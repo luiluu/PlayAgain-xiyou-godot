@@ -3,9 +3,7 @@ extends RefCounted
 
 static func make_theme() -> Theme:
 	var theme := Theme.new()
-	var font := SystemFont.new()
-	font.font_names = PackedStringArray(["PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Heiti SC"])
-	theme.default_font = font
+	theme.default_font = GameFont.current()
 	theme.default_font_size = 20
 	return theme
 

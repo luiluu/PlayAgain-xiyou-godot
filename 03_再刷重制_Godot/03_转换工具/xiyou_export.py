@@ -19,7 +19,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 2
+TOOL_VERSION = 3
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -309,6 +309,8 @@ class Exporter:
         # 界面用图（标题、菜单底图等），写成「文件夹/文件名」
         for rel in cfg.get('extraImages', []):
             self.img.add(rel)
+        for rel in cfg.get('extraAudio', []):
+            self.audio.add(rel)
         self.slice_info = {'maps': cfg['maps'], 'actors': sorted(actors), 'troops': self.slice_troops,
                            'enemies': sorted(enemies), 'skills': sorted(skills), 'animations': sorted(a for a in anims if a > 0),
                            'commonEvents': sorted(seen)}

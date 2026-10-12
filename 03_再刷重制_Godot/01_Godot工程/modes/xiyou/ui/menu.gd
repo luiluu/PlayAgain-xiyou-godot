@@ -156,132 +156,18 @@ func _cur() -> XActor:
 
 
 func _show_status() -> void:
-	_clear()
-	_actor_tabs(_show_status)
-	var a := _cur()
-	var top := HBoxContainer.new()
-	top.add_theme_constant_override("separation", 24)
-	_content.add_child(top)
-	_actor_face(top, a)
-	var info := VBoxContainer.new()
-	top.add_child(info)
-	var name_row := HBoxContainer.new()
-	name_row.add_child(XUI.label(a.display_name()))
-	name_row.add_child(XUI.label("   " + str(a.nickname), 22))
-	info.add_child(name_row)
-	var lv := HBoxContainer.new()
-	lv.add_child(XUI.label("Lv", XUI.FONT_SIZE, XUI.SYSTEM))
-	lv.add_child(XUI.label(" %d" % a.level))
-	info.add_child(lv)
-	info.add_child(XUI.param_gauge("HP", a.hp, a.mhp, "hp", 260))
-	info.add_child(XUI.param_gauge("MP", a.mp, a.mmp, "mp", 260))
-	var exp := VBoxContainer.new()
-	exp.add_theme_constant_override("separation", 0)
-	top.add_child(exp)
-	exp.add_child(XUI.label("当前经验", 22, XUI.SYSTEM))
-	exp.add_child(XUI.label(str(a.exp_total), 22))
-	exp.add_child(XUI.label("距下一级", 22, XUI.SYSTEM))
-	exp.add_child(XUI.label(str(maxi(0, a.exp_for_level(a.level + 1) - a.exp_total)), 22))
-	var grid := GridContainer.new()
-	grid.columns = 4
-	grid.add_theme_constant_override("h_separation", 36)
-	_content.add_child(grid)
-	for i in range(8):
-		grid.add_child(XUI.label(PARAM_NAMES[i], 22, XUI.SYSTEM))
-		grid.add_child(XUI.label(str(int(a.param(i))), 22))
-	var x := HBoxContainer.new()
-	x.add_theme_constant_override("separation", 36)
-	_content.add_child(x)
-	for p in [["命中", a.hit], ["闪避", a.eva], ["暴击", a.cri], ["反击", a.cnt]]:
-		x.add_child(XUI.label(p[0], 22, XUI.SYSTEM))
-		x.add_child(XUI.label("%d%%" % roundi(p[1] * 100), 22))
-	_header("技能")
-	for sk in a.skills():
-		if int(sk.id) <= 2:
-			continue
-		var row := HBoxContainer.new()
-		var ic := TextureRect.new()
-		ic.texture = XUI.icon_texture(int(sk.get("iconIndex", 0)))
-		ic.custom_minimum_size = Vector2(32, 32)
-		row.add_child(ic)
-		var l := XUI.label(("【被动】" if int(sk.stypeId) == 4 else "") + str(sk.name), 22)
-		l.tooltip_text = XText.plain(str(sk.description))
-		l.mouse_filter = Control.MOUSE_FILTER_PASS
-		row.add_child(l)
-		_content.add_child(row)
-
+	_open_detail(XStatusPage.new())
 
 func _show_equip() -> void:
-	_clear()
-	_actor_tabs(_show_equip)
-	var a := _cur()
-	var s := XState.current
-	var types: Array = XDB.system().equipTypes
-	var slots := a.equip_slots()
-	for i in range(slots.size()):
-		var current = a.equips[i]
-		var choices := s.gear.filter(func(e): return int(e.etypeId) == int(slots[i]) and a.can_equip(e))
-		if (current == null or current.is_empty()) and choices.is_empty():
-			continue
-		var row := HBoxContainer.new()
-		_content.add_child(row)
-		var lab := XUI.label(str(types[slots[i]]), 22, XUI.SYSTEM)
-		lab.custom_minimum_size.x = 110
-		row.add_child(lab)
-		var has: bool = current != null and not current.is_empty()
-		var b := XUI.button(str(current.name) if has else "", 44)
-		if has:
-			b.icon = XUI.icon_texture(int(current.get("iconIndex", 0)))
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var slot := i
-		b.pressed.connect(func(): _choose_equip(a, slot))
-		row.add_child(b)
-	if _content.get_child_count() <= 1:
-		_content.add_child(XUI.label("背包里没有可以装备的东西。", 22, XUI.DIM))
+	_open_detail(XEquipPage.new())
 
-
-func _choose_equip(a: XActor, slot: int) -> void:
-	_clear()
-	var s := XState.current
-	var et := int(a.equip_slots()[slot])
-	_header("选择装备")
-	var current = a.equips[slot]
-	if current != null and not current.is_empty():
-		var un := XUI.button("卸载", 44)
-		un.icon = XUI.icon_texture(int(XDB.plugin("YEP_EquipCore").get("Remove Icon", 0)))
-		un.pressed.connect(func():
-			s.gear.append(current)
-			a.equips[slot] = null
-			a.refresh_passive()
-			_show_equip())
-		_content.add_child(un)
-	for e in s.gear:
-		if int(e.etypeId) != et or not a.can_equip(e):
-			continue
-		var row := HBoxContainer.new()
-		_content.add_child(row)
-		var b := XUI.button(str(e.name), 44)
-		b.icon = XUI.icon_texture(int(e.get("iconIndex", 0)))
-		b.custom_minimum_size.x = 380
-		var inst: Dictionary = e
-		b.pressed.connect(func():
-			s.gear.erase(inst)
-			if current != null and not current.is_empty():
-				s.gear.append(current)
-			a.equips[slot] = inst
-			a.refresh_passive()
-			a.hp = minf(a.hp, a.mhp)
-			a.mp = minf(a.mp, a.mmp)
-			_show_equip())
-		row.add_child(b)
-		# 能力值变化：升为 powerUpColor、降为 powerDownColor（MV Window_EquipStatus）
-		for i in range(8):
-			var d := int(e.params[i]) - (int(current.params[i]) if current != null and not current.is_empty() else 0)
-			if d != 0:
-				row.add_child(XUI.label("%s%+d" % [PARAM_NAMES[i], d], 20, XUI.POWER_UP if d > 0 else XUI.POWER_DOWN))
-	var back := XUI.button("返回", 44)
-	back.pressed.connect(_show_equip)
-	_content.add_child(back)
+func _open_detail(page: XActorPage) -> void:
+	page.actor_index = _selected_actor
+	add_child(page)
+	page.closed.connect(func():
+		_selected_actor = page.actor_index
+		page.queue_free()
+		_show_party())
 
 
 func _show_items() -> void:

@@ -23,6 +23,13 @@ var elite_roll := -1.0
 
 
 func setup(troop: int, s: XState) -> void:
+	turn = 0
+	escaped = false
+	current_order.clear()
+	next_order.clear()
+	_acted.clear()
+	_speed.clear()
+	_orders_made = false
 	state = s
 	troop_id = troop
 	actors = s.battle_members()
@@ -302,12 +309,12 @@ func act(u: XBattler, skill, target) -> Array:
 func end_turn() -> Array:
 	var logs := []
 	var before := _movable_snapshot()
+	_acted.clear()
 	for b in actors + enemies:
 		b.guarding = false
 		if b.is_alive():
 			_tick_states(b, 2)
 			_regenerate(b, logs)
-	_acted.clear()
 	_sync_orders(before, false)
 	return logs
 

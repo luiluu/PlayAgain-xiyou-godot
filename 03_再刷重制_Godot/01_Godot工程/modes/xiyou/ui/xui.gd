@@ -3,8 +3,8 @@ extends RefCounted
 ## 西游模式共用界面样式，照原版（用户 2026-10-12 要求「界面风格用原版界面风格」）：
 ## - 窗口：img/system/Window.png 皮肤（XWindowStyle），背景不透明度 192（YEP_CoreEngine Window Opacity）。
 ## - 菜单场景：img/menus/Background.png 铺底，窗口整体不透明度 30（MOG_MenuBackground），上浮粒子（MOG_MenuParticles）。
-## - 字体：GameFont = fonts/StarComfortUI.ttf（只含西文），中文回落到系统黑体（与 NW.js 的回落一致）；
-##   字号 26、行高 36，描边 4px 半透明黑（MV Window_Base）。
+## - 字体：当前西游 installDisplayPreferencesRuntime 指定 FZLanTYJW_ZhongCu.TTF（方正兰亭圆简体中粗）；
+##   字号 26、行高 36，细黑描边（正式版限制 0.75px；Godot 用 1px）。
 ## - 颜色：Window.png 右下色板 textColor(n)；下面常量就是该色板的值。
 ## 按钮照 MV 指令窗口：平时只有文字，选中/悬停时画皮肤里的光标框。
 
@@ -27,9 +27,8 @@ const POWER_DOWN := Color("c08080")    # 25
 const MP_COST := Color("40c0f0")       # 23
 const TP_COST := Color("00e060")       # 29
 const DIM := Color(1, 1, 1, 160.0 / 255.0)   # MV translucentOpacity
-const GAUGES := {"hp": [Color("e08040"), Color("f0c040")], "mp": [Color("4080c0"), Color("40c0f0")], "tp": [Color("00a040"), Color("00e060")]}
+const GAUGES := {"hp": [Color("e08040"), Color("f0c040")], "mp": [Color("4080c0"), Color("40c0f0")], "tp": [Color("00a040"), Color("00e060")], "xp": [Color("a060e0"), Color("c080ff")]}
 
-static var _font: Font
 static var _skin: Texture2D
 
 
@@ -45,27 +44,16 @@ static func skin() -> Texture2D:
 
 
 static func font() -> Font:
-	if _font == null:
-		var cjk := SystemFont.new()
-		cjk.font_names = PackedStringArray(["PingFang SC", "Heiti SC", "Heiti TC", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", "sans-serif"])
-		var p := XDB.BASE + "fonts/StarComfortUI.ttf"
-		if FileAccess.file_exists(p):
-			var f := FontFile.new()
-			f.load_dynamic_font(p)
-			f.fallbacks = [cjk]
-			_font = f
-		else:
-			_font = cjk
-	return _font
+	return GameFont.current()
 
 
 static func theme() -> Theme:
 	var t := Theme.new()
 	t.default_font = font()
 	t.default_font_size = FONT_SIZE
-	var outline := Color(0, 0, 0, 0.5)
+	var outline := Color(0, 0, 0, 0.45)
 	for type in ["Label", "Button", "RichTextLabel"]:
-		t.set_constant("outline_size", type, 4)
+		t.set_constant("outline_size", type, 1)
 		t.set_color("font_outline_color", type, outline)
 	t.set_color("font_color", "Label", TEXT)
 	t.set_color("default_color", "RichTextLabel", TEXT)

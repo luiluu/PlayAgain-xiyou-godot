@@ -395,6 +395,8 @@ func _main() -> void:
 		await _play(logic.end_turn())
 		otb.show_orders(logic.current_order, logic.next_order)
 		_refresh_status()
+		# 全员不能行动时也交还一帧，保留自动/速度按钮与窗口响应。
+		await get_tree().process_frame
 
 
 ## 轮到 u：敌人/自动/不能行动时直接决定；角色由玩家选。逃跑在这里处理，成功时结束战斗并返回 "escaped"。
@@ -435,10 +437,12 @@ func _close_windows() -> void:
 
 ## 选指令时预览：自己下个回合的位置（技能速度＋OTB User Next Turn），以及选中目标的位移。
 func _preview(a: XBattler, skill, targets: Array = []) -> void:
-	if skill == null or XBattleLogic.is_item(skill):
+	if skill == null:
 		otb.clear_preview()
 		return
-	var entries := [[a, "n", logic.next_order, int(skill.get("speed", 0)) + XBattleLogic._note_int(skill, "OTB User Next Turn"), logic._speed]]
+	var entries := []
+	if not XBattleLogic.is_item(skill):
+		entries.append([a, "n", logic.next_order, int(skill.get("speed", 0)) + XBattleLogic._note_int(skill, "OTB User Next Turn"), logic._speed])
 	var cur := XBattleLogic._note_int(skill, "OTB Target Current Turn")
 	var nxt := XBattleLogic._note_int(skill, "OTB Target Next Turn")
 	if not str(skill.get("note", "")).contains("<OTB Target Next Turn:"):
@@ -837,63 +841,43 @@ func _say(text: String, seconds: float) -> void:
 	_banner("")
 
 
-## 胜利：我方胜利动作；顶部「战斗胜利」，中间窗口列出经验、金钱、掉落与升级（MV 窗口皮肤）。
+## 胜利：先发放一次奖励，再放大胜利镜头，最后显示 Olivia 的结算布局。
 func _victory() -> void:
+	_close_windows()
 	for a in logic.alive(logic.actors):
 		sprites[a].set_motion("victory")
+	var before := {}
+	for a in logic.actors:
+		before[a] = {"exp": a.exp_total, "level": a.level}
 	var r := logic.rewards()
-	var ups := logic.grant(r)
+	logic.grant(r)
 	logic.end_battle()
-	var me: Dictionary = XDB.system().get("victoryMe", {})
-	var p := XDB.audio_path("me", str(me.get("name", "")))
+	var params := XDB.plugin("Olivia_VictorySequenceUI")
 	bgm.stop()
-	if p != "":
-		bgm.stream = load(p)
+	var music := XDB.audio_path("bgm", str(params.get("Victory Screen BGM", "Ship3")))
+	if music != "":
+		bgm.stream = load(music)
+		bgm.volume_db = linear_to_db(float(params.get("Victory Screen BGM Volume", 90)) / 100)
 		bgm.play()
-	_close_windows()
-	_banner("战斗胜利！")
-	var w := PanelContainer.new()
-	w.add_theme_stylebox_override("panel", XUI.panel())
-	w.custom_minimum_size.x = 560
-	ui.add_child(w)
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 2)
-	w.add_child(col)
-	var exp_row := HBoxContainer.new()
-	exp_row.add_child(XUI.label("经验值", XUI.FONT_SIZE, XUI.SYSTEM))
-	var ev := XUI.label("+%d" % r.exp)
-	ev.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	ev.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	exp_row.add_child(ev)
-	col.add_child(exp_row)
-	var gold_row := HBoxContainer.new()
-	gold_row.add_child(XUI.label(str(XDB.system().currencyUnit), XUI.FONT_SIZE, XUI.SYSTEM))
-	var gv := XUI.label("+%d" % r.gold)
-	gv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	gv.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	gold_row.add_child(gv)
-	col.add_child(gold_row)
-	for d in r.drops:
-		var table: String = {1: "Items", 2: "Weapons", 3: "Armors"}[int(d.kind)]
-		var rec := XDB.rec(table, int(d.id))
-		var row := HBoxContainer.new()
-		var ic := TextureRect.new()
-		ic.texture = XUI.icon_texture(int(rec.get("iconIndex", 0)))
-		ic.custom_minimum_size = Vector2(32, 32)
-		row.add_child(ic)
-		row.add_child(XUI.label(str(rec.get("name", "?")), 24))
-		col.add_child(row)
-	for u in ups:
-		col.add_child(XUI.label("%s 升到 %d 级！" % [u.actor.display_name(), u.actor.level], 24, XUI.POWER_UP))
-	var ok := XUI.button("继续", 44)
-	ok.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	ok.pressed.connect(func(): _picked.emit("ok"))
-	col.add_child(ok)
-	w.resized.connect(func(): w.position = (get_viewport_rect().size - w.size) / 2.0)
-	ok.grab_focus.call_deferred()
-	if logic.auto:
-		await get_tree().create_timer(1.2).timeout
-	else:
-		while not (str(await _picked) == "ok"):
-			pass
+	# 胜利镜头只作用于背景和战斗人物，结算文字保持原比例。
+	var focus := Vector2(float(params.get("Victory Screen Zoom X", 700)), float(params.get("Victory Screen Zoom Y", 460)))
+	var zoom := float(params.get("Victory Screen Zoom Scale", 2))
+	var duration := float(params.get("Victory Screen Zoom Duration", 300)) / 1000
+	if str(params.get("Victory Screen Zoom", "true")) == "true":
+		for visual in get_children():
+			if visual == ui or not (visual is Control or visual is Node2D):
+				continue
+			var local_focus: Vector2 = _origin + focus - visual.position
+			var tween := create_tween().set_parallel(true)
+			tween.tween_property(visual, "position", visual.position - local_focus * (zoom - 1), duration)
+			tween.tween_property(visual, "scale", Vector2.ONE * zoom, duration)
+	await get_tree().create_timer(float(params.get("Victory Screen Hide Window Delay", 500)) / 1000).timeout
+	for node in ui.get_children():
+		if node is CanvasItem:
+			node.hide()
+	await get_tree().create_timer(maxf(0, float(params.get("Victory Screen Display Delay", 1000)) / 1000 - float(params.get("Victory Screen Hide Window Delay", 500)) / 1000)).timeout
+	var screen := XVictoryScreen.new()
+	screen.setup(r, before, logic.actors, logic.auto)
+	ui.add_child(screen)
+	await screen.continued
 	Engine.time_scale = 1.0

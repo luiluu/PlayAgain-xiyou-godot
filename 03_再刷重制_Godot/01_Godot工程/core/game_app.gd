@@ -6,6 +6,8 @@ var modes: Array = []
 var current_mode: String = ""
 
 func _ready() -> void:
+	if WindowFit.should_apply(OS.get_cmdline_args()):
+		WindowFit.apply(get_window())
 	var data = JSON.parse_string(FileAccess.get_file_as_string(MODE_FILE))
 	if not data is Dictionary or not data.get("modes") is Array:
 		push_error("Invalid mode registry")
@@ -42,3 +44,14 @@ func save_directory() -> String:
 	if mode.is_empty():
 		return ""
 	return "user://modes/" + str(mode["saveNamespace"])
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_F11 or (event.keycode == KEY_ENTER and event.meta_pressed):
+			var window := get_window()
+			if window.mode == Window.MODE_FULLSCREEN:
+				window.mode = Window.MODE_WINDOWED
+				WindowFit.apply(window)
+			else:
+				window.mode = Window.MODE_FULLSCREEN
+			get_viewport().set_input_as_handled()

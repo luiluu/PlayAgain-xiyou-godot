@@ -43,8 +43,7 @@
     "titles2/Particles3"
   ],
   "fonts": [
-    "StarComfortUI.ttf",
-    "StarComfortUI-LICENSE.txt"
+    "FZLanTYJW_ZhongCu.TTF"
   ],
   "systemImages": [
     "Window",
@@ -82,5 +81,9 @@
       "20": 1
     },
     "说明": "开局剧情（Map002）结束后的位置与当前层数"
-  }
+  },
+  "extraAudio": [
+    "bgm/Ship3",
+    "se/Skill2"
+  ]
 }

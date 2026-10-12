@@ -56,8 +56,8 @@
     "selfContainedEditor": true,
     "editorStartupVerified": true,
     "visibleProjectManagerVerified": true,
-    "runnableBuildKind": "dev.003 西游首期可玩版（开局区域＋一层，原版界面风格）",
-    "developmentVersion": "dev.003",
+    "runnableBuildKind": "dev.004 西游首期可玩版（OTB、结算、状态/装备、当前西游字体、Mac 窗口适配）",
+    "developmentVersion": "dev.004",
     "developmentRegistry": "03_再刷重制_Godot/开发编号.json",
     "deferredPlatforms": [
       "Windows",
@@ -75,10 +75,13 @@
   "plan": "00_项目管理/重制步骤清单.md（9 步，西游优先）",
   "remakeSource": {
     "sourceId": "legacy_xiyou_mod_kyo",
-    "releaseVersion": "v0.04",
+    "releaseVersion": "v0.05",
     "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
-    "fingerprint": "00_项目管理/验证与备份/20261012_双入口西游优先/当前西游来源清单.json",
-    "fingerprintedFiles": 765
+    "fingerprint": "00_项目管理/验证与备份/20261012_界面补全/当前西游来源清单.json",
+    "fingerprintedFiles": 770,
+    "convertedContentReleaseVersion": "v0.04",
+    "uiReferenceReleaseVersion": "v0.05",
+    "contentRefreshPending": true
   },
   "handoff": "00_项目管理/交接板.md",
   "collaboration": {
