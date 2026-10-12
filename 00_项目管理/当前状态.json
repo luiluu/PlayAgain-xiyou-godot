@@ -1,0 +1,54 @@
+{
+  "marker": "【Codex·未经Claude检验】",
+  "review": "未经claude检验",
+  "updatedDate": "2026-10-12",
+  "libraryRevision": 1,
+  "root": "/Users/kyo/Documents/再刷项目资料库",
+  "currentStep": 2,
+  "currentAction": "等待 PD 的 Windows Steam 原版下载并复制到待接收目录",
+  "steps": {
+    "1": "library_structure_created_pending_cross_review",
+    "2": "awaiting_original_files",
+    "3": "not_started",
+    "4": "not_started",
+    "5": "not_started",
+    "6": "not_started",
+    "7": "not_started",
+    "8": "not_started",
+    "9": "not_started",
+    "10": "not_started"
+  },
+  "original": {
+    "steamAppId": 2059790,
+    "imported": false,
+    "baselineVerified": false,
+    "buildId": null,
+    "recommendedDownload": "PD Windows Steam",
+    "intakeDirectory": "/Users/kyo/Documents/再刷项目资料库/01_再刷一把/01_待接收原版"
+  },
+  "godot": {
+    "installationStatus": "not_installed_by_this_task",
+    "selectedVersion": null,
+    "languageRecommendation": "GDScript",
+    "projectCreated": false,
+    "projectDirectory": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/01_Godot工程",
+    "runnableBuildAvailable": false,
+    "releaseVersion": null,
+    "targetPlatforms": ["macOS", "Windows", "Android"]
+  },
+  "existingMod": {
+    "referenceLibrary": "/Users/kyo/Documents/再刷西游",
+    "gameModifiedByThisTask": false,
+    "realSaveReadByThisTask": false,
+    "realSaveModifiedByThisTask": false,
+    "releaseNumberChangedByThisTask": false
+  },
+  "pending": [
+    "下载并接收干净 Steam 原版及可用的 Steam 版本登记",
+    "核对原版来源、版本、数据、脚本和运行行为",
+    "安装并登记 Godot 与匹配导出模板",
+    "创建可运行工程与核心框架",
+    "后续完成实际多平台验收",
+    "Claude 对本轮同版本文档与记录独立核查"
+  ]
+}

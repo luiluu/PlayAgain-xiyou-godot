@@ -1,0 +1,51 @@
+{
+  "marker": "【Codex·未经Claude检验】",
+  "review": "未经claude检验",
+  "updatedDate": "2026-10-12",
+  "sources": [
+    {
+      "id": "steam_playagain_original",
+      "category": "01_再刷一把",
+      "title": "再刷一把 PlayAgain",
+      "steamAppId": 2059790,
+      "storeUrl": "https://store.steampowered.com/app/2059790/",
+      "status": "awaiting_files",
+      "buildId": null,
+      "branch": null,
+      "engineVersion": null,
+      "baselinePath": null,
+      "sha256Manifest": null,
+      "modFreeStatus": "unverified_until_file_audit",
+      "intakePath": "/Users/kyo/Documents/再刷项目资料库/01_再刷一把/01_待接收原版"
+    },
+    {
+      "id": "legacy_xiyou_mod_kyo",
+      "category": "02_再刷西游",
+      "title": "再刷一把：西游（mod_KYO）",
+      "status": "existing_mod_reference_only",
+      "libraryPath": "/Users/kyo/Documents/再刷西游",
+      "appPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app",
+      "currentLog": "/Users/kyo/Documents/再刷西游/00_说明与维护记录/KYO更新日志.md",
+      "useAsOriginalBaseline": false,
+      "copyExistingModFeaturesAutomatically": false
+    },
+    {
+      "id": "historical_xiyou_source_157",
+      "category": "02_再刷西游",
+      "status": "historical_mod_port_backup",
+      "path": "/Users/kyo/Documents/再刷西游/01_开发工程/Louis/rpg-maker-mac/source-1.57",
+      "evidence": "/Users/kyo/Documents/再刷西游/00_说明与维护记录/文件来源与去向.csv",
+      "useAsOriginalBaseline": false
+    },
+    {
+      "id": "new_godot_remake",
+      "category": "03_再刷重制_Godot",
+      "status": "documentation_scaffold_only",
+      "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot",
+      "baselineSourceId": "steam_playagain_original",
+      "baselineLocked": false,
+      "godotVersion": null,
+      "gameReleaseVersion": null
+    }
+  ]
+}
