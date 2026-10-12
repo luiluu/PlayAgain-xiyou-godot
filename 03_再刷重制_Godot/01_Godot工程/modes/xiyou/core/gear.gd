@@ -3,8 +3,14 @@ extends RefCounted
 ## 装备实例工厂：模板保持不变；随机属性/词缀只在获得时掷骰，存档读回不重掷。
 ## 与正式版 DreamX/YEP 顺序相同：词缀合并 -> 重解析备注 -> 属性浮动 -> 插槽浮动。
 static var force_roll := -1.0
+## 测试用：非空时按顺序循环取值（与参照引擎的 Math.random 序列对照取数次数与先后）。
+static var roll_seq: Array = []
+static var roll_count := 0
 
 static func roll() -> float:
+	if not roll_seq.is_empty():
+		roll_count += 1
+		return float(roll_seq[(roll_count - 1) % roll_seq.size()])
 	return force_roll if force_roll >= 0 else randf()
 
 static func template(kind: String, id: int) -> Dictionary:

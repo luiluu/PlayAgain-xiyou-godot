@@ -12,9 +12,16 @@ for(const name of ['YEP_ItemCore','ItemQuality','DreamX_RandomPrefixesSuffixes',
  const rel='js/plugins/'+name+'.js';out.sourceHashes[rel]=crypto.createHash('sha256').update(fs.readFileSync(path.join(APP,rel))).digest('hex');
 }
 function brief(e){return {name:e.name,params:Array.from(e.params),traits:w.JSON.parse(w.JSON.stringify(e.traits)),price:e.price,icon:e.iconIndex,quality:Number(e.meta.quality||0),slots:e.upgradeSlots,originalSlots:e.originalUpgradeSlots??e.upgradeSlots,boost:e.boostCount||0,elementAmplify:w.JSON.parse(w.JSON.stringify(e.elementAmplify||{})),note:e.note,runewords:Array.from(e._codexRunewords||[])};}
-function make(kind,id,roll){w.Math.random=()=>roll;w.$gameParty.RomDreamX=new w.Array();w.$gameParty.RomDreamXNum=0;w.$gameParty.RomDreamXs=new w.Array();w.$gameParty.RomDreamXsNum=0;const table=kind==='weapon'?w.$dataWeapons:w.$dataArmors,base=table[id];const e=w.DreamX.RandomPrefixSuffix.isConfiguredForPrefixSuffix(base)?w.DreamX.RandomPrefixSuffix.makeItem(base):w.DataManager.registerNewItem(base);return e;}
+function make(kind,id,roll){w.Math.random=typeof roll==='function'?roll:()=>roll;w.$gameParty.RomDreamX=new w.Array();w.$gameParty.RomDreamXNum=0;w.$gameParty.RomDreamXs=new w.Array();w.$gameParty.RomDreamXsNum=0;const table=kind==='weapon'?w.$dataWeapons:w.$dataArmors,base=table[id];const e=w.DreamX.RandomPrefixSuffix.isConfiguredForPrefixSuffix(base)?w.DreamX.RandomPrefixSuffix.makeItem(base):w.DataManager.registerNewItem(base);return e;}
 for(const [kind,id] of [['weapon',2],['weapon',56],['weapon',667],['weapon',725],['armor',12],['armor',52],['armor',57],['armor',235],['armor',236],['armor',240],['armor',336],['armor',337]]){
  for(const roll of [0,0.5,0.99]){const e=make(kind,id,roll);out.gear.push({kind,id,roll,...brief(e)});}
+}
+// 变化的随机序列：检查取随机数的次数与先后（固定常数无法区分顺序）。
+const SEQ=[0.73,0.12,0.95,0.31,0.58,0.04,0.86,0.47,0.22,0.69,0.37,0.81];
+out.sequence=SEQ;out.sequenced=[];
+for(const [kind,id] of [['weapon',2],['weapon',56],['weapon',667],['weapon',725],['armor',12],['armor',52],['armor',57],['armor',235],['armor',236],['armor',240],['armor',336],['armor',337]]){
+ let n=0;const g=make(kind,id,()=>SEQ[n++%SEQ.length]);
+ out.sequenced.push({kind,id,draws:n,...brief(g)});
 }
 // 每一种正式生效材料选一个类型匹配的基础装备；随机强化额外覆盖两端。
 for(const item of w.$dataItems){

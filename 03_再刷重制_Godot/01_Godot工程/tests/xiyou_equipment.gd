@@ -34,6 +34,16 @@ func _run() -> void:
 		check(tag+"_params",close_array(e.params,row.params),{"godot":e.params,"mv":row.params})
 		check(tag+"_metadata",e.name==row.name and e.traits==row.traits and int(e.price)==int(row.price) and int(e.iconIndex)==int(row.icon) and XGear.quality(e)==int(row.quality),{"godot":e,"mv":row})
 		check(tag+"_slots",int(e.upgradeSlots)==int(row.slots) and int(e.originalUpgradeSlots)==int(row.originalSlots))
+	# 变化随机序列：名字、属性、插槽一致且取随机数的次数相同，才说明取数先后与正式版一致。
+	for row in ref.get("sequenced", []):
+		XGear.force_roll = -1.0
+		XGear.roll_seq = ref.sequence
+		XGear.roll_count = 0
+		var e := XGear.create(row.kind, int(row.id))
+		var tag := "seq_%s%d" % [row.kind, int(row.id)]
+		check(tag, close_array(e.params, row.params) and e.name == row.name and e.traits == row.traits and int(e.upgradeSlots) == int(row.slots) and XGear.roll_count == int(row.draws),
+			{"godot": [e.name, e.params, e.upgradeSlots, XGear.roll_count], "mv": [row.name, row.params, row.slots, row.draws]})
+	XGear.roll_seq = []
 	for row in ref.upgrades:
 		if int(row.itemId) in [170,242]:continue # 正式版旧标签只扣费，不作为有效强化开放。
 		XGear.force_roll=0.5
