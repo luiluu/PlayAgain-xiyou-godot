@@ -3,7 +3,7 @@ extends RefCounted
 ## 西游模式的一局游戏状态（相当于 MV 的 $gameParty/$gameSwitches/$gameVariables/$gameSelfSwitches/$gamePlayer 位置）。
 ## 只属于西游模式；存档读写 to_dict()/from_dict()，保存位置由 GameApp.save_directory() 决定。
 
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 static var current: XState
 
 var difficulty := 3
@@ -11,6 +11,7 @@ var party: Array[int] = []          # 队伍顺序（前 4 位出战）
 var actors := {}                    # actor_id -> XActor
 var gold := 0
 var items := {}                     # item_id -> 数量
+var next_gear_id := 1
 var gear: Array = []                # 背包里的装备实例
 var switches := {}                  # id -> bool
 var variables := {}                 # id -> 数值
@@ -36,6 +37,7 @@ static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> 
 func actor(id: int) -> XActor:
 	if not actors.has(id):
 		actors[id] = XActor.new().setup(id)
+		for e in actors[id].equip_list():register_gear(e)
 	return actors[id]
 
 func add_actor(id: int) -> void:
@@ -93,14 +95,30 @@ func gain_item(id: int, amount: int) -> void:
 func gain_gear(kind: String, base_id: int, amount: int) -> void:
 	if amount > 0:
 		for i in range(amount):
-			var inst := XActor.make_equip(kind, base_id)
+			var inst := XGear.create(kind, base_id)
 			if not inst.is_empty():
+				register_gear(inst)
 				gear.append(inst)
 	else:
 		for i in range(-amount):
 			var idx := gear.find_custom(func(e): return e.kind == kind and int(e.base) == base_id)
 			if idx >= 0:
 				gear.remove_at(idx)
+
+func register_gear(item: Dictionary) -> void:
+	if not item.has("instanceId"):
+		item.instanceId = "xg:%d" % next_gear_id
+		next_gear_id += 1
+	else:
+		next_gear_id = maxi(next_gear_id,int(str(item.instanceId).get_slice(":",1))+1)
+
+func owns_gear(item: Dictionary) -> bool:
+	for e in gear:
+		if is_same(e,item):return true
+	for a in members():
+		for e in a.equip_list():
+			if is_same(e,item):return true
+	return false
 
 func gear_count(kind: String, base_id: int) -> int:
 	return gear.filter(func(e): return e.kind == kind and int(e.base) == base_id).size()
@@ -117,7 +135,7 @@ func to_dict() -> Dictionary:
 		a[str(id)] = {"level": x2.level, "exp": x2.exp_total, "skills": x2.skill_ids, "equips": x2.equips,
 			"hp": x2.hp, "mp": x2.mp, "states": x2.state_ids, "cooldowns": x2.cooldowns}
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "actors": a, "gold": gold,
-		"items": items, "gear": gear, "switches": switches, "variables": variables, "selfSwitches": self_switches,
+		"items": items, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds}
 
 static func from_dict(d: Dictionary) -> XState:
@@ -142,6 +160,10 @@ static func from_dict(d: Dictionary) -> XState:
 	for k in d.items:
 		s.items[int(k)] = int(d.items[k])
 	s.gear = d.gear
+	s.next_gear_id = int(d.get("nextGearId",1))
+	for a in s.actors.values():
+		for e in a.equip_list():s.register_gear(e)
+	for e in s.gear:s.register_gear(e)
 	for k in d.switches:
 		s.switches[int(k)] = bool(d.switches[k])
 	for k in d.variables:

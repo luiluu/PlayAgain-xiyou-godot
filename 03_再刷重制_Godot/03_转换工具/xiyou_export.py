@@ -12,6 +12,7 @@
   manifest.json    输入/输出 SHA-256、未能处理项
 """
 import argparse
+import equipment_rules
 import hashlib
 import json
 import re
@@ -19,7 +20,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 4
+TOOL_VERSION = 5
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -207,7 +208,22 @@ class Exporter:
         self.inputs[rel] = sha(b)
         text = b.decode('utf-8')
         plugins = json.loads(text[text.index('['):text.rindex(']') + 1])
-        self.write_json('db/Plugins.json', {p['name']: p['parameters'] for p in plugins if p.get('status')})
+        enabled = {p['name']: p['parameters'] for p in plugins if p.get('status')}
+        self.write_json('db/Plugins.json', enabled)
+        self.write_json('db/EquipSuits.json', equipment_rules.suits(enabled))
+        issues=[]
+        for table in ['Weapons','Armors','Items']:
+            for rec in self.db[table]:
+                if not rec: continue
+                if table != 'Items':
+                    rec['equipment'] = equipment_rules.definition(rec, enabled['YEP_X_ItemUpgradeSlots'])
+                if table == 'Items':
+                    rule = equipment_rules.upgrade(rec)
+                    if rule['weapon'] or rule['armor'] or rule['issues']:
+                        rec['upgrade'] = rule
+                        issues += [{'table':table,'id':rec['id'],'line':line} for line in rule['issues']]
+            self.write_json('db/%s.json' % table,self.db[table])
+        self.issues += [{'unsupportedUpgrade':r} for r in issues]
 
     # ---- 切片引用收集 ----
     def ref_img(self, folder, name):

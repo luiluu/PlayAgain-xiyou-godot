@@ -59,13 +59,7 @@ func equip_slots() -> Array:
 	return out
 
 static func make_equip(kind: String, base_id: int) -> Dictionary:
-	var src := XDB.rec("Weapons" if kind == "weapon" else "Armors", base_id)
-	if src.is_empty():
-		return {}
-	var inst := src.duplicate(true)
-	inst["kind"] = kind
-	inst["base"] = float(base_id)  # 与 JSON 往返后的类型一致（存档读回都是浮点）
-	return inst
+	return XGear.template(kind,base_id)
 
 ## MV Game_Actor.canEquip：武器/防具类型由特性 51/52（及被动 passiveEWPN/EARM）放行，特性 54 封印装备类型；
 ## zbxz 插件的 <req_level:N> 等级需求。
@@ -77,6 +71,8 @@ func can_equip(item: Dictionary) -> bool:
 	var req := int(item.get("meta", {}).get("req_level", 0))
 	if req > _lv:
 		return false
+	var required: Array = item.get("equipment",{}).get("requirements",{}).get("actors",[])
+	if not required.is_empty() and not required.has(actor_id):return false
 	if item.kind == "weapon":
 		var wt := int(item.wtypeId)
 		return traits_set(51).has(wt) or not passive_values("passiveEWPN%02d" % wt).is_empty()
@@ -147,6 +143,8 @@ func skills() -> Array:
 	for t in all_traits():
 		if int(t.code) == TRAIT_SKILL_ADD and not ids.has(int(t.dataId)):
 			ids.append(int(t.dataId))
+	for id in XEquipSuits.ids(self,"skills"):
+		if not ids.has(id):ids.append(id)
 	var out := []
 	for id in ids:
 		var s := XDB.rec("Skills", id)
@@ -160,8 +158,22 @@ func trait_objects() -> Array:
 	var out := [data(), class_data()]
 	out.append_array(equip_list())
 	out.append_array(states())
+	var resistance := []
+	for id in XEquipSuits.ids(self,"statesResist"):
+		resistance.append({"code":TRAIT_STATE_RESIST,"dataId":id,"value":1})
+	if not resistance.is_empty():out.append({"traits":resistance})
 	return out
 
+
+func states() -> Array:
+	var result := super.states()
+	for id in XEquipSuits.ids(self,"states"):
+		var state := XDB.rec("States",id)
+		if not state.is_empty() and not result.has(state):result.append(state)
+	return result
+
+func param_rate(i: int) -> float:
+	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true)
 
 # ---- dsPassiveSkill：被动标签只从已有技能读取 ----
 func passive_values(tag: String) -> Array:
@@ -210,7 +222,7 @@ func param_base(i: int) -> float:
 
 ## 装备属性；被动 passiveWPNMxx / passiveARMMxx 按武器/防具类型放大该装备的正值属性。
 func param_plus(i: int) -> float:
-	var v := 0.0
+	var v := XEquipSuits.value(self,"param",i,false)
 	for e in equip_list():
 		var p := float(e.params[i])
 		v += p
@@ -225,12 +237,14 @@ func xparam(i: int) -> float:
 	var v := super.xparam(i)
 	for m in passive_values(_tag("passiveXPBST", i)):
 		v += _num(m) * 0.01
+	v = (v + XEquipSuits.value(self,"xparam",i,false)/100) * XEquipSuits.value(self,"xparam",i,true)
 	return maxf(0.9, v) if i == 0 else v
 
 func sparam(i: int) -> float:
 	var v := traits_pi(TRAIT_SPARAM, i)
 	for m in passive_values(_tag("passiveSPBST", i)):
 		v += _num(m) * 0.01
+	v = (v + XEquipSuits.value(self,"sparam",i,false)/100) * XEquipSuits.value(self,"sparam",i,true)
 	if i == 6 or i == 7:
 		return additive_rate(TRAIT_SPARAM, i, v, [])
 	return v
