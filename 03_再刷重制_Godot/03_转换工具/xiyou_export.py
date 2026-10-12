@@ -8,6 +8,7 @@
                    技能/物品附 formulaGd（翻译成 Godot Expression 的伤害公式，翻译不了为 null）
   maps/MapNNN.json 切片涉及的地图
   img/…、audio/…   切片实际引用到的素材（原样复制）
+  fonts/…          界面字体与授权文件（原样复制）
   manifest.json    输入/输出 SHA-256、未能处理项
 """
 import argparse
@@ -18,7 +19,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 1
+TOOL_VERSION = 2
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -305,6 +306,9 @@ class Exporter:
             self.ref_audio('se', s)
         for name in cfg.get('systemImages', []):
             self.ref_img('system', name)
+        # 界面用图（标题、菜单底图等），写成「文件夹/文件名」
+        for rel in cfg.get('extraImages', []):
+            self.img.add(rel)
         self.slice_info = {'maps': cfg['maps'], 'actors': sorted(actors), 'troops': self.slice_troops,
                            'enemies': sorted(enemies), 'skills': sorted(skills), 'animations': sorted(a for a in anims if a > 0),
                            'commonEvents': sorted(seen)}
@@ -326,10 +330,20 @@ class Exporter:
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src, dst)
                 self.outputs[f'{kind}/{rel}{ext}'] = sha(src.read_bytes())
+        # 界面字体（原版 fonts/gamefont.css 指向的 GameFont）连同授权文件原样复制
+        for name in self.cfg.get('fonts', []):
+            src = self.app / 'fonts' / name
+            if not src.exists():
+                self.issues.append({'missingAsset': f'fonts/{name}'})
+                continue
+            dst = self.out / 'fonts' / name
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+            self.outputs[f'fonts/{name}'] = sha(src.read_bytes())
 
     def run(self):
         # 只清理本工具生成的部分；oracle/ 由 mv_oracle/slice_probe.cjs 写入，保留
-        for sub in ('db', 'maps', 'img', 'audio'):
+        for sub in ('db', 'maps', 'img', 'audio', 'fonts'):
             if (self.out / sub).exists():
                 shutil.rmtree(self.out / sub)
         self.out.mkdir(parents=True, exist_ok=True)

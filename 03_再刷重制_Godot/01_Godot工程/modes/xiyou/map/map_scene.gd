@@ -62,23 +62,45 @@ func _build_hud() -> void:
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.theme = XUI.theme()
 	ui.add_child(hud)
-	var menu_btn := XUI.button("菜单", 52)
+	# 触屏用菜单入口（原版靠右键/双指点开菜单）；做成小号 MV 窗口
+	var menu_btn := XUI.button("菜单", 48)
+	menu_btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menu_btn.add_theme_stylebox_override("normal", XUI.panel())
 	menu_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	menu_btn.offset_left = -130
-	menu_btn.offset_top = 16
-	menu_btn.offset_right = -16
+	menu_btn.offset_left = -120
+	menu_btn.offset_top = 12
+	menu_btn.offset_right = -12
 	menu_btn.pressed.connect(open_menu)
 	hud.add_child(menu_btn)
-	var plate := PanelContainer.new()
-	var sb := XUI.panel()
-	sb.content_margin_top = 6
-	sb.content_margin_bottom = 6
-	plate.add_theme_stylebox_override("panel", sb)
-	plate.position = Vector2(16, 16)
+	# 地图名（Olivia_MapDisplayNameCore）：暗底条，从 y=18 滑到 48 淡入，停留，再滑到 78 淡出（各 60 帧）
+	var plate := XUI.dimmer(false, true)
+	plate.name = "MapNamePlate"
+	plate.size = Vector2(420, 36)
+	plate.position = Vector2(0, 18)
+	plate.modulate.a = 0.0
 	hud.add_child(plate)
-	var map_name := XUI.label("", 20, XUI.GOLD)
+	var map_name := XUI.label("", XUI.FONT_SIZE)
 	map_name.name = "MapName"
+	map_name.position = Vector2(80, -2)
 	plate.add_child(map_name)
+
+
+func _show_map_name(text: String) -> void:
+	var plate: Control = hud.find_child("MapNamePlate", true, false)
+	var label: Label = plate.find_child("MapName", true, false)
+	label.text = text
+	if text == "":
+		plate.modulate.a = 0.0
+		return
+	plate.size.x = 80 + label.get_minimum_size().x + 200
+	plate.position.y = 18
+	plate.modulate.a = 0.0
+	var t := plate.create_tween()
+	t.tween_property(plate, "position:y", 48.0, 1.0)
+	t.parallel().tween_property(plate, "modulate:a", 1.0, 1.0)
+	t.tween_interval(1.0)
+	t.tween_property(plate, "position:y", 78.0, 1.0)
+	t.parallel().tween_property(plate, "modulate:a", 0.0, 1.0)
 
 
 func load_map(id: int, x: int, y: int, d: int) -> void:
@@ -127,7 +149,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	camera.reparent(player)
 	camera.position = Vector2(0, -TS / 2.0)
 	camera.reset_smoothing()
-	(hud.find_child("MapName", true, false) as Label).text = str(map_data.get("displayName", ""))
+	_show_map_name(str(map_data.get("displayName", "")))
 	play_bgm(map_data.get("bgm", {}))
 	_make_encounter_count()
 	await _run_autorun()

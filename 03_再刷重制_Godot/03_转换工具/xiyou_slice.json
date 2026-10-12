@@ -31,6 +31,21 @@
     52
   ],
   "weaponScan": 60,
+  "extraImages": [
+    "menus/Background",
+    "menus/Particles",
+    "titles1/login",
+    "titles2/Command_0",
+    "titles2/Command_1",
+    "titles2/Cursor",
+    "titles2/Particles",
+    "titles2/Particles2",
+    "titles2/Particles3"
+  ],
+  "fonts": [
+    "StarComfortUI.ttf",
+    "StarComfortUI-LICENSE.txt"
+  ],
   "systemImages": [
     "Window",
     "Damage",
