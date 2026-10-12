@@ -119,9 +119,12 @@ func change_level(lv: int) -> void:
 	refresh_passive()
 
 ## 获得经验，返回升了几级。
-func gain_exp(amount: int) -> int:
+## YEP_CoreEngine：已到等级上限不再获得经验。rate 为 MV finalExpRate 里的出战/后备系数。
+func gain_exp(amount: int, rate := 1.0) -> int:
 	var before := _lv
-	exp_total += int(roundf(amount * exr))
+	if _lv >= max_level():
+		return 0
+	exp_total += int(roundf(amount * exr * rate))
 	while _lv < max_level() and exp_total >= exp_for_level(_lv + 1):
 		_lv += 1
 		for l in class_data().get("learnings", []):

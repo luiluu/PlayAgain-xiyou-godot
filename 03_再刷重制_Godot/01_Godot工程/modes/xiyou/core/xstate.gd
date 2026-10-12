@@ -51,8 +51,12 @@ func remove_actor(id: int) -> void:
 func members() -> Array:
 	return party.map(func(id): return actor(id))
 
+## 出战上限 5：YEP_PartySystem 参数写 4，但后加载的 MrTS_BattleCharacterLimit 把 maxBattleMembers 改为 5（参数为空取默认）。
+## YEP 的编队界面（自选出战成员）未做，暂按队伍前 5 人。
+const MAX_BATTLE_MEMBERS := 5
+
 func battle_members() -> Array:
-	return members().slice(0, 4)
+	return members().slice(0, MAX_BATTLE_MEMBERS)
 
 
 func switch(id: int) -> bool:

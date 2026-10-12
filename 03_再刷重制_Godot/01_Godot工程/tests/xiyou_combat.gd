@@ -148,6 +148,25 @@ func _run() -> void:
 	_check("reflect_hits_user", logs.size() >= 3 and foe.hp == foe_hp and (caster.hp < caster_hp or logs[2].missed or logs[2].evaded), [foe.hp, foe_hp, caster.hp, caster_hp])
 	logic.end_battle()
 
+	# ---- 出战人数与经验分配（MrTS 出战 5 人；MV gainExp 全队含阵亡与后备）----
+	s = _new_state()
+	for id in [2, 3, 4]:
+		s.add_actor(id)
+	_check("battle_members_5", s.battle_members().size() == 5 and s.members().size() == 7, [s.battle_members().size(), s.members().size()])
+	logic = XBattleLogic.new()
+	logic.elite_roll = 100.0
+	logic.setup(2, s)
+	_check("battle_actors_5", logic.actors.size() == 5, logic.actors.size())
+	var dead: XActor = logic.actors[1]
+	logic._die(dead)
+	var bench: XActor = s.members()[5]
+	var before_exp := {dead: dead.exp_total, bench: bench.exp_total, s.members()[0]: s.members()[0].exp_total}
+	logic.grant({"exp": 10, "gold": 0, "drops": []})
+	var bench_rate := 1.0 if bool(XDB.system().get("optExtraExp", false)) else 0.0
+	_check("exp_dead_member", dead.exp_total - before_exp[dead] == roundi(10 * dead.exr), [before_exp[dead], dead.exp_total])
+	_check("exp_bench_member", bench.exp_total - before_exp[bench] == roundi(10 * bench.exr * bench_rate), [before_exp[bench], bench.exp_total])
+	logic.end_battle()
+
 	var passed := results.filter(func(x): return x.passed).size()
 	for x in results:
 		if not x.passed:

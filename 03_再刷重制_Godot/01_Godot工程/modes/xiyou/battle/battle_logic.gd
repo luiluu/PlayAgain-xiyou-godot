@@ -711,7 +711,8 @@ func rewards() -> Dictionary:
 	var drops := []
 	var gold_up := 0.0
 	var item_up := 0.0
-	var reward_members := XState.current.members()
+	# GT_EquipSuitCore 用 $gameParty.members()，战斗中即出战成员
+	var reward_members := actors
 	var suit_drop := XEquipSuits.reward(reward_members,1.0,2)
 	for a in actors:
 		gold_up = maxf(gold_up, _passive_sum(a, "passiveGRUP"))
@@ -759,12 +760,13 @@ func grant(r: Dictionary) -> Array:
 			1: state.gain_item(d.id, 1)
 			2: state.gain_gear("weapon", d.id, 1)
 			3: state.gain_gear("armor", d.id, 1)
+	# MV BattleManager.gainExp：全队（含阵亡与后备）都得经验；后备按 System「后备成员获得经验」（optExtraExp）
 	var ups := []
-	for a in actors:
-		if a.is_alive():
-			var n: int = a.gain_exp(r.exp)
-			if n > 0:
-				ups.append({"actor": a, "levels": n})
+	var bench_rate := 1.0 if bool(XDB.system().get("optExtraExp", false)) else 0.0
+	for a in state.members():
+		var n: int = a.gain_exp(r.exp, 1.0 if actors.has(a) else bench_rate)
+		if n > 0:
+			ups.append({"actor": a, "levels": n})
 	return ups
 
 
