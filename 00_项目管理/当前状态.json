@@ -42,9 +42,7 @@
     "runnableBuildAvailable": true,
     "releaseVersion": null,
     "targetPlatforms": [
-      "macOS",
-      "Windows",
-      "Android"
+      "macOS"
     ],
     "versionString": "4.7.2.stable.official.ed1daf0bf",
     "environmentRegistry": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/环境登记.json",
@@ -58,9 +56,14 @@
     "selfContainedEditor": true,
     "editorStartupVerified": true,
     "visibleProjectManagerVerified": true,
-    "runnableBuildKind": "dev.002 西游首期可玩版（开局区域＋一层）",
-    "developmentVersion": "dev.002",
-    "developmentRegistry": "03_再刷重制_Godot/开发编号.json"
+    "runnableBuildKind": "dev.003 西游首期可玩版（开局区域＋一层，原版界面风格）",
+    "developmentVersion": "dev.003",
+    "developmentRegistry": "03_再刷重制_Godot/开发编号.json",
+    "deferredPlatforms": [
+      "Windows",
+      "Android"
+    ],
+    "platformDecision": "用户 2026-10-12：先完成 Mac 版重制"
   },
   "existingMod": {
     "referenceLibrary": "/Users/kyo/Documents/再刷西游",
