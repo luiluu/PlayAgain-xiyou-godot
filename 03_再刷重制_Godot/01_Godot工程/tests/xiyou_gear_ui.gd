@@ -47,7 +47,7 @@ func _run() -> void:
 	check("single_item_target_selection",upgrade.phase=="targets")
 	var other_hp:=s.actor(8).hp;upgrade._use_on([a]);await frames();check("item_uses_once_on_target",s.item_count(1)==0 and s.actor(8).hp==other_hp)
 	upgrade.queue_free();await frames()
-	var menu:=XMenu.new();add_child(menu);await frames();check("menu_item_entry",text(menu).contains("物品"));menu._show_items();await frames()
+	var menu:=XMenu.new();add_child(menu);await frames();check("menu_item_entry",menu.command_names().has("物品"));menu._show_items();await frames()
 	var pages:=menu.get_children().filter(func(n):return n is XUpgradePage)
 	var focus:=get_viewport().gui_get_focus_owner()
 	check("upgrade_keyboard_focus",pages.size()==1 and focus!=null and pages[0].is_ancestor_of(focus))

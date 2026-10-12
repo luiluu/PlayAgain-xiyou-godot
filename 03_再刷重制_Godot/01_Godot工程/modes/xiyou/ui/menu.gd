@@ -1,17 +1,49 @@
 class_name XMenu
 extends Control
-## 地图菜单，照原版布局（YEP_MainMenuManager ＋ MOG_MenuBackground）：
-## 菜单底图＋粒子；左上指令窗（宽 240），左下金钱窗，右侧队伍状态窗（头像、名字、等级、HP/MP/TP）。
-## 选「状态／装备」时右侧换成该角色的页面，可用顶部名字切换角色；物品、存档同理。窗口整体不透明度 30。
+## 地图主菜单，按正式版运行时逐像素复现（参照截图：04_验证/本地结果/原版参照/11～14）：
+## - 指令窗 (0,0,240,568)：行高 36、可见 15 行、左对齐，18 条指令与正式版同序（YEP_MainMenuManager＋各运行模块）。
+## - 金钱窗 (0,656,240,64)：字号 20 右对齐数值＋图标 416（YEP_MainMenuManager 金钱图标）。
+## - 队伍窗 (240,0,1040,720)：可见 5 行、每行 138（MrTS 出战 5 人）；installCombatPowerRuntime 的行布局：
+##   头像 144×136（上下各裁 4px）、名字/等级/状态图标/「战力见状态」在左列（x 158、宽 144），
+##   称号与 HP/MP/TP 在右列（x 314、宽 686），行高 33；YEP 描边量条与「当前/最大」数值。
+## - 选「技能/装备/状态」后光标移到队伍窗选人（整行高亮），确定进入该角色页面，取消回到指令窗。
+## - 窗口整体不透明度 30（MOG_MenuBackground）；底图与粒子 XUI.menu_background。
+## 尚未重制的指令（真气、整队、种族祝福等）暂时灰显，原版均可用；见 界面风格.md。
 
 signal closed
 
 const PARAM_NAMES := ["最大生命", "最大魔法", "攻击", "防御", "魔攻", "魔防", "敏捷", "幸运"]
-const CMD_WIDTH := 240.0
-var _content: VBoxContainer
-var _scroll: ScrollContainer
-var _gold: Label
+const CMD_RECT := Rect2(0, 0, 240, 568)
+const GOLD_RECT := Rect2(0, 656, 240, 64)
+const STATUS_RECT := Rect2(240, 0, 1040, 720)
+const CMD_LH := 36.0
+const STATUS_LH := 33.0
+const STATUS_ROWS := 5
+const GOLD_ICON := 416
+const POWER_COLOR := Color8(255, 211, 115)
+## [名称, 符号, 已重制]
+const COMMANDS := [["物品", "item", true], ["技能", "skill", false], ["装备", "equip", true], ["状态", "status", true],
+	["真气", "zhenqi", false], ["整队", "formation", false], ["种族祝福", "race", false], ["宠物", "pet", false],
+	["制作", "crafting", false], ["宝珠坊", "orbs", false], ["异化工坊", "alienation", false], ["人物图鉴", "actorBook", false],
+	["怪物图鉴", "monsterBook", false], ["成就", "achievement", false], ["存档", "save", true], ["反馈", "feedback", false],
+	["设置", "options", false], ["游戏结束", "gameEnd", true]]
+const CMD_VISIBLE := 15
+
+var cmd_win: XMVWindow
+var gold_win: XMVWindow
+var status_win: XMVWindow
+var _cmd_index := 0
+var _cmd_top := 0
+var _actor_index := 0
+var _actor_top := 0
+var _mode := "command"          # command / actor / page
+var _pending := ""              # 选人后要打开的指令
 var _selected_actor := 0
+var _overlay: Control
+
+
+func command_names() -> Array:
+	return COMMANDS.map(func(c): return c[0])
 
 
 func _ready() -> void:
@@ -19,134 +51,248 @@ func _ready() -> void:
 	theme = XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	XUI.menu_background(self)
-	var vs := get_viewport_rect().size
-	var cmd := PanelContainer.new()
-	cmd.add_theme_stylebox_override("panel", XUI.panel(XUI.MENU_WINDOW_OPACITY))
-	cmd.position = Vector2.ZERO
-	cmd.custom_minimum_size.x = CMD_WIDTH
-	add_child(cmd)
-	var tabs := VBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 0)
-	cmd.add_child(tabs)
-	for t in [["状态", _show_status], ["装备", _show_equip], ["物品", _show_items], ["存档", _show_save], ["回到标题", _to_title], ["关闭", func(): closed.emit()]]:
-		var b := XUI.button(t[0], XUI.LINE_HEIGHT + 12)
-		b.pressed.connect(t[1])
-		tabs.add_child(b)
-	(tabs.get_child(0) as Button).grab_focus.call_deferred()
-	# 金钱窗（MV Window_Gold：数值右对齐，货币单位系统色）
-	var gold_win := PanelContainer.new()
-	gold_win.add_theme_stylebox_override("panel", XUI.panel(XUI.MENU_WINDOW_OPACITY))
-	gold_win.custom_minimum_size = Vector2(CMD_WIDTH, 72)
-	gold_win.position = Vector2(0, vs.y - 72)
-	add_child(gold_win)
-	var grow := HBoxContainer.new()
-	gold_win.add_child(grow)
-	_gold = XUI.label(str(XState.current.gold))
-	_gold.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_gold.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	grow.add_child(_gold)
-	grow.add_child(XUI.label(" " + str(XDB.system().currencyUnit), XUI.FONT_SIZE, XUI.SYSTEM))
-	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", XUI.panel(XUI.MENU_WINDOW_OPACITY))
-	panel.position = Vector2(CMD_WIDTH, 0)
-	panel.size = Vector2(vs.x - CMD_WIDTH, vs.y)
-	add_child(panel)
-	_scroll = ScrollContainer.new()
-	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	panel.add_child(_scroll)
-	_content = VBoxContainer.new()
-	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_content.add_theme_constant_override("separation", 6)
-	_scroll.add_child(_content)
-	_show_party()
+	cmd_win = XMVWindow.make(self, CMD_RECT, XUI.MENU_WINDOW_OPACITY, _paint_commands)
+	cmd_win.canvas.blink = true
+	gold_win = XMVWindow.make(self, GOLD_RECT, XUI.MENU_WINDOW_OPACITY, _paint_gold)
+	status_win = XMVWindow.make(self, STATUS_RECT, XUI.MENU_WINDOW_OPACITY, _paint_status)
+	status_win.canvas.blink = true
+	_refresh()
 
 
-func _clear() -> void:
-	for c in _content.get_children():
-		c.queue_free()
-	_scroll.scroll_vertical = 0
-	_gold.text = str(XState.current.gold)
+func _members() -> Array:
+	return XState.current.members()
 
 
-func _header(text: String) -> void:
-	_content.add_child(XUI.label(text, XUI.FONT_SIZE, XUI.SYSTEM))
+func _refresh() -> void:
+	cmd_win.up_arrow = _cmd_top > 0
+	cmd_win.down_arrow = _cmd_top < COMMANDS.size() - CMD_VISIBLE
+	status_win.up_arrow = _actor_top > 0
+	status_win.down_arrow = _actor_top < _members().size() - STATUS_ROWS
+	for w in [cmd_win, gold_win, status_win]:
+		w.refresh()
 
 
-## MV Window_MenuStatus：每人一行，头像 144、名字/等级/称号、HP/MP/TP 量条。
-func _show_party() -> void:
-	_clear()
-	var s := XState.current
-	for i in range(s.party.size()):
-		var a := s.actor(s.party[i])
-		var b := Button.new()
-		b.custom_minimum_size.y = 160
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var idx := i
-		b.pressed.connect(func():
-			_selected_actor = idx
-			_show_status())
-		_content.add_child(b)
-		var row := HBoxContainer.new()
-		row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		row.offset_left = 8
-		row.offset_top = 8
-		row.add_theme_constant_override("separation", 24)
-		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		b.add_child(row)
-		_actor_face(row, a)
-		var c1 := VBoxContainer.new()
-		c1.custom_minimum_size.x = 220
-		c1.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(c1)
-		c1.add_child(XUI.label(a.display_name(), XUI.FONT_SIZE, XUI.DEATH if a.is_dead() else XUI.TEXT))
-		var lv := HBoxContainer.new()
-		lv.add_child(XUI.label("Lv", XUI.FONT_SIZE, XUI.SYSTEM))
-		lv.add_child(XUI.label(" %d" % a.level))
-		c1.add_child(lv)
-		c1.add_child(XUI.label(str(a.nickname), 20))
-		var c2 := VBoxContainer.new()
-		c2.add_theme_constant_override("separation", 6)
-		c2.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(c2)
-		c2.add_child(XUI.param_gauge("HP", a.hp, a.mhp, "hp", 220))
-		c2.add_child(XUI.param_gauge("MP", a.mp, a.mmp, "mp", 220))
-		c2.add_child(XUI.param_gauge("TP", a.tp, 100, "tp", 220))
-	for b in _content.get_children():
-		for n in b.get_children():
-			_ignore_mouse(n)
+# ---- 绘制 ----
+func _paint_commands(c: XMVCanvas) -> void:
+	for i in range(COMMANDS.size()):
+		var y := (i - _cmd_top) * CMD_LH
+		if y < -CMD_LH or y > c.size.y:
+			continue
+		if i == _cmd_index:
+			c.cursor(Rect2(0, y, c.size.x, CMD_LH), _mode == "command")
+		c.text(COMMANDS[i][0], 6, y, c.size.x - 12, "left", XUI.TEXT, XUI.FONT_SIZE, CMD_LH, 1.0 if COMMANDS[i][2] else XUI.DIM.a)
 
 
-func _ignore_mouse(n: Node) -> void:
-	if n is Control:
-		n.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for c in n.get_children():
-		_ignore_mouse(c)
+func _paint_gold(c: XMVCanvas) -> void:
+	var ww := c.size.x - 12
+	c.text(str(XState.current.gold), 6, 0, ww - 32 - 4, "right", XUI.TEXT, 20, CMD_LH)
+	c.icon(GOLD_ICON, 6 + ww - 32, 2)
 
 
-func _actor_face(parent: Control, a: XActor) -> void:
-	var face := TextureRect.new()
-	face.texture = XUI.face_texture(str(a.data().faceName), int(a.data().faceIndex))
-	face.custom_minimum_size = Vector2(144, 144)
-	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	face.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(face)
+func _row_height(c: XMVCanvas) -> float:
+	return floorf(c.size.y / STATUS_ROWS)
 
 
-func _actor_tabs(on_pick: Callable) -> void:
-	var row := HBoxContainer.new()
-	_content.add_child(row)
-	var s := XState.current
-	for i in range(s.party.size()):
-		var a := s.actor(s.party[i])
-		var b := XUI.button(a.display_name())
-		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		if i == _selected_actor:
-			b.add_theme_stylebox_override("normal", XUI.cursor_style(0.5))
-		var idx := i
-		b.pressed.connect(func():
-			_selected_actor = idx
-			on_pick.call())
-		row.add_child(b)
+func _paint_status(c: XMVCanvas) -> void:
+	var rh := _row_height(c)
+	var members := _members()
+	var battle := XState.current.battle_members()
+	for i in range(members.size()):
+		var ry := (i - _actor_top) * rh
+		if ry < -rh or ry > c.size.y:
+			continue
+		var a: XActor = members[i]
+		if _mode == "actor" and i == _actor_index:
+			c.cursor(Rect2(0, ry, c.size.x, rh))
+		c.face(str(a.data().faceName), int(a.data().faceIndex), 1, ry + 1, 144, rh - 2, 1.0 if battle.has(a) else XUI.DIM.a)
+		_paint_actor(c, a, 158.0, ry, c.size.x - 158.0 - 6.0)
+
+
+## installCombatPowerRuntime 的 drawActorSimpleStatus（主菜单行）
+func _paint_actor(c: XMVCanvas, a: XActor, x: float, y: float, width: float) -> void:
+	var lh := STATUS_LH
+	var gap := 144.0 + 12.0
+	var x2 := x + gap
+	var left_w := gap - 12.0
+	var right_w := maxf(0.0, minf(width - gap - 6.0, c.size.x - x2))
+	var name := a.display_name()
+	var code := str(a.nickname).strip_edges()
+	if code == "" or code == name:
+		var cls := str(a.class_data().get("name", "")).strip_edges()
+		code = cls if cls != name else ""
+	c.text(name, x, y, left_w, "left", _hp_color(a), XUI.FONT_SIZE, lh)
+	c.text(code, x2, y, right_w, "left", XUI.TEXT, XUI.FONT_SIZE, lh)
+	# 等级：「Lv」系统色，数值在最大等级位数宽度内右对齐
+	var lv_w := c.text_width("Lv")
+	c.text("Lv", x, y + lh, lv_w, "left", XUI.SYSTEM, XUI.FONT_SIZE, lh)
+	c.text(_group(a.level), x + lv_w, y + lh, c.text_width(_group(a.max_level())), "right", XUI.TEXT, XUI.FONT_SIZE, lh)
+	var n := 0
+	for st in a.states():
+		if int(st.get("iconIndex", 0)) > 0 and n < floori(left_w / 32.0):
+			c.icon(int(st.iconIndex), x + n * 32, y + lh * 2 + 2)
+			n += 1
+	c.text("战力见状态", x, y + lh * 3, left_w, "left", POWER_COLOR, 21, lh)
+	_param(c, "HP", a.hp, a.mhp, x2, y + lh, right_w, "hp", _hp_color(a))
+	_param(c, "MP", a.mp, a.mmp, x2, y + lh * 2, right_w, "mp", XUI.TEXT)
+	var tp_cols: Array = XUI.GAUGES.tp
+	c.gauge(x2, y + lh * 3, right_w, a.tp / 100.0, tp_cols[0], tp_cols[1], lh)
+	c.text("TP", x2, y + lh * 3, 44, "left", XUI.SYSTEM, XUI.FONT_SIZE, lh)
+	c.text(str(int(a.tp)), x2 + right_w - 64, y + lh * 3, 64, "right", XUI.TEXT, XUI.FONT_SIZE, lh)
+
+
+## Window_Base.drawActorHp/Mp＋YEP drawCurrentAndMax
+func _param(c: XMVCanvas, label: String, cur: float, mx: float, x: float, y: float, w: float, kind: String, color: Color) -> void:
+	var cols: Array = XUI.GAUGES[kind]
+	c.gauge(x, y, w, cur / maxf(mx, 1.0), cols[0], cols[1], STATUS_LH)
+	c.text(label, x, y, 44, "left", XUI.SYSTEM, XUI.FONT_SIZE, STATUS_LH)
+	var vw := c.text_width(_group(mx))
+	var sw := c.text_width("/")
+	var x1 := x + w - vw
+	var xs := x1 - sw
+	var x3 := xs - vw
+	if x3 >= x + c.text_width("HP"):
+		c.text(_group(cur), x3, y, vw, "right", color, XUI.FONT_SIZE, STATUS_LH)
+		c.text("/", xs, y, sw, "right", XUI.TEXT, XUI.FONT_SIZE, STATUS_LH)
+		c.text(_group(mx), x1, y, vw, "right", XUI.TEXT, XUI.FONT_SIZE, STATUS_LH)
+	else:
+		c.text(_group(cur), x1, y, vw, "right", color, XUI.FONT_SIZE, STATUS_LH)
+
+
+func _hp_color(a: XActor) -> Color:
+	if a.is_dead():
+		return XUI.DEATH
+	if a.hp < a.mhp / 4.0:
+		return XUI.CRISIS
+	return XUI.TEXT
+
+
+## Yanfly.Util.toGroup：千位逗号
+static func _group(v: float) -> String:
+	var s := str(int(v))
+	var neg := s.begins_with("-")
+	if neg:
+		s = s.substr(1)
+	var out := ""
+	while s.length() > 3:
+		out = "," + s.substr(s.length() - 3) + out
+		s = s.substr(0, s.length() - 3)
+	return ("-" if neg else "") + s + out
+
+
+# ---- 操作 ----
+func _gui_input(event: InputEvent) -> void:
+	if _mode == "page":
+		return
+	if event is InputEventMouseButton and event.pressed:
+		var p: Vector2 = event.position
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			_cancel()
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN or event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			var d := 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1
+			if CMD_RECT.has_point(p):
+				_cmd_top = clampi(_cmd_top + d, 0, maxi(0, COMMANDS.size() - CMD_VISIBLE))
+			elif STATUS_RECT.has_point(p):
+				_actor_top = clampi(_actor_top + d, 0, maxi(0, _members().size() - STATUS_ROWS))
+			_refresh()
+		elif event.button_index == MOUSE_BUTTON_LEFT:
+			_click(p)
+
+
+## MV processTouch：点到当前选中的行即确定，点到别的行先选中。
+func _click(p: Vector2) -> void:
+	var cp := p - CMD_RECT.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
+	if _mode == "command" and CMD_RECT.has_point(p):
+		var i := _cmd_top + floori(cp.y / CMD_LH)
+		if i >= 0 and i < COMMANDS.size():
+			if i == _cmd_index:
+				_ok()
+			else:
+				_cmd_index = i
+				_refresh()
+		return
+	var sp := p - STATUS_RECT.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
+	if _mode == "actor" and STATUS_RECT.has_point(p):
+		var i := _actor_top + floori(sp.y / _row_height(status_win.canvas))
+		if i >= 0 and i < _members().size():
+			if i == _actor_index:
+				_ok()
+			else:
+				_actor_index = i
+				_refresh()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _mode == "page":
+		return
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		_cancel()
+	elif event.is_action_pressed("ui_accept"):
+		get_viewport().set_input_as_handled()
+		_ok()
+	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
+		get_viewport().set_input_as_handled()
+		var d := 1 if event.is_action_pressed("ui_down", true) else -1
+		var wrap := not event.is_echo()
+		if _mode == "command":
+			_cmd_index = _move(_cmd_index, d, COMMANDS.size(), wrap)
+			_cmd_top = _scroll_to(_cmd_index, _cmd_top, CMD_VISIBLE)
+		elif _mode == "actor":
+			_actor_index = _move(_actor_index, d, _members().size(), wrap)
+			_actor_top = _scroll_to(_actor_index, _actor_top, STATUS_ROWS)
+		_refresh()
+
+
+static func _move(i: int, d: int, n: int, wrap: bool) -> int:
+	var j := i + d
+	if j < 0:
+		return n - 1 if wrap else 0
+	if j >= n:
+		return 0 if wrap else n - 1
+	return j
+
+
+static func _scroll_to(i: int, top: int, visible: int) -> int:
+	if i < top:
+		return i
+	if i >= top + visible:
+		return i - visible + 1
+	return top
+
+
+func _ok() -> void:
+	if _mode == "command":
+		var cmd: Array = COMMANDS[_cmd_index]
+		if not cmd[2]:
+			return
+		match cmd[1]:
+			"item":
+				_show_items()
+			"skill", "equip", "status":
+				_pending = cmd[1]
+				_mode = "actor"
+				_actor_index = clampi(_selected_actor, 0, _members().size() - 1)
+				_actor_top = _scroll_to(_actor_index, _actor_top, STATUS_ROWS)
+				_refresh()
+			"save":
+				_show_save()
+			"gameEnd":
+				_show_game_end()
+	elif _mode == "actor":
+		_selected_actor = _actor_index
+		match _pending:
+			"status":
+				_show_status()
+			"equip":
+				_show_equip()
+
+
+func _cancel() -> void:
+	if _mode == "actor":
+		_mode = "command"
+		_refresh()
+	elif _mode == "command":
+		closed.emit()
 
 
 func _cur() -> XActor:
@@ -161,47 +307,52 @@ func _show_status() -> void:
 func _show_equip() -> void:
 	_open_detail(XEquipPage.new())
 
-func _open_detail(page: XActorPage) -> void:
-	# 进入子页时隐藏主菜单控件，避免 Enter 仍触发背后的旧指令。
+## 子页面盖在菜单上；关闭后回到指令窗（MV 返回 Scene_Menu 时指令窗活动、选中上次指令）。
+func _open_detail(page: Control) -> void:
+	_mode = "page"
 	for node in get_children():
 		if node is CanvasItem:
 			node.hide()
-	page.actor_index = _selected_actor
+	if "actor_index" in page:
+		page.actor_index = _selected_actor
 	add_child(page)
 	page.closed.connect(func():
-		_selected_actor = page.actor_index
+		if "actor_index" in page:
+			_selected_actor = page.actor_index
 		page.queue_free()
 		for node in get_children():
 			if node is CanvasItem and node != page:
 				node.show()
-		_show_party()
-		var buttons := find_children("*", "Button", true, false)
-		if not buttons.is_empty():
-			buttons[0].grab_focus.call_deferred())
+		_mode = "command"
+		_refresh())
 
 
 func _show_items() -> void:
 	_open_detail(XUpgradePage.new())
 
+
+## 存档：正式版「存档」是公共事件（开局选定固定存档位，之后在该位覆盖保存），尚未逐页复现；
+## 暂用 Godot 独立存档的三格页面，盖在队伍窗位置。
 func _show_save() -> void:
-	_clear()
-	_content.add_child(XUI.label("请选择一个文件插槽。（西游重制版独立存档，与 MV 版无关）", 22, XUI.DIM))
-	for i in range(1, XSave.SLOTS + 1):
-		var b := XUI.button(XSave.summary(i), 56)
-		b.icon = XUI.icon_texture(int(XDB.plugin("YEP_SaveCore").get("Saved Icon" if XSave.exists(i) else "Empty Icon", 0)))
-		var slot := i
-		b.pressed.connect(func():
-			var ok := XSave.save(slot)
-			_show_save()
-			_content.add_child(XUI.label("已保存到存档 %d。" % slot if ok else "保存失败。", 22, XUI.POWER_UP if ok else XUI.DEATH)))
-		_content.add_child(b)
+	var page := XSavePanel.new()
+	page.position = STATUS_RECT.position
+	page.size = STATUS_RECT.size
+	_open_detail(page)
+	for node in get_children():
+		if node == cmd_win or node == gold_win or (node is TextureRect) or (node is CPUParticles2D):
+			node.show()
+
+
+## Scene_GameEnd：背景不透明度 128，窗口 (520,310,240,100)，「回到标题 / 取消」。
+func _show_game_end() -> void:
+	var page := XGameEndPanel.new()
+	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_open_detail(page)
+	for node in get_children():
+		if (node is TextureRect) or (node is CPUParticles2D):
+			node.show()
+	page.to_title.connect(_to_title)
 
 
 func _to_title() -> void:
 	get_tree().change_scene_to_file("res://modes/xiyou/entry.tscn")
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
-		closed.emit()

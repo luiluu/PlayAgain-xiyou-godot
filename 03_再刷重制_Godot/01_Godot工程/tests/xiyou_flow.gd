@@ -122,10 +122,35 @@ func _run() -> void:
 	var menus := map.ui.get_children().filter(func(c): return c is XMenu)
 	_check("menu_opened", menus.size() == 1)
 	if menus.size() == 1:
-		menus[0]._show_status()
+		var m: XMenu = menus[0]
+		_check("menu_commands_like_original", m.command_names().size() == 18 and m.command_names()[0] == "物品" and m.command_names()[17] == "游戏结束", m.command_names())
+		# 状态：先选人（光标到队伍窗），确定后进入状态页，关闭后回到指令窗
+		m._cmd_index = 3
+		m._ok()
+		await _frames(3)
+		await _shot("07b_菜单选人.png")
+		_check("menu_actor_select", m._mode == "actor")
+		m._ok()
 		await _frames(5)
 		await _shot("08_状态.png")
-		menus[0].closed.emit()
+		var pages := m.get_children().filter(func(n): return n is XStatusPage)
+		_check("menu_status_page", pages.size() == 1)
+		if pages.size() == 1:
+			pages[0].closed.emit()
+		await _frames(3)
+		_check("menu_back_to_commands", m._mode == "command")
+		# 游戏结束窗口（只截图，选「取消」返回）
+		m._cmd_index = 17
+		m._cmd_top = 3
+		m._ok()
+		await _frames(3)
+		await _shot("07c_游戏结束.png")
+		var ends := m.get_children().filter(func(n): return n is XGameEndPanel)
+		_check("menu_game_end", ends.size() == 1)
+		if ends.size() == 1:
+			ends[0].closed.emit()
+		await _frames(2)
+		m.closed.emit()
 	await _frames(3)
 	_check("menu_closed", not map._menu_open)
 	map.open_shop([[0, 1, 0, 0], [0, 2, 0, 0], [1, 1, 0, 0]], false)
