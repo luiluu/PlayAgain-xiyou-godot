@@ -103,7 +103,7 @@ func _slot_button(caption: String, e) -> Button:
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(icon)
-	var item_name := XUI.label(str(e.name) if e is Dictionary else "")
+	var item_name := XUI.label(str(e.name) if e is Dictionary else "", XUI.FONT_SIZE, XGear.color(e) if e is Dictionary else XUI.TEXT)
 	item_name.name = "EquipName"
 	item_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	item_name.clip_text = true
@@ -114,6 +114,7 @@ func _slot_button(caption: String, e) -> Button:
 func _candidate(parent: Control, e) -> void:
 	var b := XUI.button(str(e.name) if e is Dictionary else "卸载", 36)
 	b.icon = XUI.icon_texture(int(e.get("iconIndex", 0)) if e is Dictionary else int(XDB.plugin("YEP_EquipCore").get("Remove Icon", 1354)))
+	if e is Dictionary:XGearInfo.button_color(b,e)
 	b.pressed.connect(func():
 		if XEquipment.change(XState.current, actor(), slot, e):
 			_slots())
@@ -138,14 +139,8 @@ func _show_detail(e) -> void:
 	else:
 		details.add_child(XUI.label("装备信息", 24, XUI.SYSTEM))
 		if e is Dictionary:
-			details.add_child(XUI.label(str(e.name), 26))
-			pair(details, "持有数", str(XState.current.gear_count(str(e.kind), int(e.base))))
-			for i in range(8):
-				if int(e.params[i]) != 0:
-					pair(details, XMenu.PARAM_NAMES[i], "%+d" % int(e.params[i]))
-			var req := int(e.get("meta", {}).get("req_level", 0))
-			if req > 0:
-				pair(details, "需求等级", str(req))
+			XGearInfo.details(details,e,a)
+			pair(details, "背包同款", str(XState.current.gear_count(str(e.kind), int(e.base))))
 		else:
 			details.add_child(XUI.label("选中装备后显示详情。", 22, XUI.DIM))
 

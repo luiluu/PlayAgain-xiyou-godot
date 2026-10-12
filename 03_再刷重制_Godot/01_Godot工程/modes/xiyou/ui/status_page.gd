@@ -11,8 +11,8 @@ func rebuild() -> void:
 	selector(top)
 	var tabs := HBoxContainer.new()
 	top.add_child(tabs)
-	for i in range(3):
-		var b := XUI.button(["状态", "加成与抗性", "掌握"][i], 40)
+	for i in range(4):
+		var b := XUI.button(["状态", "加成与抗性", "掌握", "套装"][i], 40)
 		var idx := i
 		b.pressed.connect(func(): page = idx; rebuild())
 		if page == i:
@@ -27,6 +27,7 @@ func rebuild() -> void:
 		0: _params(body)
 		1: _resistances(body)
 		2: _mastery(body)
+		3: _suits(body)
 	(tabs.get_child(page) as Button).grab_focus.call_deferred()
 
 func _params(parent: Control) -> void:
@@ -56,7 +57,7 @@ func _params(parent: Control) -> void:
 		var e = a.equips[i]
 		if e == null or e.is_empty():
 			continue
-		var l := XUI.label("%s  %s" % [XDB.system().equipTypes[i + 1], e.name], 20)
+		var l := XUI.label("%s  %s" % [XDB.system().equipTypes[i + 1], e.name], 20, XGear.color(e))
 		l.tooltip_text = XText.plain(str(e.get("description", "")))
 		equips.add_child(l)
 
@@ -103,7 +104,9 @@ func _resistances(parent: Control) -> void:
 	for member in XState.current.battle_members():
 		for value in member.passive_values("passiveIRUP"):
 			drop = maxf(drop, XActor._num(value))
-	pair(other, "全队掉率", "+%d%%" % roundi(drop))
+	pair(other, "全队掉率", "+%d%%" % roundi(((1+drop/100)*XEquipSuits.reward(XState.current.members(),1,2)-1)*100))
+	pair(other, "套装经验", "+%d%%" % roundi((XEquipSuits.reward(XState.current.members(),100,0)/100-1)*100))
+	pair(other, "套装金钱", "+%d%%" % roundi((XEquipSuits.reward(XState.current.members(),100,1)/100-1)*100))
 	parent.add_child(XUI.label("穿透：固定值 / 百分比；承伤：100% 为正常，越低受到的伤害越少。", 20, XUI.DIM))
 
 func _mastery(parent: Control) -> void:
@@ -120,3 +123,15 @@ func _mastery(parent: Control) -> void:
 		for i in range(1, types.size()):
 			if a.traits_set(spec[2]).has(i) or not a.passive_values("%s%02d" % [spec[3], i]).is_empty():
 				col.add_child(XUI.label(str(types[i]), 24, XUI.MP_COST))
+
+func _suits(parent: Control) -> void:
+	var counts := XEquipSuits.counts(actor())
+	if counts.is_empty():XGearInfo.text(parent,"当前装备没有套装。",XUI.DIM)
+	for id in counts:
+		var suit := XDB.rec("EquipSuits",int(id))
+		if suit.is_empty():continue
+		XGearInfo.text(parent,"%s · 已装备 %d 件"%[suit.name,int(counts[id])],XUI.SYSTEM,26)
+		for bonus in suit.bonuses:
+			var active := int(counts[id])>=int(bonus.requirePieces)
+			XGearInfo.text(parent,"%d 件 %s：%s"%[int(bonus.requirePieces),"已生效" if active else "未激活",XGearInfo.bonus_text(bonus)],XUI.POWER_UP if active else XUI.DIM)
+	XGearInfo.text(parent,"满足件数的各档加成同时生效；队伍奖励按全队套装计算。",XUI.DIM,20)

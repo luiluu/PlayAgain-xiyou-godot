@@ -211,6 +211,7 @@ class Exporter:
         enabled = {p['name']: p['parameters'] for p in plugins if p.get('status')}
         self.write_json('db/Plugins.json', enabled)
         self.write_json('db/EquipSuits.json', equipment_rules.suits(enabled))
+        self.write_json('db/Runewords.json', equipment_rules.runewords(enabled))
         issues=[]
         for table in ['Weapons','Armors','Items']:
             for rec in self.db[table]:

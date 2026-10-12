@@ -106,6 +106,9 @@ func gain_gear(kind: String, base_id: int, amount: int) -> void:
 				gear.remove_at(idx)
 
 func register_gear(item: Dictionary) -> void:
+	var defaults := XGear.template(str(item.kind),int(item.base))
+	for key in ["equipment","upgradeSlots","originalUpgradeSlots","boostCount","upgrades","affixIds","baseName"]:
+		if not item.has(key):item[key]=defaults.get(key)
 	if not item.has("instanceId"):
 		item.instanceId = "xg:%d" % next_gear_id
 		next_gear_id += 1
@@ -115,7 +118,7 @@ func register_gear(item: Dictionary) -> void:
 func owns_gear(item: Dictionary) -> bool:
 	for e in gear:
 		if is_same(e,item):return true
-	for a in members():
+	for a in actors.values():
 		for e in a.equip_list():
 			if is_same(e,item):return true
 	return false
@@ -164,6 +167,7 @@ static func from_dict(d: Dictionary) -> XState:
 	for a in s.actors.values():
 		for e in a.equip_list():s.register_gear(e)
 	for e in s.gear:s.register_gear(e)
+	for a in s.actors.values():a.refresh_passive()
 	for k in d.switches:
 		s.switches[int(k)] = bool(d.switches[k])
 	for k in d.variables:

@@ -98,6 +98,7 @@ func _row(rec: Dictionary, price_text: String, enabled: bool, on_press: Callable
 	var b := XUI.button(str(rec.get("name", "")), 44)
 	b.icon = XUI.icon_texture(int(rec.get("iconIndex", 0)))
 	b.disabled = not enabled
+	XGearInfo.button_color(b,rec)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var p := XUI.label(price_text, XUI.FONT_SIZE, XUI.TEXT if enabled else XUI.DIM)
 	p.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
@@ -163,9 +164,8 @@ func _show_info(rec: Dictionary, kind: int) -> void:
 	else:
 		# 商品是数据库记录（无 kind/base），出售列表是背包实例（有 kind/base）
 		if not rec.has("kind"):
-			rec = rec.duplicate()
-			rec.kind = kind_name
-			rec.base = int(rec.id)
+			rec = XGear.template(kind_name,int(rec.id))
+			XGearInfo.text(_info,"购买时随机生成词缀、属性与插槽；以下为基础属性对比。",XUI.DIM,20)
 		owned = s.gear_count(kind_name, int(rec.base))
 	var row := HBoxContainer.new()
 	row.add_child(XUI.label("持有数", XUI.FONT_SIZE, XUI.SYSTEM))
@@ -186,8 +186,8 @@ func _show_info(rec: Dictionary, kind: int) -> void:
 			r.add_child(XUI.label("无法装备", 22, XUI.DIM))
 		else:
 			var slot: int = a.equip_slots().find(int(rec.etypeId))
-			var cur = a.equips[slot] if slot >= 0 and slot < a.equips.size() else null
-			var d := int(rec.params[param]) - (int(cur.params[param]) if cur != null and not cur.is_empty() else 0)
+			var after := XEquipment.preview(a,slot,rec)
+			var d := int(after.param(param)-a.param(param))
 			r.add_child(XUI.label(["", "攻击", "防御"][kind] + " ", 22, XUI.SYSTEM))
 			r.add_child(XUI.label("%+d" % d, 22, XUI.POWER_UP if d > 0 else (XUI.POWER_DOWN if d < 0 else XUI.TEXT)))
 		_info.add_child(r)

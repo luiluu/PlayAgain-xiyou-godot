@@ -49,7 +49,9 @@ static func create(kind: String, id: int) -> Dictionary:
 	var variance := int(item.get("meta", {}).get("Random Variance", definition.get("variance",0)))
 	for i in range(8):
 		if float(item.params[i]) != 0 and variance >= 0:
-			item.params[i] = maxf(0, float(item.params[i]) + floorf(roll() * (variance*2+1) - variance))
+			var original := float(item.params[i])
+			var value := original + floorf(roll() * (variance*2+1) - variance)
+			item.params[i] = maxf(0,value) if original>=0 else value
 	var slots := int(item.upgradeSlots)
 	var span := int(definition.get("slotVariance",6))
 	if slots > 0 and span > 0:
@@ -74,19 +76,7 @@ static func combine(item: Dictionary, affix: Dictionary, kind: String) -> void:
 	if meta.has("prefixSuffixReplaceAnim"):item.animationId = affix.animationId
 	if meta.has("prefixSuffixReplaceWeaponType"):item.wtypeId = affix.wtypeId
 	if meta.has("prefixSuffixReplaceArmorType"):item.atypeId = affix.atypeId
-	# 重新合并已经翻译的元素/会心字段，数值与正式备注重解析保持一致。
-	var yep: Dictionary = item.get("yep",{})
-	for k in affix.get("yep",{}):
-		var value = affix.yep[k]
-		if value is Dictionary:
-			var pool: Dictionary = yep.get(k,{}).duplicate()
-			for id in value: pool[id] = float(pool.get(id,0)) + float(value[id])
-			yep[k] = pool
-		elif value is Array:
-			var list: Array = yep.get(k,[]).duplicate(); list.append_array(value); yep[k] = list
-		else:
-			yep[k] = float(yep.get(k,0)) + float(value)
-	item.yep = yep
+	merge_yep(item,affix)
 	# 词缀上的套装标签也计入同一实例。
 	var suits: Array = item.equipment.get("suits",[])
 	suits.append_array(affix.get("equipment",{}).get("suits",[]))
@@ -109,3 +99,17 @@ static func color(item: Dictionary) -> Color:
 	if colors.size() <= quality(item):return XUI.TEXT
 	var c: RegExMatch = colors[quality(item)]
 	return Color(float(c.get_string(1))/255,float(c.get_string(2))/255,float(c.get_string(3))/255,float(c.get_string(4)))
+
+static func merge_yep(item: Dictionary, affix: Dictionary) -> void:
+	var yep: Dictionary = item.get("yep",{})
+	for k in affix.get("yep",{}):
+		var value = affix.yep[k]
+		if value is Dictionary:
+			var pool: Dictionary = yep.get(k,{}).duplicate()
+			for id in value: pool[id] = float(pool.get(id,0)) + float(value[id])
+			yep[k] = pool
+		elif value is Array:
+			var list: Array = yep.get(k,[]).duplicate(); list.append_array(value); yep[k] = list
+		else:
+			yep[k] = float(yep.get(k,0)) + float(value)
+	item.yep = yep

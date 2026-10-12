@@ -4,7 +4,7 @@
 // 敌群生成时 Math.random 固定为 0.99（避开精英/神话随机），之后固定 0.5。
 // 用法：node slice_probe.cjs [难度ID...] → 只写 .sandbox/slice/slice_d<N>.json；验收后由资料库侧复制到 generated/oracle。
 'use strict';
-const fs = require('fs'), path = require('path'), crypto = require('crypto');
+const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
 const OUT = path.resolve(__dirname, '.sandbox/slice');
@@ -21,26 +21,9 @@ const snap = b => ({param: P.map(k => b[k]), xparam: X.map(k => r6(b[k])), spara
 const brief = bd => bd && {base: r6(bd.base), basis: r6(bd.basis), weights: (bd.weights || []).map(r6), normal: r6(bd.normal), terminal: r6(bd.terminal),
   row: bd.rows && bd.rows[0] && Object.fromEntries(Object.entries(bd.rows[0]).map(([k, v]) => [k, r6(v)]))};
 
-const digest = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-function sourceIdentity() {
-  const inputs = {};
-  for (const name of fs.readdirSync(path.join(APP, 'data')).filter(n => n.endsWith('.json')).sort()) {
-    inputs['data/' + name] = digest(path.join(APP, 'data', name));
-  }
-  inputs['package.json'] = digest(path.join(APP, 'package.json'));
-  const runtimeInputs = {};
-  function walk(dir) {
-    for (const entry of fs.readdirSync(dir, {withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name))) {
-      const file = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(file);
-      else if (entry.name.endsWith('.js')) runtimeInputs[path.relative(APP,file)] = digest(file);
-    }
-  }
-  walk(path.join(APP,'js'));
-  return {releaseVersion:JSON.parse(fs.readFileSync(path.join(APP,'package.json'),'utf8')).releaseVersion, inputs, runtimeInputs};
-}
+const {sourceIdentity} = require('./source_identity.cjs');
 function run(difficulty) {
-  const identity = sourceIdentity();
+  const identity = sourceIdentity(APP);
   const r = boot(APP, {tolerant: true, log: false});
   const w = r.window;
   const failed = w.CodexRuntime.status().filter(m => m.state !== 'installed');

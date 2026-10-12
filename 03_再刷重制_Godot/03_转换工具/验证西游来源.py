@@ -43,6 +43,21 @@ def verify(app, generated, oracle):
                     issues.append(f'难度 {difficulty} 参照数据不一致：{rel}')
         if data.get('difficulty') != difficulty or any(row.get('error') for row in data.get('damage', [])):
             issues.append(f'难度 {difficulty} 测量异常')
+    equipment = oracle / 'equipment.json'
+    if manifest.get('toolVersion', 0) >= 5:
+        if not equipment.is_file():
+            issues.append('缺少装备对照')
+        else:
+            data = json.loads(equipment.read_text())
+            identity = data.get('sourceIdentity', {})
+            if identity.get('releaseVersion') != version or identity.get('runtimeInputs') != manifest.get('runtimeInputs'):
+                issues.append('装备参照版本/脚本不一致')
+            for rel, digest in manifest['inputs'].items():
+                if rel.startswith('data/') or rel == 'package.json':
+                    if identity.get('inputs', {}).get(rel) != digest:
+                        issues.append('装备参照数据不一致：' + rel)
+            if not data.get('gear') or not data.get('upgrades') or not data.get('sets'):
+                issues.append('装备参照缺少测量结果')
     return {'releaseVersion': version, 'inputs': len(manifest['inputs']),
             'runtimeInputs': len(manifest.get('runtimeInputs', {})),
             'outputs': len(manifest['outputs']), 'issues': issues}

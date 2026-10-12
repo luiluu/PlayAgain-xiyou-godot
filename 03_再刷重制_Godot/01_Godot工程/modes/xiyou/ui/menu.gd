@@ -28,7 +28,7 @@ func _ready() -> void:
 	var tabs := VBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 0)
 	cmd.add_child(tabs)
-	for t in [["状态", _show_status], ["装备", _show_equip], ["物品", _show_items], ["存档", _show_save], ["回到标题", _to_title], ["关闭", func(): closed.emit()]]:
+	for t in [["状态", _show_status], ["装备", _show_equip], ["强化", _show_upgrade], ["物品", _show_items], ["存档", _show_save], ["回到标题", _to_title], ["关闭", func(): closed.emit()]]:
 		var b := XUI.button(t[0], XUI.LINE_HEIGHT + 12)
 		b.pressed.connect(t[1])
 		tabs.add_child(b)
@@ -161,6 +161,9 @@ func _show_status() -> void:
 func _show_equip() -> void:
 	_open_detail(XEquipPage.new())
 
+func _show_upgrade() -> void:
+	_open_detail(XUpgradePage.new())
+
 func _open_detail(page: XActorPage) -> void:
 	# 进入子页时隐藏主菜单控件，避免 Enter 仍触发背后的旧指令。
 	for node in get_children():
@@ -212,7 +215,7 @@ func _show_items() -> void:
 			ic.texture = XUI.icon_texture(int(e.get("iconIndex", 0)))
 			ic.custom_minimum_size = Vector2(32, 32)
 			row.add_child(ic)
-			row.add_child(XUI.label(str(e.name), 22))
+			row.add_child(XUI.label(str(e.name), 22, XGear.color(e)))
 			_content.add_child(row)
 
 

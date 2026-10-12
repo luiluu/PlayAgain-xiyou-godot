@@ -711,7 +711,8 @@ func rewards() -> Dictionary:
 	var drops := []
 	var gold_up := 0.0
 	var item_up := 0.0
-	var suit_drop := XEquipSuits.reward(actors,1.0,2)
+	var reward_members := XState.current.members()
+	var suit_drop := XEquipSuits.reward(reward_members,1.0,2)
 	for a in actors:
 		gold_up = maxf(gold_up, _passive_sum(a, "passiveGRUP"))
 		item_up = maxf(item_up, _passive_sum(a, "passiveIRUP"))
@@ -729,7 +730,7 @@ func rewards() -> Dictionary:
 		for extra in _extra_drops(d):
 			if randf() < extra.rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
 				drops.append({"kind": extra.kind, "id": extra.id})
-	return {"exp": int(XEquipSuits.reward(actors,roundi(exp),0)), "gold": int(XEquipSuits.reward(actors,roundi(gold),1)), "drops": drops}
+	return {"exp": int(XEquipSuits.reward(reward_members,roundi(exp),0)), "gold": int(XEquipSuits.reward(reward_members,roundi(gold),1)), "drops": drops}
 
 func _passive_sum(a: XActor, tag: String) -> float:
 	var v := 0.0

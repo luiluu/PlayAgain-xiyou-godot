@@ -10,9 +10,9 @@ static func reason(gear: Dictionary, item: Dictionary, count: int) -> String:
 	if data.is_empty() or not data.get("issues",[]).is_empty():return "强化效果尚未支持"
 	var kind := str(gear.get("kind",""))
 	if not kind in ["weapon","armor"] or data.get(kind,[]).is_empty():return "不能用于这类装备"
-	var types: Array = data.get(kind+"Types",[])
+	var types: Array = data.get(kind+"Types",[]).map(func(v):return int(v))
 	var type := int(gear.get("wtypeId" if kind == "weapon" else "atypeId",0))
-	if not types.has(0.0) and not types.has(type):return "装备类型不符"
+	if not types.has(0) and not types.has(type):return "装备类型不符"
 	if count <= 0:return "没有这件材料"
 	if int(gear.get("upgradeSlots",6)) < int(data.get("cost",1)):return "强化插槽不足"
 	for effect in data[kind]:
@@ -24,14 +24,15 @@ static func reason(gear: Dictionary, item: Dictionary, count: int) -> String:
 
 static func preview(gear: Dictionary, item: Dictionary) -> Dictionary:
 	var copy := gear.duplicate(true)
-	if reason(copy,item,1) == "":apply_effects(copy,item)
+	if reason(copy,item,1) == "":apply_effects(copy,item,false)
 	return copy
 
 static func apply(s: XState, gear: Dictionary, item_id: int) -> bool:
 	var item := XDB.rec("Items",item_id)
 	if not s.owns_gear(gear) or reason(gear,item,s.item_count(item_id)) != "":return false
 	# 在副本完成全部计算，随后一次性替换实例内容；引用该实例的角色会看到同一结果。
-	var copy := preview(gear,item)
+	var copy := gear.duplicate(true)
+	apply_effects(copy,item,true)
 	s.gain_item(item_id,-1)
 	gear.clear();gear.merge(copy,true)
 	for a in s.members():
@@ -39,7 +40,7 @@ static func apply(s: XState, gear: Dictionary, item_id: int) -> bool:
 		a.hp = minf(a.hp,a.mhp);a.mp = minf(a.mp,a.mmp)
 	return true
 
-static func apply_effects(gear: Dictionary, item: Dictionary) -> void:
+static func apply_effects(gear: Dictionary, item: Dictionary, randomize := true) -> void:
 	var data := rule(item)
 	gear.upgradeSlots = int(gear.get("upgradeSlots",6)) - int(data.cost)
 	gear.originalUpgradeSlots = int(gear.get("originalUpgradeSlots",6))
@@ -55,7 +56,7 @@ static func apply_effects(gear: Dictionary, item: Dictionary) -> void:
 					if effect.param is String and effect.param == "current" and float(gear.params[i]) == 0:continue
 					var n := float(effect.value)
 					if bool(effect.get("random",false)):
-						n = floorf(XGear.roll() * (n*2+1)-n) if not bool(effect.get("signed",false)) else (floorf(XGear.roll() * (absf(n)+1)) * signf(n))
+						n = (floorf(XGear.roll() * ((n+1)*2)-n) if not bool(effect.get("signed",false)) else (floorf(XGear.roll() * (n+signf(n))))) if randomize else 0.0
 					if bool(effect.get("percent",false)):
 						var base := XDB.rec("Weapons" if gear.kind == "weapon" else "Armors",int(gear.base))
 						n *= float(base.params[i]) / 100
@@ -68,13 +69,14 @@ static func apply_effects(gear: Dictionary, item: Dictionary) -> void:
 				yep.elementAmplify = pool;gear.yep = yep
 			"xparam":
 				var found := false
-				for trait in gear.traits:
-					if int(trait.code) == 22 and int(trait.dataId) == int(effect.param):
-						trait.value = float(trait.value) + float(effect.value); found = true; break
-				if not found:gear.traits.append({"code":22,"dataId":int(effect.param),"value":float(effect.value)})
+				for t in gear.traits:
+					if int(t.code) == 22 and int(t.dataId) == int(effect.param):
+						t.value = float(t.value) + float(effect.value); found = true; break
+				if not found:gear.traits.append({"code":22.0,"dataId":float(effect.param),"value":float(effect.value)})
 			"slots":
 				gear.upgradeSlots += int(effect.value)
 				gear.originalUpgradeSlots += int(effect.value)
 				gear.boostCount -= 1;gear.upgrades.pop_back()
-	var name := str(gear.get("baseName",gear.name))
+	XRunewords.check(gear)
+	var name := str(gear.get("runewordName",""))+str(gear.get("baseName",gear.name))
 	gear.name = name + (" (+%d)" % int(gear.boostCount) if int(gear.boostCount) > 0 else "")

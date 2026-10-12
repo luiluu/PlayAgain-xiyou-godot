@@ -38,10 +38,11 @@ static func change(s: XState, a: XActor, slot: int, item) -> bool:
 	if not can_change(a, slot):
 		return false
 	if item is Dictionary:
-		if not s.gear.has(item) or int(item.etypeId) != int(a.equip_slots()[slot]) or not a.can_equip(item):
+		var index := s.gear.find_custom(func(e):return is_same(e,item))
+		if index < 0 or int(item.etypeId) != int(a.equip_slots()[slot]) or not a.can_equip(item):
 			return false
 		# 同属性实例也逐件交换，不合并背包中的数量。
-		s.gear.erase(item)
+		s.gear.remove_at(index)
 	var old = a.equips[slot]
 	if old is Dictionary and not old.is_empty():
 		s.gear.append(old)

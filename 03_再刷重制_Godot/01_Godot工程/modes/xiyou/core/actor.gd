@@ -71,7 +71,7 @@ func can_equip(item: Dictionary) -> bool:
 	var req := int(item.get("meta", {}).get("req_level", 0))
 	if req > _lv:
 		return false
-	var required: Array = item.get("equipment",{}).get("requirements",{}).get("actors",[])
+	var required: Array = item.get("equipment",{}).get("requirements",{}).get("actors",[]).map(func(v):return int(v))
 	if not required.is_empty() and not required.has(actor_id):return false
 	if item.kind == "weapon":
 		var wt := int(item.wtypeId)

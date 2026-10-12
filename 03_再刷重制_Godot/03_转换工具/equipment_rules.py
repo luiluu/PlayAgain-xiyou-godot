@@ -56,7 +56,9 @@ def upgrade(rec):
                     effect={'op':'element','element':int(symbol.split()[-1]),'value':int(match[3])/100}
                 elif symbol in ['XIANGQIAN MZ','XIANGQIAN BJ']:
                     effect={'op':'xparam','param':0 if symbol.endswith('MZ') else 2,'value':int(match[3])/100}
-            if line.upper() in ['ADD SLOTS','DELETE SLOTS']:effect={'op':'slots','value':1 if line.upper()=='ADD SLOTS' else -1}
+            if line.upper() in ['ADD SLOTS','DELETE SLOTS']:
+                effect={'op':'slots','value':1 if line.upper()=='ADD SLOTS' else -1}
+                result['weapon'].append(effect.copy());result['armor'].append(effect.copy());continue
             if effect:
                 for kind in kinds:result[kind].append(effect)
             else:result['issues'].append(line)
@@ -81,14 +83,27 @@ def suits(plugins):
         id=int(key.split()[-1]);bonus=[]
         for encoded in json.loads(source['SuitBonuses']):
             b=json.loads(encoded);row={'requirePieces':int(b['RequirePieces'])}
-            for src,target in [('PassiveStates','states'),('StatesResist','statesResist'),('AddSkills','skills')]:row[target]=[int(v) for v in json.loads(b[src])]
+            for src,target in [('PassiveStates','states'),('StatesResist','statesResist'),('AddSkills','skills')]:row[target]=[int(v) for v in json.loads(b[src]) if str(v).strip().isdigit()]
             for group,symbols in groups.items():
                 row[group+'Plus']=[0]*len(symbols);row[group+'Rate']=[1.0]*len(symbols)
                 src={'param':'ParamBonuses','xparam':'XParamBonuses','sparam':'SParamBonuses','bResult':'BResultBonuses'}[group]
                 for line in json.loads(b[src]):
                     entry=json.loads(line)
                     if entry['ParamName'] in symbols:
-                        i=symbols.index(entry['ParamName']);row[group+'Plus'][i]=float(entry['ParamPlus']);row[group+'Rate'][i]=float(entry['ParamRate'])
+                        i=symbols.index(entry['ParamName']);row[group+'Plus'][i]=float(entry['ParamPlus'] or 0);row[group+'Rate'][i]=float(entry['ParamRate'] or 0)
             bonus.append(row)
         result[id]={'id':id,'name':source['SuitName'],'bonuses':bonus}
+    return result
+
+
+def runewords(plugins):
+    result=[None]*251
+    for key,value in plugins.get('Star_EquipmentMosaic',{}).items():
+        if not re.fullmatch(r'EMosaic \d+',key) or not value:continue
+        s=json.loads(value);id=int(key.split()[-1])
+        result[id]={'id':id,'name':s['EMosaicName'],
+                    'weapon':int(s['EMosaicWId'] or 0),'armor':int(s['EMosaicAId'] or 0),
+                    'weaponTypes':json.loads(s['EMosaicWtepy'] or '[]'),
+                    'armorSlots':json.loads(s['EMosaicAtepy'] or '[]'),
+                    'materials':json.loads(s['EMosaicZID'] or '[]')}
     return result
