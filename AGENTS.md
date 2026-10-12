@@ -64,7 +64,7 @@ Claude 与 Codex 共用这一份规则（`CLAUDE.md` 只引用本文件）。修
 - `01_再刷一把`：Steam 原版《再刷一把 PlayAgain》，AppID 2059790，保留在 PD Windows 内只供调用，不做 Mac 移植。路径 `C:\Program Files (x86)\Steam\steamapps\common\再刷一把 PlayAgain`，通过 `01_再刷一把/03_原版分析/工具/pd_original.py` 只读访问。原版审计已移出当前路线，按需再启动；未核对前不认定为干净原版。
 - `02_再刷西游`：链接到 `/Users/kyo/Documents/再刷西游`，那里的维护规范、日志与存档保护规则继续适用。不为分类搬动既有工程、应用或存档。
 - `03_再刷重制_Godot`：双入口工程，共用启动界面与基础设施，模式内容与保存位置分开。
-  - **西游模式（当前工作）**：以正式 Mac 应用 `/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw/` 的当时实际版本为来源（已确认 v0.04）。不能用旧发布包或 `source-1.57` 代替。西游 MOD 不能充当 Steam 原版，两种来源身份分开登记。
+  - **西游模式（当前工作）**：以正式 Mac 应用 `/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw/` 的当时实际版本为来源（版本与指纹以来源登记为准）。不能用旧发布包或 `source-1.57` 代替。西游 MOD 不能充当 Steam 原版，两种来源身份分开登记。
   - **新版模式**：只保留禁用入口（`enabled=false`、`entryScene=null`），尚未设计。
   - 重制版是新引擎上的新游戏，**不迁移 MV 旧存档**（用户 2026-10-12 明确）。
 

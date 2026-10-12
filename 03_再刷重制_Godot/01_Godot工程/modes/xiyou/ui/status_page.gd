@@ -27,6 +27,7 @@ func rebuild() -> void:
 		0: _params(body)
 		1: _resistances(body)
 		2: _mastery(body)
+	(tabs.get_child(page) as Button).grab_focus.call_deferred()
 
 func _params(parent: Control) -> void:
 	var a := actor()

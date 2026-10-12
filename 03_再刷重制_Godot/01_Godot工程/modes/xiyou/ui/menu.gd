@@ -162,12 +162,22 @@ func _show_equip() -> void:
 	_open_detail(XEquipPage.new())
 
 func _open_detail(page: XActorPage) -> void:
+	# 进入子页时隐藏主菜单控件，避免 Enter 仍触发背后的旧指令。
+	for node in get_children():
+		if node is CanvasItem:
+			node.hide()
 	page.actor_index = _selected_actor
 	add_child(page)
 	page.closed.connect(func():
 		_selected_actor = page.actor_index
 		page.queue_free()
-		_show_party())
+		for node in get_children():
+			if node is CanvasItem and node != page:
+				node.show()
+		_show_party()
+		var buttons := find_children("*", "Button", true, false)
+		if not buttons.is_empty():
+			buttons[0].grab_focus.call_deferred())
 
 
 func _show_items() -> void:

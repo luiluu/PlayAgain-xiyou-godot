@@ -74,6 +74,10 @@ func rebuild() -> void:
 	var spacer := Control.new()
 	spacer.custom_minimum_size.y = 48
 	details.add_child(spacer)
+	for child in left.get_children():
+		if child is Button and not child.disabled:
+			child.grab_focus.call_deferred()
+			break
 
 func _candidate(parent: Control, e) -> void:
 	var b := XUI.button(str(e.name) if e is Dictionary else "卸载", 36)

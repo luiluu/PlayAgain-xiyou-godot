@@ -331,7 +331,9 @@ class Exporter:
                 dst = self.out / kind / (rel + ext)
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src, dst)
-                self.outputs[f'{kind}/{rel}{ext}'] = sha(src.read_bytes())
+                digest = sha(src.read_bytes())
+                self.inputs[f'{kind}/{rel}{ext}'] = digest
+                self.outputs[f'{kind}/{rel}{ext}'] = digest
         # 界面字体（原版 fonts/gamefont.css 指向的 GameFont）连同授权文件原样复制
         for name in self.cfg.get('fonts', []):
             src = self.app / 'fonts' / name
@@ -341,7 +343,9 @@ class Exporter:
             dst = self.out / 'fonts' / name
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
-            self.outputs[f'fonts/{name}'] = sha(src.read_bytes())
+            digest = sha(src.read_bytes())
+            self.inputs[f'fonts/{name}'] = digest
+            self.outputs[f'fonts/{name}'] = digest
 
     def run(self):
         # 只清理本工具生成的部分；oracle/ 由 mv_oracle/slice_probe.cjs 写入，保留
