@@ -1,5 +1,5 @@
 extends Node
-## 西游战斗规则对照测试：用正式 v0.04 参照引擎的输出（generated/oracle/slice_d<N>.json，
+## 西游战斗规则对照测试：用当前正式应用参照引擎的输出（generated/oracle/slice_d<N>.json，
 ## 由 03_转换工具/mv_oracle/slice_probe.cjs 生成）逐项比较 Godot 的能力值与伤害。
 ## 伤害比较的是结算后、取整前的值；正式版的成长修正 growth 首期未移植，按 oracle 值 ÷ growth 比较。
 ## 运行：godot --headless --path <工程> res://tests/xiyou_rules.tscn [-- --verbose]
@@ -57,9 +57,37 @@ func _make_actor(id: int, d: Dictionary, battle: bool) -> XActor:
 	return a
 
 
+## 数据、规则脚本与版本必须同源；旧 oracle 即使数值碰巧相同也不能作为本轮对照。
+func _reference_issues(manifest: Dictionary, reference: Dictionary) -> Array:
+	var issues := []
+	var identity: Dictionary = reference.get("sourceIdentity", {})
+	if identity.get("releaseVersion") != manifest.get("releaseVersion"):
+		issues.append("来源版本不一致")
+	var runtime: Dictionary = manifest.get("runtimeInputs", {})
+	if runtime.is_empty() or runtime != identity.get("runtimeInputs", {}):
+		issues.append("运行脚本指纹不一致")
+	var hashes: Dictionary = identity.get("inputs", {})
+	for rel in manifest.get("inputs", {}):
+		if rel.begins_with("data/") or rel in ["package.json", "js/plugins.js"]:
+			var actual = identity.get("runtimeInputs", {}).get(rel) if rel == "js/plugins.js" else hashes.get(rel)
+			if actual != manifest.inputs[rel]:
+				issues.append("输入指纹不一致：" + rel)
+	var expected_actors: Array = manifest.get("slice", {}).get("actors", [])
+	var ids: Array = reference.get("actors", {}).keys().map(func(id): return int(id))
+	expected_actors = expected_actors.map(func(id): return int(id))
+	expected_actors.sort(); ids.sort()
+	if ids != expected_actors:
+		issues.append("队伍切片不一致")
+	return issues
+
+
 func _run() -> void:
 	if not XDB.available():
 		_check("generated_data_present", false, "先运行 03_转换工具/xiyou_export.py")
+		return _finish()
+	var manifest = JSON.parse_string(FileAccess.get_file_as_string(XDB.BASE + "manifest.json"))
+	if not manifest is Dictionary:
+		_check("conversion_manifest_present", false)
 		return _finish()
 	for diff in DIFFICULTIES:
 		var path := "res://modes/xiyou/generated/oracle/slice_d%d.json" % diff
@@ -67,6 +95,17 @@ func _run() -> void:
 		if not d is Dictionary:
 			_check("oracle_d%d_present" % diff, false, "先运行 mv_oracle/slice_probe.cjs")
 			continue
+		var issues := _reference_issues(manifest, d)
+		_check("d%d.source_identity" % diff, issues.is_empty(), issues)
+		if not issues.is_empty():
+			continue
+		if diff == DIFFICULTIES[0]:
+			var stale: Dictionary = d.duplicate(true)
+			stale.sourceIdentity.inputs["data/Classes.json"] = "旧来源"
+			_check("stale_oracle_rejected", not _reference_issues(manifest, stale).is_empty())
+			stale = d.duplicate(true)
+			stale.sourceIdentity.runtimeInputs["js/plugins.js"] = "旧脚本"
+			_check("stale_runtime_rejected", not _reference_issues(manifest, stale).is_empty())
 		var growth_seen := []
 		# 能力值
 		for id_s in d.actors:

@@ -38,6 +38,8 @@ func _find(name: String) -> Node:
 	return get_tree().current_scene.find_child(name, true, false)
 
 func _run() -> void:
+	# 用户可能正在试玩并已有 Godot 存档；标题测试只看独立空命名空间。
+	XSave.dir_override = "user://test_ui_smoke/" + str(Time.get_ticks_usec())
 	var retina := Rect2i(0,66,3024,1764)
 	var fitted := WindowFit.rectangle(retina)
 	_check("retina_window_fills_screen", fitted.size.x > 2500 and fitted.size.y > 1500 and retina.encloses(fitted))
@@ -75,7 +77,7 @@ func _run() -> void:
 	var visible := get_viewport().get_visible_rect().size
 	_check("wide_window_expands_width", visible.x > 1280.0 and is_equal_approx(visible.y, 800.0))
 	await _shot("03_入口_宽窗口比例.png")
-	_check("no_user_saves_written", not DirAccess.dir_exists_absolute("user://modes"))
+	_check("no_user_saves_written", not DirAccess.dir_exists_absolute(XSave.dir()))
 	var passed := results.filter(func(r): return r["passed"]).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size(), "results": results}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)

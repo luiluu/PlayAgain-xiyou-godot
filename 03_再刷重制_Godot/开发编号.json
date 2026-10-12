@@ -3,13 +3,13 @@
   "review": "未经claude检验",
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.004",
-  "sequence": 4,
-  "next": "dev.005",
-  "nextSequence": 5,
+  "current": "dev.005",
+  "sequence": 5,
+  "next": "dev.006",
+  "nextSequence": 6,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "OTB 行动顺序、胜利结算、状态/装备界面；当前西游字体与 Mac Retina 窗口适配",
+  "currentChange": "同步当前正式西游 v0.05 首期数据与三难度参照；来源指纹与测试存档隔离",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

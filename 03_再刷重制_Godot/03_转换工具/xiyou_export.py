@@ -376,7 +376,7 @@ class Exporter:
                     'formulaUntranslatedInSlice': untranslated, 'formulaUntranslatedAllSkills': all_bad,
                     'issues': self.issues, 'inputs': self.inputs, 'outputs': self.outputs}
         # 生成期间源若发生变化，候选不可用；不将混合来源登记成成功结果。
-        changed = [rel for rel, digest in {**self.inputs, **runtime_inputs}.items()
+        changed = [rel for hashes in [self.inputs, runtime_inputs] for rel, digest in hashes.items()
                    if sha((self.app / rel).read_bytes()) != digest]
         if changed:
             raise RuntimeError('生成期间来源改变：' + ', '.join(changed[:10]))

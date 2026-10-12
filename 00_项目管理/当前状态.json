@@ -56,8 +56,8 @@
     "selfContainedEditor": true,
     "editorStartupVerified": true,
     "visibleProjectManagerVerified": true,
-    "runnableBuildKind": "dev.004 西游首期可玩版（OTB、结算、状态/装备、当前西游字体、Mac 窗口适配）",
-    "developmentVersion": "dev.004",
+    "runnableBuildKind": "dev.005 西游首期可玩版（v0.05 来源数据与参照同步）",
+    "developmentVersion": "dev.005",
     "developmentRegistry": "03_再刷重制_Godot/开发编号.json",
     "deferredPlatforms": [
       "Windows",
@@ -79,9 +79,12 @@
     "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
     "fingerprint": "00_项目管理/验证与备份/20261012_界面补全/当前西游来源清单.json",
     "fingerprintedFiles": 770,
-    "convertedContentReleaseVersion": "v0.04",
+    "convertedContentReleaseVersion": "v0.05",
     "uiReferenceReleaseVersion": "v0.05",
-    "contentRefreshPending": true
+    "contentRefreshPending": false,
+    "convertedScope": "floor1_slice",
+    "converterVersion": 4,
+    "runtimeFingerprintCount": 376
   },
   "handoff": "00_项目管理/交接板.md",
   "collaboration": {

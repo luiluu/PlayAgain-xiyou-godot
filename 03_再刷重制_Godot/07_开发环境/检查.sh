@@ -64,6 +64,7 @@ if [[ ${1:-} == --oracle ]]; then
   if [[ -d $oracle/node_modules ]]; then
     res=$(cd "$oracle" && node boot_check.cjs 2>/dev/null | tail -1)
     if print -r -- "$res" | grep -q '"db":true' && print -r -- "$res" | grep -q '"modulesFailed":\[\]'; then ok "$res" | cut -c1-120; else bad "参照引擎启动异常：$res"; fi
+    if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/验证西游来源.py"; then ok "当前西游来源、转换产物、三难度参照同源"; else bad "西游来源/转换/参照不一致"; fi
   else
     bad "mv_oracle 未安装依赖（在该目录运行 npm install）"
   fi
