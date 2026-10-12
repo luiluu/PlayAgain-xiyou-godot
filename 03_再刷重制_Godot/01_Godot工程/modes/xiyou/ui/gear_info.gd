@@ -41,8 +41,8 @@ static func bonus_text(b: Dictionary) -> String:
 		var labels: Array={"param":XMenu.PARAM_NAMES,"xparam":XNAMES,"sparam":SNAMES,"bResult":["队伍经验","队伍金钱","队伍掉率"]}[group]
 		for i in range(labels.size()):
 			var plus := float(b[group+"Plus"][i]);var rate := float(b[group+"Rate"][i])
-			if plus!=0:parts.append("%s %s%s%s"%[labels[i],"+" if plus>0 else "",str(plus),"" if group=="param" else "%"])
-			if rate!=1:parts.append("%s ×%s"%[labels[i],str(rate)])
+			if plus!=0:parts.append("%s %s%s%s"%[labels[i],"+" if plus>0 else "",number(plus),"" if group=="param" else "%"])
+			if rate!=1:parts.append("%s ×%s"%[labels[i],number(rate)])
 	for id in b.skills:
 		var skill := XDB.rec("Skills",int(id))
 		parts.append("获得 "+str(skill.get("name","技能%d"%int(id))))
@@ -51,3 +51,6 @@ static func bonus_text(b: Dictionary) -> String:
 	for id in b.statesResist:
 		parts.append("免疫 "+str(XDB.rec("States",int(id)).get("name",id)))
 	return "、".join(parts) if not parts.is_empty() else "无额外加成"
+
+static func number(value: float) -> String:
+	return str(roundi(value)) if is_equal_approx(value,float(roundi(value))) else str(value)

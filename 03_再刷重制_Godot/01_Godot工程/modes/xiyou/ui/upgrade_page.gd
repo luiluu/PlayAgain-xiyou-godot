@@ -104,7 +104,7 @@ func _show_detail() -> void:
 	if selected.is_empty():help.text="";return
 	var help_item:=XDB.rec("Items",material_id) if phase=="materials" and material_id>0 else selected
 	help.text=XText.to_bb(str(help_item.get("description",""))).bbcode
-	var large:=TextureRect.new();large.texture=XUI.icon_texture(int(selected.iconIndex));large.position=Vector2(8,8);large.size=Vector2(128,128);large.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;large.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;summary.add_child(large)
+	var large:=TextureRect.new();large.texture=XUI.icon_texture(int(selected.iconIndex));large.position=Vector2(8,8);large.size=Vector2(128,128);large.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;large.texture_filter=Control.TEXTURE_FILTER_NEAREST;large.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;summary.add_child(large)
 	for i in range(8):
 		var rect:=ColorRect.new();rect.color=XUI.text_color(19);rect.modulate.a=0.5;rect.position=Vector2(144+(i%2)*(summary_width-144)/2,floori(i/2.0)*36);rect.size=Vector2((summary_width-144)/2-2,34);summary.add_child(rect)
 		var value:=int(selected.get("params",[0,0,0,0,0,0,0,0])[i])

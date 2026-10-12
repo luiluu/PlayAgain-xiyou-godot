@@ -1,8 +1,8 @@
 {
   "marker": "机器可读事实；叙述性进度见交接板",
   "review": "见交接板「待交叉核查」",
-  "updatedDate": "2026-10-12",
-  "libraryRevision": 4,
+  "updatedDate": "2026-10-13",
+  "libraryRevision": 5,
   "root": "/Users/kyo/Documents/再刷项目资料库",
   "currentStep": 5,
   "steps": {
@@ -11,7 +11,7 @@
     "3": "slice_mapped_rest_pending",
     "4": "core_systems_partial",
     "5": "floor1_slice_playable_pending_user_playtest",
-    "6": "not_started",
+    "6": "ui_partial_original_layout_calibrated",
     "7": "templates_installed_no_game_export",
     "8": "not_started",
     "9": "not_designed_entry_reserved"
@@ -56,14 +56,19 @@
     "selfContainedEditor": true,
     "editorStartupVerified": true,
     "visibleProjectManagerVerified": true,
-    "runnableBuildKind": "dev.005 西游首期可玩版（v0.05 来源数据与参照同步）",
-    "developmentVersion": "dev.005",
+    "runnableBuildKind": "dev.006 西游首期可玩版（装备规则、物品升级与原版布局校准）",
+    "developmentVersion": "dev.006",
     "developmentRegistry": "03_再刷重制_Godot/开发编号.json",
     "deferredPlatforms": [
       "Windows",
       "Android"
     ],
-    "platformDecision": "用户 2026-10-12：先完成 Mac 版重制"
+    "platformDecision": "用户 2026-10-12：先完成 Mac 版重制",
+    "logicalCanvas": [
+      1280,
+      720
+    ],
+    "saveSchemaVersion": 2
   },
   "existingMod": {
     "referenceLibrary": "/Users/kyo/Documents/再刷西游",
@@ -83,7 +88,7 @@
     "uiReferenceReleaseVersion": "v0.05",
     "contentRefreshPending": false,
     "convertedScope": "floor1_slice",
-    "converterVersion": 4,
+    "converterVersion": 5,
     "runtimeFingerprintCount": 376
   },
   "handoff": "00_项目管理/交接板.md",
