@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""西游 v0.04 → Godot 数据与素材转换（只读正式应用）。
+"""当前正式西游 → Godot 数据与素材转换（只读正式应用）。
 
 用法：xiyou_export.py [--app <app.nw>] [--out <输出目录>] [--slice xiyou_slice.json]
 
@@ -19,7 +19,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 3
+TOOL_VERSION = 4
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -156,7 +156,9 @@ def load_json(path):
 
 class Exporter:
     def __init__(self, app, out, slice_cfg):
-        self.app, self.out, self.cfg = app, out, slice_cfg
+        self.app, self.out, self.cfg = app.resolve(), out.resolve(), slice_cfg
+        if self.out.is_relative_to(self.app) or self.app.is_relative_to(self.out):
+            raise ValueError('输出目录不能与正式应用重叠')
         self.inputs, self.outputs, self.issues = {}, {}, []
         self.img, self.audio = set(), set()
         self.db = {}
@@ -353,7 +355,10 @@ class Exporter:
             if (self.out / sub).exists():
                 shutil.rmtree(self.out / sub)
         self.out.mkdir(parents=True, exist_ok=True)
-        pkg = load_json(self.app / 'package.json')
+        pkg = self.read('package.json')
+        # 脚本是运行规则来源；与数据库同时取指纹，便于阻止旧 oracle 混用。
+        runtime_inputs = {str(p.relative_to(self.app)): sha(p.read_bytes())
+                          for p in sorted((self.app / 'js').rglob('*.js'))}
         self.export_db()
         self.export_plugins()
         self.collect_slice()
@@ -366,8 +371,15 @@ class Exporter:
         all_bad = sum(1 for s in self.db['Skills'] if s and s['damage']['type'] and s['damage']['formulaGd'] is None)
         manifest = {'tool': 'xiyou_export.py', 'toolVersion': TOOL_VERSION, 'source': str(self.app),
                     'releaseVersion': pkg.get('releaseVersion'), 'slice': self.slice_info,
+                    'runtimeInputs': runtime_inputs,
+                    'sliceConfigSHA256': sha(json.dumps(self.cfg, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()),
                     'formulaUntranslatedInSlice': untranslated, 'formulaUntranslatedAllSkills': all_bad,
                     'issues': self.issues, 'inputs': self.inputs, 'outputs': self.outputs}
+        # 生成期间源若发生变化，候选不可用；不将混合来源登记成成功结果。
+        changed = [rel for rel, digest in {**self.inputs, **runtime_inputs}.items()
+                   if sha((self.app / rel).read_bytes()) != digest]
+        if changed:
+            raise RuntimeError('生成期间来源改变：' + ', '.join(changed[:10]))
         self.write_json('slice.json', self.cfg)
         (self.out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + '\n')
         size = sum(p.stat().st_size for p in self.out.rglob('*') if p.is_file())
