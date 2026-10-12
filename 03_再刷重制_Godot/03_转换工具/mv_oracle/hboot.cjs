@@ -1,6 +1,6 @@
 // 【Claude·未经Codex检验】复制自再刷西游 Louis/rpg-maker-mac/strength-recheck-20261010-210743/sim/hboot.cjs
 // （源 SHA256 de6f861e1bfcd7604dfcb16327c137c3b202bb6d5186fd8c714872ed5cbaf5b0），新增文件系统守卫：
-// 只允许读游戏目录与本工具目录，写入只限 opts.sandbox；屏蔽真实存档/作者钥匙/Application Support。
+// 写入只限 opts.sandbox 与调用方显式给出的 opts.allowWrite 目录；屏蔽真实存档/作者钥匙/Application Support。
 // 无画面完整引擎：按 index.html 顺序加载引擎、全部启用插件与 Codex 模块。
 // 渲染、音频只给占位；Game_*、BattleManager、DataManager 与插件逻辑都是工程原文件。
 'use strict';
@@ -9,12 +9,12 @@ const fs = require('fs'), path = require('path'), zlib = require('zlib');
 
 
 const ORACLE_DIR = __dirname;
-function installGuard(root, sandbox) {
-  if (fs.__oracleGuard) { fs.__oracleGuard.root = root; fs.__oracleGuard.sandbox = sandbox; return; }
-  const g = fs.__oracleGuard = {root, sandbox};
+function installGuard(root, sandbox, allow) {
+  if (fs.__oracleGuard) { Object.assign(fs.__oracleGuard, {root, sandbox, allow}); return; }
+  const g = fs.__oracleGuard = {root, sandbox, allow};
   const inside = (p, base) => { const r = path.relative(base, path.resolve(String(p))); return r === '' || (!r.startsWith('..') && !path.isAbsolute(r)); };
   const blocked = p => /Application Support|codex_author_key|\/save\//.test(path.resolve(String(p))) && !inside(p, g.sandbox);
-  const canWrite = p => typeof p === 'number' || inside(p, g.sandbox);
+  const canWrite = p => typeof p === 'number' || inside(p, g.sandbox) || g.allow.some(d => inside(p, d));
   for (const k of ['writeFileSync', 'appendFileSync', 'mkdirSync', 'renameSync', 'unlinkSync', 'rmSync', 'rmdirSync', 'copyFileSync', 'openSync', 'writeFile', 'appendFile', 'mkdir', 'rename', 'unlink', 'rm']) {
     const orig = fs[k]; if (typeof orig !== 'function') continue;
     fs[k] = function(p, flags) {
@@ -47,7 +47,7 @@ function boot(root, opts = {}) {
   root = path.resolve(root);
   const sandbox = path.resolve(opts.sandbox || path.join(ORACLE_DIR, '.sandbox'));
   fs.mkdirSync(sandbox, {recursive: true});
-  installGuard(root, sandbox);
+  installGuard(root, sandbox, (opts.allowWrite || []).map(d => path.resolve(d)));
   const errors = [];
   const vc = new VirtualConsole();
   vc.on('jsdomError', e => errors.push(String(e && e.message || e)));

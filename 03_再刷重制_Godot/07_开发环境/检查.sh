@@ -48,7 +48,8 @@ tests=("$PROJECT"/tests/*.tscn(N))
 if (( ${#tests} == 0 )); then bad "tests/ 下没有测试场景"; fi
 for t in $tests; do
   name=${t:t}
-  out=$("$GODOT" --headless --path "$PROJECT" "res://tests/$name" 2>&1); rc=$?
+  # 每个测试最多 5 分钟；脚本语法错误时场景不会自行退出，超时即判失败
+  out=$(perl -e 'alarm 300; exec @ARGV' "$GODOT" --headless --path "$PROJECT" "res://tests/$name" 2>&1); rc=$?
   line=$(print -r -- "$out" | grep -m1 '^TEST_RESULT=')
   if (( rc == 0 )) && [[ -n $line ]] && ! print -r -- "$out" | grep -qE 'SCRIPT ERROR|^ERROR:'; then
     ok "$name ${line#TEST_RESULT=}" | cut -c1-120

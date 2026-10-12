@@ -72,6 +72,83 @@ def translate_formula(js, item_id=0):
     return gd, None
 
 
+# ---- 状态脚本（YEP BuffsStatesCore <Custom X Effect>）→ 结构化效果 ----
+EFFECT_RE = re.compile(r'<Custom ([A-Za-z]+(?: [A-Za-z]+)*) Effect>([\s\S]*?)</Custom \1 Effect>')
+SIMPLE_MUL = re.compile(r'^if\s*\((?:this\.isHpEffect\(\)\s*&&\s*)?value\s*(!==|>|>=)\s*0(?:\s*&&\s*this\.isHpEffect\(\))?\)\s*\{\s*'
+                        r'value\s*=\s*Math\.(ceil|floor|round)\(\s*value\s*\*\s*([\d.]+)\s*\)\s*;?\s*\}$')
+SIMPLE_MINUS = re.compile(r'^if\s*\(value\s*(>|>=)\s*0\s*&&\s*this\.isHpEffect\(\)\s*\)\s*\{\s*value\s*\*=\s*1\s*-\s*([\d.]+)\s*;\s*'
+                          r'value\s*=\s*Math\.(floor|ceil|round)\(value\)\s*;?\s*\}$')
+
+
+def strip_js_comments(js):
+    js = re.sub(r'/\*[\s\S]*?\*/', '', js)
+    return re.sub(r'//[^\n]*', '', js)
+
+
+def parse_state_effects(note):
+    """返回 [{phase, op, cond, k, round} 或 {phase, op:'js', source}]；op=js 表示尚未翻译。"""
+    out = []
+    for m in EFFECT_RE.finditer(note or ''):
+        phase, body = m.group(1).lower().replace(' ', '_'), m.group(2)
+        code = re.sub(r'\s+', ' ', strip_js_comments(body)).strip()
+        mm = SIMPLE_MUL.match(code)
+        if mm:
+            out.append({'phase': phase, 'op': 'mul', 'cond': {'!==': 'nonzero', '>': 'positive', '>=': 'nonnegative'}[mm.group(1)],
+                        'hpOnly': 'isHpEffect' in code, 'k': float(mm.group(3)), 'round': mm.group(2)})
+            continue
+        mm = SIMPLE_MINUS.match(code)
+        if mm:
+            out.append({'phase': phase, 'op': 'mul', 'cond': {'>': 'positive', '>=': 'nonnegative'}[mm.group(1)],
+                        'hpOnly': True, 'k': 1 - float(mm.group(2)), 'round': mm.group(3)})
+            continue
+        out.append({'phase': phase, 'op': 'js', 'source': body.strip()})
+    return out
+
+
+# ---- YEP_ElementCore / YEP_X_CriticalControl 备注标签 → 结构化字段（按行匹配，与原插件一致）----
+YEP_C1 = re.compile(r'<(?:ELEMENT AMPLIFY) (\d+): ([+\-]\d+(?:\.\d+)?)([%％])>', re.I)
+YEP_C2 = re.compile(r'<(?:ELEMENT AMPLIFY) (.*): ([+\-]\d+(?:\.\d+)?)([%％])>', re.I)
+YEP_CN1 = re.compile(r'<(?:ELEMENT AMPLIFY) (\d+): ([+\-]\d+(?:\.\d+)?)>', re.I)
+YEP_CN2 = re.compile(r'<(?:ELEMENT AMPLIFY) (.*): ([+\-]\d+(?:\.\d+)?)>', re.I)
+YEP_C3 = re.compile(r'<(?:ELEMENT MAGNIFY) (\d+): ([+\-]\d+(?:\.\d+)?)([%％])>', re.I)
+YEP_C4 = re.compile(r'<(?:ELEMENT MAGNIFY) (.*): ([+\-]\d+(?:\.\d+)?)([%％])>', re.I)
+YEP_CRIT = re.compile(r'<(?:CRITICAL MULTIPLIER): ([+\-]\d+)([%％])>', re.I)
+YEP_MULTI1 = re.compile(r'<MULTIPLE ELEMENTS:[ ]*(\d+(?:\s*,\s*\d+)*)>', re.I)
+YEP_MULTI2 = re.compile(r'<MULTIPLE ELEMENTS: (\d+) (?:THROUGH|to) (\d+)>', re.I)
+
+
+def parse_yep(note, element_ids):
+    amp, ampn, mag, crit, multi = {}, {}, {}, 0.0, []
+    for line in re.split(r'[\r\n]+', note or ''):
+        def eid(name):
+            return element_ids.get(name.upper().strip())
+        if m := YEP_C1.search(line):
+            amp[m.group(1)] = amp.get(m.group(1), 0) + float(m.group(2)) * 0.01
+        elif (m := YEP_C2.search(line)) and eid(m.group(1)):
+            k = str(eid(m.group(1))); amp[k] = amp.get(k, 0) + float(m.group(2)) * 0.01
+        elif m := YEP_CN1.search(line):
+            ampn[m.group(1)] = ampn.get(m.group(1), 0) + float(m.group(2))
+        elif (m := YEP_CN2.search(line)) and eid(m.group(1)):
+            k = str(eid(m.group(1))); ampn[k] = ampn.get(k, 0) + float(m.group(2))
+        elif m := YEP_C3.search(line):
+            mag[m.group(1)] = float(m.group(2)) * 0.01
+        elif (m := YEP_C4.search(line)) and eid(m.group(1)):
+            mag[str(eid(m.group(1)))] = float(m.group(2)) * 0.01
+        if m := YEP_CRIT.search(line):
+            crit = float(m.group(1)) * 0.01
+        if m := YEP_MULTI2.search(line):
+            multi += list(range(int(m.group(1)), int(m.group(2)) + 1))
+        elif m := YEP_MULTI1.search(line):
+            multi += [int(x) for x in re.findall(r'\d+', m.group(1))]
+    out = {}
+    if amp: out['elementAmplify'] = amp
+    if ampn: out['elementAmplifyN'] = ampn
+    if mag: out['elementMagnify'] = mag
+    if crit: out['critMultBonus'] = crit
+    if multi: out['multipleElements'] = multi
+    return out
+
+
 def load_json(path):
     return json.loads(path.read_text(encoding='utf-8'))
 
@@ -98,12 +175,20 @@ class Exporter:
 
     # ---- 数据库 ----
     def export_db(self):
+        system = self.read('data/System.json')
+        element_ids = {n.upper().strip(): i for i, n in enumerate(system['elements']) if n}
         for name in TABLES:
             data = self.read(f'data/{name}.json')
             if isinstance(data, list):
                 for rec in data:
                     if isinstance(rec, dict) and 'note' in rec:
                         rec['meta'] = extract_meta(rec['note'])
+                    if isinstance(rec, dict) and 'note' in rec:
+                        yep = parse_yep(rec['note'], element_ids)
+                        if yep:
+                            rec['yep'] = yep
+                    if name == 'States' and isinstance(rec, dict):
+                        rec['effects'] = parse_state_effects(rec['note'])
                     if isinstance(rec, dict) and isinstance(rec.get('damage'), dict):
                         gd, why = translate_formula(rec['damage'].get('formula'), rec.get('id', 0))
                         rec['damage']['formulaGd'] = gd
@@ -111,6 +196,15 @@ class Exporter:
                             rec['damage']['formulaIssue'] = why
             self.db[name] = data
             self.write_json(f'db/{name}.json', data)
+
+    def export_plugins(self):
+        """启用插件的参数（难度倍率表等）。plugins.js 是 JS，取出其中的 JSON 数组。"""
+        rel = 'js/plugins.js'
+        b = (self.app / rel).read_bytes()
+        self.inputs[rel] = sha(b)
+        text = b.decode('utf-8')
+        plugins = json.loads(text[text.index('['):text.rindex(']') + 1])
+        self.write_json('db/Plugins.json', {p['name']: p['parameters'] for p in plugins if p.get('status')})
 
     # ---- 切片引用收集 ----
     def ref_img(self, folder, name):
@@ -234,11 +328,14 @@ class Exporter:
                 self.outputs[f'{kind}/{rel}{ext}'] = sha(src.read_bytes())
 
     def run(self):
-        if self.out.exists():
-            shutil.rmtree(self.out)
-        self.out.mkdir(parents=True)
+        # 只清理本工具生成的部分；oracle/ 由 mv_oracle/slice_probe.cjs 写入，保留
+        for sub in ('db', 'maps', 'img', 'audio'):
+            if (self.out / sub).exists():
+                shutil.rmtree(self.out / sub)
+        self.out.mkdir(parents=True, exist_ok=True)
         pkg = load_json(self.app / 'package.json')
         self.export_db()
+        self.export_plugins()
         self.collect_slice()
         self.copy_assets()
         untranslated = []

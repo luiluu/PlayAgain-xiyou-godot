@@ -1,66 +1,95 @@
-// 首期切片探针：在正式 v0.04 引擎里新开一局，输出角色/敌人能力值与伤害（分散度清零、无会心），
-// 作为 Godot 实现的对照基准。用法：node slice_probe.cjs [难度ID] > 输出.json
+// 首期切片探针：在正式 v0.04 引擎里按真实开局状态新开一局，输出能力值与伤害明细，作为 Godot 实现的对照基准。
+// 开局被动（技能学会后按战斗开始的方式刷新被动缓存）：暴爽(2747)、天道诅咒(6168)、难度适应(5980，简单~困难)；战斗开始状态 995/1691 直接附加。
+// 伤害：分散度清零、不会心；value=CodexDamage 结算值，final=再经 YEP 状态 Confirm/React 脚本后的值。
+// 敌群生成时 Math.random 固定为 0.99（避开精英/神话随机），之后固定 0.5。
+// 用法：node slice_probe.cjs [难度ID...]  → 写入 01_Godot工程/modes/xiyou/generated/oracle/slice_d<N>.json
 'use strict';
+const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
-const difficulty = Number(process.argv[2] || 3);
-const r = boot(APP, {tolerant: true, log: false});
-const w = r.window;
-// 全新玩家：配置全部取默认值（无通关加成等跨存档数据）
-w.eval('ConfigManager.applyData({}); DataManager.setupNewGame();');
-if (w.$gameSystem.setDifficultyId) w.$gameSystem.setDifficultyId(difficulty);
-else if (w.Vitsuno && w.Vitsuno.Difficulty) w.Vitsuno.Difficulty.setId(difficulty);
+const OUT = path.resolve(__dirname, '../../01_Godot工程/modes/xiyou/generated/oracle');
+const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));
+const ACTORS = SLICE.actors, TROOPS = SLICE.troops;
+// 与 dsPassiveSkill 战斗开始时相同：先清空被动缓存再刷新一次（直接多次 refresh 会重复累加）
+const battleRefresh = a => { if (a.initPassiveCache) { a.initPassiveCache(); a.refreshPassiveCache(); } };
 const P = ['mhp', 'mmp', 'atk', 'def', 'mat', 'mdf', 'agi', 'luk'];
 const X = ['hit', 'eva', 'cri', 'cev', 'mev', 'mrf', 'cnt', 'hrg', 'mrg', 'trg'];
 const S = ['tgr', 'grd', 'rec', 'pha', 'mcr', 'tcr', 'pdr', 'mdr', 'fdr', 'exr'];
-const snap = b => ({param: P.map(k => b[k]), xparam: X.map(k => +b[k].toFixed(4)), sparam: S.map(k => +b[k].toFixed(4)),
-  elementRates: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(e => +b.elementRate(e).toFixed(4))});
-const out = {difficulty, difficultyName: null, actors: {}, enemies: {}, damage: []};
-try { out.difficultyName = w.$gameSystem.difficultyName ? w.$gameSystem.difficultyName() : null; } catch (e) {}
-const ACTORS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-for (const id of ACTORS) {
-  const a = w.$gameActors.actor(id);
-  out.actors[id] = {name: a.name(), lv1: snap(a), equips: a.equips().map(e => e ? e.id : 0), skills: a.skills().map(s => s.id)};
-  a.changeLevel(10, false);
-  out.actors[id].lv10 = snap(a);
-  a.changeLevel(1, false);
-}
-// 数组须在游戏窗口的 realm 里创建，MV 给 Array.prototype 加的 contains 等方法才可用
-w.eval('$gameParty._actors = []; [1, 8, 9, 10].forEach(function(id){ $gameParty.addActor(id); });');
-for (const tid of [2, 4]) {
-  w.$gameTroop.setup(tid);
-  w.$gameTroop.members().forEach((e, i) => { out.enemies[tid + ':' + i] = {id: e.enemyId(), name: e.name(), ...snap(e)}; });
-}
-// 伤害：Math.random 固定，分散度置 0，不会心
-w.Math.random = () => 0.5;
-for (const tid of [2, 4]) {
-  w.$gameTroop.setup(tid);
-  const target = w.$gameTroop.members()[0];
+const r6 = x => typeof x === 'number' ? +x.toFixed(6) : x;
+const snap = b => ({param: P.map(k => b[k]), xparam: X.map(k => r6(b[k])), sparam: S.map(k => r6(b[k])),
+  elementRates: [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15].map(e => r6(b.elementRate(e)))});
+const brief = bd => bd && {base: r6(bd.base), basis: r6(bd.basis), weights: (bd.weights || []).map(r6), normal: r6(bd.normal), terminal: r6(bd.terminal),
+  row: bd.rows && bd.rows[0] && Object.fromEntries(Object.entries(bd.rows[0]).map(([k, v]) => [k, r6(v)]))};
+
+function run(difficulty) {
+  const w = boot(APP, {tolerant: true, log: false, allowWrite: [OUT]}).window;
+  w.eval('ConfigManager.applyData({}); DataManager.setupNewGame(); $gameSystem.setDifficultyId(' + difficulty + ');');
+  // 开局公共事件「初始化」(812) 会把公式用到的变量置 0；这里不跑事件，统一把未定义变量当 0（Godot 版同样处理）
+  w.eval('for (var i = 1; i < 5000; i++) if ($gameVariables._data[i] === undefined) $gameVariables._data[i] = 0;');
+  const passives = [2747, 6168].concat(difficulty >= 2 && difficulty <= 4 ? [5980] : []);
+  const startStates = [995].concat(difficulty >= 2 && difficulty <= 4 ? [1691] : []);
+  const out = {difficulty, difficultyName: w.$gameSystem.difficultyName(), passives, startStates, actors: {}, enemies: {}, damage: []};
   for (const id of ACTORS) {
     const a = w.$gameActors.actor(id);
-    const skills = [1].concat(w.$dataClasses[a._classId].learnings.filter(l => l.level <= 20).map(l => l.skillId));
-    for (const sid of skills) {
-      const item = w.$dataSkills[sid];
-      if (!item || !item.damage.type) continue;
-      const saved = item.damage.variance; item.damage.variance = 0;
-      const act = new w.Game_Action(a); act.setSkill(sid);
-      let value = null, err = null;
-      try { value = act.makeDamageValue(target, false); } catch (e) { err = String(e.message || e); }
-      item.damage.variance = saved;
-      out.damage.push({troop: tid, actor: id, skill: sid, skillName: item.name, formula: item.damage.formula, type: item.damage.type,
-        element: item.damage.elementId, base: (() => { try { return act.evalDamageFormula(target); } catch (e) { return null; } })(), value, err});
+    passives.forEach(s => a.learnSkill(s));
+    battleRefresh(a);
+    const row = {name: a.name(), classId: a._classId, equips: a.equips().map(e => e ? {id: e.id, base: e.baseItemId || e.id, name: e.name} : null), skills: a.skills().map(s => s.id)};
+    row.lv1 = snap(a);
+    startStates.forEach(s => a.addState(s));
+    battleRefresh(a);
+    row.lv1Battle = snap(a);
+    a.changeLevel(10, false); battleRefresh(a);
+    row.lv10Battle = snap(a);
+    a.changeLevel(1, false); battleRefresh(a);
+    out.actors[id] = row;
+  }
+  w.eval('$gameParty._actors = []; [1, 8, 9, 10].forEach(function(id){ $gameParty.addActor(id); });');
+  for (const tid of TROOPS) {
+    w.Math.random = () => 0.99;
+    w.$gameTroop.setup(tid);
+    w.Math.random = () => 0.5;
+    const members = w.$gameTroop.members();
+    members.forEach(e => e.refreshPassiveCache && e.refreshPassiveCache());
+    out.enemies[tid] = members.map(e => ({id: e.enemyId(), name: e.name(), ...snap(e)}));
+    const target = members[0];
+    if (!target) continue;
+    for (const id of ACTORS) {
+      const a = w.$gameActors.actor(id);
+      const skills = [1].concat(w.$dataClasses[a._classId].learnings.filter(l => l.level <= 20).map(l => l.skillId));
+      for (const sid of skills) {
+        const item = w.$dataSkills[sid];
+        if (!item || !item.damage.type) continue;
+        out.damage.push(measure(w, a, target, sid, {troop: tid, actor: id}));
+      }
+    }
+    for (const act0 of w.$dataEnemies[target.enemyId()].actions) {
+      if (w.$dataSkills[act0.skillId].damage.type) out.damage.push(measure(w, target, w.$gameActors.actor(9), act0.skillId, {troop: tid, enemy: target.enemyId(), target: 9}));
     }
   }
-  const enemy = w.$gameTroop.members()[0];
-  for (const act0 of w.$dataEnemies[enemy.enemyId()].actions) {
-    const item = w.$dataSkills[act0.skillId];
-    if (!item.damage.type) continue;
-    const saved = item.damage.variance; item.damage.variance = 0;
-    const act = new w.Game_Action(enemy); act.setSkill(act0.skillId);
-    let value = null; try { value = act.makeDamageValue(w.$gameActors.actor(9), false); } catch (e) { value = 'ERR ' + e.message; }
-    item.damage.variance = saved;
-    out.damage.push({troop: tid, enemy: enemy.enemyId(), skill: act0.skillId, skillName: item.name, target: 9, value});
-  }
+  return out;
 }
-process.stdout.write(JSON.stringify(out, null, 1));
+
+function measure(w, user, target, sid, tag) {
+  const item = w.$dataSkills[sid], saved = item.damage.variance;
+  item.damage.variance = 0;
+  const act = new w.Game_Action(user); act.setSkill(sid);
+  act.itemCri = () => 0;
+  const row = {...tag, skill: sid, skillName: item.name, type: item.damage.type, element: item.damage.elementId, physical: act.isPhysical(), magical: act.isMagical()};
+  try {
+    row.value = act.makeDamageValue(target, false);
+    row.breakdown = brief(act._codexDamageBreakdown);
+    row.final = act.onPreDamageStateEffects ? act.onPreDamageStateEffects(target, row.value) : row.value;
+  } catch (e) { row.error = String(e.message || e); }
+  item.damage.variance = saved;
+  return row;
+}
+
+fs.mkdirSync(OUT, {recursive: true});
+const ids = process.argv.slice(2).map(Number);
+for (const d of ids.length ? ids : [2, 3, 4]) {
+  const data = run(d);
+  fs.writeFileSync(path.join(OUT, 'slice_d' + d + '.json'), JSON.stringify(data, null, 1));
+  console.log('difficulty', d, data.difficultyName, 'actors', Object.keys(data.actors).length, 'damage rows', data.damage.length,
+    'errors', data.damage.filter(x => x.error).length);
+}
 process.exit(0);

@@ -1,0 +1,296 @@
+class_name XActor
+extends XBattler
+## 角色：MV Game_Actor ＋ dsPassiveSkill 的被动规则（按标签本意实现，不复制正式版的重复累加问题）。
+## 装备是实例：{"kind": "weapon"/"armor", "base": 基础ID, "params": [...], "traits": [...], "note", "meta", "yep"}。
+
+var actor_id := 0
+var class_id := 0
+var _lv := 1
+var exp_total := 0
+var nickname := ""
+var skill_ids: Array[int] = []
+var equips: Array = []      # 每个装备槽一个实例或 null
+var _passive_cache := {}    # 由 refresh_passive() 生成；能力值/技能变化后需刷新
+
+
+func setup(id: int) -> XActor:
+	actor_id = id
+	var d := data()
+	class_id = int(d.classId)
+	_lv = int(d.initialLevel)
+	nickname = str(d.get("nickname", ""))
+	exp_total = exp_for_level(_lv)
+	equips.resize(equip_slots().size())
+	var init: Array = d.get("equips", [])
+	for i in range(equips.size()):
+		var item_id := int(init[i]) if i < init.size() and init[i] != null else 0
+		equips[i] = make_equip("weapon" if i == 0 else "armor", item_id) if item_id > 0 else null
+	for l in class_data().get("learnings", []):
+		if int(l.level) <= _lv:
+			learn_skill(int(l.skillId))
+	release_unequippable()
+	refresh_passive()
+	recover_all()
+	return self
+
+
+func data() -> Dictionary:
+	return XDB.rec("Actors", actor_id)
+
+func class_data() -> Dictionary:
+	return XDB.rec("Classes", class_id)
+
+func is_actor() -> bool:
+	return true
+
+func display_name() -> String:
+	return str(data().get("name", ""))
+
+func _level() -> int:
+	return _lv
+
+
+# ---- 装备 ----
+## 西游正式版每位角色 19 个槽，对应 System.equipTypes 1..19。
+func equip_slots() -> Array:
+	var out := []
+	for i in range(1, XDB.system().equipTypes.size()):
+		out.append(i)
+	return out
+
+static func make_equip(kind: String, base_id: int) -> Dictionary:
+	var src := XDB.rec("Weapons" if kind == "weapon" else "Armors", base_id)
+	if src.is_empty():
+		return {}
+	var inst := src.duplicate(true)
+	inst["kind"] = kind
+	inst["base"] = base_id
+	return inst
+
+## MV Game_Actor.canEquip：武器/防具类型由特性 51/52（及被动 passiveEWPN/EARM）放行，特性 54 封印装备类型；
+## zbxz 插件的 <req_level:N> 等级需求。
+func can_equip(item: Dictionary) -> bool:
+	if item.is_empty():
+		return false
+	if traits_set(54).has(int(item.etypeId)):
+		return false
+	var req := int(item.get("meta", {}).get("req_level", 0))
+	if req > _lv:
+		return false
+	if item.kind == "weapon":
+		var wt := int(item.wtypeId)
+		return traits_set(51).has(wt) or not passive_values("passiveEWPN%02d" % wt).is_empty()
+	var at := int(item.atypeId)
+	return traits_set(52).has(at) or not passive_values("passiveEARM%02d" % at).is_empty()
+
+## 槽位类型不符或不能装备的卸下（MV releaseUnequippableItems，反复直到稳定）。
+func release_unequippable() -> Array:
+	var removed := []
+	var slots := equip_slots()
+	var changed := true
+	while changed:
+		changed = false
+		for i in range(equips.size()):
+			var e = equips[i]
+			if e != null and not e.is_empty() and (int(e.etypeId) != int(slots[i]) or not can_equip(e)):
+				removed.append(e)
+				equips[i] = null
+				changed = true
+	return removed
+
+func equip_list() -> Array:
+	return equips.filter(func(e): return e != null and not e.is_empty())
+
+
+# ---- 等级与经验（MV Game_Actor.expForLevel）----
+func exp_for_level(lv: int) -> int:
+	var p: Array = class_data().expParams
+	var basis := float(p[0])
+	var extra := float(p[1])
+	var acc_a := float(p[2])
+	var acc_b := float(p[3])
+	return int(roundf(basis * pow(lv - 1, 0.9 + acc_a / 250.0) * lv * (lv + 1) / (6.0 + pow(lv, 2) / 50.0 / acc_b) + (lv - 1) * extra))
+
+func max_level() -> int:
+	return int(data().get("maxLevel", 99))
+
+func change_level(lv: int) -> void:
+	_lv = clampi(lv, 1, max_level())
+	exp_total = exp_for_level(_lv)
+	for l in class_data().get("learnings", []):
+		if int(l.level) <= _lv:
+			learn_skill(int(l.skillId))
+	refresh_passive()
+
+## 获得经验，返回升了几级。
+func gain_exp(amount: int) -> int:
+	var before := _lv
+	exp_total += int(roundf(amount * exr))
+	while _lv < max_level() and exp_total >= exp_for_level(_lv + 1):
+		_lv += 1
+		for l in class_data().get("learnings", []):
+			if int(l.level) == _lv:
+				learn_skill(int(l.skillId))
+	if _lv != before:
+		refresh_passive()
+	return _lv - before
+
+
+# ---- 技能 ----
+func learn_skill(id: int) -> void:
+	if not skill_ids.has(id) and not XDB.rec("Skills", id).is_empty():
+		skill_ids.append(id)
+		skill_ids.sort()
+
+func skills() -> Array:
+	var ids: Array[int] = skill_ids.duplicate()
+	for t in all_traits():
+		if int(t.code) == TRAIT_SKILL_ADD and not ids.has(int(t.dataId)):
+			ids.append(int(t.dataId))
+	var out := []
+	for id in ids:
+		var s := XDB.rec("Skills", id)
+		if not s.is_empty():
+			out.append(s)
+	return out
+
+
+# ---- 特性对象 ----
+func trait_objects() -> Array:
+	var out := [data(), class_data()]
+	out.append_array(equip_list())
+	out.append_array(states())
+	return out
+
+
+# ---- dsPassiveSkill：被动标签只从已有技能读取 ----
+func passive_values(tag: String) -> Array:
+	var out := []
+	for s in skills():
+		var m: Dictionary = s.get("meta", {})
+		if m.has(tag):
+			out.append(m[tag])
+	return out
+
+static func _num(v) -> float:
+	var r := RegEx.create_from_string("[-+]?\\d*\\.?\\d+")
+	var m := r.search(str(v))
+	return float(m.get_string()) if m else 0.0
+
+static func _param_boost(base: float, meta) -> float:
+	var s := str(meta)
+	return floorf(base * _num(s) * 0.01) if s.contains("%") else _num(s)
+
+func _condition(cond: String, value: float) -> bool:
+	match cond:
+		"HPUP": return hp_rate() >= value * 0.01
+		"HPLW": return hp_rate() <= value * 0.01
+		"MPUP": return mp / maxf(mmp, 1.0) >= value * 0.01
+		"MPLW": return mp / maxf(mmp, 1.0) <= value * 0.01
+	return false
+
+## 被动标签的编号只取一位（原插件 ('0'+id).slice(-1)）
+func _tag(prefix: String, i: int) -> String:
+	return prefix + str(i % 10)
+
+func param_base_direct(i: int) -> float:
+	var params: Array = class_data().params
+	return float(params[i][_lv])
+
+func param_base(i: int) -> float:
+	var base := param_base_direct(i)
+	var v := base
+	for m in passive_values(_tag("passivePBST", i)):
+		v += _param_boost(base, m)
+	for m in passive_values(_tag("passivePBSTEX", i)):
+		var parts := str(m).split(",")
+		if parts.size() >= 3 and _condition(parts[1].strip_edges(), float(parts[2])):
+			v += _param_boost(base, parts[0])
+	return v
+
+## 装备属性；被动 passiveWPNMxx / passiveARMMxx 按武器/防具类型放大该装备的正值属性。
+func param_plus(i: int) -> float:
+	var v := 0.0
+	for e in equip_list():
+		var p := float(e.params[i])
+		v += p
+		if p > 0.0:
+			var tag := ("passiveWPNM%02d" % int(e.wtypeId)) if e.kind == "weapon" else ("passiveARMM%02d" % int(e.atypeId))
+			for m in passive_values(tag):
+				v += _param_boost(p, m)
+	return v
+
+## 正式版运行时对角色命中率保底 0.9（命中 = xparam 0）。
+func xparam(i: int) -> float:
+	var v := super.xparam(i)
+	for m in passive_values(_tag("passiveXPBST", i)):
+		v += _num(m) * 0.01
+	return maxf(0.9, v) if i == 0 else v
+
+func sparam(i: int) -> float:
+	var v := traits_pi(TRAIT_SPARAM, i)
+	for m in passive_values(_tag("passiveSPBST", i)):
+		v += _num(m) * 0.01
+	if i == 6 or i == 7:
+		return additive_rate(TRAIT_SPARAM, i, v, [])
+	return v
+
+func passive_element_values(e: int) -> Array:
+	return passive_values("passiveELEM%02d" % e).map(func(m): return _num(m) / 100.0)
+
+
+# ---- 伤害结算用的被动缓存（dsPassiveSkill refreshPassiveCache，单次汇总）----
+func refresh_passive() -> void:
+	var c := {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "skillPass": {}, "skillTypeDvup": {},
+		"SkETypeHarmRi": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0, "itemRateUp": 0.0}
+	var objs := equip_list() + skills() + states()
+	for o in objs:
+		var note := str(o.get("note", ""))
+		var meta: Dictionary = o.get("meta", {})
+		for m in _scan(note, "<passiveHarmRe(\\d+):\\s*([\\d.]+)>"):
+			c.harmRe[int(m[0])] = c.harmRe.get(int(m[0]), 0.0) + float(m[1])
+		for m in _scan(note, "<DepassiveHarmRe(\\d+):\\s*([\\d.]+%?)>"):
+			var key := "penetratePercent" if m[1].contains("%") else "penetrateFixed"
+			c[key][int(m[0])] = c[key].get(int(m[0]), 0.0) + _num(m[1])
+		for k in meta:
+			if str(k).begins_with("SkillPass"):
+				var sid := int(str(k).substr(9))
+				var row: Dictionary = c.skillPass.get(sid, {"rate": 0.0, "flat": 0.0})
+				if str(meta[k]).contains("%"):
+					row.rate += _num(meta[k]) / 100.0
+				else:
+					row.flat += _num(meta[k])
+				c.skillPass[sid] = row
+		for m in _scan(note, "<SkillTypesDvup([A-Za-z]+):\\s*([\\d.]+%?)>"):
+			c.skillTypeDvup[m[0]] = c.skillTypeDvup.get(m[0], 0.0) + _num(m[1]) / 100.0
+		for m in _scan(note, "<SkETypeHarmRi(\\d+):\\s*([\\d.]+%?)>"):
+			c.SkETypeHarmRi[int(m[0])] = c.SkETypeHarmRi.get(int(m[0]), 0.0) + _num(m[1]) / 100.0
+		for m in _scan(note, "(?i)<passiveHarmRi:([-]?\\d+(?:\\.\\d+)?)(%?)>"):
+			c.globalHarmRi += float(m[0]) / 100.0
+		for m in _scan(note, "(?i)<passiveCrHarmRi:([-]?\\d+(?:\\.\\d+)?)(%?)>"):
+			c.critHarmRi += float(m[0]) / 100.0
+		if meta.has("passiveIRUP"):
+			c.itemRateUp += _num(meta.passiveIRUP)
+	_passive_cache = c
+
+func passive_cache() -> Dictionary:
+	return _passive_cache
+
+static func _scan(text: String, pattern: String) -> Array:
+	var out := []
+	for m in RegEx.create_from_string(pattern).search_all(text):
+		var g := []
+		for i in range(1, m.get_group_count() + 1):
+			g.append(m.get_string(i))
+		out.append(g)
+	return out
+
+
+## 战斗开始：StartPushState 标签（概率）给自己加状态，再刷新被动缓存。
+func on_battle_start() -> void:
+	for o in equip_list() + skills():
+		for k in o.get("meta", {}):
+			var m := RegEx.create_from_string("^StartPushState(\\d+)$").search(str(k))
+			if m and randf() * 100.0 < _num(o.meta[k]):
+				add_state(int(m.get_string(1)))
+	refresh_passive()
