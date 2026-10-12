@@ -4,7 +4,7 @@ extends RefCounted
 ## 伤害交给 XDamage（与正式版对照过），这里负责命中/闪避/会心、技能消耗、效果、状态回合、敌人 AI、奖励。
 ## 每次行动返回一组记录（log），画面层按记录播放；无界面测试也直接用这些记录。
 ## 另含：技能冷却/预热（YEP_X_SkillCooldowns）、战斗中用物品、反击/魔法反射（MV invokeAction）、神话敌人（XEnemy）。
-## 首期精简：OTB 行动顺序条、追加行动不做。
+## 行动顺序按 Olivia_BattleSysOTB（见「回合」一节）。
 
 const DEATH_STATE := 1
 const GUARD_SKILL := 2
@@ -51,6 +51,7 @@ func setup(troop: int, s: XState) -> void:
 		a.on_battle_start()
 	for b in actors + enemies:
 		b.start_warmups()
+	_escape_ratio = 0.5 * _avg_agi(actors) / maxf(_avg_agi(enemies), 1.0)
 
 
 func alive(list: Array) -> Array:
@@ -227,53 +228,270 @@ func auto_action(a: XActor) -> Array:
 	return [best, target]
 
 
-# ---- 回合 ----
-## commands: actor -> [skill, target]；返回本回合按顺序的行动记录。
-func run_turn(commands: Dictionary) -> Array:
+# ---- 回合（Olivia_BattleSysOTB：行动顺序回合制）----
+## 正式版强制使用 OTB（Force Battle System = true）。与 MV 默认回合制不同：
+## - 不再「全员先选指令再统一执行」，而是按行动顺序轮到谁、谁当场选指令并立即行动。
+## - 每回合开始时同时排好「当前回合」和「下个回合」两条顺序；下一回合直接沿用已排好的顺序。
+##   速度 = 敏捷 + 随机(0 ~ 5+敏捷/4 - 1)（Static AGI Calculation = false）；不能行动者速度为无穷大（醒来后排最前）。
+## - 技能速度不再参与排序，而是使用后把自己在下个回合的位置前移「速度」格（Action Speed Convert）：
+##   攻击速度 -1 → 后移 1 格；防御速度 2000 → 移到最前。物品不移位（只有技能付费时触发）。
+## - 增加敏捷增益的技能命中后，目标下个回合前移 1 格（Buff/Debuff AGI Convert；正式版减益判断写错，不移位，照搬）。
+## - 追加行动（特性 61）：同一人在顺序中连续出现多次；正式版改为每回合最多 5 次（文件末尾的修复段）。
+## - 无法行动（死亡、行动限制）的人从当前回合移除；下个回合若一回合后仍不能动也移除；恢复行动时补回顺序末尾。
+## 未移植：正式版超过上限的追加行动换算成永久伤害加成（_actionDMG，只累加不清零），见 数值平衡.md。
+
+const OTB_MAX_ACTIONS := 5
+const AGI_PARAM := 6
+
+var current_order: Array = []   # 本回合尚未行动的顺序（XBattler，可重复）
+var next_order: Array = []      # 下个回合的顺序
+var _orders_made := false
+var _acted := {}                # XBattler -> 本回合已行动次数（_otbTimesActedThisTurn）
+var _speed := {}                # XBattler -> 最近一次排序时的速度
+var _escape_ratio := -1.0
+
+
+## 回合开始（YEP startTurn）：回合数 +1、冷却 -1、排顺序。
+func start_turn() -> void:
 	turn += 1
 	# YEP_X_SkillCooldowns：Game_Troop.increaseTurn 时双方冷却/预热各减 1
 	for b in actors + enemies:
 		b.update_cooldowns()
-	var order := []
-	for a in alive(actors):
-		var cmd: Array = commands.get(a, auto_action(a) if auto else [XDB.rec("Skills", ATTACK_SKILL), null])
-		if cmd[0] == null:
-			continue  # 本回合不行动（如逃跑失败）
-		order.append({"user": a, "skill": cmd[0], "target": cmd[1]})
-	for e in alive(enemies):
-		order.append({"user": e, "skill": enemy_action(e), "target": null})
-	for o in order:
-		var u: XBattler = o.user
-		o.speed = u.agi + randi_range(0, floori(5 + u.agi / 4.0)) + int(o.skill.get("speed", 0))
-		if int(o.skill.id) == ATTACK_SKILL:
-			o.speed += u.traits_sum_all(XBattler.TRAIT_ATTACK_SPEED)
-	order.sort_custom(func(x, y): return x.speed > y.speed)
+	_make_action_orders()
+
+
+## 取出下一位行动者；本回合结束时返回 null。
+func next_subject() -> XBattler:
+	while not current_order.is_empty():
+		var b: XBattler = current_order.pop_front()
+		if b.is_alive() and (actors.has(b) or enemies.has(b)):
+			return b
+	return null
+
+
+## 行动者当场决定的行动：敌人按 AI，角色在自动战斗时按自动规则，否则普通攻击。返回 [技能, 目标]。
+func decide(b: XBattler) -> Array:
+	if b is XEnemy:
+		return [enemy_action(b), null]
+	return auto_action(b) if auto else [XDB.rec("Skills", ATTACK_SKILL), null]
+
+
+## 执行一位行动者的一次行动，返回记录。skill 为 null 表示放弃本次行动（逃跑失败）。
+func act(u: XBattler, skill, target) -> Array:
 	var logs := []
-	for o in order:
-		var u: XBattler = o.user
-		if u.is_dead() or is_won() or is_lost():
-			continue
-		if _restricted(u):
-			logs.append({"type": "skip", "user": u})
-			continue
-		if int(o.skill.id) == GUARD_SKILL:
-			u.guarding = true
-			logs.append({"type": "guard", "user": u})
-			continue
-		logs.append_array(execute(u, o.skill, o.target))
-		_tick_states(u, 1)
+	var before := _movable_snapshot()
+	if is_won() or is_lost() or u.is_dead():
+		return logs
+	if not can_move(u):
+		logs.append({"type": "skip", "user": u})
+	elif skill == null:
+		pass
+	elif int(skill.id) == GUARD_SKILL and not is_item(skill):
+		u.guarding = true
+		_otb_user_shift(u, skill)
+		logs.append({"type": "guard", "user": u})
+	else:
+		logs.append_array(execute(u, skill, target))
+	_acted[u] = int(_acted.get(u, 0)) + 1
+	_tick_states(u, 1)
+	_sync_orders(before, true)
+	return logs
+
+
+## 回合结束（MV onTurnEnd）：解除防御、再生、状态回合 -1；恢复行动的人只补进下个回合。
+func end_turn() -> Array:
+	var logs := []
+	var before := _movable_snapshot()
 	for b in actors + enemies:
 		b.guarding = false
 		if b.is_alive():
 			_tick_states(b, 2)
 			_regenerate(b, logs)
+	_acted.clear()
+	_sync_orders(before, false)
 	return logs
+
+
+## 无界面测试用：跑完一整个回合。commands: actor -> [技能, 目标]（[null, null] 表示放弃）。
+func run_turn(commands: Dictionary) -> Array:
+	start_turn()
+	var logs := []
+	while true:
+		var u := next_subject()
+		if u == null or is_won() or is_lost():
+			break
+		var cmd: Array = commands.get(u, decide(u)) if u is XActor else decide(u)
+		logs.append_array(act(u, cmd[0], cmd[1]))
+	if not is_won() and not is_lost():
+		logs.append_array(end_turn())
+	return logs
+
+
+func can_move(b: XBattler) -> bool:
+	return b.is_alive() and not _restricted(b)
 
 func _restricted(b: XBattler) -> bool:
 	for s in b.states():
 		if int(s.restriction) >= 4:
 			return true
 	return false
+
+
+## OTB makeActionOrdersOTB：当前回合 = 上回合排好的「下个回合」；再排新的「下个回合」。
+## 首回合另排一次当前回合（速度重新随机）。排序稳定，同速时我方在前（JS sort 稳定）。
+func _make_action_orders() -> void:
+	if _orders_made:
+		current_order = next_order
+	next_order = _sorted_by_speed(alive(actors) + alive(enemies))
+	if not _orders_made:
+		current_order = _sorted_by_speed(actors + enemies)
+		_action_times_modification(current_order)
+	_clear_unable()
+	_action_times_modification(next_order)
+	_orders_made = true
+
+
+func _sorted_by_speed(list: Array) -> Array:
+	var keyed := []
+	for i in range(list.size()):
+		var b: XBattler = list[i]
+		var sp := INF
+		if can_move(b):
+			var a := b.agi
+			sp = a + randi_range(0, maxi(floori(5 + a / 4.0), 1) - 1)
+		_speed[b] = sp
+		keyed.append([sp, i, b])
+	keyed.sort_custom(func(x, y): return x[0] > y[0] or (x[0] == y[0] and x[1] < y[1]))
+	return keyed.map(func(k): return k[2])
+
+
+## 追加行动：按 MV makeActionTimes 掷骰，在此人第一次出现的位置连续插入；每回合总数不超过 5。
+func _action_times_modification(order: Array) -> void:
+	for b in actors + enemies:
+		if not order.has(b):
+			continue
+		var existing := order.count(b)
+		var max_extra := OTB_MAX_ACTIONS - existing
+		if max_extra <= 0:
+			continue
+		var n := mini(make_action_times(b) - 1, max_extra)
+		var at := order.find(b)
+		for i in range(n):
+			order.insert(at, b)
+
+
+## MV makeActionTimes：每个「追加行动」特性按几率各加 1 次。
+func make_action_times(b: XBattler) -> int:
+	var n := 1
+	for t in b.all_traits():
+		if int(t.code) == 61 and int(t.dataId) == 0 and randf() < float(t.value):
+			n += 1
+	return n
+
+
+## otbClearActionOrdersOfUnableBattlers
+func _clear_unable() -> void:
+	var members := actors + enemies
+	current_order = current_order.filter(func(b): return members.has(b) and can_move(b))
+	next_order = next_order.filter(func(b): return members.has(b) and b.is_alive() and (can_move(b) or _movable_after_turn_end(b)))
+
+
+## 下个回合是否能动：模拟一次回合结束的状态回合递减（YEP updateStateTurns 会移除到期的回合结束型状态）。
+func _movable_after_turn_end(b: XBattler) -> bool:
+	if b.is_dead():
+		return false
+	for id in b.state_ids:
+		var st := XDB.rec("States", id)
+		if int(st.get("restriction", 0)) < 4:
+			continue
+		if int(st.get("autoRemovalTiming", 0)) == 2 and int(b.state_turns.get(id, 1)) <= 1:
+			continue
+		return false
+	return true
+
+
+func _movable_snapshot() -> Dictionary:
+	var out := {}
+	for b in actors + enemies:
+		out[b] = can_move(b)
+	return out
+
+
+## 行动/回合结束后：刚失去行动能力的移出顺序；刚恢复的补回（otbInsertRevivalActionOrders）。
+## 回合结束时只补下个回合（正式版 onTurnEnd 临时关闭 Current Turn Wakeup）。
+func _sync_orders(before: Dictionary, allow_current: bool) -> void:
+	var lost := false
+	for b in before:
+		var now := can_move(b)
+		if before[b] and not now:
+			lost = true
+		elif not before[b] and now:
+			if allow_current and make_action_times(b) > int(_acted.get(b, 0)):
+				_insert_orders(b, current_order)
+			_insert_orders(b, next_order)
+	if lost:
+		_clear_unable()
+
+
+func _insert_orders(b: XBattler, order: Array) -> void:
+	if order.has(b):
+		return
+	var times := maxi(make_action_times(b) - int(_acted.get(b, 0)), 1)
+	for i in range(times):
+		order.append(b)
+
+
+## otbNextTurnChange：把 b 在顺序中的每个位置前移 change 格（负数后移），不越过速度无穷大的人。
+func _shift(b: XBattler, change: int, current: bool) -> void:
+	var order := current_order if current else next_order
+	var idx := []
+	for i in range(order.size()):
+		if order[i] == b:
+			idx.append(i)
+	if idx.is_empty():
+		return
+	for i in range(idx.size() - 1, -1, -1):
+		order.remove_at(idx[i])
+	var minimum := order.size()
+	for i in range(order.size()):
+		if _speed.get(order[i], 0.0) != INF:
+			minimum = i
+			break
+	for i in idx:
+		order.insert(clampi(i - change, minimum, order.size()), b)
+
+
+## 技能付费时：下个回合位置按技能速度前移（Action Speed Convert）。
+func _otb_user_shift(u: XBattler, skill: Dictionary) -> void:
+	var change := int(skill.get("speed", 0)) + _note_int(skill, "OTB User Next Turn")
+	if change != 0:
+		_shift(u, change, false)
+
+
+## 命中后对目标：OTB Target Current/Next/Follow Turn 备注，及敏捷增益换算的「下个回合 +1」。
+func _otb_target_shift(skill: Dictionary, t: XBattler) -> void:
+	var cur := _note_int(skill, "OTB Target Current Turn")
+	var nxt := _note_int(skill, "OTB Target Next Turn")
+	var follow := _note_int(skill, "OTB Target Follow Turn")
+	if follow != 0:
+		if current_order.has(t):
+			cur += follow
+		else:
+			nxt += follow
+	if not str(skill.get("note", "")).contains("<OTB Target Next Turn:"):
+		for eff in skill.get("effects", []):
+			if int(eff.code) == 31 and int(eff.dataId) == AGI_PARAM:
+				nxt += 1
+				break
+	if cur != 0:
+		_shift(t, cur, true)
+	if nxt != 0:
+		_shift(t, nxt, false)
+
+
+static func _note_int(rec: Dictionary, tag: String) -> int:
+	var m := RegEx.create_from_string("(?i)<" + tag + ":\\s*([+-]\\d+)>").search(str(rec.get("note", "")))
+	return int(m.get_string(1)) if m else 0
 
 
 ## 执行一次行动：消耗、目标、连击、命中、伤害、效果。
@@ -289,6 +507,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler) -> Array:
 		u.mp -= c.mp
 		u.tp -= c.tp
 		u.pay_cooldown(skill)
+		_otb_user_shift(u, skill)
 	logs.append({"type": "action", "user": u, "skill": skill})
 	var repeats := int(skill.get("repeats", 1))
 	if not is_item(skill) and int(skill.id) == ATTACK_SKILL:
@@ -371,6 +590,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 			t.tp = minf(100.0, t.tp + floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
 	for eff in skill.get("effects", []):
 		_effect(u, t, eff, r)
+	_otb_target_shift(skill, t)
 	u.tp = minf(100.0, u.tp + float(skill.get("tpGain", 0)) * u.tcr)
 	if t.hp <= 0.0 and t.is_dead():
 		_die(t)
@@ -460,13 +680,16 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 	b.tp = minf(100.0, b.tp + 100.0 * b.trg)
 
 
+## MV：逃跑率在战斗开始时算一次（0.5×我方平均敏捷/敌方平均敏捷），每失败一次 +0.1。
+## 逃跑失败在 OTB 下只消耗这名角色的本次行动（由画面层调用 act(u, null, null)）。
 func try_escape() -> bool:
-	var ratio := 0.5 * _avg_agi(actors) / maxf(_avg_agi(enemies), 1.0)
-	escaped = randf() < ratio
+	escaped = randf() < _escape_ratio
+	if not escaped:
+		_escape_ratio += 0.1
 	return escaped
 
 func _avg_agi(list: Array) -> float:
-	var l := alive(list)
+	var l := list
 	var s := 0.0
 	for b in l:
 		s += b.agi

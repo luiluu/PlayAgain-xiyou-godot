@@ -7,6 +7,8 @@ extends Control
 ## - 敌人在敌群编辑器坐标（原版 1280×720 原样使用），1 倍大小，神话 1.8 倍并偏色；
 ##   YEP_X_VisualHpGauge：敌人脚下 12px 粗血条（受伤或选目标时显示，带数值）。
 ## - 伤害数字用原版 Damage.png（XDamagePopup，MOG 弹跳＋放大）。
+## - Olivia_BattleSysOTB：行动顺序回合制，轮到谁谁当场选指令；画面下方是行动顺序条（XOTBBar），
+##   说明栏移到 y=92（OTB Help Window Y）；指令窗里有「逃跑」，没有队伍指令窗，取消不能回到上一人。
 ## 规则在 XBattleLogic；结束时发出 finished(0 胜利 / 1 逃跑 / 2 战败)。
 
 signal finished(result: int)
@@ -21,6 +23,9 @@ const CMD_SCALE := 0.8
 const LIST_W := 450.0
 const LIST_MAX := 16
 const ENEMY_GAUGE_W := 180.0
+const OTB_POS := Vector2(58, 618)
+const OTB_HELP_Y := 92.0
+const STATES_MAX := 4
 
 var logic := XBattleLogic.new()
 var map_data: Dictionary
@@ -35,6 +40,7 @@ var ui: Control
 var help_bar: Control
 var help_label: Label
 var help_cancel: Button
+var otb: XOTBBar
 var cmd_win: PanelContainer
 var list_win: PanelContainer
 var auto_btn: Button
@@ -43,6 +49,8 @@ var bgm: AudioStreamPlayer
 var se: AudioStreamPlayer
 var _target_mode := ""            # "enemy" / "ally" / ""
 var _target_pool: Array = []
+var _target_skill: Dictionary = {}
+var _hover = null
 var _active: XActor = null
 var _fast := false
 var _origin := Vector2.ZERO       # 原版坐标 → 画面坐标的偏移
@@ -194,7 +202,7 @@ func _show_enemy_gauge(e: XBattler, seconds := 1.5) -> void:
 func _build_ui(vs: Vector2) -> void:
 	# 顶部说明栏（Olivia：Window_Help 不透明度 0、暗底；YEP 行动名也显示在顶部）
 	help_bar = XUI.dimmer(false, true)
-	help_bar.position = Vector2.ZERO
+	help_bar.position = Vector2(0, _origin.y + OTB_HELP_Y)
 	help_bar.size = Vector2(vs.x - STATUS_W, XUI.LINE_HEIGHT * 2 + 28)
 	help_bar.visible = false
 	ui.add_child(help_bar)
@@ -241,6 +249,11 @@ func _build_ui(vs: Vector2) -> void:
 		speed_btn.text = "速度 ×2" if _fast else "速度 ×1")
 	side.add_child(speed_btn)
 	_refresh_auto()
+	# 行动顺序条：宽 = 画面宽 - x - 状态宽 - 左移量 - 状态图标 4.5 个
+	otb = XOTBBar.new()
+	otb.position = _origin + OTB_POS
+	ui.add_child(otb)
+	otb.setup(BOX.x - OTB_POS.x - STATUS_W - STATUS_MOVE - 32 * (STATES_MAX + 0.5))
 
 
 func _small_button(text: String) -> Button:
@@ -342,36 +355,72 @@ func _process(delta: float) -> void:
 				g.box.visible = false
 
 
-# ---- 主循环 ----
+# ---- 主循环（OTB）----
 func _main() -> void:
 	await _say("%s 出现了！" % "、".join(logic.enemies.map(func(e): return e.display_name())), 0.9)
+	var first := true
 	while true:
+		logic.start_turn()
+		if not first:
+			otb.advance_turn()
+		otb.show_orders(logic.current_order, logic.next_order, first)
+		first = false
+		while not logic.is_won() and not logic.is_lost():
+			var u := logic.next_subject()
+			if u == null:
+				break
+			otb.on_subject(u)
+			otb.show_orders(logic.current_order, logic.next_order)
+			var cmd = await _command(u)
+			if cmd is String and cmd == "escaped":
+				return
+			_close_windows()
+			_set_active(null)
+			var logs := logic.act(u, cmd[0], cmd[1])
+			await _play(logs)
+			otb.clear_subject()
+			otb.show_orders(logic.current_order, logic.next_order)
+			_refresh_status()
 		if logic.is_won():
+			otb.hide_bar()
 			await _victory()
 			finished.emit(0)
 			return
 		if logic.is_lost():
+			otb.hide_bar()
 			await _say("全军覆没……", 1.2)
 			logic.end_battle()
 			finished.emit(2)
 			return
-		var cmds = {} if logic.auto else await _input_commands()
-		if cmds is String and cmds == "escape":
+		await _play(logic.end_turn())
+		otb.show_orders(logic.current_order, logic.next_order)
+		_refresh_status()
+
+
+## 轮到 u：敌人/自动/不能行动时直接决定；角色由玩家选。逃跑在这里处理，成功时结束战斗并返回 "escaped"。
+func _command(u: XBattler):
+	if not (u is XActor) or logic.auto or not logic.can_move(u):
+		return logic.decide(u)
+	_set_active(u)
+	while true:
+		var r = await _command_for(u)
+		if logic.auto or (r is String and r == "auto"):
+			_close_windows()
+			return logic.decide(u)
+		if r is Array:
+			return r
+		if r is String and r == "escape":
 			_close_windows()
 			if logic.try_escape():
+				otb.hide_bar()
 				await _say("成功逃跑了。", 0.8)
 				logic.end_battle()
 				finished.emit(1)
-				return
+				return "escaped"
 			await _say("没能逃掉！", 0.8)
-			cmds = {}
-			for a in logic.actors:
-				cmds[a] = [null, null]
-		_close_windows()
-		_set_active(null)
-		var logs := logic.run_turn(cmds if cmds is Dictionary else {})
-		await _play(logs)
-		_refresh_status()
+			return [null, null]
+		# "back"：OTB 没有队伍指令窗，取消不回到上一人，重新显示指令
+	return null
 
 
 func _close_windows() -> void:
@@ -381,29 +430,31 @@ func _close_windows() -> void:
 	cmd_win = null
 	list_win = null
 	_help("")
+	otb.clear_preview()
 
 
-## 依次为每位能行动的角色选指令；返回 {actor: [技能或物品, 目标]}，或 "escape"。
-func _input_commands():
-	var cmds := {}
-	var members := logic.alive(logic.actors).filter(func(a): return not logic._restricted(a))
-	var i := 0
-	while i < members.size():
-		var a: XActor = members[i]
-		_set_active(a)
-		var r = await _command_for(a)
-		if logic.auto:
-			_close_windows()
-			return {}
-		if r is String and r == "escape":
-			return "escape"
-		if r is String and r == "back":
-			i = maxi(0, i - 1)
+## 选指令时预览：自己下个回合的位置（技能速度＋OTB User Next Turn），以及选中目标的位移。
+func _preview(a: XBattler, skill, targets: Array = []) -> void:
+	if skill == null or XBattleLogic.is_item(skill):
+		otb.clear_preview()
+		return
+	var entries := [[a, "n", logic.next_order, int(skill.get("speed", 0)) + XBattleLogic._note_int(skill, "OTB User Next Turn"), logic._speed]]
+	var cur := XBattleLogic._note_int(skill, "OTB Target Current Turn")
+	var nxt := XBattleLogic._note_int(skill, "OTB Target Next Turn")
+	if not str(skill.get("note", "")).contains("<OTB Target Next Turn:"):
+		for eff in skill.get("effects", []):
+			if int(eff.code) == 31 and int(eff.dataId) == XBattleLogic.AGI_PARAM:
+				nxt += 1
+				break
+	var follow := XBattleLogic._note_int(skill, "OTB Target Follow Turn")
+	for t in targets:
+		if logic._speed.get(t, 0.0) == INF:
 			continue
-		cmds[a] = r
-		i += 1
-	_set_active(null)
-	return cmds
+		var c := cur + (follow if logic.current_order.has(t) else 0)
+		var n := nxt + (0 if logic.current_order.has(t) else follow)
+		entries.append([t, "c", logic.current_order, c, logic._speed])
+		entries.append([t, "n", logic.next_order, n, logic._speed])
+	otb.set_preview(entries)
 
 
 ## 窗口（指令窗/列表窗）：MV 窗口皮肤，缩放 0.8 的行。
@@ -471,6 +522,9 @@ func _command_for(a: XActor):
 			var b := _row_button(o[0])
 			var key: String = o[1]
 			b.pressed.connect(func(): _picked.emit(key))
+			var pv = XDB.rec("Skills", XBattleLogic.ATTACK_SKILL) if key == "attack" else (XDB.rec("Skills", XBattleLogic.GUARD_SKILL) if key == "guard" else null)
+			b.focus_entered.connect(func(): _preview(a, pv))
+			b.mouse_entered.connect(func(): _preview(a, pv))
 			col.add_child(b)
 		(col.get_child(0) as Button).grab_focus.call_deferred()
 		_place_near_actor(cmd_win, a)
@@ -563,9 +617,9 @@ func _pick_from_list(a: XActor, entries: Array, items: bool):
 			r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			b.add_child(r)
 		var desc := XText.plain(str(e.get("description", "")))
-		b.focus_entered.connect(func(): _help(desc))
-		b.mouse_entered.connect(func(): _help(desc))
 		var rec: Dictionary = e
+		b.focus_entered.connect(func(): _help(desc); _preview(a, null if items else rec))
+		b.mouse_entered.connect(func(): _help(desc); _preview(a, null if items else rec))
 		b.pressed.connect(func(): _picked.emit(rec))
 		col.add_child(b)
 	_place_near_actor(list_win, a, Vector2(16, 16))
@@ -608,13 +662,18 @@ func _pick_target(skill: Dictionary, a: XActor):
 	if cmd_win and is_instance_valid(cmd_win):
 		cmd_win.visible = false
 	_help("选择目标（点按）", true)
+	_target_skill = skill
 	for b in pool:
 		sprites[b].flash(Color(1, 0.9, 0.5))
 		if gauges.has(b):
 			_refresh_enemy_gauge(b)
+	_preview(a, skill)
 	var r = await _picked
 	_target_mode = ""
 	_target_pool = []
+	_target_skill = {}
+	otb.set_selected([])
+	otb.clear_preview()
 	_help("")
 	if cmd_win and is_instance_valid(cmd_win):
 		cmd_win.visible = true
@@ -627,6 +686,14 @@ func _pick_target(skill: Dictionary, a: XActor):
 
 func _gui_input(event: InputEvent) -> void:
 	var pos := Vector2.INF
+	if event is InputEventMouseMotion and _target_mode != "":
+		# 鼠标指向的候选目标视为「被选中」：顺序条上放大闪烁，并预览位移
+		var h = _nearest_target(event.position)
+		if h != _hover:
+			_hover = h
+			otb.set_selected([h] if h != null else [])
+			_preview(_active, _target_skill, [h] if h != null else [])
+		return
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			_picked.emit("cancel" if _target_mode != "" or list_win != null else "back")
@@ -636,6 +703,12 @@ func _gui_input(event: InputEvent) -> void:
 		pos = event.position
 	if pos == Vector2.INF or _target_mode == "":
 		return
+	var best = _nearest_target(pos)
+	if best != null:
+		_picked.emit(best)
+
+
+func _nearest_target(pos: Vector2):
 	var best = null
 	var best_d := 1e9
 	for b in _target_pool:
@@ -645,8 +718,7 @@ func _gui_input(event: InputEvent) -> void:
 		if d < best_d and d < maxf(90.0, s.height()):
 			best_d = d
 			best = b
-	if best != null:
-		_picked.emit(best)
+	return best
 
 
 func _unhandled_input(event: InputEvent) -> void:
