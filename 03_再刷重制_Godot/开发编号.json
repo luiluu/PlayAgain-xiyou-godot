@@ -1,0 +1,15 @@
+{
+  "marker": "【Codex·未经Claude检验】",
+  "review": "未经claude检验",
+  "projectId": "kyo.godot_remake",
+  "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
+  "current": "dev.001",
+  "sequence": 1,
+  "next": "dev.002",
+  "nextSequence": 2,
+  "releaseVersion": null,
+  "publicReleaseCreated": false,
+  "currentChange": "双入口启动原型：西游优先，新版暂未开放",
+  "runtimeVersionFile": "01_Godot工程/content/build_info.json",
+  "legacyModVersionUnchanged": "v0.04"
+}

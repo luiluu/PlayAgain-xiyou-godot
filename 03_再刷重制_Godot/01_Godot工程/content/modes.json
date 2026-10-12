@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "modes": [
+    {
+      "id": "xiyou",
+      "title": "西游改版",
+      "enabled": true,
+      "status": "entry_preview_gameplay_pending",
+      "sourceId": "legacy_xiyou_mod_kyo",
+      "entryScene": "res://modes/xiyou/entry.tscn",
+      "saveNamespace": "xiyou"
+    },
+    {
+      "id": "new",
+      "title": "新版",
+      "enabled": false,
+      "status": "not_designed",
+      "sourceId": null,
+      "entryScene": null,
+      "saveNamespace": "new"
+    }
+  ]
+}

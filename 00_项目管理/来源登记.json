@@ -1,6 +1,6 @@
 {
-  "marker": "【Codex·未经Claude检验】",
-  "review": "未经claude检验",
+  "marker": "【Codex·未经Claude检验】＋【Claude·未经Codex检验】",
+  "review": "来源归属由 Claude 按用户最新方向更新，未经Codex检验",
   "updatedDate": "2026-10-12",
   "sources": [
     {
@@ -9,7 +9,7 @@
       "title": "再刷一把 PlayAgain",
       "steamAppId": 2059790,
       "storeUrl": "https://store.steampowered.com/app/2059790/",
-      "status": "pd_original_access_verified_audit_pending",
+      "status": "pd_original_access_verified_audit_deferred",
       "buildId": "11735036",
       "branch": null,
       "engineVersion": null,
@@ -41,18 +41,24 @@
         "encoding_status": "not_plain_utf8_needs_original_packaging_audit"
       },
       "baselineFullyAudited": false,
-      "auditEvidence": "/Users/kyo/Documents/再刷项目资料库/00_项目管理/验证与备份/20261012_Godot部署/pd-original-access.json"
+      "auditEvidence": "/Users/kyo/Documents/再刷项目资料库/00_项目管理/验证与备份/20261012_Godot部署/pd-original-access.json",
+      "auditRequiredForXiyouRemake": false
     },
     {
       "id": "legacy_xiyou_mod_kyo",
       "category": "02_再刷西游",
       "title": "再刷一把：西游（mod_KYO）",
-      "status": "existing_mod_reference_only",
+      "status": "current_remake_source_for_xiyou_mode",
       "libraryPath": "/Users/kyo/Documents/再刷西游",
       "appPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app",
       "currentLog": "/Users/kyo/Documents/再刷西游/00_说明与维护记录/KYO更新日志.md",
       "useAsOriginalBaseline": false,
-      "copyExistingModFeaturesAutomatically": false
+      "copyExistingModFeaturesAutomatically": false,
+      "remakeMode": "xiyou",
+      "confirmedReleaseVersion": "v0.04",
+      "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
+      "fingerprint": "00_项目管理/验证与备份/20261012_双入口西游优先/当前西游来源清单.json",
+      "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。"
     },
     {
       "id": "historical_xiyou_source_157",
@@ -65,13 +71,18 @@
     {
       "id": "new_godot_remake",
       "category": "03_再刷重制_Godot",
-      "status": "godot_environment_deployed_no_game_project",
+      "status": "dev001_dual_entry_prototype",
       "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot",
-      "baselineSourceId": "steam_playagain_original",
+      "baselineSourceId": null,
       "baselineLocked": false,
       "godotVersion": "4.7.2",
       "gameReleaseVersion": null,
-      "environmentRegistry": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/环境登记.json"
+      "environmentRegistry": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/环境登记.json",
+      "modeSources": {
+        "xiyou": "legacy_xiyou_mod_kyo",
+        "new": null
+      },
+      "developmentVersion": "dev.001"
     }
   ]
 }

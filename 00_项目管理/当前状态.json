@@ -1,22 +1,21 @@
 {
-  "marker": "【Codex·未经Claude检验】",
-  "review": "未经claude检验",
+  "marker": "【Codex·未经Claude检验】＋【Claude·未经Codex检验】",
+  "review": "dev.001 由 Codex 编写、Claude 补测试与收尾；双方均未对对方本轮做独立交叉核查",
   "updatedDate": "2026-10-12",
-  "libraryRevision": 2,
+  "libraryRevision": 3,
   "root": "/Users/kyo/Documents/再刷项目资料库",
-  "currentStep": 2,
-  "currentAction": "PD 原版调用及 Godot 部署已完成；下一步审计原版数据与封装，确定重制首期规格",
+  "currentStep": 3,
+  "currentAction": "dev.001 双入口原型已验收；下一步盘点当前西游 v0.04 系统并做 Godot 映射",
   "steps": {
-    "1": "library_structure_created_pending_cross_review",
-    "2": "pd_access_verified_full_baseline_audit_pending",
-    "3": "not_started",
-    "4": "engine_templates_installed_project_creation_pending",
+    "1": "done_pending_cross_review",
+    "2": "dev001_entry_prototype_verified",
+    "3": "in_progress",
+    "4": "not_started",
     "5": "not_started",
     "6": "not_started",
-    "7": "not_started",
+    "7": "templates_installed_no_game_export",
     "8": "not_started",
-    "9": "not_started",
-    "10": "not_started"
+    "9": "not_designed_entry_reserved"
   },
   "original": {
     "steamAppId": 2059790,
@@ -31,15 +30,17 @@
     "windowsGamePath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\再刷一把 PlayAgain",
     "macPortRequested": false,
     "accessMethod": "pd_read_only_exec",
-    "sourceSnapshotCreated": false
+    "sourceSnapshotCreated": false,
+    "auditDeferred": true,
+    "auditRequiredForXiyouRemake": false
   },
   "godot": {
     "installationStatus": "installed_in_library_and_verified",
     "selectedVersion": "4.7.2",
     "languageRecommendation": "GDScript",
-    "projectCreated": false,
+    "projectCreated": true,
     "projectDirectory": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/01_Godot工程",
-    "runnableBuildAvailable": false,
+    "runnableBuildAvailable": true,
     "releaseVersion": null,
     "targetPlatforms": [
       "macOS",
@@ -57,7 +58,10 @@
     ],
     "selfContainedEditor": true,
     "editorStartupVerified": true,
-    "visibleProjectManagerVerified": true
+    "visibleProjectManagerVerified": true,
+    "runnableBuildKind": "dev.001 entry prototype, no gameplay",
+    "developmentVersion": "dev.001",
+    "developmentRegistry": "03_再刷重制_Godot/开发编号.json"
   },
   "existingMod": {
     "referenceLibrary": "/Users/kyo/Documents/再刷西游",
@@ -67,10 +71,18 @@
     "releaseNumberChangedByThisTask": false
   },
   "pending": [
-    "核对原版数据、插件、编译封装与纯净状态，形成可追溯审计基准",
-    "进行原版运行对照并确定重制首期规格",
-    "创建唯一 Godot 工程与核心框架",
-    "配置 Android SDK/签名与实际多平台导出验收",
-    "Claude 对本轮同版本文件独立核查"
-  ]
+    "盘点西游 v0.04 数据库、插件与 codex 运行模块，形成系统映射表",
+    "西游核心系统（数据、战斗、装备实例、掉落、保存）Godot 实现",
+    "小范围可玩版及与正式版行为对照",
+    "Android SDK/签名与三端实际导出验收",
+    "Codex/Claude 对彼此本轮改动交叉核查"
+  ],
+  "plan": "00_项目管理/重制步骤清单.md（9 步，西游优先）",
+  "remakeSource": {
+    "sourceId": "legacy_xiyou_mod_kyo",
+    "releaseVersion": "v0.04",
+    "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
+    "fingerprint": "00_项目管理/验证与备份/20261012_双入口西游优先/当前西游来源清单.json",
+    "fingerprintedFiles": 765
+  }
 }
