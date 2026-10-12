@@ -1,0 +1,11 @@
+{
+  "说明": "首期可玩版切片：开局区域＋初始队伍。见 00_设计/首期可玩版规格.md",
+  "maps": [4, 5],
+  "actors": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  "troops": [2, 4],
+  "maxLevel": 30,
+  "extraSkills": [1, 2],
+  "extraAnimations": [1, 51, 52],
+  "weaponScan": 60,
+  "systemImages": ["IconSet", "Window", "Damage", "Balloon", "Shadow1", "Shadow2", "States", "Weapons1", "Weapons2", "Weapons3", "GameOver"]
+}
