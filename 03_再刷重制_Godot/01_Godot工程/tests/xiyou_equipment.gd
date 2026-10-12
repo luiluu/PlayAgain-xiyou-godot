@@ -29,6 +29,7 @@ func _run() -> void:
 		check("suit_definition_%d"%int(original.id),mine.name==original.name and mine.bonuses.size()==original.bonuses.size() and range(mine.bonuses.size()).all(func(i):return fields.all(func(k):return mine.bonuses[i][k]==original.bonuses[i][k])))
 	for row in ref.gear:
 		XGear.force_roll=float(row.roll)
+		XGear.reset_pool()
 		var e := XGear.create(row.kind,int(row.id))
 		var tag := "%s%d_%.2f"%[row.kind,row.id,row.roll]
 		check(tag+"_params",close_array(e.params,row.params),{"godot":e.params,"mv":row.params})
@@ -39,6 +40,7 @@ func _run() -> void:
 		XGear.force_roll = -1.0
 		XGear.roll_seq = ref.sequence
 		XGear.roll_count = 0
+		XGear.reset_pool()
 		var e := XGear.create(row.kind, int(row.id))
 		var tag := "seq_%s%d" % [row.kind, int(row.id)]
 		check(tag, close_array(e.params, row.params) and e.name == row.name and e.traits == row.traits and int(e.upgradeSlots) == int(row.slots) and XGear.roll_count == int(row.draws),
@@ -105,6 +107,16 @@ func _run() -> void:
 	var migrated := XState.from_dict(old)
 	check("godot_v1_keeps_stats",migrated.gear[0].params==old_params and migrated.gear[0].has("equipment") and migrated.gear[0].has("instanceId"))
 	XGear.force_roll=-1
+	# 预掷随机池随存档：存档后获得的装备，读档再获得一次结果相同（Star_RomGetItems）
+	var rs := XState.new_game(3,1,[])
+	rs.gain_gear("weapon",56,1)
+	var saved: Dictionary = JSON.parse_string(JSON.stringify(rs.to_dict()))
+	rs.gain_gear("weapon",56,1)
+	var first: Dictionary = rs.gear.back()
+	var again := XState.from_dict(saved)
+	again.gain_gear("weapon",56,1)
+	var second: Dictionary = again.gear.back()
+	check("rom_pool_same_after_reload",second.params==first.params and second.name==first.name and second.affixIds==first.affixIds,{"first":[first.name,first.params],"second":[second.name,second.params]})
 	finish()
 func finish() -> void:
 	var passed := results.filter(func(r):return r.passed).size()

@@ -2,16 +2,60 @@ class_name XGear
 extends RefCounted
 ## 装备实例工厂：模板保持不变；随机属性/词缀只在获得时掷骰，存档读回不重掷。
 ## 与正式版 DreamX/YEP 顺序相同：词缀合并 -> 重解析备注 -> 属性浮动 -> 插槽浮动。
+##
+## 预掷随机池（Star_RomGetItems）：词缀掷骰、词缀选取、属性浮动不现掷，而是从队伍身上一组预先掷好的
+## 20 个随机数里按序号取（$gameParty.RomDreamX / RomDreamXNum），随存档保存，所以读档后获得同一件装备结果不变。
+## 每个取数函数进入时检查：池长度不是 20 或序号已超过 15 就整组重掷、序号归零。另有一组 0/1 池（RomDreamXs）
+## 只在同几率词缀排序时使用，当前数据没有同几率，但重掷时同样消耗 20 次随机数；它的序号重掷后不归零（照搬）。
+## 插槽浮动与强化随机值仍是现掷（YEP 直接用 Math.random）。
+## 有意修正：正式版属性浮动循环可越过池末尾（序号 20 起取到 undefined，属性变成 NaN）；这里越界时改为现掷。
+const ROM_LENGTH := 20
+const ROM_REFRESH := 15
 static var force_roll := -1.0
 ## 测试用：非空时按顺序循环取值（与参照引擎的 Math.random 序列对照取数次数与先后）。
 static var roll_seq: Array = []
 static var roll_count := 0
+## 没有当前存档时（无界面测试）用的池
+static var _fallback := {}
 
+## 相当于 Math.random
 static func roll() -> float:
 	if not roll_seq.is_empty():
 		roll_count += 1
 		return float(roll_seq[(roll_count - 1) % roll_seq.size()])
 	return force_roll if force_roll >= 0 else randf()
+
+static func _rom() -> Dictionary:
+	return XState.current.rom if XState.current != null else _fallback
+
+## 测试用：清空随机池（参照探针每件装备前也清空）
+static func reset_pool() -> void:
+	var r := _rom()
+	r.x = []
+	r.xn = 0
+	r.xs = []
+	r.xsn = 0
+
+static func _pool_enter(with_bits := false) -> void:
+	var r := _rom()
+	if r.get("x", []).size() != ROM_LENGTH or int(r.get("xn", 0)) > ROM_REFRESH:
+		var x := []
+		for i in range(ROM_LENGTH):
+			x.append(roll())
+		r.x = x
+		r.xn = 0
+	if with_bits and (r.get("xs", []).size() != ROM_LENGTH or int(r.get("xsn", 0)) > ROM_REFRESH):
+		var xs := []
+		for i in range(ROM_LENGTH):
+			xs.append(floori(roll() * 2))
+		r.xs = xs
+		r.xsn = int(r.get("xsn", 0))
+
+static func _pool_next() -> float:
+	var r := _rom()
+	var i := int(r.xn)
+	r.xn = i + 1
+	return float(r.x[i]) if i < r.x.size() else roll()
 
 static func template(kind: String, id: int) -> Dictionary:
 	var src := XDB.rec("Weapons" if kind == "weapon" else "Armors", id)
@@ -35,7 +79,8 @@ static func create(kind: String, id: int) -> Dictionary:
 	if item.get("meta", {}).has("prefixSuffixUseArmorDatabase"): table = "Armors"
 	if item.get("meta", {}).has("prefixSuffixUseWeaponDatabase"): table = "Weapons"
 	for row in definition.get("affixes", []):
-		var dice := floori(roll() * 100) + 1
+		_pool_enter(true)     # DreamX.RandomPrefixSuffix.choose
+		var dice := floori(_pool_next() * 100) + 1
 		var choices: Array = row.choices.duplicate()
 		choices.sort_custom(func(a,b):return a.chance < b.chance)
 		for choice in choices:
@@ -44,7 +89,8 @@ static func create(kind: String, id: int) -> Dictionary:
 			if dice > int(choice.chance):
 				dice -= int(choice.chance)
 				continue
-			var affix_id := int(ids[mini(floori(roll()*ids.size()),ids.size()-1)])
+			_pool_enter()         # DreamX.randomArrayElement
+			var affix_id := int(ids[mini(floori(_pool_next()*ids.size()),ids.size()-1)])
 			combine(item, XDB.rec(table,affix_id), str(row.kind))
 			item.affixIds.append({"table":table,"id":affix_id,"kind":row.kind})
 			break
@@ -53,10 +99,11 @@ static func create(kind: String, id: int) -> Dictionary:
 		var p := param_id(m.get_string(1))
 		item.params[p] = int(m.get_string(2))
 	var variance := int(item.get("meta", {}).get("Random Variance", definition.get("variance",0)))
+	_pool_enter()             # ItemManager.randomizeInitialStats
 	for i in range(8):
 		if float(item.params[i]) != 0 and variance >= 0:
 			var original := float(item.params[i])
-			var value := original + floorf(roll() * (variance*2+1) - variance)
+			var value := original + floorf(_pool_next() * (variance*2+1) - variance)
 			item.params[i] = maxf(0,value) if original>=0 else value
 	var slots := int(item.upgradeSlots)
 	var span := int(definition.get("slotVariance",6))

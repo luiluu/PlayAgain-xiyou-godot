@@ -7,7 +7,7 @@ const SAVE_VERSION := 2
 static var current: XState
 
 var difficulty := 3
-var party: Array[int] = []          # 队伍顺序（前 4 位出战）
+var party: Array[int] = []          # 队伍顺序（前 5 位出战）
 var actors := {}                    # actor_id -> XActor
 var gold := 0
 var items := {}                     # item_id -> 数量
@@ -23,6 +23,8 @@ var direction := 2
 var steps := 0
 var play_seconds := 0.0
 var encounter_count := 0
+## Star_RomGetItems 的装备预掷随机池（见 XGear），随存档保存
+var rom := {"x": [], "xn": 0, "xs": [], "xsn": 0}
 
 
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
@@ -143,7 +145,7 @@ func to_dict() -> Dictionary:
 			"hp": x2.hp, "mp": x2.mp, "states": x2.state_ids, "cooldowns": x2.cooldowns}
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "actors": a, "gold": gold,
 		"items": items, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
-		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds}
+		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -183,5 +185,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.direction = int(d.direction)
 	s.steps = int(d.steps)
 	s.play_seconds = float(d.playSeconds)
+	var rom: Dictionary = d.get("rom", {})
+	s.rom = {"x": rom.get("x", []).map(func(v): return float(v)), "xn": int(rom.get("xn", 0)),
+		"xs": rom.get("xs", []).map(func(v): return int(v)), "xsn": int(rom.get("xsn", 0))}
 	current = s
 	return s
