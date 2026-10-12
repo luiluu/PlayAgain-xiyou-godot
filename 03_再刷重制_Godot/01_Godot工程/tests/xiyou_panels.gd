@@ -61,6 +61,8 @@ func _run() -> void:
 	var equip := XEquipPage.new()
 	add_child(equip); await _frames()
 	_check("all_slots", _all_text(equip).contains(str(XDB.system().equipTypes.back())))
+	var weapon_row := equip.find_child("Slot_武器", true, false)
+	_check("slot_name_before_icon", weapon_row != null and weapon_row.find_child("SlotName",true,false).position.x < weapon_row.find_child("EquipIcon",true,false).position.x and weapon_row.find_child("EquipIcon",true,false).position.x < weapon_row.find_child("EquipName",true,false).position.x)
 	await _shot("04_装备槽")
 	equip.slot = 0; equip.comparing = true; equip.rebuild(); await _frames(); equip._show_detail(item); await _frames()
 	_check("candidate_compare", _all_text(equip).contains("属性对比") and _all_text(equip).contains("→"))

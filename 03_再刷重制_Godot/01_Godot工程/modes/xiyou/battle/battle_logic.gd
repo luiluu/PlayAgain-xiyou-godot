@@ -433,7 +433,7 @@ func _sync_orders(before: Dictionary, allow_current: bool) -> void:
 		if before[b] and not now:
 			lost = true
 		elif not before[b] and now:
-			if allow_current and make_action_times(b) > int(_acted.get(b, 0)):
+			if allow_current and mini(make_action_times(b), OTB_MAX_ACTIONS) > int(_acted.get(b, 0)):
 				_insert_orders(b, current_order)
 			_insert_orders(b, next_order)
 	if lost:
@@ -443,7 +443,7 @@ func _sync_orders(before: Dictionary, allow_current: bool) -> void:
 func _insert_orders(b: XBattler, order: Array) -> void:
 	if order.has(b):
 		return
-	var times := maxi(make_action_times(b) - int(_acted.get(b, 0)), 1)
+	var times := maxi(mini(make_action_times(b), OTB_MAX_ACTIONS) - int(_acted.get(b, 0)), 1)
 	for i in range(times):
 		order.append(b)
 

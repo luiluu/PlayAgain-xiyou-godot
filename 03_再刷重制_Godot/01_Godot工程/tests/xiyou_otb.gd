@@ -78,6 +78,15 @@ func _run() -> void:
 	var order_before := l.next_order.duplicate()
 	l.execute(a,XDB.rec("Items",1),a)
 	_check("item_no_user_shift", l.next_order == order_before)
+	# 正式插件复活插入未再钳制次数；Godot 保持每回合五次上限，不让复活绕过。
+	l.repeats[b] = 8
+	l._acted[b] = 5
+	before = l._movable_snapshot(); b.hp = 0; l._sync_orders(before,true)
+	before = l._movable_snapshot(); b.recover_all(); l._sync_orders(before,true)
+	_check("revive_cannot_exceed_five", not l.current_order.has(b))
+	l.current_order.clear(); l.next_order.clear(); l._acted.clear()
+	l._insert_orders(b,l.current_order)
+	_check("revive_insert_cap", l.current_order.count(b) == 5)
 	l.end_battle()
 	var passed := results.filter(func(r):return r.passed).size()
 	for r in results:

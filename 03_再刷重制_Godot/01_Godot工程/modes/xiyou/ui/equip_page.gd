@@ -45,9 +45,7 @@ func rebuild() -> void:
 	if slot < 0:
 		for i in range(a.equips.size()):
 			var e = a.equips[i]
-			var b := XUI.button("%s    %s" % [XDB.system().equipTypes[a.equip_slots()[i]], str(e.name) if e is Dictionary else ""], 36)
-			if e is Dictionary:
-				b.icon = XUI.icon_texture(int(e.get("iconIndex", 0)))
+			var b := _slot_button(str(XDB.system().equipTypes[a.equip_slots()[i]]), e)
 			b.disabled = not XEquipment.can_change(a, i)
 			var idx := i
 			b.pressed.connect(func(): slot = idx; comparing = true; rebuild())
@@ -78,6 +76,40 @@ func rebuild() -> void:
 		if child is Button and not child.disabled:
 			child.grab_focus.call_deferred()
 			break
+
+## 槽位名独立占一列，装备图标贴着物品名称；按钮自带 icon 会排到整行最左边。
+func _slot_button(caption: String, e) -> Button:
+	var b := XUI.button("", 44)
+	b.name = "Slot_" + caption
+	var row := HBoxContainer.new()
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 10
+	row.offset_right = -10
+	row.offset_top = 4
+	row.offset_bottom = -4
+	row.add_theme_constant_override("separation", 8)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(row)
+	var kind := XUI.label(caption, XUI.FONT_SIZE, XUI.SYSTEM)
+	kind.name = "SlotName"
+	kind.custom_minimum_size.x = 130
+	kind.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(kind)
+	var icon := TextureRect.new()
+	icon.name = "EquipIcon"
+	icon.texture = XUI.icon_texture(int(e.get("iconIndex", 0))) if e is Dictionary else null
+	icon.custom_minimum_size = Vector2(32, 32)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(icon)
+	var item_name := XUI.label(str(e.name) if e is Dictionary else "")
+	item_name.name = "EquipName"
+	item_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	item_name.clip_text = true
+	item_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(item_name)
+	return b
 
 func _candidate(parent: Control, e) -> void:
 	var b := XUI.button(str(e.name) if e is Dictionary else "卸载", 36)
