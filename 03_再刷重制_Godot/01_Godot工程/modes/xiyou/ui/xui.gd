@@ -60,10 +60,10 @@ static func theme() -> Theme:
 	t.set_stylebox("panel", "PanelContainer", panel())
 	t.set_stylebox("panel", "Panel", panel())
 	var empty := StyleBoxEmpty.new()
-	empty.content_margin_left = 10
-	empty.content_margin_right = 10
-	empty.content_margin_top = 4
-	empty.content_margin_bottom = 4
+	empty.content_margin_left = 6
+	empty.content_margin_right = 6
+	empty.content_margin_top = 0
+	empty.content_margin_bottom = 0
 	for state in ["normal", "disabled"]:
 		t.set_stylebox(state, "Button", empty)
 	for state in ["hover", "pressed", "focus", "hover_pressed"]:
@@ -92,8 +92,8 @@ static func panel(opacity := 255) -> XWindowStyle:
 	var b := XWindowStyle.new()
 	b.skin = skin()
 	b.opacity = opacity / 255.0
-	b.content_margin_left = 18
-	b.content_margin_right = 18
+	b.content_margin_left = 14
+	b.content_margin_right = 14
 	b.content_margin_top = 14
 	b.content_margin_bottom = 14
 	return b
@@ -105,10 +105,10 @@ static func cursor_style(alpha := 1.0) -> XWindowStyle:
 	c.skin = skin()
 	c.cursor = true
 	c.cursor_alpha = alpha
-	c.content_margin_left = 10
-	c.content_margin_right = 10
-	c.content_margin_top = 4
-	c.content_margin_bottom = 4
+	c.content_margin_left = 6
+	c.content_margin_right = 6
+	c.content_margin_top = 0
+	c.content_margin_bottom = 0
 	return c
 
 
@@ -151,7 +151,7 @@ static func menu_background(parent: Control) -> void:
 		parent.add_child(bg)
 	var pp := XDB.img_path("menus", "Particles")
 	if pp != "":
-		var vs := parent.get_viewport_rect().size if parent.is_inside_tree() else Vector2(1280, 800)
+		var vs := parent.get_viewport_rect().size if parent.is_inside_tree() else Vector2(1280, 720)
 		var parts := CPUParticles2D.new()
 		parts.texture = load(pp)
 		parts.amount = 15

@@ -28,7 +28,7 @@ func _ready() -> void:
 	var tabs := VBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 0)
 	cmd.add_child(tabs)
-	for t in [["状态", _show_status], ["装备", _show_equip], ["强化", _show_upgrade], ["物品", _show_items], ["存档", _show_save], ["回到标题", _to_title], ["关闭", func(): closed.emit()]]:
+	for t in [["状态", _show_status], ["装备", _show_equip], ["物品", _show_items], ["存档", _show_save], ["回到标题", _to_title], ["关闭", func(): closed.emit()]]:
 		var b := XUI.button(t[0], XUI.LINE_HEIGHT + 12)
 		b.pressed.connect(t[1])
 		tabs.add_child(b)
@@ -161,9 +161,6 @@ func _show_status() -> void:
 func _show_equip() -> void:
 	_open_detail(XEquipPage.new())
 
-func _show_upgrade() -> void:
-	_open_detail(XUpgradePage.new())
-
 func _open_detail(page: XActorPage) -> void:
 	# 进入子页时隐藏主菜单控件，避免 Enter 仍触发背后的旧指令。
 	for node in get_children():
@@ -184,56 +181,7 @@ func _open_detail(page: XActorPage) -> void:
 
 
 func _show_items() -> void:
-	_clear()
-	var s := XState.current
-	if s.items.is_empty() and s.gear.is_empty():
-		_content.add_child(XUI.label("背包是空的。", 22, XUI.DIM))
-	for id in s.items.keys():
-		var rec := XDB.rec("Items", int(id))
-		if rec.is_empty():
-			continue
-		var usable := [0, 2].has(int(rec.get("occasion", 0))) and [7, 8, 11].has(int(rec.get("scope", 0)))
-		var b := XUI.button("%s" % rec.name, 44)
-		b.icon = XUI.icon_texture(int(rec.get("iconIndex", 0)))
-		b.tooltip_text = XText.plain(str(rec.get("description", "")))
-		b.disabled = not usable
-		var num := XUI.label(":%d" % s.items[id], XUI.FONT_SIZE, XUI.DIM if not usable else XUI.TEXT)
-		num.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
-		num.offset_left = -90
-		num.offset_right = -12
-		num.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		num.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		b.add_child(num)
-		var iid := int(id)
-		b.pressed.connect(func(): _use_item(iid))
-		_content.add_child(b)
-	if not s.gear.is_empty():
-		_header("装备（%d 件）" % s.gear.size())
-		for e in s.gear:
-			var row := HBoxContainer.new()
-			var ic := TextureRect.new()
-			ic.texture = XUI.icon_texture(int(e.get("iconIndex", 0)))
-			ic.custom_minimum_size = Vector2(32, 32)
-			row.add_child(ic)
-			row.add_child(XUI.label(str(e.name), 22, XGear.color(e)))
-			_content.add_child(row)
-
-
-## 物品对全队/单人生效：只处理回复类效果（11 HP、12 MP、22 解除状态）。
-func _use_item(id: int) -> void:
-	var s := XState.current
-	var rec := XDB.rec("Items", id)
-	var targets := s.members() if int(rec.scope) == 8 else [_cur()]
-	for t in targets:
-		for eff in rec.get("effects", []):
-			match int(eff.code):
-				11: t.hp = minf(t.mhp, t.hp + (t.mhp * float(eff.value1) + float(eff.value2)) * t.rec)
-				12: t.mp = minf(t.mmp, t.mp + (t.mmp * float(eff.value1) + float(eff.value2)) * t.rec)
-				22: t.remove_state(int(eff.dataId))
-	if bool(rec.get("consumable", true)):
-		s.gain_item(id, -1)
-	_show_items()
-
+	_open_detail(XUpgradePage.new())
 
 func _show_save() -> void:
 	_clear()

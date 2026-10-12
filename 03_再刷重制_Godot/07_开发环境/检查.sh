@@ -54,7 +54,7 @@ for t in $tests; do
   if (( rc == 0 )) && [[ -n $line ]] && ! print -r -- "$out" | grep -qE 'SCRIPT ERROR|^ERROR:'; then
     ok "$name ${line#TEST_RESULT=}" | cut -c1-120
   else
-    bad "$name (rc=$rc)"; print -r -- "$out" | grep -E 'ERROR|passed|TEST_RESULT' | head -8 | sed 's/^/      /'
+    bad "$name (rc=$rc)"; print -r -- "$out" | grep -E 'ERROR|FAIL |passed|TEST_RESULT' | head -8 | sed 's/^/      /'
   fi
 done
 

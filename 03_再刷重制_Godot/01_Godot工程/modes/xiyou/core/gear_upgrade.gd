@@ -7,7 +7,7 @@ static func rule(item: Dictionary) -> Dictionary:
 
 static func reason(gear: Dictionary, item: Dictionary, count: int) -> String:
 	var data := rule(item)
-	if data.is_empty() or not data.get("issues",[]).is_empty():return "强化效果尚未支持"
+	if data.is_empty() or not data.get("issues",[]).is_empty():return "这件材料没有可用的强化效果"
 	var kind := str(gear.get("kind",""))
 	if not kind in ["weapon","armor"] or data.get(kind,[]).is_empty():return "不能用于这类装备"
 	var types: Array = data.get(kind+"Types",[]).map(func(v):return int(v))

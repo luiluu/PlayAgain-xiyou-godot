@@ -95,6 +95,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		closed.emit()
+	elif event is InputEventKey and event.pressed and event.keycode in [KEY_Q,KEY_W]:
+		get_viewport().set_input_as_handled()
+		switch_actor(-1 if event.keycode==KEY_Q else 1)
 	elif event.is_action_pressed("ui_page_up") or event.is_action_pressed("ui_page_down"):
 		get_viewport().set_input_as_handled()
 		switch_actor(-1 if event.is_action_pressed("ui_page_up") else 1)

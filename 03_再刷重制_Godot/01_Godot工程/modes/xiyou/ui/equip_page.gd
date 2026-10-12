@@ -10,21 +10,25 @@ var details: VBoxContainer
 func rebuild() -> void:
 	super.rebuild()
 	var vs := get_viewport_rect().size
-	var help_win := window_at(Rect2(0, 0, vs.x, 104))
+	var padding := float(XDB.plugin("YEP_CoreEngine").get("Window Padding",14))
+	var help_height := XUI.LINE_HEIGHT*2+padding*2
+	var command_height := XUI.LINE_HEIGHT*4+padding*2
+	var lower := help_height+command_height
+	var help_win := window_at(Rect2(0, 0, vs.x, help_height))
 	help = RichTextLabel.new()
 	help.bbcode_enabled = true
 	help.fit_content = false
 	help_win.add_child(help)
 	var commands := VBoxContainer.new()
 	commands.add_theme_constant_override("separation", 0)
-	window_at(Rect2(0, 104, 240, 200)).add_child(commands)
+	window_at(Rect2(0, help_height, 240, command_height)).add_child(commands)
 	for spec in [["装备", _slots], ["最强装备", _optimize], ["卸载全部", _clear_equips], ["返回", func(): closed.emit()]]:
 		var b := XUI.button(spec[0], 36)
 		b.pressed.connect(spec[1])
 		commands.add_child(b)
 	var status := VBoxContainer.new()
-	window_at(Rect2(240, 104, vs.x - 240, 200)).add_child(status)
-	selector(status)
+	window_at(Rect2(240, help_height, vs.x - 240, command_height)).add_child(status)
+
 	# 装备页状态头与原版相同：头像、名字、等级、HP/MP；紧凑排列。
 	var a := actor()
 	var info := HBoxContainer.new()
@@ -32,16 +36,19 @@ func rebuild() -> void:
 	status.add_child(info)
 	var face := TextureRect.new()
 	face.texture = XUI.face_texture(str(a.data().faceName), int(a.data().faceIndex))
-	face.custom_minimum_size = Vector2(108, 108)
+	face.custom_minimum_size = Vector2(144, 144)
 	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	info.add_child(face)
 	var col := VBoxContainer.new()
 	info.add_child(col)
+	col.add_child(XUI.label(a.display_name(), 26))
 	col.add_child(XUI.label("Lv.%d   %s" % [a.level, a.class_data().name], 24))
 	col.add_child(XUI.param_gauge("HP", a.hp, a.mhp, "hp", 300))
 	col.add_child(XUI.param_gauge("MP", a.mp, a.mmp, "mp", 300))
-	var left := scroll_column(window_at(Rect2(0, 304, vs.x / 2, vs.y - 304)))
-	details = scroll_column(window_at(Rect2(vs.x / 2, 304, vs.x / 2, vs.y - 304)))
+	var left := scroll_column(window_at(Rect2(0, lower, vs.x / 2, vs.y - lower)))
+	var detail_window := window_at(Rect2(vs.x / 2, lower, vs.x / 2, vs.y - lower))
+	detail_window.tooltip_text = "Shift / Tab 切换装备信息与属性对比"
+	details = scroll_column(detail_window)
 	if slot < 0:
 		for i in range(a.equips.size()):
 			var e = a.equips[i]
@@ -63,15 +70,6 @@ func rebuild() -> void:
 		back.pressed.connect(_slots)
 		left.add_child(back)
 		_show_detail(null)
-	var toggle := XUI.button("装备信息 / 属性对比（Tab）", 36)
-	toggle.pressed.connect(_toggle)
-	# 固定在右侧底端，滚动内容为其留空间。
-	toggle.position = Vector2(vs.x / 2 + 18, vs.y - 54)
-	toggle.size.x = vs.x / 2 - 36
-	content.add_child(toggle)
-	var spacer := Control.new()
-	spacer.custom_minimum_size.y = 48
-	details.add_child(spacer)
 	for child in left.get_children():
 		if child is Button and not child.disabled:
 			child.grab_focus.call_deferred()
@@ -79,7 +77,7 @@ func rebuild() -> void:
 
 ## 槽位名独立占一列，装备图标贴着物品名称；按钮自带 icon 会排到整行最左边。
 func _slot_button(caption: String, e) -> Button:
-	var b := XUI.button("", 44)
+	var b := XUI.button("", XUI.LINE_HEIGHT)
 	b.name = "Slot_" + caption
 	var row := HBoxContainer.new()
 	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -144,6 +142,7 @@ func _show_detail(e) -> void:
 		else:
 			details.add_child(XUI.label("选中装备后显示详情。", 22, XUI.DIM))
 
+
 func _slots() -> void:
 	slot = -1
 	rebuild()
@@ -172,6 +171,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		super._unhandled_input(event)
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and event.keycode == KEY_TAB:
+	if event is InputEventKey and event.pressed and event.keycode in [KEY_TAB,KEY_SHIFT]:
 		get_viewport().set_input_as_handled()
 		_toggle()

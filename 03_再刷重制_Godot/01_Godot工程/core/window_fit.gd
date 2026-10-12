@@ -1,8 +1,8 @@
 class_name WindowFit
 extends RefCounted
 ## 按屏幕的实际可用像素选窗口大小；Retina 的 window.size 是物理像素。
-## 画面仍使用 1280×800 逻辑坐标，由 canvas_items 统一缩放，不独立缩小文字。
-const BASE := Vector2(1280, 800)
+## 画面仍使用 1280×720 逻辑坐标，由 canvas_items 统一缩放，不独立缩小文字。
+const BASE := Vector2(1280, 720)
 const SCREEN_FRACTION := 0.90
 
 static func rectangle(usable: Rect2i) -> Rect2i:

@@ -68,7 +68,7 @@ func _ready() -> void:
 		icon.texture = XUI.icon_texture(int(rec.get("iconIndex", 0)))
 		icon.custom_minimum_size = Vector2(32, 32)
 		row.add_child(icon)
-		var label := XUI.label(str(rec.get("name", "?")), 24)
+		var label := XUI.label(str(rec.get("name", "?")), 24, XGear.color(rec))
 		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		label.clip_text = true
 		label.tooltip_text = label.text

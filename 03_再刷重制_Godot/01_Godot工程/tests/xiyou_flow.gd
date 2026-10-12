@@ -138,9 +138,9 @@ func _run() -> void:
 	await _frames(3)
 	# 存档 / 读档
 	_check("save", XSave.save(1))
-	var before := JSON.stringify(s.to_dict())
+	var before := JSON.stringify(JSON.parse_string(JSON.stringify(s.to_dict())))
 	_check("load", XSave.load_slot(1))
-	var after := JSON.stringify(XState.current.to_dict())
+	var after := JSON.stringify(JSON.parse_string(JSON.stringify(XState.current.to_dict())))
 	var diff := []
 	for i in range(mini(before.length(), after.length())):
 		if before[i] != after[i]:
