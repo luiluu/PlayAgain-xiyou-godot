@@ -1,0 +1,9 @@
+{
+  "name": "xiyou-mv-oracle",
+  "private": true,
+  "description": "无画面 MV 参照引擎：只读加载正式西游 app.nw，用于与 Godot 重写结果对照。",
+  "dependencies": {
+    "jsdom": "24.1.3",
+    "lz-string": "1.5.0"
+  }
+}
