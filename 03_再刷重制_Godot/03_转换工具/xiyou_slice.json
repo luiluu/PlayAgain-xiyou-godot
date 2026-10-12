@@ -1,11 +1,71 @@
 {
   "说明": "首期可玩版切片：开局区域＋初始队伍。见 00_设计/首期可玩版规格.md",
-  "maps": [4, 5],
-  "actors": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-  "troops": [2, 4],
+  "maps": [
+    4,
+    5
+  ],
+  "actors": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "troops": [
+    2,
+    4
+  ],
   "maxLevel": 30,
-  "extraSkills": [1, 2],
-  "extraAnimations": [1, 51, 52],
+  "extraSkills": [
+    1,
+    2
+  ],
+  "extraAnimations": [
+    1,
+    51,
+    52
+  ],
   "weaponScan": 60,
-  "systemImages": ["IconSet", "Window", "Damage", "Balloon", "Shadow1", "Shadow2", "States", "Weapons1", "Weapons2", "Weapons3", "GameOver"]
+  "systemImages": [
+    "Window",
+    "Damage",
+    "Balloon",
+    "Shadow1",
+    "Shadow2",
+    "States",
+    "Weapons1",
+    "Weapons2",
+    "Weapons3",
+    "GameOver",
+    "IconSet_1",
+    "IconSet_2",
+    "IconSet_3",
+    "IconSet_4"
+  ],
+  "keepEvents": {
+    "4": [
+      36
+    ],
+    "5": [
+      2,
+      4,
+      6
+    ]
+  },
+  "keepEvents说明": "首期保留的地图事件：大厅通往各层的门；一层的守层者里德、小贩、传送回大厅的辛德瑞。其余事件首期不放到地图上。",
+  "start": {
+    "mapId": 4,
+    "x": 14,
+    "y": 23,
+    "direction": 8,
+    "variables": {
+      "20": 1
+    },
+    "说明": "开局剧情（Map002）结束后的位置与当前层数"
+  }
 }

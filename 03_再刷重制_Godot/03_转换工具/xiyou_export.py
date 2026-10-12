@@ -348,6 +348,7 @@ class Exporter:
                     'releaseVersion': pkg.get('releaseVersion'), 'slice': self.slice_info,
                     'formulaUntranslatedInSlice': untranslated, 'formulaUntranslatedAllSkills': all_bad,
                     'issues': self.issues, 'inputs': self.inputs, 'outputs': self.outputs}
+        self.write_json('slice.json', self.cfg)
         (self.out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + '\n')
         size = sum(p.stat().st_size for p in self.out.rglob('*') if p.is_file())
         print(json.dumps({'releaseVersion': manifest['releaseVersion'], 'outputs': len(self.outputs), 'bytes': size,
