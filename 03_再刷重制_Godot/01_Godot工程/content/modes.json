@@ -5,7 +5,7 @@
       "id": "xiyou",
       "title": "西游改版",
       "enabled": true,
-      "status": "entry_preview_gameplay_pending",
+      "status": "playable_slice_floor1",
       "sourceId": "legacy_xiyou_mod_kyo",
       "entryScene": "res://modes/xiyou/entry.tscn",
       "saveNamespace": "xiyou"

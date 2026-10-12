@@ -20,7 +20,7 @@ static func color(n: int) -> Color:
 
 
 ## 返回 {"name": 名字框文字, "bbcode": 正文}
-static func convert(raw: String) -> Dictionary:
+static func to_bb(raw: String) -> Dictionary:
 	var s := raw.replace("\\\\", "\u001b")
 	var name := ""
 	var m := RegEx.create_from_string("\\\\n<([^>]*)>").search(s)
@@ -71,7 +71,7 @@ static func convert(raw: String) -> Dictionary:
 
 static func plain(raw: String) -> String:
 	var r := RegEx.create_from_string("\\[[^\\]]*\\]")
-	return r.sub(convert(raw).bbcode.replace("[lb]", "["), "", true)
+	return r.sub(to_bb(raw).bbcode.replace("[lb]", "["), "", true)
 
 
 static func _sub(s: String, pattern: String, fn: Callable) -> String:

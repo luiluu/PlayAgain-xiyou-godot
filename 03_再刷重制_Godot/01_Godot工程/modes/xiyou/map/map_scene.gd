@@ -41,7 +41,7 @@ func _ready() -> void:
 	ui.add_child(message)
 	fader = ColorRect.new()
 	fader.color = Color.BLACK
-	fader.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fader.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	fader.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fader.modulate.a = 0.0
 	ui.add_child(fader)
@@ -58,7 +58,7 @@ func _ready() -> void:
 
 func _build_hud() -> void:
 	hud = Control.new()
-	hud.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.theme = XUI.theme()
 	ui.add_child(hud)
@@ -69,10 +69,16 @@ func _build_hud() -> void:
 	menu_btn.offset_right = -16
 	menu_btn.pressed.connect(open_menu)
 	hud.add_child(menu_btn)
+	var plate := PanelContainer.new()
+	var sb := XUI.panel()
+	sb.content_margin_top = 6
+	sb.content_margin_bottom = 6
+	plate.add_theme_stylebox_override("panel", sb)
+	plate.position = Vector2(16, 16)
+	hud.add_child(plate)
 	var map_name := XUI.label("", 20, XUI.GOLD)
 	map_name.name = "MapName"
-	map_name.position = Vector2(20, 18)
-	hud.add_child(map_name)
+	plate.add_child(map_name)
 
 
 func load_map(id: int, x: int, y: int, d: int) -> void:
@@ -95,7 +101,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	upper.z_index = 10
 	add_child(upper)
 	upper.setup(map_data, true)
-	var keep: Array = slice().get("keepEvents", {}).get(str(id), [])
+	var keep: Array = slice().get("keepEvents", {}).get(str(id), []).map(func(v): return int(v))
 	for ev in map_data.events:
 		if ev == null or not keep.has(int(ev.id)):
 			continue
@@ -121,7 +127,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	camera.reparent(player)
 	camera.position = Vector2(0, -TS / 2.0)
 	camera.reset_smoothing()
-	(hud.get_node("MapName") as Label).text = str(map_data.get("displayName", ""))
+	(hud.find_child("MapName", true, false) as Label).text = str(map_data.get("displayName", ""))
 	play_bgm(map_data.get("bgm", {}))
 	_make_encounter_count()
 	await _run_autorun()
@@ -209,11 +215,13 @@ func run_event(e: MVEvent) -> void:
 	_set_busy(true)
 	if not e.direction_fix and e.trigger() == 0:
 		e.set_direction(MVCharacter.reverse_dir(player.direction))
-	var interp := MVInterpreter.new(self, map_id, e.event_id, e.command_list())
+	var ev_id := e.event_id
+	var interp := MVInterpreter.new(self, map_id, ev_id, e.command_list())
 	await interp.run()
+	# 事件里若有场所移动，旧地图的事件节点已释放，之后不能再访问 e
 	if not interp.skipped.is_empty():
 		skipped_log.append_array(interp.skipped)
-		print("[xiyou] 事件 %d 跳过 %d 条：%s" % [e.event_id, interp.skipped.size(), JSON.stringify(interp.skipped.slice(0, 3))])
+		print("[xiyou] 事件 %d 跳过 %d 条：%s" % [ev_id, interp.skipped.size(), JSON.stringify(interp.skipped.slice(0, 3))])
 	_set_busy(false)
 	refresh_events()
 
@@ -260,7 +268,7 @@ func fade(out: bool) -> void:
 	await t.finished
 
 func transfer(id: int, x: int, y: int, d: int) -> void:
-	if XDB.map(id).is_empty() or not slice().get("maps", []).has(id):
+	if XDB.map(id).is_empty() or not slice().get("maps", []).map(func(v): return int(v)).has(id):
 		await message.show_text("", 0, ["\\c[2]（首期尚未开放这张地图：Map%03d）" % id])
 		return
 	await fade(true)

@@ -64,7 +64,7 @@ static func make_equip(kind: String, base_id: int) -> Dictionary:
 		return {}
 	var inst := src.duplicate(true)
 	inst["kind"] = kind
-	inst["base"] = base_id
+	inst["base"] = float(base_id)  # 与 JSON 往返后的类型一致（存档读回都是浮点）
 	return inst
 
 ## MV Game_Actor.canEquip：武器/防具类型由特性 51/52（及被动 passiveEWPN/EARM）放行，特性 54 封印装备类型；

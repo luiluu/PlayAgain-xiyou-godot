@@ -4,13 +4,13 @@
   "updatedDate": "2026-10-12",
   "libraryRevision": 4,
   "root": "/Users/kyo/Documents/再刷项目资料库",
-  "currentStep": 3,
+  "currentStep": 5,
   "steps": {
     "1": "done_pending_cross_review",
     "2": "dev001_entry_prototype_verified",
-    "3": "in_progress",
-    "4": "not_started",
-    "5": "not_started",
+    "3": "slice_mapped_rest_pending",
+    "4": "core_systems_partial",
+    "5": "floor1_slice_playable_pending_user_playtest",
     "6": "not_started",
     "7": "templates_installed_no_game_export",
     "8": "not_started",
@@ -58,8 +58,8 @@
     "selfContainedEditor": true,
     "editorStartupVerified": true,
     "visibleProjectManagerVerified": true,
-    "runnableBuildKind": "dev.001 entry prototype, no gameplay",
-    "developmentVersion": "dev.001",
+    "runnableBuildKind": "dev.002 西游首期可玩版（开局区域＋一层）",
+    "developmentVersion": "dev.002",
     "developmentRegistry": "03_再刷重制_Godot/开发编号.json"
   },
   "existingMod": {

@@ -62,16 +62,15 @@ static func button(text: String, min_h := 56) -> Button:
 	return b
 
 
-## 头像：faces 图每张 4×2 个，144×144。
+## 头像：faces 图按 4 列排列，每格 144×144。
 static func face_texture(face_name: String, index: int) -> AtlasTexture:
 	var p := XDB.img_path("faces", face_name) if face_name != "" else ""
 	if p == "":
 		return null
 	var a := AtlasTexture.new()
 	a.atlas = load(p)
-	var w: float = a.atlas.get_width() / 4.0
-	var h: float = a.atlas.get_height() / 2.0
-	a.region = Rect2((index % 4) * w, floori(index / 4.0) * h, w, h)
+	# MV 头像每格固定 144×144（ImageManager.faceWidth），图可能只有一两格
+	a.region = Rect2((index % 4) * 144, floori(index / 4.0) * 144, 144, 144)
 	return a
 
 

@@ -1,11 +1,26 @@
-# 唯一 Godot 工程位置
+# Godot 工程
 
-【Codex·未经Claude检验】｜dev.001 双入口开发原型，游戏玩法未接入。
+唯一 Godot 工程（GDScript，Godot 4.7.2，见[开发环境](../07_开发环境/README.md)）。启动后选「西游改版」或「新版」（新版未开放）。
 
-本目录是唯一 Godot 工程，使用 GDScript 与[本地开发环境](../07_开发环境/README.md)。运行后选择「西游改版」或「新版」；西游进入开发预览，新版暂未开放。当前来源为正式 Mac v0.04，Steam 原版审计不作为本期前置条件。
+## 首次运行
 
-`content/modes.json` 是模式原件，`core` 为共用入口/路由/表现，`modes/xiyou` 为西游入口。新版没有内容场景。本轮不读写玩家进度。开发编号原件为上级 `开发编号.json`，工程版本与构建信息同轮同步，尚未制作公开发行包。
+西游模式的数据与素材由转换器从正式 Mac 应用（v0.04）只读生成，不入 Git：
 
-不建立第二份“最新工程”；阶段候选通过版本记录与发布目录追溯。
+```
+python3 ../03_转换工具/xiyou_export.py          # → modes/xiyou/generated/
+cd ../03_转换工具/mv_oracle && npm install         # 参照引擎依赖（只需一次）
+node slice_probe.cjs && node map_probe.cjs          # 生成对照基准（测试用）
+```
 
-自动测试：`tests/ui_smoke.tscn`（入口冒烟测试，Claude 新增）。运行方式见脚本头注释；截图输出到 `04_验证/本地结果/`。
+然后用 `../07_开发环境/打开重制工程.command` 打开，或 `../07_开发环境/godot --path .` 直接运行。
+
+## 目录
+
+- `core/`、`scenes/`：共用入口与路由；`content/modes.json` 为模式原件。
+- `modes/xiyou/core/`：数据（XDB）、战斗者（XBattler/XActor/XEnemy）、伤害（XDamage，移植正式版 CodexDamage）、状态与存档（XState/XSave）。
+- `modes/xiyou/map/`：MV 图块绘制与通行、角色/事件/玩家、事件解释器、地图场景。
+- `modes/xiyou/battle/`：战斗规则（XBattleLogic）、侧视战斗画面、MV 动画播放。
+- `modes/xiyou/ui/`：文字代码转换、对话框、商店、菜单、样式。
+- `tests/`：`检查.sh` 自动运行。xiyou_rules（与正式版对照能力值/伤害）、xiyou_map（通行对照）、xiyou_battle（战斗规则）、xiyou_flow（无人操作走完首期流程）、ui_smoke（入口）。
+
+开发编号以上级 `开发编号.json` 为准，用 `07_开发环境/开发编号.py bump` 递增。首期范围见[首期可玩版规格](../00_设计/首期可玩版规格.md)。

@@ -7,6 +7,10 @@ signal _advance
 signal _chosen(index: int)
 
 const CHARS_PER_FRAME := 2
+## 自动测试用：auto 为真时文字自动翻页，选项依次取 auto_answers（取完后选第一个）。
+static var auto := false
+static var auto_answers: Array = []
+static var transcript: Array = []
 var _panel: PanelContainer
 var _face: TextureRect
 var _name: Label
@@ -18,7 +22,7 @@ var _cancel_type := -1
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	theme = XUI.theme()
 	_panel = PanelContainer.new()
@@ -62,6 +66,11 @@ func show_text(face_name: String, face_index: int, lines: Array) -> void:
 	await _show(face_name, face_index, lines)
 	if lines.is_empty():
 		return
+	if auto:
+		transcript.append(XText.plain("\n".join(lines)))
+		await get_tree().process_frame
+		visible = false
+		return
 	_waiting = true
 	await _advance
 	_waiting = false
@@ -90,7 +99,12 @@ func choose(options: Array, cancel_type: int) -> int:
 	await get_tree().process_frame
 	if _choices.get_child_count() > 0:
 		(_choices.get_child(0) as Button).grab_focus()
-	var r: int = await _chosen
+	var r: int
+	if auto:
+		r = int(auto_answers.pop_front()) if not auto_answers.is_empty() else 0
+		transcript.append("选择：" + XText.plain(str(options[r])))
+	else:
+		r = await _chosen
 	for c in _choices.get_children():
 		c.queue_free()
 	_cancel_type = -1
@@ -99,14 +113,14 @@ func choose(options: Array, cancel_type: int) -> int:
 
 func _show(face_name: String, face_index: int, lines: Array) -> void:
 	visible = true
-	var conv := XText.convert("\n".join(lines))
+	var conv := XText.to_bb("\n".join(lines))
 	_face.texture = XUI.face_texture(face_name, face_index)
 	_face.visible = _face.texture != null
 	_name.text = conv.name
 	_name.visible = conv.name != ""
 	_text.text = str(conv.bbcode).strip_edges()
 	_text.visible_characters = 0
-	_typing = true
+	_typing = not auto
 	while _typing and _text.visible_characters < _text.get_total_character_count():
 		_text.visible_characters += CHARS_PER_FRAME
 		await get_tree().process_frame
@@ -117,8 +131,8 @@ func _show(face_name: String, face_index: int, lines: Array) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
-	var confirm := event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT) or (event is InputEventScreenTouch and event.pressed)
-	var cancel := event.is_action_pressed("ui_cancel") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT)
+	var confirm: bool = event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT) or (event is InputEventScreenTouch and event.pressed)
+	var cancel: bool = event.is_action_pressed("ui_cancel") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT)
 	if _choices.get_child_count() > 0:
 		if cancel and _cancel_type != -1:
 			get_viewport().set_input_as_handled()

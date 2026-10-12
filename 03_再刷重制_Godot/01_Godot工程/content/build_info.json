@@ -1,8 +1,8 @@
 {
-  "developmentVersion": "dev.001",
+  "developmentVersion": "dev.002",
   "releaseVersion": null,
-  "kind": "entry_prototype",
-  "gameplayAvailable": false,
+  "kind": "playable_slice",
+  "gameplayAvailable": true,
   "marker": "【Codex·未经Claude检验】",
   "review": "未经claude检验"
 }

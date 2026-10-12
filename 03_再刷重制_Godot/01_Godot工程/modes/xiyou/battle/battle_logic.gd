@@ -206,6 +206,8 @@ func run_turn(commands: Dictionary) -> Array:
 	var order := []
 	for a in alive(actors):
 		var cmd: Array = commands.get(a, auto_action(a) if auto else [XDB.rec("Skills", ATTACK_SKILL), null])
+		if cmd[0] == null:
+			continue  # 本回合不行动（如逃跑失败）
 		order.append({"user": a, "skill": cmd[0], "target": cmd[1]})
 	for e in alive(enemies):
 		order.append({"user": e, "skill": enemy_action(e), "target": null})
