@@ -1,11 +1,10 @@
 {
-  "marker": "【Codex·未经Claude检验】＋【Claude·未经Codex检验】",
-  "review": "dev.001 由 Codex 编写、Claude 补测试与收尾；双方均未对对方本轮做独立交叉核查",
+  "marker": "机器可读事实；叙述性进度见交接板",
+  "review": "见交接板「待交叉核查」",
   "updatedDate": "2026-10-12",
-  "libraryRevision": 3,
+  "libraryRevision": 4,
   "root": "/Users/kyo/Documents/再刷项目资料库",
   "currentStep": 3,
-  "currentAction": "dev.001 双入口原型已验收；下一步盘点当前西游 v0.04 系统并做 Godot 映射",
   "steps": {
     "1": "done_pending_cross_review",
     "2": "dev001_entry_prototype_verified",
@@ -70,13 +69,6 @@
     "realSaveModifiedByThisTask": false,
     "releaseNumberChangedByThisTask": false
   },
-  "pending": [
-    "盘点西游 v0.04 数据库、插件与 codex 运行模块，形成系统映射表",
-    "西游核心系统（数据、战斗、装备实例、掉落、保存）Godot 实现",
-    "小范围可玩版及与正式版行为对照",
-    "Android SDK/签名与三端实际导出验收",
-    "Codex/Claude 对彼此本轮改动交叉核查"
-  ],
   "plan": "00_项目管理/重制步骤清单.md（9 步，西游优先）",
   "remakeSource": {
     "sourceId": "legacy_xiyou_mod_kyo",
@@ -84,5 +76,17 @@
     "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
     "fingerprint": "00_项目管理/验证与备份/20261012_双入口西游优先/当前西游来源清单.json",
     "fingerprintedFiles": 765
+  },
+  "handoff": "00_项目管理/交接板.md",
+  "collaboration": {
+    "agents": [
+      "Claude",
+      "Codex"
+    ],
+    "sharedRules": "AGENTS.md",
+    "claudeEntry": "CLAUDE.md -> @AGENTS.md",
+    "branch": "main",
+    "check": "03_再刷重制_Godot/07_开发环境/检查.sh",
+    "devVersionTool": "03_再刷重制_Godot/07_开发环境/开发编号.py"
   }
 }

@@ -1,5 +1,5 @@
 extends Node
-## 【Claude·未经Codex检验】 入口界面冒烟测试：西游可进入并返回，新版禁用，手机横屏比例扩展。
+## 入口界面冒烟测试：西游可进入并返回，新版禁用，手机横屏比例扩展。
 ## 运行：godot --path <工程> res://tests/ui_smoke.tscn -- --out=<截图目录>
 ## 不读写任何保存；截图只写入 --out 指定目录。
 
@@ -11,12 +11,13 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
-	var runner := Node.new()
-	runner.set_script(get_script())
-	runner.set_meta("runner", true)
 	if has_meta("runner"):
 		_run.call_deferred()
 		return
+	# 场景切换会释放当前场景，测试执行器挂在 root 下才能跨场景存活。
+	var runner := Node.new()
+	runner.set_script(get_script())
+	runner.set_meta("runner", true)
 	runner.out_dir = out_dir
 	get_tree().root.add_child.call_deferred(runner)
 
@@ -69,5 +70,5 @@ func _run() -> void:
 	await _shot("03_入口_手机比例.png")
 	_check("no_user_saves_written", not DirAccess.dir_exists_absolute("user://modes"))
 	var passed := results.filter(func(r): return r["passed"]).size()
-	print("UI_SMOKE=" + JSON.stringify({"passed": passed, "total": results.size(), "results": results}))
-	get_tree().quit(0 if passed == results.size() else 1)
+	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size(), "results": results}))
+	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
