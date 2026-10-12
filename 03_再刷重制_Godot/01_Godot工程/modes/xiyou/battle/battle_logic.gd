@@ -3,7 +3,8 @@ extends RefCounted
 ## 战斗规则（不含画面）：MV 回合制——全员选好行动后按速度排序依次执行。
 ## 伤害交给 XDamage（与正式版对照过），这里负责命中/闪避/会心、技能消耗、效果、状态回合、敌人 AI、奖励。
 ## 每次行动返回一组记录（log），画面层按记录播放；无界面测试也直接用这些记录。
-## 首期精简：OTB 行动顺序条、追加行动、反击/反射、技能冷却、精英变体不做。
+## 另含：技能冷却/预热（YEP_X_SkillCooldowns）、战斗中用物品、反击/魔法反射（MV invokeAction）、神话敌人（XEnemy）。
+## 首期精简：OTB 行动顺序条、追加行动不做。
 
 const DEATH_STATE := 1
 const GUARD_SKILL := 2
@@ -17,6 +18,8 @@ var can_escape := true
 var escaped := false
 var auto := false
 var state: XState
+## 测试用：>= 0 时固定神话判定（0 必为神话，100 必不是）
+var elite_roll := -1.0
 
 
 func setup(troop: int, s: XState) -> void:
@@ -29,7 +32,7 @@ func setup(troop: int, s: XState) -> void:
 	for m in t.get("members", []):
 		if bool(m.get("hidden", false)):
 			continue
-		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty)
+		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty, elite_roll)
 		e.set_meta("x", float(m.x))
 		e.set_meta("y", float(m.y))
 		enemies.append(e)
@@ -46,6 +49,8 @@ func setup(troop: int, s: XState) -> void:
 				continue
 			a.remove_state(sid)
 		a.on_battle_start()
+	for b in actors + enemies:
+		b.start_warmups()
 
 
 func alive(list: Array) -> Array:
@@ -62,7 +67,12 @@ func vars() -> Array:
 
 
 # ---- 技能可用 ----
+static func is_item(rec: Dictionary) -> bool:
+	return rec.has("itypeId")
+
 func skill_cost(a: XBattler, skill: Dictionary) -> Dictionary:
+	if is_item(skill):
+		return {"mp": 0, "tp": 0}
 	return {"mp": floori(float(skill.get("mpCost", 0)) * a.mcr), "tp": int(skill.get("tpCost", 0))}
 
 func can_use(a: XBattler, skill: Dictionary) -> bool:
@@ -70,6 +80,10 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	var occ := int(skill.get("occasion", 0))
 	if occ != 0 and occ != 1:
+		return false
+	if is_item(skill):
+		return a.is_actor() and state.items.get(int(skill.id), 0) > 0
+	if a.cooldown_left(int(skill.id)) > 0:
 		return false
 	if a.is_actor() and int(skill.stypeId) > 0:
 		if not a.traits_set(XBattler.TRAIT_STYPE_ADD).has(int(skill.stypeId)) or a.traits_set(XBattler.TRAIT_STYPE_SEAL).has(int(skill.stypeId)):
@@ -81,10 +95,24 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 
 ## 角色的可用主动技能（隐藏的被动不列出）
 func usable_skills(a: XActor) -> Array:
+	return battle_skills(a).filter(func(s): return can_use(a, s))
+
+## 技能列表里显示的全部主动技能（含冷却中/魔法不足的，画面上显示为灰色）
+func battle_skills(a: XActor) -> Array:
 	var out := []
 	for s in a.skills():
-		if int(s.id) > GUARD_SKILL and int(s.stypeId) != 4 and not s.get("meta", {}).has("Hide in Battle") and can_use(a, s):
+		if int(s.id) > GUARD_SKILL and int(s.stypeId) != 4 and not s.get("meta", {}).has("Hide in Battle"):
 			out.append(s)
+	return out
+
+## 战斗中可用的物品（MV Window_BattleItem：场合为「总是」或「战斗中」且持有）
+func battle_items() -> Array:
+	var out := []
+	for id in state.items.keys():
+		var rec := XDB.rec("Items", int(id))
+		if not rec.is_empty() and int(state.items[id]) > 0 and [0, 1].has(int(rec.get("occasion", 3))):
+			out.append(rec)
+	out.sort_custom(func(x, y): return int(x.id) < int(y.id))
 	return out
 
 
@@ -203,6 +231,9 @@ func auto_action(a: XActor) -> Array:
 ## commands: actor -> [skill, target]；返回本回合按顺序的行动记录。
 func run_turn(commands: Dictionary) -> Array:
 	turn += 1
+	# YEP_X_SkillCooldowns：Game_Troop.increaseTurn 时双方冷却/预热各减 1
+	for b in actors + enemies:
+		b.update_cooldowns()
 	var order := []
 	for a in alive(actors):
 		var cmd: Array = commands.get(a, auto_action(a) if auto else [XDB.rec("Skills", ATTACK_SKILL), null])
@@ -250,19 +281,51 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler) -> Array:
 	var logs := []
 	if not can_use(u, skill):
 		skill = XDB.rec("Skills", ATTACK_SKILL)
-	var c := skill_cost(u, skill)
-	u.mp -= c.mp
-	u.tp -= c.tp
+	if is_item(skill):
+		if bool(skill.get("consumable", true)):
+			state.gain_item(int(skill.id), -1)
+	else:
+		var c := skill_cost(u, skill)
+		u.mp -= c.mp
+		u.tp -= c.tp
+		u.pay_cooldown(skill)
 	logs.append({"type": "action", "user": u, "skill": skill})
 	var repeats := int(skill.get("repeats", 1))
-	if int(skill.id) == ATTACK_SKILL:
+	if not is_item(skill) and int(skill.id) == ATTACK_SKILL:
 		repeats += int(u.traits_sum_all(XBattler.TRAIT_ATTACK_TIMES))
 	for t in targets_for(u, skill, chosen):
 		for i in range(maxi(1, repeats)):
 			if t.is_dead() and not [9, 10].has(int(skill.scope)):
 				break
-			logs.append(apply(u, skill, t))
+			if u.is_dead():
+				break
+			logs.append_array(_invoke(u, skill, t))
 	return logs
+
+
+## YEP_BattleEngineCore 的 invokeAction：先判魔法反射（魔法、几率 mrf），再判反击（物理、目标能行动、几率 cnt），否则正常生效。
+## 反射：行动作用到行动者自己。反击：目标对行动者普通攻击，原行动对该目标无效。
+## dsPassiveSkill 必中（角色的 SkillCertainHit 被动）时不会被反射/反击。MV 不区分敌我。
+func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
+	var sure := certain_hit(u, skill)
+	var mrf := t.mrf if XDamage.is_magical(skill) and not sure else 0.0
+	if randf() < mrf:
+		var r := apply(u, skill, u)
+		r.reflected = true
+		return [{"type": "reflect", "user": u, "target": t}, r]
+	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure else 0.0
+	if randf() < cnt:
+		var r := apply(t, XDB.rec("Skills", ATTACK_SKILL), u)
+		r.counter = true
+		return [{"type": "counter", "user": t, "target": u}, r]
+	return [apply(u, skill, t)]
+
+
+static func certain_hit(u: XBattler, skill: Dictionary) -> bool:
+	if not u.is_actor():
+		return false
+	var ch: Dictionary = u.passive_cache().get("certainHit", {})
+	return bool(ch.get("global", false)) or ch.get("bySkill", {}).has(int(skill.id))
 
 
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
@@ -272,6 +335,8 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var physical := XDamage.is_physical(skill)
 	var magical := XDamage.is_magical(skill)
 	var hit_rate := float(skill.get("successRate", 100)) * 0.01 * (u.hit if physical else 1.0)
+	if certain_hit(u, skill):
+		hit_rate = 1.0
 	var eva_rate := t.eva if physical else (t.mev if magical else 0.0)
 	if u.is_actor() == t.is_actor():
 		eva_rate = 0.0
@@ -318,11 +383,13 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 	var v2 := float(eff.value2)
 	match int(eff.code):
 		11:
-			var v := (t.mhp * v1 + v2) * t.rec
+			var v := (t.mhp * v1 + v2) * t.rec * (u.pha if is_item(r.skill) else 1.0)
+			v = floorf(v)
 			t.hp = minf(t.mhp, t.hp + v)
 			r.hp -= v
 		12:
-			var v := (t.mmp * v1 + v2) * t.rec
+			var v := (t.mmp * v1 + v2) * t.rec * (u.pha if is_item(r.skill) else 1.0)
+			v = floorf(v)
 			t.mp = minf(t.mmp, t.mp + v)
 			r.mp -= v
 		13:
@@ -419,17 +486,17 @@ func rewards() -> Dictionary:
 		item_up = maxf(item_up, _passive_sum(a, "passiveIRUP"))
 	for e in enemies:
 		var d: Dictionary = e.data()
-		exp += float(d.exp) * rates[0]
-		gold += float(d.gold) * rates[1] * (1.0 + gold_up / 100.0)
+		exp += float(e.exp_reward()) * rates[0]
+		gold += float(e.gold_reward()) * rates[1] * (1.0 + gold_up / 100.0)
 		var di: Array = d.get("dropItems", [])
 		for i in range(di.size()):
 			var drop: Dictionary = di[i]
 			if int(drop.kind) > 0 and int(drop.denominator) > 0:
 				var rate := float(rates[2 + i]) if 2 + i < rates.size() else 1.0
-				if randf() * int(drop.denominator) < rate * (1.0 + item_up / 100.0):
+				if randf() * int(drop.denominator) < rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0):
 					drops.append({"kind": int(drop.kind), "id": int(drop.dataId)})
 		for extra in _extra_drops(d):
-			if randf() < extra.rate * (1.0 + item_up / 100.0):
+			if randf() < extra.rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0):
 				drops.append({"kind": extra.kind, "id": extra.id})
 	return {"exp": roundi(exp), "gold": roundi(gold), "drops": drops}
 
@@ -472,6 +539,7 @@ func grant(r: Dictionary) -> Array:
 func end_battle() -> void:
 	for b in actors:
 		b.guarding = false
+		b.end_battle_cooldowns()
 		for id in b.state_ids.duplicate():
 			if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):
 				b.remove_state(id)

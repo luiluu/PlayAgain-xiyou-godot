@@ -20,6 +20,7 @@ func _run() -> void:
 		a.recover_all()
 	var logic := XBattleLogic.new()
 	logic.auto = true
+	logic.elite_roll = 100.0  # 不出神话，奖励按普通敌人核对
 	logic.setup(2, s)
 	_check("troop2_three_enemies", logic.enemies.size() == 3, logic.enemies.map(func(e): return e.display_name()))
 	_check("battle_start_states", logic.actors.all(func(a): return a.is_state_affected(995) and a.is_state_affected(1691)))

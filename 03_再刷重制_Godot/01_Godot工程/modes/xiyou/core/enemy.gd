@@ -1,19 +1,33 @@
 class_name XEnemy
 extends XBattler
-## 敌人：MV Game_Enemy ＋ Vitsuno_Difficulty 按难度放大能力值。
-## 精英/神话随机变体（EliteEnemy）、敌人等级（YEP_EnemyLevels）首期不做。
+## 敌人：MV Game_Enemy ＋ Vitsuno_Difficulty 按难度放大能力值 ＋ EliteEnemy 随机「神话」变体。
+## 神话（正式版插件参数）：几率 50%（备注 <elite:几率,能力,经验,金钱,掉率> 可单独设定，NoElite 不会变），
+## 基础能力值 ×3.5 取整、经验 ×1.2、金钱 ×1.2、掉率 ×5，名字前加「【神话】」，图像放大 1.8 倍并偏色。
+## 开关参数「开启」在正式版被读成 NaN（不看开关），所以总是生效。
+## 敌人等级（YEP_EnemyLevels）在正式版只影响显示（已关闭）且不改能力值，不做。
 
 var enemy_id := 0
 var difficulty_id := 2
 var letter := ""
 var _rates: Array = [1, 1, 1, 1, 1, 1, 1, 1]
 var _passive_cache := {}
+var elite := false
+var elite_hue := 0.0              # 0~1，画面偏色用
+## 测试用：>= 0 时所有敌人按此值判定神话（0 必为神话，100 必不是）
+static var force_roll := -1.0
 
 
-func setup(id: int, difficulty: int) -> XEnemy:
+## roll < 0 时按几率随机决定神话；测试可传 0（必为神话，除非 NoElite）或 100（必不是）。
+func setup(id: int, difficulty: int, roll := -1.0) -> XEnemy:
 	enemy_id = id
 	difficulty_id = difficulty
 	_rates = difficulty_rates(difficulty)
+	if roll < 0.0:
+		roll = force_roll
+	var r := randf() * 100.0 if roll < 0.0 else roll
+	elite = r < elite_param(0) and not str(data().get("note", "")).contains("NoElite")
+	if elite:
+		elite_hue = randf_range(100.0, 170.0) / 360.0
 	refresh_passive()
 	recover_all()
 	return self
@@ -34,13 +48,32 @@ func data() -> Dictionary:
 	return XDB.rec("Enemies", enemy_id)
 
 func display_name() -> String:
-	return str(data().get("name", "")) + letter
+	return (elite_title() if elite else "") + str(data().get("name", "")) + letter
+
+static func elite_title() -> String:
+	return str(XDB.plugin("EliteEnemy").get("EliteEnemyTitle", "【精英】"))
+
+## EliteEnemy 数值：0 几率、1 能力、2 经验、3 金钱、4 掉率；备注 <elite:...> 优先。
+func elite_param(i: int) -> float:
+	var keys := ["EliteEnemyChances", "EliteEnemyAdditionParamBase", "EliteEnemyAdditionExp", "EliteEnemyAdditionGold", "EliteEnemyAdditionDropItemRate"]
+	var defaults := [35.0, 1.5, 3.0, 3.0, 2.0]
+	var meta = data().get("meta", {}).get("elite")
+	if meta != null:
+		var parts := str(meta).split(",")
+		# JS：Number(片段 || 默认)——片段为空才用默认
+		if i < parts.size() and parts[i].strip_edges() != "":
+			return float(parts[i])
+	var v := str(XDB.plugin("EliteEnemy").get(keys[i], ""))
+	return float(v) if v != "" else defaults[i]
 
 func _level() -> int:
 	return 1
 
 func param_base(i: int) -> float:
-	return float(data().params[i]) * float(_rates[i])
+	var base := float(data().params[i])
+	if elite:
+		base = floorf(base * elite_param(1))
+	return base * float(_rates[i])
 
 func trait_objects() -> Array:
 	var out := [data()]
@@ -57,10 +90,14 @@ func skills() -> Array:
 	return out
 
 func exp_reward() -> int:
-	return int(data().get("exp", 0))
+	return int(float(data().get("exp", 0)) * (elite_param(2) if elite else 1.0))
 
 func gold_reward() -> int:
-	return int(data().get("gold", 0))
+	return int(float(data().get("gold", 0)) * (elite_param(3) if elite else 1.0))
+
+## 掉率倍数（神话 ×5）
+func drop_rate_bonus() -> float:
+	return elite_param(4) if elite else 1.0
 
 func race_ids() -> Array:
 	var out := []

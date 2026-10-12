@@ -115,7 +115,7 @@ func to_dict() -> Dictionary:
 	for id in actors:
 		var x2: XActor = actors[id]
 		a[str(id)] = {"level": x2.level, "exp": x2.exp_total, "skills": x2.skill_ids, "equips": x2.equips,
-			"hp": x2.hp, "mp": x2.mp, "states": x2.state_ids}
+			"hp": x2.hp, "mp": x2.mp, "states": x2.state_ids, "cooldowns": x2.cooldowns}
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "actors": a, "gold": gold,
 		"items": items, "gear": gear, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds}
@@ -134,6 +134,8 @@ static func from_dict(d: Dictionary) -> XState:
 		x2.refresh_passive()
 		x2.hp = float(row.hp)
 		x2.mp = float(row.mp)
+		for k in row.get("cooldowns", {}):
+			x2.cooldowns[int(k)] = float(row.cooldowns[k])
 		s.actors[int(id_s)] = x2
 	s.party.assign(d.party.map(func(v): return int(v)))
 	s.gold = int(d.gold)

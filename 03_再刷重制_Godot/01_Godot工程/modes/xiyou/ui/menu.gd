@@ -228,7 +228,7 @@ func _show_equip() -> void:
 		var lab := XUI.label(str(types[slots[i]]), 22, XUI.SYSTEM)
 		lab.custom_minimum_size.x = 110
 		row.add_child(lab)
-		var has := current != null and not current.is_empty()
+		var has: bool = current != null and not current.is_empty()
 		var b := XUI.button(str(current.name) if has else "", 44)
 		if has:
 			b.icon = XUI.icon_texture(int(current.get("iconIndex", 0)))

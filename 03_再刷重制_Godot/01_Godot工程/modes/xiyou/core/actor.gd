@@ -242,7 +242,8 @@ func passive_element_values(e: int) -> Array:
 # ---- 伤害结算用的被动缓存（dsPassiveSkill refreshPassiveCache，单次汇总）----
 func refresh_passive() -> void:
 	var c := {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "skillPass": {}, "skillTypeDvup": {},
-		"SkETypeHarmRi": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0, "itemRateUp": 0.0}
+		"SkETypeHarmRi": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0, "itemRateUp": 0.0,
+		"certainHit": {"global": false, "bySkill": {}}}
 	var objs := equip_list() + skills() + states()
 	for o in objs:
 		var note := str(o.get("note", ""))
@@ -269,6 +270,12 @@ func refresh_passive() -> void:
 			c.globalHarmRi += float(m[0]) / 100.0
 		for m in _scan(note, "(?i)<passiveCrHarmRi:([-]?\\d+(?:\\.\\d+)?)(%?)>"):
 			c.critHarmRi += float(m[0]) / 100.0
+		# 必中：<SkillCertainHitss> 全部技能，<SkillCertainHitN: 技能ID> 指定技能（命中率 1，且不会被反击/反射）
+		if meta.has("SkillCertainHitss"):
+			c.certainHit.global = true
+		for k in meta:
+			if str(k).begins_with("SkillCertainHit") and str(meta[k]).strip_edges().is_valid_int():
+				c.certainHit.bySkill[int(str(meta[k]).strip_edges())] = true
 		if meta.has("passiveIRUP"):
 			c.itemRateUp += _num(meta.passiveIRUP)
 	_passive_cache = c

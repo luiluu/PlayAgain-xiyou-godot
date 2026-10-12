@@ -3,13 +3,13 @@
   "review": "未经claude检验",
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.002",
-  "sequence": 2,
-  "next": "dev.003",
-  "nextSequence": 3,
+  "current": "dev.003",
+  "sequence": 3,
+  "next": "dev.004",
+  "nextSequence": 4,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "首期可玩版：开局选择、方桌大厅、一层探索/遇敌/战斗/商店、菜单与存档",
+  "currentChange": "西游界面改用原版风格；战斗补全：技能冷却/预热、战斗中用物品、反击与魔法反射、神话敌人、敌人血条",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

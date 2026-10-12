@@ -82,7 +82,7 @@ func _run() -> void:
 		for tid_s in d.enemies:
 			var list := []
 			for e in d.enemies[tid_s]:
-				var en := XEnemy.new().setup(int(e.id), diff)
+				var en := XEnemy.new().setup(int(e.id), diff, 100.0)  # 参照数据取自非神话（Math.random=0.99）
 				list.append(en)
 				_compare_snap("d%d.troop%s.enemy%d" % [diff, tid_s, int(e.id)], _snap(en), e)
 			troops[int(tid_s)] = list

@@ -61,6 +61,7 @@ func _event(scene: XMapScene, id: int) -> MVEvent:
 func _run() -> void:
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
+	XEnemy.force_roll = 100.0   # 流程测试不出神话敌人（神话另由 xiyou_combat 测）
 	XSave.dir_override = "user://test_xiyou_flow"
 	Engine.time_scale = 6.0
 	seed(20261012)
@@ -114,6 +115,27 @@ func _run() -> void:
 	_check("encounter_won", result == 0, result)
 	_check("rewards", s.gold > gold0 and s.actor(1).exp_total > exp0, [s.gold, s.actor(1).exp_total])
 	await _frames(5)
+	# 菜单、状态、商店（原版界面风格）
+	map.open_menu()
+	await _frames(15)
+	await _shot("07_菜单.png")
+	var menus := map.ui.get_children().filter(func(c): return c is XMenu)
+	_check("menu_opened", menus.size() == 1)
+	if menus.size() == 1:
+		menus[0]._show_status()
+		await _frames(5)
+		await _shot("08_状态.png")
+		menus[0].closed.emit()
+	await _frames(3)
+	_check("menu_closed", not map._menu_open)
+	map.open_shop([[0, 1, 0, 0], [0, 2, 0, 0], [1, 1, 0, 0]], false)
+	await _frames(10)
+	await _shot("09_商店.png")
+	var shops := map.ui.get_children().filter(func(c): return c is XShop)
+	_check("shop_opened", shops.size() == 1)
+	if shops.size() == 1:
+		shops[0].closed.emit()
+	await _frames(3)
 	# 存档 / 读档
 	_check("save", XSave.save(1))
 	var before := JSON.stringify(s.to_dict())

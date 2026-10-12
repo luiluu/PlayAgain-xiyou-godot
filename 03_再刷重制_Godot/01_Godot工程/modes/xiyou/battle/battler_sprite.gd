@@ -16,6 +16,21 @@ var _frame := 0
 var _tick := 0
 var home := Vector2.ZERO
 var facing_left := true
+## YEP_X_AnimatedSVEnemies 呼吸（Breathing Y Rate 0.02）
+var breathing := false
+var _breath_t := randf() * TAU
+const HUE_SHADER := """
+shader_type canvas_item;
+uniform float hue = 0.0;
+void fragment() {
+	vec4 c = texture(TEXTURE, UV) * COLOR;
+	float a = hue * 6.28318;
+	vec3 k = vec3(0.57735);
+	float ca = cos(a);
+	c.rgb = c.rgb * ca + cross(k, c.rgb) * sin(a) + k * dot(k, c.rgb) * (1.0 - ca);
+	COLOR = c;
+}
+"""
 
 
 func setup(b: XBattler, sprite_scale: float) -> void:
@@ -45,12 +60,26 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 		var h := 64.0 if sv else float(tex.get_height())
 		sprite.offset.y = -h / 2.0
 	scale = Vector2.ONE * sprite_scale
+	# EliteEnemyPlugins：神话敌人色相偏移（MV loadBitmap 的 hue）
+	if b is XEnemy and (b as XEnemy).elite:
+		var mat := ShaderMaterial.new()
+		var sh := Shader.new()
+		sh.code = HUE_SHADER
+		mat.shader = sh
+		mat.set_shader_parameter("hue", (b as XEnemy).elite_hue)
+		sprite.material = mat
 	set_motion("walk" if b.is_alive() else "dead")
 
 
 static func _load(folder: String, name: String) -> Texture2D:
 	var p := XDB.img_path(folder, name)
 	return load(p) if p != "" else null
+
+
+func width() -> float:
+	if sprite.texture == null:
+		return 64.0 * scale.x
+	return (64.0 if sv else float(sprite.texture.get_width())) * scale.x
 
 
 func height() -> float:
@@ -66,7 +95,11 @@ func set_motion(m: String) -> void:
 	_apply()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if breathing and battler.is_alive():
+		_breath_t += delta * TAU / 2.4
+		sprite.scale.y = 1.0 + sin(_breath_t) * 0.02
+		sprite.position.y = 0.0
 	if not sv:
 		return
 	_tick += 1

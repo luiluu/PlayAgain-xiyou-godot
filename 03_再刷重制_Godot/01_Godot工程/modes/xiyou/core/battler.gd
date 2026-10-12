@@ -27,6 +27,9 @@ var state_turns := {}
 var buffs: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var buff_turns: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var guarding := false
+## YEP_X_SkillCooldowns：技能 ID → 剩余回合（冷却 / 预热）。冷却跨战斗保留（随存档），预热只在战斗内。
+var cooldowns := {}
+var warmups := {}
 
 var mhp: float:
 	get: return param(0)
@@ -119,6 +122,52 @@ func passive_values(_tag: String) -> Array:
 
 func race_ids() -> Array:
 	return []
+
+# ---- 技能冷却（YEP_X_SkillCooldowns，回合制）----
+## 技能 1~7 不受冷却影响（插件参数 Cooldown Bypass）。
+static func cooldown_bypass(skill_id: int) -> bool:
+	var ids := str(XDB.plugin("YEP_X_SkillCooldowns").get("Cooldown Bypass", "")).split(" ", false)
+	return ids.has(str(skill_id))
+
+## 剩余回合：冷却与预热取大者；> 0 时不能使用。
+func cooldown_left(skill_id: int) -> int:
+	return maxi(ceili(float(cooldowns.get(skill_id, 0))), ceili(float(warmups.get(skill_id, 0))))
+
+## 使用技能后：<Cooldown: x> 设为 x。
+func pay_cooldown(skill: Dictionary) -> void:
+	var cd = skill.get("meta", {}).get("Cooldown")
+	if cd == null or cooldown_bypass(int(skill.id)):
+		return
+	cooldowns[int(skill.id)] = maxf(0.0, float(str(cd).strip_edges()))
+
+## 战斗开始：<Warmup: x> 的技能设预热。
+func start_warmups() -> void:
+	warmups.clear()
+	for sk in skills():
+		var wu = sk.get("meta", {}).get("Warmup")
+		if wu != null and not cooldown_bypass(int(sk.id)):
+			warmups[int(sk.id)] = float(str(wu).strip_edges())
+
+## 每回合开始（MV Game_Troop.increaseTurn）各减 1。
+func update_cooldowns() -> void:
+	for k in cooldowns.keys():
+		cooldowns[k] = float(cooldowns[k]) - 1.0
+		if cooldowns[k] <= 0.0:
+			cooldowns.erase(k)
+	for k in warmups.keys():
+		warmups[k] = float(warmups[k]) - 1.0
+		if warmups[k] <= 0.0:
+			warmups.erase(k)
+
+## 战斗结束：冷却加上 Cooldown After Battle（-10），清除预热。
+func end_battle_cooldowns() -> void:
+	var after := float(XDB.plugin("YEP_X_SkillCooldowns").get("Cooldown After Battle", "0"))
+	for k in cooldowns.keys():
+		cooldowns[k] = float(cooldowns[k]) + after
+		if cooldowns[k] <= 0.0:
+			cooldowns.erase(k)
+	warmups.clear()
+
 
 ## 公式兼容：技能熟练度（YEP_SkillMasteryLevels），首期统一为 0。
 func skillMasteryLevel(_skill_id: int) -> int:
