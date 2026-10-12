@@ -1,5 +1,5 @@
 'use strict';
-// 正式 v0.04 OTB 顺序探针；新建内存队伍，写入只限 .sandbox/，不创建或读取存档。
+// 正式版 OTB 顺序探针（夹具记录插件 SHA，xiyou_otb 对照当前来源）；新建内存队伍，写入只限 .sandbox/，不创建或读取存档。
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const {boot} = require('./hboot.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';

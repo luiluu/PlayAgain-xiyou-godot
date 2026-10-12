@@ -32,7 +32,12 @@ func _stun() -> int:
 	return id
 
 func _run() -> void:
-	expected = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/otb.json")).rows
+	var fixture: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/otb.json"))
+	expected = fixture.rows
+	# 夹具取自的插件必须与当前转换来源的同一文件相同，正式版改了 OTB 就要重跑 otb_probe.cjs
+	var manifest = XDB.load_json("manifest.json")
+	var current_sha = manifest.get("runtimeInputs", {}).get(fixture.source) if manifest is Dictionary else null
+	_check("fixture_matches_current_plugin", current_sha == fixture.sha256, [fixture.sha256, current_sha])
 	var s := XState.new_game(3, 1, [8,9,10])
 	var l := FixedLogic.new()
 	l.elite_roll = 100.0
