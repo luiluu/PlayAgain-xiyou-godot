@@ -1,0 +1,112 @@
+{
+  "marker": "【Codex·未经Claude检验】",
+  "review": "未经claude检验",
+  "installedAt": "2026-10-12T19:24:13.303725+02:00",
+  "version": "4.7.2",
+  "versionString": "4.7.2.stable.official.ed1daf0bf",
+  "flavor": "standard_GDScript",
+  "officialRelease": "https://github.com/godotengine/godot-builds/releases/tag/4.7.2-stable",
+  "applicationPath": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/引擎/4.7.2-stable/Godot.app",
+  "currentApplicationLink": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/当前Godot.app",
+  "commandLineEntry": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/godot",
+  "selfContained": true,
+  "editorDataPath": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/引擎/4.7.2-stable/editor_data",
+  "editorConfigPath": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/引擎/4.7.2-stable/editor_data",
+  "editorCachePath": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/引擎/4.7.2-stable/editor_data/cache",
+  "templateVersion": "4.7.2.stable",
+  "templateDirectory": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/导出模板/4.7.2.stable",
+  "editorTemplateLink": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/引擎/4.7.2-stable/editor_data/export_templates/4.7.2.stable",
+  "installedTemplatePlatforms": [
+    "macOS",
+    "Windows",
+    "Android"
+  ],
+  "otherTemplatesRetainedInArchive": true,
+  "downloads": [
+    {
+      "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/下载包/Godot_v4.7.2-stable_macos.universal.zip",
+      "url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_macos.universal.zip",
+      "sha256": "c58a24e31d720be9d62f60cb5627c4e695fb72f21b0cfe1bc9ccaa9a3b3ba63e",
+      "bytes": 170622178,
+      "official_digest_verified": true
+    },
+    {
+      "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/下载包/Godot_v4.7.2-stable_export_templates.tpz",
+      "url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz",
+      "mirror_url": "https://godot-releases.nbg1.your-objectstorage.com/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz",
+      "sha256": "f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011",
+      "sha512": "ca4d71c4d7b81dfc15d1a98baa07534aa95b03fdda78a0075b06672e1648d2e5f40980c9adc28d23e1b92e732ee7bf3461997aa804af74ec2fcd7a93ccb84079",
+      "bytes": 1281349702,
+      "official_digest_verified": true,
+      "official_sha512_verified": true,
+      "resumed_prefix_bytes": 280834048,
+      "ranges": [
+        {
+          "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/下载包/template_parts/001-range",
+          "start": 280834048,
+          "end": 405898504,
+          "bytes": 125064457
+        },
+        {
+          "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/下载包/template_parts/002-range",
+          "start": 405898505,
+          "end": 530962961,
+          "bytes": 125064457
+        },
+        {
+          "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/下载包/template_parts/003-range",
+          "start": 530962962,
+          "end": 656027418,
+          "bytes": 125064457
+        },
+        {
+          "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/下载包/template_parts/004-range",
+          "start": 656027419,
+          "end": 781091875,
+          "bytes": 125064457
+        },
+        {
+          "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/下载包/template_parts/005-range",
+          "start": 781091876,
+          "end": 906156332,
+          "bytes": 125064457
+        },
+        {
+          "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/下载包/template_parts/006-range",
+          "start": 906156333,
+          "end": 1031220789,
+          "bytes": 125064457
+        },
+        {
+          "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/下载包/template_parts/007-range",
+          "start": 1031220790,
+          "end": 1156285246,
+          "bytes": 125064457
+        },
+        {
+          "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/下载包/template_parts/008-range",
+          "start": 1156285247,
+          "end": 1281349701,
+          "bytes": 125064455
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "officialSHA256": true,
+    "officialSHA512": true,
+    "codesignValid": true,
+    "gatekeeperAccepted": true,
+    "headlessEditorInitializationAndExit": true,
+    "headlessFinalErrors": false,
+    "guiProjectManagerViewed": true,
+    "guiProjectsPresent": false,
+    "canonicalProjectCreated": false,
+    "gameplayImplemented": false,
+    "windowsOrAndroidExported": false
+  },
+  "verificationDirectory": "/Users/kyo/Documents/再刷项目资料库/00_项目管理/验证与备份/20261012_Godot部署",
+  "androidSDKConfigured": false,
+  "androidSigningConfigured": false,
+  "engineUpdatedAutomatically": false
+}

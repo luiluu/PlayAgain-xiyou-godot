@@ -2,15 +2,15 @@
   "marker": "【Codex·未经Claude检验】",
   "review": "未经claude检验",
   "updatedDate": "2026-10-12",
-  "libraryRevision": 1,
+  "libraryRevision": 2,
   "root": "/Users/kyo/Documents/再刷项目资料库",
   "currentStep": 2,
-  "currentAction": "等待 PD 的 Windows Steam 原版下载并复制到待接收目录",
+  "currentAction": "PD 原版调用及 Godot 部署已完成；下一步审计原版数据与封装，确定重制首期规格",
   "steps": {
     "1": "library_structure_created_pending_cross_review",
-    "2": "awaiting_original_files",
+    "2": "pd_access_verified_full_baseline_audit_pending",
     "3": "not_started",
-    "4": "not_started",
+    "4": "engine_templates_installed_project_creation_pending",
     "5": "not_started",
     "6": "not_started",
     "7": "not_started",
@@ -22,19 +22,42 @@
     "steamAppId": 2059790,
     "imported": false,
     "baselineVerified": false,
-    "buildId": null,
+    "buildId": "11735036",
     "recommendedDownload": "PD Windows Steam",
-    "intakeDirectory": "/Users/kyo/Documents/再刷项目资料库/01_再刷一把/01_待接收原版"
+    "intakeDirectory": "/Users/kyo/Documents/再刷项目资料库/01_再刷一把/01_待接收原版",
+    "downloadCompleteUserConfirmed": true,
+    "accessVerified": true,
+    "depotManifest": "8064319545780814456",
+    "windowsGamePath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\再刷一把 PlayAgain",
+    "macPortRequested": false,
+    "accessMethod": "pd_read_only_exec",
+    "sourceSnapshotCreated": false
   },
   "godot": {
-    "installationStatus": "not_installed_by_this_task",
-    "selectedVersion": null,
+    "installationStatus": "installed_in_library_and_verified",
+    "selectedVersion": "4.7.2",
     "languageRecommendation": "GDScript",
     "projectCreated": false,
     "projectDirectory": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/01_Godot工程",
     "runnableBuildAvailable": false,
     "releaseVersion": null,
-    "targetPlatforms": ["macOS", "Windows", "Android"]
+    "targetPlatforms": [
+      "macOS",
+      "Windows",
+      "Android"
+    ],
+    "versionString": "4.7.2.stable.official.ed1daf0bf",
+    "environmentRegistry": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/环境登记.json",
+    "applicationPath": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/引擎/4.7.2-stable/Godot.app",
+    "exportTemplatesInstalled": true,
+    "exportTemplatePlatforms": [
+      "macOS",
+      "Windows",
+      "Android"
+    ],
+    "selfContainedEditor": true,
+    "editorStartupVerified": true,
+    "visibleProjectManagerVerified": true
   },
   "existingMod": {
     "referenceLibrary": "/Users/kyo/Documents/再刷西游",
@@ -44,11 +67,10 @@
     "releaseNumberChangedByThisTask": false
   },
   "pending": [
-    "下载并接收干净 Steam 原版及可用的 Steam 版本登记",
-    "核对原版来源、版本、数据、脚本和运行行为",
-    "安装并登记 Godot 与匹配导出模板",
-    "创建可运行工程与核心框架",
-    "后续完成实际多平台验收",
-    "Claude 对本轮同版本文档与记录独立核查"
+    "核对原版数据、插件、编译封装与纯净状态，形成可追溯审计基准",
+    "进行原版运行对照并确定重制首期规格",
+    "创建唯一 Godot 工程与核心框架",
+    "配置 Android SDK/签名与实际多平台导出验收",
+    "Claude 对本轮同版本文件独立核查"
   ]
 }

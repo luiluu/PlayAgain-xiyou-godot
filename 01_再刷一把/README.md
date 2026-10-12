@@ -2,7 +2,9 @@
 
 【Codex·未经Claude检验】｜2026-10-12
 
-目标是 [Steam 原版《再刷一把 PlayAgain》](https://store.steampowered.com/app/2059790/)，AppID 2059790。本目录尚未收到原版文件，也没有已确认基准。
+目标是 [Steam 原版《再刷一把 PlayAgain》](https://store.steampowered.com/app/2059790/)，AppID 2059790。用户已在 PD Windows 下载，安装目录为 `C:\Program Files (x86)\Steam\steamapps\common\再刷一把 PlayAgain`。
+
+[原版调用说明](./03_原版分析/原版调用说明.md)提供只读访问入口。已核对 Steam AppID、BuildID 11735036、Depot manifest 8064319545780814456，并实际读取 rpg_core.js；其内容不是普通 UTF-8 脚本文本，完整封装/规则/纯净基准审计仍待完成。用户明确不制作原版 Mac 移植。
 
 | 目录 | 用途 |
 | --- | --- |
