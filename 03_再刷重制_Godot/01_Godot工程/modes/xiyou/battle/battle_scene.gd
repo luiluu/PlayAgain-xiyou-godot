@@ -42,8 +42,7 @@ var field: Node2D
 var fx: Node2D
 var ui: Control
 var help_bar: Control
-var help_label: Label
-var help_cancel: Button
+var help_canvas: XMVCanvas
 var otb: XOTBBar
 var cmd_win: XBattleList
 var list_win: XBattleList
@@ -238,24 +237,11 @@ func _show_enemy_gauge(e: XBattler, seconds := 0.5) -> void:
 
 func _build_ui(vs: Vector2) -> void:
 	# 顶部说明栏（Olivia：Window_Help 不透明度 0、暗底；YEP 行动名也显示在顶部）
-	help_bar = XUI.dimmer(false, true)
-	help_bar.position = Vector2(0, _origin.y + OTB_HELP_Y)
-	help_bar.size = Vector2(vs.x, XUI.LINE_HEIGHT * 2 + 28)
+	var help := XMVWindow.make(ui, Rect2(_origin + Vector2(0, OTB_HELP_Y), Vector2(1280, 100)), 0)
+	help.background_type = 1
+	help_bar = help
+	help_canvas = help.canvas
 	help_bar.visible = false
-	ui.add_child(help_bar)
-	help_label = XUI.label("", XUI.FONT_SIZE)
-	help_label.position = Vector2(18, 14)
-	help_label.size = Vector2(help_bar.size.x - 28, help_bar.size.y - 28)
-	help_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	help_bar.add_child(help_label)
-	help_cancel = XUI.button("返回", 44)
-	help_cancel.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	help_cancel.add_theme_stylebox_override("normal", XUI.panel())
-	help_cancel.position = Vector2(help_bar.size.x - 340, 20)
-	help_cancel.size = Vector2(110, 48)
-	help_cancel.visible = false
-	help_cancel.pressed.connect(func(): _picked.emit("cancel"))
-	help_bar.add_child(help_cancel)
 	# 右侧状态（XSideStatus，按正式版队伍顺序）
 	var holder := Control.new()
 	holder.position = _origin
@@ -320,18 +306,18 @@ func _set_active(a: XActor) -> void:
 		status_rows[b].active = b == a
 
 
-func _help(text: String, cancel := false) -> void:
+func _help(text: String) -> void:
 	help_bar.visible = text != ""
-	help_label.text = text
-	help_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	help_cancel.visible = cancel
+	var t := XMVText.new(XMVText.convert_escapes(text), 6, 0, help_canvas.size.x)
+	t.run()
+	help_canvas.painter = func(c): XMVText.paint(c, t.glyphs)
+	help_canvas.queue_redraw()
 
 
 func _banner(text: String) -> void:
 	help_bar.visible = text != ""
-	help_label.text = text
-	help_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	help_cancel.visible = false
+	help_canvas.painter = func(c): c.text(text, 6, 0, help_canvas.size.x - 12, "center")
+	help_canvas.queue_redraw()
 
 
 func _process(delta: float) -> void:
@@ -493,15 +479,11 @@ func _command_for(a: XActor):
 			return "auto"
 		if pick is String and pick.begins_with("stype:"):
 			cmd_win.active = false
-			var s = await _pick_from_list(a, logic.battle_skills(a).filter(func(x): return int(x.stypeId) == int(pick.substr(6))), false)
+			var action = await _pick_action_list(a, logic.battle_skills(a).filter(func(x): return int(x.stypeId) == int(pick.substr(6))), false)
 			if logic.auto:
 				return "auto"
-			if s is Dictionary:
-				var t = await _pick_target(s, a)
-				if logic.auto:
-					return "auto"
-				if t != null:
-					return [s, t]
+			if action is Array:
+				return action
 			continue
 		match pick:
 			"attack":
@@ -517,17 +499,27 @@ func _command_for(a: XActor):
 				return "escape"
 			"item":
 				cmd_win.active = false
-				var it = await _pick_from_list(a, logic.battle_items(), true)
+				var action = await _pick_action_list(a, logic.battle_items(), true)
 				if logic.auto:
 					return "auto"
-				if it is Dictionary:
-					var t = await _pick_target(it, a)
-					if logic.auto:
-						return "auto"
-					if t != null:
-						return [it, t]
+				if action is Array:
+					return action
 			"back", "cancel":
 				return "back"
+	return null
+
+
+## 目标取消后返回刚才的技能/物品列表；再次取消才回指令（MV onEnemyCancel/onActorCancel）。
+func _pick_action_list(a: XActor, entries: Array, items: bool):
+	var index := 0
+	while not logic.auto:
+		var entry = await _pick_from_list(a, entries, items, index)
+		if not entry is Dictionary or logic.auto:
+			return null
+		index = entries.find(entry)
+		var target = await _pick_target(entry, a)
+		if target != null:
+			return [entry, target]
 	return null
 
 
@@ -554,17 +546,17 @@ func _list_entry(a: XActor, e: Dictionary, items: bool) -> Dictionary:
 
 
 ## Window_BattleSkill / Window_BattleItem（宽 450、最多 16 行），贴在角色旁 (+16, +16)。
-func _pick_from_list(a: XActor, entries: Array, items: bool):
+func _pick_from_list(a: XActor, entries: Array, items: bool, initial_index := 0):
 	_close_list()
 	var rows := entries.map(func(e): return _list_entry(a, e, items))
 	list_win = XBattleList.create(ui, rows, LIST_W)
 	list_win.index_changed.connect(func(i):
 		if i >= 0 and i < entries.size():
-			_help(XText.plain(str(entries[i].get("description", ""))))
+			_help(str(entries[i].get("description", "")))
 			_preview(a, null if items else entries[i]))
 	list_win.chosen.connect(func(i): _picked.emit(entries[i]))
 	list_win.cancelled.connect(func(): _picked.emit("cancel"))
-	list_win.select(0)
+	list_win.select(initial_index)
 	_place_near_actor(list_win, a, Vector2(16, 16))
 	while true:
 		var r = await _picked

@@ -62,6 +62,7 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0
 	seed(20261013)
 	var s := XState.new_game(3, 1, [8, 9, 10])
+	s.gain_item(1, 5)
 	s.map_id = 5
 	s.x = 10
 	s.y = 10
@@ -121,6 +122,28 @@ func _run() -> void:
 	_check("keyboard_target_changes", b._hover != target and b.sprites[b._hover].selected and not b.sprites[target].selected)
 	await _press("ui_cancel")
 	_check("target_cancel_returns", b._target_mode == "" and b.cmd_win != null and b.cmd_win.visible and b.sprites.values().all(func(v): return not v.selected))
+	await _press("ui_down")
+	await _press("ui_accept")
+	await _press("ui_accept")
+	_check("skill_opens_target", b._target_mode == "enemy")
+	await _press("ui_cancel")
+	_check("skill_target_cancel_to_list", b._target_mode == "" and b.list_win != null and b.list_win.active and not b.cmd_win.active)
+	await _press("ui_cancel")
+	_check("skill_list_second_cancel_to_command", b.list_win == null and b.cmd_win != null and b.cmd_win.active)
+	# 物品列表 → 我方目标；取消不消耗药水，目标状态条左移 24。
+	for i in range(3):
+		await _press("ui_down")
+	await _press("ui_accept")
+	_check("item_list_open", b.list_win != null)
+	await _shot("battle_43_item")
+	await _press("ui_accept")
+	_check("item_targets_ally", b._target_mode == "ally" and b.sprites[b._hover].cursor != null and b.status_rows[b._hover].selected)
+	await _shot("battle_43b_ally_target")
+	await _press("ui_cancel")
+	_check("item_target_cancel_to_list", b.list_win != null and b.list_win.active and s.item_count(1) == 5)
+	await _press("ui_cancel")
+	for i in range(4):
+		await _press("ui_up")
 	await _press("ui_accept")
 	target = b._hover
 	var hp := target.hp
