@@ -10,6 +10,9 @@ const LOOP := ["walk", "wait", "chant", "guard", "dying", "abnormal", "sleep", "
 
 var battler: XBattler
 var sprite: Sprite2D
+var shadow: Sprite2D
+## 图像缩放只作用于身体（MV 缩放 _mainSprite），影子与位置不缩放
+var body_scale := 1.0
 var sv := false
 var motion := "walk"
 var _frame := 0
@@ -36,6 +39,14 @@ void fragment() {
 func setup(b: XBattler, sprite_scale: float) -> void:
 	battler = b
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	# MV Sprite_Actor.createShadowSprite：Shadow2，中心锚点，y −2（YEP_BattleEngineCore Show Shadows）
+	if b is XActor:
+		var sp := XDB.img_path("system", "Shadow2")
+		if sp != "":
+			shadow = Sprite2D.new()
+			shadow.texture = load(sp)
+			shadow.position.y = -2
+			add_child(shadow)
 	sprite = Sprite2D.new()
 	sprite.centered = true
 	add_child(sprite)
@@ -59,7 +70,8 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	if tex:
 		var h := 64.0 if sv else float(tex.get_height())
 		sprite.offset.y = -h / 2.0
-	scale = Vector2.ONE * sprite_scale
+	body_scale = sprite_scale
+	sprite.scale = Vector2.ONE * body_scale
 	# EliteEnemyPlugins：神话敌人色相偏移（MV loadBitmap 的 hue）
 	if b is XEnemy and (b as XEnemy).elite:
 		var mat := ShaderMaterial.new()
@@ -78,14 +90,14 @@ static func _load(folder: String, name: String) -> Texture2D:
 
 func width() -> float:
 	if sprite.texture == null:
-		return 64.0 * scale.x
-	return (64.0 if sv else float(sprite.texture.get_width())) * scale.x
+		return 64.0 * body_scale
+	return (64.0 if sv else float(sprite.texture.get_width())) * body_scale
 
 
 func height() -> float:
 	if sprite.texture == null:
-		return 64.0 * scale.y
-	return (64.0 if sv else float(sprite.texture.get_height())) * scale.y
+		return 64.0 * body_scale
+	return (64.0 if sv else float(sprite.texture.get_height())) * body_scale
 
 
 func set_motion(m: String) -> void:
@@ -98,7 +110,7 @@ func set_motion(m: String) -> void:
 func _process(delta: float) -> void:
 	if breathing and battler.is_alive():
 		_breath_t += delta * TAU / 2.4
-		sprite.scale.y = 1.0 + sin(_breath_t) * 0.02
+		sprite.scale.y = body_scale * (1.0 + sin(_breath_t) * 0.02)
 		sprite.position.y = 0.0
 	if not sv:
 		return
