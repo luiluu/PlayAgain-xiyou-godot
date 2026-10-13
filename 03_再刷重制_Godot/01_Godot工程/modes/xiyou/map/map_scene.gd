@@ -24,6 +24,7 @@ var bgm: AudioStreamPlayer
 var se: AudioStreamPlayer
 var hud: Control
 var map_hud: XMapHUD
+var transfer_page: XMapTransferScene
 var busy := false
 var encounter_count := 0
 var skipped_log: Array = []
@@ -35,6 +36,10 @@ var _menu_open := false
 var _backup_until := 0
 ## Game_Temp.reserveCommonEvent：事件进行中点的枫叶，等事件结束后执行
 var _reserved_common_event := 0
+## Scene_Map.create / update：变量 21（副本）为 0 时建出地图传送按钮，建出后到下次换场景前一直在
+var _transfer_shown := false
+## O-012：事件/对话期间不开放地图传送（原版事件中也能打开并传送）。设 false 恢复。
+const SAFE_TRANSFER_BUTTON := true
 var _map_name_tween: Tween
 ## O-011：事件/消息期间不开放地图备份，避免保存一半剧情（解释器当前不序列化）。
 const SAFE_HUD_ACTIONS := true
@@ -86,6 +91,7 @@ func _build_hud() -> void:
 	map_hud = XMapHUD.new()
 	hud.add_child(map_hud)
 	map_hud.backup_requested.connect(backup_game)
+	map_hud.transfer_requested.connect(open_transfer)
 	map_hud.return_requested.connect(return_to_hub)
 	# 地图名（Olivia_MapDisplayNameCore，正式版改为居中）：窗口宽 1280、高 36，从 y=18 滑到 48 淡入，停留，再滑到 78 淡出（各 60 帧）
 	var plate := XMVCanvas.new()
@@ -145,6 +151,8 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	map_data = XDB.map(id)
 	var s := XState.current
 	s.map_id = id
+	XMapTransfer.on_arrive(s, id)
+	_reset_transfer_button()
 	lower = MVTilemap.new()
 	lower.z_index = -10
 	add_child(lower)
@@ -219,7 +227,11 @@ func _process(delta: float) -> void:
 				f.opacity = player.opacity
 				f.queue_redraw()
 		map_hud.refresh()
-		map_hud.set_actions_enabled(not busy and not _menu_open and not player.is_moving(), not _menu_open)
+		if not _transfer_shown and XState.current.variable(21) == 0:
+			_transfer_shown = true
+		map_hud.transfer_button.visible = _transfer_shown
+		map_hud.set_actions_enabled(not busy and not _menu_open and not player.is_moving(), not _menu_open,
+			not _menu_open and not (SAFE_TRANSFER_BUTTON and busy))
 	if not _pending_popups.is_empty():
 		_flush_popups()
 	if not busy and not _menu_open and player:
@@ -430,6 +442,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	var result: int = await battle.finished
 	battle.queue_free()
 	hud.visible = true
+	_reset_transfer_button()
 	_bgm_name = ""
 	play_bgm({"name": prev, "volume": 90})
 	refresh_events()
@@ -440,11 +453,18 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 func _snapshot() -> Texture2D:
 	if DisplayServer.get_name() == "headless":
 		return null
+	# 窗口层（对话框、地图名）不进截图：snapForBattleBackground 隐藏窗口层，Scene_Map.terminate 先隐藏地图名
+	var plate: CanvasItem = hud.find_child("MapNamePlate", true, false)
 	var was := message.visible
+	var plate_was := plate.visible if plate else false
 	message.visible = false
+	if plate:
+		plate.visible = false
 	await RenderingServer.frame_post_draw
 	var img := get_viewport().get_texture().get_image()
 	message.visible = was
+	if plate:
+		plate.visible = plate_was
 	if img == null or img.is_empty():
 		return null
 	var ft := get_viewport().get_final_transform()
@@ -598,6 +618,7 @@ func open_menu() -> void:
 	menu.queue_free()
 	_menu_open = false
 	hud.visible = true
+	_reset_transfer_button()
 	if reserved > 0:
 		await run_common_event(reserved)
 	# 整队/换人后队首与跟随的行走图
@@ -622,6 +643,39 @@ func backup_game() -> void:
 		await message.show_text("", 0, ["⚠️ 备份已满，请清理旧存档" if slot == 0 else "备份失败，请重试。"])
 	busy = false
 	busy_changed.emit(false)
+
+
+## 换场景（场所移动、菜单/战斗返回）后重新按变量 21 决定是否有地图传送按钮
+func _reset_transfer_button() -> void:
+	_transfer_shown = XState.current != null and XState.current.variable(21) == 0
+	if map_hud:
+		map_hud.transfer_button.visible = _transfer_shown
+
+
+## Sprite_MapTransferButton → Scene_MapTransfer：截图（不含地图名）作背景；确认传送后从黑场淡入新地图（Laser1 已在页内播放）。
+func open_transfer() -> void:
+	if _menu_open or (SAFE_TRANSFER_BUTTON and busy):
+		return
+	XSound.system(1)
+	_set_busy(true)
+	var shot := await _snapshot()
+	hud.visible = false
+	var page := XMapTransferScene.new()
+	page.background = shot
+	ui.add_child(page)
+	transfer_page = page
+	var target: Dictionary = await page.closed
+	page.queue_free()
+	transfer_page = null
+	hud.visible = true
+	if not target.is_empty():
+		fader.modulate.a = 1.0
+		await load_map(int(target.map), int(target.x), int(target.y), 8)
+		await fade(false)
+	else:
+		_reset_transfer_button()
+	_set_busy(false)
+	refresh_events()
 
 
 ## TCLH_levelUP_button：枫叶只预约公共事件 10（带副本限制），不能直接绕过事件传送。

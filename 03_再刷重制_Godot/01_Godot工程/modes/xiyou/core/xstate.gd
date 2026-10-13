@@ -34,6 +34,8 @@ var actor_name := ""
 ## 事件脚本「所有角色学会/忘记技能」：MV 会当场建出全部角色；这里按顺序记下，角色第一次建出时补上（见 actor()）
 ## 每条 {"op": "learn"/"forget", "skill": N, "ids": [] 为全体, "exclude": [], "named": 只限有名字的角色}
 var actor_ops: Array = []
+## MapTransferPlugin 的 $gameSystem._unlockedMaps：进入过的配置地图（map_id -> true；见 XMapTransfer）
+var unlocked_maps := {}
 
 
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
@@ -219,7 +221,8 @@ func to_dict() -> Dictionary:
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "actors": a, "gold": gold,
 		"items": items, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
-		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops}
+		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
+		"unlockedMaps": unlocked_maps.keys()}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -270,5 +273,11 @@ static func from_dict(d: Dictionary) -> XState:
 			"exclude": op.get("exclude", []).map(func(v): return int(v)), "named": bool(op.get("named", false))})
 	for k in d.get("seen", []):
 		s.seen[str(k)] = true
+	if d.has("unlockedMaps"):
+		for k in d.unlockedMaps:
+			s.unlocked_maps[int(k)] = true
+	elif s.self_switch(4, 20, "A"):
+		# dev.016 及以前的 Godot 档没有解锁记录：已到过大厅的补大厅（所在地图由 load_map 照常解锁）
+		s.unlocked_maps[4] = true
 	current = s
 	return s

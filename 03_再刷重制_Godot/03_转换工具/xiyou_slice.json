@@ -104,6 +104,7 @@
     "bgm/Ship3",
     "se/Skill2",
     "se/Cursor1",
-    "se/Coin"
+    "se/Coin",
+    "se/Laser1"
   ]
 }

@@ -223,8 +223,7 @@ func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 
 ## EnemyNameColorByDifficulty 只为与数据库原名完全相同的文字上色。
 func _enemy_name_color(e: XEnemy) -> Color:
-	var colors := {1:"#ffffff",2:"#39ff39",3:"#4499ff",4:"#b050ff",5:"#ff9922",6:"#ffd700",7:"#ff2222",8:"#ee77ee"}
-	return Color(colors[e.difficulty_id]) if e.display_name() == str(e.data().get("name","")) and colors.has(e.difficulty_id) else XUI.TEXT
+	return XEnemy.name_color(e.display_name(), e.difficulty_id)
 
 
 func _refresh_enemy_gauge(e: XEnemy) -> void:

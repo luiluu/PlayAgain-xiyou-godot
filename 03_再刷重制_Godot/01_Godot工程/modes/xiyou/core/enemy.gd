@@ -33,6 +33,20 @@ func setup(id: int, difficulty: int, roll := -1.0) -> XEnemy:
 	return self
 
 
+## EnemyNameColorByDifficulty：任何与数据库敌人原名（去首尾空白）完全相同的文字，改画成当前难度的颜色。
+const NAME_COLORS := {1: "#ffffff", 2: "#39ff39", 3: "#4499ff", 4: "#b050ff", 5: "#ff9922", 6: "#ffd700", 7: "#ff2222", 8: "#ee77ee"}
+static var _names := {}
+
+static func name_color(text: String, difficulty: int, base := XUI.TEXT) -> Color:
+	if _names.is_empty():
+		for e in XDB.table("Enemies"):
+			if e is Dictionary and str(e.get("name", "")).strip_edges() != "":
+				_names[str(e.name).strip_edges()] = true
+	if _names.has(text.strip_edges()) and NAME_COLORS.has(difficulty):
+		return Color(NAME_COLORS[difficulty])
+	return base
+
+
 static func difficulty_rates(difficulty: int) -> Array:
 	var p := XDB.plugin("Vitsuno_Difficulty")
 	var s := str(p.get("%d : Param Rate" % difficulty, ""))
