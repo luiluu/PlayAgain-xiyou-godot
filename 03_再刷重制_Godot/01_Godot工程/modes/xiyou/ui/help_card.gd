@@ -96,25 +96,9 @@ static func _quality(obj: Dictionary) -> int:
 	return int(str(q).strip_edges()) if str(q).strip_edges().is_valid_int() else 0
 
 
+## ItemQuality 的 normalcolor/namecolor：QualitiesColor[旧档]，西游 v0.15 起整表换成七档颜色（XQuality）
 static func quality_color_text(obj: Dictionary) -> String:
-	var list := _list_param(str(XDB.plugin("ItemQuality").get("QualitiesColor", "")))
-	var q := _quality(obj)
-	return list[q] if q < list.size() else "rgba(255,255,255,1)"
-
-
-static func quality_name(obj: Dictionary) -> String:
-	var raw = JSON.parse_string(str(XDB.plugin("ItemQuality").get("QualitiesName", "[]")))
-	var q := _quality(obj)
-	return str(raw[q]) if raw is Array and q < raw.size() else ""
-
-
-## "['a','b']" 形式的参数（JS 数组字面量，单引号）
-static func _list_param(text: String) -> Array:
-	var out := []
-	var re := RegEx.create_from_string("'([^']*)'")
-	for m in re.search_all(text):
-		out.append(m.get_string(1))
-	return out
+	return XQuality.color_text(obj)
 
 
 static func _num(v) -> String:
@@ -159,7 +143,14 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 	for line in str(obj.get("note", "")).split("\n"):
 		_extra_row(rows, pos, line.strip_edges(false, true), normal)
 	# ItemQuality：<pos=AD text=品质：名称 size=18 color=normalcolor line=false align=0>
-	_extra_row(rows, pos, "<pos=AD text=品质：%s size=18 color=normalcolor line=false align=0>" % quality_name(obj), normal)
+	_extra_row(rows, pos, "<pos=AD text=品质：%s size=18 color=normalcolor line=false align=0>" % XQuality.grade_name(obj), normal)
+	# 西游 v0.15 Q.labelRows：所有「品质：」行换成七档名称，装备带标签（品质：不朽（传家宝））
+	var label := "品质：" + XQuality.label(obj, ["item", "weapon", "armor", "skill"][type])
+	var color_code := RegEx.create_from_string("(?i)\\\\c\\[\\d+\\]")
+	for r in rows:
+		var plain := color_code.sub(str(r[0]), "", true)
+		if plain.begins_with("品质：") or plain.begins_with("品质:"):
+			r[0] = label
 	for r in rows:
 		r[0] = _terms(str(r[0]))
 	return rows
@@ -800,8 +791,8 @@ func place_near(anchor: Rect2, side := "right", area := Rect2(22, 22, 1236, 676)
 
 
 func _draw_frame() -> void:
-	# ItemQuality：四层 Window{品质} 窗口（不透明度、背景都是 60），覆盖卡外 10px
-	var skin_path := XDB.img_path("system", "Window%d" % quality)
+	# ItemQuality：四层 Window{品质} 窗口（西游 v0.15 起按七档取代表图）（不透明度、背景都是 60），覆盖卡外 10px
+	var skin_path := XDB.img_path("system", "Window%d" % XQuality.window_skin(quality))
 	_frame_style = XUI.panel(60)
 	if skin_path != "":
 		_frame_style.skin = load(skin_path)

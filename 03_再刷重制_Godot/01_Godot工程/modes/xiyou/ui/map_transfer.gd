@@ -30,9 +30,6 @@ const ENEMY_COL := 230.0             # min(230, floor(1072 × 0.28))
 const DROP_COLS := 3                 # floor((1072 − 230 − 30) / 190) 限 1～3
 const COOLDOWN := 10
 const SELECT_COLOR := Color("ffff00")
-## Window_Base.itemColor（西游改写的 1～15 号色）；掉落名字按物品 <ici>，没有时为 1
-const ITEM_COLORS := {1: "ffffff", 2: "80ff80", 3: "39b9ff", 4: "8064f5", 5: "ff28ff", 6: "ff8000", 7: "ffff00",
-	8: "b0b0b0", 9: "ffb100", 10: "8d0919", 11: "ab716e", 12: "a891c8", 13: "2c968c", 14: "fffa32", 15: "a873b9"}
 const PARAM_NAMES := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "敏捷", "幸运"]
 const BLUR_SHADER := """
 shader_type canvas_item;
@@ -269,8 +266,8 @@ func _paint_drop(c: XMVCanvas, d: Dictionary, r: Rect2, difficulty: int) -> void
 	var name := str(item.get("name", ""))
 	if name.length() > 12:
 		name = name.substr(0, 11) + "..."
-	var ici := str(item.get("meta", {}).get("ici", "1"))
-	var color := Color(ITEM_COLORS.get(int(ici) if ici.is_valid_int() else 1, "ffffff"))
+	# 西游 v0.18：掉落名字与列表一样，有品质按七档色，否则按 <ici>
+	var color := XQuality.list_color(item)
 	c.text(name, r.position.x + 32, r.position.y, r.size.x - 32 - 60, "left", XEnemy.name_color(name, difficulty, color))
 	c.text("%.2f%%" % float(d.rate), r.position.x + r.size.x - 60, r.position.y, 60, "right")
 

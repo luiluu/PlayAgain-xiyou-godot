@@ -124,6 +124,15 @@ func _run() -> void:
 		_check("skill_book_extra_clear_of_row", not Rect2(card.position + ex.position, ex.size).grow(10).intersects(Rect2(0, 187, 768, 36)), [card.position, ex.position])
 	card.show_for(XDB.rec("Items", 1))
 	_check("plain_item_no_extra", card.extras.is_empty())
+	# 七档品质（西游 v0.15～v0.18）：映射、标签（多标签用 ·）、边框、列表名字色
+	var grades := range(16).map(func(q): return XQuality.grade_of(q))
+	_check("quality_grades", grades == [0, 0, 1, 2, 3, 4, 4, 4, 5, 5, 5, 5, 6, 5, 6, 6] and XQuality.grade_of(20) == 6, grades)
+	var shenwu := {"meta": {"quality": "9"}, "etypeId": 17}
+	_check("quality_label_tags", XQuality.label(shenwu, "armor") == "不朽（传家宝·神武）" and XQuality.label(shenwu, "item") == "不朽"
+		and XQuality.label({"meta": {"quality": "12"}}, "weapon") == "神话", XQuality.label(shenwu, "armor"))
+	_check("quality_window", XQuality.window_skin(10) == 8 and XQuality.window_skin(12) == 10 and XQuality.window_skin(5) == 7 and XQuality.window_skin(16) == 16)
+	_check("quality_list_color", XQuality.list_color({"meta": {"quality": "13", "ici": "12"}}) == Color8(255, 214, 90)
+		and XQuality.list_color({"meta": {"ici": "6"}}) == Color("ff8000") and XQuality.list_color({}) == Color.WHITE)
 	await get_tree().process_frame
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

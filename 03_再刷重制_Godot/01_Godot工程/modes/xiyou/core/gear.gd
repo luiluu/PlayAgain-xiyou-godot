@@ -142,16 +142,13 @@ static func param_id(text: String) -> int:
 static func quality(item: Dictionary) -> int:
 	return clampi(int(item.get("meta",{}).get("quality",0)),0,15)
 
+## 七档品质名（XQuality；排序仍按 quality 的旧档）
 static func quality_name(item: Dictionary) -> String:
-	var names = JSON.parse_string(str(XDB.plugin("ItemQuality").get("QualitiesName","[]")))
-	return str(names[quality(item)]) if names is Array and names.size() > quality(item) else "普通"
+	return XQuality.grade_name(item)
 
+## 列表名字色（西游 v0.18：有品质按七档，否则按 <ici>）
 static func color(item: Dictionary) -> Color:
-	var text := str(XDB.plugin("ItemQuality").get("QualitiesColor",""))
-	var colors := RegEx.create_from_string("rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*([\\d.]+)\\s*\\)").search_all(text)
-	if colors.size() <= quality(item):return XUI.TEXT
-	var c: RegExMatch = colors[quality(item)]
-	return Color(float(c.get_string(1))/255,float(c.get_string(2))/255,float(c.get_string(3))/255,float(c.get_string(4)))
+	return XQuality.list_color(item)
 
 static func merge_yep(item: Dictionary, affix: Dictionary) -> void:
 	var yep: Dictionary = item.get("yep",{})
