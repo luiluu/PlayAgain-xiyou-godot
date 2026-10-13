@@ -14,7 +14,8 @@ func _run() -> void:
 	seed(12345)
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	for a in s.members():
-		for sid in [2747, 6168, 5980]:
+		# 原版开局（普通难度）实际所学：天道诅咒、难度适应、普通难度；开局可选的角色另有万众一心、SupperStar
+		for sid in [6168, 5980, 5548] + ([2571, 2786] if a.actor_id <= 7 else []):
 			a.learn_skill(sid)
 		a.refresh_passive()
 		a.recover_all()
@@ -23,7 +24,7 @@ func _run() -> void:
 	logic.elite_roll = 100.0  # 不出神话，奖励按普通敌人核对
 	logic.setup(2, s)
 	_check("troop2_three_enemies", logic.enemies.size() == 3, logic.enemies.map(func(e): return e.display_name()))
-	_check("battle_start_states", logic.actors.all(func(a): return a.is_state_affected(995) and a.is_state_affected(1691)))
+	_check("battle_start_states", logic.actors.all(func(a): return a.is_state_affected(995) and a.is_state_affected(1691) and a.is_state_affected(1631)))
 	var hits := 0
 	var turns := 0
 	while not logic.is_won() and not logic.is_lost() and turns < 60:

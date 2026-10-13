@@ -1,5 +1,8 @@
 // 首期切片探针：在正式 v0.04 引擎里按真实开局状态新开一局，输出能力值与伤害明细，作为 Godot 实现的对照基准。
-// 开局被动（技能学会后按战斗开始的方式刷新被动缓存）：暴爽(2747)、天道诅咒(6168)、难度适应(5980，简单~困难)；战斗开始状态 995/1691 直接附加。
+// 开局被动照 v0.13 原版开局实际所学（Map001 选难度 → Map002 第 5 页 → 大厅 EV20；技能学会后按战斗开始的方式刷新被动缓存）：
+//   有名字的角色：天道诅咒 6168（变量 14＝1）、难度适应 5980（简单～困难）、难度被动（简单 5547、普通 5548、困难 5549）；
+//   开局可选的角色（1～7、52）另有万众一心 2571、SupperStar 2786（大厅 EV20「增减技能」）。v0.13 不送暴爽 2747（Map002 第 4 页的开关 685 无处打开）。
+//   战斗开始状态（被动的 StartPushState）直接附加：995（6168）、1691（5980）、1630（5547）、1631（5548）。
 // 伤害：分散度清零、不会心；value=CodexDamage 结算值，final=再经 YEP 状态 Confirm/React 脚本后的值。
 // 敌群生成时 Math.random 固定为 0.99（避开精英/神话随机），之后固定 0.5。
 // 用法：node slice_probe.cjs [难度ID...] → 只写 .sandbox/slice/slice_d<N>.json；验收后由资料库侧复制到 generated/oracle。
@@ -31,12 +34,14 @@ function run(difficulty) {
   w.eval('ConfigManager.applyData({}); DataManager.setupNewGame(); $gameSystem.setDifficultyId(' + difficulty + ');');
   // 开局公共事件「初始化」(812) 会把公式用到的变量置 0；这里不跑事件，统一把未定义变量当 0（Godot 版同样处理）
   w.eval('for (var i = 1; i < 5000; i++) if ($gameVariables._data[i] === undefined) $gameVariables._data[i] = 0;');
-  const passives = [2747, 6168].concat(difficulty >= 2 && difficulty <= 4 ? [5980] : []);
-  const startStates = [995].concat(difficulty >= 2 && difficulty <= 4 ? [1691] : []);
-  const out = {sourceIdentity:identity, difficulty, difficultyName: w.$gameSystem.difficultyName(), passives, startStates, actors: {}, enemies: {}, damage: []};
+  const difficultyPassive = {1: 5561, 2: 5547, 3: 5548, 4: 5549, 5: 5562, 6: 5564}[difficulty];
+  const passives = [6168].concat(difficulty >= 2 && difficulty <= 4 ? [5980] : []).concat(difficultyPassive ? [difficultyPassive] : []);
+  const starters = [1, 2, 3, 4, 5, 6, 7, 52], starterPassives = [2571, 2786];
+  const startStates = [995].concat(difficulty >= 2 && difficulty <= 4 ? [1691] : []).concat({2: [1630], 3: [1631]}[difficulty] || []);
+  const out = {sourceIdentity:identity, difficulty, difficultyName: w.$gameSystem.difficultyName(), passives, starters, starterPassives, startStates, actors: {}, enemies: {}, damage: []};
   for (const id of ACTORS) {
     const a = w.$gameActors.actor(id);
-    passives.forEach(s => a.learnSkill(s));
+    passives.concat(starters.includes(id) ? starterPassives : []).forEach(s => a.learnSkill(s));
     battleRefresh(a);
     const row = {name: a.name(), classId: a._classId, equips: a.equips().map(e => e ? {id: e.id, base: e.baseItemId || e.id, name: e.name} : null), skills: a.skills().map(s => s.id)};
     row.lv1 = snap(a);

@@ -17,7 +17,8 @@ func _check(name: String, ok: bool, detail = null) -> void:
 func _new_state() -> XState:
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	for a in s.members():
-		for sid in [2747, 6168, 5980]:
+		# 原版开局（普通难度）实际所学：天道诅咒、难度适应、普通难度；开局可选的角色另有万众一心、SupperStar
+		for sid in [6168, 5980, 5548] + ([2571, 2786] if a.actor_id <= 7 else []):
 			a.learn_skill(sid)
 		a.refresh_passive()
 		a.recover_all()

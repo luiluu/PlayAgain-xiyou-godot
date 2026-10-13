@@ -46,9 +46,13 @@ func _compare_snap(tag: String, mine: Dictionary, theirs: Dictionary) -> void:
 		_check("%s.%s" % [tag, k], _arr_close(mine[k], theirs[k], 1e-4), {"godot": mine[k], "mv": theirs[k]})
 
 
+## 开局被动照对照基准：全体的 passives，开局可选的角色（starters）另加 starterPassives
 func _make_actor(id: int, d: Dictionary, battle: bool) -> XActor:
 	var a := XActor.new().setup(id)
-	for s in d.passives:
+	var list: Array = d.passives.duplicate()
+	if d.get("starters", []).map(func(v): return int(v)).has(id):
+		list.append_array(d.get("starterPassives", []))
+	for s in list:
 		a.learn_skill(int(s))
 	if battle:
 		for s in d.startStates:
