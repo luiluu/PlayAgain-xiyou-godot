@@ -10,6 +10,8 @@ extends Control
 ## - YEP Gauge Outline 量条：条高 6、底条半透明（160/255）、上移 1px，填充内缩 1px、宽 -2。
 
 const OUTLINE := Color(0, 0, 0, 0.45)
+## Mac 上正式版（Chromium/CoreText）画字会加粗笔画；Godot 不加，用同色细描边补上（像素亮度对照见 界面风格.md）
+const EMBOLDEN := 1
 const ARROW_DOWN := Rect2(132, 60, 24, 12)
 const ARROW_UP := Rect2(132, 24, 24, 12)
 
@@ -63,6 +65,8 @@ func text(s: String, x: float, y: float, max_w: float, align := "left", color :=
 	var c := Color(color, color.a * alpha)
 	draw_set_transform(Vector2(roundf(tx), roundf(base)), 0.0, Vector2(sx, 1.0))
 	draw_string_outline(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 1, Color(OUTLINE, OUTLINE.a * alpha))
+	if EMBOLDEN > 0:
+		draw_string_outline(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, EMBOLDEN, c)
 	draw_string(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, c)
 	draw_set_transform(Vector2.ZERO)
 

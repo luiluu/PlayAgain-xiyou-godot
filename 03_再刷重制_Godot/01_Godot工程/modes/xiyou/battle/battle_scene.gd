@@ -26,9 +26,13 @@ const ENEMY_GAUGE_W := 180.0
 const OTB_POS := Vector2(58, 618)
 const OTB_HELP_Y := 92.0
 const STATES_MAX := 4
+## Codex_MiraRavenMultiFrame：旧式侧视角色（ID < 167）战斗中身体缩放 0.75、最近邻
+const ACTOR_SCALE := 0.75
 
 var logic := XBattleLogic.new()
 var map_data: Dictionary
+## 地图快照（MV Scene_Map.snapForBattleBackground；YEP_MainMenuManager 关闭模糊）
+var snapshot: Texture2D
 var troop_id := 0
 var can_lose := false
 var sprites := {}                 # XBattler -> XBattlerSprite
@@ -58,8 +62,9 @@ var _origin := Vector2.ZERO       # 原版坐标 → 画面坐标的偏移
 static var force_auto := false
 
 
-func setup(troop: int, escape: bool, lose: bool, map: Dictionary) -> void:
+func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Texture2D = null) -> void:
 	troop_id = troop
+	snapshot = background
 	can_lose = lose
 	map_data = map
 	logic.can_escape = escape
@@ -104,14 +109,28 @@ func _exit_tree() -> void:
 
 
 # ---- 布局 ----
+## MV Spriteset_Battle：地图指定了战斗背景才用战斗背景图（YEP_ImprovedBattlebacks 缩放铺满）；
+## 否则（世界图块以外）背景图为空，露出进入战斗前的地图快照。
 func _build_background() -> void:
 	var bg := ColorRect.new()
 	bg.color = Color(0.04, 0.06, 0.07)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
-	var names := [str(map_data.get("battleback1Name", "")), str(map_data.get("battleback2Name", ""))]
-	if names[0] == "":
+	var names := ["", ""]
+	if bool(map_data.get("specifyBattleback", false)):
+		names = [str(map_data.get("battleback1Name", "")), str(map_data.get("battleback2Name", ""))]
+	elif snapshot == null:
+		# 没有快照（无画面测试）时用系统默认战斗背景
 		names = [str(XDB.system().battleback1Name), str(XDB.system().battleback2Name)]
+	if snapshot and names == ["", ""]:
+		var t := TextureRect.new()
+		t.texture = snapshot
+		t.position = _origin
+		t.size = BOX
+		t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		t.stretch_mode = TextureRect.STRETCH_SCALE
+		add_child(t)
+		return
 	for i in range(2):
 		var p := XDB.img_path("battlebacks%d" % (i + 1), names[i]) if names[i] != "" else ""
 		if p == "":
@@ -124,24 +143,44 @@ func _build_background() -> void:
 		add_child(t)
 
 
+## Codex_MiraRavenMultiFrame partyLayout：中线 x = 宽×0.64；1～4 人竖排一列（上 max(高+36, 高×0.32)、下 高×0.73，
+## 1 人在 高×0.525）；5 人前后两列交错（x ∓ 50，上 max(高+36, 高×0.30)、下 高×0.75）。
+## 角色图高按 72 计（旧式 64×64 侧视图缩放 0.75 后不超过 72）。
+static func party_layout(n: int, sprite_h := 72.0, sprite_w := 72.0) -> Array:
+	var pts := []
+	var cx := roundf(BOX.x * 0.64)
+	if n == 5:
+		var dx := roundf(maxf(100.0, minf(BOX.x * 0.105, sprite_w + 24.0)) / 2.0)
+		var top5 := maxf(sprite_h + 36.0, BOX.y * 0.30)
+		var step5 := (BOX.y * 0.75 - top5) / 4.0
+		for k in range(5):
+			pts.append(Vector2(cx + (dx if k % 2 == 1 else -dx), roundf(top5 + k * step5)))
+	else:
+		var top := maxf(sprite_h + 36.0, BOX.y * 0.32)
+		var step := (BOX.y * 0.73 - top) / (n - 1) if n > 1 else 0.0
+		for j in range(n):
+			pts.append(Vector2(cx, roundf(BOX.y * 0.525) if n == 1 else roundf(top + j * step)))
+	return pts
+
+
 func _place_battlers() -> void:
 	for e in logic.enemies:
 		var s := XBattlerSprite.new()
 		field.add_child(s)
 		s.setup(e, 1.8 if e.elite else 1.0)
 		s.breathing = true
-		s.home = Vector2(float(e.get_meta("x")), float(e.get_meta("y")))
+		# YEP_CoreEngine Reposition Battlers：侧视时敌人 y 加 (画面高 − 624) / 2
+		s.home = Vector2(float(e.get_meta("x")), float(e.get_meta("y")) + floorf((BOX.y - 624.0) / 2.0))
 		s.position = s.home
 		sprites[e] = s
 		_make_enemy_gauge(e)
-	var n := logic.actors.size()
-	var max_members := 5
-	for i in range(n):
+	var points := party_layout(logic.actors.size())
+	for i in range(logic.actors.size()):
 		var a: XActor = logic.actors[i]
 		var s := XBattlerSprite.new()
 		field.add_child(s)
-		s.setup(a, 1.0)
-		s.home = Vector2(BOX.x * 0.5 + 128 + i * 64, BOX.y - 235 - (max_members - i - 1) * 48)
+		s.setup(a, ACTOR_SCALE)
+		s.home = points[i]
 		s.position = s.home + Vector2(300, 0)
 		sprites[a] = s
 		var t := create_tween()
@@ -315,13 +354,9 @@ func _refresh_status() -> void:
 		s.refresh_idle()
 
 
-## 轮到输入指令的角色：状态条左移 48，角色前进一步（MV Sprite_Actor：输入中 stepForward）。
+## 轮到输入指令的角色：状态条左移 48。正式版输入中角色不前进（运行时读数：输入中的角色仍在原位）。
 func _set_active(a: XActor) -> void:
 	_active = a
-	for b in logic.actors:
-		var sp: XBattlerSprite = sprites[b]
-		var tw := create_tween()
-		tw.tween_property(sp, "position", sp.home + (Vector2(-48, 0) if b == a and b.is_alive() else Vector2.ZERO), 0.15)
 	for b in status_rows:
 		var row: Dictionary = status_rows[b]
 		var target_x: float = row.home - (STATUS_MOVE if b == a else 0.0)

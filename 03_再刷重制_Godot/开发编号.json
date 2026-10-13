@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.008",
-  "sequence": 8,
-  "next": "dev.009",
-  "nextSequence": 9,
+  "current": "dev.009",
+  "sequence": 9,
+  "next": "dev.010",
+  "nextSequence": 10,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "主菜单与商店按原版真实画面逐像素复现；原版界面参照工具",
+  "currentChange": "对话框/选项窗/数值输入按原版逐帧复现；界面文字补笔画粗细",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

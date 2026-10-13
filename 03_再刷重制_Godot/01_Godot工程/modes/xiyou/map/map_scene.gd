@@ -322,10 +322,11 @@ func play_se(audio) -> void:
 ## 战斗：返回 0 胜利 1 逃跑 2 战败（MV 语义）
 func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	var prev := _bgm_name
-	var battle := XBattleScene.new()
-	battle.setup(troop_id, can_escape, can_lose, map_data)
-	ui.add_child(battle)
 	hud.visible = false
+	var shot := await _snapshot()
+	var battle := XBattleScene.new()
+	battle.setup(troop_id, can_escape, can_lose, map_data, shot)
+	ui.add_child(battle)
 	var result: int = await battle.finished
 	battle.queue_free()
 	hud.visible = true
@@ -333,6 +334,25 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	play_bgm({"name": prev, "volume": 90})
 	refresh_events()
 	return result
+
+## Scene_Map.snapForBattleBackground：隐藏窗口层（对话框、地图名、菜单按钮）后截取地图画面，
+## 裁成 1280×720 画布范围。无画面（测试）时返回 null。
+func _snapshot() -> Texture2D:
+	if DisplayServer.get_name() == "headless":
+		return null
+	var was := message.visible
+	message.visible = false
+	await RenderingServer.frame_post_draw
+	var img := get_viewport().get_texture().get_image()
+	message.visible = was
+	if img == null or img.is_empty():
+		return null
+	var ft := get_viewport().get_final_transform()
+	var r := Rect2i(Rect2(ft.origin, ft.get_scale() * get_viewport().get_visible_rect().size)).intersection(Rect2i(Vector2i.ZERO, img.get_size()))
+	if r.size.x <= 0 or r.size.y <= 0:
+		return null
+	return ImageTexture.create_from_image(img.get_region(r))
+
 
 func open_shop(goods: Array, purchase_only: bool) -> void:
 	var shop := XShop.new()
