@@ -104,7 +104,8 @@ func _run() -> void:
 	for pressed in [true, false]:
 		var event := InputEventMouseButton.new()
 		event.button_index = MOUSE_BUTTON_LEFT
-		event.position = Vector2(895, 35)
+		# parse_input_event 接收窗口像素坐标；无界面窗口也会缩放逻辑画布。
+		event.position = get_viewport().get_final_transform() * map.map_hud.backup_button.get_global_rect().get_center()
 		event.global_position = event.position
 		event.pressed = pressed
 		Input.parse_input_event(event)
