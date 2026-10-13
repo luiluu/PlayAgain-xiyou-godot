@@ -111,7 +111,37 @@ func _run() -> void:
 	await _press("ui_accept")
 	await _frames(10)
 	_check("target_mode", b._target_mode == "enemy")
+	var target: XEnemy = b._hover
+	_check("target_defaults_to_rightmost", target != null and b.sprites[target].home.x == 353)
+	_check("only_selected_cursor", b.sprites.values().filter(func(v): return v.selected).size() == 1 and b.sprites[target].cursor != null)
+	_check("target_has_no_extra_help_button", not b.help_bar.visible)
+	_check("auto_controls_clear_of_otb", b.auto_btn.get_global_rect().end.y < b.otb.position.y)
 	await _shot("battle_42_target")
+	await _press("ui_left")
+	_check("keyboard_target_changes", b._hover != target and b.sprites[b._hover].selected and not b.sprites[target].selected)
+	await _press("ui_cancel")
+	_check("target_cancel_returns", b._target_mode == "" and b.cmd_win != null and b.cmd_win.visible and b.sprites.values().all(func(v): return not v.selected))
+	await _press("ui_accept")
+	target = b._hover
+	var hp := target.hp
+	await _press("ui_accept")
+	ok = await _until(func(): return b._target_mode == "" and target.hp < hp)
+	_check("keyboard_target_confirm_attacks", ok, [hp, target.hp])
+	# 五人结算与空掉落：第五行仍在画面内，不画虚构的「没有获得物品」。
+	var members: Array = s.battle_members().duplicate()
+	members.append(s.actor(2))
+	var before := {}
+	for a in members:
+		before[a] = {"exp": a.exp_total, "level": a.level}
+	var victory := XVictoryScreen.new()
+	victory.setup({"gold":1234,"exp":5678,"drops":[]}, before, members, false)
+	b.hide()
+	map.ui.add_child(victory)
+	await get_tree().create_timer(3.1).timeout
+	_check("victory_five_fit", victory.rows.size() == 5 and XVictoryScreen.ROW_Y + 4 * XVictoryScreen.ROW_STEP + 72 <= 720)
+	_check("victory_empty_drop_list", victory._drops.is_empty())
+	await _shot("battle_44_victory_5_empty")
+	_check("victory_sorted_drops", XVictoryScreen.grouped_drops([{ "kind":3,"id":2},{"kind":1,"id":2},{"kind":1,"id":1},{"kind":1,"id":2}]) == [{"kind":1,"id":1,"count":1},{"kind":1,"id":2,"count":2},{"kind":3,"id":2,"count":1}])
 	_finish()
 
 

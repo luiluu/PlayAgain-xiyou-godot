@@ -189,65 +189,63 @@ func _place_battlers() -> void:
 
 ## YEP_X_VisualHpGauge：宽 max(180, 图宽)、高 12，底色 19、渐变 20→21，显示当前 HP 数值。
 func _make_enemy_gauge(e: XEnemy) -> void:
-	var s: XBattlerSprite = sprites[e]
-	var w := maxf(ENEMY_GAUGE_W, s.width())
-	var box := Control.new()
-	box.position = s.home + Vector2(-w / 2.0, -16 + 4)
-	box.size = Vector2(w, 34)
-	box.visible = false
-	box.z_index = 5
-	field.add_child(box)
-	var name := XUI.label(e.display_name(), 15, _enemy_name_color(e))
-	name.add_theme_constant_override("outline_size", 4)
-	name.position = Vector2(0, -2)
-	box.add_child(name)
-	gauges[e] = {"box": box, "timer": 0.0, "name": name}
-	_refresh_enemy_gauge(e)
+	var c := XMVCanvas.new()
+	c.size = Vector2(640, 100)
+	c.clip_contents = false
+	c.z_index = 5
+	field.add_child(c)
+	gauges[e] = {"box": c, "timer": 0.0, "name_timer": 3.0}
+	c.painter = func(canvas): _paint_enemy(canvas, e)
 
 
-## EnemyNameColorByDifficulty：名字与数据库原名完全相同时按难度上色（带 ＡＢＣ 或前缀的不变）。
+## Olivia WeaknessDisplay 名字与 YEP VisualHpGauge 是两个独立窗口。
+## 名字居中在 (敌人 x, y−27) 的 640×72 内容位图；HP 内容 (x−90,y−16)，字号 26、居中、12px 粗条。
+func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
+	var g: Dictionary = gauges[e]
+	if e.is_alive() and (g.name_timer > 0.0 or e == _hover):
+		var color := _enemy_name_color(e) if e.hp_rate() > 0.5 else XUI.text_color(2 if e.hp_rate() > 0.25 else 10)
+		c.text(e.display_name(), 0, 0, 640, "center", color, 18, 36)
+	if g.timer <= 0.0 and not (_target_mode == "enemy" and e == _hover):
+		return
+	var w := maxf(ENEMY_GAUGE_W, sprites[e].width())
+	var x := 320.0 - w / 2.0
+	var y := 11.0
+	var gy := y + 36 - 12 - 2
+	c.draw_rect(Rect2(x, gy, w, 12), Color(XUI.text_color(19), 160.0 / 255.0))
+	var fill := maxf(0, floorf(w * e.hp_rate()) - 4)
+	if fill > 0:
+		c.gradient(Rect2(x + 2, gy + 2, fill, 8), XUI.text_color(20), XUI.text_color(21))
+	c.text(XMenu._group(e.hp), x, y, w, "center", XUI.TEXT, 26, 36)
+
+
+## EnemyNameColorByDifficulty 只为与数据库原名完全相同的文字上色。
 func _enemy_name_color(e: XEnemy) -> Color:
-	var colors := {1: "#ffffff", 2: "#39ff39", 3: "#4499ff", 4: "#b050ff", 5: "#ff9922", 6: "#ffd700", 7: "#ff2222", 8: "#ee77ee"}
-	if e.display_name() == str(e.data().get("name", "")) and colors.has(e.difficulty_id):
-		return Color(colors[e.difficulty_id])
-	return XUI.TEXT
+	var colors := {1:"#ffffff",2:"#39ff39",3:"#4499ff",4:"#b050ff",5:"#ff9922",6:"#ffd700",7:"#ff2222",8:"#ee77ee"}
+	return Color(colors[e.difficulty_id]) if e.display_name() == str(e.data().get("name","")) and colors.has(e.difficulty_id) else XUI.TEXT
 
 
 func _refresh_enemy_gauge(e: XEnemy) -> void:
-	var g: Dictionary = gauges[e]
-	var box: Control = g.box
-	for c in box.get_children():
-		if c != g.name:
-			c.queue_free()
-	var w := box.size.x
-	var bar := XUI.gauge(e.hp, e.mhp, "hp", w, 12)
-	bar.position = Vector2(0, 18)
-	box.add_child(bar)
-	var v := XUI.label(str(int(e.hp)), 16)
-	v.position = Vector2(0, 10)
-	v.size = Vector2(w - 4, 20)
-	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	box.add_child(v)
+	gauges[e].box.queue_redraw()
 
 
-func _show_enemy_gauge(e: XBattler, seconds := 1.5) -> void:
+func _show_enemy_gauge(e: XBattler, seconds := 0.5) -> void:
 	if not gauges.has(e):
 		return
 	_refresh_enemy_gauge(e)
 	gauges[e].timer = seconds
-	gauges[e].box.visible = e.is_alive() or seconds > 0.0
+	gauges[e].name_timer = 3.0
 
 
 func _build_ui(vs: Vector2) -> void:
 	# 顶部说明栏（Olivia：Window_Help 不透明度 0、暗底；YEP 行动名也显示在顶部）
 	help_bar = XUI.dimmer(false, true)
 	help_bar.position = Vector2(0, _origin.y + OTB_HELP_Y)
-	help_bar.size = Vector2(vs.x - STATUS_W, XUI.LINE_HEIGHT * 2 + 28)
+	help_bar.size = Vector2(vs.x, XUI.LINE_HEIGHT * 2 + 28)
 	help_bar.visible = false
 	ui.add_child(help_bar)
 	help_label = XUI.label("", XUI.FONT_SIZE)
 	help_label.position = Vector2(18, 14)
-	help_label.size = Vector2(help_bar.size.x - 160, help_bar.size.y - 28)
+	help_label.size = Vector2(help_bar.size.x - 28, help_bar.size.y - 28)
 	help_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	help_bar.add_child(help_label)
 	help_cancel = XUI.button("返回", 44)
@@ -269,9 +267,9 @@ func _build_ui(vs: Vector2) -> void:
 		holder.add_child(row)
 		status_rows[logic.actors[i]] = row
 	_refresh_status()
-	# 自动/加速：左下角小窗（原版 SSEP 加速开关、挂机）
+	# 自动/加速：左上角小窗，避免挡住 OTB（优化 O-006）。
 	var side := HBoxContainer.new()
-	side.position = Vector2(12, vs.y - 60)
+	side.position = _origin + Vector2(12, 12)
 	side.add_theme_constant_override("separation", 8)
 	ui.add_child(side)
 	auto_btn = _small_button("自动：关")
@@ -339,13 +337,10 @@ func _banner(text: String) -> void:
 func _process(delta: float) -> void:
 	for e in gauges:
 		var g: Dictionary = gauges[e]
-		if _target_mode == "enemy" and _target_pool.has(e):
-			g.box.visible = true
-			continue
-		if g.timer > 0.0:
-			g.timer -= delta
-			if g.timer <= 0.0:
-				g.box.visible = false
+		g.box.position = sprites[e].position + Vector2(-320, -27)
+		g.timer = maxf(0, g.timer - delta)
+		g.name_timer = maxf(0, g.name_timer - delta)
+		g.box.queue_redraw()
 
 
 # ---- 主循环（OTB）----
@@ -596,32 +591,30 @@ func _pick_target(skill: Dictionary, a: XActor):
 	if not [1, 7, 9].has(scope):
 		return a
 	var pool := logic.alive(logic.enemies) if scope == 1 else (logic.alive(logic.actors) if scope == 7 else logic.actors.filter(func(x): return x.is_dead()))
-	if pool.size() == 1:
-		return pool[0]
 	if pool.is_empty():
 		return null
 	_target_mode = "enemy" if scope == 1 else "ally"
 	_target_pool = pool
 	if cmd_win and is_instance_valid(cmd_win):
 		cmd_win.visible = false
-	_help("选择目标（点按）", true)
+	_help("")
 	_target_skill = skill
-	for b in pool:
-		sprites[b].flash(Color(1, 0.9, 0.5))
-		if gauges.has(b):
-			_refresh_enemy_gauge(b)
-	_preview(a, skill)
+	# YEP Enemy Auto Select = furthestRight；我方默认第一人。
+	var initial = pool[0]
+	if scope == 1:
+		for b in pool:
+			if sprites[b].home.x > sprites[initial].home.x:
+				initial = b
+	_select_target(initial)
 	var r = await _picked
 	_target_mode = ""
 	_target_pool = []
 	_target_skill = {}
-	otb.set_selected([])
+	_select_target(null)
 	otb.clear_preview()
 	_help("")
 	if cmd_win and is_instance_valid(cmd_win):
 		cmd_win.visible = true
-	for e in gauges:
-		gauges[e].box.visible = gauges[e].timer > 0.0
 	if r is XBattler and pool.has(r):
 		return r
 	return null
@@ -632,10 +625,8 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and _target_mode != "":
 		# 鼠标指向的候选目标视为「被选中」：顺序条上放大闪烁，并预览位移
 		var h = _nearest_target(event.position)
-		if h != _hover:
-			_hover = h
-			otb.set_selected([h] if h != null else [])
-			_preview(_active, _target_skill, [h] if h != null else [])
+		if h != null and h != _hover:
+			_select_target(h)
 		return
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
@@ -664,9 +655,36 @@ func _nearest_target(pos: Vector2):
 	return best
 
 
+func _select_target(b) -> void:
+	_hover = b
+	for actor in status_rows:
+		status_rows[actor].selected = actor == b
+	for who in sprites:
+		var s: XBattlerSprite = sprites[who]
+		if s.selected and who.is_alive():
+			s.sprite.modulate = Color.WHITE
+		s.selected = who == b
+	otb.set_selected([b] if b != null else [])
+	if b != null:
+		_preview(_active, _target_skill, [b])
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
-		_picked.emit("cancel" if _target_mode != "" or list_win != null else "back")
+	if _target_mode != "":
+		var i := _target_pool.find(_hover)
+		if event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_down", true):
+			_select_target(_target_pool[(i + 1) % _target_pool.size()])
+		elif event.is_action_pressed("ui_left", true) or event.is_action_pressed("ui_up", true):
+			_select_target(_target_pool[posmod(i - 1, _target_pool.size())])
+		elif event.is_action_pressed("ui_accept"):
+			_picked.emit(_hover)
+		elif event.is_action_pressed("ui_cancel"):
+			_picked.emit("cancel")
+		else:
+			return
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_cancel"):
+		_picked.emit("cancel" if list_win != null else "back")
 
 
 # ---- 播放行动记录 ----

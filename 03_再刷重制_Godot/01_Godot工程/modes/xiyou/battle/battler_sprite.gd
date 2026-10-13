@@ -11,6 +11,9 @@ const LOOP := ["walk", "wait", "chant", "guard", "dying", "abnormal", "sleep", "
 var battler: XBattler
 var sprite: Sprite2D
 var shadow: Sprite2D
+var cursor: Sprite2D
+var selected := false
+var _selection_frame := 0
 ## 图像缩放只作用于身体（MV 缩放 _mainSprite），影子与位置不缩放
 var body_scale := 1.0
 var sv := false
@@ -72,6 +75,15 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 		sprite.offset.y = -h / 2.0
 	body_scale = sprite_scale
 	sprite.scale = Vector2.ONE * body_scale
+	var cursor_name := str(XDB.plugin("YEP_BattleSelectCursor").get("Ally Cursor" if b is XActor else "Enemy Cursor", ""))
+	var cp := XDB.img_path("pictures", cursor_name)
+	if cp != "":
+		cursor = Sprite2D.new()
+		cursor.texture = load(cp)
+		cursor.offset.y = -cursor.texture.get_height() / 2.0
+		cursor.position.y = -64.0 if sv else -height()
+		cursor.visible = false
+		add_child(cursor)
 	# EliteEnemyPlugins：神话敌人色相偏移（MV loadBitmap 的 hue）
 	if b is XEnemy and (b as XEnemy).elite:
 		var mat := ShaderMaterial.new()
@@ -108,6 +120,13 @@ func set_motion(m: String) -> void:
 
 
 func _process(delta: float) -> void:
+	if cursor:
+		cursor.visible = selected
+	if selected:
+		_selection_frame += 1
+		sprite.modulate = Color(1.5, 1.5, 1.5) if _selection_frame % 30 < 15 else Color.WHITE
+	else:
+		_selection_frame = 0
 	if breathing and battler.is_alive():
 		_breath_t += delta * TAU / 2.4
 		sprite.scale.y = body_scale * (1.0 + sin(_breath_t) * 0.02)

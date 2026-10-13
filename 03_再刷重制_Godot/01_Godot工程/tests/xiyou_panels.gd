@@ -83,7 +83,7 @@ func _run() -> void:
 	before = JSON.stringify(s.to_dict())
 	victory._update_exp(1)
 	_check("victory_no_double_grant", JSON.stringify(s.to_dict()) == before)
-	_check("victory_level_up", _all_text(victory).contains("等级提升！") and _all_text(victory).contains("Lv.3"))
+	_check("victory_level_up", victory.rows[0].notified and victory.rows[0].display_level == 3)
 	victory._elapsed=3.1; victory._process(0.1)
 	await _frames(40); await _shot("07_胜利结算")
 	victory.queue_free(); await _frames()
