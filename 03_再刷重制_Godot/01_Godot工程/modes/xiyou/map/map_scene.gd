@@ -377,6 +377,20 @@ func _snapshot() -> Texture2D:
 	return ImageTexture.create_from_image(img)
 
 
+## Game_Temp.reserveCommonEvent：回到地图后执行的公共事件（事件 ID 为 0）
+func run_common_event(id: int) -> void:
+	var ce := XDB.rec("CommonEvents", id)
+	if ce.is_empty() or busy:
+		return
+	_set_busy(true)
+	var interp := MVInterpreter.new(self, map_id, 0, ce.list)
+	await interp.run()
+	if not interp.skipped.is_empty():
+		skipped_log.append_array(interp.skipped)
+	_set_busy(false)
+	refresh_events()
+
+
 # ---- 角色、动画、提示、输入、存档 ----
 ## Game_Interpreter.character：-1 玩家，0 本事件，N 为该事件（不在本图则为空）
 func character(id: int, this_event: int) -> MVCharacter:
@@ -412,27 +426,10 @@ func return_to_title() -> void:
 	get_tree().change_scene_to_file.call_deferred("res://modes/xiyou/entry.tscn")
 
 
-## jQuery toaster：右上角提示框，几秒后淡出
+## $.toaster 提示（AXY_Toast 样式，见 XToast）
 func toast(text: String) -> void:
-	toasts.append(text)
-	var box := PanelContainer.new()
-	box.add_theme_stylebox_override("panel", XUI.panel())
-	box.add_child(XUI.label(text, 22))
-	var stack: VBoxContainer = hud.get_node_or_null("Toasts")
-	if stack == null:
-		stack = VBoxContainer.new()
-		stack.name = "Toasts"
-		stack.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-		stack.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-		stack.offset_top = 72
-		stack.offset_right = -12
-		stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		hud.add_child(stack)
-	stack.add_child(box)
-	var tw := box.create_tween()
-	tw.tween_interval(3.0)
-	tw.tween_property(box, "modulate:a", 0.0, 0.6)
-	tw.tween_callback(box.queue_free)
+	toasts.append(XToast.plain(text))
+	XToast.show_text(text)
 
 
 ## 原版的 prompt(提示, 默认)：输入一行文字，取消返回空。自动测试时取 auto_answers 里排在最前的字符串。
@@ -515,8 +512,11 @@ func open_menu() -> void:
 	var menu := XMenu.new()
 	ui.add_child(menu)
 	await menu.closed
+	var reserved := menu.reserved_common_event
 	menu.queue_free()
 	_menu_open = false
+	if reserved > 0:
+		await run_common_event(reserved)
 	if player:
 		var leader: XActor = XState.current.members()[0]
 		player.set_image(str(leader.data().characterName), int(leader.data().characterIndex))

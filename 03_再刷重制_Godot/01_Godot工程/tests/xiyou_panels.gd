@@ -94,6 +94,14 @@ func _run() -> void:
 	if pages.size() == 1: pages[0].closed.emit()
 	await _frames()
 	_check("detail_returns_to_menu", menu.get_children().all(func(n): return not n is XStatusPage))
+	# 一键存档：还没有存档格（新游戏后未存过）时打开选格存档页，不直接存
+	XSave.current_slot = 0
+	menu._cmd_index = menu.command_names().find("一键存档")
+	menu._ok(); await _frames()
+	_check("quick_save_asks_slot", menu.get_children().any(func(n): return n is XSavePanel))
+	for n in menu.get_children():
+		if n is XSavePanel: n.closed.emit()
+	await _frames()
 	menu.queue_free(); await _frames()
 	# 非自动场景截图：轮到角色时停在指令窗，验证顺序条实际接入。
 	var battle := XBattleScene.new()

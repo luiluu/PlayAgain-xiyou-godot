@@ -26,7 +26,7 @@ const COMMANDS := [["物品", "item", true], ["技能", "skill", false], ["装�
 	["真气", "zhenqi", false], ["整队", "formation", false], ["种族祝福", "race", false], ["宠物", "pet", false],
 	["制作", "crafting", false], ["宝珠坊", "orbs", false], ["异化工坊", "alienation", false], ["人物图鉴", "actorBook", false],
 	["怪物图鉴", "monsterBook", false], ["成就", "achievement", false], ["存档", "save", true], ["反馈", "feedback", false],
-	["设置", "options", false], ["游戏结束", "gameEnd", true]]
+	["设置", "options", false], ["游戏结束", "gameEnd", true], ["一键存档", "quickSave", true]]
 const CMD_VISIBLE := 15
 
 var cmd_win: XMVWindow
@@ -40,6 +40,8 @@ var _mode := "command"          # command / actor / page
 var _pending := ""              # 选人后要打开的指令
 var _selected_actor := 0
 var _overlay: Control
+## 关闭菜单后要在地图上执行的公共事件（YEP_MainMenuManager callCommonEvent：reserveCommonEvent 后 popScene）
+var reserved_common_event := 0
 
 
 func command_names() -> Array:
@@ -279,9 +281,13 @@ func _ok() -> void:
 				_actor_top = _scroll_to(_actor_index, _actor_top, STATUS_ROWS)
 				_refresh()
 			"save":
-				_show_save()
+				# 正式版「存档」是公共事件 1（Menu 84 Ext）：回到地图后存到开局选的固定存档位
+				reserved_common_event = int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 84 Ext", "1")))
+				closed.emit()
 			"gameEnd":
 				_show_game_end()
+			"quickSave":
+				_quick_save()
 	elif _mode == "actor":
 		_selected_actor = _actor_index
 		match _pending:
@@ -335,8 +341,22 @@ func _show_items() -> void:
 	_open_detail(XItemScene.new())
 
 
-## 存档：正式版「存档」是公共事件（开局选定固定存档位，之后在该位覆盖保存），尚未逐页复现；
-## 暂用 Godot 独立存档的三格页面，盖在队伍窗位置。
+## v0.10 一键存档（installV010UsabilityRuntime CodexQuickSave.run）：存到最近一次存/读档的格，成功提示「已保存到存档 N。」，
+## 失败蜂鸣并提示；新游戏后还没存过档时改为打开选格的存档页（Scene_Save）。菜单留在指令窗。
+func _quick_save() -> void:
+	var slot := XSave.current_slot
+	if slot < 1 or slot > XSave.SLOTS:
+		_show_save()
+		return
+	if XSave.save(slot):
+		XSound.system(5)
+		XToast.show_text("已保存到存档 %d。" % slot)
+	else:
+		XSound.system(3)
+		XToast.show_text("存档失败，请通过存档菜单重试。")
+
+
+## 选格存档页（YEP 的 Scene_Save；只在一键存档还没有存档格时打开），盖在队伍窗位置。
 func _show_save() -> void:
 	var page := XSavePanel.new()
 	page.position = STATUS_RECT.position

@@ -7,6 +7,8 @@ extends RefCounted
 const SLOTS := 10
 ## 自动测试改到临时目录，避免覆盖开发时手动存的档。
 static var dir_override := ""
+## 最近一次成功存档/读档的格（installV010UsabilityRuntime：一键存档存到这一格）；新游戏到第一次存档前为 0，一键存档改为选格
+static var current_slot := 0
 
 
 static func dir() -> String:
@@ -28,6 +30,7 @@ static func save(slot: int) -> bool:
 	if f == null:
 		return false
 	f.store_string(JSON.stringify(data))
+	current_slot = slot
 	return true
 
 
@@ -54,4 +57,5 @@ static func load_slot(slot: int) -> bool:
 	if not d is Dictionary or str(d.get("mode", "")) != "xiyou":
 		return false
 	XState.from_dict(d)
+	current_slot = slot
 	return true

@@ -57,6 +57,7 @@ static func new_game_blank() -> XState:
 	s.x = int(sys.get("startX", 0))
 	s.y = int(sys.get("startY", 0))
 	s.direction = 2
+	XSave.current_slot = 0
 	current = s
 	return s
 

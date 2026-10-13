@@ -1,6 +1,7 @@
 class_name XSavePanel
 extends PanelContainer
-## 菜单里的存档页（Godot 独立存档 3 格）。正式版的固定存档位流程尚未复现，见 界面风格.md。
+## 选格存档页（Godot 独立存档 10 格，对应 YEP 的 Scene_Save）：新游戏后还没存过档时，一键存档打开这里选格。
+## 平时的「存档」照原版走公共事件 1，存到开局选的固定存档位。
 
 signal closed
 

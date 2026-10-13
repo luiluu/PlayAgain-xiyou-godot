@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.013",
-  "sequence": 13,
-  "next": "dev.014",
-  "nextSequence": 14,
+  "current": "dev.014",
+  "sequence": 14,
+  "next": "dev.015",
+  "nextSequence": 15,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "开局按原版事件运行（选存档位/难度/英雄/教派、大厅首次存档与难度被动）；解释器扩展与 MVScript；获得提示；对照基准按实际开局被动",
+  "currentChange": "主菜单「存档」走公共事件 1（固定存档位）、v0.10「一键存档」、AXY_Toast 提示样式；说明卡隐藏规则核对",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
