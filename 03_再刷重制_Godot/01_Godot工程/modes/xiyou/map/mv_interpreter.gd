@@ -244,7 +244,8 @@ func _execute(c: Dictionary):
 			if ch:
 				ch.force_move_route(p[1])
 				if bool(p[1].get("wait", false)):
-					while ch.is_route_forcing():
+					# 等待中若场所移动，旧地图的角色已释放
+					while is_instance_valid(ch) and ch.is_route_forcing():
 						await host.get_tree().physics_frame
 		211:
 			host.player.transparent = int(p[0]) == 0
@@ -262,7 +263,7 @@ func _execute(c: Dictionary):
 			if ch:
 				ch.start_balloon(int(p[1]))
 				if bool(p[2]):
-					while ch.is_balloon_playing():
+					while is_instance_valid(ch) and ch.is_balloon_playing():
 						await host.get_tree().physics_frame
 		318:
 			# 增减技能 [指定方式, 角色/变量, 0 学会 1 遗忘, 技能]；角色 0 为全队

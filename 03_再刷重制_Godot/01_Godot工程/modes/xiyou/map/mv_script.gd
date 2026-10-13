@@ -164,9 +164,25 @@ static func _block(js: String, from: int) -> Array:
 	return [js.substr(from + 1), js.length()]
 
 
+## 去掉 // 行注释（引号里的 // 不算，如提示文字里的网址）
 static func _strip_comments(code: String) -> String:
 	var out := []
 	for line in code.split("\n"):
-		var i := line.find("//")
-		out.append(line.substr(0, i) if i >= 0 else line)
+		var quote := ""
+		var cut := line.length()
+		var i := 0
+		while i < line.length():
+			var ch := line[i]
+			if quote != "":
+				if ch == "\\":
+					i += 1
+				elif ch == quote:
+					quote = ""
+			elif ch == "'" or ch == "\"":
+				quote = ch
+			elif ch == "/" and i + 1 < line.length() and line[i + 1] == "/":
+				cut = i
+				break
+			i += 1
+		out.append(line.substr(0, cut))
 	return "\n".join(out)

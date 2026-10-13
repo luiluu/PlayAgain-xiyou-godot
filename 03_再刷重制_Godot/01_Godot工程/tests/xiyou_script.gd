@@ -85,6 +85,9 @@ func _run() -> void:
 	it = await run_list(XDB.rec("CommonEvents", 1344).list)
 	var lamps := s.items.keys().filter(func(id): return int(id) >= 2701 and int(id) <= 2819)
 	check("ce1344_random_lamps", it.skipped.is_empty() and lamps.size() >= 3 and toasts.size() == lamps.size() and toasts.all(func(t): return str(t).begins_with("获得了：")), [it.skipped, lamps, toasts])
+	# 行注释去掉，但引号里的 // 保留
+	toasts.clear()
+	check("comment_strip_keeps_quoted", (await script("$.toaster({ message : '见 http://a.b'}); // 注释")).is_empty() and toasts == ["见 http://a.b"], toasts)
 	# 认不出的脚本原样报告
 	check("unknown_reported", (await script("Star.AchievementSystem.GetAcReward(84)")) == ["Star.AchievementSystem.GetAcReward(84)"])
 	# 插件指令设难度；增减技能（角色 0 为全队）
