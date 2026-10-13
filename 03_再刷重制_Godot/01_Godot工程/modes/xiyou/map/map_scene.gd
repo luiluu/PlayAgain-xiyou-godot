@@ -435,12 +435,22 @@ func toast(text: String) -> void:
 	tw.tween_callback(box.queue_free)
 
 
-## 原版的 prompt(提示, 默认)：输入一行文字，取消返回空。自动测试时取 auto_answers 里排在最前的字符串
+## 原版的 prompt(提示, 默认)：输入一行文字，取消返回空。自动测试时取 auto_answers 里排在最前的字符串。
+## 优化 O-010：原版是 NW.js 浏览器自带的输入框（与游戏画面风格无关），这里默认用 MV 窗口皮肤的 XTextPrompt；
+## NATIVE_PROMPT 设 true 改用系统输入框（DisplayServer.dialog_input_text，最接近原版的浏览器对话框）。
+const NATIVE_PROMPT := false
+
 func input_text(prompt: String, default := "") -> String:
 	if XMessageBox.auto:
 		if not XMessageBox.auto_answers.is_empty() and XMessageBox.auto_answers[0] is String:
 			return str(XMessageBox.auto_answers.pop_front())
 		return default
+	if NATIVE_PROMPT and DisplayServer.has_feature(DisplayServer.FEATURE_NATIVE_DIALOG_INPUT):
+		var box := [null]
+		DisplayServer.dialog_input_text("", prompt, default, func(t: String): box[0] = t)
+		while box[0] == null:
+			await get_tree().process_frame
+		return str(box[0])
 	var dlg := XTextPrompt.new()
 	dlg.setup(prompt, default)
 	ui.add_child(dlg)
