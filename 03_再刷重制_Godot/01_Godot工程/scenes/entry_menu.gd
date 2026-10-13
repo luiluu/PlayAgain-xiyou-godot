@@ -1,5 +1,5 @@
 extends Control
-## 【Codex·未经Claude检验】 Two entry points; future mode has no gameplay design.
+## 两个入口：西游改版、新版（新版尚未设计，按钮禁用）。启动即把键盘焦点放在第一个可进入的入口。
 
 const UI = preload("res://core/menu_ui.gd")
 var cards: GridContainer
@@ -24,6 +24,10 @@ func _ready() -> void:
 	column.add_child(footer)
 	resized.connect(_adapt_layout)
 	_adapt_layout()
+	for entry in cards.find_children("*", "Button", true, false):
+		if not entry.disabled:
+			entry.grab_focus.call_deferred()
+			break
 
 func _add_card(mode: Dictionary) -> void:
 	var box := VBoxContainer.new()

@@ -1,6 +1,7 @@
 class_name XSave
 extends RefCounted
-## 西游模式存档：user://modes/xiyou/save_<N>.json（GameApp 按模式隔离目录）。只存 Godot 版自己的状态，不读 MV 存档。
+## 西游模式存档：<GameApp.save_directory()>/save_<N>.json，即 user://modes/xiyou（按 modes.json 的 saveNamespace 隔离）。
+## 只存 Godot 版自己的状态，不读 MV 存档。
 
 const SLOTS := 3
 ## 自动测试改到临时目录，避免覆盖开发时手动存的档。
@@ -8,7 +9,11 @@ static var dir_override := ""
 
 
 static func dir() -> String:
-	return dir_override if dir_override != "" else "user://modes/xiyou"
+	if dir_override != "":
+		return dir_override
+	# 未经入口进入（测试直接建档）时没有当前模式，退回西游命名空间
+	var mode_dir: String = GameApp.save_directory()
+	return mode_dir if mode_dir != "" else "user://modes/xiyou"
 
 static func path(slot: int) -> String:
 	return dir().path_join("save_%d.json" % slot)

@@ -1,4 +1,4 @@
-; 【Codex·未经Claude检验】 独立双入口开发原型，未接入游戏内容。
+; 再刷重制：双入口（西游改版、新版）；开发编号见 config/version。
 config_version=5
 
 [application]

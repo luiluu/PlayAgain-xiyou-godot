@@ -159,7 +159,8 @@ func _update_exp(progress: float) -> void:
 					_sound.play()
 
 func _input(event: InputEvent) -> void:
-	if not visible:
+	# _input 先于 GameApp 收到事件，⌘Enter（切全屏）要让过去
+	if not visible or WindowFit.is_fullscreen_shortcut(event):
 		return
 	var confirm: bool = event.is_action_pressed("ui_cancel") or event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT)
 	if confirm:

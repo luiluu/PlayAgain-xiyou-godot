@@ -116,6 +116,10 @@ func _run() -> void:
 	_check("victory_zoom", is_equal_approx(battle.field.scale.x,2.0))
 	if screens.size() == 1:
 		var screen: XVictoryScreen = screens[0]
+		var cmd_enter := InputEventKey.new(); cmd_enter.keycode = KEY_ENTER; cmd_enter.meta_pressed = true; cmd_enter.pressed = true
+		var closing_before: bool = screen._ready_to_close
+		screen._input(cmd_enter)
+		_check("victory_ignores_fullscreen_key", screen._ready_to_close == closing_before and done.is_empty())
 		var event := InputEventAction.new(); event.action = "ui_cancel"; event.pressed = true
 		screen._input(event)
 		await _frames(40); await _shot("09_战斗胜利镜头")

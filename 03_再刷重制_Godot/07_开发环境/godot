@@ -1,5 +1,5 @@
 #!/bin/zsh
-# 【Codex·未经Claude检验】 Local Godot command-line entry.
+# Local Godot command-line entry.
 set -e
 godot_env_dir="${0:A:h}"
 exec "$godot_env_dir/当前Godot.app/Contents/MacOS/Godot" "$@"

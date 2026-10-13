@@ -34,6 +34,14 @@ func _shot(file: String) -> void:
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(file))
 
+func _key(code: Key, meta := false, pressed := true) -> InputEventKey:
+	var e := InputEventKey.new()
+	e.keycode = code
+	e.physical_keycode = code
+	e.meta_pressed = meta
+	e.pressed = pressed
+	return e
+
 func _find(name: String) -> Node:
 	return get_tree().current_scene.find_child(name, true, false)
 
@@ -58,8 +66,14 @@ func _run() -> void:
 	_check("new_mode_refused", not GameApp.enter_mode("new"))
 	_check("unknown_mode_refused", not GameApp.enter_mode("missing"))
 	_check("menu_two_columns_wide", _find("XiyouEntry").get_parent().get_parent().columns == 2)
+	_check("menu_keyboard_focus", get_viewport().gui_get_focus_owner() == xiyou)
+	_check("fullscreen_shortcut", WindowFit.is_fullscreen_shortcut(_key(KEY_ENTER, true)) and WindowFit.is_fullscreen_shortcut(_key(KEY_F11))
+		and not WindowFit.is_fullscreen_shortcut(_key(KEY_ENTER)) and not WindowFit.is_fullscreen_shortcut(_key(KEY_ENTER, true, false)))
 	await _shot("01_入口_宽屏.png")
-	xiyou.pressed.emit()
+	# 只用键盘：回车进入有焦点的西游入口
+	Input.parse_input_event(_key(KEY_ENTER))
+	await _frames(1)
+	Input.parse_input_event(_key(KEY_ENTER, false, false))
 	await _frames(4)
 	_check("xiyou_entered", get_tree().current_scene.scene_file_path == "res://modes/xiyou/entry.tscn")
 	_check("xiyou_current_mode", GameApp.current_mode == "xiyou")
@@ -67,9 +81,13 @@ func _run() -> void:
 	await _shot("02_西游预览.png")
 	var back: Button = _find("ReturnToMenu")
 	_check("return_button_present", back != null)
-	back.pressed.emit()
+	if back != null:
+		back.pressed.emit()
+	else:
+		GameApp.return_to_menu()
 	await _frames(4)
 	_check("returned_to_menu", get_tree().current_scene.scene_file_path == MENU)
+	_check("menu_focus_after_return", get_viewport().gui_get_focus_owner() == _find("XiyouEntry"))
 	_check("mode_cleared", GameApp.current_mode == "" and GameApp.save_directory() == "")
 	# 宽窗口仍保留正式版 1280×720 画面比例，避免窗口位置随宽高比改变。
 	get_window().size = Vector2i(1600, 720)

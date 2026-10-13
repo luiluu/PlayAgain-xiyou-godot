@@ -44,7 +44,8 @@ func update_character() -> void:
 			if grid + dir_offset(d) == touch_target:
 				action_pressed.emit()
 			touch_target = Vector2i(-1, -1)
-	elif Input.is_action_just_pressed("ui_accept"):
+	elif Input.is_action_just_pressed("ui_accept") and not Input.is_key_pressed(KEY_META):
+		# ⌘Enter 是切全屏（GameApp），轮询不受 set_input_as_handled 影响，这里排除
 		action_pressed.emit()
 
 

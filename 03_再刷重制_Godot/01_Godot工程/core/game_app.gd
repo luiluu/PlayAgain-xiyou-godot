@@ -1,5 +1,5 @@
 extends Node
-## 【Codex·未经Claude检验】 Mode routing only; no player saves are read or written.
+## 模式路由、窗口适配与全屏切换；本身不读写玩家存档（各模式按 save_directory() 隔离保存）。
 
 const MODE_FILE := "res://content/modes.json"
 var modes: Array = []
@@ -46,12 +46,11 @@ func save_directory() -> String:
 	return "user://modes/" + str(mode["saveNamespace"])
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_F11 or (event.keycode == KEY_ENTER and event.meta_pressed):
-			var window := get_window()
-			if window.mode == Window.MODE_FULLSCREEN:
-				window.mode = Window.MODE_WINDOWED
-				WindowFit.apply(window)
-			else:
-				window.mode = Window.MODE_FULLSCREEN
-			get_viewport().set_input_as_handled()
+	if WindowFit.is_fullscreen_shortcut(event):
+		var window := get_window()
+		if window.mode == Window.MODE_FULLSCREEN:
+			window.mode = Window.MODE_WINDOWED
+			WindowFit.apply(window)
+		else:
+			window.mode = Window.MODE_FULLSCREEN
+		get_viewport().set_input_as_handled()

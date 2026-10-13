@@ -38,6 +38,15 @@ func _shot(name: String) -> void:
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name))
 
 
+func _key(code: Key, meta := false, pressed := true) -> InputEventKey:
+	var e := InputEventKey.new()
+	e.keycode = code
+	e.physical_keycode = code
+	e.meta_pressed = meta
+	e.pressed = pressed
+	return e
+
+
 func _scene() -> Node:
 	return get_tree().current_scene
 
@@ -84,6 +93,20 @@ func _run() -> void:
 	_check("opening_passives", s.actor(1).skill_ids.has(5980) and s.actor(1).skill_ids.has(6168))
 	_check("hub_start_pos", map.player.grid == Vector2i(14, 23), map.player.grid)
 	_check("hub_door_present", _event(map, 36) != null)
+	# ⌘Enter 只切全屏，地图轮询确定键时不能同时触发调查。只在无界面模式按，免得真的切到全屏。
+	if DisplayServer.get_name() == "headless":
+		var acts := [0]
+		var count := func(): acts[0] += 1
+		map.player.action_pressed.connect(count)
+		Input.parse_input_event(_key(KEY_META, true))
+		Input.parse_input_event(_key(KEY_ENTER, true))
+		await _frames(3)
+		Input.parse_input_event(_key(KEY_ENTER, true, false))
+		Input.parse_input_event(_key(KEY_META, false, false))
+		await _frames(2)
+		map.player.action_pressed.disconnect(count)
+		get_window().mode = Window.MODE_WINDOWED
+		_check("cmd_enter_not_map_action", acts[0] == 0 and not map.busy, acts[0])
 	await _frames(10)
 	await _shot("03_方桌大厅.png")
 	# 玩家走几步（真实移动与碰撞）
