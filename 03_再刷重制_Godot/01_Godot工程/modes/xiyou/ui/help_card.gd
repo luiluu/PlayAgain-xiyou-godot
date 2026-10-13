@@ -59,7 +59,7 @@ static func content(obj: Dictionary, kind := "") -> Array:
 		return []
 	if kind == "":
 		kind = kind_of(obj)
-	var type := {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
+	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
 	var rows := desc_params(obj, type)
 	rows = _element_wrapper(obj, type, rows)
 	if type == 3 and not _special_target(obj):
@@ -177,7 +177,7 @@ static func _extra_row(rows: Array, pos: Array, line: String, normal: String) ->
 	if text.contains("DreamX_bonus"):
 		return
 	var p := m.get_string(1)
-	var at := {"AN": pos[0], "AD": pos[1], "AP": pos[2], "APs": pos[3], "AC": pos[4]}.get(p, -1)
+	var at: int = {"AN": pos[0], "AD": pos[1], "AP": pos[2], "APs": pos[3], "AC": pos[4]}.get(p, -1)
 	if at == -1:
 		at = int(p) if p.is_valid_int() else 0
 	var size := m.get_string(3)
@@ -492,8 +492,11 @@ static func _js_key_before(a, b) -> bool:
 # ======================================================================
 
 ## 按 RJO.SW 排版，返回 {height, lines:[{glyphs, y, h, line}]}；min_size>0 时把小字号提到该值（优化 O-007）。
-static func layout(rows: Array, min_size := 0, width := WIDTH) -> Dictionary:
-	var font := XUI.font()
+## measure(text, size) -> 宽度；省略时用游戏字体（测试用参照引擎的「字数×字号×0.6」核对算法）。
+static func layout(rows: Array, min_size := 0, width := WIDTH, measure := Callable()) -> Dictionary:
+	if not measure.is_valid():
+		var font := XUI.font()
+		measure = func(t: String, s: int) -> float: return font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x
 	var cw := width - PAD * 2
 	var y := PAD
 	var height := PAD * 2
@@ -510,9 +513,16 @@ static func layout(rows: Array, min_size := 0, width := WIDTH) -> Dictionary:
 		var cur := size
 		var line_max := size
 		var i := 0
+		if text == "":
+			# RJO.SW.setupTextState：空文字不排版，行高 0（分隔照加，如分组占位装备「------」的空描述）
+			lines.append({"glyphs": glyphs, "y": y, "h": 0.0, "line": bool(r[3])})
+			if bool(r[3]):
+				y += SEP
+				height += SEP
+			continue
 		if align != 0:
 			# 居中/靠右：整行一次画（RJO.SW.drawText，行高 36）
-			var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+			var w: float = measure.call(text, size)
 			var gx := PAD + ((cw - w) / 2.0 if align == 1 else cw - w)
 			glyphs.append({"t": text, "x": gx, "y": y, "size": size, "color": color, "lh": 36.0, "w": w})
 			var th := float(_first_line_height(text, size))
@@ -556,7 +566,7 @@ static func layout(rows: Array, min_size := 0, width := WIDTH) -> Dictionary:
 					x += 36
 				i += m.get_string(0).length()
 				continue
-			var gw := font.get_string_size(c, HORIZONTAL_ALIGNMENT_LEFT, -1, cur).x
+			var gw: float = measure.call(c, cur)
 			if cw - x < gw:
 				heights.append(line_max + 8)
 				x = PAD
