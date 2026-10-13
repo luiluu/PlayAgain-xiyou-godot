@@ -57,7 +57,7 @@
     "editorStartupVerified": true,
     "visibleProjectManagerVerified": true,
     "runnableBuildKind": "playable_slice",
-    "developmentVersion": "dev.016",
+    "developmentVersion": "dev.017",
     "developmentRegistry": "03_再刷重制_Godot/开发编号.json",
     "deferredPlatforms": [
       "Windows",
@@ -88,7 +88,7 @@
     "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13",
     "contentRefreshPending": false,
     "convertedScope": "floor1_slice",
-    "converterVersion": 5,
+    "converterVersion": 6,
     "runtimeFingerprintCount": 377
   },
   "handoff": "00_项目管理/交接板.md",

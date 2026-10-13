@@ -37,13 +37,21 @@ proj = re.search(r'config/version="([^"]+)"', (root / '03_再刷重制_Godot/01_
 build = json.loads((root / '03_再刷重制_Godot/01_Godot工程/content/build_info.json').read_text())['developmentVersion']
 if not dev == proj == build:
     bad.append(f'开发编号不一致：开发编号.json={dev} project.godot={proj} build_info={build}')
+state = json.loads((root / '00_项目管理/当前状态.json').read_text())
+source = json.loads((root / '00_项目管理/来源登记.json').read_text())
+remake = next(s for s in source['sources'] if s['id'] == 'new_godot_remake')
+if state['godot']['developmentVersion'] != dev or remake['developmentVersion'] != dev:
+    bad.append('当前状态／来源登记的开发编号与工程不一致')
 for b in bad: print('  ✗ ' + b)
 print(f'  ✓ JSON、链接、开发编号（{dev}）' if not bad else f'  共 {len(bad)} 项问题')
 sys.exit(1 if bad else 0)
 PY
 
 print "== Godot 测试"
-"$GODOT" --headless --path "$PROJECT" --import >/dev/null 2>&1
+import_out=$(perl -e 'alarm 300; exec @ARGV' "$GODOT" --headless --path "$PROJECT" --import 2>&1); import_rc=$?
+if (( import_rc != 0 )) || print -r -- "$import_out" | grep -qE 'SCRIPT ERROR|^ERROR:'; then
+  bad "Godot 导入失败 (rc=$import_rc)"; print -r -- "$import_out" | grep -E 'ERROR|FAIL' | head -8
+fi
 tests=("$PROJECT"/tests/*.tscn(N))
 if (( ${#tests} == 0 )); then bad "tests/ 下没有测试场景"; fi
 for t in $tests; do
@@ -58,12 +66,16 @@ for t in $tests; do
   fi
 done
 
+print "== 参照工具访问守卫"
+if node "$ROOT/03_再刷重制_Godot/03_转换工具/mv_oracle/guard_check.cjs"; then ok "MV 文件守卫"; else bad "MV 文件守卫"; fi
+if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/ui_reference/guard_check.py"; then ok "界面参照服务守卫"; else bad "界面参照服务守卫"; fi
+
 if [[ ${1:-} == --oracle ]]; then
   print "== MV 参照引擎"
   oracle=$ROOT/03_再刷重制_Godot/03_转换工具/mv_oracle
   if [[ -d $oracle/node_modules ]]; then
-    res=$(cd "$oracle" && node boot_check.cjs 2>/dev/null | tail -1)
-    if print -r -- "$res" | grep -q '"db":true' && print -r -- "$res" | grep -q '"modulesFailed":\[\]'; then ok "$res" | cut -c1-120; else bad "参照引擎启动异常：$res"; fi
+    res=$(cd "$oracle" && node boot_check.cjs); oracle_rc=$?
+    if (( oracle_rc == 0 )) && python3 -c 'import json,sys; d=json.loads(sys.argv[1]); sys.exit(0 if d.get("db") is True and d.get("modulesFailed")==[] and d.get("errors")==[] else 1)' "$res"; then ok "$res" | cut -c1-120; else bad "参照引擎启动异常：$res"; fi
     if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/验证西游来源.py"; then ok "当前西游来源、转换产物、六难度参照同源"; else bad "西游来源/转换/参照不一致"; fi
   else
     bad "mv_oracle 未安装依赖（在该目录运行 npm install）"

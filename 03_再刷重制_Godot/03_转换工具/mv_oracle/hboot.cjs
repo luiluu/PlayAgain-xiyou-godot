@@ -9,30 +9,7 @@ const fs = require('fs'), path = require('path'), zlib = require('zlib');
 
 
 const ORACLE_DIR = __dirname;
-function installGuard(root, sandbox, allow) {
-  if (fs.__oracleGuard) { Object.assign(fs.__oracleGuard, {root, sandbox, allow}); return; }
-  const g = fs.__oracleGuard = {root, sandbox, allow};
-  const inside = (p, base) => { const r = path.relative(base, path.resolve(String(p))); return r === '' || (!r.startsWith('..') && !path.isAbsolute(r)); };
-  const blocked = p => /Application Support|codex_author_key|\/save\//.test(path.resolve(String(p))) && !inside(p, g.sandbox);
-  const canWrite = p => typeof p === 'number' || inside(p, g.sandbox) || g.allow.some(d => inside(p, d));
-  for (const k of ['writeFileSync', 'appendFileSync', 'mkdirSync', 'renameSync', 'unlinkSync', 'rmSync', 'rmdirSync', 'copyFileSync', 'openSync', 'writeFile', 'appendFile', 'mkdir', 'rename', 'unlink', 'rm']) {
-    const orig = fs[k]; if (typeof orig !== 'function') continue;
-    fs[k] = function(p, flags) {
-      const isOpen = k === 'openSync';
-      const writing = !isOpen || /[wa+]/.test(String(flags || 'r'));
-      if (writing && !canWrite(p)) throw new Error('oracle guard: write blocked ' + p);
-      if (blocked(p)) throw new Error('oracle guard: blocked ' + p);
-      return orig.apply(this, arguments);
-    };
-  }
-  for (const k of ['readFileSync', 'readdirSync', 'existsSync', 'statSync']) {
-    const orig = fs[k];
-    fs[k] = function(p) {
-      if (typeof p !== 'number' && blocked(p)) { if (k === 'existsSync') return false; throw new Error('oracle guard: read blocked ' + p); }
-      return orig.apply(this, arguments);
-    };
-  }
-}
+const {installGuard} = require('./fs_guard.cjs');
 
 function deepNoop() {
   const f = function() {};
