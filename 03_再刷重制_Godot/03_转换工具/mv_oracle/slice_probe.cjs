@@ -71,7 +71,7 @@ function run(difficulty) {
       if (w.$dataSkills[act0.skillId].damage.type) out.damage.push(measure(w, target, w.$gameActors.actor(9), act0.skillId, {troop: tid, enemy: target.enemyId(), target: 9}));
     }
   }
-  if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity())) throw new Error('测量期间来源改变');
+  if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
   return out;
 }
 
