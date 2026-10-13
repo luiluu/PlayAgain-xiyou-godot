@@ -71,11 +71,15 @@ func text(s: String, x: float, y: float, max_w: float, align := "left", color :=
 	draw_set_transform(Vector2.ZERO)
 
 
-func icon(index: int, x: float, y: float, alpha := 1.0) -> void:
+## size：图标边长（Olivia 缩放窗口用 round(32×0.8)=26，按 MV blt 缩放）
+func icon(index: int, x: float, y: float, alpha := 1.0, size := 32.0) -> void:
 	var t := XUI.icon_texture(index)
 	if t:
 		_keep.append(t)
-		draw_texture(t, Vector2(x, y), Color(1, 1, 1, alpha))
+		if size == 32.0:
+			draw_texture(t, Vector2(x, y), Color(1, 1, 1, alpha))
+		else:
+			draw_texture_rect(t, Rect2(x, y, size, size), false, Color(1, 1, 1, alpha))
 
 
 ## Window_Base.drawFace(faceName, faceIndex, x, y, width, height)

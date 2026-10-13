@@ -22,6 +22,9 @@ var state: XState
 var elite_roll := -1.0
 
 
+const TRAIT_SPECIAL_FLAG := 62
+const FLAG_PRESERVE_TP := 3
+
 func setup(troop: int, s: XState) -> void:
 	turn = 0
 	escaped = false
@@ -56,6 +59,10 @@ func setup(troop: int, s: XState) -> void:
 				continue
 			a.remove_state(sid)
 		a.on_battle_start()
+	# MV Game_Battler.onBattleStart：没有「保留 TP」（特殊旗标 3）时 TP 随机 0～24
+	for b in actors + enemies:
+		if not b.traits_set(TRAIT_SPECIAL_FLAG).has(FLAG_PRESERVE_TP):
+			b.tp = float(randi() % 25)
 	for b in actors + enemies:
 		b.start_warmups()
 	_escape_ratio = 0.5 * _avg_agi(actors) / maxf(_avg_agi(enemies), 1.0)
@@ -773,6 +780,9 @@ func grant(r: Dictionary) -> Array:
 func end_battle() -> void:
 	for b in actors:
 		b.guarding = false
+		# MV Game_Battler.onBattleEnd：clearTp（保留 TP 时不清）
+		if not b.traits_set(TRAIT_SPECIAL_FLAG).has(FLAG_PRESERVE_TP):
+			b.tp = 0.0
 		b.end_battle_cooldowns()
 		for id in b.state_ids.duplicate():
 			if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):

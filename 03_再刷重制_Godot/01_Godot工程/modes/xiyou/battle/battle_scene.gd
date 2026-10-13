@@ -37,7 +37,7 @@ var troop_id := 0
 var can_lose := false
 var sprites := {}                 # XBattler -> XBattlerSprite
 var gauges := {}                  # XEnemy -> {box, timer}
-var status_rows := {}             # XActor -> {root, home}
+var status_rows := {}             # XActor -> XSideStatus
 var field: Node2D
 var fx: Node2D
 var ui: Control
@@ -45,8 +45,8 @@ var help_bar: Control
 var help_label: Label
 var help_cancel: Button
 var otb: XOTBBar
-var cmd_win: PanelContainer
-var list_win: PanelContainer
+var cmd_win: XBattleList
+var list_win: XBattleList
 var auto_btn: Button
 var speed_btn: Button
 var bgm: AudioStreamPlayer
@@ -258,16 +258,16 @@ func _build_ui(vs: Vector2) -> void:
 	help_cancel.visible = false
 	help_cancel.pressed.connect(func(): _picked.emit("cancel"))
 	help_bar.add_child(help_cancel)
-	# 右侧状态条
-	var row_h := _status_height()
+	# 右侧状态（XSideStatus，按正式版队伍顺序）
+	var holder := Control.new()
+	holder.position = _origin
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(holder)
 	for i in range(logic.actors.size()):
-		var a: XActor = logic.actors[i]
-		var root := Control.new()
-		root.position = Vector2(vs.x - STATUS_W, row_h * i)
-		root.size = Vector2(STATUS_W + STATUS_MOVE * 2, row_h)
-		root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ui.add_child(root)
-		status_rows[a] = {"root": root, "home": root.position.x}
+		var row := XSideStatus.new()
+		row.setup(logic.actors[i], i)
+		holder.add_child(row)
+		status_rows[logic.actors[i]] = row
 	_refresh_status()
 	# 自动/加速：左下角小窗（原版 SSEP 加速开关、挂机）
 	var side := HBoxContainer.new()
@@ -304,52 +304,13 @@ func _small_button(text: String) -> Button:
 	return b
 
 
-func _status_height() -> float:
-	# Window_BattleSideStatus：fittingHeight(4.5)（行高 36×0.6=22，无内边距）＋显示 TP 时再加一行
-	var lh := roundf(XUI.LINE_HEIGHT * STATUS_SCALE)
-	return lh * 4.5 + (lh if bool(XDB.system().get("optDisplayTp", false)) else 0.0)
-
-
 func _refresh_auto() -> void:
 	auto_btn.text = "自动：开" if logic.auto else "自动：关"
 
 
 func _refresh_status() -> void:
-	var lh := roundf(XUI.LINE_HEIGHT * STATUS_SCALE)
-	var fs := roundi(XUI.FONT_SIZE * STATUS_SCALE)
-	var show_tp := bool(XDB.system().get("optDisplayTp", false))
-	for a in status_rows:
-		var root: Control = status_rows[a].root
-		for c in root.get_children():
-			c.queue_free()
-		var dim := XUI.dimmer(true, false)
-		dim.size = root.size
-		root.add_child(dim)
-		var name := XUI.label(a.display_name(), fs, XUI.DEATH if a.is_dead() else XUI.TEXT)
-		name.position = Vector2(4, ceilf(lh / 4.0) - 2)
-		root.add_child(name)
-		var rows := [["HP", a.hp, a.mhp, "hp"], ["MP", a.mp, a.mmp, "mp"]]
-		if show_tp:
-			rows.append(["TP", a.tp, 100.0, "tp"])
-		for i in range(rows.size()):
-			var r: Array = rows[i]
-			var g := XUI.param_gauge(r[0], r[1], r[2], r[3], 160, fs)
-			g.position = Vector2(8 * (i + 1) + 4, ceilf(lh / 4.0) + lh * (i + 1))
-			root.add_child(g)
-		# 状态图标：状态条左侧，最多 4 个
-		var icons := HBoxContainer.new()
-		icons.add_theme_constant_override("separation", 0)
-		icons.alignment = BoxContainer.ALIGNMENT_END
-		icons.size = Vector2(4 * 32 + 4, 32)
-		icons.position = Vector2(-icons.size.x, lh - 2)
-		root.add_child(icons)
-		var n := 0
-		for st in a.states():
-			if int(st.get("iconIndex", 0)) > 0 and n < 4:
-				var ic := TextureRect.new()
-				ic.texture = XUI.icon_texture(int(st.iconIndex))
-				icons.add_child(ic)
-				n += 1
+	for row in status_rows.values():
+		row.refresh()
 	for s in sprites.values():
 		s.refresh_idle()
 
@@ -358,10 +319,7 @@ func _refresh_status() -> void:
 func _set_active(a: XActor) -> void:
 	_active = a
 	for b in status_rows:
-		var row: Dictionary = status_rows[b]
-		var target_x: float = row.home - (STATUS_MOVE if b == a else 0.0)
-		var tw := create_tween()
-		tw.tween_property(row.root, "position:x", target_x, 0.15)
+		status_rows[b].active = b == a
 
 
 func _help(text: String, cancel := false) -> void:
@@ -496,81 +454,50 @@ func _preview(a: XBattler, skill, targets: Array = []) -> void:
 	otb.set_preview(entries)
 
 
-## 窗口（指令窗/列表窗）：MV 窗口皮肤，缩放 0.8 的行。
-func _list_window(width: float) -> Array:
-	var w := PanelContainer.new()
-	var st := XUI.panel()
-	for side in ["left", "right", "top", "bottom"]:
-		st.set("content_margin_" + side, roundf(14 * CMD_SCALE))
-	w.add_theme_stylebox_override("panel", st)
-	w.custom_minimum_size.x = width
-	ui.add_child(w)
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	w.add_child(scroll)
-	var col := VBoxContainer.new()
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.add_theme_constant_override("separation", 0)
-	scroll.add_child(col)
-	return [w, scroll, col]
+## 指令（Window_ActorCommand＋OTB）：攻击、加入的技能类型（按编号；CP_MagicWeapon 不列 3～6，没有该类技能也列出）、
+## 防御、物品、逃跑（OTB Escape Actor Window：总是列出，不能逃时灰显）。
+func _command_entries(a: XActor) -> Array:
+	var terms: Array = XDB.system().terms.commands
+	var atk := XDB.rec("Skills", XBattleLogic.ATTACK_SKILL)
+	var grd := XDB.rec("Skills", XBattleLogic.GUARD_SKILL)
+	var opts := [{"text": str(terms[2]), "key": "attack", "enabled": logic.can_use(a, atk), "preview": atk}]
+	var stypes: Array = XDB.system().skillTypes
+	var added := a.traits_set(XBattler.TRAIT_STYPE_ADD)
+	added.sort()
+	for t in added:
+		if not [3, 4, 5, 6].has(int(t)) and int(t) < stypes.size():
+			opts.append({"text": str(stypes[int(t)]), "key": "stype:%d" % int(t)})
+	opts.append({"text": str(terms[3]), "key": "guard", "enabled": logic.can_use(a, grd), "preview": grd})
+	opts.append({"text": str(terms[4]), "key": "item"})
+	opts.append({"text": str(terms[1]), "key": "escape", "enabled": logic.can_escape})
+	return opts
 
 
-func _row_button(text: String, icon_index := 0) -> Button:
-	var b := XUI.button(text, roundf(XUI.LINE_HEIGHT * CMD_SCALE) + 8)
-	b.add_theme_font_size_override("font_size", roundi(XUI.FONT_SIZE * CMD_SCALE))
-	if icon_index > 0:
-		b.icon = XUI.icon_texture(icon_index)
-		b.expand_icon = false
-		b.add_theme_constant_override("icon_max_width", roundi(32 * CMD_SCALE))
-	return b
-
-
-## 窗口贴着角色：x = 角色右侧，y = 角色头顶；超出画面时收回（Olivia correctScreenPosition）。
-func _place_near_actor(w: Control, a: XActor, offset := Vector2.ZERO) -> void:
-	var vs := get_viewport_rect().size
+## Olivia updatePosition：x = 角色 x + 图宽/2（64/2），y = 角色 y − 图高（64）；再收在画面内。列表另加 (16, 16)。
+func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> void:
 	var s: XBattlerSprite = sprites[a]
-	await get_tree().process_frame
-	if not is_instance_valid(w):
-		return
-	var p := _origin + s.home + Vector2(s.width() / 2.0, -s.height()) + offset
-	p.x = minf(p.x, vs.x - w.size.x)
-	p.y = clampf(p.y, 0.0, vs.y - w.size.y)
-	w.position = p
+	var p := s.position + Vector2(32, -64)
+	w.place(minf(BOX.x - w.size.x, p.x) + offset.x, minf(BOX.y - w.size.y, p.y) + offset.y)
+	w.position += _origin
 
 
 func _command_for(a: XActor):
+	var opts := _command_entries(a)
+	var last_index := 0
 	while true:
 		_close_windows()
-		var parts := _list_window(CMD_W)
-		cmd_win = parts[0]
-		var col: VBoxContainer = parts[2]
-		var terms: Array = XDB.system().terms.commands
-		var opts := [[str(terms[2]), "attack"]]
-		var stypes: Array = XDB.system().skillTypes
-		var added := a.traits_set(XBattler.TRAIT_STYPE_ADD)
-		added.sort()
-		for t in added:
-			if int(t) != 4 and int(t) < stypes.size() and logic.battle_skills(a).any(func(s): return int(s.stypeId) == int(t)):
-				opts.append([str(stypes[int(t)]), "stype:%d" % int(t)])
-		opts.append([str(terms[3]), "guard"])
-		opts.append([str(terms[4]), "item"])
-		if logic.can_escape:
-			opts.append([str(terms[1]), "escape"])
-		(parts[1] as ScrollContainer).custom_minimum_size.y = (roundf(XUI.LINE_HEIGHT * CMD_SCALE) + 8) * opts.size()
-		for o in opts:
-			var b := _row_button(o[0])
-			var key: String = o[1]
-			b.pressed.connect(func(): _picked.emit(key))
-			var pv = XDB.rec("Skills", XBattleLogic.ATTACK_SKILL) if key == "attack" else (XDB.rec("Skills", XBattleLogic.GUARD_SKILL) if key == "guard" else null)
-			b.focus_entered.connect(func(): _preview(a, pv))
-			b.mouse_entered.connect(func(): _preview(a, pv))
-			col.add_child(b)
-		(col.get_child(0) as Button).grab_focus.call_deferred()
+		cmd_win = XBattleList.create(ui, opts, CMD_W, "center")
+		cmd_win.cancel_enabled = false
+		cmd_win.index_changed.connect(func(i): _preview(a, opts[i].get("preview") if i >= 0 else null))
+		cmd_win.chosen.connect(func(i): _picked.emit(opts[i].key))
+		cmd_win.select(last_index)
 		_place_near_actor(cmd_win, a)
 		var pick = await _picked
+		last_index = cmd_win.index if cmd_win else 0
 		if pick is String and pick == "auto":
 			return "auto"
 		if pick is String and pick.begins_with("stype:"):
+			cmd_win.active = false
 			var s = await _pick_from_list(a, logic.battle_skills(a).filter(func(x): return int(x.stypeId) == int(pick.substr(6))), false)
 			if logic.auto:
 				return "auto"
@@ -594,6 +521,7 @@ func _command_for(a: XActor):
 			"escape":
 				return "escape"
 			"item":
+				cmd_win.active = false
 				var it = await _pick_from_list(a, logic.battle_items(), true)
 				if logic.auto:
 					return "auto"
@@ -608,67 +536,41 @@ func _command_for(a: XActor):
 	return null
 
 
-## 技能/物品列表（Olivia：宽 450、最多 16 行、缩放 0.8）。
-## 技能右侧显示消耗（MP 用颜色 23）；冷却中显示「nCD」（颜色 6），预热「nWU」（颜色 4），不可用时整行半透明。
+## 技能/物品列表的一行：技能右侧照 YEP 消耗（TP 图标 1268 色 29、MP 图标 1269 色 23，字号 20）；
+## 冷却「nCD」色 6、预热「nWU」色 4（图标 1045）；物品右侧「×数量」字号 20。
+func _list_entry(a: XActor, e: Dictionary, items: bool) -> Dictionary:
+	var row := {"text": str(e.name), "icon": int(e.get("iconIndex", 0)), "enabled": logic.can_use(a, e), "costs": []}
+	if items:
+		row.costs = [{"text": "×%d" % int(XState.current.items.get(int(e.id), 0)), "size": 20}]
+		return row
+	var wu := int(ceilf(float(a.warmups.get(int(e.id), 0))))
+	var cd := int(ceilf(float(a.cooldowns.get(int(e.id), 0))))
+	if wu > 0:
+		row.costs = [{"text": "%dWU" % wu, "color": XUI.text_color(4), "icon": 1045}]
+	elif cd > 0:
+		row.costs = [{"text": "%dCD" % cd, "color": XUI.text_color(6), "icon": 1045}]
+	else:
+		var c := logic.skill_cost(a, e)
+		if c.tp > 0:
+			row.costs.append({"text": "%sTP" % XMenu._group(c.tp), "color": XUI.text_color(29), "icon": 1268})
+		if c.mp > 0:
+			row.costs.append({"text": "%sMP" % XMenu._group(c.mp), "color": XUI.text_color(23), "icon": 1269})
+	return row
+
+
+## Window_BattleSkill / Window_BattleItem（宽 450、最多 16 行），贴在角色旁 (+16, +16)。
 func _pick_from_list(a: XActor, entries: Array, items: bool):
-	if list_win and is_instance_valid(list_win):
-		list_win.queue_free()
-	var parts := _list_window(LIST_W)
-	list_win = parts[0]
-	var scroll: ScrollContainer = parts[1]
-	var col: VBoxContainer = parts[2]
-	var row_h := roundf(XUI.LINE_HEIGHT * CMD_SCALE) + 8
-	scroll.custom_minimum_size.y = row_h * mini(maxi(entries.size(), 1), LIST_MAX)
-	var fs := roundi(XUI.FONT_SIZE * CMD_SCALE)
-	if entries.is_empty():
-		col.add_child(XUI.label("（没有可用的%s）" % ("物品" if items else "技能"), fs, XUI.DIM))
-	for e in entries:
-		var ok := logic.can_use(a, e)
-		var b := _row_button(str(e.name), int(e.get("iconIndex", 0)))
-		b.disabled = not ok
-		var right := ""
-		var color := XUI.TEXT
-		if items:
-			right = ":%d" % int(XState.current.items.get(int(e.id), 0))
-		else:
-			var cd := int(ceilf(float(a.cooldowns.get(int(e.id), 0))))
-			var wu := int(ceilf(float(a.warmups.get(int(e.id), 0))))
-			if wu > 0:
-				right = "%dWU" % wu
-				color = XUI.text_color(4)
-			elif cd > 0:
-				right = "%dCD" % cd
-				color = XUI.text_color(6)
-			else:
-				var c := logic.skill_cost(a, e)
-				if c.tp > 0:
-					right = str(c.tp)
-					color = XUI.TP_COST
-				elif c.mp > 0:
-					right = str(c.mp)
-					color = XUI.MP_COST
-		if right != "":
-			var r := XUI.label(right, fs, color if ok else Color(color, 0.63))
-			r.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
-			r.offset_left = -110
-			r.offset_right = -8
-			r.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-			r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			b.add_child(r)
-		var desc := XText.plain(str(e.get("description", "")))
-		var rec: Dictionary = e
-		b.focus_entered.connect(func(): _help(desc); _preview(a, null if items else rec))
-		b.mouse_entered.connect(func(): _help(desc); _preview(a, null if items else rec))
-		b.pressed.connect(func(): _picked.emit(rec))
-		col.add_child(b)
-	_place_near_actor(list_win, a, Vector2(16, 16))
-	_help("")
-	for i in range(col.get_child_count()):
-		var c := col.get_child(i)
-		if c is Button and not c.disabled:
-			c.grab_focus.call_deferred()
+	_close_list()
+	var rows := entries.map(func(e): return _list_entry(a, e, items))
+	list_win = XBattleList.create(ui, rows, LIST_W)
+	list_win.index_changed.connect(func(i):
+		if i >= 0 and i < entries.size():
 			_help(XText.plain(str(entries[i].get("description", ""))))
-			break
+			_preview(a, null if items else entries[i]))
+	list_win.chosen.connect(func(i): _picked.emit(entries[i]))
+	list_win.cancelled.connect(func(): _picked.emit("cancel"))
+	list_win.select(0)
+	_place_near_actor(list_win, a, Vector2(16, 16))
 	while true:
 		var r = await _picked
 		if r is Dictionary:
@@ -676,6 +578,8 @@ func _pick_from_list(a: XActor, entries: Array, items: bool):
 			return r
 		if r is String and (r == "cancel" or r == "back" or r == "auto"):
 			_close_list()
+			if cmd_win:
+				cmd_win.active = true
 			return null
 
 

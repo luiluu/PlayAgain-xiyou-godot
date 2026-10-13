@@ -48,9 +48,18 @@ func _init() -> void:
 	resized.connect(_layout)
 
 
+## 内边距（MV standardPadding；Olivia 缩放 0.8 的战斗窗口为 11）
+var padding := PADDING:
+	set(v):
+		padding = v
+		_layout()
+
+
 func _layout() -> void:
-	canvas.position = Vector2(PADDING, PADDING)
-	canvas.size = size - Vector2(PADDING, PADDING) * 2.0
+	if canvas == null:
+		return
+	canvas.position = Vector2(padding, padding)
+	canvas.size = size - Vector2(padding, padding) * 2.0
 	queue_redraw()
 
 
