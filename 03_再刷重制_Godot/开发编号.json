@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.011",
-  "sequence": 11,
-  "next": "dev.012",
-  "nextSequence": 12,
+  "current": "dev.012",
+  "sequence": 12,
+  "next": "dev.013",
+  "nextSequence": 13,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "说明卡（战斗技能/物品、商店）与技能书附卡；装备槽装备名靠左",
+  "currentChange": "物品页、装备页按原版整页重做（XItemScene、XEquipScene，O-009）；同步正式西游 v0.13",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

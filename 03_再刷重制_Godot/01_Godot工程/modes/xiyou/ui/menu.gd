@@ -108,9 +108,13 @@ func _paint_status(c: XMVCanvas) -> void:
 		_paint_actor(c, a, 158.0, ry, c.size.x - 158.0 - 6.0)
 
 
-## installCombatPowerRuntime 的 drawActorSimpleStatus（主菜单行）
+## installCombatPowerRuntime 的 drawActorSimpleStatus：主菜单行（行高 33、「战力见状态」）与
+## 技能/装备页的 Window_SkillStatus（行高 36、「战力 N」，没有估算时写「战力 …」）共用。
 func _paint_actor(c: XMVCanvas, a: XActor, x: float, y: float, width: float) -> void:
-	var lh := STATUS_LH
+	paint_actor_status(c, a, x, y, width)
+
+
+static func paint_actor_status(c: XMVCanvas, a: XActor, x: float, y: float, width: float, lh := STATUS_LH, power := "战力见状态") -> void:
 	var gap := 144.0 + 12.0
 	var x2 := x + gap
 	var left_w := gap - 12.0
@@ -131,9 +135,9 @@ func _paint_actor(c: XMVCanvas, a: XActor, x: float, y: float, width: float) -> 
 		if int(st.get("iconIndex", 0)) > 0 and n < floori(left_w / 32.0):
 			c.icon(int(st.iconIndex), x + n * 32, y + lh * 2 + 2)
 			n += 1
-	c.text("战力见状态", x, y + lh * 3, left_w, "left", POWER_COLOR, 21, lh)
-	_param(c, "HP", a.hp, a.mhp, x2, y + lh, right_w, "hp", _hp_color(a))
-	_param(c, "MP", a.mp, a.mmp, x2, y + lh * 2, right_w, "mp", XUI.TEXT)
+	c.text(power, x, y + lh * 3, left_w, "left", POWER_COLOR, 21, lh)
+	_param(c, "HP", a.hp, a.mhp, x2, y + lh, right_w, "hp", _hp_color(a), lh)
+	_param(c, "MP", a.mp, a.mmp, x2, y + lh * 2, right_w, "mp", XUI.TEXT, lh)
 	var tp_cols: Array = XUI.GAUGES.tp
 	c.gauge(x2, y + lh * 3, right_w, a.tp / 100.0, tp_cols[0], tp_cols[1], lh)
 	c.text("TP", x2, y + lh * 3, 44, "left", XUI.SYSTEM, XUI.FONT_SIZE, lh)
@@ -141,24 +145,24 @@ func _paint_actor(c: XMVCanvas, a: XActor, x: float, y: float, width: float) -> 
 
 
 ## Window_Base.drawActorHp/Mp＋YEP drawCurrentAndMax
-func _param(c: XMVCanvas, label: String, cur: float, mx: float, x: float, y: float, w: float, kind: String, color: Color) -> void:
+static func _param(c: XMVCanvas, label: String, cur: float, mx: float, x: float, y: float, w: float, kind: String, color: Color, lh := STATUS_LH) -> void:
 	var cols: Array = XUI.GAUGES[kind]
-	c.gauge(x, y, w, cur / maxf(mx, 1.0), cols[0], cols[1], STATUS_LH)
-	c.text(label, x, y, 44, "left", XUI.SYSTEM, XUI.FONT_SIZE, STATUS_LH)
+	c.gauge(x, y, w, cur / maxf(mx, 1.0), cols[0], cols[1], lh)
+	c.text(label, x, y, 44, "left", XUI.SYSTEM, XUI.FONT_SIZE, lh)
 	var vw := c.text_width(_group(mx))
 	var sw := c.text_width("/")
 	var x1 := x + w - vw
 	var xs := x1 - sw
 	var x3 := xs - vw
 	if x3 >= x + c.text_width("HP"):
-		c.text(_group(cur), x3, y, vw, "right", color, XUI.FONT_SIZE, STATUS_LH)
-		c.text("/", xs, y, sw, "right", XUI.TEXT, XUI.FONT_SIZE, STATUS_LH)
-		c.text(_group(mx), x1, y, vw, "right", XUI.TEXT, XUI.FONT_SIZE, STATUS_LH)
+		c.text(_group(cur), x3, y, vw, "right", color, XUI.FONT_SIZE, lh)
+		c.text("/", xs, y, sw, "right", XUI.TEXT, XUI.FONT_SIZE, lh)
+		c.text(_group(mx), x1, y, vw, "right", XUI.TEXT, XUI.FONT_SIZE, lh)
 	else:
-		c.text(_group(cur), x1, y, vw, "right", color, XUI.FONT_SIZE, STATUS_LH)
+		c.text(_group(cur), x1, y, vw, "right", color, XUI.FONT_SIZE, lh)
 
 
-func _hp_color(a: XActor) -> Color:
+static func _hp_color(a: XActor) -> Color:
 	if a.is_dead():
 		return XUI.DEATH
 	if a.hp < a.mhp / 4.0:
@@ -305,7 +309,7 @@ func _show_status() -> void:
 	_open_detail(XStatusPage.new())
 
 func _show_equip() -> void:
-	_open_detail(XEquipPage.new())
+	_open_detail(XEquipScene.new())
 
 ## 子页面盖在菜单上；关闭后回到指令窗（MV 返回 Scene_Menu 时指令窗活动、选中上次指令）。
 func _open_detail(page: Control) -> void:
