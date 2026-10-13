@@ -54,15 +54,15 @@
    "useAsOriginalBaseline": false,
    "copyExistingModFeaturesAutomatically": false,
    "remakeMode": "xiyou",
-   "confirmedReleaseVersion": "v0.10",
+   "confirmedReleaseVersion": "v0.13",
    "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
-   "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/dev.012_v010同步/当前西游来源清单.json",
+   "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/dev.012_v013同步/当前西游来源清单.json",
    "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。",
-   "lastConvertedContentReleaseVersion": "v0.10",
+   "lastConvertedContentReleaseVersion": "v0.13",
    "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10",
    "contentRefreshPending": false,
    "convertedScope": "floor1_slice",
-   "oracleReleaseVersion": "v0.10"
+   "oracleReleaseVersion": "v0.13"
   },
   {
    "id": "historical_xiyou_source_157",
