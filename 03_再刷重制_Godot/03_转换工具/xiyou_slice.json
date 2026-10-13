@@ -32,6 +32,8 @@
   ],
   "weaponScan": 60,
   "extraImages": [
+    "pictures/BattleCursor_A",
+    "pictures/BattleCursor_B",
     "menus/Background",
     "menus/Particles",
     "titles1/login",

@@ -91,6 +91,27 @@ func _run() -> void:
 	_check("actor_scale", is_equal_approx(b.sprites[b.logic.actors[0]].body_scale, 0.75))
 	await _frames(30)
 	await _shot("battle_40_input")
+	# 指令窗（原版：851,462,220,196；6 条居中）
+	var cw: XBattleList = b.cmd_win
+	_check("command_rect", [cw.position, cw.size] == [Vector2(851, 462), Vector2(220, 196)], [cw.position, cw.size])
+	_check("command_entries", cw.entries.map(func(e): return e.text) == ["攻击", "战技", "魔法", "防御", "物品", "逃跑"], cw.entries.map(func(e): return e.text))
+	# 战技 → 技能列表（原版：830,478,450,51）
+	await _press("ui_down")
+	await _press("ui_accept")
+	await _frames(5)
+	var lw: XBattleList = b.list_win
+	_check("skill_list_open", lw != null)
+	if lw:
+		_check("skill_list_rect", lw.position.x == 830.0 and lw.size == Vector2(450, 29 * lw.rows + 22), [lw.position, lw.size, lw.rows])
+	await _shot("battle_41_skill")
+	await _press("ui_cancel")
+	await _frames(3)
+	_check("list_cancel_back_to_command", b.list_win == null and b.cmd_win != null and b.cmd_win.active)
+	await _press("ui_up")
+	await _press("ui_accept")
+	await _frames(10)
+	_check("target_mode", b._target_mode == "enemy")
+	await _shot("battle_42_target")
 	_finish()
 
 
