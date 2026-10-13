@@ -4,12 +4,15 @@ import argparse
 import base64
 import json
 from pathlib import Path, PureWindowsPath
+import re
 import subprocess
 
 LIBRARY = Path(__file__).resolve().parents[3]
 PRLCTL = '/Applications/Parallels Desktop.app/Contents/MacOS/prlctl'
 DEFAULT_VM = '{41b9e50d-7445-4a97-98b8-6fca401302fa}'
 DEFAULT_GAME = r'C:\Program Files (x86)\Steam\steamapps\common\再刷一把 PlayAgain'
+SAVE_DIRS = {'save', 'saves', 'app_userdata'}
+SAVE_SUFFIXES = {'.rpgsave', '.sav', '.save'}
 
 
 def settings():
@@ -20,16 +23,21 @@ def settings():
 
 
 def ps_literal(text):
-    return "'" + str(text).replace("'", "''") + "'"
+    # PowerShell also treats U+2018/2019/201A/201B as single quotes; double every kind.
+    return "'" + re.sub("(['\u2018\u2019\u201a\u201b])", r'\1\1', str(text)) + "'"
 
 
 def relative_path(text):
     p = PureWindowsPath(text or '.')
-    if p.is_absolute() or p.drive or p.root or '..' in p.parts:
+    # Windows drops trailing dots/spaces per segment ("save." is "save"); compare the same way.
+    parts = [part.rstrip(' .').lower() for part in p.parts]
+    if p.is_absolute() or p.drive or p.root or '' in parts:
         raise ValueError('Only relative paths within the original game are allowed')
-    if any(part.lower() in {'save', 'saves', 'app_userdata'} for part in p.parts):
+    if ':' in str(p):
+        raise ValueError('Alternate data streams are not allowed')
+    if any(part in SAVE_DIRS for part in parts):
         raise ValueError('Player save directories are excluded')
-    if p.suffix.lower() in {'.rpgsave', '.sav', '.save'}:
+    if parts and SAVE_SUFFIXES & {s.lower() for s in PureWindowsPath(parts[-1]).suffixes}:
         raise ValueError('Player save files are excluded')
     return str(p)
 
