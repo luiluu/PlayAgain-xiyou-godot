@@ -84,7 +84,9 @@
     "IconSet_3",
     "IconSet_4",
     "newIcon",
-    "anjian_level_up"
+    "anjian_level_up",
+    "Combo_A",
+    "Combo_D"
   ],
   "keepEvents": {
     "1": "*",
