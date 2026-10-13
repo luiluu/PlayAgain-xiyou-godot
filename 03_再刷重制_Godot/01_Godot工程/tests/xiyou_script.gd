@@ -92,6 +92,17 @@ func _run() -> void:
 	s.add_actor(8)
 	it = await run_list([{"code": 356, "indent": 0, "parameters": ["Difficulty SetID 5"]}, {"code": 318, "indent": 0, "parameters": [0, 0, 0, 2571]}, {"code": 318, "indent": 0, "parameters": [0, 8, 1, 2571]}, {"code": 0, "indent": 0, "parameters": []}])
 	check("plugin_difficulty_and_skills", s.difficulty == 5 and s.actor(1).skill_ids.has(2571) and not s.actor(8).skill_ids.has(2571) and it.skipped.is_empty())
+	# YEP_X_ExtMesPack1 连续选项合并：Map001 两组 5 个存档位并成 10 项，分支续编号 0～9，默认第 1 项
+	var map1: Dictionary = XDB.map(1)
+	var ev_list: Array = map1.events[1].pages[0].list.duplicate(true)
+	var ci := ev_list.find_custom(func(c): return int(c.code) == 102)
+	var merger := MVInterpreter.new(self, 1, 1, ev_list)
+	merger._merge_choices(ci)
+	var branches := []
+	for c in ev_list:
+		if int(c.code) == 402 and int(c.indent) == int(ev_list[ci].indent) and ev_list.find(c) < ev_list.find_custom(func(x): return int(x.code) == 404 and int(x.indent) == int(ev_list[ci].indent)):
+			branches.append(int(c.parameters[0]))
+	check("merge_save_choices", ev_list[ci].parameters[0].size() == 10 and str(ev_list[ci].parameters[0][9]) == "10号存档" and branches == range(10) and int(ev_list[ci].parameters[2]) == 0, [ev_list[ci].parameters, branches])
 	# 存读档保留 actor_ops、名字、标记；读档后新建的角色照样补上
 	var d: Dictionary = JSON.parse_string(JSON.stringify(s.to_dict()))
 	var r := XState.from_dict(d)

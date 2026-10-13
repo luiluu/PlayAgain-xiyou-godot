@@ -93,6 +93,9 @@ func _run() -> void:
 	var s := XState.current
 	_check("opening_choices", s.fixed_save_slot() == 1 and s.difficulty == 3 and s.actor_name == "测试玩家" and s.switch(682), [s.fixed_save_slot(), s.difficulty, s.actor_name])
 	_check("opening_party", s.party == [1, 8, 10, 9], s.party)
+	# MOG_TreasurePopup：Map002 事件的「伙伴号角：里德 +1」在场所移动之后执行，提示浮在 Map221 同 ID（2）的雕像处（下一帧成批出现）
+	await _frames(2)
+	_check("opening_popup_horn", map.popups.has("伙伴号角：里德 x 1"), map.popups)
 	await _frames(10)
 	await _shot("02b_教派选择.png")
 	# 求道者雕像 → 方桌大厅；首次到达的自动事件存到 1 号存档位并按难度学被动
@@ -112,6 +115,7 @@ func _run() -> void:
 	_check("companion_passives", s.actor(9).skill_ids.has(5548) and s.actor(9).skill_ids.has(6168) and not s.actor(9).skill_ids.has(2571))
 	_check("opening_saved_slot1", XSave.exists(1) and map.toasts.has("存档成功，储存到了1号存档！"), map.toasts)
 	_check("opening_vars", s.variable(20) == 1 and s.variable(14) == 1 and s.self_switch(4, 20, "A"))
+	_check("opening_popup_hub", map.popups.has("指路灯 x 1") and map.popups.has("难度修正 x 1"), map.popups)
 	print("opening skipped: ", JSON.stringify(map.skipped_log.map(func(r): return "%d %s" % [r.code, r.text])).left(1500))
 	_check("hub_start_pos", map.player.grid == Vector2i(14, 23), map.player.grid)
 	_check("hub_door_present", _event(map, 36) != null)

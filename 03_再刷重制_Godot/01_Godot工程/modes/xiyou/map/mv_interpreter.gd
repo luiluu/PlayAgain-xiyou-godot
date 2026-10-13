@@ -41,6 +41,37 @@ func run() -> void:
 	finished.emit()
 
 
+## YEP_X_ExtMesPack1 setupExtendedChoices：同一缩进上一组选项结束（404）后紧跟另一组「显示选项」时并成一个窗口，
+## 删去中间的 404 与 102、后面的选项分支（402）续编号；后一组的默认项与取消项按前面已有的项数平移。
+## 与原版一样直接改指令列表（同一事件再次执行时已是合并后的样子）。ci 为第一组 102 的位置。
+func _merge_choices(ci: int) -> void:
+	var params: Array = list[ci].parameters
+	var indent := int(list[ci].indent)
+	var total := 0
+	var i := ci + 1
+	while i < list.size():
+		var c: Dictionary = list[i]
+		if int(c.indent) == indent:
+			if int(c.code) == 404 and not (i + 1 < list.size() and int(list[i + 1].code) == 102):
+				break
+			elif int(c.code) == 102:
+				var cp: Array = c.parameters
+				if int(cp[2]) >= 0:
+					params[2] = int(cp[2]) + total
+				if int(cp[1]) >= 0:
+					params[1] = int(cp[1]) + total
+				elif int(cp[1]) == -2:
+					params[1] = -2
+				params[0].append_array(cp[0])
+				list.remove_at(i - 1)
+				list.remove_at(i - 1)
+				i -= 2
+			elif int(c.code) == 402:
+				c.parameters[0] = total
+				total += 1
+		i += 1
+
+
 ## Game_Interpreter.setupChoices：[选项, 取消类型, 默认, 位置, 背景]
 func _choice_params(msg: Dictionary, cp: Array) -> void:
 	msg.choices = cp[0]
@@ -78,6 +109,7 @@ func _execute(c: Dictionary):
 				msg.lines.append(str(list[index].parameters[0]))
 			if index + 1 < list.size() and int(list[index + 1].code) == 102:
 				index += 1
+				_merge_choices(index)
 				_choice_params(msg, list[index].parameters)
 				_branch[int(list[index].indent)] = await host.show_message(msg)
 			elif index + 1 < list.size() and int(list[index + 1].code) == 103:
@@ -87,7 +119,8 @@ func _execute(c: Dictionary):
 				await host.show_message(msg)
 		102:
 			var msg := {}
-			_choice_params(msg, p)
+			_merge_choices(index)
+			_choice_params(msg, list[index].parameters)
 			_branch[indent] = await host.show_message(msg)
 		103:
 			await _number_input({}, p)
@@ -147,13 +180,16 @@ func _execute(c: Dictionary):
 		125:
 			var v := _operand(int(p[1]), int(p[2]))
 			state().gain_gold(v if int(p[0]) == 0 else -v)
+			_treasure_popup({}, v if int(p[0]) == 0 else -v)
 		126:
 			var n := _operand(int(p[2]), int(p[3]))
 			state().gain_item(int(p[0]), n if int(p[1]) == 0 else -n)
+			_treasure_popup(XDB.rec("Items", int(p[0])), n if int(p[1]) == 0 else -n)
 			host.refresh_events()
 		127, 128:
 			var n := _operand(int(p[2]), int(p[3]))
 			state().gain_gear("weapon" if int(c.code) == 127 else "armor", int(p[0]), n if int(p[1]) == 0 else -n)
+			_treasure_popup(XDB.rec("Weapons" if int(c.code) == 127 else "Armors", int(p[0])), n if int(p[1]) == 0 else -n)
 		129:
 			if int(p[1]) == 0:
 				state().add_actor(int(p[0]))
@@ -286,6 +322,12 @@ func _plugin_command(line: String) -> void:
 			state().flags["HangUpProhibited"] = args[0] == "ProhibitHangUp"
 			return
 	skipped.append({"code": 356, "text": line.left(80)})
+
+
+## MOG_TreasurePopup：数量为正、本事件（按 ID）在当前地图上时浮出获得提示
+func _treasure_popup(rec: Dictionary, amount: int) -> void:
+	if amount > 0 and event_id > 0 and host.has_method("treasure_popup"):
+		host.treasure_popup(rec, amount, event_id)
 
 
 func _operand(type: int, value: int) -> int:

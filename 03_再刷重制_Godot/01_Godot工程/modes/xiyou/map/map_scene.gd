@@ -26,6 +26,8 @@ var busy := false
 var encounter_count := 0
 var skipped_log: Array = []
 var toasts: Array = []              # 出现过的提示文字（测试核对用）
+var popups: Array = []              # 出现过的获得提示文字（测试核对用）
+var _pending_popups: Array = []     # 本帧获得的物品（MOG_TreasurePopup 按帧成批，序号决定错开）
 var _bgm_name := ""
 var _menu_open := false
 
@@ -36,6 +38,15 @@ static func slice() -> Dictionary:
 
 
 func _ready() -> void:
+	# MV 画面底色为黑：比画面小的地图（开局 Map001/002 为 17×13）四周是黑的
+	var backdrop := CanvasLayer.new()
+	backdrop.layer = -100
+	var black := ColorRect.new()
+	black.color = Color.BLACK
+	black.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	black.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	backdrop.add_child(black)
+	add_child(backdrop)
 	ui = CanvasLayer.new()
 	ui.layer = 10
 	add_child(ui)
@@ -166,6 +177,8 @@ func _process(delta: float) -> void:
 		s.x = player.grid.x
 		s.y = player.grid.y
 		s.direction = player.direction
+	if not _pending_popups.is_empty():
+		_flush_popups()
 	if not busy and not _menu_open and player:
 		_check_autorun()
 	if not busy and Input.is_action_just_pressed("ui_cancel") and not XMessageBox.consumed_input_this_frame():
@@ -434,6 +447,37 @@ func input_text(prompt: String, default := "") -> String:
 	var text: String = await dlg.closed
 	dlg.queue_free()
 	return text
+
+
+## MOG_TreasurePopup：在 ID 为 event_id 的事件处浮出「图标 名字 x 数量」。事件按 ID 在当前地图上找（场所移动后旧事件的
+## 后续指令也照此找新地图上同 ID 的事件，与原版相同）；该事件未放到地图上时用地图数据里的初始格子。
+func treasure_popup(rec: Dictionary, amount: int, event_id: int) -> void:
+	_pending_popups.append([rec, amount, event_id])
+
+
+func _flush_popups() -> void:
+	var list := _pending_popups
+	_pending_popups = []
+	for i in range(list.size()):
+		var at = _event_screen_pos(int(list[i][2]))
+		if at == null:
+			continue
+		var pop := XTreasurePopup.new()
+		pop.z_index = 60
+		pop.setup(list[i][0], int(list[i][1]), at, i, list.size())
+		add_child(pop)
+		popups.append(pop.text())
+
+
+## Game_CharacterBase.screenX/screenY 的世界坐标：格子中心、脚下减行走图偏移 6（物件不减）
+func _event_screen_pos(id: int):
+	for e in events:
+		if e.event_id == id:
+			return e.position - Vector2(0, 0.0 if e.is_object() else 6.0)
+	for ev in map_data.get("events", []):
+		if ev is Dictionary and int(ev.id) == id:
+			return Vector2((float(ev.x) + 0.5) * TS, (float(ev.y) + 1.0) * TS - 6.0)
+	return null
 
 
 ## DataManager.saveGame(固定存档位)
