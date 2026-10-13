@@ -102,5 +102,13 @@
     "branch": "main",
     "check": "03_再刷重制_Godot/07_开发环境/检查.sh",
     "devVersionTool": "03_再刷重制_Godot/07_开发环境/开发编号.py"
+  },
+  "progress": {
+    "percent": 15.1,
+    "ledger": "00_项目管理/重制步骤清单.md（进度账）",
+    "reviewEveryPercent": 5,
+    "lastReviewAtPercent": null,
+    "nextReviewAtPercent": 15,
+    "asOf": "dev.014"
   }
 }
