@@ -47,6 +47,7 @@
   ],
   "systemImages": [
     "Window",
+    "ButtonSet",
     "Damage",
     "Balloon",
     "Shadow1",
@@ -84,6 +85,7 @@
   },
   "extraAudio": [
     "bgm/Ship3",
-    "se/Skill2"
+    "se/Skill2",
+    "se/Cursor1"
   ]
 }

@@ -40,6 +40,24 @@ func run() -> void:
 	finished.emit()
 
 
+## Game_Interpreter.setupChoices：[选项, 取消类型, 默认, 位置, 背景]
+func _choice_params(msg: Dictionary, cp: Array) -> void:
+	msg.choices = cp[0]
+	msg.cancel = int(cp[1])
+	msg.default = int(cp[2]) if cp.size() > 2 else 0
+	msg.choice_position = int(cp[3]) if cp.size() > 3 else 2
+	msg.choice_background = int(cp[4]) if cp.size() > 4 else 0
+
+
+## Game_Interpreter.setupNumInput：[变量, 位数]
+func _number_input(msg: Dictionary, np: Array) -> void:
+	var var_id := int(np[0])
+	msg.digits = int(np[1])
+	msg.number_value = int(state().variable(var_id))
+	var v: int = await host.show_message(msg)
+	state().set_variable(var_id, v)
+
+
 func _skip_branch() -> void:
 	var indent := int(list[index].indent)
 	while index + 1 < list.size() and int(list[index + 1].indent) > indent:
@@ -51,20 +69,27 @@ func _execute(c: Dictionary):
 	var indent := int(c.indent)
 	match int(c.code):
 		101:
-			var lines := []
+			# MV command101：文字、紧跟的选项/数值输入合成一条消息
+			var msg := {"face": str(p[0]), "index": int(p[1]), "background": int(p[2]) if p.size() > 2 else 0,
+				"position": int(p[3]) if p.size() > 3 else 2, "lines": []}
 			while index + 1 < list.size() and int(list[index + 1].code) == 401:
 				index += 1
-				lines.append(str(list[index].parameters[0]))
-			# 紧跟选项时一起显示
+				msg.lines.append(str(list[index].parameters[0]))
 			if index + 1 < list.size() and int(list[index + 1].code) == 102:
 				index += 1
-				var cp: Array = list[index].parameters
-				var choice: int = await host.show_text_with_choices(str(p[0]), int(p[1]), lines, cp[0], int(cp[1]))
-				_branch[int(list[index].indent)] = choice
+				_choice_params(msg, list[index].parameters)
+				_branch[int(list[index].indent)] = await host.show_message(msg)
+			elif index + 1 < list.size() and int(list[index + 1].code) == 103:
+				index += 1
+				await _number_input(msg, list[index].parameters)
 			else:
-				await host.show_text(str(p[0]), int(p[1]), lines)
+				await host.show_message(msg)
 		102:
-			_branch[indent] = await host.show_text_with_choices("", 0, [], p[0], int(p[1]))
+			var msg := {}
+			_choice_params(msg, p)
+			_branch[indent] = await host.show_message(msg)
+		103:
+			await _number_input({}, p)
 		402:
 			if _branch.get(indent) != int(p[0]):
 				_skip_branch()

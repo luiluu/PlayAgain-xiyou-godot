@@ -164,7 +164,7 @@ func _process(delta: float) -> void:
 		s.x = player.grid.x
 		s.y = player.grid.y
 		s.direction = player.direction
-	if not busy and Input.is_action_just_pressed("ui_cancel"):
+	if not busy and Input.is_action_just_pressed("ui_cancel") and not XMessageBox.consumed_input_this_frame():
 		open_menu()
 
 
@@ -283,6 +283,10 @@ func show_text(face: String, idx: int, lines: Array) -> void:
 
 func show_text_with_choices(face: String, idx: int, lines: Array, options: Array, cancel_type: int) -> int:
 	return await message.show_text_with_choices(face, idx, lines, options, cancel_type)
+
+## 文字/选项/数值输入（XMessageBox.run 的参数）
+func show_message(msg: Dictionary) -> int:
+	return await message.run(msg)
 
 func fade(out: bool) -> void:
 	var t := create_tween()
