@@ -1,5 +1,5 @@
 extends RefCounted
-## 【Codex·未经Claude检验】 Shared UI presentation for the entry prototype.
+## Shared UI presentation for the entry menu.
 
 static func make_theme() -> Theme:
 	var theme := Theme.new()

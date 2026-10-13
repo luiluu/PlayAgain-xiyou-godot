@@ -1,6 +1,5 @@
 {
-  "marker": "【Codex·未经Claude检验】",
-  "review": "未经claude检验",
+  "review": "Codex 部署；Claude 2026-10-13 核查通过（下载包 SHA256 与官方 SHA512 清单一致、签名/公证、版本、模板与 tpz 内原件一致、便携 editor_data 生效），见变更记录",
   "installedAt": "2026-10-12T19:24:13.303725+02:00",
   "version": "4.7.2",
   "versionString": "4.7.2.stable.official.ed1daf0bf",
@@ -89,7 +88,8 @@
           "end": 1281349701,
           "bytes": 125064455
         }
-      ]
+      ],
+      "rangesNote": "分段文件在合并、校验后已删除，仅留传输记录"
     }
   ],
   "verification": {
@@ -100,13 +100,12 @@
     "headlessEditorInitializationAndExit": true,
     "headlessFinalErrors": false,
     "guiProjectManagerViewed": true,
-    "guiProjectsPresent": false,
-    "canonicalProjectCreated": false,
-    "gameplayImplemented": false,
-    "windowsOrAndroidExported": false
+    "gatekeeperNote": "spctl: Notarized Developer ID；本机全局评估已关闭（override=security disabled），以公证来源为准"
   },
   "verificationDirectory": "/Users/kyo/Documents/再刷项目资料库/00_项目管理/验证与备份/20261012_Godot部署",
   "androidSDKConfigured": false,
   "androidSigningConfigured": false,
-  "engineUpdatedAutomatically": false
+  "engineUpdatedAutomatically": false,
+  "templateFilesNotInstalled": "icudt_godot.dat 及 iOS/Linux/Web 模板只在 tpz 内",
+  "macExportNote": "macOS debug/release 模板未内嵌 ICU 断行数据（编辑器内嵌）；导出前开启 internationalization/locale/include_text_server_data 并实测中文自动换行"
 }

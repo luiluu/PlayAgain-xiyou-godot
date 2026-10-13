@@ -2,7 +2,5 @@
   "developmentVersion": "dev.008",
   "releaseVersion": null,
   "kind": "playable_slice",
-  "gameplayAvailable": true,
-  "marker": "【Codex·未经Claude检验】",
-  "review": "未经claude检验"
+  "gameplayAvailable": true
 }

@@ -1,5 +1,5 @@
 extends Control
-## 【Codex·未经Claude检验】 Code-drawn background; no source-game art imported.
+## Code-drawn background for the entry menu; no source-game art imported.
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
