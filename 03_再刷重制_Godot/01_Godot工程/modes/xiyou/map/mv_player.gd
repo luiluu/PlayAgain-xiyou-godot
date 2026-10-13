@@ -6,6 +6,8 @@ extends MVCharacter
 signal stepped
 signal action_pressed
 signal touch_target_reached
+## Game_Player.moveStraight：能走时先让队伍跟随追上一步（追的是玩家移动前的位置）
+signal before_step
 
 var input_enabled := true
 var touch_target := Vector2i(-1, -1)
@@ -47,6 +49,12 @@ func update_character() -> void:
 	elif Input.is_action_just_pressed("ui_accept") and not Input.is_key_pressed(KEY_META):
 		# ⌘Enter 是切全屏（GameApp），轮询不受 set_input_as_handled 影响，这里排除
 		action_pressed.emit()
+
+
+func move_straight(d: int) -> bool:
+	if can_pass(d):
+		before_step.emit()
+	return super.move_straight(d)
 
 
 func _input_dir() -> int:

@@ -144,6 +144,8 @@ func _run() -> void:
 		map.player.move_straight(8)
 		await _frames(20)
 	_check("player_walks", map.player.grid.y < start.y, [start, map.player.grid])
+	# 队伍跟随：出战第 2～4 人有行走图、第 5 位空；走几步后第一个跟随者在玩家身后一格
+	_check("followers", map.followers.size() == 4 and map.followers.slice(0, 3).all(func(f): return f.character_name != "") and map.followers[3].character_name == "" and map.followers[0].grid == map.player.grid + Vector2i(0, 1), map.followers.map(func(f): return [f.character_name, f.grid]))
 	# 进门到一层
 	XMessageBox.auto_answers = [0]
 	await map.run_event(_event(map, 36))

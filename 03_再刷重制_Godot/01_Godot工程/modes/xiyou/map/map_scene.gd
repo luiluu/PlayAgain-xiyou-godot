@@ -14,6 +14,7 @@ var lower: MVTilemap
 var upper: MVTilemap
 var chars: Node2D
 var player: MVPlayer
+var followers: Array[MVFollower] = []
 var events: Array[MVEvent] = []
 var camera: Camera2D
 var ui: CanvasLayer
@@ -160,14 +161,29 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 		chars.add_child(e)
 		e.setup_event(id, ev)
 		events.append(e)
+	# MOG_TreasurePopup：换地图时上一张图的获得提示不带过来（场所移动之后才执行的获得指令照常出现在新地图）
+	for n in get_children():
+		if n is XTreasurePopup:
+			n.queue_free()
+	# 队伍跟随在玩家之前加入（Spriteset_Map 先倒序放跟随、最后放玩家；同一行时玩家画在最上面）
+	followers.clear()
+	if bool(XDB.system().get("optFollowers", false)):
+		for i in range(XState.MAX_BATTLE_MEMBERS - 1, 0, -1):
+			var f := MVFollower.new()
+			f.member_index = i
+			f.tilemap = lower
+			chars.add_child(f)
+			f.synchronize(Vector2i(x, y), d if d > 0 else 2)
+			followers.push_front(f)
 	player = MVPlayer.new()
 	player.tilemap = lower
 	chars.add_child(player)
-	var leader: XActor = s.members()[0] if not s.party.is_empty() else null
-	if leader:
-		player.set_image(str(leader.data().characterName), int(leader.data().characterIndex))
 	player.locate(x, y)
 	player.direction = d if d > 0 else 2
+	# 队伍跟随（System 显示队伍跟随）：出战成员第 2～5 人，场所移动后叠在玩家脚下
+	if not followers.is_empty():
+		player.before_step.connect(_followers_step)
+	refresh_party_sprites()
 	player.stepped.connect(_on_player_step)
 	player.action_pressed.connect(_on_action)
 	camera.limit_left = 0
@@ -191,6 +207,12 @@ func _process(delta: float) -> void:
 		s.x = player.grid.x
 		s.y = player.grid.y
 		s.direction = player.direction
+		# Game_Follower.update：透明、不透明度跟着玩家
+		for f in followers:
+			if f.transparent != player.transparent or f.opacity != player.opacity:
+				f.transparent = player.transparent
+				f.opacity = player.opacity
+				f.queue_redraw()
 	if not _pending_popups.is_empty():
 		_flush_popups()
 	if not busy and not _menu_open and player:
@@ -212,6 +234,28 @@ func is_blocked(cell: Vector2i, who: MVCharacter) -> bool:
 func refresh_events() -> void:
 	for e in events:
 		e.refresh()
+	refresh_party_sprites()
+
+
+## Game_Player.refresh / Game_Followers.refresh：队首的行走图给玩家，其余出战成员给队伍跟随
+func refresh_party_sprites() -> void:
+	if player == null:
+		return
+	var s := XState.current
+	var leader: XActor = s.members()[0] if s and not s.party.is_empty() else null
+	if leader:
+		player.set_image(str(leader.data().characterName), int(leader.data().characterIndex))
+	else:
+		player.set_image("", 0)
+	for f in followers:
+		f.refresh_image()
+
+
+## Game_Followers.updateMove：从最后一个开始各追前一个人
+func _followers_step() -> void:
+	for i in range(followers.size() - 1, -1, -1):
+		var target: MVCharacter = followers[i - 1] if i > 0 else player
+		followers[i].chase(target, player.move_speed)
 
 
 # ---- 触发 ----
@@ -531,6 +575,5 @@ func open_menu() -> void:
 	_menu_open = false
 	if reserved > 0:
 		await run_common_event(reserved)
-	if player:
-		var leader: XActor = XState.current.members()[0]
-		player.set_image(str(leader.data().characterName), int(leader.data().characterIndex))
+	# 整队/换人后队首与跟随的行走图
+	refresh_party_sprites()

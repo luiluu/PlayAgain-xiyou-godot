@@ -66,7 +66,7 @@ func _add(message: String) -> void:
 	box.add_theme_stylebox_override("panel", style)
 	var label := Label.new()
 	label.text = text
-	label.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 与浏览器一样：句末标点不单独起行
 	label.add_theme_font_override("font", XUI.font())
 	label.add_theme_font_size_override("font_size", FONT_SIZE)
 	label.add_theme_color_override("font_color", Color.WHITE)
