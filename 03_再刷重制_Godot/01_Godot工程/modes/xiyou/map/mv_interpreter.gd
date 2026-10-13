@@ -308,7 +308,8 @@ func _execute(c: Dictionary):
 	return true
 
 
-## 插件指令：Vitsuno_Difficulty「Difficulty SetID N」；Mehmet_GhostButtons 与 XdRs_HangUp 的开关只记标记（重制版没有这两种界面）
+## 插件指令：Vitsuno_Difficulty「Difficulty SetID N」；Mehmet_GhostButtons 只记标记（重制版没有虚拟按钮）；
+## XdRs_HangUp「EnableHangUp / ProhibitHangUp」开关挂机（XHangUp.enabled）
 func _plugin_command(line: String) -> void:
 	var args := line.split(" ", false)
 	if args.is_empty():
@@ -321,7 +322,7 @@ func _plugin_command(line: String) -> void:
 		"GhostButtons":
 			state().flags["GhostButtons"] = args[1] if args.size() > 1 else ""
 			return
-		"ProhibitHangUp", "PermitHangUp":
+		"ProhibitHangUp", "EnableHangUp":
 			state().flags["HangUpProhibited"] = args[0] == "ProhibitHangUp"
 			return
 	skipped.append({"code": 356, "text": line.left(80)})
