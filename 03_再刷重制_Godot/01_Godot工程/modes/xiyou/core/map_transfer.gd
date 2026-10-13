@@ -146,12 +146,16 @@ static func drop_item_rate(s: XState, enemy: Dictionary) -> float:
 static func drops(s: XState, enemy: Dictionary) -> Array:
 	var base := drop_item_rate(s, enemy)
 	var out := []
-	for d in enemy.get("dropItems", []):
+	# YEP_ExtraEnemyDrops 在读数据库时把 <Enemy Drops> 的「Armor N: x%」追加进 dropItems（分母 = 1/几率）
+	var list: Array = enemy.get("dropItems", []).duplicate()
+	for x in XBattleLogic._extra_drops(enemy):
+		list.append({"kind": x.kind, "dataId": x.id, "denominator": 1.0 / x.rate if x.rate > 0 else 0.0})
+	for d in list:
 		var kind := int(d.kind)
-		if not TYPES.has(kind) or int(d.denominator) <= 0:
+		if not TYPES.has(kind) or float(d.denominator) <= 0:
 			continue
 		var item := XDB.rec(TABLES[kind], int(d.dataId))
-		var rate := minf(floorf((1.0 / int(d.denominator)) * base * 100000.0 + 0.5) / 1000.0, 100.0)
+		var rate := minf(floorf((1.0 / float(d.denominator)) * base * 100000.0 + 0.5) / 1000.0, 100.0)
 		out.append({"type": TYPES[kind], "kind": kind, "id": int(d.dataId), "rate": rate, "item": item, "order": out.size()})
 	out.sort_custom(func(a, b):
 		var qa := quality(a.item)
