@@ -1,7 +1,8 @@
 class_name XMapScene
 extends Node2D
 ## 西游地图场景：图块（下层/上层）、角色、事件、镜头、遇敌，并为事件解释器提供画面服务。
-## 只放切片配置 keepEvents 里列出的事件（首期精简）。
+## 只放切片配置 keepEvents 里列出的事件（"*" 为整张图的事件，开局三张图照原版全放）。
+## 自动执行事件照 MV：解释器空闲时每帧找第一个满足条件的自动执行事件运行（场所移动后旧事件剩下的指令照常在新地图执行完）。
 
 signal busy_changed(busy: bool)
 
@@ -24,6 +25,7 @@ var hud: Control
 var busy := false
 var encounter_count := 0
 var skipped_log: Array = []
+var toasts: Array = []              # 出现过的提示文字（测试核对用）
 var _bgm_name := ""
 var _menu_open := false
 
@@ -123,9 +125,10 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	upper.z_index = 10
 	add_child(upper)
 	upper.setup(map_data, true)
-	var keep: Array = slice().get("keepEvents", {}).get(str(id), []).map(func(v): return int(v))
+	var keep_cfg = slice().get("keepEvents", {}).get(str(id), [])
+	var keep: Array = keep_cfg.map(func(v): return int(v)) if keep_cfg is Array else []
 	for ev in map_data.events:
-		if ev == null or not keep.has(int(ev.id)):
+		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id))):
 			continue
 		var e := MVEvent.new()
 		e.tilemap = lower
@@ -152,7 +155,6 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	_show_map_name(str(map_data.get("displayName", "")))
 	play_bgm(map_data.get("bgm", {}))
 	_make_encounter_count()
-	await _run_autorun()
 
 
 func _process(delta: float) -> void:
@@ -164,6 +166,8 @@ func _process(delta: float) -> void:
 		s.x = player.grid.x
 		s.y = player.grid.y
 		s.direction = player.direction
+	if not busy and not _menu_open and player:
+		_check_autorun()
 	if not busy and Input.is_action_just_pressed("ui_cancel") and not XMessageBox.consumed_input_this_frame():
 		open_menu()
 
@@ -225,10 +229,12 @@ func _physics_process(_delta: float) -> void:
 			return
 
 
-func _run_autorun() -> void:
+## Game_Map.setupAutorunEvent / Game_Event.checkEventTriggerAuto：列表多于一条（末尾结束指令之外还有内容）才启动
+func _check_autorun() -> void:
 	for e in events:
-		if e.trigger() == 3:
-			await run_event(e)
+		if e.trigger() == 3 and e.command_list().size() > 1:
+			run_event(e)
+			return
 
 
 func run_event(e: MVEvent) -> void:
@@ -356,6 +362,83 @@ func _snapshot() -> Texture2D:
 	if img.get_size() != Vector2i(1280, 720):
 		img.resize(1280, 720, Image.INTERPOLATE_BILINEAR)
 	return ImageTexture.create_from_image(img)
+
+
+# ---- 角色、动画、提示、输入、存档 ----
+## Game_Interpreter.character：-1 玩家，0 本事件，N 为该事件（不在本图则为空）
+func character(id: int, this_event: int) -> MVCharacter:
+	if id < 0:
+		return player
+	var want := this_event if id == 0 else id
+	for e in events:
+		if e.event_id == want:
+			return e
+	return null
+
+
+## 在角色身上播 MV 动画（Sprite_Animation：0 头上 1 中心 2 脚下 3 画面中央）
+func show_animation(ch: MVCharacter, anim_id: int) -> MVAnimation:
+	var a := XDB.rec("Animations", anim_id)
+	if a.is_empty():
+		return null
+	var at := ch.position - Vector2(0, 0.0 if ch.is_object() else 6.0)
+	match int(a.get("position", 1)):
+		0:
+			at.y -= ch.sprite_height()
+		1:
+			at.y -= ch.sprite_height() / 2.0
+		3:
+			at = camera.get_screen_center_position()
+	var anim := MVAnimation.play(self, anim_id, at)
+	if anim:
+		anim.z_index = 50
+	return anim
+
+
+func return_to_title() -> void:
+	get_tree().change_scene_to_file.call_deferred("res://modes/xiyou/entry.tscn")
+
+
+## jQuery toaster：右上角提示框，几秒后淡出
+func toast(text: String) -> void:
+	toasts.append(text)
+	var box := PanelContainer.new()
+	box.add_theme_stylebox_override("panel", XUI.panel())
+	box.add_child(XUI.label(text, 22))
+	var stack: VBoxContainer = hud.get_node_or_null("Toasts")
+	if stack == null:
+		stack = VBoxContainer.new()
+		stack.name = "Toasts"
+		stack.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+		stack.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		stack.offset_top = 72
+		stack.offset_right = -12
+		stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hud.add_child(stack)
+	stack.add_child(box)
+	var tw := box.create_tween()
+	tw.tween_interval(3.0)
+	tw.tween_property(box, "modulate:a", 0.0, 0.6)
+	tw.tween_callback(box.queue_free)
+
+
+## 原版的 prompt(提示, 默认)：输入一行文字，取消返回空。自动测试时取 auto_answers 里排在最前的字符串
+func input_text(prompt: String, default := "") -> String:
+	if XMessageBox.auto:
+		if not XMessageBox.auto_answers.is_empty() and XMessageBox.auto_answers[0] is String:
+			return str(XMessageBox.auto_answers.pop_front())
+		return default
+	var dlg := XTextPrompt.new()
+	dlg.setup(prompt, default)
+	ui.add_child(dlg)
+	var text: String = await dlg.closed
+	dlg.queue_free()
+	return text
+
+
+## DataManager.saveGame(固定存档位)
+func save_game(slot: int) -> bool:
+	return slot > 0 and XSave.save(slot)
 
 
 func open_shop(goods: Array, purchase_only: bool) -> void:

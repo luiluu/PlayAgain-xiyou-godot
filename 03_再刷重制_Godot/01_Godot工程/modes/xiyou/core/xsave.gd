@@ -3,7 +3,8 @@ extends RefCounted
 ## 西游模式存档：<GameApp.save_directory()>/save_<N>.json，即 user://modes/xiyou（按 modes.json 的 saveNamespace 隔离）。
 ## 只存 Godot 版自己的状态，不读 MV 存档。
 
-const SLOTS := 3
+## 正式版开局选固定存档位 1～10（开关 161～165、276～280），之后「存档」都存在那一格
+const SLOTS := 10
 ## 自动测试改到临时目录，避免覆盖开发时手动存的档。
 static var dir_override := ""
 

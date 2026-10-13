@@ -1,5 +1,6 @@
 extends Node
-## 首期流程测试（无人操作）：入口 → 西游 → 新游戏（普通、狗逍遥）→ 方桌大厅 → 进门到一层 →
+## 首期流程测试（无人操作）：入口 → 西游 → 新游戏 → 原版开局事件（Map001 选 1 号存档位、输入名字、普通难度 →
+## Map002 剧情、选狗逍遥 → Map221 选求道者雕像）→ 方桌大厅（首次到达存档、学难度被动）→ 进门到一层 →
 ## 遇敌自动战斗获胜 → 与辛德瑞对话后离开 → 挑战守层者里德（开局等级必败，验证战败回大厅）→ 存档/读档一致。
 ## 对话与选项自动应答，战斗强制自动；存档写到 user://test_xiyou_flow，测试结束删除。
 ## 窗口模式加 -- --out=<目录> 会在关键步骤截图。
@@ -51,10 +52,10 @@ func _scene() -> Node:
 	return get_tree().current_scene
 
 
-func _wait_map(map_id: int, timeout := 600) -> bool:
+func _wait_map(map_id: int, timeout := 600, even_busy := false) -> bool:
 	for i in range(timeout):
 		var s = _scene()
-		if s is XMapScene and s.map_id == map_id and s.player != null and not s.busy:
+		if s is XMapScene and s.map_id == map_id and s.player != null and (even_busy or not s.busy):
 			return true
 		await get_tree().process_frame
 	return false
@@ -80,17 +81,38 @@ func _run() -> void:
 	var entry = _scene()
 	_check("xiyou_title", entry.scene_file_path == ENTRY and XDB.available())
 	await _shot("01_西游标题.png")
-	entry._difficulty = 3
-	entry._choose_starter()
-	await _frames(3)
-	await _shot("02_选择英雄.png")
-	entry._start(1)
-	var ok := await _wait_map(4)
-	_check("hub_loaded", ok)
+	# 原版开局：存档位 1 → 模式（唯一）→ 名字 → 天道使者「是」→ 普通难度 → 接受 → 就选他（狗逍遥）
+	XMessageBox.auto_answers = [0, 0, 0, "测试玩家", 0, 2, 0, 0]
+	entry._new_game()
+	var ok := await _wait_map(2, 3000, true)
+	_check("opening_map002", ok)
+	await _shot("02_开局剧情.png")
+	ok = await _wait_map(221, 6000)
+	_check("opening_map221", ok)
 	var map: XMapScene = _scene()
 	var s := XState.current
-	_check("party", s.party == [1, 8, 9, 10], s.party)
-	_check("opening_passives", s.actor(1).skill_ids.has(5980) and s.actor(1).skill_ids.has(6168))
+	_check("opening_choices", s.fixed_save_slot() == 1 and s.difficulty == 3 and s.actor_name == "测试玩家" and s.switch(682), [s.fixed_save_slot(), s.difficulty, s.actor_name])
+	_check("opening_party", s.party == [1, 8, 10, 9], s.party)
+	await _frames(10)
+	await _shot("02b_教派选择.png")
+	# 求道者雕像 → 方桌大厅；首次到达的自动事件存到 1 号存档位并按难度学被动
+	XMessageBox.auto_answers = [0]
+	await map.run_event(_event(map, 2))
+	ok = await _wait_map(4, 3000)
+	for i in range(600):
+		if s.self_switch(4, 20, "A") and not _scene().busy:
+			break
+		await get_tree().process_frame
+	_check("hub_loaded", ok and s.self_switch(4, 20, "A"))
+	map = _scene()
+	var a1 := s.actor(1)
+	_check("opening_sect", s.switch(2301) and not s.switch(2302) and s.item_count(4) == 1 and s.item_count(2896) == 1 and s.item_count(10) == 1)
+	# 开局被动：天道诅咒 6168（变量 14＝1）、难度适应 5980、普通难度 5548、万众一心 2571、SupperStar 2786；v0.13 走 Map002 第 5 页，不送暴爽 2747
+	_check("opening_passives", [6168, 5980, 5548, 2571, 2786].all(func(id): return a1.skill_ids.has(id)) and not a1.skill_ids.has(2747), a1.skill_ids)
+	_check("companion_passives", s.actor(9).skill_ids.has(5548) and s.actor(9).skill_ids.has(6168) and not s.actor(9).skill_ids.has(2571))
+	_check("opening_saved_slot1", XSave.exists(1) and map.toasts.has("存档成功，储存到了1号存档！"), map.toasts)
+	_check("opening_vars", s.variable(20) == 1 and s.variable(14) == 1 and s.self_switch(4, 20, "A"))
+	print("opening skipped: ", JSON.stringify(map.skipped_log.map(func(r): return "%d %s" % [r.code, r.text])).left(1500))
 	_check("hub_start_pos", map.player.grid == Vector2i(14, 23), map.player.grid)
 	_check("hub_door_present", _event(map, 36) != null)
 	# ⌘Enter 只切全屏，地图轮询确定键时不能同时触发调查。只在无界面模式按，免得真的切到全屏。
@@ -100,7 +122,9 @@ func _run() -> void:
 		map.player.action_pressed.connect(count)
 		Input.parse_input_event(_key(KEY_META, true))
 		Input.parse_input_event(_key(KEY_ENTER, true))
-		await _frames(3)
+		# 按住若干物理帧再松开：同一物理帧内按下又松开时 is_action_just_pressed 仍为真而 ⌘ 已松开，会误判（测试时序问题，非真人操作）
+		for i in range(3):
+			await get_tree().physics_frame
 		Input.parse_input_event(_key(KEY_ENTER, true, false))
 		Input.parse_input_event(_key(KEY_META, false, false))
 		await _frames(2)

@@ -165,6 +165,9 @@ func learn_skill(id: int) -> void:
 		skill_ids.append(id)
 		skill_ids.sort()
 
+func forget_skill(id: int) -> void:
+	skill_ids.erase(id)
+
 func skills() -> Array:
 	var ids: Array[int] = skill_ids.duplicate()
 	for t in all_traits():

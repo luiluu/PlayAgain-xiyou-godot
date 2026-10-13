@@ -24,9 +24,16 @@ var steps := 0
 var play_seconds := 0.0
 var encounter_count := 0
 ## Star_RomGetItems 的装备预掷随机池（见 XGear），随存档保存
-var rom := {"x": [], "xn": 0, "xs": [], "xsn": 0}
+var rom := {"x": [], "xn": 0, "xs": [], "xsn": 0, "g": [], "gn": 0}
 ## Galv_NewItemIndication 的 $gameSystem._seenItems：看过的物品（物品 ID／装备实例 ID）不再画 NEW
 var seen := {}
+## 事件脚本里给 $gameParty / $gamePlayer 挂的零散标记（DCultyL1～8 等），按原名保存
+var flags := {}
+## $gamePlayer.SaveActorName：开局输入的名字（称号、成就里用）
+var actor_name := ""
+## 事件脚本「所有角色学会/忘记技能」：MV 会当场建出全部角色；这里按顺序记下，角色第一次建出时补上（见 actor()）
+## 每条 {"op": "learn"/"forget", "skill": N, "ids": [] 为全体, "exclude": [], "named": 只限有名字的角色}
+var actor_ops: Array = []
 
 
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
@@ -38,11 +45,63 @@ static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> 
 	return s
 
 
+## MV setupNewGame：System 的初始队伍（西游为空）与起点（Map001 (7,10)），难度取 Vitsuno_Difficulty 的 Init Difficulty ID。
+## 之后由 Map001/Map002/Map221 的原版事件选存档位、难度、英雄与教派。
+static func new_game_blank() -> XState:
+	var s := XState.new()
+	var sys := XDB.system()
+	s.difficulty = int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2))
+	for id in sys.get("partyMembers", []):
+		s.add_actor(int(id))
+	s.map_id = int(sys.get("startMapId", 1))
+	s.x = int(sys.get("startX", 0))
+	s.y = int(sys.get("startY", 0))
+	s.direction = 2
+	current = s
+	return s
+
+
 func actor(id: int) -> XActor:
 	if not actors.has(id):
 		actors[id] = XActor.new().setup(id)
+		for op in actor_ops:
+			_apply_actor_op(actors[id], op)
+		actors[id].refresh_passive()
 		for e in actors[id].equip_list():register_gear(e)
 	return actors[id]
+
+
+## 记下一条「所有角色学会/忘记技能」，并对已经建出的角色立刻生效
+func add_actor_op(op: Dictionary) -> void:
+	actor_ops.append(op)
+	for a in actors.values():
+		_apply_actor_op(a, op)
+		a.refresh_passive()
+
+
+static func _apply_actor_op(a: XActor, op: Dictionary) -> void:
+	var ids: Array = op.get("ids", [])
+	if not ids.is_empty() and not ids.has(a.actor_id):
+		return
+	if op.get("exclude", []).has(a.actor_id):
+		return
+	if bool(op.get("named", false)) and str(a.data().get("name", "")) == "":
+		return
+	if str(op.op) == "forget":
+		a.forget_skill(int(op.skill))
+	else:
+		a.learn_skill(int(op.skill))
+
+
+## 开局选的固定存档位：开关 161～165 → 1～5，276～280 → 6～10（公共事件 1「存档」等按它保存）；未选为 0
+func fixed_save_slot() -> int:
+	for i in range(5):
+		if switch(161 + i):
+			return i + 1
+	for i in range(5):
+		if switch(276 + i):
+			return i + 6
+	return 0
 
 func add_actor(id: int) -> void:
 	if not party.has(id) and not XDB.rec("Actors", id).is_empty():
@@ -159,7 +218,7 @@ func to_dict() -> Dictionary:
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "actors": a, "gold": gold,
 		"items": items, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
-		"seen": seen.keys()}
+		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -201,7 +260,13 @@ static func from_dict(d: Dictionary) -> XState:
 	s.play_seconds = float(d.playSeconds)
 	var rom: Dictionary = d.get("rom", {})
 	s.rom = {"x": rom.get("x", []).map(func(v): return float(v)), "xn": int(rom.get("xn", 0)),
-		"xs": rom.get("xs", []).map(func(v): return int(v)), "xsn": int(rom.get("xsn", 0))}
+		"xs": rom.get("xs", []).map(func(v): return int(v)), "xsn": int(rom.get("xsn", 0)),
+		"g": rom.get("g", []).map(func(v): return int(v)), "gn": int(rom.get("gn", 0))}
+	s.flags = d.get("flags", {})
+	s.actor_name = str(d.get("actorName", ""))
+	for op in d.get("actorOps", []):
+		s.actor_ops.append({"op": str(op.op), "skill": int(op.skill), "ids": op.get("ids", []).map(func(v): return int(v)),
+			"exclude": op.get("exclude", []).map(func(v): return int(v)), "named": bool(op.get("named", false))})
 	for k in d.get("seen", []):
 		s.seen[str(k)] = true
 	current = s

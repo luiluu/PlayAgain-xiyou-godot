@@ -250,12 +250,23 @@ class Exporter:
                 self.ref_img('pictures', p[1])
             elif code == 117:
                 self.common_events.add(p[0])
+            elif code == 129 and p[1] == 0:
+                self.event_actors.add(p[0])
+            elif code == 212:
+                self.event_animations.add(p[1])
+            elif code == 205:
+                for m in p[1].get('list', []):
+                    if m.get('code') == 44 and m.get('parameters'):
+                        self.ref_audio('se', m['parameters'][0])
+                    elif m.get('code') == 41 and m.get('parameters'):
+                        self.ref_img('characters', m['parameters'][0])
             elif code == 283:
                 self.ref_img('battlebacks1', p[0]); self.ref_img('battlebacks2', p[1])
 
     def collect_slice(self):
         cfg, db = self.cfg, self.db
         troops, self.common_events = set(cfg.get('troops', [])), set()
+        self.event_actors, self.event_animations = set(), set()
         actors = set(cfg['actors'])
         for mid in cfg['maps']:
             rel = f'data/Map{mid:03d}.json'
@@ -283,6 +294,9 @@ class Exporter:
             if 0 < ce < len(db['CommonEvents']) and db['CommonEvents'][ce]:
                 self.walk_commands(db['CommonEvents'][ce]['list'], troops)
         self.slice_troops = sorted(troops)
+        # 事件里入队的角色（开局的孙悟空 52、里德 11 等）也要带上素材；对照用的 actors 仍以切片配置为准
+        event_actors = {a for a in self.event_actors if 0 < a < len(db['Actors']) and db['Actors'][a]} - actors
+        actors = actors | event_actors
         for aid in actors:
             a = db['Actors'][aid]
             self.ref_img('faces', a['faceName']); self.ref_img('characters', a['characterName']); self.ref_img('sv_actors', a['battlerName'])
@@ -306,7 +320,7 @@ class Exporter:
                 self.ref_img('sv_enemies' if db['System']['optSideView'] else 'enemies', e['battlerName'])
             skills |= {a['skillId'] for a in e['actions']}
         anims = {db['Skills'][s]['animationId'] for s in skills if 0 < s < len(db['Skills']) and db['Skills'][s]}
-        anims |= {int(x) for x in cfg.get('extraAnimations', [])}
+        anims |= {int(x) for x in cfg.get('extraAnimations', [])} | self.event_animations
         for wid in range(1, min(len(db['Weapons']), cfg.get('weaponScan', 200))):
             w = db['Weapons'][wid]
             if w:
@@ -339,7 +353,7 @@ class Exporter:
             self.img.add(rel)
         for rel in cfg.get('extraAudio', []):
             self.audio.add(rel)
-        self.slice_info = {'maps': cfg['maps'], 'actors': sorted(actors), 'troops': self.slice_troops,
+        self.slice_info = {'maps': cfg['maps'], 'actors': sorted(actors - event_actors), 'eventActors': sorted(event_actors), 'troops': self.slice_troops,
                            'enemies': sorted(enemies), 'skills': sorted(skills), 'animations': sorted(a for a in anims if a > 0),
                            'commonEvents': sorted(seen)}
 

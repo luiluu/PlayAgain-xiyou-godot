@@ -1,8 +1,9 @@
 class_name MVInterpreter
 extends RefCounted
 ## MV 事件指令解释器（Game_Interpreter 的子集）。按缩进和 _branch 记录处理分支，与 MV 一致。
-## host 提供画面服务（文字、选项、场所移动、战斗、商店、淡入淡出），见 map_scene.gd。
-## 脚本(355/655)、插件指令(356)、未支持的指令一律跳过并记进 skipped，便于之后逐条补齐。
+## host 提供画面服务（文字、选项、场所移动、战斗、商店、淡入淡出、移动路线、动画、气泡、提示、输入名字、存档），见 map_scene.gd。
+## 脚本(355/655) 由 MVScript 按已知写法翻译；插件指令(356) 认得 Difficulty SetID、GhostButtons、ProhibitHangUp；
+## 认不出的脚本语句、插件指令与未支持的指令跳过并记进 skipped，便于之后逐条补齐。
 
 signal finished
 
@@ -201,6 +202,63 @@ func _execute(c: Dictionary):
 		314:
 			for a in state().members():
 				a.recover_all()
+		205:
+			# 设置移动路线 [角色, 路线]；路线勾选「等待完成」时等角色走完
+			var ch = host.character(int(p[0]), event_id)
+			if ch:
+				ch.force_move_route(p[1])
+				if bool(p[1].get("wait", false)):
+					while ch.is_route_forcing():
+						await host.get_tree().physics_frame
+		211:
+			host.player.transparent = int(p[0]) == 0
+			host.player.queue_redraw()
+		212:
+			# 显示动画 [角色, 动画, 等待]
+			var ch = host.character(int(p[0]), event_id)
+			if ch:
+				var anim = host.show_animation(ch, int(p[1]))
+				if bool(p[2]) and anim:
+					await anim.done
+		213:
+			# 显示气泡 [角色, 气泡, 等待]
+			var ch = host.character(int(p[0]), event_id)
+			if ch:
+				ch.start_balloon(int(p[1]))
+				if bool(p[2]):
+					while ch.is_balloon_playing():
+						await host.get_tree().physics_frame
+		318:
+			# 增减技能 [指定方式, 角色/变量, 0 学会 1 遗忘, 技能]；角色 0 为全队
+			var aid := int(p[1]) if int(p[0]) == 0 else int(state().variable(int(p[1])))
+			var targets: Array = state().members() if aid == 0 else ([state().actor(aid)] if not XDB.rec("Actors", aid).is_empty() else [])
+			for a in targets:
+				if int(p[2]) == 0:
+					a.learn_skill(int(p[3]))
+				else:
+					a.forget_skill(int(p[3]))
+				a.refresh_passive()
+		354:
+			host.return_to_title()
+			return false
+		355:
+			var code := str(p[0])
+			while index + 1 < list.size() and int(list[index + 1].code) == 655:
+				index += 1
+				code += "\n" + str(list[index].parameters[0])
+			for st in await MVScript.run(code, self):
+				skipped.append({"code": 355, "text": str(st).left(80)})
+		356:
+			_plugin_command(str(p[0]))
+		118:
+			pass
+		119:
+			# 跳转标签（Game_Interpreter.command119 / jumpTo）：找同名标签，分支记录按缩进清空
+			for i in range(list.size()):
+				if int(list[i].code) == 118 and str(list[i].parameters[0]) == str(p[0]):
+					_branch.clear()
+					index = i
+					break
 		_:
 			var code := int(c.code)
 			if code in [401, 405, 408, 655, 404, 412, 604, 0, 108, 505]:
@@ -209,6 +267,25 @@ func _execute(c: Dictionary):
 				var text := str(p[0]) if p.size() > 0 else ""
 				skipped.append({"code": code, "text": text.left(80)})
 	return true
+
+
+## 插件指令：Vitsuno_Difficulty「Difficulty SetID N」；Mehmet_GhostButtons 与 XdRs_HangUp 的开关只记标记（重制版没有这两种界面）
+func _plugin_command(line: String) -> void:
+	var args := line.split(" ", false)
+	if args.is_empty():
+		return
+	match args[0]:
+		"Difficulty":
+			if args.size() >= 3 and args[1] == "SetID":
+				state().difficulty = int(args[2])
+				return
+		"GhostButtons":
+			state().flags["GhostButtons"] = args[1] if args.size() > 1 else ""
+			return
+		"ProhibitHangUp", "PermitHangUp":
+			state().flags["HangUpProhibited"] = args[0] == "ProhibitHangUp"
+			return
+	skipped.append({"code": 356, "text": line.left(80)})
 
 
 func _operand(type: int, value: int) -> int:

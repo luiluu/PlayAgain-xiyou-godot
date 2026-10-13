@@ -1,18 +1,15 @@
 extends Control
 ## 西游模式标题：照原版标题画面（titles1/login 底图、MOG_TitlePictureCom 图片指令、MOG_TitleParticles 粒子）。
-## 指令：新的游戏 / 旧的回忆（读档）/ 返回版本选择。新游戏进入开局选择（难度＋初始英雄），用 MV 窗口皮肤。
+## 指令：新的游戏 / 旧的回忆（读档）/ 返回版本选择。新游戏照 MV setupNewGame 从 System 起点（Map001）开始，
+## 由原版开局事件选固定存档位、难度、英雄与教派（Map001 → Map002 → Map221 → 方桌大厅）。
 ## 数据未生成时提示先运行转换器（数据来自正式 v0.04，只读转换，不随工程提交）。
 
 const UI = preload("res://core/menu_ui.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
-const STARTERS := [1, 2, 3, 4, 5, 6, 7]
-const COMPANIONS := [8, 9, 10]
-const DIFFICULTIES := [[2, "简单"], [3, "普通"], [4, "困难"]]
 ## MOG_TitlePictureCom Command Pos 1..3（原版 1280×720 坐标，图片左上角）
 const COMMAND_POS := [Vector2(540, 375), Vector2(540, 450), Vector2(540, 525)]
 
 var column: VBoxContainer
-var _difficulty := 3
 var _layer: Control               # 当前页面（标题指令或窗口）
 var _commands: Array = []         # [{node, enabled, fn, top, bottom}]
 var _sel := 0
@@ -98,7 +95,7 @@ func _title() -> void:
 	var any := false
 	for i in range(1, XSave.SLOTS + 1):
 		any = any or XSave.exists(i)
-	_add_picture_command(0, "新的游戏", true, _choose_difficulty)
+	_add_picture_command(0, "新的游戏", true, _new_game)
 	_add_picture_command(1, "旧的回忆", any, _choose_save)
 	var back := _add_picture_command(-1, "返回版本选择", true, GameApp.return_to_menu)
 	back.name = "ReturnToMenu"
@@ -250,46 +247,6 @@ func _choose_save() -> void:
 	_focus_first()
 
 
-func _choose_difficulty() -> void:
-	_window("选择难度", 760)
-	column.add_child(XUI.label("难度越高，敌人越强，奖励越多。首期提供三档。", 20, XUI.DIM))
-	for d in DIFFICULTIES:
-		var id: int = d[0]
-		var rates := XEnemy.difficulty_rates(id)
-		var b := XUI.button("%s    敌人生命 ×%s    奖励 ×%s" % [d[1], str(rates[0]), str(Array(str(XDB.plugin("Vitsuno_Difficulty").get("%d : Drop Rate" % id, "1")).split(","))[0])])
-		_add(b, func():
-			_difficulty = id
-			_choose_starter())
-	_add(XUI.button("返回"), _title)
-	_focus_first()
-
-
-func _choose_starter() -> void:
-	_window("选择你的初始英雄", 1040)
-	column.add_child(XUI.label("修、罗琳、美娜会作为伙伴同行。", 20, XUI.DIM))
-	var grid := GridContainer.new()
-	grid.columns = 4
-	grid.add_theme_constant_override("h_separation", 8)
-	grid.add_theme_constant_override("v_separation", 8)
-	column.add_child(grid)
-	for id in STARTERS:
-		var a := XDB.rec("Actors", id)
-		var b := Button.new()
-		b.custom_minimum_size = Vector2(240, 200)
-		b.icon = XUI.face_texture(str(a.faceName), int(a.faceIndex))
-		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
-		b.text = "%s\n%s" % [a.name, a.nickname]
-		b.add_theme_font_size_override("font_size", 20)
-		var m := RegEx.create_from_string("(?s)<ActorNote>(.*?)</ActorNote>").search(str(a.note))
-		b.tooltip_text = m.get_string(1).strip_edges() if m else ""
-		var aid: int = id
-		b.pressed.connect(func(): _start(aid))
-		grid.add_child(b)
-	_add(XUI.button("返回"), _choose_difficulty)
-	_focus_first()
-
-
 func _focus_first() -> void:
 	for c in column.get_children():
 		if c is Button and not c.disabled:
@@ -300,22 +257,7 @@ func _focus_first() -> void:
 			return
 
 
-## 开局：与正式版 Map001/Map002 结束时一致——学会开局被动、当前层数=1、送三名伙伴，站在方桌大厅。
-func _start(starter: int) -> void:
-	var s := XState.new_game(_difficulty, starter, COMPANIONS)
-	var cfg: Dictionary = XMapScene.slice().get("start", {})
-	for k in cfg.get("variables", {}):
-		s.set_variable(int(k), float(cfg.variables[k]))
-	var passives := [2747, 6168]
-	if _difficulty >= 2 and _difficulty <= 4:
-		passives.append(5980)
-	for a in s.members():
-		for sid in passives:
-			a.learn_skill(sid)
-		a.refresh_passive()
-		a.recover_all()
-	s.map_id = int(cfg.get("mapId", 4))
-	s.x = int(cfg.get("x", 14))
-	s.y = int(cfg.get("y", 23))
-	s.direction = int(cfg.get("direction", 8))
+## Scene_Title.commandNewGame → DataManager.setupNewGame：空队伍、难度为初始值，站在 Map001 起点，开局事件自动执行
+func _new_game() -> void:
+	XState.new_game_blank()
 	get_tree().change_scene_to_file(MAP_SCENE)

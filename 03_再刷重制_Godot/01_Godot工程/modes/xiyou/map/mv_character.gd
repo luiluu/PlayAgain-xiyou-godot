@@ -25,6 +25,19 @@ var _tex: Texture2D
 var _anime_count := 0.0
 var _stop_count := 0
 var tilemap: MVTilemap
+## 移动路线（Game_Character.forceMoveRoute / updateRoutineMove）
+var _route: Dictionary = {}
+var _route_index := 0
+var _route_wait := 0
+var _route_forcing := false
+var _route_ok := true
+## 跳跃（Game_CharacterBase.jump / updateJump）
+var _jump_peak := 0
+var _jump_count := 0
+## 气泡（Sprite_Balloon：8 帧 × 速度 8 ＋ 停留 12 帧，图 Balloon.png 每格 48）
+var balloon_id := 0
+var _balloon_t := 0
+static var _balloon_tex: Texture2D
 
 
 func set_image(name: String, index: int) -> void:
@@ -54,6 +67,12 @@ func is_object() -> bool:
 
 func is_moving() -> bool:
 	return not real.is_equal_approx(Vector2(grid))
+
+func is_jumping() -> bool:
+	return _jump_count > 0
+
+func jump_height() -> float:
+	return (_jump_peak * _jump_peak - pow(absf(_jump_count - _jump_peak), 2)) / 2.0
 
 func distance_per_frame() -> float:
 	return pow(2.0, move_speed) / 256.0
@@ -102,12 +121,135 @@ func _physics_process(_delta: float) -> void:
 	update_character()
 
 func update_character() -> void:
-	if is_moving():
+	if not is_moving() and not is_jumping() and _route_forcing:
+		_update_route()
+	if is_jumping():
+		_jump_count -= 1
+		real.x = (real.x * _jump_count + grid.x) / (_jump_count + 1.0)
+		real.y = (real.y * _jump_count + grid.y) / (_jump_count + 1.0)
+		if _jump_count == 0:
+			real = Vector2(grid)
+		_sync_position()
+	elif is_moving():
 		var dist := distance_per_frame()
 		real.x = move_toward(real.x, grid.x, dist)
 		real.y = move_toward(real.y, grid.y, dist)
 		_sync_position()
 	_update_animation()
+	if balloon_id > 0:
+		_balloon_t -= 1
+		if _balloon_t <= 0:
+			balloon_id = 0
+		queue_redraw()
+
+
+# ---- 移动路线（MV Game_Character.processMoveCommand 的常用部分）----
+func force_move_route(route: Dictionary) -> void:
+	_route = route
+	_route_index = 0
+	_route_wait = 0
+	_route_forcing = true
+
+func is_route_forcing() -> bool:
+	return _route_forcing
+
+func _update_route() -> void:
+	if _route_wait > 0:
+		_route_wait -= 1
+		return
+	var list: Array = _route.get("list", [])
+	_route_ok = true
+	if _route_index >= list.size():
+		_route_forcing = false
+		return
+	_process_move(list[_route_index])
+	if _route_ok or bool(_route.get("skippable", false)):
+		_route_index += 1
+		if bool(_route.get("repeat", false)) and _route_index >= list.size() - 1:
+			_route_index = 0
+
+func _process_move(cmd: Dictionary) -> void:
+	var p: Array = cmd.get("parameters", [])
+	match int(cmd.get("code", 0)):
+		0:
+			if bool(_route.get("repeat", false)):
+				_route_index = -1
+			else:
+				_route_forcing = false
+		1, 2, 3, 4:
+			_route_ok = move_straight([2, 4, 6, 8][int(cmd.code) - 1])
+		12:
+			_route_ok = move_straight(direction)
+		13:
+			var d := direction
+			var fix := direction_fix
+			direction_fix = true
+			_route_ok = move_straight(reverse_dir(d))
+			direction_fix = fix
+		14:
+			jump(int(p[0]), int(p[1]))
+		15:
+			_route_wait = int(p[0]) - 1
+		16, 17, 18, 19:
+			set_direction([2, 4, 6, 8][int(cmd.code) - 16])
+		22:
+			set_direction(reverse_dir(direction))
+		29:
+			move_speed = int(p[0])
+		30:
+			move_frequency = int(p[0])
+		31, 32:
+			walk_anime = int(cmd.code) == 31
+		33, 34:
+			step_anime = int(cmd.code) == 33
+		35, 36:
+			direction_fix = int(cmd.code) == 35
+		37, 38:
+			through = int(cmd.code) == 37
+		39, 40:
+			transparent = int(cmd.code) == 39
+			queue_redraw()
+		41:
+			set_image(str(p[0]), int(p[1]))
+		42:
+			opacity = int(p[0])
+			queue_redraw()
+		44:
+			var path := XDB.audio_path("se", str(p[0].get("name", ""))) if p.size() > 0 and p[0] is Dictionary else ""
+			if path != "":
+				var player := AudioStreamPlayer.new()
+				player.stream = load(path)
+				player.volume_db = linear_to_db(float(p[0].get("volume", 90)) / 100.0)
+				player.pitch_scale = float(p[0].get("pitch", 100)) / 100.0
+				add_child(player)
+				player.play()
+				player.finished.connect(player.queue_free)
+		_:
+			push_warning("移动路线指令 %d 尚未支持" % int(cmd.get("code", 0)))
+
+## Game_CharacterBase.jump：朝位移方向转身，峰高 10 + 距离 − 速度，帧数为峰高的两倍
+func jump(dx: int, dy: int) -> void:
+	if absi(dx) > absi(dy):
+		if dx != 0:
+			set_direction(4 if dx < 0 else 6)
+	elif dy != 0:
+		set_direction(8 if dy < 0 else 2)
+	grid += Vector2i(dx, dy)
+	var distance := roundi(sqrt(dx * dx + dy * dy))
+	_jump_peak = 10 + distance - move_speed
+	_jump_count = _jump_peak * 2
+	_stop_count = 0
+	pattern = 1
+
+
+# ---- 气泡 ----
+func start_balloon(id: int) -> void:
+	balloon_id = id
+	_balloon_t = 8 * 8 + 12
+	queue_redraw()
+
+func is_balloon_playing() -> bool:
+	return balloon_id > 0
 
 func _update_animation() -> void:
 	if is_moving() and walk_anime or step_anime:
@@ -126,7 +268,7 @@ func _update_animation() -> void:
 		queue_redraw()
 
 func _sync_position() -> void:
-	position = Vector2(real.x * TS + TS / 2.0, real.y * TS + TS)
+	position = Vector2(real.x * TS + TS / 2.0, real.y * TS + TS - (jump_height() if is_jumping() else 0.0))
 	z_index = (0 if priority_type == 1 else (-1 if priority_type == 0 else 1))
 	queue_redraw()
 
@@ -134,6 +276,34 @@ func _sync_position() -> void:
 func _draw() -> void:
 	if transparent or opacity <= 0:
 		return
+	_draw_body()
+	if balloon_id > 0:
+		_draw_balloon()
+
+
+## 行走图高度（气泡、动画定位用）
+func sprite_height() -> float:
+	if tile_id > 0:
+		return TS
+	if _tex == null:
+		return 0.0
+	return _tex.get_height() / (4.0 if is_big() else 8.0)
+
+
+## Sprite_Balloon：帧号 = 7 − floor((剩余 − 12) / 8)，画在角色头顶（行走图高度处）
+func _draw_balloon() -> void:
+	if _balloon_tex == null:
+		var p := XDB.img_path("system", "Balloon")
+		if p != "":
+			_balloon_tex = load(p)
+	if _balloon_tex == null:
+		return
+	var frame := 7 - maxi(floori((_balloon_t - 12) / 8.0), 0)
+	var shift := 0.0 if is_object() else 6.0
+	draw_texture_rect_region(_balloon_tex, Rect2(-24, -sprite_height() - shift - 48, 48, 48), Rect2(frame * 48, (balloon_id - 1) * 48, 48, 48))
+
+
+func _draw_body() -> void:
 	var mod := Color(1, 1, 1, opacity / 255.0)
 	if tile_id > 0 and tilemap != null:
 		_draw_tile_image(mod)
