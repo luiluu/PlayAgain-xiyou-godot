@@ -1,92 +1,92 @@
 {
-  "review": "Codex 建立（Claude 2026-10-13 核查）；来源归属由 Claude 按用户最新方向更新，待 Codex 核查",
-  "updatedDate": "2026-10-13",
-  "sources": [
-    {
-      "id": "steam_playagain_original",
-      "category": "01_再刷一把",
-      "title": "再刷一把 PlayAgain",
-      "steamAppId": 2059790,
-      "storeUrl": "https://store.steampowered.com/app/2059790/",
-      "status": "pd_original_access_verified_audit_deferred",
-      "buildId": "11735036",
-      "branch": null,
-      "engineVersion": null,
-      "baselinePath": null,
-      "sha256Manifest": null,
-      "modFreeStatus": "full_content_audit_pending",
-      "intakePath": "/Users/kyo/Documents/再刷项目资料库/01_再刷一把/01_待接收原版",
-      "depotId": 2059791,
-      "depotManifest": "8064319545780814456",
-      "userDownloadComplete": true,
-      "macPortRequested": false,
-      "access": {
-        "method": "read_only_pd_exec",
-        "vmName": "Windows 11",
-        "vmUuid": "{41b9e50d-7445-4a97-98b8-6fca401302fa}",
-        "windowsGamePath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\再刷一把 PlayAgain",
-        "windowsManifestPath": "C:\\Program Files (x86)\\Steam\\steamapps\\appmanifest_2059790.acf",
-        "toolPath": "/Users/kyo/Documents/再刷项目资料库/01_再刷一把/03_原版分析/工具/pd_original.py",
-        "readVerified": true,
-        "writeOperations": 0,
-        "gameLaunchedThisRound": false
-      },
-      "coreSample": {
-        "core_sha256": "751a3915171edbe2834ddfcf1da3052d6a6749289c24f379add70a4749780f1c",
-        "core_bytes": 221816,
-        "leading_bytes_hex": "0304dec0a5843340acba0300a94f54026062030039e49a6801245301f93f07a8",
-        "name": null,
-        "version": null,
-        "encoding_status": "not_plain_utf8_needs_original_packaging_audit"
-      },
-      "baselineFullyAudited": false,
-      "auditEvidence": "/Users/kyo/Documents/再刷项目资料库/00_项目管理/验证与备份/20261012_Godot部署/pd-original-access.json",
-      "auditRequiredForXiyouRemake": false
-    },
-    {
-      "id": "legacy_xiyou_mod_kyo",
-      "category": "02_再刷西游",
-      "title": "再刷一把：西游（mod_KYO）",
-      "status": "current_remake_source_for_xiyou_mode",
-      "libraryPath": "/Users/kyo/Documents/再刷西游",
-      "appPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app",
-      "currentLog": "/Users/kyo/Documents/再刷西游/00_说明与维护记录/KYO更新日志.md",
-      "useAsOriginalBaseline": false,
-      "copyExistingModFeaturesAutomatically": false,
-      "remakeMode": "xiyou",
-      "confirmedReleaseVersion": "v0.08",
-      "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
-      "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/dev.010_战斗界面/当前西游来源清单.json",
-      "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。",
-      "lastConvertedContentReleaseVersion": "v0.08",
-      "uiReferenceReleaseVersion": "v0.05",
-      "contentRefreshPending": false,
-      "convertedScope": "floor1_slice",
-      "oracleReleaseVersion": "v0.08"
-    },
-    {
-      "id": "historical_xiyou_source_157",
-      "category": "02_再刷西游",
-      "status": "historical_mod_port_backup",
-      "path": "/Users/kyo/Documents/再刷西游/01_开发工程/Louis/rpg-maker-mac/source-1.57",
-      "evidence": "/Users/kyo/Documents/再刷西游/00_说明与维护记录/文件来源与去向.csv",
-      "useAsOriginalBaseline": false
-    },
-    {
-      "id": "new_godot_remake",
-      "category": "03_再刷重制_Godot",
-      "status": "floor1_slice_playable_pending_user_playtest",
-      "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot",
-      "baselineSourceId": null,
-      "baselineLocked": false,
-      "godotVersion": "4.7.2",
-      "gameReleaseVersion": null,
-      "environmentRegistry": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/环境登记.json",
-      "modeSources": {
-        "xiyou": "legacy_xiyou_mod_kyo",
-        "new": null
-      },
-      "developmentVersion": "dev.006"
-    }
-  ]
+ "review": "Codex 建立（Claude 2026-10-13 核查）；来源归属由 Claude 按用户最新方向更新，待 Codex 核查",
+ "updatedDate": "2026-10-13",
+ "sources": [
+  {
+   "id": "steam_playagain_original",
+   "category": "01_再刷一把",
+   "title": "再刷一把 PlayAgain",
+   "steamAppId": 2059790,
+   "storeUrl": "https://store.steampowered.com/app/2059790/",
+   "status": "pd_original_access_verified_audit_deferred",
+   "buildId": "11735036",
+   "branch": null,
+   "engineVersion": null,
+   "baselinePath": null,
+   "sha256Manifest": null,
+   "modFreeStatus": "full_content_audit_pending",
+   "intakePath": "/Users/kyo/Documents/再刷项目资料库/01_再刷一把/01_待接收原版",
+   "depotId": 2059791,
+   "depotManifest": "8064319545780814456",
+   "userDownloadComplete": true,
+   "macPortRequested": false,
+   "access": {
+    "method": "read_only_pd_exec",
+    "vmName": "Windows 11",
+    "vmUuid": "{41b9e50d-7445-4a97-98b8-6fca401302fa}",
+    "windowsGamePath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\再刷一把 PlayAgain",
+    "windowsManifestPath": "C:\\Program Files (x86)\\Steam\\steamapps\\appmanifest_2059790.acf",
+    "toolPath": "/Users/kyo/Documents/再刷项目资料库/01_再刷一把/03_原版分析/工具/pd_original.py",
+    "readVerified": true,
+    "writeOperations": 0,
+    "gameLaunchedThisRound": false
+   },
+   "coreSample": {
+    "core_sha256": "751a3915171edbe2834ddfcf1da3052d6a6749289c24f379add70a4749780f1c",
+    "core_bytes": 221816,
+    "leading_bytes_hex": "0304dec0a5843340acba0300a94f54026062030039e49a6801245301f93f07a8",
+    "name": null,
+    "version": null,
+    "encoding_status": "not_plain_utf8_needs_original_packaging_audit"
+   },
+   "baselineFullyAudited": false,
+   "auditEvidence": "/Users/kyo/Documents/再刷项目资料库/00_项目管理/验证与备份/20261012_Godot部署/pd-original-access.json",
+   "auditRequiredForXiyouRemake": false
+  },
+  {
+   "id": "legacy_xiyou_mod_kyo",
+   "category": "02_再刷西游",
+   "title": "再刷一把：西游（mod_KYO）",
+   "status": "current_remake_source_for_xiyou_mode",
+   "libraryPath": "/Users/kyo/Documents/再刷西游",
+   "appPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app",
+   "currentLog": "/Users/kyo/Documents/再刷西游/00_说明与维护记录/KYO更新日志.md",
+   "useAsOriginalBaseline": false,
+   "copyExistingModFeaturesAutomatically": false,
+   "remakeMode": "xiyou",
+   "confirmedReleaseVersion": "v0.10",
+   "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
+   "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/dev.012_v010同步/当前西游来源清单.json",
+   "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。",
+   "lastConvertedContentReleaseVersion": "v0.10",
+   "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10",
+   "contentRefreshPending": false,
+   "convertedScope": "floor1_slice",
+   "oracleReleaseVersion": "v0.10"
+  },
+  {
+   "id": "historical_xiyou_source_157",
+   "category": "02_再刷西游",
+   "status": "historical_mod_port_backup",
+   "path": "/Users/kyo/Documents/再刷西游/01_开发工程/Louis/rpg-maker-mac/source-1.57",
+   "evidence": "/Users/kyo/Documents/再刷西游/00_说明与维护记录/文件来源与去向.csv",
+   "useAsOriginalBaseline": false
+  },
+  {
+   "id": "new_godot_remake",
+   "category": "03_再刷重制_Godot",
+   "status": "floor1_slice_playable_pending_user_playtest",
+   "path": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot",
+   "baselineSourceId": null,
+   "baselineLocked": false,
+   "godotVersion": "4.7.2",
+   "gameReleaseVersion": null,
+   "environmentRegistry": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/07_开发环境/环境登记.json",
+   "modeSources": {
+    "xiyou": "legacy_xiyou_mod_kyo",
+    "new": null
+   },
+   "developmentVersion": "dev.006"
+  }
+ ]
 }
