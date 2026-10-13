@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.016",
-  "sequence": 16,
-  "next": "dev.017",
-  "nextSequence": 17,
+  "current": "dev.017",
+  "sequence": 17,
+  "next": "dev.018",
+  "nextSequence": 18,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "地图 HUD 第一批：11～30 号递增备份与读档、回城枫叶、坐标/难度；连续换图地图名动效修复",
+  "currentChange": "地图传送页与敌人/掉落预览（MapTransferPlugin）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

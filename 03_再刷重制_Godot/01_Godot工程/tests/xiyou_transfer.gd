@@ -91,6 +91,7 @@ func _run() -> void:
 	s.set_variable(21, 0)
 	await frames(2)
 	check("button_appears", map.map_hud.transfer_button.visible and not map.map_hud.transfer_button.disabled)
+	await shot("00_地图按钮.png")
 	# ---- 页面 ----
 	map.open_transfer()
 	await frames(3)
