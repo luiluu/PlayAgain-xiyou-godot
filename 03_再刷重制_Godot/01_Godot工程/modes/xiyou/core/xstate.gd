@@ -94,7 +94,7 @@ func item_count(id: int) -> int:
 	return items.get(id, 0)
 
 func gain_item(id: int, amount: int) -> void:
-	items[id] = clampi(item_count(id) + amount, 0, 99999)
+	items[id] = clampi(item_count(id) + amount, 0, 9999)  # $gameParty.maxItems（正式版运行时为 9999）
 	if items[id] == 0:
 		items.erase(id)
 

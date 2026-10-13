@@ -159,7 +159,41 @@ func _run() -> void:
 	var shops := map.ui.get_children().filter(func(c): return c is XShop)
 	_check("shop_opened", shops.size() == 1)
 	if shops.size() == 1:
-		shops[0].closed.emit()
+		var sh: XShop = shops[0]
+		_check("shop_commands_like_original", sh.COMMANDS.map(func(c): return c[0]) == ["购买", "出售", "一键出售", "取消"])
+		# 购买：选商品 → 数量窗 → 确定（治疗药水 50）
+		sh._ok()
+		await _frames(3)
+		await _shot("09_商店.png")
+		sh._buy_index = 2
+		sh._refresh()
+		await _frames(3)
+		await _shot("09b_商店_武器.png")
+		sh._buy_index = 0
+		sh._ok()
+		await _frames(3)
+		await _shot("09c_商店_数量.png")
+		_check("shop_number_window", sh._mode == "number" and sh._number == 1)
+		var g0 := s.gold
+		var n0 := s.item_count(1)
+		sh._ok()
+		_check("shop_bought", s.gold == g0 - 50 and s.item_count(1) == n0 + 1, [g0, s.gold, n0, s.item_count(1)])
+		# 出售：分类 → 物品 → 数量 → 确定（半价 25）
+		sh._cancel()
+		sh._cmd = 1
+		sh._ok()
+		sh._ok()
+		sh._refresh()
+		await _frames(3)
+		await _shot("09d_商店_出售.png")
+		var g1 := s.gold
+		var n1 := s.item_count(1)
+		var idx := sh._sell_data().map(func(e): return int(e.rec.id)).find(1)
+		sh._sell_index = idx
+		sh._ok()
+		sh._ok()
+		_check("shop_sold_half_price", idx >= 0 and s.gold == g1 + 25 and s.item_count(1) == n1 - 1, [idx, g1, s.gold, n1, s.item_count(1)])
+		sh.closed.emit()
 	await _frames(3)
 	# 存档 / 读档
 	_check("save", XSave.save(1))

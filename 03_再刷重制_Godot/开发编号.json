@@ -3,13 +3,13 @@
   "review": "未经claude检验",
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.007",
-  "sequence": 7,
-  "next": "dev.008",
-  "nextSequence": 8,
+  "current": "dev.008",
+  "sequence": 8,
+  "next": "dev.009",
+  "nextSequence": 9,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "核查修复：出战 5 人、全队经验、套装奖励按出战成员、装备预掷随机池",
+  "currentChange": "主菜单与商店按原版真实画面逐像素复现；原版界面参照工具",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
