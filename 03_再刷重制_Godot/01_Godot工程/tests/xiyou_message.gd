@@ -47,6 +47,11 @@ func _rect(w: XMVWindow) -> Array:
 	return [w.position.x, w.position.y, w.size.x, w.size.y]
 
 
+## 等到翻页标记出现并过了 startPause 的 10 帧等待（期间按键无效，同 MV）
+func _wait_pause() -> void:
+	await _until(func(): return box.win.pause and box._wait == 0)
+
+
 ## 等到 cond 成立（最多 n 个物理帧）
 func _until(cond: Callable, n := 600) -> bool:
 	for i in range(n):
@@ -97,7 +102,7 @@ func _run() -> void:
 	await _phys()
 	_check("show_fast", box._page_glyphs.size() == 21, box._page_glyphs.size())
 	_check("wait_60", box._wait > 40 and not box.win.pause, box._wait)
-	await _until(func(): return box.win.pause)
+	await _wait_pause()
 	await _phys(12)
 	await _shot("msg_02_middle_name")
 	_check("pause_sign_after_wait", box.win.pause)
@@ -107,12 +112,12 @@ func _run() -> void:
 
 	# 2) 连续对话（同设置）不关窗；改到顶部则先关再开（原版 30：名字框在消息窗下方 0,172）
 	_check("continue_keeps_open", box.win.openness == 255 and not box.win.is_closing(), box.win.openness)
-	await _until(func(): return box.win.pause)
+	await _wait_pause()
 	await _press("ui_accept")
 	await _until(func(): return r2.value != null, 60)
 	await _phys()
 	_check("position_change_closes_first", box.win.is_closing(), box.win.openness)
-	await _until(func(): return box.win.pause)
+	await _wait_pause()
 	_check("msg_top_rect", _rect(box.win) == [0.0, 0.0, 1280.0, 172.0], _rect(box.win))
 	_check("name_below_top", _rect(box.name_win) == [0.0, 172.0, 246.0, 64.0], _rect(box.name_win))
 	await _phys(12)
@@ -216,22 +221,22 @@ func _run() -> void:
 	await _press("ui_left")
 	await _press("ui_left")
 	await _phys()
-	_check("number_digits", box._number == 19120 and box._digit_index == 3, [box._number, box._digit_index])
+	_check("number_digits", box._number == 19120 and box._digit_index == 4, [box._number, box._digit_index])
 	await _press("ui_accept")
 	await _until(func(): return r8.value != null, 30)
 	_check("number_result", r8.value == 19120, r8.value)
 
 	# 7) 超过 4 行：满页等待，翻页后接着显示（自动换行越界的字留到下一页，优化 O-005）
-	var long := "一二三四五六七八九十".repeat(10)
+	var long := "一二三四五六七八九十".repeat(30)
 	var r9 := {"value": null}
 	var t9 := func(): r9.value = await box.run({"lines": [long]})
 	t9.call()
-	await _until(func(): return box.win.pause)
+	await _wait_pause()
 	var page1 := box._page_glyphs.size()
 	_check("page_full_4_lines", page1 > 0 and box._page_glyphs.back().y == 34.0 * 3, [page1, box._page_glyphs.back().y if page1 else -1])
 	await _press("ui_accept")
-	await _until(func(): return box.win.pause)
-	_check("next_page_rest", page1 + box._page_glyphs.size() == 100, [page1, box._page_glyphs.size()])
+	await _wait_pause()
+	_check("next_page_rest", page1 + box._page_glyphs.size() == 300, [page1, box._page_glyphs.size()])
 	await _press("ui_accept")
 	await _until(func(): return r9.value != null, 30)
 
@@ -245,7 +250,7 @@ func _run() -> void:
 		await _phys()
 		waited += 1
 	_check("wait_15_frames", waited >= 15 and waited <= 17, waited)
-	await _until(func(): return box.win.pause)
+	await _wait_pause()
 	await _press("ui_accept")
 	await _until(func(): return r10.value != null, 30)
 	_check("plain_text", XMVText.plain("\\c[4]地狱\\c[0]难度\\.") == "地狱难度")
