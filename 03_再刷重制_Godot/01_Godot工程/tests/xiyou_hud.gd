@@ -14,6 +14,8 @@ func _ready() -> void:
 
 
 func check(name: String, ok: bool, detail = null) -> void:
+	if out_dir != "":
+		print("HUD_CHECK ", name, " ", ok)
 	results.append({"name": name, "passed": ok})
 	if not ok:
 		print("FAIL ", name, " ", detail)
@@ -68,12 +70,14 @@ func _run() -> void:
 	s.flags.DCultyL3 = true
 	await shot("01_地图HUD.png")
 	# 地图名第一次动效尚未结束就切换，之后只按新地图的时间线移动。
+	Engine.time_scale = 1.0  # Tween 的最大帧步长与 SceneTreeTimer 在高速时不同，按真实时间验证。
 	map._show_map_name("旧地图")
-	await get_tree().create_timer(0.2).timeout
+	await get_tree().create_timer(0.4).timeout
 	map._show_map_name("方桌大厅")
-	await get_tree().create_timer(1.0).timeout
+	await get_tree().create_timer(1.85).timeout
 	var plate: Control = map.hud.find_child("MapNamePlate", true, false)
 	check("map_name_reentry", absf(plate.position.y - 48) < 2 and plate.modulate.a > 0.95, plate.position)
+	Engine.time_scale = 6.0
 	# 忙碌时不能保存剧情中间态；立即重复点击也不新建备份。
 	map.busy = true
 	await map.backup_game()
@@ -82,10 +86,30 @@ func _run() -> void:
 	s.gold = 123
 	check("normal_save", XSave.save(1))
 	var normal_hash := FileAccess.get_sha256(XSave.path(1))
-	await map.backup_game()
+	if out_dir != "" and DisplayServer.get_name() != "headless":
+		XMessageBox.auto = false
+		map.backup_game()
+		await frames(90)
+		await shot("02_备份完成.png")
+		map.message._terminate(0)
+		while map.busy:
+			await frames(1)
+		XMessageBox.auto = true
+	else:
+		await map.backup_game()
 	check("backup_first", XSave.exists(11) and XSave.current_slot == 11 and FileAccess.get_sha256(XSave.path(1)) == normal_hash)
 	await map.backup_game()
 	check("backup_cooldown", not XSave.exists(12))
+	# 真正的鼠标事件经过 Control 命中测试：按钮区域不能成为地图的寻路目标。
+	for pressed in [true, false]:
+		var event := InputEventMouseButton.new()
+		event.button_index = MOUSE_BUTTON_LEFT
+		event.position = Vector2(895, 35)
+		event.global_position = event.position
+		event.pressed = pressed
+		Input.parse_input_event(event)
+		await frames(2)
+	check("backup_click_not_walk", map.player.touch_target == Vector2i(-1, -1) and map.player.grid == Vector2i(14, 23), map.player.touch_target)
 	# 跳过已占的格（13），先 12 再 14，不覆盖普通格或已有备份。
 	check("backup_sparse_setup", XSave.save(13))
 	var sparse_hash := FileAccess.get_sha256(XSave.path(13))
@@ -124,14 +148,21 @@ func _run() -> void:
 	await frames(2)
 	check("return_hub_event", map.map_id == 4 and map.player.grid == Vector2i(14, 21) and map.player.direction == 8 and not map.busy)
 	# 备份位可从标题读档页访问；滚动容器让 30 格均可达。
+	map.queue_free()
+	await frames(2)
 	var entry = load("res://modes/xiyou/entry.tscn").instantiate()
 	add_child(entry)
+	entry.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	entry.size = get_viewport().get_visible_rect().size
+	await frames(2)
 	entry._choose_save()
 	await frames(3)
 	var scroll: ScrollContainer = entry.find_child("LoadScroll", true, false)
 	check("backup_load_ui", scroll.get_child(0).get_child_count() == 30 and not scroll.get_child(0).get_child(10).disabled and scroll.follow_focus)
+	var panel: Control = scroll.get_parent().get_parent()
+	check("backup_load_ui_fits", panel.get_global_rect().position.y >= 0 and panel.get_global_rect().end.y <= 720, panel.get_global_rect())
+	await shot("03_备份读档页.png")
 	entry.queue_free()
-	map.queue_free()
 	for i in range(1, 31):
 		if XSave.exists(i):
 			DirAccess.remove_absolute(XSave.path(i))

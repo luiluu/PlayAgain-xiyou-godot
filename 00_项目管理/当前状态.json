@@ -56,8 +56,8 @@
     "selfContainedEditor": true,
     "editorStartupVerified": true,
     "visibleProjectManagerVerified": true,
-    "runnableBuildKind": "dev.006 西游首期可玩版（装备规则、物品升级与原版布局校准）",
-    "developmentVersion": "dev.006",
+    "runnableBuildKind": "playable_slice",
+    "developmentVersion": "dev.016",
     "developmentRegistry": "03_再刷重制_Godot/开发编号.json",
     "deferredPlatforms": [
       "Windows",
@@ -85,7 +85,7 @@
     "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/dev.012_v013同步/当前西游来源清单.json",
     "fingerprintedFiles": 628,
     "convertedContentReleaseVersion": "v0.13",
-    "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10",
+    "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13",
     "contentRefreshPending": false,
     "convertedScope": "floor1_slice",
     "converterVersion": 5,
@@ -109,6 +109,6 @@
     "reviewEveryPercent": 5,
     "lastReviewAtPercent": 15,
     "nextReviewAtPercent": 20,
-    "asOf": "dev.015"
+    "asOf": "dev.016"
   }
 }
