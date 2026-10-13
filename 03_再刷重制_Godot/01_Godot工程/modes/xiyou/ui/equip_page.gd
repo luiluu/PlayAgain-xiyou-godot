@@ -50,9 +50,10 @@ func rebuild() -> void:
 	detail_window.tooltip_text = "Shift / Tab 切换装备信息与属性对比"
 	details = scroll_column(detail_window)
 	if slot < 0:
+		var name_w := _slot_name_width(a)
 		for i in range(a.equips.size()):
 			var e = a.equips[i]
-			var b := _slot_button(str(XDB.system().equipTypes[a.equip_slots()[i]]), e)
+			var b := _slot_button(str(XDB.system().equipTypes[a.equip_slots()[i]]), e, name_w)
 			b.disabled = not XEquipment.can_change(a, i)
 			var idx := i
 			b.pressed.connect(func(): slot = idx; comparing = true; rebuild())
@@ -75,8 +76,16 @@ func rebuild() -> void:
 			child.grab_focus.call_deferred()
 			break
 
+## YEP_EquipCore setSlotNameWidth：槽位名列宽 = 各槽位名加一个空格的最大字宽，装备紧跟其后靠左。
+func _slot_name_width(a: XActor) -> float:
+	var w := 0.0
+	for t in a.equip_slots():
+		w = maxf(w, XUI.font().get_string_size(str(XDB.system().equipTypes[t]) + " ", HORIZONTAL_ALIGNMENT_LEFT, -1, XUI.FONT_SIZE).x)
+	return ceilf(w)
+
 ## 槽位名独立占一列，装备图标贴着物品名称；按钮自带 icon 会排到整行最左边。
-func _slot_button(caption: String, e) -> Button:
+## 间距照 drawItemName：图标画在 x+2，名字从 x+36 开始。
+func _slot_button(caption: String, e, name_w: float) -> Button:
 	var b := XUI.button("", XUI.LINE_HEIGHT)
 	b.name = "Slot_" + caption
 	var row := HBoxContainer.new()
@@ -85,12 +94,12 @@ func _slot_button(caption: String, e) -> Button:
 	row.offset_right = -10
 	row.offset_top = 4
 	row.offset_bottom = -4
-	row.add_theme_constant_override("separation", 8)
+	row.add_theme_constant_override("separation", 2)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(row)
 	var kind := XUI.label(caption, XUI.FONT_SIZE, XUI.SYSTEM)
 	kind.name = "SlotName"
-	kind.custom_minimum_size.x = 130
+	kind.custom_minimum_size.x = name_w
 	kind.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(kind)
 	var icon := TextureRect.new()

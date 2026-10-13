@@ -30,6 +30,9 @@ func _run() -> void:
 	await shot("11_套装状态");status.queue_free();await frames()
 	var equip:=XEquipPage.new();add_child(equip);await frames();equip._show_detail(a.equips[2]);await frames()
 	check("quality_and_slots",text(equip).contains("品质：") and text(equip).contains("强化插槽：") and text(equip).contains("狼魂"))
+	# YEP_EquipCore setSlotNameWidth：装备紧跟槽位名（最长槽位名＋空格），图标在其后 2px，靠左而非居中
+	var slot_name:=equip.find_child("SlotName",true,false) as Control;var slot_icon:=equip.find_child("EquipIcon",true,false) as Control
+	check("slot_items_follow_names",slot_name!=null and slot_name.size.x<80 and is_equal_approx(slot_icon.position.x,slot_name.size.x+2))
 	await shot("12_装备详细");equip.queue_free();await frames()
 	var upgrade:=XUpgradePage.new();upgrade.selected=s.gear.back();upgrade.category=1;upgrade.material_id=258;add_child(upgrade);await frames()
 	check("upgrade_material_list",text(upgrade).contains("劣质磨刀石") and upgrade.action!=null and not upgrade.action.disabled)
