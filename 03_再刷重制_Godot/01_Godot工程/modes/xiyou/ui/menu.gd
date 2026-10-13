@@ -328,7 +328,7 @@ func _open_detail(page: Control) -> void:
 
 
 func _show_items() -> void:
-	_open_detail(XUpgradePage.new())
+	_open_detail(XItemScene.new())
 
 
 ## 存档：正式版「存档」是公共事件（开局选定固定存档位，之后在该位覆盖保存），尚未逐页复现；

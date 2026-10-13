@@ -25,6 +25,8 @@ var play_seconds := 0.0
 var encounter_count := 0
 ## Star_RomGetItems 的装备预掷随机池（见 XGear），随存档保存
 var rom := {"x": [], "xn": 0, "xs": [], "xsn": 0}
+## Galv_NewItemIndication 的 $gameSystem._seenItems：看过的物品（物品 ID／装备实例 ID）不再画 NEW
+var seen := {}
 
 
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
@@ -132,6 +134,17 @@ func owns_gear(item: Dictionary) -> bool:
 func gear_count(kind: String, base_id: int) -> int:
 	return gear.filter(func(e): return e.kind == kind and int(e.base) == base_id).size()
 
+## 物品记 "i:<ID>"，装备记实例 ID（原版独立装备各有自己的 ID）
+static func seen_key(rec: Dictionary) -> String:
+	return str(rec.instanceId) if rec.has("instanceId") else "i:%d" % int(rec.get("id", 0))
+
+func is_new(rec: Dictionary) -> bool:
+	return not rec.is_empty() and not seen.has(seen_key(rec))
+
+func mark_seen(rec: Dictionary) -> void:
+	if not rec.is_empty():
+		seen[seen_key(rec)] = true
+
 func gain_gold(amount: int) -> void:
 	gold = clampi(gold + amount, 0, 999999999)
 
@@ -145,7 +158,8 @@ func to_dict() -> Dictionary:
 			"hp": x2.hp, "mp": x2.mp, "states": x2.state_ids, "cooldowns": x2.cooldowns}
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "actors": a, "gold": gold,
 		"items": items, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
-		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom}
+		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
+		"seen": seen.keys()}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -188,5 +202,7 @@ static func from_dict(d: Dictionary) -> XState:
 	var rom: Dictionary = d.get("rom", {})
 	s.rom = {"x": rom.get("x", []).map(func(v): return float(v)), "xn": int(rom.get("xn", 0)),
 		"xs": rom.get("xs", []).map(func(v): return int(v)), "xsn": int(rom.get("xsn", 0))}
+	for k in d.get("seen", []):
+		s.seen[str(k)] = true
 	current = s
 	return s
