@@ -2,7 +2,8 @@
 // 开局被动照 v0.13 原版开局实际所学（Map001 选难度 → Map002 第 5 页 → 大厅 EV20；技能学会后按战斗开始的方式刷新被动缓存）：
 //   有名字的角色：天道诅咒 6168（变量 14＝1）、难度适应 5980（简单～困难）、难度被动（简单 5547、普通 5548、困难 5549）；
 //   开局可选的角色（1～7、52）另有万众一心 2571、SupperStar 2786（大厅 EV20「增减技能」）。v0.13 不送暴爽 2747（Map002 第 4 页的开关 685 无处打开）。
-//   战斗开始状态（被动的 StartPushState）直接附加：995（6168）、1691（5980）、1630（5547）、1631（5548）。
+//   战斗开始状态（被动的 StartPushState）直接附加：995（6168）、1691（5980）、1629（5561 宝宝）、1630（5547）、1631（5548）。
+//   宝宝难度另有 StartAEPushState1055（给全体敌人加状态）不在本探针里（不模拟开战）；天灾的 5968/5969 已退役（无效果）不加。
 // 伤害：分散度清零、不会心；value=CodexDamage 结算值，final=再经 YEP 状态 Confirm/React 脚本后的值。
 // 敌群生成时 Math.random 固定为 0.99（避开精英/神话随机），之后固定 0.5。
 // 用法：node slice_probe.cjs [难度ID...] → 只写 .sandbox/slice/slice_d<N>.json；验收后由资料库侧复制到 generated/oracle。
@@ -37,7 +38,7 @@ function run(difficulty) {
   const difficultyPassive = {1: 5561, 2: 5547, 3: 5548, 4: 5549, 5: 5562, 6: 5564}[difficulty];
   const passives = [6168].concat(difficulty >= 2 && difficulty <= 4 ? [5980] : []).concat(difficultyPassive ? [difficultyPassive] : []);
   const starters = [1, 2, 3, 4, 5, 6, 7, 52], starterPassives = [2571, 2786];
-  const startStates = [995].concat(difficulty >= 2 && difficulty <= 4 ? [1691] : []).concat({2: [1630], 3: [1631]}[difficulty] || []);
+  const startStates = [995].concat(difficulty >= 2 && difficulty <= 4 ? [1691] : []).concat({1: [1629], 2: [1630], 3: [1631]}[difficulty] || []);
   const out = {sourceIdentity:identity, difficulty, difficultyName: w.$gameSystem.difficultyName(), passives, starters, starterPassives, startStates, actors: {}, enemies: {}, damage: []};
   for (const id of ACTORS) {
     const a = w.$gameActors.actor(id);
@@ -46,6 +47,8 @@ function run(difficulty) {
     const row = {name: a.name(), classId: a._classId, equips: a.equips().map(e => e ? {id: e.id, base: e.baseItemId || e.id, name: e.name} : null), skills: a.skills().map(s => s.id)};
     row.lv1 = snap(a);
     startStates.forEach(s => a.addState(s));
+    // krz_state_re 在 addState 之后才置刷新标记，状态缓存要等下一次 refresh() 才更新（实战里随时会刷新）；只加一个开战状态时不补这一下会读到旧缓存
+    a.refresh();
     battleRefresh(a);
     row.lv1Battle = snap(a);
     a.changeLevel(10, false); battleRefresh(a);
@@ -96,7 +99,7 @@ function measure(w, user, target, sid, tag) {
 }
 
 const ids = process.argv.slice(2).map(Number);
-const measured = (ids.length ? ids : [2, 3, 4]).map(run);
+const measured = (ids.length ? ids : [1, 2, 3, 4, 5, 6]).map(run);
 fs.mkdirSync(OUT, {recursive: true});
 for (const data of measured) {
   const d = data.difficulty;

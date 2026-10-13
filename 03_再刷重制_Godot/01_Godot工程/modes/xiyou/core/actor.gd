@@ -337,11 +337,17 @@ static func _scan(text: String, pattern: String) -> Array:
 	return out
 
 
-## 战斗开始：StartPushState 标签（概率）给自己加状态，再刷新被动缓存。
-func on_battle_start() -> void:
-	for o in equip_list() + skills():
-		for k in o.get("meta", {}):
-			var m := RegEx.create_from_string("^StartPushState(\\d+)$").search(str(k))
-			if m and randf() * 100.0 < _num(o.meta[k]):
-				add_state(int(m.get_string(1)))
-	refresh_passive()
+## 战斗开始的加状态标签（dsPassiveSkill Scene_Battle.start）：装备与技能上「前缀＋状态 ID: 概率%」。
+## 返回 [[前缀, 状态 ID, 概率], ...]，按前缀分组的顺序（与原版逐个前缀遍历一致）。
+const START_STATE_TAGS := ["StartPushState", "StartRomActPushState", "StartRomEmePushState", "StartRomPushState", "StartAEPushState", "StartWTPushState"]
+
+func battle_start_state_tags() -> Array:
+	var out := []
+	var objs := equip_list() + skills()
+	for prefix in START_STATE_TAGS:
+		for o in objs:
+			for k in o.get("meta", {}):
+				var key := str(k)
+				if key.begins_with(prefix) and key.substr(prefix.length()).is_valid_int():
+					out.append([prefix, int(key.substr(prefix.length())), _num(o.meta[k])])
+	return out

@@ -58,7 +58,7 @@ func setup(troop: int, s: XState) -> void:
 			if not bool(XDB.rec("States", sid).get("removeAtBattleEnd", false)):
 				continue
 			a.remove_state(sid)
-		a.on_battle_start()
+	_battle_start_states()
 	# MV Game_Battler.onBattleStart：没有「保留 TP」（特殊旗标 3）时 TP 随机 0～24
 	for b in actors + enemies:
 		if not b.traits_set(TRAIT_SPECIAL_FLAG).has(FLAG_PRESERVE_TP):
@@ -66,6 +66,40 @@ func setup(troop: int, s: XState) -> void:
 	for b in actors + enemies:
 		b.start_warmups()
 	_escape_ratio = 0.5 * _avg_agi(actors) / maxf(_avg_agi(enemies), 1.0)
+
+
+## dsPassiveSkill Scene_Battle.start：每个出战角色依次处理开战状态标签——自己、随机队友、随机敌人、随机任一目标、
+## 全体敌人、全队；之后刷新所有角色的被动缓存。
+func _battle_start_states() -> void:
+	for a in actors:
+		for tag in a.battle_start_state_tags():
+			if randf() * 100.0 >= float(tag[2]):
+				continue
+			var sid := int(tag[1])
+			match str(tag[0]):
+				"StartPushState":
+					a.add_state(sid)
+				"StartRomActPushState":
+					var others := actors.filter(func(x): return x != a)
+					if not others.is_empty():
+						others[randi() % others.size()].add_state(sid)
+				"StartRomEmePushState":
+					var foes := alive(enemies)
+					if not foes.is_empty():
+						foes[randi() % foes.size()].add_state(sid)
+				"StartRomPushState":
+					var all: Array = actors + alive(enemies)
+					all[randi() % all.size()].add_state(sid)
+				"StartAEPushState":
+					for e in alive(enemies):
+						e.add_state(sid)
+				"StartWTPushState":
+					for x in actors:
+						x.add_state(sid)
+	for a in actors:
+		a.refresh_passive()
+	for e in enemies:
+		e.refresh_passive()
 
 
 func alive(list: Array) -> Array:

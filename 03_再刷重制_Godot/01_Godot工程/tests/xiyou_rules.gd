@@ -4,7 +4,7 @@ extends Node
 ## 伤害比较的是结算后、取整前的值；正式版的成长修正 growth 首期未移植，按 oracle 值 ÷ growth 比较。
 ## 运行：godot --headless --path <工程> res://tests/xiyou_rules.tscn [-- --verbose]
 
-const DIFFICULTIES := [2, 3, 4]
+const DIFFICULTIES := [1, 2, 3, 4, 5, 6]
 var results: Array = []
 var mismatches: Array = []
 var verbose := false

@@ -25,6 +25,16 @@ func _run() -> void:
 	logic.setup(2, s)
 	_check("troop2_three_enemies", logic.enemies.size() == 3, logic.enemies.map(func(e): return e.display_name()))
 	_check("battle_start_states", logic.actors.all(func(a): return a.is_state_affected(995) and a.is_state_affected(1691) and a.is_state_affected(1631)))
+	# 宝宝难度被动 5561：StartPushState1629 给自己、StartAEPushState1055 给全体敌人（dsPassiveSkill 开战标签）
+	var baby := XState.new_game(1, 1, [8])
+	for a in baby.members():
+		a.learn_skill(5561)
+		a.refresh_passive()
+	var logic1 := XBattleLogic.new()
+	logic1.elite_roll = 100.0
+	logic1.setup(2, baby)
+	_check("start_ae_push_state", logic1.enemies.all(func(e): return e.is_state_affected(1055)) and logic1.actors.all(func(a): return a.is_state_affected(1629)))
+	XState.current = s
 	var hits := 0
 	var turns := 0
 	while not logic.is_won() and not logic.is_lost() and turns < 60:

@@ -28,7 +28,7 @@ def verify(app, generated, oracle):
     version = json.loads((app / 'package.json').read_text()).get('releaseVersion')
     if version != manifest['releaseVersion']:
         issues.append('实际来源版本不一致')
-    for difficulty in [2, 3, 4]:
+    for difficulty in [1, 2, 3, 4, 5, 6]:
         file = oracle / f'slice_d{difficulty}.json'
         if not file.is_file():
             issues.append(f'缺少难度 {difficulty} 对照')
