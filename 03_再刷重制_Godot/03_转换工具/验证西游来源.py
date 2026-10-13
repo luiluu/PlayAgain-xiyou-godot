@@ -58,6 +58,17 @@ def verify(app, generated, oracle):
                         issues.append('装备参照数据不一致：' + rel)
             if not data.get('gear') or not data.get('upgrades') or not data.get('sets'):
                 issues.append('装备参照缺少测量结果')
+    map_identity_file = oracle / 'maps_source.json'
+    if not map_identity_file.is_file():
+        issues.append('地图参照缺少来源指纹（重新运行 map_probe）')
+    else:
+        identity = json.loads(map_identity_file.read_text())
+        if identity.get('releaseVersion') != version or identity.get('runtimeInputs') != manifest.get('runtimeInputs'):
+            issues.append('地图参照版本/脚本不一致')
+        for rel, digest in manifest['inputs'].items():
+            if rel.startswith('data/') or rel == 'package.json':
+                if identity.get('inputs', {}).get(rel) != digest:
+                    issues.append('地图参照数据不一致：' + rel)
     return {'releaseVersion': version, 'inputs': len(manifest['inputs']),
             'runtimeInputs': len(manifest.get('runtimeInputs', {})),
             'outputs': len(manifest['outputs']), 'issues': issues}

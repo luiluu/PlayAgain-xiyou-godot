@@ -1,12 +1,16 @@
-// 地图探针：正式 v0.04 的 Game_Map.isPassable，逐格逐方向输出，供 Godot 通行判定对照。
-// 用法：node map_probe.cjs → 01_Godot工程/modes/xiyou/generated/oracle/maps.json
+// 地图探针：当前正式版的 Game_Map.isPassable，逐格逐方向输出，供 Godot 通行判定对照。
+// 用法：node map_probe.cjs → 仅写 .sandbox/maps.json；核验后由资料库侧复制到 generated/oracle。
 'use strict';
 const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs');
+const {sourceIdentity} = require('./source_identity.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
-const OUT = path.resolve(__dirname, '../../01_Godot工程/modes/xiyou/generated/oracle');
+const OUT = path.resolve(__dirname, '.sandbox');
 const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));
-const w = boot(APP, {tolerant: true, log: false, allowWrite: [OUT]}).window;
+const identity = sourceIdentity(APP);
+const r = boot(APP, {tolerant: true, log: false});
+const w = r.window;
+if (r.errors.length || w.CodexRuntime.status().some(m => m.state !== 'installed') || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败');
 w.eval('ConfigManager.applyData({}); DataManager.setupNewGame();');
 const out = {};
 for (const id of SLICE.maps) {
@@ -25,6 +29,8 @@ for (const id of SLICE.maps) {
   out[id] = {width: m.width(), height: m.height(), passable: rows};
 }
 fs.mkdirSync(OUT, {recursive: true});
+if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.writeFileSync(path.join(OUT, 'maps.json'), JSON.stringify(out));
+fs.writeFileSync(path.join(OUT, 'maps_source.json'), JSON.stringify(identity));
 console.log('maps', Object.keys(out).join(','));
 process.exit(0);

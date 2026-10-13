@@ -64,5 +64,6 @@ for(const ids of [[235],[235,236],[240],[336,337],[637]]){
  a.refreshEquipSuit();a.initPassiveCache();a.refreshPassiveCache();a.refresh();
  out.sets.push({armorIds:ids,before,activeStates:Array.from(a._equipSuitsStateIDs||[]),equips:Array.from(a.equips(),e=>e&&{id:e.id,base:e.originalBaseItemId||e.baseItemId,params:Array.from(e.params)}),params:Array.from({length:8},(_,i)=>a.param(i)),xparams:Array.from({length:10},(_,i)=>a.xparam(i)),sparams:Array.from({length:10},(_,i)=>a.sparam(i)),states:Array.from(a.states(),s=>s.id),skills:Array.from(a.skills(),s=>s.id),bResult:Array.from({length:3},(_,i)=>[a.equipSuitBonusParamEdit('bResult',i,0),a.equipSuitBonusParamEdit('bResult',i,1)])});
 }
+if(JSON.stringify(out.sourceIdentity)!==JSON.stringify(sourceIdentity(APP)))throw new Error('测量期间来源改变');
 fs.writeFileSync(path.join(__dirname,'.sandbox/equipment.json'),JSON.stringify(out,null,2));
 console.log(JSON.stringify({gear:out.gear.length,upgrades:out.upgrades.length,materials:new Set(out.upgrades.map(r=>r.itemId)).size,sets:out.sets.length}));process.exit(0);
