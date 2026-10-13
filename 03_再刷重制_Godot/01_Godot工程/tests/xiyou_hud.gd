@@ -152,9 +152,17 @@ func _run() -> void:
 	map.followers[0].locate(11, 16)
 	await map.gather_followers()
 	check("followers_gather", map.followers.slice(0, 3).all(func(f): return f.grid == map.player.grid and not f.is_moving()))
+	# 事件进行中点枫叶：照 reserveCommonEvent 预约，事件结束后才回城。
+	map._set_busy(true)
 	await map.return_to_hub()
+	check("return_reserved_while_busy", map.map_id == 5 and map._reserved_common_event == 10)
+	map._set_busy(false)
+	for i in 600:
+		await get_tree().process_frame
+		if map.map_id == 4 and not map.busy:
+			break
 	await frames(2)
-	check("return_hub_event", map.map_id == 4 and map.player.grid == Vector2i(14, 21) and map.player.direction == 8 and not map.busy)
+	check("return_hub_event", map.map_id == 4 and map.player.grid == Vector2i(14, 21) and map.player.direction == 8 and not map.busy and map._reserved_common_event == 0)
 	# 备份位可从标题读档页访问；滚动容器让 30 格均可达。
 	map.queue_free()
 	await frames(2)

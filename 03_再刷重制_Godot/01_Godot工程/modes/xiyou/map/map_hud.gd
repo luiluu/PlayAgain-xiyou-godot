@@ -86,6 +86,6 @@ func refresh() -> void:
 		coords.queue_redraw()
 
 
-func set_actions_enabled(enabled: bool) -> void:
-	backup_button.disabled = not enabled
-	return_button.disabled = not enabled
+func set_actions_enabled(backup: bool, return_hub: bool) -> void:
+	backup_button.disabled = not backup
+	return_button.disabled = not return_hub

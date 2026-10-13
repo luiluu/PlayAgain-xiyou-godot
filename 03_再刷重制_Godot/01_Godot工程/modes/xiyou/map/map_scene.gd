@@ -33,6 +33,8 @@ var _pending_popups: Array = []     # 本帧获得的物品（MOG_TreasurePopup 
 var _bgm_name := ""
 var _menu_open := false
 var _backup_until := 0
+## Game_Temp.reserveCommonEvent：事件进行中点的枫叶，等事件结束后执行
+var _reserved_common_event := 0
 var _map_name_tween: Tween
 ## O-011：事件/消息期间不开放地图备份，避免保存一半剧情（解释器当前不序列化）。
 const SAFE_HUD_ACTIONS := true
@@ -217,11 +219,17 @@ func _process(delta: float) -> void:
 				f.opacity = player.opacity
 				f.queue_redraw()
 		map_hud.refresh()
-		map_hud.set_actions_enabled(not busy and not _menu_open and not player.is_moving())
+		map_hud.set_actions_enabled(not busy and not _menu_open and not player.is_moving(), not _menu_open)
 	if not _pending_popups.is_empty():
 		_flush_popups()
 	if not busy and not _menu_open and player:
-		_check_autorun()
+		# Game_Map.setupStartingEvent：预约的公共事件先于自动执行事件
+		if _reserved_common_event > 0:
+			var id := _reserved_common_event
+			_reserved_common_event = 0
+			run_common_event(id)
+		else:
+			_check_autorun()
 	if not busy and Input.is_action_just_pressed("ui_cancel") and not XMessageBox.consumed_input_this_frame():
 		open_menu()
 
@@ -609,15 +617,20 @@ func backup_game() -> void:
 		XSound.system(5)
 		await message.show_text("", 0, ["✅ 备份完成", "存入【%d】号存档" % slot])
 	else:
-		XSound.system(3)
+		if slot < 0:
+			XSound.system(3)  # 原版备份已满时不放音效；写入失败是 O-011 新增的提示
 		await message.show_text("", 0, ["⚠️ 备份已满，请清理旧存档" if slot == 0 else "备份失败，请重试。"])
 	busy = false
 	busy_changed.emit(false)
 
 
 ## TCLH_levelUP_button：枫叶只预约公共事件 10（带副本限制），不能直接绕过事件传送。
+## 原版在事件或移动中点击也会预约，等当前事件结束后执行。
 func return_to_hub() -> void:
-	if busy or _menu_open:
+	if _menu_open:
 		return
 	play_se({"name": "Coin"})
+	if busy:
+		_reserved_common_event = 10
+		return
 	await run_common_event(10)
