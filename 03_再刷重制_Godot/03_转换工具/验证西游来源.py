@@ -69,6 +69,17 @@ def verify(app, generated, oracle):
             if rel.startswith('data/') or rel == 'package.json':
                 if identity.get('inputs', {}).get(rel) != digest:
                     issues.append('地图参照数据不一致：' + rel)
+    help_file = oracle / 'help_cards.json'
+    if not help_file.is_file():
+        issues.append('说明卡参照缺失（重新运行 help_probe）')
+    else:
+        identity = json.loads(help_file.read_text()).get('sourceIdentity', {})
+        if identity.get('releaseVersion') != version or identity.get('runtimeInputs') != manifest.get('runtimeInputs'):
+            issues.append('说明卡参照版本/脚本不一致')
+        for rel, digest in manifest['inputs'].items():
+            if rel.startswith('data/') or rel == 'package.json':
+                if identity.get('inputs', {}).get(rel) != digest:
+                    issues.append('说明卡参照数据不一致：' + rel)
     return {'releaseVersion': version, 'inputs': len(manifest['inputs']),
             'runtimeInputs': len(manifest.get('runtimeInputs', {})),
             'outputs': len(manifest['outputs']), 'issues': issues}
