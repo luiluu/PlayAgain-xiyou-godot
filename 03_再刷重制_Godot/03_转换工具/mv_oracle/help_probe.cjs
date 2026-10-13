@@ -57,7 +57,9 @@ function make(kind, id, roll) {
 for (const [kind, id] of [['weapon', 2], ['weapon', 56], ['armor', 12], ['armor', 52], ['armor', 57]]) {
   for (const roll of [0, 0.5, 0.99]) {
     const e = make(kind, id, roll);
-    out.gear.push({kind, id, roll, name: e.name, note: e.note, params: Array.from(e.params), quality: Number(e.meta.quality || 0), ...card(e)});
+    out.gear.push({kind, id, roll, name: e.name, note: e.note, description: e.description, params: Array.from(e.params), price: e.price,
+      traits: w.JSON.parse(w.JSON.stringify(e.traits || [])), quality: Number(e.meta.quality || 0),
+      elementAmplify: w.JSON.parse(w.JSON.stringify(e.elementAmplify || {})), elementAmplifyN: w.JSON.parse(w.JSON.stringify(e.elementAmplifyN || {})), ...card(e)});
   }
 }
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
