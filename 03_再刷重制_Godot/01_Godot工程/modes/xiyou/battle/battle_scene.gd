@@ -6,7 +6,7 @@ extends Control
 ##   指令窗（宽 220、缩放 0.8）出现在行动角色身旁，技能/物品列表（宽 450）在其右下；顶部暗底说明栏。
 ## - 敌人在敌群编辑器坐标（原版 1280×720 原样使用），1 倍大小，神话 1.8 倍并偏色；
 ##   YEP_X_VisualHpGauge：敌人脚下 12px 粗血条（受伤或选目标时显示，带数值）。
-## - 伤害数字用原版 Damage.png（XDamagePopup，MOG 弹跳＋放大）。
+## - 伤害数字照 LGP_BetterDamagePopup 文字弹出（XDamagePopup）。
 ## - Olivia_BattleSysOTB：行动顺序回合制，轮到谁谁当场选指令；画面下方是行动顺序条（XOTBBar），
 ##   说明栏移到 y=92（OTB Help Window Y）；指令窗里有「逃跑」，没有队伍指令窗，取消不能回到上一人。
 ## 规则在 XBattleLogic；结束时发出 finished(0 胜利 / 1 逃跑 / 2 战败)。
@@ -767,10 +767,12 @@ func _play(logs: Array) -> void:
 			"hit":
 				await _show_hit(l)
 			"counter":
-				_popup(l.user, 0, false, "counter")
+				# YEP Show Counter Text：日志「%1的反击！」
+				_banner(str(XDB.system().terms.messages.counterAttack).replace("%1", l.user.display_name()))
 				await get_tree().create_timer(0.3).timeout
 			"reflect":
-				_popup(l.target, 0, false, "reflect")
+				# YEP Show Reflect Text：日志「%1反射了魔法！」
+				_banner(str(XDB.system().terms.messages.magicReflection).replace("%1", l.target.display_name()))
 				if show_skill_animation:
 					MVAnimation.play(fx, _reflect_animation(), _center(l.target), false)
 				await get_tree().create_timer(0.2).timeout
@@ -865,13 +867,21 @@ func _attack_animation(u: XBattler) -> int:
 	return int(XDB.plugin("YEP_BattleEngineCore").get("Enemy Attack Animation", "1"))
 
 
-## 伤害数字（XDamagePopup）。text: "miss" / "counter" / "reflect"。
+## 伤害数字（XDamagePopup，LGP_BetterDamagePopup）。位置：敌人 = 脚底 + (0, −图高/2 + 16)（MOG Center Y-Axis），
+## 角色 = 脚底；同一目标已有的弹出数决定叠加高度。text: "miss" 显示 Miss。
+var _popups := {}          # XBattler -> Array[XDamagePopup]
+
+
 func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := false) -> void:
+	var s: XBattlerSprite = sprites[b]
+	var live: Array = _popups.get(b, []).filter(func(x): return is_instance_valid(x))
 	var p := XDamagePopup.new()
-	p.position = _center(b)
+	p.position = s.position + (Vector2.ZERO if b is XActor else Vector2(0, -s.height() / s.body_scale / 2.0 + 16))
 	p.z_index = 20
+	p.setup(value, is_mp, critical, text == "miss", b is XActor, live.size())
 	fx.add_child(p)
-	p.setup(value, "mp" if is_mp else "hp", critical, text)
+	live.append(p)
+	_popups[b] = live
 
 
 func _say(text: String, seconds: float) -> void:

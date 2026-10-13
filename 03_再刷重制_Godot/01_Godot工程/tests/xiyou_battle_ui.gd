@@ -152,6 +152,8 @@ func _run() -> void:
 	_check("keyboard_target_confirm_attacks", ok, [hp, target.hp])
 	await _frames(4)
 	await _shot("battle_48_attack")
+	await _frames(16)
+	await _shot("battle_48b_popup")
 	_check("action_log_shown", b._log_lines.size() == 1 and b._log_lines[0].simple)
 	# 真实打完这一战（同原版参照 45～47：敌人 HP 设为 1 后普通攻击），截取胜利镜头与结算
 	for i in range(60):
