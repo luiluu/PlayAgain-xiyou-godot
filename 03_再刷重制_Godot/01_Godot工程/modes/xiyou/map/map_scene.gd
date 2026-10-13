@@ -85,27 +85,41 @@ func _build_hud() -> void:
 	menu_btn.offset_right = -12
 	menu_btn.pressed.connect(open_menu)
 	hud.add_child(menu_btn)
-	# 地图名（Olivia_MapDisplayNameCore）：暗底条，从 y=18 滑到 48 淡入，停留，再滑到 78 淡出（各 60 帧）
-	var plate := XUI.dimmer(false, true)
+	# 地图名（Olivia_MapDisplayNameCore，正式版改为居中）：窗口宽 1280、高 36，从 y=18 滑到 48 淡入，停留，再滑到 78 淡出（各 60 帧）
+	var plate := XMVCanvas.new()
 	plate.name = "MapNamePlate"
-	plate.size = Vector2(420, 36)
+	plate.size = Vector2(1280, 36)
 	plate.position = Vector2(0, 18)
 	plate.modulate.a = 0.0
+	plate.painter = _paint_map_name
 	hud.add_child(plate)
-	var map_name := XUI.label("", XUI.FONT_SIZE)
-	map_name.name = "MapName"
-	map_name.position = Vector2(80, -2)
-	plate.add_child(map_name)
+
+
+var map_name_text := ""
+
+## 正式版改过的 Window_MapName.refresh：暗底从 640−80×1.5 起、宽＝字宽＋160（左半由透明渐到 0.6 黑、右半渐回透明），
+## 文字以 640 为中心
+func _paint_map_name(c: XMVCanvas) -> void:
+	if map_name_text == "":
+		return
+	var tw := c.text_width(map_name_text)
+	var distance := 80.0
+	var w := tw + distance * 2.0
+	var bx := 640.0 - distance * 1.5
+	var dark := Color(0, 0, 0, 0.6)
+	var clear := Color(0, 0, 0, 0)
+	c.gradient(Rect2(bx, 0, w / 2.0, 36), clear, dark)
+	c.gradient(Rect2(bx + w / 2.0, 0, w / 2.0, 36), dark, clear)
+	c.text(map_name_text, 640.0 - w / 2.0 + distance, 0, tw + 2, "left")
 
 
 func _show_map_name(text: String) -> void:
-	var plate: Control = hud.find_child("MapNamePlate", true, false)
-	var label: Label = plate.find_child("MapName", true, false)
-	label.text = text
+	var plate: XMVCanvas = hud.find_child("MapNamePlate", true, false)
+	map_name_text = text
+	plate.queue_redraw()
 	if text == "":
 		plate.modulate.a = 0.0
 		return
-	plate.size.x = 80 + label.get_minimum_size().x + 200
 	plate.position.y = 18
 	plate.modulate.a = 0.0
 	var t := plate.create_tween()

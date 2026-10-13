@@ -93,6 +93,7 @@ func _run() -> void:
 	var s := XState.current
 	_check("opening_choices", s.fixed_save_slot() == 1 and s.difficulty == 3 and s.actor_name == "测试玩家" and s.switch(682), [s.fixed_save_slot(), s.difficulty, s.actor_name])
 	_check("opening_party", s.party == [1, 8, 10, 9], s.party)
+	_check("map_name_centered", map.map_name_text == "教派选择")
 	# MOG_TreasurePopup：Map002 事件的「伙伴号角：里德 +1」在场所移动之后执行，提示浮在 Map221 同 ID（2）的雕像处（下一帧成批出现）
 	await _frames(2)
 	_check("opening_popup_horn", map.popups.has("伙伴号角：里德 x 1"), map.popups)
