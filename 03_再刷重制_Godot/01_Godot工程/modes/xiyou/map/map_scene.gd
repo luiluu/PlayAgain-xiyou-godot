@@ -25,6 +25,9 @@ var se: AudioStreamPlayer
 var hud: Control
 var map_hud: XMapHUD
 var transfer_page: XMapTransferScene
+var hang_overlay: XHangUpOverlay
+## O-015：事件、对话、战斗之外才挂机走动与自动存档（原版事件进行中角色也会继续随机走动，存档可能存进半段剧情）。
+const SAFE_HANG_UP := true
 var busy := false
 var encounter_count := 0
 var skipped_log: Array = []
@@ -90,6 +93,10 @@ func _build_hud() -> void:
 	ui.add_child(hud)
 	map_hud = XMapHUD.new()
 	hud.add_child(map_hud)
+	# XdRs_HangUp 的快捷界面与挂机提示：地图和战斗都显示，放在 ui 最上层（战斗开始时再提到最上）
+	hang_overlay = XHangUpOverlay.new()
+	ui.add_child(hang_overlay)
+	hang_overlay.toggle_requested.connect(toggle_hang_up)
 	map_hud.backup_requested.connect(backup_game)
 	map_hud.transfer_requested.connect(open_transfer)
 	map_hud.return_requested.connect(return_to_hub)
@@ -215,7 +222,11 @@ func _process(delta: float) -> void:
 	if XState.current:
 		XState.current.play_seconds += delta
 	if player:
-		player.input_enabled = not busy and not _menu_open
+		var hanging := XHangUp.is_active(XState.current)
+		player.input_enabled = not busy and not _menu_open and not hanging
+		player.auto_step = _hang_up_step if hanging else Callable()
+		hang_overlay.visible = not _menu_open and transfer_page == null
+		hang_overlay.refresh()
 		var s := XState.current
 		s.x = player.grid.x
 		s.y = player.grid.y
@@ -322,8 +333,9 @@ func _on_action() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	# 玩家朝同层事件走却被挡住：MV 的 checkEventTriggerTouch（触发 1/2）
-	if busy or player == null or player.is_moving():
+	_hang_up_physics()
+	# 玩家朝同层事件走却被挡住：MV 的 checkEventTriggerTouch（触发 1/2）；挂机中不能手动移动
+	if busy or player == null or player.is_moving() or XHangUp.is_active(XState.current):
 		return
 	var d := player._input_dir()
 	if d == 0:
@@ -439,8 +451,13 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	var battle := XBattleScene.new()
 	battle.setup(troop_id, can_escape, can_lose, map_data, shot)
 	ui.add_child(battle)
+	ui.move_child(hang_overlay, -1)
+	_in_battle = true
 	var result: int = await battle.finished
+	_in_battle = false
 	battle.queue_free()
+	# Scene_Battle.terminate → refrishHangUp：死亡停止
+	XHangUp.after_battle(XState.current)
 	hud.visible = true
 	_reset_transfer_button()
 	_bgm_name = ""
@@ -607,7 +624,8 @@ func game_over() -> void:
 	await transfer(4, 14, 23, 8)
 
 func open_menu() -> void:
-	if busy or _menu_open:
+	# 挂机中不能呼叫菜单（Scene_Map.isMenuCalled）
+	if busy or _menu_open or XHangUp.is_active(XState.current):
 		return
 	_menu_open = true
 	hud.visible = false
@@ -643,6 +661,59 @@ func backup_game() -> void:
 		await message.show_text("", 0, ["⚠️ 备份已满，请清理旧存档" if slot == 0 else "备份失败，请重试。"])
 	busy = false
 	busy_changed.emit(false)
+
+
+# ---- 挂机（XdRs_HangUp，数据与规则见 XHangUp）----
+var _in_battle := false
+
+
+## G 键与快捷界面按钮（XdRsData.hangUp.set）；菜单与传送页不是挂机场景，不响应
+func toggle_hang_up() -> void:
+	var s := XState.current
+	if s == null or _menu_open or transfer_page != null:
+		return
+	if XHangUp.is_active(s):
+		XHangUp.stop(s)
+		return
+	var tip := XHangUp.ready_start(s, not map_data.get("encounterList", []).is_empty(), player.grid)
+	if tip != "" and not busy:
+		_set_busy(true)
+		await message.show_text("", 0, [tip], 0, 1)
+		_set_busy(false)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	if key and key.pressed and not key.echo and key.physical_keycode == KEY_G:
+		toggle_hang_up()
+		get_viewport().set_input_as_handled()
+
+
+## Game_Player.updateHangUp：有遇敌表时在范围内随机走、出范围往回走；没有遇敌表时回原点
+func _hang_up_step() -> Array:
+	var s := XState.current
+	if (SAFE_HANG_UP and busy) or _menu_open or transfer_page != null:
+		return []
+	player.move_speed = 5 if player.dash and Input.is_physical_key_pressed(KEY_SHIFT) else 4
+	if map_data.get("encounterList", []).is_empty():
+		return XHangUp.toward(player.grid, s.hang_up_origin)
+	return XHangUp.next_dirs(s, player.grid)
+
+
+## 挂机计时（地图与战斗场景每帧）；满存档间隔后回到地图时存到开局固定存档位
+func _hang_up_physics() -> void:
+	var s := XState.current
+	if s == null or _menu_open or transfer_page != null:
+		return
+	XHangUp.tick(s)
+	if s.hang_up_save_pending and not _in_battle and not (SAFE_HANG_UP and busy):
+		s.hang_up_save_pending = false
+		var slot := int(s.flags.get("SaveGameId", 0))
+		if slot > 0 and XSave.save(slot):
+			XSound.system(5)
+			_set_busy(true)
+			await message.show_text("", 0, [str(XHangUp.params().get("saveWord", ""))], 0, 1)
+			_set_busy(false)
 
 
 ## 换场景（场所移动、菜单/战斗返回）后重新按变量 21 决定是否有地图传送按钮

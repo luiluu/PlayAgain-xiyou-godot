@@ -10,6 +10,8 @@ signal touch_target_reached
 signal before_step
 
 var input_enabled := true
+## 挂机（XdRs_HangUp）：不在移动时调用，返回要依次尝试的方向；空数组为不动
+var auto_step := Callable()
 var touch_target := Vector2i(-1, -1)
 var dash := true
 
@@ -30,6 +32,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func update_character() -> void:
 	super.update_character()
+	if not is_moving() and auto_step.is_valid():
+		for d in auto_step.call():
+			if move_straight(d):
+				stepped.emit()
+				break
+		return
 	if is_moving() or not input_enabled:
 		return
 	var d := _input_dir()

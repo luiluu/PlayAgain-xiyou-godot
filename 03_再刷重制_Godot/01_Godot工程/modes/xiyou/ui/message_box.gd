@@ -40,6 +40,8 @@ var num_win: XMVWindow
 var _num_buttons: Control
 
 var _busy := false
+## XdRs_HangUp：挂机中每页开始计 messageCount 帧，到时自动翻页/关闭
+var _hang_count := 0
 var _queue: Array = []
 var _msg := {}
 var _pending_start := false
@@ -232,6 +234,7 @@ func _new_page() -> void:
 	_line_fast = false
 	_pause_skip = false
 	_sound_count = 0
+	_hang_count = int(str(XHangUp.params().get("messageCount", "60"))) if XHangUp.is_active(XState.current) else 0
 	win.refresh()
 
 
@@ -320,8 +323,22 @@ func _physics_process(_delta: float) -> void:
 			_terminate(0)
 	elif _state != null:
 		_update_message()
+	_update_hang_up_auto()
 	_in.clear()
 
+
+## Window_Message.updateHangUpAuto：计数到 0 时取消等待，还有字就翻新页，否则结束（选项与数值输入不在此列）
+func _update_hang_up_auto() -> void:
+	if _hang_count <= 0 or _input_mode != "" or not _busy:
+		return
+	_hang_count -= 1
+	if _hang_count == 0:
+		win.pause = false
+		_wait = 0
+		if _state != null:
+			_new_page()
+		else:
+			_terminate(0)
 
 func _update_message() -> void:
 	while not _state.at_end():

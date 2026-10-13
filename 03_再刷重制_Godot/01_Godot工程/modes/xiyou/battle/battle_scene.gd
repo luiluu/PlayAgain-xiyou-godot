@@ -258,9 +258,9 @@ func _build_ui(vs: Vector2) -> void:
 		holder.add_child(row)
 		status_rows[logic.actors[i]] = row
 	_refresh_status()
-	# 自动/加速：左上角小窗，避免挡住 OTB（优化 O-006）。
+	# 自动/加速：左上角小窗，避免挡住 OTB（优化 O-006）；让出左上 (20,10,240,74) 给挂机快捷界面。
 	var side := HBoxContainer.new()
-	side.position = _origin + Vector2(12, 12)
+	side.position = _origin + Vector2(272, 12)
 	side.add_theme_constant_override("separation", 8)
 	ui.add_child(side)
 	auto_btn = _small_button("自动：关")
@@ -428,6 +428,9 @@ func _main() -> void:
 
 ## 轮到 u：敌人/自动/不能行动时直接决定；角色由玩家选。逃跑在这里处理，成功时结束战斗并返回 "escaped"。
 func _command(u: XBattler):
+	# 挂机中队员按自动战斗行动（Game_BattlerBase.isAutoBattle）
+	if u is XActor and logic.can_move(u) and XHangUp.is_active(XState.current):
+		return logic.auto_action(u)
 	if not (u is XActor) or logic.auto or not logic.can_move(u):
 		return logic.decide(u)
 	_set_active(u)
@@ -926,6 +929,10 @@ func _victory() -> void:
 		if node is CanvasItem:
 			node.hide()
 	await get_tree().create_timer(maxf(0, float(params.get("Victory Screen Display Delay", 1000)) / 1000 - float(params.get("Victory Screen Hide Window Delay", 500)) / 1000)).timeout
+	# 挂机中：Window_BattleVictoryActorSub 一建出就把 _victoryPhase 设回 false，结算画面不出现、直接回地图
+	if XHangUp.is_active(XState.current):
+		Engine.time_scale = 1.0
+		return
 	var screen := XVictoryScreen.new()
 	screen.setup(r, before, logic.actors, logic.auto)
 	ui.add_child(screen)

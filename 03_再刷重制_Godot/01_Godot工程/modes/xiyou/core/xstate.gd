@@ -36,6 +36,13 @@ var actor_name := ""
 var actor_ops: Array = []
 ## MapTransferPlugin 的 $gameSystem._unlockedMaps：进入过的配置地图（map_id -> true；见 XMapTransfer）
 var unlocked_maps := {}
+## XdRs_HangUp：挂机设置（随存档，见 XHangUp.DEFAULTS）与总挂机帧数；运行状态不进存档（读档即不在挂机）
+var hang_up := {}
+var hang_up_total := 0
+var hang_up_active := false
+var hang_up_origin := Vector2i(-1, -1)
+var hang_up_count := 0
+var hang_up_save_pending := false
 
 
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
@@ -222,7 +229,7 @@ func to_dict() -> Dictionary:
 		"items": items, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys()}
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -273,6 +280,8 @@ static func from_dict(d: Dictionary) -> XState:
 			"exclude": op.get("exclude", []).map(func(v): return int(v)), "named": bool(op.get("named", false))})
 	for k in d.get("seen", []):
 		s.seen[str(k)] = true
+	s.hang_up = d.get("hangUp", {})
+	s.hang_up_total = int(d.get("hangUpTotal", 0))
 	if d.has("unlockedMaps"):
 		for k in d.unlockedMaps:
 			s.unlocked_maps[int(k)] = true
