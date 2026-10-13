@@ -236,15 +236,32 @@ func _add(b: Button, fn: Callable) -> void:
 
 func _choose_save() -> void:
 	_window("读取存档", 760)
+	var scroll := ScrollContainer.new()
+	scroll.name = "LoadScroll"
+	scroll.custom_minimum_size = Vector2(720, 540)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	column.add_child(scroll)
+	var slots := VBoxContainer.new()
+	slots.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(slots)
+	var first: Button
 	for i in range(1, XSave.SLOTS + 1):
 		var b := XUI.button(XSave.summary(i))
 		b.disabled = not XSave.exists(i)
 		var slot := i
-		_add(b, func():
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.pressed.connect(func():
 			if XSave.load_slot(slot):
 				get_tree().change_scene_to_file(MAP_SCENE))
+		slots.add_child(b)
+		if first == null and not b.disabled:
+			first = b
 	_add(XUI.button("返回"), _title)
-	_focus_first()
+	if first:
+		first.grab_focus.call_deferred()
+	else:
+		_focus_first()
 
 
 func _focus_first() -> void:

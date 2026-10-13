@@ -23,6 +23,7 @@ var fader: ColorRect
 var bgm: AudioStreamPlayer
 var se: AudioStreamPlayer
 var hud: Control
+var map_hud: XMapHUD
 var busy := false
 var encounter_count := 0
 var skipped_log: Array = []
@@ -31,6 +32,10 @@ var popups: Array = []              # 出现过的获得提示文字（测试核
 var _pending_popups: Array = []     # 本帧获得的物品（MOG_TreasurePopup 按帧成批，序号决定错开）
 var _bgm_name := ""
 var _menu_open := false
+var _backup_until := 0
+var _map_name_tween: Tween
+## O-011：事件/消息期间不开放地图备份，避免保存一半剧情（解释器当前不序列化）。
+const SAFE_HUD_ACTIONS := true
 
 
 static func slice() -> Dictionary:
@@ -76,16 +81,10 @@ func _build_hud() -> void:
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.theme = XUI.theme()
 	ui.add_child(hud)
-	# 触屏用菜单入口（原版靠右键/双指点开菜单）；做成小号 MV 窗口
-	var menu_btn := XUI.button("菜单", 48)
-	menu_btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	menu_btn.add_theme_stylebox_override("normal", XUI.panel())
-	menu_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	menu_btn.offset_left = -120
-	menu_btn.offset_top = 12
-	menu_btn.offset_right = -12
-	menu_btn.pressed.connect(open_menu)
-	hud.add_child(menu_btn)
+	map_hud = XMapHUD.new()
+	hud.add_child(map_hud)
+	map_hud.backup_requested.connect(backup_game)
+	map_hud.return_requested.connect(return_to_hub)
 	# 地图名（Olivia_MapDisplayNameCore，正式版改为居中）：窗口宽 1280、高 36，从 y=18 滑到 48 淡入，停留，再滑到 78 淡出（各 60 帧）
 	var plate := XMVCanvas.new()
 	plate.name = "MapNamePlate"
@@ -111,10 +110,13 @@ func _paint_map_name(c: XMVCanvas) -> void:
 	var clear := Color(0, 0, 0, 0)
 	c.gradient(Rect2(bx, 0, w / 2.0, 36), clear, dark)
 	c.gradient(Rect2(bx + w / 2.0, 0, w / 2.0, 36), dark, clear)
-	c.text(map_name_text, 640.0 - w / 2.0 + distance, 0, tw + 2, "left")
+	c.text(map_name_text, 640.0 - w / 2.0 + distance, 0, tw + 2, "left", XUI.TEXT, 26, 34)
 
 
 func _show_map_name(text: String) -> void:
+	# 快速连续场所移动时，上一张地图的 tween 不能继续改新地图名的位置/透明度。
+	if _map_name_tween:
+		_map_name_tween.kill()
 	var plate: XMVCanvas = hud.find_child("MapNamePlate", true, false)
 	map_name_text = text
 	plate.queue_redraw()
@@ -123,7 +125,8 @@ func _show_map_name(text: String) -> void:
 		return
 	plate.position.y = 18
 	plate.modulate.a = 0.0
-	var t := plate.create_tween()
+	_map_name_tween = plate.create_tween()
+	var t := _map_name_tween
 	t.tween_property(plate, "position:y", 48.0, 1.0)
 	t.parallel().tween_property(plate, "modulate:a", 1.0, 1.0)
 	t.tween_interval(1.0)
@@ -213,6 +216,8 @@ func _process(delta: float) -> void:
 				f.transparent = player.transparent
 				f.opacity = player.opacity
 				f.queue_redraw()
+		map_hud.refresh()
+		map_hud.set_actions_enabled(not busy and not _menu_open and not player.is_moving())
 	if not _pending_popups.is_empty():
 		_flush_popups()
 	if not busy and not _menu_open and player:
@@ -256,6 +261,16 @@ func _followers_step() -> void:
 	for i in range(followers.size() - 1, -1, -1):
 		var target: MVCharacter = followers[i - 1] if i > 0 else player
 		followers[i].chase(target, player.move_speed)
+
+
+## Game_Followers.gather（指令 217）：收拢后才开始回城动画。
+func gather_followers() -> void:
+	while is_instance_valid(player) and player.is_moving():
+		await get_tree().physics_frame
+	while followers.any(func(f): return f.character_name != "" and (f.is_moving() or f.grid != player.grid)):
+		if not followers.any(func(f): return f.is_moving()):
+			_followers_step()
+		await get_tree().physics_frame
 
 
 # ---- 触发 ----
@@ -567,13 +582,42 @@ func open_menu() -> void:
 	if busy or _menu_open:
 		return
 	_menu_open = true
+	hud.visible = false
 	var menu := XMenu.new()
 	ui.add_child(menu)
 	await menu.closed
 	var reserved := menu.reserved_common_event
 	menu.queue_free()
 	_menu_open = false
+	hud.visible = true
 	if reserved > 0:
 		await run_common_event(reserved)
 	# 整队/换人后队首与跟随的行走图
 	refresh_party_sprites()
+
+
+func backup_game() -> void:
+	if _menu_open or (SAFE_HUD_ACTIONS and busy) or Time.get_ticks_msec() < _backup_until:
+		return
+	if player and player.is_moving():
+		return
+	busy = true
+	busy_changed.emit(true)
+	var slot := XSave.backup()
+	if slot > 0:
+		_backup_until = Time.get_ticks_msec() + 2000
+		XSound.system(5)
+		await message.show_text("", 0, ["✅ 备份完成", "存入【%d】号存档" % slot])
+	else:
+		XSound.system(3)
+		await message.show_text("", 0, ["⚠️ 备份已满，请清理旧存档" if slot == 0 else "备份失败，请重试。"])
+	busy = false
+	busy_changed.emit(false)
+
+
+## TCLH_levelUP_button：枫叶只预约公共事件 10（带副本限制），不能直接绕过事件传送。
+func return_to_hub() -> void:
+	if busy or _menu_open:
+		return
+	play_se({"name": "Coin"})
+	await run_common_event(10)

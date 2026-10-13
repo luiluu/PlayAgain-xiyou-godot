@@ -1,6 +1,6 @@
 class_name XSavePanel
 extends PanelContainer
-## 选格存档页（Godot 独立存档 10 格，对应 YEP 的 Scene_Save）：新游戏后还没存过档时，一键存档打开这里选格。
+## 选格存档页（Godot 独立存档 30 格，11～30 为地图备份位）：新游戏后还没存过档时，一键存档打开这里选格。
 ## 平时的「存档」照原版走公共事件 1，存到开局选的固定存档位。
 
 signal closed
@@ -17,8 +17,18 @@ func _ready() -> void:
 
 func _build(note: String) -> void:
 	for c in _col.get_children():
+		_col.remove_child(c)
 		c.queue_free()
 	_col.add_child(XUI.label("请选择一个文件插槽。（西游重制版独立存档，与 MV 版无关）", 22, XUI.DIM))
+	var scroll := ScrollContainer.new()
+	scroll.name = "SaveScroll"
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	_col.add_child(scroll)
+	var slots := VBoxContainer.new()
+	slots.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(slots)
 	var first: Button = null
 	for i in range(1, XSave.SLOTS + 1):
 		var b := XUI.button(XSave.summary(i), 56)
@@ -27,7 +37,8 @@ func _build(note: String) -> void:
 		b.pressed.connect(func():
 			var ok := XSave.save(slot)
 			_build("已保存到存档 %d。" % slot if ok else "保存失败。"))
-		_col.add_child(b)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		slots.add_child(b)
 		if first == null:
 			first = b
 	if note != "":

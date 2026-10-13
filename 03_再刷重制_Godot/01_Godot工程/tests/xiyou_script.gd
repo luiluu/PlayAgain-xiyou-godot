@@ -48,6 +48,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	XSave.dir_override = "user://test_xiyou_script"  # ConfigManager 的测试仅改内存
 	var s := XState.new_game_blank()
 	check("blank_start", s.party.is_empty() and s.map_id == 1 and Vector2i(s.x, s.y) == Vector2i(7, 10) and s.difficulty == 2, [s.party, s.map_id, s.x, s.y, s.difficulty])
 	# 1319 天道诅咒：有名字的角色学 6168（条件是变量 14＝1）

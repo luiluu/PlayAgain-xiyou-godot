@@ -75,6 +75,10 @@ static func _statements(js: String, interp) -> Array:
 		if m:
 			s.flags["SaveGameId"] = int(m.get_string(1))
 			continue
+		m = RegEx.create_from_string("^ConfigManager\\.MapXy\\s*=\\s*(true|false)$").search(st)
+		if m:
+			XConfig.set_map_xy(m.get_string(1) == "true")
+			continue
 		if RegEx.create_from_string("^ConfigManager\\.\\w+\\s*=\\s*\\w+$").search(st) or st == "$gameSystem.onBeforeSave()":
 			continue
 		m = RegEx.create_from_string("^\\$gamePlayer\\.SaveActorName\\s*=\\s*prompt\\(\\s*\"([^\"]*)\"\\s*,\\s*\"([^\"]*)\"\\s*\\)$").search(st)

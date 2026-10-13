@@ -82,7 +82,8 @@
     "IconSet_2",
     "IconSet_3",
     "IconSet_4",
-    "newIcon"
+    "newIcon",
+    "anjian_level_up"
   ],
   "keepEvents": {
     "1": "*",
@@ -102,6 +103,7 @@
   "extraAudio": [
     "bgm/Ship3",
     "se/Skill2",
-    "se/Cursor1"
+    "se/Cursor1",
+    "se/Coin"
   ]
 }

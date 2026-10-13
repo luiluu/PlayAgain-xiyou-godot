@@ -22,6 +22,53 @@ window.__refShot = function (name) {
     var x = new XMLHttpRequest(); x.open('POST', '/__ref_shot/' + name, false); x.send(b._canvas.toDataURL('image/png'));
     return x.status;
 };
+/* ?map_ref=1：地图 HUD 内存夹具。只修改此浏览器的内存与配置，不加载任何存档。 */
+(function () {
+    if (!/[?&]map_ref=1(?:&|$)/.test(location.search)) return;
+    addEventListener('load', function () {
+        var panel = document.createElement('div');
+        panel.style.cssText = 'position:fixed;left:0;top:80px;z-index:99999;background:#fff;color:#111;font:12px monospace;max-width:600px;max-height:300px;overflow:auto';
+        ['mousedown','mouseup','click','touchstart','touchend'].forEach(function(type){panel.addEventListener(type,function(e){e.stopPropagation();});});
+        function button(text, fn) { var b=document.createElement('button'); b.textContent=text; b.onclick=function(){fn();b.blur();}; panel.appendChild(b); }
+        function fixture(mid, x, y, coords) {
+            if (!window.DataManager || !DataManager.isDatabaseLoaded()) return;
+            ConfigManager.applyData({}); DataManager.setupNewGame();
+            ConfigManager.MapXy=coords;
+            $gameSystem.setDifficultyId(3); $gameParty.DCultyL3=true;
+            $gameParty._actors=[1,8,10,9]; $gameParty._battleMembers=$gameParty._actors.slice();
+            Game_Map.prototype.updateInterpreter=function(){};
+            $gameScreen.clear(); $gameMessage.clear(); $gamePlayer.clearTransferInfo(); $gamePlayer.refresh();
+            DataManager.loadMapData(mid);
+            var wait=setInterval(function(){
+                if (!DataManager.isMapLoaded()) return;
+                clearInterval(wait); $gameMap.setup(mid); $gameSystem.unlockMap(mid);
+                $gamePlayer.locate(x,y); $gamePlayer.setDirection(2); $gamePlayer.followers().synchronize(x,y,2);
+                SceneManager.goto(Scene_Map);
+            },20);
+        }
+        button('教派地图夹具',function(){fixture(221,13,11,false);});
+        button('大厅地图夹具',function(){fixture(4,14,23,true);});
+        button('一层地图夹具',function(){fixture(5,11,13,true);});
+        button('截图',function(){var s=SceneManager._scene;__refShot('v013_map_'+$gameMap.mapId()+'_'+s.constructor.name);});
+        button('隐藏工具栏',function(){panel.style.display='none';});
+        var details=document.createElement('details'), summary=document.createElement('summary'), readout=document.createElement('pre');
+        summary.textContent='地图运行时读数'; details.appendChild(summary); details.appendChild(readout); panel.appendChild(details); document.body.appendChild(panel);
+        var hooked=false;
+        setInterval(function(){
+            if (!window.SceneManager || !SceneManager._scene) return;
+            if (!hooked && window.Bitmap) {
+                var draw=Bitmap.prototype.drawText;
+                Bitmap.prototype.drawText=function(){(this.__refText||(this.__refText=[])).push(Array.prototype.slice.call(arguments));return draw.apply(this,arguments);};
+                hooked=true;
+            }
+            var s=SceneManager._scene,windows=[];
+            function info(x) {return x&&{type:x.constructor.name,x:x.x,y:x.y,w:x.width,h:x.height,font:x.bitmap&&x.bitmap.fontSize,text:x.bitmap&&x.bitmap.__refText};}
+            function walk(x){if (x instanceof Window_Base) windows.push({type:x.constructor.name,x:x.x,y:x.y,w:x.width,h:x.height,padding:x.padding,font:x.contents&&x.contents.fontSize,text:x.contents&&x.contents.__refText,index:x.index?x.index():null});(x.children||[]).forEach(walk);}
+            walk(s);
+            readout.textContent=JSON.stringify({scene:s.constructor.name,map:window.$gameMap&&$gameMap.mapId(),windows:windows,backup:info(s._backupBtn),transfer:info(s._mapTransferButton),leaf:info(s._huicheng_Sprite),coords:s._StarInter&&info(s._StarInter._cont),errors:__refErrors});
+        },500);
+    });
+})();
 /* ?battle_ref=1：独立内存战斗夹具；按钮只驱动此浏览器，不读取存档。 */
 (function () {
     if (!/[?&]battle_ref=1(?:&|$)/.test(location.search)) return;

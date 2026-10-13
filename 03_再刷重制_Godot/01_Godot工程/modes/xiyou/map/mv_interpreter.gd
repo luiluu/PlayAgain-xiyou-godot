@@ -265,6 +265,8 @@ func _execute(c: Dictionary):
 				if bool(p[2]):
 					while is_instance_valid(ch) and ch.is_balloon_playing():
 						await host.get_tree().physics_frame
+		217:
+			await host.gather_followers()
 		318:
 			# 增减技能 [指定方式, 角色/变量, 0 学会 1 遗忘, 技能]；角色 0 为全队
 			var aid := int(p[1]) if int(p[0]) == 0 else int(state().variable(int(p[1])))
@@ -389,6 +391,9 @@ func _condition(p: Array) -> bool:
 			if code.contains("hangUp"):
 				return false
 			skipped.append({"code": 111, "text": "脚本条件 " + code.left(60)})
+			return false
+		13:
+			# 首期没有车辆；Game_Player.isInVehicle 在这些地图始终为 false。
 			return false
 	skipped.append({"code": 111, "text": "条件类型 %d" % int(p[0])})
 	return false
