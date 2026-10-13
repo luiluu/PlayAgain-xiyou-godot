@@ -150,6 +150,31 @@ func _run() -> void:
 	await _press("ui_accept")
 	ok = await _until(func(): return b._target_mode == "" and target.hp < hp)
 	_check("keyboard_target_confirm_attacks", ok, [hp, target.hp])
+	await _frames(4)
+	await _shot("battle_48_attack")
+	_check("action_log_shown", b._log_lines.size() == 1 and b._log_lines[0].simple)
+	# 真实打完这一战（同原版参照 45～47：敌人 HP 设为 1 后普通攻击），截取胜利镜头与结算
+	for i in range(60):
+		for e in b.logic.enemies:
+			if e.is_alive():
+				e.hp = 1.0
+		if b.logic.is_won():
+			break
+		if b.cmd_win != null and b.cmd_win.active and b._target_mode == "":
+			await _press("ui_accept")
+			await _frames(3)
+			if b._target_mode != "":
+				await _press("ui_accept")
+		await _frames(10)
+	ok = await _until(func(): return b.ui.get_children().any(func(c): return c is XVictoryScreen), 900)
+	_check("real_victory_screen", ok)
+	await get_tree().create_timer(0.5).timeout
+	await _shot("battle_46_victory_window")
+	await get_tree().create_timer(4.0).timeout
+	await _shot("battle_47_victory_later")
+	var vs: XVictoryScreen = b.ui.get_children().filter(func(c): return c is XVictoryScreen)[0] if ok else null
+	if vs:
+		vs.queue_free()
 	# 五人结算与空掉落：第五行仍在画面内，不画虚构的「没有获得物品」。
 	var members: Array = s.battle_members().duplicate()
 	members.append(s.actor(2))

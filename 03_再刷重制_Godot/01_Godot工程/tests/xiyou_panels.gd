@@ -113,7 +113,8 @@ func _run() -> void:
 	await get_tree().create_timer(2.0).timeout
 	var screens := battle.ui.get_children().filter(func(n): return n is XVictoryScreen)
 	_check("battle_victory_screen", screens.size() == 1)
-	_check("victory_zoom", is_equal_approx(battle.field.scale.x,2.0))
+	# 胜利镜头照 YEP 战斗镜头 300 帧线性放大到 2 倍、镜头点 (700,460)；此时仍在放大途中
+	_check("victory_zoom", battle.field.scale.x > 1.0 and battle.field.scale.x < 2.0 and battle._camera.get("to") == Vector2(700, 460), battle.field.scale.x)
 	if screens.size() == 1:
 		var screen: XVictoryScreen = screens[0]
 		var cmd_enter := InputEventKey.new(); cmd_enter.keycode = KEY_ENTER; cmd_enter.meta_pressed = true; cmd_enter.pressed = true

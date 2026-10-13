@@ -7,11 +7,19 @@ const MOTIONS := {"walk": 0, "wait": 1, "chant": 2, "guard": 3, "damage": 4, "ev
 	"missile": 8, "skill": 9, "spell": 10, "item": 11, "escape": 12, "victory": 13, "dying": 14, "abnormal": 15,
 	"sleep": 16, "dead": 17}
 const LOOP := ["walk", "wait", "chant", "guard", "dying", "abnormal", "sleep", "dead", "victory"]
+## 正式版运行时读数：Sprite_Actor.motionSpeed 6 帧一格，Sprite_Weapon.animationWait 3 帧一格
+const MOTION_SPEED := 6
+const WEAPON_WAIT := 3
 
 var battler: XBattler
 var sprite: Sprite2D
 var shadow: Sprite2D
 var cursor: Sprite2D
+## MV Sprite_Weapon：武器挥动图，挂在角色下（不随身体缩放），(−16, 0) 底边居中
+var weapon: Sprite2D
+var _weapon_id := 0
+var _weapon_pattern := 0
+var _weapon_count := 0
 var selected := false
 var _selection_frame := 0
 ## 图像缩放只作用于身体（MV 缩放 _mainSprite），影子与位置不缩放
@@ -119,6 +127,57 @@ func set_motion(m: String) -> void:
 	_apply()
 
 
+## MV Sprite_Weapon.setup：第 id 张武器图在 Weapons{(id−1)/12+1}，每格 96×64，3 格。
+func start_weapon(id: int) -> void:
+	_weapon_id = id
+	_weapon_pattern = 0
+	_weapon_count = 0
+	if weapon == null:
+		weapon = Sprite2D.new()
+		weapon.centered = true
+		weapon.region_enabled = true
+		weapon.position = Vector2(-16, 0)
+		weapon.offset = Vector2(0, -32)
+		add_child(weapon)
+	var tex := _load("system", "Weapons%d" % (floori((id - 1) / 12.0) + 1)) if id > 0 else null
+	weapon.texture = tex
+	weapon.visible = tex != null
+	_weapon_frame()
+
+
+func _weapon_frame() -> void:
+	if weapon == null or not weapon.visible:
+		return
+	var index := (_weapon_id - 1) % 12
+	weapon.region_rect = Rect2((floori(index / 6.0) * 3 + _weapon_pattern) * 96, (index % 6) * 64, 96, 64)
+
+
+## MV Sprite_Actor.updateMotionCount / Sprite_Weapon.updatePattern：按帧计数（60 帧/秒）
+func _physics_process(_delta: float) -> void:
+	if weapon and weapon.visible:
+		_weapon_count += 1
+		if _weapon_count >= WEAPON_WAIT:
+			_weapon_count = 0
+			_weapon_pattern += 1
+			if _weapon_pattern >= 3:
+				weapon.visible = false
+			else:
+				_weapon_frame()
+	if not sv:
+		return
+	_tick += 1
+	if _tick >= MOTION_SPEED:
+		_tick = 0
+		if LOOP.has(motion):
+			_frame = (_frame + 1) % 4
+		elif _frame < 2:
+			_frame += 1
+		else:
+			set_motion(_idle_motion())
+			return
+		_apply()
+
+
 func _process(delta: float) -> void:
 	if cursor:
 		cursor.visible = selected
@@ -131,18 +190,6 @@ func _process(delta: float) -> void:
 		_breath_t += delta * TAU / 2.4
 		sprite.scale.y = body_scale * (1.0 + sin(_breath_t) * 0.02)
 		sprite.position.y = 0.0
-	if not sv:
-		return
-	_tick += 1
-	if _tick % 12 == 0:
-		_frame += 1
-		if _frame >= 3:
-			if LOOP.has(motion):
-				_frame = 0
-			else:
-				set_motion(_idle_motion())
-				return
-		_apply()
 
 
 func _idle_motion() -> String:
@@ -164,7 +211,8 @@ func _apply() -> void:
 	if not sv or sprite.texture == null:
 		return
 	var idx: int = MOTIONS.get(motion, 0)
-	var cx := floori(idx / 6.0) * 3 + _frame
+	# 循环动作的第 4 格回到中间一格（MV：pattern < 3 ? pattern : 1）
+	var cx := floori(idx / 6.0) * 3 + (_frame if _frame < 3 else 1)
 	var cy := idx % 6
 	sprite.region_rect = Rect2(cx * 64, cy * 64, 64, 64)
 
@@ -173,6 +221,14 @@ func flash(color := Color(1, 1, 1)) -> void:
 	var t := create_tween()
 	sprite.modulate = color * 2.0
 	t.tween_property(sprite, "modulate", Color.WHITE, 0.25)
+
+
+## MV Sprite_Enemy.updateBlink：20 帧，每 10 帧里前 5 帧显示、后 5 帧隐藏
+func blink() -> void:
+	for f in range(20, 0, -1):
+		sprite.self_modulate.a = 1.0 if f % 10 < 5 else 0.0
+		await get_tree().physics_frame
+	sprite.self_modulate.a = 1.0
 
 
 func step(forward: bool) -> void:

@@ -43,6 +43,8 @@ var fx: Node2D
 var ui: Control
 var help_bar: Control
 var help_canvas: XMVCanvas
+var log_canvas: XMVCanvas
+var _log_lines: Array = []        # [{text, simple}]
 var otb: XOTBBar
 var cmd_win: XBattleList
 var list_win: XBattleList
@@ -57,8 +59,11 @@ var _hover = null
 var _active: XActor = null
 var _fast := false
 var _origin := Vector2.ZERO       # 原版坐标 → 画面坐标的偏移
+var _camera := {}                 # 胜利镜头（见 _victory）
 ## 自动测试用：强制自动战斗，胜利界面自动关闭。
 static var force_auto := false
+## 「显示技能动画」（Star_CombatDamageRecord 选项 CombatSkillAnimation，正式版默认关闭；关闭时 YEP startAnimation 直接返回）
+static var show_skill_animation := false
 
 
 func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Texture2D = null) -> void:
@@ -182,8 +187,7 @@ func _place_battlers() -> void:
 		s.home = points[i]
 		s.position = s.home + Vector2(300, 0)
 		sprites[a] = s
-		var t := create_tween()
-		t.tween_property(s, "position", s.home, 0.4).set_delay(0.05 * i)
+
 
 
 ## YEP_X_VisualHpGauge：宽 max(180, 图宽)、高 12，底色 19、渐变 20→21，显示当前 HP 数值。
@@ -242,6 +246,14 @@ func _build_ui(vs: Vector2) -> void:
 	help_bar = help
 	help_canvas = help.canvas
 	help_bar.visible = false
+	# 战斗日志 Window_BattleLog (0,92,1280,388)：每行底下一条黑色 64/255 的带子（x 0、宽 1280、行高 36），
+	# <SIMPLE> 行（YEP 行动名：图标＋名字）居中，其余靠左。
+	log_canvas = XMVCanvas.new()
+	log_canvas.position = _origin + Vector2(0, OTB_HELP_Y)
+	log_canvas.size = Vector2(1280, 388)
+	log_canvas.clip_contents = false
+	log_canvas.painter = _paint_log
+	ui.add_child(log_canvas)
 	# 右侧状态（XSideStatus，按正式版队伍顺序）
 	var holder := Control.new()
 	holder.position = _origin
@@ -315,9 +327,39 @@ func _help(text: String) -> void:
 
 
 func _banner(text: String) -> void:
-	help_bar.visible = text != ""
-	help_canvas.painter = func(c): c.text(text, 6, 0, help_canvas.size.x - 12, "center")
-	help_canvas.queue_redraw()
+	_log_lines = [] if text == "" else [{"text": text, "simple": false}]
+	log_canvas.queue_redraw()
+
+
+## YEP_BattleEngineCore displayAction：日志一行「<SIMPLE>\i[图标]名字」居中
+func _log_action(skill: Dictionary) -> void:
+	_log_lines = [{"text": "\\i[%d]%s" % [int(skill.get("iconIndex", 0)), str(skill.get("name", ""))], "simple": true}]
+	log_canvas.queue_redraw()
+
+
+func _paint_log(c: XMVCanvas) -> void:
+	for i in range(_log_lines.size()):
+		var y := 14.0 + i * 36.0
+		c.draw_rect(Rect2(0, y, 1280, 36), Color(0, 0, 0, 64.0 / 255.0))
+		var t := XMVText.new(XMVText.convert_escapes(str(_log_lines[i].text)), 0, 0)
+		var w := t.run()
+		var x := 14.0 + ((1252.0 - w) / 2.0 if _log_lines[i].simple else 0.0)
+		XMVText.paint(c, t.glyphs, x, y)
+
+
+## 每帧推进胜利镜头（MV Game_Screen：zoomScale 与镜头点按剩余帧数线性逼近目标）。
+func _physics_process(_delta: float) -> void:
+	if _camera.is_empty() or _camera.t >= _camera.frames:
+		return
+	_camera.t += 1
+	var k: float = float(_camera.t) / float(_camera.frames)
+	var zoom: float = lerpf(1.0, float(_camera.scale), k)
+	var cam: Vector2 = (_camera.from as Vector2).lerp(_camera.to, k)
+	var screen := (BOX / 2.0 - cam * zoom).clamp(BOX - BOX * zoom, Vector2.ZERO).round()
+	for visual in _camera.base:
+		var b: Vector2 = _camera.base[visual]
+		visual.scale = Vector2.ONE * zoom
+		visual.position = _origin + screen + (b - _origin) * zoom
 
 
 func _process(delta: float) -> void:
@@ -331,7 +373,14 @@ func _process(delta: float) -> void:
 
 # ---- 主循环（OTB）----
 func _main() -> void:
-	await _say("%s 出现了！" % "、".join(logic.enemies.map(func(e): return e.display_name())), 0.9)
+	# YEP_BattleEngineCore Show Emerge Text = false：开战不显示「出现了」；
+	# MV Sprite_Actor.startEntryMotion：从右侧 300px 处 30 帧线性走到原位（全员同时）；
+	# 入场移动结束前不开始（Spriteset_Battle.isBusy）
+	for f in range(1, ENTRY_FRAMES + 1):
+		for a in logic.actors:
+			var sp: XBattlerSprite = sprites[a]
+			sp.position = sp.home + Vector2(300.0 * (ENTRY_FRAMES - f) / ENTRY_FRAMES, 0)
+		await get_tree().physics_frame
 	var first := true
 	while true:
 		logic.start_turn()
@@ -680,21 +729,41 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 # ---- 播放行动记录 ----
+## 正式版运行时逐帧读数（地图 5 普通攻击）：行动开始即在日志显示行动名；第 12 帧角色做动作（不前进），
+## 再 2 帧出伤害数字；第 41 帧日志清空，第 52 帧轮到下一位。技能动画默认不播（show_skill_animation）。
+const ENTRY_FRAMES := 30
+const ACT_MOTION_FRAMES := 12
+const ACT_HIT_FRAMES := 2
+const ACT_LOG_FRAMES := 41
+const ACT_END_FRAMES := 52
+
+
+func _wait_frames(n: int) -> void:
+	for i in range(maxi(n, 0)):
+		await get_tree().physics_frame
+
+
 func _play(logs: Array) -> void:
+	var started := Engine.get_physics_frames()
+	var acting := false
 	for l in logs:
 		match l.type:
 			"action":
+				if acting:
+					await _finish_action(started)
+				started = Engine.get_physics_frames()
+				acting = true
 				var s: XBattlerSprite = sprites[l.user]
-				var item := XBattleLogic.is_item(l.skill)
-				if item or int(l.skill.id) > XBattleLogic.GUARD_SKILL:
-					_banner(str(l.skill.name))
+				_log_action(l.skill)
 				if l.user is XActor:
 					_set_active(l.user)
-					await s.step(true)
-					s.set_motion("item" if item else ("swing" if int(l.skill.id) == XBattleLogic.ATTACK_SKILL else ("spell" if XDamage.is_magical(l.skill) else "skill")))
+				await _wait_frames(ACT_MOTION_FRAMES)
+				if l.user is XActor:
+					_perform_action(l.user, l.skill)
 				else:
-					s.flash(Color(1, 0.6, 0.6))
-				await get_tree().create_timer(0.18).timeout
+					# MV Game_Enemy.performAction：白色闪一下
+					s.flash(Color(1, 1, 1))
+				await _wait_frames(ACT_HIT_FRAMES)
 			"hit":
 				await _show_hit(l)
 			"counter":
@@ -702,8 +771,9 @@ func _play(logs: Array) -> void:
 				await get_tree().create_timer(0.3).timeout
 			"reflect":
 				_popup(l.target, 0, false, "reflect")
-				var ra := MVAnimation.play(fx, _reflect_animation(), _center(l.target), false)
-				await get_tree().create_timer(0.3 if ra else 0.2).timeout
+				if show_skill_animation:
+					MVAnimation.play(fx, _reflect_animation(), _center(l.target), false)
+				await get_tree().create_timer(0.2).timeout
 			"guard":
 				sprites[l.user].set_motion("guard")
 			"regen":
@@ -711,23 +781,40 @@ func _play(logs: Array) -> void:
 					_popup(l.target, -float(l.hp), false)
 			"skip":
 				pass
-		if l.type == "hit" and l.user is XActor and not _next_is_same_action(logs, l):
-			await sprites[l.user].step(false)
-			_banner("")
 		_refresh_status()
+	if acting:
+		await _finish_action(started)
 	_banner("")
 	_set_active(null)
 	for s in sprites.values():
 		s.position = s.home
 
 
+## 行动收尾：到第 41 帧清日志、第 52 帧结束（已超过就不再等）。
+func _finish_action(started: int) -> void:
+	await _wait_frames(started + ACT_LOG_FRAMES - Engine.get_physics_frames())
+	_banner("")
+	await _wait_frames(started + ACT_END_FRAMES - Engine.get_physics_frames())
+
+
+## MV Game_Actor.performAction：物品 item、普通攻击按武器（YEP_WeaponAnimation）、防御 guard、魔法 spell、其余 skill。
+func _perform_action(a: XActor, skill: Dictionary) -> void:
+	var s: XBattlerSprite = sprites[a]
+	if XBattleLogic.is_item(skill):
+		s.set_motion("item")
+	elif int(skill.id) == XBattleLogic.ATTACK_SKILL:
+		var v := a.attack_visual()
+		s.set_motion(v.motion)
+		if int(v.image) > 0:
+			s.start_weapon(int(v.image))
+	elif int(skill.id) == XBattleLogic.GUARD_SKILL:
+		s.set_motion("guard")
+	else:
+		s.set_motion("spell" if XDamage.is_magical(skill) else "skill")
+
+
 func _reflect_animation() -> int:
 	return int(XDB.plugin("YEP_BattleEngineCore").get("Reflect Animation", "0"))
-
-
-func _next_is_same_action(logs: Array, l: Dictionary) -> bool:
-	var i := logs.find(l)
-	return i + 1 < logs.size() and logs[i + 1].type == "hit" and logs[i + 1].user == l.user
 
 
 func _center(b: XBattler) -> Vector2:
@@ -741,7 +828,7 @@ func _show_hit(l: Dictionary) -> void:
 	var anim_id := int(l.skill.animationId)
 	if anim_id < 0:
 		anim_id = _attack_animation(l.user)
-	if anim_id > 0:
+	if anim_id > 0 and show_skill_animation:
 		var a := MVAnimation.play(fx, anim_id, _center(t), false)
 		if a:
 			await get_tree().create_timer(0.25).timeout
@@ -751,9 +838,12 @@ func _show_hit(l: Dictionary) -> void:
 	else:
 		if float(l.hp) != 0.0:
 			_popup(t, float(l.hp), l.critical)
+			# MV performDamage：敌人闪烁（requestEffect blink），角色做受伤动作
 			if float(l.hp) > 0.0:
-				ts.flash(Color(1, 0.5, 0.5))
-				ts.set_motion("damage")
+				if t is XEnemy:
+					ts.blink()
+				else:
+					ts.set_motion("damage")
 		if float(l.mp) != 0.0:
 			_popup(t, float(l.mp), false, "", true)
 		if t is XEnemy:
@@ -808,18 +898,14 @@ func _victory() -> void:
 		bgm.stream = load(music)
 		bgm.volume_db = linear_to_db(float(params.get("Victory Screen BGM Volume", 90)) / 100)
 		bgm.play()
-	# 胜利镜头只作用于背景和战斗人物，结算文字保持原比例。
-	var focus := Vector2(float(params.get("Victory Screen Zoom X", 700)), float(params.get("Victory Screen Zoom Y", 460)))
-	var zoom := float(params.get("Victory Screen Zoom Scale", 2))
-	var duration := float(params.get("Victory Screen Zoom Duration", 300)) / 1000
+	# 胜利镜头（YEP_X_ActSeqPack3 战斗镜头）：镜头点从画面中心 (640,360) 移到 (700,460)、放大 1→2，
+	# 都在 300 帧内线性完成；场景层位置 = −镜头点×放大 + 画面中心，并夹在放大后的画面内。结算文字不缩放。
 	if str(params.get("Victory Screen Zoom", "true")) == "true":
+		_camera = {"from": BOX / 2.0, "to": Vector2(float(params.get("Victory Screen Zoom X", 700)), float(params.get("Victory Screen Zoom Y", 460))),
+			"scale": float(params.get("Victory Screen Zoom Scale", 2)), "frames": int(params.get("Victory Screen Zoom Duration", 300)), "t": 0, "base": {}}
 		for visual in get_children():
-			if visual == ui or not (visual is Control or visual is Node2D):
-				continue
-			var local_focus: Vector2 = _origin + focus - visual.position
-			var tween := create_tween().set_parallel(true)
-			tween.tween_property(visual, "position", visual.position - local_focus * (zoom - 1), duration)
-			tween.tween_property(visual, "scale", Vector2.ONE * zoom, duration)
+			if visual != ui and (visual is Control or visual is Node2D):
+				_camera.base[visual] = visual.position
 	await get_tree().create_timer(float(params.get("Victory Screen Hide Window Delay", 500)) / 1000).timeout
 	for node in ui.get_children():
 		if node is CanvasItem:

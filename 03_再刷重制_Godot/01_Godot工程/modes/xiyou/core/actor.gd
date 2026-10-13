@@ -98,6 +98,30 @@ func equip_list() -> Array:
 	return equips.filter(func(e): return e != null and not e.is_empty())
 
 
+## 普通攻击的动作与武器挥动图（MV Game_Actor.performAttack＋YEP_WeaponAnimation）：
+## 先找 <Weapon Image: n>（状态→装备→职业→角色），动作取 attackMotions[n]（超出则 swing）；
+## 否则按第一把武器的武器类型取系统攻击动作（0 突刺 1 挥舞 2 射击）。返回 {motion, image}。
+func attack_visual() -> Dictionary:
+	var names := ["thrust", "swing", "missile"]
+	var motions: Array = XDB.system().get("attackMotions", [])
+	var sources: Array = states() + equip_list() + [class_data(), data()]
+	for o in sources:
+		var img := str(o.get("meta", {}).get("Weapon Image", "")).strip_edges()
+		if img.is_valid_int() and int(img) > 0:
+			var n := int(img)
+			var m = motions[n] if n < motions.size() else null
+			return {"motion": names[clampi(int(m.type), 0, 2)] if m is Dictionary else "swing", "image": n}
+	var wtype := 0
+	for e in equip_list():
+		if e.get("kind", "") == "weapon":
+			wtype = int(e.get("wtypeId", 0))
+			break
+	var am = motions[wtype] if wtype < motions.size() else null
+	if am is Dictionary:
+		return {"motion": names[clampi(int(am.type), 0, 2)], "image": int(am.weaponImageId)}
+	return {"motion": "thrust", "image": 0}
+
+
 # ---- 等级与经验（MV Game_Actor.expForLevel）----
 func exp_for_level(lv: int) -> int:
 	var p: Array = class_data().expParams

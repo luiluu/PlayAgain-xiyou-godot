@@ -351,7 +351,11 @@ func _snapshot() -> Texture2D:
 	var r := Rect2i(Rect2(ft.origin, ft.get_scale() * get_viewport().get_visible_rect().size)).intersection(Rect2i(Vector2i.ZERO, img.get_size()))
 	if r.size.x <= 0 or r.size.y <= 0:
 		return null
-	return ImageTexture.create_from_image(img.get_region(r))
+	img = img.get_region(r)
+	# MV 快照是 1280×720 位图；高分屏截到的大图缩回画布尺寸，放大镜头时才会和原版一样柔化
+	if img.get_size() != Vector2i(1280, 720):
+		img.resize(1280, 720, Image.INTERPOLATE_BILINEAR)
+	return ImageTexture.create_from_image(img)
 
 
 func open_shop(goods: Array, purchase_only: bool) -> void:

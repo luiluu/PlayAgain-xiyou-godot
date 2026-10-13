@@ -41,7 +41,8 @@ func _ready() -> void:
 	canvas.painter = _paint
 	add_child(canvas)
 	for a in actors:
-		rows.append({"actor": a, "rate": 0.0, "display_level": int(snapshots[a].level), "exp": int(snapshots[a].exp), "notified": false})
+		rows.append({"actor": a, "rate": 0.0, "display_level": int(snapshots[a].level), "exp": int(snapshots[a].exp), "notified": false,
+			"lv_scale": 0.0, "lv_opacity": 255.0, "lv_fade": 0.0})
 	_drops = grouped_drops(rewards.get("drops", []))
 	var raw := str(XDB.plugin("Olivia_VictorySequenceUI").get("Victory Screen Continue Text", "\\c[27]ESC\\c[0] 或者 \\c[27]点击屏幕\\c[0] 退出界面"))
 	_hint_text = XMVText.new(XMVText.convert_escapes(raw), 6, 0)
@@ -132,12 +133,30 @@ func _paint_actor(c: XMVCanvas, row: Dictionary, y: float) -> void:
 	c.text(str(XDB.system().terms.basic[8]), x+24, y+36, w, "left", XUI.TEXT, 16, 36)
 	c.text(tail, x+24, y+36, w, "right", XUI.text_color(8), 18, 36)
 	c.text(current, x+24, y+36, w-c.text_width(tail,18), "right", XUI.TEXT, 20, 36)
-	if row.notified:
-		c.text("等级提升！", x, y, ROW_W, "center", XUI.text_color(17), 36, 36, 0.65+0.35*sin(_elapsed*TAU))
+	# Olivia createLevelUpSprite：中心 (行宽/2, 18)，升级起每帧放大 0.02 到 1；不透明度每帧 ±4 在 255 与 0 之间往返
+	if row.notified and row.lv_scale > 0.0:
+		var center := Vector2(x + ROW_W / 2.0, y + 18)
+		c.text("等级提升！", x, center.y - 36, ROW_W, "center", XUI.text_color(17), 36, 72, row.lv_opacity / 255.0, row.lv_scale, center)
+
+
+var _frame_acc := 0.0
 
 
 func _process(delta: float) -> void:
 	_elapsed += delta
+	# 升级字样按 60 帧/秒逐帧推进（Window_BattleVictoryActorSub.update）
+	_frame_acc += delta
+	while _frame_acc >= 1.0 / 60.0:
+		_frame_acc -= 1.0 / 60.0
+		for row in rows:
+			if not row.notified:
+				continue
+			row.lv_scale = minf(1.0, row.lv_scale + 0.02)
+			if row.lv_fade == 0.0:
+				row.lv_fade = 4.0
+			row.lv_opacity = clampf(row.lv_opacity + row.lv_fade, 0.0, 255.0)
+			if row.lv_opacity >= 255.0 or row.lv_opacity <= 0.0:
+				row.lv_fade = -row.lv_fade
 	_update_exp(clampf(_elapsed / 3.0, 0, 1))
 	if _elapsed >= 1.0:
 		_ready_to_close = true

@@ -325,6 +325,15 @@ class Exporter:
             self.ref_audio('se', s)
         for name in cfg.get('systemImages', []):
             self.ref_img('system', name)
+        # 武器挥动图（MV Sprite_Weapon：第 n 张 = Weapons{(n-1)//12+1}）：系统攻击动作与 YEP_WeaponAnimation <Weapon Image: n>
+        weapon_images = {m['weaponImageId'] for m in sysd.get('attackMotions', []) if m and m.get('weaponImageId', 0) > 0}
+        for w in db['Weapons']:
+            if w:
+                found = re.search(r'<Weapon Image:\s*(\d+)>', w.get('note', ''), re.I)
+                if found:
+                    weapon_images.add(int(found.group(1)))
+        for page in sorted({(i - 1) // 12 + 1 for i in weapon_images}):
+            self.ref_img('system', 'Weapons%d' % page)
         # 界面用图（标题、菜单底图等），写成「文件夹/文件名」
         for rel in cfg.get('extraImages', []):
             self.img.add(rel)
