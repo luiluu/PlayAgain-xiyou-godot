@@ -526,13 +526,17 @@ func _use() -> void:
 		XSound.system(3)
 		return
 	XSound.system(22)   # SoundManager.playUseItem
-	# Scene_Item.user：全队中药物知识 pha 最大者；与战斗共用效果栏实现（含取整、状态与复活）。
-	var user: XActor = s.members()[0]
-	for a in s.members():
-		if a.pha > user.pha:
-			user = a
+	# Scene_Item.user：可行动角色中药物知识 pha 最大者；与战斗共用效果栏实现。
 	var logic := XBattleLogic.new()
 	logic.state = s
+	var movable := s.members().filter(func(a): return logic.can_move(a))
+	if movable.is_empty():
+		XSound.system(3)
+		return
+	var user: XActor = movable[0]
+	for a in movable:
+		if a.pha > user.pha:
+			user = a
 	for t in targets:
 		if t.is_dead() != (_scope() in [9, 10]):
 			continue

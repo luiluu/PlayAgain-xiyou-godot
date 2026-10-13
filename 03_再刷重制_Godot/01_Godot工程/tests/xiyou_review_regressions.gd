@@ -46,6 +46,22 @@ func _run() -> void:
 	logic.execute(a, XDB.rec("Items", 183), dead)
 	check("battle_revives_selected_dead", dead.is_alive() and s.actor(8).is_dead() and s.item_count(183) == 0)
 	logic.end_battle()
+	# 阵亡的药物知识高者不能充当菜单物品的使用者。
+	var phantom := XGear.template("armor", 1)
+	phantom.traits.append({"code": 23, "dataId": 3, "value": 10.0})
+	s.actor(8).equips[1] = phantom
+	s.actor(8).refresh_passive()
+	s.actor(8).add_state(1)
+	page._item = XDB.rec("Items", 1)
+	page._actor = 0
+	a.change_level(30)  # 最大HP大于500，避免回复量被低等级上限夹住而掩盖选人错误。
+	a.hp = 1
+	page._use()
+	check("dead_pharmacist_not_selected", a.hp == minf(a.mhp, 1 + floorf(500 * a.rec * a.pha)))
+	# 不保留测试药物知识装备，后面的存档仍用真实合法槽位。
+	s.actor(8).equips[1] = null
+	s.actor(8).refresh_passive()
+	s.gain_item(1, 1)
 	# 效果栏添加状态的道具：原 _effective 允许，但 _use 没有执行任何效果。
 	var fake := XDB.rec("Items", 1).duplicate(true)
 	fake.effects = [{"code": 21, "dataId": 2, "value1": 1.0, "value2": 0}]
