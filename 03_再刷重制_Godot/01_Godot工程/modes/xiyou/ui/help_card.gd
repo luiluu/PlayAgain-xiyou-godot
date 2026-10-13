@@ -105,11 +105,27 @@ static func quality_color_text(obj: Dictionary) -> String:
 static func quality_name(obj: Dictionary) -> String:
 	var raw = JSON.parse_string(str(XDB.plugin("ItemQuality").get("QualitiesName", "[]")))
 	var q := _quality(obj)
-	return str(raw[q]) if raw is Array and q < raw.size() else ""
+	var name := str(raw[q]) if raw is Array and q >= 0 and q < raw.size() else ""
+	var tags = JSON.parse_string(str(XDB.plugin("ItemQuality").get("CodexGearTags", "{}")))
+	var suffix := []
+	if obj.has("wtypeId") or obj.has("atypeId") or str(obj.get("kind", "")) in ["weapon", "armor"]:
+		if tags is Dictionary and tags.has(str(q)):
+			suffix.append(str(tags[str(q)]))
+		if int(obj.get("etypeId", 0)) == 17:
+			suffix.append("神武")
+	return name + ("（" + "·".join(suffix) + "）" if not suffix.is_empty() else "")
+
+
+static func quality_window(q: int) -> int:
+	var ids = JSON.parse_string(str(XDB.plugin("ItemQuality").get("CodexWindowIds", "[]")))
+	return int(ids[q]) if ids is Array and q >= 0 and q < ids.size() else q
 
 
 ## "['a','b']" 形式的参数（JS 数组字面量，单引号）
 static func _list_param(text: String) -> Array:
+	var json = JSON.parse_string(text) if text.begins_with("[\"") else null
+	if json is Array:
+		return json
 	var out := []
 	var re := RegEx.create_from_string("'([^']*)'")
 	for m in re.search_all(text):
@@ -801,7 +817,7 @@ func place_near(anchor: Rect2, side := "right", area := Rect2(22, 22, 1236, 676)
 
 func _draw_frame() -> void:
 	# ItemQuality：四层 Window{品质} 窗口（不透明度、背景都是 60），覆盖卡外 10px
-	var skin_path := XDB.img_path("system", "Window%d" % quality)
+	var skin_path := XDB.img_path("system", "Window%d" % quality_window(quality))
 	_frame_style = XUI.panel(60)
 	if skin_path != "":
 		_frame_style.skin = load(skin_path)

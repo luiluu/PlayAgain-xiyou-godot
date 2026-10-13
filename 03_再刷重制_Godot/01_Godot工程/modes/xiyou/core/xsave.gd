@@ -30,13 +30,20 @@ static func save(slot: int) -> bool:
 		return false
 	var data := XState.current.to_dict()
 	data["savedAt"] = Time.get_datetime_string_from_system()
-	var f := FileAccess.open(path(slot), FileAccess.WRITE)
+	# 先写同目录临时文件，成功后替换；失败不截断原有存档。
+	var temp := path(slot) + ".tmp"
+	var f := FileAccess.open(temp, FileAccess.WRITE)
 	if f == null:
 		return false
 	f.store_string(JSON.stringify(data))
+	f.flush()
 	var ok := f.get_error() == OK
 	f.close()
 	if not ok:
+		DirAccess.remove_absolute(temp)
+		return false
+	if DirAccess.rename_absolute(temp, path(slot)) != OK:
+		DirAccess.remove_absolute(temp)
 		return false
 	current_slot = slot
 	return true
@@ -51,14 +58,62 @@ static func backup() -> int:
 
 
 static func exists(slot: int) -> bool:
-	return FileAccess.file_exists(path(slot))
+	return slot >= 1 and slot <= SLOTS and FileAccess.file_exists(path(slot))
+
+
+## 在创建角色／替换当前状态前检查完整结构；损坏或未来版本的档不进入反序列化。
+static func valid_data(d) -> bool:
+	if not d is Dictionary or str(d.get("mode", "")) != "xiyou":
+		return false
+	if not (d.get("version") is int or d.get("version") is float) or int(d.version) not in [1, XState.SAVE_VERSION]:
+		return false
+	for key in ["difficulty", "gold", "mapId", "x", "y", "direction", "steps", "playSeconds"]:
+		if not (d.get(key) is int or d.get(key) is float):
+			return false
+	for key in ["actors", "items", "switches", "variables", "selfSwitches"]:
+		if not d.get(key) is Dictionary:
+			return false
+	for key in ["party", "gear"]:
+		if not d.get(key) is Array:
+			return false
+	for key in ["rom", "seen", "flags", "actorOps", "unlockedMaps", "hangUp"]:
+		if d.has(key) and typeof(d[key]) != (TYPE_ARRAY if key in ["seen", "actorOps", "unlockedMaps"] else TYPE_DICTIONARY):
+			return false
+	for key in d.actors:
+		var row = d.actors[key]
+		if XDB.rec("Actors", int(key)).is_empty() or not row is Dictionary:
+			return false
+		for field in ["level", "exp", "hp", "mp"]:
+			if not (row.get(field) is int or row.get(field) is float):
+				return false
+		for field in ["skills", "equips", "states"]:
+			if not row.get(field) is Array:
+				return false
+		if row.equips.size() != XDB.system().equipTypes.size() - 1:
+			return false
+		if row.has("cooldowns") and not row.cooldowns is Dictionary:
+			return false
+		if not row.equips.all(func(e): return e == null or _valid_gear(e)):
+			return false
+	if not d.gear.all(_valid_gear):
+		return false
+	for id in d.party:
+		if not (id is int or id is float) or not d.actors.has(str(int(id))):
+			return false
+	return true
+
+
+static func _valid_gear(e) -> bool:
+	return e is Dictionary and str(e.get("kind", "")) in ["weapon", "armor"] and e.get("base") != null \
+		and e.get("params") is Array and e.params.size() == 8 and e.get("traits") is Array \
+		and e.get("meta") is Dictionary and e.get("etypeId") != null
 
 
 static func summary(slot: int) -> String:
 	if not exists(slot):
 		return "存档 %d：空" % slot
 	var d = JSON.parse_string(FileAccess.get_file_as_string(path(slot)))
-	if not d is Dictionary:
+	if not valid_data(d):
 		return "存档 %d：无法读取" % slot
 	var leader := str(XDB.rec("Actors", int(d.party[0])).get("name", "")) if not d.party.is_empty() else ""
 	var lv := int(d.actors.get(str(int(d.party[0])), {}).get("level", 1)) if not d.party.is_empty() else 1
@@ -70,7 +125,7 @@ static func load_slot(slot: int) -> bool:
 	if not exists(slot):
 		return false
 	var d = JSON.parse_string(FileAccess.get_file_as_string(path(slot)))
-	if not d is Dictionary or str(d.get("mode", "")) != "xiyou":
+	if not valid_data(d):
 		return false
 	XState.from_dict(d)
 	# dev.015 及以前忽略 ConfigManager 脚本，没有配置文件。已完成大厅 EV20 的 Godot 档补其 MapXy=true；

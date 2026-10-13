@@ -271,6 +271,9 @@ func _paint_drop(c: XMVCanvas, d: Dictionary, r: Rect2, difficulty: int) -> void
 		name = name.substr(0, 11) + "..."
 	var ici := str(item.get("meta", {}).get("ici", "1"))
 	var color := Color(ITEM_COLORS.get(int(ici) if ici.is_valid_int() else 1, "ffffff"))
+	# 正式 v0.18：带品质的掉落名字使用七档色，无品质标记保留 ici。
+	if item.get("meta", {}).has("quality"):
+		color = XGear.color(item)
 	c.text(name, r.position.x + 32, r.position.y, r.size.x - 32 - 60, "left", XEnemy.name_color(name, difficulty, color))
 	c.text("%.2f%%" % float(d.rate), r.position.x + r.size.x - 60, r.position.y, 60, "right")
 
