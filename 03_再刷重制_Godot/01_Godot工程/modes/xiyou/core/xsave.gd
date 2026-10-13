@@ -93,6 +93,13 @@ static func valid_data(d) -> bool:
 			return false
 		if row.has("cooldowns") and not row.cooldowns is Dictionary:
 			return false
+		if row.has("stateTurns") and not row.stateTurns is Dictionary:
+			return false
+		for field in ["buffs", "buffTurns"]:
+			if row.has(field) and (not row[field] is Array or row[field].size() != 8):
+				return false
+		if row.has("tp") and not (row.tp is int or row.tp is float):
+			return false
 		if not row.equips.all(func(e): return e == null or _valid_gear(e)):
 			return false
 	if not d.gear.all(_valid_gear):

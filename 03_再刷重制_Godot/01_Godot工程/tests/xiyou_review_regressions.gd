@@ -72,6 +72,10 @@ func _run() -> void:
 	page._use()
 	check("repeated_state_does_not_consume", s.item_count(1) == 2)
 	# 存档写入、覆盖、读取及错误档处理，全部在专用测试目录。
+	a.tp = 37
+	a.state_turns[2] = 4
+	a.buffs[2] = 1
+	a.buff_turns[2] = 3
 	check("save_valid", XSave.save(1))
 	var before := FileAccess.get_file_as_string(XSave.path(1))
 	check("saved_shape_valid", XSave.valid_data(JSON.parse_string(before)))
@@ -80,6 +84,8 @@ func _run() -> void:
 	DirAccess.remove_absolute(XSave.path(1) + ".tmp")
 	s.gold = 12345
 	check("atomic_overwrite", XSave.save(1) and XSave.load_slot(1) and XState.current.gold == 12345 and not FileAccess.file_exists(XSave.path(1) + ".tmp"))
+	var restored := XState.current.actor(1)
+	check("save_preserves_combat_state", restored.tp == 37 and restored.state_turns.get(2) == 4 and restored.buffs[2] == 1 and restored.buff_turns[2] == 3)
 	var previous := XState.current
 	var f := FileAccess.open(XSave.path(2), FileAccess.WRITE)
 	f.store_string('{"mode":"xiyou","version":2}')
@@ -89,6 +95,11 @@ func _run() -> void:
 	var future: Dictionary = JSON.parse_string(before)
 	future.version = 999
 	check("future_version_rejected", not XSave.valid_data(future))
+	var legacy: Dictionary = JSON.parse_string(before)
+	for row in legacy.actors.values():
+		for field in ["tp", "stateTurns", "buffs", "buffTurns"]:
+			row.erase(field)
+	check("legacy_save_optional_fields", XSave.valid_data(legacy) and XState.from_dict(legacy).actor(1).tp == 0)
 	check("invalid_slot_rejected", not XSave.save(0) and not XSave.exists(31) and not XSave.load_slot(0))
 	page.queue_free()
 	await get_tree().process_frame
