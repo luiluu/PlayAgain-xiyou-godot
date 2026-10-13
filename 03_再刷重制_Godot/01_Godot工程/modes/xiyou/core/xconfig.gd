@@ -6,6 +6,7 @@ extends RefCounted
 static var path_override := ""
 static var _loaded_path := "<unloaded>"
 static var _values := {}
+static var _map_xy_configured := false
 
 
 static func path() -> String:
@@ -20,10 +21,12 @@ static func ensure_loaded() -> void:
 		return
 	_loaded_path = p
 	_values = {"MapXy": false}  # ConfigManager.readFlag：没有配置时为 false
+	_map_xy_configured = false
 	if p != "" and FileAccess.file_exists(p):
 		var data = JSON.parse_string(FileAccess.get_file_as_string(p))
 		if data is Dictionary:
 			_values.MapXy = bool(data.get("MapXy", false))
+			_map_xy_configured = data.has("MapXy")
 
 
 static func map_xy() -> bool:
@@ -31,9 +34,15 @@ static func map_xy() -> bool:
 	return bool(_values.MapXy)
 
 
+static func has_map_xy() -> bool:
+	ensure_loaded()
+	return _map_xy_configured
+
+
 static func set_map_xy(value: bool) -> bool:
 	ensure_loaded()
 	_values.MapXy = value
+	_map_xy_configured = true
 	var p := path()
 	if p == "":
 		return true

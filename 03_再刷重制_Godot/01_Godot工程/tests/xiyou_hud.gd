@@ -121,6 +121,13 @@ func _run() -> void:
 	check("invalid_slots", not XSave.save(0) and not XSave.save(31) and XSave.current_slot == 30)
 	s.gold = 999
 	check("backup_load", XSave.load_slot(11) and XState.current.gold == 123 and XSave.current_slot == 11 and XState.current.rom.gn == 1 and XState.current.rom.g == [71, 93, 52])
+	# dev.015 之前的本工程档没有局外配置：补已发生的大厅显示开关；显式关闭的配置不能被读档改回。
+	DirAccess.remove_absolute(XConfig.path_override)
+	XConfig._loaded_path = "<unloaded>"
+	check("old_godot_config_backfill", XSave.load_slot(11) and XConfig.map_xy())
+	XConfig.set_map_xy(false)
+	check("explicit_config_not_rolled_back", XSave.load_slot(11) and not XConfig.map_xy())
+	XConfig.set_map_xy(true)
 	s = XState.current
 	# 菜单/战斗不显示 HUD；打开菜单后按取消回地图。
 	map.open_menu()
