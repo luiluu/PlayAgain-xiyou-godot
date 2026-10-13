@@ -1,5 +1,5 @@
 {
- "review": "来源分类与正式 v0.19 转换／参照由 Codex 2026-10-14 交叉复核；本轮修复提交仍待 Claude 核查，见交接板与变更记录",
+ "review": "来源分类与正式 v0.14 转换／参照由 Codex 2026-10-14 交叉复核；本轮修复提交仍待 Claude 核查，见交接板与变更记录",
  "updatedDate": "2026-10-14",
  "sources": [
   {
@@ -54,15 +54,15 @@
    "useAsOriginalBaseline": false,
    "copyExistingModFeaturesAutomatically": false,
    "remakeMode": "xiyou",
-   "confirmedReleaseVersion": "v0.19",
+   "confirmedReleaseVersion": "v0.14",
    "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
    "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/20261014_Codex交叉复核/当前西游来源清单.json",
    "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。",
-   "lastConvertedContentReleaseVersion": "v0.19",
-   "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.19(help_cards)",
+   "lastConvertedContentReleaseVersion": "v0.14",
+   "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.14(help_cards)",
    "contentRefreshPending": false,
    "convertedScope": "floor1_slice",
-   "oracleReleaseVersion": "v0.19"
+   "oracleReleaseVersion": "v0.14"
   },
   {
    "id": "historical_xiyou_source_157",

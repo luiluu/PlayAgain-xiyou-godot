@@ -709,6 +709,7 @@ func _die(b: XBattler) -> void:
 	b.state_ids.append(DEATH_STATE)
 	for i in range(8):
 		b.buffs[i] = 0
+		b.buff_turns[i] = 0
 
 
 ## timing 1 = 行动结束，2 = 回合结束（MV autoRemovalTiming）
@@ -823,8 +824,11 @@ func grant(r: Dictionary) -> Array:
 
 
 func end_battle() -> void:
-	for b in actors:
+	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
+	for b in state.members():
 		b.guarding = false
+		b.buffs.fill(0)
+		b.buff_turns.fill(0)
 		# MV Game_Battler.onBattleEnd：clearTp（保留 TP 时不清）
 		if not b.traits_set(TRAIT_SPECIAL_FLAG).has(FLAG_PRESERVE_TP):
 			b.tp = 0.0

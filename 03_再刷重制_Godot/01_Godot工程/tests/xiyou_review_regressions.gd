@@ -101,6 +101,18 @@ func _run() -> void:
 			row.erase(field)
 	check("legacy_save_optional_fields", XSave.valid_data(legacy) and XState.from_dict(legacy).actor(1).tp == 0)
 	check("invalid_slot_rejected", not XSave.save(0) and not XSave.exists(31) and not XSave.load_slot(0))
+	# MV 清理生命周期：阵亡清掉增减益计时，战斗结束连后备成员的临时增减益也移除。
+	var all := XState.new_game(3, 1, [8, 9, 10, 2, 3, 4])
+	var battle := XBattleLogic.new()
+	battle.elite_roll = 100
+	battle.setup(2, all)
+	for member in all.members():
+		member.buffs[2] = 1
+		member.buff_turns[2] = 3
+	battle._die(all.actor(9))
+	check("death_clears_buff_timers", all.actor(9).buff_turns.all(func(n): return n == 0))
+	battle.end_battle()
+	check("battle_end_clears_bench_buffs", all.members().all(func(member): return member.buffs.all(func(n): return n == 0) and member.buff_turns.all(func(n): return n == 0)))
 	page.queue_free()
 	await get_tree().process_frame
 	for slot in [1, 2]:
