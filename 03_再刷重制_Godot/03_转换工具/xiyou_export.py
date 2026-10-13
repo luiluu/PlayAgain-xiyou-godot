@@ -7,6 +7,7 @@
   db/<表>.json     全部数据库表；每条记录附 meta（与 MV DataManager.extractMetadata 相同规则）
                    技能/物品附 formulaGd（翻译成 Godot Expression 的伤害公式，翻译不了为 null）
   maps/MapNNN.json 切片涉及的地图
+  db/MapPreview.json MapTransferPlugin 各配置地图的遇敌敌群 ID（地图传送页预览用；切片外地图不导出本体）
   img/…、audio/…   切片实际引用到的素材（原样复制）
   fonts/…          界面字体与授权文件（原样复制）
   manifest.json    输入/输出 SHA-256、未能处理项
@@ -20,7 +21,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 5
+TOOL_VERSION = 6
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -209,6 +210,7 @@ class Exporter:
         text = b.decode('utf-8')
         plugins = json.loads(text[text.index('['):text.rindex(']') + 1])
         enabled = {p['name']: p['parameters'] for p in plugins if p.get('status')}
+        self.plugins = enabled
         self.write_json('db/Plugins.json', enabled)
         self.write_json('db/EquipSuits.json', equipment_rules.suits(enabled))
         self.write_json('db/Runewords.json', equipment_rules.runewords(enabled))
@@ -353,9 +355,40 @@ class Exporter:
             self.img.add(rel)
         for rel in cfg.get('extraAudio', []):
             self.audio.add(rel)
+        self.collect_transfer_preview()
         self.slice_info = {'maps': cfg['maps'], 'actors': sorted(actors - event_actors), 'eventActors': sorted(event_actors), 'troops': self.slice_troops,
                            'enemies': sorted(enemies), 'skills': sorted(skills), 'animations': sorted(a for a in anims if a > 0),
-                           'commonEvents': sorted(seen)}
+                           'commonEvents': sorted(seen), 'transferPreviewEnemies': len(self.transfer_enemies)}
+
+    def collect_transfer_preview(self):
+        """MapTransferPlugin 的敌人预览：每张配置地图只取 encounterList 的敌群（地图本体不导出），
+        连同额外怪物的战斗图一起带上（sv_enemies，或 <Sideview Battler> 指定的 sv_actors）。"""
+        db = self.db
+        raw = self.plugins.get('MapTransferPlugin', {}).get('Map Settings') or '[]'
+        preview, enemies = {}, set()
+        for setting in (json.loads(x) for x in json.loads(raw)):
+            mid = int(setting['id'])
+            rel = f'data/Map{mid:03d}.json'
+            if not (self.app / rel).exists():
+                self.issues.append({'missingTransferMap': rel})
+                continue
+            troops = [int(e['troopId']) for e in self.read(rel).get('encounterList', [])]
+            preview[str(mid)] = troops
+            for tid in troops:
+                if 0 < tid < len(db['Troops']) and db['Troops'][tid]:
+                    enemies |= {m['enemyId'] for m in db['Troops'][tid]['members'] if m['enemyId'] > 0}
+            enemies |= {int(x) for x in (setting.get('extraEnemies') or '').split(',') if x.strip().isdigit()}
+        for eid in sorted(enemies):
+            e = db['Enemies'][eid] if 0 < eid < len(db['Enemies']) else None
+            if not e:
+                continue
+            side = e['meta'].get('Sideview Battler')
+            if side:
+                self.ref_img('sv_actors', side.strip())
+            else:
+                self.ref_img('sv_enemies', e['battlerName'])
+        self.write_json('db/MapPreview.json', preview)
+        self.transfer_enemies = sorted(enemies)
 
     def copy_assets(self):
         def find(base, rel, exts):
