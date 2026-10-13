@@ -188,15 +188,19 @@ func _run() -> void:
 		sh._ok()
 		await _frames(3)
 		await _shot("09_商店.png")
+		_check("shop_help_card_buy", sh.help_card.visible and str(sh.help_card.rows[0][0]) == "治疗药水(小)")
 		sh._buy_index = 2
 		sh._refresh()
 		await _frames(3)
 		await _shot("09b_商店_武器.png")
+		# 说明卡在列表窗口右侧，不盖住列表（原版参照 61：卡左边 ≈ 列表右边）
+		_check("shop_help_card_weapon", str(sh.help_card.rows[0][0]) == str(XDB.rec("Weapons", 1).name) and sh.help_card.position.x - 10 >= sh.list_win.position.x + sh.list_win.size.x, sh.help_card.position)
 		sh._buy_index = 0
 		sh._ok()
 		await _frames(3)
 		await _shot("09c_商店_数量.png")
 		_check("shop_number_window", sh._mode == "number" and sh._number == 1)
+		_check("shop_number_hides_help_card", not sh.help_card.visible)
 		var g0 := s.gold
 		var n0 := s.item_count(1)
 		sh._ok()

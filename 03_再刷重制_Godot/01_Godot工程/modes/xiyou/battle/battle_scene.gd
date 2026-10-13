@@ -3,12 +3,13 @@ extends Control
 ## 侧视战斗画面，照原版界面（用户 2026-10-12 要求「界面风格用原版界面风格」）：
 ## - 布局按 Olivia_SideBattleUI：我方站位 x = 宽/2+128+序号×64、y = 高-235-(5-序号-1)×48；
 ##   右侧每人一条状态（缩放 0.6：名字、HP/MP/TP 量条、左侧状态图标，轮到谁谁左移 48）；
-##   指令窗（宽 220、缩放 0.8）出现在行动角色身旁，技能/物品列表（宽 450）在其右下；顶部暗底说明栏。
+##   指令窗（宽 220、缩放 0.8）出现在行动角色身旁，技能/物品列表（宽 450）在其右下；
+##   选中技能/物品时在列表左侧显示 HelpExtend 说明卡（XHelpCard；原版没有顶部说明栏）。
 ## - 敌人在敌群编辑器坐标（原版 1280×720 原样使用），1 倍大小，神话 1.8 倍并偏色；
 ##   YEP_X_VisualHpGauge：敌人脚下 12px 粗血条（受伤或选目标时显示，带数值）。
 ## - 伤害数字照 LGP_BetterDamagePopup 文字弹出（XDamagePopup）。
 ## - Olivia_BattleSysOTB：行动顺序回合制，轮到谁谁当场选指令；画面下方是行动顺序条（XOTBBar），
-##   说明栏移到 y=92（OTB Help Window Y）；指令窗里有「逃跑」，没有队伍指令窗，取消不能回到上一人。
+##   指令窗里有「逃跑」，没有队伍指令窗，取消不能回到上一人。
 ## 规则在 XBattleLogic；结束时发出 finished(0 胜利 / 1 逃跑 / 2 战败)。
 
 signal finished(result: int)
@@ -24,7 +25,7 @@ const LIST_W := 450.0
 const LIST_MAX := 16
 const ENEMY_GAUGE_W := 180.0
 const OTB_POS := Vector2(58, 618)
-const OTB_HELP_Y := 92.0
+const LOG_Y := 92.0                # OTB Log Window Y
 const STATES_MAX := 4
 ## Codex_MiraRavenMultiFrame：旧式侧视角色（ID < 167）战斗中身体缩放 0.75、最近邻
 const ACTOR_SCALE := 0.75
@@ -41,8 +42,7 @@ var status_rows := {}             # XActor -> XSideStatus
 var field: Node2D
 var fx: Node2D
 var ui: Control
-var help_bar: Control
-var help_canvas: XMVCanvas
+var help_card: XHelpCard
 var log_canvas: XMVCanvas
 var _log_lines: Array = []        # [{text, simple}]
 var otb: XOTBBar
@@ -240,16 +240,10 @@ func _show_enemy_gauge(e: XBattler, seconds := 0.5) -> void:
 
 
 func _build_ui(vs: Vector2) -> void:
-	# 顶部说明栏（Olivia：Window_Help 不透明度 0、暗底；YEP 行动名也显示在顶部）
-	var help := XMVWindow.make(ui, Rect2(_origin + Vector2(0, OTB_HELP_Y), Vector2(1280, 100)), 0)
-	help.background_type = 1
-	help_bar = help
-	help_canvas = help.canvas
-	help_bar.visible = false
 	# 战斗日志 Window_BattleLog (0,92,1280,388)：每行底下一条黑色 64/255 的带子（x 0、宽 1280、行高 36），
 	# <SIMPLE> 行（YEP 行动名：图标＋名字）居中，其余靠左。
 	log_canvas = XMVCanvas.new()
-	log_canvas.position = _origin + Vector2(0, OTB_HELP_Y)
+	log_canvas.position = _origin + Vector2(0, LOG_Y)
 	log_canvas.size = Vector2(1280, 388)
 	log_canvas.clip_contents = false
 	log_canvas.painter = _paint_log
@@ -318,12 +312,23 @@ func _set_active(a: XActor) -> void:
 		status_rows[b].active = b == a
 
 
-func _help(text: String) -> void:
-	help_bar.visible = text != ""
-	var t := XMVText.new(XMVText.convert_escapes(text), 6, 0, help_canvas.size.x)
-	t.run()
-	help_canvas.painter = func(c): XMVText.paint(c, t.glyphs)
-	help_canvas.queue_redraw()
+## HelpExtend：Window_BattleSkill/BattleItem.updateHelp 让说明卡跟着选中行（列表左侧，见 XHelpCard.place_for_row）。
+func _help(entry = null) -> void:
+	if help_card == null:
+		help_card = XHelpCard.new()
+		# 原版说明卡是场景直属精灵，在窗口层（含 OTB 行动顺序条，z 8）之上
+		help_card.z_index = 10
+		ui.add_child(help_card)
+	if not (entry is Dictionary) or list_win == null or not is_instance_valid(list_win) or list_win.index < 0:
+		help_card.visible = false
+		return
+	help_card.show_for(entry)
+	ui.move_child(help_card, -1)
+	# 选中行：纵向取该行，横向取整个列表窗口（卡片外发光不压到窗口边框）
+	var row := Rect2(list_win.position - _origin + Vector2(0, list_win.padding + (list_win.index - list_win.top) * XBattleList.LH),
+		Vector2(list_win.size.x, XBattleList.LH))
+	help_card.place_for_row(row, true)
+	help_card.position += _origin
 
 
 func _banner(text: String) -> void:
@@ -454,7 +459,7 @@ func _close_windows() -> void:
 			w.queue_free()
 	cmd_win = null
 	list_win = null
-	_help("")
+	_help()
 	otb.clear_preview()
 
 
@@ -601,12 +606,13 @@ func _pick_from_list(a: XActor, entries: Array, items: bool, initial_index := 0)
 	list_win = XBattleList.create(ui, rows, LIST_W)
 	list_win.index_changed.connect(func(i):
 		if i >= 0 and i < entries.size():
-			_help(str(entries[i].get("description", "")))
+			_help(entries[i])
 			_preview(a, null if items else entries[i]))
 	list_win.chosen.connect(func(i): _picked.emit(entries[i]))
 	list_win.cancelled.connect(func(): _picked.emit("cancel"))
 	list_win.select(initial_index)
 	_place_near_actor(list_win, a, Vector2(16, 16))
+	_help(entries[list_win.index] if list_win.index >= 0 and list_win.index < entries.size() else null)
 	while true:
 		var r = await _picked
 		if r is Dictionary:
@@ -623,7 +629,7 @@ func _close_list() -> void:
 	if list_win and is_instance_valid(list_win):
 		list_win.queue_free()
 	list_win = null
-	_help("")
+	_help()
 
 
 ## 单体技能：点敌人（或我方）选目标；全体/自身直接返回占位目标。
@@ -638,7 +644,7 @@ func _pick_target(skill: Dictionary, a: XActor):
 	_target_pool = pool
 	if cmd_win and is_instance_valid(cmd_win):
 		cmd_win.visible = false
-	_help("")
+	_help()
 	_target_skill = skill
 	# YEP Enemy Auto Select = furthestRight；我方默认第一人。
 	var initial = pool[0]
@@ -653,7 +659,7 @@ func _pick_target(skill: Dictionary, a: XActor):
 	_target_skill = {}
 	_select_target(null)
 	otb.clear_preview()
-	_help("")
+	_help()
 	if cmd_win and is_instance_valid(cmd_win):
 		cmd_win.visible = true
 	if r is XBattler and pool.has(r):

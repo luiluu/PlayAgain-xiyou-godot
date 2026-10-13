@@ -40,6 +40,11 @@ const ELEMENT_COLORS := ["#c1c9d5", "#d5dce6", "#ff846b", "#9be4ff", "#d8ac74", 
 const BACK := Color8(0x16, 0x1c, 0x25)
 ## 优化 O-007：说明卡最小字号（原版描述 10、能力/价格 12、元素行 14，在 1280×720 上难以看清）。设 0 恢复原版。
 const MIN_FONT := 16
+## 优化 O-008：true 贴着选中行（place_near）；false 照原版位置公式（place_original）。
+const PLACE_NEAR := true
+## 技能书附卡之间的间距：原版 10（品质框外扩 10，相邻卡的框会叠在一起）；O-008 留出两边的框再加 4。
+const EXTRA_GAP_ORIGINAL := 10.0
+const EXTRA_GAP_NEAR := 24.0
 
 var rows: Array = []          # content() 的结果
 var quality := 0
@@ -47,6 +52,11 @@ var min_font := MIN_FONT
 var _lines: Array = []        # layout() 的结果：[{glyphs, y, h, line}]
 var canvas: XMVCanvas
 var frame: Control
+## RJO.HE.updateExtraHelpWindows：物品带「学会技能」效果（code 43）时，所学技能各一张附卡
+var extras: Array = []
+var _anchor := Rect2()            # place_near 的选中行（附卡避开它）
+## 品质框样式要一直引用到下一次重画：局部变量释放后皮肤贴图的 RID 失效，什么也画不出来
+var _frame_style: XWindowStyle
 
 
 # ======================================================================
@@ -640,10 +650,11 @@ func _init() -> void:
 	visible = false
 
 
-## 显示 obj 的说明卡（obj 为空时隐藏）
-func show_for(obj, kind := "") -> void:
+## 显示 obj 的说明卡（obj 为空时隐藏）；with_extras：技能书同时显示所学技能的附卡
+func show_for(obj, kind := "", with_extras := true) -> void:
 	if not (obj is Dictionary) or obj.is_empty():
 		visible = false
+		_set_extras({})
 		return
 	rows = content(obj, kind)
 	quality = _quality(obj)
@@ -657,11 +668,114 @@ func show_for(obj, kind := "") -> void:
 	visible = lay.height > PAD * 2
 	frame.queue_redraw()
 	canvas.queue_redraw()
+	_set_extras(obj if with_extras and visible else {})
 
 
-## 优化 O-008：贴着选中行放，不盖住选中行。side：left（战斗，列表左侧）、right、below（列表内，选中行下方/上方）。
-## anchor 为选中行在画布上的矩形；area 为可用范围（默认整个画面，四周留 12）。
-func place_near(anchor: Rect2, side := "right", area := Rect2(12, 12, 1256, 696)) -> void:
+func _set_extras(obj: Dictionary) -> void:
+	for c in extras:
+		remove_child(c)
+		c.queue_free()
+	extras = []
+	for ef in obj.get("effects", []):
+		if int(ef.get("code", 0)) != 43:
+			continue
+		var c := XHelpCard.new()
+		c.min_font = min_font
+		add_child(c)
+		c.show_for(XDB.rec("Skills", int(ef.get("dataId", 0))), "skill", false)
+		if c.visible:
+			extras.append(c)
+		else:
+			remove_child(c)
+			c.queue_free()
+	_layout_extras()
+
+
+## 附卡并排：主卡左边放得下就放左边，否则右边，再否则在主卡下方竖排（原版判断用整个画面，O-008 用留边后的范围）。
+func _layout_extras() -> void:
+	if extras.is_empty():
+		return
+	var gap := EXTRA_GAP_NEAR if PLACE_NEAR else EXTRA_GAP_ORIGINAL
+	var lo := 22.0 if PLACE_NEAR else 0.0
+	var hi := 1258.0 if PLACE_NEAR else 1280.0
+	var total := -gap
+	for c in extras:
+		total += c.size.x + gap
+	var x := 0.0
+	if position.x - gap - total >= lo:
+		x = -gap - total
+	elif position.x + size.x + gap + total <= hi:
+		x = size.x + gap
+	else:
+		var y := size.y + gap
+		for c in extras:
+			c.position = Vector2(0, y)
+			y += c.size.y + gap
+		return
+	for c in extras:
+		c.position = Vector2(x, 0)
+		x += c.size.x + gap
+	if not PLACE_NEAR or _anchor.size == Vector2.ZERO:
+		return
+	# O-008：附卡压到选中行时，整排挪到选中行下方或上方（都放不下时取压得少的一边，贴画面边）
+	var h := 0.0
+	var hit := false
+	for c in extras:
+		h = maxf(h, c.size.y)
+		hit = hit or Rect2(position + c.position, c.size).grow(10).intersects(_anchor)
+	if not hit:
+		return
+	var below := minf(_anchor.end.y + 14.0, 698.0 - h)
+	var above := maxf(_anchor.position.y - 14.0 - h, 22.0)
+	var cover_below := maxf(0.0, _anchor.end.y + 14.0 - below)
+	var cover_above := maxf(0.0, above + h + 14.0 - _anchor.position.y)
+	var top := below if cover_below <= cover_above else above
+	for c in extras:
+		c.position.y = top - position.y
+
+
+## 列表选中行变化时调用（Window_*.updateHelp）：anchor 为选中行在 1280×720 画布上的矩形（横向取整个列表窗口）；
+## battle：战斗中（卡在列表左侧）。
+func place_for_row(anchor: Rect2, battle := false) -> void:
+	if PLACE_NEAR:
+		place_near(anchor, "left" if battle else "right")
+	else:
+		place_original(anchor, battle)
+
+
+## 原版位置：Sprite_ItemHelp.updatePos（战斗：行左 −宽−80、行底 −4；其他：行右 −4、行底 −4；超出画面时贴边留 4），
+## 再经 setItem 的修正（x<900 右移 52，否则左移 10；y<220 下移 32；y>400 上移 100，仍>500 再上移 250；超出右/下边时留 30）。
+## 差别：原版 updatePos 用「窗口位置＋内容区里的行矩形」（不含内边距）且用上一张卡的高度，这里用选中行的画布矩形与本卡高度。
+func place_original(anchor: Rect2, battle := false) -> void:
+	var w := size.x
+	var h := size.y
+	var p := Vector2(anchor.position.x - w - 80, anchor.end.y - 4) if battle else Vector2(anchor.end.x - 4, anchor.end.y - 4)
+	if p.x < 0:
+		p.x = 4
+	if p.x + w > 1280:
+		p.x = 1280 - w - 4
+	if p.y + h > 720:
+		p.y = 720 - h - 4
+	p.x += 52 if p.x < 900 else -10
+	if p.y < 220:
+		p.y += 32
+	if p.y > 400:
+		p.y -= 100
+	if p.y > 500:
+		p.y -= 250
+	if p.x + w > 1280:
+		p.x = 1280 - w - 30
+	if p.y + h > 720:
+		p.y = 720 - h - 30
+	position = p.round()
+	_layout_extras()
+
+
+## 优化 O-008：贴着选中行放，不盖住选中行，选中行上下移动时卡片跟着平移而不跳动。
+## side：left（战斗，列表左侧）、right、below（列表内，选中行下方/上方）。
+## anchor 为选中行在画布上的矩形；area 为卡片本体的可用范围（默认整个画面去掉品质框外扩 10、再留 12）。
+func place_near(anchor: Rect2, side := "right", area := Rect2(22, 22, 1236, 676)) -> void:
+	_anchor = anchor
 	var w := size.x
 	var h := size.y
 	var p := Vector2.ZERO
@@ -682,17 +796,18 @@ func place_near(anchor: Rect2, side := "right", area := Rect2(12, 12, 1256, 696)
 	p.x = clampf(p.x, area.position.x, area.end.x - w)
 	p.y = clampf(p.y, area.position.y, area.end.y - h)
 	position = p.round()
+	_layout_extras()
 
 
 func _draw_frame() -> void:
 	# ItemQuality：四层 Window{品质} 窗口（不透明度、背景都是 60），覆盖卡外 10px
 	var skin_path := XDB.img_path("system", "Window%d" % quality)
-	var style := XUI.panel(60)
+	_frame_style = XUI.panel(60)
 	if skin_path != "":
-		style.skin = load(skin_path)
-	style.back_opacity = 60.0 / 255.0
+		_frame_style.skin = load(skin_path)
+	_frame_style.back_opacity = 60.0 / 255.0
 	for i in range(4):
-		frame.draw_style_box(style, Rect2(Vector2.ZERO, frame.size))
+		frame.draw_style_box(_frame_style, Rect2(Vector2.ZERO, frame.size))
 
 
 func _paint(c: XMVCanvas) -> void:

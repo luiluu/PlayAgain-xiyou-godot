@@ -104,6 +104,11 @@ func _run() -> void:
 	_check("skill_list_open", lw != null)
 	if lw:
 		_check("skill_list_rect", lw.position.x == 830.0 and lw.size == Vector2(450, 29 * lw.rows + 22), [lw.position, lw.size, lw.rows])
+		# HelpExtend 说明卡：选中技能的卡在列表左侧，不盖住列表（原版参照 41：卡右边 ≈ 列表左边 −28）
+		var hc: XHelpCard = b.help_card
+		_check("skill_help_card", hc != null and hc.visible and hc.rows.size() > 0 and str(hc.rows[0][0]) == str(lw.entries[lw.index].text), null if hc == null else hc.rows.slice(0, 1))
+		if hc:
+			_check("skill_help_card_left_of_list", hc.position.x + hc.size.x + 10 <= lw.position.x and hc.position.y >= 0 and hc.position.y + hc.size.y <= 720, [hc.position, hc.size])
 	await _shot("battle_41_skill")
 	await _press("ui_cancel")
 	await _frames(3)
@@ -115,7 +120,7 @@ func _run() -> void:
 	var target: XEnemy = b._hover
 	_check("target_defaults_to_rightmost", target != null and b.sprites[target].home.x == 353)
 	_check("only_selected_cursor", b.sprites.values().filter(func(v): return v.selected).size() == 1 and b.sprites[target].cursor != null)
-	_check("target_has_no_extra_help_button", not b.help_bar.visible)
+	_check("target_hides_help_card", b.help_card == null or not b.help_card.visible)
 	_check("auto_controls_clear_of_otb", b.auto_btn.get_global_rect().end.y < b.otb.position.y)
 	await _shot("battle_42_target")
 	await _press("ui_left")

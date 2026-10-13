@@ -8,7 +8,8 @@ extends Control
 ## - 列表 (0,173,768,547)：购买列表、出售列表、数量窗共用此位置；指令阶段是空窗。
 ## - 状态 (768,173,512,483)：持有数；装备显示「<< 队员 >>」与 8 项能力增减（本 MOD 右移 220，左边留给物品说明卡）。
 ## - 金钱 (768,656,512,64)。
-## 尚未复现：一键出售（Star_ShopOnekey）、HelpExtend 物品说明卡、新物品「NEW」标记，见 界面风格.md。
+## - HelpExtend 说明卡（XHelpCard）：购买/出售列表选中行旁；数量窗、分类、指令阶段隐藏（原版 onBuyOk/onSellOk 时 clear）。
+## 尚未复现：一键出售（Star_ShopOnekey）、新物品「NEW」标记，见 界面风格.md。
 
 signal closed
 
@@ -41,6 +42,7 @@ var info_win: XMVWindow
 var list_win: XMVWindow
 var status_win: XMVWindow
 var gold_win: XMVWindow
+var help_card: XHelpCard
 
 
 func setup(g: Array, only: bool) -> void:
@@ -61,6 +63,8 @@ func _ready() -> void:
 	gold_win = XMVWindow.make(self, GOLD_RECT, op, _paint_gold)
 	for w in [cmd_win, list_win]:
 		w.canvas.blink = true
+	help_card = XHelpCard.new()
+	add_child(help_card)
 	_refresh()
 
 
@@ -73,6 +77,23 @@ func _refresh() -> void:
 	list_win.up_arrow = _mode == "sell" and _sell_top > 0
 	for w in [cmd_win, info_win, list_win, status_win, gold_win]:
 		w.refresh()
+	_update_help()
+
+
+## Window_ShopBuy / Window_ShopSell.updateHelp：说明卡跟着选中行（横向取整个列表窗口）
+func _update_help() -> void:
+	if help_card == null:
+		return
+	var row := -1
+	match _mode:
+		"buy":
+			row = _buy_index
+		"sell":
+			row = _sell_index - _sell_top
+	var rec := _current_rec() if row >= 0 else {}
+	help_card.show_for(rec)
+	if help_card.visible:
+		help_card.place_for_row(Rect2(list_win.position + Vector2(0, list_win.padding + row * LH), Vector2(list_win.size.x, LH)))
 
 
 static func table_of(kind: int) -> String:

@@ -113,6 +113,17 @@ func _run() -> void:
 	_check("place_left", card.position.x + card.size.x <= 900 - 10 and card.position.y >= 12 and card.position.y + card.size.y <= 708, card.position)
 	card.place_near(Rect2(40, 300, 300, 36), "left")
 	_check("place_left_flips", card.position.x >= 340 + 10, card.position)
+	# 技能书（学会技能效果 code 43）：所学技能附卡，主卡左边放得下放左边，否则右边，互不重叠
+	card.show_for(XDB.rec("Items", 15))
+	var skill_name := str(XDB.rec("Skills", 125).name)
+	_check("skill_book_extra", card.extras.size() == 1 and str(card.extras[0].rows[0][0]) == skill_name, card.extras.map(func(c): return c.rows[0][0]))
+	card.place_near(Rect2(0, 187, 768, 36), "right")   # 商店列表第一行
+	if card.extras.size() == 1:
+		var ex: XHelpCard = card.extras[0]
+		_check("skill_book_extra_side", ex.position.x >= card.size.x + 20 or ex.position.x + ex.size.x + 20 <= 0, [card.position, ex.position])
+		_check("skill_book_extra_clear_of_row", not Rect2(card.position + ex.position, ex.size).grow(10).intersects(Rect2(0, 187, 768, 36)), [card.position, ex.position])
+	card.show_for(XDB.rec("Items", 1))
+	_check("plain_item_no_extra", card.extras.is_empty())
 	await get_tree().process_frame
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
