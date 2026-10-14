@@ -1,5 +1,5 @@
 {
- "review": "历史20组变更已由Codex交叉复核；当前v0.15来源实测同源，本轮整合修复仍待Claude核查",
+ "review": "v0.16 来源由 Claude 同步实测同源，待 Codex 核查",
  "updatedDate": "2026-10-14",
  "sources": [
   {
@@ -54,15 +54,15 @@
    "useAsOriginalBaseline": false,
    "copyExistingModFeaturesAutomatically": false,
    "remakeMode": "xiyou",
-   "confirmedReleaseVersion": "v0.15",
+   "confirmedReleaseVersion": "v0.16",
    "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
-   "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/dev.019_整合/当前西游来源清单.json",
-   "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。2026-10-14 西游 MOD 重编号：旧 v0.14～v0.19 合为新 v0.14（内容同旧 v0.19，只改 package.json），新 v0.14、v0.15 都晚于旧 v0.13。",
-   "lastConvertedContentReleaseVersion": "v0.15",
-   "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.15(help_cards,difficulty_notice)",
+   "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/claude_v016同步/当前西游来源清单.json",
+   "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。2026-10-14 西游 MOD 重编号：旧 v0.14～v0.19 合为新 v0.14（内容同旧 v0.19，只改 package.json），新 v0.14、v0.15 都晚于旧 v0.13。 v0.16（2026-10-14 06:03）只改技能消耗百分比下限与大厅改版向导文字，参照测量与 v0.15 相同。",
+   "lastConvertedContentReleaseVersion": "v0.16",
+   "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.15(help_cards,difficulty_notice),v0.16(options,hangup_options)",
    "contentRefreshPending": false,
    "convertedScope": "floor1_slice",
-   "oracleReleaseVersion": "v0.15"
+   "oracleReleaseVersion": "v0.16"
   },
   {
    "id": "historical_xiyou_source_157",
