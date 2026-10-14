@@ -3,7 +3,7 @@
 // 记录可观察的输出（文字/选项/数值输入/场所移动/战斗/商店/场景/存档/输入名字/提示/预约公共事件）与运行前后的状态变化，
 // 供 Godot 的 MVInterpreter 以同样的初始状态和同样的应答逐项对照（tests/xiyou_event_compare）。
 // - 每个用例从同一内存新游戏开始：setupNewGame、难度 3、队伍 1/8/10/9、所在地图为事件所在地图（公共事件用大厅 4），玩家在事件的位置。
-// - 随机数固定 0.5（Math.random），Godot 侧用 MVInterpreter.fixed_random 对应。
+// - 随机数固定 0.5（Math.random）；每例游戏时间从 0 起（Graphics.frameCount），Godot 侧用 MVInterpreter.fixed_random 对应。
 // - 应答：选项取默认项（无默认取 0；同一组选项第 4 次出现起取最后一项，避免「更早的更新」之类的循环），数值输入 0，prompt 输入「测试」，战斗记为胜利（不进战斗），商店/菜单/名字等场景只记录不打开。
 // - 只跑该页指令：不看出现条件；地图自己的自动/并行事件、并行公共事件都不运行；动画/气泡/集合等等待直接结束。
 // - 不加载配置或任何存档；存档调用只记录（不写文件）。输出只写 .sandbox/events.json；验收后复制到 generated/oracle/。
@@ -138,7 +138,7 @@ function delta(a, b) {
 
 // ---- 运行一个用例 ----
 function runCase(c) {
-  w.eval('ConfigManager.applyData({}); DataManager.setupNewGame(); $gamePlayer.clearTransferInfo(); Math.random = function() { return 0.5; };');
+  w.eval('ConfigManager.applyData({}); DataManager.setupNewGame(); $gamePlayer.clearTransferInfo(); Math.random = function() { return 0.5; }; Graphics.frameCount = 0;');
   w.$gameSystem._difficultyId = DIFFICULTY;
   for (const id of PARTY) w.$gameParty.addActor(id);
   w.DataManager.loadMapData(c.map);

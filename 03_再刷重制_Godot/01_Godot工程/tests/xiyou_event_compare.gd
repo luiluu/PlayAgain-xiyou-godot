@@ -22,6 +22,8 @@ var only: Array = []
 class FakePlayer:
 	extends RefCounted
 	var transparent := false
+	var direction := 2
+	var grid := Vector2i.ZERO
 	func queue_redraw() -> void:
 		pass
 
@@ -91,14 +93,26 @@ class EventHost:
 	func refresh_events() -> void:
 		pass
 
-	func character(_id: int, _this_event: int):
+	## Game_Interpreter.character：-1 为玩家（朝向同 XState，新游戏朝下）；事件不在替身里
+	func character(id: int, _this_event: int):
+		if id == -1:
+			player.direction = XState.current.direction
+			player.grid = Vector2i(XState.current.x, XState.current.y)
+			return player
 		return null
 
 	func show_animation(_ch, _anim_id: int):
 		return null
 
+	## MV command221/222：淡出/淡入并等待 fadeSpeed（24 帧）
 	func fade(_out: bool) -> void:
-		pass
+		for i in range(24):
+			await get_tree().process_frame
+
+	## 游戏时间按帧走（同参照引擎每帧 Graphics.frameCount +1，playtime = 帧数/60 取整）
+	func _process(_delta: float) -> void:
+		if XState.current:
+			XState.current.play_seconds += 1.0 / 60.0
 
 	func play_bgm(_a) -> void:
 		pass

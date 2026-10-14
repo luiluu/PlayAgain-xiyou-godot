@@ -43,6 +43,9 @@ var unlocked_maps := {}
 var hang_up := {}
 var hang_up_total := 0
 var encounter_enabled := true      # Game_System._encounterEnabled（指令 136）
+## YEP_CoreEngine 的 $gameParty.ActorMaxLevel：全体角色的等级上限（每次换场景写回 $dataActors[i].maxLevel，
+## 所以角色数据库与备注里的上限都被它取代）。初值为插件参数 Max Level（西游 10），插件指令 maxlevel add/equal 改它。
+var actor_max_level := 0
 var followers_visible := true      # Game_Followers._visible（初值 System optFollowers；指令 216、设置「队列跟随」）
 var pingbi_quality: Array = []      # 屏蔽掉落：旧档 0～7 是否屏蔽（$gameSystem._pingbiQuality）
 var hang_up_active := false
@@ -77,6 +80,16 @@ static func new_game_blank() -> XState:
 	XSave.current_slot = 0
 	current = s
 	return s
+
+
+static func default_max_level() -> int:
+	var v := str(XDB.plugin("YEP_CoreEngine").get("Max Level", "99"))
+	return int(v) if v.is_valid_int() else 99
+
+
+## 当前等级上限（未设置时为插件参数）
+func max_level() -> int:
+	return actor_max_level if actor_max_level > 0 else default_max_level()
 
 
 func actor(id: int) -> XActor:
@@ -298,7 +311,7 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "encounterEnabled": encounter_enabled}
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -365,6 +378,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.pingbi_quality = Array(d.get("pingbiQuality", [])).map(func(v): return bool(v))
 	s.followers_visible = bool(d.get("followersVisible", XDB.system().get("optFollowers", false)))
 	s.encounter_enabled = bool(d.get("encounterEnabled", true))
+	# dev.032 以前的存档没有这一项：按初值（原版开局就是插件参数）
+	s.actor_max_level = int(d.get("actorMaxLevel", default_max_level()))
 	if d.has("unlockedMaps"):
 		for k in d.unlockedMaps:
 			s.unlocked_maps[int(k)] = true

@@ -100,14 +100,15 @@ static func _statements(js: String, interp) -> Array:
 	return unknown
 
 
-## $.toaster({ message : '…' })：字面文字；'获得了：'+$dataItems[$gameVariables.value(N)].name+'！' 这种拼接也认
+## $.toaster({ message : '…' })：字面文字与下列部分用 + 拼接（引号里的 + 不算）：
+## $dataItems[$gameVariables.value(N)].name、$gameVariables.value(N)（JS 数字写法）
 static func _toaster_text(js: String) -> String:
 	var m := RegEx.create_from_string("\\$\\.toaster\\(\\s*\\{\\s*message\\s*:\\s*(.*?)\\s*\\}\\s*\\)").search(js)
 	if m == null:
 		return ""
 	var out := ""
-	for part in m.get_string(1).split("+"):
-		var p := part.strip_edges()
+	for part in _concat_parts(m.get_string(1)):
+		var p := str(part).strip_edges()
 		var lit := RegEx.create_from_string("^['\"](.*)['\"]$").search(p)
 		if lit:
 			out += lit.get_string(1)
@@ -116,8 +117,81 @@ static func _toaster_text(js: String) -> String:
 		if item:
 			out += str(XDB.rec("Items", int(XState.current.variable(int(item.get_string(1))))).get("name", ""))
 			continue
+		var v := RegEx.create_from_string("^\\$gameVariables\\.value\\((\\d+)\\)$").search(p)
+		if v:
+			out += js_number(XState.current.variable(int(v.get_string(1))))
+			continue
 		return ""
 	return out
+
+
+## 按引号外的 + 切开字符串拼接表达式
+static func _concat_parts(expr: String) -> Array:
+	var parts := []
+	var cur := ""
+	var quote := ""
+	for ch in expr:
+		if quote != "":
+			cur += ch
+			if ch == quote:
+				quote = ""
+		elif ch == "'" or ch == "\"":
+			quote = ch
+			cur += ch
+		elif ch == "+":
+			parts.append(cur)
+			cur = ""
+		else:
+			cur += ch
+	parts.append(cur)
+	return parts
+
+
+## JS 数字转字符串（整数不带小数点）
+static func js_number(v: float) -> String:
+	return "%d" % int(v) if v == floorf(v) and absf(v) < 9.0e18 else str(v)
+
+
+## 只认白名单的简单 JS 表达式（事件条件 111 脚本、变量操作数 122 脚本）：数字、+ - * / ( )、比较、&& || !，
+## 以及 $gameVariables.value(N)、$gameSwitches.value(N)、$gameSystem.playtime()、$gameParty.gold()/steps()/size()、
+## $gameMap.mapId()、$gameParty.numItems($dataItems[N])、Math.floor/ceil/max/min/abs。认不出返回 null（调用方记进 skipped）。
+static func eval_expr(js: String) -> Variant:
+	var e := js.strip_edges()
+	while e.ends_with(";"):
+		e = e.left(-1).strip_edges()
+	if e == "" or e.contains("%") or e.contains("=>") or e.contains("\"") or e.contains("'"):
+		return null
+	var subs := [["$gameVariables.value(", "v("], ["$gameSwitches.value(", "sw("], ["$gameSystem.playtime()", "playtime()"],
+		["$gameParty.gold()", "gold()"], ["$gameParty.steps()", "steps()"], ["$gameParty.size()", "party_size()"],
+		["$gameMap.mapId()", "map_id()"], ["$gameMap._mapId", "map_id()"], ["Math.floor(", "floor("], ["Math.ceil(", "ceil("],
+		["Math.max(", "max("], ["Math.min(", "min("], ["Math.abs(", "abs("], ["===", "=="], ["!==", "!="], ["&&", " and "], ["||", " or "]]
+	for s in subs:
+		e = e.replace(s[0], s[1])
+	e = RegEx.create_from_string("\\$gameParty\\.numItems\\(\\$dataItems\\[(\\d+)\\]\\)").sub(e, "items($1)", true)
+	e = RegEx.create_from_string("!(?!=)").sub(e, " not ", true)
+	var allowed := ["v", "sw", "playtime", "gold", "steps", "party_size", "map_id", "items", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
+	for w in RegEx.create_from_string("[A-Za-z_$][A-Za-z_0-9$.]*").search_all(e):
+		if not allowed.has(w.get_string()):
+			return null
+	# JS 除法是浮点：整数字面量一律写成浮点
+	e = RegEx.create_from_string("(?<![\\d.])(\\d+)(?![\\d.])").sub(e, "$1.0", true)
+	var ex := Expression.new()
+	if ex.parse(e) != OK:
+		return null
+	var r = ex.execute([], ExprEnv.new(), false)
+	return null if ex.has_execute_failed() else r
+
+
+class ExprEnv:
+	extends RefCounted
+	func v(id: float) -> float: return XState.current.variable(int(id))
+	func sw(id: float) -> bool: return XState.current.switch(int(id))
+	func playtime() -> float: return floorf(XState.current.play_seconds)
+	func gold() -> float: return float(XState.current.gold)
+	func steps() -> float: return float(XState.current.steps)
+	func party_size() -> float: return float(XState.current.members().size())
+	func map_id() -> float: return float(XState.current.map_id)
+	func items(id: float) -> float: return float(XState.current.item_count(int(id)))
 
 
 ## 「所有角色学会/忘记技能」的几种循环写法 → actor_op 列表；认不出返回空

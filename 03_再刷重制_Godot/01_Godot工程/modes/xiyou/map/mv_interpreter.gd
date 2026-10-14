@@ -15,6 +15,11 @@ var index := 0
 var _branch := {}
 var _depth := 0
 var skipped: Array = []        # [{code, text}]
+## $gameMessage 里还没显示的文字（升级提示等由指令直接 add 的）：到下一个会等待的指令或事件结束时一起显示，
+## 同 MV 消息窗在解释器下一次等待时才出现（等级提升各人之间以 \f 分页）
+var pending_lines: Array = []
+## 会让 MV 解释器等待（或在消息忙时停住）的指令：执行前先显示待显示的文字
+const FLUSH_BEFORE := [101, 102, 103, 104, 201, 205, 212, 213, 217, 221, 222, 230, 301, 302, 303, 353, 354]
 static var skip_common_events := [714, 1386, 1435]   # 难度修复、战斗背景、轮回模式：首期无对应系统
 ## 对照工具用：全部解释器（含公共事件子解释器）合计最多执行的指令数，0 为不限；超过就停止并置 aborted
 static var max_steps := 0
@@ -52,11 +57,29 @@ func run() -> void:
 				aborted = true
 				break
 		var c: Dictionary = list[index]
+		if not pending_lines.is_empty() and FLUSH_BEFORE.has(int(c.code)):
+			await flush_message()
 		var go = await _execute(c)
 		if go == false:
 			break
 		index += 1
+	if _depth == 0:
+		await flush_message()
 	finished.emit()
+
+
+## Game_Message.newPage：已有文字时给最后一行加 \f
+func new_page() -> void:
+	if not pending_lines.is_empty():
+		pending_lines[pending_lines.size() - 1] = str(pending_lines[-1]) + "\f"
+
+
+func flush_message() -> void:
+	if pending_lines.is_empty():
+		return
+	var lines := pending_lines.duplicate()
+	pending_lines.clear()
+	await host.show_message({"face": "", "index": 0, "background": 0, "position": 2, "lines": lines})
 
 
 ## YEP_X_ExtMesPack1 setupExtendedChoices：同一缩进上一组选项结束（404）后紧跟另一组「显示选项」时并成一个窗口，
@@ -182,6 +205,7 @@ func _execute(c: Dictionary):
 				var ce := XDB.rec("CommonEvents", ce_id)
 				if not ce.is_empty() and _depth < 30:
 					var sub := MVInterpreter.new(host, map_id, event_id, ce.list, _depth + 1)
+					sub.pending_lines = pending_lines
 					await sub.run()
 					skipped.append_array(sub.skipped)
 		121:
@@ -305,6 +329,23 @@ func _execute(c: Dictionary):
 				else:
 					a.forget_skill(int(p[3]))
 				a.refresh_passive()
+		316:
+			# 增减等级 [指定方式, 角色/变量, 0 增 1 减, 操作数类型, 操作数, 显示升级]；角色 0 为全队（iterateActorEx）
+			var value := _operand(int(p[3]), int(p[4]))
+			if int(p[2]) == 1:
+				value = -value
+			for a in _actors_ex(int(p[0]), int(p[1])):
+				var before: int = a.level
+				var learned: Array = a.change_level_mv(a.level + value)
+				if bool(p[5]) and a.level > before:
+					_display_level_up(a, learned)
+		313:
+			# 更改状态 [指定方式, 角色/变量, 0 附加 1 解除, 状态]
+			for a in _actors_ex(int(p[0]), int(p[1])):
+				if int(p[2]) == 0:
+					a.add_state(int(p[3]))
+				else:
+					a.remove_state(int(p[3]))
 		354:
 			host.return_to_title()
 			return false
@@ -350,10 +391,38 @@ func _plugin_command(line: String) -> void:
 		"GhostButtons":
 			state().flags["GhostButtons"] = args[1] if args.size() > 1 else ""
 			return
+		"maxlevel", "MaxLevel", "MAXLEVEL":
+			# YEP_CoreEngine：maxlevel add N（在当前上限上加）/ maxlevel equal N
+			if args.size() > 2 and str(args[2]).is_valid_int():
+				var s := state()
+				if str(args[1]).to_lower() == "add":
+					s.actor_max_level = s.max_level() + int(args[2])
+					return
+				if str(args[1]).to_lower() == "equal":
+					s.actor_max_level = int(args[2])
+					return
 		"ProhibitHangUp", "EnableHangUp":
 			state().flags["HangUpProhibited"] = args[0] == "ProhibitHangUp"
 			return
 	skipped.append({"code": 356, "text": line.left(80)})
+
+
+## Game_Interpreter.iterateActorEx：0 指定（ID 0 为全队）、1 按变量
+func _actors_ex(kind: int, param: int) -> Array:
+	var s := state()
+	var id := param if kind == 0 else int(s.variable(param))
+	if id == 0:
+		return s.members()
+	return [s.actor(id)] if not XDB.rec("Actors", id).is_empty() else []
+
+
+## Game_Actor.displayLevelUp：新的一页写「%1升到了 %2 %3！」，再逐个「学会了%1！」
+func _display_level_up(a: XActor, learned: Array) -> void:
+	var terms: Dictionary = XDB.system().terms
+	new_page()
+	pending_lines.append(str(terms.messages.levelUp).replace("%1", a.display_name()).replace("%2", str(terms.basic[0])).replace("%3", str(a.level)))
+	for id in learned:
+		pending_lines.append(str(terms.messages.obtainSkill).replace("%1", str(XDB.rec("Skills", int(id)).get("name", ""))))
 
 
 ## MOG_TreasurePopup：数量为正、本事件（按 ID）在当前地图上时浮出获得提示
@@ -366,12 +435,65 @@ func _operand(type: int, value: int) -> int:
 	return int(state().variable(value)) if type != 0 else value
 
 
+## Game_Interpreter.gameDataOperand（变量操作数「游戏数据」）；战斗中的敌人等首期没有的项目返回 null
+func _game_data(type: int, p1: int, p2: int):
+	var s := state()
+	match type:
+		0: return s.item_count(p1)
+		1: return s.gear_count("weapon", p1)
+		2: return s.gear_count("armor", p1)
+		3:
+			if XDB.rec("Actors", p1).is_empty():
+				return 0
+			var a := s.actor(p1)
+			match p2:
+				0: return a.level
+				1: return a.exp_total
+				2: return a.hp
+				3: return a.mp
+			if p2 >= 4 and p2 <= 11:
+				return a.param(p2 - 4)
+			return 0
+		5:
+			var ch = host.character(p1, event_id)
+			if ch == null:
+				return null
+			match p2:
+				0: return ch.grid.x
+				1: return ch.grid.y
+				2: return ch.direction
+			return null
+		6:
+			var m := s.members()
+			return m[p1].actor_id if p1 >= 0 and p1 < m.size() else 0
+		7:
+			match p1:
+				0: return s.map_id
+				1: return s.members().size()
+				2: return s.gold
+				3: return s.steps
+				4: return floori(s.play_seconds)
+	return null
+
+
 func _set_variables(p: Array) -> void:
 	var value := 0.0
 	match int(p[3]):
 		0: value = float(p[4])
 		1: value = state().variable(int(p[4]))
 		2: value = random_int(int(p[4]), int(p[5]))
+		3:
+			var gd = _game_data(int(p[4]), int(p[5]), int(p[6]))
+			if gd == null:
+				skipped.append({"code": 122, "text": "游戏数据 %d,%d,%d" % [int(p[4]), int(p[5]), int(p[6])]})
+				return
+			value = float(gd)
+		4:
+			var r = MVScript.eval_expr(str(p[4]))
+			if r == null or not (r is float or r is int or r is bool):
+				skipped.append({"code": 122, "text": "脚本 " + str(p[4]).left(60)})
+				return
+			value = float(r)
 		_:
 			skipped.append({"code": 122, "text": "变量操作数类型 %d" % int(p[3])})
 			return
@@ -414,11 +536,18 @@ func _condition(p: Array) -> bool:
 				2: return s.gold < g
 		8:
 			return s.item_count(int(p[1])) > 0
+		6:
+			# 角色朝向 [6, 角色, 方向]
+			var ch = host.character(int(p[1]), event_id)
+			return ch != null and int(ch.direction) == int(p[2])
 		12:
-			# 脚本条件：首期已知的几条按语义处理，其余视为 false
+			# 脚本条件：白名单表达式（MVScript.eval_expr）；挂机相关写法与认不出的视为 false
 			var code := str(p[1])
 			if code.contains("hangUp"):
 				return false
+			var r = MVScript.eval_expr(code)
+			if r != null:
+				return bool(r)
 			skipped.append({"code": 111, "text": "脚本条件 " + code.left(60)})
 			return false
 		13:

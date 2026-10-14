@@ -146,11 +146,37 @@ func exp_for_level(lv: int) -> int:
 	var acc_b := float(p[3])
 	return int(roundf(basis * pow(lv - 1, 0.9 + acc_a / 250.0) * lv * (lv + 1) / (6.0 + pow(lv, 2) / 50.0 / acc_b) + (lv - 1) * extra))
 
+## YEP_CoreEngine：每次换场景把 $dataActors[i].maxLevel 写成 $gameParty.ActorMaxLevel，实际上限就是队伍的那一个（XState.max_level）
 func max_level() -> int:
-	return int(data().get("maxLevel", 99))
+	return XState.current.max_level() if XState.current else int(data().get("maxLevel", 99))
 
+## Game_Actor.levelUp：等级 +1，学会该等级的职业技能；PKD_SimpleSkillsTree 给备注 pSkillPointsVarId 指定的变量加技能点（每级 1）
+func _level_up() -> void:
+	_lv += 1
+	for l in class_data().get("learnings", []):
+		if int(l.level) == _lv:
+			learn_skill(int(l.skillId))
+	var var_id := str(data().get("meta", {}).get("pSkillPointsVarId", "")).strip_edges()
+	if var_id.is_valid_int() and int(var_id) > 0 and XState.current:
+		var points := str(XDB.plugin("PKD_SimpleSkillsTree").get("skillPointsPerLevelUpGain:i", "1"))
+		XState.current.set_variable(int(var_id), XState.current.variable(int(var_id)) + (int(points) if points.is_valid_int() else 1))
+
+## Game_Actor.changeLevel（事件「增减等级」316）：夹在 1～上限，按 changeExp 逐级升降（降级不忘技能、不扣技能点），
+## 返回新学会的技能 ID（displayLevelUp 用）
+func change_level_mv(lv: int) -> Array:
+	var before := skill_ids.duplicate()
+	lv = clampi(lv, 1, max_level())
+	exp_total = exp_for_level(lv)
+	while _lv < lv:
+		_level_up()
+	while _lv > lv:
+		_lv -= 1
+	refresh_passive()
+	return skill_ids.filter(func(id): return not before.has(id))
+
+## 直接设定等级（读档、测试夹具用）：只按数据库上限夹，不看队伍上限，不加技能点
 func change_level(lv: int) -> void:
-	_lv = clampi(lv, 1, max_level())
+	_lv = clampi(lv, 1, int(data().get("maxLevel", 99)))
 	exp_total = exp_for_level(_lv)
 	for l in class_data().get("learnings", []):
 		if int(l.level) <= _lv:
@@ -165,10 +191,7 @@ func gain_exp(amount: int, rate := 1.0) -> int:
 		return 0
 	exp_total += int(roundf(amount * exr * rate))
 	while _lv < max_level() and exp_total >= exp_for_level(_lv + 1):
-		_lv += 1
-		for l in class_data().get("learnings", []):
-			if int(l.level) == _lv:
-				learn_skill(int(l.skillId))
+		_level_up()
 	if _lv != before:
 		refresh_passive()
 	return _lv - before
