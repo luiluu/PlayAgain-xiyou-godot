@@ -101,8 +101,10 @@ func _ready() -> void:
 	add_child(ui)
 	_build_ui(vs)
 	bgm = AudioStreamPlayer.new()
+	XAudio.bind(bgm, "BGM")
 	add_child(bgm)
 	se = AudioStreamPlayer.new()
+	XAudio.bind(se, "SE")
 	add_child(se)
 	var music: Dictionary = XDB.system().battleBgm
 	var p := XDB.audio_path("bgm", str(music.name))
@@ -540,7 +542,7 @@ func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> voi
 
 func _command_for(a: XActor):
 	var opts := _command_entries(a)
-	var last_index := 0
+	var last_index := initial_command_index(a, opts)
 	while true:
 		_close_windows()
 		cmd_win = XBattleList.create(ui, opts, CMD_W, "center")
@@ -553,6 +555,8 @@ func _command_for(a: XActor):
 		last_index = cmd_win.index if cmd_win else 0
 		if pick is String and pick == "auto":
 			return "auto"
+		if pick is String and pick not in ["back", "cancel"]:
+			a.last_command = pick if XConfig.flag("commandRemember") else ""
 		if pick is String and pick.begins_with("stype:"):
 			cmd_win.active = false
 			var action = await _pick_action_list(a, logic.battle_skills(a).filter(func(x): return int(x.stypeId) == int(pick.substr(6))), false)
@@ -587,16 +591,40 @@ func _command_for(a: XActor):
 
 ## 目标取消后返回刚才的技能/物品列表；再次取消才回指令（MV onEnemyCancel/onActorCancel）。
 func _pick_action_list(a: XActor, entries: Array, items: bool):
-	var index := 0
+	var index := initial_action_index(a, entries, items)
 	while not logic.auto:
 		var entry = await _pick_from_list(a, entries, items, index)
 		if not entry is Dictionary or logic.auto:
 			return null
 		index = entries.find(entry)
+		# Scene_Battle.onSkillOk/onItemOk：先记选择，再选目标；取消目标也保留。
+		if items:
+			logic.state.last_item = int(entry.id)
+		else:
+			a.last_battle_skill = int(entry.id)
 		var target = await _pick_target(entry, a)
 		if target != null:
 			return [entry, target]
 	return null
+
+
+func initial_command_index(a: XActor, entries: Array) -> int:
+	if not XConfig.flag("commandRemember"):
+		return 0
+	var key := a.last_command
+	if key.begins_with("stype:"):
+		var skill := XDB.rec("Skills", a.last_battle_skill)
+		if not skill.is_empty():
+			key = "stype:%d" % int(skill.stypeId)
+	var i := entries.find_custom(func(e): return str(e.key) == key)
+	if i < 0 and a.last_command.begins_with("stype:"):
+		i = entries.find_custom(func(e): return str(e.key).begins_with("stype:"))
+	return maxi(0, i)
+
+
+func initial_action_index(a: XActor, entries: Array, items: bool) -> int:
+	var id := logic.state.last_item if items else a.last_battle_skill
+	return maxi(0, entries.find_custom(func(e): return int(e.id) == id))
 
 
 ## 技能/物品列表的一行：技能右侧照 YEP 消耗（TP 图标 1268 色 29、MP 图标 1269 色 23，字号 20）；

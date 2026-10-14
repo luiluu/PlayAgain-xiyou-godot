@@ -34,6 +34,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_origin = (get_viewport_rect().size - Vector2(1280, 720)) / 2
 	_sound = AudioStreamPlayer.new()
+	XAudio.bind(_sound, "SE")
 	add_child(_sound)
 	canvas = XMVCanvas.new()
 	canvas.position = _origin

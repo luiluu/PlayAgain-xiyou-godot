@@ -211,6 +211,10 @@ func _execute(c: Dictionary):
 				await host.get_tree().process_frame
 		241:
 			host.play_bgm(p[0])
+		245:
+			host.play_bgs(p[0])
+		249:
+			host.play_me(p[0])
 		250:
 			host.play_se(p[0])
 		301:

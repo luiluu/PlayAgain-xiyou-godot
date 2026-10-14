@@ -218,6 +218,7 @@ func _process_move(cmd: Dictionary) -> void:
 			var path := XDB.audio_path("se", str(p[0].get("name", ""))) if p.size() > 0 and p[0] is Dictionary else ""
 			if path != "":
 				var player := AudioStreamPlayer.new()
+				XAudio.bind(player, "SE")
 				player.stream = load(path)
 				player.volume_db = linear_to_db(float(p[0].get("volume", 90)) / 100.0)
 				player.pitch_scale = float(p[0].get("pitch", 100)) / 100.0

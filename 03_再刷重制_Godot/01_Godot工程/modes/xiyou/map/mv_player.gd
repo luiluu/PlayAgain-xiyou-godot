@@ -46,7 +46,7 @@ func update_character() -> void:
 		if d == 0:
 			touch_target = Vector2i(-1, -1)
 	if d != 0:
-		move_speed = 5 if dash and (Input.is_physical_key_pressed(KEY_SHIFT) or touch_target.x >= 0) else 4
+		move_speed = 5 if is_dashing() else 4
 		if move_straight(d):
 			stepped.emit()
 		elif touch_target.x >= 0:
@@ -63,6 +63,12 @@ func move_straight(d: int) -> bool:
 	if can_pass(d):
 		before_step.emit()
 	return super.move_straight(d)
+
+
+## MV updateDashing：始终跑步时 Shift 反转；鼠标目标始终跑步，地图禁跑时为 false。
+func is_dashing(shift = null) -> bool:
+	var pressed := Input.is_physical_key_pressed(KEY_SHIFT) if shift == null else bool(shift)
+	return dash and (touch_target.x >= 0 or (not pressed if XConfig.flag("alwaysDash") else pressed))
 
 
 func _input_dir() -> int:

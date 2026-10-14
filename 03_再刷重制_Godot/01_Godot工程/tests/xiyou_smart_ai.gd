@@ -101,6 +101,20 @@ func _run() -> void:
 			check(tag + ".score.%s%d" % ["i" if cand.item else "s", int(cand.id)], not m.is_empty() and close(float(m[0].score), float(cand.score), 2e-3),
 				{"godot": m[0].score if not m.is_empty() else null, "mv": cand.score})
 	routing(ref)
+	var edge_logic := setup(ref, int(ref.cases[0].troop), "full")
+	var edge_actor := edge_logic.state.actor(1)
+	var edge_ai := XSmartAI.new(edge_logic, edge_actor)
+	for row in ref.get("edgeDamage", []):
+		var rec := XDB.rec("Skills", 160).duplicate(true)
+		rec.damage.type = int(row.type)
+		rec.damage.formula = row.formula
+		rec.damage.formulaGd = "a.atk * randf()" if int(row.type) == 1 else "a.mat * 2"
+		seed(20261014)
+		var first := randf()
+		seed(20261014)
+		var value := edge_ai.safe_damage(edge_actor, edge_logic.enemies[0], rec)
+		check("edge_damage_%d" % int(row.type), close(value, float(row.value)), [value, row.value])
+		check("preview_preserves_rng_%d" % int(row.type), randf() == first)
 	finish()
 
 

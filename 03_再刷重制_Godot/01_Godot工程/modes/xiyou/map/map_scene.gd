@@ -22,6 +22,8 @@ var message: XMessageBox
 var fader: ColorRect
 var bgm: AudioStreamPlayer
 var se: AudioStreamPlayer
+var bgs: AudioStreamPlayer
+var me: AudioStreamPlayer
 var hud: Control
 var map_hud: XMapHUD
 var transfer_page: XMapTransferScene
@@ -81,9 +83,18 @@ func _ready() -> void:
 	ui.add_child(difficulty_notice)
 	difficulty_notice.clock.can_paint = _difficulty_notice_active
 	bgm = AudioStreamPlayer.new()
+	XAudio.bind(bgm, "BGM")
 	add_child(bgm)
 	se = AudioStreamPlayer.new()
+	XAudio.bind(se, "SE")
 	add_child(se)
+	bgs = AudioStreamPlayer.new()
+	XAudio.bind(bgs, "BGS")
+	add_child(bgs)
+	me = AudioStreamPlayer.new()
+	XAudio.bind(me, "ME")
+	add_child(me)
+	me.finished.connect(func(): bgm.stream_paused = false)
 	camera = Camera2D.new()
 	add_child(camera)
 	var s := XState.current
@@ -213,6 +224,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 			f.synchronize(Vector2i(x, y), d if d > 0 else 2)
 			followers.push_front(f)
 	player = MVPlayer.new()
+	player.dash = not bool(map_data.get("disableDashing", false))
 	player.tilemap = lower
 	chars.add_child(player)
 	player.locate(x, y)
@@ -231,7 +243,10 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	camera.position = Vector2(0, -TS / 2.0)
 	camera.reset_smoothing()
 	_show_map_name(str(map_data.get("displayName", "")))
-	play_bgm(map_data.get("bgm", {}))
+	if bool(map_data.get("autoplayBgm", false)):
+		play_bgm(map_data.get("bgm", {}))
+	if bool(map_data.get("autoplayBgs", false)):
+		play_bgs(map_data.get("bgs", {}))
 	_make_encounter_count()
 
 
@@ -459,6 +474,27 @@ func play_se(audio) -> void:
 	if p != "":
 		se.stream = load(p)
 		se.play()
+
+
+func play_bgs(audio: Dictionary) -> void:
+	var path := XDB.audio_path("bgs", str(audio.get("name", "")))
+	bgs.stop()
+	if path != "":
+		bgs.stream = load(path)
+		bgs.volume_db = linear_to_db(float(audio.get("volume", 90)) / 100.0)
+		bgs.pitch_scale = float(audio.get("pitch", 100)) / 100.0
+		bgs.play()
+
+
+func play_me(audio: Dictionary) -> void:
+	me.stop()
+	var path := XDB.audio_path("me", str(audio.get("name", "")))
+	bgm.stream_paused = path != ""
+	if path != "":
+		me.stream = load(path)
+		me.volume_db = linear_to_db(float(audio.get("volume", 90)) / 100.0)
+		me.pitch_scale = float(audio.get("pitch", 100)) / 100.0
+		me.play()
 
 ## 战斗：返回 0 胜利 1 逃跑 2 战败（MV 语义）
 func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
@@ -732,7 +768,7 @@ func _hang_up_step() -> Array:
 	var s := XState.current
 	if (SAFE_HANG_UP and busy) or _menu_open or transfer_page != null:
 		return []
-	player.move_speed = 5 if player.dash and Input.is_physical_key_pressed(KEY_SHIFT) else 4
+	player.move_speed = 5 if player.is_dashing() else 4
 	if map_data.get("encounterList", []).is_empty():
 		return XHangUp.toward(player.grid, s.hang_up_origin)
 	return XHangUp.next_dirs(s, player.grid)

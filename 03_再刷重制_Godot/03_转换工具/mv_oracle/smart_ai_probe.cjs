@@ -88,6 +88,16 @@ for (const id of PARTY) {
       whole: (s.wholeActions || []).map(x => [String(x[0]), (x[1] || []).map(String)]), target: (s.targetActions || []).map(x => [String(x[0]), (x[1] || []).map(String)])});
   }
 }
+// 通用公式边界：随机预览按 choose 的0.5，不抽实战随机数。
+setup(SLICE.troops[0]);
+out.edgeDamage=[];
+for(const [type,formula] of [[1,'a.atk * Math.random()'],[3,'a.mat * 2']]){
+  const rec=w.JSON.parse(JSON.stringify(w.$dataSkills[160]));rec.damage.type=type;rec.damage.formula=formula;
+  const actor=w.$gameActors.actor(1),target=w.$gameTroop.members()[0];
+  w.Math.random=()=>0.5;
+  const action=new w.Game_Action(actor);action.setSkill(160);
+  out.edgeDamage.push({type,formula,value:r6(w.CodexSmartAI.safeDamage(actor,target,rec,action))});
+}
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox/smart_ai.json'), JSON.stringify(out, null, 1));

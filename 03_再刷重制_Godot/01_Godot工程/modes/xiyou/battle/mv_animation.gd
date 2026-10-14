@@ -33,6 +33,7 @@ func _ready() -> void:
 		var p := XDB.img_path("animations", name) if name != "" else ""
 		sheets[i] = load(p) if p != "" else null
 	se_player = AudioStreamPlayer.new()
+	XAudio.bind(se_player, "SE")
 	add_child(se_player)
 	_show_frame()
 

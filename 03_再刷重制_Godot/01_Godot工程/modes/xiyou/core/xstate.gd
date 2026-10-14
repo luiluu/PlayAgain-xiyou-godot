@@ -11,6 +11,7 @@ var party: Array[int] = []          # 队伍顺序（前 5 位出战）
 var actors := {}                    # actor_id -> XActor
 var gold := 0
 var items := {}                     # item_id -> 数量
+var last_item := 0
 var next_gear_id := 1
 var gear: Array = []                # 背包里的装备实例
 var switches := {}                  # id -> bool
@@ -225,9 +226,10 @@ func to_dict() -> Dictionary:
 		var x2: XActor = actors[id]
 		a[str(id)] = {"level": x2.level, "exp": x2.exp_total, "skills": x2.skill_ids, "equips": x2.equips,
 			"hp": x2.hp, "mp": x2.mp, "tp": x2.tp, "states": x2.state_ids, "stateTurns": x2.state_turns,
-			"buffs": x2.buffs, "buffTurns": x2.buff_turns, "cooldowns": x2.cooldowns}
+			"buffs": x2.buffs, "buffTurns": x2.buff_turns, "cooldowns": x2.cooldowns,
+			"lastCommand": x2.last_command, "lastBattleSkill": x2.last_battle_skill}
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "actors": a, "gold": gold,
-		"items": items, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
+		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total}
@@ -251,6 +253,8 @@ static func from_dict(d: Dictionary) -> XState:
 		x2.hp = float(row.hp)
 		x2.mp = float(row.mp)
 		x2.tp = float(row.get("tp", 0.0))
+		x2.last_command = str(row.get("lastCommand", ""))
+		x2.last_battle_skill = int(row.get("lastBattleSkill", 0))
 		for k in row.get("cooldowns", {}):
 			x2.cooldowns[int(k)] = float(row.cooldowns[k])
 		s.actors[int(id_s)] = x2
@@ -258,6 +262,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.gold = int(d.gold)
 	for k in d.items:
 		s.items[int(k)] = int(d.items[k])
+	s.last_item = int(d.get("lastItem", 0))
 	s.gear = d.gear
 	s.next_gear_id = int(d.get("nextGearId",1))
 	for a in s.actors.values():

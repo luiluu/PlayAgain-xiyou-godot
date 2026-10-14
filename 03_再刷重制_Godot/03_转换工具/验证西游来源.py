@@ -110,6 +110,21 @@ def verify(app, generated, oracle):
                         issues.append('智能AI参照数据不一致：' + rel)
             if not data.get('cases') or not data.get('damage') or not data.get('sequence'):
                 issues.append('智能AI参照缺少测量结果')
+    options = oracle / 'options.json'
+    if manifest.get('toolVersion', 0) >= 9:
+        if not options.is_file():
+            issues.append('基础设置参照缺失（重新运行 options_probe）')
+        else:
+            data = json.loads(options.read_text())
+            identity = data.get('sourceIdentity', {})
+            if identity.get('releaseVersion') != version or identity.get('runtimeInputs') != manifest.get('runtimeInputs'):
+                issues.append('基础设置参照版本/脚本不一致')
+            for rel, digest in manifest['inputs'].items():
+                if rel.startswith('data/') or rel == 'package.json':
+                    if identity.get('inputs', {}).get(rel) != digest:
+                        issues.append('基础设置参照数据不一致：' + rel)
+            if not data.get('volume') or not data.get('dash') or not data.get('commands'):
+                issues.append('基础设置参照缺少测量结果')
     return {'releaseVersion': version, 'inputs': len(manifest['inputs']),
             'runtimeInputs': len(manifest.get('runtimeInputs', {})),
             'outputs': len(manifest['outputs']), 'issues': issues}

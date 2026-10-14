@@ -7,6 +7,9 @@ static var path_override := ""
 static var _loaded_path := "<unloaded>"
 static var _values := {}
 static var _map_xy_configured := false
+const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "commandRemember": true,
+	"bgmVolume": 40, "bgsVolume": 40, "meVolume": 40, "seVolume": 40}
+const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 
 
 static func path() -> String:
@@ -20,14 +23,44 @@ static func ensure_loaded() -> void:
 	if p == _loaded_path:
 		return
 	_loaded_path = p
-	_values = {"MapXy": false, "codexSmartAI": true}  # MapXy 没有配置时为 false；codexSmartAI 没有配置时为 true
+	_values = DEFAULTS.duplicate()  # 正式版 applyData({}) 的实际默认值（含后续插件覆盖）
 	_map_xy_configured = false
 	if p != "" and FileAccess.file_exists(p):
 		var data = JSON.parse_string(FileAccess.get_file_as_string(p))
 		if data is Dictionary:
-			_values.MapXy = bool(data.get("MapXy", false))
+			for key in DEFAULTS:
+				_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 0, 100) if key in VOLUMES else bool(data.get(key, DEFAULTS[key]))
 			_map_xy_configured = data.has("MapXy")
-			_values.codexSmartAI = bool(data.get("codexSmartAI", true))
+	XAudio.apply_volumes(_values)
+
+
+static func flag(key: String) -> bool:
+	ensure_loaded()
+	return bool(_values.get(key, false))
+
+
+static func set_flag(key: String, value: bool) -> bool:
+	if key not in DEFAULTS or key in VOLUMES:
+		return false
+	ensure_loaded()
+	_values[key] = value
+	if key == "MapXy":
+		_map_xy_configured = true
+	return _write()
+
+
+static func volume(key: String) -> int:
+	ensure_loaded()
+	return int(_values.get(key, 40))
+
+
+static func set_volume(key: String, value: int) -> bool:
+	if key not in VOLUMES:
+		return false
+	ensure_loaded()
+	_values[key] = clampi(value, 0, 100)
+	XAudio.apply_volumes(_values)
+	return _write()
 
 
 static func map_xy() -> bool:
@@ -41,10 +74,7 @@ static func has_map_xy() -> bool:
 
 
 static func set_map_xy(value: bool) -> bool:
-	ensure_loaded()
-	_values.MapXy = value
-	_map_xy_configured = true
-	return _write()
+	return set_flag("MapXy", value)
 
 
 ## Codex_SmartBattleAI 的 ConfigManager.codexSmartAI（设置「智能战斗AI（自动战斗）」）
@@ -54,9 +84,7 @@ static func smart_ai() -> bool:
 
 
 static func set_smart_ai(value: bool) -> bool:
-	ensure_loaded()
-	_values.codexSmartAI = value
-	return _write()
+	return set_flag("codexSmartAI", value)
 
 
 static func _write() -> bool:

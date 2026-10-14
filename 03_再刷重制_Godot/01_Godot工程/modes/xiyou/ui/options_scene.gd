@@ -15,11 +15,11 @@ const LH := 36.0
 const ROWS := 12
 const STATUS_W := 120.0
 ## [名字, 符号, 已重制]（正式 v0.19 Window_Options._list 顺序：v0.19 加「消息提醒」、去掉「技能升级通告」）
-const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", true], ["始终跑步", "alwaysDash", false],
-	["记住指令", "commandRemember", false], ["Battle Camera", "battleCamera", false], ["开启掉落动画", "MOG_TrPopUpBattle_Key", false],
+const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", true], ["始终跑步", "alwaysDash", true],
+	["记住指令", "commandRemember", true], ["Battle Camera", "battleCamera", false], ["开启掉落动画", "MOG_TrPopUpBattle_Key", false],
 	["战斗伤害记录", "CombatDamageRecordKey", false], ["显示伤害数字", "CombatDamageShow", false], ["显示技能动画", "CombatSkillAnimation", false],
-	["屏蔽掉落", "pingbiDrop", false], ["智能战斗AI（自动战斗）", "codexSmartAI", true], ["BGM 音量", "bgmVolume", false],
-	["BGS 音量", "bgsVolume", false], ["ME 音量", "meVolume", false], ["SE 音量", "seVolume", false], ["只遇稀有", "Boss", false],
+	["屏蔽掉落", "pingbiDrop", false], ["智能战斗AI（自动战斗）", "codexSmartAI", true], ["BGM 音量", "bgmVolume", true],
+	["BGS 音量", "bgsVolume", true], ["ME 音量", "meVolume", true], ["SE 音量", "seVolume", true], ["只遇稀有", "Boss", false],
 	["只遇罕见", "BOSS", false], ["极其稀有", "boss", false], ["穿墙开关", "cq", false], ["此游戏为免费游戏！", "wxxonoff", false],
 	["总群请加906327865！", "wxlonoff", false], ["不要在闲鱼买到这个版本！", "wxtonoff", false], ["战斗变速", "battleAniSpeed", false],
 	["对话跳过", "dhtg", false], ["禁用遇敌", "ydgb", false], ["步步遇敌", "yd100", false], ["消息提醒", "codexNotices", false],
@@ -54,10 +54,10 @@ func symbols() -> Array:
 
 func status_text(i: int) -> String:
 	match str(_list[i][1]):
-		"MapXy":
-			return "ON" if XConfig.map_xy() else "OFF"
-		"codexSmartAI":
-			return "ON" if XConfig.smart_ai() else "OFF"
+		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember":
+			return "ON" if XConfig.flag(str(_list[i][1])) else "OFF"
+		"bgmVolume", "bgsVolume", "meVolume", "seVolume":
+			return str(XConfig.volume(str(_list[i][1])))
 	return ""
 
 
@@ -97,10 +97,11 @@ func ok() -> void:
 		XSound.system(3)
 		return
 	match str(o[1]):
-		"MapXy":
-			_set_map_xy(not XConfig.map_xy())
-		"codexSmartAI":
-			_set_flag("codexSmartAI", not XConfig.smart_ai())
+		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember":
+			_set_flag(str(o[1]), not XConfig.flag(str(o[1])))
+		"bgmVolume", "bgsVolume", "meVolume", "seVolume":
+			var value := XConfig.volume(str(o[1])) + 20
+			_set_volume(str(o[1]), 0 if value > 100 else value)
 		"HangUp":
 			XSound.system(1)
 			_open_hang_up()
@@ -109,24 +110,30 @@ func ok() -> void:
 ## Window_Options.changeValue：值变了才存、重画并播光标音；HangUp 不改值
 func _side(right: bool) -> void:
 	match str(_list[index][1]):
-		"MapXy":
-			_set_map_xy(right)
-		"codexSmartAI":
-			_set_flag("codexSmartAI", right)
+		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember":
+			_set_flag(str(_list[index][1]), right)
+		"bgmVolume", "bgsVolume", "meVolume", "seVolume":
+			var symbol := str(_list[index][1])
+			_set_volume(symbol, clampi(XConfig.volume(symbol) + (20 if right else -20), 0, 100))
 
 
 func _set_map_xy(v: bool) -> void:
 	_set_flag("MapXy", v)
 
 
+
 func _set_flag(sym: String, v: bool) -> void:
-	var cur := XConfig.map_xy() if sym == "MapXy" else XConfig.smart_ai()
-	if cur == v:
+	if XConfig.flag(sym) == v:
 		return
-	if sym == "MapXy":
-		XConfig.set_map_xy(v)
-	else:
-		XConfig.set_smart_ai(v)
+	XConfig.set_flag(sym, v)
+	XSound.system(0)
+	_refresh()
+
+
+func _set_volume(sym: String, v: int) -> void:
+	if XConfig.volume(sym) == v:
+		return
+	XConfig.set_volume(sym, v)
 	XSound.system(0)
 	_refresh()
 

@@ -25,6 +25,7 @@ static func play(name: String, volume := 90, pitch := 100) -> void:
 		_players.clear()
 		for i in range(POOL):
 			var a := AudioStreamPlayer.new()
+			XAudio.bind(a, "SE")
 			tree.root.add_child.call_deferred(a)
 			_players.append(a)
 	var player: AudioStreamPlayer = _players[_next]
@@ -32,7 +33,7 @@ static func play(name: String, volume := 90, pitch := 100) -> void:
 	if not player.is_inside_tree():
 		return
 	player.stream = stream
-	player.volume_db = linear_to_db(maxf(volume, 1) / 100.0)
+	player.volume_db = linear_to_db(maxf(volume, 0) / 100.0)
 	player.pitch_scale = maxf(pitch, 10) / 100.0
 	player.play()
 

@@ -142,7 +142,12 @@ func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var type := int(dmg.get("type", 0))
 	if not formula_safe(str(dmg.get("formula", "0"))):
 		return 0.0
-	var value := XDamage.eval_formula(rec, a, t, logic.vars())
+	# 正式 choose 暂时把 Math.random 固定为0.5；预览不能抽走实战随机数。
+	var preview := rec.duplicate()
+	preview.damage = dmg.duplicate()
+	if dmg.get("formulaGd") is String:
+		preview.damage.formulaGd = dmg.formulaGd.replace("randf()", "0.5")
+	var value := XDamage.eval_formula(preview, a, t, logic.vars())
 	if type in [3, 4]:
 		value = -value
 	var element := int(dmg.get("elementId", 0))
