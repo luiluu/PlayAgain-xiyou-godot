@@ -60,8 +60,9 @@
         button('难度地图夹具',function(){
             if(!window.DataManager||!DataManager.isDatabaseLoaded())return;
             clocks();
-            if(SceneManager._scene)SceneManager._scene.update=function(){};
+            if(SceneManager._scene)SceneManager._scene.update=function(){};SceneManager._scene.isBusy=function(){return false;};
             SceneManager.goto(Scene_Base);ConfigManager.applyData({});DataManager.setupNewGame();
+            clocks().read.call();clocks().tick.call();remaining=0;
             Game_Map.prototype.updateInterpreter=function(){};
             if(window.CodexGuide)CodexGuide.MILESTONE_ENABLED=false;
             $gameParty._actors=[1,8,9,10];$gameParty._battleMembers=$gameParty._actors.slice();
@@ -111,7 +112,7 @@ window.__refShot = function (name) {
         function button(text, fn) { var b=document.createElement('button'); b.textContent=text; b.onclick=function(){fn();b.blur();}; panel.appendChild(b); }
         function fixture(mid, x, y, coords) {
             if (!window.DataManager || !DataManager.isDatabaseLoaded()) return;
-            if (SceneManager._scene instanceof Scene_Map) { SceneManager._scene.update=function(){}; }
+            if (SceneManager._scene instanceof Scene_Map) { SceneManager._scene.update=function(){};SceneManager._scene.isBusy=function(){return false;}; }
             SceneManager.goto(Scene_Base);
             ConfigManager.applyData({}); DataManager.setupNewGame();
             ConfigManager.MapXy=coords;
@@ -162,7 +163,7 @@ window.__refShot = function (name) {
         function button(text, fn) { var b = document.createElement('button'); b.textContent = text; b.onclick = function(){fn();b.blur();}; panel.appendChild(b); }
         function fixture(n) {
             if (!window.DataManager || !DataManager.isDatabaseLoaded()) return;
-            if (SceneManager._scene instanceof Scene_Map) { SceneManager._scene.update=function(){}; }
+            if (SceneManager._scene instanceof Scene_Map) { SceneManager._scene.update=function(){};SceneManager._scene.isBusy=function(){return false;}; }
             SceneManager.goto(Scene_Base);
             ConfigManager.applyData({}); DataManager.setupNewGame();
             $gameSystem.setDifficultyId(3);
