@@ -185,6 +185,8 @@ window.__refShot = function (name) {
                 clearInterval(wait); $gameMap.setup(5); $gamePlayer.locate(10,10); $gamePlayer.setDirection(2);
                 SceneManager.goto(Scene_Map);
                 var ready=setInterval(function(){
+                    // 地图的首次修行指引会令 isBusy 一直为真；本夹具只观察画面，先清内存消息再等待场景就绪。
+                    if(SceneManager._scene instanceof Scene_Map)$gameMessage.clear();
                     if (!(SceneManager._scene instanceof Scene_Map) || !ImageManager.isReady() || SceneManager._scene.isBusy()) return;
                     $gameMessage.clear();
                     clearInterval(ready);

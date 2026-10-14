@@ -12,6 +12,7 @@ const ORACLE := "res://modes/xiyou/generated/oracle/events.json"
 const BASELINE := "res://tests/event_compare_baseline.json"
 const PARTY := [1, 8, 10, 9]
 const MAX_STEPS := 20000
+const KNOWN_ORACLE_ERRORS := ["m4e8p1", "m221e3p0", "ce1344"]
 
 var results := []
 var out_dir := ""
@@ -153,6 +154,22 @@ func _run() -> void:
 	if not (oracle is Dictionary):
 		_finish()
 		return
+	var expected_ids := []
+	var manifest: Dictionary = XDB.load_json("manifest.json")
+	for id in manifest.slice.maps:
+		for ev in XDB.map(int(id)).get("events", []):
+			if not ev is Dictionary:
+				continue
+			for p in ev.pages.size():
+				if ev.pages[p].list.any(func(c): return int(c.code) != 0):
+					expected_ids.append("m%de%dp%d" % [int(id), int(ev.id), p])
+	for id in manifest.slice.commonEvents:
+		if XDB.rec("CommonEvents", int(id)).get("list", []).any(func(c): return int(c.code) != 0):
+			expected_ids.append("ce%d" % int(id))
+	var actual_ids: Array = oracle.cases.map(func(c): return str(c.id))
+	expected_ids.sort()
+	actual_ids.sort()
+	check("oracle_cases_complete", expected_ids == actual_ids, [expected_ids.size(), actual_ids.size()])
 	var baseline: Dictionary = {}
 	if FileAccess.file_exists(BASELINE):
 		var b = JSON.parse_string(FileAccess.get_file_as_string(BASELINE))
@@ -193,6 +210,7 @@ func _run() -> void:
 	if out_dir != "":
 		_write_report(report, oracle_errors)
 	check("no_regressions", regressions.is_empty() or update_baseline, regressions)
+	check("no_new_oracle_errors", oracle_errors.all(func(id): return KNOWN_ORACLE_ERRORS.has(id)), oracle_errors)
 	check("cases_ran", report.size() > 0 or not only.is_empty())
 	_finish()
 

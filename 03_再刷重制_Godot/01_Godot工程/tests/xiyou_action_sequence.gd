@@ -56,6 +56,7 @@ func _run() -> void:
 		return finish()
 	var manifest: Dictionary = XDB.load_json("manifest.json")
 	check("same_source", ref.sourceIdentity.runtimeInputs == manifest.runtimeInputs)
+	check("rule_oracle_clean", ref.rules.all(func(row): return row.error == null))
 	var ok_count := 0
 	var unknown := {}
 	for row in ref.rules:
