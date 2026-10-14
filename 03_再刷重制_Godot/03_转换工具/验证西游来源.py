@@ -141,6 +141,20 @@ def verify(app, generated, oracle):
                     json.dumps([r.get('yepSeq', {}).get(k, []) for k in phases], ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()]
                 if wrong or len(data.get(key, {})) != sum(1 for r in rows if isinstance(r, dict)):
                     issues.append('行动序列与正式解析不一致：%s %d 项（如 %s）' % (table, len(wrong), wrong[:5]))
+    party_file = oracle / 'party.json'
+    if not party_file.is_file():
+        issues.append('整队参照缺失（重新运行 party_probe）')
+    else:
+        data = json.loads(party_file.read_text())
+        identity = data.get('sourceIdentity', {})
+        if identity.get('releaseVersion') != version or identity.get('runtimeInputs') != manifest.get('runtimeInputs'):
+            issues.append('整队参照版本/脚本不一致')
+        for rel, digest in manifest['inputs'].items():
+            if rel.startswith('data/') or rel == 'package.json':
+                if identity.get('inputs', {}).get(rel) != digest:
+                    issues.append('整队参照数据不一致：' + rel)
+        if len(data.get('trace', [])) != 11 or len(data.get('eligibility', [])) != 4 or not data.get('layout'):
+            issues.append('整队参照缺少测量结果')
     return {'releaseVersion': version, 'inputs': len(manifest['inputs']),
             'runtimeInputs': len(manifest.get('runtimeInputs', {})),
             'outputs': len(manifest['outputs']), 'issues': issues}
