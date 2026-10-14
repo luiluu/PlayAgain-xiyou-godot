@@ -30,7 +30,7 @@
         function info() {
             var s=window.SceneManager&&SceneManager._scene, sp=s&&s._tipSpr;
             readout.textContent=JSON.stringify({version:window.nw&&nw.App.manifest.releaseVersion,scene:s&&s.constructor.name,
-                difficulty:window.$gameSystem&&$gameSystem.getDifficultyId(),manual:manual,remaining:remaining,
+                difficulty:window.$gameSystem&&($gameSystem._difficultyId||2),manual:manual,remaining:remaining,
                 tip:sp&&{x:sp.x,y:sp.y,width:sp.bitmap.width,height:sp.bitmap.height,visible:sp.visible,opacity:sp.opacity,
                     font:sp.bitmap.fontFace,fontSize:sp.bitmap.fontSize,bold:sp.bitmap.fontBold,color:sp.bitmap.textColor},
                 drawCount:draws.length,draws:draws.slice(-1),errors:window.__refErrors});
@@ -53,7 +53,7 @@
         }
         function setDifficulty(id) {
             if (!window.$gameSystem||!SceneManager._scene._tipSpr) return;
-            var c=clocks(), changed=$gameSystem.getDifficultyId()!==id;
+            var c=clocks(), changed=($gameSystem._difficultyId||2)!==id;
             $gameSystem.setDifficultyId(id);c.read.call();c.tick.call();
             remaining=changed?239:Math.max(0,remaining-1);paint();
         }
@@ -80,7 +80,7 @@
             if(!(SceneManager._scene instanceof Scene_Map))return;
             Math.random=function(){return 0.5;};$gameMessage.clear();BattleManager.setup(2,true,false);SceneManager.push(Scene_Battle);
         });
-        button('难度截图',function(){__refShot('dev019_difficulty_d'+$gameSystem.getDifficultyId()+'_'+remaining+'_'+SceneManager._scene.constructor.name);});
+        button('难度截图',function(){__refShot('dev019_difficulty_d'+($gameSystem._difficultyId||2)+'_'+remaining+'_'+SceneManager._scene.constructor.name);});
         button('隐藏难度工具栏',function(){panel.style.display='none';});
         panel.appendChild(readout);document.body.appendChild(panel);setInterval(info,200);
     });
