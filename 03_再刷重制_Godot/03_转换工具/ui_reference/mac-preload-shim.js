@@ -187,7 +187,8 @@ window.__refShot = function (name) {
                 var ready=setInterval(function(){
                     // 地图的首次修行指引会令 isBusy 一直为真；本夹具只观察画面，先清内存消息再等待场景就绪。
                     if(SceneManager._scene instanceof Scene_Map)$gameMessage.clear();
-                    if (!(SceneManager._scene instanceof Scene_Map) || !ImageManager.isReady() || SceneManager._scene.isBusy()) return;
+                    if (!(SceneManager._scene instanceof Scene_Map) || !ImageManager.isReady()) return;
+                    SceneManager._scene.isBusy=function(){return false;}; // 仅此内存布局夹具，忽略原生指引等待。
                     $gameMessage.clear();
                     clearInterval(ready);
                     // 避开随机神话并稳定 OTB 同速顺序；不影响正式应用。
