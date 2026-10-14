@@ -25,13 +25,14 @@ out.record=[false,true].map(establish=>{
   w.eval('BattleDamageLog=0;BattleDamageLog1=0;BattleDamageLog2=0;BattleDamageLog3=0;BattleDamageLog4=0;BattleDamageLog5=0;Record=null;');
   const a=w.$gameActors.actor(1),t=w.$gameTroop.members()[0];
   if(establish){a.addState(1460);a.refresh();} // krz_state_re 的状态缓存到下一次 refresh 才更新。
-  // 无画面时只固定命中、会心与分散度，其余仍跑正式 Game_Action.apply 和真实记录插件。
-  const saved=w.$dataSkills[1];w.$dataSkills[1]=w.JsonEx.makeDeepCopy(saved);
-  Object.assign(w.$dataSkills[1],{hitType:0,successRate:100});Object.assign(w.$dataSkills[1].damage,{variance:0,critical:false});
-  const act=new w.Game_Action(a);act.setSkill(1);act.apply(t);
+  // 记录测量固定基础伤害 100，避免尚未移植的正式路线／成长平衡影响记录模块的对照。
+  // 仍跑真实 Game_Action.apply、Establish 与 Bailong gainHp/displayActionResults 链。
+  const saved=w.$dataSkills[14];w.$dataSkills[14]=w.JsonEx.makeDeepCopy(saved); // 正式的固定伤害测试技能，单次 apply。
+  Object.assign(w.$dataSkills[14],{hitType:0,successRate:100});Object.assign(w.$dataSkills[14].damage,{variance:0,critical:false});
+  const act=new w.Game_Action(a);act.setSkill(14);act.makeDamageValue=function(){return 100;};act.apply(t);
   w.Window_BattleLog.prototype.displayActionResults.call(stub,a,t);
-  w.$dataSkills[1]=saved;
-  return {establish,hp:t.hp,total:w.BattleDamageLog,slots:[1,2,3,4,5].map(i=>w['BattleDamageLog'+i]),states:a._states.slice()};
+  w.$dataSkills[14]=saved;
+  return {establish,skill:14,baseDamage:100,hp:t.hp,total:w.BattleDamageLog,slots:[1,2,3,4,5].map(i=>w['BattleDamageLog'+i]),states:a._states.slice()};
 });
 out.drops=[false,true].map(enabled=>{
   setup();w.ConfigManager.MOG_TrPopUpBattle_Key=enabled;

@@ -106,11 +106,13 @@ func _oracle_record() -> void:
 		var t: XBattler = logic.enemies[0]
 		if row.establish:
 			a.add_state(1460)
-		var skill := XDB.rec("Skills", 1).duplicate(true)
+		var skill := XDB.rec("Skills", int(row.skill)).duplicate(true)
 		skill.hitType = 0
 		skill.successRate = 100
 		skill.damage.variance = 0
 		skill.damage.critical = false
+		skill.damage.elementId = 0
+		skill.damage.formulaGd = str(row.baseDamage)
 		var hit := logic.apply(a, skill, t)
 		var r := XDamageRecord.new()
 		r.setup(s.battle_slots, s.battle_members().size())

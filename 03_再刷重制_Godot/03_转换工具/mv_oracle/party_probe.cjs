@@ -43,6 +43,10 @@ eligible('dead_all', [1,8,9,10,2], true, false);
 eligible('dead_front_alive_reserve', [1,8,9,10,2], true, true);
 eligible('one_member', [0,0,9,0,0], false, false);
 out.listData = Array.from(scene._listWindow._data);
+// Scene_Skill 的目标窗口沿用 Window_MenuActor：四行可见，但第五位与后备都能滚动选中。
+const menuActor=new w.Window_MenuActor();menuActor.select(0);
+for(let i=0;i<4;i++)menuActor.cursorDown(false);
+out.menuActor={index:menuActor.index(),topRow:menuActor.topRow(),maxPageRows:menuActor.maxPageRows(),rect:[menuActor.x,menuActor.y,menuActor.width,menuActor.height]};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.writeFileSync(path.join(__dirname,'.sandbox/party.json'), JSON.stringify(out,null,2));
 console.log(JSON.stringify({version:identity.releaseVersion,trace:out.trace.length,eligibility:out.eligibility,keys:out.keys}));

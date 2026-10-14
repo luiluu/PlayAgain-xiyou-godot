@@ -134,6 +134,10 @@ def verify(app, generated, oracle):
             identity = data.get('sourceIdentity', {})
             if identity.get('releaseVersion') != version or identity.get('runtimeInputs') != manifest.get('runtimeInputs'):
                 issues.append('行动序列参照版本/脚本不一致')
+            for rel, digest in manifest['inputs'].items():
+                if rel.startswith('data/') or rel == 'package.json':
+                    if identity.get('inputs', {}).get(rel) != digest:
+                        issues.append('行动序列参照数据不一致：' + rel)
             phases = ['setup', 'whole', 'target', 'follow', 'finish']
             for key, table in (('skills', 'Skills'), ('items', 'Items')):
                 rows = json.loads((generated / 'db' / (table + '.json')).read_text())

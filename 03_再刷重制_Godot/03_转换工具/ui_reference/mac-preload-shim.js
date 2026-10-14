@@ -206,7 +206,8 @@ window.__refShot = function (name) {
                 if(++tries>2000){clearInterval(sample);return;}
                 if(!(s instanceof Scene_Battle))return;
                 if(!attacked&&s._actorCommandWindow&&s._actorCommandWindow.active){
-                    attacked=true;s._actorCommandWindow.deactivate();s.commandAttack();s._enemyWindow.select(0);s._enemyWindow.deactivate();s.onEnemyOk();
+                    // 布局夹具：只触发第一只敌人的真实倒下／掉落动画；伤害统计规则另由 drop_record_probe 严格对照。
+                    attacked=true;$gameTroop.members()[0].setHp(0);$gameTroop.members()[0].performCollapse();
                 }
                 var field=s._spriteset&&s._spriteset._battleField;
                 var popup=field&&(field.children||[]).some(function(x){return x instanceof SpriteEnemyTrP&&x.visible;});

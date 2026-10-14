@@ -107,6 +107,17 @@ func _run() -> void:
 	XSound.system_log.clear()
 	page.ok()
 	check("no_valid_target_buzzer", XSound.system_log == [3], XSound.system_log)
+	# 第五位也应能被选中／复活（Window_MenuActor 四行窗口会滚动）。
+	s.add_actor(2)
+	s.actor(2).add_state(1)
+	page.actor_pick = 0
+	page.actor_top = 0
+	for i in range(4):
+		page._move(1, false, false)
+	var ref: Dictionary = XDB.load_json("oracle/party.json").get("menuActor", {})
+	check("fifth_actor_scroll", page.actor_pick == int(ref.get("index", -1)) and page.actor_top == int(ref.get("topRow", -1)) and ACTOR_ROWS_matches(ref))
+	page.ok()
+	check("fifth_actor_revives", s.actor(2).is_alive())
 	page.queue_free()
 
 	# 主菜单：技能 → 选人 → 技能页
@@ -125,3 +136,7 @@ func finish() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+func ACTOR_ROWS_matches(ref: Dictionary) -> bool:
+	return XSkillScene.ACTOR_ROWS == int(ref.get("maxPageRows", -1))

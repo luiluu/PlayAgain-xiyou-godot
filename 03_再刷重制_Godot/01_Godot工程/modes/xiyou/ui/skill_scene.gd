@@ -32,6 +32,7 @@ var type_top := 0
 var index := 0
 var top := 0
 var actor_pick := 0
+var actor_top := 0
 var type_win: XMVWindow
 var status_win: XMVWindow
 var list_win: XMVWindow
@@ -112,6 +113,8 @@ func _refresh() -> void:
 	for w in [type_win, status_win, list_win]:
 		w.visible = not actor_mode
 	actor_win.visible = actor_mode
+	actor_win.up_arrow = actor_top > 0
+	actor_win.down_arrow = actor_top + ACTOR_ROWS < XState.current.members().size()
 	for w in [type_win, status_win, list_win, actor_win]:
 		w.refresh()
 	_update_help()
@@ -188,8 +191,8 @@ func _costs(a: XActor, s: Dictionary) -> Array:
 func _paint_actors(c: XMVCanvas) -> void:
 	var members := XState.current.members()
 	var all := int(current().get("scope", 0)) in [8, 10]
-	for i in range(mini(members.size(), ACTOR_ROWS)):
-		var y := i * ACTOR_ROW_H
+	for i in range(actor_top, mini(actor_top + ACTOR_ROWS, members.size())):
+		var y := (i - actor_top) * ACTOR_ROW_H
 		if all or i == actor_pick:
 			c.cursor(Rect2(0, y, c.size.x, ACTOR_ROW_H))
 		var m: XActor = members[i]
@@ -221,6 +224,7 @@ func ok() -> void:
 			XSound.system(1)
 			mode = "actor"
 			actor_pick = 0
+			actor_top = 0
 		"actor":
 			use_skill()
 	_refresh()
@@ -309,7 +313,8 @@ func _move(d: int, horizontal: bool, wrap: bool) -> void:
 		"actor":
 			if horizontal or int(current().get("scope", 0)) in [8, 10]:
 				return
-			actor_pick = XMenu._move(actor_pick, d, mini(XState.current.members().size(), ACTOR_ROWS), wrap)
+			actor_pick = XMenu._move(actor_pick, d, XState.current.members().size(), wrap)
+			actor_top = XMenu._scroll_to(actor_pick, actor_top, ACTOR_ROWS)
 	if before != [type_index, index, actor_pick]:
 		XSound.system(0)
 	_refresh()
@@ -371,8 +376,11 @@ func _gui_input(event: InputEvent) -> void:
 						XSound.system(0)
 						_refresh()
 		"actor":
-			var i := floori((p - pad).y / ACTOR_ROW_H)
-			if i >= 0 and i < mini(XState.current.members().size(), ACTOR_ROWS):
+			if not ACTOR_RECT.grow(-XMVWindow.PADDING).has_point(p):
+				return
+			var row := floori((p - pad).y / ACTOR_ROW_H)
+			var i := actor_top + row
+			if row < ACTOR_ROWS and i < XState.current.members().size():
 				if i == actor_pick:
 					ok()
 				else:
