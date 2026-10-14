@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.019",
-  "sequence": 19,
-  "next": "dev.020",
-  "nextSequence": 20,
+  "current": "dev.020",
+  "sequence": 20,
+  "next": "dev.021",
+  "nextSequence": 21,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "整合历史交叉复核修复、统一七档品质来源、按原版复现难度提示与战斗快照",
+  "currentChange": "设置页与挂机设置页；挂机逃跑/屏蔽掉落/快速战斗；同步正式 v0.16",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
