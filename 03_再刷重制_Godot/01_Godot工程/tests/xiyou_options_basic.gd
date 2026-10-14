@@ -180,7 +180,7 @@ func _run() -> void:
 	for i in 6000:
 		if outcome[0] != null:
 			break
-		await get_tree().process_frame
+		await get_tree().physics_frame
 	check("battle_resumes_map_audio", outcome[0] == 1 and not map.bgm.stream_paused and not map.bgs.stream_paused)
 	XHangUp.stop(s)
 	map.queue_free()

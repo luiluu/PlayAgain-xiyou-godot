@@ -139,7 +139,7 @@ func _run() -> void:
 	check("options_rect", opt.win.position == Vector2(440, 130) and opt.win.size == Vector2(400, 460))
 	check("options_list", opt.symbols().size() == 33 and opt.symbols()[0] == "MapXy" and opt.symbols()[1] == "HangUp"
 		and opt.symbols()[32] == "codexFeedbackPending")
-	check("options_status", opt.status_text(0) == "ON" and opt.status_text(1) == "" and opt.status_text(11) == "")
+	check("options_status", opt.status_text(0) == "ON" and opt.status_text(1) == "" and opt.status_text(11) == str(XConfig.volume("bgmVolume")))
 	await shot("00_设置.png")
 	# 坐标显示：确定切换，右开左关
 	opt.ok()
@@ -147,7 +147,7 @@ func _run() -> void:
 	opt._side(true)
 	check("mapxy_right", XConfig.map_xy())
 	# 未重制的选项：确定不打开任何页
-	opt.index = 2
+	opt.index = 4
 	opt.ok()
 	check("unimplemented_noop", opt._page == null)
 	# 下键循环与滚动
