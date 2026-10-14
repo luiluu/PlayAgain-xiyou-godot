@@ -20,6 +20,8 @@ const TRAIT_SKILL_ADD := 43
 const TRAIT_SKILL_SEAL := 44
 
 var hp := 0.0
+## YEP 行动序列的 IMMORTAL（Game_Battler._immortalState）：期间 HP 为 0 也不倒下、阵亡状态视为抵抗
+var immortal := false
 var mp := 0.0
 var tp := 0.0
 var state_ids: Array[int] = []
@@ -338,10 +340,10 @@ func recover_all() -> void:
 	mp = mmp
 
 func is_dead() -> bool:
-	return hp <= 0.0
+	return hp <= 0.0 and not immortal
 
 func is_alive() -> bool:
-	return hp > 0.0
+	return hp > 0.0 or immortal
 
 func hp_rate() -> float:
 	return hp / maxf(mhp, 1.0)

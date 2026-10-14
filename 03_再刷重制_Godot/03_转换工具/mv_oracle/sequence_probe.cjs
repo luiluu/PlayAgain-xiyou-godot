@@ -14,8 +14,84 @@ for(const [key,table] of [['skills',w.$dataSkills],['items',w.$dataItems]]){
 }
 for(const id of [1,2,160,65,104])out.samples['s'+id]=PH.map(k=>w.$dataSkills[id][k]);
 out.repeats.notOne=w.$dataSkills.filter(o=>o&&o.repeats!==1).length+w.$dataItems.filter(o=>o&&o.repeats!==1).length;
+// ---- 规则实跑：真实 BattleManager 行动机（日志窗/精灵组用空代理），记录每次 ACTION EFFECT 的目标与序列附加的状态 ----
+// 场景同 smart_ai_probe（普通难度、出战 1/8/9/10、10 级），敌群 222（三只 20 万血，Lv10 打不死，避免 IMMORTAL 差异）。
+{
+  const PARTY=[1,8,9,10],TROOP=222,LEVEL=10;
+  const stub=new Proxy(function(){},{get:(t,k)=>k==='_waitCount'?0:(()=>false),set:()=>true});
+  const setup=()=>{
+    w.eval('ConfigManager.applyData({});DataManager.setupNewGame();$gameSystem.setDifficultyId(3);for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
+    w.eval('$gameParty._actors=[];'+JSON.stringify(PARTY)+'.forEach(function(id){$gameParty.addActor(id);});');
+    for(const id of PARTY){const a=w.$gameActors.actor(id);[6168,5980,5548].concat([1,2,3,4,5,6,7,52].includes(id)?[2571,2786]:[]).forEach(k=>a.learnSkill(k));a.changeLevel(LEVEL,false);a.refresh();a.recoverAll();}
+    const BM=w.BattleManager;
+    if(!w.$dataMap)w.$dataMap={displayName:'',events:[],data:[],width:1,height:1,note:'',meta:{},encounterList:[],tilesetId:1};
+    w.Math.random=()=>0.99;BM.setup(TROOP,true,false);BM._logWindow=stub;BM._spriteset=stub;BM._statusWindow=stub;
+    try{BM.startBattle();}catch(e){out.startError=String(e&&e.stack||e).slice(0,500);}
+    w.Math.random=()=>0.5;
+    w.$gameParty._inBattle=true;w.$gameTroop._turnCount=1;
+  };
+  // 只关掉画面上的伤害弹字（LGP_BetterDamagePopup 需要精灵层）；不影响结算。
+  w.Game_Battler.prototype.startDamagePopup=function(){};
+  // 移动/跳跃等画面指令要战斗精灵：给一个空精灵（记住被写入的数值，方法一律无作用）。
+  const sprite=()=>{const store={x:0,y:0,_homeX:0,_homeY:0,width:64,height:64,scale:{x:1,y:1},anchor:{x:0.5,y:1},opacity:255};
+    return new Proxy(store,{get:(t,k)=>k in t?t[k]:(()=>false),set:(t,k,v)=>{t[k]=v;return true;}});};
+  const sprites=new Map();
+  w.BattleManager.actionBattleHud=function(){return true;};
+  w.Game_Battler.prototype.battler=function(){if(!sprites.has(this))sprites.set(this,sprite());return sprites.get(this);};
+  const key=b=>b.isActor()?'a'+b.actorId():'e'+b.index();
+  const RULE=/^(ADD_STATE|ADD STATE|REMOVE_STATE|REMOVE STATE)[ ](\d+(?:\s*,\s*\d+)*)/i;
+  const pick=[],seen=new Set(),add=id=>{if(!seen.has(id)&&w.$dataSkills[id]&&![3,4,5,6].includes(w.$dataSkills[id].scope)&&w.$dataSkills[id].scope>0){seen.add(id);pick.push(id);}};
+  [1,2,160,65,104].forEach(add);
+  const groups={};
+  for(const o of w.$dataSkills){
+    if(!o)continue;
+    const lines=[].concat(o.setupActions,o.wholeActions,o.targetActions,o.followActions,o.finishActions);
+    for(const l of lines){
+      const n=String(l[0]);let g=null;
+      if(/^if /i.test(n))g='if:'+n.slice(3).replace(/\d+/g,'N').replace(/\/\/.*$/,'').trim();
+      else if(RULE.test(n))g='state:'+n.split(' ')[0].toUpperCase()+':'+String((l[1]||[])[0]||'').toUpperCase();
+      else if(/^(HP|MP|TP)[ ]/i.test(n))g='gain:'+n.split(' ')[0].toUpperCase()+':'+String((l[1]||[])[0]||'').toUpperCase();
+      else if(/^(ADD|REMOVE)[ ].*[ ](BUFF|DEBUFF)/i.test(n))g='buff';
+      else if(/^ACTION EFFECT$/i.test(n)&&l[1]&&l[1][0])g='effect:'+String(l[1][0]).toUpperCase();
+      if(g){(groups[g]=groups[g]||[]);if(groups[g].length<3&&!groups[g].includes(o.id))groups[g].push(o.id);}
+    }
+  }
+  Object.values(groups).forEach(list=>list.forEach(add));
+  const refs=o=>{const t=JSON.stringify([o.setupActions,o.wholeActions,o.targetActions,o.followActions,o.finishActions]);
+    return {skills:[...t.matchAll(/_skills\.includes\((\d+)\)|hasSkill\((\d+)\)/g)].map(m=>+(m[1]||m[2])),states:[...t.matchAll(/user\._states\.includes\((\d+)\)/g)].map(m=>+m[1]),
+      rule:[...t.matchAll(/(?:ADD|REMOVE)[ _]STATE[ ](\d+(?:\s*,\s*\d+)*)/gi)].flatMap(m=>m[1].split(',').map(Number))};};
+  const run=(userKey,id,variant)=>{
+    setup();
+    const o=w.$dataSkills[id],rf=refs(o);
+    const user=userKey==='e0'?w.$gameTroop.members()[0]:w.$gameActors.actor(+userKey.slice(1));
+    if(variant==='learned'){rf.skills.forEach(k=>user.learnSkill&&user.learnSkill(k));rf.states.forEach(k=>user.addState(k));user.refresh();}
+    const all=w.$gameParty.battleMembers().concat(w.$gameTroop.members());
+    const before=Object.fromEntries(all.map(b=>[key(b),b._states.slice()]));
+    const action=new w.Game_Action(user);action.setSkill(id);action.setTarget(0);
+    user._actions=[action];const BM=w.BattleManager;BM._subject=user;BM._logWindow=stub;BM._spriteset=stub;BM._action=null;
+    const invoked=[],inv=BM.invokeAction;BM.invokeAction=function(su,t){invoked.push(key(t));return inv.call(this,su,t);};
+    let error=null,madeTargets=null;
+    try{
+      BM.startAction();
+      madeTargets=(BM._allTargets||[]).map(key);
+      for(let i=0;i<20000;i++){const ph=BM._phase;if(ph==='phaseChange')BM.updatePhase();else if(ph==='actionList')BM.updateActionList();else if(ph==='actionTargetList')BM.updateActionTargetList();else break;}
+    }catch(e){error=String(e&&e.stack||e).slice(0,600);}
+    BM.invokeAction=inv;
+    const changed={};
+    for(const b of all){const k=key(b);const add=b._states.filter(x=>!before[k].includes(x)&&rf.rule.includes(x)),rem=before[k].filter(x=>!b._states.includes(x)&&rf.rule.includes(x));if(add.length||rem.length)changed[k]={add,rem};}
+    return {user:userKey,skill:id,variant,targets:madeTargets,invoked,states:changed,cnt:all.map(b=>b.cnt>0||b.mrf>0?key(b):null).filter(Boolean),error};
+  };
+  out.rules=[];
+  for(const id of pick){
+    out.rules.push(run('a1',id,'base'));
+    const rf=refs(w.$dataSkills[id]);
+    if(rf.skills.length||rf.states.length)out.rules.push(run('a1',id,'learned'));
+  }
+  for(const id of [1,2,160])out.rules.push(run('e0',id,'base'));
+  out.ruleGroups=groups;
+}
 if(JSON.stringify(identity)!==JSON.stringify(sourceIdentity(APP)))throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname,'.sandbox'),{recursive:true});
 fs.writeFileSync(path.join(__dirname,'.sandbox/sequences.json'),JSON.stringify(out));
-process.stdout.write(JSON.stringify({skills:Object.keys(out.skills).length,items:Object.keys(out.items).length,repeatsNotOne:out.repeats.notOne})+'\n');
+process.stdout.write(JSON.stringify({rules:out.rules.length,errors:out.rules.filter(r=>r.error).length,skills:Object.keys(out.skills).length,items:Object.keys(out.items).length,repeatsNotOne:out.repeats.notOne})+'\n');
 process.exit(0);

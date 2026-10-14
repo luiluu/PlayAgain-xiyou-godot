@@ -849,6 +849,13 @@ func _play(logs: Array) -> void:
 			"regen":
 				if float(l.hp) != 0.0:
 					_popup(l.target, -float(l.hp), false)
+			"collapse":
+				# 行动序列 IMMORTAL 解除时 HP 为 0 的倒下
+				var cs: XBattlerSprite = sprites[l.target]
+				if gauges.has(l.target):
+					gauges[l.target].box.visible = false
+					gauges[l.target].timer = 0.0
+				await cs.collapse()
 			"skip":
 				pass
 		_refresh_status()

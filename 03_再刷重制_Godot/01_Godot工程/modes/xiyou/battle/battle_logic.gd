@@ -694,8 +694,8 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 			var v := (t.mhp * v1 + v2) * t.rec * (u.pha if is_item(r.skill) else 1.0)
 			v = floorf(v)
 			t.hp = clampf(t.hp + v, 0.0, t.mhp)
-			# MV gainHp → refresh：负值恢复也要同步阵亡状态。
-			if t.hp <= 0:
+			# MV gainHp → refresh：负值恢复也要同步阵亡状态（IMMORTAL 期间阵亡被抵抗）。
+			if t.hp <= 0 and not t.immortal:
 				t.add_state(DEATH_STATE)
 			else:
 				t.remove_state(DEATH_STATE)
@@ -716,6 +716,7 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 					chance = 0.0
 				if randf() < chance:
 					if id == DEATH_STATE:
+						t.immortal = false  # itemEffectAddNormalState：附加阵亡前先解除 IMMORTAL
 						t.hp = 0.0
 					else:
 						t.add_state(id)
@@ -741,14 +742,14 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 				t.refresh_passive()
 
 
-## 行动序列 ADD STATE（Game_Battler.addState → isStateAddable：活着、未抵抗；阵亡状态直接倒下）
+## 行动序列 ADD STATE（Game_Battler.addState → isStateAddable：活着、未抵抗（IMMORTAL 期间阵亡视为抵抗）；阵亡状态直接倒下）
 func sequence_add_state(t: XBattler, id: int) -> void:
 	if XDB.rec("States", id).is_empty() or t.is_dead():
 		return
+	if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) or (id == DEATH_STATE and t.immortal):
+		return
 	if id == DEATH_STATE:
 		_die(t)
-		return
-	if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
 		return
 	t.add_state(id)
 
@@ -758,7 +759,7 @@ func sequence_gain(t: XBattler, kind: String, value: int) -> void:
 	match kind:
 		"HP":
 			t.hp = clampf(t.hp + value, 0.0, t.mhp)
-			if t.hp <= 0.0:
+			if t.hp <= 0.0 and not t.immortal:
 				_die(t)
 		"MP":
 			t.mp = clampf(t.mp + value, 0.0, t.mmp)
@@ -909,6 +910,7 @@ func grant(r: Dictionary) -> Array:
 func end_battle() -> void:
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	for b in state.members():
+		b.immortal = false
 		b.guarding = false
 		b.buffs.fill(0)
 		b.buff_turns.fill(0)

@@ -49,8 +49,9 @@ func run() -> Array:
 		_break = false
 		var list: Array = seq.get(phase, [])
 		if phase == "target":
-			for t in all_targets:
-				targets = [t]
+			# createTargetActions：没有目标时仍以空目标跑一遍（setTargets([undefined])）
+			for t in (all_targets if not all_targets.is_empty() else [null]):
+				targets = [t] if t != null else []
 				_run_list(list)
 				if _break:
 					break
@@ -120,6 +121,22 @@ func _command(name: String, args: Array) -> void:
 				continue
 			logs.append_array(logic._invoke(user, skill, t))
 		return
+	if name == "IMMORTAL":
+		# actionImmortal：参数二 eval 成真＝加，否则解除；解除时 HP 为 0 的倒下（removeImmortal → refresh）
+		var on := not args.is_empty() and args.size() > 1 and str(args[1]).to_lower() == "true"
+		var seen := []
+		for t in make_targets(str(args[0]) if not args.is_empty() else ""):
+			if seen.has(t):
+				continue
+			seen.append(t)
+			if on:
+				t.immortal = true
+			elif t.immortal:
+				t.immortal = false
+				if t.hp <= 0.0 and not t.state_ids.has(XBattleLogic.DEATH_STATE):
+					logic._die(t)
+					logs.append({"type": "collapse", "target": t})
+		return
 	if name == "DEATH BREAK" or name == "BREAK ACTION":
 		if name == "BREAK ACTION" or user.is_dead():
 			_break = true
@@ -168,17 +185,24 @@ func _modify(kind: String, name: String, list: Array) -> void:
 	else:
 		m = RegEx.create_from_string("(?i)^" + kind + "[ ]([+-]\\d+)([%％])").search(name)
 		if m:
-			change = float(int(m.get_string(1)))
+			change = float(m.get_string(1).to_float())
 			percent = true
 		else:
 			m = RegEx.create_from_string("(?i)^" + kind + "[ ]([+-]\\d+)").search(name)
 			if not m:
 				return
-			change = float(int(m.get_string(1)))
+			change = m.get_string(1).to_float()  # parseInt(很长的数字串) 是大浮点数
 	for t in list:
 		var base: float = t.mhp if kind == "HP" else (t.mmp if kind == "MP" else 100.0)
-		var value := int(base * change * 0.01) if percent else int(change)
-		logic.sequence_gain(t, kind, value)
+		logic.sequence_gain(t, kind, js_parse_int(base * change * 0.01 if percent else change))
+
+
+## JS parseInt(数字)：先转成字符串，绝对值 ≥ 1e21 时是指数写法，只取到小数点/e 之前（-1e+33 → -1）
+static func js_parse_int(v: float) -> int:
+	if absf(v) >= 1e21:
+		var mantissa := absf(v) / pow(10.0, floorf(log(absf(v)) / log(10.0)))
+		return int(floorf(mantissa)) * (-1 if v < 0 else 1)
+	return int(v)
 
 
 ## BattleManager.makeActionTargets（序列里实际用到的写法；其余写法照原版得到空表）
