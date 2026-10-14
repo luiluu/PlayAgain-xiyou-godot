@@ -16,6 +16,19 @@ var _branch := {}
 var _depth := 0
 var skipped: Array = []        # [{code, text}]
 static var skip_common_events := [714, 1386, 1435]   # 难度修复、战斗背景、轮回模式：首期无对应系统
+## 对照工具用：全部解释器（含公共事件子解释器）合计最多执行的指令数，0 为不限；超过就停止并置 aborted
+static var max_steps := 0
+static var steps := 0
+static var aborted := false
+## 对照工具用：≥0 时随机数固定为该值（同参照引擎把 Math.random 固定），默认 −1 不固定
+static var fixed_random := -1.0
+
+
+## MV Math.randomInt(hi − lo + 1) + lo
+static func random_int(lo: int, hi: int) -> int:
+	if fixed_random >= 0.0:
+		return lo + floori((hi - lo + 1) * fixed_random)
+	return randi_range(lo, hi)
 
 
 func _init(h: Node, map: int, event: int, commands: Array, depth := 0) -> void:
@@ -33,6 +46,11 @@ func state() -> XState:
 func run() -> void:
 	index = 0
 	while index < list.size():
+		if max_steps > 0:
+			steps += 1
+			if steps > max_steps:
+				aborted = true
+				break
 		var c: Dictionary = list[index]
 		var go = await _execute(c)
 		if go == false:
@@ -353,7 +371,7 @@ func _set_variables(p: Array) -> void:
 	match int(p[3]):
 		0: value = float(p[4])
 		1: value = state().variable(int(p[4]))
-		2: value = randi_range(int(p[4]), int(p[5]))
+		2: value = random_int(int(p[4]), int(p[5]))
 		_:
 			skipped.append({"code": 122, "text": "变量操作数类型 %d" % int(p[3])})
 			return

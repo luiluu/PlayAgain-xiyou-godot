@@ -155,6 +155,21 @@ def verify(app, generated, oracle):
                     issues.append('整队参照数据不一致：' + rel)
         if len(data.get('trace', [])) != 11 or len(data.get('eligibility', [])) != 4 or not data.get('layout'):
             issues.append('整队参照缺少测量结果')
+    events_file = oracle / 'events.json'
+    if manifest.get('toolVersion', 0) >= 11:
+        if not events_file.is_file():
+            issues.append('地图事件对照参照缺失（重新运行 event_probe）')
+        else:
+            data = json.loads(events_file.read_text())
+            identity = data.get('sourceIdentity', {})
+            if identity.get('releaseVersion') != version or identity.get('runtimeInputs') != manifest.get('runtimeInputs'):
+                issues.append('地图事件对照参照版本/脚本不一致')
+            for rel, digest in manifest['inputs'].items():
+                if rel.startswith('data/') or rel == 'package.json':
+                    if identity.get('inputs', {}).get(rel) != digest:
+                        issues.append('地图事件对照参照数据不一致：' + rel)
+            if len(data.get('cases', [])) < 100:
+                issues.append('地图事件对照参照缺少用例')
     return {'releaseVersion': version, 'inputs': len(manifest['inputs']),
             'runtimeInputs': len(manifest.get('runtimeInputs', {})),
             'outputs': len(manifest['outputs']), 'issues': issues}

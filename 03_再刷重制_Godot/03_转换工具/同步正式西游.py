@@ -14,6 +14,7 @@
 import argparse
 import datetime as dt
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -37,6 +38,7 @@ PROBES = [
     (['options_probe.cjs'], ['options.json']),
     (['sequence_probe.cjs'], ['sequences.json']),
     (['party_probe.cjs'], ['party.json']),
+    (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
 IDENTITY_KEYS = {'sourceIdentity', 'identity', 'releaseVersion', 'source'}
 
@@ -116,6 +118,9 @@ def main() -> int:
         elif src.exists():
             shutil.copy2(src, backup / name)
     report = {'from': old_version, 'to': new_version, 'backup': str(backup.relative_to(ROOT)), 'generated': str(gen)}
+    # 探针按环境变量取正式源（XIYOU_APP）与转换产物（XIYOU_GENERATED，event_probe 读地图），与 --app/--generated 一致
+    os.environ['XIYOU_APP'] = str(app)
+    os.environ['XIYOU_GENERATED'] = str(gen)
     with open(backup / '同步.log', 'w') as log:
         run([sys.executable, str(HERE / 'xiyou_export.py'), '--app', str(app), '--out', str(gen)], HERE, log)
         for cmd, outs in PROBES:

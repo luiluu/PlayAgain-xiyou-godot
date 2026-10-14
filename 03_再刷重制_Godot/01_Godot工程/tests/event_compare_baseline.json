@@ -1,0 +1,100 @@
+{
+	"cases": 207,
+	"match": 179,
+	"mismatch": {
+		"ce1440": [
+			"trace",
+			"items",
+			"variables"
+		],
+		"ce811": [
+			"trace"
+		],
+		"m4e15p0": [
+			"variables"
+		],
+		"m4e17p0": [
+			"trace"
+		],
+		"m4e17p1": [
+			"trace"
+		],
+		"m4e19p0": [
+			"variables"
+		],
+		"m4e1p1": [
+			"trace"
+		],
+		"m4e22p0": [
+			"trace"
+		],
+		"m4e22p1": [
+			"trace"
+		],
+		"m4e23p0": [
+			"trace",
+			"items"
+		],
+		"m4e26p0": [
+			"trace",
+			"items"
+		],
+		"m4e27p0": [
+			"trace"
+		],
+		"m4e40p1": [
+			"trace"
+		],
+		"m4e40p3": [
+			"trace"
+		],
+		"m4e41p0": [
+			"trace"
+		],
+		"m4e41p1": [
+			"trace"
+		],
+		"m4e41p2": [
+			"trace"
+		],
+		"m4e41p3": [
+			"trace"
+		],
+		"m4e41p4": [
+			"trace"
+		],
+		"m4e41p5": [
+			"trace"
+		],
+		"m4e49p1": [
+			"variables"
+		],
+		"m4e49p2": [
+			"variables"
+		],
+		"m4e5p0": [
+			"trace",
+			"variables"
+		],
+		"m4e64p0": [
+			"actors",
+			"variables"
+		],
+		"m4e69p0": [
+			"trace",
+			"actors",
+			"variables"
+		],
+		"m4e72p0": [
+			"trace"
+		],
+		"m4e73p0": [
+			"trace"
+		],
+		"m4e8p0": [
+			"trace"
+		]
+	},
+	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。",
+	"source": "v0.24"
+}

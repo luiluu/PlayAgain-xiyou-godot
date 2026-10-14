@@ -31,7 +31,7 @@ static func run(code: String, interp) -> Array:
 		if s.rom.get("g", []).size() < 35:
 			var pool := []
 			for i in range(35):
-				pool.append(randi_range(1, 9999))
+				pool.append(MVInterpreter.random_int(1, 9999))
 			s.rom.g = pool
 			s.rom.gn = 0
 		return []
