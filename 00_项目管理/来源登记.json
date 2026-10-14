@@ -54,15 +54,15 @@
    "useAsOriginalBaseline": false,
    "copyExistingModFeaturesAutomatically": false,
    "remakeMode": "xiyou",
-   "confirmedReleaseVersion": "v0.14",
+   "confirmedReleaseVersion": "v0.15",
    "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
-   "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/dev.018_v014整合同步/当前西游来源清单.json",
-   "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。2026-10-14 西游 MOD 重编号：旧 v0.14～v0.19 合为新 v0.14（内容同旧 v0.19，只改 package.json），此处的 v0.14 指新 v0.14，晚于 v0.13。",
-   "lastConvertedContentReleaseVersion": "v0.14",
+   "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/dev.018_v015同步/当前西游来源清单.json",
+   "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。2026-10-14 西游 MOD 重编号：旧 v0.14～v0.19 合为新 v0.14（内容同旧 v0.19，只改 package.json），新 v0.14、v0.15 都晚于旧 v0.13。",
+   "lastConvertedContentReleaseVersion": "v0.15",
    "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13",
    "contentRefreshPending": false,
    "convertedScope": "floor1_slice",
-   "oracleReleaseVersion": "v0.14"
+   "oracleReleaseVersion": "v0.15"
   },
   {
    "id": "historical_xiyou_source_157",
