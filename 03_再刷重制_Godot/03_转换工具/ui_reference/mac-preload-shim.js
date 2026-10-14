@@ -32,6 +32,8 @@ window.__refShot = function (name) {
         function button(text, fn) { var b=document.createElement('button'); b.textContent=text; b.onclick=function(){fn();b.blur();}; panel.appendChild(b); }
         function fixture(mid, x, y, coords) {
             if (!window.DataManager || !DataManager.isDatabaseLoaded()) return;
+            if (SceneManager._scene instanceof Scene_Map) { SceneManager._scene.update=function(){}; }
+            SceneManager.goto(Scene_Base);
             ConfigManager.applyData({}); DataManager.setupNewGame();
             ConfigManager.MapXy=coords;
             $gameSystem.setDifficultyId(3); $gameParty.DCultyL3=true;
@@ -81,6 +83,8 @@ window.__refShot = function (name) {
         function button(text, fn) { var b = document.createElement('button'); b.textContent = text; b.onclick = function(){fn();b.blur();}; panel.appendChild(b); }
         function fixture(n) {
             if (!window.DataManager || !DataManager.isDatabaseLoaded()) return;
+            if (SceneManager._scene instanceof Scene_Map) { SceneManager._scene.update=function(){}; }
+            SceneManager.goto(Scene_Base);
             ConfigManager.applyData({}); DataManager.setupNewGame();
             $gameSystem.setDifficultyId(3);
             for (var i=1;i<5000;i++) $gameVariables._data[i]=0;
@@ -98,6 +102,7 @@ window.__refShot = function (name) {
                 SceneManager.goto(Scene_Map);
                 var ready=setInterval(function(){
                     if (!(SceneManager._scene instanceof Scene_Map) || !ImageManager.isReady() || SceneManager._scene.isBusy()) return;
+                    $gameMessage.clear();
                     clearInterval(ready);
                     // 避开随机神话并稳定 OTB 同速顺序；不影响正式应用。
                     Math.random = function(){return 0.5;};
