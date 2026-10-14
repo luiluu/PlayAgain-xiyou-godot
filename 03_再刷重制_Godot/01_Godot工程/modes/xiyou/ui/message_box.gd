@@ -3,8 +3,10 @@ extends Control
 ## 对话框，照正式版运行时逐帧复现（参照：04_验证/本地结果/原版参照/02、03、06、30～）：
 ## - 消息窗 MV Window_Message＋YEP_MessageCore：全宽 1280×172（4 行），位置 上/中/下 = y 0/274/548；
 ##   背景 窗口/暗底/透明；头像 144×144 画在内容 (0,0)，正文从 x 168 起（无头像从 0）；
-##   每帧处理一个字符（XMVText），行高 = 本行最大字号 + 8；放不下自动换行（zidonghuanhang）；
-##   满 4 行或 \! 时等待按键（先等 10 帧），底边显示翻页标记；确定/取消/点击都可翻页，打字中按下则本页瞬显；
+##   文字逐字处理（XMVText），但正式核心 clearFlags 总把 _showFast 设为真，所以每页在窗口打开后一帧内整页画出，
+##   只有 \. \| 等等待码会停顿（dev.025 起照此；此前误作每帧一字）。行高 = 本行最大字号 + 8；放不下自动换行（zidonghuanhang）；
+##   满 4 行或 \! 时等待按键（先等 10 帧），底边显示翻页标记；确定/取消/点击都可翻页；
+##   设置「对话跳过」（dhtg）开着时行内快显且文字结束不等按键直接关闭（选项/数值输入照常等待）；
 ##   按住 PageDown 快进（YEP Fast Forward）；打字音 Cursor1 音量 50、每 3 帧一次、音高 ±10（YEP_X_ExtMesPack1）。
 ## - 名字框 YEP Window_NameBox：\n<名字>（\nc<> 居中、\nr<> 靠右等），高 64，宽 = 名字宽 + 28 + 140，
 ##   名字用 \c[6] 画在 x 70；消息窗在上方时放在消息窗下面，否则在上面；消息结束 4 帧后关闭。
@@ -230,9 +232,10 @@ func _new_page() -> void:
 	_state.x = _state.left
 	_state.y = 0
 	_state.height = _state.calc_height()
-	_show_fast = false
-	_line_fast = false
-	_pause_skip = false
+	# 正式核心 clearFlags：整页立即显示；设置「对话跳过」时行内也快显，且文字完不等按键直接关闭
+	_show_fast = true
+	_line_fast = XConfig.flag("dhtg")
+	_pause_skip = XConfig.flag("dhtg")
 	_sound_count = 0
 	_hang_count = int(str(XHangUp.params().get("messageCount", "60"))) if XHangUp.is_active(XState.current) else 0
 	win.refresh()

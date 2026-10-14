@@ -107,6 +107,68 @@ for(const remember of [false,true]){
   w.ConfigManager.applyData({});
   out.notices=nt;
 }
+// 核心里的杂项开关（rpg_windows/rpg_objects 改动）：只遇稀有/罕见/极其稀有、穿墙、对话跳过、禁用遇敌、步步遇敌、三条宣传行。
+{
+  const SYMS=['Boss','BOSS','boss','cq','wxxonoff','wxlonoff','wxtonoff','dhtg','ydgb','yd100'];
+  const ms={rows:[],ops:[],persist:{},message:[],passable:[],troops:[],progress:[],execute:[]};
+  w.ConfigManager.applyData({});
+  for(const s of SYMS)ms.rows.push({symbol:s,value:w.ConfigManager[s]===undefined?null:w.ConfigManager[s],status:win.statusText(win.findSymbol(s))===undefined?null:String(win.statusText(win.findSymbol(s)))});
+  for(const s of SYMS){
+    win.select(win.findSymbol(s));
+    for(const initial of [undefined,false,true])for(const op of ['processOk','cursorRight','cursorLeft']){
+      w.ConfigManager[s]=initial;win[op](false);
+      ms.ops.push({symbol:s,initial:initial===undefined?null:initial,op,value:w.ConfigManager[s]===undefined?null:w.ConfigManager[s],status:String(win.statusText(win.index()))});
+    }
+  }
+  for(const s of SYMS)w.ConfigManager[s]=true;
+  const saved=w.ConfigManager.makeData();
+  ms.persist.saved=SYMS.filter(s=>s in saved);
+  for(const s of SYMS)delete w.ConfigManager[s];
+  w.ConfigManager.applyData(Object.fromEntries(SYMS.map(s=>[s,true])));
+  ms.persist.applied=Object.fromEntries(SYMS.map(s=>[s,w.ConfigManager[s]===undefined?null:w.ConfigManager[s]]));
+  w.ConfigManager.applyData({cq:1});ms.persist.cqTruthy=w.ConfigManager.cq;
+  for(const dhtg of [undefined,false,true]){
+    w.ConfigManager.dhtg=dhtg;const m={};w.Window_Message.prototype.clearFlags.call(m);
+    ms.message.push({dhtg:dhtg===undefined?null:dhtg,showFast:m._showFast,lineShowFast:m._lineShowFast,pauseSkip:m._pauseSkip});
+  }
+  for(const cq of [false,true])for(const open of [false,true]){
+    w.ConfigManager.cq=cq;
+    ms.passable.push({cq,open,passable:w.Game_Map.prototype.isPassable.call({checkPassage:()=>open},1,1,2)});
+  }
+  const lists=[[10,5,1],[1],[5,5],[1,1,3],[2,1],[3]];
+  const flags=[];for(const a of [false,true])for(const b of [false,true])for(const c of [false,true])flags.push({Boss:a,BOSS:b,boss:c});
+  const realRandom=w.Math.random,realList=w.$gameMap.encounterList;
+  for(const weights of lists){
+    const sum=weights.reduce((x,y)=>x+y,0);
+    w.$gameMap.encounterList=()=>weights.map((weight,i)=>({troopId:i+1,weight,regionSet:[]}));
+    for(const f of flags)for(let r=0;r<sum;r++){
+      Object.assign(w.ConfigManager,f);w.Math.random=()=>(r+0.5)/sum;
+      ms.troops.push({weights,flags:f,random:r,troop:w.$gamePlayer.makeEncounterTroopId()});
+    }
+  }
+  w.Math.random=realRandom;w.$gameMap.encounterList=realList;
+  for(const f of flags)Object.assign(w.ConfigManager,{Boss:undefined,BOSS:undefined,boss:undefined});
+  for(const yd100 of [undefined,true])for(const bush of [false,true]){
+    w.ConfigManager.yd100=yd100;
+    const isBush=w.$gameMap.isBush;w.$gameMap.isBush=()=>bush;
+    ms.progress.push({yd100:!!yd100,bush,value:w.$gamePlayer.encounterProgressValue()});
+    w.$gameMap.isBush=isBush;
+  }
+  for(const ydgb of [undefined,true]){
+    w.ConfigManager.ydgb=ydgb;
+    const list=w.$gameMap.encounterList,ev=w.$gameMap.isEventRunning,mk=w.$gamePlayer.makeEncounterCount,setup=w.BattleManager.setup,enc=w.BattleManager.onEncounter;
+    let made=0,setups=0;
+    w.$gameMap.encounterList=()=>[{troopId:1,weight:1,regionSet:[]}];w.$gameMap.isEventRunning=()=>false;
+    w.$gamePlayer.makeEncounterCount=function(){made++;this._encounterCount=7;};w.BattleManager.setup=function(){setups++;};w.BattleManager.onEncounter=function(){};
+    w.$gamePlayer._encounterCount=0;
+    const result=w.$gamePlayer.executeEncounter();
+    ms.execute.push({ydgb:!!ydgb,result,made,setups,count:w.$gamePlayer._encounterCount});
+    w.$gameMap.encounterList=list;w.$gameMap.isEventRunning=ev;delete w.$gamePlayer.makeEncounterCount;w.BattleManager.setup=setup;w.BattleManager.onEncounter=enc;
+  }
+  for(const s of SYMS)delete w.ConfigManager[s];
+  w.ConfigManager.applyData({});
+  out.misc=ms;
+}
 if(JSON.stringify(identity)!==JSON.stringify(sourceIdentity(APP)))throw new Error('测量期间来源改变');
 fs.writeFileSync(path.join(__dirname,'.sandbox/options.json'),JSON.stringify(out,null,1));
 process.stdout.write(JSON.stringify({notices:out.notices.rows.length,rows:out.rows.length,volume:out.volume.length,dash:out.dash.length,commands:out.commands,defaults:out.defaults})+'\n');

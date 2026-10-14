@@ -7,11 +7,16 @@ static var path_override := ""
 static var _loaded_path := "<unloaded>"
 static var _values := {}
 static var _map_xy_configured := false
+## 核心改动的杂项开关（rpg_windows/rpg_objects）：只遇稀有/罕见/极其稀有、三条宣传行、对话跳过、禁用遇敌、步步遇敌。
+## 不存进配置，只在本次运行有效；开局为未设置（null，设置页状态空白），确定后变 true。穿墙 cq 由
+## installDisplayPreferencesRuntime 存进配置（DEFAULTS）。
+const SESSION_FLAGS := ["Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100"]
+static var _session := {}
 const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "commandRemember": true,
 	"bgmVolume": 40, "bgsVolume": 40, "meVolume": 40, "seVolume": 40,
 	"CombatDamageShow": true, "CombatSkillAnimation": false, "battleAniSpeed": 4,
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
-	"codexSkillLevelNotice": true}
+	"codexSkillLevelNotice": true, "cq": false}
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
 const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
@@ -56,8 +61,23 @@ static func ensure_loaded() -> void:
 
 
 static func flag(key: String) -> bool:
+	if key in SESSION_FLAGS:
+		return _session.get(key) == true
 	ensure_loaded()
 	return bool(_values.get(key, false))
+
+
+## 本次运行的杂项开关原值：null（未设置）或 bool
+static func session_value(key: String) -> Variant:
+	return _session.get(key)
+
+
+static func set_session(key: String, value: Variant) -> void:
+	if key in SESSION_FLAGS:
+		if value == null:
+			_session.erase(key)
+		else:
+			_session[key] = bool(value)
 
 
 static func set_flag(key: String, value: bool) -> bool:

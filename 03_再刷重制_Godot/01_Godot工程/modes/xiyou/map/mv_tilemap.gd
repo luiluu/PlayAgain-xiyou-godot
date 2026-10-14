@@ -215,10 +215,12 @@ func _draw_shadow(bits: int, dx: int, dy: int) -> void:
 
 
 # ---- 通行（MV Game_Map.checkPassage）----
-## d 为方向 2/4/6/8；返回该格朝 d 方向能否离开/进入。
+## d 为方向 2/4/6/8；返回该格朝 d 方向能否离开/进入。设置「穿墙开关」开着时一律可通行（地图外仍不行，MV canPass 先查 isValid）。
 func is_passable(x: int, y: int, d: int) -> bool:
 	if x < 0 or y < 0 or x >= width or y >= height:
 		return false
+	if XConfig.flag("cq"):
+		return true
 	var bit := (1 << (d / 2 - 1)) & 0x0f
 	for z in [3, 2, 1, 0]:
 		var id := tile(x, y, z)
@@ -229,6 +231,15 @@ func is_passable(x: int, y: int, d: int) -> bool:
 			return true
 		if flag & bit == bit:
 			return false
+	return false
+
+## MV Game_Map.isBush：四层图块任一有草丛标记 0x40
+func is_bush(x: int, y: int) -> bool:
+	if x < 0 or y < 0 or x >= width or y >= height:
+		return false
+	for z in [3, 2, 1, 0]:
+		if _flag(tile(x, y, z)) & 0x40 != 0:
+			return true
 	return false
 
 ## 区域 ID（第 6 层）

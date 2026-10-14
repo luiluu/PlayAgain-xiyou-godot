@@ -32,7 +32,7 @@ var difficulty_notice: XDifficultyNoticeCanvas
 ## O-015：事件、对话、战斗之外才挂机走动与自动存档（原版事件进行中角色也会继续随机走动，存档可能存进半段剧情）。
 const SAFE_HANG_UP := true
 var busy := false
-var encounter_count := 0
+var encounter_count := 0.0
 var skipped_log: Array = []
 var toasts: Array = []              # 出现过的提示文字（测试核对用）
 var popups: Array = []              # 出现过的获得提示文字（测试核对用）
@@ -345,7 +345,7 @@ func _on_player_step() -> void:
 			await run_event(e)
 			return
 	if not map_data.encounterList.is_empty():
-		encounter_count -= 1
+		encounter_count -= encounter_progress_value(lower.is_bush(player.grid.x, player.grid.y))
 		if encounter_count <= 0:
 			await _encounter()
 
@@ -418,19 +418,39 @@ func _encounter() -> void:
 	_make_encounter_count()
 	var region := lower.region(player.grid.x, player.grid.y)
 	var list: Array = map_data.encounterList.filter(func(en): return en.regionSet.is_empty() or en.regionSet.has(float(region)) or en.regionSet.has(region))
-	if list.is_empty():
-		return
 	var total := 0
 	for en in list:
 		total += int(en.weight)
-	var r := randi_range(0, total - 1)
+	if total <= 0:
+		return
+	var troop := encounter_troop(list, randi_range(0, total - 1))
+	# 设置「禁用遇敌」：仍重置步数并抽敌群，只是不进战斗（executeEncounter 返回 false）
+	if troop <= 0 or XConfig.flag("ydgb"):
+		return
+	_set_busy(true)
+	await start_battle(troop, true, false)
+	_set_busy(false)
+
+
+## Game_Player.encounterProgressValue：草丛 2、否则 1；设置「步步遇敌」时 100（每步必遇）。
+static func encounter_progress_value(bush: bool) -> float:
+	return 100.0 if XConfig.flag("yd100") else (2.0 if bush else 1.0)
+
+
+## Game_Player.makeEncounterTroopId（正式核心改动版）：r 为 0～权重和−1 的随机数。
+## 「极其稀有」boss 取权重和−1、「只遇稀有」Boss 取权重和−2 作为抽签值；「只遇罕见」BOSS 时每项都减权重和−1。
+static func encounter_troop(list: Array, r: int) -> int:
+	var total := 0
 	for en in list:
-		r -= int(en.weight)
-		if r < 0:
-			_set_busy(true)
-			await start_battle(int(en.troopId), true, false)
-			_set_busy(false)
-			return
+		total += int(en.weight)
+	if total <= 0:
+		return 0
+	var value := total - 1 if XConfig.flag("boss") else (total - 2 if XConfig.flag("Boss") else r)
+	for en in list:
+		value -= total - 1 if XConfig.flag("BOSS") else int(en.weight)
+		if value < 0:
+			return int(en.troopId)
+	return 0
 
 
 # ---- 解释器服务 ----

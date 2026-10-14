@@ -87,20 +87,13 @@ func _run() -> void:
 	await _phys()
 	_check("msg_middle_rect", _rect(box.win) == [0.0, 274.0, 1280.0, 172.0], _rect(box.win))
 	_check("name_rect", _rect(box.name_win) == [0.0, 210.0, 246.0, 64.0], _rect(box.name_win))
-	# 开窗 8 帧（每帧 +32）后才开始逐字
+	# 开窗 8 帧（每帧 +32）后才画字；正式 clearFlags 强制 _showFast，打开后一帧内整页画到 \| 等待
 	await _phys(6)
 	_check("opening_8_frames", box.win.openness < 255 and box._page_glyphs.is_empty(), box.win.openness)
 	await _phys(3)
-	_check("typing_started", box.win.is_open() and box._page_glyphs.size() >= 1, box._page_glyphs.size())
-	var n0 := box._page_glyphs.size()
-	await _phys(5)
-	_check("one_char_per_frame", box._page_glyphs.size() - n0 == 5, box._page_glyphs.size() - n0)
+	_check("page_drawn_at_once", box.win.is_open() and box._page_glyphs.size() == 21, box._page_glyphs.size())
 	var first: Dictionary = box._page_glyphs[0]
 	_check("text_indent_168_line_34", first.x == 168.0 and first.h == 34.0, [first.x, first.h])
-	# 打字中按确定：本页瞬显，到 \| 等待
-	await _press("ui_accept")
-	await _phys()
-	_check("show_fast", box._page_glyphs.size() == 21, box._page_glyphs.size())
 	_check("wait_60", box._wait > 40 and not box.win.pause, box._wait)
 	await _wait_pause()
 	await _phys(12)
