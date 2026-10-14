@@ -73,7 +73,41 @@ for(const remember of [false,true]){
   const sk=new w.Window_BattleSkill();sk.setActor(a);sk.setStypeId(1);sk.selectLast();
   out.skills.push({remember,id:sk.item()&&sk.item().id});
 }
+// 消息提醒（installV019UsabilityRuntime）：子页行、说明、开关操作、设置页状态文字、配置读写与自动提示分类。
+{
+  const U=w.CodexV019,nt={};
+  w.ConfigManager.applyData({});
+  nt.defaults={notices:Object.assign({},w.ConfigManager.codexNotices),skillLevel:w.ConfigManager.codexSkillLevelNotice};
+  const sc=new w.Scene_CodexNotices();sc.create();
+  const l=sc._list,h=sc._heading;
+  nt.heading=[h.x,h.y,h.width,h.height];nt.list=[l.x,l.y,l.width,l.height,l.maxItems(),l.index()];
+  nt.rows=l._list.map((c,i)=>({name:c.name,key:c.ext,hint:l.hintOf(c.ext),on:l.isOn(c.ext)}));
+  nt.ops=[];
+  for(let i=0;i<l.maxItems();i++){
+    l.select(i);
+    for(const op of ['toggle','cursorRight','cursorLeft','cursorLeft','toggle']){
+      if(op==='toggle')l.toggleCurrent();else l[op]();
+      nt.ops.push({index:i,op,index2:l.index(),on:l.isOn(l.extOf(i))});
+    }
+  }
+  const oi=win.findSymbol('codexNotices');win.select(oi);
+  nt.status=[];
+  w.ConfigManager.applyData({});
+  nt.status.push({off:[],text:String(win.statusText(oi))});
+  for(const off of [['race'],['zhenqi','skillLevel'],['race','chest','zhenqi','points','drop','learn','dungeon','share','skillLevel']]){
+    w.ConfigManager.applyData({codexNotices:Object.fromEntries(off.filter(k=>k!=='skillLevel').map(k=>[k,false])),codexSkillLevelNotice:!off.includes('skillLevel')});
+    nt.status.push({off,text:String(win.statusText(oi))});
+  }
+  for(const op of ['cursorRight','cursorLeft']){win[op](false);nt.status.push({op,index:win.index(),text:String(win.statusText(oi))});}
+  nt.saved=w.ConfigManager.makeData().codexNotices;nt.savedSkillLevel=w.ConfigManager.makeData().codexSkillLevelNotice;
+  w.ConfigManager.applyData({codexNotices:{race:0,chest:null,zhenqi:false}});
+  nt.loose=Object.assign({},w.ConfigManager.codexNotices);
+  nt.classify=['宝箱收获：金币×3','获得 肝帝积分 +5','滑稽值＋1','抽奖券额外 +1','副本Boss专属掉落：XX','权能掉落','获得锻造材料','孙悟空已领悟 火眼金睛','副本挑战完成！','逃离副本','进入副本，关闭挂机','技能共享激活：光环','羁绊：师徒','装备出售完成','已保存到存档 1。','没药了']
+    .map(message=>({message,key:U.classify({message})}));
+  w.ConfigManager.applyData({});
+  out.notices=nt;
+}
 if(JSON.stringify(identity)!==JSON.stringify(sourceIdentity(APP)))throw new Error('测量期间来源改变');
 fs.writeFileSync(path.join(__dirname,'.sandbox/options.json'),JSON.stringify(out,null,1));
-process.stdout.write(JSON.stringify({rows:out.rows.length,volume:out.volume.length,dash:out.dash.length,commands:out.commands,defaults:out.defaults})+'\n');
+process.stdout.write(JSON.stringify({notices:out.notices.rows.length,rows:out.rows.length,volume:out.volume.length,dash:out.dash.length,commands:out.commands,defaults:out.defaults})+'\n');
 process.exit(0);

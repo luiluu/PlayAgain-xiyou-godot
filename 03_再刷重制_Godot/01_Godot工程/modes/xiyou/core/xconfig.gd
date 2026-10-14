@@ -9,8 +9,16 @@ static var _values := {}
 static var _map_xy_configured := false
 const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "commandRemember": true,
 	"bgmVolume": 40, "bgsVolume": 40, "meVolume": 40, "seVolume": 40,
-	"CombatDamageShow": true, "CombatSkillAnimation": false, "battleAniSpeed": 4}
+	"CombatDamageShow": true, "CombatSkillAnimation": false, "battleAniSpeed": 4,
+	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
+	"codexSkillLevelNotice": true}
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
+## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
+const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
+	["zhenqi", "真气消息", "真气精进、大圆满、降服灵根等"], ["points", "积分消息", "肝帝积分、滑稽值、额外抽奖券"],
+	["drop", "掉落消息", "副本Boss专属掉落、权能、锻造锤"], ["learn", "领悟消息", "角色领悟新技能"],
+	["dungeon", "副本消息", "副本完成、逃离、关闭挂机"], ["share", "共享消息", "光环等技能共享、羁绊激活与失效"],
+	["skillLevel", "技能升级通告", "技能升级时右上角的通告"]]
 
 
 static func path() -> String:
@@ -24,7 +32,7 @@ static func ensure_loaded() -> void:
 	if p == _loaded_path:
 		return
 	_loaded_path = p
-	_values = DEFAULTS.duplicate()  # 正式版 applyData({}) 的实际默认值（含后续插件覆盖）
+	_values = DEFAULTS.duplicate(true)  # 正式版 applyData({}) 的实际默认值（含后续插件覆盖）
 	_map_xy_configured = false
 	if p != "" and FileAccess.file_exists(p):
 		var data = JSON.parse_string(FileAccess.get_file_as_string(p))
@@ -34,6 +42,13 @@ static func ensure_loaded() -> void:
 					_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 0, 100)
 				elif key == "battleAniSpeed":
 					_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 1, 4)
+				elif key == "codexNotices":
+					# 原版 applyData：只有存成 false 的类别才关闭
+					var saved = data.get(key)
+					for k in _values[key]:
+						_values[key][k] = not (saved is Dictionary and saved.get(k) is bool and saved[k] == false)
+				elif key == "codexSkillLevelNotice":
+					_values[key] = not (data.get(key) is bool and data[key] == false)
 				else:
 					_values[key] = bool(data.get(key, DEFAULTS[key]))
 			_map_xy_configured = data.has("MapXy")
@@ -46,7 +61,7 @@ static func flag(key: String) -> bool:
 
 
 static func set_flag(key: String, value: bool) -> bool:
-	if key not in DEFAULTS or key in VOLUMES or key == "battleAniSpeed":
+	if key not in DEFAULTS or key in VOLUMES or key in ["battleAniSpeed", "codexNotices"]:
 		return false
 	ensure_loaded()
 	_values[key] = value
@@ -83,6 +98,31 @@ static func set_battle_speed(value: int) -> bool:
 
 static func battle_speed_text() -> String:
 	return ["四倍", "三倍", "二倍", "OFF"][battle_speed() - 1]
+
+
+## 消息提醒某一类是否显示（skillLevel 为技能升级通告）
+static func notice_on(key: String) -> bool:
+	ensure_loaded()
+	if key == "skillLevel":
+		return bool(_values.codexSkillLevelNotice)
+	return bool(_values.codexNotices.get(key, true))
+
+
+static func set_notice(key: String, on: bool) -> bool:
+	ensure_loaded()
+	if key == "skillLevel":
+		_values.codexSkillLevelNotice = on
+	elif _values.codexNotices.has(key):
+		_values.codexNotices[key] = on
+	else:
+		return false
+	return _write()
+
+
+## 设置页「消息提醒」的状态文字
+static func notices_text() -> String:
+	var off := NOTICES.filter(func(n): return not notice_on(n[0])).size()
+	return "%d项关闭" % off if off > 0 else "全部显示"
 
 
 static func map_xy() -> bool:

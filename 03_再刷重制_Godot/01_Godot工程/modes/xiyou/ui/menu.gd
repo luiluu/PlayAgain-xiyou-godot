@@ -358,10 +358,10 @@ func _quick_save() -> void:
 		return
 	if XSave.save(slot):
 		XSound.system(5)
-		XToast.show_text("已保存到存档 %d。" % slot)
+		XToast.show_text("已保存到存档 %d。" % slot, true)
 	else:
 		XSound.system(3)
-		XToast.show_text("存档失败，请通过存档菜单重试。")
+		XToast.show_text("存档失败，请通过存档菜单重试。", true)
 
 
 ## 选格存档页（YEP 的 Scene_Save；只在一键存档还没有存档格时打开），盖在队伍窗位置。

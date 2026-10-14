@@ -3,6 +3,8 @@ extends CanvasLayer
 ## 事件脚本与一键存档的 $.toaster 提示（AXY_Toast，正式版参数）：网页层的提示框，盖在地图和菜单之上，换场景也不消失。
 ## 容器 (450,20) 宽 280；每条外边距 10、内边距 10，底色 rgba(0,0,0,0.7)，白字 18（游戏字体）、四向 1 像素阴影 rgba(0,0,0,0.5)；
 ## 淡入 0.6 秒（jQuery "slow"），出现 3 秒后用 0.6 秒淡出并收起高度，后面的提示随之上移。消息里的 <br> 换行，其余标签去掉。
+## 消息提醒（installV019UsabilityRuntime）：按文字分类，类别关闭时不弹；菜单里操作得到的反馈（in_menu）照常显示。
+## 原版种族/真气两类靠调用栈识别，这里由调用方传 key。
 
 const LEFT := 450.0
 const TOP := 20.0
@@ -20,7 +22,11 @@ var stack: VBoxContainer
 
 
 ## 显示一条提示（挂在场景树根上，跨场景保留，与原版网页层一样）
-static func show_text(message: String) -> void:
+static func show_text(message: String, in_menu := false, key := "") -> void:
+	if key == "":
+		key = classify(message)
+	if key != "" and not in_menu and not XConfig.notice_on(key):
+		return
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree == null:
 		return
@@ -30,6 +36,16 @@ static func show_text(message: String) -> void:
 		layer.name = "XToast"
 		tree.root.add_child(layer)
 	layer._add(message)
+
+
+## U.classify 的文字规则（正则同原版）
+static func classify(message: String) -> String:
+	for rule in [["^宝箱收获", "chest"], ["肝帝积分 *[+＋]|滑稽值 *[+＋]|抽奖券额外", "points"],
+			["专属掉落|权能掉落|获得锻造材料", "drop"], ["已领悟", "learn"],
+			["副本挑战完成|逃离副本|进入副本，关闭挂机", "dungeon"], ["^技能共享|^羁绊：", "share"]]:
+		if RegEx.create_from_string(rule[0]).search(message):
+			return rule[1]
+	return ""
 
 
 static func plain(message: String) -> String:

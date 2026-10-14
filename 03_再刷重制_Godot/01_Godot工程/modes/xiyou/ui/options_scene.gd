@@ -4,7 +4,8 @@ extends Control
 ## - 背景同主菜单（MOG_MenuBackground 底图＋粒子），窗口不透明度 30、背景 192。
 ## - Window_Options (440,130,400,460)：行高 36、字号 26、可见 12 行；名字左对齐在 itemRectForText (6,宽 360) 的前 240，
 ##   状态右对齐在内容 x 240、宽 120（statusWidth）。33 项与正式版同序；「挂机设置」只在挂机未禁用时出现（needAddHangUp）。
-## - 已重制：坐标、智能AI、始终跑步、记住指令、伤害数字、技能动画开关，挂机设置，四路音量与四档战斗变速。
+## - 已重制：坐标、智能AI、始终跑步、记住指令、伤害数字、技能动画开关，挂机设置，四路音量与四档战斗变速，
+##   消息提醒（状态「全部显示」/「N项关闭」，确定音后打开 XNoticeOptionsScene，左右无作用）。
 ##   其余选项的机制还没做，暂时灰显、不显示状态，确定时蜂鸣；原版都可用（见 界面风格.md）。
 ## - 上下键：按住连续移动、首按可首尾循环，换行播光标音；取消（Esc/右键）播取消音返回主菜单。
 
@@ -14,6 +15,8 @@ const RECT := Rect2(440, 130, 400, 460)
 const LH := 36.0
 const ROWS := 12
 const STATUS_W := 120.0
+## O-024：从挂机设置/消息提醒子页返回时保留光标位置（原版 Scene_Options 重建，回到第 0 项）
+const KEEP_INDEX_AFTER_PAGE := true
 ## [名字, 符号, 已重制]（正式 v0.19 Window_Options._list 顺序：v0.19 加「消息提醒」、去掉「技能升级通告」）
 const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", true], ["始终跑步", "alwaysDash", true],
 	["记住指令", "commandRemember", true], ["Battle Camera", "battleCamera", false], ["开启掉落动画", "MOG_TrPopUpBattle_Key", false],
@@ -22,7 +25,7 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 	["BGS 音量", "bgsVolume", true], ["ME 音量", "meVolume", true], ["SE 音量", "seVolume", true], ["只遇稀有", "Boss", false],
 	["只遇罕见", "BOSS", false], ["极其稀有", "boss", false], ["穿墙开关", "cq", false], ["此游戏为免费游戏！", "wxxonoff", false],
 	["总群请加906327865！", "wxlonoff", false], ["不要在闲鱼买到这个版本！", "wxtonoff", false], ["战斗变速", "battleAniSpeed", true],
-	["对话跳过", "dhtg", false], ["禁用遇敌", "ydgb", false], ["步步遇敌", "yd100", false], ["消息提醒", "codexNotices", false],
+	["对话跳过", "dhtg", false], ["禁用遇敌", "ydgb", false], ["步步遇敌", "yd100", false], ["消息提醒", "codexNotices", true],
 	["队列跟随", "codexFollow", false],
 	["战力显示与估算", "codexPowerEnabled", false], ["测试模式", "codexTestMode", false], ["GM 工具", "codexGM", false],
 	["角色换装", "codexCostumes", false], ["待提交反馈", "codexFeedbackPending", false]]
@@ -60,6 +63,8 @@ func status_text(i: int) -> String:
 			return XConfig.battle_speed_text()
 		"bgmVolume", "bgsVolume", "meVolume", "seVolume":
 			return str(XConfig.volume(str(_list[i][1])))
+		"codexNotices":
+			return XConfig.notices_text()
 	return ""
 
 
@@ -109,6 +114,9 @@ func ok() -> void:
 		"HangUp":
 			XSound.system(1)
 			_open_hang_up()
+		"codexNotices":
+			XSound.system(1)
+			_open_page(XNoticeOptionsScene.new())
 
 
 ## Window_Options.changeValue：值变了才存、重画并播光标音；HangUp 不改值
@@ -125,7 +133,6 @@ func _side(right: bool) -> void:
 
 func _set_map_xy(v: bool) -> void:
 	_set_flag("MapXy", v)
-
 
 
 func _set_flag(sym: String, v: bool) -> void:
@@ -161,6 +168,10 @@ func _open_hang_up() -> void:
 	var page := XHangUpOptionsScene.new()
 	page.map_shot = map_shot
 	page.player_tile = player_tile
+	_open_page(page)
+
+
+func _open_page(page: Control) -> void:
 	_page = page
 	for node in get_children():
 		if node is CanvasItem:
@@ -172,6 +183,9 @@ func _open_hang_up() -> void:
 		for node in get_children():
 			if node is CanvasItem and node != page:
 				node.show()
+		if not KEEP_INDEX_AFTER_PAGE:
+			index = 0
+			top = 0
 		_refresh())
 
 

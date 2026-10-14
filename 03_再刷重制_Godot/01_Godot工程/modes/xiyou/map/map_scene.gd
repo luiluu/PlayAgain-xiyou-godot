@@ -620,7 +620,7 @@ func return_to_title() -> void:
 ## $.toaster 提示（AXY_Toast 样式，见 XToast）
 func toast(text: String) -> void:
 	toasts.append(XToast.plain(text))
-	XToast.show_text(text)
+	XToast.show_text(text, _menu_open)
 
 
 ## 原版的 prompt(提示, 默认)：输入一行文字，取消返回空。自动测试时取 auto_answers 里排在最前的字符串。

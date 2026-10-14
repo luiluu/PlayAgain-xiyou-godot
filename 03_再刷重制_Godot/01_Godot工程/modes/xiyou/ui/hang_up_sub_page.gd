@@ -52,7 +52,7 @@ func _ready() -> void:
 	_refresh()
 	if rows().is_empty():
 		if kind in ["hp", "mp"]:
-			XToast.show_text("没药了")
+			XToast.show_text("没药了", true)
 		closed.emit.call_deferred()
 
 
