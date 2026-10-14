@@ -23,6 +23,7 @@
 
 - `options_probe.cjs`：正式引擎内存配置的默认值、33项顺序与文字、48组音量改值、4组跑步/Shift和角色指令/技能记忆，战斗显示/变速，消息提醒子页（notices）、核心杂项开关与遇敌抽签（misc）、屏蔽掉落子页与实际掉落过滤（pingbi）、队列跟随（follow）；只写 `.sandbox/options.json`，验收后复制到 `generated/oracle/`。来源同步需同其余六探针一起重跑。
 - `sequence_probe.cjs`：YEP_BattleEngineCore 解析后全部技能/物品的五段行动序列（每项 SHA-1，另存少量全文样本）；只写 `.sandbox/sequences.json`，验收后复制到 `generated/oracle/`。`验证西游来源.py` 逐项核对转换器（v10 起）导出的 `yepSeq`。来源同步时与其余七探针一起重跑。
+- `event_probe.cjs`：地图事件对照参照（效率改造第二步）。用正式 Game_Interpreter 逐个运行 Godot 导出的切片事件页（generated/maps）与切片公共事件，每个用例从同一内存新游戏开始（难度 3、队伍 1/8/10/9、所在地图为事件地图，公共事件用大厅），只跑该页指令；应答固定（选项默认项、同组第 4 次起取最后一项、数值 0、prompt「测试」、战斗胜利、Math.random 固定 0.5），场景/存档/商店只记录。输出每个用例的 trace（文字、选项、场所移动、战斗、商店、场景、存档、输入、提示、预约公共事件）与状态变化 delta；只写 `.sandbox/events.json`，复制到 `generated/oracle/`（同步正式西游.py 自动做）。读转换产物的位置可用环境变量 XIYOU_GENERATED 指定。Godot 侧对照见 `tests/xiyou_event_compare`。
 
 ## 同步正式西游.py：正式源更新后的一键重同步
 
