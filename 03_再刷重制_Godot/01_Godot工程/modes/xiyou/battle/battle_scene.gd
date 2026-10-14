@@ -58,13 +58,10 @@ var _target_pool: Array = []
 var _target_skill: Dictionary = {}
 var _hover = null
 var _active: XActor = null
-var _fast := false
 var _origin := Vector2.ZERO       # 原版坐标 → 画面坐标的偏移
 var _camera := {}                 # 胜利镜头（见 _victory）
 ## 自动测试用：强制自动战斗，胜利界面自动关闭。
 static var force_auto := false
-## 「显示技能动画」（Star_CombatDamageRecord 选项 CombatSkillAnimation，正式版默认关闭；关闭时 YEP startAnimation 直接返回）
-static var show_skill_animation := false
 
 
 func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Texture2D = null) -> void:
@@ -113,10 +110,6 @@ func _ready() -> void:
 		bgm.volume_db = linear_to_db(float(music.volume) / 100.0)
 		bgm.play()
 	_main.call_deferred()
-
-
-func _exit_tree() -> void:
-	Engine.time_scale = 1.0
 
 
 # ---- 布局 ----
@@ -277,11 +270,11 @@ func _build_ui(vs: Vector2) -> void:
 		if logic.auto:
 			_picked.emit("auto"))
 	side.add_child(auto_btn)
-	speed_btn = _small_button("速度 ×1")
+	speed_btn = _small_button("变速 " + XConfig.battle_speed_text())
 	speed_btn.pressed.connect(func():
-		_fast = not _fast
-		Engine.time_scale = 2.0 if _fast else 1.0
-		speed_btn.text = "速度 ×2" if _fast else "速度 ×1")
+		XConfig.set_battle_speed(XConfig.battle_speed() % 4 + 1)
+		XSound.system(0)
+		speed_btn.text = "变速 " + XConfig.battle_speed_text())
 	side.add_child(speed_btn)
 	_refresh_auto()
 	# 行动顺序条：宽 = 画面宽 - x - 状态宽 - 左移量 - 状态图标 4.5 个
@@ -387,10 +380,11 @@ func _main() -> void:
 	# YEP_BattleEngineCore Show Emerge Text = false：开战不显示「出现了」；
 	# MV Sprite_Actor.startEntryMotion：从右侧 300px 处 30 帧线性走到原位（全员同时）；
 	# 入场移动结束前不开始（Spriteset_Battle.isBusy）
-	for f in range(1, ENTRY_FRAMES + 1):
+	var entry_frames := XBattleTiming.move_frames(ENTRY_FRAMES)
+	for f in range(1, entry_frames + 1):
 		for a in logic.actors:
 			var sp: XBattlerSprite = sprites[a]
-			sp.position = sp.home + Vector2(300.0 * (ENTRY_FRAMES - f) / ENTRY_FRAMES, 0)
+			sp.position = sp.home + Vector2(300.0 * (entry_frames - f) / entry_frames, 0)
 		await get_tree().physics_frame
 	var first := true
 	while true:
@@ -786,7 +780,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # ---- 播放行动记录 ----
 ## 正式版运行时逐帧读数（地图 5 普通攻击）：行动开始即在日志显示行动名；第 12 帧角色做动作（不前进），
-## 再 2 帧出伤害数字；第 41 帧日志清空，第 52 帧轮到下一位。技能动画默认不播（show_skill_animation）。
+## 再 2 帧出伤害数字；第 41 帧日志清空，第 52 帧轮到下一位（OFF 档）。技能动画由局外配置控制。
 const ENTRY_FRAMES := 30
 const ACT_MOTION_FRAMES := 12
 const ACT_HIT_FRAMES := 2
@@ -814,25 +808,24 @@ func _play(logs: Array) -> void:
 				_log_action(l.skill)
 				if l.user is XActor:
 					_set_active(l.user)
-				await _wait_frames(ACT_MOTION_FRAMES)
+				await _wait_frames(XBattleTiming.wait_frames(ACT_MOTION_FRAMES))
 				if l.user is XActor:
 					_perform_action(l.user, l.skill)
 				else:
 					# MV Game_Enemy.performAction：白色闪一下
 					s.flash(Color(1, 1, 1))
-				await _wait_frames(ACT_HIT_FRAMES)
+				await _wait_frames(XBattleTiming.wait_frames(ACT_HIT_FRAMES))
 			"hit":
 				await _show_hit(l)
 			"counter":
 				# YEP Show Counter Text：日志「%1的反击！」
 				_banner(str(XDB.system().terms.messages.counterAttack).replace("%1", l.user.display_name()))
-				await get_tree().create_timer(0.3).timeout
+				await _wait_frames(XBattleTiming.wait_frames(18))
 			"reflect":
 				# YEP Show Reflect Text：日志「%1反射了魔法！」
 				_banner(str(XDB.system().terms.messages.magicReflection).replace("%1", l.target.display_name()))
-				if show_skill_animation:
-					MVAnimation.play(fx, _reflect_animation(), _center(l.target), false)
-				await get_tree().create_timer(0.2).timeout
+				_start_animation(_reflect_animation(), l.target)
+				await _wait_frames(XBattleTiming.wait_frames(12))
 			"guard":
 				sprites[l.user].set_motion("guard")
 			"regen":
@@ -851,9 +844,9 @@ func _play(logs: Array) -> void:
 
 ## 行动收尾：到第 41 帧清日志、第 52 帧结束（已超过就不再等）。
 func _finish_action(started: int) -> void:
-	await _wait_frames(started + ACT_LOG_FRAMES - Engine.get_physics_frames())
+	await _wait_frames(started + XBattleTiming.wait_frames(ACT_LOG_FRAMES) - Engine.get_physics_frames())
 	_banner("")
-	await _wait_frames(started + ACT_END_FRAMES - Engine.get_physics_frames())
+	await _wait_frames(started + XBattleTiming.wait_frames(ACT_END_FRAMES) - Engine.get_physics_frames())
 	combo.action_ended()
 
 
@@ -888,10 +881,9 @@ func _show_hit(l: Dictionary) -> void:
 	var anim_id := int(l.skill.animationId)
 	if anim_id < 0:
 		anim_id = _attack_animation(l.user)
-	if anim_id > 0 and show_skill_animation:
-		var a := MVAnimation.play(fx, anim_id, _center(t), false)
-		if a:
-			await get_tree().create_timer(0.25).timeout
+	var animation := _start_animation(anim_id, t)
+	if animation:
+		await animation.done
 	var hit: bool = not (l.missed or l.evaded)
 	combo.applied(l.user, t, hit, int(l.skill.get("damage", {}).get("type", 0)), float(l.hp) if float(l.hp) != 0.0 else float(l.mp))
 	if not hit:
@@ -915,7 +907,22 @@ func _show_hit(l: Dictionary) -> void:
 			gauges[t].box.visible = false
 			gauges[t].timer = 0.0
 		await ts.collapse()
-	await get_tree().create_timer(0.22).timeout
+	await _wait_frames(XBattleTiming.wait_frames(13))
+
+
+## 关闭时连动画音效也跳过（正式版 Game_Battler.startAnimation 直接返回）。地图动画不受这个开关影响。
+func _start_animation(id: int, target: XBattler) -> MVAnimation:
+	if id <= 0 or not XConfig.flag("CombatSkillAnimation"):
+		return null
+	var data := XDB.rec("Animations", id)
+	if data.is_empty():
+		return null
+	var at := _center(target)
+	match int(data.get("position", 1)):
+		0: at = sprites[target].position - Vector2(0, sprites[target].height())
+		2: at = sprites[target].position
+		3: at = BOX / 2.0
+	return MVAnimation.play(fx, id, at, false, XConfig.battle_speed())
 
 
 func _attack_animation(u: XBattler) -> int:
@@ -933,6 +940,8 @@ var _popups := {}          # XBattler -> Array[XDamagePopup]
 
 
 func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := false) -> void:
+	if not XConfig.flag("CombatDamageShow"):
+		return
 	var s: XBattlerSprite = sprites[b]
 	var live: Array = _popups.get(b, []).filter(func(x): return is_instance_valid(x))
 	var p := XDamagePopup.new()
@@ -983,10 +992,8 @@ func _victory() -> void:
 	await get_tree().create_timer(maxf(0, float(params.get("Victory Screen Display Delay", 1000)) / 1000 - float(params.get("Victory Screen Hide Window Delay", 500)) / 1000)).timeout
 	# 挂机中：Window_BattleVictoryActorSub 一建出就把 _victoryPhase 设回 false，结算画面不出现、直接回地图
 	if XHangUp.is_active(XState.current):
-		Engine.time_scale = 1.0
 		return
 	var screen := XVictoryScreen.new()
 	screen.setup(r, before, logic.actors, logic.auto)
 	ui.add_child(screen)
 	await screen.continued
-	Engine.time_scale = 1.0

@@ -195,6 +195,32 @@ window.__refShot = function (name) {
         }
         button('战斗夹具 4 人', function(){fixture(4);});
         button('战斗夹具 5 人', function(){fixture(5);});
+        // 三项偏好仅在本浏览器内存切换，不调用 ConfigManager.save。
+        button('伤害数字 开/关', function(){ConfigManager.CombatDamageShow=!ConfigManager.CombatDamageShow;});
+        button('技能动画 开/关', function(){ConfigManager.CombatSkillAnimation=!ConfigManager.CombatSkillAnimation;});
+        button('战斗变速 下一档', function(){ConfigManager.battleAniSpeed=ConfigManager.battleAniSpeed%4+1;});
+        var actionTrace=null;
+        button('测量普通攻击', function(){
+            var s=SceneManager._scene;
+            if (!(s instanceof Scene_Battle)||!s._actorCommandWindow.active||actionTrace&&actionTrace.running) return;
+            var actor=BattleManager.actor(), enemy=$gameTroop.members().filter(function(e){return e.isAlive();})[0];
+            if(!actor||!enemy)return;
+            actionTrace={running:true,speed:ConfigManager.battleAniSpeed,animation:ConfigManager.CombatSkillAnimation,damage:ConfigManager.CombatDamageShow,actor:actor.actorId(),frames:0,hit:null,logClear:null,nextInput:null};
+            var original=s.update, apply=Game_Action.prototype.apply;
+            Game_Action.prototype.apply=function(target){
+                apply.apply(this,arguments);
+                if(actionTrace.hit===null&&this.subject()===actor)actionTrace.hit=actionTrace.frames;
+            };
+            s._actorCommandWindow.deactivate();s.commandAttack();s._enemyWindow.select($gameTroop.members().indexOf(enemy));s._enemyWindow.deactivate();s.onEnemyOk();
+            s.update=function(){
+                original.apply(this,arguments);actionTrace.frames++;
+                if(actionTrace.hit!==null&&actionTrace.logClear===null&&this._logWindow._lines.length===0)actionTrace.logClear=actionTrace.frames;
+                if(actionTrace.hit!==null&&this._actorCommandWindow.active){
+                    actionTrace.nextInput=actionTrace.frames;actionTrace.running=false;this.update=original;Game_Action.prototype.apply=apply;
+                }
+                if(actionTrace.frames>1200){actionTrace.running=false;this.update=original;Game_Action.prototype.apply=apply;}
+            };
+        });
         button('胜利结算夹具', function(){
             if (!(SceneManager._scene instanceof Scene_Battle)) return;
             $gameTroop.members().forEach(function(e){e.setHp(0);});
@@ -219,7 +245,7 @@ window.__refShot = function (name) {
             var sp=s._spriteset;
             var actors=sp&&sp._actorSprites ? sp._actorSprites.map(function(x){return {id:x._actor&&x._actor.actorId(),x:x.x,y:x.y,home:[x._homeX,x._homeY]};}) : [];
             var enemies=sp&&sp._enemySprites ? sp._enemySprites.map(function(x){return {id:x._enemy&&x._enemy.enemyId(),name:x._enemy&&x._enemy.name(),x:x.x,y:x.y,cursor:x._battleSelectCursorSprite&&[x._battleSelectCursorSprite.x,x._battleSelectCursorSprite.y]};}) : [];
-            readout.textContent=JSON.stringify({version:nw.App.manifest.releaseVersion,scene:s.constructor.name,phase:window.BattleManager&&BattleManager._phase,windows:windows,actors:actors,enemies:enemies,victory:window.Olivia&&Olivia.OctoBattle.VictoryUI,errors:__refErrors});
+            readout.textContent=JSON.stringify({version:nw.App.manifest.releaseVersion,scene:s.constructor.name,phase:window.BattleManager&&BattleManager._phase,display:{damage:ConfigManager.CombatDamageShow,animation:ConfigManager.CombatSkillAnimation,speed:ConfigManager.battleAniSpeed},actionTrace:actionTrace,windows:windows,actors:actors,enemies:enemies,victory:window.Olivia&&Olivia.OctoBattle.VictoryUI,errors:__refErrors});
         }, 500);
     });
 })();

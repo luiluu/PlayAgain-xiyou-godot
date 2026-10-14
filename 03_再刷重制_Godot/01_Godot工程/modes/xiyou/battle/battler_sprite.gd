@@ -234,7 +234,7 @@ func blink() -> void:
 func step(forward: bool) -> void:
 	var dir := -1.0 if (battler is XActor) else 1.0
 	var t := create_tween()
-	t.tween_property(self, "position", home + Vector2(dir * 48.0 if forward else 0.0, 0), 0.15)
+	t.tween_property(self, "position", home + Vector2(dir * 48.0 if forward else 0.0, 0), XBattleTiming.move_frames(18) / 60.0)
 	await t.finished
 
 

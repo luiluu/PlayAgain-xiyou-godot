@@ -1,6 +1,6 @@
 class_name XConfig
 extends RefCounted
-## 西游界面配置（MV ConfigManager），与局内存档分开。已接入坐标、智能AI、始终跑步、记住指令与四路音量；默认值照正式引擎内存测量。
+## 西游界面配置（MV ConfigManager），与局内存档分开；默认值照正式引擎内存测量。
 ## 测试传入自己的 path_override；其余使用 XSave.dir_override 的测试只在内存改配置。
 
 static var path_override := ""
@@ -8,7 +8,8 @@ static var _loaded_path := "<unloaded>"
 static var _values := {}
 static var _map_xy_configured := false
 const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "commandRemember": true,
-	"bgmVolume": 40, "bgsVolume": 40, "meVolume": 40, "seVolume": 40}
+	"bgmVolume": 40, "bgsVolume": 40, "meVolume": 40, "seVolume": 40,
+	"CombatDamageShow": true, "CombatSkillAnimation": false, "battleAniSpeed": 4}
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 
 
@@ -29,7 +30,12 @@ static func ensure_loaded() -> void:
 		var data = JSON.parse_string(FileAccess.get_file_as_string(p))
 		if data is Dictionary:
 			for key in DEFAULTS:
-				_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 0, 100) if key in VOLUMES else bool(data.get(key, DEFAULTS[key]))
+				if key in VOLUMES:
+					_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 0, 100)
+				elif key == "battleAniSpeed":
+					_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 1, 4)
+				else:
+					_values[key] = bool(data.get(key, DEFAULTS[key]))
 			_map_xy_configured = data.has("MapXy")
 	XAudio.apply_volumes(_values)
 
@@ -40,7 +46,7 @@ static func flag(key: String) -> bool:
 
 
 static func set_flag(key: String, value: bool) -> bool:
-	if key not in DEFAULTS or key in VOLUMES:
+	if key not in DEFAULTS or key in VOLUMES or key == "battleAniSpeed":
 		return false
 	ensure_loaded()
 	_values[key] = value
@@ -61,6 +67,22 @@ static func set_volume(key: String, value: int) -> bool:
 	_values[key] = clampi(value, 0, 100)
 	XAudio.apply_volumes(_values)
 	return _write()
+
+
+## YEP_BattleAniSpeedOpt：1 四倍、2 三倍、3 二倍、4 OFF。
+static func battle_speed() -> int:
+	ensure_loaded()
+	return int(_values.battleAniSpeed)
+
+
+static func set_battle_speed(value: int) -> bool:
+	ensure_loaded()
+	_values.battleAniSpeed = clampi(value, 1, 4)
+	return _write()
+
+
+static func battle_speed_text() -> String:
+	return ["四倍", "三倍", "二倍", "OFF"][battle_speed() - 1]
 
 
 static func map_xy() -> bool:

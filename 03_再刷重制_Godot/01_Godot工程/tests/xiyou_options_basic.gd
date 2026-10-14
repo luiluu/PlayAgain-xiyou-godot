@@ -45,7 +45,8 @@ func _run() -> void:
 	var manifest: Dictionary = XDB.load_json("manifest.json")
 	check("same_source", ref.sourceIdentity.runtimeInputs == manifest.runtimeInputs and ref.sourceIdentity.releaseVersion == manifest.releaseVersion)
 	for key in ref.defaults:
-		check("default_" + key, XConfig.volume(key) == int(ref.defaults[key]) if key in XConfig.VOLUMES else XConfig.flag(key) == bool(ref.defaults[key]))
+		var actual = XConfig.battle_speed() if key == "battleAniSpeed" else XConfig.volume(key) if key in XConfig.VOLUMES else XConfig.flag(key)
+		check("default_" + key, actual == ref.defaults[key])
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	s.map_id = 5
 	s.x = 11

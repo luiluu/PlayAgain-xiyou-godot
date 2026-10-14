@@ -1,7 +1,7 @@
 class_name MVAnimation
 extends Node2D
 ## 播放 MV 动画（Animations.json）：每帧若干格子 [图案, x, y, 缩放%, 旋转, 翻转, 不透明度, 混合]，
-## 图案 <100 取 animation1 图，>=100 取 animation2 图；每格 192×192、每行 5 格；每 4 帧（60fps）换一帧，与 MV 一致。
+## 图案 <100 取 animation1 图，>=100 取 animation2 图；每格 192×192、每行 5 格；默认每 4 物理帧（60fps）换一帧。
 ## position：0 头上 1 中心 2 脚下 3 画面中央（由调用方给出坐标）。
 
 signal done
@@ -11,11 +11,12 @@ var anim: Dictionary
 var sheets: Array = [null, null]
 var frame := 0
 var _tick := 0
+var rate := 4  # 战斗调用时按 ConfigManager.battleAniSpeed；地图保持 4。
 var _sprites: Array[Sprite2D] = []
 var se_player: AudioStreamPlayer
 
 
-static func play(parent: Node, anim_id: int, at: Vector2, mirror := false) -> MVAnimation:
+static func play(parent: Node, anim_id: int, at: Vector2, mirror := false, frame_rate := 4) -> MVAnimation:
 	var a := XDB.rec("Animations", anim_id)
 	if a.is_empty():
 		return null
@@ -23,6 +24,7 @@ static func play(parent: Node, anim_id: int, at: Vector2, mirror := false) -> MV
 	n.anim = a
 	n.position = at
 	n.scale.x = -1.0 if mirror else 1.0
+	n.rate = clampi(frame_rate, 1, 4)
 	parent.add_child(n)
 	return n
 
@@ -35,19 +37,18 @@ func _ready() -> void:
 	se_player = AudioStreamPlayer.new()
 	XAudio.bind(se_player, "SE")
 	add_child(se_player)
-	_show_frame()
 
 
-func _process(_delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	_tick += 1
-	if _tick % 4 != 0:
-		return
-	frame += 1
-	if frame >= anim.frames.size():
+	# MV setupDuration = frames.length * rate + 1；第一步绘制第 0 格，最后一步结束。
+	if _tick > anim.frames.size() * rate:
 		done.emit()
 		queue_free()
 		return
-	_show_frame()
+	if (_tick - 1) % rate == 0:
+		frame = floori(float(_tick - 1) / rate)
+		_show_frame()
 
 
 func _show_frame() -> void:
