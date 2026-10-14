@@ -123,7 +123,7 @@ def verify(app, generated, oracle):
                 if rel.startswith('data/') or rel == 'package.json':
                     if identity.get('inputs', {}).get(rel) != digest:
                         issues.append('基础设置参照数据不一致：' + rel)
-            if not data.get('volume') or not data.get('dash') or not data.get('commands'):
+            if not data.get('volume') or not data.get('dash') or not data.get('commands') or not data.get('notices'):
                 issues.append('基础设置参照缺少测量结果')
     return {'releaseVersion': version, 'inputs': len(manifest['inputs']),
             'runtimeInputs': len(manifest.get('runtimeInputs', {})),

@@ -9,6 +9,7 @@ extends Control
 ## - 选「技能/装备/状态」后光标移到队伍窗选人（整行高亮），确定进入该角色页面，取消回到指令窗。
 ## - 窗口整体不透明度 30（MOG_MenuBackground）；底图与粒子 XUI.menu_background。
 ## 尚未重制的指令（真气、整队、种族祝福等）暂时灰显，原版均可用；见 界面风格.md。
+## - 音效照 Window_Selectable：换行播光标音；确定播确定音（灰显指令蜂鸣）；取消播取消音。一键存档先确定音再存档音。
 
 signal closed
 
@@ -217,6 +218,7 @@ func _click(p: Vector2) -> void:
 				_ok()
 			else:
 				_cmd_index = i
+				XSound.system(0)
 				_refresh()
 		return
 	var sp := p - STATUS_RECT.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
@@ -227,6 +229,7 @@ func _click(p: Vector2) -> void:
 				_ok()
 			else:
 				_actor_index = i
+				XSound.system(0)
 				_refresh()
 
 
@@ -243,12 +246,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		var d := 1 if event.is_action_pressed("ui_down", true) else -1
 		var wrap := not event.is_echo()
+		var before := [_cmd_index, _actor_index]
 		if _mode == "command":
 			_cmd_index = _move(_cmd_index, d, COMMANDS.size(), wrap)
 			_cmd_top = _scroll_to(_cmd_index, _cmd_top, CMD_VISIBLE)
 		elif _mode == "actor":
 			_actor_index = _move(_actor_index, d, _members().size(), wrap)
 			_actor_top = _scroll_to(_actor_index, _actor_top, STATUS_ROWS)
+		if before != [_cmd_index, _actor_index]:
+			XSound.system(0)
 		_refresh()
 
 
@@ -273,7 +279,9 @@ func _ok() -> void:
 	if _mode == "command":
 		var cmd: Array = COMMANDS[_cmd_index]
 		if not cmd[2]:
+			XSound.system(3)
 			return
+		XSound.system(1)
 		match cmd[1]:
 			"item":
 				_show_items()
@@ -297,6 +305,7 @@ func _ok() -> void:
 			"quickSave":
 				_quick_save()
 	elif _mode == "actor":
+		XSound.system(1)
 		_selected_actor = _actor_index
 		match _pending:
 			"status":
@@ -306,6 +315,8 @@ func _ok() -> void:
 
 
 func _cancel() -> void:
+	if _mode in ["actor", "command"]:
+		XSound.system(2)
 	if _mode == "actor":
 		_mode = "command"
 		_refresh()

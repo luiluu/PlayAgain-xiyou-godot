@@ -7,6 +7,7 @@ const POOL := 8
 static var _players: Array = []
 static var _next := 0
 static var _cache := {}
+static var system_log: Array = []   # 最近播放的 system 编号（测试核对用，保留 64 条）
 
 
 static func play(name: String, volume := 90, pitch := 100) -> void:
@@ -39,6 +40,9 @@ static func play(name: String, volume := 90, pitch := 100) -> void:
 
 
 static func system(index: int) -> void:
+	system_log.append(index)
+	if system_log.size() > 64:
+		system_log.pop_front()
 	var sounds: Array = XDB.system().get("sounds", [])
 	if index < 0 or index >= sounds.size() or not sounds[index] is Dictionary:
 		return

@@ -701,6 +701,7 @@ func open_menu() -> void:
 	if busy or _menu_open or XHangUp.is_active(XState.current):
 		return
 	_menu_open = true
+	XSound.system(1)  # Scene_Map.callMenu：SoundManager.playOk
 	# Scene_Map.terminate：snapForBackground／snapForHangUp（含地图 HUD），挂机设置页的背景与范围图
 	var shot := await _snapshot()
 	hud.visible = false

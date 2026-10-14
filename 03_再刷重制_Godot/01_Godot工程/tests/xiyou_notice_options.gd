@@ -1,6 +1,6 @@
 extends Node
 ## 设置「消息提醒」：正式 options_probe 的 notices 对照（子页行/说明/开关操作/状态文字/配置读写/提示分类），
-## 提示过滤（菜单内照常显示）与设置页打开、键盘操作、返回。
+## 提示过滤（菜单内照常显示）与设置页打开、键盘操作、返回；主菜单的光标/确定/蜂鸣/取消音效。
 var results := []
 var out_dir := ""
 
@@ -159,8 +159,13 @@ func _run() -> void:
 	var p: XNoticeOptionsScene = opt._page
 	await frames(3)
 	await shot("消息提醒_全开.png")
+	XSound.system_log.clear()
 	await press("ui_accept")
 	check("key_ok_toggles", not XConfig.notice_on("race") and p.index == 0)
+	check("key_ok_sounds", XSound.system_log == [1, 0], XSound.system_log)
+	XSound.system_log.clear()
+	await press("ui_left")
+	check("key_left_unchanged_silent", XSound.system_log.is_empty() and not XConfig.notice_on("race"))
 	await press("ui_right")
 	check("key_right_on", XConfig.notice_on("race"))
 	await press("ui_left")
@@ -181,6 +186,34 @@ func _run() -> void:
 	await shot("消息提醒_设置页.png")
 	opt.queue_free()
 	set_off([])
+
+	# 主菜单（Window_MenuCommand / Window_MenuStatus）音效
+	var menu := XMenu.new()
+	add_child(menu)
+	await frames()
+	XSound.system_log.clear()
+	await press("ui_down")
+	check("menu_cursor", menu._cmd_index == 1 and XSound.system_log == [0], XSound.system_log)
+	XSound.system_log.clear()
+	await press("ui_accept")
+	check("menu_disabled_buzzer", menu._mode == "command" and XSound.system_log == [3], XSound.system_log)
+	XSound.system_log.clear()
+	await press("ui_down")
+	await press("ui_accept")
+	check("menu_ok_actor_select", menu._mode == "actor" and XSound.system_log == [0, 1], XSound.system_log)
+	XSound.system_log.clear()
+	await press("ui_cancel")
+	check("menu_cancel_actor", menu._mode == "command" and XSound.system_log == [2], XSound.system_log)
+	XSound.system_log.clear()
+	menu._cmd_index = 0
+	await press("ui_up")
+	check("menu_wrap_cursor", menu._cmd_index == XMenu.COMMANDS.size() - 1 and XSound.system_log == [0], XSound.system_log)
+	XSound.system_log.clear()
+	var closed := [false]
+	menu.closed.connect(func(): closed[0] = true)
+	await press("ui_cancel")
+	check("menu_cancel_close", closed[0] and XSound.system_log == [2], XSound.system_log)
+	menu.queue_free()
 	finish()
 
 
