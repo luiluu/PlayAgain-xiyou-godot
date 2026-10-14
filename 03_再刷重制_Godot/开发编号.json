@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.024",
-  "sequence": 24,
-  "next": "dev.025",
-  "nextSequence": 25,
+  "current": "dev.025",
+  "sequence": 25,
+  "next": "dev.026",
+  "nextSequence": 26,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "显示伤害数字、技能动画和四档战斗变速；局部计时与正式参照",
+  "currentChange": "设置「消息提醒」子页与提示过滤，主菜单音效",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
