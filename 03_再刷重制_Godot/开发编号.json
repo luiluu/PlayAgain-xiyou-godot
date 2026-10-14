@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.027",
-  "sequence": 27,
-  "next": "dev.028",
-  "nextSequence": 28,
+  "current": "dev.028",
+  "sequence": 28,
+  "next": "dev.029",
+  "nextSequence": 29,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "遇敌队伍能力与指令136、战斗逃跑消息窗",
+  "currentChange": "YEP 行动序列规则部分：转换器 v10 yepSeq、XActionSequence、IMMORTAL",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

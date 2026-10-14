@@ -108,7 +108,26 @@ func _run() -> void:
 		if same:
 			ok_count += 1
 		check("seq_%s_%d_%s" % [row.user, int(row.skill), row.variant], same, {"godot": [invoked, changed], "mv": [row.invoked, row.states], "types": logs.map(func(l): return str(l.get("type")) + ("C" if l.get("counter", false) else "") + ("R" if l.get("reflected", false) else ""))})
-	print("unknown conditions: ", unknown.keys())
+	# 全部技能/物品里的 IF 条件都要能翻译（不认识的写法会当作假）
+	var logic := setup()
+	var probe := XActionSequence.create(logic, logic.actors[0], XDB.rec("Skills", 1), [logic.enemies[0]])
+	probe.targets = [logic.enemies[0]]
+	var total := 0
+	for table in ["Skills", "Items"]:
+		for rec in XDB.table(table):
+			if not (rec is Dictionary and rec.get("yepSeq") is Dictionary):
+				continue
+			for phase in rec.yepSeq:
+				for e in rec.yepSeq[phase]:
+					var m := RegEx.create_from_string("(?i)IF[ ](.*)").search(str(e[0]))
+					if m and not RegEx.create_from_string("(?i)ELSE").search(str(e[0])):
+						total += 1
+						probe.eval_condition(m.get_string(1))
+	var kinds := {}
+	for a in probe.unknown:
+		kinds[RegEx.create_from_string("\\d+").sub(a, "N", true)] = true
+	print("conditions: ", total, " unknown atoms: ", probe.unknown.size(), " kinds: ", kinds.keys())
+	check("conditions_translated", probe.unknown.is_empty(), kinds.keys())
 	finish()
 
 
