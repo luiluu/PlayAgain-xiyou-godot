@@ -7,7 +7,9 @@ const SAVE_VERSION := 2
 static var current: XState
 
 var difficulty := 3
-var party: Array[int] = []          # 队伍顺序（前 5 位出战）
+var party: Array[int] = []          # 队伍顺序（$gameParty._actors；出战成员在前，见 battle_slots）
+## YEP_PartySystem 的 $gameParty._battleMembers：出战栏位（长度＝上限 5，空位为 0）
+var battle_slots: Array = []
 var actors := {}                    # actor_id -> XActor
 var gold := 0
 var items := {}                     # item_id -> 数量
@@ -119,19 +121,58 @@ func fixed_save_slot() -> int:
 			return i + 6
 	return 0
 
+## Game_Party.addActor（YEP_PartySystem）：加入队尾；出战栏位有空位时填入第一个空位并重排
 func add_actor(id: int) -> void:
 	if not party.has(id) and not XDB.rec("Actors", id).is_empty():
 		actor(id)
 		party.append(id)
+	_ensure_slots()
+	if battle_slots.has(id) or not battle_slots.has(0):
+		return
+	battle_slots[battle_slots.find(0)] = id
+	rearrange_actors()
 
+## Game_Party.removeActor：出战栏位里的变成空位并重排
 func remove_actor(id: int) -> void:
 	party.erase(id)
+	_ensure_slots()
+	if not battle_slots.has(id):
+		return
+	battle_slots[battle_slots.find(id)] = 0
+	rearrange_actors()
+
+
+## initializeBattleMembers：按队伍前 5 人建立出战栏位（不足补 0）
+func init_battle_slots() -> void:
+	battle_slots = []
+	for i in MAX_BATTLE_MEMBERS:
+		battle_slots.append(party[i] if i < party.size() else 0)
+
+
+func _ensure_slots() -> void:
+	if battle_slots.size() != MAX_BATTLE_MEMBERS:
+		init_battle_slots()
+
+
+## rearrangeActors：出战栏位（按栏位顺序）在前，其余按角色编号升序
+func rearrange_actors() -> void:
+	_ensure_slots()
+	var battle: Array[int] = []
+	for id in battle_slots:
+		if int(id) > 0 and party.has(int(id)):
+			battle.append(int(id))
+	var reserve: Array[int] = []
+	for id in party:
+		if not battle.has(id):
+			reserve.append(id)
+	reserve.sort()
+	party = battle + reserve
 
 func members() -> Array:
 	return party.map(func(id): return actor(id))
 
 ## 出战上限 5：YEP_PartySystem 参数写 4，但后加载的 MrTS_BattleCharacterLimit 把 maxBattleMembers 改为 5（参数为空取默认）。
-## YEP 的编队界面（自选出战成员）未做，暂按队伍前 5 人。
+## 出战成员由 battle_slots 决定（整队页 XPartyScene）。
 const MAX_BATTLE_MEMBERS := 5
 
 ## Game_Party.partyAbility：出战成员任一有该队伍能力（特性 64；0 遇敌减半 1 无遇敌 2 防偷袭 3 先发制人率上升 4 金钱双倍 5 物品掉落双倍）
@@ -139,8 +180,14 @@ func party_ability(id: int) -> bool:
 	return battle_members().any(func(a): return not a.traits_with_id(64, id).is_empty())
 
 
+## YEP Game_Party.battleMembers：出战栏位里的非空角色（栏位顺序）
 func battle_members() -> Array:
-	return members().slice(0, MAX_BATTLE_MEMBERS)
+	_ensure_slots()
+	var out := []
+	for id in battle_slots:
+		if int(id) > 0 and party.has(int(id)):
+			out.append(actor(int(id)))
+	return out
 
 
 func switch(id: int) -> bool:
@@ -238,7 +285,7 @@ func to_dict() -> Dictionary:
 			"hp": x2.hp, "mp": x2.mp, "tp": x2.tp, "states": x2.state_ids, "stateTurns": x2.state_turns,
 			"buffs": x2.buffs, "buffTurns": x2.buff_turns, "cooldowns": x2.cooldowns,
 			"lastCommand": x2.last_command, "lastBattleSkill": x2.last_battle_skill}
-	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "actors": a, "gold": gold,
+	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "battleSlots": battle_slots, "actors": a, "gold": gold,
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
@@ -269,6 +316,9 @@ static func from_dict(d: Dictionary) -> XState:
 			x2.cooldowns[int(k)] = float(row.cooldowns[k])
 		s.actors[int(id_s)] = x2
 	s.party.assign(d.party.map(func(v): return int(v)))
+	# 旧档没有出战栏位：按队伍前 5 人（toInitializeBattleMembers）
+	s.battle_slots = Array(d.get("battleSlots", [])).map(func(v): return int(v))
+	s._ensure_slots()
 	s.gold = int(d.gold)
 	for k in d.items:
 		s.items[int(k)] = int(d.items[k])
