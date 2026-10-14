@@ -353,7 +353,8 @@ func _on_player_step() -> void:
 			await run_event(e)
 			return
 	if not map_data.encounterList.is_empty():
-		encounter_count -= encounter_progress_value(lower.is_bush(player.grid.x, player.grid.y))
+		if can_encounter():
+			encounter_count -= encounter_progress_value(lower.is_bush(player.grid.x, player.grid.y), XState.current.party_ability(0))
 		if encounter_count <= 0:
 			await _encounter()
 
@@ -440,9 +441,17 @@ func _encounter() -> void:
 	_set_busy(false)
 
 
-## Game_Player.encounterProgressValue：草丛 2、否则 1；设置「步步遇敌」时 100（每步必遇）。
-static func encounter_progress_value(bush: bool) -> float:
-	return 100.0 if XConfig.flag("yd100") else (2.0 if bush else 1.0)
+## Game_Player.canEncounter：没有「无遇敌」队伍能力、遇敌未被指令 136 禁止、不在强制移动路线中
+func can_encounter() -> bool:
+	var s := XState.current
+	return not s.party_ability(1) and s.encounter_enabled and not player.is_route_forcing()
+
+
+## Game_Player.encounterProgressValue：草丛 2、否则 1，「遇敌减半」队伍能力 ×0.5；设置「步步遇敌」时 100（每步必遇）。
+static func encounter_progress_value(bush: bool, half := false) -> float:
+	if XConfig.flag("yd100"):
+		return 100.0
+	return (2.0 if bush else 1.0) * (0.5 if half else 1.0)
 
 
 ## Game_Player.makeEncounterTroopId（正式核心改动版）：r 为 0～权重和−1 的随机数。

@@ -269,6 +269,9 @@ func _execute(c: Dictionary):
 				if bool(p[2]):
 					while is_instance_valid(ch) and ch.is_balloon_playing():
 						await host.get_tree().physics_frame
+		136:
+			# 更改禁止遇敌 [0 禁止 1 允许]
+			state().encounter_enabled = int(p[0]) != 0
 		216:
 			# 更改队伍跟随 [0 显示 1 隐藏]
 			host.set_followers_visible(int(p[0]) == 0)

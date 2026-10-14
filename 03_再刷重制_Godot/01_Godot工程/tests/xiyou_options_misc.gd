@@ -134,7 +134,7 @@ func _run() -> void:
 	XConfig._session.clear()
 	for row in ms.progress:
 		XConfig.set_session("yd100", true if row.yd100 else null)
-		check("progress_%s_%s" % [row.yd100, row.bush], XMapScene.encounter_progress_value(row.bush) == float(row.value))
+		check("progress_%s_%s_%s" % [row.yd100, row.bush, row.half], XMapScene.encounter_progress_value(row.bush, row.half) == float(row.value))
 	XConfig._session.clear()
 
 	# 对话框：整页一帧画完；对话跳过时文字结束直接关闭，标志照 clearFlags
@@ -259,6 +259,27 @@ func _run() -> void:
 	check("follow_saved", restored2.followers_visible)
 	XState.current = s
 	s.set_variable(24, 0)
+
+	# canEncounter：无遇敌队伍能力（状态 174 隐形）、指令 136、强制移动路线
+	check("can_default", map.can_encounter())
+	var lead: XActor = s.battle_members()[0]
+	lead.add_state(174)
+	check("ability_none_state", s.party_ability(1) == ms.ability.withState and map.can_encounter() == ms.ability.can)
+	lead.remove_state(174)
+	check("ability_none_removed", s.party_ability(1) == ms.ability.after and map.can_encounter())
+	var interp136 := MVInterpreter.new(map, 5, 0, [{"code": 136, "indent": 0, "parameters": [0]}, {"code": 0, "indent": 0, "parameters": []}])
+	await interp136.run()
+	check("cmd136_disable", not s.encounter_enabled and not map.can_encounter() and interp136.skipped.is_empty())
+	var before_count := 5.0
+	map.encounter_count = before_count
+	await map._on_player_step()
+	check("disabled_no_countdown", map.encounter_count == before_count, map.encounter_count)
+	interp136 = MVInterpreter.new(map, 5, 0, [{"code": 136, "indent": 0, "parameters": [1]}, {"code": 0, "indent": 0, "parameters": []}])
+	await interp136.run()
+	check("cmd136_enable", s.encounter_enabled and map.can_encounter())
+	check("encounter_enabled_saved", XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict()))).encounter_enabled)
+	XState.current = s
+	map.encounter_count = 0.0
 
 	XConfig.set_session("ydgb", true)
 	map.encounter_count = 0

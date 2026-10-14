@@ -148,12 +148,25 @@ for(const remember of [false,true]){
   }
   w.Math.random=realRandom;w.$gameMap.encounterList=realList;
   for(const f of flags)Object.assign(w.ConfigManager,{Boss:undefined,BOSS:undefined,boss:undefined});
-  for(const yd100 of [undefined,true])for(const bush of [false,true]){
+  for(const yd100 of [undefined,true])for(const bush of [false,true])for(const half of [false,true]){
     w.ConfigManager.yd100=yd100;
-    const isBush=w.$gameMap.isBush;w.$gameMap.isBush=()=>bush;
-    ms.progress.push({yd100:!!yd100,bush,value:w.$gamePlayer.encounterProgressValue()});
-    w.$gameMap.isBush=isBush;
+    const isBush=w.$gameMap.isBush,hh=w.$gameParty.hasEncounterHalf;w.$gameMap.isBush=()=>bush;w.$gameParty.hasEncounterHalf=()=>half;
+    ms.progress.push({yd100:!!yd100,bush,half,value:w.$gamePlayer.encounterProgressValue()});
+    w.$gameMap.isBush=isBush;w.$gameParty.hasEncounterHalf=hh;
   }
+  // canEncounter：无遇敌队伍能力、指令136、强制移动路线
+  ms.can=[];
+  for(const none of [false,true])for(const enabled of [true,false])for(const forcing of [false,true]){
+    const hn=w.$gameParty.hasEncounterNone,fr=w.$gamePlayer.isMoveRouteForcing;
+    w.$gameParty.hasEncounterNone=()=>none;w.$gamePlayer.isMoveRouteForcing=()=>forcing;w.$gameSystem._encounterEnabled=enabled;
+    ms.can.push({none,enabled,forcing,can:w.$gamePlayer.canEncounter()});
+    w.$gameParty.hasEncounterNone=hn;w.$gamePlayer.isMoveRouteForcing=fr;w.$gameSystem._encounterEnabled=true;
+  }
+  // 队伍能力：状态174「隐形」给出无遇敌（特性64/1）；先清行动结果，否则刚移除过的状态加不上
+  if(w.$gameParty.battleMembers().length===0)w.$gameParty.addActor(1);
+  const lead=w.$gameParty.battleMembers()[0];ms.ability={before:w.$gameParty.hasEncounterNone()};
+  lead.clearResult();lead.addState(174);lead.refresh();ms.ability.withState=w.$gameParty.hasEncounterNone();ms.ability.can=w.$gamePlayer.canEncounter();
+  lead.removeState(174);lead.clearResult();lead.refresh();ms.ability.after=w.$gameParty.hasEncounterNone();
   for(const ydgb of [undefined,true]){
     w.ConfigManager.ydgb=ydgb;
     const list=w.$gameMap.encounterList,ev=w.$gameMap.isEventRunning,mk=w.$gamePlayer.makeEncounterCount,setup=w.BattleManager.setup,enc=w.BattleManager.onEncounter;
