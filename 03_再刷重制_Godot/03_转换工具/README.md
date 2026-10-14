@@ -23,3 +23,12 @@
 
 - `options_probe.cjs`：正式引擎内存配置的默认值、33项顺序与文字、48组音量改值、4组跑步/Shift和角色指令/技能记忆，战斗显示/变速，消息提醒子页（notices）、核心杂项开关与遇敌抽签（misc）、屏蔽掉落子页与实际掉落过滤（pingbi）、队列跟随（follow）；只写 `.sandbox/options.json`，验收后复制到 `generated/oracle/`。来源同步需同其余六探针一起重跑。
 - `sequence_probe.cjs`：YEP_BattleEngineCore 解析后全部技能/物品的五段行动序列（每项 SHA-1，另存少量全文样本）；只写 `.sandbox/sequences.json`，验收后复制到 `generated/oracle/`。`验证西游来源.py` 逐项核对转换器（v10 起）导出的 `yepSeq`。来源同步时与其余七探针一起重跑。
+
+## 同步正式西游.py：正式源更新后的一键重同步
+
+备份 generated 的 oracle/db/maps/manifest/slice 到 `04_验证/本地结果/自动同步/<时间>_<旧版>-<新版>/`，重跑转换器与全部探针（PROBES 表），去掉来源身份比较全部参照，列出改动的来源文件、数据记录编号与地图，再运行 `验证西游来源.py`。测量全不变且核对 0 问题时写来源清单并更新来源登记与当前状态（`--no-register` 不写）；有变化时退出码 2，报告在备份目录 `同步报告.json`，交人工查看。`--generated` 可指向副本试跑。新增探针要加进 PROBES。
+
+## 事件指令统计.py
+
+统计正式全部 231 张地图、公共事件与敌群事件用到的事件指令，按次数排序并标出 Godot `MVInterpreter._execute` 已有/未有的指令；插件指令按首词、脚本按首行写法归类。报告写到 `04_验证/本地结果/事件指令统计/报告.json`。2026-10-14 首次结果：124,995 条指令中有处理分支的占 97%；缺口主要是脚本（355，约 1.4 万条，toaster 提示、成就奖励、按变量取角色等）、插件指令（Difficulty、crafting、ShopInventory 等）与敌群事件的强制行动（339）。用来决定先翻译什么。
+
