@@ -254,28 +254,19 @@ func _meets(e: XEnemy, act: Dictionary) -> bool:
 	return true
 
 
-## 自动战斗：选对当前目标伤害最高的可用技能（不含治疗），HP 低于 35% 时优先治疗技能。
-func auto_action(a: XActor) -> Array:
-	var target: XBattler = alive(enemies).reduce(func(x, y): return x if x.hp <= y.hp else y) if not alive(enemies).is_empty() else null
-	var best: Dictionary = XDB.rec("Skills", ATTACK_SKILL)
-	var best_v := -1.0
-	var low_ally = null
-	for b in alive(actors):
-		if b.hp_rate() < 0.35 and (low_ally == null or b.hp_rate() < low_ally.hp_rate()):
-			low_ally = b
-	for s in [XDB.rec("Skills", ATTACK_SKILL)] + usable_skills(a):
-		var t := int(s.damage.type)
-		if low_ally != null and t == 3 and [7, 8, 11].has(int(s.scope)):
-			return [s, low_ally]
-		if target == null or not [1, 5].has(t) or not [1, 2, 3, 4, 5, 6].has(int(s.scope)):
-			continue
-		var v: float = XDamage.calculate(s, a, target, {"variance": false, "vars": vars()}).value
-		if int(s.scope) == 2:
-			v *= alive(enemies).size()
-		if v > best_v:
-			best_v = v
-			best = s
-	return [best, target]
+## 自动战斗（挂机或自动按钮）一次行动，照正式版 Game_Actor.makeAction 链：
+## 智能AI开着（默认）——技能顺序表排了且能用就照表（XdRs_HangUp makeAction），否则 XSmartAI 选；没有可选的退回普通攻击。
+## 智能AI关着——照表，否则普通攻击（XdRs_HangUp 的 makeAction 不再走 MV 原生评估）。
+func auto_battle_action(a: XActor) -> Array:
+	var planned := XHangUpAuto.scheduled_skill(state, self, a, turn)
+	if not planned.is_empty():
+		return [planned, null]
+	if XConfig.smart_ai():
+		var r := XSmartAI.choose(self, a)
+		if r.has("skill"):
+			return [r.skill, r.target]
+	return [XDB.rec("Skills", ATTACK_SKILL), null]
+
 
 
 # ---- 回合（Olivia_BattleSysOTB：行动顺序回合制）----
@@ -323,7 +314,7 @@ func next_subject() -> XBattler:
 func decide(b: XBattler) -> Array:
 	if b is XEnemy:
 		return [enemy_action(b), null]
-	return auto_action(b) if auto else [XDB.rec("Skills", ATTACK_SKILL), null]
+	return auto_battle_action(b) if auto else [XDB.rec("Skills", ATTACK_SKILL), null]
 
 
 ## 执行一位行动者的一次行动，返回记录。skill 为 null 表示放弃本次行动（逃跑失败）。
@@ -597,18 +588,53 @@ static func certain_hit(u: XBattler, skill: Dictionary) -> bool:
 	return bool(ch.get("global", false)) or ch.get("bySkill", {}).has(int(skill.id))
 
 
+## Game_Action.itemHit 正式版链：dsPassiveSkill 必中被动 → 1；否则 YEP_HitAccuracy 的命中公式
+##（参数「Accuracy Formula」，西游为 skillHitRate * (userHitRate - targetEvadeRate) * 1.2；
+## userHitRate 物理 user.hit、魔法 user.hit*1.1、必中 10000000；targetEvadeRate 物理 target.eva、魔法 target.mev、必中 0）；
+## 最后 installDamageElementRuntime 夹到 0～1。Olivia_AntiPlayerStress 的命中修正在西游关闭（Hit Rate Stacking=false）。
+func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
+	if certain_hit(u, skill):
+		return 1.0
+	return clampf(_hit_formula("Accuracy Formula", "skillHitRate * (userHitRate - targetEvadeRate)", u, skill, t), 0.0, 1.0)
+
+
+## itemEva：YEP「Evade Formula」（西游为 0）夹到 0～1。原版闪避已并入命中公式。
+func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
+	return clampf(_hit_formula("Evade Formula", "0", u, skill, t), 0.0, 1.0)
+
+
+static var _hit_exprs := {}
+
+func _hit_formula(key: String, fallback: String, u: XBattler, skill: Dictionary, t: XBattler) -> float:
+	var p := XDB.plugin("YEP_HitAccuracy")
+	var kind := "Physical" if XDamage.is_physical(skill) else "Magical" if XDamage.is_magical(skill) else "Certain"
+	var user_rate := _eval_hit(str(p.get("User %s Hit" % kind, "user.hit")), u, t, {})
+	var target_rate := _eval_hit(str(p.get("Target %s Evade" % kind, "0")), u, t, {})
+	return _eval_hit(str(p.get(key, fallback)), u, t, {"skillHitRate": float(skill.get("successRate", 100)) * 0.01,
+		"userHitRate": user_rate, "targetEvadeRate": target_rate})
+
+
+func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> float:
+	var names := ["user", "target", "a", "b", "subject"] + extra.keys()
+	var key := code + "|" + ",".join(names)
+	if not _hit_exprs.has(key):
+		var e := Expression.new()
+		_hit_exprs[key] = e if e.parse(code, names) == OK else null
+	var expr: Expression = _hit_exprs[key]
+	if expr == null:
+		return 0.0
+	var v = expr.execute([u, t, u, t, u] + extra.values(), null, false)
+	return float(v) if not expr.has_execute_failed() and (v is float or v is int) else 0.0
+
+
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var r := {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
 		"hp": 0.0, "mp": 0.0, "added": [], "removed": [], "died": false}
 	var dmg: Dictionary = skill.damage
 	var physical := XDamage.is_physical(skill)
 	var magical := XDamage.is_magical(skill)
-	var hit_rate := float(skill.get("successRate", 100)) * 0.01 * (u.hit if physical else 1.0)
-	if certain_hit(u, skill):
-		hit_rate = 1.0
-	var eva_rate := t.eva if physical else (t.mev if magical else 0.0)
-	if u.is_actor() == t.is_actor():
-		eva_rate = 0.0
+	var hit_rate := item_hit(u, skill, t)
+	var eva_rate := item_eva(u, skill, t)
 	if randf() >= clampf(hit_rate, 0.0, 1.0):
 		r.missed = true
 		return r

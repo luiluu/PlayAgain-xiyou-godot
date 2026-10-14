@@ -4,7 +4,7 @@ extends Control
 ## - 背景同主菜单（MOG_MenuBackground 底图＋粒子），窗口不透明度 30、背景 192。
 ## - Window_Options (440,130,400,460)：行高 36、字号 26、可见 12 行；名字左对齐在 itemRectForText (6,宽 360) 的前 240，
 ##   状态右对齐在内容 x 240、宽 120（statusWidth）。33 项与正式版同序；「挂机设置」只在挂机未禁用时出现（needAddHangUp）。
-## - 已重制：坐标显示（MapXy，确定切换、右开左关）、挂机设置（确定音后打开 XHangUpOptionsScene）。
+## - 已重制：坐标显示（MapXy）、智能战斗AI（codexSmartAI，默认开）：确定切换、右开左关；挂机设置（确定音后打开 XHangUpOptionsScene）。
 ##   其余选项的机制还没做，暂时灰显、不显示状态，确定时蜂鸣；原版都可用（见 界面风格.md）。
 ## - 上下键：按住连续移动、首按可首尾循环，换行播光标音；取消（Esc/右键）播取消音返回主菜单。
 
@@ -18,7 +18,7 @@ const STATUS_W := 120.0
 const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", true], ["始终跑步", "alwaysDash", false],
 	["记住指令", "commandRemember", false], ["Battle Camera", "battleCamera", false], ["开启掉落动画", "MOG_TrPopUpBattle_Key", false],
 	["战斗伤害记录", "CombatDamageRecordKey", false], ["显示伤害数字", "CombatDamageShow", false], ["显示技能动画", "CombatSkillAnimation", false],
-	["屏蔽掉落", "pingbiDrop", false], ["智能战斗AI（自动战斗）", "codexSmartAI", false], ["BGM 音量", "bgmVolume", false],
+	["屏蔽掉落", "pingbiDrop", false], ["智能战斗AI（自动战斗）", "codexSmartAI", true], ["BGM 音量", "bgmVolume", false],
 	["BGS 音量", "bgsVolume", false], ["ME 音量", "meVolume", false], ["SE 音量", "seVolume", false], ["只遇稀有", "Boss", false],
 	["只遇罕见", "BOSS", false], ["极其稀有", "boss", false], ["穿墙开关", "cq", false], ["此游戏为免费游戏！", "wxxonoff", false],
 	["总群请加906327865！", "wxlonoff", false], ["不要在闲鱼买到这个版本！", "wxtonoff", false], ["战斗变速", "battleAniSpeed", false],
@@ -55,6 +55,8 @@ func status_text(i: int) -> String:
 	match str(_list[i][1]):
 		"MapXy":
 			return "ON" if XConfig.map_xy() else "OFF"
+		"codexSmartAI":
+			return "ON" if XConfig.smart_ai() else "OFF"
 	return ""
 
 
@@ -96,6 +98,8 @@ func ok() -> void:
 	match str(o[1]):
 		"MapXy":
 			_set_map_xy(not XConfig.map_xy())
+		"codexSmartAI":
+			_set_flag("codexSmartAI", not XConfig.smart_ai())
 		"HangUp":
 			XSound.system(1)
 			_open_hang_up()
@@ -103,14 +107,25 @@ func ok() -> void:
 
 ## Window_Options.changeValue：值变了才存、重画并播光标音；HangUp 不改值
 func _side(right: bool) -> void:
-	if str(_list[index][1]) == "MapXy":
-		_set_map_xy(right)
+	match str(_list[index][1]):
+		"MapXy":
+			_set_map_xy(right)
+		"codexSmartAI":
+			_set_flag("codexSmartAI", right)
 
 
 func _set_map_xy(v: bool) -> void:
-	if XConfig.map_xy() == v:
+	_set_flag("MapXy", v)
+
+
+func _set_flag(sym: String, v: bool) -> void:
+	var cur := XConfig.map_xy() if sym == "MapXy" else XConfig.smart_ai()
+	if cur == v:
 		return
-	XConfig.set_map_xy(v)
+	if sym == "MapXy":
+		XConfig.set_map_xy(v)
+	else:
+		XConfig.set_smart_ai(v)
 	XSound.system(0)
 	_refresh()
 

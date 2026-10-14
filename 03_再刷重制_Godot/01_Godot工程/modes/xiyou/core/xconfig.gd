@@ -1,6 +1,6 @@
 class_name XConfig
 extends RefCounted
-## 西游界面配置（MV ConfigManager），与局内存档分开。当前接入 MapXy；选项页后续复用。
+## 西游界面配置（MV ConfigManager），与局内存档分开。当前接入 MapXy、codexSmartAI；其余选项随设置页批次加入。
 ## 测试传入自己的 path_override；其余使用 XSave.dir_override 的测试只在内存改配置。
 
 static var path_override := ""
@@ -20,13 +20,14 @@ static func ensure_loaded() -> void:
 	if p == _loaded_path:
 		return
 	_loaded_path = p
-	_values = {"MapXy": false}  # ConfigManager.readFlag：没有配置时为 false
+	_values = {"MapXy": false, "codexSmartAI": true}  # MapXy 没有配置时为 false；codexSmartAI 没有配置时为 true
 	_map_xy_configured = false
 	if p != "" and FileAccess.file_exists(p):
 		var data = JSON.parse_string(FileAccess.get_file_as_string(p))
 		if data is Dictionary:
 			_values.MapXy = bool(data.get("MapXy", false))
 			_map_xy_configured = data.has("MapXy")
+			_values.codexSmartAI = bool(data.get("codexSmartAI", true))
 
 
 static func map_xy() -> bool:
@@ -43,6 +44,22 @@ static func set_map_xy(value: bool) -> bool:
 	ensure_loaded()
 	_values.MapXy = value
 	_map_xy_configured = true
+	return _write()
+
+
+## Codex_SmartBattleAI 的 ConfigManager.codexSmartAI（设置「智能战斗AI（自动战斗）」）
+static func smart_ai() -> bool:
+	ensure_loaded()
+	return bool(_values.codexSmartAI)
+
+
+static func set_smart_ai(value: bool) -> bool:
+	ensure_loaded()
+	_values.codexSmartAI = value
+	return _write()
+
+
+static func _write() -> bool:
 	var p := path()
 	if p == "":
 		return true

@@ -22,7 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 8
+TOOL_VERSION = 9
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -157,6 +157,38 @@ def load_json(path):
     return json.loads(path.read_text(encoding='utf-8'))
 
 
+def yep_action_effects(obj, animations):
+    """YEP_BattleEngineCore 解析后 whole＋target 行动序列里「ACTION EFFECT」的条数（Codex_SmartBattleAI.sequenceHits）。
+    默认序列按 isWholeAction 放在 whole 或 target，含 max(1, repeats) 条（addActionEffects 之后 repeats 被改成 1）；
+    备注里的 <whole action>/<target action> 块整段替换。YEP 把 if 行存成整行名字，AI 的 IF/ELSE/END 判断从不成立，所以全部计数。"""
+    anim_id = obj.get('animationId', 0) or 0
+    whole = False
+    if anim_id > 0 and anim_id < len(animations) and animations[anim_id]:
+        whole = animations[anim_id].get('position') == 3 or obj.get('scope') in (2, 8, 10)
+    default = max(1, int(obj.get('repeats', 1) or 1))
+    counts = {'whole': default if whole else 0, 'target': 0 if whole else default}
+    kind = None
+    for line in re.split(r'[\r\n]+', obj.get('note', '') or ''):
+        if re.search(r'<(?:SETUP ACTION|setup)>', line, re.I):
+            kind = 'setup'
+        elif re.search(r'<(?:WHOLE ACTION|whole)>', line, re.I):
+            kind = 'whole'; counts['whole'] = 0
+        elif re.search(r'<(?:TARGET ACTION|target)>', line, re.I):
+            kind = 'target'; counts['target'] = 0
+        elif re.search(r'<(?:FOLLOW ACTION|follow)>', line, re.I):
+            kind = 'follow'
+        elif re.search(r'<(?:FINISH ACTION|finish)>', line, re.I):
+            kind = 'finish'
+        elif re.search(r'</(?:SETUP ACTION|setup|WHOLE ACTION|whole|TARGET ACTION|target|FOLLOW ACTION|follow|FINISH ACTION|finish)>', line, re.I):
+            kind = None
+        elif kind in ('whole', 'target'):
+            m = re.match(r'[ ]*(.*):[ ](.*)', line)
+            name = (m.group(1) if m else line).strip()
+            if name.upper() == 'ACTION EFFECT':
+                counts[kind] += 1
+    return max(1, counts['whole'] + counts['target'])
+
+
 class Exporter:
     def __init__(self, app, out, slice_cfg):
         self.app, self.out, self.cfg = app.resolve(), out.resolve(), slice_cfg
@@ -202,6 +234,12 @@ class Exporter:
                             rec['damage']['formulaIssue'] = why
             self.db[name] = data
             self.write_json(f'db/{name}.json', data)
+        animations = self.db.get('Animations') or self.read('data/Animations.json')
+        for name in ['Skills', 'Items']:
+            for rec in self.db[name]:
+                if isinstance(rec, dict):
+                    rec['yepEffects'] = yep_action_effects(rec, animations)
+            self.write_json(f'db/{name}.json', self.db[name])
 
     def export_plugins(self):
         """启用插件的参数（难度倍率表等）。plugins.js 是 JS，取出其中的 JSON 数组。"""

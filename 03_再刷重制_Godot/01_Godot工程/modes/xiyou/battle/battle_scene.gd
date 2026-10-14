@@ -452,9 +452,8 @@ func _escape_success() -> void:
 func _command(u: XBattler):
 	# 挂机中队员按自动战斗行动（Game_BattlerBase.isAutoBattle）
 	if u is XActor and logic.can_move(u) and XHangUp.is_active(XState.current):
-		# 技能顺序页排了这一回合就照排的用（目标随机），否则按自动战斗
-		var planned := XHangUpAuto.scheduled_skill(XState.current, logic, u, logic.turn)
-		return [planned, null] if not planned.is_empty() else logic.auto_action(u)
+		# 技能顺序表／智能战斗AI（XBattleLogic.auto_battle_action）
+		return logic.auto_battle_action(u)
 	if not (u is XActor) or logic.auto or not logic.can_move(u):
 		return logic.decide(u)
 	_set_active(u)
