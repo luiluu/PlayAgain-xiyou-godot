@@ -397,6 +397,10 @@ func _main() -> void:
 			otb.advance_turn()
 		otb.show_orders(logic.current_order, logic.next_order, first)
 		first = false
+		# XdRs_HangUp 的 updateTurn：挂机逃跑条件成立就 processEscape（逃跑率 1）
+		if XHangUp.should_escape(XState.current, logic.enemies):
+			await _escape_success()
+			return
 		while not logic.is_won() and not logic.is_lost():
 			var u := logic.next_subject()
 			if u == null:
@@ -420,7 +424,9 @@ func _main() -> void:
 			return
 		if logic.is_lost():
 			otb.hide_bar()
-			await _say("全军覆没……", 1.2)
+			# 快速战斗只跳过失败信息（见 XHangUp）
+			if not XHangUp.fast_fighting(XState.current):
+				await _say("全军覆没……", 1.2)
 			logic.end_battle()
 			finished.emit(2)
 			return
@@ -429,6 +435,17 @@ func _main() -> void:
 		_refresh_status()
 		# 全员不能行动时也交还一帧，保留自动/速度按钮与窗口响应。
 		await get_tree().process_frame
+
+
+## BattleManager.processEscape 成功：逃跑音效、提示，结束战斗（结果 1）
+func _escape_success() -> void:
+	_close_windows()
+	otb.hide_bar()
+	logic.escaped = true
+	XSound.system(8)
+	await _say("成功逃跑了。", 0.8)
+	logic.end_battle()
+	finished.emit(1)
 
 
 ## 轮到 u：敌人/自动/不能行动时直接决定；角色由玩家选。逃跑在这里处理，成功时结束战斗并返回 "escaped"。
@@ -449,10 +466,7 @@ func _command(u: XBattler):
 		if r is String and r == "escape":
 			_close_windows()
 			if logic.try_escape():
-				otb.hide_bar()
-				await _say("成功逃跑了。", 0.8)
-				logic.end_battle()
-				finished.emit(1)
+				await _escape_success()
 				return "escaped"
 			await _say("没能逃掉！", 0.8)
 			return [null, null]

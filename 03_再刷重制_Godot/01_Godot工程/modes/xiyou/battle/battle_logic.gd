@@ -785,6 +785,7 @@ func rewards() -> Dictionary:
 		for extra in _extra_drops(d):
 			if randf() < extra.rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
 				drops.append({"kind": extra.kind, "id": extra.id})
+	drops = XHangUp.shield_drops(state, drops)
 	return {"exp": int(XEquipSuits.reward(reward_members,roundi(exp),0)), "gold": int(XEquipSuits.reward(reward_members,roundi(gold),1)), "drops": drops}
 
 func _passive_sum(a: XActor, tag: String) -> float:

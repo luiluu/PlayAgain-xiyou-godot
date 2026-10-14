@@ -1,8 +1,8 @@
 class_name XHangUp
 extends RefCounted
 ## XdRs_HangUp「真·在线挂机」第一批：开关、范围内随机走动遇敌、自动战斗、战后死亡停止、定时自动存档、挂机计时。
-## 地图的面板/横幅在 map/hang_up_overlay.gd，接线在 XMapScene。设置页（范围、快捷界面、快速战斗、逃跑、技能顺序、
-## 自动吃药、自动卖出、屏蔽掉落）是第二批；设置值已按正式版默认存在 XState.hang_up 里。
+## 地图的面板/横幅在 map/hang_up_overlay.gd，接线在 XMapScene；设置页在 ui/hang_up_options.gd（主菜单 → 设置 → 挂机设置）。
+## 第二批已接：快速战斗、三种逃跑、屏蔽掉落（见下）；技能次数/顺序、自动吃药、自动卖出的子页与规则未做。
 ## - 开启（G 键或面板按钮）：挂机禁用（插件指令 ProhibitHangUp）时只清除状态；当前地图有遇敌表才开始（确定音、
 ##   以玩家位置为原点），否则蜂鸣并提示「这个地图没有敌人！」。关闭：取消音，挂机时长计入总计。
 ## - 明雷怪（事件备注 <Enemy>）：正式全部地图都没有这种事件，不做；有无敌人只看遇敌表。
@@ -12,6 +12,13 @@ extends RefCounted
 ## - 自动存档：挂机计时每满 10 分钟（saveMnt）记一次，回到地图时存到开局固定存档位并提示「已自动存储」；
 ##   正式版判断时没有看「自动储存」设置（needAutoSave 未被调用）；O-017 让该设置生效（AUTO_SAVE_SETTING）。
 ## - 读档后不在挂机（DataManager.loadGame 清除）：运行状态不进存档。
+## - 快速战斗（isFastFighting＝挂机中且 fastFt）：插件跳过开战/胜利/失败/奖励信息与行动动画，但它在插件列表第 3 位，
+##   开战信息与 Window_BattleLog.startAction 被后面的 YEP_BattleEngineCore 整个替换、胜利/奖励信息被 Olivia 结算取代，
+##   v0.16 实测只剩「失败信息」会被跳过（挂机胜利本来不出任何信息）。
+## - 逃跑（BattleManager.updateTurn）：每次处理回合前按敌群备注判断，成立就 processEscape（逃跑率 1，必定成功），
+##   不看「能否逃跑」；任一敌人有 <DontEsc> 就不逃。规则见 should_escape。O-019：原版判断的是开始挂机时设的全局标记
+##   GuaJiStartBettleOk（读档、回标题都不清除），这里改看是否正在挂机。
+## - 屏蔽掉落（isDropShield＝挂机中且 DropShield）：掉落里旧品质 1/2/3（普通/优秀/精良）的武器防具去掉。
 
 const DEFAULTS := {"range": 10, "showInter": true, "fastFt": false, "deathStop": true, "autoSave": true,
 	"RareEscape": false, "UnprecedentedEscape": false, "CommonEscape": false, "DropShield": false}
@@ -110,6 +117,49 @@ static func after_battle(s: XState) -> void:
 			stop(s)
 		else:
 			clear(s)
+
+
+static func fast_fighting(s: XState) -> bool:
+	return is_active(s) and bool(settings(s).fastFt)
+
+
+## XdRs_HangUp 的 BattleManager.updateTurn：逐个敌人逐行备注（按 [\r\n]+ 切开、整行比较）。
+## 小怪逃跑开着时任何一行都算数，但遇到没开对应开关的「HangUp Rare / HangUp Unprecedented」行即中断（之后的敌人也不再算），
+## 原版这样写的结果：只要敌群里有一只被排除的稀有/前所未见敌人就不逃。没开小怪逃跑时，有对应标记且开了对应开关才逃。
+static func should_escape(s: XState, enemies: Array) -> bool:
+	if not is_active(s):
+		return false
+	var cfg := settings(s)
+	var common := bool(cfg.CommonEscape)
+	var escape := false
+	var broken := false
+	for e in enemies:
+		var note := RegEx.create_from_string("[\r\n]+").sub(str(e.data().get("note", "")), "\n", true)
+		for line in note.split("\n"):
+			var rare: bool = line == "HangUp Rare"
+			var unseen: bool = line == "HangUp Unprecedented"
+			if not ((rare and cfg.RareEscape) or (unseen and cfg.UnprecedentedEscape) or common):
+				continue
+			if common:
+				if (unseen and not cfg.UnprecedentedEscape) or (rare and not cfg.RareEscape):
+					broken = true
+				if broken:
+					escape = false
+					break
+			escape = true
+	for e in enemies:
+		if e.data().get("meta", {}).has("DontEsc"):
+			return false
+	return escape
+
+
+## Game_Enemy.makeDropItems 的屏蔽：武器/防具里 meta.quality 正好是 "1"/"2"/"3" 的去掉（drops 为 {kind, id}）
+static func shield_drops(s: XState, drops: Array) -> Array:
+	if not (is_active(s) and bool(settings(s).DropShield)):
+		return drops
+	return drops.filter(func(d):
+		var table: String = {2: "Weapons", 3: "Armors"}.get(int(d.kind), "")
+		return table == "" or not str(XDB.rec(table, int(d.id)).get("meta", {}).get("quality", "")) in ["1", "2", "3"])
 
 
 static func in_range(origin: Vector2i, p: Vector2i, r: int) -> bool:

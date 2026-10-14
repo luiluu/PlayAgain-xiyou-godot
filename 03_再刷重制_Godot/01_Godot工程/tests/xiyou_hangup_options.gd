@@ -1,7 +1,8 @@
 extends Node
 ## 主菜单「设置」与挂机设置页（XOptionsScene / XHangUpOptionsScene）：正式 v0.16 运行时读数的窗口位置、
 ## 选项顺序与状态文字、范围/开关的改值与循环、选择移动、点击、子页未做时不改值、范围格、自动储存（O-017）。
-## 从真实地图打开菜单→设置→挂机设置。窗口模式加 -- --out=<目录> 保存实际绘制截图。
+## 从真实地图打开菜单→设置→挂机设置。另测第二批规则：三种逃跑（含原版逐行中断的写法与 DontEsc）、屏蔽掉落、
+## 快速战斗，以及挂机中开着「小怪逃跑」时真实战斗开场即逃。窗口模式加 -- --out=<目录> 保存实际绘制截图。
 
 var results := []
 var out_dir := ""
@@ -53,6 +54,63 @@ func click(p: Vector2) -> void:
 		e.pressed = down
 		Input.parse_input_event(e)
 		await frames(1)
+
+
+class FakeEnemy:
+	var d := {}
+	func _init(note: String, meta := {}) -> void:
+		d = {"note": note, "meta": meta}
+	func data() -> Dictionary:
+		return d
+
+
+func escape_with(s: XState, cfg: Dictionary, notes: Array, meta := {}) -> bool:
+	for k in ["CommonEscape", "RareEscape", "UnprecedentedEscape"]:
+		XHangUp.settings(s)[k] = bool(cfg.get(k, false))
+	var list := notes.map(func(n): return FakeEnemy.new(n))
+	if not meta.is_empty():
+		list.append(FakeEnemy.new("", meta))
+	return XHangUp.should_escape(s, list)
+
+
+func rules(s: XState) -> void:
+	var rare := "<Capture: 10%>\nHangUp Rare\n<EnemyRace: 3>"
+	var unseen := "HangUp Unprecedented"
+	check("escape_inactive", not escape_with(s, {"CommonEscape": true}, [""]))
+	s.hang_up_active = true
+	s.hang_up_origin = Vector2i(1, 1)
+	check("escape_all_off", not escape_with(s, {}, ["", rare]))
+	check("escape_common_plain", escape_with(s, {"CommonEscape": true}, ["", "abc"]))
+	check("escape_common_blocked_by_rare", not escape_with(s, {"CommonEscape": true}, ["", rare]) and not escape_with(s, {"CommonEscape": true}, [rare, ""]))
+	check("escape_common_blocked_by_unseen", not escape_with(s, {"CommonEscape": true, "RareEscape": true}, [rare, unseen]))
+	check("escape_common_with_rare", escape_with(s, {"CommonEscape": true, "RareEscape": true}, ["", rare]))
+	check("escape_rare_only", escape_with(s, {"RareEscape": true}, ["", rare]) and not escape_with(s, {"RareEscape": true}, ["", "x"]))
+	check("escape_unseen_only", escape_with(s, {"UnprecedentedEscape": true}, [unseen]) and not escape_with(s, {"UnprecedentedEscape": true}, [rare]))
+	check("escape_line_exact", not escape_with(s, {"RareEscape": true}, ["HangUp Rare "]))
+	check("escape_dont_esc", not escape_with(s, {"CommonEscape": true}, [""], {"DontEsc": true}))
+	for k in ["CommonEscape", "RareEscape", "UnprecedentedEscape"]:
+		XHangUp.settings(s)[k] = false
+	# 屏蔽掉落：旧品质 1/2/3 的武器防具去掉
+	var low := -1
+	var high := -1
+	for w in XDB.table("Weapons"):
+		if w is Dictionary and w.has("meta"):
+			var q := str(w.meta.get("quality", ""))
+			if low < 0 and q == "2":
+				low = int(w.id)
+			if high < 0 and q == "4":
+				high = int(w.id)
+	var drops := [{"kind": 2, "id": low}, {"kind": 2, "id": high}, {"kind": 1, "id": 1}]
+	check("shield_off", XHangUp.shield_drops(s, drops) == drops)
+	XHangUp.settings(s).DropShield = true
+	check("shield_on", low > 0 and high > 0 and XHangUp.shield_drops(s, drops) == [drops[1], drops[2]], [low, high])
+	XHangUp.settings(s).DropShield = false
+	check("fast_off", not XHangUp.fast_fighting(s))
+	XHangUp.settings(s).fastFt = true
+	check("fast_on", XHangUp.fast_fighting(s))
+	XHangUp.settings(s).fastFt = false
+	XHangUp.clear(s)
+	check("shield_needs_hang_up", XHangUp.shield_drops(s, drops) == drops)
 
 
 func _run() -> void:
@@ -192,6 +250,34 @@ func _run() -> void:
 	check("prohibited_no_hangup", opt2.symbols().size() == 32 and not opt2.symbols().has("HangUp"))
 	opt2.queue_free()
 	s.flags.HangUpProhibited = false
+	rules(s)
+	menu._cancel()
+	await frames(3)
+	check("menu_closed", not map._menu_open)
+	# 真实战斗：挂机中开着小怪逃跑，一层的敌群开场即逃，不打也不出结算
+	await map.load_map(5, 11, 13, 2)
+	await frames(2)
+	XHangUp.settings(s).CommonEscape = true
+	var results_seen := []
+	var hook := func(n):
+		if n is XBattleScene:
+			n.finished.connect(func(r): results_seen.append([r, n.logic.turn_count() if n.logic.has_method("turn_count") else -1]))
+	get_tree().node_added.connect(hook)
+	map.encounter_count = 999
+	map.toggle_hang_up()
+	await frames(2)
+	check("hang_started", XHangUp.is_active(s), [map.busy, map._menu_open, s.hang_up_origin])
+	var hp_before := s.members().map(func(a): return a.hp)
+	map.encounter_count = 1
+	for i in 2000:
+		if not results_seen.is_empty():
+			break
+		await get_tree().physics_frame
+	check("battle_escapes", results_seen.size() == 1 and results_seen[0][0] == 1, [results_seen, map._in_battle, map.player.grid])
+	check("escape_no_damage", s.members().map(func(a): return a.hp) == hp_before)
+	get_tree().node_added.disconnect(hook)
+	XHangUp.stop(s)
+	XHangUp.settings(s).CommonEscape = false
 	map.queue_free()
 	await frames(2)
 	var passed := results.filter(func(r): return r.passed).size()
