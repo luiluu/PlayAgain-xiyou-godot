@@ -3,10 +3,21 @@ extends Node
 ## 对照正式 options_probe 的 misc（状态文字、开关操作、存取、对话标志、通行、304 次遇敌抽签、步数值、禁用遇敌），
 ## 另测对话框整页立即显示与对话跳过的实际关闭、地图上穿墙与禁用遇敌。
 var results := []
+var out_dir := ""
 
 
 func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out_dir = arg.substr(6)
 	_run.call_deferred()
+
+
+func shot(name: String) -> void:
+	if out_dir == "" or DisplayServer.get_name() == "headless":
+		return
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name))
 
 
 func check(name: String, ok: bool, detail = null) -> void:
@@ -75,6 +86,12 @@ func _run() -> void:
 	XSound.system_log.clear()
 	opt._side(false)
 	check("null_to_off_sounds", XConfig.session_value("ydgb") == false and XSound.system_log == [0], XSound.system_log)
+	XConfig.set_session("ydgb", null)
+	XConfig.set_session("Boss", true)
+	opt._select(opt.symbols().find("yd100"))
+	await physics(3)
+	await shot("杂项开关.png")
+	XConfig._session.clear()
 	opt.queue_free()
 
 	# 存取：只有穿墙写进配置；其余重读配置后仍是本次运行的值、不入文件
@@ -184,6 +201,8 @@ func _run() -> void:
 	check("pingbi_rect", page.rect() == Rect2(520, 256, 240, 208) and page.win.position == Vector2(520, 256), page.rect())
 	XSound.system_log.clear()
 	page.ok()
+	await physics(3)
+	await shot("屏蔽掉落.png")
 	check("pingbi_page_ok", XSound.system_log == [1] and XPingbi.state(s, 0) == "all", XSound.system_log)
 	page.select(XMenu._move(page.index, -1, page.rows().size(), true))
 	check("pingbi_page_wrap", page.index == 4)

@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.025",
-  "sequence": 25,
-  "next": "dev.026",
-  "nextSequence": 26,
+  "current": "dev.026",
+  "sequence": 26,
+  "next": "dev.027",
+  "nextSequence": 27,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "设置「消息提醒」子页与提示过滤，主菜单音效",
+  "currentChange": "设置页杂项九项、穿墙、屏蔽掉落子页、队列跟随；对话框整页立即显示；同步 v0.22",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
