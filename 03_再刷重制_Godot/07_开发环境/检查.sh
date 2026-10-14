@@ -1,6 +1,7 @@
 #!/bin/zsh
 # 共用提交前检查：Claude 与 Codex 每次提交前都跑这一条。
 # 用法：03_再刷重制_Godot/07_开发环境/检查.sh [--oracle]
+#   在 worktree（多会话车道）里也可运行：测试自动只并行 2 个；交付单／开发编号占位检查只在主工作区做
 #   --oracle  另外启动 MV 参照引擎做一次启动检查（约 5 秒）
 set -u
 ENV_DIR=${0:A:h}
@@ -16,6 +17,9 @@ python3 - "$ROOT" <<'PY' || FAIL=1
 import json, re, subprocess, sys
 from pathlib import Path
 root = Path(sys.argv[1]); bad = []
+gd = subprocess.run(['git', 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'], cwd=root, capture_output=True, text=True).stdout.split('\n')
+in_worktree = len(gd) > 1 and gd[0] != gd[1]
+main_root = Path(gd[1]).parent if in_worktree else root  # worktree 里不入 Git 的本地证据（验证与备份、本地结果）只在主工作区
 files = subprocess.run(['git', '-c', 'core.quotePath=false', 'ls-files', '--cached', '--others', '--exclude-standard'],
                        cwd=root, capture_output=True, text=True).stdout.splitlines()
 for rel in files:
@@ -31,6 +35,9 @@ for rel in files:
             if not ref or '://' in ref or ref.startswith('~'):
                 continue
             target = Path(ref) if ref.startswith('/') else p.parent / ref
+            if not target.exists() and in_worktree and not ref.startswith('/'):
+                try: target = main_root / (p.parent / ref).resolve().relative_to(root.resolve())
+                except ValueError: pass
             if not target.exists(): bad.append(f'失效链接 {rel} -> {ref}')
 dev = json.loads((root / '03_再刷重制_Godot/开发编号.json').read_text())['current']
 proj = re.search(r'config/version="([^"]+)"', (root / '03_再刷重制_Godot/01_Godot工程/project.godot').read_text()).group(1)
@@ -42,6 +49,15 @@ source = json.loads((root / '00_项目管理/来源登记.json').read_text())
 remake = next(s for s in source['sources'] if s['id'] == 'new_godot_remake')
 if state['godot']['developmentVersion'] != dev or remake['developmentVersion'] != dev:
     bad.append('当前状态／来源登记的开发编号与工程不一致')
+# 多会话并行（AGENTS.md）：主工作区不应留有未并入的交付单或开发编号占位
+if not in_worktree:
+    left = [f for f in files if f.startswith('00_项目管理/交付/') and f != '00_项目管理/交付/README.md']
+    if left: bad.append('交付单未并入：' + '、'.join(left))
+    marker = 'dev.' + '待定'
+    exempt = {'AGENTS.md', '00_项目管理/交付/README.md'}
+    hits = [f for f in files if f not in exempt and f.endswith(('.md', '.json', '.gd', '.py', '.sh')) and (root / f).is_file()
+            and marker in (root / f).read_text(errors='ignore')]
+    if hits: bad.append(marker + ' 未替换：' + '、'.join(hits))
 for b in bad: print('  ✗ ' + b)
 print(f'  ✓ JSON、链接、开发编号（{dev}）' if not bad else f'  共 {len(bad)} 项问题')
 sys.exit(1 if bad else 0)
