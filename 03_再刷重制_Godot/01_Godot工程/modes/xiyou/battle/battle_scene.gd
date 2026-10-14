@@ -41,6 +41,7 @@ var gauges := {}                  # XEnemy -> {box, timer}
 var status_rows := {}             # XActor -> XSideStatus
 var field: Node2D
 var fx: Node2D
+var combo: XComboCounter
 var ui: Control
 var help_card: XHelpCard
 var log_canvas: XMVCanvas
@@ -89,6 +90,10 @@ func _ready() -> void:
 	fx = Node2D.new()
 	fx.position = _origin
 	add_child(fx)
+	# MOG_ComboCounter：在战斗者与伤害数字之上、窗口之下
+	combo = XComboCounter.new()
+	combo.position = _origin
+	add_child(combo)
 	_place_battlers()
 	ui = Control.new()
 	ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -761,6 +766,7 @@ func _play(logs: Array) -> void:
 					await _finish_action(started)
 				started = Engine.get_physics_frames()
 				acting = true
+				combo.action_started()
 				var s: XBattlerSprite = sprites[l.user]
 				_log_action(l.skill)
 				if l.user is XActor:
@@ -805,6 +811,7 @@ func _finish_action(started: int) -> void:
 	await _wait_frames(started + ACT_LOG_FRAMES - Engine.get_physics_frames())
 	_banner("")
 	await _wait_frames(started + ACT_END_FRAMES - Engine.get_physics_frames())
+	combo.action_ended()
 
 
 ## MV Game_Actor.performAction：物品 item、普通攻击按武器（YEP_WeaponAnimation）、防御 guard、魔法 spell、其余 skill。
@@ -842,7 +849,9 @@ func _show_hit(l: Dictionary) -> void:
 		var a := MVAnimation.play(fx, anim_id, _center(t), false)
 		if a:
 			await get_tree().create_timer(0.25).timeout
-	if l.missed or l.evaded:
+	var hit: bool = not (l.missed or l.evaded)
+	combo.applied(l.user, t, hit, int(l.skill.get("damage", {}).get("type", 0)), float(l.hp) if float(l.hp) != 0.0 else float(l.mp))
+	if not hit:
 		_popup(t, 0, false, "miss")
 		ts.set_motion("evade")
 	else:

@@ -160,6 +160,10 @@ func _run() -> void:
 	await _frames(16)
 	await _shot("battle_48b_popup")
 	_check("action_log_shown", b._log_lines.size() == 1 and b._log_lines[0].simple)
+	# MOG_ComboCounter：打中显示「N 击中」（参照 48_attack_f42「1 击中」），数字中心 (115−30×位数+30×i, 135)、底图 (118,124)
+	ok = await _until(func(): return b.combo.hits >= 1 and b.combo.layout_alpha == 255 and b.combo.digits.size() == 1)
+	_check("combo_counts_in_battle", ok and b.combo.position == b._origin and b.combo.digits[0].dx == -30.0, [b.combo.hits, b.combo.digits])
+	_combo_rules()
 	# 真实打完这一战（同原版参照 45～47：敌人 HP 设为 1 后普通攻击），截取胜利镜头与结算
 	for i in range(60):
 		for e in b.logic.enemies:
@@ -198,6 +202,50 @@ func _run() -> void:
 	await _shot("battle_44_victory_5_empty")
 	_check("victory_sorted_drops", XVictoryScreen.grouped_drops([{ "kind":3,"id":2},{"kind":1,"id":2},{"kind":1,"id":1},{"kind":1,"id":2}]) == [{"kind":1,"id":1,"count":1},{"kind":1,"id":2,"count":2},{"kind":3,"id":2,"count":1}])
 	_finish()
+
+
+## XComboCounter 逐帧规则（不依赖战斗随机）
+func _combo_rules() -> void:
+	var c := XComboCounter.new()
+	add_child(c)
+	c.set_physics_process(false)
+	var a := XActor.new()
+	var e := XEnemy.new()
+	c.action_started()
+	for i in range(12):
+		c.applied(a, e, true, 1, 100.0)
+	c.step()
+	var hold := c.timer == 90 and c.hits == 12 and c.total == 1200.0 and c.digits.size() == 2 and c.digits.map(func(g): return [g.n, g.dx]) == [[1, -60.0], [2, -30.0]]
+	for i in range(30):
+		c.step()
+	hold = hold and c.timer == 90 and is_equal_approx(c.digits[0].scale, 1.0)   # 行动中不倒数；10 帧缩回 1 倍
+	c.action_ended()
+	for i in range(89):
+		c.step()
+	var counting := c.timer == 1 and c.hits == 12
+	c.step()
+	var reset := c.timer == 0 and c.hits == 0 and c.layout_alpha == 255
+	var frames := 0
+	while c.layout_alpha > 0 and frames < 100:
+		c.step()
+		frames += 1
+	_check("combo_hold_and_fade", hold and counting and reset and frames == 26 and c.slide == 26 and c.digits.all(func(g): return g.alpha == 0), [hold, counting, reset, frames, c.slide])
+	# 不带伤害类型不算；角色打敌人未命中、敌人打中角色都会打断
+	c.applied(a, e, true, 0, 0.0)
+	c.step()
+	var no_damage := c.timer == 0 and c.hits == 0
+	c.applied(a, e, true, 1, 5.0)
+	c.step()
+	c.applied(a, e, false, 1, 0.0)
+	c.step()
+	var miss_breaks := c.timer == 0 and c.hits == 0
+	c.action_started()
+	c.applied(a, e, true, 1, 5.0)
+	c.step()
+	c.applied(e, a, true, 1, 5.0)
+	c.step()
+	_check("combo_breaks", no_damage and miss_breaks and c.timer == 0 and c.hits == 0 and not c.acting, [no_damage, miss_breaks, c.timer, c.acting])
+	c.queue_free()
 
 
 func _battle(map: XMapScene) -> XBattleScene:
