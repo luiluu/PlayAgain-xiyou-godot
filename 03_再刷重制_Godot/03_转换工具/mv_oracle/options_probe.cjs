@@ -32,6 +32,8 @@ for(const initial of [1,2,3,4])for(const op of ['processOk','cursorRight','curso
 }
 w.$gameParty._inBattle=true;
 out.timing=[];
+out.attackSequence={};
+for(const key of ['setupActions','wholeActions','targetActions','followActions','finishActions'])out.attackSequence[key]=w.$dataSkills[1][key];
 for(const value of [1,2,3,4]){
   w.ConfigManager.battleAniSpeed=value;
   const anim={},moving={};
@@ -42,7 +44,10 @@ for(const value of [1,2,3,4]){
   w.BattleManager.actionWait(13);
   const wait=w.BattleManager._logWindow._waitCount;
   w.BattleManager.actionAniWait(13);
-  out.timing.push({value,animationRate:anim._rate,animationDuration5:anim._duration,movement:moving._movementDuration,wait,animationWait:w.BattleManager._logWindow._waitCount});
+  const animationWait=w.BattleManager._logWindow._waitCount;
+  w.BattleManager._subject=w.$gameActors.actor(1);w.BattleManager._logWindow._waitCount=0;w.BattleManager._logWindow.performAction=function(){};
+  w.BattleManager.actionPerformAction();
+  out.timing.push({value,animationRate:anim._rate,animationDuration5:anim._duration,movement:moving._movementDuration,wait,animationWait,performActionWait:w.BattleManager._logWindow._waitCount});
 }
 const actor=w.$gameActors.actor(1);
 for(const enabled of [false,true]){

@@ -808,24 +808,24 @@ func _play(logs: Array) -> void:
 				_log_action(l.skill)
 				if l.user is XActor:
 					_set_active(l.user)
-				await _wait_frames(XBattleTiming.wait_frames(ACT_MOTION_FRAMES))
+				await _wait_frames(ACT_MOTION_FRAMES)
 				if l.user is XActor:
 					_perform_action(l.user, l.skill)
 				else:
 					# MV Game_Enemy.performAction：白色闪一下
 					s.flash(Color(1, 1, 1))
-				await _wait_frames(XBattleTiming.wait_frames(ACT_HIT_FRAMES))
+				await _wait_frames(ACT_HIT_FRAMES)
 			"hit":
 				await _show_hit(l)
 			"counter":
 				# YEP Show Counter Text：日志「%1的反击！」
 				_banner(str(XDB.system().terms.messages.counterAttack).replace("%1", l.user.display_name()))
-				await _wait_frames(XBattleTiming.wait_frames(18))
+				await _wait_frames(18)
 			"reflect":
 				# YEP Show Reflect Text：日志「%1反射了魔法！」
 				_banner(str(XDB.system().terms.messages.magicReflection).replace("%1", l.target.display_name()))
 				_start_animation(_reflect_animation(), l.target)
-				await _wait_frames(XBattleTiming.wait_frames(12))
+				await _wait_frames(12)
 			"guard":
 				sprites[l.user].set_motion("guard")
 			"regen":
@@ -844,9 +844,9 @@ func _play(logs: Array) -> void:
 
 ## 行动收尾：到第 41 帧清日志、第 52 帧结束（已超过就不再等）。
 func _finish_action(started: int) -> void:
-	await _wait_frames(started + XBattleTiming.wait_frames(ACT_LOG_FRAMES) - Engine.get_physics_frames())
+	await _wait_frames(started + ACT_LOG_FRAMES - Engine.get_physics_frames())
 	_banner("")
-	await _wait_frames(started + XBattleTiming.wait_frames(ACT_END_FRAMES) - Engine.get_physics_frames())
+	await _wait_frames(started + ACT_END_FRAMES - Engine.get_physics_frames())
 	combo.action_ended()
 
 
@@ -907,7 +907,7 @@ func _show_hit(l: Dictionary) -> void:
 			gauges[t].box.visible = false
 			gauges[t].timer = 0.0
 		await ts.collapse()
-	await _wait_frames(XBattleTiming.wait_frames(13))
+	await _wait_frames(13)
 
 
 ## 关闭时连动画音效也跳过（正式版 Game_Battler.startAnimation 直接返回）。地图动画不受这个开关影响。

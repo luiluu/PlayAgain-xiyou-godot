@@ -129,7 +129,14 @@ func _run() -> void:
 			check("animation_gate_%s" % str(row.enabled), int(animation != null) == int(row.animationRequests))
 			if animation:
 				check("animation_rate_current", animation.rate == XConfig.battle_speed())
-				animation.queue_free()
+				# 冻结短动画的第一个可见格，避免 Mac 截图调度晚于动画结束。
+				animation.set_physics_process(false)
+				animation._physics_process(1.0 / 60)
+				animation._physics_process(1.0 / 60)
+				check("animation_sprite_visible", animation._sprites.any(func(sprite): return sprite.visible and sprite.texture != null))
+				await shot("战斗技能动画")
+				if is_instance_valid(animation):
+					animation.queue_free()
 	# 打中敌人的连击与受伤闪烁，在关闭伤害数字时仍发生。
 	XConfig.set_flag("CombatDamageShow", false)
 	XConfig.set_flag("CombatSkillAnimation", false)
@@ -143,6 +150,7 @@ func _run() -> void:
 	check("hidden_popup_keeps_combo", b.fx.get_child_count() == 0 and b.combo.hits == 1 and b.combo.total == 12.0)
 	# 同一行动不同显示/变速配置结算相同：包括开启动画后完整播放。
 	var baseline := []
+	var baseline_frames := 0
 	for speed in [4, 1, 2, 3]:
 		XConfig.set_battle_speed(speed)
 		XConfig.set_flag("CombatDamageShow", speed != 1)
@@ -162,6 +170,11 @@ func _run() -> void:
 		check("settlement_speed_%d" % speed, outcome == baseline, [outcome, baseline])
 		var started := Engine.get_physics_frames()
 		await live._play(logs)
+		var elapsed := Engine.get_physics_frames() - started
+		if speed == 4:
+			baseline_frames = elapsed
+		elif speed in [1, 3]:
+			check("fixed_stages_preserved_%d" % speed, elapsed == baseline_frames, [elapsed,baseline_frames])
 		check("play_finishes_%d" % speed, not live.combo.acting and live._log_lines.is_empty() and Engine.get_physics_frames() > started)
 		check("play_preserves_settlement_%d" % speed, outcome == [target.hp, s.actor(1).hp, s.actor(1).mp, s.actor(1).tp])
 		if speed == 1:
