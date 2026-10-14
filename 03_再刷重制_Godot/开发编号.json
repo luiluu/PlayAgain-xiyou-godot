@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.030",
-  "sequence": 30,
-  "next": "dev.031",
-  "nextSequence": 31,
+  "current": "dev.031",
+  "sequence": 31,
+  "next": "dev.032",
+  "nextSequence": 32,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "主菜单技能页",
+  "currentChange": "设置「开启掉落动画」「战斗伤害记录」、转换器 v11",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
