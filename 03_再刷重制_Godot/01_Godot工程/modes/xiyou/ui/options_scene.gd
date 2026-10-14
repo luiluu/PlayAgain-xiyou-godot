@@ -14,7 +14,7 @@ const RECT := Rect2(440, 130, 400, 460)
 const LH := 36.0
 const ROWS := 12
 const STATUS_W := 120.0
-## [名字, 符号, 已重制]（正式 v0.16 Window_Options._list 顺序）
+## [名字, 符号, 已重制]（正式 v0.19 Window_Options._list 顺序：v0.19 加「消息提醒」、去掉「技能升级通告」）
 const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", true], ["始终跑步", "alwaysDash", false],
 	["记住指令", "commandRemember", false], ["Battle Camera", "battleCamera", false], ["开启掉落动画", "MOG_TrPopUpBattle_Key", false],
 	["战斗伤害记录", "CombatDamageRecordKey", false], ["显示伤害数字", "CombatDamageShow", false], ["显示技能动画", "CombatSkillAnimation", false],
@@ -22,9 +22,10 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 	["BGS 音量", "bgsVolume", false], ["ME 音量", "meVolume", false], ["SE 音量", "seVolume", false], ["只遇稀有", "Boss", false],
 	["只遇罕见", "BOSS", false], ["极其稀有", "boss", false], ["穿墙开关", "cq", false], ["此游戏为免费游戏！", "wxxonoff", false],
 	["总群请加906327865！", "wxlonoff", false], ["不要在闲鱼买到这个版本！", "wxtonoff", false], ["战斗变速", "battleAniSpeed", false],
-	["对话跳过", "dhtg", false], ["禁用遇敌", "ydgb", false], ["步步遇敌", "yd100", false], ["队列跟随", "codexFollow", false],
+	["对话跳过", "dhtg", false], ["禁用遇敌", "ydgb", false], ["步步遇敌", "yd100", false], ["消息提醒", "codexNotices", false],
+	["队列跟随", "codexFollow", false],
 	["战力显示与估算", "codexPowerEnabled", false], ["测试模式", "codexTestMode", false], ["GM 工具", "codexGM", false],
-	["角色换装", "codexCostumes", false], ["技能升级通告", "codexSkillLevelNotice", false], ["待提交反馈", "codexFeedbackPending", false]]
+	["角色换装", "codexCostumes", false], ["待提交反馈", "codexFeedbackPending", false]]
 
 ## 挂机设置页用：打开菜单前的地图截图与玩家所在的画面格（由地图经主菜单传入）
 var map_shot: Texture2D

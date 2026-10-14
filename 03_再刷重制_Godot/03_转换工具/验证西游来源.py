@@ -95,6 +95,21 @@ def verify(app, generated, oracle):
                         issues.append('挂机/星级参照数据不一致：' + rel)
             if not data.get('windows') or not data.get('recovery') or len(data.get('stars', [])) != 64:
                 issues.append('挂机/星级参照缺少测量结果')
+    smart = oracle / 'smart_ai.json'
+    if manifest.get('toolVersion', 0) >= 9:
+        if not smart.is_file():
+            issues.append('智能AI参照缺失（重新运行 smart_ai_probe）')
+        else:
+            data = json.loads(smart.read_text())
+            identity = data.get('sourceIdentity', {})
+            if identity.get('releaseVersion') != version or identity.get('runtimeInputs') != manifest.get('runtimeInputs'):
+                issues.append('智能AI参照版本/脚本不一致')
+            for rel, digest in manifest['inputs'].items():
+                if rel.startswith('data/') or rel == 'package.json':
+                    if identity.get('inputs', {}).get(rel) != digest:
+                        issues.append('智能AI参照数据不一致：' + rel)
+            if not data.get('cases') or not data.get('damage') or not data.get('sequence'):
+                issues.append('智能AI参照缺少测量结果')
     return {'releaseVersion': version, 'inputs': len(manifest['inputs']),
             'runtimeInputs': len(manifest.get('runtimeInputs', {})),
             'outputs': len(manifest['outputs']), 'issues': issues}
