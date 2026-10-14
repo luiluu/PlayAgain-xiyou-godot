@@ -16,6 +16,10 @@ var enemies: Array = []         # XEnemy
 var turn := 0
 var can_escape := true
 var escaped := false
+## MOG_TrPopUpBattle：掉落已在敌人倒下时实时获得，胜利时不再发放物品（$gameTemp._trBatDropLock）
+var drop_lock := false
+## 每个敌人的掉落（Game_Enemy._treasure.item）：倒下时或结算时第一次取用时抽定，之后不变
+var _treasure := {}
 var auto := false
 var state: XState
 ## 测试用：>= 0 时固定神话判定（0 必为神话，100 必不是）
@@ -28,6 +32,8 @@ const FLAG_PRESERVE_TP := 3
 func setup(troop: int, s: XState) -> void:
 	turn = 0
 	escaped = false
+	drop_lock = false
+	_treasure.clear()
 	current_order.clear()
 	next_order.clear()
 	_acted.clear()
@@ -841,34 +847,63 @@ func _avg_agi(list: Array) -> float:
 
 # ---- 奖励（难度掉率：经验、金钱、物品1~3）----
 func rewards() -> Dictionary:
-	var rates: Array = Array(str(XDB.plugin("Vitsuno_Difficulty").get("%d : Drop Rate" % state.difficulty, "1,1,1,1,1")).split(",")).map(func(x): return float(x))
+	var rates := _difficulty_rates()
 	var exp := 0.0
 	var gold := 0.0
 	var drops := []
 	var gold_up := 0.0
-	var item_up := 0.0
 	# GT_EquipSuitCore 用 $gameParty.members()，战斗中即出战成员
 	var reward_members := actors
-	var suit_drop := XEquipSuits.reward(reward_members,1.0,2)
 	for a in actors:
 		gold_up = maxf(gold_up, _passive_sum(a, "passiveGRUP"))
-		item_up = maxf(item_up, _passive_sum(a, "passiveIRUP"))
 	for e in enemies:
-		var d: Dictionary = e.data()
 		exp += float(e.exp_reward()) * rates[0]
 		gold += float(e.gold_reward()) * rates[1] * (1.0 + gold_up / 100.0)
-		var di: Array = d.get("dropItems", [])
-		for i in range(di.size()):
-			var drop: Dictionary = di[i]
-			if int(drop.kind) > 0 and int(drop.denominator) > 0:
-				var rate := float(rates[2 + i]) if 2 + i < rates.size() else 1.0
-				if randf() * int(drop.denominator) < rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
-					drops.append({"kind": int(drop.kind), "id": int(drop.dataId)})
-		for extra in _extra_drops(d):
-			if randf() < extra.rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
-				drops.append({"kind": extra.kind, "id": extra.id})
-	drops = XPingbi.filter_drops(state, XHangUp.shield_drops(state, drops))
+		drops.append_array(drops_of(e))
 	return {"exp": int(XEquipSuits.reward(reward_members,roundi(exp),0)), "gold": int(XEquipSuits.reward(reward_members,roundi(gold),1)), "drops": drops}
+
+
+func _difficulty_rates() -> Array:
+	return Array(str(XDB.plugin("Vitsuno_Difficulty").get("%d : Drop Rate" % state.difficulty, "1,1,1,1,1")).split(",")).map(func(x): return float(x))
+
+
+## 敌人的掉落（MOG_TrPopUpBattle 把 makeDropItems 的结果存进 _treasure：倒下动画结束时抽一次，结算沿用同一份）。
+## 挂机屏蔽掉落（XdRs，在 MOG 之内）与屏蔽掉落（SiShiTan PingBi，在 MOG 之外）都作用在这份结果上。
+func drops_of(e: XEnemy) -> Array:
+	if not _treasure.has(e):
+		_treasure[e] = XPingbi.filter_drops(state, XHangUp.shield_drops(state, _roll_drops(e)))
+	return _treasure[e]
+
+
+func _roll_drops(e: XEnemy) -> Array:
+	var rates := _difficulty_rates()
+	var item_up := 0.0
+	for a in actors:
+		item_up = maxf(item_up, _passive_sum(a, "passiveIRUP"))
+	var suit_drop := XEquipSuits.reward(actors,1.0,2)
+	var d: Dictionary = e.data()
+	var drops := []
+	var di: Array = d.get("dropItems", [])
+	for i in range(di.size()):
+		var drop: Dictionary = di[i]
+		if int(drop.kind) > 0 and int(drop.denominator) > 0:
+			var rate := float(rates[2 + i]) if 2 + i < rates.size() else 1.0
+			if randf() * int(drop.denominator) < rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
+				drops.append({"kind": int(drop.kind), "id": int(drop.dataId)})
+	for extra in _extra_drops(d):
+		if randf() < extra.rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
+			drops.append({"kind": extra.kind, "id": extra.id})
+	return drops
+
+
+## 把掉落放进背包（BattleManager.gainDropItems / SpriteEnemyTrP.gainDropItems）
+func gain_drops(drops: Array) -> void:
+	for d in drops:
+		match int(d.kind):
+			1: state.gain_item(d.id, 1)
+			2: state.gain_gear("weapon", d.id, 1)
+			3: state.gain_gear("armor", d.id, 1)
+
 
 func _passive_sum(a: XActor, tag: String) -> float:
 	var v := 0.0
@@ -892,11 +927,8 @@ static func _extra_drops(d: Dictionary) -> Array:
 ## 发放奖励，返回升级信息 [{actor, levels}]
 func grant(r: Dictionary) -> Array:
 	state.gain_gold(r.gold)
-	for d in r.drops:
-		match int(d.kind):
-			1: state.gain_item(d.id, 1)
-			2: state.gain_gear("weapon", d.id, 1)
-			3: state.gain_gear("armor", d.id, 1)
+	if not drop_lock:
+		gain_drops(r.drops)
 	# MV BattleManager.gainExp：全队（含阵亡与后备）都得经验；后备按 System「后备成员获得经验」（optExtraExp）
 	var ups := []
 	var bench_rate := 1.0 if bool(XDB.system().get("optExtraExp", false)) else 0.0

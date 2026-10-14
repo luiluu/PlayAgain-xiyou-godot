@@ -16,6 +16,7 @@ static var _session := {}
 const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "commandRemember": true,
 	"bgmVolume": 40, "bgsVolume": 40, "meVolume": 40, "seVolume": 40,
 	"CombatDamageShow": true, "CombatSkillAnimation": false, "battleAniSpeed": 4,
+	"MOG_TrPopUpBattle_Key": false, "CombatDamageRecordKey": false,
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
 	"codexSkillLevelNotice": true, "cq": false}
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]

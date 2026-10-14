@@ -42,6 +42,7 @@ var status_rows := {}             # XActor -> XSideStatus
 var field: Node2D
 var fx: Node2D
 var combo: XComboCounter
+var record: XDamageRecord
 var ui: Control
 ## 战斗中的消息窗（BattleManager 的逃跑信息等走 $gameMessage，Scene_Battle 的 Window_Message）
 var message: XMessageBox
@@ -93,6 +94,13 @@ func _ready() -> void:
 	combo = XComboCounter.new()
 	combo.position = _origin
 	add_child(combo)
+	# 设置「战斗伤害记录」：开战时开着才建（Star_CombatDamageRecord），在战斗画面之上、窗口之下，不随胜利镜头缩放
+	if XConfig.flag("CombatDamageRecordKey"):
+		record = XDamageRecord.new()
+		var members := logic.actors.size()
+		record.setup(XState.current.battle_slots if XState.current else [], members)
+		record.position += _origin
+		add_child(record)
 	_place_battlers()
 	ui = Control.new()
 	ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -425,6 +433,7 @@ func _main() -> void:
 			return
 		if logic.is_lost():
 			otb.hide_bar()
+			_end_record()
 			# 快速战斗只跳过失败信息（见 XHangUp）
 			if not XHangUp.fast_fighting(XState.current):
 				await _say("全军覆没……", 1.2)
@@ -441,6 +450,7 @@ func _main() -> void:
 ## BattleManager.processEscape 成功：逃跑音效，消息窗「<队名>开始逃跑了！」（等按键；挂机中按 messageCount 自动翻页），结束战斗（结果 1）
 func _escape_success() -> void:
 	_close_windows()
+	_end_record()
 	otb.hide_bar()
 	logic.escaped = true
 	XSound.system(8)
@@ -856,6 +866,8 @@ func _play(logs: Array) -> void:
 					gauges[l.target].box.visible = false
 					gauges[l.target].timer = 0.0
 				await cs.collapse()
+				if l.target is XEnemy:
+					_enemy_collapsed(l.target)
 			"skip":
 				pass
 		_refresh_status()
@@ -911,6 +923,8 @@ func _show_hit(l: Dictionary) -> void:
 		await animation.done
 	var hit: bool = not (l.missed or l.evaded)
 	combo.applied(l.user, t, hit, int(l.skill.get("damage", {}).get("type", 0)), float(l.hp) if float(l.hp) != 0.0 else float(l.mp))
+	if record and hit:
+		record.record(l.user, t, float(l.hp))
 	if not hit:
 		_popup(t, 0, false, "miss")
 		ts.set_motion("evade")
@@ -932,6 +946,8 @@ func _show_hit(l: Dictionary) -> void:
 			gauges[t].box.visible = false
 			gauges[t].timer = 0.0
 		await ts.collapse()
+		if t is XEnemy:
+			_enemy_collapsed(t)
 	await _wait_frames(13)
 
 
@@ -984,9 +1000,31 @@ func _say(text: String, seconds: float) -> void:
 	_banner("")
 
 
+## MOG_TrPopUpBattle：敌人倒下动画结束时抽定它的掉落（不论设置）；开着「掉落动画」就立即获得、弹出图标，
+## 并锁住胜利时的物品发放（结算画面照样列出）。所以开着时，逃跑前打倒的敌人的掉落也会留下（同原版）。
+func _enemy_collapsed(e: XEnemy) -> void:
+	var drops := logic.drops_of(e)
+	if drops.is_empty() or not XConfig.flag("MOG_TrPopUpBattle_Key"):
+		return
+	logic.drop_lock = true
+	logic.gain_drops(drops)
+	var p := XDropPopup.new()
+	p.setup(sprites[e], sprites[e].height(), drops.map(func(d): return XDB.rec(["", "Items", "Weapons", "Armors"][int(d.kind)], int(d.id))))
+	field.add_child(p)
+
+
+## BattleManager.endBattle：伤害记录随即移除（胜利时在结算镜头之前）
+func _end_record() -> void:
+	if record:
+		remove_child(record)      # 先移出，胜利镜头收集子节点时不会收到待释放的记录窗
+		record.queue_free()
+		record = null
+
+
 ## 胜利：先发放一次奖励，再放大胜利镜头，最后显示 Olivia 的结算布局。
 func _victory() -> void:
 	_close_windows()
+	_end_record()
 	for a in logic.alive(logic.actors):
 		sprites[a].set_motion("victory")
 	var before := {}
@@ -1008,7 +1046,7 @@ func _victory() -> void:
 		_camera = {"from": BOX / 2.0, "to": Vector2(float(params.get("Victory Screen Zoom X", 700)), float(params.get("Victory Screen Zoom Y", 460))),
 			"scale": float(params.get("Victory Screen Zoom Scale", 2)), "frames": int(params.get("Victory Screen Zoom Duration", 300)), "t": 0, "base": {}}
 		for visual in get_children():
-			if visual != ui and (visual is Control or visual is Node2D):
+			if visual != ui and visual != record and (visual is Control or visual is Node2D):
 				_camera.base[visual] = visual.position
 	await get_tree().create_timer(float(params.get("Victory Screen Hide Window Delay", 500)) / 1000).timeout
 	for node in ui.get_children():

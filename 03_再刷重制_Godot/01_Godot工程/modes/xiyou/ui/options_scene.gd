@@ -4,7 +4,7 @@ extends Control
 ## - 背景同主菜单（MOG_MenuBackground 底图＋粒子），窗口不透明度 30、背景 192。
 ## - Window_Options (440,130,400,460)：行高 36、字号 26、可见 12 行；名字左对齐在 itemRectForText (6,宽 360) 的前 240，
 ##   状态右对齐在内容 x 240、宽 120（statusWidth）。33 项与正式版同序；「挂机设置」只在挂机未禁用时出现（needAddHangUp）。
-## - 已重制：坐标、智能AI、始终跑步、记住指令、伤害数字、技能动画开关，挂机设置，四路音量与四档战斗变速，
+## - 已重制：坐标、智能AI、始终跑步、记住指令、伤害数字、技能动画、掉落动画、战斗伤害记录开关，挂机设置，四路音量与四档战斗变速，
 ##   消息提醒（状态「全部显示」/「N项关闭」，确定音后打开 XNoticeOptionsScene，左右无作用），
 ##   核心杂项开关（只遇稀有/罕见/极其稀有、穿墙、三条宣传行、对话跳过、禁用遇敌、步步遇敌）：确定取反、右开左关；
 ##   除穿墙外不存配置，开局未设置时状态空白（正式版 statusText 返回 undefined）。
@@ -23,8 +23,8 @@ const STATUS_W := 120.0
 const KEEP_INDEX_AFTER_PAGE := true
 ## [名字, 符号, 已重制]（正式 v0.19 Window_Options._list 顺序：v0.19 加「消息提醒」、去掉「技能升级通告」）
 const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", true], ["始终跑步", "alwaysDash", true],
-	["记住指令", "commandRemember", true], ["Battle Camera", "battleCamera", false], ["开启掉落动画", "MOG_TrPopUpBattle_Key", false],
-	["战斗伤害记录", "CombatDamageRecordKey", false], ["显示伤害数字", "CombatDamageShow", true], ["显示技能动画", "CombatSkillAnimation", true],
+	["记住指令", "commandRemember", true], ["Battle Camera", "battleCamera", false], ["开启掉落动画", "MOG_TrPopUpBattle_Key", true],
+	["战斗伤害记录", "CombatDamageRecordKey", true], ["显示伤害数字", "CombatDamageShow", true], ["显示技能动画", "CombatSkillAnimation", true],
 	["屏蔽掉落", "pingbiDrop", true], ["智能战斗AI（自动战斗）", "codexSmartAI", true], ["BGM 音量", "bgmVolume", true],
 	["BGS 音量", "bgsVolume", true], ["ME 音量", "meVolume", true], ["SE 音量", "seVolume", true], ["只遇稀有", "Boss", true],
 	["只遇罕见", "BOSS", true], ["极其稀有", "boss", true], ["穿墙开关", "cq", true], ["此游戏为免费游戏！", "wxxonoff", true],
@@ -61,7 +61,8 @@ func symbols() -> Array:
 
 func status_text(i: int) -> String:
 	match str(_list[i][1]):
-		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "CombatDamageShow", "CombatSkillAnimation", "cq":
+		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "CombatDamageShow", "CombatSkillAnimation", "cq",\
+		"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey":
 			return "ON" if XConfig.flag(str(_list[i][1])) else "OFF"
 		"Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100":
 			var v = XConfig.session_value(str(_list[i][1]))
@@ -113,7 +114,8 @@ func ok() -> void:
 		XSound.system(3)
 		return
 	match str(o[1]):
-		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "CombatDamageShow", "CombatSkillAnimation", "cq":
+		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "CombatDamageShow", "CombatSkillAnimation", "cq",\
+		"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey":
 			_set_flag(str(o[1]), not XConfig.flag(str(o[1])))
 		"Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100":
 			_set_session(str(o[1]), not XConfig.flag(str(o[1])))
@@ -137,7 +139,8 @@ func ok() -> void:
 ## Window_Options.changeValue：值变了才存、重画并播光标音；HangUp 不改值
 func _side(right: bool) -> void:
 	match str(_list[index][1]):
-		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "CombatDamageShow", "CombatSkillAnimation", "cq":
+		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "CombatDamageShow", "CombatSkillAnimation", "cq",\
+		"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey":
 			_set_flag(str(_list[index][1]), right)
 		"Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100", "pingbiDrop":
 			_set_session(str(_list[index][1]), right)

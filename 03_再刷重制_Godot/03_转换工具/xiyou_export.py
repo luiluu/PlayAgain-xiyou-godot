@@ -22,7 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 10
+TOOL_VERSION = 11
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -456,6 +456,21 @@ class Exporter:
             skills |= {a['skillId'] for a in e['actions']}
         anims = {db['Skills'][s]['animationId'] for s in skills if 0 < s < len(db['Skills']) and db['Skills'][s]}
         anims |= {int(x) for x in cfg.get('extraAnimations', [])} | self.event_animations
+        # MOG_TrPopUpBattle：掉落图标上播放物品备注 <dh:N> 的动画（数据库掉落与 YEP_ExtraEnemyDrops 追加掉落）
+        tables = {1: 'Items', 2: 'Weapons', 3: 'Armors'}
+        for eid in enemies:
+            e = db['Enemies'][eid]
+            drops = [(d['kind'], d['dataId']) for d in e.get('dropItems', []) if d.get('kind', 0) > 0]
+            block = re.search(r'<Enemy Drops>(.*?)</Enemy Drops>', e.get('note', ''), re.I | re.S)
+            if block:
+                for kind, did in re.findall(r'(Item|Weapon|Armor)\s+(\d+)\s*:', block.group(1), re.I):
+                    drops.append(({'item': 1, 'weapon': 2, 'armor': 3}[kind.lower()], int(did)))
+            for kind, did in drops:
+                rows = db[tables[kind]]
+                rec = rows[did] if 0 < did < len(rows) else None
+                dh = str((rec or {}).get('meta', {}).get('dh', '')).strip()
+                if dh.isdigit():
+                    anims.add(int(dh))
         for wid in range(1, min(len(db['Weapons']), cfg.get('weaponScan', 200))):
             w = db['Weapons'][wid]
             if w:
