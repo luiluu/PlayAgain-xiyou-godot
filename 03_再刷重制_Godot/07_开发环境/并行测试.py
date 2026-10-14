@@ -6,6 +6,7 @@
 - 导入（--import）由调用方先单独做一次；这里只读工程缓存。
 - 每个测试最多 300 秒；脚本语法错误时场景不会自行退出，超时即判失败。
 - 输出与原来逐个运行时相同（按场景名排序），失败时返回 1。
+- 并行数：CHECK_JOBS 或 --jobs；都没给时主工作区用 CPU 核数一半（最多 6），worktree 里只用 2（多会话并行时给其他车道留余量）。
 """
 import argparse
 import concurrent.futures as cf
@@ -34,13 +35,25 @@ def run_one(godot: str, project: str, name: str) -> tuple:
     return name, rc, out, time.time() - start
 
 
+def in_linked_worktree(path: str) -> bool:
+    """是否在 git worktree（而不是主工作区）里：git-dir 与 git-common-dir 不同。"""
+    try:
+        out = subprocess.run(['git', '-C', path, 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'],
+                             capture_output=True, text=True, check=True).stdout.split('\n')
+        return out[0] != out[1]
+    except (OSError, subprocess.CalledProcessError, IndexError):
+        return False
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('godot')
     ap.add_argument('project')
-    ap.add_argument('--jobs', type=int, default=int(os.environ.get('CHECK_JOBS', '0')) or max(1, min(6, (os.cpu_count() or 2) // 2)))
+    ap.add_argument('--jobs', type=int, default=0)
     ap.add_argument('names', nargs='*')
     a = ap.parse_args()
+    if a.jobs <= 0:
+        a.jobs = int(os.environ.get('CHECK_JOBS', '0')) or (2 if in_linked_worktree(a.project) else max(1, min(6, (os.cpu_count() or 2) // 2)))
     scenes = sorted(p.name for p in (Path(a.project) / 'tests').glob('*.tscn'))
     if a.names:
         scenes = [s for s in scenes if any(s == n or s == n + '.tscn' or s.startswith(n) for n in a.names)]
