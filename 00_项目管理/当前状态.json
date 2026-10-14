@@ -80,17 +80,17 @@
   "plan": "00_项目管理/重制步骤清单.md（9 步，西游优先）",
   "remakeSource": {
     "sourceId": "legacy_xiyou_mod_kyo",
-    "releaseVersion": "v0.16",
+    "releaseVersion": "v0.17",
     "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
-    "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/claude_v016同步/当前西游来源清单.json",
+    "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/claude_v017同步/当前西游来源清单.json",
     "fingerprintedFiles": 951,
-    "convertedContentReleaseVersion": "v0.16",
-    "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.15(help_cards,difficulty_notice),v0.16(options,hangup_options)",
+    "convertedContentReleaseVersion": "v0.17",
+    "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.15(help_cards,difficulty_notice),v0.16(options,hangup_options),v0.17(hangup_subpages)",
     "contentRefreshPending": false,
     "convertedScope": "floor1_slice",
-    "converterVersion": 7,
+    "converterVersion": 8,
     "runtimeFingerprintCount": 380,
-    "oracleReleaseVersion": "v0.16"
+    "oracleReleaseVersion": "v0.17"
   },
   "handoff": "00_项目管理/交接板.md",
   "collaboration": {
