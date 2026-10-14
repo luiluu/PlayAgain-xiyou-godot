@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.021",
-  "sequence": 21,
-  "next": "dev.022",
-  "nextSequence": 22,
+  "current": "dev.022",
+  "sequence": 22,
+  "next": "dev.023",
+  "nextSequence": 23,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "完成挂机技能次数/顺序、自动吃药与七档自动卖出子页，补快捷摘要；同步正式 v0.17 星级",
+  "currentChange": "智能战斗AI、命中公式照 YEP_HitAccuracy、同步正式 v0.18～v0.20",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
