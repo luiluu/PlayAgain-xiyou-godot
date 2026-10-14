@@ -166,6 +166,8 @@ func ok() -> void:
 
 ## Star_Window_AutomaticCombatSkills/Skill.update：→ 与 ← 按住连续（只有这两页）
 func side(right: bool) -> void:
+	if rows().is_empty():
+		return
 	match kind:
 		"counts":
 			XHangUpAuto.change_count(_s(), actor, _skills[index], right)

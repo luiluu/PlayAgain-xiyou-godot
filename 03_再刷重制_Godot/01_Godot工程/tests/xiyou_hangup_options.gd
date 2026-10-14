@@ -212,11 +212,14 @@ func _run() -> void:
 	check("bool_ok", not XHangUp.settings(s).showInter)
 	page.left()
 	check("bool_left", XHangUp.settings(s).showInter)
-	# 子页未做：不改设置
+	# 自动吃药子页已接入，返回后主页面恢复
 	page.select(10)
-	var before := XHangUp.settings(s).duplicate()
 	page.ok()
-	check("subpage_noop", XHangUp.settings(s) == before)
+	await frames(2)
+	check("subpage_open", page._page != null and page._page.kind == "medication" and not page.title_win.visible)
+	page._page.cancel()
+	await frames(2)
+	check("subpage_return", page._page == null and page.title_win.visible)
 	# 点击：点非活动窗口＝选中，再点活动窗口的项＝确定
 	if DisplayServer.get_name() != "headless":
 		await click(Vector2(100, 300))

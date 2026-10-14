@@ -57,7 +57,7 @@
     "editorStartupVerified": true,
     "visibleProjectManagerVerified": true,
     "runnableBuildKind": "playable_slice",
-    "developmentVersion": "dev.020",
+    "developmentVersion": "dev.021",
     "developmentRegistry": "03_再刷重制_Godot/开发编号.json",
     "deferredPlatforms": [
       "Windows",

@@ -132,7 +132,7 @@ func _run() -> void:
 	_check("quality_grades", grades == [0, 0, 1, 2, 3, 4, 4, 4, 5, 5, 5, 5, 6, 5, 6, 6] and XQuality.grade_of(20) == 6, grades)
 	var shenwu := {"meta": {"quality": "9"}, "etypeId": 17}
 	_check("quality_label_tags", XQuality.label(shenwu, "armor") == "不朽（传家宝·神武）" and XQuality.label(shenwu, "item") == "不朽"
-		and XQuality.label({"meta": {"quality": "12"}}, "weapon") == "神话", XQuality.label(shenwu, "armor"))
+		and XQuality.label({"meta": {"quality": "12"}}, "weapon") == "神话★（超·神器）", XQuality.label(shenwu, "armor"))
 	_check("quality_window", XQuality.window_skin(10) == 8 and XQuality.window_skin(12) == 10 and XQuality.window_skin(5) == 7 and XQuality.window_skin(16) == 16)
 	_check("quality_list_color", XQuality.list_color({"meta": {"quality": "13", "ici": "12"}}) == Color8(255, 214, 90)
 		and XQuality.list_color({"meta": {"ici": "6"}}) == Color("ff8000") and XQuality.list_color({}) == Color.WHITE)

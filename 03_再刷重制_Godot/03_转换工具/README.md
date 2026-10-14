@@ -14,6 +14,7 @@
 - `equipment_rules.py`：将装备/强化备注、GT 套装与符文之语插件参数转成纯 JSON 规则，不执行来源备注代码。
 - `equipment_probe.cjs`：在内存新游戏中固定随机数，测装备、强化材料、套装与符文之语；输出只写 `.sandbox/equipment.json`，验收后复制到 `generated/oracle/`。
 - `help_probe.cjs`：在内存新游戏中对物品（1～200）、武器/防具（1～60）、切片角色技能、随机词缀装备实例调用正式版 `Sprite_ItemHelp.setItem`，记录实际画出的每一行（文字、字号、颜色、y、对齐）与卡片宽高；只写 `.sandbox/help_cards.json`，验收后复制到 `generated/oracle/`，供 Godot 说明卡（XHelpCard）对照。
+- `hang_up_probe.cjs`：七个挂机子页窗口、技能次数/顺序、正常战后回血/回蓝/复活、七档卖出状态与 64 种品质星级；只写 `.sandbox/hang_up.json`，核验后复制到 `generated/oracle/`。固定能力值隔离不移植的 growth；初始化成就为已领取、绕过场景退出与死亡停止以单测吃药分支，实际战后调用另由 Godot 测试覆盖。与其余四探针一起重跑并核验来源。
 - `source_identity.cjs`：两种探针共用的原始数据与运行脚本指纹。
 - `验证西游来源.py`：只读核对正式来源、转换产物和三难度及装备参照；`检查.sh --oracle` 会调用。来源变化或产物损坏时报告失败，不自行覆盖。
 - 依赖：`npm install`（jsdom 24.1.3、lz-string 1.5.0；`node_modules/` 与 `.sandbox/` 不入 Git）。

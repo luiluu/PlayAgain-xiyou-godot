@@ -13,7 +13,7 @@ extends Control
 ## - 操作（HuList＋活动窗口）：上下键只认首按、首尾循环，换项播光标音；确定/右键头＝范围 +1（20 后回 1）或开关取反，
 ##   左键头＝范围 −1（1 后到 20）或开关取反；值变了播光标音。点非活动窗口即选中它，点活动窗口的项＝确定；
 ##   取消（Esc/右键）播取消音返回设置。
-## - 技能次数、技能顺序、自动吃药、自动卖出四个子页（Star_Scene_*）还没做：确定/右键头蜂鸣（原版会先把同名字段取反再打开子页）。
+## - 四个子页在 XHangUpSubPage；打开时先切换同名字段并播光标音（原版 processOk）。
 ## - 「自动储存」说明里的档位按 O-017 写开局选的存档位（原版写参数 saveId，空时为 1）。
 
 signal closed
@@ -38,6 +38,7 @@ var index := 0
 var title_win: XMVWindow
 var range_win: XMVWindow
 var item_wins: Array = []
+var _page: XHangUpSubPage
 
 
 ## HuList.createAllList 的窗口位置
@@ -159,7 +160,9 @@ func _change(sym: String, v) -> void:
 func ok() -> void:
 	var sym: String = SYMS[index]
 	if sym in SUBPAGES:
-		XSound.system(3)
+		_change(sym, not bool(settings().get(sym, false)))
+		_open_subpage({"SetSkilllist": "actors_count", "SetSkillNum": "actors_order",
+			"AutomaticMedication": "medication", "AutomaticSellWeapon": "sell"}[sym])
 	elif sym == "range":
 		_change(sym, posmod(int(settings().range), max_range()) + 1)
 	else:
@@ -170,7 +173,7 @@ func ok() -> void:
 func left() -> void:
 	var sym: String = SYMS[index]
 	if sym in SUBPAGES:
-		XSound.system(0)  # 原版把同名字段取反（值变了）播光标音，不打开子页
+		_change(sym, not bool(settings().get(sym, false)))
 	elif sym == "range":
 		_change(sym, posmod(int(settings().range) - 2, max_range()) + 1)
 	else:
@@ -187,8 +190,24 @@ func cancel() -> void:
 	closed.emit()
 
 
+func _open_subpage(kind: String) -> void:
+	_page = XHangUpSubPage.new().setup(kind)
+	for node in get_children():
+		if node is CanvasItem:
+			node.hide()
+	add_child(_page)
+	_page.closed.connect(func():
+		var page := _page
+		_page = null
+		page.queue_free()
+		for node in get_children():
+			if node is CanvasItem and node != page:
+				node.show()
+		_refresh())
+
+
 func _gui_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton and event.pressed):
+	if _page or not (event is InputEventMouseButton and event.pressed):
 		return
 	if event.button_index == MOUSE_BUTTON_RIGHT:
 		cancel()
@@ -207,6 +226,8 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _page:
+		return
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		cancel()

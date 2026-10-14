@@ -14,6 +14,8 @@ const SAVE_ORDER := true
 ## O-021：吃药/回蓝的循环加上限（原版不可消耗的药会无限循环卡死）；阵亡者不吃回蓝药（原版会把开着的回蓝药全吃光）
 const SAFE_RECOVERY := true
 const LOOP_CAP := 2000
+## O-023：顺序号保持 1～N 且删去旧表残留，次数改动后重建已排过的顺序；false 恢复原版延迟刷新/残留。
+const CONSISTENT_ORDER := true
 
 static var _order_temp := {}
 static var better_frequency := 0
@@ -95,6 +97,10 @@ static func change_count(s: XState, a: XActor, sk: Dictionary, up: bool) -> void
 	var k := a.display_name() + str(int(sk.id))
 	var v := int(t.get(k, 0))
 	t[k] = (v + 1 if v < 20 else 0) if up else (v - 1 if v > 0 else 20)
+	if CONSISTENT_ORDER and data(s, "ActSkill").keys().any(func(key): return _schedule_key(str(key), a.display_name())):
+		var logic := XBattleLogic.new()
+		logic.state = s
+		order_list(s, a, bet_skills(logic, a))
 
 
 ## 技能顺序页（Star_Window_AutomaticCombatSkill）：每个技能按次数重复（次数不是数字时当 1 并写回）。
@@ -137,6 +143,21 @@ static func renumber(s: XState, st: Dictionary) -> void:
 				order[i] = order[j] + 1
 			temp[_temp_key(st.name, list[i])] = order[i]
 			table[st.name + three(int(order[i]))] = int(list[i].skill.id)
+	if CONSISTENT_ORDER:
+		var indices := range(list.size())
+		indices.sort_custom(func(a, b): return order[a] < order[b] if order[a] != order[b] else a < b)
+		for i in indices.size():
+			order[indices[i]] = i + 1
+		for key in table.keys():
+			if _schedule_key(str(key), st.name):
+				table.erase(key)
+		for i in list.size():
+			temp[_temp_key(st.name, list[i])] = order[i]
+			table[st.name + three(int(order[i]))] = int(list[i].skill.id)
+
+
+static func _schedule_key(key: String, name: String) -> bool:
+	return key.begins_with(name) and key.substr(name.length()).is_valid_int()
 
 
 ## 确定/右键头：顺序号 −1（到 1 为止），其余项按 renumber 让位
@@ -158,7 +179,7 @@ static func scheduled_skill(s: XState, logic: XBattleLogic, a: XActor, turn: int
 		return {}
 	var id := int(v)
 	var sk := XDB.rec("Skills", id)
-	if sk.is_empty() or not logic.can_use(a, sk):
+	if sk.is_empty() or not logic.can_use(a, sk) or not wtype_ok(a, sk):
 		return {}
 	if id > XBattleLogic.GUARD_SKILL and not a.skills().any(func(x): return int(x.id) == id):
 		return {}
@@ -283,6 +304,8 @@ static func after_battle_recovery(s: XState, logic: XBattleLogic) -> void:
 		if SAFE_RECOVERY and guard > LOOP_CAP:
 			break
 		var a: XActor = members[i]
+		var before_hp := a.hp
+		var was_break: bool = b.call(i)
 		var rate := a.hp / maxf(a.mhp, 1.0)
 		if a.mhp > 1 and rate < 1.0 and rate > 0.0:
 			if r.get("HpV") and float(r.HpV) > rate * 100.0 and b.call(i):
@@ -320,9 +343,10 @@ static func after_battle_recovery(s: XState, logic: XBattleLogic) -> void:
 			var any_on := hp_list.any(func(x): return x[0] == true)
 			var none_plain := not hp_list.any(func(x): return x[0] == true and x[2] != "FH")
 			var any_zl := hp_list.any(func(x): return x[0] == true and x[2] == "ZL")
-			if any_on and (none_plain or any_zl) and any_zl:
+			if any_on and (none_plain or any_zl) and any_zl and (not SAFE_RECOVERY or was_break or a.hp != before_hp):
 				continue
 		i += 1
+		guard = 0
 	brk.fill(true)
 	i = 0
 	guard = 0
@@ -334,6 +358,8 @@ static func after_battle_recovery(s: XState, logic: XBattleLogic) -> void:
 		if SAFE_RECOVERY and a.is_dead():
 			i += 1
 			continue
+		var before_mp := a.mp
+		var was_break: bool = b.call(i)
 		var rate := a.mp / maxf(a.mmp, 1.0)
 		if a.mmp > 1 and rate < 1.0:
 			if r.get("MpV") and float(r.MpV) > rate * 100.0 and b.call(i):
@@ -346,9 +372,10 @@ static func after_battle_recovery(s: XState, logic: XBattleLogic) -> void:
 						_use_potion(s, logic, a, int(arr[1]))
 						if s.item_count(int(arr[1])) <= 0:
 							arr[0] = false
-		if a.mp / maxf(a.mmp, 1.0) < 1.0 and not b.call(i) and mp_list.any(func(x): return x[0] == true):
+		if a.mp / maxf(a.mmp, 1.0) < 1.0 and not b.call(i) and mp_list.any(func(x): return x[0] == true) and (not SAFE_RECOVERY or was_break or a.mp != before_mp):
 			continue
 		i += 1
+		guard = 0
 
 
 # ---- 自动卖出 ----
@@ -415,7 +442,7 @@ static func after_battle_sell(s: XState) -> int:
 		var q := str(e.get("meta", {}).get("quality", ""))
 		if not q.is_valid_int() or not legacy.has(int(q)) or str(e.get("name", "")).contains("[锁定]"):
 			continue
-		s.gain_gold(int(e.get("price", 0)) / 2)
+		s.gain_gold(int(e.get("sellPrice", int(e.get("price", 0)) / 2)))
 		s.gear.erase(e)
 		sold += 1
 	return sold

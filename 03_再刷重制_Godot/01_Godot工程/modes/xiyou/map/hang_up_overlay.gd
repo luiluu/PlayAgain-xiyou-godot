@@ -7,7 +7,8 @@ extends Control
 ##   时长白色在 (126,12) 宽 120 行高 18（不在挂机时「---」）。点击范围：按钮中心 ±27 的开区间。
 ## - 挂机提示 HangUp_Tip（挂机中）：取图 (0,0,560,88)，实际 546×88，放在 ((1280−560)/2, 100)，不透明度 160。
 ##   原版 drawWord 把「摆烂中.....」画进图的离屏画布，精灵贴图仍是原图，文字从不显示，照做。
-## 吃药/卖装备的剩余数量列表（drawHMPU）随第二批设置页做。
+## drawHMPU：240×222 画布，药品 (5,80) 宽120/行高18，每行下移20；卖出标题宽200，
+## 七档摘要 (10,y) 宽190/行高18，按测量宽度换行。O-022：状态变化先清画布，避免原版旧字残留。
 
 signal toggle_requested
 
@@ -18,6 +19,8 @@ const BUTTON_CENTER := Vector2(32, 42)
 const TIP_SRC := Rect2(0, 0, 546, 88)
 const TIP_POS := Vector2(360, 100)
 const TEXT_COLOR := Color8(0, 200, 0)
+## O-022：摘要随状态清除。false 按状态保留并叠画旧文字，恢复原版残留。
+const CLEAR_SUMMARY := true
 
 var inter: Control
 var tip: TextureRect
@@ -26,6 +29,9 @@ var _button_sprite: TextureRect
 var _text: XMVCanvas
 var _press := 0
 var _time := ""
+var _summary: XMVCanvas
+var _lines := {}
+var _summary_history: Array = []
 
 
 func _ready() -> void:
@@ -54,6 +60,11 @@ func _ready() -> void:
 	_text.size = Vector2(240, 74)
 	_text.painter = _paint
 	inter.add_child(_text)
+	_summary = XMVCanvas.new()
+	_summary.size = Vector2(240, 222)
+	_summary.clip_contents = true
+	_summary.painter = _paint_summary
+	inter.add_child(_summary)
 	button = Button.new()
 	button.name = "HangUpButton"
 	button.position = BUTTON_CENTER - Vector2(27, 27)
@@ -92,6 +103,36 @@ func press() -> void:
 	_press = 8
 
 
+func _paint_summary(c: XMVCanvas) -> void:
+	if not CLEAR_SUMMARY:
+		for lines in _summary_history:
+			_paint_lines(c, lines)
+	_paint_lines(c, _lines)
+
+
+func _paint_lines(c: XMVCanvas, lines: Dictionary) -> void:
+	var y := 80.0
+	for line in lines.get("potions", []):
+		c.text(line, 5, y, 120, "left", XUI.TEXT, 14, 18)
+		y += 20
+	var grades: Array = lines.get("grades", [])
+	if grades.is_empty():
+		return
+	c.text("每 %d 次战斗后卖出的装备品质:" % int(lines.every), 5, y, 200, "left", XUI.TEXT, 14, 18)
+	y += 20
+	var line := ""
+	for grade in grades:
+		var candidate := str(grade) if line == "" else line + "、" + str(grade)
+		if XUI.font().get_string_size(candidate, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x > 190 and line != "":
+			c.text(line, 10, y, 190, "left", XUI.TEXT, 14, 18)
+			y += 18
+			line = str(grade)
+		else:
+			line = candidate
+	if line != "":
+		c.text(line, 10, y, 190, "left", XUI.TEXT, 14, 18)
+
+
 func _physics_process(_delta: float) -> void:
 	if _press > 0:
 		_press -= 1
@@ -108,3 +149,9 @@ func refresh() -> void:
 	if t != _time:
 		_time = t
 		_text.queue_redraw()
+	var lines := XHangUpAuto.panel_lines(s) if s and XHangUp.is_active(s) else {}
+	if lines != _lines:
+		if not CLEAR_SUMMARY and not _lines.is_empty():
+			_summary_history.append(_lines)
+		_lines = lines
+		_summary.queue_redraw()
