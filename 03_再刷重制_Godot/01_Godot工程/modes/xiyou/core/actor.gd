@@ -178,6 +178,7 @@ func change_level_mv(lv: int) -> Array:
 	while _lv > lv:
 		_lv -= 1
 	refresh_passive()
+	refresh_resources()  # Game_Actor.changeExp 最后 refresh，降级后夹回新 HP/MP 上限。
 	return skill_ids.filter(func(id): return not before.has(id))
 
 ## 直接设定等级（读档、测试夹具用）：只按数据库上限夹，不看队伍上限，不加技能点
@@ -200,6 +201,7 @@ func gain_exp(amount: int, rate := 1.0) -> int:
 		_level_up()
 	if _lv != before:
 		refresh_passive()
+		refresh_resources()
 	return _lv - before
 
 
