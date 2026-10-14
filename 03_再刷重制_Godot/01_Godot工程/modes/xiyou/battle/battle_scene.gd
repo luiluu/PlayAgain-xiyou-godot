@@ -400,6 +400,8 @@ func _main() -> void:
 			sp.position = sp.home + Vector2(300.0 * (entry_frames - f) / entry_frames, 0)
 		await get_tree().physics_frame
 	var first := true
+	# 敌群事件：开战（第 0 回合）检查一次
+	await _play_troop_events(logic.troop_events())
 	while true:
 		logic.start_turn()
 		if not first:
@@ -410,13 +412,17 @@ func _main() -> void:
 		if XHangUp.should_escape(XState.current, logic.enemies):
 			await _escape_success()
 			return
+		var turn_first := true
 		while not logic.is_won() and not logic.is_lost():
 			var u := logic.next_subject()
-			if u == null:
+			# 每位行动之前（及最后一人之后）检查敌群事件；回合首位已在 OTB startTurn 取出
+			await _play_troop_events(logic.troop_events(u if turn_first else null))
+			turn_first = false
+			if u == null or logic.is_won() or logic.is_lost():
 				break
 			otb.on_subject(u)
 			otb.show_orders(logic.current_order, logic.next_order)
-			var cmd = await _command(u)
+			var cmd = [null, null] if logic.cleared_action(u) else await _command(u)
 			if cmd is String and cmd == "escaped":
 				return
 			_close_windows()
@@ -441,10 +447,20 @@ func _main() -> void:
 			finished.emit(2)
 			return
 		await _play(logic.end_turn())
+		await _play_troop_events(logic.troop_events(null, true))
 		otb.show_orders(logic.current_order, logic.next_order)
 		_refresh_status()
 		# 全员不能行动时也交还一帧，保留自动/速度按钮与窗口响应。
 		await get_tree().process_frame
+
+
+## 敌群事件的强制行动（记录同普通行动）；之后刷新行动条与状态
+func _play_troop_events(logs: Array) -> void:
+	if logs.is_empty():
+		return
+	await _play(logs)
+	otb.show_orders(logic.current_order, logic.next_order)
+	_refresh_status()
 
 
 ## BattleManager.processEscape 成功：逃跑音效，消息窗「<队名>开始逃跑了！」（等按键；挂机中按 messageCount 自动翻页），结束战斗（结果 1）
@@ -929,8 +945,11 @@ func _show_hit(l: Dictionary) -> void:
 		_popup(t, 0, false, "miss")
 		ts.set_motion("evade")
 	else:
-		if float(l.hp) != 0.0:
-			_popup(t, float(l.hp), l.critical)
+		# 轮回困难 Establish 的附加伤害：先于本次伤害各弹一次（gainHp＋startDamagePopup）
+		for v in l.get("extra", []):
+			_popup(t, float(v), false)
+		if float(l.hp) != 0.0 or l.has("popup_hp"):
+			_popup(t, float(l.get("popup_hp", l.hp)), l.critical)
 			# MV performDamage：敌人闪烁（requestEffect blink），角色做受伤动作
 			if float(l.hp) > 0.0:
 				if t is XEnemy:

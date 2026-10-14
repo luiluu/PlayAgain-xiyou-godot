@@ -22,7 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 11
+TOOL_VERSION = 12
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -89,6 +89,9 @@ def strip_js_comments(js):
     return re.sub(r'//[^\n]*', '', js)
 
 
+PARAM_HIT = re.compile(r'if \(user\.(atk|mat|def|mdf|agi|luk) > 0\) \{ target\.gainHp\(-user\.(\w+)\); target\.startDamagePopup\(\); \}\s*')
+
+
 def parse_state_effects(note):
     """返回 [{phase, op, cond, k, round} 或 {phase, op:'js', source}]；op=js 表示尚未翻译。"""
     out = []
@@ -104,6 +107,11 @@ def parse_state_effects(note):
         if mm:
             out.append({'phase': phase, 'op': 'mul', 'cond': {'>': 'positive', '>=': 'nonnegative'}[mm.group(1)],
                         'hpOnly': True, 'k': 1 - float(mm.group(2)), 'round': mm.group(3)})
+            continue
+        # 轮回困难 1460/1461（Establish）：行动者每个正的 atk/mat 各对目标附加一次 gainHp(-值) 并弹字
+        blocks = PARAM_HIT.findall(code)
+        if blocks and PARAM_HIT.sub('', code).strip() == '' and all(a == b for a, b in blocks):
+            out.append({'phase': phase, 'op': 'user_param_damage', 'params': [a for a, _ in blocks]})
             continue
         out.append({'phase': phase, 'op': 'js', 'source': body.strip()})
     return out

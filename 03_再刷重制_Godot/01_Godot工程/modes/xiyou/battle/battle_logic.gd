@@ -28,11 +28,24 @@ var elite_roll := -1.0
 
 const TRAIT_SPECIAL_FLAG := 62
 const FLAG_PRESERVE_TP := 3
+## O-026：轮回困难（1460/1461）Establish 附加伤害时，原版本次普通伤害的弹字被 gainHp 改写成最后一次附加值
+##（如普通伤害 380 弹成 70），true 时普通伤害照实显示；附加的 atk/mat 两次弹字不变。
+const ESTABLISH_TRUE_POPUP := true
+
+## 敌群事件（Game_Troop._eventFlags）：页序号 → 已执行（span 0 战斗、1 回合各一次；1 在回合开始时清除）
+var _event_flags := {}
+## 强制行动清掉的首位行动者（OTB startTurn 先取出首位并 makeActions，事件里 forceAction 的 clearActions 把它清空）
+var _cleared := {}
+## 敌群事件里尚未翻译、本次跳过的指令（"代码 页"）
+var troop_event_skipped: Array = []
 
 func setup(troop: int, s: XState) -> void:
 	turn = 0
 	escaped = false
 	drop_lock = false
+	_event_flags.clear()
+	_cleared.clear()
+	troop_event_skipped.clear()
 	_treasure.clear()
 	current_order.clear()
 	next_order.clear()
@@ -300,6 +313,12 @@ var _escape_ratio := -1.0
 
 ## 回合开始（YEP startTurn）：回合数 +1、冷却 -1、排顺序。
 func start_turn() -> void:
+	# Game_Troop.increaseTurn：span 1（回合）的页重新可执行
+	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
+	for i in range(pages.size()):
+		if int(pages[i].get("span", 0)) == 1:
+			_event_flags.erase(i)
+	_cleared.clear()
 	turn += 1
 	# YEP_X_SkillCooldowns：Game_Troop.increaseTurn 时双方冷却/预热各减 1
 	for b in actors + enemies:
@@ -361,17 +380,131 @@ func end_turn() -> Array:
 
 ## 无界面测试用：跑完一整个回合。commands: actor -> [技能, 目标]（[null, null] 表示放弃）。
 func run_turn(commands: Dictionary) -> Array:
+	var logs := troop_events() if turn == 0 else []
 	start_turn()
-	var logs := []
+	var first := true
 	while true:
 		var u := next_subject()
+		logs.append_array(troop_events(u if first else null))
+		first = false
 		if u == null or is_won() or is_lost():
 			break
-		var cmd: Array = commands.get(u, decide(u)) if u is XActor else decide(u)
+		var cmd: Array = [null, null] if cleared_action(u) else (commands.get(u, decide(u)) if u is XActor else decide(u))
 		logs.append_array(act(u, cmd[0], cmd[1]))
 	if not is_won() and not is_lost():
 		logs.append_array(end_turn())
+		logs.append_array(troop_events(null, true))
 	return logs
+
+
+# ---- 敌群事件（Game_Troop.setupBattleEvent / meetsConditions；YEP_BattleEngineCore + OTB 的强制行动）----
+## 正式版在 start/turn/turnEnd 阶段每次 update 都检查：开战（第 0 回合）、每回合开始（OTB startTurn 已取出首位行动者）、
+## 每次行动结束后、回合最后一人之后、回合结束（turn_end）。一次检查里依次执行所有满足条件的页（每页执行完再找下一页；
+## span 2「瞬间」的页每次检查最多一次，避免条件一直成立时死循环）。
+## first_subject：回合开始时已取出的首位行动者；它被强制行动时本回合的普通行动被清掉（见 _cleared / cleared_action）。
+## 目前只执行 339「强制行动」，其余指令记入 troop_event_skipped。返回记录（强制行动的 action/hit 等）。
+func troop_events(first_subject: XBattler = null, turn_end := false) -> Array:
+	var logs := []
+	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
+	var moment_done := {}
+	for guard in range(pages.size() + 1):
+		if is_won() or is_lost():
+			break
+		var found := -1
+		for i in range(pages.size()):
+			if not _event_flags.has(i) and not moment_done.has(i) and _page_meets(pages[i], turn_end):
+				found = i
+				break
+		if found < 0:
+			break
+		if int(pages[found].get("span", 0)) <= 1:
+			_event_flags[found] = true
+		else:
+			moment_done[found] = true
+		for c in pages[found].get("list", []):
+			var code := int(c.code)
+			if code == 0:
+				continue
+			if code == 339 and int(c.get("indent", 0)) == 0:
+				logs.append_array(_force_action(c.parameters, first_subject))
+			else:
+				troop_event_skipped.append("%d 第%d页" % [code, found + 1])
+	return logs
+
+
+func _page_meets(page: Dictionary, turn_end: bool) -> bool:
+	var c: Dictionary = page.get("conditions", {})
+	if not (c.get("turnEnding", false) or c.get("turnValid", false) or c.get("enemyValid", false) or c.get("actorValid", false) or c.get("switchValid", false)):
+		return false
+	if c.get("turnEnding", false) and not turn_end:
+		return false
+	if c.get("turnValid", false):
+		var a := int(c.turnA)
+		var b := int(c.turnB)
+		if b == 0 and turn != a:
+			return false
+		if b > 0 and (turn < 1 or turn < a or turn % b != a % b):
+			return false
+	if c.get("enemyValid", false):
+		var idx := int(c.enemyIndex)
+		if idx >= enemies.size() or enemies[idx].hp_rate() * 100.0 > float(c.enemyHp):
+			return false
+	if c.get("actorValid", false):
+		var actor := state.actor(int(c.actorId))
+		if actor == null or actor.hp_rate() * 100.0 > float(c.actorHp):
+			return false
+	if c.get("switchValid", false) and not state.switch(int(c.switchId)):
+		return false
+	return true
+
+
+## 339 [敌我(0 敌人/1 角色), 敌人序号（<0 全体）或角色 ID, 技能, 目标(-2 上次目标、-1 随机、≥0 序号)]：
+## 不在阵亡状态的才行动（Game_Interpreter.command339）；Game_Battler.forceAction 不检查能否使用（Game_Action._forcing），
+## 行动后 onAllActionsEnd（行动结束的状态回合）；OTB 不计入本回合行动次数。
+func _force_action(p: Array, first_subject: XBattler) -> Array:
+	var users := []
+	if int(p[0]) == 0:
+		if int(p[1]) < 0:
+			users = enemies.duplicate()
+		elif int(p[1]) < enemies.size():
+			users = [enemies[int(p[1])]]
+	else:
+		var a := state.actor(int(p[1]))
+		if a != null and actors.has(a):
+			users = [a]
+	var logs := []
+	var skill := XDB.rec("Skills", int(p[2]))
+	for u in users:
+		if u.is_dead() or skill.is_empty():
+			continue
+		if u == first_subject:
+			_cleared[u] = true
+		var before := _movable_snapshot()
+		logs.append_array(execute(u, skill, _forced_target(u, skill, int(p[3])), true))
+		_tick_states(u, 1)
+		_sync_orders(before, true)
+	return logs
+
+
+## Game_Action.setTarget 的序号按 smoothTarget（该序号阵亡时取第一个活着的）；-1 交给 targets_for 随机。
+func _forced_target(u: XBattler, skill: Dictionary, index: int) -> XBattler:
+	if index == -1:
+		return null
+	if index == -2:
+		index = u.last_target_index
+	var scope := int(skill.get("scope", 1))
+	var foe_side := scope <= 6
+	var unit: Array = (enemies if u.is_actor() else actors) if foe_side else (actors if u.is_actor() else enemies)
+	var dead_ok := [9, 10].has(scope)
+	if index >= 0 and index < unit.size() and (unit[index].is_dead() == dead_ok):
+		return unit[index]
+	var pool := unit.filter(func(b): return b.is_dead() == dead_ok)
+	return pool[0] if not pool.is_empty() else null
+
+
+## 回合开始时首位行动者的行动被强制行动清掉：本回合只剩 onAllActionsEnd（照 act 的「放弃行动」处理）。
+func cleared_action(b: XBattler) -> bool:
+	return _cleared.has(b)
 
 
 func can_move(b: XBattler) -> bool:
@@ -542,9 +675,9 @@ static func _note_int(rec: Dictionary, tag: String) -> int:
 
 
 ## 执行一次行动：消耗、目标、连击、命中、伤害、效果。
-func execute(u: XBattler, skill: Dictionary, chosen: XBattler) -> Array:
+func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false) -> Array:
 	var logs := []
-	if not can_use(u, skill):
+	if not forcing and not can_use(u, skill):
 		skill = XDB.rec("Skills", ATTACK_SKILL)
 	if is_item(skill):
 		if bool(skill.get("consumable", true)):
@@ -585,6 +718,8 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler) -> Array:
 ## 反射：行动作用到行动者自己。反击：目标对行动者普通攻击，原行动对该目标无效。
 ## dsPassiveSkill 必中（角色的 SkillCertainHit 被动）时不会被反射/反击。MV 不区分敌我。
 func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
+	# Game_Battler.setLastTarget（YEP invokeAction）：强制行动「上次目标」用
+	u.last_target_index = maxi(0, (actors if t.is_actor() else enemies).find(t))
 	var sure := certain_hit(u, skill)
 	var mrf := t.mrf if XDamage.is_magical(skill) and not sure else 0.0
 	if randf() < mrf:
@@ -682,6 +817,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 				u.mp = minf(u.mmp, u.mp + r.mp)
 		if value > 0.0 and [1, 5].has(type):
 			t.tp = minf(100.0, t.tp + floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
+		_establish(u, t, r)
 	for eff in skill.get("effects", []):
 		_effect(u, t, eff, r)
 	_otb_target_shift(skill, t)
@@ -690,6 +826,23 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_die(t)
 		r.died = true
 	return r
+
+
+## YEP_BuffsStatesCore onPostDamageStateEffects 的 Establish（行动者的状态）：executeDamage 之后、使用效果之前。
+## user_param_damage（轮回困难 1460/1461）：行动者每个为正的能力值各一次 target.gainHp(-值)（不经伤害计算，可致死）并弹字。
+## 记录 r.extra（附加值列表）；原版普通伤害弹字被改写为最后一次附加值（r.popup_hp，见 ESTABLISH_TRUE_POPUP）。
+func _establish(u: XBattler, t: XBattler, r: Dictionary) -> void:
+	for s in u.states():
+		for eff in s.get("effects", []):
+			if eff.phase != "establish" or eff.op != "user_param_damage":
+				continue
+			for p in eff.params:
+				var v := float(u.get(str(p)))
+				if v > 0.0:
+					t.hp = clampf(t.hp - v, 0.0, t.mhp)
+					r.extra = r.get("extra", []) + [v]
+	if r.has("extra") and not ESTABLISH_TRUE_POPUP:
+		r.popup_hp = r.extra[-1]
 
 
 func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:

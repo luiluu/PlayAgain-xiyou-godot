@@ -29,6 +29,8 @@ var state_turns := {}
 var buffs: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var buff_turns: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var guarding := false
+## Game_Battler._lastTargetIndex：最近一次行动作用到的目标在其队伍里的序号（强制行动「上次目标」用）
+var last_target_index := 0
 ## YEP_X_SkillCooldowns：技能 ID → 剩余回合（冷却 / 预热）。冷却跨战斗保留（随存档），预热只在战斗内。
 var cooldowns := {}
 var warmups := {}
