@@ -7,8 +7,7 @@ extends RefCounted
 ##   正式版 eval 出错（如敌人没有 _skills）时为假。不认识的写法记入 unknown 并当作假。
 ## - 规则指令：ACTION EFFECT（可指定目标）、ADD/REMOVE STATE、HP/MP/TP ±（数值、百分比、变量）、ADD/REMOVE 能力 BUFF/DEBUFF。
 ##   其余（动画、移动、等待、镜头、音效、公共事件、变量、EVAL）不影响本函数的结算，跳过。
-## - 与正式版的已知差异：setup 里的 IMMORTAL 让目标在序列中 HP 为 0 也不倒下，后续 ACTION EFFECT 继续命中（不再扣血）；
-##   这里倒下的目标不再结算（除非技能本来以阵亡者为对象），与 dev.026 以前的行为相同。
+## - IMMORTAL 期间 HP 为 0 也不倒下，解除时同步阵亡；资源增减与能力增减后按 MV refresh 同步夹值与阵亡状态。
 
 const PHASES := ["setup", "whole", "target", "follow", "finish"]
 const PARAMS := {"MAXHP": 0, "MHP": 0, "MAX HP": 0, "HP": 0, "MAXMP": 1, "MMP": 1, "MAX MP": 1, "MP": 1, "ATK": 2, "STR": 2,
@@ -179,7 +178,7 @@ func _modify(kind: String, name: String, list: Array) -> void:
 	var percent := false
 	var m := RegEx.create_from_string("(?i)^" + kind + "[ ]([+-])(?:VARIABLE|VAR)[ ](\\d+)").search(name)
 	if m:
-		change = float(int(logic.state.variable(int(m.get_string(2)))))
+		change = js_parse_int(logic.state.variable(int(m.get_string(2))))
 		if m.get_string(1) == "-":
 			change = -change
 	else:
@@ -193,16 +192,21 @@ func _modify(kind: String, name: String, list: Array) -> void:
 				return
 			change = m.get_string(1).to_float()  # parseInt(很长的数字串) 是大浮点数
 	for t in list:
-		var base: float = t.mhp if kind == "HP" else (t.mmp if kind == "MP" else 100.0)
+		var base: float = t.mhp if kind == "HP" else (t.mmp if kind == "MP" else t.max_tp())
 		logic.sequence_gain(t, kind, js_parse_int(base * change * 0.01 if percent else change))
 
 
 ## JS parseInt(数字)：先转成字符串，绝对值 ≥ 1e21 时是指数写法，只取到小数点/e 之前（-1e+33 → -1）
-static func js_parse_int(v: float) -> int:
-	if absf(v) >= 1e21:
+static func js_parse_int(v: float) -> float:
+	if absf(v) >= 1e21 or (absf(v) > 0.0 and absf(v) < 1e-6):
 		var mantissa := absf(v) / pow(10.0, floorf(log(absf(v)) / log(10.0)))
-		return int(floorf(mantissa)) * (-1 if v < 0 else 1)
-	return int(v)
+		# log(10^n) 的舍入可能让指数少 1；规范化后再取首位。
+		while mantissa >= 10.0:
+			mantissa /= 10.0
+		while mantissa < 1.0:
+			mantissa *= 10.0
+		return floorf(mantissa) * (-1.0 if v < 0 else 1.0)
+	return floorf(absf(v)) * (-1.0 if v < 0 else 1.0)
 
 
 ## BattleManager.makeActionTargets（序列里实际用到的写法；其余写法照原版得到空表）

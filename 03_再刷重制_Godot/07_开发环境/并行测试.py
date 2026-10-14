@@ -56,7 +56,7 @@ def main() -> int:
     ap.add_argument('--jobs', type=int, default=int(os.environ.get('CHECK_JOBS', '0')) or max(1, min(6, (os.cpu_count() or 2) // 2)))
     ap.add_argument('--log-dir', type=Path, default=Path(os.environ['CHECK_LOG_DIR']) if os.environ.get('CHECK_LOG_DIR') else None)
     ap.add_argument('names', nargs='*')
-    a = ap.parse_args()
+    a = ap.parse_intermixed_args()
     if a.jobs < 1:
         ap.error('--jobs 必须大于 0')
     scenes = sorted(p.name for p in (Path(a.project) / 'tests').glob('*.tscn'))

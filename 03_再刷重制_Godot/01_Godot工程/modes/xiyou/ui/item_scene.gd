@@ -330,7 +330,7 @@ func _paint_actors(c: XMVCanvas) -> void:
 		_current_max(c, "HP", a.hp, a.mhp, gx, y + LH, gw, "hp")
 		_current_max(c, "MP", a.mp, a.mmp, gx, y + LH * 2, gw, "mp")
 		var tp: Array = XUI.GAUGES.tp
-		c.gauge(gx, y + LH * 3, gw, a.tp / 100.0, tp[0], tp[1], LH)
+		c.gauge(gx, y + LH * 3, gw, a.tp / a.max_tp(), tp[0], tp[1], LH)
 		c.text("TP", gx, y + LH * 3, 44, "left", XUI.SYSTEM, XUI.FONT_SIZE, LH)
 		c.text(str(int(a.tp)), gx + gw - 64, y + LH * 3, 64, "right", XUI.TEXT, XUI.FONT_SIZE, LH)
 
@@ -506,7 +506,7 @@ func _effective(t: XActor) -> bool:
 				if not t.skill_ids.has(int(e.dataId)):
 					return true
 			31, 32:
-				if t.buffs[int(e.dataId)] != (2 if int(e.code) == 31 else -2):
+				if t.buffs[int(e.dataId)] != t.buff_limit(int(e.dataId), int(e.code) == 31):
 					return true
 			33, 34:
 				if (int(e.code) == 33 and t.buffs[int(e.dataId)] > 0) or (int(e.code) == 34 and t.buffs[int(e.dataId)] < 0):

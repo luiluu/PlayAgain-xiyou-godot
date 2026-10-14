@@ -785,7 +785,7 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var r := {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
-		"hp": 0.0, "mp": 0.0, "added": [], "removed": [], "died": false}
+		"hp": 0.0, "mp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false}
 	var dmg: Dictionary = skill.damage
 	var physical := XDamage.is_physical(skill)
 	var magical := XDamage.is_magical(skill)
@@ -818,13 +818,14 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 				r.mp = minf(value, t.mp)
 				t.mp -= r.mp
 				u.mp = minf(u.mmp, u.mp + r.mp)
+		r.record_hp += floorf(maxf(0.0, float(r.hp)))
 		if value > 0.0 and [1, 5].has(type):
-			t.tp = minf(100.0, t.tp + floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
+			t.tp = minf(t.max_tp(), t.tp + floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
 		_establish(u, t, r)
 	for eff in skill.get("effects", []):
 		_effect(u, t, eff, r)
 	_otb_target_shift(skill, t)
-	u.tp = minf(100.0, u.tp + float(skill.get("tpGain", 0)) * u.tcr)
+	u.tp = minf(u.max_tp(), u.tp + float(skill.get("tpGain", 0)) * u.tcr)
 	if t.hp <= 0.0 and t.is_dead():
 		_die(t)
 		r.died = true
@@ -844,6 +845,7 @@ func _establish(u: XBattler, t: XBattler, r: Dictionary) -> void:
 				if v > 0.0:
 					t.hp = clampf(t.hp - v, 0.0, t.mhp)
 					r.extra = r.get("extra", []) + [v]
+					r.record_hp = float(r.get("record_hp", 0.0)) + floorf(v)
 	if r.has("extra") and not ESTABLISH_TRUE_POPUP:
 		r.popup_hp = r.extra[-1]
 
@@ -862,13 +864,14 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 			else:
 				t.remove_state(DEATH_STATE)
 			r.hp -= v
+			r.record_hp = float(r.get("record_hp", 0.0)) + floorf(maxf(0.0, -v))
 		12:
 			var v := (t.mmp * v1 + v2) * t.rec * (u.pha if is_item(r.skill) else 1.0)
 			v = floorf(v)
 			t.mp = clampf(t.mp + v, 0.0, t.mmp)
 			r.mp -= v
 		13:
-			t.tp = clampf(t.tp + floorf(v1), 0.0, 100.0)
+			t.tp = clampf(t.tp + floorf(v1), 0.0, t.max_tp())
 		21:
 			var sid := int(eff.dataId)
 			var ids := u.traits_set(XBattler.TRAIT_ATTACK_STATE) if sid == 0 else [sid]
@@ -888,16 +891,15 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 				t.remove_state(int(eff.dataId))
 				r.removed.append(int(eff.dataId))
 		31:
-			t.buffs[int(eff.dataId)] = mini(2, t.buffs[int(eff.dataId)] + 1)
-			t.buff_turns[int(eff.dataId)] = int(v1)
+			sequence_buff(t, int(eff.dataId), true, true, int(v1))
 		32:
-			t.buffs[int(eff.dataId)] = maxi(-2, t.buffs[int(eff.dataId)] - 1)
-			t.buff_turns[int(eff.dataId)] = int(v1)
+			sequence_buff(t, int(eff.dataId), true, false, int(v1))
 		33, 34:
 			var id := int(eff.dataId)
 			if (int(eff.code) == 33 and t.buffs[id] > 0) or (int(eff.code) == 34 and t.buffs[id] < 0):
 				t.buffs[id] = 0
 				t.buff_turns[id] = 0
+				t.refresh_resources()
 		43:
 			if t is XActor:
 				t.learn_skill(int(eff.dataId))
@@ -917,16 +919,15 @@ func sequence_add_state(t: XBattler, id: int) -> void:
 
 
 ## 行动序列 HP/MP/TP ±（gainHp/gainMp/gainTp）：HP 归零即倒下
-func sequence_gain(t: XBattler, kind: String, value: int) -> void:
+func sequence_gain(t: XBattler, kind: String, value: float) -> void:
 	match kind:
 		"HP":
 			t.hp = clampf(t.hp + value, 0.0, t.mhp)
-			if t.hp <= 0.0 and not t.immortal:
-				_die(t)
 		"MP":
 			t.mp = clampf(t.mp + value, 0.0, t.mmp)
 		"TP":
-			t.tp = clampf(t.tp + value, 0.0, 100.0)
+			t.tp = clampf(t.tp + value, 0.0, t.max_tp())
+	t.refresh_resources()
 
 
 ## 行动序列 ADD/REMOVE BUFF/DEBUFF（Game_Battler.addBuff/addDebuff：活着才加，等级 ±2 封顶，回合取较大者；remove 只去同方向）
@@ -934,12 +935,14 @@ func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int) -> 
 	if add:
 		if t.is_dead():
 			return
-		t.buffs[pid] = clampi(t.buffs[pid] + (1 if buff else -1), -2, 2)
+		if t.buffs[pid] != t.buff_limit(pid, buff):
+			t.buffs[pid] += 1 if buff else -1
 		if t.buffs[pid] != 0 and t.buff_turns[pid] < turns:
 			t.buff_turns[pid] = turns
 	elif (buff and t.buffs[pid] > 0) or (not buff and t.buffs[pid] < 0):
 		t.buffs[pid] = 0
 		t.buff_turns[pid] = 0
+	t.refresh_resources()
 
 
 func state_rate(b: XBattler, id: int) -> float:
@@ -982,7 +985,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		logs.append({"type": "regen", "target": b, "hp": -dh})
 	if dm != 0.0:
 		b.mp = clampf(b.mp + dm, 0.0, b.mmp)
-	b.tp = minf(100.0, b.tp + 100.0 * b.trg)
+	b.tp = minf(b.max_tp(), b.tp + 100.0 * b.trg)
 
 
 ## MV：逃跑率在战斗开始时算一次（0.5×我方平均敏捷/敌方平均敏捷），每失败一次 +0.1。

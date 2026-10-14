@@ -50,6 +50,7 @@ func _run() -> void:
 	_format()
 	_record_unit()
 	_popup_unit()
+	_oracle_record()
 	var s := XState.new_game(3, 1, [8, 10, 9])
 	s.map_id = 5
 	s.x = 11
@@ -81,6 +82,41 @@ func _format() -> void:
 	var f := XDamageRecord.format_damage
 	var got := [f.call(0.0), f.call(9999.0), f.call(10000.0), f.call(15000.0), f.call(123456789.0), f.call(1e12), f.call(25e15), f.call(3e28)]
 	check("format_damage", got == ["0", "9999", "1万", "1.5万", "1.23亿", "1兆", "2.5京", "3穰"], got)
+
+
+func _oracle_record() -> void:
+	var ref = XDB.load_json("oracle/drop_record.json")
+	check("drop_record_oracle_present", ref is Dictionary and ref.has("record") and ref.has("drops"))
+	if not ref is Dictionary:
+		return
+	check("drop_record_same_source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
+	for row in ref.format:
+		check("format_oracle_%s" % row.value, XDamageRecord.format_damage(float(row.value)) == row.text)
+	for row in ref.record:
+		var s := XState.new_game(3, 1, [8, 10, 9])
+		for a in s.members():
+			for k in [6168, 5980, 5548] + ([2571, 2786] if a.actor_id == 1 else []):
+				a.learn_skill(k)
+			a.refresh_passive()
+			a.recover_all()
+		var logic := XBattleLogic.new()
+		logic.level_roll = 0.99
+		logic.setup(222, s)
+		var a: XBattler = logic.actors[0]
+		var t: XBattler = logic.enemies[0]
+		if row.establish:
+			a.add_state(1460)
+		var skill := XDB.rec("Skills", 1).duplicate(true)
+		skill.hitType = 0
+		skill.successRate = 100
+		skill.damage.variance = 0
+		skill.damage.critical = false
+		var hit := logic.apply(a, skill, t)
+		var r := XDamageRecord.new()
+		r.setup(s.battle_slots, s.battle_members().size())
+		r.record(a, t, float(hit.get("record_hp", hit.hp)))
+		check("exact_record_%s" % row.establish, r.values == row.slots and t.hp == float(row.hp), [r.values, row.slots, t.hp, row.hp])
+		r.free()
 
 
 func _record_unit() -> void:

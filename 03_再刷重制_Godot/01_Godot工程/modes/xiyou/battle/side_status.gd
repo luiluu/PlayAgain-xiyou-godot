@@ -85,7 +85,7 @@ func _paint(c: XMVCanvas) -> void:
 	# HP / MP / TP
 	_param(c, ox + 8 + PAD, 28, "HP", actor.hp, actor.mhp, XUI.GAUGES.hp, _hp_color(), true)
 	_param(c, ox + 16 + PAD, 50, "MP", actor.mp, actor.mmp, XUI.GAUGES.mp, XUI.TEXT, true)
-	_param(c, ox + 24 + PAD, 72, "TP", actor.tp, 100.0, XUI.GAUGES.tp, XUI.TEXT, false)
+	_param(c, ox + 24 + PAD, 72, "TP", actor.tp, actor.max_tp(), XUI.GAUGES.tp, XUI.TEXT, false)
 
 
 func _param(c: XMVCanvas, x: float, y: float, label: String, cur: float, mx: float, colors: Array, color: Color, with_max: bool) -> void:

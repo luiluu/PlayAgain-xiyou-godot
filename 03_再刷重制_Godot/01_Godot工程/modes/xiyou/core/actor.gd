@@ -150,6 +150,12 @@ func exp_for_level(lv: int) -> int:
 func max_level() -> int:
 	return XState.current.max_level() if XState.current else int(data().get("maxLevel", 99))
 
+func max_tp() -> float:
+	var value := super.max_tp()
+	for extra in passive_values("passiveEXTTP"):
+		value += _num(extra)
+	return value
+
 ## Game_Actor.levelUp：等级 +1，学会该等级的职业技能；PKD_SimpleSkillsTree 给备注 pSkillPointsVarId 指定的变量加技能点（每级 1）
 func _level_up() -> void:
 	_lv += 1

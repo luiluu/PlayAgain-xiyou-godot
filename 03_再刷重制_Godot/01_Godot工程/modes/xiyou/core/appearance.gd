@@ -69,7 +69,10 @@ static func for_image(key: String, meta := {}) -> XAppearance:
 	var a := XAppearance.new()
 	var o = config().get("battlers", {}).get(key)
 	if o is Dictionary:
-		a._from_override(o)
+		var spec: Dictionary = o.duplicate(true)
+		if not spec.has("image"):
+			spec.image = key
+		a._from_override(spec)
 	elif key.begins_with("sv_actors/"):
 		a._mv_sheet(_tex(key))
 		a._super_sv(meta)

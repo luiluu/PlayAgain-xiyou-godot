@@ -146,7 +146,7 @@ static func paint_actor_status(c: XMVCanvas, a: XActor, x: float, y: float, widt
 	_param(c, "HP", a.hp, a.mhp, x2, y + lh, right_w, "hp", _hp_color(a), lh)
 	_param(c, "MP", a.mp, a.mmp, x2, y + lh * 2, right_w, "mp", XUI.TEXT, lh)
 	var tp_cols: Array = XUI.GAUGES.tp
-	c.gauge(x2, y + lh * 3, right_w, a.tp / 100.0, tp_cols[0], tp_cols[1], lh)
+	c.gauge(x2, y + lh * 3, right_w, a.tp / a.max_tp(), tp_cols[0], tp_cols[1], lh)
 	c.text("TP", x2, y + lh * 3, 44, "left", XUI.SYSTEM, XUI.FONT_SIZE, lh)
 	c.text(str(int(a.tp)), x2 + right_w - 64, y + lh * 3, 64, "right", XUI.TEXT, XUI.FONT_SIZE, lh)
 

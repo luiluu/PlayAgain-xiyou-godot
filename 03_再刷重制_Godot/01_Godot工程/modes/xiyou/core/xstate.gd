@@ -221,7 +221,7 @@ func variable(id: int) -> float:
 	return variables.get(id, 0)
 
 func set_variable(id: int, value: float) -> void:
-	variables[id] = value
+	variables[id] = floorf(value)  # Game_Variables.setValue：数值一律 Math.floor。
 
 ## 公式用的变量表 v[...]：未定义的按 0。
 func variable_array(size := 5000) -> Array:

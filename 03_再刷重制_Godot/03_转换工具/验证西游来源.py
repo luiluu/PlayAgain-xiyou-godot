@@ -170,6 +170,26 @@ def verify(app, generated, oracle):
                         issues.append('地图事件对照参照数据不一致：' + rel)
             if len(data.get('cases', [])) < 100:
                 issues.append('地图事件对照参照缺少用例')
+    # 新参照不能只在某个测试里比较脚本身份：完整入口也要拒绝缺失、旧数据或探针报错。
+    for name, key in [('troop_events.json', 'cases'), ('drop_record.json', 'record')]:
+        file = oracle / name
+        if not file.is_file():
+            issues.append('缺少参照：' + name)
+            continue
+        data = json.loads(file.read_text())
+        identity = data.get('sourceIdentity', {})
+        if identity.get('releaseVersion') != version or identity.get('runtimeInputs') != manifest.get('runtimeInputs'):
+            issues.append(name + ' 参照版本/脚本不一致')
+        for rel, digest in manifest['inputs'].items():
+            if rel.startswith('data/') or rel == 'package.json':
+                if identity.get('inputs', {}).get(rel) != digest:
+                    issues.append(name + ' 参照数据不一致：' + rel)
+        if not data.get(key) or any(row.get('errors') for row in data.get(key, [])):
+            issues.append(name + ' 缺少测量或测量出错')
+    if sequences.is_file():
+        data = json.loads(sequences.read_text())
+        if not data.get('operations') or not data.get('parseIntNumbers'):
+            issues.append('行动序列缺少数值边界参照')
     return {'releaseVersion': version, 'inputs': len(manifest['inputs']),
             'runtimeInputs': len(manifest.get('runtimeInputs', {})),
             'outputs': len(manifest['outputs']), 'issues': issues}

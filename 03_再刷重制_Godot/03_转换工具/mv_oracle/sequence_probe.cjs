@@ -101,6 +101,7 @@ out.repeats.notOne=w.$dataSkills.filter(o=>o&&o.repeats!==1).length+w.$dataItems
     {id:'debuff_cap',commands:[['ADD DEF DEBUFF',['TARGETS','3']],['ADD DEF DEBUFF',['TARGETS','7']],['ADD DEF DEBUFF',['TARGETS','2']]]},
     {id:'hp_buff_refresh',commands:[['ADD HP BUFF',['TARGETS','3']],['HP +100%',['TARGETS']],['REMOVE HP BUFF',['TARGETS']]]}
   ];
+  w.BattleManager.otbDisplayWindow=function(){return stub;}; // 复活时 OTB 刷行动条；画面替身不改规则。
   out.operations=operations.map(row=>{
     setup();const BM=w.BattleManager,t=w.$gameTroop.members()[0];
     BM._subject=w.$gameActors.actor(1);BM._targets=[t];BM._allTargets=[t];

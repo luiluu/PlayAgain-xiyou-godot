@@ -58,10 +58,11 @@ func _defaults() -> void:
 
 
 func _grid() -> void:
-	XAppearance.overrides = {"battlers": {"sv_actors/gxysv2": {"kind": "grid", "image": "sv_actors/gxysv2", "cell": [32, 48],
+	XAppearance.overrides = {"battlers": {"sv_actors/gxysv2": {"kind": "grid", "cell": [32, 48],
 		"wait": 2, "scale": 2.0, "hideShadow": true,
 		"motions": {"walk": {"row": 1, "col": 2, "frames": 6}, "skill": {"row": 3, "frames": 5, "loop": false, "wait": 4}}}}}
 	var a := XAppearance.for_image("sv_actors/gxysv2")
+	check("grid.default_image", a.frame("walk", 0).tex != null)
 	check("grid.cell", a.cell == Vector2(32, 48) and a.kind == "frames" and a.sideview)
 	check("grid.walk", a.frame_count("walk") == 6 and a.frame("walk", 5).rect == Rect2(7 * 32, 48, 32, 48), a.frame("walk", 5).rect)
 	check("grid.fallback_swing_to_skill", a.resolve("swing") == "skill" and a.resolve("thrust") == "skill" and a.resolve("guard") == "walk",

@@ -940,7 +940,7 @@ func _show_hit(l: Dictionary) -> void:
 	var hit: bool = not (l.missed or l.evaded)
 	combo.applied(l.user, t, hit, int(l.skill.get("damage", {}).get("type", 0)), float(l.hp) if float(l.hp) != 0.0 else float(l.mp))
 	if record and hit:
-		record.record(l.user, t, float(l.hp))
+		record.record(l.user, t, float(l.get("record_hp", l.hp)))
 	if not hit:
 		_popup(t, 0, false, "miss")
 		ts.set_motion("evade")

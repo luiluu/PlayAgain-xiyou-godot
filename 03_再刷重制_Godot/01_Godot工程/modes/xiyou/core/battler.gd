@@ -335,6 +335,36 @@ func attack_elements() -> Array:
 
 
 # ---- 资源 ----
+## 正式 rpg_οbjects.js 的 maxTp 为 200（角色另有 dsPassiveSkill passiveEXTTP）。
+func max_tp() -> float:
+	return 200.0
+
+
+## Game_Battler.refresh：夹资源并同步阵亡状态（序列 HP + 恢复时也必须去除阵亡）。
+func refresh_resources() -> void:
+	hp = clampf(hp, 0.0, mhp)
+	mp = clampf(mp, 0.0, mmp)
+	tp = clampf(tp, 0.0, max_tp())
+	if hp <= 0.0 and not immortal:
+		add_state(1)
+	elif hp > 0.0:
+		remove_state(1)
+
+
+## YEP_BuffsStatesCore：默认层数 4、绝对上限 8，加上状态／角色／职业／装备／敌人备注的 <Max 能力 Buff/Debuff: ±N>。
+func buff_limit(pid: int, positive: bool) -> int:
+	var p := XDB.plugin("YEP_BuffsStatesCore")
+	var limit := int(p.get("Default Limit", "2"))
+	var tag := "BUFF" if positive else "DEBUFF"
+	for obj in trait_objects():
+		var bonus := 0
+		for m in RegEx.create_from_string("(?i)<MAX (.*) " + tag + ": ([+-]\\d+)>").search_all(str(obj.get("note", ""))):
+			if XActionSequence.PARAMS.get(m.get_string(1).to_upper(), -1) == pid:
+				bonus = int(m.get_string(2))
+		limit += bonus
+	return clampi(limit, 1, int(p.get("Maximum Limit", "8"))) * (1 if positive else -1)
+
+
 func recover_all() -> void:
 	state_ids.clear()
 	state_turns.clear()

@@ -130,7 +130,7 @@ func _paint_list(c: XMVCanvas) -> void:
 		_value(c, "HP", a.hp, a.mhp, section * 3, y, section - 6, "hp", XMenu._hp_color(a))
 		_value(c, "MP", a.mp, a.mmp, section * 4, y, section - 6, "mp", XUI.TEXT)
 		var tp: Array = XUI.GAUGES.tp
-		c.gauge(section * 5, y, section - 6, a.tp / 100.0, tp[0], tp[1])
+		c.gauge(section * 5, y, section - 6, a.tp / a.max_tp(), tp[0], tp[1])
 		c.text("TP", section * 5, y, 44, "left", XUI.SYSTEM)
 		c.text(str(int(a.tp)), section * 5 + section - 6 - 64, y, 64, "right")
 

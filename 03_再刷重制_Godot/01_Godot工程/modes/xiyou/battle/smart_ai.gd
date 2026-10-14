@@ -232,8 +232,8 @@ func recovery_utility(t: XBattler, rec: Dictionary, item: bool) -> float:
 	for e in rec.get("effects", []):
 		if int(e.code) == 13:
 			tp += float(e.value1)
-	if t.tp < 100.0 * 0.4 and t.skills().any(func(s): return int(s.get("tpCost", 0)) > 0):
-		score += 3000.0 * minf(100.0 - t.tp, tp) / 100.0
+	if t.tp < t.max_tp() * 0.4 and t.skills().any(func(s): return int(s.get("tpCost", 0)) > 0):
+		score += 3000.0 * minf(t.max_tp() - t.tp, tp) / maxf(1.0, t.max_tp())
 	return score
 
 
@@ -274,7 +274,7 @@ func cost_multiplier(rec: Dictionary, item: bool) -> float:
 		return 0.65
 	var c := logic.skill_cost(actor, rec)
 	return 1.0 / (1.0 + 0.25 * c.mp / maxf(1.0, actor.mmp) + 0.6 * c.mp / maxf(1.0, actor.mp)
-		+ 0.25 * c.tp / 100.0 + 0.35 * c.tp / maxf(1.0, actor.tp))
+		+ 0.25 * c.tp / maxf(1.0, actor.max_tp()) + 0.35 * c.tp / maxf(1.0, actor.tp))
 
 
 static func has_cooldown(rec: Dictionary) -> bool:

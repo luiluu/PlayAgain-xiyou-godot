@@ -161,11 +161,12 @@ window.__refShot = function (name) {
         // 工具栏点击不能同时落进 MV TouchInput（否则「截图」会确认/关闭游戏窗口）。
         ['mousedown','mouseup','click','touchstart','touchend'].forEach(function(type){panel.addEventListener(type,function(e){e.stopPropagation();});});
         function button(text, fn) { var b = document.createElement('button'); b.textContent = text; b.onclick = function(){fn();b.blur();}; panel.appendChild(b); }
-        function fixture(n) {
+        function fixture(n, dropRecord) {
             if (!window.DataManager || !DataManager.isDatabaseLoaded()) return;
             if (SceneManager._scene instanceof Scene_Map) { SceneManager._scene.update=function(){};SceneManager._scene.isBusy=function(){return false;}; }
             SceneManager.goto(Scene_Base);
             ConfigManager.applyData({}); DataManager.setupNewGame();
+            if(dropRecord){ConfigManager.MOG_TrPopUpBattle_Key=true;ConfigManager.CombatDamageRecordKey=true;}
             $gameSystem.setDifficultyId(3);
             for (var i=1;i<5000;i++) $gameVariables._data[i]=0;
             $gameParty._actors = n===5 ? [1,8,9,10,2] : [1,8,9,10];
@@ -188,13 +189,33 @@ window.__refShot = function (name) {
                     $gameMessage.clear();
                     clearInterval(ready);
                     // 避开随机神话并稳定 OTB 同速顺序；不影响正式应用。
-                    Math.random = function(){return 0.5;};
-                    BattleManager.setup(2,true,false); SceneManager.push(Scene_Battle);
+                    Math.random = function(){return dropRecord ? 0.01 : 0.5;};
+                    BattleManager.setup(2,true,false);
+                    if(dropRecord)$gameTroop.members()[0].setHp(1);
+                    SceneManager.push(Scene_Battle);
                 }, 100);
             }, 20);
         }
         button('战斗夹具 4 人', function(){fixture(4);});
         button('战斗夹具 5 人', function(){fixture(5);});
+        button('掉落与记录对照截图', function(){
+            fixture(4,true);
+            var attacked=false,tries=0;
+            var sample=setInterval(function(){
+                var s=SceneManager._scene;
+                if(++tries>2000){clearInterval(sample);return;}
+                if(!(s instanceof Scene_Battle))return;
+                if(!attacked&&s._actorCommandWindow&&s._actorCommandWindow.active){
+                    attacked=true;s._actorCommandWindow.deactivate();s.commandAttack();s._enemyWindow.select(0);s._enemyWindow.deactivate();s.onEnemyOk();
+                }
+                var field=s._spriteset&&s._spriteset._battleField;
+                var popup=field&&(field.children||[]).some(function(x){return x instanceof SpriteEnemyTrP&&x.visible;});
+                if(popup){
+                    clearInterval(sample);s.update=function(){};
+                    setTimeout(function(){__refShot('codex_drop_record_reference');},150);
+                }
+            },16);
+        });
         // 三项偏好仅在本浏览器内存切换，不调用 ConfigManager.save。
         button('伤害数字 开/关', function(){ConfigManager.CombatDamageShow=!ConfigManager.CombatDamageShow;});
         button('技能动画 开/关', function(){ConfigManager.CombatSkillAnimation=!ConfigManager.CombatSkillAnimation;});

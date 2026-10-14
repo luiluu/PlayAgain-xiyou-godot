@@ -128,7 +128,26 @@ func _run() -> void:
 		kinds[RegEx.create_from_string("\\d+").sub(a, "N", true)] = true
 	print("conditions: ", total, " unknown atoms: ", probe.unknown.size(), " kinds: ", kinds.keys())
 	check("conditions_translated", probe.unknown.is_empty(), kinds.keys())
+	_numeric_checks(ref)
 	finish()
+
+
+func _numeric_checks(ref: Dictionary) -> void:
+	check("numeric_oracle_present", ref.has("operations") and ref.has("parseIntNumbers"))
+	for row in ref.get("parseIntNumbers", []):
+		check("parseInt_%s" % row.value, XActionSequence.js_parse_int(float(row.value)) == float(row.result))
+	for row in ref.get("operations", []):
+		var logic := setup()
+		var t: XBattler = logic.enemies[0]
+		t.tp = 0.0
+		if row.get("dead", false):
+			t.add_state(1)
+		if row.has("variable"):
+			logic.state.set_variable(20, float(row.variable))
+		var rec := {"yepSeq": {"whole": row.commands}}
+		XActionSequence.create(logic, logic.actors[0], rec, [t]).run()
+		var got := {"hp": t.hp, "mp": t.mp, "tp": t.tp, "states": t.state_ids, "buffs": t.buffs, "buffTurns": t.buff_turns}
+		check("numeric_" + str(row.id), JSON.parse_string(JSON.stringify(got)) == row.result, [got, row.result])
 
 
 func finish() -> void:
