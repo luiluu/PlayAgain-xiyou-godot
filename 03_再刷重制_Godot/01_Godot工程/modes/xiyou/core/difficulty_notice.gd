@@ -34,6 +34,12 @@ func _ready() -> void:
 	_last_usec = Time.get_ticks_usec()
 
 
+func _exit_tree() -> void:
+	can_paint = Callable()
+	if instance == self:
+		instance = null
+
+
 func _process(_delta: float) -> void:
 	var now := Time.get_ticks_usec()
 	var elapsed := (now - _last_usec) / 1000.0
