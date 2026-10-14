@@ -177,7 +177,7 @@ func _run() -> void:
 	_check("menu_opened", menus.size() == 1)
 	if menus.size() == 1:
 		var m: XMenu = menus[0]
-		_check("menu_commands_like_original", m.command_names().size() == 19 and m.command_names()[0] == "物品" and m.command_names()[17] == "游戏结束" and m.command_names()[18] == "一键存档", m.command_names())
+		_check("menu_commands_like_original", m.command_names().size() == 18 and m.command_names()[0] == "物品" and m.command_names()[17] == "游戏结束" and not m.command_names().has("一键存档"), m.command_names())
 		# 状态：先选人（光标到队伍窗），确定后进入状态页，关闭后回到指令窗
 		m._cmd_index = 3
 		m._ok()
@@ -204,14 +204,11 @@ func _run() -> void:
 		if ends.size() == 1:
 			ends[0].closed.emit()
 		await _frames(2)
-		# v0.10 一键存档：存到最近一次存档的格（开局大厅 EV20 存的 1 号），留在菜单
+		# v0.24 移除菜单入口，快存后端仍存到最近一次存档的格（这里验证后端）
 		var shown_before := XToast.shown.size()
-		m._cmd_index = 18
-		m._cmd_top = 4
-		m._ok()
+		m._quick_save()
 		await _frames(2)
-		_check("menu_quick_save", XSave.current_slot == 1 and XToast.shown.slice(shown_before).has("已保存到存档 1。") and map._menu_open and m._mode == "command", XToast.shown.slice(shown_before))
-		await _shot("07d_一键存档.png")
+		_check("quick_save_backend", XSave.current_slot == 1 and XToast.shown.slice(shown_before).has("已保存到存档 1。") and map._menu_open and m._mode == "command", XToast.shown.slice(shown_before))
 		# 「存档」＝公共事件 1：关菜单回到地图，存到开局选的固定存档位
 		var toasts_before := map.toasts.size()
 		m._cmd_index = 14

@@ -8,8 +8,9 @@ extends Control
 ##   称号与 HP/MP/TP 在右列（x 314、宽 686），行高 33；YEP 描边量条与「当前/最大」数值。
 ## - 选「技能/装备/状态」后光标移到队伍窗选人（整行高亮），确定进入该角色页面，取消回到指令窗。
 ## - 窗口整体不透明度 30（MOG_MenuBackground）；底图与粒子 XUI.menu_background。
-## 尚未重制的指令（真气、整队、种族祝福等）暂时灰显，原版均可用；见 界面风格.md。
-## - 音效照 Window_Selectable：换行播光标音；确定播确定音（灰显指令蜂鸣）；取消播取消音。一键存档先确定音再存档音。
+## 尚未重制的指令（真气、种族祝福等）暂时灰显，原版均可用；见 界面风格.md。
+## - 音效照 Window_Selectable：换行播光标音；确定播确定音（灰显指令蜂鸣）；取消播取消音。
+## - 正式 v0.24 已移除菜单底部一键存档；快速存档的后端规则仍保留。
 
 signal closed
 
@@ -27,7 +28,7 @@ const COMMANDS := [["物品", "item", true], ["技能", "skill", false], ["装�
 	["真气", "zhenqi", false], ["整队", "formation", true], ["种族祝福", "race", false], ["宠物", "pet", false],
 	["制作", "crafting", false], ["宝珠坊", "orbs", false], ["异化工坊", "alienation", false], ["人物图鉴", "actorBook", false],
 	["怪物图鉴", "monsterBook", false], ["成就", "achievement", false], ["存档", "save", true], ["反馈", "feedback", false],
-	["设置", "options", true], ["游戏结束", "gameEnd", true], ["一键存档", "quickSave", true]]
+	["设置", "options", true], ["游戏结束", "gameEnd", true]]
 const CMD_VISIBLE := 15
 
 var cmd_win: XMVWindow
@@ -305,8 +306,6 @@ func _ok() -> void:
 				_open_detail(XPartyScene.new())
 			"gameEnd":
 				_show_game_end()
-			"quickSave":
-				_quick_save()
 	elif _mode == "actor":
 		XSound.system(1)
 		_selected_actor = _actor_index

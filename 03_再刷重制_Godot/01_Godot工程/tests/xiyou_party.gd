@@ -222,6 +222,33 @@ func _run() -> void:
 	s.battle_slots = [0, 8, 0, 3, 0]
 	map.queue_free()
 	await frames(2)
+	# 长名单分页与鼠标内容区：隐藏窗口/边框不能误选或误滚动。
+	var long_state := XState.new_game(3, 1, [])
+	for id in range(2, 21):
+		long_state.add_actor(id)
+	var long_page := XPartyScene.new()
+	add_child(long_page)
+	await frames(2)
+	var wheel := InputEventMouseButton.new()
+	wheel.pressed = true
+	wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
+	wheel.position = Vector2(300, 300)
+	long_page._gui_input(wheel)
+	check("inactive_list_wheel_ignored", long_page.list_top == 0)
+	long_page.mode = "list"
+	long_page._click(Vector2(4, 240))
+	check("list_padding_click_ignored", long_page.list_index == 1)
+	await press("ui_page_down")
+	check("list_page_down", long_page.list_index == 15 and long_page.list_top == 8)
+	await press("ui_page_up")
+	check("list_page_up", long_page.list_index == 1 and long_page.list_top == 0)
+	long_page.mode = "slot"
+	long_page.slot_index = 2
+	long_page._click(Vector2(300, 160))
+	check("slot_padding_click_ignored", long_page.slot_index == 2 and long_page.mode == "slot")
+	long_page.queue_free()
+	await frames(2)
+	XState.current = s
 
 	# 主菜单「整队」打开本页
 	var menu := XMenu.new()
