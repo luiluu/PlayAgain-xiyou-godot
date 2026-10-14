@@ -655,12 +655,17 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 		11:
 			var v := (t.mhp * v1 + v2) * t.rec * (u.pha if is_item(r.skill) else 1.0)
 			v = floorf(v)
-			t.hp = minf(t.mhp, t.hp + v)
+			t.hp = clampf(t.hp + v, 0.0, t.mhp)
+			# MV gainHp → refresh：负值恢复也要同步阵亡状态。
+			if t.hp <= 0:
+				t.add_state(DEATH_STATE)
+			else:
+				t.remove_state(DEATH_STATE)
 			r.hp -= v
 		12:
 			var v := (t.mmp * v1 + v2) * t.rec * (u.pha if is_item(r.skill) else 1.0)
 			v = floorf(v)
-			t.mp = minf(t.mmp, t.mp + v)
+			t.mp = clampf(t.mp + v, 0.0, t.mmp)
 			r.mp -= v
 		13:
 			t.tp = clampf(t.tp + floorf(v1), 0.0, 100.0)

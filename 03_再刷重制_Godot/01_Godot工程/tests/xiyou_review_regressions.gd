@@ -80,6 +80,16 @@ func _run() -> void:
 	check("negative_hp_valid_when_full", page._effective(a))
 	fake.effects = [{"code": 11, "dataId": 0, "value1": 0.1, "value2": 0.0}]
 	check("heal_invalid_when_full", not page._effective(a))
+	# 负值恢复允许使用之后，要经过 MV gainHp/gainMp 的下限钳制与阵亡同步。
+	fake.effects = [{"code": 11, "dataId": 0, "value1": 0.0, "value2": -a.mhp * 2}]
+	page._use()
+	check("negative_hp_clamps_to_zero", a.hp == 0.0 and a.is_state_affected(1))
+	a.recover_all()
+	fake.effects = [{"code": 12, "dataId": 0, "value1": 0.0, "value2": -a.mmp * 2}]
+	page._use()
+	check("negative_mp_clamps_to_zero", a.mp == 0.0)
+	a.recover_all()
+	a.add_state(2)
 	# 存档写入、覆盖、读取及错误档处理，全部在专用测试目录。
 	a.tp = 37
 	a.state_turns[2] = 4
