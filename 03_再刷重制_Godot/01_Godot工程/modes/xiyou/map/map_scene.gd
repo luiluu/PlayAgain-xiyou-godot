@@ -515,6 +515,14 @@ func _snapshot() -> Texture2D:
 	return ImageTexture.create_from_image(img)
 
 
+## Game_Map.adjustX/Y($gamePlayer.x/y)：玩家所在格减去画面左上角（以格计，镜头未对齐格时有小数）
+func player_screen_tile() -> Vector2:
+	if player == null or camera == null:
+		return Vector2.ZERO
+	var origin := camera.get_screen_center_position() - Vector2(1280, 720) / 2.0
+	return Vector2(player.grid) - origin / TS
+
+
 ## Game_Temp.reserveCommonEvent：回到地图后执行的公共事件（事件 ID 为 0）
 func run_common_event(id: int) -> void:
 	var ce := XDB.rec("CommonEvents", id)
@@ -648,8 +656,12 @@ func open_menu() -> void:
 	if busy or _menu_open or XHangUp.is_active(XState.current):
 		return
 	_menu_open = true
+	# Scene_Map.terminate：snapForBackground／snapForHangUp（含地图 HUD），挂机设置页的背景与范围图
+	var shot := await _snapshot()
 	hud.visible = false
 	var menu := XMenu.new()
+	menu.map_shot = shot
+	menu.player_tile = player_screen_tile()
 	ui.add_child(menu)
 	await menu.closed
 	var reserved := menu.reserved_common_event

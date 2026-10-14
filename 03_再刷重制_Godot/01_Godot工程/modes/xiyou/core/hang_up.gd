@@ -10,13 +10,15 @@ extends RefCounted
 ##   （moveTowardPosition：先走差距大的方向，走不通再走另一方向）。战斗中队员按自动战斗行动，胜利不显示结算。
 ## - 每次战斗结束（不论是否挂机）：死亡停止开着且队伍里有人阵亡就停止挂机（O-016：原版不在挂机时也播一声取消音）。
 ## - 自动存档：挂机计时每满 10 分钟（saveMnt）记一次，回到地图时存到开局固定存档位并提示「已自动存储」；
-##   正式版判断时没有看「自动储存」设置（needAutoSave 未被调用），照做。
+##   正式版判断时没有看「自动储存」设置（needAutoSave 未被调用）；O-017 让该设置生效（AUTO_SAVE_SETTING）。
 ## - 读档后不在挂机（DataManager.loadGame 清除）：运行状态不进存档。
 
 const DEFAULTS := {"range": 10, "showInter": true, "fastFt": false, "deathStop": true, "autoSave": true,
 	"RareEscape": false, "UnprecedentedEscape": false, "CommonEscape": false, "DropShield": false}
 ## O-016：只在挂机中因阵亡停止时播放取消音；设 false 恢复原版（任何战斗结束有人阵亡都播）。
 const SILENT_WHEN_IDLE := true
+## O-017：「自动储存」设置生效、说明写实际存档位（开局选的固定存档位）；设 false 恢复原版（开关无效、说明写 saveId 参数，空为 1）。
+const AUTO_SAVE_SETTING := true
 
 
 static func params() -> Dictionary:
@@ -68,6 +70,14 @@ static func ready_start(s: XState, has_enemy: bool, at: Vector2i) -> String:
 	return ""
 
 
+## 自动存档写入的存档位（设置页「自动储存」说明里的 \f）
+static func auto_save_slot(s: XState) -> int:
+	if AUTO_SAVE_SETTING:
+		return int(s.flags.get("SaveGameId", 0)) if s else 0
+	var v := str(params().get("saveId", ""))
+	return int(v) if v.is_valid_int() and int(v) != 0 else 1
+
+
 static func stop(s: XState) -> void:
 	XSound.system(2)
 	clear(s)
@@ -87,7 +97,7 @@ static func tick(s: XState) -> void:
 		return
 	s.hang_up_count += 1
 	var n := save_frames()
-	if s.hang_up_count >= n and s.hang_up_count % n == 0:
+	if s.hang_up_count >= n and s.hang_up_count % n == 0 and (not AUTO_SAVE_SETTING or bool(settings(s).autoSave)):
 		s.hang_up_save_pending = true
 
 

@@ -26,7 +26,7 @@ const COMMANDS := [["物品", "item", true], ["技能", "skill", false], ["装�
 	["真气", "zhenqi", false], ["整队", "formation", false], ["种族祝福", "race", false], ["宠物", "pet", false],
 	["制作", "crafting", false], ["宝珠坊", "orbs", false], ["异化工坊", "alienation", false], ["人物图鉴", "actorBook", false],
 	["怪物图鉴", "monsterBook", false], ["成就", "achievement", false], ["存档", "save", true], ["反馈", "feedback", false],
-	["设置", "options", false], ["游戏结束", "gameEnd", true], ["一键存档", "quickSave", true]]
+	["设置", "options", true], ["游戏结束", "gameEnd", true], ["一键存档", "quickSave", true]]
 const CMD_VISIBLE := 15
 
 var cmd_win: XMVWindow
@@ -40,6 +40,9 @@ var _mode := "command"          # command / actor / page
 var _pending := ""              # 选人后要打开的指令
 var _selected_actor := 0
 var _overlay: Control
+## 打开菜单前的地图截图与玩家画面格（设置 → 挂机设置页的背景与范围图；Scene_Map.terminate 的 snapForHangUp）
+var map_shot: Texture2D
+var player_tile := Vector2.ZERO
 ## 关闭菜单后要在地图上执行的公共事件（YEP_MainMenuManager callCommonEvent：reserveCommonEvent 后 popScene）
 var reserved_common_event := 0
 
@@ -284,6 +287,11 @@ func _ok() -> void:
 				# 正式版「存档」是公共事件 1（Menu 84 Ext）：回到地图后存到开局选的固定存档位
 				reserved_common_event = int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 84 Ext", "1")))
 				closed.emit()
+			"options":
+				var page := XOptionsScene.new()
+				page.map_shot = map_shot
+				page.player_tile = player_tile
+				_open_detail(page)
 			"gameEnd":
 				_show_game_end()
 			"quickSave":

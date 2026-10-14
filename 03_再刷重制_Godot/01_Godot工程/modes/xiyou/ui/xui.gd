@@ -133,6 +133,37 @@ static func dimmer(fade_left := true, fade_right := true) -> Control:
 	return c
 
 
+const BLUR_SHADER := """
+shader_type canvas_item;
+// MV Bitmap.blur：两遍 3×3 平均（边缘复制）＝ 一遍 5×5，权重 [1,2,3,2,1]²/81
+void fragment() {
+	float w[5] = float[](1.0, 2.0, 3.0, 2.0, 1.0);
+	vec2 px = TEXTURE_PIXEL_SIZE;
+	vec4 acc = vec4(0.0);
+	for (int i = 0; i < 5; i++) {
+		for (int j = 0; j < 5; j++) {
+			vec2 uv = clamp(UV + vec2(float(i - 2), float(j - 2)) * px, px * 0.5, vec2(1.0) - px * 0.5);
+			acc += texture(TEXTURE, uv) * w[i] * w[j];
+		}
+	}
+	COLOR = vec4(acc.rgb / 81.0, 1.0);
+}
+"""
+
+## MV SceneManager.snapForBackground 的底图：地图截图按 Bitmap.blur 模糊后铺满 1280×720（传送页、挂机设置页）。
+static func blurred_background(tex: Texture2D) -> TextureRect:
+	var bg := TextureRect.new()
+	bg.name = "Background"
+	bg.texture = tex
+	bg.size = Vector2(1280, 720)
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := ShaderMaterial.new()
+	mat.shader = Shader.new()
+	mat.shader.code = BLUR_SHADER
+	bg.material = mat
+	return bg
+
 ## 菜单底图（MOG_MenuBackground：Background.png 铺满）＋上浮粒子（MOG_MenuParticles：15 个，向上飘、加算混合）。
 static func menu_background(parent: Control) -> void:
 	var p := XDB.img_path("menus", "Background")
