@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.033",
-  "sequence": 33,
-  "next": "dev.034",
-  "nextSequence": 34,
+  "current": "dev.034",
+  "sequence": 34,
+  "next": "dev.035",
+  "nextSequence": 35,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "效率改造第三步：按事件对照补翻译（191/207）、等级上限与技能点",
+  "currentChange": "扩楼层：二至四层（Map003/006/007）、敌群事件强制行动与轮回困难附加伤害、敌人备注覆盖能力（转换器 v13）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

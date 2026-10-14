@@ -1,6 +1,6 @@
 {
-	"cases": 238,
-	"match": 222,
+	"cases": 253,
+	"match": 237,
 	"mismatch": {
 		"ce1440": [
 			"trace",
