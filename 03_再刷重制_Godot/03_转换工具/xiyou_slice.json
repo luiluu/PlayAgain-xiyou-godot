@@ -22,7 +22,11 @@
   ],
   "troops": [
     2,
-    4
+    4,
+    3,
+    5,
+    6,
+    7
   ],
   "maxLevel": 30,
   "extraSkills": [
