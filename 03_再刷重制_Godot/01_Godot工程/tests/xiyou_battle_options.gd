@@ -197,6 +197,35 @@ func _run() -> void:
 	check("map_animation_independent", map_animation != null and map_animation.rate == 4)
 	if map_animation:
 		map_animation.queue_free()
+	# 逃跑：BattleManager.processEscape 的消息窗（正式实测：底部窗口、等按键；失败两行，第二行带 \. 等待）
+	var eb := QuietBattle.new()
+	eb.setup(2, true, false, {})
+	add_child(eb)
+	await frames(4)
+	var party_name: String = "%s的队伍" % eb.logic.actors[0].display_name() if eb.logic.actors.size() > 1 else eb.logic.actors[0].display_name()
+	check("escape_text", eb.escape_text() == "%s开始逃跑了！" % party_name, eb.escape_text())
+	XSound.system_log.clear()
+	var done := [false]
+	var fail_call = func():
+		await eb._escape_failure()
+		done[0] = true
+	fail_call.call()
+	for i in 60:
+		await get_tree().physics_frame
+	check("escape_failure_waits", not done[0] and eb.message.win.pause and XSound.system_log.has(8), [done[0], XSound.system_log])
+	check("escape_failure_lines", eb.message.position == eb._origin and eb.message.win.position.y == 548.0, [eb.message.position, eb.message.win.position])
+	var ev := InputEventAction.new()
+	ev.action = "ui_accept"
+	ev.pressed = true
+	Input.parse_input_event(ev)
+	await get_tree().physics_frame
+	ev = ev.duplicate()
+	ev.pressed = false
+	Input.parse_input_event(ev)
+	for i in 30:
+		await get_tree().physics_frame
+	check("escape_failure_closes_on_key", done[0])
+	eb.queue_free()
 	DirAccess.remove_absolute(XConfig.path())
 	finish()
 

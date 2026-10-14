@@ -43,6 +43,8 @@ var field: Node2D
 var fx: Node2D
 var combo: XComboCounter
 var ui: Control
+## 战斗中的消息窗（BattleManager 的逃跑信息等走 $gameMessage，Scene_Battle 的 Window_Message）
+var message: XMessageBox
 var help_card: XHelpCard
 var log_canvas: XMVCanvas
 var _log_lines: Array = []        # [{text, simple}]
@@ -97,6 +99,9 @@ func _ready() -> void:
 	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ui)
 	_build_ui(vs)
+	message = XMessageBox.new()
+	message.position = _origin
+	ui.add_child(message)
 	bgm = AudioStreamPlayer.new()
 	XAudio.bind(bgm, "BGM")
 	add_child(bgm)
@@ -433,15 +438,28 @@ func _main() -> void:
 		await get_tree().process_frame
 
 
-## BattleManager.processEscape 成功：逃跑音效、提示，结束战斗（结果 1）
+## BattleManager.processEscape 成功：逃跑音效，消息窗「<队名>开始逃跑了！」（等按键；挂机中按 messageCount 自动翻页），结束战斗（结果 1）
 func _escape_success() -> void:
 	_close_windows()
 	otb.hide_bar()
 	logic.escaped = true
 	XSound.system(8)
-	await _say("成功逃跑了。", 0.8)
+	await message.run({"lines": [escape_text()]})
 	logic.end_battle()
 	finished.emit(1)
+
+
+## 逃跑失败：逃跑音效，消息窗两行「<队名>开始逃跑了！」「\.但是没有逃跑成功！」，等按键后这次行动结束（OTB endAction）
+func _escape_failure() -> void:
+	XSound.system(8)
+	await message.run({"lines": [escape_text(), "\\." + str(XDB.system().terms.messages.escapeFailure)]})
+
+
+## TextManager.escapeStart.format($gameParty.name())：出战 1 人时为其名字，否则 partyName「%1的队伍」
+func escape_text() -> String:
+	var leader: XActor = logic.actors[0] if not logic.actors.is_empty() else null
+	var name := "" if leader == null else (leader.display_name() if logic.actors.size() == 1 else str(XDB.system().terms.messages.get("partyName", "%1的队伍")).replace("%1", leader.display_name()))
+	return str(XDB.system().terms.messages.escapeStart).replace("%1", name)
 
 
 ## 轮到 u：敌人/自动/不能行动时直接决定；角色由玩家选。逃跑在这里处理，成功时结束战斗并返回 "escaped"。
@@ -465,7 +483,7 @@ func _command(u: XBattler):
 			if logic.try_escape():
 				await _escape_success()
 				return "escaped"
-			await _say("没能逃掉！", 0.8)
+			await _escape_failure()
 			return [null, null]
 		# "back"：OTB 没有队伍指令窗，取消不回到上一人，重新显示指令
 	return null
