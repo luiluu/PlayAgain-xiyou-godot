@@ -79,7 +79,7 @@ func _ready() -> void:
 	# EnemyNameColorByDifficulty 的提示位于窗口层之上，随地图快照进入战斗背景。
 	difficulty_notice = XDifficultyNoticeCanvas.new()
 	ui.add_child(difficulty_notice)
-	difficulty_notice.clock.can_paint = func(): return not _in_battle and not _menu_open and transfer_page == null
+	difficulty_notice.clock.can_paint = _difficulty_notice_active
 	bgm = AudioStreamPlayer.new()
 	add_child(bgm)
 	se = AudioStreamPlayer.new()
@@ -88,6 +88,18 @@ func _ready() -> void:
 	add_child(camera)
 	var s := XState.current
 	await load_map(s.map_id, s.x, s.y, s.direction)
+
+
+func _difficulty_notice_active() -> bool:
+	return not _in_battle and not _menu_open and transfer_page == null
+
+
+func _exit_tree() -> void:
+	# 地图销毁前解除全局计时器的回调，不能留到下一帧再检测已释放的闭包。
+	if is_instance_valid(difficulty_notice) and is_instance_valid(difficulty_notice.clock):
+		var clock := difficulty_notice.clock
+		if clock.can_paint == _difficulty_notice_active:
+			clock.can_paint = Callable()
 
 
 func _build_hud() -> void:

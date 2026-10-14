@@ -113,8 +113,13 @@ func _run() -> void:
 	clock.advance(7200,3)
 	check("expired_notice_cannot_enter_next_snapshot", not notice.visible)
 	await shot("03_提示已消失")
+	clock.set_process(true)
 	map.queue_free()
+	await frames(8)
+	check("destroyed_map_unbinds_global_clock", not clock.can_paint.is_valid())
+	clock.queue_free()
 	await frames(2)
+	check("destroyed_clock_releases_singleton", XDifficultyNotice.instance == null)
 	XEnemy.force_roll = -1
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed":passed,"total":results.size()}))
