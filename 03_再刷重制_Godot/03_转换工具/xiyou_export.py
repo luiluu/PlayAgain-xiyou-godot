@@ -22,7 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 13
+TOOL_VERSION = 14
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -397,6 +397,17 @@ class Exporter:
         if name:
             self.img.add(f'{folder}/{name}')
 
+    def ref_super_sv(self, meta):
+        """Mx_SuperSV：<sv:名> 与 <SVzs动作:帧数> 的逐帧图 sv_actors/sv/名/名动作_帧（XAppearance 读取）。"""
+        name = str(meta.get('sv', '')).strip() if isinstance(meta.get('sv'), str) else ''
+        if not name or re.search(r'[\\/:\x00-\x1f]', name) or name in ('.', '..'):
+            return
+        for i in range(18):
+            n = str(meta.get(f'SVzs{i}', '')).strip()
+            if n.isdigit() and 0 < int(n) <= 4096:
+                for f in range(int(n)):
+                    self.ref_img('sv_actors', f'sv/{name}/{name}{i}_{f}')
+
     def ref_audio(self, folder, obj):
         if isinstance(obj, dict) and obj.get('name'):
             self.audio.add(f'{folder}/{obj["name"]}')
@@ -466,6 +477,7 @@ class Exporter:
         for aid in actors:
             a = db['Actors'][aid]
             self.ref_img('faces', a['faceName']); self.ref_img('characters', a['characterName']); self.ref_img('sv_actors', a['battlerName'])
+            self.ref_super_sv(a['meta'])
         enemies = set()
         for tid in troops:
             t = db['Troops'][tid]
@@ -482,6 +494,7 @@ class Exporter:
             side = e['meta'].get('Sideview Battler')
             if side:
                 self.ref_img('sv_actors', side.strip())
+                self.ref_super_sv(e['meta'])
             else:
                 self.ref_img('sv_enemies' if db['System']['optSideView'] else 'enemies', e['battlerName'])
             skills |= {a['skillId'] for a in e['actions']}
