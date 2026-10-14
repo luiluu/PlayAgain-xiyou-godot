@@ -38,29 +38,20 @@ class Icon extends Node2D:
 		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		face = Sprite2D.new()
 		add_child(face)
-		var flip := false
-		var tex: Texture2D = null
-		var sv := true
-		if b is XActor:
-			tex = XBattlerSprite._load("sv_actors", str((b as XActor).data().battlerName))
-		else:
-			var side = (b as XEnemy).data().get("meta", {}).get("Sideview Battler")
-			if side != null:
-				tex = XBattlerSprite._load("sv_actors", str(side).strip_edges())
-				flip = true
-			else:
-				tex = XBattlerSprite._load("sv_enemies", str((b as XEnemy).data().battlerName))
-				sv = false
+		# 头像取外观的待机第一帧（MV 侧视图左上一格；单图整张；场景外观用登记的 portrait）
+		var look := XAppearance.for_battler(b)
+		var flip := b is XEnemy and look.sideview
+		var tex := look.portrait_tex
 		if tex == null:
 			return
 		face.texture = tex
 		var w := float(tex.get_width())
 		var h := float(tex.get_height())
-		if sv:
-			w /= 9.0
-			h /= 6.0
+		if look.portrait_rect.has_area():
+			w = look.portrait_rect.size.x
+			h = look.portrait_rect.size.y
 			face.region_enabled = true
-			face.region_rect = Rect2(0, 0, w, h)
+			face.region_rect = look.portrait_rect
 		face.flip_h = flip
 		var larger := maxf(w, h)
 		base_scale = LH / larger if larger > LH else 1.0

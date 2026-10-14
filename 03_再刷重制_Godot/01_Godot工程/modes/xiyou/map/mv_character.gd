@@ -22,6 +22,8 @@ var character_index := 0
 var tile_id := 0
 var opacity := 255
 var _tex: Texture2D
+## 行走图格式（XAppearance.walk：格子、序列、停步序号、方向行），默认 MV 3×4
+var _walk := {"cell": Vector2(48, 48), "origin": Vector2.ZERO, "sequence": [0, 1, 2, 1], "stand": 1, "rows": {2: 0, 4: 1, 6: 2, 8: 3}}
 var _anime_count := 0.0
 var _stop_count := 0
 var tilemap: MVTilemap
@@ -46,6 +48,7 @@ func set_image(name: String, index: int) -> void:
 	tile_id = 0
 	var p := XDB.img_path("characters", name) if name != "" else ""
 	_tex = load(p) if p != "" else null
+	_walk = XAppearance.walk(name, index, _tex)
 	queue_redraw()
 
 func set_tile_image(id: int) -> void:
@@ -240,7 +243,7 @@ func jump(dx: int, dy: int) -> void:
 	_jump_peak = 10 + distance - move_speed
 	_jump_count = _jump_peak * 2
 	_stop_count = 0
-	pattern = 1
+	pattern = int(_walk.stand)
 
 
 # ---- 气泡 ----
@@ -255,17 +258,17 @@ func is_balloon_playing() -> bool:
 func _update_animation() -> void:
 	if is_moving() and walk_anime or step_anime:
 		_anime_count += 1.5 if is_moving() else 1.0
-	elif pattern != 1:
+	elif pattern != int(_walk.stand):
 		_stop_count += 1
 		if _stop_count > 6:
-			pattern = 1
+			pattern = int(_walk.stand)
 			_anime_count = 0
 			queue_redraw()
 	var wait := (9 - move_speed) * 3
 	if _anime_count >= wait:
 		_anime_count = 0
 		_stop_count = 0
-		pattern = (pattern + 1) % 4
+		pattern = (pattern + 1) % (_walk.sequence as Array).size()
 		queue_redraw()
 
 func _sync_position() -> void:
@@ -288,7 +291,7 @@ func sprite_height() -> float:
 		return TS
 	if _tex == null:
 		return 0.0
-	return _tex.get_height() / (4.0 if is_big() else 8.0)
+	return _walk.cell.y
 
 
 ## Sprite_Balloon：帧号 = 7 − floor((剩余 − 12) / 8)，画在角色头顶（行走图高度处）
@@ -311,12 +314,12 @@ func _draw_body() -> void:
 		return
 	if _tex == null:
 		return
-	var pw: float = _tex.get_width() / (3.0 if is_big() else 12.0)
-	var ph: float = _tex.get_height() / (4.0 if is_big() else 8.0)
-	var block := Vector2.ZERO if is_big() else Vector2((character_index % 4) * 3 * pw, floori(character_index / 4.0) * 4 * ph)
-	var pat: int = [0, 1, 2, 1][pattern % 4]
-	var row := (direction - 2) / 2
-	var src := Rect2(block.x + pat * pw, block.y + row * ph, pw, ph)
+	var pw: float = _walk.cell.x
+	var ph: float = _walk.cell.y
+	var seq: Array = _walk.sequence
+	var pat: int = seq[pattern % seq.size()]
+	var row: int = _walk.rows.get(direction, 0)
+	var src := Rect2(_walk.origin.x + pat * pw, _walk.origin.y + row * ph, pw, ph)
 	var shift := 0.0 if is_object() else 6.0
 	draw_texture_rect_region(_tex, Rect2(-pw / 2.0, -ph - shift, pw, ph), src, mod)
 

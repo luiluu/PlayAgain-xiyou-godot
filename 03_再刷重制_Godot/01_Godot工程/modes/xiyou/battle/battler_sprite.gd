@@ -1,18 +1,18 @@
 class_name XBattlerSprite
 extends Node2D
-## 战斗者图像。角色用 MV 侧视图（9×6 格、每格 64×64、18 种动作）；敌人用 sv_enemies 单图，
-## 或 <Sideview Battler: 名> 指定的角色侧视图（如守层者里德）。像素图放大时用最近邻采样保持清晰。
+## 战斗者图像。取图格式由 XAppearance 决定（默认照正式版：角色 MV 侧视图 9×6／Mx_SuperSV 逐帧，
+## 敌人 sv_enemies 单图或 <Sideview Battler: 名> 指定的侧视图；appearances.json 可换成任意格子、逐帧或 Godot 场景）。
+## 本节点只按动作名与帧号播放。像素图放大时用最近邻采样保持清晰。
 
-const MOTIONS := {"walk": 0, "wait": 1, "chant": 2, "guard": 3, "damage": 4, "evade": 5, "thrust": 6, "swing": 7,
-	"missile": 8, "skill": 9, "spell": 10, "item": 11, "escape": 12, "victory": 13, "dying": 14, "abnormal": 15,
-	"sleep": 16, "dead": 17}
-const LOOP := ["walk", "wait", "chant", "guard", "dying", "abnormal", "sleep", "dead", "victory"]
+const LOOP := XAppearance.LOOP
 ## 正式版运行时读数：Sprite_Actor.motionSpeed 6 帧一格，Sprite_Weapon.animationWait 3 帧一格
 const MOTION_SPEED := 6
 const WEAPON_WAIT := 3
 
 var battler: XBattler
-var sprite: Sprite2D
+var look: XAppearance
+## 身体：格子/逐帧/单图时是 Sprite2D，场景外观时是场景根节点
+var sprite: Node2D
 var shadow: Sprite2D
 var cursor: Sprite2D
 ## MV Sprite_Weapon：武器挥动图，挂在角色下（不随身体缩放），(−16, 0) 底边居中
@@ -24,6 +24,7 @@ var selected := false
 var _selection_frame := 0
 ## 图像缩放只作用于身体（MV 缩放 _mainSprite），影子与位置不缩放
 var body_scale := 1.0
+## 会逐帧播放动作（侧视图、逐帧、场景；敌人单图不播放）
 var sv := false
 var motion := "walk"
 var _frame := 0
@@ -50,46 +51,40 @@ void fragment() {
 func setup(b: XBattler, sprite_scale: float) -> void:
 	battler = b
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	# MV Sprite_Actor.createShadowSprite：Shadow2，中心锚点，y −2（YEP_BattleEngineCore Show Shadows）
-	if b is XActor:
+	look = XAppearance.for_battler(b)
+	sv = look.animated()
+	if b is XEnemy and look.sideview:
+		facing_left = false
+	# MV Sprite_Actor.createShadowSprite：Shadow2，中心锚点，y −2（YEP_BattleEngineCore Show Shadows）；Mx_SuperSV <YCyy:true> 隐藏
+	if b is XActor and not look.hide_shadow:
 		var sp := XDB.img_path("system", "Shadow2")
 		if sp != "":
 			shadow = Sprite2D.new()
 			shadow.texture = load(sp)
 			shadow.position.y = -2
 			add_child(shadow)
-	sprite = Sprite2D.new()
-	sprite.centered = true
-	add_child(sprite)
-	var tex: Texture2D = null
-	if b is XActor:
-		tex = _load("sv_actors", str((b as XActor).data().battlerName))
-		sv = true
+	if look.kind == "scene" and look.scene:
+		sprite = look.scene.instantiate() as Node2D
+		_hook_scene_finished()
 	else:
-		var e := b as XEnemy
-		var side = e.data().get("meta", {}).get("Sideview Battler")
-		if side != null:
-			tex = _load("sv_actors", str(side).strip_edges())
-			sv = true
-			facing_left = false
-		else:
-			tex = _load("sv_enemies", str(e.data().battlerName))
-	sprite.texture = tex
-	if sv and tex:
-		sprite.region_enabled = true
-		sprite.flip_h = not facing_left if b is XEnemy else false
-	if tex:
-		var h := 64.0 if sv else float(tex.get_height())
-		sprite.offset.y = -h / 2.0
-	body_scale = sprite_scale
-	sprite.scale = Vector2.ONE * body_scale
+		var body := Sprite2D.new()
+		body.centered = true
+		body.region_enabled = look.sideview
+		sprite = body
+	if sprite == null:
+		sprite = Sprite2D.new()
+	add_child(sprite)
+	if b is XEnemy and look.sideview:
+		_set_flip(true)
+	body_scale = sprite_scale * look.scale
+	_apply_scale()
 	var cursor_name := str(XDB.plugin("YEP_BattleSelectCursor").get("Ally Cursor" if b is XActor else "Enemy Cursor", ""))
 	var cp := XDB.img_path("pictures", cursor_name)
 	if cp != "":
 		cursor = Sprite2D.new()
 		cursor.texture = load(cp)
 		cursor.offset.y = -cursor.texture.get_height() / 2.0
-		cursor.position.y = -64.0 if sv else -height()
+		cursor.position.y = -look.cell.y if sv and look.kind != "scene" else -height()
 		cursor.visible = false
 		add_child(cursor)
 	# EliteEnemyPlugins：神话敌人色相偏移（MV loadBitmap 的 hue）
@@ -100,7 +95,11 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 		mat.shader = sh
 		mat.set_shader_parameter("hue", (b as XEnemy).elite_hue)
 		sprite.material = mat
+		for n in sprite.find_children("*", "CanvasItem", true, false):
+			(n as CanvasItem).use_parent_material = true
 	set_motion("walk" if b.is_alive() else "dead")
+	if not sv:
+		_show_frame(look.frame("walk", 0))
 
 
 static func _load(folder: String, name: String) -> Texture2D:
@@ -109,15 +108,25 @@ static func _load(folder: String, name: String) -> Texture2D:
 
 
 func width() -> float:
-	if sprite.texture == null:
-		return 64.0 * body_scale
-	return (64.0 if sv else float(sprite.texture.get_width())) * body_scale
+	return (look.cell.x if look.cell.x > 0 else 64.0) * body_scale
 
 
 func height() -> float:
-	if sprite.texture == null:
-		return 64.0 * body_scale
-	return (64.0 if sv else float(sprite.texture.get_height())) * body_scale
+	return (look.cell.y if look.cell.y > 0 else 64.0) * body_scale
+
+
+func _set_flip(f: bool) -> void:
+	if sprite is Sprite2D:
+		(sprite as Sprite2D).flip_h = f
+	else:
+		sprite.set_meta("flip", f)
+		_apply_scale()
+
+
+## 身体缩放（场景外观用负的 x 表示翻转）
+func _apply_scale() -> void:
+	var fx := -1.0 if sprite.get_meta("flip", false) else 1.0
+	sprite.scale = Vector2(body_scale * fx, body_scale)
 
 
 func set_motion(m: String) -> void:
@@ -165,12 +174,16 @@ func _physics_process(_delta: float) -> void:
 				_weapon_frame()
 	if not sv:
 		return
+	if look.kind == "scene":
+		return
 	_tick += 1
-	if _tick >= MOTION_SPEED:
+	var w := look.wait_of(motion)
+	if _tick >= (w if w > 0 else MOTION_SPEED):
 		_tick = 0
-		if LOOP.has(motion):
-			_frame = (_frame + 1) % 4
-		elif _frame < 2:
+		var n := look.frame_count(motion)
+		if look.is_loop(motion):
+			_frame = (_frame + 1) % maxi(n, 1)
+		elif _frame < n - 1:
 			_frame += 1
 		else:
 			set_motion(_idle_motion())
@@ -208,13 +221,74 @@ func refresh_idle() -> void:
 
 
 func _apply() -> void:
-	if not sv or sprite.texture == null:
+	if not sv:
 		return
-	var idx: int = MOTIONS.get(motion, 0)
-	# 循环动作的第 4 格回到中间一格（MV：pattern < 3 ? pattern : 1）
-	var cx := floori(idx / 6.0) * 3 + (_frame if _frame < 3 else 1)
-	var cy := idx % 6
-	sprite.region_rect = Rect2(cx * 64, cy * 64, 64, 64)
+	if look.kind == "scene":
+		_play_scene(look.resolve(motion) if not look.motions.is_empty() else motion)
+		return
+	_show_frame(look.frame(motion, _frame))
+
+
+## 显示一帧（MV 侧视图的循环动作已在外观里展开成 0,1,2,1）；身体以脚底为原点
+func _show_frame(f: Dictionary) -> void:
+	var body := sprite as Sprite2D
+	if body == null or f.is_empty():
+		return
+	body.texture = f.tex
+	var r: Rect2 = f.get("rect", Rect2())
+	body.region_enabled = r.has_area()
+	if r.has_area():
+		body.region_rect = r
+	var h := r.size.y if r.has_area() else float((f.tex as Texture2D).get_height())
+	body.offset.y = -h / 2.0
+
+
+# ---- 场景外观：根节点有 play_motion(名) 就调用，否则找 AnimationPlayer / AnimatedSprite2D 播同名动画 ----
+func _play_scene(m: String) -> void:
+	if sprite.has_method("play_motion"):
+		sprite.call("play_motion", m)
+		return
+	var aps := sprite.find_children("*", "AnimationPlayer", true, false)
+	if not aps.is_empty():
+		var ap := aps[0] as AnimationPlayer
+		var name := _scene_anim(m, func(n): return ap.has_animation(n))
+		if name != "":
+			ap.play(name)
+		return
+	var list := sprite.find_children("*", "AnimatedSprite2D", true, false)
+	if sprite is AnimatedSprite2D:
+		list.insert(0, sprite)
+	if not list.is_empty():
+		var a := list[0] as AnimatedSprite2D
+		var name := _scene_anim(m, func(n): return a.sprite_frames != null and a.sprite_frames.has_animation(n))
+		if name != "":
+			a.play(name)
+
+
+static func _scene_anim(m: String, has: Callable) -> String:
+	var seen := {}
+	var cur := m
+	while cur != "" and not seen.has(cur):
+		if has.call(cur):
+			return cur
+		seen[cur] = true
+		cur = XAppearance.FALLBACK.get(cur, "")
+	return "walk" if has.call("walk") else ""
+
+
+## 场景播完非循环动作时回到待机（根节点发 motion_finished，或 AnimationPlayer/AnimatedSprite2D 播完）
+func _hook_scene_finished() -> void:
+	if sprite == null:
+		return
+	var done := func(_a = null):
+		if not LOOP.has(motion):
+			set_motion(_idle_motion())
+	if sprite.has_signal("motion_finished"):
+		sprite.connect("motion_finished", done)
+	for ap in sprite.find_children("*", "AnimationPlayer", true, false):
+		(ap as AnimationPlayer).animation_finished.connect(done)
+	for a in sprite.find_children("*", "AnimatedSprite2D", true, false) + ([sprite] if sprite is AnimatedSprite2D else []):
+		(a as AnimatedSprite2D).animation_finished.connect(done)
 
 
 func flash(color := Color(1, 1, 1)) -> void:
@@ -226,9 +300,9 @@ func flash(color := Color(1, 1, 1)) -> void:
 ## MV Sprite_Enemy.updateBlink：20 帧，每 10 帧里前 5 帧显示、后 5 帧隐藏
 func blink() -> void:
 	for f in range(20, 0, -1):
-		sprite.self_modulate.a = 1.0 if f % 10 < 5 else 0.0
+		sprite.visible = f % 10 < 5
 		await get_tree().physics_frame
-	sprite.self_modulate.a = 1.0
+	sprite.visible = true
 
 
 func step(forward: bool) -> void:
