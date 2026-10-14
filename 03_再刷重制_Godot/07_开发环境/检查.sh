@@ -52,19 +52,8 @@ import_out=$(perl -e 'alarm 300; exec @ARGV' "$GODOT" --headless --path "$PROJEC
 if (( import_rc != 0 )) || print -r -- "$import_out" | grep -qE 'SCRIPT ERROR|^ERROR:'; then
   bad "Godot 导入失败 (rc=$import_rc)"; print -r -- "$import_out" | grep -E 'ERROR|FAIL' | head -8
 fi
-tests=("$PROJECT"/tests/*.tscn(N))
-if (( ${#tests} == 0 )); then bad "tests/ 下没有测试场景"; fi
-for t in $tests; do
-  name=${t:t}
-  # 每个测试最多 5 分钟；脚本语法错误时场景不会自行退出，超时即判失败
-  out=$(perl -e 'alarm 300; exec @ARGV' "$GODOT" --headless --path "$PROJECT" "res://tests/$name" 2>&1); rc=$?
-  line=$(print -r -- "$out" | grep -m1 '^TEST_RESULT=')
-  if (( rc == 0 )) && [[ -n $line ]] && ! print -r -- "$out" | grep -qE 'SCRIPT ERROR|^ERROR:'; then
-    ok "$name ${line#TEST_RESULT=}" | cut -c1-120
-  else
-    bad "$name (rc=$rc)"; print -r -- "$out" | grep -E 'ERROR|FAIL |passed|TEST_RESULT' | head -8 | sed 's/^/      /'
-  fi
-done
+# 测试并行运行（每个测试独立临时 HOME，互不干扰、不碰真实用户数据）；CHECK_JOBS=1 时逐个运行
+if ! python3 "$ENV_DIR/并行测试.py" "$GODOT" "$PROJECT"; then FAIL=1; fi
 
 print "== 参照工具访问守卫"
 if node "$ROOT/03_再刷重制_Godot/03_转换工具/mv_oracle/guard_check.cjs"; then ok "MV 文件守卫"; else bad "MV 文件守卫"; fi
