@@ -7,7 +7,7 @@
 3. 重跑全部参照探针（mv_oracle，只写 .sandbox/），复制到 generated/oracle/；
 4. 去掉来源身份（sourceIdentity、releaseVersion 等）后逐份比较测量；列出改动的数据文件、记录编号、地图与运行脚本；
 5. 运行 验证西游来源.py；
-6. 测量全部不变且核对 0 问题：写来源清单，更新 来源登记.json 与 当前状态.json（--no-register 时不写），退出码 0；
+6. 测量全部不变且核对 0 问题：写来源清单，更新 来源登记.json 与 当前状态.json（--no-register 或在 worktree 里运行时不写），退出码 0；
    有测量变化：不改登记，退出码 2，报告写在备份目录 同步报告.json，交给人看（变化可能就是正式版的规则改动，要跟进）。
 只读正式应用；不读写任何玩家存档。
 """
@@ -106,6 +106,12 @@ def main() -> int:
     ap.add_argument('--generated', type=Path, default=DEFAULT_OUT)
     ap.add_argument('--no-register', action='store_true', help='只同步与比较，不改来源登记/当前状态')
     a = ap.parse_args()
+    # 多会话并行（AGENTS.md）：来源登记／当前状态只由总装在主工作区改，worktree 里自动不登记
+    git = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'],
+                         capture_output=True, text=True).stdout.split('\n')
+    if not a.no_register and len(git) > 1 and git[0] != git[1]:
+        a.no_register = True
+        print('在 worktree 里运行：只同步与比较，不写来源登记／当前状态（由总装在主工作区登记）')
     app, gen = a.app.resolve(), a.generated.resolve()
     old_manifest = json.loads((gen / 'manifest.json').read_text())
     old_version = old_manifest.get('releaseVersion')
