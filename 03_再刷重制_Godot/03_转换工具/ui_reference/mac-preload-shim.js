@@ -172,7 +172,10 @@ window.__refShot = function (name) {
             // 夹具只观察地图与战斗绘制，不推进地图/公共事件剧情。
             Game_Map.prototype.updateInterpreter = function(){};
             $gameScreen.clear(); $gameMessage.clear(); $gamePlayer.clearTransferInfo(); $gamePlayer.refresh();
-            $gameParty.members().forEach(function(a){ [2747,6168,5980].forEach(function(id){a.learnSkill(id);}); a.recoverAll(); });
+            $gameParty.members().forEach(function(a){
+                [6168,5980,5548].concat([1,2,3,4,5,6,7,52].indexOf(a.actorId())>=0 ? [2571,2786] : []).forEach(function(id){a.learnSkill(id);});
+                a.initPassiveCache(); a.refreshPassiveCache(); a.recoverAll();
+            });
             $gameParty.gainItem($dataItems[1], 5);
             DataManager.loadMapData(5);
             var wait = setInterval(function(){

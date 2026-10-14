@@ -1,6 +1,6 @@
 {
- "review": "Codex 建立（Claude 2026-10-13 核查）；来源归属由 Claude 按用户最新方向更新，待 Codex 核查",
- "updatedDate": "2026-10-13",
+ "review": "历史20组变更已由Codex交叉复核；当前v0.15来源实测同源，本轮整合修复仍待Claude核查",
+ "updatedDate": "2026-10-14",
  "sources": [
   {
    "id": "steam_playagain_original",
@@ -86,7 +86,7 @@
     "xiyou": "legacy_xiyou_mod_kyo",
     "new": null
    },
-   "developmentVersion": "dev.016"
+   "developmentVersion": "dev.018"
   }
  ]
 }

@@ -13,6 +13,7 @@
   manifest.json    输入/输出 SHA-256、未能处理项
 """
 import argparse
+import ast
 import equipment_rules
 import hashlib
 import json
@@ -21,7 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 6
+TOOL_VERSION = 7
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -210,6 +211,26 @@ class Exporter:
         text = b.decode('utf-8')
         plugins = json.loads(text[text.index('['):text.rindex(']') + 1])
         enabled = {p['name']: p['parameters'] for p in plugins if p.get('status')}
+        # 正式版 v0.15+ 在运行时覆盖 ItemQuality 参数，plugins.js 里的旧 16 档已不是实际显示。
+        module = 'js/codex/runtime/installUnifiedQualityRuntime.js'
+        modules_file = self.app / 'js/codex/modules.json'
+        if modules_file.exists() and module in self.read('js/codex/modules.json').get('modules', []):
+            source = (self.app / module).read_text()
+            def array(name):
+                match = re.search(r'\b' + name + r':\s*(\[[^\]]*\])', source)
+                if not match:
+                    raise ValueError('七档品质字段无法解析：' + name)
+                return ast.literal_eval(match[1])
+            names, colors, windows, grades = [array(k) for k in ('names', 'colors', 'windows', 'itemGrades')]
+            if len(grades) != 16 or any(not 0 <= g < len(names) or g >= len(colors) or g >= len(windows) for g in grades):
+                raise ValueError('七档品质映射无效')
+            tags = re.search(r'gearTags:\s*\{([^}]*)\}', source)
+            if not tags:
+                raise ValueError('七档品质装备标签无法解析')
+            self.write_json('db/UnifiedQuality.json', {
+                'names': names, 'colors': colors, 'windows': windows, 'itemGrades': grades,
+                'gearTags': dict(re.findall(r"(\d+):\s*'([^']*)'", tags[1])),
+            })
         self.plugins = enabled
         self.write_json('db/Plugins.json', enabled)
         self.write_json('db/EquipSuits.json', equipment_rules.suits(enabled))

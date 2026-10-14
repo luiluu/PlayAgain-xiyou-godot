@@ -102,6 +102,9 @@ func _run() -> void:
 			var cat_results := results.slice(before)
 			print("%s %d/%d" % [cat, cat_results.filter(func(r): return r.passed).size(), cat_results.size()])
 	# 显示：节点能建、能按选中行贴边放（O-008）、最小字号生效（O-007）
+	_check("seven_quality_windows", range(16).map(func(q): return XQuality.window_skin(q)) == [1, 1, 2, 3, 4, 7, 7, 7, 8, 8, 8, 8, 10, 8, 10, 10])
+	_check("seven_quality_red_gold", XGear.color({"meta": {"quality": 12}}).is_equal_approx(Color8(255, 72, 60)) and XGear.color({"meta": {"quality": 13}}).is_equal_approx(Color8(255, 214, 90)))
+	_check("seven_quality_tags", XQuality.label({"kind": "armor", "etypeId": 17, "meta": {"quality": 9}}, "armor") == "不朽（传家宝·神武）")
 	var card := XHelpCard.new()
 	add_child(card)
 	card.show_for(XDB.rec("Skills", 160))

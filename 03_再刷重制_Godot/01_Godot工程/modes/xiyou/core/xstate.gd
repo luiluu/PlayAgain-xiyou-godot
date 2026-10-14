@@ -224,7 +224,8 @@ func to_dict() -> Dictionary:
 	for id in actors:
 		var x2: XActor = actors[id]
 		a[str(id)] = {"level": x2.level, "exp": x2.exp_total, "skills": x2.skill_ids, "equips": x2.equips,
-			"hp": x2.hp, "mp": x2.mp, "states": x2.state_ids, "cooldowns": x2.cooldowns}
+			"hp": x2.hp, "mp": x2.mp, "tp": x2.tp, "states": x2.state_ids, "stateTurns": x2.state_turns,
+			"buffs": x2.buffs, "buffTurns": x2.buff_turns, "cooldowns": x2.cooldowns}
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "actors": a, "gold": gold,
 		"items": items, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
@@ -242,9 +243,14 @@ static func from_dict(d: Dictionary) -> XState:
 		x2.skill_ids.assign(row.skills.map(func(v): return int(v)))
 		x2.equips = row.equips
 		x2.state_ids.assign(row.states.map(func(v): return int(v)))
+		for k in row.get("stateTurns", {}):
+			x2.state_turns[int(k)] = int(row.stateTurns[k])
+		x2.buffs.assign(row.get("buffs", [0, 0, 0, 0, 0, 0, 0, 0]).map(func(v): return int(v)))
+		x2.buff_turns.assign(row.get("buffTurns", [0, 0, 0, 0, 0, 0, 0, 0]).map(func(v): return int(v)))
 		x2.refresh_passive()
 		x2.hp = float(row.hp)
 		x2.mp = float(row.mp)
+		x2.tp = float(row.get("tp", 0.0))
 		for k in row.get("cooldowns", {}):
 			x2.cooldowns[int(k)] = float(row.cooldowns[k])
 		s.actors[int(id_s)] = x2

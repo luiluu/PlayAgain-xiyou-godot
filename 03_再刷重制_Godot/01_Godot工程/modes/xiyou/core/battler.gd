@@ -189,6 +189,12 @@ func is_state_affected(id: int) -> bool:
 func add_state(id: int) -> void:
 	if XDB.rec("States", id).is_empty():
 		return
+	if id == 1:
+		hp = 0.0
+		state_ids.clear()
+		state_turns.clear()
+		buffs.fill(0)
+		buff_turns.fill(0)
 	if not state_ids.has(id):
 		state_ids.append(id)
 		_sort_states()
@@ -196,6 +202,8 @@ func add_state(id: int) -> void:
 	state_turns[id] = int(s.get("minTurns", 1)) + randi_range(0, max(0, int(s.get("maxTurns", 1)) - int(s.get("minTurns", 1))))
 
 func remove_state(id: int) -> void:
+	if id == 1 and state_ids.has(id) and hp <= 0.0:
+		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
 	state_ids.erase(id)
 	state_turns.erase(id)
 

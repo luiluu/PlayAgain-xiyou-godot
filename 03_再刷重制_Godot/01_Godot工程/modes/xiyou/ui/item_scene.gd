@@ -486,6 +486,8 @@ func _targets() -> Array:
 
 ## Game_Action.testApply：至少一个对象有效才能用，否则蜂鸣
 func _effective(t: XActor) -> bool:
+	if t.is_dead() != (_scope() in [9, 10]):
+		return false
 	for e in _item.get("effects", []):
 		match int(e.code):
 			11:
@@ -495,12 +497,22 @@ func _effective(t: XActor) -> bool:
 				if t.mp < t.mmp:
 					return true
 			21:
-				return true
+				if not t.is_state_affected(int(e.dataId)):
+					return true
 			22:
 				if t.state_ids.has(int(e.dataId)):
 					return true
 			43:
 				if not t.skill_ids.has(int(e.dataId)):
+					return true
+			13:
+				if t.tp < 100.0:
+					return true
+			31, 32:
+				if t.buffs[int(e.dataId)] != (2 if int(e.code) == 31 else -2):
+					return true
+			33, 34:
+				if (int(e.code) == 33 and t.buffs[int(e.dataId)] > 0) or (int(e.code) == 34 and t.buffs[int(e.dataId)] < 0):
 					return true
 			_:
 				return true
@@ -514,17 +526,22 @@ func _use() -> void:
 		XSound.system(3)
 		return
 	XSound.system(22)   # SoundManager.playUseItem
+	# Scene_Item.user：可行动角色中药物知识 pha 最大者；与战斗共用效果栏实现。
+	var logic := XBattleLogic.new()
+	logic.state = s
+	var movable := s.members().filter(func(a): return logic.can_move(a))
+	if movable.is_empty():
+		XSound.system(3)
+		return
+	var user: XActor = movable[0]
+	for a in movable:
+		if a.pha > user.pha:
+			user = a
 	for t in targets:
+		if t.is_dead() != (_scope() in [9, 10]):
+			continue
 		for e in _item.get("effects", []):
-			match int(e.code):
-				11:
-					t.hp = minf(t.mhp, t.hp + (t.mhp * float(e.value1) + float(e.value2)) * t.rec)
-				12:
-					t.mp = minf(t.mmp, t.mp + (t.mmp * float(e.value1) + float(e.value2)) * t.rec)
-				22:
-					t.remove_state(int(e.dataId))
-				43:
-					t.learn_skill(int(e.dataId))
+			logic._effect(user, t, e, {"skill": _item, "hp": 0.0, "mp": 0.0, "added": [], "removed": []})
 	if bool(_item.get("consumable", true)):
 		s.gain_item(int(_item.id), -1)
 

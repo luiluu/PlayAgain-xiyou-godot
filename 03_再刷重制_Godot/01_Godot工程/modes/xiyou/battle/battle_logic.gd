@@ -192,6 +192,8 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Arr
 		8:
 			return alive(friends)
 		9:
+			if chosen and chosen.is_dead() and friends.has(chosen):
+				return [chosen]
 			return friends.filter(func(b): return b.is_dead()).slice(0, 1)
 		10:
 			return friends.filter(func(b): return b.is_dead())
@@ -661,7 +663,7 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 			t.mp = minf(t.mmp, t.mp + v)
 			r.mp -= v
 		13:
-			t.tp = minf(100.0, t.tp + v1)
+			t.tp = clampf(t.tp + floorf(v1), 0.0, 100.0)
 		21:
 			var sid := int(eff.dataId)
 			var ids := u.traits_set(XBattler.TRAIT_ATTACK_STATE) if sid == 0 else [sid]
@@ -685,6 +687,15 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 		32:
 			t.buffs[int(eff.dataId)] = maxi(-2, t.buffs[int(eff.dataId)] - 1)
 			t.buff_turns[int(eff.dataId)] = int(v1)
+		33, 34:
+			var id := int(eff.dataId)
+			if (int(eff.code) == 33 and t.buffs[id] > 0) or (int(eff.code) == 34 and t.buffs[id] < 0):
+				t.buffs[id] = 0
+				t.buff_turns[id] = 0
+		43:
+			if t is XActor:
+				t.learn_skill(int(eff.dataId))
+				t.refresh_passive()
 
 
 func state_rate(b: XBattler, id: int) -> float:
@@ -698,6 +709,8 @@ func _die(b: XBattler) -> void:
 	b.state_ids.append(DEATH_STATE)
 	for i in range(8):
 		b.buffs[i] = 0
+		b.buff_turns[i] = 0
+	b.mp = minf(b.mp, b.mmp)
 
 
 ## timing 1 = 行动结束，2 = 回合结束（MV autoRemovalTiming）
@@ -812,8 +825,11 @@ func grant(r: Dictionary) -> Array:
 
 
 func end_battle() -> void:
-	for b in actors:
+	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
+	for b in state.members():
 		b.guarding = false
+		b.buffs.fill(0)
+		b.buff_turns.fill(0)
 		# MV Game_Battler.onBattleEnd：clearTp（保留 TP 时不清）
 		if not b.traits_set(TRAIT_SPECIAL_FLAG).has(FLAG_PRESERVE_TP):
 			b.tp = 0.0
@@ -822,3 +838,5 @@ func end_battle() -> void:
 			if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):
 				b.remove_state(id)
 		b.refresh_passive()
+		b.hp = minf(b.hp, b.mhp)
+		b.mp = minf(b.mp, b.mmp)
