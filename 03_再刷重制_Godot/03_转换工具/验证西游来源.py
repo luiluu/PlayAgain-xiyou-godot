@@ -125,6 +125,22 @@ def verify(app, generated, oracle):
                         issues.append('基础设置参照数据不一致：' + rel)
             if not data.get('volume') or not data.get('dash') or not data.get('commands') or not data.get('notices') or not data.get('misc') or not data.get('pingbi') or not data.get('follow'):
                 issues.append('基础设置参照缺少测量结果')
+    sequences = oracle / 'sequences.json'
+    if manifest.get('toolVersion', 0) >= 10:
+        if not sequences.is_file():
+            issues.append('行动序列参照缺失（重新运行 sequence_probe）')
+        else:
+            data = json.loads(sequences.read_text())
+            identity = data.get('sourceIdentity', {})
+            if identity.get('releaseVersion') != version or identity.get('runtimeInputs') != manifest.get('runtimeInputs'):
+                issues.append('行动序列参照版本/脚本不一致')
+            phases = ['setup', 'whole', 'target', 'follow', 'finish']
+            for key, table in (('skills', 'Skills'), ('items', 'Items')):
+                rows = json.loads((generated / 'db' / (table + '.json')).read_text())
+                wrong = [r['id'] for r in rows if isinstance(r, dict) and data.get(key, {}).get(str(r['id'])) != hashlib.sha1(
+                    json.dumps([r.get('yepSeq', {}).get(k, []) for k in phases], ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()]
+                if wrong or len(data.get(key, {})) != sum(1 for r in rows if isinstance(r, dict)):
+                    issues.append('行动序列与正式解析不一致：%s %d 项（如 %s）' % (table, len(wrong), wrong[:5]))
     return {'releaseVersion': version, 'inputs': len(manifest['inputs']),
             'runtimeInputs': len(manifest.get('runtimeInputs', {})),
             'outputs': len(manifest['outputs']), 'issues': issues}

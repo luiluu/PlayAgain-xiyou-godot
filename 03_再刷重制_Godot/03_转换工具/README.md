@@ -22,3 +22,4 @@
 注意：正式版脚本文件名含形近的非拉丁字符（如 `rpg_managеrs.js` 中的西里尔字母 е），匹配文件名时不能手打。
 
 - `options_probe.cjs`：正式引擎内存配置的默认值、33项顺序与文字、48组音量改值、4组跑步/Shift和角色指令/技能记忆，战斗显示/变速，消息提醒子页（notices）、核心杂项开关与遇敌抽签（misc）、屏蔽掉落子页与实际掉落过滤（pingbi）、队列跟随（follow）；只写 `.sandbox/options.json`，验收后复制到 `generated/oracle/`。来源同步需同其余六探针一起重跑。
+- `sequence_probe.cjs`：YEP_BattleEngineCore 解析后全部技能/物品的五段行动序列（每项 SHA-1，另存少量全文样本）；只写 `.sandbox/sequences.json`，验收后复制到 `generated/oracle/`。`验证西游来源.py` 逐项核对转换器（v10 起）导出的 `yepSeq`。来源同步时与其余七探针一起重跑。

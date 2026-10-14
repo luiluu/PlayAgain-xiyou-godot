@@ -22,7 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 9
+TOOL_VERSION = 10
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -189,6 +189,69 @@ def yep_action_effects(obj, animations):
     return max(1, counts['whole'] + counts['target'])
 
 
+YEP_DEFAULT_SETUP = [['CLEAR BATTLE LOG'], ['DISPLAY ACTION'], ['IMMORTAL', ['TARGETS', 'TRUE']], ['PERFORM START'],
+                     ['WAIT FOR MOVEMENT'], ['CAST ANIMATION'], ['WAIT FOR ANIMATION']]
+YEP_DEFAULT_FINISH = [['IMMORTAL', ['TARGETS', 'FALSE']], ['WAIT FOR NEW LINE'], ['CLEAR BATTLE LOG'], ['PERFORM FINISH'],
+                      ['WAIT FOR MOVEMENT'], ['WAIT FOR EFFECT'], ['ACTION COMMON EVENT']]
+YEP_PHASES = ['setup', 'whole', 'target', 'follow', 'finish']
+
+
+def yep_sequences(obj, animations, motion_wait=True):
+    """YEP_BattleEngineCore.processMELODYNotetags 的 Python 移植：返回五段行动序列 {setup, whole, target, follow, finish}，
+    每条为 [名字, 参数表]（与运行时 $dataSkills[i].xxxActions 相同；默认序列的单名条目没有参数表）。
+    setDefaultActions 对每个对象都执行，所以运行时 repeats 一律变成 1、默认段里展开为 repeats 次 ACTION EFFECT。"""
+    anim_id = obj.get('animationId', 0) or 0
+    whole = False
+    if anim_id > 0 and anim_id < len(animations) and animations[anim_id]:
+        whole = animations[anim_id].get('position') == 3 or obj.get('scope') in (2, 8, 10)
+    base = [['PERFORM ACTION'], ['MOTION WAIT', ['USER']] if motion_wait else ['WAIT', [10]], ['ACTION ANIMATION'], ['WAIT FOR ANIMATION']]
+    effects = []
+    repeats = int(obj.get('repeats', 1) or 1)
+    while True:
+        effects += [['ACTION EFFECT'], ['DEATH BREAK']]
+        repeats -= 1
+        if repeats <= 0:
+            break
+        effects.append(['WAIT', [8]])
+    seq = {'setup': [list(x) for x in YEP_DEFAULT_SETUP], 'whole': base + effects if whole else [],
+           'target': [] if whole else base + effects, 'follow': [], 'finish': [list(x) for x in YEP_DEFAULT_FINISH]}
+    kind = None
+    tags = [('setup', r'SETUP ACTION|setup'), ('whole', r'WHOLE ACTION|whole'), ('target', r'TARGET ACTION|target'),
+            ('follow', r'FOLLOW ACTION|follow'), ('finish', r'FINISH ACTION|finish')]
+    for line in re.split(r'[\r\n]+', obj.get('note', '') or ''):
+        hit = False
+        for name, pat in tags:
+            if re.search(r'<(?:' + pat + r')>', line, re.I):
+                kind = name; seq[name] = []; hit = True; break
+            if re.search(r'</(?:' + pat + r')>', line, re.I):
+                kind = None; hit = True; break
+        if hit or kind is None:
+            continue
+        m = re.match(r'[ ]*(.*):[ ](.*)', line)
+        if m:
+            seq[kind].append([m.group(1).strip(), [a.strip() for a in m.group(2).split(',')]])
+        else:
+            seq[kind].append([line.strip(), []])
+    return seq
+
+
+def yep_action_copy(group, skills, items):
+    """processBECNotetags2 的 <Action Copy: x: y>：按编号顺序把目标对象当时的五段序列复制过来。"""
+    pat = re.compile(r'<(?:ACTION COPY):[ ](.*):[ ]*(\d+)>', re.I)
+    for obj in group:
+        if not isinstance(obj, dict):
+            continue
+        for line in re.split(r'[\r\n]+', obj.get('note', '') or ''):
+            m = pat.search(line)
+            if not m:
+                continue
+            text, tid = m.group(1).upper(), int(m.group(2))
+            src = items if text in ('I', 'ITEM') else skills if text in ('S', 'SKILL') else None
+            target = src[tid] if src is not None and 0 <= tid < len(src) else None
+            if isinstance(target, dict) and 'yepSeq' in target:
+                obj['yepSeq'] = {k: [list(x) for x in target['yepSeq'][k]] for k in YEP_PHASES}
+
+
 class Exporter:
     def __init__(self, app, out, slice_cfg):
         self.app, self.out, self.cfg = app.resolve(), out.resolve(), slice_cfg
@@ -235,10 +298,18 @@ class Exporter:
             self.db[name] = data
             self.write_json(f'db/{name}.json', data)
         animations = self.db.get('Animations') or self.read('data/Animations.json')
+        plugins_text = (self.app / 'js/plugins.js').read_text()
+        plugin_list = json.loads(plugins_text[plugins_text.index('['):plugins_text.rindex(']') + 1])
+        bec = next((p.get('parameters', {}) for p in plugin_list if p.get('name') == 'YEP_BattleEngineCore' and p.get('status')), {})
+        motion_wait = str(bec.get('Motion Waiting', 'false')).strip().lower() == 'true'
         for name in ['Skills', 'Items']:
             for rec in self.db[name]:
                 if isinstance(rec, dict):
                     rec['yepEffects'] = yep_action_effects(rec, animations)
+                    rec['yepSeq'] = yep_sequences(rec, animations, motion_wait)
+        yep_action_copy(self.db['Skills'], self.db['Skills'], self.db['Items'])
+        yep_action_copy(self.db['Items'], self.db['Skills'], self.db['Items'])
+        for name in ['Skills', 'Items']:
             self.write_json(f'db/{name}.json', self.db[name])
 
     def export_plugins(self):
