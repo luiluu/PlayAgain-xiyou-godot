@@ -2,7 +2,7 @@ class_name XHangUp
 extends RefCounted
 ## XdRs_HangUp「真·在线挂机」第一批：开关、范围内随机走动遇敌、自动战斗、战后死亡停止、定时自动存档、挂机计时。
 ## 地图的面板/横幅在 map/hang_up_overlay.gd，接线在 XMapScene；设置页在 ui/hang_up_options.gd（主菜单 → 设置 → 挂机设置）。
-## 第二批已接：快速战斗、三种逃跑、屏蔽掉落（见下）；技能次数/顺序、自动吃药、自动卖出的子页与规则未做。
+## 第二批已接：快速战斗、三种逃跑、屏蔽掉落（见下）；技能次数/顺序、自动吃药、自动卖出在 core/hang_up_auto.gd。
 ## - 开启（G 键或面板按钮）：挂机禁用（插件指令 ProhibitHangUp）时只清除状态；当前地图有遇敌表才开始（确定音、
 ##   以玩家位置为原点），否则蜂鸣并提示「这个地图没有敌人！」。关闭：取消音，挂机时长计入总计。
 ## - 明雷怪（事件备注 <Enemy>）：正式全部地图都没有这种事件，不做；有无敌人只看遇敌表。
@@ -74,6 +74,7 @@ static func ready_start(s: XState, has_enemy: bool, at: Vector2i) -> String:
 	XSound.system(1)
 	s.hang_up_active = true
 	s.hang_up_origin = at
+	XHangUpAuto.on_start(s)
 	return ""
 
 
@@ -88,6 +89,7 @@ static func auto_save_slot(s: XState) -> int:
 static func stop(s: XState) -> void:
 	XSound.system(2)
 	clear(s)
+	XHangUpAuto.on_stop()
 
 
 static func clear(s: XState) -> void:

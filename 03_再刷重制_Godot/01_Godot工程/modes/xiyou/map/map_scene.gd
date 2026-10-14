@@ -476,8 +476,14 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	_in_battle = false
 	battle.queue_free()
 	difficulty_notice.clock.paint()
-	# Scene_Battle.terminate → refrishHangUp：死亡停止
+	# Scene_Battle.terminate → refrishHangUp：死亡停止；仍在挂机就自动吃药、按场数自动卖出
 	XHangUp.after_battle(XState.current)
+	if XHangUp.is_active(XState.current):
+		var logic := XBattleLogic.new()
+		logic.state = XState.current
+		XHangUpAuto.after_battle_recovery(XState.current, logic)
+		if XHangUpAuto.after_battle_sell(XState.current) >= 0:
+			XToast.show_text("装备出售完成")
 	hud.visible = true
 	_reset_transfer_button()
 	_bgm_name = ""
