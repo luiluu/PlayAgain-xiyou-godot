@@ -126,8 +126,10 @@ func _run() -> void:
 			var list := []
 			for e in d.enemies[tid_s]:
 				var en := XEnemy.new().setup(int(e.id), diff, 100.0)  # 参照数据取自非神话（Math.random=0.99）
+				en.setup_level(1, 0.99)  # 参照：出战成员 1 级、Math.random=0.99 → 等级 3
 				list.append(en)
 				_compare_snap("d%d.troop%s.enemy%d" % [diff, tid_s, int(e.id)], _snap(en), e)
+				_check("d%d.troop%s.enemy%d.level" % [diff, tid_s, int(e.id)], e.has("level") and en.level == int(e.level), [en.level, e.get("level")])
 			troops[int(tid_s)] = list
 		# 伤害
 		var untranslated := []

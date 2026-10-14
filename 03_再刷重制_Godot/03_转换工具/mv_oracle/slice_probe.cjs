@@ -63,7 +63,7 @@ function run(difficulty) {
     w.Math.random = () => 0.5;
     const members = w.$gameTroop.members();
     members.forEach(e => e.refreshPassiveCache && e.refreshPassiveCache());
-    out.enemies[tid] = members.map(e => ({id: e.enemyId(), name: e.name(), ...snap(e)}));
+    out.enemies[tid] = members.map(e => ({id: e.enemyId(), name: e.name(), level: e.level, ...snap(e)}));
     const target = members[0];
     if (!target) continue;
     for (const id of ACTORS) {

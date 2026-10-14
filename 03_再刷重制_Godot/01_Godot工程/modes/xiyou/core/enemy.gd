@@ -4,7 +4,9 @@ extends XBattler
 ## 神话（正式版插件参数）：几率 50%（备注 <elite:几率,能力,经验,金钱,掉率> 可单独设定，NoElite 不会变），
 ## 基础能力值 ×3.5 取整、经验 ×1.2、金钱 ×1.2、掉率 ×5，名字前加「【神话】」，图像放大 1.8 倍并偏色。
 ## 开关参数「开启」在正式版被读成 NaN（不看开关），所以总是生效。
-## 敌人等级（YEP_EnemyLevels）在正式版只影响显示（已关闭）且不改能力值，不做。
+## 敌人等级（YEP_EnemyLevels，Default Type 5、浮动 ±2；正式数据没有敌人改等级的备注）：开战时＝出战成员最高等级，
+## 再 floor(随机×5 + 等级−2)，不低于 1（见 setup_level）。EliteEnemy 排在后面且重写了 paramBase/exp/gold（不调用前面的），
+## 所以等级不改能力值、经验、金钱，只给伤害公式里的 a.level / b.level 用；等级显示已关闭。
 
 var enemy_id := 0
 var difficulty_id := 2
@@ -80,8 +82,17 @@ func elite_param(i: int) -> float:
 	var v := str(XDB.plugin("EliteEnemy").get(keys[i], ""))
 	return float(v) if v != "" else defaults[i]
 
+var enemy_level := 1
+
 func _level() -> int:
-	return 1
+	return enemy_level
+
+
+## Game_Enemy.setupEnemyLevel：level = highestLevelBattleMembers，clamp(1, 999999)；浮动 floor(r×5 + level − 2)，再 clamp(1, 999999)。
+## r < 0 时取随机数（测试用固定值）。
+func setup_level(highest: int, r := -1.0) -> void:
+	var base := clampi(highest, 1, 999999)
+	enemy_level = clampi(floori((randf() if r < 0.0 else r) * 5.0 + base - 2), 1, 999999)
 
 func param_base(i: int) -> float:
 	var base := float(data().params[i])

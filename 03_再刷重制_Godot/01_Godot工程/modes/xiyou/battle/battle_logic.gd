@@ -24,6 +24,8 @@ var auto := false
 var state: XState
 ## 测试用：>= 0 时固定神话判定（0 必为神话，100 必不是）
 var elite_roll := -1.0
+## 测试用：敌人等级浮动的随机数（<0 为随机）
+var level_roll := -1.0
 
 
 const TRAIT_SPECIAL_FLAG := 62
@@ -62,6 +64,7 @@ func setup(troop: int, s: XState) -> void:
 		if bool(m.get("hidden", false)):
 			continue
 		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty, elite_roll)
+		e.setup_level(actors.reduce(func(acc, x): return maxi(acc, int(x.level)), 1), level_roll)
 		e.set_meta("x", float(m.x))
 		e.set_meta("y", float(m.y))
 		enemies.append(e)
