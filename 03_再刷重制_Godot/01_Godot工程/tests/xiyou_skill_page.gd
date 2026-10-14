@@ -130,6 +130,14 @@ func _run() -> void:
 	menu._ok()
 	check("menu_opens_skill", menu.get_children().any(func(n): return n is XSkillScene))
 	menu.queue_free()
+	# 事件降级会降低最大资源；原版 changeExp 最后 refresh，不能把原来的高等级 HP 留在新上限之外。
+	var level_ref: Dictionary = XDB.load_json("oracle/party.json").get("levelDown", {})
+	var level_state := XState.new_game_blank()
+	var level_actor := level_state.actor(int(level_ref.get("actor", 1)))
+	level_actor.change_level_mv(int(level_ref.get("from", 10)))
+	level_actor.recover_all()
+	level_actor.change_level_mv(int(level_ref.get("to", 1)))
+	check("level_down_clamps_resources", level_actor.hp == float(level_ref.get("hp", -1)) and level_actor.mp == float(level_ref.get("mp", -1)), [level_actor.hp, level_actor.mp, level_ref])
 	finish()
 
 
