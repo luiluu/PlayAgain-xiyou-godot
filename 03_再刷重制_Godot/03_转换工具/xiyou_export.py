@@ -22,7 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 12
+TOOL_VERSION = 13
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -127,6 +127,27 @@ YEP_C4 = re.compile(r'<(?:ELEMENT MAGNIFY) (.*): ([+\-]\d+(?:\.\d+)?)([%％])>',
 YEP_CRIT = re.compile(r'<(?:CRITICAL MULTIPLIER): ([+\-]\d+)([%％])>', re.I)
 YEP_MULTI1 = re.compile(r'<MULTIPLE ELEMENTS:[ ]*(\d+(?:\s*,\s*\d+)*)>', re.I)
 YEP_MULTI2 = re.compile(r'<MULTIPLE ELEMENTS: (\d+) (?:THROUGH|to) (\d+)>', re.I)
+
+
+CORE_ENEMY_STATS = {'HP': 0, 'MAXHP': 0, 'MAX HP': 0, 'MP': 1, 'MAXMP': 1, 'MAX MP': 1, 'SP': 1, 'MAXSP': 1, 'MAX SP': 1,
+                    'ATK': 2, 'STR': 2, 'DEF': 3, 'MAT': 4, 'INT': 4, 'SPI': 4, 'MDF': 5, 'RES': 5, 'AGI': 6, 'SPD': 6, 'LUK': 7}
+
+
+def core_enemy_notetags(rec):
+    """YEP_CoreEngine DataManager.processCORENotetags2（读库时改写敌人）：每行 <GOLD: n>、<能力: n>、<EXP: n> 覆盖原值。"""
+    for line in re.split(r'[\r\n]+', rec.get('note') or ''):
+        m = re.search(r'<(?:GOLD):[ ](\d+)>', line, re.I)
+        if m:
+            rec['gold'] = int(m.group(1))
+            continue
+        m = re.search(r'<(.*):[ ](\d+)>', line, re.I)
+        if not m:
+            continue
+        stat, value = m.group(1).upper(), int(m.group(2))
+        if stat in CORE_ENEMY_STATS:
+            rec['params'][CORE_ENEMY_STATS[stat]] = value
+        elif stat in ('EXP', 'XP'):
+            rec['exp'] = value
 
 
 def parse_yep(note, element_ids):
@@ -298,6 +319,8 @@ class Exporter:
                             rec['yep'] = yep
                     if name == 'States' and isinstance(rec, dict):
                         rec['effects'] = parse_state_effects(rec['note'])
+                    if name == 'Enemies' and isinstance(rec, dict):
+                        core_enemy_notetags(rec)
                     if isinstance(rec, dict) and isinstance(rec.get('damage'), dict):
                         gd, why = translate_formula(rec['damage'].get('formula'), rec.get('id', 0))
                         rec['damage']['formulaGd'] = gd
