@@ -194,9 +194,12 @@ func _run() -> void:
 	XSound.system_log.clear()
 	await press("ui_down")
 	check("menu_cursor", menu._cmd_index == 1 and XSound.system_log == [0], XSound.system_log)
+	# 灰显指令（真气）蜂鸣；技能页 dev.030 起可用
+	menu._cmd_index = XMenu.COMMANDS.map(func(c): return c[1]).find("zhenqi")
 	XSound.system_log.clear()
 	await press("ui_accept")
 	check("menu_disabled_buzzer", menu._mode == "command" and XSound.system_log == [3], XSound.system_log)
+	menu._cmd_index = 1
 	XSound.system_log.clear()
 	await press("ui_down")
 	await press("ui_accept")

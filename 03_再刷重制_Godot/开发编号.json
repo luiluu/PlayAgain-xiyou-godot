@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.029",
-  "sequence": 29,
-  "next": "dev.030",
-  "nextSequence": 30,
+  "current": "dev.030",
+  "sequence": 30,
+  "next": "dev.031",
+  "nextSequence": 31,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "整队页与出战栏位、正式 v0.24 同步、去一键存档",
+  "currentChange": "主菜单技能页",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
