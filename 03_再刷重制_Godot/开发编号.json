@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.034",
-  "sequence": 34,
-  "next": "dev.035",
-  "nextSequence": 35,
+  "current": "dev.035",
+  "sequence": 35,
+  "next": "dev.036",
+  "nextSequence": 36,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "扩楼层：二至四层（Map003/006/007）、敌群事件强制行动与轮回困难附加伤害、敌人备注覆盖能力（转换器 v13）",
+  "currentChange": "角色外观接口（XAppearance、appearances.json）、扩五层 Map010、敌人等级照 YEP_EnemyLevels",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
