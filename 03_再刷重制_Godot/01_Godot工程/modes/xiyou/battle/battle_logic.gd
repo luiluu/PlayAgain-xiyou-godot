@@ -710,6 +710,7 @@ func _die(b: XBattler) -> void:
 	for i in range(8):
 		b.buffs[i] = 0
 		b.buff_turns[i] = 0
+	b.mp = minf(b.mp, b.mmp)
 
 
 ## timing 1 = 行动结束，2 = 回合结束（MV autoRemovalTiming）
@@ -837,3 +838,5 @@ func end_battle() -> void:
 			if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):
 				b.remove_state(id)
 		b.refresh_passive()
+		b.hp = minf(b.hp, b.mhp)
+		b.mp = minf(b.mp, b.mmp)

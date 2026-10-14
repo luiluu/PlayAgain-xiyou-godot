@@ -109,10 +109,14 @@ func _run() -> void:
 	for member in all.members():
 		member.buffs[2] = 1
 		member.buff_turns[2] = 3
+		member.buffs[0] = 1
+		member.buffs[1] = 1
+		member.hp = member.mhp
+		member.mp = member.mmp
 	battle._die(all.actor(9))
 	check("death_clears_buff_timers", all.actor(9).buff_turns.all(func(n): return n == 0))
 	battle.end_battle()
-	check("battle_end_clears_bench_buffs", all.members().all(func(member): return member.buffs.all(func(n): return n == 0) and member.buff_turns.all(func(n): return n == 0)))
+	check("battle_end_clears_bench_buffs", all.members().all(func(member): return member.buffs.all(func(n): return n == 0) and member.buff_turns.all(func(n): return n == 0) and member.hp <= member.mhp and member.mp <= member.mmp))
 	page.queue_free()
 	await get_tree().process_frame
 	for slot in [1, 2]:
