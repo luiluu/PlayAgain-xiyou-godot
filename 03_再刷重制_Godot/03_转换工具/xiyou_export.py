@@ -22,7 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 7
+TOOL_VERSION = 8
 HERE = Path(__file__).resolve().parent
 DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
@@ -227,9 +227,12 @@ class Exporter:
             tags = re.search(r'gearTags:\s*\{([^}]*)\}', source)
             if not tags:
                 raise ValueError('七档品质装备标签无法解析')
+            # v0.17 起神话档装备另有星级（旧12/14/15）；更早的版本没有该字段
+            stars = re.search(r'starMarks:\s*\{([^}]*)\}', source)
             self.write_json('db/UnifiedQuality.json', {
                 'names': names, 'colors': colors, 'windows': windows, 'itemGrades': grades,
                 'gearTags': dict(re.findall(r"(\d+):\s*'([^']*)'", tags[1])),
+                'starMarks': dict(re.findall(r"(\d+):\s*'([^']*)'", stars[1])) if stars else {},
             })
         self.plugins = enabled
         self.write_json('db/Plugins.json', enabled)

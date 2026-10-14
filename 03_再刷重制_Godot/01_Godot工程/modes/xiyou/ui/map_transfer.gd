@@ -238,6 +238,9 @@ func _paint_drop(c: XMVCanvas, d: Dictionary, r: Rect2, difficulty: int) -> void
 	var name := str(item.get("name", ""))
 	if name.length() > 12:
 		name = name.substr(0, 11) + "..."
+	else:
+		# v0.17 星级：starScope 只在画出的文字正好是 item.name 时加星，截断的名字不加
+		name += XQuality.stars(item)
 	# 西游 v0.18：掉落名字与列表一样，有品质按七档色，否则按 <ici>
 	var color := XQuality.list_color(item)
 	c.text(name, r.position.x + 32, r.position.y, r.size.x - 32 - 60, "left", XEnemy.name_color(name, difficulty, color))

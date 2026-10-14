@@ -17,7 +17,7 @@ static func number_width(c: XMVCanvas) -> float:
 static func paint(c: XMVCanvas, rec: Dictionary, y: float, right_text: String, alpha := 1.0, is_new := false) -> void:
 	var w := c.size.x - 6.0
 	c.icon(int(rec.get("iconIndex", 0)), 2, y + 2, alpha)
-	c.text(str(rec.get("name", "")), 36, y, w - number_width(c) - 36, "left", XGear.color(rec), XUI.FONT_SIZE, LH, alpha)
+	c.text(XQuality.list_name(rec), 36, y, w - number_width(c) - 36, "left", XGear.color(rec), XUI.FONT_SIZE, LH, alpha)
 	if is_new:
 		var tex := new_icon()
 		if tex:

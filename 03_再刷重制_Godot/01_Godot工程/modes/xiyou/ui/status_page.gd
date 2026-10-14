@@ -57,7 +57,7 @@ func _params(parent: Control) -> void:
 		var e = a.equips[i]
 		if e == null or e.is_empty():
 			continue
-		var l := XUI.label("%s  %s" % [XDB.system().equipTypes[i + 1], e.name], 20, XGear.color(e))
+		var l := XUI.label("%s  %s" % [XDB.system().equipTypes[i + 1], XQuality.list_name(e)], 20, XGear.color(e))
 		l.tooltip_text = XText.plain(str(e.get("description", "")))
 		equips.add_child(l)
 

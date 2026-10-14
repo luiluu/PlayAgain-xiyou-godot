@@ -102,7 +102,7 @@ func _paint(c: XMVCanvas) -> void:
 			var y := 234.0 + (i - _drop_top) * 36.0
 			var x := 694.0
 			c.icon(int(rec.get("iconIndex", 0)), x + 2, y + 2)
-			c.text(str(rec.get("name", "?")), x + 36, y, 484 - c.text_width("000") - 36, "left", XGear.color(rec))
+			c.text(XQuality.list_name(rec) if rec.has("name") else "?", x + 36, y, 484 - c.text_width("000") - 36, "left", XGear.color(rec))
 			c.text("×%s" % XMenu._group(d.count), x, y, 484, "right", XUI.TEXT, 20, 36)
 	for i in range(rows.size()):
 		_paint_actor(c, rows[i], ROW_Y + ROW_STEP * i)

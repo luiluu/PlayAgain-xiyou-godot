@@ -199,7 +199,7 @@ func _paint_info(c: XMVCanvas) -> void:
 ## MV drawItemName：图标 (x+2, y+2)，名字从 x+36 起，品质颜色（ItemQuality）。
 func _item_name(c: XMVCanvas, rec: Dictionary, x: float, y: float, w: float, alpha := 1.0) -> void:
 	c.icon(int(rec.get("iconIndex", 0)), x + 2, y + 2, alpha)
-	c.text(str(rec.get("name", "")), x + 36, y, w - 36, "left", XGear.color(rec), XUI.FONT_SIZE, LH, alpha)
+	c.text(XQuality.list_name(rec), x + 36, y, w - 36, "left", XGear.color(rec), XUI.FONT_SIZE, LH, alpha)
 
 
 ## YEP drawCurrencyValue：字号 20，数值右对齐，金钱图标在最右
