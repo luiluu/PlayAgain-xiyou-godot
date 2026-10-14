@@ -10,6 +10,7 @@
 """
 import argparse
 import concurrent.futures as cf
+import json
 import os
 import re
 import subprocess
@@ -21,6 +22,19 @@ from pathlib import Path
 TIMEOUT = 300
 
 
+def result_ok(rc: int, out: str) -> bool:
+    """退出码与结构化结果都通过才算成功，防止场景漏设非零退出码时假通过。"""
+    lines = [l[len('TEST_RESULT='):] for l in out.splitlines() if l.startswith('TEST_RESULT=')]
+    if rc != 0 or len(lines) != 1 or re.search(r'SCRIPT ERROR|^ERROR:|^FAIL(?:\s|$)', out, re.M):
+        return False
+    try:
+        result = json.loads(lines[0])
+    except ValueError:
+        return False
+    return (isinstance(result, dict) and type(result.get('total')) is int and result['total'] > 0
+            and type(result.get('passed')) is int and result['passed'] == result['total'])
+
+
 def run_one(godot: str, project: str, name: str) -> tuple:
     start = time.time()
     with tempfile.TemporaryDirectory(prefix='xiyou_test_home_') as home:
@@ -30,7 +44,8 @@ def run_one(godot: str, project: str, name: str) -> tuple:
                                capture_output=True, text=True, timeout=TIMEOUT, env=env)
             out, rc = p.stdout + p.stderr, p.returncode
         except subprocess.TimeoutExpired as e:
-            out = (e.stdout or b'').decode(errors='replace') if isinstance(e.stdout, bytes) else (e.stdout or '')
+            out = ''.join(x.decode(errors='replace') if isinstance(x, bytes) else (x or '')
+                          for x in (e.stdout, e.stderr))
             rc = 142
     return name, rc, out, time.time() - start
 
@@ -49,11 +64,14 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('godot')
     ap.add_argument('project')
-    ap.add_argument('--jobs', type=int, default=0)
+    ap.add_argument('--jobs', type=int, default=None)
+    ap.add_argument('--log-dir', type=Path, default=Path(os.environ['CHECK_LOG_DIR']) if os.environ.get('CHECK_LOG_DIR') else None)
     ap.add_argument('names', nargs='*')
     a = ap.parse_args()
-    if a.jobs <= 0:
+    if a.jobs is None:
         a.jobs = int(os.environ.get('CHECK_JOBS', '0')) or (2 if in_linked_worktree(a.project) else max(1, min(6, (os.cpu_count() or 2) // 2)))
+    if a.jobs < 1:
+        ap.error('--jobs 必须大于 0')
     scenes = sorted(p.name for p in (Path(a.project) / 'tests').glob('*.tscn'))
     if a.names:
         scenes = [s for s in scenes if any(s == n or s == n + '.tscn' or s.startswith(n) for n in a.names)]
@@ -67,8 +85,11 @@ def main() -> int:
             results[name] = (rc, out, secs)
     for name in scenes:
         rc, out, secs = results[name]
+        if a.log_dir:
+            a.log_dir.mkdir(parents=True, exist_ok=True)
+            (a.log_dir / (Path(name).stem + '.log')).write_text(out)
         line = next((l for l in out.splitlines() if l.startswith('TEST_RESULT=')), '')
-        if rc == 0 and line and not re.search(r'SCRIPT ERROR|^ERROR:', out, re.M):
+        if result_ok(rc, out):
             print(('  ✓ %s %s' % (name, line[len('TEST_RESULT='):]))[:120])
         else:
             fail = 1

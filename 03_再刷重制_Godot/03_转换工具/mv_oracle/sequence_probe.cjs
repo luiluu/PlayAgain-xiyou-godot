@@ -89,6 +89,27 @@ out.repeats.notOne=w.$dataSkills.filter(o=>o&&o.repeats!==1).length+w.$dataItems
   }
   for(const id of [1,2,160])out.rules.push(run('e0',id,'base'));
   out.ruleGroups=groups;
+  // 数值／复活边界必须跑真实 actionXXX；原 rules 只比较目标与状态，无法发现数值溢出或资源夹值错误。
+  const operations=[
+    {id:'hp_percent',commands:[['HP -50%',['TARGETS']]]},
+    {id:'hp_revive',dead:true,commands:[['HP +50',['TARGETS']]]},
+    {id:'hp_var_large',variable:1e20,commands:[['HP +VAR 20',['TARGETS']]]},
+    {id:'hp_var_small',variable:1e-7,commands:[['HP +VAR 20',['TARGETS']]]},
+    {id:'mp_percent',commands:[['MP -50%',['TARGETS']]]},
+    {id:'tp_clamp',commands:[['TP +150',['TARGETS']],['TP +150',['TARGETS']]]},
+    {id:'buff_turns',commands:[['ADD ATK BUFF',['TARGETS','3']],['ADD ATK BUFF',['TARGETS','7']],['REMOVE ATK BUFF',['TARGETS']]]},
+    {id:'debuff_cap',commands:[['ADD DEF DEBUFF',['TARGETS','3']],['ADD DEF DEBUFF',['TARGETS','7']],['ADD DEF DEBUFF',['TARGETS','2']]]},
+    {id:'hp_buff_refresh',commands:[['ADD HP BUFF',['TARGETS','3']],['HP +100%',['TARGETS']],['REMOVE HP BUFF',['TARGETS']]]}
+  ];
+  out.operations=operations.map(row=>{
+    setup();const BM=w.BattleManager,t=w.$gameTroop.members()[0];
+    BM._subject=w.$gameActors.actor(1);BM._targets=[t];BM._allTargets=[t];
+    t.setTp(0);if(row.dead)t.addState(1);
+    if(row.variable!==undefined)w.$gameVariables.setValue(20,row.variable);
+    for(const [name,args] of row.commands)BM.processActionSequence(name,args);
+    return {...row,result:{hp:t.hp,mp:t.mp,tp:t.tp,states:t._states.slice(),buffs:t._buffs.slice(),buffTurns:t._buffTurns.slice()}};
+  });
+  out.parseIntNumbers=[0,1e-7,-1e-7,1e20,-1e20,1e21,-1e21,1e33].map(value=>({value,result:w.parseInt(value)}));
 }
 if(JSON.stringify(identity)!==JSON.stringify(sourceIdentity(APP)))throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname,'.sandbox'),{recursive:true});
