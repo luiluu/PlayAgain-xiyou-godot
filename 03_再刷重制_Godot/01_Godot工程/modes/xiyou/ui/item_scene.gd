@@ -491,10 +491,10 @@ func _effective(t: XActor) -> bool:
 	for e in _item.get("effects", []):
 		match int(e.code):
 			11:
-				if t.hp < t.mhp:
+				if t.hp < t.mhp or float(e.value1) < 0.0 or float(e.value2) < 0.0:
 					return true
 			12:
-				if t.mp < t.mmp:
+				if t.mp < t.mmp or float(e.value1) < 0.0 or float(e.value2) < 0.0:
 					return true
 			21:
 				if not t.is_state_affected(int(e.dataId)):
@@ -504,9 +504,6 @@ func _effective(t: XActor) -> bool:
 					return true
 			43:
 				if not t.skill_ids.has(int(e.dataId)):
-					return true
-			13:
-				if t.tp < 100.0:
 					return true
 			31, 32:
 				if t.buffs[int(e.dataId)] != (2 if int(e.code) == 31 else -2):

@@ -71,6 +71,15 @@ func _run() -> void:
 	check("menu_add_state_applies", a.is_state_affected(2) and s.item_count(1) == 2)
 	page._use()
 	check("repeated_state_does_not_consume", s.item_count(1) == 2)
+	# MV testItemEffect：TP 恢复走 default（TP 满也可用）；HP 恢复值为负时满血也可用。
+	a.tp = 100.0
+	fake.effects = [{"code": 13, "dataId": 0, "value1": 10.0, "value2": 0}]
+	check("tp_gain_valid_when_full", page._effective(a))
+	a.hp = a.mhp
+	fake.effects = [{"code": 11, "dataId": 0, "value1": 0.0, "value2": -5.0}]
+	check("negative_hp_valid_when_full", page._effective(a))
+	fake.effects = [{"code": 11, "dataId": 0, "value1": 0.1, "value2": 0.0}]
+	check("heal_invalid_when_full", not page._effective(a))
 	# 存档写入、覆盖、读取及错误档处理，全部在专用测试目录。
 	a.tp = 37
 	a.state_turns[2] = 4
