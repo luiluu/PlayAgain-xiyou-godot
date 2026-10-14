@@ -115,7 +115,8 @@ func _run() -> void:
 	for i in range(4):
 		page._move(1, false, false)
 	var ref: Dictionary = XDB.load_json("oracle/party.json").get("menuActor", {})
-	check("fifth_actor_scroll", page.actor_pick == int(ref.get("index", -1)) and page.actor_top == int(ref.get("topRow", -1)) and ACTOR_ROWS_matches(ref))
+	check("fifth_actor_scroll", page.actor_pick == int(ref.get("index", -1)) and page.actor_top == int(ref.get("topRow", -1))
+		and XSkillScene.ACTOR_ROWS == int(ref.get("maxPageRows", -1)))
 	page.ok()
 	check("fifth_actor_revives", s.actor(2).is_alive())
 	page.queue_free()
@@ -136,7 +137,3 @@ func finish() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
-
-
-func ACTOR_ROWS_matches(ref: Dictionary) -> bool:
-	return XSkillScene.ACTOR_ROWS == int(ref.get("maxPageRows", -1))

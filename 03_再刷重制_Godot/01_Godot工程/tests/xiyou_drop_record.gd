@@ -7,6 +7,13 @@ var results := []
 var out_dir := ""
 
 
+class FixedDamageLogic:
+	extends XBattleLogic
+	var base_damage := 100.0
+	func _damage_value(_u: XBattler, _skill: Dictionary, _t: XBattler, _critical: bool) -> float:
+		return base_damage
+
+
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
@@ -99,7 +106,8 @@ func _oracle_record() -> void:
 				a.learn_skill(k)
 			a.refresh_passive()
 			a.recover_all()
-		var logic := XBattleLogic.new()
+		var logic := FixedDamageLogic.new()
+		logic.base_damage = float(row.baseDamage)
 		logic.level_roll = 0.99
 		logic.setup(222, s)
 		var a: XBattler = logic.actors[0]
@@ -111,8 +119,6 @@ func _oracle_record() -> void:
 		skill.successRate = 100
 		skill.damage.variance = 0
 		skill.damage.critical = false
-		skill.damage.elementId = 0
-		skill.damage.formulaGd = str(row.baseDamage)
 		var hit := logic.apply(a, skill, t)
 		var r := XDamageRecord.new()
 		r.setup(s.battle_slots, s.battle_members().size())

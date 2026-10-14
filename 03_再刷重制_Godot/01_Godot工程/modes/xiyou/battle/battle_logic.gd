@@ -783,6 +783,12 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 	return float(v) if not expr.has_execute_failed() and (v is float or v is int) else 0.0
 
 
+## 伤害计算与 apply 的扣血／记账分开，模块对照可固定这一步（同正式 Game_Action.makeDamageValue 夹具）。
+func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
+	var res := XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars()})
+	return XDamage.apply_state_effects(res.value, skill, u, t)
+
+
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var r := {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
 		"hp": 0.0, "mp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false}
@@ -801,8 +807,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if type > 0:
 		var cri := u.cri * (1.0 - t.cev) if bool(dmg.critical) else 0.0
 		r.critical = randf() < clampf(cri, 0.0, 1.0)
-		var res := XDamage.calculate(skill, u, t, {"critical": r.critical, "vars": vars()})
-		var value := XDamage.apply_state_effects(res.value, skill, u, t)
+		var value := _damage_value(u, skill, t, r.critical)
 		match type:
 			1, 3:
 				r.hp = value

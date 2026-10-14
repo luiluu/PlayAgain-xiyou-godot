@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.035",
-  "sequence": 35,
-  "next": "dev.036",
-  "nextSequence": 36,
+  "current": "dev.036",
+  "sequence": 36,
+  "next": "dev.037",
+  "nextSequence": 37,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "角色外观接口（XAppearance、appearances.json）、扩五层 Map010、敌人等级照 YEP_EnemyLevels",
+  "currentChange": "积压交叉核查修复：行动序列资源与能力边界、精确伤害记录、技能第五位目标、外观默认图与验证防漏报",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
