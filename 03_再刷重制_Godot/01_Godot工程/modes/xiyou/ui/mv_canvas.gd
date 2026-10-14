@@ -105,6 +105,25 @@ func face(face_name: String, index: int, x: float, y: float, w := 144.0, h := 14
 	draw_texture_rect_region(tex, Rect2(dx, dy, sw, sh), Rect2(sx, sy, sw, sh), Color(1, 1, 1, alpha))
 
 
+## Window_Base.drawCharacter：行走图朝下中间一格，底边中点在 (x, y)；clip_h > 0 时只画上面 clip_h 像素（列表行覆盖下一行的部分）。
+func character(name: String, index: int, x: float, y: float, clip_h := 0.0, alpha := 1.0) -> void:
+	var p := XDB.img_path("characters", name) if name != "" else ""
+	if p == "":
+		return
+	if not _cache.has(p):
+		_cache[p] = load(p)
+	var tex: Texture2D = _cache[p]
+	if tex == null:
+		return
+	var big := name.begins_with("$") or name.begins_with("!$")
+	var pw := tex.get_width() / (3.0 if big else 12.0)
+	var ph := tex.get_height() / (4.0 if big else 8.0)
+	var sx := ((index % 4) * 3 + 1) * pw if not big else pw
+	var sy := floorf(index / 4.0) * 4.0 * ph if not big else 0.0
+	var h := ph if clip_h <= 0.0 else minf(ph, clip_h)
+	draw_texture_rect_region(tex, Rect2(x - pw / 2.0, y - ph, pw, h), Rect2(sx, sy, pw, h), Color(1, 1, 1, alpha))
+
+
 ## YEP_CoreEngine drawGauge（Gauge Outline 开启）
 func gauge(dx: float, dy: float, dw: float, rate: float, c1: Color, c2: Color, lh := XUI.LINE_HEIGHT) -> void:
 	var gh := 6.0
