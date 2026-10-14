@@ -51,7 +51,7 @@ func rules(ref: Dictionary) -> void:
 		if row.kind in ["weapon", "armor"]:
 			rec.kind = row.kind
 		check("stars_%s_%d" % [row.kind, int(row.quality)], XQuality.stars(rec) == row.stars and XQuality.label(rec, row.kind) == row.label)
-		check("list_name_%s_%d" % [row.kind, int(row.quality)], XQuality.list_name(rec) == "测试装备" + str(row.stars))
+		check("list_name_%s_%d" % [row.kind, int(row.quality)], XQuality.list_name(rec) == str(row.stars) + "测试装备")
 	for row in ref.recovery:
 		var s := fixture(true)
 		for i in s.party.size():

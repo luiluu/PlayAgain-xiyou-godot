@@ -76,6 +76,10 @@ static func content(obj: Dictionary, kind := "") -> Array:
 		rows = _generic_view(obj, rows)
 	for r in rows:
 		r[0] = _terms(str(r[0]))
+	# v0.18 starredHead：名字行（第一行、名字字号）前加星级，只给武器/防具
+	var star := XQuality.stars(obj, kind)
+	if star != "" and not rows.is_empty() and int(rows[0][1]) == NAME_SIZE and not str(rows[0][0]).begins_with(star):
+		rows[0][0] = star + str(rows[0][0])
 	return rows
 
 

@@ -63,12 +63,12 @@ static func gear_kind(item: Dictionary) -> String:
 	return "weapon" if item.has("wtypeId") else "armor" if item.has("atypeId") else ""
 
 
-## 列表里画出的名字（Yanfly drawItemName 经 starScope：名字后加星，item.name 不变）
+## 列表里画出的名字（Yanfly drawItemName 经 starScope：v0.18 起星级在名字前，item.name 不变）
 static func list_name(item: Dictionary) -> String:
-	return str(item.get("name", "")) + stars(item)
+	return stars(item) + str(item.get("name", ""))
 
 
-## 说明卡品质行：装备带星级与标签，例如「神话★★★（混沌特效）」「不朽（传家宝）」；神武为防具类型 17
+## 说明卡品质行：装备带标签，例如「神话（混沌特效）」「不朽（传家宝）」；v0.18 起不加星（星级在名字行前）；神武为防具类型 17
 static func label(item: Dictionary, kind: String) -> String:
 	var tags := []
 	if kind == "weapon" or kind == "armor":
@@ -77,7 +77,7 @@ static func label(item: Dictionary, kind: String) -> String:
 			tags.append(t)
 		if kind == "armor" and int(item.get("etypeId", 0)) == 17:
 			tags.append("神武")
-	return grade_name(item) + stars(item, kind) + ("（%s）" % "·".join(tags) if not tags.is_empty() else "")
+	return grade_name(item) + ("（%s）" % "·".join(tags) if not tags.is_empty() else "")
 
 
 ## 说明卡边框：旧档 0～15 换成七档代表图

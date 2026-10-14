@@ -132,7 +132,13 @@ func _run() -> void:
 	_check("quality_grades", grades == [0, 0, 1, 2, 3, 4, 4, 4, 5, 5, 5, 5, 6, 5, 6, 6] and XQuality.grade_of(20) == 6, grades)
 	var shenwu := {"meta": {"quality": "9"}, "etypeId": 17}
 	_check("quality_label_tags", XQuality.label(shenwu, "armor") == "不朽（传家宝·神武）" and XQuality.label(shenwu, "item") == "不朽"
-		and XQuality.label({"meta": {"quality": "12"}}, "weapon") == "神话★（超·神器）", XQuality.label(shenwu, "armor"))
+		and XQuality.label({"meta": {"quality": "12"}}, "weapon") == "神话（超·神器）", XQuality.label(shenwu, "armor"))
+	# v0.18：星级在列表名字与说明卡名字行前，品质行不加星；物品、技能不加星
+	var myth := {"name": "测试剑", "kind": "weapon", "meta": {"quality": "15"}, "description": ""}
+	var myth_rows := XHelpCard.content(myth, "weapon")
+	_check("star_name_row", XQuality.list_name(myth) == "★★★测试剑" and str(myth_rows[0][0]) == "★★★测试剑"
+		and not myth_rows.any(func(r): return str(r[0]).begins_with("品质") and str(r[0]).contains("★"))
+		and XQuality.list_name({"name": "药", "itypeId": 1, "meta": {"quality": "15"}}) == "药", myth_rows.slice(0, 3))
 	_check("quality_window", XQuality.window_skin(10) == 8 and XQuality.window_skin(12) == 10 and XQuality.window_skin(5) == 7 and XQuality.window_skin(16) == 16)
 	_check("quality_list_color", XQuality.list_color({"meta": {"quality": "13", "ici": "12"}}) == Color8(255, 214, 90)
 		and XQuality.list_color({"meta": {"ici": "6"}}) == Color("ff8000") and XQuality.list_color({}) == Color.WHITE)

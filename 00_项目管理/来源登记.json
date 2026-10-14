@@ -1,5 +1,5 @@
 {
- "review": "v0.17 来源由 Codex 接手同步实测同源，待 Claude 核查",
+ "review": "v0.18 来源由 Claude 同步实测同源，待 Codex 核查",
  "updatedDate": "2026-10-14",
  "sources": [
   {
@@ -54,15 +54,15 @@
    "useAsOriginalBaseline": false,
    "copyExistingModFeaturesAutomatically": false,
    "remakeMode": "xiyou",
-   "confirmedReleaseVersion": "v0.17",
+   "confirmedReleaseVersion": "v0.18",
    "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
-   "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/claude_v017同步/当前西游来源清单.json",
-   "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。2026-10-14 西游 MOD 重编号：旧 v0.14～v0.19 合为新 v0.14（内容同旧 v0.19，只改 package.json），新 v0.14、v0.15 都晚于旧 v0.13。 v0.16（2026-10-14 06:03）只改技能消耗百分比下限与大厅改版向导文字，参照测量与 v0.15 相同。 v0.17（2026-10-14 09:51）神话装备星级；切片测量值与 v0.16 相同（现有说明卡样本未含神话装备，另补星级测试）。",
-   "lastConvertedContentReleaseVersion": "v0.17",
+   "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/claude_v018同步/当前西游来源清单.json",
+   "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。2026-10-14 西游 MOD 重编号：旧 v0.14～v0.19 合为新 v0.14（内容同旧 v0.19，只改 package.json），新 v0.14、v0.15 都晚于旧 v0.13。 v0.16（2026-10-14 06:03）只改技能消耗百分比下限与大厅改版向导文字，参照测量与 v0.15 相同。 v0.17（2026-10-14 09:51）神话装备星级；切片测量值与 v0.16 相同（现有说明卡样本未含神话装备，另补星级测试）。 v0.18（11:08）星级移到装备名字前、帮助卡品质行不加星，参照只有星级标签一项变化。",
+   "lastConvertedContentReleaseVersion": "v0.18",
    "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.15(help_cards,difficulty_notice),v0.16(options,hangup_options),v0.17(hangup_subpages)",
    "contentRefreshPending": false,
    "convertedScope": "floor1_slice",
-   "oracleReleaseVersion": "v0.17"
+   "oracleReleaseVersion": "v0.18"
   },
   {
    "id": "historical_xiyou_source_157",
