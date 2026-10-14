@@ -169,6 +169,46 @@ for(const remember of [false,true]){
   w.ConfigManager.applyData({});
   out.misc=ms;
 }
+// 屏蔽掉落（SiShiTan-PingBi-fix2 ＋ installUnifiedQualityRuntime）：子页行、整档切换与实际 makeDropItems 过滤。
+{
+  const pb={};
+  w.$gameSystem._pingbiQuality=[false,false,false,false,false,false,false];
+  pb.pinbi=w.$gameParty.isPinbi();
+  const cw=new w.Window_PingbiCommands(0,0);
+  pb.window=[cw.width,cw.height];
+  pb.rows=[];
+  for(const q of [[],[0],[0,1],[5],[5,6,7],[2,3,4],[0,1,2,3,4,5,6,7]]){
+    w.$gameSystem._pingbiQuality=[0,1,2,3,4,5,6,7].map(i=>q.includes(i));cw.refresh();
+    pb.rows.push({blocked:q,names:cw._list.map(c=>c.name),symbols:cw._list.map(c=>c.symbol)});
+  }
+  pb.toggles=[];
+  w.$gameSystem._pingbiQuality=[false,false,false,false,false,false,false];
+  for(const g of [0,0,4,1,4,4]){
+    if(g===4&&pb.toggles.length===4)w.$gameSystem._pingbiQuality[6]=false;
+    const before=w.$gameSystem._pingbiQuality.map(x=>!!x);
+    cw.toggleQuality(g);
+    pb.toggles.push({grade:g,before,after:w.$gameSystem._pingbiQuality.map(x=>!!x)});
+  }
+  // 实际掉落链：取每个旧档 0～8 各一件武器/防具，另一件无品质标记；全部 100% 掉落后看哪些留下
+  const pick=[];
+  for(const [kind,table] of [[2,w.$dataWeapons],[3,w.$dataArmors]]){
+    for(let q=0;q<=8;q++){const it=table.find(x=>x&&x.meta&&x.meta.quality!==undefined&&Number(x.meta.quality)===q);if(it)pick.push({kind,id:it.id,quality:String(it.meta.quality)});}
+    const none=table.find(x=>x&&x.meta&&x.meta.quality===undefined&&x.name);if(none)pick.push({kind,id:none.id,quality:null});
+  }
+  pb.candidates=pick;pb.filter=[];
+  const eid=w.$dataTroops[2].members[0].enemyId,data=w.$dataEnemies[eid],saved=data.dropItems,realRandom=w.Math.random;
+  for(const q of [[],[0,1],[2],[5,6,7],[0,1,2,3,4,5,6,7]]){
+    w.$gameSystem._pingbiQuality=[0,1,2,3,4,5,6,7].map(i=>q.includes(i));
+    data.dropItems=pick.map(p=>({kind:p.kind,dataId:p.id,denominator:1}));
+    w.Math.random=()=>0;
+    const e=new w.Game_Enemy(eid,0,0);
+    const got=e.makeDropItems().map(it=>({kind:w.DataManager.isWeapon(it)?2:w.DataManager.isArmor(it)?3:1,id:it.id}));
+    pb.filter.push({blocked:q,kept:pick.filter(p=>got.some(g=>g.kind===p.kind&&g.id===p.id)).map(p=>[p.kind,p.id])});
+  }
+  data.dropItems=saved;w.Math.random=realRandom;
+  w.$gameSystem._pingbiQuality=[false,false,false,false,false,false,false];
+  out.pingbi=pb;
+}
 if(JSON.stringify(identity)!==JSON.stringify(sourceIdentity(APP)))throw new Error('测量期间来源改变');
 fs.writeFileSync(path.join(__dirname,'.sandbox/options.json'),JSON.stringify(out,null,1));
 process.stdout.write(JSON.stringify({notices:out.notices.rows.length,rows:out.rows.length,volume:out.volume.length,dash:out.dash.length,commands:out.commands,defaults:out.defaults})+'\n');

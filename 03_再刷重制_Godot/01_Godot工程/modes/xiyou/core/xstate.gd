@@ -40,6 +40,7 @@ var unlocked_maps := {}
 ## XdRs_HangUp：挂机设置（随存档，见 XHangUp.DEFAULTS）与总挂机帧数；运行状态不进存档（读档即不在挂机）
 var hang_up := {}
 var hang_up_total := 0
+var pingbi_quality: Array = []      # 屏蔽掉落：旧档 0～7 是否屏蔽（$gameSystem._pingbiQuality）
 var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
 var hang_up_count := 0
@@ -232,7 +233,7 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total}
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -293,6 +294,7 @@ static func from_dict(d: Dictionary) -> XState:
 		s.seen[str(k)] = true
 	s.hang_up = d.get("hangUp", {})
 	s.hang_up_total = int(d.get("hangUpTotal", 0))
+	s.pingbi_quality = Array(d.get("pingbiQuality", [])).map(func(v): return bool(v))
 	if d.has("unlockedMaps"):
 		for k in d.unlockedMaps:
 			s.unlocked_maps[int(k)] = true

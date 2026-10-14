@@ -10,7 +10,8 @@ static var _map_xy_configured := false
 ## 核心改动的杂项开关（rpg_windows/rpg_objects）：只遇稀有/罕见/极其稀有、三条宣传行、对话跳过、禁用遇敌、步步遇敌。
 ## 不存进配置，只在本次运行有效；开局为未设置（null，设置页状态空白），确定后变 true。穿墙 cq 由
 ## installDisplayPreferencesRuntime 存进配置（DEFAULTS）。
-const SESSION_FLAGS := ["Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100"]
+## pingbiDrop 也只在本次运行：设置页左右键会改它（无作用，状态恒为空白）。
+const SESSION_FLAGS := ["Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100", "pingbiDrop"]
 static var _session := {}
 const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "commandRemember": true,
 	"bgmVolume": 40, "bgsVolume": 40, "meVolume": 40, "seVolume": 40,

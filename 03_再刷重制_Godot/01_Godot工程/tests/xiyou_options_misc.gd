@@ -141,6 +141,58 @@ func _run() -> void:
 		await physics(1)
 	XConfig._session.clear()
 
+	# 屏蔽掉落：子页行、整档切换、掉落过滤（相对未屏蔽时的结果，排除其他掉落插件的影响）
+	var pb: Dictionary = ref.pingbi
+	check("pingbi_party_on", pb.pinbi)
+	for row in pb.rows:
+		s.pingbi_quality = range(8).map(func(i): return row.blocked.has(float(i)) or row.blocked.has(i))
+		var names := XPingbi.rows(s).map(func(r): return r[1])
+		check("pingbi_rows_%s" % [row.blocked], names == row.names and XPingbi.rows(s).map(func(r): return "quality%d" % r[0]) == row.symbols, names)
+	s.pingbi_quality = [false, false, false, false, false, false, false]
+	for t in pb.toggles:
+		if int(t.grade) == 4 and pb.toggles.find(t) == 4:
+			s.pingbi_quality[6] = false
+		var before := s.pingbi_quality.duplicate()
+		XPingbi.toggle(s, int(t.grade))
+		check("pingbi_toggle_%d" % pb.toggles.find(t), before == t.before and s.pingbi_quality == t.after, [before, s.pingbi_quality])
+	var base: Array = pb.filter[0].kept.map(func(k): return {"kind": int(k[0]), "id": int(k[1])})
+	for row in pb.filter:
+		s.pingbi_quality = range(8).map(func(i): return row.blocked.has(float(i)) or row.blocked.has(i))
+		var kept := XPingbi.filter_drops(s, base).map(func(d): return [d.kind, d.id])
+		var want: Array = row.kept.map(func(k): return [int(k[0]), int(k[1])])
+		check("pingbi_filter_%s" % [row.blocked], kept == want, kept)
+	s.pingbi_quality = [true]
+	var restored := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
+	check("pingbi_saved", restored.pingbi_quality == [true])
+	XState.current = s
+	s.pingbi_quality = []
+	# 设置页：确定直接打开（无音效），左右改无作用的 pingbiDrop（变了才响），状态空白；子页操作
+	var opt2 := XOptionsScene.new()
+	add_child(opt2)
+	await physics(2)
+	opt2.index = opt2.symbols().find("pingbiDrop")
+	XSound.system_log.clear()
+	opt2._side(true)
+	opt2._side(true)
+	opt2._side(false)
+	check("pingbi_side_sounds", XSound.system_log == [0, 0] and opt2.status_text(opt2.index) == "", XSound.system_log)
+	XSound.system_log.clear()
+	opt2.ok()
+	check("pingbi_open_silent", opt2._page is XPingbiScene and XSound.system_log.is_empty(), XSound.system_log)
+	var page: XPingbiScene = opt2._page
+	await physics(2)
+	check("pingbi_rect", page.rect() == Rect2(520, 256, 240, 208) and page.win.position == Vector2(520, 256), page.rect())
+	XSound.system_log.clear()
+	page.ok()
+	check("pingbi_page_ok", XSound.system_log == [1] and XPingbi.state(s, 0) == "all", XSound.system_log)
+	page.select(XMenu._move(page.index, -1, page.rows().size(), true))
+	check("pingbi_page_wrap", page.index == 4)
+	page.cancel()
+	await physics(2)
+	check("pingbi_page_closed", opt2._page == null)
+	opt2.queue_free()
+	s.pingbi_quality = []
+
 	# 地图：穿墙与禁用遇敌
 	s.map_id = 5
 	var map := XMapScene.new()

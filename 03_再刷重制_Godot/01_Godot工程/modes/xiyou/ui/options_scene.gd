@@ -8,6 +8,7 @@ extends Control
 ##   消息提醒（状态「全部显示」/「N项关闭」，确定音后打开 XNoticeOptionsScene，左右无作用），
 ##   核心杂项开关（只遇稀有/罕见/极其稀有、穿墙、三条宣传行、对话跳过、禁用遇敌、步步遇敌）：确定取反、右开左关；
 ##   除穿墙外不存配置，开局未设置时状态空白（正式版 statusText 返回 undefined）。
+##   屏蔽掉落：状态恒空白，确定无音效直接打开 XPingbiScene，左右只改无作用的 pingbiDrop（值变了播光标音）。
 ##   其余选项的机制还没做，暂时灰显、不显示状态，确定时蜂鸣；原版都可用（见 界面风格.md）。
 ## - 上下键：按住连续移动、首按可首尾循环，换行播光标音；取消（Esc/右键）播取消音返回主菜单。
 
@@ -23,7 +24,7 @@ const KEEP_INDEX_AFTER_PAGE := true
 const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", true], ["始终跑步", "alwaysDash", true],
 	["记住指令", "commandRemember", true], ["Battle Camera", "battleCamera", false], ["开启掉落动画", "MOG_TrPopUpBattle_Key", false],
 	["战斗伤害记录", "CombatDamageRecordKey", false], ["显示伤害数字", "CombatDamageShow", true], ["显示技能动画", "CombatSkillAnimation", true],
-	["屏蔽掉落", "pingbiDrop", false], ["智能战斗AI（自动战斗）", "codexSmartAI", true], ["BGM 音量", "bgmVolume", true],
+	["屏蔽掉落", "pingbiDrop", true], ["智能战斗AI（自动战斗）", "codexSmartAI", true], ["BGM 音量", "bgmVolume", true],
 	["BGS 音量", "bgsVolume", true], ["ME 音量", "meVolume", true], ["SE 音量", "seVolume", true], ["只遇稀有", "Boss", true],
 	["只遇罕见", "BOSS", true], ["极其稀有", "boss", true], ["穿墙开关", "cq", true], ["此游戏为免费游戏！", "wxxonoff", true],
 	["总群请加906327865！", "wxlonoff", true], ["不要在闲鱼买到这个版本！", "wxtonoff", true], ["战斗变速", "battleAniSpeed", true],
@@ -121,6 +122,8 @@ func ok() -> void:
 		"HangUp":
 			XSound.system(1)
 			_open_hang_up()
+		"pingbiDrop":
+			_open_page(XPingbiScene.new())
 		"codexNotices":
 			XSound.system(1)
 			_open_page(XNoticeOptionsScene.new())
@@ -131,7 +134,7 @@ func _side(right: bool) -> void:
 	match str(_list[index][1]):
 		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "CombatDamageShow", "CombatSkillAnimation", "cq":
 			_set_flag(str(_list[index][1]), right)
-		"Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100":
+		"Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100", "pingbiDrop":
 			_set_session(str(_list[index][1]), right)
 		"battleAniSpeed":
 			_set_speed(clampi(XConfig.battle_speed() + (1 if right else -1), 1, 4))
