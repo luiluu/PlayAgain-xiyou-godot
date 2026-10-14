@@ -19,6 +19,7 @@ var _cursor_t := 0.0
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	XDifficultyNotice.ensure(get_tree())
 	if not XDB.available():
 		theme = UI.make_theme()
 		column = UI.layout(self)

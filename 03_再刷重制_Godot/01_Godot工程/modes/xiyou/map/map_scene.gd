@@ -26,6 +26,7 @@ var hud: Control
 var map_hud: XMapHUD
 var transfer_page: XMapTransferScene
 var hang_overlay: XHangUpOverlay
+var difficulty_notice: XDifficultyNoticeCanvas
 ## O-015：事件、对话、战斗之外才挂机走动与自动存档（原版事件进行中角色也会继续随机走动，存档可能存进半段剧情）。
 const SAFE_HANG_UP := true
 var busy := false
@@ -75,6 +76,10 @@ func _ready() -> void:
 	fader.modulate.a = 0.0
 	ui.add_child(fader)
 	_build_hud()
+	# EnemyNameColorByDifficulty 的提示位于窗口层之上，随地图快照进入战斗背景。
+	difficulty_notice = XDifficultyNoticeCanvas.new()
+	ui.add_child(difficulty_notice)
+	difficulty_notice.clock.can_paint = func(): return not _in_battle and not _menu_open and transfer_page == null
 	bgm = AudioStreamPlayer.new()
 	add_child(bgm)
 	se = AudioStreamPlayer.new()
@@ -448,6 +453,8 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	var prev := _bgm_name
 	hud.visible = false
 	var shot := await _snapshot()
+	# 原版战斗没有 _tipSpr；只保留快照里的那一帧，活提示在后台继续倒数。
+	difficulty_notice.hide()
 	var battle := XBattleScene.new()
 	battle.setup(troop_id, can_escape, can_lose, map_data, shot)
 	ui.add_child(battle)
@@ -456,6 +463,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	var result: int = await battle.finished
 	_in_battle = false
 	battle.queue_free()
+	difficulty_notice.clock.paint()
 	# Scene_Battle.terminate → refrishHangUp：死亡停止
 	XHangUp.after_battle(XState.current)
 	hud.visible = true
