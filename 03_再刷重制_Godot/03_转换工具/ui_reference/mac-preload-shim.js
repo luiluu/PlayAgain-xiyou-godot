@@ -1,10 +1,89 @@
 /* 参照用浏览器垫片：替代需要 Node 的 mac-preload.js。不读写任何文件；存档只会进浏览器自己的 localStorage。 */
+/* 难度提示专用：记录原插件的三个计时器；按工具栏按钮时才停止并逐次调用原回调。 */
+(function () {
+    if (!/[?&]difficulty_ref=1(?:&|$)/.test(location.search)) return;
+    var original = window.setInterval;
+    window.__difficultyRefClocks = {};
+    window.setInterval = function (fn, ms) {
+        var id = original.apply(this, arguments), code = String(fn);
+        var key = ms===60 && /diffId = getDiff/.test(code) ? 'read' :
+            ms===30 && /tipTime/.test(code) ? 'tick' : ms===32 && /_tipSpr/.test(code) ? 'paint' : '';
+        if (key) window.__difficultyRefClocks[key] = {id:id, call:fn};
+        return id;
+    };
+})();
 (function () {
     var x = new XMLHttpRequest(); x.open('GET', 'package.json', false); x.send();
     var manifest = JSON.parse(x.responseText);
     var win = { title: '', menu: null, on: function () {}, enterFullscreen: function () {}, leaveFullscreen: function () {}, toggleFullscreen: function () {}, isFullscreen: false, showDevTools: function () {}, focus: function () {}, resizeTo: function () {}, moveTo: function () {} };
     window.nw = { App: { manifest: manifest, startPath: '', argv: [], fullArgv: [], dataPath: '', quit: function () {} }, Window: { get: function () { return win; } }, Menu: function () { return { createMacBuiltin: function () {} }; }, Shell: { openExternal: function () {} } };
     window.MacPort = { root: '', save: '', bundle: '', qa: '', log: function () {} };
+})();
+/* ?difficulty_ref=1：真实插件定帧参照。只操作内存新游戏；不创建、不加载任何存档。 */
+(function () {
+    if (!/[?&]difficulty_ref=1(?:&|$)/.test(location.search)) return;
+    addEventListener('load', function () {
+        var panel=document.createElement('div');
+        panel.style.cssText='position:fixed;left:0;top:100px;z-index:99999;background:white;color:black;font:12px monospace;max-width:900px;max-height:180px;overflow:auto';
+        ['mousedown','mouseup','click','touchstart','touchend'].forEach(function(t){panel.addEventListener(t,function(e){e.stopPropagation();});});
+        var readout=document.createElement('pre'), draws=[], remaining=0, manual=false;
+        function info() {
+            var s=window.SceneManager&&SceneManager._scene, sp=s&&s._tipSpr;
+            readout.textContent=JSON.stringify({version:window.nw&&nw.App.manifest.releaseVersion,scene:s&&s.constructor.name,
+                difficulty:window.$gameSystem&&$gameSystem.getDifficultyId(),manual:manual,remaining:remaining,
+                tip:sp&&{x:sp.x,y:sp.y,width:sp.bitmap.width,height:sp.bitmap.height,visible:sp.visible,opacity:sp.opacity,
+                    font:sp.bitmap.fontFace,fontSize:sp.bitmap.fontSize,bold:sp.bitmap.fontBold,color:sp.bitmap.textColor},
+                drawCount:draws.length,draws:draws.slice(-1),errors:window.__refErrors});
+        }
+        function button(text,fn) {var b=document.createElement('button');b.textContent=text;b.onclick=function(){fn();b.blur();info();};panel.appendChild(b);}
+        function clocks() {
+            var c=window.__difficultyRefClocks;
+            if (!c.read||!c.tick||!c.paint) throw new Error('难度提示的三个原插件计时器未就绪');
+            if (!manual) {Object.keys(c).forEach(function(k){clearInterval(c[k].id);});manual=true;}
+            return c;
+        }
+        function paint() {
+            var s=SceneManager._scene, sp=s&&s._tipSpr;
+            if (sp&&!sp.bitmap.__difficultyRefHook) {
+                var draw=sp.bitmap.drawText;
+                sp.bitmap.drawText=function(){draws.push({args:Array.prototype.slice.call(arguments),color:this.textColor});return draw.apply(this,arguments);};
+                sp.bitmap.__difficultyRefHook=true;
+            }
+            draws=[];clocks().paint.call();info();
+        }
+        function setDifficulty(id) {
+            if (!window.$gameSystem||!SceneManager._scene._tipSpr) return;
+            var c=clocks(), changed=$gameSystem.getDifficultyId()!==id;
+            $gameSystem.setDifficultyId(id);c.read.call();c.tick.call();
+            remaining=changed?239:Math.max(0,remaining-1);paint();
+        }
+        button('难度地图夹具',function(){
+            if(!window.DataManager||!DataManager.isDatabaseLoaded())return;
+            clocks();
+            if(SceneManager._scene)SceneManager._scene.update=function(){};
+            SceneManager.goto(Scene_Base);ConfigManager.applyData({});DataManager.setupNewGame();
+            Game_Map.prototype.updateInterpreter=function(){};
+            if(window.CodexGuide)CodexGuide.MILESTONE_ENABLED=false;
+            $gameParty._actors=[1,8,9,10];$gameParty._battleMembers=$gameParty._actors.slice();
+            $gamePlayer.clearTransferInfo();$gameScreen.clear();$gameMessage.clear();
+            DataManager.loadMapData(5);
+            var t=setInterval(function(){
+                if(!DataManager.isMapLoaded())return;clearInterval(t);$gameMap.setup(5);$gamePlayer.locate(10,10);$gamePlayer.refresh();
+                SceneManager.goto(Scene_Map);
+                var ready=setInterval(function(){if(!SceneManager._scene._tipSpr)return;clearInterval(ready);setDifficulty(3);},20);
+            },20);
+        });
+        for(var i=1;i<=9;i++)(function(id){button('难度 '+id,function(){setDifficulty(id);});})(i);
+        button('推进 30 格',function(){var c=clocks();for(var n=0;n<30;n++)c.tick.call();remaining=Math.max(0,remaining-30);paint();});
+        button('推进至消失',function(){var c=clocks();for(var n=0;n<240;n++)c.tick.call();remaining=0;paint();});
+        button('快照进入战斗',function(){
+            if(!(SceneManager._scene instanceof Scene_Map))return;
+            Math.random=function(){return 0.5;};$gameMessage.clear();BattleManager.setup(2,true,false);SceneManager.push(Scene_Battle);
+        });
+        button('难度截图',function(){__refShot('dev019_difficulty_d'+$gameSystem.getDifficultyId()+'_'+remaining+'_'+SceneManager._scene.constructor.name);});
+        button('隐藏难度工具栏',function(){panel.style.display='none';});
+        panel.appendChild(readout);document.body.appendChild(panel);setInterval(info,200);
+    });
 })();
 (function () {
     window.__refErrors = [];
