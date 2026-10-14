@@ -550,6 +550,18 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler) -> Array:
 		u.pay_cooldown(skill)
 		_otb_user_shift(u, skill)
 	logs.append({"type": "action", "user": u, "skill": skill})
+	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击的追加次数，
+	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
+	if XActionSequence.has_sequence(skill):
+		var times := 1
+		if not is_item(skill) and int(skill.id) == ATTACK_SKILL:
+			times += int(u.traits_sum_all(XBattler.TRAIT_ATTACK_TIMES))
+		var list := []
+		for t in targets_for(u, skill, chosen):
+			for i in range(maxi(1, times)):
+				list.append(t)
+		logs.append_array(XActionSequence.create(self, u, skill, list).run())
+		return logs
 	var repeats := int(skill.get("repeats", 1))
 	if not is_item(skill) and int(skill.id) == ATTACK_SKILL:
 		repeats += int(u.traits_sum_all(XBattler.TRAIT_ATTACK_TIMES))
@@ -727,6 +739,44 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 			if t is XActor:
 				t.learn_skill(int(eff.dataId))
 				t.refresh_passive()
+
+
+## 行动序列 ADD STATE（Game_Battler.addState → isStateAddable：活着、未抵抗；阵亡状态直接倒下）
+func sequence_add_state(t: XBattler, id: int) -> void:
+	if XDB.rec("States", id).is_empty() or t.is_dead():
+		return
+	if id == DEATH_STATE:
+		_die(t)
+		return
+	if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
+		return
+	t.add_state(id)
+
+
+## 行动序列 HP/MP/TP ±（gainHp/gainMp/gainTp）：HP 归零即倒下
+func sequence_gain(t: XBattler, kind: String, value: int) -> void:
+	match kind:
+		"HP":
+			t.hp = clampf(t.hp + value, 0.0, t.mhp)
+			if t.hp <= 0.0:
+				_die(t)
+		"MP":
+			t.mp = clampf(t.mp + value, 0.0, t.mmp)
+		"TP":
+			t.tp = clampf(t.tp + value, 0.0, 100.0)
+
+
+## 行动序列 ADD/REMOVE BUFF/DEBUFF（Game_Battler.addBuff/addDebuff：活着才加，等级 ±2 封顶，回合取较大者；remove 只去同方向）
+func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int) -> void:
+	if add:
+		if t.is_dead():
+			return
+		t.buffs[pid] = clampi(t.buffs[pid] + (1 if buff else -1), -2, 2)
+		if t.buffs[pid] != 0 and t.buff_turns[pid] < turns:
+			t.buff_turns[pid] = turns
+	elif (buff and t.buffs[pid] > 0) or (not buff and t.buffs[pid] < 0):
+		t.buffs[pid] = 0
+		t.buff_turns[pid] = 0
 
 
 func state_rate(b: XBattler, id: int) -> float:

@@ -100,6 +100,19 @@ func equip_list() -> Array:
 	return equips.filter(func(e): return e != null and not e.is_empty())
 
 
+## Game_Actor.weapons()[0]
+func first_weapon() -> Dictionary:
+	for e in equip_list():
+		if e.get("kind", "") == "weapon":
+			return e
+	return {}
+
+
+## YEP_ItemCore hasWeapon/hasArmor → hasBaseItem：已装备的独立装备按基础编号比较
+func has_base_equip(kind: String, base_id: int) -> bool:
+	return equip_list().any(func(e): return e.get("kind", "") == kind and int(e.get("base", 0)) == base_id)
+
+
 ## 普通攻击的动作与武器挥动图（MV Game_Actor.performAttack＋YEP_WeaponAnimation）：
 ## 先找 <Weapon Image: n>（状态→装备→职业→角色），动作取 attackMotions[n]（超出则 swing）；
 ## 否则按第一把武器的武器类型取系统攻击动作（0 突刺 1 挥舞 2 射击）。返回 {motion, image}。
