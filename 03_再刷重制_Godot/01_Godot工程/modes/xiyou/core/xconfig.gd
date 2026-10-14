@@ -1,6 +1,6 @@
 class_name XConfig
 extends RefCounted
-## 西游界面配置（MV ConfigManager），与局内存档分开。当前接入 MapXy、codexSmartAI；其余选项随设置页批次加入。
+## 西游界面配置（MV ConfigManager），与局内存档分开。已接入坐标、智能AI、始终跑步、记住指令与四路音量；默认值照正式引擎内存测量。
 ## 测试传入自己的 path_override；其余使用 XSave.dir_override 的测试只在内存改配置。
 
 static var path_override := ""

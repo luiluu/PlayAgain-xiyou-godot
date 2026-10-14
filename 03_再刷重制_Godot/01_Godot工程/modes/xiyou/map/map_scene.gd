@@ -498,7 +498,10 @@ func play_me(audio: Dictionary) -> void:
 
 ## 战斗：返回 0 胜利 1 逃跑 2 战败（MV 语义）
 func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
-	var prev := _bgm_name
+	# BattleManager.saveBgmAndBgs/playBattleBgm：地图音乐不能和战斗音乐叠播，返回保留播放位置。
+	me.stop()
+	bgm.stream_paused = true
+	bgs.stream_paused = true
 	hud.visible = false
 	var shot := await _snapshot()
 	# 原版战斗没有 _tipSpr；只保留快照里的那一帧，活提示在后台继续倒数。
@@ -522,8 +525,8 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 			XToast.show_text("装备出售完成")
 	hud.visible = true
 	_reset_transfer_button()
-	_bgm_name = ""
-	play_bgm({"name": prev, "volume": 90})
+	bgm.stream_paused = false
+	bgs.stream_paused = false
 	refresh_events()
 	return result
 

@@ -3,6 +3,10 @@ extends Node
 var results := []
 var out_dir := ""
 
+class QuietBattle extends XBattleScene:
+	func _main() -> void:
+		pass
+
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
@@ -120,10 +124,39 @@ func _run() -> void:
 	check("legacy_save_memory_defaults", XState.from_dict(legacy).actor(1).last_battle_skill == 0)
 	battle.free()
 	XState.current = s
+	# 真实指令窗口：记忆选中防御，键盘确定后仍保存；关闭后下一次从攻击开始。
+	var live := QuietBattle.new()
+	live.setup(2, true, true, {})
+	add_child(live)
+	await frames(4)
+	a.last_command = "guard"
+	XConfig.set_flag("commandRemember", true)
+	var selected := [null]
+	var choose = func(): selected[0] = await live._command_for(a)
+	choose.call()
+	await frames()
+	check("live_command_selects_last", live.cmd_win.entries[live.cmd_win.index].key == "guard")
+	await press("ui_accept")
+	check("live_command_records_confirm", selected[0] is Array and int(selected[0][0].id) == 2 and a.last_command == "guard")
+	XConfig.set_flag("commandRemember", false)
+	selected[0] = null
+	choose.call()
+	await frames()
+	check("live_command_off_starts_attack", live.cmd_win.index == 0)
+	live.cmd_win.select(live._command_entries(a).find_custom(func(e):return e.key=="guard"))
+	await press("ui_accept")
+	check("live_command_off_clears_memory", a.last_command == "")
+	live.queue_free()
+	await frames()
 	var map := XMapScene.new()
 	add_child(map)
 	await frames(4)
 	check("map_audio_buses", map.bgm.bus == XAudio.bus("BGM") and map.se.bus == XAudio.bus("SE") and map.bgs.bus == XAudio.bus("BGS") and map.me.bus == XAudio.bus("ME"))
+	map.play_me({"name":"Inn","volume":70,"pitch":100})
+	await frames()
+	check("me_play_pauses_bgm", map.me.playing and (not map.bgm.playing or map.bgm.stream_paused) and is_equal_approx(db_to_linear(map.me.volume_db),0.7), [map.me.playing,map.bgm.playing,map.bgm.stream_paused,db_to_linear(map.me.volume_db)])
+	map.play_me({"name":""})
+	check("me_stop_resumes_bgm", not map.me.playing and not map.bgm.stream_paused)
 	for channel in XAudio.SYMBOLS:
 		XConfig.set_volume(XAudio.SYMBOLS[channel], 0)
 		check("mute_"+channel, AudioServer.is_bus_mute(AudioServer.get_bus_index(XAudio.bus(channel))))
@@ -133,6 +166,23 @@ func _run() -> void:
 	await frames()
 	XSound.system(0)
 	check("menu_se_uses_bus", XSound._players.all(func(p):return p.bus==XAudio.bus("SE")))
+	# 入战时暂停地图两路，挂机逃跑返回后恢复原音乐，不重播。
+	map.encounter_count = 9999
+	XEnemy.force_roll = 100
+	XHangUp.ready_start(s, true, Vector2i(s.x,s.y))
+	for key in ["CommonEscape","RareEscape","UnprecedentedEscape"]:
+		XHangUp.settings(s)[key] = true
+	var outcome := [null]
+	var fight = func(): outcome[0] = await map.start_battle(2,true,true)
+	fight.call()
+	await frames(4)
+	check("battle_pauses_map_audio", (not map.bgm.playing or map.bgm.stream_paused) and (not map.bgs.playing or map.bgs.stream_paused), [map.bgm.playing,map.bgm.stream_paused,map.bgs.playing,map.bgs.stream_paused,map._in_battle])
+	for i in 6000:
+		if outcome[0] != null:
+			break
+		await get_tree().process_frame
+	check("battle_resumes_map_audio", outcome[0] == 1 and not map.bgm.stream_paused and not map.bgs.stream_paused)
+	XHangUp.stop(s)
 	map.queue_free()
 	await frames()
 	DirAccess.remove_absolute(XConfig.path())
