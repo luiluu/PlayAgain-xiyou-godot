@@ -123,7 +123,9 @@ func fixed_save_slot() -> int:
 
 ## Game_Party.addActor（YEP_PartySystem）：加入队尾；出战栏位有空位时填入第一个空位并重排
 func add_actor(id: int) -> void:
-	if not party.has(id) and not XDB.rec("Actors", id).is_empty():
+	if XDB.rec("Actors", id).is_empty():
+		return
+	if not party.has(id):
 		actor(id)
 		party.append(id)
 	_ensure_slots()
@@ -188,6 +190,12 @@ func battle_members() -> Array:
 		if int(id) > 0 and party.has(int(id)):
 			out.append(actor(int(id)))
 	return out
+
+
+## Game_Party.leader：第一个实际出战成员；出战栏全空时没有队首。
+func leader() -> XActor:
+	var battle := battle_members()
+	return battle[0] if not battle.is_empty() else null
 
 
 func switch(id: int) -> bool:
@@ -278,6 +286,7 @@ func gain_gold(amount: int) -> void:
 
 # ---- 存档 ----
 func to_dict() -> Dictionary:
+	_ensure_slots()
 	var a := {}
 	for id in actors:
 		var x2: XActor = actors[id]

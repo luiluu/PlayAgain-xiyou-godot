@@ -107,6 +107,19 @@ static func valid_data(d) -> bool:
 	for id in d.party:
 		if not (id is int or id is float) or not d.actors.has(str(int(id))):
 			return false
+	# 出战栏位可缺省（旧 Godot 档）；新档不接受重复、无效角色或损坏类型，避免读档时悄悄换成前五人。
+	if d.has("battleSlots"):
+		if not d.battleSlots is Array or d.battleSlots.size() != XState.MAX_BATTLE_MEMBERS:
+			return false
+		var seen := {}
+		for id in d.battleSlots:
+			if not (id is int or id is float) or float(id) != floorf(float(id)):
+				return false
+			if id == 0:
+				continue
+			if not d.party.has(id) or seen.has(int(id)):
+				return false
+			seen[int(id)] = true
 	return true
 
 

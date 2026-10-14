@@ -316,7 +316,7 @@ func refresh_party_sprites() -> void:
 	if player == null:
 		return
 	var s := XState.current
-	var leader: XActor = s.members()[0] if s and not s.party.is_empty() else null
+	var leader: XActor = s.leader() if s else null
 	if leader:
 		player.set_image(str(leader.data().characterName), int(leader.data().characterIndex))
 	else:

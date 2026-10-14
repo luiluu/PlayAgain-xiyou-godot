@@ -9,7 +9,7 @@ extends Control
 ##   内容宽六等分：Lv 在第 2 份、HP/MP/TP 在第 3/4/5 份（宽一份−6，只写当前值）。名单开局选第 1 行但不活动。
 ## - 操作：指令「整队」「离队」→ 出战栏选第 0 格；整队时在出战栏确定 → 名单选人，名单确定播装备音：
 ##   选「离队」行把该格清空，选角色放进该格（已在别格的两格互换）；离队时在出战栏确定直接清空该格（装备音）。
-##   出战栏 Q/W（上一页/下一页）与相邻格互换（光标音＋装备音）。取消逐层返回；「还原」恢复进页时的出战栏；
+##   出战栏 Q/E（上一页/下一页）与相邻格互换（光标音＋装备音）。取消逐层返回；「还原」恢复进页时的出战栏；
 ##   「完成」或在指令窗取消返回主菜单（完成在出战栏全空/全员阵亡时灰显，确定蜂鸣）。
 
 signal closed
@@ -40,6 +40,7 @@ func _ready() -> void:
 	theme = XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	XUI.menu_background(self)
+	XState.current._ensure_slots()
 	_former = XState.current.battle_slots.duplicate()
 	cmd_win = XMVWindow.make(self, CMD_RECT, XUI.MENU_WINDOW_OPACITY, _paint_cmd)
 	slot_win = XMVWindow.make(self, SLOT_RECT, XUI.MENU_WINDOW_OPACITY, _paint_slots)
@@ -188,6 +189,9 @@ func ok() -> void:
 
 
 func cancel() -> void:
+	# Window_PartyMenuCommand.isCancelEnabled 同时限制取消键与鼠标右键；不能退出时不发取消音。
+	if mode == "command" and not finish_enabled():
+		return
 	XSound.system(2)
 	match mode:
 		"command":
@@ -203,6 +207,16 @@ func cancel() -> void:
 
 ## Scene_Party.onPartyPageUp/PageDown：与相邻格互换（首尾循环）
 func page(d: int) -> void:
+	if mode == "list":
+		var before := list_index
+		if (d < 0 and list_top > 0) or (d > 0 and list_top + _rows() < list_data().size()):
+			list_top = clampi(list_top + d * _rows(), 0, maxi(0, list_data().size() - _rows()))
+			list_index = clampi(list_index + d * _rows(), 0, list_data().size() - 1)
+			list_top = XMenu._scroll_to(list_index, list_top, _rows())
+		if list_index != before:
+			XSound.system(0)
+		_refresh()
+		return
 	if mode != "slot":
 		return
 	XSound.system(0)
@@ -240,7 +254,7 @@ func _gui_input(event: InputEvent) -> void:
 		MOUSE_BUTTON_RIGHT:
 			cancel()
 		MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP:
-			if LIST_RECT.has_point(event.position):
+			if mode == "list" and LIST_RECT.has_point(event.position):
 				var d := 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1
 				list_top = clampi(list_top + d, 0, maxi(0, list_data().size() - _rows()))
 				_refresh()
@@ -253,16 +267,16 @@ func _click(p: Vector2) -> void:
 	var pad := Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 	match mode:
 		"command":
-			if CMD_RECT.has_point(p):
+			if CMD_RECT.grow(-XMVWindow.PADDING).has_point(p):
 				var i := floori((p - CMD_RECT.position - pad).y / LH)
 				_pick(i, COMMANDS.size(), "cmd_index")
 		"slot":
-			if SLOT_RECT.has_point(p):
+			if SLOT_RECT.grow(-XMVWindow.PADDING).has_point(p):
 				var w := (SLOT_RECT.size.x - XMVWindow.PADDING * 2) / slots().size()
 				var i := floori((p - SLOT_RECT.position - pad).x / w)
 				_pick(i, slots().size(), "slot_index")
 		"list":
-			if LIST_RECT.has_point(p):
+			if LIST_RECT.grow(-XMVWindow.PADDING).has_point(p):
 				var i := list_top + floori((p - LIST_RECT.position - pad).y / LH)
 				_pick(i, list_data().size(), "list_index")
 
@@ -279,22 +293,24 @@ func _pick(i: int, n: int, field: String) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	var pressed := key != null and key.pressed
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		cancel()
 	elif event.is_action_pressed("ui_accept"):
 		get_viewport().set_input_as_handled()
 		ok()
-	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
+	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true) or (pressed and key.physical_keycode in [KEY_W, KEY_S]):
 		# 出战栏是一行 5 列：上下不动（Window_Selectable.cursorDown/Up 需要多行）
 		get_viewport().set_input_as_handled()
 		if mode != "slot":
-			_move(1 if event.is_action_pressed("ui_down", true) else -1, not event.is_echo())
-	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
+			_move(1 if event.is_action_pressed("ui_down", true) or (pressed and key.physical_keycode == KEY_S) else -1, not event.is_echo())
+	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true) or (pressed and key.physical_keycode in [KEY_A, KEY_D]):
 		# 只有出战栏横向移动（isHorizontal 时首按可首尾循环）；指令窗与名单单列不动
 		get_viewport().set_input_as_handled()
 		if mode == "slot":
-			_move(1 if event.is_action_pressed("ui_right", true) else -1, not event.is_echo())
-	elif event is InputEventKey and event.pressed and not event.echo and event.physical_keycode in [KEY_Q, KEY_W, KEY_PAGEUP, KEY_PAGEDOWN]:
+			_move(1 if event.is_action_pressed("ui_right", true) or (pressed and key.physical_keycode == KEY_D) else -1, not event.is_echo())
+	elif event.is_action_pressed("ui_page_up", true) or event.is_action_pressed("ui_page_down", true) or (pressed and key.physical_keycode in [KEY_Q, KEY_E]):
 		get_viewport().set_input_as_handled()
-		page(-1 if event.physical_keycode in [KEY_Q, KEY_PAGEUP] else 1)
+		page(-1 if event.is_action_pressed("ui_page_up", true) or (pressed and key.physical_keycode == KEY_Q) else 1)
