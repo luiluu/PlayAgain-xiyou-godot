@@ -213,16 +213,16 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	for n in get_children():
 		if n is XTreasurePopup:
 			n.queue_free()
-	# 队伍跟随在玩家之前加入（Spriteset_Map 先倒序放跟随、最后放玩家；同一行时玩家画在最上面）
+	# 队伍跟随在玩家之前加入（Spriteset_Map 先倒序放跟随、最后放玩家；同一行时玩家画在最上面）。
+	# MV 的跟随者总是存在，显示与否看 Game_Followers._visible（XState.followers_visible，refresh_party_sprites 里套用）。
 	followers.clear()
-	if bool(XDB.system().get("optFollowers", false)):
-		for i in range(XState.MAX_BATTLE_MEMBERS - 1, 0, -1):
-			var f := MVFollower.new()
-			f.member_index = i
-			f.tilemap = lower
-			chars.add_child(f)
-			f.synchronize(Vector2i(x, y), d if d > 0 else 2)
-			followers.push_front(f)
+	for i in range(XState.MAX_BATTLE_MEMBERS - 1, 0, -1):
+		var f := MVFollower.new()
+		f.member_index = i
+		f.tilemap = lower
+		chars.add_child(f)
+		f.synchronize(Vector2i(x, y), d if d > 0 else 2)
+		followers.push_front(f)
 	player = MVPlayer.new()
 	player.dash = not bool(map_data.get("disableDashing", false))
 	player.tilemap = lower
@@ -299,6 +299,12 @@ func is_blocked(cell: Vector2i, who: MVCharacter) -> bool:
 	return false
 
 
+## Game_Player.showFollowers/hideFollowers（指令 216、设置「队列跟随」）
+func set_followers_visible(v: bool) -> void:
+	XState.current.followers_visible = v
+	refresh_party_sprites()
+
+
 func refresh_events() -> void:
 	for e in events:
 		e.refresh()
@@ -317,6 +323,7 @@ func refresh_party_sprites() -> void:
 		player.set_image("", 0)
 	for f in followers:
 		f.refresh_image()
+		f.visible = s == null or s.followers_visible
 
 
 ## Game_Followers.updateMove：从最后一个开始各追前一个人
@@ -330,7 +337,8 @@ func _followers_step() -> void:
 func gather_followers() -> void:
 	while is_instance_valid(player) and player.is_moving():
 		await get_tree().physics_frame
-	while followers.any(func(f): return f.character_name != "" and (f.is_moving() or f.grid != player.grid)):
+	# Game_Followers.areGathered 只看显示中的跟随者
+	while followers.any(func(f): return f.visible and f.character_name != "" and (f.is_moving() or f.grid != player.grid)):
 		if not followers.any(func(f): return f.is_moving()):
 			_followers_step()
 		await get_tree().physics_frame

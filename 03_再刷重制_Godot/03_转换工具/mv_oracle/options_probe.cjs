@@ -209,6 +209,22 @@ for(const remember of [false,true]){
   w.$gameSystem._pingbiQuality=[false,false,false,false,false,false,false];
   out.pingbi=pb;
 }
+// 队列跟随（installDisplayPreferencesRuntime）：游戏内＝变量24为0时 ON；切换写变量24并显示/隐藏跟随。
+{
+  const fo={title:{},ops:[]};
+  const fw=new w.Window_Options(),fi=fw.findSymbol('codexFollow');
+  fo.title={status:String(fw.statusText(fi)),enabled:fw.isCommandEnabled(fi)};
+  w.$gameMap._mapId=5;
+  fo.optFollowers=w.$dataSystem.optFollowers;fo.initialVisible=w.$gamePlayer.followers().isVisible();
+  const gw=new w.Window_Options(),gi=gw.findSymbol('codexFollow');gw.select(gi);
+  fo.game={status:String(gw.statusText(gi)),enabled:gw.isCommandEnabled(gi)};
+  for(const initial of [0,1,2])for(const op of ['processOk','cursorRight','cursorLeft']){
+    w.$gameVariables.setValue(24,initial);w.$gamePlayer.showFollowers();gw[op](false);
+    fo.ops.push({initial,op,variable:w.$gameVariables.value(24),visible:w.$gamePlayer.followers().isVisible(),status:String(gw.statusText(gi))});
+  }
+  w.$gameVariables.setValue(24,0);w.$gamePlayer.showFollowers();w.$gameMap._mapId=0;
+  out.follow=fo;
+}
 if(JSON.stringify(identity)!==JSON.stringify(sourceIdentity(APP)))throw new Error('测量期间来源改变');
 fs.writeFileSync(path.join(__dirname,'.sandbox/options.json'),JSON.stringify(out,null,1));
 process.stdout.write(JSON.stringify({notices:out.notices.rows.length,rows:out.rows.length,volume:out.volume.length,dash:out.dash.length,commands:out.commands,defaults:out.defaults})+'\n');

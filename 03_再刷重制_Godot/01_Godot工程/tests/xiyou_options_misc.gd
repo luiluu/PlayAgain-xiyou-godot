@@ -210,6 +210,37 @@ func _run() -> void:
 	check("map_cq_passes", blocked.x >= 0 and map.lower.is_passable(blocked.x, blocked.y, blocked.z) and not map.lower.is_passable(-1, 0, 2), blocked)
 	XConfig.set_flag("cq", false)
 	check("map_cq_off_blocks", not map.lower.is_passable(blocked.x, blocked.y, blocked.z))
+	# 队列跟随：对照正式 follow（游戏中 ON＝变量24为0），并检查地图跟随者显示与指令 216
+	var fo: Dictionary = ref.follow
+	check("follow_initial", s.followers_visible == fo.initialVisible and map.followers.all(func(f): return f.visible))
+	var opt3 := XOptionsScene.new()
+	add_child(opt3)
+	await physics(2)
+	var fi := opt3.symbols().find("codexFollow")
+	check("follow_row", opt3._list[fi][2] and opt3.status_text(fi) == fo.game.status, opt3.status_text(fi))
+	opt3.index = fi
+	for row in fo.ops:
+		s.set_variable(24, row.initial)
+		s.followers_visible = true
+		match row.op:
+			"processOk": opt3.ok()
+			"cursorRight": opt3._side(true)
+			"cursorLeft": opt3._side(false)
+		check("follow_%d_%s" % [int(row.initial), row.op], s.variable(24) == row.variable and s.followers_visible == row.visible and opt3.status_text(fi) == row.status,
+			[s.variable(24), s.followers_visible, opt3.status_text(fi)])
+	opt3.queue_free()
+	s.set_variable(24, 1)
+	s.followers_visible = false
+	map.refresh_party_sprites()
+	check("follow_hidden_on_map", map.followers.all(func(f): return not f.visible))
+	var interp := MVInterpreter.new(map, 5, 0, [{"code": 216, "indent": 0, "parameters": [0]}, {"code": 0, "indent": 0, "parameters": []}])
+	await interp.run()
+	check("cmd216_show", s.followers_visible and map.followers.all(func(f): return f.visible) and interp.skipped.is_empty())
+	var restored2 := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
+	check("follow_saved", restored2.followers_visible)
+	XState.current = s
+	s.set_variable(24, 0)
+
 	XConfig.set_session("ydgb", true)
 	map.encounter_count = 0
 	await map._encounter()

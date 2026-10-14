@@ -8,6 +8,7 @@ extends Control
 ##   消息提醒（状态「全部显示」/「N项关闭」，确定音后打开 XNoticeOptionsScene，左右无作用），
 ##   核心杂项开关（只遇稀有/罕见/极其稀有、穿墙、三条宣传行、对话跳过、禁用遇敌、步步遇敌）：确定取反、右开左关；
 ##   除穿墙外不存配置，开局未设置时状态空白（正式版 statusText 返回 undefined）。
+##   队列跟随：变量 24 为 0 时 ON；切换写变量 24（开 0、关 1）并显示/隐藏跟随（重制版只能在游戏中打开设置，不会是「进入游戏」）。
 ##   屏蔽掉落：状态恒空白，确定无音效直接打开 XPingbiScene，左右只改无作用的 pingbiDrop（值变了播光标音）。
 ##   其余选项的机制还没做，暂时灰显、不显示状态，确定时蜂鸣；原版都可用（见 界面风格.md）。
 ## - 上下键：按住连续移动、首按可首尾循环，换行播光标音；取消（Esc/右键）播取消音返回主菜单。
@@ -29,7 +30,7 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 	["只遇罕见", "BOSS", true], ["极其稀有", "boss", true], ["穿墙开关", "cq", true], ["此游戏为免费游戏！", "wxxonoff", true],
 	["总群请加906327865！", "wxlonoff", true], ["不要在闲鱼买到这个版本！", "wxtonoff", true], ["战斗变速", "battleAniSpeed", true],
 	["对话跳过", "dhtg", true], ["禁用遇敌", "ydgb", true], ["步步遇敌", "yd100", true], ["消息提醒", "codexNotices", true],
-	["队列跟随", "codexFollow", false],
+	["队列跟随", "codexFollow", true],
 	["战力显示与估算", "codexPowerEnabled", false], ["测试模式", "codexTestMode", false], ["GM 工具", "codexGM", false],
 	["角色换装", "codexCostumes", false], ["待提交反馈", "codexFeedbackPending", false]]
 
@@ -71,6 +72,8 @@ func status_text(i: int) -> String:
 			return str(XConfig.volume(str(_list[i][1])))
 		"codexNotices":
 			return XConfig.notices_text()
+		"codexFollow":
+			return "ON" if _follow_on() else "OFF"
 	return ""
 
 
@@ -124,6 +127,8 @@ func ok() -> void:
 			_open_hang_up()
 		"pingbiDrop":
 			_open_page(XPingbiScene.new())
+		"codexFollow":
+			_set_follow(not _follow_on())
 		"codexNotices":
 			XSound.system(1)
 			_open_page(XNoticeOptionsScene.new())
@@ -136,6 +141,8 @@ func _side(right: bool) -> void:
 			_set_flag(str(_list[index][1]), right)
 		"Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100", "pingbiDrop":
 			_set_session(str(_list[index][1]), right)
+		"codexFollow":
+			_set_follow(right)
 		"battleAniSpeed":
 			_set_speed(clampi(XConfig.battle_speed() + (1 if right else -1), 1, 4))
 		"bgmVolume", "bgsVolume", "meVolume", "seVolume":
@@ -160,6 +167,19 @@ func _set_session(sym: String, v: bool) -> void:
 	if XConfig.session_value(sym) == v:
 		return
 	XConfig.set_session(sym, v)
+	XSound.system(0)
+	_refresh()
+
+
+func _follow_on() -> bool:
+	return XState.current != null and XState.current.variable(24) == 0
+
+
+func _set_follow(v: bool) -> void:
+	if _follow_on() == v or XState.current == null:
+		return
+	XState.current.set_variable(24, 0 if v else 1)
+	XState.current.followers_visible = v
 	XSound.system(0)
 	_refresh()
 

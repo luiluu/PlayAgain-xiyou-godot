@@ -40,6 +40,7 @@ var unlocked_maps := {}
 ## XdRs_HangUp：挂机设置（随存档，见 XHangUp.DEFAULTS）与总挂机帧数；运行状态不进存档（读档即不在挂机）
 var hang_up := {}
 var hang_up_total := 0
+var followers_visible := true      # Game_Followers._visible（初值 System optFollowers；指令 216、设置「队列跟随」）
 var pingbi_quality: Array = []      # 屏蔽掉落：旧档 0～7 是否屏蔽（$gameSystem._pingbiQuality）
 var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
@@ -52,6 +53,7 @@ static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> 
 	s.difficulty = difficulty_id
 	for id in [starter_id] + companions:
 		s.add_actor(int(id))
+	s.followers_visible = bool(XDB.system().get("optFollowers", false))
 	current = s
 	return s
 
@@ -61,6 +63,7 @@ static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> 
 static func new_game_blank() -> XState:
 	var s := XState.new()
 	var sys := XDB.system()
+	s.followers_visible = bool(sys.get("optFollowers", false))
 	s.difficulty = int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2))
 	for id in sys.get("partyMembers", []):
 		s.add_actor(int(id))
@@ -233,7 +236,7 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality}
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -295,6 +298,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.hang_up = d.get("hangUp", {})
 	s.hang_up_total = int(d.get("hangUpTotal", 0))
 	s.pingbi_quality = Array(d.get("pingbiQuality", [])).map(func(v): return bool(v))
+	s.followers_visible = bool(d.get("followersVisible", XDB.system().get("optFollowers", false)))
 	if d.has("unlockedMaps"):
 		for k in d.unlockedMaps:
 			s.unlocked_maps[int(k)] = true
