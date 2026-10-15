@@ -4,7 +4,7 @@
 // 装备按特性/备注自动挑选：每种特性（代码:编号）、每种战力相关备注各取第一件，另加切片角色的初始装备；法宝（<Magic Weapon>）另记一类。
 const fs=require('fs'),path=require('path');
 const {boot}=require('./hboot.cjs'),{sourceIdentity}=require('./source_identity.cjs');
-const APP=process.env.XIYOU_APP||'/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
+const APP=process.env.XIYOU_APP||'/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const identity=sourceIdentity(APP),r=boot(APP,{tolerant:true,log:false}),w=r.window;
 if(r.errors.length||!w.DataManager.isDatabaseLoaded())throw new Error('参照引擎启动失败');
 // 重制版不移植五乘区成长修正（00_设计/数值平衡.md，用户 2026-10-12），参照里关掉，与伤害对照去掉 growth 一致

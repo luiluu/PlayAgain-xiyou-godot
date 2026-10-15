@@ -1,7 +1,7 @@
 {
   "marker": "机器可读事实；叙述性进度见交接板",
   "review": "见交接板「待交叉核查」",
-  "updatedDate": "2026-10-15",
+  "updatedDate": "2026-10-16",
   "libraryRevision": 5,
   "root": "/Users/kyo/Documents/再刷项目资料库",
   "currentStep": 5,
@@ -80,17 +80,19 @@
   "plan": "00_项目管理/重制步骤清单.md（9 步，西游优先）",
   "remakeSource": {
     "sourceId": "legacy_xiyou_mod_kyo",
-    "releaseVersion": "v0.27",
+    "releaseVersion": "v0.28",
     "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
-    "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261015_225428_v0.27-v0.27/当前西游来源清单.json",
+    "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261015_234948_v0.27-v0.28/当前西游来源清单.json",
     "fingerprintedFiles": 1153,
-    "convertedContentReleaseVersion": "v0.27",
+    "convertedContentReleaseVersion": "v0.28",
     "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.15(help_cards,difficulty_notice),v0.16(options,hangup_options),v0.17(hangup_subpages),v0.27(shop_buy)",
     "contentRefreshPending": false,
     "convertedScope": "floor1_slice",
     "converterVersion": 14,
     "runtimeFingerprintCount": 382,
-    "oracleReleaseVersion": "v0.27"
+    "oracleReleaseVersion": "v0.28",
+    "frozenCopy": "03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw",
+    "followOfficialUpdates": false
   },
   "handoff": "00_项目管理/交接板.md",
   "collaboration": {

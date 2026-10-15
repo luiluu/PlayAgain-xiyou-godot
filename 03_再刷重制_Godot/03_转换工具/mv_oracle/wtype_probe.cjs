@@ -3,7 +3,7 @@
 // × 角色已学技能＋几招有武器要求的技能，记战斗中 canUse（满 MP/TP，及 MP/TP 清零时）。只写 .sandbox/wtype.json。
 const fs=require('fs'),path=require('path');
 const {boot}=require('./hboot.cjs'),{sourceIdentity}=require('./source_identity.cjs');
-const APP=process.env.XIYOU_APP||'/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
+const APP=process.env.XIYOU_APP||'/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const identity=sourceIdentity(APP),r=boot(APP,{tolerant:true,log:false}),w=r.window;
 if(r.errors.length||!w.DataManager.isDatabaseLoaded())throw new Error('参照引擎启动失败');
 w.eval('ConfigManager.applyData({});DataManager.setupNewGame();Math.random=function(){return 0.5;};');

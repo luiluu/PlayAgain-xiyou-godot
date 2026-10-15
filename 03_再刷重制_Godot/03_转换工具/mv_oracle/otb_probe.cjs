@@ -2,7 +2,7 @@
 // 正式版 OTB 顺序探针（夹具记录插件 SHA，xiyou_otb 对照当前来源）；新建内存队伍，写入只限 .sandbox/，不创建或读取存档。
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const {boot} = require('./hboot.cjs');
-const APP = process.env.XIYOU_APP || '/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
+const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const w = boot(APP, {tolerant:true, log:false}).window;
 w.eval(`ConfigManager.applyData({}); DataManager.setupNewGame();
 $gameParty._actors = [1,8,9,10]; $gameParty._battleMembers = [1,8,9,10]; $gameParty._inBattle = true;
