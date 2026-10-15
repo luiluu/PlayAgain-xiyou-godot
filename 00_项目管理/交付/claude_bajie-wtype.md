@@ -2,7 +2,7 @@
 
 - 车道／工作者：B 规则／八戒（Claude，重制_八戒_4 → 重制_八戒_5 接手收尾）
 - 位置：worktree `.claude/worktrees/bajie-flow-test-3b9e3c`，分支 `claude/bajie-wtype`
-- 状态：检查中（检查.sh --oracle 通过后改「可合并」）
+- 状态：可合并（注意下面「正式源 v0.27」：两处失败都来自正式版更新，不是本分支）
 - 任务（唐僧 2026-10-15 派）：XBattleLogic.can_use 补 MV isSkillWtypeOk（技能要求武器类型），XPower 改用同一实现；严格级参照探针逐例比对 canUse。
 - 预分配编号 O-031～O-033：未用（本轮只照正式版补规则，没有优化项）。
 
@@ -15,10 +15,17 @@
 - 新参照探针 mv_oracle/wtype_probe.cjs（已加进同步正式西游.py 的 PROBES，输出 wtype.json）：切片角色 10 级 × 默认／裸装／12 种武器类型第一件 × 已学技能＋几招有武器要求的技能，共 1036 例，记 isSkillWtypeOk、战斗中满 MP/TP 与 MP/TP 清零时的 canUse、MP 上限。tests/xiyou_wtype 逐例比对 1039/1039（676 例被武器要求拦下，339 例被费用拦下）。
 - 查清：重制_八戒_4 看到的「10 级 MP 上限 Godot 480、正式版 200」是探针搭法问题——正式版 krz_state_re 在战斗中用 _ParamCache2 缓存属性，只在 need_refresh 时重算，探针先把 inBattle 设真再 changeLevel，缓存停在 1 级值。真实游戏只在胜利结算时于战斗中升级，战后即按新等级算，不影响玩法。探针改为战斗外搭装备、升级，并照正式版 Z.refresh 的写法清缓存后再量。
 - 旧测试夹具按正式版改（不改规则）：xiyou_battle_ui 先手美娜的唯一战技「寒锋」要求武器类型 1，默认水果刀是类型 0，正式版同样放不了，开战前换类型 1 的剃须刀（装武器后打完一战约需 62 轮，「真实打完这一战」的循环上限 60 放宽到 200）；xiyou_combat 冷却与反击用的击木楔(401) 要求类型 5，狗逍遥的练习剑是类型 2，换指虎。
-- 验证：检查.sh --oracle（结果见下）；xiyou_wtype、xiyou_battle_ui、xiyou_combat、xiyou_power 专项通过。
-- 提交：508a101、8e4ed39、b82f6e1 及交付提交
+- 验证：检查.sh --oracle 在 v0.26 产物下除「西游来源/转换/参照不一致」（正式版 16:30 前后更新到 v0.27）外全部通过（45 项）；在 worktree 跑同步正式西游.py 换成 v0.27 产物后，来源项通过，只有 xiyou_opening_branches（b_hub/b_switches/b_items/b_suppression）失败——v0.27 改了 Map221，与本分支无关。xiyou_wtype 1039/1039、xiyou_battle_ui 35/35、xiyou_combat 34/34、xiyou_power 102/102。
+- 提交：508a101、8e4ed39、b82f6e1、123f54e 及交付提交
 - 已知：krz 战斗中属性缓存本身未移植（只影响胜利结算画面里刚升级角色的上限显示，未核对正式版画面）。
 ```
+
+## 正式源 v0.27（给唐僧）
+
+- 正式应用已从 v0.26 更新到 v0.27：变了 package.json、data/Skills.json、data/Map004.json、data/Map221.json、js/codex/modules.json（运行时 installNativeYunshangRuntime.js、main.js）。
+- worktree 里跑同步正式西游.py（只比较不登记，约 9.5 分钟）：「有变化，请人工查看」——测量变化 events.json 6 处（cases[141] trace）、maps_source.json 7 处、sequences.json 1 处；wtype.json 不变。备份与报告：`03_再刷重制_Godot/04_验证/本地结果/自动同步/20261015_163627_v0.26-v0.27/`。
+- v0.27 产物下 xiyou_opening_branches 4 项失败（Map221 开局分支）。需在 main 跑同步正式西游.py 登记并跟进（内容车道）。
+- 合并本分支前后都要先处理 v0.27，否则 main 上 检查.sh 的来源项不过。
 
 ## 交接板
 
@@ -39,3 +46,6 @@
 - 41a80c8 合并 main（e9f306a）
 - 8e4ed39 改 xiyou_battle_ui／xiyou_combat 夹具
 - b82f6e1 wtype_probe 战斗外搭法并清 krz 属性缓存、加 MP/TP 清零时 canUse；xiyou_wtype 逐例比 canUse 与 MP 上限
+- 123f54e xiyou_battle_ui 打完一战的循环上限 60→200
+- 020ce92 合并 main（2b8f4bd）
+- （本提交）交付单可合并
