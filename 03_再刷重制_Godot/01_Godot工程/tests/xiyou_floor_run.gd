@@ -20,9 +20,11 @@ extends Node
 ## 新开局到大厅（Map001 → Map002 → Map221 → Map004）的细节核对见 xiyou_flow；这里只核对到达。
 ## 窗口模式加 -- --out=<目录> 会在每层守层者战后截图。
 ##
-## 拆场景（并行测试.py 单个测试 300 秒上限）：part／parts 把楼层表按连续段分给几个场景，本场景只「完整走」第 part 段
-## （寻路行走、遇敌、存读档），之前各层「快速通过」（直接执行传送门、守层者、辛德瑞事件，不走路、不存读档；事件本身照常执行）。
-## 现在 parts=4：xiyou_floor_run、_b、_c、_d 各走一段（十二层时 2 段的第 2 段单跑已到 168.6 秒；十三层时 3 段的第 3 段超过 200 秒）。单个场景接近 200 秒时把 parts 加一并新增场景。
+## 拆场景（并行测试.py 单个测试 300 秒上限）：SEGMENTS 按层指定各场景「完整走」的连续段（寻路行走、遇敌、存读档），
+## 之前各层「快速通过」（直接执行传送门、守层者、辛德瑞事件，不走路、不存读档；事件本身照常执行）。part＝第几段（1 起）；
+## 最后一段到楼层表末尾，新加的层自动落进最后一段。快速通过每层约 6 秒，所以越靠后的段前缀越长：后段少放几层。
+## 单个场景过了约 170 秒就在 SEGMENTS 末尾再切一段并新增场景（xiyou_floor_run、_b、_c、_d、_e…，场景只设 part）。
+## 实测（time_scale 6）：1～4 层 84 项、5～8、9～12 各约 100～130 秒；13 层 23 秒、14 层 69 秒（绕循环边缘，遇敌多）、15 层 36 秒。
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -37,10 +39,11 @@ const DIR_ACTIONS := {2: "ui_down", 4: "ui_left", 6: "ui_right", 8: "ui_up"}
 ## 要越过循环地图边缘才走得到的守层者（「地图:事件」）：完整模式检查路上确实绕过了边缘。
 ## 十四层 Map030 横向循环（scrollType 2），克力之爷 (44,23) 与入口 (18,30) 只在绕过 x=0／59 时相连（正式引擎 canPass 实测）
 const WRAP_BOSS := ["30:8"]
+## 各段完整走的起始层（第 part 段从 SEGMENTS[part−1] 走到下一段起始层的前一层；最后一段走到楼层表末尾）
+const SEGMENTS := [1, 5, 9, 13, 15]
 @export var part := 1
 ## 本次走路越过循环地图边缘的步数
 var wrapped_steps := 0
-@export var parts := 1
 
 var results: Array = []
 var out_dir := ""
@@ -59,7 +62,6 @@ func _ready() -> void:
 	var runner := Node.new()
 	runner.set_script(get_script())
 	runner.set("part", part)
-	runner.set("parts", parts)
 	runner.set_meta("runner", true)
 	get_tree().root.add_child.call_deferred(runner)
 
@@ -316,11 +318,10 @@ func _run() -> void:
 	var t0 := Time.get_ticks_msec()
 	var floors := floor_table()
 	_check("floor_table", floors.size() >= 1 and floors[0].map == 5, floors)
-	var chunk := ceili(floors.size() / float(parts))
-	var full_from := (part - 1) * chunk + 1
-	var full_to := mini(part * chunk, floors.size())
+	var full_from: int = SEGMENTS[part - 1] if part >= 1 and part <= SEGMENTS.size() else floors.size() + 1
+	var full_to: int = SEGMENTS[part] - 1 if part < SEGMENTS.size() else floors.size()
 	print("楼层表：", JSON.stringify(floors), "；本场景完整走第 %d～%d 层" % [full_from, full_to])
-	_check("part_has_floors", full_from <= full_to, [part, parts, floors.size()])
+	_check("part_has_floors", full_from <= full_to and full_to <= floors.size(), [part, SEGMENTS, floors.size()])
 	await _opening()
 	var last_floor := 0
 	for f in floors:
