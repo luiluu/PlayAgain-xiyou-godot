@@ -33,3 +33,7 @@
 
 统计正式全部 231 张地图、公共事件与敌群事件用到的事件指令，按次数排序并标出 Godot `MVInterpreter._execute` 已有/未有的指令；插件指令按首词、脚本按首行写法归类。报告写到 `04_验证/本地结果/事件指令统计/报告.json`。2026-10-14 首次结果：124,995 条指令中有处理分支的占 97%；缺口主要是脚本（355，约 1.4 万条，toaster 提示、成就奖励、按变量取角色等）、插件指令（Difficulty、crafting、ShopInventory 等）与敌群事件的强制行动（339）。用来决定先翻译什么。
 
+
+## zh_collation_table.cjs：中文拼音排序表
+
+正式版装备排序用 `localeCompare(…, 'zh-Hans')`（ICU 拼音排序），Godot 没有 ICU。本脚本用 Node 的 `Intl.Collator('zh-Hans')` 把 CJK 基本区、ASCII 与冻结正式源 data 里出现的全部字符排成一级权重名次，写到 `01_Godot工程/modes/xiyou/zh_collation.json`（入 Git，Godot `XZhCollation` 读取）。生成后自检：正式源物品/武器/防具 15,117 个名字按表排序须与 ICU 完全一致（2026-10-16：0 处差异；参照浏览器 Chromium 152 的排序结果哈希与 Node 26 相同）。`--check` 只核对不写。正式源统一同步后重跑一次。
