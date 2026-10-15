@@ -1,6 +1,6 @@
 {
-	"cases": 304,
-	"match": 287,
+	"cases": 322,
+	"match": 305,
 	"mismatch": {
 		"ce1440": [
 			"trace",
@@ -57,5 +57,5 @@
 		]
 	},
 	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。",
-	"source": "v0.24"
+	"source": "v0.25"
 }
