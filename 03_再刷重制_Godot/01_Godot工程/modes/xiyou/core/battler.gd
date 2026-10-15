@@ -269,10 +269,23 @@ func param_rate(i: int) -> float:
 func param_buff_rate(i: int) -> float:
 	return buffs[i] * 0.25 + 1.0
 
+## G_StateParam（未装 YEP_BaseParamControl 的分支）：(基础＋加值)×比率×强化率 之后再加状态备注 <G_ShuXing> 的固定值
 func param(i: int) -> float:
 	var v := param_base(i) + param_plus(i)
 	v *= param_rate(i) * param_buff_rate(i)
+	v += param_state(i)
 	return roundf(clampf(v, param_min(i), param_max(i)))
+
+## G_StateParam paramState：各状态 <G_ShuXing> 的固定值之和。原版乘以 YEP 状态计数（_stateCounter，层数）；
+## Godot 没有状态计数，按 1 层（正式版没设计数时同样是 1）。
+static var _state_param_cache := {}
+func param_state(i: int) -> float:
+	var v := 0.0
+	for id in state_ids:
+		if not _state_param_cache.has(id):
+			_state_param_cache[id] = XPower.state_params(XDB.rec("States", id))
+		v += float(_state_param_cache[id][i])
+	return v
 
 func xparam(i: int) -> float:
 	return traits_sum(TRAIT_XPARAM, i)
@@ -293,6 +306,9 @@ func element_rate(e: int) -> float:
 	# 原生链（MV 连乘＋dsPassiveSkill 再乘被动）得到 current，再交给加算池
 	var passive := passive_element_values(e)
 	var current := traits_pi(TRAIT_ELEMENT_RATE, e)
+	# YEP_ElementCore：吸收的元素在倍率为正时降 200%（不是取反），至少吸收 0.01%
+	if current > 0.0 and is_absorb_element(e):
+		current = minf(current - 2.0, -0.01)
 	for p in passive:
 		current *= p
 	return additive_rate(TRAIT_ELEMENT_RATE, e, current, passive)
@@ -320,6 +336,8 @@ func additive_rate(code: int, id: int, current: float, passive: Array) -> float:
 		return maxf(minf(0.01, pure), sum)
 	var product := traits_pi(code, id) * passive_product
 	if current < 0.0:
+		if is_absorb_element(id) and product > 0.0:
+			return minf(sum - 2.0 + (current - (product - 2.0)), -0.01)
 		return current
 	var r := sum + current - product
 	if not is_actor():
@@ -327,6 +345,45 @@ func additive_rate(code: int, id: int, current: float, passive: Array) -> float:
 		if r < low:
 			return low
 	return maxf(0.0, r)
+
+## YEP_ElementCore isAbsorbElement：特性对象（角色、职业、装备、状态；敌人、状态）备注
+## <Element Absorb: x>、<Element Absorb: x, x>、<Element Absorb: x to y>、<Element Absorb: 名字, 名字>
+static var _absorb_cache := {}
+func is_absorb_element(e: int) -> bool:
+	for o in trait_objects():
+		var note := str(o.get("note", ""))
+		if note == "":
+			continue
+		if not _absorb_cache.has(note):
+			_absorb_cache[note] = _parse_element_absorb(note)
+		if _absorb_cache[note].has(e):
+			return true
+	return false
+
+static func _parse_element_absorb(note: String) -> Array:
+	var out := []
+	var names := {}
+	var elements: Array = XDB.system().get("elements", [])
+	for i in range(elements.size()):
+		names[str(elements[i]).to_upper()] = i
+	for line in note.split("\n"):
+		var m := RegEx.create_from_string("(?i)<(?:ELEMENT ABSORB):[ ]*(\\d+(?:\\s*,\\s*\\d+)*)>").search(line)
+		if m:
+			for n in m.get_string(1).split(","):
+				out.append(int(n.strip_edges()))
+			continue
+		m = RegEx.create_from_string("(?i)<(?:ELEMENT ABSORB):[ ](\\d+)[ ](?:THROUGH|to)[ ](\\d+)>").search(line)
+		if m:
+			for i in range(int(m.get_string(1)), int(m.get_string(2)) + 1):
+				out.append(i)
+			continue
+		m = RegEx.create_from_string("(?i)<(?:ELEMENT ABSORB):[ ](.*)>").search(line)
+		if m:
+			for n in m.get_string(1).split(","):
+				var id := int(names.get(n.to_upper().strip_edges(), 0))
+				if id > 0:
+					out.append(id)
+	return out
 
 ## 没有攻击元素特性时（如空手）按物理(1)处理，与正式版一致。
 func attack_elements() -> Array:
