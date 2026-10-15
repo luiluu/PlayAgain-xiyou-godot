@@ -108,8 +108,15 @@ static func _label(text: String, size: int, color: Color, bold := false) -> Labe
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", color)
 	_outline(l)
-	l.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return l
+
+
+## 详情里的段落：按容器宽度折行（CSS overflow-wrap:anywhere）
+static func _para(text: String, size: int, color: Color, line_h: float, bold := false) -> Label:
+	var l := _fixed(_label(text, size, color, bold), line_h)
+	l.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return l
 
 
@@ -354,8 +361,8 @@ func _render_gear() -> void:
 	sub.position = Vector2(CONTENT_X, 72.8)
 	add_child(sub)
 	var close_b := _button("关闭 · Esc", close)
-	close_b.position = Vector2(CONTENT_X + CONTENT_W - close_b.size.x, 44.2)
 	add_child(close_b)
+	_right_align(close_b, CONTENT_X + CONTENT_W, 44.2)
 	# 搜索框
 	_search = LineEdit.new()
 	_search.placeholder_text = "搜索装备 / 词条，例如：暴击 掉宝"
@@ -417,8 +424,8 @@ func _render_gear() -> void:
 	note.position = Vector2(CONTENT_X, footer_y + (41.2 - 20.8) / 2)
 	add_child(note)
 	var apply_b := _button("应用到装备列表", apply_filter)
-	apply_b.position = Vector2(CONTENT_X + CONTENT_W - apply_b.size.x, footer_y)
 	add_child(apply_b)
+	_right_align(apply_b, CONTENT_X + CONTENT_W, footer_y)
 	queue_redraw()
 	_render_results()
 	_search.grab_focus.call_deferred()
@@ -432,6 +439,14 @@ func _place_row(row: Array, y: float) -> float:
 	for c in row:
 		c.position.y = y + (h - c.size.y) / 2
 	return y + h
+
+
+## 加进场景树后字体才生效，宽度变了也保持右端对齐
+func _right_align(b: Button, right: float, y: float) -> void:
+	b.size = b.get_combined_minimum_size()
+	b.size.y = 41.2
+	b.position = Vector2(right - b.size.x, y)
+	b.resized.connect(func(): b.position.x = right - b.size.x)
 
 
 func _button(text: String, cb: Callable) -> Button:
@@ -448,7 +463,6 @@ func _button(text: String, cb: Callable) -> Button:
 func _select(label: String, values: Array, value: String, cb: Callable) -> Control:
 	var box := Control.new()
 	var l := _fixed(_label(label, 13, SYSTEM), 20.8)
-	l.autowrap_mode = TextServer.AUTOWRAP_OFF
 	box.add_child(l)
 	var s := OptionButton.new()
 	s.add_theme_font_override("font", XUI.font())
@@ -564,7 +578,7 @@ func _empty(text: String) -> Control:
 	var m := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
 		m.add_theme_constant_override("margin_" + side, 20)
-	m.add_child(_fixed(_label(text, 18, MUTED), 28.8))
+	m.add_child(_para(text, 18, MUTED, 28.8))
 	return m
 
 
@@ -586,11 +600,9 @@ func _row(r: Dictionary) -> Button:
 	b.custom_minimum_size = Vector2(0, 63.4)
 	var name := _fixed(_label(star_name(r.item), 17, TEXT), 27.2)
 	name.position = Vector2(12, 8)
-	name.autowrap_mode = TextServer.AUTOWRAP_OFF
 	name.clip_text = true
 	var small := _fixed(_label(row_small(r), 12, MUTED), 19.2)
 	small.position = Vector2(12, 8 + 27.2)
-	small.autowrap_mode = TextServer.AUTOWRAP_OFF
 	small.clip_text = true
 	b.add_child(name)
 	b.add_child(small)
@@ -612,14 +624,14 @@ func _pick(key: String) -> void:
 func _block(b: Dictionary) -> Control:
 	match str(b.tag):
 		"h2":
-			return _fixed(_label(b.text, 23, TEXT, true), 36.8)
+			return _para(b.text, 23, TEXT, 36.8, true)
 		"meta", "note":
-			return _fixed(_label(b.text, 13, MUTED), 20.8)
+			return _para(b.text, 13, MUTED, 20.8)
 		"h3", "power":
 			var m := MarginContainer.new()
 			m.add_theme_constant_override("margin_top", 12)
 			m.add_theme_constant_override("margin_bottom", 6)
-			m.add_child(_fixed(_label(b.text, 17, GOLD if b.tag == "power" else SYSTEM, true), 27.2))
+			m.add_child(_para(b.text, 17, GOLD if b.tag == "power" else SYSTEM, 27.2, true))
 			return m
 		"pills":
 			var m := MarginContainer.new()
@@ -631,9 +643,7 @@ func _block(b: Dictionary) -> Control:
 			for t in b.pills:
 				var p := PanelContainer.new()
 				p.add_theme_stylebox_override("panel", _box(Color(0, 0, 0, 0.3), Color(1, 211 / 255.0, 115 / 255.0, 0.45), 6, 1, Vector2(7, 3)))
-				var l := _fixed(_label(t, 13, GOLD), 20.8)
-				l.autowrap_mode = TextServer.AUTOWRAP_OFF
-				p.add_child(l)
+				p.add_child(_fixed(_label(t, 13, GOLD), 20.8))
 				flow.add_child(p)
 			m.add_child(flow)
 			return m
@@ -647,8 +657,8 @@ func _block(b: Dictionary) -> Control:
 			p.add_theme_stylebox_override("panel", st)
 			var v := VBoxContainer.new()
 			v.add_theme_constant_override("separation", 0)
-			v.add_child(_fixed(_label(b.text, 18, TEXT), 28.8))
-			v.add_child(_fixed(_label(b.small, 12, MUTED), 19.2))
+			v.add_child(_para(b.text, 18, TEXT, 28.8))
+			v.add_child(_para(b.small, 12, MUTED, 19.2))
 			p.add_child(v)
 			m.add_child(p)
 			return m
