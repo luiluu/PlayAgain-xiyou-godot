@@ -1,6 +1,6 @@
 {
- "review": "v0.25 由自动同步核对同源，待交叉核查",
- "updatedDate": "2026-10-14",
+ "review": "Codex（沙僧）2026-10-15 交叉核查：正式 v0.25、转换器 v14、已登记参照同源；本轮新增核查工具修复另待 Claude 核查",
+ "updatedDate": "2026-10-15",
  "sources": [
   {
    "id": "steam_playagain_original",
