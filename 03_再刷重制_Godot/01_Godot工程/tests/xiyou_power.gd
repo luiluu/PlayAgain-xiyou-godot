@@ -2,7 +2,7 @@ extends Node
 ## 战力（installCombatPowerRuntime v2，XPower）：与 mv_oracle power_probe 的参照（generated/oracle/power.json）逐例比对。
 ## 装备评分：每件装备的总分、三项与逐行明细（标签与三项数值，差 1e-6 以内），含法宝（初始等级）。
 ## 角色战力：切片角色（新开局初始装备，属性浮动取中值）1/30 级的总分、自身、装备差、三项，与爆发/持续/有效生命/辅助（相对 1e-6）、出手顺序。
-## 角色战力移植未完成（数值未对上，见交付单），暂只打印 ACTOR_PENDING 一致数，不计入结果；对上后改回 check。
+## 参照关掉五乘区成长修正（重制版不移植，数值平衡.md）。
 
 const ORACLE := "res://modes/xiyou/generated/oracle/power.json"
 var results := []
@@ -83,7 +83,6 @@ func _option() -> void:
 
 func _actors(data: Dictionary) -> void:
 	XGear.force_roll = 0.5
-	var matched := 0
 	for c in data.get("actors", []):
 		var st := XState.new_game_blank()
 		var a := st.actor(int(c.id))
@@ -97,6 +96,16 @@ func _actors(data: Dictionary) -> void:
 		var sched: Array = e.schedule.map(func(x): return int(x.id))
 		var ok: bool = int(p.total) == int(c.total) and int(p.self) == int(c.self) and _close(p.parts, c.parts) and _close(p.selfParts, c.selfParts) \
 			and _close(nums, want) and sched == c.full.schedule.map(func(x): return int(x)) and int(e.coverage.known) == int(c.full.known)
-		matched += 1 if ok else 0
-	print("ACTOR_PENDING %d/%d" % [matched, data.get("actors", []).size()])
+		check("actor_%d_lv%d" % [int(c.id), int(c.level)], ok, {"got": [p.total, p.self, p.parts, nums, sched], "want": [c.total, c.self, c.parts, want, c.full.schedule]})
+	check("actors_covered", data.get("actors", []).size() >= 20)
+	# 界面文字：主菜单没算过时「战力见状态」，技能/装备页算过后主菜单显示「战斗力 N」；关掉战力时都不画
+	var st := XState.new_game_blank()
+	var a1 := st.actor(1)
+	XPower.clear_cache()
+	check("menu_before_status", XPower.menu_text(a1) == "战力见状态", XPower.menu_text(a1))
+	var shown := XPower.status_text(a1)
+	check("status_text", shown == "战力 " + XPower.format(XPower.actor(a1).total) and XPower.menu_text(a1) == "战斗力 " + XPower.format(XPower.actor(a1).total), [shown, XPower.menu_text(a1)])
+	XConfig.set_flag("codexPowerEnabled", false)
+	check("texts_disabled", XPower.status_text(a1) == "" and XPower.menu_text(a1) == "")
+	XConfig.set_flag("codexPowerEnabled", true)
 	XGear.force_roll = -1.0

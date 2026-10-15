@@ -118,7 +118,7 @@ func _paint_status(c: XMVCanvas) -> void:
 ## installCombatPowerRuntime 的 drawActorSimpleStatus：主菜单行（行高 33、「战力见状态」）与
 ## 技能/装备页的 Window_SkillStatus（行高 36、「战力 N」，没有估算时写「战力 …」）共用。
 func _paint_actor(c: XMVCanvas, a: XActor, x: float, y: float, width: float) -> void:
-	paint_actor_status(c, a, x, y, width)
+	paint_actor_status(c, a, x, y, width, STATUS_LH, XPower.menu_text(a))
 
 
 static func paint_actor_status(c: XMVCanvas, a: XActor, x: float, y: float, width: float, lh := STATUS_LH, power := "战力见状态") -> void:

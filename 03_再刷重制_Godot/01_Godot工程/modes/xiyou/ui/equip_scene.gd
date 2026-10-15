@@ -16,7 +16,7 @@ extends Control
 ## - 说明卡（XHelpCard）：指令阶段隐藏，槽位/候选跟着选中行。
 ## - 换角色只在指令阶段：Q/W、PageUp/PageDown（光标音），回到指令窗。装上/清空后 HP、MP 按原比例保留（YEP）。
 ## 优化 O-009：属性对比的当前值/箭头/新值三列整体左移 45，新值不再超出窗口被截掉（COMPARE_SHIFT = 0 恢复原版）。
-## 暂未做：「战力」估算（写「战力 …」，即正式版还没算出时的写法）；同品质装备按中文拼音排序（现按字码）。
+## 战力：XPower.status_text（角色战力，关掉战力时不画）。暂未做：同品质装备按中文拼音排序（现按字码）。
 
 signal closed
 
@@ -34,7 +34,6 @@ const COMPARE_VALUE_W := 139.75
 const COMPARE_ARROW_W := 33.21
 ## 优化 O-009：三列左移 45（新值右端 = 内容宽 − 文字边距）；改为 0 即恢复原版（新值右端超出窗口 39，被截掉）
 const COMPARE_SHIFT := 45.0
-const POWER_TEXT := "战力 …"
 
 var actor_index := 0
 var _mode := "command"              # command / slot / item
@@ -194,7 +193,7 @@ func _paint_cmd(c: XMVCanvas) -> void:
 func _paint_status(c: XMVCanvas) -> void:
 	var a := actor()
 	c.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0)), 0, 0, 144, c.size.y)
-	XMenu.paint_actor_status(c, a, 158, 0, c.size.x - 158 - 6, LH, POWER_TEXT)
+	XMenu.paint_actor_status(c, a, 158, 0, c.size.x - 158 - 6, LH, XPower.status_text(a))
 
 
 func _paint_list(c: XMVCanvas) -> void:

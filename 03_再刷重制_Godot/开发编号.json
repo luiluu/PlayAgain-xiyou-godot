@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.045",
-  "sequence": 45,
-  "next": "dev.046",
-  "nextSequence": 46,
+  "current": "dev.046",
+  "sequence": 46,
+  "next": "dev.047",
+  "nextSequence": 47,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "扩十三层 Map064；敌群事件小解释器、G_StateParam、元素吸收（悟空）",
+  "currentChange": "角色战力对上正式版并接技能页、装备页、主菜单（八戒）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

@@ -537,6 +537,7 @@ static func _vars() -> Array:
 
 
 ## repeatCount：(重复次数＋普攻追加次数＋再次使用概率) × 行动序列里 ACTION EFFECT 段数
+## canUse 含 MV isSkillWtypeOk（技能要求的武器类型），XBattleLogic.can_use 没查，cycle 里另判
 static func _repeat_count(a: XActor, item: Dictionary) -> float:
 	var base := float(item.get("repeats", 1))
 	if int(item.id) == XBattleLogic.ATTACK_SKILL:
@@ -548,7 +549,13 @@ static func _repeat_count(a: XActor, item: Dictionary) -> float:
 			var k := m.get_string(1)
 			if k == "All" or k == by or (k.is_valid_int() and int(k) == int(item.id)):
 				chance += float(m.get_string(2))
-	return (maxf(1.0, base) + clampf(chance / 100.0, 0.0, 1.0)) * maxf(1.0, float(item.get("yepEffects", 1)))
+	# 正式版只数整体/逐目标序列里大写的「ACTION EFFECT」（小写写法的序列算 1 段），与实战段数 yepEffects 不同
+	var hits := 0
+	var seq: Dictionary = item.get("yepSeq", {}) if item.get("yepSeq") is Dictionary else {}
+	for cmd in seq.get("whole", []) + seq.get("target", []):
+		if cmd is Array and not cmd.is_empty() and str(cmd[0]) == "ACTION EFFECT":
+			hits += 1
+	return (maxf(1.0, base) + clampf(chance / 100.0, 0.0, 1.0)) * maxf(1.0, float(hits))
 
 
 ## expected：先扣费用再预演普通与暴击伤害（含状态 Confirm/React），× 命中 ×(1−闪避) × 段数，群体按 60% 单体／40% 三体
@@ -640,7 +647,7 @@ static func _cycle(logic: XBattleLogic, a: XActor, t: XBattler, skills: Array) -
 			for s in candidates:
 				var c: Dictionary = cost_for.call(s)
 				var ready: bool = not (int(cooldowns.get(int(s.id), 0)) > 0 or int(warmups.get(int(s.id), 0)) > 0) \
-					and c.mp <= a.mp and c.tp <= a.tp and c.hp < a.hp and logic.can_use(a, s)
+					and c.mp <= a.mp and c.tp <= a.tp and c.hp < a.hp and logic.can_use(a, s) and XHangUpAuto.wtype_ok(a, s)
 				if not ready:
 					continue
 				var v: float = damage_for.call(s, c)
@@ -735,6 +742,19 @@ static func actor(a: XActor, force := false) -> Dictionary:
 		"evaluation": full, "ownEvaluation": own}
 	_actor_cache[sig] = result
 	return result
+
+
+## drawActorSimpleStatus 的战力行：技能/装备页「战力 N」（按需完整评估）；关掉战力时不画
+static func status_text(a: XActor) -> String:
+	return "战力 " + format(actor(a).total) if enabled() and a != null else ""
+
+
+## 主菜单行：有有效缓存「战斗力 N」，否则「战力见状态」；关掉战力时不画
+static func menu_text(a: XActor) -> String:
+	if not enabled() or a == null:
+		return ""
+	var p := cached_actor(a)
+	return "战力见状态" if p.is_empty() else "战斗力 " + format(p.total)
 
 
 ## 主菜单只读有效缓存（cachedActorPower）：没算过就是 {}，显示「战力见状态」
