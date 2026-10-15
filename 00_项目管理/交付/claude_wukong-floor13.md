@@ -17,7 +17,7 @@
 - 敌群事件参照 `troop_event_probe` 加 111；`xiyou_troop_events` 518 → 564 项（atk_mat 检查覆盖 G_ShuXing：Godot 原来 875，参照 1875）。
 - `xiyou_floor_run`：十三层守层者生命约 7e10 且带减伤 1103，测试用增强装备的攻击/魔攻 5e7 → 5e9（只影响测试）；三段时第 3 段超过 200 秒，改成四段（新增 `xiyou_floor_run_d`）。
 - 验证：`同步正式西游.py`（v0.26 不变）「有变化」只来自切片扩大（maps /64、events 新增 20 例、slice_d1～6 与 smart_ai 新增敌人、troop_events 11→12 例）；`godot --import`；`xiyou_event_compare` 323/341 → 343/361（新增 20 例全部一致，已 --update-baseline）；`xiyou_troop_events` 564/564；`xiyou_power` 78/78；`xiyou_floor_run` 四段 84/124/164/147 全过（第 4 段单跑 88.9 秒）。
-- 提交：edc4211、d6093cd、（元素吸收）。
+- 提交：edc4211、d6093cd、6ee5e73。
 - 未完成／已知问题：守层者 111 第 0 页（每 3 回合）没有参照对照；求道者·狗逍遥各页（开关 2302／2303／2307）与敌群 748／798 未接；状态计数（层数）未做。
 
 ## 交接板
