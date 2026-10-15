@@ -9,8 +9,12 @@ extends RefCounted
 ## - $.toaster({message: '...'}) → 右上角提示；$gameParty.gainItem($dataItems[$gameVariables.value(N)], n) 与对应的提示。
 ## - $gameParty.DCultyL1～8 等标记、ConfigManager 界面选项（无对应设置，忽略）、$gameSystem.onBeforeSave()（无操作）、
 ##   Star_RomGetItems 的 RomGet 预掷池初始化。
+## - v0.27 轮回入口（installReincarnationRandomRuntime）：CodexReincarnationRandom.open(this) → 选「轮回普通／困难」再选阵容规则；
+##   条件 entryAccepted()／entryHard() 读选择结果；finishEntry() 无操作。随机角色模式暂不开放（O-035），菜单只列「常规阵容」。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
+## CodexReincarnationRandom.entry：open 之后的选择结果 {accepted, hard}
+static var reincarnation_entry := {}
 
 
 ## 执行一段脚本；返回认不出的语句（空数组表示全部认得）。
@@ -89,6 +93,11 @@ static func _statements(js: String, interp) -> Array:
 		if m:
 			s.gain_item(int(s.variable(int(m.get_string(1)))), int(m.get_string(2)))
 			continue
+		if st == "CodexReincarnationRandom.open(this)":
+			await _reincarnation_open(interp)
+			continue
+		if st == "CodexReincarnationRandom.finishEntry()":
+			continue
 		if st.begins_with("$.toaster"):
 			var text := _toaster_text(st)
 			if text != "":
@@ -98,6 +107,24 @@ static func _statements(js: String, interp) -> Array:
 			continue
 		unknown.append(st)
 	return unknown
+
+
+## CodexReincarnationRandom.open（Scene_ReincarnationDraft）：本局已开启轮回（开关 2307／2303）时提示后关闭；
+## 否则先选难度（轮回普通／轮回困难／返回），再选阵容规则（常规阵容／返回：回到难度）。随机角色（9 选 5）暂不开放（O-035）。
+static func _reincarnation_open(interp) -> void:
+	var s := XState.current
+	reincarnation_entry = {"accepted": false, "hard": false}
+	if s.switch(2307) or s.switch(2303):
+		interp.host.toast("本局轮回已经开启，阵容规则不能中途更换。")
+		return
+	while true:
+		var d: int = await interp.host.show_text_with_choices("", 0, ["选择轮回难度，再选择阵容规则。"], ["轮回普通", "轮回困难", "返回"], 2)
+		if d < 0 or d == 2:
+			return
+		var m: int = await interp.host.show_text_with_choices("", 0, ["请选择本局阵容规则。"], ["常规阵容", "返回"], 1)
+		if m == 0:
+			reincarnation_entry = {"accepted": true, "hard": d == 1}
+			return
 
 
 ## $.toaster({ message : '…' })：字面文字与下列部分用 + 拼接（引号里的 + 不算）：
@@ -164,12 +191,13 @@ static func eval_expr(js: String) -> Variant:
 	var subs := [["$gameVariables.value(", "v("], ["$gameSwitches.value(", "sw("], ["$gameSystem.playtime()", "playtime()"],
 		["$gameParty.gold()", "gold()"], ["$gameParty.steps()", "steps()"], ["$gameParty.size()", "party_size()"],
 		["$gameMap.mapId()", "map_id()"], ["$gameMap._mapId", "map_id()"], ["Math.floor(", "floor("], ["Math.ceil(", "ceil("],
-		["Math.max(", "max("], ["Math.min(", "min("], ["Math.abs(", "abs("], ["===", "=="], ["!==", "!="], ["&&", " and "], ["||", " or "]]
+		["Math.max(", "max("], ["Math.min(", "min("], ["Math.abs(", "abs("], ["===", "=="], ["!==", "!="], ["&&", " and "], ["||", " or "],
+		["CodexReincarnationRandom.entryAccepted()", "entry_accepted()"], ["CodexReincarnationRandom.entryHard()", "entry_hard()"]]
 	for s in subs:
 		e = e.replace(s[0], s[1])
 	e = RegEx.create_from_string("\\$gameParty\\.numItems\\(\\$dataItems\\[(\\d+)\\]\\)").sub(e, "items($1)", true)
 	e = RegEx.create_from_string("!(?!=)").sub(e, " not ", true)
-	var allowed := ["v", "sw", "playtime", "gold", "steps", "party_size", "map_id", "items", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
+	var allowed := ["v", "sw", "playtime", "gold", "steps", "party_size", "map_id", "items", "entry_accepted", "entry_hard", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
 	for w in RegEx.create_from_string("[A-Za-z_$][A-Za-z_0-9$.]*").search_all(e):
 		if not allowed.has(w.get_string()):
 			return null
@@ -192,6 +220,8 @@ class ExprEnv:
 	func party_size() -> float: return float(XState.current.members().size())
 	func map_id() -> float: return float(XState.current.map_id)
 	func items(id: float) -> float: return float(XState.current.item_count(int(id)))
+	func entry_accepted() -> bool: return bool(MVScript.reincarnation_entry.get("accepted", false))
+	func entry_hard() -> bool: return bool(MVScript.reincarnation_entry.get("hard", false))
 
 
 ## 「所有角色学会/忘记技能」的几种循环写法 → actor_op 列表；认不出返回空

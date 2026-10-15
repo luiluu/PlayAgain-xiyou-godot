@@ -3,6 +3,8 @@ extends Node2D
 ## 绘制一层 MV 地图图块（upper=false 为角色下方，true 为星号图块等角色上方）。
 ## 拼图规则移植自 rpg_core.js Tilemap._paintTiles/_drawTile/_drawAutotile/_drawTableEdge/_drawShadow。
 ## A1 水面每 30 帧换一帧（与 MV 相同），只有含 A1 图块的层会重绘。
+## 循环地图（MV scrollType 1 纵向、2 横向、3 双向；正式版只有十四层 Map030 横向循环）：通行与移动照
+## Game_Map.roundX/roundY/deltaX，绘制时在循环方向两侧多画一屏（Tilemap 的 horizontalWrap/verticalWrap）。
 
 const TS := MVTiles.TILE_SIZE
 const HALF := TS / 2
@@ -17,6 +19,12 @@ var _tick := 0
 var width := 0
 var height := 0
 var data: Array = []
+var loop_x := false
+var loop_y := false
+## 循环方向两侧多画的格数：画面 1280×720 ÷ 48 向上取整再加 1
+const LOOP_MARGIN := Vector2i(28, 16)
+## 循环地图上角色的显示位置取离这一点（玩家的 real）最近的那一份，同 Game_Map.adjustX/adjustY
+var view_anchor := Vector2.ZERO
 
 
 func setup(map_data: Dictionary, upper_layer: bool) -> void:
@@ -25,6 +33,9 @@ func setup(map_data: Dictionary, upper_layer: bool) -> void:
 	width = int(map.width)
 	height = int(map.height)
 	data = map.data
+	var scroll := int(map.get("scrollType", 0))
+	loop_x = scroll == 2 or scroll == 3
+	loop_y = scroll == 1 or scroll == 3
 	var ts := XDB.rec("Tilesets", int(map.tilesetId))
 	flags = ts.flags
 	sheets.clear()
@@ -48,6 +59,10 @@ func _process(_delta: float) -> void:
 
 
 func tile(x: int, y: int, z: int) -> int:
+	if loop_x:
+		x = posmod(x, width)
+	if loop_y:
+		y = posmod(y, height)
 	if x < 0 or y < 0 or x >= width or y >= height:
 		return 0
 	return int(data[(z * height + y) * width + x])
@@ -63,8 +78,10 @@ func _is_table(id: int) -> bool:
 
 
 func _draw() -> void:
-	for y in range(height):
-		for x in range(width):
+	var mx := LOOP_MARGIN.x if loop_x else 0
+	var my := LOOP_MARGIN.y if loop_y else 0
+	for y in range(-my, height + my):
+		for x in range(-mx, width + mx):
 			var dx := x * TS
 			var dy := y * TS
 			for id in _tiles_at(x, y):
@@ -212,6 +229,29 @@ func _draw_shadow(bits: int, dx: int, dy: int) -> void:
 	for i in range(4):
 		if bits & (1 << i):
 			draw_rect(Rect2(dx + (i % 2) * HALF, dy + floori(i / 2.0) * HALF, HALF, HALF), Color(0, 0, 0, 0.5))
+
+
+# ---- 循环（MV Game_Map.roundX/roundY/isValid/deltaX/deltaY）----
+func round_cell(c: Vector2i) -> Vector2i:
+	return Vector2i(posmod(c.x, width) if loop_x else c.x, posmod(c.y, height) if loop_y else c.y)
+
+func is_valid(c: Vector2i) -> bool:
+	return c.x >= 0 and c.y >= 0 and c.x < width and c.y < height
+
+## a − b，循环方向取较短的一边
+func delta(a: Vector2i, b: Vector2i) -> Vector2i:
+	var r := a - b
+	if loop_x and absi(r.x) > width / 2:
+		r.x += width if r.x < 0 else -width
+	if loop_y and absi(r.y) > height / 2:
+		r.y += height if r.y < 0 else -height
+	return r
+
+## 角色显示位置的平移（以格计）：循环方向取离 view_anchor 最近的那一份
+func loop_shift(real: Vector2) -> Vector2:
+	var sx := roundf((view_anchor.x - real.x) / width) * width if loop_x else 0.0
+	var sy := roundf((view_anchor.y - real.y) / height) * height if loop_y else 0.0
+	return Vector2(sx, sy)
 
 
 # ---- 通行（MV Game_Map.checkPassage）----

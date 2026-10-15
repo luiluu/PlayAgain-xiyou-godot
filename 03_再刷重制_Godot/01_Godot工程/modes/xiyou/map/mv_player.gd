@@ -21,13 +21,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var p := get_global_mouse_position()
-		touch_target = Vector2i(floori(p.x / TS), floori(p.y / TS))
-		if touch_target == grid + dir_offset(direction) or touch_target == grid:
+		touch_target = _touch_cell(p)
+		if touch_target == front_cell(direction) or touch_target == grid:
 			touch_target = Vector2i(-1, -1)
 			action_pressed.emit()
 	elif event is InputEventScreenTouch and event.pressed:
 		var p2: Vector2 = get_canvas_transform().affine_inverse() * (event as InputEventScreenTouch).position
-		touch_target = Vector2i(floori(p2.x / TS), floori(p2.y / TS))
+		touch_target = _touch_cell(p2)
 
 
 func update_character() -> void:
@@ -51,7 +51,7 @@ func update_character() -> void:
 			stepped.emit()
 		elif touch_target.x >= 0:
 			# 走不过去：面向目标，若目标就是相邻格则视为调查
-			if grid + dir_offset(d) == touch_target:
+			if front_cell(d) == touch_target:
 				action_pressed.emit()
 			touch_target = Vector2i(-1, -1)
 	elif Input.is_action_just_pressed("ui_accept") and not Input.is_key_pressed(KEY_META):
@@ -83,8 +83,18 @@ func _input_dir() -> int:
 	return 0
 
 
+## 点到的格子（循环地图上点在绕回的那一份时换回地图内的格子）
+func _touch_cell(p: Vector2) -> Vector2i:
+	var c := Vector2i(floori(p.x / TS), floori(p.y / TS))
+	return tilemap.round_cell(c) if tilemap else c
+
+## 朝 d 的前方一格（循环地图绕回）
+func front_cell(d: int) -> Vector2i:
+	return tilemap.round_cell(grid + dir_offset(d)) if tilemap else grid + dir_offset(d)
+
+
 func _toward(t: Vector2i) -> int:
-	var diff := t - grid
+	var diff := tilemap.delta(t, grid) if tilemap else t - grid
 	if diff == Vector2i.ZERO:
 		return 0
 	var horiz := 6 if diff.x > 0 else 4
