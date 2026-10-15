@@ -3,7 +3,7 @@
 # 用法：
 #   新建工作树.sh <任务名> [claude|codex]   从 main 最新提交切出分支 <执行者>/<任务名>，建在主工作区旁 <主工作区名>-wt-<任务名>
 #   新建工作树.sh --补齐 <worktree 路径>      只补齐已有 worktree（如桌面 app 自己建的）
-# 补齐内容：Godot 引擎链接、西游资料库链接、mv_oracle/node_modules、转换产物 generated/、导入缓存 .godot/。
+# 补齐内容：Godot 引擎链接、西游资料库链接、冻结正式源链接、mv_oracle/node_modules、转换产物 generated/、导入缓存 .godot/。
 # node_modules、generated、.godot 用 APFS 克隆（cp -c）复制主工作区的，不另占空间；随后按本分支重跑转换器与 godot --import。
 # 已有 generated 时，generated/oracle 里主工作区较新的文件会覆盖进来（本分支自己生成、主工作区没有或比主工作区新的保留）。
 if [ -z "${ZSH_VERSION:-}" ]; then
@@ -45,6 +45,9 @@ prepare() {
   [[ -e $env/当前Godot.app ]] || ln -s "$menv/当前Godot.app" "$env/当前Godot.app"
   local lib=$wt/02_再刷西游/现有资料库
   [[ -e $lib || ! -L $MAIN/02_再刷西游/现有资料库 ]] || ln -s "$(readlink "$MAIN/02_再刷西游/现有资料库")" "$lib"
+  # 冻结正式源（只读，不入 Git）：工具默认用主工作区的绝对路径；按相对路径找它（如 serve.py）时也能找到
+  local frozen=$wt/$GODOT_SUB/02_内容与素材/冻结正式源/app.nw
+  [[ -e $frozen || ! -d $MAIN/$GODOT_SUB/02_内容与素材/冻结正式源/app.nw ]] || ln -s "$MAIN/$GODOT_SUB/02_内容与素材/冻结正式源/app.nw" "$frozen"
   # 会被写或按路径解析的：克隆一份（链接到主工作区的目录会被 git 当成未跟踪文件，也会让 worktree 改到主工作区）
   [[ -e $tools/mv_oracle/node_modules ]] || cp -cR "$mtools/mv_oracle/node_modules" "$tools/mv_oracle/node_modules"
   if [[ -e $gen ]]; then

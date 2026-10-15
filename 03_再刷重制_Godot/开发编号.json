@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.054",
-  "sequence": 54,
-  "next": "dev.055",
-  "nextSequence": 55,
+  "current": "dev.055",
+  "sequence": 55,
+  "next": "dev.056",
+  "nextSequence": 56,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "十九层 Map047 天空圣殿普通主线（悟空）",
+  "currentChange": "物品页／装备页装备检索排序、拼音排序、v0.28 装备页（八戒）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

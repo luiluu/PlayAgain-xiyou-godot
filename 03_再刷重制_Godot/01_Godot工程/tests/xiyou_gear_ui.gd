@@ -37,7 +37,7 @@ func _run() -> void:
 	var worn:=rows.filter(func(r):return r.get("owner")!=null)
 	var bag:=rows.filter(func(r):return r.has("carry"))
 	check("weapon_rows_bag_and_worn",bag.size()>=1 and worn.size()>=1 and XItemRow.right_text(bag[0])=="1/9,999" and worn.any(func(r):return XItemRow.right_text(r)==a.display_name()),rows.map(func(r):return XItemRow.right_text(r)))
-	var q:=rows.map(func(r):return XGear.quality(r.rec))
+	var q:=rows.map(func(r):return XGearQuery.rank(XGear.quality(r.rec)))
 	var sorted_q:=q.duplicate();sorted_q.sort();sorted_q.reverse()
 	check("weapon_rows_quality_sorted",q==sorted_q,q)
 	var first:Dictionary=page._current()
@@ -93,9 +93,13 @@ func _run() -> void:
 	check("candidate_info_and_card",equip._shown_item()==cands[0].rec and equip.help_card.visible and equip._temp_actor()!=null)
 	equip.shift_lower();await frames()
 	check("compare_toggle",equip._compare)
-	# O-009：新值列右端收进内容区（内容宽 612 − 文字边距 6）；原版（COMPARE_SHIFT=0）超出 39
-	var new_right:=equip.lower_win.canvas.size.x-6.0-XEquipScene.COMPARE_VALUE_W+45.0-XEquipScene.COMPARE_SHIFT+XEquipScene.COMPARE_VALUE_W
-	check("compare_fits",equip.lower_win.canvas.size.x==612.0 and new_right<=606.0,new_right)
+	# v0.28 属性对比列（运行时读数）：名字 6、当前值 151.21 宽 200、箭头 359.21 宽 38、新值 405.21 宽 200.79（右端 606）
+	var col:=XEquipScene.compare_columns(equip.lower_win.canvas)
+	var want:=[6.0,151.21,200.0,359.21,38.0,405.21,200.79]
+	check("compare_columns_v028",equip.lower_win.canvas.size.x==612.0 and range(7).all(func(i):return absf(float(col[i])-want[i])<0.6),col)
+	check("compare_diff_text",XEquipScene.compare_text(485,500)=="500 (+15)" and XEquipScene.compare_text(1200,1000)=="1,000 (-200)" and XEquipScene.compare_text(3,3)=="3")
+	# v0.28 说明卡在左侧列表区：选中行底 +12；x = 640 − 宽 − 12（运行时读数 228,235）
+	check("equip_card_in_list",equip.help_card.position==Vector2(maxf(12,640-equip.help_card.size.x-12),173+14+(equip._item_index-equip._item_top)*36+36+12) or equip.help_card.position.y<173+14+(equip._item_index-equip._item_top)*36,equip.help_card.position)
 	await shot("12c_装备对比")
 	var ev_tab:=InputEventKey.new();ev_tab.keycode=KEY_TAB;ev_tab.pressed=true;get_viewport().push_input(ev_tab);await frames()
 	check("tab_back_to_info",not equip._compare)

@@ -19,6 +19,21 @@
     window.nw = { App: { manifest: manifest, startPath: '', argv: [], fullArgv: [], dataPath: '', quit: function () {} }, Window: { get: function () { return win; } }, Menu: function () { return { createMacBuiltin: function () {} }; }, Shell: { openExternal: function () {} } };
     window.MacPort = { root: '', save: '', bundle: '', qa: '', log: function () {} };
 })();
+/* 声音（用户 2026-10-16）：参照浏览器默认静音。WebAudio 主音量固定为 0（之后游戏再设也不生效），
+   Html5Audio 与视频元素也静音；网址加 ?sound=1 时不处理。只改本浏览器内存，不碰配置与存档。 */
+(function () {
+    if (/[?&]sound=1(?:&|$)/.test(location.search)) return;
+    window.__refMuted = true;
+    addEventListener('load', function () {
+        if (window.WebAudio) {
+            WebAudio.setMasterVolume(0);
+            var setVolume = WebAudio.setMasterVolume;
+            WebAudio.setMasterVolume = function () { return setVolume.call(this, 0); };
+        }
+        if (window.Html5Audio && Html5Audio._audioElement) Html5Audio._audioElement.muted = true;
+        if (window.Graphics && Graphics._video) Graphics._video.muted = true;
+    });
+})();
 /* ?difficulty_ref=1：真实插件定帧参照。只操作内存新游戏；不创建、不加载任何存档。 */
 (function () {
     if (!/[?&]difficulty_ref=1(?:&|$)/.test(location.search)) return;
