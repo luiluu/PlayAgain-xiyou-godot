@@ -131,10 +131,17 @@ func race_ids() -> Array:
 	return out
 
 
-## dsPassiveSkill Game_Enemy.refreshPassiveCache：只有元素减伤。
+## dsPassiveSkill Game_Enemy.refreshPassiveCache：只有元素减伤。扫描行动列表里的技能（Game_Enemy.skills 按行动逐条，
+## 同一技能出现几次就算几次，如十七层妖精的「伤害抵抗(1000)」）与状态，不扫敌人自身备注。
 func refresh_passive() -> void:
 	var c := {"harmRe": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0}
-	for o in trait_objects():
+	var objs := []
+	for a in data().get("actions", []):
+		var sk := XDB.rec("Skills", int(a.skillId))
+		if not sk.is_empty():
+			objs.append(sk)
+	objs.append_array(states())
+	for o in objs:
 		for m in XActor._scan(str(o.get("note", "")), "<passiveHarmRe(\\d+):\\s*([\\d.]+)>"):
 			c.harmRe[int(m[0])] = c.harmRe.get(int(m[0]), 0.0) + float(m[1])
 	_passive_cache = c

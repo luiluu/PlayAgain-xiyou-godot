@@ -196,6 +196,7 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 	var guard := 1.0 if kind == "true" else (1.0 / (2.0 * b.grd) if b.guarding else 1.0)
 	var growth := 1.0
 	var best := {}
+	var cands := []
 	for e in es:
 		var resistance: float = 1.0 if kind == "true" or e == 0 else b.element_rate(e)
 		var absorb := resistance < 0.0
@@ -208,7 +209,9 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 		var flat: float = 0.0 if kind == "true" else _flat_mitigation(a, b, e) + race.flat
 		var independent: float = 1.0 if absorb else _independent(a, item, e)
 		var gross: float = 0.0 if resistance == 0.0 else maxf(0.0, before_fixed) * independent * guard
-		var value: float = -maxf(0.0, before_fixed - flat) * guard if absorb else (0.0 if resistance == 0.0 else maxf(0.0, gross - flat))
+		# 固定减伤（harmRe、种族减免）在状态脚本之后才扣（apply_fixed_mitigation），这里只算扣之前的；吸收时照原版先扣
+		var value: float = -maxf(0.0, before_fixed - flat) * guard if absorb else gross
+		cands.append({"gross": value, "flat": flat, "resistance": resistance})
 		var row := {"element": e, "bonus": bonus, "defense": defense, "matchup": match_rate, "resistance": resistance,
 			"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": growth,
 			"critical": crit, "independent": independent, "guard": guard, "fixedMitigation": flat, "beforeFixed": gross, "value": value}
@@ -220,7 +223,31 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 	var out_value := roundf(settled)
 	if settled > 0.0 and out_value == 0.0:
 		out_value = 1.0
-	return {"value": out_value, "settled": settled, "critical": critical, "breakdown": {"base": raw, "basis": basis, "weights": weights, "row": best}}
+	return {"value": out_value, "settled": settled, "critical": critical, "breakdown": {"base": raw, "basis": basis, "weights": weights, "row": best, "candidates": cands}}
+
+
+## 伤害结算的最后两步：状态脚本（Confirm/React）→ 固定减伤。
+static func finish(res: Dictionary, item: Dictionary, a: XBattler, b: XBattler) -> float:
+	return apply_fixed_mitigation(apply_state_effects(res.value, item, a, b), res)
+
+
+## 正式 installDamageElementRuntime 的 entered 阶段：状态脚本之后的伤害按比例摊回各属性候选，各减固定减伤，取最大；
+## 抗性 0 为 0，结果四舍五入。吸收（负值）与回复不在此扣（吸收已在 calculate 里扣过）。
+static func apply_fixed_mitigation(amount: float, res: Dictionary) -> float:
+	var row: Dictionary = res.get("breakdown", {}).get("row", {})
+	var cands: Array = res.get("breakdown", {}).get("candidates", [])
+	if row.is_empty() or cands.is_empty() or amount < 0.0 or float(row.get("resistance", 1.0)) < 0.0:
+		return amount
+	var picked := float(row.get("value", 0.0))
+	var scale := amount / picked if picked > 0.0 else 1.0
+	var best := -INF
+	for c in cands:
+		if float(c.gross) < 0.0:
+			continue
+		var gross: float = float(c.gross) * scale if picked > 0.0 else amount
+		var v: float = 0.0 if float(c.resistance) == 0.0 else maxf(0.0, gross - float(c.flat))
+		best = maxf(best, v)
+	return roundf(best) if best > -INF else amount
 
 
 static func _healing(item: Dictionary, a: XBattler, b: XBattler, options: Dictionary, vars: Array) -> Dictionary:
