@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.037",
-  "sequence": 37,
-  "next": "dev.038",
-  "nextSequence": 38,
+  "current": "dev.038",
+  "sequence": 38,
+  "next": "dev.039",
+  "nextSequence": 39,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "扩六层 Map013 哥布林部族（悟空）",
+  "currentChange": "扩七层 Map061 荒废的猪猪农场（悟空）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
