@@ -22,7 +22,7 @@ extends Node
 ##
 ## 拆场景（并行测试.py 单个测试 300 秒上限）：part／parts 把楼层表按连续段分给几个场景，本场景只「完整走」第 part 段
 ## （寻路行走、遇敌、存读档），之前各层「快速通过」（直接执行传送门、守层者、辛德瑞事件，不走路、不存读档；事件本身照常执行）。
-## 现在 parts=2：xiyou_floor_run（第 1 段）与 xiyou_floor_run_b（第 2 段）。单个场景接近 200 秒时把 parts 加一并新增场景。
+## 现在 parts=3：xiyou_floor_run、xiyou_floor_run_b、xiyou_floor_run_c 各走一段（十二层时 2 段的第 2 段单跑已到 168.6 秒）。单个场景接近 200 秒时把 parts 加一并新增场景。
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
