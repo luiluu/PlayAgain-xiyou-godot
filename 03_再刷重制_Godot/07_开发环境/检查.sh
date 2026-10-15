@@ -58,12 +58,12 @@ if not in_worktree:
     hits = [f for f in files if f not in exempt and f.endswith(('.md', '.json', '.gd', '.py', '.sh')) and (root / f).is_file()
             and marker in (root / f).read_text(errors='ignore')]
     if hits: bad.append(marker + ' 未替换：' + '、'.join(hits))
-# 执行—核查双轨流程（AGENTS.md）：待交叉核查超过 4 行时提示（不判失败，超限期间仍要能收工修复）
+# 执行—核查双轨流程（AGENTS.md）：待交叉核查超过 10 行时提示（用户 2026-10-15 由 4 改 10）（不判失败，超限期间仍要能收工修复）
 board = (root / '00_项目管理/交接板.md').read_text()
 pending = board.split('## 待交叉核查', 1)[1].split('\n## ', 1)[0] if '## 待交叉核查' in board else ''
 rows = [l for l in pending.splitlines() if l.startswith('| ') and not l.startswith('| 提交 ') and not l.startswith('| ---')]
-if len(rows) > 4:
-    print(f'  ⚠ 待交叉核查 {len(rows)} 行，超过 4 行上限：停派新车道、停新功能，先启动 Codex（沙僧）核查')
+if len(rows) > 10:
+    print(f'  ⚠ 待交叉核查 {len(rows)} 行，超过 10 行上限：停派新车道、停新功能，先启动 Codex（沙僧）核查')
 for b in bad: print('  ✗ ' + b)
 print(f'  ✓ JSON、链接、开发编号（{dev}）' if not bad else f'  共 {len(bad)} 项问题')
 sys.exit(1 if bad else 0)
