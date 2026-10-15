@@ -1,8 +1,8 @@
 # 交付：claude/bajie-flow-test-3b9e3c（第四轮：出售报酬）
 
-- 车道／工作者：B 界面·规则／八戒（Claude，重制_八戒_3）
+- 车道／工作者：B 界面·规则／八戒（Claude，重制_八戒_3 → 重制_八戒_4）
 - 位置：worktree `.claude/worktrees/bajie-flow-test-3b9e3c`，分支 `claude/bajie-flow-test-3b9e3c`
-- 状态：进行中
+- 状态：可合并
 - 任务：出售报酬——补商店出售漏掉的 YEP_X_MoreCurrencies 卖出报酬（普通出售与一键出售；悟空审查 dev.039 发现；唐僧 2026-10-15 09:09 派）。严格级：mv_oracle 参照探针逐项比对。
 
 ## 出售报酬
@@ -25,14 +25,14 @@
 - 出售列表能否选照 YEP_ShopMenuCore：有价格，或有卖出报酬备注（MoreCurrencies 设 canSell）。原来 0 价的报酬装备（如武器 73「麒麟对剑」给变量 201）在 Godot 灰显不能卖，现在可以卖。
 - 备注解析照插件逐行的判断顺序（一行只认第一种写法，同一 ID 只取第一行）。
 - 严格级参照：新探针 sell_reward_probe.cjs 自动挑每张表各种备注的第一件、多备注的、无备注有价的、无备注 0 价的，经正式 Scene_Shop.doSell 与 XdRsData.hangUp.doSell 各卖一次，记能否卖、金币、变量、物品、装备件数变化（28 例，两条路径结果相同）；xiyou_item_marks 逐例比对全部一致。
-- 验证：xiyou_item_marks 82/82、xiyou_hangup_auto 226/226、xiyou_flow 48/48、xiyou_gear_ui 44/44；合并 main 后的全量 检查.sh --oracle 在 09:30 收尾时还没跑完，结果未知。
+- 验证：合并 main（9984feb）后 `检查.sh --oracle` 全部通过（37 个 Godot 测试，含 xiyou_item_marks 82/82、xiyou_hangup_auto 226/226、xiyou_flow 48/48、xiyou_gear_ui 44/44、xiyou_rules 17900/17900、xiyou_event_compare 5/5、xiyou_floor_run 1～7 层；参照守卫、MV 参照引擎、同源核对通过）。worktree 的 generated/oracle 与主工作区逐文件相同，另加本分支探针生成的 sell_rewards.json。
 - 未完成／已知问题：商店数量窗没画报酬那几行（MoreCurrencies 的 Window_ShopNumber 会列出卖出得到的变量/物品）；界面项，另做。
 ```
 
-### 停在哪里（09:30 收尾）
+### 停在哪里
 
-- 功能、探针、测试都已完成并提交；只差合并 main（e22c432）之后的全量 `检查.sh --oracle` 结果。
-- 下一步：跑一次 `检查.sh --oracle`（worktree 里先 `--补齐`，并把主工作区 generated/oracle 同步过来），全部通过后把状态改成「可合并」。
+- 09:30 收尾时只差全量检查；重制_八戒_4 合并 main（9984feb）、`--补齐`、核对 oracle 与主工作区一致后跑 `检查.sh --oracle`，全部通过。可合并。
+- 小注（给唐僧）：`新建工作树.sh` 是 zsh 脚本，用 `bash` 调用会在第 9 行报 `A: unbound variable`；直接运行或用 `zsh`。
 
 ### 合并时要做
 
@@ -71,4 +71,4 @@
 ## 本分支提交
 
 - 7a061d8 WIP 审查第一段（暂缓）
-- 第四轮开工交付单；afdb882 探针；1e7b5d0 出售报酬；装备判断修正；e22c432 合并 main；（本提交）交付单
+- 第四轮开工交付单；afdb882 探针；1e7b5d0 出售报酬；48dec51 装备判断修正；e22c432 合并 main；7ba5193 WIP 交付单；9984feb 合并 main；（本提交）交付单可合并
