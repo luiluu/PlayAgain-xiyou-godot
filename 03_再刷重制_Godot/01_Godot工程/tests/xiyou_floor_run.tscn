@@ -5,4 +5,4 @@
 [node name="XiyouFloorRun" type="Node"]
 script = ExtResource("1")
 part = 1
-parts = 3
+parts = 4

@@ -22,7 +22,7 @@ extends Node
 ##
 ## 拆场景（并行测试.py 单个测试 300 秒上限）：part／parts 把楼层表按连续段分给几个场景，本场景只「完整走」第 part 段
 ## （寻路行走、遇敌、存读档），之前各层「快速通过」（直接执行传送门、守层者、辛德瑞事件，不走路、不存读档；事件本身照常执行）。
-## 现在 parts=3：xiyou_floor_run、xiyou_floor_run_b、xiyou_floor_run_c 各走一段（十二层时 2 段的第 2 段单跑已到 168.6 秒）。单个场景接近 200 秒时把 parts 加一并新增场景。
+## 现在 parts=4：xiyou_floor_run、_b、_c、_d 各走一段（十二层时 2 段的第 2 段单跑已到 168.6 秒；十三层时 3 段的第 3 段超过 200 秒）。单个场景接近 200 秒时把 parts 加一并新增场景。
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -277,7 +277,8 @@ func _boost_party(s: XState) -> void:
 		if item.is_empty():
 			continue
 		# 生命、魔法、攻击、防御、魔攻、魔防、敏捷、幸运
-		item.params = [5.0e8, 1.0e6, 5.0e7, 5.0e6, 5.0e7, 5.0e6, 1.0e5, 1.0e3]
+		# 攻击、魔攻 5e9：十三层守层者（敌群 111）生命约 7e10 且带减伤状态 1103，5e7 时一场打不完
+		item.params = [5.0e8, 1.0e6, 5.0e9, 5.0e6, 5.0e9, 5.0e6, 1.0e5, 1.0e3]
 		a.refresh_passive()
 		a.hp = a.mhp
 		a.mp = a.mmp
