@@ -80,6 +80,7 @@ if ! python3 "$ENV_DIR/并行测试.py" "$GODOT" "$PROJECT"; then FAIL=1; fi
 print "== 参照工具访问守卫"
 if node "$ROOT/03_再刷重制_Godot/03_转换工具/mv_oracle/guard_check.cjs"; then ok "MV 文件守卫"; else bad "MV 文件守卫"; fi
 if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/ui_reference/guard_check.py"; then ok "界面参照服务守卫"; else bad "界面参照服务守卫"; fi
+if python3 "$ENV_DIR/测试工作树清理.py" >/dev/null; then ok "工作树清理保护"; else bad "工作树清理保护"; fi
 
 if [[ ${1:-} == --oracle ]]; then
   print "== MV 参照引擎"
