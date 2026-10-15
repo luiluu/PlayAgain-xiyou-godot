@@ -1,6 +1,6 @@
 extends Node
 ## 战力（installCombatPowerRuntime v2，XPower）：与 mv_oracle power_probe 的参照（generated/oracle/power.json）逐例比对。
-## 装备评分：每件装备的总分、三项与逐行明细（标签与三项数值，差 1e-6 以内）。法宝（<Magic Weapon>）未移植，跳过并计数。
+## 装备评分：每件装备的总分、三项与逐行明细（标签与三项数值，差 1e-6 以内），含法宝（初始等级）。
 
 const ORACLE := "res://modes/xiyou/generated/oracle/power.json"
 var results := []
@@ -39,11 +39,7 @@ func _run() -> void:
 
 
 func _gear(data: Dictionary) -> void:
-	var skipped := 0
 	for c in data.gear:
-		if bool(c.magic):
-			skipped += 1
-			continue
 		var rec := XDB.rec("Weapons" if c.kind == "weapon" else "Armors", int(c.id))
 		var s := XPower.equipment(rec)
 		var got_rows: Array = s.rows.map(func(r): return [r.label, r.parts])
@@ -52,7 +48,7 @@ func _gear(data: Dictionary) -> void:
 		for i in range(mini(got_rows.size(), want_rows.size())):
 			ok = ok and got_rows[i][0] == want_rows[i][0] and _close(got_rows[i][1], want_rows[i][1])
 		check("gear_%s%d" % [c.kind, int(c.id)], ok, {"got": [s.total, s.parts, got_rows], "want": [c.total, c.parts, want_rows], "why": c.why})
-	check("gear_magic_skipped", skipped < data.gear.size() / 2, skipped)
+	check("gear_magic_covered", data.gear.filter(func(c): return bool(c.magic)).size() >= 5)
 	# 关掉「战力显示与估算」时为 0
 	XConfig.set_flag("codexPowerEnabled", false)
 	XPower._gear_cache.clear()

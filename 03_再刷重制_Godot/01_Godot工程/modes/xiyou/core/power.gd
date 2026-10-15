@@ -5,8 +5,8 @@ extends RefCounted
 ##
 ## 装备评分 equipment(装备)：与穿戴者无关，按公共参照属性（生命 1000、魔法 300、其余 100）把基础属性、特性、
 ## 战力相关备注与被动状态折成「输出／生存／辅助」三项分数，再加「命中 / 暴击与伤害乘区」（三档参照的伤害预演增益）。
-## 未移植：法宝成长（<Magic Weapon> 等级×paramPlusPerLevel，法宝系统未做）、渡鸦／米拉／甚尔／狂妄／心钢的专属装备加成
-## （对应角色未接入）。
+## 法宝（<Magic Weapon>）按等级×每级属性另加「法宝成长」；法宝升级未做，等级取 CP_MagicWeapon 的初始等级。
+## 未移植：渡鸦／米拉／甚尔／狂妄／心钢的专属装备加成（对应角色未接入）。
 
 const NAMES := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "敏捷", "幸运"]
 ## 公共参照属性：装备评分与穿戴者无关
@@ -353,21 +353,46 @@ static func base_params(rec: Dictionary) -> Array:
 	return params
 
 
+## CP_MagicWeapon：等级（法宝升级未做，取 <Init Level: n>，缺省 1）
+static func magic_level(item: Dictionary) -> int:
+	if item.has("level"):
+		return int(item.level)
+	var init := int(roundf(float(str(item.get("meta", {}).get("Init Level", "0")).to_float())))
+	return init if init != 0 else 1
+
+
+## CP_MagicWeapon loadMagicWeaponBaseParam：<atk Param +30 per Level>（三字母小写属性名）
+static func magic_growth(item: Dictionary) -> Array:
+	var out := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	var ids := ["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"]
+	for m: RegExMatch in RegEx.create_from_string("<([a-z]{3}) Param ([+-]\\d+(\\.\\d+)*) per Level>").search_all(str(item.get("note", ""))):
+		var i := ids.find(m.get_string(1))
+		if i >= 0:
+			out[i] = m.get_string(2).to_float()
+	return out
+
+
 ## 装备评分 {total, parts[输出,生存,辅助], rows[{label, parts, value}]}；关掉战力或不是装备时为 0
 static func equipment(item: Dictionary) -> Dictionary:
 	if not enabled() or not _is_gear(item):
 		return _finish(_empty())
-	var sig := JSON.stringify([item.get("params"), item.get("traits"), item.get("note")])
+	var sig := JSON.stringify([item.get("params"), item.get("traits"), item.get("note"), item.get("level")])
 	if _gear_cache.has(sig):
 		return _gear_cache[sig]
 	var s := _empty()
 	var params: Array = item.get("params", []) if XItemMarks.is_gear(item) else base_params(item)
 	for i in range(mini(8, params.size())):
 		_attribute(s, i, float(params[i]), "基础属性 · " + NAMES[i])
+	var magic := RegEx.create_from_string("(?i)<Magic Weapon>").search(str(item.get("note", ""))) != null
+	var level := maxi(0, magic_level(item)) if magic else 0
+	if magic:
+		var plus := magic_growth(item)
+		for i in range(8):
+			_attribute(s, i, plus[i] * level, "法宝成长 · " + NAMES[i])
 	_traits(s, item, false)
 	_notes(s, item)
 	_gear_effects(s, item)
-	s.level = 0
+	s.level = level
 	s = _finish(s)
 	_gear_cache[sig] = s
 	return s
