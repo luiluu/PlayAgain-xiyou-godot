@@ -11,8 +11,9 @@ extends Control
 ## - 升级材料（占列表位置）：XItemRow；不能用的半透明；确定即镶嵌，留在材料列表。取消回到操作。
 ## - 选人 (0,0,1280,720)：Window_MenuActor，每行 173，头像居中、名字/Lv、HP/MP/TP 量条；使用后留在选人。
 ## - 说明卡（XHelpCard）跟着列表/材料列表的选中行；操作阶段保留；分类与选人阶段隐藏（v0.10 选人时隐藏）。
-## 暂未做（灰显或不画）：宝珠镶嵌（Codex 宝珠模块按实例随机插槽数：信息窗「镶嵌物」与操作菜单宝珠行）、道具置顶（Star_ItemTop）、
-##   出售锁定（随一键出售）、Codex「装备检索 / 排序」网页面板（只做默认排序）；同品质装备的名字排序暂按字码（正式版按中文拼音）。
+## - 道具置顶（Star_ItemTop，只对物品）、出售锁定（Star_ShopOnekey，物品与装备）：见 XItemMarks；做完留在操作菜单。
+## 暂未做（灰显或不画）：宝珠镶嵌（Codex 宝珠模块按实例随机插槽数：信息窗「镶嵌物」与操作菜单宝珠行）、
+##   Codex「装备检索 / 排序」网页面板（只做默认排序）；同品质装备的名字排序暂按字码（正式版按中文拼音）。
 
 signal closed
 
@@ -87,7 +88,7 @@ func entries() -> Array:
 			var itype := int(rec.get("itypeId", 1))
 			if (sym == "item" and itype == 1) or (sym == "keyItem" and itype == 2) or (sym == "consumable" and bool(rec.get("consumable", false))):
 				out.append({"rec": rec, "count": s.item_count(id)})
-		return out
+		return XItemMarks.apply_list(s, out)
 	var bag := bag_gear(sym)
 	for i in range(bag.size()):
 		out.append({"rec": bag[i], "carry": i + 1})
@@ -172,8 +173,8 @@ func _make_actions() -> void:
 	if _item.has("instanceId"):
 		_actions.append({"text": str(XDB.plugin("YEP_X_ItemUpgradeSlots").get("Upgrade Command", "升级 %1")).replace("%1", label), "symbol": "upgrade", "enabled": true})
 	else:
-		_actions.append({"text": "道具置顶", "symbol": "top", "enabled": false})
-	_actions.append({"text": "出售锁定", "symbol": "lock", "enabled": false})
+		_actions.append({"text": "道具置顶", "symbol": "top", "enabled": true})
+	_actions.append({"text": "出售锁定", "symbol": "lock", "enabled": true})
 	_actions.append({"text": "取消", "symbol": "cancel", "enabled": true})
 
 
@@ -425,6 +426,15 @@ func _ok_inner() -> void:
 					_mode = "upgrade"
 					_up_index = 0
 					_up_top = 0
+				"top", "lock":
+					# 物品的 _item 是列表里加了标记名的副本，改的是原记录；做完换成新的显示副本，操作菜单随之重画
+					var s := XState.current
+					var orig := _item if XItemMarks.is_gear(_item) else XDB.rec("Items", int(_item.id))
+					var msg := XItemMarks.toggle_top(s, orig) if a.symbol == "top" else XItemMarks.toggle_lock(s, orig)
+					if msg != "":
+						XToast.show_text(msg, true)
+					_item = XItemMarks.decorate(s, orig)
+					_make_actions()
 				"cancel":
 					_mode = "list"
 		"upgrade":

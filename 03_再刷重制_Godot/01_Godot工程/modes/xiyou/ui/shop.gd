@@ -9,7 +9,10 @@ extends Control
 ## - 状态 (768,173,512,483)：持有数；装备显示「<< 队员 >>」与 8 项能力增减（本 MOD 右移 220，左边留给物品说明卡）。
 ## - 金钱 (768,656,512,64)。
 ## - HelpExtend 说明卡（XHelpCard）：购买/出售列表选中行旁；数量窗、分类、指令阶段隐藏（原版 onBuyOk/onSellOk 时 clear）。
-## 尚未复现：一键出售（Star_ShopOnekey）、新物品「NEW」标记，见 界面风格.md。
+## - 一键出售（Star_ShopOnekey＋installUnifiedQualityRuntime）：Window_OnekeySellCommand (350,150,240,行数×36+内边距×2)，
+##   七档「出售X品质」左对齐；确定即卖出背包里该档（旧档 0～14）不带「[锁定]」的装备、无确认，然后回到指令窗（取消同）。
+## - 出售列表套用出售锁定／道具置顶（XItemMarks.apply_list）；选中锁定的物品时提示「已锁定 无法出售」并留在列表。
+## 尚未复现：新物品「NEW」标记，见 界面风格.md。
 
 signal closed
 
@@ -23,11 +26,14 @@ const GOLD_FONT := 20
 const QTY_FONT := 20
 const MAX_ITEMS := 9999
 const COMMANDS := [["购买", "buy"], ["出售", "sell"], ["一键出售", "onekey"], ["取消", "cancel"]]
+const ONEKEY_POS := Vector2(350, 150)
+const ONEKEY_W := 240.0
 const CATEGORIES := [["物品", "item"], ["消耗品", "consumable"], ["武器", "weapon"], ["护甲", "armor"], ["重要物品", "keyItem"]]
 
 var goods: Array = []
 var purchase_only := false
-var _mode := "command"          # command / buy / category / sell / number
+var _mode := "command"          # command / buy / category / sell / number / onekey
+var _onekey := 0
 var _cmd := 0
 var _cat := 0
 var _cat_top := 0
@@ -42,6 +48,7 @@ var info_win: XMVWindow
 var list_win: XMVWindow
 var status_win: XMVWindow
 var gold_win: XMVWindow
+var onekey_win: XMVWindow
 var help_card: XHelpCard
 
 
@@ -61,7 +68,10 @@ func _ready() -> void:
 	list_win = XMVWindow.make(self, LIST_RECT, op, _paint_list)
 	status_win = XMVWindow.make(self, STATUS_RECT, op, _paint_status)
 	gold_win = XMVWindow.make(self, GOLD_RECT, op, _paint_gold)
-	for w in [cmd_win, list_win]:
+	var n := XItemMarks.onekey_grades().size()
+	onekey_win = XMVWindow.make(self, Rect2(ONEKEY_POS, Vector2(ONEKEY_W, n * LH + XMVWindow.PADDING * 2)), op, _paint_onekey)
+	onekey_win.visible = false
+	for w in [cmd_win, list_win, onekey_win]:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
 	add_child(help_card)
@@ -75,7 +85,8 @@ func _refresh() -> void:
 	var n := _sell_data().size()
 	list_win.down_arrow = _mode == "sell" and _sell_top < n - _list_rows()
 	list_win.up_arrow = _mode == "sell" and _sell_top > 0
-	for w in [cmd_win, info_win, list_win, status_win, gold_win]:
+	onekey_win.visible = _mode == "onekey"
+	for w in [cmd_win, info_win, list_win, status_win, gold_win, onekey_win]:
 		w.refresh()
 	_update_help()
 
@@ -134,6 +145,7 @@ func _sell_data() -> Array:
 			if sym == "consumable" and (key or not bool(rec.get("consumable", false))):
 				continue
 			out.append({"rec": rec, "kind": 0, "count": s.item_count(id)})
+		out = XItemMarks.apply_list(s, out)
 	else:
 		for e in s.gear:
 			if e.kind == sym:
@@ -188,8 +200,16 @@ func _cmd_enabled(i: int) -> bool:
 		"sell":
 			return not purchase_only
 		"onekey":
-			return false
+			return not purchase_only
 	return true
+
+
+func _paint_onekey(c: XMVCanvas) -> void:
+	var rows := XItemMarks.onekey_grades()
+	for i in range(rows.size()):
+		if i == _onekey:
+			c.cursor(Rect2(0, i * LH, c.size.x, LH))
+		c.text(rows[i].text, 6, i * LH, c.size.x - 12, "left")
 
 
 func _paint_info(c: XMVCanvas) -> void:
@@ -358,6 +378,8 @@ func _move(d: int, wrap: bool) -> void:
 				_sell_top = XMenu._scroll_to(_sell_index, _sell_top, _list_rows())
 		"number":
 			_change_number(d)
+		"onekey":
+			_onekey = XMenu._move(_onekey, d, XItemMarks.onekey_grades().size(), wrap)
 
 
 ## MV Window_ShopNumber：上下 ±10、左右 ±1，范围 1～最大可买/可卖数
@@ -400,6 +422,8 @@ func _ok_inner() -> void:
 					_buy_index = clampi(_buy_index, 0, maxi(0, _buy_data().size() - 1))
 				"sell":
 					_mode = "category"
+				"onekey":
+					_mode = "onekey"
 				"cancel":
 					closed.emit()
 		"category":
@@ -415,11 +439,19 @@ func _ok_inner() -> void:
 		"sell":
 			var d := _sell_data()
 			if _sell_index < d.size() and int(d[_sell_index].rec.get("price", 0)) > 0:
+				# Star_ShopOnekey onSellOk：名字带「[锁定]」的不能卖
+				if str(d[_sell_index].rec.get("name", "")).contains(XItemMarks.LOCK):
+					XToast.show_text("已锁定 无法出售", true)
+					return
 				_number_from = "sell"
 				_number = 1
 				_mode = "number"
 		"number":
 			_trade()
+		"onekey":
+			var rows := XItemMarks.onekey_grades()
+			XItemMarks.onekey_sell(s, int(rows[_onekey].grade))
+			_mode = "command"
 
 
 func _trade() -> void:
@@ -436,7 +468,7 @@ func _trade() -> void:
 			2: s.gain_gear("armor", int(e.rec.id), _number)
 		_mode = "buy"
 	else:
-		var price := int(e.rec.get("price", 0)) / 2
+		var price := XItemMarks.selling_price(e.rec)
 		s.gain_gold(price * _number)
 		if int(e.kind) == 0:
 			s.gain_item(int(e.rec.id), -_number)
@@ -456,7 +488,7 @@ func _cancel_inner() -> void:
 	match _mode:
 		"command":
 			closed.emit()
-		"buy", "category":
+		"buy", "category", "onekey":
 			_mode = "command"
 		"sell":
 			_mode = "category"
@@ -476,7 +508,15 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	var p: Vector2 = event.position
 	var pad := Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
-	if CMD_RECT.has_point(p) and _mode in ["command", "category"]:
+	if _mode == "onekey":
+		var r := Rect2(onekey_win.position, onekey_win.size)
+		var i := floori((p - r.position - pad).y / LH)
+		if r.has_point(p) and i >= 0 and i < XItemMarks.onekey_grades().size():
+			if i == _onekey:
+				_ok()
+			else:
+				_onekey = i
+	elif CMD_RECT.has_point(p) and _mode in ["command", "category"]:
 		var i := floori((p - CMD_RECT.position - pad).y / LH)
 		if _mode == "command" and i >= 0 and i < COMMANDS.size():
 			if i == _cmd:
