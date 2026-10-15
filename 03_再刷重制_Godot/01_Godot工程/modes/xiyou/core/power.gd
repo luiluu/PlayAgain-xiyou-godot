@@ -25,6 +25,10 @@ static var _gear_cache := {}
 static var _ref_cache := {}
 
 
+static func clear_cache() -> void:
+	_gear_cache.clear()
+
+
 ## 设置页「战力显示与估算」（ConfigManager.codexPowerEnabled，默认开）
 static func enabled() -> bool:
 	return XConfig.flag("codexPowerEnabled")

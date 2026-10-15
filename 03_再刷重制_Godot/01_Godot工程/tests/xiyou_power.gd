@@ -32,6 +32,7 @@ func _run() -> void:
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
 	if check("power_oracle_loaded", data is Dictionary and data.get("gear", []).size() >= 50, ORACLE):
 		_gear(data)
+	await _option()
 	DirAccess.remove_absolute(XSave.dir())
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
@@ -54,3 +55,24 @@ func _gear(data: Dictionary) -> void:
 	XPower._gear_cache.clear()
 	check("gear_disabled_zero", int(XPower.equipment(XDB.rec("Weapons", 1)).total) == 0)
 	XConfig.set_flag("codexPowerEnabled", true)
+
+
+## 设置页「战力显示与估算」：状态与正式版 options 参照一致（默认 ON），确定取反、左关右开，切换后装备评分跟着变
+func _option() -> void:
+	var ref = JSON.parse_string(FileAccess.get_file_as_string("res://modes/xiyou/generated/oracle/options.json"))
+	var want := ""
+	for row in (ref.rows if ref is Dictionary else []):
+		if row.symbol == "codexPowerEnabled":
+			want = str(row.status)
+	XState.current = XState.new_game(3, 1, [8, 9, 10])
+	var opt := XOptionsScene.new()
+	add_child(opt)
+	await get_tree().process_frame
+	opt.index = opt.symbols().find("codexPowerEnabled")
+	check("option_status", want == "ON" and opt.status_text(opt.index) == want, [opt.status_text(opt.index), want])
+	var w1 := XDB.rec("Weapons", 2)
+	opt.ok()
+	check("option_ok_off", not XPower.enabled() and opt.status_text(opt.index) == "OFF" and int(XPower.equipment(w1).total) == 0)
+	opt._side(true)
+	check("option_right_on", XPower.enabled() and int(XPower.equipment(w1).total) == 42, XPower.equipment(w1).total)
+	opt.queue_free()
