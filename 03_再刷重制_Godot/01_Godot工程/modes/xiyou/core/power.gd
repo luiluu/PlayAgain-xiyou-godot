@@ -27,6 +27,7 @@ static var _ref_cache := {}
 
 static func clear_cache() -> void:
 	_gear_cache.clear()
+	_actor_cache.clear()
 
 
 ## 设置页「战力显示与估算」（ConfigManager.codexPowerEnabled，默认开）
@@ -400,3 +401,344 @@ static func equipment(item: Dictionary) -> Dictionary:
 	s = _finish(s)
 	_gear_cache[sig] = s
 	return s
+
+
+# ======================================================================
+# 角色战力（CodexCombatPower.actor）：只读的整套配置评估，不改真实角色
+# ======================================================================
+## 三档中性敌人（防御、权重）：先评中档，再评低、高档
+const PROFILES := [{"def": 100.0, "weight": 0.3}, {"def": 10000.0, "weight": 0.4}, {"def": 1000000.0, "weight": 0.3}]
+const NANO_STATES := [1522, 1708, 1709, 1763, 1765, 1768, 1769, 1770, 1771, 1772, 1773, 1774, 1775, 1776, 1777, 1778, 1780, 1781, 1782,
+	1783, 1784, 1785, 1786, 1789, 1792, 1793, 1794, 1795, 1796, 1797, 1798, 1799, 1800, 1801, 1802, 1803, 1804, 1805, 1806, 1807]
+const ENVIRONMENT := "^(?:轮回模式|灭世挑战|天灾难度|强者增强.*洪荒|天道诅咒|强者压制)"
+const DAMAGE_TYPES := [1, 2, 5, 6]
+
+static var _actor_cache := {}
+static var _formula_ok := {}
+
+
+## 中性敌人：生命 100 万、攻击类 1 万、防御按档位、敏捷幸运 100；命中 1、其余附加能力 0、特殊能力 1、属性有效度 1、无属性体质
+class NeutralEnemy extends XBattler:
+	var params := []
+
+	func _init(defense: float) -> void:
+		params = [1000000.0, 10000.0, 10000.0, defense, 10000.0, defense, 100.0, 100.0]
+		hp = params[0]
+		mp = params[1]
+
+	func param(i: int) -> float:
+		return params[i]
+
+	func param_base(i: int) -> float:
+		return params[i]
+
+	func xparam(i: int) -> float:
+		return 1.0 if i == 0 else 0.0
+
+	func sparam(_i: int) -> float:
+		return 1.0
+
+	func element_rate(_e: int) -> float:
+		return 1.0
+
+	func passive_cache() -> Dictionary:
+		return {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0}
+
+
+static func _js_formula(f: String) -> String:
+	var re := RegEx.create_from_string("Math\\.(floor|ceil)\\(Math\\.random\\(\\)\\s*\\*\\s*(\\d+)\\)")
+	var m := re.search(f)
+	while m:
+		var n := int(m.get_string(2))
+		f = f.substr(0, m.get_start()) + "(%s/2)" % str(n - 1 if m.get_string(1) == "floor" else n + 1) + f.substr(m.get_end())
+		m = re.search(f)
+	return f.replace("Math.random()", "0.5")
+
+
+## compileFormula：只认受限写法（能力值、熟练度、状态、变量、Math 函数与常数运算），其余技能不计入（coverage.unknown）
+static func formula_ok(skill: Dictionary) -> bool:
+	var d: Dictionary = skill.get("damage", {})
+	var key := str(d.get("formula", "0")) + "|" + str(bool(d.get("custom", false)))
+	if _formula_ok.has(key):
+		return _formula_ok[key]
+	var ok := false
+	if not bool(d.get("custom", false)):
+		var s := _js_formula(str(d.get("formula", "0")))
+		for p in ["Codex(?:Raven\\.(?:legionStrikeRate|skillCoefficient|defenseFactor|defenseDeduction)|Mira\\.damage|Yomi\\.damage|Jingliu\\.damage|Toji\\.damage|Sukuna\\.damage|Garou\\.base)\\b",
+				"CodexYunshang\\.formula\\b", "Codex(?:Tusu|Xuan)\\.(?:damage|heal)\\(a,\\s*b(?:,\\s*'\\w+')?\\)",
+				"(?:a|b|user|target|subject)\\.(?:skillMasteryLevel|isStateAffected|hpRate|mpRate|tpRate|param|xparam|sparam)\\b",
+				"(?:a|b|user|target|subject)\\.(?:mhp|mmp|hp|mp|tp|atk|def|mat|mdf|agi|luk|level|hit|cri|pdr|mdr|rec)\\b",
+				"Math\\.(?:floor|ceil|round|max|min|abs|pow|sqrt|log)\\b", "item\\.id", "v\\[\\d+\\]", "\\b(?:a|b|user|target|subject|this|true|false)\\b"]:
+			s = RegEx.create_from_string(p).sub(s, "1", true)
+		ok = RegEx.create_from_string("^[\\d\\s.eE+*/()%\\-,?:<>=!&|]+$").search(s) != null \
+			and RegEx.create_from_string("[;{}\\[\\]'\"`]").search(s) == null \
+			and RegEx.create_from_string("(?<![<>=!])=(?!=)").search(s) == null
+	_formula_ok[key] = ok
+	return ok
+
+
+## 预演用的技能副本：公式里的随机数固定为 0.5（正式版评估期间 Math.random 恒为 0.5）
+static func _preview_skill(skill: Dictionary) -> Dictionary:
+	var item := skill.duplicate()
+	item.damage = skill.damage.duplicate()
+	if item.damage.get("formulaGd") is String:
+		item.damage.formulaGd = str(item.damage.formulaGd).replace("randf()", "0.5")
+	return item
+
+
+static func _environment(rec: Dictionary) -> bool:
+	return not rec.is_empty() and RegEx.create_from_string(ENVIRONMENT).search(str(rec.get("name", ""))) != null
+
+
+## isolatedActor：复制角色（naked 时不穿装备），去掉环境技能/状态与战斗中状态，增减益清零，生命魔法补满
+static func _isolated(actor: XActor, naked: bool) -> XActor:
+	var a := XEquipment.clone(actor)
+	var learned: Array[int] = []
+	for id in a.skill_ids:
+		if not _environment(XDB.rec("Skills", id)):
+			learned.append(id)
+	a.skill_ids = learned
+	var kept: Array[int] = []
+	for id in a.state_ids:
+		var st := XDB.rec("States", id)
+		if not st.is_empty() and id != 1 and not _environment(st) and not bool(st.get("removeAtBattleEnd", false)) \
+				and int(st.get("autoRemovalTiming", 0)) == 0 and not NANO_STATES.has(id):
+			kept.append(id)
+	a.state_ids = kept
+	a.buffs = [0, 0, 0, 0, 0, 0, 0, 0]
+	a.buff_turns = [0, 0, 0, 0, 0, 0, 0, 0]
+	a.cooldowns = {}
+	a.warmups = {}
+	if naked:
+		for i in range(a.equips.size()):
+			a.equips[i] = null
+	a.refresh_passive()
+	# prepare：装备与技能上 <StartPushStateN: ≥100%> 的状态
+	for tag in a.battle_start_state_tags():
+		if tag[0] == "StartPushState" and float(tag[2]) >= 100.0 and not a.state_ids.has(int(tag[1])) and int(tag[1]) != 1:
+			a.add_state(int(tag[1]))
+	a.refresh_passive()
+	a.hp = a.mhp
+	a.mp = a.mmp
+	a.tp = 0.0
+	return a
+
+
+static func _attack_skill(a: XActor) -> Dictionary:
+	return XDB.rec("Skills", XBattleLogic.ATTACK_SKILL)
+
+
+static func _vars() -> Array:
+	var v: Array = XState.current.variable_array().duplicate() if XState.current else []
+	while v.size() <= 20:
+		v.append(0)
+	v[20] = 0
+	return v
+
+
+## repeatCount：(重复次数＋普攻追加次数＋再次使用概率) × 行动序列里 ACTION EFFECT 段数
+static func _repeat_count(a: XActor, item: Dictionary) -> float:
+	var base := float(item.get("repeats", 1))
+	if int(item.id) == XBattleLogic.ATTACK_SKILL:
+		base += a.traits_sum_all(XBattler.TRAIT_ATTACK_TIMES)
+	var chance := 0.0
+	var by := "Zj" if int(item.get("stypeId", 0)) == 1 else "Mf" if int(item.get("stypeId", 0)) == 2 else ""
+	for o in a.equip_list() + a.skills() + a.states():
+		for m: RegExMatch in RegEx.create_from_string("<AgainUse(All|Mf|Zj|\\d+):\\s*([+-]?\\d+(?:\\.\\d+)?)%?\\s*>").search_all(str(o.get("note", ""))):
+			var k := m.get_string(1)
+			if k == "All" or k == by or (k.is_valid_int() and int(k) == int(item.id)):
+				chance += float(m.get_string(2))
+	return (maxf(1.0, base) + clampf(chance / 100.0, 0.0, 1.0)) * maxf(1.0, float(item.get("yepEffects", 1)))
+
+
+## expected：先扣费用再预演普通与暴击伤害（含状态 Confirm/React），× 命中 ×(1−闪避) × 段数，群体按 60% 单体／40% 三体
+static func _expected(logic: XBattleLogic, a: XActor, t: XBattler, skill: Dictionary, cost: Dictionary) -> float:
+	var item := _preview_skill(skill)
+	var saved := [a.mp, a.hp, a.tp]
+	a.mp = maxf(0.0, a.mp - float(cost.mp))
+	a.tp = maxf(0.0, a.tp - float(cost.tp))
+	var vars := _vars()
+	var normal := XDamage.apply_state_effects(XDamage.calculate(item, a, t, {"critical": false, "variance": false, "vars": vars}).value, item, a, t)
+	var critical := normal
+	if bool(item.damage.get("critical", false)):
+		critical = XDamage.apply_state_effects(XDamage.calculate(item, a, t, {"critical": true, "variance": false, "vars": vars}).value, item, a, t)
+	var p := _clamp01(a.cri * (1.0 - t.cev)) if bool(item.damage.get("critical", false)) else 0.0
+	var hit := _clamp01(logic.item_hit(a, item, t)) * (1.0 - _clamp01(logic.item_eva(a, item, t)))
+	a.mp = saved[0]
+	a.hp = saved[1]
+	a.tp = saved[2]
+	var value := maxf(0.0, normal * (1.0 - p) + critical * p) * hit * _repeat_count(a, skill)
+	var scope := int(skill.get("scope", 1))
+	if scope == 2:
+		value *= 1.8
+	elif scope >= 3 and scope <= 6:
+		value *= scope - 2
+	return maxf(0.0, value)
+
+
+static func _skills_for(a: XActor, coverage: Dictionary) -> Array:
+	var list: Array = a.skills().filter(func(s): return int(s.get("occasion", 0)) < 2 and DAMAGE_TYPES.has(int(s.get("damage", {}).get("type", 0))))
+	var attack := _attack_skill(a)
+	if not attack.is_empty() and not list.any(func(s): return int(s.id) == int(attack.id)):
+		list.append(attack)
+	var out := []
+	var seen := {}
+	for s in list:
+		if seen.has(int(s.id)):
+			continue
+		seen[int(s.id)] = true
+		if not formula_ok(s):
+			coverage.unknown.append({"id": int(s.id), "name": s.name})
+			continue
+		coverage.known += 1
+		out.append(s)
+	return out
+
+
+static func _meta_int(skill: Dictionary, key: String) -> int:
+	return int(str(skill.get("meta", {}).get(key, "0")).strip_edges().to_int())
+
+
+## cycle：10 回合，每次行动在候选里挑当前能用（冷却、预热、费用）且期望伤害最高的技能；回合末按再生率回复、TP +5
+static func _cycle(logic: XBattleLogic, a: XActor, t: XBattler, skills: Array) -> Dictionary:
+	var damage := 0.0
+	var first := 0.0
+	var schedule := []
+	var cooldowns := {}
+	var warmups := {}
+	var cache := {}
+	var cost_for := func(s: Dictionary) -> Dictionary:
+		var c := logic.skill_cost(a, s)
+		return {"mp": float(c.mp), "tp": float(c.tp), "hp": 0.0}
+	var damage_for := func(s: Dictionary, c: Dictionary) -> float:
+		var f := str(s.damage.get("formula", ""))
+		var key := "%d|%s|%s|%s" % [int(s.id), str(a.mp) if RegEx.create_from_string("\\.(?:mp|mpRate)").search(f) else "0",
+			str(a.hp) if RegEx.create_from_string("\\.(?:hp|hpRate)").search(f) else "0", str(a.tp) if RegEx.create_from_string("\\.(?:tp|tpRate)").search(f) else "0"]
+		if not cache.has(key):
+			cache[key] = _expected(logic, a, t, s, c)
+		return cache[key]
+	for s in skills:
+		warmups[int(s.id)] = maxi(0, _meta_int(s, "Warmup"))
+	# screen：按期望伤害取前 8 个（同分保持原顺序），普攻保底
+	var scored := []
+	for i in range(skills.size()):
+		scored.append([skills[i], damage_for.call(skills[i], cost_for.call(skills[i])), i])
+	scored.sort_custom(func(x, y): return x[1] > y[1] or (x[1] == y[1] and x[2] < y[2]))
+	var candidates: Array = scored.slice(0, 8).map(func(r): return r[0])
+	var fallback = skills.filter(func(s): return int(s.id) == XBattleLogic.ATTACK_SKILL)
+	if not fallback.is_empty() and not candidates.has(fallback[0]):
+		candidates.append(fallback[0])
+	var plus := 0.0
+	for tr in a.all_traits():
+		if int(tr.code) == 61:
+			plus += _clamp01(float(tr.value))
+	var actions := 1.0 + plus
+	for turn in range(1, 11):
+		for index in range(ceili(actions)):
+			var weight := minf(1.0, actions - index)
+			var best := {}
+			for s in candidates:
+				var c: Dictionary = cost_for.call(s)
+				var ready: bool = not (int(cooldowns.get(int(s.id), 0)) > 0 or int(warmups.get(int(s.id), 0)) > 0) \
+					and c.mp <= a.mp and c.tp <= a.tp and c.hp < a.hp and logic.can_use(a, s)
+				if not ready:
+					continue
+				var v: float = damage_for.call(s, c)
+				if best.is_empty() or v > best.value:
+					best = {"skill": s, "cost": c, "value": v}
+			if not best.is_empty():
+				damage += best.value * weight
+				a.mp = maxf(0.0, a.mp - best.cost.mp * weight)
+				a.tp = maxf(0.0, a.tp - best.cost.tp * weight)
+				a.hp = maxf(1.0, a.hp - best.cost.hp * weight)
+				cooldowns[int(best.skill.id)] = maxi(0, _meta_int(best.skill, "Cooldown"))
+				schedule.append({"turn": turn, "id": int(best.skill.id), "damage": best.value * weight})
+		a.mp = minf(a.mmp, a.mp + maxf(0.0, a.mmp * a.mrg))
+		a.hp = minf(a.mhp, a.hp + maxf(0.0, a.mhp * a.hrg))
+		a.tp = minf(a.max_tp(), a.tp + maxf(0.0, a.max_tp() * a.trg) + 5.0)
+		for k in cooldowns:
+			cooldowns[k] = maxi(0, int(cooldowns[k]) - 1)
+		for k in warmups:
+			warmups[k] = maxi(0, int(warmups[k]) - 1)
+		if turn == 3:
+			first = damage / 3.0
+	return {"burst": first, "sustained": damage / 10.0, "schedule": schedule}
+
+
+static func _curve(value: float, reference: float, weight: float, exponent: float) -> float:
+	return js_round(weight * pow(maxf(0.0, value) / reference, exponent))
+
+
+## evaluate：三档防御下的 3 回合爆发／10 回合持续（输出）、有效生命（生存）、最大单次治疗×恢复率（辅助），各按曲线折分
+static func evaluate(actor: XActor, naked: bool) -> Dictionary:
+	if not enabled():
+		return {}
+	var logic := XBattleLogic.new()
+	logic.state = XState.current
+	var coverage := {"known": 0, "unknown": []}
+	var results := [null, null, null]
+	var ehp := 0.0
+	var aux := 0.0
+	var params := []
+	for index in [1, 0, 2]:
+		var profile: Dictionary = PROFILES[index]
+		var a := _isolated(actor, naked)
+		var t := NeutralEnemy.new(float(profile.def))
+		var skills := _skills_for(a, coverage if index == 1 else {"known": 0, "unknown": []})
+		var out := _cycle(logic, a, t, skills)
+		out.weight = profile.weight
+		results[index] = out
+		var avoidance := (clampf(a.eva, 0, 0.8) + clampf(a.mev, 0, 0.8)) / 2.0
+		var rate := maxf(0.02, (maxf(0.0, a.pdr) + maxf(0.0, a.mdr)) / 2.0) * (1.0 - avoidance)
+		var defense := 1.0 / ((XDamage.defense_rate(10000, a.def) + XDamage.defense_rate(10000, a.mdf)) / 2.0)
+		ehp += float(profile.weight) * maxf(0.0, a.mhp) * (1.0 + minf(1.0, maxf(0.0, a.hrg) * 3.0)) * defense / rate
+		if index == 0:
+			for j in range(8):
+				params.append(a.param(j))
+			var heal := 0.0
+			for s in a.skills():
+				if not [3, 4].has(int(s.get("damage", {}).get("type", 0))) or not formula_ok(s):
+					continue
+				if float(logic.skill_cost(a, s).mp) > a.mmp:
+					continue
+				var amount := maxf(0.0, -XDamage.eval_formula(_preview_skill(s), a, a, _vars()))
+				heal = maxf(heal, amount * (3.0 if int(s.scope) == 8 else 1.0) * maxf(0.0, a.rec))
+			aux = heal
+	var burst := 0.0
+	var sustained := 0.0
+	for r in results:
+		burst += r.burst * r.weight
+		sustained += r.sustained * r.weight
+	var parts := [_curve(burst * 0.4 + sustained * 0.6, 1000, 600, 0.35), _curve(ehp, 1000, 300, 0.5), _curve(aux, 1000, 100, 0.5)]
+	return {"total": parts[0] + parts[1] + parts[2], "parts": parts, "burst": burst, "sustained": sustained, "effectiveHp": ehp,
+		"auxiliary": aux, "params": params, "coverage": coverage, "schedule": results[1].schedule}
+
+
+static func _signature(a: XActor) -> String:
+	return JSON.stringify([a.actor_id, a.class_id, a.level, a.skill_ids, a.state_ids, a.equips, XState.current.variable(8) if XState.current else 0])
+
+
+## 角色战力 {total, self, gear, gearScore, parts, selfParts, gearParts, evaluation, ownEvaluation}；关掉时全 0
+static func actor(a: XActor, force := false) -> Dictionary:
+	if not enabled() or a == null:
+		return {"self": 0, "gear": 0, "total": 0, "parts": [0, 0, 0], "selfParts": [0, 0, 0], "gearParts": [0, 0, 0]}
+	var sig := _signature(a)
+	if not force and _actor_cache.has(sig):
+		return _actor_cache[sig]
+	var own := evaluate(a, true)
+	var full := evaluate(a, false)
+	var gear_score := 0.0
+	for e in a.equip_list():
+		gear_score += float(equipment(e).total)
+	var result := {"self": own.total, "gear": full.total - own.total, "gearScore": gear_score, "total": full.total, "parts": full.parts,
+		"selfParts": own.parts, "gearParts": [full.parts[0] - own.parts[0], full.parts[1] - own.parts[1], full.parts[2] - own.parts[2]],
+		"evaluation": full, "ownEvaluation": own}
+	_actor_cache[sig] = result
+	return result
+
+
+## 主菜单只读有效缓存（cachedActorPower）：没算过就是 {}，显示「战力见状态」
+static func cached_actor(a: XActor) -> Dictionary:
+	if not enabled() or a == null:
+		return {}
+	return _actor_cache.get(_signature(a), {})

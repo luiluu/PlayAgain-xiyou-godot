@@ -47,15 +47,21 @@
 - 设置页「战力显示与估算」：ON/OFF，确定取反、左右开关，切换清缓存；状态与正式版选项参照一致（默认 ON，存成 false 才关）。
 - 未移植：渡鸦／米拉／甚尔／狂妄／心钢专属装备加成（角色未接入）；法宝升级（等级取初始等级）。
 
-### 未做（下一段）
+### 进行中：角色战力（WIP，数值未对上，未接界面）
 
-- 角色战力 CodexCombatPower.actor：孤立角色＋中性敌人（防御 100／1 万／100 万三档）、10 回合技能循环（冷却、预热、费用、再生、额外行动、重复次数）、爆发/持续、有效生命、辅助治疗，curve 折分；自身（裸装）与装备差。参照已试：切片 10 个角色各 2～3 个可计入技能，单次约 0.6 秒。
-- 界面：装备页／技能页状态窗「战力 N」（现「战力 …」）、主菜单「战力见状态」→ 有缓存时「战斗力 N」、装备变更后的战力提示。
+- 已写 XPower.evaluate／actor／cached_actor（power.gd 后半）：孤立角色（XEquipment.clone，裸装时卸装备；去环境技能/状态与战斗中状态；StartPushState≥100%）、中性敌人 NeutralEnemy、compileFormula 受限公式判定、expected（XDamage.calculate 无浮动＋状态 Confirm/React、命中×(1−闪避)、暴击期望、段数 yepEffects＋普攻追加＋AgainUse、群体倍率）、10 回合 cycle（前 8 候选、冷却/预热、费用、再生、额外行动）、有效生命、辅助治疗、curve。
+- 参照：power_probe 已加切片 10 个角色 1/30 级（power.json 的 actors）。xiyou_power 里角色比对暂时只打印 ACTOR_PENDING（现 0/20），不计入结果。
+- 已查到的差异（下一会话从这里接）：
+  1. 有效生命 1 级完全一致（属性与公式对）；30 级 Godot 学会的技能比正式版多（正式版 1 号角色 30 级只多学 160；Godot 还学了 311 等）——测试已改用 change_level_mv，仍要核对 Godot 升级学技能是否与 MV changeLevel 一致（可能是升级规则问题，不只是战力）。
+  2. 单次伤害偏大：1 号角色 1 级裸装、防御 1 万档普攻，正式版 schedule 每次 10.33，Godot expected 15.9；Godot 明细里物理元素增幅 bonus=2.4（+140%），先查这份增幅从哪来、正式版预演时是否同样计入（正式版 makeDamageValue 外层可能还有 PowerZones／ImportedBalance／难度等钩子）。办法：在 node 里对同一孤立角色直接调 CodexDamage.calculate 与 Game_Action.itemHit/itemCri，逐项对 breakdown。
+  3. Godot 的 passive_cache 没有 againUse／atkk（正式版 dsPassiveSkill），XPower 里 AgainUse 是自己扫备注，atkk 未计。
+- 界面未接：装备页／技能页状态窗仍写「战力 …」（正式版还没算出时的写法），主菜单仍「战力见状态」；角色战力对上之后再接（XMenu.paint_actor_status 的 power 参数、主菜单用 cached_actor）、装备变更后的战力提示。
 
 ## 停在哪里
 
 - ①② 已提交；全量检查只差正式源 v0.25 的登记（见上面「验证」），已告诉唐僧。
-- ③ 装备评分、说明卡、设置页已完成（26f1221、36ff923、3e5fba2）；下一段是角色战力与装备/技能页、主菜单显示。
+- ③ 装备评分、说明卡、设置页已完成（26f1221、36ff923、3e5fba2）；角色战力代码已写但数值未对上（见上面「进行中」，本提交），界面未接。
+- 2026-10-15 重制_八戒_4 上下文到 50%，停在这里；Remote Control 下不能开新会话接力，已报告唐僧。下一会话接角色战力差异第 1、2 项。
 
 ## 本分支提交
 
@@ -63,4 +69,5 @@
 - f5a5680 新建工作树.sh --补齐 刷新旧参照、bash 调用提示
 - f24e85e 商店数量窗卖出报酬列与装备数量光标
 - c6f9fe6 交付单：①② 检查结果
-- 26f1221 WIP 装备评分＋探针；36ff923 WIP 说明卡战力行＋法宝成长；3e5fba2 WIP 设置页战力项
+- 26f1221 WIP 装备评分＋探针；36ff923 WIP 说明卡战力行＋法宝成长；3e5fba2 WIP 设置页战力项；7df1c10 交付单
+- （本提交）WIP 角色战力初稿与参照（未对上）

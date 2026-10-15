@@ -1,6 +1,8 @@
 extends Node
 ## 战力（installCombatPowerRuntime v2，XPower）：与 mv_oracle power_probe 的参照（generated/oracle/power.json）逐例比对。
 ## 装备评分：每件装备的总分、三项与逐行明细（标签与三项数值，差 1e-6 以内），含法宝（初始等级）。
+## 角色战力：切片角色（新开局初始装备，属性浮动取中值）1/30 级的总分、自身、装备差、三项，与爆发/持续/有效生命/辅助（相对 1e-6）、出手顺序。
+## 角色战力移植未完成（数值未对上，见交付单），暂只打印 ACTOR_PENDING 一致数，不计入结果；对上后改回 check。
 
 const ORACLE := "res://modes/xiyou/generated/oracle/power.json"
 var results := []
@@ -32,6 +34,7 @@ func _run() -> void:
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
 	if check("power_oracle_loaded", data is Dictionary and data.get("gear", []).size() >= 50, ORACLE):
 		_gear(data)
+		_actors(data)
 	await _option()
 	DirAccess.remove_absolute(XSave.dir())
 	var passed := results.filter(func(x): return x.passed).size()
@@ -76,3 +79,24 @@ func _option() -> void:
 	opt._side(true)
 	check("option_right_on", XPower.enabled() and int(XPower.equipment(w1).total) == 42, XPower.equipment(w1).total)
 	opt.queue_free()
+
+
+func _actors(data: Dictionary) -> void:
+	XGear.force_roll = 0.5
+	var matched := 0
+	for c in data.get("actors", []):
+		var st := XState.new_game_blank()
+		var a := st.actor(int(c.id))
+		a.change_level_mv(int(c.level))
+		a.recover_all()
+		var p := XPower.actor(a, true)
+		var e: Dictionary = p.evaluation
+		var o: Dictionary = p.ownEvaluation
+		var nums := [e.burst, e.sustained, e.effectiveHp, e.auxiliary, o.burst, o.sustained, o.effectiveHp, o.auxiliary]
+		var want := [c.full.burst, c.full.sustained, c.full.effectiveHp, c.full.auxiliary, c.own.burst, c.own.sustained, c.own.effectiveHp, c.own.auxiliary]
+		var sched: Array = e.schedule.map(func(x): return int(x.id))
+		var ok: bool = int(p.total) == int(c.total) and int(p.self) == int(c.self) and _close(p.parts, c.parts) and _close(p.selfParts, c.selfParts) \
+			and _close(nums, want) and sched == c.full.schedule.map(func(x): return int(x)) and int(e.coverage.known) == int(c.full.known)
+		matched += 1 if ok else 0
+	print("ACTOR_PENDING %d/%d" % [matched, data.get("actors", []).size()])
+	XGear.force_roll = -1.0

@@ -1,5 +1,6 @@
 'use strict';
-// 战力（installCombatPowerRuntime v2）参照：装备评分 CodexCombatPower.equipment 的总分、三项与逐行明细。只写 .sandbox/power.json。
+// 战力（installCombatPowerRuntime v2）参照：装备评分 CodexCombatPower.equipment 的总分、三项与逐行明细；
+// 角色战力 CodexCombatPower.actor（切片角色 1/30 级，新开局初始装备）的总分、自身、装备差与爆发/持续/有效生命/辅助。只写 .sandbox/power.json。
 // 装备按特性/备注自动挑选：每种特性（代码:编号）、每种战力相关备注各取第一件，另加切片角色的初始装备；法宝（<Magic Weapon>）另记一类。
 const fs=require('fs'),path=require('path');
 const {boot}=require('./hboot.cjs'),{sourceIdentity}=require('./source_identity.cjs');
@@ -33,8 +34,16 @@ for(const c of picked.values()){
   gear.push({kind:c.kind,id:c.id,why:c.why,name:o.name,magic:/<Magic Weapon>/i.test(o.note||''),total:s.total,parts:s.parts,
     rows:s.rows.map(x=>({label:x.label,parts:x.parts}))});
 }
+// 角色战力：切片角色（新开局的初始装备）1 级与 30 级，强制重算
+const actors=[];
+for(const id of SLICE.actors){const a=w.$gameActors.actor(id);if(!a)continue;
+  for(const lv of [1,30]){a.changeLevel(lv,false);a.recoverAll();const p=P.actor(a,true),e=p.evaluation,o=p.ownEvaluation;
+    actors.push({id,level:lv,name:a.name(),equips:a.equips().map(x=>x?[w.DataManager.isWeapon(x)?'weapon':'armor',x.baseItemId||x.id,x.params]:null),
+      total:p.total,self:p.self,gear:p.gear,gearScore:p.gearScore,parts:p.parts,selfParts:p.selfParts,
+      full:{burst:e.burst,sustained:e.sustained,effectiveHp:e.effectiveHp,auxiliary:e.auxiliary,known:e.coverage.known,unknown:e.coverage.unknown.map(u=>u.id),schedule:e.schedule.map(x=>x.id)},
+      own:{burst:o.burst,sustained:o.sustained,effectiveHp:o.effectiveHp,auxiliary:o.auxiliary,schedule:o.schedule.map(x=>x.id)}});}}
 if(JSON.stringify(identity)!==JSON.stringify(sourceIdentity(APP)))throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname,'.sandbox'),{recursive:true});
-fs.writeFileSync(path.join(__dirname,'.sandbox/power.json'),JSON.stringify({sourceIdentity:identity,version:P.version,gear},null,1));
-console.log(JSON.stringify({gear:gear.length,magic:gear.filter(g=>g.magic).length,zero:gear.filter(g=>!g.total).length}));
+fs.writeFileSync(path.join(__dirname,'.sandbox/power.json'),JSON.stringify({sourceIdentity:identity,version:P.version,gear,actors},null,1));
+console.log(JSON.stringify({actors:actors.length,gear:gear.length,magic:gear.filter(g=>g.magic).length,zero:gear.filter(g=>!g.total).length}));
 process.exit(0);
