@@ -1,7 +1,9 @@
 extends Node
 ## 说明卡验收：XHelpCard.content() 与正式版 Sprite_ItemHelp.setItem 实际画出的行（generated/oracle/help_cards.json，
 ## 探针 03_转换工具/mv_oracle/help_probe.cjs）逐行一致——文字、字号、颜色、对齐；layout() 用参照引擎同样的字宽
-## （字数×字号×0.6）排出的每行 y 与卡高一致。「装备战力」行随战力估算再做，比较时去掉该行并扣除其行高。
+## （字数×字号×0.6）排出的每行 y 与卡高一致，含「装备战力」行（XPower.equipment）。
+## 参照里每类第一件真装备（水果刀、学徒斗篷）没有战力行（参照引擎里首次 setItem 的现象，正式版游戏中不确定），
+## 这几张比较时去掉 Godot 的战力行。
 
 const ORACLE := "res://modes/xiyou/generated/oracle/help_cards.json"
 const POWER_PREFIX := "装备战力："
@@ -49,20 +51,8 @@ func _obj(cat: String, card: Dictionary) -> Dictionary:
 		"price": card.price, "traits": card.traits, "meta": meta, "yep": yep}
 
 
-## 去掉「装备战力」行，后面各行 y 与卡高扣除其行高
 func _expected(card: Dictionary) -> Dictionary:
-	var rows := []
-	var shift := 0.0
-	var height := float(card.height)
-	for r in card.rows:
-		if str(r[0]).begins_with(POWER_PREFIX):
-			shift += float(r[1]) + 8.0
-			height -= float(r[1]) + 8.0
-			continue
-		var e: Array = r.duplicate()
-		e[3] = float(r[3]) - shift
-		rows.append(e)
-	return {"rows": rows, "height": height}
+	return {"rows": card.rows, "height": float(card.height), "power": card.rows.any(func(r): return str(r[0]).begins_with(POWER_PREFIX))}
 
 
 func _compare(cat: String, card: Dictionary) -> void:
@@ -72,6 +62,8 @@ func _compare(cat: String, card: Dictionary) -> void:
 	var obj := _obj(cat, card)
 	var exp := _expected(card)
 	var got := XHelpCard.content(obj, "" if cat != "gear" else str(card.kind))
+	if not exp.power:
+		got = got.filter(func(r): return not str(r[0]).begins_with(POWER_PREFIX))
 	var lay := XHelpCard.layout(got, 0, XHelpCard.WIDTH, oracle_measure)
 	var want: Array = exp.rows
 	if got.size() != want.size():

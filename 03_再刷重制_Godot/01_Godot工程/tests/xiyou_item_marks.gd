@@ -3,6 +3,8 @@ extends Node
 ## 参照：正式应用 js/plugins/Star_ShopOnekey.js、Star_ItemTop.js、js/codex/runtime/installUnifiedQualityRuntime.js（只读，规则见 XItemMarks）。
 ## 出售报酬（YEP_X_MoreCurrencies）：与 mv_oracle sell_reward_probe 的参照（generated/oracle/sell_rewards.json）逐例比对
 ## 能否卖、金币、变量、物品与装备件数的变化；商店与挂机两条路径。
+## 数量窗卖出报酬列（YEP_X_MoreCurrencies Window_ShopNumber）：与正式版运行时的绘制调用（ui_reference 浏览器里记录
+## contents.drawText／drawIcon，2026-10-15）逐项比对位置、文字、颜色、字号。
 ## 窗口模式加 -- --out=<目录> 保存截图。
 
 var results := []
@@ -184,6 +186,7 @@ func _run() -> void:
 	await frames()
 	await _sell_rewards()
 	await _item_marks_oracle()
+	await _number_window_rewards()
 	DirAccess.remove_absolute(XSave.dir())
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
@@ -362,4 +365,95 @@ func _item_marks_oracle() -> void:
 	tilemap.free()
 	# O-027：七层（Map061 事件 9）与十二层（Map065 事件 3）辛德瑞原版都传到上面验过的 (12,18)，只改这两条
 	check("return_fix_seventh_twelfth", MVInterpreter.TRANSFER_FIX == {"61:9:4:12:18": Vector2i(14, 23), "65:3:4:12:18": Vector2i(14, 23)})
+	await frames()
+
+
+## 记录画图调用的画布（数量窗比对用）
+class RecCanvas extends XMVCanvas:
+	var log := []
+
+	func text(s: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, lh := XUI.LINE_HEIGHT, alpha := 1.0, zoom := 1.0, pivot := Vector2.ZERO) -> void:
+		log.append(["text", s, x, y, max_w, align, size, color.to_html(false)])
+
+	func icon(index: int, x: float, y: float, alpha := 1.0, size := 32.0) -> void:
+		log.append(["icon", index, x, y])
+
+	func cursor(r: Rect2, active := true) -> void:
+		log.append(["cursor", r])
+
+
+## 正式版运行时记录（contents 宽 740；金币 12,345，变量 199=1234、201=7，物品 10×5、188×2；y≥108 的行）：
+## [文字或图标, 内容, 宽度或 x, y, 颜色]。
+## w961 哈耳庇厄之爪 ×2：0 价且有变量买入价 → 不画金币；不朽碎片列＋物品 180 列。
+## i10 伙伴号角：里德 ×3：金币列＋物品 188 列。w73 麒麟对剑 ×1：0 价无买入价 → 金币「+0」＋不朽灵魂列。
+const NUMBER_REF := {
+	"w961": [["text", "不朽碎片", 734, 108, "84aaff"], ["icon", 2219, 616, 110], ["text", "1,234", 616, 108, "ffffff"],
+		["text", "不朽碎片", 734, 144, "84aaff"], ["icon", 2219, 616, 146], ["text", "+2", 616, 144, "ffffff"],
+		["text", "不朽碎片", 734, 180, "84aaff"], ["icon", 2219, 616, 182], ["text", "1,236", 616, 180, "ffffff"],
+		["icon", 2219, 525.25, 110], ["text", "0", 525.25, 108, "ffffff"], ["icon", 2219, 525.25, 146], ["text", "+2", 525.25, 144, "ffffff"],
+		["icon", 2219, 525.25, 182], ["text", "2", 525.25, 180, "ffffff"]],
+	"i10": [["text", "12,345", 698, 108, "ffffff"], ["icon", 416, 702, 110], ["text", "+7,500", 698, 144, "ffffff"], ["icon", 416, 702, 146],
+		["text", "19,845", 698, 180, "ffffff"], ["icon", 416, 702, 182],
+		["icon", 111, 568.453125, 110], ["text", "2", 568.453125, 108, "ffffff"], ["icon", 111, 568.453125, 146], ["text", "+3", 568.453125, 144, "ffffff"],
+		["icon", 111, 568.453125, 182], ["text", "5", 568.453125, 180, "ffffff"]],
+	"w73": [["text", "12,345", 698, 108, "ffffff"], ["icon", 416, 702, 110], ["text", "+0", 698, 144, "ffffff"], ["icon", 416, 702, 146],
+		["text", "12,345", 698, 180, "ffffff"], ["icon", 416, 702, 182],
+		["text", "不朽灵魂", 600.453125, 108, "84aaff"], ["icon", 2220, 482.453125, 110], ["text", "7", 482.453125, 108, "ffffff"],
+		["text", "不朽灵魂", 600.453125, 144, "84aaff"], ["icon", 2220, 482.453125, 146], ["text", "+1", 482.453125, 144, "ffffff"],
+		["text", "不朽灵魂", 600.453125, 180, "84aaff"], ["icon", 2220, 482.453125, 182], ["text", "8", 482.453125, 180, "ffffff"]],
+}
+
+
+## 数量窗卖出时的报酬列：按顺序比对每个画图调用；位置差在 3 像素内（MV 与 Godot 字宽略有差别，后一列会累积）
+func _number_window_rewards() -> void:
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = s
+	s.gold = 12345
+	s.set_variable(199, 1234)
+	s.set_variable(201, 7)
+	s.gain_item(10, 5)
+	s.gain_item(188, 2)
+	var cases := {  # [记录, 数量, 出售分类：0 物品 / 2 武器]
+		"w961": [gear(s, "weapon", 961, "1", 0), 2, 2],
+		"i10": [XDB.rec("Items", 10), 3, 0],
+		"w73": [gear(s, "weapon", 73, "1", 0), 1, 2],
+	}
+	var shop := XShop.new()
+	shop.setup([], false)
+	add_child(shop)
+	await frames()
+	for key in cases:
+		var rec: Dictionary = cases[key][0]
+		shop._mode = "sell"
+		shop._cat = int(cases[key][2])
+		shop._sell_index = shop._sell_data().find_custom(func(x): return is_same(x.rec, rec) or (int(x.kind) == 0 and int(x.rec.id) == int(rec.id)))
+		shop._mode = "number"
+		shop._number_from = "sell"
+		shop._number = int(cases[key][1])
+		var rc := RecCanvas.new()
+		rc.size = Vector2(740, 511)
+		rc.painter = shop._paint_number
+		add_child(rc)
+		await frames(2)
+		var got := rc.log.filter(func(e): return e[0] != "cursor" and float(e[3]) >= 108).map(func(e): return [e[0], e[1], float(e[4]) if e[0] == "text" else float(e[2]), float(e[3]), e[7] if e[0] == "text" else null])
+		var want: Array = NUMBER_REF[key]
+		var ok: bool = got.size() == want.size()
+		for i in range(mini(got.size(), want.size())):
+			var g: Array = got[i]
+			var w: Array = want[i]
+			ok = ok and g[0] == w[0] and str(g[1]) == str(w[1]) and absf(g[2] - float(w[2])) <= 3 and g[3] == float(w[3]) and (w[0] == "icon" or g[4] == w[4])
+			if w[0] == "text":
+				var e: Array = rc.log.filter(func(x): return x[0] == "text" and float(x[3]) >= 108)[0]
+				ok = ok and e[6] == 20 and e[5] == "right"
+		check("number_rewards_" + key, ok, [got, want])
+		# 数量光标（运行时 cursorX/cursorWidth：装备 706.46/27.54，物品 652.13/81.88）
+		var cur: Array = rc.log.filter(func(x): return x[0] == "cursor")
+		var want_x := 652.125 if key == "i10" else 706.4609375
+		check("number_cursor_" + key, cur.size() == 1 and absf(cur[0][1].position.x - want_x) <= 2 and absf(cur[0][1].size.x - (740 - 6 - want_x)) <= 2, [cur, want_x])
+		rc.queue_free()
+		if key == "w961":  # 与正式版截图 shop_number_sell_reward_961 对照
+			shop._refresh()
+			await frames()
+			await shot("shop_number_sell_reward_961")
+	shop.queue_free()
 	await frames()

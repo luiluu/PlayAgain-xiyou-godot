@@ -106,16 +106,18 @@ static func apply_list(s: XState, entries: Array) -> Array:
 ## 卖出报酬只有 <Variable x Sell Price: y> 与 <Item x Sell Price: y>：<Weapon/Armor x Sell Price> 的目标是独立装备时插件跳过，
 ## 本 MOD 的武器、防具都是独立装备，所以从不生效；按名字的写法（<Item 名字 Sell Price>）正式数据里没有，不做。
 const _MC_LINE := [
-	["skip", "<PROXY BUY:[ ](.*)>"], ["skip", "<VARIABLE[ ](\\d+)[ ]BUY PRICE:[ ](\\d+)>"],
+	["skip", "<PROXY BUY:[ ](.*)>"], ["buy", "<VARIABLE[ ](\\d+)[ ]BUY PRICE:[ ](\\d+)>"],
 	["var", "<VARIABLE[ ](\\d+)[ ]SELL PRICE:[ ](\\d+)>"],
-	["skip", "<ITEM[ ](.*)[ ]BUY PRICE:[ ](\\d+)>"], ["item", "<ITEM[ ](\\d+)[ ]SELL PRICE:[ ](\\d+)>"], ["skip", "<ITEM[ ](.*)[ ]SELL PRICE:[ ](\\d+)>"],
+	["buy", "<ITEM[ ](\\d+)[ ]BUY PRICE:[ ](\\d+)>"], ["skip", "<ITEM[ ](.*)[ ]BUY PRICE:[ ](\\d+)>"], ["item", "<ITEM[ ](\\d+)[ ]SELL PRICE:[ ](\\d+)>"], ["skip", "<ITEM[ ](.*)[ ]SELL PRICE:[ ](\\d+)>"],
 	["skip", "<WEAPON[ ](.*)[ ]BUY PRICE:[ ](\\d+)>"], ["skip", "<WEAPON[ ](.*)[ ]SELL PRICE:[ ](\\d+)>"],
 	["skip", "<ARMOR[ ](.*)[ ]BUY PRICE:[ ](\\d+)>"], ["skip", "<ARMOR[ ](.*)[ ]SELL PRICE:[ ](\\d+)>"]]
 static var _rewards := {}
 static var _mc_res: Array = []
 
 
-## 基础记录（装备按 base）的卖出报酬 {"vars": {变量: 值}, "items": {物品: 数}}
+## 基础记录（装备按 base）的卖出报酬 {"vars": {变量: 值}, "items": {物品: 数}, "buy": 有无变量/物品买入价}
+## vars、items 按备注行的先后；插件 unshift 进 xxxSellPrices，数量窗从右往左画的是倒序。
+## buy 只给 Window_ShopNumber.isDrawGoldCurrency 用（按名字的 <Item 名字 Buy Price> 正式数据里解析不到物品，不算）。
 static func sell_rewards(rec: Dictionary) -> Dictionary:
 	var base := _base_rec(rec)
 	var key := "%s:%d" % [str(base.get("_table", _table_of(rec))), int(base.get("id", 0))]
@@ -124,12 +126,14 @@ static func sell_rewards(rec: Dictionary) -> Dictionary:
 	if _mc_res.is_empty():
 		for pair in _MC_LINE:
 			_mc_res.append([pair[0], RegEx.create_from_string("(?i)" + str(pair[1]))])
-	var out := {"vars": {}, "items": {}}
+	var out := {"vars": {}, "items": {}, "buy": false}
 	for line in RegEx.create_from_string("[\\r\\n]+").sub(str(base.get("note", "")), "\n", true).split("\n"):
 		for pair in _mc_res:
 			var m: RegExMatch = pair[1].search(line)
 			if m == null:
 				continue
+			if pair[0] == "buy":
+				out.buy = true
 			var bucket := "vars" if pair[0] == "var" else "items" if pair[0] == "item" else ""
 			if bucket != "" and not out[bucket].has(int(m.get_string(1))):
 				out[bucket][int(m.get_string(1))] = int(m.get_string(2))
@@ -154,6 +158,11 @@ static func _base_rec(rec: Dictionary) -> Dictionary:
 static func has_sell_rewards(rec: Dictionary) -> bool:
 	var r := sell_rewards(rec)
 	return not r.vars.is_empty() or not r.items.is_empty()
+
+
+## YEP_X_MoreCurrencies Window_ShopNumber.isDrawGoldCurrency：有变量/物品买入价且基础价为 0 时，数量窗不画金币三行（买、卖都按买入价判断）。
+static func draws_gold(rec: Dictionary) -> bool:
+	return not sell_rewards(rec).buy or int(rec.get("price", 0)) > 0
 
 
 ## Window_ShopSell.isEnabled（YEP_ShopMenuCore）：有价格，或有卖出报酬备注（MoreCurrencies 设 canSell）。
