@@ -2,7 +2,7 @@
 
 - 车道／工作者：B 规则·界面／八戒（Claude，重制_八戒_4，沿用）
 - 位置：worktree `.claude/worktrees/bajie-flow-test-3b9e3c`，分支 `claude/bajie-power`
-- 状态：进行中（①② 功能完成，等 main 登记正式源 v0.25 后复检；③ 进行中）
+- 状态：进行中（①② 功能完成；正式源又在 11:07 更新到 v0.26，等 main 登记 v0.26 后复检；③ 进行中）
 - 任务（唐僧 2026-10-15 09:55 派）：①`新建工作树.sh --补齐` 刷新过旧的 generated/oracle 与转换产物；②商店数量窗卖出报酬行（YEP_X_MoreCurrencies Window_ShopNumber）；③战力估算（installCombatPowerRuntime），数值用 mv_oracle 参照。
 - 预分配编号：O-031～O-033（①② 未用）
 
@@ -61,6 +61,7 @@
 
 - ①② 已提交；全量检查只差正式源 v0.25 的登记（见上面「验证」），已告诉唐僧。
 - ③ 装备评分、说明卡、设置页已完成（26f1221、36ff923、3e5fba2）；角色战力代码已写但数值未对上（见上面「进行中」，本提交），界面未接。
+- 11:1x 合并 main（v0.25 登记 6c56db1、81f94c7）后 --补齐 时正式应用已是 v0.26（11:07 更新），检查.sh --oracle 里 12 个测试与同源核对只因来源身份不符失败（version／same_source／source_identity），xiyou_power 78/78、xiyou_help_card 389/389、xiyou_item_marks 88/88 等其余通过。等 main 登记 v0.26 后再复检。
 - 2026-10-15 重制_八戒_4 上下文到 50%，停在这里；Remote Control 下不能开新会话接力，已报告唐僧。下一会话接角色战力差异第 1、2 项。
 
 ## 本分支提交
