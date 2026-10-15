@@ -27,6 +27,10 @@ static var steps := 0
 static var aborted := false
 ## 对照工具用：≥0 时随机数固定为该值（同参照引擎把 Math.random 固定），默认 −1 不固定
 static var fixed_random := -1.0
+## O-027：原版事件把玩家传到四个方向都不能通行的格子（正式引擎 isMapPassable 实测）时，改传到同图的正常落点。
+## 键「来源地图:事件:目的地图:x:y」。七层辛德瑞（Map061 事件 9）原版传回大厅 (12,18)，那里是钓鱼池水面，传过去就走不动；
+## 一至六、八层的辛德瑞都传到 (14,23)。设为空字典 {} 恢复原版。
+const TRANSFER_FIX := {"61:9:4:12:18": Vector2i(14, 23)}
 
 
 ## MV Math.randomInt(hi − lo + 1) + lo
@@ -240,7 +244,8 @@ func _execute(c: Dictionary):
 			host.refresh_events()
 		201:
 			if int(p[0]) == 0:
-				await host.transfer(int(p[1]), int(p[2]), int(p[3]), int(p[4]))
+				var to: Vector2i = TRANSFER_FIX.get("%d:%d:%d:%d:%d" % [map_id, event_id, int(p[1]), int(p[2]), int(p[3])], Vector2i(int(p[2]), int(p[3])))
+				await host.transfer(int(p[1]), to.x, to.y, int(p[4]))
 			else:
 				var s := state()
 				await host.transfer(int(s.variable(int(p[1]))), int(s.variable(int(p[2]))), int(s.variable(int(p[3]))), int(p[4]))
