@@ -58,7 +58,7 @@ prepare() {
   print "== godot --import"
   local out rc=0
   out=$(perl -e 'alarm 300; exec @ARGV' "$env/godot" --headless --path "$proj" --import 2>&1) || rc=$?
-  if (( rc != 0 )) || print -r -- "$out" | grep -qE 'SCRIPT ERROR|^ERROR:'; then
+  if (( rc != 0 )) || grep -qE 'SCRIPT ERROR|^ERROR:' <<< "$out"; then
     print -r -- "$out" | grep -E 'ERROR|FAIL' | head -8
     print -u2 "✗ 导入失败 (rc=$rc)"; exit 1
   fi
