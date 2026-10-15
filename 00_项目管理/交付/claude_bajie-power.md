@@ -2,7 +2,7 @@
 
 - 车道／工作者：B 规则·界面／八戒（Claude，重制_八戒_4，沿用）
 - 位置：worktree `.claude/worktrees/bajie-flow-test-3b9e3c`，分支 `claude/bajie-power`
-- 状态：进行中（①② 功能完成；正式源又在 11:07 更新到 v0.26，等 main 登记 v0.26 后复检；③ 进行中）
+- 状态：可合并（①②，③ 的装备评分／说明卡战力行／设置页战力项；③ 角色战力是未接界面的 WIP，代码在 power.gd 后半，测试只打印 ACTOR_PENDING）
 - 任务（唐僧 2026-10-15 09:55 派）：①`新建工作树.sh --补齐` 刷新过旧的 generated/oracle 与转换产物；②商店数量窗卖出报酬行（YEP_X_MoreCurrencies Window_ShopNumber）；③战力估算（installCombatPowerRuntime），数值用 mv_oracle 参照。
 - 预分配编号：O-031～O-033（①② 未用）
 
@@ -62,6 +62,8 @@
 - ①② 已提交；全量检查只差正式源 v0.25 的登记（见上面「验证」），已告诉唐僧。
 - ③ 装备评分、说明卡、设置页已完成（26f1221、36ff923、3e5fba2）；角色战力代码已写但数值未对上（见上面「进行中」，本提交），界面未接。
 - 11:1x 合并 main（v0.25 登记 6c56db1、81f94c7）后 --补齐 时正式应用已是 v0.26（11:07 更新），检查.sh --oracle 里 12 个测试与同源核对只因来源身份不符失败（version／same_source／source_identity），xiyou_power 78/78、xiyou_help_card 389/389、xiyou_item_marks 88/88 等其余通过。等 main 登记 v0.26 后再复检。
+- 11:3x 合并 main 0d0740b（v0.26 登记 55215d9）：冲突两处，两边都保留——同步正式西游.py PROBES 同时留 power_probe 与 main 新增的 item_marks_probe；tests/xiyou_item_marks.gd 以 main 版为底（新增 _item_marks_oracle），接回本分支的数量窗比对（_number_window_rewards、RecCanvas、NUMBER_REF）。新建工作树.sh 在 main 没有改动，自动合并无冲突（main 另加的 测试工作树清理.py 不受影响）。--补齐 刷新 20 个参照文件、保留本分支独有 power.json；按 v0.26 重跑 power_probe。`检查.sh --oracle` 全部通过：38 个 Godot 测试（xiyou_item_marks 107/107、xiyou_power 78/78、xiyou_help_card 389/389、xiyou_rules 20468/20468 等）、参照守卫、参照引擎、同源核对。
+- 合并时要做：main 跑一次 同步正式西游.py 生成 generated/oracle/power.json（不入 Git）；没有它 xiyou_power 的 power_oracle_loaded 会失败。
 - 2026-10-15 重制_八戒_4 上下文到 50%，停在这里；Remote Control 下不能开新会话接力，已报告唐僧。下一会话接角色战力差异第 1、2 项。
 
 ## 本分支提交
@@ -71,4 +73,4 @@
 - f24e85e 商店数量窗卖出报酬列与装备数量光标
 - c6f9fe6 交付单：①② 检查结果
 - 26f1221 WIP 装备评分＋探针；36ff923 WIP 说明卡战力行＋法宝成长；3e5fba2 WIP 设置页战力项；7df1c10 交付单
-- （本提交）WIP 角色战力初稿与参照（未对上）
+- 4df5a6c WIP 角色战力初稿与参照（未对上）；d02da68 交付单 v0.26；7dbaf1f 合并 main；（本提交）交付单可合并
