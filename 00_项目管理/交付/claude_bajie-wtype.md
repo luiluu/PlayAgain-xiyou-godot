@@ -2,7 +2,7 @@
 
 - 车道／工作者：B 规则／八戒（Claude，重制_八戒_4 → 重制_八戒_5 接手收尾）
 - 位置：worktree `.claude/worktrees/bajie-flow-test-3b9e3c`，分支 `claude/bajie-wtype`
-- 状态：可合并（注意下面「正式源 v0.27」：两处失败都来自正式版更新，不是本分支）
+- 状态：可合并（已合 main ed88443；检查.sh --oracle 只有 xiyou_opening_branches B 分支 4 项失败，是 v0.27 新轮回入口模块所致，唐僧已派悟空补，不是本分支）
 - 任务（唐僧 2026-10-15 派）：XBattleLogic.can_use 补 MV isSkillWtypeOk（技能要求武器类型），XPower 改用同一实现；严格级参照探针逐例比对 canUse。
 - 预分配编号 O-031～O-033：未用（本轮只照正式版补规则，没有优化项）。
 
@@ -20,12 +20,9 @@
 - 已知：krz 战斗中属性缓存本身未移植（只影响胜利结算画面里刚升级角色的上限显示，未核对正式版画面）。
 ```
 
-## 正式源 v0.27（给唐僧）
+## 正式源 v0.27
 
-- 正式应用已从 v0.26 更新到 v0.27：变了 package.json、data/Skills.json、data/Map004.json、data/Map221.json、js/codex/modules.json（运行时 installNativeYunshangRuntime.js、main.js）。
-- worktree 里跑同步正式西游.py（只比较不登记，约 9.5 分钟）：「有变化，请人工查看」——测量变化 events.json 6 处（cases[141] trace）、maps_source.json 7 处、sequences.json 1 处；wtype.json 不变。备份与报告：`03_再刷重制_Godot/04_验证/本地结果/自动同步/20261015_163627_v0.26-v0.27/`。
-- v0.27 产物下 xiyou_opening_branches 4 项失败（Map221 开局分支）。需在 main 跑同步正式西游.py 登记并跟进（内容车道）。
-- 合并本分支前后都要先处理 v0.27，否则 main 上 检查.sh 的来源项不过。
+- 唐僧已在 main 登记 v0.27（65047ed）。本分支合 main（ed88443）、--补齐 后跑 检查.sh --oracle：45 项通过，只有 xiyou_opening_branches 的 b_hub／b_switches／b_items／b_suppression 失败（v0.27 新轮回入口模块，已派悟空）。v0.27 下 wtype.json 不变，xiyou_wtype 1039/1039。
 
 ## 交接板
 
@@ -48,4 +45,6 @@
 - b82f6e1 wtype_probe 战斗外搭法并清 krz 属性缓存、加 MP/TP 清零时 canUse；xiyou_wtype 逐例比 canUse 与 MP 上限
 - 123f54e xiyou_battle_ui 打完一战的循环上限 60→200
 - 020ce92 合并 main（2b8f4bd）
-- （本提交）交付单可合并
+- 145eae4 交付单可合并
+- 52a0504 合并 main（ed88443，v0.27 登记）
+- （本提交）交付单注明 opening_branches
