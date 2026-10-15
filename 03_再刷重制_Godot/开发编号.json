@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.042",
-  "sequence": 42,
-  "next": "dev.043",
-  "nextSequence": 43,
+  "current": "dev.043",
+  "sequence": 43,
+  "next": "dev.044",
+  "nextSequence": 44,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "扩九层 Map015、十层 Map017，敌群事件 333（悟空）",
+  "currentChange": "补齐刷新参照、商店数量窗报酬列、装备战力与设置页战力项（八戒）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

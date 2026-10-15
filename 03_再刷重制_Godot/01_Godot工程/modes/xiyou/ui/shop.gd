@@ -25,6 +25,7 @@ const LH := 36.0
 const GOLD_FONT := 20
 const QTY_FONT := 20
 const MAX_ITEMS := 9999
+const MC_PADDING := 5          # YEP_X_MoreCurrencies Currency Padding
 const COMMANDS := [["购买", "buy"], ["出售", "sell"], ["一键出售", "onekey"], ["取消", "cancel"]]
 const ONEKEY_POS := Vector2(350, 150)
 const ONEKEY_W := 240.0
@@ -261,13 +262,15 @@ func _paint_list(c: XMVCanvas) -> void:
 
 
 ## YEP Window_ShopNumber：名字在第 1 行，「× 数量」在第 2 行（数量带光标），第 3 行起是现有金钱、增减、横线与结算。
+## 卖出时 YEP_X_MoreCurrencies 在金币列左边接着画报酬列（现有、+增加、结算三行），见 _paint_sell_rewards。
 func _paint_number(c: XMVCanvas) -> void:
 	var e := _number_entry()
 	if e.is_empty():
 		return
 	var price := int(e.price) if _number_from == "buy" else XItemMarks.selling_price(e.rec)
 	_item_name(c, e.rec, 0, LH, c.size.x)
-	var cw := c.text_width(XMenu._group(MAX_ITEMS)) + 12
+	# YEP cursorWidth：maxItems(物品) 的字宽＋12；本 MOD 装备是独立物品，maxItems 为 1（运行时读数：装备 27.5、物品 81.9）
+	var cw := c.text_width(XMenu._group(1 if int(e.kind) != 0 else MAX_ITEMS)) + 12
 	var cx := c.size.x - cw - 6
 	var y := LH * 2
 	var sign_w := c.text_width("×")
@@ -278,10 +281,64 @@ func _paint_number(c: XMVCanvas) -> void:
 	var gold := XState.current.gold
 	var cost := price * _number
 	_line(c, LH * 3)
-	_currency(c, XMenu._group(gold), 0, y + LH, ww)
-	_currency(c, ("+" + XMenu._group(cost)) if _number_from == "sell" else XMenu._group(-cost), 0, y + LH * 2, ww)
 	_line(c, y + LH * 3)
-	_currency(c, XMenu._group(gold + (cost if _number_from == "sell" else -cost)), 0, y + LH * 3, ww)
+	var gold_on := _number_from == "buy" or XItemMarks.draws_gold(e.rec)
+	if gold_on:
+		_currency(c, XMenu._group(gold), 0, y + LH, ww)
+		_currency(c, ("+" + XMenu._group(cost)) if _number_from == "sell" else XMenu._group(-cost), 0, y + LH * 2, ww)
+		_currency(c, XMenu._group(gold + (cost if _number_from == "sell" else -cost)), 0, y + LH * 3, ww)
+	if _number_from == "sell":
+		if gold_on:
+			ww -= _gold_width(c, maxi(gold, cost + gold) * 100)
+		_paint_sell_rewards(c, e.rec, ww, y)
+
+
+## YEP_X_MoreCurrencies drawTotalPrice（卖出）：从金币列左边起，变量、物品各一列，每列从右往左排、列间隔 Currency Padding 5。
+## 插件 unshift 收集报酬，所以按备注行倒序画；没有武器/防具报酬（独立装备，插件跳过）。
+func _paint_sell_rewards(c: XMVCanvas, rec: Dictionary, ww: float, wy: float) -> void:
+	var s := XState.current
+	var r := XItemMarks.sell_rewards(rec)
+	var names: Array = XDB.system().get("variables", [])
+	var vars: Array = r.vars.keys()
+	vars.reverse()
+	var icon_re := RegEx.create_from_string("(?i)\\\\I\\[(\\d+)\\]")
+	var tag_re := RegEx.create_from_string("<<(.*?)>>")
+	for v in vars:
+		var raw := str(names[v]) if v < names.size() and names[v] != null else ""
+		var m := icon_re.search(raw)
+		var unit := tag_re.sub(icon_re.sub(raw, "", true), "", true)
+		ww = _reward_column(c, ww, wy, unit, int(m.get_string(1)) if m else 0, s.variable(v), int(r.vars[v])) - MC_PADDING
+	var items: Array = r.items.keys()
+	items.reverse()
+	for id in items:
+		ww = _reward_column(c, ww, wy, "", int(XDB.rec("Items", id).get("iconIndex", 0)), s.item_count(id), int(r.items[id])) - MC_PADDING
+
+
+## drawVariablePrice／drawItemCostPrice：现有（分组）、「+」数量×单价（不分组）、结算（分组）三行，返回三行中最靠左的左缘
+func _reward_column(c: XMVCanvas, ww: float, wy: float, unit: String, icon: int, have: float, price: int) -> float:
+	var add := price * _number
+	var fw := _alt_currency(c, XMenu._group(have), unit, icon, wy + LH, ww)
+	fw = minf(fw, _alt_currency(c, "+" + str(add), unit, icon, wy + LH * 2, ww))
+	return minf(fw, _alt_currency(c, XMenu._group(have + add), unit, icon, wy + LH * 3, ww))
+
+
+## Window_Base.drawAltCurrency：字号 20；变量名（去掉 \I[n] 与 <<…>>）系统色右对齐，再往左 6 像素放图标，再往左是数值；返回剩余宽度
+func _alt_currency(c: XMVCanvas, value: String, unit: String, icon: int, wy: float, ww: float) -> float:
+	if unit != "":
+		c.text(unit, 0, wy, ww, "right", XUI.SYSTEM, GOLD_FONT, LH)
+		ww -= c.text_width(unit, GOLD_FONT)
+	if icon > 0:
+		if unit != "":
+			ww -= 6
+		ww -= 32
+		c.icon(icon, ww, wy + 2)
+	c.text(value, 0, wy, ww, "right", XUI.TEXT, GOLD_FONT, LH)
+	return ww - c.text_width(value, GOLD_FONT)
+
+
+## getCoreGoldWidth：金钱图标 32＋数值宽＋4＋2（字号 Gold Font Size 20）
+static func _gold_width(c: XMVCanvas, value: int) -> float:
+	return 32 + c.text_width(XMenu._group(value), GOLD_FONT) + 4 + 2
 
 
 static func _line(c: XMVCanvas, y: float) -> void:

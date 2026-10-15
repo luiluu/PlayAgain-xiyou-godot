@@ -5,6 +5,7 @@ extends Control
 ## - Window_Options (440,130,400,460)：行高 36、字号 26、可见 12 行；名字左对齐在 itemRectForText (6,宽 360) 的前 240，
 ##   状态右对齐在内容 x 240、宽 120（statusWidth）。33 项与正式版同序；「挂机设置」只在挂机未禁用时出现（needAddHangUp）。
 ## - 已重制：坐标、智能AI、始终跑步、记住指令、伤害数字、技能动画、掉落动画、战斗伤害记录开关，挂机设置，四路音量与四档战斗变速，
+##   战力显示与估算（ON/OFF，确定取反、右开左关；切换时清掉战力缓存，XPower），
 ##   消息提醒（状态「全部显示」/「N项关闭」，确定音后打开 XNoticeOptionsScene，左右无作用），
 ##   核心杂项开关（只遇稀有/罕见/极其稀有、穿墙、三条宣传行、对话跳过、禁用遇敌、步步遇敌）：确定取反、右开左关；
 ##   除穿墙外不存配置，开局未设置时状态空白（正式版 statusText 返回 undefined）。
@@ -31,7 +32,7 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 	["总群请加906327865！", "wxlonoff", true], ["不要在闲鱼买到这个版本！", "wxtonoff", true], ["战斗变速", "battleAniSpeed", true],
 	["对话跳过", "dhtg", true], ["禁用遇敌", "ydgb", true], ["步步遇敌", "yd100", true], ["消息提醒", "codexNotices", true],
 	["队列跟随", "codexFollow", true],
-	["战力显示与估算", "codexPowerEnabled", false], ["测试模式", "codexTestMode", false], ["GM 工具", "codexGM", false],
+	["战力显示与估算", "codexPowerEnabled", true], ["测试模式", "codexTestMode", false], ["GM 工具", "codexGM", false],
 	["角色换装", "codexCostumes", false], ["待提交反馈", "codexFeedbackPending", false]]
 
 ## 挂机设置页用：打开菜单前的地图截图与玩家所在的画面格（由地图经主菜单传入）
@@ -62,7 +63,7 @@ func symbols() -> Array:
 func status_text(i: int) -> String:
 	match str(_list[i][1]):
 		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "CombatDamageShow", "CombatSkillAnimation", "cq",\
-		"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey":
+		"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled":
 			return "ON" if XConfig.flag(str(_list[i][1])) else "OFF"
 		"Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100":
 			var v = XConfig.session_value(str(_list[i][1]))
@@ -115,7 +116,7 @@ func ok() -> void:
 		return
 	match str(o[1]):
 		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "CombatDamageShow", "CombatSkillAnimation", "cq",\
-		"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey":
+		"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled":
 			_set_flag(str(o[1]), not XConfig.flag(str(o[1])))
 		"Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100":
 			_set_session(str(o[1]), not XConfig.flag(str(o[1])))
@@ -140,7 +141,7 @@ func ok() -> void:
 func _side(right: bool) -> void:
 	match str(_list[index][1]):
 		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "CombatDamageShow", "CombatSkillAnimation", "cq",\
-		"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey":
+		"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled":
 			_set_flag(str(_list[index][1]), right)
 		"Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100", "pingbiDrop":
 			_set_session(str(_list[index][1]), right)
@@ -161,6 +162,8 @@ func _set_flag(sym: String, v: bool) -> void:
 	if XConfig.flag(sym) == v:
 		return
 	XConfig.set_flag(sym, v)
+	if sym == "codexPowerEnabled":
+		XPower.clear_cache()  # installCombatPowerRuntime changeValue：开关变了清缓存
 	XSound.system(0)
 	_refresh()
 

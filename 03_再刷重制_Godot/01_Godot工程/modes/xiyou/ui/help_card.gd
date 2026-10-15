@@ -13,7 +13,9 @@ extends Control
 ## 4. installDisplayPreferencesRuntime genericHelpView（普通技能）：改名合并（对象→目标、命中类型＋能否暴击 → 命中；暴击、
 ##    MP/TP 消耗 → 消耗：nTP），分成 抬头／公式（\c[5]）／基本信息（\c[0]，按 伤害属性→目标→…排序）／效果（\c[1]）／
 ##    成长（\c[3]）／价格 六组，组间分隔；正文统一为最常见字号。
-## 未做：installCombatPowerRuntime 的「装备战力」行（依赖战力估算，随主菜单「战力」一起做）；特殊角色（ID 10122～10299）
+## 5. installCombatPowerRuntime（setItem 最外层）：装备在名字后插「装备战力：N」（18 号、rgba(255,211,115,1)、align 0），
+##    N 是与穿戴者无关的装备评分 XPower.equipment；设置页关掉「战力显示与估算」时不插。
+## 未做：特殊角色（ID 10122～10299）
 ##    与心钢、狂妄等专属装备的动态说明（切片里没有）。
 ##
 ## 版面（layout()）：宽 400、内边距 4；每行按 RJO.SW 逐字排版：可用宽 392−x，放不下换行；行高 = 该行最大字号 + 8；
@@ -34,6 +36,8 @@ const TP_COLOR := "rgba(128,255,128,1)"
 const PARAM_COLORS := ["rgba(255,128,128,1)", "rgba(76,76,255,1)", "rgba(255,76,76,1)", "rgba(128,128,128,1)",
 	"rgba(255,76,255,1)", "rgba(76,255,255,1)", "rgba(128,255,128,1)", "rgba(255,255,128,1)"]
 const VIEW_COLOR := "rgba(235,240,247,1)"
+const POWER_PREFIX := "装备战力："
+const POWER_COLOR := "rgba(255,211,115,1)"
 const ELEMENT_ROW_COLOR := "rgba(170,215,245,1)"
 const ELEMENT_COLORS := ["#c1c9d5", "#d5dce6", "#ff846b", "#9be4ff", "#d8ac74", "#f7db62", "#83d784", "#a99bff",
 	"#fff0b0", "#bd8bc9", "#6fe4c0", "#b59cf0", "#f497c8", "#7eb8ff", "#65ccef", "#bce986"]
@@ -72,6 +76,8 @@ static func content(obj: Dictionary, kind := "") -> Array:
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
 	var rows := desc_params(obj, type)
 	rows = _element_wrapper(obj, type, rows)
+	if (type == 1 or type == 2) and XPower.enabled():
+		rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
 	if type == 3 and not _special_target(obj):
 		rows = _generic_view(obj, rows)
 	for r in rows:
