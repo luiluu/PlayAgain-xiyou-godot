@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.048",
-  "sequence": 48,
-  "next": "dev.049",
-  "nextSequence": 49,
+  "current": "dev.049",
+  "sequence": 49,
+  "next": "dev.050",
+  "nextSequence": 50,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "地图循环、v0.27 轮回入口、十五层 Map032（悟空）",
+  "currentChange": "技能武器类型要求（八戒）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

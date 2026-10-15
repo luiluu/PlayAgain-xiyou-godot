@@ -63,6 +63,9 @@ func _run() -> void:
 	seed(20261013)
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	s.gain_item(1, 5)
+	# 先手美娜的唯一战技「寒锋」要求武器类型 1，默认水果刀（类型 0）在正式版也放不了（wtype_probe）；换成类型 1 的剃须刀
+	s.actor(10).equips[0] = XGear.create("weapon", 14)
+	s.actor(10).refresh_passive()
 	s.map_id = 5
 	s.x = 10
 	s.y = 10
@@ -165,7 +168,8 @@ func _run() -> void:
 	_check("combo_counts_in_battle", ok and b.combo.position == b._origin and b.combo.digits[0].dx == -30.0, [b.combo.hits, b.combo.digits])
 	_combo_rules()
 	# 真实打完这一战（同原版参照 45～47：敌人 HP 设为 1 后普通攻击），截取胜利镜头与结算
-	for i in range(60):
+	# 循环上限只是防死循环；美娜装上武器后约需 62 轮，留足余量
+	for i in range(200):
 		for e in b.logic.enemies:
 			if e.is_alive():
 				e.hp = 1.0

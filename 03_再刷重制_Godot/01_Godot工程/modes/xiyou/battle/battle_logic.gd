@@ -161,8 +161,42 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 			return false
 	if a.traits_set(XBattler.TRAIT_SKILL_SEAL).has(int(skill.id)):
 		return false
+	if not wtype_ok(a, skill):
+		return false
 	var c := skill_cost(a, skill)
 	return a.mp >= c.mp and a.tp >= c.tp
+
+## Game_Actor.isSkillWtypeOk：技能没有武器类型要求，或装着其中一种（敌人恒真）。
+## isWtypeEquipped 经 dsPassiveSkill 改写：被动 <SkETypeAll: t> 装着任一列出类型的武器时全部类型都算装着；
+## <SkEquipType: t> 有值时只认该类型（正式数据未用）；否则看身上武器的类型。
+static func wtype_ok(a: XBattler, skill: Dictionary) -> bool:
+	if not a is XActor:
+		return true
+	var need := [int(skill.get("requiredWtypeId1", 0)), int(skill.get("requiredWtypeId2", 0))]
+	if need == [0, 0]:
+		return true
+	return (need[0] > 0 and wtype_equipped(a, need[0])) or (need[1] > 0 and wtype_equipped(a, need[1]))
+
+
+static func wtype_equipped(a: XActor, wtype: int) -> bool:
+	var weapons := []
+	for e in a.equip_list():
+		if str(e.get("kind", "")) == "weapon" or e.has("wtypeId"):
+			weapons.append(int(e.get("wtypeId", 0)))
+	var all_types := []
+	var only := 0
+	for o in a.skills() + a.equip_list() + a.states():
+		var meta: Dictionary = o.get("meta", {})
+		if meta.has("SkETypeAll") and str(meta.SkETypeAll).strip_edges().is_valid_int():
+			all_types.append(int(str(meta.SkETypeAll).strip_edges()))
+		if meta.has("SkEquipType") and str(meta.SkEquipType).strip_edges().is_valid_int() and int(str(meta.SkEquipType).strip_edges()) != 0:
+			only = int(str(meta.SkEquipType).strip_edges())
+	if all_types.any(func(t): return weapons.has(t)):
+		return true
+	if only != 0:
+		return only == wtype
+	return weapons.has(wtype)
+
 
 ## 角色的可用主动技能（隐藏的被动不列出）
 func usable_skills(a: XActor) -> Array:
