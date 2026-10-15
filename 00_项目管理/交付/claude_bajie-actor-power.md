@@ -1,28 +1,38 @@
 # 交付：claude/bajie-actor-power
 
-- 车道／工作者：B 规则·界面／八戒（Claude，重制_八戒_4，沿用）
+- 车道／工作者：B 规则·界面／八戒（Claude，重制_八戒_4，沿用；用户 2026-10-15 允许本会话上下文到 60%）
 - 位置：worktree `.claude/worktrees/bajie-flow-test-3b9e3c`，分支 `claude/bajie-actor-power`
-- 状态：进行中
-- 任务（唐僧 2026-10-15 派）：角色战力 XPower.actor 对上正式版（①30 级学技能差异 ②单次伤害偏大 ③passive_cache 缺 againUse／atkk），把 xiyou_power 角色比对计入结果，再接装备页／技能页「战力 N」与主菜单（cached_actor）。
-- 预分配编号：O-031～O-033
+- 状态：可合并
+- 预分配编号：O-031～O-033（未用）
 
-## 停在哪里（重制_八戒_4，上下文到 50% 停下；下一会话 重制_八戒_5 接）
+## 独占文件
 
-- ① 30 级学技能差异：**不是规则问题**。正式版新开局的等级上限是 10，探针里 changeLevel(30) 实际只到 10 级（MV 只学到 10 级的 160，Godot 测试升到 30 学了 311、502）。power_probe 改为记录实际等级 `level`（另记 `asked`），xiyou_power 按实际等级 change_level_mv。已重跑探针（本提交）。
-- ② 单次伤害偏大：**已定位**。node 里对裸装 1 号角色、防御 1 万的中性敌人做 makeDamageValue 预演：元素增幅 bonus 2.4 两边相同（技能 2746 妖兽化形 passiveELUP 33%＋技能 41 天遁仙法 passiveELUP01 107%）；差别是
-  - **growth 0.6437651755973418**：正式版 CodexDamage 的 growthMultiplier（五乘区预算软上限，installNativePowerZonesRuntime 的 CodexDamageHooks），Godot XDamage 首期精简把 growth 固定为 1；
-  - **暴击倍率 1.7**（Godot 按 1.5＋criticalMultiplierBonus），来源待查（可能同一钩子或别的 criticalAdd）。
-  - 结果：正式版普通 9、暴击 16（Godot 14、约 22）；命中 1、闪避 0、暴击率 0.19 两边一致。
-  - 这两项是**伤害规则层**的缺口（实战伤害也走 XDamage），不只是战力。xiyou_rules 现在全过，说明战斗对照的用例里没覆盖到这个钩子或它为 1——建议唐僧判断：由 C 规则车道移植 PowerZones（growthMultiplier）与暴击加成，战力随后自然对上；或战力先单独加。
-- ③ againUse／atkk：未动（XPower 里 AgainUse 自己扫备注，atkk 未计）。
-- 下一步：读 `js/codex/runtime/installNativePowerZonesRuntime.js` 的 build 钩子（growthMultiplier、criticalAdd），移植进 XDamage（要对 xiyou_rules 重测），再看 xiyou_power 角色比对；对上后把 ACTOR_PENDING 改回 check，再接装备页／技能页「战力 N」与主菜单 cached_actor。
-- 用户 2026-10-15 指示「按建议继续」：由本车道移植伤害结算的成长乘区与暴击加成（XDamage），再对战力。已查到的写入点：
-  - growthMultiplier：`installNativePowerZonesRuntime.js`（`growthMultiplier*=c`，约 2 万字，五乘区预算软上限）与 `installNativeZhenqiRuntime.js`（`growthMultiplier*=r`，真气）。
-  - criticalAdd：`installDamageElementRuntime` 自身（passiveCrHarmRi、黑闪）、ImportedBalance（+12，引入角色）、NativeRace（q/2）、MiraRaven／YomiJingliu（专属角色）；另有 criticalMultiplier 在非 reference 时乘 `$gameSystem.criticalMultiplier()`。1 号角色裸装 1.7 的来源先查 passiveCrHarmRi（Godot 的正则不允许冒号后有空格）与 $gameSystem.criticalMultiplier。
-  - 改 XDamage 后必须重跑 xiyou_rules（严格级），并核对悟空 dev.045 新加的元素吸收／G_StateParam 不受影响。
-- 复现脚本：mv_oracle/.sandbox/try_dmg.cjs（不入 Git，内容：setupNewGame、Math.random=0.5、actor(1).clearEquipments、中性敌人、Game_Action 普攻 _codexPowerPreview、打印 _codexDamageBreakdown.rows[0]）。
+- `core/power.gd`（角色战力 evaluate／actor／cached_actor／status_text／menu_text）、`tests/xiyou_power.gd`、`mv_oracle/power_probe.cjs`
+- `ui/equip_scene.gd`、`ui/skill_scene.gd`（状态窗战力文字）、`ui/menu.gd` 主菜单行的战力参数一处
+
+## 变更记录草稿
+
+```
+## 2026-10-15 【Claude·八戒·未经Codex检验】角色战力：对上正式版并接技能页/装备页/主菜单（dev.待定）
+
+- 移植 installCombatPowerRuntime v2 的角色战力：孤立角色（裸装/整套）× 三档中性敌人（防御 100／1 万／100 万），10 回合按期望伤害挑技能（前 8 候选、冷却、预热、费用、再生、额外行动），3 回合爆发＋10 回合持续、有效生命、最大单次治疗，curve 折成输出/生存/辅助；自身＝裸装，装备差＝整套−裸装。
+- 界面：技能页、装备页状态窗「战力 N」（原来写「战力 …」）；主菜单角色行在技能/装备页算过之后显示「战斗力 N」，没算过「战力见状态」；设置里关掉战力时不画。
+- 差异定位（之前偏大的原因）：
+  - 正式版新开局等级上限 10，探针里「30 级」实际是 10 级——不是升级规则问题。
+  - 正式版伤害预演含五乘区成长修正 growth（installNativePowerZonesRuntime）；按 数值平衡.md（用户 2026-10-12）重制版不移植，探针设 CodexZones.ENABLED=false，与伤害对照去掉 growth 的做法一致。
+  - 段数：正式版战力只数整体/逐目标序列里大写的「ACTION EFFECT」（小写写法的序列算 1 段），与实战段数 yepEffects 不同；照正式版。
+  - 能否出手含 MV isSkillWtypeOk（技能要求武器类型）：XBattleLogic.can_use 没查，战力里另判（借 XHangUpAuto.wtype_ok）。
+- 严格级参照：power_probe 加切片 10 个角色 1/10 级（新开局初始装备）20 例，总分、自身、三项、爆发/持续/有效生命/辅助、出手顺序全部一致（xiyou_power 102/102，含装备 72 件与界面文字）。
+- 验证：检查.sh --oracle 全部通过（40 个 Godot 测试，xiyou_rules 33482/33482）。
+- 未完成／已知问题：passive_cache 的 againUse 由 XPower 自己扫 <AgainUse…> 备注，atkk（dsPassiveSkill 攻击次数加成）未计——切片角色没有；状态页（Scene_Status）顶部战力条、装备变更后的战力提示（右下浮窗）未做；特殊角色的变身路线（formHooks）、谷雨、种族、引入角色平衡未移植（切片没有）。
+- 发现（给唐僧）：XBattleLogic.can_use 没有检查技能的武器类型要求（MV Game_BattlerBase.isSkillWtypeOk），实战里没装对应武器也能放这类技能（如 101 御剑术要求武器类型 2）。属规则缺口，建议 C 车道补并加对照。
+```
+
+## 交接板
+
+- 下一步：删掉「战力估算」相关条目；新增「XBattleLogic.can_use 补技能武器类型要求（isSkillWtypeOk）」待派；状态页战力条、装备变更战力提示可并入界面逐页复现。
+- 用户试玩说明：技能页、装备页会显示角色战力；去过这两页后主菜单显示「战斗力 N」。设置里可关掉。
 
 ## 本分支提交
 
-- 53e097a 开工交付单
-- （本提交）探针记实际等级；交付单写明差异定位
+- 53e097a 开工；6cd8bb1、2df545c 差异定位与交付单；839d261 角色战力对上；（UI 提交）接界面；（本提交）交付单可合并
