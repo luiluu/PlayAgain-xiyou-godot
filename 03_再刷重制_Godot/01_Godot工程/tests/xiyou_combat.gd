@@ -67,7 +67,8 @@ func _run() -> void:
 	# ---- 冷却 ----
 	s = _new_state()
 	var a := s.actor(1)
-	a.learn_skill(401)          # 击木楔 <Cooldown: 2>，单体伤害
+	a.learn_skill(401)          # 击木楔 <Cooldown: 2>，单体伤害；要求武器类型 5，换上指虎（练习剑是类型 2）
+	_equip_wtype5(a)
 	a.learn_skill(6028)         # 旋龙斩 <Warmup: 2>
 	logic = XBattleLogic.new()
 	logic.elite_roll = 100.0
@@ -120,6 +121,7 @@ func _run() -> void:
 	var foe: XEnemy = logic.enemies[0]
 	# 本 MOD 的普通攻击（技能 1）是魔法型（hitType 2），只会被反射；反击用物理技能 击木楔(401) 测
 	a.learn_skill(401)
+	_equip_wtype5(a)
 	var phys := XDB.rec("Skills", 401)
 	_check("attack_is_magical", XDamage.is_magical(XDB.rec("Skills", 1)) and XDamage.is_physical(phys))
 	var cnt_state := _fake_state(6, 1.0)
@@ -176,3 +178,9 @@ func _run() -> void:
 			print("FAIL ", x.name, " ", JSON.stringify(x.detail))
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## 击木楔(401) 要求武器类型 5（isSkillWtypeOk）：换上类型 5 的指虎(武器 6)
+func _equip_wtype5(a: XActor) -> void:
+	a.equips[0] = XGear.create("weapon", 6)
+	a.refresh_passive()
