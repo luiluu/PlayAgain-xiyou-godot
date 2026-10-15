@@ -51,6 +51,8 @@ var status_win: XMVWindow
 var gold_win: XMVWindow
 var onekey_win: XMVWindow
 var help_card: XHelpCard
+var _gold_item := {}            # 金钱窗跟随的商品（Window_Gold._item）
+var _gold_buy := true
 
 
 func setup(g: Array, only: bool) -> void:
@@ -80,6 +82,17 @@ func _ready() -> void:
 
 
 func _refresh() -> void:
+	# Window_ShopBuy／Window_ShopSell.updateHelp 设金钱窗的商品；onBuyCancel 清空（出售取消不清）
+	if _mode == "buy":
+		var d := _buy_data()
+		_gold_item = d[_buy_index].item if _buy_index < d.size() else {}
+		_gold_buy = true
+	elif _mode == "sell":
+		var d := _sell_data()
+		_gold_item = d[_sell_index].rec if _sell_index < d.size() else {}
+		_gold_buy = false
+	elif _mode == "command" and _gold_buy:
+		_gold_item = {}
 	var cats := _mode in ["category", "sell"] or (_mode == "number" and _number_from == "sell")
 	cmd_win.down_arrow = cats and _cat_top < CATEGORIES.size() - 4
 	cmd_win.up_arrow = cats and _cat_top > 0
@@ -117,12 +130,14 @@ func _price(g: Array) -> int:
 	return int(g[3]) if int(g[2]) == 1 else int(rec.get("price", 0))
 
 
+## 购买列表：商品表先经 Scene_Shop.prepare 的改写（XItemMarks.shop_goods）。rec 是显示用记录（代购时抄上代购件的名字、图标、说明），
+## item 是买入各函数用的商品记录（装备带 kind/base），price 是金币价（指定价格优先）。
 func _buy_data() -> Array:
 	var out := []
-	for g in goods:
+	for g in XItemMarks.shop_goods(goods):
 		var rec := XDB.rec(table_of(int(g[0])), int(g[1]))
 		if not rec.is_empty():
-			out.append({"rec": rec, "kind": int(g[0]), "price": _price(g)})
+			out.append({"rec": XItemMarks.shop_display(rec), "item": XItemMarks.shop_rec(int(g[0]), int(g[1])), "kind": int(g[0]), "price": _price(g)})
 	return out
 
 
@@ -237,12 +252,11 @@ func _paint_list(c: XMVCanvas) -> void:
 			for i in range(d.size()):
 				var y := i * LH
 				var w := c.size.x - 6
-				var ok: bool = s.gold >= int(d[i].price)
-				var a := 1.0 if ok else XUI.DIM.a
+				var a := 1.0 if XItemMarks.can_buy(s, d[i].item, int(d[i].price)) else XUI.DIM.a
 				if i == _buy_index:
 					c.cursor(Rect2(0, y, c.size.x, LH))
 				_item_name(c, d[i].rec, 0, y, w, a)
-				_currency(c, XMenu._group(int(d[i].price)), 0, y, w, a)
+				_paint_buy_price(c, d[i], y, w, a)
 		"sell":
 			var d := _sell_data()
 			var qty_w := c.text_width("×" + XMenu._group(MAX_ITEMS), QTY_FONT)
@@ -261,8 +275,40 @@ func _paint_list(c: XMVCanvas) -> void:
 			_paint_number(c)
 
 
+## YEP_X_MoreCurrencies Window_ShopBuy.drawBuyPrice：数据库价格 > 0 时画金币价（指定价格优先），
+## 再从金币价左边（隔 Currency Padding 5）起从右往左画变量、物品买入价（插件 unshift 的顺序，即备注行倒序）。
+func _paint_buy_price(c: XMVCanvas, e: Dictionary, y: float, w: float, a: float) -> void:
+	var ww := w
+	var base_price := int(e.rec.get("price", 0))
+	if base_price > 0:
+		_currency(c, XMenu._group(int(e.price)), 0, y, w, a)
+		ww -= _gold_width(c, base_price) + MC_PADDING
+	var r := XItemMarks.sell_rewards(e.item)
+	for v in _reversed(r.buy_vars.keys()):
+		var u := _var_unit(int(v))
+		ww = _alt_currency(c, XMenu._group(int(r.buy_vars[v])), u[0], u[1], y, ww, a) - MC_PADDING
+	for id in _reversed(r.buy_items.keys()):
+		ww = _alt_currency(c, XMenu._group(int(r.buy_items[id])), "", int(XDB.rec("Items", int(id)).get("iconIndex", 0)), y, ww, a) - MC_PADDING
+
+
+static func _reversed(a: Array) -> Array:
+	var out := a.duplicate()
+	out.reverse()
+	return out
+
+
+## drawAltCurrency 的变量单位：变量名去掉 \I[n] 与 <<…>> 后的文字、\I[n] 的图标
+static func _var_unit(v: int) -> Array:
+	var names: Array = XDB.system().get("variables", [])
+	var raw := str(names[v]) if v < names.size() and names[v] != null else ""
+	var m := RegEx.create_from_string("(?i)\\\\I\\[(\\d+)\\]").search(raw)
+	var unit := RegEx.create_from_string("<<(.*?)>>").sub(RegEx.create_from_string("(?i)\\\\I\\[(\\d+)\\]").sub(raw, "", true), "", true)
+	return [unit, int(m.get_string(1)) if m else 0]
+
+
 ## YEP Window_ShopNumber：名字在第 1 行，「× 数量」在第 2 行（数量带光标），第 3 行起是现有金钱、增减、横线与结算。
-## 卖出时 YEP_X_MoreCurrencies 在金币列左边接着画报酬列（现有、+增加、结算三行），见 _paint_sell_rewards。
+## YEP_X_MoreCurrencies 在金币列左边接着画变量、物品列（现有、增减、结算三行），见 _paint_currency_columns；
+## 有变量/物品买入价且数据库价格为 0 时不画金币三行（isDrawGoldCurrency，买、卖都按买入价判断）。
 func _paint_number(c: XMVCanvas) -> void:
 	var e := _number_entry()
 	if e.is_empty():
@@ -282,57 +328,51 @@ func _paint_number(c: XMVCanvas) -> void:
 	var cost := price * _number
 	_line(c, LH * 3)
 	_line(c, y + LH * 3)
-	var gold_on := _number_from == "buy" or XItemMarks.draws_gold(e.rec)
+	var item: Dictionary = e.get("item", e.rec)
+	var gold_on := XItemMarks.draws_gold(item)
 	if gold_on:
 		_currency(c, XMenu._group(gold), 0, y + LH, ww)
 		_currency(c, ("+" + XMenu._group(cost)) if _number_from == "sell" else XMenu._group(-cost), 0, y + LH * 2, ww)
 		_currency(c, XMenu._group(gold + (cost if _number_from == "sell" else -cost)), 0, y + LH * 3, ww)
-	if _number_from == "sell":
-		if gold_on:
-			ww -= _gold_width(c, maxi(gold, cost + gold) * 100)
-		_paint_sell_rewards(c, e.rec, ww, y)
+		ww -= _gold_width(c, maxi(gold, cost + gold) * 100)
+	_paint_currency_columns(c, item, ww, y)
 
 
-## YEP_X_MoreCurrencies drawTotalPrice（卖出）：从金币列左边起，变量、物品各一列，每列从右往左排、列间隔 Currency Padding 5。
-## 插件 unshift 收集报酬，所以按备注行倒序画；没有武器/防具报酬（独立装备，插件跳过）。
-func _paint_sell_rewards(c: XMVCanvas, rec: Dictionary, ww: float, wy: float) -> void:
+## YEP_X_MoreCurrencies drawTotalPrice：从金币列左边起，变量、物品各一列，每列从右往左排、列间隔 Currency Padding 5。
+## 卖出画卖出报酬、买入画买入价；插件 unshift 收集，所以按备注行倒序画；没有武器/防具（独立装备，插件跳过）。
+func _paint_currency_columns(c: XMVCanvas, item: Dictionary, ww: float, wy: float) -> void:
 	var s := XState.current
-	var r := XItemMarks.sell_rewards(rec)
-	var names: Array = XDB.system().get("variables", [])
-	var vars: Array = r.vars.keys()
-	vars.reverse()
-	var icon_re := RegEx.create_from_string("(?i)\\\\I\\[(\\d+)\\]")
-	var tag_re := RegEx.create_from_string("<<(.*?)>>")
-	for v in vars:
-		var raw := str(names[v]) if v < names.size() and names[v] != null else ""
-		var m := icon_re.search(raw)
-		var unit := tag_re.sub(icon_re.sub(raw, "", true), "", true)
-		ww = _reward_column(c, ww, wy, unit, int(m.get_string(1)) if m else 0, s.variable(v), int(r.vars[v])) - MC_PADDING
-	var items: Array = r.items.keys()
-	items.reverse()
-	for id in items:
-		ww = _reward_column(c, ww, wy, "", int(XDB.rec("Items", id).get("iconIndex", 0)), s.item_count(id), int(r.items[id])) - MC_PADDING
+	var r := XItemMarks.sell_rewards(item)
+	var sell := _number_from == "sell"
+	var vars: Dictionary = r.vars if sell else r.buy_vars
+	var items: Dictionary = r.items if sell else r.buy_items
+	for v in _reversed(vars.keys()):
+		var u := _var_unit(int(v))
+		ww = _currency_column(c, ww, wy, u[0], u[1], s.variable(int(v)), int(vars[v])) - MC_PADDING
+	for id in _reversed(items.keys()):
+		ww = _currency_column(c, ww, wy, "", int(XDB.rec("Items", int(id)).get("iconIndex", 0)), s.item_count(int(id)), int(items[id])) - MC_PADDING
 
 
-## drawVariablePrice／drawItemCostPrice：现有（分组）、「+」数量×单价（不分组）、结算（分组）三行，返回三行中最靠左的左缘
-func _reward_column(c: XMVCanvas, ww: float, wy: float, unit: String, icon: int, have: float, price: int) -> float:
-	var add := price * _number
+## drawVariablePrice／drawItemCostPrice：现有（分组）、增减（卖出「+」数量×单价不分组，买入 −数量×单价分组）、结算（分组）三行，
+## 返回三行中最靠左的左缘
+func _currency_column(c: XMVCanvas, ww: float, wy: float, unit: String, icon: int, have: float, price: int) -> float:
+	var add := price * _number * (1 if _number_from == "sell" else -1)
 	var fw := _alt_currency(c, XMenu._group(have), unit, icon, wy + LH, ww)
-	fw = minf(fw, _alt_currency(c, "+" + str(add), unit, icon, wy + LH * 2, ww))
+	fw = minf(fw, _alt_currency(c, ("+" + str(add)) if add >= 0 and _number_from == "sell" else XMenu._group(add), unit, icon, wy + LH * 2, ww))
 	return minf(fw, _alt_currency(c, XMenu._group(have + add), unit, icon, wy + LH * 3, ww))
 
 
 ## Window_Base.drawAltCurrency：字号 20；变量名（去掉 \I[n] 与 <<…>>）系统色右对齐，再往左 6 像素放图标，再往左是数值；返回剩余宽度
-func _alt_currency(c: XMVCanvas, value: String, unit: String, icon: int, wy: float, ww: float) -> float:
+func _alt_currency(c: XMVCanvas, value: String, unit: String, icon: int, wy: float, ww: float, alpha := 1.0) -> float:
 	if unit != "":
-		c.text(unit, 0, wy, ww, "right", XUI.SYSTEM, GOLD_FONT, LH)
+		c.text(unit, 0, wy, ww, "right", XUI.SYSTEM, GOLD_FONT, LH, alpha)
 		ww -= c.text_width(unit, GOLD_FONT)
 	if icon > 0:
 		if unit != "":
 			ww -= 6
 		ww -= 32
-		c.icon(icon, ww, wy + 2)
-	c.text(value, 0, wy, ww, "right", XUI.TEXT, GOLD_FONT, LH)
+		c.icon(icon, ww, wy + 2, alpha)
+	c.text(value, 0, wy, ww, "right", XUI.TEXT, GOLD_FONT, LH, alpha)
 	return ww - c.text_width(value, GOLD_FONT)
 
 
@@ -352,7 +392,9 @@ func _paint_status(c: XMVCanvas) -> void:
 	var s := XState.current
 	var owned := 0
 	if rec.has("itypeId"):
-		owned = s.item_count(int(rec.id))
+		# 代购商品显示代购件的持有数（MoreCurrencies Window_ShopStatus.setItem）
+		var pid := XItemMarks.proxy_buy(rec)
+		owned = s.item_count(pid if pid > 0 else int(rec.id))
 	else:
 		var kind: String = rec.get("kind", "weapon" if rec.has("wtypeId") else "armor")
 		owned = s.gear_count(kind, int(rec.get("base", rec.id)))
@@ -385,8 +427,38 @@ func _paint_status(c: XMVCanvas) -> void:
 			XItemStatusPainter.change_color(change), 20, LH, 1.0 if change != 0 else XUI.DIM.a)
 
 
+## YEP_X_MoreCurrencies Window_Gold.refresh：购买／出售列表选中的商品（setItemBuy／setItemSell，购买取消时清空）有变量/物品价时，
+## 金币左边（隔 Currency Padding 5）从右往左画这些变量的值与物品持有数（变量、物品顺序同价格列）；
+## 有这类价格且数据库价格为 0 时不画金币（isDrawGoldCurrency：购买看买入价，出售看卖出报酬）。
 func _paint_gold(c: XMVCanvas) -> void:
-	_currency(c, XMenu._group(XState.current.gold), 6, 0, c.size.x - 12)
+	var s := XState.current
+	var ww := c.size.x - 12
+	var item := _gold_item
+	var r := XItemMarks.sell_rewards(item) if not item.is_empty() else {}
+	var vars: Dictionary = r.get("buy_vars" if _gold_buy else "vars", {})
+	var items: Dictionary = r.get("buy_items" if _gold_buy else "items", {})
+	if vars.is_empty() and items.is_empty() or int(item.get("price", 0)) > 0:
+		_currency(c, XMenu._group(s.gold), 6, 0, ww)
+		ww -= _gold_width(c, s.gold) + MC_PADDING
+	for v in _reversed(vars.keys()):
+		var u := _var_unit(int(v))
+		ww = _alt_currency_at(c, 6, XMenu._group(s.variable(int(v))), u[0], u[1], ww) - MC_PADDING
+	for id in _reversed(items.keys()):
+		ww = _alt_currency_at(c, 6, XMenu._group(s.item_count(int(id))), "", int(XDB.rec("Items", int(id)).get("iconIndex", 0)), ww) - MC_PADDING
+
+
+## 金钱窗的 drawAltCurrency：从 x 起宽 ww 的右对齐（同 _alt_currency，左边留 textPadding）
+func _alt_currency_at(c: XMVCanvas, x: float, value: String, unit: String, icon: int, ww: float) -> float:
+	if unit != "":
+		c.text(unit, x, 0, ww, "right", XUI.SYSTEM, GOLD_FONT, LH)
+		ww -= c.text_width(unit, GOLD_FONT)
+	if icon > 0:
+		if unit != "":
+			ww -= 6
+		ww -= 32
+		c.icon(icon, x + ww, 2)
+	c.text(value, x, 0, ww, "right", XUI.TEXT, GOLD_FONT, LH)
+	return ww - c.text_width(value, GOLD_FONT)
 
 
 # ---- 操作 ----
@@ -450,16 +522,7 @@ func _max_number() -> int:
 		return 1
 	if _number_from == "sell":
 		return int(e.count)
-	var price := int(e.price)
-	var have := _owned(e)
-	var by_gold := MAX_ITEMS if price <= 0 else XState.current.gold / price
-	return mini(by_gold, MAX_ITEMS - have)
-
-
-func _owned(e: Dictionary) -> int:
-	if int(e.kind) == 0:
-		return XState.current.item_count(int(e.rec.id))
-	return XState.current.gear_count("weapon" if int(e.kind) == 1 else "armor", int(e.rec.id))
+	return XItemMarks.max_buy(XState.current, e.item, int(e.price))
 
 
 func _ok() -> void:
@@ -489,7 +552,7 @@ func _ok_inner() -> void:
 			_sell_top = 0
 		"buy":
 			var d := _buy_data()
-			if _buy_index < d.size() and s.gold >= int(d[_buy_index].price) and _max_number() > 0:
+			if _buy_index < d.size() and XItemMarks.can_buy(s, d[_buy_index].item, int(d[_buy_index].price)) and _max_number() > 0:
 				_number_from = "buy"
 				_number = 1
 				_mode = "number"
@@ -515,14 +578,9 @@ func _trade() -> void:
 	var s := XState.current
 	var e := _number_entry()
 	if _number_from == "buy":
-		var cost := int(e.price) * _number
-		if s.gold < cost:
+		if _number < 1 or _number > XItemMarks.max_buy(s, e.item, int(e.price)):
 			return
-		s.gain_gold(-cost)
-		match int(e.kind):
-			0: s.gain_item(int(e.rec.id), _number)
-			1: s.gain_gear("weapon", int(e.rec.id), _number)
-			2: s.gain_gear("armor", int(e.rec.id), _number)
+		XItemMarks.buy(s, e.item, int(e.price), _number)
 		_mode = "buy"
 	else:
 		# 装备的 e.rec 就是背包实例；物品的 e.rec 可能是加了标记名的副本，按 ID 卖
