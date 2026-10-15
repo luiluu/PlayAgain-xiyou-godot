@@ -14,14 +14,20 @@ const SLICE=JSON.parse(fs.readFileSync(path.join(__dirname,'../xiyou_slice.json'
 const TABLES=[w.$dataItems,w.$dataWeapons,w.$dataArmors];
 const RICH=1000000;
 
-// 切片各图商店里的商品（去重）：[类型, ID, 价格类型, 指定价]
-const goods=[],seen={};
+// 切片各图商店（事件指令 302＋605）经正式 Scene_Shop.prepare（种族运行时把旧版进阶石换成正规 ID 并去重、
+// 平衡运行时滤掉停用号角）后的商品，去重：[类型, ID, 价格类型, 指定价]；shops 记每家店整理前后的商品表
+const goods=[],seen={},shops=[];
+w.eval('ConfigManager.applyData({});DataManager.setupNewGame();');
 for(const mid of SLICE.maps){
   const map=JSON.parse(fs.readFileSync(path.join(APP,'data',`Map${String(mid).padStart(3,'0')}.json`),'utf8'));
-  for(const ev of map.events||[])if(ev)for(const page of ev.pages)for(const c of page.list){
-    if(c.code!==302&&c.code!==605)continue;
-    const g=c.parameters.slice(0,4).map(Number),key=g.join(',');
-    if(TABLES[g[0]]&&TABLES[g[0]][g[1]]&&!seen[key]){seen[key]=true;goods.push(g);}
+  for(const ev of map.events||[])if(ev)for(const page of ev.pages)for(let i=0;i<page.list.length;i++){
+    const c=page.list[i];if(c.code!==302)continue;
+    const raw=[c.parameters.slice(0,4).map(Number)];
+    for(let j=i+1;j<page.list.length&&page.list[j].code===605;j++)raw.push(page.list[j].parameters.slice(0,4).map(Number));
+    const sc=Object.create(w.Scene_Shop.prototype);sc.prepare(raw.map(x=>x.slice()),!!c.parameters[4]);
+    const prepared=sc._goods.map(x=>x.slice(0,4).map(Number));
+    shops.push({map:mid,event:ev.id,raw,prepared});
+    for(const g of prepared){const key=g.join(',');if(TABLES[g[0]]&&TABLES[g[0]][g[1]]&&!seen[key]){seen[key]=true;goods.push(g);}}
   }
 }
 
@@ -29,8 +35,9 @@ for(const mid of SLICE.maps){
 w.eval('ConfigManager.applyData({});DataManager.setupNewGame();Math.random=function(){return 0.5;};');
 w.Input._currentState=w.Input._currentState||{}; // isDebugThrough 读按键状态（无键盘，按不按都是假）
 function setup(){w.$gameParty.initAllItems();}
+// 带随机词缀的装备会再生成一层基础记录，按 originalBaseItemId 认原装备
 function snap(){
-  const count=list=>{const c={};list.forEach(x=>{const b=x.baseItemId||x.id;c[b]=(c[b]||0)+1;});return c;};
+  const count=list=>{const c={};list.forEach(x=>{const b=x.originalBaseItemId||x.baseItemId||x.id;c[b]=(c[b]||0)+1;});return c;};
   return {gold:w.$gameParty.gold(),vars:w.$gameVariables._data.slice(),items:Object.assign({},w.$gameParty._items),
     weapons:count(w.$gameParty.weapons()),armors:count(w.$gameParty.armors())};
 }
@@ -83,7 +90,7 @@ const parsed=goods.map(g=>{const it=TABLES[g[0]][g[1]];return {goods:g,price:it.
   variableBuyPrices:(it.variableBuyPrices||[]).map(v=>[v,it.variableBuyPrice[v]]),itemBuyPrices:(it.itemBuyPrices||[]).map(i=>[i,it.itemBuyPrice[i]])};});
 if(JSON.stringify(identity)!==JSON.stringify(sourceIdentity(APP)))throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname,'.sandbox'),{recursive:true});
-fs.writeFileSync(path.join(__dirname,'.sandbox/shop_buy.json'),JSON.stringify({sourceIdentity:identity,goods:parsed,cases},null,1));
+fs.writeFileSync(path.join(__dirname,'.sandbox/shop_buy.json'),JSON.stringify({sourceIdentity:identity,shops,goods:parsed,cases},null,1));
 console.log(JSON.stringify({goods:goods.length,cases:cases.length,bought:cases.filter(c=>c.delta).length,
   withCurrency:parsed.filter(p=>p.variableBuyPrices.length||p.itemBuyPrices.length).length,proxy:parsed.filter(p=>p.proxyBuy).length}));
 process.exit(0);
