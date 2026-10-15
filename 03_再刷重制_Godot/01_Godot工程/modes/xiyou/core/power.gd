@@ -537,6 +537,7 @@ static func _vars() -> Array:
 
 
 ## repeatCount：(重复次数＋普攻追加次数＋再次使用概率) × 行动序列里 ACTION EFFECT 段数
+## canUse 含 MV isSkillWtypeOk（技能要求的武器类型），XBattleLogic.can_use 没查，cycle 里另判
 static func _repeat_count(a: XActor, item: Dictionary) -> float:
 	var base := float(item.get("repeats", 1))
 	if int(item.id) == XBattleLogic.ATTACK_SKILL:
@@ -548,7 +549,13 @@ static func _repeat_count(a: XActor, item: Dictionary) -> float:
 			var k := m.get_string(1)
 			if k == "All" or k == by or (k.is_valid_int() and int(k) == int(item.id)):
 				chance += float(m.get_string(2))
-	return (maxf(1.0, base) + clampf(chance / 100.0, 0.0, 1.0)) * maxf(1.0, float(item.get("yepEffects", 1)))
+	# 正式版只数整体/逐目标序列里大写的「ACTION EFFECT」（小写写法的序列算 1 段），与实战段数 yepEffects 不同
+	var hits := 0
+	var seq: Dictionary = item.get("yepSeq", {}) if item.get("yepSeq") is Dictionary else {}
+	for cmd in seq.get("whole", []) + seq.get("target", []):
+		if cmd is Array and not cmd.is_empty() and str(cmd[0]) == "ACTION EFFECT":
+			hits += 1
+	return (maxf(1.0, base) + clampf(chance / 100.0, 0.0, 1.0)) * maxf(1.0, float(hits))
 
 
 ## expected：先扣费用再预演普通与暴击伤害（含状态 Confirm/React），× 命中 ×(1−闪避) × 段数，群体按 60% 单体／40% 三体
@@ -640,7 +647,7 @@ static func _cycle(logic: XBattleLogic, a: XActor, t: XBattler, skills: Array) -
 			for s in candidates:
 				var c: Dictionary = cost_for.call(s)
 				var ready: bool = not (int(cooldowns.get(int(s.id), 0)) > 0 or int(warmups.get(int(s.id), 0)) > 0) \
-					and c.mp <= a.mp and c.tp <= a.tp and c.hp < a.hp and logic.can_use(a, s)
+					and c.mp <= a.mp and c.tp <= a.tp and c.hp < a.hp and logic.can_use(a, s) and XHangUpAuto.wtype_ok(a, s)
 				if not ready:
 					continue
 				var v: float = damage_for.call(s, c)

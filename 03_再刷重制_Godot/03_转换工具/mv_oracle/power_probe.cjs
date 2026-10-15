@@ -7,7 +7,8 @@ const {boot}=require('./hboot.cjs'),{sourceIdentity}=require('./source_identity.
 const APP=process.env.XIYOU_APP||'/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
 const identity=sourceIdentity(APP),r=boot(APP,{tolerant:true,log:false}),w=r.window;
 if(r.errors.length||!w.DataManager.isDatabaseLoaded())throw new Error('参照引擎启动失败');
-w.eval('ConfigManager.applyData({});DataManager.setupNewGame();Math.random=function(){return 0.5;};');
+// 重制版不移植五乘区成长修正（00_设计/数值平衡.md，用户 2026-10-12），参照里关掉，与伤害对照去掉 growth 一致
+w.eval('ConfigManager.applyData({});DataManager.setupNewGame();Math.random=function(){return 0.5;};CodexZones.ENABLED=false;');
 const P=w.CodexCombatPower;
 const SLICE=JSON.parse(fs.readFileSync(path.join(__dirname,'../xiyou_slice.json'),'utf8'));
 const NOTE_TAGS=['passiveHarmRi','passiveCrHarmRi','passiveELUP','SkETypeHarmRi','passiveHEUP','passiveAPLUS','passiveHarmRe','SkillCriPush','DBHPLSteal',
