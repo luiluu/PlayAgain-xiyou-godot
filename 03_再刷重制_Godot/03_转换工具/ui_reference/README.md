@@ -4,6 +4,7 @@
 
 - `serve.py <app.nw> [截图目录]`：只读服务 127.0.0.1:8766。只允许 GET；拒绝 `save/` 与 `..` 路径段；`js/mac-preload.js` 换成本目录的 `mac-preload-shim.js`（需要 Node 的 Mac 启动脚本在浏览器里无法运行）。唯一的写入是 `POST /__ref_shot/<名字>`，只写截图目录。全部响应 `no-store`，同时允许约 250 个并发脚本请求。
 - `mac-preload-shim.js`：提供 `nw`、`MacPort` 的空实现，不读写文件；浏览器模式下存档只进该浏览器自己的 localStorage，不碰真实玩家存档（`StorageManager.isLocalMode()` 为 false）。另提供 `__refShot(名字)`（`SceneManager.snap()` 原尺寸 1280×720 PNG）与 `__refErrors`（场景异常）。
+- 声音（用户 2026-10-16）：用浏览器跑参照时默认静音——垫片在加载后把 `WebAudio.setMasterVolume` 固定为 0；确实需要听声音时网址加 `?sound=1`。
 - 使用：后台运行 `python3 -I serve.py "<app.nw>"`（重制期间 `<app.nw>` 用冻结副本 `03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw`，见该目录 README），浏览器打开 `http://127.0.0.1:8766/index.html`，视口设 1280×720，启动约 30 秒到标题。用页面内 JS 推进剧情/打开场景后调用 `__refShot`。
 - 截图默认写到 `04_验证/本地结果/原版参照/`（不入 Git）。不修改正式应用的任何文件。
 
