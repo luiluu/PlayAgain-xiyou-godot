@@ -1,5 +1,5 @@
 'use strict';
-// 敌群事件参照（扩楼层：一至三、五层守层者 4/5/8/28 第 1 回合的强制行动 339 → 技能 8111「轮回模式·平衡伤害」→ 状态 1460「轮回困难v1」）。
+// 敌群事件参照（扩楼层：一至三、五、六层守层者 4/5/8/28/39 第 1 回合的强制行动 339 → 技能 8111「轮回模式·平衡伤害」→ 状态 1460「轮回困难v1」）。
 // 真实 BattleManager 跑前两回合（日志窗/精灵组用空代理，同 sequence_probe）：普通难度、开局队伍 1/8/9/10（1 级，开局被动），
 // 角色输入一律普通攻击敌人 0；Math.random 敌群生成时 0.99（不出神话），之后 0.5（分散度为 0、不会心）。
 // 记录：每次开始行动（回合数、行动者、技能、是否强制）、每次 invokeAction 的目标血量变化与伤害弹字（startDamagePopup 时的 hpDamage）、
@@ -9,7 +9,7 @@ const {boot} = require('./hboot.cjs'), {sourceIdentity} = require('./source_iden
 const APP = process.env.XIYOU_APP || '/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
 const identity = sourceIdentity(APP), r = boot(APP, {tolerant: true, log: false}), w = r.window;
 if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败');
-const PARTY = [1, 8, 9, 10], TROOPS = [4, 5, 8, 28];
+const PARTY = [1, 8, 9, 10], TROOPS = [4, 5, 8, 28, 39];
 const stub = new Proxy(function () {}, {get: (t, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprite = () => {
   const store = {x: 0, y: 0, _homeX: 0, _homeY: 0, width: 64, height: 64, scale: {x: 1, y: 1}, anchor: {x: 0.5, y: 1}, opacity: 255};
