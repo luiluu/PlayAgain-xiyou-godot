@@ -435,10 +435,11 @@ func _return_hub(map: XMapScene, f: Dictionary, tag: String, full: bool) -> bool
 		return false
 	if not await _talk(map, back.id, [back.choice], tag + "_return", full):
 		return false
-	# 回到的格子照该事件的场所移动指令（七层辛德瑞传到 (12,18)，一至六层是 (14,23)）
+	# 回到的格子照该事件的场所移动指令，再按 MVInterpreter.TRANSFER_FIX（O-027：七层辛德瑞原版传到大厅水面 (12,18)，改到 (14,23)）
 	var dest := Vector2i(-1, -1)
 	for c in _raw_event(f.map, back.id).pages[0].list:
 		if int(c.code) == 201 and int(c.parameters[0]) == 0 and int(c.parameters[1]) == HUB:
 			dest = Vector2i(int(c.parameters[2]), int(c.parameters[3]))
+			dest = MVInterpreter.TRANSFER_FIX.get("%d:%d:%d:%d:%d" % [f.map, back.id, HUB, dest.x, dest.y], dest)
 			break
 	return _check(tag + "_back_hub", await _wait_map(HUB) and _scene().player.grid == dest, [_scene().map_id, _scene().player.grid, dest])
