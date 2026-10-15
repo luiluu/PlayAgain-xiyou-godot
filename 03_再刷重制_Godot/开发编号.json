@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.039",
-  "sequence": 39,
-  "next": "dev.040",
-  "nextSequence": 40,
+  "current": "dev.040",
+  "sequence": 40,
+  "next": "dev.041",
+  "nextSequence": 41,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "一键出售、出售锁定、道具置顶（八戒）",
+  "currentChange": "出售报酬：YEP_X_MoreCurrencies 卖出的变量与物品报酬（八戒）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

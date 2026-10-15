@@ -40,6 +40,7 @@ PROBES = [
     (['party_probe.cjs'], ['party.json']),
     (['troop_event_probe.cjs'], ['troop_events.json']),
     (['drop_record_probe.cjs'], ['drop_record.json']),
+    (['sell_reward_probe.cjs'], ['sell_rewards.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
 IDENTITY_KEYS = {'sourceIdentity', 'identity', 'releaseVersion', 'source'}

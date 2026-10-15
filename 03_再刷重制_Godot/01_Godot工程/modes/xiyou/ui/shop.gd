@@ -250,7 +250,7 @@ func _paint_list(c: XMVCanvas) -> void:
 				if y < 0 or y >= c.size.y:
 					continue
 				var w := c.size.x - 6
-				var a := 1.0 if int(d[i].rec.get("price", 0)) > 0 else XUI.DIM.a
+				var a := 1.0 if XItemMarks.can_sell(d[i].rec) else XUI.DIM.a
 				if i == _sell_index:
 					c.cursor(Rect2(0, y, c.size.x, LH))
 				_item_name(c, d[i].rec, 0, y, w - qty_w, a)
@@ -265,7 +265,7 @@ func _paint_number(c: XMVCanvas) -> void:
 	var e := _number_entry()
 	if e.is_empty():
 		return
-	var price := int(e.price) if _number_from == "buy" else int(e.rec.get("price", 0)) / 2
+	var price := int(e.price) if _number_from == "buy" else XItemMarks.selling_price(e.rec)
 	_item_name(c, e.rec, 0, LH, c.size.x)
 	var cw := c.text_width(XMenu._group(MAX_ITEMS)) + 12
 	var cx := c.size.x - cw - 6
@@ -438,7 +438,7 @@ func _ok_inner() -> void:
 				_mode = "number"
 		"sell":
 			var d := _sell_data()
-			if _sell_index < d.size() and int(d[_sell_index].rec.get("price", 0)) > 0:
+			if _sell_index < d.size() and XItemMarks.can_sell(d[_sell_index].rec):
 				# Star_ShopOnekey onSellOk：名字带「[锁定]」的不能卖
 				if str(d[_sell_index].rec.get("name", "")).contains(XItemMarks.LOCK):
 					XToast.show_text("已锁定 无法出售", true)
@@ -468,12 +468,8 @@ func _trade() -> void:
 			2: s.gain_gear("armor", int(e.rec.id), _number)
 		_mode = "buy"
 	else:
-		var price := XItemMarks.selling_price(e.rec)
-		s.gain_gold(price * _number)
-		if int(e.kind) == 0:
-			s.gain_item(int(e.rec.id), -_number)
-		else:
-			s.gear.erase(e.rec)
+		# 装备的 e.rec 就是背包实例；物品的 e.rec 可能是加了标记名的副本，按 ID 卖
+		XItemMarks.sell(s, e.rec if int(e.kind) != 0 else XDB.rec("Items", int(e.rec.id)), _number)
 		_mode = "sell"
 		var n := _sell_data().size()
 		_sell_index = clampi(_sell_index, 0, maxi(0, n - 1))

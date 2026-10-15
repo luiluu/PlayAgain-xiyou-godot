@@ -1,6 +1,8 @@
 extends Node
 ## 一键出售（Star_ShopOnekey＋installUnifiedQualityRuntime）、出售锁定（Star_ShopOnekey）、道具置顶（Star_ItemTop）。
 ## 参照：正式应用 js/plugins/Star_ShopOnekey.js、Star_ItemTop.js、js/codex/runtime/installUnifiedQualityRuntime.js（只读，规则见 XItemMarks）。
+## 出售报酬（YEP_X_MoreCurrencies）：与 mv_oracle sell_reward_probe 的参照（generated/oracle/sell_rewards.json）逐例比对
+## 能否卖、金币、变量、物品与装备件数的变化；商店与挂机两条路径。
 ## 窗口模式加 -- --out=<目录> 保存截图。
 
 var results := []
@@ -14,10 +16,11 @@ func _ready() -> void:
 	_run.call_deferred()
 
 
-func check(name: String, ok: bool, detail = null) -> void:
+func check(name: String, ok: bool, detail = null) -> bool:
 	results.append({"name": name, "passed": ok})
 	if not ok:
 		print("FAIL ", name, " ", JSON.stringify(detail))
+	return ok
 
 
 func frames(n := 4) -> void:
@@ -179,7 +182,107 @@ func _run() -> void:
 	check("purchase_only_disables_onekey", not only._cmd_enabled(2))
 	only.queue_free()
 	await frames()
+	await _sell_rewards()
 	DirAccess.remove_absolute(XSave.dir())
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+const ORACLE := "res://modes/xiyou/generated/oracle/sell_rewards.json"
+
+
+func _gear_count(s: XState) -> int:
+	return s.gear.size()
+
+
+## 每例新开一局：持有该物品（装备按参照实例的价格）→ 卖出 → 与参照的变化逐项比对
+func _sell_rewards() -> void:
+	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
+	if not check("sell_oracle_loaded", data is Dictionary and data.get("cases", []).size() >= 20, ORACLE):
+		return
+	var tags := {}
+	for c in data.cases:
+		var s := XState.new_game(3, 1, [8, 9, 10])
+		XState.current = s
+		s.gold = 1000
+		var kind := str(c.kind)
+		var id := int(c.id)
+		var n := int(c.number)
+		var rec: Dictionary
+		if kind == "item":
+			s.gain_item(id, n)
+			rec = XDB.rec("Items", id)
+		else:
+			rec = XGear.create(kind, id)
+			s.register_gear(rec)
+			rec.price = int(c.price)
+			rec.meta = rec.meta.duplicate()
+			rec.meta.quality = "1"
+			s.gear.append(rec)
+		var tag := "%s%d_%s" % [kind, id, c.via]
+		check("sell_enabled_" + tag, XItemMarks.can_sell(rec) == bool(c.enabled), [XItemMarks.can_sell(rec), c.enabled])
+		if not bool(c.enabled) and c.via == "shop":
+			continue
+		var vars0 := s.variables.duplicate()
+		var items0 := s.items.duplicate()
+		var gear0 := _gear_count(s)
+		if c.via == "hangUp" and kind != "item":
+			# 挂机自动卖出走 XHangUpAuto.after_battle_sell（每 1 场卖、旧档 1 开）
+			var cfg := XHangUpAuto.sell_config(s)
+			cfg.SellQuality = 1
+			cfg["quality1"] = true
+			XHangUpAuto.better_frequency = 0
+			XHangUpAuto.after_battle_sell(s)
+		else:
+			XItemMarks.sell(s, rec, n)
+		var dv := {}
+		for k in s.variables:
+			if float(s.variables[k]) != float(vars0.get(k, 0)):
+				dv[str(int(k))] = int(s.variables[k] - vars0.get(k, 0))
+		var di := {}
+		for k in items0.keys() + s.items.keys():
+			var d := s.item_count(int(k)) - int(items0.get(k, 0))
+			if d != 0:
+				di[str(int(k))] = d
+		var want_gear := 0
+		for k in ["weapons", "armors"]:
+			for v in c.delta[k].values():
+				want_gear += int(v)
+		var want_vars := {}
+		for k in c.delta.vars:
+			want_vars[str(k)] = int(c.delta.vars[k])
+		var want_items := {}
+		for k in c.delta.items:
+			want_items[str(k)] = int(c.delta.items[k])
+		var ok: bool = s.gold - 1000 == int(c.delta.gold) and dv == want_vars and di == want_items and _gear_count(s) - gear0 == want_gear
+		check("sell_reward_" + tag, ok, [s.gold - 1000, dv, di, _gear_count(s) - gear0, c.delta])
+		for v in want_vars:
+			tags["var" + v] = true
+		for v in want_items:
+			if int(want_items[v]) > 0:
+				tags["item"] = true
+	# 参照至少覆盖：变量报酬、物品报酬、不能卖
+	check("sell_oracle_coverage", tags.has("item") and tags.keys().any(func(k): return k.begins_with("var")) and data.cases.any(func(c): return not c.enabled), tags.keys())
+	# 商店：0 价但有报酬的可以卖，并按数量给报酬（weapon 73：变量 201 +1）
+	var s2 := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = s2
+	var e := XGear.create("weapon", 73)
+	s2.register_gear(e)
+	e.price = 0
+	s2.gear.append(e)
+	var shop := XShop.new()
+	shop.setup([], false)
+	add_child(shop)
+	await frames()
+	shop._cmd = 1
+	shop._ok()
+	shop._cat = 2
+	shop._ok()
+	shop._sell_index = shop._sell_data().find_custom(func(x): return is_same(x.rec, e))
+	var v0 := s2.variable(201)
+	shop._ok()
+	shop._ok()
+	check("shop_sell_zero_price_reward", not s2.gear.has(e) and s2.variable(201) == v0 + 1 and shop._mode == "sell", [s2.variable(201), shop._mode])
+	shop.queue_free()
+	await frames()
