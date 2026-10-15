@@ -360,5 +360,6 @@ func _item_marks_oracle() -> void:
 			actual_dirs.append(tilemap.is_passable(int(c.x), int(c.y), d) and tilemap.is_passable(dest.x, dest.y, MVCharacter.reverse_dir(d)))
 		check("return_tile_oracle_%d_%d" % [int(c.x), int(c.y)], actual_dirs == c.dirs, [actual_dirs, c.dirs])
 	tilemap.free()
-	check("return_fix_only_seventh", MVInterpreter.TRANSFER_FIX == {"61:9:4:12:18": Vector2i(14, 23)})
+	# O-027：七层（Map061 事件 9）与十二层（Map065 事件 3）辛德瑞原版都传到上面验过的 (12,18)，只改这两条
+	check("return_fix_seventh_twelfth", MVInterpreter.TRANSFER_FIX == {"61:9:4:12:18": Vector2i(14, 23), "65:3:4:12:18": Vector2i(14, 23)})
 	await frames()

@@ -20,7 +20,7 @@
 ### 2026-10-15 【Claude·悟空·未经Codex检验】扩十二层 Map065 苍白雪岭；O-027 扩到十二层；楼层跑分三段（dev.待定）
 
 - 切片加 Map065（大厅传送门变量 20＝12 → (21,14)）、敌群 251～253/101/102（遇敌）与 110（守层者）；keepEvents "65" 放 2、3：守层者奥法师·莉莎（敌群 110；等级上限开放至 35，切片 maxLevel 33 → 35；胜后改卖货 845）与辛德瑞。未放：北风高原副本入口（1，Difficulty 插件，进 Map034）。
-- 十二层辛德瑞（Map065 事件 3）原版也传回大厅 (12,18)（钓鱼池水面，七层同一缺陷）：`MVInterpreter.TRANSFER_FIX` 加 `"65:3:4:12:18" → (14,23)`，优化登记 O-027 改为「七层、十二层」（恢复方法不变：设 `{}`）。事件对照 baseline 因此多一项已知不一致 m65e3p0 trace。
+- 十二层辛德瑞（Map065 事件 3）原版也传回大厅 (12,18)（钓鱼池水面，七层同一缺陷）：`MVInterpreter.TRANSFER_FIX` 加 `"65:3:4:12:18" → (14,23)`，优化登记 O-027 改为「七层、十二层」（恢复方法不变：设 `{}`）。沙僧核查 O-027 时在 `tests/xiyou_item_marks` 加的补证断言「TRANSFER_FIX 只有七层一条」随之改为两条（check 改名 `return_fix_seventh_twelfth`；(12,18) 的通行性参照检查不变，十二层用的是同一格）。事件对照 baseline 因此多一项已知不一致 m65e3p0 trace。
 - 敌群事件参照加 110（第 1 回合强制 8111，同前，没有新指令）；`xiyou_troop_events` 472 → 518 项。
 - `xiyou_floor_run` 两段时第 2 段单跑 168.6 秒（接近 200 秒），改成三段：`xiyou_floor_run`／`_b`／`_c` 的 parts＝3，各完整走 1～4、5～8、9～12 层。
 - 验证：`同步正式西游.py`（v0.26 不变）「有变化」只来自切片扩大（maps /65、events 新增用例、slice_d1～6 与 smart_ai 新增敌人、troop_events 10→11 例）；`godot --import`；`xiyou_event_compare` 317/334 → 323/341（Map065 新增 7 例，6 例一致，另 1 例即 O-027，已 --update-baseline）；`xiyou_troop_events` 518/518；`xiyou_floor_run` 84/84、`_b` 124/124、`_c` 164/164。
