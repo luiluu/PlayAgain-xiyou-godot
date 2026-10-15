@@ -157,9 +157,9 @@ func _run() -> void:
 			var expected := float(mv_row.value) / growth if growth != 0.0 else 0.0
 			_check(tag, _close(res.settled, expected), {"skill": r.skillName, "godot": res.settled, "mv_div_growth": expected,
 				"godot_row": res.breakdown.row, "mv_row": mv_row, "godot_base": res.breakdown.base, "mv_base": r.breakdown.base})
-			# 状态脚本：用正式版的结算值套 Godot 的效果，应与正式版最终值一致
-			# 再扣固定减伤（正式版在状态脚本之后扣）
-			var fin: float = XDamage.apply_fixed_mitigation(XDamage.apply_state_effects(float(r.value), item, user, target, untranslated), res)
+			# slice_probe 的 final 是 onPreDamageStateEffects（Confirm＋固定减伤），不含目标 React。
+			# 完整结算顺序另由 xiyou_settlement 对照真正的 onReactStateEffects。
+			var fin: float = XDamage.apply_fixed_mitigation(XDamage.apply_state_effects(float(r.value), item, user, target, untranslated, "confirm"), res)
 			_check(tag + ".stateEffects", _close(fin, float(r.final)), {"godot": fin, "mv": r.final})
 		_check("d%d.no_untranslated_state_effects" % diff, untranslated.is_empty(), untranslated.slice(0, 5))
 		if verbose:

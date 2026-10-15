@@ -44,6 +44,7 @@ PROBES = [
     (['power_probe.cjs'], ['power.json']),
     (['wtype_probe.cjs'], ['wtype.json']),
     (['shop_buy_probe.cjs'], ['shop_buy.json']),
+    (['settlement_probe.cjs'], ['settlement.json']),
     (['item_marks_probe.cjs'], ['item_marks.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]

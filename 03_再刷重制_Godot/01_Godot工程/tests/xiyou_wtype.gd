@@ -1,4 +1,9 @@
 extends Node
+
+class TaggedActor extends XActor:
+	var tagged_skills := []
+	func skills() -> Array:
+		return tagged_skills
 ## 技能武器类型要求（XBattleLogic.wtype_ok，MV Game_Actor.isSkillWtypeOk＋dsPassiveSkill isWtypeEquipped）：
 ## 与 mv_oracle wtype_probe 的参照（generated/oracle/wtype.json）逐例比对——切片角色 10 级 × 默认装备／裸装／各武器类型第一件
 ## × 技能，比 isSkillWtypeOk、战斗中 canUse（满 MP/TP 与清零时）与 MP 上限。
@@ -58,6 +63,13 @@ func _run() -> void:
 		check("wtype_blocked_covered", data.cases.filter(func(c): return not c.wtypeOk).size() >= 50)
 		# MP/TP 清零时有因费用被拦的例子，canUse 比对才不只是武器判断的重复
 		check("cost_blocked_covered", data.cases.filter(func(c): return c.canUse and not c.canUseEmpty).size() >= 20)
+	for c in data.get("priority", []):
+		var a := TaggedActor.new()
+		a.equips = [{"kind": "weapon", "wtypeId": int(c.weaponType), "meta": c.equipMeta}]
+		a.tagged_skills = [{"meta": c.skillMeta}]
+		var got := [1, 2, 5, 7].map(func(t): return XBattleLogic.wtype_equipped(a, t))
+		check("tag_priority_" + str(c.skillMeta), got == c.answers, [got, c.answers])
+	check("priority_covered", data.get("priority", []).size() == 2)
 	XGear.force_roll = -1.0
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

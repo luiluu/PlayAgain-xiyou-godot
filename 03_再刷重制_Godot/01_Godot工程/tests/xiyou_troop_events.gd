@@ -1,7 +1,8 @@
 extends Node
-## 敌群事件（强制行动 339、更改敌人状态 333）与轮回困难 Establish：对照 mv_oracle troop_event_probe（真实 BattleManager 跑两回合）。
+## 敌群事件（条件分支／公共事件、强制行动 339、更改状态）与轮回困难 Establish：对照 mv_oracle troop_event_probe（真实 BattleManager 跑两回合）。
 ## 场景：普通难度、开局队伍 1/8/9/10（1 级）、敌群 4/5/8/28/39/52/53/67/109/110（一至三、五至九、十一至十二层守层者，第 1 回合强制使用 8111 → 状态 1460）、
 ## 69（十层守层者：第 1 回合强制 500、给自己加状态 44、再强制 8111）、111／118／138／172／173（十三至十七层守层者：条件分支里调公共事件 1398，再强制 6069／6105／8111）。
+## 十三至十七层另测已交见面礼（变量 842＝1）：跳过开场领域与强制行动。
 ## 比较：第 1 回合强制行动排在最前且清掉守层者本回合的普通行动、敌方行动者、状态 1460 与第 1 回合加上的其余状态、
 ## 守层者攻击/魔攻、第 2 回合守层者每次命中的附加伤害（行动者正的攻击/魔攻各一次）。伤害浮动由 Godot 随机，不比 HP。
 var results := []
@@ -21,9 +22,10 @@ func key(b: XBattler, logic: XBattleLogic) -> String:
 	return "a%d" % int((b as XActor).data().id) if b is XActor else "e%d" % logic.enemies.find(b)
 
 
-func setup(troop: int) -> XBattleLogic:
+func setup(troop: int, paid := false) -> XBattleLogic:
 	XEnemy.force_roll = 100.0
 	var s := XState.new_game(3, 1, [8, 9, 10])
+	s.set_variable(842, 1 if paid else 0)
 	var logic := XBattleLogic.new()
 	logic.level_roll = 0.99  # 参照：敌群生成时 Math.random=0.99
 	logic.setup(troop, s)
@@ -51,9 +53,9 @@ func _run() -> void:
 
 
 func _case(c: Dictionary, round: int) -> void:
-	var name := "troop%d.r%d" % [int(c.troop), round]
+	var name := "troop%d.paid%s.r%d" % [int(c.troop), str(c.get("paid", false)), round]
 	seed(1000 + round)
-	var logic := setup(int(c.troop))
+	var logic := setup(int(c.troop), bool(c.get("paid", false)))
 	var e0: XBattler = logic.enemies[0]
 	var logs := []
 	var t1_states: Array = []
@@ -74,7 +76,7 @@ func _case(c: Dictionary, round: int) -> void:
 		if t == 0:
 			first_cleared = logic.cleared_action(e0)
 			t1_states = e0.state_ids.duplicate()
-			check(name + ".state1460", e0.state_ids.has(1460), e0.state_ids)
+			check(name + ".state1460", e0.state_ids.has(1460) == c.battlers.e0.states.has(1460.0), e0.state_ids)
 			check(name + ".atk_mat", int(e0.atk) == int(c.battlers.e0.atk) and int(e0.mat) == int(c.battlers.e0.mat),
 				[e0.atk, e0.mat, c.battlers.e0.atk, c.battlers.e0.mat])
 	check(name + ".skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
@@ -100,7 +102,7 @@ func _case(c: Dictionary, round: int) -> void:
 		return out
 	# 第 1 回合：强制行动最先；守层者是回合首位时本回合的普通行动被清掉（参照即此情形），
 	# 不是首位时轮到它还会再行动一次（OTB 轮到时才 makeActions）。敌方行动者一致
-	check(name + ".t1_forced_first", not got[1].is_empty() and got[1][0] == want[1][0], [got[1], want[1]])
+	check(name + ".t1_forced_first", (not first_cleared) if forced == 0 else (not got[1].is_empty() and got[1][0] == want[1][0]), [got[1], want[1]])
 	check(name + ".t1_enemy_actions", got[1].filter(func(x): return x[0] == "e0").size() == forced + (0 if first_cleared else 1), [forced, first_cleared, got[1]])
 	check(name + ".t1_enemy_set", enemies_of.call(got[1]) == enemies_of.call(want[1]), [got[1], want[1]])
 	# 第 2 回合（战斗没结束时）：守层者照常行动一次（技能随机，不比）
@@ -119,7 +121,7 @@ func _case(c: Dictionary, round: int) -> void:
 	for inv in c.invokes:
 		if inv.subject == "e0" and inv.target != "e0" and float(inv.hpBefore) > 0.0 and inv.userStates.has(1460.0):
 			want_extra = [float(inv.userAtk), float(inv.userMat)]
-	check(name + ".extra", not extras.is_empty() and extras.all(func(x): return x == want_extra), [extras, want_extra])
+	check(name + ".extra", extras.is_empty() if want_extra.is_empty() else (not extras.is_empty() and extras.all(func(x): return x == want_extra)), [extras, want_extra])
 
 
 ## 条件与目标的细项（不依赖参照数据）

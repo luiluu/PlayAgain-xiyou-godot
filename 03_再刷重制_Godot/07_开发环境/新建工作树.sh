@@ -10,7 +10,7 @@ if [ -z "${ZSH_VERSION:-}" ]; then
   echo "✗ 本脚本是 zsh 脚本：请直接运行 $0，或用 zsh $0 …（不要用 bash/sh 调用）" >&2
   exit 64
 fi
-set -eu
+set -euo pipefail
 ENV_DIR=${0:A:h}
 SELF_ROOT=${ENV_DIR:h:h}
 MAIN=${$(git -C "$SELF_ROOT" rev-parse --path-format=absolute --git-common-dir):h}

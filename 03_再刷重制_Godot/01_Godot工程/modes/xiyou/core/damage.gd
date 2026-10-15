@@ -209,7 +209,7 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 		var flat: float = 0.0 if kind == "true" else _flat_mitigation(a, b, e) + race.flat
 		var independent: float = 1.0 if absorb else _independent(a, item, e)
 		var gross: float = 0.0 if resistance == 0.0 else maxf(0.0, before_fixed) * independent * guard
-		# 固定减伤（harmRe、种族减免）在状态脚本之后才扣（apply_fixed_mitigation），这里只算扣之前的；吸收时照原版先扣
+		# 固定减伤（harmRe、种族减免）在 Confirm 之后、React 之前扣（apply_fixed_mitigation），这里只算扣之前的；吸收时照原版先扣
 		var value: float = -maxf(0.0, before_fixed - flat) * guard if absorb else gross
 		cands.append({"gross": value, "flat": flat, "resistance": resistance})
 		var row := {"element": e, "bonus": bonus, "defense": defense, "matchup": match_rate, "resistance": resistance,
@@ -226,12 +226,13 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 	return {"value": out_value, "settled": settled, "critical": critical, "breakdown": {"base": raw, "basis": basis, "weights": weights, "row": best, "candidates": cands}}
 
 
-## 伤害结算的最后两步：状态脚本（Confirm/React）→ 固定减伤。
+## 正式 executeDamage 的顺序：攻击方 Confirm → 固定减伤（onPreDamageStateEffects 的包装）→ 目标 React。
 static func finish(res: Dictionary, item: Dictionary, a: XBattler, b: XBattler) -> float:
-	return apply_fixed_mitigation(apply_state_effects(res.value, item, a, b), res)
+	var confirmed := apply_state_effects(res.value, item, a, b, [], "confirm")
+	return apply_state_effects(apply_fixed_mitigation(confirmed, res), item, a, b, [], "react")
 
 
-## 正式 installDamageElementRuntime 的 entered 阶段：状态脚本之后的伤害按比例摊回各属性候选，各减固定减伤，取最大；
+## 正式 installDamageElementRuntime 的 entered 阶段：Confirm 之后的伤害按比例摊回各属性候选，各减固定减伤，取最大；
 ## 抗性 0 为 0，结果四舍五入。吸收（负值）与回复不在此扣（吸收已在 calculate 里扣过）。
 static func apply_fixed_mitigation(amount: float, res: Dictionary) -> float:
 	var row: Dictionary = res.get("breakdown", {}).get("row", {})
@@ -321,9 +322,11 @@ static func _independent(a: XBattler, item: Dictionary, e: int) -> float:
 
 # ---- 状态脚本（YEP BuffsStatesCore）：Confirm = 行动者的状态，React = 目标的状态 ----
 ## 转换器已把常见写法变成 {op: "mul", cond, k, round}；op == "js" 的尚未翻译，跳过并计数。
-static func apply_state_effects(value: float, item: Dictionary, a: XBattler, b: XBattler, untranslated: Array = []) -> float:
+static func apply_state_effects(value: float, item: Dictionary, a: XBattler, b: XBattler, untranslated: Array = [], phase := "") -> float:
 	var is_hp := [1, 3, 5].has(int(item.damage.type))
 	for pair in [["confirm", a], ["react", b]]:
+		if phase != "" and pair[0] != phase:
+			continue
 		for s in pair[1].states():
 			for eff in s.get("effects", []):
 				if eff.phase != pair[0]:

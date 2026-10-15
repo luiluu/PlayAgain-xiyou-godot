@@ -169,6 +169,10 @@ func _ui_reference() -> void:
 		shop._refresh()
 		await _compare_paint("number%d" % i, shop._paint_number, 740, func(e): return float(e[3]) >= 108)
 		if i == 0 and out_dir != "" and DisplayServer.get_name() != "headless":
+			# 截图使用可实际购买的 1 件（上述 2 件夹具只测绘制，持有的材料不够买两件）。
+			shop._number = 1
+			shop._refresh()
+			await get_tree().process_frame
 			await RenderingServer.frame_post_draw
 			get_viewport().get_texture().get_image().save_png(out_dir.path_join("Godot_买入数量窗_2230.png"))
 	shop.queue_free()

@@ -1,5 +1,6 @@
 'use strict';
 // 敌群事件参照（扩楼层：一至三、五至九、十一至十二层守层者 4/5/8/28/39/52/53/67/109/110 、十层守层者 69（另有 333 给自己加状态 44）与十三至十七层守层者 111／118／138／172／173（变量 842 为 0 时先调公共事件 1398：334 完全回复、313 全队加状态、333 加状态，再强制 6069／6105／8111）第 1 回合的强制行动 339 → 技能 8111「轮回模式·平衡伤害」→ 状态 1460「轮回困难v1」）。
+// 十三至十七层补已交见面礼（变量 842＝1）分支，确认不触发开场领域与强制行动。
 // 真实 BattleManager 跑前两回合（日志窗/精灵组用空代理，同 sequence_probe）：普通难度、开局队伍 1/8/9/10（1 级，开局被动），
 // 角色输入一律普通攻击敌人 0；Math.random 敌群生成时 0.99（不出神话），之后 0.5（分散度为 0、不会心）。
 // 记录：每次开始行动（回合数、行动者、技能、是否强制）、每次 invokeAction 的目标血量变化与伤害弹字（startDamagePopup 时的 hpDamage）、
@@ -25,9 +26,10 @@ w.Game_Battler.prototype.startDamagePopup = function () {
   if (popups) popups.push({target: key(this), hpDamage: this._result.hpDamage, hpAffected: this._result.hpAffected});
 };
 
-function run(troopId) {
+function run(troopId, paid = false) {
   w.eval('ConfigManager.applyData({});DataManager.setupNewGame();$gameSystem.setDifficultyId(3);for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
   w.eval('$gameParty._actors=[];' + JSON.stringify(PARTY) + '.forEach(function(id){$gameParty.addActor(id);});');
+  w.$gameVariables.setValue(842, paid ? 1 : 0);
   for (const id of PARTY) {
     const a = w.$gameActors.actor(id);
     [6168, 5980, 5548].concat([1, 2, 3, 4, 5, 6, 7, 52].includes(id) ? [2571, 2786] : []).forEach(k => a.learnSkill(k));
@@ -39,7 +41,7 @@ function run(troopId) {
   BM.setup(troopId, false, false);
   BM._logWindow = stub; BM._spriteset = stub; BM._statusWindow = stub;
   w.Math.random = () => 0.5;
-  const out = {troop: troopId, actions: [], invokes: [], errors: [], battlers: {}};
+  const out = {troop: troopId, paid, actions: [], invokes: [], errors: [], battlers: {}};
   const inv = BM.invokeAction, sa = BM.startAction;
   BM.startAction = function () {
     const s = this._subject, act = s && s.currentAction();
@@ -77,7 +79,8 @@ function run(troopId) {
   return out;
 }
 
-const result = {sourceIdentity: identity, party: PARTY, difficulty: 3, cases: TROOPS.map(run)};
+const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
+  cases: TROOPS.map(id => run(id)).concat([111,118,138,172,173].map(id => run(id, true)))};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));

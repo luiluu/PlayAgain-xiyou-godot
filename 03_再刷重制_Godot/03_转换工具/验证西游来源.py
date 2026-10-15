@@ -176,7 +176,9 @@ def verify(app, generated, oracle):
                 issues.append('地图事件对照参照缺少用例')
     # 新参照不能只在某个测试里比较脚本身份：完整入口也要拒绝缺失、旧数据或探针报错。
     for name, key in [('troop_events.json', 'cases'), ('drop_record.json', 'record'),
-                      ('sell_rewards.json', 'cases'), ('item_marks.json', 'onekey')]:
+                      ('sell_rewards.json', 'cases'), ('item_marks.json', 'onekey'),
+                      ('power.json', 'gear'), ('wtype.json', 'cases'),
+                      ('shop_buy.json', 'cases'), ('settlement.json', 'cases')]:
         file = oracle / name
         if not file.is_file():
             issues.append('缺少参照：' + name)

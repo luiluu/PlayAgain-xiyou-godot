@@ -28,8 +28,18 @@ for(const aid of SLICE.actors){const a=w.$gameActors.actor(aid);if(!a)continue;a
     inb=false;a._equips.forEach((e,i)=>e.setObject(original[i]||null));
   }
 }
+// 冲突标签夹具：正式 refreshPassiveCache 的解析顺序是装备→技能→状态；SkETypeAll 优先于 SkEquipType。
+const priority=[];
+for(const all of [false,true]){
+  const a=new w.Game_Actor(1), equipMeta={SkEquipType:'2'}, skillMeta={SkEquipType:'5'};
+  if(all)skillMeta.SkETypeAll='2';
+  const weapon=Object.assign({},w.$dataWeapons[2],{wtypeId:2,meta:equipMeta});
+  a.equips=()=>[weapon];a.skills=()=>[{meta:skillMeta,note:''}];a.states=()=>[];
+  a.initPassiveCache();a.refreshPassiveCache();
+  priority.push({equipMeta,skillMeta,weaponType:2,answers:[1,2,5,7].map(t=>!!a.isWtypeEquipped(t))});
+}
 if(JSON.stringify(identity)!==JSON.stringify(sourceIdentity(APP)))throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname,'.sandbox'),{recursive:true});
-fs.writeFileSync(path.join(__dirname,'.sandbox/wtype.json'),JSON.stringify({sourceIdentity:identity,firstOfType,cases},null,1));
+fs.writeFileSync(path.join(__dirname,'.sandbox/wtype.json'),JSON.stringify({sourceIdentity:identity,firstOfType,cases,priority},null,1));
 console.log(JSON.stringify({cases:cases.length,blocked:cases.filter(c=>!c.wtypeOk).length,firstOfType}));
 process.exit(0);

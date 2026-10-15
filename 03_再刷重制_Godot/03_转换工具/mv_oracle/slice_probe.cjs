@@ -4,7 +4,7 @@
 //   开局可选的角色（1～7、52）另有万众一心 2571、SupperStar 2786（大厅 EV20「增减技能」）。v0.13 不送暴爽 2747（Map002 第 4 页的开关 685 无处打开）。
 //   战斗开始状态（被动的 StartPushState）直接附加：995（6168）、1691（5980）、1629（5561 宝宝）、1630（5547）、1631（5548）。
 //   宝宝难度另有 StartAEPushState1055（给全体敌人加状态）不在本探针里（不模拟开战）；天灾的 5968/5969 已退役（无效果）不加。
-// 伤害：分散度清零、不会心；value=CodexDamage 结算值，final=再经 YEP 状态 Confirm/React 脚本后的值。
+// 伤害：分散度清零、不会心；value=CodexDamage 结算值，final=onPreDamageStateEffects（Confirm＋固定减伤，不含 React）。
 // 敌群生成时 Math.random 固定为 0.99（避开精英/神话随机），之后固定 0.5。
 // 用法：node slice_probe.cjs [难度ID...] → 只写 .sandbox/slice/slice_d<N>.json；验收后由资料库侧复制到 generated/oracle。
 'use strict';

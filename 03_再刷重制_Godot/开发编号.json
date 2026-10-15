@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.051",
-  "sequence": 51,
-  "next": "dev.052",
-  "nextSequence": 52,
+  "current": "dev.052",
+  "sequence": 52,
+  "next": "dev.053",
+  "nextSequence": 53,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "商店用变量/物品买（八戒）",
+  "currentChange": "修复 dev.049/050 核查：武器类型标签顺序与 Confirm→固定减伤→React 结算顺序",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

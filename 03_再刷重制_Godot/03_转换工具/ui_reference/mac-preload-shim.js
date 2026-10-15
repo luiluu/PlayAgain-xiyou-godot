@@ -293,6 +293,20 @@ window.__refShot = function (name) {
             },20);
         });
         button('一键出售截图',function(){__refShot('codex_onekey_reference');});
+        button('多货币买入夹具',function(){
+            if(!window.DataManager||!DataManager.isDatabaseLoaded())return;
+            ConfigManager.applyData({});DataManager.setupNewGame();$gameParty._actors=[1,8,9,10];
+            $gameParty.gainGold(12345);$gameVariables.setValue(206,5000);
+            $gameParty.gainItem($dataItems[182],400);$gameParty.gainItem($dataItems[2201],50);$gameMessage.clear();
+            SceneManager.goto(Scene_Shop);SceneManager.prepareNextScene([[0,2230,0,0],[2,4375,0,0],[0,732,0,0]],false);
+            var timer=setInterval(function(){var s=SceneManager._scene;if(!(s instanceof Scene_Shop)||!s._buyWindow)return;
+                clearInterval(timer);s._commandWindow.deactivate();s.commandBuy();s._buyWindow.select(0);s._buyWindow.updateHelp();
+                readout.textContent=JSON.stringify({goods:s._goods,buy:[s._buyWindow.x,s._buyWindow.y,s._buyWindow.width,s._buyWindow.height],gold:[s._goldWindow.x,s._goldWindow.y,s._goldWindow.width,s._goldWindow.height],errors:window.__refErrors});
+            },20);
+        });
+        button('买入数量窗',function(){var s=SceneManager._scene;if(s instanceof Scene_Shop&&s._buyWindow.active){s.onBuyOk();
+            readout.textContent=JSON.stringify({number:s._numberWindow._number,max:s._numberWindow._max,rect:[s._numberWindow.x,s._numberWindow.y,s._numberWindow.width,s._numberWindow.height],errors:window.__refErrors});}});
+        button('买入复核截图',function(){__refShot('codex_shop_buy_reference');});
         button('隐藏一键工具栏',function(){panel.style.display='none';});
         panel.appendChild(readout);document.body.appendChild(panel);
     });

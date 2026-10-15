@@ -185,7 +185,7 @@ static func wtype_equipped(a: XActor, wtype: int) -> bool:
 			weapons.append(int(e.get("wtypeId", 0)))
 	var all_types := []
 	var only := 0
-	for o in a.skills() + a.equip_list() + a.states():
+	for o in a.equip_list() + a.skills() + a.states():
 		var meta: Dictionary = o.get("meta", {})
 		if meta.has("SkETypeAll") and str(meta.SkETypeAll).strip_edges().is_valid_int():
 			all_types.append(int(str(meta.SkETypeAll).strip_edges()))
