@@ -34,6 +34,8 @@ const WAIT_EVENT := 6000
 const WAIT_STEP := 600
 const DIR_ACTIONS := {2: "ui_down", 4: "ui_left", 6: "ui_right", 8: "ui_up"}
 
+## 正式版从入口走不到的守层者（「地图:事件」→ 说明）：完整模式也直接执行事件
+const UNREACHABLE_BOSS := {"30:8": "十四层克力之爷 (44,23)：正式引擎 isMapPassable 实测，从入口 (18,30) 只能走到 616 格，守层者所在区域不相连"}
 @export var part := 1
 @export var parts := 1
 
@@ -395,7 +397,12 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	var boss := boss_of(f.map)
 	if not _check(tag + "_boss_found", not boss.is_empty() and boss.choice >= 0, boss):
 		return false
-	if not await _talk(map, boss.id, [boss.choice], tag + "_boss", full):
+	# 正式版走不到的守层者：确认 Godot 同样走不到，再直接执行事件（同快速通过）
+	var unreachable := UNREACHABLE_BOSS.has("%d:%d" % [f.map, boss.id])
+	if full and unreachable:
+		var be := _event(map, boss.id)
+		_check(tag + "_boss_unreachable", be != null and _path_to(map, be.grid).is_empty(), UNREACHABLE_BOSS["%d:%d" % [f.map, boss.id]])
+	if not await _talk(map, boss.id, [boss.choice], tag + "_boss", full and not unreachable):
 		return false
 	var idle := await _wait_idle(map, WAIT_EVENT * 3)
 	var won := s.variable(20) == n + 1 and s.self_switch(f.map, boss.id, "A")
