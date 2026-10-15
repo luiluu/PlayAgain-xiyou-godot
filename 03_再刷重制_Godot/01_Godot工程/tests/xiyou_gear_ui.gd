@@ -37,7 +37,7 @@ func _run() -> void:
 	var worn:=rows.filter(func(r):return r.get("owner")!=null)
 	var bag:=rows.filter(func(r):return r.has("carry"))
 	check("weapon_rows_bag_and_worn",bag.size()>=1 and worn.size()>=1 and XItemRow.right_text(bag[0])=="1/9,999" and worn.any(func(r):return XItemRow.right_text(r)==a.display_name()),rows.map(func(r):return XItemRow.right_text(r)))
-	var q:=rows.map(func(r):return XGear.quality(r.rec))
+	var q:=rows.map(func(r):return XGearQuery.rank(XGear.quality(r.rec)))
 	var sorted_q:=q.duplicate();sorted_q.sort();sorted_q.reverse()
 	check("weapon_rows_quality_sorted",q==sorted_q,q)
 	var first:Dictionary=page._current()

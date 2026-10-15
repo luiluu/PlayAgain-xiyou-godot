@@ -4,7 +4,8 @@ extends Control
 ## 按正式版运行时逐像素复现（参照截图 04_验证/本地结果/原版参照/70～74，绘制记录见 界面风格.md）。没有顶部说明栏：
 ## - 分类 (0,0,240,172)：物品／消耗品／武器／护甲／重要物品，居中，可见 4 行；分类阶段列表跟着显示该类物品（无光标）。
 ## - 状态 (240,1,1040,172)：YEP 物品状态（XItemStatusPainter）。
-## - 列表 (0,172,640,548)：XItemRow；武器/护甲含队员身上的装备，按 Codex 装备排序（品质高在前 → 名字 → ID）。
+## - 列表 (0,172,640,548)：XItemRow；武器/护甲含队员身上的装备，按 Codex 装备检索条件筛选排序（XGearQuery；
+##   默认品质名次高在前 → 名字拼音 → ID，排序选择存配置）。右上角「装备检索 / 排序」「清除筛选」与检索面板见 XGearSearch。
 ## - 信息 (640,172,640,548)：图标 (8,2)、名字 x 42（品质色）；装备另画「插槽可用 剩余/总数」（标签右移 215）
 ##   与「插入n: 材料」（缩小一级）。
 ## - 操作（占列表位置）：使用 \i[图标]名字、升级（装备）或道具置顶（物品）、出售锁定、取消；不能用的半透明。
@@ -12,8 +13,7 @@ extends Control
 ## - 选人 (0,0,1280,720)：Window_MenuActor，每行 173，头像居中、名字/Lv、HP/MP/TP 量条；使用后留在选人。
 ## - 说明卡（XHelpCard）跟着列表/材料列表的选中行；操作阶段保留；分类与选人阶段隐藏（v0.10 选人时隐藏）。
 ## - 道具置顶（Star_ItemTop，只对物品）、出售锁定（Star_ShopOnekey，物品与装备）：见 XItemMarks；做完留在操作菜单。
-## 暂未做（灰显或不画）：宝珠镶嵌（Codex 宝珠模块按实例随机插槽数：信息窗「镶嵌物」与操作菜单宝珠行）、
-##   Codex「装备检索 / 排序」网页面板（只做默认排序）；同品质装备的名字排序暂按字码（正式版按中文拼音）。
+## 暂未做（灰显或不画）：宝珠镶嵌（Codex 宝珠模块按实例随机插槽数：信息窗「镶嵌物」与操作菜单宝珠行）。
 
 signal closed
 
@@ -47,6 +47,10 @@ var list_win: XMVWindow
 var info_win: XMVWindow
 var actor_win: XMVWindow
 var help_card: XHelpCard
+## 「应用到装备列表」的检索条件（Window_ItemList._cqFilter；空为未筛选），换分类仍保留，「清除筛选」清空
+var gear_filter := {}
+var toolbar: HBoxContainer
+var search_panel: XGearSearch
 
 
 func _ready() -> void:
@@ -64,6 +68,43 @@ func _ready() -> void:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
 	add_child(help_card)
+	toolbar = XGearSearch.make_toolbar(open_search, clear_filter)
+	add_child(toolbar)
+	_refresh()
+
+
+# ---- 装备检索（Codex 网页覆盖层）----
+func open_search() -> void:
+	if search_panel != null:
+		return
+	toolbar.visible = false
+	help_card.visible = false
+	search_panel = XGearSearch.open(self, XGearQuery.collection(XState.current))
+	search_panel.applied.connect(_apply_filter)
+	search_panel.closed.connect(_search_closed)
+
+
+func _search_closed() -> void:
+	search_panel = null
+	toolbar.visible = true
+	_refresh()
+
+
+## applyFilter：换上新条件后选回原来那件，没有就选第一行
+func _apply_filter(f: Dictionary) -> void:
+	var old := _current()
+	gear_filter = f
+	var d := entries()
+	_index = maxi(0, d.find_custom(func(e): return is_same(e.rec, old)))
+	_top = XMenu._scroll_to(_index, _top, _rows())
+	_refresh()
+
+
+func clear_filter() -> void:
+	gear_filter = {}
+	XGearSearch.filter = XGearQuery.default_view()
+	_index = 0
+	_top = 0
 	_refresh()
 
 
@@ -96,7 +137,7 @@ func entries() -> Array:
 		for e in a.equip_list():
 			if e.kind == sym and not out.any(func(x): return is_same(x.rec, e)):
 				out.append({"rec": e, "owner": a})
-	return sort_gear(out)
+	return filter_gear(out)
 
 
 static func instance_no(e: Dictionary) -> int:
@@ -110,24 +151,20 @@ static func bag_gear(kind: String) -> Array:
 	return list
 
 
-## Codex installEquipmentStatusRuntime 默认排序「品质」：品质高在前 → 名字 → ID → 原顺序
-static func sort_gear(list: Array) -> Array:
-	var keyed := []
-	for i in range(list.size()):
-		keyed.append([list[i], i])
-	keyed.sort_custom(func(a, b):
-		var qa := XGear.quality(a[0].rec)
-		var qb := XGear.quality(b[0].rec)
-		if qa != qb:
-			return qa > qb
-		var na := XHelpCard.plain(str(a[0].rec.get("name", "")))
-		var nb := XHelpCard.plain(str(b[0].rec.get("name", "")))
-		if na != nb:
-			return na < nb
-		if instance_no(a[0].rec) != instance_no(b[0].rec):
-			return instance_no(a[0].rec) < instance_no(b[0].rec)
-		return a[1] < b[1])
-	return keyed.map(func(x): return x[0])
+## Codex installEquipmentStatusRuntime 的 makeItemList：装备按检索条件（gear_filter，没有时用默认条件）筛选并排序，
+## 排序选择取配置；「位置」只在物品页生效（仅背包＝carry、仅已装备＝owner）。
+func filter_gear(list: Array) -> Array:
+	var f: Dictionary = (gear_filter if not gear_filter.is_empty() else XGearQuery.default_view()).duplicate()
+	var stored := XGearQuery.sort_settings(XConfig.equipment_sort())
+	f.sort = stored.sort
+	f.sortTerm = stored.term
+	var out := XGearQuery.filter_entries(list, f)
+	match str(f.scope):
+		"bag":
+			out = out.filter(func(e): return e.has("carry"))
+		"worn":
+			out = out.filter(func(e): return e.has("owner"))
+	return out
 
 
 func _rows() -> int:
@@ -193,6 +230,9 @@ func _refresh() -> void:
 	actor_win.visible = actor_mode
 	for w in [cat_win, status_win, list_win, info_win, actor_win]:
 		w.refresh()
+	if toolbar != null:
+		var gear := entries().filter(func(e): return XItemMarks.is_gear(e.rec)).size()
+		(toolbar.get_child(0) as Button).text = XGearSearch.toolbar_label(not gear_filter.is_empty(), gear)
 	_update_help()
 
 
@@ -349,6 +389,8 @@ static func _current_max(c: XMVCanvas, label: String, cur: float, mx: float, x: 
 
 # ---- 操作 ----
 func _unhandled_input(event: InputEvent) -> void:
+	if search_panel != null:
+		return
 	var handled := true
 	if event.is_action_pressed("ui_cancel"):
 		_cancel()
@@ -555,7 +597,7 @@ func _use() -> void:
 
 # ---- 鼠标：先选中再点确定；右键取消；滚轮滚动 ----
 func _gui_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton and event.pressed):
+	if search_panel != null or not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
 	var pad := Vector2(XMVWindow.PADDING, XMVWindow.PADDING)

@@ -7,7 +7,7 @@ extends Control
 ##   称号与 HP/MP/TP 在 x 314、宽 686；行高 36（XMenu.paint_actor_status）。
 ## - 槽位 (0,173,640,547)：槽位名系统色，列宽 = 最长槽位名＋空格（setSlotNameWidth）；图标在其后 +2、名字 +36（品质色）；
 ##   空槽画图标 0 半透明；不能换的槽整行半透明。可见 14 行，19 个槽要滚动。
-## - 候选（Window_EquipItem，选槽后盖在槽位窗上）：背包里能装进该槽的装备（XItemRow，「序号/9,999」，Codex 品质排序）
+## - 候选（Window_EquipItem，选槽后盖在槽位窗上）：背包里能装进该槽的装备（XItemRow，「序号/9,999」，按装备检索条件筛选排序）
 ##   ＋末行「卸载」（图标 1354，x 36、宽 570）。
 ## - 右下 (640,173,640,547)：物品信息窗（XItemScene.paint_info）与属性对比（Window_StatCompare）轮换，默认信息窗；
 ##   →／Tab／点击右下区域换下一个，← 换上一个（各响光标音，任何阶段都可以换）。
@@ -16,7 +16,8 @@ extends Control
 ## - 说明卡（XHelpCard）：指令阶段隐藏，槽位/候选跟着选中行。
 ## - 换角色只在指令阶段：Q/W、PageUp/PageDown（光标音），回到指令窗。装上/清空后 HP、MP 按原比例保留（YEP）。
 ## 优化 O-009：属性对比的当前值/箭头/新值三列整体左移 45，新值不再超出窗口被截掉（COMPARE_SHIFT = 0 恢复原版）。
-## 战力：XPower.status_text（角色战力，关掉战力时不画）。暂未做：同品质装备按中文拼音排序（现按字码）。
+## 战力：XPower.status_text（角色战力，关掉战力时不画）。右上角「装备检索 / 排序」「清除筛选」见 XGearSearch：
+## 候选阶段打开只检索该槽候选，应用后候选按条件筛选（「卸载」留在最后）。
 
 signal closed
 
@@ -49,6 +50,10 @@ var status_win: XMVWindow
 var list_win: XMVWindow
 var lower_win: XMVWindow
 var help_card: XHelpCard
+## 「应用到装备列表」的检索条件（Window_EquipItem._cqFilter；空为未筛选），换槽位、换角色都保留，「清除筛选」清空
+var gear_filter := {}
+var toolbar: HBoxContainer
+var search_panel: XGearSearch
 
 
 func _ready() -> void:
@@ -65,6 +70,52 @@ func _ready() -> void:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
 	add_child(help_card)
+	toolbar = XGearSearch.make_toolbar(open_search, clear_filter)
+	add_child(toolbar)
+	_refresh()
+
+
+# ---- 装备检索（Codex 网页覆盖层）----
+## 候选阶段打开时只检索该槽的候选（Window_EquipItem 的原始数据），否则检索背包与全部角色身上的装备
+func open_search() -> void:
+	if search_panel != null:
+		return
+	var src := []
+	if _mode == "item":
+		for e in _raw_candidates():
+			if not (e.rec as Dictionary).is_empty():
+				src.append({"item": e.rec, "owner": "", "key": str(e.rec.get("instanceId", ""))})
+	else:
+		src = XGearQuery.collection(XState.current)
+	toolbar.visible = false
+	help_card.visible = false
+	search_panel = XGearSearch.open(self, src)
+	search_panel.applied.connect(_apply_filter)
+	search_panel.closed.connect(_search_closed)
+
+
+func _search_closed() -> void:
+	search_panel = null
+	toolbar.visible = true
+	_refresh()
+
+
+func _apply_filter(f: Dictionary) -> void:
+	var old := _candidate() if _mode == "item" else {}
+	gear_filter = f
+	if _mode == "item":
+		var d := candidates()
+		_item_index = maxi(0, d.find_custom(func(e): return is_same(e.rec, old)))
+		_item_top = XMenu._scroll_to(_item_index, _item_top, _rows())
+	_refresh()
+
+
+func clear_filter() -> void:
+	gear_filter = {}
+	XGearSearch.filter = XGearQuery.default_view()
+	if _mode == "item":
+		_item_index = 0
+		_item_top = 0
 	_refresh()
 
 
@@ -98,6 +149,10 @@ func slot_name_width(c: XMVCanvas) -> float:
 
 ## Window_EquipItem.makeItemList：背包里能装进该槽的装备（Codex 默认排序）＋末行「卸载」（{}）
 func candidates() -> Array:
+	return XGearQuery.filter_entries(_raw_candidates(), _filter_view())
+
+
+func _raw_candidates() -> Array:
 	var a := actor()
 	var etype := int(a.equip_slots()[_slot])
 	var out := []
@@ -106,9 +161,17 @@ func candidates() -> Array:
 		for i in range(bag.size()):
 			if int(bag[i].get("etypeId", 0)) == etype and a.can_equip(bag[i]):
 				out.append({"rec": bag[i], "carry": i + 1})
-	out = XItemScene.sort_gear(out)
 	out.append({"rec": {}})
 	return out
+
+
+## makeItemList：候选按检索条件筛选排序（排序选择取配置；位置条件在装备页不用）
+func _filter_view() -> Dictionary:
+	var f: Dictionary = (gear_filter if not gear_filter.is_empty() else XGearQuery.default_view()).duplicate()
+	var stored := XGearQuery.sort_settings(XConfig.equipment_sort())
+	f.sort = stored.sort
+	f.sortTerm = stored.term
+	return f
 
 
 func _candidate() -> Dictionary:
@@ -152,6 +215,9 @@ func _refresh() -> void:
 	cmd_win.down_arrow = commands().size() > CMD_ROWS
 	for w in [cmd_win, status_win, list_win, lower_win]:
 		w.refresh()
+	if toolbar != null:
+		var gear := candidates().filter(func(e): return not (e.rec as Dictionary).is_empty()).size() if _slot >= 0 else 0
+		(toolbar.get_child(0) as Button).text = XGearSearch.toolbar_label(not gear_filter.is_empty(), gear)
 	_update_help()
 
 
@@ -270,6 +336,8 @@ static func paint_compare(c: XMVCanvas, a: XActor, temp: XActor) -> void:
 
 # ---- 操作 ----
 func _unhandled_input(event: InputEvent) -> void:
+	if search_panel != null:
+		return
 	var handled := true
 	var key := event as InputEventKey
 	if event.is_action_pressed("ui_cancel"):
@@ -388,7 +456,7 @@ func _keep_rates(change: Callable) -> void:
 
 # ---- 鼠标：只有活动窗口响应（选中行再点＝确定）；右键取消；滚轮滚动活动列表；点右下区域换窗口 ----
 func _gui_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton and event.pressed):
+	if search_panel != null or not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
 	match event.button_index:

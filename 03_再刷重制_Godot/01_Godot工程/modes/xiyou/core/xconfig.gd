@@ -18,7 +18,8 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"CombatDamageShow": true, "CombatSkillAnimation": false, "battleAniSpeed": 4,
 	"MOG_TrPopUpBattle_Key": false, "CombatDamageRecordKey": false,
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
-	"codexSkillLevelNotice": true, "cq": false, "codexPowerEnabled": true}
+	"codexSkillLevelNotice": true, "cq": false, "codexPowerEnabled": true,
+	"codexEquipmentSort": {"sort": "quality", "term": ""}}
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
 const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
@@ -54,6 +55,10 @@ static func ensure_loaded() -> void:
 					var saved = data.get(key)
 					for k in _values[key]:
 						_values[key][k] = not (saved is Dictionary and saved.get(k) is bool and saved[k] == false)
+				elif key == "codexEquipmentSort":
+					# installEquipmentStatusRuntime applyData：sortSettings 校正（XGearQuery）
+					var saved = data.get(key)
+					_values[key] = XGearQuery.sort_settings(saved if saved is Dictionary else {})
 				elif key == "codexSkillLevelNotice" or key == "codexPowerEnabled":
 					# installCombatPowerRuntime applyData：只有存成 false 才关
 					_values[key] = not (data.get(key) is bool and data[key] == false)
@@ -84,7 +89,7 @@ static func set_session(key: String, value: Variant) -> void:
 
 
 static func set_flag(key: String, value: bool) -> bool:
-	if key not in DEFAULTS or key in VOLUMES or key in ["battleAniSpeed", "codexNotices"]:
+	if key not in DEFAULTS or key in VOLUMES or key in ["battleAniSpeed", "codexNotices", "codexEquipmentSort"]:
 		return false
 	ensure_loaded()
 	_values[key] = value
@@ -160,6 +165,18 @@ static func has_map_xy() -> bool:
 
 static func set_map_xy(value: bool) -> bool:
 	return set_flag("MapXy", value)
+
+
+## 装备检索的排序选择（installEquipmentStatusRuntime：ConfigManager.codexEquipmentSort = {sort, term}）
+static func equipment_sort() -> Dictionary:
+	ensure_loaded()
+	return (_values.codexEquipmentSort as Dictionary).duplicate()
+
+
+static func set_equipment_sort(value: Dictionary) -> bool:
+	ensure_loaded()
+	_values.codexEquipmentSort = XGearQuery.sort_settings(value)
+	return _write()
 
 
 ## Codex_SmartBattleAI 的 ConfigManager.codexSmartAI（设置「智能战斗AI（自动战斗）」）
