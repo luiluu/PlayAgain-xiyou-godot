@@ -405,7 +405,7 @@ func run_turn(commands: Dictionary) -> Array:
 ## 每次行动结束后、回合最后一人之后、回合结束（turn_end）。一次检查里依次执行所有满足条件的页（每页执行完再找下一页；
 ## span 2「瞬间」的页每次检查最多一次，避免条件一直成立时死循环）。
 ## first_subject：回合开始时已取出的首位行动者；它被强制行动时本回合的普通行动被清掉（见 _cleared / cleared_action）。
-## 目前只执行 339「强制行动」与 333「更改敌人状态」，其余指令记入 troop_event_skipped。返回记录（强制行动的 action/hit 等）。
+## 页内指令由 _run_troop_list 执行（Game_Interpreter 的子集），其余指令记入 troop_event_skipped。返回记录（强制行动的 action/hit 等）。
 func troop_events(first_subject: XBattler = null, turn_end := false) -> Array:
 	var logs := []
 	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
@@ -424,17 +424,124 @@ func troop_events(first_subject: XBattler = null, turn_end := false) -> Array:
 			_event_flags[found] = true
 		else:
 			moment_done[found] = true
-		for c in pages[found].get("list", []):
-			var code := int(c.code)
-			if code == 0:
-				continue
-			if code == 339 and int(c.get("indent", 0)) == 0:
-				logs.append_array(_force_action(c.parameters, first_subject))
-			elif code == 333 and int(c.get("indent", 0)) == 0:
-				_change_enemy_state(c.parameters)
-			else:
-				troop_event_skipped.append("%d 第%d页" % [code, found + 1])
+		_run_troop_list(pages[found].get("list", []), first_subject, logs, "第%d页" % (found + 1))
 	return logs
+
+
+## 敌群事件的指令（战斗中的 Game_Interpreter，同步执行；强制行动当场执行完再继续，同 setWaitMode('action')）：
+## 111/411/412 条件分支（开关、变量；其余条件记入 skipped 并视为不成立）、115 中止（只结束本列表，公共事件里的不影响调用方）、
+## 117 公共事件（子列表）、121 开关、122 变量（常数、变量、随机）、313 角色状态、333 敌人状态、334 敌人完全回复、339 强制行动。
+## 十三层守层者（敌群 111）：变量 842（交过见面礼）为 0 时第 1 回合调公共事件 1398「大道领域」再连续强制行动，每 3 回合随机一招。
+func _run_troop_list(list: Array, first_subject: XBattler, logs: Array, tag: String, depth := 0) -> void:
+	var branch := {}
+	var i := 0
+	while i < list.size():
+		var c: Dictionary = list[i]
+		var code := int(c.code)
+		var indent := int(c.get("indent", 0))
+		var p: Array = c.get("parameters", [])
+		match code:
+			0, 412:
+				pass
+			111:
+				var ok = _troop_condition(p)
+				if ok == null:
+					troop_event_skipped.append("111 条件 %d %s" % [int(p[0]), tag])
+					ok = false
+				branch[indent] = ok
+				if not ok:
+					i = _skip_branch(list, i)
+			411:
+				if branch.get(indent, null) != false:
+					i = _skip_branch(list, i)
+			115:
+				return
+			117:
+				var ce := XDB.rec("CommonEvents", int(p[0]))
+				if not ce.is_empty() and depth < 30:
+					_run_troop_list(ce.get("list", []), first_subject, logs, "%s 公共事件%d" % [tag, int(p[0])], depth + 1)
+			121:
+				for id in range(int(p[0]), int(p[1]) + 1):
+					state.set_switch(id, int(p[2]) == 0)
+			122:
+				if not _troop_set_variables(p):
+					troop_event_skipped.append("122 操作数 %d %s" % [int(p[3]), tag])
+			313:
+				_change_actor_state(p)
+			333:
+				_change_enemy_state(p)
+			334:
+				for e in (enemies.duplicate() if int(p[0]) < 0 else ([enemies[int(p[0])]] if int(p[0]) < enemies.size() else [])):
+					e.recover_all()
+					e.refresh_resources()
+			339:
+				logs.append_array(_force_action(p, first_subject))
+			_:
+				troop_event_skipped.append("%d %s" % [code, tag])
+		i += 1
+
+
+## Game_Interpreter.skipBranch：跳到下一条同缩进指令之前
+func _skip_branch(list: Array, i: int) -> int:
+	var indent := int(list[i].get("indent", 0))
+	while i + 1 < list.size() and int(list[i + 1].get("indent", 0)) > indent:
+		i += 1
+	return i
+
+
+## command111 的开关、变量两种条件（同 MVInterpreter._condition）；认不出返回 null
+func _troop_condition(p: Array):
+	match int(p[0]):
+		0:
+			return state.switch(int(p[1])) == (int(p[2]) == 0)
+		1:
+			var v1 := state.variable(int(p[1]))
+			var v2 := float(p[3]) if int(p[2]) == 0 else state.variable(int(p[3]))
+			match int(p[4]):
+				0: return v1 == v2
+				1: return v1 >= v2
+				2: return v1 <= v2
+				3: return v1 > v2
+				4: return v1 < v2
+				5: return v1 != v2
+	return null
+
+
+## command122 的常数、变量、随机三种操作数（同 MVInterpreter._set_variables）；其余返回 false
+func _troop_set_variables(p: Array) -> bool:
+	var value := 0.0
+	match int(p[3]):
+		0: value = float(p[4])
+		1: value = state.variable(int(p[4]))
+		2: value = MVInterpreter.random_int(int(p[4]), int(p[5]))
+		_: return false
+	for id in range(int(p[0]), int(p[1]) + 1):
+		var old := state.variable(id)
+		var r := value
+		match int(p[2]):
+			1: r = old + value
+			2: r = old - value
+			3: r = old * value
+			4: r = old / value if value != 0 else old
+			5: r = fmod(old, value) if value != 0 else old
+		state.set_variable(id, r)
+	return true
+
+
+## 313 [0 固定／1 变量, 角色（0 全队）, 0 附加／1 解除, 状态]（command313 / iterateActorEx：全队是战斗成员）
+func _change_actor_state(p: Array) -> void:
+	var id := int(p[1]) if int(p[0]) == 0 else int(state.variable(int(p[1])))
+	var targets: Array = actors.duplicate() if id == 0 else []
+	if id > 0:
+		var a := state.actor(id)
+		if a != null:
+			targets = [a]
+	for a in targets:
+		if int(p[2]) == 0:
+			sequence_add_state(a, int(p[3]))
+		elif a.is_state_affected(int(p[3])):
+			a.remove_state(int(p[3]))
+		a.refresh_resources()
 
 
 func _page_meets(page: Dictionary, turn_end: bool) -> bool:
@@ -500,6 +607,7 @@ func _change_enemy_state(p: Array) -> void:
 			sequence_add_state(e, int(p[2]))
 		elif e.is_state_affected(int(p[2])):
 			e.remove_state(int(p[2]))
+		e.refresh_resources()
 
 
 ## Game_Action.setTarget 的序号按 smoothTarget（该序号阵亡时取第一个活着的）；-1 交给 targets_for 随机。
