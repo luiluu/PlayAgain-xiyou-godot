@@ -3,7 +3,7 @@
 const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs');
 const {sourceIdentity} = require('./source_identity.cjs');
-const APP = process.env.XIYOU_APP || '/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
+const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const identity = sourceIdentity(APP), r = boot(APP, {tolerant:true, log:false}), w = r.window;
 if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败');
 w.eval('ConfigManager.applyData({});ConfigManager.SAchievementS=new Array(10000).fill(true);DataManager.setupNewGame();Input._currentState={};Graphics.boxWidth=1280;Graphics.boxHeight=720;$gameParty._battleMembers=[8,10,9,0,0];Star.XdRsData_hangUp.ActSkilllist=$gameActors.actor(8);');

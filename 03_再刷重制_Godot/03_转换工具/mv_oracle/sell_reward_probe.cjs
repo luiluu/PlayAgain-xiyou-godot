@@ -4,7 +4,7 @@
 // 按备注自动挑选：每张表各种 <Variable/Item/Weapon/Armor x Sell Price: y> 的第一件、多个备注的第一件、无备注且有价格的第一件、无备注且 0 价的第一件（不能卖）。
 const fs=require('fs'),path=require('path');
 const {boot}=require('./hboot.cjs'),{sourceIdentity}=require('./source_identity.cjs');
-const APP=process.env.XIYOU_APP||'/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
+const APP=process.env.XIYOU_APP||'/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const identity=sourceIdentity(APP),r=boot(APP,{tolerant:true,log:false}),w=r.window;
 if(r.errors.length||!w.DataManager.isDatabaseLoaded())throw new Error('参照引擎启动失败');
 w.Star.Achievement.Manager.init(); // 正式 Scene_Boot.start 的成就提示初始化（获得物品会触发），仅内存。

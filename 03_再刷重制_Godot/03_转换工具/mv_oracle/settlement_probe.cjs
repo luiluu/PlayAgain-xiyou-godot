@@ -3,7 +3,7 @@
 // 正式数据库状态与敌人；只在内存把普攻公式固定为 1000000，去掉浮动和五乘区成长。
 const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs'), {sourceIdentity} = require('./source_identity.cjs');
-const APP = process.env.XIYOU_APP || '/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
+const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const identity = sourceIdentity(APP), r = boot(APP, {tolerant: true, log: false}), w = r.window;
 if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败');
 w.eval('ConfigManager.applyData({});DataManager.setupNewGame();CodexZones.ENABLED=false;Math.random=function(){return 0.5;};');

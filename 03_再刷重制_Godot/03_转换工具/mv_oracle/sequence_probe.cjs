@@ -3,7 +3,7 @@
 // 输出每项 JSON 文本的 SHA-1 与少量全文样本，供转换器 yepSeq 逐项对照；只写 .sandbox/sequences.json。
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
 const {boot}=require('./hboot.cjs'),{sourceIdentity}=require('./source_identity.cjs');
-const APP=process.env.XIYOU_APP||'/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
+const APP=process.env.XIYOU_APP||'/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const identity=sourceIdentity(APP),r=boot(APP,{tolerant:true,log:false}),w=r.window;
 if(r.errors.length||!w.DataManager.isDatabaseLoaded())throw new Error('参照引擎启动失败');
 const out={sourceIdentity:identity,skills:{},items:{},samples:{},repeats:{}};

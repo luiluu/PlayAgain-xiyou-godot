@@ -13,7 +13,7 @@ import os
 import sys
 from pathlib import Path
 
-DATA = Path(os.environ.get('XIYOU_DATA', '/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw/data'))
+DATA = Path(os.environ.get('XIYOU_DATA', '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw/data'))
 _cache = {}
 
 

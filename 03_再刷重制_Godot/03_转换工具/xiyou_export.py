@@ -24,7 +24,8 @@ from pathlib import Path
 
 TOOL_VERSION = 14
 HERE = Path(__file__).resolve().parent
-DEFAULT_APP = Path('/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw')
+# 用户 2026-10-15：重制期间冻结在 v0.28 的只读副本（不入 Git，见 02_内容与素材/冻结正式源/README.md），重制完成后再统一同步正式版
+DEFAULT_APP = Path('/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
 TABLES = ['Actors', 'Classes', 'Skills', 'Items', 'Weapons', 'Armors', 'Enemies', 'Troops', 'States',
           'Animations', 'CommonEvents', 'Tilesets', 'MapInfos', 'System',

@@ -10,7 +10,7 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs');
-const APP = process.env.XIYOU_APP || '/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw';
+const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const OUT = path.resolve(__dirname, '.sandbox/slice');
 const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));
 const ACTORS = SLICE.actors, TROOPS = SLICE.troops;
