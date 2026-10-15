@@ -11,11 +11,13 @@ extends Control
 ##   ＋末行「卸载」（图标 1354，x 36、宽 570）。
 ## - 右下 (640,173,640,547)：物品信息窗（XItemScene.paint_info）与属性对比（Window_StatCompare）轮换，默认信息窗；
 ##   →／Tab／点击右下区域换下一个，← 换上一个（各响光标音，任何阶段都可以换）。
-## - 属性对比：8 行暗格 (1,y+1,610,34)；能力名前 4 字（系统色）、当前值、「→」（系统色）；选候选时另画新值（增绿减红）。
+## - 属性对比（v0.28 installEquipmentStatusRuntime 改写的 Window_StatCompare.drawItem，各列都在内容区内）：8 行暗格
+##   (1,y+1,610,34)；能力名全称 (6, 宽 137.21) 系统色；当前值 (151.21, 宽 200) 右对齐；「→」(359.21, 宽 38) 居中系统色；
+##   选候选时新值 (405.21, 宽 200.79) 右对齐，有差值写「新值 (+差)」（增绿减红）。
 ## - 信息窗与对比的对象：指令阶段为空／只有当前值；槽位阶段为该槽装备／只有当前值；候选阶段为该候选／当前值→装上后的值。
-## - 说明卡（XHelpCard）：指令阶段隐藏，槽位/候选跟着选中行。
+## - 说明卡（XHelpCard）：指令阶段隐藏，槽位/候选跟着选中行；v0.28 起留在左侧列表区（不挡右下的信息/对比）：
+##   x = max(12, 640 − 卡宽 − 12)，y = 选中行底 + 12，放不下改到行顶 − 卡高 − 12，再放不下贴画面底 12（运行时读数 228,235）。
 ## - 换角色只在指令阶段：Q/W、PageUp/PageDown（光标音），回到指令窗。装上/清空后 HP、MP 按原比例保留（YEP）。
-## 优化 O-009：属性对比的当前值/箭头/新值三列整体左移 45，新值不再超出窗口被截掉（COMPARE_SHIFT = 0 恢复原版）。
 ## 战力：XPower.status_text（角色战力，关掉战力时不画）。右上角「装备检索 / 排序」「清除筛选」见 XGearSearch：
 ## 候选阶段打开只检索该槽候选，应用后候选按条件筛选（「卸载」留在最后）。
 
@@ -27,14 +29,9 @@ const LIST_RECT := Rect2(0, 173, 640, 547)
 const LOWER_RECT := Rect2(640, 173, 640, 547)
 const LH := 36.0
 const CMD_ROWS := 4
-## Window_StatCompare（正式版改过的 drawItem：名字 +20、当前值与箭头 +60、新值 +45；差值列宽为 0 不显示）。
-## 宽度为正式版运行时读数：能力名列 137.21（「最大生命值 」）、数值列 139.75（能力上限的千位格式）、箭头列 33.21（「→ 」）。
-const COMPARE_NAME_X := 26.0
+## Window_StatCompare 能力名列宽（_paramNameWidth，运行时读数＝「最大生命值 」的字宽）
 const COMPARE_NAME_W := 137.21
-const COMPARE_VALUE_W := 139.75
-const COMPARE_ARROW_W := 33.21
-## 优化 O-009：三列左移 45（新值右端 = 内容宽 − 文字边距）；改为 0 即恢复原版（新值右端超出窗口 39，被截掉）
-const COMPARE_SHIFT := 45.0
+const COMPARE_GAP := 8.0
 
 var actor_index := 0
 var _mode := "command"              # command / slot / item
@@ -237,7 +234,23 @@ func _update_help() -> void:
 			_pending_seen = rec
 	help_card.show_for(rec if row >= 0 else {})
 	if help_card.visible:
-		help_card.place_for_row(Rect2(LIST_RECT.position + Vector2(0, XMVWindow.PADDING + row * LH), Vector2(LIST_RECT.size.x, LH)))
+		place_help(help_card, row)
+
+
+## v0.28 Sprite_ItemHelp.setItem（Scene_Equip）：卡在左侧列表区内，选中行下方，放不下到上方，再不行贴底
+static func place_help(card: XHelpCard, row: int) -> void:
+	var edge := minf(LIST_RECT.end.x, LOWER_RECT.position.x)
+	var row_y := LIST_RECT.position.y + XMVWindow.PADDING + maxi(0, row) * LH
+	var top := LIST_RECT.position.y + 12
+	var bottom := 720.0 - 12
+	var below := row_y + LH + 12
+	var above := row_y - card.size.y - 12
+	var x := maxf(LIST_RECT.position.x + 12, edge - card.size.x - 12)
+	var y := below if below + card.size.y <= bottom else (above if above >= top else maxf(top, bottom - card.size.y))
+	card.position = Vector2(x, y)
+	# 技能书附卡照 XHelpCard 的排法，避开选中行
+	card._anchor = Rect2(LIST_RECT.position.x, row_y, LIST_RECT.size.x, LH)
+	card._layout_extras()
 
 
 func _commit_seen() -> void:
@@ -312,26 +325,41 @@ func _paint_lower(c: XMVCanvas) -> void:
 		XItemScene.paint_info(c, _shown_item())
 
 
-## Window_StatCompare.drawItem × 8（正式版位置；COMPARE_SHIFT 为优化 O-009）
+## v0.28 Window_StatCompare.drawItem 的列：[能力名 x, 当前值 x, 数值宽, 箭头 x, 箭头宽, 新值 x, 新值宽]（内容宽 cw）
+static func compare_columns(c: XMVCanvas) -> Array:
+	var cw := c.size.x
+	var pad := 6.0
+	var right := cw - pad
+	var name_w := minf(floorf(cw * 0.28), COMPARE_NAME_W)
+	var cur_x := pad + name_w + COMPARE_GAP
+	var arrow_w := c.text_width("→") + 12
+	var value_w := maxf(1.0, floorf((right - cur_x - arrow_w - COMPARE_GAP * 2) / 2))
+	var arrow_x := cur_x + value_w + COMPARE_GAP
+	var next_x := arrow_x + arrow_w + COMPARE_GAP
+	return [pad, cur_x, value_w, arrow_x, arrow_w, next_x, maxf(1.0, right - next_x)]
+
+
+static func compare_text(before: int, after: int) -> String:
+	var diff := after - before
+	return XMenu._group(after) + (" (%s%s)" % ["+" if diff > 0 else "", XMenu._group(diff)] if diff != 0 else "")
+
+
 static func paint_compare(c: XMVCanvas, a: XActor, temp: XActor) -> void:
 	var names: Array = XDB.system().get("terms", {}).get("params", [])
-	var right := c.size.x - 6.0
-	var cur_x := right - (COMPARE_VALUE_W * 2 + COMPARE_ARROW_W) + 60 - COMPARE_SHIFT
-	var arrow_x := right - (COMPARE_VALUE_W + COMPARE_ARROW_W) + 60 - COMPARE_SHIFT
-	var new_x := right - COMPARE_VALUE_W + 45 - COMPARE_SHIFT
+	var col := compare_columns(c)
 	for i in range(8):
 		var y := i * LH
 		c.draw_rect(Rect2(1, y + 1, c.size.x - 2, LH - 2), Color(XUI.GAUGE_BACK, XUI.DIM.a))
 		var pname: String = str(names[i]) if i < names.size() else XMenu.PARAM_NAMES[i]
-		c.text(pname.substr(0, 4), COMPARE_NAME_X, y, COMPARE_NAME_W, "left", XUI.SYSTEM, XUI.FONT_SIZE, LH)
-		var before := a.param(i)
-		c.text(XMenu._group(before), cur_x, y, COMPARE_VALUE_W, "right", XUI.TEXT, XUI.FONT_SIZE, LH)
-		c.text("→", arrow_x, y, COMPARE_ARROW_W, "center", XUI.SYSTEM, XUI.FONT_SIZE, LH)
+		c.text(pname, col[0], y, minf(floorf(c.size.x * 0.28), COMPARE_NAME_W), "left", XUI.SYSTEM, XUI.FONT_SIZE, LH)
+		var before := int(a.param(i))
+		c.text(XMenu._group(before), col[1], y, col[2], "right", XUI.TEXT, XUI.FONT_SIZE, LH)
+		c.text("→", col[3], y, col[4], "center", XUI.SYSTEM, XUI.FONT_SIZE, LH)
 		if temp == null:
 			continue
-		var after := temp.param(i)
+		var after := int(temp.param(i))
 		var color := XUI.POWER_UP if after > before else (XUI.POWER_DOWN if after < before else XUI.TEXT)
-		c.text(XMenu._group(after), new_x, y, COMPARE_VALUE_W, "right", color, XUI.FONT_SIZE, LH)
+		c.text(compare_text(before, after), col[5], y, col[6], "right", color, XUI.FONT_SIZE, LH)
 
 
 # ---- 操作 ----
