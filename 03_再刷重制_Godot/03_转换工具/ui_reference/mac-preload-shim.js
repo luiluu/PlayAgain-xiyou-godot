@@ -274,3 +274,26 @@ window.__refShot = function (name) {
         }, 500);
     });
 })();
+/* ?item_marks_ref=1：dev.039 一键出售窗口参照。只创建内存新游戏，不读玩家存档。 */
+(function () {
+    if (!/[?&]item_marks_ref=1(?:&|$)/.test(location.search)) return;
+    addEventListener('load', function () {
+        var panel=document.createElement('div'), readout=document.createElement('pre');
+        panel.style.cssText='position:fixed;left:0;top:0;z-index:99999;background:white;color:black;font:12px monospace;max-width:900px;max-height:110px;overflow:auto';
+        ['mousedown','mouseup','click','touchstart','touchend'].forEach(function(t){panel.addEventListener(t,function(e){e.stopPropagation();});});
+        function button(text, fn) {var b=document.createElement('button');b.textContent=text;b.onclick=function(){fn();b.blur();};panel.appendChild(b);}
+        button('一键出售夹具',function(){
+            if(!window.DataManager||!DataManager.isDatabaseLoaded())return;
+            ConfigManager.applyData({});DataManager.setupNewGame();$gameParty.gainGold(1000);
+            $gameParty.gainItem($dataItems[1],3);$gameParty.gainItem($dataWeapons[1],1);
+            $gameMessage.clear();SceneManager.goto(Scene_Shop);SceneManager.prepareNextScene([[0,1,0,0]],false);
+            var timer=setInterval(function(){var s=SceneManager._scene;if(!(s instanceof Scene_Shop)||!s._ShopOnekeySellWindow)return;
+                clearInterval(timer);s._commandWindow.deactivate();s._commandWindow.selectSymbol('Onekeysell');s.commandOnekeySell();
+                var win=s._ShopOnekeySellWindow;readout.textContent=JSON.stringify({rect:[win.x,win.y,win.width,win.height],lineHeight:win.lineHeight(),padding:win.padding,commands:win._list.map(function(c){return c.name;}),errors:window.__refErrors});
+            },20);
+        });
+        button('一键出售截图',function(){__refShot('codex_onekey_reference');});
+        button('隐藏一键工具栏',function(){panel.style.display='none';});
+        panel.appendChild(readout);document.body.appendChild(panel);
+    });
+})();
