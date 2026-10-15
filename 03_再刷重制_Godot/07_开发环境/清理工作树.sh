@@ -20,8 +20,8 @@ branch=$(git -C "$wt" rev-parse --abbrev-ref HEAD)
 if [[ -n $(git -C "$wt" status --porcelain) ]]; then
   print -u2 "✗ $wt 有未提交改动或未跟踪文件，先提交或处理："; git -C "$wt" status --short | head -10; exit 1
 fi
-if [[ $branch != HEAD ]] && ! git -C "$MAIN" merge-base --is-ancestor "$branch" main; then
-  print -u2 "✗ 分支 $branch 还没有并入 main，不删除"; exit 1
+if ! git -C "$MAIN" merge-base --is-ancestor "$(git -C "$wt" rev-parse HEAD)" main; then
+  print -u2 "✗ 工作区 HEAD（$branch）还没有并入 main，不删除"; exit 1
 fi
 evidence=$wt/$GODOT_SUB/04_验证/本地结果
 if [[ -d $evidence ]] && [[ -n $(ls -A "$evidence") ]]; then
