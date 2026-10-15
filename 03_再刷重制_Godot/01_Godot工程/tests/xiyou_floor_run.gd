@@ -23,7 +23,7 @@ extends Node
 ## 拆场景（并行测试.py 单个测试 300 秒上限）：SEGMENTS 按层指定各场景「完整走」的连续段（寻路行走、遇敌、存读档），
 ## 之前各层「快速通过」（直接执行传送门、守层者、辛德瑞事件，不走路、不存读档；事件本身照常执行）。part＝第几段（1 起）；
 ## 最后一段到楼层表末尾，新加的层自动落进最后一段。快速通过每层约 6 秒，所以越靠后的段前缀越长：后段少放几层。
-## 单个场景过了约 170 秒就在 SEGMENTS 末尾再切一段并新增场景（xiyou_floor_run、_b、_c、_d、_e…，场景只设 part）。
+## 单个场景过了约 170 秒就在 SEGMENTS 末尾再切一段并新增场景（xiyou_floor_run、_b、_c、_d、_e、_f…，场景只设 part）。
 ## 实测（time_scale 6，dev.048 后）：第 4 段（13～14 层）163 秒（14 层绕循环边缘、遇敌多，单层约 69 秒）；第 5 段（15～17 层）146 秒，前缀快速通过 14 层约 90 秒。
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
@@ -40,7 +40,7 @@ const DIR_ACTIONS := {2: "ui_down", 4: "ui_left", 6: "ui_right", 8: "ui_up"}
 ## 十四层 Map030 横向循环（scrollType 2），克力之爷 (44,23) 与入口 (18,30) 只在绕过 x=0／59 时相连（正式引擎 canPass 实测）
 const WRAP_BOSS := ["30:8"]
 ## 各段完整走的起始层（第 part 段从 SEGMENTS[part−1] 走到下一段起始层的前一层；最后一段走到楼层表末尾）
-const SEGMENTS := [1, 5, 9, 13, 15]
+const SEGMENTS := [1, 5, 9, 13, 15, 18]
 @export var part := 1
 ## 本次走路越过循环地图边缘的步数
 var wrapped_steps := 0
