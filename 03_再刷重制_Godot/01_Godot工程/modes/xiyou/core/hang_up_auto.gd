@@ -429,7 +429,7 @@ static func sell_legacy(s: XState) -> Array:
 
 
 ## 战后自动卖出：每场 +1，等于 SellQuality 时卖背包里开着的旧档装备（跳过名字带 [锁定] 的、没有品质标记的），归零。
-## 价格同商店（price 的一半）。返回卖掉的件数（-1 表示这场不卖）。
+## 价格与卖出报酬同商店（XItemMarks.sell）。返回卖掉的件数（-1 表示这场不卖）。
 static func after_battle_sell(s: XState) -> int:
 	var c := sell_config(s)
 	better_frequency += 1
@@ -442,8 +442,7 @@ static func after_battle_sell(s: XState) -> int:
 		var q := str(e.get("meta", {}).get("quality", ""))
 		if not q.is_valid_int() or not legacy.has(int(q)) or str(e.get("name", "")).contains("[锁定]"):
 			continue
-		s.gain_gold(int(e.get("sellPrice", int(e.get("price", 0)) / 2)))
-		s.gear.erase(e)
+		XItemMarks.sell(s, e, 1)   # XdRsData.hangUp.doSell：同商店，含 YEP_X_MoreCurrencies 卖出报酬
 		sold += 1
 	return sold
 
