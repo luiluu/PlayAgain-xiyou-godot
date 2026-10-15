@@ -175,7 +175,8 @@ def verify(app, generated, oracle):
             if len(data.get('cases', [])) < 100:
                 issues.append('地图事件对照参照缺少用例')
     # 新参照不能只在某个测试里比较脚本身份：完整入口也要拒绝缺失、旧数据或探针报错。
-    for name, key in [('troop_events.json', 'cases'), ('drop_record.json', 'record')]:
+    for name, key in [('troop_events.json', 'cases'), ('drop_record.json', 'record'),
+                      ('sell_rewards.json', 'cases'), ('item_marks.json', 'onekey')]:
         file = oracle / name
         if not file.is_file():
             issues.append('缺少参照：' + name)
@@ -190,8 +191,13 @@ def verify(app, generated, oracle):
                     issues.append(name + ' 参照数据不一致：' + rel)
         if not data.get(key) or any(row.get('errors') for row in data.get(key, [])):
             issues.append(name + ' 缺少测量或测量出错')
-        if name == 'troop_events.json' and {4, 5, 8, 28} - {row.get('troop') for row in data.get('cases', [])}:
+        if name == 'troop_events.json' and {4, 5, 8, 28, 39, 52, 53} - {row.get('troop') for row in data.get('cases', [])}:
             issues.append('敌群事件参照缺少守层者用例')
+    marks = oracle / 'item_marks.json'
+    if marks.is_file():
+        data = json.loads(marks.read_text())
+        if {row.get('grade') for row in data.get('onekey', [])} != set(range(7)) or not data.get('marks') or not data.get('passability'):
+            issues.append('物品标记参照缺少七档出售、标记或落点用例')
     if sequences.is_file():
         data = json.loads(sequences.read_text())
         if not data.get('operations') or not data.get('parseIntNumbers'):

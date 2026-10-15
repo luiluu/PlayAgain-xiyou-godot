@@ -185,6 +185,7 @@ func _run() -> void:
 	only.queue_free()
 	await frames()
 	await _sell_rewards()
+	await _item_marks_oracle()
 	await _number_window_rewards()
 	DirAccess.remove_absolute(XSave.dir())
 	var passed := results.filter(func(x): return x.passed).size()
@@ -288,6 +289,81 @@ func _sell_rewards() -> void:
 	shop._ok()
 	check("shop_sell_zero_price_reward", not s2.gear.has(e) and s2.variable(201) == v0 + 1 and shop._mode == "sell", [s2.variable(201), shop._mode])
 	shop.queue_free()
+	await frames()
+
+
+## 执行正式引擎七档筛选（不是在测试里重写筛选公式），并检查锁定／置顶、窗口尺寸与 O-027 的依据。
+func _item_marks_oracle() -> void:
+	var file := "res://modes/xiyou/generated/oracle/item_marks.json"
+	var data = JSON.parse_string(FileAccess.get_file_as_string(file)) if FileAccess.file_exists(file) else null
+	if not check("marks_oracle_loaded", data is Dictionary and data.get("onekey", []).size() == 7, file):
+		return
+	for c in data.onekey:
+		var s := XState.new_game(3, 1, [8, 9, 10])
+		s.gear.clear()
+		s.gold = 1000
+		for spec in c.specs:
+			var e := XGear.create(str(spec.kind), int(spec.base))
+			s.register_gear(e)
+			e.meta = e.meta.duplicate()
+			if spec.quality == null:
+				e.meta.erase("quality")
+			else:
+				e.meta.quality = str(int(spec.quality))
+			e.price = int(spec.price)
+			e.name = str(spec.label) + ("[锁定]" if spec.locked else "")
+			e.audit_label = str(spec.label)
+			if spec.get("worn", false):
+				s.actor(1).equips[0] = e
+			else:
+				s.gear.append(e)
+		var before: Array = s.gear.map(func(e): return str(e.audit_label))
+		var v0 := s.variable(201)
+		XItemMarks.onekey_sell(s, int(c.grade))
+		var remaining: Array = s.gear.map(func(e): return str(e.audit_label))
+		var sold: Array = before.filter(func(label): return not remaining.has(label))
+		sold.sort()
+		remaining.sort()
+		check("onekey_oracle_grade%d" % int(c.grade), sold == c.sold and remaining == c.remaining and s.gold - 1000 == int(c.gold) and s.variable(201) - v0 == int(c.var201) and bool(c.worn) and s.actor(1).equips[0].get("audit_label") == "worn", [sold, remaining, s.gold - 1000, c])
+	var state := XState.new_game(3, 1, [8, 9, 10])
+	for c in data.marks:
+		var rec := XDB.rec("Items", int(c.id))
+		if c.op == "lock":
+			XItemMarks.toggle_lock(state, rec)
+		else:
+			XItemMarks.toggle_top(state, rec)
+		check("marks_oracle_%d_%s" % [int(c.id), c.op], state.flags.get("ItemSpLock", []) == c.locks.map(func(id): return int(id)) and state.flags.get("TopItem", []) == c.tops.map(func(id): return int(id)), [state.flags, c])
+	state.flags.ItemSpLock = [3]
+	state.flags.TopItem = [1, 2]
+	var entries := [1, 2, 3].map(func(id): return {"rec": XDB.rec("Items", id)})
+	var actual := XItemMarks.apply_list(state, entries).map(func(e): return {"id": int(e.rec.id), "name": str(e.rec.name)})
+	check("marks_oracle_list", actual == data.listOrder.map(func(e): return {"id": int(e.id), "name": str(e.name)}), [actual, data.listOrder])
+	# O-030：参照证实原版跨类型加名；Godot 只按物品标记，不改变同编号装备。
+	var collision := XGear.create("weapon", 1)
+	collision.id = int(data.collision.id)
+	collision.name = "collision"
+	state.flags.ItemSpLock = [int(collision.id)]
+	state.flags.TopItem = [int(collision.id)]
+	var collision_list := XItemMarks.apply_list(state, [{"rec": collision}])
+	check("O030_typed_item_marks", str(data.collision.name) == "collision[锁定][置顶]" and collision_list[0].rec.name == "collision" and not XItemMarks.is_locked(state, collision) and not XItemMarks.is_top(state, collision))
+	XState.current = state
+	var shop := XShop.new()
+	shop.setup([], false)
+	add_child(shop)
+	await frames()
+	var rect: Array = data.layout.rect
+	check("onekey_oracle_layout", shop.onekey_win.position == Vector2(rect[0], rect[1]) and shop.onekey_win.size == Vector2(rect[2], rect[3]) and XShop.LH == data.layout.lineHeight and XMVWindow.PADDING == data.layout.padding and XItemMarks.onekey_grades().map(func(row): return row.text) == data.layout.commands, [shop.onekey_win.size, data.layout])
+	shop.queue_free()
+	var tilemap := MVTilemap.new()
+	tilemap.setup(XDB.map(4), false)
+	for c in data.passability:
+		var actual_dirs := []
+		for d in [2, 4, 6, 8]:
+			var dest := Vector2i(int(c.x), int(c.y)) + MVCharacter.dir_offset(d)
+			actual_dirs.append(tilemap.is_passable(int(c.x), int(c.y), d) and tilemap.is_passable(dest.x, dest.y, MVCharacter.reverse_dir(d)))
+		check("return_tile_oracle_%d_%d" % [int(c.x), int(c.y)], actual_dirs == c.dirs, [actual_dirs, c.dirs])
+	tilemap.free()
+	check("return_fix_only_seventh", MVInterpreter.TRANSFER_FIX == {"61:9:4:12:18": Vector2i(14, 23)})
 	await frames()
 
 
