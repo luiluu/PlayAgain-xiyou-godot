@@ -335,6 +335,14 @@ func _item_marks_oracle() -> void:
 	var entries := [1, 2, 3].map(func(id): return {"rec": XDB.rec("Items", id)})
 	var actual := XItemMarks.apply_list(state, entries).map(func(e): return {"id": int(e.rec.id), "name": str(e.rec.name)})
 	check("marks_oracle_list", actual == data.listOrder.map(func(e): return {"id": int(e.id), "name": str(e.name)}), [actual, data.listOrder])
+	# O-030：参照证实原版跨类型加名；Godot 只按物品标记，不改变同编号装备。
+	var collision := XGear.create("weapon", 1)
+	collision.id = int(data.collision.id)
+	collision.name = "collision"
+	state.flags.ItemSpLock = [int(collision.id)]
+	state.flags.TopItem = [int(collision.id)]
+	var collision_list := XItemMarks.apply_list(state, [{"rec": collision}])
+	check("O030_typed_item_marks", str(data.collision.name) == "collision[锁定][置顶]" and collision_list[0].rec.name == "collision" and not XItemMarks.is_locked(state, collision) and not XItemMarks.is_top(state, collision))
 	XState.current = state
 	var shop := XShop.new()
 	shop.setup([], false)

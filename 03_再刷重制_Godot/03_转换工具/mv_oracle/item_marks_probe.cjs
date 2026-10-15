@@ -43,11 +43,16 @@ for(let id=1;id<=3;id++)w.$gameParty.gainItem(w.$dataItems[id],1);
 w.$gameParty.ItemSpLock=w.JSON.parse('[3]');w.$gameParty.TopItem=w.JSON.parse('[1,2]');
 const list=Object.create(w.Window_ItemList.prototype);list._category='item';list.makeItemList();
 const listOrder=list._data.filter(Boolean).map(e=>({id:e.id,name:e.name}));
+// O-030：正式列表只按物品 ID 标记，会连带同编号装备；保留测量，Godot 明确登记为优化差异。
+setup();const equip=fixture({label:'collision',kind:'weapon',base:1,quality:1,price:100,locked:false});
+w.$gameParty.ItemSpLock=w.JSON.parse(JSON.stringify([equip.id]));w.$gameParty.TopItem=w.JSON.parse(JSON.stringify([equip.id]));
+const gearList=Object.create(w.Window_ItemList.prototype);gearList._category='weapon';gearList.makeItemList();
+const collision={id:equip.id,name:equip.name};
 const win=new w.Window_OnekeySellCommand();
 const layout={rect:[win.x,win.y,win.width,win.height],lineHeight:win.lineHeight(),padding:win.padding,commands:win._list.map(e=>e.name)};
 // 正式 Game_Map / Game_Player 的通行判断，不替换地块规则。
 w.$dataMap=JSON.parse(fs.readFileSync(path.join(APP,'data/Map004.json'),'utf8'));w.$gameMap.setup(4);
 const passability=[{x:12,y:18},{x:14,y:23}].map(p=>({...p,dirs:[2,4,6,8].map(d=>w.$gamePlayer.isMapPassable(p.x,p.y,d))}));
 if(JSON.stringify(identity)!==JSON.stringify(sourceIdentity(APP)))throw new Error('测量期间来源改变');
-fs.writeFileSync(path.join(__dirname,'.sandbox/item_marks.json'),JSON.stringify({sourceIdentity:identity,onekey,marks,listOrder,layout,passability},null,1));
+fs.writeFileSync(path.join(__dirname,'.sandbox/item_marks.json'),JSON.stringify({sourceIdentity:identity,onekey,marks,listOrder,collision,layout,passability},null,1));
 console.log(JSON.stringify({cases:onekey.length,marks:marks.length,layout,passability}));process.exit(0);
