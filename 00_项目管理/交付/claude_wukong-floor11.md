@@ -4,7 +4,7 @@
 - 位置：worktree `/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/wukong-floor6-54af49`，分支 `claude/wukong-floor11`
 - 任务：十一层（大厅传送门变量 20＝11 → Map020 (34,19)）与十二层（变量 20＝12 → Map065 (21,14)）主图
 - 预分配编号：O-034～O-036
-- 状态：进行中（十一层开工）
+- 状态：可合并（十一层、十二层）
 
 ## 变更记录草稿
 
@@ -41,4 +41,5 @@
 ## 本分支提交
 
 - 0ebb3d7 开工交付单；23fe14f、6bb6887 十一层；2898e3e、be368bf 十二层
-- 本提交：交付单草稿（待检查.sh）
+- dc66771 交付单草稿；4944dc5 xiyou_item_marks 补证断言改两条；57513a3 合并 main（dev.043 战力）后 --补齐、worktree 同步（只新增 power.json 参照）
+- 本提交：检查.sh --oracle 全部通过（44 个 Godot 测试，来源 v0.26），可合并。前一次全量里 `xiyou_notice_options` 71/71 但退出时报「8 resources still in use」判失败，单独重跑 3 次都通过，再跑全量也通过，属满负载下偶发（不是本车道文件，留给沙僧留意）
