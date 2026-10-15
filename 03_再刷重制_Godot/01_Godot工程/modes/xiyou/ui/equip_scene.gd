@@ -18,7 +18,7 @@ extends Control
 ## - 说明卡（XHelpCard）：指令阶段隐藏，槽位/候选跟着选中行；v0.28 起留在左侧列表区（不挡右下的信息/对比）：
 ##   x = max(12, 640 − 卡宽 − 12)，y = 选中行底 + 12，放不下改到行顶 − 卡高 − 12，再放不下贴画面底 12（运行时读数 228,235）。
 ## - 换角色只在指令阶段：Q/W、PageUp/PageDown（光标音），回到指令窗。装上/清空后 HP、MP 按原比例保留（YEP）。
-## 战力：XPower.status_text（角色战力，关掉战力时不画）。右上角「装备检索 / 排序」「清除筛选」见 XGearSearch：
+## 战力：XPower.status_text（角色战力，关掉战力时不画）；装上／卸下／清空后右下角弹战力变化提示（XPowerNotice）。右上角「装备检索 / 排序」「清除筛选」见 XGearSearch：
 ## 候选阶段打开只检索该槽候选，应用后候选按条件筛选（「卸载」留在最后）。
 
 signal closed
@@ -472,12 +472,12 @@ func _cancel() -> void:
 	_refresh()
 
 
-## YEP onItemOk / commandClear：换装后 HP、MP 按换装前的比例（活着至少 1）
+## YEP onItemOk / commandClear：换装后 HP、MP 按换装前的比例（活着至少 1）；装备确实变了弹战力提示（XPowerNotice）
 func _keep_rates(change: Callable) -> void:
 	var a := actor()
 	var hp_rate := a.hp / maxf(1.0, a.mhp)
 	var mp_rate := a.mp / maxf(1.0, a.mmp)
-	change.call()
+	XPowerNotice.around(a, change)
 	a.hp = maxf(0.0 if a.is_dead() else 1.0, floorf(a.mhp * hp_rate))
 	a.mp = floorf(a.mmp * mp_rate)
 

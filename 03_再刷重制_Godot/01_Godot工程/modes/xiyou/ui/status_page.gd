@@ -1,7 +1,9 @@
 class_name XStatusPage
 extends XActorPage
 ## JAH_StatusMenuCore 三页；展示值直接取当前 Godot 战斗规则。
+## 页窗上方是战力条（XPowerStrip，installCombatPowerRuntime）；本页布局尚未按正式版逐像素复现，战力条跟着页窗的位置走。
 var page := 0
+var power_strip: XPowerStrip
 
 func rebuild() -> void:
 	super.rebuild()
@@ -22,7 +24,12 @@ func rebuild() -> void:
 	back.pressed.connect(func(): closed.emit())
 	tabs.add_child(back)
 	actor_summary(top, true)
-	var body := scroll_column(window_at(Rect2(0, 280, vs.x, vs.y - 280)))
+	# 战力条（XPowerStrip）占页窗原位置的上 36，页窗下移；关掉战力时没有
+	var page_rect := Rect2(0, 280, vs.x, vs.y - 280)
+	power_strip = XPowerStrip.make(content, actor(), page_rect.position.y, vs.x)
+	if power_strip != null:
+		page_rect = page_rect.grow_side(SIDE_TOP, -XPowerStrip.HEIGHT)
+	var body := scroll_column(window_at(page_rect))
 	match page:
 		0: _params(body)
 		1: _resistances(body)
