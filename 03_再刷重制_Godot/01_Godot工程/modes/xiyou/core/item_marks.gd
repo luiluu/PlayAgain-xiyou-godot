@@ -29,8 +29,9 @@ static func _toggle_id(s: XState, key: String, id: int) -> bool:
 	return on
 
 
+## 装备实例（背包与身上）都有 kind（weapon/armor）与 instanceId；物品记录两者都没有
 static func is_gear(rec: Dictionary) -> bool:
-	return rec.has("instanceId")
+	return rec.has("instanceId") or str(rec.get("kind", "")) in ["weapon", "armor"]
 
 
 static func is_locked(s: XState, rec: Dictionary) -> bool:
