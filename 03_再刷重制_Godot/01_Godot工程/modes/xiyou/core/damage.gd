@@ -228,7 +228,9 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 
 ## 正式 executeDamage 的顺序：攻击方 Confirm → 固定减伤（onPreDamageStateEffects 的包装）→ 目标 React。
 static func finish(res: Dictionary, item: Dictionary, a: XBattler, b: XBattler) -> float:
-	var confirmed := apply_state_effects(res.value, item, a, b, [], "confirm")
+	# installDamageElementRuntime：HP 伤害／吸取被元素吸收时跳过攻击方 Confirm（普通回复仍照常）。
+	var absorbed: bool = float(res.value) < 0.0 and int(item.damage.type) in [1, 5]
+	var confirmed: float = res.value if absorbed else apply_state_effects(res.value, item, a, b, [], "confirm")
 	return apply_state_effects(apply_fixed_mitigation(confirmed, res), item, a, b, [], "react")
 
 
