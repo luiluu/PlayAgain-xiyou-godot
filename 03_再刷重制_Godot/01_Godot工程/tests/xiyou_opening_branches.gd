@@ -1,7 +1,8 @@
 extends Node
 ## 开局 Map221 引路人的两条分支（无人操作，原版事件实跑）：
 ## A「攻击他？」：打真·天道投影（敌群 771，打不过、可战败）→ 英雄与伙伴全部离队、里德入队、随机伙伴魂灯、强者/弱者压制 → 方桌大厅。
-## B「轮回归来！·普通」：打投影（敌群 815，5 点血）→ 开关 2307、强者/弱者压制 → 方桌大厅，队伍不变。
+## B「轮回归来！」→ v0.27 轮回入口（CodexReincarnationRandom）选「轮回普通」「常规阵容」：打投影（敌群 815，5 点血）→ 开关 2307、强者/弱者压制 → 方桌大厅，队伍不变。
+## C 同 B 选「轮回困难」：另开开关 2282、全体学 8105；先选「返回」退出一次（不开启）。
 ## 存档写到 user://test_xiyou_branches，测试结束删除。
 
 var results: Array = []
@@ -80,7 +81,7 @@ func _run() -> void:
 	# B：轮回归来！→ 开启轮回·普通
 	map = await _to_map221()
 	s = XState.current
-	XMessageBox.auto_answers = [1, 0]
+	XMessageBox.auto_answers = [1, 0, 0]
 	await map.run_event(_event(map, 3))
 	ok = await _wait(func(): return _map_idle(4) and s.self_switch(4, 20, "A"))
 	_check("b_hub", ok)
@@ -89,6 +90,18 @@ func _run() -> void:
 	_check("b_items", s.item_count(4) == 1 and s.item_count(2896) == 1 and s.item_count(10) == 1)
 	_check("b_suppression", s.actor(1).skill_ids.has(6216) and s.actor(8).skill_ids.has(6216))
 	print("B skipped: ", JSON.stringify(_scene().skipped_log.map(func(r): return "%d %s" % [r.code, r.text])).left(800))
+	# C：轮回归来！→ 返回（不开启）；再来一次 → 轮回困难 → 常规阵容
+	map = await _to_map221()
+	s = XState.current
+	XMessageBox.auto_answers = [1, 2]
+	await map.run_event(_event(map, 3))
+	_check("c_back_closed", map.map_id == 221 and not s.switch(2307) and not MVScript.reincarnation_entry.get("accepted", true), [map.map_id, MVScript.reincarnation_entry])
+	XMessageBox.auto_answers = [1, 1, 0]
+	await map.run_event(_event(map, 3))
+	ok = await _wait(func(): return _map_idle(4) and s.self_switch(4, 20, "A"))
+	_check("c_hub", ok)
+	_check("c_switches", s.switch(2307) and s.switch(2282) and not s.switch(2303), [s.switch(2307), s.switch(2282)])
+	_check("c_hard_skill", s.actor(1).skill_ids.has(8105) and s.actor(8).skill_ids.has(8105))
 	DirAccess.remove_absolute(XSave.path(1))
 	DirAccess.remove_absolute(XSave.dir())
 	Engine.time_scale = 1.0
