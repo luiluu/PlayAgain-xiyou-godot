@@ -5,9 +5,43 @@
 - 状态：进行中
 - 任务：出售报酬——补商店出售漏掉的 YEP_X_MoreCurrencies 卖出报酬（普通出售与一键出售；悟空审查 dev.039 发现；唐僧 2026-10-15 09:09 派）。严格级：mv_oracle 参照探针逐项比对。
 
-## 出售报酬（进行中）
+## 出售报酬
 
-（进行中）
+### 独占文件
+
+- 改 `01_Godot工程/modes/xiyou/core/item_marks.gd`（新增卖出报酬解析 sell_rewards、can_sell、统一出售 sell）、`ui/shop.gd`（普通出售改走 XItemMarks.sell、0 价有报酬可卖）
+- 改 `01_Godot工程/modes/xiyou/core/hang_up_auto.gd` 一处：after_battle_sell 改调 XItemMarks.sell（正式版挂机自动卖出 XdRsData.hangUp.doSell 同样给报酬；不在原派单范围，改动 1 行，xiyou_hangup_auto 226/226 通过）
+- 新增探针 `03_转换工具/mv_oracle/sell_reward_probe.cjs`，加进 `03_转换工具/同步正式西游.py` 的 PROBES（输出 sell_rewards.json）
+- 测试 `01_Godot工程/tests/xiyou_item_marks.gd` 扩充
+- **转换器没改**：generated/db 已带 note 字段。
+
+### 变更记录草稿
+
+```
+## 2026-10-15 【Claude·八戒·未经Codex检验】出售报酬：YEP_X_MoreCurrencies 卖出的变量与物品报酬（dev.待定）
+
+- 悟空审查 dev.039 发现：Godot 卖东西只给金币。正式版 YEP_X_MoreCurrencies 的 doSellGold 按物品备注另加报酬，挂机自动卖出 XdRsData.hangUp.doSell 也照抄了同一段。现在商店普通出售、一键出售、挂机自动卖出都走 XItemMarks.sell：金币 sellingPrice×数量，再按基础记录备注 <Variable x Sell Price: y> 加变量、<Item x Sell Price: y> 给物品（各 ×数量），然后失去物品。
+- 正式数据里的报酬：变量 199／200／201／206／212／213，物品 188、180、236、457、2530、2898、678～707 等；没有 <Weapon/Armor x Sell Price>（插件对独立装备目标也会跳过）、没有按名字的写法、没有 <Price>／<Sell Price>／<Can Sell>／<Cannot Sell>。
+- 出售列表能否选照 YEP_ShopMenuCore：有价格，或有卖出报酬备注（MoreCurrencies 设 canSell）。原来 0 价的报酬装备（如武器 73「麒麟对剑」给变量 201）在 Godot 灰显不能卖，现在可以卖。
+- 备注解析照插件逐行的判断顺序（一行只认第一种写法，同一 ID 只取第一行）。
+- 严格级参照：新探针 sell_reward_probe.cjs 自动挑每张表各种备注的第一件、多备注的、无备注有价的、无备注 0 价的，经正式 Scene_Shop.doSell 与 XdRsData.hangUp.doSell 各卖一次，记能否卖、金币、变量、物品、装备件数变化（28 例，两条路径结果相同）；xiyou_item_marks 逐例比对全部一致。
+- 验证：xiyou_item_marks 82/82、xiyou_hangup_auto 226/226、xiyou_flow 48/48、xiyou_gear_ui 44/44；合并 main 后的全量 检查.sh --oracle 在 09:30 收尾时还没跑完，结果未知。
+- 未完成／已知问题：商店数量窗没画报酬那几行（MoreCurrencies 的 Window_ShopNumber 会列出卖出得到的变量/物品）；界面项，另做。
+```
+
+### 停在哪里（09:30 收尾）
+
+- 功能、探针、测试都已完成并提交；只差合并 main（e22c432）之后的全量 `检查.sh --oracle` 结果。
+- 下一步：跑一次 `检查.sh --oracle`（worktree 里先 `--补齐`，并把主工作区 generated/oracle 同步过来），全部通过后把状态改成「可合并」。
+
+### 合并时要做
+
+- 主工作区跑一次 `python3 03_再刷重制_Godot/03_转换工具/同步正式西游.py`，生成 `generated/oracle/sell_rewards.json`（不入 Git）；没有它 xiyou_item_marks 的 sell_oracle_loaded 会失败。
+
+### 交接板
+
+- 下一步：无新增；第 6 项「逐页复现原版界面」可补「商店数量窗的卖出报酬行（YEP_X_MoreCurrencies Window_ShopNumber）」。
+- 用户试玩说明：卖装备/物品时，正式版会给的不朽灵魂、不朽碎片、法宝积分等变量与兑换物品现在也会给；0 价但有报酬的装备可以卖。
 
 ## 审查草稿（暂缓，用户 2026-10-15 09:09：审查先暂缓、先继续做）
 
@@ -36,4 +70,5 @@
 
 ## 本分支提交
 
-- 第三轮开工交付单、本 WIP 提交（审查第一段）
+- 7a061d8 WIP 审查第一段（暂缓）
+- 第四轮开工交付单；afdb882 探针；1e7b5d0 出售报酬；装备判断修正；e22c432 合并 main；（本提交）交付单
