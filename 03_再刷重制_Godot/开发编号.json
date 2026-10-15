@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.043",
-  "sequence": 43,
-  "next": "dev.044",
-  "nextSequence": 44,
+  "current": "dev.044",
+  "sequence": 44,
+  "next": "dev.045",
+  "nextSequence": 45,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "补齐刷新参照、商店数量窗报酬列、装备战力与设置页战力项（八戒）",
+  "currentChange": "扩十一层 Map020、十二层 Map065（悟空）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

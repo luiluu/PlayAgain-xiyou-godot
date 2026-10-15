@@ -4,7 +4,7 @@ config_version=5
 [application]
 config/name="再刷重制"
 config/description="西游改版优先重制，新版保留入口。"
-config/version="dev.043"
+config/version="dev.044"
 run/main_scene="res://scenes/entry_menu.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="KYO/再刷重制_开发"
