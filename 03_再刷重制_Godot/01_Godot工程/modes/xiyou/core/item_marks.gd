@@ -106,18 +106,19 @@ static func apply_list(s: XState, entries: Array) -> Array:
 ## 卖出报酬只有 <Variable x Sell Price: y> 与 <Item x Sell Price: y>：<Weapon/Armor x Sell Price> 的目标是独立装备时插件跳过，
 ## 本 MOD 的武器、防具都是独立装备，所以从不生效；按名字的写法（<Item 名字 Sell Price>）正式数据里没有，不做。
 const _MC_LINE := [
-	["skip", "<PROXY BUY:[ ](.*)>"], ["buy", "<VARIABLE[ ](\\d+)[ ]BUY PRICE:[ ](\\d+)>"],
+	["skip", "<PROXY BUY:[ ](.*)>"], ["bvar", "<VARIABLE[ ](\\d+)[ ]BUY PRICE:[ ](\\d+)>"],
 	["var", "<VARIABLE[ ](\\d+)[ ]SELL PRICE:[ ](\\d+)>"],
-	["buy", "<ITEM[ ](\\d+)[ ]BUY PRICE:[ ](\\d+)>"], ["skip", "<ITEM[ ](.*)[ ]BUY PRICE:[ ](\\d+)>"], ["item", "<ITEM[ ](\\d+)[ ]SELL PRICE:[ ](\\d+)>"], ["skip", "<ITEM[ ](.*)[ ]SELL PRICE:[ ](\\d+)>"],
+	["bitem", "<ITEM[ ](\\d+)[ ]BUY PRICE:[ ](\\d+)>"], ["skip", "<ITEM[ ](.*)[ ]BUY PRICE:[ ](\\d+)>"], ["item", "<ITEM[ ](\\d+)[ ]SELL PRICE:[ ](\\d+)>"], ["skip", "<ITEM[ ](.*)[ ]SELL PRICE:[ ](\\d+)>"],
 	["skip", "<WEAPON[ ](.*)[ ]BUY PRICE:[ ](\\d+)>"], ["skip", "<WEAPON[ ](.*)[ ]SELL PRICE:[ ](\\d+)>"],
 	["skip", "<ARMOR[ ](.*)[ ]BUY PRICE:[ ](\\d+)>"], ["skip", "<ARMOR[ ](.*)[ ]SELL PRICE:[ ](\\d+)>"]]
 static var _rewards := {}
 static var _mc_res: Array = []
 
 
-## 基础记录（装备按 base）的卖出报酬 {"vars": {变量: 值}, "items": {物品: 数}, "buy": 有无变量/物品买入价}
-## vars、items 按备注行的先后；插件 unshift 进 xxxSellPrices，数量窗从右往左画的是倒序。
-## buy 只给 Window_ShopNumber.isDrawGoldCurrency 用（按名字的 <Item 名字 Buy Price> 正式数据里解析不到物品，不算）。
+## 基础记录（装备按 base）的 MoreCurrencies 价格 {"vars": {变量: 值}, "items": {物品: 数}（卖出报酬），
+## "buy_vars": {变量: 值}, "buy_items": {物品: 数}（买入价）, "buy": 有无变量/物品买入价}
+## 各表按备注行的先后；插件 unshift 进 xxxSellPrices／xxxBuyPrices，画价格时从右往左是倒序。
+## 按名字的 <Item 名字 Buy Price> 正式数据里解析不到物品，不算；<Weapon/Armor x Buy Price> 的目标是独立装备，插件跳过。
 static func sell_rewards(rec: Dictionary) -> Dictionary:
 	var base := _base_rec(rec)
 	var key := "%s:%d" % [str(base.get("_table", _table_of(rec))), int(base.get("id", 0))]
@@ -126,15 +127,15 @@ static func sell_rewards(rec: Dictionary) -> Dictionary:
 	if _mc_res.is_empty():
 		for pair in _MC_LINE:
 			_mc_res.append([pair[0], RegEx.create_from_string("(?i)" + str(pair[1]))])
-	var out := {"vars": {}, "items": {}, "buy": false}
+	var out := {"vars": {}, "items": {}, "buy_vars": {}, "buy_items": {}, "buy": false}
 	for line in RegEx.create_from_string("[\\r\\n]+").sub(str(base.get("note", "")), "\n", true).split("\n"):
 		for pair in _mc_res:
 			var m: RegExMatch = pair[1].search(line)
 			if m == null:
 				continue
-			if pair[0] == "buy":
+			if pair[0] in ["bvar", "bitem"]:
 				out.buy = true
-			var bucket := "vars" if pair[0] == "var" else "items" if pair[0] == "item" else ""
+			var bucket: String = {"var": "vars", "item": "items", "bvar": "buy_vars", "bitem": "buy_items"}.get(pair[0], "")
 			if bucket != "" and not out[bucket].has(int(m.get_string(1))):
 				out[bucket][int(m.get_string(1))] = int(m.get_string(2))
 			break
@@ -191,6 +192,160 @@ static func selling_price(rec: Dictionary) -> int:
 	if rec.has("sellPrice"):
 		return int(rec.sellPrice)
 	return int(rec.get("price", 0)) / 2
+
+
+# ---- 买入 ----
+
+## 停用的伙伴号角（installImportedBalanceRuntime：Scene_Shop.prepare 从商品里滤掉，Window_ShopBuy.isEnabled 也拦下）
+const DISABLED_HORNS := [255, 256, 257, 394, 440]
+const MAX_ITEMS := 9999         # $gameParty.maxItems（物品）；独立装备每件单独，maxItems 为 1
+static var _proxy := {}
+
+
+const PILL_ANCHOR := 1693       # Codex_PercentPills SHOP_ANCHOR
+const PILL_KEYS := ["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"]
+
+
+## Scene_Shop.prepare 整条链对商品表的改写（切片商店用到的）：
+## - Codex_PercentPills：商品里有 1693 时，把所有 <CodexPill: mhp…luk> 的物品追加到末尾（已有的不重复）；
+## - installNativeRaceRuntime：旧版祝福进阶石按 CodexRaces.legacyItems 换成正规 ID，再去掉完全相同的行；
+## - installImportedBalanceRuntime：滤掉停用的伙伴号角。
+## 未移植：Map132 号角商店追加新伙伴号角（多个 installNative…Runtime）、installNativeOrbRuntime 撤下宝珠——切片商店不受影响（shop_buy_probe）。
+static func shop_goods(goods: Array) -> Array:
+	var rows: Array = goods.map(func(g): return [int(g[0]), int(g[1]), int(g[2]), int(g[3])])
+	if rows.any(func(g): return g[0] == 0 and g[1] == PILL_ANCHOR):
+		var db: Array = XDB.table("Items")
+		for i in range(1, db.size()):
+			var key := str(db[i].get("meta", {}).get("CodexPill", "")).strip_edges() if db[i] is Dictionary else ""
+			if PILL_KEYS.has(key) and not rows.any(func(g): return g[0] == 0 and g[1] == i):
+				rows.append([0, i, 0, 0])
+	var races = XDB.table("CodexRaces")
+	var legacy: Dictionary = races.get("legacyItems", {}) if races is Dictionary else {}
+	var out := []
+	for g in rows:
+		if g[0] == 0 and legacy.has(str(g[1])):
+			g[1] = int(legacy[str(g[1])])
+		if not out.has(g) and not (g[0] == 0 and DISABLED_HORNS.has(g[1])):
+			out.append(g)
+	return out
+
+
+## 商品记录（goods 的类型 0物品/1武器/2防具 + ID）：装备补上 kind、base，买入各函数据此认表
+static func shop_rec(kind: int, id: int) -> Dictionary:
+	if kind == 0:
+		return XDB.rec("Items", id)
+	var r := XDB.rec("Weapons" if kind == 1 else "Armors", id)
+	if r.is_empty():
+		return r
+	r = r.duplicate()
+	r.kind = "weapon" if kind == 1 else "armor"
+	r.base = id
+	return r
+
+
+## <Proxy Buy: x>（YEP_X_MoreCurrencies）：买到的是同表的另一件（数字是 ID，否则按名字，同名取 ID 最大的）；0 为没有。
+## 插件读数据库时把代购件的名字、图标、说明（物品还有效果，装备还有能力）抄到商品上。
+static func proxy_buy(rec: Dictionary) -> int:
+	var table := _table_of(rec)
+	var key := "%s:%d" % [table, int(rec.get("base", rec.get("id", 0)))]
+	if _proxy.has(key):
+		return _proxy[key]
+	var id := 0
+	var m := RegEx.create_from_string("(?i)<PROXY BUY:[ ](.*)>").search(str(_base_rec(rec).get("note", "")))
+	if m:
+		var v := m.get_string(1)
+		if v.is_valid_int():
+			id = int(v)
+		else:
+			var db: Array = XDB.table(table)
+			for i in range(1, db.size()):
+				if db[i] is Dictionary and str(db[i].get("name", "")).to_upper() == v.to_upper():
+					id = i
+	_proxy[key] = id
+	return id
+
+
+## 商品的显示记录：有代购时抄上代购件的名字、图标、说明（Copy Name/Icon/Help 均为 true）
+static func shop_display(rec: Dictionary) -> Dictionary:
+	var pid := proxy_buy(rec)
+	if pid <= 0:
+		return rec
+	var src := XDB.rec(_table_of(rec), pid)
+	var out := rec.duplicate()
+	for k in ["name", "iconIndex", "description"]:
+		out[k] = src.get(k, out.get(k))
+	return out
+
+
+## CodexZhenqi.progressFloor：进度层数 = 变量 20 − 1（0～33）
+static func progress_floor(s: XState) -> int:
+	return clampi(int(s.variable(20)) - 1, 0, 33)
+
+
+## 祝福进阶石（installNativeRaceRuntime 改 Window_ShopBuy.isEnabled）：CodexRaces.stones 第 k 件（k 从 0）要进度层数 ≥ bands[k][0]
+static func stone_locked(s: XState, rec: Dictionary) -> bool:
+	if is_gear(rec):
+		return false
+	var races = XDB.table("CodexRaces")
+	if not races is Dictionary:
+		return false
+	var k: int = races.get("stones", []).map(func(x): return int(x)).find(int(rec.get("id", 0)))
+	return k >= 0 and progress_floor(s) < int(races.bands[k][0])
+
+
+## Window_ShopBuy.isEnabled 整条链（price 为商品的买入价，指定价格优先）：停用号角、进阶石层数、
+## MoreCurrencies 变量/物品买入价都够、YEP_ItemCore 独立装备该类不超过 9999 件、MV 价格不超过金钱且物品未满。
+## 未移植：超强者伙伴号角限地狱及以上（installBossDifficultyRuntime）、轮回随机阵容限制（installReincarnationRandomRuntime）、
+## KMS_ShopInventory 库存——切片商店的商品在新游戏状态下都不受影响（shop_buy_probe）。
+static func can_buy(s: XState, rec: Dictionary, price: int) -> bool:
+	if rec.is_empty():
+		return false
+	if not is_gear(rec) and DISABLED_HORNS.has(int(rec.get("id", 0))):
+		return false
+	if stone_locked(s, rec):
+		return false
+	var r := sell_rewards(rec)
+	for v in r.buy_vars:
+		if s.variable(int(v)) < int(r.buy_vars[v]):
+			return false
+	for id in r.buy_items:
+		if s.item_count(int(id)) < int(r.buy_items[id]):
+			return false
+	if is_gear(rec):
+		var kind := str(rec.get("kind", "weapon"))
+		if s.gear.filter(func(e): return e.kind == kind).size() >= MAX_ITEMS:
+			return false
+		return price <= s.gold
+	return price <= s.gold and s.item_count(int(rec.id)) < MAX_ITEMS
+
+
+## Scene_Shop.maxBuy：持有上限余量（物品 9999−持有，独立装备 1），有价格时再受金钱限制，MoreCurrencies 再按各变量/物品取整
+static func max_buy(s: XState, rec: Dictionary, price: int) -> int:
+	var mx := 1 if is_gear(rec) else MAX_ITEMS - s.item_count(int(rec.get("id", 0)))
+	if price > 0:
+		mx = mini(mx, s.gold / price)
+	var r := sell_rewards(rec)
+	for v in r.buy_vars:
+		mx = mini(mx, floori(s.variable(int(v)) / float(r.buy_vars[v])))
+	for id in r.buy_items:
+		mx = mini(mx, s.item_count(int(id)) / int(r.buy_items[id]))
+	return mx
+
+
+## Scene_Shop.doBuy(number)：doBuyGold 扣金币与各变量、物品买入价×数量，doBuyItem 得到商品（有代购时得到代购件）
+static func buy(s: XState, rec: Dictionary, price: int, number := 1) -> void:
+	s.gain_gold(-price * number)
+	var r := sell_rewards(rec)
+	for v in r.buy_vars:
+		s.set_variable(int(v), s.variable(int(v)) - int(r.buy_vars[v]) * number)
+	for id in r.buy_items:
+		s.gain_item(int(id), -int(r.buy_items[id]) * number)
+	var pid := proxy_buy(rec)
+	var id := pid if pid > 0 else int(rec.get("id", 0))
+	if is_gear(rec):
+		s.gain_gear(str(rec.get("kind", "weapon")), id, number)
+	else:
+		s.gain_item(id, number)
 
 
 ## 一键出售指令（installUnifiedQualityRuntime 改写 Window_OnekeySellCommand）：七档中含旧档 0～14 的各一行

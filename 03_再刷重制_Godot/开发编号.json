@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.050",
-  "sequence": 50,
-  "next": "dev.051",
-  "nextSequence": 51,
+  "current": "dev.051",
+  "sequence": 51,
+  "next": "dev.052",
+  "nextSequence": 52,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "十六层 Map033、十七层 Map045，敌人被动缓存与固定减伤顺序（悟空）",
+  "currentChange": "商店用变量/物品买（八戒）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
