@@ -299,7 +299,7 @@ func _snap(s: XState) -> Dictionary:
 			flags[str(k)] = float(s.flags[k])
 	return {"switches": sw, "variables": vars, "selfSwitches": ss, "gold": s.gold, "items": items, "weapons": weapons, "armors": armors,
 		"party": Array(s.party).duplicate(), "actors": actors, "difficulty": s.difficulty, "encounter": s.encounter_enabled,
-		"followers": s.followers_visible, "actorName": s.actor_name, "flags": flags}
+		"followers": s.followers_visible, "actorName": s.actor_name, "actorMaxLevel": s.actor_max_level, "flags": flags}
 
 
 func _map_delta(a: Dictionary, b: Dictionary, empty) -> Dictionary:
@@ -342,7 +342,7 @@ func _delta(a: Dictionary, b: Dictionary) -> Dictionary:
 		if not ch.is_empty():
 			actors[id] = ch
 	put.call("actors", actors)
-	for k in ["difficulty", "encounter", "followers", "actorName"]:
+	for k in ["difficulty", "encounter", "followers", "actorName", "actorMaxLevel"]:
 		if a[k] != b[k]:
 			d[k] = b[k]
 	put.call("flags", _map_delta(a.flags, b.flags, null))

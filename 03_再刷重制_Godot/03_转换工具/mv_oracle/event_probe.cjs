@@ -105,7 +105,8 @@ function snap() {
   return {switches: sw, variables: vars, selfSwitches: ss, gold: g.$gameParty.gold(), items: Object.assign({}, g.$gameParty._items),
     weapons: baseCount(g.$gameParty._weapons, g.$dataWeapons), armors: baseCount(g.$gameParty._armors, g.$dataArmors),
     party: g.$gameParty._actors.slice(), actors, difficulty: g.$gameSystem.difficultyId(), encounter: g.$gameSystem.isEncounterEnabled(),
-    followers: g.$gamePlayer.followers().isVisible(), actorName: g.$gamePlayer.SaveActorName === undefined ? '' : String(g.$gamePlayer.SaveActorName), flags};
+    followers: g.$gamePlayer.followers().isVisible(), actorName: g.$gamePlayer.SaveActorName === undefined ? '' : String(g.$gamePlayer.SaveActorName),
+    actorMaxLevel: Number(g.$gameParty.ActorMaxLevel || 0), flags};
 }
 function mapDelta(a, b, empty) {
   const out = {};
@@ -131,7 +132,7 @@ function delta(a, b) {
     if (Object.keys(ch).length) actors[id] = ch;
   }
   put('actors', actors);
-  for (const k of ['difficulty', 'encounter', 'followers', 'actorName']) if (a[k] !== b[k]) d[k] = b[k];
+  for (const k of ['difficulty', 'encounter', 'followers', 'actorName', 'actorMaxLevel']) if (a[k] !== b[k]) d[k] = b[k];
   put('flags', mapDelta(a.flags, b.flags, null));
   return d;
 }

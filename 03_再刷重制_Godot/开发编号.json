@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.052",
-  "sequence": 52,
-  "next": "dev.053",
-  "nextSequence": 53,
+  "current": "dev.053",
+  "sequence": 53,
+  "next": "dev.054",
+  "nextSequence": 54,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "修复 dev.049/050 核查：武器类型标签顺序与 Confirm→固定减伤→React 结算顺序",
+  "currentChange": "十八层 Map046 恶魔城外围普通主线与第六段完整流程",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
