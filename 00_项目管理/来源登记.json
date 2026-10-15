@@ -1,5 +1,5 @@
 {
- "review": "Codex（沙僧）2026-10-15 交叉核查：正式 v0.25、转换器 v14、已登记参照同源；本轮新增核查工具修复另待 Claude 核查",
+ "review": "v0.25登记已由Codex交叉核查；v0.26同步与本轮核查工具修复由Codex执行，另待Claude核查",
  "updatedDate": "2026-10-15",
  "sources": [
   {
@@ -54,15 +54,15 @@
    "useAsOriginalBaseline": false,
    "copyExistingModFeaturesAutomatically": false,
    "remakeMode": "xiyou",
-   "confirmedReleaseVersion": "v0.25",
+   "confirmedReleaseVersion": "v0.26",
    "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
-   "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261015_104237_v0.24-v0.25/当前西游来源清单.json",
-   "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。2026-10-14 西游 MOD 重编号：旧 v0.14～v0.19 合为新 v0.14（内容同旧 v0.19，只改 package.json），新 v0.14、v0.15 都晚于旧 v0.13。 v0.16（2026-10-14 06:03）只改技能消耗百分比下限与大厅改版向导文字，参照测量与 v0.15 相同。 v0.17（2026-10-14 09:51）神话装备星级；切片测量值与 v0.16 相同（现有说明卡样本未含神话装备，另补星级测试）。 v0.18（11:08）星级移到装备名字前、帮助卡品质行不加星，参照只有星级标签一项变化。 v0.19（11:44）性能与提醒类改动，设置页加「消息提醒」去「技能升级通告」；六份参照测量与 v0.18 相同。 v0.20（12:09）大厅向导「更新日志」与冷却/吸血/威能区性能修复，六份参照测量与 v0.19 相同。 v0.22（16:43）删除紫炎莲华的 3 个 Boss 直接掉落与 2 个公共事件分支（切片外），七份参照测量与 v0.21 相同。 v0.23（18:11）角色/真气反馈修复，均在当前接入范围外；v0.24（18:32）移除主菜单一键存档，重制已同步。九类参照去来源身份与发布编号后测量不变，新增整队探针。 v0.24（2026-10-15 自动同步）：改动 只有 package.json；全部参照去来源身份后测量不变。 v0.25（2026-10-15 自动同步）：改动 data/Actors.json、data/Armors.json、data/Classes.json、data/CommonEvents.json、data/Map004.json、data/Skills.json、package.json、js/codex/runtime/installImportedBalanceRuntime.js、js/codex/runtime/installNativeDifficultyInheritanceRuntime.js、js/codex/runtime/installQiyuDimensionRuntime.js、js/codex/runtime/i；测量变化只有 events.json 第 141 例（Map004 事件 71 改版向导日志多一行 v0.25 文字），规则参照全不变，唐僧人工核对后登记。",
-   "lastConvertedContentReleaseVersion": "v0.25",
+   "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261015_111501_v0.25-v0.26/当前西游来源清单.json",
+   "note": "用户指定以正式 Mac 应用当时版本重制西游模式；仍不能充当 Steam 原版。正式版继续更新时需重新取指纹。2026-10-14 西游 MOD 重编号：旧 v0.14～v0.19 合为新 v0.14（内容同旧 v0.19，只改 package.json），新 v0.14、v0.15 都晚于旧 v0.13。 v0.16（2026-10-14 06:03）只改技能消耗百分比下限与大厅改版向导文字，参照测量与 v0.15 相同。 v0.17（2026-10-14 09:51）神话装备星级；切片测量值与 v0.16 相同（现有说明卡样本未含神话装备，另补星级测试）。 v0.18（11:08）星级移到装备名字前、帮助卡品质行不加星，参照只有星级标签一项变化。 v0.19（11:44）性能与提醒类改动，设置页加「消息提醒」去「技能升级通告」；六份参照测量与 v0.18 相同。 v0.20（12:09）大厅向导「更新日志」与冷却/吸血/威能区性能修复，六份参照测量与 v0.19 相同。 v0.22（16:43）删除紫炎莲华的 3 个 Boss 直接掉落与 2 个公共事件分支（切片外），七份参照测量与 v0.21 相同。 v0.23（18:11）角色/真气反馈修复，均在当前接入范围外；v0.24（18:32）移除主菜单一键存档，重制已同步。九类参照去来源身份与发布编号后测量不变，新增整队探针。 v0.24（2026-10-15 自动同步）：改动 只有 package.json；全部参照去来源身份后测量不变。 v0.25（2026-10-15 自动同步）：改动 data/Actors.json、data/Armors.json、data/Classes.json、data/CommonEvents.json、data/Map004.json、data/Skills.json、package.json、js/codex/runtime/installImportedBalanceRuntime.js、js/codex/runtime/installNativeDifficultyInheritanceRuntime.js、js/codex/runtime/installQiyuDimensionRuntime.js、js/codex/runtime/i；测量变化只有 events.json 第 141 例（Map004 事件 71 改版向导日志多一行 v0.25 文字），规则参照全不变，唐僧人工核对后登记。 v0.26（2026-10-15 Codex核查期间同步）：变更Map004改版向导日志、package.json、installNativeYunshangRuntime与installV010UsabilityRuntime；全部重测后仅events第141例向导文字变化，规则测量不变。云殇Actor174不在切片，接入时按v0.26的无技能行动处理。",
+   "lastConvertedContentReleaseVersion": "v0.26",
    "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.15(help_cards,difficulty_notice),v0.16(options,hangup_options),v0.17(hangup_subpages)",
    "contentRefreshPending": false,
    "convertedScope": "floor1_slice",
-   "oracleReleaseVersion": "v0.25"
+   "oracleReleaseVersion": "v0.26"
   },
   {
    "id": "historical_xiyou_source_157",
