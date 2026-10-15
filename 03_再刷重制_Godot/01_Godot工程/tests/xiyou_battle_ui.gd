@@ -168,7 +168,8 @@ func _run() -> void:
 	_check("combo_counts_in_battle", ok and b.combo.position == b._origin and b.combo.digits[0].dx == -30.0, [b.combo.hits, b.combo.digits])
 	_combo_rules()
 	# 真实打完这一战（同原版参照 45～47：敌人 HP 设为 1 后普通攻击），截取胜利镜头与结算
-	for i in range(60):
+	# 循环上限只是防死循环；美娜装上武器后约需 62 轮，留足余量
+	for i in range(200):
 		for e in b.logic.enemies:
 			if e.is_alive():
 				e.hp = 1.0
