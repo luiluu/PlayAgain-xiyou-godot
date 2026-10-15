@@ -3,7 +3,7 @@ extends Control
 ## 主菜单「技能」：Scene_Skill（YEP_SkillCore＋YEP_X_SkillCooldowns＋HelpExtend 说明卡），按正式 v0.24 运行时复现
 ## （参照 原版参照/claude_skill_00、claude_skill_01_list）。
 ## - 背景同主菜单，窗口不透明度 30。技能类型 (0,0,240,172)：角色的技能类型（特性 41，编号升序）居中，可见 4 行；
-##   状态 (240,0,1040,172)：Window_SkillStatus（与装备页同一画法 XMenu.paint_actor_status，战力写「战力 …」）；
+##   状态 (240,0,1040,172)：Window_SkillStatus（与装备页同一画法 XMenu.paint_actor_status，战力写 XPower.status_text「战力 N」）；
 ##   列表 (0,172,1280,548)：两列（宽 602、间距 48）、行高 36；图标＋名字（品质/ici 色）＋右侧 YEP 消耗（字号 20、TP/MP 图标），
 ##   冷却/预热写「nCD」「nWU」；不能用的（战斗专用、消耗不足）半透明。类型阶段列表只显示、无光标。
 ## - 说明卡（XHelpCard）跟着列表选中项：Sprite_ItemHelp.updatePos 用不含内边距的行矩形（行右 −4、行底 −4，再 x<900 右移 52、y<220 下移 32）。
@@ -22,7 +22,6 @@ const SPACING := 48.0
 const TYPE_ROWS := 4
 const ACTOR_ROWS := 4
 const ACTOR_ROW_H := 173.0
-const POWER_TEXT := "战力 …"
 const COST_SIZE := 20
 
 var actor_index := 0
@@ -144,7 +143,7 @@ func _paint_types(c: XMVCanvas) -> void:
 func _paint_status(c: XMVCanvas) -> void:
 	var a := actor()
 	c.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0)), 0, 0, 144, c.size.y)
-	XMenu.paint_actor_status(c, a, 158, 0, c.size.x - 158 - 6, LH, POWER_TEXT)
+	XMenu.paint_actor_status(c, a, 158, 0, c.size.x - 158 - 6, LH, XPower.status_text(a))
 
 
 func _paint_list(c: XMVCanvas) -> void:

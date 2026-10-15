@@ -744,6 +744,19 @@ static func actor(a: XActor, force := false) -> Dictionary:
 	return result
 
 
+## drawActorSimpleStatus 的战力行：技能/装备页「战力 N」（按需完整评估）；关掉战力时不画
+static func status_text(a: XActor) -> String:
+	return "战力 " + format(actor(a).total) if enabled() and a != null else ""
+
+
+## 主菜单行：有有效缓存「战斗力 N」，否则「战力见状态」；关掉战力时不画
+static func menu_text(a: XActor) -> String:
+	if not enabled() or a == null:
+		return ""
+	var p := cached_actor(a)
+	return "战力见状态" if p.is_empty() else "战斗力 " + format(p.total)
+
+
 ## 主菜单只读有效缓存（cachedActorPower）：没算过就是 {}，显示「战力见状态」
 static func cached_actor(a: XActor) -> Dictionary:
 	if not enabled() or a == null:

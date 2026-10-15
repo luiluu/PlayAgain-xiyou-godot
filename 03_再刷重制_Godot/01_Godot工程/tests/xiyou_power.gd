@@ -98,4 +98,14 @@ func _actors(data: Dictionary) -> void:
 			and _close(nums, want) and sched == c.full.schedule.map(func(x): return int(x)) and int(e.coverage.known) == int(c.full.known)
 		check("actor_%d_lv%d" % [int(c.id), int(c.level)], ok, {"got": [p.total, p.self, p.parts, nums, sched], "want": [c.total, c.self, c.parts, want, c.full.schedule]})
 	check("actors_covered", data.get("actors", []).size() >= 20)
+	# 界面文字：主菜单没算过时「战力见状态」，技能/装备页算过后主菜单显示「战斗力 N」；关掉战力时都不画
+	var st := XState.new_game_blank()
+	var a1 := st.actor(1)
+	XPower.clear_cache()
+	check("menu_before_status", XPower.menu_text(a1) == "战力见状态", XPower.menu_text(a1))
+	var shown := XPower.status_text(a1)
+	check("status_text", shown == "战力 " + XPower.format(XPower.actor(a1).total) and XPower.menu_text(a1) == "战斗力 " + XPower.format(XPower.actor(a1).total), [shown, XPower.menu_text(a1)])
+	XConfig.set_flag("codexPowerEnabled", false)
+	check("texts_disabled", XPower.status_text(a1) == "" and XPower.menu_text(a1) == "")
+	XConfig.set_flag("codexPowerEnabled", true)
 	XGear.force_roll = -1.0
