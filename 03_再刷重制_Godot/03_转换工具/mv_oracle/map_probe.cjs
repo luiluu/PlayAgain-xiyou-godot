@@ -27,6 +27,13 @@ for (const id of SLICE.maps) {
     rows.push(row);
   }
   out[id] = {width: m.width(), height: m.height(), passable: rows};
+  // 循环地图（scrollType）：越过边缘的那一步，每行／列一位，1＝能从边缘格走到另一侧（Game_Map.roundXWithDirection 后双向 isPassable）
+  if (m.isLoopHorizontal() || m.isLoopVertical()) {
+    out[id].loop = [m.isLoopHorizontal(), m.isLoopVertical()];
+    const W = m.width(), H = m.height(), cross = (x, y, d) => m.isPassable(x, y, d) && m.isPassable(m.roundXWithDirection(x, d), m.roundYWithDirection(y, d), 10 - d);
+    if (m.isLoopHorizontal()) out[id].wrapLeft = Array.from({length: H}, (_, y) => cross(0, y, 4) ? 1 : 0).join('');
+    if (m.isLoopVertical()) out[id].wrapUp = Array.from({length: W}, (_, x) => cross(x, 0, 8) ? 1 : 0).join('');
+  }
 }
 fs.mkdirSync(OUT, {recursive: true});
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');

@@ -235,10 +235,12 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	refresh_party_sprites()
 	player.stepped.connect(_on_player_step)
 	player.action_pressed.connect(_on_action)
-	camera.limit_left = 0
-	camera.limit_top = 0
-	camera.limit_right = lower.width * TS
-	camera.limit_bottom = lower.height * TS
+	# 循环方向不限镜头（Game_Map.setDisplayPos／scrollLeft 在循环地图上不夹边）
+	const FREE := 10000000
+	camera.limit_left = -FREE if lower.loop_x else 0
+	camera.limit_top = -FREE if lower.loop_y else 0
+	camera.limit_right = FREE if lower.loop_x else lower.width * TS
+	camera.limit_bottom = FREE if lower.loop_y else lower.height * TS
 	camera.reparent(player)
 	camera.position = Vector2(0, -TS / 2.0)
 	camera.reset_smoothing()
@@ -269,6 +271,12 @@ func _process(delta: float) -> void:
 				f.transparent = player.transparent
 				f.opacity = player.opacity
 				f.queue_redraw()
+		# 循环地图：角色画在离玩家最近的那一份上（玩家越过边缘后其他角色跟着换份）
+		if lower.loop_x or lower.loop_y:
+			lower.view_anchor = player.real
+			for c in chars.get_children():
+				if c is MVCharacter:
+					c._sync_position()
 		map_hud.refresh()
 		if not _transfer_shown and XState.current.variable(21) == 0:
 			_transfer_shown = true
@@ -362,7 +370,7 @@ func _on_player_step() -> void:
 func _on_action() -> void:
 	if busy:
 		return
-	var front := player.grid + MVCharacter.dir_offset(player.direction)
+	var front := player.front_cell(player.direction)
 	for e in events:
 		if e.grid == player.grid and e.trigger() == 0 and not e.is_normal_priority():
 			await run_event(e)
@@ -381,7 +389,7 @@ func _physics_process(_delta: float) -> void:
 	var d := player._input_dir()
 	if d == 0:
 		return
-	var front := player.grid + MVCharacter.dir_offset(d)
+	var front := player.front_cell(d)
 	for e in events:
 		if e.grid == front and [1, 2].has(e.trigger()) and e.is_normal_priority():
 			run_event(e)
@@ -810,9 +818,11 @@ func _hang_up_step() -> Array:
 	if (SAFE_HANG_UP and busy) or _menu_open or transfer_page != null:
 		return []
 	player.move_speed = 5 if player.is_dashing() else 4
+	# 回原点照 moveTowardPosition 的 deltaXFrom：循环地图上朝较近的一边走
+	var back_to: Vector2i = player.grid + lower.delta(s.hang_up_origin, player.grid)
 	if map_data.get("encounterList", []).is_empty():
-		return XHangUp.toward(player.grid, s.hang_up_origin)
-	return XHangUp.next_dirs(s, player.grid)
+		return XHangUp.toward(player.grid, back_to)
+	return XHangUp.next_dirs(s, player.grid, back_to)
 
 
 ## 挂机计时（地图与战斗场景每帧）；满存档间隔后回到地图时存到开局固定存档位

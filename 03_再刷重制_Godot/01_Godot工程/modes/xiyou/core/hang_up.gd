@@ -169,11 +169,12 @@ static func in_range(origin: Vector2i, p: Vector2i, r: int) -> bool:
 
 
 ## 下一步要试的方向（按顺序，走通一个即止）。随机走动 moveRandom＝2/4/6/8 任一；回原点同 moveTowardPosition。
-static func next_dirs(s: XState, at: Vector2i) -> Array:
+## back_to：回原点时朝向的格子，循环地图上传离 at 较近的那一份原点（deltaXFrom），默认原点本身；范围仍按原点直接相减（distanceX）
+static func next_dirs(s: XState, at: Vector2i, back_to = null) -> Array:
 	var o := s.hang_up_origin
 	if in_range(o, at, int(settings(s).range)):
 		return [2 + randi_range(0, 3) * 2]
-	return toward(at, o)
+	return toward(at, o if back_to == null else back_to)
 
 
 static func toward(at: Vector2i, target: Vector2i) -> Array:

@@ -34,9 +34,12 @@ const WAIT_EVENT := 6000
 const WAIT_STEP := 600
 const DIR_ACTIONS := {2: "ui_down", 4: "ui_left", 6: "ui_right", 8: "ui_up"}
 
-## 正式版从入口走不到的守层者（「地图:事件」→ 说明）：完整模式也直接执行事件
-const UNREACHABLE_BOSS := {"30:8": "十四层克力之爷 (44,23)：正式引擎 isMapPassable 实测，从入口 (18,30) 只能走到 616 格，守层者所在区域不相连"}
+## 要越过循环地图边缘才走得到的守层者（「地图:事件」）：完整模式检查路上确实绕过了边缘。
+## 十四层 Map030 横向循环（scrollType 2），克力之爷 (44,23) 与入口 (18,30) 只在绕过 x=0／59 时相连（正式引擎 canPass 实测）
+const WRAP_BOSS := ["30:8"]
 @export var part := 1
+## 本次走路越过循环地图边缘的步数
+var wrapped_steps := 0
 @export var parts := 1
 
 var results: Array = []
@@ -200,7 +203,7 @@ func _path_to(map: XMapScene, goal: Vector2i) -> Array:
 	while not queue.is_empty():
 		var cur: Vector2i = queue.pop_front()
 		for d in dirs:
-			var nxt: Vector2i = cur + MVCharacter.dir_offset(d)
+			var nxt: Vector2i = tm.round_cell(cur + MVCharacter.dir_offset(d))
 			if nxt == goal:
 				# 到达：回溯成方向序列，最后一项是面向事件的方向（不移动）
 				var path := [d]
@@ -244,8 +247,11 @@ func _walk_and_talk(map: XMapScene, ev_id: int, answers: Array, tag: String) -> 
 				started = true
 				break
 		Input.action_release(action)
-		if not started or map.player.grid != before + MVCharacter.dir_offset(path[i]):
+		var expect: Vector2i = map.lower.round_cell(before + MVCharacter.dir_offset(path[i]))
+		if not started or map.player.grid != expect:
 			return _check(tag + "_walk_step", false, [before, map.player.grid, path[i]])
+		if expect != before + MVCharacter.dir_offset(path[i]):
+			wrapped_steps += 1
 		steps += 1
 	if not await _wait_idle(map):
 		return _check(tag + "_walk_idle", false, [map.map_id, map.player.grid])
@@ -397,13 +403,11 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	var boss := boss_of(f.map)
 	if not _check(tag + "_boss_found", not boss.is_empty() and boss.choice >= 0, boss):
 		return false
-	# 正式版走不到的守层者：确认 Godot 同样走不到，再直接执行事件（同快速通过）
-	var unreachable := UNREACHABLE_BOSS.has("%d:%d" % [f.map, boss.id])
-	if full and unreachable:
-		var be := _event(map, boss.id)
-		_check(tag + "_boss_unreachable", be != null and _path_to(map, be.grid).is_empty(), UNREACHABLE_BOSS["%d:%d" % [f.map, boss.id]])
-	if not await _talk(map, boss.id, [boss.choice], tag + "_boss", full and not unreachable):
+	wrapped_steps = 0
+	if not await _talk(map, boss.id, [boss.choice], tag + "_boss", full):
 		return false
+	if full and WRAP_BOSS.has("%d:%d" % [f.map, boss.id]):
+		_check(tag + "_boss_wrapped", wrapped_steps > 0, wrapped_steps)
 	var idle := await _wait_idle(map, WAIT_EVENT * 3)
 	var won := s.variable(20) == n + 1 and s.self_switch(f.map, boss.id, "A")
 	if not _check(tag + "_boss_won", idle and won and map.map_id == f.map, [idle, s.variable(20), map.map_id, boss]):

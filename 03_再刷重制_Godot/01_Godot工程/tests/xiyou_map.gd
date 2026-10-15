@@ -1,5 +1,5 @@
 extends Node2D
-## 地图对照测试：通行判定与正式 v0.04 的 Game_Map.isPassable 逐格逐方向比较
+## 地图对照测试：通行判定与正式版的 Game_Map.isPassable 逐格逐方向比较，循环地图另比循环方向与越过边缘的一步
 ## （oracle 由 03_转换工具/mv_oracle/map_probe.cjs 生成）。窗口模式加 -- --out=<目录> 时另存每张地图的整图截图。
 
 var results: Array = []
@@ -42,6 +42,19 @@ func _run() -> void:
 				if mine != expect:
 					wrong.append([x, y, mine, expect])
 		_check("map%s.passable" % id_s, wrong.is_empty(), wrong.slice(0, 8))
+		# 循环地图：循环方向与越过边缘的那一步（正式版只有十四层 Map030 横向循环）
+		var loop: Array = oracle[id_s].get("loop", [false, false])
+		_check("map%s.loop" % id_s, [lower.loop_x, lower.loop_y] == loop, [[lower.loop_x, lower.loop_y], loop])
+		for key in ["wrapLeft", "wrapUp"]:
+			if not oracle[id_s].has(key):
+				continue
+			var mine := ""
+			for i in range(lower.height if key == "wrapLeft" else lower.width):
+				var at := Vector2i(0, i) if key == "wrapLeft" else Vector2i(i, 0)
+				var d := 4 if key == "wrapLeft" else 8
+				var to := lower.round_cell(at + MVCharacter.dir_offset(d))
+				mine += "1" if lower.is_valid(to) and lower.is_passable(at.x, at.y, d) and lower.is_passable(to.x, to.y, 10 - d) else "0"
+			_check("map%s.%s" % [id_s, key], mine == oracle[id_s][key], [mine, oracle[id_s][key]])
 		if out_dir != "" and DisplayServer.get_name() != "headless":
 			var size := Vector2(lower.width, lower.height) * MVTiles.TILE_SIZE
 			var scale_f := minf(get_viewport_rect().size.x / size.x, get_viewport_rect().size.y / size.y)

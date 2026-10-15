@@ -100,8 +100,10 @@ func set_direction(d: int) -> void:
 
 ## 能否朝 d 走一步：地图双向通行＋与其他同层角色碰撞（由地图场景提供 is_blocked）。
 func can_pass(d: int) -> bool:
-	var to := grid + dir_offset(d)
-	if tilemap == null or to.x < 0 or to.y < 0 or to.x >= tilemap.width or to.y >= tilemap.height:
+	if tilemap == null:
+		return false
+	var to := tilemap.round_cell(grid + dir_offset(d))
+	if not tilemap.is_valid(to):
 		return false
 	if through:
 		return true
@@ -115,9 +117,16 @@ func can_pass(d: int) -> bool:
 func move_straight(d: int) -> bool:
 	set_direction(d)
 	if can_pass(d):
-		grid += dir_offset(d)
+		step_by(dir_offset(d))
 		return true
 	return false
+
+## 走一格：循环地图越过边缘时格子绕回另一侧，实际位置跟着平移一整张图，仍从原处走过去
+## （MV moveStraight 的 _x = roundXWithDirection、_realX = xWithDirection(_x, 反方向)）
+func step_by(off: Vector2i) -> void:
+	var to := grid + off
+	grid = tilemap.round_cell(to) if tilemap else to
+	real += Vector2(grid - to)
 
 
 func _physics_process(_delta: float) -> void:
@@ -272,7 +281,8 @@ func _update_animation() -> void:
 		queue_redraw()
 
 func _sync_position() -> void:
-	position = Vector2(real.x * TS + TS / 2.0, real.y * TS + TS - (jump_height() if is_jumping() else 0.0))
+	var at := real + (tilemap.loop_shift(real) if tilemap and (tilemap.loop_x or tilemap.loop_y) else Vector2.ZERO)
+	position = Vector2(at.x * TS + TS / 2.0, at.y * TS + TS - (jump_height() if is_jumping() else 0.0))
 	z_index = (0 if priority_type == 1 else (-1 if priority_type == 0 else 1))
 	queue_redraw()
 
