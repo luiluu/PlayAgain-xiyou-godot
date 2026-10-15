@@ -55,7 +55,7 @@ func _case(c: Dictionary, round: int) -> void:
 	seed(1000 + round)
 	var logic := setup(int(c.troop))
 	var e0: XBattler = logic.enemies[0]
-	var logs := []  # 第 2 回合的记录（第 1 回合守层者可能在加上 1460 之前先强制行动，没有附加伤害）
+	var logs := []
 	var t1_states: Array = []
 	# 每回合单独记录 [行动者, 技能]（多敌人的敌群里角色可能在行动前被打倒，行动者集合随随机数变，只比敌方）
 	var got := {1: [], 2: []}
@@ -67,8 +67,7 @@ func _case(c: Dictionary, round: int) -> void:
 		for a in logic.actors:
 			cmds[a] = [XDB.rec("Skills", 1), e0]
 		var turn_logs := logic.run_turn(cmds)
-		if t == 1:
-			logs.append_array(turn_logs)
+		logs.append_array(turn_logs)
 		for l in turn_logs:
 			if l.type == "action":
 				got[t + 1].append([key(l.user, logic), int(l.skill.id)])
@@ -107,14 +106,18 @@ func _case(c: Dictionary, round: int) -> void:
 	# 第 2 回合（战斗没结束时）：守层者照常行动一次（技能随机，不比）
 	if not got[2].is_empty():
 		check(name + ".t2_enemy_once", got[2].filter(func(x): return x[0] == "e0").size() == 1, got[2])
-	# 附加伤害：守层者每次命中活着的目标都按 [攻击, 魔攻] 附加
+	# 附加伤害：守层者用过 8111（加上 1460）之后，每次命中活着的目标都按 [攻击, 魔攻] 附加
+	# （十层守层者第 1 回合先强制 500，那时还没有 1460，不附加）
 	var extras := []
+	var established := false
 	for l in logs:
-		if l.type == "hit" and l.user == e0 and not l.missed and not l.evaded and l.target != e0:
+		if l.type == "action" and l.user == e0 and int(l.skill.id) == 8111:
+			established = true
+		if established and l.type == "hit" and l.user == e0 and not l.missed and not l.evaded and l.target != e0:
 			extras.append(l.get("extra", []))
 	var want_extra := []
 	for inv in c.invokes:
-		if int(inv.turn) == 2 and inv.subject == "e0" and inv.target != "e0" and float(inv.hpBefore) > 0.0:
+		if inv.subject == "e0" and inv.target != "e0" and float(inv.hpBefore) > 0.0 and inv.userStates.has(1460.0):
 			want_extra = [float(inv.userAtk), float(inv.userMat)]
 	check(name + ".extra", not extras.is_empty() and extras.all(func(x): return x == want_extra), [extras, want_extra])
 
