@@ -38,7 +38,7 @@ for(const c of picked.values()){
 const actors=[];
 for(const id of SLICE.actors){const a=w.$gameActors.actor(id);if(!a)continue;
   for(const lv of [1,30]){a.changeLevel(lv,false);a.recoverAll();const p=P.actor(a,true),e=p.evaluation,o=p.ownEvaluation;
-    actors.push({id,level:lv,name:a.name(),equips:a.equips().map(x=>x?[w.DataManager.isWeapon(x)?'weapon':'armor',x.baseItemId||x.id,x.params]:null),
+    actors.push({id,level:a.level,asked:lv,name:a.name(),equips:a.equips().map(x=>x?[w.DataManager.isWeapon(x)?'weapon':'armor',x.baseItemId||x.id,x.params]:null),
       total:p.total,self:p.self,gear:p.gear,gearScore:p.gearScore,parts:p.parts,selfParts:p.selfParts,
       full:{burst:e.burst,sustained:e.sustained,effectiveHp:e.effectiveHp,auxiliary:e.auxiliary,known:e.coverage.known,unknown:e.coverage.unknown.map(u=>u.id),schedule:e.schedule.map(x=>x.id)},
       own:{burst:o.burst,sustained:o.sustained,effectiveHp:o.effectiveHp,auxiliary:o.auxiliary,schedule:o.schedule.map(x=>x.id)}});}}
