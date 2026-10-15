@@ -537,7 +537,6 @@ static func _vars() -> Array:
 
 
 ## repeatCount：(重复次数＋普攻追加次数＋再次使用概率) × 行动序列里 ACTION EFFECT 段数
-## canUse 含 MV isSkillWtypeOk（技能要求的武器类型），XBattleLogic.can_use 没查，cycle 里另判
 static func _repeat_count(a: XActor, item: Dictionary) -> float:
 	var base := float(item.get("repeats", 1))
 	if int(item.id) == XBattleLogic.ATTACK_SKILL:
@@ -647,7 +646,7 @@ static func _cycle(logic: XBattleLogic, a: XActor, t: XBattler, skills: Array) -
 			for s in candidates:
 				var c: Dictionary = cost_for.call(s)
 				var ready: bool = not (int(cooldowns.get(int(s.id), 0)) > 0 or int(warmups.get(int(s.id), 0)) > 0) \
-					and c.mp <= a.mp and c.tp <= a.tp and c.hp < a.hp and logic.can_use(a, s) and XHangUpAuto.wtype_ok(a, s)
+					and c.mp <= a.mp and c.tp <= a.tp and c.hp < a.hp and logic.can_use(a, s)
 				if not ready:
 					continue
 				var v: float = damage_for.call(s, c)

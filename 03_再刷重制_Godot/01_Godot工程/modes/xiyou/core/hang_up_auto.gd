@@ -70,13 +70,7 @@ static func bet_skills(logic: XBattleLogic, a: XActor) -> Array:
 
 ## Game_BattlerBase.isSkillWtypeOk：没有武器类型要求，或装着其中一种类型的武器
 static func wtype_ok(a: XActor, sk: Dictionary) -> bool:
-	var need := [int(sk.get("requiredWtypeId1", 0)), int(sk.get("requiredWtypeId2", 0))]
-	if need == [0, 0]:
-		return true
-	for e in a.equips:
-		if e is Dictionary and str(e.get("kind", "")) == "weapon" and int(e.get("wtypeId", 0)) > 0 and need.has(int(e.wtypeId)):
-			return true
-	return false
+	return XBattleLogic.wtype_ok(a, sk)
 
 
 ## 技能次数页（Star_Window_AutomaticCombatSkills）：没设过的写 0
