@@ -940,8 +940,7 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 
 ## 伤害计算与 apply 的扣血／记账分开，模块对照可固定这一步（同正式 Game_Action.makeDamageValue 夹具）。
 func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
-	var res := XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars()})
-	return XDamage.apply_state_effects(res.value, skill, u, t)
+	return XDamage.finish(XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars()}), skill, u, t)
 
 
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
