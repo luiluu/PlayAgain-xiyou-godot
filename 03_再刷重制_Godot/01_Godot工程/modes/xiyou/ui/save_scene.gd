@@ -11,7 +11,7 @@ extends Control
 ## - 信息 (240,164,1040,556)，内容 1012×528：顶上游戏名（居中）；队伍前 5 格每格宽 202：头像 (列×202＋29, 36)、
 ##   名字 y 180、「Lv 等级」y 216（字号 20）；数据两列（宽 506，右边留 6）从 y 252 起每行 36、底 #202040 不透明度 160：
 ##   左列 地点（居中）、保存次数、游戏时间、「精魂:」金钱、变量 20、变量 206（名字字号 20、下移 3，值右对齐），
-##   右列 存档容量（O-042：实际文件大小）。空格只画整块暗底与居中的「空」（系统色）。
+##   右列 存档容量（O-042：实际文件大小，见 file_size）。空格只画整块暗底与居中的「空」（系统色）。
 ## - 确认 (居中，宽＝说明宽＋40，高 136)：说明 (6,0)，「是／否」两行居中；读取总要确认，保存在这格已有档时确认，删除确认。
 ## 保存次数取存档的 saveCount（XState.save_count，XSave.save 写盘前加 1；旧档没有这一项按 0）。
 
@@ -237,13 +237,23 @@ static func playtime(sec: float) -> String:
 	return "%02d:%02d:%02d" % [s / 3600, (s / 60) % 60, s % 60]
 
 
-## 存档容量（O-042：实际存档文件大小，B／KB／MB 一位小数；正式版只数 encodeURI 的转义字节）
+## 存档容量。O-042：正式 drawFileSize 把 encodeURI(存档字符串) 里 %XX 的个数当字节数（只数非 ASCII、空格、引号等要转义的
+## 字节），并不是存档大小；Godot 默认显示实际存档文件大小（B／KB／MB 一位小数）。REAL_FILE_SIZE 设 false 恢复原版算法。
+const REAL_FILE_SIZE := true
+const URI_KEEP := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789;,/?:@&=+$-_.!~*'()#"
+
 static func file_size(slot_no: int) -> String:
-	var f := FileAccess.open(XSave.path(slot_no), FileAccess.READ)
-	if f == null:
-		return "0B"
-	var bytes := f.get_length()
-	f.close()
+	var bytes := 0
+	if REAL_FILE_SIZE:
+		var f := FileAccess.open(XSave.path(slot_no), FileAccess.READ)
+		if f == null:
+			return "0B"
+		bytes = f.get_length()
+		f.close()
+	else:
+		for ch in FileAccess.get_file_as_string(XSave.path(slot_no)):
+			if not URI_KEEP.contains(ch):
+				bytes += ch.to_utf8_buffer().size()
 	if bytes < 1024:
 		return "%dB" % bytes
 	if bytes < 1048576:
