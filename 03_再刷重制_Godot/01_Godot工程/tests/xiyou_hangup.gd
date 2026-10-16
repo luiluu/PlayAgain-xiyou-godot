@@ -178,10 +178,15 @@ func _run() -> void:
 	XState.current = s
 	# 面板按钮停止
 	ov.button.pressed.emit()
-	await frames(2)
-	check("button_stop", not XHangUp.is_active(s) and is_equal_approx(ov._button_sprite.scale.x, 0.9) and s.hang_up_total > total_before)
+	# pressed 同步停止并缩小按钮。快时钟下两个 process_frame 可能已跨过恢复所需的 8 个物理帧，
+	# 所以立即核对按下效果，再照原来的 10 个物理帧验证恢复；不依赖渲染帧与物理帧的比例。
+	check("button_stop", not XHangUp.is_active(s) and is_equal_approx(ov._button_sprite.scale.x, 0.9) and s.hang_up_total > total_before,
+		[XHangUp.is_active(s), ov._button_sprite.scale.x, s.hang_up_total, total_before])
 	await physics(10)
-	check("button_scale_restore", is_equal_approx(ov._button_sprite.scale.x, 1.0) and map.player.input_enabled)
+	# 按钮缩放由物理帧恢复，地图输入则由 _process 恢复；一次快时钟补帧可能尚未运行后者。
+	await frames(2)
+	check("button_scale_restore", is_equal_approx(ov._button_sprite.scale.x, 1.0) and map.player.input_enabled,
+		[ov._button_sprite.scale.x, map.player.input_enabled, map.busy])
 	map.queue_free()
 	await frames(2)
 	for i in range(1, 31):
