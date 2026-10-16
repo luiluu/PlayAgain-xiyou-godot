@@ -104,7 +104,7 @@ func setup(target: Node2D, sprite_h: float, items: Array) -> void:
 ## Sprite_Base.startAnimation：建在图标的父节点（本节点）里，紧跟在图标之后
 func _start_animation(anim_id: int) -> DhAnimation:
 	var data := XDB.rec("Animations", anim_id)
-	if data.is_empty():
+	if not MVAnimation.usable(data):
 		return null
 	var a := DhAnimation.new()
 	a.anim = data

@@ -983,7 +983,7 @@ func _start_animation(id: int, target: XBattler) -> MVAnimation:
 	if id <= 0 or not XConfig.flag("CombatSkillAnimation"):
 		return null
 	var data := XDB.rec("Animations", id)
-	if data.is_empty():
+	if not MVAnimation.usable(data):
 		return null
 	var ts: XBattlerSprite = sprites[target]
 	# Sprite_Animation.updatePosition 用目标的帧高（_mainSprite／Sprite_Enemy.height，不含身体缩放）

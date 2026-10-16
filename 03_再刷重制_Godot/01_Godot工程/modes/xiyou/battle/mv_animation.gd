@@ -80,7 +80,7 @@ var se_player: AudioStreamPlayer
 
 static func play(parent: Node, anim_id: int, at: Vector2, mirror := false, frame_rate := 4) -> MVAnimation:
 	var a := XDB.rec("Animations", anim_id)
-	if a.is_empty():
+	if not usable(a):
 		return null
 	var n := MVAnimation.new()
 	n.anim = a
@@ -89,6 +89,12 @@ static func play(parent: Node, anim_id: int, at: Vector2, mirror := false, frame
 	n.rate = clampi(frame_rate, 1, 4)
 	parent.add_child(n)
 	return n
+
+
+## MV 格式的动画才播：Animations.json 里另有 132 条 MZ 格式（Effekseer，没有 frames/timings），
+## 技能、物品、武器都没用到，这里不支持
+static func usable(a: Dictionary) -> bool:
+	return a.has("frames") and a.has("timings")
 
 
 ## 转色相（hue≠0）或加法混合的格子材质；同一组合共用
