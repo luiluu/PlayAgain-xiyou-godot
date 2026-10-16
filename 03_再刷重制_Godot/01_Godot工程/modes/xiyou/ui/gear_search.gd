@@ -1,5 +1,5 @@
 class_name XGearSearch
-extends Control
+extends XWebPanel
 ## 装备词条检索面板（正式西游 v0.28 Codex installEquipmentStatusRuntime 的网页覆盖层＋installGamePanelTheme 外观）。
 ## 正式版是画布上面的 DOM：物品页/装备页右上角「装备检索 / 排序」「清除筛选」两个按钮（toolbar），点开后整页面板；
 ## 这里用 Godot 控件照运行时读数（参照浏览器 1280×720，04_验证/本地结果/原版参照/bajie_equip_search/）复现：
@@ -16,24 +16,7 @@ extends Control
 ## 条件 filter 与选中项在本次运行内保留（正式版是模块变量），读配置时排序回到配置值。
 
 signal applied(filter: Dictionary)
-signal closed
 
-const PANEL := Rect2(8, 8, 1264, 704)
-const BORDER := 12.0
-const PAD := Vector2(20, 16)
-const CONTENT_X := 40.0
-const CONTENT_W := 1200.0
-const TEXT := Color(1, 1, 1)
-const MUTED := Color("#c9ced8")
-const SYSTEM := Color("#84aaff")
-const GOLD := Color("#ffd373")
-const LINE := Color(1, 1, 1, 0.22)
-const PANEL_BG := Color("#16161f")
-const FIELD_BG := Color(0, 0, 0, 0.42)
-const BUTTON_BG := Color(0, 0, 0, 0.28)
-const BUTTON_EDGE := Color(1, 1, 1, 0.4)
-const CURSOR := Color(160 / 255.0, 230 / 255.0, 235 / 255.0, 0.22)
-const CURSOR_EDGE := Color(200 / 255.0, 245 / 255.0, 250 / 255.0, 0.75)
 const NOTE_TEXT := "按当前属性、法宝等级和已识别战斗词条估算；品质与刷宝收益不直接加分。"
 
 static var filter := {}
@@ -54,86 +37,6 @@ var _sort_select: OptionButton
 static func reset_session() -> void:
 	filter = XGearQuery.default_view()
 	selected_key = ""
-
-
-static func _font(bold := false) -> Font:
-	if not bold:
-		return XUI.font()
-	var v := FontVariation.new()
-	v.base_font = XUI.font()
-	v.variation_embolden = 0.6
-	v.spacing_glyph = 1
-	return v
-
-
-# ---- 外观 ----
-static func _box(bg: Color, edge: Color, radius := 6, border := 1, pad := Vector2(10, 6)) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = bg
-	s.border_color = edge
-	s.set_border_width_all(border)
-	s.set_corner_radius_all(radius)
-	s.content_margin_left = pad.x
-	s.content_margin_right = pad.x
-	s.content_margin_top = pad.y
-	s.content_margin_bottom = pad.y
-	return s
-
-
-static func _outline(c: Control) -> void:
-	c.add_theme_color_override("font_outline_color", Color.BLACK)
-	c.add_theme_constant_override("outline_size", 2)
-
-
-## installGamePanelTheme 的按钮：17 号、黑 0.28 底、白 0.4 边、圆角 6；悬停光标色
-static func style_button(b: Button, pad := Vector2(10, 6)) -> void:
-	b.add_theme_font_override("font", XUI.font())
-	b.add_theme_font_size_override("font_size", 17)
-	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
-		b.add_theme_color_override(k, TEXT)
-	_outline(b)
-	b.add_theme_stylebox_override("normal", _box(BUTTON_BG, BUTTON_EDGE, 6, 1, pad))
-	b.add_theme_stylebox_override("hover", _box(CURSOR, CURSOR_EDGE, 6, 1, pad))
-	b.add_theme_stylebox_override("pressed", _box(CURSOR, CURSOR_EDGE, 6, 1, pad))
-	b.add_theme_stylebox_override("hover_pressed", _box(CURSOR, CURSOR_EDGE, 6, 1, pad))
-	var focus := _box(Color(0, 0, 0, 0), CURSOR_EDGE, 7, 2, Vector2.ZERO)
-	focus.set_expand_margin_all(3)
-	b.add_theme_stylebox_override("focus", focus)
-
-
-static func _label(text: String, size: int, color: Color, bold := false) -> Label:
-	var l := Label.new()
-	l.text = text
-	l.add_theme_font_override("font", _font(bold))
-	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", color)
-	_outline(l)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return l
-
-
-## 详情里的段落：按容器宽度折行（CSS overflow-wrap:anywhere）
-static func _para(text: String, size: int, color: Color, line_h: float, bold := false) -> Label:
-	var l := _fixed(_label(text, size, color, bold), line_h)
-	l.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
-	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	return l
-
-
-## 行高按 CSS line-height（字号 × 1.6），不用字体自身的行高
-static func _fixed(l: Label, line_h: float) -> Label:
-	var ls := LabelSettings.new()
-	ls.font = l.get_theme_font("font")
-	ls.font_size = l.get_theme_font_size("font_size")
-	ls.font_color = l.get_theme_color("font_color")
-	ls.outline_size = 2
-	ls.outline_color = Color.BLACK
-	ls.line_spacing = 0
-	var f := ls.font
-	ls.line_spacing = line_h - (f.get_ascent(ls.font_size) + f.get_descent(ls.font_size))
-	l.label_settings = ls
-	l.custom_minimum_size.y = line_h
-	return l
 
 
 # ---- 工具条（物品页、装备页右上角） ----
@@ -327,28 +230,7 @@ func _ready() -> void:
 
 
 func _draw() -> void:
-	var bg := _box(PANEL_BG, Color(0, 0, 0, 0), 8, 0, Vector2.ZERO)
-	bg.shadow_color = Color(0, 0, 0, 0.65)
-	bg.shadow_size = 20
-	bg.shadow_offset = Vector2(0, 10)
-	draw_style_box(bg, PANEL)
-	# border-image：Window 皮肤 (96,0,96,96) 切 24，四角缩成 12，四边拉伸，不画中间
-	var skin := XUI.skin()
-	if skin != null:
-		var r := PANEL
-		var s := 24.0
-		var b := BORDER
-		var xs := [[0.0, s, r.position.x, b], [s, 48.0, r.position.x + b, r.size.x - b * 2], [72.0, s, r.end.x - b, b]]
-		var ys := [[0.0, s, r.position.y, b], [s, 48.0, r.position.y + b, r.size.y - b * 2], [72.0, s, r.end.y - b, b]]
-		for xi in range(3):
-			for yi in range(3):
-				if xi == 1 and yi == 1:
-					continue
-				var x: Array = xs[xi]
-				var y: Array = ys[yi]
-				draw_texture_rect_region(skin, Rect2(x[2], y[2], x[3], y[3]), Rect2(96 + x[0], y[0], x[1], y[1]))
-	# 标题区下的分隔线
-	draw_line(Vector2(CONTENT_X, 103.6), Vector2(CONTENT_X + CONTENT_W, 103.6), LINE, 1.0)
+	draw_frame()
 
 
 func _render_gear() -> void:
@@ -441,24 +323,6 @@ func _place_row(row: Array, y: float) -> float:
 	return y + h
 
 
-## 加进场景树后字体才生效，宽度变了也保持右端对齐
-func _right_align(b: Button, right: float, y: float) -> void:
-	b.size = b.get_combined_minimum_size()
-	b.size.y = 41.2
-	b.position = Vector2(right - b.size.x, y)
-	b.resized.connect(func(): b.position.x = right - b.size.x)
-
-
-func _button(text: String, cb: Callable) -> Button:
-	var b := Button.new()
-	b.text = text
-	style_button(b)
-	b.pressed.connect(cb)
-	b.size = b.get_combined_minimum_size()
-	b.size.y = 41.2
-	return b
-
-
 ## label.cq-field：标签 13 号系统色、间距 5、下拉 36 高，宽按最长项（最多 260）
 func _select(label: String, values: Array, value: String, cb: Callable) -> Control:
 	var box := Control.new()
@@ -501,32 +365,6 @@ func _select(label: String, values: Array, value: String, cb: Callable) -> Contr
 	box.add_child(s)
 	box.size = Vector2(s.position.x + s.size.x, 36)
 	return box
-
-
-func _panel_scroll(r: Rect2, pad: float) -> ScrollContainer:
-	var frame := Panel.new()
-	frame.add_theme_stylebox_override("panel", _box(Color(0, 0, 0, 0.25), LINE, 6, 1, Vector2.ZERO))
-	frame.position = r.position
-	frame.size = r.size
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(frame)
-	var sc := ScrollContainer.new()
-	sc.position = r.position + Vector2(1 + pad, 1 + pad)
-	sc.size = r.size - Vector2(2 + pad * 2, 2 + pad * 2)
-	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	sc.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
-	var grab := _box(Color(1, 1, 1, 0.35), Color(0, 0, 0, 0), 4, 0, Vector2(4, 0))
-	var bar := sc.get_v_scroll_bar()
-	bar.add_theme_stylebox_override("grabber", grab)
-	bar.add_theme_stylebox_override("grabber_highlight", grab)
-	bar.add_theme_stylebox_override("grabber_pressed", grab)
-	bar.add_theme_stylebox_override("scroll", StyleBoxEmpty.new())
-	bar.custom_minimum_size.x = 8
-	var box := VBoxContainer.new()
-	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	sc.add_child(box)
-	add_child(sc)
-	return sc
 
 
 func _on_field(v: String, key: String) -> void:
@@ -572,14 +410,6 @@ func _render_results() -> void:
 		return
 	for b in detail_blocks(cur[0]):
 		_detail_box.add_child(_block(b))
-
-
-func _empty(text: String) -> Control:
-	var m := MarginContainer.new()
-	for side in ["left", "right", "top", "bottom"]:
-		m.add_theme_constant_override("margin_" + side, 20)
-	m.add_child(_para(text, 18, MUTED, 28.8))
-	return m
 
 
 ## 列表行（button.cq-row）：内边距 8/12、底边 1px；选中为光标色
@@ -628,40 +458,11 @@ func _block(b: Dictionary) -> Control:
 		"meta", "note":
 			return _para(b.text, 13, MUTED, 20.8)
 		"h3", "power":
-			var m := MarginContainer.new()
-			m.add_theme_constant_override("margin_top", 12)
-			m.add_theme_constant_override("margin_bottom", 6)
-			m.add_child(_para(b.text, 17, GOLD if b.tag == "power" else SYSTEM, 27.2, true))
-			return m
+			return h3(b.text, GOLD if b.tag == "power" else SYSTEM)
 		"pills":
-			var m := MarginContainer.new()
-			m.add_theme_constant_override("margin_top", 8)
-			m.add_theme_constant_override("margin_bottom", 8)
-			var flow := HFlowContainer.new()
-			flow.add_theme_constant_override("h_separation", 7)
-			flow.add_theme_constant_override("v_separation", 7)
-			for t in b.pills:
-				var p := PanelContainer.new()
-				p.add_theme_stylebox_override("panel", _box(Color(0, 0, 0, 0.3), Color(1, 211 / 255.0, 115 / 255.0, 0.45), 6, 1, Vector2(7, 3)))
-				p.add_child(_fixed(_label(t, 13, GOLD), 20.8))
-				flow.add_child(p)
-			m.add_child(flow)
-			return m
+			return pills(b.pills)
 		"effect":
-			var m := MarginContainer.new()
-			m.add_theme_constant_override("margin_bottom", 7)
-			var p := PanelContainer.new()
-			var st := _box(Color(1, 1, 1, 0.04), SYSTEM, 0, 0, Vector2(10, 9))
-			st.border_width_left = 3
-			st.content_margin_left = 13
-			p.add_theme_stylebox_override("panel", st)
-			var v := VBoxContainer.new()
-			v.add_theme_constant_override("separation", 0)
-			v.add_child(_para(b.text, 18, TEXT, 28.8))
-			v.add_child(_para(b.small, 12, MUTED, 19.2))
-			p.add_child(v)
-			m.add_child(p)
-			return m
+			return card([[b.text, 18, TEXT, 28.8], [b.small, 12, MUTED, 19.2]])
 		_:
 			return _empty(b.text)
 
@@ -671,22 +472,3 @@ func apply_filter() -> void:
 	XGearQuery.set_sort(filter, str(filter.sort), str(filter.term) if str(filter.term) != "" else str(filter.sortTerm))
 	applied.emit(filter.duplicate())
 	close()
-
-
-func close() -> void:
-	if is_queued_for_deletion():
-		return
-	closed.emit()
-	queue_free()
-
-
-## Esc 先于输入框处理；其余按键交给控件（Tab 移动焦点），没被控件用掉的也不再传给游戏窗口
-func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		get_viewport().set_input_as_handled()
-		close()
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey or event is InputEventAction:
-		get_viewport().set_input_as_handled()
