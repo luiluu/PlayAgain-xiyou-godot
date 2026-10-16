@@ -230,7 +230,7 @@ func _update_help() -> void:
 			row = _item_index - _item_top
 	if rec != _pending_seen:
 		_commit_seen()
-		if _mode == "item" and not rec.is_empty() and XState.current.is_new(rec):
+		if _mode == "item" and XItemRow.shows_new(XState.current, rec):
 			_pending_seen = rec
 	help_card.show_for(rec if row >= 0 else {})
 	if help_card.visible:
@@ -285,7 +285,7 @@ func _paint_list(c: XMVCanvas) -> void:
 			if d[i].rec.is_empty():
 				_paint_remove(c, y)
 			else:
-				XItemRow.paint(c, d[i].rec, y, XItemRow.right_text(d[i]), 1.0, XState.current.is_new(d[i].rec))
+				XItemRow.paint(c, d[i].rec, y, XItemRow.right_text(d[i]), 1.0, XItemRow.shows_new(XState.current, d[i].rec))
 		return
 	var a := actor()
 	var nw := slot_name_width(c)

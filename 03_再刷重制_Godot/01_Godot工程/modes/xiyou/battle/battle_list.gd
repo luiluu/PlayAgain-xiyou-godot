@@ -3,11 +3,12 @@ extends XMVWindow
 ## 战斗中的指令窗与技能/物品列表（Olivia_SideBattleUI 缩放 0.8：行高 29、字号 21、内边距 11、文字边距 5、图标 26）。
 ## - 指令窗 Window_ActorCommand：宽 220，行数 = 指令数（最多 16），文字居中（YEP Command Alignment center）。
 ## - 技能/物品 Window_BattleSkill / Window_BattleItem：宽 450，单列，行数 = 项数（最多 16）。
-##   每行：itemRect 宽减文字边距；图标 (2,2) 26px、名字从 30 起（宽减「000」宽）；右侧按 YEP 画消耗：
+##   每行：itemRect 宽减文字边距；图标 (2,2) 26px、名字从 30 起（宽减 reserve 的字宽：技能「000」，物品「×0,000」）；右侧按 YEP 画消耗：
 ##   每段先在最右画 26px 图标（x = 宽 − 32）、再在剩余宽度里右对齐写字（字号 20），段间留 5。
 ##   不能用的行半透明（160/255）。
-## 操作照 Window_Selectable：上下（按下时首尾相接）、PageUp/Down、确定/取消；点选中行确定、点别的行先选中；滚轮；右键取消。
-## entries：[{text, enabled, icon, costs: [{text, color, icon, size}]}]
+## 操作照 Window_Selectable：上下（按下时首尾相接）、PageUp/Down（还有下一页／上一页才翻，全部放得下时不动）、确定/取消；
+## 点选中行确定、点别的行先选中；滚轮；右键取消。
+## entries：[{text, enabled, icon, reserve, costs: [{text, color, icon, size}]}]
 
 signal chosen(index: int)
 signal cancelled
@@ -77,7 +78,7 @@ func _paint(c: XMVCanvas) -> void:
 			c.text(str(e.text), TPAD, y, cw - TPAD * 2, "center", XUI.TEXT, FS, LH, alpha)
 			continue
 		var w := cw - TPAD
-		var name_w := w - c.text_width("000", FS)
+		var name_w := w - c.text_width(str(e.get("reserve", "000")), FS)
 		var x := 0.0
 		if int(e.get("icon", 0)) > 0:
 			c.icon(int(e.icon), x + 2, y + 2, alpha, ICON)
@@ -91,6 +92,18 @@ func _paint(c: XMVCanvas) -> void:
 			var fs := int(cost.get("size", 20))
 			c.text(str(cost.text), x, y, dw, "right", cost.get("color", XUI.TEXT), fs, LH, alpha)
 			dw -= c.text_width(str(cost.text), fs) + 5
+
+
+## Window_Selectable.cursorPagedown／cursorPageup：顶行 + 页行数 < 总行数（上翻：顶行 > 0）才翻一页，
+## 顶行收在 0～最大顶行，光标跟着移一页（收在首末项）；否则什么都不做
+func page(d: int) -> void:
+	var n := entries.size()
+	if d > 0 and top + rows < n:
+		top = mini(top + rows, maxi(0, n - rows))
+		select(mini(index + rows, n - 1))
+	elif d < 0 and top > 0:
+		top = maxi(top - rows, 0)
+		select(maxi(index - rows, 0))
 
 
 ## Window_Selectable.processWheel：只滚动显示，不移动光标
@@ -130,11 +143,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if index > 0 or not event.is_echo():
 			select((index - 1 + n) % n)
 	elif event.is_action_pressed("ui_page_down") and n > 0:
-		top = clampi(top + rows, 0, maxi(0, n - rows))
-		select(mini(index + rows, n - 1))
+		page(1)
 	elif event.is_action_pressed("ui_page_up") and n > 0:
-		top = clampi(top - rows, 0, maxi(0, n - rows))
-		select(maxi(index - rows, 0))
+		page(-1)
 	elif event.is_action_pressed("ui_accept", true):
 		_ok()
 	elif event.is_action_pressed("ui_cancel", true):
