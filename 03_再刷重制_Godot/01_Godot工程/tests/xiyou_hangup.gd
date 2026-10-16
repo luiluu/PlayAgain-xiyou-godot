@@ -183,7 +183,10 @@ func _run() -> void:
 	check("button_stop", not XHangUp.is_active(s) and is_equal_approx(ov._button_sprite.scale.x, 0.9) and s.hang_up_total > total_before,
 		[XHangUp.is_active(s), ov._button_sprite.scale.x, s.hang_up_total, total_before])
 	await physics(10)
-	check("button_scale_restore", is_equal_approx(ov._button_sprite.scale.x, 1.0) and map.player.input_enabled)
+	# 按钮缩放由物理帧恢复，地图输入则由 _process 恢复；一次快时钟补帧可能尚未运行后者。
+	await frames(2)
+	check("button_scale_restore", is_equal_approx(ov._button_sprite.scale.x, 1.0) and map.player.input_enabled,
+		[ov._button_sprite.scale.x, map.player.input_enabled, map.busy])
 	map.queue_free()
 	await frames(2)
 	for i in range(1, 31):
