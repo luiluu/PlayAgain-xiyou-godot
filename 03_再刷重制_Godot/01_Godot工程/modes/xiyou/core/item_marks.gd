@@ -213,6 +213,7 @@ const PILL_KEYS := ["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"]
 ## 未移植：Map132 号角商店追加新伙伴号角（多个 installNative…Runtime）、installNativeOrbRuntime 撤下宝珠——切片商店不受影响（shop_buy_probe）。
 static func shop_goods(goods: Array) -> Array:
 	var rows: Array = goods.map(func(g): return [int(g[0]), int(g[1]), int(g[2]), int(g[3])])
+	rows = rows.filter(func(g): return not _orb_filtered(g))
 	if rows.any(func(g): return g[0] == 0 and g[1] == PILL_ANCHOR):
 		var db: Array = XDB.table("Items")
 		for i in range(1, db.size()):
@@ -228,6 +229,31 @@ static func shop_goods(goods: Array) -> Array:
 		if not out.has(g) and not (g[0] == 0 and DISABLED_HORNS.has(g[1])):
 			out.append(g)
 	return out
+
+
+## 宝珠运行时（installNativeOrbRuntime）：宝珠改为副本掉落，Scene_Shop.prepare 先从商品表滤掉宝珠物品（CodexOrbs 的新宝珠
+## items、神秘珠 bands、原作宝珠 legacyRefund；shopKeep 里的保留），再交给其余改写；商品表非空而全被滤掉时，商店一打开就提示并关闭。
+const ORB_SHOP_TEXT := "宝珠已改为副本掉落：刷副本Boss得神秘珠，到宝珠坊鉴定"
+
+
+static func is_orb_item(id: int) -> bool:
+	var cfg = XDB.table("CodexOrbs")
+	if not cfg is Dictionary:
+		return false
+	var key := str(id)
+	return cfg.get("items", {}).has(key) or cfg.get("legacyRefund", {}).has(key) \
+		or cfg.get("bands", []).any(func(b): return int(b.get("itemId", 0)) == id)
+
+
+static func _orb_filtered(g: Array) -> bool:
+	var cfg = XDB.table("CodexOrbs")
+	return cfg is Dictionary and int(g[0]) == 0 and is_orb_item(int(g[1])) \
+		and not cfg.get("shopKeep", []).any(func(k): return int(k) == int(g[1]))
+
+
+## 商品表非空、滤掉宝珠后为空（Scene_Shop._codexOrbOnly）
+static func shop_orb_only(goods: Array) -> bool:
+	return not goods.is_empty() and goods.all(func(g): return _orb_filtered([int(g[0]), int(g[1])]))
 
 
 ## 商品记录（goods 的类型 0物品/1武器/2防具 + ID）：装备补上 kind、base，买入各函数据此认表

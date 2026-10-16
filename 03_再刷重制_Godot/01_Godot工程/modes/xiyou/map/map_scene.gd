@@ -736,6 +736,10 @@ func save_game(slot: int) -> bool:
 
 
 func open_shop(goods: Array, purchase_only: bool) -> void:
+	# 宝珠运行时：只卖宝珠的商店（如二十一层神秘使者）一打开就提示并关闭（Scene_Shop.start → popScene）
+	if XItemMarks.shop_orb_only(goods):
+		toast(XItemMarks.ORB_SHOP_TEXT)
+		return
 	var shop := XShop.new()
 	shop.setup(goods, purchase_only)
 	ui.add_child(shop)
