@@ -3,7 +3,7 @@ extends RefCounted
 ## 伤害结算：移植自正式版 js/codex/runtime/installDamageElementRuntime.js v3（CodexDamage.calculate）。
 ## 首期精简：
 ## - 成长修正 growth 固定为 1（正式版的「五乘区预算软上限」/真气钩子未移植，见首期规格）。
-## - 其余 CodexDamageHooks（角色专属机制）未移植；首期角色不依赖它们。
+## - 其余 CodexDamageHooks（角色专属机制）未移植；首期角色不依赖它们。已接：orb-sets（宝珠套装通用效果，见 orb_set_multiplier）。
 ## - 混合模式（spec.mode == "mixed"）的物理/魔法权重按公式对 atk/mat 的偏导数估算，与原版相同。
 
 const ACTIVE := [2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
@@ -126,6 +126,15 @@ static func element_bonus(a: XBattler, e: int) -> float:
 		return maxf(own, common)
 	return own
 
+## CodexDamageHooks「orb-sets」（installNativeOrbRuntime）：角色用技能（含普通攻击）时，宝珠套装通用效果只取最高一套，
+## 全部伤害 ×(1＋general%)，乘在 finalMultiplier 上；恢复类（伤害类型 3/4）在前面已分流，不受影响。
+## 套装的技能专属加成（set.skills／rate）当前数据全为空，未接。
+static func orb_set_multiplier(item: Dictionary, a: XBattler) -> float:
+	if not (a is XActor) or not item.has("stypeId"):
+		return 1.0
+	var g := XOrbs.general_set((a as XActor).equips)
+	return 1.0 + float(g.get("general", 0.0)) / 100.0 if not g.is_empty() else 1.0
+
 static func defense_rate(attack: float, defense: float) -> float:
 	var a := maxf(0.0, attack)
 	var d := maxf(0.0, defense)
@@ -182,7 +191,7 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 	var critical: bool = options.get("critical", false)
 	var critical_base := 1.5 + critical_multiplier_bonus(a)
 	var critical_mult := maxf(1.0, critical_base + critical_add) if critical else 1.0
-	var final_mult := maxf(0.0, 1.0 + final_add)
+	var final_mult := maxf(0.0, 1.0 + final_add) * maxf(0.0, orb_set_multiplier(item, a))
 	var normal_mult := maxf(0.0, 1.0 + normal_add)
 	var race := _race_factors(a, b)
 	var es := action_elements(item, a)

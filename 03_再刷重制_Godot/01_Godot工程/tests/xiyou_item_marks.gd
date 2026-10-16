@@ -127,9 +127,10 @@ func _run() -> void:
 	page._index = wi
 	page._ok()
 	await frames()
-	check("gear_actions_no_top", page._actions.map(func(x): return x.symbol) == ["use", "upgrade", "lock", "cancel"])
+	# 升级之后是宝珠孔行（XOrbs，每件 0～3 个，按实例随机），再是出售锁定
+	check("gear_actions_no_top", page._actions.map(func(x): return x.symbol) == ["use", "upgrade"] + w4.augmentSlots.map(func(_t): return "augment") + ["lock", "cancel"])
 	shown_before = XToast.shown.size()
-	page._act = 2
+	page._act = page._actions.find_custom(func(x): return x.symbol == "lock")
 	page._ok()
 	await frames()
 	check("gear_lock_from_page", str(w4.name).ends_with("[锁定]") and XToast.shown.slice(shown_before).has("锁定完成") and page._mode == "action")
