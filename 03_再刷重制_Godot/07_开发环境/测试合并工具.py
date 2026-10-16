@@ -253,6 +253,91 @@ class MergeTests(unittest.TestCase):
     def register(self):
         self.put(str(merge.BOARD), '# board\n## 正在进行\n\n## 待交叉核查\n| claude/task | Codex |\n## end\n')
 
+    def realistic_checker(self):
+        # 模拟检查.sh 的真实入口：从 Git 索引取文件清单，再看工作区内容。
+        # 原来的 exit 0 替身看不到“文件删了但索引仍跟踪”的交付单。
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!' + sys.executable + '''
+import subprocess
+from pathlib import Path
+files = subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\\0')
+marker = 'dev.' + '待定'
+for name in filter(None, files):
+    path = Path(name)
+    if name.startswith('00_项目管理/交付/') and path.name != 'README.md':
+        raise SystemExit('交付单未并入：' + name)
+    if path.suffix == '.md' and path.is_file() and marker in path.read_text():
+        raise SystemExit('编号占位未替换：' + name)
+''')
+        self.g('add', str(merge.ENV / '检查.sh')); self.g('commit', '-m', 'realistic checker')
+        self.g('merge', 'main', cwd=self.wt)
+
+    def lane_document(self):
+        rel = merge.SUB / '00_设计/界面风格.md'
+        p = self.wt / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text('# 界面风格\n' + merge.VERSION_MARKER + '：已完成；参见 ' + merge.VERSION_MARKER + '。\n')
+        self.g('add', str(rel), cwd=self.wt); self.g('commit', '-m', 'lane document', cwd=self.wt)
+        return rel
+
+    def test_real_checker_sees_receipt_deletion(self):
+        self.realistic_checker()
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertFalse(self.wt.exists())
+
+    def test_version_replacement_in_lane_document(self):
+        self.realistic_checker()
+        rel = self.lane_document()
+        self.assertEqual(self.call(), 0, self.last_output)
+        text = (self.root / rel).read_text()
+        self.assertNotIn(merge.VERSION_MARKER, text)
+        self.assertEqual(text.count('dev.002'), 2)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertFalse(merge.dirty(self.root))
+
+    def test_version_document_extra_edit_is_preserved_and_rejected(self):
+        rel = self.lane_document()
+        self.assertEqual(self.call(), 0, self.last_output)
+        p = self.root / rel
+        p.write_text(p.read_text() + 'unrelated edit\n')
+        self.register()
+        self.assertEqual(self.call('--finish'), 1, self.last_output)
+        self.assertTrue(p.read_text().endswith('unrelated edit\n'))
+        self.assertNotIn(str(rel), self.g('diff', '--cached', '--name-only').splitlines())
+        self.assertTrue(self.wt.exists())
+
+    def test_resume_version_replacement_after_plan_saved(self):
+        rel = self.lane_document()
+        original = (self.wt / rel).read_bytes()
+        self.assertEqual(self.call(), 0, self.last_output)
+        path = self.root / '.git/lane-merge/state.json'
+        state = json.loads(path.read_text())
+        state['phase'] = 'versioned'
+        path.write_text(json.dumps(state))
+        (self.root / rel).write_bytes(original)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertEqual((self.root / rel).read_text().count('dev.002'), 2)
+        self.assertEqual((self.root / merge.LOG).read_text().count('fixture change'), 1)
+        self.assertEqual(json.loads((self.root / merge.SUB / '开发编号.json').read_text())['current'], 'dev.002')
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+
+    def test_resume_version_replacement_never_overwrites_extra_edit(self):
+        rel = self.lane_document()
+        self.assertEqual(self.call(), 0, self.last_output)
+        path = self.root / '.git/lane-merge/state.json'
+        state = json.loads(path.read_text())
+        state['phase'] = 'versioned'
+        path.write_text(json.dumps(state))
+        p = self.root / rel
+        p.write_text(p.read_text() + 'keep this edit\n')
+        self.assertEqual(self.call(), 1, self.last_output)
+        self.assertTrue(p.read_text().endswith('keep this edit\n'))
+        self.assertTrue(self.wt.exists())
+
     def test_dry_run_is_read_only(self):
         head = self.g('rev-parse', 'HEAD')
         self.assertEqual(self.call('--dry-run'), 0)
