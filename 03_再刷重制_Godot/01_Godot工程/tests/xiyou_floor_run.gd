@@ -29,6 +29,7 @@ extends Node
 ## 加快后同样七段合计约 160 秒、各段项数不变，于是合成两段（1～12、13～）。
 ## 二十层（大厅门「进入该层」→ 天才灵魂「干他」打敌群 453 → 交见面礼挑战石日天）加进第 2 段后：1～12 层 37 秒／236 项，13～20 层 61 秒／283 项。
 ## 二十一层（二十层通关后门第 3 页先关开关 686，O-036 接着出楼层菜单 → 交见面礼挑战六道魔君 457）加进第 2 段后：单跑 13～21 层 59 秒／326 项。
+## 二十二层（交见面礼挑战三眼娃 458）加进第 2 段；队伍攻击、魔攻提到 5e13 后（见 _boost_party），本机 7 个并行负载下 13～22 层约 86 秒／348 项，6 个种子全过。
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -50,8 +51,8 @@ const WRAP_BOSS := ["30:8"]
 ## （命中 −100%、攻击魔攻 ×0.4、属性伤害 −75%），普通攻击全落空，增强队伍也要打约 2 分钟（正式版同样，交礼是原版的出路）。
 ## 这些层先给够两种见面礼（物品 182 不朽残渣、变量 206 肝帝积分；公共事件随机要其中一种），再按「缴纳见面礼 → 给」应答，
 ## 走交礼分支（变量 842＝1 → 1400 天道领域*伪）。十三至十九层不交礼也打得过，照旧走不交礼分支。
-## 二十一层六道魔君（敌群 457）开场同 456。值为该层「没交礼物胜后」才置 1 的索礼变量（二十层 868、二十一层 869），交礼后应仍为 0。
-const PAY_GIFT := {116: 868, 117: 869}
+## 二十一层六道魔君（457）、二十二层三眼娃（458）开场同 456。值为该层「没交礼物胜后」才置 1 的索礼变量（二十层 868、二十一层 869、二十二层 870），交礼后应仍为 0。
+const PAY_GIFT := {116: 868, 117: 869, 119: 870}
 ## 开关 686「前往20层」：二十层过路关后打开，大厅门第 3 页在变量 20＝21 时关掉（O-036：关掉后直接出楼层菜单）
 const GATE_SWITCH := 686
 ## 门里困难／地狱／天灾分支给全员学的挑战技能（六、十一、十六、二十一、二十六层…），普通难度不应学到
@@ -66,12 +67,16 @@ var results: Array = []
 var out_dir := ""
 var log_lines: Array = []
 var battles := 0
+## 固定随机种子（-- --seed=N 可换，用来复现）
+var seed_value := 20261015
 
 
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
+		elif arg.begins_with("--seed="):
+			seed_value = int(arg.substr(7))
 	if has_meta("runner"):
 		_run.call_deferred()
 		return
@@ -354,9 +359,12 @@ func _boost_party(s: XState) -> void:
 		if item.is_empty():
 			continue
 		# 生命、魔法、攻击、防御、魔攻、魔防、敏捷、幸运
-		# 攻击、魔攻 5e11：十三层守层者（敌群 111）生命约 7e10 且带减伤状态 1103（5e7 时打不完）；
-		# 十六层海王子（敌群 172）生命 1.5e12、每回合回复约 20%，5e9 时一回合只打掉 0.4%
-		item.params = [5.0e8, 1.0e6, 5.0e11, 5.0e6, 5.0e11, 5.0e6, 1.0e5, 1.0e3]
+		# 攻击、魔攻 5e13：十三层守层者（敌群 111）生命约 7e10 且带减伤状态 1103（5e7 时打不完）；
+		# 十六层海王子（敌群 172）生命 1.5e12、每回合回复约 20%，5e9 时一回合只打掉 0.4%。
+		# 二十层起守层者（456～458）生命 5e13～1.8e14、每回合回复约 15%，交礼后队伍仍约一半攻击落空：5e11 时每回合伤害与回复相当，
+		# 胜负看命中与暴击的随机数，几十到上百回合打不完；而负载下帧序不同（地图事件在战斗中照常随机走动、取随机数），
+		# 同一种子在并行全量检查里会走到打不完的分支，按墙钟等待超时（f21_boss_won）。5e13 时无界面模拟 20 个种子都一回合打完。
+		item.params = [5.0e8, 1.0e6, 5.0e13, 5.0e6, 5.0e13, 5.0e6, 1.0e5, 1.0e3]
 		a.refresh_passive()
 		a.hp = a.mhp
 		a.mp = a.mmp
@@ -382,7 +390,7 @@ func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_floor_run"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	_fast_clock(true)
-	seed(20261015)
+	seed(seed_value)
 	var t0 := Time.get_ticks_msec()
 	var floors := floor_table()
 	_check("floor_table", floors.size() >= 1 and floors[0].map == 5, floors)
@@ -507,7 +515,7 @@ func _floor(f: Dictionary, full: bool) -> bool:
 		_check(tag + "_boss_wrapped", wrapped_steps > 0, wrapped_steps)
 	var idle := await _wait_idle(map, WAIT_EVENT * 3)
 	var won := s.variable(20) == n + 1 and s.self_switch(f.map, boss.id, "A")
-	if not _check(tag + "_boss_won", idle and won and map.map_id == f.map, [idle, s.variable(20), map.map_id, boss]):
+	if not _check(tag + "_boss_won", idle and won and map.map_id == f.map, [idle, s.variable(20), map.map_id, boss, _boss_debug(map, s)]):
 		return false
 	if PAY_GIFT.has(f.map):
 		_check(tag + "_gift_paid", s.variable(842) == 0 and s.variable(PAY_GIFT[f.map]) == 0, [s.variable(842), s.variable(PAY_GIFT[f.map])])
@@ -538,6 +546,19 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	_check(tag + "_reload_boss_beaten", s.self_switch(f.map, boss.id, "A") and s.variable(20) == n + 1 and s.members().all(func(a): return a.hp > 0))
 	# 5. 在读回的地图上走到辛德瑞「传送」回大厅（能接着打）
 	return await _return_hub(map, f, tag, true)
+
+
+## 守层者战没按时结束时的现场：见面礼变量（842 交了礼、841 随机要哪种）、是否还在战斗、回合与双方生命比例和状态
+func _boss_debug(map: XMapScene, s: XState) -> Dictionary:
+	var out := {"v842": s.variable(842), "v841": s.variable(841), "busy": map.busy, "in_battle": map._in_battle,
+		"msg": map.message.visible, "battles": battles}
+	for n in map.ui.get_children():
+		if n is XBattleScene:
+			var lg: XBattleLogic = n.logic
+			out.turn = lg.turn
+			out.actors = lg.actors.map(func(a): return [snappedf(a.hp / maxf(a.mhp, 1.0), 0.001), a.state_ids])
+			out.enemies = lg.enemies.map(func(e): return [snappedf(e.hp / maxf(e.mhp, 1.0), 0.001), e.state_ids])
+	return out
 
 
 func _return_hub(map: XMapScene, f: Dictionary, tag: String, full: bool) -> bool:
