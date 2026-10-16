@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.066",
-  "sequence": 66,
-  "next": "dev.067",
-  "nextSequence": 67,
+  "current": "dev.067",
+  "sequence": 67,
+  "next": "dev.068",
+  "nextSequence": 68,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "二十四层 Map120 速行天、等级上限 65（悟空）",
+  "currentChange": "存读档页整页复现、保存次数（八戒）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

@@ -99,9 +99,9 @@ func _run() -> void:
 	XSave.current_slot = 0
 	# 正式 v0.24 没有快存菜单项；单独验证保留的后端选格规则。
 	menu._quick_save(); await _frames()
-	_check("quick_save_asks_slot", menu.get_children().any(func(n): return n is XSavePanel))
+	_check("quick_save_asks_slot", menu.get_children().any(func(n): return n is XSaveScene))
 	for n in menu.get_children():
-		if n is XSavePanel: n.closed.emit()
+		if n is XSaveScene: n.closed.emit()
 	await _frames()
 	menu.queue_free(); await _frames()
 	# 非自动场景截图：轮到角色时停在指令窗，验证顺序条实际接入。

@@ -28,6 +28,8 @@ static func save(slot: int) -> bool:
 		return false
 	if DirAccess.make_dir_recursive_absolute(dir()) != OK:
 		return false
+	# Game_System.onBeforeSave：保存次数加 1（写盘失败也不退回，与正式版相同）
+	XState.current.save_count += 1
 	var data := XState.current.to_dict()
 	data["savedAt"] = Time.get_datetime_string_from_system()
 	# 先写同目录临时文件，成功后替换；失败不截断原有存档。
@@ -55,6 +57,13 @@ static func backup() -> int:
 		if not exists(slot):
 			return slot if save(slot) else -1
 	return 0
+
+
+## 存档页「删除」（StorageManager.remove）：删掉这格的文件
+static func remove(slot: int) -> bool:
+	if not exists(slot):
+		return false
+	return DirAccess.remove_absolute(path(slot)) == OK
 
 
 static func exists(slot: int) -> bool:
