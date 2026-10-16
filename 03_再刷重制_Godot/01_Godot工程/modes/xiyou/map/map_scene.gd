@@ -563,7 +563,12 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	ui.add_child(battle)
 	ui.move_child(hang_overlay, -1)
 	_in_battle = true
+	# 战斗期间 Scene_Map 不更新（$gameMap／$gamePlayer.update 都不跑）：地图上的玩家、事件、跟随者不走动、不取随机数。
+	# 挂机计时在本场景 _physics_process，照常走。
+	chars.process_mode = Node.PROCESS_MODE_DISABLED
 	var result: int = await battle.finished
+	if is_instance_valid(chars):
+		chars.process_mode = Node.PROCESS_MODE_INHERIT
 	_in_battle = false
 	battle.queue_free()
 	difficulty_notice.clock.paint()

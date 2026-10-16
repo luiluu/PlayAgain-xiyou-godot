@@ -67,6 +67,9 @@ var results: Array = []
 var out_dir := ""
 var log_lines: Array = []
 var battles := 0
+## 战斗时地图上有随机走动事件的场数；战斗期间地图角色位置／朝向／帧变了的战斗
+var battles_with_movers := 0
+var moved_in_battle := []
 ## 固定随机种子（-- --seed=N 可换，用来复现）
 var seed_value := 20261015
 
@@ -143,11 +146,26 @@ func _wait_idle(map: XMapScene, timeout := WAIT_EVENT) -> bool:
 	return false
 
 
-## 数遇敌与守层者战斗（XBattleScene 加到地图 ui 层）
+## 数遇敌与守层者战斗（XBattleScene 加到地图 ui 层）；核对战斗期间地图角色不动（Scene_Map 战斗时不更新）
 func _watch(map: XMapScene) -> void:
 	if not map.has_meta("floor_run_watch"):
 		map.set_meta("floor_run_watch", true)
-		map.ui.child_entered_tree.connect(func(n): if n is XBattleScene: battles += 1)
+		map.ui.child_entered_tree.connect(func(n): if n is XBattleScene: _on_battle(map, n))
+
+
+func _on_battle(map: XMapScene, battle: XBattleScene) -> void:
+	battles += 1
+	var before := _char_positions(map)
+	var movers := map.events.filter(func(e): return int(e.page.get("moveType", 0)) == 1).size()
+	battle.finished.connect(func(_r):
+		if movers > 0:
+			battles_with_movers += 1
+		if _char_positions(map) != before:
+			moved_in_battle.append([map.map_id, battles]), CONNECT_ONE_SHOT)
+
+
+func _char_positions(map: XMapScene) -> Array:
+	return map.chars.get_children().filter(func(c): return c is MVCharacter).map(func(c): return [c.grid, c.real, c.direction, c.pattern])
 
 
 func _event(scene: XMapScene, id: int) -> MVEvent:
@@ -410,6 +428,8 @@ func _run() -> void:
 		last_floor = f.floor
 		print("第 %d 层%s通过（Map%03d），战斗 %d 场，累计 %.1f 秒" % [f.floor, "" if full else "快速", f.map, battles - b0, (Time.get_ticks_msec() - t0) / 1000.0])
 	_check("floors_cleared", last_floor == full_to and floors.size() > 0, [last_floor, full_to])
+	_check("map_frozen_in_battle", moved_in_battle.is_empty(), moved_in_battle)
+	print("战斗中地图有随机走动事件的场数：%d" % battles_with_movers)
 	# 收尾：清理测试存档
 	for i in range(1, XSave.SLOTS + 1):
 		if XSave.exists(i):
