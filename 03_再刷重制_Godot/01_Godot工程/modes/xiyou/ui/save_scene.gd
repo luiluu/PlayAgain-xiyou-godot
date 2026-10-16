@@ -42,6 +42,8 @@ var list_win: XMVWindow
 var action_win: XMVWindow
 var info_win: XMVWindow
 var confirm_win: XMVWindow
+var confirm_back: Control
+var confirm_background: Control
 var _cache := {}                    # 格 → 读出的存档字典（无效为 null）
 var dark_rects: Array = []          # 信息窗最近一次画的暗底（测试核对用）
 
@@ -56,6 +58,14 @@ func _ready() -> void:
 	list_win = XMVWindow.make(self, LIST_RECT, op, _paint_list)
 	action_win = XMVWindow.make(self, ACTION_RECT, op, _paint_action)
 	info_win = XMVWindow.make(self, INFO_RECT, op, _paint_info)
+	# MV WindowLayer 会清掉确认窗矩形内下层窗口的内容；保留菜单底图，避免头像透过确认框。
+	confirm_back = Control.new()
+	confirm_back.clip_contents = true
+	confirm_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(confirm_back)
+	confirm_background = get_child(0).duplicate()
+	confirm_back.add_child(confirm_background)
+	confirm_background.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	confirm_win = XMVWindow.make(self, Rect2(0, 0, 300, 136), op, _paint_confirm)
 	confirm_win.visible = false
 	for w in [list_win, action_win, confirm_win]:
@@ -118,6 +128,11 @@ func action_enabled(i: int) -> bool:
 
 # ---- 刷新与绘制 ----
 func _refresh() -> void:
+	confirm_back.visible = confirm_win.visible
+	confirm_back.position = confirm_win.position
+	confirm_back.size = confirm_win.size
+	confirm_background.position = -confirm_back.position
+	confirm_background.size = size
 	list_win.up_arrow = top > 0
 	list_win.down_arrow = top + page_rows() < XSave.SLOTS
 	for w in [help_win, list_win, action_win, info_win, confirm_win]:
@@ -262,7 +277,7 @@ static func file_size(slot_no: int) -> String:
 
 
 func _paint_confirm(c: XMVCanvas) -> void:
-	var t := XMVText.new(XMVText.convert_escapes(confirm_text), 6, 0, c.size.x - 12)
+	var t := XMVText.new(XMVText.convert_escapes(confirm_text), 6, 0, c.size.x)
 	t.run()
 	XMVText.paint(c, t.glyphs)
 	for i in range(2):

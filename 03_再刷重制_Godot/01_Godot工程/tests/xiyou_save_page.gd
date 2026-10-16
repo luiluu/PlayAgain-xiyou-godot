@@ -68,6 +68,7 @@ func _run() -> void:
 		XSave.save(1)
 		XSave.save(3)
 		await _page(fx, s)
+		await _menu_load()
 	for i in range(1, XSave.SLOTS + 1):
 		XSave.remove(i)
 	DirAccess.remove_absolute(XSave.dir_override)
@@ -160,6 +161,13 @@ func _page(fx: Dictionary, s: XState) -> void:
 	page.ok()
 	var c: Dictionary = fx.confirm
 	check("confirm_load", page._phase == "confirm" and page.confirm_text == str(c.load) and rect_of(page.confirm_win) == nums(c.rect), [page.confirm_text, rect_of(page.confirm_win)])
+	var confirm_canvas := RecCanvas.new()
+	confirm_canvas.size = page.confirm_win.canvas.size
+	page._paint_confirm(confirm_canvas)
+	var question: Array = confirm_canvas.log.filter(func(x): return x[0] == "text").slice(0, str(c.load).length())
+	check("confirm_question_single_line", question.size() == str(c.load).length() and question.all(func(x): return x[3] == 0.0), question)
+	check("confirm_masks_underlying_windows", page.confirm_back.visible and page.confirm_back.position == page.confirm_win.position and page.confirm_back.size == page.confirm_win.size)
+	confirm_canvas.free()
 	await shot("load_confirm")
 	page.confirm_index = 1
 	page.ok()
@@ -192,6 +200,39 @@ func _page(fx: Dictionary, s: XState) -> void:
 	sp.ok()
 	check("save_overwrite_confirm", sp._phase == "confirm" and sp.confirm_text == str(c.save))
 	sp.queue_free()
+	await frames()
+
+
+class LoadMenu extends XMenu:
+	var reloads := 0
+	func _reload_after_load() -> void:
+		reloads += 1
+
+
+func _menu_load() -> void:
+	check("menu_map_scene_exists", ResourceLoader.exists(XMenu.MAP_SCENE, "PackedScene"))
+	var s := _state()
+	s.gold = 112233
+	s.map_id = 5
+	XSave.save(9)
+	s.gold = 7
+	s.map_id = 4
+	var menu := LoadMenu.new()
+	add_child(menu)
+	menu._show_save()
+	await frames()
+	var pages := menu.get_children().filter(func(n): return n is XSaveScene)
+	check("menu_save_page_exists", pages.size() == 1)
+	if pages.size() == 1:
+		var page: XSaveScene = pages[0]
+		page.index = 8
+		page.ok()
+		page.act = 0
+		page.ok()
+		page.ok()
+		check("menu_load_restores_state", XState.current.gold == 112233 and XState.current.map_id == 5 and XSave.current_slot == 9)
+		check("menu_load_reenters_map", menu.reloads == 1)
+	menu.queue_free()
 	await frames()
 
 

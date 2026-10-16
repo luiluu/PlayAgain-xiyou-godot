@@ -22,6 +22,7 @@ const CMD_LH := 36.0
 const STATUS_LH := 33.0
 const STATUS_ROWS := 5
 const GOLD_ICON := 416
+const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const POWER_COLOR := Color8(255, 211, 115)
 ## [名称, 符号, 已重制]
 const COMMANDS := [["物品", "item", true], ["技能", "skill", true], ["装备", "equip", true], ["状态", "status", true],
@@ -386,7 +387,12 @@ func _quick_save() -> void:
 func _show_save() -> void:
 	var page := XSaveScene.new()
 	page.mode = "save"
+	page.loaded.connect(_reload_after_load)
 	_open_detail(page)
+
+
+func _reload_after_load() -> void:
+	get_tree().change_scene_to_file.call_deferred(MAP_SCENE)
 
 
 ## Scene_GameEnd：背景不透明度 128，窗口 (520,310,240,100)，「回到标题 / 取消」。
