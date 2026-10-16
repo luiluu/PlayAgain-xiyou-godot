@@ -28,6 +28,7 @@ extends Node
 ## 加快前（time_scale 6、物理 60 帧，dev.054）分七段，第 7 段 173 秒（前缀快速通过 18 层约 125 秒），七段合计约 830 秒；
 ## 加快后同样七段合计约 160 秒、各段项数不变，于是合成两段（1～12、13～）。
 ## 二十层（大厅门「进入该层」→ 天才灵魂「干他」打敌群 453 → 交见面礼挑战石日天）加进第 2 段后：1～12 层 37 秒／236 项，13～20 层 61 秒／283 项。
+## 二十一层（二十层通关后门第 3 页先关开关 686，O-036 接着出楼层菜单 → 交见面礼挑战六道魔君 457）加进第 2 段后：单跑 13～21 层 59 秒／326 项。
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -49,7 +50,12 @@ const WRAP_BOSS := ["30:8"]
 ## （命中 −100%、攻击魔攻 ×0.4、属性伤害 −75%），普通攻击全落空，增强队伍也要打约 2 分钟（正式版同样，交礼是原版的出路）。
 ## 这些层先给够两种见面礼（物品 182 不朽残渣、变量 206 肝帝积分；公共事件随机要其中一种），再按「缴纳见面礼 → 给」应答，
 ## 走交礼分支（变量 842＝1 → 1400 天道领域*伪）。十三至十九层不交礼也打得过，照旧走不交礼分支。
-const PAY_GIFT := [116]
+## 二十一层六道魔君（敌群 457）开场同 456。值为该层「没交礼物胜后」才置 1 的索礼变量（二十层 868、二十一层 869），交礼后应仍为 0。
+const PAY_GIFT := {116: 868, 117: 869}
+## 开关 686「前往20层」：二十层过路关后打开，大厅门第 3 页在变量 20＝21 时关掉（O-036：关掉后直接出楼层菜单）
+const GATE_SWITCH := 686
+## 门里困难／地狱／天灾分支给全员学的挑战技能（六、十一、十六、二十一、二十六层…），普通难度不应学到
+const CHALLENGE_SKILLS := [2873, 2874, 2875, 2876, 2879, 2880, 2881, 2882, 2892, 2893, 2894, 2895]
 ## 各段完整走的起始层（第 part 段从 SEGMENTS[part−1] 走到下一段起始层的前一层；最后一段走到楼层表末尾）
 const SEGMENTS := [1, 13]
 @export var part := 1
@@ -472,10 +478,17 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	if not _check(tag + "_at_hub", map.map_id == HUB and s.variable(20) == n, [map.map_id, s.variable(20)]):
 		return false
 	# 1. 大厅传送门「进入该层」
+	var gate_on := s.switch(GATE_SWITCH)
+	var skill_cap := s.variable(8)
 	if not await _talk(map, HUB_DOOR, f.answers, tag + "_door", full):
 		return false
 	if not _check(tag + "_entered", await _wait_map(f.map) and _scene().player.grid == Vector2i(f.x, f.y), [_scene().map_id, _scene().player.grid if _scene() is XMapScene else null]):
 		return false
+	# 普通难度不走门里困难／地狱／天灾的分支（开关 2500／2494／2489：全员学挑战技能、改技能等级上限变量 8）
+	_check(tag + "_normal_difficulty_path", s.variable(8) == skill_cap and s.members().all(func(a): return not CHALLENGE_SKILLS.any(func(k): return a.skill_ids.has(k))), [skill_cap, s.variable(8)])
+	# 二十层通关后开关 686 仍开：门第 3 页先关 686，O-036 接着出楼层菜单（一次按门就进二十一层）
+	if gate_on and f.floor != 20:
+		_check(tag + "_gate_switch_off", not s.switch(GATE_SWITCH))
 	map = _scene()
 	# 2. 守层者「挑战」
 	var boss := boss_of(f.map)
@@ -497,7 +510,7 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	if not _check(tag + "_boss_won", idle and won and map.map_id == f.map, [idle, s.variable(20), map.map_id, boss]):
 		return false
 	if PAY_GIFT.has(f.map):
-		_check(tag + "_gift_paid", s.variable(842) == 0 and s.variable(868) == 0, [s.variable(842), s.variable(868)])
+		_check(tag + "_gift_paid", s.variable(842) == 0 and s.variable(PAY_GIFT[f.map]) == 0, [s.variable(842), s.variable(PAY_GIFT[f.map])])
 	_check(tag + "_clear_toast", map.toasts.any(func(t): return str(t).begins_with("通关神魔之塔第")), map.toasts.slice(-4))
 	await _shot("%02d_守层者战后.png" % n)
 	if not full:

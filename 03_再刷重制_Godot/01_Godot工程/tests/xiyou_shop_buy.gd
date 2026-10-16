@@ -36,6 +36,8 @@ func _run() -> void:
 			var got := XItemMarks.shop_goods(sh.raw)
 			var want: Array = sh.prepared.map(func(g): return [int(g[0]), int(g[1]), int(g[2]), int(g[3])])
 			check("prepare_map%d_ev%d" % [int(sh.map), int(sh.event)], got == want, [got, want])
+			# 宝珠运行时：整理后为空（全是宝珠）的店一打开就提示并关闭
+			check("orb_only_map%d_ev%d" % [int(sh.map), int(sh.event)], XItemMarks.shop_orb_only(sh.raw) == (want.is_empty() and not sh.raw.is_empty()), [sh.raw.size(), want.size()])
 		# 解析：买入价（插件 unshift 的顺序 = 备注行倒序）、代购、是否画金币
 		for p in data.goods:
 			var rec := XItemMarks.shop_rec(int(p.goods[0]), int(p.goods[1]))
