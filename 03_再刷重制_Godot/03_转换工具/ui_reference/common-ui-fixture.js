@@ -8,9 +8,9 @@
     panel.style.cssText='position:fixed;left:4px;bottom:4px;z-index:99999;background:white;color:black;font:12px monospace;max-width:1250px';
     ['mousedown','mouseup','click','touchstart','touchend'].forEach(function(t){panel.addEventListener(t,function(e){e.stopPropagation();});});
     var pre=document.createElement('pre');pre.id='common-readout';pre.style.cssText='max-height:110px;overflow:auto;max-width:1240px';
-    function button(label,fn){var b=document.createElement('button');b.textContent=label;b.onclick=function(){try{fn();b.blur();}catch(e){pre.textContent=JSON.stringify({error:String(e.stack||e)});}};panel.appendChild(b);}
-    function fresh(){if(!DataManager.isDatabaseLoaded())throw new Error('数据库尚未就绪');ConfigManager.applyData({});DataManager.setupNewGame();Math.random=function(){return 0.5;};
-      $gameSystem._codexOrbRng={seed:20261016,n:{}};$gameParty._actors=[1,8,9,10];$gameMessage.clear();}
+    function button(label,fn){var b=document.createElement('button');b.textContent=label;b.onclick=function(){try{fn();b.blur();}catch(e){fixture.error=String(e.stack||e);pre.textContent=JSON.stringify({error:fixture.error});}};panel.appendChild(b);}
+    function fresh(){var scene=SceneManager._scene;if(!(scene instanceof Scene_Title||scene instanceof Scene_Item||scene instanceof Scene_Battle))throw new Error('请等待标题画面完成启动，再建立夹具');if(!DataManager.isDatabaseLoaded())throw new Error('数据库尚未就绪');ConfigManager.applyData({});DataManager.setupNewGame();Math.random=function(){return 0.5;};
+      $gameSystem._codexOrbRng={seed:20261016,n:{}};$gameParty._actors=[];[1,8,9,10].forEach(function(id){$gameParty.addActor(id);});$gameMessage.clear();}
     function awaitScene(klass,fn){var count=0,timer=setInterval(function(){if(++count>250){clearInterval(timer);pre.textContent=JSON.stringify({error:'场景未就绪'});return;}
       var s=SceneManager._scene;if(s instanceof klass&&s.isActive()&&s._windowLayer&&s._itemWindow){clearInterval(timer);try{fn(s);}catch(e){fixture.error=String(e.stack||e);}}},20);}
     function openGear(s,eq){if(s._augmentListWindow){s._augmentListWindow.hide();s._augmentListWindow.deactivate();}var category=DataManager.isWeapon(eq)?'weapon':'armor';s._categoryWindow.selectSymbol(category);s._categoryWindow.deactivate();s._itemWindow.setCategory(category);s._itemWindow.refresh();
@@ -34,18 +34,20 @@
     button('建立战斗物品夹具',function(){fresh();[1,2,137,77].forEach(function(id){$gameParty.gainItem($dataItems[id],3);});
       fixture={kind:'battle-items',party:$gameParty._actors.slice(),items:[1,2,137,77]};
       // 画面夹具暂停流程调度；真实Window_BattleItem的列表、可用性、标记与绘制保持原实现。
-      Scene_Battle.prototype.updateBattleProcess=function(){};
-      BattleManager.setup(4,false,false);SceneManager.goto(Scene_Battle);awaitScene(Scene_Battle,function(s){s._partyCommandWindow.deactivate();s._actorCommandWindow.deactivate();s.commandItem();s._itemWindow.select(0);s._itemWindow.updateHelp();});
+      Scene_Battle.prototype.updateBattleProcess=function(){};$gameSystem._treType[0]=-1;
+      DataManager.loadMapData(4);var tries=0,timer=setInterval(function(){try{if(++tries>250)throw new Error('地图未就绪');if(!DataManager.isMapLoaded())return;clearInterval(timer);$gameMap.setup(4);
+        BattleManager.setup(4,false,false);SceneManager.goto(Scene_Battle);awaitScene(Scene_Battle,function(s){BattleManager.changeActor(0,'inputting');BattleManager.actor().makeActions();s.startActorCommandSelection();s._partyCommandWindow.deactivate();s._actorCommandWindow.deactivate();s.commandItem();s._itemWindow.select(0);s._itemWindow.updateHelp();});
+      }catch(e){clearInterval(timer);fixture.error=String(e.stack||e);}},20);
     });
     button('取消战斗物品窗口',function(){var s=SceneManager._scene;if(!(s instanceof Scene_Battle))throw new Error('先建立战斗物品夹具');s.onItemCancel();});
     button('重新打开战斗物品',function(){var s=SceneManager._scene;s.commandItem();s._itemWindow.select(0);s._itemWindow.updateHelp();});
     button('隐藏夹具工具栏',function(){panel.style.visibility='hidden';});
     panel.appendChild(pre);document.body.appendChild(panel);
     var oldDraw=Bitmap.prototype.drawText;Bitmap.prototype.drawText=function(){(this._commonDraw||(this._commonDraw=[])).push(Array.prototype.slice.call(arguments));if(this._commonDraw.length>180)this._commonDraw.shift();return oldDraw.apply(this,arguments);};
-    setInterval(function(){if(!SceneManager._scene)return;var s=SceneManager._scene,windows=[];
+    setInterval(function(){if(!SceneManager._scene||!window.$gameParty||!window.$gameSystem)return;var s=SceneManager._scene,windows=[];
       function walk(n){if(n instanceof Window_Base)windows.push({type:n.constructor.name,rect:[n.x,n.y,n.width,n.height],visible:n.visible,active:n.active,index:n.index?n.index():null,padding:n.padding,lineHeight:n.lineHeight(),maxCols:n.maxCols?n.maxCols():null,pendingNewRedraw:n._viewedNewIndex===undefined?null:n._viewedNewIndex,
         commands:n._list||null,items:(n._data||[]).filter(function(x){return x&&x.id;}).map(function(x){return {id:x.id,name:x.name,occasion:x.occasion,enabled:n.isEnabled?!!n.isEnabled(x):null,seenInState:!!($gameSystem._seenItems[x.itypeId?'items':x.wtypeId?'weapons':'armors']||{})[x.id],owned:$gameParty.numItems(x)};}),draws:n.contents&&n.contents._commonDraw||[]});(n.children||[]).forEach(walk);}
-      walk(s);pre.textContent=JSON.stringify({version:nw.App.manifest.releaseVersion,fixture:fixture,scene:s.constructor.name,windows:windows,currentItem:s.item&&s.item()?{id:s.item().id,slots:s.item().augmentSlots,stored:s.item().augmentSlotItems}:null,errors:window.__refErrors||[]});
+      walk(s);pre.textContent=JSON.stringify({version:nw.App.manifest.releaseVersion,fixture:fixture,scene:s.constructor.name,party:{inBattle:$gameParty.inBattle(),members:$gameParty.members().map(function(a){return {id:a.actorId(),hp:a.hp,mhp:a.mhp,states:a._states};}),items:[1,2,137,77].map(function(id){return {id:id,owned:$gameParty.numItems($dataItems[id]),canUse:$gameParty.canUse($dataItems[id])};})},windows:windows,currentItem:s.item&&s.item()?{id:s.item().id,slots:s.item().augmentSlots,stored:s.item().augmentSlotItems}:null,errors:window.__refErrors||[]});
     },300);
   });
 })();
