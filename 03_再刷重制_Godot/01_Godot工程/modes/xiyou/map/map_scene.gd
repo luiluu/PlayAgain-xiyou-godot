@@ -49,6 +49,10 @@ const SAFE_TRANSFER_BUTTON := true
 var _map_name_tween: Tween
 ## O-011：事件/消息期间不开放地图备份，避免保存一半剧情（解释器当前不序列化）。
 const SAFE_HUD_ACTIONS := true
+## O-036：这些事件页执行完、事件换到别的页时，接着按新页再执行一次（键「地图:事件:页下标」）。
+## 大厅传送门（Map004 事件 36）第 3 页（开关 686「前往20层」）在变量 20＝21 时只关掉 686、什么都不显示，
+## 二十层通关后第一次按门没有反应，要再按一次才出楼层菜单；这里关掉后直接出楼层菜单。设 {} 恢复原版。
+const RERUN_AFTER_PAGE := {"4:36:2": true}
 
 
 static func slice() -> Dictionary:
@@ -411,6 +415,7 @@ func run_event(e: MVEvent) -> void:
 	if not e.direction_fix and e.trigger() == 0:
 		e.set_direction(MVCharacter.reverse_dir(player.direction))
 	var ev_id := e.event_id
+	var rerun_key := "%d:%d:%d" % [map_id, ev_id, e.page_index]
 	var interp := MVInterpreter.new(self, map_id, ev_id, e.command_list())
 	await interp.run()
 	# 事件里若有场所移动，旧地图的事件节点已释放，之后不能再访问 e
@@ -419,6 +424,8 @@ func run_event(e: MVEvent) -> void:
 		print("[xiyou] 事件 %d 跳过 %d 条：%s" % [ev_id, interp.skipped.size(), JSON.stringify(interp.skipped.slice(0, 3))])
 	_set_busy(false)
 	refresh_events()
+	if RERUN_AFTER_PAGE.has(rerun_key) and is_instance_valid(e) and "%d:%d:%d" % [map_id, ev_id, e.page_index] != rerun_key:
+		await run_event(e)
 
 
 func _set_busy(b: bool) -> void:
