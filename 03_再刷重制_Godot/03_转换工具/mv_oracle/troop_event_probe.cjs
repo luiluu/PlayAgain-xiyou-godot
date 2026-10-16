@@ -1,5 +1,5 @@
 'use strict';
-// 敌群事件参照（扩楼层：一至三、五至九、十一至十二层守层者 4/5/8/28/39/52/53/67/109/110 、十层守层者 69（另有 333 给自己加状态 44）与十三至十九层守层者 111／118／138／172／173／174／333（变量 842 为 0 时先调公共事件 1398：334 完全回复、313 全队加状态、333 加状态，再强制 6069／6105／8111）第 1 回合的强制行动 339 → 技能 8111「轮回模式·平衡伤害」→ 状态 1460「轮回困难v1」）。
+// 敌群事件参照（扩楼层：一至三、五至九、十一至十二层守层者 4/5/8/28/39/52/53/67/109/110 、十层守层者 69（另有 333 给自己加状态 44）与十三至十九层守层者 111／118／138／172／173／174／333（变量 842 为 0 时先调公共事件 1398：334 完全回复、313 全队加状态、333 加状态，再强制 6069／6105／8111）、二十层守层者 456（842 为 0 时公共事件 1399 天道领域＋强制 6070／8111，否则 1400 天道领域*伪＋强制 6071；第 3 回合起每 3 回合随机 844 强制 6101～6104 与 8111）第 1 回合的强制行动 339 → 技能 8111「轮回模式·平衡伤害」→ 状态 1460「轮回困难v1」）。
 // 十三至十九层补已交见面礼（变量 842＝1）分支，确认不触发开场领域与强制行动。
 // 真实 BattleManager 跑前两回合（日志窗/精灵组用空代理，同 sequence_probe）：普通难度、开局队伍 1/8/9/10（1 级，开局被动），
 // 角色输入一律普通攻击敌人 0；Math.random 敌群生成时 0.99（不出神话），之后 0.5（分散度为 0、不会心）。
@@ -10,7 +10,7 @@ const {boot} = require('./hboot.cjs'), {sourceIdentity} = require('./source_iden
 const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const identity = sourceIdentity(APP), r = boot(APP, {tolerant: true, log: false}), w = r.window;
 if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败');
-const PARTY = [1, 8, 9, 10], TROOPS = [4, 5, 8, 28, 39, 52, 53, 67, 69, 109, 110, 111, 118, 138, 172, 173, 174, 333];
+const PARTY = [1, 8, 9, 10], TROOPS = [4, 5, 8, 28, 39, 52, 53, 67, 69, 109, 110, 111, 118, 138, 172, 173, 174, 333, 456];
 const stub = new Proxy(function () {}, {get: (t, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprite = () => {
   const store = {x: 0, y: 0, _homeX: 0, _homeY: 0, width: 64, height: 64, scale: {x: 1, y: 1}, anchor: {x: 0.5, y: 1}, opacity: 255};
@@ -80,7 +80,7 @@ function run(troopId, paid = false) {
 }
 
 const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
-  cases: TROOPS.map(id => run(id)).concat([111,118,138,172,173,174,333].map(id => run(id, true)))};
+  cases: TROOPS.map(id => run(id)).concat([111,118,138,172,173,174,333,456].map(id => run(id, true)))};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));
