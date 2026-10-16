@@ -24,6 +24,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE))
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT  # noqa: E402
+from oracle_additions import compare_directories, payload, source_preserved  # noqa: E402
 
 ORACLE_DIR = HERE / 'mv_oracle'
 SANDBOX = ORACLE_DIR / '.sandbox'
@@ -49,15 +50,10 @@ PROBES = [
     (['shared_system_probe.cjs'], ['shop_stock.json', 'battle_messages.json', 'challenge_passives.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
-IDENTITY_KEYS = {'sourceIdentity', 'identity', 'releaseVersion', 'source'}
 
 
 def strip(x):
-    if isinstance(x, dict):
-        return {k: strip(v) for k, v in x.items() if k not in IDENTITY_KEYS}
-    if isinstance(x, list):
-        return [strip(v) for v in x]
-    return x
+    return payload(x)
 
 
 def diff_paths(a, b, path='', out=None, limit=20):
@@ -112,6 +108,8 @@ def main() -> int:
     ap.add_argument('--app', type=Path, default=DEFAULT_APP)
     ap.add_argument('--generated', type=Path, default=DEFAULT_OUT)
     ap.add_argument('--no-register', action='store_true', help='只同步与比较，不改来源登记/当前状态')
+    ap.add_argument('--accept-additions', action='store_true',
+                    help='同源且旧用例逐条相同、只增已知结构新用例时自动接受；不接受规则变化/删除/新用例错误')
     a = ap.parse_args()
     # 多会话并行（AGENTS.md）：来源登记／当前状态只由总装在主工作区改，worktree 里自动不登记
     git = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'],
@@ -162,8 +160,12 @@ def main() -> int:
     report['sliceChanged'] = (backup / 'slice.json').read_bytes() != (gen / 'slice.json').read_bytes() if (backup / 'slice.json').exists() else True
     # 测量比较
     measure = {}
-    for f in sorted((gen / 'oracle').glob('*.json')):
+    for name in sorted({f.name for d in [gen / 'oracle', backup / 'oracle'] for f in d.glob('*.json')}):
+        f = gen / 'oracle' / name
         old = backup / 'oracle' / f.name
+        if not f.exists():
+            measure[name] = ['参照已删除']
+            continue
         if not old.exists():
             measure[f.name] = ['新增参照']
             continue
@@ -171,11 +173,21 @@ def main() -> int:
         if d:
             measure[f.name] = d
     report['measurementChanges'] = measure
+    report['additionCheck'] = compare_directories(backup / 'oracle', gen / 'oracle')
+    report['sameExistingSource'] = source_preserved(old_manifest, new_manifest)
     v = subprocess.run([sys.executable, str(HERE / '验证西游来源.py'), '--app', str(app), '--generated', str(gen)], capture_output=True, text=True)
     report['verify'] = (v.stdout.strip().splitlines() or [''])[-1]
     report['verifyOk'] = v.returncode == 0
-    ok = report['verifyOk'] and not measure
-    report['result'] = '测量不变，已登记' if ok and not a.no_register else ('测量不变' if ok else '有变化，请人工查看')
+    accepted = bool(a.accept_additions and report['additionCheck']['onlyAdditions']
+                    and report['sameExistingSource'] and report['verifyOk'])
+    ok = report['verifyOk'] and (not measure or accepted)
+    report['acceptedAdditions'] = accepted
+    if accepted:
+        report['result'] = '只增新用例，已接受' + ('并登记' if not a.no_register else '（不登记）')
+    elif report['additionCheck']['onlyAdditions'] and report['sameExistingSource'] and report['verifyOk']:
+        report['result'] = '只增新用例；加 --accept-additions 可自动接受'
+    else:
+        report['result'] = '测量不变，已登记' if ok and not a.no_register else ('测量不变' if ok else '有变化，请人工查看')
     fingerprint = backup / '当前西游来源清单.json'
     fingerprint.write_text(json.dumps({'releaseVersion': new_version, 'inputs': new_manifest['inputs'],
                                        'runtimeInputs': new_manifest.get('runtimeInputs', {})}, ensure_ascii=False, indent=2))
@@ -189,14 +201,15 @@ def main() -> int:
 
 def register(version: str, fingerprint: Path, report: dict) -> None:
     rel = str(fingerprint.relative_to(ROOT))
-    changed = '、'.join(report['changedInputs'] + report['changedRuntime'])[:300] or '只有 package.json'
+    changed = '、'.join(report['changedInputs'] + report['changedRuntime'])[:300] or '来源文件不变'
     p = ROOT / '00_项目管理/来源登记.json'
     data = json.loads(p.read_text())
     src = next(s for s in data['sources'] if s['id'] == 'legacy_xiyou_mod_kyo')
     for k in ['confirmedReleaseVersion', 'lastConvertedContentReleaseVersion', 'oracleReleaseVersion']:
         src[k] = version
     src['fingerprint'] = rel
-    src['note'] = src.get('note', '') + ' %s（%s 自动同步）：改动 %s；全部参照去来源身份后测量不变。' % (version, dt.date.today().isoformat(), changed)
+    conclusion = '既有用例逐条不变，只增新用例' if report.get('acceptedAdditions') else '全部参照去来源身份后测量不变'
+    src['note'] = src.get('note', '') + ' %s（%s 自动同步）：改动 %s；%s。' % (version, dt.date.today().isoformat(), changed, conclusion)
     data['review'] = '%s 由自动同步核对同源，待交叉核查' % version
     p.write_text(json.dumps(data, ensure_ascii=False, indent=1) + '\n')
     p = ROOT / '00_项目管理/当前状态.json'
@@ -205,6 +218,10 @@ def register(version: str, fingerprint: Path, report: dict) -> None:
     for k in ['releaseVersion', 'convertedContentReleaseVersion', 'oracleReleaseVersion']:
         rs[k] = version
     rs['fingerprint'] = rel
+    manifest = json.loads((Path(report['generated']) / 'manifest.json').read_text())
+    rs['fingerprintedFiles'] = len(manifest['inputs'])
+    rs['runtimeFingerprintCount'] = len(manifest.get('runtimeInputs', {}))
+    rs['converterVersion'] = manifest.get('toolVersion', rs.get('converterVersion'))
     p.write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n')
 
 

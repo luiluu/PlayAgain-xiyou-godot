@@ -80,6 +80,7 @@ def main() -> int:
         return 1
     fail = 0
     results = {}
+    started = time.monotonic()
     with cf.ThreadPoolExecutor(max_workers=a.jobs) as pool:
         for name, rc, out, secs in pool.map(lambda n: run_one(a.godot, a.project, n), scenes):
             results[name] = (rc, out, secs)
@@ -96,6 +97,13 @@ def main() -> int:
             print('  ✗ %s (rc=%d)' % (name, rc))
             for l in [l for l in out.splitlines() if re.search(r'ERROR|FAIL |passed|TEST_RESULT', l)][:8]:
                 print('      ' + l)
+    if a.log_dir:
+        (a.log_dir / 'test_timings.json').write_text(json.dumps({
+            'jobs': a.jobs, 'wallSeconds': round(time.monotonic() - started, 3),
+            'scenes': [{'name': name, 'seconds': round(results[name][2], 3),
+                        'passed': result_ok(results[name][0], results[name][1])}
+                       for name in sorted(scenes, key=lambda n: results[n][2], reverse=True)]
+        }, ensure_ascii=False, indent=2) + '\n')
     return fail
 
 
