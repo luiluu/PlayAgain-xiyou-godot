@@ -265,6 +265,11 @@ static func apply(eq: Dictionary, gem: Dictionary, slot: int, s: XState, gain :=
 	install_to_slot(eq, gem, slot)
 	if not gem.is_empty():
 		s.gain_item(int(gem.id), -gain)
+	# augmentRefreshParty：穿着这件装备的队员 refresh（HP/MP 不超过新的上限）
+	for a in s.members():
+		if a.equips.any(func(e): return is_same(e, eq)):
+			a.hp = minf(a.hp, a.mhp)
+			a.mp = minf(a.mp, a.mmp)
 	return ""
 
 ## installAugmentToSlot（YEP）＋ Codex「类:阶」标记 ＋ Star_EquipmentMosaic 继承词缀

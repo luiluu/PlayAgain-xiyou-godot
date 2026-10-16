@@ -219,6 +219,20 @@ func _save_roundtrip() -> void:
 	var d: Dictionary = JSON.parse_string(JSON.stringify(s.to_dict()))
 	d.erase("orbSeed")
 	check("rt_legacy_seed", XState.from_dict(d.duplicate(true)).orb_seed == XState.from_dict(d.duplicate(true)).orb_seed)
+	# 穿着时取下长生宝珠：HP 不超过新的上限（augmentRefreshParty → refresh）
+	var a := back.actor(1)
+	var arm := XGear.template("armor", 4)
+	back.register_gear(arm)
+	arm.augmentSlots = [XOrbs.ARMOR_TYPE]
+	arm.augmentSlotEnable = [true]
+	arm.augmentSlotItems = ["none"]
+	back.gain_item(3006, 1)
+	XOrbs.apply(arm, XDB.rec("Items", 3006), 0, back)
+	a.equips[2] = arm
+	a.hp = a.mhp
+	var high := a.mhp
+	XOrbs.apply(arm, {}, 0, back)
+	check("rt_remove_clamps_hp", a.mhp < high and a.hp == a.mhp, [high, a.mhp, a.hp])
 	# 取下：宝珠回背包，特性与增幅复原
 	check("rt_remove", XOrbs.apply(bw, {}, 0, back) == "" and back.item_count(2947) == 1 and bw.augmentSlotItems[0] == "none" \
 		and not bw.traits.any(func(t): return t.has("_codexOrb")))
