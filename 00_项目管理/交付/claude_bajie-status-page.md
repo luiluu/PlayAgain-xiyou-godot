@@ -1,7 +1,7 @@
 # 交付：claude/bajie-status-page
 
 - 车道／工作者：B 界面／八戒（Claude，重制_八戒_8）
-- 状态：进行中——功能与测试已完成，等收工检查（检查.sh --oracle）结果
+- 状态：可合并（2026-10-16 05:1x，检查.sh --oracle 全部通过；已合并 main 01b1871，带入 d47aa33 与协助预检，八戒预检各点已满足）
 
 ## 变更记录草稿
 
@@ -12,10 +12,10 @@
 - 右上角「战力 N」按钮（网页层，与装备检索按钮同款）打开角色战力面板 `ui/power_panel.gd`（XPowerPanel，installEquipmentStatusRuntime renderPower）：标题与队伍页签、胶囊（总／自身／装备战力）、人物属性、各元素承伤、能力构成三卡（自身与装备提升）、3／10 回合平均输出、尚未完整评估的技能、战力未计入、已穿装备评分卡（法宝等级）、自身成长来源说明、底部「返回游戏」。数值全部取 XPower。
 - XPower（`core/power.gd`）补正式版 actorPower 的 `equipment`（已穿装备 {item, slot, score}）、`rows`（正式版恒为空）与 `evaluation.coverage.unmodeled`（强化/变身/切换、队友辅助、当前条件不可用，扣掉中档路线里用过的技能）；`formula_ok` 补 YEP_DamageCore 规则：备注带 `<damage formula>` 的技能 damage.custom 为真，不计入（此前把它们当普通公式算，如摇光「圣光打击」、红尘一步·烽火无尽）。只影响战力显示，不碰战斗。
 - 公共部件：装备检索的网页层面板抽成 `ui/web_panel.gd`（XWebPanel：外框、标题区、按钮样式、详情滚动框、h3／胶囊／卡片、精确小数排版），XGearSearch 改为继承；按钮与胶囊的边框计入内边距（CSS 盒子，原来窄 2 像素）。
-- 验证分级「标准」：ui_reference（冻结副本，静音）录正式版运行时读数——状态页各窗口矩形与每页 contents 上的全部绘制调用（4 个角色 × 3 页，夹具 `tests/fixtures/status_page_oracle.json`）、战力面板 DOM 各行矩形（`power_panel_oracle.json`）、新开局 166 个角色的覆盖说明（`power_coverage_oracle.json`）。新测试 `xiyou_status_page`（42 项：绘制调用逐项一致、行数、窗口、滚动到底、换页循环、换角色、战力按钮与面板、关掉战力的布局）、`xiyou_status_power_panel`（11 项：163 个角色覆盖说明与正式版一致，另 3 个因未移植模块跳过；面板各行位置 ±2 像素、胶囊间距）。`xiyou_status_power` 改按新页窗；`xiyou_panels`、`xiyou_gear_ui` 的状态页文字改读 `XStatusPage.all_text()`（页面不再是 Label），焦点检查改为「页外无控件占焦点」。截图对照：正式版 `04_验证/本地结果/原版参照/bajie8_status_*`、`bajie8_power_*`；Godot `04_验证/本地结果/八戒8_状态页/`、`八戒8_战力面板/`。检查.sh --oracle：（待填）。
+- 验证分级「标准」：ui_reference（冻结副本，静音）录正式版运行时读数——状态页各窗口矩形与每页 contents 上的全部绘制调用（4 个角色 × 3 页，夹具 `tests/fixtures/status_page_oracle.json`）、战力面板 DOM 各行矩形（`power_panel_oracle.json`）、新开局 166 个角色的覆盖说明（`power_coverage_oracle.json`）。新测试 `xiyou_status_page`（42 项：绘制调用逐项一致、行数、窗口、滚动到底、换页循环、换角色、战力按钮与面板、关掉战力的布局）、`xiyou_status_power_panel`（11 项：163 个角色覆盖说明与正式版一致，另 3 个因未移植模块跳过；面板各行位置 ±2 像素、胶囊间距）。`xiyou_status_power` 改按新页窗；`xiyou_panels`、`xiyou_gear_ui` 的状态页文字改读 `XStatusPage.all_text()`（页面不再是 Label），焦点检查改为「页外无控件占焦点」。截图对照：正式版 `04_验证/本地结果/原版参照/bajie8_status_*`、`bajie8_power_*`；Godot `04_验证/本地结果/八戒8_状态页/`、`八戒8_战力面板/`。检查.sh --oracle 全部通过：46 个 Godot 测试场景／77,410 项断言，参照工具访问守卫 16、界面参照服务守卫 12、工作树清理保护通过，MV 参照引擎启动正常（v0.28，248 脚本／165 插件），同源 1181／382／1115 无问题（worktree 并行 2）。本分支未改切片、转换器与探针，合并时不需同步。新截图均已核对 PNG 文件头。
 - 未做：战力条右端真气段与「修行」页（真气未移植）；战力面板的路线比较（routes，变身钩子角色 167／168／171～174 未接入）；CodexDisabledActor（157／160 正式版不能行动）未移植；装备检索详情里卡片与 h3 相邻外边距未折叠（与正式版差 7 像素，未改其行为）。
 - 发现（不在本车道）：技能 1065「霸道之刃」公式 `750 +  + a.atk * 38.5`（JS 一元加号）转换器没译成可解析的 Godot Expression，战斗里伤害算 0、评估时报「公式解析失败」；应在转换器 `xiyou_export.py` 的公式翻译里处理一元加号（悟空车道独占文件）。测试里这类角色先跳过并单列。
-- 提交：e630774～3d90562（八戒）
+- 提交：e630774～3d90562（八戒），合并 main：2ea62fc、（本提交前一次）
 
 ## 交接板
 
@@ -36,4 +36,6 @@
 - 401b6e6 角色战力面板 XPowerPanel、DOM 读数夹具与测试；CSS 边框计入内边距、精确排版
 - 108bf75 状态页逐像素复现、「战力 N」按钮接面板；O-032
 - 3d90562 优化登记 O-032、界面风格
-- 2ea62fc 合并 main
+- 2ea62fc 合并 main（d47aa33 dev.058）
+- 1af9ee0 交付单草稿（WIP）
+- 合并 main 01b1871（协助预检）与本交付单「可合并」
