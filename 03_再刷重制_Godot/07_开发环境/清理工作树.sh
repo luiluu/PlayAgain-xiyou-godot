@@ -11,7 +11,8 @@ GODOT_SUB=03_再刷重制_Godot
 
 (( $# == 1 )) || { print -u2 "用法：${0:t} <任务名或 worktree 路径>"; exit 64; }
 wt=$1
-[[ -d $wt ]] || wt=${MAIN:h}/${MAIN:t}-wt-$1
+[[ -d $wt ]] || wt=$MAIN/.claude/worktrees/$1
+[[ -d $wt ]] || wt=${MAIN:h}/${MAIN:t}-wt-$1   # 2026-10-16 前建在主工作区旁
 wt=${wt:A}
 [[ -d $wt && -e $wt/.git ]] || { print -u2 "✗ 找不到 worktree：$1"; exit 1; }
 [[ $wt != $MAIN ]] || { print -u2 "✗ 不能删除主工作区"; exit 1; }

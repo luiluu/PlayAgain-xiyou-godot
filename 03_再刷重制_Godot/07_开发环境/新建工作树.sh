@@ -1,7 +1,7 @@
 #!/bin/zsh
 # 多会话并行：给一条车道新建 worktree，并补齐不入 Git 的运行文件（规则见 AGENTS.md「多会话并行」）。
 # 用法：
-#   新建工作树.sh <任务名> [claude|codex]   从 main 最新提交切出分支 <执行者>/<任务名>，建在主工作区旁 <主工作区名>-wt-<任务名>
+#   新建工作树.sh <任务名> [claude|codex]   从 main 最新提交切出分支 <执行者>/<任务名>，建在主工作区的 .claude/worktrees/<任务名>（已信任的项目文件夹内，开车道会话不用再确认信任；该目录已被 .gitignore 忽略）
 #   新建工作树.sh --补齐 <worktree 路径>      只补齐已有 worktree（如桌面 app 自己建的）
 # 补齐内容：Godot 引擎链接、西游资料库链接、冻结正式源链接、mv_oracle/node_modules、转换产物 generated/、导入缓存 .godot/。
 # node_modules、generated、.godot 用 APFS 克隆（cp -c）复制主工作区的，不另占空间；随后按本分支重跑转换器与 godot --import。
@@ -80,7 +80,8 @@ name=$1 who=${2:-claude}
 [[ $who == claude || $who == codex ]] || usage
 [[ $name != */* && $name != -* ]] || { print -u2 "✗ 任务名不能含 / 或以 - 开头"; exit 64; }
 branch=$who/$name
-dest=${MAIN:h}/${MAIN:t}-wt-$name
+dest=$MAIN/.claude/worktrees/$name
+mkdir -p "${dest:h}"
 [[ ! -e $dest ]] || { print -u2 "✗ $dest 已存在"; exit 1; }
 if git -C "$MAIN" show-ref --verify --quiet "refs/heads/$branch"; then
   print -u2 "✗ 分支 $branch 已存在（要接手已有分支：git worktree add <路径> $branch，再用 --补齐）"; exit 1

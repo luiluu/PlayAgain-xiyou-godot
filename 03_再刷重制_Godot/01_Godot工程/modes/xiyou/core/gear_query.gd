@@ -125,7 +125,9 @@ static func is_gear(item: Dictionary) -> bool:
 ## record()：词条行、分类与搜索文字（按备注/描述/品质/能力缓存）
 static func record(item: Dictionary) -> Dictionary:
 	var description := text(XHelpCard.gear_text(str(item.get("description", ""))))
-	var sig := "|".join([item.get("note", ""), item.get("description", ""), quality(item), JSON.stringify(item.get("params", []))])
+	# 正式版 WeakMap 按装备对象隔离；这里按内容缓存，必须包含名字与底材身份。
+	var sig := JSON.stringify([item.get("kind", ""), item.get("base"), item.get("name", ""),
+		item.get("note", ""), item.get("description", ""), quality(item), item.get("params", [])])
 	var c = _cache.get(sig)
 	if c != null:
 		return c
