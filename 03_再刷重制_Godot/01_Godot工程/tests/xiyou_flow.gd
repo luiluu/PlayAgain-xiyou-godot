@@ -8,6 +8,7 @@ extends Node
 const ENTRY := "res://modes/xiyou/entry.tscn"
 var results: Array = []
 var out_dir := ""
+var _clock_before := []
 
 
 func _ready() -> void:
@@ -29,6 +30,14 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 func _frames(n: int) -> void:
 	for i in range(n):
+		await get_tree().process_frame
+
+
+func _wait_frame() -> void:
+	# 无画面快循环可能在剧情时钟前耗光process帧预算；条件等待仍按物理帧推进。
+	if DisplayServer.get_name() == "headless":
+		await get_tree().physics_frame
+	else:
 		await get_tree().process_frame
 
 
@@ -57,7 +66,7 @@ func _wait_map(map_id: int, timeout := 600, even_busy := false) -> bool:
 		var s = _scene()
 		if s is XMapScene and s.map_id == map_id and s.player != null and (even_busy or not s.busy):
 			return true
-		await get_tree().process_frame
+		await _wait_frame()
 	return false
 
 
@@ -73,7 +82,15 @@ func _run() -> void:
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0   # 流程测试不出神话敌人（神话另由 xiyou_combat 测）
 	XSave.dir_override = "user://test_xiyou_flow"
-	Engine.time_scale = 6.0
+	_clock_before = [OS.low_processor_usage_mode_sleep_usec, Engine.physics_ticks_per_second,
+		Engine.max_physics_steps_per_frame, Engine.time_scale]
+	if DisplayServer.get_name() == "headless":
+		OS.low_processor_usage_mode_sleep_usec = 0
+		Engine.physics_ticks_per_second = 600
+		Engine.max_physics_steps_per_frame = 64
+		Engine.time_scale = 30.0
+	else:
+		Engine.time_scale = 6.0
 	seed(20261012)
 	# 入口 → 西游 → 新游戏
 	_check("enter_xiyou", GameApp.enter_mode("xiyou"))
@@ -106,7 +123,7 @@ func _run() -> void:
 	for i in range(600):
 		if s.self_switch(4, 20, "A") and not _scene().busy:
 			break
-		await get_tree().process_frame
+		await _wait_frame()
 	_check("hub_loaded", ok and s.self_switch(4, 20, "A"))
 	map = _scene()
 	var a1 := s.actor(1)
@@ -130,6 +147,8 @@ func _run() -> void:
 		# 按住若干物理帧再松开：同一物理帧内按下又松开时 is_action_just_pressed 仍为真而 ⌘ 已松开，会误判（测试时序问题，非真人操作）
 		for i in range(3):
 			await get_tree().physics_frame
+			# 快时钟可在一个process帧里跑多次物理帧；组合键必须跨真实输入刷新周期。
+			await get_tree().process_frame
 		Input.parse_input_event(_key(KEY_ENTER, true, false))
 		Input.parse_input_event(_key(KEY_META, false, false))
 		await _frames(2)
@@ -216,7 +235,7 @@ func _run() -> void:
 		for i in range(120):
 			if not map._menu_open and not map.busy:
 				break
-			await get_tree().process_frame
+			await _wait_frame()
 		_check("menu_save_common_event", map.toasts.slice(toasts_before) == ["存档成功，储存到了1号存档！"], map.toasts.slice(toasts_before))
 	await _frames(3)
 	_check("menu_closed", not map._menu_open)
@@ -290,7 +309,10 @@ func _run() -> void:
 	# 清理测试存档
 	DirAccess.remove_absolute(XSave.path(1))
 	DirAccess.remove_absolute(XSave.dir())
-	Engine.time_scale = 1.0
+	OS.low_processor_usage_mode_sleep_usec = _clock_before[0]
+	Engine.physics_ticks_per_second = _clock_before[1]
+	Engine.max_physics_steps_per_frame = _clock_before[2]
+	Engine.time_scale = _clock_before[3]
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:

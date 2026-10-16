@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT
+from common_oracle_contract import verify_reports
 
 
 def sha(path):
@@ -204,6 +205,7 @@ def verify(app, generated, oracle):
         data = json.loads(sequences.read_text())
         if not data.get('operations') or not data.get('parseIntNumbers'):
             issues.append('行动序列缺少数值边界参照')
+    issues.extend(verify_reports(oracle, manifest))
     return {'releaseVersion': version, 'inputs': len(manifest['inputs']),
             'runtimeInputs': len(manifest.get('runtimeInputs', {})),
             'outputs': len(manifest['outputs']), 'issues': issues}
