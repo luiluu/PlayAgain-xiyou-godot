@@ -34,18 +34,24 @@ var facing_left := true
 ## YEP_X_AnimatedSVEnemies 呼吸（Breathing Y Rate 0.02）
 var breathing := false
 var _breath_t := randf() * TAU
-const HUE_SHADER := """
+## 身体材质：hue 是神话敌人色相（载入时改图，先做），blend 是 Sprite.setBlendColor（技能动画目标闪光：rgb 向 blend.rgb 混合 blend.a）
+const BODY_SHADER := """
 shader_type canvas_item;
 uniform float hue = 0.0;
+uniform vec4 blend = vec4(0.0);
+varying vec4 tint;
+void vertex() { tint = COLOR; }
 void fragment() {
-	vec4 c = texture(TEXTURE, UV) * COLOR;
+	vec4 c = texture(TEXTURE, UV);
 	float a = hue * 6.28318;
 	vec3 k = vec3(0.57735);
 	float ca = cos(a);
 	c.rgb = c.rgb * ca + cross(k, c.rgb) * sin(a) + k * dot(k, c.rgb) * (1.0 - ca);
-	COLOR = c;
+	c.rgb = mix(c.rgb, blend.rgb, blend.a);
+	COLOR = c * tint;
 }
 """
+static var _body_shader: Shader
 
 
 func setup(b: XBattler, sprite_scale: float) -> void:
@@ -89,14 +95,7 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 		add_child(cursor)
 	# EliteEnemyPlugins：神话敌人色相偏移（MV loadBitmap 的 hue）
 	if b is XEnemy and (b as XEnemy).elite:
-		var mat := ShaderMaterial.new()
-		var sh := Shader.new()
-		sh.code = HUE_SHADER
-		mat.shader = sh
-		mat.set_shader_parameter("hue", (b as XEnemy).elite_hue)
-		sprite.material = mat
-		for n in sprite.find_children("*", "CanvasItem", true, false):
-			(n as CanvasItem).use_parent_material = true
+		_body_material().set_shader_parameter("hue", (b as XEnemy).elite_hue)
 	set_motion("walk" if b.is_alive() else "dead")
 	if not sv:
 		_show_frame(look.frame("walk", 0))
@@ -289,6 +288,36 @@ func _hook_scene_finished() -> void:
 		(ap as AnimationPlayer).animation_finished.connect(done)
 	for a in sprite.find_children("*", "AnimatedSprite2D", true, false) + ([sprite] if sprite is AnimatedSprite2D else []):
 		(a as AnimatedSprite2D).animation_finished.connect(done)
+
+
+## 身体的 BODY_SHADER 材质（用到时才建；场景外观的子节点跟着用）
+func _body_material() -> ShaderMaterial:
+	if not sprite.material is ShaderMaterial:
+		if _body_shader == null:
+			_body_shader = Shader.new()
+			_body_shader.code = BODY_SHADER
+		var mat := ShaderMaterial.new()
+		mat.shader = _body_shader
+		sprite.material = mat
+		for n in sprite.find_children("*", "CanvasItem", true, false):
+			(n as CanvasItem).use_parent_material = true
+	return sprite.material
+
+
+## 技能动画目标（Sprite_Animation._target）：角色是 _mainSprite、敌人是 Sprite_Enemy，这里都作用在身体上
+func set_anim_blend(c: Color) -> void:
+	if c.a <= 0.0 and not sprite.material is ShaderMaterial:
+		return
+	_body_material().set_shader_parameter("blend", c)
+
+
+func anim_blend() -> Color:
+	return sprite.material.get_shader_parameter("blend") if sprite.material is ShaderMaterial else Color(0, 0, 0, 0)
+
+
+## Sprite_Base.hide/show（技能动画 flashScope 3）
+func set_anim_hidden(h: bool) -> void:
+	sprite.visible = not h
 
 
 func flash(color := Color(1, 1, 1)) -> void:
