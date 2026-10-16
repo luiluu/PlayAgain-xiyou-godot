@@ -213,6 +213,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 		chars.add_child(e)
 		e.setup_event(id, ev)
 		events.append(e)
+	lower.tile_events = _tile_events_at
 	# MOG_TreasurePopup：换地图时上一张图的获得提示不带过来（场所移动之后才执行的获得指令照常出现在新地图）
 	for n in get_children():
 		if n is XTreasurePopup:
@@ -400,6 +401,15 @@ func _physics_process(_delta: float) -> void:
 			return
 
 
+## Game_Map.tileEventsXy：该格上当前页图像是图块、优先级「角色下方」的事件的图块编号（通行判定用）
+func _tile_events_at(x: int, y: int) -> Array:
+	var out := []
+	for e in events:
+		if e.tile_id > 0 and e.priority_type == 0 and e.grid.x == x and e.grid.y == y:
+			out.append(e.tile_id)
+	return out
+
+
 ## Game_Map.setupAutorunEvent / Game_Event.checkEventTriggerAuto：列表多于一条（末尾结束指令之外还有内容）才启动
 func _check_autorun() -> void:
 	for e in events:
@@ -563,7 +573,12 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	ui.add_child(battle)
 	ui.move_child(hang_overlay, -1)
 	_in_battle = true
+	# 战斗期间 Scene_Map 不更新（$gameMap／$gamePlayer.update 都不跑）：地图上的玩家、事件、跟随者不走动、不取随机数。
+	# 挂机计时在本场景 _physics_process，照常走。
+	chars.process_mode = Node.PROCESS_MODE_DISABLED
 	var result: int = await battle.finished
+	if is_instance_valid(chars):
+		chars.process_mode = Node.PROCESS_MODE_INHERIT
 	_in_battle = false
 	battle.queue_free()
 	difficulty_notice.clock.paint()

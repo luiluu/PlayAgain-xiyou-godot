@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.062",
-  "sequence": 62,
-  "next": "dev.063",
-  "nextSequence": 63,
+  "current": "dev.063",
+  "sequence": 63,
+  "next": "dev.064",
+  "nextSequence": 64,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "二十二层 Map119 月行天、转换器一元加号、楼层流程负载修稳（悟空）",
+  "currentChange": "二十三层 Map118 娑罗天、图块事件通行、战斗中地图停更新（悟空）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

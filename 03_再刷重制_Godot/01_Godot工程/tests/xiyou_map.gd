@@ -22,6 +22,8 @@ func _run() -> void:
 	if not oracle is Dictionary:
 		_check("oracle_present", false, "先运行 mv_oracle/map_probe.cjs")
 		return _finish()
+	# 事件页条件按新开局状态判断（同参照探针的 DataManager.setupNewGame）
+	XState.new_game_blank()
 	for id_s in oracle:
 		var map := XDB.map(int(id_s))
 		var lower := MVTilemap.new()
@@ -30,6 +32,18 @@ func _run() -> void:
 		add_child(upper)
 		lower.setup(map, false)
 		upper.setup(map, true)
+		# 参照探针在新开局 $gameMap.setup 后取通行：本图全部事件按当时的页，图块事件（如二十三层 Map118 事件 1、2）参与判定
+		var evs := []
+		for ev in map.get("events", []):
+			if ev == null:
+				continue
+			var e := MVEvent.new()
+			e.tilemap = lower
+			lower.add_child(e)
+			e.setup_event(int(id_s), ev)
+			evs.append(e)
+		lower.tile_events = func(x: int, y: int) -> Array:
+			return evs.filter(func(e): return e.tile_id > 0 and e.priority_type == 0 and e.grid == Vector2i(x, y)).map(func(e): return e.tile_id)
 		var rows: Array = oracle[id_s].passable
 		var wrong := []
 		for y in range(rows.size()):
