@@ -47,10 +47,11 @@ static func _box(bg: Color, edge: Color, radius := 6, border := 1, pad := Vector
 	s.border_color = edge
 	s.set_border_width_all(border)
 	s.set_corner_radius_all(radius)
-	s.content_margin_left = pad.x
-	s.content_margin_right = pad.x
-	s.content_margin_top = pad.y
-	s.content_margin_bottom = pad.y
+	# CSS 盒子：内容到外沿＝内边距＋边框
+	s.content_margin_left = pad.x + border
+	s.content_margin_right = pad.x + border
+	s.content_margin_top = pad.y + border
+	s.content_margin_bottom = pad.y + border
 	return s
 
 
@@ -213,30 +214,47 @@ func _empty(text: String) -> Control:
 	return m
 
 
-## h3：上 12 下 6、17 号粗体
-static func h3(text: String, color := SYSTEM) -> Control:
+## h3：上 12 下 6、17 号粗体；top 给前一块的下边距折叠用（CSS 相邻外边距取大者）
+static func h3(text: String, color := SYSTEM, top := 12) -> Control:
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_top", 12)
+	m.add_theme_constant_override("margin_top", top)
 	m.add_theme_constant_override("margin_bottom", 6)
 	m.add_child(_para(text, 17, color, 27.2, true))
 	return m
 
 
-## .cq-pills：金色胶囊，上下 8、间距 7
-static func pills(texts: Array) -> Control:
+## .cq-pills：金色胶囊，上下 8、间距 7（胶囊高 28.8＝20.8＋上下 3＋边框 1）
+static func pills(texts: Array, width := 1164.0) -> Control:
 	var m := MarginContainer.new()
 	m.add_theme_constant_override("margin_top", 8)
 	m.add_theme_constant_override("margin_bottom", 8)
-	var flow := HFlowContainer.new()
-	flow.add_theme_constant_override("h_separation", 7)
-	flow.add_theme_constant_override("v_separation", 7)
+	var items := []
 	for t in texts:
 		var p := PanelContainer.new()
 		p.add_theme_stylebox_override("panel", _box(Color(0, 0, 0, 0.3), Color(1, 211 / 255.0, 115 / 255.0, 0.45), 6, 1, Vector2(7, 3)))
 		p.add_child(_fixed(_label(t, 13, GOLD), 20.8))
-		flow.add_child(p)
-	m.add_child(flow)
+		items.append(p)
+	m.add_child(flow(items, width, 7, 7, 28.8))
 	return m
+
+
+## CSS flex-wrap：按宽度换行，横 hgap、纵 vgap；高度不取整（Godot 的 FlowContainer 会把行高截成整数）
+static func flow(items: Array, width: float, hgap: float, vgap: float, line_h: float) -> Control:
+	var box := Control.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var x := 0.0
+	var y := 0.0
+	for c in items:
+		box.add_child(c)
+		var w := _min_width(c)
+		if x > 0 and x + w > width:
+			x = 0.0
+			y += line_h + vgap
+		c.position = Vector2(x, y)
+		c.size = Vector2(w, line_h)
+		x += w + hgap
+	box.custom_minimum_size = Vector2(0, y + line_h if not items.is_empty() else 0.0)
+	return box
 
 
 ## .cq-effect 卡片：rows 为 [文字, 字号, 颜色, 行高, 粗体]
@@ -274,3 +292,75 @@ func _input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey or event is InputEventAction:
 		get_viewport().set_input_as_handled()
+
+
+## 进场景树前的最小宽度：PanelContainer 的缓存尺寸要进树才更新，这里按「子项＋面板样式」自己算
+static func _min_width(c: Control) -> float:
+	if c is PanelContainer and c.get_child_count() > 0:
+		var st: StyleBox = c.get_theme_stylebox("panel")
+		return (c.get_child(0) as Control).get_combined_minimum_size().x + (st.get_minimum_size().x if st else 0.0)
+	return c.get_combined_minimum_size().x
+
+
+# ---- 精确排版（CSS 小数高度；Godot 的 Box/Margin/Flow 容器会把子项高度取整，逐块累积误差） ----
+## 纵向堆叠：各块宽 width、高取 custom_minimum_size.y（块自己算好），y 用小数累加；返回带最小尺寸的容器
+static func stack(blocks: Array, width: float) -> Control:
+	var box := Control.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var y := 0.0
+	for b in blocks:
+		var c: Control = b
+		box.add_child(c)
+		c.position = Vector2(0, y)
+		c.size = Vector2(width, c.custom_minimum_size.y)
+		y += c.custom_minimum_size.y
+	box.custom_minimum_size = Vector2(width, y)
+	return box
+
+
+## 外边距块：上 top、下 bottom 包住 inner（inner 已带 custom_minimum_size.y）
+static func spaced(inner: Control, top: float, bottom: float, width: float) -> Control:
+	var box := Control.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(inner)
+	inner.position = Vector2(0, top)
+	inner.size = Vector2(width, inner.custom_minimum_size.y)
+	box.custom_minimum_size = Vector2(0, top + inner.custom_minimum_size.y + bottom)
+	return box
+
+
+## 一段文字（.cq-note 等）：按宽度折行，高＝行数×行高
+static func text_block(text: String, size: int, color: Color, line_h: float, width: float, bold := false) -> Label:
+	var l := _para(text, size, color, line_h, bold)
+	l.size = Vector2(width, line_h)
+	var lines := maxi(1, l.get_line_count())
+	l.custom_minimum_size = Vector2(0, lines * line_h)
+	return l
+
+
+## h3 块（上 top 下 6，17 号粗体 27.2）
+static func h3_block(text: String, width: float, top := 12.0, color := SYSTEM) -> Control:
+	return spaced(text_block(text, 17, color, 27.2, width, true), top, 6, width)
+
+
+## .cq-effect 卡片块：白 0.04 底、左 3px 系统色、内边距 9/10、下距 7；rows 为 [文字, 字号, 颜色, 行高, 粗体]
+static func card_block(rows: Array, width: float) -> Control:
+	var box := Control.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var bg := Panel.new()
+	var st := _box(Color(1, 1, 1, 0.04), SYSTEM, 0, 0, Vector2.ZERO)
+	st.border_width_left = 3
+	bg.add_theme_stylebox_override("panel", st)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(bg)
+	var y := 9.0
+	for r in rows:
+		var l := text_block(r[0], r[1], r[2], r[3], width - 23, r[4] if r.size() > 4 else false)
+		l.position = Vector2(13, y)
+		box.add_child(l)
+		y += l.custom_minimum_size.y
+	bg.position = Vector2.ZERO
+	bg.size = Vector2(width, y + 9)
+	box.custom_minimum_size = Vector2(0, y + 9 + 7)
+	return box
+
