@@ -101,8 +101,12 @@ function wear(slots){setup(13);const a=w.$gameActors.actor(1);a.releaseUnequippa
   a.need_refresh_paramrate=[1,1,1,1,1,1,1,1];a.need_refresh_xparam=[1,1,1,1,1,1,1,1,1,1];
   const kept=a.allTraits().filter(t=>t._codexOrb).map(t=>({code:t.code,dataId:t.dataId,value:t.value,orb:t._codexOrb}));
   const all=[];a.equips().forEach((eq,i)=>{if(eq)eq.traits.forEach(t=>{if(t._codexOrb)all.push({slot:i,code:t.code,dataId:t.dataId,value:t.value,orb:t._codexOrb});});});
-  return {worn,kept,all,paramRate:[0,1,2,3,4,5,6,7].map(i=>a.paramRate(i)),xparam:[0,1,2,3,4,5,6,7,8,9].map(i=>a.xparam(i)),
+  // 套装通用效果：CodexDamage.calculate 的 terminal（finalMultiplier）；普通攻击与一个魔法技能，对 1 号敌人
+  const foe=new w.Game_Enemy(1,0,0),damage=[1,DMG_SKILL].map(id=>{const act=new w.Game_Action(a);act.setSkill(id);
+    const res=w.CodexDamage.calculate(act,foe,{reference:true,critical:false});return {skill:id,terminal:res.breakdown.terminal};});
+  return {worn,kept,all,damage,paramRate:[0,1,2,3,4,5,6,7].map(i=>a.paramRate(i)),xparam:[0,1,2,3,4,5,6,7,8,9].map(i=>a.xparam(i)),
     sets:J(O.activeSets(a)),general:J(O.generalSet(a))};}
+const DMG_SKILL=w.$dataSkills.findIndex(k=>k&&k.damage&&k.damage.type===1&&k.hitType===2&&/a\.mat/.test(k.damage.formula));
 const armorBases=types.filter(t=>t.kind==='armor'&&[1,2,17].indexOf(t.etypeId)<0);
 const slotOf=t=>t.etypeId-1;
 const guard=fam(10),life=fam(11),speed=fam(13);

@@ -192,6 +192,12 @@ func _actor(data: Dictionary) -> void:
 		check("param_rate_%s" % c.label, rate == norm(c.paramRate), [rate, c.paramRate])
 		var xp := range(10).map(func(i): return snappedf(a.xparam(i), 0.000001))
 		check("xparam_%s" % c.label, xp == norm(c.xparam), [xp, c.xparam])
+		var foe := XEnemy.new().setup(1, 3, 0.5)
+		var terms := []
+		for dmg in c.damage:
+			var res := XDamage.calculate(XDB.rec("Skills", int(dmg.skill)), a, foe, {"critical": false, "variance": false})
+			terms.append(snappedf(float(res.breakdown.row.get("terminal", -1.0)), 0.000001))
+		check("damage_terminal_%s" % c.label, terms == c.damage.map(func(x): return snappedf(float(x.terminal), 0.000001)), [terms, c.damage])
 		var sets = norm(XOrbs.active_sets(a.equips))
 		check("sets_%s" % c.label, sets == norm(c.sets) and norm(XOrbs.general_set(a.equips)) == norm(c.general if c.general != null else {}), [sets, c.sets, c.general])
 

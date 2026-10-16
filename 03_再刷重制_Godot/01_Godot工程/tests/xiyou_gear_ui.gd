@@ -47,7 +47,7 @@ func _run() -> void:
 		page._move(-1,true);page._refresh()
 	await shot("13_原版物品强化")
 	page._index=rows.find_custom(func(r):return is_same(r.rec,s.gear.back()));page._refresh();page._ok();await frames()
-	check("gear_actions",page._mode=="action" and page._actions.map(func(x):return x.symbol)==["use","upgrade","lock","cancel"] and not page._actions[0].enabled and page._actions[1].enabled and page.help_card.visible)
+	check("gear_actions",page._mode=="action" and page._actions.map(func(x):return x.symbol)==["use","upgrade"]+page._item.augmentSlots.map(func(_t):return "augment")+["lock","cancel"] and not page._actions[0].enabled and page._actions[1].enabled and page.help_card.visible)
 	page._act=1;page._ok();await frames()
 	var mats:=page.materials()
 	var m258:=mats.find_custom(func(r):return int(r.rec.id)==258)
