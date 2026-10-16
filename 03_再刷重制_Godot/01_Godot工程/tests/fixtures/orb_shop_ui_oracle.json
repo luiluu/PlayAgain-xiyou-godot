@@ -1,0 +1,8 @@
+{
+ "source": "冻结正式源 v0.28，ui_reference ?item_list_ref=1 内存新局（队伍 1/8/9/10，变量 20＝15，神秘珠·玄藏×12、尘封×1、残片×40），主菜单 → CodexOrbs.open，2026-10-16 八戒采集；截图 04_验证/本地结果/原版参照/宝珠坊/",
+ "window": {"class": "Window_YunChoices", "width": 760, "padding": 14, "lineHeight": 36, "opacity": 30, "backOpacity": 192, "text_x": 6, "text_w": 720, "info_line_w": 732,
+   "note": "说明第 1 行系统色 #84aaff、其余 #ffffff；第 1、2 行不透明，其余半透明；分隔线 y＝说明行数×36＋5、高 2；选项从说明高（行数×36＋12）起"},
+ "home": {"rect": [260, 124, 760, 472], "infoH": 228, "pageRows": 6, "rows": 6},
+ "menu": {"rect": [260, 232, 760, 256], "infoH": 120, "pageRows": 3, "rows": 2},
+ "detail": {"rect": [260, 124, 760, 472], "infoH": 264, "pageRows": 5, "rows": 5}
+}
