@@ -57,7 +57,7 @@
     "editorStartupVerified": true,
     "visibleProjectManagerVerified": true,
     "runnableBuildKind": "playable_slice",
-    "developmentVersion": "dev.058",
+    "developmentVersion": "dev.059",
     "developmentRegistry": "03_再刷重制_Godot/开发编号.json",
     "deferredPlatforms": [
       "Windows",
@@ -107,7 +107,7 @@
     "devVersionTool": "03_再刷重制_Godot/07_开发环境/开发编号.py"
   },
   "progress": {
-    "percent": 22.2,
+    "percent": 22.3,
     "ledger": "00_项目管理/重制步骤清单.md（进度账）",
     "reviewEveryPercent": 5,
     "lastReviewAtPercent": 15,
