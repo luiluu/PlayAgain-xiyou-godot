@@ -15,6 +15,8 @@ var gold := 0
 var items := {}                     # item_id -> 数量
 var last_item := 0
 var next_gear_id := 1
+## 宝珠孔的存档种子（$gameSystem._codexOrbRng.seed：新游戏随机，之后随存档保存；见 XOrbs）
+var orb_seed: int = _fresh_seed()
 var gear: Array = []                # 背包里的装备实例
 var switches := {}                  # id -> bool
 var variables := {}                 # id -> 数值
@@ -52,6 +54,13 @@ var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
 var hang_up_count := 0
 var hang_up_save_pending := false
+
+
+## 新种子用独立的随机数生成器取，不动全局 randi 序列（战斗等测试按全局种子复现）
+static func _fresh_seed() -> int:
+	var r := RandomNumberGenerator.new()
+	r.randomize()
+	return r.randi()
 
 
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
@@ -270,6 +279,7 @@ func register_gear(item: Dictionary) -> void:
 		next_gear_id += 1
 	else:
 		next_gear_id = maxi(next_gear_id,int(str(item.instanceId).get_slice(":",1))+1)
+	XOrbs.layout(item, orb_seed)
 
 func owns_gear(item: Dictionary) -> bool:
 	for e in gear:
@@ -308,7 +318,7 @@ func to_dict() -> Dictionary:
 			"buffs": x2.buffs, "buffTurns": x2.buff_turns, "cooldowns": x2.cooldowns,
 			"lastCommand": x2.last_command, "lastBattleSkill": x2.last_battle_skill}
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "battleSlots": battle_slots, "actors": a, "gold": gold,
-		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "switches": switches, "variables": variables, "selfSwitches": self_switches,
+		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level}
@@ -347,6 +357,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.last_item = int(d.get("lastItem", 0))
 	s.gear = d.gear
 	s.next_gear_id = int(d.get("nextGearId",1))
+	# 没有宝珠种子的旧档：照正式 seedFromSave 由存档内容算出（同一存档每次读都一样）
+	s.orb_seed = int(d.orbSeed) if d.has("orbSeed") else XOrbs.hash32(JSON.stringify([float(d.get("playSeconds", 0)), s.gold, d.party]))
 	for a in s.actors.values():
 		for e in a.equip_list():s.register_gear(e)
 	for e in s.gear:s.register_gear(e)
