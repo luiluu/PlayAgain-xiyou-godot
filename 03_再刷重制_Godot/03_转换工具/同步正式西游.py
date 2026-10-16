@@ -48,6 +48,7 @@ PROBES = [
     (['settlement_probe.cjs'], ['settlement.json']),
     (['item_marks_probe.cjs'], ['item_marks.json']),
     (['orb_probe.cjs'], ['orbs.json']),
+    (['orb_shop_probe.cjs'], ['orb_shop.json']),
     (['shared_system_probe.cjs'], ['shop_stock.json', 'battle_messages.json', 'challenge_passives.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
