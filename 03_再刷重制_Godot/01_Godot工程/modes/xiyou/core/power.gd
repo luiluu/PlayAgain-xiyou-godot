@@ -445,6 +445,9 @@ class NeutralEnemy extends XBattler:
 		return {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0}
 
 
+static var _CUSTOM_FORMULA := RegEx.create_from_string("(?im)^.*<damage formula>")
+
+
 static func _js_formula(f: String) -> String:
 	var re := RegEx.create_from_string("Math\\.(floor|ceil)\\(Math\\.random\\(\\)\\s*\\*\\s*(\\d+)\\)")
 	var m := re.search(f)
@@ -455,14 +458,16 @@ static func _js_formula(f: String) -> String:
 	return f.replace("Math.random()", "0.5")
 
 
-## compileFormula：只认受限写法（能力值、熟练度、状态、变量、Math 函数与常数运算），其余技能不计入（coverage.unknown）
+## compileFormula：只认受限写法（能力值、熟练度、状态、变量、Math 函数与常数运算），其余技能不计入（coverage.unknown）。
+## 备注里有 <damage formula> 段的技能，正式版载入时 YEP_DamageCore 把 damage.custom 设为真，一律不计入。
 static func formula_ok(skill: Dictionary) -> bool:
 	var d: Dictionary = skill.get("damage", {})
-	var key := str(d.get("formula", "0")) + "|" + str(bool(d.get("custom", false)))
+	var custom := bool(d.get("custom", false)) or _CUSTOM_FORMULA.search(str(skill.get("note", ""))) != null
+	var key := str(d.get("formula", "0")) + "|" + str(custom)
 	if _formula_ok.has(key):
 		return _formula_ok[key]
 	var ok := false
-	if not bool(d.get("custom", false)):
+	if not custom:
 		var s := _js_formula(str(d.get("formula", "0")))
 		for p in ["Codex(?:Raven\\.(?:legionStrikeRate|skillCoefficient|defenseFactor|defenseDeduction)|Mira\\.damage|Yomi\\.damage|Jingliu\\.damage|Toji\\.damage|Sukuna\\.damage|Garou\\.base)\\b",
 				"CodexYunshang\\.formula\\b", "Codex(?:Tusu|Xuan)\\.(?:damage|heal)\\(a,\\s*b(?:,\\s*'\\w+')?\\)",
@@ -583,6 +588,17 @@ static func _expected(logic: XBattleLogic, a: XActor, t: XBattler, skill: Dictio
 
 
 static func _skills_for(a: XActor, coverage: Dictionary) -> Array:
+	# 模型不施放强化/变身/切换类技能；条件当前不满足的伤害技能也不会出手，逐项披露（coverage 带 unmodeled 时）
+	if coverage.has("unmodeled"):
+		for s in a.skills():
+			if int(s.get("occasion", 0)) >= 2 or int(s.get("stypeId", 0)) == 4 or not s.has("damage"):
+				continue
+			var type := int(s.damage.get("type", 0))
+			if type == 0 and int(s.id) != XBattleLogic.GUARD_SKILL:
+				var scope := int(s.get("scope", 0))
+				coverage.unmodeled.append({"id": int(s.id), "name": s.name, "reason": "队友辅助" if scope >= 7 and scope <= 10 else "强化/变身/切换"})
+			elif DAMAGE_TYPES.has(type) and formula_ok(s) and not _meets_ignoring_cost(a, s):
+				coverage.unmodeled.append({"id": int(s.id), "name": s.name, "reason": "当前条件不可用"})
 	var list: Array = a.skills().filter(func(s): return int(s.get("occasion", 0)) < 2 and DAMAGE_TYPES.has(int(s.get("damage", {}).get("type", 0))))
 	var attack := _attack_skill(a)
 	if not attack.is_empty() and not list.any(func(s): return int(s.id) == int(attack.id)):
@@ -601,6 +617,20 @@ static func _skills_for(a: XActor, coverage: Dictionary) -> Array:
 	return out
 
 
+## meetsIgnoringCost：判断角色/形态条件时暂时补满魔法与 TP，判断后恢复
+static func _meets_ignoring_cost(a: XActor, s: Dictionary) -> bool:
+	var mp := a.mp
+	var tp := a.tp
+	a.mp = a.mmp
+	a.tp = a.max_tp()
+	var logic := XBattleLogic.new()
+	logic.state = XState.current
+	var ok := logic.can_use(a, s)
+	a.mp = mp
+	a.tp = tp
+	return ok
+
+
 static func _meta_int(skill: Dictionary, key: String) -> int:
 	return int(str(skill.get("meta", {}).get(key, "0")).strip_edges().to_int())
 
@@ -610,6 +640,7 @@ static func _cycle(logic: XBattleLogic, a: XActor, t: XBattler, skills: Array) -
 	var damage := 0.0
 	var first := 0.0
 	var schedule := []
+	var used := {}
 	var cooldowns := {}
 	var warmups := {}
 	var cache := {}
@@ -649,10 +680,12 @@ static func _cycle(logic: XBattleLogic, a: XActor, t: XBattler, skills: Array) -
 					and c.mp <= a.mp and c.tp <= a.tp and c.hp < a.hp and logic.can_use(a, s)
 				if not ready:
 					continue
+				used[int(s.id)] = true
 				var v: float = damage_for.call(s, c)
 				if best.is_empty() or v > best.value:
 					best = {"skill": s, "cost": c, "value": v}
 			if not best.is_empty():
+				used[int(best.skill.id)] = true
 				damage += best.value * weight
 				a.mp = maxf(0.0, a.mp - best.cost.mp * weight)
 				a.tp = maxf(0.0, a.tp - best.cost.tp * weight)
@@ -668,7 +701,7 @@ static func _cycle(logic: XBattleLogic, a: XActor, t: XBattler, skills: Array) -
 			warmups[k] = maxi(0, int(warmups[k]) - 1)
 		if turn == 3:
 			first = damage / 3.0
-	return {"burst": first, "sustained": damage / 10.0, "schedule": schedule}
+	return {"burst": first, "sustained": damage / 10.0, "schedule": schedule, "used": used}
 
 
 static func _curve(value: float, reference: float, weight: float, exponent: float) -> float:
@@ -681,7 +714,7 @@ static func evaluate(actor: XActor, naked: bool) -> Dictionary:
 		return {}
 	var logic := XBattleLogic.new()
 	logic.state = XState.current
-	var coverage := {"known": 0, "unknown": []}
+	var coverage := {"known": 0, "unknown": [], "unmodeled": []}
 	var results := [null, null, null]
 	var ehp := 0.0
 	var aux := 0.0
@@ -710,6 +743,8 @@ static func evaluate(actor: XActor, naked: bool) -> Dictionary:
 				var amount := maxf(0.0, -XDamage.eval_formula(_preview_skill(s), a, a, _vars()))
 				heal = maxf(heal, amount * (3.0 if int(s.scope) == 8 else 1.0) * maxf(0.0, a.rec))
 			aux = heal
+	# 已在中档路线里实际可用或施放过的技能不再列为未计入
+	coverage.unmodeled = coverage.unmodeled.filter(func(r): return not results[1].used.has(int(r.id)))
 	var burst := 0.0
 	var sustained := 0.0
 	for r in results:
@@ -724,21 +759,27 @@ static func _signature(a: XActor) -> String:
 	return JSON.stringify([a.actor_id, a.class_id, a.level, a.skill_ids, a.state_ids, a.equips, XState.current.variable(8) if XState.current else 0])
 
 
-## 角色战力 {total, self, gear, gearScore, parts, selfParts, gearParts, evaluation, ownEvaluation}；关掉时全 0
+## 角色战力 {total, self, gear, gearScore, parts, selfParts, gearParts, equipment[{item, slot, score}], rows, evaluation, ownEvaluation}；关掉时全 0
+## rows（自身成长来源明细）正式版恒为空数组，面板只写说明。
 static func actor(a: XActor, force := false) -> Dictionary:
 	if not enabled() or a == null:
-		return {"self": 0, "gear": 0, "total": 0, "parts": [0, 0, 0], "selfParts": [0, 0, 0], "gearParts": [0, 0, 0]}
+		return {"self": 0, "gear": 0, "total": 0, "parts": [0, 0, 0], "selfParts": [0, 0, 0], "gearParts": [0, 0, 0], "equipment": [], "rows": []}
 	var sig := _signature(a)
 	if not force and _actor_cache.has(sig):
 		return _actor_cache[sig]
 	var own := evaluate(a, true)
 	var full := evaluate(a, false)
 	var gear_score := 0.0
-	for e in a.equip_list():
-		gear_score += float(equipment(e).total)
+	var worn := []
+	for slot in range(a.equips.size()):
+		var e = a.equips[slot]
+		if e is Dictionary and _is_gear(e):
+			var score := equipment(e)
+			gear_score += float(score.total)
+			worn.append({"item": e, "slot": slot, "score": score})
 	var result := {"self": own.total, "gear": full.total - own.total, "gearScore": gear_score, "total": full.total, "parts": full.parts,
 		"selfParts": own.parts, "gearParts": [full.parts[0] - own.parts[0], full.parts[1] - own.parts[1], full.parts[2] - own.parts[2]],
-		"evaluation": full, "ownEvaluation": own}
+		"equipment": worn, "rows": [], "evaluation": full, "ownEvaluation": own}
 	_actor_cache[sig] = result
 	return result
 
