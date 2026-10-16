@@ -16,6 +16,8 @@
 
 - 战斗工具栏「掉落与记录对照截图」开启两项偏好，触发第一只敌人的倒下与真实掉落动画并定格，输出 `codex_drop_record_reference.png`；仅测布局。规则参照另见 `mv_oracle/drop_record_probe.cjs`。
 
+- 战斗工具栏「dh 掉落逐帧读数」（页面内 JS：`__dhRef.run({drops:[防具ID…],rand:[…],shotFrame:N,shot:名字})`，再 `await __dhRef.pump()`）：第一只敌人倒下时掉落带 `<dh:N>` 的防具，逐帧记录 SpriteEnemyTrP 的子节点（顺序即绘制先后；图标位置/缩放/不透明度、Sprite_Animation 位置/剩余时长/帧序、屏幕闪光）与动画图转色相前后的像素，到 shotFrame 帧截图。每跑一次先重载页面。内置浏览器窗格不在前台时 requestAnimationFrame 停摆，用 `__dhRef.pump()` 手动推帧。读数存 `01_Godot工程/tests/fixtures/drop_dh_oracle.json`，由 `tests/xiyou_drop_dh` 逐帧对照。
+
 - `index.html?item_marks_ref=1`：一键出售与多货币买入的内存夹具；「多货币买入夹具」打开 2230／4375／732 三件商品并显示窗口几何，「买入数量窗」进入实际最多能买 1 件的数量窗，「买入复核截图」保存当前商店原尺寸画面。金币、变量与物品都只属于新建测试局，不加载玩家存档。
 
 - `index.html?item_list_ref=1`：物品列表一组（NEW 角标、「序号/9,999」、战斗物品窗口）参照。不放工具栏，用页面内 JS 调 `__ilr`：`newGame()` 建四人内存新局（1/8/9/10，不读写存档），`go(场景类)` 切场景并等就绪，`rows(窗口)` 读每行的数据、`$gameSystem._seenItems` 与此刻画面（`newShown` 是否画着 newIcon、`texts` 该行文字的 x／宽／对齐／字号；包装 Bitmap 的 blt/drawText/clearRect/clear 记录），`saveRoundTrip()` 只在内存里做存读档序列化。移光标用 `cursorDown(false)`／`processOk()`，换分类后先等几帧（分类窗在 update 里才 setCategory）。读数存 `01_Godot工程/tests/fixtures/item_list_oracle.json`。
