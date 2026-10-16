@@ -97,6 +97,12 @@ func _run() -> void:
 			await _flow(p)
 	await _geometry()
 	await _menu_entry()
+	# 选择窗的确定/取消音效还在播：先停掉再退出，免得退出时报资源未释放
+	for pl in XSound._players:
+		if is_instance_valid(pl):
+			pl.stop()
+			pl.stream = null
+	await frames(3)
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
