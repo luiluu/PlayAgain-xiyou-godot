@@ -12,9 +12,8 @@ extends Node2D
 ##   动画没有 intY，比较得 NaN 视为「不小于」）。这个顺序就是绘制先后与每帧更新顺序，见 _mv_sort。
 ## - 物品备注 <dh:N>：N 是动画 ID。建图标时就在图标上 Sprite_Base.startAnimation(动画 N)（不受「显示技能动画」开关影响；
 ##   帧速同战斗变速）。动画按 Sprite_Animation 原样逐帧：位置取图标「上一帧」的坐标（子节点先更新、弹跳在后），
-##   头上/中心按图标高度 32×scale.y 上移；动画图按 animation1Hue/animation2Hue 转色相（Bitmap.rotateHue，见 HUE_SHADER）；
-##   屏幕闪光（flashScope 2）是动画的子节点，画满整个画面、盖住它之前的兄弟节点，不透明度每帧 ×(d−1)/d；
-##   播完（_duration 到 0）的下一帧由图标移除。dh 用到的动画只有 flashScope 0/2（测试守着）。
+##   头上/中心按图标高度 32×scale.y 上移；色相、屏幕闪光（盖住它之前的兄弟节点）、播完下一帧移除都在 MVAnimation。
+##   图标不是战斗者，没有目标闪光与隐藏；dh 用到的动画只有 flashScope 0/2（测试守着）。
 ## - 位置每帧跟随敌人精灵；画在战斗者之上（battleField 内 z = 敌人 + 1）。
 ## - 正式版首次载入动画图要等 2～5 帧（异步加载）；这里图已预载，动画从第一帧就播（不复现加载等待）。
 ## 掉落的获得与「胜利时不再发放」由 XBattleLogic.drop_lock 负责（见 XBattleScene._enemy_collapsed）。
@@ -23,49 +22,6 @@ const ICON := 32.0
 const START_Y := -40.0
 const FADE_DURATION := 10
 const ICON_SCALE := 1.0
-
-## Bitmap.rotateHue 逐像素：RGB→HSL、色相加 hue、再转回，写回 Uint8ClampedArray（四舍五入到偶数）。
-## 正式版在载入时改图，这里在取样后改；格子缩放时边缘插值次序不同，差别只在半透明边缘。
-const HUE_SHADER := """
-shader_type canvas_item;
-render_mode %s;
-uniform float hue;
-varying vec4 tint;
-void vertex() { tint = COLOR; }
-void fragment() {
-	vec4 t = texture(TEXTURE, UV);
-	vec3 p = floor(t.rgb * 255.0 + 0.5);
-	float cmin = min(p.r, min(p.g, p.b));
-	float cmax = max(p.r, max(p.g, p.b));
-	float h = 0.0;
-	float s = 0.0;
-	float l = (cmin + cmax) / 2.0;
-	float d = cmax - cmin;
-	if (d > 0.0) {
-		if (p.r == cmax) { h = 60.0 * mod((p.g - p.b) / d + 6.0, 6.0); }
-		else if (p.g == cmax) { h = 60.0 * ((p.b - p.r) / d + 2.0); }
-		else { h = 60.0 * ((p.r - p.g) / d + 4.0); }
-		s = d / (255.0 - abs(2.0 * l - 255.0));
-	}
-	h = mod(h + hue, 360.0);
-	float c = (255.0 - abs(2.0 * l - 255.0)) * s;
-	float x = c * (1.0 - abs(mod(h / 60.0, 2.0) - 1.0));
-	float m = l - c / 2.0;
-	float cm = c + m;
-	float xm = x + m;
-	vec3 o;
-	if (h < 60.0) { o = vec3(cm, xm, m); }
-	else if (h < 120.0) { o = vec3(xm, cm, m); }
-	else if (h < 180.0) { o = vec3(m, cm, xm); }
-	else if (h < 240.0) { o = vec3(m, xm, cm); }
-	else if (h < 300.0) { o = vec3(xm, m, cm); }
-	else { o = vec3(cm, m, xm); }
-	COLOR = vec4(clamp(roundEven(o), 0.0, 255.0) / 255.0, t.a) * tint;
-}
-"""
-
-static var _hue_shaders := {}
-static var _hue_materials := {}
 
 var follow: Node2D
 var icons: Array = []        # 按 intY 排好（_icons）：[{item, index, x, y, intY, dy, ry, vx, sx, sy, alpha, wait, visible, node, anim}]
@@ -91,103 +47,26 @@ class DropIcon:
 		draw_texture_rect(tex, Rect2(g.x - w / 2.0, g.y - h, w, h), false, Color(1, 1, 1, g.alpha / 255.0))
 
 
-## 图标上的 dh 动画（Sprite_Animation）：由 XDropPopup.step 逐帧推进，不自己跑 _physics_process
+## 图标上的 dh 动画：MVAnimation 由 XDropPopup.step 逐帧推进（不自己跑 _physics_process），位置取图标上一帧的坐标
 class DhAnimation:
 	extends MVAnimation
-	var target: Dictionary
-	var duration := 0
-	var wait := 0            # Sprite_Animation._delay（startAnimation 给 0；测试用它对齐正式版的加载等待）
-	var flash_color := Color(0, 0, 0, 0)
-	var flash_duration := 0
-	var flash: Node2D
+	var icon: Dictionary
 
 	func _ready() -> void:
 		super._ready()
-		duration = anim.frames.size() * rate + 1
-		flash = Node2D.new()
-		flash.visible = false
-		flash.draw.connect(_draw_flash)
-		add_child(flash)
+		follow = _icon_position
 
 	func _physics_process(_delta: float) -> void:
 		pass
 
-	func playing() -> bool:
-		return duration > 0
-
-	## Sprite_Animation.currentFrameIndex
-	func frame_index() -> int:
-		return anim.frames.size() - floori(float(duration + rate - 1) / rate)
-
-	## Sprite_Animation.update：updateMain（_delay、_duration−1、updatePosition、换帧与时间点）后 updateScreenFlash
-	func advance(icon_pos: Vector2, icon_h: float) -> void:
-		if duration > 0:
-			if wait > 0:
-				wait -= 1
-			else:
-				duration -= 1
-				position = icon_pos
-				match int(anim.get("position", 1)):
-					0: position.y -= icon_h
-					1: position.y -= icon_h / 2.0
-					3: position = Vector2.ZERO    # parent.width/2：SpriteEnemyTrP 没有位图，宽高都是 0
-				if duration % rate == 0 and duration > 0:
-					frame = frame_index()
-					_show_frame()
-		if flash_duration > 0:
-			var d := flash_duration
-			flash_duration -= 1
-			flash_color.a *= float(d - 1) / d
-			flash.visible = flash_duration > 0
-			flash.queue_redraw()
-
-	func _show_frame() -> void:
-		super._show_frame()
-		for t in anim.get("timings", []):
-			if int(t.frame) == frame and int(t.get("flashScope", 0)) == 2:
-				var c: Array = t.flashColor
-				flash_color = Color(c[0] / 255.0, c[1] / 255.0, c[2] / 255.0, c[3] / 255.0)
-				flash_duration = int(t.flashDuration) * rate
-		var cells: Array = anim.frames[frame]
-		for i in range(mini(cells.size(), _sprites.size())):
-			var s := _sprites[i]
-			if not s.visible:
-				continue
-			var cell: Array = cells[i]
-			var hue := int(anim.get("animation1Hue" if int(cell[0]) < 100 else "animation2Hue", 0))
-			var add := cell.size() > 7 and int(cell[7]) == 1
-			if hue != 0:
-				s.material = XDropPopup.hue_material(hue, add)
-			elif add and not s.material is CanvasItemMaterial:
-				var m := CanvasItemMaterial.new()      # 上一帧这格可能还是转色相的材质
-				m.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-				s.material = m
-		if flash.get_index() != get_child_count() - 1:
-			move_child(flash, -1)     # 屏幕闪光在格子之后（盖住本动画的格子）
-
-	## ScreenSprite：(−5W, −5H) 起 10 倍画面大小的纯色矩形，跟着画面原点
-	func _draw_flash() -> void:
-		var o := -flash.get_global_transform().origin
-		var box := XBattleScene.BOX
-		flash.draw_rect(Rect2(o - box * 5.0, box * 10.0), flash_color)
-
-	func flash_opacity() -> float:
-		return flash_color.a * 255.0
-
-
-static func hue_material(hue: int, add: bool) -> ShaderMaterial:
-	var key := "%d:%s" % [hue, add]
-	if not _hue_materials.has(key):
-		var mode := "blend_add" if add else "blend_mix"
-		if not _hue_shaders.has(mode):
-			var sh := Shader.new()
-			sh.code = HUE_SHADER % mode
-			_hue_shaders[mode] = sh
-		var m := ShaderMaterial.new()
-		m.shader = _hue_shaders[mode]
-		m.set_shader_parameter("hue", float(((hue % 360) + 360) % 360))
-		_hue_materials[key] = m
-	return _hue_materials[key]
+	## updatePosition：图标锚点 (0.5, 1)，头上/中心按图标高度 32×scale.y 上移；画面中央取 parent.width/2（SpriteEnemyTrP 没有位图，为 0）
+	func _icon_position() -> Vector2:
+		var h := XDropPopup.ICON * absf(icon.sy)
+		match int(anim.get("position", 1)):
+			0: return Vector2(icon.x, icon.y - h)
+			1: return Vector2(icon.x, icon.y - h / 2.0)
+			3: return Vector2.ZERO
+		return Vector2(icon.x, icon.y)
 
 
 ## sprite_h：敌人精灵高度（Sprite_Enemy.height）；items：掉落记录（XDB 物品/武器/防具）
@@ -213,7 +92,7 @@ func setup(target: Node2D, sprite_h: float, items: Array) -> void:
 		if meta.has("dh") and str(meta.dh).strip_edges().is_valid_int():
 			var a := _start_animation(int(str(meta.dh)))
 			if a:
-				a.target = g
+				a.icon = g
 				g.anim = a
 		made.append(g)
 	icons = made
@@ -285,11 +164,9 @@ func step() -> void:
 			var a: DhAnimation = c.g.anim
 			if a != null and is_instance_valid(a) and not a.playing():
 				c.g.anim = null
-				remove_child(a)
-				a.queue_free()
+				a.finish()
 		elif c is DhAnimation and c.get_parent() == self:
-			var g: Dictionary = c.target
-			c.advance(Vector2(g.x, g.y), ICON * absf(g.sy))
+			c.advance()
 	if follow and is_instance_valid(follow):
 		position = follow.position
 	for g in icons:
