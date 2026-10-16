@@ -63,6 +63,10 @@ func _run() -> void:
 	seed(20261013)
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	s.gain_item(1, 5)
+	# 战斗物品窗口与物品页共用 XItemMarks.apply_list：置顶的在最前、名字带标记；不记看过（item_list_oracle.json）
+	s.gain_item(5, 2)
+	s.flags.TopItem = [5]
+	s.flags.ItemSpLock = [1]
 	# 先手美娜的唯一战技「寒锋」要求武器类型 1，默认水果刀（类型 0）在正式版也放不了（wtype_probe）；换成类型 1 的剃须刀
 	s.actor(10).equips[0] = XGear.create("weapon", 14)
 	s.actor(10).refresh_passive()
@@ -143,6 +147,10 @@ func _run() -> void:
 		await _press("ui_down")
 	await _press("ui_accept")
 	_check("item_list_open", b.list_win != null)
+	if b.list_win:
+		var texts: Array = b.list_win.entries.map(func(e): return e.text)
+		_check("item_list_marks_order", texts.size() == 2 and texts[0] == "止血草[置顶]" and texts[1] == "治疗药水(小)[锁定]" and b.list_win.index == 0, texts)
+		_check("item_list_not_marked_seen", s.is_new(XDB.rec("Items", 5)) and s.is_new(XDB.rec("Items", 1)))
 	await _shot("battle_43_item")
 	await _press("ui_accept")
 	_check("item_targets_ally", b._target_mode == "ally" and b.sprites[b._hover].cursor != null and b.status_rows[b._hover].selected)

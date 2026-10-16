@@ -617,7 +617,7 @@ func _command_for(a: XActor):
 				return "escape"
 			"item":
 				cmd_win.active = false
-				var action = await _pick_action_list(a, logic.battle_items(), true)
+				var action = await _pick_action_list(a, battle_item_order(logic.state, logic.battle_items()), true)
 				if logic.auto:
 					return "auto"
 				if action is Array:
@@ -665,13 +665,21 @@ func initial_action_index(a: XActor, entries: Array, items: bool) -> int:
 	return maxi(0, entries.find_custom(func(e): return int(e.id) == id))
 
 
+## Window_BattleItem 的列表：$gameParty.canUse 的物品（battle_items，按 ID）再经 Window_ItemList.makeItemList 的
+## Star_ItemTop／Star_ShopOnekey 改写——与物品页共用 XItemMarks.apply_list（置顶的逐个移到最前）。
+## 不走 Codex 装备检索排序（只在物品页、装备页），不画 NEW、不记看过（见 XItemRow）。返回原记录（行动与战斗记录用原名）。
+static func battle_item_order(s: XState, items: Array) -> Array:
+	return XItemMarks.apply_list(s, items.map(func(r): return {"rec": r, "item": r})).map(func(d): return d.item)
+
+
 ## 技能/物品列表的一行：技能右侧照 YEP 消耗（TP 图标 1268 色 29、MP 图标 1269 色 23，字号 20）；
-## 冷却「nCD」色 6、预热「nWU」色 4（图标 1045）；物品右侧「×数量」字号 20。
+## 冷却「nCD」色 6、预热「nWU」色 4（图标 1045）。
+## 物品：名字带「[锁定]」「[置顶]」标记（XItemMarks.decorate，O-030 只画在列表里），名字宽扣「×0,000」（YEP numberWidth），
+## 右侧「×数量」千分位、字号 20（YEP_CoreEngine drawItemNumber）。
 func _list_entry(a: XActor, e: Dictionary, items: bool) -> Dictionary:
-	var row := {"text": str(e.name), "icon": int(e.get("iconIndex", 0)), "enabled": logic.can_use(a, e), "costs": []}
 	if items:
-		row.costs = [{"text": "×%d" % int(XState.current.items.get(int(e.id), 0)), "size": 20}]
-		return row
+		return item_list_row(logic.state, e, logic.can_use(a, e))
+	var row := {"text": str(e.name), "icon": int(e.get("iconIndex", 0)), "enabled": logic.can_use(a, e), "costs": []}
 	var wu := int(ceilf(float(a.warmups.get(int(e.id), 0))))
 	var cd := int(ceilf(float(a.cooldowns.get(int(e.id), 0))))
 	if wu > 0:
@@ -685,6 +693,11 @@ func _list_entry(a: XActor, e: Dictionary, items: bool) -> Dictionary:
 		if c.mp > 0:
 			row.costs.append({"text": "%sMP" % XMenu._group(c.mp), "color": XUI.text_color(23), "icon": 1269})
 	return row
+
+
+static func item_list_row(s: XState, e: Dictionary, enabled: bool) -> Dictionary:
+	return {"text": str(XItemMarks.decorate(s, e).name), "icon": int(e.get("iconIndex", 0)), "enabled": enabled, "reserve": "×0,000",
+		"costs": [{"text": "×" + XMenu._group(s.item_count(int(e.id))), "size": 20}]}
 
 
 ## Window_BattleSkill / Window_BattleItem（宽 450、最多 16 行），贴在角色旁 (+16, +16)。

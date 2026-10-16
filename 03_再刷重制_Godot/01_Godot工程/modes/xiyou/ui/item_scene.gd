@@ -144,10 +144,11 @@ static func instance_no(e: Dictionary) -> int:
 	return int(str(e.get("instanceId", "xg:0")).get_slice(":", 1))
 
 
-## $gameParty.weapons()/armors()：独立装备按 ID（这里是实例先后）排列；「序号/9,999」的序号即在这里的位置
+## $gameParty.weapons()/armors()：YEP independentItemSort 按基础 ID 排，同基础保持实例先后（正式版运行时读数）；
+## 「序号/9,999」的序号即在这里的位置，物品页、装备页、商店出售共用，筛选与排序后不重编
 static func bag_gear(kind: String) -> Array:
 	var list := XState.current.gear.filter(func(e): return e.kind == kind)
-	list.sort_custom(func(a, b): return instance_no(a) < instance_no(b))
+	list.sort_custom(func(a, b): return [int(a.base), instance_no(a)] < [int(b.base), instance_no(b)])
 	return list
 
 
@@ -251,7 +252,7 @@ func _update_help() -> void:
 			return
 	if rec != _pending_seen:
 		_commit_seen()
-		if _mode in ["list", "upgrade"] and XState.current.is_new(rec):
+		if _mode in ["list", "upgrade"] and XItemRow.shows_new(XState.current, rec):
 			_pending_seen = rec
 	help_card.show_for(rec if row >= 0 else {})
 	if help_card.visible:
@@ -265,7 +266,7 @@ func _commit_seen() -> void:
 
 
 func _is_new_drawn(rec: Dictionary) -> bool:
-	return XState.current.is_new(rec)
+	return XItemRow.shows_new(XState.current, rec)
 
 
 # ---- 绘制 ----

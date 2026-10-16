@@ -12,7 +12,7 @@ extends Control
 ## - 一键出售（Star_ShopOnekey＋installUnifiedQualityRuntime）：Window_OnekeySellCommand (350,150,240,行数×36+内边距×2)，
 ##   七档「出售X品质」左对齐；确定即卖出背包里该档（旧档 0～14）不带「[锁定]」的装备、无确认，然后回到指令窗（取消同）。
 ## - 出售列表套用出售锁定／道具置顶（XItemMarks.apply_list）；选中锁定的物品时提示「已锁定 无法出售」并留在列表。
-## 尚未复现：新物品「NEW」标记，见 界面风格.md。
+## - 出售列表的行同物品页（XItemRow）：画 NEW 但不记看过；装备按背包原序、右侧「序号/9,999」。
 
 signal closed
 
@@ -23,7 +23,6 @@ const STATUS_RECT := Rect2(768, 173, 512, 483)
 const GOLD_RECT := Rect2(768, 656, 512, 64)
 const LH := 36.0
 const GOLD_FONT := 20
-const QTY_FONT := 20
 const MAX_ITEMS := 9999
 const MC_PADDING := 5          # YEP_X_MoreCurrencies Currency Padding
 const COMMANDS := [["购买", "buy"], ["出售", "sell"], ["一键出售", "onekey"], ["取消", "cancel"]]
@@ -163,9 +162,10 @@ func _sell_data() -> Array:
 			out.append({"rec": rec, "kind": 0, "count": s.item_count(id)})
 		out = XItemMarks.apply_list(s, out)
 	else:
-		for e in s.gear:
-			if e.kind == sym:
-				out.append({"rec": e, "kind": 1 if sym == "weapon" else 2, "count": 1})
+		# Window_ShopSell 不列身上装备、不走 Codex 排序：按 $gameParty.weapons()/armors() 原序，右侧「序号/9,999」
+		var bag := XItemScene.bag_gear(sym)
+		for i in range(bag.size()):
+			out.append({"rec": bag[i], "kind": 1 if sym == "weapon" else 2, "count": 1, "carry": i + 1})
 	return out
 
 
@@ -258,19 +258,17 @@ func _paint_list(c: XMVCanvas) -> void:
 				_item_name(c, d[i].rec, 0, y, w, a)
 				_paint_buy_price(c, d[i], y, w, a)
 		"sell":
+			# Window_ShopSell 继承 Window_ItemList：同物品页一行（XItemRow：NEW、物品「×数量」、装备「序号/9,999」），
+			# 但 NEW 只画不记看过（正式版选中、移动、取消都不调 Galv 的 updateHelp）
 			var d := _sell_data()
-			var qty_w := c.text_width("×" + XMenu._group(MAX_ITEMS), QTY_FONT)
 			for i in range(d.size()):
 				var y := (i - _sell_top) * LH
 				if y < 0 or y >= c.size.y:
 					continue
-				var w := c.size.x - 6
 				var a := 1.0 if XItemMarks.can_sell(d[i].rec) else XUI.DIM.a
 				if i == _sell_index:
 					c.cursor(Rect2(0, y, c.size.x, LH))
-				_item_name(c, d[i].rec, 0, y, w - qty_w, a)
-				if int(d[i].kind) == 0:
-					c.text("×" + XMenu._group(int(d[i].count)), 0, y, w, "right", XUI.TEXT, QTY_FONT, LH, a)
+				XItemRow.paint(c, d[i].rec, y, XItemRow.right_text(d[i]), a, XItemRow.shows_new(s, d[i].rec))
 		"number":
 			_paint_number(c)
 
