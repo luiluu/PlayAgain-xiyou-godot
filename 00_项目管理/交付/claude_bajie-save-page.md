@@ -1,7 +1,7 @@
 # 交付：claude/bajie-save-page
 
 - 车道／工作者：B 界面·存档／读档页／八戒（Claude，重制_八戒_10）
-- 状态：进行中（功能、测试、文档已提交；正在合并 main 并跑全量检查）
+- 状态：可合并（main 无新提交；--补齐 后 `检查.sh --oracle` 全部通过：53 个场景、约 80,498 项）
 - 预分配 O-042～O-044：用了 O-042（存档容量显示实际文件大小）。
 - XState／XSave 改动（唐僧_3 批准）：`XState.save_count`（存档可选键 `saveCount`，旧档缺省 0），`XSave.save` 写盘前加 1；另加 `XSave.remove(slot)` 供「删除」用。其余存档字段不动。
 - 合并注意：`dev.待定` 在 `00_设计/界面风格.md`（1 处）。本分支不改切片、转换器与探针，不需要同步。
@@ -14,8 +14,9 @@
 - 存档：`XState.save_count`＋`XSave.save` 写盘前加 1（正式 $gameSystem._saveCount／onBeforeSave），旧档读出 0；`XSave.remove`。
 - 优化 O-042：正式「存档容量」实际是 encodeURI 转义字节数（不是大小），Godot 显示实际存档文件大小；`XSaveScene.REAL_FILE_SIZE` 设 false 恢复原版算法。
 - 与正式的已知差别：最近保存的一格按存档时间 savedAt（只到秒），同一秒存的几格取编号大的（正式版是毫秒时间戳）。
-- 验证：`tests/xiyou_save_page` 29/29（窗口矩形、列表行、操作窗格子与可用性、信息窗文字／头像／等级／图标／暗底、空格、确认窗、读取／删除／取消／存档模式流程、保存次数 2／旧档 0／再存 1）；`xiyou_hud`（标题读档页 30 格可达）、`xiyou_panels`（一键存档无格时开选格页）、`xiyou_review_regressions`、ui_smoke、flow 通过；全量见下（交付前补）。
+- 验证：`tests/xiyou_save_page` 29/29（窗口矩形、列表行、操作窗格子与可用性、信息窗文字／头像／等级／图标／暗底、空格、确认窗、读取／删除／取消／存档模式流程、保存次数 2／旧档 0／再存 1）；`xiyou_hud`（标题读档页 30 格可达）、`xiyou_panels`（一键存档无格时开选格页）、`xiyou_review_regressions`、ui_smoke、flow 通过；`检查.sh --oracle` 全部通过（53 个场景、约 80,498 项；先前一次 event_compare 用例数 566/553 不符是工作树转换产物旧，--补齐 后通过）。
 - 提交：5d40aca 起至本分支末（见下）。
+- 顺带：`xiyou_orb_shop_ui`、`xiyou_save_page` 退出前释放音效播放器与音频缓存（满负载偶发「resources still in use at exit」）；唐僧_3 说 main 上另有同一处修法，合并时 `xiyou_orb_shop_ui.gd` 冲突取 main 的即可。
 - 未完成：无。
 
 ## 交接板
@@ -35,3 +36,4 @@
 - WIP 初稿与读数夹具
 - 3e7d443 存读档页整页复现、XState.save_count、XSave.remove
 - d55a157 O-042 存档容量、优化登记与界面风格
+- db1fd6b 测试退出前释放音效
