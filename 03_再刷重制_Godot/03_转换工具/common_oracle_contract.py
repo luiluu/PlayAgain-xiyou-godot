@@ -6,7 +6,7 @@ from pathlib import Path
 STOCK_IDS = {'stock.' + s for s in ['purchase-reopen-sell', 'group-scope', 'cancel-preview',
     'affordability', 'memory-roundtrip', 'restock-reset', 'clamp-and-type', 'time-restock',
     'no-restock', 'supply-speed-command', 'currency-and-stock.77', 'currency-and-stock.150',
-    'pending-overwrite', 'timer-memory-roundtrip']}
+    'pending-overwrite', 'timer-memory-roundtrip', 'currency-short.77', 'currency-short.150']}
 VARIANTS = ['above-threshold', 'exact-threshold', 'below-threshold', 'variable-off', 'late-variable']
 MESSAGE_IDS = {f'message.{tid}.{v}' for tid in [456, 457, 458] for v in VARIANTS} | {'message.contract-nested-common'}
 CHALLENGE_IDS = {f'challenge.f{f}.d{d}' for f in [6, 11, 16, 21, 26] for d in [3, 4, 5, 6]} | {
@@ -110,6 +110,10 @@ def validate_payload(name, data, manifest):
                 issues.append('限购JsonEx恢复未保留原型')
             if [x['stock'] for x in rows['stock.time-restock']['trace']] != [0, 1, 3, 5]:
                 issues.append('定时补货边界缺失')
+            for item in [77, 150]:
+                row = rows[f'stock.currency-short.{item}']
+                if row['before']['enabled'] or row['before'] != row['after']:
+                    issues.append(f'限购物品{item}多货币不足异常')
         elif name == 'battle_messages.json':
             for tid in [456, 457, 458]:
                 for variant in VARIANTS:

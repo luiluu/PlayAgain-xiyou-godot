@@ -66,9 +66,15 @@ module.exports=function stock(host) {
     fixture();const it=w.$dataItems[id],sc=shop('oracle_currency_'+id,[[0,id,0,0]]);
     for(const v of it.variableBuyPrices||[])w.$gameVariables.setValue(v,1000000);
     for(const id of it.itemBuyPrices||[])w.$gameParty.gainItem(w.$dataItems[id],9999);
-    const before=snap(sc),vars=Object.fromEntries((it.variableBuyPrices||[]).map(v=>[v,w.$gameVariables.value(v)]));
+    const before=snap(sc),vars=Object.fromEntries((it.variableBuyPrices||[]).map(v=>[v,w.$gameVariables.value(v)])),itemMoney=Object.fromEntries((it.itemBuyPrices||[]).map(id=>[id,w.$gameParty.numItems(w.$dataItems[id])]));
     if(before.enabled&&before.max>0)sc.doBuy(1);
-    return {before,after:snap(sc),currencies:(it.variableBuyPrices||[]).map(v=>[v,vars[v],w.$gameVariables.value(v)]),prepared:sc._goods};
+    return {before,after:snap(sc),currencies:(it.variableBuyPrices||[]).map(v=>[v,vars[v],w.$gameVariables.value(v)]),itemCurrencies:(it.itemBuyPrices||[]).map(id=>[id,itemMoney[id],w.$gameParty.numItems(w.$dataItems[id])]),prepared:sc._goods};
+  }));
+  for(const id of [77,150])cases.push(makeCase('stock.currency-short.'+id,{goods:[0,id,0,0],short:'变量或物品货币少1'},()=>{
+    fixture();const it=w.$dataItems[id];
+    for(const v of it.variableBuyPrices||[])w.$gameVariables.setValue(v,Math.max(0,it.variableBuyPrice[v]-1));
+    for(const k of it.itemBuyPrices||[])w.$gameParty.gainItem(w.$dataItems[k],Math.max(0,it.itemBuyPrice[k]-1));
+    const sc=shop('short_'+id,[[0,id,0,0]]),before=snap(sc);return {before,after:snap(sc)};
   }));
   cases.push(makeCase('stock.pending-overwrite',{groups:['pending_A','pending_B']},()=>{
     fixture();command('apply','pending_A');command('apply','pending_B');const first=shop(null),second=shop(null);
@@ -81,8 +87,10 @@ module.exports=function stock(host) {
   }));
   // 来源目录全量扫描只记定义；是否在切片可玩由实现车道单独确认。
   const catalog=[];
-  for(const [kind,table] of [['item',w.$dataItems],['weapon',w.$dataWeapons],['armor',w.$dataArmors]])
-    for(const it of table)if(it&&it.shopStockCountMax!==undefined)catalog.push({kind,id:it.id,name:it.name,max:it.shopStockCountMax,interval:it.shopStockSupplyInterval,mode:it.shopStockSupplyMode});
+  for(const [kind,table,file] of [['item',w.$dataItems,'Items'],['weapon',w.$dataWeapons,'Weapons'],['armor',w.$dataArmors,'Armors']]){
+    const source=JSON.parse(fs.readFileSync(path.join(APP,'data',file+'.json'),'utf8'));
+    for(const raw of source)if(raw){const it=table[raw.id];if(it&&it.shopStockCountMax!==undefined)catalog.push({kind,id:it.id,name:it.name,max:it.shopStockCountMax,interval:it.shopStockSupplyInterval,mode:it.shopStockSupplyMode});}
+  }
   const locations=[];
   for(const file of fs.readdirSync(path.join(APP,'data')).filter(f=>/^Map\d{3}\.json$/.test(f)).sort()){
     const map=JSON.parse(fs.readFileSync(path.join(APP,'data',file),'utf8'));
@@ -90,5 +98,6 @@ module.exports=function stock(host) {
       if(c.code===356&&/^ShopInventory\s/.test(c.parameters[0]))locations.push({map:Number(file.slice(3,6)),event:ev.id,page,index,command:c.parameters[0]});
     }));
   }
+  for(const ce of w.$dataCommonEvents)if(ce)(ce.list||[]).forEach((c,index)=>{if(c.code===356&&/^ShopInventory\s/.test(c.parameters[0]))locations.push({common:ce.id,index,command:c.parameters[0]});});
   return {hostScope:'真实Scene_Shop/Window_ShopBuy与插件命令；无渲染，库存/扣款/补货/JsonEx仅内存；time为游戏帧，不是墙钟',catalog,locations,cases};
 };
