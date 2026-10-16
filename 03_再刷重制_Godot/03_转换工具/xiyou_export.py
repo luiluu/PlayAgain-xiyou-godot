@@ -66,6 +66,9 @@ def translate_formula(js, item_id=0):
         gd = gd.replace(k, v)
     if 'Math.' in gd:
         return None, 'unknown_math_function'
+    # JS 一元加号（Godot Expression 不支持）：开头、运算符或左括号、逗号之后的 + 对数值不起作用，去掉。
+    # 如技能 1065「霸道之刃」750 +  + a.atk * 38.5
+    gd = re.sub(r'(^|[+\-*/%(,<>=!&|])(\s*)\+(?!\+)', r'\1\2', gd)
     gd = gd.replace('&&', ' and ').replace('||', ' or ')
     gd = re.sub(r'!(?!=)', ' not ', gd)
     # 允许的标识符：a、b、v[…]、数字、属性访问、运算符、上面翻译过的函数
