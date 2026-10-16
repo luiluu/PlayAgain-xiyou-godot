@@ -727,3 +727,22 @@ static func claim_drops(s: XState) -> int:
 		if int(box[k]) == 0:
 			box.erase(k)
 	return total
+
+
+## 副本 Boss 胜利掉神秘珠（正式 dropBossPearl，挂在 CodexEconomy.bossReward 发奖之后；每场最多一次）：
+## 按开战时 Boss 所在楼层取层段，随机流 drop 的值 < dropRate（10%）才掉 1 枚；背包满时进神秘珠暂存箱（打开宝珠坊时领）。
+## 返回 {id, floor, overflow, toast}，不掉返回 {}。接线（发奖时机、楼层来源 CodexHonghuang.bossFloor）属副本系统，尚未接。
+static func drop_boss_pearl(s: XState, floor_no: int) -> Dictionary:
+	if config().is_empty():
+		return {}
+	var b := band(floor_no)
+	if b.is_empty() or roll(s, "drop") >= float(config().dropRate):
+		return {}
+	var id := int(b.itemId)
+	var overflow := free_space(s, id) == 0
+	if not overflow:
+		s.gain_item(id, 1)
+	else:
+		s.orb_state.inbox[str(id)] = int(s.orb_state.inbox.get(str(id), 0)) + 1
+	return {"id": id, "floor": floor_no, "overflow": overflow,
+		"toast": "副本Boss掉落：" + item_name(id) + "（未鉴定）" + ("；背包已满，暂存宝珠坊" if overflow else "")}

@@ -59,6 +59,7 @@ func _run() -> void:
 		_buy(d)
 		_dismantle(d)
 		_returns(d)
+	_drop()
 	_save_roundtrip()
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
@@ -175,6 +176,29 @@ func _returns(d: Dictionary) -> void:
 	s.gain_item(3027, 9998)
 	gained = XOrbs.claim_drops(s)
 	check("inbox_claim", gained == int(d.inbox[0].gained) and norm(s.orb_state.inbox) == norm(d.inbox[0].box) and bag(s) == norm(d.inbox[0].bag), [gained, s.orb_state.inbox, bag(s)])
+
+
+## 神秘珠掉落：drop 流的值 < 10% 才掉，层段按楼层；背包满进暂存箱（与 roll 序列一致，接线前的接口测试）
+func _drop() -> void:
+	var s := fresh(655860619)
+	var probe := fresh(655860619)
+	var hits := 0
+	for i in range(60):
+		var expect := XOrbs.roll(probe, "drop") < 0.1
+		var got := XOrbs.drop_boss_pearl(s, 20)
+		if expect != not got.is_empty():
+			check("drop_follows_roll", false, [i, got])
+			return
+		if expect:
+			hits += 1
+	check("drop_follows_roll", hits > 0 and s.item_count(3030) == hits and s.orb_state.n.drop == 60, [hits, s.item_count(3030)])
+	s.gain_item(3031, 9999)
+	var guard := 0
+	var got := {}
+	while got.is_empty() and guard < 200:
+		got = XOrbs.drop_boss_pearl(s, 30)
+		guard += 1
+	check("drop_overflow_inbox", got.overflow and int(s.orb_state.inbox.get("3031", 0)) == 1 and got.toast.ends_with("；背包已满，暂存宝珠坊") and s.item_count(3031) == 9999, got)
 
 
 func _save_roundtrip() -> void:
