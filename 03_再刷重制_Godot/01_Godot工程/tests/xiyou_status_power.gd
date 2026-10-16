@@ -72,9 +72,10 @@ func _strip(o: Dictionary, s: XState) -> void:
 		var a := s.actor(int(want.actorId))
 		if not check("strip_exists_%d" % a.actor_id, strip != null and is_same(strip.actor, a)):
 			continue
-		# 位置：(24, 页窗原 y) 宽 = 画面宽 − 48，高 36；页窗下移 36（本页窗原 y 是 280，正式版 72，见 status_page.gd）
-		var body := strip.get_parent().get_children().filter(func(n): return n is PanelContainer).back() as Control
-		check("strip_rect_%d" % a.actor_id, strip.position.x == o.strip[0] and strip.size == Vector2(o.strip[2], o.strip[3])
+		# 位置：(24, 页窗原 y 72) 宽 = 画面宽 − 48，高 36；页窗下移 36 到 (0,108,1280,612)
+		var body: Control = page.page_win
+		check("strip_rect_%d" % a.actor_id, strip.position == Vector2(o.strip[0], o.strip[1]) and strip.size == Vector2(o.strip[2], o.strip[3])
+			and Rect2(body.position, body.size) == Rect2(o.pageAfter[0], o.pageAfter[1], o.pageAfter[2], o.pageAfter[3])
 			and body.position.y == strip.position.y + 36 and body.size.y == 720 - strip.position.y - 36,
 			[strip.position, strip.size, body.position, body.size])
 		var got := strip.layout()
@@ -110,8 +111,9 @@ func _strip(o: Dictionary, s: XState) -> void:
 	page.actor_index = 0
 	page.rebuild()
 	await frames()
-	var body0 := page.content.get_children().filter(func(n): return n is PanelContainer and not n.is_queued_for_deletion()).back() as Control
-	check("strip_hidden_when_disabled", page.power_strip == null and body0.position.y == 280, [page.power_strip, body0.position])
+	var body0: Control = page.page_win
+	check("strip_hidden_when_disabled", page.power_strip == null and Rect2(body0.position, body0.size) == Rect2(o.pageBefore[0], o.pageBefore[1], o.pageBefore[2], o.pageBefore[3]),
+		[page.power_strip, body0.position, body0.size])
 	XConfig.set_flag("codexPowerEnabled", true)
 	XPower.clear_cache()
 	page.queue_free()

@@ -26,7 +26,7 @@ func _run() -> void:
 	a.refresh_passive()
 	s.gain_gear("weapon",56,1);s.gain_item(258,2);s.gain_item(1904,1);s.gain_item(170,1)
 	var status := XStatusPage.new();status.page=3;add_child(status);await frames()
-	check("suit_threshold_visible",text(status).contains("狼魂") and text(status).contains("已生效") and text(status).contains("队伍掉率"))
+	check("suit_threshold_visible",status.all_text().contains("狼魂") and status.all_text().contains("已生效") and status.all_text().contains("队伍掉率"))
 	await shot("11_套装状态");status.queue_free();await frames()
 	# 物品页（XItemScene，参照 70～74）：窗口矩形、分类五项、列表/信息/状态、NEW、装备序号与装备者、说明卡、升级、选人使用
 	var page:=XItemScene.new();add_child(page);await frames()
