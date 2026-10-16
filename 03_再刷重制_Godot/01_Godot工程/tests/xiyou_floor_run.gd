@@ -11,7 +11,7 @@ extends Node
 ## 用到的测试辅助（都只为速度或稳定，不改变流程本身）：
 ## - XMessageBox.auto：文字立即结束，选项按 auto_answers 依次应答（选项下标也从事件数据里按选项文字取）。
 ## - XBattleScene.force_auto：战斗全自动；XEnemy.force_roll=100：不出神话敌人（神话另由 xiyou_combat 测）。
-## - 固定随机种子 seed()、Engine.time_scale=6。
+## - 固定随机种子 seed()；时钟加快（去掉 headless 每帧睡眠、物理帧 600／秒、time_scale 30，见 _fast_clock）。
 ## - 队伍增强：出战成员第一件装备的能力值加到很大并回满。开局等级打不过守层者（一层里德 500 万生命，xiyou_flow 验证必败），
 ##   本测试查的是流程而不是数值；增强写在装备实例里，随存档一起存读，也顺带验证了装备实例的存读。
 ## - 移动：按地图通行度（MVTilemap.is_passable、事件碰撞）广度优先寻路，再逐格按方向键行走（玩家输入路径：计步、遇敌、自动战斗）；
@@ -22,25 +22,30 @@ extends Node
 ##
 ## 拆场景（并行测试.py 单个测试 300 秒上限）：SEGMENTS 按层指定各场景「完整走」的连续段（寻路行走、遇敌、存读档），
 ## 之前各层「快速通过」（直接执行传送门、守层者、辛德瑞事件，不走路、不存读档；事件本身照常执行）。part＝第几段（1 起）；
-## 最后一段到楼层表末尾，新加的层自动落进最后一段。快速通过每层约 6 秒，所以越靠后的段前缀越长：后段少放几层。
-## 单个场景过了约 170 秒就在 SEGMENTS 末尾再切一段并新增场景（xiyou_floor_run、_b、_c、_d、_e、_f、_g…，场景只设 part）。
-## 实测（time_scale 6，dev.048 后）：第 4 段（13～14 层）163 秒（14 层绕循环边缘、遇敌多，单层约 69 秒）；第 5 段（15～17 层）146 秒，前缀快速通过 14 层约 90 秒。dev.054：18～19 层合一段 181 秒（前缀 17 层约 115 秒，19 层约 46 秒），拆成第 6 段（18 层）132 秒、第 7 段（19 层）173 秒（前缀快速通过 18 层约 125 秒；单层不能再切，后面再加层时前缀要改成更快的通过方式或另想办法）。
+## 最后一段到楼层表末尾，新加的层自动落进最后一段。单个场景过了约 120 秒就在 SEGMENTS 末尾再切一段并新增场景
+## （xiyou_floor_run、_b…，场景只设 part）。
+## 实测（时钟加快后，并行 2 个）：开局约 2 秒；快速通过每层约 0.9 秒；完整走每层约 2～6 秒，十四层（绕循环边缘、遇敌多）约 23 秒。
+## 加快前（time_scale 6、物理 60 帧，dev.054）分七段，第 7 段 173 秒（前缀快速通过 18 层约 125 秒），七段合计约 830 秒；
+## 加快后同样七段合计约 160 秒、各段项数不变，于是合成两段（1～12、13～）。
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const HUB := 4
 const HUB_DOOR := 36
-## 进地图／事件结束／走路的帧数上限（time_scale 6 下实际很快；超时即判卡流程）
+## 进地图／事件结束的帧数上限（按原来每帧约 7 毫秒折成墙钟，见 _within）、走路每步的物理帧上限；超时即判卡流程
 const WAIT_MAP := 3000
 const WAIT_EVENT := 6000
 const WAIT_STEP := 600
+## 加快时钟时的 time_scale 与每秒物理帧数（见 _fast_clock）
+const FAST_SCALE := 30.0
+const FAST_TICKS := 600
 const DIR_ACTIONS := {2: "ui_down", 4: "ui_left", 6: "ui_right", 8: "ui_up"}
 
 ## 要越过循环地图边缘才走得到的守层者（「地图:事件」）：完整模式检查路上确实绕过了边缘。
 ## 十四层 Map030 横向循环（scrollType 2），克力之爷 (44,23) 与入口 (18,30) 只在绕过 x=0／59 时相连（正式引擎 canPass 实测）
 const WRAP_BOSS := ["30:8"]
 ## 各段完整走的起始层（第 part 段从 SEGMENTS[part−1] 走到下一段起始层的前一层；最后一段走到楼层表末尾）
-const SEGMENTS := [1, 5, 9, 13, 15, 18, 19]
+const SEGMENTS := [1, 13]
 @export var part := 1
 ## 本次走路越过循环地图边缘的步数
 var wrapped_steps := 0
@@ -89,8 +94,18 @@ func _scene() -> Node:
 	return get_tree().current_scene
 
 
+## 帧数上限是否还没到：时钟加快后每帧不睡、空闲帧快很多，改按墙钟（每帧按原来的约 7 毫秒算），给的实际时间不比原来少
+func _within(i: int, timeout: int, t0: int) -> bool:
+	if OS.low_processor_usage_mode_sleep_usec == 0:
+		return Time.get_ticks_msec() - t0 < timeout * 7
+	return i < timeout
+
+
 func _wait_map(map_id: int, timeout := WAIT_MAP) -> bool:
-	for i in range(timeout):
+	var t0 := Time.get_ticks_msec()
+	var i := 0
+	while _within(i, timeout, t0):
+		i += 1
 		var s = _scene()
 		if s is XMapScene and s.map_id == map_id and s.player != null and not s.busy and not s._menu_open:
 			return true
@@ -99,7 +114,10 @@ func _wait_map(map_id: int, timeout := WAIT_MAP) -> bool:
 
 
 func _wait_idle(map: XMapScene, timeout := WAIT_EVENT) -> bool:
-	for i in range(timeout):
+	var t0 := Time.get_ticks_msec()
+	var i := 0
+	while _within(i, timeout, t0):
+		i += 1
 		if not is_instance_valid(map):
 			return false
 		if not map.busy and not map._menu_open and not map.player.is_moving():
@@ -314,7 +332,7 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0
 	XSave.dir_override = "user://test_xiyou_floor_run"
 	XConfig.path_override = XSave.dir().path_join("options.json")
-	Engine.time_scale = 6.0
+	_fast_clock(true)
 	seed(20261015)
 	var t0 := Time.get_ticks_msec()
 	var floors := floor_table()
@@ -341,13 +359,28 @@ func _run() -> void:
 			DirAccess.remove_absolute(XSave.path(i))
 	DirAccess.remove_absolute(XSave.dir().path_join("options.json"))
 	DirAccess.remove_absolute(XSave.dir())
-	Engine.time_scale = 1.0
+	_fast_clock(false)
 	var passed := results.filter(func(r): return r.passed).size()
 	for l in log_lines:
 		print(l)
 	print("用时 %.1f 秒，到第 %d 层守层者（共 %d 层），战斗 %d 场" % [(Time.get_ticks_msec() - t0) / 1000.0, last_floor, floors.size(), battles])
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size(), "floors": [full_from, last_floor]}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## 加快时钟。原来（time_scale 6）快速通过每层约 5.5 秒、完整走每层十几到几十秒，几乎都在等：headless 每帧默认睡 6.9 毫秒
+## （OS.low_processor_usage_mode_sleep_usec，约 145 帧／秒，CPU 约 20%）；Godot 4 的 time_scale 只放大 delta 与计时器，
+## 不加快物理帧，而地图移动、显示动画（如辛德瑞传送的动画 117 约 2.5 秒）、战斗的 MV 帧都按物理帧走，固定 60 帧／秒。
+## 所以去掉每帧睡眠、物理帧提到 FAST_TICKS、time_scale 提到 FAST_SCALE：事件、行走与战斗仍逐帧照常执行（各处 _physics_process
+## 都不用 delta，只按帧计数；遇敌按步数），只是跑得快。
+func _fast_clock(on: bool) -> void:
+	if not has_meta("clock"):
+		set_meta("clock", [OS.low_processor_usage_mode_sleep_usec, Engine.physics_ticks_per_second, Engine.max_physics_steps_per_frame])
+	var orig: Array = get_meta("clock")
+	OS.low_processor_usage_mode_sleep_usec = 0 if on else orig[0]
+	Engine.physics_ticks_per_second = FAST_TICKS if on else orig[1]
+	Engine.max_physics_steps_per_frame = 64 if on else orig[2]
+	Engine.time_scale = FAST_SCALE if on else 1.0
 
 
 ## 新开局 → 方桌大厅（同 xiyou_flow 的应答：存档位 1、名字、普通难度、狗逍遥、求道者雕像）
