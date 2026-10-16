@@ -28,6 +28,7 @@ extends Node
 ## 加快前（time_scale 6、物理 60 帧，dev.054）分七段，第 7 段 173 秒（前缀快速通过 18 层约 125 秒），七段合计约 830 秒；
 ## 加快后同样七段合计约 160 秒、各段项数不变，于是合成两段（1～12、13～）。
 ## 二十层（大厅门「进入该层」→ 天才灵魂「干他」打敌群 453 → 交见面礼挑战石日天）加进第 2 段后：1～12 层 37 秒／236 项，13～20 层 61 秒／283 项。
+## 二十一层（二十层通关后门第 3 页先关开关 686，O-036 接着出楼层菜单 → 交见面礼挑战六道魔君 457）加进第 2 段后：单跑 13～21 层 59 秒／326 项。
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -49,7 +50,8 @@ const WRAP_BOSS := ["30:8"]
 ## （命中 −100%、攻击魔攻 ×0.4、属性伤害 −75%），普通攻击全落空，增强队伍也要打约 2 分钟（正式版同样，交礼是原版的出路）。
 ## 这些层先给够两种见面礼（物品 182 不朽残渣、变量 206 肝帝积分；公共事件随机要其中一种），再按「缴纳见面礼 → 给」应答，
 ## 走交礼分支（变量 842＝1 → 1400 天道领域*伪）。十三至十九层不交礼也打得过，照旧走不交礼分支。
-const PAY_GIFT := [116]
+## 二十一层六道魔君（敌群 457）开场同 456。值为该层「没交礼物胜后」才置 1 的索礼变量（二十层 868、二十一层 869），交礼后应仍为 0。
+const PAY_GIFT := {116: 868, 117: 869}
 ## 开关 686「前往20层」：二十层过路关后打开，大厅门第 3 页在变量 20＝21 时关掉（O-036：关掉后直接出楼层菜单）
 const GATE_SWITCH := 686
 ## 门里困难／地狱／天灾分支给全员学的挑战技能（六、十一、十六、二十一、二十六层…），普通难度不应学到
@@ -508,7 +510,7 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	if not _check(tag + "_boss_won", idle and won and map.map_id == f.map, [idle, s.variable(20), map.map_id, boss]):
 		return false
 	if PAY_GIFT.has(f.map):
-		_check(tag + "_gift_paid", s.variable(842) == 0 and s.variable(868) == 0, [s.variable(842), s.variable(868)])
+		_check(tag + "_gift_paid", s.variable(842) == 0 and s.variable(PAY_GIFT[f.map]) == 0, [s.variable(842), s.variable(PAY_GIFT[f.map])])
 	_check(tag + "_clear_toast", map.toasts.any(func(t): return str(t).begins_with("通关神魔之塔第")), map.toasts.slice(-4))
 	await _shot("%02d_守层者战后.png" % n)
 	if not full:
