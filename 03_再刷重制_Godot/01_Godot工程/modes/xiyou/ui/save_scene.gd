@@ -308,6 +308,56 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+func _gui_input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton and event.pressed):
+		return
+	if event.button_index == MOUSE_BUTTON_RIGHT:
+		cancel()
+		return
+	if _phase == "list" and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		if Rect2(list_win.position, list_win.size).has_point(event.position):
+			top = clampi(top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0, XSave.SLOTS - page_rows()))
+			_refresh()
+		return
+	if event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	var active := list_win if _phase == "list" else (action_win if _phase == "action" else confirm_win)
+	var p: Vector2 = event.position - active.position - Vector2.ONE * XMVWindow.PADDING
+	if not Rect2(Vector2.ZERO, active.canvas.size).has_point(p):
+		return
+	match _phase:
+		"list":
+			var row := floori(p.y / LH)
+			var i := top + row
+			if row >= page_rows() or i >= XSave.SLOTS:
+				return
+			if i == index:
+				ok()
+			else:
+				index = i
+				XSound.system(0)
+		"action":
+			for i in range(ACTIONS.size()):
+				if action_rect(i).has_point(p):
+					if i == act:
+						ok()
+					else:
+						act = i
+						XSound.system(0)
+						_update_action_help()
+					break
+		"confirm":
+			var i := floori(p.y / LH) - 1
+			if i not in [0, 1]:
+				return
+			if i == confirm_index:
+				ok()
+			else:
+				confirm_index = i
+				XSound.system(0)
+	_refresh()
+
+
 func move(d: int, wrap := true) -> void:
 	match _phase:
 		"list":

@@ -225,11 +225,32 @@ func _menu_load() -> void:
 	check("menu_save_page_exists", pages.size() == 1)
 	if pages.size() == 1:
 		var page: XSaveScene = pages[0]
-		page.index = 8
-		page.ok()
-		page.act = 0
-		page.ok()
-		page.ok()
+		check("save_page_mouse_handler", page.has_method("_gui_input"))
+		if page.has_method("_gui_input"):
+			page.index = 0
+			page.top = 0
+			page._refresh()
+			var click := InputEventMouseButton.new()
+			click.button_index = MOUSE_BUTTON_LEFT
+			click.pressed = true
+			click.position = page.list_win.position + Vector2(30, 14 + 8 * 36 + 8)
+			page.call("_gui_input", click)
+			check("mouse_selects_save_slot", page.index == 8 and page._phase == "list")
+			page.call("_gui_input", click)
+			check("mouse_opens_save_actions", page._phase == "action" and page.act == 1)
+			click.position = page.action_win.position + Vector2(30, 30)
+			page.call("_gui_input", click)
+			check("mouse_selects_load_action", page.act == 0 and page._phase == "action")
+			page.call("_gui_input", click)
+			check("mouse_opens_load_confirmation", page._phase == "confirm")
+			click.position = page.confirm_win.position + Vector2(30, 14 + 36 + 8)
+			page.call("_gui_input", click)
+		else:
+			page.index = 8
+			page.ok()
+			page.act = 0
+			page.ok()
+			page.ok()
 		check("menu_load_restores_state", XState.current.gold == 112233 and XState.current.map_id == 5 and XSave.current_slot == 9)
 		check("menu_load_reenters_map", menu.reloads == 1)
 	menu.queue_free()
