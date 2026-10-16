@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.067",
-  "sequence": 67,
-  "next": "dev.068",
-  "nextSequence": 68,
+  "current": "dev.068",
+  "sequence": 68,
+  "next": "dev.069",
+  "nextSequence": 69,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "存读档页整页复现、保存次数（八戒）",
+  "currentChange": "二十五层上行天主线；核查修复存读档页读取衔接、确认框与鼠标操作",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
