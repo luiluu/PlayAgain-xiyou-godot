@@ -235,34 +235,15 @@ func _add(b: Button, fn: Callable) -> void:
 	column.add_child(b)
 
 
+## 旧的回忆：YEP_SaveCore 的读档页（XSaveScene 读档模式）；读到档进地图，取消回标题
 func _choose_save() -> void:
-	_window("读取存档", 760)
-	var scroll := ScrollContainer.new()
-	scroll.name = "LoadScroll"
-	scroll.custom_minimum_size = Vector2(720, 540)
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.follow_focus = true
-	column.add_child(scroll)
-	var slots := VBoxContainer.new()
-	slots.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(slots)
-	var first: Button
-	for i in range(1, XSave.SLOTS + 1):
-		var b := XUI.button(XSave.summary(i))
-		b.disabled = not XSave.exists(i)
-		var slot := i
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.pressed.connect(func():
-			if XSave.load_slot(slot):
-				get_tree().change_scene_to_file(MAP_SCENE))
-		slots.add_child(b)
-		if first == null and not b.disabled:
-			first = b
-	_add(XUI.button("返回"), _title)
-	if first:
-		first.grab_focus.call_deferred()
-	else:
-		_focus_first()
+	_clear()
+	var page := XSaveScene.new()
+	page.name = "LoadPage"
+	page.mode = "load"
+	_layer.add_child(page)
+	page.loaded.connect(func(): get_tree().change_scene_to_file(MAP_SCENE))
+	page.closed.connect(_title)
 
 
 func _focus_first() -> void:

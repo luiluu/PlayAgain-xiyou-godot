@@ -13,7 +13,7 @@ extends Control
 ##   左列 地点（居中）、保存次数、游戏时间、「精魂:」金钱、变量 20、变量 206（名字字号 20、下移 3，值右对齐），
 ##   右列 存档容量（O-042：实际文件大小）。空格只画整块暗底与居中的「空」（系统色）。
 ## - 确认 (居中，宽＝说明宽＋40，高 136)：说明 (6,0)，「是／否」两行居中；读取总要确认，保存在这格已有档时确认，删除确认。
-## 未做（照搬差异）：保存次数（Godot 存档没有 $gameSystem._saveCount，画「—」，见交付单）。
+## 保存次数取存档的 saveCount（XState.save_count，XSave.save 写盘前加 1；旧档没有这一项按 0）。
 
 signal closed
 signal loaded
@@ -43,6 +43,7 @@ var action_win: XMVWindow
 var info_win: XMVWindow
 var confirm_win: XMVWindow
 var _cache := {}                    # 格 → 读出的存档字典（无效为 null）
+var dark_rects: Array = []          # 信息窗最近一次画的暗底（测试核对用）
 
 
 func _ready() -> void:
@@ -98,7 +99,8 @@ func first_index() -> int:
 	var best_at := ""
 	for i in range(1, XSave.SLOTS + 1):
 		var d = data(i)
-		if d != null and str(d.get("savedAt", "")) > best_at:
+		# savedAt 只到秒：同一秒存的几格取编号大的（正式版用毫秒时间戳）
+		if d != null and str(d.get("savedAt", "")) >= best_at:
 			best_at = str(d.get("savedAt", ""))
 			best = i - 1
 	return best
@@ -154,10 +156,14 @@ func _paint_action(c: XMVCanvas) -> void:
 
 
 func _dark(c: XMVCanvas, r: Rect2) -> void:
+	dark_rects.append(Rect2(r.position + Vector2.ONE, r.size - Vector2(2, 2)))
+	if not c.is_inside_tree():
+		return   # 测试用的记录画布
 	c.draw_rect(Rect2(r.position + Vector2.ONE, r.size - Vector2(2, 2)), Color(XUI.GAUGE_BACK, DARK_ALPHA))
 
 
 func _paint_info(c: XMVCanvas) -> void:
+	dark_rects = []
 	var d = data(slot())
 	var w := c.size.x
 	if d == null:
@@ -207,7 +213,7 @@ func _data_row(c: XMVCanvas, d: Dictionary, kind: String, dx: float, dy: float, 
 			c.text(name, x, dy, tw, "center", XUI.TEXT, 20, LH)
 		"save count":
 			c.text(plugin("Save Count", "保存次数"), x, dy, tw, "left", XUI.SYSTEM, 20, LH)
-			c.text(XMenu._group(int(d.saveCount)) if d.has("saveCount") else "—", x, dy, tw, "right", XUI.TEXT, 20, LH)
+			c.text(XMenu._group(int(d.get("saveCount", 0))), x, dy, tw, "right", XUI.TEXT, 20, LH)
 		"playtime":
 			c.text(plugin("Playtime", "游戏时间"), x, dy, tw, "left", XUI.SYSTEM, 20, LH)
 			c.text(playtime(float(d.playSeconds)), x, dy, tw, "right", XUI.TEXT, 20, LH)
