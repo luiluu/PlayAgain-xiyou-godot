@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.059",
-  "sequence": 59,
-  "next": "dev.060",
-  "nextSequence": 60,
+  "current": "dev.060",
+  "sequence": 60,
+  "next": "dev.061",
+  "nextSequence": 61,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "状态页逐像素复现、角色战力面板（八戒）",
+  "currentChange": "二十一层 Map117 威德天普通主线（悟空）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
