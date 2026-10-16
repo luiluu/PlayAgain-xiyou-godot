@@ -382,15 +382,11 @@ func _quick_save() -> void:
 		XToast.show_text("存档失败，请通过存档菜单重试。", true)
 
 
-## 选格存档页（YEP 的 Scene_Save；只在一键存档还没有存档格时打开），盖在队伍窗位置。
+## 选格存档页（YEP 的 Scene_Save；只在一键存档还没有存档格时打开）：XSaveScene 存档模式，整页
 func _show_save() -> void:
-	var page := XSavePanel.new()
-	page.position = STATUS_RECT.position
-	page.size = STATUS_RECT.size
+	var page := XSaveScene.new()
+	page.mode = "save"
 	_open_detail(page)
-	for node in get_children():
-		if node == cmd_win or node == gold_win or (node is TextureRect) or (node is CPUParticles2D):
-			node.show()
 
 
 ## Scene_GameEnd：背景不透明度 128，窗口 (520,310,240,100)，「回到标题 / 取消」。

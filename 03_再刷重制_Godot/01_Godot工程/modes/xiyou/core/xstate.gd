@@ -15,6 +15,8 @@ var gold := 0
 var items := {}                     # item_id -> 数量
 var last_item := 0
 var next_gear_id := 1
+## 保存次数（$gameSystem._saveCount：每次存档写盘前加 1；存读档页显示；旧档缺省 0）
+var save_count := 0
 ## 宝珠孔的存档种子（$gameSystem._codexOrbRng.seed：新游戏随机，之后随存档保存；见 XOrbs）
 var orb_seed: int = _fresh_seed()
 ## 宝珠坊：随机流序号 n、暂存宝珠 returns、神秘珠暂存箱 inbox、最近鉴定 recent（见 XOrbs）
@@ -320,7 +322,7 @@ func to_dict() -> Dictionary:
 			"buffs": x2.buffs, "buffTurns": x2.buff_turns, "cooldowns": x2.cooldowns,
 			"lastCommand": x2.last_command, "lastBattleSkill": x2.last_battle_skill}
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "battleSlots": battle_slots, "actors": a, "gold": gold,
-		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
+		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level}
@@ -359,6 +361,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.last_item = int(d.get("lastItem", 0))
 	s.gear = d.gear
 	s.next_gear_id = int(d.get("nextGearId",1))
+	s.save_count = int(d.get("saveCount", 0))
 	# 没有宝珠种子的旧档：照正式 seedFromSave 由存档内容算出（同一存档每次读都一样）
 	var os: Dictionary = d.get("orbState", {})
 	s.orb_state = {"n": {}, "returns": {}, "inbox": {}, "recent": os.get("recent", [])}

@@ -173,10 +173,16 @@ func _run() -> void:
 	await frames(2)
 	entry._choose_save()
 	await frames(3)
-	var scroll: ScrollContainer = entry.find_child("LoadScroll", true, false)
-	check("backup_load_ui", scroll.get_child(0).get_child_count() == 30 and not scroll.get_child(0).get_child(10).disabled and scroll.follow_focus)
-	var panel: Control = scroll.get_parent().get_parent()
-	check("backup_load_ui_fits", panel.get_global_rect().position.y >= 0 and panel.get_global_rect().end.y <= 720, panel.get_global_rect())
+	var page: XSaveScene = entry.find_child("LoadPage", true, false)
+	# 30 格都可达：移到第 11 格（备份位），列表滚动后它在可见范围里
+	var reach := page != null
+	if reach:
+		page.index = 0
+		for k in range(10):
+			page.move(1)
+		reach = page.index == 10 and page.index >= page.top and page.index < page.top + page.page_rows() and page.data(11) != null
+	check("backup_load_ui", reach, page.index if page else null)
+	check("backup_load_ui_fits", page != null and page.list_win.get_global_rect().end.y <= 720 and page.info_win.get_global_rect().end.y <= 720)
 	await shot("03_备份读档页.png")
 	entry.queue_free()
 	for i in range(1, 31):
