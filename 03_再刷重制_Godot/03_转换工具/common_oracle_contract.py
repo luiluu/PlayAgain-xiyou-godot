@@ -23,6 +23,8 @@ def finite(value):
 
 
 def case_map(data):
+    if not isinstance(data, dict):
+        raise ValueError('参照根节点须为对象')
     rows = data.get('cases')
     if not isinstance(rows, list) or not rows:
         raise ValueError('缺少非空cases')
@@ -84,22 +86,29 @@ def compare_reports(reference, actual, prefixes=()):
             'passed': not problems, 'differences': problems}
 
 
+def identity_issues(name, identity, manifest):
+    if not isinstance(identity, dict):
+        return [name + ' 参照来源结构异常']
+    issues = []
+    if identity.get('releaseVersion') != manifest['releaseVersion'] or identity.get('runtimeInputs') != manifest['runtimeInputs']:
+        issues.append(name + ' 参照版本/脚本不同源')
+    for rel, digest in manifest['inputs'].items():
+        if (rel.startswith('data/') or rel == 'package.json') and identity.get('inputs', {}).get(rel) != digest:
+            issues.append(name + ' 参照数据不同源：' + rel)
+    return issues
+
+
 def validate_payload(name, data, manifest):
     issues = []
     try:
         rows = case_map(data)
         if rows.keys() != FILES[name]:
             issues.append(name + ' 用例集合不完整或出现未经登记的新用例')
-        if data.get('schemaVersion') != 1 or not data.get('hostScope'):
+        if type(data.get('schemaVersion')) is not int or data['schemaVersion'] != 1 or not data.get('hostScope'):
             issues.append(name + ' 缺少版本或宿主范围说明')
         if any(row.get('errors') != [] for row in data['cases']):
             issues.append(name + ' 参照缺少明确的零错误记录')
-        identity = data.get('sourceIdentity', {})
-        if identity.get('releaseVersion') != manifest['releaseVersion'] or identity.get('runtimeInputs') != manifest['runtimeInputs']:
-            issues.append(name + ' 参照版本/脚本不同源')
-        for rel, digest in manifest['inputs'].items():
-            if (rel.startswith('data/') or rel == 'package.json') and identity.get('inputs', {}).get(rel) != digest:
-                issues.append(name + ' 参照数据不同源：' + rel)
+        issues.extend(identity_issues(name, data.get('sourceIdentity', {}), manifest))
         if name == 'shop_stock.json':
             r = rows['stock.purchase-reopen-sell']
             if [x['stock'] for x in r['trace']] != [5, 3, 3, 0, 1] or r['trace'][3]['enabled']:

@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / '03_转换工具'))
-from common_oracle_contract import compare_reports, case_map, verify_reports
+from common_oracle_contract import compare_reports, case_map, verify_reports, identity_issues
 
 
 class ContractTests(unittest.TestCase):
@@ -74,6 +74,16 @@ class ContractTests(unittest.TestCase):
     def test_missing_reports_fail(self):
         with tempfile.TemporaryDirectory() as directory:
             self.assertEqual(len(verify_reports(Path(directory), {})), 3)
+
+    def test_identity_changes_fail(self):
+        manifest = {'releaseVersion': 'v0.28', 'runtimeInputs': {'js/main.js': 'runtime-sha'}, 'inputs': {'data/Items.json': 'data-sha', 'package.json': 'version-sha'}}
+        self.assertFalse(identity_issues('test', manifest, manifest))
+        for key, value in [('releaseVersion', 'v0.29'), ('runtimeInputs', {}), ('inputs', {})]:
+            wrong = copy.deepcopy(manifest); wrong[key] = value
+            self.assertTrue(identity_issues('test', wrong, manifest))
+
+    def test_non_object_root_fails(self):
+        with self.assertRaises(ValueError): case_map([])
 
 
 if __name__ == '__main__':
