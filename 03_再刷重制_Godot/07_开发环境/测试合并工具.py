@@ -277,6 +277,29 @@ class MergeTests(unittest.TestCase):
         self.assertEqual((self.root / 'untracked').read_text(), 'keep')
         self.assertTrue(self.wt.exists())
 
+    def test_resume_after_receipt_removed_before_state_saved(self):
+        self.assertEqual(self.call(), 0)
+        path = self.root / '.git/lane-merge/state.json'
+        state = json.loads(path.read_text())
+        state['phase'] = 'versioned'
+        path.write_text(json.dumps(state))
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertEqual((self.root / merge.LOG).read_text().count('fixture change'), 1)
+        self.assertEqual(json.loads((self.root / merge.SUB / '开发编号.json').read_text())['current'], 'dev.002')
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+
+    def test_missing_receipt_without_log_marker_stops(self):
+        self.assertEqual(self.call(), 0)
+        path = self.root / '.git/lane-merge/state.json'
+        state = json.loads(path.read_text())
+        state['phase'] = 'versioned'
+        path.write_text(json.dumps(state))
+        self.put(str(merge.LOG), '# missing draft\n')
+        self.assertEqual(self.call(), 1)
+        self.assertTrue(self.wt.exists())
+        self.assertFalse(self.g('diff', '--cached', '--name-only'))
+
     def test_lane_dirty_is_preserved(self):
         (self.wt / 'untracked').write_text('keep')
         self.assertEqual(self.call(), 1)

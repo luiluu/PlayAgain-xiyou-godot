@@ -155,12 +155,16 @@ def prepare(root, state, state_file, executor):
         save(state_file, state)
     if state['phase'] == 'versioned':
         receipt = root / state['delivery']
-        body = draft(receipt.read_text()).replace(VERSION_MARKER, state['version'])
         marker = '<!-- lane-merge:' + state['target'] + ' -->'
         log = (root / LOG).read_text()
-        if marker not in log:
-            (root / LOG).write_text(log.rstrip() + '\n\n' + body + '\n\n' + marker + '\n')
-        receipt.unlink()
+        if receipt.exists():
+            body = draft(receipt.read_text()).replace(VERSION_MARKER, state['version'])
+            if marker not in log:
+                (root / LOG).write_text(log.rstrip() + '\n\n' + body + '\n\n' + marker + '\n')
+            receipt.unlink()
+        elif marker not in log:
+            raise RuntimeError('交付单已不存在且变更记录无本批标记，先人工核对')
+        # 归并记录并删除交付单后若进程中断，凭本批标记安全接续，不重复追加或编号。
         state['phase'] = 'prepared'
         save(state_file, state)
     print('已准备合并。请唐僧手改交接板（移除活动车道、加入待核查）与进度账，保持改动未提交；然后运行 --finish。', flush=True)
