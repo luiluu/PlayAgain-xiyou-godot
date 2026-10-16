@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.056",
-  "sequence": 56,
-  "next": "dev.057",
-  "nextSequence": 57,
+  "current": "dev.057",
+  "sequence": 57,
+  "next": "dev.058",
+  "nextSequence": 58,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "状态页战力条、装备变更战力提示（八戒）",
+  "currentChange": "二十层 Map116 喜乐天普通主线（悟空）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
