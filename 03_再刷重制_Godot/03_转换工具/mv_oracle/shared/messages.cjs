@@ -38,15 +38,15 @@ module.exports=function messages(host){
     }
   }
   // 明确标成解释器契约夹具，CE内容仅存内存，不假称是游戏数据里的真实剧情。
-  cases.push(makeCase('message.contract-nested-common',{kind:'engine-contract',syntheticCommon:9001,variable:4900},()=>{
+  cases.push(makeCase('message.contract-nested-common',{kind:'engine-contract',syntheticCommon:9001,variable:1001},()=>{
     newGame();const saved=w.$dataCommonEvents[9001];
     const c=(code,parameters,indent=0)=>({code,parameters,indent});
-    w.$dataCommonEvents[9001]={id:9001,name:'oracle-memory-only',list:[c(122,[4900,4900,1,0,1]),c(101,['',0,0,2]),c(401,['nested A']),c(401,['nested B']),c(122,[4900,4900,1,0,10]),c(0,[])]};
+    w.$dataCommonEvents[9001]={id:9001,name:'oracle-memory-only',list:[c(122,[1001,1001,1,0,1]),c(101,['',0,0,2]),c(401,['nested A']),c(401,['nested B']),c(122,[1001,1001,1,0,10]),c(0,[])]};
     try{
-      const it=new w.Game_Interpreter();it.setup([c(117,[9001]),c(122,[4900,4900,1,0,100]),c(0,[])]);it.update();
-      const before={message:snapshot(),variable:w.$gameVariables.value(4900),parentIndex:it._index,childIndex:it._childInterpreter._index};
-      for(let i=0;i<5;i++)it.update();const held=w.$gameVariables.value(4900);w.$gameMessage.clear();
-      for(let i=0;i<5;i++)it.update();return {before,held,after:w.$gameVariables.value(4900),finished:!it.isRunning()};
+      const it=new w.Game_Interpreter();it.setup([c(117,[9001]),c(122,[1001,1001,1,0,100]),c(0,[])]);it.update();
+      const before={message:snapshot(),variable:w.$gameVariables.value(1001),parentIndex:it._index,childIndex:it._childInterpreter._index};
+      for(let i=0;i<5;i++)it.update();const held=w.$gameVariables.value(1001);w.$gameMessage.clear();
+      for(let i=0;i<5;i++)it.update();return {before,held,after:w.$gameVariables.value(1001),finished:!it.isRunning()};
     }finally{if(saved===undefined)delete w.$dataCommonEvents[9001];else w.$dataCommonEvents[9001]=saved;}
   }));
   return {hostScope:'正式Game_Troop页条件与Game_Interpreter 101/401/117/339；第三页隔离；339只记录真实排队，宿主解除action等待，未执行专属技能伤害',definitions,cases};

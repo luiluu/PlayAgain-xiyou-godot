@@ -55,5 +55,10 @@ module.exports=function challenge(host){
   cases.push(makeCase('challenge.cancel',{floor:21,difficulty:4,skillCapBefore:10},()=>{
     newGame();w.$gameSwitches.setValue(2500,true);w.$gameVariables.setValue(8,10);const result=gate(21,true);return {skillCap:result.skillCap,actors:result.actors};
   }));
+  for(const difficulty of [4,5,6])cases.push(makeCase('challenge.progression.d'+difficulty,{difficulty,floors:[6,11,16,21,26]},()=>{
+    newGame();w.$gameSwitches.setValue(SWITCH[difficulty],true);w.$gameSystem.setDifficultyId(difficulty);w.$gameVariables.setValue(8,10);
+    const trace=[];for(const floor of [6,11,16,21,26]){const result=gate(floor);const a=w.$gameActors.actor(1);refresh(a);trace.push({floor,skillCap:result.skillCap,actor:actor(a)});}
+    return {trace};
+  }));
   return {hostScope:'真实Map004 EV36有效页与完整指令；开局难度开关作为已知输入，不冒充重跑全部开局；全部角色学技由原脚本执行，记录6人含后备。JsonEx仅内存，战斗开始调用正式Scene_Battle.start链',skills,cases};
 };

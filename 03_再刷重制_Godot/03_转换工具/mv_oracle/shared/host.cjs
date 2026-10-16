@@ -4,7 +4,7 @@ const fs = require('fs'), path = require('path');
 const {boot} = require('../hboot.cjs');
 const {sourceIdentity} = require('../source_identity.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
-const round = v => typeof v === 'number' ? (Number.isFinite(v) ? +v.toFixed(6) : String(v)) : v;
+const round = v => { if(typeof v==='number'&&!Number.isFinite(v))throw new Error('非有限测量数值');return typeof v==='number'?+v.toFixed(6):v; };
 function start() {
   const identity = sourceIdentity(APP), r = boot(APP, {tolerant:true, log:false}), w = r.window;
   if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败: '+JSON.stringify(r.errors));
