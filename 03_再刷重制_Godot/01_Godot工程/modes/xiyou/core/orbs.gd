@@ -469,3 +469,280 @@ static func general_set(equips: Array) -> Dictionary:
 		if best.is_empty() or float(s.general) > float(best.general):
 			best = s
 	return best
+
+
+# ---- 宝珠坊（鉴定、残片兑换、分解、暂存；参照 mv_oracle/orb_shop_probe.cjs → orb_shop.json）----
+## 随存档的宝珠坊状态在 XState.orb_state：n（各随机流已取次数）、returns（暂存宝珠 "item N" → 颗数）、
+## inbox（背包满时暂存的神秘珠 "N" → 枚数）、recent（最近一次鉴定结果）。种子是 XState.orb_seed。
+const MAX_ITEMS := 9999
+const LEGACY_TIER_NAME := {"weak": "弱", "mid": "中", "strong": "强"}
+
+static func _fail(reason: String) -> Dictionary:
+	return {"ok": false, "reason": reason}
+
+## 正整数（JS whole：有限、≥1、整数）
+static func whole(n) -> bool:
+	return (n is int or n is float) and is_finite(float(n)) and float(n) >= 1.0 and floorf(float(n)) == float(n)
+
+## roll(stream)：hash32(种子:流:序号) 混合得 [0,1)，该流序号加一（随存档）
+static func roll(s: XState, stream: String) -> float:
+	var n: Dictionary = s.orb_state.n
+	var k := int(n.get(stream, 0))
+	n[stream] = k + 1
+	return mix(hash32(str(s.orb_seed) + ":" + stream + ":" + str(k)))
+
+static func roll_int(s: XState, stream: String, lo: int, hi: int) -> int:
+	return lo + floori(roll(s, stream) * (hi - lo + 1))
+
+static func free_space(s: XState, id: int) -> int:
+	return maxi(0, MAX_ITEMS - s.item_count(id))
+
+static func item_name(id: int) -> String:
+	return str(XDB.rec("Items", id).get("name", ""))
+
+## 神秘珠的层段（bands 里 itemId 相同的一段）
+static func seal(id: int) -> Dictionary:
+	for b in config().get("bands", []):
+		if int(b.itemId) == id:
+			return b
+	return {}
+
+static func band(floor_no: int) -> Dictionary:
+	for b in config().get("bands", []):
+		if floor_no >= int(b.from) and floor_no <= int(b.to):
+			return b
+	return {}
+
+static func refund(id: int) -> int:
+	var sp := spec(id)
+	if not sp.is_empty():
+		return int(config().refund[int(sp.rank) - 1])
+	return int(config().get("legacyRefund", {}).get(str(id), 0))
+
+static func is_orb_item(id: int) -> bool:
+	return not spec(id).is_empty() or not seal(id).is_empty() or config().get("legacyRefund", {}).has(str(id))
+
+static func legacy_share() -> float:
+	return float(config().get("legacyShare", 0))
+
+## 层段的原作宝珠池（band.legacy＝weak/mid/strong；只留数据库里有的）
+static func legacy_pool(b: Dictionary) -> Array:
+	var tiers: Dictionary = config().get("legacyTiers", {})
+	var pool: Array = tiers.get(str(b.get("legacy", "")), config().get("legacyPool", [])) if not b.is_empty() else config().get("legacyPool", [])
+	return pool.filter(func(k): return not XDB.rec("Items", int(k)).is_empty()).map(func(k): return int(k))
+
+static func probabilities(id: int) -> Array:
+	var b := seal(id)
+	var out := []
+	if b.is_empty():
+		return out
+	for r in range(b.weights.size()):
+		if int(b.weights[r]) != 0:
+			out.append("%s %d%%" % [config().tiers[r], int(b.weights[r])])
+	return out
+
+static func possible(id: int) -> Array:
+	var b := seal(id)
+	var out := []
+	if b.is_empty():
+		return out
+	for f in config().families:
+		for r in range(b.weights.size()):
+			if int(b.weights[r]) != 0:
+				out.append(int(f.ids[r]))
+	if legacy_share() > 0:
+		out.append_array(legacy_pool(b))
+	return out
+
+static func max_identify(s: XState, id: int) -> int:
+	if config().is_empty() or seal(id).is_empty():
+		return 0
+	var n := s.item_count(id)
+	for k in possible(id):
+		n = mini(n, free_space(s, k))
+	return n
+
+static func quote_identify(s: XState, id: int, q) -> Dictionary:
+	if seal(id).is_empty() or not whole(q):
+		return _fail("神秘珠或数量无效")
+	if s.item_count(id) < int(q):
+		return _fail("神秘珠数量不足")
+	for k in possible(id):
+		if free_space(s, k) < int(q):
+			return _fail("请先腾出 " + item_name(k) + " 的背包空间")
+	return {"ok": true, "id": id, "quantity": int(q)}
+
+## 换物：先扣后给，数量不对就整体退回（exchange）
+static func _exchange(s: XState, inputs: Array, outputs: Array) -> bool:
+	var before := s.items.duplicate()
+	var delta := {}
+	for x in inputs:
+		s.gain_item(int(x.id), -int(x.quantity))
+		delta[int(x.id)] = int(delta.get(int(x.id), 0)) - int(x.quantity)
+	for x in outputs:
+		s.gain_item(int(x.id), int(x.quantity))
+		delta[int(x.id)] = int(delta.get(int(x.id), 0)) + int(x.quantity)
+	for id in delta:
+		if s.item_count(id) != int(before.get(id, 0)) + int(delta[id]):
+			s.items = before
+			return false
+	return true
+
+static func _roll_rank(b: Dictionary, rand: Callable) -> int:
+	var n: float = rand.call() * 100.0
+	var sum := 0.0
+	for r in range(b.weights.size()):
+		sum += float(b.weights[r])
+		if n < sum:
+			return r + 1
+	return 5
+
+## identify：每枚先按 legacyShare% 判原作宝珠（池里等概率），否则按层段权重定阶、16 类等概率；随机流 identify:<神秘珠ID>
+static func identify(s: XState, id: int, q) -> Dictionary:
+	var quote := quote_identify(s, id, q)
+	if not quote.ok:
+		return quote
+	var b := seal(id)
+	var stream := "identify:%d" % id
+	var rand := func() -> float: return roll(s, stream)
+	var got := {}
+	for n in range(int(q)):
+		var pool := legacy_pool(b)
+		var k := 0
+		if not pool.is_empty() and rand.call() * 100.0 < legacy_share():
+			k = int(pool[floori(rand.call() * pool.size())])
+		else:
+			var r := _roll_rank(b, rand)
+			var fams: Array = config().families
+			k = int(fams[floori(rand.call() * fams.size())].ids[r - 1])
+		got[k] = int(got.get(k, 0)) + 1
+	var keys := got.keys()
+	keys.sort()
+	var out := keys.map(func(k): return {"id": int(k), "quantity": int(got[k])})
+	if not _exchange(s, [{"id": id, "quantity": int(q)}], out):
+		return _fail("鉴定未完成，神秘珠已保留")
+	s.orb_state.recent = out.duplicate(true)
+	return {"ok": true, "kind": "identify", "quantity": int(q), "outputs": out}
+
+## 残片换神秘珠：层段按已到达的最高层（CodexZhenqi.progressFloor ＝ 变量 20 － 1，限 0～33，至少按 1 层）
+static func progress_floor(s: XState) -> int:
+	return clampi(int(s.variable(20)) - 1, 0, 33)
+
+static func progress_band(s: XState) -> Dictionary:
+	return band(maxi(1, progress_floor(s)))
+
+static func pearl_price(b: Dictionary) -> int:
+	var i: int = config().get("bands", []).find(b)
+	var prices: Array = config().get("pearlPrice", [])
+	return int(prices[i]) if i >= 0 and i < prices.size() else 0
+
+static func quote_buy(s: XState, q) -> Dictionary:
+	var b := progress_band(s)
+	var p := pearl_price(b) if not b.is_empty() else 0
+	if b.is_empty() or p == 0 or not whole(q):
+		return _fail("兑换数量无效")
+	var frag := int(config().fragment)
+	if s.item_count(frag) < p * int(q):
+		return _fail("宝珠残片不足：需要 %d，持有 %d" % [p * int(q), s.item_count(frag)])
+	if free_space(s, int(b.itemId)) < int(q):
+		return _fail(item_name(int(b.itemId)) + " 背包空间不足")
+	return {"ok": true, "id": int(b.itemId), "quantity": int(q), "cost": p * int(q)}
+
+static func buy_pearl(s: XState, q) -> Dictionary:
+	var quote := quote_buy(s, q)
+	if not quote.ok:
+		return quote
+	var out := [{"id": int(quote.id), "quantity": int(q)}]
+	if not _exchange(s, [{"id": int(config().fragment), "quantity": int(quote.cost)}], out):
+		return _fail("兑换未完成，残片已保留")
+	return {"ok": true, "kind": "buy", "quantity": int(q), "outputs": out}
+
+static func quote_dismantle(s: XState, id: int, q) -> Dictionary:
+	var n := refund(id)
+	if n == 0 or not whole(q):
+		return _fail("宝珠或数量无效")
+	if s.item_count(id) < int(q):
+		return _fail("背包中宝珠数量不足；镶嵌中的宝珠请先卸下")
+	if free_space(s, int(config().fragment)) < n * int(q):
+		return _fail("宝珠残片背包空间不足")
+	return {"ok": true, "id": id, "quantity": int(q), "fragments": n * int(q)}
+
+static func dismantle(s: XState, id: int, q) -> Dictionary:
+	var quote := quote_dismantle(s, id, q)
+	if not quote.ok:
+		return quote
+	var out := [{"id": int(config().fragment), "quantity": int(quote.fragments)}]
+	if not _exchange(s, [{"id": id, "quantity": int(q)}], out):
+		return _fail("分解未完成，宝珠已保留")
+	return {"ok": true, "kind": "dismantle", "quantity": int(q), "outputs": out}
+
+## 暂存宝珠（旧档孔位重排退回而背包满时；正式 returnBox）。只认 "item N"：宝珠都是物品，
+## 正式版对 "weapon/armor N" 领取时会生成新实例却不扣暂存数（数据里不会出现），这里不领。
+static func _return_id(key: String) -> int:
+	var m := RegEx.create_from_string("^item (\\d+)$").search(key)
+	return int(m.get_string(1)) if m and not XDB.rec("Items", int(m.get_string(1))).is_empty() else 0
+
+static func pending_returns(s: XState) -> int:
+	var n := 0
+	for k in s.orb_state.returns:
+		if whole(s.orb_state.returns[k]):
+			n += int(s.orb_state.returns[k])
+	return n
+
+static func claim_return(s: XState, key: String) -> int:
+	var box: Dictionary = s.orb_state.returns
+	var id := _return_id(key)
+	if id == 0 or not whole(box.get(key)):
+		return 0
+	var n := mini(int(box[key]), free_space(s, id))
+	if n <= 0:
+		return 0
+	var before := s.item_count(id)
+	s.gain_item(id, n)
+	var gained := clampi(s.item_count(id) - before, 0, n)
+	box[key] = int(box[key]) - gained
+	if int(box[key]) == 0:
+		box.erase(key)
+	return gained
+
+static func claim_returns(s: XState) -> int:
+	var n := 0
+	for k in s.orb_state.returns.keys():
+		n += claim_return(s, str(k))
+	return n
+
+## 神秘珠暂存箱（副本 Boss 掉落时背包满；claimDrops，打开宝珠坊时领）
+static func claim_drops(s: XState) -> int:
+	var box: Dictionary = s.orb_state.inbox
+	var total := 0
+	for k in box.keys():
+		var id := int(k)
+		if seal(id).is_empty():
+			continue
+		var n := mini(int(box[k]), free_space(s, id))
+		if n > 0:
+			s.gain_item(id, n)
+			box[k] = int(box[k]) - n
+			total += n
+		if int(box[k]) == 0:
+			box.erase(k)
+	return total
+
+
+## 副本 Boss 胜利掉神秘珠（正式 dropBossPearl，挂在 CodexEconomy.bossReward 发奖之后；每场最多一次）：
+## 按开战时 Boss 所在楼层取层段，随机流 drop 的值 < dropRate（10%）才掉 1 枚；背包满时进神秘珠暂存箱（打开宝珠坊时领）。
+## 返回 {id, floor, overflow, toast}，不掉返回 {}。接线（发奖时机、楼层来源 CodexHonghuang.bossFloor）属副本系统，尚未接。
+static func drop_boss_pearl(s: XState, floor_no: int) -> Dictionary:
+	if config().is_empty():
+		return {}
+	var b := band(floor_no)
+	if b.is_empty() or roll(s, "drop") >= float(config().dropRate):
+		return {}
+	var id := int(b.itemId)
+	var overflow := free_space(s, id) == 0
+	if not overflow:
+		s.gain_item(id, 1)
+	else:
+		s.orb_state.inbox[str(id)] = int(s.orb_state.inbox.get(str(id), 0)) + 1
+	return {"id": id, "floor": floor_no, "overflow": overflow,
+		"toast": "副本Boss掉落：" + item_name(id) + "（未鉴定）" + ("；背包已满，暂存宝珠坊" if overflow else "")}

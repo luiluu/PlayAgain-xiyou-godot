@@ -26,7 +26,7 @@ const POWER_COLOR := Color8(255, 211, 115)
 ## [名称, 符号, 已重制]
 const COMMANDS := [["物品", "item", true], ["技能", "skill", true], ["装备", "equip", true], ["状态", "status", true],
 	["真气", "zhenqi", false], ["整队", "formation", true], ["种族祝福", "race", false], ["宠物", "pet", false],
-	["制作", "crafting", false], ["宝珠坊", "orbs", false], ["异化工坊", "alienation", false], ["人物图鉴", "actorBook", false],
+	["制作", "crafting", false], ["宝珠坊", "orbs", true], ["异化工坊", "alienation", false], ["人物图鉴", "actorBook", false],
 	["怪物图鉴", "monsterBook", false], ["成就", "achievement", false], ["存档", "save", true], ["反馈", "feedback", false],
 	["设置", "options", true], ["游戏结束", "gameEnd", true]]
 const CMD_VISIBLE := 15
@@ -304,6 +304,9 @@ func _ok() -> void:
 			"formation":
 				# Scene_Menu.commandFormation → YEP_PartySystem 的 Scene_Party
 				_open_detail(XPartyScene.new())
+			"orbs":
+				# installNativeOrbRuntime：CodexOrbs.open → 宝珠坊（XOrbShop）
+				_open_detail(XOrbShop.new())
 			"gameEnd":
 				_show_game_end()
 	elif _mode == "actor":
