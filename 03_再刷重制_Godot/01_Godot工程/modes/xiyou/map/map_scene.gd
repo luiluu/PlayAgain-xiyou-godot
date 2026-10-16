@@ -213,6 +213,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 		chars.add_child(e)
 		e.setup_event(id, ev)
 		events.append(e)
+	lower.tile_events = _tile_events_at
 	# MOG_TreasurePopup：换地图时上一张图的获得提示不带过来（场所移动之后才执行的获得指令照常出现在新地图）
 	for n in get_children():
 		if n is XTreasurePopup:
@@ -398,6 +399,15 @@ func _physics_process(_delta: float) -> void:
 		if e.grid == front and [1, 2].has(e.trigger()) and e.is_normal_priority():
 			run_event(e)
 			return
+
+
+## Game_Map.tileEventsXy：该格上当前页图像是图块、优先级「角色下方」的事件的图块编号（通行判定用）
+func _tile_events_at(x: int, y: int) -> Array:
+	var out := []
+	for e in events:
+		if e.tile_id > 0 and e.priority_type == 0 and e.grid.x == x and e.grid.y == y:
+			out.append(e.tile_id)
+	return out
 
 
 ## Game_Map.setupAutorunEvent / Game_Event.checkEventTriggerAuto：列表多于一条（末尾结束指令之外还有内容）才启动

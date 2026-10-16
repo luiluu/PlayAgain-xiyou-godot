@@ -255,6 +255,10 @@ func loop_shift(real: Vector2) -> Vector2:
 
 
 # ---- 通行（MV Game_Map.checkPassage）----
+## 图块事件（Game_Map.tileEventsXy：当前页图像是图块、优先级「角色下方」的事件）：(x, y) -> 图块编号数组。
+## 地图场景设为本图上的事件；不设时只看地图图块。
+var tile_events: Callable
+
 ## d 为方向 2/4/6/8；返回该格朝 d 方向能否离开/进入。设置「穿墙开关」开着时一律可通行（地图外仍不行，MV canPass 先查 isValid）。
 func is_passable(x: int, y: int, d: int) -> bool:
 	if x < 0 or y < 0 or x >= width or y >= height:
@@ -262,8 +266,10 @@ func is_passable(x: int, y: int, d: int) -> bool:
 	if XConfig.flag("cq"):
 		return true
 	var bit := (1 << (d / 2 - 1)) & 0x0f
-	for z in [3, 2, 1, 0]:
-		var id := tile(x, y, z)
+	# Game_Map.checkPassage 查 allTiles：图块事件的图块排在第 4～1 层之前
+	var ids: Array = tile_events.call(x, y) if tile_events.is_valid() else []
+	ids.append_array([tile(x, y, 3), tile(x, y, 2), tile(x, y, 1), tile(x, y, 0)])
+	for id in ids:
 		var flag := _flag(id)
 		if flag & 0x10 != 0:
 			continue
