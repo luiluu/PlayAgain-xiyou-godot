@@ -17,6 +17,11 @@ python3 - "$ROOT" <<'PY' || FAIL=1
 import json, re, subprocess, sys
 from pathlib import Path
 root = Path(sys.argv[1]); bad = []
+# 历史只追加：防止合并交付单时把变更记录整页替换成当批条目。
+history = '00_项目管理/变更记录.md'
+previous = subprocess.run(['git', 'show', 'HEAD:' + history], cwd=root, capture_output=True, text=True)
+if previous.returncode == 0 and previous.stdout.strip() and not (root / history).read_text().startswith(previous.stdout.rstrip()):
+    bad.append('变更记录的既有正文被改写或删除；请恢复历史后只追加本轮记录')
 gd = subprocess.run(['git', 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'], cwd=root, capture_output=True, text=True).stdout.split('\n')
 in_worktree = len(gd) > 1 and gd[0] != gd[1]
 main_root = Path(gd[1]).parent if in_worktree else root  # worktree 里不入 Git 的本地证据（验证与备份、本地结果）只在主工作区
