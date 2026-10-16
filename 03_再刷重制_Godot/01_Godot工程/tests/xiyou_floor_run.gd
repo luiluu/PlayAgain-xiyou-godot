@@ -27,6 +27,7 @@ extends Node
 ## 实测（时钟加快后，并行 2 个）：开局约 2 秒；快速通过每层约 0.9 秒；完整走每层约 2～6 秒，十四层（绕循环边缘、遇敌多）约 23 秒。
 ## 加快前（time_scale 6、物理 60 帧，dev.054）分七段，第 7 段 173 秒（前缀快速通过 18 层约 125 秒），七段合计约 830 秒；
 ## 加快后同样七段合计约 160 秒、各段项数不变，于是合成两段（1～12、13～）。
+## 二十层（大厅门「进入该层」→ 天才灵魂「干他」打敌群 453 → 交见面礼挑战石日天）加进第 2 段后：1～12 层 37 秒／236 项，13～20 层 61 秒／283 项。
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -44,6 +45,11 @@ const DIR_ACTIONS := {2: "ui_down", 4: "ui_left", 6: "ui_right", 8: "ui_up"}
 ## 要越过循环地图边缘才走得到的守层者（「地图:事件」）：完整模式检查路上确实绕过了边缘。
 ## 十四层 Map030 横向循环（scrollType 2），克力之爷 (44,23) 与入口 (18,30) 只在绕过 x=0／59 时相连（正式引擎 canPass 实测）
 const WRAP_BOSS := ["30:8"]
+## 先交见面礼再挑战的层（地图号）：二十层石日天不交礼时开场公共事件 1399「天道领域」给全队加状态 698 天道*终焉
+## （命中 −100%、攻击魔攻 ×0.4、属性伤害 −75%），普通攻击全落空，增强队伍也要打约 2 分钟（正式版同样，交礼是原版的出路）。
+## 这些层先给够两种见面礼（物品 182 不朽残渣、变量 206 肝帝积分；公共事件随机要其中一种），再按「缴纳见面礼 → 给」应答，
+## 走交礼分支（变量 842＝1 → 1400 天道领域*伪）。十三至十九层不交礼也打得过，照旧走不交礼分支。
+const PAY_GIFT := [116]
 ## 各段完整走的起始层（第 part 段从 SEGMENTS[part−1] 走到下一段起始层的前一层；最后一段走到楼层表末尾）
 const SEGMENTS := [1, 13]
 @export var part := 1
@@ -142,7 +148,9 @@ func _event(scene: XMapScene, id: int) -> MVEvent:
 
 # ---- 楼层表（从内容数据推出） ----
 
-## 大厅传送门第 0 页：条件分歧「变量 20 ＝ N」（111 [1, 20, 0, N, 0]）下的场所移动 201 [0, M, x, y, d, f]
+## 大厅传送门第 0 页：条件分歧「变量 20 ＝ N」（111 [1, 20, 0, N, 0]）下的场所移动 201 [0, M, x, y, d, f]。
+## 场所移动可能套在选项里（二十层「天才灵魂」过路关：交 99 灵魂结晶或「干他」打敌群 453 后才传送）：取该分支里第一个
+## 只套在选项（402）里、不套其他条件的场所移动，answers 为门的应答（先「进入该层」0，再依次是各层选项的下标）。
 static func floor_table() -> Array:
 	var maps: Array = XMapScene.slice().get("maps", []).map(func(v): return int(v))
 	var door := _raw_event(HUB, HUB_DOOR)
@@ -151,15 +159,37 @@ static func floor_table() -> Array:
 		return out
 	var floor_n := -1
 	var cond_indent := -1
+	## 分支内各缩进最近一条开块指令（111／402／411…）
+	var opener := {}
 	for c in door.pages[0].list:
 		var p: Array = c.parameters
-		if int(c.code) == 111 and p.size() >= 5 and int(p[0]) == 1 and int(p[1]) == 20 and int(p[2]) == 0 and int(p[4]) == 0:
+		var code := int(c.code)
+		var indent := int(c.indent)
+		if code == 111 and p.size() >= 5 and int(p[0]) == 1 and int(p[1]) == 20 and int(p[2]) == 0 and int(p[4]) == 0:
 			floor_n = int(p[3])
-			cond_indent = int(c.indent)
-		elif int(c.code) == 201 and floor_n > 0 and int(c.indent) == cond_indent + 1 and int(p[0]) == 0:
-			if maps.has(int(p[1])):
-				out.append({"floor": floor_n, "map": int(p[1]), "x": int(p[2]), "y": int(p[3])})
+			cond_indent = indent
+			opener = {}
+			continue
+		if floor_n < 0:
+			continue
+		if indent <= cond_indent:
 			floor_n = -1
+			continue
+		if code in [111, 402, 411, 403]:
+			opener[indent] = c
+		elif code == 201 and int(p[0]) == 0 and maps.has(int(p[1])):
+			var answers := [0]
+			var plain := true
+			# 缩进 lv 上最近的开块指令包着缩进 lv+1 的内容
+			for lv in range(cond_indent + 1, indent):
+				var o = opener.get(lv)
+				if o != null and int(o.code) == 402:
+					answers.append(int(o.parameters[0]))
+				else:
+					plain = false
+			if plain:
+				out.append({"floor": floor_n, "map": int(p[1]), "x": int(p[2]), "y": int(p[3]), "answers": answers})
+				floor_n = -1
 	out.sort_custom(func(a, b): return a.floor < b.floor)
 	# 只取从一层起连续的楼层（中间缺一层就到此为止）
 	var cont := []
@@ -197,6 +227,19 @@ static func find_event(map_id: int, pred: Callable) -> Dictionary:
 			if pred.call(c):
 				return {"id": int(ev.id), "choice": branch, "x": int(ev.x), "y": int(ev.y), "name": str(ev.name)}
 	return {}
+
+
+## 守层者第 0 页「缴纳见面礼」的选项下标，再加见面礼对话里「给」的下标
+static func _gift_answers(map_id: int, ev_id: int) -> Array:
+	var out := []
+	for c in _raw_event(map_id, ev_id).pages[0].list:
+		if int(c.code) == 102:
+			var opts: Array = c.parameters[0]
+			if out.is_empty() and opts.has("缴纳见面礼"):
+				out.append(opts.find("缴纳见面礼"))
+			elif out.size() == 1 and opts.has("给"):
+				out.append(opts.find("给"))
+	return out
 
 
 static func boss_of(map_id: int) -> Dictionary:
@@ -429,7 +472,7 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	if not _check(tag + "_at_hub", map.map_id == HUB and s.variable(20) == n, [map.map_id, s.variable(20)]):
 		return false
 	# 1. 大厅传送门「进入该层」
-	if not await _talk(map, HUB_DOOR, [0], tag + "_door", full):
+	if not await _talk(map, HUB_DOOR, f.answers, tag + "_door", full):
 		return false
 	if not _check(tag + "_entered", await _wait_map(f.map) and _scene().player.grid == Vector2i(f.x, f.y), [_scene().map_id, _scene().player.grid if _scene() is XMapScene else null]):
 		return false
@@ -439,7 +482,13 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	if not _check(tag + "_boss_found", not boss.is_empty() and boss.choice >= 0, boss):
 		return false
 	wrapped_steps = 0
-	if not await _talk(map, boss.id, [boss.choice], tag + "_boss", full):
+	var boss_answers := [boss.choice]
+	if PAY_GIFT.has(f.map):
+		boss_answers = _gift_answers(f.map, boss.id)
+		_check(tag + "_gift_choice", boss_answers.size() == 2, boss_answers)
+		s.gain_item(182, 999)
+		s.set_variable(206, 99999)
+	if not await _talk(map, boss.id, boss_answers, tag + "_boss", full):
 		return false
 	if full and WRAP_BOSS.has("%d:%d" % [f.map, boss.id]):
 		_check(tag + "_boss_wrapped", wrapped_steps > 0, wrapped_steps)
@@ -447,6 +496,8 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	var won := s.variable(20) == n + 1 and s.self_switch(f.map, boss.id, "A")
 	if not _check(tag + "_boss_won", idle and won and map.map_id == f.map, [idle, s.variable(20), map.map_id, boss]):
 		return false
+	if PAY_GIFT.has(f.map):
+		_check(tag + "_gift_paid", s.variable(842) == 0 and s.variable(868) == 0, [s.variable(842), s.variable(868)])
 	_check(tag + "_clear_toast", map.toasts.any(func(t): return str(t).begins_with("通关神魔之塔第")), map.toasts.slice(-4))
 	await _shot("%02d_守层者战后.png" % n)
 	if not full:
