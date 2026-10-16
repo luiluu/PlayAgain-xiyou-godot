@@ -235,6 +235,85 @@ window.__refShot = function (name) {
                 }
             },16);
         });
+        // 图标 dh 闪光：第一只敌人倒下时掉落三件带 <dh:N> 的防具（默认 108 生命披风 dh179、130 队员死霸装 dh183、
+        // 57 萌萌怪的毛布护甲 dh143），逐帧记录 SpriteEnemyTrP 的子节点（图标与 Sprite_Animation、屏幕闪光），
+        // 到 shotFrame 帧定格截图 dh_drop_reference_f<帧>。页面内 JS 也可调 __dhRef.run({drops:[防具ID…],shotFrame:N,rand:[…],shot:名字})，
+        // 读 __dhRef.trace。每次跑之前重载页面（夹具战斗里再开新局，离开战斗时 AB_EnemyBook.onBattleEnd 会报错）。
+        // 只测画面，掉落规则另见 drop_record_probe。
+        var dh=window.__dhRef={trace:null};
+        dh.run=function(o){
+            o=o||{};var ids=o.drops||[108,130,57],shot=o.shotFrame===undefined?3:o.shotFrame,maxFrames=o.frames||240;
+            var T0=dh.trace;if(T0)T0.done=true;
+            fixture(4,true);
+            var T=dh.trace={target:null,drops:ids,shotFrame:shot,frames:[],samples:null,done:false,battleAniSpeed:null,enemy:null};
+            if(!SpriteEnemyTrP.prototype.__dhWrapped){
+                var up=SpriteEnemyTrP.prototype.update;
+                SpriteEnemyTrP.prototype.update=function(){up.call(this);if(dh.hook)dh.hook(this);};
+                SpriteEnemyTrP.prototype.__dhWrapped=true;
+            }
+            function node(c,icons){
+                if(c instanceof Sprite_Animation){
+                    var f=c._screenFlashSprite;
+                    return {anim:c._animation&&c._animation.id,target:icons.indexOf(c._target),x:c.x,y:c.y,duration:c._duration,rate:c._rate,
+                        frame:c.isPlaying()?c.currentFrameIndex():null,cells:c._cellSprites.filter(function(s){return s.visible;}).length,
+                        screenFlash:f&&{opacity:f.opacity,visible:f.visible,x:f.x,y:f.y,rgb:[f._red,f._green,f._blue],duration:c._screenFlashDuration}};
+                }
+                return {icon:c.item&&c.item.id,x:c.x,y:c.y,sx:c.scale.x,sy:c.scale.y,opacity:c.opacity,visible:c.visible,intY:c.intY,ry:c.ry,dy:c.dy,vx:c.sx,wait:c.wait,height:c.height};
+            }
+            function samples(trp){
+                // 色相：同一格子在原图（hue 0）与动画实际用的 hue 图上的像素，供 Godot 着色器逐点对照。
+                var out=[];
+                trp.children.forEach(function(c){
+                    if(!(c instanceof Sprite_Animation))return;
+                    var a=c._animation,raw=ImageManager.loadAnimation(a.animation1Name,0);
+                    if(!raw.isReady()||!c._bitmap1.isReady())return;
+                    // 只取不透明度 ≥160 的点（画布读回会把低不透明度像素的颜色量化），最多 48 个。
+                    var pts=[];for(var y=5;y<c._bitmap1.height&&pts.length<48;y+=11)for(var x=3;x<c._bitmap1.width&&pts.length<48;x+=37)
+                        if(raw.getAlphaPixel(x,y)>=160)pts.push([x,y,raw.getPixel(x,y),c._bitmap1.getPixel(x,y),raw.getAlphaPixel(x,y)]);
+                    out.push({anim:a.id,name:a.animation1Name,hue:a.animation1Hue,points:pts});
+                });
+                return out;
+            }
+            dh.hook=function(trp){
+                if(T.done||!T.target||trp._enemy!==T.target)return; // 只记本次倒下的敌人（旧场景的掉落不算）
+                var icons=trp._icons||[];
+                if(!T.enemy)T.enemy={x:trp._sprite.x,y:trp._sprite.y,height:trp._sprite.height,z:trp.z};
+                T.battleAniSpeed=ConfigManager.battleAniSpeed;
+                T.frames.push({n:T.frames.length+1,x:trp.x,y:trp.y,visible:trp.visible,children:trp.children.map(function(c){return node(c,icons);})});
+                if(!T.samples){var sm=samples(trp);if(sm.length)T.samples=sm;}
+                if(T.frames.length===shot){var s=SceneManager._scene;var u=s.update;s.update=function(){};
+                    setTimeout(function(){__refShot(o.shot||'dh_drop_reference_f'+shot);s.update=u;},150);}
+                if(T.frames.length>=maxFrames)T.done=true;
+            };
+            var attacked=false,tries=0,old=SceneManager._scene; // 连续再跑时，旧战斗场景要等真正换掉
+            var t=setInterval(dh.tick=function(){
+                var s=SceneManager._scene;
+                if(++tries>3000||T.done){clearInterval(t);dh.tick=null;return;}
+                if(s===old||!(s instanceof Scene_Battle)||attacked||!s._actorCommandWindow||!s._actorCommandWindow.active)return;
+                attacked=true;var e=T.target=$gameTroop.members()[0];
+                e.makeDropItems=function(){return ids.map(function(id){return $dataArmors[id];});};
+                // rand：之后 Math.random 依次循环取这些值（改变各图标的 intY／横向速度与排序）；不给时沿用夹具的 0.01。
+                if(o.rand){var k=0;Math.random=function(){return o.rand[k++%o.rand.length];};}
+                e.setHp(0);e.performCollapse();
+            },16);
+            return T;
+        };
+        // 内置浏览器窗格不在前台时 requestAnimationFrame 停摆：pump 手动按 MV 主循环推进（每帧一次
+        // updateInputData/changeScene/updateScene/renderScene），帧间用 MessageChannel 让出事件循环以便图片加载。
+        dh.pump=function(o){
+            o=o||{};var until=o.until||function(){return dh.trace&&dh.trace.done;},limit=Date.now()+(o.ms||40000);
+            var ch=new MessageChannel();
+            return new Promise(function(ok){
+                ch.port1.onmessage=function(){
+                    if(until()||Date.now()>limit){ok(!!until());return;}
+                    SceneManager.updateInputData();SceneManager.changeScene();SceneManager.updateScene();SceneManager.renderScene();
+                    if(dh.tick)dh.tick();
+                    ch.port2.postMessage(0);
+                };
+                ch.port2.postMessage(0);
+            });
+        };
+        button('dh 掉落逐帧读数',function(){dh.run();});
         // 三项偏好仅在本浏览器内存切换，不调用 ConfigManager.save。
         button('伤害数字 开/关', function(){ConfigManager.CombatDamageShow=!ConfigManager.CombatDamageShow;});
         button('技能动画 开/关', function(){ConfigManager.CombatSkillAnimation=!ConfigManager.CombatSkillAnimation;});

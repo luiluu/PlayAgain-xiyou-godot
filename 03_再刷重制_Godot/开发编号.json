@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.068",
-  "sequence": 68,
-  "next": "dev.069",
-  "nextSequence": 69,
+  "current": "dev.069",
+  "sequence": 69,
+  "next": "dev.070",
+  "nextSequence": 70,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "二十五层上行天主线；核查修复存读档页读取衔接、确认框与鼠标操作",
+  "currentChange": "图标 dh 目标闪光：掉落图标动画按正式版逐帧（八戒）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
