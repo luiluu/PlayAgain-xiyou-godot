@@ -9,9 +9,9 @@
     ['mousedown','mouseup','click','touchstart','touchend'].forEach(function(t){panel.addEventListener(t,function(e){e.stopPropagation();});});
     var pre=document.createElement('pre');pre.id='common-readout';pre.style.cssText='max-height:110px;overflow:auto;max-width:1240px';
     function button(label,fn){var b=document.createElement('button');b.textContent=label;b.onclick=function(){try{fn();b.blur();}catch(e){fixture.error=String(e.stack||e);pre.textContent=JSON.stringify({error:fixture.error});}};panel.appendChild(b);}
-    function fresh(){var scene=SceneManager._scene;if(!(scene instanceof Scene_Title||scene instanceof Scene_Item||scene instanceof Scene_Battle))throw new Error('请等待标题画面完成启动，再建立夹具');if(!DataManager.isDatabaseLoaded())throw new Error('数据库尚未就绪');ConfigManager.applyData({});DataManager.setupNewGame();Math.random=function(){return 0.5;};
+    function fresh(){var scene=SceneManager._scene;if(!(scene instanceof Scene_Title||scene instanceof Scene_Item))throw new Error('请从已启动的标题或物品场景建立夹具；战斗中更换夹具请先刷新页面');if(!DataManager.isDatabaseLoaded())throw new Error('数据库尚未就绪');ConfigManager.applyData({});DataManager.setupNewGame();Math.random=function(){return 0.5;};
       $gameSystem._codexOrbRng={seed:20261016,n:{}};$gameParty._actors=[];[1,8,9,10].forEach(function(id){$gameParty.addActor(id);});$gameMessage.clear();}
-    function awaitScene(klass,fn){var count=0,timer=setInterval(function(){if(++count>250){clearInterval(timer);pre.textContent=JSON.stringify({error:'场景未就绪'});return;}
+    function awaitScene(klass,fn){var count=0,timer=setInterval(function(){if(++count>250){clearInterval(timer);fixture.error='场景未就绪';return;}
       var s=SceneManager._scene;if(s instanceof klass&&s.isActive()&&s._windowLayer&&s._itemWindow){clearInterval(timer);try{fn(s);}catch(e){fixture.error=String(e.stack||e);}}},20);}
     function openGear(s,eq){if(s._augmentListWindow){s._augmentListWindow.hide();s._augmentListWindow.deactivate();}var category=DataManager.isWeapon(eq)?'weapon':'armor';s._categoryWindow.selectSymbol(category);s._categoryWindow.deactivate();s._itemWindow.setCategory(category);s._itemWindow.refresh();
       var index=s._itemWindow._data.indexOf(eq);if(index<0)throw new Error('装备不在物品页列表');s._itemWindow.select(index);s._itemWindow.updateHelp();s.onItemOk();}
@@ -36,11 +36,11 @@
       // 画面夹具暂停流程调度；真实Window_BattleItem的列表、可用性、标记与绘制保持原实现。
       Scene_Battle.prototype.updateBattleProcess=function(){};$gameSystem._treType[0]=-1;
       DataManager.loadMapData(4);var tries=0,timer=setInterval(function(){try{if(++tries>250)throw new Error('地图未就绪');if(!DataManager.isMapLoaded())return;clearInterval(timer);$gameMap.setup(4);
-        BattleManager.setup(4,false,false);SceneManager.goto(Scene_Battle);awaitScene(Scene_Battle,function(s){BattleManager.changeActor(0,'inputting');BattleManager.actor().makeActions();s.startActorCommandSelection();s._partyCommandWindow.deactivate();s._actorCommandWindow.deactivate();s.commandItem();s._itemWindow.select(0);s._itemWindow.updateHelp();});
+        BattleManager.setup(4,false,false);SceneManager.goto(Scene_Battle);awaitScene(Scene_Battle,function(s){BattleManager.changeActor(0,'inputting');BattleManager.actor().makeActions();s.startActorCommandSelection();s._partyCommandWindow.deactivate();s._actorCommandWindow.selectSymbol('item');s._actorCommandWindow.processOk();s._itemWindow.select(0);s._itemWindow.updateHelp();});
       }catch(e){clearInterval(timer);fixture.error=String(e.stack||e);}},20);
     });
-    button('取消战斗物品窗口',function(){var s=SceneManager._scene;if(!(s instanceof Scene_Battle))throw new Error('先建立战斗物品夹具');s.onItemCancel();});
-    button('重新打开战斗物品',function(){var s=SceneManager._scene;s.commandItem();s._itemWindow.select(0);s._itemWindow.updateHelp();});
+    button('取消战斗物品窗口',function(){var s=SceneManager._scene;if(!(s instanceof Scene_Battle))throw new Error('先建立战斗物品夹具');s._itemWindow.processCancel();});
+    button('重新打开战斗物品',function(){var s=SceneManager._scene;if(!(s instanceof Scene_Battle))throw new Error('先建立战斗物品夹具');s._actorCommandWindow.selectSymbol('item');s._actorCommandWindow.processOk();s._itemWindow.select(0);s._itemWindow.updateHelp();});
     button('隐藏夹具工具栏',function(){panel.style.visibility='hidden';});
     panel.appendChild(pre);document.body.appendChild(panel);
     var oldDraw=Bitmap.prototype.drawText;Bitmap.prototype.drawText=function(){(this._commonDraw||(this._commonDraw=[])).push(Array.prototype.slice.call(arguments));if(this._commonDraw.length>180)this._commonDraw.shift();return oldDraw.apply(this,arguments);};
