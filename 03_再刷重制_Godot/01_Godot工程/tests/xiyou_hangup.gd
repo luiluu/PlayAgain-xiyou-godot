@@ -6,6 +6,7 @@ extends Node
 var results := []
 var out_dir := ""
 var _victory_screens := 0
+var _clock_before := []
 
 
 func _ready() -> void:
@@ -65,7 +66,17 @@ func _run() -> void:
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
 	XEnemy.force_roll = 100.0
-	Engine.time_scale = 6.0
+	# 计时实测的最慢项是等待物理帧（约139秒）。沿用楼层流程的headless快时钟，
+	# 仍逐帧执行同样的240/150步、战斗、自动存档与翻页；窗口截图模式保持原节奏。
+	_clock_before = [OS.low_processor_usage_mode_sleep_usec, Engine.physics_ticks_per_second,
+		Engine.max_physics_steps_per_frame, Engine.time_scale]
+	if DisplayServer.get_name() == "headless":
+		OS.low_processor_usage_mode_sleep_usec = 0
+		Engine.physics_ticks_per_second = 600
+		Engine.max_physics_steps_per_frame = 64
+		Engine.time_scale = 30.0
+	else:
+		Engine.time_scale = 6.0
 	seed(20261014)
 	var s := XState.new_game(3, 1, [8, 10, 9])
 	s.map_id = 4
@@ -178,7 +189,10 @@ func _run() -> void:
 			DirAccess.remove_absolute(XSave.path(i))
 	DirAccess.remove_absolute(XSave.dir())
 	XEnemy.force_roll = -1.0
-	Engine.time_scale = 1.0
+	OS.low_processor_usage_mode_sleep_usec = _clock_before[0]
+	Engine.physics_ticks_per_second = _clock_before[1]
+	Engine.max_physics_steps_per_frame = _clock_before[2]
+	Engine.time_scale = _clock_before[3]
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
