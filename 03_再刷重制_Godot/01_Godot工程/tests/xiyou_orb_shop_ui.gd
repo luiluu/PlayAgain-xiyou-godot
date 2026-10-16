@@ -98,10 +98,12 @@ func _run() -> void:
 	await _geometry()
 	await _menu_entry()
 	# 选择窗的确定/取消音效还在播：先停掉再退出，免得退出时报资源未释放
+	# 满负载下混音线程释放播放对象较慢：停掉后按真实时间再等 0.5 秒（不受 time_scale 影响）
 	for pl in XSound._players:
 		if is_instance_valid(pl):
 			pl.stop()
 			pl.stream = null
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	await frames(3)
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
