@@ -16,7 +16,7 @@ var items := {}                     # item_id -> 数量
 var last_item := 0
 var next_gear_id := 1
 ## 宝珠孔的存档种子（$gameSystem._codexOrbRng.seed：新游戏随机，之后随存档保存；见 XOrbs）
-var orb_seed: int = randi()
+var orb_seed: int = _fresh_seed()
 var gear: Array = []                # 背包里的装备实例
 var switches := {}                  # id -> bool
 var variables := {}                 # id -> 数值
@@ -54,6 +54,13 @@ var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
 var hang_up_count := 0
 var hang_up_save_pending := false
+
+
+## 新种子用独立的随机数生成器取，不动全局 randi 序列（战斗等测试按全局种子复现）
+static func _fresh_seed() -> int:
+	var r := RandomNumberGenerator.new()
+	r.randomize()
+	return r.randi()
 
 
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
