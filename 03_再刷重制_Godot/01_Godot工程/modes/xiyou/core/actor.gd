@@ -230,6 +230,10 @@ func skills() -> Array:
 
 
 # ---- 特性对象 ----
+## 宝珠：同类新宝珠的标记特性只算阶位最高 3 件装备（installNativeOrbRuntime capDrops，见 XOrbs）
+func all_traits() -> Array:
+	return XOrbs.filter_traits(super.all_traits(), equips)
+
 func trait_objects() -> Array:
 	var out := [data(), class_data()]
 	out.append_array(equip_list())

@@ -229,11 +229,13 @@ func all_traits() -> Array:
 func traits_with_id(code: int, id: int) -> Array:
 	return all_traits().filter(func(t): return int(t.code) == code and int(t.dataId) == id)
 
+## MV traitsPi 经 CP_StateFloor（State Added Type: true，正式版启用）改为加算：1＋Σ(值−1)，小于 0 取 0。
+## 能力值比率、特殊能力、元素有效度、状态有效度都走这里（正式 traitsPiToSum）。
 func traits_pi(code: int, id: int) -> float:
 	var v := 1.0
 	for t in traits_with_id(code, id):
-		v *= float(t.value)
-	return v
+		v += float(t.value) - 1.0
+	return maxf(0.0, v)
 
 func traits_sum(code: int, id: int) -> float:
 	var v := 0.0
