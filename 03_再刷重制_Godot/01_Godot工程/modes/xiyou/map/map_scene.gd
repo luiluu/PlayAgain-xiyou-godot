@@ -318,6 +318,15 @@ func set_followers_visible(v: bool) -> void:
 	refresh_party_sprites()
 
 
+## 指令 214 暂时消除：本次进图期间该事件不再出现（Game_Event.erase）
+func erase_event(id: int) -> void:
+	for e in events:
+		if e.event_id == id:
+			e.erased = true
+			e.page_index = -2
+			e.refresh()
+
+
 func refresh_events() -> void:
 	for e in events:
 		e.refresh()

@@ -54,6 +54,11 @@ var encounter_enabled := true      # Game_System._encounterEnabled（指令 136�
 var actor_max_level := 0
 var followers_visible := true      # Game_Followers._visible（初值 System optFollowers；指令 216、设置「队列跟随」）
 var pingbi_quality: Array = []      # 屏蔽掉落：旧档 0～7 是否屏蔽（$gameSystem._pingbiQuality）
+## 副本上下文（XDungeon：进门时的 pending、进入后的 context）、副本 Boss 熟练度（$gameSystem._codexBossMastery：敌群 → 次数）、
+## 种族补给（$gameSystem._codexRaceSupply：counts／first／inbox）
+var dungeon := {}
+var boss_mastery := {}
+var race_supply := {}
 var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
 var hang_up_count := 0
@@ -257,6 +262,11 @@ func item_count(id: int) -> int:
 	return items.get(id, 0)
 
 func gain_item(id: int, amount: int) -> void:
+	# installNativeRaceRuntime：得到旧版祝福进阶石时换成正规 ID（CodexRaces.legacyItems）
+	if amount > 0:
+		var races = XDB.table("CodexRaces")
+		if races is Dictionary and int(races.get("legacyItems", {}).get(str(id), id)) != id:
+			id = int(races.legacyItems[str(id)])
 	items[id] = clampi(item_count(id) + amount, 0, 9999)  # $gameParty.maxItems（正式版运行时为 9999）
 	if items[id] == 0:
 		items.erase(id)
@@ -325,7 +335,8 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level}
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
+		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -396,6 +407,9 @@ static func from_dict(d: Dictionary) -> XState:
 	for k in d.get("seen", []):
 		s.seen[str(k)] = true
 	s.hang_up = d.get("hangUp", {})
+	s.dungeon = d.get("dungeon", {})
+	s.boss_mastery = d.get("bossMastery", {})
+	s.race_supply = d.get("raceSupply", {})
 	s.hang_up_total = int(d.get("hangUpTotal", 0))
 	s.pingbi_quality = Array(d.get("pingbiQuality", [])).map(func(v): return bool(v))
 	s.followers_visible = bool(d.get("followersVisible", XDB.system().get("optFollowers", false)))

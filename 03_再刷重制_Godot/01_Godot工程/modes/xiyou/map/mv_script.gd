@@ -11,6 +11,8 @@ extends RefCounted
 ##   Star_RomGetItems 的 RomGet 预掷池初始化。
 ## - v0.27 轮回入口（installReincarnationRandomRuntime）：CodexReincarnationRandom.open(this) → 选「轮回普通／困难」再选阵容规则；
 ##   条件 entryAccepted()／entryHard() 读选择结果；finishEntry() 无操作。随机角色模式暂不开放（O-035），菜单只列「常规阵容」。
+## - 副本 Boss 奖励（CE1439）：CodexEconomy.bossReward、CodexOrbs.rollInt、CodexV010Fixes.rewardNotice／awardQuantity、
+##   甚尔／宿傩 rollAdvanceStone（见 XDungeon）；洪荒的 grantTicketBonus／rollPower 在非洪荒难度无操作。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## CodexReincarnationRandom.entry：open 之后的选择结果 {accepted, hard}
@@ -92,6 +94,35 @@ static func _statements(js: String, interp) -> Array:
 		m = RegEx.create_from_string("^\\$gameParty\\.gainItem\\(\\$dataItems\\[\\$gameVariables\\.value\\((\\d+)\\)\\]\\s*,\\s*(\\d+)").search(st)
 		if m:
 			s.gain_item(int(s.variable(int(m.get_string(1)))), int(m.get_string(2)))
+			continue
+		# ---- 副本 Boss 胜利奖励（CE1439 肝帝积分券里的 Codex 脚本，见 XDungeon） ----
+		if st == "if(window.CodexEconomy)CodexEconomy.bossReward()":
+			for t in XDungeon.boss_reward(s):
+				interp.host.toast(t)
+			continue
+		# 洪荒（难度 8）的诅咒加成券与不朽之力：其他难度不做任何事
+		if st in ["if(window.CodexHonghuang)CodexHonghuang.grantTicketBonus()", "if(window.CodexHonghuang)CodexHonghuang.rollPower()"] and s.difficulty != 8:
+			continue
+		m = RegEx.create_from_string("^\\$gameVariables\\.setValue\\((\\d+),window\\.CodexOrbs&&CodexOrbs\\.rollInt\\?CodexOrbs\\.rollInt\\('(\\w+)',(\\d+),(\\d+)\\):1\\+Math\\.randomInt\\(\\d+\\)\\)$").search(st)
+		if m:
+			s.set_variable(int(m.get_string(1)), XOrbs.roll_int(s, m.get_string(2), int(m.get_string(3)), int(m.get_string(4))))
+			continue
+		# CodexV010Fixes.rewardNotice(this, '前'+CodexV010Fixes.awardQuantity(this,'种类',ID,默认)+'后')：宝箱里不提示；数量取本解释器最近一次实际所得
+		m = RegEx.create_from_string("^CodexV010Fixes\\.rewardNotice\\(this,\\s*'([^']*)'\\s*\\+\\s*CodexV010Fixes\\.awardQuantity\\(this,'(\\w+)',(\\d+),(\\d+)\\)\\s*\\+\\s*'([^']*)'\\)$").search(st)
+		if m:
+			if interp.receipt == null:
+				var g: Dictionary = interp.last_gain
+				var qty := int(g.amount) if str(g.get("kind", "")) == m.get_string(2) and int(g.get("id", -1)) == int(m.get_string(3)) else int(m.get_string(4))
+				interp.host.toast(m.get_string(1) + str(qty) + m.get_string(5))
+			continue
+		m = RegEx.create_from_string("^\\$gameVariables\\.setValue\\((\\d+),window\\.CodexMijing\\?CodexMijing\\.pickHere\\(\\):(\\d+)\\)$").search(st)
+		if m:
+			s.set_variable(int(m.get_string(1)), XDungeon.mijing_pick_here(s))
+			continue
+		if st == "CodexToji.rollAdvanceStone()" or st == "CodexSukuna.rollAdvanceStone()":
+			var got := XDungeon.roll_advance_stone(s, XDungeon.TOJI if st.begins_with("CodexToji") else XDungeon.SUKUNA)
+			if got != "":
+				interp.host.toast(got)
 			continue
 		if st == "CodexReincarnationRandom.open(this)":
 			await _reincarnation_open(interp)
