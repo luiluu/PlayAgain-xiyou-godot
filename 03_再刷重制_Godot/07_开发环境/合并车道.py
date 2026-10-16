@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """总装合并：默认准备合并；手改交接板/进度账后 --finish 检查、提交、清理。失败保留现场。"""
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -18,6 +19,7 @@ COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/重制步骤清单.
           Path('00_项目管理/当前状态.json'), Path('00_项目管理/来源登记.json'),
           SUB / '开发编号.json', PROJECT / 'project.godot', PROJECT / 'content/build_info.json']}
 VERSION_MARKER = 'dev.' + '待定'
+VERSION_EXEMPT = {'AGENTS.md', '00_项目管理/交付/README.md'}
 
 
 def git(root, *args):
@@ -88,8 +90,14 @@ def plan(root, task):
                   or (p.startswith(str(TOOLS / 'mv_oracle') + '/') and p.endswith('.cjs')) for p in changed)
     game = any(p.startswith(str(PROJECT) + '/') and not p.startswith(str(PROJECT / 'tests') + '/')
                and p != str(PROJECT / 'content/build_info.json') for p in changed)
+    # 只替换目标车道带来的编号占位，不扫描、暂存主工作区的其它文件。
+    version_paths = [p for p in changed if p != str(delivery) and p not in VERSION_EXEMPT
+                     and Path(p).suffix in {'.md', '.json', '.gd', '.py', '.sh'}
+                     and (wt / p).is_file() and not (wt / p).is_symlink()
+                     and VERSION_MARKER in (wt / p).read_text()]
     return dict(task=task, branch=lane['branch'], worktree=str(wt), base=base, target=target,
                 delivery=str(delivery), refresh=refresh, gameplay=game, phase='planned', head=base,
+                versionPaths=version_paths,
                 mainAdvancedAfterDelivery=fork != base)
 
 
@@ -110,6 +118,48 @@ def update_version(root):
             next(s for s in data['sources'] if s['id'] == 'new_godot_remake')['developmentVersion'] = version
         p.write_text(json.dumps(data, ensure_ascii=False, indent=indent) + '\n')
     return version
+
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def replace_versions(root, state, state_file):
+    if 'versionEdits' not in state:
+        edits = {}
+        for rel in state.get('versionPaths', []):
+            path = root / rel
+            if path.is_symlink() or not path.is_file():
+                raise RuntimeError('编号占位文件已改变类型：' + rel)
+            before = path.read_bytes()
+            after = before.decode().replace(VERSION_MARKER, state['version']).encode()
+            if before != after:
+                edits[rel] = {'before': digest(before), 'after': digest(after)}
+        # 先保存计划再写文件；中断时只接受原内容或已经替换完的内容。
+        state['versionEdits'] = edits
+        save(state_file, state)
+    for rel, hashes in state['versionEdits'].items():
+        path = root / rel
+        if path.is_symlink() or not path.is_file():
+            raise RuntimeError('编号占位文件已改变类型：' + rel)
+        current = path.read_bytes()
+        if digest(current) == hashes['after']:
+            continue
+        if digest(current) != hashes['before']:
+            raise RuntimeError('编号替换过程中出现额外改动，保留现场：' + rel)
+        after = current.decode().replace(VERSION_MARKER, state['version']).encode()
+        if digest(after) != hashes['after']:
+            raise RuntimeError('编号替换结果与计划不一致：' + rel)
+        path.write_bytes(after)
+
+
+def validate_version_edits(root, state):
+    for rel, hashes in state.get('versionEdits', {}).items():
+        if rel in COMMON:
+            continue  # 共用登记允许唐僧在暂停点继续编辑。
+        path = root / rel
+        if path.is_symlink() or not path.is_file() or digest(path.read_bytes()) != hashes['after']:
+            raise RuntimeError('编号替换文件还有其它改动，保留现场：' + rel)
 
 
 def prepare(root, state, state_file, executor):
@@ -154,6 +204,7 @@ def prepare(root, state, state_file, executor):
         state['phase'] = 'versioned'
         save(state_file, state)
     if state['phase'] == 'versioned':
+        replace_versions(root, state, state_file)
         receipt = root / state['delivery']
         marker = '<!-- lane-merge:' + state['target'] + ' -->'
         log = (root / LOG).read_text()
@@ -186,17 +237,30 @@ def finish(root, state, state_file, executor):
         if state['branch'] not in pending and state['target'][:7] not in pending and state['head'][:7] not in pending:
             raise RuntimeError('待交叉核查尚未登记本车道分支或提交号')
         changed = dirty(root)
-        allowed = COMMON | {state['delivery']}
+        allowed = COMMON | {state['delivery']} | set(state.get('versionEdits', {}))
         if changed - allowed:
             raise RuntimeError('不自动暂存预期外文件：' + '、'.join(sorted(changed - allowed)))
+        validate_version_edits(root, state)
         run(root, [sys.executable, ENV / '进度账.py', '--check'])
+        # 检查.sh 按 git ls-files 枚举交付单；仅删除工作区文件仍会被它列出。
+        # 先核对全部改动范围，再只暂存本批交付单的删除，不提前暂存其它内容。
+        if (root / state['delivery']).exists():
+            raise RuntimeError('交付单重新出现，先人工核对：' + state['delivery'])
+        if git(root, 'ls-files', '--', state['delivery']):
+            run(root, ['git', 'add', '--', state['delivery']])
         run(root, [ENV / '检查.sh', '--oracle'])
         # 检查可能生成 .uid 等文件，仍须重新核对，不能顺带提交。
         changed = dirty(root)
         if changed - allowed:
             raise RuntimeError('检查后出现预期外改动，先人工处理：' + '、'.join(sorted(changed - allowed)))
+        validate_version_edits(root, state)
+        if (root / state['delivery']).exists():
+            raise RuntimeError('检查后交付单重新出现，先人工核对：' + state['delivery'])
         run(root, ['git', 'diff', '--check'])
-        run(root, ['git', 'add', '--', *sorted(changed)])
+        # 已暂存删除的路径已不在索引里，重复 git add 会报 pathspec 不存在。
+        remaining = changed - {state['delivery']}
+        if remaining:
+            run(root, ['git', 'add', '--', *sorted(remaining)])
         actor = 'Claude（唐僧）' if executor == 'Claude' else 'Codex（沙僧）'
         reviewer = 'Codex' if executor == 'Claude' else 'Claude'
         run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾',
