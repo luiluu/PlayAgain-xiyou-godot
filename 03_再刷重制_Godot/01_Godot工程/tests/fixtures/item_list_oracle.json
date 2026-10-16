@@ -1,0 +1,61 @@
+{
+  "source": "冻结正式源 v0.28，ui_reference ?item_list_ref=1 内存新局（队伍 1/8/9/10，难度 3），2026-10-16 八戒采集；截图 04_验证/本地结果/原版参照/物品列表一组/",
+  "note": "newShown＝该行此刻画着 newIcon；seen＝$gameSystem._seenItems 已记。gear 引用：gN＝按 gains 顺序获得的第 N 件（0 起），aID＝队员 ID 开局身上的武器。",
+  "new_items": {
+    "gains": [[1, 3], [2, 1], [5, 2], [6, 1]],
+    "rows": ["治疗药水(小)", "魔力药水(小)", "止血草", "可口的蘑菇"],
+    "category_phase": {"seen": [0, 0, 0, 0], "shown": [1, 1, 1, 1]},
+    "open": {"index": 0, "seen": [1, 0, 0, 0], "shown": [1, 1, 1, 1]},
+    "down1": {"index": 1, "seen": [1, 1, 0, 0], "shown": [0, 1, 1, 1]},
+    "down2": {"index": 2, "seen": [1, 1, 1, 0], "shown": [0, 0, 1, 1]},
+    "ok_to_actions": {"seen": [1, 1, 1, 0], "shown": [0, 0, 0, 1]}
+  },
+  "weapons": {
+    "gains": [5, 2, 1, 5, 3, 2],
+    "start_weapons": {"1": 2, "8": 4, "9": 7, "10": 0},
+    "bag_order": ["g2", "g1", "g5", "g4", "g0", "g3"],
+    "untyped_base": 1,
+    "untyped_note": "水果刀 wtypeId 0：Galv 认不出类型，从不画 NEW，becomeOld 返回 false（不记已看）",
+    "item_rows": [["a8", "修", 1], ["a9", "罗琳", 1], ["a1", "狗逍遥", 1], ["g1", "2/9,999", 1], ["g5", "3/9,999", 1], ["g4", "4/9,999", 1], ["g0", "5/9,999", 1], ["g3", "6/9,999", 1], ["g2", "1/9,999", 0]],
+    "row_text": {"name_x": 36, "name_w": 474.125, "right_x": 0, "right_w": 606, "right_size": 20, "name_size": 26},
+    "after_equip_g5_on_1": {
+      "bag_order": ["g2", "a1", "g1", "g4", "g0", "g3"],
+      "item_rows": [["a8", "修"], ["a9", "罗琳"], ["a1", "2/9,999"], ["g1", "3/9,999"], ["g5", "狗逍遥"], ["g4", "4/9,999"], ["g0", "5/9,999"], ["g3", "6/9,999"], ["g2", "1/9,999"]],
+      "filter_bag_type_w2": [["a1", "2/9,999"], ["g1", "3/9,999"]],
+      "filter_worn": [["a8", "修"], ["a9", "罗琳"], ["g5", "狗逍遥"]]
+    },
+    "equip_candidates_actor1_slot0": {"rows": [["g1", "2/9,999"], ["g5", "3/9,999"], ["remove", ""]], "open": {"seen": [1, 0], "shown": [1, 1]}, "down": {"seen": [1, 1], "shown": [0, 1]}, "cancel": {"shown": [0, 0]}},
+    "shop_sell": {
+      "rows": [["g2", "1/9,999", 0], ["a1", "2/9,999", 1], ["g1", "3/9,999", 1], ["g4", "4/9,999", 1], ["g0", "5/9,999", 1], ["g3", "6/9,999", 1]],
+      "note": "Window_ShopSell 不列身上装备、不走 Codex 排序（按 $gameParty.weapons() 原序）；画 NEW 但选中、移动、取消都不记已看",
+      "after_equip": "after_equip_g5_on_1"
+    }
+  },
+  "seen_rules": {
+    "same_item_after_seen": false,
+    "new_instance_of_seen_base": true,
+    "instance_id_reused_after_loss": false,
+    "save_round_trip_keeps_seen": true
+  },
+  "battle_items": {
+    "gains": [[1, 3], [2, 1], [3, 1], [5, 2], [6, 1], [4, 1]],
+    "top": [6, 3],
+    "lock": [2],
+    "ids": [6, 3, 1, 2, 5],
+    "names": ["可口的蘑菇[置顶]", "活力药水(小)[置顶]", "治疗药水(小)", "魔力药水(小)[锁定]", "止血草"],
+    "numbers": ["×1", "×1", "×3", "×1", "×2"],
+    "new_shown": false,
+    "marks_seen": false,
+    "rect_5": [830, 478, 450, 167],
+    "row": {"line_height": 29, "padding": 11, "font": 21, "name_x": 30, "name_w": 315.5625, "number_x": 0, "number_w": 423, "number_size": 20},
+    "last_item_after_ok_target_cancel": {"index": 2, "last": 1},
+    "reopen_after_cancel_without_ok": {"moved_to": 4, "reopen_index": 2},
+    "more_gains": [22, 23, 26, 27, 28, 49, 50, 51, 58, 59, 138, 139, 140, 183, 200],
+    "rect_20": [830, 234, 450, 486],
+    "max_page_rows": 16,
+    "page_seq_from_0": [["pd", 16, 4], ["pd", 16, 4], ["pd", 16, 4], ["pd", 16, 4], ["pu", 0, 0], ["pu", 0, 0], ["pu", 0, 0], ["pu", 0, 0]],
+    "page_from_5": ["pd", 19, 4],
+    "page_when_all_fit": "5 项时 PageDown／PageUp 都不动光标",
+    "wrap": {"down_from_19": [0, 0], "up_from_0": [19, 4]}
+  }
+}

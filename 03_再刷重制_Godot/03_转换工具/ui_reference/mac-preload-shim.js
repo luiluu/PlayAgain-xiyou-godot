@@ -326,3 +326,71 @@ window.__refShot = function (name) {
         panel.appendChild(readout);document.body.appendChild(panel);
     });
 })();
+/* ?item_list_ref=1：物品列表一组（NEW 角标、「序号/9,999」、战斗物品窗口）参照。只建内存新游戏，不读写玩家存档；
+   页面内 JS 调 __ilr.*：newGame() 建四人新局，go(场景类) 切场景并等就绪，rows(窗口) 读每行的数据、已看过状态与当前画面
+   （newShown：该行此刻是否画着 newIcon；texts：该行此刻的文字），saveRoundTrip() 只在内存里做存读档序列化。 */
+(function () {
+    if (!/[?&]item_list_ref=1(?:&|$)/.test(location.search)) return;
+    var R = window.__ilr = {};
+    var hooked = false;
+    function hook() {
+        if (hooked || !window.Bitmap || !window.Galv) return;
+        hooked = true;
+        var blt = Bitmap.prototype.blt, clearRect = Bitmap.prototype.clearRect, clear = Bitmap.prototype.clear, drawText = Bitmap.prototype.drawText;
+        Bitmap.prototype.blt = function (src, sx, sy, sw, sh, dx, dy) {
+            if (src && src === ImageManager.loadSystem(Galv.NII.newIcon)) (this.__ilrNew || (this.__ilrNew = [])).push([dx, dy]);
+            return blt.apply(this, arguments);
+        };
+        Bitmap.prototype.drawText = function (text, x, y, w, h, align) {
+            (this.__ilrText || (this.__ilrText = [])).push({text: String(text), x: x, y: y, w: w, align: align || 'left', size: this.fontSize, color: this.textColor});
+            return drawText.apply(this, arguments);
+        };
+        Bitmap.prototype.clearRect = function (x, y, w, h) {
+            var inside = function (p) { return p.y === undefined ? !(p[1] >= y && p[1] < y + h) : !(p.y >= y && p.y < y + h); };
+            if (this.__ilrNew) this.__ilrNew = this.__ilrNew.filter(inside);
+            if (this.__ilrText) this.__ilrText = this.__ilrText.filter(inside);
+            return clearRect.apply(this, arguments);
+        };
+        Bitmap.prototype.clear = function () { this.__ilrNew = []; this.__ilrText = []; return clear.apply(this, arguments); };
+    }
+    addEventListener('load', function () { var t = setInterval(function () { if (window.Galv && window.Bitmap) { hook(); clearInterval(t); } }, 50); });
+    R.wait = function (cond, ms) {
+        return new Promise(function (ok, ng) {
+            var n = 0, t = setInterval(function () { var v; try { v = cond(); } catch (e) { v = false; } if (v) { clearInterval(t); ok(v); } else if (++n * 20 > (ms || 20000)) { clearInterval(t); ng(new Error('timeout')); } }, 20);
+        });
+    };
+    R.newGame = function () {
+        hook();
+        if (SceneManager._scene instanceof Scene_Map) { SceneManager._scene.update = function () {}; SceneManager._scene.isBusy = function () { return false; }; }
+        ConfigManager.applyData({}); DataManager.setupNewGame();
+        $gameParty._actors = [1, 8, 9, 10]; $gameParty._battleMembers = $gameParty._actors.slice();
+        Game_Map.prototype.updateInterpreter = function () {};
+        $gameMessage.clear();
+        return $gameParty.members().map(function (a) { return a.name(); });
+    };
+    R.go = function (cls) {
+        SceneManager.goto(cls);
+        return R.wait(function () { var s = SceneManager._scene; return s instanceof cls && SceneManager._sceneStarted && ImageManager.isReady() && s; });
+    };
+    R.type = function (item) { return !item ? null : item.itypeId ? 'items' : item.wtypeId ? 'weapons' : item.atypeId ? 'armors' : null; };
+    R.seen = function (item) { var t = R.type(item); return !!(t && $gameSystem._seenItems[t][item.id]); };
+    R.rows = function (w) {
+        var h = w.itemHeight(), sy = w._scrollY || 0, out = [];
+        var bmp = w.contents, news = bmp.__ilrNew || [], texts = bmp.__ilrText || [];
+        for (var i = 0; i < w.maxItems(); i++) {
+            var it = w._data[i];
+            var y0 = i * h - sy;
+            out.push({i: i, id: it && it.id, base: it && (it.baseItemId || it.id), type: R.type(it), name: it && it.name, seen: R.seen(it),
+                enabled: !!(it && w.isEnabled(it)),
+                newShown: news.some(function (p) { return p[1] >= y0 && p[1] < y0 + h; }),
+                texts: texts.filter(function (t) { return t.y >= y0 && t.y < y0 + h; }).map(function (t) { return [t.text, t.x, t.y - y0, t.w, t.align, t.size]; })});
+        }
+        return {type: w.constructor.name, rect: [w.x, w.y, w.width, w.height], padding: w.padding, lineHeight: w.lineHeight(), itemHeight: h,
+            font: w.standardFontSize(), index: w.index(), topRow: w.topRow(), maxPageRows: w.maxPageRows(), active: w.active, visible: w.visible, rows: out};
+    };
+    R.saveRoundTrip = function () {
+        var json = JsonEx.stringify(DataManager.makeSaveContents());
+        DataManager.extractSaveContents(JsonEx.parse(json));
+        return json.length;
+    };
+})();
