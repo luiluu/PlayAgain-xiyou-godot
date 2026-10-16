@@ -1,7 +1,7 @@
 # 交付：claude/bajie-orb-shop
 
 - 车道／工作者：B 界面·宝珠坊／八戒（Claude，重制_八戒_10）
-- 状态：进行中（功能、测试、文档已提交；正在合并 main 并跑全量检查）
+- 状态：可合并（main 无新提交、worktree 同步「测量不变」，`检查.sh --oracle` 全部通过：52 个场景、约 79,812 项）
 - 预分配 O-042～O-044：未用。
 - 入口：正式版宝珠坊只从主菜单「宝珠坊」进（installNativeOrbRuntime 给 Window_MenuCommand 加 codexOrbs → CodexOrbs.open），不在地图事件里，入口已在本车道接上（menu.gd）。
 - 交给悟空（副本系统）接线：① 神秘珠掉落 `XOrbs.drop_boss_pearl(s, 楼层)`——正式版挂在 CodexEconomy.bossReward（副本 Boss 胜利奖励发出后，每场最多一次，楼层取开战时的 CodexHonghuang.bossFloor），返回的 `toast` 要用 $.toaster 提示；② 公共事件 1439（肝帝积分券）第 42 行 `$gameVariables.setValue(1473, CodexOrbs.rollInt('fragment',1,2))` 对应 `XOrbs.roll_int(s, "fragment", 1, 2)`（随存档的随机流，防 SL）。
@@ -15,8 +15,8 @@
 - 界面（标准级）：新增通用选择窗 `XChoiceWindow`（正式 Window_YunChoices：宽 760 居中、说明区＋分隔线、命令行 36、最多 12 行可见、滚动、不可选半透明蜂鸣）与宝珠坊 `XOrbShop` 全部页面（主页、鉴定列表/详情/确认/结果与结果详情、残片兑换与确认、分解列表/详情/确认、暂存领取、楼层与品质分布、套装图谱与当前配装）；说明按 48 个半角宽换行。主菜单「宝珠坊」由灰显改为可用。
 - 正式差异（照搬或说明）：正式版暂存箱若出现「weapon/armor N」，领取时会生成新装备却不扣暂存数（数据里不会出现）；Godot 只认「item N」，其余保留不领。
 - 参照：`mv_oracle/orb_shop_probe.cjs`（接进同步 PROBES，输出 orb_shop.json）：4 个种子 × 4 条随机流前 25 个值与 rollInt、60 例鉴定（结果、背包、随机流序号、最近鉴定）、6 种鉴定失败、5 种神秘珠的可能产出与概率、37 例残片兑换、9 例分解、暂存宝珠与暂存箱领取、7 条宝珠坊点选路线的逐页行文。界面读数 `tests/fixtures/orb_shop_ui_oracle.json`（ui_reference 浏览器：主页/鉴定列表/鉴定详情的窗口矩形、说明高、可见行数）。
-- 验证：`tests/xiyou_orb_shop` 22/22、`tests/xiyou_orb_shop_ui` 27/27；ui_smoke、hud、panels、flow、item_list、orbs、orb_ui 通过；全量见下（交付前补）。
-- 提交：40c7074、385be4b、17def8f、7d117c0、57ceb5b、e65ca0a 及合并 main。
+- 验证：`tests/xiyou_orb_shop` 22/22、`tests/xiyou_orb_shop_ui` 27/27；ui_smoke、hud、panels、flow、item_list、orbs、orb_ui 通过；首次全量检查报宝珠坊界面测试退出时音效资源未释放，改为退出前停掉音效后，`检查.sh --oracle` 全部通过（52 个场景、约 79,812 项）。
+- 提交：40c7074、385be4b、17def8f、7d117c0、57ceb5b、e65ca0a、efc7522。
 - 未完成：神秘珠掉落与 CE1439 残片随机数的接线（副本系统，交悟空）；原作宝珠 ShareLearnSkill 技能效果仍未移植；现阶段玩家手里没有神秘珠与残片来源，宝珠坊可打开但多半显示「尚无未鉴定神秘珠」。
 
 ## 交接板
@@ -39,3 +39,4 @@
 - 7d117c0 宝珠坊界面（XChoiceWindow＋XOrbShop）与主菜单入口
 - 57ceb5b 神秘珠掉落接口 drop_boss_pearl
 - e65ca0a 界面风格、框架维护约定补宝珠坊
+- efc7522 宝珠坊界面测试退出前停掉音效
