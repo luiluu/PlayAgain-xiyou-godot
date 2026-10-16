@@ -111,7 +111,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	_static_checks()
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
-	check("oracle_loaded", oracle is Dictionary and oracle.has("cases") and oracle.cases.size() >= 20)
+	check("oracle_loaded", oracle is Dictionary and oracle.has("cases") and oracle.cases.size() >= 45)
 	if oracle is Dictionary:
 		var host := DungeonHost.new()
 		add_child(host)
@@ -169,10 +169,11 @@ func _run_case(c: Dictionary, setup: Dictionary, host: DungeonHost) -> Dictionar
 		s.set_switch(int(id), true)
 	for k in st.get("vars", {}):
 		s.set_variable(int(k), float(st.vars[k]))
+	var base := int(c.tierBase)
 	for t in range(2, int(st.get("tier", 1)) + 1):
-		s.set_switch(1564 + t, true)
-		s.set_switch(1563 + t, false)
-	_warp(host, setup.start)
+		s.set_switch(base + t - 1, true)
+		s.set_switch(base + t - 2, false)
+	_warp(host, c.at)
 	var steps := []
 	for step in c.script:
 		var res := await _run_step(step, host)
@@ -359,7 +360,7 @@ func _check_optimized(c: Dictionary, got: Dictionary) -> void:
 			check(name + ".difficulty", int(g.after.difficulty) == base, [g.after.difficulty, base])
 		if in_dungeon:
 			check(name + ".context", bool(g.context) or str(c.id).begins_with("d2.reenter"))
-	if str(c.id) in ["d2.escape", "d2.clear-normal", "hall.enable-hang"]:
+	if str(c.id) in ["d2.escape", "d2.clear-normal", "hall.enable-hang"] or str(c.id).ends_with(".escape") or str(c.id).ends_with(".clear-normal"):
 		# 进门前挂机开着：离开后的第一步就恢复（原版要找大厅大工匠）
 		var entered := false
 		for g in got.steps:
@@ -380,6 +381,13 @@ func _static_checks() -> void:
 	check("spec.rune", int(spec.get("rune", 0)) == 24, spec)
 	check("spec.tiers", spec.get("tiers", []) == [1, 2, 3, 4], spec)
 	check("spec.transfer", spec.get("transfers", []) == [[123, 14, 23]], spec)
+	# 同一模板的其他副本入口：每页都认得出，符文与目的地图一致
+	for d in [[5, 8, 220], [7, 1, 8], [13, 1, 14], [61, 10, 129], [61, 11, 130]]:
+		var ev := event_rec(d[0], d[1])
+		var ok: bool = not ev.is_empty() and ev.pages.all(func(pg):
+			var sp := XDungeon.entry_spec(pg.list)
+			return int(sp.get("rune", 0)) == 24 and int(sp.transfers[0][0]) == d[2])
+		check("spec.map%d_ev%d" % [d[0], d[1]], ok)
 	check("spec.not_exit", XDungeon.entry_spec(event_rec(123, 6).pages[0].list).is_empty())
 	check("spec.not_map001", XDungeon.entry_spec(XDB.map(1).events[1].pages[0].list).is_empty())
 	check("floor.dungeon_map", XDungeon.map_floor(124) == 2, XDungeon.map_floor(124))

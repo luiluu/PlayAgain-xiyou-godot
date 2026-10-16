@@ -139,7 +139,8 @@ function delta(a, b) {
 
 // ---- 运行一个用例 ----
 function runCase(c) {
-  w.eval('ConfigManager.applyData({}); DataManager.setupNewGame(); $gamePlayer.clearTransferInfo(); Math.random = function() { return 0.5; }; Graphics.frameCount = 0;');
+  // 随机数先固定再开新局：宝珠随机流的种子（setupNewGame 时取 Math.random）每例都是 0.5×2³²
+  w.eval('Math.random = function() { return 0.5; }; ConfigManager.applyData({}); DataManager.setupNewGame(); $gamePlayer.clearTransferInfo(); Graphics.frameCount = 0;');
   w.$gameSystem._difficultyId = DIFFICULTY;
   for (const id of PARTY) w.$gameParty.addActor(id);
   w.DataManager.loadMapData(c.map);

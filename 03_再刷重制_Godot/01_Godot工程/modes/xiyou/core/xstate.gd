@@ -59,6 +59,7 @@ var pingbi_quality: Array = []      # 屏蔽掉落：旧档 0～7 是否屏蔽�
 var dungeon := {}
 var boss_mastery := {}
 var race_supply := {}
+var eco_frac := {}
 var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
 var hang_up_count := 0
@@ -261,12 +262,35 @@ func set_self_switch(map: int, event: int, letter: String, on: bool) -> void:
 func item_count(id: int) -> int:
 	return items.get(id, 0)
 
+## installNativeEconomyRuntime（CodexEconomy.redirect）：得到这些物品时改记肝帝积分（变量 206，每件 30）或换成合并后的货币；
+## 小数倍率的零头累计在 eco_frac（$gameSystem._codexEcoFrac），凑满一件再给
+const ECO_SCORE_VAR := 206
+const ECO_TO_SCORE := {2451: 30, 1919: 30, 1350: 30}
+const ECO_TO_ITEM := {184: [188, 1.0], 185: [188, 1.0], 186: [188, 1.0], 187: [188, 1.0], 2251: [2201, 1.0], 2301: [2201, 1.5], 2351: [2201, 1.5],
+	1234: [1233, 3.0], 1991: [1981, 1.0], 2495: [2475, 1.0], 2496: [2476, 1.0], 2497: [2477, 1.0], 2498: [2478, 1.0], 2499: [2479, 1.0],
+	2500: [2480, 1.0], 2501: [2481, 1.0], 2502: [2482, 1.0], 2503: [2483, 1.0], 2504: [2484, 1.0], 2505: [2485, 1.0], 2506: [2486, 1.0],
+	2508: [2509, 1.0], 2510: [2511, 1.0], 2512: [2513, 1.0], 2514: [2515, 1.0], 2516: [2517, 1.0], 2518: [2519, 1.0], 2520: [2521, 1.0]}
+
 func gain_item(id: int, amount: int) -> void:
-	# installNativeRaceRuntime：得到旧版祝福进阶石时换成正规 ID（CodexRaces.legacyItems）
 	if amount > 0:
+		# installNativeRaceRuntime：得到旧版祝福进阶石时换成正规 ID（CodexRaces.legacyItems）
 		var races = XDB.table("CodexRaces")
 		if races is Dictionary and int(races.get("legacyItems", {}).get(str(id), id)) != id:
 			id = int(races.legacyItems[str(id)])
+		if ECO_TO_SCORE.has(id):
+			set_variable(ECO_SCORE_VAR, variable(ECO_SCORE_VAR) + amount * ECO_TO_SCORE[id])
+			return
+		if ECO_TO_ITEM.has(id):
+			var t: Array = ECO_TO_ITEM[id]
+			var total := float(eco_frac.get(str(t[0]), 0.0)) + amount * float(t[1])
+			var n := floori(total + 1e-9)
+			eco_frac[str(t[0])] = total - n
+			if n > 0:
+				_gain_raw(int(t[0]), n)
+			return
+	_gain_raw(id, amount)
+
+func _gain_raw(id: int, amount: int) -> void:
 	items[id] = clampi(item_count(id) + amount, 0, 9999)  # $gameParty.maxItems（正式版运行时为 9999）
 	if items[id] == 0:
 		items.erase(id)
@@ -336,7 +360,7 @@ func to_dict() -> Dictionary:
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
-		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply}
+		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -410,6 +434,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.dungeon = d.get("dungeon", {})
 	s.boss_mastery = d.get("bossMastery", {})
 	s.race_supply = d.get("raceSupply", {})
+	s.eco_frac = d.get("ecoFrac", {})
 	s.hang_up_total = int(d.get("hangUpTotal", 0))
 	s.pingbi_quality = Array(d.get("pingbiQuality", [])).map(func(v): return bool(v))
 	s.followers_visible = bool(d.get("followersVisible", XDB.system().get("optFollowers", false)))

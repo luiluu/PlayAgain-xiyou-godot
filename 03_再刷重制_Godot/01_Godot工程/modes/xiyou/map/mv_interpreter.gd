@@ -3,6 +3,7 @@ extends RefCounted
 ## MV 事件指令解释器（Game_Interpreter 的子集）。按缩进和 _branch 记录处理分支，与 MV 一致。
 ## host 提供画面服务（文字、选项、场所移动、战斗、商店、淡入淡出、移动路线、动画、气泡、提示、输入名字、存档），见 map_scene.gd。
 ## 脚本(355/655) 由 MVScript 按已知写法翻译；插件指令(356) 认得 Difficulty SetID、GhostButtons、ProhibitHangUp；
+## 副本相关（Difficulty SetID、挂机开关、顶层事件结束、事件战斗结束）交给 XDungeon；214 暂时消除交给宿主 erase_event；
 ## 认不出的脚本语句、插件指令与未支持的指令跳过并记进 skipped，便于之后逐条补齐。
 
 signal finished

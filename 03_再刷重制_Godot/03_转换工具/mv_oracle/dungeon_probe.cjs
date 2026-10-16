@@ -16,7 +16,7 @@ const PARTY = [1, 8, 10, 9], MAX_FRAMES = 6000, ORB_SEED = 12345;
 const DIFF_SWITCH = {1: 2496, 2: 2492, 3: 2491, 4: 2500, 5: 2494, 6: 2489};
 // 关心的状态（快照 focus）：副本变量与开关、符文与奖励物品
 const FOCUS_VARS = [5, 6, 21, 94, 450, 364, 206, 214, 243];
-const FOCUS_SW = [229, 230, 882, 1565, 1566, 1567, 1568];
+const FOCUS_SW = [229, 230, 882, 1565, 1566, 1567, 1568];   // 二层；其他副本的开关在 delta 里
 
 const identity = sourceIdentity(APP);
 const r = boot(APP, {tolerant: true, log: false}), w = r.window;
@@ -24,8 +24,36 @@ if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参�
 w.Star.Achievement.Manager.init();
 
 // ---- 剧本 ----
-const D2 = {map: 3, x: 41, y: 17};          // 二层溪流森林，土地庙门（EV7 在 (41,16)）前
-const enter = (picks, rune = 1) => [{do: 'item', id: 24, n: rune}, {do: 'event', event: 7, picks}];
+// 副本：楼层地图上入口门前的位置、门事件、第一档开关（CE822 开，每档一页，Boss 胜后换下一档）、
+// 逃离事件、通关路线（入口后的事件步骤，最后两步是 Boss 战与宝箱）、副本协会主席（出现开关、事件）
+const DUNGEONS = {
+  d2: {start: {map: 3, x: 41, y: 17}, door: 7, tierBase: 1565},
+  d1: {start: {map: 5, x: 4, y: 18}, door: 8, tierBase: 1561, escape: 8,
+    clear: [{do: 'event', event: 3, battle: 'win'}, {do: 'event', event: 1, battle: 'win'}, {do: 'event', event: 1}], boss: {sw: 881, event: 9}},
+  d4: {start: {map: 7, x: 16, y: 11}, door: 1, tierBase: 1573, escape: 9,
+    clear: [{do: 'event', event: 3, battle: 'win'}, {do: 'event', event: 2, battle: 'win'}, {do: 'event', event: 1}, {do: 'event', event: 2, battle: 'win'},
+      {do: 'event', event: 2}], boss: {sw: 884, event: 7}},
+  d6: {start: {map: 13, x: 31, y: 1}, door: 1, tierBase: 1581, escape: 20,
+    clear: [2, 3, 4, 5].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 1, battle: 'win'}, {do: 'event', event: 19, battle: 'win'},
+      {do: 'event', event: 19}]), boss: {sw: 886, event: 9}},
+  d7a: {start: {map: 61, x: 1, y: 16}, door: 10, tierBase: 1585, escape: 9,
+    clear: [{do: 'event', event: 4, battle: 'win'}, {do: 'event', event: 3, battle: 'win'}, {do: 'event', event: 3}], boss: {sw: 887, event: 1}},
+  d7b: {start: {map: 61, x: 24, y: 16}, door: 11, tierBase: 1585, escape: 17,
+    clear: [{do: 'event', event: 2, battle: 'win'}, {do: 'event', event: 11, battle: 'win'}, {do: 'event', event: 11}], boss: {sw: 888, event: 1}},
+};
+const D2 = DUNGEONS.d2.start;
+const enter = (picks, rune = 1, door = 7) => [{do: 'item', id: 24, n: rune}, {do: 'event', event: door, picks}];
+// 二层以外的副本按同一模板：缺符文、逃离、普通档通关、王者档通关（CE1439）、行贿主席
+function standard(id) {
+  const d = DUNGEONS[id], go = (picks, rune) => enter(picks, rune, d.door);
+  return [
+    {id: id + '.no-rune', dungeon: id, setup: {}, steps: go([0], 0)},
+    {id: id + '.escape', dungeon: id, setup: {difficulty: 5}, steps: [...go([0]), {do: 'event', event: d.escape, picks: [0]}]},
+    {id: id + '.clear-normal', dungeon: id, setup: {}, steps: [...go([0]), ...d.clear]},
+    {id: id + '.clear-king', dungeon: id, setup: {tier: 4, rand: 0.05}, steps: [...go([0, 3]), ...d.clear]},
+    {id: id + '.bribe', dungeon: id, setup: {sw: [d.boss.sw]}, steps: [...go([0]), {do: 'item', id: 913, n: 1}, {do: 'event', event: d.boss.event, picks: [0]}]},
+  ];
+}
 const SCENARIOS = [
   {id: 'd2.no-rune', setup: {}, steps: enter([0], 0)},
   {id: 'd2.leave', setup: {}, steps: enter([2])},
@@ -58,7 +86,8 @@ const SCENARIOS = [
   {id: 'd2.boss-lose', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'lose'}]},
   {id: 'd2.boss-roundtrip', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'win'}, {do: 'roundtrip'},
     {do: 'event', event: 1}]},
-];
+  ...['d1', 'd4', 'd6', 'd7a', 'd7b'].flatMap(standard),
+].map(sc => Object.assign({dungeon: 'd2'}, sc));
 
 // ---- 引擎占位（同 event_probe） ----
 w.eval(`
@@ -181,7 +210,7 @@ function runList(list, eventId) {
   return !it.isRunning();
 }
 function setupCase(sc) {
-  const st = sc.setup, diff = st.difficulty || 3, tier = st.tier || 1, rand = st.rand === undefined ? 0.5 : st.rand;
+  const dg = DUNGEONS[sc.dungeon], st = sc.setup, diff = st.difficulty || 3, tier = st.tier || 1, rand = st.rand === undefined ? 0.5 : st.rand;
   w.eval('ConfigManager.applyData({}); DataManager.setupNewGame(); $gamePlayer.clearTransferInfo(); Graphics.frameCount = 0;');
   w.Math.random = () => rand;
   w.$gameSystem._codexOrbRng = {seed: ORB_SEED, n: {}};
@@ -193,8 +222,8 @@ function setupCase(sc) {
   runList(w.$dataCommonEvents[822].list, 0);      // 副本初始化（Map002 开局调用）
   for (const id of st.sw || []) w.$gameSwitches.setValue(id, true);
   for (const id of Object.keys(st.vars || {})) w.$gameVariables.setValue(Number(id), st.vars[id]);
-  for (let t = 2; t <= tier; t++) { w.$gameSwitches.setValue(1564 + t, true); w.$gameSwitches.setValue(1563 + t, false); }
-  warp(D2);
+  for (let t = 2; t <= tier; t++) { w.$gameSwitches.setValue(dg.tierBase + t - 1, true); w.$gameSwitches.setValue(dg.tierBase + t - 2, false); }
+  warp(dg.start);
 }
 function warp(at) {
   w.DataManager.loadMapData(at.map);
@@ -258,7 +287,8 @@ const cases = chosen.map(sc => {
     steps.push(res);
     if (res.gameOver || res.errors) break;
   }
-  return {id: sc.id, setup: sc.setup, script: sc.steps, start, steps};
+  const dg = DUNGEONS[sc.dungeon];
+  return {id: sc.id, dungeon: sc.dungeon, at: dg.start, tierBase: dg.tierBase, setup: sc.setup, script: sc.steps, start, steps};
 });
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 const setup = {party: PARTY, orbSeed: ORB_SEED, diffSwitch: DIFF_SWITCH, start: D2, maxFrames: MAX_FRAMES};

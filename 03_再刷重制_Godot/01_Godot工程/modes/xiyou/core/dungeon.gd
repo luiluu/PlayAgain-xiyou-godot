@@ -34,6 +34,8 @@ const SUKUNA := {"actor": 172, "stone": 2937}
 
 ## 最近一场事件战斗（BattleManager.setup 时记楼层，endBattle 记胜负）：Boss 奖励、神秘珠、种族补给只认这一场，各领一次
 static var battle := {}
+## 地图事件对照用：参照的 event_probe 只回调战斗结果、不走 BattleManager.endBattle，胜负不记（神秘珠、种族补给不发）
+static var battle_end_counts := true
 
 
 # ---- 入口定义 ----
@@ -128,7 +130,7 @@ static func leave(s: XState) -> void:
 
 ## 事件战斗（指令 301）：setup 时取 Boss 所在楼层，结束记胜负（result 0 为胜）
 static func battle_finished(troop: int, result: int, map_id: int) -> void:
-	battle = {"troop": troop, "floor": boss_floor(map_id), "won": result == 0, "orb": false, "supply": false}
+	battle = {"troop": troop, "floor": boss_floor(map_id), "won": result == 0 and battle_end_counts, "orb": false, "supply": false}
 
 
 # ---- 副本 Boss 奖励（CE1439 的 Codex 脚本） ----

@@ -22,7 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 14
+TOOL_VERSION = 15
 HERE = Path(__file__).resolve().parent
 # 用户 2026-10-15：重制期间冻结在 v0.28 的只读副本（不入 Git，见 02_内容与素材/冻结正式源/README.md），重制完成后再统一同步正式版
 DEFAULT_APP = Path('/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw')
@@ -51,6 +51,23 @@ JS_FUNCS = {'Math.max': 'max', 'Math.min': 'min', 'Math.floor': 'floor', 'Math.c
 UNSUPPORTED = re.compile(r'[;{}?]|\bif\b|\bvar\b|\blet\b|\$game|\$data|=>|===|!==|\bfunction\b|\.length|\[\s*\]|\bthis\b')
 
 
+def _top_ternary(js):
+    """括号外恰好一个 ? 与其后一个 : 时返回 [条件, 真值, 假值]，否则 None。"""
+    depth, q, c = 0, [], []
+    for i, ch in enumerate(js):
+        if ch in '([':
+            depth += 1
+        elif ch in ')]':
+            depth -= 1
+        elif depth == 0 and ch == '?':
+            q.append(i)
+        elif depth == 0 and ch == ':' and q:
+            c.append(i)
+    if len(q) != 1 or len(c) != 1:
+        return None
+    return [js[:q[0]].strip(), js[q[0] + 1:c[0]].strip(), js[c[0] + 1:].strip()]
+
+
 def translate_formula(js, item_id=0):
     js = (js or '').strip()
     # MV 公式里 user/target 与 a/b 同义；item.id 在转换时就能确定
@@ -59,6 +76,14 @@ def translate_formula(js, item_id=0):
     js = re.sub(r'\bitem\.id\b', str(item_id), js)
     if not js:
         return '0', None
+    # 顶层的一个三元式 c ? x : y：Godot Expression 不认 if/else（解析通过但总取前一支），改成按条件取值的算术式
+    split = _top_ternary(js)
+    if split:
+        parts = [translate_formula(x, item_id) for x in split]
+        if all(gd is not None for gd, _ in parts):
+            c, x, y = (gd for gd, _ in parts)
+            return f'({x}) * float({c}) + ({y}) * float(not ({c}))', None
+        return None, next(why for gd, why in parts if gd is None)
     if UNSUPPORTED.search(js):
         return None, 'js_statement_or_game_state'
     gd = js
