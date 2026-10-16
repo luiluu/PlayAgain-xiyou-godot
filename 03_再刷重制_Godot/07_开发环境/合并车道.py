@@ -254,8 +254,13 @@ def finish(root, state, state_file, executor):
         if changed - allowed:
             raise RuntimeError('检查后出现预期外改动，先人工处理：' + '、'.join(sorted(changed - allowed)))
         validate_version_edits(root, state)
+        if (root / state['delivery']).exists():
+            raise RuntimeError('检查后交付单重新出现，先人工核对：' + state['delivery'])
         run(root, ['git', 'diff', '--check'])
-        run(root, ['git', 'add', '--', *sorted(changed)])
+        # 已暂存删除的路径已不在索引里，重复 git add 会报 pathspec 不存在。
+        remaining = changed - {state['delivery']}
+        if remaining:
+            run(root, ['git', 'add', '--', *sorted(remaining)])
         actor = 'Claude（唐僧）' if executor == 'Claude' else 'Codex（沙僧）'
         reviewer = 'Codex' if executor == 'Claude' else 'Claude'
         run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾',
