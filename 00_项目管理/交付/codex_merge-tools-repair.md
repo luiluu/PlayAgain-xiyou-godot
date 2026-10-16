@@ -1,7 +1,7 @@
 # 交付：codex/merge-tools-repair
 
 - 车道／工作者：工具修复／沙僧（Codex，重制_沙僧_2）
-- 状态：进行中（接手交接板 dev.061 实用发现的两处缺口；不改游戏文件）
+- 状态：可合并（唐僧_4 读差异、专项 38/38 通过；不改游戏文件，完整检查在 main 合并后跑）
 - 工作区：.claude/worktrees/merge-tools-repair
 - 独占：合并车道.py、测试合并工具.py、合并提速工具.md
 
