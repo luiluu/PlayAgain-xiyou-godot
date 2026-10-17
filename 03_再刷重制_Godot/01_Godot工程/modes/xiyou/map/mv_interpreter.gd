@@ -283,6 +283,13 @@ func _execute(c: Dictionary):
 			await host.fade(true)
 		222:
 			await host.fade(false)
+		225:
+			# 画面震动 [强度, 速度, 时间, 等待]
+			if host.has_method("shake_screen"):
+				host.shake_screen(int(p[0]), int(p[1]), int(p[2]))
+			if bool(p[3]):
+				for i in range(int(p[2])):
+					await host.get_tree().process_frame
 		230:
 			for i in range(int(p[0])):
 				await host.get_tree().process_frame

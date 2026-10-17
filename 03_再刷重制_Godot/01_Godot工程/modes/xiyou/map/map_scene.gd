@@ -397,6 +397,7 @@ func _on_action() -> void:
 
 func _physics_process(_delta: float) -> void:
 	_hang_up_physics()
+	_update_shake()
 	# 玩家朝同层事件走却被挡住：MV 的 checkEventTriggerTouch（触发 1/2）；挂机中不能手动移动
 	if busy or player == null or player.is_moving() or XHangUp.is_active(XState.current):
 		return
@@ -514,6 +515,30 @@ func show_text_with_choices(face: String, idx: int, lines: Array, options: Array
 ## 文字/选项/数值输入（XMessageBox.run 的参数）
 func show_message(msg: Dictionary) -> int:
 	return await message.run(msg)
+
+## 指令 225 画面震动（Game_Screen.startShake／updateShake，每帧一次；Spriteset_Base 只横向偏移）
+var _shake := {"power": 0.0, "speed": 0.0, "duration": 0, "dir": 1, "value": 0.0}
+
+func shake_screen(power: int, speed: int, duration: int) -> void:
+	_shake.power = float(power)
+	_shake.speed = float(speed)
+	_shake.duration = duration
+
+func _update_shake() -> void:
+	var k: Dictionary = _shake
+	if k.duration > 0 or k.value != 0.0:
+		var delta: float = k.power * k.speed * k.dir / 10.0
+		if k.duration <= 1 and k.value * (k.value + delta) < 0:
+			k.value = 0.0
+		else:
+			k.value += delta
+		if k.value > k.power * 2:
+			k.dir = -1
+		if k.value < -k.power * 2:
+			k.dir = 1
+		k.duration -= 1
+	if camera:
+		camera.offset.x = roundf(k.value)
 
 func fade(out: bool) -> void:
 	var t := create_tween()

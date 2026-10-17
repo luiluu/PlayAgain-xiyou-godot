@@ -419,6 +419,15 @@ func _static_checks() -> void:
 	check("cond.actor_kinds", ci._condition([4, 1, 0]) and not ci._condition([4, 3, 0]) and ci._condition([4, 3, 3, 2765])
 		and not ci._condition([4, 3, 3, 4408]) and ci._condition([4, 3, 2, cls]) and not ci._condition([4, 3, 2, cls + 1])
 		and not ci._condition([4, 3, 6, 1]) and not ci._condition([4, 9999, 0]))
+	# 指令 225 画面震动（十二层三首领）：照 Game_Screen.updateShake，强度 5、速度 5、60 帧
+	var ms := XMapScene.new()
+	ms.shake_screen(5, 5, 60)
+	var seq := []
+	for i in 61:
+		ms._update_shake()
+		seq.append(ms._shake.value)
+	ms.free()
+	check("shake.screen", seq.slice(0, 8) == [2.5, 5.0, 7.5, 10.0, 12.5, 10.0, 7.5, 5.0] and seq[59] == 0.0 and seq[60] == 0.0, seq)
 	check("floor.dungeon_map", XDungeon.map_floor(124) == 2, XDungeon.map_floor(124))
 	check("floor.parse_cn", XDungeon.parse_floor("十二层:冰封洞穴") == 12 and XDungeon.parse_floor("二十层") == 20 and XDungeon.parse_floor("24层 速行天") == 24)
 	# Boss 熟练度：第 1 次 +10 抽奖券；同一场神秘珠只判一次
