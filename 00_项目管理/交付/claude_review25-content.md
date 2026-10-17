@@ -1,7 +1,7 @@
 # 交付：claude/review25-content
 
 - 车道／工作者：审查·内容与规则／八戒（Claude，重制_八戒_13，中等努力）
-- 状态：进行中（检查.sh --oracle 运行中）
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -35,7 +35,7 @@
   - `XState._become_current`：新游戏、读档时清 `XDungeon.battle`；`xiyou_dungeon` 加 `load.clears_battle`。
   - 新测试 `xiyou_element_ternary`（33 项）；`xiyou_review_regressions` 加 redirect 两项；事件对照 baseline 重写（699／681／18）。
   - 框架维护约定标题与页眉。
-- 验证：同步正式西游（worktree）测量不变；专项 xiyou_formulas、xiyou_review_regressions 29/29、xiyou_dungeon 594/594、xiyou_element_ternary 33/33、xiyou_event_compare 5/5、xiyou_transfer 38/38；检查.sh --oracle：（待填）。
+- 验证：同步正式西游（worktree）测量不变；专项 xiyou_formulas、xiyou_review_regressions 29/29、xiyou_dungeon 594/594、xiyou_element_ternary 33/33、xiyou_event_compare 5/5、xiyou_transfer 38/38；检查.sh --oracle 全部通过（Godot 测试 58 场全过，MV 参照引擎 v0.28、来源／转换产物／六难度参照同源，共性参照完整性通过）。合并时本分支改了转换器（v16），main 需重跑同步正式西游.py，预期测量不变。
 - 提交：47de5f5、d0fa816、aadd9e0、727bfc9、de34355、0a39445、10e5fe5、0de4a3b
 - 遗留：见下「交接板」。
 - 给沙僧的完成度提示：
@@ -66,3 +66,6 @@
 - 0a39445 读档／新游戏清空 XDungeon.battle，补测试
 - 10e5fe5 补测试：CodexEconomy.redirect
 - 0de4a3b 抽查：命中／闪避实测对照并入 xiyou_element_ternary
+- 01edb65 交付单草稿；最后一笔提交补 .uid、填检查结果
+
+可合并
