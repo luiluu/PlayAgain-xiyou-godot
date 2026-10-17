@@ -122,7 +122,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	_static_checks()
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
-	check("oracle_loaded", oracle is Dictionary and oracle.has("cases") and oracle.cases.size() >= 119)
+	check("oracle_loaded", oracle is Dictionary and oracle.has("cases") and oracle.cases.size() >= 124)
 	if oracle is Dictionary:
 		var host := DungeonHost.new()
 		add_child(host)
@@ -412,7 +412,7 @@ func _static_checks() -> void:
 	check("spec.tiers", spec.get("tiers", []) == [1, 2, 3, 4], spec)
 	check("spec.transfer", spec.get("transfers", []) == [[123, 14, 23]], spec)
 	# 同一模板的其他副本入口：每页都认得出，符文与目的地图一致
-	for d in [[5, 8, 220, 24], [7, 1, 8, 24], [13, 1, 14, 24], [61, 10, 129, 24], [61, 11, 130, 24], [15, 4, 131, 24], [17, 2, 22, 64], [12, 17, 16, 64], [20, 5, 21, 110], [65, 1, 34, 110], [64, 2, 63, 110], [30, 6, 39, 110], [32, 4, 43, 171], [45, 2, 48, 171], [46, 2, 49, 171], [47, 11, 54, 171], [116, 2, 163, 397]]:
+	for d in [[5, 8, 220, 24], [7, 1, 8, 24], [13, 1, 14, 24], [61, 10, 129, 24], [61, 11, 130, 24], [15, 4, 131, 24], [17, 2, 22, 64], [12, 17, 16, 64], [20, 5, 21, 110], [65, 1, 34, 110], [64, 2, 63, 110], [30, 6, 39, 110], [32, 4, 43, 171], [45, 2, 48, 171], [46, 2, 49, 171], [47, 11, 54, 171], [116, 2, 163, 397], [117, 2, 166, 397]]:
 		var ev := event_rec(d[0], d[1])
 		var ok: bool = not ev.is_empty() and ev.pages.all(func(pg):
 			var sp := XDungeon.entry_spec(pg.list)
