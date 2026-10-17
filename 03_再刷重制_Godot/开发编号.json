@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.076",
-  "sequence": 76,
-  "next": "dev.077",
-  "nextSequence": 77,
+  "current": "dev.077",
+  "sequence": 77,
+  "next": "dev.078",
+  "nextSequence": 78,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "副本批量第二批：八层哀嚎迷窟、十一层地下河实验洞窟、十二层北风高原（悟空）",
+  "currentChange": "真气第一批与状态页修行页（八戒）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
