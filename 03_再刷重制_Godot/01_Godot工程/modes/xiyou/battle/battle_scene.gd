@@ -936,11 +936,6 @@ func _reflect_animation() -> int:
 	return int(XDB.plugin("YEP_BattleEngineCore").get("Reflect Animation", "0"))
 
 
-func _center(b: XBattler) -> Vector2:
-	var s: XBattlerSprite = sprites[b]
-	return s.position + Vector2(0, -s.height() / 2.0)
-
-
 func _show_hit(l: Dictionary) -> void:
 	var t: XBattler = l.target
 	var ts: XBattlerSprite = sprites[t]
@@ -988,14 +983,22 @@ func _start_animation(id: int, target: XBattler) -> MVAnimation:
 	if id <= 0 or not XConfig.flag("CombatSkillAnimation"):
 		return null
 	var data := XDB.rec("Animations", id)
-	if data.is_empty():
+	if not MVAnimation.usable(data):
 		return null
-	var at := _center(target)
-	match int(data.get("position", 1)):
-		0: at = sprites[target].position - Vector2(0, sprites[target].height())
-		2: at = sprites[target].position
-		3: at = BOX / 2.0
-	return MVAnimation.play(fx, id, at, false, XConfig.battle_speed())
+	var ts: XBattlerSprite = sprites[target]
+	# Sprite_Animation.updatePosition 用目标的帧高（_mainSprite／Sprite_Enemy.height，不含身体缩放）
+	var place := func() -> Vector2:
+		var h := ts.height() / ts.body_scale
+		match int(data.get("position", 1)):
+			0: return ts.position - Vector2(0, h)
+			1: return ts.position - Vector2(0, h / 2.0)
+			3: return BOX / 2.0
+		return ts.position
+	var a := MVAnimation.play(fx, id, place.call(), false, XConfig.battle_speed())
+	if a:
+		a.target = ts            # 目标闪光、隐藏作用在被打的战斗者上
+		a.follow = place         # updatePosition：每帧跟随目标
+	return a
 
 
 func _attack_animation(u: XBattler) -> int:

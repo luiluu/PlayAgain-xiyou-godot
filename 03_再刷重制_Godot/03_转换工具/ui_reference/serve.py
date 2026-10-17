@@ -35,16 +35,18 @@ class H(http.server.SimpleHTTPRequestHandler):
             self.send_error(403); return
         return super().do_HEAD()
     def do_POST(self):
-        # 只接受参照截图：写到本脚本旁的 shots/，文件名只允许字母数字下划线
-        import re, base64
-        m = re.fullmatch(r'/__ref_shot/([A-Za-z0-9_]+)', self.path)
+        # 只接受参照截图（PNG）与运行时读数（JSON）：写到截图目录，文件名只允许字母数字下划线
+        import re, base64, json
+        m = re.fullmatch(r'/__ref_(shot|json)/([A-Za-z0-9_]+)', self.path)
         if not m:
             self.send_error(405); return
         n = int(self.headers.get('Content-Length', 0))
         data = self.rfile.read(n).decode()
-        png = base64.b64decode(data.split(',', 1)[1])
-        out = os.path.join(SHOTS, m.group(1) + '.png')
-        open(out, 'wb').write(png)
+        if m.group(1) == 'shot':
+            open(os.path.join(SHOTS, m.group(2) + '.png'), 'wb').write(base64.b64decode(data.split(',', 1)[1]))
+        else:
+            json.loads(data)
+            open(os.path.join(SHOTS, m.group(2) + '.json'), 'w', encoding='utf-8').write(data)
         self.send_response(200); self.end_headers()
     def do_PUT(self): self.send_error(405)
     do_DELETE = do_PUT

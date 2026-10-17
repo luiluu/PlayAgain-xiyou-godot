@@ -39,6 +39,9 @@ func _run() -> void:
 			await _battle_shot()
 	DirAccess.remove_absolute(XConfig.path_override)
 	DirAccess.remove_absolute(XSave.dir())
+	for sp in find_children("*", "AudioStreamPlayer", true, false):
+		(sp as AudioStreamPlayer).stop()
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
@@ -133,7 +136,7 @@ func _row(p: XDropPopup) -> Array:
 			var g: Dictionary = c.g
 			out.append(["i", int(g.item.id), g.x, g.y, g.sx, g.sy, g.alpha, 1 if g.visible else 0])
 		elif c is XDropPopup.DhAnimation:
-			out.append(["a", int(c.anim.id), p.icons.find(c.target), c.position.x, c.position.y, c.duration,
+			out.append(["a", int(c.anim.id), p.icons.find(c.icon), c.position.x, c.position.y, c.duration,
 				c.frame_index() if c.playing() else null, c.flash_opacity(), 1 if c.flash.visible and c.flash_opacity() > 0.0 else 0])
 	return out
 
@@ -206,7 +209,7 @@ func _shader_pixels() -> void:
 		sp.region_enabled = true
 		sp.region_rect = Rect2(int(pts[i][0]), int(pts[i][1]), 1, 1)
 		sp.position = Vector2(4 + i * 4, 4)
-		sp.material = XDropPopup.hue_material(int(s.hue), false)
+		sp.material = MVAnimation.cell_material(int(s.hue), false)
 		layer.add_child(sp)
 	var bg := ColorRect.new()
 	bg.color = Color.BLACK

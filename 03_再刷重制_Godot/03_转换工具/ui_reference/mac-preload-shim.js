@@ -117,6 +117,10 @@ window.__refShot = function (name) {
     var x = new XMLHttpRequest(); x.open('POST', '/__ref_shot/' + name, false); x.send(b._canvas.toDataURL('image/png'));
     return x.status;
 };
+window.__refJson = function (name, obj) {
+    var x = new XMLHttpRequest(); x.open('POST', '/__ref_json/' + name, false); x.send(JSON.stringify(obj));
+    return x.status;
+};
 /* ?map_ref=1：地图 HUD 内存夹具。只修改此浏览器的内存与配置，不加载任何存档。 */
 (function () {
     if (!/[?&]map_ref=1(?:&|$)/.test(location.search)) return;
@@ -314,6 +318,64 @@ window.__refShot = function (name) {
             });
         };
         button('dh 掉落逐帧读数',function(){dh.run();});
+        // 技能动画逐帧：在战斗者精灵上 startAnimation（敌人目标是 Sprite_Enemy，角色是 _mainSprite），每帧 Spriteset_Battle.update
+        // 之后记 Sprite_Animation 的位置（相对目标精灵）、剩余时长、帧序、目标混合色与显示、屏幕闪光，到移除后再 2 帧。
+        // 页面内 JS：__animRef.run({anim:ID, side:'enemy'|'actor', index:0}) 后 await __animRef.pump()，读 __animRef.trace。
+        // 先在战斗夹具里等到角色指令窗口；动画图事先载好（不计异步加载等待）。只测画面。
+        var ar=window.__animRef={trace:null};
+        ar.run=function(o){
+            var T=ar.trace={anim:o.anim,side:o.side||'enemy',index:o.index||0,frames:[],samples:null,done:false,rate:null,target:null};
+            var a=$dataAnimations[o.anim],b1=ImageManager.loadAnimation(a.animation1Name,a.animation1Hue),b2=ImageManager.loadAnimation(a.animation2Name,a.animation2Hue);
+            var raw=ImageManager.loadAnimation(a.animation1Name,0);
+            if(!Spriteset_Battle.prototype.__arWrapped){
+                var up=Spriteset_Battle.prototype.update;
+                Spriteset_Battle.prototype.update=function(){up.call(this);if(ar.hook)ar.hook(this);};
+                Spriteset_Battle.prototype.__arWrapped=true;
+            }
+            var sprite=null,anim=null,removed=0;
+            ar.hook=function(ss){
+                if(T.done)return;
+                if(!anim){
+                    if(!b1.isReady()||!b2.isReady()||!raw.isReady())return;
+                    var list=T.side==='actor'?ss._actorSprites:ss._enemySprites;
+                    var battlers=T.side==='actor'?$gameParty.battleMembers():$gameTroop.members();
+                    sprite=list.filter(function(s){return s._battler===battlers[T.index];})[0];
+                    sprite.startAnimation(a,false,0);anim=sprite._animationSprites[sprite._animationSprites.length-1];
+                    T.rate=anim._rate;T.target={x:sprite.x,y:sprite.y,height:sprite._effectTarget.height,effect:sprite._effectTarget===sprite?'self':'main'};
+                    var pts=[];for(var y=5;y<b1.height&&pts.length<48;y+=11)for(var x=3;x<b1.width&&pts.length<48;x+=37)
+                        if(raw.getAlphaPixel(x,y)>=160)pts.push([x,y,raw.getPixel(x,y),b1.getPixel(x,y),raw.getAlphaPixel(x,y)]);
+                    T.samples={name:a.animation1Name,hue:a.animation1Hue,points:pts};
+                    return;
+                }
+                var t=anim._target,f=anim._screenFlashSprite,live=!!anim.parent;
+                if(!live)removed++;
+                T.frames.push({n:T.frames.length+1,live:live,x:anim.x-sprite.x,y:anim.y-sprite.y,duration:anim._duration,
+                    frame:anim.isPlaying()?anim.currentFrameIndex():null,cells:anim._cellSprites.filter(function(s){return s.visible;}).length,
+                    blend:t.getBlendColor().slice(),targetVisible:t.visible,flashDuration:anim._flashDuration,hiding:anim._hidingDuration,
+                    screen:f&&{opacity:f.opacity,visible:f.visible,duration:anim._screenFlashDuration}});
+                if(removed>=2)T.done=true;
+            };
+            return T;
+        };
+        ar.pump=function(o){o=o||{};return dh.pump({until:function(){return ar.trace&&ar.trace.done;},ms:o.ms});};
+        // 夹具套件：动画 3（目标闪光＋屏幕闪光，含四倍速）、14（转色相 135）、24（隐藏目标，敌人与角色），
+        // 压成 frames 行后 __refJson('mv_anim_oracle') 写到截图目录，复制到 tests/fixtures/mv_anim_oracle.json。
+        ar.suite=async function(){
+            var cases=[['flash3',{anim:3,side:'enemy'},4],['hue14',{anim:14,side:'enemy'},4],['hide24_actor',{anim:24,side:'actor'},4],
+                ['hide24_enemy',{anim:24,side:'enemy'},4],['flash3_speed1',{anim:3,side:'enemy'},1]];
+            var out={note:'ui_reference __animRef.suite()：正式版 Sprite_Animation 逐帧（Spriteset_Battle.update 之后），战斗夹具 4 人、敌群 2。'+
+                'frames 行：[n, 未移除, 相对目标 dx, dy, _duration, 帧序, 可见格数, 目标混合色 r, g, b, a, 目标可见, 屏幕闪光不透明度, 屏幕闪光可见]',traces:{}};
+            for(var i=0;i<cases.length;i++){
+                var c=cases[i];ConfigManager.battleAniSpeed=c[2];ar.run(c[1]);var ok=await ar.pump({ms:30000});var t=ar.trace;
+                out.traces[c[0]]={ok:ok,anim:t.anim,side:t.side,index:t.index,speed:c[2],rate:t.rate,target:t.target,
+                    samples:t.samples.hue?{name:t.samples.name,hue:t.samples.hue,points:t.samples.points.slice(0,24)}:null,
+                    frames:t.frames.map(function(f){return [f.n,f.live?1:0,f.x,f.y,f.duration,f.frame,f.cells,f.blend[0],f.blend[1],f.blend[2],
+                        Math.round(f.blend[3]*1000)/1000,f.targetVisible?1:0,Math.round(f.screen.opacity*1000)/1000,f.screen.visible?1:0];})};
+            }
+            ConfigManager.battleAniSpeed=4;
+            __refJson('mv_anim_oracle',out);
+            return out;
+        };
         // 三项偏好仅在本浏览器内存切换，不调用 ConfigManager.save。
         button('伤害数字 开/关', function(){ConfigManager.CombatDamageShow=!ConfigManager.CombatDamageShow;});
         button('技能动画 开/关', function(){ConfigManager.CombatSkillAnimation=!ConfigManager.CombatSkillAnimation;});

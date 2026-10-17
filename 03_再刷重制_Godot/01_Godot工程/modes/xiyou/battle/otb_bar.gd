@@ -59,7 +59,7 @@ class Icon extends Node2D:
 		if b is XEnemy and (b as XEnemy).elite:
 			var mat := ShaderMaterial.new()
 			var sh := Shader.new()
-			sh.code = XBattlerSprite.HUE_SHADER
+			sh.code = XBattlerSprite.BODY_SHADER
 			mat.shader = sh
 			mat.set_shader_parameter("hue", (b as XEnemy).elite_hue)
 			face.material = mat

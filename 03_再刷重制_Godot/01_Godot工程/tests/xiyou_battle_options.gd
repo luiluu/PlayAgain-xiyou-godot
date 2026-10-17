@@ -100,10 +100,13 @@ func _run() -> void:
 		var done := {"value":false}
 		anim.done.connect(func(): done.value = true)
 		var count := 0
-		while not done.value and count < 100:
+		while anim.playing() and count < 100:
 			anim._physics_process(0.001 if count % 2 else 0.05)
 			count += 1
-		check("animation_duration_%d" % int(row.value), count == int(row.animationDuration5) and anim.frame == 4, [count,anim.frame])
+		check("animation_duration_%d" % int(row.value), count == int(row.animationDuration5) and anim.frame == 4 and not done.value, [count,anim.frame])
+		# Sprite_Base.updateAnimationSprites：播完的下一帧才移除
+		anim._physics_process(0.016)
+		check("animation_removed_next_%d" % int(row.value), done.value)
 		await frames()
 	XConfig.set_battle_speed(4)
 	XEnemy.force_roll = 100.0
