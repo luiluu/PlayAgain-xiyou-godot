@@ -13,6 +13,8 @@ var equips: Array = []      # 每个装备槽一个实例或 null
 var last_command := ""
 var last_battle_skill := 0
 var _passive_cache := {}    # 由 refresh_passive() 生成；能力值/技能变化后需刷新
+## 真气（CodexZhenqi，actor._codexZhenqi；见 XZhenqi.data）：{qi, firsts, realm, pending, daofa, spec}，随存档
+var zhenqi := {}
 
 
 func setup(id: int) -> XActor:

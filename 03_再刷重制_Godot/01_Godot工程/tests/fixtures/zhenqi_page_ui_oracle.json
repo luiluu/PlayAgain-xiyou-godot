@@ -1,0 +1,8 @@
+{
+  "source": "冻结 v0.28，ui_reference ?item_list_ref=1：四人新局，变量 20＝4，狗逍遥真气 700（炼气大圆满），状态页第 4 页「修行」；截图 04_验证/本地结果/原版参照/codex_status_xiuxing_reference.png",
+  "pageRect": [0, 108, 1280, 612],
+  "head": ["【真气】", 6, 216, 1240, "left", 26, "#84aaff"],
+  "textStart": [6, 252],
+  "colors": {"C6": "#ffffa0", "C3": "#66cc40", "warn": "#ff784c"},
+  "colsHeader": [["乘区", 6, 194, "left"], ["实际→生效", 206, 344, "right"], ["占比", 556, 319, "right"], ["目标占比", 881, 319, "right"]]
+}

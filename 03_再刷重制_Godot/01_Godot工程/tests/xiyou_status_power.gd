@@ -78,7 +78,12 @@ func _strip(o: Dictionary, s: XState) -> void:
 			and Rect2(body.position, body.size) == Rect2(o.pageAfter[0], o.pageAfter[1], o.pageAfter[2], o.pageAfter[3])
 			and body.position.y == strip.position.y + 36 and body.size.y == 720 - strip.position.y - 36,
 			[strip.position, strip.size, body.position, body.size])
-		var got := strip.layout()
+		# 参照只记了前几段；最后一段是真气段（XGuide.strip_text，由 xiyou_zhenqi 对照），第三段宽度按原版（O-046 关）
+		XPowerStrip.SHOW_ZHENQI_CLEAR = false
+		var full := strip.layout()
+		XPowerStrip.SHOW_ZHENQI_CLEAR = true
+		var got := full.slice(0, full.size() - 1)
+		check("strip_zhenqi_%d" % a.actor_id, full[-1][0] == XGuide.strip_text(s, a)[0] and full[-1][1] == strip.size.x - 300 and full[-1][4] == 18 and full[-1][6] == "right", full[-1])
 		var p := XPower.actor(a)
 		var calls: Array = want.calls
 		var ok := got.size() == calls.size()

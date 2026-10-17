@@ -81,6 +81,7 @@ static func _fresh_seed() -> int:
 static func _become_current(s: XState) -> void:
 	current = s
 	XDungeon.battle = {}
+	XZhenqi.battle = {}
 
 
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
@@ -364,7 +365,7 @@ func to_dict() -> Dictionary:
 		a[str(id)] = {"level": x2.level, "exp": x2.exp_total, "skills": x2.skill_ids, "equips": x2.equips,
 			"hp": x2.hp, "mp": x2.mp, "tp": x2.tp, "states": x2.state_ids, "stateTurns": x2.state_turns,
 			"buffs": x2.buffs, "buffTurns": x2.buff_turns, "cooldowns": x2.cooldowns,
-			"lastCommand": x2.last_command, "lastBattleSkill": x2.last_battle_skill}
+			"lastCommand": x2.last_command, "lastBattleSkill": x2.last_battle_skill, "zhenqi": x2.zhenqi}
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "battleSlots": battle_slots, "actors": a, "gold": gold,
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
@@ -394,6 +395,8 @@ static func from_dict(d: Dictionary) -> XState:
 		x2.tp = float(row.get("tp", 0.0))
 		x2.last_command = str(row.get("lastCommand", ""))
 		x2.last_battle_skill = int(row.get("lastBattleSkill", 0))
+		# 真气：旧档没有这一项时为空，第一次用到时给初值（XZhenqi.data）
+		x2.zhenqi = XZhenqi.from_save(row.zhenqi) if row.has("zhenqi") and row.zhenqi is Dictionary and not row.zhenqi.is_empty() else {}
 		for k in row.get("cooldowns", {}):
 			x2.cooldowns[int(k)] = float(row.cooldowns[k])
 		s.actors[int(id_s)] = x2

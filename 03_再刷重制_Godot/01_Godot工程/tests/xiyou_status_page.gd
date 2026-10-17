@@ -138,7 +138,6 @@ func _scene(o: Dictionary, s: XState) -> void:
 	for i in range(XStatusPage.PAGE_NAMES.size()):
 		texts.append(["text", XStatusPage.PAGE_NAMES[i], i * XStatusPage.ITEM_STEP + 6, 0.0, XStatusPage.ITEM_W - 12, 36, "center", 26, "#ffffff"])
 	var want_texts: Array = o.select.texts.duplicate(true)
-	want_texts[3][1] = XStatusPage.PAGE_NAMES[3]   # O-032：第 4 页「修行」→「套装」
 	compare("select_items", texts, want_texts)
 	check("select_item_rects", o.select.items.size() == 4 and range(4).all(func(i): return Rect2(o.select.items[i][0], 0, o.select.items[i][2], 36) == Rect2(i * XStatusPage.ITEM_STEP, 0, XStatusPage.ITEM_W, 36)))
 	await shot("status_1_p0")
