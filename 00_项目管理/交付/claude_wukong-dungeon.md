@@ -1,7 +1,7 @@
 # 交付：claude/wukong-dungeon
 
 - 车道／工作者：A 内容·楼层／悟空（Claude，重制_悟空_9）
-- 状态：进行中
+- 状态：可合并（已合并 main ad2bd98；本 worktree 跑过同步脚本：只增新用例，见下）
 
 ## 变更记录草稿
 
@@ -15,7 +15,7 @@
 - 转换器 v15：顶层三元伤害公式翻成按条件取值的算术式（Godot Expression 不认 if/else，会总取前一支）；全库未翻译公式 172→157，切片内只剩 5455。
 - 切片：二层土地庙入口（Map003 EV7）、Map123 土地庙、Map124 土地庙内、大厅大工匠（Map004 EV7）；一层嘤嘤怪的巢穴（Map005 EV8→Map220）、四层海岸洞窟（Map007 EV1→Map008／009）、六层哥布林英雄谷（Map013 EV1→Map014）、七层珈蓝寺／夜雨寺（Map061 EV10／11→Map129／130）；敌群 424、425、661、422、423、19～21、36～38、440～443。地图 29→37 张。
 - 事件对照：探针改为先固定随机数再开新局（宝珠种子每例一致），Godot 侧同种子；副本优化在事件对照里关掉，比原版翻译。702 例无退步。
-- 验证：`检查.sh --oracle`（见下「验证」）；专项 xiyou_dungeon 593/593、xiyou_event_compare 5/5（702 例无退步）、xiyou_rules 52496/52496。
+- 验证：合并 main 后 `检查.sh --oracle` 全部通过（55 场景 90996 项，含楼层流程 1～12 层 249 项、13～25 层 415 项）；`同步正式西游.py`（worktree，不登记）结果「只增新用例」：maps 加 8 张副本图、slice_d1～d6 加 15 个敌人（伤害用例 3730→4197）、smart_ai 用例 2420→2720，其余测量不变；同步后先 `godot --import` 再测（同步会重写图片，未重新导入时 xiyou_battle_ui 的光标图读不到）。专项：xiyou_dungeon 593/593、xiyou_event_compare 702 例无退步、xiyou_rules 59072/59072、xiyou_smart_ai 20935/20935。
 - 提交：31d1a2e、9873ea3、041a868（及合并 main）
 - 未完成／已知问题：八层以后的副本（哀嚎迷窟、先祖禁地、地下河实验洞窟、北风高原、魔晶洞穴等，含求道者小队、坤坤任务等额外机制）未接，按 `dungeon_probe.cjs` 的 DUNGEONS 表加行即可复用；换装 `ConfigManager.ChangeClothesLite` 与成就 `GetAcReward` 照旧跳过；洪荒（难度 8）的诅咒券与不朽之力未做（切片到不了）。
 
@@ -35,3 +35,5 @@
 - 31d1a2e 副本参照探针 dungeon_probe，加进同步 PROBES
 - 9873ea3 XDungeon 服务、CE714、指令 214、宝箱收获、CE1439 Boss 奖励、切片二层土地庙与大厅大工匠、tests/xiyou_dungeon
 - 041a868 复用到一、四、六、七层；CodexEconomy.redirect；三元公式翻译；O-038／O-040 登记；框架维护约定
+- be383b1 合并 main
+- 合并时：分支改了切片、转换器与探针（新增 dungeon_probe、event_probe 改随机数顺序），main 需跑 `同步正式西游.py`，预期「只增新用例」，可 `--accept-additions`；事件对照 events.json 因随机数顺序整份重测，Godot 侧已同种子。
