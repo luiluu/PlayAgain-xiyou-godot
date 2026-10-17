@@ -14,6 +14,12 @@ class Ch:
 	extends RefCounted
 	var character_name := ""
 
+	func start_balloon(_id: int) -> void:    # 指令 213（九层女神、精灵商人）：参照不画气泡
+		pass
+
+	func is_balloon_playing() -> bool:
+		return false
+
 
 ## 记录用宿主：在地图事件对照的替身上，按剧本回答选项、给战斗结果，并替事件提供当前页的图像与暂时消除
 class DungeonHost:
