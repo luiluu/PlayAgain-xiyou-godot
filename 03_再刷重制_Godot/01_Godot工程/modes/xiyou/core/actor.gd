@@ -227,7 +227,7 @@ func skills() -> Array:
 	for id in ids:
 		var s := XDB.rec("Skills", id)
 		if not s.is_empty():
-			out.append(s)
+			out.append(XZhenqi.skill_view(s, self))  # 道法按境界缩放（CodexZhenqi.skillView）
 	return out
 
 

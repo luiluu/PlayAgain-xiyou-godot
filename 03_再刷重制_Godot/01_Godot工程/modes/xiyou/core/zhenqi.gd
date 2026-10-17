@@ -21,13 +21,23 @@ const ROUTES := [
 const GUARDIANS := {4: 1, 5: 2, 8: 3, 22: 4, 28: 5, 245: 5, 39: 6, 52: 7, 53: 8, 67: 9, 69: 10, 109: 11, 110: 12, 111: 13, 118: 14, 138: 15, 172: 16,
 	173: 17, 174: 18, 333: 19, 456: 20, 457: 21, 458: 22, 459: 23, 460: 24, 461: 25, 462: 26, 463: 27, 464: 28, 465: 29, 466: 30, 467: 31, 468: 32, 469: 33}
 const REALMS := [
-	{"name": "炼气", "need": 0, "world": "人界"}, {"name": "筑基", "need": 600, "world": "人界", "trial": "心魔"},
-	{"name": "结丹", "need": 2500, "world": "人界", "trial": "心魔"}, {"name": "元婴", "need": 6000, "world": "人界", "trial": "心魔"},
-	{"name": "化神", "need": 18000, "world": "人界", "trial": "心魔"}, {"name": "炼虚", "need": 36000, "world": "灵界", "trial": "心魔"},
-	{"name": "合体", "need": 66000, "world": "灵界", "trial": "心魔"}, {"name": "大乘", "need": 88000, "world": "灵界", "trial": "心魔"},
-	{"name": "渡劫", "need": 111000, "world": "灵界", "trial": "天劫"}, {"name": "真仙", "need": 150000, "world": "仙界", "trial": "天劫"},
-	{"name": "金仙", "need": 222000, "world": "仙界", "trial": "天劫"}, {"name": "太乙", "need": 300000, "world": "仙界", "trial": "天劫"},
-	{"name": "大罗", "need": 388000, "world": "仙界", "trial": "天劫"}, {"name": "道祖", "need": 500000, "world": "仙界", "trial": "天劫"}]
+	{"name": "炼气", "need": 0, "world": "人界"},
+	{"name": "筑基", "need": 600, "world": "人界", "trial": "心魔", "scale": 1, "choice": {"split": 30}},
+	{"name": "结丹", "need": 2500, "world": "人界", "trial": "心魔", "scale": 1, "fixed": "jindan", "choice": {"split": 50}},
+	{"name": "元婴", "need": 6000, "world": "人界", "trial": "心魔", "scale": 1, "fixed": "yuanying", "choice": {"split": 70}},
+	{"name": "化神", "need": 18000, "world": "人界", "trial": "心魔", "scale": 1, "choice": {"split": 99}},
+	{"name": "炼虚", "need": 36000, "world": "灵界", "trial": "心魔", "scale": 2, "fixed": "lianxu", "choice": {"all": 333}},
+	{"name": "合体", "need": 66000, "world": "灵界", "trial": "心魔", "scale": 2, "choice": {"all": 333}},
+	{"name": "大乘", "need": 88000, "world": "灵界", "trial": "心魔", "scale": 2, "fixed": "dacheng", "choice": {"all": 500}},
+	{"name": "渡劫", "need": 111000, "world": "灵界", "trial": "天劫", "scale": 3, "fixed": "dujie", "choice": {"all": 666}},
+	{"name": "真仙", "need": 150000, "world": "仙界", "trial": "天劫", "scale": 5, "fixed": "xianyuan", "choice": {"all": 1000}},
+	{"name": "金仙", "need": 222000, "world": "仙界", "trial": "天劫", "scale": 8, "fixed": "xianyuan", "choice": {"all": 1000}},
+	{"name": "太乙", "need": 300000, "world": "仙界", "trial": "天劫", "scale": 13, "fixed": "xianyuan", "choice": {"all": 1000}},
+	{"name": "大罗", "need": 388000, "world": "仙界", "trial": "天劫", "scale": 21, "fixed": "xianyuan", "choice": {"all": 1000}},
+	{"name": "道祖", "need": 500000, "world": "仙界", "trial": "天劫", "scale": 34, "fixed": "xianyuan", "choice": {"all": 1000}}]
+const TRIAL_TROOP := {"心魔": 901, "天劫": 823}
+const HEART_TROOP := {1: 770}
+const LINGGEN_ELEMENTS := [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const DAOFA := ["lianji", "fenshen", "lingtai", "benming", "linggen", "huichun", "jinshen", "pojia", "hufa"]
 const DAOFA_NAME := {"lianji": "连击", "fenshen": "分神", "lingtai": "灵台", "benming": "本命兵", "linggen": "灵根", "huichun": "回春", "jinshen": "金身", "pojia": "破甲", "hufa": "护法"}
 const COMP_ANCHORS := [[12, 1.0], [21, 15.0], [33, 111.0]]
@@ -64,6 +74,10 @@ static func from_save(d) -> Dictionary:
 		for k in d.get("daofa", {}):
 			out.daofa[str(k)] = int(d.daofa[k])
 		out.spec = d.get("spec", {}) if d.get("spec", {}) is Dictionary else {}
+		if d.get("daofaStages") is Dictionary:
+			out.daofaStages = {}
+			for k in d.daofaStages:
+				out.daofaStages[str(k)] = int(d.daofaStages[k])
 	return out
 
 
@@ -228,14 +242,20 @@ static func is_boss_enemy(e: XEnemy) -> bool:
 # ---- 战斗钩子（BattleLogic 调用）----
 ## BattleManager.setup：记本场路线、守层者层、楼层与天道补偿，清溢出计数
 static func battle_setup(s: XState, troop_id: int) -> void:
+	var trial := pending_trial
+	pending_trial = {}
+	if not trial.is_empty() and int(trial.troopId) != troop_id:
+		trial = {}
 	var r := route(s)
 	var gf := int(GUARDIANS.get(troop_id, 0))
 	var f := gf
+	if f == 0 and not trial.is_empty():
+		f = int(trial.ref.floor)
 	if f == 0:
 		f = map_floor(s.map_id)
 	if f == 0:
 		f = progress_floor(s)
-	battle = {"troopId": troop_id, "route": r, "guardianFloor": gf, "floor": f, "comp": comp_for(r.key, f), "ovf": {}}
+	battle = {"troopId": troop_id, "trial": trial, "route": r, "guardianFloor": 0 if not trial.is_empty() else gf, "floor": f, "comp": comp_for(r.key, f), "ovf": {}}
 	for a in s.battle_members():
 		data(a)
 
@@ -253,6 +273,11 @@ static func on_victory(s: XState, actors: Array, enemies: Array) -> Array:
 	battle = {}
 	if b.is_empty():
 		return []
+	if not b.trial.is_empty():
+		b.trial.won = actors.any(func(a): return a.is_alive() and a.actor_id == int(b.trial.actorId))
+		trial_done = b.trial
+		return []
+	unlock_specs(s, enemies)
 	var boss := int(b.guardianFloor) == 0 and enemies.any(func(e): return is_boss_enemy(e))
 	var c := int(b.route.coef)
 	var f := int(b.guardianFloor) if int(b.guardianFloor) else int(b.floor)
@@ -338,3 +363,389 @@ static func mult(v: float) -> String:
 ## JS toFixed（四舍五入到 n 位小数，补零）
 static func _fixed(v: float, n: int) -> String:
 	return String.num(snappedf(v, pow(10, -n)), n).pad_decimals(n)
+
+
+# ==== 第二批：突破、瓶颈之战、突破奖励与道法（installNativeZhenqiRuntime 89～90、199～278、291～334 行）====
+# 闭关流程原版用 interp.setupChild 插入「文字＋选项」指令列，选项回调 CodexZhenqi._cb。这里拆成两层：
+# menu(s, node) 按节点给出 {lines, options:[{label, next}], next?, battle?}，记账（突破、学奖励技能、记道法）只在节点里做；
+# 画面（XZhenqiRetreat）只负责显示文字、选项与开战，按选中项的 next 走下一个节点。参照 zhenqi_probe「break.*」逐项比。
+
+## 瓶颈之战：startTrial 记下、BattleManager.setup 吃掉（敌群不符就作废）；战斗结束（胜负）写进 trial_done，_trialEnd 结算
+static var pending_trial := {}
+static var trial_done := {}
+## 测试注入 Math.randomInt 的序列（空时用 randi）
+static var rand_seq: Array = []
+
+
+static func _random_int(n: int) -> int:
+	if not rand_seq.is_empty():
+		return int(rand_seq.pop_front()) % n
+	return randi() % n
+
+
+# ---- 奖励技能（备注 <CodexZhenqi: 键>）----
+static var _skills := {}
+
+
+static func skill_key(key: String) -> int:
+	if _skills.is_empty():
+		var re := RegEx.create_from_string("<CodexZhenqi:\\s*([^>]+)>")
+		for sk in XDB.table("Skills"):
+			if sk is Dictionary:
+				var m := re.search(str(sk.get("note", "")))
+				if m:
+					_skills[m.get_string(1).strip_edges()] = int(sk.id)
+		_skills[""] = 0
+	return int(_skills.get(key, 0))
+
+
+static func learn_key(a: XActor, key: String) -> int:
+	var id := skill_key(key)
+	if id and not a.skill_ids.has(id):
+		a.learn_skill(id)
+	return id
+
+
+static func grant_fixed(a: XActor, i: int) -> void:
+	var f := str(REALMS[i].get("fixed", ""))
+	if f != "":
+		learn_key(a, "fixed:xianyuan:%d" % i if f == "xianyuan" else "fixed:" + f)
+
+
+## Z.refreshRewards：奖励被动随境界（daofaScale）与技能变化重算
+static func refresh_rewards(a: XActor) -> void:
+	a.refresh_passive()
+	a.refresh_resources()
+
+
+## Z.breakthrough：真气够、楼层门槛已过才突破；升一境、学固定奖励、记一笔待选奖励
+static func breakthrough(s: XState, a: XActor) -> bool:
+	var d := data(a)
+	var i := int(d.realm) + 1
+	if i >= REALMS.size() or int(d.qi) < int(REALMS[i].need) or not gate(s, a).unlocked:
+		return false
+	d.realm = i
+	grant_fixed(a, i)
+	d.pending.append(i)
+	_toast("%s 突破至%s！" % [a.display_name(), REALMS[i].name])
+	refresh_rewards(a)
+	return true
+
+
+static func has_daofa(a, key: String) -> bool:
+	return a is XActor and not a.zhenqi.is_empty() and int(a.zhenqi.daofa.get(key, 0)) != 0
+
+
+## Z.daofaScale：道法与奖励被动按当前境界的缩放（炼气 1/4、筑基 1/3、结丹 1/2、元婴 2/3、化神起 1）
+static func daofa_scale(a: XActor) -> float:
+	var i := int(a.zhenqi.get("realm", 0)) if a and not a.zhenqi.is_empty() else 0
+	return 1.0 if i >= 5 else (2.0 / 3.0 if i >= 4 else (0.5 if i == 3 else (1.0 / 3.0 if i == 2 else 0.25)))
+
+
+## Z.patchRewards：数据库载入时把筑基～化神属性奖励改成 30/50/70/99%、金丹 20%、元婴 50%（备注里的被动值与说明文字）
+static func patch_rewards(table: Array) -> void:
+	var values := [30, 50, 70, 99]
+	var tag_re := RegEx.create_from_string("<CodexZhenqi:\\s*([^>]+)>")
+	var attr_re := RegEx.create_from_string("^attr:(atk|def|sup):[1-4]$")
+	var pas_re := RegEx.create_from_string("(?i)(<passive(?:PBST\\d|XPBST\\d|CrHarmRi):\\s*)[\\d.]+(%?>)")
+	var txt_re := RegEx.create_from_string("\\+\\d+(?:\\.\\d+)?%")
+	for sk in table:
+		if not sk is Dictionary:
+			continue
+		var m := tag_re.search(str(sk.get("note", "")))
+		if m == null:
+			continue
+		var tag := m.get_string(1)
+		var value := 0
+		if tag == "fixed:jindan":
+			value = 20
+		elif tag == "fixed:yuanying":
+			value = 50
+		elif attr_re.search(tag):
+			value = values[int(tag.right(1)) - 1]
+		else:
+			continue
+		var note := pas_re.sub(str(sk.note), "${1}%d${2}" % value, true)
+		note = txt_re.sub(note, "+%d%%" % value, true)
+		if note != sk.note:
+			sk.note = note
+			sk.meta = extract_meta(note)
+
+
+## DataManager.extractMetadata
+static func extract_meta(note: String) -> Dictionary:
+	var out := {}
+	for m in RegEx.create_from_string("<([^<>:]+)(:?)([^>]*)>").search_all(note):
+		out[m.get_string(1)] = m.get_string(3) if m.get_string(2) == ":" else true
+	return out
+
+
+## Z.skillView：道法技能的被动值与说明按 daofaScale 缩放（武器 WPNM、元素 ELUP、治疗 HEUP、TP 上限 EXTTP；本命兵、灵根、回春、
+## 金身、灵台、护法、破甲的说明文字）。缓存键＝技能 ID＋缩放（技能数据只在载入时改）。
+static var _views := {}
+
+
+static func skill_view(sk: Dictionary, a: XActor) -> Dictionary:
+	var m := RegEx.create_from_string("<CodexZhenqi:\\s*(daofa:[^>]+)>").search(str(sk.get("note", "")))
+	if m == null:
+		return sk
+	var tag := m.get_string(1)
+	var factor := daofa_scale(a)
+	var key := "%d|%s" % [int(sk.id), str(factor)]
+	if _views.has(key):
+		return _views[key]
+	var v := sk.duplicate()
+	var note := str(sk.get("note", ""))
+	var out := ""
+	var at := 0
+	for pm in RegEx.create_from_string("(?i)(<passive(?:WPNM\\d+|ELUP\\d+|HEUP|EXTTP):\\s*)([\\d.]+)(%?>)").search_all(note):
+		out += note.substr(at, pm.get_start() - at) + pm.get_string(1) + str(_js_round(float(pm.get_string(2)) * factor)) + pm.get_string(3)
+		at = pm.get_end()
+	note = out + note.substr(at)
+	if tag.begins_with("daofa:benming:"):
+		note = note.replace("物攻、魔攻+333%", "物攻、魔攻+%d%%" % _js_round(333 * factor))
+	elif tag.begins_with("daofa:linggen:"):
+		note = note.replace("伤害+500%", "伤害+%d%%" % _js_round(500 * factor))
+	elif tag == "daofa:huichun":
+		note = note.replace("治疗量+100%", "治疗量+%d%%" % _js_round(100 * factor))
+	elif tag == "daofa:jinshen":
+		note = note.replace("护盾+100%", "护盾+%s%%" % _pct(100 * factor))
+	elif tag == "daofa:lingtai":
+		note = note.replace("TP上限+100", "TP上限+%d" % _js_round(100 * factor))
+	elif tag == "daofa:hufa":
+		note = note.replace("伤害-30%", "伤害-%s%%" % _pct(30 * factor))
+	elif tag == "daofa:pojia":
+		note = note.replace("双防×0.5", "双防×" + _pct(1 - 0.5 * factor))
+	v.note = note
+	v.meta = extract_meta(note)
+	_views[key] = v
+	return v
+
+
+static func _js_round(x: float) -> int:
+	return int(floor(x + 0.5))
+
+
+## String(Math.round(v*100)/100)
+static func _pct(v: float) -> String:
+	var r := floor(v * 100 + 0.5) / 100.0
+	return str(int(r)) if r == floor(r) else str(r)
+
+
+# ---- 瓶颈之战 ----
+## 守层者敌群里第一个对应该层的（第 5 层有 28 与 245，取 28）
+static func guardian_troop_of_floor(f: int) -> int:
+	var best := 0
+	var keys := GUARDIANS.keys()
+	keys.sort()
+	for t in keys:
+		if int(GUARDIANS[t]) == f and (best == 0 or int(t) != 245):
+			best = int(t)
+	return best
+
+
+## Z.trialRef：对手强度＝修行进度层（至少 1）的守层者首个敌人，× 该境界倍数
+static func trial_ref(s: XState, i: int) -> Dictionary:
+	var f := maxi(1, progress_floor(s))
+	var t := guardian_troop_of_floor(f)
+	var mem: Array = XDB.rec("Troops", t).get("members", []) if t else []
+	return {"floor": f, "troopId": t, "enemyId": int(mem[0].enemyId) if not mem.is_empty() else 0, "scale": int(REALMS[i].scale)}
+
+
+## Game_Troop.setup 之后：幻化的敌人能力值取参照敌人的 paramBase，生命／攻击／魔攻 ×倍数，回满；不掉落（XEnemy.zq_ref／zq_trial_loot）
+static func troop_setup(enemies: Array, difficulty: int, elite_roll := -1.0) -> void:
+	var t: Dictionary = battle.get("trial", {})
+	if t.is_empty() or int(t.ref.enemyId) == 0:
+		return
+	var ref := XEnemy.new().setup(int(t.ref.enemyId), difficulty, elite_roll)
+	var p := []
+	for i in range(8):
+		p.append(ref.param_base_raw(i))
+	for e in enemies:
+		e.zq_ref = {"p": p, "k": float(t.ref.scale)}
+		e.zq_trial_loot = true
+		e.recover_all()
+
+
+## 战斗结束（XBattleLogic.end_battle）：胜利已由 on_victory 结算并清空；输了、逃了时瓶颈之战记为未通过
+static func on_battle_end() -> void:
+	if not battle.is_empty() and not battle.get("trial", {}).is_empty():
+		battle.trial.won = false
+		trial_done = battle.trial
+	battle = {}
+
+
+## 灵根可指定的元素：击败带 <Element Absorb: …> 的 Boss（1～9 号元素，第一次提示）。$gameSystem._codexZhenqiSpec.e
+## 本命兵（.w）只由神兵试炼解锁（第三批）。
+static func unlock_specs(s: XState, enemies: Array) -> void:
+	var sp := s.zhenqi_spec
+	var re := RegEx.create_from_string("(?i)<Element Absorb:\\s*([\\d,\\s]+)>")
+	for e in enemies:
+		if not is_boss_enemy(e):
+			continue
+		for m in re.search_all(str(e.data().get("note", ""))):
+			for x in m.get_string(1).split(","):
+				var n := int(x.strip_edges()) if x.strip_edges().is_valid_int() else 0
+				if LINGGEN_ELEMENTS.has(n) and not sp.e.has(str(n)):
+					sp.e[str(n)] = 1
+					_toast("降服 %s：灵根可指定「%s」" % [str(e.data().get("name", "")), str(XDB.system().elements[n])])
+
+
+# ---- 闭关菜单（节点）----
+## 节点：{"page": retreat|actor|trial|trial_end|pick|daofa|daofa_done, ...}；返回 {lines, options:[{label, next}], next, battle}
+static func menu(s: XState, node: Dictionary) -> Dictionary:
+	match str(node.page):
+		"retreat": return _retreat(s, int(node.get("p", 0)))
+		"actor": return _actor_page(s, s.actors[int(node.id)])
+		"trial": return _start_trial(s, s.actors[int(node.id)])
+		"trial_end": return _trial_end(s)
+		"pick": return _pick_flow(s, s.actors[int(node.id)])
+		"attr":
+			var a: XActor = s.actors[int(node.id)]
+			learn_key(a, str(node.key))
+			data(a).pending.pop_front()
+			refresh_rewards(a)
+			return _pick_flow(s, a)
+		"daofa": return _roll_daofa(s, s.actors[int(node.id)], int(node.i))
+		"daofa_done": return _daofa_done(s, s.actors[int(node.id)], node)
+	return {}
+
+
+static func _ask(lines: Array, options: Array) -> Dictionary:
+	return {"lines": lines.slice(0, 4), "options": options}
+
+
+static func _tell(lines: Array, next = null) -> Dictionary:
+	return {"lines": lines.slice(0, 4), "options": [], "next": next}
+
+
+static func _retreat(s: XState, page: int) -> Dictionary:
+	var members := s.members()
+	var size := 4
+	var pages := maxi(1, ceili(members.size() / float(size)))
+	page = clampi(page, 0, pages - 1)
+	var opts := []
+	for a in members.slice(page * size, (page + 1) * size):
+		var st := state_of(s, a)
+		var tag := "［待选奖励］" if st.pending else ("［可突破］" if st.canBreak else ("［通关%d层后突破］" % int(st.gate.required) if st.capped else ""))
+		opts.append({"label": "%s %s ×%.1f%s" % [a.display_name(), st.name, st.rate, tag], "next": {"page": "actor", "id": a.actor_id}})
+	if page > 0:
+		opts.append({"label": "上一页（%d/%d）" % [page, pages], "next": {"page": "retreat", "p": page - 1}})
+	if page + 1 < pages:
+		opts.append({"label": "下一页（%d/%d）" % [page + 2, pages], "next": {"page": "retreat", "p": page + 1}})
+	# 神兵试炼（指定本命兵武器）留第三批：选项照原版列出，进去先说明未开放（O-048）
+	opts.append({"label": "神兵试炼（指定本命兵武器）", "next": {"page": "weapon"}})
+	opts.append({"label": "离开", "next": null})
+	return _ask(["\\C[6]闭关之所\\C[0]", "真气达到大圆满、通关对应楼层后，打赢瓶颈之战突破。", "突破后获得境界奖励。"], opts)
+
+
+static func _actor_page(s: XState, a: XActor) -> Dictionary:
+	var st := state_of(s, a)
+	var lines := ["\\C[6]%s\\C[0]：%s %s" % [a.display_name(), st.world, st.name], "真气 %d　加成 ×%.1f" % [st.qi, st.rate]]
+	if st.next == null:
+		lines.append("已至最高境界")
+	elif not st.capped:
+		lines.append("距%s还差 %d 真气" % [st.next, st.need])
+	elif st.canBreak:
+		lines.append("已到瓶颈，可挑战「%s」突破%s" % [REALMS[st.realm + 1].trial, st.next])
+	else:
+		lines.append("需先通关第%d层，当前已通关%d层" % [int(st.gate.required), int(st.gate.passed)])
+	var opts := []
+	if st.pending:
+		opts.append({"label": "选择突破奖励（%d）" % st.pending, "next": {"page": "pick", "id": a.actor_id}})
+	if st.canBreak:
+		opts.append({"label": "挑战瓶颈之战", "next": {"page": "trial", "id": a.actor_id}})
+	opts.append({"label": "返回", "next": {"page": "retreat"}})
+	opts.append({"label": "离开", "next": null})
+	return _ask(lines, opts)
+
+
+static func _start_trial(s: XState, a: XActor) -> Dictionary:
+	var d := data(a)
+	var i := int(d.realm) + 1
+	var g := gate(s, a)
+	if not g.ready or not g.unlocked:
+		return _tell(["需先通关第%d层，当前已通关%d层。" % [int(g.required), int(g.passed)] if g.ready else "真气尚未达到下一境界。"])
+	if not s.battle_members().has(a):
+		return _tell(["%s 不在出战队伍中。" % a.display_name(), "请先把%s编入出战队伍再闭关。" % a.display_name()])
+	var ref := trial_ref(s, i)
+	var kind := str(REALMS[i].trial)
+	var troop := int(HEART_TROOP.get(a.actor_id, 0)) if kind == "心魔" else 0
+	if troop == 0:
+		troop = int(TRIAL_TROOP[kind])
+	pending_trial = {"actorId": a.actor_id, "target": i, "ref": ref, "kind": kind, "troopId": troop}
+	return {"lines": ["\\C[6]%s\\C[0]幻化为第%d层守层者之力（×%d）。" % [kind, ref.floor, ref.scale], "%s必须坚持到战斗结束，才能突破%s。" % [a.display_name(), REALMS[i].name]],
+		"options": [], "battle": troop, "next": {"page": "trial_end"}}
+
+
+static func _trial_end(s: XState) -> Dictionary:
+	var t := trial_done
+	trial_done = {}
+	pending_trial = {}
+	if t.is_empty():
+		return {}
+	var a: XActor = s.actors[int(t.actorId)]
+	if bool(t.get("won", false)) and breakthrough(s, a):
+		return _tell(["\\C[6]%s 突破至%s！\\C[0]" % [a.display_name(), REALMS[int(t.target)].name]], {"page": "pick", "id": a.actor_id})
+	return _tell(["%s 未能突破。" % a.display_name(), "（突破的角色需活到战斗结束）"], {"page": "actor", "id": a.actor_id})
+
+
+static func _pick_flow(s: XState, a: XActor) -> Dictionary:
+	var d := data(a)
+	if d.pending.is_empty():
+		return _actor_page(s, a)
+	var i := int(d.pending[0])
+	var R: Dictionary = REALMS[i]
+	var ch: Dictionary = R.choice
+	var opts := []
+	var id := a.actor_id
+	if ch.has("split"):
+		opts.append({"label": "攻击属性 +%d%%（物攻、魔攻）" % ch.split, "next": {"page": "attr", "id": id, "key": "attr:atk:%d" % i}})
+		opts.append({"label": "防御属性 +%d%%（生命、物防、魔防）" % ch.split, "next": {"page": "attr", "id": id, "key": "attr:def:%d" % i}})
+		opts.append({"label": "辅助属性 +%d%%（敏捷、幸运、魔法上限）" % ch.split, "next": {"page": "attr", "id": id, "key": "attr:sup:%d" % i}})
+	else:
+		opts.append({"label": "全属性 +%d%%" % ch.all, "next": {"page": "attr", "id": id, "key": "attr:all:%d" % i}})
+	var left := DAOFA.filter(func(k): return not int(d.daofa.get(k, 0)))
+	if not left.is_empty():
+		opts.append({"label": "道法（随机一项，剩 %d 种）" % left.size(), "next": {"page": "daofa", "id": id, "i": i}})
+	opts.append({"label": "稍后再选", "next": null})
+	return _ask(["\\C[6]%s\\C[0] %s突破奖励：自选一项" % [a.display_name(), R.name], "属性：稳定提升；道法：对特定打法大幅加成。"], opts)
+
+
+## Z.rollDaofa：在没领悟的道法里随机一项；本命兵／灵根有已降服的武器类型／元素时可指定，否则随机
+static func _roll_daofa(s: XState, a: XActor, i: int) -> Dictionary:
+	var d := data(a)
+	var left := DAOFA.filter(func(k): return not int(d.daofa.get(k, 0)))
+	var k: String = left[_random_int(left.size())]
+	var id := a.actor_id
+	if k == "benming" or k == "linggen":
+		var is_w := k == "benming"
+		var pool: Array = range(1, 13) if is_w else LINGGEN_ELEMENTS
+		var names: Array = XDB.system().weaponTypes if is_w else XDB.system().elements
+		var known_d: Dictionary = s.zhenqi_spec.w if is_w else s.zhenqi_spec.e
+		var known := []
+		for x in known_d:
+			if pool.has(int(x)):
+				known.append(int(x))
+		known.sort()
+		var rnd: int = pool[_random_int(pool.size())]
+		var done := func(x: int) -> Dictionary:
+			return {"page": "daofa_done", "id": id, "k": k, "i": i, "key": "daofa:%s:%d" % [k, x], "label": "%s·%s" % [DAOFA_NAME[k], names[x]]}
+		if known.is_empty():
+			return _daofa_done(s, a, done.call(rnd))
+		var opts := known.map(func(x): return {"label": "指定「%s」" % names[x], "next": done.call(x)})
+		opts.append({"label": "随机（%s）" % names[rnd], "next": done.call(rnd)})
+		return _ask(["领悟道法「%s」：" % DAOFA_NAME[k], "已降服过的Boss可让你指定%s。" % ("武器类型" if is_w else "元素")], opts)
+	return _daofa_done(s, a, {"page": "daofa_done", "id": id, "k": k, "i": i, "key": "daofa:" + k, "label": DAOFA_NAME[k]})
+
+
+static func _daofa_done(_s: XState, a: XActor, node: Dictionary) -> Dictionary:
+	var d := data(a)
+	d.daofa[str(node.k)] = 1
+	if not d.has("daofaStages"):
+		d.daofaStages = {}
+	d.daofaStages[str(node.k)] = int(node.i)
+	learn_key(a, str(node.key))
+	d.pending.pop_front()
+	refresh_rewards(a)
+	return _tell(["%s 领悟道法「%s」！" % [a.display_name(), node.label]], {"page": "pick", "id": a.actor_id})
