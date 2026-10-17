@@ -5,6 +5,8 @@ extends Node
 class Stub:
 	var atk := 100.0
 	var mat := 0.0
+	var hp := 100.0
+	var mhp := 1000.0
 
 var results := []
 func check(label: String, ok: bool, detail = null) -> void:
@@ -33,6 +35,22 @@ func _ready() -> void:
 	var ok: bool = sk.damage.get("formulaGd") is String and e.parse(str(sk.damage.formulaGd), ["a", "b", "v"]) == OK
 	var value = e.execute([Stub.new(), Stub.new(), []], null, false) if ok else null
 	check("skill_1065_unary_plus", ok and is_equal_approx(float(value), 750.0 + 100.0 * 38.5), [sk.damage.get("formulaGd"), value])
+	# 三元式 c ? x : y 译成 [y, x][int(bool(c))]（进度审查 25%）：按条件取一支，未取的一支不参与运算
+	for row in [[75, 100.0, 1800.0 + 100.0 * 14], [75, 900.0, 900.0 + 100.0 * 7], [10020, 100.0, 1000.0 * 1000000], [10020, 900.0, 100.0 * 0.2]]:
+		var tb := Stub.new()
+		tb.hp = row[1]
+		var tsk: Dictionary = XDB.rec("Skills", row[0])
+		var te := Expression.new()
+		var tok: bool = tsk.damage.get("formulaGd") is String and te.parse(str(tsk.damage.formulaGd), ["a", "b", "v"]) == OK
+		var tv = te.execute([Stub.new(), tb, []], null, false) if tok else null
+		check("ternary_%d_hp%d" % [row[0], int(row[1])], tok and tv != null and is_equal_approx(float(tv), row[2]), [tsk.damage.get("formulaGd"), tv])
+	# 条件为数字时照 JS 真值（非零为真），不能乘成倍数；未取的一支为 NaN 也不影响结果
+	var ne := Expression.new()
+	ne.parse("[(2.0), (sqrt(-1.0))][int(bool(0))]", [])
+	var nv = ne.execute([], null, false)
+	var me := Expression.new()
+	me.parse("[(2.0), (1.0)][int(bool(5))]", [])
+	check("ternary_numeric_and_nan_branch", float(nv) == 2.0 and float(me.execute([], null, false)) == 1.0, [nv])
 	print("公式 %d 条可解析，未翻译 %d 条" % [total, untranslated])
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

@@ -73,13 +73,20 @@ static func _fresh_seed() -> int:
 	return r.randi()
 
 
+## 换成另一份游戏状态（新游戏、读档）：清掉依赖上一档的进程内标记（框架维护约定「缓存」）。
+## XDungeon.battle 记最近一场事件战斗的胜负与神秘珠／种族补给是否已领，不随存档。
+static func _become_current(s: XState) -> void:
+	current = s
+	XDungeon.battle = {}
+
+
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
 	var s := XState.new()
 	s.difficulty = difficulty_id
 	for id in [starter_id] + companions:
 		s.add_actor(int(id))
 	s.followers_visible = bool(XDB.system().get("optFollowers", false))
-	current = s
+	_become_current(s)
 	return s
 
 
@@ -97,7 +104,7 @@ static func new_game_blank() -> XState:
 	s.y = int(sys.get("startY", 0))
 	s.direction = 2
 	XSave.current_slot = 0
-	current = s
+	_become_current(s)
 	return s
 
 
@@ -447,5 +454,5 @@ static func from_dict(d: Dictionary) -> XState:
 	elif s.self_switch(4, 20, "A"):
 		# dev.016 及以前的 Godot 档没有解锁记录：已到过大厅的补大厅（所在地图由 load_map 照常解锁）
 		s.unlocked_maps[4] = true
-	current = s
+	_become_current(s)
 	return s
