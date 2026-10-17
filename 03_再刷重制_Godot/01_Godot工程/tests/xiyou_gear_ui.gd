@@ -25,8 +25,14 @@ func _run() -> void:
 		var e:=XGear.create("armor",id);s.register_gear(e);a.equips[int(e.etypeId)-1]=e
 	a.refresh_passive()
 	s.gain_gear("weapon",56,1);s.gain_item(258,2);s.gain_item(1904,1);s.gain_item(170,1)
+	# 套装件数与各档加成：装备说明（XGearInfo.details）按已装备件数着色；状态页第 4 页已改回正式「修行」页（O-032 撤销）
+	var box := VBoxContainer.new();add_child(box)
+	for id in [235,236,240]:XGearInfo.details(box,a.equips[int(XDB.rec("Armors",id).etypeId)-1],a)
+	var info := "\n".join(box.get_children().map(func(l):return str(l.text)))
+	check("suit_threshold_visible",info.contains("狼魂") and info.contains("已装备") and info.contains("队伍掉率"),info)
+	box.queue_free()
 	var status := XStatusPage.new();status.page=3;add_child(status);await frames()
-	check("suit_threshold_visible",status.all_text().contains("狼魂") and status.all_text().contains("已生效") and status.all_text().contains("队伍掉率"))
+	check("status_page4_xiuxing",status.all_text().contains("【真气】") and status.all_text().contains("难度对照"),status.all_text().left(200))
 	await shot("11_套装状态");status.queue_free();await frames()
 	# 物品页（XItemScene，参照 70～74）：窗口矩形、分类五项、列表/信息/状态、NEW、装备序号与装备者、说明卡、升级、选人使用
 	var page:=XItemScene.new();add_child(page);await frames()
