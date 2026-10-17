@@ -85,6 +85,18 @@ module.exports=function stock(host) {
     w.Graphics.frameCount=29*60;restore(encode());const trace=[inventory('saved_timer').getStock(it)];
     w.Graphics.frameCount=30*60;w.$gameSystem.updateInventorySupplier();trace.push(inventory('saved_timer').getStock(it));return {trace};
   }));
+  // 八戒 2026-10-17：独立装备（4279 代购 8018）买入扣商品库存、卖出所得实例不回商品库存；二十层后索礼商店（正式组名、正式商品）买到售完再重开。
+  const payCurrencies=it=>{for(const v of it.variableBuyPrices||[])w.$gameVariables.setValue(v,1000000);for(const k of it.itemBuyPrices||[])w.$gameParty.gainItem(w.$dataItems[k],9999);};
+  cases.push(makeCase('stock.gear-buy-sell',{goods:[2,4279,0,0],group:'gear'},()=>{
+    fixture();const base=w.$dataArmors[4279];payCurrencies(base);const sc=shop('gear',[[2,4279,0,0]]),before=snap(sc);sc.doBuy(1);const after=snap(sc);
+    const armors=w.$gameParty.armors().map(a=>[a.id,a.baseItemId]);const inst=w.$gameParty.armors()[0];sc._item=inst||base;if(inst)sc.doSell(1);
+    const inv=inventory('gear');return {armors,before,after,instanceSold:!!inst,baseAfterSell:inv.getStock(base),armorKeys:Object.keys(inv._armorStock).length,ownedAfterSell:w.$gameParty.armors().length};
+  }));
+  for(const [id,group] of [[1912,'群仙俯首购买'],[1916,'天宫之寒购买']])cases.push(makeCase('stock.floor-shop.'+id,{goods:[0,id,0,0],group},()=>{
+    fixture();const it=w.$dataItems[id];payCurrencies(it);const sc=shop(group,[[0,id,0,0]]),trace=[snap(sc)];sc.doBuy(2);trace.push(snap(sc));
+    const again=shop(group,[[0,id,0,0]]);trace.push(snap(again));again.doBuy(again.maxBuy());trace.push(snap(again));trace.push(snap(shop(group,[[0,id,0,0]])));
+    const otherGroup=shop('其它组',[[0,id,0,0]]);trace.push(snap(otherGroup));return {trace};
+  }));
   // 来源目录全量扫描只记定义；是否在切片可玩由实现车道单独确认。
   const catalog=[];
   for(const [kind,table,file] of [['item',w.$dataItems,'Items'],['weapon',w.$dataWeapons,'Weapons'],['armor',w.$dataArmors,'Armors']]){

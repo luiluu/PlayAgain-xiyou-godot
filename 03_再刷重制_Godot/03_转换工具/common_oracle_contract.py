@@ -6,7 +6,8 @@ from pathlib import Path
 STOCK_IDS = {'stock.' + s for s in ['purchase-reopen-sell', 'group-scope', 'cancel-preview',
     'affordability', 'memory-roundtrip', 'restock-reset', 'clamp-and-type', 'time-restock',
     'no-restock', 'supply-speed-command', 'currency-and-stock.77', 'currency-and-stock.150',
-    'pending-overwrite', 'timer-memory-roundtrip', 'currency-short.77', 'currency-short.150']}
+    'pending-overwrite', 'timer-memory-roundtrip', 'currency-short.77', 'currency-short.150',
+    'gear-buy-sell', 'floor-shop.1912', 'floor-shop.1916']}
 VARIANTS = ['above-threshold', 'exact-threshold', 'below-threshold', 'variable-off', 'late-variable']
 MESSAGE_IDS = {f'message.{tid}.{v}' for tid in [456, 457, 458] for v in VARIANTS} | {'message.contract-nested-common'}
 CHALLENGE_IDS = {f'challenge.f{f}.d{d}' for f in [6, 11, 16, 21, 26] for d in [3, 4, 5, 6]} | {
@@ -123,6 +124,12 @@ def validate_payload(name, data, manifest):
                 row = rows[f'stock.currency-short.{item}']
                 if row['before']['enabled'] or row['before'] != row['after']:
                     issues.append(f'限购物品{item}多货币不足异常')
+            g = rows['stock.gear-buy-sell']
+            if g['after']['stock'] != 0 or not g['instanceSold'] or g['baseAfterSell'] != 0:
+                issues.append('限购独立装备买卖链不完整')
+            for item in [1912, 1916]:
+                if [x['stock'] for x in rows[f'stock.floor-shop.{item}']['trace']] != [5, 3, 3, 0, 0, 5]:
+                    issues.append(f'限购索礼商店{item}链不完整')
         elif name == 'battle_messages.json':
             for tid in [456, 457, 458]:
                 for variant in VARIANTS:

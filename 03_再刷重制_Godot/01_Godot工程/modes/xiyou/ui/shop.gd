@@ -13,6 +13,9 @@ extends Control
 ##   七档「出售X品质」左对齐；确定即卖出背包里该档（旧档 0～14）不带「[锁定]」的装备、无确认，然后回到指令窗（取消同）。
 ## - 出售列表套用出售锁定／道具置顶（XItemMarks.apply_list）；选中锁定的物品时提示「已锁定 无法出售」并留在列表。
 ## - 出售列表的行同物品页（XItemRow）：画 NEW 但不记看过；装备按背包原序、右侧「序号/9,999」。
+## - 限购（KMS_ShopInventory，XShopStock）：stock_group 非空时，售完的商品画名字＋右侧「售完」（宽 96、白字、按不可买半透明）且不可买，
+##   数量上限再与库存取小；状态窗第 2 行画「库存 剩余/上限」（插件参数名不符，按默认只画在状态窗，数量窗不画）。
+##   装备商品原版这一行与「<< 队员 >>」重叠，改画在能力表下方（O-043，STOCK_GEAR_BELOW 设 false 回到原版）。
 
 signal closed
 
@@ -29,9 +32,15 @@ const COMMANDS := [["购买", "buy"], ["出售", "sell"], ["一键出售", "onek
 const ONEKEY_POS := Vector2(350, 150)
 const ONEKEY_W := 240.0
 const CATEGORIES := [["物品", "item"], ["消耗品", "consumable"], ["武器", "weapon"], ["护甲", "armor"], ["重要物品", "keyItem"]]
+const SOLD_OUT := "售完"            # KMS_ShopInventory 参数 Sold out text
+const STOCK_CAPTION := "库存"       # Caption for stock
+const SOLD_OUT_W := 96.0
+## O-043：装备商品的库存行画在能力表下方（第 11 行、26 号字）；false 为原版（第 2 行、沿用能力表的 20 号字，与队员名重叠）
+static var STOCK_GEAR_BELOW := true
 
 var goods: Array = []
 var purchase_only := false
+var stock_group := ""           # KMS_ShopInventory 库存组（XShopStock.open 取得；"" 为不限购）
 var _mode := "command"          # command / buy / category / sell / number / onekey
 var _onekey := 0
 var _cmd := 0
@@ -54,9 +63,10 @@ var _gold_item := {}            # 金钱窗跟随的商品（Window_Gold._item�
 var _gold_buy := true
 
 
-func setup(g: Array, only: bool) -> void:
+func setup(g: Array, only: bool, group := "") -> void:
 	goods = g
 	purchase_only = only
+	stock_group = group
 
 
 func _ready() -> void:
@@ -136,7 +146,7 @@ func _buy_data() -> Array:
 	for g in XItemMarks.shop_goods(goods):
 		var rec := XDB.rec(table_of(int(g[0])), int(g[1]))
 		if not rec.is_empty():
-			out.append({"rec": XItemMarks.shop_display(rec), "item": XItemMarks.shop_rec(int(g[0]), int(g[1])), "kind": int(g[0]), "price": _price(g)})
+			out.append({"rec": XItemMarks.shop_display(rec), "item": XItemMarks.shop_rec(int(g[0]), int(g[1])), "kind": int(g[0]), "gid": int(g[1]), "price": _price(g)})
 	return out
 
 
@@ -180,6 +190,39 @@ func _current_rec() -> Dictionary:
 		"number":
 			return _number_entry().rec if not _number_entry().is_empty() else {}
 	return {}
+
+
+## Window_ShopBuy.isEnabled：原链（XItemMarks.can_buy）且有库存
+func _buy_enabled(e: Dictionary) -> bool:
+	return XItemMarks.can_buy(XState.current, e.item, int(e.price)) and XShopStock.available(XState.current, stock_group, int(e.kind), int(e.gid))
+
+
+## 状态窗库存行的 [类型, ID, 剩余]：购买（含数量窗）按商品表；出售按持有物——物品照该组库存，
+## 装备实例原版另记在实例 ID 上（从未扣过）恒为上限。不画时返回 []
+func _stock_row() -> Array:
+	if stock_group == "":
+		return []
+	var from := _number_from if _mode == "number" else _mode
+	var s := XState.current
+	if from == "buy":
+		var e := _number_entry() if _mode == "number" else {}
+		var d := _buy_data()
+		if e.is_empty() and _buy_index < d.size():
+			e = d[_buy_index]
+		if e.is_empty() or not XShopStock.managed(int(e.kind), int(e.gid)):
+			return []
+		return [int(e.kind), int(e.gid), XShopStock.remaining(s, stock_group, int(e.kind), int(e.gid))]
+	if from == "sell":
+		var d := _sell_data()
+		if _sell_index >= d.size():
+			return []
+		var e: Dictionary = d[_sell_index]
+		var kind := int(e.kind)
+		var id := int(e.rec.get("base", e.rec.get("id", 0)))
+		if not XShopStock.managed(kind, id):
+			return []
+		return [kind, id, XShopStock.remaining(s, stock_group, kind, id) if kind == 0 else XShopStock.stock_max(kind, id)]
+	return []
 
 
 func _number_entry() -> Dictionary:
@@ -252,9 +295,14 @@ func _paint_list(c: XMVCanvas) -> void:
 			for i in range(d.size()):
 				var y := i * LH
 				var w := c.size.x - 6
-				var a := 1.0 if XItemMarks.can_buy(s, d[i].item, int(d[i].price)) else XUI.DIM.a
+				var a := 1.0 if _buy_enabled(d[i]) else XUI.DIM.a
 				if i == _buy_index:
 					c.cursor(Rect2(0, y, c.size.x, LH))
+				# KMS Window_ShopBuy.drawItem：售完的画名字（宽减 96）与右侧「售完」，不画价格
+				if not XShopStock.available(s, stock_group, int(d[i].kind), int(d[i].gid)):
+					_item_name(c, d[i].rec, 0, y, w - SOLD_OUT_W, a)
+					c.text(SOLD_OUT, w - SOLD_OUT_W, y, SOLD_OUT_W, "right", XUI.TEXT, XUI.FONT_SIZE, LH, a)
+					continue
 				_item_name(c, d[i].rec, 0, y, w, a)
 				_paint_buy_price(c, d[i], y, w, a)
 		"sell":
@@ -399,7 +447,13 @@ func _paint_status(c: XMVCanvas) -> void:
 	var w := c.size.x - 12
 	c.text("持有数", 6, 0, w, "left", XUI.SYSTEM)
 	c.text(XMenu._group(owned), 6, 0, w, "right")
-	if rec.has("itypeId") or not rec.has("etypeId"):
+	var gear := rec.has("etypeId") and not rec.has("itypeId")
+	var row := _stock_row()
+	if not row.is_empty():
+		# KMS Window_ShopStatus.refresh 在原内容之后画第 2 行；装备时字号沿用能力表的 20（O-043 改到能力表下方、26 号）
+		var below := gear and STOCK_GEAR_BELOW
+		_paint_stock(c, 6, LH * 10 if below else LH, w, 20 if gear and not below else XUI.FONT_SIZE, int(row[2]), XShopStock.stock_max(row[0], row[1]))
+	if not gear:
 		return
 	# 「<< 队员 >>」与 8 项能力增减（actor 模式；左右键切换队员）
 	var members := s.members()
@@ -423,6 +477,17 @@ func _paint_status(c: XMVCanvas) -> void:
 		var change := int(item.params[i]) - (int(cur.params[i]) if cur != null else 0)
 		c.text(("+" if change > 0 else "") + XMenu._group(change), 220 + 6, y, half - 12, "right",
 			XItemStatusPainter.change_color(change), 20, LH, 1.0 if change != 0 else XUI.DIM.a)
+
+
+## Window_Base.drawShopStockNumber：系统色「库存」左对齐（宽为字宽＋8），右端三格「剩余」「/」「上限」右对齐（数字格宽＝「000」字宽）
+func _paint_stock(c: XMVCanvas, x: float, y: float, w: float, size: int, stock: int, mx: int) -> void:
+	var vw := c.text_width("000", size)
+	var sw := c.text_width("/", size)
+	c.text(STOCK_CAPTION, x, y, c.text_width(STOCK_CAPTION, size) + 8, "left", XUI.SYSTEM, size)
+	var nx := x + w - (vw * 2 + sw)
+	c.text(str(stock), nx, y, vw, "right", XUI.TEXT, size)
+	c.text("/", nx + vw, y, sw, "right", XUI.TEXT, size)
+	c.text(str(mx), nx + vw + sw, y, vw, "right", XUI.TEXT, size)
 
 
 ## YEP_X_MoreCurrencies Window_Gold.refresh：购买／出售列表选中的商品（setItemBuy／setItemSell，购买取消时清空）有变量/物品价时，
@@ -520,7 +585,12 @@ func _max_number() -> int:
 		return 1
 	if _number_from == "sell":
 		return int(e.count)
-	return XItemMarks.max_buy(XState.current, e.item, int(e.price))
+	return _max_buy(e)
+
+
+## Scene_Shop.maxBuy（KMS 再与库存取小）
+func _max_buy(e: Dictionary) -> int:
+	return XShopStock.max_buy(XState.current, stock_group, int(e.kind), int(e.gid), XItemMarks.max_buy(XState.current, e.item, int(e.price)))
 
 
 func _ok() -> void:
@@ -550,7 +620,7 @@ func _ok_inner() -> void:
 			_sell_top = 0
 		"buy":
 			var d := _buy_data()
-			if _buy_index < d.size() and XItemMarks.can_buy(s, d[_buy_index].item, int(d[_buy_index].price)) and _max_number() > 0:
+			if _buy_index < d.size() and _buy_enabled(d[_buy_index]) and _max_number() > 0:
 				_number_from = "buy"
 				_number = 1
 				_mode = "number"
@@ -576,13 +646,16 @@ func _trade() -> void:
 	var s := XState.current
 	var e := _number_entry()
 	if _number_from == "buy":
-		if _number < 1 or _number > XItemMarks.max_buy(s, e.item, int(e.price)):
+		if _number < 1 or _number > _max_buy(e):
 			return
+		# Scene_Shop.doBuy：先付款得物（XItemMarks.buy），再扣库存、登记补货（KMS）
 		XItemMarks.buy(s, e.item, int(e.price), _number)
+		XShopStock.record_purchase(s, stock_group, int(e.kind), int(e.gid), _number)
 		_mode = "buy"
 	else:
 		# 装备的 e.rec 就是背包实例；物品的 e.rec 可能是加了标记名的副本，按 ID 卖
 		XItemMarks.sell(s, e.rec if int(e.kind) != 0 else XDB.rec("Items", int(e.rec.id)), _number)
+		XShopStock.record_sale(s, stock_group, int(e.kind), int(e.rec.get("id", 0)), _number)
 		_mode = "sell"
 		var n := _sell_data().size()
 		_sell_index = clampi(_sell_index, 0, maxi(0, n - 1))
