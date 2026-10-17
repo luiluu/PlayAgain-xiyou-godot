@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.074",
-  "sequence": 74,
-  "next": "dev.075",
-  "nextSequence": 75,
+  "current": "dev.075",
+  "sequence": 75,
+  "next": "dev.076",
+  "nextSequence": 76,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "副本批量复用：九层女神道场、十层先祖禁地（悟空）",
+  "currentChange": "商店限购 KMS_ShopInventory（八戒）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
