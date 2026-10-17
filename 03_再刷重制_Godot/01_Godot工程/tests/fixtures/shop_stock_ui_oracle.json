@@ -1,0 +1,9 @@
+{
+  "source": "冻结 v0.28，ui_reference ?item_list_ref=1 内存新局：apply ref，1912 库存 0、1685 库存 7，商品 [[0,1912],[0,1685],[0,1],[2,4279]]，金币 10000000；截图 04_验证/本地结果/原版参照/codex_shop_stock_reference.png",
+  "buyWindow": {"rect": [0, 173, 768, 547], "padding": 14, "lineHeight": 36},
+  "soldOutRow": {"name": ["被动书:群仙俯首", 36, 0, 602, "left", 26], "soldOut": ["售完", 638, 0, 96, "right", 26, "#ffffff"], "paintOpacity": 160},
+  "disabledRowOpacity": 160,
+  "statusItem": {"rect": [768, 173, 512, 483], "texts": [["持有数", 6, 0, "left", 26, "system"], ["库存", 6, 36, 60, "left", 26, "system"], ["7", 371.77, 36, 46.62, "right", 26], ["/", 418.38, 36, 13, "right", 26], ["30", 431.38, 36, 46.62, "right", 26]]},
+  "statusGear": {"note": "装备时库存行与「<< 队员 >>」同在 y=36、字号沿用能力行的 20（原版重叠，见 O-043）", "texts": [["库存", 6, 36, 48, "left", 20, "system"], ["1", 396.28, 36, 35.86, "right", 20], ["/", 432.14, 36, 10, "right", 20], ["1", 442.14, 36, 35.86, "right", 20]]},
+  "numberWindow": {"note": "Stock display 参数名与插件读取的 Show stock in status 不符，按默认 1 只在状态窗显示，数量窗不画库存"}
+}

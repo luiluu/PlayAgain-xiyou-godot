@@ -321,8 +321,8 @@ static func stone_locked(s: XState, rec: Dictionary) -> bool:
 
 ## Window_ShopBuy.isEnabled 整条链（price 为商品的买入价，指定价格优先）：停用号角、进阶石层数、
 ## MoreCurrencies 变量/物品买入价都够、YEP_ItemCore 独立装备该类不超过 9999 件、MV 价格不超过金钱且物品未满。
-## 未移植：超强者伙伴号角限地狱及以上（installBossDifficultyRuntime）、轮回随机阵容限制（installReincarnationRandomRuntime）、
-## KMS_ShopInventory 库存——切片商店的商品在新游戏状态下都不受影响（shop_buy_probe）。
+## 未移植：超强者伙伴号角限地狱及以上（installBossDifficultyRuntime）、轮回随机阵容限制（installReincarnationRandomRuntime）。
+## KMS_ShopInventory 库存在 XShop._buy_enabled 另乘（XShopStock，链的最后一环）。
 static func can_buy(s: XState, rec: Dictionary, price: int) -> bool:
 	if rec.is_empty():
 		return false

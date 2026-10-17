@@ -760,12 +760,14 @@ func save_game(slot: int) -> bool:
 
 
 func open_shop(goods: Array, purchase_only: bool) -> void:
+	# KMS_ShopInventory 在 Scene_Shop.prepare 补货并取走 apply 的库存组（先于宝珠商店的 start 关店）
+	var stock_group := XShopStock.open(XState.current)
 	# 宝珠运行时：只卖宝珠的商店（如二十一层神秘使者）一打开就提示并关闭（Scene_Shop.start → popScene）
 	if XItemMarks.shop_orb_only(goods):
 		toast(XItemMarks.ORB_SHOP_TEXT)
 		return
 	var shop := XShop.new()
-	shop.setup(goods, purchase_only)
+	shop.setup(goods, purchase_only, stock_group)
 	ui.add_child(shop)
 	await shop.closed
 	shop.queue_free()

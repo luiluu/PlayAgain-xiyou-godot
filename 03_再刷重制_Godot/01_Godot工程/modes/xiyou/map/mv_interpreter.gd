@@ -447,6 +447,9 @@ func _plugin_command(line: String) -> void:
 		"ProhibitHangUp", "EnableHangUp":
 			XDungeon.set_hang_up(state(), args[0] == "EnableHangUp")
 			return
+		"ShopInventory":
+			XShopStock.plugin_command(state(), args)  # KMS_ShopInventory 限购（八戒车道）
+			return
 	skipped.append({"code": 356, "text": line.left(80)})
 
 
