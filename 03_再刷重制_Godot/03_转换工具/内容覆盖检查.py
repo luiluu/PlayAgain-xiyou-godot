@@ -104,7 +104,12 @@ class Checker:
             if e is None:
                 out.append(('无效引用', where, '敌群 %s 的敌人 %s' % (tid, m.get('enemyId'))))
             else:
-                self.asset('img/sv_enemies', e.get('battlerName'), where, out)
+                # YEP 侧视：备注 <Sideview Battler: X> 时战斗图用 sv_actors/X，不用 battlerName（同转换器）
+                side = str((e.get('meta') or {}).get('Sideview Battler') or '').strip()
+                if side:
+                    self.asset('img/sv_actors', side, where, out)
+                else:
+                    self.asset('img/sv_enemies', e.get('battlerName'), where, out)
 
     def route(self, cmds, where, out):
         for c in cmds or []:
