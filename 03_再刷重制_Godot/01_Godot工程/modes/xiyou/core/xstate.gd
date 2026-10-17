@@ -60,6 +60,9 @@ var dungeon := {}
 var boss_mastery := {}
 var race_supply := {}
 var eco_frac := {}
+## KMS_ShopInventory 商店库存（见 XShopStock；随存档）与下一次商店用的库存组（$gameTemp.nextInventoryId，不存档）
+var shop_stock := {"inv": {}, "schedules": []}
+var shop_pending := ""
 var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
 var hang_up_count := 0
@@ -367,7 +370,8 @@ func to_dict() -> Dictionary:
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
-		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac}
+		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac,
+		"shopStock": shop_stock}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -442,6 +446,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.boss_mastery = d.get("bossMastery", {})
 	s.race_supply = d.get("raceSupply", {})
 	s.eco_frac = d.get("ecoFrac", {})
+	s.shop_stock = XShopStock.from_save(d.get("shopStock", {}))
 	s.hang_up_total = int(d.get("hangUpTotal", 0))
 	s.pingbi_quality = Array(d.get("pingbiQuality", [])).map(func(v): return bool(v))
 	s.followers_visible = bool(d.get("followersVisible", XDB.system().get("optFollowers", false)))
