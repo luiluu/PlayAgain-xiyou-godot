@@ -39,7 +39,7 @@ func _run() -> void:
 	check("save_reload", XSave.load_slot(1) and XState.current.gold != 4321)
 	XSave.remove(1)
 	var input := LineEdit.new()
-	input.position = Vector2(80, 220)
+	input.position = Vector2(80, 400)
 	input.size = Vector2(700, 50)
 	input.text = "中文输入验收"
 	input.add_theme_font_override("font", font)
@@ -47,7 +47,7 @@ func _run() -> void:
 	check("unicode_text", input.text == "中文输入验收")
 	var label := Label.new()
 	label.position = Vector2(80, 80)
-	label.size = Vector2(360, 120)
+	label.size = Vector2(360, 260)
 	label.add_theme_font_override("font", font)
 	label.add_theme_font_size_override("font_size", 26)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
