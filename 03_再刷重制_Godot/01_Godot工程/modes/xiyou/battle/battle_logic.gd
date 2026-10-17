@@ -57,6 +57,7 @@ func setup(troop: int, s: XState) -> void:
 	state = s
 	troop_id = troop
 	actors = s.battle_members()
+	XZhenqi.battle_setup(s, troop)  # 真气：本场路线、楼层、溢出计数（BattleManager.setup）
 	enemies.clear()
 	var letters := {}
 	var t := XDB.rec("Troops", troop)
@@ -335,7 +336,7 @@ func auto_battle_action(a: XActor) -> Array:
 ## - 增加敏捷增益的技能命中后，目标下个回合前移 1 格（Buff/Debuff AGI Convert；正式版减益判断写错，不移位，照搬）。
 ## - 追加行动（特性 61）：同一人在顺序中连续出现多次；正式版改为每回合最多 5 次（文件末尾的修复段）。
 ## - 无法行动（死亡、行动限制）的人从当前回合移除；下个回合若一回合后仍不能动也移除；恢复行动时补回顺序末尾。
-## 未移植：正式版超过上限的追加行动换算成永久伤害加成（_actionDMG，只累加不清零），见 数值平衡.md。
+## 超过上限的追加行动：原 _actionDMG 已被真气取代（installNativeZhenqiRuntime：首回合超额次数记真气，见 XZhenqi）。
 
 const OTB_MAX_ACTIONS := 5
 const AGI_PARAM := 6
@@ -683,7 +684,7 @@ func _make_action_orders() -> void:
 	next_order = _sorted_by_speed(alive(actors) + alive(enemies))
 	if not _orders_made:
 		current_order = _sorted_by_speed(actors + enemies)
-		_action_times_modification(current_order)
+		_action_times_modification(current_order, true)
 	_clear_unable()
 	_action_times_modification(next_order)
 	_orders_made = true
@@ -704,7 +705,8 @@ func _sorted_by_speed(list: Array) -> Array:
 
 
 ## 追加行动：按 MV makeActionTimes 掷骰，在此人第一次出现的位置连续插入；每回合总数不超过 5。
-func _action_times_modification(order: Array) -> void:
+## 首回合的当前顺序（first_current）里，追加次数超过 4 的部分记作真气溢出（XZhenqi.note_overflow，原 _actionDMG）。
+func _action_times_modification(order: Array, first_current := false) -> void:
 	for b in actors + enemies:
 		if not order.has(b):
 			continue
@@ -712,7 +714,10 @@ func _action_times_modification(order: Array) -> void:
 		var max_extra := OTB_MAX_ACTIONS - existing
 		if max_extra <= 0:
 			continue
-		var n := mini(make_action_times(b) - 1, max_extra)
+		var extra := make_action_times(b) - 1
+		if first_current and b is XActor:
+			XZhenqi.note_overflow(b, extra)
+		var n := mini(extra, max_extra)
 		var at := order.find(b)
 		for i in range(n):
 			order.insert(at, b)
@@ -1245,6 +1250,7 @@ static func _extra_drops(d: Dictionary) -> Array:
 
 ## 发放奖励，返回升级信息 [{actor, levels}]
 func grant(r: Dictionary) -> Array:
+	XZhenqi.on_victory(state, actors, enemies)  # 真气胜利结算（BattleManager.endBattle(0)；每场一次）
 	state.gain_gold(r.gold)
 	if not drop_lock:
 		gain_drops(r.drops)
