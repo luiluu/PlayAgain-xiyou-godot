@@ -11,7 +11,7 @@ const toasts = [];
 w.$ = Object.assign(w.$ || {}, {toaster: m => toasts.push(String(m && m.message))});
 const ROUTE_SWITCHES = [2500, 2494, 2489, 2461, 2487, 2462, 2483, 2463];
 const actor = id => w.$gameActors.actor(id);
-const setData = (a, d) => { a._codexZhenqi = Object.assign({qi: 0, firsts: {}, realm: 0, pending: [], daofa: {}, spec: {}}, d); return a; };
+const setData = (a, d) => { a._codexZhenqi = Object.assign({qi: 0, firsts: {}, realm: 0, pending: [], daofa: {}, spec: {}}, JSON.parse(JSON.stringify(d))); return a; };
 const r6 = v => round(v);
 const stateOf = a => { const s = Z.state(a); return {name: s.name, realm: s.realm, world: s.world, qi: s.qi, rate: r6(s.rate), capped: s.capped,
   next: s.next ? s.next.name : null, need: s.need, pending: s.pending, gate: s.gate, canBreak: s.canBreak, describe: Z.describe(a)}; };
@@ -127,7 +127,8 @@ function setupWorld(opts) {
   if (opts.extra) for (const id of opts.extra) w.$gameParty.addActor(id);
   for (const [id, d] of Object.entries(opts.data || {})) setData(actor(+id), d);
 }
-const B = (id, opts, fn) => cases.push(makeCase('break.' + id, opts, () => { fresh(); setupWorld(opts); return fn(); }));
+// 每例清掉上一例留下的瓶颈之战状态（Z._pendingTrial／_trialDone／_battle 是全局的）
+const B = (id, opts, fn) => cases.push(makeCase('break.' + id, opts, () => { fresh(); Z._pendingTrial = null; Z._trialDone = null; Z._battle = null; setupWorld(opts); return fn(); }));
 
 // 闭关首页：每页 4 人，标签含境界、加成与［待选奖励］／［可突破］／［通关N层后突破］
 B('retreat.default', {}, () => view((it => (Z.retreat(it), it))(fakeInterp())));
@@ -159,7 +160,8 @@ function trialBattle(aid, opts) {
   const it = fakeInterp(); Z.startTrial(it, actor(aid)); const troop = Z._pendingTrial.troopId;
   w.BattleManager.setup(troop, false, true);
   const b = Z._battle, en = w.$gameTroop.members().map(e => ({enemyId: e.enemyId(), base: [0, 1, 2, 3, 4, 5, 6, 7].map(i => e.paramBase(i)), param: [0, 1, 2, 3, 4, 5, 6, 7].map(i => e.param(i)), hp: e.hp, mp: e.mp, drops: e.makeDropItems().length}));
-  w.BattleManager.makeRewards(); const rw = w.BattleManager._rewards;
+  // makeRewards 只计已倒下的敌人（expTotal／goldTotal／makeDropItems 走 deadMembers）：先让敌人倒下
+  w.$gameTroop.members().forEach(e => e.addState(1)); w.BattleManager.makeRewards(); const rw = w.BattleManager._rewards;
   for (const id of opts.dead || []) actor(id).addState(1);
   toasts.length = 0; const before = zq(actor(aid)); Z.onVictory(); const done = Z._trialDone && {won: Z._trialDone.won, actorId: Z._trialDone.actorId, target: Z._trialDone.target};
   for (const id of opts.dead || []) actor(id).removeState(1);

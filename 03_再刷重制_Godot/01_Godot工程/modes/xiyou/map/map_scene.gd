@@ -669,6 +669,16 @@ func player_screen_tile() -> Vector2:
 	return Vector2(player.grid) - origin / TS
 
 
+## 主菜单「真气」：Game_Map.setupStartingEvent 里由地图解释器执行 CodexZhenqi.retreat（事件 ID 为 0）
+func run_zhenqi_retreat() -> void:
+	if busy:
+		return
+	_set_busy(true)
+	await XZhenqiRetreat.run(self)
+	_set_busy(false)
+	refresh_events()
+
+
 ## Game_Temp.reserveCommonEvent：回到地图后执行的公共事件（事件 ID 为 0）
 func run_common_event(id: int) -> void:
 	var ce := XDB.rec("CommonEvents", id)
@@ -818,12 +828,15 @@ func open_menu() -> void:
 	ui.add_child(menu)
 	await menu.closed
 	var reserved := menu.reserved_common_event
+	var zhenqi := menu.zhenqi_requested
 	menu.queue_free()
 	_menu_open = false
 	hud.visible = true
 	_reset_transfer_button()
 	if reserved > 0:
 		await run_common_event(reserved)
+	if zhenqi:
+		await run_zhenqi_retreat()
 	# 整队/换人后队首与跟随的行走图
 	refresh_party_sprites()
 

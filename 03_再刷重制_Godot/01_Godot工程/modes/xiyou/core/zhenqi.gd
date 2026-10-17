@@ -528,8 +528,8 @@ static func _js_round(x: float) -> int:
 
 ## String(Math.round(v*100)/100)
 static func _pct(v: float) -> String:
-	var r := floor(v * 100 + 0.5) / 100.0
-	return str(int(r)) if r == floor(r) else str(r)
+	var r := floorf(v * 100 + 0.5) / 100.0
+	return str(int(r)) if r == floorf(r) else str(r)
 
 
 # ---- 瓶颈之战 ----
@@ -588,7 +588,9 @@ static func unlock_specs(s: XState, enemies: Array) -> void:
 				var n := int(x.strip_edges()) if x.strip_edges().is_valid_int() else 0
 				if LINGGEN_ELEMENTS.has(n) and not sp.e.has(str(n)):
 					sp.e[str(n)] = 1
-					_toast("降服 %s：灵根可指定「%s」" % [str(e.data().get("name", "")), str(XDB.system().elements[n])])
+					# e.originalName()：神话敌人带「【神话】」前缀（EliteEnemy），不含同名后缀字母
+					var oname: String = (XEnemy.elite_title() if e.elite else "") + str(e.data().get("name", ""))
+					_toast("降服 %s：灵根可指定「%s」" % [oname, str(XDB.system().elements[n])])
 
 
 # ---- 闭关菜单（节点）----

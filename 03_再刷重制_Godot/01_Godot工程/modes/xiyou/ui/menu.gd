@@ -8,7 +8,7 @@ extends Control
 ##   称号与 HP/MP/TP 在右列（x 314、宽 686），行高 33；YEP 描边量条与「当前/最大」数值。
 ## - 选「技能/装备/状态」后光标移到队伍窗选人（整行高亮），确定进入该角色页面，取消回到指令窗。
 ## - 窗口整体不透明度 30（MOG_MenuBackground）；底图与粒子 XUI.menu_background。
-## 尚未重制的指令（真气、种族祝福等；技能页 dev.030 起可用）暂时灰显，原版均可用；见 界面风格.md。
+## 尚未重制的指令（种族祝福等；技能页 dev.030 起可用、真气随身闭关第二批起可用）暂时灰显，原版均可用；见 界面风格.md。
 ## - 音效照 Window_Selectable：换行播光标音；确定播确定音（灰显指令蜂鸣）；取消播取消音。
 ## - 正式 v0.24 已移除菜单底部一键存档；快速存档的后端规则仍保留。
 
@@ -26,7 +26,7 @@ const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const POWER_COLOR := Color8(255, 211, 115)
 ## [名称, 符号, 已重制]
 const COMMANDS := [["物品", "item", true], ["技能", "skill", true], ["装备", "equip", true], ["状态", "status", true],
-	["真气", "zhenqi", false], ["整队", "formation", true], ["种族祝福", "race", false], ["宠物", "pet", false],
+	["真气", "zhenqi", true], ["整队", "formation", true], ["种族祝福", "race", false], ["宠物", "pet", false],
 	["制作", "crafting", false], ["宝珠坊", "orbs", true], ["异化工坊", "alienation", false], ["人物图鉴", "actorBook", false],
 	["怪物图鉴", "monsterBook", false], ["成就", "achievement", false], ["存档", "save", true], ["反馈", "feedback", false],
 	["设置", "options", true], ["游戏结束", "gameEnd", true]]
@@ -48,6 +48,8 @@ var map_shot: Texture2D
 var player_tile := Vector2.ZERO
 ## 关闭菜单后要在地图上执行的公共事件（YEP_MainMenuManager callCommonEvent：reserveCommonEvent 后 popScene）
 var reserved_common_event := 0
+## 「真气」：CodexZhenqi.openFromMenu 关菜单回地图后，由地图执行闭关（XZhenqiRetreat）
+var zhenqi_requested := false
 
 
 func command_names() -> Array:
@@ -305,6 +307,9 @@ func _ok() -> void:
 			"formation":
 				# Scene_Menu.commandFormation → YEP_PartySystem 的 Scene_Party
 				_open_detail(XPartyScene.new())
+			"zhenqi":
+				zhenqi_requested = true
+				closed.emit()
 			"orbs":
 				# installNativeOrbRuntime：CodexOrbs.open → 宝珠坊（XOrbShop）
 				_open_detail(XOrbShop.new())
