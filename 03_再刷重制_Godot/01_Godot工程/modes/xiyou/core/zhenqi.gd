@@ -105,7 +105,8 @@ static func parse_floor(text: String) -> int:
 static func map_floor(map_id: int) -> int:
 	var info := XDB.rec("MapInfos", map_id)
 	var f := parse_floor(str(info.get("name", "")))
-	if f == 0:
+	# 显示名只在已转换的地图里有（切片外与地图号 0 不读，免得 XDB 报读取失败）
+	if f == 0 and map_id > 0 and FileAccess.file_exists(XDB.BASE + "maps/Map%03d.json" % map_id):
 		f = parse_floor(str(XDB.map(map_id).get("displayName", "")))
 	return f
 
