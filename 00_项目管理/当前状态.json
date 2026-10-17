@@ -1,7 +1,7 @@
 {
   "marker": "机器可读事实；叙述性进度见交接板",
   "review": "见交接板「待交叉核查」",
-  "updatedDate": "2026-10-17",
+  "updatedDate": "2026-10-18",
   "libraryRevision": 5,
   "root": "/Users/kyo/Documents/再刷项目资料库",
   "currentStep": 5,
@@ -12,7 +12,7 @@
     "4": "core_systems_partial",
     "5": "floor1_slice_playable_pending_user_playtest",
     "6": "ui_partial_original_layout_calibrated",
-    "7": "templates_installed_no_game_export",
+    "7": "trial_export_in_review_branch_automated_checks_passed_pending_merge_cross_review_and_manual_checks",
     "8": "not_started",
     "9": "not_designed_entry_reserved"
   },
@@ -57,7 +57,7 @@
     "editorStartupVerified": true,
     "visibleProjectManagerVerified": true,
     "runnableBuildKind": "playable_slice",
-    "developmentVersion": "dev.077",
+    "developmentVersion": "dev.079",
     "developmentRegistry": "03_再刷重制_Godot/开发编号.json",
     "deferredPlatforms": [
       "Windows",
@@ -82,13 +82,13 @@
     "sourceId": "legacy_xiyou_mod_kyo",
     "releaseVersion": "v0.28",
     "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
-    "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261017_220256_v0.28-v0.28/当前西游来源清单.json",
-    "fingerprintedFiles": 1289,
+    "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261017_234446_v0.28-v0.28/当前西游来源清单.json",
+    "fingerprintedFiles": 1311,
     "convertedContentReleaseVersion": "v0.28",
     "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.15(help_cards,difficulty_notice),v0.16(options,hangup_options),v0.17(hangup_subpages),v0.27(shop_buy),v0.28(gear_search,status_power,equip_compare)",
     "contentRefreshPending": false,
     "convertedScope": "floor1_slice",
-    "converterVersion": 16,
+    "converterVersion": 17,
     "runtimeFingerprintCount": 382,
     "oracleReleaseVersion": "v0.28",
     "frozenCopy": "03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw",
@@ -107,11 +107,11 @@
     "devVersionTool": "03_再刷重制_Godot/07_开发环境/开发编号.py"
   },
   "progress": {
-    "percent": 26.9,
+    "percent": 28.0,
     "ledger": "00_项目管理/重制步骤清单.md（进度账）",
     "reviewEveryPercent": 10,
     "lastReviewAtPercent": 25,
     "nextReviewAtPercent": 35,
-    "asOf": "dev.068"
+    "asOf": "dev.079"
   }
 }

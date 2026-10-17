@@ -46,10 +46,28 @@ func _run() -> void:
 	check("same_source", ref.sourceIdentity.runtimeInputs == manifest.runtimeInputs)
 	for c in ref.cases:
 		check("troop%d.oracle_clean" % int(c.troop), c.errors.is_empty(), c.errors)
+		if c.has("preset"):
+			_preset_case(c)
+			continue
 		for round in range(5):
 			_case(c, round)
 	_unit_checks()
 	finish()
+
+
+## 开战前改敌人 HP（参照 preset），只比开场敌群事件后的敌人 HP 与状态（十五层副本敌群 160：控尸者 HP≤1% 时两只丧尸战斗不能）
+func _preset_case(c: Dictionary) -> void:
+	var logic := setup(int(c.troop))
+	for i in c.preset:
+		logic.enemies[int(i)].hp = float(c.preset[i])
+	logic.troop_events()
+	for k in c.battlers:
+		if not str(k).begins_with("e"):
+			continue
+		var e: XBattler = logic.enemies[int(str(k).substr(1))]
+		var want: Dictionary = c.battlers[k]
+		check("troop%d.preset.%s" % [int(c.troop), k], int(e.hp) == int(want.hp) and e.state_ids == Array(want.states).map(func(x): return int(x)),
+			[e.hp, e.state_ids, want])
 
 
 func _case(c: Dictionary, round: int) -> void:

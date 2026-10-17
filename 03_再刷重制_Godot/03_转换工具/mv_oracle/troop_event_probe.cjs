@@ -1,6 +1,7 @@
 'use strict';
 // 敌群事件参照（扩楼层：一至三、五至九、十一至十二层守层者 4/5/8/28/39/52/53/67/109/110 、十层守层者 69（另有 333 给自己加状态 44）与十三至十九层守层者 111／118／138／172／173／174／333（变量 842 为 0 时先调公共事件 1398：334 完全回复、313 全队加状态、333 加状态，再强制 6069／6105／8111）、二十层守层者 456（842 为 0 时公共事件 1399 天道领域＋强制 6070／8111，否则 1400 天道领域*伪＋强制 6071；第 3 回合起每 3 回合随机 844 强制 6101～6104 与 8111）、二十一层守层者 457 与二十二层守层者 458（同 456；第 3 页生命≤20% 且变量 853＝1 的 101 对话与专属强制 3559／3560 首两回合参照不覆盖）、二十三层守层者 459（只有两页，不交礼开场比 456 多强制 6105／6107，没有第 3 页）、二十四层守层者 460（同 459）、二十五层守层者 461（同 459）第 1 回合的强制行动 339 → 技能 8111「轮回模式·平衡伤害」→ 状态 1460「轮回困难v1」）。
 // 十三至十九层补已交见面礼（变量 842＝1）分支，确认不触发开场领域与强制行动。
+// 十五层副本敌群 160（控尸者 HP≤1% 时两只丧尸附加状态 1）：开战前控尸者 HP 设 1（守层者那套两回合检查以 e0 为首领，不适用这个敌群）（preset，只到第 1 回合输入前）。
 // 真实 BattleManager 跑前两回合（日志窗/精灵组用空代理，同 sequence_probe）：普通难度、开局队伍 1/8/9/10（1 级，开局被动），
 // 角色输入一律普通攻击敌人 0；Math.random 敌群生成时 0.99（不出神话），之后 0.5（分散度为 0、不会心）。
 // 记录：每次开始行动（回合数、行动者、技能、是否强制）、每次 invokeAction 的目标血量变化与伤害弹字（startDamagePopup 时的 hpDamage）、
@@ -26,7 +27,7 @@ w.Game_Battler.prototype.startDamagePopup = function () {
   if (popups) popups.push({target: key(this), hpDamage: this._result.hpDamage, hpAffected: this._result.hpAffected});
 };
 
-function run(troopId, paid = false) {
+function run(troopId, paid = false, preset = null) {
   w.eval('ConfigManager.applyData({});DataManager.setupNewGame();$gameSystem.setDifficultyId(3);for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
   w.eval('$gameParty._actors=[];' + JSON.stringify(PARTY) + '.forEach(function(id){$gameParty.addActor(id);});');
   w.$gameVariables.setValue(842, paid ? 1 : 0);
@@ -42,6 +43,11 @@ function run(troopId, paid = false) {
   BM._logWindow = stub; BM._spriteset = stub; BM._statusWindow = stub;
   w.Math.random = () => 0.5;
   const out = {troop: troopId, paid, actions: [], invokes: [], errors: [], battlers: {}};
+  // preset：开战前把敌人 HP 设成定值（{敌人序号: hp}），只跑到第 1 回合输入前，记开场敌群事件的结果
+  if (preset) {
+    out.preset = preset;
+    for (const i of Object.keys(preset)) w.$gameTroop.members()[Number(i)].setHp(preset[i]);
+  }
   const inv = BM.invokeAction, sa = BM.startAction;
   BM.startAction = function () {
     const s = this._subject, act = s && s.currentAction();
@@ -62,6 +68,7 @@ function run(troopId, paid = false) {
     BM.startBattle();
     for (let i = 0; i < 20000; i++) {
       if (BM._phase === 'battleEnd' || w.$gameTroop._turnCount > 2 || BM.isBattleEnd && BM._phase === null) break;
+      if (preset && BM._phase === 'input') break;
       if (BM._phase === 'input') {
         const act = BM.inputtingAction();
         if (act) { act.setAttack(); act.setTarget(0); }
@@ -80,7 +87,9 @@ function run(troopId, paid = false) {
 }
 
 const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
-  cases: TROOPS.map(id => run(id)).concat([111,118,138,172,173,174,333,456,457,458,459,460,461].map(id => run(id, true)))};
+  cases: TROOPS.map(id => run(id)).concat([111,118,138,172,173,174,333,456,457,458,459,460,461].map(id => run(id, true)))
+    // 十五层副本废墟深处：敌群 160 控尸者（第 3 名）HP≤1% 时两只丧尸附加战斗不能（只记开场敌群事件）
+    .concat([run(160, false, {2: 1})])};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));
