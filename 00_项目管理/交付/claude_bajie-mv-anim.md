@@ -1,7 +1,7 @@
 # 交付：claude/bajie-mv-anim
 
 - 车道／工作者：B 界面／八戒（Claude，重制_八戒_12，中等努力）
-- 状态：进行中
+- 状态：可合并（main 已是最新，无需合并；`检查.sh --oracle` 全部通过）
 
 ## 变更记录草稿
 
@@ -15,7 +15,7 @@
 - 参照：`ui_reference` 战斗工具加 `__animRef`（`suite()` 五组：动画 3 目标＋屏幕闪光、四倍速版；14 转色相 135；24 隐藏目标，敌人与角色），`serve.py` 加 `POST /__ref_json/<名字>`（只写截图目录）。读数存 `tests/fixtures/mv_anim_oracle.json`。
 - 测试：新 `tests/xiyou_mv_animation`（19 项）在真实战斗画面经 `_start_animation` 逐帧比：已移除、相对目标位置、剩余时长、帧序、可见格数、目标混合色、目标显示、屏幕闪光，五组全部逐帧一致；另查转色相材质与地图无目标动画播完时机。`xiyou_battle_options` 的动画时长改成「_duration 帧后不再播放、下一帧才移除」；`xiyou_drop_dh` 改用 `MVAnimation.cell_material`，退出前停音效等 0.5 秒。
 - 工程规则检查（框架维护约定「随重制照做的工程规则」）：结算只在规则层——动画只改画面与演出时长，`xiyou_battle_options` 的不同显示／变速结算一致仍通过；动画不用随机数；无缓存失效问题（格子材质按色相＋混合方式共用，不依赖存档数据）。
-- 验证：见下「状态」。
+- 验证：`检查.sh --oracle` 全部通过（本 worktree，main 已并入）；过程中战斗／动画相关 18 个测试全过（battle_options 88→92、drop_dh 12、mv_animation 19、floor_run 1～25 层等）。正式读数用内置浏览器跑冻结 v0.28 副本取得。优化登记：本轮没有新优化项，预分配的 O-043、O-044、O-046 未用。
 - 遗留：①地图动画的目标闪光／隐藏没接（要改 `map_scene` 与地图角色，属车道 A 文件）；②敌人目标闪光与隐藏只作用在身体上（正式版作用于整个 Sprite_Enemy，含其子精灵）；③动画 24 的图没导出（没有技能用到），只对照了时序与隐藏，没对照格子；④未复现正式版首次载入动画图的异步等待（同 dev.069）。
 
 ## 交接板
@@ -32,3 +32,5 @@
 
 - deff48d MVAnimation 按 Sprite_Animation 逐帧，DhAnimation 改薄子类
 - 7eec888 目标闪光与隐藏作用在战斗者、跟随目标；__animRef 读数与 xiyou_mv_animation
+- 3cbecb8 MZ 格式动画不播；README 与交付单草稿
+- （本提交）交付单可合并
