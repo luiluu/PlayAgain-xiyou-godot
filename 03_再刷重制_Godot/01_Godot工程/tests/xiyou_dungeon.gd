@@ -102,6 +102,8 @@ static func page_of(map_id: int, id: int, erased: Dictionary) -> int:
 
 
 var rune_item := 24     # 本例副本的挑战符文（十层起中级符文 64）
+var track_kun := false  # 艾坤（角色 3）在队：after 多记坤坤任务（变量 346 与黄昏的信徒技能）
+const KUN_SKILLS := [2765, 4397, 4398, 4399, 4400, 4401, 4402, 4403, 4404, 4405, 4406, 4407, 4408]
 
 
 func _ready() -> void:
@@ -120,7 +122,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	_static_checks()
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
-	check("oracle_loaded", oracle is Dictionary and oracle.has("cases") and oracle.cases.size() >= 59)
+	check("oracle_loaded", oracle is Dictionary and oracle.has("cases") and oracle.cases.size() >= 81)
 	if oracle is Dictionary:
 		var host := DungeonHost.new()
 		add_child(host)
@@ -162,8 +164,9 @@ func _run_case(c: Dictionary, setup: Dictionary, host: DungeonHost) -> Dictionar
 	var st: Dictionary = c.setup
 	var diff := int(st.get("difficulty", 3))
 	var s := XState.new_game_blank()
-	for id in setup.party:
+	for id in Array(setup.party) + Array(st.get("actors", [])):
 		s.add_actor(int(id))
+	track_kun = Array(st.get("actors", [])).any(func(x): return int(x) == 3)
 	s.difficulty = diff
 	s.set_switch(int(setup.diffSwitch[str(diff)]), true)
 	for i in range(1, 9):
@@ -240,6 +243,8 @@ func _run_step(step: Dictionary, host: DungeonHost) -> Dictionary:
 			s = XState.current
 		"warp":
 			_warp(host, step)
+		"face":
+			s.direction = int(step.d)
 	if host.game_over_hit:
 		out.gameOver = true
 	out.trace = host.trace.duplicate(true)
@@ -323,8 +328,12 @@ func _focus(s: XState, _host: DungeonHost) -> Dictionary:
 	var sw := {}
 	for id in [229, 230, 882, 1565, 1566, 1567, 1568]:
 		sw[str(id)] = s.switch(id)
-	return {"difficulty": s.difficulty, "map": s.map_id, "x": s.x, "y": s.y, "hangEnabled": XHangUp.enabled(s),
+	var out := {"difficulty": s.difficulty, "map": s.map_id, "x": s.x, "y": s.y, "hangEnabled": XHangUp.enabled(s),
 		"hangActive": s.hang_up_active, "rune": s.item_count(rune_item), "vars": vars, "switches": sw}
+	if track_kun:
+		var a := s.actor(3)
+		out.kun = {"found": s.variable(346), "skills": KUN_SKILLS.filter(func(id): return a.skill_ids.has(id))}
+	return out
 
 
 ## 数值统一成整数（能整除时），再序列化比较
@@ -392,7 +401,7 @@ func _static_checks() -> void:
 	check("spec.tiers", spec.get("tiers", []) == [1, 2, 3, 4], spec)
 	check("spec.transfer", spec.get("transfers", []) == [[123, 14, 23]], spec)
 	# 同一模板的其他副本入口：每页都认得出，符文与目的地图一致
-	for d in [[5, 8, 220, 24], [7, 1, 8, 24], [13, 1, 14, 24], [61, 10, 129, 24], [61, 11, 130, 24], [15, 4, 131, 24], [17, 2, 22, 64]]:
+	for d in [[5, 8, 220, 24], [7, 1, 8, 24], [13, 1, 14, 24], [61, 10, 129, 24], [61, 11, 130, 24], [15, 4, 131, 24], [17, 2, 22, 64], [12, 17, 16, 64], [20, 5, 21, 110], [65, 1, 34, 110]]:
 		var ev := event_rec(d[0], d[1])
 		var ok: bool = not ev.is_empty() and ev.pages.all(func(pg):
 			var sp := XDungeon.entry_spec(pg.list)
