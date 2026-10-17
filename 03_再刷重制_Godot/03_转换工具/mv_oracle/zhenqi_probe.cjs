@@ -169,7 +169,7 @@ function trialBattle(aid, opts) {
   r.next = view((Z._cb(0, end), end));
   return r;
 }
-for (const [id, aid, opts] of [['heart1', 1, {progress: 6, data: {1: {qi: 700}}}], ['heart8', 8, {progress: 11, data: {8: {qi: 3000, realm: 1}}}], ['jindan', 9, {progress: 12, data: {9: {qi: 7000, realm: 2}}}],
+for (const [id, aid, opts] of [['heart1', 1, {progress: 6, data: {1: {qi: 700}}}], ['heart8', 8, {progress: 11, data: {8: {qi: 3000, realm: 1}}}], ['jindan', 9, {progress: 15, data: {9: {qi: 7000, realm: 2}}}],
   ['dead', 8, {progress: 6, data: {8: {qi: 700}}, dead: [8]}], ['otherDead', 8, {progress: 6, data: {8: {qi: 700}}, dead: [9]}], ['tianjie', 9, {progress: 33, data: {9: {qi: 120000, realm: 7}}}],
   ['hard', 10, {progress: 25, route: 2500, data: {10: {qi: 40000, realm: 4}}}], ['xian', 10, {progress: 33, data: {10: {qi: 400000, realm: 11}}}]])
   B('fight.' + id, opts, () => trialBattle(aid, opts));
