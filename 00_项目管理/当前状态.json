@@ -109,9 +109,9 @@
   "progress": {
     "percent": 25.4,
     "ledger": "00_项目管理/重制步骤清单.md（进度账）",
-    "reviewEveryPercent": 5,
+    "reviewEveryPercent": 10,
     "lastReviewAtPercent": 15,
-    "nextReviewAtPercent": 20,
+    "nextReviewAtPercent": 35,
     "asOf": "dev.068"
   }
 }

@@ -22,7 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 15
+TOOL_VERSION = 16
 HERE = Path(__file__).resolve().parent
 # 用户 2026-10-15：重制期间冻结在 v0.28 的只读副本（不入 Git，见 02_内容与素材/冻结正式源/README.md），重制完成后再统一同步正式版
 DEFAULT_APP = Path('/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw')
@@ -76,13 +76,15 @@ def translate_formula(js, item_id=0):
     js = re.sub(r'\bitem\.id\b', str(item_id), js)
     if not js:
         return '0', None
-    # 顶层的一个三元式 c ? x : y：Godot Expression 不认 if/else（解析通过但总取前一支），改成按条件取值的算术式
+    # 顶层的一个三元式 c ? x : y：Godot Expression 不认 if/else（解析通过但总取前一支），改成按条件下标取值的数组。
+    # 不用 x*float(c)+y*float(not c)：条件为数字（如 5）时会乘成 5x，未取的一支为 NaN／无穷时整式变 NaN。
+    # bool() 照 JS 真值（非零数为真）；两支仍都会求值，含 randf() 时比正式版多耗一次全局随机数（Godot 战斗随机数不与 MV 同种子，取值分布不变）。
     split = _top_ternary(js)
     if split:
         parts = [translate_formula(x, item_id) for x in split]
         if all(gd is not None for gd, _ in parts):
             c, x, y = (gd for gd, _ in parts)
-            return f'({x}) * float({c}) + ({y}) * float(not ({c}))', None
+            return f'[({y}), ({x})][int(bool({c}))]', None
         return None, next(why for gd, why in parts if gd is None)
     if UNSUPPORTED.search(js):
         return None, 'js_statement_or_game_state'

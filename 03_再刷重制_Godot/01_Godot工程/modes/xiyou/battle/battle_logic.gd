@@ -1038,7 +1038,8 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 				var chance := v1 * state_rate(t, id) * maxf(1.0 + (u.luk - t.luk) * 0.001, 0.0)
 				if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
 					chance = 0.0
-				if randf() < chance:
+				# MV addState → isStateAddable 要求活着：本次伤害已致死时照常掷随机数，但不再附加（不进 r.added）
+				if randf() < chance and t.is_alive():
 					if id == DEATH_STATE:
 						t.immortal = false  # itemEffectAddNormalState：附加阵亡前先解除 IMMORTAL
 						t.hp = 0.0
