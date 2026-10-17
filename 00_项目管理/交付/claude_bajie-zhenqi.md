@@ -1,7 +1,7 @@
 # 交付：claude/bajie-zhenqi
 
 - 车道／工作者：B 界面／C 规则／八戒（Claude，重制_八戒_14，中等努力）
-- 状态：进行中——代码、参照、测试、界面已完成并提交（xiyou_zhenqi 181 项、状态页／战力条专项全过）；剩：`同步正式西游.py --accept-additions` 结果确认、`git merge main`、`检查.sh --oracle`、本单改「可合并」。接手者从这几步接着做即可，无未提交改动。
+- 状态：可合并（2026-10-17：已合并 main 7b5c914；worktree 跑 `同步正式西游.py --accept-additions` 测量不变、核对无问题，已留产物指纹；`检查.sh --oracle` 全部通过）
 
 ## 变更记录草稿
 
@@ -12,7 +12,7 @@
 - 新增 `XGuide`（installNativeGuidanceRuntime）：状态页第 4 页改回正式「修行」页（真气、难度对照、建议），战力条右端真气段。O-032（套装页）撤销。
 - 真气加成只显示、按数值平衡不移植：修行页与战力条照原版显示「加成 ×N」，伤害不乘（已记入数值平衡.md 已知问题）。
 - 优化：O-044 修行页不显示「五个乘区」（五乘区不移植）；O-046 战力条第三段限宽，不被真气段擦掉。
-- 验证：`mv_oracle/zhenqi_probe.cjs` 冻结 v0.28 参照 171 例（已加进 同步正式西游.py PROBES、oracle_additions KEYS）→ `tests/xiyou_zhenqi` 181 项全过（含 BattleLogic 钩子、旧档、修行页逐行文字与难度对照数值、标准级界面读数）；xiyou_status_page／status_power／power 专项全过。截图 `04_验证/本地结果/原版参照/codex_status_xiuxing_reference.png`。
+- 验证：`mv_oracle/zhenqi_probe.cjs` 冻结 v0.28 参照 171 例（已加进 同步正式西游.py PROBES、oracle_additions KEYS）→ `tests/xiyou_zhenqi` 181 项全过（含 BattleLogic 钩子、旧档、修行页逐行文字与难度对照数值、标准级界面读数）；xiyou_status_page／status_power／power 专项全过；xiyou_gear_ui 的套装件数检查改看装备说明（套装页撤销），另查第 4 页为修行页；`map_floor` 只读已转换地图的显示名（修地图号 0 时 XDB 报错）。`检查.sh --oracle` 全部通过。截图 `04_验证/本地结果/原版参照/codex_status_xiuxing_reference.png`。
 - 未做（第二批，见框架维护约定「真气与修行页」）：突破与瓶颈之战、突破奖励与道法、神兵试炼、主菜单「真气」、闭关 NPC、区段里程碑与下一步建议。
 
 ## 交接板
@@ -31,3 +31,8 @@
 - ec76e08 真气第一批：XZhenqi、XGuide、zhenqi_probe、xiyou_zhenqi
 - 817cc23 状态页修行页、战力条真气段、O-032 撤销、O-044／O-046
 - dec286b 修行页标准级界面读数夹具
+- 106f732 框架维护约定「真气与修行页」、交付单
+- 717663d 加成只显示、按数值平衡不移植（数值平衡.md 已知问题）
+- d519b00 合并 main
+- e03fbd2 map_floor 只读已转换地图
+- bc12c17 xiyou_gear_ui 随套装页撤销调整
