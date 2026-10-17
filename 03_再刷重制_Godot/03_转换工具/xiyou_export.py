@@ -22,7 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 16
+TOOL_VERSION = 17
 HERE = Path(__file__).resolve().parent
 # 用户 2026-10-15：重制期间冻结在 v0.28 的只读副本（不入 Git，见 02_内容与素材/冻结正式源/README.md），重制完成后再统一同步正式版
 DEFAULT_APP = Path('/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw')
@@ -47,7 +47,7 @@ def extract_meta(note):
 
 # ---- 伤害公式翻译：JS 表达式 → Godot Expression ----
 JS_FUNCS = {'Math.max': 'max', 'Math.min': 'min', 'Math.floor': 'floor', 'Math.ceil': 'ceil', 'Math.round': 'round',
-            'Math.abs': 'abs', 'Math.pow': 'pow', 'Math.sqrt': 'sqrt', 'Math.random()': 'randf()'}
+            'Math.abs': 'abs', 'Math.pow': 'pow', 'Math.sqrt': 'sqrt', 'Math.random()': 'randf()', '.elementRate(': '.element_rate('}
 UNSUPPORTED = re.compile(r'[;{}?]|\bif\b|\bvar\b|\blet\b|\$game|\$data|=>|===|!==|\bfunction\b|\.length|\[\s*\]|\bthis\b')
 
 
@@ -105,6 +105,42 @@ def translate_formula(js, item_id=0):
         if ident not in ('a', 'b', 'v', 'max', 'min', 'floor', 'ceil', 'round', 'abs', 'pow', 'sqrt', 'randf', 'and', 'or', 'not', 'true', 'false'):
             return None, f'unknown_identifier:{ident}'
     return gd, None
+
+
+def yep_damage_block(note):
+    """YEP_DamageCore processDMGNotetags：备注里 <Damage Formula>…</Damage Formula> 的各行（按 /[\r\n]+/ 拆，每行加 \n）
+    替换数据库的公式，并标 damage.custom（没有这一块时 custom 一律为 false）。返回块文字或 None。"""
+    out, mode = None, False
+    for line in re.split(r'[\r\n]+', note or ''):
+        if re.search(r'<(?:DAMAGE FORMULA)>', line, re.I):
+            mode, out = True, ''
+        elif re.search(r'</(?:DAMAGE FORMULA)>', line, re.I):
+            mode = False
+        elif mode:
+            out += line + '\n'
+    return out
+
+
+def translate_custom_block(block, item_id=0):
+    """自定义公式块（eval 后取 value，默认 0）：只认「var/let/const 名 = 式」与「value = 式」两种语句，按顺序把变量代入，
+    得到一个式子再按普通公式翻译；有其他语句（加减 HP/MP/TP、条件、数组等副作用或流程）一律算未翻译。"""
+    names, value = {}, '0'
+    sub = lambda e: re.sub(r'(?<![\.\w])([A-Za-z_]\w*)', lambda m: names.get(m.group(1), m.group(1)), e)
+    for stmt in re.split(r'[;\n]', strip_js_comments(block)):
+        stmt = stmt.strip()
+        if not stmt:
+            continue
+        m = re.match(r'^(?:var|let|const)\s+([A-Za-z_]\w*)\s*=\s*(.+)$', stmt)
+        if m and m.group(1) != 'value':
+            names[m.group(1)] = '(' + sub(m.group(2)) + ')'
+            continue
+        m = re.match(r'^value\s*=\s*(.+)$', stmt)
+        if m and '=' not in m.group(1).replace('==', '').replace('<=', '').replace('>=', '').replace('!=', ''):
+            value = '(' + sub(m.group(1)) + ')'
+            names['value'] = value
+            continue
+        return None, 'js_statement_or_game_state'
+    return translate_formula(value, item_id)
 
 
 # ---- 状态脚本（YEP BuffsStatesCore <Custom X Effect>）→ 结构化效果 ----
@@ -353,7 +389,13 @@ class Exporter:
                     if name == 'Enemies' and isinstance(rec, dict):
                         core_enemy_notetags(rec)
                     if isinstance(rec, dict) and isinstance(rec.get('damage'), dict):
-                        gd, why = translate_formula(rec['damage'].get('formula'), rec.get('id', 0))
+                        block = yep_damage_block(rec.get('note'))
+                        rec['damage']['custom'] = block is not None
+                        if block is not None:
+                            rec['damage']['formula'] = block
+                            gd, why = translate_custom_block(block, rec.get('id', 0))
+                        else:
+                            gd, why = translate_formula(rec['damage'].get('formula'), rec.get('id', 0))
                         rec['damage']['formulaGd'] = gd
                         if why and rec['damage'].get('type'):
                             rec['damage']['formulaIssue'] = why
