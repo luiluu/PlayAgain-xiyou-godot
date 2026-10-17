@@ -185,5 +185,119 @@
     0.9
    ]
   }
+ ],
+ "hit": [
+  {
+   "user": "actor1",
+   "enemy": 82,
+   "skill": 1,
+   "hit": 1,
+   "eva": 0
+  },
+  {
+   "user": "actor1",
+   "enemy": 82,
+   "skill": 9,
+   "hit": 1,
+   "eva": 0
+  },
+  {
+   "user": "actor1",
+   "enemy": 82,
+   "skill": 14,
+   "hit": 1,
+   "eva": 0
+  },
+  {
+   "user": "enemy",
+   "enemy": 82,
+   "skill": 1,
+   "hit": 1,
+   "eva": 0
+  },
+  {
+   "user": "actor1",
+   "enemy": 129,
+   "skill": 1,
+   "hit": 0.7812,
+   "eva": 0
+  },
+  {
+   "user": "actor1",
+   "enemy": 129,
+   "skill": 9,
+   "hit": 0.7812,
+   "eva": 0
+  },
+  {
+   "user": "actor1",
+   "enemy": 129,
+   "skill": 14,
+   "hit": 1,
+   "eva": 0
+  },
+  {
+   "user": "enemy",
+   "enemy": 129,
+   "skill": 1,
+   "hit": 1,
+   "eva": 0
+  },
+  {
+   "user": "actor1",
+   "enemy": 180,
+   "skill": 1,
+   "hit": 0.8412,
+   "eva": 0
+  },
+  {
+   "user": "actor1",
+   "enemy": 180,
+   "skill": 9,
+   "hit": 0.8412,
+   "eva": 0
+  },
+  {
+   "user": "actor1",
+   "enemy": 180,
+   "skill": 14,
+   "hit": 1,
+   "eva": 0
+  },
+  {
+   "user": "enemy",
+   "enemy": 180,
+   "skill": 1,
+   "hit": 1,
+   "eva": 0
+  },
+  {
+   "user": "actor1",
+   "enemy": 192,
+   "skill": 1,
+   "hit": 0.7812,
+   "eva": 0
+  },
+  {
+   "user": "actor1",
+   "enemy": 192,
+   "skill": 9,
+   "hit": 0.7812,
+   "eva": 0
+  },
+  {
+   "user": "actor1",
+   "enemy": 192,
+   "skill": 14,
+   "hit": 1,
+   "eva": 0
+  },
+  {
+   "user": "enemy",
+   "enemy": 192,
+   "skill": 1,
+   "hit": 1,
+   "eva": 0
+  }
  ]
 }
