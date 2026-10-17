@@ -23,6 +23,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -66,6 +67,7 @@ PROBES = [
     (['dungeon_probe.cjs'], ['dungeon.json']),
     (['shared_system_probe.cjs'], ['shop_stock.json', 'battle_messages.json', 'challenge_passives.json']),
     (['zhenqi_probe.cjs'], ['zhenqi.json']),
+    (['custom_damage_probe.cjs'], ['custom_damage.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
 
@@ -113,10 +115,17 @@ def outputs_digest(gen: Path) -> str:
 def clone_from_worktree(worktree: Path, gen: Path):
     """车道产物可用时克隆到本工作区 generated；不可用返回原因（此时不动本工作区）。"""
     lane_gen = worktree / gen.relative_to(ROOT.resolve())
+    if lane_gen.resolve() == gen.resolve() or lane_gen.resolve() in gen.resolve().parents or gen.resolve() in lane_gen.resolve().parents:
+        return None, '车道与当前产物目录相同或互相包含'
     stamp_file = lane_gen / STAMP
     if not stamp_file.is_file():
         return None, '车道产物没有同步指纹（车道未用新版同步脚本跑过同步）'
-    stamp = json.loads(stamp_file.read_text())
+    try:
+        stamp = json.loads(stamp_file.read_text())
+    except (ValueError, OSError):
+        return None, '车道同步指纹无法读取'
+    if not isinstance(stamp, dict):
+        return None, '车道同步指纹格式无效'
     if stamp.get('toolsDigest') != tools_digest():
         return None, '合并后 main 的转换工具文件与车道同步时不同'
     if stamp.get('toolsDigest') != tools_digest(worktree):
@@ -134,8 +143,15 @@ def write_stamp(gen: Path, report: dict) -> None:
 
 def godot_import(log=None) -> None:
     if GODOT.exists() and PROJECT.is_dir():
-        subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--import'],
-                       stdout=log or subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--import'],
+                           capture_output=True, text=True, timeout=300)
+        out = (p.stdout or '') + (p.stderr or '')
+        if log:
+            log.write(out)
+        if p.returncode or re.search(r'SCRIPT ERROR|^ERROR:', out, re.M):
+            raise RuntimeError('Godot 导入失败（退出码 %d），见同步.log' % p.returncode)
+    else:
+        raise RuntimeError('Godot 引擎或工程目录缺失，无法确认导入')
 
 
 def diff_paths(a, b, path='', out=None, limit=20):
@@ -293,17 +309,22 @@ def main() -> int:
     fingerprint = backup / '当前西游来源清单.json'
     fingerprint.write_text(json.dumps({'releaseVersion': new_version, 'inputs': new_manifest['inputs'],
                                        'runtimeInputs': new_manifest.get('runtimeInputs', {})}, ensure_ascii=False, indent=2))
+    if not a.no_import:
+        try:
+            with open(backup / '同步.log', 'a') as log:
+                godot_import(log)
+        except (RuntimeError, subprocess.TimeoutExpired) as error:
+            ok = False
+            report['importError'] = str(error)
+            report['result'] = 'Godot 导入失败，未登记'
     (backup / '同步报告.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
     if ok and not a.no_register:
         register(new_version, fingerprint, report)
-    usable = report['verifyOk'] and report['sameExistingSource'] and (not measure or report['additionCheck']['onlyAdditions'])
+    usable = not report.get('importError') and report['verifyOk'] and report['sameExistingSource'] and (not measure or report['additionCheck']['onlyAdditions'])
     if usable and lane is None:
         write_stamp(gen, report)
     elif not usable:
         (gen / STAMP).unlink(missing_ok=True)
-    if not a.no_import:
-        with open(backup / '同步.log', 'a') as log:
-            godot_import(log)
     print(json.dumps({k: report[k] for k in ['from', 'to', 'result', 'changedInputs', 'changedMaps', 'measurementChanges', 'verify', 'backup']},
                      ensure_ascii=False))
     return 0 if ok else 2

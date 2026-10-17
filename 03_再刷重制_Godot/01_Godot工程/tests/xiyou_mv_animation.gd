@@ -46,6 +46,7 @@ func _run() -> void:
 		_replay(b, k, oracle.traces[k])
 	_hue(b)
 	_map()
+	_audio()
 	b.logic.end_battle()
 	b.queue_free()
 	XConfig.set_battle_speed(4)
@@ -144,4 +145,24 @@ func _map() -> void:
 		a._physics_process(1.0 / 60)
 		n += 1
 	check("map_rate_and_removal", a.rate == 4 and n == a.anim.frames.size() * 4 + 2, n)
+	host.queue_free()
+
+
+## 冻结源 AudioManager.playSe 每次单独创建 buffer：连续两个时间点并播，动画移除后两个音效都保留。
+func _audio() -> void:
+	var host := Node2D.new()
+	add_child(host)
+	var a := MVAnimation.play(host, 1, Vector2.ZERO)
+	a.set_physics_process(false)
+	var name := str(XDB.system().sounds[0].name)
+	var timing := {"se": {"name": name, "volume": 0, "pitch": 100}}
+	a._timing(timing)
+	var first := a.se_player
+	a._timing(timing)
+	var second := a.se_player
+	check("audio_timings_overlap", first != second and first.playing and second.playing)
+	a.finish()
+	check("audio_all_survive_animation", first.get_parent() == host and second.get_parent() == host and first.playing and second.playing)
+	first.stop()
+	second.stop()
 	host.queue_free()

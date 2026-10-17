@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.079",
-  "sequence": 79,
-  "next": "dev.080",
-  "nextSequence": 80,
+  "current": "dev.080",
+  "sequence": 80,
+  "next": "dev.081",
+  "nextSequence": 81,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "副本批量第四批：十七层、十八层（悟空）",
+  "currentChange": "review-backlog-20261017",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

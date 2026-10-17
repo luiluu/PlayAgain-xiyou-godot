@@ -13,6 +13,13 @@ func _ready() -> void:
 		push_error("Invalid mode registry")
 		return
 	modes = data["modes"]
+	# 官方导出模板不允许用命令行覆盖场景路径；调试包通过显式验收参数在包内跳转。
+	if OS.is_debug_build() and OS.get_cmdline_user_args().has("--verify-export"):
+		_verify_export.call_deferred()
+
+func _verify_export() -> void:
+	await get_tree().process_frame
+	get_tree().change_scene_to_file.call_deferred("res://tests/xiyou_mac_export.tscn")
 
 func get_mode(mode_id: String) -> Dictionary:
 	for mode in modes:

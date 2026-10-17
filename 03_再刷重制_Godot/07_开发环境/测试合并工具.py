@@ -167,7 +167,7 @@ class ProgressTests(unittest.TestCase):
 
 
 class SyncRegistrationTests(unittest.TestCase):
-    def simulate(self, accept=False, verify=True, changed_source=False):
+    def simulate(self, accept=False, verify=True, changed_source=False, import_error=None):
         with tempfile.TemporaryDirectory(prefix='xiyou_sync_fixture_') as tmp:
             root = Path(tmp); gen = root / 'generated'; app = root / 'app'
             app.mkdir(); (app / 'package.json').write_text('{"releaseVersion":"v0.28"}')
@@ -199,6 +199,7 @@ class SyncRegistrationTests(unittest.TestCase):
             argv = ['sync', '--app', str(app), '--generated', str(gen)] + (['--accept-additions'] if accept else [])
             with mock.patch.object(sync, 'ROOT', root), mock.patch.object(sync, 'PROBES', []), \
                  mock.patch.object(sync, 'run', export), mock.patch.object(sync.subprocess, 'run', external), \
+                 mock.patch.object(sync, 'godot_import', side_effect=import_error), \
                  mock.patch.object(sys, 'argv', argv), mock.patch.dict(os.environ), contextlib.redirect_stdout(io.StringIO()):
                 rc = sync.main()
             return rc, before != source.read_bytes(), json.loads(state.read_text())
@@ -216,6 +217,19 @@ class SyncRegistrationTests(unittest.TestCase):
 
     def test_changed_runtime_never_auto_accepts(self):
         self.assertEqual(self.simulate(accept=True, changed_source=True)[:2], (2, False))
+
+    def test_import_failure_never_registers(self):
+        self.assertEqual(self.simulate(accept=True, import_error=RuntimeError('fixture import error'))[:2], (2, False))
+
+    def test_import_error_with_zero_exit_is_rejected(self):
+        with mock.patch.object(sync.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, 'SCRIPT ERROR: bad script\n', '')):
+            with self.assertRaises(RuntimeError):
+                sync.godot_import(io.StringIO())
+
+    def test_import_nonzero_exit_is_rejected(self):
+        with mock.patch.object(sync.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, '', 'bad import')):
+            with self.assertRaises(RuntimeError):
+                sync.godot_import(io.StringIO())
 
 
 class SyncStampTests(unittest.TestCase):
@@ -278,6 +292,18 @@ class SyncStampTests(unittest.TestCase):
         self.assertEqual(sync.outputs_digest(self.gen), sync.outputs_digest(self.lane_gen))
         state = json.loads((self.root / '00_项目管理/当前状态.json').read_text())
         self.assertIn('fingerprint', state['remakeSource'])
+
+    def test_self_clone_leaves_all_outputs_untouched(self):
+        before = sync.outputs_digest(self.gen)
+        self.assertEqual(self.sync_main('--from-worktree', str(self.root)), 3)
+        self.assertEqual(sync.outputs_digest(self.gen), before)
+
+    def test_malformed_stamp_falls_back_without_writes(self):
+        for text in ['{bad json', 'null', '[]']:
+            (self.lane_gen / sync.STAMP).write_text(text)
+            before = sync.outputs_digest(self.gen)
+            self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 3)
+            self.assertEqual(sync.outputs_digest(self.gen), before)
 
 
 class MergeTests(unittest.TestCase):

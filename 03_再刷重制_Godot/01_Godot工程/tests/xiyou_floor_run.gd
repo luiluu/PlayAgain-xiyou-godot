@@ -158,6 +158,7 @@ func _on_battle(map: XMapScene, battle: XBattleScene) -> void:
 	var before := _char_positions(map)
 	var movers := map.events.filter(func(e): return int(e.page.get("moveType", 0)) == 1).size()
 	battle.finished.connect(func(_r):
+		log_lines.append("战斗统计：Map%03d 敌群%d 回合%d 结果%d" % [map.map_id, battle.logic.troop_id, battle.logic.turn, _r])
 		if movers > 0:
 			battles_with_movers += 1
 		if _char_positions(map) != before:

@@ -18,6 +18,8 @@ static func elements_data() -> Dictionary:
 # ---- 公式（转换器已把 JS 翻成 Godot Expression）----
 static func eval_formula(item: Dictionary, a: XBattler, b: XBattler, vars: Array) -> float:
 	var dmg: Dictionary = item.damage
+	if XCustomDamage.supports(item):
+		return XCustomDamage.evaluate(item, a, b)
 	var src = dmg.get("formulaGd")
 	if src == null:
 		push_warning("技能 %d 的公式未翻译：%s" % [int(item.id), dmg.formula])
