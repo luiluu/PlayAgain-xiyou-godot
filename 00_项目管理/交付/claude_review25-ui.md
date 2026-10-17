@@ -1,7 +1,7 @@
 # 交付：claude/review25-ui
 
 - 车道／工作者：审查·界面与系统／悟空（Claude，重制_悟空_10，中等努力）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -26,7 +26,7 @@
 9. 【回查通过】返回与停位：设置子页返回保留光标（O-024）；商店出售后光标钳回列表内；物品页操作后按原对象找回位置。
 10. 【登记已修】（唐僧转来）界面风格补注 O-013、O-020、O-026（新节「界面类优化」）；「未做（目标）」里的存档（dev.014）、存读档页（dev.067）、$.toaster 提示、说明卡隐藏规则移到新节「已实现」；说明卡隐藏一条原写「技能页未做」，核对技能页进入选人即隐藏（mode≠list），改标已实现并给 `xiyou_skill_page` 的 list_to_actor 加断言。界面类 O 项（O-005～O-008、O-010～O-014、O-017、O-018、O-020、O-022、O-024、O-025、O-030～O-032、O-042）的回退开关在代码里都找到了。O-030 已含 20% 审查第 2 条（不校验类型）。
 - 测试覆盖：范围内各功能都有专项（hud、transfer、hangup／hangup_auto／hangup_options、battle_ui／combat 连击、rules 品质、options_basic／misc、party、skill_page、drop_record、item_marks、shop_buy、power／status_power／status_page、wtype、gear_search、item_list、orbs／orb_ui／orb_shop／orb_shop_ui、save_page、drop_dh、mv_animation）；本轮新增 1 个测试、补 3 条断言。
-- 验证：见下方「验证」行（检查.sh）。
+- 验证：合并 main（f765e73）并 `新建工作树.sh --补齐` 后，worktree `检查.sh` 全部通过（本轮无战斗规则改动，未加 --oracle）；新增与改动的专项 xiyou_window_rects 9/9、xiyou_power 103/103、xiyou_status_page 43/43、xiyou_skill_page 21/21。
 - 提交：dbae35b（窗口矩形对照）、3d42be6（战力缓存键）、b9f7445（状态页右键返回）、f0b5407（界面风格登记）、合并 main f765e73。
 - 遗留：①说明卡卖价与实卖差 1（原版行为，要不要登记 O 项由唐僧定）；②出售筛选与设置页 symbol 表的重复写法（建议顺手合并）；③20% 审查遗留的 KMS 商店库存仍未做。
 - 给沙僧（⑤完成度）：界面页面 67% 的依据里「设置页按半页计」合理（灰显 5 行没状态文字）；状态页第 4 页是 O-032 的「套装」代替「修行」，真气未移植，不能算整页复现；状态页右键返回本轮才补，此前「已复现」缺这一项输入。其余抽查页矩形全对，未见需要下调的。
@@ -48,3 +48,6 @@
 - b9f7445 状态页右键返回、返回播取消音
 - f0b5407 界面风格补注 O-013／O-020／O-026，「未做」已实现条目移出；技能页选人隐藏说明卡补断言
 - f765e73 合并 main
+- a1a2381 交付单草稿＋新测试 uid
+
+可合并
