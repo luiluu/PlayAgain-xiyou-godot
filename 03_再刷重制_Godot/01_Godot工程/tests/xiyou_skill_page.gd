@@ -98,7 +98,7 @@ func _run() -> void:
 	page.mode = "list"
 	check("revive_usable", page.usable(XDB.rec("Skills", 499)))
 	page.ok()
-	check("list_to_actor", page.mode == "actor")
+	check("list_to_actor", page.mode == "actor" and not page.help_card.visible)   # v0.10：选人时隐藏说明卡
 	page.actor_pick = 1
 	XSound.system_log.clear()
 	page.ok()
