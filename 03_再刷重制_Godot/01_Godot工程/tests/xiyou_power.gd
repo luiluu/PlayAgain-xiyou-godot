@@ -58,6 +58,17 @@ func _gear(data: Dictionary) -> void:
 	XPower._gear_cache.clear()
 	check("gear_disabled_zero", int(XPower.equipment(XDB.rec("Weapons", 1)).total) == 0)
 	XConfig.set_flag("codexPowerEnabled", true)
+	# 缓存键含武器类型（进度审查 25%）：只改 wtypeId 的同一件武器，武器类型乘区不同，缓存结果要与清缓存重算一致
+	XPower._gear_cache.clear()
+	var wa: Dictionary = XDB.rec("Weapons", 1).duplicate(true)
+	wa.note = str(wa.get("note", "")) + "\n<SkETypeHarmRi%d: 50>" % int(wa.wtypeId)
+	var before := float(XPower.equipment(wa).total)
+	var wb := wa.duplicate(true)
+	wb.wtypeId = int(wa.wtypeId) % 12 + 1
+	var cached := float(XPower.equipment(wb).total)
+	XPower._gear_cache.clear()
+	var fresh := float(XPower.equipment(wb).total)
+	check("gear_cache_key_wtype", before != fresh and cached == fresh, [before, cached, fresh])
 
 
 ## 设置页「战力显示与估算」：状态与正式版 options 参照一致（默认 ON），确定取反、左关右开，切换后装备评分跟着变
