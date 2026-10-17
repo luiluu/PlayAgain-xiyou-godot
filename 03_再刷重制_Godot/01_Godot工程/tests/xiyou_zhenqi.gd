@@ -253,6 +253,7 @@ func _run() -> void:
 				check("boss_enemies_%d" % want.size(), bad.is_empty(), bad.slice(0, 10))
 	_hooks()
 	_old_save()
+	_page_ui()
 	var failed := results.filter(func(r): return not r.passed)
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_zhenqi", "passed": results.size() - failed.size(), "total": results.size(), "failed": failed.map(func(r): return r.name)}))
 	get_tree().quit(0 if failed.is_empty() else 1)
@@ -297,3 +298,23 @@ func _old_save() -> void:
 	var old := XState.from_dict(d)
 	check("old_save_default", _same(XZhenqi.data(old.actor(1)), XZhenqi.default_data()))
 	check("battle_cleared_on_load", XZhenqi.battle.is_empty())
+
+
+## 修行页绘制（标准级，tests/fixtures/zhenqi_page_ui_oracle.json）：标题位置、文字行起点与颜色码、四列位置与宽
+func _page_ui() -> void:
+	var o = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/zhenqi_page_ui_oracle.json"))
+	var s := _fresh()
+	s.set_variable(20, 4)
+	_set_zq(s.actor(1), {"qi": 700})
+	XState.current = s
+	var ops := XStatusPage._guide_ops(s.actor(1))
+	var h: Array = o.head
+	check("page_ui_head", ops[0][1] == h[0] and ops[0][2] == float(h[1]) and ops[0][3] == float(h[2]) and ops[0][4] == float(h[3]) and ops[0][8] == h[6], ops[0])
+	var line := ops.filter(func(op): return float(op[3]) == 252.0)
+	check("page_ui_text_colors", line.size() >= 4 and line[0][2] == 6.0 and line[1][1].begins_with("人界") and line[1][8] == o.colors.C6 and line.any(func(op): return op[8] == o.colors.C3), line)
+	var cols := ops.filter(func(op): return op[1] in ["项目", "难度（含补强）", "自身", "当前"])
+	var ok: bool = cols.size() == 4
+	for j in range(mini(4, cols.size())):
+		var w: Array = o.colsHeader[j]
+		ok = ok and cols[j][2] == float(w[1]) and cols[j][4] == float(w[2]) and cols[j][6] == w[3]
+	check("page_ui_cols", ok, cols)
