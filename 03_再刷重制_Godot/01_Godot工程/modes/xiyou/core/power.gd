@@ -381,7 +381,9 @@ static func magic_growth(item: Dictionary) -> Array:
 static func equipment(item: Dictionary) -> Dictionary:
 	if not enabled() or not _is_gear(item):
 		return _finish(_empty())
-	var sig := JSON.stringify([item.get("params"), item.get("traits"), item.get("note"), item.get("level")])
+	# 缓存键含全部输入：正式版按物品对象缓存，Godot 用一张表，故另加种类与武器／防具类型（_is_weapon、武器类型乘区要用）
+	var sig := JSON.stringify([item.get("kind"), item.get("wtypeId"), item.get("atypeId"), item.get("params"), item.get("traits"),
+		item.get("note"), item.get("level")])
 	if _gear_cache.has(sig):
 		return _gear_cache[sig]
 	var s := _empty()

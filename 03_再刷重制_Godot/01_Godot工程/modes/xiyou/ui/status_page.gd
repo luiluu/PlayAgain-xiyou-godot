@@ -501,13 +501,27 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_up", true) or event.is_action_pressed("ui_down", true):
 		get_viewport().set_input_as_handled()
 		_scroll(-1 if event.is_action("ui_up") else 1)
+	elif event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		cancel()
 	else:
 		super._unhandled_input(event)
 
 
+## 页签窗 processCancel：播取消音后 popScene（键盘取消与右键同一条路）
+func cancel() -> void:
+	XSound.system(2)
+	closed.emit()
+
+
 ## 点选页签（Window_Selectable 触摸选中）
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		# TouchInput.isCancelled：页签窗是唯一的活动窗口，右键与取消键一样返回；战力面板开着时由面板处理
+		if power_panel == null or not is_instance_valid(power_panel):
+			accept_event()
+			cancel()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var p: Vector2 = event.position - SELECT_RECT.position - Vector2(PAD, PAD)
 		if p.y >= 0 and p.y < LH and p.x >= 0:
 			var i := int(p.x / ITEM_STEP)

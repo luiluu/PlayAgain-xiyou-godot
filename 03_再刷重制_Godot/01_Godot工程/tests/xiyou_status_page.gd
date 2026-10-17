@@ -56,6 +56,13 @@ func _run() -> void:
 	XConfig.set_flag("codexPowerEnabled", true)
 	DirAccess.remove_absolute(XSave.dir().path_join("options.json"))
 	DirAccess.remove_absolute(XSave.dir())
+	# 换页与返回播过音效：停掉播放器后按真实时间等 0.5 秒再退出（AGENTS.md 测试规则）
+	for pl in XSound._players:
+		if is_instance_valid(pl):
+			pl.stop()
+			pl.stream = null
+	await get_tree().create_timer(0.5, true, false, true).timeout
+	await frames(3)
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)
@@ -184,6 +191,16 @@ func _scene(o: Dictionary, s: XState) -> void:
 	page.power_panel.close()
 	await frames()
 	check("power_panel_closed", page.power_panel == null)
+	# 右键与取消键都返回（Window_Selectable.processTouch 的 isCancelled → processCancel）
+	var closes := [0]
+	page.closed.connect(func(): closes[0] += 1)
+	var rc := InputEventMouseButton.new()
+	rc.button_index = MOUSE_BUTTON_RIGHT
+	rc.pressed = true
+	page._gui_input(rc)
+	XSound.system_log.clear()
+	_key(page, "ui_cancel")
+	check("right_click_and_cancel_close", closes[0] == 2 and XSound.system_log == [2], [closes, XSound.system_log])
 	page.queue_free()
 	await frames()
 	# 关掉战力：没有战力条与按钮，页窗回到 (0,72,1280,648)
