@@ -38,6 +38,8 @@ ORACLE_DIR = HERE / 'mv_oracle'
 SANDBOX = ORACLE_DIR / '.sandbox'
 STAMP = 'sync_stamp.json'
 TOOLS_REL = HERE.relative_to(ROOT).as_posix()   # 03_再刷重制_Godot/03_转换工具
+# 只读的检查工具不影响产物，不算进转换工具指纹
+READ_ONLY_TOOLS = {'内容覆盖检查.py', '事件指令统计.py', '共性参照验收.py', '验证西游来源.py'}
 GODOT = ROOT / '03_再刷重制_Godot/07_开发环境/godot'
 PROJECT = ROOT / '03_再刷重制_Godot/01_Godot工程'
 # 探针 → 产物（相对 .sandbox）；slice_probe 一次跑 6 个难度
@@ -84,14 +86,15 @@ def file_digest(path: Path) -> bytes:
 
 
 def tools_digest(root: Path = None) -> str:
-    """决定转换产物的本库文件：03_转换工具 下受 Git 跟踪的文件（ui_reference 与 .md 除外），按路径与内容摘要。"""
+    """决定转换产物的本库文件：03_转换工具 下受 Git 跟踪的文件（ui_reference、.md 与只读检查工具除外），按路径与内容摘要。"""
     root = root or ROOT
     tools = TOOLS_REL
     out = subprocess.run(['git', '-C', str(root), '-c', 'core.quotepath=false', 'ls-files', '-z', '--', tools],
                          capture_output=True, text=True).stdout
     h = hashlib.sha256()
     for rel in sorted(x for x in out.split('\0') if x.startswith(tools + '/')):
-        if '/ui_reference/' in rel or rel.endswith('.md') or not (root / rel).is_file():
+        if ('/ui_reference/' in rel or rel.endswith('.md') or Path(rel).name in READ_ONLY_TOOLS
+                or not (root / rel).is_file()):
             continue
         h.update(rel.encode() + b'\0' + file_digest(root / rel))
     return h.hexdigest()

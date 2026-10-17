@@ -96,6 +96,13 @@ class AdditionTests(unittest.TestCase):
             (new / 'dungeon.json').write_text(json.dumps({'cases': [{'id': 1, 'error': 'boom'}]}))
             self.assertIn('dungeon.json', additions.compare_directories(old, new, {'dungeon.json'})['problems'])
 
+    def test_dungeon_cases_by_id(self):
+        old = {'schemaVersion': 1, 'setup': {}, 'cases': [{'id': 'd2.leave', 'steps': [1]}]}
+        new = copy.deepcopy(old); new['cases'].append({'id': 'd9.leave', 'steps': [2]})
+        self.assertEqual(len(additions.compare_file('dungeon.json', old, new)[0]), 1)
+        new['cases'][0]['steps'] = [3]
+        self.assertTrue(additions.compare_file('dungeon.json', old, new)[1])
+
     def test_map_additions_and_changes(self):
         new = {'width': 1, 'height': 1, 'passable': ['f']}
         self.assertFalse(additions.compare_file('maps.json', {'1': {'passable': [1]}}, {'1': {'passable': [1]}, '2': new})[1])
