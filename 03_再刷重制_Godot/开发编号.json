@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.078",
-  "sequence": 78,
-  "next": "dev.079",
-  "nextSequence": 79,
+  "current": "dev.079",
+  "sequence": 79,
+  "next": "dev.080",
+  "nextSequence": 80,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "副本批量第三批：十三层魔晶洞穴、十四层浅析之谷、十五层废墟深处；转换器 v17（悟空）",
+  "currentChange": "副本批量第四批：十七层、十八层（悟空）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
