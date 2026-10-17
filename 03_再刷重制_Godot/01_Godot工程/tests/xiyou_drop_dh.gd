@@ -30,6 +30,7 @@ func _run() -> void:
 	check("oracle_present", oracle.has("A") and oracle.has("B"))
 	if oracle.has("A"):
 		_guard_flash_scopes()
+		_mute_dh_se()
 		_hue_samples()
 		for k in ["A", "B"]:
 			_replay(k, oracle[k])
@@ -39,8 +40,14 @@ func _run() -> void:
 			await _battle_shot()
 	DirAccess.remove_absolute(XConfig.path_override)
 	DirAccess.remove_absolute(XSave.dir())
-	for sp in find_children("*", "AudioStreamPlayer", true, false):
-		(sp as AudioStreamPlayer).stop()
+	# 停掉整棵树里的播放器（含 XSound 挂在根节点下的系统音效）并清 stream，按真实时间等 0.5 秒（AGENTS.md 测试规则；
+	# 原来只停本节点子树，满负载下偶发「resources still in use at exit」）
+	var players: Array = get_tree().root.find_children("*", "AudioStreamPlayer", true, false)
+	players.append_array(XSound._players)
+	for sp in players:
+		if is_instance_valid(sp):
+			(sp as AudioStreamPlayer).stop()
+			(sp as AudioStreamPlayer).stream = null
 	await get_tree().create_timer(0.5, true, false, true).timeout
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
@@ -57,11 +64,7 @@ func _load_oracle() -> Dictionary:
 
 ## 全部带 dh 的物品/武器/防具用到的动画只有 flashScope 0/2（1 目标闪光、3 隐藏目标没有实现）
 func _guard_flash_scopes() -> void:
-	var ids := {}
-	for t in ["Items", "Weapons", "Armors"]:
-		for r in XDB.table(t):
-			if r is Dictionary and r.get("meta", {}).has("dh"):
-				ids[int(str(r.meta.dh))] = true
+	var ids := _dh_anim_ids()
 	var bad := []
 	for id in ids:
 		for tm in XDB.rec("Animations", id).get("timings", []):
@@ -69,6 +72,24 @@ func _guard_flash_scopes() -> void:
 				bad.append([id, tm.flashScope])
 	check("dh_anims_found", ids.size() >= 8, ids.keys())
 	check("dh_flash_scopes_0_2", bad.is_empty(), bad)
+
+
+## 带 dh 的物品/武器/防具用到的动画 ID
+func _dh_anim_ids() -> Dictionary:
+	var ids := {}
+	for t in ["Items", "Weapons", "Armors"]:
+		for r in XDB.table(t):
+			if r is Dictionary and r.get("meta", {}).has("dh"):
+				ids[int(str(r.meta.dh))] = true
+	return ids
+
+
+## 本测试只比画面：开测前去掉 dh 动画时间点里的音效（改的是本进程的 XDB 缓存）。逐帧推进是同步的，几只音效会在同一瞬间开播，
+## 随弹出节点 free() 后只能等音频线程回收；满负载时拖到退出，报「resources still in use」（2026-10-17 外部负载约 30 时连续出现）。
+func _mute_dh_se() -> void:
+	for id in _dh_anim_ids():
+		for tm in XDB.rec("Animations", id).get("timings", []):
+			tm.erase("se")
 
 
 ## 正式版 Bitmap.rotateHue 前后的像素（不透明度 ≥160）：Godot 的原图同一点相同，按同一算法转出来的也相同

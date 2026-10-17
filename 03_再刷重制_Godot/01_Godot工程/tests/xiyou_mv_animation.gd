@@ -28,6 +28,12 @@ func _run() -> void:
 	var f := FileAccess.open("res://tests/fixtures/mv_anim_oracle.json", FileAccess.READ)
 	oracle = JSON.parse_string(f.get_as_text()) if f else {}
 	check("oracle_present", oracle.has("traces") and oracle.traces.size() == 5)
+	# 本测试只比画面与时序：去掉动画时间点里的音效（本进程的 XDB 缓存）。同步逐帧推进会让音效同一瞬间开播，
+	# 战斗场景释放后只能等音频线程回收，满负载时拖到退出报「resources still in use」（同 xiyou_drop_dh）
+	for anim in XDB.table("Animations"):
+		if anim is Dictionary:
+			for tm in anim.get("timings", []):
+				tm.erase("se")
 	XConfig.set_flag("CombatSkillAnimation", true)
 	XState.new_game(3, 1, [8, 9, 10])
 	XEnemy.force_roll = 100.0
@@ -43,8 +49,13 @@ func _run() -> void:
 	b.logic.end_battle()
 	b.queue_free()
 	XConfig.set_battle_speed(4)
-	for sp in find_children("*", "AudioStreamPlayer", true, false):
-		(sp as AudioStreamPlayer).stop()
+	# 停掉整棵树里的播放器（含 XSound 挂在根节点下的系统音效）并清 stream，按真实时间等 0.5 秒（AGENTS.md 测试规则）
+	var players: Array = get_tree().root.find_children("*", "AudioStreamPlayer", true, false)
+	players.append_array(XSound._players)
+	for sp in players:
+		if is_instance_valid(sp):
+			(sp as AudioStreamPlayer).stop()
+			(sp as AudioStreamPlayer).stream = null
 	await get_tree().create_timer(0.5, true, false, true).timeout
 	DirAccess.remove_absolute(XConfig.path_override)
 	DirAccess.remove_absolute(XSave.dir())
