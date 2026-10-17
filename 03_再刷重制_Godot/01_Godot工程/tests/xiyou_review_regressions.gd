@@ -37,6 +37,17 @@ func _run() -> void:
 	page._use()
 	check("menu_revive_removes_death", dead.is_alive() and not dead.is_state_affected(1) and s.item_count(137) == 1)
 	check("menu_revive_heal_rounded", dead.hp == minf(dead.mhp, 1 + floorf(dead.mhp * 0.2 * dead.rec * a.pha)))
+	# 进度审查 25%：CodexEconomy.redirect（installNativeEconomyRuntime 的 TO_SCORE／TO_ITEM，冻结 v0.28 同表）
+	var eco := XState.new_game(3, 1, [8])
+	var score0 := eco.variable(XState.ECO_SCORE_VAR)
+	eco.gain_item(2451, 2)
+	check("eco_to_score", eco.item_count(2451) == 0 and eco.variable(XState.ECO_SCORE_VAR) == score0 + 60)
+	eco.gain_item(2301, 1)
+	var first := eco.item_count(2201)
+	var eco_back := XState.from_dict(JSON.parse_string(JSON.stringify(eco.to_dict())))
+	eco_back.gain_item(2301, 1)
+	check("eco_fraction_saved", eco.item_count(2301) == 0 and first == 1 and eco_back.item_count(2201) == 3)
+	XState.current = s
 	var logic := XBattleLogic.new()
 	logic.elite_roll = 100
 	logic.setup(2, s)
