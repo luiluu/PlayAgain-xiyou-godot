@@ -1,7 +1,7 @@
 {
   "marker": "机器可读事实；叙述性进度见交接板",
   "review": "见交接板「待交叉核查」",
-  "updatedDate": "2026-10-17",
+  "updatedDate": "2026-10-18",
   "libraryRevision": 5,
   "root": "/Users/kyo/Documents/再刷项目资料库",
   "currentStep": 5,
@@ -12,7 +12,7 @@
     "4": "core_systems_partial",
     "5": "floor1_slice_playable_pending_user_playtest",
     "6": "ui_partial_original_layout_calibrated",
-    "7": "templates_installed_no_game_export",
+    "7": "trial_export_in_review_branch_automated_checks_passed_pending_merge_cross_review_and_manual_checks",
     "8": "not_started",
     "9": "not_designed_entry_reserved"
   },
@@ -112,6 +112,6 @@
     "reviewEveryPercent": 10,
     "lastReviewAtPercent": 25,
     "nextReviewAtPercent": 35,
-    "asOf": "dev.068"
+    "asOf": "dev.079"
   }
 }
