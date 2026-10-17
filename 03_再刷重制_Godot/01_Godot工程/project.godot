@@ -27,3 +27,6 @@ textures/default_filters/use_nearest_mipmap_filter=false
 
 [audio]
 driver/enable_input=false
+
+[internationalization]
+locale/include_text_server_data=true
