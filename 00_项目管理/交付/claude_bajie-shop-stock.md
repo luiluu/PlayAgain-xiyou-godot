@@ -32,7 +32,7 @@
 - 89bac06 限购参照：stock 探针补独立装备买卖、二十层后索礼商店两例；正式版商店库存显示读数夹具
 - 86f5385 商店限购：XShopStock 接插件指令与商店页，售完／库存行，O-043；xiyou_shop_stock
 - be181e1 O-043 登记、框架维护约定限购节改已实现、测试可存 Godot 截图
-- （TEST_RESULT 通过数修正与交付单草稿）
+- f75a007 TEST_RESULT 通过数修正、交付单草稿
 - ae97095 共性参照登记：限购新增三例及完整性断言
 - 4cbc5e1 补 xiyou_shop_stock.gd.uid
 - 1908a57 合并 main
