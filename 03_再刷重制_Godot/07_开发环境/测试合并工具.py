@@ -83,6 +83,26 @@ class AdditionTests(unittest.TestCase):
             self.assertFalse(additions.compare_directories(old, new)['onlyAdditions'])
             self.assertIn('events.json', additions.compare_directories(old, new)['problems'])
 
+    def test_new_reference_from_known_probe(self):
+        with tempfile.TemporaryDirectory() as folder:
+            old, new = Path(folder) / 'old', Path(folder) / 'new'
+            old.mkdir(); new.mkdir()
+            (new / 'dungeon.json').write_text(json.dumps({'sourceIdentity': {}, 'cases': [{'id': 1}, {'id': 2}]}))
+            result = additions.compare_directories(old, new, {'dungeon.json'})
+            self.assertTrue(result['onlyAdditions'])
+            self.assertEqual(result['additions']['dungeon.json'][0]['count'], 2)
+            # 不在探针产物登记里的新文件、带错误的新参照仍须人工核查
+            self.assertFalse(additions.compare_directories(old, new)['onlyAdditions'])
+            (new / 'dungeon.json').write_text(json.dumps({'cases': [{'id': 1, 'error': 'boom'}]}))
+            self.assertIn('dungeon.json', additions.compare_directories(old, new, {'dungeon.json'})['problems'])
+
+    def test_dungeon_cases_by_id(self):
+        old = {'schemaVersion': 1, 'setup': {}, 'cases': [{'id': 'd2.leave', 'steps': [1]}]}
+        new = copy.deepcopy(old); new['cases'].append({'id': 'd9.leave', 'steps': [2]})
+        self.assertEqual(len(additions.compare_file('dungeon.json', old, new)[0]), 1)
+        new['cases'][0]['steps'] = [3]
+        self.assertTrue(additions.compare_file('dungeon.json', old, new)[1])
+
     def test_map_additions_and_changes(self):
         new = {'width': 1, 'height': 1, 'passable': ['f']}
         self.assertFalse(additions.compare_file('maps.json', {'1': {'passable': [1]}}, {'1': {'passable': [1]}, '2': new})[1])
@@ -196,6 +216,68 @@ class SyncRegistrationTests(unittest.TestCase):
 
     def test_changed_runtime_never_auto_accepts(self):
         self.assertEqual(self.simulate(accept=True, changed_source=True)[:2], (2, False))
+
+
+class SyncStampTests(unittest.TestCase):
+    """提速提案 P3：同步写产物指纹；合并时按指纹直接用车道产物，不满足就退出码 3 且不动 main。"""
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix='xiyou_stamp_fixture_')
+        self.root = Path(self.tmp.name).resolve() / 'main'
+        self.lane = Path(self.tmp.name).resolve() / 'lane'
+        rel = Path('03_再刷重制_Godot/01_Godot工程/modes/xiyou/generated')
+        self.gen, self.lane_gen = self.root / rel, self.lane / rel
+        for gen, extra in [(self.gen, []), (self.lane_gen, [{'id': 'b', 'trace': []}])]:
+            (gen / 'oracle').mkdir(parents=True); (gen / 'db').mkdir(); (gen / 'maps').mkdir()
+            (gen / 'manifest.json').write_text(json.dumps({'releaseVersion': 'v0.28', 'inputs': {'a': '1'}, 'runtimeInputs': {'r': '1'}}))
+            (gen / 'slice.json').write_text('{}')
+            (gen / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'a', 'trace': []}] + extra}))
+        docs = self.root / '00_项目管理'; docs.mkdir()
+        (docs / '来源登记.json').write_text(json.dumps({'sources': [{'id': 'legacy_xiyou_mod_kyo'}]}))
+        (docs / '当前状态.json').write_text(json.dumps({'remakeSource': {}}))
+        self.app = Path(self.tmp.name) / 'app'; self.app.mkdir()
+        (self.app / 'package.json').write_text('{"releaseVersion":"v0.28"}')
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def sync_main(self, *extra, tools=lambda root=None: 'same'):
+        def external(args, **kwargs):
+            if args[0] == 'git':
+                return subprocess.CompletedProcess(args, 0, '', '')
+            if args[0] == 'cp':
+                return subprocess.CompletedProcess(args, 1, '', '')
+            return subprocess.CompletedProcess(args, 0, '{"issues":[]}\n', '')
+        argv = ['sync', '--app', str(self.app), '--generated', str(self.gen), '--accept-additions', '--no-import', *extra]
+        with mock.patch.object(sync, 'ROOT', self.root), mock.patch.object(sync, 'run', lambda *a: None), \
+             mock.patch.object(sync, 'PROBES', []), mock.patch.object(sync, 'tools_digest', tools), mock.patch.object(sync.subprocess, 'run', external), \
+             mock.patch.object(sys, 'argv', argv), mock.patch.dict(os.environ), contextlib.redirect_stdout(io.StringIO()):
+            return sync.main()
+
+    def lane_stamp(self, tools='same'):
+        stamp = {'toolsDigest': tools, 'outputsDigest': sync.outputs_digest(self.lane_gen)}
+        (self.lane_gen / sync.STAMP).write_text(json.dumps(stamp))
+
+    def test_full_sync_writes_stamp(self):
+        self.assertEqual(self.sync_main(), 0)
+        stamp = json.loads((self.gen / sync.STAMP).read_text())
+        self.assertEqual(stamp['outputsDigest'], sync.outputs_digest(self.gen))
+
+    def test_missing_or_mismatched_stamp_leaves_main_untouched(self):
+        before = (self.gen / 'oracle/events.json').read_bytes()
+        self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 3)        # 没有指纹
+        self.lane_stamp(tools='other')
+        self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 3)        # 转换工具不同
+        self.lane_stamp()
+        (self.lane_gen / 'slice.json').write_text('{"x":1}')
+        self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 3)        # 同步后产物被改
+        self.assertEqual((self.gen / 'oracle/events.json').read_bytes(), before)
+
+    def test_matching_stamp_clones_and_registers(self):
+        self.lane_stamp()
+        self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 0)
+        self.assertEqual(sync.outputs_digest(self.gen), sync.outputs_digest(self.lane_gen))
+        state = json.loads((self.root / '00_项目管理/当前状态.json').read_text())
+        self.assertIn('fingerprint', state['remakeSource'])
 
 
 class MergeTests(unittest.TestCase):

@@ -89,6 +89,9 @@ if python3 "$ENV_DIR/测试工作树清理.py" >/dev/null; then ok "工作树清
 if python3 "$ENV_DIR/测试共性验收.py"; then ok "共性参照对照工具保护"; else bad "共性验收工具回归失败"; fi
 if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/共性参照验收.py"; then ok "共性参照完整性（尚非Godot实现验收）"; else bad "共性参照缺失或异常"; fi
 if python3 "$ENV_DIR/测试合并工具.py"; then ok "新增用例、进度账与合并保护"; else bad "合并工具回归失败"; fi
+if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi
+# 内容覆盖（沙僧协助计划第 8 项）：缺素材／无效引用／未翻译不得出现基线外的新问题；修好或接受后 --update-baseline
+if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/内容覆盖检查.py" --check; then ok "内容覆盖（无基线外新问题）"; else bad "内容覆盖出现新问题，见 04_验证/本地结果/内容覆盖/报告.json"; fi
 
 if [[ ${1:-} == --oracle ]]; then
   print "== MV 参照引擎"
