@@ -3,8 +3,8 @@
 // 用冻结 v0.28 的正式引擎，从同一内存新游戏起按「剧本」逐步运行副本入口、副本内事件与公共事件，记录每一步的输出与状态变化，
 // 供 Godot 的 tests/xiyou_dungeon 用同样的剧本对照（XDungeon、MVInterpreter）。
 // - 剧本步骤：event（当前地图上的事件，按正式出现条件取页，暂时消除的为 −1；picks 依次回答选项，用完取最后一项；battle 为 win/lose）、
-//   common（公共事件）、item（把物品数量设为 n）、hang（挂机开关 enabled 与运行中 active）、roundtrip（JsonEx 存档往返）。
-// - 每例：setupNewGame、setup 里的开关 sw 与变量 vars、队伍 1/8/10/9、难度与难度开关（Map001 选难度时开的开关与 DCultyL 标记）、副本初始化 CE822，
+//   common（公共事件）、item（把物品数量设为 n）、hang（挂机开关 enabled 与运行中 active）、roundtrip（JsonEx 存档往返）、warp（瞬移）、face（玩家朝向 d）。
+// - 每例：setupNewGame、setup 里的开关 sw 与变量 vars、队伍 1/8/10/9（setup.actors 再追加，含艾坤 3 时 after 多记坤坤任务 kun）、难度与难度开关（Map001 选难度时开的开关与 DCultyL 标记）、副本初始化 CE822，
 //   随机数固定（Math.random＝rand，默认 0.5），宝珠随机流种子固定 12345；场所移动立即执行；战斗胜利走 BattleManager.endBattle(0)。
 // - 不加载配置或存档，存档只在内存往返。输出只写 .sandbox/dungeon.json。
 // 用法：node dungeon_probe.cjs [剧本 ID 前缀…]
@@ -47,6 +47,17 @@ const DUNGEONS = {
   d10: {start: {map: 17, x: 21, y: 36}, door: 2, tierBase: 1597, rune: 64, escape: 14,
     clear: [2, 9, 10, 11, 13, 6, 7, 8].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 8}]),
     boss: {sw: 890, event: 12, item: 912}},
+  // 八层哀嚎迷窟（首领坤坤）：六只精英（变量 42）后出两首领开石栏；十一层实验洞窟：精英五只（变量 44），首领连打五场，出口不重置（原版）；
+  // 十二层北风高原：精英六只（变量 47）后三首领（变量 48），随机变量 49 决定隐藏首领；逃离要朝下（face）
+  d8: {start: {map: 12, x: 8, y: 8}, door: 17, tierBase: 1589, rune: 64, escape: 18,
+    clear: [12, 13, 14, 15, 16, 17, 8, 9, 11].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 11}]),
+    boss: {sw: 889, event: 19, item: 912}},
+  d11: {start: {map: 20, x: 47, y: 5}, door: 5, tierBase: 1601, rune: 110, escape: 6, escapeThen: [{do: 'event', event: 5, picks: [1]}],
+    clear: [7, 8, 9, 10, 11, 5].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 5}]),
+    boss: {sw: 891, event: 12, item: 913}},
+  d12: {start: {map: 65, x: 23, y: 1}, door: 1, tierBase: 1605, rune: 110, escape: 19, escapeFace: 2,
+    clear: [3, 4, 5, 6, 7, 9, 10, 11, 12, 15].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 15}]),
+    boss: {sw: 892, event: 22, item: 914}},
 };
 const D2 = DUNGEONS.d2.start;
 const enter = (picks, rune = 1, door = 7, item = 24) => [{do: 'item', id: item, n: rune}, {do: 'event', event: door, picks}];
@@ -55,7 +66,8 @@ function standard(id) {
   const d = DUNGEONS[id], go = (picks, rune) => enter(picks, rune, d.door, d.rune || 24);
   return [
     {id: id + '.no-rune', dungeon: id, setup: {}, steps: go([0], 0)},
-    {id: id + '.escape', dungeon: id, setup: {difficulty: 5}, steps: [...go([0]), {do: 'event', event: d.escape, picks: [0]}]},
+    {id: id + '.escape', dungeon: id, setup: {difficulty: 5}, steps: [...go([0]), ...(d.escapeFace ? [{do: 'face', d: d.escapeFace}] : []),
+      {do: 'event', event: d.escape, picks: [0]}, ...(d.escapeThen || [])]},
     {id: id + '.clear-normal', dungeon: id, setup: {}, steps: [...go([0]), ...d.clear]},
     {id: id + '.clear-king', dungeon: id, setup: {tier: 4, rand: 0.05}, steps: [...go([0, 3]), ...d.clear]},
     {id: id + '.bribe', dungeon: id, setup: {sw: [d.boss.sw]}, steps: [...go([0]), {do: 'item', id: d.boss.item || 913, n: 1}, {do: 'event', event: d.boss.event, picks: [0]}]},
@@ -93,7 +105,20 @@ const SCENARIOS = [
   {id: 'd2.boss-lose', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'lose'}]},
   {id: 'd2.boss-roundtrip', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'win'}, {do: 'roundtrip'},
     {do: 'event', event: 1}]},
-  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10'].flatMap(standard),
+  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12'].flatMap(standard),
+  // 十二层隐藏首领（随机变量 49 取到 5）；十二层逃离朝上不问
+  {id: 'd12.hidden-boss', dungeon: 'd12', setup: {rand: 0.9}, steps: [...enter([0], 1, 1, 110),
+    ...[3, 4, 5, 6, 7, 9, 10, 11, 12, 17].map(e => ({do: 'event', event: e, battle: 'win'}))]},
+  {id: 'd12.escape-facing-up', dungeon: 'd12', setup: {}, steps: [...enter([0], 1, 1, 110), {do: 'face', d: 8}, {do: 'event', event: 19, picks: [0]}]},
+  // 十一层不经副本走入口 10 进实验洞窟，再从出口 14 回
+  {id: 'd11.walk-in', dungeon: 'd11', setup: {}, steps: [{do: 'warp', map: 20, x: 10, y: 14}, {do: 'event', event: 10}, {do: 'event', event: 14}]},
+  // 坤坤任务：艾坤（角色 3）在队时，副本里的黄昏的信徒（八层 Map190、十一层 Map021、十二层 Map191）各领一次，技能逐级替换；不在队只说话
+  {id: 'kun.d8-believer', dungeon: 'd8', setup: {actors: [3]}, steps: [...enter([0], 1, 17, 64), {do: 'event', event: 20},
+    {do: 'event', event: 1}, {do: 'event', event: 1}]},
+  {id: 'kun.three-believers', dungeon: 'd11', setup: {actors: [3]}, steps: [{do: 'warp', map: 21, x: 4, y: 1}, {do: 'event', event: 13},
+    {do: 'warp', map: 190, x: 5, y: 9}, {do: 'event', event: 1}, {do: 'warp', map: 191, x: 3, y: 5}, {do: 'event', event: 1}, {do: 'roundtrip'},
+    {do: 'event', event: 1}]},
+  {id: 'kun.no-kun', dungeon: 'd11', setup: {}, steps: [{do: 'warp', map: 21, x: 4, y: 1}, {do: 'event', event: 13}]},
 ].map(sc => Object.assign({dungeon: 'd2'}, sc));
 
 // ---- 引擎占位（同 event_probe） ----
@@ -112,7 +137,9 @@ const sceneStub = new Proxy(Object.create(w.Scene_Map.prototype), {
   },
   set(o, k, v) { o[k] = v; return true; }
 });
-let trace = null, battleResult = 'win', picks = [], runeItem = 24;
+let trace = null, battleResult = 'win', picks = [], runeItem = 24, trackKun = false;
+// 坤坤任务：艾坤的「黄昏的信徒」2765 → +1～+12（4397～4408）
+const KUN_SKILLS = [2765].concat(Array.from({length: 12}, (_, i) => 4397 + i));
 const rec = e => trace && trace.push(e);
 if (w.$) w.$.toaster = o => rec({t: 'toast', text: String(o && (o.message || o.title) || '')});
 function sceneCall(cls) {
@@ -178,7 +205,8 @@ function focus() {
   for (const v of FOCUS_VARS) vars[v] = w.$gameVariables.value(v);
   for (const s of FOCUS_SW) sw[s] = !!w.$gameSwitches.value(s);
   return {difficulty: w.$gameSystem.difficultyId(), map: w.$gameMap.mapId(), x: p.x, y: p.y, hangEnabled: !!w.$gameParty.hangUpSwitch(),
-    hangActive: !!(hu && hu.state), rune: w.$gameParty.numItems(w.$dataItems[runeItem]), vars, switches: sw};
+    hangActive: !!(hu && hu.state), rune: w.$gameParty.numItems(w.$dataItems[runeItem]), vars, switches: sw,
+    ...(trackKun ? {kun: {found: w.$gameVariables.value(346), skills: KUN_SKILLS.filter(id => w.$gameActors.actor(3).isLearnedSkill(id))}} : {})};
 }
 
 // ---- 运行 ----
@@ -222,7 +250,8 @@ function setupCase(sc) {
   w.eval('ConfigManager.applyData({}); DataManager.setupNewGame(); $gamePlayer.clearTransferInfo(); Graphics.frameCount = 0;');
   w.Math.random = () => rand;
   w.$gameSystem._codexOrbRng = {seed: ORB_SEED, n: {}};
-  for (const id of PARTY) w.$gameParty.addActor(id);
+  for (const id of PARTY.concat(st.actors || [])) w.$gameParty.addActor(id);
+  trackKun = (st.actors || []).includes(3);
   w.$gameSystem._difficultyId = diff;
   w.$gameSwitches.setValue(DIFF_SWITCH[diff], true);
   for (let i = 1; i <= 8; i++) w.$gameParty['DCultyL' + i] = i === diff;
@@ -270,6 +299,8 @@ function runStep(step) {
       w.DataManager.loadMapData(mapId);
       w.$gameMap.setup(mapId);
       w.$gamePlayer.refresh();
+    } else if (step.do === 'face') {
+      w.$gamePlayer.setDirection(step.d);
     } else if (step.do === 'warp') {
       warp(step);
     }
