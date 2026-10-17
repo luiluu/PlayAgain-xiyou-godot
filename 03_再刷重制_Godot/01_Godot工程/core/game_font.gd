@@ -9,9 +9,12 @@ static func current() -> Font:
 	if _font == null:
 		var fallback := SystemFont.new()
 		fallback.font_names = PackedStringArray(["PingFang SC", "Microsoft YaHei UI", "sans-serif"])
-		if FileAccess.file_exists(PATH):
-			var font := FontFile.new()
-			if font.load_dynamic_font(PATH) == OK:
+		# 导出后字体会重映射到导入资源，FileAccess／load_dynamic_font 读原始 TTF 会漏掉它。
+		if ResourceLoader.exists(PATH):
+			var font := load(PATH) as FontFile
+			if font != null:
+				# 与原 load_dynamic_font 的度量一致，避免导入器默认的子像素取整累积挤换行。
+				font.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
 				font.fallbacks = [fallback]
 				_font = font
 		if _font == null:

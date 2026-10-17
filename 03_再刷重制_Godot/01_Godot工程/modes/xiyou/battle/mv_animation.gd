@@ -190,9 +190,10 @@ func finish() -> void:
 	var parent := get_parent()
 	if parent:
 		# AudioManager.playSe 不随动画移除而停：还在响的音效交给父节点播完
-		if se_player.playing:
-			se_player.reparent(parent)
-			se_player.finished.connect(se_player.queue_free)
+		for player in get_children().filter(func(n): return n is AudioStreamPlayer):
+			if player.playing:
+				player.reparent(parent)
+				player.finished.connect(player.queue_free)
 		parent.remove_child(self)
 	queue_free()
 
@@ -257,6 +258,11 @@ func _timing(t: Dictionary) -> void:
 	if se is Dictionary and str(se.get("name", "")) != "":
 		var p := XDB.audio_path("se", str(se.name))
 		if p != "":
+			# AudioManager.playSe 为每次请求新建 buffer；同动画的后一个音效不能截断前一个。
+			if se_player.playing:
+				se_player = AudioStreamPlayer.new()
+				XAudio.bind(se_player, "SE")
+				add_child(se_player)
 			se_player.stream = load(p)
 			se_player.volume_db = linear_to_db(float(se.get("volume", 90)) / 100.0)
 			se_player.pitch_scale = float(se.get("pitch", 100)) / 100.0

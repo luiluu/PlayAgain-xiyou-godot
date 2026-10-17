@@ -18,6 +18,7 @@ KEYS = {
     'battle_messages.json': {'cases': ('id',)},
     'challenge_passives.json': {'cases': ('id',)},
     'zhenqi.json': {'cases': ('id',)},
+    'custom_damage.json': {'cases': ('id',)},
     'troop_events.json': {'cases': ('troop', 'paid')},
     'smart_ai.json': {'cases': ('troop', 'scene', 'actor', 'state'),
                       'damage': ('troop', 'actor', 'skill', 'target')},
