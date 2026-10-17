@@ -12,6 +12,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	var font := XUI.font()
+	check("authored_font", font is FontFile and ResourceLoader.exists(GameFont.PATH), font.get_font_name())
 	var text := "中文自动换行验证：天地玄黄宇宙洪荒。"
 	check("chinese_glyphs", font.has_char("中".unicode_at(0)) and font.has_char("文".unicode_at(0)))
 	var paragraph := TextParagraph.new()
@@ -24,11 +25,18 @@ func _run() -> void:
 	var se := XDB.audio_path("se", str(XDB.system().sounds[0].name))
 	check("audio_resource", se != "" and load(se) is AudioStream)
 	GameApp.current_mode = "xiyou"
+	var isolated := OS.get_user_data_dir().begins_with(OS.get_environment("HOME")) and (OS.get_environment("HOME").get_file().begins_with("xiyou_test_home_") or OS.get_environment("HOME").get_file().begins_with("xiyou_export_home_"))
+	# 只允许验证运行器新建的 HOME，绝不向日常目录写入。
+	check("isolated_home", isolated)
+	if not isolated:
+		print("TEST_RESULT=" + JSON.stringify({"passed": results.size() - 1, "total": results.size()}))
+		get_tree().quit(1)
+		return
 	XState.new_game(3, 1, [8])
 	check("save_namespace", XSave.dir() == "user://modes/xiyou")
 	check("save_write", XSave.save(1))
 	XState.current.gold = 4321
-	check("save_reload", XSave.load(1) and XState.current.gold != 4321)
+	check("save_reload", XSave.load_slot(1) and XState.current.gold != 4321)
 	XSave.remove(1)
 	var input := LineEdit.new()
 	input.position = Vector2(80, 220)
@@ -62,7 +70,9 @@ func _run() -> void:
 				get_viewport().get_texture().get_image().save_png(arg.substr(6).path_join("Mac导出_字体与输入.png"))
 	print("MAC_EXPORT_INFO=" + JSON.stringify({"editor": OS.has_feature("editor"), "display": DisplayServer.get_name(),
 		"ime_supported": DisplayServer.has_feature(DisplayServer.FEATURE_IME), "saveDirectory": OS.get_user_data_dir(),
+		"font": font.get_font_name(), "authoredFont": font is FontFile,
 		"chineseLines": paragraph.get_line_count(), "fullscreen": fullscreen, "version": Engine.get_version_info().string}))
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
+	await get_tree().process_frame
 	get_tree().quit(0 if passed == results.size() else 1)
