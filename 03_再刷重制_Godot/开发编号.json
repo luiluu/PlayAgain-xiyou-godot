@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.070",
-  "sequence": 70,
-  "next": "dev.071",
-  "nextSequence": 71,
+  "current": "dev.071",
+  "sequence": 71,
+  "next": "dev.072",
+  "nextSequence": 72,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "战斗技能动画按 Sprite_Animation 逐帧：色相、目标闪光、屏幕闪光、隐藏、移除时机（八戒）",
+  "currentChange": "副本系统 XDungeon：一、二、四、六、七层副本（悟空）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
