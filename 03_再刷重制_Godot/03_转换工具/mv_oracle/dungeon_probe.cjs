@@ -81,6 +81,10 @@ const DUNGEONS = {
   d19: {start: {map: 47, x: 14, y: 14}, door: 11, tierBase: 1633, rune: 171, escape: 32, escapeFace: 2,
     clear: [23, 24, 25, 26, 27, 28, 18, 19, 29, 30, 15].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 15}]),
     boss: {sw: 899, event: 34, item: 912}},
+  // 二十层食人魔的晚宴（终极符文 397）：四首领（变量 175）到 4 后出首领「厄运之王」高尔戈；主席收活力水 912
+  d20: {start: {map: 116, x: 17, y: 2}, door: 2, tierBase: 1637, rune: 397, escape: 5,
+    clear: [1, 2, 3, 4, 6].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 6}]),
+    boss: {sw: 900, event: 7, item: 912}},
 };
 const D2 = DUNGEONS.d2.start;
 const enter = (picks, rune = 1, door = 7, item = 24) => [{do: 'item', id: item, n: rune}, {do: 'event', event: door, picks}];
@@ -128,9 +132,12 @@ const SCENARIOS = [
   {id: 'd2.boss-lose', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'lose'}]},
   {id: 'd2.boss-roundtrip', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'win'}, {do: 'roundtrip'},
     {do: 'event', event: 1}]},
-  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd17', 'd18', 'd19'].flatMap(standard),
+  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd17', 'd18', 'd19', 'd20'].flatMap(standard),
   {id: 'd17.hidden-boss', dungeon: 'd17', setup: {rand: 0.9}, steps: [...enter([0], 1, 2, 171),
     ...[6, 7, 8, 9, 10, 11, 12, 13, 2, 3, 4, 5, 14].map(e => ({do: 'event', event: e, battle: 'win'}))]},
+  // 二十层宝箱额外奖励（入口随机变量 155 到 97 以上，157 选三件之一）
+  {id: 'd20.rare-drop', dungeon: 'd20', setup: {rand: 0.99}, steps: [...enter([0], 1, 2, 397),
+    ...[1, 2, 3, 4, 6].map(e => ({do: 'event', event: e, battle: 'win'})), {do: 'event', event: 6}]},
   {id: 'kun.d17-believer', dungeon: 'd17', setup: {actors: [3]}, steps: [{do: 'warp', map: 193, x: 10, y: 13}, {do: 'event', event: 2}, {do: 'event', event: 1}]},
   // 十二层隐藏首领（随机变量 49 取到 5）；十二层逃离朝上不问
   {id: 'd12.hidden-boss', dungeon: 'd12', setup: {rand: 0.9}, steps: [...enter([0], 1, 1, 110),
