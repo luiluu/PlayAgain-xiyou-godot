@@ -9,10 +9,18 @@
 5. 运行 验证西游来源.py；
 6. 测量全部不变且核对 0 问题：写来源清单，更新 来源登记.json 与 当前状态.json（--no-register 或在 worktree 里运行时不写），退出码 0；
    有测量变化：不改登记，退出码 2，报告写在备份目录 同步报告.json，交给人看（变化可能就是正式版的规则改动，要跟进）。
+7. 同步正常结束（核对 0 问题、测量不变或只增）时在 generated/ 写产物指纹 sync_stamp.json：本库决定产物的转换工具文件摘要
+   （03_转换工具 下受 Git 跟踪的文件，ui_reference 与 .md 除外）与全部产物摘要（不含 Godot 的 .import）。
+8. 最后 godot --import（--no-import 跳过），免得紧接着跑的专项测试读不到新图。
+
+--from-worktree <车道工作树>（总装合并时用，提速提案 P3）：车道在自己的工作树跑过同步、且合并后 main 的转换工具文件与车道
+同步时完全相同，则不再重跑转换器与探针，直接克隆车道的产物，核对产物摘要后照常比较测量、核对来源、登记。
+任一条件不满足退出码 3（未改动 main 的产物），调用方改跑完整同步。
 只读正式应用；不读写任何玩家存档。
 """
 import argparse
 import datetime as dt
+import hashlib
 import json
 import os
 import shutil
@@ -28,6 +36,10 @@ from oracle_additions import compare_directories, payload, source_preserved  # n
 
 ORACLE_DIR = HERE / 'mv_oracle'
 SANDBOX = ORACLE_DIR / '.sandbox'
+STAMP = 'sync_stamp.json'
+TOOLS_REL = HERE.relative_to(ROOT).as_posix()   # 03_再刷重制_Godot/03_转换工具
+GODOT = ROOT / '03_再刷重制_Godot/07_开发环境/godot'
+PROJECT = ROOT / '03_再刷重制_Godot/01_Godot工程'
 # 探针 → 产物（相对 .sandbox）；slice_probe 一次跑 6 个难度
 PROBES = [
     (['slice_probe.cjs', '1', '2', '3', '4', '5', '6'], ['slice/slice_d%d.json' % d for d in range(1, 7)]),
@@ -57,6 +69,69 @@ PROBES = [
 
 def strip(x):
     return payload(x)
+
+
+def probe_outputs():
+    return {Path(rel).name for _, outs in PROBES for rel in outs}
+
+
+def file_digest(path: Path) -> bytes:
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for block in iter(lambda: f.read(1 << 20), b''):
+            h.update(block)
+    return h.digest()
+
+
+def tools_digest(root: Path = None) -> str:
+    """决定转换产物的本库文件：03_转换工具 下受 Git 跟踪的文件（ui_reference 与 .md 除外），按路径与内容摘要。"""
+    root = root or ROOT
+    tools = TOOLS_REL
+    out = subprocess.run(['git', '-C', str(root), '-c', 'core.quotepath=false', 'ls-files', '-z', '--', tools],
+                         capture_output=True, text=True).stdout
+    h = hashlib.sha256()
+    for rel in sorted(x for x in out.split('\0') if x.startswith(tools + '/')):
+        if '/ui_reference/' in rel or rel.endswith('.md') or not (root / rel).is_file():
+            continue
+        h.update(rel.encode() + b'\0' + file_digest(root / rel))
+    return h.hexdigest()
+
+
+def outputs_digest(gen: Path) -> str:
+    """全部转换产物（不含 Godot 导入时写的 .import 与本指纹文件）按相对路径与内容摘要。"""
+    h = hashlib.sha256()
+    for p in sorted(gen.rglob('*')):
+        if p.is_file() and p.name != STAMP and p.suffix != '.import':
+            h.update(p.relative_to(gen).as_posix().encode() + b'\0' + file_digest(p))
+    return h.hexdigest()
+
+
+def clone_from_worktree(worktree: Path, gen: Path):
+    """车道产物可用时克隆到本工作区 generated；不可用返回原因（此时不动本工作区）。"""
+    lane_gen = worktree / gen.relative_to(ROOT.resolve())
+    stamp_file = lane_gen / STAMP
+    if not stamp_file.is_file():
+        return None, '车道产物没有同步指纹（车道未用新版同步脚本跑过同步）'
+    stamp = json.loads(stamp_file.read_text())
+    if stamp.get('toolsDigest') != tools_digest():
+        return None, '合并后 main 的转换工具文件与车道同步时不同'
+    if stamp.get('toolsDigest') != tools_digest(worktree):
+        return None, '车道同步后又改了转换工具文件'
+    if outputs_digest(lane_gen) != stamp.get('outputsDigest'):
+        return None, '车道产物在同步后被改动'
+    return (lane_gen, stamp), None
+
+
+def write_stamp(gen: Path, report: dict) -> None:
+    stamp = {'toolsDigest': tools_digest(), 'outputsDigest': outputs_digest(gen), 'releaseVersion': report.get('to'),
+             'result': report.get('result'), 'time': dt.datetime.now().isoformat(timespec='seconds'), 'backup': report.get('backup')}
+    (gen / STAMP).write_text(json.dumps(stamp, ensure_ascii=False, indent=2) + '\n')
+
+
+def godot_import(log=None) -> None:
+    if GODOT.exists() and PROJECT.is_dir():
+        subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--import'],
+                       stdout=log or subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
 
 def diff_paths(a, b, path='', out=None, limit=20):
@@ -113,6 +188,8 @@ def main() -> int:
     ap.add_argument('--no-register', action='store_true', help='只同步与比较，不改来源登记/当前状态')
     ap.add_argument('--accept-additions', action='store_true',
                     help='同源且旧用例逐条相同、只增已知结构新用例时自动接受；不接受规则变化/删除/新用例错误')
+    ap.add_argument('--from-worktree', type=Path, help='合并时用车道已同步的产物（按指纹核对），不满足条件退出码 3')
+    ap.add_argument('--no-import', action='store_true', help='结束时不跑 godot --import')
     a = ap.parse_args()
     # 多会话并行（AGENTS.md）：来源登记／当前状态只由总装在主工作区改，worktree 里自动不登记
     git = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'],
@@ -121,6 +198,12 @@ def main() -> int:
         a.no_register = True
         print('在 worktree 里运行：只同步与比较，不写来源登记／当前状态（由总装在主工作区登记）')
     app, gen = a.app.resolve(), a.generated.resolve()
+    lane = None
+    if a.from_worktree:
+        lane, why = clone_from_worktree(a.from_worktree.resolve(), gen)
+        if lane is None:
+            print('不用车道产物：' + why + '；请改跑完整同步')
+            return 3
     old_manifest = json.loads((gen / 'manifest.json').read_text())
     old_version = old_manifest.get('releaseVersion')
     new_version = json.loads((app / 'package.json').read_text()).get('releaseVersion')
@@ -138,11 +221,23 @@ def main() -> int:
     os.environ['XIYOU_APP'] = str(app)
     os.environ['XIYOU_GENERATED'] = str(gen)
     with open(backup / '同步.log', 'w') as log:
-        run([sys.executable, str(HERE / 'xiyou_export.py'), '--app', str(app), '--out', str(gen)], HERE, log)
-        for cmd, outs in PROBES:
-            run(['node'] + cmd, ORACLE_DIR, log)
-            for rel in outs:
-                shutil.copy2(SANDBOX / rel, gen / 'oracle' / Path(rel).name)
+        if lane is not None:
+            lane_gen, stamp = lane
+            log.write('用车道产物 %s（指纹 %s，%s）\n' % (lane_gen, stamp.get('outputsDigest'), stamp.get('time')))
+            shutil.rmtree(gen)
+            # APFS 克隆（cp -c）不占空间；不可用时退回普通复制
+            if subprocess.run(['cp', '-c', '-R', str(lane_gen), str(gen)]).returncode or not (gen / 'manifest.json').exists():
+                shutil.rmtree(gen, ignore_errors=True)
+                shutil.copytree(lane_gen, gen)
+            if outputs_digest(gen) != stamp.get('outputsDigest'):
+                raise RuntimeError('克隆后的产物与车道指纹不一致')
+            report['fromWorktree'] = str(a.from_worktree)
+        else:
+            run([sys.executable, str(HERE / 'xiyou_export.py'), '--app', str(app), '--out', str(gen)], HERE, log)
+            for cmd, outs in PROBES:
+                run(['node'] + cmd, ORACLE_DIR, log)
+                for rel in outs:
+                    shutil.copy2(SANDBOX / rel, gen / 'oracle' / Path(rel).name)
     new_manifest = json.loads((gen / 'manifest.json').read_text())
     # 改动的来源文件
     report['changedInputs'] = sorted(k for k in set(old_manifest.get('inputs', {})) | set(new_manifest.get('inputs', {}))
@@ -176,7 +271,7 @@ def main() -> int:
         if d:
             measure[f.name] = d
     report['measurementChanges'] = measure
-    report['additionCheck'] = compare_directories(backup / 'oracle', gen / 'oracle')
+    report['additionCheck'] = compare_directories(backup / 'oracle', gen / 'oracle', probe_outputs())
     report['sameExistingSource'] = source_preserved(old_manifest, new_manifest)
     v = subprocess.run([sys.executable, str(HERE / '验证西游来源.py'), '--app', str(app), '--generated', str(gen)], capture_output=True, text=True)
     report['verify'] = (v.stdout.strip().splitlines() or [''])[-1]
@@ -197,6 +292,14 @@ def main() -> int:
     (backup / '同步报告.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
     if ok and not a.no_register:
         register(new_version, fingerprint, report)
+    usable = report['verifyOk'] and report['sameExistingSource'] and (not measure or report['additionCheck']['onlyAdditions'])
+    if usable and lane is None:
+        write_stamp(gen, report)
+    elif not usable:
+        (gen / STAMP).unlink(missing_ok=True)
+    if not a.no_import:
+        with open(backup / '同步.log', 'a') as log:
+            godot_import(log)
     print(json.dumps({k: report[k] for k in ['from', 'to', 'result', 'changedInputs', 'changedMaps', 'measurementChanges', 'verify', 'backup']},
                      ensure_ascii=False))
     return 0 if ok else 2

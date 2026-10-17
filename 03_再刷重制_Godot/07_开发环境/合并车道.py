@@ -179,8 +179,16 @@ def prepare(root, state, state_file, executor):
         save(state_file, state)
     if state['phase'] == 'merged':
         if state['refresh']:
-            run(root, [sys.executable, TOOLS / '同步正式西游.py', '--accept-additions'])
-            run(root, [ENV / 'godot', '--headless', '--path', PROJECT, '--import'])
+            # 提速提案 P3：车道已在同一套转换工具上同步过时直接用其产物（按指纹核对）；退出码 3＝条件不满足，改跑完整同步。
+            # 同步脚本结束时自己跑 godot --import。
+            sync = [sys.executable, TOOLS / '同步正式西游.py', '--accept-additions']
+            cmd = list(map(str, sync + ['--from-worktree', state['worktree']]))
+            print('== ' + ' '.join(cmd), flush=True)
+            rc = subprocess.run(cmd, cwd=root).returncode
+            if rc == 3:
+                run(root, sync)
+            elif rc:
+                raise RuntimeError('同步未通过（退出码 %d），保留现场' % rc)
         state['phase'] = 'synced'
         save(state_file, state)
     if state['phase'] == 'synced':

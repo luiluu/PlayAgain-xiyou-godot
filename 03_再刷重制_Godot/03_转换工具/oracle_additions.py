@@ -106,11 +106,33 @@ def compare_file(name, old, new):
     return additions, problems
 
 
-def compare_directories(old_dir: Path, new_dir: Path):
+def case_count(data):
+    """整份新参照的用例数：取顶层各列表长度之和；没有列表时按 1 份计。"""
+    data = payload(data)
+    if isinstance(data, list):
+        return len(data)
+    if isinstance(data, dict):
+        return sum(len(v) for v in data.values() if isinstance(v, list)) or 1
+    return 1
+
+
+def compare_directories(old_dir: Path, new_dir: Path, new_references=frozenset()):
+    """new_references：同步脚本 PROBES 登记的产物文件名。本批新增探针第一次生成的整份参照只要没有错误就算新增；
+    不在登记里的新文件、任何参照被删除，仍须人工核查。"""
     files = sorted({p.name for d in [old_dir, new_dir] for p in d.glob('*.json')})
     additions, problems = {}, {}
     for name in files:
         old, new = old_dir / name, new_dir / name
+        if not old.exists() and new.exists() and name in new_references:
+            try:
+                data = json.loads(new.read_text())
+            except (ValueError, OSError) as error:
+                problems[name] = ['无法读取参照：' + str(error)]; continue
+            if not data or has_error(payload(data)):
+                problems[name] = ['新增参照为空或有错误']
+            else:
+                additions[name] = [{'collection': '*', 'key': '整份新参照', 'count': case_count(data)}]
+            continue
         if not old.exists() or not new.exists():
             problems[name] = ['参照文件新增或删除，须人工核查']; continue
         try:
