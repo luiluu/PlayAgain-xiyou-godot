@@ -407,4 +407,12 @@ func _static_checks() -> void:
 	s.dungeon = {"context": {"entryMap": 3, "entryEvent": 7, "baseDifficulty": 5, "hangEnabled": true, "rune": 24, "id": 22, "tier": 1}}
 	var back := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
 	check("save.context", int(XDungeon.context(back).get("baseDifficulty", 0)) == 5 and int(back.boss_mastery.get("424", 0)) == 2)
+	# 进度审查 25%：读档／新游戏清掉上一档最近一场事件战斗的标记（不随存档），读档后不会凭旧胜利再领神秘珠
+	XDungeon.battle_finished(424, 0, 124)
+	XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
+	var cleared_on_load := XDungeon.battle.is_empty()
+	XDungeon.battle_finished(424, 0, 124)
+	XState.new_game_blank()
+	check("load.clears_battle", cleared_on_load and XDungeon.battle.is_empty() and XDungeon.boss_reward(s).is_empty())
+	XState.current = s
 	XDungeon.battle = {}
