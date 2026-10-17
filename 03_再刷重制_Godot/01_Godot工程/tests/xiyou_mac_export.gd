@@ -13,6 +13,7 @@ func _ready() -> void:
 func _run() -> void:
 	var font := XUI.font()
 	check("authored_font", font is FontFile and ResourceLoader.exists(GameFont.PATH), font.get_font_name())
+	check("power_panel_text_width", absf(font.get_string_size("雷电承伤 90%", HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x - 84.15) < 0.5)
 	var text := "中文自动换行验证：天地玄黄宇宙洪荒。"
 	check("chinese_glyphs", font.has_char("中".unicode_at(0)) and font.has_char("文".unicode_at(0)))
 	var paragraph := TextParagraph.new()
