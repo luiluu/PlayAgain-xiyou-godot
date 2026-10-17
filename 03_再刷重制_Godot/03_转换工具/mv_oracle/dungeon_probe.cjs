@@ -69,6 +69,14 @@ const DUNGEONS = {
   d15: {start: {map: 32, x: 29, y: 1}, door: 4, tierBase: 1617, rune: 171, escape: 14, escapeFace: 2,
     clear: [6, 7, 8, 9, 10, 11, 12, 2, 3, 4, 5, 13].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 13}]),
     boss: {sw: 895, event: 17, item: 914}},
+  // 十七层风精灵沉眠墓地：八精英、四首领（变量 114 到 4 才出首领页，随机变量 115 决定隐藏首领 14）；
+  // 十八层恶魔城：六精英、四首领（变量 116），首领按随机变量 117 是 1 打城主 203，否则打怨念集合体 202；两层逃离要朝下
+  d17: {start: {map: 45, x: 24, y: 7}, door: 2, tierBase: 1625, rune: 171, escape: 15, escapeFace: 2,
+    clear: [6, 7, 8, 9, 10, 11, 12, 13, 2, 3, 4, 5, 1].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 1}]),
+    boss: {sw: 897, event: 16, item: 913}},
+  d18: {start: {map: 46, x: 21, y: 25}, door: 2, tierBase: 1629, rune: 171, escape: 12, escapeFace: 2,
+    clear: [5, 15, 16, 17, 18, 19, 7, 9, 10, 11, 6].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 6}]),
+    boss: {sw: 898, event: 20, item: 913}},
 };
 const D2 = DUNGEONS.d2.start;
 const enter = (picks, rune = 1, door = 7, item = 24) => [{do: 'item', id: item, n: rune}, {do: 'event', event: door, picks}];
@@ -116,7 +124,10 @@ const SCENARIOS = [
   {id: 'd2.boss-lose', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'lose'}]},
   {id: 'd2.boss-roundtrip', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'win'}, {do: 'roundtrip'},
     {do: 'event', event: 1}]},
-  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15'].flatMap(standard),
+  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd17', 'd18'].flatMap(standard),
+  {id: 'd17.hidden-boss', dungeon: 'd17', setup: {rand: 0.9}, steps: [...enter([0], 1, 2, 171),
+    ...[6, 7, 8, 9, 10, 11, 12, 13, 2, 3, 4, 5, 14].map(e => ({do: 'event', event: e, battle: 'win'}))]},
+  {id: 'kun.d17-believer', dungeon: 'd17', setup: {actors: [3]}, steps: [{do: 'warp', map: 193, x: 10, y: 13}, {do: 'event', event: 2}, {do: 'event', event: 1}]},
   // 十二层隐藏首领（随机变量 49 取到 5）；十二层逃离朝上不问
   {id: 'd12.hidden-boss', dungeon: 'd12', setup: {rand: 0.9}, steps: [...enter([0], 1, 1, 110),
     ...[3, 4, 5, 6, 7, 9, 10, 11, 12, 17].map(e => ({do: 'event', event: e, battle: 'win'}))]},
