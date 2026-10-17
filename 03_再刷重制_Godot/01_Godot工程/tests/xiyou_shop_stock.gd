@@ -309,7 +309,7 @@ func _run() -> void:
 	_old_save()
 	await _ui()
 	var failed := results.filter(func(r): return not r.passed)
-	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_shop_stock", "passed": failed.is_empty(), "total": results.size(), "failed": failed.map(func(r): return r.name)}))
+	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_shop_stock", "passed": results.size() - failed.size(), "total": results.size(), "failed": failed.map(func(r): return r.name)}))
 	get_tree().quit(0 if failed.is_empty() else 1)
 
 
