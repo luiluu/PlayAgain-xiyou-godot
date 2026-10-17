@@ -7,7 +7,10 @@ extends XMVCanvas
 ##   「人物属性：火焰／水」(325, 宽 220) 18 号 rgb(180,201,220)、元素名用元素色，总宽超过 220 时按比例缩小字号（CodexElements.drawAttributes）；
 ##   「自身 N  ·  装备战力 N」(550, 宽 条宽−565) 18 号 rgb(180,201,220)；装备战力是身上各件装备评分之和（gearScore）。
 ## - O-031：自身与装备战力之间加「装备提升 +N」（总战力−自身，= 正式版 gear），三个数能对上总战力；SHOW_GEAR_GAIN 关掉即恢复原版。
-## - 未做：右端 300 宽的真气段（installNativeGuidanceRuntime，真气未移植）。数值都取 XPower.actor（与正式版一致，dev.046）。
+## - 右端 300 宽的真气段（installNativeGuidanceRuntime refreshCombatPowerSummary）：先清再铺底色 rgba(12,25,35,0.45)，
+##   「真气·境界 ×加成（待选／瓶颈）」18 号右对齐（宽 288），瓶颈或待选 rgb(255,170,120)，否则 rgb(150,220,255)（XGuide.strip_text）。
+##   原版这一段会擦掉第三段文字的右端；O-046 把第三段限宽到真气段左边（SHOW_ZHENQI_CLEAR 设 false 回到原版宽度）。
+## - 数值都取 XPower.actor（与正式版一致，dev.046）。
 
 const HEIGHT := 36.0
 const SIDE := 24.0
@@ -21,6 +24,12 @@ const ATTR_W := 220.0
 const DETAIL_X := 550.0
 ## O-031（优化登记）：false 恢复原版「自身 N  ·  装备战力 N」
 const SHOW_GEAR_GAIN := true
+const ZHENQI_W := 300.0
+const ZHENQI_SIZE := 18
+const ZHENQI_WARN := Color8(255, 170, 120)
+const ZHENQI_INK := Color8(150, 220, 255)
+## O-046：第三段限宽到真气段左边，不被真气段截掉；false 照原版宽度（右端被擦掉）
+static var SHOW_ZHENQI_CLEAR := true
 ## CodexElements 元素色（installDamageElementRuntime colors，下标即元素 ID）
 const ELEMENT_COLORS := XHelpCard.ELEMENT_COLORS
 
@@ -84,5 +93,7 @@ func layout() -> Array:
 		var w := text_width(part[0], fs)
 		out.append([part[0], x, w + 1, HEIGHT, fs, part[1], "left"])
 		x += w
-	out.append([detail_text(p), DETAIL_X, size.x - 565, HEIGHT, DETAIL_SIZE, INK, "left"])
+	out.append([detail_text(p), DETAIL_X, (size.x - ZHENQI_W - DETAIL_X) if SHOW_ZHENQI_CLEAR else size.x - 565, HEIGHT, DETAIL_SIZE, INK, "left"])
+	var zq := XGuide.strip_text(XState.current, actor)
+	out.append([zq[0], size.x - ZHENQI_W, ZHENQI_W - 12, HEIGHT, ZHENQI_SIZE, ZHENQI_WARN if zq[1] else ZHENQI_INK, "right"])
 	return out

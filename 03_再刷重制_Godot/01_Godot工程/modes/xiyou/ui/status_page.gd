@@ -14,15 +14,19 @@ extends XActorPage
 ## - 第 2 页「加成与抗性」：元素／加成（CodexElements 元素伤害加成，两位小数）／穿透（百分比）／承伤（按档位着色），
 ##   武器类型加成，其他加成 13 项（爆伤、终伤、全队掉率、再次行动、攻击次数、技能档位、消耗、连击、元素转换）；元素名用元素色。
 ## - 第 3 页「掌握」：「角色可使用」，职业特性可装备的武器／防具类型（mpGaugeColor2），超出窗口高时换列。
-## - 第 4 页：正式版是「修行」（installNativeGuidanceRuntime 真气页，真气未移植）；这里先放「套装」（O-032，见优化登记）。
+## - 第 4 页「修行」（installNativeGuidanceRuntime JAH_Window_Status_Zhenqi，行由 XGuide.page_rows 给出）：
+##   head 系统色「【…】」(6, 宽 1240)；text 按 drawTextEx 从 x 6 起画，\C[n] 换色；cols 四列宽 floor(1252×.16/.28/.26/.26)，
+##   首列左对齐、其余右对齐（宽减 6），表头系统色、首列普通色、warn 行第 4 列红字 textColor(2)。五个乘区不移植（O-044）。
+##   O-032（套装页）随之撤销：套装加成仍在物品说明卡与装备页显示。
 ## - 右上角「战力 N」按钮（XPowerPanel.make_button）打开角色战力面板（XPowerPanel）；关掉战力时没有按钮和战力条。
 
 const SELECT_RECT := Rect2(0, 0, 1280, 64)
 const PAGE_Y := 72.0
 const LH := 36.0
 const PAD := 14.0
-## O-032：第 4 页正式版是「修行」（真气未移植），改放「套装」；PAGE_NAMES[3] 改回「修行」并实现真气页即恢复
-const PAGE_NAMES := ["状态", "加成与抗性", "掌握", "套装"]
+const PAGE_NAMES := ["状态", "加成与抗性", "掌握", "修行"]
+## 修行页四列（drawPageBlock：availableWidth＝contents 宽 1252）
+const GUIDE_COLS := [200.0, 350.0, 325.0, 325.0]
 const ITEM_W := 304.0
 const ITEM_STEP := 316.0
 const HEADER_LINES := 6
@@ -140,7 +144,7 @@ static func line_count(a: XActor, p: int) -> int:
 		2:
 			return HEADER_LINES + 10
 		_:
-			return HEADER_LINES + _suit_lines(a).size()
+			return HEADER_LINES + XGuide.page_rows(XState.current, a).size()
 
 
 # ---- 绘制调用（与正式版 contents 上的调用一一对应，测试直接比对） ----
@@ -156,7 +160,7 @@ static func page_ops(a: XActor, p: int, window_h := 612.0) -> Array:
 		2:
 			ops += _mastery_ops(a, window_h)
 		_:
-			ops += _suit_ops(a)
+			ops += _guide_ops(a)
 	return ops
 
 
@@ -456,31 +460,43 @@ static func _section(title: String, types: Array, x: float, y: float, name_w: fl
 	return ops
 
 
-# ---- 第 4 页：套装（O-032） ----
-static func _suit_lines(a: XActor) -> Array:
-	var out := []
-	var counts := XEquipSuits.counts(a)
-	if counts.is_empty():
-		out.append(["当前装备没有套装。", XUI.DIM])
-	for id in counts:
-		var suit := XDB.rec("EquipSuits", int(id))
-		if suit.is_empty():
-			continue
-		out.append(["%s · 已装备 %d 件" % [suit.name, int(counts[id])], XUI.SYSTEM])
-		for bonus in suit.bonuses:
-			var active := int(counts[id]) >= int(bonus.requirePieces)
-			out.append(["%d 件 %s：%s" % [int(bonus.requirePieces), "已生效" if active else "未激活", XGearInfo.bonus_text(bonus)], XUI.POWER_UP if active else XUI.DIM])
-	out.append(["满足件数的各档加成同时生效；队伍奖励按全队套装计算。", XUI.DIM])
-	return out
-
-
-static func _suit_ops(a: XActor) -> Array:
+# ---- 第 4 页：修行（JAH_Window_Status_Zhenqi.drawPageBlock） ----
+static func _guide_ops(a: XActor) -> Array:
 	var ops := []
+	var pad := 6.0
+	var w := 1252.0
 	var y := LH * HEADER_LINES
-	for line in _suit_lines(a):
-		var op := _t(line[0], PAD * 2, y, 1252 - PAD * 4, "left", line[1])
-		op[8] = "#" + (line[1] as Color).to_html(true)
-		ops.append(op)
+	var re := RegEx.create_from_string("\\\\C\\[(\\d+)\\]")
+	for r in XGuide.page_rows(XState.current, a):
+		match str(r.type):
+			"head":
+				ops.append(_t("【" + str(r.text) + "】", pad, y, w - pad * 2, "left", XUI.SYSTEM))
+			"text":
+				# drawTextEx：\C[n] 换色，其余文字接着往右画
+				var x := pad
+				var color := XUI.TEXT
+				var raw := str(r.text)
+				var at := 0
+				for m in re.search_all(raw):
+					var seg := raw.substr(at, m.get_start() - at)
+					if seg != "":
+						ops.append(_t(seg, x, y, _tw(seg) + 1, "left", color))
+						x += _tw(seg)
+					color = XUI.text_color(int(m.get_string(1)))
+					at = m.get_end()
+				var rest := raw.substr(at)
+				if rest != "":
+					ops.append(_t(rest, x, y, _tw(rest) + 1, "left", color))
+			"cols":
+				var x := pad
+				for j in range(r.cells.size()):
+					var color := XUI.TEXT
+					if r.system:
+						color = XUI.SYSTEM
+					elif j != 0 and r.warn and j == 3:
+						color = XUI.text_color(2)
+					ops.append(_t(str(r.cells[j]), x, y, GUIDE_COLS[j] - pad, "left" if j == 0 else "right", color))
+					x += GUIDE_COLS[j]
 		y += LH
 	return ops
 
