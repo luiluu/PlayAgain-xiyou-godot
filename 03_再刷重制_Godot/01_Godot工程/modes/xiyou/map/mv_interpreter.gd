@@ -3,6 +3,7 @@ extends RefCounted
 ## MV 事件指令解释器（Game_Interpreter 的子集）。按缩进和 _branch 记录处理分支，与 MV 一致。
 ## host 提供画面服务（文字、选项、场所移动、战斗、商店、淡入淡出、移动路线、动画、气泡、提示、输入名字、存档），见 map_scene.gd。
 ## 脚本(355/655) 由 MVScript 按已知写法翻译；插件指令(356) 认得 Difficulty SetID、GhostButtons、ProhibitHangUp；
+## 副本相关（Difficulty SetID、挂机开关、顶层事件结束、事件战斗结束）交给 XDungeon；214 暂时消除交给宿主 erase_event；
 ## 认不出的脚本语句、插件指令与未支持的指令跳过并记进 skipped，便于之后逐条补齐。
 
 signal finished
@@ -15,12 +16,19 @@ var index := 0
 var _branch := {}
 var _depth := 0
 var skipped: Array = []        # [{code, text}]
+## 作为公共事件子解释器运行时的公共事件 ID（顶层为 0）
+var common_id := 0
+## installV010UsabilityRuntime：宝箱事件（开始时本事件图像为 BaoXiangGuai）把 125～128 的所得合并成一条「宝箱收获」提示，
+## 子公共事件共用同一份；CodexV010Fixes.rewardNotice 在宝箱里不再单独提示。rows：[{key, name, amount}]
+var receipt = null
+## 本解释器最近一条 125～128 的实际所得 {kind, id, amount}（CodexV010Fixes.awardQuantity）
+var last_gain := {}
 ## $gameMessage 里还没显示的文字（升级提示等由指令直接 add 的）：到下一个会等待的指令或事件结束时一起显示，
 ## 同 MV 消息窗在解释器下一次等待时才出现（等级提升各人之间以 \f 分页）
 var pending_lines: Array = []
 ## 会让 MV 解释器等待（或在消息忙时停住）的指令：执行前先显示待显示的文字
 const FLUSH_BEFORE := [101, 102, 103, 104, 201, 205, 212, 213, 217, 221, 222, 230, 301, 302, 303, 353, 354]
-static var skip_common_events := [714, 1386, 1435]   # 难度修复、战斗背景、轮回模式：首期无对应系统
+static var skip_common_events := [1386, 1435]   # 战斗背景、轮回模式：首期无对应系统
 ## 对照工具用：全部解释器（含公共事件子解释器）合计最多执行的指令数，0 为不限；超过就停止并置 aborted
 static var max_steps := 0
 static var steps := 0
@@ -31,6 +39,11 @@ static var fixed_random := -1.0
 ## 键「来源地图:事件:目的地图:x:y」。七层、十二层辛德瑞（Map061 事件 9、Map065 事件 3）原版传回大厅 (12,18)，那里是钓鱼池水面，
 ## 传过去就走不动；其余各层的辛德瑞都传到 (14,23)。设为空字典 {} 恢复原版。
 const TRANSFER_FIX := {"61:9:4:12:18": Vector2i(14, 23), "65:3:4:12:18": Vector2i(14, 23)}
+
+
+## MV Math.random()
+static func random_float() -> float:
+	return fixed_random if fixed_random >= 0.0 else randf()
 
 
 ## MV Math.randomInt(hi − lo + 1) + lo
@@ -54,6 +67,10 @@ func state() -> XState:
 
 func run() -> void:
 	index = 0
+	if _depth == 0 and event_id > 0:
+		var ch = host.character(event_id, event_id)
+		if ch != null and str(ch.get("character_name")) == "BaoXiangGuai":
+			receipt = {"rows": []}
 	while index < list.size():
 		if max_steps > 0:
 			steps += 1
@@ -69,6 +86,9 @@ func run() -> void:
 		index += 1
 	if _depth == 0:
 		await flush_message()
+		if receipt != null and not receipt.rows.is_empty():
+			host.toast("宝箱收获：<br>" + "<br>".join(PackedStringArray(receipt.rows.map(func(r): return "%s ×%d" % [str(r.name).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;"), int(r.amount)]))))
+		XDungeon.event_finished(state())
 	finished.emit()
 
 
@@ -210,6 +230,8 @@ func _execute(c: Dictionary):
 				if not ce.is_empty() and _depth < 30:
 					var sub := MVInterpreter.new(host, map_id, event_id, ce.list, _depth + 1)
 					sub.pending_lines = pending_lines
+					sub.common_id = ce_id
+					sub.receipt = receipt
 					await sub.run()
 					skipped.append_array(sub.skipped)
 		121:
@@ -225,17 +247,25 @@ func _execute(c: Dictionary):
 				host.refresh_events()
 		125:
 			var v := _operand(int(p[1]), int(p[2]))
+			var before := state().gold
 			state().gain_gold(v if int(p[0]) == 0 else -v)
 			_treasure_popup({}, v if int(p[0]) == 0 else -v)
+			_record_gain("gold", 0, state().gold - before, str(XDB.system().get("currencyUnit", "")))
 		126:
 			var n := _operand(int(p[2]), int(p[3]))
+			var before := state().item_count(int(p[0]))
 			state().gain_item(int(p[0]), n if int(p[1]) == 0 else -n)
 			_treasure_popup(XDB.rec("Items", int(p[0])), n if int(p[1]) == 0 else -n)
+			_record_gain("item", int(p[0]), state().item_count(int(p[0])) - before, str(XDB.rec("Items", int(p[0])).get("name", "")))
 			host.refresh_events()
 		127, 128:
 			var n := _operand(int(p[2]), int(p[3]))
-			state().gain_gear("weapon" if int(c.code) == 127 else "armor", int(p[0]), n if int(p[1]) == 0 else -n)
-			_treasure_popup(XDB.rec("Weapons" if int(c.code) == 127 else "Armors", int(p[0])), n if int(p[1]) == 0 else -n)
+			var kind := "weapon" if int(c.code) == 127 else "armor"
+			state().gain_gear(kind, int(p[0]), n if int(p[1]) == 0 else -n)
+			var rec := XDB.rec("Weapons" if int(c.code) == 127 else "Armors", int(p[0]))
+			_treasure_popup(rec, n if int(p[1]) == 0 else -n)
+			# 装备都是独立物品（YEP_ItemCore）：原版按数据库原件数 $gameParty.numItems 计，所得恒为 0，不进宝箱收获
+			_record_gain(kind, int(p[0]), 0, str(rec.get("name", "")))
 		129:
 			if int(p[1]) == 0:
 				state().add_actor(int(p[0]))
@@ -267,6 +297,7 @@ func _execute(c: Dictionary):
 		301:
 			var troop := int(p[1]) if int(p[0]) == 0 else int(state().variable(int(p[1])))
 			var result: int = await host.start_battle(troop, bool(p[2]), bool(p[3]))
+			XDungeon.battle_finished(troop, result, state().map_id)
 			_branch[indent] = result
 			if result == 2 and not bool(p[3]):
 				host.game_over()
@@ -301,6 +332,10 @@ func _execute(c: Dictionary):
 		211:
 			host.player.transparent = int(p[0]) == 0
 			host.player.queue_redraw()
+		214:
+			# 暂时消除事件（Game_Map.eraseEvent）：换地图重建事件后复原
+			if event_id > 0 and host.has_method("erase_event"):
+				host.erase_event(event_id)
 		212:
 			# 显示动画 [角色, 动画, 等待]
 			var ch = host.character(int(p[0]), event_id)
@@ -391,7 +426,10 @@ func _plugin_command(line: String) -> void:
 	match args[0]:
 		"Difficulty":
 			if args.size() >= 3 and args[1] == "SetID":
-				state().difficulty = int(args[2])
+				# installWeakChallengeRuntime：混沌（9）时公共事件 714 难度修复不改难度
+				if common_id == 714 and state().difficulty == 9:
+					return
+				XDungeon.set_difficulty(state(), int(args[2]), self)
 				return
 		"GhostButtons":
 			state().flags["GhostButtons"] = args[1] if args.size() > 1 else ""
@@ -407,7 +445,7 @@ func _plugin_command(line: String) -> void:
 					s.actor_max_level = int(args[2])
 					return
 		"ProhibitHangUp", "EnableHangUp":
-			state().flags["HangUpProhibited"] = args[0] == "ProhibitHangUp"
+			XDungeon.set_hang_up(state(), args[0] == "EnableHangUp")
 			return
 	skipped.append({"code": 356, "text": line.left(80)})
 
@@ -428,6 +466,19 @@ func _display_level_up(a: XActor, learned: Array) -> void:
 	pending_lines.append(str(terms.messages.levelUp).replace("%1", a.display_name()).replace("%2", str(terms.basic[0])).replace("%3", str(a.level)))
 	for id in learned:
 		pending_lines.append(str(terms.messages.obtainSkill).replace("%1", str(XDB.rec("Skills", int(id)).get("name", ""))))
+
+
+## installV010UsabilityRuntime：记下 125～128 的实际所得（数量差，不计负数），宝箱里并入收获清单
+func _record_gain(kind: String, id: int, amount: int, name: String) -> void:
+	amount = maxi(0, amount)
+	last_gain = {"kind": kind, "id": id, "amount": amount}
+	if receipt != null and amount > 0:
+		var key := "%s:%d" % [kind, id]
+		for r in receipt.rows:
+			if r.key == key:
+				r.amount += amount
+				return
+		receipt.rows.append({"key": key, "name": name, "amount": amount})
 
 
 ## MOG_TreasurePopup：数量为正、本事件（按 ID）在当前地图上时浮出获得提示

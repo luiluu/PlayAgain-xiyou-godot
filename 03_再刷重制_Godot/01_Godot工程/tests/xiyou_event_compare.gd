@@ -149,6 +149,10 @@ func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_event_compare"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
+	# 比原版翻译：副本的难度／挂机恢复优化（O-038／O-040）关掉，由 tests/xiyou_dungeon 单独对照
+	XDungeon.restore_difficulty = false
+	XDungeon.restore_hang_up = false
+	XDungeon.battle_end_counts = false
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 	check("oracle_loaded", oracle is Dictionary and oracle.has("cases"))
 	if not (oracle is Dictionary):
@@ -220,6 +224,10 @@ func _finish() -> void:
 	DirAccess.remove_absolute(XSave.dir())
 	MVInterpreter.max_steps = 0
 	MVInterpreter.fixed_random = -1.0
+	XDungeon.restore_difficulty = true
+	XDungeon.restore_hang_up = true
+	XDungeon.battle_end_counts = true
+	XDungeon.battle = {}
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
@@ -243,6 +251,8 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 			if e is Dictionary and int(e.id) == int(c.event):
 				ev = e
 		list = ev.pages[int(c.page)].list.duplicate(true) if ev != null else []
+	XDungeon.battle = {}       # $gameTroop 每例新游戏都是空的
+	s.orb_seed = 2147483648    # 参照固定 Math.random＝0.5 后开新局：宝珠随机流种子 floor(0.5×2³²)
 	var before := _snap(s)
 	MVInterpreter.max_steps = MAX_STEPS
 	MVInterpreter.fixed_random = 0.5
