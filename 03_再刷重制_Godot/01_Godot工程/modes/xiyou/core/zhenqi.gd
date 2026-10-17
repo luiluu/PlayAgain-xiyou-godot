@@ -10,7 +10,8 @@ extends RefCounted
 ## - 加成 rate = √(1＋真气÷10)，境界 9（真仙）起每级再 ×1.1。原版把 rate×天道补偿乘进对敌伤害（growthMultiplier）；
 ##   加成只显示、按数值平衡不移植（用户 2026-10-12 已定：成长修正不移植），伤害 growth 仍为 1，这里只算出来供界面显示（APPLY_TO_DAMAGE）；
 ##   统一调整时再定（数值平衡.md「统一调整时要看的已知问题」）。
-## - 第二批（未做）：突破与瓶颈之战（心魔 901／天劫 823）、突破奖励与道法、神兵试炼、菜单「真气」闭关、天道使者旧档回退（重制版不读 MV 存档）。
+## - 第二批（文件后半）：闭关菜单节点、瓶颈之战、突破、突破奖励与道法、灵根降服、奖励技能数值（参照 zhenqi_probe「break.*」，tests/xiyou_zhenqi_break）。
+## - 第三批（未做）：道法的运行时钩子（连击、分神、金身、护法、破甲 2705、元婴护体）、神兵试炼；天道使者旧档回退不移植（重制版不读 MV 存档）。
 
 const DIV := 10.0
 const OVERFLOW_CAP := 10
@@ -635,7 +636,7 @@ static func _retreat(s: XState, page: int) -> Dictionary:
 		opts.append({"label": "上一页（%d/%d）" % [page, pages], "next": {"page": "retreat", "p": page - 1}})
 	if page + 1 < pages:
 		opts.append({"label": "下一页（%d/%d）" % [page + 2, pages], "next": {"page": "retreat", "p": page + 1}})
-	# 神兵试炼（指定本命兵武器）留第三批：选项照原版列出，进去先说明未开放（O-048）
+	# 神兵试炼（指定本命兵武器）留第三批：选项照原版列出，进去先说明未开放
 	opts.append({"label": "神兵试炼（指定本命兵武器）", "next": {"page": "weapon"}})
 	opts.append({"label": "离开", "next": null})
 	return _ask(["\\C[6]闭关之所\\C[0]", "真气达到大圆满、通关对应楼层后，打赢瓶颈之战突破。", "突破后获得境界奖励。"], opts)

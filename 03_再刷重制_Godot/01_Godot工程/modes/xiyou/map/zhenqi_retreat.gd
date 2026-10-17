@@ -9,7 +9,7 @@ static func run(host, node := {"page": "retreat"}) -> void:
 	var cur = node
 	while cur != null:
 		if str(cur.page) == "weapon":
-			# 神兵试炼（第三批）：选项照原版列出，先说明尚未开放后回到闭关首页（O-048）
+			# 神兵试炼（第三批）：选项照原版列出，先说明尚未开放后回到闭关首页
 			await host.show_message({"lines": ["\\C[6]神兵试炼\\C[0]尚未开放，敬请期待。"], "position": 2, "background": 0})
 			cur = {"page": "retreat"}
 			continue
