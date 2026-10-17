@@ -6,13 +6,18 @@ extends Node
 ## - 目录：全部受管商品的备注解析、全部 ShopInventory 指令的组名；解释器的插件指令把组交给下一次商店。
 ## - 界面（标准级）：tests/fixtures/shop_stock_ui_oracle.json 的正式版运行时读数（售完行、状态窗库存行），位置差 3 像素内。
 ## - 存档：旧档没有 shopStock 时全满。
+## 窗口模式加 -- --out=<目录> 保存与正式版截图（codex_shop_stock_reference.png）同一夹具的 Godot 画面。
 
 const ORACLE := "res://modes/xiyou/generated/oracle/shop_stock.json"
 const UI_ORACLE := "res://tests/fixtures/shop_stock_ui_oracle.json"
 var results := []
+var out_dir := ""
 
 
 func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out_dir = arg.substr(6)
 	_run.call_deferred()
 
 
@@ -405,6 +410,11 @@ func _ui() -> void:
 	shop._mode = "buy"
 	shop._buy_index = 1
 	shop._refresh()
+	if out_dir != "" and DisplayServer.get_name() != "headless":
+		for _i in range(3):
+			await get_tree().process_frame
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(out_dir.path_join("Godot_限购商店.png"))
 	var w: float = shop.list_win.canvas.size.x
 	var log := await _paint(shop._paint_list, w)
 	var so: Array = ref.soldOutRow.soldOut
