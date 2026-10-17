@@ -583,7 +583,21 @@ func _condition(p: Array) -> bool:
 		2:
 			return event_id > 0 and s.self_switch(map_id, event_id, str(p[1])) == (int(p[2]) == 0)
 		4:
-			return s.party.has(int(p[1]))
+			# 角色 [4, 角色, 种类, 值]（Game_Interpreter.command111）：0 在队 1 名字 2 职业 3 技能 4 武器 5 防具 6 状态
+			var aid := int(p[1])
+			if XDB.rec("Actors", aid).is_empty():
+				return false
+			match int(p[2]):
+				0: return s.party.has(aid)
+				1: return s.actor(aid).display_name() == str(p[3])
+				2: return s.actor(aid).class_id == int(p[3])
+				3: return s.actor(aid).skills().any(func(k): return int(k.id) == int(p[3]))
+				4, 5:
+					# 按底材编号比（未对照独立装备实例的 hasWeapon/hasArmor）
+					var kind := "weapon" if int(p[2]) == 4 else "armor"
+					return s.actor(aid).equip_list().any(func(e): return e.get("kind", "") == kind and int(e.get("base", 0)) == int(p[3]))
+				6: return s.actor(aid).is_state_affected(int(p[3]))
+			return false
 		7:
 			var g := float(p[1])
 			match int(p[2]):

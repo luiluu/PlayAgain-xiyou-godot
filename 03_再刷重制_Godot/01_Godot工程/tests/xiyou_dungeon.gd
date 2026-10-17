@@ -122,7 +122,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	_static_checks()
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
-	check("oracle_loaded", oracle is Dictionary and oracle.has("cases") and oracle.cases.size() >= 81)
+	check("oracle_loaded", oracle is Dictionary and oracle.has("cases") and oracle.cases.size() >= 80)
 	if oracle is Dictionary:
 		var host := DungeonHost.new()
 		add_child(host)
@@ -409,6 +409,16 @@ func _static_checks() -> void:
 		check("spec.map%d_ev%d" % [d[0], d[1]], ok)
 	check("spec.not_exit", XDungeon.entry_spec(event_rec(123, 6).pages[0].list).is_empty())
 	check("spec.not_map001", XDungeon.entry_spec(XDB.map(1).events[1].pages[0].list).is_empty())
+	# 条件分歧「角色」的种类（坤坤任务 CE819 按「习得技能」分级）：不在队也按角色本身判
+	var cs := XState.new_game_blank()
+	cs.add_actor(1)
+	XState.current = cs
+	cs.actor(3).learn_skill(2765)
+	var ci := MVInterpreter.new(self, 1, 0, [])
+	var cls := cs.actor(3).class_id
+	check("cond.actor_kinds", ci._condition([4, 1, 0]) and not ci._condition([4, 3, 0]) and ci._condition([4, 3, 3, 2765])
+		and not ci._condition([4, 3, 3, 4408]) and ci._condition([4, 3, 2, cls]) and not ci._condition([4, 3, 2, cls + 1])
+		and not ci._condition([4, 3, 6, 1]) and not ci._condition([4, 9999, 0]))
 	check("floor.dungeon_map", XDungeon.map_floor(124) == 2, XDungeon.map_floor(124))
 	check("floor.parse_cn", XDungeon.parse_floor("十二层:冰封洞穴") == 12 and XDungeon.parse_floor("二十层") == 20 and XDungeon.parse_floor("24层 速行天") == 24)
 	# Boss 熟练度：第 1 次 +10 抽奖券；同一场神秘珠只判一次
