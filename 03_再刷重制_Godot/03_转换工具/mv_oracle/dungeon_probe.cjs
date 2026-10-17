@@ -77,6 +77,10 @@ const DUNGEONS = {
   d18: {start: {map: 46, x: 21, y: 25}, door: 2, tierBase: 1629, rune: 171, escape: 12, escapeFace: 2,
     clear: [5, 15, 16, 17, 18, 19, 7, 9, 10, 11, 6].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 6}]),
     boss: {sw: 898, event: 20, item: 913}},
+  // 十九层古龙祭坛：六精英（变量 118）后两祭祀首领开火墙，再打护卫、队长，首领「古龙」普拉顿；主席收活力水 912；逃离要朝下
+  d19: {start: {map: 47, x: 14, y: 14}, door: 11, tierBase: 1633, rune: 171, escape: 32, escapeFace: 2,
+    clear: [23, 24, 25, 26, 27, 28, 18, 19, 29, 30, 15].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 15}]),
+    boss: {sw: 899, event: 34, item: 912}},
 };
 const D2 = DUNGEONS.d2.start;
 const enter = (picks, rune = 1, door = 7, item = 24) => [{do: 'item', id: item, n: rune}, {do: 'event', event: door, picks}];
@@ -124,7 +128,7 @@ const SCENARIOS = [
   {id: 'd2.boss-lose', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'lose'}]},
   {id: 'd2.boss-roundtrip', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'win'}, {do: 'roundtrip'},
     {do: 'event', event: 1}]},
-  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd17', 'd18'].flatMap(standard),
+  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd17', 'd18', 'd19'].flatMap(standard),
   {id: 'd17.hidden-boss', dungeon: 'd17', setup: {rand: 0.9}, steps: [...enter([0], 1, 2, 171),
     ...[6, 7, 8, 9, 10, 11, 12, 13, 2, 3, 4, 5, 14].map(e => ({do: 'event', event: e, battle: 'win'}))]},
   {id: 'kun.d17-believer', dungeon: 'd17', setup: {actors: [3]}, steps: [{do: 'warp', map: 193, x: 10, y: 13}, {do: 'event', event: 2}, {do: 'event', event: 1}]},
