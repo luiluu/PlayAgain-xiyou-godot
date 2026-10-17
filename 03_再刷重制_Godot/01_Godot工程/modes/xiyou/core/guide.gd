@@ -3,6 +3,7 @@ extends RefCounted
 ## 修行指引（installNativeGuidanceRuntime，CodexGuide）第一批：状态页「修行」页的行（JAH_Window_Status_Zhenqi.buildRows）与战力条旁的真气文字。
 ## 参照 zhenqi_probe 的 page.* 用例（tests/xiyou_zhenqi 逐行比）。
 ## - 行：{type: head/text/cols/blank, …}，text 里保留 \C[n] 颜色码（XMVCanvas 按 drawTextEx 画）。
+## - 加成只显示、按数值平衡不移植：页上与战力条的「加成 ×N」「天道补偿 ×N」照原版算，但重制版伤害不乘（见 XZhenqi.APPLY_TO_DAMAGE）。
 ## - 「五个乘区」一段（CodexZones，五乘区预算软上限）按数值平衡不移植（用户 2026-10-12），整段不显示（O-044）。
 ## - 未做：区段里程碑对话、方桌大厅「下一步建议」、Boss 预告（原版已关）。
 
