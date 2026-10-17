@@ -40,18 +40,25 @@ const DUNGEONS = {
     clear: [{do: 'event', event: 4, battle: 'win'}, {do: 'event', event: 3, battle: 'win'}, {do: 'event', event: 3}], boss: {sw: 887, event: 1}},
   d7b: {start: {map: 61, x: 24, y: 16}, door: 11, tierBase: 1585, escape: 17,
     clear: [{do: 'event', event: 2, battle: 'win'}, {do: 'event', event: 11, battle: 'win'}, {do: 'event', event: 11}], boss: {sw: 888, event: 1}},
+  // 九层女神道场、十层先祖禁地：主席收活力水 912；十层用中级副本挑战符文 64，五只精英（变量 43）开石栏
+  d9: {start: {map: 15, x: 30, y: 1}, door: 4, tierBase: 1593, escape: 7,
+    clear: [8, 11, 12, 14, 15, 16, 17, 9].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 9}]),
+    boss: {sw: 905, event: 20, item: 912}},
+  d10: {start: {map: 17, x: 21, y: 36}, door: 2, tierBase: 1597, rune: 64, escape: 14,
+    clear: [2, 9, 10, 11, 13, 6, 7, 8].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 8}]),
+    boss: {sw: 890, event: 12, item: 912}},
 };
 const D2 = DUNGEONS.d2.start;
-const enter = (picks, rune = 1, door = 7) => [{do: 'item', id: 24, n: rune}, {do: 'event', event: door, picks}];
+const enter = (picks, rune = 1, door = 7, item = 24) => [{do: 'item', id: item, n: rune}, {do: 'event', event: door, picks}];
 // 二层以外的副本按同一模板：缺符文、逃离、普通档通关、王者档通关（CE1439）、行贿主席
 function standard(id) {
-  const d = DUNGEONS[id], go = (picks, rune) => enter(picks, rune, d.door);
+  const d = DUNGEONS[id], go = (picks, rune) => enter(picks, rune, d.door, d.rune || 24);
   return [
     {id: id + '.no-rune', dungeon: id, setup: {}, steps: go([0], 0)},
     {id: id + '.escape', dungeon: id, setup: {difficulty: 5}, steps: [...go([0]), {do: 'event', event: d.escape, picks: [0]}]},
     {id: id + '.clear-normal', dungeon: id, setup: {}, steps: [...go([0]), ...d.clear]},
     {id: id + '.clear-king', dungeon: id, setup: {tier: 4, rand: 0.05}, steps: [...go([0, 3]), ...d.clear]},
-    {id: id + '.bribe', dungeon: id, setup: {sw: [d.boss.sw]}, steps: [...go([0]), {do: 'item', id: 913, n: 1}, {do: 'event', event: d.boss.event, picks: [0]}]},
+    {id: id + '.bribe', dungeon: id, setup: {sw: [d.boss.sw]}, steps: [...go([0]), {do: 'item', id: d.boss.item || 913, n: 1}, {do: 'event', event: d.boss.event, picks: [0]}]},
   ];
 }
 const SCENARIOS = [
@@ -86,7 +93,7 @@ const SCENARIOS = [
   {id: 'd2.boss-lose', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'lose'}]},
   {id: 'd2.boss-roundtrip', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'win'}, {do: 'roundtrip'},
     {do: 'event', event: 1}]},
-  ...['d1', 'd4', 'd6', 'd7a', 'd7b'].flatMap(standard),
+  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10'].flatMap(standard),
 ].map(sc => Object.assign({dungeon: 'd2'}, sc));
 
 // ---- 引擎占位（同 event_probe） ----
@@ -105,7 +112,7 @@ const sceneStub = new Proxy(Object.create(w.Scene_Map.prototype), {
   },
   set(o, k, v) { o[k] = v; return true; }
 });
-let trace = null, battleResult = 'win', picks = [];
+let trace = null, battleResult = 'win', picks = [], runeItem = 24;
 const rec = e => trace && trace.push(e);
 if (w.$) w.$.toaster = o => rec({t: 'toast', text: String(o && (o.message || o.title) || '')});
 function sceneCall(cls) {
@@ -171,7 +178,7 @@ function focus() {
   for (const v of FOCUS_VARS) vars[v] = w.$gameVariables.value(v);
   for (const s of FOCUS_SW) sw[s] = !!w.$gameSwitches.value(s);
   return {difficulty: w.$gameSystem.difficultyId(), map: w.$gameMap.mapId(), x: p.x, y: p.y, hangEnabled: !!w.$gameParty.hangUpSwitch(),
-    hangActive: !!(hu && hu.state), rune: w.$gameParty.numItems(w.$dataItems[24]), vars, switches: sw};
+    hangActive: !!(hu && hu.state), rune: w.$gameParty.numItems(w.$dataItems[runeItem]), vars, switches: sw};
 }
 
 // ---- 运行 ----
@@ -210,7 +217,8 @@ function runList(list, eventId) {
   return !it.isRunning();
 }
 function setupCase(sc) {
-  const dg = DUNGEONS[sc.dungeon], st = sc.setup, diff = st.difficulty || 3, tier = st.tier || 1, rand = st.rand === undefined ? 0.5 : st.rand;
+  const dg = DUNGEONS[sc.dungeon]; runeItem = dg.rune || 24;
+  const st = sc.setup, diff = st.difficulty || 3, tier = st.tier || 1, rand = st.rand === undefined ? 0.5 : st.rand;
   w.eval('ConfigManager.applyData({}); DataManager.setupNewGame(); $gamePlayer.clearTransferInfo(); Graphics.frameCount = 0;');
   w.Math.random = () => rand;
   w.$gameSystem._codexOrbRng = {seed: ORB_SEED, n: {}};
@@ -288,7 +296,7 @@ const cases = chosen.map(sc => {
     if (res.gameOver || res.errors) break;
   }
   const dg = DUNGEONS[sc.dungeon];
-  return {id: sc.id, dungeon: sc.dungeon, at: dg.start, tierBase: dg.tierBase, setup: sc.setup, script: sc.steps, start, steps};
+  return {id: sc.id, dungeon: sc.dungeon, at: dg.start, tierBase: dg.tierBase, ...(dg.rune ? {rune: dg.rune} : {}), setup: sc.setup, script: sc.steps, start, steps};
 });
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 const setup = {party: PARTY, orbSeed: ORB_SEED, diffSwitch: DIFF_SWITCH, start: D2, maxFrames: MAX_FRAMES};

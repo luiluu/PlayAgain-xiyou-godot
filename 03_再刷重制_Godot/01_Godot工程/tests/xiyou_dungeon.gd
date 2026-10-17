@@ -14,6 +14,12 @@ class Ch:
 	extends RefCounted
 	var character_name := ""
 
+	func start_balloon(_id: int) -> void:    # 指令 213（九层女神、精灵商人）：参照不画气泡
+		pass
+
+	func is_balloon_playing() -> bool:
+		return false
+
 
 ## 记录用宿主：在地图事件对照的替身上，按剧本回答选项、给战斗结果，并替事件提供当前页的图像与暂时消除
 class DungeonHost:
@@ -95,6 +101,9 @@ static func page_of(map_id: int, id: int, erased: Dictionary) -> int:
 	return -1
 
 
+var rune_item := 24     # 本例副本的挑战符文（十层起中级符文 64）
+
+
 func _ready() -> void:
 	_run.call_deferred()
 
@@ -111,7 +120,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	_static_checks()
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
-	check("oracle_loaded", oracle is Dictionary and oracle.has("cases") and oracle.cases.size() >= 45)
+	check("oracle_loaded", oracle is Dictionary and oracle.has("cases") and oracle.cases.size() >= 59)
 	if oracle is Dictionary:
 		var host := DungeonHost.new()
 		add_child(host)
@@ -169,6 +178,7 @@ func _run_case(c: Dictionary, setup: Dictionary, host: DungeonHost) -> Dictionar
 		s.set_switch(int(id), true)
 	for k in st.get("vars", {}):
 		s.set_variable(int(k), float(st.vars[k]))
+	rune_item = int(c.get("rune", 24))
 	var base := int(c.tierBase)
 	for t in range(2, int(st.get("tier", 1)) + 1):
 		s.set_switch(base + t - 1, true)
@@ -314,7 +324,7 @@ func _focus(s: XState, _host: DungeonHost) -> Dictionary:
 	for id in [229, 230, 882, 1565, 1566, 1567, 1568]:
 		sw[str(id)] = s.switch(id)
 	return {"difficulty": s.difficulty, "map": s.map_id, "x": s.x, "y": s.y, "hangEnabled": XHangUp.enabled(s),
-		"hangActive": s.hang_up_active, "rune": s.item_count(24), "vars": vars, "switches": sw}
+		"hangActive": s.hang_up_active, "rune": s.item_count(rune_item), "vars": vars, "switches": sw}
 
 
 ## 数值统一成整数（能整除时），再序列化比较
@@ -382,11 +392,11 @@ func _static_checks() -> void:
 	check("spec.tiers", spec.get("tiers", []) == [1, 2, 3, 4], spec)
 	check("spec.transfer", spec.get("transfers", []) == [[123, 14, 23]], spec)
 	# 同一模板的其他副本入口：每页都认得出，符文与目的地图一致
-	for d in [[5, 8, 220], [7, 1, 8], [13, 1, 14], [61, 10, 129], [61, 11, 130]]:
+	for d in [[5, 8, 220, 24], [7, 1, 8, 24], [13, 1, 14, 24], [61, 10, 129, 24], [61, 11, 130, 24], [15, 4, 131, 24], [17, 2, 22, 64]]:
 		var ev := event_rec(d[0], d[1])
 		var ok: bool = not ev.is_empty() and ev.pages.all(func(pg):
 			var sp := XDungeon.entry_spec(pg.list)
-			return int(sp.get("rune", 0)) == 24 and int(sp.transfers[0][0]) == d[2])
+			return int(sp.get("rune", 0)) == d[3] and int(sp.transfers[0][0]) == d[2])
 		check("spec.map%d_ev%d" % [d[0], d[1]], ok)
 	check("spec.not_exit", XDungeon.entry_spec(event_rec(123, 6).pages[0].list).is_empty())
 	check("spec.not_map001", XDungeon.entry_spec(XDB.map(1).events[1].pages[0].list).is_empty())
