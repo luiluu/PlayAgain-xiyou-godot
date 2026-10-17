@@ -33,7 +33,7 @@ var home := Vector2.ZERO
 var facing_left := true
 ## YEP_X_AnimatedSVEnemies 呼吸（Breathing Y Rate 0.02）
 var breathing := false
-var _breath_t := randf() * TAU
+var _breath_t := 0.0
 ## 身体材质：hue 是神话敌人色相（载入时改图，先做），blend 是 Sprite.setBlendColor（技能动画目标闪光：rgb 向 blend.rgb 混合 blend.a）
 const BODY_SHADER := """
 shader_type canvas_item;
@@ -52,6 +52,13 @@ void fragment() {
 }
 """
 static var _body_shader: Shader
+
+
+func _init() -> void:
+	# 呼吸相位只属于画面：不能抽走战斗规则使用的全局随机数。
+	var visual_rng := RandomNumberGenerator.new()
+	visual_rng.randomize()
+	_breath_t = visual_rng.randf() * TAU
 
 
 func setup(b: XBattler, sprite_scale: float) -> void:

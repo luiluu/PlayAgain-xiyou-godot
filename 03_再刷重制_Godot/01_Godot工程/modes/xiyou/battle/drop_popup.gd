@@ -27,6 +27,12 @@ var follow: Node2D
 var icons: Array = []        # 按 intY 排好（_icons）：[{item, index, x, y, intY, dy, ry, vx, sx, sy, alpha, wait, visible, node, anim}]
 var _born_icons: Array = []  # 建立顺序（排序前）
 var _born_nodes: Array = []
+var _visual_rng := RandomNumberGenerator.new()
+
+
+func _init() -> void:
+	# 图标弹跳不影响下一次命中、暴击、掉落或战斗结束后的随机数。
+	_visual_rng.randomize()
 
 
 ## 一个掉落图标（SpriteEnemyTrP._icons[i]），画法读它的状态字典
@@ -77,11 +83,11 @@ func setup(target: Node2D, sprite_h: float, items: Array) -> void:
 	var made: Array = []
 	for i in range(items.size()):
 		var item: Dictionary = items[i]
-		var hr := randi_range(0, int(ICON) - 1)
+		var hr := _visual_rng.randi_range(0, int(ICON) - 1)
 		var int_y := (sprite_h / 3.0 + hr) - ICON
-		var randx := randf() * 0.5 + i / 8.0
+		var randx := _visual_rng.randf() * 0.5 + i / 8.0
 		var g := {"item": item, "index": i, "x": 0.0, "y": START_Y, "intY": int_y, "dy": 15.0, "ry": START_Y + int_y,
-			"vx": randx if randi_range(0, 1) == 0 else -randx, "sx": ICON_SCALE, "sy": ICON_SCALE,
+			"vx": randx if _visual_rng.randi_range(0, 1) == 0 else -randx, "sx": ICON_SCALE, "sy": ICON_SCALE,
 			"alpha": 255, "wait": 0, "visible": true, "anim": null}
 		var node := DropIcon.new()
 		node.g = g
