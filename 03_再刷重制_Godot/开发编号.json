@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.071",
-  "sequence": 71,
-  "next": "dev.072",
-  "nextSequence": 72,
+  "current": "dev.072",
+  "sequence": 72,
+  "next": "dev.073",
+  "nextSequence": 73,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "副本系统 XDungeon：一、二、四、六、七层副本（悟空）",
+  "currentChange": "进度审查（内容与规则）修复：三元公式按下标取值、致死后不附加状态、读档清副本战斗标记（八戒）",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
