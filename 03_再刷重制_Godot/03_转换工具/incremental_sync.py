@@ -106,6 +106,13 @@ class ProbeCache:
         except (KeyError, TypeError, OSError):
             return False
 
+    def invalidate(self, commands):
+        # A forced or invalidated probe must not fall back to an older successful cache
+        # after this attempt fails, even if its input key happens to be unchanged.
+        for command in commands:
+            self.entries.pop(command[0], None)
+        atomic_json(self.path, {'version': VERSION, 'probes': self.entries})
+
     def record(self, command, output_names, key):
         self.pending[command[0]] = {'key': key, 'command': command, 'names': output_names, 'outputs': self.outputs(output_names)}
 

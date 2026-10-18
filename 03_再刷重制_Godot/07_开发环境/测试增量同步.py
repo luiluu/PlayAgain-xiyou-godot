@@ -126,7 +126,6 @@ class CacheTests(unittest.TestCase):
 
     def test_failed_or_missing_probe_does_not_reuse_stale_output(self):
         self.prime()
-        previous = self.cache().path.read_bytes()
         (self.oracle / '.sandbox/a.json').write_text('{"old":true}')
         for text in [None, '{"cases":[{"error":"failed sampling"}]}']:
             c = self.cache(True)
@@ -138,8 +137,18 @@ class CacheTests(unittest.TestCase):
                  mock.patch.object(sync.subprocess, 'run', fake), mock.patch.dict(os.environ, XIYOU_GENERATED=str(self.gen)):
                 with self.assertRaises(RuntimeError):
                     sync.run_probes(io.StringIO(), c)
-            self.assertEqual(c.path.read_bytes(), previous)
+            self.assertNotIn('a_probe.cjs', json.loads(c.path.read_text())['probes'])
             self.assertIn('ok', (self.gen / 'oracle/a.json').read_text())
+
+    def test_failed_forced_run_cannot_reuse_last_success(self):
+        self.prime()
+        c = self.cache(True)
+        with mock.patch.multiple(sync, PROBES=[self.probes[0]], ORACLE_DIR=self.oracle, SANDBOX=self.oracle / '.sandbox'), \
+             mock.patch.object(sync.subprocess, 'run', return_value=subprocess.CompletedProcess([], 7, '', 'failure')), \
+             mock.patch.dict(os.environ, XIYOU_GENERATED=str(self.gen)):
+            with self.assertRaises(RuntimeError):
+                sync.run_probes(io.StringIO(), c)
+        self.assertEqual(self.hits(), [False, True, True])
 
     def test_existing_baseline_failure_cannot_be_extended_or_changed(self):
         known = '{"cases":[{"id":"known","error":"old failure","finished":false}]}'

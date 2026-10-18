@@ -226,6 +226,8 @@ def run_probes(log, cache=None):
     print('PROBE_PLAN=' + json.dumps({'executed': len(plan), 'reused': len(reused)}), flush=True)
     if not plan:
         return {'executed': [], 'reused': reused, 'seconds': {}}
+    if cache:
+        cache.invalidate([command for command, _ in plan])
     runs = SANDBOX / 'run'
     shutil.rmtree(runs, ignore_errors=True)
 
