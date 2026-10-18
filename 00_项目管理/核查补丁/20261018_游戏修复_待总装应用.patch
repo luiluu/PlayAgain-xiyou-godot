@@ -1,0 +1,57 @@
+--- a/03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/guide.gd
++++ b/03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/guide.gd
+@@ -206,9 +206,25 @@
+ 	return ""
+ 
+ 
++## 区段原表保留冻结来源；显示内容遵循已定数值原则与当前实际掉率。
++static func milestone_intro(seg: Dictionary) -> String:
++	var intro := str(seg.intro)
++	match str(seg.key):
++		"a":
++			var rate := pct(float(XDB.table("CodexOrbs").get("dropRate", 0.1)))
++			return intro.replace("20%", rate)
++		"c":
++			return "首通守层者可以获得真气；副本Boss可以反复挑战。积累真气、突破境界、学习道法，提升队伍能力。"
++		"d":
++			return "打开状态界面「修行」页的难度对照，查看暴击率、爆伤、命中与攻击的变化，再通过装备、被动和真气调整队伍。"
++		"g":
++			return intro.replace("五个乘区和难度对照", "难度对照")
++	return intro
++
++
+ ## G.milestoneTexts
+ static func milestone_texts(seg: Dictionary) -> Array:
+-	var t := ["\\C[6]%s\\C[0]　%s" % [seg.title, seg.intro]]
++	var t := ["\\C[6]%s\\C[0]　%s" % [seg.title, milestone_intro(seg)]]
+ 	if not seg.get("bosses", []).is_empty():
+ 		t.append("\\C[4]可反复刷的副本Boss\\C[0]：" + _boss_summary(seg, 4) + "。")
+ 	var more: Array = seg.get("special", []).duplicate()
+--- a/03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/damage.gd
++++ b/03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/damage.gd
+@@ -274,6 +274,10 @@
+ 			mult += maxf(0.0, 1.0 + element_bonus(a, e))
+ 		mult /= es.size()
+ 	var value: float = base * mult * maxf(0.0, b.rec)
++	# installDamageElementRuntime.healing：治疗被动在浮动与取整之前相乘。
++	if value < 0.0 and a is XActor:
++		for bonus in a.passive_values("passiveHEUP"):
++			value *= 1.0 + float(bonus) * 0.01
+ 	if options.get("variance", true):
+ 		value = apply_variance(value, int(item.damage.variance))
+ 	return {"value": roundf(minf(0.0, value)), "settled": value, "critical": false, "breakdown": {"base": base, "elementMultiplier": mult}}
+--- a/03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_scene.gd
++++ b/03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_scene.gd
+@@ -444,6 +444,12 @@
+ 			if not XHangUp.fast_fighting(XState.current):
+ 				await _say("全军覆没……", 1.2)
+ 			logic.end_battle()
++			# MV updateBattleEnd：允许失败时，只将阵亡出战成员复活到 1 HP。
++			if can_lose:
++				for member in XState.current.battle_members():
++					if member.is_dead():
++						member.hp = 1.0
++						member.refresh_resources()
+ 			finished.emit(2)
+ 			return
+ 		await _play(logic.end_turn())
