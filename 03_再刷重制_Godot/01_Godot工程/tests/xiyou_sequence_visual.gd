@@ -51,6 +51,8 @@ func _run() -> void:
 		e.hp = e.mhp
 	for key in oracle.traces:
 		await _trace(scene, s, key, oracle.traces[key])
+	await _counter_death(scene, oracle.traces.s104)
+	await _multi_hit_gauge(scene)
 	XConfig.set_flag("battleCamera", true)
 	XConfig.set_flag("CombatSkillAnimation", false)
 	scene.queue_free()
@@ -137,3 +139,99 @@ func _trace(scene: XBattleScene, s: XState, key: String, t: Dictionary) -> void:
 					or (k.begins_with("a") and gs[3] != str(ws[3])):
 				bad.append([f, k, gs, ws])
 	check("%s_frames" % key, bad.is_empty(), bad.slice(0, 6))
+
+
+# ---- 画面快照（日志写入时记下的值，表现层只读日志） ----
+## 测试专用反击状态（同 xiyou_combat）：一条 xparam 6 特性，追加到 States 表末尾
+func _counter_state() -> int:
+	var t: Array = XDB.table("States")
+	var id := t.size()
+	t.append({"id": id, "name": "测试反击", "traits": [{"code": 22, "dataId": 6, "value": 1.0}],
+		"note": "", "meta": {}, "iconIndex": 0, "restriction": 0, "autoRemovalTiming": 0, "removeAtBattleEnd": true})
+	return id
+
+
+## 跑一招并逐帧记录：返回 {logs, cmds, jump（行动者跳跃高度）, hp（目标在画面上的 HP 读数）}
+func _play_once(scene: XBattleScene, user: XActor, skill_id: int, target: XBattler) -> Dictionary:
+	for sp in scene.sprites.values():
+		sp.set_motion("walk")
+		sp.position = sp.home
+	scene.camera = XBattleCamera.new()
+	scene.camera.sprites = scene.sprites
+	var logs := scene.logic.execute(user, XDB.rec("Skills", skill_id), target, true)
+	var i := logs.find(logs.filter(func(l): return l.type == "seq_phase")[0])
+	var j := logs.find(logs.filter(func(l): return l.type == "seq_end")[0])
+	var got := {"logs": logs, "jump": [], "hp": [], "text": []}
+	var player := XSequencePlayer.create(scene, logs[i - 1], logs.slice(i, j + 1))
+	scene.show_views(logs[i - 1].views)
+	player.on_frame = func(_p):
+		got.jump.append(snappedf(scene.sprites[user].jump_height(), 0.001))
+		got.hp.append(float(scene.view(target).hp))
+	await player.play()
+	scene.clear_views()
+	got.cmds = player.cmds
+	return got
+
+
+## 反击致死：行动者 1 HP、目标 100% 反击，104 在首个 ACTION EFFECT 被反击击倒。MV 在指令执行时读 spriteCanMove，
+## 反击到 ACTION EFFECT 的 invokeAction 才发生，所以首个 ACTION EFFECT（含）之前的指令时间与跳跃高度
+## 应与正式版高 HP 读数（__seqRef s104）一致；结算（倒下、反击记录）照旧。
+func _counter_death(scene: XBattleScene, t: Dictionary) -> void:
+	var logic := scene.logic
+	var user: XActor = logic.actors.filter(func(a): return a.actor_id == int(t.actor))[0]
+	var foe: XBattler = logic.enemies[1]
+	for b in logic.actors + logic.enemies:
+		b.recover_all()
+	var cnt := _counter_state()
+	foe.add_state(cnt)
+	user.hp = 1.0
+	var got := await _play_once(scene, user, int(t.skill), foe)
+	foe.remove_state(cnt)
+	var first := -1
+	for c in t.cmds:
+		if str(c[1]).to_upper() == "ACTION EFFECT":
+			first = int(c[0])
+			break
+	# 到首个 ACTION EFFECT 为止（之后 DEATH BREAK 因行动者已倒下而中断，本该与高 HP 不同）
+	var cut := func(list: Array) -> Array:
+		var out := []
+		for c in list:
+			out.append([int(c[0]), str(c[1]).to_upper()])
+			if out.back()[1] == "ACTION EFFECT":
+				break
+		return out
+	var want_cmds: Array = cut.call(t.cmds)
+	var got_cmds: Array = cut.call(got.cmds)
+	check("counter_death_cmds_until_effect", got_cmds == want_cmds, {"godot": got_cmds, "mv": want_cmds})
+	var key := "a%d" % user.actor_id
+	var want_jump: Array = t.sprites[key].slice(0, first).map(func(r): return snappedf(float(r[2]), 0.001))
+	var bad := []
+	for f in range(mini(first, got.jump.size())):
+		if absf(got.jump[f] - want_jump[f]) > 0.002:
+			bad.append([f, got.jump[f], want_jump[f]])
+	check("counter_death_jump_until_effect", bad.is_empty() and got.jump.size() > first and want_jump.max() > 0.0, bad.slice(0, 6))
+	check("counter_death_settled", user.is_dead() and got.logs.any(func(l): return l.type == "counter" and l.user == foe),
+		[user.hp, got.logs.map(func(l): return l.type)])
+
+
+## 多段攻击：每一下命中时画面上的敌人 HP 是该下结算后的值（日志 views），不是最终值；最后一下与实际 HP 相同。
+func _multi_hit_gauge(scene: XBattleScene) -> void:
+	var logic := scene.logic
+	var user: XActor = logic.actors[0]
+	var foe: XBattler = logic.enemies[1]
+	for b in logic.actors + logic.enemies:
+		b.recover_all()
+	var start := foe.hp
+	var got := await _play_once(scene, user, 131, foe)
+	var hits: Array = got.logs.filter(func(l): return l.type == "hit" and l.target == foe and not (l.missed or l.evaded))
+	var want := [start]
+	var hp := start
+	for h in hits:
+		hp = clampf(hp - float(h.hp), 0.0, foe.mhp)
+		want.append(hp)
+	var seen := []
+	for v in got.hp:
+		if seen.is_empty() or seen.back() != v:
+			seen.append(v)
+	check("multi_hit_gauge_steps", hits.size() >= 2 and seen == want and is_equal_approx(want.back(), foe.hp), {"seen": seen, "want": want, "hits": hits.size()})
+	check("multi_hit_gauge_live_after", is_equal_approx(float(scene.view(foe).hp), foe.hp))
