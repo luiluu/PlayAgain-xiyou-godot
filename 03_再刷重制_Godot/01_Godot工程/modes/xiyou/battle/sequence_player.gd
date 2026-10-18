@@ -38,6 +38,8 @@ var cmds: Array = []
 var done := false
 ## ACTION COMMON EVENT / COMMON EVENT 预约了公共事件：下一帧 BattleManager.updateEvent 占掉（事件本身不在这里执行）
 var _event_pending := false
+## 正在执行的序列指令（读它的 moves 快照）
+var _cur: Dictionary = {}
 
 
 static func create(s: XBattleScene, action: Dictionary, list: Array) -> XSequencePlayer:
@@ -60,6 +62,7 @@ func play() -> void:
 			_step()
 		for sp in scene.sprites.values():
 			(sp as XBattlerSprite).seq_update()
+		scene.update_gauges()
 		scene.apply_camera()
 		if on_frame.is_valid():
 			on_frame.call(self)
@@ -99,6 +102,9 @@ func _step() -> void:
 			"seq":
 				pos += 1
 				cmds.append([frame, e.name])
+				_cur = e
+				if e.has("views"):
+					scene.show_views(e.views)
 				if not _exec(e):
 					return
 			_:
@@ -123,14 +129,19 @@ func _speed_frames(n: float) -> int:
 	return ceili(n / (5 - XConfig.battle_speed()))
 
 
-## Game_Battler.spriteCanMove：能行动（restriction < 4 且活着）
-static func can_move(b: XBattler) -> bool:
-	if b.is_dead():
-		return false
-	for st in b.states():
-		if int(st.get("restriction", 0)) >= 4:
-			return false
-	return true
+## Game_Battler.spriteCanMove：能行动（restriction < 4 且活着）。读当前指令执行时记下的快照（XActionSequence 的 moves），
+## 后发生的反击致死等不影响之前指令的跳跃、移动与朝向；没有快照（旧记录）时读实时状态。
+func can_move(b: XBattler) -> bool:
+	var f = _cur.get("moves", {}).get(b)
+	if f != null:
+		return f[0]
+	return b.is_alive() and not b.states().any(func(st): return int(st.get("restriction", 0)) >= 4)
+
+
+## 当前指令执行时是否活着（快照）
+func _alive(b: XBattler) -> bool:
+	var f = _cur.get("moves", {}).get(b)
+	return f[1] if f != null else b.is_alive()
 
 
 func _exec(e: Dictionary) -> bool:
@@ -459,20 +470,28 @@ func _play_results(list: Array) -> void:
 			"hit":
 				if scene._hit_visual(l):
 					scene._collapse_visual(l.target)
-				_push_results(not (l.added.is_empty() and l.removed.is_empty()))
+				# 倒下也算状态变化（MV 结算时附加了无法战斗状态，addedStateObjects 里有它）
+				_push_results(not (l.added.is_empty() and l.removed.is_empty()) or l.died)
 			"counter":
+				# displayCounter：addText 直接加一行并 wait()（等 messageSpeed），再放攻击动画、waitForAnimation
+				lines += 1
+				wait_count = MESSAGE_SPEED
 				scene._banner(str(XDB.system().terms.messages.counterAttack).replace("%1", l.user.display_name()))
 				var a := scene._start_animation(scene._attack_animation(l.user), l.target)
 				if a:
 					anims.append(a)
 				wait_mode = "animation"
 			"reflect":
+				# displayReflection：同 displayCounter（addText＋wait，放技能动画、waitForAnimation）
+				lines += 1
+				wait_count = MESSAGE_SPEED
 				scene._banner(str(XDB.system().terms.messages.magicReflection).replace("%1", l.target.display_name()))
 				var a := scene._start_animation(int(skill.get("animationId", 0)), l.user)
 				if a:
 					anims.append(a)
 				wait_mode = "animation"
 			"collapse":
+				scene.show_views(l.get("views", {}))
 				scene._collapse_visual(l.target)
 	scene._refresh_status(false)
 
@@ -557,7 +576,7 @@ func _whiten(b: XBattler) -> void:
 func _perform_finish() -> void:
 	scene.camera.zoom_to(1.0, 30)
 	scene.camera.reset(30)
-	for b in scene.logic.alive(scene.logic.actors) + scene.logic.alive(scene.logic.enemies):
+	for b in (scene.logic.actors + scene.logic.enemies).filter(_alive):
 		var sp := _sprite(b)
 		if can_move(b):
 			sp.set_mirror(false)
@@ -639,7 +658,8 @@ func _face(movers: Array, args: Array) -> bool:
 		_:
 			var away := cmd.begins_with("AWAY FROM ")
 			var spec := cmd.substr(10) if away else cmd
-			var group := XActionSequence.create(scene.logic, user, skill, []).visual_targets(spec)
+			var group: Array = _cur.get("face_group", []) if _cur.has("face_group") \
+				else XActionSequence.create(scene.logic, user, skill, []).visual_targets(spec)
 			if group.is_empty():
 				return false
 			var x := 0.0

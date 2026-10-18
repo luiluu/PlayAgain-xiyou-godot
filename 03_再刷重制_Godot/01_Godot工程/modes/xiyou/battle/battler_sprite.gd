@@ -10,6 +10,8 @@ const MOTION_SPEED := 6
 const WEAPON_WAIT := 3
 
 var battler: XBattler
+## 演出中的读数（XBattleScene.show_views 设、clear_views 清）；空时读实时状态
+var view := {}
 var look: XAppearance
 ## 身体：格子/逐帧/单图时是 Sprite2D，场景外观时是场景根节点
 var sprite: Node2D
@@ -211,13 +213,19 @@ func _process(delta: float) -> void:
 		sprite.modulate = Color(1.5, 1.5, 1.5) if _selection_frame % 30 < 15 else Color.WHITE
 	else:
 		_selection_frame = 0
-	if breathing and battler.is_alive():
+	if breathing and not (view.dead if not view.is_empty() else battler.is_dead()):
 		_breath_t += delta * TAU / 2.4
 		sprite.scale.y = body_scale * (1.0 + sin(_breath_t) * 0.02)
 		sprite.position.y = -_lift_px
 
 
 func _idle_motion() -> String:
+	if not view.is_empty():
+		if view.dead:
+			return "dead"
+		if view.hp / maxf(view.mhp, 1.0) < 0.25:
+			return "dying"
+		return "guard" if view.guarding else "walk"
 	if battler.is_dead():
 		return "dead"
 	if battler.hp_rate() < 0.25:
