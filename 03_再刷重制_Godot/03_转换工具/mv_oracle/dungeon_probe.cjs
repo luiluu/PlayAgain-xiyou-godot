@@ -89,6 +89,17 @@ const DUNGEONS = {
   d21: {start: {map: 117, x: 35, y: 1}, door: 2, tierBase: 1641, rune: 397, escape: 7,
     clear: [1, 2, 3, 4, 5, 6].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 6}]),
     boss: {sw: 901, event: 11, item: 914}},
+  // 二十二层剥皮教堂：四只精英（无计数）后首领劳勃；二十三层陈塘关：六只卫兵精英（变量 246 到 4 才出首领李静）；
+  // 二十四层熊族桃园：熊一至熊五（变量 249 到 5 才出首领雄霸，宝箱是自动执行页，敌群 526 第 2 页第 1 回合给状态 44 并强制 3813）；三层都收活力水 912
+  d22: {start: {map: 119, x: 38, y: 5}, door: 14, tierBase: 1645, rune: 397, escape: 10,
+    clear: [6, 7, 8, 9, 5].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 5}]),
+    boss: {sw: 902, event: 11, item: 912}},
+  d23: {start: {map: 118, x: 43, y: 46}, door: 4, tierBase: 1649, rune: 397, escape: 8,
+    clear: [2, 3, 4, 5, 6, 7, 1].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 1}]),
+    boss: {sw: 903, event: 9, item: 912}},
+  d24: {start: {map: 120, x: 41, y: 1}, door: 2, tierBase: 1653, rune: 397, escape: 7,
+    clear: [1, 3, 4, 5, 6, 2].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 2}]),
+    boss: {sw: 904, event: 8, item: 912}},
 };
 const D2 = DUNGEONS.d2.start;
 const enter = (picks, rune = 1, door = 7, item = 24) => [{do: 'item', id: item, n: rune}, {do: 'event', event: door, picks}];
@@ -136,7 +147,7 @@ const SCENARIOS = [
   {id: 'd2.boss-lose', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'lose'}]},
   {id: 'd2.boss-roundtrip', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'win'}, {do: 'roundtrip'},
     {do: 'event', event: 1}]},
-  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd17', 'd18', 'd19', 'd20', 'd21'].flatMap(standard),
+  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd17', 'd18', 'd19', 'd20', 'd21', 'd22', 'd23', 'd24'].flatMap(standard),
   {id: 'd17.hidden-boss', dungeon: 'd17', setup: {rand: 0.9}, steps: [...enter([0], 1, 2, 171),
     ...[6, 7, 8, 9, 10, 11, 12, 13, 2, 3, 4, 5, 14].map(e => ({do: 'event', event: e, battle: 'win'}))]},
   // 二十层宝箱额外奖励（入口随机变量 155 到 97 以上，157 选三件之一）
