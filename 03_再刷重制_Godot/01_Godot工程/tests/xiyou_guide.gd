@@ -124,8 +124,11 @@ func _run() -> void:
 				var full: Array = want.full
 				check(c.id + ".zones_only_extra", full.size() == want.texts.size() + 1 and _same(full.slice(0, -1), want.texts) and str(full[-1]).contains("战力短板"), full)
 				want = {"texts": want.texts, "list": want.list}
+			if c.id.begins_with("milestone.") and c.id != "milestone.pick" and c.id != "milestone.save":
+				want = _adapt_milestone(c.setup, want)
 			check(c.id, got != null and _same(got, want), [got, want])
 	check("guide_cases", n >= 22, n)
+	_milestone_content()
 	_atlas_file()
 	_word_wrap()
 	await _shop_flow(shop_list)
@@ -134,6 +137,34 @@ func _run() -> void:
 	_cmp.free()
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_guide", "passed": results.size() - failed.size(), "total": results.size(), "failed": failed.map(func(r): return r.name)}))
 	get_tree().quit(0 if failed.is_empty() else 1)
+
+
+## 2026-10-18 核查第二批：里程碑介绍在显示层改写（原表保留）——神秘珠掉率读实际配置（10%），
+## 不介绍未移植的五乘区预算与未开放的洪荒入口。参照文字里只换这一句介绍，其余逐字照比；分页按改写后的文字重算。
+func _adapt_milestone(setup: Dictionary, want: Dictionary) -> Dictionary:
+	var seg := {}
+	for x in XGuide.atlas():
+		if str(x.key) == str(setup.segment):
+			seg = x
+	var texts: Array = want.texts.duplicate()
+	if seg.is_empty() or texts.is_empty():
+		return want
+	texts[0] = str(texts[0]).replace(str(seg.intro), XGuide.milestone_intro(seg))
+	return {"texts": texts, "list": XGuide.page_list(texts)}
+
+
+func _milestone_content() -> void:
+	var by := {}
+	for x in XGuide.atlas():
+		by[str(x.key)] = x
+	var all := ""
+	for k in by:
+		all += "\n".join(XGuide.milestone_texts(by[k]))
+	var rate := XGuide.pct(float(XDB.table("CodexOrbs").get("dropRate", 0.1)))
+	check("milestone_orb_rate", rate == "10%" and XGuide.milestone_intro(by.a).contains("10%") and not XGuide.milestone_intro(by.a).contains("20%"), XGuide.milestone_intro(by.a))
+	check("milestone_no_zones", not all.contains("乘区") and not all.contains("溢出"), all)
+	check("milestone_no_honghuang", not all.contains("洪荒") and not all.contains("诅咒"), all)
+	check("milestone_atlas_kept", str(by.a.intro).contains("20%") and str(by.c.intro).contains("洪荒"), [by.a.intro, by.c.intro])
 
 
 func _atlas_file() -> void:
