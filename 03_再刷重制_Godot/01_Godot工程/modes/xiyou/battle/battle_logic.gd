@@ -127,6 +127,45 @@ func _battle_start_states() -> void:
 func alive(list: Array) -> Array:
 	return list.filter(func(b): return b.is_alive())
 
+
+# ---- 画面快照：日志写入时记下表现要用的值，表现层只读日志（整次行动先结算完才演出，播放时的实时状态已是最终值） ----
+## 一个战斗者此刻的画面读数（血条、状态栏、待机动作、能否行动）
+func view_of(b: XBattler) -> Dictionary:
+	var icons := []
+	for st in b.states():
+		if int(st.get("iconIndex", 0)) > 0:
+			icons.append(int(st.iconIndex))
+	return {"hp": b.hp, "mp": b.mp, "tp": b.tp, "mhp": b.mhp, "mmp": b.mmp, "mtp": b.max_tp(), "dead": b.is_dead(),
+		"guarding": b.guarding, "can_move": can_move(b), "icons": icons}
+
+
+## 全体战斗者 → view_of
+func views(list: Array = []) -> Dictionary:
+	var out := {}
+	for b in (list if not list.is_empty() else actors + enemies):
+		if b != null and not out.has(b):
+			out[b] = view_of(b)
+	return out
+
+
+## 全体战斗者 → 能否行动（spriteCanMove）与是否活着，行动序列每条指令执行前记一次（MOVE/JUMP/FACE 等按当时的状态）
+func move_flags() -> Dictionary:
+	var out := {}
+	for b in actors + enemies:
+		out[b] = [can_move(b), b.is_alive()]
+	return out
+
+
+## 命中记录（含反击、反射的命中）写入时附上行动者与目标的结算后读数
+func mark_views(entries: Array) -> Array:
+	for l in entries:
+		if l is Dictionary and l.get("type") == "hit":
+			var list := [l.target]
+			if l.get("user") is XBattler:
+				list.append(l.user)
+			l.views = views(list)
+	return entries
+
 func is_won() -> bool:
 	return alive(enemies).is_empty()
 
@@ -850,7 +889,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		u.tp -= c.tp
 		u.pay_cooldown(skill)
 		_otb_user_shift(u, skill)
-	logs.append({"type": "action", "user": u, "skill": skill})
+	logs.append({"type": "action", "user": u, "skill": skill, "views": views()})
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
@@ -872,7 +911,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 				break
 			if u.is_dead():
 				break
-			logs.append_array(_invoke(u, skill, t))
+			logs.append_array(mark_views(_invoke(u, skill, t)))
 	return logs
 
 
@@ -1171,7 +1210,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 	var dm := floorf(b.mmp * b.mrg)
 	if dh != 0.0:
 		b.hp = clampf(b.hp + dh, 1.0, b.mhp) if dh < 0.0 else minf(b.mhp, b.hp + dh)
-		logs.append({"type": "regen", "target": b, "hp": -dh})
+		logs.append({"type": "regen", "target": b, "hp": -dh, "views": views([b])})
 	if dm != 0.0:
 		b.mp = clampf(b.mp + dm, 0.0, b.mmp)
 	b.tp = minf(b.max_tp(), b.tp + 100.0 * b.trg)

@@ -230,8 +230,10 @@ func _make_enemy_gauge(e: XEnemy) -> void:
 ## 名字居中在 (敌人 x, y−27) 的 640×72 内容位图；HP 内容 (x−90,y−16)，字号 26、居中、12px 粗条。
 func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 	var g: Dictionary = gauges[e]
-	if e.is_alive() and (g.name_timer > 0.0 or e == _hover):
-		var color := _enemy_name_color(e) if e.hp_rate() > 0.5 else XUI.text_color(2 if e.hp_rate() > 0.25 else 10)
+	var v := view(e)
+	var rate: float = v.hp / maxf(v.mhp, 1.0)
+	if not v.dead and (g.name_timer > 0.0 or e == _hover):
+		var color := _enemy_name_color(e) if rate > 0.5 else XUI.text_color(2 if rate > 0.25 else 10)
 		c.text(e.display_name(), 0, 0, 640, "center", color, 18, 36)
 	if g.timer <= 0.0 and not (_target_mode == "enemy" and e == _hover):
 		return
@@ -240,15 +242,46 @@ func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 	var y := 11.0
 	var gy := y + 36 - 12 - 2
 	c.draw_rect(Rect2(x, gy, w, 12), Color(XUI.text_color(19), 160.0 / 255.0))
-	var fill := maxf(0, floorf(w * e.hp_rate()) - 4)
+	var fill := maxf(0, floorf(w * rate) - 4)
 	if fill > 0:
 		c.gradient(Rect2(x + 2, gy + 2, fill, 8), XUI.text_color(20), XUI.text_color(21))
-	c.text(XMenu._group(e.hp), x, y, w, "center", XUI.TEXT, 26, 36)
+	c.text(XMenu._group(v.hp), x, y, w, "center", XUI.TEXT, 26, 36)
 
 
 ## EnemyNameColorByDifficulty 只为与数据库原名完全相同的文字上色。
 func _enemy_name_color(e: XEnemy) -> Color:
 	return XEnemy.name_color(e.display_name(), e.difficulty_id)
+
+
+# ---- 画面读数 ----
+## 演出中显示的战斗者读数：日志里记下的结算后值（XBattleLogic.view_of）。整次行动先结算完才演出，
+## 实时状态已是最终值，多段攻击若读实时值第一下就显示最后的血量。不在演出中（或日志没有记）时读实时状态。
+var shown := {}            # XBattler -> view
+
+func view(b: XBattler) -> Dictionary:
+	return shown[b] if shown.has(b) else logic.view_of(b)
+
+
+func show_views(v: Dictionary) -> void:
+	for b in v:
+		shown[b] = v[b]
+		if status_rows.has(b):
+			status_rows[b].view = v[b]
+			status_rows[b].refresh()
+		if sprites.has(b):
+			sprites[b].view = v[b]
+		if gauges.has(b):
+			_refresh_enemy_gauge(b)
+
+
+func clear_views() -> void:
+	shown.clear()
+	for row in status_rows.values():
+		row.view = {}
+	for sp in sprites.values():
+		sp.view = {}
+	for e in gauges:
+		_refresh_enemy_gauge(e)
 
 
 func _refresh_enemy_gauge(e: XEnemy) -> void:
@@ -897,6 +930,8 @@ func _play(logs: Array) -> void:
 	while i < logs.size():
 		var l: Dictionary = logs[i]
 		i += 1
+		if l.type in ["action", "regen", "collapse"] and l.has("views"):
+			show_views(l.views)
 		# YEP 行动序列：行动记录后面跟着 seq_* 条目时交给 XSequencePlayer 逐帧演出（到 seq_end 为止）
 		if l.type == "action" and i < logs.size() and str(logs[i].type) == "seq_phase":
 			if acting:
@@ -965,6 +1000,7 @@ func _play(logs: Array) -> void:
 		await _finish_action(started)
 	_banner("")
 	_set_active(null)
+	clear_views()
 	for s in sprites.values():
 		s.position = s.home
 
@@ -1020,6 +1056,7 @@ func _hit_visual(l: Dictionary) -> bool:
 	var t: XBattler = l.target
 	var ts: XBattlerSprite = sprites[t]
 	var hit: bool = not (l.missed or l.evaded)
+	show_views(l.get("views", {}))
 	combo.applied(l.user, t, hit, int(l.skill.get("damage", {}).get("type", 0)), float(l.hp) if float(l.hp) != 0.0 else float(l.mp))
 	if record and hit:
 		record.record(l.user, t, float(l.get("record_hp", l.hp)))

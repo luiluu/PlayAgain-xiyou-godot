@@ -20,6 +20,8 @@ const GAUGE_W := 160.0
 const CYCLE_MS := 1400
 
 var actor: XActor
+## 演出中的读数（XBattleScene.show_views 设、clear_views 清）；空时读实时状态
+var view := {}
 var active := false
 var selected := false
 var canvas: XMVCanvas
@@ -58,6 +60,8 @@ func _physics_process(_delta: float) -> void:
 
 
 func _icons() -> Array:
+	if not view.is_empty():
+		return view.icons
 	var out := []
 	for st in actor.states():
 		if int(st.get("iconIndex", 0)) > 0:
@@ -83,9 +87,16 @@ func _paint(c: XMVCanvas) -> void:
 	# 名字
 	c.text(actor.display_name(), ox + PAD, 6, 200, "left", _hp_color(), FS, LH)
 	# HP / MP / TP
-	_param(c, ox + 8 + PAD, 28, "HP", actor.hp, actor.mhp, XUI.GAUGES.hp, _hp_color(), true)
-	_param(c, ox + 16 + PAD, 50, "MP", actor.mp, actor.mmp, XUI.GAUGES.mp, XUI.TEXT, true)
-	_param(c, ox + 24 + PAD, 72, "TP", actor.tp, actor.max_tp(), XUI.GAUGES.tp, XUI.TEXT, false)
+	var v := _v()
+	_param(c, ox + 8 + PAD, 28, "HP", v.hp, v.mhp, XUI.GAUGES.hp, _hp_color(), true)
+	_param(c, ox + 16 + PAD, 50, "MP", v.mp, v.mmp, XUI.GAUGES.mp, XUI.TEXT, true)
+	_param(c, ox + 24 + PAD, 72, "TP", v.tp, v.mtp, XUI.GAUGES.tp, XUI.TEXT, false)
+
+
+func _v() -> Dictionary:
+	if not view.is_empty():
+		return view
+	return {"hp": actor.hp, "mhp": actor.mhp, "mp": actor.mp, "mmp": actor.mmp, "tp": actor.tp, "mtp": actor.max_tp(), "dead": actor.is_dead()}
 
 
 func _param(c: XMVCanvas, x: float, y: float, label: String, cur: float, mx: float, colors: Array, color: Color, with_max: bool) -> void:
@@ -109,8 +120,9 @@ func _param(c: XMVCanvas, x: float, y: float, label: String, cur: float, mx: flo
 
 
 func _hp_color() -> Color:
-	if actor.is_dead():
+	var v := _v()
+	if v.dead:
 		return XUI.DEATH
-	if actor.hp < actor.mhp / 4.0:
+	if v.hp < v.mhp / 4.0:
 		return XUI.CRISIS
 	return XUI.TEXT
