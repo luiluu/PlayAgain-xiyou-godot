@@ -1,7 +1,7 @@
 # 交付：claude/peaceful-hellman-178245
 
 - 车道／工作者：B 界面／C 规则／八戒（Claude，重制_八戒_17，接重制_八戒_16）
-- 状态：进行中——代码与测试已完成，交付前同步与 `检查.sh --oracle` 在跑。
+- 状态：可合并——已合并 main（88d3631，含悟空副本第五批与同步提速），本工作树跑过 `同步正式西游.py --accept-additions`（只增新用例，已接受，留有指纹），`检查.sh --oracle` 全部通过。
 - 车道位置变更：本批改在 worktree `.claude/worktrees/peaceful-hellman-178245`、分支 `claude/peaceful-hellman-178245` 完成（本会话不能写八戒原工作区）。原分支 `claude/bajie-zhenqi3`（worktree `bajie-shop-stock`）停在 787bce4，是本分支的祖先，内容已全部在这里；该工作区还留着两处未提交的测试改动（xiyou_zhenqi.gd、xiyou_zhenqi_break.gd），与本分支 d298e66 相同，可直接丢弃。合并本分支后两个分支与两个工作树都可清理。
 
 ## 变更记录草稿
@@ -13,8 +13,8 @@
 - 神兵试炼：闭关首页「神兵试炼」进 7 位神兵之仙列表（［试炼完成］／［已领悟·未完成试炼］、返回、离开），对手＝修行进度层守层者 ×2，不能逃、可以输；打倒神兵之仙才记本命兵可指定与试炼完成（随存档），野外击败不算；打完不回菜单。替换掉原来的「尚未开放」提示。
 - 降服时含隐藏成员：胜利结算把没出场的隐藏成员也算进灵根降服与 Boss 胜利（原版 $gameTroop.members()）。正式数据里目前没有隐藏 Boss，用合成例验证。
 - 优化 O-048：被动掩护要能行动（原版倒下的护法仍替队友挨打）。
-- 验证：zhenqi_probe 245→301 例（新增 daofa.*、weapon.*、hidden.* 56 例）；新测试 `tests/xiyou_zhenqi_daofa` 68 项全过（逐例对照＋BattleLogic 接线、存档、闭关里打一场神兵试炼）；xiyou_zhenqi 181、xiyou_zhenqi_break 83 全过；检查.sh --oracle：（待填）
-- 提交：a3915f8、787bce4、d298e66、（交付提交）
+- 验证：zhenqi_probe 245→301 例（新增 daofa.*、weapon.*、hidden.* 56 例）；新测试 `tests/xiyou_zhenqi_daofa` 68 项全过（逐例对照＋BattleLogic 接线、存档、闭关里打一场神兵试炼）；xiyou_zhenqi 181、xiyou_zhenqi_break 83 全过；检查.sh --oracle 全部通过（worktree，合并 main 88d3631 后）
+- 提交：a3915f8、787bce4、d298e66、9855f2e、（交付提交）
 - 已知：金身要等护盾系统；隐藏成员不掷神话（提示名不带【神话】前缀，原版隐藏成员也会掷）；日后实现敌人出现（335）时 troop_members 要去重。
 
 ## 交接板
@@ -34,3 +34,5 @@
 - 787bce4 Godot 初稿：道法接线、神兵试炼菜单、隐藏成员
 - d298e66 xiyou_zhenqi_daofa 逐例对照，O-048
 - e6db8a1 合并 main（只含文档）
+- 9855f2e 交付单与框架维护约定
+- 88d3631 合并 main（悟空副本第五批、同步提速）
