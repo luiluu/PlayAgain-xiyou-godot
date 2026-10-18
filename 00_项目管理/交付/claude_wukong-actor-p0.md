@@ -1,7 +1,7 @@
 # 交付：claude/wukong-actor-p0
 
 - 车道／工作者：A 内容·角色模板 P0／悟空（Claude，重制_悟空_15，Sonnet 批次）
-- 状态：进行中（检查.sh --oracle 在跑，通过后改「可合并」）
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -13,7 +13,7 @@
   - `xiyou_rules.gd` 逐角色比较 lv1／lv1Battle／lv10Battle 与新增采样，伤害行包含每个角色等级 ≤20 的技能；补上「元素吸收时跳过攻击方 Confirm」（`XDamage.finish` 早已如此，测试对照复刻漏了；吸收型首领只在新角色的技能下出现）。
   - 新测试 `xiyou_actor_p0`：①招募——原版「召唤…」公共事件（里德 CE13、斯盖 CE23 召唤苍龙骑士、刘备 CE20、关羽 CE21、张飞 CE22、克莱德 CE19 召唤祭祀、克洛什 CE24 召唤绿色游侠、雪清寒 CE25 召唤雪山）在地图场景里真能入队；②初始装备与已学技能和参照行一致；③每个角色在参照里有独立行与无报错的伤害行。
   - `oracle_additions.py` 的新增识别放行：slice 的 `actors`（既有字段逐项相同、允许新增采样字段）、`power.json` 的 `actors`／`gear`、`wtype.json` 的 `cases`，否则扩切片后同步永远报「有变化」。
-- 验证：xiyou_rules 173258 项全过；xiyou_actor_p0 74 项全过；同步正式西游（测量不变，已留指纹）；内容覆盖检查 new 0／resolved 0；检查.sh --oracle 见提交。
+- 验证：xiyou_rules 173258 项全过；xiyou_actor_p0 74 项全过；同步正式西游（测量不变，已留指纹）；内容覆盖检查 new 0／resolved 0；检查.sh --oracle 全部通过。
 - 提交：见「本分支提交」。
 - 可用范围（重要）：11～18 为 **battleReady**（导入、等级采样、装备、技能、伤害已有独立参照行）；**progressionReady=false**——技能树、进阶、羁绊、技能点变量未验，界面里这些入口对他们仍按现有通用逻辑，不宣称可用。未做 `availability` 数据字段与目录工具（框架「目标」里的 ActorCatalog／计划构建器），本批以「切片参照行齐全＋测试」作为可用声明。
 - 已知问题：`XBattler.recover_all()` 会清掉全部状态，MV 的 recoverAll 保留 `<Permanent>` 状态（战斗开始状态 995 等）；目前只有测试夹具遇到，实战不走此路径，未改共用规则，记在这里留给规则车道。
