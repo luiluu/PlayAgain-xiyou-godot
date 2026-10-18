@@ -103,9 +103,14 @@ static func set_hang_up(s: XState, enabled: bool) -> void:
 	s.flags["HangUpProhibited"] = not enabled
 
 
-## 顶层事件结束：入口事件进了副本就记上下文，没进成就清掉（O-038 恢复难度）
+## 顶层事件结束：入口事件进了副本就记上下文，没进成就清掉（O-038 恢复难度）；
+## 逃离事件没有「Difficulty SetID 1」的副本（二十三层陈塘关）变量 21 归零后也在这里离开，免得难度和挂机开关停在副本里
 static func event_finished(s: XState) -> void:
-	if s == null or not s.dungeon.has("pending"):
+	if s == null:
+		return
+	if not s.dungeon.has("pending") and s.dungeon.has("context") and not inside(s):
+		leave(s)
+	if not s.dungeon.has("pending"):
 		return
 	var pending: Dictionary = s.dungeon.pending
 	s.dungeon.erase("pending")
