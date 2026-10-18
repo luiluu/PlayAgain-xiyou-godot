@@ -34,7 +34,7 @@ ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE))
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT  # noqa: E402
 from incremental_sync import ProbeCache
-from oracle_additions import compare_directories, payload, source_preserved, has_error, compare_file  # noqa: E402
+from oracle_additions import compare_directories, payload, source_preserved, has_error, retained_errors_unchanged  # noqa: E402
 
 ORACLE_DIR = HERE / 'mv_oracle'
 SANDBOX = ORACLE_DIR / '.sandbox'
@@ -275,7 +275,7 @@ def run_probes(log, cache=None):
                 previous = Path(os.environ['XIYOU_GENERATED']) / 'oracle' / Path(rel).name
                 # Frozen event baselines contain explicitly retained, unresolved source cases.
                 # Preserve identical old failures, but never accept a new or changed failing case.
-                if not previous.is_file() or compare_file(previous.name, json.loads(previous.read_text()), data)[1]:
+                if not previous.is_file() or not retained_errors_unchanged(previous.name, json.loads(previous.read_text()), data):
                     raise RuntimeError('探针产物有新增或变化的错误：' + rel)
     for command, outputs in plan:
         for rel in outputs:

@@ -55,6 +55,43 @@ def has_error(x):
     return isinstance(x, list) and any(has_error(v) for v in x)
 
 
+
+def retained_errors_unchanged(name, old, new):
+    """Only permit already recorded failing rows, never a new/changed failure.
+
+    Healthy measurement changes belong to the normal report/comparison stage.
+    For unknown collections or errors outside keyed rows, require the entire
+    failing value to match. Repeated rows are counted, so duplicating a known
+    failure cannot make it through this guard.
+    """
+    old, new = payload(old), payload(new)
+    if not has_error(new):
+        return True
+    if old == new:
+        return True
+    if not isinstance(old, dict) or not isinstance(new, dict):
+        return False
+    if new.get('error') or new.get('errors') or new.get('finished') is False:
+        return False  # Root failures have no stable case boundary; exact match was checked above.
+    for field, value in new.items():
+        if not has_error(value):
+            continue
+        fields = KEYS.get(name, {}).get(field)
+        previous = old.get(field)
+        if fields and isinstance(value, list) and isinstance(previous, list):
+            try:
+                groups([row for row in value if has_error(row)], fields)
+            except ValueError:
+                return False
+            known = collections.Counter(canonical(row) for row in previous if has_error(row))
+            current = collections.Counter(canonical(row) for row in value if has_error(row))
+            if current - known:
+                return False
+        elif value != previous:
+            return False
+    return True
+
+
 def valid_level_samples(samples):
     import math
     if not isinstance(samples, dict) or set(samples) != {'35', '65', '99'}:

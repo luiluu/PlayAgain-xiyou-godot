@@ -237,7 +237,7 @@ def wait(log, timeout=0, poll=0.2):
         if state.get('status') in ('done', 'failed', 'stuck'):
             try:
                 code = int(Path(str(log) + '.exit').read_text())
-                last = Path(log).read_text().splitlines()[-1]
+                last = Path(log).read_bytes().splitlines()[-1].decode('utf-8')
                 if not last.startswith('TASK_RESULT='):
                     raise ValueError('缺少任务结果标记')
                 marker = json.loads(last.removeprefix('TASK_RESULT='))
