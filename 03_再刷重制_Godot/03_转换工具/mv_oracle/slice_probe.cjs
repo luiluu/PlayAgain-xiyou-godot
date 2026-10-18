@@ -55,10 +55,9 @@ function run(difficulty) {
     row.lv10Battle = snap(a);
     // 角色模板 P0：等级采样 35／65／99（升序连续升级；Godot 对应 xiyou_rules 的 levelSamples）
     row.levelSamples = {};
-    const savedMax = w.eval('$gameParty.ActorMaxLevel');
-    w.eval('$gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
+    w.eval('var __pm = {p: $gameParty.ActorMaxLevel, d: $dataActors.map(function(x){ return x ? x.maxLevel : null; })}; $gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
     for (const lv of [35, 65, 99]) { a.changeLevel(lv, false); battleRefresh(a); row.levelSamples[lv] = Object.assign(snap(a), {level: a.level}); }
-    w.eval('$gameParty.ActorMaxLevel = ' + JSON.stringify(savedMax === undefined ? null : savedMax) + '; $dataActors.forEach(function(x){ if (x) x.maxLevel = ' + JSON.stringify(savedMax === undefined ? 10 : savedMax) + '; });');
+    w.eval('if (__pm.p === undefined) delete $gameParty.ActorMaxLevel; else $gameParty.ActorMaxLevel = __pm.p; $dataActors.forEach(function(x, i){ if (x) { if (__pm.d[i] === undefined) delete x.maxLevel; else x.maxLevel = __pm.d[i]; } });');
     a.changeLevel(1, false); battleRefresh(a);
     out.actors[id] = row;
   }
