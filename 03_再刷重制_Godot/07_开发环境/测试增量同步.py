@@ -166,6 +166,39 @@ class CacheTests(unittest.TestCase):
                     with self.assertRaises(RuntimeError):
                         sync.run_probes(io.StringIO())
 
+    def test_healthy_event_change_with_frozen_failures_reaches_measurement_report(self):
+        old = {'cases': [{'id': 'known', 'errors': ['old failure'], 'finished': False},
+                         {'id': 'healthy', 'frames': 1, 'errors': []}]}
+        new = copy.deepcopy(old)
+        new['cases'][1]['frames'] = 2
+        (self.gen / 'oracle/events.json').write_text(json.dumps(old))
+        def fake(*args, **kwargs):
+            (self.oracle / '.sandbox/events.json').write_text(json.dumps(new))
+            return subprocess.CompletedProcess(args, 0, '', '')
+        with mock.patch.multiple(sync, PROBES=[(['event_probe.cjs'], ['events.json'])],
+                                 ORACLE_DIR=self.oracle, SANDBOX=self.oracle / '.sandbox'), \
+             mock.patch.object(sync.subprocess, 'run', fake), \
+             mock.patch.dict(os.environ, XIYOU_GENERATED=str(self.gen)):
+            result = sync.run_probes(io.StringIO())
+        self.assertEqual(result['executed'], ['event_probe.cjs'])
+        self.assertEqual(json.loads((self.gen / 'oracle/events.json').read_text()), new)
+        # Allow the reporting stage to see the change, but never auto-accept it.
+        self.assertTrue(oracle_additions.compare_file('events.json', old, new)[1])
+
+    def test_failure_guard_ignores_healthy_rows_but_rejects_new_changed_or_duplicate_failure(self):
+        old = {'cases': [{'id': 'known', 'errors': ['old'], 'observed': {'frames': 1}},
+                         {'id': 'healthy', 'errors': []}], 'errors': []}
+        for kind in ['healthy_change', 'fixed', 'changed', 'new', 'duplicate', 'root']:
+            new = copy.deepcopy(old)
+            if kind == 'healthy_change': new['cases'][1]['observed'] = {'frames': 2}
+            if kind == 'fixed': new['cases'][0]['errors'] = []
+            if kind == 'changed': new['cases'][0]['observed']['frames'] = 2
+            if kind == 'new': new['cases'][1]['errors'] = ['new']
+            if kind == 'duplicate': new['cases'].append(copy.deepcopy(new['cases'][0]))
+            if kind == 'root': new['errors'] = ['new host failure']
+            self.assertEqual(oracle_additions.retained_errors_unchanged('events.json', old, new),
+                             kind in ['healthy_change', 'fixed'], kind)
+
     def test_reused_output_is_not_replaced_from_old_sandbox(self):
         self.prime()
         (self.oracle / '.sandbox/a.json').write_text('{"stale":true}')
@@ -207,6 +240,17 @@ class TaskWatchTests(unittest.TestCase):
                 self.assertEqual(int(Path(str(log) + '.exit').read_text()), expected)
                 w = subprocess.run([str(HERE / '等待任务.sh'), str(log)], capture_output=True, timeout=5)
                 self.assertEqual(w.returncode, expected, w.stdout + w.stderr)
+
+    def test_non_utf8_output_does_not_hide_valid_completion_marker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / 'binary.log'
+            script = "import os; os.write(1, bytes([255, 254, 10]))"
+            p = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'run', str(log),
+                                '--', sys.executable, '-c', script], capture_output=True, timeout=10)
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            self.assertIn(bytes([255, 254]), log.read_bytes())
+            w = subprocess.run([str(HERE / '等待任务.sh'), str(log)], capture_output=True, timeout=5)
+            self.assertEqual(w.returncode, 0, w.stdout + w.stderr)
 
     def test_orphan_holding_log_pipe_is_stopped_with_its_owned_group(self):
         with tempfile.TemporaryDirectory() as tmp:
