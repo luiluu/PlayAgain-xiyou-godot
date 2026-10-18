@@ -34,6 +34,9 @@ var last_target_index := 0
 ## YEP_X_SkillCooldowns：技能 ID → 剩余回合（冷却 / 预热）。冷却跨战斗保留（随存档），预热只在战斗内。
 var cooldowns := {}
 var warmups := {}
+## 真气道法（XZhenqi）：元婴护体本场已用（_codexZqGuard，BattleManager.setup 时清）；破甲·真气 2705 的双防倍率（_codexZqPojiaRate，0.5＝原状态）
+var zq_guard := false
+var zq_pojia_rate := 0.5
 
 var mhp: float:
 	get: return param(0)
@@ -184,7 +187,7 @@ func states() -> Array:
 	for id in state_ids:
 		var s := XDB.rec("States", id)
 		if not s.is_empty():
-			out.append(s)
+			out.append(XZhenqi.pojia_state(s, zq_pojia_rate) if id == XZhenqi.POJIA_STATE else s)
 	return out
 
 func is_state_affected(id: int) -> bool:
@@ -193,7 +196,10 @@ func is_state_affected(id: int) -> bool:
 func add_state(id: int) -> void:
 	if XDB.rec("States", id).is_empty():
 		return
+	if id == XZhenqi.POJIA_STATE:
+		zq_pojia_rate = XZhenqi.pojia_rate()  # 本次行动者有破甲道法时 1−0.5×scale，否则 0.5
 	if id == 1:
+		zq_pojia_rate = 0.5
 		hp = 0.0
 		state_ids.clear()
 		state_turns.clear()
@@ -210,6 +216,8 @@ func remove_state(id: int) -> void:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
 	state_ids.erase(id)
 	state_turns.erase(id)
+	if id == XZhenqi.POJIA_STATE:
+		zq_pojia_rate = 0.5
 
 func _sort_states() -> void:
 	# MV：按优先级降序，同优先级按 ID 升序
@@ -386,6 +394,32 @@ static func _parse_element_absorb(note: String) -> Array:
 				if id > 0:
 					out.append(id)
 	return out
+
+## Game_BattlerBase.attackStates／attackStatesRate（特性 32）；角色另加 dsPassiveSkill passiveATKST（XActor）
+func attack_states() -> Array:
+	return traits_set(TRAIT_ATTACK_STATE)
+
+func attack_states_rate(id: int) -> float:
+	return traits_sum(TRAIT_ATTACK_STATE, id)
+
+## Game_BattlerBase.attackTimesAdd：普攻追加次数（特性 34，不小于 0）；角色另加道法「连击」
+func attack_times_add() -> float:
+	return maxf(traits_sum_all(TRAIT_ATTACK_TIMES), 0.0)
+
+## Game_BattlerBase.actionPlusSet：各「追加行动」特性（61 号 0）的几率；角色另加道法「分神」[1]
+func action_plus_set() -> Array:
+	var out := []
+	for t in all_traits():
+		if int(t.code) == 61 and int(t.dataId) == 0:
+			out.append(float(t.value))
+	return out
+
+## 特殊旗标（62）：2 掩护、3 保留 TP；角色另加 dsPassiveSkill passiveSUBS／passivePRETP。掩护还要能行动（BattleLogic 判）
+func is_substitute() -> bool:
+	return traits_set(62).has(2)
+
+func is_preserve_tp() -> bool:
+	return traits_set(62).has(3)
 
 ## 没有攻击元素特性时（如空手）按物理(1)处理，与正式版一致。
 func attack_elements() -> Array:

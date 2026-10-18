@@ -28,8 +28,6 @@ var elite_roll := -1.0
 var level_roll := -1.0
 
 
-const TRAIT_SPECIAL_FLAG := 62
-const FLAG_PRESERVE_TP := 3
 ## O-026：轮回困难（1460/1461）Establish 附加伤害时，原版本次普通伤害的弹字被 gainHp 改写成最后一次附加值
 ##（如普通伤害 380 弹成 70），true 时普通伤害照实显示；附加的 atk/mat 两次弹字不变。
 const ESTABLISH_TRUE_POPUP := true
@@ -85,7 +83,7 @@ func setup(troop: int, s: XState) -> void:
 	_battle_start_states()
 	# MV Game_Battler.onBattleStart：没有「保留 TP」（特殊旗标 3）时 TP 随机 0～24
 	for b in actors + enemies:
-		if not b.traits_set(TRAIT_SPECIAL_FLAG).has(FLAG_PRESERVE_TP):
+		if not b.is_preserve_tp():
 			b.tp = float(randi() % 25)
 	for b in actors + enemies:
 		b.start_warmups()
@@ -724,11 +722,11 @@ func _action_times_modification(order: Array, first_current := false) -> void:
 			order.insert(at, b)
 
 
-## MV makeActionTimes：每个「追加行动」特性按几率各加 1 次。
+## MV makeActionTimes：每个「追加行动」几率（actionPlusSet，含道法分神的 [1]）各掷一次，成功加 1 次。
 func make_action_times(b: XBattler) -> int:
 	var n := 1
-	for t in b.all_traits():
-		if int(t.code) == 61 and int(t.dataId) == 0 and randf() < float(t.value):
+	for p in b.action_plus_set():
+		if randf() < float(p):
 			n += 1
 	return n
 
@@ -858,7 +856,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	if XActionSequence.has_sequence(skill):
 		var times := 1
 		if not is_item(skill) and int(skill.id) == ATTACK_SKILL:
-			times += int(u.traits_sum_all(XBattler.TRAIT_ATTACK_TIMES))
+			times = floori(times + u.attack_times_add())
 		var list := []
 		for t in targets_for(u, skill, chosen):
 			for i in range(maxi(1, times)):
@@ -867,7 +865,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		return logs
 	var repeats := int(skill.get("repeats", 1))
 	if not is_item(skill) and int(skill.id) == ATTACK_SKILL:
-		repeats += int(u.traits_sum_all(XBattler.TRAIT_ATTACK_TIMES))
+		repeats = floori(repeats + u.attack_times_add())
 	for t in targets_for(u, skill, chosen):
 		for i in range(maxi(1, repeats)):
 			if t.is_dead() and not [9, 10].has(int(skill.scope)):
@@ -895,7 +893,18 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		var r := apply(t, XDB.rec("Skills", ATTACK_SKILL), u)
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
-	return [apply(u, skill, t)]
+	return [apply(u, skill, substitute_for(skill, t))]
+
+
+## BattleManager.applySubstitute：目标濒死（活着且 hp < mhp/4）、技能不是必中时，同队出战成员里第一个能掩护的替它挨打
+## （第一个就是目标自己时不换）。掩护要能行动：特殊旗标同原版；dsPassiveSkill 的 passiveSUBS 原版倒下也挡，改为要能行动（O-048）。
+func substitute_for(skill: Dictionary, t: XBattler) -> XBattler:
+	if not (t.is_alive() and t.hp < t.mhp / 4.0) or int(skill.get("hitType", 0)) == 0:
+		return t
+	for m in (actors if t.is_actor() else enemies):
+		if m.is_substitute() and can_move(m):
+			return m
+	return t
 
 
 static func certain_hit(u: XBattler, skill: Dictionary) -> bool:
@@ -949,7 +958,16 @@ func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) 
 	return XDamage.finish(XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars()}), skill, u, t)
 
 
+## Game_Action.apply：行动者有道法「破甲」时，期间附加的破甲·真气（2705）用它的倍率（XZhenqi.pojia_actor）
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
+	var before = XZhenqi.pojia_actor
+	XZhenqi.pojia_actor = u if XZhenqi.has_daofa(u, "pojia") else null
+	var r := _apply(u, skill, t)
+	XZhenqi.pojia_actor = before
+	return r
+
+
+func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var r := {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
 		"hp": 0.0, "mp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false}
 	var dmg: Dictionary = skill.damage
@@ -968,6 +986,8 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		var cri := u.cri * (1.0 - t.cev) if bool(dmg.critical) else 0.0
 		r.critical = randf() < clampf(cri, 0.0, 1.0)
 		var value := _damage_value(u, skill, t, r.critical)
+		if [1, 3, 5].has(type) and troop_id > 0:
+			value = XZhenqi.hp_damage(t, value)  # executeHpDamage：我方受伤时护法减伤、元婴护体（只在战斗中）
 		match type:
 			1, 3:
 				r.hp = value
@@ -1039,9 +1059,10 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 			t.tp = clampf(t.tp + floorf(v1), 0.0, t.max_tp())
 		21:
 			var sid := int(eff.dataId)
-			var ids := u.traits_set(XBattler.TRAIT_ATTACK_STATE) if sid == 0 else [sid]
+			var ids := u.attack_states() if sid == 0 else [sid]
 			for id in ids:
-				var chance := v1 * state_rate(t, id) * maxf(1.0 + (u.luk - t.luk) * 0.001, 0.0)
+				# 普攻附加状态（itemEffectAddAttackState）另乘行动者的 attackStatesRate（特性 32 的值＋passiveATKST）
+				var chance := v1 * state_rate(t, id) * (u.attack_states_rate(id) if sid == 0 else 1.0) * maxf(1.0 + (u.luk - t.luk) * 0.001, 0.0)
 				if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
 					chance = 0.0
 				# MV addState → isStateAddable 要求活着：本次伤害已致死时照常掷随机数，但不再附加（不进 r.added）
@@ -1253,7 +1274,7 @@ static func _extra_drops(d: Dictionary) -> Array:
 
 ## 发放奖励，返回升级信息 [{actor, levels}]
 func grant(r: Dictionary) -> Array:
-	XZhenqi.on_victory(state, actors, enemies)  # 真气胜利结算（BattleManager.endBattle(0)；每场一次）
+	XZhenqi.on_victory(state, actors, XZhenqi.troop_members(troop_id, enemies, state.difficulty))  # 真气胜利结算（含没出场的隐藏成员）（BattleManager.endBattle(0)；每场一次）
 	state.gain_gold(r.gold)
 	if not drop_lock:
 		gain_drops(r.drops)
@@ -1276,7 +1297,7 @@ func end_battle() -> void:
 		b.buffs.fill(0)
 		b.buff_turns.fill(0)
 		# MV Game_Battler.onBattleEnd：clearTp（保留 TP 时不清）
-		if not b.traits_set(TRAIT_SPECIAL_FLAG).has(FLAG_PRESERVE_TP):
+		if not b.is_preserve_tp():
 			b.tp = 0.0
 		b.end_battle_cooldowns()
 		for id in b.state_ids.duplicate():

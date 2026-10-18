@@ -233,7 +233,10 @@ function withDaofa(aid, realm, keys, extra = []) {
   for (const k of extra) a.learnSkill(typeof k === 'number' ? k : Z.skillKey(k));
   Z.refreshRewards(a); return a;
 }
-const inBattle = troop => { w.BattleManager.setup(troop || 1, true, false); w.$gameParty._inBattle = true; w.BattleManager._logWindow = {displaySubstitute() {}}; };
+// 真开战（同 drop_record_probe）：各运行时的开战初始化（如吸血缓存、云裳本场记录）都要先跑过，行动才能执行；窗口与弹字用空壳
+const stub = new Proxy(function () {}, {get: () => function () {}, set: () => true});
+const inBattle = troop => { w.BattleManager.setup(troop || 1, true, false); w.$gameParty._inBattle = true; w.Game_Battler.prototype.startDamagePopup = function () {};
+  w.BattleManager._logWindow = stub; w.BattleManager._spriteset = stub; w.BattleManager.otbDisplayWindow = function () { return stub; }; w.BattleManager.startBattle(); };
 // 连击 attackTimesAdd＋1、分神 actionPlusSet 再加 [1]、金身 shieldEffectBonus＋daofaScale；命中 xparam(0) 下限 0.9
 for (const [id, realm, keys] of [['none', 0, []], ['lianji', 0, ['lianji']], ['fenshen', 3, ['fenshen']], ['jinshen.r0', 0, ['jinshen']], ['jinshen.r2', 2, ['jinshen']], ['jinshen.r3', 3, ['jinshen']],
   ['jinshen.r4', 4, ['jinshen']], ['jinshen.r9', 9, ['jinshen']], ['all', 1, ['lianji', 'fenshen', 'jinshen']]])
@@ -243,7 +246,7 @@ for (const [id, realm, keys] of [['none', 0, []], ['lianji', 0, ['lianji']], ['f
 function hpHits(aid, hits, opts) {
   const a = actor(aid), out = [];
   for (const h of hits) {
-    if (h === 'setup') { w.BattleManager.setup(1, true, false); w.$gameParty._inBattle = !opts.outside; out.push('setup'); continue; }
+    if (h === 'setup') { inBattle(1); w.$gameParty._inBattle = !opts.outside; out.push('setup'); continue; }
     if (h.hp === 'full') a.setHp(a.mhp); else if (h.hp !== undefined) a.setHp(h.hp);
     const act = new w.Game_Action(w.$gameTroop.members()[0]); act.setAttack();
     const hp0 = a.hp, v = h.v === 'lethal' ? hp0 + 50 : h.v === 'exact' ? hp0 : h.v;
@@ -286,9 +289,10 @@ function pojia(realm, keys, o) {
   const traits = () => { const s = e.states().find(s => s.id === 2705); return s ? s.traits.filter(t => t.code === 21).map(t => [t.dataId, r6(t.value)]) : null; };
   const rate = () => e._codexZqPojiaRate === undefined ? null : r6(e._codexZqPojiaRate);
   const out = {attackStates: a.attackStates().slice().sort((x, y) => x - y), statesRate: r6(a.attackStatesRate(2705)), chance: r6(1 * e.stateRate(2705) * a.attackStatesRate(2705) * act.lukEffectRate(e)), before: [3, 5].map(i => e.param(i))};
+  // krz_state_re 的状态与能力值缓存到 refresh 才更新；同一次结果里刚去除的状态不能再附加（isStateAddable），再加前先 clearResult
   if (o.direct) e.addState(2705); else act.apply(e);
-  Object.assign(out, {affected: e.isStateAffected(2705), rate: rate(), traits: traits(), after: [3, 5].map(i => e.param(i))});
-  if (o.erase) { e.removeState(2705); out.erased = rate(); e.addState(2705); out.readd = {rate: rate(), traits: traits()}; }
+  e.refresh(); Object.assign(out, {affected: e.isStateAffected(2705), rate: rate(), traits: traits(), after: [3, 5].map(i => e.param(i))});
+  if (o.erase) { e.removeState(2705); e.refresh(); out.erased = rate(); e.clearResult(); e.addState(2705); e.refresh(); out.readd = {affected: e.isStateAffected(2705), rate: rate(), traits: traits(), after: [3, 5].map(i => e.param(i))}; }
   return out;
 }
 for (const [id, realm, keys, o] of [['r0', 0, ['pojia'], {}], ['r3', 3, ['pojia'], {}], ['r5', 5, ['pojia'], {}], ['none', 0, [], {}], ['direct', 0, ['pojia'], {direct: true}], ['erase', 0, ['pojia'], {erase: true}]])

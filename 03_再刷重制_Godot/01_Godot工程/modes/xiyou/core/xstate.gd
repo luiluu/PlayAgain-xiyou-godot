@@ -62,8 +62,8 @@ var race_supply := {}
 var eco_frac := {}
 ## KMS_ShopInventory 商店库存（见 XShopStock；随存档）与下一次商店用的库存组（$gameTemp.nextInventoryId，不存档）
 var shop_stock := {"inv": {}, "schedules": []}
-## 真气：降服过的本命兵武器类型 w、灵根元素 e（$gameSystem._codexZhenqiSpec），全队共用、随存档
-var zhenqi_spec := {"w": {}, "e": {}}
+## 真气：降服过的本命兵武器类型 w、灵根元素 e、完成过的神兵试炼 weaponTrials（$gameSystem._codexZhenqiSpec），全队共用、随存档
+var zhenqi_spec := {"w": {}, "e": {}, "weaponTrials": {}}
 var shop_pending := ""
 var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
@@ -86,6 +86,7 @@ static func _become_current(s: XState) -> void:
 	XZhenqi.battle = {}
 	XZhenqi.pending_trial = {}
 	XZhenqi.trial_done = {}
+	XZhenqi.pending_scale = {}
 
 
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
@@ -455,7 +456,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.eco_frac = d.get("ecoFrac", {})
 	s.shop_stock = XShopStock.from_save(d.get("shopStock", {}))
 	var zs = d.get("zhenqiSpec", {})
-	for part in ["w", "e"]:
+	for part in ["w", "e", "weaponTrials"]:
 		for k in (zs.get(part, {}) if zs is Dictionary and zs.get(part, {}) is Dictionary else {}):
 			s.zhenqi_spec[part][str(k)] = 1
 	s.hang_up_total = int(d.get("hangUpTotal", 0))
