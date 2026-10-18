@@ -11,6 +11,8 @@ extends RefCounted
 ##   带当时的目标与画面要用的对象组）与 seq_end，由 XSequencePlayer 逐帧演出；这些条目不影响结算。
 ## - IMMORTAL 期间 HP 为 0 也不倒下，解除时同步阵亡；资源增减与能力增减后按 MV refresh 同步夹值与阵亡状态。
 
+## 会改数值或状态的指令：执行后记下全体读数（状态栏、血条）
+static var STATE_CMD := RegEx.create_from_string("^(?:HP|MP|TP)[ ]|^(?:ADD_STATE|ADD STATE|REMOVE_STATE|REMOVE STATE)[ ]\\d|^(?:ADD|REMOVE)[ ].*[ ](?:BUFF|DEBUFF)|^IMMORTAL$")
 const PHASES := ["setup", "whole", "target", "follow", "finish"]
 const PARAMS := {"MAXHP": 0, "MHP": 0, "MAX HP": 0, "HP": 0, "MAXMP": 1, "MMP": 1, "MAX MP": 1, "MP": 1, "ATK": 2, "STR": 2,
 	"DEF": 3, "MAT": 4, "INT": 4, "SPI": 4, "MDF": 5, "RES": 5, "AGI": 6, "SPD": 6, "LUK": 7}
@@ -87,6 +89,8 @@ func _run_list(list: Array) -> void:
 		_command(name.to_upper(), args)
 		if not _gains.is_empty():
 			mark.gains = _gains
+		if STATE_CMD.search(mark.name):
+			mark.views = logic.views()
 		mark.broke = _break
 		mark.user_dead = user.is_dead()
 		if _break:
@@ -135,7 +139,7 @@ func _command(name: String, args: Array) -> void:
 				continue
 			if t.is_dead() and not [9, 10].has(int(skill.get("scope", 0))):
 				continue
-			logs.append_array(logic._invoke(user, skill, t))
+			logs.append_array(logic.mark_views(logic._invoke(user, skill, t)))
 		return
 	if name == "IMMORTAL":
 		# actionImmortal：参数二 eval 成真＝加，否则解除；解除时 HP 为 0 的倒下（removeImmortal → refresh）
@@ -151,7 +155,7 @@ func _command(name: String, args: Array) -> void:
 				t.immortal = false
 				if t.hp <= 0.0 and not t.state_ids.has(XBattleLogic.DEATH_STATE):
 					logic._die(t)
-					logs.append({"type": "collapse", "target": t})
+					logs.append({"type": "collapse", "target": t, "views": logic.views([t])})
 		return
 	if name == "DEATH BREAK" or name == "BREAK ACTION":
 		if name == "BREAK ACTION" or user.is_dead():
@@ -258,12 +262,17 @@ func make_targets(spec: String) -> Array:
 # ---- 画面 ----
 ## 指令名里的对象（MOVE/FACE/FLOAT/JUMP/OPACITY 后面那段）与第一个参数，按执行当时的状态解析好（BattleManager.makeActionTargets）
 func _visual_entry(name: String, args: Array) -> Dictionary:
-	var e := {"type": "seq", "name": name, "args": args, "user": user, "targets": targets.filter(func(t): return t != null)}
+	var e := {"type": "seq", "name": name, "args": args, "user": user, "targets": targets.filter(func(t): return t != null),
+		"moves": logic.move_flags()}
 	var m := RegEx.create_from_string("^(?:FACE|FLOAT|JUMP|MOVE|OPACITY)[ ](.*)$").search(name)
 	if m:
 		e.sub = visual_targets(m.get_string(1))
 	if not args.is_empty():
 		e.a0 = visual_targets(str(args[0]))
+		# FACE …：朝向的参照组（FACE 目标 / AWAY FROM 目标）也按执行当时解析
+		if name.begins_with("FACE "):
+			var cmd := str(args[0]).to_upper()
+			e.face_group = visual_targets(cmd.substr(10) if cmd.begins_with("AWAY FROM ") else cmd)
 	return e
 
 

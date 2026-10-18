@@ -139,6 +139,14 @@ func _run() -> void:
 	_check("hub_door_present", _event(map, 36) != null)
 	# ⌘Enter 只切全屏，地图轮询确定键时不能同时触发调查。只在无界面模式按，免得真的切到全屏。
 	if DisplayServer.get_name() == "headless":
+		# 先等首次到达的自动事件（存档提示等）真的结束：上面的 600 帧在满负载并行时可能不够，
+		# 地图仍忙时按键本来就不会调查，测不出 ⌘Enter 的问题，结束后的 busy 也只是残留（偶发失败的原因）。
+		var idle_before := false
+		for i in range(3000):
+			if not map.busy:
+				idle_before = true
+				break
+			await _wait_frame()
 		var acts := [0]
 		var count := func(): acts[0] += 1
 		map.player.action_pressed.connect(count)
@@ -154,7 +162,7 @@ func _run() -> void:
 		await _frames(2)
 		map.player.action_pressed.disconnect(count)
 		get_window().mode = Window.MODE_WINDOWED
-		_check("cmd_enter_not_map_action", acts[0] == 0 and not map.busy, acts[0])
+		_check("cmd_enter_not_map_action", idle_before and acts[0] == 0 and not map.busy, [idle_before, acts[0], map.busy])
 	await _frames(10)
 	await _shot("03_方桌大厅.png")
 	# 玩家走几步（真实移动与碰撞）
