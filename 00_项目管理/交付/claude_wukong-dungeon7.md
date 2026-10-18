@@ -1,7 +1,7 @@
 # 交付：claude/wukong-dungeon7
 
 - 车道／工作者：A 内容·楼层／悟空（Claude，重制_悟空_13，Sonnet 试行，中等努力，接唐僧_8 建的工作树）
-- 状态：可合并（已 merge main；同步 --accept-additions 在合并 main 之后跑过，留有指纹；检查.sh --oracle 全部通过）
+- 状态：可合并。（已 merge main f351a52 后重跑 --补齐 与 同步 --accept-additions：测量变化只有 main 带来的 zhenqi 245→301 例，留有指纹；合并 main 之前检查.sh --oracle 全部通过，合并后复跑 dungeon、troop_events、event_compare、zhenqi 专项全过）
 
 ## 变更记录草稿
 
@@ -37,4 +37,5 @@
 - d8c0a0f 二十二～二十四层切片与参照剧本（d22、d23、d24；敌群 526）
 - 交付单草稿
 - 7bbac02 测试入口表、事件对照 baseline（1025 例）、逃离无 Difficulty SetID 时离开副本上下文
-- merge main 一次
+- merge main 两次（ba799bc、f351a52 之后）
+- 交付单可合并
