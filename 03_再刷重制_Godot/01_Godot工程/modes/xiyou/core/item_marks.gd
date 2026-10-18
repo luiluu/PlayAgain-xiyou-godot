@@ -291,12 +291,14 @@ static func proxy_buy(rec: Dictionary) -> int:
 	return id
 
 
-## 商品的显示记录：有代购时抄上代购件的名字、图标、说明（Copy Name/Icon/Help 均为 true）
-static func shop_display(rec: Dictionary) -> Dictionary:
-	var pid := proxy_buy(rec)
+## 商品的显示记录：有代购时抄上代购件的名字、图标、说明（Copy Name/Icon/Help 均为 true）。
+## item 是 shop_rec 的商品记录（装备带 kind/base，才能按武器／防具表查代购）；返回的是表里的原始记录或其副本。
+static func shop_display(item: Dictionary) -> Dictionary:
+	var rec := _base_rec(item)
+	var pid := proxy_buy(item)
 	if pid <= 0:
 		return rec
-	var src := XDB.rec(_table_of(rec), pid)
+	var src := XDB.rec(_table_of(item), pid)
 	var out := rec.duplicate()
 	for k in ["name", "iconIndex", "description"]:
 		out[k] = src.get(k, out.get(k))

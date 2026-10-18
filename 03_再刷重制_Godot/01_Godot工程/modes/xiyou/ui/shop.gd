@@ -144,9 +144,9 @@ func _price(g: Array) -> int:
 func _buy_data() -> Array:
 	var out := []
 	for g in XItemMarks.shop_goods(goods):
-		var rec := XDB.rec(table_of(int(g[0])), int(g[1]))
-		if not rec.is_empty():
-			out.append({"rec": XItemMarks.shop_display(rec), "item": XItemMarks.shop_rec(int(g[0]), int(g[1])), "kind": int(g[0]), "gid": int(g[1]), "price": _price(g)})
+		var item := XItemMarks.shop_rec(int(g[0]), int(g[1]))
+		if not item.is_empty():
+			out.append({"rec": XItemMarks.shop_display(item), "item": item, "kind": int(g[0]), "gid": int(g[1]), "price": _price(g)})
 	return out
 
 
