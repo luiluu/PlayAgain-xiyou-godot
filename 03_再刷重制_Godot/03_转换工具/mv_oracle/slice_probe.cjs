@@ -79,6 +79,15 @@ function run(difficulty) {
       if (w.$dataSkills[act0.skillId].damage.type) out.damage.push(measure(w, target, w.$gameActors.actor(9), act0.skillId, {troop: tid, enemy: target.enemyId(), target: 9}));
     }
   }
+  // 角色模板 P0：等级采样 35／65／99。必须放在伤害测量之后——升级会学到高等级技能，改变角色状态
+  w.eval('var __pm = {p: $gameParty.ActorMaxLevel, d: $dataActors.map(function(x){ return x ? x.maxLevel : null; })}; $gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
+  for (const id of ACTORS) {
+    const a = w.$gameActors.actor(id), samples = {};
+    for (const lv of [35, 65, 99]) { a.changeLevel(lv, false); a.recoverAll(); a.refresh(); battleRefresh(a); samples[lv] = Object.assign(snap(a), {level: a.level, hp: a.hp, mhp: a.mhp}); }
+    a.changeLevel(1, false); battleRefresh(a);
+    out.actors[id].levelSamples = samples;
+  }
+  w.eval('if (__pm.p === undefined) delete $gameParty.ActorMaxLevel; else $gameParty.ActorMaxLevel = __pm.p; $dataActors.forEach(function(x, i){ if (x) { if (__pm.d[i] === undefined) delete x.maxLevel; else x.maxLevel = __pm.d[i]; } });');
   if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
   return out;
 }

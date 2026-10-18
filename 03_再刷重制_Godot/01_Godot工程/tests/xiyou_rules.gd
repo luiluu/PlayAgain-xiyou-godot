@@ -120,6 +120,14 @@ func _run() -> void:
 			_compare_snap("d%d.actor%d.lv1Battle" % [diff, id], _snap(a), row.lv1Battle)
 			a.change_level(10)
 			_compare_snap("d%d.actor%d.lv10Battle" % [diff, id], _snap(a), row.lv10Battle)
+			# 角色模板 P0：等级采样 35／65／99（升序，同一实例连续升级；参照由 slice_probe 的 levelSamples 给出）
+			var samples: Dictionary = row.get("levelSamples", {})
+			var lvs := samples.keys().map(func(k): return int(k))
+			lvs.sort()
+			for lv in lvs:
+				a.change_level(lv)
+				a.hp = a.mhp  # 参照取样时满血（HP 低于 60% 才生效的被动不应混进能力采样）；不用 recover_all——它会清掉战斗开始状态
+				_compare_snap("d%d.actor%d.lv%dBattle" % [diff, id, lv], _snap(a), samples[str(lv)])
 		# 敌人
 		var troops := {}
 		for tid_s in d.enemies:
@@ -159,7 +167,10 @@ func _run() -> void:
 				"godot_row": res.breakdown.row, "mv_row": mv_row, "godot_base": res.breakdown.base, "mv_base": r.breakdown.base})
 			# slice_probe 的 final 是 onPreDamageStateEffects（Confirm＋固定减伤），不含目标 React。
 			# 完整结算顺序另由 xiyou_settlement 对照真正的 onReactStateEffects。
-			var fin: float = XDamage.apply_fixed_mitigation(XDamage.apply_state_effects(float(r.value), item, user, target, untranslated, "confirm"), res)
+			# 与 XDamage.finish 同：HP 伤害／吸取被元素吸收（值为负）时跳过攻击方 Confirm（installDamageElementRuntime）
+			var absorbed: bool = float(r.value) < 0.0 and int(item.damage.type) in [1, 5]
+			var confirmed: float = float(r.value) if absorbed else XDamage.apply_state_effects(float(r.value), item, user, target, untranslated, "confirm")
+			var fin: float = XDamage.apply_fixed_mitigation(confirmed, res)
 			_check(tag + ".stateEffects", _close(fin, float(r.final)), {"godot": fin, "mv": r.final})
 		_check("d%d.no_untranslated_state_effects" % diff, untranslated.is_empty(), untranslated.slice(0, 5))
 		if verbose:
