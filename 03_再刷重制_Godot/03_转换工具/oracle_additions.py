@@ -16,14 +16,18 @@ KEYS = {
     'dungeon.json': {'cases': ('id',)},
     'shop_stock.json': {'cases': ('id',)},
     'battle_messages.json': {'cases': ('id',)},
+    'battle_events.json': {'cases': ('id',)},
     'challenge_passives.json': {'cases': ('id',)},
     'zhenqi.json': {'cases': ('id',)},
+    'guide.json': {'cases': ('id',)},
     'custom_damage.json': {'cases': ('id',)},
     'troop_events.json': {'cases': ('troop', 'paid')},
     'smart_ai.json': {'cases': ('troop', 'scene', 'actor', 'state'),
                       'damage': ('troop', 'actor', 'skill', 'target')},
     'shop_buy.json': {'shops': ('map', 'event', 'raw'), 'goods': ('goods',),
                       'cases': ('goods', 'state')},
+    'power.json': {'actors': ('id', 'level', 'asked'), 'gear': ('kind', 'id', 'why')},
+    'wtype.json': {'cases': ('actor', 'variant', 'weapon', 'skill')},
     'help_cards.json': {k: ('id',) for k in ['skills', 'items', 'weapons', 'armors']},
 }
 
@@ -85,13 +89,20 @@ def compare_file(name, old, new):
         a, b = old[field], new[field]
         if a == b:
             continue
-        if name.startswith('slice_d') and field == 'enemies' and isinstance(a, dict) and isinstance(b, dict):
+        if name.startswith('slice_d') and field in ('enemies', 'actors') and isinstance(a, dict) and isinstance(b, dict):
             for key, value in a.items():
+                # 角色行允许新增采样字段（如 levelSamples），原有字段必须逐项相同
+                if field == 'actors' and key in b and isinstance(value, dict) and isinstance(b[key], dict):
+                    if any(k not in b[key] or b[key][k] != v for k, v in value.items()):
+                        problems.append('既有角色改变或删除：' + key)
+                    elif set(b[key]) - set(value):
+                        additions.append({'collection': 'actors.fields', 'key': key, 'count': len(set(b[key]) - set(value))})
+                    continue
                 if key not in b or b[key] != value:
-                    problems.append('既有敌人改变或删除：' + key)
+                    problems.append('既有' + ('敌人' if field == 'enemies' else '角色') + '改变或删除：' + key)
             for key in b.keys() - a.keys():
                 if has_error(b[key]):
-                    problems.append('新增敌人有错误：' + key)
+                    problems.append('新增' + ('敌人' if field == 'enemies' else '角色') + '有错误：' + key)
                 else:
                     additions.append({'collection': field, 'key': key, 'count': 1})
         elif field in keys and isinstance(a, list) and isinstance(b, list):

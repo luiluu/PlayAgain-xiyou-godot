@@ -5,7 +5,10 @@ extends RefCounted
 ## - 行：{type: head/text/cols/blank, …}，text 里保留 \C[n] 颜色码（XMVCanvas 按 drawTextEx 画）。
 ## - 加成只显示、按数值平衡不移植：页上与战力条的「加成 ×N」「天道补偿 ×N」照原版算，但重制版伤害不乘（见 XZhenqi.APPLY_TO_DAMAGE）。
 ## - 「五个乘区」一段（CodexZones，五乘区预算软上限）按数值平衡不移植（用户 2026-10-12），整段不显示（O-044）。
-## - 未做：区段里程碑对话、方桌大厅「下一步建议」、Boss 预告（原版已关）。
+## - 第二阶段：区段里程碑（首次进新区段时的对话，每段一次，看过记 XState.guide_seen）与方桌大厅「商店向导」→「下一步建议」。
+##   区段表 G.ATLAS 照原版（modes/xiyou/guide_atlas.json，冻结源抽出，tests/xiyou_guide 与参照比对）。参照 mv_oracle/guide_probe.cjs → generated/oracle/guide.json。
+##   「战力短板」一段来自五乘区预算（CodexZones），同修行页不移植（O-050）；「洪荒权能」一句随洪荒难度（未移植）。
+## - Boss 预告原版关闭（G.PREVIEW_ENABLED=false，无调用处），不做。
 
 ## 难度技能名单（CodexGuide.difficultySkillIds）
 static var MANAGED: Array = _managed()
@@ -158,3 +161,137 @@ static func page_rows(s: XState, a: XActor) -> Array:
 static func strip_text(s: XState, a: XActor) -> Array:
 	var st := XZhenqi.state_of(s, a)
 	return ["真气·" + st.name + " " + XZhenqi.mult(st.rate) + ("（待选）" if st.pending else ("（瓶颈）" if st.capped else "")), st.capped or st.pending > 0]
+
+
+# ---- 第二阶段：区段里程碑与「下一步建议」 ----
+## Scene_Map.update 的里程碑开关（G.MILESTONE_ENABLED）；无画面测试可关掉
+static var MILESTONE_ENABLED := true
+static var _atlas = null
+
+
+## G.ATLAS：[{key, lo, hi, title, intro, power, special, bosses:[{f, where, n}]}]
+static func atlas() -> Array:
+	if _atlas == null:
+		var d = JSON.parse_string(FileAccess.get_file_as_string("res://modes/xiyou/guide_atlas.json"))
+		_atlas = d.get("atlas", []) if d is Dictionary else []
+	return _atlas
+
+
+## G.segmentOf：落在 lo～hi 的区段，都不在时取最后一段
+static func segment_of(f: int) -> Dictionary:
+	var a := atlas()
+	for seg in a:
+		if f >= int(seg.lo) and f <= int(seg.hi):
+			return seg
+	return a.back() if not a.is_empty() else {}
+
+
+## G.seen：$gameSystem._codexGuideSeen
+static func seen(s: XState, key: String, set_it := false) -> bool:
+	if set_it:
+		s.guide_seen[key] = 1
+	return s.guide_seen.has(key)
+
+
+static func _boss_summary(seg: Dictionary, n: int) -> String:
+	var b: Array = seg.get("bosses", [])
+	var shown := PackedStringArray()
+	for x in b.slice(0, n):
+		shown.append("%d层 %s%s" % [int(x.f), str(x.where), "（%d个）" % int(x.n) if int(x.n) > 1 else ""])
+	return "、".join(shown) + (" 等 %d 处" % b.size() if b.size() > n else "")
+
+
+## powerLine：洪荒难度（开关 2483／2463）下本段不朽存在的权能掉率。洪荒的诅咒倍率与权能掉落未移植，暂不显示
+static func _power_line(_seg: Dictionary) -> String:
+	return ""
+
+
+## 区段原表保留冻结来源；显示内容遵循已定数值原则与当前实际掉率。
+static func milestone_intro(seg: Dictionary) -> String:
+	var intro := str(seg.intro)
+	match str(seg.key):
+		"a":
+			var rate := pct(float(XDB.table("CodexOrbs").get("dropRate", 0.1)))
+			return intro.replace("20%", rate)
+		"c":
+			return "首通守层者可以获得真气；副本Boss可以反复挑战。积累真气、突破境界、学习道法，提升队伍能力。"
+		"d":
+			return "打开状态界面「修行」页的难度对照，查看暴击率、爆伤、命中与攻击的变化，再通过装备、被动和真气调整队伍。"
+		"g":
+			return intro.replace("五个乘区和难度对照", "难度对照")
+	return intro
+
+
+## G.milestoneTexts
+static func milestone_texts(seg: Dictionary) -> Array:
+	var t := ["\\C[6]%s\\C[0]　%s" % [seg.title, milestone_intro(seg)]]
+	if not seg.get("bosses", []).is_empty():
+		t.append("\\C[4]可反复刷的副本Boss\\C[0]：" + _boss_summary(seg, 4) + "。")
+	var more: Array = seg.get("special", []).duplicate()
+	var pw := _power_line(seg)
+	if pw != "":
+		more.append(pw)
+	if not more.is_empty():
+		t.append("".join(PackedStringArray(more)))
+	return t
+
+
+## 原版插入解释器的指令列：每段文字一页（101 无头像、窗口、下方＋401 <WordWrap>），末尾结束指令
+static func page_list(texts: Array) -> Array:
+	var out := []
+	for t in texts:
+		out.append({"code": 101, "indent": 0, "parameters": ["", 0, 0, 2]})
+		out.append({"code": 401, "indent": 0, "parameters": ["<WordWrap>" + str(t)]})
+	out.append({"code": 0, "indent": 0, "parameters": []})
+	return out
+
+
+## Scene_Map.update：修行进度层所在区段没看过时返回该段（调用方记看过并显示），否则空
+static func pending_milestone(s: XState) -> Dictionary:
+	if not MILESTONE_ENABLED or s == null:
+		return {}
+	var seg := segment_of(XZhenqi.progress_floor(s))
+	if seg.is_empty() or seen(s, "seg:" + str(seg.key)):
+		return {}
+	return seg
+
+
+## G.adviceTexts（方桌大厅「商店向导」→「下一步建议」）：进度与待选／可突破、本段副本 Boss、养成入口与祝福石；战力短板段不移植（O-050）
+static func advice_texts(s: XState) -> Array:
+	var f := XZhenqi.progress_floor(s)
+	var seg := segment_of(f)
+	var out := []
+	var pend := PackedStringArray()
+	var cap := PackedStringArray()
+	for a in s.members():
+		var st := XZhenqi.state_of(s, a)
+		if st.pending:
+			pend.append(a.display_name())
+		elif st.canBreak:
+			cap.append(a.display_name() + "→" + str(st.next))
+	var p1 := "\\C[6]修行建议\\C[0]　路线：%s，已通过第%d层，" % [XZhenqi.route(s).name, f]
+	p1 += "守层者已全部通过，真气主要靠副本Boss、神兵试炼和溢出再动。" if f >= 33 else "下一个守层者在第%d层（每层只能打一次，首通给大量真气）。" % (f + 1)
+	if not pend.is_empty():
+		p1 += "\\C[2]待选奖励\\C[0]：" + "、".join(pend.slice(0, 6)) + (" 等" if pend.size() > 6 else "") + "——打开菜单「真气」补选。"
+	if not cap.is_empty():
+		p1 += "\\C[2]可突破\\C[0]：" + "、".join(cap.slice(0, 4)) + (" 等" if cap.size() > 4 else "") + "——打开菜单「真气」打瓶颈之战。"
+	out.append(p1)
+	if not seg.is_empty():
+		out.append("\\C[4]%s\\C[0]可反复刷：%s。胜利给抽奖券（另加 层数÷3 张）和真气（1～15层保留原奖励的1/3，16～25层保留1/2，26～33层保留2/3）；同一个副本Boss打满 1／10／50 次另给 10／30／100 张券，10 次后权能和专属书掉率×2、50 次后×3；每场另有 10%% 掉神秘珠（宝珠坊鉴定，一半出原作宝珠）。" % [seg.title, _boss_summary(seg, 5)])
+		var sp := "".join(PackedStringArray(seg.get("special", [])))
+		var pw := _power_line(seg)
+		if sp != "" or pw != "":
+			out.append(sp + pw)
+	var entry := "\\C[4]养成入口\\C[0]：菜单「宝珠坊」鉴定、分解并查看套装；「种族祝福」逐人换族与进阶；菜单「真气」突破、领奖与挑战神兵试炼，大厅「闭关」也可操作。"
+	var races = XDB.table("CodexRaces")
+	var bands: Array = races.get("bands", []) if races is Dictionary else []
+	var band := -1
+	for i in bands.size():
+		if f >= int(bands[i][0]) and f <= int(bands[i][1]):
+			band = i
+	if band >= 0:
+		var first = s.race_supply.get("first", {})
+		var claimed := first is Dictionary and bool(first.get(str(band + 2), false))
+		entry += "本段副本Boss提供%s，%s每累计5场再1份。" % [str(XDB.rec("Items", int(races.stones[band])).get("name", "")), "" if claimed else "首次胜利1份，"]
+	out.append(entry)
+	return out

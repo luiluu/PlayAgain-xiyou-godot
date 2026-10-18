@@ -274,6 +274,10 @@ static func _healing(item: Dictionary, a: XBattler, b: XBattler, options: Dictio
 			mult += maxf(0.0, 1.0 + element_bonus(a, e))
 		mult /= es.size()
 	var value: float = base * mult * maxf(0.0, b.rec)
+	# installDamageElementRuntime.healing：治疗被动在浮动与取整之前相乘。
+	if value < 0.0 and a is XActor:
+		for bonus in a.passive_values("passiveHEUP"):
+			value *= 1.0 + float(bonus) * 0.01
 	if options.get("variance", true):
 		value = apply_variance(value, int(item.damage.variance))
 	return {"value": roundf(minf(0.0, value)), "settled": value, "critical": false, "breakdown": {"base": base, "elementMultiplier": mult}}

@@ -11,7 +11,10 @@ extends RefCounted
 ##   加成只显示、按数值平衡不移植（用户 2026-10-12 已定：成长修正不移植），伤害 growth 仍为 1，这里只算出来供界面显示（APPLY_TO_DAMAGE）；
 ##   统一调整时再定（数值平衡.md「统一调整时要看的已知问题」）。
 ## - 第二批（文件后半）：闭关菜单节点、瓶颈之战、突破、突破奖励与道法、灵根降服、奖励技能数值（参照 zhenqi_probe「break.*」，tests/xiyou_zhenqi_break）。
-## - 第三批（未做）：道法的运行时钩子（连击、分神、金身、护法、破甲 2705、元婴护体）、神兵试炼；天道使者旧档回退不移植（重制版不读 MV 存档）。
+## - 第三批：道法的运行时钩子（连击、分神、金身、护法减伤与掩护、灵台保留 TP、破甲 2705、元婴护体，接在 XBattler／XActor／BattleLogic）、
+##   神兵试炼（weapon 页、_pendingScale）、降服时含没出场的隐藏成员（troop_members）。参照 zhenqi_probe「daofa.*」「weapon.*」「hidden.*」
+##  （tests/xiyou_zhenqi_daofa）。金身的护盾加成先给出 shield_effect_bonus，护盾系统（ShieldSystem）接入时调用。
+##   天道使者旧档回退不移植（重制版不读 MV 存档）。
 
 const DIV := 10.0
 const OVERFLOW_CAP := 10
@@ -46,6 +49,11 @@ const SUB3 := ["初期", "中期", "后期"]
 const CN := "零一二三四五六七八九十"
 ## 原版 rate×天道补偿 乘进对敌伤害；按用户 2026-10-12 数值平衡决定不乘（见文件头）
 const APPLY_TO_DAMAGE := false
+## 神兵试炼：没有 <CodexZhenqi: weapon N> 标签时按敌人编号认的神兵 Boss（Z.WEAPON_BOSS）；对手强度＝修行进度层守层者 ×2
+const WEAPON_BOSS := {20: 11, 40: 2, 51: 5, 52: 2, 419: 2, 420: 2, 421: 2, 655: 4, 664: 9, 667: 4}
+const WEAPON_TRIAL_SCALE := 2
+## 破甲·真气（道法「破甲」passiveATKST2705）
+const POJIA_STATE := 2705
 
 ## 本场战斗（BattleManager.setup 时的 Z._battle 与 Z._ovf）；不存档，换档清空
 static var battle := {}
@@ -244,9 +252,13 @@ static func is_boss_enemy(e: XEnemy) -> bool:
 ## BattleManager.setup：记本场路线、守层者层、楼层与天道补偿，清溢出计数
 static func battle_setup(s: XState, troop_id: int) -> void:
 	var trial := pending_trial
+	var scaled := pending_scale
 	pending_trial = {}
+	pending_scale = {}
 	if not trial.is_empty() and int(trial.troopId) != troop_id:
 		trial = {}
+	if not scaled.is_empty() and int(scaled.troopId) != troop_id:
+		scaled = {}
 	var r := route(s)
 	var gf := int(GUARDIANS.get(troop_id, 0))
 	var f := gf
@@ -256,9 +268,12 @@ static func battle_setup(s: XState, troop_id: int) -> void:
 		f = map_floor(s.map_id)
 	if f == 0:
 		f = progress_floor(s)
-	battle = {"troopId": troop_id, "trial": trial, "route": r, "guardianFloor": 0 if not trial.is_empty() else gf, "floor": f, "comp": comp_for(r.key, f), "ovf": {}}
-	for a in s.battle_members():
+	if not scaled.is_empty():
+		f = int(scaled.ref.floor)
+	battle = {"troopId": troop_id, "trial": trial, "scaled": scaled, "route": r, "guardianFloor": 0 if not trial.is_empty() else gf, "floor": f, "comp": comp_for(r.key, f), "ovf": {}}
+	for a in s.members():
 		data(a)
+		a.zq_guard = false  # 元婴护体每场一次
 
 
 ## otbActionTimesModification（只在首回合的当前顺序）：追加次数 extra 超过 4 的部分记为溢出
@@ -278,7 +293,7 @@ static func on_victory(s: XState, actors: Array, enemies: Array) -> Array:
 		b.trial.won = actors.any(func(a): return a.is_alive() and a.actor_id == int(b.trial.actorId))
 		trial_done = b.trial
 		return []
-	unlock_specs(s, enemies)
+	unlock_specs(s, enemies, b)
 	var boss := int(b.guardianFloor) == 0 and enemies.any(func(e): return is_boss_enemy(e))
 	var c := int(b.route.coef)
 	var f := int(b.guardianFloor) if int(b.guardianFloor) else int(b.floor)
@@ -374,6 +389,10 @@ static func _fixed(v: float, n: int) -> String:
 ## 瓶颈之战：startTrial 记下、BattleManager.setup 吃掉（敌群不符就作废）；战斗结束（胜负）写进 trial_done，_trialEnd 结算
 static var pending_trial := {}
 static var trial_done := {}
+## 神兵试炼（Z._pendingScale）：{ref, master, wtype, troopId}；BattleManager.setup 吃掉（敌群不符就作废）
+static var pending_scale := {}
+## 正在 Game_Action.apply 的行动者（有破甲道法时；BattleLogic.apply 设定）
+static var pojia_actor = null
 ## 测试注入 Math.randomInt 的序列（空时用 randi）
 static var rand_seq: Array = []
 
@@ -441,6 +460,79 @@ static func has_daofa(a, key: String) -> bool:
 static func daofa_scale(a: XActor) -> float:
 	var i := int(a.zhenqi.get("realm", 0)) if a and not a.zhenqi.is_empty() else 0
 	return 1.0 if i >= 5 else (2.0 / 3.0 if i >= 4 else (0.5 if i == 3 else (1.0 / 3.0 if i == 2 else 0.25)))
+
+
+# ---- 道法的运行时效果（第三批）----
+## Game_Battler.shieldEffectBonus：道法「金身」加 daofaScale（自身获得的护盾 ×(1＋加成)）。护盾系统尚未移植，接入时调用。
+static func shield_effect_bonus(b) -> float:
+	return daofa_scale(b) if has_daofa(b, "jinshen") else 0.0
+
+
+## Game_Action.executeHpDamage（战斗中、我方、正伤害）：护法 ×(1−0.3×scale) 四舍五入；
+## 学了元婴（fixed:yuanying）的每场一次，生命大于 1 时致命伤保留 1 点（zq_guard，battle_setup 清）。
+static func hp_damage(t: XBattler, value: float) -> float:
+	var a := t as XActor
+	if a == null or value <= 0.0:
+		return value
+	if has_daofa(a, "hufa"):
+		value = float(_js_round(value * (1.0 - 0.3 * daofa_scale(a))))
+	var yid := skill_key("fixed:yuanying")
+	if yid and a.skill_ids.has(yid) and not t.zq_guard and t.hp > 1.0 and value >= t.hp:
+		value = t.hp - 1.0
+		t.zq_guard = true
+	return value
+
+
+## 破甲·真气附加时的双防倍率：本次行动者（pojia_actor）有破甲道法时 1−0.5×scale，否则 0.5（原状态）
+static func pojia_rate() -> float:
+	return 1.0 - 0.5 * daofa_scale(pojia_actor) if pojia_actor != null else 0.5
+
+
+## states() 里的破甲·真气：倍率不是 0.5 时改写特性 21 的 3／5 号与说明文字（缓存每个倍率一份）
+static var _pojia_views := {}
+static func pojia_state(st: Dictionary, rate: float) -> Dictionary:
+	if is_equal_approx(rate, 0.5):
+		return st
+	if not _pojia_views.has(rate):
+		var v := st.duplicate()
+		v.traits = st.get("traits", []).map(func(t): return (t.merged({"value": rate}, true) if int(t.code) == 21 and [3, 5].has(int(t.dataId)) else t))
+		v.note = str(st.get("note", "")).replace("双防×0.5", "双防×" + _pct(rate))
+		_pojia_views[rate] = v
+	return _pojia_views[rate]
+
+
+## $gameTroop.members()：出场的敌人按敌群顺序，加上没出场的隐藏成员（只看数据与 Boss 判定；不掷神话）
+static func troop_members(troop_id: int, enemies: Array, difficulty: int) -> Array:
+	var mem: Array = XDB.rec("Troops", troop_id).get("members", []) if troop_id else []
+	if not mem.any(func(m): return bool(m.get("hidden", false))):
+		return enemies
+	var out := []
+	var k := 0
+	for m in mem:
+		if bool(m.get("hidden", false)):
+			out.append(XEnemy.new().setup(int(m.enemyId), difficulty, 100.0))
+		elif k < enemies.size():
+			out.append(enemies[k])
+			k += 1
+	out.append_array(enemies.slice(k))
+	return out
+
+
+## Z.weaponMasters：敌人备注 <CodexZhenqi: weapon N> 的神兵之仙，取首个成员是它的敌群
+static func weapon_masters() -> Array:
+	var out := []
+	var re := RegEx.create_from_string("<CodexZhenqi:\\s*weapon\\s+(\\d+)>")
+	for e in XDB.table("Enemies"):
+		if not e is Dictionary:
+			continue
+		var m := re.search(str(e.get("note", "")))
+		if m == null:
+			continue
+		for t in XDB.table("Troops"):
+			if t is Dictionary and not t.get("members", []).is_empty() and int(t.members[0].enemyId) == int(e.id):
+				out.append({"enemyId": int(e.id), "name": str(e.name), "wtype": int(m.get_string(1)), "troopId": int(t.id)})
+				break
+	return out
 
 
 ## Z.patchRewards：数据库载入时把筑基～化神属性奖励改成 30/50/70/99%、金丹 20%、元婴 50%（备注里的被动值与说明文字）
@@ -556,6 +648,8 @@ static func trial_ref(s: XState, i: int) -> Dictionary:
 ## Game_Troop.setup 之后：幻化的敌人能力值取参照敌人的 paramBase，生命／攻击／魔攻 ×倍数，回满；不掉落（XEnemy.zq_ref／zq_trial_loot）
 static func troop_setup(enemies: Array, difficulty: int, elite_roll := -1.0) -> void:
 	var t: Dictionary = battle.get("trial", {})
+	if t.is_empty():
+		t = battle.get("scaled", {})  # 神兵试炼同样幻化
 	if t.is_empty() or int(t.ref.enemyId) == 0:
 		return
 	var ref := XEnemy.new().setup(int(t.ref.enemyId), difficulty, elite_roll)
@@ -577,11 +671,23 @@ static func on_battle_end() -> void:
 
 
 ## 灵根可指定的元素：击败带 <Element Absorb: …> 的 Boss（1～9 号元素，第一次提示）。$gameSystem._codexZhenqiSpec.e
-## 本命兵（.w）只由神兵试炼解锁（第三批）。
-static func unlock_specs(s: XState, enemies: Array) -> void:
+## 本命兵（.w）只由神兵试炼解锁：本场是神兵试炼、打倒的是那位神兵之仙、武器类型相符；第一次完成记 weaponTrials 并提示。
+## enemies 含没出场的隐藏成员（troop_members）：原版 $gameTroop.members() 也算它们。
+static func unlock_specs(s: XState, enemies: Array, b := {}) -> void:
 	var sp := s.zhenqi_spec
 	var re := RegEx.create_from_string("(?i)<Element Absorb:\\s*([\\d,\\s]+)>")
+	var tag_re := RegEx.create_from_string("<CodexZhenqi:\\s*weapon\\s+(\\d+)>")
+	var scaled: Dictionary = b.get("scaled", {})
 	for e in enemies:
+		var tm := tag_re.search(str(e.data().get("note", "")))
+		var w := int(tm.get_string(1)) if tm else int(WEAPON_BOSS.get(e.enemy_id, 0))
+		if not scaled.is_empty() and e.enemy_id == int(scaled.master) and w == int(scaled.wtype) and e.is_dead() and w:
+			if not sp.has("weaponTrials"):
+				sp.weaponTrials = {}
+			sp.w[str(w)] = 1
+			if not sp.weaponTrials.has(str(w)):
+				sp.weaponTrials[str(w)] = 1
+				_toast("神兵试炼完成：本命兵可指定「%s」" % str(XDB.system().weaponTypes[w]))
 		if not is_boss_enemy(e):
 			continue
 		for m in re.search_all(str(e.data().get("note", ""))):
@@ -611,6 +717,8 @@ static func menu(s: XState, node: Dictionary) -> Dictionary:
 			return _pick_flow(s, a)
 		"daofa": return _roll_daofa(s, s.actors[int(node.id)], int(node.i))
 		"daofa_done": return _daofa_done(s, s.actors[int(node.id)], node)
+		"weapon": return _weapon_menu(s)
+		"weapon_start": return _start_weapon(s, int(node.k))
 	return {}
 
 
@@ -636,7 +744,6 @@ static func _retreat(s: XState, page: int) -> Dictionary:
 		opts.append({"label": "上一页（%d/%d）" % [page, pages], "next": {"page": "retreat", "p": page - 1}})
 	if page + 1 < pages:
 		opts.append({"label": "下一页（%d/%d）" % [page + 2, pages], "next": {"page": "retreat", "p": page + 1}})
-	# 神兵试炼（指定本命兵武器）留第三批：选项照原版列出，进去先说明未开放
 	opts.append({"label": "神兵试炼（指定本命兵武器）", "next": {"page": "weapon"}})
 	opts.append({"label": "离开", "next": null})
 	return _ask(["\\C[6]闭关之所\\C[0]", "真气达到大圆满、通关对应楼层后，打赢瓶颈之战突破。", "突破后获得境界奖励。"], opts)
@@ -752,3 +859,30 @@ static func _daofa_done(_s: XState, a: XActor, node: Dictionary) -> Dictionary:
 	d.pending.pop_front()
 	refresh_rewards(a)
 	return _tell(["%s 领悟道法「%s」！" % [a.display_name(), node.label]], {"page": "pick", "id": a.actor_id})
+
+
+## Z.weaponMenu：神兵之仙列表（［试炼完成］／［已领悟·未完成试炼］）、返回闭关首页、离开
+static func _weapon_menu(s: XState) -> Dictionary:
+	var sp := s.zhenqi_spec
+	var f := maxi(1, progress_floor(s))
+	var names: Array = XDB.system().weaponTypes
+	var opts := []
+	var ms := weapon_masters()
+	for k in range(ms.size()):
+		var m: Dictionary = ms[k]
+		var w := str(m.wtype)
+		var tag := "［试炼完成］" if sp.get("weaponTrials", {}).has(w) else ("［已领悟·未完成试炼］" if sp.w.has(w) else "")
+		opts.append({"label": "%s（%s）%s" % [m.name, names[m.wtype], tag], "next": {"page": "weapon_start", "k": k}})
+	opts.append({"label": "返回", "next": {"page": "retreat"}})
+	opts.append({"label": "离开", "next": null})
+	return _ask(["\\C[6]神兵试炼\\C[0]：降服神兵之仙，领悟道法「本命兵」时即可指定该武器类型。",
+		"对手强度＝第%d层守层者 ×%d。须在此主动挑战并获胜，野外击败同名Boss不算完成。" % [f, WEAPON_TRIAL_SCALE]], opts)
+
+
+## Z.startWeaponTrial：对手＝修行进度层守层者 ×2（不能逃、可以输）；打完不回菜单
+static func _start_weapon(s: XState, k: int) -> Dictionary:
+	var m: Dictionary = weapon_masters()[k]
+	var ref := trial_ref(s, 1)
+	ref.scale = WEAPON_TRIAL_SCALE
+	pending_scale = {"ref": ref, "master": m.enemyId, "wtype": m.wtype, "troopId": m.troopId}
+	return {"lines": ["\\C[6]%s\\C[0]：「来，让我看看你配不配用%s。」" % [m.name, XDB.system().weaponTypes[m.wtype]]], "options": [], "battle": int(m.troopId), "next": null}

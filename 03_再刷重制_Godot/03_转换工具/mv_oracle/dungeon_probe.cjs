@@ -89,6 +89,17 @@ const DUNGEONS = {
   d21: {start: {map: 117, x: 35, y: 1}, door: 2, tierBase: 1641, rune: 397, escape: 7,
     clear: [1, 2, 3, 4, 5, 6].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 6}]),
     boss: {sw: 901, event: 11, item: 914}},
+  // 二十二层剥皮教堂：四只精英（无计数）后首领劳勃；二十三层陈塘关：六只卫兵精英（变量 246 到 4 才出首领李静）；
+  // 二十四层熊族桃园：熊一至熊五（变量 249 到 5 才出首领雄霸，宝箱是自动执行页，敌群 526 第 2 页第 1 回合给状态 44 并强制 3813）；三层都收活力水 912
+  d22: {start: {map: 119, x: 38, y: 5}, door: 14, tierBase: 1645, rune: 397, escape: 10,
+    clear: [6, 7, 8, 9, 5].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 5}]),
+    boss: {sw: 902, event: 11, item: 912}},
+  d23: {start: {map: 118, x: 43, y: 46}, door: 4, tierBase: 1649, rune: 397, escape: 8,
+    clear: [2, 3, 4, 5, 6, 7, 1].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 1}]),
+    boss: {sw: 903, event: 9, item: 912}},
+  d24: {start: {map: 120, x: 41, y: 1}, door: 2, tierBase: 1653, rune: 397, escape: 7,
+    clear: [1, 3, 4, 5, 6, 2].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 2}]),
+    boss: {sw: 904, event: 8, item: 912}},
 };
 const D2 = DUNGEONS.d2.start;
 const enter = (picks, rune = 1, door = 7, item = 24) => [{do: 'item', id: item, n: rune}, {do: 'event', event: door, picks}];
@@ -102,6 +113,58 @@ function standard(id) {
     {id: id + '.clear-normal', dungeon: id, setup: {}, steps: [...go([0]), ...d.clear]},
     {id: id + '.clear-king', dungeon: id, setup: {tier: 4, rand: 0.05}, steps: [...go([0, 3]), ...d.clear]},
     {id: id + '.bribe', dungeon: id, setup: {sw: [d.boss.sw]}, steps: [...go([0]), {do: 'item', id: d.boss.item || 913, n: 1}, {do: 'event', event: d.boss.event, picks: [0]}]},
+  ];
+}
+// ---- 深渊之门 ----
+// 宿主副本（宝箱事件末尾：持有物品 179 或随机变量 106 为 1 时出门，选「进入此门」去 A／B 图；设 Difficulty 1）与十二张结构相同的深渊图：
+// 封印 seal（先「解开封印」开开关 75，再「继续解开封印」随机变量 108 选一场被封印者战，赢了开开关 76）、
+// 深渊商人 shop（开关 76 的自动页随机变量 110 为 1 时按变量 109 定商店，否则开关 78 不开店）、出口 door（按变量 6 回副本所在层并重置）。
+// 随机数在一例里是常数 r，所以变量 109 只能取到 N/2 以内的商店、Map058／059 只能从关口之外直接进（r 同时定 136 与 107）；这两处覆盖见交付单。
+// n＝封印战斗种数，N＝商店变量 109 的最大值，exits＝出口按变量 6 的取值，cthulu＝Map167／168 的克苏鲁的化身事件（开关 695 的自动页，随机变量 215）
+const ABYSS = {
+  50: {n: 3, shop: 6, door: 7, N: 15, exits: [10, 11, 19]}, 51: {n: 3, shop: 6, door: 7, N: 15, exits: [10, 11, 19]},
+  52: {n: 3, shop: 6, door: 7, N: 15, exits: [12, 13]}, 53: {n: 3, shop: 8, door: 7, N: 15, exits: [12, 13]},
+  56: {n: 4, shop: 6, door: 8, N: 51, exits: [14, 18, 45]}, 57: {n: 4, shop: 6, door: 7, N: 51, exits: [14, 18, 45]},
+  58: {n: 5, shop: 7, door: 6, N: 51, exits: [14, 18, 45]}, 59: {n: 5, shop: 7, door: 6, N: 51, exits: [14, 18, 45]},
+  164: {n: 4, shop: 6, door: 8, N: 34, exits: [28, 29]}, 165: {n: 4, shop: 6, door: 7, N: 34, exits: [28, 29]},
+  167: {n: 7, shop: 6, door: 8, N: 47, exits: [32, 33], cthulu: 7}, 168: {n: 7, shop: 6, door: 7, N: 47, exits: [32, 33], cthulu: 8},
+};
+// 宿主副本 → [低随机数（r＝0.05）进的图, 持物品 179 且 r＝0.5 进的图]
+const GATES = {d15: [50, 51], d17: [52, 53], d18: [52, 53], d19: [56, 59], d20: [164, 165], d21: [164, 165], d22: [167, 168], d23: [167, 168]};
+const rn = (k, n) => (k - 0.5) / n;
+const abyssTail = m => { const a = ABYSS[m]; return [{do: 'event', event: 5, picks: [0]}, {do: 'event', event: 5, picks: [0]}, {do: 'event', event: a.shop},
+  {do: 'event', event: a.shop, picks: [0]}, {do: 'event', event: a.door, picks: [0]}]; };
+function gateCases(id) {
+  const d = DUNGEONS[id], go = () => enter([0], 1, d.door, d.rune || 24), last = d.clear.length - 1;
+  const clearTo = picks => [...go(), ...d.clear.map((s, i) => i === last ? {...s, picks} : s)];
+  const [lo, hi] = GATES[id];
+  return [
+    {id: id + '.gate-leave', dungeon: id, setup: {rand: 0.05}, steps: clearTo([1])},
+    {id: id + '.gate-low', dungeon: id, setup: {rand: 0.05}, steps: [...clearTo([0]), ...abyssTail(lo)]},
+    {id: id + '.gate-item', dungeon: id, setup: {rand: 0.5}, steps: [{do: 'item', id: 179, n: 1}, ...clearTo([0]), ...abyssTail(hi)]},
+    ...(id === 'd19' ? [{id: id + '.gate-item-57', dungeon: id, setup: {rand: 0.4}, steps: [{do: 'item', id: 179, n: 1}, ...clearTo([0]), ...abyssTail(57)]}] : []),
+  ];
+}
+function abyssCases(m) {
+  const a = ABYSS[m], at = {do: 'warp', map: m, x: 19, y: 23}, id = 'ab' + m, v6 = {6: a.exits[0]};
+  const ks = [...new Set([1, Math.round(a.N / 4), Math.floor(a.N / 2)])];
+  return [
+    ...Array.from({length: a.n}, (_, i) => ({id: `${id}.seal-${i + 1}`, setup: {rand: rn(i + 1, a.n), vars: v6},
+      steps: [at, {do: 'event', event: 5, picks: [0]}, {do: 'event', event: 5, picks: [0]}, {do: 'event', event: a.shop}, {do: 'event', event: a.shop, picks: [0]},
+        {do: 'event', event: a.door, picks: [0]}]})),
+    {id: id + '.seal-leave', setup: {}, steps: [at, {do: 'event', event: 5, picks: [1]}, {do: 'event', event: 5, picks: [0]}, {do: 'event', event: 5, picks: [1]}]},
+    {id: id + '.seal-unknown', setup: {rand: 0.05}, steps: [at, {do: 'event', event: 5, picks: [0]}, {do: 'event', event: 5, picks: [0, 0]}]},
+    {id: id + '.seal-lose', setup: {rand: 0.05}, steps: [at, {do: 'event', event: 5, picks: [0]}, {do: 'event', event: 5, picks: [0], battle: 'lose'}]},
+    ...ks.map(k => ({id: `${id}.shop-${k}`, setup: {sw: [76], rand: rn(k, a.N)}, steps: [at, {do: 'event', event: a.shop}, {do: 'event', event: a.shop, picks: [0]}]})),
+    {id: id + '.shop-none', setup: {sw: [76], rand: 0.9}, steps: [at, {do: 'event', event: a.shop}, {do: 'event', event: a.shop, picks: [0]}]},
+    ...a.exits.map(v => ({id: `${id}.exit-${v}`, setup: {vars: {6: v}}, steps: [at, {do: 'event', event: a.door, picks: [0]}]})),
+    {id: id + '.exit-stay', setup: {vars: v6}, steps: [at, {do: 'event', event: a.door, picks: [1]}]},
+    {id: id + '.exit-other', setup: {}, steps: [at, {do: 'event', event: a.door, picks: [0]}]},
+    {id: id + '.roundtrip', setup: {rand: 0.05}, steps: [at, {do: 'event', event: 5, picks: [0]}, {do: 'roundtrip'}, {do: 'event', event: 5, picks: [0]}, {do: 'roundtrip'},
+      {do: 'event', event: a.shop}, {do: 'event', event: a.shop, picks: [0]}]},
+    ...(a.cthulu ? [...[1, 2, 3, 4, 5].map(k => ({id: `${id}.cthulu-${k}`, setup: {sw: [695], rand: rn(k, 11)},
+      steps: [at, {do: 'event', event: a.cthulu}, {do: 'event', event: a.cthulu, picks: [0]}]})),
+      {id: id + '.cthulu-none', setup: {sw: [695], rand: 0.9}, steps: [at, {do: 'event', event: a.cthulu}, {do: 'event', event: a.cthulu, picks: [0]}]}] : []),
   ];
 }
 const SCENARIOS = [
@@ -136,7 +199,7 @@ const SCENARIOS = [
   {id: 'd2.boss-lose', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'lose'}]},
   {id: 'd2.boss-roundtrip', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'win'}, {do: 'roundtrip'},
     {do: 'event', event: 1}]},
-  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd17', 'd18', 'd19', 'd20', 'd21'].flatMap(standard),
+  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd17', 'd18', 'd19', 'd20', 'd21', 'd22', 'd23', 'd24'].flatMap(standard),
   {id: 'd17.hidden-boss', dungeon: 'd17', setup: {rand: 0.9}, steps: [...enter([0], 1, 2, 171),
     ...[6, 7, 8, 9, 10, 11, 12, 13, 2, 3, 4, 5, 14].map(e => ({do: 'event', event: e, battle: 'win'}))]},
   // 二十层宝箱额外奖励（入口随机变量 155 到 97 以上，157 选三件之一）
@@ -158,6 +221,8 @@ const SCENARIOS = [
   // 十五层首领要四只首领都打掉（变量 111≥4）才出现；行贿主席直接加 4
   {id: 'd15.boss-locked', dungeon: 'd15', setup: {}, steps: [...enter([0], 1, 4, 171), {do: 'event', event: 2, battle: 'win'}, {do: 'event', event: 13}]},
   {id: 'kun.no-kun', dungeon: 'd11', setup: {}, steps: [{do: 'warp', map: 21, x: 4, y: 1}, {do: 'event', event: 13}]},
+  ...Object.keys(GATES).flatMap(gateCases),
+  ...Object.keys(ABYSS).flatMap(m => abyssCases(Number(m))),
 ].map(sc => Object.assign({dungeon: 'd2'}, sc));
 
 // ---- 引擎占位（同 event_probe） ----
@@ -187,12 +252,16 @@ function sceneCall(cls) {
     const result = battleResult === 'lose' ? 2 : 0;
     if (result === 2 && !w.BattleManager._canLose) { rec({t: 'scene', name: 'Scene_Gameover'}); throw new GameOver(); }
     w.BattleManager.endBattle(result);
-  } else rec({t: 'scene', name: cls && cls.name || String(cls)});
+  } else if (cls === w.Scene_Shop) rec({t: 'shop', goods: []});     // 商品由随后的 prepareNextScene 填入（command302 先 push 后 prepare）
+  else rec({t: 'scene', name: cls && cls.name || String(cls)});
 }
 class GameOver extends Error {}
 w.SceneManager.push = cls => sceneCall(cls);
 w.SceneManager.goto = cls => sceneCall(cls);
-w.SceneManager.prepareNextScene = function() {};
+w.SceneManager.prepareNextScene = function(goods) {
+  const last = trace && trace[trace.length - 1];
+  if (last && last.t === 'shop' && Array.isArray(goods)) last.goods = goods.map(g => [g[0], g[1]]);
+};
 w.DataManager.saveGame = id => { rec({t: 'save', slot: Number(id)}); return true; };
 // 战斗结束的画面/音乐收尾不需要
 w.BattleManager.replayBgmAndBgs = function() {};

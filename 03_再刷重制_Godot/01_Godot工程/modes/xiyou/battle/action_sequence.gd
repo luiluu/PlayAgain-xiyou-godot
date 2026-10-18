@@ -7,6 +7,8 @@ extends RefCounted
 ##   正式版 eval 出错（如敌人没有 _skills）时为假。不认识的写法记入 unknown 并当作假。
 ## - 规则指令：ACTION EFFECT（可指定目标）、ADD/REMOVE STATE、HP/MP/TP ±（数值、百分比、变量）、ADD/REMOVE 能力 BUFF/DEBUFF。
 ##   其余（动画、移动、等待、镜头、音效、公共事件、变量、EVAL）不影响本函数的结算，跳过。
+## - 画面：照执行顺序在记录里插入 seq_phase（段开始）、seq_target（target 段换下一个目标）、seq（每条执行的指令，
+##   带当时的目标与画面要用的对象组）与 seq_end，由 XSequencePlayer 逐帧演出；这些条目不影响结算。
 ## - IMMORTAL 期间 HP 为 0 也不倒下，解除时同步阵亡；资源增减与能力增减后按 MV refresh 同步夹值与阵亡状态。
 
 const PHASES := ["setup", "whole", "target", "follow", "finish"]
@@ -20,6 +22,8 @@ var all_targets: Array = []
 var targets: Array = []
 var logs: Array = []
 var unknown: Array = []
+## 画面：本条 HP/MP/TP 指令实际增减（[对象, 种类, 数值]），记进 seq 条目给伤害数字用
+var _gains: Array = []
 var _flags: Array = []
 var _true_flags: Array = []
 var _break := false
@@ -47,15 +51,21 @@ func run() -> Array:
 		_true_flags.clear()
 		_break = false
 		var list: Array = seq.get(phase, [])
+		logs.append({"type": "seq_phase", "phase": phase, "empty": list.is_empty()})
 		if phase == "target":
 			# createTargetActions：没有目标时仍以空目标跑一遍（setTargets([undefined])）
+			var first := true
 			for t in (all_targets if not all_targets.is_empty() else [null]):
+				if not first:
+					logs.append({"type": "seq_target"})
+				first = false
 				targets = [t] if t != null else []
 				_run_list(list)
 				if _break:
 					break
 		else:
 			_run_list(list)
+	logs.append({"type": "seq_end"})
 	return logs
 
 
@@ -71,7 +81,14 @@ func _run_list(list: Array) -> void:
 			_flags.append(v == true)
 			_true_flags.append(false)
 			continue
+		var mark := _visual_entry(name.to_upper(), args)
+		logs.append(mark)
+		_gains = []
 		_command(name.to_upper(), args)
+		if not _gains.is_empty():
+			mark.gains = _gains
+		mark.broke = _break
+		mark.user_dead = user.is_dead()
 		if _break:
 			return
 
@@ -193,7 +210,9 @@ func _modify(kind: String, name: String, list: Array) -> void:
 			change = m.get_string(1).to_float()  # parseInt(很长的数字串) 是大浮点数
 	for t in list:
 		var base: float = t.mhp if kind == "HP" else (t.mmp if kind == "MP" else t.max_tp())
-		logic.sequence_gain(t, kind, js_parse_int(base * change * 0.01 if percent else change))
+		var v := js_parse_int(base * change * 0.01 if percent else change)
+		_gains.append([t, kind, v])
+		logic.sequence_gain(t, kind, v)
 
 
 ## JS parseInt(数字)：先转成字符串，绝对值 ≥ 1e21 时是指数写法，只取到小数点/e 之前（-1e+33 → -1）
@@ -233,6 +252,80 @@ func make_targets(spec: String) -> Array:
 			return logic.alive(foes)
 		"ALL ALIVE":
 			return logic.alive(logic.actors) + logic.alive(logic.enemies)
+	return []
+
+
+# ---- 画面 ----
+## 指令名里的对象（MOVE/FACE/FLOAT/JUMP/OPACITY 后面那段）与第一个参数，按执行当时的状态解析好（BattleManager.makeActionTargets）
+func _visual_entry(name: String, args: Array) -> Dictionary:
+	var e := {"type": "seq", "name": name, "args": args, "user": user, "targets": targets.filter(func(t): return t != null)}
+	var m := RegEx.create_from_string("^(?:FACE|FLOAT|JUMP|MOVE|OPACITY)[ ](.*)$").search(name)
+	if m:
+		e.sub = visual_targets(m.get_string(1))
+	if not args.is_empty():
+		e.a0 = visual_targets(str(args[0]))
+	return e
+
+
+## YEP makeActionTargets 的全部写法（画面用；不改规则用的 make_targets）
+func visual_targets(spec: String) -> Array:
+	var s := spec.strip_edges().to_upper()
+	var mine: Array = logic.actors if user is XActor else logic.enemies
+	var foes: Array = logic.enemies if user is XActor else logic.actors
+	var live := func(list: Array) -> Array: return logic.alive(list)
+	var dead := func(list: Array) -> Array: return list.filter(func(b): return b.is_dead())
+	var not_user := func(list: Array) -> Array: return logic.alive(list).filter(func(b): return b != user)
+	match s:
+		"SUBJECT", "USER": return [user]
+		"TARGET", "TARGETS": return targets.filter(func(t): return t != null)
+		"ACTORS", "EXISTING ACTORS", "ALIVE ACTORS": return live.call(logic.actors)
+		"ACTORS ALL", "ALL ACTORS", "PARTY": return logic.actors.duplicate()
+		"DEAD ACTORS", "DEAD ACTOR": return dead.call(logic.actors)
+		"ACTORS NOT USER", "ACTORS NOT SUBJECT": return not_user.call(logic.actors)
+		"ENEMIES", "EXISTING ENEMIES", "ALIVE ENEMIES", "TROOP", "TROOPS": return live.call(logic.enemies)
+		"ENEMIES ALL", "ALL ENEMIES": return logic.enemies.duplicate()
+		"DEAD ENEMIES", "DEAD ENEMY": return dead.call(logic.enemies)
+		"ENEMIES NOT USER", "ENEMIES NOT SUBJECT", "TROOP NOT USER", "TROOP NOT SUBJECT": return not_user.call(logic.enemies)
+		"FRIEND", "FRIENDS", "ALLIES": return live.call(mine)
+		"ALL FRIENDS", "ALL ALLIES": return mine.duplicate()
+		"DEAD FRIEND", "DEAD FRIENDS", "DEAD ALLIES": return dead.call(mine)
+		"OPPONENT", "OPPONENTS", "RIVALS", "FOES": return live.call(foes)
+		"ALL OPPONENTS", "ALL RIVALS", "ALL FOES": return foes.duplicate()
+		"DEAD OPPONENT", "DEAD OPPONENTS", "DEAD RIVALS", "DEAD FOES": return dead.call(foes)
+		"FRIENDS NOT USER", "ALLIES NOT USER": return not_user.call(mine)
+		"ALL ALIVE": return live.call(mine) + live.call(foes)
+		"ALL MEMBERS": return mine + foes
+		"ALL DEAD": return dead.call(mine) + dead.call(foes)
+		"ALL NOT USER": return not_user.call(mine) + not_user.call(foes)
+		"FOCUS", "PARTICIPANTS":
+			var list := targets.filter(func(t): return t != null)
+			if not list.has(user):
+				list.append(user)
+			return list
+		"NOT FOCUS", "NONPARTICIPANTS":
+			# 倒下的敌人不算（侧视敌人倒下后仍显示的除外，这里没有）；倒下的角色仍算
+			return (mine + foes).filter(func(b): return b != user and not targets.has(b) and (b.is_alive() or b is XActor))
+		"FIRST":
+			return [targets[0]] if not targets.is_empty() and targets[0] != null else []
+	var m := RegEx.create_from_string("^ACTOR[ ](\\d+)").search(s)
+	if m:
+		var i := int(m.get_string(1))
+		return [logic.actors[i]] if i < logic.actors.size() else []
+	m = RegEx.create_from_string("^ENEMY[ ](\\d+)").search(s)
+	if m:
+		var i := int(m.get_string(1))
+		return [logic.enemies[i]] if i < logic.enemies.size() else []
+	m = RegEx.create_from_string("(?:FRIEND|ALLY)[ ](\\d+)").search(s)
+	if m:
+		var i := int(m.get_string(1))
+		return [mine[i]] if i < mine.size() else []
+	m = RegEx.create_from_string("(?:OPPONENT|FOE|RIVAL)[ ](\\d+)").search(s)
+	if m:
+		var i := int(m.get_string(1))
+		return [foes[i]] if i < foes.size() else []
+	m = RegEx.create_from_string("(?:CHAR|CHARA|CHARACTER)[ ](\\d+)").search(s)
+	if m:
+		return logic.actors.filter(func(a): return (a as XActor).actor_id == int(m.get_string(1)))
 	return []
 
 

@@ -406,6 +406,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0
+	XGuide.MILESTONE_ENABLED = false   # 区段里程碑会在走路时插进对话（tests/xiyou_guide 另测）
 	XSave.dir_override = "user://test_xiyou_floor_run"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	_fast_clock(true)

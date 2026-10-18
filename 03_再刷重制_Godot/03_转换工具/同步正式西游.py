@@ -40,7 +40,7 @@ SANDBOX = ORACLE_DIR / '.sandbox'
 STAMP = 'sync_stamp.json'
 TOOLS_REL = HERE.relative_to(ROOT).as_posix()   # 03_再刷重制_Godot/03_转换工具
 # 只读的检查工具不影响产物，不算进转换工具指纹
-READ_ONLY_TOOLS = {'内容覆盖检查.py', '事件指令统计.py', '共性参照验收.py', '验证西游来源.py'}
+READ_ONLY_TOOLS = {'内容覆盖检查.py', '事件指令统计.py', '共性参照验收.py', '验证西游来源.py', '角色模板预检.py'}
 GODOT = ROOT / '03_再刷重制_Godot/07_开发环境/godot'
 PROJECT = ROOT / '03_再刷重制_Godot/01_Godot工程'
 # 探针 → 产物（相对 .sandbox）；slice_probe 一次跑 6 个难度
@@ -55,6 +55,7 @@ PROBES = [
     (['sequence_probe.cjs'], ['sequences.json']),
     (['party_probe.cjs'], ['party.json']),
     (['troop_event_probe.cjs'], ['troop_events.json']),
+    (['battle_event_probe.cjs'], ['battle_events.json']),
     (['drop_record_probe.cjs'], ['drop_record.json']),
     (['sell_reward_probe.cjs'], ['sell_rewards.json']),
     (['power_probe.cjs'], ['power.json']),
@@ -67,7 +68,9 @@ PROBES = [
     (['dungeon_probe.cjs'], ['dungeon.json']),
     (['shared_system_probe.cjs'], ['shop_stock.json', 'battle_messages.json', 'challenge_passives.json']),
     (['zhenqi_probe.cjs'], ['zhenqi.json']),
+    (['guide_probe.cjs'], ['guide.json']),
     (['custom_damage_probe.cjs'], ['custom_damage.json']),
+    (['review_fix_probe.cjs'], ['review_fix.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
 

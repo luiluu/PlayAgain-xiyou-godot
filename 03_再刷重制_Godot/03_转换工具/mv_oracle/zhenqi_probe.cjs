@@ -224,4 +224,124 @@ for (const [id, keys] of [['atk1', ['attr:atk:1']], ['def2', ['attr:def:2']], ['
 cases.push(makeCase('menu.command', {}, () => { fresh(); const win = Object.create(w.Window_MenuCommand.prototype); win._list = []; win.addCommand = function (n, s, e) { this._list.push({name: n, symbol: s, enabled: e}); };
   win.addOriginalCommands(); return win._list.filter(c => c.symbol === 'codexZhenqi'); }));
 
+// ==== 第三批：道法运行时（连击、分神、金身、护法减伤与掩护、元婴护体、灵台保留 TP、破甲·真气 2705）、神兵试炼、降服含隐藏成员 ====
+const T3 = (id, opts, fn) => cases.push(makeCase(id, opts, () => { fresh(); Z._pendingTrial = null; Z._pendingScale = null; Z._trialDone = null; Z._battle = null; setupWorld(opts); return fn(); }));
+// 角色学会道法：_codexZhenqi.daofa 记上，并学会对应奖励技能（被动标签来自技能）；extra 是另学的技能（键或编号）
+function withDaofa(aid, realm, keys, extra = []) {
+  const a = actor(aid); setData(a, {realm, qi: Z.REALMS[realm].need, daofa: Object.fromEntries(keys.map(k => [k, 1]))});
+  for (const k of keys) a.learnSkill(Z.skillKey('daofa:' + k));
+  for (const k of extra) a.learnSkill(typeof k === 'number' ? k : Z.skillKey(k));
+  Z.refreshRewards(a); return a;
+}
+// 真开战（同 drop_record_probe）：各运行时的开战初始化（如吸血缓存、云裳本场记录）都要先跑过，行动才能执行；窗口与弹字用空壳
+const stub = new Proxy(function () {}, {get: () => function () {}, set: () => true});
+const inBattle = troop => { w.BattleManager.setup(troop || 1, true, false); w.$gameParty._inBattle = true; w.Game_Battler.prototype.startDamagePopup = function () {};
+  w.BattleManager._logWindow = stub; w.BattleManager._spriteset = stub; w.BattleManager.otbDisplayWindow = function () { return stub; }; w.BattleManager.startBattle(); };
+// 连击 attackTimesAdd＋1、分神 actionPlusSet 再加 [1]、金身 shieldEffectBonus＋daofaScale；命中 xparam(0) 下限 0.9
+for (const [id, realm, keys] of [['none', 0, []], ['lianji', 0, ['lianji']], ['fenshen', 3, ['fenshen']], ['jinshen.r0', 0, ['jinshen']], ['jinshen.r2', 2, ['jinshen']], ['jinshen.r3', 3, ['jinshen']],
+  ['jinshen.r4', 4, ['jinshen']], ['jinshen.r9', 9, ['jinshen']], ['all', 1, ['lianji', 'fenshen', 'jinshen']]])
+  T3('daofa.traits.' + id, {realm, keys}, () => { const a = withDaofa(1, realm, keys);
+    return {attackTimesAdd: a.attackTimesAdd(), actionPlusSet: a.actionPlusSet().map(r6), makeActionTimes: a.makeActionTimes(), shieldEffectBonus: r6(a.shieldEffectBonus()), hit: r6(a.xparam(0))}; });
+// executeHpDamage：战斗中我方受伤，护法 ×(1−0.3×scale) 四舍五入；元婴护体每场一次致命伤留 1 点（BattleManager.setup 时重置）
+function hpHits(aid, hits, opts) {
+  const a = actor(aid), out = [];
+  for (const h of hits) {
+    if (h === 'setup') { inBattle(1); w.$gameParty._inBattle = !opts.outside; out.push('setup'); continue; }
+    if (h.hp === 'full') a.setHp(a.mhp); else if (h.hp !== undefined) a.setHp(h.hp);
+    const act = new w.Game_Action(w.$gameTroop.members()[0]); act.setAttack();
+    const hp0 = a.hp, v = h.v === 'lethal' ? hp0 + 50 : h.v === 'exact' ? hp0 : h.v;
+    act.executeHpDamage(a, v); out.push({hp0, value: v, hp: a.hp, guard: !!a._codexZqGuard});
+  }
+  return {mhp: a.mhp, hits: out};
+}
+const HP = (id, realm, keys, extra, hits, opts = {}) => T3('daofa.hp.' + id, Object.assign({realm, keys, extra, hits}, opts), () => { withDaofa(1, realm, keys, extra); return hpHits(1, ['setup'].concat(hits), opts); });
+HP('plain', 0, [], [], [{v: 100}, {v: 'lethal'}]);
+HP('hufa.r0', 0, ['hufa'], [], [{v: 100}, {v: 101}, {v: 7}]);
+HP('hufa.r2', 2, ['hufa'], [], [{v: 100}, {v: 101}]);
+HP('hufa.r5', 5, ['hufa'], [], [{v: 100}, {v: 101}, {v: 1}]);
+HP('heal', 5, ['hufa'], ['fixed:yuanying'], [{hp: 10, v: -50}, {v: 0}]);
+HP('yuanying', 3, [], ['fixed:yuanying'], [{v: 'lethal'}, {v: 'lethal'}]);
+HP('yuanying.exact', 3, [], ['fixed:yuanying'], [{v: 'exact'}]);
+HP('yuanying.below', 3, [], ['fixed:yuanying'], [{hp: 'full', v: 10}, {hp: 20, v: 19}, {v: 'lethal'}]);
+HP('yuanying.hp1', 3, [], ['fixed:yuanying'], [{hp: 1, v: 10}]);
+HP('yuanying.reset', 3, [], ['fixed:yuanying'], [{v: 'lethal'}, 'setup', {hp: 'full', v: 'lethal'}]);
+HP('both', 3, ['hufa'], ['fixed:yuanying'], [{v: 'lethal'}, {hp: 'full', v: 100}]);
+HP('outside', 3, ['hufa'], ['fixed:yuanying'], [{v: 100}, {hp: 'full', v: 'lethal'}], {outside: true});
+// 掩护（BattleManager.applySubstitute）：目标濒死（hp < mhp/4）且不是必中技能时，出战成员里第一个 isSubstitute（护法 passiveSUBS）替它挨打
+const CERTAIN = w.$dataSkills.find(s => s && s.hitType === 0 && s.damage.type === 1).id;
+for (const [id, o] of [['dying', {hufa: [9]}], ['notDying', {hufa: [9], hp: 'quarter'}], ['certain', {hufa: [9], skill: CERTAIN}], ['self', {hufa: [8]}], ['first', {hufa: [1, 9]}],
+  ['targetFirst', {hufa: [8, 9]}], ['dead', {hufa: [9], dead: [9]}], ['none', {}]])
+  T3('daofa.subs.' + id, o, () => { for (const aid of o.hufa || []) withDaofa(aid, 3, ['hufa']);
+    inBattle(1); const act = new w.Game_Action(w.$gameTroop.members()[0]); if (o.skill) act.setSkill(o.skill); else act.setAttack(); w.BattleManager._action = act;
+    for (const aid of o.dead || []) actor(aid).addState(1);
+    const t = actor(8); t.setHp(o.hp === 'quarter' ? Math.ceil(t.mhp / 4) : Math.ceil(t.mhp / 4) - 1);
+    const r = w.BattleManager.applySubstitute(t);
+    return {skill: o.skill || 1, hp: t.hp, mhp: t.mhp, dying: t.isDying(), got: r.actorId(), subs: w.$gameParty.battleMembers().filter(a => a.isSubstitute()).map(a => a.actorId())}; });
+// 灵台 passivePRETP（及其他带该标签的技能）：开战不重置 TP、战后不清 TP；passiveEXTTP 按境界缩放
+for (const [id, realm, keys, extra] of [['none', 0, [], []], ['lingtai.r0', 0, ['lingtai'], []], ['lingtai.r5', 5, ['lingtai'], []], ['skill575', 0, [], [575]]])
+  T3('daofa.tp.' + id, {realm, keys, extra}, () => { const a = withDaofa(1, realm, keys, extra); a.setTp(50); a.onBattleStart(); const start = a.tp; a.setTp(70); a.onBattleEnd();
+    return {preserve: a.isPreserveTp(), maxTp: a.maxTp(), start, end: a.tp}; });
+// 破甲：passiveATKST2705 让普攻附加「破甲·真气」；施加者有破甲道法时目标双防倍率＝1−0.5×scale（states() 改写特性 21 的 3／5 号），别的途径附加仍是 0.5
+function pojia(realm, keys, o) {
+  inBattle(1); const a = withDaofa(1, realm, keys), e = w.$gameTroop.members()[0];
+  e._paramPlus[0] += 1e7; e.setHp(e.mhp);   // 普攻不致死，才能附加状态
+  const act = new w.Game_Action(a); act.setAttack();
+  const traits = () => { const s = e.states().find(s => s.id === 2705); return s ? s.traits.filter(t => t.code === 21).map(t => [t.dataId, r6(t.value)]) : null; };
+  const rate = () => e._codexZqPojiaRate === undefined ? null : r6(e._codexZqPojiaRate);
+  const out = {attackStates: a.attackStates().slice().sort((x, y) => x - y), statesRate: r6(a.attackStatesRate(2705)), chance: r6(1 * e.stateRate(2705) * a.attackStatesRate(2705) * act.lukEffectRate(e)), before: [3, 5].map(i => e.param(i))};
+  // krz_state_re 的状态与能力值缓存到 refresh 才更新；同一次结果里刚去除的状态不能再附加（isStateAddable），再加前先 clearResult
+  if (o.direct) e.addState(2705); else act.apply(e);
+  e.refresh(); Object.assign(out, {affected: e.isStateAffected(2705), rate: rate(), traits: traits(), after: [3, 5].map(i => e.param(i))});
+  if (o.erase) { e.removeState(2705); e.refresh(); out.erased = rate(); e.clearResult(); e.addState(2705); e.refresh(); out.readd = {affected: e.isStateAffected(2705), rate: rate(), traits: traits(), after: [3, 5].map(i => e.param(i))}; }
+  return out;
+}
+for (const [id, realm, keys, o] of [['r0', 0, ['pojia'], {}], ['r3', 3, ['pojia'], {}], ['r5', 5, ['pojia'], {}], ['none', 0, [], {}], ['direct', 0, ['pojia'], {direct: true}], ['erase', 0, ['pojia'], {erase: true}]])
+  T3('daofa.pojia.' + id, Object.assign({realm, keys}, o), () => pojia(realm, keys, o));
+
+// 神兵试炼：敌人备注 <CodexZhenqi: weapon N> 的神兵之仙（取首个成员是它的敌群）；对手＝修行进度层守层者 ×2（_pendingScale），打赢 master 才记本命兵与试炼完成
+const specFull = () => { const sp = w.$gameSystem._codexZhenqiSpec; return sp ? {w: Object.keys(sp.w).sort(), e: Object.keys(sp.e).sort(), t: Object.keys(sp.weaponTrials || {}).sort()} : null; };
+const setSpec = sp => { if (sp) w.$gameSystem._codexZhenqiSpec = Object.assign({w: {}, e: {}}, JSON.parse(JSON.stringify(sp))); };
+cases.push(makeCase('weapon.masters', {}, () => { fresh(); return Z.weaponMasters(); }));
+for (const [id, opts] of [['f0', {progress: 0}], ['f12', {progress: 12, spec: {w: {3: 1}}}], ['done', {progress: 33, spec: {w: {1: 1, 3: 1}, weaponTrials: {1: 1}}}]])
+  T3('weapon.menu.' + id, opts, () => { setSpec(opts.spec); const it = fakeInterp(); Z.weaponMenu(it); const v = view(it), n = Z._cbs.length, leaveIsNull = Z._cbs[n - 1] === null;
+    return {view: v, leaveIsNull, back: pick(it, n - 2)}; });
+T3('weapon.fromRetreat', {}, () => { const it = fakeInterp(); Z.retreat(it); return pick(it, Z._cbs.length - 2); });
+for (const k of [0, 3, 6]) T3('weapon.start.k' + k, {progress: 12}, () => { const it = fakeInterp(); Z.weaponMenu(it); const v = pick(it, k), p = Z._pendingScale;
+  return {view: v, pending: p && {ref: p.ref, master: p.master, wtype: p.wtype, troopId: p.troopId}}; });
+function weaponFight(k, o) {
+  const it = fakeInterp(); Z.weaponMenu(it); pick(it, k); const troop = Z.weaponMasters()[k].troopId;
+  if (o.wild) Z._pendingScale = null;
+  w.BattleManager.setup(troop, false, true); const b = Z._battle;
+  const en = w.$gameTroop.members().map(e => ({enemyId: e.enemyId(), base: [0, 1, 2, 3, 4, 5, 6, 7].map(i => e.paramBase(i)), hp: e.hp, drops: o.wild ? null : e.makeDropItems().length}));
+  w.$gameTroop.members().forEach((e, i) => { if (!(o.masterAlive && i === 0)) e.addState(1); });
+  let items = null; if (!o.wild) { w.BattleManager.makeRewards(); items = w.BattleManager._rewards.items.length; }
+  const before = {}; w.$gameParty.members().forEach(a => { Z.data(a); before[a.actorId()] = a._codexZhenqi.qi; });
+  toasts.length = 0; Z.onVictory();
+  const gains = {}; w.$gameParty.members().forEach(a => { gains[a.actorId()] = a._codexZhenqi.qi - before[a.actorId()]; });
+  return {troop, battle: {scaled: !!b.scaled, trial: !!b.trial, guardianFloor: b.guardianFloor, floor: b.floor, comp: r6(b.comp), route: b.route.key}, enemies: en, items,
+    spec: specFull(), toasts: toasts.slice(), gains, cleared: Z._battle === null && Z._pendingScale === null};
+}
+for (const [id, k, opts] of [['k0', 0, {progress: 12}], ['k3.hard', 3, {progress: 33, route: 2500}], ['f0', 6, {progress: 0}], ['masterAlive', 1, {progress: 12, masterAlive: true}],
+  ['preW', 2, {progress: 12, spec: {w: {6: 1}}}], ['wild', 0, {progress: 12, wild: true}]])
+  T3('weapon.fight.' + id, opts, () => { setSpec(opts.spec); return weaponFight(k, opts); });
+T3('weapon.fight.twice', {progress: 12}, () => { const first = weaponFight(0, {}); toasts.length = 0; return {first, second: weaponFight(0, {})}; });
+
+// 降服时含隐藏成员：$gameTroop.members() 包括没出场的隐藏成员（灵根降服、Boss 胜利都算）
+cases.push(makeCase('hidden.bosses', {}, () => { fresh(); const out = [];
+  for (const t of w.$dataTroops) if (t && t.members.some(m => m.hidden)) { w.$gameTroop.setup(t.id);
+    const hid = w.$gameTroop.members().filter(e => e.isHidden() && Z.isBossEnemy(e)).map(e => e.enemyId()); if (hid.length) out.push([t.id, hid]); }
+  return out; }));
+// 合成：把一个降服用 Boss（非守层者敌群）改成隐藏成员，只打倒其余成员；胜利结算照样降服、照样按 Boss 胜利记真气
+T3('hidden.unlock', {progress: 12}, () => { let tid = 0, idx = -1;
+  for (const t of w.$dataTroops) if (!tid && t && t.members.length && !Z.GUARDIANS[t.id]) { w.$gameTroop.setup(t.id);
+    const i = w.$gameTroop.members().findIndex(e => Z.isBossEnemy(e) && /<Element Absorb:/i.test(e.enemy().note || '')); if (i >= 0) { tid = t.id; idx = i; } }
+  const m = w.$dataTroops[tid].members[idx], was = m.hidden; m.hidden = true;
+  try {
+    const before = {}; w.$gameParty.members().forEach(a => { Z.data(a); before[a.actorId()] = a._codexZhenqi.qi; });
+    w.BattleManager.setup(tid, true, false); w.$gameTroop.members().forEach(e => { if (!e.isHidden()) e.addState(1); });
+    toasts.length = 0; Z.onVictory();
+    const gains = {}; w.$gameParty.members().forEach(a => { gains[a.actorId()] = a._codexZhenqi.qi - before[a.actorId()]; });
+    return {troop: tid, index: idx, hidden: w.$gameTroop.members().map(e => e.isHidden()), spec: spec(), toasts: toasts.slice(), gains};
+  } finally { m.hidden = was; } });
+
 process.exit(finish(host, 'zhenqi.json', {hostScope: '真实 CodexZhenqi／CodexGuide 与 BattleManager.setup、otbActionTimesModification、JsonEx；无渲染，提示文字由 $.toaster 截获', cases}) ? 0 : 1);

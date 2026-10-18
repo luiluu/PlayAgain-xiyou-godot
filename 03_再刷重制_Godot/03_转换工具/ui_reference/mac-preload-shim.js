@@ -376,6 +376,81 @@ window.__refJson = function (name, obj) {
             __refJson('mv_anim_oracle',out);
             return out;
         };
+        // YEP 行动序列画面逐帧：在战斗夹具等到角色指令窗口后 __seqRef.run({skill:ID, target:敌人序号, camera:true|false})，
+        // 再 await __seqRef.pump()。当前行动角色学会该技能、补满 MP/TP 后照指令窗流程出招；每帧 Spriteset_Battle.update 之后记
+        // 每个战斗者精灵（位置、移动偏移、朝向、不透明度、浮空/跳跃高度、动作、帧格）与镜头（场景层位置与缩放、$gameScreen 镜头点）、
+        // 窗口层位置（HIDE BATTLE HUD）、日志行数，另记每条序列指令开始执行的帧。到该角色的行动结束为止。只测画面。
+        var sr=window.__seqRef={trace:null};
+        var r3=function(v){return Math.round(v*1000)/1000;};
+        sr.run=function(o){
+            o=o||{};var s=SceneManager._scene;
+            if(!(s instanceof Scene_Battle)||!s._actorCommandWindow||!s._actorCommandWindow.active)throw new Error('先等到角色指令窗口');
+            ConfigManager.battleCamera=o.camera!==false;ConfigManager.CombatSkillAnimation=!!o.anim;
+            var actor=BattleManager.actor(),skill=$dataSkills[o.skill];
+            actor.learnSkill(o.skill);actor.setMp(actor.mmp);actor.setTp(actor.maxTp());
+            // 连续出招时不让战斗结束：敌人加 100 万生命、全员回满（只改这场内存战斗）。
+            $gameTroop.members().forEach(function(e){if(!e.__srTough){e.addParam(0,1000000);e.__srTough=true;}e.recoverAll();});
+            $gameParty.battleMembers().forEach(function(a){a.recoverAll();});
+            var T=sr.trace={skill:o.skill,actor:actor.actorId(),camera:ConfigManager.battleCamera,speed:ConfigManager.battleAniSpeed,
+                animation:ConfigManager.CombatSkillAnimation,battlers:null,frames:[],cmds:[],done:false,started:false};
+            if(!BattleManager.__srWrapped){
+                var proc=BattleManager.processActionSequence;
+                BattleManager.processActionSequence=function(name,args){
+                    var t=sr.trace;if(t&&!t.done)t.cmds.push([t.frames.length,name,(args||[]).slice()]);
+                    return proc.call(this,name,args);
+                };
+                BattleManager.__srWrapped=true;
+                var up=Spriteset_Battle.prototype.update;
+                Spriteset_Battle.prototype.update=function(){up.call(this);if(sr.hook)sr.hook(this);};
+            }
+            var motionName=function(sp){for(var k in Sprite_Actor.MOTIONS)if(Sprite_Actor.MOTIONS[k]===sp._motion)return k;return '';};
+            var jump=function(sp){if(!(sp._jumpDur>0))return 0;var x=sp._jumpFull-sp._jumpDur,h=sp._jumpFull/2,k=sp._jumpHeight;return -k/(h*h)*(x-h)*(x-h)+k;};
+            sr.hook=function(ss){
+                if(T.done)return;
+                var list=ss.battlerSprites().filter(function(sp){return sp._battler;});
+                if(!T.battlers)T.battlers=list.map(function(sp){var b=sp._battler;
+                    return {key:b.isActor()?'a'+b.actorId():'e'+b.index(),home:[sp._homeX,sp._homeY],width:b.spriteWidth(),height:b.spriteHeight()};});
+                if(!T.started)return;
+                var lw=SceneManager._scene._logWindow;
+                T.frames.push({phase:BattleManager._phase,wait:lw._waitMode,count:lw._waitCount,lines:lw._lines.length,
+                    methods:lw._methods.map(function(m){return m.name;}),
+                    field:[ss.x,ss.y,r3(ss.scale.x)],zoom:[r3($gameScreen._zoomX),r3($gameScreen._zoomY),r3($gameScreen._zoomScale)],
+                    hud:BattleManager._windowLayer?BattleManager._windowLayer.x:0,
+                    sprites:list.map(function(sp){var b=sp._battler,main=sp._mainSprite;
+                        return [r3(sp.x),r3(sp.y),r3(sp._offsetX),r3(sp._offsetY),sp.scale.x<0?1:0,r3(sp.opacity),r3(sp._floatHeight||0),r3(jump(sp)),
+                            b.isActor()?motionName(sp):'',b.isActor()?sp._pattern:0,r3(main&&main.bitmap?main.anchor.y:sp.anchor.y),sp.visible?1:0];})});
+                if(BattleManager._subject!==actor||BattleManager._phase==='input'||T.frames.length>=1500)T.done=true;
+            };
+            s._actorCommandWindow.deactivate();
+            var act=actor.inputtingAction();act.setSkill(o.skill);
+            T.started=true;
+            if(act.isForOpponent()&&!act.isForAll()){s._enemyWindow.select(o.target||0);s._enemyWindow.deactivate();s.onEnemyOk();}
+            else{act.setTarget(o.target||0);s.selectNextCommand();}
+            return T;
+        };
+        sr.pump=function(o){o=o||{};return dh.pump({until:function(){return sr.trace&&sr.trace.done;},ms:o.ms});};
+        // 套件：普通攻击、幻化龙爪 65（透明/镜头/缩放/击退）开与关镜头、104（跳跃/隐藏界面/SE）、161（浮空）、51（动画/等待/咏唱）。
+        // 每条跑完刷新页面重开夹具更稳；此处按顺序在同一场战斗里接着出招（每条之后等回到角色指令窗口）。
+        sr.suite=async function(list){
+            list=list||[['attack',{skill:1}],['s65',{skill:65}],['s65_nocam',{skill:65,camera:false}],['s104',{skill:104}],['s161',{skill:161}],['s51',{skill:51}],['attack_anim',{skill:1,anim:true}],['s65_anim',{skill:65,anim:true}],['s73',{skill:73}]];
+            var out=sr.out={note:'ui_reference __seqRef.suite()：正式版 YEP 行动序列逐帧（Spriteset_Battle.update 之后），战斗夹具 4 人、敌群 2。'+
+                'sprites 行：[x, y, _offsetX, _offsetY, 朝向反转, 不透明度, 浮空率, 跳跃率, 动作, 帧格, 身体锚点 y, 可见]',traces:{}};
+            // 先载好要用的动画图（正式版首次播放要等图片异步载入，几十帧不等，Godot 已预载，不比这一段）
+            await dh.pump({until:function(){var s=SceneManager._scene;return s instanceof Scene_Battle&&s._actorCommandWindow&&s._actorCommandWindow.active;},ms:60000});
+            var ids=[51,52];$gameParty.battleMembers().forEach(function(a){ids.push(a.attackAnimationId1(),a.attackAnimationId2());});
+            list.forEach(function(c){var k=$dataSkills[c[1].skill];ids.push(k.animationId,k.castAnimation||0);
+                [k.setupActions,k.wholeActions,k.targetActions,k.followActions,k.finishActions].forEach(function(l){(l||[]).forEach(function(x){var m=String(x[0]).match(/ANIMATION[ ](\d+)/i);if(m)ids.push(+m[1]);});});});
+            var bms=[];ids.forEach(function(id){var a=id>0&&$dataAnimations[id];if(a&&a.frames){bms.push(ImageManager.loadAnimation(a.animation1Name,a.animation1Hue),ImageManager.loadAnimation(a.animation2Name,a.animation2Hue));}});
+            await dh.pump({until:function(){return bms.every(function(b){return b.isReady();});},ms:30000});
+            for(var i=0;i<list.length;i++){
+                await dh.pump({until:function(){var s=SceneManager._scene;return s instanceof Scene_Battle&&s._actorCommandWindow&&s._actorCommandWindow.active;},ms:60000});
+                sr.run(list[i][1]);var ok=await sr.pump({ms:60000});
+                out.traces[list[i][0]]=Object.assign({ok:ok},sr.trace);
+            }
+            ConfigManager.battleCamera=true;ConfigManager.CombatSkillAnimation=false;
+            __refJson('action_sequence_oracle',out);
+            return out;
+        };
         // 三项偏好仅在本浏览器内存切换，不调用 ConfigManager.save。
         button('伤害数字 开/关', function(){ConfigManager.CombatDamageShow=!ConfigManager.CombatDamageShow;});
         button('技能动画 开/关', function(){ConfigManager.CombatSkillAnimation=!ConfigManager.CombatSkillAnimation;});

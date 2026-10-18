@@ -13,7 +13,7 @@ static var _map_xy_configured := false
 ## pingbiDrop 也只在本次运行：设置页左右键会改它（无作用，状态恒为空白）。
 const SESSION_FLAGS := ["Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100", "pingbiDrop"]
 static var _session := {}
-const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "commandRemember": true,
+const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "commandRemember": true, "battleCamera": true,
 	"bgmVolume": 40, "bgsVolume": 40, "meVolume": 40, "seVolume": 40,
 	"CombatDamageShow": true, "CombatSkillAnimation": false, "battleAniSpeed": 4,
 	"MOG_TrPopUpBattle_Key": false, "CombatDamageRecordKey": false,

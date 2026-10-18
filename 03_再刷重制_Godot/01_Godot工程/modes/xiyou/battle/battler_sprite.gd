@@ -167,8 +167,14 @@ func _weapon_frame() -> void:
 	weapon.region_rect = Rect2((floori(index / 6.0) * 3 + _weapon_pattern) * 96, (index % 6) * 64, 96, 64)
 
 
-## MV Sprite_Actor.updateMotionCount / Sprite_Weapon.updatePattern：按帧计数（60 帧/秒）
+## MV Sprite_Actor.updateMotionCount / Sprite_Weapon.updatePattern：按帧计数（60 帧/秒）。
+## 行动序列演出时由 XSequencePlayer 在每帧固定位置调用（seq_driven），保证与正式版同一帧换动作。
 func _physics_process(_delta: float) -> void:
+	if not seq_driven:
+		motion_tick()
+
+
+func motion_tick() -> void:
 	if weapon and weapon.visible:
 		_weapon_count += 1
 		if _weapon_count >= WEAPON_WAIT:
@@ -208,7 +214,7 @@ func _process(delta: float) -> void:
 	if breathing and battler.is_alive():
 		_breath_t += delta * TAU / 2.4
 		sprite.scale.y = body_scale * (1.0 + sin(_breath_t) * 0.02)
-		sprite.position.y = 0.0
+		sprite.position.y = -_lift_px
 
 
 func _idle_motion() -> String:
@@ -297,7 +303,8 @@ func _hook_scene_finished() -> void:
 		(a as AnimatedSprite2D).animation_finished.connect(done)
 
 
-## 身体的 BODY_SHADER 材质（用到时才建；场景外观的子节点跟着用）
+## 身体的 BODY_SHADER 材质（用到时才建）。场景外观里没有自己材质的子节点跟着用；
+## 自带材质的子节点（外观作者的特效、描边等）保留自己的材质，不被色相/闪光盖掉。
 func _body_material() -> ShaderMaterial:
 	if not sprite.material is ShaderMaterial:
 		if _body_shader == null:
@@ -307,7 +314,8 @@ func _body_material() -> ShaderMaterial:
 		mat.shader = _body_shader
 		sprite.material = mat
 		for n in sprite.find_children("*", "CanvasItem", true, false):
-			(n as CanvasItem).use_parent_material = true
+			if (n as CanvasItem).material == null:
+				(n as CanvasItem).use_parent_material = true
 	return sprite.material
 
 
@@ -335,6 +343,7 @@ func flash(color := Color(1, 1, 1)) -> void:
 
 ## MV Sprite_Enemy.updateBlink：20 帧，每 10 帧里前 5 帧显示、后 5 帧隐藏
 func blink() -> void:
+	effect_left = maxi(effect_left, 20)
 	for f in range(20, 0, -1):
 		sprite.visible = f % 10 < 5
 		await get_tree().physics_frame
@@ -352,6 +361,7 @@ func collapse() -> void:
 	if battler is XActor:
 		set_motion("dead")
 		return
+	effect_left = maxi(effect_left, 32)  # MV Sprite_Enemy.startCollapse：32 帧
 	var t := create_tween()
 	t.tween_property(sprite, "modulate", Color(1, 0.3, 0.3, 0.0), 0.5)
 	await t.finished
@@ -360,3 +370,119 @@ func collapse() -> void:
 func revive_visual() -> void:
 	sprite.modulate = Color.WHITE
 	set_motion(_idle_motion())
+
+
+# ---- YEP 行动序列的画面状态（XSequencePlayer 每帧调 seq_update；YEP_X_ActSeqPack2 Sprite_Battler） ----
+## 正式版 WY 插件在输入阶段后把战斗者坐标锁死，移动指令只剩计时（_movementDuration 照样倒数）；这里只记剩余帧。
+var move_left := 0
+var float_height := 0.0
+var _float_target := 0.0
+var _float_dur := 0
+var _float_rate := 0.0
+var _jump_height := 0.0
+var _jump_dur := 0
+var _jump_full := 0
+var seq_opacity := 255.0
+var _opacity_target := 255.0
+var _opacity_dur := 0
+var _opacity_rate := 0.0
+var _opacity_changing := false
+## 精灵效果（Sprite_Enemy._effectDuration：闪烁、变白、倒下），WAIT FOR EFFECT 等它
+var effect_left := 0
+var mirrored := false
+var _lift_px := 0.0
+var seq_driven := false
+
+
+## spriteWidth/spriteHeight：未缩放的帧大小（角色 _mainSprite 一格，敌人整图）
+func frame_size() -> Vector2:
+	var body := sprite as Sprite2D
+	if body and body.texture:
+		return body.region_rect.size if body.region_enabled else Vector2(body.texture.get_size())
+	return Vector2(width(), height()) / maxf(body_scale, 0.0001)
+
+
+func setup_float(h: float, dur: int) -> void:
+	dur = maxi(1, dur)
+	_float_target = h
+	_float_dur = dur
+	_float_rate = absf(float_height - h) / dur
+
+
+func setup_jump(h: float, dur: int) -> void:
+	_jump_height = h
+	_jump_dur = dur
+	_jump_full = dur
+
+
+func setup_opacity(target: float, dur: int) -> void:
+	dur = maxi(1, dur)
+	_opacity_target = target
+	_opacity_dur = dur
+	_opacity_rate = absf(seq_opacity - target) / dur
+	_opacity_changing = true
+
+
+## getFloatHeight：每取一次就向目标走一步（正式版每帧至少取两次）
+func float_step() -> float:
+	if _float_dur <= 0:
+		float_height = _float_target
+	elif float_height >= _float_target:
+		float_height = maxf(_float_target, float_height - _float_rate)
+	else:
+		float_height = minf(_float_target, float_height + _float_rate)
+	return float_height
+
+
+func jump_height() -> float:
+	if _jump_dur <= 0:
+		return 0.0
+	var x := float(_jump_full - _jump_dur)
+	var h := _jump_full / 2.0
+	return -_jump_height / (h * h) * (x - h) * (x - h) + _jump_height
+
+
+func is_floating() -> bool:
+	return _float_dur > 0
+
+
+func is_jumping() -> bool:
+	return _jump_dur > 0
+
+
+func is_changing_opacity() -> bool:
+	return _opacity_dur > 0
+
+
+func set_mirror(m: bool) -> void:
+	mirrored = m
+	scale.x = -absf(scale.x) if m else absf(scale.x)
+
+
+## Sprite_Battler.update 里与序列有关的部分（updateMove 的计时、updateFloat、updateStateSprites、updateOpacity），
+## 再加 Sprite_Enemy.updateEffect 的计时
+func seq_update() -> void:
+	if move_left > 0:
+		move_left -= 1
+	if _float_dur > 0:
+		_float_dur -= 1
+	if _jump_dur > 0:
+		_jump_dur -= 1
+	_lift_px = (float_step() + jump_height()) * frame_size().y * body_scale
+	sprite.position.y = -_lift_px
+	if weapon:
+		weapon.position.y = -_lift_px
+	float_step()
+	if _opacity_changing:
+		_opacity_dur -= 1
+		if _opacity_dur <= 0:
+			seq_opacity = _opacity_target
+			_opacity_changing = false
+		elif seq_opacity >= _opacity_target:
+			seq_opacity = maxf(_opacity_target, seq_opacity - _opacity_rate)
+		else:
+			seq_opacity = minf(_opacity_target, seq_opacity + _opacity_rate)
+	modulate.a = seq_opacity / 255.0
+	if effect_left > 0:
+		effect_left -= 1
+	motion_tick()

@@ -63,6 +63,12 @@ var _hover = null
 var _active: XActor = null
 var _origin := Vector2.ZERO       # 原版坐标 → 画面坐标的偏移
 var _camera := {}                 # 胜利镜头（见 _victory）
+## YEP_X_ActSeqPack3 战斗镜头（行动序列的 CAMERA/ZOOM）；_cam_base 是各画面层的原始位置
+var camera := XBattleCamera.new()
+var _cam_base := {}
+var _cam_applied := false
+## 正在演出的行动序列（它自己逐帧推进镜头）
+var seq_player: XSequencePlayer
 ## 自动测试用：强制自动战斗，胜利界面自动关闭。
 static var force_auto := false
 
@@ -110,6 +116,10 @@ func _ready() -> void:
 	message = XMessageBox.new()
 	message.position = _origin
 	ui.add_child(message)
+	camera.sprites = sprites
+	for visual in get_children():
+		if visual != ui and visual != record and (visual is Control or visual is Node2D):
+			_cam_base[visual] = visual.position
 	bgm = AudioStreamPlayer.new()
 	XAudio.bind(bgm, "BGM")
 	add_child(bgm)
@@ -117,6 +127,8 @@ func _ready() -> void:
 	XAudio.bind(se, "SE")
 	add_child(se)
 	var music: Dictionary = XDB.system().battleBgm
+	if XState.current and not XState.current.battle_bgm.is_empty():
+		music = XState.current.battle_bgm    # 指令 132（深渊封印战斗前后换歌）
 	var p := XDB.audio_path("bgm", str(music.name))
 	if p != "":
 		bgm.stream = load(p)
@@ -310,9 +322,11 @@ func _refresh_auto() -> void:
 	auto_btn.text = "自动：开" if logic.auto else "自动：关"
 
 
-func _refresh_status() -> void:
+func _refresh_status(idle := true) -> void:
 	for row in status_rows.values():
 		row.refresh()
+	if not idle:
+		return
 	for s in sprites.values():
 		s.refresh_idle()
 
@@ -366,6 +380,9 @@ func _paint_log(c: XMVCanvas) -> void:
 
 ## 每帧推进胜利镜头（MV Game_Screen：zoomScale 与镜头点按剩余帧数线性逼近目标）。
 func _physics_process(_delta: float) -> void:
+	if _camera.is_empty() and seq_player == null:
+		camera.update()
+		apply_camera()
 	if _camera.is_empty() or _camera.t >= _camera.frames:
 		return
 	_camera.t += 1
@@ -377,6 +394,23 @@ func _physics_process(_delta: float) -> void:
 		var b: Vector2 = _camera.base[visual]
 		visual.scale = Vector2.ONE * zoom
 		visual.position = _origin + screen + (b - _origin) * zoom
+
+
+## Spriteset_Battle.updatePosition：场景层（背景、战斗者、动画、伤害数字）按镜头缩放与平移；窗口层不动。
+func apply_camera() -> void:
+	if not _camera.is_empty():
+		return
+	if not camera.active() and not _cam_applied:
+		return
+	var zoom := camera.scale
+	var screen := camera.screen_offset()
+	for visual in _cam_base:
+		if not is_instance_valid(visual):
+			continue
+		var b: Vector2 = _cam_base[visual]
+		visual.scale = Vector2.ONE * zoom
+		visual.position = _origin + screen + (b - _origin) * zoom
+	_cam_applied = camera.active()
 
 
 func _process(delta: float) -> void:
@@ -444,6 +478,12 @@ func _main() -> void:
 			if not XHangUp.fast_fighting(XState.current):
 				await _say("全军覆没……", 1.2)
 			logic.end_battle()
+			# MV updateBattleEnd：允许失败时，只将阵亡出战成员复活到 1 HP。
+			if can_lose:
+				for member in XState.current.battle_members():
+					if member.is_dead():
+						member.hp = 1.0
+						member.refresh_resources()
 			finished.emit(2)
 			return
 		await _play(logic.end_turn())
@@ -853,7 +893,28 @@ func _wait_frames(n: int) -> void:
 func _play(logs: Array) -> void:
 	var started := Engine.get_physics_frames()
 	var acting := false
-	for l in logs:
+	var i := 0
+	while i < logs.size():
+		var l: Dictionary = logs[i]
+		i += 1
+		# YEP 行动序列：行动记录后面跟着 seq_* 条目时交给 XSequencePlayer 逐帧演出（到 seq_end 为止）
+		if l.type == "action" and i < logs.size() and str(logs[i].type) == "seq_phase":
+			if acting:
+				await _finish_action(started)
+				acting = false
+			var j := i
+			while j < logs.size() and logs[j].type != "seq_end":
+				j += 1
+			combo.action_started()
+			if l.user is XActor:
+				_set_active(l.user)
+			await XSequencePlayer.create(self, l, logs.slice(i, j + 1)).play()
+			combo.action_ended()
+			_banner("")
+			_set_active(null)
+			_refresh_status()
+			i = j + 1
+			continue
 		match l.type:
 			"action":
 				if acting:
@@ -929,7 +990,9 @@ func _perform_action(a: XActor, skill: Dictionary) -> void:
 	elif int(skill.id) == XBattleLogic.GUARD_SKILL:
 		s.set_motion("guard")
 	else:
-		s.set_motion("spell" if XDamage.is_magical(skill) else "skill")
+		# Game_Action.isMagicSkill：技能类型在 System.magicSkills 里
+		var magic: Array = XDB.system().get("magicSkills", [])
+		s.set_motion("spell" if magic.has(int(skill.get("stypeId", 0))) or magic.has(float(skill.get("stypeId", 0))) else "skill")
 
 
 func _reflect_animation() -> int:
@@ -945,6 +1008,17 @@ func _show_hit(l: Dictionary) -> void:
 	var animation := _start_animation(anim_id, t)
 	if animation:
 		await animation.done
+	if _hit_visual(l):
+		await ts.collapse()
+		if t is XEnemy:
+			_enemy_collapsed(t)
+	await _wait_frames(13)
+
+
+## 一次命中的画面（连击计数、伤害记录、伤害数字、闪烁/受伤/闪避动作、敌人血条）；倒下时返回 true（由调用方演倒下）
+func _hit_visual(l: Dictionary) -> bool:
+	var t: XBattler = l.target
+	var ts: XBattlerSprite = sprites[t]
 	var hit: bool = not (l.missed or l.evaded)
 	combo.applied(l.user, t, hit, int(l.skill.get("damage", {}).get("type", 0)), float(l.hp) if float(l.hp) != 0.0 else float(l.mp))
 	if record and hit:
@@ -972,10 +1046,21 @@ func _show_hit(l: Dictionary) -> void:
 		if gauges.has(t):
 			gauges[t].box.visible = false
 			gauges[t].timer = 0.0
-		await ts.collapse()
+		return true
+	return false
+
+
+## 行动序列里的倒下：不等倒下演完（正式版 performCollapse 只启动效果，WAIT FOR EFFECT 才等）
+func _collapse_visual(t: XBattler) -> void:
+	if gauges.has(t):
+		gauges[t].box.visible = false
+		gauges[t].timer = 0.0
+	var cs: XBattlerSprite = sprites[t]
+	var finish := func():
+		await cs.collapse()
 		if t is XEnemy:
 			_enemy_collapsed(t)
-	await _wait_frames(13)
+	finish.call()
 
 
 ## 关闭时连动画音效也跳过（正式版 Game_Battler.startAnimation 直接返回）。地图动画不受这个开关影响。
@@ -1077,6 +1162,13 @@ func _victory() -> void:
 		bgm.play()
 	# 胜利镜头（YEP_X_ActSeqPack3 战斗镜头）：镜头点从画面中心 (640,360) 移到 (700,460)、放大 1→2，
 	# 都在 300 帧内线性完成；场景层位置 = −镜头点×放大 + 画面中心，并夹在放大后的画面内。结算文字不缩放。
+	# 行动序列镜头还没复位完时先归位，胜利镜头从原始画面开始
+	for visual in _cam_base:
+		if is_instance_valid(visual):
+			visual.position = _cam_base[visual]
+			visual.scale = Vector2.ONE
+	camera = XBattleCamera.new()
+	camera.sprites = sprites
 	if str(params.get("Victory Screen Zoom", "true")) == "true":
 		_camera = {"from": BOX / 2.0, "to": Vector2(float(params.get("Victory Screen Zoom X", 700)), float(params.get("Victory Screen Zoom Y", 460))),
 			"scale": float(params.get("Victory Screen Zoom Scale", 2)), "frames": int(params.get("Victory Screen Zoom Duration", 300)), "t": 0, "base": {}}
