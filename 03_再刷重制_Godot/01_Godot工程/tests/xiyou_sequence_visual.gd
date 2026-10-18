@@ -8,7 +8,11 @@ class QuietBattle extends XBattleScene:
 		pass
 
 const ORACLE := "res://tests/fixtures/action_sequence_oracle.json"
+## 窗口模式加 -- --out=<目录>：在这些帧截图（镜头拉近、跳跃最高、透明度最低）
+const SHOTS := {"s65": [49, 70, 100], "s104": [42]}
 var results := []
+var out_dir := ""
+var _pending_shot := ""
 
 
 func _ready() -> void:
@@ -22,6 +26,9 @@ func check(label: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out_dir = arg.substr(6)
 	XSave.dir_override = "user://test_xiyou_sequence_visual"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XEnemy.force_roll = 100.0
@@ -88,11 +95,23 @@ func _trace(scene: XBattleScene, s: XState, key: String, t: Dictionary) -> void:
 			if got.sprites.has(k):
 				var sp: XBattlerSprite = scene.sprites[b]
 				got.sprites[k].append([snappedf(sp.seq_opacity, 0.001), snappedf(sp.float_height, 0.001), snappedf(sp.jump_height(), 0.001), sp.motion])
+		if out_dir != "" and DisplayServer.get_name() != "headless" and SHOTS.get(key, []).has(got.frames.size() - 1):
+			_pending_shot = "%s_f%d" % [key, got.frames.size() - 1]
 	# 行动记录 → 演出（同 XBattleScene._play 的序列分支）
 	var i := logs.find(logs.filter(func(l): return l.type == "seq_phase")[0])
 	var j := logs.find(logs.filter(func(l): return l.type == "seq_end")[0])
 	var player := XSequencePlayer.create(scene, logs[i - 1], logs.slice(i, j + 1))
 	player.on_frame = hook
+	var shooter := func():
+		while not player.done:
+			if _pending_shot != "":
+				var name := _pending_shot
+				_pending_shot = ""
+				await RenderingServer.frame_post_draw
+				get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
+			await get_tree().process_frame
+	if out_dir != "":
+		shooter.call()
 	await player.play()
 	got.cmds = player.cmds
 	# 指令时间线

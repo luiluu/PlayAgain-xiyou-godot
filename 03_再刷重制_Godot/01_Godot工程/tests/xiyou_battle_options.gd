@@ -177,7 +177,8 @@ func _run() -> void:
 		if speed == 4:
 			baseline_frames = elapsed
 		elif speed in [1, 3]:
-			check("fixed_stages_preserved_%d" % speed, elapsed == baseline_frames, [elapsed,baseline_frames])
+			# YEP 行动序列的移动、WAIT 按 YEP_BattleAniSpeedOpt 随变速缩短（ceil(帧/(5−档))），日志窗等待不变
+			check("sequence_speed_shortens_%d" % speed, elapsed < baseline_frames and elapsed >= baseline_frames - 12, [elapsed,baseline_frames])
 		check("play_finishes_%d" % speed, not live.combo.acting and live._log_lines.is_empty() and Engine.get_physics_frames() > started)
 		check("play_preserves_settlement_%d" % speed, outcome == [target.hp, s.actor(1).hp, s.actor(1).mp, s.actor(1).tp])
 		if speed == 1:
