@@ -124,6 +124,9 @@ static func _statements(js: String, interp) -> Array:
 			if got != "":
 				interp.host.toast(got)
 			continue
+		if st == "CodexGuide.advise(this)":
+			await _guide_advise(interp)  # 方桌大厅「商店向导」→「下一步建议」
+			continue
 		if st == "CodexZhenqi.retreat(this)":
 			await XZhenqiRetreat.run(interp.host)  # 方桌大厅「闭关」NPC
 			continue
@@ -141,6 +144,14 @@ static func _statements(js: String, interp) -> Array:
 			continue
 		unknown.append(st)
 	return unknown
+
+
+## CodexGuide.advise：interp.setupChild 插入建议文字（每段一页），显示完回到原事件
+static func _guide_advise(interp) -> void:
+	var sub := MVInterpreter.new(interp.host, interp.map_id, interp.event_id, XGuide.page_list(XGuide.advice_texts(XState.current)), interp._depth + 1)
+	sub.pending_lines = interp.pending_lines
+	await sub.run()
+	interp.skipped.append_array(sub.skipped)
 
 
 ## CodexReincarnationRandom.open（Scene_ReincarnationDraft）：本局已开启轮回（开关 2307／2303）时提示后关闭；

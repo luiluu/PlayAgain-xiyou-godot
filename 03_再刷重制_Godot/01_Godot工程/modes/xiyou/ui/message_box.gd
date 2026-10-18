@@ -187,14 +187,30 @@ func _start_message() -> void:
 	_name_active = false
 	_face = str(_msg.get("face", ""))
 	_face_index = int(_msg.get("index", 0))
-	var text := XMVText.convert_escapes("\n".join(_msg.get("lines", [])))
+	var wrapped := word_wrap("\n".join(_msg.get("lines", [])))
+	var text := XMVText.convert_escapes(wrapped[0])
 	text = _convert_message_codes(text)
-	_state = XMVText.new(text, 0, 0, SCREEN.x - XMVWindow.PADDING * 2)
+	_state = XMVText.new(text, 0, 0, SCREEN.x - XMVWindow.PADDING * 2 - (WORD_WRAP_MARGIN if wrapped[1] else 0.0))
 	_new_page()
 	_update_placement()
 	win.background_type = int(_msg.get("background", 0))
 	win.open()
 	_refresh_name_placement()
+
+
+## YEP_MessageCore setWordWrap（Word Wrap Space 关）：文字含 <WordWrap> 时去掉标记、去掉换行、<BR> 换成换行；
+## 不含时 <BR> 删去。返回 [文字, 是否自动换行]。本作改过的 checkWordWrap 在自动换行时比 zidonghuanhang 早 30 像素换行。
+const WORD_WRAP_MARGIN := 30.0
+
+
+static func word_wrap(text: String) -> Array:
+	var tag := RegEx.create_from_string("(?i)<WordWrap>")
+	var on := tag.search(text) != null
+	var br := RegEx.create_from_string("(?i)<(?:BR|line break)>")
+	if on:
+		text = RegEx.create_from_string("[\n\r]+").sub(tag.sub(text, "", true), "", true)
+		return [br.sub(text, "\n", true), true]
+	return [br.sub(text, "", true), false]
 
 
 ## YEP convertNameBox / convertActorFace
