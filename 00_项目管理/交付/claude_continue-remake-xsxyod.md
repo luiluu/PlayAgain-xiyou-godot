@@ -1,7 +1,7 @@
 # 交付：claude/continue-remake-xsxyod
 
 - 车道／工作者：云端小修（Claude 云端会话；不占本机车道名额，只改不在悟空、八戒独占文件里的代码）
-- 状态：可合并（云端没有转换产物，只跑了新测试；合并前请在 Mac 跑一次 `检查.sh`，相关专项见下）
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -13,7 +13,7 @@
 - `battle/battler_sprite.gd`：场景外观子节点材质 main 已在 9509398 修好（本分支接到 main 后合并为同一写法）；这里只把 BODY_SHADER 抽成 `XBattlerSprite.body_shader()`，供地图角色共用。
 - `map/map_scene.gd` `show_animation` 设 `MVAnimation.target`；`map/mv_character.gd` 补 `set_anim_blend`（身体材质染色，只作用在行走图上）与 `set_anim_hidden`（flashScope 3），气泡挪到单独子节点（MV 的 Sprite_Balloon 加在角色精灵的父节点上，不受闪光、隐藏影响）。地图动画的目标闪光与隐藏从此生效（原来是缺功能）。
 - 测试：新 `tests/xiyou_review_fixes`（桩表，不依赖转换产物）16 项全过；改动前 7 项失败（商店列表名字、元素名增伤、子节点材质、地图目标等）。
-- 验证：云端 Godot 4.7.2 Linux 版只跑了新测试；云端这次没有转换产物，其余测试未跑。合并前在 Mac 跑 `检查.sh`，重点看 `xiyou_shop*`、`xiyou_orb*`、`xiyou_mv_animation`、`xiyou_map`、`xiyou_dungeon`、`xiyou_battle_ui`。
+- 验证：本分支已接到 Mac main（6915e2e，dev.088）上；云端用 Mac main 的转换产物（sync_stamp v0.28 测量不变）跑 `检查.sh`：Godot 测试 72/72 通过（`xiyou_review_fixes` 16/16），工具检查全过；只报云端缺本地文件的 49 条失效链接和本交付单两项（车道分支应有）。`--oracle` 未跑（云端没有冻结正式源）。
 - `ui/gear_search.gd` 关闭也存排序未改：要对照原版，云端没有冻结正式源。
 
 ## 交接板
