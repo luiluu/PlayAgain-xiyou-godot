@@ -35,11 +35,25 @@ func _run() -> void:
 	if check("power_oracle_loaded", data is Dictionary and data.get("gear", []).size() >= 50, ORACLE):
 		_gear(data)
 		_actors(data)
+	_zhenqi_clone()
 	await _option()
 	DirAccess.remove_absolute(XSave.dir())
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)
+
+
+## 真气境界：装备预览与战力评估复制的角色要带上境界（道法缩放），境界变了战力缓存也要失效
+func _zhenqi_clone() -> void:
+	var a := XActor.new().setup(1)
+	a.zhenqi = {"realm": 6}
+	var b := XEquipment.clone(a)
+	check("clone_keeps_zhenqi", b.zhenqi == a.zhenqi and XZhenqi.daofa_scale(b) == 1.0, b.zhenqi)
+	b.zhenqi.realm = 2
+	check("clone_zhenqi_independent", int(a.zhenqi.realm) == 6, a.zhenqi)
+	var sig := XPower._signature(a)
+	a.zhenqi.realm = 2
+	check("power_signature_realm", XPower._signature(a) != sig)
 
 
 func _gear(data: Dictionary) -> void:

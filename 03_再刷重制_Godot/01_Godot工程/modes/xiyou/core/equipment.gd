@@ -22,6 +22,7 @@ static func clone(a: XActor) -> XActor:
 	b.hp = a.hp
 	b.mp = a.mp
 	b.tp = a.tp
+	b.zhenqi = a.zhenqi.duplicate(true)   # 道法技能按境界缩放（XZhenqi.daofa_scale），漏了预览与战力都按 1/4 算
 	b.refresh_passive()
 	return b
 
