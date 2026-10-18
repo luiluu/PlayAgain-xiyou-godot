@@ -1,6 +1,6 @@
 {
-	"cases": 980,
-	"match": 962,
+	"cases": 1025,
+	"match": 1008,
 	"mismatch": {
 		"m119e15p0": [
 			"trace"
@@ -39,9 +39,6 @@
 			"trace"
 		],
 		"m4e41p5": [
-			"trace"
-		],
-		"m4e72p0": [
 			"trace"
 		],
 		"m4e73p0": [
