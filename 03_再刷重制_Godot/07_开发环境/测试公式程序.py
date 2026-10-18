@@ -28,7 +28,7 @@ class FormulaCompilerTests(unittest.TestCase):
                        'let x=1;value=x', 'const x=1;value=x', '010', '-2**2', 'var true=1;5',
                        'a.states()===b.states()?99:1', '١+2', '1\u0085+2', '010.5', '00e1',
                        'var sign=-1;100', 'var arguments;5', 'var enum=1;5', 'var super=1;5',
-                       'a.param(1.9)', 'a.param(true)', 'a.param(null)']:
+                       'a.param(1.9)', 'a.param(true)', 'a.param(null)', '++2', '--2', '++v[1]', '--a.hp']:
             with self.subTest(source=source):
                 p = compile_formula(source, custom=True)
                 self.assertEqual(p['status'], 'unsupported', p)

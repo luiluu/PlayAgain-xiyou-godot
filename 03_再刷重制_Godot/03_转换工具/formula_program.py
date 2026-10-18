@@ -13,7 +13,7 @@ MATH = {'max': (1, 32), 'min': (1, 32), 'floor': (1, 1), 'ceil': (1, 1),
         'round': (1, 1), 'abs': (1, 1), 'pow': (2, 2), 'sqrt': (1, 1), 'random': (0, 0)}
 ALIASES = {'a': 'a', 'user': 'a', 'subject': 'a', 'b': 'b', 'target': 'b'}
 RESERVED = set('if else true false null var let const return function while for switch new delete this typeof void instanceof in yield await break continue try catch finally throw do case default class extends super enum import export with debugger'.split())
-TOKEN = re.compile(r'(?P<space>[ \t\v\f\r\n\u00a0\ufeff\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|//[^\n\r\u2028\u2029]*|/\*[\s\S]*?\*/)|(?P<number>(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?)|(?P<name>[A-Za-z_$][A-Za-z0-9_$]*)|(?P<op>===|!==|\*\*|<=|>=|==|!=|&&|\|\||[+*/%<>!=?:.,;(){}\[\]-])')
+TOKEN = re.compile(r'(?P<space>[ \t\v\f\r\n\u00a0\ufeff\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|//[^\n\r\u2028\u2029]*|/\*[\s\S]*?\*/)|(?P<number>(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?)|(?P<name>[A-Za-z_$][A-Za-z0-9_$]*)|(?P<op>===|!==|\+\+|--|\*\*|<=|>=|==|!=|&&|\|\||[+*/%<>!=?:.,;(){}\[\]-])')
 PREC = {'||': 1, '&&': 2, '==': 3, '!=': 3, '===': 3, '!==': 3,
         '<': 4, '>': 4, '<=': 4, '>=': 4, '+': 5, '-': 5, '*': 6, '/': 6, '%': 6, '**': 7}
 
