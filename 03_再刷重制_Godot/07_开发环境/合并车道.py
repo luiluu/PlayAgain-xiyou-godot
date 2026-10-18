@@ -282,6 +282,31 @@ def finish(root, state, state_file, executor):
     run(root, [ENV / '清理工作树.sh', state['worktree']])
     state_file.unlink()
     print('合并、检查、提交与工作树清理全部完成。', flush=True)
+    push_github(root)
+
+
+def push_github(root, remote='github'):
+    """用户 2026-10-18：每次合并后把 main 推到 GitHub。失败只警告，下次合并补推；GitHub 有本地没有的提交时不推。"""
+    def remote_git(*args):
+        env = dict(os.environ, GIT_TERMINAL_PROMPT='0')
+        p = subprocess.run(['git', '-C', str(root), *args], capture_output=True, text=True, env=env, timeout=120)
+        if p.returncode:
+            raise RuntimeError(p.stderr.strip() or p.stdout.strip())
+        return p.stdout.strip()
+    try:
+        if remote not in git(root, 'remote').split():
+            print('无 ' + remote + ' 远端，跳过推送。', flush=True)
+            return
+        if remote_git('ls-remote', '--heads', remote, 'main'):
+            remote_git('fetch', '--no-tags', remote, '+refs/heads/main:refs/remotes/' + remote + '/main')
+            ahead = git(root, 'log', '--oneline', 'main..refs/remotes/' + remote + '/main')
+            if ahead:
+                print('警告：GitHub main 有本地 main 没有的提交，未推送（不强推，请人工核对）：\n' + ahead, flush=True)
+                return
+        remote_git('push', remote, 'refs/heads/main:refs/heads/main')
+        print('已推送 main 到 ' + remote + '。', flush=True)
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+        print('警告：推送 ' + remote + ' 失败，合并不受影响，下次合并会补推：' + ' '.join(str(error).split()), flush=True)
 
 
 def main(argv=None):

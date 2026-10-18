@@ -570,6 +570,49 @@ for name in filter(None, files):
         self.register()
         self.assertEqual(self.call('--finish'), 0)
 
+    def github(self, url=None):
+        # 临时裸库充当 GitHub；先放入合并前的 main。
+        bare = Path(self.tmp.name) / 'github.git'
+        if url is None:
+            subprocess.run(['git', 'init', '--bare', '-b', 'main', str(bare)], capture_output=True, check=True)
+            url = str(bare)
+        self.g('remote', 'add', 'github', url)
+        if url == str(bare):
+            self.g('push', 'github', 'main')
+        return bare
+
+    def merge_and_finish(self):
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertFalse(self.wt.exists())
+        self.assertFalse((self.root / '.git/lane-merge/state.json').exists())
+
+    def test_finish_pushes_main_to_github(self):
+        bare = self.github()
+        self.merge_and_finish()
+        self.assertIn('已推送 main', self.last_output)
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
+
+    def test_unreachable_github_only_warns(self):
+        self.github(str(Path(self.tmp.name) / 'missing.git'))
+        self.merge_and_finish()
+        self.assertIn('警告：推送 github 失败', self.last_output)
+        self.assertIn('收尾', self.g('log', '-1', '--format=%s'))
+
+    def test_github_ahead_is_never_overwritten(self):
+        bare = self.github()
+        other = Path(self.tmp.name) / 'other'
+        subprocess.run(['git', 'clone', '-q', str(bare), str(other)], check=True)
+        (other / 'web.md').write_text('edited on GitHub\n')
+        self.g('add', '.', cwd=other); self.g('commit', '-m', 'remote only change', cwd=other)
+        self.g('push', 'origin', 'main', cwd=other)
+        remote_head = self.g('rev-parse', 'main', cwd=bare)
+        self.merge_and_finish()
+        self.assertIn('remote only change', self.last_output)
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), remote_head)
+        self.assertNotIn('remote only change', self.g('log', '--format=%s', 'main'))
+
     def test_merge_conflict_keeps_both_worktrees(self):
         self.put(str(merge.PROJECT / 'modes/测试.gd'), '# main version\n')
         self.g('add', '.'); self.g('commit', '-m', 'conflicting main update')
