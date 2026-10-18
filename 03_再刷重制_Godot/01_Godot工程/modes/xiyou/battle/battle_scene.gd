@@ -127,6 +127,8 @@ func _ready() -> void:
 	XAudio.bind(se, "SE")
 	add_child(se)
 	var music: Dictionary = XDB.system().battleBgm
+	if XState.current and not XState.current.battle_bgm.is_empty():
+		music = XState.current.battle_bgm    # 指令 132（深渊封印战斗前后换歌）
 	var p := XDB.audio_path("bgm", str(music.name))
 	if p != "":
 		bgm.stream = load(p)
