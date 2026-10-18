@@ -18,6 +18,7 @@ func _ready() -> void:
 	var manifest = JSON.parse_string(FileAccess.get_file_as_string(XDB.BASE + "manifest.json"))
 	check("same_runtime_source", reference.sourceIdentity.runtimeInputs == manifest.runtimeInputs)
 	check("shadow_scope", reference.get("hostScope") == "pure-formula-shadow" and reference.cases.size() > 1000)
+	var random_program := {}
 	for c in reference.cases:
 		check(str(c.id) + ".source_clean", c.errors.is_empty())
 		if not c.errors.is_empty():
@@ -27,6 +28,8 @@ func _ready() -> void:
 		var type: int
 		if setup.has("program"):
 			program = setup.program
+			if str(c.id) == "language.and_use":
+				random_program = program
 			type = int(setup.type)
 			check(str(c.id) + ".source_hash", str(setup.formula).sha256_text() == program.source.sha256)
 		else:
@@ -46,6 +49,13 @@ func _ready() -> void:
 	var pure: Dictionary = XDB.rec("Skills", 1).damage.formulaProgram
 	check("objects_rejected", not XFormulaProgram.evaluate(pure, {"a": XActor.new()}).available)
 	check("old_version_rejected", not XFormulaProgram.evaluate({"version": 0}, {}).available)
+	var tape := XFormulaProgram.evaluate(random_program, {}, 1, {"randomValues": [0.25]})
+	check("explicit_random_tape", tape.available and tape.value == 0.25 and tape.randomDraws == 1, tape)
+	check("empty_tape_fails", not XFormulaProgram.evaluate(random_program, {}, 1, {"randomValues": []}).available)
+	check("upper_bound_tape_fails", not XFormulaProgram.evaluate(random_program, {}, 1, {"randomValues": [1.0]}).available)
+	check("negative_tape_fails", not XFormulaProgram.evaluate(random_program, {}, 1, {"randomValues": [-0.1]}).available)
+	check("object_tape_fails", not XFormulaProgram.evaluate(random_program, {}, 1, {"randomValues": [self]}).available)
+	check("unknown_vm_opcode_fails", not XFormulaProgram.evaluate({"version": 1, "status": "pure", "steps": [{"op": "expr", "value": {"op": "host_eval"}}]}, {}).available)
 	finish()
 
 func finish() -> void:
