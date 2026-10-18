@@ -66,7 +66,7 @@ func _view(m: Dictionary):
 	var opts: Array = m.get("options", [])
 	return {"lines": m.lines, "choices": opts.map(func(o): return o.label) if not opts.is_empty() else null,
 		"cancel": opts.size() - 1 if not opts.is_empty() else null, "battle": [0, int(m.battle), false, true] if m.has("battle") else null,
-		"then": not opts.is_empty() or m.get("next") != null or m.has("battle")}
+		"then": not opts.is_empty() or m.get("next") != null}
 
 
 func _go(node: Dictionary):
@@ -363,7 +363,7 @@ class FakeHost:
 		return 0
 
 
-## XZhenqiRetreat：闭关首页→选狗逍遥→挑战瓶颈之战（770，不能逃、可以输）→突破筑基→选攻击属性→回角色页→离开；神兵试炼先说明未开放
+## XZhenqiRetreat：闭关首页→选狗逍遥→挑战瓶颈之战（770，不能逃、可以输）→突破筑基→选攻击属性→回角色页→离开；神兵试炼进列表后离开（试炼流程见 xiyou_zhenqi_daofa）
 func _flow() -> void:
 	_fresh()
 	XState._become_current(s)
@@ -380,4 +380,4 @@ func _flow() -> void:
 	var h2 := FakeHost.new()
 	h2.picks = [4]
 	await XZhenqiRetreat.run(h2)
-	check("flow_weapon_notice", h2.trace.size() == 3 and str(h2.trace[1].lines[0]).contains("尚未开放") and h2.trace[2].choices != null, h2.trace)
+	check("flow_weapon_menu", h2.trace.size() == 2 and str(h2.trace[1].lines[0]).contains("神兵试炼") and h2.trace[1].choices.size() == 9, h2.trace)

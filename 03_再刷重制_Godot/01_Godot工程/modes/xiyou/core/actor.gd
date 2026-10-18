@@ -266,6 +266,38 @@ func passive_values(tag: String) -> Array:
 			out.append(m[tag])
 	return out
 
+## 道法（XZhenqi）：连击普攻次数＋1、分神必定再动＋1
+func attack_times_add() -> float:
+	return super.attack_times_add() + (1.0 if XZhenqi.has_daofa(self, "lianji") else 0.0)
+
+func action_plus_set() -> Array:
+	var out := super.action_plus_set()
+	if XZhenqi.has_daofa(self, "fenshen"):
+		out.append(1.0)
+	return out
+
+## dsPassiveSkill：passiveSUBS 掩护、passivePRETP 保留 TP（灵台、护法等技能）
+func is_substitute() -> bool:
+	return super.is_substitute() or not passive_values("passiveSUBS").is_empty()
+
+func is_preserve_tp() -> bool:
+	return super.is_preserve_tp() or not passive_values("passivePRETP").is_empty()
+
+## dsPassiveSkill：<passiveATKST状态编号:付与率%> 加进攻击附加状态，付与率按 % 加到 attackStatesRate（如破甲 2705:100%）
+func attack_states() -> Array:
+	var out := super.attack_states()
+	for s in skills():
+		for k in s.get("meta", {}):
+			if str(k).begins_with("passiveATKST") and str(k).substr(12).is_valid_int() and not out.has(int(str(k).substr(12))):
+				out.append(int(str(k).substr(12)))
+	return out
+
+func attack_states_rate(id: int) -> float:
+	var v := super.attack_states_rate(id)
+	for m in passive_values("passiveATKST%04d" % id):
+		v += _num(m) * 0.01
+	return v
+
 static func _num(v) -> float:
 	var r := RegEx.create_from_string("[-+]?\\d*\\.?\\d+")
 	var m := r.search(str(v))
