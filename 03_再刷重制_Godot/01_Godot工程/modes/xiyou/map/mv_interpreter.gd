@@ -293,6 +293,8 @@ func _execute(c: Dictionary):
 		230:
 			for i in range(int(p[0])):
 				await host.get_tree().process_frame
+		132:
+			state().battle_bgm = (p[0] as Dictionary).duplicate() if p[0] is Dictionary else {}
 		241:
 			host.play_bgm(p[0])
 		245:

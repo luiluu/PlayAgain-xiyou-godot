@@ -151,6 +151,11 @@ func _run() -> void:
 					break
 				var diffs := _compare(c.steps[i], got.steps[i])
 				check("%s.step%d" % [c.id, i], diffs.is_empty(), diffs)
+			# 指令 132：深渊封印战斗前换成 sy，战斗后换回 New_Battle1（存档往返保留）
+			if str(c.id).ends_with(".seal-1"):
+				var back := XState.from_dict(JSON.parse_string(JSON.stringify(XState.current.to_dict())))
+				check(c.id + ".battleBgm", str(XState.current.battle_bgm.get("name", "")) == "New_Battle1" and str(back.battle_bgm.get("name", "")) == "New_Battle1",
+					[XState.current.battle_bgm, back.battle_bgm])
 		# 第二轮：O-038／O-040
 		XDungeon.restore_difficulty = true
 		XDungeon.restore_hang_up = true
