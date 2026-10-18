@@ -2,7 +2,7 @@
 """冻结 v0.28 角色依赖静态预检；不加载/执行 JS，不读玩家存档。
 
 只写本工作树 04_验证/本地结果/ 下，源固定为冻结正式源。
-index.json 可人工审阅后复制为 Git 中的源数据目录；evidence.json 是本地证据。
+catalog.json 可人工审阅后复制为 Git 中的小型源数据目录；index/evidence.json 是完整本地证据。
 静态候选不是运行时可达性证明，未知脚本不自动认定为已支持。
 """
 from __future__ import annotations
@@ -192,9 +192,12 @@ def main():
             tree_files.add(tree_rel)
             tree_nodes = [{'source': tree_rel + '#' + ptr, 'data': row} for ptr, row in nodes(read(tree_rel)) if 'skillId' in row and row.get('skillId')]
         skill_origins = collections.defaultdict(set)
+        unresolved_skills = collections.defaultdict(set)
         def add(sid, origin):
             if 0 < sid < len(db['Skills']) and db['Skills'][sid]:
                 skill_origins[sid].add(origin)
+            else:
+                unresolved_skills[sid].add(origin)
         for sid in [1, 2]:
             add(sid, 'engineAttackGuard')
         for l in c['learnings']:
@@ -269,7 +272,7 @@ def main():
                      'actorTags': tags(a['note']), 'classTags': tags(c['note']), 'appearance': appearance,
                      'curveSamples': {str(lv): [v[lv] for v in c['params']] for lv in [1,10,35,65,99]}, 'expParams': c['expParams'], 'classLearnings': c['learnings'], 'skillIds': sorted(skill_origins), 'stateIds': sorted(states),
                      'skillOriginCounts': dict(collections.Counter(v for vv in skill_origins.values() for v in vv)),
-                     'passiveTags': passive_tags, 'scriptSkillCandidates': script_skills, 'commonEventIds': common_events,
+                     'unresolvedSkillReferences': {str(k): sorted(v) for k,v in sorted(unresolved_skills.items())}, 'passiveTags': passive_tags, 'scriptSkillCandidates': script_skills, 'commonEventIds': common_events,
                      'treeSource': tree_rel if tree_nodes else None, 'treeNodeCount': len(tree_nodes),
                      'advancedSources': [x['source'] for x in advanced[aid]], 'bondSources': [x['source'] for x in bonds[aid]],
                      'runtimeModuleCandidates': modules_needed, 'confirmedModuleSources': [module_source(m, aid, main_text, plugin_map) for m in modules_needed], 'literalScriptCandidates': literal_by_actor[aid],
@@ -296,12 +299,35 @@ def main():
                              'scriptSkillCandidates are conservative regex candidates; absence does not prove supported',
                              'source data values may be rewritten by main.js-installed runtime modules',
                              'no actor is declared behaviorally complete by this static inventory']}
+    # Small tracked catalog: one row per actor and deduplicated module anchors.
+    module_evidence = {}
+    catalog_rows = []
+    for row in rows:
+        for name, evidence in zip(row['runtimeModuleCandidates'], row['confirmedModuleSources']):
+            evidence = {k: v for k,v in evidence.items() if k != 'actorId'}
+            if name in module_evidence:
+                assert module_evidence[name] == evidence
+            module_evidence[name] = evidence
+        catalog_rows.append({k: row[k] for k in ['actorId', 'name', 'classId', 'category', 'source', 'classSource',
+                             'actorSha256', 'classSha256', 'templates', 'runtimeModuleCandidates']} | {
+            'availability': 'source_disabled' if 'disabled_preserve_do_not_enable' in row['risks'] else 'not_assessed_by_static_inventory'})
+    small = {'schema': 1, 'source': index['source'], 'method': index['method'], 'scope': index['scope'],
+             'inputSetSha256': index['inputSetSha256'], 'inputFileCount': len(fingerprints),
+             'keySourceSha256': {k: fingerprints[k] for k in ['data/Actors.json','data/Classes.json','data/Skills.json','js/plugins.js','js/main.js','js/codex/modules.json']},
+             'profileDetails': 'local index.json#/templateGroups (same inputSetSha256)',
+             'moduleEvidence': module_evidence, 'actors': catalog_rows,
+             'limitations': index['limitations']}
     if args.verify_index:
         previous = json.loads(args.verify_index.read_text())
-        if previous != index:
+        if previous != small:
             raise SystemExit('索引与冻结源/扫描结果不同；请读差异，不自动覆盖索引')
     out.mkdir(parents=True, exist_ok=True)
-    (out / 'index.json').write_text(json.dumps(index, ensure_ascii=False, indent=2) + '\n')
+    meta = {k: v for k, v in index.items() if k != 'actors'}
+    prefix = json.dumps(meta, ensure_ascii=False, indent=2).rstrip()[:-1].rstrip()
+    catalog = prefix + ',\n  \"actors\": [\n' + ',\n'.join('    ' + json.dumps(a, ensure_ascii=False, separators=(',', ':')) for a in rows) + '\n  ]\n}\n'
+    (out / 'index.json').write_text(catalog)
+    small_text = '{\n' + ',\n'.join('  ' + json.dumps(k) + ': ' + (('[\n' + ',\n'.join('    ' + json.dumps(a, ensure_ascii=False, separators=(',', ':')) for a in v) + '\n  ]') if k == 'actors' else json.dumps(v, ensure_ascii=False, separators=(',', ':'))) for k,v in small.items()) + '\n}\n'
+    (out / 'catalog.json').write_text(small_text)
     (out / 'evidence.json').write_text(json.dumps({'scripts': script_evidence, 'actors': detail}, ensure_ascii=False, indent=2) + '\n')
     summary = {'namedActors': len(rows), 'categories': {k: len(v) for k, v in categories.items()},
                'templateGroups': {k: len(v) for k, v in groups.items()}, 'fingerprints': len(fingerprints),
