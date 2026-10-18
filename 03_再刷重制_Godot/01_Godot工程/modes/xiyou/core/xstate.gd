@@ -52,6 +52,7 @@ var encounter_enabled := true      # Game_System._encounterEnabled（指令 136�
 ## YEP_CoreEngine 的 $gameParty.ActorMaxLevel：全体角色的等级上限（每次换场景写回 $dataActors[i].maxLevel，
 ## 所以角色数据库与备注里的上限都被它取代）。初值为插件参数 Max Level（西游 10），插件指令 maxlevel add/equal 改它。
 var actor_max_level := 0
+var battle_bgm: Dictionary = {}     # $gameSystem._battleBgm（指令 132 更改战斗 BGM；空＝用 System 里的）
 var followers_visible := true      # Game_Followers._visible（初值 System optFollowers；指令 216、设置「队列跟随」）
 var pingbi_quality: Array = []      # 屏蔽掉落：旧档 0～7 是否屏蔽（$gameSystem._pingbiQuality）
 ## 副本上下文（XDungeon：进门时的 pending、进入后的 context）、副本 Boss 熟练度（$gameSystem._codexBossMastery：敌群 → 次数）、
@@ -377,7 +378,7 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen}
 
@@ -466,6 +467,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.hang_up_total = int(d.get("hangUpTotal", 0))
 	s.pingbi_quality = Array(d.get("pingbiQuality", [])).map(func(v): return bool(v))
 	s.followers_visible = bool(d.get("followersVisible", XDB.system().get("optFollowers", false)))
+	s.battle_bgm = d.get("battleBgm", {}) if d.get("battleBgm", {}) is Dictionary else {}
 	s.encounter_enabled = bool(d.get("encounterEnabled", true))
 	# dev.032 以前的存档没有这一项：按初值（原版开局就是插件参数）
 	s.actor_max_level = int(d.get("actorMaxLevel", default_max_level()))

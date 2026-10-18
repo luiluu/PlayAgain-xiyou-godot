@@ -136,7 +136,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	_static_checks()
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
-	check("oracle_loaded", oracle is Dictionary and oracle.has("cases") and oracle.cases.size() >= 139)
+	check("oracle_loaded", oracle is Dictionary and oracle.has("cases") and oracle.cases.size() >= 378)
 	if oracle is Dictionary:
 		var host := DungeonHost.new()
 		add_child(host)
@@ -151,6 +151,11 @@ func _run() -> void:
 					break
 				var diffs := _compare(c.steps[i], got.steps[i])
 				check("%s.step%d" % [c.id, i], diffs.is_empty(), diffs)
+			# 指令 132：深渊封印战斗前换成 sy，战斗后换回 New_Battle1（存档往返保留）
+			if str(c.id).ends_with(".seal-1"):
+				var back := XState.from_dict(JSON.parse_string(JSON.stringify(XState.current.to_dict())))
+				check(c.id + ".battleBgm", str(XState.current.battle_bgm.get("name", "")) == "New_Battle1" and str(back.battle_bgm.get("name", "")) == "New_Battle1",
+					[XState.current.battle_bgm, back.battle_bgm])
 		# 第二轮：O-038／O-040
 		XDungeon.restore_difficulty = true
 		XDungeon.restore_hang_up = true
@@ -403,7 +408,8 @@ func _check_optimized(c: Dictionary, got: Dictionary) -> void:
 		if not in_dungeon and str(want.do) == "event":
 			check(name + ".difficulty", int(g.after.difficulty) == base, [g.after.difficulty, base])
 		if in_dungeon:
-			check(name + ".context", bool(g.context) or str(c.id).begins_with("d2.reenter"))
+			# ab* 是直接瞬移进深渊图的例子（没走副本入口，没有上下文；出口让变量 21 变成 −1）
+			check(name + ".context", bool(g.context) or str(c.id).begins_with("d2.reenter") or str(c.id).begins_with("ab"))
 	if str(c.id) in ["d2.escape", "d2.clear-normal", "hall.enable-hang"] or str(c.id).ends_with(".escape") or str(c.id).ends_with(".clear-normal"):
 		# 进门前挂机开着：离开后的第一步就恢复（原版要找大厅大工匠）
 		var entered := false
