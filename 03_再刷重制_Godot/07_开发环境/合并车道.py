@@ -15,7 +15,7 @@ TOOLS = SUB / '03_转换工具'
 PROJECT = SUB / '01_Godot工程'
 BOARD = Path('00_项目管理/交接板.md')
 LOG = Path('00_项目管理/变更记录.md')
-COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/重制步骤清单.md'),
+COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/交接板归档.md'), Path('00_项目管理/重制步骤清单.md'),
           Path('00_项目管理/当前状态.json'), Path('00_项目管理/来源登记.json'),
           SUB / '开发编号.json', PROJECT / 'project.godot', PROJECT / 'content/build_info.json']}
 VERSION_MARKER = 'dev.' + '待定'
@@ -59,7 +59,7 @@ def worktrees(root):
 
 def draft(text):
     match = re.search(r'^## 变更记录草稿\s*\n(.*?)(?=^## 交接板\s*$|\Z)', text, re.M | re.S)
-    if not re.search(r'^- 状态：可合并(?:\s|[（(。，；：]|$)', text, re.M):
+    if not re.search(r'^- 状态：可合并(?:\s|[（(。，；：—]|$)', text, re.M):
         raise RuntimeError('交付单尚未标为可合并')
     if not match or not match[1].strip() or '待写' in match[1]:
         raise RuntimeError('交付单缺少完整变更记录草稿')
