@@ -123,9 +123,14 @@ func _case(c: Dictionary, round: int) -> void:
 	check(name + ".t1_forced_first", (not first_cleared) if forced == 0 else (not got[1].is_empty() and got[1][0] == want[1][0]), [got[1], want[1]])
 	check(name + ".t1_enemy_actions", got[1].filter(func(x): return x[0] == "e0").size() == forced + (0 if first_cleared else 1), [forced, first_cleared, got[1]])
 	check(name + ".t1_enemy_set", enemies_of.call(got[1]) == enemies_of.call(want[1]), [got[1], want[1]])
-	# 第 2 回合（战斗没结束时）：守层者照常行动一次（技能随机，不比）
+	# 第 2 回合（战斗没结束时）：守层者照常行动一次（技能随机，不比）；有追加行动特性（61，几率）的敌人，每条特性最多再多一次（怨毒集合体 10%）
 	if not got[2].is_empty():
-		check(name + ".t2_enemy_once", got[2].filter(func(x): return x[0] == "e0").size() == 1, got[2])
+		var plus := 0
+		for tr in (e0 as XEnemy).data().get("traits", []):
+			if int(tr.code) == 61 and float(tr.value) > 0.0:
+				plus += 1
+		var times: int = got[2].filter(func(x): return x[0] == "e0").size()
+		check(name + ".t2_enemy_once", times >= 1 and times <= 1 + plus, got[2])
 	# 附加伤害：守层者用过 8111（加上 1460）之后，每次命中活着的目标都按 [攻击, 魔攻] 附加
 	# （十层守层者第 1 回合先强制 500，那时还没有 1460，不附加）
 	var extras := []
