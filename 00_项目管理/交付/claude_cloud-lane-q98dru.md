@@ -31,6 +31,19 @@
   - 八戒（演出）：`battler_sprite.gd` `_body_material()` 对「场景」外观的子节点一律设 `use_parent_material`，会盖掉它们自己的材质（目前没有场景外观，不触发）；地图动画 `map_scene.gd` `show_animation` 没设 `MVAnimation.target`，flashScope 1／3 的目标闪光与隐藏在地图上不生效（缺功能，不是回退）。
 - 八戒_17 在做道法运行时：这次修复让预览和战力开始按实际境界计入道法被动，战力参照若有变化以此为准。
 
+## 2026-10-18 【Claude·云端·未经Codex检验】代码审查 dev.049～067：宝珠存读档后取不下等 3 处修复（dev.待定）
+
+- 范围：98ce46d..c85f6e3 的 `modes/` 与 `core/` 改动（约 4,700 行），分宝珠与物品商店／战力与状态装备页／战斗规则与地图三块读。
+- 修复：
+  - `core/orbs.gd` `_param_rate` 取下时按 `==` 找特性：存档 JSON 把 0.36+1 写成 1.36、读回 1.3600000000000001，存读档后取下 宝珠·长生·归真（3006）、藏气·归真（3011）删不掉特性，宝珠回背包而 ×1.36 留在装备上，每轮镶嵌／存读档／取下多叠一条。改为差小于 1e-9 即算同一条。`xiyou_orbs` 补 1 项（修复前失败）。
+  - `ui/choice_window.gd` 点最后一行下方的留白会选中画面外的下一行（光标消失，再点就确定看不见的行）；加行号上限，同 `battle_list._hit`。新测试 `xiyou_choice_window` 3 项（修复前 1 项失败）。
+  - `ui/status_page.gd` 头部 HP／MP／TP／EXP 条：记录的填充宽换回比例时 floor 误差，w=458 时 13 个宽度少画 1px；换比例时加半格。只是画面，测试比的是记录值，未加测试。
+- 只记录、未修：
+  - `ui/shop.gd` `_buy_data` 把武器／防具商品的原始记录交给 `XItemMarks.shop_display`，没有 kind，按 Items 表查 `<Proxy Buy>`：防具 1991、2495～2520 与带 Proxy Buy 的物品同号，若有商店卖这些防具会显示代购物品的名字和图标（购买本身正确）；目前没有商店卖。
+  - `core/orbs.gd` 303～308 行 Element Amplify 元素名写法的正则少一个分组，数值读错；目前没有宝珠用这种写法。
+  - `ui/gear_search.gd` 改排序就存配置，按「关闭」不应用也会改装备列表顺序；要对照原版再定是不是问题。
+- 验证：`xiyou_orbs`、`xiyou_orb_*`、`xiyou_status_page`、`xiyou_choice_window` 通过，全部测试见本分支最后一次提交。
+
 ## 交接板
 
 - 需要用户决定：删掉「说明卡『出售价格』差 1」与「优化登记的 O 项」两条（已定）。
