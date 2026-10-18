@@ -1,7 +1,7 @@
 # 交付：claude/sweet-rosalind-062740
 
 - 车道／工作者：B 界面·C 战斗画面／八戒（Claude，重制_八戒_19）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -14,7 +14,7 @@
 - 战斗动作：PERFORM ACTION 的咏唱/技能动作改照 Game_Action.isMagicSkill（技能类型在 System.magicSkills）。
 - 参照：`ui_reference` 新增 `__seqRef`（行动序列逐帧读数，先载好动画图）与 `压缩序列参照.py`；正式版 9 段（普攻、幻化龙爪 开/关镜头、开动画、跳跃 104、浮空 161、咏唱 51、附加状态 73）存 `tests/fixtures/action_sequence_oracle.json`。新测试 `tests/xiyou_sequence_visual` 27/27：每条指令执行帧、总帧数、镜头层位置与缩放、窗口层隐藏、日志行数、战斗者不透明度/浮空/跳跃/动作逐帧一致。窗口模式截图在 `04_验证/本地结果/序列画面/`。
 - 测试调整：`xiyou_battle_options` 原「各变速档总帧数相同」改为「变速档更短」（YEP 移动与 WAIT 随 battleAniSpeed 缩短，同正式版）；`xiyou_combat` 反击/反射断言先去掉画面条目。
-- 验证：检查.sh --oracle（结果见下）；专项 xiyou_battle*、combat、determinism、action_sequence、hangup_options、troop_events、drop*、mv_animation、flow 通过。
+- 验证：合并 main（3d4ba44）并 --补齐 后 检查.sh --oracle 全部通过（worktree 里 generated/oracle 缺主工作区新出的 battle_events.json，已从主工作区复制）；专项 xiyou_battle*、combat、determinism、action_sequence、hangup_options、troop_events、drop*、mv_animation、flow 通过。
 - 未完成：序列里的公共事件、变量、开关、EVAL 不执行（ACTION COMMON EVENT 只按 updateEvent 多占一帧）；FADE/FLASH/TINT/SHAKE SCREEN 只占帧不画（切片数据未用到）；动画跟随浮空高度（Sprite_Animation.updateBattlerPosition）未做；敌人 YEP 血条在 OPACITY 时不随敌人变淡（原版归属未核）。O-052 未用到。
 
 ## 交接板
@@ -34,3 +34,4 @@
 - 9509398 战斗演出：YEP 行动序列逐帧演出、战斗镜头、Battle Camera 开关
 - 6a87a78 行动序列画面：文档、截图选项、测试随正式版变速调整
 - 3d4ba44 合并 main
+- 交付单可合并
