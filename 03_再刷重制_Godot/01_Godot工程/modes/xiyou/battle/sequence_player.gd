@@ -62,6 +62,7 @@ func play() -> void:
 			_step()
 		for sp in scene.sprites.values():
 			(sp as XBattlerSprite).seq_update()
+		scene.update_gauges()
 		scene.apply_camera()
 		if on_frame.is_valid():
 			on_frame.call(self)

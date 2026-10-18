@@ -222,7 +222,7 @@ func _make_enemy_gauge(e: XEnemy) -> void:
 	c.clip_contents = false
 	c.z_index = 5
 	field.add_child(c)
-	gauges[e] = {"box": c, "timer": 0.0, "name_timer": 3.0}
+	gauges[e] = {"box": c, "timer": 0.0, "name_timer": 3.0, "cur": e.hp, "disp": e.hp, "drop": 0.0}
 	c.painter = func(canvas): _paint_enemy(canvas, e)
 
 
@@ -235,17 +235,18 @@ func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 	if not v.dead and (g.name_timer > 0.0 or e == _hover):
 		var color := _enemy_name_color(e) if rate > 0.5 else XUI.text_color(2 if rate > 0.25 else 10)
 		c.text(e.display_name(), 0, 0, 640, "center", color, 18, 36)
-	if g.timer <= 0.0 and not (_target_mode == "enemy" and e == _hover):
+	if g.timer <= 0.0 and g.disp == g.cur and not (_target_mode == "enemy" and e == _hover):
 		return
 	var w := maxf(ENEMY_GAUGE_W, sprites[e].width())
 	var x := 320.0 - w / 2.0
 	var y := 11.0
 	var gy := y + 36 - 12 - 2
 	c.draw_rect(Rect2(x, gy, w, 12), Color(XUI.text_color(19), 160.0 / 255.0))
-	var fill := maxf(0, floorf(w * rate) - 4)
+	# 血条与数字都画显示值（drawActorHp 的 rate = _displayedValue / mhp）
+	var fill := maxf(0, floorf(w * g.disp / maxf(v.mhp, 1.0)) - 4)
 	if fill > 0:
 		c.gradient(Rect2(x + 2, gy + 2, fill, 8), XUI.text_color(20), XUI.text_color(21))
-	c.text(XMenu._group(v.hp), x, y, w, "center", XUI.TEXT, 26, 36)
+	c.text(XMenu._group(g.disp), x, y, w, "center", XUI.TEXT, 26, 36)
 
 
 ## EnemyNameColorByDifficulty 只为与数据库原名完全相同的文字上色。
@@ -412,7 +413,25 @@ func _paint_log(c: XMVCanvas) -> void:
 
 
 ## 每帧推进胜利镜头（MV Game_Screen：zoomScale 与镜头点按剩余帧数线性逼近目标）。
+## YEP_X_VisualHpGauge updateHpPosition：HP（画面读数）变了就按 Gauge Duration 定每帧滑动量 ceil(差/时长)，
+## 显示值逐帧靠近，到达为止；滑动中血条保持显示。
+func update_gauges() -> void:
+	var dur := maxf(1.0, float(XDB.plugin("YEP_X_VisualHpGauge").get("Gauge Duration", "30")))
+	for e in gauges:
+		var g: Dictionary = gauges[e]
+		var hp: float = view(e).hp
+		if hp != g.cur:
+			g.cur = hp
+			g.drop = ceilf(absf(g.disp - hp) / dur)
+		if g.disp > g.cur:
+			g.disp = maxf(g.disp - g.drop, g.cur)
+		elif g.disp < g.cur:
+			g.disp = minf(g.disp + g.drop, g.cur)
+
+
 func _physics_process(_delta: float) -> void:
+	if seq_player == null:
+		update_gauges()      # 行动序列演出中由 XSequencePlayer 每帧在精灵之后更新
 	if _camera.is_empty() and seq_player == null:
 		camera.update()
 		apply_camera()

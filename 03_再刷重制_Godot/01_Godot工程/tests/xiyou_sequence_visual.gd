@@ -164,12 +164,14 @@ func _play_once(scene: XBattleScene, user: XActor, skill_id: int, target: XBattl
 	var logs := scene.logic.execute(user, XDB.rec("Skills", skill_id), target, true)
 	var i := logs.find(logs.filter(func(l): return l.type == "seq_phase")[0])
 	var j := logs.find(logs.filter(func(l): return l.type == "seq_end")[0])
-	var got := {"logs": logs, "jump": [], "hp": [], "text": []}
+	var got := {"logs": logs, "jump": [], "hp": [], "disp": []}
 	var player := XSequencePlayer.create(scene, logs[i - 1], logs.slice(i, j + 1))
 	scene.show_views(logs[i - 1].views)
 	player.on_frame = func(_p):
 		got.jump.append(snappedf(scene.sprites[user].jump_height(), 0.001))
 		got.hp.append(float(scene.view(target).hp))
+		if scene.gauges.has(target):
+			got.disp.append(float(scene.gauges[target].disp))
 	await player.play()
 	scene.clear_views()
 	got.cmds = player.cmds
@@ -206,7 +208,7 @@ func _counter_death(scene: XBattleScene, t: Dictionary) -> void:
 
 ## 多段攻击（正式版读数 s131：敌人 HP 逐帧）：每一下 ACTION EFFECT 当帧画面上的敌人 HP 换成该下结算后的值（日志 views），
 ## 不是最终值。正式版目标第 4 下倒下（夹具敌人没加大生命），Godot 目标打不死，比前 4 段换值的帧；数值另与日志逐段核对。
-## 正式版血条显示值按 Gauge Duration 逐帧滑落，Godot 血条直接显示（未做，见交付单）。
+## 血条显示值（YEP_X_VisualHpGauge）：换值当帧开始滑落，每帧 ceil(差/Gauge Duration)，正式版同帧读数同此规则。
 func _multi_hit_gauge(scene: XBattleScene, t: Dictionary) -> void:
 	var logic := scene.logic
 	var user: XActor = logic.actors.filter(func(a): return a.actor_id == int(t.actor))[0]
@@ -238,4 +240,8 @@ func _multi_hit_gauge(scene: XBattleScene, t: Dictionary) -> void:
 	var last: int = mv_steps.back() if not mv_steps.is_empty() else 0
 	var want_cmds: Array = t.cmds.map(func(c): return [int(c[0]), str(c[1]).to_upper()]).filter(func(c): return c[0] <= last)
 	check("multi_hit_cmds_until_last_mv_hit", got.cmds.filter(func(c): return c[0] <= last) == want_cmds, {"godot": got.cmds, "mv": want_cmds})
+	# 正式版：实际 HP 换值当帧显示值就开始滑落（_displayedValue 比上一帧少 ceil(差/30)）
+	var mv_ok := mv_steps.all(func(f): return mv[f][1] == maxf(mv[f - 1][1] - ceilf(absf(mv[f - 1][1] - mv[f][0]) / 30.0), mv[f][0]))
+	var g_ok := steps.size() >= 2 and steps.all(func(f): return got.disp[f] == maxf(got.disp[f - 1] - ceilf(absf(got.disp[f - 1] - got.hp[f]) / 30.0), got.hp[f]))
+	check("multi_hit_gauge_drain", mv_ok and g_ok and got.disp.back() < start, {"mv": mv_ok, "godot": g_ok})
 	check("multi_hit_gauge_live_after", is_equal_approx(float(scene.view(foe).hp), foe.hp))
