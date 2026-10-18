@@ -5,6 +5,7 @@ import importlib.util
 import io
 import json
 import os
+import signal
 from pathlib import Path
 import subprocess
 import sys
@@ -206,6 +207,25 @@ class TaskWatchTests(unittest.TestCase):
                 self.assertEqual(int(Path(str(log) + '.exit').read_text()), expected)
                 w = subprocess.run([str(HERE / '等待任务.sh'), str(log)], capture_output=True, timeout=5)
                 self.assertEqual(w.returncode, expected, w.stdout + w.stderr)
+
+    def test_orphan_holding_log_pipe_is_stopped_with_its_owned_group(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log, pidfile = Path(tmp) / 'orphan.log', Path(tmp) / 'child.pid'
+            child = "import os,signal,time; from pathlib import Path; signal.signal(signal.SIGTERM,signal.SIG_IGN); Path(%r).write_text(str(os.getpid())); time.sleep(30)" % str(pidfile)
+            parent = "import subprocess,sys,time; subprocess.Popen([sys.executable,'-c',%r]); time.sleep(0.2)" % child
+            try:
+                p = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'run', str(log), '--', sys.executable, '-c', parent],
+                                   capture_output=True, timeout=10)
+                self.assertEqual(p.returncode, 1)
+                pid = int(pidfile.read_text())
+                state = subprocess.run(['ps', '-o', 'stat=', '-p', str(pid)], capture_output=True, text=True).stdout.strip()
+                self.assertTrue(not state or state.startswith('Z'), state)
+            finally:
+                if pidfile.exists():
+                    try:
+                        os.kill(int(pidfile.read_text()), signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
 
     def test_abandoned_runner_is_marked_stuck(self):
         with tempfile.TemporaryDirectory() as tmp:

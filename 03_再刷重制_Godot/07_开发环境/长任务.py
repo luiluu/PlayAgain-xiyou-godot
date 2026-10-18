@@ -32,12 +32,18 @@ def status_path(log):
 def stop(proc):
     try:
         os.killpg(proc.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    try:
         proc.wait(timeout=3)
     except subprocess.TimeoutExpired:
+        pass
+    # The group may still contain a child holding the log pipe after its parent exited.
+    try:
         os.killpg(proc.pid, signal.SIGKILL)
-        proc.wait()
     except ProcessLookupError:
         pass
+    proc.wait()
 
 
 def run(log, command, idle=3600, poll=0.2):
