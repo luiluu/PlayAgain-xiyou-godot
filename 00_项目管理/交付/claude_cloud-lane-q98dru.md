@@ -20,6 +20,17 @@
 - `检查.sh`：`GODOT` 可用环境变量覆盖（默认仍是 `07_开发环境/godot`）。
 - 未做：注册成仓库 SessionStart hook（改 `.claude/settings.json` 需用户同意；用户 2026-10-18 说项目额度当天到期，暂不开云端车道）。
 
+## 2026-10-18 【Claude·云端·未经Codex检验】代码审查 dev.068～081：修复复制角色丢真气境界（dev.待定）
+
+- 范围：c85f6e3..a70c28d 的 `modes/` 与 `core/` 改动（约 2,500 行），分真气／副本与事件／界面与战斗演出三块读，相关专项在云端全部通过。
+- 修复（`core/equipment.gd`、`core/power.gd`，不在任何车道独占文件里）：`XEquipment.clone` 没复制 `zhenqi`，装备页预览与 `XPower` 评估里道法被动一律按炼气 1/4 缩放（境界 6 学灵台：真实 TP 上限 300，预览 225），战力偏低；`XPower._signature` 加境界，突破后不再返回旧战力。`xiyou_power` 补 3 项，去掉修复时其中 2 项失败。
+- 验证：`xiyou_power` 106/106、`xiyou_equipment` 1228/1228、`xiyou_status_power*`、`xiyou_zhenqi*` 全部通过。
+- 只记录、未修（低影响或在车道独占文件里，请唐僧转给对应车道）：
+  - 悟空（解释器）：`mv_interpreter.gd` 指令 214 暂时消除没检查是否仍在原地图（MV `isOnCurrentMap`），传送后执行会消掉新地图同号事件；切片里目前没有触发点。`FLUSH_BEFORE` 漏了带等待的 225 画面震动，排队的升级文字会晚到震动之后。
+  - 悟空／地图：`map_scene.gd` 只靠 214 消除（不开独立开关）的事件读档后会重新出现，MV 把 `_erased` 存在 `$gameMap` 里；要先查有没有这种事件再决定修不修。
+  - 八戒（演出）：`battler_sprite.gd` `_body_material()` 对「场景」外观的子节点一律设 `use_parent_material`，会盖掉它们自己的材质（目前没有场景外观，不触发）；地图动画 `map_scene.gd` `show_animation` 没设 `MVAnimation.target`，flashScope 1／3 的目标闪光与隐藏在地图上不生效（缺功能，不是回退）。
+- 八戒_17 在做道法运行时：这次修复让预览和战力开始按实际境界计入道法被动，战力参照若有变化以此为准。
+
 ## 交接板
 
 - 需要用户决定：删掉「说明卡『出售价格』差 1」与「优化登记的 O 项」两条（已定）。
