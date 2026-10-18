@@ -124,6 +124,9 @@ static func _statements(js: String, interp) -> Array:
 			if got != "":
 				interp.host.toast(got)
 			continue
+		if st == "CodexZhenqi.retreat(this)":
+			await XZhenqiRetreat.run(interp.host)  # 方桌大厅「闭关」NPC
+			continue
 		if st == "CodexReincarnationRandom.open(this)":
 			await _reincarnation_open(interp)
 			continue

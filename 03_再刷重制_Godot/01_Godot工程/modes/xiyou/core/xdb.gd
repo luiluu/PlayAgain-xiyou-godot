@@ -22,6 +22,8 @@ static func load_json(rel: String) -> Variant:
 static func table(name: String) -> Variant:
 	if not _tables.has(name):
 		_tables[name] = load_json("db/%s.json" % name)
+		if name == "Skills" and _tables[name] is Array:
+			XZhenqi.patch_rewards(_tables[name])  # 真气突破奖励的数值（CodexZhenqi.patchRewards）
 	return _tables[name]
 
 

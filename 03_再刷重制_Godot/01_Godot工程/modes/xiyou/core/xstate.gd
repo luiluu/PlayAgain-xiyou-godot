@@ -62,6 +62,8 @@ var race_supply := {}
 var eco_frac := {}
 ## KMS_ShopInventory 商店库存（见 XShopStock；随存档）与下一次商店用的库存组（$gameTemp.nextInventoryId，不存档）
 var shop_stock := {"inv": {}, "schedules": []}
+## 真气：降服过的本命兵武器类型 w、灵根元素 e（$gameSystem._codexZhenqiSpec），全队共用、随存档
+var zhenqi_spec := {"w": {}, "e": {}}
 var shop_pending := ""
 var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
@@ -82,6 +84,8 @@ static func _become_current(s: XState) -> void:
 	current = s
 	XDungeon.battle = {}
 	XZhenqi.battle = {}
+	XZhenqi.pending_trial = {}
+	XZhenqi.trial_done = {}
 
 
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
@@ -372,7 +376,7 @@ func to_dict() -> Dictionary:
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac,
-		"shopStock": shop_stock}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -450,6 +454,10 @@ static func from_dict(d: Dictionary) -> XState:
 	s.race_supply = d.get("raceSupply", {})
 	s.eco_frac = d.get("ecoFrac", {})
 	s.shop_stock = XShopStock.from_save(d.get("shopStock", {}))
+	var zs = d.get("zhenqiSpec", {})
+	for part in ["w", "e"]:
+		for k in (zs.get(part, {}) if zs is Dictionary and zs.get(part, {}) is Dictionary else {}):
+			s.zhenqi_spec[part][str(k)] = 1
 	s.hang_up_total = int(d.get("hangUpTotal", 0))
 	s.pingbi_quality = Array(d.get("pingbiQuality", [])).map(func(v): return bool(v))
 	s.followers_visible = bool(d.get("followersVisible", XDB.system().get("optFollowers", false)))

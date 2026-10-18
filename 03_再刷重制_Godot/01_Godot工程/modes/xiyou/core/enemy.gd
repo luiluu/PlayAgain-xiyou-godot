@@ -94,11 +94,22 @@ func setup_level(highest: int, r := -1.0) -> void:
 	var base := clampi(highest, 1, 999999)
 	enemy_level = clampi(floori((randf() if r < 0.0 else r) * 5.0 + base - 2), 1, 999999)
 
-func param_base(i: int) -> float:
+## 真气瓶颈之战的幻化（XZhenqi.troop_setup）：{p: 参照敌人 paramBase, k: 倍数}；生命、攻击、魔攻 ×k
+var zq_ref := {}
+## 幻化的敌人不掉落（makeDropItems／makeRewards 的物品清空）
+var zq_trial_loot := false
+
+## EliteEnemy 的 paramBase（不含难度倍率 Vitsuno paramRate）
+func param_base_raw(i: int) -> float:
 	var base := float(data().params[i])
 	if elite:
 		base = floorf(base * elite_param(1))
-	return base * float(_rates[i])
+	return base
+
+func param_base(i: int) -> float:
+	if not zq_ref.is_empty():
+		return float(zq_ref.p[i]) * (float(zq_ref.k) if i in [0, 2, 4] else 1.0) * float(_rates[i])
+	return param_base_raw(i) * float(_rates[i])
 
 func trait_objects() -> Array:
 	var out := [data()]

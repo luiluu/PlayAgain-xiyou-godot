@@ -56,6 +56,7 @@ func _same(a, b) -> bool:
 	return JSON.stringify(_norm(a)) == JSON.stringify(_norm(b))
 
 
+const SECOND := ["break.", "trial.", "reward.", "menu."]
 const SWITCHES := [2500, 2494, 2489, 2461, 2487, 2462, 2483, 2463]
 
 
@@ -219,6 +220,8 @@ func _run() -> void:
 				continue
 			if c.id in ["map.floor", "boss.enemies"]:
 				continue
+			if SECOND.any(func(p): return c.id.begins_with(p)):
+				continue   # 第二批（突破、瓶颈之战、奖励与道法）由 tests/xiyou_zhenqi_break 比
 			var got = _case(c.id, c.setup)
 			var want = c.observed
 			if c.id.begins_with("page."):
