@@ -385,9 +385,12 @@ window.__refJson = function (name, obj) {
         sr.run=function(o){
             o=o||{};var s=SceneManager._scene;
             if(!(s instanceof Scene_Battle)||!s._actorCommandWindow||!s._actorCommandWindow.active)throw new Error('先等到角色指令窗口');
-            ConfigManager.battleCamera=o.camera!==false;
+            ConfigManager.battleCamera=o.camera!==false;ConfigManager.CombatSkillAnimation=!!o.anim;
             var actor=BattleManager.actor(),skill=$dataSkills[o.skill];
             actor.learnSkill(o.skill);actor.setMp(actor.mmp);actor.setTp(actor.maxTp());
+            // 连续出招时不让战斗结束：敌人加 100 万生命、全员回满（只改这场内存战斗）。
+            $gameTroop.members().forEach(function(e){if(!e.__srTough){e.addParam(0,1000000);e.__srTough=true;}e.recoverAll();});
+            $gameParty.battleMembers().forEach(function(a){a.recoverAll();});
             var T=sr.trace={skill:o.skill,actor:actor.actorId(),camera:ConfigManager.battleCamera,speed:ConfigManager.battleAniSpeed,
                 animation:ConfigManager.CombatSkillAnimation,battlers:null,frames:[],cmds:[],done:false,started:false};
             if(!BattleManager.__srWrapped){
@@ -410,6 +413,7 @@ window.__refJson = function (name, obj) {
                 if(!T.started)return;
                 var lw=SceneManager._scene._logWindow;
                 T.frames.push({phase:BattleManager._phase,wait:lw._waitMode,count:lw._waitCount,lines:lw._lines.length,
+                    methods:lw._methods.map(function(m){return m.name;}),
                     field:[ss.x,ss.y,r3(ss.scale.x)],zoom:[r3($gameScreen._zoomX),r3($gameScreen._zoomY),r3($gameScreen._zoomScale)],
                     hud:BattleManager._windowLayer?BattleManager._windowLayer.x:0,
                     sprites:list.map(function(sp){var b=sp._battler,main=sp._mainSprite;
@@ -428,15 +432,22 @@ window.__refJson = function (name, obj) {
         // 套件：普通攻击、幻化龙爪 65（透明/镜头/缩放/击退）开与关镜头、104（跳跃/隐藏界面/SE）、161（浮空）、51（动画/等待/咏唱）。
         // 每条跑完刷新页面重开夹具更稳；此处按顺序在同一场战斗里接着出招（每条之后等回到角色指令窗口）。
         sr.suite=async function(list){
-            list=list||[['attack',{skill:1}],['s65',{skill:65}],['s65_nocam',{skill:65,camera:false}],['s104',{skill:104}],['s161',{skill:161}],['s51',{skill:51}]];
-            var out={note:'ui_reference __seqRef.suite()：正式版 YEP 行动序列逐帧（Spriteset_Battle.update 之后），战斗夹具 4 人、敌群 2。'+
+            list=list||[['attack',{skill:1}],['s65',{skill:65}],['s65_nocam',{skill:65,camera:false}],['s104',{skill:104}],['s161',{skill:161}],['s51',{skill:51}],['attack_anim',{skill:1,anim:true}],['s65_anim',{skill:65,anim:true}],['s73',{skill:73}]];
+            var out=sr.out={note:'ui_reference __seqRef.suite()：正式版 YEP 行动序列逐帧（Spriteset_Battle.update 之后），战斗夹具 4 人、敌群 2。'+
                 'sprites 行：[x, y, _offsetX, _offsetY, 朝向反转, 不透明度, 浮空率, 跳跃率, 动作, 帧格, 身体锚点 y, 可见]',traces:{}};
+            // 先载好要用的动画图（正式版首次播放要等图片异步载入，几十帧不等，Godot 已预载，不比这一段）
+            await dh.pump({until:function(){var s=SceneManager._scene;return s instanceof Scene_Battle&&s._actorCommandWindow&&s._actorCommandWindow.active;},ms:60000});
+            var ids=[51,52];$gameParty.battleMembers().forEach(function(a){ids.push(a.attackAnimationId1(),a.attackAnimationId2());});
+            list.forEach(function(c){var k=$dataSkills[c[1].skill];ids.push(k.animationId,k.castAnimation||0);
+                [k.setupActions,k.wholeActions,k.targetActions,k.followActions,k.finishActions].forEach(function(l){(l||[]).forEach(function(x){var m=String(x[0]).match(/ANIMATION[ ](\d+)/i);if(m)ids.push(+m[1]);});});});
+            var bms=[];ids.forEach(function(id){var a=id>0&&$dataAnimations[id];if(a&&a.frames){bms.push(ImageManager.loadAnimation(a.animation1Name,a.animation1Hue),ImageManager.loadAnimation(a.animation2Name,a.animation2Hue));}});
+            await dh.pump({until:function(){return bms.every(function(b){return b.isReady();});},ms:30000});
             for(var i=0;i<list.length;i++){
                 await dh.pump({until:function(){var s=SceneManager._scene;return s instanceof Scene_Battle&&s._actorCommandWindow&&s._actorCommandWindow.active;},ms:60000});
                 sr.run(list[i][1]);var ok=await sr.pump({ms:60000});
                 out.traces[list[i][0]]=Object.assign({ok:ok},sr.trace);
             }
-            ConfigManager.battleCamera=true;
+            ConfigManager.battleCamera=true;ConfigManager.CombatSkillAnimation=false;
             __refJson('action_sequence_oracle',out);
             return out;
         };
