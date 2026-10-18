@@ -129,7 +129,8 @@ func _paint_page(c: XMVCanvas) -> void:
 				c.icon(op[1], op[2], op[3] + dy)
 			"gauge":
 				var w: float = op[3]
-				c.gauge(op[1], op[2] + dy, w, (op[4] + 2.0) / w if op[4] > 0 else 0.0, Color(op[5]), Color(op[6]))
+				# 记录的是填充宽 floor(w×rate)−2；换回比例时加半格，floor(w×(k/w)) 有时会得 k−1（w=458 时 13 个宽度少画 1px）
+				c.gauge(op[1], op[2] + dy, w, (op[4] + 2.5) / w if op[4] > 0 else 0.0, Color(op[5]), Color(op[6]))
 			"line":
 				c.draw_rect(Rect2(op[1], op[2] + LH / 2 - 1 + dy, op[3], 2), Color(1, 1, 1, 48 / 255.0))
 

@@ -72,6 +72,7 @@ func _run() -> void:
 		_install(data)
 		_actor(data)
 	_save_roundtrip()
+	_detach_rate_after_save()
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
@@ -236,3 +237,13 @@ func _save_roundtrip() -> void:
 	# 取下：宝珠回背包，特性与增幅复原
 	check("rt_remove", XOrbs.apply(bw, {}, 0, back) == "" and back.item_count(2947) == 1 and bw.augmentSlotItems[0] == "none" \
 		and not bw.traits.any(func(t): return t.has("_codexOrb")))
+
+
+## 存读档后取下：存档 JSON 把 0.36+1 写成 1.36，读回 1.3600000000000001，按 == 比对会删不掉，
+## 每轮镶嵌／存读档／取下都多留一条 ×1.36（宝珠·长生·归真 3006、藏气·归真 3011）
+func _detach_rate_after_save() -> void:
+	var eq := {"traits": [], "params": [0, 0, 0, 0, 0, 0, 0, 0]}
+	XOrbs._param_rate(eq, "MHP", 36.0, true, "11:5")
+	eq = JSON.parse_string(JSON.stringify(eq))
+	XOrbs._param_rate(eq, "MHP", 36.0, false, "11:5")
+	check("detach_rate_after_save", eq.traits.is_empty(), eq.traits)
