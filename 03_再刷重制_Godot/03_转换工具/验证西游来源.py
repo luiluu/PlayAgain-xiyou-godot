@@ -7,6 +7,7 @@ from pathlib import Path
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT
 from common_oracle_contract import verify_reports
 from battle_event_contract import verify_battle_events
+from formula_effect_contract import verify_formula_effects
 
 
 def sha(path):
@@ -207,6 +208,7 @@ def verify(app, generated, oracle):
         if not data.get('operations') or not data.get('parseIntNumbers'):
             issues.append('行动序列缺少数值边界参照')
     issues.extend(verify_battle_events(oracle, manifest))
+    issues.extend(verify_formula_effects(oracle, manifest))
     issues.extend(verify_reports(oracle, manifest))
     return {'releaseVersion': version, 'inputs': len(manifest['inputs']),
             'runtimeInputs': len(manifest.get('runtimeInputs', {})),

@@ -18,6 +18,8 @@ func _ready() -> void:
 	var manifest = JSON.parse_string(FileAccess.get_file_as_string(XDB.BASE + "manifest.json"))
 	check("same_runtime_source", reference.sourceIdentity.runtimeInputs == manifest.runtimeInputs)
 	check("shadow_scope", reference.get("hostScope") == "pure-formula-shadow" and reference.cases.size() > 1000)
+	check("enemy_contexts", reference.contexts.has("enemy_actor.full") and reference.contexts.has("actor_enemy.full")
+		and reference.contexts.has("enemy_actor.edge") and reference.contexts.has("actor_enemy.edge"))
 	var random_program := {}
 	for c in reference.cases:
 		check(str(c.id) + ".source_clean", c.errors.is_empty())

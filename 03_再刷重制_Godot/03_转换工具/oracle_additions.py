@@ -21,6 +21,8 @@ KEYS = {
     'zhenqi.json': {'cases': ('id',)},
     'guide.json': {'cases': ('id',)},
     'custom_damage.json': {'cases': ('id',)},
+    'formula_programs.json': {'cases': ('id',)},
+    'formula_effects.json': {'cases': ('id',)},
     'troop_events.json': {'cases': ('troop', 'paid')},
     'smart_ai.json': {'cases': ('troop', 'scene', 'actor', 'state'),
                       'damage': ('troop', 'actor', 'skill', 'target')},
@@ -146,7 +148,18 @@ def compare_file(name, old, new):
         a, b = old[field], new[field]
         if a == b:
             continue
-        if name.startswith('slice_d') and field in ('enemies', 'actors') and isinstance(a, dict) and isinstance(b, dict):
+        if name == 'formula_programs.json' and field == 'contexts' and isinstance(a, dict) and isinstance(b, dict):
+            for key, value in a.items():
+                if b.get(key) != value:
+                    problems.append('既有公式上下文改变或删除：' + key)
+            allowed = {'enemy_actor.full', 'enemy_actor.edge', 'actor_enemy.full', 'actor_enemy.edge'}
+            for key in b.keys() - a.keys():
+                row = b[key]
+                if key not in allowed or not isinstance(row, dict) or set(row) != {'a', 'b', 'v', 's'} or has_error(row):
+                    problems.append('新增公式上下文未登记或结构异常：' + key)
+                else:
+                    additions.append({'collection': field, 'key': key, 'count': 1})
+        elif name.startswith('slice_d') and field in ('enemies', 'actors') and isinstance(a, dict) and isinstance(b, dict):
             for key, value in a.items():
                 # 角色行允许新增采样字段（如 levelSamples），原有字段必须逐项相同
                 if field == 'actors' and key in b and isinstance(value, dict) and isinstance(b[key], dict):

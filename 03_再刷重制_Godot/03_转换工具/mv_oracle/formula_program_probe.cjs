@@ -17,10 +17,18 @@ function snapshot(b) {
     param:Array.from({length:8},(_,i)=>b.param(i)), xparam:Array.from({length:10},(_,i)=>b.xparam(i)),
     sparam:Array.from({length:10},(_,i)=>b.sparam(i))};
 }
-const a=w.$gameActors.actor(1), b=w.$gameActors.actor(8);
+let a=w.$gameActors.actor(1), b=w.$gameActors.actor(8);
 const tables = {};
 for(const table of ['Skills','Items']) tables[table] = JSON.parse(fs.readFileSync(path.join(generated,'db',table+'.json'),'utf8'));
-for(const [label,resources] of [['full',[1,1,200]],['edge',[0.2,0,1]]]) {
+for(const pair of ['actors','enemy_actor','actor_enemy']) {
+  if(pair!=='actors') {
+    w.$gameTroop.setup(157);
+    const enemy=w.$gameTroop.members()[0];
+    a=pair==='enemy_actor'?enemy:w.$gameActors.actor(1);
+    b=pair==='actor_enemy'?enemy:w.$gameActors.actor(8);
+  }
+for(const [suffix,resources] of [['full',[1,1,200]],['edge',[0.2,0,1]]]) {
+  const label=pair==='actors'?suffix:pair+'.'+suffix;
   a._hp=a.mhp; a._mp=a.mmp; a._tp=55;
   b._hp=Math.floor(b.mhp*resources[0]); b._mp=Math.floor(b.mmp*resources[1]); b._tp=resources[2];
   w.Math.random=()=>0.5;
@@ -44,6 +52,8 @@ for(const [label,resources] of [['full',[1,1,200]],['edge',[0.2,0,1]]]) {
     }));
   }
 }
+}
+a=w.$gameActors.actor(1);b=w.$gameActors.actor(8);
 for(const fixture of language) {
   const setup={context:'edge',program:fixture.program,formula:fixture.formula,type:fixture.type};
   cases.push(makeCase('language.'+fixture.id,setup,()=>{
