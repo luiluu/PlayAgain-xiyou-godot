@@ -15,10 +15,10 @@ extends Control
 ##    成长（\c[3]）／价格 六组，组间分隔；正文统一为最常见字号。
 ## 5. installCombatPowerRuntime（setItem 最外层）：装备在名字后插「装备战力：N」（18 号、rgba(255,211,115,1)、align 0），
 ##    N 是与穿戴者无关的装备评分 XPower.equipment；设置页关掉「战力显示与估算」时不插。
-## 未做：特殊角色（ID 10122～10299）
-##    与心钢、狂妄等专属装备的动态说明（切片里没有）。
+## 6. 特殊角色（渡鸦～哈基米，技能 10122～10299 等）与专属装备：characterHelpView／nowGrowthView／dyn2View，
+##    见 XCharacterHelp（character_help.gd，对 generated/oracle/special_help_cards.json 核对，按图鉴预览态）。
 ##
-## 版面（layout()）：宽 400、内边距 4；每行按 RJO.SW 逐字排版：可用宽 392−x，放不下换行；行高 = 该行最大字号 + 8；
+## 版面（layout()）：宽 400（备注 <HelpWidth: N> 时为 N，width_for）、内边距 4；每行按 RJO.SW 逐字排版：可用宽 392−x，放不下换行；行高 = 该行最大字号 + 8；
 ## 居中/靠右的行只算第一行；有分隔的行之后加 3；卡高 = 8 + Σ行高 + 3×分隔数。\i[n] 占 36、画在 (x+2, y−3)；
 ## \{ \} 字号 ±6；\C[2000+e] 为元素颜色。
 ## 外观：四层品质窗口（Window{品质}.png，不透明度 60）套在卡外 10px，卡内实心 #161c25（Codex 覆盖）。
@@ -78,11 +78,15 @@ static func content(obj: Dictionary, kind := "") -> Array:
 		kind = kind_of(obj)
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
 	var rows := desc_params(obj, type)
+	rows = XCharacterHelp.binding_rows(obj, rows)
 	rows = _element_wrapper(obj, type, rows)
 	if (type == 1 or type == 2) and XPower.enabled():
 		rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
-	if type == 3 and not _special_target(obj):
+	if XCharacterHelp.target(obj):
+		rows = XCharacterHelp.view(obj, rows)
+	elif type == 3:
 		rows = _generic_view(obj, rows)
+	rows = XCharacterHelp.after_view(obj, rows)
 	for r in rows:
 		r[0] = _terms(str(r[0]))
 	# v0.18 starredHead：名字行（第一行、名字字号）前加星级，只给武器/防具
@@ -90,6 +94,12 @@ static func content(obj: Dictionary, kind := "") -> Array:
 	if star != "" and not rows.is_empty() and int(rows[0][1]) == NAME_SIZE and not str(rows[0][0]).begins_with(star):
 		rows[0][0] = star + str(rows[0][0])
 	return rows
+
+
+## HelpExtend setItem：备注 <HelpWidth: N> 改卡宽（特殊角色技能多为 520），否则 400
+static func width_for(obj: Dictionary) -> float:
+	var m := RegEx.create_from_string("(?i)<HelpWidth:\\s*(\\d+)>").search(str(obj.get("note", "")))
+	return float(m.get_string(1)) if m != null else WIDTH
 
 
 static func kind_of(obj: Dictionary) -> String:
@@ -207,11 +217,6 @@ static func _terms(text: String) -> String:
 	return RegEx.create_from_string("全伤(?:害)?").sub(text, "全属性伤害", true)
 
 
-static func _special_target(obj: Dictionary) -> bool:
-	var id := int(obj.get("id", 0))
-	return id >= 10122 and id <= 10299
-
-
 # ---- installDamageElementRuntime ----
 static func _element_data() -> Dictionary:
 	var d = XDB.load_json("db/CodexDamageElements.json")
@@ -268,7 +273,8 @@ static func _element_wrapper(obj: Dictionary, type: int, rows: Array) -> Array:
 	var lines := []
 	var data := _element_data()
 	var active: Array = data.get("activeElements", [])
-	if type == 3:
+	# 屠苏／璇的技能经 CodexBinding 换成副本后才到这里，DataManager.isSkill 认不出，不加「伤害属性」行（XCharacterHelp.binding_rows）
+	if type == 3 and XCharacterHelp.bound(obj).is_empty():
 		var d: Dictionary = obj.get("damage", {})
 		if [1, 2, 5, 6].has(int(d.get("type", 0))):
 			var eid := _migrated_element(obj)
@@ -663,9 +669,10 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 		return
 	rows = content(obj, kind)
 	quality = _quality(obj)
-	var lay := layout(rows, min_font)
+	var w := width_for(obj)
+	var lay := layout(rows, min_font, w)
 	_lines = lay.lines
-	size = Vector2(WIDTH, lay.height)
+	size = Vector2(w, lay.height)
 	frame.position = Vector2(-10, -10)
 	frame.size = size + Vector2(20, 20)
 	canvas.position = Vector2.ZERO
