@@ -15,6 +15,7 @@
 import argparse
 import ast
 import equipment_rules
+from formula_program import compile_formula
 import hashlib
 import json
 import re
@@ -22,7 +23,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 17
+TOOL_VERSION = 18
 HERE = Path(__file__).resolve().parent
 # 用户 2026-10-15：重制期间冻结在 v0.28 的只读副本（不入 Git，见 02_内容与素材/冻结正式源/README.md），重制完成后再统一同步正式版
 DEFAULT_APP = Path('/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw')
@@ -397,6 +398,7 @@ class Exporter:
                         else:
                             gd, why = translate_formula(rec['damage'].get('formula'), rec.get('id', 0))
                         rec['damage']['formulaGd'] = gd
+                        rec['damage']['formulaProgram'] = compile_formula(rec['damage'].get('formula'), rec.get('id', 0), block is not None, name)
                         if why and rec['damage'].get('type'):
                             rec['damage']['formulaIssue'] = why
             self.db[name] = data
@@ -707,11 +709,22 @@ class Exporter:
             if s and s['damage']['type'] and s['damage']['formulaGd'] is None:
                 untranslated.append({'skill': sid, 'name': s['name'], 'formula': s['damage']['formula'], 'why': s['damage'].get('formulaIssue')})
         all_bad = sum(1 for s in self.db['Skills'] if s and s['damage']['type'] and s['damage']['formulaGd'] is None)
+        program_stats = {}
+        for table in ['Skills', 'Items']:
+            counts = {'pureSupported': 0, 'effectfulSupported': 0, 'unsupportedActiveDamage': 0, 'unsupportedNoDamage': 0}
+            for rec in self.db[table]:
+                if not rec or 'damage' not in rec:
+                    continue
+                status = rec['damage']['formulaProgram']['status']
+                key = 'pureSupported' if status == 'pure' else 'unsupportedActiveDamage' if rec['damage']['type'] else 'unsupportedNoDamage'
+                counts[key] += 1
+            program_stats[table] = counts
         manifest = {'tool': 'xiyou_export.py', 'toolVersion': TOOL_VERSION, 'source': str(self.app),
                     'releaseVersion': pkg.get('releaseVersion'), 'slice': self.slice_info,
                     'runtimeInputs': runtime_inputs,
                     'sliceConfigSHA256': sha(json.dumps(self.cfg, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()),
                     'formulaUntranslatedInSlice': untranslated, 'formulaUntranslatedAllSkills': all_bad,
+                    'formulaPrograms': {'version': 1, 'execution': 'shadow-only', 'tables': program_stats},
                     'issues': self.issues, 'inputs': self.inputs, 'outputs': self.outputs}
         # 生成期间源若发生变化，候选不可用；不将混合来源登记成成功结果。
         changed = [rel for hashes in [self.inputs, runtime_inputs] for rel, digest in hashes.items()

@@ -1,0 +1,1875 @@
+[
+  {
+    "id": "numeric_truth",
+    "formula": "5 ? 7 : 9",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "9a2de0951ec3fb461aedc23e05849daf6180d179297021f96d27a1a707c88ef9"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "select",
+            "pos": 0,
+            "condition": {
+              "op": "literal",
+              "pos": 0,
+              "value": 5.0
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 4,
+              "value": 7.0
+            },
+            "no": {
+              "op": "literal",
+              "pos": 8,
+              "value": 9.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "nan_unselected",
+    "formula": "false ? Math.sqrt(-1) : 9",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "b5bc08ce4a21186610f656221f64d49c084a3fe848880e494f1caf06f5159d13"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "select",
+            "pos": 0,
+            "condition": {
+              "op": "literal",
+              "pos": 0,
+              "value": false
+            },
+            "yes": {
+              "op": "math",
+              "pos": 8,
+              "name": "sqrt",
+              "args": [
+                {
+                  "op": "unary",
+                  "pos": 18,
+                  "operator": "-",
+                  "arg": {
+                    "op": "literal",
+                    "pos": 19,
+                    "value": 1.0
+                  }
+                }
+              ]
+            },
+            "no": {
+              "op": "literal",
+              "pos": 24,
+              "value": 9.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "and_skip",
+    "formula": "0 && Math.random()",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "5771e4ff53b270905d994c881ac7e407f5a23def376e48f405d96da1de5e7171"
+      },
+      "status": "pure",
+      "capabilities": [
+        "random.rule"
+      ],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "&&",
+            "left": {
+              "op": "literal",
+              "pos": 0,
+              "value": 0.0
+            },
+            "right": {
+              "op": "math",
+              "pos": 5,
+              "name": "random",
+              "args": []
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "or_skip",
+    "formula": "1 || Math.random()",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "aa78caefddbbba6a5ff9779c5a8441c088d5ba585bf6c11a32c514a987d908e9"
+      },
+      "status": "pure",
+      "capabilities": [
+        "random.rule"
+      ],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "||",
+            "left": {
+              "op": "literal",
+              "pos": 0,
+              "value": 1.0
+            },
+            "right": {
+              "op": "math",
+              "pos": 5,
+              "name": "random",
+              "args": []
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "and_use",
+    "formula": "1 && Math.random()",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "890f6e7ec2fdfb1e5b100530c3213d69969892accfc4796ff2915c30ee8be61d"
+      },
+      "status": "pure",
+      "capabilities": [
+        "random.rule"
+      ],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "&&",
+            "left": {
+              "op": "literal",
+              "pos": 0,
+              "value": 1.0
+            },
+            "right": {
+              "op": "math",
+              "pos": 5,
+              "name": "random",
+              "args": []
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "nested_select",
+    "formula": "0 ? 1 : 2 ? 3 : 4",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "ee51f349d6b73f75f28b3d128c47c3c778f35f8ca44645592808fd516e168190"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "select",
+            "pos": 0,
+            "condition": {
+              "op": "literal",
+              "pos": 0,
+              "value": 0.0
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 4,
+              "value": 1.0
+            },
+            "no": {
+              "op": "select",
+              "pos": 8,
+              "condition": {
+                "op": "literal",
+                "pos": 8,
+                "value": 2.0
+              },
+              "yes": {
+                "op": "literal",
+                "pos": 12,
+                "value": 3.0
+              },
+              "no": {
+                "op": "literal",
+                "pos": 16,
+                "value": 4.0
+              }
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "negative_remainder",
+    "formula": "-3 % 2 + 7",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "e989f9db3711573bce3ab3f4414d8884193af135ea0aeeeb10f87b80c4a7ceee"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "+",
+            "left": {
+              "op": "binary",
+              "pos": 0,
+              "operator": "%",
+              "left": {
+                "op": "unary",
+                "pos": 0,
+                "operator": "-",
+                "arg": {
+                  "op": "literal",
+                  "pos": 1,
+                  "value": 3.0
+                }
+              },
+              "right": {
+                "op": "literal",
+                "pos": 5,
+                "value": 2.0
+              }
+            },
+            "right": {
+              "op": "literal",
+              "pos": 9,
+              "value": 7.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "round_negative",
+    "formula": "Math.round(-1.5)+10",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "cc95d481bd9cdcf9482537f3bb6c07cf7f1f91ceae7a38e4bbc63e1346981d3e"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "+",
+            "left": {
+              "op": "math",
+              "pos": 0,
+              "name": "round",
+              "args": [
+                {
+                  "op": "unary",
+                  "pos": 11,
+                  "operator": "-",
+                  "arg": {
+                    "op": "literal",
+                    "pos": 12,
+                    "value": 1.5
+                  }
+                }
+              ]
+            },
+            "right": {
+              "op": "literal",
+              "pos": 17,
+              "value": 10.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "negative_zero",
+    "formula": "(-2 / -0) > 0 ? 4 : 7",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "8fa7db62c53f472a85a183f8e6abe51cea4318be7300f31ea7901d7775e25dc8"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "select",
+            "pos": 0,
+            "condition": {
+              "op": "binary",
+              "pos": 0,
+              "operator": ">",
+              "left": {
+                "op": "binary",
+                "pos": 1,
+                "operator": "/",
+                "left": {
+                  "op": "unary",
+                  "pos": 1,
+                  "operator": "-",
+                  "arg": {
+                    "op": "literal",
+                    "pos": 2,
+                    "value": 2.0
+                  }
+                },
+                "right": {
+                  "op": "unary",
+                  "pos": 6,
+                  "operator": "-",
+                  "arg": {
+                    "op": "literal",
+                    "pos": 7,
+                    "value": 0.0
+                  }
+                }
+              },
+              "right": {
+                "op": "literal",
+                "pos": 12,
+                "value": 0.0
+              }
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 16,
+              "value": 4.0
+            },
+            "no": {
+              "op": "literal",
+              "pos": 20,
+              "value": 7.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "null_math",
+    "formula": "null + 7",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "6a539d82f8a8bc9b836fd457b508cb6a9996d96e551312cd53c74f11fa7b9a3c"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "+",
+            "left": {
+              "op": "literal",
+              "pos": 0,
+              "value": null
+            },
+            "right": {
+              "op": "literal",
+              "pos": 7,
+              "value": 7.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "zero_division",
+    "formula": "0/0",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "5513e3eabba6d75402c1c34c7365c6fac01024589d0a6996329255cd18fec5cc"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "/",
+            "left": {
+              "op": "literal",
+              "pos": 0,
+              "value": 0.0
+            },
+            "right": {
+              "op": "literal",
+              "pos": 2,
+              "value": 0.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "var_redeclare",
+    "formula": "var x=7;var x;value=x;",
+    "custom": true,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": true,
+        "sha256": "41000ea76bda259ff706d239fb9c9b9272fa6f204ba76fb6a946c7f1af93488c"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [
+        "value",
+        "x"
+      ],
+      "steps": [
+        {
+          "op": "set",
+          "pos": 0,
+          "name": "x",
+          "value": {
+            "op": "literal",
+            "pos": 6,
+            "value": 7.0
+          }
+        },
+        {
+          "op": "empty",
+          "pos": 8
+        },
+        {
+          "op": "set",
+          "pos": 14,
+          "name": "value",
+          "value": {
+            "op": "local",
+            "pos": 20,
+            "name": "x"
+          }
+        }
+      ],
+      "result": "value"
+    }
+  },
+  {
+    "id": "var_hoist",
+    "formula": "value=x?7:9;var x=2;",
+    "custom": true,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": true,
+        "sha256": "400e568f693276d141fee2e1ed8b20bea29f21fd57287e58c71bc3494940b6c2"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [
+        "value",
+        "x"
+      ],
+      "steps": [
+        {
+          "op": "set",
+          "pos": 0,
+          "name": "value",
+          "value": {
+            "op": "select",
+            "pos": 6,
+            "condition": {
+              "op": "local",
+              "pos": 6,
+              "name": "x"
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 8,
+              "value": 7.0
+            },
+            "no": {
+              "op": "literal",
+              "pos": 10,
+              "value": 9.0
+            }
+          }
+        },
+        {
+          "op": "set",
+          "pos": 12,
+          "name": "x",
+          "value": {
+            "op": "literal",
+            "pos": 18,
+            "value": 2.0
+          }
+        }
+      ],
+      "result": "value"
+    }
+  },
+  {
+    "id": "var_overwrite",
+    "formula": "var cap=3;var cap=5;value=cap;",
+    "custom": true,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": true,
+        "sha256": "1cbb075db35324536f78ab7d72afc18a1d4b0079cd957e3874e39ff37f833147"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [
+        "value",
+        "cap"
+      ],
+      "steps": [
+        {
+          "op": "set",
+          "pos": 0,
+          "name": "cap",
+          "value": {
+            "op": "literal",
+            "pos": 8,
+            "value": 3.0
+          }
+        },
+        {
+          "op": "set",
+          "pos": 10,
+          "name": "cap",
+          "value": {
+            "op": "literal",
+            "pos": 18,
+            "value": 5.0
+          }
+        },
+        {
+          "op": "set",
+          "pos": 20,
+          "name": "value",
+          "value": {
+            "op": "local",
+            "pos": 26,
+            "name": "cap"
+          }
+        }
+      ],
+      "result": "value"
+    }
+  },
+  {
+    "id": "if_short",
+    "formula": "if(false){value=Math.random();}else{value=8;}",
+    "custom": true,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": true,
+        "sha256": "84635f0108c5d4e8b6088a4b9a3aacc8fdb048a05528175d40aeb66668539207"
+      },
+      "status": "pure",
+      "capabilities": [
+        "random.rule"
+      ],
+      "locals": [
+        "value"
+      ],
+      "steps": [
+        {
+          "op": "if",
+          "pos": 0,
+          "condition": {
+            "op": "literal",
+            "pos": 3,
+            "value": false
+          },
+          "yes": {
+            "op": "block",
+            "pos": 9,
+            "steps": [
+              {
+                "op": "set",
+                "pos": 10,
+                "name": "value",
+                "value": {
+                  "op": "math",
+                  "pos": 16,
+                  "name": "random",
+                  "args": []
+                }
+              }
+            ]
+          },
+          "no": {
+            "op": "block",
+            "pos": 35,
+            "steps": [
+              {
+                "op": "set",
+                "pos": 36,
+                "name": "value",
+                "value": {
+                  "op": "literal",
+                  "pos": 42,
+                  "value": 8.0
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "result": "value"
+    }
+  },
+  {
+    "id": "undefined_loose",
+    "formula": "var x;value=null==x?3:4;",
+    "custom": true,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": true,
+        "sha256": "63e13d39d8ade0784d558f602fe62be765875b324f4f7fd822091454ce075316"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [
+        "value",
+        "x"
+      ],
+      "steps": [
+        {
+          "op": "empty",
+          "pos": 0
+        },
+        {
+          "op": "set",
+          "pos": 6,
+          "name": "value",
+          "value": {
+            "op": "select",
+            "pos": 12,
+            "condition": {
+              "op": "binary",
+              "pos": 12,
+              "operator": "==",
+              "left": {
+                "op": "literal",
+                "pos": 12,
+                "value": null
+              },
+              "right": {
+                "op": "local",
+                "pos": 18,
+                "name": "x"
+              }
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 20,
+              "value": 3.0
+            },
+            "no": {
+              "op": "literal",
+              "pos": 22,
+              "value": 4.0
+            }
+          }
+        }
+      ],
+      "result": "value"
+    }
+  },
+  {
+    "id": "undefined_strict",
+    "formula": "var x;value=null===x?3:4;",
+    "custom": true,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": true,
+        "sha256": "20a2cf939f618120c78fba021541533eb2670ddbc4e82a2c4324e4bad2cabc33"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [
+        "value",
+        "x"
+      ],
+      "steps": [
+        {
+          "op": "empty",
+          "pos": 0
+        },
+        {
+          "op": "set",
+          "pos": 6,
+          "name": "value",
+          "value": {
+            "op": "select",
+            "pos": 12,
+            "condition": {
+              "op": "binary",
+              "pos": 12,
+              "operator": "===",
+              "left": {
+                "op": "literal",
+                "pos": 12,
+                "value": null
+              },
+              "right": {
+                "op": "local",
+                "pos": 19,
+                "name": "x"
+              }
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 21,
+              "value": 3.0
+            },
+            "no": {
+              "op": "literal",
+              "pos": 23,
+              "value": 4.0
+            }
+          }
+        }
+      ],
+      "result": "value"
+    }
+  },
+  {
+    "id": "empty",
+    "formula": "",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "undefined",
+            "pos": 0
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "states_length",
+    "formula": "a.states().length+3",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "a4d86adf42030dcafd21b19993b33e051f0f177e81b84cc7dda19c59c167e1f5"
+      },
+      "status": "pure",
+      "capabilities": [
+        "read.battler"
+      ],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "+",
+            "left": {
+              "op": "read",
+              "pos": 0,
+              "receiver": "a",
+              "name": "states_count",
+              "args": []
+            },
+            "right": {
+              "op": "literal",
+              "pos": 18,
+              "value": 3.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "parenthesized_power",
+    "formula": "(-2)**2",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "dd96c5c2293e28b8c55aa3f85f97253e4c72cb1687c27889f75474d88cfa9f24"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "**",
+            "left": {
+              "op": "unary",
+              "pos": 1,
+              "operator": "-",
+              "arg": {
+                "op": "literal",
+                "pos": 2,
+                "value": 2.0
+              }
+            },
+            "right": {
+              "op": "literal",
+              "pos": 6,
+              "value": 2.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "null_strict_bool",
+    "formula": "null===false?5:9",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "4e9a1359c671158216d5cbc35d7130b2afada3938bb24038318b7eb8dcad51c6"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "select",
+            "pos": 0,
+            "condition": {
+              "op": "binary",
+              "pos": 0,
+              "operator": "===",
+              "left": {
+                "op": "literal",
+                "pos": 0,
+                "value": null
+              },
+              "right": {
+                "op": "literal",
+                "pos": 7,
+                "value": false
+              }
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 13,
+              "value": 5.0
+            },
+            "no": {
+              "op": "literal",
+              "pos": 15,
+              "value": 9.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "pow_nan_zero",
+    "formula": "Math.pow(0/0,0)",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "acb60cbd77bebe7b4a10dff7718b4c80cea9754b9dc6580dfdcb3e67129e8e4e"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "math",
+            "pos": 0,
+            "name": "pow",
+            "args": [
+              {
+                "op": "binary",
+                "pos": 9,
+                "operator": "/",
+                "left": {
+                  "op": "literal",
+                  "pos": 9,
+                  "value": 0.0
+                },
+                "right": {
+                  "op": "literal",
+                  "pos": 11,
+                  "value": 0.0
+                }
+              },
+              {
+                "op": "literal",
+                "pos": 13,
+                "value": 0.0
+              }
+            ]
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "pow_op_nan_zero",
+    "formula": "(0/0)**0",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "96ff797abe5b4793c468f4e09e0e2707bf1ee5fabd8840521bbe390ce5062d50"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "**",
+            "left": {
+              "op": "binary",
+              "pos": 1,
+              "operator": "/",
+              "left": {
+                "op": "literal",
+                "pos": 1,
+                "value": 0.0
+              },
+              "right": {
+                "op": "literal",
+                "pos": 3,
+                "value": 0.0
+              }
+            },
+            "right": {
+              "op": "literal",
+              "pos": 7,
+              "value": 0.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "round_negative_zero",
+    "formula": "1/Math.round(-0.1)<0?99:1",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "3055924d6dd910409808150208a86cd2dfb9a899eb4c9f28400adf139354ec62"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "select",
+            "pos": 0,
+            "condition": {
+              "op": "binary",
+              "pos": 0,
+              "operator": "<",
+              "left": {
+                "op": "binary",
+                "pos": 0,
+                "operator": "/",
+                "left": {
+                  "op": "literal",
+                  "pos": 0,
+                  "value": 1.0
+                },
+                "right": {
+                  "op": "math",
+                  "pos": 2,
+                  "name": "round",
+                  "args": [
+                    {
+                      "op": "unary",
+                      "pos": 13,
+                      "operator": "-",
+                      "arg": {
+                        "op": "literal",
+                        "pos": 14,
+                        "value": 0.1
+                      }
+                    }
+                  ]
+                }
+              },
+              "right": {
+                "op": "literal",
+                "pos": 19,
+                "value": 0.0
+              }
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 21,
+              "value": 99.0
+            },
+            "no": {
+              "op": "literal",
+              "pos": 24,
+              "value": 1.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "round_small",
+    "formula": "Math.round(0.49999999999999994)",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "4e615ff6171784e5621359ca8c797d0b4e0f84ca868c337be8de68de455d4ff6"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "math",
+            "pos": 0,
+            "name": "round",
+            "args": [
+              {
+                "op": "literal",
+                "pos": 11,
+                "value": 0.49999999999999994
+              }
+            ]
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "min_negative_zero",
+    "formula": "1/Math.min(0,-0)<0?99:1",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "ee91e8d814e58769b231e33ed3593cb0584d98d45a524356f86d5d88586ffe6d"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "select",
+            "pos": 0,
+            "condition": {
+              "op": "binary",
+              "pos": 0,
+              "operator": "<",
+              "left": {
+                "op": "binary",
+                "pos": 0,
+                "operator": "/",
+                "left": {
+                  "op": "literal",
+                  "pos": 0,
+                  "value": 1.0
+                },
+                "right": {
+                  "op": "math",
+                  "pos": 2,
+                  "name": "min",
+                  "args": [
+                    {
+                      "op": "literal",
+                      "pos": 11,
+                      "value": 0.0
+                    },
+                    {
+                      "op": "unary",
+                      "pos": 13,
+                      "operator": "-",
+                      "arg": {
+                        "op": "literal",
+                        "pos": 14,
+                        "value": 0.0
+                      }
+                    }
+                  ]
+                }
+              },
+              "right": {
+                "op": "literal",
+                "pos": 17,
+                "value": 0.0
+              }
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 19,
+              "value": 99.0
+            },
+            "no": {
+              "op": "literal",
+              "pos": 22,
+              "value": 1.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "max_positive_zero",
+    "formula": "1/Math.max(-0,0)>0?99:1",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "7469bc2c557c9c7c607bf0fc8c4d750fa1370a1e4f5a871a89c0422ecf6c808f"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "select",
+            "pos": 0,
+            "condition": {
+              "op": "binary",
+              "pos": 0,
+              "operator": ">",
+              "left": {
+                "op": "binary",
+                "pos": 0,
+                "operator": "/",
+                "left": {
+                  "op": "literal",
+                  "pos": 0,
+                  "value": 1.0
+                },
+                "right": {
+                  "op": "math",
+                  "pos": 2,
+                  "name": "max",
+                  "args": [
+                    {
+                      "op": "unary",
+                      "pos": 11,
+                      "operator": "-",
+                      "arg": {
+                        "op": "literal",
+                        "pos": 12,
+                        "value": 0.0
+                      }
+                    },
+                    {
+                      "op": "literal",
+                      "pos": 14,
+                      "value": 0.0
+                    }
+                  ]
+                }
+              },
+              "right": {
+                "op": "literal",
+                "pos": 17,
+                "value": 0.0
+              }
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 19,
+              "value": 99.0
+            },
+            "no": {
+              "op": "literal",
+              "pos": 22,
+              "value": 1.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "pow_unit_infinity",
+    "formula": "Math.pow(-1,1/0)",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "6bf366ea42f785a51ae524eed220ab2f3b01605b4a3be5f57c5ce287b004dd24"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "math",
+            "pos": 0,
+            "name": "pow",
+            "args": [
+              {
+                "op": "unary",
+                "pos": 9,
+                "operator": "-",
+                "arg": {
+                  "op": "literal",
+                  "pos": 10,
+                  "value": 1.0
+                }
+              },
+              {
+                "op": "binary",
+                "pos": 12,
+                "operator": "/",
+                "left": {
+                  "op": "literal",
+                  "pos": 12,
+                  "value": 1.0
+                },
+                "right": {
+                  "op": "literal",
+                  "pos": 14,
+                  "value": 0.0
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "comment_cr",
+    "formula": "1 // comment\r+2",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "fe88b6162699c56dbc205374e241edf525166a4989cf96b172979f04ad4e1226"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "+",
+            "left": {
+              "op": "literal",
+              "pos": 0,
+              "value": 1.0
+            },
+            "right": {
+              "op": "literal",
+              "pos": 14,
+              "value": 2.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "comment_ls",
+    "formula": "1 // comment +2",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "8f1f91fc9bbc00924f5a120faa48fc304467af87cab372c31716d752cd52e8db"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "+",
+            "left": {
+              "op": "literal",
+              "pos": 0,
+              "value": 1.0
+            },
+            "right": {
+              "op": "literal",
+              "pos": 14,
+              "value": 2.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "asi_cr",
+    "formula": "var x=1\rvar y=2\rvalue=x+y",
+    "custom": true,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": true,
+        "sha256": "ee9322d573da4aea99e398121e9f5f416fc538d7e459e9aaf780c25cb535ad5b"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [
+        "value",
+        "x",
+        "y"
+      ],
+      "steps": [
+        {
+          "op": "set",
+          "pos": 0,
+          "name": "x",
+          "value": {
+            "op": "literal",
+            "pos": 6,
+            "value": 1.0
+          }
+        },
+        {
+          "op": "set",
+          "pos": 8,
+          "name": "y",
+          "value": {
+            "op": "literal",
+            "pos": 14,
+            "value": 2.0
+          }
+        },
+        {
+          "op": "set",
+          "pos": 16,
+          "name": "value",
+          "value": {
+            "op": "binary",
+            "pos": 22,
+            "operator": "+",
+            "left": {
+              "op": "local",
+              "pos": 22,
+              "name": "x"
+            },
+            "right": {
+              "op": "local",
+              "pos": 24,
+              "name": "y"
+            }
+          }
+        }
+      ],
+      "result": "value"
+    }
+  },
+  {
+    "id": "switch_undefined",
+    "formula": "s[4999]===false?99:1",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "5f9a841fab34820383f4c5736a6d9a1fa5c093ed57bcd2a93141bceaaff023cc"
+      },
+      "status": "pure",
+      "capabilities": [
+        "read.switches"
+      ],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "select",
+            "pos": 0,
+            "condition": {
+              "op": "binary",
+              "pos": 0,
+              "operator": "===",
+              "left": {
+                "op": "lookup",
+                "pos": 0,
+                "pool": "s",
+                "index": {
+                  "op": "literal",
+                  "pos": 2,
+                  "value": 4999.0
+                }
+              },
+              "right": {
+                "op": "literal",
+                "pos": 10,
+                "value": false
+              }
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 16,
+              "value": 99.0
+            },
+            "no": {
+              "op": "literal",
+              "pos": 19,
+              "value": 1.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "variable_hole",
+    "formula": "v[0]===null?99:1",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "0ee8678a857683c0097dce969ffd4897f1a0bc46456464114ad3482aea025bd7"
+      },
+      "status": "pure",
+      "capabilities": [
+        "read.variables"
+      ],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "select",
+            "pos": 0,
+            "condition": {
+              "op": "binary",
+              "pos": 0,
+              "operator": "===",
+              "left": {
+                "op": "lookup",
+                "pos": 0,
+                "pool": "v",
+                "index": {
+                  "op": "literal",
+                  "pos": 2,
+                  "value": 0.0
+                }
+              },
+              "right": {
+                "op": "literal",
+                "pos": 7,
+                "value": null
+              }
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 12,
+              "value": 99.0
+            },
+            "no": {
+              "op": "literal",
+              "pos": 15,
+              "value": 1.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "param_integer",
+    "formula": "a.param(1)",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "fb0cff5688ed3f02d34e4b58b8346b963c445911fda3d32a7be29e63acf03931"
+      },
+      "status": "pure",
+      "capabilities": [
+        "read.battler"
+      ],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "read",
+            "pos": 0,
+            "receiver": "a",
+            "name": "param",
+            "args": [
+              {
+                "op": "literal",
+                "pos": 8,
+                "value": 1.0
+              }
+            ]
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  {
+    "id": "lookup_bool",
+    "formula": "v[true]===0?99:1",
+    "custom": false,
+    "type": 1,
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "LanguageFixture",
+        "id": 0,
+        "custom": false,
+        "sha256": "b31d47d2bfc87c386e4a8402137bc8b9c331af2b473e9e4d33b27983c3c990d1"
+      },
+      "status": "pure",
+      "capabilities": [
+        "read.variables"
+      ],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "select",
+            "pos": 0,
+            "condition": {
+              "op": "binary",
+              "pos": 0,
+              "operator": "===",
+              "left": {
+                "op": "lookup",
+                "pos": 0,
+                "pool": "v",
+                "index": {
+                  "op": "literal",
+                  "pos": 2,
+                  "value": true
+                }
+              },
+              "right": {
+                "op": "literal",
+                "pos": 10,
+                "value": 0.0
+              }
+            },
+            "yes": {
+              "op": "literal",
+              "pos": 12,
+              "value": 99.0
+            },
+            "no": {
+              "op": "literal",
+              "pos": 15,
+              "value": 1.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  }
+]
