@@ -141,6 +141,21 @@ class CacheTests(unittest.TestCase):
             self.assertEqual(c.path.read_bytes(), previous)
             self.assertIn('ok', (self.gen / 'oracle/a.json').read_text())
 
+    def test_existing_baseline_failure_cannot_be_extended_or_changed(self):
+        known = '{"cases":[{"id":"known","error":"old failure","finished":false}]}'
+        (self.gen / 'oracle/a.json').write_text(known)
+        for text, accepted in [(known, True), (known.replace('old failure', 'new failure'), False)]:
+            def fake(*args, **kwargs):
+                (self.oracle / '.sandbox/a.json').write_text(text)
+                return subprocess.CompletedProcess(args, 0, '', '')
+            with mock.patch.multiple(sync, PROBES=[self.probes[0]], ORACLE_DIR=self.oracle, SANDBOX=self.oracle / '.sandbox'), \
+                 mock.patch.object(sync.subprocess, 'run', fake), mock.patch.dict(os.environ, XIYOU_GENERATED=str(self.gen)):
+                if accepted:
+                    self.assertEqual(sync.run_probes(io.StringIO())['executed'], ['a_probe.cjs'])
+                else:
+                    with self.assertRaises(RuntimeError):
+                        sync.run_probes(io.StringIO())
+
     def test_reused_output_is_not_replaced_from_old_sandbox(self):
         self.prime()
         (self.oracle / '.sandbox/a.json').write_text('{"stale":true}')
