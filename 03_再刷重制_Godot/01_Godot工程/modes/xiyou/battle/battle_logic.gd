@@ -70,6 +70,7 @@ func setup(troop: int, s: XState) -> void:
 		e.set_meta("y", float(m.y))
 		enemies.append(e)
 		letters[e.enemy_id] = letters.get(e.enemy_id, 0) + 1
+	XZhenqi.troop_setup(enemies, s.difficulty, elite_roll)  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
 	# 同名敌人加 Ａ Ｂ Ｃ（MV makeUniqueNames）
 	var seen := {}
 	for e in enemies:
@@ -1194,6 +1195,8 @@ func _difficulty_rates() -> Array:
 ## 敌人的掉落（MOG_TrPopUpBattle 把 makeDropItems 的结果存进 _treasure：倒下动画结束时抽一次，结算沿用同一份）。
 ## 挂机屏蔽掉落（XdRs，在 MOG 之内）与屏蔽掉落（SiShiTan PingBi，在 MOG 之外）都作用在这份结果上。
 func drops_of(e: XEnemy) -> Array:
+	if e.zq_trial_loot:
+		return []
 	if not _treasure.has(e):
 		_treasure[e] = XPingbi.filter_drops(state, XHangUp.shield_drops(state, _roll_drops(e)))
 	return _treasure[e]
@@ -1265,6 +1268,7 @@ func grant(r: Dictionary) -> Array:
 
 
 func end_battle() -> void:
+	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	for b in state.members():
 		b.immortal = false

@@ -42,7 +42,21 @@ class DungeonHost:
 
 	func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 		trace.append({"t": "battle", "troop": troop_id, "escape": can_escape, "lose": can_lose})
+		if battle_result != "lose":
+			_zhenqi_unlock(troop_id)
 		return 2 if battle_result == "lose" else 0
+
+	## 胜利时真气的灵根降服（XZhenqi.unlock_specs，BattleManager.endBattle(0) → onVictory）：参照随机数 rand 决定神话
+	func _zhenqi_unlock(troop_id: int) -> void:
+		var s := XState.current
+		var roll := MVInterpreter.fixed_random * 100.0 if MVInterpreter.fixed_random >= 0.0 else -1.0
+		var enemies := []
+		for m in XDB.rec("Troops", troop_id).get("members", []):
+			enemies.append(XEnemy.new().setup(int(m.enemyId), s.difficulty, roll))
+		var n := XZhenqi.toasts.size()
+		XZhenqi.unlock_specs(s, enemies)
+		for t in XZhenqi.toasts.slice(n):
+			trace.append({"t": "toast", "text": t})
 
 	func game_over() -> void:
 		game_over_hit = true
@@ -351,8 +365,8 @@ static func norm(v):
 
 
 ## 参照里有、Godot 尚未实现的提示（按开头匹配），比较前从参照里去掉；实现后删掉对应一项
-## - 「降服 」：真气灵根（installNativeZhenqiRuntime unlockSpecs，Boss 有灵根元素的 Element Absorb 时胜后提示），八戒 claude/bajie-zhenqi 在做
-const PENDING_TOASTS := ["降服 "]
+## （「降服 」真气灵根已由真气第二批实现：宿主胜利时调 XZhenqi.unlock_specs）
+const PENDING_TOASTS := []
 
 static func pending(want_trace) -> Array:
 	return Array(want_trace if want_trace is Array else []).filter(func(e): return not (str(e.get("t", "")) == "toast"
