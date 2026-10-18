@@ -29,6 +29,79 @@ def status_path(log):
     return Path(str(log) + '.status.json')
 
 
+def process_table():
+    """Read only process identities, never command arguments or environment values."""
+    result = subprocess.run(['ps', '-axo', 'pid=,pgid=,stat=,lstart='],
+                            capture_output=True, text=True, check=True, env=dict(os.environ, LC_ALL='C'))
+    rows = {}
+    for line in result.stdout.splitlines():
+        parts = line.split(None, 3)
+        if len(parts) == 4:
+            pid, group = int(parts[0]), int(parts[1])
+            rows[pid] = {'pid': pid, 'pgid': group, 'startedAt': parts[3], 'zombie': parts[2].startswith('Z')}
+    return rows
+
+
+def identity(row):
+    return {k: row[k] for k in ('pid', 'pgid', 'startedAt')} if row else None
+
+
+def recover_abandoned(log, job):
+    """Caller owns the released wrapper lock. Never signal an unverified process group."""
+    group, expected = job.get('childPGID'), job.get('childIdentity')
+    rows = process_table()
+    if type(group) is not int or group <= 1:
+        reason = '任务包装器已失联；旧状态缺少子进程身份，无法确认任务已结束'
+    else:
+        members = [r for r in rows.values() if r['pgid'] == group and not r['zombie']]
+        leader = rows.get(group)
+        if members and (not expected or expected.get('pid') != group or identity(leader) != expected):
+            reason = '任务包装器已失联；进程组身份无法核实，未终止未知进程，不能确认任务已结束'
+        else:
+            if members:
+                # The same leader is still present, authenticating this run's group.
+                # Recheck immediately before signalling to reject a reused PID/PGID.
+                if identity(process_table().get(group)) != expected:
+                    reason = '进程组身份已改变，不能确认旧任务已结束'
+                else:
+                    try:
+                        os.killpg(group, signal.SIGTERM)
+                    except ProcessLookupError:
+                        pass
+                    deadline = time.monotonic() + 3
+                    while time.monotonic() < deadline:
+                        if not any(r['pgid'] == group and not r['zombie'] for r in process_table().values()):
+                            break
+                        time.sleep(.05)
+                    else:
+                        try:
+                            os.killpg(group, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+                    deadline = time.monotonic() + 3
+                    while time.monotonic() < deadline and any(
+                            r['pgid'] == group and not r['zombie'] for r in process_table().values()):
+                        time.sleep(.05)
+                    reason = ('旧进程组仍未退出，不能确认任务已结束' if any(
+                        r['pgid'] == group and not r['zombie'] for r in process_table().values()) else None)
+            else:
+                reason = None
+            if reason is None:
+                job.update(status='stuck', exitCode=124, reason='任务包装器失联；已确认旧任务进程组退出',
+                           finishedAt=dt.datetime.now(dt.timezone.utc).isoformat())
+                with Path(log).open('a') as output:
+                    output.write('\nTASK_RESULT=' + json.dumps(job, ensure_ascii=False) + '\n')
+                atomic(Path(str(log) + '.exit'), '124\n')
+                atomic(status_path(Path(log)), json.dumps(job, ensure_ascii=False) + '\n')
+                return 124
+    job.update(status='orphaned', exitCode=None, reason=reason)
+    job.pop('finishedAt', None)
+    Path(str(log) + '.exit').unlink(missing_ok=True)
+    atomic(status_path(Path(log)), json.dumps(job, ensure_ascii=False) + '\n')
+    print(reason, file=sys.stderr)
+    return 2
+
+
 def stop(proc):
     try:
         os.killpg(proc.pid, signal.SIGTERM)
@@ -55,8 +128,16 @@ def run(log, command, idle=3600, poll=0.2):
         except BlockingIOError:
             print('同一日志已有任务运行', file=sys.stderr)
             return 2
+        try:
+            previous = json.loads(status_path(log).read_text())
+        except (OSError, ValueError):
+            previous = {}
+        if previous.get('status') in ('running', 'orphaned'):
+            if recover_abandoned(log, previous) == 2:
+                return 2
         job = {'runId': uuid.uuid4().hex, 'status': 'running', 'exitCode': None, 'pid': os.getpid(),
-               'startedAt': dt.datetime.now(dt.timezone.utc).isoformat(), 'command': command}
+               'startedAt': dt.datetime.now(dt.timezone.utc).isoformat(), 'command': command,
+               'childPGID': None, 'childIdentity': None}
         Path(str(log) + '.exit').unlink(missing_ok=True)
         atomic(status_path(log), json.dumps(job) + '\n')
         print('TASK_LOG=' + str(log), flush=True)
@@ -87,6 +168,8 @@ def run(log, command, idle=3600, poll=0.2):
                 env = dict(os.environ, XIYOU_LONG_TASK_MANAGED='1', PYTHONUNBUFFERED='1')
                 proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         env=env, start_new_session=True)
+                job.update(childPGID=proc.pid, childIdentity=identity(process_table().get(proc.pid)))
+                atomic(status_path(log), json.dumps(job) + '\n')
                 reader = threading.Thread(target=forward, daemon=True)
                 reader.start()
                 while proc.poll() is None:
@@ -113,6 +196,20 @@ def run(log, command, idle=3600, poll=0.2):
                 signal.signal(signal.SIGTERM, old_term)
                 if reader and reader.is_alive():
                     reader.join(timeout=3)
+                # A command may exit after spawning descendants which closed stdout.
+                # A quiet pipe alone does not prove the owned process group has ended.
+                if proc and any(r['pgid'] == proc.pid and not r['zombie'] for r in process_table().values()):
+                    stop(proc)
+                    state, code = 'failed', 1
+                    deadline = time.monotonic() + 3
+                    while time.monotonic() < deadline and any(
+                            r['pgid'] == proc.pid and not r['zombie'] for r in process_table().values()):
+                        time.sleep(.05)
+                    if any(r['pgid'] == proc.pid and not r['zombie'] for r in process_table().values()):
+                        job.update(status='orphaned', exitCode=None, reason='旧任务进程组未退出，不能确认任务已结束')
+                        atomic(status_path(log), json.dumps(job, ensure_ascii=False) + '\n')
+                        print(job['reason'], file=sys.stderr)
+                        return 2
                 job.update(status=state, exitCode=code, finishedAt=dt.datetime.now(dt.timezone.utc).isoformat())
                 marker = 'TASK_RESULT=' + json.dumps(job, ensure_ascii=False) + '\n'
                 output.write(b'\n' + marker.encode())
@@ -141,6 +238,8 @@ def wait(log, timeout=0, poll=0.2):
             try:
                 code = int(Path(str(log) + '.exit').read_text())
                 last = Path(log).read_text().splitlines()[-1]
+                if not last.startswith('TASK_RESULT='):
+                    raise ValueError('缺少任务结果标记')
                 marker = json.loads(last.removeprefix('TASK_RESULT='))
                 if marker != state or code != state['exitCode']:
                     raise ValueError('任务结果不一致')
@@ -148,31 +247,24 @@ def wait(log, timeout=0, poll=0.2):
                 return 2
             print('TASK_RESULT=' + json.dumps(state, ensure_ascii=False))
             return code
-        try:
-            os.kill(int(state['pid']), 0)
-        except ProcessLookupError:
-            # A crashed wrapper cannot emit its own terminal marker. Take its released lock,
-            # recheck the run ID, and leave an explicit abandoned/stuck result.
-            with Path(str(log) + '.lock').open('a') as lock:
-                try:
-                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                except BlockingIOError:
-                    time.sleep(poll)
-                    continue
+        if state.get('status') == 'orphaned':
+            print(state.get('reason', '旧任务失联，不能确认已结束'), file=sys.stderr)
+            return 2
+        # A held lock identifies the live wrapper. PID existence alone can point to
+        # an unrelated process after PID reuse or a reboot.
+        with Path(str(log) + '.lock').open('a') as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                pass
+            else:
                 current = json.loads(status_path(Path(log)).read_text())
                 if current.get('runId') != run_id or current.get('status') != 'running':
                     continue
-                current.update(status='stuck', exitCode=124, reason='任务进程已消失',
-                               finishedAt=dt.datetime.now(dt.timezone.utc).isoformat())
-                with Path(log).open('a') as output:
-                    output.write('\nTASK_RESULT=' + json.dumps(current, ensure_ascii=False) + '\n')
-                atomic(Path(str(log) + '.exit'), '124\n')
-                atomic(status_path(Path(log)), json.dumps(current, ensure_ascii=False) + '\n')
-            continue
-        except PermissionError:
-            pass
-        except (KeyError, ValueError, TypeError):
-            return 2
+                code = recover_abandoned(log, current)
+                if code == 2:
+                    return code
+                continue
         if timeout > 0 and time.monotonic() - start >= timeout:
             print('等待超时；任务状态仍为running', file=sys.stderr)
             return 124

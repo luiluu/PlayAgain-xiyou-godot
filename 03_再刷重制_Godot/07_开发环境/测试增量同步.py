@@ -227,14 +227,104 @@ class TaskWatchTests(unittest.TestCase):
                     except ProcessLookupError:
                         pass
 
-    def test_abandoned_runner_is_marked_stuck(self):
+    def test_descendant_with_closed_stdout_is_not_reported_as_success(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log, pidfile = Path(tmp) / 'quiet-child.log', Path(tmp) / 'child.pid'
+            child = "import os,time; from pathlib import Path; Path(%r).write_text(str(os.getpid())); time.sleep(30)" % str(pidfile)
+            parent = ("import subprocess,sys,time; subprocess.Popen([sys.executable,'-c',%r], "
+                      "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(.2)") % child
+            try:
+                p = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'run', str(log), '--', sys.executable, '-c', parent],
+                                   capture_output=True, timeout=10)
+                self.assertEqual(p.returncode, 1, p.stdout + p.stderr)
+                stat = subprocess.run(['ps', '-o', 'stat=', '-p', pidfile.read_text()], capture_output=True, text=True).stdout.strip()
+                self.assertTrue(not stat or stat.startswith('Z'), stat)
+            finally:
+                if pidfile.exists():
+                    try:
+                        os.kill(int(pidfile.read_text()), signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+
+    def test_legacy_abandoned_runner_is_unconfirmed(self):
         with tempfile.TemporaryDirectory() as tmp:
             log = Path(tmp) / 'abandoned.log'
             log.write_text('started\n')
             Path(str(log) + '.status.json').write_text(json.dumps({'runId': 'x', 'status': 'running', 'pid': 1073741824, 'exitCode': None}))
             w = subprocess.run([str(HERE / '等待任务.sh'), str(log)], capture_output=True, timeout=5)
-            self.assertEqual(w.returncode, 124, w.stdout + w.stderr)
-            self.assertEqual(json.loads(Path(str(log) + '.status.json').read_text())['status'], 'stuck')
+            self.assertEqual(w.returncode, 2, w.stdout + w.stderr)
+            self.assertEqual(json.loads(Path(str(log) + '.status.json').read_text())['status'], 'orphaned')
+            self.assertFalse(Path(str(log) + '.exit').exists())
+            self.assertNotIn('TASK_RESULT=', log.read_text())
+
+    def test_killed_wrapper_cleans_child_before_publishing_stuck_even_with_reused_wrapper_pid(self):
+        import time
+        with tempfile.TemporaryDirectory() as tmp:
+            log, pidfile, ticks = Path(tmp) / 'killed.log', Path(tmp) / 'child.pid', Path(tmp) / 'ticks'
+            child = ("import os,time; from pathlib import Path; Path(%r).write_text(str(os.getpid())); "
+                     "exec('while True:\\n Path(%r).write_text(str(time.monotonic())); time.sleep(.02)')") % (str(pidfile), str(ticks))
+            # Construct the child script without an extra escaping layer.
+            child = ("import os,time; from pathlib import Path; Path(%r).write_text(str(os.getpid()))\n"
+                     "while True:\n Path(%r).write_text(str(time.monotonic())); time.sleep(.02)") % (str(pidfile), str(ticks))
+            runner = subprocess.Popen([sys.executable, str(HERE / '长任务.py'), 'run', str(log), '--', sys.executable, '-c', child],
+                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            try:
+                deadline = time.monotonic() + 5
+                while time.monotonic() < deadline:
+                    try:
+                        state = json.loads(Path(str(log) + '.status.json').read_text())
+                        if state.get('childIdentity') and ticks.exists():
+                            break
+                    except (OSError, ValueError):
+                        pass
+                    time.sleep(.01)
+                else:
+                    self.fail('child identity was not published')
+                runner.kill(); runner.wait()
+                state['pid'] = os.getpid()  # Simulate a reused wrapper PID pointing to a live unrelated process.
+                Path(str(log) + '.status.json').write_text(json.dumps(state))
+                w = subprocess.run([str(HERE / '等待任务.sh'), str(log)], capture_output=True, timeout=10)
+                self.assertEqual(w.returncode, 124, w.stdout + w.stderr)
+                state = json.loads(Path(str(log) + '.status.json').read_text())
+                self.assertEqual(state['status'], 'stuck')
+                before = ticks.read_text(); time.sleep(.1)
+                self.assertEqual(ticks.read_text(), before, 'child still mutates after terminal result')
+                stat = subprocess.run(['ps', '-o', 'stat=', '-p', pidfile.read_text()], capture_output=True, text=True).stdout.strip()
+                self.assertTrue(not stat or stat.startswith('Z'), stat)
+            finally:
+                if runner.poll() is None:
+                    runner.kill(); runner.wait()
+                if pidfile.exists():
+                    try:
+                        os.killpg(int(pidfile.read_text()), signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+
+    def test_reused_child_group_identity_is_not_signalled_or_marked_finished(self):
+        watch = load('watch_identity_test', HERE / '长任务.py')
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / 'identity.log'; log.write_text('started\n')
+            child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], start_new_session=True)
+            try:
+                row = watch.identity(watch.process_table().get(child.pid))
+                row['startedAt'] = 'different process start time'
+                state = {'runId': 'x', 'status': 'running', 'pid': os.getpid(), 'exitCode': None,
+                         'childPGID': child.pid, 'childIdentity': row}
+                Path(str(log) + '.status.json').write_text(json.dumps(state))
+                w = subprocess.run([str(HERE / '等待任务.sh'), str(log)], capture_output=True, timeout=5)
+                self.assertEqual(w.returncode, 2, w.stdout + w.stderr)
+                self.assertIsNone(child.poll(), 'unrelated process was signalled')
+                state = json.loads(Path(str(log) + '.status.json').read_text())
+                self.assertEqual(state['status'], 'orphaned')
+                self.assertNotIn('finishedAt', state)
+                self.assertFalse(Path(str(log) + '.exit').exists())
+                self.assertNotIn('TASK_RESULT=', log.read_text())
+                rerun = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'run', str(log), '--',
+                                        sys.executable, '-c', 'print(1)'], capture_output=True, timeout=5)
+                self.assertEqual(rerun.returncode, 2)
+                self.assertEqual(json.loads(Path(str(log) + '.status.json').read_text())['runId'], 'x')
+            finally:
+                child.kill(); child.wait()
 
     def test_mismatched_or_missing_completion_is_not_success(self):
         with tempfile.TemporaryDirectory() as tmp:
