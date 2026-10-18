@@ -146,8 +146,15 @@ func _run() -> void:
 	check("mapxy_toggle", not XConfig.map_xy())
 	opt._side(true)
 	check("mapxy_right", XConfig.map_xy())
-	# 未重制的选项：确定不打开任何页
+	# Battle Camera（YEP_X_ActSeqPack3）：默认 ON，确定切换，右开左关
+	check("battle_camera_default", opt.symbols()[4] == "battleCamera" and opt.status_text(4) == "ON")
 	opt.index = 4
+	opt.ok()
+	check("battle_camera_toggle", not XConfig.flag("battleCamera") and opt.status_text(4) == "OFF")
+	opt._side(true)
+	check("battle_camera_right", XConfig.flag("battleCamera"))
+	# 未重制的选项（测试模式）：确定不打开任何页
+	opt.index = 29
 	opt.ok()
 	check("unimplemented_noop", opt._page == null)
 	# 下键循环与滚动

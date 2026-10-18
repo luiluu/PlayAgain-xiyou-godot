@@ -129,6 +129,7 @@ func _run() -> void:
 	_check("enemy_cnt_1", is_equal_approx(foe.cnt, 1.0), foe.cnt)
 	var foe_hp := foe.hp
 	logs = logic.execute(a, phys, foe)
+	logs = logs.filter(func(l): return not str(l.type).begins_with("seq"))  # 去掉行动序列的画面条目
 	_check("counter_logged", logs.size() >= 3 and logs[1].type == "counter" and logs[1].user == foe and logs[2].user == foe and logs[2].target == a, logs.map(func(l): return l.type))
 	_check("counter_negates_hit", foe.hp == foe_hp, [foe.hp, foe_hp])
 	# 必中被动：不会被反击
@@ -149,6 +150,7 @@ func _run() -> void:
 	foe_hp = foe.hp
 	var caster_hp := caster.hp
 	logs = logic.execute(caster, magic, foe)
+	logs = logs.filter(func(l): return not str(l.type).begins_with("seq"))
 	_check("reflect_logged", logs.size() >= 3 and logs[1].type == "reflect" and logs[2].target == caster, logs.map(func(l): return l.type))
 	_check("reflect_hits_user", logs.size() >= 3 and foe.hp == foe_hp and (caster.hp < caster_hp or logs[2].missed or logs[2].evaded), [foe.hp, foe_hp, caster.hp, caster_hp])
 	logic.end_battle()
