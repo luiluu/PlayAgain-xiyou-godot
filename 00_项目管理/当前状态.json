@@ -112,6 +112,6 @@
     "reviewEveryPercent": 10,
     "lastReviewAtPercent": 25,
     "nextReviewAtPercent": 35,
-    "asOf": "dev.080"
+    "asOf": "dev.085"
   }
 }
