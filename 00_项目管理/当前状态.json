@@ -1,21 +1,7 @@
 {
-  "marker": "机器可读事实；叙述性进度见交接板",
-  "review": "见交接板「待交叉核查」",
-  "updatedDate": "2026-10-18",
-  "libraryRevision": 5,
+  "marker": "机器可读事实，不写叙述；字段的维护者见 00_项目管理/规则/文件职责与记录.md「当前状态的字段」",
+  "review": "由 03_再刷重制_Godot/07_开发环境/待核查.py 生成（检查.sh 打印）",
   "root": "/Users/kyo/Documents/再刷项目资料库",
-  "currentStep": 5,
-  "steps": {
-    "1": "done_pending_cross_review",
-    "2": "dev001_entry_prototype_verified",
-    "3": "slice_mapped_rest_pending",
-    "4": "core_systems_partial",
-    "5": "floor1_slice_playable_pending_user_playtest",
-    "6": "ui_partial_original_layout_calibrated",
-    "7": "trial_export_in_review_branch_automated_checks_passed_pending_merge_cross_review_and_manual_checks",
-    "8": "not_started",
-    "9": "not_designed_entry_reserved"
-  },
   "original": {
     "steamAppId": 2059790,
     "imported": false,
@@ -87,7 +73,6 @@
     "convertedContentReleaseVersion": "v0.28",
     "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.15(help_cards,difficulty_notice),v0.16(options,hangup_options),v0.17(hangup_subpages),v0.27(shop_buy),v0.28(gear_search,status_power,equip_compare)",
     "contentRefreshPending": false,
-    "convertedScope": "floor1_slice",
     "converterVersion": 17,
     "runtimeFingerprintCount": 382,
     "oracleReleaseVersion": "v0.28",
