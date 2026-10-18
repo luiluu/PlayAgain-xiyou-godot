@@ -17,7 +17,7 @@
 - 参照：`ui_reference` 的 `__seqRef` 每帧另记敌人 [实际 HP, 血条显示值]；`suite(列表, 读数名)` 可另起读数名，`run` 加 `prep(角色, 敌人)`；`压缩序列参照.py` 第二个参数为输出文件名并带出 hp。新读数 `tests/fixtures/action_sequence_hp_oracle.json`：s131 多段攻击（角色 10，正式版目标第 4 下倒下），s104_counter_death（角色 10 生命 1、全体敌人反击率 1，首个 ACTION EFFECT 被反击击倒）。原 9 段读数未重采。
 - `tests/xiyou_sequence_visual` 27→35 项：反击致死逐帧指令时间与跳跃高度（全 80 帧与正式版一致，首个 ACTION EFFECT 第 45 帧；旧代码为第 36 帧）、结算照旧；多段攻击每下画面 HP＝该下结算值、换值帧与正式版一致（23/36/49/62）、血条滑落规则、演出后回到实时值。旧代码下这几项失败（已实测）。
 - `tests/xiyou_flow` 的 `cmd_enter_not_map_action` 修稳：按 ⌘Enter 前先等地图空闲（首次到达的自动事件在满负载时可能超过原来的 600 帧），检查同时要求按前空闲；加 10 个 CPU 满载进程跑两次都过。
-- 验证：`检查.sh --oracle` 全部通过；另跑 xiyou_battle_ui 37、xiyou_battle 8、xiyou_combat 34、xiyou_action_sequence 109 全过。
+- 验证：合并 main 后最终 `检查.sh --oracle` 全部通过（0942fbc 上，rc=0）；另跑 xiyou_battle_ui 37、xiyou_battle 8、xiyou_combat 34、xiyou_action_sequence 109 全过。
 - 提交：b6ef3e9 b1380d8 7b741b8 41eade5 644408d
 - 未完成／已知问题：正式版敌人血条另有 contentsOpacity 每帧 ±32 的淡入淡出，Godot 仍按 0.5 秒计时显隐；角色状态栏在正式版的换值帧未取读数。O-054 未使用。
 
