@@ -1,7 +1,7 @@
 # 交付：claude/wukong-dungeon6
 
 - 车道／工作者：A 内容·楼层／悟空（Claude，重制_悟空_12，接重制_悟空_11）
-- 状态：进行中（副本第五批：十九～二十一层已做，交付检查中）
+- 状态：可合并（已 merge main 492a3ba；同步 --accept-additions 已在合并八戒真气第二批后重跑留指纹，之后 main 只多文档提交）
 
 ## 变更记录草稿
 
@@ -13,7 +13,7 @@
 - 二十一层：精英 1～5 接触触发，首领 6 龟丞相不计数；主席 11 收精神酒 914。通往九尾天狐支线 Map171 的传送 8～10（守护者敌群 793）未放。
 - 首领敌群都没有战斗事件页，不涉及战斗内 101 对话与变身；本批没改 battle_logic、转换器。
 - 参照：`dungeon_probe.cjs` DUNGEONS 加 d19、d20、d21（各 5 例标准模板）＋ `d20.rare-drop`（rand 0.99 取额外奖励）共 16 例，参照总数 124；`tests/xiyou_dungeon` 静态入口表加三行。
-- 验证：同步正式西游 `--accept-additions` 只增新用例；专项 xiyou_dungeon 2097/2097、xiyou_rules、xiyou_troop_events、xiyou_event_compare 通过；事件对照 980 例 962 一致（新增 59 例全一致，既知 18 例不变），已 `--update-baseline`；内容覆盖检查 new 0；检查.sh --oracle 见下。
+- 验证：同步正式西游 `--accept-additions` 只增新用例；专项 xiyou_dungeon 2097/2097、xiyou_rules、xiyou_troop_events、xiyou_event_compare 通过；事件对照 980 例 962 一致（新增 59 例全一致，既知 18 例不变），已 `--update-baseline`；内容覆盖检查 new 0；检查.sh --oracle 全部通过（76 项测试）。
 - 未完成：三层宝箱后的深渊之门（Map056／057、Map164／165）同十七、十八层未接；二十二～二十四层副本（Map119 EV14→170、Map118 EV4→169、Map120 EV2→172）同模板未做；十六层仍待战斗内对话与变身。
 
 ## 交接板
@@ -32,4 +32,6 @@
 - 7e3e55b 十九层古龙祭坛切片与参照（d19）
 - 004ac10 二十层食人魔的晚宴切片与参照（d20、额外奖励）
 - 103f329 二十一层东海湾切片与参照（d21）
-- 事件对照 baseline 提交与两次 merge main
+- 12a1694 事件对照 baseline（980 例）
+- 5d7a3df 交付单草稿
+- 4b35912／ae01eb6／492a3ba merge main
