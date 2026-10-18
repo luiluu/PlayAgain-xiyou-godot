@@ -478,6 +478,12 @@ func _main() -> void:
 			if not XHangUp.fast_fighting(XState.current):
 				await _say("全军覆没……", 1.2)
 			logic.end_battle()
+			# MV updateBattleEnd：允许失败时，只将阵亡出战成员复活到 1 HP。
+			if can_lose:
+				for member in XState.current.battle_members():
+					if member.is_dead():
+						member.hp = 1.0
+						member.refresh_resources()
 			finished.emit(2)
 			return
 		await _play(logic.end_turn())

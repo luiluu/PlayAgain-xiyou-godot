@@ -206,9 +206,25 @@ static func _power_line(_seg: Dictionary) -> String:
 	return ""
 
 
+## 区段原表保留冻结来源；显示内容遵循已定数值原则与当前实际掉率。
+static func milestone_intro(seg: Dictionary) -> String:
+	var intro := str(seg.intro)
+	match str(seg.key):
+		"a":
+			var rate := pct(float(XDB.table("CodexOrbs").get("dropRate", 0.1)))
+			return intro.replace("20%", rate)
+		"c":
+			return "首通守层者可以获得真气；副本Boss可以反复挑战。积累真气、突破境界、学习道法，提升队伍能力。"
+		"d":
+			return "打开状态界面「修行」页的难度对照，查看暴击率、爆伤、命中与攻击的变化，再通过装备、被动和真气调整队伍。"
+		"g":
+			return intro.replace("五个乘区和难度对照", "难度对照")
+	return intro
+
+
 ## G.milestoneTexts
 static func milestone_texts(seg: Dictionary) -> Array:
-	var t := ["\\C[6]%s\\C[0]　%s" % [seg.title, seg.intro]]
+	var t := ["\\C[6]%s\\C[0]　%s" % [seg.title, milestone_intro(seg)]]
 	if not seg.get("bosses", []).is_empty():
 		t.append("\\C[4]可反复刷的副本Boss\\C[0]：" + _boss_summary(seg, 4) + "。")
 	var more: Array = seg.get("special", []).duplicate()
