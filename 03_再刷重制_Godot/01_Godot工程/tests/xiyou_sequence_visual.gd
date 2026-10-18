@@ -8,6 +8,8 @@ class QuietBattle extends XBattleScene:
 		pass
 
 const ORACLE := "res://tests/fixtures/action_sequence_oracle.json"
+## 画面快照用的正式版读数（__seqRef.suite(列表, 'action_sequence_hp_oracle')）：s131 多段攻击敌人 HP 逐帧、s104 反击致死
+const HP_ORACLE := "res://tests/fixtures/action_sequence_hp_oracle.json"
 ## 窗口模式加 -- --out=<目录>：在这些帧截图（镜头拉近、跳跃最高、透明度最低）
 const SHOTS := {"s65": [49, 70, 100], "s104": [42]}
 var results := []
@@ -51,8 +53,9 @@ func _run() -> void:
 		e.hp = e.mhp
 	for key in oracle.traces:
 		await _trace(scene, s, key, oracle.traces[key])
-	await _counter_death(scene, oracle.traces.s104)
-	await _multi_hit_gauge(scene)
+	var hp_oracle: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(HP_ORACLE))
+	await _counter_death(scene, hp_oracle.traces.s104_counter_death)
+	await _multi_hit_gauge(scene, hp_oracle.traces.s131)
 	XConfig.set_flag("battleCamera", true)
 	XConfig.set_flag("CombatSkillAnimation", false)
 	scene.queue_free()
@@ -173,9 +176,9 @@ func _play_once(scene: XBattleScene, user: XActor, skill_id: int, target: XBattl
 	return got
 
 
-## 反击致死：行动者 1 HP、目标 100% 反击，104 在首个 ACTION EFFECT 被反击击倒。MV 在指令执行时读 spriteCanMove，
-## 反击到 ACTION EFFECT 的 invokeAction 才发生，所以首个 ACTION EFFECT（含）之前的指令时间与跳跃高度
-## 应与正式版高 HP 读数（__seqRef s104）一致；结算（倒下、反击记录）照旧。
+## 反击致死（正式版读数 action_sequence_hp_oracle.json 的 s104_counter_death：行动者 1 HP、全体敌人反击率 1）：
+## MV 在指令执行时读 spriteCanMove，反击到 ACTION EFFECT 的 invokeAction 才发生，之前的跳跃照常；之后 DEATH BREAK 中断本段。
+## 逐帧比指令时间与行动者跳跃高度；结算（倒下、反击记录）照旧。
 func _counter_death(scene: XBattleScene, t: Dictionary) -> void:
 	var logic := scene.logic
 	var user: XActor = logic.actors.filter(func(a): return a.actor_id == int(t.actor))[0]
@@ -187,42 +190,31 @@ func _counter_death(scene: XBattleScene, t: Dictionary) -> void:
 	user.hp = 1.0
 	var got := await _play_once(scene, user, int(t.skill), foe)
 	foe.remove_state(cnt)
-	var first := -1
-	for c in t.cmds:
-		if str(c[1]).to_upper() == "ACTION EFFECT":
-			first = int(c[0])
-			break
-	# 到首个 ACTION EFFECT 为止（之后 DEATH BREAK 因行动者已倒下而中断，本该与高 HP 不同）
-	var cut := func(list: Array) -> Array:
-		var out := []
-		for c in list:
-			out.append([int(c[0]), str(c[1]).to_upper()])
-			if out.back()[1] == "ACTION EFFECT":
-				break
-		return out
-	var want_cmds: Array = cut.call(t.cmds)
-	var got_cmds: Array = cut.call(got.cmds)
-	check("counter_death_cmds_until_effect", got_cmds == want_cmds, {"godot": got_cmds, "mv": want_cmds})
+	var want_cmds: Array = t.cmds.map(func(c): return [int(c[0]), str(c[1]).to_upper()])
+	check("counter_death_cmds", got.cmds == want_cmds, {"godot": got.cmds, "mv": want_cmds})
 	var key := "a%d" % user.actor_id
-	var want_jump: Array = t.sprites[key].slice(0, first).map(func(r): return snappedf(float(r[2]), 0.001))
+	var want_jump: Array = t.sprites[key].map(func(r): return snappedf(float(r[2]), 0.001))
 	var bad := []
-	for f in range(mini(first, got.jump.size())):
+	for f in range(mini(want_jump.size(), got.jump.size())):
 		if absf(got.jump[f] - want_jump[f]) > 0.002:
 			bad.append([f, got.jump[f], want_jump[f]])
-	check("counter_death_jump_until_effect", bad.is_empty() and got.jump.size() > first and want_jump.max() > 0.0, bad.slice(0, 6))
+	check("counter_death_jump", bad.is_empty() and got.jump.size() == want_jump.size() and want_jump.max() > 0.0,
+		{"bad": bad.slice(0, 6), "size": [got.jump.size(), want_jump.size()]})
 	check("counter_death_settled", user.is_dead() and got.logs.any(func(l): return l.type == "counter" and l.user == foe),
 		[user.hp, got.logs.map(func(l): return l.type)])
 
 
-## 多段攻击：每一下命中时画面上的敌人 HP 是该下结算后的值（日志 views），不是最终值；最后一下与实际 HP 相同。
-func _multi_hit_gauge(scene: XBattleScene) -> void:
+## 多段攻击（正式版读数 s131：敌人 HP 逐帧）：每一下 ACTION EFFECT 当帧画面上的敌人 HP 换成该下结算后的值（日志 views），
+## 不是最终值。正式版目标第 4 下倒下（夹具敌人没加大生命），Godot 目标打不死，比前 4 段换值的帧；数值另与日志逐段核对。
+## 正式版血条显示值按 Gauge Duration 逐帧滑落，Godot 血条直接显示（未做，见交付单）。
+func _multi_hit_gauge(scene: XBattleScene, t: Dictionary) -> void:
 	var logic := scene.logic
-	var user: XActor = logic.actors[0]
+	var user: XActor = logic.actors.filter(func(a): return a.actor_id == int(t.actor))[0]
 	var foe: XBattler = logic.enemies[1]
 	for b in logic.actors + logic.enemies:
 		b.recover_all()
 	var start := foe.hp
-	var got := await _play_once(scene, user, 131, foe)
+	var got := await _play_once(scene, user, int(t.skill), foe)
 	var hits: Array = got.logs.filter(func(l): return l.type == "hit" and l.target == foe and not (l.missed or l.evaded))
 	var want := [start]
 	var hp := start
@@ -230,8 +222,20 @@ func _multi_hit_gauge(scene: XBattleScene) -> void:
 		hp = clampf(hp - float(h.hp), 0.0, foe.mhp)
 		want.append(hp)
 	var seen := []
-	for v in got.hp:
-		if seen.is_empty() or seen.back() != v:
-			seen.append(v)
-	check("multi_hit_gauge_steps", hits.size() >= 2 and seen == want and is_equal_approx(want.back(), foe.hp), {"seen": seen, "want": want, "hits": hits.size()})
+	var steps := []
+	for f in range(got.hp.size()):
+		if seen.is_empty() or seen.back() != got.hp[f]:
+			if not seen.is_empty():
+				steps.append(f)
+			seen.append(got.hp[f])
+	check("multi_hit_gauge_values", hits.size() >= 2 and seen == want and is_equal_approx(want.back(), foe.hp), {"seen": seen, "want": want})
+	var mv: Array = t.hp["e1"]
+	var mv_steps := []
+	for f in range(1, mv.size()):
+		if mv[f][0] != mv[f - 1][0]:
+			mv_steps.append(f)
+	check("multi_hit_gauge_frames", mv_steps.size() >= 2 and steps.slice(0, mv_steps.size()) == mv_steps, {"godot": steps, "mv": mv_steps})
+	var last: int = mv_steps.back() if not mv_steps.is_empty() else 0
+	var want_cmds: Array = t.cmds.map(func(c): return [int(c[0]), str(c[1]).to_upper()]).filter(func(c): return c[0] <= last)
+	check("multi_hit_cmds_until_last_mv_hit", got.cmds.filter(func(c): return c[0] <= last) == want_cmds, {"godot": got.cmds, "mv": want_cmds})
 	check("multi_hit_gauge_live_after", is_equal_approx(float(scene.view(foe).hp), foe.hp))

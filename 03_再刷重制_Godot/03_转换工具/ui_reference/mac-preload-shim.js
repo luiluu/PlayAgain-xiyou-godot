@@ -391,6 +391,8 @@ window.__refJson = function (name, obj) {
             // 连续出招时不让战斗结束：敌人加 100 万生命、全员回满（只改这场内存战斗）。
             $gameTroop.members().forEach(function(e){if(!e.__srTough){e.addParam(0,1000000);e.__srTough=true;}e.recoverAll();});
             $gameParty.battleMembers().forEach(function(a){a.recoverAll();});
+            // prep(actor, 目标敌人)：另设场景（如反击致死：行动者 1 HP、目标加反击）；只改这场内存战斗
+            if(o.prep)o.prep(actor,$gameTroop.members()[o.target||0]);
             var T=sr.trace={skill:o.skill,actor:actor.actorId(),camera:ConfigManager.battleCamera,speed:ConfigManager.battleAniSpeed,
                 animation:ConfigManager.CombatSkillAnimation,battlers:null,frames:[],cmds:[],done:false,started:false};
             if(!BattleManager.__srWrapped){
@@ -418,7 +420,9 @@ window.__refJson = function (name, obj) {
                     hud:BattleManager._windowLayer?BattleManager._windowLayer.x:0,
                     sprites:list.map(function(sp){var b=sp._battler,main=sp._mainSprite;
                         return [r3(sp.x),r3(sp.y),r3(sp._offsetX),r3(sp._offsetY),sp.scale.x<0?1:0,r3(sp.opacity),r3(sp._floatHeight||0),r3(jump(sp)),
-                            b.isActor()?motionName(sp):'',b.isActor()?sp._pattern:0,r3(main&&main.bitmap?main.anchor.y:sp.anchor.y),sp.visible?1:0];})});
+                            b.isActor()?motionName(sp):'',b.isActor()?sp._pattern:0,r3(main&&main.bitmap?main.anchor.y:sp.anchor.y),sp.visible?1:0];}),
+                    // 敌人：[实际 HP, YEP_X_VisualHpGauge 显示值]（多段攻击血条逐段变化用）
+                    hp:list.map(function(sp){var b=sp._battler,g=sp._visualHpGauge;return b.isEnemy()?[b.hp,g?g._displayedValue:null]:null;})});
                 if(BattleManager._subject!==actor||BattleManager._phase==='input'||T.frames.length>=1500)T.done=true;
             };
             s._actorCommandWindow.deactivate();
@@ -431,7 +435,8 @@ window.__refJson = function (name, obj) {
         sr.pump=function(o){o=o||{};return dh.pump({until:function(){return sr.trace&&sr.trace.done;},ms:o.ms});};
         // 套件：普通攻击、幻化龙爪 65（透明/镜头/缩放/击退）开与关镜头、104（跳跃/隐藏界面/SE）、161（浮空）、51（动画/等待/咏唱）。
         // 每条跑完刷新页面重开夹具更稳；此处按顺序在同一场战斗里接着出招（每条之后等回到角色指令窗口）。
-        sr.suite=async function(list){
+        // name：写出的读数名（默认 action_sequence_oracle；另跑几招时另起名，免得覆盖 9 段套件）
+        sr.suite=async function(list,name){
             list=list||[['attack',{skill:1}],['s65',{skill:65}],['s65_nocam',{skill:65,camera:false}],['s104',{skill:104}],['s161',{skill:161}],['s51',{skill:51}],['attack_anim',{skill:1,anim:true}],['s65_anim',{skill:65,anim:true}],['s73',{skill:73}]];
             var out=sr.out={note:'ui_reference __seqRef.suite()：正式版 YEP 行动序列逐帧（Spriteset_Battle.update 之后），战斗夹具 4 人、敌群 2。'+
                 'sprites 行：[x, y, _offsetX, _offsetY, 朝向反转, 不透明度, 浮空率, 跳跃率, 动作, 帧格, 身体锚点 y, 可见]',traces:{}};
@@ -448,7 +453,7 @@ window.__refJson = function (name, obj) {
                 out.traces[list[i][0]]=Object.assign({ok:ok},sr.trace);
             }
             ConfigManager.battleCamera=true;ConfigManager.CombatSkillAnimation=false;
-            __refJson('action_sequence_oracle',out);
+            __refJson(name||'action_sequence_oracle',out);
             return out;
         };
         // 三项偏好仅在本浏览器内存切换，不调用 ConfigManager.save。

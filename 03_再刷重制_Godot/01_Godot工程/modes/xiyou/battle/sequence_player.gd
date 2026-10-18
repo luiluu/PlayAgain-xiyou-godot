@@ -469,14 +469,21 @@ func _play_results(list: Array) -> void:
 			"hit":
 				if scene._hit_visual(l):
 					scene._collapse_visual(l.target)
-				_push_results(not (l.added.is_empty() and l.removed.is_empty()))
+				# 倒下也算状态变化（MV 结算时附加了无法战斗状态，addedStateObjects 里有它）
+				_push_results(not (l.added.is_empty() and l.removed.is_empty()) or l.died)
 			"counter":
+				# displayCounter：addText 直接加一行并 wait()（等 messageSpeed），再放攻击动画、waitForAnimation
+				lines += 1
+				wait_count = MESSAGE_SPEED
 				scene._banner(str(XDB.system().terms.messages.counterAttack).replace("%1", l.user.display_name()))
 				var a := scene._start_animation(scene._attack_animation(l.user), l.target)
 				if a:
 					anims.append(a)
 				wait_mode = "animation"
 			"reflect":
+				# displayReflection：同 displayCounter（addText＋wait，放技能动画、waitForAnimation）
+				lines += 1
+				wait_count = MESSAGE_SPEED
 				scene._banner(str(XDB.system().terms.messages.magicReflection).replace("%1", l.target.display_name()))
 				var a := scene._start_animation(int(skill.get("animationId", 0)), l.user)
 				if a:
