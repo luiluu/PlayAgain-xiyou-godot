@@ -201,6 +201,43 @@ def run(cmd, cwd, log):
         raise RuntimeError('命令失败（%d）：%s' % (p.returncode, ' '.join(cmd)))
 
 
+def run_probes(log) -> None:
+    """互不依赖的探针并行跑（AGENTS.md「省额度约定」同步提速）。每个探针一个独立存档目录
+    .sandbox/run/<探针>（开跑前复制 .sandbox 现有的 save／macport，各探针看到同样的起始状态），
+    产物照旧写 .sandbox/*.json；日志按 PROBES 顺序写回，并记每个探针的耗时。SYNC_JOBS=1 退回串行。"""
+    import concurrent.futures
+    import time
+    jobs = max(1, int(os.environ.get('SYNC_JOBS', '4')))
+    runs = SANDBOX / 'run'
+    shutil.rmtree(runs, ignore_errors=True)
+
+    def one(cmd):
+        box = runs / Path(cmd[0]).stem
+        box.mkdir(parents=True)
+        for name in ['save', 'macport']:
+            if (SANDBOX / name).is_dir():
+                shutil.copytree(SANDBOX / name, box / name)
+        env = dict(os.environ, XIYOU_ORACLE_SANDBOX=str(box))
+        t = time.time()
+        p = subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=env, capture_output=True, text=True)
+        return cmd, p.returncode, p.stdout + p.stderr, time.time() - t
+
+    slow = ['smart_ai_probe.cjs', 'event_probe.cjs', 'zhenqi_probe.cjs', 'dungeon_probe.cjs', 'sequence_probe.cjs']   # 最慢的先开跑
+    order = sorted(range(len(PROBES)), key=lambda i: slow.index(PROBES[i][0][0]) if PROBES[i][0][0] in slow else len(slow))
+    with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
+        futures = {i: pool.submit(one, PROBES[i][0]) for i in order}
+        results = [futures[i].result() for i in range(len(PROBES))]
+    failed = []
+    for cmd, code, out, sec in results:
+        log.write('$ node %s（%.0f 秒）\n' % (' '.join(cmd), sec))
+        log.write(out)
+        if code != 0:
+            failed.append(' '.join(cmd))
+    log.flush()
+    if failed:
+        raise RuntimeError('探针失败：' + '；'.join(failed))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--app', type=Path, default=DEFAULT_APP)
@@ -254,8 +291,8 @@ def main() -> int:
             report['fromWorktree'] = str(a.from_worktree)
         else:
             run([sys.executable, str(HERE / 'xiyou_export.py'), '--app', str(app), '--out', str(gen)], HERE, log)
+            run_probes(log)
             for cmd, outs in PROBES:
-                run(['node'] + cmd, ORACLE_DIR, log)
                 for rel in outs:
                     shutil.copy2(SANDBOX / rel, gen / 'oracle' / Path(rel).name)
     new_manifest = json.loads((gen / 'manifest.json').read_text())
