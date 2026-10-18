@@ -103,6 +103,21 @@ class AdditionTests(unittest.TestCase):
         new['cases'][0]['steps'] = [3]
         self.assertTrue(additions.compare_file('dungeon.json', old, new)[1])
 
+    def test_battle_event_reference_additions_preserve_existing_measurements(self):
+        old = {'schemaVersion': 1, 'scan': {'troops': [165, 824]},
+               'cases': [{'id': 'transform.pending', 'errors': [],
+                          'observed': {'messageBusy': True, 'hp': 123}}]}
+        new = copy.deepcopy(old)
+        new['cases'].append({'id': 'appear.hidden', 'errors': [], 'observed': {'hidden': False}})
+        added, problems = additions.compare_file('battle_events.json', old, new)
+        self.assertEqual(len(added), 1)
+        self.assertFalse(problems)
+        new['cases'][0]['observed']['hp'] = 124
+        self.assertTrue(additions.compare_file('battle_events.json', old, new)[1])
+        new = copy.deepcopy(old)
+        new['cases'].clear()
+        self.assertTrue(additions.compare_file('battle_events.json', old, new)[1])
+
     def test_map_additions_and_changes(self):
         new = {'width': 1, 'height': 1, 'passable': ['f']}
         self.assertFalse(additions.compare_file('maps.json', {'1': {'passable': [1]}}, {'1': {'passable': [1]}, '2': new})[1])

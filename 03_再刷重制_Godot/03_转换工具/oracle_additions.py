@@ -16,6 +16,7 @@ KEYS = {
     'dungeon.json': {'cases': ('id',)},
     'shop_stock.json': {'cases': ('id',)},
     'battle_messages.json': {'cases': ('id',)},
+    'battle_events.json': {'cases': ('id',)},
     'challenge_passives.json': {'cases': ('id',)},
     'zhenqi.json': {'cases': ('id',)},
     'guide.json': {'cases': ('id',)},
