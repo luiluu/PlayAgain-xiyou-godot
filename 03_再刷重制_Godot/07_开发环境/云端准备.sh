@@ -37,8 +37,18 @@ if [ ! -f "$GENERATED/manifest.json" ]; then
   fi
 fi
 
-if [ -f "$GENERATED/manifest.json" ] && [ ! -d "$PROJECT/.godot/imported" ]; then
+if [ -f "$GENERATED/manifest.json" ]; then
+  # imported 目录也可能来自一次失败的导入；每次让 Godot 做增量导入并核对结果。
   log "godot --import"
-  timeout 900 "$GODOT" --headless --path "$PROJECT" --import >/dev/null 2>&1 || log "导入返回非 0"
+  mkdir -p "$PROJECT/.godot"
+  import_log="$PROJECT/.godot/cloud-import.log"
+  import_rc=0
+  timeout 900 "$GODOT" --headless --path "$PROJECT" --import >"$import_log" 2>&1 || import_rc=$?
+  if [ "$import_rc" -ne 0 ] || grep -qE 'SCRIPT ERROR|^ERROR:' "$import_log"; then
+    log "导入失败（退出码 ${import_rc}），日志：$import_log"
+    tail -20 "$import_log" >&2
+    [ "$import_rc" -ne 0 ] || import_rc=1
+    exit "$import_rc"
+  fi
 fi
 echo "export GODOT=\"$GODOT\" CHECK_JOBS=$(nproc)"
