@@ -129,6 +129,7 @@ func _run() -> void:
 	_atlas_file()
 	_word_wrap()
 	await _shop_flow(shop_list)
+	await _map_milestone()
 	var failed := results.filter(func(r): return not r.passed)
 	_cmp.free()
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_guide", "passed": results.size() - failed.size(), "total": results.size(), "failed": failed.map(func(r): return r.name)}))
@@ -187,3 +188,43 @@ func _shop_flow(list: Array) -> void:
 	check("shop_flow_no_skips", interp.skipped.is_empty(), interp.skipped)
 	check("shop_flow_pending_name", str(want[0][0]).contains("待选奖励") and str(want[0][0]).contains(s.actor(1).display_name()), want[0])
 	h.free()
+
+
+func _frames(n: int) -> void:
+	for i in n:
+		await get_tree().process_frame
+
+
+func _count(text: String) -> int:
+	return XMessageBox.transcript.filter(func(t): return str(t).contains(text)).size()
+
+
+## 真实地图：方桌大厅新局，30 帧内弹出「神魔之塔 1～6 层」说明一次（记看过）；不再重弹；通过第 7 层后弹 7～12 层
+func _map_milestone() -> void:
+	XSave.dir_override = "user://test_xiyou_guide"
+	XConfig.path_override = XSave.dir().path_join("options.json")
+	XMessageBox.auto = true
+	XMessageBox.transcript.clear()
+	_fresh()
+	s.x = 14
+	s.y = 23
+	var map := XMapScene.new()
+	add_child(map)
+	await _frames(90)
+	check("map_shop_guide_npc", map.events.any(func(e): return e.event_id == 73 and e.grid == Vector2i(15, 5)), map.events.map(func(e): return e.event_id))
+	check("map_milestone_a", _count("神魔之塔 1～6 层") == 1 and XGuide.seen(s, "seg:a"), XMessageBox.transcript)
+	await _frames(90)
+	check("map_milestone_once", _count("神魔之塔 1～6 层") == 1, XMessageBox.transcript)
+	s.set_variable(20, 8)
+	await _frames(90)
+	check("map_milestone_b", _count("神魔之塔 7～12 层") == 1 and XGuide.seen(s, "seg:b"), XMessageBox.transcript)
+	XGuide.MILESTONE_ENABLED = false
+	s.set_variable(20, 14)
+	await _frames(90)
+	check("map_milestone_disabled", _count("神魔之塔 13～15 层") == 0 and not XGuide.seen(s, "seg:c"))
+	XGuide.MILESTONE_ENABLED = true
+	map.queue_free()
+	await _frames(2)
+	XMessageBox.auto = false
+	DirAccess.remove_absolute(XConfig.path_override)
+	DirAccess.remove_absolute(XSave.dir())
