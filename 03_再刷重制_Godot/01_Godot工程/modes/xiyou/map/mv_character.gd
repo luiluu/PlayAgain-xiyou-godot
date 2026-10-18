@@ -40,6 +40,8 @@ var _jump_count := 0
 var balloon_id := 0
 var _balloon_t := 0
 static var _balloon_tex: Texture2D
+var _balloon_layer: Node2D    # 气泡单独一层（MV 的 Sprite_Balloon 加在角色精灵的父节点上，不受闪光、隐藏影响）
+var _anim_hidden := false     # 动画 flashScope 3 隐藏目标（Sprite_Character.hide）
 
 
 func set_image(name: String, index: int) -> void:
@@ -152,7 +154,8 @@ func update_character() -> void:
 		_balloon_t -= 1
 		if _balloon_t <= 0:
 			balloon_id = 0
-		queue_redraw()
+		if _balloon_layer:
+			_balloon_layer.queue_redraw()
 
 
 # ---- 移动路线（MV Game_Character.processMoveCommand 的常用部分）----
@@ -259,6 +262,11 @@ func jump(dx: int, dy: int) -> void:
 func start_balloon(id: int) -> void:
 	balloon_id = id
 	_balloon_t = 8 * 8 + 12
+	if _balloon_layer == null:
+		_balloon_layer = Node2D.new()
+		_balloon_layer.draw.connect(_draw_balloon)
+		add_child(_balloon_layer)
+	_balloon_layer.queue_redraw()
 	queue_redraw()
 
 func is_balloon_playing() -> bool:
@@ -288,11 +296,30 @@ func _sync_position() -> void:
 
 
 func _draw() -> void:
-	if transparent or opacity <= 0:
+	if transparent or opacity <= 0 or _anim_hidden:
 		return
 	_draw_body()
-	if balloon_id > 0:
-		_draw_balloon()
+
+
+## 技能动画目标（Sprite_Animation._target）：flashScope 1 用 Sprite.setBlendColor 的颜色混合（只作用在行走图上）
+func set_anim_blend(c: Color) -> void:
+	if c.a <= 0.0 and not material is ShaderMaterial:
+		return
+	if not material is ShaderMaterial:
+		var mat := ShaderMaterial.new()
+		mat.shader = XBattlerSprite.body_shader()
+		material = mat
+	(material as ShaderMaterial).set_shader_parameter("blend", c)
+
+
+func anim_blend() -> Color:
+	return (material as ShaderMaterial).get_shader_parameter("blend") if material is ShaderMaterial else Color(0, 0, 0, 0)
+
+
+## flashScope 3：隐藏到时间点结束（气泡照常显示）
+func set_anim_hidden(h: bool) -> void:
+	_anim_hidden = h
+	queue_redraw()
 
 
 ## 行走图高度（气泡、动画定位用）
@@ -306,6 +333,8 @@ func sprite_height() -> float:
 
 ## Sprite_Balloon：帧号 = 7 − floor((剩余 − 12) / 8)，画在角色头顶（行走图高度处）
 func _draw_balloon() -> void:
+	if balloon_id <= 0 or transparent or opacity <= 0:
+		return
 	if _balloon_tex == null:
 		var p := XDB.img_path("system", "Balloon")
 		if p != "":
@@ -314,7 +343,7 @@ func _draw_balloon() -> void:
 		return
 	var frame := 7 - maxi(floori((_balloon_t - 12) / 8.0), 0)
 	var shift := 0.0 if is_object() else 6.0
-	draw_texture_rect_region(_balloon_tex, Rect2(-24, -sprite_height() - shift - 48, 48, 48), Rect2(frame * 48, (balloon_id - 1) * 48, 48, 48))
+	_balloon_layer.draw_texture_rect_region(_balloon_tex, Rect2(-24, -sprite_height() - shift - 48, 48, 48), Rect2(frame * 48, (balloon_id - 1) * 48, 48, 48))
 
 
 func _draw_body() -> void:

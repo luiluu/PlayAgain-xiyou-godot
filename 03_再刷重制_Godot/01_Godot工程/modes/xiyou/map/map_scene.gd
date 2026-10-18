@@ -742,6 +742,7 @@ func show_animation(ch: MVCharacter, anim_id: int) -> MVAnimation:
 	var anim := MVAnimation.play(self, anim_id, at)
 	if anim:
 		anim.z_index = 50
+		anim.target = ch    # Sprite_Animation._target 是这个角色：flashScope 1 闪光、3 隐藏作用在它身上
 	return anim
 
 

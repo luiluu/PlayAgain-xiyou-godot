@@ -58,12 +58,16 @@ def worktrees(root):
 
 
 def draft(text):
-    match = re.search(r'^## 变更记录草稿\s*\n(.*?)(?=^## 交接板\s*$|\Z)', text, re.M | re.S)
-    if not re.search(r'^- 状态：可合并(?:\s|[（(。，；：—]|$)', text, re.M):
+    """取所有「…变更记录草稿」节。变更记录条目标题都带【执行者】；节止于下一个不带【的二级标题
+    （如「## 交接板（由唐僧并入）」），不把交接板／进度账等节当成变更记录贴进去。"""
+    if not re.search(r'^- 状态：\**可合并\**(?:\s|[（(。，；：—]|$)', text, re.M):
         raise RuntimeError('交付单尚未标为可合并')
-    if not match or not match[1].strip() or '待写' in match[1]:
+    heads = list(re.finditer(r'^## (?!.*【).*$', text, re.M))
+    parts = [text[h.end():heads[i + 1].start() if i + 1 < len(heads) else len(text)].strip()
+             for i, h in enumerate(heads) if '变更记录草稿' in h[0]]
+    if not parts or not all(parts) or any('待写' in p for p in parts):
         raise RuntimeError('交付单缺少完整变更记录草稿')
-    return match[1].strip()
+    return '\n\n'.join(parts)
 
 
 def plan(root, task):

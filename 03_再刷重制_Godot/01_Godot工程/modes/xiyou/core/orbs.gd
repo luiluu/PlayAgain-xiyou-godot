@@ -298,14 +298,25 @@ static func remove_from_slot(eq: Dictionary, slot: int) -> Dictionary:
 
 ## processAugmentEffect（数据用到的几种）
 static func effect(line: String, eq: Dictionary, attach: bool, tag: String) -> void:
-	var m := RegEx.create_from_string("(?i)((?:(ELEMENT AMPLIFY))[ ](\\d+):[ ]([\\+\\-]\\d+)([%％]))").search(line)
-	if m == null:
-		m = RegEx.create_from_string("(?i)((?:ELEMENT AMPLIFY)[ ](.*):[ ]([\\+\\-]\\d+)([%％]))").search(line)
+	var key := ""
+	var value := 0.0
+	var m := RegEx.create_from_string("(?i)ELEMENT AMPLIFY[ ](\\d+):[ ]([\\+\\-]\\d+)[%％]").search(line)
+	if m:
+		key = m.get_string(1)
+		value = float(m.get_string(2))
+	else:
+		# 元素名写法：按 System.elements 的名字（不分大小写）找元素号，找不到不生效
+		m = RegEx.create_from_string("(?i)ELEMENT AMPLIFY[ ](.*):[ ]([\\+\\-]\\d+)[%％]").search(line)
+		if m:
+			var id: int = XDB.system().get("elements", []).map(func(n): return str(n).to_upper()).find(m.get_string(1).to_upper().strip_edges())
+			if id <= 0:
+				return
+			key = str(id)
+			value = float(m.get_string(2))
 	if m:
 		var yep: Dictionary = eq.get("yep", {})
 		var amp: Dictionary = yep.get("elementAmplify", {})
-		var key := m.get_string(3)
-		amp[key] = float(amp.get(key, 0.0)) + (1.0 if attach else -1.0) * float(m.get_string(4)) / 100.0
+		amp[key] = float(amp.get(key, 0.0)) + (1.0 if attach else -1.0) * value / 100.0
 		yep.elementAmplify = amp
 		eq.yep = yep
 		return

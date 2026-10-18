@@ -139,6 +139,27 @@ class AdditionTests(unittest.TestCase):
         self.assertFalse(additions.compare_file('slice_d3.json', a, b)[1])
 
 
+class DraftTests(unittest.TestCase):
+    """交付单的变更记录草稿只取草稿节；交接板等节标题带后缀时也不能贴进变更记录。"""
+
+    def test_suffixed_sections_end_draft_and_later_draft_kept(self):
+        sheet = ('# 交付\n- 状态：**可合并**；待核查\n\n## 变更记录草稿\n\n## 2026-10-18 【Codex·沙僧】甲\n\n- a\n\n'
+                 '## 2026-10-18 【Codex·沙僧】乙\n\n- b\n\n## 交接板（由唐僧在main并入）\n\n- 板\n\n'
+                 '## 用户定案的追加变更记录草稿\n\n## 2026-10-18 【Codex·沙僧】丙\n\n- c\n\n'
+                 '## 进度账\n\n- 账\n\n## 本分支提交\n\n- x\n')
+        body = merge.draft(sheet)
+        self.assertEqual([line for line in body.splitlines() if line.startswith('## ')],
+                         ['## 2026-10-18 【Codex·沙僧】甲', '## 2026-10-18 【Codex·沙僧】乙', '## 2026-10-18 【Codex·沙僧】丙'])
+        self.assertNotIn('板', body)
+        self.assertNotIn('账', body)
+
+    def test_unmarked_or_empty_draft_rejected(self):
+        with self.assertRaises(RuntimeError):
+            merge.draft('- 状态：进行中\n\n## 变更记录草稿\n\n## 日期 【Claude】x\n')
+        with self.assertRaises(RuntimeError):
+            merge.draft('- 状态：可合并\n\n## 变更记录草稿\n\n## 交接板\n- y\n')
+
+
 def ledger():
     return '''## 进度账
 

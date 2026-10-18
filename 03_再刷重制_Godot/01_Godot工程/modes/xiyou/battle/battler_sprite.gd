@@ -303,15 +303,19 @@ func _hook_scene_finished() -> void:
 		(a as AnimatedSprite2D).animation_finished.connect(done)
 
 
+static func body_shader() -> Shader:
+	if _body_shader == null:
+		_body_shader = Shader.new()
+		_body_shader.code = BODY_SHADER
+	return _body_shader
+
+
 ## 身体的 BODY_SHADER 材质（用到时才建）。场景外观里没有自己材质的子节点跟着用；
 ## 自带材质的子节点（外观作者的特效、描边等）保留自己的材质，不被色相/闪光盖掉。
 func _body_material() -> ShaderMaterial:
 	if not sprite.material is ShaderMaterial:
-		if _body_shader == null:
-			_body_shader = Shader.new()
-			_body_shader.code = BODY_SHADER
 		var mat := ShaderMaterial.new()
-		mat.shader = _body_shader
+		mat.shader = body_shader()
 		sprite.material = mat
 		for n in sprite.find_children("*", "CanvasItem", true, false):
 			if (n as CanvasItem).material == null:

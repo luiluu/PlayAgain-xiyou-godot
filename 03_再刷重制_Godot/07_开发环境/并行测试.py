@@ -19,7 +19,7 @@ import tempfile
 import time
 from pathlib import Path
 
-TIMEOUT = 300
+TIMEOUT = 600  # xiyou_rules 角色 P0 后单跑约 200 秒，满负载并行时超过 300
 
 
 def result_ok(rc: int, out: str) -> bool:

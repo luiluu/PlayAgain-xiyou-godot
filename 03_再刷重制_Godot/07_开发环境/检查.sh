@@ -21,11 +21,11 @@ python3 - "$ROOT" <<'PY' || FAIL=1
 import json, re, subprocess, sys
 from pathlib import Path
 root = Path(sys.argv[1]); bad = []
-# 历史只追加：防止合并交付单时把变更记录整页替换成当批条目。
-history = '00_项目管理/变更记录.md'
-previous = subprocess.run(['git', 'show', 'HEAD:' + history], cwd=root, capture_output=True, text=True)
-if previous.returncode == 0 and previous.stdout.strip() and not (root / history).read_text().startswith(previous.stdout.rstrip()):
-    bad.append('变更记录的既有正文被改写或删除；请恢复历史后只追加本轮记录')
+# 历史只追加：防止合并交付单时把变更记录整页替换成当批条目；分卷＋当前卷连起来与 HEAD 比（规则：文件职责与记录「变更记录分卷」）
+tools = root / '03_再刷重制_Godot/07_开发环境'
+history = subprocess.run([sys.executable, str(tools / '变更记录分卷.py'), '--check', '--root', str(root)], capture_output=True, text=True)
+if history.returncode: bad.append(history.stdout.strip().removeprefix('✗ ') or '变更记录分卷检查失败：' + history.stderr.strip()[-200:])
+volumes = '00_项目管理/变更记录卷/'  # 只读分卷：链接与占位检查只扫当前卷
 gd = subprocess.run(['git', 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'], cwd=root, capture_output=True, text=True).stdout.split('\n')
 in_worktree = len(gd) > 1 and gd[0] != gd[1]
 main_root = Path(gd[1]).parent if in_worktree else root  # worktree 里不入 Git 的本地证据（验证与备份、本地结果）只在主工作区
@@ -33,7 +33,7 @@ files = subprocess.run(['git', '-c', 'core.quotePath=false', 'ls-files', '--cach
                        cwd=root, capture_output=True, text=True).stdout.splitlines()
 for rel in files:
     p = root / rel
-    if not p.is_file():
+    if not p.is_file() or rel.startswith(volumes):
         continue
     if p.suffix == '.json':
         try: json.loads(p.read_text())
@@ -67,12 +67,9 @@ if not in_worktree:
     hits = [f for f in files if f not in exempt and f.endswith(('.md', '.json', '.gd', '.py', '.sh')) and (root / f).is_file()
             and marker in (root / f).read_text(errors='ignore')]
     if hits: bad.append(marker + ' 未替换：' + '、'.join(hits))
-# 执行—核查双轨流程（AGENTS.md）：待交叉核查超过 10 行时提示（用户 2026-10-15 由 4 改 10）（不判失败，超限期间仍要能收工修复）
-board = (root / '00_项目管理/交接板.md').read_text()
-pending = board.split('## 待交叉核查', 1)[1].split('\n## ', 1)[0] if '## 待交叉核查' in board else ''
-rows = [l for l in pending.splitlines() if l.startswith('| ') and not l.startswith('| 提交 ') and not l.startswith('| ---')]
-if len(rows) > 10:
-    print(f'  ⚠ 待交叉核查 {len(rows)} 行，超过 10 行上限：停派新车道、停新功能，先启动 Codex（沙僧）核查')
+# 执行—核查双轨流程：待交叉核查由提交尾注生成，超过 10 批时提示（用户 2026-10-15 由 4 改 10）（不判失败，超限期间仍要能收工修复）
+review = subprocess.run([sys.executable, str(tools / '待核查.py'), '--root', str(root), '--limit', '10'], capture_output=True, text=True)
+print(review.stdout.rstrip() if review.returncode == 0 else '  ⚠ 待核查清单生成失败：' + review.stderr.strip()[-200:])
 for b in bad: print('  ✗ ' + b)
 print(f'  ✓ JSON、链接、开发编号（{dev}）' if not bad else f'  共 {len(bad)} 项问题')
 sys.exit(1 if bad else 0)
@@ -90,10 +87,12 @@ print "== 参照工具访问守卫"
 if node "$ROOT/03_再刷重制_Godot/03_转换工具/mv_oracle/guard_check.cjs"; then ok "MV 文件守卫"; else bad "MV 文件守卫"; fi
 if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/ui_reference/guard_check.py"; then ok "界面参照服务守卫"; else bad "界面参照服务守卫"; fi
 if python3 "$ENV_DIR/测试工作树清理.py" >/dev/null; then ok "工作树清理保护"; else bad "工作树清理保护"; fi
+if python3 "$ENV_DIR/测试导出过滤.py"; then ok "导出包排除测试与参照数据"; else bad "导出过滤没挡住测试或参照数据"; fi
 if python3 "$ENV_DIR/测试共性验收.py"; then ok "共性参照对照工具保护"; else bad "共性验收工具回归失败"; fi
 if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/共性参照验收.py"; then ok "共性参照完整性（尚非Godot实现验收）"; else bad "共性参照缺失或异常"; fi
 if python3 "$ENV_DIR/测试合并工具.py"; then ok "新增用例、进度账与合并保护"; else bad "合并工具回归失败"; fi
 if python3 "$ENV_DIR/测试公式程序.py"; then ok "结构化公式编译边界"; else bad "公式编译边界失败"; fi
+if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi
 if python3 "$ENV_DIR/测试云端准备.py"; then ok "云端导入失败保护"; else bad "云端导入保护回归失败"; fi
 if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi
 # 内容覆盖（沙僧协助计划第 8 项）：缺素材／无效引用／未翻译不得出现基线外的新问题；修好或接受后 --update-baseline
