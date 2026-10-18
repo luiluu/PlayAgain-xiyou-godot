@@ -1,7 +1,7 @@
 class_name XFormulaProgram
 extends RefCounted
 ## Bounded formula VM. Context consists of detached values; no Object/Callable access.
-## Phase 1 runs beside the current damage path; it does not replace that path.
+## Readonly entry rejects effects; explicit action execution uses a trusted subclass.
 const UNDEFINED := &"formula_undefined"
 var _locals := {}
 var _context := {}
@@ -17,23 +17,26 @@ static func evaluate(program: Dictionary, context: Dictionary, damage_type := 1,
 		return {"available": false, "value": 0.0, "diagnostic": "unsupported_program", "randomDraws": 0}
 	if not _detached(context) or not _detached(options):
 		return {"available": false, "value": 0.0, "diagnostic": "context_must_be_detached", "randomDraws": 0}
+	return vm._run(program, context, damage_type, options)
+
+func _run(program: Dictionary, context: Dictionary, damage_type: int, options: Dictionary) -> Dictionary:
 	# The VM only reads these dictionaries; retaining the graph preserves aliases.
-	vm._context = context
-	vm._options = options
+	_context = context
+	_options = options
 	for name in program.get("locals", []):
-		vm._locals[str(name)] = 0.0 if str(name) == "value" else UNDEFINED
+		_locals[str(name)] = 0.0 if str(name) == "value" else UNDEFINED
 	for step in program.get("steps", []):
-		vm._step(step)
-		if not vm._error.is_empty():
+		_step(step)
+		if not _error.is_empty():
 			break
-	var raw = vm._locals.get("value", 0.0) if program.get("result") == "value" else vm._completion
-	var number := vm._number(raw)
+	var raw = _locals.get("value", 0.0) if program.get("result") == "value" else _completion
+	var number := _number(raw)
 	var signed_value := number if is_nan(number) else maxf(0.0, number) * (-1.0 if damage_type in [3, 4] else 1.0)
 	var native_kind := "nan" if is_nan(signed_value) else ("positive-infinity" if signed_value > 0 else "negative-infinity") if is_inf(signed_value) else "finite"
 	# Keep the existing Godot damage adapter's finite guard, while exposing the
 	# native outcome kind so NaN/Infinity are measured instead of silently hidden.
-	var value := 0.0 if is_nan(signed_value) or is_inf(signed_value) or not vm._error.is_empty() else signed_value
-	return {"available": vm._error.is_empty(), "value": value, "sourceValueKind": native_kind, "diagnostic": vm._error, "randomDraws": vm._draws}
+	var value := 0.0 if is_nan(signed_value) or is_inf(signed_value) or not _error.is_empty() else signed_value
+	return {"available": _error.is_empty(), "value": value, "sourceValueKind": native_kind, "diagnostic": _error, "randomDraws": _draws}
 
 static func _detached(value, depth := 0) -> bool:
 	if depth > 64 or value is Object or value is Callable or value is Signal:
@@ -103,7 +106,7 @@ func _expr(n: Dictionary):
 		"undefined": return UNDEFINED
 		"local": return _locals.get(str(n.name), UNDEFINED)
 		"property":
-			var row: Dictionary = _context.get(str(n.receiver), {})
+			var row: Dictionary = _row(str(n.receiver))
 			return row.get("properties", {}).get(str(n.name), UNDEFINED)
 		"lookup":
 			var index = _expr(n.index)
@@ -146,11 +149,20 @@ func _expr(n: Dictionary):
 			if n.operator == "||":
 				return left if _truth(left) else _expr(n.right)
 			return _binary(str(n.operator), left, _expr(n.right))
+		"gain":
+			var amount := _number(_expr(n.amount))
+			return _gain(str(n.receiver), str(n.resource), amount) if _error.is_empty() else UNDEFINED
 		"math": return _math(n)
 	return _fail("unknown_expression")
 
+func _row(receiver: String) -> Dictionary:
+	return _context.get(receiver, {})
+
+func _gain(_receiver: String, _resource: String, _amount: float):
+	return _fail("write_capability_required")
+
 func _read(n: Dictionary):
-	var row: Dictionary = _context.get(str(n.receiver), {})
+	var row: Dictionary = _row(str(n.receiver))
 	var args: Array = n.args.map(func(a): return _expr(a))
 	var index := float(args[0]) if args.size() == 1 and (args[0] is int or args[0] is float) else NAN
 	var key := str(int(index)) if not is_nan(index) and not is_inf(index) and floorf(index) == index else ""

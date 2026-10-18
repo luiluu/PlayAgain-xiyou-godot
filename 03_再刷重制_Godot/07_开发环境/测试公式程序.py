@@ -25,7 +25,7 @@ class FormulaCompilerTests(unittest.TestCase):
 
     def test_unknown_and_host_access_rejected_as_whole_program(self):
         for source in ['eval(1)', 'a.constructor()', 'a.hp=1; 0', 'v[0]=2;0', 'Math.unknown(2)',
-                       'a.gainHp(-3);0', 'value=2; b.gainMp(-1);', 'while(true){}',
+                       'while(true){}',
                        'a[1]', 'new Object()', 'a.get(1)', 'Math.random(2)',
                        'function f(){}', 'a.hp; process.exit(0)', 'var a=2;value=1',
                        'let x=1;value=x', 'const x=1;value=x', '010', '-2**2', 'var true=1;5',
@@ -37,6 +37,13 @@ class FormulaCompilerTests(unittest.TestCase):
                 self.assertEqual(p['status'], 'unsupported', p)
                 self.assertFalse(p['steps'])
                 self.assertIn('line', p['diagnostic'])
+
+    def test_effects_require_explicit_write_capability(self):
+        p = compile_formula('var x=b.hp; b.gainHp(-3); if(x>2)b.gainMp(-1); value=b.hp;', custom=True)
+        self.assertEqual(p['status'], 'effectful')
+        self.assertTrue({'write.hp', 'write.mp'} <= set(p['capabilities']))
+        for source in ['b.gainHp()', 'b.gainMp(1,2)', 'b.addShield(1);value=0;', 'b.setHp(1);value=0;']:
+            self.assertEqual(compile_formula(source, custom=True)['status'], 'unsupported')
 
     def test_source_identity_and_bounds(self):
         p = compile_formula('a.hp+1', 7)

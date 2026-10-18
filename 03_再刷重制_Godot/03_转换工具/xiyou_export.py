@@ -716,7 +716,7 @@ class Exporter:
                 if not rec or 'damage' not in rec:
                     continue
                 status = rec['damage']['formulaProgram']['status']
-                key = 'pureSupported' if status == 'pure' else 'unsupportedActiveDamage' if rec['damage']['type'] else 'unsupportedNoDamage'
+                key = 'pureSupported' if status == 'pure' else 'effectfulSupported' if status == 'effectful' else 'unsupportedActiveDamage' if rec['damage']['type'] else 'unsupportedNoDamage'
                 counts[key] += 1
             program_stats[table] = counts
         manifest = {'tool': 'xiyou_export.py', 'toolVersion': TOOL_VERSION, 'source': str(self.app),

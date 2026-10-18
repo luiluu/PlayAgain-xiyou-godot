@@ -251,8 +251,14 @@ class Compiler:
                         raise Unsupported('parameter_requires_constant_index', pos)
                 self.caps.add('read.battler')
                 return out('read', receiver=ALIASES[owner], name=canonical, args=[self.lower(x) for x in args])
-            if owner in ALIASES and method in ('gainHp', 'gainMp', 'gainTp', 'addShield'):
-                raise Unsupported('effectful_runtime_pending:' + method, pos)
+            if owner in ALIASES and method in ('gainHp', 'gainMp', 'gainTp'):
+                if len(args) != 1:
+                    raise Unsupported('invalid_arity:' + method, pos)
+                resource = method[4:].lower()
+                self.caps.add('write.' + resource)
+                return out('gain', receiver=ALIASES[owner], resource=resource, amount=self.lower(args[0]))
+            if owner in ALIASES and method == 'addShield':
+                raise Unsupported('shield_runtime_pending', pos)
             raise Unsupported('unsupported_call:' + owner + '.' + method, pos)
         if op in ('declare', 'assign'):
             if n['name'] not in self.locals:
@@ -292,7 +298,7 @@ class Compiler:
         if not self.custom and (not tree or tree[-1]['op'] != 'expr'):
             raise Unsupported('missing_expression_result')
         steps = [self.lower(x) for x in tree]
-        return {'status': 'pure', 'capabilities': sorted(self.caps), 'locals': list(self.locals),
+        return {'status': 'effectful' if any(x.startswith('write.') for x in self.caps) else 'pure', 'capabilities': sorted(self.caps), 'locals': list(self.locals),
                 'steps': steps, 'result': 'value' if self.custom else 'completion'}
 
 

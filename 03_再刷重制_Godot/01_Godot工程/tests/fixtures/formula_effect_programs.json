@@ -1,0 +1,406 @@
+{
+  "language.zero": {
+    "formula": "b.gainHp(0); b.gainMp(0); b.gainTp(0); value=1;",
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "Skills",
+        "id": 857,
+        "custom": true,
+        "sha256": "8e2686d27392f1bb20aade8560d4c96ff79ca722d43f9852d026ae798ba1fa38"
+      },
+      "status": "effectful",
+      "capabilities": [
+        "write.hp",
+        "write.mp",
+        "write.tp"
+      ],
+      "locals": [
+        "value"
+      ],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "gain",
+            "pos": 0,
+            "receiver": "b",
+            "resource": "hp",
+            "amount": {
+              "op": "literal",
+              "pos": 9,
+              "value": 0.0
+            }
+          }
+        },
+        {
+          "op": "expr",
+          "pos": 13,
+          "value": {
+            "op": "gain",
+            "pos": 13,
+            "receiver": "b",
+            "resource": "mp",
+            "amount": {
+              "op": "literal",
+              "pos": 22,
+              "value": 0.0
+            }
+          }
+        },
+        {
+          "op": "expr",
+          "pos": 26,
+          "value": {
+            "op": "gain",
+            "pos": 26,
+            "receiver": "b",
+            "resource": "tp",
+            "amount": {
+              "op": "literal",
+              "pos": 35,
+              "value": 0.0
+            }
+          }
+        },
+        {
+          "op": "set",
+          "pos": 39,
+          "name": "value",
+          "value": {
+            "op": "literal",
+            "pos": 45,
+            "value": 1.0
+          }
+        }
+      ],
+      "result": "value"
+    }
+  },
+  "language.lazy": {
+    "formula": "if(false){b.gainHp(-99);} value=2;",
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "Skills",
+        "id": 857,
+        "custom": true,
+        "sha256": "a5e41a2b39d08e190438cdd306a7a9f0a71644eb1af80e8392755c7e6e023e20"
+      },
+      "status": "effectful",
+      "capabilities": [
+        "write.hp"
+      ],
+      "locals": [
+        "value"
+      ],
+      "steps": [
+        {
+          "op": "if",
+          "pos": 0,
+          "condition": {
+            "op": "literal",
+            "pos": 3,
+            "value": false
+          },
+          "yes": {
+            "op": "block",
+            "pos": 9,
+            "steps": [
+              {
+                "op": "expr",
+                "pos": 10,
+                "value": {
+                  "op": "gain",
+                  "pos": 10,
+                  "receiver": "b",
+                  "resource": "hp",
+                  "amount": {
+                    "op": "unary",
+                    "pos": 19,
+                    "operator": "-",
+                    "arg": {
+                      "op": "literal",
+                      "pos": 20,
+                      "value": 99.0
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "no": {
+            "op": "empty",
+            "pos": 0
+          }
+        },
+        {
+          "op": "set",
+          "pos": 26,
+          "name": "value",
+          "value": {
+            "op": "literal",
+            "pos": 32,
+            "value": 2.0
+          }
+        }
+      ],
+      "result": "value"
+    }
+  },
+  "language.after_write_error": {
+    "formula": "b.gainHp(-7); value=a.skillMasteryLevel(1); b.gainMp(-9);",
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "Skills",
+        "id": 857,
+        "custom": true,
+        "sha256": "279724f9167a2f9d5d209c9feee6038453e30f92b598ba3a86d4c0ee8d724db0"
+      },
+      "status": "effectful",
+      "capabilities": [
+        "read.battler",
+        "write.hp",
+        "write.mp"
+      ],
+      "locals": [
+        "value"
+      ],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "gain",
+            "pos": 0,
+            "receiver": "b",
+            "resource": "hp",
+            "amount": {
+              "op": "unary",
+              "pos": 9,
+              "operator": "-",
+              "arg": {
+                "op": "literal",
+                "pos": 10,
+                "value": 7.0
+              }
+            }
+          }
+        },
+        {
+          "op": "set",
+          "pos": 14,
+          "name": "value",
+          "value": {
+            "op": "read",
+            "pos": 20,
+            "receiver": "a",
+            "name": "mastery",
+            "args": [
+              {
+                "op": "literal",
+                "pos": 40,
+                "value": 1.0
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "pos": 44,
+          "value": {
+            "op": "gain",
+            "pos": 44,
+            "receiver": "b",
+            "resource": "mp",
+            "amount": {
+              "op": "unary",
+              "pos": 53,
+              "operator": "-",
+              "arg": {
+                "op": "literal",
+                "pos": 54,
+                "value": 9.0
+              }
+            }
+          }
+        }
+      ],
+      "result": "value"
+    }
+  },
+  "language.before_write_error": {
+    "formula": "value=a.skillMasteryLevel(1); b.gainHp(-7);",
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "Skills",
+        "id": 857,
+        "custom": true,
+        "sha256": "b28c42b6e1a2279ae6cb139a87af63ee22a617e5606917a87f455e83ee17b8c1"
+      },
+      "status": "effectful",
+      "capabilities": [
+        "read.battler",
+        "write.hp"
+      ],
+      "locals": [
+        "value"
+      ],
+      "steps": [
+        {
+          "op": "set",
+          "pos": 0,
+          "name": "value",
+          "value": {
+            "op": "read",
+            "pos": 6,
+            "receiver": "a",
+            "name": "mastery",
+            "args": [
+              {
+                "op": "literal",
+                "pos": 26,
+                "value": 1.0
+              }
+            ]
+          }
+        },
+        {
+          "op": "expr",
+          "pos": 30,
+          "value": {
+            "op": "gain",
+            "pos": 30,
+            "receiver": "b",
+            "resource": "hp",
+            "amount": {
+              "op": "unary",
+              "pos": 39,
+              "operator": "-",
+              "arg": {
+                "op": "literal",
+                "pos": 40,
+                "value": 7.0
+              }
+            }
+          }
+        }
+      ],
+      "result": "value"
+    }
+  },
+  "language.repeated": {
+    "formula": "b.gainHp(-3000); b.gainMp(-4); b.gainTp(-3); b.gainHp(0); value=b.mp;",
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "Skills",
+        "id": 857,
+        "custom": true,
+        "sha256": "a41ccc737e663a8de45f2193654312202884266bb5e020734956c0be12df6afd"
+      },
+      "status": "effectful",
+      "capabilities": [
+        "read.battler",
+        "write.hp",
+        "write.mp",
+        "write.tp"
+      ],
+      "locals": [
+        "value"
+      ],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "gain",
+            "pos": 0,
+            "receiver": "b",
+            "resource": "hp",
+            "amount": {
+              "op": "unary",
+              "pos": 9,
+              "operator": "-",
+              "arg": {
+                "op": "literal",
+                "pos": 10,
+                "value": 3000.0
+              }
+            }
+          }
+        },
+        {
+          "op": "expr",
+          "pos": 17,
+          "value": {
+            "op": "gain",
+            "pos": 17,
+            "receiver": "b",
+            "resource": "mp",
+            "amount": {
+              "op": "unary",
+              "pos": 26,
+              "operator": "-",
+              "arg": {
+                "op": "literal",
+                "pos": 27,
+                "value": 4.0
+              }
+            }
+          }
+        },
+        {
+          "op": "expr",
+          "pos": 31,
+          "value": {
+            "op": "gain",
+            "pos": 31,
+            "receiver": "b",
+            "resource": "tp",
+            "amount": {
+              "op": "unary",
+              "pos": 40,
+              "operator": "-",
+              "arg": {
+                "op": "literal",
+                "pos": 41,
+                "value": 3.0
+              }
+            }
+          }
+        },
+        {
+          "op": "expr",
+          "pos": 45,
+          "value": {
+            "op": "gain",
+            "pos": 45,
+            "receiver": "b",
+            "resource": "hp",
+            "amount": {
+              "op": "literal",
+              "pos": 54,
+              "value": 0.0
+            }
+          }
+        },
+        {
+          "op": "set",
+          "pos": 58,
+          "name": "value",
+          "value": {
+            "op": "property",
+            "pos": 64,
+            "receiver": "b",
+            "name": "mp"
+          }
+        }
+      ],
+      "result": "value"
+    }
+  }
+}

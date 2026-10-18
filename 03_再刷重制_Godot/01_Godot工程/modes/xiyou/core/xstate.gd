@@ -34,6 +34,41 @@ var play_seconds := 0.0
 var encounter_count := 0
 ## Star_RomGetItems 的装备预掷随机池（见 XGear），随存档保存
 var rom := {"x": [], "xn": 0, "xs": [], "xsn": 0, "g": [], "gn": 0}
+## Initialized only when actual play first needs a stream. Loading/previews keep legacy pools intact.
+var random_master := ""
+var battle_serial := 0
+var _equipment_random: XRandomStream
+
+func _ensure_random_master() -> void:
+	if random_master.is_empty():
+		random_master = XRandomStream.derive(XRandomStream.hex64(orb_seed), "world")
+
+func reserve_battle_random() -> XBattleRandom:
+	_ensure_random_master()
+	var out := XBattleRandom.create(XRandomStream.derive(random_master, "battle:" + str(battle_serial)), battle_serial)
+	battle_serial += 1
+	return out
+
+func equipment_random() -> XRandomStream:
+	_ensure_random_master()
+	if _equipment_random == null:
+		_equipment_random = XRandomStream.create(XRandomStream.derive(random_master, "equipment"), "equipment")
+	return _equipment_random
+
+func random_save() -> Dictionary:
+	return {"version": 1, "engine": XRandomStream.ENGINE, "master": random_master,
+		"battleSerial": battle_serial, "equipment": _equipment_random.snapshot() if _equipment_random != null else {}}
+
+static func valid_random_save(data) -> bool:
+	if not data is Dictionary or data.get("version") != 1 or data.get("engine") != XRandomStream.ENGINE:
+		return false
+	var serial = data.get("battleSerial")
+	if not (serial is int or serial is float) or not is_finite(float(serial)) or float(serial) < 0 or float(serial) != floorf(float(serial)) or float(serial) >= 9007199254740992.0:
+		return false
+	if not data.get("master") is String or (data.master != "" and not XRandomStream.valid_hex(data.master)):
+		return false
+	var equipment = data.get("equipment")
+	return equipment is Dictionary and (equipment.is_empty() or (data.master != "" and XRandomStream.valid_saved(equipment) and equipment.domain == "equipment" and not equipment.get("scripted", false)))
 ## Galv_NewItemIndication 的 $gameSystem._seenItems：看过的物品（物品 ID／装备实例 ID）不再画 NEW
 var seen := {}
 ## 事件脚本里给 $gameParty / $gamePlayer 挂的零散标记（DCultyL1～8 等），按原名保存
@@ -317,7 +352,7 @@ func _gain_raw(id: int, amount: int) -> void:
 func gain_gear(kind: String, base_id: int, amount: int) -> void:
 	if amount > 0:
 		for i in range(amount):
-			var inst := XGear.create(kind, base_id)
+			var inst := XGear.create(kind, base_id, self)
 			if not inst.is_empty():
 				register_gear(inst)
 				gear.append(inst)
@@ -380,10 +415,17 @@ func to_dict() -> Dictionary:
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac,
-		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "random": random_save()}
 
 static func from_dict(d: Dictionary) -> XState:
+	if d.has("random") and not valid_random_save(d.random):
+		return null
 	var s := XState.new()
+	if d.has("random"):
+		s.random_master = d.random.master
+		s.battle_serial = int(d.random.battleSerial)
+		if not d.random.equipment.is_empty():
+			s._equipment_random = XRandomStream.restore(d.random.equipment)
 	s.difficulty = int(d.difficulty)
 	for id_s in d.actors:
 		var row: Dictionary = d.actors[id_s]

@@ -74,6 +74,8 @@ static func exists(slot: int) -> bool:
 static func valid_data(d) -> bool:
 	if not d is Dictionary or str(d.get("mode", "")) != "xiyou":
 		return false
+	if d.has("random") and not XState.valid_random_save(d.random):
+		return false
 	if not (d.get("version") is int or d.get("version") is float) or int(d.version) not in [1, XState.SAVE_VERSION]:
 		return false
 	for key in ["difficulty", "gold", "mapId", "x", "y", "direction", "steps", "playSeconds"]:

@@ -22,6 +22,29 @@ var drop_lock := false
 var _treasure := {}
 var auto := false
 var state: XState
+var random: XBattleRandom
+var _ids := {}
+var _action_resources: XResourceContext
+var _formula_outcome := {}
+
+func _rule() -> XRandomStream:
+	if random == null:
+		random = state.reserve_battle_random() if state != null else XBattleRandom.create(XRandomStream.hex64(XState._fresh_seed()))
+	return random.rule
+
+func _float(reason: String) -> float:
+	return _rule().next_float(reason, str(turn))
+
+func _int(lo: int, hi: int, reason: String) -> int:
+	return _rule().next_int_inclusive(lo, hi, reason, str(turn))
+
+func _mod(n: int, reason: String) -> int:
+	return _rule().next_index_mod(n, reason, str(turn))
+
+func stable_id(b: XBattler) -> String:
+	if _ids.has(b):
+		return _ids[b]
+	return ("actor:" + str(actors.find(b)) if b is XActor else "enemy:" + str(enemies.find(b)))
 ## 测试用：>= 0 时固定神话判定（0 必为神话，100 必不是）
 var elite_roll := -1.0
 ## 测试用：敌人等级浮动的随机数（<0 为随机）
@@ -39,7 +62,9 @@ var _cleared := {}
 ## 敌群事件里尚未翻译、本次跳过的指令（"代码 页"）
 var troop_event_skipped: Array = []
 
-func setup(troop: int, s: XState) -> void:
+func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
+	random = random_context if random_context != null else s.reserve_battle_random()
+	_ids.clear()
 	turn = 0
 	escaped = false
 	drop_lock = false
@@ -62,13 +87,17 @@ func setup(troop: int, s: XState) -> void:
 	for m in t.get("members", []):
 		if bool(m.get("hidden", false)):
 			continue
-		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty, elite_roll)
-		e.setup_level(actors.reduce(func(acc, x): return maxi(acc, int(x.level)), 1), level_roll)
+		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty, elite_roll, _rule())
+		e.setup_level(actors.reduce(func(acc, x): return maxi(acc, int(x.level)), 1), level_roll, _rule())
 		e.set_meta("x", float(m.x))
 		e.set_meta("y", float(m.y))
 		enemies.append(e)
 		letters[e.enemy_id] = letters.get(e.enemy_id, 0) + 1
-	XZhenqi.troop_setup(enemies, s.difficulty, elite_roll)  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
+	XZhenqi.troop_setup(enemies, s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
+	for i in range(actors.size()):
+		_ids[actors[i]] = "actor:%d:%d" % [i, actors[i].actor_id]
+	for i in range(enemies.size()):
+		_ids[enemies[i]] = "enemy:%d:%d" % [i, enemies[i].enemy_id]
 	# 同名敌人加 Ａ Ｂ Ｃ（MV makeUniqueNames）
 	var seen := {}
 	for e in enemies:
@@ -84,7 +113,7 @@ func setup(troop: int, s: XState) -> void:
 	# MV Game_Battler.onBattleStart：没有「保留 TP」（特殊旗标 3）时 TP 随机 0～24
 	for b in actors + enemies:
 		if not b.is_preserve_tp():
-			b.tp = float(randi() % 25)
+			b.tp = float(_mod(25, "initial_tp"))
 	for b in actors + enemies:
 		b.start_warmups()
 	_escape_ratio = 0.5 * _avg_agi(actors) / maxf(_avg_agi(enemies), 1.0)
@@ -95,29 +124,29 @@ func setup(troop: int, s: XState) -> void:
 func _battle_start_states() -> void:
 	for a in actors:
 		for tag in a.battle_start_state_tags():
-			if randf() * 100.0 >= float(tag[2]):
+			if _float("start_state") * 100.0 >= float(tag[2]):
 				continue
 			var sid := int(tag[1])
 			match str(tag[0]):
 				"StartPushState":
-					a.add_state(sid)
+					a.add_state(sid, _rule())
 				"StartRomActPushState":
 					var others := actors.filter(func(x): return x != a)
 					if not others.is_empty():
-						others[randi() % others.size()].add_state(sid)
+						others[_mod(others.size(), "start_ally")].add_state(sid, _rule())
 				"StartRomEmePushState":
 					var foes := alive(enemies)
 					if not foes.is_empty():
-						foes[randi() % foes.size()].add_state(sid)
+						foes[_mod(foes.size(), "start_enemy")].add_state(sid, _rule())
 				"StartRomPushState":
 					var all: Array = actors + alive(enemies)
-					all[randi() % all.size()].add_state(sid)
+					all[_mod(all.size(), "start_any")].add_state(sid, _rule())
 				"StartAEPushState":
 					for e in alive(enemies):
-						e.add_state(sid)
+						e.add_state(sid, _rule())
 				"StartWTPushState":
 					for x in actors:
-						x.add_state(sid)
+						x.add_state(sid, _rule())
 	for a in actors:
 		a.refresh_passive()
 	for e in enemies:
@@ -262,7 +291,7 @@ func _random_target(list: Array) -> XBattler:
 	var total := 0.0
 	for b in list:
 		total += b.tgr
-	var r := randf() * total
+	var r := _float("target") * total
 	for b in list:
 		r -= b.tgr
 		if r <= 0.0:
@@ -283,7 +312,7 @@ func enemy_action(e: XEnemy) -> Dictionary:
 	var sum := 0
 	for act in list:
 		sum += int(act.rating) - zero
-	var r := randi_range(0, sum - 1)
+	var r := _int(0, sum - 1, "enemy_action")
 	for act in list:
 		r -= int(act.rating) - zero
 		if r < 0:
@@ -426,7 +455,7 @@ func run_turn(commands: Dictionary) -> Array:
 		first = false
 		if u == null or is_won() or is_lost():
 			break
-		var cmd: Array = [null, null] if cleared_action(u) else (commands.get(u, decide(u)) if u is XActor else decide(u))
+		var cmd: Array = [null, null] if cleared_action(u) else ((commands[u] if commands.has(u) else decide(u)) if u is XActor else decide(u))
 		logs.append_array(act(u, cmd[0], cmd[1]))
 	if not is_won() and not is_lost():
 		logs.append_array(end_turn())
@@ -507,7 +536,7 @@ func _run_troop_list(list: Array, first_subject: XBattler, logs: Array, tag: Str
 			334:
 				for e in (enemies.duplicate() if int(p[0]) < 0 else ([enemies[int(p[0])]] if int(p[0]) < enemies.size() else [])):
 					e.recover_all()
-					e.refresh_resources()
+					e.refresh_resources(_rule())
 			339:
 				logs.append_array(_force_action(p, first_subject))
 			_:
@@ -547,7 +576,7 @@ func _troop_set_variables(p: Array) -> bool:
 	match int(p[3]):
 		0: value = float(p[4])
 		1: value = state.variable(int(p[4]))
-		2: value = MVInterpreter.random_int(int(p[4]), int(p[5]))
+		2: value = _int(int(p[4]), int(p[5]), "event_variable")
 		_: return false
 	for id in range(int(p[0]), int(p[1]) + 1):
 		var old := state.variable(id)
@@ -575,7 +604,7 @@ func _change_actor_state(p: Array) -> void:
 			sequence_add_state(a, int(p[3]))
 		elif a.is_state_affected(int(p[3])):
 			a.remove_state(int(p[3]))
-		a.refresh_resources()
+		a.refresh_resources(_rule())
 
 
 func _page_meets(page: Dictionary, turn_end: bool) -> bool:
@@ -641,7 +670,7 @@ func _change_enemy_state(p: Array) -> void:
 			sequence_add_state(e, int(p[2]))
 		elif e.is_state_affected(int(p[2])):
 			e.remove_state(int(p[2]))
-		e.refresh_resources()
+		e.refresh_resources(_rule())
 
 
 ## Game_Action.setTarget 的序号按 smoothTarget（该序号阵亡时取第一个活着的）；-1 交给 targets_for 随机。
@@ -696,7 +725,7 @@ func _sorted_by_speed(list: Array) -> Array:
 		var sp := INF
 		if can_move(b):
 			var a := b.agi
-			sp = a + randi_range(0, maxi(floori(5 + a / 4.0), 1) - 1)
+			sp = a + _int(0, maxi(floori(5 + a / 4.0), 1) - 1, "otb_speed")
 		_speed[b] = sp
 		keyed.append([sp, i, b])
 	keyed.sort_custom(func(x, y): return x[0] > y[0] or (x[0] == y[0] and x[1] < y[1]))
@@ -726,7 +755,7 @@ func _action_times_modification(order: Array, first_current := false) -> void:
 func make_action_times(b: XBattler) -> int:
 	var n := 1
 	for p in b.action_plus_set():
-		if randf() < float(p):
+		if _float("action_times") < float(p):
 			n += 1
 	return n
 
@@ -884,12 +913,12 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	u.last_target_index = maxi(0, (actors if t.is_actor() else enemies).find(t))
 	var sure := certain_hit(u, skill)
 	var mrf := t.mrf if XDamage.is_magical(skill) and not sure else 0.0
-	if randf() < mrf:
+	if _float("reflection") < mrf:
 		var r := apply(u, skill, u)
 		r.reflected = true
 		return [{"type": "reflect", "user": u, "target": t}, r]
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure else 0.0
-	if randf() < cnt:
+	if _float("counter") < cnt:
 		var r := apply(t, XDB.rec("Skills", ATTACK_SKILL), u)
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
@@ -957,14 +986,35 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 
 ## 伤害计算与 apply 的扣血／记账分开，模块对照可固定这一步（同正式 Game_Action.makeDamageValue 夹具）。
 func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
-	return XDamage.finish(XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars()}), skill, u, t)
+	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
+	return XDamage.finish(XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule()}), skill, u, t)
 
 
 ## Game_Action.apply：行动者有道法「破甲」时，期间附加的破甲·真气（2705）用它的倍率（XZhenqi.pojia_actor）
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var before = XZhenqi.pojia_actor
 	XZhenqi.pojia_actor = u if XZhenqi.has_daofa(u, "pojia") else null
+	var previous_resources := _action_resources
+	_action_resources = XResourceContext.new()
+	_action_resources.random = _rule()
+	_action_resources.labels = {u: "a"}
+	if u != t:
+		_action_resources.labels[t] = "b"
+	_formula_outcome = {}
 	var r := _apply(u, skill, t)
+	var result := _action_resources.result(t)
+	result.missed = r.missed
+	result.evaded = r.evaded
+	result.critical = r.critical
+	r.result = result.duplicate(true)
+	r.effectJournal = _action_resources.journal.duplicate(true)
+	r.formulaDiagnostic = _formula_outcome.get("diagnostic", "")
+	r.hp = result.hpDamage
+	r.mp = result.mpDamage
+	r.tp = result.tpDamage
+	r.added = result.addedStates.duplicate()
+	r.removed = result.removedStates.duplicate()
+	_action_resources = previous_resources
 	XZhenqi.pojia_actor = before
 	return r
 
@@ -977,42 +1027,43 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var magical := XDamage.is_magical(skill)
 	var hit_rate := item_hit(u, skill, t)
 	var eva_rate := item_eva(u, skill, t)
-	if randf() >= clampf(hit_rate, 0.0, 1.0):
+	if _float("hit") >= clampf(hit_rate, 0.0, 1.0):
 		r.missed = true
 		return r
-	if randf() < clampf(eva_rate, 0.0, 1.0):
+	if _float("evade") < clampf(eva_rate, 0.0, 1.0):
 		r.evaded = true
 		return r
 	var type := int(dmg.type)
 	if type > 0:
 		var cri := u.cri * (1.0 - t.cev) if bool(dmg.critical) else 0.0
-		r.critical = randf() < clampf(cri, 0.0, 1.0)
+		r.critical = _float("critical") < clampf(cri, 0.0, 1.0)
 		var value := _damage_value(u, skill, t, r.critical)
 		if [1, 3, 5].has(type) and troop_id > 0:
 			value = XZhenqi.hp_damage(t, value)  # executeHpDamage：我方受伤时护法减伤、元婴护体（只在战斗中）
 		match type:
 			1, 3:
 				r.hp = value
-				t.hp = clampf(t.hp - value, 0.0, t.mhp)
+				_action_resources.gain(t, "hp", -value)
 			2, 4:
 				r.mp = value
-				t.mp = clampf(t.mp - value, 0.0, t.mmp)
+				_action_resources.gain(t, "mp", -value)
 			5:
 				r.hp = minf(value, t.hp)
-				t.hp -= r.hp
-				u.hp = minf(u.mhp, u.hp + r.hp)
+				_action_resources.gain(t, "hp", -r.hp)
+				_action_resources.gain(u, "hp", r.hp)
 			6:
 				r.mp = minf(value, t.mp)
-				t.mp -= r.mp
-				u.mp = minf(u.mmp, u.mp + r.mp)
+				_action_resources.gain(t, "mp", -r.mp)
+				_action_resources.gain(u, "mp", r.mp)
+		_action_resources.result(t).success = true
 		r.record_hp += floorf(maxf(0.0, float(r.hp)))
 		if value > 0.0 and [1, 5].has(type):
-			t.tp = minf(t.max_tp(), t.tp + floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
+			_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
 		_establish(u, t, r)
 	for eff in skill.get("effects", []):
 		_effect(u, t, eff, r)
 	_otb_target_shift(skill, t)
-	u.tp = minf(u.max_tp(), u.tp + float(skill.get("tpGain", 0)) * u.tcr)
+	_action_resources.silent_gain(u, "tp", float(skill.get("tpGain", 0)) * u.tcr)
 	if t.hp <= 0.0 and t.is_dead():
 		_die(t)
 		r.died = true
@@ -1030,7 +1081,7 @@ func _establish(u: XBattler, t: XBattler, r: Dictionary) -> void:
 			for p in eff.params:
 				var v := float(u.get(str(p)))
 				if v > 0.0:
-					t.hp = clampf(t.hp - v, 0.0, t.mhp)
+					_action_resources.gain(t, "hp", -v)
 					r.extra = r.get("extra", []) + [v]
 					r.record_hp = float(r.get("record_hp", 0.0)) + floorf(v)
 	if r.has("extra") and not ESTABLISH_TRUE_POPUP:
@@ -1044,21 +1095,16 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 		11:
 			var v := (t.mhp * v1 + v2) * t.rec * (u.pha if is_item(r.skill) else 1.0)
 			v = floorf(v)
-			t.hp = clampf(t.hp + v, 0.0, t.mhp)
-			# MV gainHp → refresh：负值恢复也要同步阵亡状态（IMMORTAL 期间阵亡被抵抗）。
-			if t.hp <= 0 and not t.immortal:
-				t.add_state(DEATH_STATE)
-			else:
-				t.remove_state(DEATH_STATE)
-			r.hp -= v
+			_action_resources.gain(t, "hp", v)
+			r.hp = -v
 			r.record_hp = float(r.get("record_hp", 0.0)) + floorf(maxf(0.0, -v))
 		12:
 			var v := (t.mmp * v1 + v2) * t.rec * (u.pha if is_item(r.skill) else 1.0)
 			v = floorf(v)
-			t.mp = clampf(t.mp + v, 0.0, t.mmp)
-			r.mp -= v
+			_action_resources.gain(t, "mp", v)
+			r.mp = -v
 		13:
-			t.tp = clampf(t.tp + floorf(v1), 0.0, t.max_tp())
+			_action_resources.gain(t, "tp", floorf(v1))
 		21:
 			var sid := int(eff.dataId)
 			var ids := u.attack_states() if sid == 0 else [sid]
@@ -1068,17 +1114,20 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 				if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
 					chance = 0.0
 				# MV addState → isStateAddable 要求活着：本次伤害已致死时照常掷随机数，但不再附加（不进 r.added）
-				if randf() < chance and t.is_alive():
+				if _float("add_state") < chance and t.is_alive():
 					if id == DEATH_STATE:
 						t.immortal = false  # itemEffectAddNormalState：附加阵亡前先解除 IMMORTAL
-						t.hp = 0.0
+						t.add_state(DEATH_STATE, _rule())
+						_action_resources.result(t).addedStates.append(DEATH_STATE)
 					else:
-						t.add_state(id)
+						t.add_state(id, _rule())
 						r.added.append(id)
+						_action_resources.result(t).addedStates.append(id)
 		22:
-			if randf() < v1:
+			if _float("remove_state") < v1:
 				t.remove_state(int(eff.dataId))
 				r.removed.append(int(eff.dataId))
+				_action_resources.result(t).removedStates.append(int(eff.dataId))
 		31:
 			sequence_buff(t, int(eff.dataId), true, true, int(v1))
 		32:
@@ -1088,7 +1137,7 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 			if (int(eff.code) == 33 and t.buffs[id] > 0) or (int(eff.code) == 34 and t.buffs[id] < 0):
 				t.buffs[id] = 0
 				t.buff_turns[id] = 0
-				t.refresh_resources()
+				t.refresh_resources(_rule())
 		43:
 			if t is XActor:
 				t.learn_skill(int(eff.dataId))
@@ -1104,7 +1153,7 @@ func sequence_add_state(t: XBattler, id: int) -> void:
 	if id == DEATH_STATE:
 		_die(t)
 		return
-	t.add_state(id)
+	t.add_state(id, _rule())
 
 
 ## 行动序列 HP/MP/TP ±（gainHp/gainMp/gainTp）：HP 归零即倒下
@@ -1116,7 +1165,7 @@ func sequence_gain(t: XBattler, kind: String, value: float) -> void:
 			t.mp = clampf(t.mp + value, 0.0, t.mmp)
 		"TP":
 			t.tp = clampf(t.tp + value, 0.0, t.max_tp())
-	t.refresh_resources()
+	t.refresh_resources(_rule())
 
 
 ## 行动序列 ADD/REMOVE BUFF/DEBUFF（Game_Battler.addBuff/addDebuff：活着才加，等级 ±2 封顶，回合取较大者；remove 只去同方向）
@@ -1131,7 +1180,7 @@ func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int) -> 
 	elif (buff and t.buffs[pid] > 0) or (not buff and t.buffs[pid] < 0):
 		t.buffs[pid] = 0
 		t.buff_turns[pid] = 0
-	t.refresh_resources()
+	t.refresh_resources(_rule())
 
 
 func state_rate(b: XBattler, id: int) -> float:
@@ -1139,14 +1188,10 @@ func state_rate(b: XBattler, id: int) -> float:
 
 
 func _die(b: XBattler) -> void:
-	b.hp = 0.0
-	b.state_ids.clear()
-	b.state_turns.clear()
-	b.state_ids.append(DEATH_STATE)
-	for i in range(8):
-		b.buffs[i] = 0
-		b.buff_turns[i] = 0
-	b.mp = minf(b.mp, b.mmp)
+	# Resource refresh has already performed death. Never clear permanent states or
+	# redraw the death duration when another gain/action observes the same corpse.
+	if not b.state_ids.has(DEATH_STATE):
+		b.add_state(DEATH_STATE, _rule())
 
 
 ## timing 1 = 行动结束，2 = 回合结束（MV autoRemovalTiming）
@@ -1180,7 +1225,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 ## MV：逃跑率在战斗开始时算一次（0.5×我方平均敏捷/敌方平均敏捷），每失败一次 +0.1。
 ## 逃跑失败在 OTB 下只消耗这名角色的本次行动（由画面层调用 act(u, null, null)）。
 func try_escape() -> bool:
-	escaped = randf() < _escape_ratio
+	escaped = _float("escape") < _escape_ratio
 	if not escaped:
 		_escape_ratio += 0.1
 	return escaped
@@ -1226,6 +1271,7 @@ func drops_of(e: XEnemy) -> Array:
 
 
 func _roll_drops(e: XEnemy) -> Array:
+	_rule() # Ensure both owned streams exist in headless fixtures too.
 	var rates := _difficulty_rates()
 	var item_up := 0.0
 	for a in actors:
@@ -1238,10 +1284,10 @@ func _roll_drops(e: XEnemy) -> Array:
 		var drop: Dictionary = di[i]
 		if int(drop.kind) > 0 and int(drop.denominator) > 0:
 			var rate := float(rates[2 + i]) if 2 + i < rates.size() else 1.0
-			if randf() * int(drop.denominator) < rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
+			if random.reward.next_float("drop", stable_id(e)) * int(drop.denominator) < rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
 				drops.append({"kind": int(drop.kind), "id": int(drop.dataId)})
 	for extra in _extra_drops(d):
-		if randf() < extra.rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
+		if random.reward.next_float("extra_drop", stable_id(e)) < extra.rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
 			drops.append({"kind": extra.kind, "id": extra.id})
 	return drops
 
