@@ -59,7 +59,7 @@ def worktrees(root):
 
 def draft(text):
     match = re.search(r'^## 变更记录草稿\s*\n(.*?)(?=^## 交接板\s*$|\Z)', text, re.M | re.S)
-    if not re.search(r'^- 状态：可合并(?:\s|[（(。，；：]|$)', text, re.M):
+    if not re.search(r'^- 状态：可合并(?:\s|[（(。，；：—]|$)', text, re.M):
         raise RuntimeError('交付单尚未标为可合并')
     if not match or not match[1].strip() or '待写' in match[1]:
         raise RuntimeError('交付单缺少完整变更记录草稿')
