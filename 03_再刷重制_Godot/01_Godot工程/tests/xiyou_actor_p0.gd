@@ -32,19 +32,19 @@ func _run() -> void:
 	for id in REGRESSION + RECRUIT.values():
 		var row = d.actors.get(str(id))
 		_check("oracle_row_%d" % id, row != null and row.has("lv1") and row.has("lv10Battle") and row.get("levelSamples", {}).size() == 3, id)
-		var dmg := d.damage.filter(func(r): return r.get("actor") != null and int(r.actor) == id)
+		var dmg = d.damage.filter(func(r): return r.get("actor") != null and int(r.actor) == id)
 		_check("oracle_damage_%d" % id, dmg.size() > 0 and dmg.all(func(r): return not r.has("error")), [id, dmg.size()])
 	# ② 初始装备与技能
 	for id in REGRESSION + RECRUIT.values():
 		var row: Dictionary = d.actors[str(id)]
 		var a := XActor.new().setup(id)
-		var mv_equips := row.equips.filter(func(e): return e != null).map(func(e): return int(e.base))
-		var my_equips := a.equips.filter(func(e): return e != null and not e.is_empty()).map(func(e): return int(e.base))
+		var mv_equips = row.equips.filter(func(e): return e != null).map(func(e): return int(e.base))
+		var my_equips = a.equips.filter(func(e): return e != null and not e.is_empty()).map(func(e): return int(e.base))
 		_check("equips_%d" % id, my_equips == mv_equips, [my_equips, mv_equips])
-		var my_skills := a.skills().map(func(s): return int(s.id))
+		var my_skills = a.skills().map(func(s): return int(s.id))
 		my_skills.sort()
-		var mv_skills := row.skills.map(func(s): return int(s))
-		var missing := mv_skills.filter(func(s): return not my_skills.has(s) and not _is_boot_passive(d, s))
+		var mv_skills = row.skills.map(func(s): return int(s))
+		var missing = mv_skills.filter(func(s): return not my_skills.has(s) and not _is_boot_passive(d, s))
 		_check("skills_%d" % id, missing.is_empty(), missing)
 	# ① 招募路径
 	var s := XState.new_game(3, 1, [8, 10, 9])
@@ -70,7 +70,7 @@ func _run() -> void:
 
 ## oracle 技能列表含开局被动（passives／starterPassives）；它们由 xiyou_rules 的 _make_actor 灌入，这里不重复
 func _is_boot_passive(d: Dictionary, skill: int) -> bool:
-	return d.passives.has(skill) or d.starterPassives.has(skill)
+	return d.passives.map(func(v): return int(v)).has(skill) or d.starterPassives.map(func(v): return int(v)).has(skill)
 
 
 func _finish() -> void:
