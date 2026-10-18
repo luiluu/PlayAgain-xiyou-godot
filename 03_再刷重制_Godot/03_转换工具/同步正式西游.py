@@ -49,6 +49,7 @@ PROBES = [
     (['equipment_probe.cjs'], ['equipment.json']),
     (['map_probe.cjs'], ['maps.json', 'maps_source.json']),
     (['help_probe.cjs'], ['help_cards.json']),
+    (['special_help_probe.cjs'], ['special_help_cards.json']),
     (['hang_up_probe.cjs'], ['hang_up.json']),
     (['smart_ai_probe.cjs'], ['smart_ai.json']),
     (['options_probe.cjs'], ['options.json']),

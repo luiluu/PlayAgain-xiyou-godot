@@ -120,8 +120,9 @@ static func _quality(obj: Dictionary) -> int:
 
 
 ## ItemQuality 的 normalcolor/namecolor：QualitiesColor[旧档]，西游 v0.15 起整表换成七档颜色（XQuality）
+## 云裳的十五件天衣（7920～7934，installNativeYunshangRuntime Y.robeColor）另用粉色；原版按编号判断、不看种类
 static func quality_color_text(obj: Dictionary) -> String:
-	return XQuality.color_text(obj)
+	return XCharacterHelp.ROBE_COLOR if XCharacterHelp.is_robe(obj) else XQuality.color_text(obj)
 
 
 static func _num(v) -> String:

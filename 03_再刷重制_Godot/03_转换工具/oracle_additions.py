@@ -29,6 +29,7 @@ KEYS = {
     'power.json': {'actors': ('id', 'level', 'asked'), 'gear': ('kind', 'id', 'why')},
     'wtype.json': {'cases': ('actor', 'variant', 'weapon', 'skill')},
     'help_cards.json': {k: ('id',) for k in ['skills', 'items', 'weapons', 'armors']},
+    'special_help_cards.json': {k: ('id',) for k in ['skills', 'weapons', 'armors']},
 }
 
 

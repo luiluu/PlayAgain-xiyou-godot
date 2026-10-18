@@ -15,6 +15,8 @@ const VIEW_COLOR := "rgba(235,240,247,1)"
 const TARGET_GEAR := [4001, 4577, 4578, 4579, 4580, 4581, 7904, 7905, 7906, 7908, 7909, 7910, 7911,
 	7920, 7921, 7922, 7923, 7924, 7925, 7926, 7927, 7928, 7929, 7930, 7931, 7932, 7933, 7934, 7935]
 
+const ROBE_COLOR := "rgba(255,169,202,1)"
+
 static var _data: Dictionary
 static var _dyn2: Dictionary
 static var _cache := {}
@@ -890,3 +892,9 @@ static func cat_help_text(text: String, obj: Dictionary, a: Dictionary) -> Strin
 			return "冷却时间：" + str(3 if h == 3 else 4) + "个自然回合；" + ("消耗剑心追加" + str(h) + "段神圣剑影" if h else "施放时消耗剑心，每层追加1段神圣剑影，满层冷却3回合")
 		return "冷却时间：4个自然回合；进阶后消耗剑心追加神圣剑影，满层冷却3回合"
 	return text
+
+
+## Y.isRobeItem：原型编号 7920～7934
+static func is_robe(obj: Dictionary) -> bool:
+	var id := int(obj.get("originalBaseItemId", obj.get("baseItemId", obj.get("id", 0))))
+	return id >= 7920 and id < 7935
