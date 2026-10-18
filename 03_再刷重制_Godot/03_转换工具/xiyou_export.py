@@ -8,6 +8,7 @@
                    技能/物品附 formulaGd（翻译成 Godot Expression 的伤害公式，翻译不了为 null）
   maps/MapNNN.json 切片涉及的地图
   db/MapPreview.json MapTransferPlugin 各配置地图的遇敌敌群 ID（地图传送页预览用；切片外地图不导出本体）
+  db/CharacterHelp.json 特殊角色说明卡的原文表（installDisplayPreferencesRuntime 的 characterHelpCopies 与 DYN2_IDS；屠苏、璇的成长曲线）
   img/…、audio/…   切片实际引用到的素材（原样复制）
   fonts/…          界面字体与授权文件（原样复制）
   manifest.json    输入/输出 SHA-256、未能处理项
@@ -22,7 +23,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 17
+TOOL_VERSION = 18
 HERE = Path(__file__).resolve().parent
 # 用户 2026-10-15：重制期间冻结在 v0.28 的只读副本（不入 Git，见 02_内容与素材/冻结正式源/README.md），重制完成后再统一同步正式版
 DEFAULT_APP = Path('/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw')
@@ -416,6 +417,30 @@ class Exporter:
         for name in ['Skills', 'Items']:
             self.write_json(f'db/{name}.json', self.db[name])
 
+    def export_character_help(self):
+        """特殊角色（渡鸦～哈基米）技能说明卡用的两张表：characterHelpCopies（备注原文与改写后的行）与
+        DYN2_IDS（说明行按前缀换成当前数值的技能）。两者在运行脚本里是 JSON 字面量，原样取出，不执行脚本。"""
+        rel = 'js/codex/runtime/installDisplayPreferencesRuntime.js'
+        b = (self.app / rel).read_bytes()
+        self.inputs[rel] = sha(b)
+        text = b.decode('utf-8')
+        copies = re.search(r'var characterHelpCopies=(\{.*?\});\n', text)
+        dyn2 = re.search(r'var DYN2_IDS=(\[[\d,\s]*\]);', text)
+        if not copies or not dyn2:
+            self.issues.append({'file': rel, 'why': '找不到 characterHelpCopies 或 DYN2_IDS'})
+            return
+        out = {'source': rel, 'copies': json.loads(copies.group(1)), 'dyn2Ids': json.loads(dyn2.group(1))}
+        # 屠苏、璇的成长曲线（CodexBinding.bindGrowth 的 CFG.growth：各技能伤害系数按等级节点插值）
+        for key, rel2 in (('tusu', 'js/codex/runtime/installNativeTusuRuntime.js'), ('xuan', 'js/codex/runtime/installNativeXuanRuntime.js')):
+            b2 = (self.app / rel2).read_bytes()
+            self.inputs[rel2] = sha(b2)
+            cfg = re.search(r'var CFG = (\{.*?\});\n', b2.decode('utf-8'))
+            if not cfg:
+                self.issues.append({'file': rel2, 'why': '找不到 CFG'})
+                continue
+            out[key + 'Growth'] = json.loads(cfg.group(1)).get('growth', {})
+        self.write_json('db/CharacterHelp.json', out)
+
     def export_plugins(self):
         """启用插件的参数（难度倍率表等）。plugins.js 是 JS，取出其中的 JSON 数组。"""
         rel = 'js/plugins.js'
@@ -699,6 +724,7 @@ class Exporter:
                           for p in sorted((self.app / 'js').rglob('*.js'))}
         self.export_db()
         self.export_plugins()
+        self.export_character_help()
         self.collect_slice()
         self.copy_assets()
         untranslated = []
