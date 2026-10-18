@@ -5,18 +5,18 @@
 
 ## 变更记录草稿
 
-## 2026-10-18 【Claude·未经Codex检验】导出瘦身：排除测试与参照数据
+## 2026-10-18 【Claude·未经Codex检验】导出瘦身：参照数据不进包，新增发行预设
 
-- 原因：dev.079 Mac 试导出的 .pck 里带着约 77 MB `generated/oracle` 参照数据（导出设置是 `all_resources`＋`*.json`，排除项为空），另有 `tests/` 全部测试、夹具与基线 JSON、`generated/manifest.json`、`sync_stamp.json`。游戏运行时只读 `generated/` 的 `db/`、`maps/`、`slice.json`、素材与字体（`xdb.gd` 的 `load_json` 全部调用已核对），不读 `oracle/`、`manifest.json`。
-- `export_presets.cfg` 加排除项：`generated/oracle/*`、`manifest.json`、`sync_stamp.json`、`builds/*`、`tests/fixtures/*`、`tests/*.json` 与各测试前缀；保留 `tests/xiyou_mac_export.*`（`--verify-export` 在包内跳到这个场景）。Godot 过滤只认 `*`、`?`，所以测试按前缀逐条排除。
-- 新增 `07_开发环境/测试导出过滤.py` 并接进 `检查.sh`：tests/ 下除导出验收场景外每个文件都要被排除，参照数据必须被排除，游戏数据不能被排除。
-- 验证：云端没有转换产物，用工程副本＋假产物（含 2 MB 假 oracle）以 Godot 4.7.2 `--export-pack "macOS 验收"` 实际导出比较：改前包里有 oracle、manifest、sync_stamp、builds 与 348 个 tests 条目；改后 tests 只剩 xiyou_mac_export，db／maps／slice 仍在。守卫脚本加一个假测试文件时报错、删掉后通过。未在 Mac 上用真实产物重新出包，预计 .pck 从 315 MB 降到约 238 MB，待 Mac 出包时实测并跑一次 `--verify-export`。
-- 提交：见下
+- 原因：dev.079 Mac 试导出的 .pck 有 315 MB，其中约 77 MB 是 `generated/oracle` 参照数据（导出设置是 `all_resources`＋`*.json`，排除项为空）；`tests/` 全部测试、夹具、基线 JSON，以及 `generated/manifest.json`、`sync_stamp.json` 也都进了包。游戏运行时只通过 `xdb.gd` 读 `generated/` 下的 `db/`、`maps/`、`slice.json`、素材和字体（全部 `load_json` 调用已核对），不读 `oracle/` 和 `manifest.json`。
+- 照架构审查（用户 2026-10-18 同意）：「macOS 验收」预设保留 `tests/`，因为 `--verify-export` 在包内跑测试；只加排除 `generated/oracle/*`、`manifest.json`、`sync_stamp.json`、`builds/*`。新增「macOS 发行」预设（release、`runnable=false`，应用名「再刷重制」，bundle id `local.kyo.remake`，导出到 `builds/再刷重制.zip`），在验收预设的排除项之外再整个排除 `tests/*`。
+- 新增 `07_开发环境/测试导出过滤.py`，接进 `检查.sh`：两个预设都必须在，参照数据都必须排除，发行预设必须排除 tests/ 下全部文件，验收预设不能排除导出验收场景，游戏数据不能被误排除。
+- 验证：云端没有转换产物，用工程副本＋假产物（含 2 MB 假 oracle），以 Godot 4.7.2 `--export-pack` 实际导出两个预设：验收包仍有 348 个 tests 条目，没有 oracle、manifest、sync_stamp、builds；发行包 tests 为 0；两个包的 db、maps、slice 都在。故意从发行预设删掉 `tests/*` 时，守卫脚本会报错。未在 Mac 上用真实产物出包，按 dev.079 的 315 MB 推算两个包都约少 77 MB，发行包再少约 1 MB 测试。
+- 提交：见本分支提交
 
 ## 交接板
 
-- 下一步：Mac 上下次出包时记新 .pck 大小，并跑 `--verify-export` 确认导出验收仍 16/16。
-- 用户试玩说明：无玩法变化，安装包变小。
+- 下一步：Mac 上下次出包时，验收包跑 `--verify-export` 确认仍 16/16，并记两个预设的 .pck 实际大小；发行包要试启动一次（release 模板、无 tests）。
+- 用户试玩说明：无玩法变化，安装包变小；多了一个给玩家用的「macOS 发行」导出预设。
 
 ## 进度账
 
@@ -24,4 +24,5 @@
 
 ## 本分支提交
 
-- 见 PR
+- bdebddf 导出瘦身：导出包排除测试与参照数据
+- （本次）验收预设保留测试，新增 macOS 发行预设

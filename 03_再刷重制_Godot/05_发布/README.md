@@ -4,4 +4,4 @@
 
 导出结果放 `导出包/`，不进入 Git。签名凭据单独保存，不写进资料、日志或公开包。旧西游 MOD 的编号登记本轮保持；新项目编号方案在首个运行候选前明确。
 
-导出包只带游戏用到的文件：`export_presets.cfg` 的排除项挡掉参照数据（`generated/oracle`、`manifest.json`、`sync_stamp.json`）、`builds/` 和测试，只留导出验收要用的 `tests/xiyou_mac_export.*`。新增测试的文件名前缀没被排除时，`检查.sh` 的「导出包排除测试与参照数据」会报出来，照报错在排除项里补一条前缀。
+导出预设两个：「macOS 验收」是调试包，保留 `tests/`（`--verify-export` 在包内跑 `tests/xiyou_mac_export.tscn`）；「macOS 发行」是给玩家的包，另外整个排除 `tests/`。两个都排除不进游戏的参照数据（`generated/oracle`、`manifest.json`、`sync_stamp.json`）和 `builds/`。`检查.sh` 的「导出包排除测试与参照数据」检查这些排除项，并确认游戏数据没被误排除。
