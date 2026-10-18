@@ -348,7 +348,8 @@ static func _param_rate(eq: Dictionary, name: String, value: float, attach: bool
 		return
 	for i in range(traits.size() - 1, -1, -1):
 		var t: Dictionary = traits[i]
-		if int(t.code) == code and int(t.dataId) == id and float(t.value) == rate:
+		# 近似比对：存档 JSON 往返后 0.36+1 读回 1.3600000000000001，用 == 会删不掉（每轮存读档多留一条）
+		if int(t.code) == code and int(t.dataId) == id and absf(float(t.value) - rate) < 1e-9:
 			traits.remove_at(i)
 			return
 

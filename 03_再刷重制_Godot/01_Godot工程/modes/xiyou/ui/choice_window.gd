@@ -137,7 +137,10 @@ func _gui_input(event: InputEvent) -> void:
 			var p: Vector2 = event.position - win.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING + info_height())
 			if not Rect2(Vector2.ZERO, win.size).has_point(event.position - win.position) or p.y < 0:
 				return
-			var i := top + floori(p.y / LH)
+			var row := floori(p.y / LH)
+			if row >= page_rows():   # 底部留白：不选画面外的下一行
+				return
+			var i := top + row
 			if i >= 0 and i < rows.size():
 				if i == index:
 					ok()

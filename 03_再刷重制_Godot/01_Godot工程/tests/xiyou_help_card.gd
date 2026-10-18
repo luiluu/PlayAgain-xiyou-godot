@@ -83,9 +83,18 @@ func _compare(cat: String, card: Dictionary) -> void:
 	_check(name, h_ok, null if h_ok else {"height": [lay.height, exp.height]})
 
 
+func _sell_row(obj: Dictionary) -> String:
+	for r in XHelpCard.content(obj, "item"):
+		if str(r[0]).begins_with("出售价格"):
+			return str(r[0])
+	return ""
+
+
 func _run() -> void:
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 	_check("oracle_loaded", data is Dictionary and data.has("skills"))
+	# 参照是原版 HelpExtend 的出售价格（四舍五入），逐行比对时关掉 O-049
+	XHelpCard.REAL_SELL_PRICE = false
 	if data is Dictionary:
 		for cat in ["skills", "items", "weapons", "armors", "gear"]:
 			var before := results.size()
@@ -93,6 +102,15 @@ func _run() -> void:
 				_compare(cat, card)
 			var cat_results := results.slice(before)
 			print("%s %d/%d" % [cat, cat_results.filter(func(r): return r.passed).size(), cat_results.size()])
+	XHelpCard.REAL_SELL_PRICE = true
+	# O-049：出售价格与商店实卖一致（半价向下取整，<Sell Price> 优先）；关掉回到原版四舍五入
+	var odd := {"kind": "item", "name": "测试药", "description": "", "price": 7}
+	_check("sell_price_real_O049", _sell_row(odd) == "出售价格：3", _sell_row(odd))
+	_check("sell_price_note_O049", _sell_row({"kind": "item", "name": "测试药", "description": "", "price": 7, "sellPrice": 1}) == "出售价格：1")
+	XHelpCard.REAL_SELL_PRICE = false
+	var original := _sell_row(odd)
+	XHelpCard.REAL_SELL_PRICE = true
+	_check("sell_price_original_O049", original == "出售价格：4", original)
 	# 显示：节点能建、能按选中行贴边放（O-008）、最小字号生效（O-007）
 	_check("seven_quality_windows", range(16).map(func(q): return XQuality.window_skin(q)) == [1, 1, 2, 3, 4, 7, 7, 7, 8, 8, 8, 8, 10, 8, 10, 10])
 	_check("seven_quality_red_gold", XGear.color({"meta": {"quality": 12}}).is_equal_approx(Color8(255, 72, 60)) and XGear.color({"meta": {"quality": 13}}).is_equal_approx(Color8(255, 214, 90)))

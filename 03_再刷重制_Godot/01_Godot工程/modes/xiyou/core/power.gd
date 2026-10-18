@@ -758,7 +758,8 @@ static func evaluate(actor: XActor, naked: bool) -> Dictionary:
 
 
 static func _signature(a: XActor) -> String:
-	return JSON.stringify([a.actor_id, a.class_id, a.level, a.skill_ids, a.state_ids, a.equips, XState.current.variable(8) if XState.current else 0])
+	return JSON.stringify([a.actor_id, a.class_id, a.level, a.skill_ids, a.state_ids, a.equips, XState.current.variable(8) if XState.current else 0,
+		int(a.zhenqi.get("realm", 0))])   # 突破改道法缩放而技能表可能不变
 
 
 ## 角色战力 {total, self, gear, gearScore, parts, selfParts, gearParts, equipment[{item, slot, score}], rows, evaluation, ownEvaluation}；关掉时全 0

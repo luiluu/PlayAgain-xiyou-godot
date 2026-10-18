@@ -49,6 +49,9 @@ const PLACE_NEAR := true
 ## 技能书附卡之间的间距：原版 10（品质框外扩 10，相邻卡的框会叠在一起）；O-008 留出两边的框再加 4。
 const EXTRA_GAP_ORIGINAL := 10.0
 const EXTRA_GAP_NEAR := 24.0
+## 优化 O-049：「出售价格」写实际卖出价（XItemMarks.selling_price：<Sell Price> 优先，否则半价向下取整，与商店付的钱一致）；
+## false 照原版 HelpExtend 写 Math.round(价格/2)，奇数价格比实卖多 1。
+static var REAL_SELL_PRICE := true
 
 var rows: Array = []          # content() 的结果
 var quality := 0
@@ -170,7 +173,8 @@ static func _prices(obj: Dictionary, rows: Array) -> void:
 	var price := float(obj.get("price", 0))
 	if price > 0:
 		rows.append(["购买价格：" + str(int(roundf(price))), OTHER_SIZE, PRICE_COLOR, false, null])
-		rows.append(["出售价格：" + str(int(roundf(price / 2.0))), OTHER_SIZE, PRICE_COLOR, false, null])
+		var sell := XItemMarks.selling_price(obj) if REAL_SELL_PRICE else int(roundf(price / 2.0))
+		rows.append(["出售价格：" + str(sell), OTHER_SIZE, PRICE_COLOR, false, null])
 	else:
 		rows.append(["无法出售给普通商店", OTHER_SIZE, PRICE_COLOR, false, null])
 

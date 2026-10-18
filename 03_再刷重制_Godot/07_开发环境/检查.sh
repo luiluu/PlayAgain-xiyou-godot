@@ -7,7 +7,7 @@ set -u
 ENV_DIR=${0:A:h}
 ROOT=${ENV_DIR:h:h}
 PROJECT=$ROOT/03_再刷重制_Godot/01_Godot工程
-GODOT=$ENV_DIR/godot
+GODOT=${GODOT:-$ENV_DIR/godot}   # 云端等没有本机 Godot.app 时用环境变量指定（见 云端测试.md）
 FAIL=0
 ok()   { print -r -- "  ✓ $1"; }
 bad()  { print -r -- "  ✗ $1"; FAIL=1; }
