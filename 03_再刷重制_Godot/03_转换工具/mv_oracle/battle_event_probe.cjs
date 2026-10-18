@@ -76,6 +76,8 @@ const snap = () => ({turn: w.$gameTroop.turnCount(), phase: w.BattleManager._pha
   subject: key(w.BattleManager._subject), currentOrder: (w.BattleManager._actionBattlers || []).map(key),
   nextOrder: (w.BattleManager._nextTurnActionBattlers || []).map(key),
   messageBusy: w.$gameMessage.isBusy(), texts: json(w.$gameMessage._texts),
+  message: {faceName: w.$gameMessage.faceName(), faceIndex: w.$gameMessage.faceIndex(),
+    background: w.$gameMessage.background(), positionType: w.$gameMessage.positionType()},
   waitMode: w.$gameTroop._interpreter._waitMode, index: w.$gameTroop._interpreter._index, eventFlags: json(w.$gameTroop._eventFlags),
   variable112: w.$gameVariables.value(112), enemies: w.$gameTroop.members().map(enemy)});
 function setup(troop) {
@@ -223,6 +225,8 @@ function appearCase(o, variable1178) {
       assert.equal(e.hp, o.reappearBefore.enemies[1].hp); assert.equal(e.mp, 0); assert.equal(e.tp, 31);
       assert.deepEqual(json(e._states), o.reappearBefore.enemies[1].states);
       assert.equal(e.index(), 1); assert.equal(e.isHidden(), false);
+      e.setHp(0); e.hide(); o.deadAppearBefore = snap(); command(335, [1]); o.deadAppearAfter = snap();
+      assert.equal(e.isHidden(), false); assert.equal(e.hp, 0); assert.ok(e.isDeathStateAffected(), '335显现死亡成员，不执行复活');
     }
   } finally {restore.reverse().forEach(f => f());}
 }
