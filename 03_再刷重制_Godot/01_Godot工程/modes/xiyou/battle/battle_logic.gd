@@ -898,11 +898,13 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 
 ## BattleManager.applySubstitute：目标濒死（活着且 hp < mhp/4）、技能不是必中时，同队出战成员里第一个能掩护的替它挨打
 ## （第一个就是目标自己时不换）。掩护要能行动：特殊旗标同原版；dsPassiveSkill 的 passiveSUBS 原版倒下也挡，改为要能行动（O-048）。
+const SUBSTITUTE_NEEDS_MOVE := true
+
 func substitute_for(skill: Dictionary, t: XBattler) -> XBattler:
 	if not (t.is_alive() and t.hp < t.mhp / 4.0) or int(skill.get("hitType", 0)) == 0:
 		return t
 	for m in (actors if t.is_actor() else enemies):
-		if m.is_substitute() and can_move(m):
+		if m.is_substitute() and (can_move(m) or not SUBSTITUTE_NEEDS_MOVE and not m.traits_set(62).has(2)):
 			return m
 	return t
 
