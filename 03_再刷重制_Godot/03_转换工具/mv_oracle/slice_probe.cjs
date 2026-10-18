@@ -53,6 +53,12 @@ function run(difficulty) {
     row.lv1Battle = snap(a);
     a.changeLevel(10, false); battleRefresh(a);
     row.lv10Battle = snap(a);
+    // 角色模板 P0：等级采样 35／65／99（升序连续升级；Godot 对应 xiyou_rules 的 levelSamples）
+    row.levelSamples = {};
+    const savedMax = w.eval('$gameParty.ActorMaxLevel');
+    w.eval('$gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
+    for (const lv of [35, 65, 99]) { a.changeLevel(lv, false); battleRefresh(a); row.levelSamples[lv] = Object.assign(snap(a), {level: a.level}); }
+    w.eval('$gameParty.ActorMaxLevel = ' + JSON.stringify(savedMax === undefined ? null : savedMax) + '; $dataActors.forEach(function(x){ if (x) x.maxLevel = ' + JSON.stringify(savedMax === undefined ? 10 : savedMax) + '; });');
     a.changeLevel(1, false); battleRefresh(a);
     out.actors[id] = row;
   }

@@ -120,6 +120,13 @@ func _run() -> void:
 			_compare_snap("d%d.actor%d.lv1Battle" % [diff, id], _snap(a), row.lv1Battle)
 			a.change_level(10)
 			_compare_snap("d%d.actor%d.lv10Battle" % [diff, id], _snap(a), row.lv10Battle)
+			# 角色模板 P0：等级采样 35／65／99（升序，同一实例连续升级；参照由 slice_probe 的 levelSamples 给出）
+			var samples: Dictionary = row.get("levelSamples", {})
+			var lvs := samples.keys().map(func(k): return int(k))
+			lvs.sort()
+			for lv in lvs:
+				a.change_level(lv)
+				_compare_snap("d%d.actor%d.lv%dBattle" % [diff, id, lv], _snap(a), samples[str(lv)])
 		# 敌人
 		var troops := {}
 		for tid_s in d.enemies:
