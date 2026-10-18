@@ -1,7 +1,7 @@
 # 交付：claude/cloud-lane-q98dru
 
 - 车道／工作者：云端协助（Claude，云端会话；不占车道名额，只改下面两处）
-- 状态：可合并（云端没有 Godot 和转换产物，`xiyou_help_card` 未运行，合并后请在 Mac 上跑）
+- 状态：可合并（云端 Godot 测试 65/65 通过，含 `xiyou_help_card` 392/392；`--oracle` 未跑）
 
 ## 变更记录草稿
 
@@ -11,8 +11,14 @@
 - 优化登记：36 项状态改为「保留（用户 2026-10-18）」，O-035 改为「暂缓」；规则段记一笔。新增 O-049。
 - O-049：`XHelpCard._prices` 的「出售价格」改用 `XItemMarks.selling_price`（<Sell Price> 优先，否则半价向下取整），与商店、一键出售、挂机卖出一致；原版 HelpExtend 是 Math.round(价格/2)，奇数价格多 1。开关 `XHelpCard.REAL_SELL_PRICE`。
 - 测试：`xiyou_help_card` 逐行比对正式参照时关掉 O-049（参照是原版四舍五入），另加 3 项（奇数价 7 → 3、<Sell Price> 1 → 1、关掉后 → 4）。
-- 验证：只做了静态检查。云端没有 Godot、`generated/` 与冻结正式源，测试未运行，留给唐僧在 Mac 上跑 `xiyou_help_card` 与 `检查.sh`。
+- 验证：云端用 Godot 4.7.2 Linux 版（与 Mac 同一构建）和 Mac main 的转换产物跑了全部 Godot 测试 65/65 通过（`xiyou_help_card` 392/392）；工具检查全部通过；`--oracle` 未跑（云端没有冻结正式源）。
 - 提交：见下。
+
+## 2026-10-18 【Claude·云端·未经Codex检验】云端测试环境（工具，dev 不递增）
+
+- `07_开发环境/云端准备.sh`：装 zsh、下载与环境登记同版本的 Godot Linux 版并校验 SHA512、解开转换产物打包、`--import`；`云端测试.md` 写取产物的办法与首次实测结果。
+- `检查.sh`：`GODOT` 可用环境变量覆盖（默认仍是 `07_开发环境/godot`）。
+- 未做：注册成仓库 SessionStart hook（改 `.claude/settings.json` 需用户同意；用户 2026-10-18 说项目额度当天到期，暂不开云端车道）。
 
 ## 交接板
 
