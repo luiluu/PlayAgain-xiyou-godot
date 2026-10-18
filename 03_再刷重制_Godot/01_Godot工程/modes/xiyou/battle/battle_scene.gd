@@ -1123,11 +1123,9 @@ func _say(text: String, seconds: float) -> void:
 ## MOG_TrPopUpBattle：敌人倒下动画结束时抽定它的掉落（不论设置）；开着「掉落动画」就立即获得、弹出图标，
 ## 并锁住胜利时的物品发放（结算画面照样列出）。所以开着时，逃跑前打倒的敌人的掉落也会留下（同原版）。
 func _enemy_collapsed(e: XEnemy) -> void:
-	var drops := logic.drops_of(e)
+	var drops := logic.drop_snapshot(e)
 	if drops.is_empty() or not XConfig.flag("MOG_TrPopUpBattle_Key"):
 		return
-	logic.drop_lock = true
-	logic.gain_drops(drops)
 	var p := XDropPopup.new()
 	p.setup(sprites[e], sprites[e].height(), drops.map(func(d): return XDB.rec(["", "Items", "Weapons", "Armors"][int(d.kind)], int(d.id))))
 	field.add_child(p)

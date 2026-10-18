@@ -20,6 +20,10 @@ var escaped := false
 var drop_lock := false
 ## 每个敌人的掉落（Game_Enemy._treasure.item）：倒下时或结算时第一次取用时抽定，之后不变
 var _treasure := {}
+var _drop_granted := {}
+var _rewards_granted := false
+## Rule parameter captured at battle start; icon visibility is presentation only.
+var advance_loot_on_collapse := false
 var auto := false
 var state: XState
 var random: XBattleRandom
@@ -72,6 +76,9 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	_cleared.clear()
 	troop_event_skipped.clear()
 	_treasure.clear()
+	_drop_granted.clear()
+	_rewards_granted = false
+	advance_loot_on_collapse = XConfig.flag("MOG_TrPopUpBattle_Key")
 	current_order.clear()
 	next_order.clear()
 	_acted.clear()
@@ -427,6 +434,7 @@ func act(u: XBattler, skill, target) -> Array:
 	_acted[u] = int(_acted.get(u, 0)) + 1
 	_tick_states(u, 1)
 	_sync_orders(before, true)
+	resolve_collapses()
 	return logs
 
 
@@ -441,6 +449,7 @@ func end_turn() -> Array:
 			_tick_states(b, 2)
 			_regenerate(b, logs)
 	_sync_orders(before, false)
+	resolve_collapses()
 	return logs
 
 
@@ -1040,6 +1049,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		var value := _damage_value(u, skill, t, r.critical)
 		if [1, 3, 5].has(type) and troop_id > 0:
 			value = XZhenqi.hp_damage(t, value)  # executeHpDamage：我方受伤时护法减伤、元婴护体（只在战斗中）
+		_action_resources.result(t).success = true
 		match type:
 			1, 3:
 				r.hp = value
@@ -1055,7 +1065,6 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 				r.mp = minf(value, t.mp)
 				_action_resources.gain(t, "mp", -r.mp)
 				_action_resources.gain(u, "mp", r.mp)
-		_action_resources.result(t).success = true
 		r.record_hp += floorf(maxf(0.0, float(r.hp)))
 		if value > 0.0 and [1, 5].has(type):
 			_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
@@ -1265,9 +1274,30 @@ func _difficulty_rates() -> Array:
 func drops_of(e: XEnemy) -> Array:
 	if e.zq_trial_loot:
 		return []
-	if not _treasure.has(e):
-		_treasure[e] = XPingbi.filter_drops(state, XHangUp.shield_drops(state, _roll_drops(e)))
-	return _treasure[e]
+	var id := stable_id(e)
+	if not _treasure.has(id):
+		_treasure[id] = XPingbi.filter_drops(state, XHangUp.shield_drops(state, _roll_drops(e)))
+	return _treasure[id].duplicate(true)
+
+
+func drop_snapshot(e: XEnemy) -> Array:
+	return _treasure.get(stable_id(e), []).duplicate(true)
+
+
+func resolve_collapses() -> void:
+	for e in enemies:
+		if e.is_dead():
+			resolve_collapse(e)
+
+
+func resolve_collapse(e: XEnemy) -> void:
+	var candidates := drops_of(e)
+	var token := stable_id(e)
+	if advance_loot_on_collapse and not _drop_granted.has(token):
+		_drop_granted[token] = true
+		if not candidates.is_empty():
+			drop_lock = true
+			gain_drops(candidates)
 
 
 func _roll_drops(e: XEnemy) -> Array:
@@ -1322,6 +1352,9 @@ static func _extra_drops(d: Dictionary) -> Array:
 
 ## 发放奖励，返回升级信息 [{actor, levels}]
 func grant(r: Dictionary) -> Array:
+	if _rewards_granted:
+		return []
+	_rewards_granted = true
 	XZhenqi.on_victory(state, actors, XZhenqi.troop_members(troop_id, enemies, state.difficulty))  # 真气胜利结算（含没出场的隐藏成员）（BattleManager.endBattle(0)；每场一次）
 	state.gain_gold(r.gold)
 	if not drop_lock:
@@ -1330,7 +1363,7 @@ func grant(r: Dictionary) -> Array:
 	var ups := []
 	var bench_rate := 1.0 if bool(XDB.system().get("optExtraExp", false)) else 0.0
 	for a in state.members():
-		var n: int = a.gain_exp(r.exp, 1.0 if actors.has(a) else bench_rate)
+		var n: int = a.gain_exp(r.exp, 1.0 if actors.has(a) else bench_rate, _rule())
 		if n > 0:
 			ups.append({"actor": a, "levels": n})
 	return ups

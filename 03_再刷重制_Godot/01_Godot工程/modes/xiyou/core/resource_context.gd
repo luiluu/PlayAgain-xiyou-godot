@@ -101,7 +101,7 @@ func refresh(b: XBattler) -> void:
 		var state := XDB.rec("States", 1)
 		var lo := int(state.get("minTurns", 1))
 		var hi := int(state.get("maxTurns", lo))
-		var duration := floori(0.5 * (hi - lo + 1)) + lo if preview else (random.next_int_inclusive(lo, hi, "state_duration", str(labels.get(b, "b")) + ":1") if random else randi_range(lo, hi))
+		var duration := floori(0.5 * (hi - lo + 1)) + lo if preview else b.roll_state_duration(lo, hi, random, str(labels.get(b, "b")) + ":1")
 		b.state_turns[1] = duration
 		if not r.addedStates.has(1):
 			r.addedStates.append(1)

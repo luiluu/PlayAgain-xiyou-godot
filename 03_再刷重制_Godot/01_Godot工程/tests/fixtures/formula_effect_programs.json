@@ -402,5 +402,87 @@
       ],
       "result": "value"
     }
+  },
+  "ai.edge_damage_1": {
+    "formula": "a.atk * Math.random()",
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "Skills",
+        "id": 160,
+        "custom": false,
+        "sha256": "0867a8ad0c9928f2a5802be9148d0ef5cb72cfae222d958d5922490af406693f"
+      },
+      "status": "pure",
+      "capabilities": [
+        "random.rule",
+        "read.battler"
+      ],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "*",
+            "left": {
+              "op": "property",
+              "pos": 0,
+              "receiver": "a",
+              "name": "atk"
+            },
+            "right": {
+              "op": "math",
+              "pos": 8,
+              "name": "random",
+              "args": []
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  "ai.edge_damage_3": {
+    "formula": "a.mat * 2",
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "Skills",
+        "id": 160,
+        "custom": false,
+        "sha256": "f9e7f8b5ad0d17cd45ff2e54a83c8704a4164c06d075adb9bad318e71b66c862"
+      },
+      "status": "pure",
+      "capabilities": [
+        "read.battler"
+      ],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "binary",
+            "pos": 0,
+            "operator": "*",
+            "left": {
+              "op": "property",
+              "pos": 0,
+              "receiver": "a",
+              "name": "mat"
+            },
+            "right": {
+              "op": "literal",
+              "pos": 8,
+              "value": 2.0
+            }
+          }
+        }
+      ],
+      "result": "completion"
+    }
   }
 }

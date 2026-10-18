@@ -13,7 +13,11 @@ var _scripted := false
 var _seed_hex := ""
 
 static func hex64(value: int) -> String:
-	return "%016x" % value
+	var bytes := PackedByteArray()
+	bytes.resize(8)
+	bytes.encode_s64(0, value)
+	bytes.reverse()
+	return bytes.hex_encode()
 
 static func parse64(value: String) -> int:
 	var bytes := value.hex_decode()

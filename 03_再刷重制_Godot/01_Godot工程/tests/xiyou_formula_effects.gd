@@ -9,6 +9,21 @@ class ProbeBattler extends XBattler:
 	func trait_objects() -> Array:
 		return [{"traits": [{"code": 14, "dataId": 1, "value": 1}]}] if death_resist else []
 
+class NativeActor extends XActor:
+	func param(i: int) -> float:
+		return [10000.0, 1000.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0][i]
+
+class NativeEnemy extends XEnemy:
+	func param(i: int) -> float:
+		return [10000.0, 101.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0][i]
+
+class ApplyLogic extends XBattleLogic:
+	var mode := "apply"
+	func item_hit(_u: XBattler, _sk: Dictionary, _t: XBattler) -> float:
+		return 0.0 if mode == "miss" else 1.0
+	func item_eva(_u: XBattler, _sk: Dictionary, _t: XBattler) -> float:
+		return 1.0 if mode == "evade" else 0.0
+
 var checks := 0
 var failures := []
 
@@ -47,7 +62,8 @@ func _ready() -> void:
 	check("source_112", reference is Dictionary and reference.cases.size() == 112)
 	for c in reference.cases:
 		if c.setup.mode != "eval":
-			continue # apply fixtures are also exercised below through XBattleLogic.
+			apply_case(c)
+			continue
 		var a := battler(c.observed.before.a, c.setup, c.setup.pair != "self")
 		var b := a if c.setup.pair == "self" else battler(c.observed.before.b, c.setup, false)
 		var context := XResourceContext.new()
@@ -73,3 +89,37 @@ func _ready() -> void:
 		check(c.id + ".preview_same", same(preview.after, actual.after) and preview.value == actual.value and same(preview.effectJournal, actual.effectJournal), preview)
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks}))
 	get_tree().quit(0 if failures.is_empty() else 1)
+
+func apply_case(c: Dictionary) -> void:
+	var a := NativeEnemy.new()
+	a.setup(int(XDB.rec("Troops", 157).members[0].enemyId), 3, 100.0)
+	var b := NativeActor.new()
+	b.setup(8)
+	for pair in [[a, c.observed.before.a], [b, c.observed.before.b]]:
+		pair[0].state_ids.clear()
+		pair[0].state_turns.clear()
+		pair[0].hp = pair[1].resources[0]
+		pair[0].mp = pair[1].resources[1]
+		pair[0].tp = pair[1].resources[2]
+	var logic := ApplyLogic.new()
+	logic.mode = c.setup.mode
+	logic.state = XState.new()
+	logic.actors = [b]
+	logic.enemies = [a]
+	logic.random = XBattleRandom.create("123456789abcdef0")
+	var tape := [{"kind": "float", "value": 0.5}]
+	if logic.mode != "miss":
+		tape.append({"kind": "float", "value": 0.5})
+	if logic.mode == "apply":
+		tape.append({"kind": "float", "value": 0.5})
+		if b.hp < 3000:
+			tape.append({"kind": "uint32", "value": 2147483648})
+		tape.append_array([{"kind": "uint32", "value": 9}, {"kind": "uint32", "value": 9}])
+	logic.random.rule = XRandomStream.scripted(tape)
+	var actual := logic.apply(a, XDB.rec("Skills", 857), b)
+	check(c.id + ".resources", same([b.hp, b.mp, b.tp], c.observed.after.b.resources), [b.hp, b.mp, b.tp])
+	check(c.id + ".result", same(actual.result, c.observed.after.b.result), actual.result)
+	check(c.id + ".journal", same(actual.effectJournal, c.observed.journal), actual.effectJournal)
+	# The native Yunshang wrapper consumes two UUID floats even on a miss. Stable
+	# action IDs replace those bookkeeping-only draws; the rule draws are preserved.
+	check(c.id + ".rule_draws", logic.random.rule.error.is_empty() and logic.random.rule.draws == int(c.observed.randomDraws) - 2, logic.random.rule.journal)

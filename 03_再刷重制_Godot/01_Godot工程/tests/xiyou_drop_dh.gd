@@ -279,8 +279,9 @@ func _battle_shot() -> void:
 	for i in 90:
 		await get_tree().physics_frame
 	var e: XEnemy = b.logic.enemies[0]
-	b.logic._treasure[e] = [{"kind": 3, "id": 108}, {"kind": 3, "id": 130}, {"kind": 3, "id": 57}]
+	b.logic._treasure[b.logic.stable_id(e)] = [{"kind": 3, "id": 108}, {"kind": 3, "id": 130}, {"kind": 3, "id": 57}]
 	e.hp = 0.0
+	b.logic.resolve_collapse(e)
 	b._enemy_collapsed(e)
 	var p: XDropPopup = b.field.get_children().filter(func(c): return c is XDropPopup)[-1]
 	get_tree().paused = true

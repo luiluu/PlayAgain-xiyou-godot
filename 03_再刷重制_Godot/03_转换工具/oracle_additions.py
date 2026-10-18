@@ -23,6 +23,7 @@ KEYS = {
     'custom_damage.json': {'cases': ('id',)},
     'formula_programs.json': {'cases': ('id',)},
     'formula_effects.json': {'cases': ('id',)},
+    'formula_equipment.json': {'cases': ('id',)},
     'troop_events.json': {'cases': ('troop', 'paid')},
     'smart_ai.json': {'cases': ('troop', 'scene', 'actor', 'state'),
                       'damage': ('troop', 'actor', 'skill', 'target')},

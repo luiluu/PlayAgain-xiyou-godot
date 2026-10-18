@@ -106,8 +106,7 @@ func _expr(n: Dictionary):
 		"undefined": return UNDEFINED
 		"local": return _locals.get(str(n.name), UNDEFINED)
 		"property":
-			var row: Dictionary = _row(str(n.receiver))
-			return row.get("properties", {}).get(str(n.name), UNDEFINED)
+			return _property(str(n.receiver), str(n.name))
 		"lookup":
 			var index = _expr(n.index)
 			var numeric := index is int or index is float
@@ -158,6 +157,9 @@ func _expr(n: Dictionary):
 func _row(receiver: String) -> Dictionary:
 	return _context.get(receiver, {})
 
+func _property(receiver: String, name: String):
+	return _row(receiver).get("properties", {}).get(name, UNDEFINED)
+
 func _gain(_receiver: String, _resource: String, _amount: float):
 	return _fail("write_capability_required")
 
@@ -168,6 +170,7 @@ func _read(n: Dictionary):
 	var key := str(int(index)) if not is_nan(index) and not is_inf(index) and floorf(index) == index else ""
 	var p: Dictionary = row.get("properties", {})
 	match str(n.name):
+		"equipment_level": return XEquipmentView.first_armor_level(row.get("equipment", []), int(index)) if not is_nan(index) and not is_inf(index) else 0.0
 		"element": return row.get("elements", {}).get(key, 1.0)
 		"mastery": return row.get("mastery", {}).get(key, 0.0)
 		"has_state": return row.get("stateIds", []).has(int(key)) if not key.is_empty() else false

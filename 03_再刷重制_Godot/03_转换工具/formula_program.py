@@ -133,6 +133,10 @@ class Parser:
         if depth > 32:
             raise Unsupported('statement_depth_limit', self.pos)
         pos = self.pos
+        if self.i == 0:
+            query = self.equipment_prefix()
+            if query is not None:
+                return query
         if self.accept(';'):
             return self.node('empty', pos)
         if self.accept('{'):
@@ -169,6 +173,44 @@ class Parser:
         self.end_statement()
         return self.node('expr', pos, value=expr)
 
+    def equipment_prefix(self):
+        """Complete bounded token grammar; filter/arrow functions never execute."""
+        shape = ('var BASE = NUMBER ; let CURRENT = null ; var EQUIPS = USER . equips ( ) . filter ( ( ELEM ) = > ! ! ELEM && DataManager . isArmor ( ELEM ) && ELEM . baseItemId === BASE ) ; '
+                 'if ( EQUIPS . length > 0 ) CURRENT = EQUIPS [ 0 ] ; var OBJECT = ! ! CURRENT ? USER . getEquipItemObject ( CURRENT ) : null ; var LEVEL = ! ! OBJECT ? OBJECT . level ( ) : 0 ;').split()
+        captured, start = {}, self.i
+        try:
+            for token in shape:
+                actual = self.take()
+                if token in ('BASE', 'CURRENT', 'EQUIPS', 'USER', 'ELEM', 'OBJECT', 'LEVEL', 'NUMBER'):
+                    if token in captured:
+                        if captured[token][0] != actual[0]:
+                            raise Unsupported('equipment_query_name_mismatch', actual[1])
+                    else:
+                        if token == 'NUMBER':
+                            if actual[3] != 'number' or not actual[0].isdigit() or actual[0].startswith('0') or int(actual[0]) <= 0:
+                                raise Unsupported('equipment_query_base_requires_positive_integer', actual[1])
+                        elif actual[3] != 'name' or actual[0] in RESERVED or (token == 'USER' and actual[0] not in ALIASES):
+                            raise Unsupported('equipment_query_identifier', actual[1])
+                        captured[token] = actual
+                elif actual[0] != token:
+                    raise Unsupported('equipment_query_shape', actual[1])
+            names = [captured[k][0] for k in ('BASE', 'CURRENT', 'EQUIPS', 'OBJECT', 'LEVEL')]
+            if len(set(names)) != len(names) or any(n in ALIASES or n in ('DataManager', 'Math', 'item', 'v', 's') for n in names) or captured['ELEM'][0] in names + ['DataManager']:
+                raise Unsupported('equipment_query_shadowing', self.pos)
+            hidden = {captured[k][0] for k in ('CURRENT', 'EQUIPS', 'OBJECT')}
+            if any(t[0] in hidden for t in self.tokens[self.i:]):
+                raise Unsupported('equipment_query_object_escape', self.pos)
+            base, level = captured['BASE'], captured['LEVEL']
+            return self.node('block', base[1], steps=[
+                self.node('declare', base[1], kind='var', name=base[0], initialized=True,
+                          value=self.node('literal', captured['NUMBER'][1], value=float(captured['NUMBER'][0]))),
+                self.node('declare', level[1], kind='var', name=level[0], initialized=True,
+                          value=self.node('equipment_query', level[1], receiver=ALIASES[captured['USER'][0]],
+                                          base=self.node('name', base[1], name=base[0])))])
+        except (Unsupported, IndexError):
+            self.i = start
+            return None
+
     def parse(self):
         steps = []
         while self.t != '<eof>':
@@ -198,6 +240,9 @@ class Compiler:
             return {'op': kind, 'pos': pos, **fields}
         if op in ('literal', 'undefined', 'empty'):
             return n
+        if op == 'equipment_query':
+            self.caps.add('read.equipment_instance_level')
+            return out('read', receiver=n['receiver'], name='equipment_level', args=[self.lower(n['base'])])
         if op == 'group':
             return self.lower(n['value'])
         if op == 'name':

@@ -36,7 +36,7 @@ for(const [suffix,resources] of [['full',[1,1,200]],['edge',[0.2,0,1]]]) {
   contexts[label]={a:snapshot(a),b:snapshot(b),v:sparse(w.$gameVariables._data),s:sparse(w.$gameSwitches._data)};
   const seen = new Set();
   for(const [table,rows] of Object.entries(tables)) for(const row of rows) {
-    if(!row || !row.damage.type || row.damage.formulaProgram.status!=='pure') continue;
+    if(!row || !row.damage.type || row.damage.formulaProgram.status!=='pure' || row.damage.formulaProgram.capabilities.includes('read.equipment_instance_level')) continue;
     const p=row.damage.formulaProgram, source=(table==='Skills'?w.$dataSkills:w.$dataItems)[row.id];
     const key=JSON.stringify([source.damage.formula,source.damage.custom,source.damage.type,/item\s*\.\s*id/.test(source.damage.formula)?row.id:0]);
     if(seen.has(key)) continue; seen.add(key);

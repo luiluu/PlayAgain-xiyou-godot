@@ -24,6 +24,7 @@ var hp := 0.0
 var immortal := false
 ## A resource refresh can leave HP zero while death is resisted/removed in this result.
 var resource_death_blocked := false
+static var _outside_random: XRandomStream
 var mp := 0.0
 var tp := 0.0
 var state_ids: Array[int] = []
@@ -217,7 +218,16 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	var s := XDB.rec("States", id)
 	var lo := int(s.get("minTurns", 1))
 	var hi := maxi(lo, int(s.get("maxTurns", lo)))
-	state_turns[id] = random.next_int_inclusive(lo, hi, "state_duration", str(id)) if random != null else randi_range(lo, hi)
+	state_turns[id] = roll_state_duration(lo, hi, random, str(id))
+
+func roll_state_duration(lo: int, hi: int, random: XRandomStream = null, event_key := "") -> int:
+	if random != null:
+		return random.next_int_inclusive(lo, hi, "state_duration", event_key)
+	if XState.current != null:
+		return XState.current.world_random().next_int_inclusive(lo, hi, "state_duration", event_key)
+	if _outside_random == null:
+		_outside_random = XRandomStream.create(XRandomStream.hex64(XState._fresh_seed()), "world")
+	return _outside_random.next_int_inclusive(lo, hi, "state_duration", event_key)
 
 func remove_state(id: int) -> void:
 	if id == 1 and state_ids.has(id) and hp <= 0.0:

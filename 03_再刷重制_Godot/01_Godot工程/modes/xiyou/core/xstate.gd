@@ -38,6 +38,7 @@ var rom := {"x": [], "xn": 0, "xs": [], "xsn": 0, "g": [], "gn": 0}
 var random_master := ""
 var battle_serial := 0
 var _equipment_random: XRandomStream
+var _world_random: XRandomStream
 
 func _ensure_random_master() -> void:
 	if random_master.is_empty():
@@ -55,9 +56,15 @@ func equipment_random() -> XRandomStream:
 		_equipment_random = XRandomStream.create(XRandomStream.derive(random_master, "equipment"), "equipment")
 	return _equipment_random
 
+func world_random() -> XRandomStream:
+	_ensure_random_master()
+	if _world_random == null:
+		_world_random = XRandomStream.create(XRandomStream.derive(random_master, "world-events"), "world")
+	return _world_random
+
 func random_save() -> Dictionary:
 	return {"version": 1, "engine": XRandomStream.ENGINE, "master": random_master,
-		"battleSerial": battle_serial, "equipment": _equipment_random.snapshot() if _equipment_random != null else {}}
+		"battleSerial": battle_serial, "world": _world_random.snapshot() if _world_random != null else {}, "equipment": _equipment_random.snapshot() if _equipment_random != null else {}}
 
 static func valid_random_save(data) -> bool:
 	if not data is Dictionary or data.get("version") != 1 or data.get("engine") != XRandomStream.ENGINE:
@@ -66,6 +73,9 @@ static func valid_random_save(data) -> bool:
 	if not (serial is int or serial is float) or not is_finite(float(serial)) or float(serial) < 0 or float(serial) != floorf(float(serial)) or float(serial) >= 9007199254740992.0:
 		return false
 	if not data.get("master") is String or (data.master != "" and not XRandomStream.valid_hex(data.master)):
+		return false
+	var world = data.get("world", {})
+	if not world is Dictionary or (not world.is_empty() and (data.master == "" or not XRandomStream.valid_saved(world) or world.domain != "world" or world.get("scripted", false))):
 		return false
 	var equipment = data.get("equipment")
 	return equipment is Dictionary and (equipment.is_empty() or (data.master != "" and XRandomStream.valid_saved(equipment) and equipment.domain == "equipment" and not equipment.get("scripted", false)))
@@ -426,6 +436,8 @@ static func from_dict(d: Dictionary) -> XState:
 		s.battle_serial = int(d.random.battleSerial)
 		if not d.random.equipment.is_empty():
 			s._equipment_random = XRandomStream.restore(d.random.equipment)
+		if not d.random.get("world", {}).is_empty():
+			s._world_random = XRandomStream.restore(d.random.world)
 	s.difficulty = int(d.difficulty)
 	for id_s in d.actors:
 		var row: Dictionary = d.actors[id_s]

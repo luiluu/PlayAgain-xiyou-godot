@@ -35,7 +35,7 @@ static func run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swit
 	vm.resources.labels[first] = "a"
 	if second != first:
 		vm.resources.labels[second] = "b"
-	var context := {"v": variables.duplicate(true), "s": switches.duplicate(true)}
+	var context := {"v": variables, "s": switches}
 	var out := vm._run(program, context, int(item.damage.type), {})
 	out.effectJournal = vm.resources.journal
 	out.results = {"a": vm.resources.result(first).duplicate(true), "b": vm.resources.result(second).duplicate(true)}
@@ -51,7 +51,27 @@ func _read(node: Dictionary):
 	if node.name == "mastery" and _battlers[node.receiver].has_meta("formula_read_error"):
 		_fail("formula_read_error")
 		return UNDEFINED
-	return super._read(node)
+	var b: XBattler = _battlers[node.receiver]
+	var args: Array = node.args.map(func(arg): return _expr(arg))
+	var index := _number(args[0]) if args.size() == 1 else NAN
+	var valid := not is_nan(index) and not is_inf(index) and index == floorf(index)
+	match str(node.name):
+		"equipment_level": return XEquipmentView.first_armor_level(b.equip_list(), int(index)) if valid and b is XActor else 0.0
+		"element": return b.element_rate(int(index)) if valid else 1.0
+		"mastery": return b.skillMasteryLevel(int(index)) if valid else 0
+		"has_state": return b.is_state_affected(int(index)) if valid else false
+		"states_count": return b.states().size()
+		"max_tp": return b.max_tp()
+		"actor_id": return b.actor_id if b is XActor else null
+		"hp_rate": return _divide(b.hp, b.mhp)
+		"mp_rate": return _divide(b.mp, b.mmp) if b.mmp != 0.0 else 0.0
+		"param": return b.param(int(index)) if valid and index >= 0 and index < 8 else UNDEFINED
+		"xparam": return b.xparam(int(index)) if valid and index >= 0 and index < 10 else UNDEFINED
+		"sparam": return b.sparam(int(index)) if valid and index >= 0 and index < 10 else UNDEFINED
+	return _fail("unknown_read")
+
+func _property(receiver: String, name: String):
+	return _battlers[receiver].get(name) if name in XFormulaContext.PROPERTIES.split(" ") else _fail("unknown_property")
 
 func _gain(receiver: String, resource: String, amount: float):
 	if not _error.is_empty():

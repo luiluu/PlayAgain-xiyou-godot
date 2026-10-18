@@ -19,7 +19,7 @@ static func elements_data() -> Dictionary:
 static func eval_formula(item: Dictionary, a: XBattler, b: XBattler, vars: Array) -> float:
 	var program: Dictionary = item.damage.get("formulaProgram", {})
 	if program.get("status") == "pure":
-		return XFormulaProgram.evaluate(program, XFormulaContext.capture(a, b, vars, {}, int(item.id)), int(item.damage.type)).value
+		return XFormulaProgram.evaluate(program, XFormulaContext.capture(a, b, vars, {}, int(item.id), program), int(item.damage.type)).value
 	var out := XFormulaExecution.run_item(item, a, b, vars)
 	return float(out.value)
 

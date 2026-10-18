@@ -73,6 +73,7 @@ PROBES = [
     (['custom_damage_probe.cjs'], ['custom_damage.json']),
     (['formula_program_probe.cjs'], ['formula_programs.json']),
     (['formula_effect_probe.cjs'], ['formula_effects.json']),
+    (['formula_equipment_probe.cjs'], ['formula_equipment.json']),
     (['review_fix_probe.cjs'], ['review_fix.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
