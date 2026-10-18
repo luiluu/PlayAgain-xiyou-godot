@@ -6,6 +6,10 @@
 set -u
 ENV_DIR=${0:A:h}
 ROOT=${ENV_DIR:h:h}
+if [[ ${XIYOU_LONG_TASK_MANAGED:-0} != 1 ]]; then
+  task_log=${XIYOU_TASK_LOG:-$ROOT/03_再刷重制_Godot/04_验证/本地结果/任务/check-$(date +%Y%m%d_%H%M%S)-$$.log}
+  exec python3 "$ENV_DIR/长任务.py" run "$task_log" -- "${0:A}" "$@"
+fi
 PROJECT=$ROOT/03_再刷重制_Godot/01_Godot工程
 GODOT=${GODOT:-$ENV_DIR/godot}   # 云端等没有本机 Godot.app 时用环境变量指定（见 云端测试.md）
 FAIL=0

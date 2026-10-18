@@ -55,6 +55,26 @@ def has_error(x):
     return isinstance(x, list) and any(has_error(v) for v in x)
 
 
+def valid_level_samples(samples):
+    import math
+    if not isinstance(samples, dict) or set(samples) != {'35', '65', '99'}:
+        return False
+    expected = {'param', 'xparam', 'sparam', 'elementRates', 'level', 'hp', 'mhp'}
+    def finite(x):
+        return type(x) in (int, float) and math.isfinite(x)
+    for level, row in samples.items():
+        if not isinstance(row, dict) or set(row) != expected or row['level'] != int(level):
+            return False
+        for field, size in [('param', 8), ('xparam', 10), ('sparam', 10), ('elementRates', None)]:
+            values = row[field]
+            if (not isinstance(values, list) or not values or (size is not None and len(values) != size)
+                    or not all(finite(x) for x in values)):
+                return False
+        if not finite(row['hp']) or not finite(row['mhp']):
+            return False
+    return True
+
+
 def compare_file(name, old, new):
     """返回新增集合与问题。数组按稳定键分组，重复键的组内按多重集逐条精确比较。"""
     old, new = payload(old), payload(new)
@@ -96,7 +116,13 @@ def compare_file(name, old, new):
                     if any(k not in b[key] or b[key][k] != v for k, v in value.items()):
                         problems.append('既有角色改变或删除：' + key)
                     elif set(b[key]) - set(value):
-                        additions.append({'collection': 'actors.fields', 'key': key, 'count': len(set(b[key]) - set(value))})
+                        extra = {k: b[key][k] for k in set(b[key]) - set(value)}
+                        samples = extra.get('levelSamples')
+                        if (set(extra) != {'levelSamples'} or not valid_level_samples(samples)
+                                or has_error(extra)):
+                            problems.append('新增角色采样字段无效或有错误：' + key)
+                        else:
+                            additions.append({'collection': 'actors.fields', 'key': key, 'count': 1})
                     continue
                 if key not in b or b[key] != value:
                     problems.append('既有' + ('敌人' if field == 'enemies' else '角色') + '改变或删除：' + key)
