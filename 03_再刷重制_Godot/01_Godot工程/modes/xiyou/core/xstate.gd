@@ -64,6 +64,8 @@ var eco_frac := {}
 var shop_stock := {"inv": {}, "schedules": []}
 ## 真气：降服过的本命兵武器类型 w、灵根元素 e、完成过的神兵试炼 weaponTrials（$gameSystem._codexZhenqiSpec），全队共用、随存档
 var zhenqi_spec := {"w": {}, "e": {}, "weaponTrials": {}}
+## 修行指引看过的区段里程碑（$gameSystem._codexGuideSeen：{"seg:a": 1}），随存档
+var guide_seen := {}
 var shop_pending := ""
 var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
@@ -377,7 +379,7 @@ func to_dict() -> Dictionary:
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac,
-		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen}
 
 static func from_dict(d: Dictionary) -> XState:
 	var s := XState.new()
@@ -453,6 +455,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.dungeon = d.get("dungeon", {})
 	s.boss_mastery = d.get("bossMastery", {})
 	s.race_supply = d.get("raceSupply", {})
+	var gs = d.get("guideSeen", {})
+	s.guide_seen = gs.duplicate() if gs is Dictionary else {}
 	s.eco_frac = d.get("ecoFrac", {})
 	s.shop_stock = XShopStock.from_save(d.get("shopStock", {}))
 	var zs = d.get("zhenqiSpec", {})

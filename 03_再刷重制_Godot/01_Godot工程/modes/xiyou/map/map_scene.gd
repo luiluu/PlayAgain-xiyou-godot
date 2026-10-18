@@ -39,6 +39,7 @@ var popups: Array = []              # 出现过的获得提示文字（测试核
 var _pending_popups: Array = []     # 本帧获得的物品（MOG_TreasurePopup 按帧成批，序号决定错开）
 var _bgm_name := ""
 var _menu_open := false
+var _milestone_tick := 0
 var _backup_until := 0
 ## Game_Temp.reserveCommonEvent：事件进行中点的枫叶，等事件结束后执行
 var _reserved_common_event := 0
@@ -298,6 +299,8 @@ func _process(delta: float) -> void:
 			run_common_event(id)
 		else:
 			_check_autorun()
+		if not busy and transfer_page == null:
+			_check_milestone()
 	if not busy and Input.is_action_just_pressed("ui_cancel") and not XMessageBox.consumed_input_this_frame():
 		open_menu()
 
@@ -418,6 +421,24 @@ func _tile_events_at(x: int, y: int) -> Array:
 		if e.tile_id > 0 and e.priority_type == 0 and e.grid.x == x and e.grid.y == y:
 			out.append(e.tile_id)
 	return out
+
+
+## 修行指引区段里程碑（installNativeGuidanceRuntime 的 Scene_Map.update）：没有事件在跑时每 30 帧查一次，
+## 修行进度层所在区段没看过就记看过、显示本段说明（每段一次）
+func _check_milestone() -> void:
+	_milestone_tick += 1
+	if _milestone_tick % 30:
+		return
+	var s := XState.current
+	var seg := XGuide.pending_milestone(s)
+	if seg.is_empty():
+		return
+	XGuide.seen(s, "seg:" + str(seg.key), true)
+	_set_busy(true)
+	var interp := MVInterpreter.new(self, map_id, 0, XGuide.page_list(XGuide.milestone_texts(seg)))
+	await interp.run()
+	_set_busy(false)
+	refresh_events()
 
 
 ## Game_Map.setupAutorunEvent / Game_Event.checkEventTriggerAuto：列表多于一条（末尾结束指令之外还有内容）才启动

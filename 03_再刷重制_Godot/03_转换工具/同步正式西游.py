@@ -67,6 +67,7 @@ PROBES = [
     (['dungeon_probe.cjs'], ['dungeon.json']),
     (['shared_system_probe.cjs'], ['shop_stock.json', 'battle_messages.json', 'challenge_passives.json']),
     (['zhenqi_probe.cjs'], ['zhenqi.json']),
+    (['guide_probe.cjs'], ['guide.json']),
     (['custom_damage_probe.cjs'], ['custom_damage.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
