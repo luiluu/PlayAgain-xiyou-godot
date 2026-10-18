@@ -15,7 +15,7 @@ TOOLS = SUB / '03_转换工具'
 PROJECT = SUB / '01_Godot工程'
 BOARD = Path('00_项目管理/交接板.md')
 LOG = Path('00_项目管理/变更记录.md')
-COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/重制步骤清单.md'),
+COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/交接板归档.md'), Path('00_项目管理/重制步骤清单.md'),
           Path('00_项目管理/当前状态.json'), Path('00_项目管理/来源登记.json'),
           SUB / '开发编号.json', PROJECT / 'project.godot', PROJECT / 'content/build_info.json']}
 VERSION_MARKER = 'dev.' + '待定'
