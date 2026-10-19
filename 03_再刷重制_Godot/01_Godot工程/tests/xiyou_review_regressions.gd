@@ -64,7 +64,8 @@ func _run() -> void:
 	lethal.effects = [{"code": 21, "dataId": 4, "value1": 100.0, "value2": 0.0}]
 	var foe: XBattler = logic.enemies[0]
 	var killed := logic.apply(a, lethal, foe)
-	check("lethal_damage_skips_add_state", killed.died and foe.state_ids == [1] and killed.added.is_empty())
+	# 结果槽现与 MV 一致记录伤害刷新附加的阵亡；后续毒状态 4 仍必须跳过。
+	check("lethal_damage_skips_add_state", killed.died and foe.state_ids == [1] and killed.added == [1])
 	var soft: Dictionary = lethal.duplicate(true)
 	soft.damage.type = 0
 	var foe2: XBattler = logic.enemies[1] if logic.enemies.size() > 1 else null
