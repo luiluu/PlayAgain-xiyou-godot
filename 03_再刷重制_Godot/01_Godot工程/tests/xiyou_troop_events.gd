@@ -133,7 +133,8 @@ func _case(c: Dictionary, round: int) -> void:
 	# 第 2 回合（战斗没结束时）：守层者照常行动一次（技能随机，不比）；有追加行动特性（61，几率）的敌人，每条特性最多再多一次（怨毒集合体 10%）
 	if not got[2].is_empty():
 		var times: int = got[2].filter(func(x): return x[0] == "e0").size()
-		check(name + ".t2_enemy_once", times >= 1 and times <= 1 + plus, got[2])
+		# Another enemy may keep the battle running after e0 dies before its turn.
+		check(name + ".t2_enemy_once", times >= (1 if e0.is_alive() else 0) and times <= 1 + plus, [got[2], e0.is_alive()])
 	# 附加伤害：守层者用过 8111（加上 1460）之后，每次命中活着的目标都按 [攻击, 魔攻] 附加
 	# （十层守层者第 1 回合先强制 500，那时还没有 1460，不附加）
 	var extras := []
