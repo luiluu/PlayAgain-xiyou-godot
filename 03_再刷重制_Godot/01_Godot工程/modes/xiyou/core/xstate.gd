@@ -98,6 +98,7 @@ static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> 
 	for id in [starter_id] + companions:
 		s.add_actor(int(id))
 	s.followers_visible = bool(XDB.system().get("optFollowers", false))
+	XGlobalVars.apply(s)  # Game_Map.initialize：跨存档变量盖到新局
 	_become_current(s)
 	return s
 
@@ -116,6 +117,7 @@ static func new_game_blank() -> XState:
 	s.y = int(sys.get("startY", 0))
 	s.direction = 2
 	XSave.current_slot = 0
+	XGlobalVars.apply(s)  # Game_Map.initialize：跨存档变量盖到新局
 	_become_current(s)
 	return s
 
@@ -254,12 +256,14 @@ func switch(id: int) -> bool:
 
 func set_switch(id: int, on: bool) -> void:
 	switches[id] = on
+	XGlobalVars.on_switch(id, on)  # 跨存档开关（Drill_VariablesAcrossArchive）
 
 func variable(id: int) -> float:
 	return variables.get(id, 0)
 
 func set_variable(id: int, value: float) -> void:
 	variables[id] = floorf(value)  # Game_Variables.setValue：数值一律 Math.floor。
+	XGlobalVars.on_variable(id, value)  # 跨存档变量存取整前的原值（同 Drill_VariablesAcrossArchive）
 
 ## 公式用的变量表 v[...]：未定义的按 0。
 func variable_array(size := 5000) -> Array:
@@ -477,5 +481,6 @@ static func from_dict(d: Dictionary) -> XState:
 	elif s.self_switch(4, 20, "A"):
 		# dev.016 及以前的 Godot 档没有解锁记录：已到过大厅的补大厅（所在地图由 load_map 照常解锁）
 		s.unlocked_maps[4] = true
+	XGlobalVars.apply(s)  # extractSaveContents 之后：跨存档变量盖掉档里的值
 	_become_current(s)
 	return s
