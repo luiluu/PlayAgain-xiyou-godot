@@ -160,12 +160,16 @@ func _run() -> void:
 	XConfig.set_equipment_sort({"sort": "quality", "term": ""})
 	page.open_search()
 	await frames()
+	# 原版 close() 不存排序：面板里只改条件、不动排序下拉就关闭，配置里的排序不变
+	page.search_panel.filter.sort = "name"
+	page.search_panel._on_field("斩月", "query")
 	var key_ev := InputEventKey.new()
 	key_ev.keycode = KEY_ESCAPE
 	key_ev.pressed = true
 	Input.parse_input_event(key_ev)
 	await frames()
 	check("escape_closes", page.search_panel == null)
+	check("close_keeps_saved_sort", XConfig.equipment_sort() == {"sort": "quality", "term": ""}, XConfig.equipment_sort())
 	page.queue_free()
 	await frames()
 

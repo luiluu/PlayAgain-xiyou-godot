@@ -31,6 +31,8 @@ const COMMANDS := [["物品", "item", true], ["技能", "skill", true], ["装备
 	["怪物图鉴", "monsterBook", false], ["成就", "achievement", false], ["存档", "save", true], ["反馈", "feedback", false],
 	["设置", "options", true], ["游戏结束", "gameEnd", true]]
 const CMD_VISIBLE := 15
+## 无队员时灰显的指令（冻结 v0.28 空队主菜单运行时：物品／技能／装备／状态／真气／整队 enabled=false，其余不变）
+const NEEDS_MEMBERS := ["item", "skill", "equip", "status", "zhenqi", "formation"]
 
 var cmd_win: XMVWindow
 var gold_win: XMVWindow
@@ -50,6 +52,12 @@ var player_tile := Vector2.ZERO
 var reserved_common_event := 0
 ## 「真气」：CodexZhenqi.openFromMenu 关菜单回地图后，由地图执行闭关（XZhenqiRetreat）
 var zhenqi_requested := false
+
+
+## 指令第 i 项是否可用：已重制，且（需要队员的）队里有人
+func command_enabled(i: int) -> bool:
+	var cmd: Array = COMMANDS[i]
+	return cmd[2] and not (cmd[1] in NEEDS_MEMBERS and _members().is_empty())
 
 
 func command_names() -> Array:
@@ -90,7 +98,7 @@ func _paint_commands(c: XMVCanvas) -> void:
 			continue
 		if i == _cmd_index:
 			c.cursor(Rect2(0, y, c.size.x, CMD_LH), _mode == "command")
-		c.text(COMMANDS[i][0], 6, y, c.size.x - 12, "left", XUI.TEXT, XUI.FONT_SIZE, CMD_LH, 1.0 if COMMANDS[i][2] else XUI.DIM.a)
+		c.text(COMMANDS[i][0], 6, y, c.size.x - 12, "left", XUI.TEXT, XUI.FONT_SIZE, CMD_LH, 1.0 if command_enabled(i) else XUI.DIM.a)
 
 
 func _paint_gold(c: XMVCanvas) -> void:
@@ -282,7 +290,7 @@ static func _scroll_to(i: int, top: int, visible: int) -> int:
 func _ok() -> void:
 	if _mode == "command":
 		var cmd: Array = COMMANDS[_cmd_index]
-		if not cmd[2]:
+		if not command_enabled(_cmd_index):
 			XSound.system(3)
 			return
 		XSound.system(1)

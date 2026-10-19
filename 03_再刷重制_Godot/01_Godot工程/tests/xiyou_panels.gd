@@ -103,6 +103,21 @@ func _run() -> void:
 	for n in menu.get_children():
 		if n is XSaveScene: n.closed.emit()
 	await _frames()
+	# 主菜单灰显（冻结 v0.28 主菜单运行时／空队运行时）：有队员时已重制的指令全可用；空队时物品／技能／装备／状态／真气／整队灰显，存档／设置等不变
+	var cmd_ok := func() -> Array: return range(menu.COMMANDS.size()).map(func(i): return menu.command_enabled(i))
+	var full: Array = cmd_ok.call()
+	var wanted := menu.COMMANDS.map(func(c): return c[2])
+	_check("menu_enabled_with_party", full == wanted, full)
+	var saved_party: Array = s.party.duplicate()
+	s.party.clear()
+	var empty: Array = cmd_ok.call()
+	var gray := []
+	for i in menu.COMMANDS.size():
+		if full[i] and not empty[i]: gray.append(menu.COMMANDS[i][0])
+	_check("menu_gray_without_members", gray == ["物品", "技能", "装备", "状态", "真气", "整队"], gray)
+	menu._cmd_index = 0; menu._ok(); await _frames()
+	_check("menu_gray_item_not_opened", menu._mode == "command" and menu.get_children().all(func(n): return not n is XItemScene))
+	s.party.assign(saved_party)
 	menu.queue_free(); await _frames()
 	# 非自动场景截图：轮到角色时停在指令窗，验证顺序条实际接入。
 	var battle := XBattleScene.new()
