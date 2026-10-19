@@ -51,6 +51,8 @@ var receipt = null
 ## 本游标最近一条 125～128 的实际所得 {kind, id, amount}（CodexV010Fixes.awardQuantity）
 var last_gain := {}
 var _child: MVEventCore = null
+## 宿主指令回 false（全军覆没、回标题）后置位；父游标见子游标 halted 也跟着结束
+var halted := false
 ## 正在等待的应答："" 不在等待、"message" 文字、"choice" 选项（_wait_arg＝缩进）、"number" 数值（_wait_arg＝变量）、
 ## "flush" 待显示文字（应答后不前进）、"command" 宿主指令
 var _wait := ""
@@ -83,6 +85,11 @@ func advance() -> Dictionary:
 			if r.kind != "done":
 				return r
 			skipped.append_array(_child.skipped)
+			if _child.halted:
+				# 全军覆没（301 战败不可败）／回标题：整串事件到此为止，不接着跑上层（地图事件、上一级公共事件）后面的指令；
+				# 参照引擎 SceneManager.goto 离开地图场景，父解释器不会再往下走
+				halted = true
+				index = list.size() - 1
 			_child = null
 			index += 1
 			continue
@@ -125,6 +132,7 @@ func resume(response = null) -> void:
 			state().set_variable(int(_wait_arg), int(response) if response != null else 0)
 		"command":
 			if response is bool and not response:
+				halted = true
 				index = list.size()
 				return
 	index += 1
