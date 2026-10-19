@@ -58,7 +58,7 @@ func _run() -> void:
 	check("battle_revives_selected_dead", dead.is_alive() and s.actor(8).is_dead() and s.item_count(183) == 0)
 	# 进度审查 25%：伤害致死后同一次行动的「附加状态」不再生效（MV isStateAddable 要求活着），存活目标照常附加
 	var lethal: Dictionary = XDB.rec("Skills", 1).duplicate(true)
-	lethal.damage = {"type": 1, "elementId": 0, "formula": "1000000", "formulaGd": "1000000", "variance": 0, "critical": false}
+	lethal.damage = {"type": 1, "elementId": 0, "formula": "1000000", "formulaGd": "1000000", "formulaProgram": JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/formula_effect_programs.json"))["runtime.constant1000000"].program, "variance": 0, "critical": false}
 	lethal.hitType = 0
 	lethal.successRate = 100
 	lethal.effects = [{"code": 21, "dataId": 4, "value1": 100.0, "value2": 0.0}]

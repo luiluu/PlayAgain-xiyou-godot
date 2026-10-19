@@ -26,7 +26,8 @@ class FormulaCompilerTests(unittest.TestCase):
     def test_effect_fixtures_and_equipment_query_bounds(self):
         path = TOOLS.parent / '01_Godot工程/tests/fixtures/formula_effect_programs.json'
         for key, row in json.loads(path.read_text()).items():
-            self.assertEqual(row['program'], compile_formula(row['formula'], 160 if key.startswith('ai.') else 857, not key.startswith('ai.')))
+            source = row['program']['source']
+            self.assertEqual(row['program'], compile_formula(row['formula'], source['id'], source['custom'], source['table']))
         prefix = ('var baseEquipId=3640; let currentEquip=null; var equips=user.equips().filter((equip)=>!!equip && DataManager.isArmor(equip) && equip.baseItemId===baseEquipId); '
                   'if(equips.length>0)currentEquip=equips[0]; var mw=!!currentEquip?user.getEquipItemObject(currentEquip):null; var level=!!mw?mw.level():0; ')
         program = compile_formula(prefix + 'value=level+user.atk;', custom=True)

@@ -484,5 +484,59 @@
       ],
       "result": "completion"
     }
+  },
+  "runtime.constant100": {
+    "formula": "100",
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "Skills",
+        "id": 0,
+        "custom": false,
+        "sha256": "ad57366865126e55649ecb23ae1d48887544976efea46a48eb5d85a6eeb4d306"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "literal",
+            "pos": 0,
+            "value": 100.0
+          }
+        }
+      ],
+      "result": "completion"
+    }
+  },
+  "runtime.constant1000000": {
+    "formula": "1000000",
+    "program": {
+      "version": 1,
+      "source": {
+        "table": "Skills",
+        "id": 0,
+        "custom": false,
+        "sha256": "6cce36d9f8a9e151b100234af75cca89d55bcb94c153f51847debdf1f39cae45"
+      },
+      "status": "pure",
+      "capabilities": [],
+      "locals": [],
+      "steps": [
+        {
+          "op": "expr",
+          "pos": 0,
+          "value": {
+            "op": "literal",
+            "pos": 0,
+            "value": 1000000.0
+          }
+        }
+      ],
+      "result": "completion"
+    }
   }
 }
