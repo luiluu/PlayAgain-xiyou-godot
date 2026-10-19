@@ -10,6 +10,8 @@ class QuietBattle extends XBattleScene:
 const ORACLE := "res://tests/fixtures/action_sequence_oracle.json"
 ## 画面快照用的正式版读数（__seqRef.suite(列表, 'action_sequence_hp_oracle')）：s131 多段攻击敌人 HP 逐帧、s104 反击致死
 const HP_ORACLE := "res://tests/fixtures/action_sequence_hp_oracle.json"
+## 普通攻击动画（双持）的正式版读数（ui_reference __atkAniRef.suite()）
+const ATK_ORACLE := "res://tests/fixtures/attack_animation_oracle.json"
 ## 窗口模式加 -- --out=<目录>：在这些帧截图（镜头拉近、跳跃最高、透明度最低）
 const SHOTS := {"s65": [49, 70, 100], "s104": [42]}
 var results := []
@@ -57,6 +59,7 @@ func _run() -> void:
 	await _counter_death(scene, hp_oracle.traces.s104_counter_death)
 	await _multi_hit_gauge(scene, hp_oracle.traces.s131)
 	await _attack_mirror()
+	await _attack_dual()
 	XConfig.set_flag("battleCamera", true)
 	XConfig.set_flag("CombatSkillAnimation", false)
 	scene.queue_free()
@@ -275,3 +278,48 @@ func _attack_mirror() -> void:
 			check("s%d_attack_plain" % row[1], not player.anims.is_empty() and player.anims.all(func(a): return a.scale.x > 0.0))
 		scene.queue_free()
 		await get_tree().process_frame
+
+
+## 冻结 YEP_BattleEngineCore.js:5617 showActorAtkAniMirror 与 MV showActorAttackAnimation：双持角色两把武器的动画都放，
+## MIRROR 路径武器 1 镜像＋武器 2 不镜像，普通路径武器 1＋武器 2 镜像；单武器、空手、敌人只放一个。
+## 对照正式版读数：每个目标上新建的动画 [目标序号, 动画, 镜像, _delay]（同一目标内按动画号排序比）。
+func _attack_dual() -> void:
+	XConfig.set_flag("CombatSkillAnimation", true)
+	var oracle: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ATK_ORACLE))
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	XState._become_current(s)
+	var scene := QuietBattle.new()
+	scene.setup(2, true, false, {})
+	add_child(scene)
+	await get_tree().physics_frame
+	var actor: XActor = scene.logic.actors[0]
+	var foes: Array = scene.logic.enemies.slice(0, 2)
+	var rows := func(anims: Array) -> Array:
+		var out := []
+		for a in anims:
+			var i := foes.map(func(f): return scene.sprites[f]).find(a.target)
+			out.append([i, int(a.anim.id), 1 if a.scale.x < 0.0 else 0, a.wait])
+		out.sort()
+		return out
+	for key in ["dual", "single", "bare", "enemy"]:
+		var want: Dictionary = oracle.cases[key]
+		var user: XBattler = foes[0]
+		if key != "enemy":
+			user = actor
+			for i in range(actor.equips.size()):
+				actor.equips[i] = null
+			for i in range(want.weapons.size()):
+				actor.equips[i] = XGear.template("weapon", int(want.weapons[i]))
+		check("atk_%s_ids" % key, scene._attack_animation_ids(user) == want.ids.map(func(v): return int(v)), [scene._attack_animation_ids(user), want.ids])
+		for path in ["plain", "mirror"]:
+			var player := XSequencePlayer.create(scene, {"user": user, "skill": XDB.rec("Skills", 1)}, [])
+			player._attack_animation(foes, path == "mirror")
+			var expect: Array = want[path].map(func(r): return r.map(func(v): return int(v)))
+			expect.sort()
+			var got: Array = rows.call(player.anims)
+			check("atk_%s_%s" % [key, path], got == expect, {"godot": got, "mv": expect})
+			for a in player.anims:
+				if is_instance_valid(a):
+					a.queue_free()
+	scene.queue_free()
+	await get_tree().process_frame

@@ -456,6 +456,38 @@ window.__refJson = function (name, obj) {
             __refJson(name||'action_sequence_oracle',out);
             return out;
         };
+        // 普通攻击动画（双持）：在战斗夹具等到角色指令窗口后 await __atkAniRef.suite()。第一位角色依次直接设成双持（独立物品 武器 2005
+        // 鸾凤和鸣剑，带双持特性＋武器 2 练习剑；不经 canEquip，2005 本是刘备专属）、单武器 2005、空手，对两只敌人调日志窗
+        // showAttackAnimation 与 showActorAtkAniMirror（YEP MIRROR 路径），再加第一只敌人出手两条；包住 Sprite_Base.startAnimation
+        // 记每次新建的 Sprite_Animation（目标、动画、镜像、_delay）。只改这场内存战斗，只测画面。
+        window.__atkAniRef={suite:async function(){
+            await dh.pump({until:function(){var s=SceneManager._scene;return s instanceof Scene_Battle&&s._actorCommandWindow&&s._actorCommandWindow.active;},ms:60000});
+            ConfigManager.CombatSkillAnimation=true;
+            var lw=SceneManager._scene._logWindow,actor=$gameParty.battleMembers()[0],foes=$gameTroop.members().slice(0,2),log=null;
+            var start=Sprite_Base.prototype.startAnimation;
+            Sprite_Base.prototype.startAnimation=function(an,m,d){
+                start.apply(this,arguments);var sp=this._animationSprites[this._animationSprites.length-1];
+                if(log)log.push([foes.indexOf(this._battler),an.id,m?1:0,sp._delay]);
+            };
+            var read=async function(subject,mirror){
+                log=[];
+                if(mirror)lw.showActorAtkAniMirror(subject,foes);else lw.showAttackAnimation(subject,foes);
+                await dh.pump({until:function(){return foes.every(function(f){return !f.isAnimationRequested();});},ms:5000});
+                var got=log;log=null;return got;
+            };
+            var setups=[['dual',[2005,2]],['single',[2005]],['bare',[]]],out={note:'ui_reference __atkAniRef.suite()：正式版普通攻击动画（Window_BattleLog.showAttackAnimation／showActorAtkAniMirror），'+
+                '战斗夹具 4 人、敌群 2，目标两只敌人。行：[目标序号, 动画, 镜像, Sprite_Animation._delay]，按创建先后',cases:{}};
+            for(var i=0;i<setups.length;i++){
+                actor._equips[0].setObject(null);actor._equips[1].setObject(null);
+                setups[i][1].forEach(function(id,slot){actor._equips[slot].setObject(DataManager.registerNewItem($dataWeapons[id]));});
+                out.cases[setups[i][0]]={weapons:actor.weapons().map(function(w){return w.baseItemId||w.id;}),dual:actor.isDualWield(),
+                    ids:[actor.attackAnimationId1(),actor.attackAnimationId2()],plain:await read(actor,false),mirror:await read(actor,true)};
+            }
+            out.cases.enemy={ids:[foes[0].attackAnimationId1(),foes[0].attackAnimationId2()],plain:await read(foes[0],false),mirror:await read(foes[0],true)};
+            Sprite_Base.prototype.startAnimation=start;ConfigManager.CombatSkillAnimation=false;
+            __refJson('attack_animation_oracle',out);
+            return out;
+        }};
         // 三项偏好仅在本浏览器内存切换，不调用 ConfigManager.save。
         button('伤害数字 开/关', function(){ConfigManager.CombatDamageShow=!ConfigManager.CombatDamageShow;});
         button('技能动画 开/关', function(){ConfigManager.CombatSkillAnimation=!ConfigManager.CombatSkillAnimation;});
