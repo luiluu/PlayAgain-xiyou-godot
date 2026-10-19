@@ -101,6 +101,8 @@ func _run() -> void:
 	# 原版开局：存档位 1 → 模式（唯一）→ 名字 → 天道使者「是」→ 普通难度 → 接受 → 就选他（狗逍遥）
 	XMessageBox.auto_answers = [0, 0, 0, "测试玩家", 0, 2, 0, 0]
 	entry._new_game()
+	# dev.099 起战斗用本场规则流（主种子来自新开局 orb_seed），全局 seed() 管不到；固定主种子才能复现
+	XState.current.random_master = XRandomStream.hex64(20261012)
 	var ok := await _wait_map(2, 3000, true)
 	_check("opening_map002", ok)
 	await _shot("02_开局剧情.png")

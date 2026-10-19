@@ -43,6 +43,8 @@ func _map_idle(map_id: int) -> bool:
 func _to_map221() -> XMapScene:
 	XMessageBox.auto_answers = [0, 0, 0, "测试", 0, 2, 0, 0]
 	XState.new_game_blank()
+	# dev.099 起战斗用本场规则流（主种子来自新开局 orb_seed），全局 seed() 管不到；固定主种子才能复现
+	XState.current.random_master = XRandomStream.hex64(20261013)
 	get_tree().change_scene_to_file("res://modes/xiyou/map/map_scene.tscn")
 	await _wait(func(): return _map_idle(221))
 	return _scene()

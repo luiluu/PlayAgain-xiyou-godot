@@ -601,6 +601,10 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	var boss := boss_of(f.map)
 	if not _check(tag + "_boss_found", not boss.is_empty() and boss.choice >= 0, boss):
 		return false
+	# 每场战斗的规则流按 battle_serial 派生；之前打了几场遇敌，要看地图随机走动与遇敌步数（全局随机，按物理帧取数，
+	# 并行负载下每帧跑的物理帧数不同），所以守层者战拿到哪条流每次不同，二十八层并行下偶发打输（f28_boss_won）。按层固定序号与全局种子。
+	s.battle_serial = 1000 + n
+	seed(seed_value + n)
 	wrapped_steps = 0
 	var boss_answers := [boss.choice]
 	if PAY_GIFT.has(f.map):

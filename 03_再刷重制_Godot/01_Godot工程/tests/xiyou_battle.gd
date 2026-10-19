@@ -13,6 +13,8 @@ func _check(name: String, ok: bool, detail = null) -> void:
 func _run() -> void:
 	seed(12345)
 	var s := XState.new_game(3, 1, [8, 9, 10])
+	# dev.099 起战斗用本场规则流（主种子来自新开局 orb_seed），全局 seed() 管不到；固定主种子才能复现
+	s.random_master = XRandomStream.hex64(12345)
 	for a in s.members():
 		# 原版开局（普通难度）实际所学：天道诅咒、难度适应、普通难度；开局可选的角色另有万众一心、SupperStar
 		for sid in [6168, 5980, 5548] + ([2571, 2786] if a.actor_id <= 7 else []):
@@ -27,6 +29,7 @@ func _run() -> void:
 	_check("battle_start_states", logic.actors.all(func(a): return a.is_state_affected(995) and a.is_state_affected(1691) and a.is_state_affected(1631)))
 	# 宝宝难度被动 5561：StartPushState1629 给自己、StartAEPushState1055 给全体敌人（dsPassiveSkill 开战标签）
 	var baby := XState.new_game(1, 1, [8])
+	baby.random_master = XRandomStream.hex64(12346)
 	for a in baby.members():
 		a.learn_skill(5561)
 		a.refresh_passive()
