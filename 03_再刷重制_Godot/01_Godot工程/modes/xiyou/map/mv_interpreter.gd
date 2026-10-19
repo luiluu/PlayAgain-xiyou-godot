@@ -13,7 +13,7 @@ var host: Node
 var map_id := 0
 var event_id := 0
 ## 只有地图宿主才处理的指令（场所移动、画面、声音、战斗、商店、脚本…）：核心发 command 请求，由 _host_command 执行
-const HOST_CODES := [201, 205, 211, 212, 213, 214, 216, 217, 221, 222, 225, 230, 241, 245, 249, 250, 301, 302, 354, 355]
+const HOST_CODES := [201, 205, 211, 212, 213, 214, 216, 217, 221, 222, 225, 230, 241, 245, 249, 250, 283, 301, 302, 354, 355]
 ## O-027：原版事件把玩家传到四个方向都不能通行的格子（正式引擎 isMapPassable 实测）时，改传到同图的正常落点。
 ## 键「来源地图:事件:目的地图:x:y」。七层、十二层辛德瑞（Map061 事件 9、Map065 事件 3）原版传回大厅 (12,18)，那里是钓鱼池水面，
 ## 传过去就走不动；其余各层的辛德瑞都传到 (14,23)。设为空字典 {} 恢复原版。
@@ -127,6 +127,10 @@ func _host_command(c: Dictionary):
 	var p: Array = c.parameters
 	var indent := int(c.indent)
 	match int(c.code):
+		283:
+			# 更改战斗背景 [背景1, 背景2]
+			if host.has_method("change_battleback"):
+				host.change_battleback(str(p[0]), str(p[1]))
 		201:
 			if int(p[0]) == 0:
 				var to: Vector2i = TRANSFER_FIX.get("%d:%d:%d:%d:%d" % [map_id, event_id, int(p[1]), int(p[2]), int(p[3])], Vector2i(int(p[2]), int(p[3])))

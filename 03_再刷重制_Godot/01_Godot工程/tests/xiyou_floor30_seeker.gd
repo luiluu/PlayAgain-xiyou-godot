@@ -144,6 +144,8 @@ func _run() -> void:
 	await _run_event(map, 1, [], true)
 	_check("guide_battle_won", battles.size() == before + 1 and battles[-1].troop == 794 and battles[-1].result == 0, battles.slice(before))
 	_check("final_boss_switch", s.switch(2306))
+	# 公共事件 1387「战斗背景更改——终极」的 283：本图之后的战斗用 DemonicWorld／DemonCastle2
+	_check("battleback_changed", map.battleback_override == ["DemonicWorld", "DemonCastle2"], map.battleback_override)
 	_check("difficulty_after_guide", s.difficulty == 1, s.difficulty)
 	# 第 2 页（开关 2306）：强者的证明，传回大厅 (14,15)
 	map = _scene()

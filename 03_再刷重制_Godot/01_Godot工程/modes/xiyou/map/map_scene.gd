@@ -10,6 +10,8 @@ const TS := MVTiles.TILE_SIZE
 
 var map_id := 0
 var map_data: Dictionary
+## 283 更改战斗背景（Game_Map.changeBattleback）设的 [背景1, 背景2]；换地图时清掉（Game_Map.setup 重设为地图指定的）
+var battleback_override: Array = []
 var lower: MVTilemap
 var upper: MVTilemap
 var chars: Node2D
@@ -189,6 +191,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	events.clear()
 	map_id = id
 	map_data = XDB.map(id)
+	battleback_override = []
 	var s := XState.current
 	s.map_id = id
 	XMapTransfer.on_arrive(s, id)
@@ -624,7 +627,13 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	# 原版战斗没有 _tipSpr；只保留快照里的那一帧，活提示在后台继续倒数。
 	difficulty_notice.hide()
 	var battle := XBattleScene.new()
-	battle.setup(troop_id, can_escape, can_lose, map_data, shot)
+	var bmap := map_data
+	if not battleback_override.is_empty():
+		bmap = map_data.duplicate()
+		bmap.specifyBattleback = true
+		bmap.battleback1Name = battleback_override[0]
+		bmap.battleback2Name = battleback_override[1]
+	battle.setup(troop_id, can_escape, can_lose, bmap, shot)
 	ui.add_child(battle)
 	ui.move_child(hang_overlay, -1)
 	_in_battle = true
@@ -981,3 +990,8 @@ func return_to_hub() -> void:
 		_reserved_common_event = 10
 		return
 	await run_common_event(10)
+
+
+## 283 更改战斗背景：之后在本图开的战斗用这两张图（三十一层可选首领、Map055 引路人前的公共事件 1387）
+func change_battleback(name1: String, name2: String) -> void:
+	battleback_override = [name1, name2]
