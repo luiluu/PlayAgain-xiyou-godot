@@ -6,6 +6,10 @@ extends Node
 ## 比较：第 1 回合强制行动排在最前且清掉守层者本回合的普通行动、敌方行动者、状态 1460 与第 1 回合加上的其余状态、
 ## 守层者攻击/魔攻、第 2 回合守层者每次命中的附加伤害（行动者正的攻击/魔攻各一次）。伤害浮动由 Godot 随机，不比 HP。
 var results := []
+## 已知偏差（登记在交付单，待规则车道改 battle_logic 后删）：{敌群: [第二名及之后的敌人比参照少的状态]}。
+## 敌群 462（金角、银角）：强制 8111（全体友方，必中）给银角附加轮回困难 1460。原版 YEP_BattleEngineCore.itemEffectAddNormalState 对必中技能
+## 不乘状态抗性与幸运差；Godot battle_logic 的状态效果（effect 21）一律乘幸运差，银角幸运比金角高 1 万，几率被乘成负数而没加上。
+const KNOWN_STATE_GAPS := {462: [1460]}
 
 
 func _ready() -> void:
@@ -71,7 +75,10 @@ func _preset_case(c: Dictionary) -> void:
 
 
 func _case(c: Dictionary, round: int) -> void:
+	var target: int = int(c.get("target", 0))   # 玩家普通攻击的敌人序号（敌群 462 有两名守层者，另测集火敌人 1）
 	var name := "troop%d.paid%s.r%d" % [int(c.troop), str(c.get("paid", false)), round]
+	if target != 0:
+		name = "troop%d.paid%s.target%d.r%d" % [int(c.troop), str(c.get("paid", false)), target, round]
 	seed(1000 + round)
 	var logic := setup(int(c.troop), bool(c.get("paid", false)))
 	var e0: XBattler = logic.enemies[0]
@@ -85,7 +92,7 @@ func _case(c: Dictionary, round: int) -> void:
 			break
 		var cmds := {}
 		for a in logic.actors:
-			cmds[a] = [XDB.rec("Skills", 1), e0]
+			cmds[a] = [XDB.rec("Skills", 1), logic.enemies[target]]
 		var turn_logs := logic.run_turn(cmds)
 		logs.append_array(turn_logs)
 		for l in turn_logs:
@@ -98,6 +105,16 @@ func _case(c: Dictionary, round: int) -> void:
 			check(name + ".atk_mat", int(e0.atk) == int(c.battlers.e0.atk) and int(e0.mat) == int(c.battlers.e0.mat),
 				[e0.atk, e0.mat, c.battlers.e0.atk, c.battlers.e0.mat])
 	check(name + ".skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
+	# 其余敌人（敌群 462 的第二名守层者）：回合结束时没有被打倒的，攻击／魔攻与状态应同参照
+	for k in c.battlers:
+		if not str(k).begins_with("e") or str(k) == "e0":
+			continue
+		var ex: XBattler = logic.enemies[int(str(k).substr(1))]
+		var want_b: Dictionary = c.battlers[k]
+		if ex.hp > 0.0 and float(want_b.hp) > 0.0:
+			var gap: Array = KNOWN_STATE_GAPS.get(int(c.troop), [])
+			check(name + ".other_" + str(k), int(ex.atk) == int(want_b.atk) and int(ex.mat) == int(want_b.mat) and Array(want_b.states).all(func(id): return ex.state_ids.has(int(id)) or gap.has(int(id))),
+				[ex.atk, ex.mat, ex.state_ids, want_b])
 	var want := {1: [], 2: []}
 	var forced := 0
 	for a in c.actions:
@@ -121,7 +138,9 @@ func _case(c: Dictionary, round: int) -> void:
 	# 第 1 回合：强制行动最先；守层者是回合首位时本回合的普通行动被清掉（参照即此情形），
 	# 不是首位时轮到它还会再行动一次（OTB 轮到时才 makeActions）。敌方行动者一致
 	check(name + ".t1_forced_first", (not first_cleared) if forced == 0 else (not got[1].is_empty() and got[1][0] == want[1][0]), [got[1], want[1]])
-	check(name + ".t1_enemy_actions", got[1].filter(func(x): return x[0] == "e0").size() == forced + (0 if first_cleared else 1), [forced, first_cleared, got[1]])
+	# 守层者本回合的普通行动：全队已被打倒（敌群 462 的银角一回合内杀光）时轮不到，此时只要强制行动做完
+	var e0_times: int = got[1].filter(func(x): return x[0] == "e0").size()
+	check(name + ".t1_enemy_actions", e0_times == forced + (0 if first_cleared else 1) or (logic.is_lost() and e0_times == forced), [forced, first_cleared, got[1]])
 	check(name + ".t1_enemy_set", enemies_of.call(got[1]) == enemies_of.call(want[1]), [got[1], want[1]])
 	# 第 2 回合（战斗没结束时）：守层者照常行动一次（技能随机，不比）；有追加行动特性（61，几率）的敌人，每条特性最多再多一次（怨毒集合体 10%）
 	if not got[2].is_empty():

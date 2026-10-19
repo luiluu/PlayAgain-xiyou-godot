@@ -115,10 +115,26 @@ func param_base_raw(i: int) -> float:
 		base = floorf(base * elite_param(1))
 	return base
 
+## 不含难度倍率的 paramBase（EliteEnemy／真气幻化后）
+func param_base_unscaled(i: int) -> float:
+	if not zq_ref.is_empty():
+		return float(zq_ref.p[i]) * (float(zq_ref.k) if i in [0, 2, 4] else 1.0)
+	return param_base_raw(i)
+
+## 含难度倍率的 paramBase（别处按「基础含倍率」取用：真气探针、特性叠加对照）
 func param_base(i: int) -> float:
 	if not zq_ref.is_empty():
 		return float(zq_ref.p[i]) * (float(zq_ref.k) if i in [0, 2, 4] else 1.0) * float(_rates[i])
 	return param_base_raw(i) * float(_rates[i])
+
+## 正式版 Vitsuno_Difficulty 在 Game_Enemy.paramRate 里乘难度倍率：(基础＋加值)×((特性比率×难度倍率)×强化率)＋状态固定值。
+## 乘法次序照 JS，倍率不预乘进基础值：预乘时 10250×1.4 得 14349.999999999998，再×1.25＋1500 为 19437.499999999996，
+## 四舍五入少 1（二十七层多宝 463 攻击 19438，敌群事件参照）。
+func param(i: int) -> float:
+	var v := param_base_unscaled(i) + param_plus(i)
+	v *= (param_rate(i) * float(_rates[i])) * param_buff_rate(i)
+	v += param_state(i)
+	return roundf(clampf(v, param_min(i), param_max(i)))
 
 func trait_objects() -> Array:
 	var out := [data()]
