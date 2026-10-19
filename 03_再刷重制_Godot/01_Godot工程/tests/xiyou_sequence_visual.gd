@@ -56,6 +56,7 @@ func _run() -> void:
 	var hp_oracle: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(HP_ORACLE))
 	await _counter_death(scene, hp_oracle.traces.s104_counter_death)
 	await _multi_hit_gauge(scene, hp_oracle.traces.s131)
+	await _attack_mirror()
 	XConfig.set_flag("battleCamera", true)
 	XConfig.set_flag("CombatSkillAnimation", false)
 	scene.queue_free()
@@ -245,3 +246,32 @@ func _multi_hit_gauge(scene: XBattleScene, t: Dictionary) -> void:
 	var g_ok := steps.size() >= 2 and steps.all(func(f): return got.disp[f] == maxf(got.disp[f - 1] - ceilf(absf(got.disp[f - 1] - got.hp[f]) / 30.0), got.hp[f]))
 	check("multi_hit_gauge_drain", mv_ok and g_ok and got.disp.back() < start, {"mv": mv_ok, "godot": g_ok})
 	check("multi_hit_gauge_live_after", is_equal_approx(float(scene.view(foe).hp), foe.hp))
+
+
+## 冻结 YEP_X_ActSeqPack2.actionAttackAnimation：第二参数 MIRROR 必须传到动画。
+## 用已开放敌群20／32的真实技能178／167生成日志，同时检查未传MIRROR的普通动画。
+func _attack_mirror() -> void:
+	XConfig.set_flag("CombatSkillAnimation", true)
+	for row in [[20, 178], [32, 167]]:
+		var s := XState.new_game(3, 1, [8, 9, 10])
+		XState._become_current(s)
+		var scene := QuietBattle.new()
+		scene.setup(row[0], true, false, {})
+		add_child(scene)
+		await get_tree().physics_frame
+		var user: XEnemy = scene.logic.enemies[0]
+		var skill := XDB.rec("Skills", row[1])
+		var logs := scene.logic.execute(user, skill, scene.logic.actors[0], true)
+		var commands := logs.filter(func(e): return e.type == "seq" and e.name == "ATTACK ANIMATION")
+		check("s%d_attack_command" % row[1], not commands.is_empty(), logs)
+		if not commands.is_empty():
+			var player := XSequencePlayer.create(scene, {"user": user, "skill": skill}, [])
+			player._exec(commands[0])
+			check("s%d_attack_mirror" % row[1], not player.anims.is_empty() and player.anims.all(func(a): return a.scale.x < 0.0))
+			player.anims.clear()
+			var plain: Dictionary = commands[0].duplicate()
+			plain.args = [commands[0].args[0]]
+			player._exec(plain)
+			check("s%d_attack_plain" % row[1], not player.anims.is_empty() and player.anims.all(func(a): return a.scale.x > 0.0))
+		scene.queue_free()
+		await get_tree().process_frame
