@@ -371,7 +371,7 @@ func passive_element_values(e: int) -> Array:
 func refresh_passive() -> void:
 	var c := {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "skillPass": {}, "skillTypeDvup": {},
 		"SkETypeHarmRi": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0, "itemRateUp": 0.0,
-		"certainHit": {"global": false, "bySkill": {}}}
+		"certainHit": {"global": false, "bySkill": {}}, "damageElement": 0}
 	var objs := equip_list() + skills() + states()
 	for o in objs:
 		var note := str(o.get("note", ""))
@@ -404,6 +404,9 @@ func refresh_passive() -> void:
 		for k in meta:
 			if str(k).begins_with("SkillCertainHit") and str(meta[k]).strip_edges().is_valid_int():
 				c.certainHit.bySkill[int(str(meta[k]).strip_edges())] = true
+		# dsPassiveSkill <DamageElements: N>：覆盖所有伤害技能的属性（摇光的圣光体：任何伤害都转神圣）；后读到的覆盖先读到的
+		if meta.has("DamageElements") and str(meta.DamageElements).strip_edges().is_valid_int():
+			c.damageElement = int(str(meta.DamageElements).strip_edges())
 		if meta.has("passiveIRUP"):
 			c.itemRateUp += _num(meta.passiveIRUP)
 	_passive_cache = c

@@ -57,7 +57,10 @@ static func matchup(element: int, body: Array) -> float:
 	return pow(product, 1.0 / body.size())
 
 static func action_elements(item: Dictionary, a: XBattler) -> Array:
-	var id := int(item.damage.elementId)
+	# installDamageElementRuntime：先取被动缓存的属性覆盖（dsPassiveSkill <DamageElements>），没有才用技能自带属性
+	var id := int(a.passive_cache().get("damageElement", 0))
+	if id == 0:
+		id = int(item.damage.elementId)
 	var es: Array = a.attack_elements() if id < 0 else ([id] if id > 0 else [])
 	es = es.duplicate()
 	es.append_array(item.get("yep", {}).get("multipleElements", []))

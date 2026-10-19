@@ -25,6 +25,12 @@ func _close(a: float, b: float, rel := 1e-6) -> bool:
 	return absf(a - b) <= maxf(1e-6, absf(b) * rel)
 
 
+## 参照行的 value 与 growth 在探针里都按 6 位小数取整，value/growth 的绝对误差可达 1e-6 量级；
+## 极小的伤害值（<1，如打满减伤的敌人）要放宽绝对误差，否则会误报
+func _close_r6(a: float, b: float) -> bool:
+	return absf(a - b) <= maxf(1e-5, absf(b) * 1e-6)
+
+
 func _arr_close(a: Array, b: Array, rel := 1e-6) -> bool:
 	if a.size() != b.size():
 		return false
@@ -163,7 +169,7 @@ func _run() -> void:
 			var growth := float(mv_row.growth)
 			growth_seen.append(growth)
 			var expected := float(mv_row.value) / growth if growth != 0.0 else 0.0
-			_check(tag, _close(res.settled, expected), {"skill": r.skillName, "godot": res.settled, "mv_div_growth": expected,
+			_check(tag, _close_r6(res.settled, expected), {"skill": r.skillName, "godot": res.settled, "mv_div_growth": expected,
 				"godot_row": res.breakdown.row, "mv_row": mv_row, "godot_base": res.breakdown.base, "mv_base": r.breakdown.base})
 			# slice_probe 的 final 是 onPreDamageStateEffects（Confirm＋固定减伤），不含目标 React。
 			# 完整结算顺序另由 xiyou_settlement 对照真正的 onReactStateEffects。
@@ -179,10 +185,6 @@ func _run() -> void:
 
 
 func _finish() -> void:
-	if OS.get_environment("MISMATCH_DUMP") != "":
-		var f := FileAccess.open(OS.get_environment("MISMATCH_DUMP"), FileAccess.WRITE)
-		for m in mismatches:
-			f.store_line(m.name + " " + JSON.stringify(m.detail).left(400))
 	var passed := results.filter(func(r): return r["passed"]).size()
 	if verbose or passed != results.size():
 		for m in mismatches.slice(0, 12):
