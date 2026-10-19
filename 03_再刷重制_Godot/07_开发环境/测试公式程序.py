@@ -23,6 +23,20 @@ class FormulaCompilerTests(unittest.TestCase):
                 self.assertEqual(program['status'], 'pure', program)
                 self.assertEqual(program, row['program'])
 
+    def test_effect_fixtures_and_equipment_query_bounds(self):
+        path = TOOLS.parent / '01_Godot工程/tests/fixtures/formula_effect_programs.json'
+        for key, row in json.loads(path.read_text()).items():
+            self.assertEqual(row['program'], compile_formula(row['formula'], 160 if key.startswith('ai.') else 857, not key.startswith('ai.')))
+        prefix = ('var baseEquipId=3640; let currentEquip=null; var equips=user.equips().filter((equip)=>!!equip && DataManager.isArmor(equip) && equip.baseItemId===baseEquipId); '
+                  'if(equips.length>0)currentEquip=equips[0]; var mw=!!currentEquip?user.getEquipItemObject(currentEquip):null; var level=!!mw?mw.level():0; ')
+        program = compile_formula(prefix + 'value=level+user.atk;', custom=True)
+        self.assertEqual(program['status'], 'pure', program)
+        self.assertIn('read.equipment_instance_level', program['capabilities'])
+        for text in [prefix + 'value=mw;', prefix.replace('isArmor', 'isWeapon')+'value=level;',
+                     prefix.replace('3640', '03640')+'value=level;', prefix.replace('equips[0]', 'equips[1]')+'value=level;',
+                     prefix.replace('=>!!equip', '=>evil() && !!equip')+'value=level;']:
+            self.assertEqual(compile_formula(text, custom=True)['status'], 'unsupported')
+
     def test_unknown_and_host_access_rejected_as_whole_program(self):
         for source in ['eval(1)', 'a.constructor()', 'a.hp=1; 0', 'v[0]=2;0', 'Math.unknown(2)',
                        'while(true){}',
@@ -44,6 +58,15 @@ class FormulaCompilerTests(unittest.TestCase):
         self.assertTrue({'write.hp', 'write.mp'} <= set(p['capabilities']))
         for source in ['b.gainHp()', 'b.gainMp(1,2)', 'b.addShield(1);value=0;', 'b.setHp(1);value=0;']:
             self.assertEqual(compile_formula(source, custom=True)['status'], 'unsupported')
+
+    def test_production_random_ownership_guard(self):
+        core = TOOLS.parent / '01_Godot工程/modes/xiyou'
+        for name in ('battle/battle_logic.gd', 'battle/action_sequence.gd', 'core/damage.gd',
+                     'core/gear.gd', 'core/gear_upgrade.gd', 'core/resource_context.gd', 'core/battler.gd'):
+            source = (core / name).read_text()
+            import re
+            self.assertFalse(re.search(r'(?<![.\w])rand(?:f|i)(?:_range)?\s*\(', source), name)
+        self.assertFalse((core / 'core/custom_damage.gd').exists())
 
     def test_source_identity_and_bounds(self):
         p = compile_formula('a.hp+1', 7)

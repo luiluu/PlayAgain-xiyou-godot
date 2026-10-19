@@ -1096,6 +1096,8 @@ func _hit_visual(l: Dictionary) -> bool:
 					ts.set_motion("damage")
 		if float(l.mp) != 0.0:
 			_popup(t, float(l.mp), false, "", true)
+		if float(l.get("tp", 0.0)) != 0.0:
+			_popup(t, float(l.tp), false, "", false, true)
 		if t is XEnemy:
 			_show_enemy_gauge(t)
 	if l.died:
@@ -1156,7 +1158,7 @@ func _attack_animation(u: XBattler) -> int:
 var _popups := {}          # XBattler -> Array[XDamagePopup]
 
 
-func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := false) -> void:
+func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := false, is_tp := false) -> void:
 	if not XConfig.flag("CombatDamageShow"):
 		return
 	var s: XBattlerSprite = sprites[b]
@@ -1164,7 +1166,7 @@ func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := fals
 	var p := XDamagePopup.new()
 	p.position = s.position + (Vector2.ZERO if b is XActor else Vector2(0, -s.height() / s.body_scale / 2.0 + 16))
 	p.z_index = 20
-	p.setup(value, is_mp, critical, text == "miss", b is XActor, live.size())
+	p.setup(value, is_mp, critical, text == "miss", b is XActor, live.size(), is_tp)
 	fx.add_child(p)
 	live.append(p)
 	_popups[b] = live

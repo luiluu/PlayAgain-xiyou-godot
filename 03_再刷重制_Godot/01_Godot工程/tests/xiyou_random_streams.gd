@@ -26,6 +26,11 @@ func _ready() -> void:
 	check("restore", restored != null)
 	for i in 64:
 		check("continuation:" + str(i), first.rule.next_int_inclusive(-7, 19, "range") == restored.rule.next_int_inclusive(-7, 19, "range"))
+	var native := RandomNumberGenerator.new()
+	native.seed = XRandomStream.parse64("123456789abcdef0")
+	var owned := XRandomStream.create("123456789abcdef0", "rule")
+	for i in range(1, 129):
+		check("native_bounded:" + str(i), native.randi_range(-i, i) == owned.next_int_inclusive(-i, i, "native") and XRandomStream.hex64(native.state) == owned.snapshot().state)
 	var wrong: Dictionary = saved.duplicate(true)
 	wrong.engine = "future-engine"
 	check("engine_reject", XBattleRandom.restore(wrong) == null)
@@ -72,5 +77,23 @@ func _ready() -> void:
 	b0.rule.next_float("hit")
 	b0.reward.next_float("drop")
 	check("two_battles", equal(b1_before, b1.snapshot()))
+	var replay_state := XState.new_game(3, 1, [])
+	replay_state.random_master = "123456789abcdef0"
+	var initial := replay_state.to_dict().duplicate(true)
+	var logic := XBattleLogic.new()
+	logic.setup(2, replay_state)
+	logic.auto = true
+	var commands := []
+	var logs := []
+	logic.start_turn()
+	for i in 2:
+		var user := logic.next_subject()
+		if user == null: break
+		var cmd := logic.decide(user)
+		commands.append({"turn": logic.turn, "user": logic.stable_id(user), "skill": int(cmd[0].id), "target": "", "automatic": true})
+		logs.append_array(logic.act(user, cmd[0], cmd[1]))
+	var artifact := XBattleReplay.record(logic, initial, commands, logs)
+	var replayed := XBattleReplay.replay(JSON.parse_string(JSON.stringify(artifact)))
+	check("actual_command_replay", replayed.available, replayed)
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failed.size(), "total": checks}))
 	get_tree().quit(0 if failed.is_empty() else 1)

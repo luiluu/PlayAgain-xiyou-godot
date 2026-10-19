@@ -79,7 +79,12 @@ function fixture(setup) {
   const before={a:snapshot(a),b:snapshot(b)};
   try {
     if(setup.mode==='eval'||!setup.mode) value=action.evalDamageFormula(b);
-    else action.apply(b);
+    else if(setup.mode==='repeat') {action.apply(b);action.apply(b);}
+    else if(setup.mode==='reflect') {w.BattleManager._action=action;w.BattleManager.invokeMagicReflection(a,b);}
+    else if(setup.mode==='counter') {
+      const prior=b.attackSkillId;b.attackSkillId=()=>857;
+      try{w.BattleManager.invokeCounterAttack(a,b);}finally{b.attackSkillId=prior;}
+    } else action.apply(b);
     const after={a:snapshot(a),b:snapshot(b)};
     b._damagePopup=[];b.startDamagePopup();
     const popup=b._damagePopup.map(x=>({hpAffected:x.hpAffected,hpDamage:x.hpDamage,mpDamage:x.mpDamage,tpDamage:x.tpDamage,
@@ -93,6 +98,8 @@ function fixture(setup) {
     w.Math.random=()=>0.5;
   }
 }
+module.exports={host,fixture};
+if(require.main===module){
 for(const skill of [857,858,4013]) for(const pair of ['actors','enemy_actor','actor_enemy','self'])
 for(const resources of [[10000,220,123],[450,1,1],[3000,0,0],[3001,201,200]]) for(const immortal of [false,true]) {
   const setup={skill,pair,resources,immortal,mode:'eval'};
@@ -116,3 +123,5 @@ for(const [id,formula,throwRead] of [
   cases.push(makeCase('language.'+id,setup,()=>fixture(setup)));
 }
 process.exit(finish(host,'formula_effects.json',{hostScope:'ordered-resource-reference-only',cases})?0:1);
+
+}

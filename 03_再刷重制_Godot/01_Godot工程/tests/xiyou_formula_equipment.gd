@@ -2,8 +2,11 @@ extends Node
 class ProbeActor extends XActor:
  var fixed := [10000.0, 1000.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0]
  var mastery := 0
+ var fixed_cri := 0.0
  func param(i: int) -> float:
   return fixed[i]
+ func xparam(i: int) -> float:
+  return fixed_cri if i == 2 else 0.0
  func skillMasteryLevel(_id: int) -> int:
   return mastery
 var checks := 0
@@ -26,6 +29,7 @@ func _ready() -> void:
   a.actor_id = 1
   a.fixed = c.setup.params
   a.mastery = int(c.setup.mastery)
+  a.fixed_cri = float(c.observed.subjectCrit)
   for row in c.setup.equipment:
    a.equips.append({"kind": row.kind, "base": row.baseItemId, "level": row.level, "meta": row.meta})
   var b := ProbeActor.new()

@@ -70,3 +70,39 @@ def verify_formula_effects(directory, manifest):
         return validate_formula_effects(json.loads((directory / 'formula_effects.json').read_text()), manifest)
     except (OSError, ValueError) as error:
         return ['formula_effects.json 缺少或不可读：' + str(error)]
+
+
+def verify_formula_equipment(directory, manifest):
+    name = 'formula_equipment.json'
+    path = directory / name
+    if not path.is_file():
+        return ['装备等级公式参照缺失']
+    try:
+        data = json.loads(path.read_text())
+        rows = case_map(data)
+        ids = {int(c['setup']['skill']) for c in rows.values()}
+        expected = {f's{sid}.{mode}.{str(edge).lower()}' for sid in ids
+                    for mode in ('none', 'wrong_kind', 'zero', 'high', 'first', 'different_base', 'nonmagic') for edge in (False, True)}
+        issues = identity_issues(name, data.get('sourceIdentity'), manifest)
+        if len(ids) != 24 or set(rows) != expected:
+            issues.append('装备等级公式须覆盖24块×14种边界')
+        for key, row in rows.items():
+            if row.get('errors') or not isinstance(row.get('observed'), dict) or not {'value', 'valueKind', 'firstLevel', 'randomDraws', 'formulaSHA256'} <= set(row['observed']):
+                issues.append('装备等级公式参照失败或缺字段：' + key)
+        return issues
+    except (ValueError, KeyError, TypeError):
+        return ['装备等级公式参照结构无效']
+
+
+def verify_formula_actions(directory, manifest):
+    name = 'formula_actions.json'
+    try:
+        data = json.loads((directory / name).read_text())
+        rows = case_map(data)
+        expected = {f'{mode}.{values}' for mode in ('repeat', 'reflect', 'counter') for values in ('10000_220_123', '450_1_1')}
+        issues = identity_issues(name, data.get('sourceIdentity'), manifest)
+        if set(rows) != expected or any(c.get('errors') or not isinstance(c.get('observed'), dict) or not valid_snapshot(c['observed'].get('after', {}).get('b')) for c in rows.values()):
+            issues.append('公式反应链参照缺失或失败')
+        return issues
+    except (OSError, ValueError, KeyError, TypeError):
+        return ['公式反应链参照结构无效']

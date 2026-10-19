@@ -1055,9 +1055,10 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	result.evaded = r.evaded
 	result.critical = r.critical
 	r.result = result.duplicate(true)
+	r.popupQueue = XResourceContext.popup_queue(result)
 	r.effectJournal = _action_resources.journal.duplicate(true)
 	r.formulaDiagnostic = _formula_outcome.get("diagnostic", "")
-	r.hp = result.hpDamage
+	r.hp = r.hp if ESTABLISH_TRUE_POPUP and r.has("extra") else result.hpDamage
 	r.mp = result.mpDamage
 	r.tp = result.tpDamage
 	r.added = result.addedStates.duplicate()
@@ -1071,6 +1072,8 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var r := {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
 		"hp": 0.0, "mp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false}
 	var dmg: Dictionary = skill.damage
+	if t.is_dead() and not int(skill.get("scope", 0)) in [9, 10]:
+		return r
 	var physical := XDamage.is_physical(skill)
 	var magical := XDamage.is_magical(skill)
 	var hit_rate := item_hit(u, skill, t)

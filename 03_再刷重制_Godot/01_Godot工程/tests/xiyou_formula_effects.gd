@@ -87,6 +87,8 @@ func _ready() -> void:
 		check(c.id + ".journal", same(actual.effectJournal, c.observed.journal), [actual.effectJournal, c.observed.journal])
 		check(c.id + ".draws", rng.error.is_empty() and rng.draws == c.observed.randomDraws, rng.journal)
 		check(c.id + ".preview_same", same(preview.after, actual.after) and preview.value == actual.value and same(preview.effectJournal, actual.effectJournal), preview)
+		check(c.id + ".popup", same(XResourceContext.popup_queue(actual.results.b), c.observed.popup))
+	reaction_cases()
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks}))
 	get_tree().quit(0 if failures.is_empty() else 1)
 
@@ -119,7 +121,50 @@ func apply_case(c: Dictionary) -> void:
 	var actual := logic.apply(a, XDB.rec("Skills", 857), b)
 	check(c.id + ".resources", same([b.hp, b.mp, b.tp], c.observed.after.b.resources), [b.hp, b.mp, b.tp])
 	check(c.id + ".result", same(actual.result, c.observed.after.b.result), actual.result)
+	check(c.id + ".popup", same(actual.popupQueue, c.observed.popup), actual.popupQueue)
 	check(c.id + ".journal", same(actual.effectJournal, c.observed.journal), actual.effectJournal)
 	# The native Yunshang wrapper consumes two UUID floats even on a miss. Stable
 	# action IDs replace those bookkeeping-only draws; the rule draws are preserved.
 	check(c.id + ".rule_draws", logic.random.rule.error.is_empty() and logic.random.rule.draws == int(c.observed.randomDraws) - 2, logic.random.rule.journal)
+
+func reaction_cases() -> void:
+	var reference: Dictionary = XDB.load_json("oracle/formula_actions.json")
+	for c in reference.cases:
+		var a := NativeEnemy.new()
+		a.setup(int(XDB.rec("Troops",157).members[0].enemyId),3,100.0)
+		var b := NativeActor.new()
+		b.setup(8)
+		for pair in [[a,c.observed.before.a],[b,c.observed.before.b]]:
+			pair[0].state_ids.clear();pair[0].state_turns.clear()
+			pair[0].hp=pair[1].resources[0];pair[0].mp=pair[1].resources[1];pair[0].tp=pair[1].resources[2]
+		var logic := ApplyLogic.new()
+		logic.state=XState.new();logic.actors=[b];logic.enemies=[a]
+		logic.random=XBattleRandom.create("123456789abcdef0")
+		# Typed values match the source Math.random=.5 integer midpoint; UUID-only
+		# draws are excluded, with separate existing AI/OTB source contracts retained.
+		var tape := []
+		var calls := 2 if c.setup.mode=="repeat" and b.hp>3000 else 1
+		for i in calls:
+			tape.append_array([{"kind":"float","value":0.5},{"kind":"float","value":0.5},{"kind":"float","value":0.5}])
+			if c.setup.mode=="repeat" and b.hp<3000:
+				tape.append({"kind":"uint32","value":2147483648})
+			tape.append_array([{"kind":"uint32","value":9 if i==0 and c.setup.mode=="repeat" else 4},{"kind":"uint32","value":9 if i==0 and c.setup.mode=="repeat" else 4}])
+		logic.random.rule=XRandomStream.scripted(tape)
+		var journal := []
+		var actual: Dictionary
+		if c.setup.mode=="repeat":
+			for i in 2:
+				actual=logic.apply(a,XDB.rec("Skills",857),b)
+				journal.append_array(actual.effectJournal)
+		elif c.setup.mode=="reflect":
+			actual=logic.apply(a,XDB.rec("Skills",857),a)
+			journal=actual.effectJournal
+		else:
+			actual=logic.apply(b,XDB.rec("Skills",857),a)
+			journal=actual.effectJournal
+			for row in journal:
+				row.receiver="a" if row.receiver=="b" else "b"
+		check(c.id+".reaction_resources",same([a.hp,a.mp,a.tp],c.observed.after.a.resources) and same([b.hp,b.mp,b.tp],c.observed.after.b.resources),[[a.hp,a.mp,a.tp],[b.hp,b.mp,b.tp]])
+		check(c.id+".reaction_journal",same(journal,c.observed.journal),journal)
+		check(c.id+".reaction_result",same(actual.result,c.observed.after.b.result if c.setup.mode=="repeat" else c.observed.after.a.result),actual.result)
+		check(c.id+".reaction_rng",logic.random.rule.error.is_empty() and logic.random.rule.draws==tape.size(),logic.random.rule.error)

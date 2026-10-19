@@ -19,9 +19,9 @@ static func row(b: XBattler, skill_id := 0, requirements := {}) -> Dictionary:
 		for item in b.equip_list():
 			gear.append({"kind": str(item.get("kind", "")), "baseItemId": int(item.get("base", item.get("id", 0))),
 				"instanceLevel": XEquipmentView.level(item)})
-	return {"properties": p, "elements": elements, "mastery": {str(skill_id): b.skillMasteryLevel(skill_id)},
-		"stateIds": b.state_ids.duplicate(), "states": b.states().map(func(s): return s.id), "equipment": gear,
-		"maxTp": b.max_tp(), "actorId": b.actor_id if b is XActor else null,
+	return {"properties": p, "elements": elements, "mastery": {str(skill_id): b.skillMasteryLevel(skill_id)} if not requirements.has("bounded") or methods.has("mastery") else {},
+		"stateIds": b.state_ids.duplicate() if not requirements.has("bounded") or methods.has("has_state") else [], "states": b.states().map(func(s): return s.id) if not requirements.has("bounded") or methods.has("states_count") else [], "equipment": gear,
+		"maxTp": b.max_tp() if not requirements.has("bounded") or methods.has("max_tp") else 200.0, "actorId": b.actor_id if b is XActor else null,
 		"param": range(8).map(func(i): return b.param(i)) if not requirements.has("bounded") or methods.has("param") else [], "xparam": range(10).map(func(i): return b.xparam(i)) if not requirements.has("bounded") or methods.has("xparam") else [],
 		"sparam": range(10).map(func(i): return b.sparam(i)) if not requirements.has("bounded") or methods.has("sparam") else []}
 

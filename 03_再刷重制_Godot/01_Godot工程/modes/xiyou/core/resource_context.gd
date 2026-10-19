@@ -13,6 +13,29 @@ static func empty_result() -> Dictionary:
 	return {"hpAffected": false, "hpDamage": 0.0, "mpDamage": 0.0, "tpDamage": 0.0,
 		"success": false, "missed": false, "evaded": false, "critical": false, "addedStates": [], "removedStates": []}
 
+static func popup_queue(r: Dictionary) -> Array:
+	var out := []
+	var base := {"hpAffected": r.hpAffected, "hpDamage": r.hpDamage, "mpDamage": r.mpDamage, "tpDamage": r.tpDamage,
+		"missed": r.missed, "evaded": r.evaded, "addedStates": r.addedStates.duplicate(), "removedStates": r.removedStates.duplicate()}
+	for kind in ["miss", "hp", "mp", "tp", "status"]:
+		var active: bool = (r.missed or r.evaded) if kind == "miss" else r.hpAffected if kind == "hp" else r.mpDamage != 0 if kind == "mp" else r.tpDamage != 0 if kind == "tp" else not r.addedStates.is_empty() or not r.removedStates.is_empty()
+		if not active:
+			continue
+		var row := base.duplicate(true)
+		if kind != "hp": row.hpAffected = false
+		if kind != "mp": row.mpDamage = 0.0
+		if kind != "tp": row.tpDamage = 0.0
+		if kind != "miss":
+			row.missed = false
+			row.evaded = false
+		if kind != "status":
+			row.addedStates = []
+			row.removedStates = []
+		else:
+			row.hpDamage = 0.0
+		out.append(row)
+	return out
+
 func result(b: XBattler) -> Dictionary:
 	if not slots.has(b):
 		slots[b] = empty_result()

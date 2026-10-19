@@ -34,7 +34,7 @@ for(const sk of skills){
     const action=new w.Game_Action(a);action.setSkill(sk.id);const value=action.evalDamageFormula(b);
     if(before!==JSON.stringify([rows,a.hp,a.mp,a.tp,b.hp,b.mp,b.tp,variables]))throw Error('readonly fixture mutated');
     const levels=rows.filter(x=>w.DataManager.isArmor(x)&&x.baseItemId===base).map(x=>a.getEquipItemObject(x).level());
-    return {value:Number.isFinite(value)?value:0,valueKind:Number.isNaN(value)?'nan':Number.isFinite(value)?'finite':'infinity',firstLevel:levels.length?levels[0]:0,randomDraws:draws,formulaSHA256:crypto.createHash('sha256').update(source.damage.formula).digest('hex')};
+    return {subjectCrit:a.cri,value:Number.isFinite(value)?value:0,valueKind:Number.isNaN(value)?'nan':Number.isFinite(value)?'finite':'infinity',firstLevel:levels.length?levels[0]:0,randomDraws:draws,formulaSHA256:crypto.createHash('sha256').update(source.damage.formula).digest('hex')};
    }finally{a.equips=oldEquips;a.skillMasteryLevel=oldMastery;a.param=oldA;b.param=oldB;w.Math.random=()=>0.5;}
   }));
  }
