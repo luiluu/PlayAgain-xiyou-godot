@@ -24,6 +24,10 @@ var hp := 0.0
 var immortal := false
 ## A resource refresh can leave HP zero while death is resisted/removed in this result.
 var resource_death_blocked := false
+## 冻结源 G_StateParam 的能力值缓存（_baseParamCache）在 336 变身时不清（YEP_EnemyLevels 只清 _cacheBaseParam），
+## 要等 krz_state_re 的 need_refresh（加减状态、回合开始／结束等）后下一次 refresh 才重算。变身后到那之前
+## 334 完全回复按旧形态的 [生命上限, 魔法上限] 回满。enemy_transform 写入，下次 334 用掉，加减状态与回合交界清掉。
+var stale_caps: Array = []
 static var _outside_random: XRandomStream
 var mp := 0.0
 var tp := 0.0
@@ -199,6 +203,7 @@ func is_state_affected(id: int) -> bool:
 func add_state(id: int, random: XRandomStream = null) -> void:
 	if XDB.rec("States", id).is_empty():
 		return
+	stale_caps = []
 	if id == XZhenqi.POJIA_STATE:
 		zq_pojia_rate = XZhenqi.pojia_rate()  # 本次行动者有破甲道法时 1−0.5×scale，否则 0.5
 	if id == 1:
@@ -230,6 +235,7 @@ func roll_state_duration(lo: int, hi: int, random: XRandomStream = null, event_k
 	return _outside_random.next_int_inclusive(lo, hi, "state_duration", event_key)
 
 func remove_state(id: int) -> void:
+	stale_caps = []
 	if id == 1 and state_ids.has(id) and hp <= 0.0:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
 	state_ids.erase(id)
