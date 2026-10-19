@@ -526,6 +526,8 @@ func _opening() -> void:
 	_check("xiyou_title", entry.scene_file_path == ENTRY and XDB.available())
 	XMessageBox.auto_answers = [0, 0, 0, "流程测试", 0, 2, 0, 0]
 	entry._new_game()
+	# dev.099 起战斗用本场规则流（种子来自新开局的 orb_seed，每次新开局不同），全局 seed() 管不到；固定主种子才能复现
+	XState.current.random_master = XRandomStream.hex64(seed_value)
 	_check("opening_map221", await _wait_map(221, 9000))
 	var map: XMapScene = _scene()
 	XMessageBox.auto_answers = [0]

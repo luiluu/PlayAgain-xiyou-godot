@@ -36,6 +36,29 @@ func key(b: XBattler, logic: XBattleLogic) -> String:
 	return "a%d" % int((b as XActor).data().id) if b is XActor else "e%d" % logic.enemies.find(b)
 
 
+## 参照固定 Math.random＝0.5：战斗不认 MVEventCore.fixed_random（沙僧 dev.099 规定战斗只用本场规则流），
+## 本测试对敌群事件的 122 随机变量单独按 0.5 取值，其余规则抽样照常走本场规则流。只用于引路人 794（第 3 页按随机变量 4 选强制）。
+class EventHalfStream extends XRandomStream:
+	func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
+		if reason == "event_variable":
+			return lo + floori((hi - lo + 1) * 0.5)
+		return super(lo, hi, reason, event_key)
+
+
+static func _half_events(src: XRandomStream) -> XRandomStream:
+	var out := EventHalfStream.new()
+	out.domain = src.domain
+	out.draws = src.draws
+	out.journal = src.journal
+	out.error = src.error
+	out._rng.seed = src._rng.seed
+	out._rng.state = src._rng.state
+	out._tape = src._tape
+	out._scripted = src._scripted
+	out._seed_hex = src._seed_hex
+	return out
+
+
 func setup(troop: int, paid := false, trial_seed := 1000) -> XBattleLogic:
 	XEnemy.force_roll = 100.0
 	var s := XState.new_game(3, 1, [8, 9, 10])
@@ -44,6 +67,8 @@ func setup(troop: int, paid := false, trial_seed := 1000) -> XBattleLogic:
 	var logic := XBattleLogic.new()
 	logic.level_roll = 0.99  # 参照：敌群生成时 Math.random=0.99
 	logic.setup(troop, s)
+	if troop == 794:
+		logic.random.rule = _half_events(logic.random.rule)
 	for a in logic.actors:
 		for sk in [6168, 5980, 5548] + ([2571, 2786] if int(a.data().id) in [1, 2, 3, 4, 5, 6, 7, 52] else []):
 			a.learn_skill(sk)
