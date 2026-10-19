@@ -1,6 +1,6 @@
 # 交付：codex/rng-rework
 
-- 车道／工作者：规则返工／沙僧（Codex，重制_沙僧_10 接手沙僧_9）
+- 车道／工作者：规则返工／沙僧（Codex，重制_沙僧_11 接手沙僧_10）
 - 分支与工作树：`codex/rng-rework`，`.claude/worktrees/rng-rework`，从main 0ea5c5c新建；辅助补齐和Godot导入已结束；沙僧8核对进程后开始游戏侧返工。
 - 开工时main由唐僧合八戒_27：C车道已从交接板删掉，原车道干净且交付可合并，只有A悟空_23仍写代码。可接本RNG车道；不得改A转换器／切片或抢改battle_logic、XBattler.recover_all。main的开发编号／交接板等尚在唐僧未提交的合并收尾中，不要替他提交。
 
@@ -92,5 +92,11 @@
 - 缓存工作树`.claude/worktrees/review-backlog-20261019-followup`，队列预计日志`20261019_缓存复核/修复实际同步.log`与`修复完整检查.log`；真实同步使用--accept-additions，worktree自动不改共用登记，不手写stamp。此时尚未开始，要以实际日志确认。缓存旧完整58e57e785be84c9584d1e8de49367d40退出1、仅rules／smart_ai超时，不能算本次修复通过。
 - 框架工作树`.claude/worktrees/framework-docs`，最新d31998e，已合main0ea5c5c；按dev.101修正466→538旧上限回满、Permanent既有保留和已删KNOWN_TRANSFORM_GAPS。仍缺逐步骤、完整队列／上下文、真实复活、schema与画面，未认所有变身全等、未动测试。旧完整0bf5321426b74f4ebca2085e69c7e8b4退出1、仅rules超时；队列新日志为`20261019_框架文档/新main完整检查.log`。
 - 接续：先读单线程补验及队列终态，失败定位修稳；队列运行时不改三条被测源码，不重开full／同步。成功则对账最新main、整理三份精确模板交付及变更草稿，真正验收完才最后写普通“状态：可合并”，全部留Claude交叉核查。未完成继续按40%自动接力，不再问确认。旧12aa60f可合并核查交付与战斗61%证据保留；converter-write-changed仍等A悟空_23释放，未做。
+
+## 沙僧11开工（2026-10-20）
+
+- 已读主AGENTS、交接板、车道表与三条分支status/log；三条工作树干净并由本会话独占接续。main仍0ea5c5c，唐僧未提交收尾保留，不改共用登记。
+- RNG单线程补验3e3f5a1570c4417d9b86cfdb9a27417f及串行队列ef6478e510034e4f9e94f2f14ff0022b仍running；只读等待原任务，不重开同步／完整检查、不改三条被测文件。交付单更新不影响队列源码守卫。
+- 核心4794项与后段双轮各534项通过记录保留；三条完整验收未齐，不标可合并、不自销Claude核查。
 
 - 状态：进行中
