@@ -33,7 +33,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE))
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT  # noqa: E402
-from incremental_sync import ProbeCache
+from incremental_sync import SHARDS, ProbeCache
 from oracle_additions import compare_directories, payload, source_preserved, has_error, retained_errors_unchanged  # noqa: E402
 
 ORACLE_DIR = HERE / 'mv_oracle'
@@ -202,6 +202,20 @@ def record_changes(old_file: Path, new_file: Path):
     return ['整体改动'] if a != b else []
 
 
+KEEP_BACKUPS = 3
+
+
+def prune_backups(root: Path, keep: int = KEEP_BACKUPS) -> list:
+    """同步备份只留最近 keep 份（用户 2026-10-18 定，含本次新建的这份）；只删「日期_时间_…」命名的备份目录。"""
+    dirs = sorted((d for d in root.iterdir() if d.is_dir() and re.match(r'^\d{8}_\d{6}', d.name)),
+                  key=lambda d: (d.name[:15], d.stat().st_mtime))
+    removed = []
+    for d in dirs[:-keep] if keep > 0 else dirs:
+        shutil.rmtree(d)
+        removed.append(d.name)
+    return removed
+
+
 def run(cmd, cwd, log):
     log.write('$ ' + ' '.join(cmd) + '\n')
     log.flush()
@@ -217,20 +231,36 @@ def run_probes(log, cache=None):
     import concurrent.futures
     import time
     jobs = max(1, int(os.environ.get('SYNC_JOBS', '4')))
-    plan, reused, keys = [], [], {}
+    plan, reused, keys, units, partial = [], [], {}, {}, {}
     for command, outputs in PROBES:
         key = cache.key(command) if cache else None
         keys[command[0]] = key
-        if cache and cache.hit(command, outputs, key):
+        units[command[0]] = cache.units(command) if cache else None
+        todo = cache.plan(command, outputs, key, units[command[0]]) if cache else None
+        if todo == []:
             reused.append(command[0])
-            cache.record(command, outputs, key)
+            cache.record(command, outputs, key, units[command[0]])
             log.write('CACHE_HIT ' + command[0] + '\n')
         else:
+            if todo is not None:
+                # 分片探针：只跑变了的单元（[''] 表示只删了单元或换了顺序，不跑探针只合并）
+                partial[command[0]] = [u for u in todo if u]
+                log.write('CACHE_PARTIAL %s %d/%d %s\n' % (command[0], len(partial[command[0]]), len(units[command[0]]),
+                                                         ' '.join(partial[command[0]][:20])))
             plan.append((command, outputs))
     log.flush()
-    print('PROBE_PLAN=' + json.dumps({'executed': len(plan), 'reused': len(reused)}), flush=True)
+    print('PROBE_PLAN=' + json.dumps({'executed': len(plan) - len(partial), 'partial': {k: len(v) for k, v in partial.items()},
+                                      'reused': len(reused)}), flush=True)
     if not plan:
-        return {'executed': [], 'reused': reused, 'seconds': {}}
+        return {'executed': [], 'partial': {}, 'reused': reused, 'seconds': {}}
+    gen_oracle = Path(os.environ['XIYOU_GENERATED']) / 'oracle'
+    # 合并要用上次产物：作废缓存前先存一份（作废后 generated/oracle 仍是上次产物，失败时也不会被当作新结果发布）
+    previous = SANDBOX / 'run-previous'
+    shutil.rmtree(previous, ignore_errors=True)
+    for name in partial:
+        for rel in next(outs for cmd, outs in plan if cmd[0] == name):
+            (previous / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(gen_oracle / Path(rel).name, previous / rel)
     if cache:
         cache.invalidate([command for command, _ in plan])
     runs = SANDBOX / 'run'
@@ -247,8 +277,30 @@ def run_probes(log, cache=None):
                 shutil.copytree(SANDBOX / name, box / name)
         env = dict(os.environ, XIYOU_ORACLE_SANDBOX=str(box))
         t = time.time()
-        p = subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=env, capture_output=True, text=True)
-        return cmd, p.returncode, p.stdout + p.stderr, time.time() - t
+        part = partial.get(cmd[0])
+        if part is None:
+            p = subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=env, capture_output=True, text=True)
+            return cmd, p.returncode, p.stdout + p.stderr, time.time() - t
+        text = ''
+        if part:
+            env['XIYOU_PROBE_UNITS'] = json.dumps(part)
+            p = subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=env, capture_output=True, text=True)
+            text = p.stdout + p.stderr
+            if p.returncode:
+                return cmd, p.returncode, text, time.time() - t
+        spec = {'kind': SHARDS[cmd[0]]['kind'], 'order': list(units[cmd[0]]), 'ran': part, 'files': []}
+        for rel in outputs:
+            fresh = box / ('fresh-' + Path(rel).name)
+            if part:
+                if not (SANDBOX / rel).is_file():
+                    return cmd, 1, text + '探针产物缺失：' + rel + '\n', time.time() - t
+                shutil.move(SANDBOX / rel, fresh)
+            spec['files'].append({'old': str(previous / rel), 'fresh': str(fresh) if part else None, 'out': str(SANDBOX / rel),
+                                  'indent': None if cmd[0] == 'event_probe.cjs' else 1})
+        (box / 'merge.json').write_text(json.dumps(spec, ensure_ascii=False))
+        p = subprocess.run(['node', str(HERE / 'oracle_shard_merge.cjs'), str(box / 'merge.json')], capture_output=True, text=True)
+        text += '（增量：只跑 %d 个单元，其余取上次产物合并）\n' % len(part) + p.stdout + p.stderr
+        return cmd, p.returncode, text, time.time() - t
 
     slow = ['smart_ai_probe.cjs', 'event_probe.cjs', 'zhenqi_probe.cjs', 'dungeon_probe.cjs', 'sequence_probe.cjs']   # 最慢的先开跑
     order = sorted(range(len(plan)), key=lambda i: slow.index(plan[i][0][0]) if plan[i][0][0] in slow else len(slow))
@@ -286,8 +338,10 @@ def run_probes(log, cache=None):
         for rel in outputs:
             shutil.copy2(SANDBOX / rel, Path(os.environ['XIYOU_GENERATED']) / 'oracle' / Path(rel).name)
         if cache:
-            cache.record(command, outputs, keys[command[0]])
-    return {'executed': [cmd[0] for cmd, _ in plan], 'reused': reused,
+            cache.record(command, outputs, keys[command[0]], units[command[0]])
+    shutil.rmtree(previous, ignore_errors=True)
+    return {'executed': [cmd[0] for cmd, _ in plan if cmd[0] not in partial],
+            'partial': {k: v for k, v in partial.items()}, 'reused': reused,
             'seconds': {cmd[0]: round(sec, 3) for cmd, _, _, sec in results}}
 
 
@@ -323,13 +377,15 @@ def _main() -> int:
     stamp = dt.datetime.now().strftime('%Y%m%d_%H%M%S_%f')
     backup = ROOT / '03_再刷重制_Godot/04_验证/本地结果/自动同步' / ('%s_%s-%s' % (stamp, old_version, new_version))
     backup.mkdir(parents=True)
+    report_pruned = prune_backups(backup.parent)
     for name in ['oracle', 'db', 'maps', 'manifest.json', 'slice.json']:
         src = gen / name
         if src.is_dir():
             shutil.copytree(src, backup / name)
         elif src.exists():
             shutil.copy2(src, backup / name)
-    report = {'from': old_version, 'to': new_version, 'backup': str(backup.relative_to(ROOT)), 'generated': str(gen)}
+    report = {'from': old_version, 'to': new_version, 'backup': str(backup.relative_to(ROOT)), 'generated': str(gen),
+              'prunedBackups': report_pruned}
     # 探针按环境变量取正式源（XIYOU_APP）与转换产物（XIYOU_GENERATED，event_probe 读地图），与 --app/--generated 一致
     os.environ['XIYOU_APP'] = str(app)
     os.environ['XIYOU_GENERATED'] = str(gen)

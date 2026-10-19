@@ -46,7 +46,9 @@ const SCENES = {
 };
 
 const out = {sourceIdentity: identity, difficulty: DIFFICULTY, party: PARTY, level: LEVEL, items: ITEMS, cases: [], damage: []};
-for (const troop of SLICE.troops) {
+// 增量同步只跑部分敌群时，由 XIYOU_PROBE_UNITS 给出（其余由 oracle_shard_merge.cjs 从上次产物取回）
+const UNITS = process.env.XIYOU_PROBE_UNITS ? new Set(JSON.parse(process.env.XIYOU_PROBE_UNITS)) : null;
+for (const troop of SLICE.troops.filter(t => !UNITS || UNITS.has(String(t)))) {
   for (const [scene, apply] of Object.entries(SCENES)) {
     setup(troop);
     apply();
