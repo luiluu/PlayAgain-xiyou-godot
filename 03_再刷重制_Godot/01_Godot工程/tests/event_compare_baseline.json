@@ -1,8 +1,17 @@
 {
-	"cases": 1196,
-	"match": 1179,
+	"cases": 1291,
+	"match": 1271,
 	"mismatch": {
 		"m119e15p0": [
+			"trace"
+		],
+		"m180e12p0": [
+			"trace"
+		],
+		"m180e12p1": [
+			"trace"
+		],
+		"m180e12p2": [
 			"trace"
 		],
 		"m4e17p0": [
