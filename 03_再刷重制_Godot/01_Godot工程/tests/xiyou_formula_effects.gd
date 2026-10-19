@@ -89,8 +89,26 @@ func _ready() -> void:
 		check(c.id + ".preview_same", same(preview.after, actual.after) and preview.value == actual.value and same(preview.effectJournal, actual.effectJournal), preview)
 		check(c.id + ".popup", same(XResourceContext.popup_queue(actual.results.b), c.observed.popup))
 	reaction_cases()
+	save_resource_boundary()
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks}))
 	get_tree().quit(0 if failures.is_empty() else 1)
+
+func save_resource_boundary() -> void:
+	var state := XState.new_game(3, 1, [])
+	var actor := state.actor(1)
+	var context := XResourceContext.new()
+	context.result(actor).removedStates = [1]
+	context.gain(actor, "hp", -actor.hp)
+	check("removed_death_zero_hp_alive", actor.hp == 0.0 and actor.is_alive() and actor.resource_death_blocked)
+	var encoded: Dictionary = JSON.parse_string(JSON.stringify(state.to_dict()))
+	check("removed_death_save_valid", XSave.valid_data(encoded))
+	var loaded := XState.from_dict(encoded)
+	check("removed_death_save_alive", loaded.actor(1).hp == 0.0 and loaded.actor(1).is_alive())
+	var invalid: Dictionary = encoded.duplicate(true)
+	invalid.actors["1"].resourceDeathBlocked = "true"
+	check("removed_death_save_type", not XSave.valid_data(invalid))
+	encoded.actors["1"].erase("resourceDeathBlocked")
+	check("legacy_hp_death_fallback", XState.from_dict(encoded).actor(1).is_dead())
 
 func apply_case(c: Dictionary) -> void:
 	var a := NativeEnemy.new()

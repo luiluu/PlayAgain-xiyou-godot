@@ -419,6 +419,10 @@ func to_dict() -> Dictionary:
 			"hp": x2.hp, "mp": x2.mp, "tp": x2.tp, "states": x2.state_ids, "stateTurns": x2.state_turns,
 			"buffs": x2.buffs, "buffTurns": x2.buff_turns, "cooldowns": x2.cooldowns,
 			"lastCommand": x2.last_command, "lastBattleSkill": x2.last_battle_skill, "zhenqi": x2.zhenqi}
+		# A removed-death result can leave a native battler alive at zero HP.
+		# Persist only this exceptional state; legacy saves retain their HP fallback.
+		if x2.resource_death_blocked:
+			a[str(id)]["resourceDeathBlocked"] = true
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "battleSlots": battle_slots, "actors": a, "gold": gold,
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
@@ -455,6 +459,7 @@ static func from_dict(d: Dictionary) -> XState:
 		x2.hp = float(row.hp)
 		x2.mp = float(row.mp)
 		x2.tp = float(row.get("tp", 0.0))
+		x2.resource_death_blocked = bool(row.get("resourceDeathBlocked", false))
 		x2.last_command = str(row.get("lastCommand", ""))
 		x2.last_battle_skill = int(row.get("lastBattleSkill", 0))
 		# 真气：旧档没有这一项时为空，第一次用到时给初值（XZhenqi.data）

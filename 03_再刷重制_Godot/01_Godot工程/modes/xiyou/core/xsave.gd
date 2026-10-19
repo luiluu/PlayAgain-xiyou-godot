@@ -111,6 +111,8 @@ static func valid_data(d) -> bool:
 				return false
 		if row.has("tp") and not (row.tp is int or row.tp is float):
 			return false
+		if row.has("resourceDeathBlocked") and not row.resourceDeathBlocked is bool:
+			return false
 		if not row.equips.all(func(e): return e == null or _valid_gear(e)):
 			return false
 	if not d.gear.all(_valid_gear):
