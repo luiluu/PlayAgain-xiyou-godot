@@ -71,6 +71,11 @@ const DUNGEONS = {
     boss: {sw: 895, event: 17, item: 914}},
   // 十七层风精灵沉眠墓地：八精英、四首领（变量 114 到 4 才出首领页，随机变量 115 决定隐藏首领 14）；
   // 十八层恶魔城：六精英、四首领（变量 116），首领按随机变量 117 是 1 打城主 203，否则打怨念集合体 202；两层逃离要朝下
+  // 十六层亚特兰蒂斯秘境（特级符文 171）：十只精英（敌群 166，变量 271≥88 时被吓跑）、四守卫 3～6（敌群 169／170／167／168，变量 113 计数，到 4 才出首领页）、
+  // 首领 2 敌群 165「海拉的幻影」（第 4 回合战斗内 101 对话＋334＋336 变身 175）；开关 2303／2307 的两页开守护者 796；逃离要朝下
+  d16: {start: {map: 33, x: 20, y: 20}, door: 1, tierBase: 1621, rune: 171, escape: 1, escapeFace: 2,
+    clear: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 3, 4, 5, 6, 2].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 2}]),
+    boss: {sw: 896, event: 17, item: 914}},
   d17: {start: {map: 45, x: 24, y: 7}, door: 2, tierBase: 1625, rune: 171, escape: 15, escapeFace: 2,
     clear: [6, 7, 8, 9, 10, 11, 12, 13, 2, 3, 4, 5, 1].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 1}]),
     boss: {sw: 897, event: 16, item: 913}},
@@ -199,7 +204,7 @@ const SCENARIOS = [
   {id: 'd2.boss-lose', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'lose'}]},
   {id: 'd2.boss-roundtrip', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'win'}, {do: 'roundtrip'},
     {do: 'event', event: 1}]},
-  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd17', 'd18', 'd19', 'd20', 'd21', 'd22', 'd23', 'd24'].flatMap(standard),
+  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd16', 'd17', 'd18', 'd19', 'd20', 'd21', 'd22', 'd23', 'd24'].flatMap(standard),
   {id: 'd17.hidden-boss', dungeon: 'd17', setup: {rand: 0.9}, steps: [...enter([0], 1, 2, 171),
     ...[6, 7, 8, 9, 10, 11, 12, 13, 2, 3, 4, 5, 14].map(e => ({do: 'event', event: e, battle: 'win'}))]},
   // 二十层宝箱额外奖励（入口随机变量 155 到 97 以上，157 选三件之一）
@@ -220,6 +225,9 @@ const SCENARIOS = [
     {do: 'event', event: 1}]},
   // 十五层首领要四只首领都打掉（变量 111≥4）才出现；行贿主席直接加 4
   {id: 'd15.boss-locked', dungeon: 'd15', setup: {}, steps: [...enter([0], 1, 4, 171), {do: 'event', event: 2, battle: 'win'}, {do: 'event', event: 13}]},
+  // 十六层首领要四守卫都打掉（变量 113≥4）才出现；开关 2303 且变量 20＝31 时首领页换成守护者海拉（敌群 796，战斗内 101 对话）
+  {id: 'd16.boss-locked', dungeon: 'd16', setup: {}, steps: [...enter([0], 1, 1, 171), {do: 'event', event: 3, battle: 'win'}, {do: 'event', event: 2}]},
+  {id: 'd16.guardian', dungeon: 'd16', setup: {sw: [2303], vars: {20: 31}}, steps: [...enter([0], 1, 1, 171), {do: 'event', event: 2, battle: 'win'}]},
   {id: 'kun.no-kun', dungeon: 'd11', setup: {}, steps: [{do: 'warp', map: 21, x: 4, y: 1}, {do: 'event', event: 13}]},
   ...Object.keys(GATES).flatMap(gateCases),
   ...Object.keys(ABYSS).flatMap(m => abyssCases(Number(m))),
