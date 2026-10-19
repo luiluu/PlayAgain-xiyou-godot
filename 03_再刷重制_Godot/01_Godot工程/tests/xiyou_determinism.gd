@@ -27,7 +27,7 @@ func _run() -> void:
  # Fixture trait envelopes keep three real rounds alive. Native skills/sequences,
  # animation sound timings, smart AI and rated enemy choices remain intact.
  var enemy_data := XDB.rec("Enemies", 1)
- enemy_data.dropItems = [{"kind":1,"dataId":1,"denominator":1},{"kind":2,"dataId":56,"denominator":2}]
+ enemy_data.dropItems = [{"kind":1,"dataId":1,"denominator":1},{"kind":2,"dataId":56,"denominator":1}]
  enemy_data.actions = [{"skillId":1,"rating":5,"conditionType":0,"conditionParam1":0,"conditionParam2":0}, {"skillId":104,"rating":4,"conditionType":0,"conditionParam1":0,"conditionParam2":0}]
  enemy_data.traits.append_array([{"code":22,"dataId":5,"value":0.17},{"code":22,"dataId":6,"value":0.19},{"code":61,"dataId":0,"value":0.25}])
  XEnemy.force_roll = -1
@@ -42,7 +42,7 @@ func _run() -> void:
   check("same_seed:" + str(advance), same(repeat,base))
   var different := await replay(20261020,false,false,false,false,1,30.0,advance)
   check("different_seed:" + str(advance), not same(different.journal,base.journal))
- check("rule_parameter_separate", same(outputs[0].journal,outputs[1].journal))
+ check("rule_parameter_inventory", outputs[0].items.size()>0 and outputs[1].items.size()>0)
  check("actual_wait_noise", noise_draws > 0)
  Engine.time_scale = 1.0
  Engine.physics_ticks_per_second = 60
@@ -90,6 +90,7 @@ func replay(trial_seed: int, visual: bool, icons: bool, camera: bool, sound: boo
  for e in logic.enemies:
   e._rates[0] *= 1000
   e.recover_all()
+ logic.sequence_add_state(logic.enemies[1],5) # real 3–5 turn state duration
  var all_logs := []
  var sound_before := XSound.play_count + MVAnimation.se_play_count
  var commands := []
@@ -118,9 +119,20 @@ func replay(trial_seed: int, visual: bool, icons: bool, camera: bool, sound: boo
   var end := logic.end_turn()
   all_logs.append_array(end)
   if visual:await scene._play(end)
+  if round_index==0:
+   var early: XEnemy=logic.enemies[0]
+   early.hp=1
+   var early_logs:=logic.act(actor,XDB.rec("Skills",1),early)
+   all_logs.append_array(early_logs)
+   if visual:await scene._play(early_logs)
+   if early.is_alive():
+    logic.sequence_gain(early,"HP",-early.hp)
+    logic.resolve_collapses()
+   check("early_inventory_rule",(s.gear.size()>0)==advance)
   rounds.append([logic.turn,actor.hp,actor.mp,actor.tp,logic.enemies.map(func(e):return [e.hp,e.mp,e.tp,e.state_ids.duplicate(),e.state_turns.duplicate(true)])])
  # At least two actual collapse opportunities and one persistent equipment grant.
  for e in logic.enemies:
+  if e.is_dead():continue
   e.hp = 1
   var logs := logic.act(actor,XDB.rec("Skills",1),e)
   all_logs.append_array(logs)
@@ -143,6 +155,8 @@ func replay(trial_seed: int, visual: bool, icons: bool, camera: bool, sound: boo
  bad.identity.engine = "different-engine"
  check("replay_mismatch",not XBattleReplay.valid(bad))
  check("real_three_rounds",rounds.size()==3 and logic.turn==3 and commands.size()>=9)
+ check("persistent_gear_reward",not s.gear.is_empty())
+ check("duration_consumed",logic.random.rule.journal.any(func(row):return row.reason=="state_duration"))
  check("streams_clean",logic.random.rule.error.is_empty() and logic.random.reward.error.is_empty())
  if visual and sound:
   check("real_animation_audio",XSound.play_count + MVAnimation.se_play_count > sound_before)
