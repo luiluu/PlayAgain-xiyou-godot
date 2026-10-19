@@ -11,6 +11,7 @@ extends RefCounted
 ##   Star_RomGetItems 的 RomGet 预掷池初始化。
 ## - v0.27 轮回入口（installReincarnationRandomRuntime）：CodexReincarnationRandom.open(this) → 选「轮回普通／困难」再选阵容规则；
 ##   条件 entryAccepted()／entryHard() 读选择结果；finishEntry() 无操作。随机角色模式暂不开放（O-035），菜单只列「常规阵容」。
+## - $gameVariables.setValue(N, 数字) → XState.set_variable（跨存档变量 900／899／1476 靠它存进 XGlobalVars）。
 ## - 副本 Boss 奖励（CE1439）：CodexEconomy.bossReward、CodexOrbs.rollInt、CodexV010Fixes.rewardNotice／awardQuantity、
 ##   甚尔／宿傩 rollAdvanceStone（见 XDungeon）；洪荒的 grantTicketBonus／rollPower 在非洪荒难度无操作。
 
@@ -118,6 +119,11 @@ static func _statements(js: String, interp) -> Array:
 		m = RegEx.create_from_string("^\\$gameVariables\\.setValue\\((\\d+),window\\.CodexMijing\\?CodexMijing\\.pickHere\\(\\):(\\d+)\\)$").search(st)
 		if m:
 			s.set_variable(int(m.get_string(1)), XDungeon.mijing_pick_here(s))
+			continue
+		# $gameVariables.setValue(N, 数字)：玉皇大帝礼物 900、奇异石碑 899、Map158 古龙祭坛 1476 等。经 set_variable 才会记进跨存档（XGlobalVars）
+		m = RegEx.create_from_string("^\\$gameVariables\\.setValue\\((\\d+)\\s*,\\s*(-?\\d+(?:\\.\\d+)?)\\)$").search(st)
+		if m:
+			s.set_variable(int(m.get_string(1)), float(m.get_string(2)))
 			continue
 		if st == "CodexToji.rollAdvanceStone()" or st == "CodexSukuna.rollAdvanceStone()":
 			var got := XDungeon.roll_advance_stone(s, XDungeon.TOJI if st.begins_with("CodexToji") else XDungeon.SUKUNA)
