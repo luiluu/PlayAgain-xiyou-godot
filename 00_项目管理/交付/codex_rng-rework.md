@@ -1,6 +1,6 @@
 # 交付：codex/rng-rework
 
-- 车道／工作者：规则返工／沙僧（Codex，重制_沙僧_9 接手沙僧_8）
+- 车道／工作者：规则返工／沙僧（Codex，重制_沙僧_10 接手沙僧_9）
 - 分支与工作树：`codex/rng-rework`，`.claude/worktrees/rng-rework`，从main 0ea5c5c新建；辅助补齐和Godot导入已结束；沙僧8核对进程后开始游戏侧返工。
 - 开工时main由唐僧合八戒_27：C车道已从交接板删掉，原车道干净且交付可合并，只有A悟空_23仍写代码。可接本RNG车道；不得改A转换器／切片或抢改battle_logic、XBattler.recover_all。main的开发编号／交接板等尚在唐僧未提交的合并收尾中，不要替他提交。
 
@@ -70,5 +70,7 @@
 - framework仍原头4700681、干净，旧完整检查仍running，原路径不变，只认证main368cf18；尚未merge新main。它的rules／smart_ai可能超时，按真实终态记录，不拿旧结果冒充。等结束再merge已提交main，改《框架维护约定》旧466→538与Permanent待修说法：main0ea5c5c已删除KNOWN_TRANSFORM_GAPS，troop专项严格比旧HP上限334回满、Permanent686及ATK／MAT／最终MHP；recover_all保留Permanent本来已实现。仍缺逐336/334步骤／完整队列／上下文／真实复活／schema及画面，八例矩阵其他缺口不删。原版其他能力值缓存不清的完整仿真没做，HP截断仍按新上限；当前11处形态新基础MHP不低于旧值，不扩大为所有变身全等。
 - 下一步先读两份尚运行日志终态；RNG失败定位修稳，否则整理交付。缓存补新main完整检查／必要真实同步与指纹；framework合新main修文档后排队完整检查。仍保持三条分支分开、精确交付二级标题、最后普通状态行、Codex（沙僧）／待Claude尾注，均不自核。旧12aa60f核查交付与战斗61%证据保留，converter-write-changed仍等A悟空_23释放，未做。
 - 沙僧9在检查点停止编辑，下一会话独占上述三条沙僧分支；主工作区只读。上下文接力不再询问用户。
+
+- 沙僧10开工：已完整读主规则、车道交接、三条分支与运行状态；本分支完整检查仍running，仅只读等待，不重跑双轮；main仍0ea5c5c，唐僧未提交收尾保留。
 
 - 状态：进行中
