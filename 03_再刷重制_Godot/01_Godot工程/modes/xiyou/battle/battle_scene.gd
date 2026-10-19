@@ -194,15 +194,9 @@ static func party_layout(n: int, sprite_h := 72.0, sprite_w := 72.0) -> Array:
 
 func _place_battlers() -> void:
 	for e in logic.enemies:
-		var s := XBattlerSprite.new()
-		field.add_child(s)
-		s.setup(e, 1.8 if e.elite else 1.0)
-		s.breathing = true
-		# YEP_CoreEngine Reposition Battlers：侧视时敌人 y 加 (画面高 − 624) / 2
-		s.home = Vector2(float(e.get_meta("x")), float(e.get_meta("y")) + floorf((BOX.y - 624.0) / 2.0))
-		s.position = s.home
-		sprites[e] = s
+		_make_enemy_sprite(e)
 		_make_enemy_gauge(e)
+		_set_enemy_shown(e)
 	var points := party_layout(logic.actors.size())
 	for i in range(logic.actors.size()):
 		var a: XActor = logic.actors[i]
@@ -216,6 +210,24 @@ func _place_battlers() -> void:
 
 
 ## YEP_X_VisualHpGauge：宽 max(180, 图宽)、高 12，底色 19、渐变 20→21，显示当前 HP 数值。
+func _make_enemy_sprite(e: XEnemy) -> void:
+	var s := XBattlerSprite.new()
+	field.add_child(s)
+	s.setup(e, 1.8 if e.elite else 1.0)
+	s.breathing = true
+	# YEP_CoreEngine Reposition Battlers：侧视时敌人 y 加 (画面高 − 624) / 2
+	s.home = Vector2(float(e.get_meta("x")), float(e.get_meta("y")) + floorf((BOX.y - 624.0) / 2.0))
+	s.position = s.home
+	sprites[e] = s
+
+
+## 隐藏成员（没出现）不画本体与血条（Sprite_Enemy.updateVisibility）
+func _set_enemy_shown(e: XEnemy) -> void:
+	sprites[e].visible = not e.hidden
+	if gauges.has(e):
+		gauges[e].box.visible = not e.hidden
+
+
 func _make_enemy_gauge(e: XEnemy) -> void:
 	var c := XMVCanvas.new()
 	c.size = Vector2(640, 100)
@@ -546,13 +558,38 @@ func _main() -> void:
 		await get_tree().process_frame
 
 
-## 敌群事件的强制行动（记录同普通行动）；之后刷新行动条与状态
+## 敌群事件的记录：强制行动（同普通行动）、敌人回复／出现／变身；101 文字停住规则，消息窗确认后续上游标再播后面的记录。
+## 自动／挂机时消息窗按已有设置自动翻页；快速战斗也照样执行规则。
 func _play_troop_events(logs: Array) -> void:
-	if logs.is_empty():
+	while true:
+		var rest := logs.filter(func(l): return l.type != "message")
+		for l in rest:
+			if l.type == "enemy_change":
+				_apply_enemy_change(l)
+		if not rest.is_empty():
+			await _play(rest)
+			otb.show_orders(logic.current_order, logic.next_order)
+			_refresh_status()
+		if not logic.is_event_waiting():
+			return
+		var w := logic.event_waiting()
+		var response = await message.run(w.msg)
+		logs = logic.resume_event(int(w.token), response)
+
+
+## 敌人变化：出现时显示本体与血条，变身时换战斗图（同一个成员，按记录刷新，不再执行规则）
+func _apply_enemy_change(l: Dictionary) -> void:
+	var e: XEnemy = l.target
+	if not sprites.has(e):
 		return
-	await _play(logs)
-	otb.show_orders(logic.current_order, logic.next_order)
-	_refresh_status()
+	if l.kind == "transform" and int(l.before.enemy_id) != int(l.after.enemy_id):
+		var old: XBattlerSprite = sprites[e]
+		_make_enemy_sprite(e)
+		field.move_child(sprites[e], old.get_index())
+		old.queue_free()
+	_set_enemy_shown(e)
+	if l.has("views"):
+		show_views(l.views)
 
 
 ## BattleManager.processEscape 成功：逃跑音效，消息窗「<队名>开始逃跑了！」（等按键；挂机中按 messageCount 自动翻页），结束战斗（结果 1）

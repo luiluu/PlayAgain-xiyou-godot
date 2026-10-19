@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.090",
-  "sequence": 90,
-  "next": "dev.091",
-  "nextSequence": 91,
+  "current": "dev.092",
+  "sequence": 92,
+  "next": "dev.093",
+  "nextSequence": 93,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-battle-snapshot",
+  "currentChange": "合并 codex/review-backlog-20261018-third：攻击动画 MIRROR 参数",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

@@ -213,7 +213,7 @@ func _exec(e: Dictionary) -> bool:
 			return true
 	# ---- YEP_X_ActSeqPack2 ----
 	if name == "ATTACK ANIMATION":
-		_attack_animation(a0)
+		_attack_animation(a0, args.size() > 1 and str(args[1]).to_upper() == "MIRROR")
 		return true
 	if name == "ENEMY EFFECT":
 		if a0.is_empty():
@@ -517,8 +517,8 @@ func _normal_animation(targets: Array, id: int, mirror := false) -> void:
 		anims.append(a)
 
 
-func _attack_animation(targets: Array) -> void:
-	_normal_animation(targets, scene._attack_animation(user))
+func _attack_animation(targets: Array, mirror := false) -> void:
+	_normal_animation(targets, scene._attack_animation(user), mirror)
 
 
 func _action_animation(targets: Array) -> void:

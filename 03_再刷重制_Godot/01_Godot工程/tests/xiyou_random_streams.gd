@@ -107,5 +107,86 @@ func _ready() -> void:
 	var artifact := XBattleReplay.record(logic, initial, commands, logs)
 	var replayed := XBattleReplay.replay(JSON.parse_string(JSON.stringify(artifact)))
 	check("actual_command_replay", replayed.available, replayed)
+	_hidden_event_streams()
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failed.size(), "total": checks}))
 	get_tree().quit(0 if failed.is_empty() else 1)
+
+
+## 合 main dev.092：隐藏 slot 的 setup、出现、变身及公共事件子游标必须共享本场规则流。
+func _hidden_event_streams() -> void:
+	var s := XState.new_game(3, 1, [])
+	s.random_master = "1122334455667788"
+	var before := s.to_dict().duplicate(true)
+	var logic := XBattleLogic.new()
+	logic.setup(824, s)
+	var other_state := XState.from_dict(before)
+	for i in 64:
+		randf()
+		randi()
+	var other := XBattleLogic.new()
+	other.setup(824, other_state)
+	check("hidden.setup_same_stream", equal(logic.random.snapshot(), other.random.snapshot()))
+	check("hidden.setup_no_world", s._world_random == null and other_state._world_random == null)
+	check("hidden.setup_all_slots", logic.enemies.size() == 6)
+	for reason in ["enemy_elite", "enemy_level"]:
+		check("hidden.draws_" + reason, logic.random.rule.journal.filter(func(e): return e.reason == reason).size() == 6)
+	for i in logic.enemies.size():
+		var e: XEnemy = logic.enemies[i]
+		check("hidden.id:" + str(i), logic.stable_id(e) == "enemy:%d:%d" % [i, e.enemy_id])
+		check("hidden.setup_value:" + str(i), [e.elite, e.enemy_level, e.tp, e.hidden] == [other.enemies[i].elite, other.enemies[i].enemy_level, other.enemies[i].tp, other.enemies[i].hidden])
+	var ce1 := XDB.rec("CommonEvents", 1)
+	var ce2 := XDB.rec("CommonEvents", 2)
+	var old1: Array = ce1.list
+	var old2: Array = ce2.list
+	ce1.list = [{"code": 117, "indent": 0, "parameters": [2]}]
+	ce2.list = [
+		{"code": 122, "indent": 0, "parameters": [700, 702, 0, 2, 7, 9]},
+		{"code": 313, "indent": 0, "parameters": [0, 1, 0, 4]},
+		{"code": 333, "indent": 0, "parameters": [0, 0, 4]},
+		{"code": 333, "indent": 0, "parameters": [1, 0, 4]},
+		{"code": 101, "indent": 0, "parameters": ["", 0, 0, 2]},
+		{"code": 401, "indent": 0, "parameters": ["随机流挂起验收"]},
+		{"code": 122, "indent": 0, "parameters": [703, 703, 0, 2, 5, 5]},
+	]
+	logic.turn = 2
+	logic.random.rule = XRandomStream.scripted([
+		{"kind": "uint32", "value": 7, "reason": "event_variable", "event": "2"},
+		{"kind": "uint32", "value": 0, "reason": "state_duration", "event": "4"},
+		{"kind": "uint32", "value": 0, "reason": "state_duration", "event": "4"},
+		{"kind": "uint32", "value": 0, "reason": "event_variable", "event": "2"},
+	])
+	var reward_before := logic.random.reward.snapshot()
+	var persistent_before := s.random_save()
+	var old_fixed := MVEventCore.fixed_random
+	MVEventCore.fixed_random = 0.99  # 战斗不能被地图对照的静态固定值覆盖。
+	seed(867)
+	var expected_global := randi()
+	seed(867)
+	var runner := XBattleEventRunner.new(logic, [{"code": 117, "indent": 0, "parameters": [1]}])
+	var request := runner.advance()
+	check("event.nested_message", request.kind == "message" and runner.waiting_frame() != runner)
+	check("event.range_once_for_multiple_variables", s.variable(700) == 8 and s.variable(701) == 8 and s.variable(702) == 8)
+	check("event.actor_duration", s.actor(1).state_turns.get(4) == 1)
+	check("event.enemy_duration", logic.enemies[0].state_turns.get(4) == 1)
+	check("event.hidden_state_rejected", not logic.enemies[1].is_state_affected(4))
+	check("event.draws_before_wait", logic.random.rule.draws == 3 and logic.random.rule.error.is_empty(), logic.random.rule.journal)
+	check("event.wait_does_not_draw", runner.advance().kind == "waiting" and logic.random.rule.draws == 3)
+	runner.waiting_frame().resume()
+	check("event.nested_resumed", runner.advance().kind == "done" and s.variable(703) == 5)
+	check("event.singleton_consumed", logic.random.rule.draws == 4 and logic.random.rule.error.is_empty(), logic.random.rule.error)
+	check("event.no_global_consumption", randi() == expected_global)
+	check("event.no_reward_or_world", equal(reward_before, logic.random.reward.snapshot()) and equal(persistent_before, s.random_save()))
+	MVEventCore.fixed_random = old_fixed
+	ce1.list = old1
+	ce2.list = old2
+	var ids: Array = logic.enemies.map(func(e): return logic.stable_id(e))
+	for i in range(1, logic.enemies.size()):
+		var e: XEnemy = logic.enemies[i]
+		var resources := [e.hp, e.mp, e.tp, e.enemy_level, e.elite, e.state_ids.duplicate(), e.state_turns.duplicate()]
+		logic.enemy_appear(i)
+		check("hidden.appear_preserves_setup:" + str(i), not e.hidden and resources == [e.hp, e.mp, e.tp, e.enemy_level, e.elite, e.state_ids, e.state_turns] and logic.stable_id(e) == ids[i])
+	logic.enemy_transform(1, 175)
+	check("hidden.transform_preserves_id", logic.enemies[1].enemy_id == 175 and logic.stable_id(logic.enemies[1]) == ids[1])
+	check("hidden.appear_transform_no_draw", logic.random.rule.draws == 4 and logic.random.rule.error.is_empty() and equal(persistent_before, s.random_save()))
+	logic.enemy_recover_all(-1)
+	check("event.recover_no_extra_draw", logic.random.rule.draws == 4 and logic.random.rule.error.is_empty() and equal(persistent_before, s.random_save()))

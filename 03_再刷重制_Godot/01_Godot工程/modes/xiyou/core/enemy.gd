@@ -11,6 +11,8 @@ extends XBattler
 var enemy_id := 0
 var difficulty_id := 2
 var letter := ""
+## 敌群的隐藏成员（Game_BattlerBase._hidden）：没出现前不算活着也不算阵亡（isAppeared），335 出现
+var hidden := false
 var _rates: Array = [1, 1, 1, 1, 1, 1, 1, 1]
 var _passive_cache := {}
 var elite := false
@@ -60,6 +62,13 @@ static func difficulty_rates(difficulty: int) -> Array:
 
 static func difficulty_name(difficulty: int) -> String:
 	return str(XDB.plugin("Vitsuno_Difficulty").get("%d : Name" % difficulty, ""))
+
+
+func is_alive() -> bool:
+	return not hidden and super()
+
+func is_dead() -> bool:
+	return not hidden and super()
 
 
 func data() -> Dictionary:
