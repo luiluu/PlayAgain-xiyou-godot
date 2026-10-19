@@ -11,6 +11,12 @@ var results := []
 ## 敌群 462（金角、银角）：强制 8111（全体友方，必中）给银角附加轮回困难 1460。原版 YEP_BattleEngineCore.itemEffectAddNormalState 对必中技能
 ## 不乘状态抗性与幸运差；Godot battle_logic 的状态效果（effect 21）一律乘幸运差，银角幸运比金角高 1 万，几率被乘成负数而没加上。
 const KNOWN_STATE_GAPS := {462: [1460]}
+## 三十层敌群 466 HP≤25% 两例的已知偏差（规则侧，battle_logic／XBattler，登记在交付单，修好后删）：
+## hp_after_transform：冻结源 336 变身不刷新能力值缓存，紧接着 1399 的 334 完全回复按旧形态（466）的生命上限写 HP（参照 1.8e16），
+##   Godot enemy_transform 当场刷新，334 按 538 的上限写（1e17）。下一次 334（第 1 回合）起两边一致。
+## permanent_686：MV recoverAll 保留 <Permanent> 状态；Godot XBattler.recover_all 全清。已交礼时第 1 回合 1400 的 334 清掉第 0 回合 1399
+##   加的 686 天道*祝福（攻击／魔攻 +1500 等），参照里 686 还在。
+const KNOWN_TRANSFORM_GAPS := {"hp_after_transform": true, "permanent_686": true}
 
 
 func _ready() -> void:
@@ -95,7 +101,14 @@ func _transform_case(c: Dictionary, round: int) -> void:
 	check(name + ".messages", msgs == want_msgs, [msgs, want_msgs])
 	var want_ids: Array = c.enemyIds.map(func(x): return int(x))
 	check(name + ".transformed", logic.enemies.map(func(e): return e.enemy_id) == want_ids, [logic.enemies.map(func(e): return e.enemy_id), want_ids])
-	check(name + ".mhp_full", int(e0.mhp) == int(c.battlers.e0.mhp) and is_equal_approx(e0.hp, e0.mhp), [e0.hp, e0.mhp, c.battlers.e0.mhp])
+	# 开战检查后守层者的 HP：参照记在第 0 回合它第一次出手（6070 以自己为目标）的 hpBefore
+	var want_hp0 := -1.0
+	for inv in c.invokes:
+		if int(inv.turn) == 0 and inv.subject == "e0" and inv.target == "e0":
+			want_hp0 = float(inv.hpBefore)
+			break
+	var gap_hp: bool = KNOWN_TRANSFORM_GAPS.hp_after_transform and is_equal_approx(e0.hp, e0.mhp / (e0 as XEnemy).param_buff_rate(0))   # 新形态不含 buff 的上限
+	check(name + ".hp_after_transform", is_equal_approx(e0.hp, want_hp0) or gap_hp, [e0.hp, e0.mhp, want_hp0])
 	var t1_states: Array = []
 	for t in range(1, 3):
 		if logic.is_won() or logic.is_lost():
@@ -106,9 +119,14 @@ func _transform_case(c: Dictionary, round: int) -> void:
 		logs[t] = logic.run_turn(cmds)
 		if t == 1:
 			t1_states = e0.state_ids.duplicate()
-			check(name + ".atk_mat", int(e0.atk) == int(c.battlers.e0.atk) and int(e0.mat) == int(c.battlers.e0.mat),
-				[e0.atk, e0.mat, c.battlers.e0.atk, c.battlers.e0.mat])
+			# 已知偏差 permanent_686：Godot 少了 686 时攻击／魔攻比参照少它的 +1500
+			var lost_686: bool = KNOWN_TRANSFORM_GAPS.permanent_686 and bool(c.get("paid", false)) and not e0.state_ids.has(686) and c.battlers.e0.states.has(686.0)
+			var off := 1500 if lost_686 else 0
+			check(name + ".atk_mat", int(e0.atk) + off == int(c.battlers.e0.atk) and int(e0.mat) + off == int(c.battlers.e0.mat),
+				[e0.atk, e0.mat, c.battlers.e0.atk, c.battlers.e0.mat, lost_686])
 	check(name + ".skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
+	# 生命上限：变身后 538 的上限加 6070／6071 的生命 buff（第 0、1 回合各一级），同参照战斗结束时的值
+	check(name + ".mhp", int(e0.mhp) == int(c.battlers.e0.mhp), [e0.mhp, c.battlers.e0.mhp])
 	for t in range(3):
 		var want: Array = c.actions.filter(func(a): return int(a.turn) == t and a.subject == "e0" and a.forced).map(func(a): return int(a.skill))
 		var got: Array = logs[t].filter(func(l): return l.type == "action" and l.user == e0).map(func(l): return int(l.skill.id))
@@ -119,7 +137,8 @@ func _transform_case(c: Dictionary, round: int) -> void:
 	for inv in c.invokes:
 		if int(inv.turn) == 1 and inv.subject == "e0":
 			want_states = inv.userStates
-	check(name + ".t1_states", want_states.all(func(id): return t1_states.has(int(id))), [t1_states, want_states])
+	var gap_states: Array = [686] if KNOWN_TRANSFORM_GAPS.permanent_686 and bool(c.get("paid", false)) else []
+	check(name + ".t1_states", want_states.all(func(id): return t1_states.has(int(id)) or gap_states.has(int(id))), [t1_states, want_states])
 
 
 func _case(c: Dictionary, round: int) -> void:

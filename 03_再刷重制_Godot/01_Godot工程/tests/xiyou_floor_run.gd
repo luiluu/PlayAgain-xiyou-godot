@@ -7,6 +7,9 @@ extends Node
 ##
 ## 楼层表从内容数据推出：大厅传送门（Map004 事件 36）里「变量 20 ＝ N → 场所移动到 Map M」的分支，取切片里有的地图；
 ## 守层者＝该图上「胜利后变量 20 加一」的事件；回大厅＝该图上场所移动到 Map004 的事件。悟空扩楼层后自动覆盖新层。
+## 门传到的图上没有守层者时（二十九层：门先到前置图 Map213 住轮天外，接触传送 1 再进主图 Map144），沿该图第 0 页
+## 场所移动到切片里另一张图的事件找主图，路径记在 via（大厅入口→前置图→主图）。主图没有回大厅的事件时（三十层 Map146），
+## 用枫叶按钮回大厅（XMapScene.return_to_hub → 公共事件 10，同原版 TCLH_levelUP_button）。
 ##
 ## 用到的测试辅助（都只为速度或稳定，不改变流程本身）：
 ## - XMessageBox.auto：文字立即结束，选项按 auto_answers 依次应答（选项下标也从事件数据里按选项文字取）。
@@ -30,6 +33,7 @@ extends Node
 ## 二十层（大厅门「进入该层」→ 天才灵魂「干他」打敌群 453 → 交见面礼挑战石日天）加进第 2 段后：1～12 层 37 秒／236 项，13～20 层 61 秒／283 项。
 ## 二十一层（二十层通关后门第 3 页先关开关 686，O-036 接着出楼层菜单 → 交见面礼挑战六道魔君 457）加进第 2 段后：单跑 13～21 层 59 秒／326 项。
 ## 二十二层（交见面礼挑战三眼娃 458）加进第 2 段；队伍攻击、魔攻提到 5e13 后（见 _boost_party），本机 7 个并行负载下 13～22 层约 86 秒／348 项，6 个种子全过。
+## 二十九、三十层加进去后单跑 13～30 层 109 秒／537 项（并行 2），接近上限，切出第 3 段（21～，xiyou_floor_run_c）。
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -53,16 +57,20 @@ const WRAP_BOSS := ["30:8"]
 ## 走交礼分支（变量 842＝1 → 1400 天道领域*伪）。十三至十九层不交礼也打得过，照旧走不交礼分支。
 ## 二十一层六道魔君（457）、二十二层三眼娃（458）开场同 456，二十三层哪吒（459）、二十四层黑熊精（460）不交礼时开场另加强制 6105／6107。值为该层「没交礼物胜后」才置 1 的索礼变量（二十层 868、二十一层 869、二十二层 870、二十三层 871、二十四层 872、二十五层 873、二十六层 874、二十七层 875、二十八层 876），交礼后应仍为 0。
 ## 二十六层金角银角（462，两名守层者）、二十七层多宝（463）、二十八层镇元子（464）同 459。
-const PAY_GIFT := {116: 868, 117: 869, 119: 870, 118: 871, 120: 872, 147: 873, 155: 874, 182: 875, 145: 876}
+## 二十九层太白金星（465，主图 Map144）同 459、索礼变量 877；三十层玉皇大帝（466）不交礼开场另加强制 6101、索礼变量 878。
+const PAY_GIFT := {116: 868, 117: 869, 119: 870, 118: 871, 120: 872, 147: 873, 155: 874, 182: 875, 145: 876, 144: 877, 146: 878}
 ## 开关 686「前往20层」：二十层过路关后打开，大厅门第 3 页在变量 20＝21 时关掉（O-036：关掉后直接出楼层菜单）
 const GATE_SWITCH := 686
 ## 门里困难／地狱／天灾分支给全员学的挑战技能（六、十一、十六、二十一、二十六层…），普通难度不应学到
-const CHALLENGE_SKILLS := [2873, 2874, 2875, 2876, 2877, 2879, 2880, 2881, 2882, 2883, 2892, 2893, 2894, 2895, 2896]
+## （三十层：困难只设技能等级上限 26，地狱／天灾学 2884／2897）
+const CHALLENGE_SKILLS := [2873, 2874, 2875, 2876, 2877, 2879, 2880, 2881, 2882, 2883, 2884, 2892, 2893, 2894, 2895, 2896, 2897]
 ## 本批只确认、不开放的副本入口与分支事件（地图号 → 事件号）：二十六层影照洞窟入口（2，传到 Map180）、二十七层副本入口（2，进 Map121）、
 ## 二十八层副本入口（2、4，进 Map208／209）与敌群 833 的分支（5）。地图上不能放这些事件。
-const UNOPENED_EVENTS := {155: [2], 182: [2], 145: [2, 4, 5]}
+## 二十九层前置图一护修炼卍解（2，要角色 109 在队，敌群 962）、主图太上老君藏身处副本入口（2，进 Map212）；
+## 三十层通往 Map055 的门（3）、辛德瑞两位（4、5）与等级上限 80／81 的小明事件（6）（页条件要求求道者开关或角色 99，普通流程不出现）。
+const UNOPENED_EVENTS := {155: [2], 182: [2], 145: [2, 4, 5], 213: [2], 144: [2], 146: [3, 4, 5, 6]}
 ## 各段完整走的起始层（第 part 段从 SEGMENTS[part−1] 走到下一段起始层的前一层；最后一段走到楼层表末尾）
-const SEGMENTS := [1, 13]
+const SEGMENTS := [1, 13, 21]
 @export var part := 1
 ## 本次走路越过循环地图边缘的步数
 var wrapped_steps := 0
@@ -225,6 +233,8 @@ static func floor_table() -> Array:
 				out.append({"floor": floor_n, "map": int(p[1]), "x": int(p[2]), "y": int(p[3]), "answers": answers})
 				floor_n = -1
 	out.sort_custom(func(a, b): return a.floor < b.floor)
+	for f in out:
+		_follow_via(f, maps)
 	# 只取从一层起连续的楼层（中间缺一层就到此为止）
 	var cont := []
 	for f in out:
@@ -232,6 +242,25 @@ static func floor_table() -> Array:
 			break
 		cont.append(f)
 	return cont
+
+
+## 门传到的图上没有守层者：找该图上（放了的事件、第 0 页）场所移动到切片里另一张有守层者的图的事件，
+## 把门的落点记进 via（{map, x, y, event：在该图上要触发的事件}），f 的 map／x／y 改成主图与落点。只跟一层。
+static func _follow_via(f: Dictionary, maps: Array) -> void:
+	f.via = []
+	if not boss_of(f.map).is_empty():
+		return
+	var hop := find_event(f.map, func(c): return int(c.code) == 201 and int(c.parameters[0]) == 0 and int(c.parameters[1]) != HUB \
+		and int(c.parameters[1]) != f.map and maps.has(int(c.parameters[1])) and not boss_of(int(c.parameters[1])).is_empty())
+	if hop.is_empty():
+		return
+	for c in _raw_event(f.map, hop.id).pages[0].list:
+		if int(c.code) == 201 and int(c.parameters[0]) == 0:
+			f.via = [{"map": f.map, "x": f.x, "y": f.y, "event": hop.id}]
+			f.map = int(c.parameters[1])
+			f.x = int(c.parameters[2])
+			f.y = int(c.parameters[3])
+			return
 
 
 static func _raw_event(map_id: int, ev_id: int) -> Dictionary:
@@ -319,7 +348,8 @@ func _path_to(map: XMapScene, goal: Vector2i) -> Array:
 
 
 ## 走到事件前并按确定。answers 为选项应答。返回事件是否被触发（之后由调用方等待结果）。
-func _walk_and_talk(map: XMapScene, ev_id: int, answers: Array, tag: String) -> bool:
+## step_on：接触触发、在角色下方的事件（二十九层前置图的接触传送）——最后一步也走上去，不按确定。
+func _walk_and_talk(map: XMapScene, ev_id: int, answers: Array, tag: String, step_on := false) -> bool:
 	var e := _event(map, ev_id)
 	if not _check(tag + "_event_present", e != null, ev_id):
 		return false
@@ -328,7 +358,9 @@ func _walk_and_talk(map: XMapScene, ev_id: int, answers: Array, tag: String) -> 
 		return false
 	var steps := 0
 	var map_id := map.map_id
-	for i in range(path.size() - 1):
+	if step_on:
+		XMessageBox.auto_answers = answers.duplicate()
+	for i in range(path.size() - (0 if step_on else 1)):
 		if not await _wait_idle(map):
 			return _check(tag + "_walk_idle", false, [map.map_id, map.player.grid])
 		if map.map_id != map_id:
@@ -344,6 +376,9 @@ func _walk_and_talk(map: XMapScene, ev_id: int, answers: Array, tag: String) -> 
 				started = true
 				break
 		Input.action_release(action)
+		if step_on and i == path.size() - 1:
+			log_lines.append("%s：走 %d 步踩上事件 %d" % [tag, steps + 1, ev_id])
+			return _check(tag + "_step_on", started, [before, map.player.grid, path[i]])
 		var expect: Vector2i = map.lower.round_cell(before + MVCharacter.dir_offset(path[i]))
 		if not started or map.player.grid != expect:
 			return _check(tag + "_walk_step", false, [before, map.player.grid, path[i]])
@@ -388,8 +423,10 @@ func _boost_party(s: XState) -> void:
 		# 胜负看命中与暴击的随机数，几十到上百回合打不完；而负载下帧序不同（地图事件在战斗中照常随机走动、取随机数），
 		# 同一种子在并行全量检查里会走到打不完的分支，按墙钟等待超时（f21_boss_won）。5e13 时无界面模拟 20 个种子都一回合打完。
 		# 二十八层镇元子（敌群 464）生命约 6e15、有圣裁之雷（3% 即死，四人同被击倒时全队一回合没）等技能，5e13 时四回合内全队阵亡（f28_boss_won）；
-		# 攻击、魔攻提到 3e15（普通攻击 ×4 一击过敌群 464 生命）
-		item.params = [5.0e8, 1.0e6, 3.0e15, 5.0e6, 3.0e15, 5.0e6, 1.0e5, 1.0e3]
+		# 攻击、魔攻提到 3e15（普通攻击 ×4 一击过敌群 464 生命）。
+		# 三十层玉皇大帝（敌群 466）生命约 2.25e16，HP≤25% 时第 3 页变身 538（1399 回满到约 1.5e17）并给全队加 698 天道*终焉（命中 −100%），
+		# 之后普通攻击全落空、打不完；提到 2e16，一击从满血打倒，不经过变身（变身另由 xiyou_troop_events 对照参照）。
+		item.params = [5.0e8, 1.0e6, 2.0e16, 5.0e6, 2.0e16, 5.0e6, 1.0e5, 1.0e3]
 		a.refresh_passive()
 		a.hp = a.mhp
 		a.mp = a.mmp
@@ -493,9 +530,9 @@ func _opening() -> void:
 
 
 ## 快速通过：直接执行事件（不走路）。完整走：寻路走到事件前按确定。
-func _talk(map: XMapScene, ev_id: int, answers: Array, tag: String, full: bool) -> bool:
+func _talk(map: XMapScene, ev_id: int, answers: Array, tag: String, full: bool, step_on := false) -> bool:
 	if full:
-		return await _walk_and_talk(map, ev_id, answers, tag)
+		return await _walk_and_talk(map, ev_id, answers, tag, step_on)
 	var e := _event(map, ev_id)
 	if not _check(tag + "_event_present", e != null, ev_id):
 		return false
@@ -518,6 +555,14 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	var skill_cap := s.variable(8)
 	if not await _talk(map, HUB_DOOR, f.answers, tag + "_door", full):
 		return false
+	# 前置图（二十九层 Map213）：门先传到这里，再踩接触传送进主图
+	for v in f.get("via", []):
+		if not _check(tag + "_via%d_entered" % v.map, await _wait_map(v.map) and _scene().player.grid == Vector2i(v.x, v.y), [_scene().map_id, _scene().player.grid if _scene() is XMapScene else null]):
+			return false
+		for ev_id in UNOPENED_EVENTS.get(v.map, []):
+			_check(tag + "_via%d_unopened_ev%d_absent" % [v.map, ev_id], _event(_scene(), ev_id) == null, [v.map, ev_id])
+		if not await _talk(_scene(), int(v.event), [], tag + "_via%d" % v.map, full, true):
+			return false
 	if not _check(tag + "_entered", await _wait_map(f.map) and _scene().player.grid == Vector2i(f.x, f.y), [_scene().map_id, _scene().player.grid if _scene() is XMapScene else null]):
 		return false
 	for ev_id in UNOPENED_EVENTS.get(f.map, []):
@@ -593,6 +638,16 @@ func _boss_debug(map: XMapScene, s: XState) -> Dictionary:
 
 func _return_hub(map: XMapScene, f: Dictionary, tag: String, full: bool) -> bool:
 	var back := return_of(f.map)
+	if back.is_empty() and not _has_transfer_to_hub(f.map):
+		# 三十层：图上没有回大厅的事件，按枫叶按钮（公共事件 10「回到大厅」，不在副本时传到大厅 (14,21)）
+		var to := Vector2i(-1, -1)
+		for c in XDB.rec("CommonEvents", 10).get("list", []):
+			if int(c.code) == 201 and int(c.parameters[0]) == 0 and int(c.parameters[1]) == HUB:
+				to = Vector2i(int(c.parameters[2]), int(c.parameters[3]))
+		if not await _wait_idle(map):
+			return _check(tag + "_maple_idle", false, [map.map_id, map.player.grid])
+		map.return_to_hub()
+		return _check(tag + "_back_hub_maple", await _wait_map(HUB) and _scene().player.grid == to, [_scene().map_id, _scene().player.grid, to])
 	if not _check(tag + "_return_found", not back.is_empty() and back.choice >= 0, back):
 		return false
 	if not await _talk(map, back.id, [back.choice], tag + "_return", full):
@@ -605,3 +660,15 @@ func _return_hub(map: XMapScene, f: Dictionary, tag: String, full: bool) -> bool
 			dest = MVInterpreter.TRANSFER_FIX.get("%d:%d:%d:%d:%d" % [f.map, back.id, HUB, dest.x, dest.y], dest)
 			break
 	return _check(tag + "_back_hub", await _wait_map(HUB) and _scene().player.grid == dest, [_scene().map_id, _scene().player.grid, dest])
+
+
+## 图上（全部事件、全部页）有没有场所移动到大厅的指令：没有时才用枫叶回大厅，免得放漏了辛德瑞也悄悄改走枫叶
+static func _has_transfer_to_hub(map_id: int) -> bool:
+	for ev in XDB.map(map_id).get("events", []):
+		if ev == null:
+			continue
+		for pg in ev.pages:
+			for c in pg.list:
+				if int(c.code) == 201 and int(c.parameters[0]) == 0 and int(c.parameters[1]) == HUB:
+					return true
+	return false
