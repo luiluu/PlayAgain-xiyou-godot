@@ -676,6 +676,8 @@ func enemy_appear(index: int) -> Array:
 ## 不重新抽神话、等级，不走开战流程；原名变了就清字母，再 makeUniqueNames。
 ## 本工程敌人在轮到时才决定行动（decide），变身后轮到时自然按新形态选招，不另生成待行动。
 ## 未实现：CodexBossDifficulty 霸体（2651）的形态同步——重制版尚无 Boss 霸体系统。
+## 冻结源能力值缓存不随变身清空：变身前的上限记进 stale_caps，供紧接的 334 用（见 enemy_recover_all）。原版截 HP 也按旧缓存上限，
+## 本版按新上限截；冻结源 11 处 336 的新形态基础生命上限都不低于旧形态，不会因此不同。
 func enemy_transform(index: int, enemy_id: int) -> Array:
 	var out := []
 	var e := enemy_at(index)
