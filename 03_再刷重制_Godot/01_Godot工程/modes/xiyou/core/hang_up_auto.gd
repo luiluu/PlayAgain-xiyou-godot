@@ -422,7 +422,7 @@ static func sell_legacy(s: XState) -> Array:
 	return out
 
 
-## 战后自动卖出：每场 +1，等于 SellQuality 时卖背包里开着的旧档装备（跳过名字带 [锁定] 的、没有品质标记的），归零。
+## 战后自动卖出：每场 +1，等于 SellQuality 时卖背包里开着的旧档装备（筛选同一键出售：XItemMarks.sellable_gear），归零。
 ## 价格与卖出报酬同商店（XItemMarks.sell）。返回卖掉的件数（-1 表示这场不卖）。
 static func after_battle_sell(s: XState) -> int:
 	var c := sell_config(s)
@@ -430,15 +430,10 @@ static func after_battle_sell(s: XState) -> int:
 	if int(c.SellQuality) == 0 or int(c.SellQuality) != better_frequency:
 		return -1
 	better_frequency = 0
-	var legacy := sell_legacy(s)
-	var sold := 0
-	for e in s.gear.duplicate():
-		var q := str(e.get("meta", {}).get("quality", ""))
-		if not q.is_valid_int() or not legacy.has(int(q)) or str(e.get("name", "")).contains("[锁定]"):
-			continue
+	var list := XItemMarks.sellable_gear(s, sell_legacy(s))
+	for e in list:
 		XItemMarks.sell(s, e, 1)   # XdRsData.hangUp.doSell：同商店，含 YEP_X_MoreCurrencies 卖出报酬
-		sold += 1
-	return sold
+	return list.size()
 
 
 ## 快捷界面下方的列表（HangUp_Inter.drawHMPU）：开着且还有的回血/回蓝药「名字 剩余: N」（按 ID 去重排序），

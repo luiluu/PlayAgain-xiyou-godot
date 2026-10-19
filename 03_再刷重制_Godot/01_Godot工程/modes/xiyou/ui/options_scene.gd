@@ -35,6 +35,11 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 	["战力显示与估算", "codexPowerEnabled", true], ["测试模式", "codexTestMode", false], ["GM 工具", "codexGM", false],
 	["角色换装", "codexCostumes", false], ["待提交反馈", "codexFeedbackPending", false]]
 
+## 开关类符号只在这里列一份：存配置的 ON/OFF 开关、四路音量用 XConfig.VOLUMES、本次运行开关用 XConfig.SESSION_FLAGS
+## （含 pingbiDrop：状态恒空白、确定打开屏蔽页，只有左右键会改它）
+const FLAG_SYMBOLS := ["MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "battleCamera", "CombatDamageShow",
+	"CombatSkillAnimation", "cq", "MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled"]
+
 ## 挂机设置页用：打开菜单前的地图截图与玩家所在的画面格（由地图经主菜单传入）
 var map_shot: Texture2D
 var player_tile := Vector2.ZERO
@@ -56,22 +61,31 @@ func _ready() -> void:
 	_refresh()
 
 
+static func _group(symbol: String) -> String:
+	if FLAG_SYMBOLS.has(symbol):
+		return "flag"
+	if XConfig.SESSION_FLAGS.has(symbol):
+		return "session"
+	return "volume" if XConfig.VOLUMES.has(symbol) else ""
+
+
 func symbols() -> Array:
 	return _list.map(func(o): return o[1])
 
 
 func status_text(i: int) -> String:
-	match str(_list[i][1]):
-		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "battleCamera", "CombatDamageShow", "CombatSkillAnimation", "cq",\
-		"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled":
-			return "ON" if XConfig.flag(str(_list[i][1])) else "OFF"
-		"Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100":
-			var v = XConfig.session_value(str(_list[i][1]))
-			return "" if v == null else ("ON" if v else "OFF")
+	var symbol := str(_list[i][1])
+	match _group(symbol):
+		"flag":
+			return "ON" if XConfig.flag(symbol) else "OFF"
+		"session":
+			var v = XConfig.session_value(symbol)
+			return "" if v == null or symbol == "pingbiDrop" else ("ON" if v else "OFF")
+		"volume":
+			return str(XConfig.volume(symbol))
+	match symbol:
 		"battleAniSpeed":
 			return XConfig.battle_speed_text()
-		"bgmVolume", "bgsVolume", "meVolume", "seVolume":
-			return str(XConfig.volume(str(_list[i][1])))
 		"codexNotices":
 			return XConfig.notices_text()
 		"codexFollow":
@@ -114,17 +128,22 @@ func ok() -> void:
 	if not o[2]:
 		XSound.system(3)
 		return
-	match str(o[1]):
-		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "battleCamera", "CombatDamageShow", "CombatSkillAnimation", "cq",\
-		"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled":
-			_set_flag(str(o[1]), not XConfig.flag(str(o[1])))
-		"Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100":
-			_set_session(str(o[1]), not XConfig.flag(str(o[1])))
+	var symbol := str(o[1])
+	match _group(symbol):
+		"flag":
+			_set_flag(symbol, not XConfig.flag(symbol))
+			return
+		"session":
+			if symbol != "pingbiDrop":
+				_set_session(symbol, not XConfig.flag(symbol))
+				return
+		"volume":
+			var value := XConfig.volume(symbol) + 20
+			_set_volume(symbol, 0 if value > 100 else value)
+			return
+	match symbol:
 		"battleAniSpeed":
 			_set_speed(XConfig.battle_speed() % 4 + 1)
-		"bgmVolume", "bgsVolume", "meVolume", "seVolume":
-			var value := XConfig.volume(str(o[1])) + 20
-			_set_volume(str(o[1]), 0 if value > 100 else value)
 		"HangUp":
 			XSound.system(1)
 			_open_hang_up()
@@ -139,19 +158,20 @@ func ok() -> void:
 
 ## Window_Options.changeValue：值变了才存、重画并播光标音；HangUp 不改值
 func _side(right: bool) -> void:
-	match str(_list[index][1]):
-		"MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "battleCamera", "CombatDamageShow", "CombatSkillAnimation", "cq",\
-		"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled":
-			_set_flag(str(_list[index][1]), right)
-		"Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonoff", "dhtg", "ydgb", "yd100", "pingbiDrop":
-			_set_session(str(_list[index][1]), right)
-		"codexFollow":
-			_set_follow(right)
-		"battleAniSpeed":
-			_set_speed(clampi(XConfig.battle_speed() + (1 if right else -1), 1, 4))
-		"bgmVolume", "bgsVolume", "meVolume", "seVolume":
-			var symbol := str(_list[index][1])
+	var symbol := str(_list[index][1])
+	match _group(symbol):
+		"flag":
+			_set_flag(symbol, right)
+		"session":
+			_set_session(symbol, right)
+		"volume":
 			_set_volume(symbol, clampi(XConfig.volume(symbol) + (20 if right else -20), 0, 100))
+		_:
+			match symbol:
+				"codexFollow":
+					_set_follow(right)
+				"battleAniSpeed":
+					_set_speed(clampi(XConfig.battle_speed() + (1 if right else -1), 1, 4))
 
 
 func _set_map_xy(v: bool) -> void:
