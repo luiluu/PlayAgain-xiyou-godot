@@ -92,7 +92,7 @@ func _execute_env(c: Dictionary):
 		339:
 			logs.append_array(logic._force_action(p, first_subject))
 			index += 1
-			return {"kind": "forced_action", "frame": self}
+			return {"kind": "forced_action"}
 		_:
 			return super(c)
 	return null

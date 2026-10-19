@@ -14,28 +14,10 @@ var map_id := 0
 var event_id := 0
 ## 只有地图宿主才处理的指令（场所移动、画面、声音、战斗、商店、脚本…）：核心发 command 请求，由 _host_command 执行
 const HOST_CODES := [201, 205, 211, 212, 213, 214, 216, 217, 221, 222, 225, 230, 241, 245, 249, 250, 301, 302, 354, 355]
-## 对照工具用：全部解释器（含公共事件子游标、战斗事件）合计最多执行的指令数，0 为不限；超过就停止并置 aborted
-static var max_steps := 0
-static var steps := 0
-static var aborted := false
-## 对照工具用：≥0 时随机数固定为该值（同参照引擎把 Math.random 固定），默认 −1 不固定
-static var fixed_random := -1.0
 ## O-027：原版事件把玩家传到四个方向都不能通行的格子（正式引擎 isMapPassable 实测）时，改传到同图的正常落点。
 ## 键「来源地图:事件:目的地图:x:y」。七层、十二层辛德瑞（Map061 事件 9、Map065 事件 3）原版传回大厅 (12,18)，那里是钓鱼池水面，
 ## 传过去就走不动；其余各层的辛德瑞都传到 (14,23)。设为空字典 {} 恢复原版。
 const TRANSFER_FIX := {"61:9:4:12:18": Vector2i(14, 23), "65:3:4:12:18": Vector2i(14, 23)}
-
-
-## MV Math.random()
-static func random_float() -> float:
-	return fixed_random if fixed_random >= 0.0 else randf()
-
-
-## MV Math.randomInt(hi − lo + 1) + lo
-static func random_int(lo: int, hi: int) -> int:
-	if fixed_random >= 0.0:
-		return lo + floori((hi - lo + 1) * fixed_random)
-	return randi_range(lo, hi)
 
 
 func _init(h: Node, map: int, event: int, commands: Array, depth := 0) -> void:
@@ -53,23 +35,28 @@ func run() -> void:
 		var ch = host.character(event_id, event_id)
 		if ch != null and str(ch.get("character_name")) == "BaoXiangGuai":
 			receipt = {"rows": []}
-	while true:
-		var r := advance()
-		if r.kind == "done":
-			break
-		var f: MVInterpreter = r.frame
-		match r.kind:
-			"message":
-				f.resume(await host.show_message(r.msg))
-			"command":
-				f.resume(await f._host_command(r.command))
-			_:
-				break
+	while await _step():
+		pass
 	if _depth == 0:
 		if receipt != null and not receipt.rows.is_empty():
 			host.toast("宝箱收获：<br>" + "<br>".join(PackedStringArray(receipt.rows.map(func(r): return "%s ×%d" % [str(r.name).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;"), int(r.amount)]))))
 		XDungeon.event_finished(state())
 	finished.emit()
+
+
+## 推进到下一个请求并等它处理完；本列表执行完返回 false。
+## 跨 await 不留指向游标的局部变量（Godot 4.7 宿主先释放时，带着它的挂起协程会让游标留在内存里，退出时报资源未释放）
+func _step() -> bool:
+	var r := advance()
+	if r.kind == "message":
+		var response = await host.show_message(r.msg)
+		waiting_frame().resume(response)
+		return true
+	if r.kind == "command":
+		var go = await waiting_frame()._host_command(r.command)
+		waiting_frame().resume(go)
+		return true
+	return false
 
 
 ## 立即显示待显示的文字（MVScript 等在执行中途需要时用）

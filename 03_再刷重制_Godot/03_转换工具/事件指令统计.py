@@ -13,7 +13,8 @@ from pathlib import Path
 from xiyou_export import DEFAULT_APP
 
 HERE = Path(__file__).resolve().parent
-INTERP = HERE.parent / '01_Godot工程/modes/xiyou/map/mv_interpreter.gd'
+# 指令语义在共用核心 MVEventCore，MVInterpreter 只接宿主指令；两份一起读
+INTERP_FILES = [HERE.parent / '01_Godot工程/modes/xiyou/core/mv_event_core.gd', HERE.parent / '01_Godot工程/modes/xiyou/map/mv_interpreter.gd']
 NAMES = {101: '显示文字', 401: '文字行', 102: '显示选项', 402: '选项分支', 403: '取消分支', 404: '选项结束', 103: '数值输入', 104: '选择物品',
          105: '滚动文字', 108: '注释', 408: '注释行', 111: '条件分歧', 411: '否则', 412: '分歧结束', 112: '循环', 413: '循环结束', 113: '跳出循环',
          115: '中止事件', 117: '公共事件', 118: '标签', 119: '跳转标签', 121: '开关', 122: '变量', 123: '独立开关', 124: '计时器', 125: '金钱',
@@ -34,7 +35,7 @@ STRUCT = {0, 401, 402, 403, 404, 408, 411, 412, 413, 505, 601, 602, 603, 604, 60
 
 def handled_codes() -> set:
     codes = set()
-    for line in INTERP.read_text().splitlines():
+    for line in '\n'.join(p.read_text() for p in INTERP_FILES).splitlines():
         m = re.match(r'^\t\t(\d+(?:, \d+)*):', line)
         if m:
             codes.update(int(x) for x in m.group(1).split(', '))

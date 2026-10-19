@@ -3,10 +3,11 @@ extends RefCounted
 ## 地图与战斗共用的游标式事件解释器核心（Game_Interpreter 的指令语义只写这一份）。
 ## advance() 从游标处一直执行到需要外部处理为止，返回请求：
 ##   {kind: "done"}                          本列表（含公共事件子游标）执行完
-##   {kind: "message", msg, frame}           显示文字／选项／数值输入；处理完调 frame.resume(应答)
-##   {kind: "command", command, frame}       宿主指令（地图：场所移动、战斗、商店、脚本…）；处理完调 frame.resume(go)
+##   {kind: "message", msg}                  显示文字／选项／数值输入；处理完调 waiting_frame().resume(应答)
+##   {kind: "command", command}              宿主指令（地图：场所移动、战斗、商店、脚本…）；处理完调 waiting_frame().resume(go)
 ##   以及子类自己的请求（战斗的 forced_action，见 XBattleEventRunner）。
-## 公共事件（117）同 MV 的 _childInterpreter 建子游标，子游标发出的请求原样向上传，frame 指向发出请求的那一层。
+## 公共事件（117）同 MV 的 _childInterpreter 建子游标，子游标发出的请求原样向上传，waiting_frame() 是发出请求的那一层。
+## 请求字典里不放游标自己（挂起的协程带着它会让宿主先释放时游标留在内存里）。
 ## 环境相关的部分是虚函数：_execute_env（本核心不认的指令）、_condition_env、_game_data、_party_members、
 ## _change_actor_state、_plugin_env、_data_changed、_treasure_popup、_make_child、_map_id、_event_id。
 ## 地图的 MVInterpreter 在外面包一层 await；战斗的 XBattleEventRunner 由 XBattleLogic 逐步推进。
@@ -16,6 +17,24 @@ const FLUSH_BEFORE := [101, 102, 103, 104, 201, 205, 212, 213, 217, 221, 222, 23
 ## 只是续行、注释或分支结尾，执行时什么也不做
 const PASS_CODES := [401, 405, 408, 655, 404, 412, 604, 0, 108, 505]
 static var skip_common_events := [1386, 1435]   # 战斗背景、轮回模式：首期无对应系统
+## 对照工具用：全部解释器（含公共事件子游标、战斗事件）合计最多执行的指令数，0 为不限；超过就停止并置 aborted
+static var max_steps := 0
+static var steps := 0
+static var aborted := false
+## 对照工具用：≥0 时随机数固定为该值（同参照引擎把 Math.random 固定），默认 −1 不固定
+static var fixed_random := -1.0
+
+## MV Math.random()
+static func random_float() -> float:
+	return fixed_random if fixed_random >= 0.0 else randf()
+
+
+## MV Math.randomInt(hi − lo + 1) + lo
+static func random_int(lo: int, hi: int) -> int:
+	if fixed_random >= 0.0:
+		return lo + floori((hi - lo + 1) * fixed_random)
+	return randi_range(lo, hi)
+
 
 var list: Array = []
 var index := 0
@@ -54,18 +73,18 @@ func advance() -> Dictionary:
 			index += 1
 			continue
 		if _wait != "":
-			return {"kind": "waiting", "frame": self}
-		if index >= list.size() or MVInterpreter.aborted:
+			return {"kind": "waiting"}
+		if index >= list.size() or aborted:
 			if _depth == 0 and not pending_lines.is_empty():
 				return _flush_request()
 			return {"kind": "done"}
 		var c: Dictionary = list[index]
 		if not pending_lines.is_empty() and FLUSH_BEFORE.has(int(c.code)):
 			return _flush_request()
-		if MVInterpreter.max_steps > 0:
-			MVInterpreter.steps += 1
-			if MVInterpreter.steps > MVInterpreter.max_steps:
-				MVInterpreter.aborted = true
+		if max_steps > 0:
+			steps += 1
+			if steps > max_steps:
+				aborted = true
 				continue
 		var r = _execute(c)
 		if r == null or (r is bool and r):
@@ -97,6 +116,13 @@ func resume(response = null) -> void:
 	index += 1
 
 
+## 正在等应答的那一层（公共事件子游标里发出的请求由子游标应答）
+func waiting_frame() -> MVEventCore:
+	if _child != null and _child.is_waiting():
+		return _child.waiting_frame()
+	return self
+
+
 func is_waiting() -> bool:
 	return _wait != "" or (_child != null and _child.is_waiting())
 
@@ -105,7 +131,6 @@ func _request(kind: String, wait: String, data: Dictionary, arg = null) -> Dicti
 	_wait = wait
 	_wait_arg = arg
 	data.kind = kind
-	data.frame = self
 	return data
 
 
@@ -514,7 +539,7 @@ func _set_variables(p: Array) -> void:
 	match int(p[3]):
 		0: value = float(p[4])
 		1: value = state().variable(int(p[4]))
-		2: value = MVInterpreter.random_int(int(p[4]), int(p[5]))
+		2: value = random_int(int(p[4]), int(p[5]))
 		3:
 			var gd = _game_data(int(p[4]), int(p[5]), int(p[6]))
 			if gd == null:

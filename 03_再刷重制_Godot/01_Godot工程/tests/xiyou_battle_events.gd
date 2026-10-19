@@ -85,7 +85,7 @@ func run_list(logic: XBattleLogic, list: Array) -> Array:
 	while true:
 		var x := r.advance()
 		if x.kind == "message":
-			x.frame.resume(null)
+			r.waiting_frame().resume(null)
 		elif x.kind == "done":
 			break
 	return r.take_logs()

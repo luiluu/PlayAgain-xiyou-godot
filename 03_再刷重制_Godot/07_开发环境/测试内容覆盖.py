@@ -71,7 +71,7 @@ class CoverageTests(unittest.TestCase):
         interp = Path(self.tmp.name) / 'mv_interpreter.gd'
         interp.write_text(INTERP)
         with mock.patch.object(cov, 'BASELINE', self.baseline), mock.patch.object(cov, 'REPORT', Path(self.tmp.name) / 'report.json'), \
-             mock.patch.object(cov, 'INTERP', interp), contextlib.redirect_stdout(out):
+             mock.patch.object(cov, 'INTERP_FILES', [interp]), contextlib.redirect_stdout(out):
             rc = cov.main(['--generated', str(self.gen), *args])
         return rc, out.getvalue()
 

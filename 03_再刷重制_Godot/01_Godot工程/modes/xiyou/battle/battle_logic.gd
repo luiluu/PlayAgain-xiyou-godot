@@ -551,7 +551,7 @@ func _drive_events() -> Array:
 		match str(r.kind):
 			"message":
 				_event_token += 1
-				_waiting = {"token": _event_token, "frame": r.frame, "msg": r.msg}
+				_waiting = {"token": _event_token, "frame": _runner.waiting_frame(), "msg": r.msg}
 				logs.append({"type": "message", "msg": r.msg, "token": _event_token})
 				return logs
 			"forced_action":
