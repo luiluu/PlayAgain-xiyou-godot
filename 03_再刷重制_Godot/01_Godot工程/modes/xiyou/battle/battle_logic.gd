@@ -36,8 +36,19 @@ const ESTABLISH_TRUE_POPUP := true
 var _event_flags := {}
 ## 强制行动清掉的首位行动者（OTB startTurn 先取出首位并 makeActions，事件里 forceAction 的 clearActions 把它清空）
 var _cleared := {}
-## 敌群事件里尚未翻译、本次跳过的指令（"代码 页"）
+## 敌群事件里尚未翻译、本次跳过的指令（"代码 内容 页"）
 var troop_event_skipped: Array = []
+## 战斗内事件的游标（XBattleEventRunner）：当前页没执行完时非空；本次检查的条件 {first, turn_end, moment, guard}
+var _runner: XBattleEventRunner = null
+var _check := {}
+## 等待画面应答的消息 {token, frame, msg}；token 每场战斗递增，旧 token 无效
+var _waiting := {}
+var _event_token := 0
+## 无界面宿主（run_turn）的消息应答：msg -> 选项序号／数值／null；未设置时确认（选项取默认项）
+var message_responder: Callable
+## makeUniqueNames：敌人 → 字母（出现时才分配）、原名 → 已分配个数
+var _letters := {}
+var _names_count := {}
 
 func setup(troop: int, s: XState) -> void:
 	turn = 0
@@ -46,6 +57,9 @@ func setup(troop: int, s: XState) -> void:
 	_event_flags.clear()
 	_cleared.clear()
 	troop_event_skipped.clear()
+	_clear_event_cursor()
+	_letters.clear()
+	_names_count.clear()
 	_treasure.clear()
 	current_order.clear()
 	next_order.clear()
@@ -57,24 +71,17 @@ func setup(troop: int, s: XState) -> void:
 	actors = s.battle_members()
 	XZhenqi.battle_setup(s, troop)  # 真气：本场路线、楼层、溢出计数（BattleManager.setup）
 	enemies.clear()
-	var letters := {}
 	var t := XDB.rec("Troops", troop)
+	# Game_Troop.setup：所有成员 slot 都建出（隐藏成员也是，序号与敌群成员一致，335 出现时只改隐藏标记）
 	for m in t.get("members", []):
-		if bool(m.get("hidden", false)):
-			continue
 		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty, elite_roll)
 		e.setup_level(actors.reduce(func(acc, x): return maxi(acc, int(x.level)), 1), level_roll)
 		e.set_meta("x", float(m.x))
 		e.set_meta("y", float(m.y))
+		e.hidden = bool(m.get("hidden", false))
 		enemies.append(e)
-		letters[e.enemy_id] = letters.get(e.enemy_id, 0) + 1
-	XZhenqi.troop_setup(enemies, s.difficulty, elite_roll)  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
-	# 同名敌人加 Ａ Ｂ Ｃ（MV makeUniqueNames）
-	var seen := {}
-	for e in enemies:
-		if letters[e.enemy_id] > 1:
-			e.letter = "ＡＢＣＤＥＦＧＨＩＪ"[seen.get(e.enemy_id, 0)]
-			seen[e.enemy_id] = seen.get(e.enemy_id, 0) + 1
+	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll)  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
+	make_unique_names()
 	for a in actors:
 		for sid in a.state_ids.duplicate():
 			if not bool(XDB.rec("States", sid).get("removeAtBattleEnd", false)):
@@ -456,12 +463,12 @@ func end_turn() -> Array:
 
 ## 无界面测试用：跑完一整个回合。commands: actor -> [技能, 目标]（[null, null] 表示放弃）。
 func run_turn(commands: Dictionary) -> Array:
-	var logs := troop_events() if turn == 0 else []
+	var logs := run_events() if turn == 0 else []
 	start_turn()
 	var first := true
 	while true:
 		var u := next_subject()
-		logs.append_array(troop_events(u if first else null))
+		logs.append_array(run_events(u if first else null))
 		first = false
 		if u == null or is_won() or is_lost():
 			break
@@ -469,7 +476,7 @@ func run_turn(commands: Dictionary) -> Array:
 		logs.append_array(act(u, cmd[0], cmd[1]))
 	if not is_won() and not is_lost():
 		logs.append_array(end_turn())
-		logs.append_array(troop_events(null, true))
+		logs.append_array(run_events(null, true))
 	return logs
 
 
@@ -478,127 +485,182 @@ func run_turn(commands: Dictionary) -> Array:
 ## 每次行动结束后、回合最后一人之后、回合结束（turn_end）。一次检查里依次执行所有满足条件的页（每页执行完再找下一页；
 ## span 2「瞬间」的页每次检查最多一次，避免条件一直成立时死循环）。
 ## first_subject：回合开始时已取出的首位行动者；它被强制行动时本回合的普通行动被清掉（见 _cleared / cleared_action）。
-## 页内指令由 _run_troop_list 执行（Game_Interpreter 的子集），其余指令记入 troop_event_skipped。返回记录（强制行动的 action/hit 等）。
+## 页内指令由 XBattleEventRunner（共用核心 MVEventCore）执行，没翻译的指令记入 troop_event_skipped。返回已提交的记录。
+## 遇到 101 文字时停在游标处：记录最后一条是 {type: "message", msg, token}，is_event_waiting() 为 true，
+## 画面显示完调 resume_event(token, 应答) 续上（同 MV 消息忙时 BattleManager 不推进）；等待中不能开始新的检查。
+## 与源一致，选页时就提交 span≤1 的 event flag；等待中不重新选页，span 1 只在 start_turn 清除。
 func troop_events(first_subject: XBattler = null, turn_end := false) -> Array:
-	var logs := []
-	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
-	var moment_done := {}
-	for guard in range(pages.size() + 1):
-		if is_won() or is_lost():
-			break
-		var found := -1
-		for i in range(pages.size()):
-			if not _event_flags.has(i) and not moment_done.has(i) and _page_meets(pages[i], turn_end):
-				found = i
-				break
-		if found < 0:
-			break
-		if int(pages[found].get("span", 0)) <= 1:
-			_event_flags[found] = true
-		else:
-			moment_done[found] = true
-		_run_troop_list(pages[found].get("list", []), first_subject, logs, "第%d页" % (found + 1))
+	if is_event_waiting():
+		return []
+	_check = {"first": first_subject, "turn_end": turn_end, "moment": {}, "guard": 0}
+	return _drive_events()
+
+
+## 画面确认消息后续上游标；token 不对（重复确认、上一场战斗的消息）时什么也不做
+func resume_event(token: int, response = null) -> Array:
+	if _waiting.is_empty() or int(_waiting.token) != token:
+		return []
+	var frame: MVEventCore = _waiting.frame
+	_waiting = {}
+	frame.resume(response)
+	return _drive_events()
+
+
+func is_event_waiting() -> bool:
+	return not _waiting.is_empty()
+
+
+## 等待中的消息 {token, msg}；不在等待时为空
+func event_waiting() -> Dictionary:
+	return {} if _waiting.is_empty() else {"token": _waiting.token, "msg": _waiting.msg}
+
+
+## 无界面宿主：检查一次敌群事件，消息由 message_responder 应答（未设置时确认），一直执行到这次检查结束
+func run_events(first_subject: XBattler = null, turn_end := false) -> Array:
+	var logs := troop_events(first_subject, turn_end)
+	while is_event_waiting():
+		var w := event_waiting()
+		var response = message_responder.call(w.msg) if message_responder.is_valid() else w.msg.get("default", null)
+		logs.append_array(resume_event(int(w.token), response))
 	return logs
 
 
-## 敌群事件的指令（战斗中的 Game_Interpreter，同步执行；强制行动当场执行完再继续，同 setWaitMode('action')）：
-## 111/411/412 条件分支（开关、变量；其余条件记入 skipped 并视为不成立）、115 中止（只结束本列表，公共事件里的不影响调用方）、
-## 117 公共事件（子列表）、121 开关、122 变量（常数、变量、随机）、313 角色状态、333 敌人状态、334 敌人完全回复、339 强制行动。
-## 十三层守层者（敌群 111）：变量 842（交过见面礼）为 0 时第 1 回合调公共事件 1398「大道领域」再连续强制行动，每 3 回合随机一招。
-func _run_troop_list(list: Array, first_subject: XBattler, logs: Array, tag: String, depth := 0) -> void:
-	var branch := {}
-	var i := 0
-	while i < list.size():
-		var c: Dictionary = list[i]
-		var code := int(c.code)
-		var indent := int(c.get("indent", 0))
-		var p: Array = c.get("parameters", [])
-		match code:
-			0, 412:
+func _drive_events() -> Array:
+	var logs := []
+	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
+	while not _check.is_empty():
+		if _runner == null:
+			if is_won() or is_lost() or int(_check.guard) > pages.size():
+				break
+			_check.guard = int(_check.guard) + 1
+			var found := -1
+			for i in range(pages.size()):
+				if not _event_flags.has(i) and not _check.moment.has(i) and _page_meets(pages[i], bool(_check.turn_end)):
+					found = i
+					break
+			if found < 0:
+				break
+			if int(pages[found].get("span", 0)) <= 1:
+				_event_flags[found] = true
+			else:
+				_check.moment[found] = true
+			_runner = XBattleEventRunner.new(self, pages[found].get("list", []), _check.first)
+			_runner.set_meta("page", found)
+		var r := _runner.advance()
+		logs.append_array(_runner.take_logs())
+		match str(r.kind):
+			"message":
+				_event_token += 1
+				_waiting = {"token": _event_token, "frame": r.frame, "msg": r.msg}
+				logs.append({"type": "message", "msg": r.msg, "token": _event_token})
+				return logs
+			"forced_action":
 				pass
-			111:
-				var ok = _troop_condition(p)
-				if ok == null:
-					troop_event_skipped.append("111 条件 %d %s" % [int(p[0]), tag])
-					ok = false
-				branch[indent] = ok
-				if not ok:
-					i = _skip_branch(list, i)
-			411:
-				if branch.get(indent, null) != false:
-					i = _skip_branch(list, i)
-			115:
-				return
-			117:
-				var ce := XDB.rec("CommonEvents", int(p[0]))
-				if not ce.is_empty() and depth < 30:
-					_run_troop_list(ce.get("list", []), first_subject, logs, "%s 公共事件%d" % [tag, int(p[0])], depth + 1)
-			121:
-				for id in range(int(p[0]), int(p[1]) + 1):
-					state.set_switch(id, int(p[2]) == 0)
-			122:
-				if not _troop_set_variables(p):
-					troop_event_skipped.append("122 操作数 %d %s" % [int(p[3]), tag])
-			313:
-				_change_actor_state(p)
-			333:
-				_change_enemy_state(p)
-			334:
-				for e in (enemies.duplicate() if int(p[0]) < 0 else ([enemies[int(p[0])]] if int(p[0]) < enemies.size() else [])):
-					e.recover_all()
-					e.refresh_resources()
-			339:
-				logs.append_array(_force_action(p, first_subject))
 			_:
-				troop_event_skipped.append("%d %s" % [code, tag])
-		i += 1
+				for sk in _runner.skipped:
+					troop_event_skipped.append("%d %s 第%d页" % [int(sk.code), str(sk.text), int(_runner.get_meta("page")) + 1])
+				_runner = null
+	_runner = null
+	_check = {}
+	return logs
 
 
-## Game_Interpreter.skipBranch：跳到下一条同缩进指令之前
-func _skip_branch(list: Array, i: int) -> int:
-	var indent := int(list[i].get("indent", 0))
-	while i + 1 < list.size() and int(list[i + 1].get("indent", 0)) > indent:
-		i += 1
-	return i
+## 退出战斗、重新开战：游标、等待中的消息全部作废
+func _clear_event_cursor() -> void:
+	_runner = null
+	_check = {}
+	_waiting = {}
 
 
-## command111 的开关、变量两种条件（同 MVInterpreter._condition）；认不出返回 null
-func _troop_condition(p: Array):
-	match int(p[0]):
-		0:
-			return state.switch(int(p[1])) == (int(p[2]) == 0)
-		1:
-			var v1 := state.variable(int(p[1]))
-			var v2 := float(p[3]) if int(p[2]) == 0 else state.variable(int(p[3]))
-			match int(p[4]):
-				0: return v1 == v2
-				1: return v1 >= v2
-				2: return v1 <= v2
-				3: return v1 > v2
-				4: return v1 < v2
-				5: return v1 != v2
-	return null
+## $gameTroop.members()[i]（含隐藏成员）
+func enemy_at(i: int) -> XEnemy:
+	return enemies[i] if i >= 0 and i < enemies.size() else null
 
 
-## command122 的常数、变量、随机三种操作数（同 MVInterpreter._set_variables）；其余返回 false
-func _troop_set_variables(p: Array) -> bool:
-	var value := 0.0
-	match int(p[3]):
-		0: value = float(p[4])
-		1: value = state.variable(int(p[4]))
-		2: value = MVInterpreter.random_int(int(p[4]), int(p[5]))
-		_: return false
-	for id in range(int(p[0]), int(p[1]) + 1):
-		var old := state.variable(id)
-		var r := value
-		match int(p[2]):
-			1: r = old + value
-			2: r = old - value
-			3: r = old * value
-			4: r = old / value if value != 0 else old
-			5: r = fmod(old, value) if value != 0 else old
-		state.set_variable(id, r)
-	return true
+## iterateEnemyIndex：-1 为全体成员（含隐藏），否则该序号
+func _enemy_slots(i: int) -> Array:
+	if i < 0:
+		return range(enemies.size())
+	return [i] if i < enemies.size() else []
+
+
+## 敌人变化的记录：稳定 slot、前后读数（画面按记录刷新同一个成员，不再执行规则）
+func _enemy_change(kind: String, slot: int, before: Dictionary) -> Dictionary:
+	var e: XEnemy = enemies[slot]
+	return {"type": "enemy_change", "kind": kind, "slot": slot, "target": e, "before": before, "after": _enemy_reading(e),
+		"views": views([e])}
+
+
+func _enemy_reading(e: XEnemy) -> Dictionary:
+	return {"enemy_id": e.enemy_id, "name": e.display_name(), "hidden": e.hidden, "hp": e.hp, "mp": e.mp, "tp": e.tp,
+		"states": e.state_ids.duplicate()}
+
+
+## 334 敌人完全回复（Game_BattlerBase.recoverAll：清状态、HP/MP 回满；TP、buff 不变；隐藏成员也回复，仍隐藏）。
+## 冻结源能力值缓存：回满用的是清状态之前的上限（状态 77 使最大 HP ×0.8 时，清掉后上限回升，HP 停在旧上限），见战斗内事件预检。
+func enemy_recover_all(index: int) -> Array:
+	var out := []
+	for i in _enemy_slots(index):
+		var e: XEnemy = enemies[i]
+		var before := _enemy_reading(e)
+		var old_mhp := e.mhp
+		var old_mmp := e.mmp
+		e.recover_all()
+		e.hp = old_mhp
+		e.mp = old_mmp
+		e.refresh_resources()
+		e.refresh_passive()
+		out.append(_enemy_change("recover", i, before))
+	return out
+
+
+## 335 敌人出现（Game_Enemy.appear）：只去掉隐藏标记，HP/MP/TP/状态不变（死亡的出现后仍死亡），再 makeUniqueNames。
+## 行动顺序不当场改：冻结源 AB_EnemyBook 盖掉了 OTB 的 appear 入队，出现的成员到下次重建 next 队列才排进（首次行动在下下回合）。
+func enemy_appear(index: int) -> Array:
+	var out := []
+	for i in _enemy_slots(index):
+		var e: XEnemy = enemies[i]
+		var before := _enemy_reading(e)
+		e.hidden = false
+		make_unique_names()
+		out.append(_enemy_change("appear", i, before))
+	return out
+
+
+## 336 敌人变身（Game_Enemy.transform）：原地换数据身份，HP/MP 按绝对值保留后截到新上限，TP、状态、buff 不变，
+## 不重新抽神话、等级，不走开战流程；原名变了就清字母，再 makeUniqueNames。
+## 本工程敌人在轮到时才决定行动（decide），变身后轮到时自然按新形态选招，不另生成待行动。
+## 未实现：CodexBossDifficulty 霸体（2651）的形态同步——重制版尚无 Boss 霸体系统。
+func enemy_transform(index: int, enemy_id: int) -> Array:
+	var out := []
+	var e := enemy_at(index)
+	if e == null or XDB.rec("Enemies", enemy_id).is_empty():
+		return out
+	var before := _enemy_reading(e)
+	var old_name := str(e.data().get("name", ""))
+	e.enemy_id = enemy_id
+	if str(e.data().get("name", "")) != old_name:
+		e.letter = ""
+		_letters.erase(e)
+	e.refresh_passive()
+	e.refresh_resources()
+	make_unique_names()
+	out.append(_enemy_change("transform", index, before))
+	return out
+
+
+## Game_Troop.makeUniqueNames：出现着（isAlive）且还没字母的成员按原名依次分配 Ａ Ｂ Ｃ…；同名已分配 2 个以上时才显示字母（plural）
+func make_unique_names() -> void:
+	const TABLE := "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"
+	for e in enemies:
+		if e.is_alive() and not _letters.has(e):
+			var n := str(e.data().get("name", ""))
+			var k := int(_names_count.get(n, 0))
+			_letters[e] = TABLE[k % TABLE.length()]
+			_names_count[n] = k + 1
+	for e in enemies:
+		if _letters.has(e) and int(_names_count.get(str(e.data().get("name", "")), 0)) >= 2:
+			e.letter = _letters[e]
 
 
 ## 313 [0 固定／1 变量, 角色（0 全队）, 0 附加／1 解除, 状态]（command313 / iterateActorEx：全队是战斗成员）
@@ -1136,7 +1198,7 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 
 ## 行动序列 ADD STATE（Game_Battler.addState → isStateAddable：活着、未抵抗（IMMORTAL 期间阵亡视为抵抗）；阵亡状态直接倒下）
 func sequence_add_state(t: XBattler, id: int) -> void:
-	if XDB.rec("States", id).is_empty() or t.is_dead():
+	if XDB.rec("States", id).is_empty() or not t.is_alive():
 		return
 	if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) or (id == DEATH_STATE and t.immortal):
 		return
@@ -1244,6 +1306,8 @@ func rewards() -> Dictionary:
 	for a in actors:
 		gold_up = maxf(gold_up, _passive_sum(a, "passiveGRUP"))
 	for e in enemies:
+		if e.hidden:
+			continue  # deadMembers：没出现的成员不算
 		exp += float(e.exp_reward()) * rates[0]
 		gold += float(e.gold_reward()) * rates[1] * (1.0 + gold_up / 100.0)
 		drops.append_array(drops_of(e))
@@ -1330,6 +1394,7 @@ func grant(r: Dictionary) -> Array:
 
 
 func end_battle() -> void:
+	_clear_event_cursor()
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	for b in state.members():
