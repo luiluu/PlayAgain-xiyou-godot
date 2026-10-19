@@ -1,6 +1,6 @@
 # 公式与独立随机数交付
 
-状态：**可合并**（重制_沙僧_4，合 main dev.092 后最终自测全部通过，待Claude交叉核查）
+- 状态：**可合并**（重制_沙僧_4，合 main dev.092 后最终自测全部通过，待Claude交叉核查）
 
 分支：`codex/formula-rng-implementation`；工作树：`.claude/worktrees/formula-rng-implementation`。执行者 Codex（沙僧），交叉核查待 Claude。已合入用户指定的 main 提交 8d684cb（dev.092），保留八戒的画面快照接口及悟空的共用事件核心，不自行递增编号或复核自己的进度。
 
