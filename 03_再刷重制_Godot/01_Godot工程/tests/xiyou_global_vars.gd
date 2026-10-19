@@ -95,7 +95,13 @@ func _run() -> void:
 	XSave.dir_override = DIR
 	DirAccess.make_dir_recursive_absolute(DIR)
 	DirAccess.remove_absolute(DIR.path_join("global.json"))
-	oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
+	var parsed = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
+	if not parsed is Dictionary:
+		check("oracle_present", false, ORACLE + "（先跑 同步正式西游.py）")
+		print("TEST_RESULT=" + JSON.stringify({"passed": 0, "total": 1}))
+		get_tree().quit(1)
+		return
+	oracle = parsed
 	check("params", XGlobalVars.switch_ids() == oracle.params.switchIds.map(func(v): return int(v))
 		and XGlobalVars.variable_ids() == oracle.params.variableIds.map(func(v): return int(v)), [XGlobalVars.switch_ids(), XGlobalVars.variable_ids(), oracle.params])
 	check("path_follows_save_dir", XGlobalVars.path() == DIR.path_join("global.json"), XGlobalVars.path())
