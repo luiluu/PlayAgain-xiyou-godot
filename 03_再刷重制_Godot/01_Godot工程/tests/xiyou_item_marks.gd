@@ -370,7 +370,9 @@ func _item_marks_oracle() -> void:
 		check("return_tile_oracle_%d_%d" % [int(c.x), int(c.y)], actual_dirs == c.dirs, [actual_dirs, c.dirs])
 	tilemap.free()
 	# O-027：七层（Map061 事件 9）与十二层（Map065 事件 3）辛德瑞原版都传到上面验过的 (12,18)，只改这两条
-	check("return_fix_seventh_twelfth", MVInterpreter.TRANSFER_FIX == {"61:9:4:12:18": Vector2i(14, 23), "65:3:4:12:18": Vector2i(14, 23)})
+	# （TRANSFER_FIX 另有 O-062 三十三层落点一条，见 xiyou_floor_run）
+	check("return_fix_seventh_twelfth", MVInterpreter.TRANSFER_FIX.keys().filter(func(k): return str(k).contains(":4:12:18")) == ["61:9:4:12:18", "65:3:4:12:18"] \
+		and MVInterpreter.TRANSFER_FIX["61:9:4:12:18"] == Vector2i(14, 23) and MVInterpreter.TRANSFER_FIX["65:3:4:12:18"] == Vector2i(14, 23))
 	await frames()
 
 

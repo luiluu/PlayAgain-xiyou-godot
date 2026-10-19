@@ -36,6 +36,32 @@ func _make_child(commands: Array) -> MVEventCore:
 	return XBattleEventRunner.new(logic, commands, first_subject, logs)
 
 
+## 公共事件 1393「天锁地缚」（Map055 引路人第 3 页）的脚本：
+##   var actorN = $gameParty.battleMembers()[k]; … if (actorN && $gameVariables.value(V)<=M) { actorN.addState(S); }
+## 按出战成员下标与变量条件附加状态（同 313 的附加：logic.sequence_add_state）。整段都认得才执行，返回 true；否则不动、返回 false。
+func _member_states_script(code: String) -> bool:
+	var js := RegEx.create_from_string("//[^\\n]*").sub(code, "", true)
+	var slots := {}
+	for m in RegEx.create_from_string("var\\s+(\\w+)\\s*=\\s*\\$gameParty\\.battleMembers\\(\\)\\[(\\d+)\\]\\s*;?").search_all(js):
+		slots[m.get_string(1)] = int(m.get_string(2))
+		js = js.replace(m.get_string(0), "")
+	var ops := []
+	var re := RegEx.create_from_string("if\\s*\\(\\s*(\\w+)\\s*&&\\s*\\$gameVariables\\.value\\((\\d+)\\)\\s*<=\\s*(\\d+)\\s*\\)\\s*\\{\\s*(\\w+)\\.addState\\((\\d+)\\)\\s*;?\\s*\\}")
+	for m in re.search_all(js):
+		if not slots.has(m.get_string(1)) or m.get_string(4) != m.get_string(1):
+			return false
+		ops.append([slots[m.get_string(1)], int(m.get_string(2)), int(m.get_string(3)), int(m.get_string(5))])
+		js = js.replace(m.get_string(0), "")
+	if slots.is_empty() or ops.is_empty() or js.strip_edges() != "":
+		return false
+	var members: Array = logic.actors
+	for op in ops:
+		if op[0] < members.size() and members[op[0]] != null and state().variable(op[1]) <= op[2]:
+			logic.sequence_add_state(members[op[0]], op[3])
+			members[op[0]].refresh_resources()
+	return true
+
+
 ## 战斗中 $gameParty.members() 是出战成员
 func _party_members() -> Array:
 	return logic.actors
@@ -93,6 +119,16 @@ func _execute_env(c: Dictionary):
 			logs.append_array(logic._force_action(p, first_subject))
 			index += 1
 			return {"kind": "forced_action"}
+		355:
+			var code := str(p[0])
+			var at := index
+			while at + 1 < list.size() and int(list[at + 1].code) == 655:
+				at += 1
+				code += "\n" + str(list[at].parameters[0])
+			if _member_states_script(code):
+				index = at
+				return null
+			return super(c)
 		_:
 			return super(c)
 	return null

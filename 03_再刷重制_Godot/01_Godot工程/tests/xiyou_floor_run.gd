@@ -34,6 +34,7 @@ extends Node
 ## 二十一层（二十层通关后门第 3 页先关开关 686，O-036 接着出楼层菜单 → 交见面礼挑战六道魔君 457）加进第 2 段后：单跑 13～21 层 59 秒／326 项。
 ## 二十二层（交见面礼挑战三眼娃 458）加进第 2 段；队伍攻击、魔攻提到 5e13 后（见 _boost_party），本机 7 个并行负载下 13～22 层约 86 秒／348 项，6 个种子全过。
 ## 二十九、三十层加进去后单跑 13～30 层 109 秒／537 项（并行 2），接近上限，切出第 3 段（21～，xiyou_floor_run_c）。
+## 三十一至三十三层（Map148／156／157，都没有回大厅的事件，用枫叶）加进第 3 段。
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -67,8 +68,16 @@ const CHALLENGE_SKILLS := [2873, 2874, 2875, 2876, 2877, 2879, 2880, 2881, 2882,
 ## 本批只确认、不开放的副本入口与分支事件（地图号 → 事件号）：二十六层影照洞窟入口（2，传到 Map180）、二十七层副本入口（2，进 Map121）、
 ## 二十八层副本入口（2、4，进 Map208／209）与敌群 833 的分支（5）。地图上不能放这些事件。
 ## 二十九层前置图一护修炼卍解（2，要角色 109 在队，敌群 962）、主图太上老君藏身处副本入口（2，进 Map212）；
-## 三十层通往 Map055 的门（3）、辛德瑞两位（4、5）与等级上限 80／81 的小明事件（6）（页条件要求求道者开关或角色 99，普通流程不出现）。
-const UNOPENED_EVENTS := {155: [2], 182: [2], 145: [2, 4, 5], 213: [2], 144: [2], 146: [3, 4, 5, 6]}
+## 三十一层七位可选首领（1、2、3、4、6、8、13）、副本协会主席（9）与错误数据（20）。
+const UNOPENED_EVENTS := {155: [2], 182: [2], 145: [2, 4, 5], 213: [2], 144: [2], 148: [1, 2, 3, 4, 6, 8, 9, 13, 20]}
+## 放了、但普通流程（开关 2302）没有可用页的事件：三十层通往 Map055 的门（3）、辛德瑞两位（4、5）与小明事件（6）
+## （页条件要求轮回开关 2303／2307 或角色 99 在队；轮回分支由 xiyou_floor30_seeker 测）。
+const HIDDEN_EVENTS := {146: [3, 4, 5, 6]}
+## 守层者胜后插件指令 maxlevel equal 设的等级上限（三十一层 81、三十二层 90、三十三层 99；之前各层见门与辛德瑞，未逐层核对）
+const MAX_LEVEL_AFTER := {148: 81, 156: 90, 157: 99}
+## 到这些层（三十一至三十三层）挑战守层者前把队伍攻击／魔攻提到 BIG_ATK（见 _boost_party）
+const BIG_ATK_MAPS := [148, 156, 157]
+const BIG_ATK := 2.0e19
 ## 各段完整走的起始层（第 part 段从 SEGMENTS[part−1] 走到下一段起始层的前一层；最后一段走到楼层表末尾）
 const SEGMENTS := [1, 13, 21]
 @export var part := 1
@@ -230,7 +239,9 @@ static func floor_table() -> Array:
 				else:
 					plain = false
 			if plain:
-				out.append({"floor": floor_n, "map": int(p[1]), "x": int(p[2]), "y": int(p[3]), "answers": answers})
+				# 落点照 MVInterpreter.TRANSFER_FIX（O-062：三十三层 Map157 (24,12) 走不动，改到 (24,13)）
+				var to: Vector2i = MVInterpreter.TRANSFER_FIX.get("%d:%d:%d:%d:%d" % [HUB, HUB_DOOR, int(p[1]), int(p[2]), int(p[3])], Vector2i(int(p[2]), int(p[3])))
+				out.append({"floor": floor_n, "map": int(p[1]), "x": to.x, "y": to.y, "answers": answers})
 				floor_n = -1
 	out.sort_custom(func(a, b): return a.floor < b.floor)
 	for f in out:
@@ -397,7 +408,7 @@ func _walk_and_talk(map: XMapScene, ev_id: int, answers: Array, tag: String, ste
 
 # ---- 测试辅助：队伍增强 ----
 
-func _boost_party(s: XState) -> void:
+func _boost_party(s: XState, atk := 2.0e16) -> void:
 	for a in s.members():
 		var eq: Array = a.equip_list()
 		var item: Dictionary
@@ -426,7 +437,9 @@ func _boost_party(s: XState) -> void:
 		# 攻击、魔攻提到 3e15（普通攻击 ×4 一击过敌群 464 生命）。
 		# 三十层玉皇大帝（敌群 466）生命约 2.25e16，HP≤25% 时第 3 页变身 538（1399 回满到约 1.5e17）并给全队加 698 天道*终焉（命中 −100%），
 		# 之后普通攻击全落空、打不完；提到 2e16，一击从满血打倒，不经过变身（变身另由 xiyou_troop_events 对照参照）。
-		item.params = [5.0e8, 1.0e6, 2.0e16, 5.0e6, 2.0e16, 5.0e6, 1.0e5, 1.0e3]
+		# 三十一至三十三层守层者生命约 3.75e17／2.5e18／1.5e19（HP≤30% 时第 3 页 1397 回满，≤10% 变身）：到这几层时再提到 atk（BIG_ATK）。
+		# 不从开局就提：2e19 时二十九层太白金星（敌群 465，吸收属性 1）两百多回合打不动。
+		item.params = [5.0e8, 1.0e6, atk, 5.0e6, atk, 5.0e6, 1.0e5, 1.0e3]
 		a.refresh_passive()
 		a.hp = a.mhp
 		a.mp = a.mmp
@@ -567,6 +580,9 @@ func _floor(f: Dictionary, full: bool) -> bool:
 		return false
 	for ev_id in UNOPENED_EVENTS.get(f.map, []):
 		_check(tag + "_unopened_ev%d_absent" % ev_id, _event(_scene(), ev_id) == null, [f.map, ev_id])
+	for ev_id in HIDDEN_EVENTS.get(f.map, []):
+		var hidden := _event(_scene(), ev_id)
+		_check(tag + "_hidden_ev%d_no_page" % ev_id, hidden != null and hidden.page.is_empty(), [f.map, ev_id, hidden.page if hidden != null else null])
 	# 普通难度不走门里困难／地狱／天灾的分支（开关 2500／2494／2489：全员学挑战技能、改技能等级上限变量 8）
 	_check(tag + "_normal_difficulty_path", s.variable(8) == skill_cap and s.members().all(func(a): return not CHALLENGE_SKILLS.any(func(k): return a.skill_ids.has(k))), [skill_cap, s.variable(8)])
 	# 二十层通关后开关 686 仍开：门第 3 页先关 686，O-036 接着出楼层菜单（一次按门就进二十一层）
@@ -574,6 +590,8 @@ func _floor(f: Dictionary, full: bool) -> bool:
 		_check(tag + "_gate_switch_off", not s.switch(GATE_SWITCH))
 	map = _scene()
 	# 2. 守层者「挑战」
+	if BIG_ATK_MAPS.has(f.map):
+		_boost_party(s, BIG_ATK)
 	var boss := boss_of(f.map)
 	if not _check(tag + "_boss_found", not boss.is_empty() and boss.choice >= 0, boss):
 		return false
@@ -595,6 +613,8 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	if PAY_GIFT.has(f.map):
 		_check(tag + "_gift_paid", s.variable(842) == 0 and s.variable(PAY_GIFT[f.map]) == 0, [s.variable(842), s.variable(PAY_GIFT[f.map])])
 	_check(tag + "_clear_toast", map.toasts.any(func(t): return str(t).begins_with("通关神魔之塔第")), map.toasts.slice(-4))
+	if MAX_LEVEL_AFTER.has(f.map):
+		_check(tag + "_max_level", s.max_level() == MAX_LEVEL_AFTER[f.map], [s.max_level(), MAX_LEVEL_AFTER[f.map]])
 	await _shot("%02d_守层者战后.png" % n)
 	if not full:
 		return await _return_hub(map, f, tag, false)
