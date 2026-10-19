@@ -80,6 +80,11 @@ func _run() -> void:
 	check("onekey_sell_grade0", r == [2, 50] and s.gold == 1050 and not s.gear.has(w1) and not s.gear.has(w2) and s.gear.has(w3) and s.gear.has(w4) and s.gear.has(w5) and s.actor(1).equips[0] == worn, [r, s.gold])
 	r = XItemMarks.onekey_sell(s, 6)
 	check("onekey_sell_grade6_legacy_only", r == [1, 45] and s.gear.has(a6) and not s.gear.has(a7), r)
+	# ---- 出售筛选合一（一键出售与挂机自动卖出共用 sellable_gear）：旧档范围由调用方给，锁定按 is_locked，只看背包 ----
+	var w8 := gear(s, "weapon", 7, "15", 70)       # 旧档 15、锁定
+	XItemMarks.toggle_lock(s, w8)
+	var sel := XItemMarks.sellable_gear(s, [14, 15])
+	check("sellable_gear_shared", sel == [a6] and XItemMarks.sellable_gear(s, XItemMarks.onekey_members(6)).is_empty() and XItemMarks.sellable_gear(s, [1]).is_empty() and XItemMarks.sellable_gear(s, [2]) == [w4], sel.size())
 	# ---- 出售锁定：装备改实例名、提示；物品记 ItemSpLock、无提示 ----
 	check("gear_locked_name", str(w3.name).ends_with("[锁定]") and XItemMarks.is_locked(s, w3))
 	check("gear_unlock_toast", XItemMarks.toggle_lock(s, w3) == "取消锁定" and not str(w3.name).contains("[锁定]"))

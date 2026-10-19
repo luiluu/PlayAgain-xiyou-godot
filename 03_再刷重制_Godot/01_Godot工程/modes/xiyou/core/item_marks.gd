@@ -395,18 +395,24 @@ static func onekey_members(g: int) -> Array:
 	return out
 
 
-## Scene_Shop.sellUnifiedQuality：背包（不含身上）里备注品质属于该档旧档 0～14、名字不带「[锁定]」的装备逐件 doSell(1)。
+## 出售筛选（一键出售 sellUnifiedQuality 与挂机自动卖出 OnekeyWPSell 共用）：背包（不含身上）里备注品质在 legacy（旧档 0～14／15 的列表）里、
+## 没有锁定（is_locked，装备按名字带「[锁定]」）的装备，按背包顺序。没有品质备注的跳过。
+## 两处原版只差旧档范围：一键出售只含 0～14（onekey_members），自动卖出含 SellWA 全部开着的档（sell_legacy，含 15）。
+static func sellable_gear(s: XState, legacy: Array) -> Array:
+	var out := []
+	for e in s.gear:
+		var q := str(e.get("meta", {}).get("quality", "")).strip_edges()
+		if q.is_valid_int() and legacy.has(int(q)) and not is_locked(s, e):
+			out.append(e)
+	return out
+
+
+## Scene_Shop.sellUnifiedQuality：sellable_gear（该档旧档 0～14）逐件 doSell(1)。
 ## 卖价为 0 的也卖掉（原版现行代码不查价格）。返回 [件数, 金额]。
 static func onekey_sell(s: XState, g: int) -> Array:
-	var legacy := onekey_members(g)
-	var count := 0
 	var gold := 0
-	for e in s.gear.duplicate():
-		var q := str(e.get("meta", {}).get("quality", "")).strip_edges()
-		if not q.is_valid_int() or not legacy.has(int(q)) or str(e.get("name", "")).contains(LOCK):
-			continue
-		var price := selling_price(e)
+	var list := sellable_gear(s, onekey_members(g))
+	for e in list:
+		gold += selling_price(e)
 		sell(s, e, 1)
-		count += 1
-		gold += price
-	return [count, gold]
+	return [list.size(), gold]
