@@ -22,7 +22,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SUB = HERE.parent
 GEN = SUB / '01_Godot工程/modes/xiyou/generated'
-INTERP = SUB / '01_Godot工程/modes/xiyou/map/mv_interpreter.gd'
+# 地图解释器：指令语义在共用核心 MVEventCore，MVInterpreter 只接宿主指令；两份一起读
+INTERP_FILES = [SUB / '01_Godot工程/modes/xiyou/core/mv_event_core.gd', SUB / '01_Godot工程/modes/xiyou/map/mv_interpreter.gd']
 BASELINE = SUB / '01_Godot工程/tests/content_coverage_baseline.json'
 REPORT = SUB / '04_验证/本地结果/内容覆盖/报告.json'
 HARD = ('缺素材', '无效引用', '未翻译')
@@ -224,7 +225,7 @@ def main(argv=None) -> int:
     ap.add_argument('--update-baseline', action='store_true')
     a = ap.parse_args(argv)
     gen = a.generated
-    ck = Checker(gen, INTERP.read_text())
+    ck = Checker(gen, '\n'.join(p.read_text() for p in INTERP_FILES))
     events = gen / 'oracle/events.json'
     compared = {c['id'] for c in json.loads(events.read_text()).get('cases', [])} if events.exists() else set()
     ck.run(compared)
