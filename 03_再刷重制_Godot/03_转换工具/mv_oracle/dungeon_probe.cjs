@@ -120,6 +120,14 @@ const DUNGEONS = {
   d29: {start: {map: 144, x: 17, y: 1}, door: 2, tierBase: 1673, rune: 171, escape: 8, escapeFace: 2,
     clear: [1, 4, 5, 6, 7].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 3}, {do: 'event', event: 1, battle: 'win'}, {do: 'event', event: 1}]),
     clearLow: [1, 4, 5, 6, 7].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 2}, {do: 'event', event: 1, battle: 'win'}, {do: 'event', event: 1}])},
+  // 二十八层众分天（不朽灵魂 640，入口 Map145 EV2 进 Map208 西天、EV4 进 Map209 小西天；两个入口共用难度档开关 1669～1672，进副本调 CE1024／1025 刷新肉鸽开关）：
+  // 四间「肉鸽」房（事件 11～14，自动页开房间页：随机变量 529～532 到 1、2 为首领（CE1020／1021 随机头目，变量 537／538 选敌群 696～704／707～715，10～12 无战斗）、
+  // 3 为物品（CE1023）、4 为随机 buff（CE1022，状态 754～757）），每间打开（变量 527／528 计数）到 4 才出最后首领（Map208 恶·如来 695、Map209 善·无天 706）；
+  // 没有副本协会主席；宝箱问「是否前往妄语深渊」（Map211，未开放）选否回 28 层并重置。固定随机数 0.5 时每间房都是物品页；0.05 每间都是首领页
+  d28a: {start: {map: 145, x: 9, y: 37}, door: 2, tierBase: 1669, rune: 640, escape: 10,
+    clear: [11, 12, 13, 14].flatMap(e => [{do: 'event', event: e}, {do: 'event', event: e, battle: 'win'}]).concat([{do: 'event', event: 1, battle: 'win'}, {do: 'event', event: 1}])},
+  d28b: {start: {map: 145, x: 14, y: 37}, door: 4, tierBase: 1669, rune: 640, escape: 10,
+    clear: [11, 12, 13, 14].flatMap(e => [{do: 'event', event: e}, {do: 'event', event: e, battle: 'win'}]).concat([{do: 'event', event: 1, battle: 'win'}, {do: 'event', event: 1}])},
 };
 const D2 = DUNGEONS.d2.start;
 const enter = (picks, rune = 1, door = 7, item = 24) => [{do: 'item', id: item, n: rune}, {do: 'event', event: door, picks}];
@@ -220,7 +228,7 @@ const SCENARIOS = [
   {id: 'd2.boss-lose', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'lose'}]},
   {id: 'd2.boss-roundtrip', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'win'}, {do: 'roundtrip'},
     {do: 'event', event: 1}]},
-  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd16', 'd17', 'd18', 'd19', 'd20', 'd21', 'd22', 'd23', 'd24', 'd26', 'd27', 'd29'].flatMap(standard),
+  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd16', 'd17', 'd18', 'd19', 'd20', 'd21', 'd22', 'd23', 'd24', 'd26', 'd27', 'd28a', 'd28b', 'd29'].flatMap(standard),
   {id: 'd17.hidden-boss', dungeon: 'd17', setup: {rand: 0.9}, steps: [...enter([0], 1, 2, 171),
     ...[6, 7, 8, 9, 10, 11, 12, 13, 2, 3, 4, 5, 14].map(e => ({do: 'event', event: e, battle: 'win'}))]},
   // 二十层宝箱额外奖励（入口随机变量 155 到 97 以上，157 选三件之一）
@@ -271,6 +279,17 @@ const SCENARIOS = [
   {id: 'd29.exit-gate-room', dungeon: 'd29', setup: {rand: 0.05}, steps: [...enter([0], 1, 2, 171), ...DUNGEONS.d29.clearLow.slice(0, 6), {do: 'event', event: 2}, {do: 'event', event: 3}]},
   {id: 'd29.hero-clear', dungeon: 'd29', setup: {tier: 3}, steps: [...enter([0, 2], 1, 2, 171), ...DUNGEONS.d29.clear]},
   {id: 'd29.boss-lose', dungeon: 'd29', setup: {}, steps: [...enter([0], 1, 2, 171), {do: 'event', event: 1, battle: 'lose'}]},
+  // 二十八层：随机变量 529 到 1、2（0.05／0.3）房间是首领页，CE1020 的 537 按随机数选敌群（0.05→696、0.3→699、0.5→701…，0.9 取到 11 无战斗）；0.9 时 529 到 4 是随机 buff 页；
+  // 首领在四间房没全打开（变量 527 不到 4）时没有可用的页；宝箱选「是」去妄语深渊（Map211）；中途败阵；八个房间传送门（接触触发）
+  ...['d28a', 'd28b'].flatMap(id => [
+    {id: id + '.boss-rooms-mid', dungeon: id, setup: {rand: 0.3}, steps: [...enter([0], 1, DUNGEONS[id].door, 640), ...DUNGEONS[id].clear]},
+    {id: id + '.buff-rooms', dungeon: id, setup: {rand: 0.9}, steps: [...enter([0], 1, DUNGEONS[id].door, 640), ...DUNGEONS[id].clear]},
+    {id: id + '.boss-locked', dungeon: id, setup: {}, steps: [...enter([0], 1, DUNGEONS[id].door, 640), {do: 'event', event: 11}, {do: 'event', event: 11}, {do: 'event', event: 1}]},
+    {id: id + '.abyss-yes', dungeon: id, setup: {}, steps: [...enter([0], 1, DUNGEONS[id].door, 640), ...DUNGEONS[id].clear.slice(0, -1), {do: 'event', event: 1, picks: [0]}]},
+    {id: id + '.room-boss-lose', dungeon: id, setup: {rand: 0.05}, steps: [...enter([0], 1, DUNGEONS[id].door, 640), {do: 'event', event: 11}, {do: 'event', event: 11, battle: 'lose'}]},
+    {id: id + '.portals', dungeon: id, setup: {}, steps: [...enter([0], 1, DUNGEONS[id].door, 640), ...[2, 3, 4, 5, 6, 7, 8, 9].map(e => ({do: 'event', event: e}))]},
+    {id: id + '.reset-after-clear', dungeon: id, setup: {}, steps: [...enter([0], 1, DUNGEONS[id].door, 640), ...DUNGEONS[id].clear, {do: 'warp', ...DUNGEONS[id].start}, {do: 'event', event: DUNGEONS[id].door, picks: [1]}]},
+  ]),
   ...Object.keys(GATES).flatMap(gateCases),
   ...Object.keys(ABYSS).flatMap(m => abyssCases(Number(m))),
 ].map(sc => Object.assign({dungeon: 'd2'}, sc));
