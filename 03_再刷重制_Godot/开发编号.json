@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.095",
-  "sequence": 95,
-  "next": "dev.096",
-  "nextSequence": 96,
+  "current": "dev.096",
+  "sequence": 96,
+  "next": "dev.097",
+  "nextSequence": 97,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "upbeat-newton-5288fa",
+  "currentChange": "exciting-nightingale-bf11ca",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
