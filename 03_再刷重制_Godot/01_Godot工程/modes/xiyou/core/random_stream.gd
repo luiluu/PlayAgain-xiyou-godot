@@ -102,7 +102,7 @@ func snapshot() -> Dictionary:
 		"tape": _tape.duplicate(true) if _scripted else []}
 
 static func valid_saved(data) -> bool:
-	if not data is Dictionary or int(data.get("version", 0)) != VERSION or data.get("engine") != ENGINE:
+	if not data is Dictionary or data.get("version") != VERSION or data.get("engine") != ENGINE:
 		return false
 	for key in ["seed", "state"]:
 		var value = data.get(key)

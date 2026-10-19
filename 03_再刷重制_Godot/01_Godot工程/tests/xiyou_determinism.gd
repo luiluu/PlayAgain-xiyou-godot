@@ -64,6 +64,9 @@ func replay(trial_seed: int, visual: bool, icons: bool, camera: bool, sound: boo
  var s := XState.new_game(3,1,[])
  s.random_master = XRandomStream.hex64(trial_seed)
  s.orb_seed = 7319
+ s.hang_up_active = visual and camera and sound
+ s.hang_up_origin = Vector2i.ZERO
+ XHangUp.settings(s).fastFt = s.hang_up_active
  var actor := s.actor(1)
  var gear := XGear.template("weapon",56)
  gear.params[0] = 1000000

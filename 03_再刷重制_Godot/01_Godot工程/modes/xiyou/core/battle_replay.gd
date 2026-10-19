@@ -63,7 +63,7 @@ static func replay(data: Dictionary) -> Dictionary:
 		for b in logic.actors + logic.enemies:
 			if logic.stable_id(b) == str(cmd.target):
 				chosen = b
-		var skill := XDB.rec("Skills", int(cmd.skill))
+		var skill := XDB.rec("Items" if cmd.get("kind", "skill") == "item" else "Skills", int(cmd.skill))
 		if bool(cmd.automatic):
 			var decision := logic.decide(user)
 			if decision[0] == null or int(decision[0].id) != int(cmd.skill):
