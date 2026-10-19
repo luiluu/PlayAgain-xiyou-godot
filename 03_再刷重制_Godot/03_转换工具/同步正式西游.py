@@ -2,9 +2,9 @@
 """正式西游更新后的一键重同步（用户 2026-10-14 同意的效率方案）。
 
 做法与历次手工同步相同，全部自动：
-1. 备份 generated/ 的 oracle、db、maps、manifest.json、slice.json 到 04_验证/本地结果/自动同步/<时间>_<旧版>-<新版>/；
+1. 备份 generated/ 的 oracle、db、maps、manifest.json、slice.json 到 04_验证/本地结果/自动同步/<时间>_<旧版>-<新版>/，备份只留最近 3 份；
 2. 重跑转换器 xiyou_export.py；
-3. 按输入与产物SHA复用未变化探针（--full强制全部重跑），运行需要更新的参照探针（mv_oracle，只写 .sandbox/），复制到 generated/oracle/；
+3. 按输入与产物SHA复用未变化探针（切片按字段；慢探针按敌群／地图分片只跑变了的单元；--full强制全部重跑），运行需要更新的参照探针（mv_oracle，只写 .sandbox/），复制到 generated/oracle/；
 4. 去掉来源身份（sourceIdentity、releaseVersion 等）后逐份比较测量；列出改动的数据文件、记录编号、地图与运行脚本；
 5. 运行 验证西游来源.py；
 6. 测量全部不变且核对 0 问题：写来源清单，更新 来源登记.json 与 当前状态.json（--no-register 或在 worktree 里运行时不写），退出码 0；
@@ -466,7 +466,9 @@ def _main() -> int:
             report['importError'] = str(error)
             report['result'] = 'Godot 导入失败，未登记'
     (backup / '同步报告.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
-    if ok and lane is None and cache is not None:
+    # 探针都跑成功、来源核验通过就发布缓存：产物是按这组输入如实测出的，测量变化接不接受（退出码 2）
+    # 与缓存无关；否则加楼层后的每次重跑都退回全量。导入失败也不影响探针产物。
+    if report['verifyOk'] and lane is None and cache is not None:
         try:
             cache.commit()
         except RuntimeError as error:
