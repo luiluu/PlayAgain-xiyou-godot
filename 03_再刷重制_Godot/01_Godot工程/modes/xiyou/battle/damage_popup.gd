@@ -22,6 +22,8 @@ const COLORS := {
 	"hp_heal": [Color8(50, 255, 50), Color8(0, 100, 0)],
 	"mp": [Color8(100, 150, 150), Color8(0, 50, 50)],
 	"mp_heal": [Color8(150, 255, 255), Color8(50, 100, 100)],
+	"tp": [Color8(150, 150, 100), Color8(50, 50, 0)],
+	"tp_heal": [Color8(255, 255, 150), Color8(100, 100, 50)],
 	"miss": [Color8(168, 145, 200), Color8(100, 100, 100)],
 }
 
@@ -39,7 +41,7 @@ var _font: Font
 
 
 ## value > 0 伤害、< 0 回复；text "miss" 只显示 Miss。
-func setup(value: float, is_mp := false, critical := false, miss := false, actor_target := false, stacked := 0) -> void:
+func setup(value: float, is_mp := false, critical := false, miss := false, actor_target := false, stacked := 0, is_tp := false) -> void:
 	_font = XUI.font()
 	on_actor = actor_target
 	stack = stacked
@@ -50,13 +52,13 @@ func setup(value: float, is_mp := false, critical := false, miss := false, actor
 		return
 	var shown := format_number(value)
 	if value < 0:
-		kind = "mp_heal" if is_mp else "hp_heal"
+		kind = "tp_heal" if is_tp else "mp_heal" if is_mp else "hp_heal"
 		text = "治疗  " + shown
 	elif critical and value != 0:
 		kind = "crit"
 		text = "暴击  " + shown + "  ！"
 	else:
-		kind = "mp" if is_mp else "hp"
+		kind = "tp" if is_tp else "mp" if is_mp else "hp"
 		text = shown
 	if value < 0:
 		_scale = 0.0
@@ -94,7 +96,7 @@ func _update() -> void:
 		_crit -= 1
 	var dir := 1.0 if on_actor else -1.0
 	match kind:
-		"hp", "mp", "crit":
+		"hp", "mp", "tp", "crit":
 			_scale = minf(1.0, _scale + 0.1)
 			_x += 0.3 * dir
 			if on_actor:
@@ -103,7 +105,7 @@ func _update() -> void:
 				_y = 0.2 * pow(_x, -2) + 5 * _x
 			if kind == "crit":
 				_scale = clampf(CRIT_UPDATES / 100.0 * _crit, 1.0, 2.0)
-		"hp_heal", "mp_heal":
+		"hp_heal", "mp_heal", "tp_heal":
 			if _crit == 0:
 				_scale = 1.0
 				_y -= 0.4

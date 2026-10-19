@@ -34,6 +34,51 @@ var play_seconds := 0.0
 var encounter_count := 0
 ## Star_RomGetItems 的装备预掷随机池（见 XGear），随存档保存
 var rom := {"x": [], "xn": 0, "xs": [], "xsn": 0, "g": [], "gn": 0}
+## Initialized only when actual play first needs a stream. Loading/previews keep legacy pools intact.
+var random_master := ""
+var battle_serial := 0
+var _equipment_random: XRandomStream
+var _world_random: XRandomStream
+
+func _ensure_random_master() -> void:
+	if random_master.is_empty():
+		random_master = XRandomStream.derive(XRandomStream.hex64(orb_seed), "world")
+
+func reserve_battle_random() -> XBattleRandom:
+	_ensure_random_master()
+	var out := XBattleRandom.create(XRandomStream.derive(random_master, "battle:" + str(battle_serial)), battle_serial)
+	battle_serial += 1
+	return out
+
+func equipment_random() -> XRandomStream:
+	_ensure_random_master()
+	if _equipment_random == null:
+		_equipment_random = XRandomStream.create(XRandomStream.derive(random_master, "equipment"), "equipment")
+	return _equipment_random
+
+func world_random() -> XRandomStream:
+	_ensure_random_master()
+	if _world_random == null:
+		_world_random = XRandomStream.create(XRandomStream.derive(random_master, "world-events"), "world")
+	return _world_random
+
+func random_save() -> Dictionary:
+	return {"version": 1, "engine": XRandomStream.ENGINE, "master": random_master,
+		"battleSerial": battle_serial, "world": _world_random.snapshot() if _world_random != null else {}, "equipment": _equipment_random.snapshot() if _equipment_random != null else {}}
+
+static func valid_random_save(data) -> bool:
+	if not data is Dictionary or data.get("version") != 1 or data.get("engine") != XRandomStream.ENGINE:
+		return false
+	var serial = data.get("battleSerial")
+	if not (serial is int or serial is float) or not is_finite(float(serial)) or float(serial) < 0 or float(serial) != floorf(float(serial)) or float(serial) >= 9007199254740992.0:
+		return false
+	if not data.get("master") is String or (data.master != "" and not XRandomStream.valid_hex(data.master)):
+		return false
+	var world = data.get("world", {})
+	if not world is Dictionary or (not world.is_empty() and (data.master == "" or not XRandomStream.valid_saved(world) or world.domain != "world" or world.get("scripted", false))):
+		return false
+	var equipment = data.get("equipment")
+	return equipment is Dictionary and (equipment.is_empty() or (data.master != "" and XRandomStream.valid_saved(equipment) and equipment.domain == "equipment" and not equipment.get("scripted", false)))
 ## Galv_NewItemIndication 的 $gameSystem._seenItems：看过的物品（物品 ID／装备实例 ID）不再画 NEW
 var seen := {}
 ## 事件脚本里给 $gameParty / $gamePlayer 挂的零散标记（DCultyL1～8 等），按原名保存
@@ -98,6 +143,7 @@ static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> 
 	for id in [starter_id] + companions:
 		s.add_actor(int(id))
 	s.followers_visible = bool(XDB.system().get("optFollowers", false))
+	XGlobalVars.apply(s)  # Game_Map.initialize：跨存档变量盖到新局
 	_become_current(s)
 	return s
 
@@ -116,6 +162,7 @@ static func new_game_blank() -> XState:
 	s.y = int(sys.get("startY", 0))
 	s.direction = 2
 	XSave.current_slot = 0
+	XGlobalVars.apply(s)  # Game_Map.initialize：跨存档变量盖到新局
 	_become_current(s)
 	return s
 
@@ -254,12 +301,14 @@ func switch(id: int) -> bool:
 
 func set_switch(id: int, on: bool) -> void:
 	switches[id] = on
+	XGlobalVars.on_switch(id, on)  # 跨存档开关（Drill_VariablesAcrossArchive）
 
 func variable(id: int) -> float:
 	return variables.get(id, 0)
 
 func set_variable(id: int, value: float) -> void:
 	variables[id] = floorf(value)  # Game_Variables.setValue：数值一律 Math.floor。
+	XGlobalVars.on_variable(id, value)  # 跨存档变量存取整前的原值（同 Drill_VariablesAcrossArchive）
 
 ## 公式用的变量表 v[...]：未定义的按 0。
 func variable_array(size := 5000) -> Array:
@@ -317,7 +366,7 @@ func _gain_raw(id: int, amount: int) -> void:
 func gain_gear(kind: String, base_id: int, amount: int) -> void:
 	if amount > 0:
 		for i in range(amount):
-			var inst := XGear.create(kind, base_id)
+			var inst := XGear.create(kind, base_id, self)
 			if not inst.is_empty():
 				register_gear(inst)
 				gear.append(inst)
@@ -374,16 +423,29 @@ func to_dict() -> Dictionary:
 			"hp": x2.hp, "mp": x2.mp, "tp": x2.tp, "states": x2.state_ids, "stateTurns": x2.state_turns,
 			"buffs": x2.buffs, "buffTurns": x2.buff_turns, "cooldowns": x2.cooldowns,
 			"lastCommand": x2.last_command, "lastBattleSkill": x2.last_battle_skill, "zhenqi": x2.zhenqi}
+		# A removed-death result can leave a native battler alive at zero HP.
+		# Persist only this exceptional state; legacy saves retain their HP fallback.
+		if x2.resource_death_blocked:
+			a[str(id)]["resourceDeathBlocked"] = true
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "battleSlots": battle_slots, "actors": a, "gold": gold,
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac,
-		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "random": random_save()}
 
 static func from_dict(d: Dictionary) -> XState:
+	if d.has("random") and not valid_random_save(d.random):
+		return null
 	var s := XState.new()
+	if d.has("random"):
+		s.random_master = d.random.master
+		s.battle_serial = int(d.random.battleSerial)
+		if not d.random.equipment.is_empty():
+			s._equipment_random = XRandomStream.restore(d.random.equipment)
+		if not d.random.get("world", {}).is_empty():
+			s._world_random = XRandomStream.restore(d.random.world)
 	s.difficulty = int(d.difficulty)
 	for id_s in d.actors:
 		var row: Dictionary = d.actors[id_s]
@@ -401,6 +463,7 @@ static func from_dict(d: Dictionary) -> XState:
 		x2.hp = float(row.hp)
 		x2.mp = float(row.mp)
 		x2.tp = float(row.get("tp", 0.0))
+		x2.resource_death_blocked = bool(row.get("resourceDeathBlocked", false))
 		x2.last_command = str(row.get("lastCommand", ""))
 		x2.last_battle_skill = int(row.get("lastBattleSkill", 0))
 		# 真气：旧档没有这一项时为空，第一次用到时给初值（XZhenqi.data）
@@ -477,5 +540,6 @@ static func from_dict(d: Dictionary) -> XState:
 	elif s.self_switch(4, 20, "A"):
 		# dev.016 及以前的 Godot 档没有解锁记录：已到过大厅的补大厅（所在地图由 load_map 照常解锁）
 		s.unlocked_maps[4] = true
+	XGlobalVars.apply(s)  # extractSaveContents 之后：跨存档变量盖掉档里的值
 	_become_current(s)
 	return s

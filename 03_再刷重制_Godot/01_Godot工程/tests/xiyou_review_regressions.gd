@@ -58,13 +58,14 @@ func _run() -> void:
 	check("battle_revives_selected_dead", dead.is_alive() and s.actor(8).is_dead() and s.item_count(183) == 0)
 	# 进度审查 25%：伤害致死后同一次行动的「附加状态」不再生效（MV isStateAddable 要求活着），存活目标照常附加
 	var lethal: Dictionary = XDB.rec("Skills", 1).duplicate(true)
-	lethal.damage = {"type": 1, "elementId": 0, "formula": "1000000", "formulaGd": "1000000", "variance": 0, "critical": false}
+	lethal.damage = {"type": 1, "elementId": 0, "formula": "1000000", "formulaGd": "1000000", "formulaProgram": JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/formula_effect_programs.json"))["runtime.constant1000000"].program, "variance": 0, "critical": false}
 	lethal.hitType = 0
 	lethal.successRate = 100
 	lethal.effects = [{"code": 21, "dataId": 4, "value1": 100.0, "value2": 0.0}]
 	var foe: XBattler = logic.enemies[0]
 	var killed := logic.apply(a, lethal, foe)
-	check("lethal_damage_skips_add_state", killed.died and foe.state_ids == [1] and killed.added.is_empty())
+	# 结果槽现与 MV 一致记录伤害刷新附加的阵亡；后续毒状态 4 仍必须跳过。
+	check("lethal_damage_skips_add_state", killed.died and foe.state_ids == [1] and killed.added == [1])
 	var soft: Dictionary = lethal.duplicate(true)
 	soft.damage.type = 0
 	var foe2: XBattler = logic.enemies[1] if logic.enemies.size() > 1 else null

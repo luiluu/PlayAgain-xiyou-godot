@@ -22,6 +22,9 @@ const TRAIT_SKILL_SEAL := 44
 var hp := 0.0
 ## YEP 行动序列的 IMMORTAL（Game_Battler._immortalState）：期间 HP 为 0 也不倒下、阵亡状态视为抵抗
 var immortal := false
+## A resource refresh can leave HP zero while death is resisted/removed in this result.
+var resource_death_blocked := false
+static var _outside_random: XRandomStream
 var mp := 0.0
 var tp := 0.0
 var state_ids: Array[int] = []
@@ -193,23 +196,38 @@ func states() -> Array:
 func is_state_affected(id: int) -> bool:
 	return state_ids.has(id)
 
-func add_state(id: int) -> void:
+func add_state(id: int, random: XRandomStream = null) -> void:
 	if XDB.rec("States", id).is_empty():
 		return
 	if id == XZhenqi.POJIA_STATE:
 		zq_pojia_rate = XZhenqi.pojia_rate()  # 本次行动者有破甲道法时 1−0.5×scale，否则 0.5
 	if id == 1:
+		if state_ids.has(1) or immortal or traits_set(TRAIT_STATE_RESIST).has(1):
+			return
 		zq_pojia_rate = 0.5
 		hp = 0.0
-		state_ids.clear()
-		state_turns.clear()
+		for sid in state_ids.duplicate():
+			if not XResourceContext.permanent(sid):
+				state_ids.erase(sid)
+				state_turns.erase(sid)
 		buffs.fill(0)
 		buff_turns.fill(0)
 	if not state_ids.has(id):
 		state_ids.append(id)
 		_sort_states()
 	var s := XDB.rec("States", id)
-	state_turns[id] = int(s.get("minTurns", 1)) + randi_range(0, max(0, int(s.get("maxTurns", 1)) - int(s.get("minTurns", 1))))
+	var lo := int(s.get("minTurns", 1))
+	var hi := maxi(lo, int(s.get("maxTurns", lo)))
+	state_turns[id] = roll_state_duration(lo, hi, random, str(id))
+
+func roll_state_duration(lo: int, hi: int, random: XRandomStream = null, event_key := "") -> int:
+	if random != null:
+		return random.next_int_inclusive(lo, hi, "state_duration", event_key)
+	if XState.current != null:
+		return XState.current.world_random().next_int_inclusive(lo, hi, "state_duration", event_key)
+	if _outside_random == null:
+		_outside_random = XRandomStream.create(XRandomStream.hex64(XState._fresh_seed()), "world")
+	return _outside_random.next_int_inclusive(lo, hi, "state_duration", event_key)
 
 func remove_state(id: int) -> void:
 	if id == 1 and state_ids.has(id) and hp <= 0.0:
@@ -434,14 +452,10 @@ func max_tp() -> float:
 
 
 ## Game_Battler.refresh：夹资源并同步阵亡状态（序列 HP + 恢复时也必须去除阵亡）。
-func refresh_resources() -> void:
-	hp = clampf(hp, 0.0, mhp)
-	mp = clampf(mp, 0.0, mmp)
-	tp = clampf(tp, 0.0, max_tp())
-	if hp <= 0.0 and not immortal:
-		add_state(1)
-	elif hp > 0.0:
-		remove_state(1)
+func refresh_resources(random: XRandomStream = null) -> void:
+	var context := XResourceContext.new()
+	context.random = random
+	context.refresh(self)
 
 
 ## YEP_BuffsStatesCore：默认层数 4、绝对上限 8，加上状态／角色／职业／装备／敌人备注的 <Max 能力 Buff/Debuff: ±N>。
@@ -459,16 +473,19 @@ func buff_limit(pid: int, positive: bool) -> int:
 
 
 func recover_all() -> void:
-	state_ids.clear()
-	state_turns.clear()
+	for sid in state_ids.duplicate():
+		if not XResourceContext.permanent(sid):
+			state_ids.erase(sid)
+			state_turns.erase(sid)
+	resource_death_blocked = false
 	hp = mhp
 	mp = mmp
 
 func is_dead() -> bool:
-	return hp <= 0.0 and not immortal
+	return state_ids.has(1) or (hp <= 0.0 and not immortal and not resource_death_blocked and not traits_set(TRAIT_STATE_RESIST).has(1))
 
 func is_alive() -> bool:
-	return hp > 0.0 or immortal
+	return not is_dead()
 
 func hp_rate() -> float:
 	return hp / maxf(mhp, 1.0)

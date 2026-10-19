@@ -38,7 +38,7 @@ func _run() -> void:
 	# 变化随机序列：名字、属性、插槽一致且取随机数的次数相同，才说明取数先后与正式版一致。
 	for row in ref.get("sequenced", []):
 		XGear.force_roll = -1.0
-		XGear.roll_seq = ref.sequence
+		XGear.roll_seq = range(int(row.draws)).map(func(i): return ref.sequence[i % ref.sequence.size()])
 		XGear.roll_count = 0
 		XGear.reset_pool()
 		var e := XGear.create(row.kind, int(row.id))

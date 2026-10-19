@@ -24,6 +24,8 @@ func _ready() -> void:
 			var item := XDB.rec("Skills", 1).duplicate(true)
 			item.damage.formula = "1000000"
 			item.damage.formulaGd = "1000000"
+			item.damage.formula = "1000000"
+			item.damage.formulaProgram = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/formula_effect_programs.json"))["runtime.constant1000000"].program
 			item.damage.elementId = int(c.element)
 			var res := XDamage.calculate(item, a, b, {"variance": false, "critical": false})
 			var confirmed := XDamage.apply_fixed_mitigation(XDamage.apply_state_effects(res.value, item, a, b, [], "confirm"), res)

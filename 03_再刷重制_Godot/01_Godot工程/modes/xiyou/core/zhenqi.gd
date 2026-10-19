@@ -646,13 +646,13 @@ static func trial_ref(s: XState, i: int) -> Dictionary:
 
 
 ## Game_Troop.setup 之后：幻化的敌人能力值取参照敌人的 paramBase，生命／攻击／魔攻 ×倍数，回满；不掉落（XEnemy.zq_ref／zq_trial_loot）
-static func troop_setup(enemies: Array, difficulty: int, elite_roll := -1.0) -> void:
+static func troop_setup(enemies: Array, difficulty: int, elite_roll := -1.0, random: XRandomStream = null) -> void:
 	var t: Dictionary = battle.get("trial", {})
 	if t.is_empty():
 		t = battle.get("scaled", {})  # 神兵试炼同样幻化
 	if t.is_empty() or int(t.ref.enemyId) == 0:
 		return
-	var ref := XEnemy.new().setup(int(t.ref.enemyId), difficulty, elite_roll)
+	var ref := XEnemy.new().setup(int(t.ref.enemyId), difficulty, elite_roll, random)
 	var p := []
 	for i in range(8):
 		p.append(ref.param_base_raw(i))

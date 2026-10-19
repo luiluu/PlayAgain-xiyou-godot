@@ -10,6 +10,21 @@ var results := []
 const BOSS_GUARD := 2651
 
 
+## 原版参照在开战生成后将 Math.random 固定为 0.5；仅替换夹具的本场 rule，不能靠全局 seed 控制它。
+## 原生随机流／实际抽样消费另由 xiyou_random_streams 验证；这里逐项复现 oracle 的事件与技能结果。
+class OracleRule:
+	extends XRandomStream
+
+	func next_float(_reason: String, _event_key := "") -> float:
+		return 0.5
+
+	func next_int_inclusive(lo: int, hi: int, _reason: String, _event_key := "") -> int:
+		return lo + floori((hi - lo + 1) * 0.5)
+
+	func next_index_mod(n: int, _reason: String, _event_key := "") -> int:
+		return floori(n * 0.5)
+
+
 func _ready() -> void:
 	_run.call_deferred()
 
@@ -24,11 +39,14 @@ func setup(troop: int, vars := {}) -> XBattleLogic:
 	XEnemy.force_roll = 100.0
 	seed(7)
 	var s := XState.new_game(3, 1, [8, 9, 10])
+	s.random_master = "2026101900000165"
 	for k in vars:
 		s.set_variable(int(k), vars[k])
 	var logic := XBattleLogic.new()
 	logic.level_roll = 0.99  # 参照：敌群生成时 Math.random=0.99
 	logic.setup(troop, s)
+	logic.random.rule = OracleRule.new()
+	logic.random.rule.domain = "rule"
 	return logic
 
 
@@ -133,11 +151,11 @@ func _rebuild_action(o: Dictionary) -> void:
 	put(logic.enemies[0], o.before.enemies[0])
 	run_list(logic, [{"code": 336, "indent": 0, "parameters": [0, 175]}])
 	var want := int(o.after.enemies[0].actions[0].skill)
-	# 敌人出招由 Godot 随机评分（参照固定 Math.random=0.5 选到 4023），这里只比：选的是新形态 175 的招，参照那招在其中
+	# 本场规则输入同 oracle 固定 0.5：变身后应重新选到 4023。
 	var got: Dictionary = logic.decide(logic.enemies[0])[0]
 	var forms := func(id: int) -> Array:
 		return XDB.rec("Enemies", id).get("actions", []).map(func(a): return int(a.skillId))
-	check("336.rebuild.skill", forms.call(175).has(int(got.get("id", 0))) and forms.call(175).has(want), [got.get("id"), want, forms.call(175), forms.call(174)])
+	check("336.rebuild.skill", int(got.get("id", 0)) == want and forms.call(175).has(want), [got.get("id"), want, forms.call(175), forms.call(174)])
 
 
 ## 一个回合，同 XBattleLogic.run_turn，另在回合首位取出后记下行动顺序
@@ -155,7 +173,7 @@ func turn_with_orders(logic: XBattleLogic, cmds: Dictionary) -> Dictionary:
 		first = false
 		if u == null or logic.is_won() or logic.is_lost():
 			break
-		var cmd: Array = [null, null] if logic.cleared_action(u) else (cmds.get(u, logic.decide(u)) if u is XActor else logic.decide(u))
+		var cmd: Array = [null, null] if logic.cleared_action(u) else (cmds[u] if u is XActor and cmds.has(u) else logic.decide(u))
 		logs.append_array(logic.act(u, cmd[0], cmd[1]))
 		heal(logic)
 	if not logic.is_won() and not logic.is_lost():
@@ -208,10 +226,8 @@ func _troop165(o: Dictionary) -> void:
 	# 行动：T1～3 用 879，T4 变身后按 175 出招 4023（参照 actions）
 	for a in o.actions:
 		if a.subject == "e0" and acts.has(int(a.turn)):
-			# 变身后的出招由 Godot 随机评分：只要求出的是新形态 175 的招（参照固定随机数选到 4023，也在其中）
-			var form: Array = XDB.rec("Enemies", 175).get("actions", []).map(func(x): return int(x.skillId))
-			var ok: bool = acts[int(a.turn)].has(int(a.actions[0].skill)) if int(a.turn) < 4 else \
-				(not acts[int(a.turn)].is_empty() and acts[int(a.turn)].all(func(k): return form.has(k)) and form.has(int(a.actions[0].skill)))
+			# 固定本场 oracle 输入，逐回合比较真实技能；保留最终资源断言。
+			var ok: bool = acts[int(a.turn)].has(int(a.actions[0].skill))
 			check("165.t%d.e0_skill" % int(a.turn), ok, [acts[int(a.turn)], a])
 	check("165.final", same(e0, o.final.enemies[0]), [reading(e0), o.final.enemies[0]])
 	logic.message_responder = Callable()  # 闭包引用 logic，清掉免得循环引用

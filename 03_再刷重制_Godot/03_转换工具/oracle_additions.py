@@ -21,6 +21,10 @@ KEYS = {
     'zhenqi.json': {'cases': ('id',)},
     'guide.json': {'cases': ('id',)},
     'custom_damage.json': {'cases': ('id',)},
+    'formula_programs.json': {'cases': ('id',)},
+    'formula_effects.json': {'cases': ('id',)},
+    'formula_equipment.json': {'cases': ('id',)},
+    'formula_actions.json': {'cases': ('id',)},
     'troop_events.json': {'cases': ('troop', 'paid')},
     'smart_ai.json': {'cases': ('troop', 'scene', 'actor', 'state'),
                       'damage': ('troop', 'actor', 'skill', 'target')},
@@ -53,6 +57,63 @@ def has_error(x):
             return True
         return any(has_error(v) for v in x.values())
     return isinstance(x, list) and any(has_error(v) for v in x)
+
+
+
+def retained_errors_unchanged(name, old, new):
+    """Only permit already recorded failing rows, never a new/changed failure.
+
+    Healthy measurement changes belong to the normal report/comparison stage.
+    For unknown collections or errors outside keyed rows, require the entire
+    failing value to match. Repeated rows are counted, so duplicating a known
+    failure cannot make it through this guard.
+    """
+    old, new = payload(old), payload(new)
+    if not has_error(new):
+        return True
+    if old == new:
+        return True
+    if not isinstance(old, dict) or not isinstance(new, dict):
+        return False
+    if new.get('error') or new.get('errors') or new.get('finished') is False:
+        return False  # Root failures have no stable case boundary; exact match was checked above.
+    for field, value in new.items():
+        if not has_error(value):
+            continue
+        fields = KEYS.get(name, {}).get(field)
+        previous = old.get(field)
+        if fields and isinstance(value, list) and isinstance(previous, list):
+            try:
+                groups([row for row in value if has_error(row)], fields)
+            except ValueError:
+                return False
+            known = collections.Counter(canonical(row) for row in previous if has_error(row))
+            current = collections.Counter(canonical(row) for row in value if has_error(row))
+            if current - known:
+                return False
+        elif value != previous:
+            return False
+    return True
+
+
+def valid_level_samples(samples):
+    import math
+    if not isinstance(samples, dict) or set(samples) != {'35', '65', '99'}:
+        return False
+    expected = {'param', 'xparam', 'sparam', 'elementRates', 'level', 'hp', 'mhp'}
+    def finite(x):
+        return type(x) in (int, float) and math.isfinite(x)
+    for level, row in samples.items():
+        if not isinstance(row, dict) or set(row) != expected or row['level'] != int(level):
+            return False
+        for field, size in [('param', 8), ('xparam', 10), ('sparam', 10), ('elementRates', None)]:
+            values = row[field]
+            if (not isinstance(values, list) or not values or (size is not None and len(values) != size)
+                    or not all(finite(x) for x in values)):
+                return False
+        if not finite(row['hp']) or not finite(row['mhp']):
+            return False
+    return True
 
 
 def compare_file(name, old, new):
@@ -89,14 +150,31 @@ def compare_file(name, old, new):
         a, b = old[field], new[field]
         if a == b:
             continue
-        if name.startswith('slice_d') and field in ('enemies', 'actors') and isinstance(a, dict) and isinstance(b, dict):
+        if name == 'formula_programs.json' and field == 'contexts' and isinstance(a, dict) and isinstance(b, dict):
+            for key, value in a.items():
+                if b.get(key) != value:
+                    problems.append('既有公式上下文改变或删除：' + key)
+            allowed = {'enemy_actor.full', 'enemy_actor.edge', 'actor_enemy.full', 'actor_enemy.edge'}
+            for key in b.keys() - a.keys():
+                row = b[key]
+                if key not in allowed or not isinstance(row, dict) or set(row) != {'a', 'b', 'v', 's'} or has_error(row):
+                    problems.append('新增公式上下文未登记或结构异常：' + key)
+                else:
+                    additions.append({'collection': field, 'key': key, 'count': 1})
+        elif name.startswith('slice_d') and field in ('enemies', 'actors') and isinstance(a, dict) and isinstance(b, dict):
             for key, value in a.items():
                 # 角色行允许新增采样字段（如 levelSamples），原有字段必须逐项相同
                 if field == 'actors' and key in b and isinstance(value, dict) and isinstance(b[key], dict):
                     if any(k not in b[key] or b[key][k] != v for k, v in value.items()):
                         problems.append('既有角色改变或删除：' + key)
                     elif set(b[key]) - set(value):
-                        additions.append({'collection': 'actors.fields', 'key': key, 'count': len(set(b[key]) - set(value))})
+                        extra = {k: b[key][k] for k in set(b[key]) - set(value)}
+                        samples = extra.get('levelSamples')
+                        if (set(extra) != {'levelSamples'} or not valid_level_samples(samples)
+                                or has_error(extra)):
+                            problems.append('新增角色采样字段无效或有错误：' + key)
+                        else:
+                            additions.append({'collection': 'actors.fields', 'key': key, 'count': 1})
                     continue
                 if key not in b or b[key] != value:
                     problems.append('既有' + ('敌人' if field == 'enemies' else '角色') + '改变或删除：' + key)

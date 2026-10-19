@@ -12,21 +12,29 @@ extends RefCounted
 const ROM_LENGTH := 20
 const ROM_REFRESH := 15
 static var force_roll := -1.0
-## 测试用：非空时按顺序循环取值（与参照引擎的 Math.random 序列对照取数次数与先后）。
+## Test-only bounded tape. The native fixture explicitly materializes its repeated sequence.
 static var roll_seq: Array = []
 static var roll_count := 0
 ## 没有当前存档时（无界面测试）用的池
 static var _fallback := {}
+static var _fallback_random := XRandomStream.create("68fcb84301a4a9e1", "equipment")
 
 ## 相当于 Math.random
-static func roll() -> float:
+static func roll(owner: XState = null) -> float:
 	if not roll_seq.is_empty():
 		roll_count += 1
-		return float(roll_seq[(roll_count - 1) % roll_seq.size()])
-	return force_roll if force_roll >= 0 else randf()
+		if roll_count > roll_seq.size():
+			push_error("equipment_random_tape_exhausted")
+			return 0.0
+		return float(roll_seq[roll_count - 1])
+	if force_roll >= 0:
+		return force_roll
+	var actual_owner := owner if owner != null else XState.current
+	return (actual_owner.equipment_random() if actual_owner != null else _fallback_random).next_float("equipment")
 
-static func _rom() -> Dictionary:
-	return XState.current.rom if XState.current != null else _fallback
+static func _rom(owner: XState = null) -> Dictionary:
+	var actual_owner := owner if owner != null else XState.current
+	return actual_owner.rom if actual_owner != null else _fallback
 
 ## 测试用：清空随机池（参照探针每件装备前也清空）
 static func reset_pool() -> void:
@@ -36,26 +44,26 @@ static func reset_pool() -> void:
 	r.xs = []
 	r.xsn = 0
 
-static func _pool_enter(with_bits := false) -> void:
-	var r := _rom()
+static func _pool_enter(with_bits := false, owner: XState = null) -> void:
+	var r := _rom(owner)
 	if r.get("x", []).size() != ROM_LENGTH or int(r.get("xn", 0)) > ROM_REFRESH:
 		var x := []
 		for i in range(ROM_LENGTH):
-			x.append(roll())
+			x.append(roll(owner))
 		r.x = x
 		r.xn = 0
 	if with_bits and (r.get("xs", []).size() != ROM_LENGTH or int(r.get("xsn", 0)) > ROM_REFRESH):
 		var xs := []
 		for i in range(ROM_LENGTH):
-			xs.append(floori(roll() * 2))
+			xs.append(floori(roll(owner) * 2))
 		r.xs = xs
 		r.xsn = int(r.get("xsn", 0))
 
-static func _pool_next() -> float:
-	var r := _rom()
+static func _pool_next(owner: XState = null) -> float:
+	var r := _rom(owner)
 	var i := int(r.xn)
 	r.xn = i + 1
-	return float(r.x[i]) if i < r.x.size() else roll()
+	return float(r.x[i]) if i < r.x.size() else roll(owner)
 
 static func template(kind: String, id: int) -> Dictionary:
 	var src := XDB.rec("Weapons" if kind == "weapon" else "Armors", id)
@@ -71,7 +79,7 @@ static func template(kind: String, id: int) -> Dictionary:
 	item["baseName"] = str(item.name)
 	return item
 
-static func create(kind: String, id: int) -> Dictionary:
+static func create(kind: String, id: int, owner: XState = null) -> Dictionary:
 	var item := template(kind, id)
 	if item.is_empty(): return {}
 	var definition: Dictionary = item.get("equipment", {})
@@ -79,8 +87,8 @@ static func create(kind: String, id: int) -> Dictionary:
 	if item.get("meta", {}).has("prefixSuffixUseArmorDatabase"): table = "Armors"
 	if item.get("meta", {}).has("prefixSuffixUseWeaponDatabase"): table = "Weapons"
 	for row in definition.get("affixes", []):
-		_pool_enter(true)     # DreamX.RandomPrefixSuffix.choose
-		var dice := floori(_pool_next() * 100) + 1
+		_pool_enter(true, owner)     # DreamX.RandomPrefixSuffix.choose
+		var dice := floori(_pool_next(owner) * 100) + 1
 		var choices: Array = row.choices.duplicate()
 		choices.sort_custom(func(a,b):return a.chance < b.chance)
 		for choice in choices:
@@ -89,8 +97,8 @@ static func create(kind: String, id: int) -> Dictionary:
 			if dice > int(choice.chance):
 				dice -= int(choice.chance)
 				continue
-			_pool_enter()         # DreamX.randomArrayElement
-			var affix_id := int(ids[mini(floori(_pool_next()*ids.size()),ids.size()-1)])
+			_pool_enter(false, owner)         # DreamX.randomArrayElement
+			var affix_id := int(ids[mini(floori(_pool_next(owner)*ids.size()),ids.size()-1)])
 			combine(item, XDB.rec(table,affix_id), str(row.kind))
 			item.affixIds.append({"table":table,"id":affix_id,"kind":row.kind})
 			break
@@ -99,16 +107,16 @@ static func create(kind: String, id: int) -> Dictionary:
 		var p := param_id(m.get_string(1))
 		item.params[p] = int(m.get_string(2))
 	var variance := int(item.get("meta", {}).get("Random Variance", definition.get("variance",0)))
-	_pool_enter()             # ItemManager.randomizeInitialStats
+	_pool_enter(false, owner)             # ItemManager.randomizeInitialStats
 	for i in range(8):
 		if float(item.params[i]) != 0 and variance >= 0:
 			var original := float(item.params[i])
-			var value := original + floorf(_pool_next() * (variance*2+1) - variance)
+			var value := original + floorf(_pool_next(owner) * (variance*2+1) - variance)
 			item.params[i] = maxf(0,value) if original>=0 else value
 	var slots := int(item.upgradeSlots)
 	var span := int(definition.get("slotVariance",6))
 	if slots > 0 and span > 0:
-		slots = clampi(slots + floori(roll() * (span*2+1)-span),0,int(XDB.plugin("YEP_X_ItemUpgradeSlots").get("MAX Slots",12)))
+		slots = clampi(slots + floori(roll(owner) * (span*2+1)-span),0,int(XDB.plugin("YEP_X_ItemUpgradeSlots").get("MAX Slots",12)))
 	item.upgradeSlots = slots
 	item.originalUpgradeSlots = slots
 	item.baseName = str(item.name)
