@@ -445,6 +445,7 @@ func start_turn() -> void:
 	# YEP_X_SkillCooldowns：Game_Troop.increaseTurn 时双方冷却/预热各减 1
 	for b in actors + enemies:
 		b.update_cooldowns()
+		b.stale_caps = []
 	_make_action_orders()
 
 
@@ -494,6 +495,7 @@ func end_turn() -> Array:
 	_acted.clear()
 	for b in actors + enemies:
 		b.guarding = false
+		b.stale_caps = []
 		if b.is_alive():
 			_tick_states(b, 2)
 			_regenerate(b, logs)
@@ -638,14 +640,16 @@ func _enemy_reading(e: XEnemy) -> Dictionary:
 
 
 ## 334 敌人完全回复（Game_BattlerBase.recoverAll：清状态、HP/MP 回满；TP、buff 不变；隐藏成员也回复，仍隐藏）。
-## 冻结源能力值缓存：回满用的是清状态之前的上限（状态 77 使最大 HP ×0.8 时，清掉后上限回升，HP 停在旧上限），见战斗内事件预检。
+## 冻结源能力值缓存：回满用的是清状态之前的上限（状态 77 使最大 HP ×0.8 时，清掉后上限回升，HP 停在旧上限），见战斗内事件预检；
+## 336 变身后缓存还没重算时用变身前的上限（stale_caps，玉皇 466 变 538 后 1399 的 334 按 466 的上限回满）。
 func enemy_recover_all(index: int) -> Array:
 	var out := []
 	for i in _enemy_slots(index):
 		var e: XEnemy = enemies[i]
 		var before := _enemy_reading(e)
-		var old_mhp := e.mhp
-		var old_mmp := e.mmp
+		var old_mhp: float = e.stale_caps[0] if e.stale_caps.size() == 2 else e.mhp
+		var old_mmp: float = e.stale_caps[1] if e.stale_caps.size() == 2 else e.mmp
+		e.stale_caps = []
 		e.recover_all()
 		e.hp = old_mhp
 		e.mp = old_mmp
@@ -672,6 +676,8 @@ func enemy_appear(index: int) -> Array:
 ## 不重新抽神话、等级，不走开战流程；原名变了就清字母，再 makeUniqueNames。
 ## 本工程敌人在轮到时才决定行动（decide），变身后轮到时自然按新形态选招，不另生成待行动。
 ## 未实现：CodexBossDifficulty 霸体（2651）的形态同步——重制版尚无 Boss 霸体系统。
+## 冻结源能力值缓存不随变身清空：变身前的上限记进 stale_caps，供紧接的 334 用（见 enemy_recover_all）。原版截 HP 也按旧缓存上限，
+## 本版按新上限截；冻结源 11 处 336 的新形态基础生命上限都不低于旧形态，不会因此不同。
 func enemy_transform(index: int, enemy_id: int) -> Array:
 	var out := []
 	var e := enemy_at(index)
@@ -679,12 +685,14 @@ func enemy_transform(index: int, enemy_id: int) -> Array:
 		return out
 	var before := _enemy_reading(e)
 	var old_name := str(e.data().get("name", ""))
+	var caps: Array = e.stale_caps if e.stale_caps.size() == 2 else [e.mhp, e.mmp]
 	e.enemy_id = enemy_id
 	if str(e.data().get("name", "")) != old_name:
 		e.letter = ""
 		_letters.erase(e)
 	e.refresh_passive()
 	e.refresh_resources(_rule())
+	e.stale_caps = caps
 	make_unique_names()
 	out.append(_enemy_change("transform", index, before))
 	return out
@@ -1238,8 +1246,13 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 			var sid := int(eff.dataId)
 			var ids := u.attack_states() if sid == 0 else [sid]
 			for id in ids:
-				# 普攻附加状态（itemEffectAddAttackState）另乘行动者的 attackStatesRate（特性 32 的值＋passiveATKST）
-				var chance := v1 * state_rate(t, id) * (u.attack_states_rate(id) if sid == 0 else 1.0) * maxf(1.0 + (u.luk - t.luk) * 0.001, 0.0)
+				# 普攻附加状态（itemEffectAddAttackState）另乘行动者的 attackStatesRate（特性 32 的值＋passiveATKST）；
+				# 指定状态（YEP_BattleEngineCore itemEffectAddNormalState）对必中（hitType 0）的技能／物品不乘状态有效度与幸运差
+				var chance := v1
+				if sid == 0:
+					chance *= state_rate(t, id) * u.attack_states_rate(id) * _luk_rate(u, t)
+				elif int(r.skill.get("hitType", 0)) != 0:
+					chance *= state_rate(t, id) * _luk_rate(u, t)
 				if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
 					chance = 0.0
 				# MV addState → isStateAddable 要求活着：本次伤害已致死时照常掷随机数，但不再附加（不进 r.added）
@@ -1310,6 +1323,11 @@ func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int) -> 
 		t.buffs[pid] = 0
 		t.buff_turns[pid] = 0
 	t.refresh_resources(_rule())
+
+
+## Game_Action.lukEffectRate：1 + (行动者幸运 − 目标幸运) × 0.001，不低于 0
+static func _luk_rate(u: XBattler, t: XBattler) -> float:
+	return maxf(1.0 + (u.luk - t.luk) * 0.001, 0.0)
 
 
 func state_rate(b: XBattler, id: int) -> float:
