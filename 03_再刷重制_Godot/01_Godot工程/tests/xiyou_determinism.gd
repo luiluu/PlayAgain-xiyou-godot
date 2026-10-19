@@ -91,7 +91,7 @@ func replay(trial_seed: int, visual: bool, icons: bool, camera: bool, sound: boo
   e._rates[0] *= 1000
   e.recover_all()
  var all_logs := []
- var sound_before := XSound.play_count
+ var sound_before := XSound.play_count + MVAnimation.se_play_count
  var commands := []
  var rounds := []
  for round_index in range(3):
@@ -145,7 +145,7 @@ func replay(trial_seed: int, visual: bool, icons: bool, camera: bool, sound: boo
  check("real_three_rounds",rounds.size()==3 and logic.turn==3 and commands.size()>=9)
  check("streams_clean",logic.random.rule.error.is_empty() and logic.random.reward.error.is_empty())
  if visual and sound:
-  check("real_animation_audio",XSound.play_count>sound_before)
+  check("real_animation_audio",XSound.play_count + MVAnimation.se_play_count > sound_before)
  var out := {"rounds":rounds,"commands":commands,"logs":artifact.logs,"journal":artifact.journal,"enemies":artifact.enemies,
   "reward":reward,"items":s.items.duplicate(true),"gear":s.gear.duplicate(true),"rom":s.rom.duplicate(true),"random":s.random_save(),"actors":s.to_dict().actors}
  logic.end_battle()

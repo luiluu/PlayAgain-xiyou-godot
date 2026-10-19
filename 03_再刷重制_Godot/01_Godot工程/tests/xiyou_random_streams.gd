@@ -77,6 +77,13 @@ func _ready() -> void:
 	b0.rule.next_float("hit")
 	b0.reward.next_float("drop")
 	check("two_battles", equal(b1_before, b1.snapshot()))
+	var outside := XBattleLogic.new()
+	outside.state = loaded
+	var serial_before := loaded.battle_serial
+	var user := loaded.actor(1)
+	user.hp = maxf(1.0, user.hp - 1.0)
+	outside._effect(user, user, {"code": 11, "value1": 0.0, "value2": 1.0, "dataId": 0}, {"skill": XDB.rec("Items", 1), "hp": 0.0, "mp": 0.0, "added": [], "removed": []})
+	check("menu_effect_world_owner", outside.random == null and loaded.battle_serial == serial_before)
 	var replay_state := XState.new_game(3, 1, [])
 	replay_state.random_master = "123456789abcdef0"
 	var initial := replay_state.to_dict().duplicate(true)

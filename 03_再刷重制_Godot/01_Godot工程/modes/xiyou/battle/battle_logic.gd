@@ -32,6 +32,8 @@ var _action_resources: XResourceContext
 var _formula_outcome := {}
 
 func _rule() -> XRandomStream:
+	if random == null and state != null and troop_id == 0:
+		return state.world_random()
 	if random == null:
 		random = state.reserve_battle_random() if state != null else XBattleRandom.create(XRandomStream.hex64(XState._fresh_seed()))
 	return random.rule
@@ -1088,6 +1090,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if type > 0:
 		var cri := u.cri * (1.0 - t.cev) if bool(dmg.critical) else 0.0
 		r.critical = _float("critical") < clampf(cri, 0.0, 1.0)
+		_action_resources.result(t).critical = r.critical
 		var value := _damage_value(u, skill, t, r.critical)
 		if [1, 3, 5].has(type) and troop_id > 0:
 			value = XZhenqi.hp_damage(t, value)  # executeHpDamage：我方受伤时护法减伤、元婴护体（只在战斗中）
@@ -1140,6 +1143,18 @@ func _establish(u: XBattler, t: XBattler, r: Dictionary) -> void:
 
 
 func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
+	# Menus and post-battle recovery share the same effect API without a live hit.
+	# Their refresh/state draws belong to the world stream, never a new battle serial.
+	var owns_context := _action_resources == null
+	if owns_context:
+		_action_resources = XResourceContext.new()
+		_action_resources.random = _rule()
+	_apply_effect(u, t, eff, r)
+	if owns_context:
+		_action_resources = null
+
+
+func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 	var v1 := float(eff.value1)
 	var v2 := float(eff.value2)
 	match int(eff.code):
@@ -1343,7 +1358,8 @@ func resolve_collapse(e: XEnemy) -> void:
 
 
 func _roll_drops(e: XEnemy) -> Array:
-	_rule() # Ensure both owned streams exist in headless fixtures too.
+	if random == null:
+		random = XBattleRandom.create(XRandomStream.hex64(XState._fresh_seed())) # standalone fixture owner; real battles initialize in setup
 	var rates := _difficulty_rates()
 	var item_up := 0.0
 	for a in actors:

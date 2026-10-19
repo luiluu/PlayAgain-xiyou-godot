@@ -39,6 +39,7 @@ static func replay(data: Dictionary) -> Dictionary:
 		return {"available": false, "diagnostic": "replay_version_or_structure_mismatch"}
 	var prior := XState.current
 	var prior_zhenqi := XZhenqi.battle.duplicate(true)
+	var prior_contexts := [XDungeon.battle, XZhenqi.pending_trial, XZhenqi.trial_done, XZhenqi.pending_scale]
 	var state := XState.from_dict(data.initial.duplicate(true))
 	var logic := XBattleLogic.new()
 	logic.setup(int(data.troop), state)
@@ -80,4 +81,8 @@ static func replay(data: Dictionary) -> Dictionary:
 				break
 	XState.current = prior
 	XZhenqi.battle = prior_zhenqi
+	XDungeon.battle = prior_contexts[0]
+	XZhenqi.pending_trial = prior_contexts[1]
+	XZhenqi.trial_done = prior_contexts[2]
+	XZhenqi.pending_scale = prior_contexts[3]
 	return {"available": diagnostic.is_empty(), "diagnostic": diagnostic}
