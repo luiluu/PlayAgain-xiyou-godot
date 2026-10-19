@@ -92,12 +92,57 @@ class CacheTests(unittest.TestCase):
         os.utime(p, ns=(old.st_atime_ns, old.st_mtime_ns))
         self.assertEqual(self.hits(), [True, False, True])
 
-    def test_helper_runtime_source_and_converter_invalidate_all(self):
-        for path in [self.oracle / 'host.cjs', self.oracle / 'node_modules/runtime.js',
-                     self.app / 'source.js', self.tools / 'xiyou_export.py']:
+    def test_helper_runtime_and_source_invalidate_all(self):
+        for path in [self.oracle / 'host.cjs', self.oracle / 'node_modules/runtime.js', self.app / 'source.js']:
             self.prime()
             path.write_text('// changed ' + path.name)
             self.assertEqual(self.hits(), [False] * 3)
+
+    def test_converter_code_only_matters_through_converted_output(self):
+        # 探针不执行 Python：转换器改了但产物没变时不失效；产物变了由 converted 键让读产物的探针重跑
+        self.prime()
+        (self.tools / 'xiyou_export.py').write_text('# changed converter')
+        self.assertEqual(self.hits(), [True] * 3)
+        (self.gen / 'db').mkdir(exist_ok=True)
+        (self.gen / 'db/Skills.json').write_text('[]')
+        self.assertEqual(self.hits(), [True, True, False])
+
+    def test_slice_fields_only_invalidate_probes_reading_them(self):
+        decl = "const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));\n"
+        (self.oracle / 'a_probe.cjs').write_text(decl + 'for (const id of SLICE.actors) {}')
+        (self.tools / 'xiyou_slice.json').write_text('{"actors":[1],"troops":[1],"maxLevel":30}')
+        self.prime()
+        (self.tools / 'xiyou_slice.json').write_text('{"actors":[1],"troops":[1,2],"maxLevel":35}')
+        self.assertEqual(self.hits(), [True, True, True])
+        (self.tools / 'xiyou_slice.json').write_text('{"actors":[1,8],"troops":[1,2],"maxLevel":35}')
+        self.assertEqual(self.hits(), [False, True, True])
+        # 认不出的用法（整份传出去）退回整份切片
+        for text in [decl + 'use(SLICE);', decl + 'SLICE[name];', '// ../xiyou_slice.json']:
+            self.assertIsNone(sys.modules['incremental_sync'].slice_fields([text]), text)
+
+    def test_event_units_follow_converted_maps_and_common_events(self):
+        (self.oracle / 'event_probe.cjs').write_text(
+            "const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));\n"
+            "for (const id of SLICE.maps) {} // XIYOU_GENERATED")
+        (self.tools / 'xiyou_slice.json').write_text('{"maps":[1,2]}')
+        for i in (1, 2, 3):
+            (self.gen / 'maps' / ('Map%03d.json' % i)).write_text('{"events":[%d]}' % i)
+        (self.gen / 'manifest.json').write_text('{"slice":{"commonEvents":[7]}}')
+        cmd, outs = self.probes[2]
+        c = self.cache()
+        c.record(cmd, outs, c.key(cmd), c.units(cmd))
+        c.commit()
+        c = self.cache()
+        self.assertEqual(c.plan(cmd, outs, c.key(cmd), c.units(cmd)), [])
+        (self.gen / 'maps/Map002.json').write_text('{"events":[22]}')
+        (self.gen / 'maps/Map003.json').write_text('{"events":[33]}')     # 不在切片里，不算
+        c = self.cache()
+        self.assertEqual(c.plan(cmd, outs, c.key(cmd), c.units(cmd)), ['m2'])
+        (self.tools / 'xiyou_slice.json').write_text('{"maps":[1,2,3]}')
+        (self.gen / 'manifest.json').write_text('{"slice":{"commonEvents":[7,8]}}')
+        c = self.cache()
+        self.assertEqual(c.plan(cmd, outs, c.key(cmd), c.units(cmd)), ['m2', 'm3', 'ce8'])
+        self.assertIsNone(self.cache(True).plan(cmd, outs, c.key(cmd), c.units(cmd)))
 
     def test_transitive_probe_dependency_invalidates_the_reader(self):
         (self.oracle / 'a_probe.cjs').write_text("require('./b_probe.cjs')")
@@ -208,6 +253,105 @@ class CacheTests(unittest.TestCase):
         self.assertEqual(result['executed'], [])
         self.assertEqual(len(result['reused']), 3)
         self.assertIn('ok', (self.gen / 'oracle/a.json').read_text())
+
+
+FAKE_SMART_AI = r"""const fs = require('fs'), path = require('path');
+const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));
+const UNITS = process.env.XIYOU_PROBE_UNITS ? new Set(JSON.parse(process.env.XIYOU_PROBE_UNITS)) : null;
+const out = {head: SLICE.troops[0], cases: [], damage: [], sequence: [1.5e-7, 1e21, 0.1 + 0.2]};
+for (const troop of SLICE.troops.filter(t => !UNITS || UNITS.has(String(t)))) {
+  out.cases.push({troop, v: troop / 3, name: '敌群' + troop});
+  if (troop % 2) out.damage.push({troop, hit: 1 - troop / 7});
+}
+fs.appendFileSync(path.join(__dirname, '.sandbox/ran.log'), JSON.stringify(UNITS ? [...UNITS] : 'all') + '\n');
+fs.writeFileSync(path.join(__dirname, '.sandbox/smart_ai.json'), JSON.stringify(out, null, 1));
+"""
+
+
+class ShardTests(unittest.TestCase):
+    """真 node 跑假探针：分片增量产物与强制全量逐字节一致，只跑新增单元。"""
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        r = Path(self.tmp.name)
+        self.tools, self.app, self.gen = r / 'tools', r / 'app', r / 'gen'
+        self.oracle = self.tools / 'mv_oracle'
+        for p in (self.oracle / '.sandbox', self.gen / 'oracle', self.gen / 'maps', self.app):
+            p.mkdir(parents=True)
+        (self.app / 'source.js').write_text('source')
+        (self.gen / 'manifest.json').write_text('{}')
+        (self.oracle / 'smart_ai_probe.cjs').write_text(FAKE_SMART_AI)
+        self.probes = [(['smart_ai_probe.cjs'], ['smart_ai.json'])]
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def sync(self, troops, force=False):
+        (self.tools / 'xiyou_slice.json').write_text(json.dumps({'troops': troops}))
+        c = ProbeCache(self.tools, self.app, self.gen, force)
+        with mock.patch.multiple(sync, PROBES=self.probes, ORACLE_DIR=self.oracle, SANDBOX=self.oracle / '.sandbox'), \
+             mock.patch.dict(os.environ, XIYOU_GENERATED=str(self.gen)), contextlib.redirect_stdout(io.StringIO()):
+            result = sync.run_probes(io.StringIO(), c)
+        c.commit()
+        ran = (self.oracle / '.sandbox/ran.log').read_text().splitlines() if (self.oracle / '.sandbox/ran.log').exists() else []
+        return result, ran[-1] if ran else None, (self.gen / 'oracle/smart_ai.json').read_bytes()
+
+    def full_bytes(self, troops):
+        # 另起一份工具目录直接全量跑同一个探针，作对照
+        tools = Path(tempfile.mkdtemp(dir=self.tmp.name)) / 'tools'
+        (tools / 'mv_oracle/.sandbox').mkdir(parents=True)
+        (tools / 'mv_oracle/smart_ai_probe.cjs').write_text(FAKE_SMART_AI)
+        (tools / 'xiyou_slice.json').write_text(json.dumps({'troops': troops}))
+        subprocess.run(['node', 'smart_ai_probe.cjs'], cwd=tools / 'mv_oracle', check=True)
+        return (tools / 'mv_oracle/.sandbox/smart_ai.json').read_bytes()
+
+    def test_added_removed_reordered_and_first_changed_units(self):
+        _, ran, _ = self.sync([1, 2, 3], force=True)
+        self.assertEqual(ran, '"all"')
+        for troops, expect_ran, partial in [
+                ([1, 2, 3, 4, 5], '["4","5"]', ['4', '5']),   # 加楼层：只跑新敌群
+                ([1, 2, 3, 4, 5], None, None),                # 无改动：整体复用
+                ([1, 3, 5], None, []),                        # 只删：不跑探针，只合并
+                ([1, 5, 3], None, []),                        # 只换顺序
+                ([1, 5, 3, 2], '["2"]', ['2'])]:              # 删掉的再加回来也要重跑
+            runs = (self.oracle / '.sandbox/ran.log').read_text().count('\n')
+            result, ran, merged = self.sync(troops)
+            self.assertEqual(merged, self.full_bytes(troops), troops)
+            if expect_ran is None:
+                self.assertEqual((self.oracle / '.sandbox/ran.log').read_text().count('\n'), runs, troops)
+            else:
+                self.assertEqual(ran, expect_ran, troops)
+            if partial is None:
+                self.assertEqual(result['reused'], ['smart_ai_probe.cjs'], troops)
+            else:
+                self.assertEqual(result['partial'], {'smart_ai_probe.cjs': partial}, troops)
+        # 第一项另有整体用途：变了就整体重跑
+        result, ran, merged = self.sync([9, 1, 5, 3, 2])
+        self.assertEqual(ran, '"all"')
+        self.assertEqual(result['executed'], ['smart_ai_probe.cjs'])
+        self.assertEqual(merged, self.full_bytes([9, 1, 5, 3, 2]))
+
+    def test_tampered_previous_output_forces_full_run(self):
+        self.sync([1, 2], force=True)
+        (self.gen / 'oracle/smart_ai.json').write_text('{"cases":[]}')
+        result, ran, merged = self.sync([1, 2, 3])
+        self.assertEqual(ran, '"all"')
+        self.assertEqual(merged, self.full_bytes([1, 2, 3]))
+
+
+class BackupPruneTests(unittest.TestCase):
+    def test_keeps_newest_three_named_backups_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            names = ['20261018_090000_v0.28-v0.28', '20261019_100000_v0.28-v0.28', '20261019_100000_123456_v0.28-v0.28',
+                     '20261019_120000_v0.28-v0.28', '20261019_130000_000001_v0.28-v0.28']
+            for n in names:
+                (root / n).mkdir()
+            (root / '说明').mkdir()
+            (root / '20261017_000000_note.txt').write_text('file, not a backup dir')
+            removed = sync.prune_backups(root)
+            self.assertEqual(sorted(removed), names[:2])
+            self.assertEqual(sorted(p.name for p in root.iterdir()),
+                             sorted(names[2:] + ['说明', '20261017_000000_note.txt']))
 
 
 class ActorSampleGuardTests(unittest.TestCase):

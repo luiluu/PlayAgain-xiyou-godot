@@ -36,7 +36,10 @@ for (const ce of MANIFEST.slice.commonEvents) {
   if (rec && (rec.list || []).some(c => c.code !== 0)) cases.push({id: `ce${ce}`, kind: 'common', map: COMMON_MAP, event: 0, common: ce, x: 0, y: 0});
 }
 const only = process.argv.slice(2);
-const chosen = only.length ? cases.filter(c => only.some(p => c.id.startsWith(p))) : cases;
+// 增量同步只跑部分地图／公共事件时，由 XIYOU_PROBE_UNITS 给出单元（m<地图>、ce<公共事件>）
+const UNITS = process.env.XIYOU_PROBE_UNITS ? new Set(JSON.parse(process.env.XIYOU_PROBE_UNITS)) : null;
+const unitOf = c => c.kind === 'common' ? 'ce' + c.common : 'm' + c.map;
+const chosen = (only.length ? cases.filter(c => only.some(p => c.id.startsWith(p))) : cases).filter(c => !UNITS || UNITS.has(unitOf(c)));
 
 // ---- 引擎占位：只跑指定解释器，等待类直接结束 ----
 w.eval(`

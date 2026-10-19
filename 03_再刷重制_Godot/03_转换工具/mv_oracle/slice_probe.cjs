@@ -13,7 +13,9 @@ const {boot} = require('./hboot.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const OUT = path.resolve(__dirname, '.sandbox/slice');
 const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));
-const ACTORS = SLICE.actors, TROOPS = SLICE.troops;
+// 增量同步只跑部分敌群时，由 XIYOU_PROBE_UNITS 给出（其余由 oracle_shard_merge.cjs 从上次产物取回）
+const UNITS = process.env.XIYOU_PROBE_UNITS ? new Set(JSON.parse(process.env.XIYOU_PROBE_UNITS)) : null;
+const ACTORS = SLICE.actors, TROOPS = SLICE.troops.filter(t => !UNITS || UNITS.has(String(t)));
 // 与 dsPassiveSkill 战斗开始时相同：先清空被动缓存再刷新一次（直接多次 refresh 会重复累加）
 const battleRefresh = a => { if (a.initPassiveCache) { a.initPassiveCache(); a.refreshPassiveCache(); } };
 const P = ['mhp', 'mmp', 'atk', 'def', 'mat', 'mdf', 'agi', 'luk'];
