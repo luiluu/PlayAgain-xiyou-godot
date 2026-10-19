@@ -62,6 +62,7 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0
 	seed(20261013)
 	var s := XState.new_game(3, 1, [8, 9, 10])
+	s.random_master = "2026101300000001"
 	s.gain_item(1, 5)
 	# 战斗物品窗口与物品页共用 XItemMarks.apply_list：置顶的在最前、名字带标记；不记看过（item_list_oracle.json）
 	s.gain_item(5, 2)
@@ -90,6 +91,11 @@ func _run() -> void:
 	if b == null:
 		_finish()
 		return
+	# 此夹具要操作美娜的寒锋（需 5 TP）；开战 TP 是本场 rule 的 0～24 随机，显式补足操作前提。
+	var cold := XDB.rec("Skills", 3644)
+	_check("skill_fixture_user", b._active == s.actor(10), null if b._active == null else b._active.actor_id)
+	s.actor(10).tp = maxf(s.actor(10).tp, float(b.logic.skill_cost(s.actor(10), cold).tp))
+	_check("skill_fixture_usable", b.logic.can_use(s.actor(10), cold), {"tp": s.actor(10).tp, "cost": b.logic.skill_cost(s.actor(10), cold)})
 	# 站位（原版运行时：角色 x 819，y 230/329/427/526；敌人 = 敌群坐标 y + 48）
 	var homes := b.logic.actors.map(func(a): return b.sprites[a].home)
 	_check("actor_column", homes == [Vector2(819, 230), Vector2(819, 329), Vector2(819, 427), Vector2(819, 526)], homes)
