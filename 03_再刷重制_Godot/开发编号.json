@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.093",
-  "sequence": 93,
-  "next": "dev.094",
-  "nextSequence": 94,
+  "current": "dev.094",
+  "sequence": 94,
+  "next": "dev.095",
+  "nextSequence": 95,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "practical-yonath-c8a454",
+  "currentChange": "zen-williamson-a69c1d",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
