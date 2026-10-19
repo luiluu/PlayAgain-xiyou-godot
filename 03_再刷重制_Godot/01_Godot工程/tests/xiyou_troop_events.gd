@@ -9,17 +9,8 @@ extends Node
 ## 比较：第 1 回合强制行动排在最前且清掉守层者本回合的普通行动、敌方行动者、状态 1460 与第 1 回合加上的其余状态、
 ## 守层者攻击/魔攻、第 2 回合守层者每次命中的附加伤害（行动者正的攻击/魔攻各一次）。伤害浮动由 Godot 随机，不比 HP。
 var results := []
-## 已知偏差（登记在交付单，待规则车道改 battle_logic 后删）：{敌群: [第二名及之后的敌人比参照少的状态]}。
-## 敌群 462（金角、银角）：强制 8111（全体友方，必中）给银角附加轮回困难 1460。原版 YEP_BattleEngineCore.itemEffectAddNormalState 对必中技能
-## 不乘状态抗性与幸运差；Godot battle_logic 的状态效果（effect 21）一律乘幸运差，银角幸运比金角高 1 万，几率被乘成负数而没加上。
-const KNOWN_STATE_GAPS := {462: [1460]}
-## 三十层敌群 466 HP≤25% 两例的已知偏差（规则侧，battle_logic／XBattler，登记在交付单，修好后删）：
-## hp_after_transform：冻结源 336 变身不刷新能力值缓存，紧接着 1399 的 334 完全回复按旧形态（466）的生命上限写 HP（参照 1.8e16），
-##   Godot enemy_transform 当场刷新，334 按 538 的上限写（1e17）。下一次 334（第 1 回合）起两边一致。
-## permanent_686：MV recoverAll 保留 <Permanent> 状态；Godot XBattler.recover_all 全清。已交礼时第 1 回合 1400 的 334 清掉第 0 回合 1399
-##   加的 686 天道*祝福（攻击／魔攻 +1500 等），参照里 686 还在。三十一至三十三层 HP≤10% 例同理：第 0 回合第 4 页 1399 加 686，
-##   第 1 回合第 2 页 1397 的 334 在 Godot 里清掉它（未交礼也会遇到）。
-const KNOWN_TRANSFORM_GAPS := {"hp_after_transform": true, "permanent_686": true}
+## 敌群 462（金角、银角）：强制 8111（全体友方，必中）给银角附加轮回困难 1460——必中技能附加状态不乘状态有效度与幸运差。
+## 三十层起变身例：336 变身后紧接的 334 按变身前的生命上限回满（冻结源能力值缓存）；334 保留 <Permanent> 状态（686 天道*祝福）。
 
 
 func _ready() -> void:
@@ -141,8 +132,7 @@ func _transform_case(c: Dictionary, round: int) -> void:
 		if int(inv.turn) == 0 and inv.subject == "e0" and inv.target == "e0":
 			want_hp0 = float(inv.hpBefore)
 			break
-	var gap_hp: bool = KNOWN_TRANSFORM_GAPS.hp_after_transform and is_equal_approx(e0.hp, e0.mhp / (e0 as XEnemy).param_buff_rate(0))   # 新形态不含 buff 的上限
-	check(name + ".hp_after_transform", is_equal_approx(e0.hp, want_hp0) or gap_hp, [e0.hp, e0.mhp, want_hp0])
+	check(name + ".hp_after_transform", is_equal_approx(e0.hp, want_hp0), [e0.hp, e0.mhp, want_hp0])
 	var t1_states: Array = []
 	for t in range(1, 3):
 		if logic.is_won() or logic.is_lost():
@@ -153,11 +143,8 @@ func _transform_case(c: Dictionary, round: int) -> void:
 		logs[t] = logic.run_turn(cmds)
 		if t == 1:
 			t1_states = e0.state_ids.duplicate()
-			# 已知偏差 permanent_686：Godot 少了 686 时攻击／魔攻比参照少它的 +1500
-			var lost_686: bool = KNOWN_TRANSFORM_GAPS.permanent_686 and not e0.state_ids.has(686) and c.battlers.e0.states.has(686.0)
-			var off := 1500 if lost_686 else 0
-			check(name + ".atk_mat", int(e0.atk) + off == int(c.battlers.e0.atk) and int(e0.mat) + off == int(c.battlers.e0.mat),
-				[e0.atk, e0.mat, c.battlers.e0.atk, c.battlers.e0.mat, lost_686])
+			check(name + ".atk_mat", int(e0.atk) == int(c.battlers.e0.atk) and int(e0.mat) == int(c.battlers.e0.mat),
+				[e0.atk, e0.mat, c.battlers.e0.atk, c.battlers.e0.mat])
 	check(name + ".skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
 	# 生命上限：变身后 538 的上限加 6070／6071 的生命 buff（第 0、1 回合各一级），同参照战斗结束时的值
 	check(name + ".mhp", int(e0.mhp) == int(c.battlers.e0.mhp), [e0.mhp, c.battlers.e0.mhp])
@@ -171,8 +158,7 @@ func _transform_case(c: Dictionary, round: int) -> void:
 	for inv in c.invokes:
 		if int(inv.turn) == 1 and inv.subject == "e0":
 			want_states = inv.userStates
-	var gap_states: Array = [686] if KNOWN_TRANSFORM_GAPS.permanent_686 else []
-	check(name + ".t1_states", want_states.all(func(id): return t1_states.has(int(id)) or gap_states.has(int(id))), [t1_states, want_states])
+	check(name + ".t1_states", want_states.all(func(id): return t1_states.has(int(id))), [t1_states, want_states])
 
 
 func _case(c: Dictionary, round: int) -> void:
@@ -212,8 +198,7 @@ func _case(c: Dictionary, round: int) -> void:
 		var ex: XBattler = logic.enemies[int(str(k).substr(1))]
 		var want_b: Dictionary = c.battlers[k]
 		if ex.hp > 0.0 and float(want_b.hp) > 0.0:
-			var gap: Array = KNOWN_STATE_GAPS.get(int(c.troop), [])
-			check(name + ".other_" + str(k), int(ex.atk) == int(want_b.atk) and int(ex.mat) == int(want_b.mat) and Array(want_b.states).all(func(id): return ex.state_ids.has(int(id)) or gap.has(int(id))),
+			check(name + ".other_" + str(k), int(ex.atk) == int(want_b.atk) and int(ex.mat) == int(want_b.mat) and Array(want_b.states).all(func(id): return ex.state_ids.has(int(id))),
 				[ex.atk, ex.mat, ex.state_ids, want_b])
 	var want := {1: [], 2: []}
 	var forced := 0
