@@ -27,6 +27,8 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import uuid
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -205,6 +207,41 @@ def record_changes(old_file: Path, new_file: Path):
 KEEP_BACKUPS = 3
 
 
+def comparison_baseline(gen: Path) -> Path:
+    """首次写产物前原子保存接受边界；拒绝或中断后仍比较同一份数据。"""
+    key = hashlib.sha256(str(gen.resolve()).encode()).hexdigest()
+    parent = ROOT / '03_再刷重制_Godot/04_验证/本地结果/同步基线'
+    parent.mkdir(parents=True, exist_ok=True)
+    baseline = parent / key
+    if not baseline.exists():
+        staging = Path(tempfile.mkdtemp(prefix=key + '.pending-', dir=parent))
+        try:
+            shutil.copy2(gen / 'manifest.json', staging / 'manifest.json')
+            shutil.copytree(gen / 'oracle', staging / 'oracle')
+            (staging / 'identity.json').write_text(json.dumps({'schema': 1, 'generated': str(gen.resolve())}))
+            staging.rename(baseline)
+        finally:
+            if staging.exists():
+                shutil.rmtree(staging)
+    try:
+        identity = json.loads((baseline / 'identity.json').read_text())
+        manifest = json.loads((baseline / 'manifest.json').read_text())
+        valid = (identity == {'schema': 1, 'generated': str(gen.resolve())}
+                 and isinstance(manifest, dict) and (baseline / 'oracle').is_dir())
+    except (OSError, ValueError):
+        valid = False
+    if not valid:
+        raise RuntimeError('已接受测量基线损坏，保留现场且停止同步：' + str(baseline))
+    return baseline
+
+
+def finish_comparison(baseline: Path) -> None:
+    # 整轮成功后先原子移出活动位置；清理中断也不留下半份活动基线。
+    retired = baseline.with_name(baseline.name + '.accepted-' + uuid.uuid4().hex)
+    baseline.rename(retired)
+    shutil.rmtree(retired, ignore_errors=True)
+
+
 def prune_backups(root: Path, keep: int = KEEP_BACKUPS) -> list:
     """同步备份只留最近 keep 份（用户 2026-10-18 定，含本次新建的这份）；只删「日期_时间_…」命名的备份目录。"""
     dirs = sorted((d for d in root.iterdir() if d.is_dir() and re.match(r'^\d{8}_\d{6}', d.name)),
@@ -371,7 +408,9 @@ def _main() -> int:
         if lane is None:
             print('不用车道产物：' + why + '；请改跑完整同步')
             return 3
-    old_manifest = json.loads((gen / 'manifest.json').read_text())
+    # clone预检失败不写任何产物；此处必须在滚动备份淘汰、转换或clone覆盖gen之前。
+    baseline = comparison_baseline(gen)
+    old_manifest = json.loads((baseline / 'manifest.json').read_text())
     old_version = old_manifest.get('releaseVersion')
     new_version = json.loads((app / 'package.json').read_text()).get('releaseVersion')
     stamp = dt.datetime.now().strftime('%Y%m%d_%H%M%S_%f')
@@ -385,7 +424,7 @@ def _main() -> int:
         elif src.exists():
             shutil.copy2(src, backup / name)
     report = {'from': old_version, 'to': new_version, 'backup': str(backup.relative_to(ROOT)), 'generated': str(gen),
-              'prunedBackups': report_pruned}
+              'prunedBackups': report_pruned, 'comparisonBaseline': str(baseline.relative_to(ROOT))}
     # 探针按环境变量取正式源（XIYOU_APP）与转换产物（XIYOU_GENERATED，event_probe 读地图），与 --app/--generated 一致
     os.environ['XIYOU_APP'] = str(app)
     os.environ['XIYOU_GENERATED'] = str(gen)
@@ -426,9 +465,9 @@ def _main() -> int:
     report['sliceChanged'] = (backup / 'slice.json').read_bytes() != (gen / 'slice.json').read_bytes() if (backup / 'slice.json').exists() else True
     # 测量比较
     measure = {}
-    for name in sorted({f.name for d in [gen / 'oracle', backup / 'oracle'] for f in d.glob('*.json')}):
+    for name in sorted({f.name for d in [gen / 'oracle', baseline / 'oracle'] for f in d.glob('*.json')}):
         f = gen / 'oracle' / name
-        old = backup / 'oracle' / f.name
+        old = baseline / 'oracle' / f.name
         if not f.exists():
             measure[name] = ['参照已删除']
             continue
@@ -439,7 +478,7 @@ def _main() -> int:
         if d:
             measure[f.name] = d
     report['measurementChanges'] = measure
-    report['additionCheck'] = compare_directories(backup / 'oracle', gen / 'oracle', probe_outputs())
+    report['additionCheck'] = compare_directories(baseline / 'oracle', gen / 'oracle', probe_outputs())
     report['sameExistingSource'] = source_preserved(old_manifest, new_manifest)
     v = subprocess.run([sys.executable, str(HERE / '验证西游来源.py'), '--app', str(app), '--generated', str(gen)], capture_output=True, text=True)
     report['verify'] = (v.stdout.strip().splitlines() or [''])[-1]
@@ -483,6 +522,9 @@ def _main() -> int:
         write_stamp(gen, report)
     elif not usable:
         (gen / STAMP).unlink(missing_ok=True)
+    # 缓存只描述测量与输入，不能充当接受记录。登记、导入、缓存与指纹均成功才推进接受边界。
+    if ok:
+        finish_comparison(baseline)
     print(json.dumps({k: report[k] for k in ['from', 'to', 'result', 'changedInputs', 'changedMaps', 'measurementChanges', 'verify', 'backup']},
                      ensure_ascii=False))
     return 0 if ok else 2
