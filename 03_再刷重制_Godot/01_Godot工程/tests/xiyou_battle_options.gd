@@ -160,6 +160,7 @@ func _run() -> void:
 		XConfig.set_flag("CombatSkillAnimation", speed == 2)
 		seed(20261014)
 		var s := XState.new_game(3, 1, [8, 9, 10])
+		s.random_master = "0000000001352926"
 		var live := QuietBattle.new()
 		live.setup(2, true, false, {})
 		add_child(live)

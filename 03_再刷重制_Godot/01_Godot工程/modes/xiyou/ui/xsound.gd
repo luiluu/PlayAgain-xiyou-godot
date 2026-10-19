@@ -8,6 +8,7 @@ static var _players: Array = []
 static var _next := 0
 static var _cache := {}
 static var system_log: Array = []   # 最近播放的 system 编号（测试核对用，保留 64 条）
+static var play_count := 0         # Successful player.play requests, for runtime diagnostics.
 
 
 static func play(name: String, volume := 90, pitch := 100) -> void:
@@ -37,6 +38,7 @@ static func play(name: String, volume := 90, pitch := 100) -> void:
 	player.volume_db = linear_to_db(maxf(volume, 0) / 100.0)
 	player.pitch_scale = maxf(pitch, 10) / 100.0
 	player.play()
+	play_count += 1
 
 
 static func system(index: int) -> void:

@@ -4,7 +4,7 @@
 做法与历次手工同步相同，全部自动：
 1. 备份 generated/ 的 oracle、db、maps、manifest.json、slice.json 到 04_验证/本地结果/自动同步/<时间>_<旧版>-<新版>/；
 2. 重跑转换器 xiyou_export.py；
-3. 重跑全部参照探针（mv_oracle，只写 .sandbox/），复制到 generated/oracle/；
+3. 按输入与产物SHA复用未变化探针（--full强制全部重跑），运行需要更新的参照探针（mv_oracle，只写 .sandbox/），复制到 generated/oracle/；
 4. 去掉来源身份（sourceIdentity、releaseVersion 等）后逐份比较测量；列出改动的数据文件、记录编号、地图与运行脚本；
 5. 运行 验证西游来源.py；
 6. 测量全部不变且核对 0 问题：写来源清单，更新 来源登记.json 与 当前状态.json（--no-register 或在 worktree 里运行时不写），退出码 0；
@@ -33,7 +33,8 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE))
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT  # noqa: E402
-from oracle_additions import compare_directories, payload, source_preserved  # noqa: E402
+from incremental_sync import ProbeCache
+from oracle_additions import compare_directories, payload, source_preserved, has_error, retained_errors_unchanged  # noqa: E402
 
 ORACLE_DIR = HERE / 'mv_oracle'
 SANDBOX = ORACLE_DIR / '.sandbox'
@@ -70,6 +71,10 @@ PROBES = [
     (['zhenqi_probe.cjs'], ['zhenqi.json']),
     (['guide_probe.cjs'], ['guide.json']),
     (['custom_damage_probe.cjs'], ['custom_damage.json']),
+    (['formula_program_probe.cjs'], ['formula_programs.json']),
+    (['formula_effect_probe.cjs'], ['formula_effects.json']),
+    (['formula_equipment_probe.cjs'], ['formula_equipment.json']),
+    (['formula_action_probe.cjs'], ['formula_actions.json']),
     (['review_fix_probe.cjs'], ['review_fix.json']),
     (['global_vars_probe.cjs'], ['global_vars.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
@@ -205,17 +210,36 @@ def run(cmd, cwd, log):
         raise RuntimeError('命令失败（%d）：%s' % (p.returncode, ' '.join(cmd)))
 
 
-def run_probes(log) -> None:
+def run_probes(log, cache=None):
     """互不依赖的探针并行跑（AGENTS.md「省额度约定」同步提速）。每个探针一个独立存档目录
     .sandbox/run/<探针>（开跑前复制 .sandbox 现有的 save／macport，各探针看到同样的起始状态），
     产物照旧写 .sandbox/*.json；日志按 PROBES 顺序写回，并记每个探针的耗时。SYNC_JOBS=1 退回串行。"""
     import concurrent.futures
     import time
     jobs = max(1, int(os.environ.get('SYNC_JOBS', '4')))
+    plan, reused, keys = [], [], {}
+    for command, outputs in PROBES:
+        key = cache.key(command) if cache else None
+        keys[command[0]] = key
+        if cache and cache.hit(command, outputs, key):
+            reused.append(command[0])
+            cache.record(command, outputs, key)
+            log.write('CACHE_HIT ' + command[0] + '\n')
+        else:
+            plan.append((command, outputs))
+    log.flush()
+    print('PROBE_PLAN=' + json.dumps({'executed': len(plan), 'reused': len(reused)}), flush=True)
+    if not plan:
+        return {'executed': [], 'reused': reused, 'seconds': {}}
+    if cache:
+        cache.invalidate([command for command, _ in plan])
     runs = SANDBOX / 'run'
     shutil.rmtree(runs, ignore_errors=True)
 
     def one(cmd):
+        outputs = next(outputs for command, outputs in plan if command == cmd)
+        for rel in outputs:
+            (SANDBOX / rel).unlink(missing_ok=True)
         box = runs / Path(cmd[0]).stem
         box.mkdir(parents=True)
         for name in ['save', 'macport']:
@@ -227,10 +251,15 @@ def run_probes(log) -> None:
         return cmd, p.returncode, p.stdout + p.stderr, time.time() - t
 
     slow = ['smart_ai_probe.cjs', 'event_probe.cjs', 'zhenqi_probe.cjs', 'dungeon_probe.cjs', 'sequence_probe.cjs']   # 最慢的先开跑
-    order = sorted(range(len(PROBES)), key=lambda i: slow.index(PROBES[i][0][0]) if PROBES[i][0][0] in slow else len(slow))
+    order = sorted(range(len(plan)), key=lambda i: slow.index(plan[i][0][0]) if plan[i][0][0] in slow else len(slow))
     with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
-        futures = {i: pool.submit(one, PROBES[i][0]) for i in order}
-        results = [futures[i].result() for i in range(len(PROBES))]
+        futures = {i: pool.submit(one, plan[i][0]) for i in order}
+        results = [None] * len(plan)
+        for future in concurrent.futures.as_completed({f: i for i, f in futures.items()}):
+            i = next(i for i, f in futures.items() if f is future)
+            results[i] = future.result()
+            print('PROBE_DONE=' + json.dumps({'probe': results[i][0][0], 'seconds': round(results[i][3], 3),
+                                             'exitCode': results[i][1]}), flush=True)
     failed = []
     for cmd, code, out, sec in results:
         log.write('$ node %s（%.0f 秒）\n' % (' '.join(cmd), sec))
@@ -240,9 +269,29 @@ def run_probes(log) -> None:
     log.flush()
     if failed:
         raise RuntimeError('探针失败：' + '；'.join(failed))
+    # Validate every new output before publishing any group. Exit 0 alone is insufficient.
+    for command, outputs in plan:
+        for rel in outputs:
+            output = SANDBOX / rel
+            if not output.is_file():
+                raise RuntimeError('探针产物缺失：' + rel)
+            data = json.loads(output.read_text())
+            if has_error(data):
+                previous = Path(os.environ['XIYOU_GENERATED']) / 'oracle' / Path(rel).name
+                # Frozen event baselines contain explicitly retained, unresolved source cases.
+                # Preserve identical old failures, but never accept a new or changed failing case.
+                if not previous.is_file() or not retained_errors_unchanged(previous.name, json.loads(previous.read_text()), data):
+                    raise RuntimeError('探针产物有新增或变化的错误：' + rel)
+    for command, outputs in plan:
+        for rel in outputs:
+            shutil.copy2(SANDBOX / rel, Path(os.environ['XIYOU_GENERATED']) / 'oracle' / Path(rel).name)
+        if cache:
+            cache.record(command, outputs, keys[command[0]])
+    return {'executed': [cmd[0] for cmd, _ in plan], 'reused': reused,
+            'seconds': {cmd[0]: round(sec, 3) for cmd, _, _, sec in results}}
 
 
-def main() -> int:
+def _main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--app', type=Path, default=DEFAULT_APP)
     ap.add_argument('--generated', type=Path, default=DEFAULT_OUT)
@@ -250,8 +299,11 @@ def main() -> int:
     ap.add_argument('--accept-additions', action='store_true',
                     help='同源且旧用例逐条相同、只增已知结构新用例时自动接受；不接受规则变化/删除/新用例错误')
     ap.add_argument('--from-worktree', type=Path, help='合并时用车道已同步的产物（按指纹核对），不满足条件退出码 3')
+    ap.add_argument('--full', action='store_true', help='忽略探针缓存，强制全量转换与全部探针')
     ap.add_argument('--no-import', action='store_true', help='结束时不跑 godot --import')
     a = ap.parse_args()
+    if a.full and a.from_worktree:
+        ap.error('--full 与 --from-worktree 不能一起使用')
     # 多会话并行（AGENTS.md）：来源登记／当前状态只由总装在主工作区改，worktree 里自动不登记
     git = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'],
                          capture_output=True, text=True).stdout.split('\n')
@@ -268,7 +320,7 @@ def main() -> int:
     old_manifest = json.loads((gen / 'manifest.json').read_text())
     old_version = old_manifest.get('releaseVersion')
     new_version = json.loads((app / 'package.json').read_text()).get('releaseVersion')
-    stamp = dt.datetime.now().strftime('%Y%m%d_%H%M%S')
+    stamp = dt.datetime.now().strftime('%Y%m%d_%H%M%S_%f')
     backup = ROOT / '03_再刷重制_Godot/04_验证/本地结果/自动同步' / ('%s_%s-%s' % (stamp, old_version, new_version))
     backup.mkdir(parents=True)
     for name in ['oracle', 'db', 'maps', 'manifest.json', 'slice.json']:
@@ -294,11 +346,10 @@ def main() -> int:
                 raise RuntimeError('克隆后的产物与车道指纹不一致')
             report['fromWorktree'] = str(a.from_worktree)
         else:
+            (gen / STAMP).unlink(missing_ok=True)
             run([sys.executable, str(HERE / 'xiyou_export.py'), '--app', str(app), '--out', str(gen)], HERE, log)
-            run_probes(log)
-            for cmd, outs in PROBES:
-                for rel in outs:
-                    shutil.copy2(SANDBOX / rel, gen / 'oracle' / Path(rel).name)
+            cache = ProbeCache(HERE, app, gen, force=a.full) if PROBES else None
+            report['probes'] = run_probes(log, cache)
     new_manifest = json.loads((gen / 'manifest.json').read_text())
     # 改动的来源文件
     report['changedInputs'] = sorted(k for k in set(old_manifest.get('inputs', {})) | set(new_manifest.get('inputs', {}))
@@ -359,9 +410,17 @@ def main() -> int:
             report['importError'] = str(error)
             report['result'] = 'Godot 导入失败，未登记'
     (backup / '同步报告.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
+    if ok and lane is None and cache is not None:
+        try:
+            cache.commit()
+        except RuntimeError as error:
+            ok = False
+            report['cacheError'] = str(error)
+            report['result'] = '输入或产物在同步中改变，未登记'
+            (backup / '同步报告.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
     if ok and not a.no_register:
         register(new_version, fingerprint, report)
-    usable = not report.get('importError') and report['verifyOk'] and report['sameExistingSource'] and (not measure or report['additionCheck']['onlyAdditions'])
+    usable = not report.get('cacheError') and not report.get('importError') and report['verifyOk'] and report['sameExistingSource'] and (not measure or report['additionCheck']['onlyAdditions'])
     if usable and lane is None:
         write_stamp(gen, report)
     elif not usable:
@@ -397,5 +456,22 @@ def register(version: str, fingerprint: Path, report: dict) -> None:
     p.write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n')
 
 
+def main() -> int:
+    import fcntl
+    lock_path = ROOT / '03_再刷重制_Godot/04_验证/本地结果/sync.lock'
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open('a') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError('同一工作树已有同步任务在运行')
+        return _main()
+
+
 if __name__ == '__main__':
+    if os.environ.get('XIYOU_LONG_TASK_MANAGED') != '1':
+        wrapper = ROOT / '03_再刷重制_Godot/07_开发环境/长任务.py'
+        task_log = os.environ.get('XIYOU_TASK_LOG') or str(ROOT / '03_再刷重制_Godot/04_验证/本地结果/任务' /
+                    ('sync-' + dt.datetime.now().strftime('%Y%m%d_%H%M%S_%f') + '.log'))
+        os.execv(sys.executable, [sys.executable, str(wrapper), 'run', task_log, '--', sys.executable, __file__, *sys.argv[1:]])
     sys.exit(main())

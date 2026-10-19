@@ -22,16 +22,18 @@ static var force_roll := -1.0
 
 
 ## roll < 0 时按几率随机决定神话；测试可传 0（必为神话，除非 NoElite）或 100（必不是）。
-func setup(id: int, difficulty: int, roll := -1.0) -> XEnemy:
+func setup(id: int, difficulty: int, roll := -1.0, random: XRandomStream = null) -> XEnemy:
 	enemy_id = id
 	difficulty_id = difficulty
 	_rates = difficulty_rates(difficulty)
 	if roll < 0.0:
 		roll = force_roll
-	var r := randf() * 100.0 if roll < 0.0 else roll
+	var r := (random.next_float("enemy_elite", str(id)) if random != null else _standalone_random().next_float("enemy_elite", str(id))) * 100.0 if roll < 0.0 else roll
 	elite = r < elite_param(0) and not str(data().get("note", "")).contains("NoElite")
 	if elite:
-		elite_hue = randf_range(100.0, 170.0) / 360.0
+		var visual := RandomNumberGenerator.new()
+		visual.randomize()
+		elite_hue = visual.randf_range(100.0, 170.0) / 360.0
 	refresh_passive()
 	recover_all()
 	return self
@@ -99,9 +101,9 @@ func _level() -> int:
 
 ## Game_Enemy.setupEnemyLevel：level = highestLevelBattleMembers，clamp(1, 999999)；浮动 floor(r×5 + level − 2)，再 clamp(1, 999999)。
 ## r < 0 时取随机数（测试用固定值）。
-func setup_level(highest: int, r := -1.0) -> void:
+func setup_level(highest: int, r := -1.0, random: XRandomStream = null) -> void:
 	var base := clampi(highest, 1, 999999)
-	enemy_level = clampi(floori((randf() if r < 0.0 else r) * 5.0 + base - 2), 1, 999999)
+	enemy_level = clampi(floori(((random.next_float("enemy_level", str(enemy_id)) if random != null else _standalone_random().next_float("enemy_level", str(enemy_id))) if r < 0.0 else r) * 5.0 + base - 2), 1, 999999)
 
 ## 真气瓶颈之战的幻化（XZhenqi.troop_setup）：{p: 参照敌人 paramBase, k: 倍数}；生命、攻击、魔攻 ×k
 var zq_ref := {}
@@ -184,3 +186,7 @@ func refresh_passive() -> void:
 
 func passive_cache() -> Dictionary:
 	return _passive_cache
+
+
+static func _standalone_random() -> XRandomStream:
+	return XRandomStream.create(XRandomStream.hex64(XState._fresh_seed()), "standalone_enemy")

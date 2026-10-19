@@ -526,6 +526,8 @@ func _opening() -> void:
 	_check("xiyou_title", entry.scene_file_path == ENTRY and XDB.available())
 	XMessageBox.auto_answers = [0, 0, 0, "流程测试", 0, 2, 0, 0]
 	entry._new_game()
+	# dev.099 起战斗用本场规则流（种子来自新开局的 orb_seed，每次新开局不同），全局 seed() 管不到；固定主种子才能复现
+	XState.current.random_master = XRandomStream.hex64(seed_value)
 	_check("opening_map221", await _wait_map(221, 9000))
 	var map: XMapScene = _scene()
 	XMessageBox.auto_answers = [0]
@@ -592,6 +594,10 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	# 2. 守层者「挑战」
 	if BIG_ATK_MAPS.has(f.map):
 		_boost_party(s, BIG_ATK)
+	# 三十三层鸿蒙老祖（敌群 469）不交礼时第 2 页开场 CE1397 给全队加 1106 霸者*终焉（命中 −100%），普通攻击必落空，只有必中技能能伤到他；
+	# 自动战斗取哪个技能看随机流，全局 seed() 管不到本场规则流（dev.099），时过时不过（f33_boss_won）。测试夹具直接设 842＝1（已交礼，跳过第 1、2 页）。
+	if f.map == 157:
+		s.set_variable(842, 1)
 	var boss := boss_of(f.map)
 	if not _check(tag + "_boss_found", not boss.is_empty() and boss.choice >= 0, boss):
 		return false

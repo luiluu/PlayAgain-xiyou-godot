@@ -61,6 +61,20 @@ func state() -> XState:
 	return XState.current
 
 
+## 战斗宿主透传本场规则流；地图保留 fixed_random 的参照接口。
+func rule_random() -> XRandomStream:
+	return null
+
+
+func _variable_random(lo: int, hi: int) -> int:
+	var stream := rule_random()
+	return stream.next_int_inclusive(lo, hi, "event_variable", _random_event_key()) if stream != null else random_int(lo, hi)
+
+
+func _random_event_key() -> String:
+	return ""
+
+
 ## 执行到下一个需要外部处理的地方（见文件头）。还在等应答时调用返回 {kind: "waiting"}。
 func advance() -> Dictionary:
 	while true:
@@ -364,7 +378,7 @@ func _party_members() -> Array:
 func _change_actor_state(p: Array) -> void:
 	for a in _actors_ex(int(p[0]), int(p[1])):
 		if int(p[2]) == 0:
-			a.add_state(int(p[3]))
+			a.add_state(int(p[3]), rule_random())
 		else:
 			a.remove_state(int(p[3]))
 
@@ -539,7 +553,7 @@ func _set_variables(p: Array) -> void:
 	match int(p[3]):
 		0: value = float(p[4])
 		1: value = state().variable(int(p[4]))
-		2: value = random_int(int(p[4]), int(p[5]))
+		2: value = _variable_random(int(p[4]), int(p[5]))
 		3:
 			var gd = _game_data(int(p[4]), int(p[5]), int(p[6]))
 			if gd == null:

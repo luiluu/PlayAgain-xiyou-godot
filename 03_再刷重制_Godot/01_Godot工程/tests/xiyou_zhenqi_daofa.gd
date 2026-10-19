@@ -159,7 +159,8 @@ func _pojia(o: Dictionary) -> Dictionary:
 	if o.get("direct", false):
 		e.add_state(XZhenqi.POJIA_STATE)
 	else:
-		seed(20261018)   # 附加几率 0.99：固定种子，结果不随运行变化
+		# 附加几率 0.99：固定本场规则流（dev.099 起战斗不认全局 seed），结果不随运行变化
+		logic.random = XBattleRandom.create(XRandomStream.hex64(20261018), 0)
 		logic.apply(a, ATTACK_STATE_SKILL, e)
 	out.merge({"affected": e.is_state_affected(XZhenqi.POJIA_STATE), "rate": rate.call(), "traits": traits.call(), "after": [e.param(3), e.param(5)]})
 	if o.get("erase", false):

@@ -25,6 +25,14 @@ func state() -> XState:
 	return logic.state
 
 
+func rule_random() -> XRandomStream:
+	return logic._rule()
+
+
+func _random_event_key() -> String:
+	return str(logic.turn)
+
+
 ## 取走已提交的记录
 func take_logs() -> Array:
 	var out := logs.duplicate()

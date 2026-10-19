@@ -523,7 +523,7 @@ static func _isolated(actor: XActor, naked: bool) -> XActor:
 	# prepare：装备与技能上 <StartPushStateN: ≥100%> 的状态
 	for tag in a.battle_start_state_tags():
 		if tag[0] == "StartPushState" and float(tag[2]) >= 100.0 and not a.state_ids.has(int(tag[1])) and int(tag[1]) != 1:
-			a.add_state(int(tag[1]))
+			a.add_state(int(tag[1]), XRandomStream.create("123456789abcdef0", "preview"))
 	a.refresh_passive()
 	a.hp = a.mhp
 	a.mp = a.mmp

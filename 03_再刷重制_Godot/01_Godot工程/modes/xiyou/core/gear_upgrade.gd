@@ -32,7 +32,7 @@ static func apply(s: XState, gear: Dictionary, item_id: int) -> bool:
 	if not s.owns_gear(gear) or reason(gear,item,s.item_count(item_id)) != "":return false
 	# 在副本完成全部计算，随后一次性替换实例内容；引用该实例的角色会看到同一结果。
 	var copy := gear.duplicate(true)
-	apply_effects(copy,item,true)
+	apply_effects(copy,item,true,s)
 	s.gain_item(item_id,-1)
 	gear.clear();gear.merge(copy,true)
 	for a in s.members():
@@ -40,7 +40,7 @@ static func apply(s: XState, gear: Dictionary, item_id: int) -> bool:
 		a.hp = minf(a.hp,a.mhp);a.mp = minf(a.mp,a.mmp)
 	return true
 
-static func apply_effects(gear: Dictionary, item: Dictionary, randomize := true) -> void:
+static func apply_effects(gear: Dictionary, item: Dictionary, randomize := true, owner: XState = null) -> void:
 	var data := rule(item)
 	gear.upgradeSlots = int(gear.get("upgradeSlots",6)) - int(data.cost)
 	gear.originalUpgradeSlots = int(gear.get("originalUpgradeSlots",6))
@@ -56,7 +56,7 @@ static func apply_effects(gear: Dictionary, item: Dictionary, randomize := true)
 					if effect.param is String and effect.param == "current" and float(gear.params[i]) == 0:continue
 					var n := float(effect.value)
 					if bool(effect.get("random",false)):
-						n = (floorf(XGear.roll() * ((n+1)*2)-n) if not bool(effect.get("signed",false)) else (floorf(XGear.roll() * (n+signf(n))))) if randomize else 0.0
+						n = (floorf(XGear.roll(owner) * ((n+1)*2)-n) if not bool(effect.get("signed",false)) else (floorf(XGear.roll(owner) * (n+signf(n))))) if randomize else 0.0
 					if bool(effect.get("percent",false)):
 						var base := XDB.rec("Weapons" if gear.kind == "weapon" else "Armors",int(gear.base))
 						n *= float(base.params[i]) / 100

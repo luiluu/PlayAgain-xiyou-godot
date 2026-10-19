@@ -74,6 +74,8 @@ static func exists(slot: int) -> bool:
 static func valid_data(d) -> bool:
 	if not d is Dictionary or str(d.get("mode", "")) != "xiyou":
 		return false
+	if d.has("random") and not XState.valid_random_save(d.random):
+		return false
 	if not (d.get("version") is int or d.get("version") is float) or int(d.version) not in [1, XState.SAVE_VERSION]:
 		return false
 	for key in ["difficulty", "gold", "mapId", "x", "y", "direction", "steps", "playSeconds"]:
@@ -108,6 +110,8 @@ static func valid_data(d) -> bool:
 			if row.has(field) and (not row[field] is Array or row[field].size() != 8):
 				return false
 		if row.has("tp") and not (row.tp is int or row.tp is float):
+			return false
+		if row.has("resourceDeathBlocked") and not row.resourceDeathBlocked is bool:
 			return false
 		if not row.equips.all(func(e): return e == null or _valid_gear(e)):
 			return false
