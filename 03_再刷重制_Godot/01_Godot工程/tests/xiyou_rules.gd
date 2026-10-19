@@ -179,6 +179,10 @@ func _run() -> void:
 
 
 func _finish() -> void:
+	if OS.get_environment("MISMATCH_DUMP") != "":
+		var f := FileAccess.open(OS.get_environment("MISMATCH_DUMP"), FileAccess.WRITE)
+		for m in mismatches:
+			f.store_line(m.name + " " + JSON.stringify(m.detail).left(400))
 	var passed := results.filter(func(r): return r["passed"]).size()
 	if verbose or passed != results.size():
 		for m in mismatches.slice(0, 12):
