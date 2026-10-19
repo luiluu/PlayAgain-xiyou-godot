@@ -188,6 +188,35 @@ func _run() -> void:
 	await _run_event(map, BOSS_EVENT, [])
 	_check("returned_floor16", await _wait_map(FLOOR_MAP))
 	_check("dungeon_reset", int(s.variable(5)) == 0 and int(s.variable(450)) == 0 and int(s.variable(113)) == 0, [s.variable(5), s.variable(450), s.variable(113)])
+	# 守护者海拉（敌群 796，开关 2303／2307 且变量 20≥31 时首领位的页）：第 3 页在敌人生命≤20% 时出 101 对话。
+	# 直接开战（地图场景的 start_battle，同事件里的战斗指令）；开战后把敌人生命压到 15%，等对话出现、队伍打完
+	map = _scene()
+	XMessageBox.transcript.clear()
+	var before_g := battles.size()
+	var gdone := {"v": false, "cut": false}
+	(func():
+		await map.start_battle(796, false, false)
+		gdone.v = true).call()
+	var gt0 := Time.get_ticks_msec()
+	while not gdone.v and Time.get_ticks_msec() - gt0 < TIMEOUT_MS:
+		var gb := _battle_of(map)
+		if gb != null and not gdone.cut and not gb.logic.enemies.is_empty():
+			gdone.cut = true
+			gb.logic.enemies[0].hp = maxf(1.0, gb.logic.enemies[0].mhp * 0.15)
+		# 对话出现后守护者身上的领域状态很难打穿，直接把它击倒收尾（只查对话跑得完、战斗能正常结束）
+		if gb != null and gdone.cut and XMessageBox.transcript.size() > 0 and not gb.logic.enemies.is_empty():
+			gdone["kill"] = true
+			gb.logic.enemies[0].hp = 0.0
+			gb.logic.enemies[0].add_state(1)
+		await get_tree().process_frame
+	if not gdone.v:
+		var gb2 := _battle_of(map)
+		if gb2 != null:
+			var e0: XEnemy = gb2.logic.enemies[0]
+			print("守护者未结束：回合 ", gb2.logic.turn, " 敌人 hp ", e0.hp, "/", e0.mhp, " 死亡 ", e0.is_dead(), " 状态 ", e0.states, " 等待事件 ", gb2.logic.is_event_waiting(), " 队伍 ", gb2.logic.actors.map(func(a): return [a.hp, a.states]))
+	_check("guardian_battle_finished", gdone.v and gdone.cut, gdone)
+	var gsaid: Array = XMessageBox.transcript.filter(func(t): return str(t).contains("接下来我可要使出全力"))
+	_check("guardian_dialogue_once", gsaid.size() == 1, XMessageBox.transcript)
 	_finish()
 
 
