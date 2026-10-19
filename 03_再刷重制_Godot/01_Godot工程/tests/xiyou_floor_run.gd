@@ -58,6 +58,9 @@ const PAY_GIFT := {116: 868, 117: 869, 119: 870, 118: 871, 120: 872, 147: 873, 1
 const GATE_SWITCH := 686
 ## 门里困难／地狱／天灾分支给全员学的挑战技能（六、十一、十六、二十一、二十六层…），普通难度不应学到
 const CHALLENGE_SKILLS := [2873, 2874, 2875, 2876, 2877, 2879, 2880, 2881, 2882, 2883, 2892, 2893, 2894, 2895, 2896]
+## 本批只确认、不开放的副本入口与分支事件（地图号 → 事件号）：二十六层影照洞窟入口（2，传到 Map180）、二十七层副本入口（2，进 Map121）、
+## 二十八层副本入口（2、4，进 Map208／209）与敌群 833 的分支（5）。地图上不能放这些事件。
+const UNOPENED_EVENTS := {155: [2], 182: [2], 145: [2, 4, 5]}
 ## 各段完整走的起始层（第 part 段从 SEGMENTS[part−1] 走到下一段起始层的前一层；最后一段走到楼层表末尾）
 const SEGMENTS := [1, 13]
 @export var part := 1
@@ -517,6 +520,8 @@ func _floor(f: Dictionary, full: bool) -> bool:
 		return false
 	if not _check(tag + "_entered", await _wait_map(f.map) and _scene().player.grid == Vector2i(f.x, f.y), [_scene().map_id, _scene().player.grid if _scene() is XMapScene else null]):
 		return false
+	for ev_id in UNOPENED_EVENTS.get(f.map, []):
+		_check(tag + "_unopened_ev%d_absent" % ev_id, _event(_scene(), ev_id) == null, [f.map, ev_id])
 	# 普通难度不走门里困难／地狱／天灾的分支（开关 2500／2494／2489：全员学挑战技能、改技能等级上限变量 8）
 	_check(tag + "_normal_difficulty_path", s.variable(8) == skill_cap and s.members().all(func(a): return not CHALLENGE_SKILLS.any(func(k): return a.skill_ids.has(k))), [skill_cap, s.variable(8)])
 	# 二十层通关后开关 686 仍开：门第 3 页先关 686，O-036 接着出楼层菜单（一次按门就进二十一层）
