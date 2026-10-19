@@ -105,6 +105,21 @@ const DUNGEONS = {
   d24: {start: {map: 120, x: 41, y: 1}, door: 2, tierBase: 1653, rune: 397, escape: 7,
     clear: [1, 3, 4, 5, 6, 2].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 2}]),
     boss: {sw: 904, event: 8, item: 912}},
+  // 二十六层兜率宫·丹房（不朽灵魂 640，入口 Map180 EV9，进 Map181）：偷丹的清风、明月（敌群 601／602，随机变量 355 到 1 得丹药 1726／1727）与首领天尊投影
+  // （随机变量 357 选敌群 603／604／605，3813 强制＋状态 44），打掉变量 356 计两只后丹炉前的挡路事件才消失（只挡路）；没有副本协会主席；逃离要朝下
+  d26: {start: {map: 180, x: 22, y: 5}, door: 9, tierBase: 1661, rune: 640, escape: 8, escapeFace: 2,
+    clear: [2, 3, 4].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 4}])},
+  // 二十七层墓池（不朽灵魂 640，入口 Map182 EV2）：二十八宿分四座石像（2～5，各按随机变量 358 在三个宿里选一个挑战，变量 359 计满 4）后打四圣兽（随机变量 360 选敌群，
+  // 614／622／630／638）；主席收活力水 912；宝箱问「是否前往孽镜深渊」（Map184，未开放）选否则重置并回 27 层；逃离要朝下
+  d27: {start: {map: 182, x: 18, y: 1}, door: 2, tierBase: 1665, rune: 640, escape: 7, escapeFace: 2,
+    clear: [2, 3, 4, 5].map(e => ({do: 'event', event: e, picks: [0], battle: 'win'})).concat([{do: 'event', event: 1, battle: 'win'}, {do: 'event', event: 1}]),
+    boss: {sw: 907, event: 8, item: 912}},
+  // 二十九层太上老君藏身处（特级符文 171，入口 Map144 EV2，没有副本协会主席）：五位首领（Map212 EV1、4、5、6、7，敌群 733～737）打完（变量 692 到 5）后，随机变量 694／693
+  // 开传送门：694＝1 或 693≥25 开 1763（EV2 去 Map214），否则开 1764（EV3 去 Map215）；两张小图各一位「太上老君」（敌群 731／732），打完变宝箱，
+  // 宝箱问「是否前往妄语深渊」（Map211，未开放）选否回 29 层并重置；逃离要朝下。固定随机数 0.5 时 693＝13、694＝3 走 Map215，0.05 时 693＝2、694＝1 走 Map214
+  d29: {start: {map: 144, x: 17, y: 1}, door: 2, tierBase: 1673, rune: 171, escape: 8, escapeFace: 2,
+    clear: [1, 4, 5, 6, 7].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 3}, {do: 'event', event: 1, battle: 'win'}, {do: 'event', event: 1}]),
+    clearLow: [1, 4, 5, 6, 7].map(e => ({do: 'event', event: e, battle: 'win'})).concat([{do: 'event', event: 2}, {do: 'event', event: 1, battle: 'win'}, {do: 'event', event: 1}])},
 };
 const D2 = DUNGEONS.d2.start;
 const enter = (picks, rune = 1, door = 7, item = 24) => [{do: 'item', id: item, n: rune}, {do: 'event', event: door, picks}];
@@ -116,8 +131,8 @@ function standard(id) {
     {id: id + '.escape', dungeon: id, setup: {difficulty: 5}, steps: [...go([0]), ...(d.escapeFace ? [{do: 'face', d: d.escapeFace}] : []),
       {do: 'event', event: d.escape, picks: [0]}, ...(d.escapeThen || [])]},
     {id: id + '.clear-normal', dungeon: id, setup: {}, steps: [...go([0]), ...d.clear]},
-    {id: id + '.clear-king', dungeon: id, setup: {tier: 4, rand: 0.05}, steps: [...go([0, 3]), ...d.clear]},
-    {id: id + '.bribe', dungeon: id, setup: {sw: [d.boss.sw]}, steps: [...go([0]), {do: 'item', id: d.boss.item || 913, n: 1}, {do: 'event', event: d.boss.event, picks: [0]}]},
+    {id: id + '.clear-king', dungeon: id, setup: {tier: 4, rand: 0.05}, steps: [...go([0, 3]), ...(d.clearLow || d.clear)]},
+    ...(d.boss ? [{id: id + '.bribe', dungeon: id, setup: {sw: [d.boss.sw]}, steps: [...go([0]), {do: 'item', id: d.boss.item || 913, n: 1}, {do: 'event', event: d.boss.event, picks: [0]}]}] : []),
   ];
 }
 // ---- 深渊之门 ----
@@ -172,6 +187,7 @@ function abyssCases(m) {
       {id: id + '.cthulu-none', setup: {sw: [695], rand: 0.9}, steps: [at, {do: 'event', event: a.cthulu}, {do: 'event', event: a.cthulu, picks: [0]}]}] : []),
   ];
 }
+const d29clear = r => DUNGEONS.d29[r > 0.9 || r < 0.1 ? 'clearLow' : 'clear'];
 const SCENARIOS = [
   {id: 'd2.no-rune', setup: {}, steps: enter([0], 0)},
   {id: 'd2.leave', setup: {}, steps: enter([2])},
@@ -204,7 +220,7 @@ const SCENARIOS = [
   {id: 'd2.boss-lose', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'lose'}]},
   {id: 'd2.boss-roundtrip', setup: {}, steps: [...enter([0]), {do: 'event', event: 5}, {do: 'event', event: 1, battle: 'win'}, {do: 'roundtrip'},
     {do: 'event', event: 1}]},
-  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd16', 'd17', 'd18', 'd19', 'd20', 'd21', 'd22', 'd23', 'd24'].flatMap(standard),
+  ...['d1', 'd4', 'd6', 'd7a', 'd7b', 'd9', 'd10', 'd8', 'd11', 'd12', 'd13', 'd14', 'd15', 'd16', 'd17', 'd18', 'd19', 'd20', 'd21', 'd22', 'd23', 'd24', 'd26', 'd27', 'd29'].flatMap(standard),
   {id: 'd17.hidden-boss', dungeon: 'd17', setup: {rand: 0.9}, steps: [...enter([0], 1, 2, 171),
     ...[6, 7, 8, 9, 10, 11, 12, 13, 2, 3, 4, 5, 14].map(e => ({do: 'event', event: e, battle: 'win'}))]},
   // 二十层宝箱额外奖励（入口随机变量 155 到 97 以上，157 选三件之一）
@@ -229,6 +245,32 @@ const SCENARIOS = [
   {id: 'd16.boss-locked', dungeon: 'd16', setup: {}, steps: [...enter([0], 1, 1, 171), {do: 'event', event: 3, battle: 'win'}, {do: 'event', event: 2}]},
   {id: 'd16.guardian', dungeon: 'd16', setup: {sw: [2303], vars: {20: 31}}, steps: [...enter([0], 1, 1, 171), {do: 'event', event: 2, battle: 'win'}]},
   {id: 'kun.no-kun', dungeon: 'd11', setup: {}, steps: [{do: 'warp', map: 21, x: 4, y: 1}, {do: 'event', event: 13}]},
+  // 二十七层：随机变量 358／360 取别的值（石像里别的宿、别的四圣兽），选第二／第三个宿；宝箱选「是」去孽镜深渊（Map184，只记场所移动与重置）；首领要四座石像打完才出
+  {id: 'd27.rand-high', dungeon: 'd27', setup: {rand: 0.9}, steps: [...enter([0], 1, 2, 640), ...[2, 3, 4, 5].map((e, i) => ({do: 'event', event: e, picks: [1 + (i % 2)], battle: 'win'})),
+    {do: 'event', event: 1, battle: 'win'}, {do: 'event', event: 1}]},
+  {id: 'd27.rand-low', dungeon: 'd27', setup: {rand: 0.05}, steps: [...enter([0], 1, 2, 640), ...[2, 3, 4, 5].map(e => ({do: 'event', event: e, picks: [2], battle: 'win'})),
+    {do: 'event', event: 1, battle: 'win'}, {do: 'event', event: 1}]},
+  {id: 'd27.abyss-yes', dungeon: 'd27', setup: {}, steps: [...enter([0], 1, 2, 640), ...[2, 3, 4, 5].map(e => ({do: 'event', event: e, picks: [0], battle: 'win'})),
+    {do: 'event', event: 1, battle: 'win'}, {do: 'event', event: 1, picks: [0]}]},
+  {id: 'd27.boss-locked', dungeon: 'd27', setup: {}, steps: [...enter([0], 1, 2, 640), {do: 'event', event: 2, picks: [0], battle: 'win'}, {do: 'event', event: 1}]},
+  {id: 'd27.statue-leave', dungeon: 'd27', setup: {}, steps: [...enter([0], 1, 2, 640), {do: 'event', event: 2, picks: [3]}, {do: 'event', event: 2, picks: [0], battle: 'lose'}]},
+  // 二十六层：随机变量 355 取到 1（随机数 0.015）得丹药 1726／1727／1728；357 选别的天尊投影（0.05、0.9）；宝箱选「是」去孽镜深渊
+  {id: 'd26.pill-drop', dungeon: 'd26', setup: {rand: 0.015}, steps: [...enter([0], 1, 9, 640), ...DUNGEONS.d26.clear.slice(0, 3), {do: 'event', event: 4}]},
+  {id: 'd26.boss-troop-low', dungeon: 'd26', setup: {rand: 0.05}, steps: [...enter([0], 1, 9, 640), ...DUNGEONS.d26.clear]},
+  {id: 'd26.boss-troop-high', dungeon: 'd26', setup: {rand: 0.9}, steps: [...enter([0], 1, 9, 640), ...DUNGEONS.d26.clear]},
+  {id: 'd26.abyss-yes', dungeon: 'd26', setup: {}, steps: [...enter([0], 1, 9, 640), ...DUNGEONS.d26.clear.slice(0, 3), {do: 'event', event: 4, picks: [0]}]},
+  {id: 'd26.boss-lose', dungeon: 'd26', setup: {}, steps: [...enter([0], 1, 9, 640), {do: 'event', event: 4, battle: 'lose'}]},
+  {id: 'd26.blockers', dungeon: 'd26', setup: {}, steps: [...enter([0], 1, 9, 640), {do: 'event', event: 1}, {do: 'event', event: 5}, {do: 'event', event: 6},
+    {do: 'event', event: 2, battle: 'win'}, {do: 'event', event: 3, battle: 'win'}, {do: 'event', event: 1}, {do: 'event', event: 5}, {do: 'event', event: 6}]},
+  // 二十九层：随机变量 693 到 25 以上（0.99）也开 Map214 的门；宝箱选「是」去妄语深渊（Map211）；五位首领没打完门不开；Map214／215 的出口回 Map212；
+  // 首领按难度档换页（勇士档 3）
+  {id: 'd29.gate-high', dungeon: 'd29', setup: {rand: 0.99}, steps: [...enter([0], 1, 2, 171), ...d29clear(0.99)]},
+  {id: 'd29.abyss-yes', dungeon: 'd29', setup: {rand: 0.05}, steps: [...enter([0], 1, 2, 171), ...DUNGEONS.d29.clearLow.slice(0, -1), {do: 'event', event: 1, picks: [0]}]},
+  {id: 'd29.gate-locked', dungeon: 'd29', setup: {rand: 0.05}, steps: [...enter([0], 1, 2, 171), ...[1, 4, 5, 6].map(e => ({do: 'event', event: e, battle: 'win'})),
+    {do: 'event', event: 2}, {do: 'event', event: 3}, {do: 'event', event: 7, battle: 'win'}, {do: 'event', event: 3}, {do: 'event', event: 2}]},
+  {id: 'd29.exit-gate-room', dungeon: 'd29', setup: {rand: 0.05}, steps: [...enter([0], 1, 2, 171), ...DUNGEONS.d29.clearLow.slice(0, 6), {do: 'event', event: 2}, {do: 'event', event: 3}]},
+  {id: 'd29.hero-clear', dungeon: 'd29', setup: {tier: 3}, steps: [...enter([0, 2], 1, 2, 171), ...DUNGEONS.d29.clear]},
+  {id: 'd29.boss-lose', dungeon: 'd29', setup: {}, steps: [...enter([0], 1, 2, 171), {do: 'event', event: 1, battle: 'lose'}]},
   ...Object.keys(GATES).flatMap(gateCases),
   ...Object.keys(ABYSS).flatMap(m => abyssCases(Number(m))),
 ].map(sc => Object.assign({dungeon: 'd2'}, sc));
