@@ -9,7 +9,7 @@ import unittest
 TOOLS = Path(__file__).resolve().parents[1] / '03_转换工具'
 sys.path.insert(0, str(TOOLS))
 from formula_program import compile_formula
-from formula_effect_contract import CASE_IDS, validate_formula_effects
+from formula_effect_contract import CASE_IDS, validate_formula_effects, verify_formula_equipment, verify_formula_actions
 from oracle_additions import compare_file
 
 
@@ -100,6 +100,35 @@ class FormulaReferenceGuardTests(unittest.TestCase):
         data, manifest = self.fixture()
         self.assertEqual(len(CASE_IDS), 112)
         self.assertFalse(validate_formula_effects(data, manifest))
+
+    def test_equipment_and_reaction_reference_use_observation_map(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            identity = {'releaseVersion': 'v0.28', 'runtimeInputs': {}, 'inputs': {}}
+            manifest = copy.deepcopy(identity)
+            rows = []
+            for sid in range(1, 25):
+                for mode in ('none', 'wrong_kind', 'zero', 'high', 'first', 'different_base', 'nonmagic'):
+                    for edge in (False, True):
+                        rows.append(dict(id=f's{sid}.{mode}.{str(edge).lower()}', setup={'skill': sid}, errors=[], observed=dict(value=0, valueKind='finite', firstLevel=0, randomDraws=0, formulaSHA256='a'*64)))
+            file = directory / 'formula_equipment.json'
+            data = dict(sourceIdentity=identity, cases=rows)
+            file.write_text(json.dumps(data))
+            self.assertFalse(verify_formula_equipment(directory, manifest))
+            rows[0]['errors'] = ['unexpected']
+            file.write_text(json.dumps(data))
+            self.assertTrue(verify_formula_equipment(directory, manifest))
+            fixture, _ = self.fixture()
+            snapshot = fixture['cases'][0]['observed']['after']['b']
+            actions = [dict(id=f'{mode}.{values}', errors=[], observed={'after': {'b': snapshot}}) for mode in ('repeat', 'reflect', 'counter') for values in ('10000_220_123', '450_1_1')]
+            file = directory / 'formula_actions.json'
+            data = dict(sourceIdentity=identity, cases=actions)
+            file.write_text(json.dumps(data))
+            self.assertFalse(verify_formula_actions(directory, manifest))
+            actions.pop()
+            file.write_text(json.dumps(data))
+            self.assertTrue(verify_formula_actions(directory, manifest))
 
     def test_missing_or_duplicate_source_case_and_incomplete_journal_rejected(self):
         original, manifest = self.fixture()
