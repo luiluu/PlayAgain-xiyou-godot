@@ -22,6 +22,10 @@
 
 - YEP 行动序列逐帧（页面内 JS：在战斗夹具等到角色指令窗口后 `await __seqRef.suite()`；单条用 `__seqRef.run({skill:ID, target:敌人选择窗序号, camera:true|false, anim:true|false})` 再 `await __seqRef.pump()`）：当前行动角色学会该技能、补满 MP/TP，敌人加 100 万生命（打不死）后照指令窗流程出招；每帧 Spriteset_Battle.update 之后记战斗者精灵（位置、移动偏移、朝向、不透明度、浮空/跳跃、动作、帧格、身体锚点）、镜头（场景层位置与缩放、$gameScreen 镜头点）、窗口层位置（HIDE BATTLE HUD）、日志窗等待与排队方法，另记每条序列指令执行的帧，到该角色行动结束。`suite()` 先载好要用的动画图（首次载入的异步等待不比），跑 9 段（`suite(列表, 读数名)` 可只跑几招并另起读数名；`run` 的 `prep(角色, 敌人)` 另设场景，如反击致死；每帧另记敌人 [实际 HP, 血条显示值]），`__refJson('action_sequence_oracle', …)` 写到截图目录，再用 `python3 -I 压缩序列参照.py` 压成 `01_Godot工程/tests/fixtures/action_sequence_oracle.json`，由 `tests/xiyou_sequence_visual` 逐帧对照；另跑的 s131 多段攻击与 s104 反击致死压成 `action_sequence_hp_oracle.json`（`压缩序列参照.py <源> action_sequence_hp_oracle.json`）。窗格隐藏时整段放进不等待的异步函数里跑，再轮询结果。
 
+- 普通攻击动画（双持，页面内 JS：在战斗夹具等到角色指令窗口后 `await __atkAniRef.suite()`）：第一位角色直接设成双持（独立物品武器 2005 鸾凤和鸣剑＋武器 2，不经 canEquip）、单武器、空手，再加敌人出手，对两只敌人调日志窗 `showAttackAnimation` 与 `showActorAtkAniMirror`，包住 `Sprite_Base.startAnimation` 记每个新建动画的目标、动画号、镜像与 `_delay`。`__refJson('attack_animation_oracle', …)` 写到截图目录，复制到 `01_Godot工程/tests/fixtures/attack_animation_oracle.json`，由 `tests/xiyou_sequence_visual` 对照。窗格隐藏时整段放进不等待的异步函数里跑（先 `__dhRef.pump` 推到标题再点夹具），再轮询结果。
+
+- 战斗里的 101 消息窗：战斗夹具到角色指令窗口后 `$gameMessage` 设无头像、背景 0、位置 2，加 `\n<海拉的幻影>很久没有打的这么尽兴了，哈哈哈。`，推到文字全显再 `__refShot('battle_msg_101_formal')`。读数：消息窗 0,548,1280,172，名字框 0,484,298,64（`\c[6]`），角色／队伍指令窗关上（`Scene_Battle.updateStatusWindow`），右侧状态与行动顺序条照常。Godot 对应 `tests/xiyou_battle_ui` 的 `battle_49_message_101`。
+
 - `index.html?item_marks_ref=1`：一键出售与多货币买入的内存夹具；「多货币买入夹具」打开 2230／4375／732 三件商品并显示窗口几何，「买入数量窗」进入实际最多能买 1 件的数量窗，「买入复核截图」保存当前商店原尺寸画面。金币、变量与物品都只属于新建测试局，不加载玩家存档。
 
 - `index.html?item_list_ref=1`：物品列表一组（NEW 角标、「序号/9,999」、战斗物品窗口）参照。不放工具栏，用页面内 JS 调 `__ilr`：`newGame()` 建四人内存新局（1/8/9/10，不读写存档），`go(场景类)` 切场景并等就绪，`rows(窗口)` 读每行的数据、`$gameSystem._seenItems` 与此刻画面（`newShown` 是否画着 newIcon、`texts` 该行文字的 x／宽／对齐／字号；包装 Bitmap 的 blt/drawText/clearRect/clear 记录），`saveRoundTrip()` 只在内存里做存读档序列化。移光标用 `cursorDown(false)`／`processOk()`，换分类后先等几帧（分类窗在 update 里才 setCategory）。读数存 `01_Godot工程/tests/fixtures/item_list_oracle.json`。

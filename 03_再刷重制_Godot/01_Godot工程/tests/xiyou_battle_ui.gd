@@ -99,6 +99,7 @@ func _run() -> void:
 	_check("actor_scale", is_equal_approx(b.sprites[b.logic.actors[0]].body_scale, 0.75))
 	await _frames(30)
 	await _shot("battle_40_input")
+	await _message_101(b)
 	# 指令窗（原版：851,462,220,196；6 条居中）
 	var cw: XBattleList = b.cmd_win
 	_check("command_rect", [cw.position, cw.size] == [Vector2(851, 462), Vector2(220, 196)], [cw.position, cw.size])
@@ -274,3 +275,31 @@ func _finish() -> void:
 			print("FAIL ", r.name, " ", JSON.stringify(r.detail))
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## 战斗里的 101（十六层敌群 165 第 4 回合）：原版参照 battle_msg_101_formal（ui_reference 战斗夹具加同一条消息，无头像、背景 0、
+## 位置 2）：消息窗 0,548,1280,172；名字框 \\n<海拉的幻影> 左对齐 0,484,298,64，黄字（\\c[6]）；右侧状态与行动顺序条照常显示。
+## 敌群事件只在回合里跑（没有指令窗），这里先收起指令窗模拟回合中，确认后再放回。
+func _message_101(b: XBattleScene) -> void:
+	var cw: XBattleList = b.cmd_win
+	cw.active = false
+	cw.hide()
+	var done := {"v": false}
+	var go := func():
+		await b.message.run({"face": "", "index": 0, "background": 0, "position": 2, "lines": ["\\n<海拉的幻影>很久没有打的这么尽兴了，哈哈哈。"]})
+		done.v = true
+	go.call()
+	var shown := await _until(func(): return b.message.win.openness >= 255 and b.message._state == null)
+	await _frames(40)
+	var w := b.message.win
+	var nw := b.message.name_win
+	var origin: Vector2 = b.message.global_position
+	_check("msg101_shown", shown)
+	_check("msg101_rect", [origin + w.position, w.size] == [Vector2(0, 548), Vector2(1280, 172)], [origin + w.position, w.size])
+	_check("msg101_name_rect", nw.visible and nw.openness >= 255 and [origin + nw.position, nw.size] == [Vector2(0, 484), Vector2(298, 64)], [origin + nw.position, nw.size, nw.openness])
+	await _shot("battle_49_message_101")
+	await _press("ui_accept")
+	_check("msg101_closed", await _until(func(): return done.v and w.openness == 0 and nw.openness == 0, 120), [done.v, w.openness, nw.openness])
+	cw.show()
+	cw.active = true
+	await _frames(2)
