@@ -59,6 +59,8 @@ func _run() -> void:
 	_popup_unit()
 	_oracle_record()
 	var s := XState.new_game(3, 1, [8, 10, 9])
+	# dev.099 起战斗用本场规则流（主种子来自新开局 orb_seed），全局 seed() 管不到；固定主种子才能复现
+	s.random_master = XRandomStream.hex64(20261014)
 	s.map_id = 5
 	s.x = 11
 	s.y = 13

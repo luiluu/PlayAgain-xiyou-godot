@@ -113,9 +113,12 @@ func _run() -> void:
 		seed(20261014)
 		var first := randf()
 		seed(20261014)
+		var rule_before := JSON.stringify(edge_logic.random.snapshot())
 		var value := edge_ai.safe_damage(edge_actor, edge_logic.enemies[0], rec)
 		check("edge_damage_%d" % int(row.type), close(value, float(row.value)), [value, row.value])
 		check("preview_preserves_rng_%d" % int(row.type), randf() == first)
+		# dev.099 起实战抽本场规则流：预览也不能动它
+		check("preview_preserves_rule_%d" % int(row.type), JSON.stringify(edge_logic.random.snapshot()) == rule_before)
 	finish()
 
 

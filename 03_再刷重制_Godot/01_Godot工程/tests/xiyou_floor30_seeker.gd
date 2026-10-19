@@ -101,6 +101,8 @@ func _run() -> void:
 	XGuide.MILESTONE_ENABLED = false
 	seed(20261019)
 	var s := XState.new_game(3, 1, [8, 9, 10])
+	# dev.099 起战斗用本场规则流（主种子来自新开局 orb_seed），全局 seed() 管不到；固定主种子才能复现
+	s.random_master = XRandomStream.hex64(20261019)
 	XState.current = s
 	s.set_switch(2307, true)   # 轮回模式
 	s.set_variable(20, 31)
