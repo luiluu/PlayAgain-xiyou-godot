@@ -190,3 +190,24 @@ func _hidden_event_streams() -> void:
 	check("hidden.appear_transform_no_draw", logic.random.rule.draws == 4 and logic.random.rule.error.is_empty() and equal(persistent_before, s.random_save()))
 	logic.enemy_recover_all(-1)
 	check("event.recover_no_extra_draw", logic.random.rule.draws == 4 and logic.random.rule.error.is_empty() and equal(persistent_before, s.random_save()))
+
+	# 336 的资源刷新若新建死亡状态，也只能抽本场 rule（而不是落到 current.world）。
+	var death_state := XState.new_game(3, 1, [])
+	death_state.random_master = "8877665544332211"
+	var death_logic := XBattleLogic.new()
+	death_logic.setup(2, death_state)
+	death_logic.random.rule = XRandomStream.scripted([
+		{"kind": "uint32", "value": 0, "reason": "state_duration", "event": "b:1"},
+	])
+	var death_persistent := death_state.random_save()
+	death_logic.enemies[0].hp = 0.0
+	death_logic.enemies[0].state_ids.clear()
+	death_logic.enemies[0].state_turns.clear()
+	var death_id := death_logic.stable_id(death_logic.enemies[0])
+	death_logic.enemy_transform(0, 2)
+	check("event.transform_death_duration", death_logic.enemies[0].is_state_affected(1) and death_logic.enemies[0].state_turns.get(1) == 1
+		and death_logic.random.rule.draws == 1 and death_logic.random.rule.error.is_empty(), death_logic.random.rule.error)
+	check("event.transform_death_no_world", equal(death_persistent, death_state.random_save()) and death_logic.stable_id(death_logic.enemies[0]) == death_id)
+	death_logic.enemy_recover_all(0)
+	check("event.recover_death_preserves_stream", death_logic.enemies[0].is_alive() and death_logic.random.rule.draws == 1
+		and death_logic.random.rule.error.is_empty() and equal(death_persistent, death_state.random_save()))
