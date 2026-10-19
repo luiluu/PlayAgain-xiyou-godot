@@ -71,7 +71,10 @@ func _preset_case(c: Dictionary) -> void:
 
 
 func _case(c: Dictionary, round: int) -> void:
+	var target: int = int(c.get("target", 0))   # 玩家普通攻击的敌人序号（敌群 462 有两名守层者，另测集火敌人 1）
 	var name := "troop%d.paid%s.r%d" % [int(c.troop), str(c.get("paid", false)), round]
+	if target != 0:
+		name = "troop%d.paid%s.target%d.r%d" % [int(c.troop), str(c.get("paid", false)), target, round]
 	seed(1000 + round)
 	var logic := setup(int(c.troop), bool(c.get("paid", false)))
 	var e0: XBattler = logic.enemies[0]
@@ -85,7 +88,7 @@ func _case(c: Dictionary, round: int) -> void:
 			break
 		var cmds := {}
 		for a in logic.actors:
-			cmds[a] = [XDB.rec("Skills", 1), e0]
+			cmds[a] = [XDB.rec("Skills", 1), logic.enemies[target]]
 		var turn_logs := logic.run_turn(cmds)
 		logs.append_array(turn_logs)
 		for l in turn_logs:
@@ -98,6 +101,15 @@ func _case(c: Dictionary, round: int) -> void:
 			check(name + ".atk_mat", int(e0.atk) == int(c.battlers.e0.atk) and int(e0.mat) == int(c.battlers.e0.mat),
 				[e0.atk, e0.mat, c.battlers.e0.atk, c.battlers.e0.mat])
 	check(name + ".skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
+	# 其余敌人（敌群 462 的第二名守层者）：回合结束时没有被打倒的，攻击／魔攻与状态应同参照
+	for k in c.battlers:
+		if not str(k).begins_with("e") or str(k) == "e0":
+			continue
+		var ex: XBattler = logic.enemies[int(str(k).substr(1))]
+		var want_b: Dictionary = c.battlers[k]
+		if ex.hp > 0.0 and float(want_b.hp) > 0.0:
+			check(name + ".other_" + str(k), int(ex.atk) == int(want_b.atk) and int(ex.mat) == int(want_b.mat) and Array(want_b.states).all(func(id): return ex.state_ids.has(int(id))),
+				[ex.atk, ex.mat, ex.state_ids, want_b])
 	var want := {1: [], 2: []}
 	var forced := 0
 	for a in c.actions:
