@@ -55,6 +55,7 @@ void fragment() {
 }
 """
 
+static var se_play_count := 0
 static var _hue_shaders := {}
 static var _materials := {}
 
@@ -267,6 +268,7 @@ func _timing(t: Dictionary) -> void:
 			se_player.volume_db = linear_to_db(float(se.get("volume", 90)) / 100.0)
 			se_player.pitch_scale = float(se.get("pitch", 100)) / 100.0
 			se_player.play()
+			se_play_count += 1
 
 
 ## ScreenSprite：画面 (−5W, −5H) 起 10 倍画面大小的纯色矩形，跟着画面原点（不随动画镜像/镜头）

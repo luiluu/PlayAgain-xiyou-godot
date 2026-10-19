@@ -39,7 +39,7 @@ func _clean(a: XActor) -> void:
 
 static func _heal(type: int) -> Dictionary:
 	return {"id": 0, "name": "核查固定恢复", "stypeId": 1, "hitType": 0, "scope": 7, "note": "", "meta": {}, "effects": [],
-		"damage": {"type": type, "formula": "100", "formulaGd": "100", "elementId": 0, "variance": 0, "critical": false}}
+		"damage": {"type": type, "formula": "100", "formulaGd": "100", "formulaProgram": JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/formula_effect_programs.json"))["runtime.constant100"].program, "elementId": 0, "variance": 0, "critical": false}}
 
 
 func _huichun(a: XActor, realm: int) -> void:
@@ -69,7 +69,7 @@ func _heal_case(id: String, o: Dictionary):
 		logic.setup(770, s)
 		b.hp = 1.0
 		var preview: float = XDamage.calculate(skill, a, b, {"variance": false}).value
-		var r := logic._apply(a, skill, b)
+		var r := logic.apply(a, skill, b)
 		return {"preview": preview, "hp": r.hp, "passive": passive}
 	return {"passive": passive, "value": XDamage.calculate(_heal(int(o.type)), a, b, {"variance": false}).value}
 

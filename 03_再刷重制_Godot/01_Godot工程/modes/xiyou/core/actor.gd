@@ -194,7 +194,7 @@ func change_level(lv: int) -> void:
 
 ## 获得经验，返回升了几级。
 ## YEP_CoreEngine：已到等级上限不再获得经验。rate 为 MV finalExpRate 里的出战/后备系数。
-func gain_exp(amount: int, rate := 1.0) -> int:
+func gain_exp(amount: int, rate := 1.0, random: XRandomStream = null) -> int:
 	var before := _lv
 	if _lv >= max_level():
 		return 0
@@ -203,7 +203,7 @@ func gain_exp(amount: int, rate := 1.0) -> int:
 		_level_up()
 	if _lv != before:
 		refresh_passive()
-		refresh_resources()
+		refresh_resources(random)
 	return _lv - before
 
 

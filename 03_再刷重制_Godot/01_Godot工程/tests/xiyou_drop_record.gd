@@ -194,7 +194,7 @@ func _battle_on(map: XMapScene, s: XState) -> void:
 		return
 	check("record_built", b.record != null and b.record.position == b._origin + Vector2(1020, 600) and b.record.get_index() < b.ui.get_index(), null if b.record == null else b.record.position)
 	for e in b.logic.enemies:
-		b.logic._treasure[e] = [{"kind": 1, "id": 1}]
+		b.logic._treasure[b.logic.stable_id(e)] = [{"kind": 1, "id": 1}]
 		e.hp = 1.0
 	var popped := await until(func(): return b.field.get_children().any(func(c): return c is XDropPopup))
 	var gained_now := s.item_count(1) - before
@@ -219,7 +219,7 @@ func _battle_off(map: XMapScene, s: XState) -> void:
 	if b == null:
 		return
 	for e in b.logic.enemies:
-		b.logic._treasure[e] = [{"kind": 1, "id": 1}]
+		b.logic._treasure[b.logic.stable_id(e)] = [{"kind": 1, "id": 1}]
 		e.hp = 1.0
 	var popped := false
 	var mid_gain := false

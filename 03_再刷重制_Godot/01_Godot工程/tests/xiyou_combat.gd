@@ -133,12 +133,14 @@ func _run() -> void:
 	_check("counter_logged", logs.size() >= 3 and logs[1].type == "counter" and logs[1].user == foe and logs[2].user == foe and logs[2].target == a, logs.map(func(l): return l.type))
 	_check("counter_negates_hit", foe.hp == foe_hp, [foe.hp, foe_hp])
 	# 必中被动：不会被反击
-	a._passive_cache.certainHit = {"global": true, "bySkill": {}}
+	phys.meta["SkillCertainHitss"] = true # persistent native note capability survives gain/refresh
+	a.refresh_passive()
 	a.cooldowns.clear()
 	logs = logic.execute(a, phys, foe)
 	# 技能 401 的正式行动序列有 3 次 ACTION EFFECT（dev.028 起照 yepSeq），目标打到 0 血时在收尾（IMMORTAL 解除）才倒下
 	var hits := logs.filter(func(l): return l.type == "hit")
 	_check("certain_hit_no_counter", not logs.any(func(l): return l.type == "counter") and hits.size() >= 1 and hits.all(func(l): return not l.missed and not l.evaded), logs.map(func(l): return l.type))
+	phys.meta.erase("SkillCertainHitss")
 	a.refresh_passive()
 	foe = logic.enemies[1]          # 上一步的敌人可能已被打倒，换一只
 	var mrf_state := _fake_state(5, 1.0)

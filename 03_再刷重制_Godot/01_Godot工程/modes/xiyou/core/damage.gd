@@ -15,34 +15,13 @@ static func elements_data() -> Dictionary:
 	return d if d is Dictionary else {"names": [], "affinities": {"actors": {}, "enemies": {}}, "edges": [], "skills": {}}
 
 
-# ---- 公式（转换器已把 JS 翻成 Godot Expression）----
+# ---- Structured formula entry; previews never own live mutation capabilities. ----
 static func eval_formula(item: Dictionary, a: XBattler, b: XBattler, vars: Array) -> float:
-	var dmg: Dictionary = item.damage
-	if XCustomDamage.supports(item):
-		return XCustomDamage.evaluate(item, a, b)
-	var src = dmg.get("formulaGd")
-	if src == null:
-		push_warning("技能 %d 的公式未翻译：%s" % [int(item.id), dmg.formula])
-		return 0.0
-	var key := str(src)
-	if not _formulas.has(key):
-		var e := Expression.new()
-		if e.parse(key, ["a", "b", "v"]) != OK:
-			push_error("公式解析失败 %d: %s" % [int(item.id), e.get_error_text()])
-			_formulas[key] = null
-		else:
-			_formulas[key] = e
-	var expr: Expression = _formulas[key]
-	if expr == null:
-		return 0.0
-	var r = expr.execute([a, b, vars], null, false)
-	if expr.has_execute_failed() or not (r is float or r is int):
-		return 0.0
-	var value: float = float(r)
-	if is_nan(value) or is_inf(value):
-		return 0.0
-	var sign := -1.0 if [3, 4].has(int(dmg.type)) else 1.0
-	return maxf(value, 0.0) * sign
+	var program: Dictionary = item.damage.get("formulaProgram", {})
+	if program.get("status") == "pure":
+		return XFormulaProgram.evaluate(program, XFormulaContext.capture(a, b, vars, {}, int(item.id), program), int(item.damage.type)).value
+	var out := XFormulaExecution.run_item(item, a, b, vars)
+	return float(out.value)
 
 
 static func is_physical(item: Dictionary) -> bool:
@@ -181,7 +160,7 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 	if dmg_type == 3 or dmg_type == 4:
 		return _healing(item, a, b, options, vars)
 
-	var raw := maxf(0.0, eval_formula(item, a, b, vars))
+	var raw := maxf(0.0, float(options.rawValue) if options.has("rawValue") else eval_formula(item, a, b, vars))
 	var basis := maxf(0.0, raw + float(skill_pass.get("flat", 0.0))) * maxf(0.0, 1.0 + float(skill_pass.get("rate", 0.0)))
 	var weights := [0.0, 1.0] if mode == "magical" else [1.0, 0.0]
 	if mode == "mixed":
@@ -230,7 +209,7 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 			best = row
 	var settled: float = best.value
 	if options.get("variance", true):
-		settled = apply_variance(settled, int(item.damage.variance))
+		settled = apply_variance(settled, int(item.damage.variance), options.get("random"))
 	var out_value := roundf(settled)
 	if settled > 0.0 and out_value == 0.0:
 		out_value = 1.0
@@ -265,7 +244,7 @@ static func apply_fixed_mitigation(amount: float, res: Dictionary) -> float:
 
 
 static func _healing(item: Dictionary, a: XBattler, b: XBattler, options: Dictionary, vars: Array) -> Dictionary:
-	var base := eval_formula(item, a, b, vars)
+	var base := float(options.rawValue) if options.has("rawValue") else eval_formula(item, a, b, vars)
 	var es := action_elements(item, a)
 	var mult := 1.0
 	if not es.is_empty():
@@ -279,13 +258,15 @@ static func _healing(item: Dictionary, a: XBattler, b: XBattler, options: Dictio
 		for bonus in a.passive_values("passiveHEUP"):
 			value *= 1.0 + float(bonus) * 0.01
 	if options.get("variance", true):
-		value = apply_variance(value, int(item.damage.variance))
+		value = apply_variance(value, int(item.damage.variance), options.get("random"))
 	return {"value": roundf(minf(0.0, value)), "settled": value, "critical": false, "breakdown": {"base": base, "elementMultiplier": mult}}
 
 
-static func apply_variance(value: float, variance: int) -> float:
+static func apply_variance(value: float, variance: int, random: XRandomStream = null) -> float:
+	if random == null:
+		return value # Preview midpoint; never consume a live/global stream.
 	var amp := floorf(maxf(absf(value) * variance / 100.0, 0.0))
-	var v := randi_range(0, int(amp)) + randi_range(0, int(amp)) - amp
+	var v := random.next_int_inclusive(0, int(amp), "variance_a") + random.next_int_inclusive(0, int(amp), "variance_b") - amp
 	return value + v if value >= 0.0 else value - v
 
 

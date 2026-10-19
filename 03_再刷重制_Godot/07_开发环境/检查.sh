@@ -6,6 +6,10 @@
 set -u
 ENV_DIR=${0:A:h}
 ROOT=${ENV_DIR:h:h}
+if [[ ${XIYOU_LONG_TASK_MANAGED:-0} != 1 ]]; then
+  task_log=${XIYOU_TASK_LOG:-$ROOT/03_再刷重制_Godot/04_验证/本地结果/任务/check-$(date +%Y%m%d_%H%M%S)-$$.log}
+  exec python3 "$ENV_DIR/长任务.py" run "$task_log" -- "${0:A}" "$@"
+fi
 PROJECT=$ROOT/03_再刷重制_Godot/01_Godot工程
 GODOT=${GODOT:-$ENV_DIR/godot}   # 云端等没有本机 Godot.app 时用环境变量指定（见 云端测试.md）
 FAIL=0
@@ -87,6 +91,7 @@ if python3 "$ENV_DIR/测试导出过滤.py"; then ok "导出包排除测试与�
 if python3 "$ENV_DIR/测试共性验收.py"; then ok "共性参照对照工具保护"; else bad "共性验收工具回归失败"; fi
 if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/共性参照验收.py"; then ok "共性参照完整性（尚非Godot实现验收）"; else bad "共性参照缺失或异常"; fi
 if python3 "$ENV_DIR/测试合并工具.py"; then ok "新增用例、进度账与合并保护"; else bad "合并工具回归失败"; fi
+if python3 "$ENV_DIR/测试公式程序.py"; then ok "结构化公式编译边界"; else bad "公式编译边界失败"; fi
 if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi
 if python3 "$ENV_DIR/测试云端准备.py"; then ok "云端导入失败保护"; else bad "云端导入保护回归失败"; fi
 if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi

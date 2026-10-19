@@ -624,6 +624,8 @@ for name in filter(None, files):
 
 if __name__ == '__main__':
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
+    extra = load('incremental_workflow_tests', HERE / '测试增量同步.py')
+    suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(extra))
     result = unittest.TextTestRunner().run(suite)
     passed = result.testsRun - len(result.failures) - len(result.errors)
     print('TEST_RESULT=' + json.dumps({'passed': passed, 'total': result.testsRun}))

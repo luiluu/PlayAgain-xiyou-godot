@@ -108,6 +108,7 @@ func _run() -> void:
 		var rec := XDB.rec("Skills", 160).duplicate(true)
 		rec.damage.type = int(row.type)
 		rec.damage.formula = row.formula
+		rec.damage.formulaProgram = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/formula_effect_programs.json"))["ai.edge_damage_" + str(int(row.type))].program
 		rec.damage.formulaGd = "a.atk * randf()" if int(row.type) == 1 else "a.mat * 2"
 		seed(20261014)
 		var first := randf()

@@ -1140,6 +1140,8 @@ func _hit_visual(l: Dictionary) -> bool:
 					ts.set_motion("damage")
 		if float(l.mp) != 0.0:
 			_popup(t, float(l.mp), false, "", true)
+		if float(l.get("tp", 0.0)) != 0.0:
+			_popup(t, float(l.tp), false, "", false, true)
 		if t is XEnemy:
 			_show_enemy_gauge(t)
 	if l.died:
@@ -1217,7 +1219,7 @@ func _attack_animation(u: XBattler) -> int:
 var _popups := {}          # XBattler -> Array[XDamagePopup]
 
 
-func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := false) -> void:
+func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := false, is_tp := false) -> void:
 	if not XConfig.flag("CombatDamageShow"):
 		return
 	var s: XBattlerSprite = sprites[b]
@@ -1225,7 +1227,7 @@ func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := fals
 	var p := XDamagePopup.new()
 	p.position = s.position + (Vector2.ZERO if b is XActor else Vector2(0, -s.height() / s.body_scale / 2.0 + 16))
 	p.z_index = 20
-	p.setup(value, is_mp, critical, text == "miss", b is XActor, live.size())
+	p.setup(value, is_mp, critical, text == "miss", b is XActor, live.size(), is_tp)
 	fx.add_child(p)
 	live.append(p)
 	_popups[b] = live
@@ -1240,11 +1242,9 @@ func _say(text: String, seconds: float) -> void:
 ## MOG_TrPopUpBattle：敌人倒下动画结束时抽定它的掉落（不论设置）；开着「掉落动画」就立即获得、弹出图标，
 ## 并锁住胜利时的物品发放（结算画面照样列出）。所以开着时，逃跑前打倒的敌人的掉落也会留下（同原版）。
 func _enemy_collapsed(e: XEnemy) -> void:
-	var drops := logic.drops_of(e)
+	var drops := logic.drop_snapshot(e)
 	if drops.is_empty() or not XConfig.flag("MOG_TrPopUpBattle_Key"):
 		return
-	logic.drop_lock = true
-	logic.gain_drops(drops)
 	var p := XDropPopup.new()
 	p.setup(sprites[e], sprites[e].height(), drops.map(func(d): return XDB.rec(["", "Items", "Weapons", "Armors"][int(d.kind)], int(d.id))))
 	field.add_child(p)

@@ -26,7 +26,10 @@ func _ready() -> void:
 		b.immortal = c.setup.immortal
 		var skill := XDB.rec("Skills", int(c.setup.skill))
 		check(c.id + ".source", str(skill.damage.formula).sha256_text() == c.observed.formulaSHA256)
-		var value := XDamage.eval_formula(skill, a, b, [])
+		var prior := [b.hp, b.mp, b.tp, b.state_ids.duplicate()]
+		XDamage.eval_formula(skill, a, b, [])
+		check(c.id + ".preview", prior == [b.hp, b.mp, b.tp, b.state_ids])
+		var value := float(XFormulaExecution.run_item(skill, a, b, [], {}, true, XBattleRandom.create("123456789abcdef0").rule).value)
 		check(c.id, value == float(c.observed.value) and [b.hp, b.mp, b.tp] == c.observed.resources
 			and b.is_state_affected(1) == bool(c.observed.deathState), [value, b.hp, b.mp, b.tp, b.state_ids])
 	var passed := results.filter(func(r): return r.passed).size()

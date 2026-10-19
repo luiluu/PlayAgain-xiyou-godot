@@ -36,9 +36,10 @@ func key(b: XBattler, logic: XBattleLogic) -> String:
 	return "a%d" % int((b as XActor).data().id) if b is XActor else "e%d" % logic.enemies.find(b)
 
 
-func setup(troop: int, paid := false) -> XBattleLogic:
+func setup(troop: int, paid := false, trial_seed := 1000) -> XBattleLogic:
 	XEnemy.force_roll = 100.0
 	var s := XState.new_game(3, 1, [8, 9, 10])
+	s.random_master = XRandomStream.hex64(trial_seed)
 	s.set_variable(842, 1 if paid else 0)
 	var logic := XBattleLogic.new()
 	logic.level_roll = 0.99  # 参照：敌群生成时 Math.random=0.99
@@ -95,8 +96,7 @@ func _preset_case(c: Dictionary) -> void:
 ## 生命上限（1399 的 334 回满）、各回合守层者的强制行动依次相同（之后的普通行动随机，不比）、第 1 回合后状态与攻击／魔攻。
 func _transform_case(c: Dictionary, round: int) -> void:
 	var name := "troop%d.paid%s.hp%s.r%d" % [int(c.troop), str(c.get("paid", false)), str(c.hpRate), round]
-	seed(2000 + round)
-	var logic := setup(int(c.troop), bool(c.get("paid", false)))
+	var logic := setup(int(c.troop), bool(c.get("paid", false)), 2000 + round)
 	# flags：参照开战前标为已执行的敌群页（三十一至三十三层 HP≤10% 例预置第 3 页，见 troop_event_probe）
 	for i in c.get("flags", []):
 		logic._event_flags[int(i)] = true
@@ -155,8 +155,7 @@ func _case(c: Dictionary, round: int) -> void:
 	var name := "troop%d.paid%s.r%d" % [int(c.troop), str(c.get("paid", false)), round]
 	if target != 0:
 		name = "troop%d.paid%s.target%d.r%d" % [int(c.troop), str(c.get("paid", false)), target, round]
-	seed(1000 + round)
-	var logic := setup(int(c.troop), bool(c.get("paid", false)))
+	var logic := setup(int(c.troop), bool(c.get("paid", false)), 1000 + round)
 	var e0: XBattler = logic.enemies[0]
 	var logs := []
 	var t1_states: Array = []
@@ -214,18 +213,22 @@ func _case(c: Dictionary, round: int) -> void:
 	# 第 1 回合：强制行动最先；守层者是回合首位时本回合的普通行动被清掉（参照即此情形），
 	# 不是首位时轮到它还会再行动一次（OTB 轮到时才 makeActions）。敌方行动者一致
 	check(name + ".t1_forced_first", (not first_cleared) if forced == 0 else (not got[1].is_empty() and got[1][0] == want[1][0]), [got[1], want[1]])
+	# Native action-plus traits apply to the first turn as well as the second.
+	var plus := 0
+	for tr in (e0 as XEnemy).data().get("traits", []):
+		if int(tr.code) == 61 and float(tr.value) > 0.0:
+			plus += 1
+	var t1_times: int = got[1].filter(func(x): return x[0] == "e0").size()
+	var normal := 0 if first_cleared else 1
 	# 守层者本回合的普通行动：全队已被打倒（敌群 462 的银角一回合内杀光）时轮不到，此时只要强制行动做完
-	var e0_times: int = got[1].filter(func(x): return x[0] == "e0").size()
-	check(name + ".t1_enemy_actions", e0_times == forced + (0 if first_cleared else 1) or (logic.is_lost() and e0_times == forced), [forced, first_cleared, got[1]])
+	check(name + ".t1_enemy_actions", (t1_times >= forced + normal and t1_times <= forced + normal + (0 if first_cleared else plus)) or (logic.is_lost() and t1_times == forced), [forced, first_cleared, got[1]])
 	check(name + ".t1_enemy_set", enemies_of.call(got[1]) == enemies_of.call(want[1]), [got[1], want[1]])
 	# 第 2 回合（战斗没结束时）：守层者照常行动一次（技能随机，不比）；有追加行动特性（61，几率）的敌人，每条特性最多再多一次（怨毒集合体 10%）
 	if not got[2].is_empty():
-		var plus := 0
-		for tr in (e0 as XEnemy).data().get("traits", []):
-			if int(tr.code) == 61 and float(tr.value) > 0.0:
-				plus += 1
 		var times: int = got[2].filter(func(x): return x[0] == "e0").size()
-		check(name + ".t2_enemy_once", times >= 1 and times <= 1 + plus, got[2])
+		# Another enemy can kill the party before e0 acts; e0 can also die first.
+		var must_act := e0.is_alive() and not logic.is_lost()
+		check(name + ".t2_enemy_once", times >= (1 if must_act else 0) and times <= 1 + plus, [got[2], e0.is_alive(), logic.is_lost()])
 	# 附加伤害：守层者用过 8111（加上 1460）之后，每次命中活着的目标都按 [攻击, 魔攻] 附加
 	# （十层守层者第 1 回合先强制 500，那时还没有 1460，不附加）
 	var extras := []
@@ -273,9 +276,12 @@ func _unit_checks() -> void:
 	# Establish：负能力值不附加
 	var t: XBattler = logic.actors[1]
 	e0.add_state(1460)
-	var r := {}
 	var hp0 := t.hp
-	logic._establish(e0, t, r)
+	# Exercise the public action owner with a genuine compiled zero formula.
+	var probe := XDB.rec("Skills", 2).duplicate(true)
+	probe.damage.type = 1
+	probe.effects = []
+	var r := logic.apply(e0, probe, t)
 	check("establish.hp", is_equal_approx(t.hp, maxf(0.0, hp0 - e0.atk - e0.mat)), [hp0, t.hp, e0.atk, e0.mat])
 	check("establish.extra", r.get("extra", []) == [float(e0.atk), float(e0.mat)], r)
 

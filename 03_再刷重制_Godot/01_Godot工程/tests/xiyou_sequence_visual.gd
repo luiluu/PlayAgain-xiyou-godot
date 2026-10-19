@@ -44,6 +44,7 @@ func _run() -> void:
 	seed(20261018)
 	XConfig.set_battle_speed(4)
 	var s := XState.new_game(3, 1, [8, 9, 10])
+	s.random_master = XRandomStream.hex64(20261018)
 	var scene := QuietBattle.new()
 	scene.setup(2, true, false, {})
 	add_child(scene)
@@ -92,6 +93,10 @@ func _trace(scene: XBattleScene, s: XState, key: String, t: Dictionary) -> void:
 	scene.camera.sprites = scene.sprites
 	var skill := XDB.rec("Skills", int(t.skill))
 	var logs := logic.execute(user, skill, logic.enemies[1], true)
+	if key == "s161":
+		# Native UI fixture fixes Math.random at 0.5, so the 3% state never fires.
+		# It adds three log methods when triggered; keep that fixture input explicit.
+		check("s161_fixed_no_status", logs.filter(func(l): return l.type == "hit").all(func(l): return l.added.is_empty() and l.removed.is_empty()))
 	var got := {"cmds": [], "frames": [], "sprites": {}}
 	for k in t.sprites:
 		got.sprites[k] = []
