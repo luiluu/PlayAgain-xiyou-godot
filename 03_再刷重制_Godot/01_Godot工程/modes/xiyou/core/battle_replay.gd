@@ -1,7 +1,7 @@
 class_name XBattleReplay
 extends RefCounted
 ## Debug artifact only; restores a boundary save and re-executes commands.
-const VERSION := 1
+const VERSION := 2
 
 static func identity() -> Dictionary:
 	var manifest: Dictionary = XDB.load_json("manifest.json")
@@ -10,7 +10,7 @@ static func identity() -> Dictionary:
 		"build": JSON.parse_string(FileAccess.get_file_as_string("res://content/build_info.json"))}
 
 static func valid(data: Dictionary) -> bool:
-	return JSON.parse_string(JSON.stringify(data.get("identity"))) == JSON.parse_string(JSON.stringify(identity())) and data.get("initial") is Dictionary and XSave.valid_data(data.initial) and data.get("commands") is Array and data.get("random") is Dictionary and XBattleRandom.restore(data.random) != null
+	return JSON.parse_string(JSON.stringify(data.get("identity"))) == JSON.parse_string(JSON.stringify(identity())) and data.get("initial") is Dictionary and XSave.valid_data(data.initial) and data.get("initialRuntime") is Dictionary and XState.valid_runtime_random(data.initialRuntime) and data.get("battleStart") is Dictionary and XBattleRandom.restore(data.battleStart) != null and data.get("commands") is Array and data.get("random") is Dictionary and XBattleRandom.restore(data.random) != null
 
 static func freeze(value, logic: XBattleLogic):
 	if value is XBattler:
@@ -29,6 +29,8 @@ static func freeze(value, logic: XBattleLogic):
 
 static func record(logic: XBattleLogic, initial: Dictionary, commands: Array, logs: Array) -> Dictionary:
 	return {"identity": identity(), "initial": initial.duplicate(true), "troop": logic.troop_id,
+		"initialRuntime": logic.replay_runtime_start.duplicate(true), "battleStart": logic.replay_battle_start.duplicate(true),
+		"finalRuntime": logic.state.runtime_random_snapshot(),
 		"rules": {"advanceLootOnCollapse": logic.advance_loot_on_collapse}, "commands": commands.duplicate(true),
 		"random": logic.random.snapshot(), "journal": {"rule": logic.random.rule.journal.duplicate(true), "reward": logic.random.reward.journal.duplicate(true)},
 		"logs": freeze(logs, logic), "final": freeze(logic.state.to_dict(), logic),
@@ -41,8 +43,9 @@ static func replay(data: Dictionary) -> Dictionary:
 	var prior_zhenqi := XZhenqi.battle.duplicate(true)
 	var prior_contexts := [XDungeon.battle, XZhenqi.pending_trial, XZhenqi.trial_done, XZhenqi.pending_scale]
 	var state := XState.from_dict(data.initial.duplicate(true))
+	state.restore_runtime_random(data.initialRuntime)
 	var logic := XBattleLogic.new()
-	logic.setup(int(data.troop), state)
+	logic.setup(int(data.troop), state, XBattleRandom.restore(data.battleStart))
 	logic.advance_loot_on_collapse = bool(data.rules.advanceLootOnCollapse)
 	logic.auto = true
 	var logs := []
@@ -75,7 +78,7 @@ static func replay(data: Dictionary) -> Dictionary:
 		commands.append(cmd)
 	if diagnostic.is_empty():
 		var actual := record(logic, data.initial, commands, logs)
-		for key in ["logs", "final", "enemies", "random", "journal"]:
+		for key in ["logs", "final", "finalRuntime", "enemies", "random", "journal"]:
 			if JSON.parse_string(JSON.stringify(actual[key])) != JSON.parse_string(JSON.stringify(data[key])):
 				diagnostic = "replay_result_mismatch:" + key
 				break

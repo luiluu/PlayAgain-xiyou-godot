@@ -1,6 +1,22 @@
 class_name XFormulaExecution
 extends XFormulaProgram
 ## The only privileged formula entry. Preview uses private battler copies and no real stream.
+## Bounded debug diagnostics contain values only, never live battler references.
+static var diagnostics: Array = []
+const DIAGNOSTIC_LIMIT := 128
+
+static func _unavailable(item: Dictionary, execute: bool, reason: String) -> Dictionary:
+	return _report(item, execute, {"available": false, "value": 0.0, "diagnostic": reason, "effectJournal": [], "results": {}})
+
+static func _report(item: Dictionary, execute: bool, out: Dictionary) -> Dictionary:
+	if execute and not out.available:
+		var row := {"kind": str(item.get("kind", "skill")), "id": int(item.get("id", 0)), "diagnostic": str(out.diagnostic)}
+		diagnostics.append(row)
+		if diagnostics.size() > DIAGNOSTIC_LIMIT:
+			diagnostics.pop_front()
+		push_warning("[xiyou] formula unavailable: " + JSON.stringify(row))
+	return out
+
 var _battlers := {}
 var _skill_id := 0
 var resources: XResourceContext
@@ -10,18 +26,18 @@ static func run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swit
 	var program: Dictionary = item.get("damage", {}).get("formulaProgram", {})
 	var status := str(program.get("status", "unsupported"))
 	if int(program.get("version", 0)) != 1 or not status in ["pure", "effectful"]:
-		return {"available": false, "value": 0.0, "diagnostic": "unsupported_program", "effectJournal": [], "results": {}}
+		return _unavailable(item, execute, "unsupported_program")
 	var mode: String = str(XDamage.elements_data().skills.get(str(int(item.id)), {}).get("mode", ""))
 	if status == "effectful" and mode == "mixed":
-		return {"available": false, "value": 0.0, "diagnostic": "effectful_mixed_pending", "effectJournal": [], "results": {}}
+		return _unavailable(item, execute, "effectful_mixed_pending")
 	for battler in [a, b]:
 		var reason := XResourceContext.supported(battler) if status == "effectful" else ""
 		if not reason.is_empty():
-			return {"available": false, "value": 0.0, "diagnostic": reason, "effectJournal": [], "results": {}}
+			return _unavailable(item, execute, reason)
 	var first: XBattler = a if execute else XFormulaContext.clone_battler(a)
 	var second: XBattler = first if a == b else (b if execute else XFormulaContext.clone_battler(b))
 	if first == null or second == null:
-		return {"available": false, "value": 0.0, "diagnostic": "unregistered_snapshot_type", "effectJournal": [], "results": {}}
+		return _unavailable(item, execute, "unregistered_snapshot_type")
 	var vm := XFormulaExecution.new()
 	vm._battlers = {"a": first, "b": second}
 	vm._skill_id = int(item.id)
@@ -41,7 +57,7 @@ static func run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swit
 	out.results = {"a": vm.resources.result(first).duplicate(true), "b": vm.resources.result(second).duplicate(true)}
 	out.after = {"a": vm.resources.snapshot(first), "b": vm.resources.snapshot(second)}
 	out.executed = execute
-	return out
+	return _report(item, execute, out)
 
 func _row(receiver: String) -> Dictionary:
 	var battler: XBattler = _battlers[receiver]

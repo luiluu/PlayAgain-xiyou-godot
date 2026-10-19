@@ -173,7 +173,7 @@ static func in_range(origin: Vector2i, p: Vector2i, r: int) -> bool:
 static func next_dirs(s: XState, at: Vector2i, back_to = null) -> Array:
 	var o := s.hang_up_origin
 	if in_range(o, at, int(settings(s).range)):
-		return [2 + randi_range(0, 3) * 2]
+		return [2 + s.world_random().next_int_inclusive(0, 3, "hang_up_direction") * 2]
 	return toward(at, o if back_to == null else back_to)
 
 

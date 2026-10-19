@@ -56,6 +56,14 @@ var _show_fast := false
 var _line_fast := false
 var _pause_skip := false
 var _sound_count := 0
+var _letter_rng := RandomNumberGenerator.new()
+
+func _init() -> void:
+	_letter_rng.randomize()
+
+func _letter_pitch() -> int:
+	return int(LETTER_SE.pitch) + _letter_rng.randi_range(-LETTER_SE.pitch_var, LETTER_SE.pitch_var)
+
 var _msg_y := SCREEN.y - MSG_HEIGHT
 var _settings := []
 
@@ -376,7 +384,7 @@ func _update_message() -> void:
 	_sound_count -= 1
 	if _sound_count < 0:
 		_sound_count = int(LETTER_SE.interval)
-		XSound.play(LETTER_SE.name, LETTER_SE.volume, LETTER_SE.pitch + randi_range(-LETTER_SE.pitch_var, LETTER_SE.pitch_var))
+		XSound.play(LETTER_SE.name, LETTER_SE.volume, _letter_pitch())
 	if _state.at_end():
 		_on_end_of_text()
 

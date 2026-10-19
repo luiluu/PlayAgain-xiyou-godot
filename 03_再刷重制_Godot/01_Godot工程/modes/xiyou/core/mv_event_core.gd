@@ -24,16 +24,23 @@ static var aborted := false
 ## 对照工具用：≥0 时随机数固定为该值（同参照引擎把 Math.random 固定），默认 −1 不固定
 static var fixed_random := -1.0
 
+## No-state tooling fallback stays independent of presentation/global RNG.
+static var _fallback_random := XRandomStream.create(XRandomStream.fresh_seed(), "world")
+
+static func _world(owner: XState) -> XRandomStream:
+	var s := owner if owner != null else XState.current
+	return s.world_random() if s != null else _fallback_random
+
 ## MV Math.random()
-static func random_float() -> float:
-	return fixed_random if fixed_random >= 0.0 else randf()
+static func random_float(owner: XState = null) -> float:
+	return fixed_random if fixed_random >= 0.0 else _world(owner).next_float("event_random")
 
 
 ## MV Math.randomInt(hi − lo + 1) + lo
-static func random_int(lo: int, hi: int) -> int:
+static func random_int(lo: int, hi: int, owner: XState = null) -> int:
 	if fixed_random >= 0.0:
 		return lo + floori((hi - lo + 1) * fixed_random)
-	return randi_range(lo, hi)
+	return _world(owner).next_int_inclusive(lo, hi, "event_random_int")
 
 
 var list: Array = []
@@ -70,7 +77,7 @@ func rule_random() -> XRandomStream:
 
 func _variable_random(lo: int, hi: int) -> int:
 	var stream := rule_random()
-	return stream.next_int_inclusive(lo, hi, "event_variable", _random_event_key()) if stream != null else random_int(lo, hi)
+	return stream.next_int_inclusive(lo, hi, "event_variable", _random_event_key()) if stream != null else random_int(lo, hi, state())
 
 
 func _random_event_key() -> String:

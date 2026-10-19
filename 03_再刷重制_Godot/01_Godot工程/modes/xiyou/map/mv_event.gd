@@ -10,6 +10,13 @@ var page_index := -1
 var page: Dictionary = {}
 var erased := false
 var _move_wait := 0
+var _wander_rng := RandomNumberGenerator.new()
+
+func _init() -> void:
+	_wander_rng.randomize()
+
+func _wander_roll(lo: int, hi: int) -> int:
+	return _wander_rng.randi_range(lo, hi)
 
 
 func setup_event(map: int, ev: Dictionary) -> void:
@@ -92,5 +99,5 @@ func update_character() -> void:
 	if int(page.get("moveType", 0)) == 1:
 		_move_wait -= 1
 		if _move_wait <= 0:
-			_move_wait = (5 - move_frequency) * 30 + randi_range(0, 60)
-			move_straight([2, 4, 6, 8][randi_range(0, 3)])
+			_move_wait = (5 - move_frequency) * 30 + _wander_roll(0, 60)
+			move_straight([2, 4, 6, 8][_wander_roll(0, 3)])

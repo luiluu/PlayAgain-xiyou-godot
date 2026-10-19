@@ -480,7 +480,8 @@ func _set_busy(b: bool) -> void:
 # ---- 遇敌（MV Game_Player.makeEncounterCount / makeEncounterTroopId）----
 func _make_encounter_count() -> void:
 	var n := int(map_data.get("encounterStep", 30))
-	encounter_count = randi_range(0, n - 1) + randi_range(0, n - 1) + 1
+	var stream := XState.current.world_random()
+	encounter_count = stream.next_int_inclusive(0, n - 1, "encounter_steps") + stream.next_int_inclusive(0, n - 1, "encounter_steps") + 1
 
 func _encounter() -> void:
 	_make_encounter_count()
@@ -491,7 +492,7 @@ func _encounter() -> void:
 		total += int(en.weight)
 	if total <= 0:
 		return
-	var troop := encounter_troop(list, randi_range(0, total - 1))
+	var troop := encounter_troop(list, XState.current.world_random().next_int_inclusive(0, total - 1, "encounter_troop"))
 	# 设置「禁用遇敌」：仍重置步数并抽敌群，只是不进战斗（executeEncounter 返回 false）
 	if troop <= 0 or XConfig.flag("ydgb"):
 		return

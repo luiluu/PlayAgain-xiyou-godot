@@ -27,6 +27,9 @@ var advance_loot_on_collapse := false
 var auto := false
 var state: XState
 var random: XBattleRandom
+## Debug replay boundaries, captured before enemy setup consumes any random value.
+var replay_runtime_start := {}
+var replay_battle_start := {}
 var _ids := {}
 var _action_resources: XResourceContext
 var _formula_outcome := {}
@@ -81,6 +84,8 @@ var _names_count := {}
 
 func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	random = random_context if random_context != null else s.reserve_battle_random()
+	replay_runtime_start = s.runtime_random_snapshot()
+	replay_battle_start = random.snapshot()
 	_ids.clear()
 	turn = 0
 	escaped = false

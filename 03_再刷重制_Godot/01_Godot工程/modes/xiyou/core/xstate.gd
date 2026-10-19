@@ -34,7 +34,8 @@ var play_seconds := 0.0
 var encounter_count := 0
 ## Star_RomGetItems 的装备预掷随机池（见 XGear），随存档保存
 var rom := {"x": [], "xn": 0, "xs": [], "xsn": 0, "g": [], "gn": 0}
-## Initialized only when actual play first needs a stream. Loading/previews keep legacy pools intact.
+## Runtime only: ordinary saves keep original rom/orb/gear data, never these streams.
+## Loading/previews do not initialize or advance them.
 var random_master := ""
 var battle_serial := 0
 var _equipment_random: XRandomStream
@@ -42,7 +43,7 @@ var _world_random: XRandomStream
 
 func _ensure_random_master() -> void:
 	if random_master.is_empty():
-		random_master = XRandomStream.derive(XRandomStream.hex64(orb_seed), "world")
+		random_master = XRandomStream.fresh_seed()
 
 func reserve_battle_random() -> XBattleRandom:
 	_ensure_random_master()
@@ -62,11 +63,11 @@ func world_random() -> XRandomStream:
 		_world_random = XRandomStream.create(XRandomStream.derive(random_master, "world-events"), "world")
 	return _world_random
 
-func random_save() -> Dictionary:
+func runtime_random_snapshot() -> Dictionary:
 	return {"version": 1, "engine": XRandomStream.ENGINE, "master": random_master,
 		"battleSerial": battle_serial, "world": _world_random.snapshot() if _world_random != null else {}, "equipment": _equipment_random.snapshot() if _equipment_random != null else {}}
 
-static func valid_random_save(data) -> bool:
+static func valid_runtime_random(data) -> bool:
 	if not data is Dictionary or data.get("version") != 1 or data.get("engine") != XRandomStream.ENGINE:
 		return false
 	var serial = data.get("battleSerial")
@@ -79,6 +80,16 @@ static func valid_random_save(data) -> bool:
 		return false
 	var equipment = data.get("equipment")
 	return equipment is Dictionary and (equipment.is_empty() or (data.master != "" and XRandomStream.valid_saved(equipment) and equipment.domain == "equipment" and not equipment.get("scripted", false)))
+## Debug replay only. Validate the entire boundary before changing any runtime stream.
+func restore_runtime_random(data: Dictionary) -> bool:
+	if not valid_runtime_random(data):
+		return false
+	random_master = data.master
+	battle_serial = int(data.battleSerial)
+	_equipment_random = XRandomStream.restore(data.equipment) if not data.equipment.is_empty() else null
+	_world_random = XRandomStream.restore(data.get("world", {})) if not data.get("world", {}).is_empty() else null
+	return true
+
 ## Galv_NewItemIndication 的 $gameSystem._seenItems：看过的物品（物品 ID／装备实例 ID）不再画 NEW
 var seen := {}
 ## 事件脚本里给 $gameParty / $gamePlayer 挂的零散标记（DCultyL1～8 等），按原名保存
@@ -433,19 +444,12 @@ func to_dict() -> Dictionary:
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac,
-		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "random": random_save()}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen}
 
 static func from_dict(d: Dictionary) -> XState:
-	if d.has("random") and not valid_random_save(d.random):
-		return null
+	# dev.099 once persisted strict engine-specific RNG state. Ignore that obsolete
+	# field even across engine upgrades; fresh runtime streams start lazily.
 	var s := XState.new()
-	if d.has("random"):
-		s.random_master = d.random.master
-		s.battle_serial = int(d.random.battleSerial)
-		if not d.random.equipment.is_empty():
-			s._equipment_random = XRandomStream.restore(d.random.equipment)
-		if not d.random.get("world", {}).is_empty():
-			s._world_random = XRandomStream.restore(d.random.world)
 	s.difficulty = int(d.difficulty)
 	for id_s in d.actors:
 		var row: Dictionary = d.actors[id_s]
