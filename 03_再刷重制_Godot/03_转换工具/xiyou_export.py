@@ -558,6 +558,8 @@ class Exporter:
                 enemies.add(mem['enemyId'])
             for pg in t['pages']:
                 self.walk_commands(pg['list'], set())
+                # 336 敌人变身的新形态（三十层玉皇大帝 534→538）：战斗图、技能与动画同敌群成员一起带上
+                enemies |= {c['parameters'][1] for c in pg['list'] if c['code'] == 336}
         skills = set(cfg.get('extraSkills', [1, 2]))
         for aid in actors:
             cls = db['Classes'][db['Actors'][aid]['classId']]
