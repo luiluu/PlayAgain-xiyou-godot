@@ -1,7 +1,7 @@
 # 交付：claude/quirky-pasteur-5de601
 
 - 车道／工作者：A 内容／解释器／悟空（Claude，重制_悟空_16）。派单写的工作树是 `wukong-interp-core`，本会话被限制在 app 自建的 `quirky-pasteur-5de601`，分支相应改名，内容同一任务。
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -15,7 +15,9 @@
 - 334 完全回复（索引 −1 含隐藏成员，TP／buff 保留，隐藏不变）；照冻结源参数缓存，回满用清状态之前的上限（状态 77 时 HP 停在 80000000000）。335 只去隐藏标记并 makeUniqueNames，资源状态不变，死亡者出现仍死亡；行动顺序不当场改，824 出现者首次行动在 T3（与参照一致，未改 OTB）。336 原地换 `enemy_id`，HP/MP 绝对值保留截到新上限，TP／状态／buff 保留，不重抽神话／等级；原名变了清字母。敌人变化都写 `enemy_change` 记录（slot、前后读数、views）。
 - 战斗画面：`_play_troop_events` 按记录播放，遇消息用 `XMessageBox.run` 显示，确认后 `resume_event` 再播后面的记录（自动／挂机按消息窗已有设置翻页）；隐藏成员不画本体与血条，出现时显示，变身时重建该成员的战斗图。
 - 测试：新 `tests/xiyou_battle_events` 96 项全过，逐项消费 `oracle/battle_events.json` 8 例：165 的 T1～T4 变量 112、每回合敌人读数、T4 一次 101（文字、头像、背景、位置）、消息未关时身份仍 174／页 flag 已置／再检查不重入、确认后 334→336、T4 起出新形态的招、T5 不重复、最终读数；334 两例（死亡复活、隐藏成员与状态 77 缓存）；336 两例（读数）及变身后选招属新形态；824 变量 1178＝5／6 的成员数、333 只加在可见成员、字母、敌方首次行动回合（e1～e5 为 T3）、受伤／死亡的隐藏成员出现后读数不变；另有旧 token、重复确认、结束清游标、隐藏不算胜负与经验。
-- 验证：检查.sh --oracle 结果待填；专项 xiyou_troop_events 4320、xiyou_event_compare 5、xiyou_dungeon 5662、xiyou_flow 48、xiyou_script 17、xiyou_battle 8、xiyou_combat 34、xiyou_zhenqi 系列全过。事件对照 baseline 未变（不退步）。
+- 工具：`内容覆盖检查.py`、`事件指令统计.py` 改读 `mv_event_core.gd`＋`mv_interpreter.gd` 两份（按 match 分支认指令，语义移进核心后只读地图文件会把 101 等报成未翻译）；`测试内容覆盖.py` 随之改 mock。随机数与步数静态量（`random_*`、`max_steps`、`fixed_random`）移进核心，仍可用 `MVInterpreter.xxx` 访问。
+- Godot 4.7 坑：协程跨 await 留着指向游标自己的类型化局部变量时，宿主场景先释放会让游标留在内存里，退出报「resources still in use」（xiyou_options_basic、xiyou_hangup_options 撞到）；请求字典因此不带游标，改用 `waiting_frame()` 取应答层，`MVInterpreter._step` 跨 await 不留局部引用。
+- 验证：`检查.sh --oracle` 全部通过（Godot 测试 73 个场景，含新 xiyou_battle_events；内容覆盖无新问题）；专项 xiyou_troop_events 4320、xiyou_event_compare 5、xiyou_dungeon 5662、xiyou_flow 48、xiyou_script 17、xiyou_battle 8、xiyou_combat 34、xiyou_zhenqi 系列全过。事件对照 baseline 未变（不退步）。
 - 提交：见下「本分支提交」
 - 未完成／已知问题：
   - 十六层副本未解锁：要扩切片（Map033 副本入口 1、Map044 亚特兰蒂斯秘境、敌群 165／796 等），留下一批。
@@ -49,3 +51,5 @@
 - 8eb4d0e WIP: 战斗事件运行器 XBattleEventRunner（共用核心），101 挂起与续上、334/335/336、隐藏成员 slot；删 _run_troop_list
 - 3aeac8f WIP: tests/xiyou_battle_events 逐项对照 battle_event_probe 8 例（96 项通过）
 - ce673e1 合并 main
+- 3827ad9 WIP: 交付单（进行中）
+- fb0196d WIP: 静态量移入核心；请求不带游标引用；内容覆盖与指令统计改读核心文件
