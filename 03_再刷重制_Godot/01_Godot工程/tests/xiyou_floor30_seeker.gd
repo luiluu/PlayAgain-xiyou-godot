@@ -157,7 +157,7 @@ func _run() -> void:
 	get_tree().change_scene_to_file(MAP_SCENE)
 	if _check("floor30_reloaded", await _wait_map(FLOOR_MAP)):
 		var door := _event(_scene(), 3)
-		_check("door_blank_after_final", door != null and door.command_list().is_empty(), door.command_list() if door != null else null)
+		_check("door_blank_after_final", door != null and door.command_list().all(func(c): return int(c.code) == 0), door.command_list() if door != null else null)
 	_finish()
 
 

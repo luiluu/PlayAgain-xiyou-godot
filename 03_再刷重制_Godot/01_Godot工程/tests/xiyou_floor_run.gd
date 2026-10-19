@@ -75,6 +75,9 @@ const UNOPENED_EVENTS := {155: [2], 182: [2], 145: [2, 4, 5], 213: [2], 144: [2]
 const HIDDEN_EVENTS := {146: [3, 4, 5, 6]}
 ## 守层者胜后插件指令 maxlevel equal 设的等级上限（三十一层 81、三十二层 90、三十三层 99；之前各层见门与辛德瑞，未逐层核对）
 const MAX_LEVEL_AFTER := {148: 81, 156: 90, 157: 99}
+## 到这些层（三十一至三十三层）挑战守层者前把队伍攻击／魔攻提到 BIG_ATK（见 _boost_party）
+const BIG_ATK_MAPS := [148, 156, 157]
+const BIG_ATK := 2.0e19
 ## 各段完整走的起始层（第 part 段从 SEGMENTS[part−1] 走到下一段起始层的前一层；最后一段走到楼层表末尾）
 const SEGMENTS := [1, 13, 21]
 @export var part := 1
@@ -236,7 +239,9 @@ static func floor_table() -> Array:
 				else:
 					plain = false
 			if plain:
-				out.append({"floor": floor_n, "map": int(p[1]), "x": int(p[2]), "y": int(p[3]), "answers": answers})
+				# 落点照 MVInterpreter.TRANSFER_FIX（O-062：三十三层 Map157 (24,12) 走不动，改到 (24,13)）
+				var to: Vector2i = MVInterpreter.TRANSFER_FIX.get("%d:%d:%d:%d:%d" % [HUB, HUB_DOOR, int(p[1]), int(p[2]), int(p[3])], Vector2i(int(p[2]), int(p[3])))
+				out.append({"floor": floor_n, "map": int(p[1]), "x": to.x, "y": to.y, "answers": answers})
 				floor_n = -1
 	out.sort_custom(func(a, b): return a.floor < b.floor)
 	for f in out:
@@ -403,7 +408,7 @@ func _walk_and_talk(map: XMapScene, ev_id: int, answers: Array, tag: String, ste
 
 # ---- 测试辅助：队伍增强 ----
 
-func _boost_party(s: XState) -> void:
+func _boost_party(s: XState, atk := 2.0e16) -> void:
 	for a in s.members():
 		var eq: Array = a.equip_list()
 		var item: Dictionary
@@ -432,8 +437,9 @@ func _boost_party(s: XState) -> void:
 		# 攻击、魔攻提到 3e15（普通攻击 ×4 一击过敌群 464 生命）。
 		# 三十层玉皇大帝（敌群 466）生命约 2.25e16，HP≤25% 时第 3 页变身 538（1399 回满到约 1.5e17）并给全队加 698 天道*终焉（命中 −100%），
 		# 之后普通攻击全落空、打不完；提到 2e16，一击从满血打倒，不经过变身（变身另由 xiyou_troop_events 对照参照）。
-		# 三十一至三十三层守层者生命约 3.75e17／2.5e18／1.5e19（HP≤30% 时第 3 页 1397 回满，≤10% 变身），提到 2e19，一击从满血打倒。
-		item.params = [5.0e8, 1.0e6, 2.0e19, 5.0e6, 2.0e19, 5.0e6, 1.0e5, 1.0e3]
+		# 三十一至三十三层守层者生命约 3.75e17／2.5e18／1.5e19（HP≤30% 时第 3 页 1397 回满，≤10% 变身）：到这几层时再提到 atk（BIG_ATK）。
+		# 不从开局就提：2e19 时二十九层太白金星（敌群 465，吸收属性 1）两百多回合打不动。
+		item.params = [5.0e8, 1.0e6, atk, 5.0e6, atk, 5.0e6, 1.0e5, 1.0e3]
 		a.refresh_passive()
 		a.hp = a.mhp
 		a.mp = a.mmp
@@ -584,6 +590,8 @@ func _floor(f: Dictionary, full: bool) -> bool:
 		_check(tag + "_gate_switch_off", not s.switch(GATE_SWITCH))
 	map = _scene()
 	# 2. 守层者「挑战」
+	if BIG_ATK_MAPS.has(f.map):
+		_boost_party(s, BIG_ATK)
 	var boss := boss_of(f.map)
 	if not _check(tag + "_boss_found", not boss.is_empty() and boss.choice >= 0, boss):
 		return false
