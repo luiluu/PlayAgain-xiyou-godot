@@ -4,6 +4,8 @@ extends Node
 ## 69（十层守层者：第 1 回合强制 500、给自己加状态 44、再强制 8111）、111／118／138／172／173／174／333（十三至十九层守层者：条件分支里调公共事件 1398，再强制 6069／6105／8111）。
 ## 十三至十九层另测已交见面礼（变量 842＝1）：跳过开场领域与强制行动。
 ## 三十层敌群 466 另测 HP≤25%（参照 hpRate）：开战即执行第 3 页——101 对话停住、确认后 336 变身 538、公共事件 1399、强制 6070／6105（见 _transform_case）。
+## 三十一至三十三层 467／468／469 测 HP≤30%（第 3 页对话＋1397 回满）与 HP≤10%（预置第 3 页已执行，第 4 页对话＋变身 929／929／930＋1399）；
+## Map055 引路人 794 测 HP≤20%（第 4 页对话＋变身 922＋1397）。
 ## 比较：第 1 回合强制行动排在最前且清掉守层者本回合的普通行动、敌方行动者、状态 1460 与第 1 回合加上的其余状态、
 ## 守层者攻击/魔攻、第 2 回合守层者每次命中的附加伤害（行动者正的攻击/魔攻各一次）。伤害浮动由 Godot 随机，不比 HP。
 var results := []
@@ -91,6 +93,9 @@ func _transform_case(c: Dictionary, round: int) -> void:
 	var name := "troop%d.paid%s.hp%s.r%d" % [int(c.troop), str(c.get("paid", false)), str(c.hpRate), round]
 	seed(2000 + round)
 	var logic := setup(int(c.troop), bool(c.get("paid", false)))
+	# flags：参照开战前标为已执行的敌群页（三十一至三十三层 HP≤10% 例预置第 3 页，见 troop_event_probe）
+	for i in c.get("flags", []):
+		logic._event_flags[int(i)] = true
 	var e0: XBattler = logic.enemies[0]
 	e0.hp = floorf(e0.mhp * float(c.hpRate))
 	check(name + ".hp_preset", is_equal_approx(e0.hp, float(c.hpPreset)), [e0.hp, c.hpPreset])
