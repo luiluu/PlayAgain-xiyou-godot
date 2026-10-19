@@ -170,7 +170,10 @@ func _read(n: Dictionary):
 	var key := str(int(index)) if not is_nan(index) and not is_inf(index) and floorf(index) == index else ""
 	var p: Dictionary = row.get("properties", {})
 	match str(n.name):
-		"equipment_level": return XEquipmentView.first_armor_level(row.get("equipment", []), int(index)) if not is_nan(index) and not is_inf(index) else 0.0
+		"equipment_level":
+			if row.get("actorId") == null:
+				return _fail("equipment_query_requires_actor")
+			return XEquipmentView.first_armor_level(row.get("equipment", []), int(index)) if not is_nan(index) and not is_inf(index) else 0.0
 		"element": return row.get("elements", {}).get(key, 1.0)
 		"mastery": return row.get("mastery", {}).get(key, 0.0)
 		"has_state": return row.get("stateIds", []).has(int(key)) if not key.is_empty() else false

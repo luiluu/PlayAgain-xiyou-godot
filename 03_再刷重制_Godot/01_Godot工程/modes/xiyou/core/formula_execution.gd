@@ -56,7 +56,10 @@ func _read(node: Dictionary):
 	var index := _number(args[0]) if args.size() == 1 else NAN
 	var valid := not is_nan(index) and not is_inf(index) and index == floorf(index)
 	match str(node.name):
-		"equipment_level": return XEquipmentView.first_armor_level(b.equip_list(), int(index)) if valid and b is XActor else 0.0
+		"equipment_level":
+			if not b is XActor:
+				return _fail("equipment_query_requires_actor")
+			return XEquipmentView.first_armor_level(b.equip_list(), int(index)) if valid else 0.0
 		"element": return b.element_rate(int(index)) if valid else 1.0
 		"mastery": return b.skillMasteryLevel(int(index)) if valid else 0
 		"has_state": return b.is_state_affected(int(index)) if valid else false
