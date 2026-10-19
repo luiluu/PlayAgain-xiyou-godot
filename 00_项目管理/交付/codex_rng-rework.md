@@ -44,4 +44,18 @@
 
 - 长操作：已执行`git merge main`，当前最新main0ea5c5c已包含八戒_27规则修复；即将启动完整`检查.sh --oracle`，日志`04_验证/本地结果/20261019_RNG返工/完整检查.log`。导入结束后再启动同目录`后段连续两轮.log`，在完整检查并行负载下顺序跑floor_run_c两轮。期间不改本分支被测源码；保留Claude核查。主工作区唐僧后续开发编号收尾尚未提交，交付前仍须再对账最新main。
 
+## 沙僧8实现检查点与沙僧9接力（2026-10-20）
+
+- 当前本分支游戏代码已实施，提交95a51c3；开工f43f59d，长任务登记b3017ce。未提交源码：无。沙僧8在此停止编辑，由下一会话独占接续。
+- 核心专项5场景4794断言全部通过：determinism372、equipment1228、formula_effects908、formula_equipment1804、random_streams482。两个早期测试夹具错误（Map000 summary、把VM steps误写为body）已修；初测里的equipment续跑／隐藏setup同流旧断言也已改为普通档重建与显式debug续跑。最终核心日志是`核心专项.log`，不是两份初测日志。
+- 实现文件：XState普通to_dict不含random、from_dict忽略旧random且lazy fresh master不由orb派生；runtime_random_snapshot／restore_runtime_random只用于显式调试。XSave不以旧random引擎拒档。XBattleLogic只加setup前的两个debug快照字段，不碰状态21、recover_all或八戒规则路径。XBattleReplay schema2保存预约后setup前的runtime和本场起点，比较finalRuntime。XFormulaExecution所有不可用返回统一push_warning和128条有界诊断，预览安静。MVEventCore静态随机接current.world、XZhenqi._random_int明确接s、挂机和遇敌接world；MVEvent和MessageBox各自原生RNG不碰全局。floor_run每次读档先断runtime为空，再显式恢复测试夹具runtime，固定测试场景不改变游戏存档行为。
+- 本分支完整检查已在运行，PTY1779只是辅助：`04_验证/本地结果/20261019_RNG返工/完整检查.log`，runId `7447c881912045a78516aa775e300869`。记录基线main0ea5c5c，git merge main当时Already up to date。先用等待任务.sh等终态，**不再开一份完整检查，不在导入／测试中改本分支源码**。
+- 后段连续两轮也已在运行，PTY37518只是辅助：同目录`后段连续两轮.log`，由同目录Python夹具先等本分支完整检查导入结束、进入并行测试后，顺序运行两次floor_run_c；每轮启动前断完整检查仍running。最后应有`TWO_CONSECUTIVE_ROUNDS_PASSED`，并由长任务包装器给退出0。接力时仍ROUND1，尚不能称通过。脚本和所有证据均被Git忽略，不是待提交文件；下一会话只读等待，不重复启动。
+- 旧两条完整检查依然运行，位置／runId见上段；两者只认证main368cf18，不认证最新main0ea5c5c。已有进程在多个全量检查／main六并行／A专项共同负载下运行，部分rules/smart_ai可能达到600秒硬超时；须保留真实失败结果，不能写成已过。等结束后各分支merge已提交main再按最新代码验收，合理排队避免多份完整检查同时把机器打满。
+- 主工作区唐僧仍在收dev.101，main最后所见0ea5c5c；所有main未提交变更都是他，不代交。交付前再看main是否已有收尾提交；若有新切片／转换器／探针才补齐生成，普通登记更新不要误重跑同步。A悟空_23仍占转换器／切片；converter只写变化产物任务继续等待A释放，未实施。
+- 下一工作顺序：先等待本RNG两份验收，失败则定位后修稳，再按最新main交付；同时等旧cache／framework检查结束。RNG完整检查运行时可在已结束检查的独立缓存分支推进工具修复，不能改被测RNG源码。framework合0ea5c5c后把466→538／KNOWN_TRANSFORM_GAPS与Permanent“待修”语句改成八戒_27已修的真实边界（状态／队列等八例缺口仍保留），完整检查也要最新main。
+- 缓存修复已读完实际_main与测试，尚未写代码。推荐小方案：在generated目录外（不能随clone删除）、最近三份备份以外保存“本次尚未接受前”的oracle＋manifest，原子初始化；拒绝、导入失败、来源失败／缓存发布失败均保留，后续普通／命中／--full／--from-worktree都对它比较测量及source_preserved；只有最终成功接受／撤回到旧测量且整轮成功后才清除，该时点下一轮才从当前已接受产物重新初始化。当前脚本取backup/oracle和old_manifest会把拒收结果当新基线，单改cache.commit不能治。注意clone预检失败应不写任何产物，baseline应在预检之后、备份淘汰／转换之前创建；路径不能放gen内部或自动同步日期备份里。
+- 缓存回归落在`07_开发环境/测试增量同步.py`（CacheTests已有真实Node夹具）或`测试合并工具.py`（SyncRegistrationTests／SyncStampTests已有_main夹具）。至少验连续拒绝多于3轮且缓存确实命中、--full仍拒绝、只新增连续拒绝后显式accept、变化撤回成功、来源manifest更改仍连续拒绝、车道clone连续拒绝；source／import／cache失败不得提前换基线。现有证据脚本断言旧漏洞[2,0,0]仅用于记录，不能当新回归期望。工具文档`长任务与增量同步.md`也应写清缓存与接受基线的区别。此前30项工具回归原结果仍保留。
+- 接力仍沿用精确交付标题、最后普通状态行。所有提交尾注Codex（沙僧）／待Claude；只能自测，不自销Claude核查，不改主交接板／编号／来源登记。老分支12aa60f交付保留不覆盖。
+
 - 状态：进行中
