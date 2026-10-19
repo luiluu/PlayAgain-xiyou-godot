@@ -477,9 +477,13 @@ func _play_results(list: Array) -> void:
 				lines += 1
 				wait_count = MESSAGE_SPEED
 				scene._banner(str(XDB.system().terms.messages.counterAttack).replace("%1", l.user.display_name()))
-				var a := scene._start_animation(scene._attack_animation(l.user), l.target)
-				if a:
-					anims.append(a)
+				# showAttackAnimation(反击者, [行动者])：双持角色两把武器都放（武器 2 镜像）
+				for pair in scene._attack_animations(l.user):
+					var a := scene._start_animation(pair[0], l.target)
+					if a:
+						if pair[1]:
+							a.scale.x = -1.0
+						anims.append(a)
 				wait_mode = "animation"
 			"reflect":
 				# displayReflection：同 displayCounter（addText＋wait，放技能动画、waitForAnimation）
@@ -499,6 +503,8 @@ func _play_results(list: Array) -> void:
 # ---- 动画 ----
 ## Window_BattleLog.showNormalAnimation：画面中央的动画每个目标都放（不延迟），其余按目标依次延迟
 func _normal_animation(targets: Array, id: int, mirror := false) -> void:
+	if id <= 0:
+		return
 	var data := XDB.rec("Animations", id)
 	var delay := ANIM_BASE_DELAY
 	var seen := []
@@ -517,8 +523,10 @@ func _normal_animation(targets: Array, id: int, mirror := false) -> void:
 		anims.append(a)
 
 
+## showAttackAnimation／showActorAtkAniMirror：双持角色两把武器各调一次 showNormalAnimation（各自从基础延迟起算）
 func _attack_animation(targets: Array, mirror := false) -> void:
-	_normal_animation(targets, scene._attack_animation(user), mirror)
+	for pair in scene._attack_animations(user, mirror):
+		_normal_animation(targets, pair[0], pair[1])
 
 
 func _action_animation(targets: Array) -> void:

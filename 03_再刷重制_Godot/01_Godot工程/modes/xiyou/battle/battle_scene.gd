@@ -1095,11 +1095,18 @@ func _show_hit(l: Dictionary) -> void:
 	var t: XBattler = l.target
 	var ts: XBattlerSprite = sprites[t]
 	var anim_id := int(l.skill.animationId)
-	if anim_id < 0:
-		anim_id = _attack_animation(l.user)
-	var animation := _start_animation(anim_id, t)
-	if animation:
-		await animation.done
+	# 普通攻击动画（-1）照 showAttackAnimation：双持角色两把武器的动画同时放
+	var pairs := _attack_animations(l.user) if anim_id < 0 else [[anim_id, false]]
+	var started := []
+	for p in pairs:
+		var a := _start_animation(p[0], t)
+		if a:
+			if p[1]:
+				a.scale.x = -1.0
+			started.append(a)
+	for a in started:
+		if is_instance_valid(a) and not a.is_queued_for_deletion():
+			await a.done
 	if _hit_visual(l):
 		await ts.collapse()
 		if t is XEnemy:
@@ -1179,13 +1186,30 @@ func _start_animation(id: int, target: XBattler) -> MVAnimation:
 	return a
 
 
-func _attack_animation(u: XBattler) -> int:
+## Game_Actor.attackAnimationId1／2：weapons()[0] 的动画（空手 bareHandsAnimationId 1）与 weapons()[1] 的动画（没有为 0，不放）。
+## YEP_WeaponAnimation 的 <Weapon Animation: x> 冻结数据里没有用到，不处理。敌人两个都是同一个攻击动画。
+func _attack_animation_ids(u: XBattler) -> Array:
 	if u is XActor:
-		for e in (u as XActor).equip_list():
-			if e.kind == "weapon":
-				return int(e.animationId)
-		return 1
-	return int(XDB.plugin("YEP_BattleEngineCore").get("Enemy Attack Animation", "1"))
+		var weapons := (u as XActor).equip_list().filter(func(e): return e.kind == "weapon")
+		if weapons.is_empty():
+			return [1, 0]
+		return [int(weapons[0].animationId), int(weapons[1].animationId) if weapons.size() > 1 else 0]
+	var id := int(XDB.plugin("YEP_BattleEngineCore").get("Enemy Attack Animation", "1"))
+	return [id, id]
+
+
+## 普通攻击动画的 [[动画, 镜像]…]。角色：MV showActorAttackAnimation 武器 1 不镜像＋武器 2 镜像；
+## MIRROR 时 YEP showActorAtkAniMirror 武器 1 镜像＋武器 2 不镜像（YEP_BattleEngineCore.js:5617）。
+## 敌人只放 id1（侧视 showEnemyAttackAnimation 不镜像，MIRROR 时镜像）。
+func _attack_animations(u: XBattler, mirror := false) -> Array:
+	var ids := _attack_animation_ids(u)
+	if u is XActor:
+		return [[ids[0], mirror], [ids[1], not mirror]]
+	return [[ids[0], mirror]]
+
+
+func _attack_animation(u: XBattler) -> int:
+	return _attack_animation_ids(u)[0]
 
 
 ## 伤害数字（XDamagePopup，LGP_BetterDamagePopup）。位置：敌人 = 脚底 + (0, −图高/2 + 16)（MOG Center Y-Axis），
