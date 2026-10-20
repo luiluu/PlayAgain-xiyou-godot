@@ -177,6 +177,25 @@ class DraftTests(unittest.TestCase):
             body = '[甲](../规则/甲.md#节) [乙](规则/甲.md) [根](../../A.md) [外](https://e.x) [缺](../无.md)'
             self.assertEqual(merge.relink(body, root), '[甲](规则/甲.md#节) [乙](规则/甲.md) [根](../A.md) [外](https://e.x) [缺](../无.md)')
 
+    def test_relink_ambiguous_target_follows_delivery_folder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel in ['00_项目管理/交付/README.md', '00_项目管理/README.md', 'README.md',
+                        '00_项目管理/交付/附件/甲.md', '00_项目管理/附件/甲.md']:
+                (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                (root / rel).write_text(rel)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                out = merge.relink('[a](../README.md) [b](README.md) [c](附件/甲.md#x) [d](../../README.md)', root)
+            # ../README.md 按交付目录是 00_项目管理/README.md；README.md 是交付 README；附件/甲.md 是交付目录下那份
+            self.assertEqual(out, '[a](README.md) [b](交付/README.md) [c](交付/附件/甲.md#x) [d](../README.md)')
+            self.assertEqual(err.getvalue().count('提示'), 3)
+            # 两种口径指同一文件时不提示、结果不变
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                self.assertEqual(merge.relink('[e](../../00_项目管理/README.md)', root), '[e](README.md)')
+            self.assertEqual(err.getvalue(), '')
+
 
 class ParallelTestRunnerTests(unittest.TestCase):
     """并行测试.py：偶发重跑、首次与重跑分别保留、慢的先跑、共用并发上限、工程未变时沿用上轮结果。"""
@@ -605,6 +624,28 @@ for name in filter(None, files):
         self.assertEqual(self.call(), 1, self.last_output)
         self.assertTrue(p.read_text().endswith('keep this edit\n'))
         self.assertTrue(self.wt.exists())
+
+    def test_lane_acceptance_sheet_is_passed_to_main_sync(self):
+        spec = merge.ACCEPT / 'claude_task.json'
+        (self.wt / spec).parent.mkdir(parents=True)
+        (self.wt / spec).write_text('{"schema": 1, "accept": []}')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'acceptance', cwd=self.wt)
+        state = merge.plan(self.root, 'task')
+        self.assertEqual((state['acceptChanges'], state['refresh']), ([str(spec)], True))
+        state.update(phase='merged', head=self.g('rev-parse', 'HEAD'))
+        calls, real = [], subprocess.run
+
+        def fake(cmd, **kw):
+            if cmd[0] == 'git':
+                return real(cmd, **kw)
+            calls.append(cmd)
+            return subprocess.CompletedProcess(cmd, 0)
+        with mock.patch.object(merge.subprocess, 'run', side_effect=fake), \
+             mock.patch.object(merge, 'save'), mock.patch.object(merge, 'replace_versions', side_effect=RuntimeError('stop')):
+            with self.assertRaisesRegex(RuntimeError, 'stop'):
+                merge.prepare(self.root, state, self.root / 'state.json', 'Claude')
+        self.assertIn('--accept-changes', calls[0])
+        self.assertEqual(calls[0][calls[0].index('--accept-changes') + 1], str(spec))
 
     def test_dry_run_is_read_only(self):
         head = self.g('rev-parse', 'HEAD')

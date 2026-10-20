@@ -30,6 +30,29 @@ cases.push(makeCase('heal.none', {type: 3}, () => { newGame(); const a = w.$game
 cases.push(makeCase('heal.enemy', {troop: 770, type: 3}, () => { newGame(); w.$gameTroop.setup(770); const e = w.$gameTroop.members()[0];
   const b = w.$gameActors.actor(8); clean(b); return {value: calc(e, b, heal(3))}; }));
 
+// 3) 指令 283 更改战斗背景的存档行为（悟空_24 低级项）：$gameMap 整个进存档（makeSaveContents.map），同版本读档不重设地图；
+//    同图移动不 setup、换图 setupBattleback 重设为地图指定；版本号不同时 reloadMapIfUpdated 重载本图也会重设。
+//    放在可败战斗之前：updateBattleEnd 留下的换场景状态会让之后的解释器停在原地。
+//    Map055 指定 Translucent／Temple，公共事件 1387 改成 DemonicWorld／DemonCastle2；Map004 不指定。JsonEx 只在内存往返。
+const names = () => [w.$gameMap.battleback1Name(), w.$gameMap.battleback2Name()];
+const battleNames = () => [w.Spriteset_Battle.prototype.battleback1Name.call({}), w.Spriteset_Battle.prototype.battleback2Name.call({})];
+const goMap = (id, x, y) => { w.$gamePlayer.reserveTransfer(id, x, y, 2, 0); w.DataManager.loadMapData(id); w.$gamePlayer.performTransfer(); };
+const changed = () => { newGame(); goMap(55, 1, 1); const before = names(); const it = new w.Game_Interpreter();
+  it.setup(w.JsonEx.makeDeepCopy(w.$dataCommonEvents[1387].list), 0); let n = 0; while (it.isRunning() && n++ < 100) it.update();
+  return {before, after: names()}; };
+const roundtrip = () => { const json = host.encode(); const saved = w.JsonEx.parse(json).map;
+  host.restore(json); return [saved._battleback1Name, saved._battleback2Name]; };
+cases.push(makeCase('battleback.save', {map: 55, common: 1387}, () => { const c = changed(); const saved = roundtrip();
+  return {...c, saved, loaded: names(), battle: battleNames(), map: w.$gameMap.mapId()}; }));
+cases.push(makeCase('battleback.sameMap', {map: 55, common: 1387, transfer: 55}, () => { const c = changed(); roundtrip(); goMap(55, 2, 2);
+  return {...c, after: names(), battle: battleNames()}; }));
+cases.push(makeCase('battleback.otherMap', {map: 55, common: 1387, transfer: 4}, () => { changed(); roundtrip(); goMap(4, 14, 23); const left = names();
+  goMap(55, 1, 1); return {left, back: names()}; }));
+cases.push(makeCase('battleback.versionReload', {map: 55, common: 1387, versionId: 'changed'}, () => { changed(); roundtrip();
+  w.$gameSystem._versionId = -1; w.Scene_File.prototype.reloadMapIfUpdated.call(null);
+  const reserved = w.$gamePlayer.isTransferring(); w.DataManager.loadMapData(w.$gamePlayer._newMapId); w.$gamePlayer.performTransfer();
+  return {reserved, after: names()}; }));
+
 const lose = (troop, canLose, dead) => { newGame(); w.BattleManager.setup(troop, false, canLose); w.$gameParty._inBattle = true;
   const members = w.$gameParty.battleMembers();
   members.forEach((a, i) => { if (dead.includes(i)) a.addState(1); else a.setHp(Math.floor(a.mhp / 2)); });
