@@ -31,6 +31,7 @@ KEYS = {
     'shop_buy.json': {'shops': ('map', 'event', 'raw'), 'goods': ('goods',),
                       'cases': ('goods', 'state')},
     'power.json': {'actors': ('id', 'level', 'asked'), 'gear': ('kind', 'id', 'why')},
+    'actor_passive.json': {'cases': ('setup',)},
     'wtype.json': {'cases': ('actor', 'variant', 'weapon', 'skill')},
     'help_cards.json': {k: ('id',) for k in ['skills', 'items', 'weapons', 'armors']},
 }
