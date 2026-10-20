@@ -1,8 +1,9 @@
 #!/bin/zsh
 # 共用提交前检查：Claude 与 Codex 每次提交前都跑这一条。
-# 用法：03_再刷重制_Godot/07_开发环境/检查.sh [--oracle]
+# 用法：03_再刷重制_Godot/07_开发环境/检查.sh [--oracle] [--full]
 #   在 worktree（多会话车道）里也可运行：测试自动只并行 2 个；交付单／开发编号占位检查只在主工作区做
 #   --oracle  另外启动 MV 参照引擎做一次启动检查（约 5 秒）
+#   --full    Godot 测试整轮重跑，不沿用上轮通过结果（也可 CHECK_FULL=1；沿用条件见 并行测试.py 文件头）
 set -u
 ENV_DIR=${0:A:h}
 ROOT=${ENV_DIR:h:h}
@@ -13,6 +14,14 @@ fi
 PROJECT=$ROOT/03_再刷重制_Godot/01_Godot工程
 GODOT=${GODOT:-$ENV_DIR/godot}   # 云端等没有本机 Godot.app 时用环境变量指定（见 云端测试.md）
 FAIL=0
+ORACLE=0; TEST_ARGS=()
+for arg in "$@"; do
+  case $arg in
+    --oracle) ORACLE=1 ;;
+    --full) TEST_ARGS+=(--full) ;;
+    *) print -r -- "未知参数：$arg（只认 --oracle、--full）"; exit 2 ;;
+  esac
+done
 ok()   { print -r -- "  ✓ $1"; }
 bad()  { print -r -- "  ✗ $1"; FAIL=1; }
 
@@ -81,7 +90,8 @@ if (( import_rc != 0 )) || print -r -- "$import_out" | grep -qE 'SCRIPT ERROR|^E
   bad "Godot 导入失败 (rc=$import_rc)"; print -r -- "$import_out" | grep -E 'ERROR|FAIL' | head -8
 fi
 # 测试并行运行（每个测试独立临时 HOME，互不干扰、不碰真实用户数据）；CHECK_JOBS=1 时逐个运行
-if ! python3 "$ENV_DIR/并行测试.py" "$GODOT" "$PROJECT"; then FAIL=1; fi
+# 慢的先跑、各工作树共用并发上限、工程未变时沿用上轮通过结果（--full 强制整轮），见 并行测试.py 文件头
+if ! python3 "$ENV_DIR/并行测试.py" "$GODOT" "$PROJECT" "${TEST_ARGS[@]}"; then FAIL=1; fi
 
 print "== 参照工具访问守卫"
 if node "$ROOT/03_再刷重制_Godot/03_转换工具/mv_oracle/guard_check.cjs"; then ok "MV 文件守卫"; else bad "MV 文件守卫"; fi
@@ -98,7 +108,7 @@ if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆�
 # 内容覆盖（沙僧协助计划第 8 项）：缺素材／无效引用／未翻译不得出现基线外的新问题；修好或接受后 --update-baseline
 if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/内容覆盖检查.py" --check; then ok "内容覆盖（无基线外新问题）"; else bad "内容覆盖出现新问题，见 04_验证/本地结果/内容覆盖/报告.json"; fi
 
-if [[ ${1:-} == --oracle ]]; then
+if (( ORACLE )); then
   print "== MV 参照引擎"
   oracle=$ROOT/03_再刷重制_Godot/03_转换工具/mv_oracle
   if [[ -d $oracle/node_modules ]]; then

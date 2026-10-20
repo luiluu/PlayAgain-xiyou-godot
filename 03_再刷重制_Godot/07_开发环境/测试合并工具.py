@@ -179,28 +179,109 @@ class DraftTests(unittest.TestCase):
 
 
 class ParallelTestRunnerTests(unittest.TestCase):
-    """并行负载下偶发失败的测试单独重跑一次；单跑仍失败才判失败。"""
+    """并行测试.py：偶发重跑、首次与重跑分别保留、慢的先跑、共用并发上限、工程未变时沿用上轮结果。"""
+    OK, BAD = 'TEST_RESULT={"passed":1,"total":1}', 'TEST_RESULT={"passed":0,"total":1}'
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmp = Path(self.tmpdir.name)
+        (self.tmp / 'proj/tests').mkdir(parents=True)
+        for n in 'abc':
+            (self.tmp / 'proj/tests' / (n + '.tscn')).touch()
+        self.state = self.tmp / 'state'
+        # 假 Godot：--version 照常回答；每次运行把场景名记进 runs；b 在 seen 不存在时失败一次；FAIL_C 时 c 失败；
+        # BUSY 时用 mkdir 当互斥标记，检测同一时刻是否有两个测试在跑
+        self.godot = self.tmp / 'godot'
+        self.godot.write_text('#!/bin/zsh\nn=${@[-1]:t}\n[[ $n == --version ]] && { echo 4.x; exit 0; }\n'
+                              'print -r -- $n >> %(t)s/runs\n'
+                              'if [[ -n ${BUSY:-} ]]; then mkdir %(t)s/busy 2>/dev/null || touch %(t)s/overlap; sleep 0.3; rmdir %(t)s/busy 2>/dev/null; fi\n'
+                              'if [[ $n == b.tscn && -n ${FLAKY_B:-} && ! -e %(t)s/seen ]]; then touch %(t)s/seen; echo \'%(bad)s\'; exit 1; fi\n'
+                              'if [[ $n == c.tscn && -n ${FAIL_C:-} ]]; then echo \'%(bad)s\'; exit 1; fi\necho \'%(ok)s\'\n'
+                              % {'t': self.tmp, 'bad': self.BAD, 'ok': self.OK})
+        self.godot.chmod(0o755)
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    def run_tests(self, *args, jobs=2, **env):
+        (self.tmp / 'runs').unlink(missing_ok=True)
+        cmd = [sys.executable, str(HERE / '并行测试.py'), '--jobs', str(jobs), str(self.godot), str(self.tmp / 'proj'), *args]
+        base = {k: v for k, v in os.environ.items() if k not in ('CHECK_FULL', 'CHECK_JOBS', 'CHECK_LOG_DIR')}
+        env = dict(base, XIYOU_TEST_STATE_DIR=str(self.state), CHECK_GLOBAL_JOBS='4', **env)
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=60, env=env)
+        runs = (self.tmp / 'runs').read_text().split() if (self.tmp / 'runs').exists() else []
+        return p, runs
 
     def test_flaky_rerun_and_real_failure(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp = Path(tmp)
-            (tmp / 'proj/tests').mkdir(parents=True)
-            for n in 'abc':
-                (tmp / 'proj/tests' / (n + '.tscn')).touch()
-            godot = tmp / 'godot'
-            ok, bad = 'TEST_RESULT={"passed":1,"total":1}', 'TEST_RESULT={"passed":0,"total":1}'
-            godot.write_text('#!/bin/zsh\nn=${@[-1]:t}\n'
-                             'if [[ $n == b.tscn && ! -e %s ]]; then touch %s; echo \'%s\'; exit 1; fi\n'
-                             'if [[ $n == c.tscn && -n ${FAIL_C:-} ]]; then echo \'%s\'; exit 1; fi\necho \'%s\'\n'
-                             % (tmp / 'seen', tmp / 'seen', bad, bad, ok))
-            godot.chmod(0o755)
-            cmd = [sys.executable, str(HERE / '并行测试.py'), '--jobs', '2', str(godot), str(tmp / 'proj')]
-            p = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-            self.assertEqual(p.returncode, 0, p.stdout)
-            self.assertIn('⚠ b.tscn 并行时失败、单独重跑通过', p.stdout)
-            p = subprocess.run(cmd, capture_output=True, text=True, timeout=60, env=dict(os.environ, FAIL_C='1'))
-            self.assertEqual(p.returncode, 1, p.stdout)
-            self.assertIn('✗ c.tscn', p.stdout)
+        p, _ = self.run_tests(FLAKY_B='1')
+        self.assertEqual(p.returncode, 0, p.stdout)
+        self.assertIn('⚠ b.tscn 并行时失败', p.stdout)
+        self.assertIn('单独重跑通过', p.stdout)
+        p, _ = self.run_tests('--full', FAIL_C='1')
+        self.assertEqual(p.returncode, 1, p.stdout)
+        self.assertIn('✗ c.tscn', p.stdout)
+
+    def test_rerun_keeps_first_attempt_and_ledger(self):
+        logs = self.tmp / 'logs'
+        p, _ = self.run_tests('--log-dir', str(logs), FLAKY_B='1')
+        self.assertEqual(p.returncode, 0, p.stdout)
+        self.assertIn(self.BAD, (logs / 'b.log').read_text())
+        self.assertIn(self.OK, (logs / 'b.rerun1.log').read_text())
+        row = next(r for r in json.loads((logs / 'test_timings.json').read_text())['scenes'] if r['name'] == 'b.tscn')
+        self.assertEqual([(x['rc'], x['passed']) for x in row['attempts']], [(1, False), (0, True)])
+        self.assertTrue(row['passed'])
+        ledger = [json.loads(l) for l in (self.state / 'flaky.jsonl').read_text().splitlines()]
+        self.assertEqual([(r['scene'], len(r['attempts'])) for r in ledger], [('b.tscn', 2)])
+        (self.tmp / 'seen').unlink()
+        p, _ = self.run_tests('--full', FLAKY_B='1')
+        self.assertIn('b.tscn 累计偶发 2 次', p.stdout)
+        self.assertEqual(len((self.state / 'flaky.jsonl').read_text().splitlines()), 2)
+
+    def test_slowest_first(self):
+        self.state.mkdir()
+        (self.state / 'timings.json').write_text(json.dumps({'a.tscn': 1, 'c.tscn': 100}))
+        _, runs = self.run_tests(jobs=1)
+        self.assertEqual(runs, ['b.tscn', 'c.tscn', 'a.tscn'])  # 没有记录的当作最慢
+
+    def test_unchanged_project_reuses_passes_and_reruns_failures(self):
+        p, runs = self.run_tests(jobs=1, FAIL_C='1')
+        self.assertEqual((p.returncode, sorted(runs)), (1, ['a.tscn', 'b.tscn', 'c.tscn']))
+        p, runs = self.run_tests(jobs=1)
+        self.assertEqual((p.returncode, runs), (0, ['c.tscn']), p.stdout)
+        self.assertIn('✓ a.tscn {"passed":1,"total":1}（沿用）', p.stdout)
+        p, runs = self.run_tests(jobs=1)
+        self.assertEqual((p.returncode, runs), (0, []), p.stdout)
+        for args, env in [(('--full',), {}), ((), {'CHECK_FULL': '1'})]:
+            _, runs = self.run_tests(*args, jobs=1, **env)
+            self.assertEqual(sorted(runs), ['a.tscn', 'b.tscn', 'c.tscn'])
+        _, runs = self.run_tests('a', 'b', jobs=1)  # 只跑指定场景时不沿用
+        self.assertEqual(sorted(runs), ['a.tscn', 'b.tscn'])
+        (self.tmp / 'proj/data.json').write_text('{}')  # 工程里任何文件变了都整轮
+        _, runs = self.run_tests(jobs=1)
+        self.assertEqual(sorted(runs), ['a.tscn', 'b.tscn', 'c.tscn'])
+        (self.tmp / 'proj/data.json').write_text('{"x":1}')  # 同大小改内容也算变
+        _, runs = self.run_tests(jobs=1)
+        self.assertEqual(len(runs), 3)
+        (self.tmp / 'proj/.godot').mkdir()
+        (self.tmp / 'proj/.godot/cache').write_text('x')  # 导入缓存不算工程输入
+        _, runs = self.run_tests(jobs=1)
+        self.assertEqual(runs, [])
+        (self.tmp / 'proj/tests/d.tscn').touch()  # 新场景：整轮
+        _, runs = self.run_tests(jobs=1)
+        self.assertEqual(len(runs), 4)
+        for f in (self.state / 'results').glob('*.json'):
+            f.write_text('坏')  # 记录读不了：整轮
+        _, runs = self.run_tests(jobs=1)
+        self.assertEqual(len(runs), 4)
+
+    def test_global_slot_limit_across_runners(self):
+        cmd = [sys.executable, str(HERE / '并行测试.py'), '--jobs', '3', '--full', str(self.godot), str(self.tmp / 'proj')]
+        env = dict(os.environ, XIYOU_TEST_STATE_DIR=str(self.state), CHECK_GLOBAL_JOBS='1', BUSY='1')
+        procs = [subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True, env=env) for _ in range(2)]
+        outs = [pr.communicate(timeout=60)[0] for pr in procs]
+        self.assertEqual([pr.returncode for pr in procs], [0, 0], outs)
+        self.assertEqual(len((self.tmp / 'runs').read_text().split()), 6)
+        self.assertFalse((self.tmp / 'overlap').exists(), '共用上限 1 时仍有两个测试同时运行')
 
 
 def ledger():

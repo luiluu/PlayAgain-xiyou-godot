@@ -2,6 +2,10 @@ extends Node
 ## 智能战斗AI（XSmartAI）对照正式版 Codex_SmartBattleAI：generated/oracle/smart_ai.json 由 mv_oracle/smart_ai_probe.cjs 生成
 ## （普通难度、出战 1/8/9/10、10 级、开局被动与开战状态、药 1/2/137；切片敌群 × 满状态/队友低血/队友阵亡/没蓝/敌人残血）。
 ## 比较：每个角色选中的技能/药与目标、前 6 名候选的分数，以及 safeDamage 估算；另比 YEP 行动序列段数（转换器 yepEffects）。
+## 单场景约 400 秒：伤害行与选择用例按序号轮流分成 parts 份（xiyou_smart_ai 管第 0 份，_b／_c／_d 各管一份），
+## 来源指纹、行动序列、自动战斗分派与边界伤害只在第 0 份比，断言总数与拆分前相同
+@export var part := 0
+@export var parts := 4
 
 var results := []
 var mismatches := []
@@ -69,11 +73,14 @@ func _run() -> void:
 		check("oracle_present", false, "先运行 mv_oracle/smart_ai_probe.cjs")
 		return finish()
 	var manifest = JSON.parse_string(FileAccess.get_file_as_string(XDB.BASE + "manifest.json"))
-	check("source_identity", ref.sourceIdentity.get("releaseVersion") == manifest.releaseVersion
-		and ref.sourceIdentity.get("runtimeInputs") == manifest.runtimeInputs, [ref.sourceIdentity.get("releaseVersion"), manifest.releaseVersion])
-	for row in ref.sequence:
+	var first := part == 0
+	if first:
+		check("source_identity", ref.sourceIdentity.get("releaseVersion") == manifest.releaseVersion
+			and ref.sourceIdentity.get("runtimeInputs") == manifest.runtimeInputs, [ref.sourceIdentity.get("releaseVersion"), manifest.releaseVersion])
+	for row in (ref.sequence if first else []):
 		check("seq.%d" % int(row.skill), int(XDB.rec("Skills", int(row.skill)).get("yepEffects", 0)) == int(row.hits), [row.skill, row.hits])
-	for row in ref.damage:
+	for i in range(part, ref.damage.size(), parts):
+		var row: Dictionary = ref.damage[i]
 		var logic := setup(ref, int(row.troop), "full")
 		var a: XActor = logic.state.actor(int(row.actor))
 		var ai := XSmartAI.new(logic, a)
@@ -86,7 +93,8 @@ func _run() -> void:
 			absf(logic.item_hit(a, sk, e) - float(row.hit)) < 1e-4 and absf(logic.item_eva(a, sk, e) - float(row.eva)) < 1e-4,
 			{"godot": [logic.item_hit(a, sk, e), logic.item_eva(a, sk, e)], "mv": [row.hit, row.eva]})
 		check("cri.t%d.a%d.s%d.e%d" % [int(row.troop), int(row.actor), int(row.skill), int(row.target)], absf(cri - float(row.cri)) < 1e-4, {"godot": cri, "mv": row.cri, "a.cri": a.cri, "e.cev": e.cev})
-	for c in ref.cases:
+	for i in range(part, ref.cases.size(), parts):
+		var c: Dictionary = ref.cases[i]
 		var tag: String = "case.t%d.%s.a%d" % [int(c.troop), c.scene, int(c.actor)]
 		if c.get("skipped", false):
 			continue
@@ -100,6 +108,8 @@ func _run() -> void:
 			var m = r.candidates.filter(func(x): return x.id == int(cand.id) and x.item == bool(cand.item))
 			check(tag + ".score.%s%d" % ["i" if cand.item else "s", int(cand.id)], not m.is_empty() and close(float(m[0].score), float(cand.score), 2e-3),
 				{"godot": m[0].score if not m.is_empty() else null, "mv": cand.score})
+	if not first:
+		return finish()
 	routing(ref)
 	var edge_logic := setup(ref, int(ref.cases[0].troop), "full")
 	var edge_actor := edge_logic.state.actor(1)

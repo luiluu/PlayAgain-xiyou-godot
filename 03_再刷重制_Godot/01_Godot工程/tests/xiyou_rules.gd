@@ -4,8 +4,10 @@ extends Node
 ## 伤害比较的是结算后、取整前的值；正式版的成长修正 growth 首期未移植，按 oracle 值 ÷ growth 比较。
 ## 运行：godot --headless --path <工程> res://tests/xiyou_rules.tscn [-- --verbose]
 
-## 六个难度的参照各约 100 秒：拆成两个场景并行（xiyou_rules 管 1～3，xiyou_rules_b 管 4～6），免得单个场景超过并行测试的 600 秒超时线
-@export var difficulties: Array = [1, 2, 3]
+## 六个难度的参照各约 100 秒：每个难度一个场景（xiyou_rules 管 1，xiyou_rules_d2～d6 各管一个），并行测试按耗时慢的先派
+@export var difficulties: Array = [1]
+## 过期参照必须被拒的两项自检：拆分前 1～3、4～6 两份各做一次，现在由难度 1 与难度 4 的场景各做一次，断言总数不变
+@export var stale_checks := true
 var results: Array = []
 var mismatches: Array = []
 var verbose := false
@@ -110,7 +112,7 @@ func _run() -> void:
 		_check("d%d.source_identity" % diff, issues.is_empty(), issues)
 		if not issues.is_empty():
 			continue
-		if diff == difficulties[0]:
+		if stale_checks and diff == difficulties[0]:
 			var stale: Dictionary = d.duplicate(true)
 			stale.sourceIdentity.inputs["data/Classes.json"] = "旧来源"
 			_check("stale_oracle_rejected", not _reference_issues(manifest, stale).is_empty())
