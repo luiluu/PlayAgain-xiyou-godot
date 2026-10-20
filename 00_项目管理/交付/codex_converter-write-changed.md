@@ -6,6 +6,7 @@
 - 接手点：从 main 84aa727 独立开工。真实切片字节与 SIGKILL 恢复通过。证据与实测脚本保存在本工作树 `03_再刷重制_Godot/04_验证/本地结果/转换器写入/`（不入 Git）。
 - 已完成长任务：旧版基准 `/tmp/converter-main-benchmark.log`（等待工具确认 done／0）、补齐 `/tmp/converter-write-changed-prepare.log`、真实字节／中断 `/tmp/converter-real-acceptance.log`、隔离候选导入测时 `/tmp/converter-candidate-benchmark.log`。旧版预热及无改动同步均测量不变，后者 32/32 CACHE_HIT。
 - 接下来：提交实现后合 main、重读规则；在本工作树清理自身五个可再生子树与 slice／manifest，保留 oracle、同步指纹与探针缓存，完成严格首跑／无改动测时、正式同步及全量 `检查.sh --oracle`。未通过前不能写可合并。
+- 验收起点：8415be0 已合 main f0b0b7a；新增规则、交付 README 已重读。该次主线未改切片／转换器／探针，无需再次补齐。下一长任务为 `/tmp/converter-branch-benchmark.log`，测本工作树首跑／无改动转换与相邻导入、一次无改动同步；按新规则用 `长任务.py start` 启动、等待工具确认。
 
 ## 变更记录草稿
 
@@ -30,3 +31,7 @@
 
 - b1035ed 登记任务范围及验证计划。
 - 906b5fb 首批 7 个写入回归；随后补第 8 个 oracle 目录符号链接保护回归。
+- ba0df2a 保存真实切片字节与 SIGKILL 验收、候选及旧版基准现场。
+- 60f80b4 沙僧_15 接续登记。
+- 01465a9 安装增量实现、检查入口一行调用；8 例回归通过。
+- 8415be0 合并 main f0b0b7a 的规则与工具更新。
