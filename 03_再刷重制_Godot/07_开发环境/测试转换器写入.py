@@ -168,6 +168,17 @@ class ExportWriteTests(unittest.TestCase):
             self.run_export(cfg=dict(self.cfg, audio=[]))
         self.assertEqual(before, self.snapshot(self.app, metadata=True))
 
+    def test_asset_parent_symlink_cannot_redirect_writes_into_oracle(self):
+        oracle = self.out / 'oracle'
+        oracle.mkdir(parents=True)
+        (oracle / 'sentinel').write_bytes(b'keep')
+        (self.out / 'img').mkdir()
+        (self.out / 'img/pictures').symlink_to(oracle, target_is_directory=True)
+        before = self.snapshot(oracle, metadata=True)
+        with self.assertRaises(ValueError):
+            self.run_export()
+        self.assertEqual(before, self.snapshot(oracle, metadata=True))
+
 
 if __name__ == '__main__':
     unittest.main()
