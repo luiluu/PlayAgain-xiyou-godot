@@ -1,7 +1,8 @@
 # 交付：codex/converter-write-changed
 
-- 车道／工作者：框架工具／沙僧（Codex，重制_沙僧_14）
+- 车道／工作者：框架工具／沙僧（Codex，重制_沙僧_15；接续重制_沙僧_14）
 - 状态：进行中
+- 本轮接手：已读工作树规则、主工作区交接板及完整交代；ba0df2a 后工作区干净，继续原分支，不接管 main。旧版基准仍由原任务运行，已用等待工具确认仍活跃，先保持旧版转换器。
 - 接手点：从 main 84aa727 独立开工。8 个回归已对隔离候选实现通过，真实切片字节与 SIGKILL 恢复通过。**工作树转换器暂仍是旧版**，必须等 `/tmp/converter-main-benchmark.log` 完成旧版全量预热及无改动同步测时后再安装候选，避免污染基准。候选与实测脚本已保存在本工作树 `03_再刷重制_Godot/04_验证/本地结果/转换器写入/`（不入 Git）。
 - 正在运行：旧版耗时／同步预热 `/tmp/converter-main-benchmark.log`（长任务）；已完成：补齐 `/tmp/converter-write-changed-prepare.log`、真实字节／中断 `/tmp/converter-real-acceptance.log`、隔离候选导入测时 `/tmp/converter-candidate-benchmark.log`。使用 `等待任务.sh <日志>` 确认结束，不重启仍运行的任务。
 - 接下来：旧版基准完成后，用本地证据 `xiyou_export.candidate.py` 覆盖本工作树 `03_转换工具/xiyou_export.py`，在 `检查.sh` 只加一行测试调用；跑 8 例回归并提交实现。再合 main、重读规则，按交代完成正式同步与本工作树测时、全量 `检查.sh --oracle`；未通过前不能写可合并。
