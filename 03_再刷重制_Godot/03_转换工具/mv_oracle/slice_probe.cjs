@@ -99,6 +99,8 @@ function run(difficulty) {
 function measure(w, user, target, sid, tag) {
   const item = w.$dataSkills[sid], saved = item.damage.variance;
   item.damage.variance = 0;
+  // onPreDamageStateEffects 会把命中附带的状态（如陈 74 的普攻给目标加灼伤）留在目标上，污染之后的伤害行；量完撤掉新增状态
+  const stateBefore = [user, target].map(b => b._states.slice());
   const act = new w.Game_Action(user); act.setSkill(sid);
   act.itemCri = () => 0;
   const row = {...tag, skill: sid, skillName: item.name, type: item.damage.type, element: item.damage.elementId, physical: act.isPhysical(), magical: act.isMagical()};
@@ -108,6 +110,7 @@ function measure(w, user, target, sid, tag) {
     row.final = act.onPreDamageStateEffects ? act.onPreDamageStateEffects(target, row.value) : row.value;
   } catch (e) { row.error = String(e.message || e); }
   item.damage.variance = saved;
+  [user, target].forEach((b, i) => b._states.filter(id => !stateBefore[i].includes(id)).forEach(id => b.removeState(id)));
   return row;
 }
 
