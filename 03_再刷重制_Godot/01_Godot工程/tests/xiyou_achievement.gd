@@ -100,6 +100,11 @@ func _ready() -> void:
 	await _ui()
 	await _script_and_save()
 	XAchievement.time_override = ""
+	# 获得成就弹窗的音效（Saint5）还在播时退出会留「resources still in use」：先停掉再等一帧（同 xiyou_sequence_visual）
+	for sp in XSound._players:
+		if is_instance_valid(sp):
+			sp.stop()
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)
