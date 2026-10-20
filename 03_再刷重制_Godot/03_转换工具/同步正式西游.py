@@ -79,6 +79,7 @@ PROBES = [
     (['formula_action_probe.cjs'], ['formula_actions.json']),
     (['review_fix_probe.cjs'], ['review_fix.json']),
     (['global_vars_probe.cjs'], ['global_vars.json']),
+    (['actor_passive_probe.cjs'], ['actor_passive.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
 
