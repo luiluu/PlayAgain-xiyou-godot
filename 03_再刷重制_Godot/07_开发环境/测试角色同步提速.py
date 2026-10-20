@@ -284,6 +284,81 @@ fs.appendFileSync('.sandbox/pool.jsonl',JSON.stringify({event:'end',d,box})+'\n'
             self.assertNotIn('slice_probe.cjs', self.cache().entries)
 
 
+class ActorInterleaveTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    @staticmethod
+    def order(actors, troops):
+        result = ['a%d' % a for a in actors]
+        for t in troops:
+            result += ['t%d' % t] + ['t%d:a%d' % (t, a) for a in actors] + ['t%d:enemy' % t]
+        return result
+
+    @staticmethod
+    def full(actors, troops, changed=()):
+        data = {'difficulty': 3, 'actors': {str(a): {'name': 'actor%d' % a} for a in actors},
+                'enemies': {str(t): [{'id': t}] for t in troops}, 'damage': []}
+        for t in troops:
+            for a in actors:
+                # 两个同技能行必须原样保留，不能用 skill 当字典键去重。
+                for sid in [1, 5, 5]:
+                    data['damage'].append({'troop': t, 'actor': a, 'skill': sid,
+                                           'value': t * 100 + a + (1000 if (t, a) in changed else 0)})
+            data['damage'].append({'troop': t, 'enemy': t, 'target': 9, 'skill': 1, 'value': t})
+        return data
+
+    def merge(self, old, fresh, order, ran):
+        for name, data in [('old', old), ('fresh', fresh)]:
+            (self.root / (name + '.json')).write_text(json.dumps(data))
+        spec = {'kind': 'slice-actors', 'order': order, 'ran': ran, 'files': [
+            {'old': str(self.root / 'old.json'), 'fresh': str(self.root / 'fresh.json'),
+             'out': str(self.root / 'out.json'), 'indent': 1}]}
+        (self.root / 'merge.json').write_text(json.dumps(spec))
+        return subprocess.run(['node', str(TOOLS / 'oracle_shard_merge.cjs'), str(self.root / 'merge.json')],
+                              capture_output=True, text=True)
+
+    def test_add_delete_reorder_and_changed_pair_match_full_bytes(self):
+        old = self.full([1, 8], [2, 3])
+        variants = [([1, 8, 9], [2, 3], ()), ([8], [2, 3], ()),
+                    ([8, 1], [3, 2], ()), ([1, 8], [2, 3, 4], ()), ([1, 8], [2, 3], ((2, 8),))]
+        for actors, troops, changed in variants:
+            with self.subTest(actors=actors, troops=troops, changed=changed):
+                fresh = self.full(actors, troops, changed)
+                ran = ['a9'] if 9 in actors else []
+                for t in troops:
+                    if t == 4:
+                        ran += ['t4', 't4:a1', 't4:a8', 't4:enemy']
+                    elif 9 in actors:
+                        ran += ['t%d:a9' % t]
+                ran += ['t%d:a%d' % pair for pair in changed]
+                # fresh 只含本次新量的字典／行，防止错误实现借全量 fresh 蒙混通过。
+                part = dict(fresh, actors={a: v for a, v in fresh['actors'].items() if 'a' + a in ran},
+                            enemies={t: v for t, v in fresh['enemies'].items() if 't' + t in ran},
+                            damage=[r for r in fresh['damage'] if ('t%d:a%d' % (r['troop'], r['actor'])
+                                    if 'actor' in r else 't%d:enemy' % r['troop']) in ran])
+                result = self.merge(old, part, self.order(actors, troops), ran)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                reference = subprocess.run(['node', '-e', 'process.stdout.write(JSON.stringify(JSON.parse(process.argv[1]),null,1))',
+                                            json.dumps(fresh)], capture_output=True, check=True).stdout
+                self.assertEqual((self.root / 'out.json').read_bytes(), reference)
+
+    def test_unknown_enemy_target_missing_actor_and_wrong_order_are_rejected(self):
+        old = self.full([1, 8], [2])
+        order = self.order([1, 8], [2])
+        fresh = self.full([1, 8], [2])
+        fresh['damage'][-1]['target'] = 8
+        self.assertNotEqual(self.merge(old, fresh, order, order).returncode, 0)
+        fresh = self.full([1, 8], [2])
+        del fresh['actors']['8']
+        self.assertNotEqual(self.merge(old, fresh, order, order).returncode, 0)
+        self.assertNotEqual(self.merge(old, old, order[::-1], []).returncode, 0)
+
+
 class ManualSandboxTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
