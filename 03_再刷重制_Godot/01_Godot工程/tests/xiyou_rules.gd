@@ -4,8 +4,13 @@ extends Node
 ## 伤害比较的是结算后、取整前的值；正式版的成长修正 growth 首期未移植，按 oracle 值 ÷ growth 比较。
 ## 运行：godot --headless --path <工程> res://tests/xiyou_rules.tscn [-- --verbose]
 
-## 六个难度的参照各约 100 秒：拆成两个场景并行（xiyou_rules 管 1～3，xiyou_rules_b 管 4～6），免得单个场景超过并行测试的 600 秒超时线
-@export var difficulties: Array = [1, 2, 3]
+## 六个难度、每个难度的角色／敌群／伤害行再按序号轮流分 parts 份，一个场景管一份（xiyou_rules 是难度 1 第 0 份，
+## xiyou_rules_d1b 是难度 1 第 1 份，xiyou_rules_d2／_d2b……同理），免得单场景随切片扩大逼近 600 秒超时线；并行测试按耗时慢的先派
+@export var difficulties: Array = [1]
+@export var part := 0
+@export var parts := 2
+## 过期参照必须被拒的两项自检：拆分前 1～3、4～6 两份各做一次，现在由难度 1 与难度 4 的第 0 份各做一次，断言总数不变
+@export var stale_checks := true
 var results: Array = []
 var mismatches: Array = []
 var verbose := false
@@ -109,10 +114,11 @@ func _run() -> void:
 			_check("oracle_d%d_present" % diff, false, "先运行 mv_oracle/slice_probe.cjs")
 			continue
 		var issues := _reference_issues(manifest, d)
-		_check("d%d.source_identity" % diff, issues.is_empty(), issues)
+		if part == 0 or not issues.is_empty():  # 同 no_untranslated：其他份只在不同源时补一项失败
+			_check("d%d.source_identity" % diff, issues.is_empty(), issues)
 		if not issues.is_empty():
 			continue
-		if diff == difficulties[0]:
+		if stale_checks and part == 0 and diff == difficulties[0]:
 			var stale: Dictionary = d.duplicate(true)
 			stale.sourceIdentity.inputs["data/Classes.json"] = "旧来源"
 			_check("stale_oracle_rejected", not _reference_issues(manifest, stale).is_empty())
@@ -121,7 +127,9 @@ func _run() -> void:
 			_check("stale_runtime_rejected", not _reference_issues(manifest, stale).is_empty())
 		var growth_seen := []
 		# 能力值
-		for id_s in d.actors:
+		var actor_keys: Array = d.actors.keys()
+		for k in range(part, actor_keys.size(), parts):
+			var id_s = actor_keys[k]
 			var id := int(id_s)
 			var row: Dictionary = d.actors[id_s]
 			_compare_snap("d%d.actor%d.lv1" % [diff, id], _snap(_make_actor(id, d, false)), row.lv1)
@@ -138,13 +146,18 @@ func _run() -> void:
 				a.hp = a.mhp  # 参照取样时满血（HP 低于 60% 才生效的被动不应混进能力采样）；不用 recover_all——它会清掉战斗开始状态
 				_compare_snap("d%d.actor%d.lv%dBattle" % [diff, id, lv], _snap(a), samples[str(lv)])
 		# 敌人
-		var troops := {}
-		for tid_s in d.enemies:
+		var troops := {}  # 每份都要建全部敌群（伤害行用），能力值只比本份的
+		var troop_keys: Array = d.enemies.keys()
+		for t in range(troop_keys.size()):
+			var tid_s = troop_keys[t]
+			var mine := t % parts == part
 			var list := []
 			for e in d.enemies[tid_s]:
 				var en := XEnemy.new().setup(int(e.id), diff, 100.0)  # 参照数据取自非神话（Math.random=0.99）
 				en.setup_level(1, 0.99)  # 参照：出战成员 1 级、Math.random=0.99 → 等级 3
 				list.append(en)
+				if not mine:
+					continue
 				_compare_snap("d%d.troop%s.enemy%d" % [diff, tid_s, int(e.id)], _snap(en), e)
 				_check("d%d.troop%s.enemy%d.level" % [diff, tid_s, int(e.id)], e.has("level") and en.level == int(e.level), [en.level, e.get("level")])
 			troops[int(tid_s)] = list
@@ -154,7 +167,8 @@ func _run() -> void:
 		var zero_vars := []
 		zero_vars.resize(5000)
 		zero_vars.fill(0)
-		for r in d.damage:
+		for k in range(part, d.damage.size(), parts):
+			var r: Dictionary = d.damage[k]
 			var item := XDB.rec("Skills", int(r.skill))
 			var user: XBattler
 			var target: XBattler
@@ -186,7 +200,9 @@ func _run() -> void:
 			var confirmed: float = float(r.value) if absorbed else XDamage.apply_state_effects(float(r.value), item, user, target, untranslated, "confirm")
 			var fin: float = XDamage.apply_fixed_mitigation(confirmed, res)
 			_check(tag + ".stateEffects", _close(fin, float(r.final)), {"godot": fin, "mv": r.final})
-		_check("d%d.no_untranslated_state_effects" % diff, untranslated.is_empty(), untranslated.slice(0, 5))
+		# 第 0 份照旧记一项；其他份只在查出未翻译时补一项失败（通过时断言总数与拆分前相同，失败也不漏）
+		if part == 0 or not untranslated.is_empty():
+			_check("d%d.no_untranslated_state_effects" % diff, untranslated.is_empty(), untranslated.slice(0, 5))
 		if verbose:
 			print("d%d growth range: %s..%s" % [diff, growth_seen.min(), growth_seen.max()])
 	_finish()

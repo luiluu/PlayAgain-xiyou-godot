@@ -1,16 +1,30 @@
 #!/usr/bin/env python3
 """并行运行 Godot 测试场景（检查.sh 调用；也可单独用来跑几个专项）。
 
-用法：并行测试.py <godot> <工程目录> [--jobs N] [场景名或前缀 ...]
+用法：并行测试.py <godot> <工程目录> [--jobs N] [--full] [场景名或前缀 ...]
 - 每个测试一个独立的临时 HOME，因此 user://（存档、配置）互不干扰，也不会读写本机真实的用户数据目录。
 - 导入（--import）由调用方先单独做一次；这里只读工程缓存。
 - 每个测试最多 600 秒；脚本语法错误时场景不会自行退出，超时即判失败。用时超过一半（300 秒）时提示拆场景。
 - 并行时只有少数（≤3）测试失败的，逐个单独重跑一次：单跑通过记为「偶发」，仍算通过但打印 ⚠，写进交付单；单跑仍失败才判失败。
+  首次与重跑的输出、退出码、耗时分别保留（日志 <场景>.log 与 <场景>.rerun1.log、test_timings.json 的 attempts），
+  每次偶发另追加到共用状态目录的 flaky.jsonl，多次偶发可对账。
 - 输出与原来逐个运行时相同（按场景名排序），失败时返回 1。
 - 并行数：CHECK_JOBS 或 --jobs；都没给时主工作区用 CPU 核数一半（最多 6），worktree 里只用 2（多会话并行时给其他车道留余量）。
+- 派发顺序：按上次实测耗时从慢到快（没有记录的排最前，当作最慢），免得最慢的场景压到队尾。
+- 所有工作树共用一个并发上限（CHECK_GLOBAL_JOBS，默认 CPU 核数一半、最多 6）：每个测试先在共用状态目录里占一个槽位
+  （flock，进程退出即释放），几条车道同时跑检查也不会把机器压到超时。等槽位的时间不计入 600 秒。
+- 沿用上轮结果（只在不指定场景的整轮运行时生效）：工程指纹与上次整轮相同时，上次通过的场景沿用、只重跑上次失败的。
+  指纹 = 工程目录下除 .godot/ 外每个文件的路径与内容 SHA-256（跟随软链接，含未入 Git 的 generated/ 转换与参照数据）
+  ＋ Godot 可执行文件的真实路径、大小、修改时间与 --version ＋ 本脚本内容 ＋ 超时上限。任何一项变了就整轮重跑；
+  读不到、解析不了上次记录也整轮重跑。--full 或 CHECK_FULL=1 强制整轮。
+- 共用状态目录：XIYOU_TEST_STATE_DIR，否则 <git-common-dir>/xiyou_test_state（主工作区与各 worktree 共用），不在 Git 里时用系统临时目录。
 """
 import argparse
 import concurrent.futures as cf
+import contextlib
+import datetime
+import fcntl
+import hashlib
 import json
 import os
 import re
@@ -21,8 +35,9 @@ import time
 from pathlib import Path
 
 TIMEOUT = 600  # xiyou_rules 角色 P0 后单跑约 200 秒，满负载并行时超过 300
-SLOW = TIMEOUT // 2  # 超过就提示按场景拆分（xiyou_rules 已拆 a／b）
+SLOW = TIMEOUT // 2  # 超过就提示按场景拆分（xiyou_rules、smart_ai 已拆成约 100 秒一份）
 FLAKY_RERUN_MAX = 3  # 并行负载下偶发失败（floor16、floor_run_c 等）最多单独重跑这么多个
+RESULTS_KEEP = 20  # 共用状态目录里最多保留这么多份整轮结果（按指纹）
 
 
 def result_ok(rc: int, out: str) -> bool:
@@ -38,19 +53,79 @@ def result_ok(rc: int, out: str) -> bool:
             and type(result.get('passed')) is int and result['passed'] == result['total'])
 
 
-def run_one(godot: str, project: str, name: str) -> tuple:
-    start = time.time()
-    with tempfile.TemporaryDirectory(prefix='xiyou_test_home_') as home:
-        env = dict(os.environ, HOME=home)
+def state_dir(project: str) -> Path:
+    if os.environ.get('XIYOU_TEST_STATE_DIR'):
+        d = Path(os.environ['XIYOU_TEST_STATE_DIR'])
+    else:
         try:
-            p = subprocess.run([godot, '--headless', '--path', project, 'res://tests/' + name],
-                               capture_output=True, text=True, timeout=TIMEOUT, env=env)
-            out, rc = p.stdout + p.stderr, p.returncode
-        except subprocess.TimeoutExpired as e:
-            out = ''.join(x.decode(errors='replace') if isinstance(x, bytes) else (x or '')
-                          for x in (e.stdout, e.stderr))
-            rc = 142
-    return name, rc, out, time.time() - start
+            common = subprocess.run(['git', '-C', project, 'rev-parse', '--path-format=absolute', '--git-common-dir'],
+                                    capture_output=True, text=True, check=True).stdout.strip()
+            d = Path(common) / 'xiyou_test_state'
+        except (OSError, subprocess.CalledProcessError):
+            d = Path(tempfile.gettempdir()) / 'xiyou_test_state'
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+@contextlib.contextmanager
+def file_lock(path: Path):
+    with open(path, 'a') as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+
+def read_json(path: Path, default):
+    try:
+        return json.loads(path.read_text())
+    except (OSError, ValueError):
+        return default
+
+
+def write_json(path: Path, data) -> None:
+    tmp = path.with_name(path.name + '.%d.tmp' % os.getpid())
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=1) + '\n')
+    os.replace(tmp, path)
+
+
+@contextlib.contextmanager
+def global_slot(sdir: Path, limit: int):
+    """所有工作树共用的并发槽位：slots/<i>.lock 上的非阻塞 flock，占到哪个用哪个；进程退出时系统自动释放。"""
+    slots = sdir / 'slots'
+    slots.mkdir(exist_ok=True)
+    while True:
+        for i in range(limit):
+            f = open(slots / ('%d.lock' % i), 'a')
+            try:
+                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                f.close()
+                continue
+            try:
+                yield i
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
+                f.close()
+            return
+        time.sleep(0.5)
+
+
+def run_one(godot: str, project: str, name: str, sdir: Path, limit: int) -> tuple:
+    with global_slot(sdir, limit):
+        start = time.time()
+        with tempfile.TemporaryDirectory(prefix='xiyou_test_home_') as home:
+            env = dict(os.environ, HOME=home)
+            try:
+                p = subprocess.run([godot, '--headless', '--path', project, 'res://tests/' + name],
+                                   capture_output=True, text=True, timeout=TIMEOUT, env=env)
+                out, rc = p.stdout + p.stderr, p.returncode
+            except subprocess.TimeoutExpired as e:
+                out = ''.join(x.decode(errors='replace') if isinstance(x, bytes) else (x or '')
+                              for x in (e.stdout, e.stderr))
+                rc = 142
+        return name, rc, out, time.time() - start
 
 
 def in_linked_worktree(path: str) -> bool:
@@ -63,61 +138,160 @@ def in_linked_worktree(path: str) -> bool:
         return False
 
 
+def project_fingerprint(godot: str, project: str, sdir: Path) -> str:
+    """工程指纹（见文件头）。文件内容哈希按 (大小, 修改时间, inode) 记在 filememo 里，没变的文件不重读。"""
+    root = Path(project).resolve()
+    memo_path = sdir / 'filememo' / (hashlib.sha1(str(root).encode()).hexdigest() + '.json')
+    memo_path.parent.mkdir(exist_ok=True)
+    memo = read_json(memo_path, {})
+    fresh = {}
+    h = hashlib.sha256()
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=True):
+        if Path(dirpath) == root:
+            dirnames[:] = [d for d in dirnames if d != '.godot']
+        dirnames.sort()
+        for fn in sorted(filenames):
+            p = Path(dirpath) / fn
+            rel = p.relative_to(root).as_posix()
+            st = p.stat()
+            key = [st.st_size, st.st_mtime_ns, st.st_ino]
+            old = memo.get(rel)
+            if old and old[:3] == key:
+                digest = old[3]
+            else:
+                fh = hashlib.sha256()
+                with open(p, 'rb') as f:
+                    for chunk in iter(lambda: f.read(1 << 20), b''):
+                        fh.update(chunk)
+                digest = fh.hexdigest()
+            fresh[rel] = key + [digest]
+            h.update(('%s\0%s\n' % (rel, digest)).encode())
+    write_json(memo_path, fresh)
+    exe = Path(subprocess.run(['/bin/sh', '-c', 'command -v "$1"', '-', godot], capture_output=True, text=True).stdout.strip() or godot).resolve()
+    st = exe.stat()
+    version = subprocess.run([godot, '--version'], capture_output=True, text=True, timeout=60).stdout.strip()
+    h.update(('godot\0%s\0%d\0%d\0%s\n' % (exe, st.st_size, st.st_mtime_ns, version)).encode())
+    h.update(hashlib.sha256(Path(__file__).read_bytes()).hexdigest().encode())
+    h.update(('timeout\0%d\n' % TIMEOUT).encode())
+    return h.hexdigest()
+
+
+def git_head(project: str) -> str:
+    try:
+        return subprocess.run(['git', '-C', project, 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return ''
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('godot')
     ap.add_argument('project')
     ap.add_argument('--jobs', type=int, default=None)
+    ap.add_argument('--full', action='store_true', help='不沿用上轮结果，整轮重跑（也可 CHECK_FULL=1）')
     ap.add_argument('--log-dir', type=Path, default=Path(os.environ['CHECK_LOG_DIR']) if os.environ.get('CHECK_LOG_DIR') else None)
     ap.add_argument('names', nargs='*')
     a = ap.parse_intermixed_args()
+    a.full = a.full or os.environ.get('CHECK_FULL', '') not in ('', '0')
+    cpu_half = max(1, min(6, (os.cpu_count() or 2) // 2))
     if a.jobs is None:
-        a.jobs = int(os.environ.get('CHECK_JOBS', '0')) or (2 if in_linked_worktree(a.project) else max(1, min(6, (os.cpu_count() or 2) // 2)))
+        a.jobs = int(os.environ.get('CHECK_JOBS', '0')) or (2 if in_linked_worktree(a.project) else cpu_half)
     if a.jobs < 1:
         ap.error('--jobs 必须大于 0')
+    limit = int(os.environ.get('CHECK_GLOBAL_JOBS', '0')) or cpu_half
     scenes = sorted(p.name for p in (Path(a.project) / 'tests').glob('*.tscn'))
     if a.names:
         scenes = [s for s in scenes if any(s == n or s == n + '.tscn' or s.startswith(n) for n in a.names)]
     if not scenes:
         print('  ✗ tests/ 下没有匹配的测试场景')
         return 1
-    fail = 0
-    results = {}
+    sdir = state_dir(a.project)
+    whole = not a.names
+    fingerprint = project_fingerprint(a.godot, a.project, sdir) if whole else ''
+    reused = {}  # 场景 → 上轮通过时的 TEST_RESULT 行
+    if whole and not a.full:
+        prev = read_json(sdir / 'results' / (fingerprint + '.json'), {})
+        if prev.get('fingerprint') == fingerprint and sorted(prev.get('scenes', {})) == scenes:
+            reused = {n: r['line'] for n, r in prev['scenes'].items()
+                      if r.get('passed') is True and isinstance(r.get('line'), str)}
+    timings = read_json(sdir / 'timings.json', {})
+    todo = sorted((n for n in scenes if n not in reused), key=lambda n: (-float(timings.get(n, 1e9)), n))
+    attempts = {}  # 场景 → [(rc, out, secs), …]：首次在前，重跑依次追加，不覆盖
     started = time.monotonic()
     with cf.ThreadPoolExecutor(max_workers=a.jobs) as pool:
-        for name, rc, out, secs in pool.map(lambda n: run_one(a.godot, a.project, n), scenes):
-            results[name] = (rc, out, secs)
-    failed = [n for n in scenes if not result_ok(*results[n][:2])]
+        for name, rc, out, secs in pool.map(lambda n: run_one(a.godot, a.project, n, sdir, limit), todo):
+            attempts[name] = [(rc, out, secs)]
+    failed = [n for n in todo if not result_ok(*attempts[n][0][:2])]
     flaky = []
-    if a.jobs > 1 and len(scenes) > 1 and 0 < len(failed) <= FLAKY_RERUN_MAX:
+    if a.jobs > 1 and len(todo) > 1 and 0 < len(failed) <= FLAKY_RERUN_MAX:
         for name in failed:
-            again = run_one(a.godot, a.project, name)
-            if result_ok(again[1], again[2]):
+            again = run_one(a.godot, a.project, name, sdir, limit)[1:]
+            attempts[name].append(again)
+            if result_ok(again[0], again[1]):
                 flaky.append(name)
-                results[name] = again[1:]
+    final = {n: result_ok(*attempts[n][-1][:2]) for n in todo}
+    fail = 0
     for name in scenes:
-        rc, out, secs = results[name]
+        if name in reused:
+            if a.log_dir:
+                a.log_dir.mkdir(parents=True, exist_ok=True)
+                (a.log_dir / (Path(name).stem + '.log')).write_text('沿用上轮通过结果（工程指纹 %s 未变）\nTEST_RESULT=%s\n' % (fingerprint[:12], reused[name]))
+            print(('  ✓ %s %s（沿用）' % (name, reused[name]))[:120])
+            continue
+        tries = attempts[name]
         if a.log_dir:
             a.log_dir.mkdir(parents=True, exist_ok=True)
-            (a.log_dir / (Path(name).stem + '.log')).write_text(out)
+            for i, (_, out, _) in enumerate(tries):
+                (a.log_dir / (Path(name).stem + ('.rerun%d' % i if i else '') + '.log')).write_text(out)
+        rc, out, secs = tries[-1]
         line = next((l for l in out.splitlines() if l.startswith('TEST_RESULT=')), '')
-        if result_ok(rc, out):
+        if final[name]:
             print(('  ✓ %s %s' % (name, line[len('TEST_RESULT='):]))[:120])
             if name in flaky:
-                print('  ⚠ %s 并行时失败、单独重跑通过（偶发，写进交付单）' % name)
-            if secs > SLOW:
-                print('  ⚠ %s 用时 %d 秒，超过上限 %d 秒的一半，请按场景拆分' % (name, secs, TIMEOUT))
+                print('  ⚠ %s 并行时失败（rc=%d，%d 秒）、单独重跑通过（%d 秒）（偶发，写进交付单）' % (name, tries[0][0], tries[0][2], secs))
+            if max(t[2] for t in tries) > SLOW:
+                print('  ⚠ %s 用时 %d 秒，超过上限 %d 秒的一半，请按场景拆分' % (name, max(t[2] for t in tries), TIMEOUT))
         else:
             fail = 1
             print('  ✗ %s (rc=%d)' % (name, rc))
             for l in [l for l in out.splitlines() if re.search(r'ERROR|FAIL |passed|TEST_RESULT', l)][:8]:
                 print('      ' + l)
+    wall = time.monotonic() - started
+    if reused:
+        print('  · 工程未变：沿用上轮通过 %d 个，实际运行 %d 个（--full 或 CHECK_FULL=1 强制整轮）' % (len(reused), len(todo)))
+    print('  · 测试用时 %d 秒（并行 %d，共用上限 %d）' % (wall, a.jobs, limit))
+    now = datetime.datetime.now().isoformat(timespec='seconds')
+    with file_lock(sdir / 'state.lock'):
+        timings = read_json(sdir / 'timings.json', {})
+        timings.update({n: round(attempts[n][0][2], 3) for n in todo})
+        write_json(sdir / 'timings.json', timings)
+        if flaky:
+            with open(sdir / 'flaky.jsonl', 'a') as f:
+                for n in flaky:
+                    f.write(json.dumps({'time': now, 'project': str(Path(a.project).resolve()), 'head': git_head(a.project), 'scene': n,
+                                        'attempts': [{'rc': t[0], 'seconds': round(t[2], 3), 'passed': result_ok(t[0], t[1])} for t in attempts[n]]},
+                                       ensure_ascii=False) + '\n')
+        if whole:
+            rdir = sdir / 'results'
+            rdir.mkdir(exist_ok=True)
+            rows = {n: {'passed': True, 'line': reused[n]} for n in reused}
+            for n in todo:
+                last = attempts[n][-1]
+                rows[n] = {'passed': final[n], 'line': next((l[len('TEST_RESULT='):] for l in last[1].splitlines() if l.startswith('TEST_RESULT=')), '')}
+            write_json(rdir / (fingerprint + '.json'), {'fingerprint': fingerprint, 'time': now, 'scenes': rows})
+            for old in sorted(rdir.glob('*.json'), key=lambda p: p.stat().st_mtime)[:-RESULTS_KEEP]:
+                old.unlink()
+    if flaky:
+        history = [json.loads(l) for l in (sdir / 'flaky.jsonl').read_text().splitlines() if l.strip()]
+        for n in flaky:
+            print('  ⚠ %s 累计偶发 %d 次（记录见 %s）' % (n, sum(1 for r in history if r.get('scene') == n), sdir / 'flaky.jsonl'))
     if a.log_dir:
         (a.log_dir / 'test_timings.json').write_text(json.dumps({
-            'jobs': a.jobs, 'wallSeconds': round(time.monotonic() - started, 3), 'flakyRerunPassed': flaky,
-            'scenes': [{'name': name, 'seconds': round(results[name][2], 3),
-                        'passed': result_ok(results[name][0], results[name][1])}
-                       for name in sorted(scenes, key=lambda n: results[n][2], reverse=True)]
+            'jobs': a.jobs, 'globalJobs': limit, 'wallSeconds': round(wall, 3), 'flakyRerunPassed': flaky,
+            'fingerprint': fingerprint, 'reused': sorted(reused),
+            'scenes': [{'name': n, 'seconds': round(attempts[n][0][2], 3), 'passed': final[n],
+                        'attempts': [{'rc': t[0], 'seconds': round(t[2], 3), 'passed': result_ok(t[0], t[1])} for t in attempts[n]]}
+                       for n in sorted(todo, key=lambda n: attempts[n][0][2], reverse=True)]
         }, ensure_ascii=False, indent=2) + '\n')
     return fail
 
