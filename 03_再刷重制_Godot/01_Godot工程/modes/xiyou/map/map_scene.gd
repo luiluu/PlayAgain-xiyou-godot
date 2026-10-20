@@ -10,8 +10,11 @@ const TS := MVTiles.TILE_SIZE
 
 var map_id := 0
 var map_data: Dictionary
-## 283 更改战斗背景（Game_Map.changeBattleback）设的 [背景1, 背景2]；换地图时清掉（Game_Map.setup 重设为地图指定的）
-var battleback_override: Array = []
+## 283 更改战斗背景（Game_Map.changeBattleback）设的 [背景1, 背景2]，存在 XState.battleback（随存档）；
+## 换到别的地图时清掉（Game_Map.setup 重设为地图指定的），同图移动与读档不清（performTransfer 只在换图时 setup）
+var battleback_override: Array:
+	get:
+		return XState.current.battleback if XState.current else []
 var lower: MVTilemap
 var upper: MVTilemap
 var chars: Node2D
@@ -189,10 +192,11 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 		if n:
 			n.queue_free()
 	events.clear()
+	var s := XState.current
+	if id != s.map_id:
+		s.battleback = []
 	map_id = id
 	map_data = XDB.map(id)
-	battleback_override = []
-	var s := XState.current
 	s.map_id = id
 	XMapTransfer.on_arrive(s, id)
 	_reset_transfer_button()
@@ -628,13 +632,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	# 原版战斗没有 _tipSpr；只保留快照里的那一帧，活提示在后台继续倒数。
 	difficulty_notice.hide()
 	var battle := XBattleScene.new()
-	var bmap := map_data
-	if not battleback_override.is_empty():
-		bmap = map_data.duplicate()
-		bmap.specifyBattleback = true
-		bmap.battleback1Name = battleback_override[0]
-		bmap.battleback2Name = battleback_override[1]
-	battle.setup(troop_id, can_escape, can_lose, bmap, shot)
+	battle.setup(troop_id, can_escape, can_lose, battle_map(), shot)
 	ui.add_child(battle)
 	ui.move_child(hang_overlay, -1)
 	_in_battle = true
@@ -993,6 +991,17 @@ func return_to_hub() -> void:
 	await run_common_event(10)
 
 
+## 开战时交给 XBattleScene 的地图数据：283 改过战斗背景就当作「地图指定」这两张（Spriteset_Battle.battleback1Name 先看 $gameMap）
+func battle_map() -> Dictionary:
+	if battleback_override.is_empty():
+		return map_data
+	var bmap := map_data.duplicate()
+	bmap.specifyBattleback = true
+	bmap.battleback1Name = battleback_override[0]
+	bmap.battleback2Name = battleback_override[1]
+	return bmap
+
+
 ## 283 更改战斗背景：之后在本图开的战斗用这两张图（三十一层可选首领、Map055 引路人前的公共事件 1387）
 func change_battleback(name1: String, name2: String) -> void:
-	battleback_override = [name1, name2]
+	XState.current.battleback = [name1, name2]

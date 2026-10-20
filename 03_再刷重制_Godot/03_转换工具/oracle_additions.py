@@ -26,6 +26,7 @@ KEYS = {
     'formula_effects.json': {'cases': ('id',)},
     'formula_equipment.json': {'cases': ('id',)},
     'formula_actions.json': {'cases': ('id',)},
+    'review_fix.json': {'cases': ('id',)},
     'troop_events.json': {'cases': ('troop', 'paid')},
     'smart_ai.json': {'cases': ('troop', 'scene', 'actor', 'state'),
                       'damage': ('troop', 'actor', 'skill', 'target')},
