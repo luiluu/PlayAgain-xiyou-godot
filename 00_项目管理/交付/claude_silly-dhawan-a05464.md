@@ -11,8 +11,9 @@
   - `xiyou_slice.json` 的 `actors` 加入 41～60；`slice_probe` 对它们做 1／10 级、35／65／99 级采样和各难度伤害行；`actor_passive_probe` 对它们升到 1／10／35／65／99 级读已学技能、追加行动几率与属性覆盖（新增 100 例）；`xiyou_rules`／`xiyou_rules_b` 逐角色逐项比较。
   - `xiyou_actor_p0` 加第三批招募表 `RECRUIT_3`：20 个「召唤…」公共事件（波加尼 CE153、酋长 154、露丝 155、碧池 156、东方不败 157、克莉丝汀 258、酒剑仙 158、莉娜 159、疾风丸 160、劲夫 162、法海 257、孙悟空 52＝「小明邀请函」698、艾瑞塔 259、迪昂 260、橙 261、瑞普 263、龙马 264、阿青 265、大羿 321、马宝国 322）都能在地图场景里让对应角色入队；初始装备与已学技能与参照行一致。
   - 工具：`oracle_additions.py` 的 `KEYS` 给 `actor_passive.json` 补了 `cases` 分组键（按 `setup`）。此前该参照没登记键，扩切片后同步一律报「非新增用例字段改变：cases」，不能 `--accept-additions`；补后既有用例逐条相同、只新增 100 例，自动接受。
+  - 测试容差：劲夫（50）的成长修正 growth 只有 0.104，参照里 growth 取 6 位小数后相对误差放大到约 5e-6，伤害主比较误报 1880 项；`_close_r6` 的相对容差改为随 growth 缩放（`6e-7/growth`，growth 较大时仍是 1e-6）。
   - 没有新增规则缺口：41～60 的基础能力曲线、装备、技能、伤害行与被动（含追加行动、属性覆盖）与参照一次全对，没有改 `core` 代码。
-- 验证：同步正式西游 `--accept-additions` 已接受并留指纹（新增只有角色 41～60 的行、help_cards 技能 100 条、power 装备 3 条、wtype 用例、actor_passive 100 例）；`xiyou_actor_p0` 1269/1269；内容覆盖检查 new 0／resolved 0；`检查.sh --oracle` 见提交。
+- 验证：同步正式西游 `--accept-additions` 已接受并留指纹（新增只有角色 41～60 的行、help_cards 技能 100 条、power 装备 3 条、wtype 用例、actor_passive 100 例）；`xiyou_actor_p0` 1269/1269；内容覆盖检查 new 0／resolved 0；`检查.sh --oracle` 全过（`xiyou_rules` 330311/330311，`xiyou_rules_b` 同）。
 - 可用范围：41～60 为 **battleReady**；**progressionReady=false**（技能树、进阶、羁绊、技能点变量未验），不记进度。
 - 战力：按 Kyo 2026-10-20 的决定战力对照不扩到新角色（`power_probe` 仍只含 1～18 号）。
 - 已知问题与未做：
