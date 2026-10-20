@@ -30,6 +30,9 @@ func refresh_events() -> void:
 func open_achievements() -> void:
 	opened += 1
 
+func character(_id, _from):
+	return null
+
 
 func run_list(list: Array) -> MVInterpreter:
 	var interp := MVInterpreter.new(self, 0, 0, list)
@@ -341,6 +344,14 @@ func _script_and_save() -> void:
 	var s := XState.new_game_blank()
 	var it := await run_list([{"code": 355, "indent": 0, "parameters": ["Star.AchievementSystem.GetAcReward(51)"]}, {"code": 0, "indent": 0, "parameters": []}])
 	check("script_get_ac_reward", it.skipped.is_empty() and XAchievement.party_has(s, 51) and XAchievement.global_has(51))
+	# O-076 FLOOR12_FIX：十二层守层者（Map023 事件 1、Map065 事件 2）给 12，其他地方的 13 不变
+	var code := [{"code": 355, "indent": 0, "parameters": ["Star.AchievementSystem.GetAcReward(13)"]}, {"code": 0, "indent": 0, "parameters": []}]
+	for at in [[23, 1, 12], [65, 2, 12], [29, 1, 13]]:
+		_reset_config()
+		var s3 := XState.new_game_blank()
+		await MVInterpreter.new(self, at[0], at[1], code).run()
+		check("floor12_fix_%d" % at[0], XAchievement.party_has(s3, at[2]) and _ids(s3.achievements) == [at[2]], s3.achievements)
+	XState.current = s
 	it = await run_list(XDB.rec("CommonEvents", 431).list)
 	check("script_ce431_opens_book", it.skipped.is_empty() and opened == 1)
 	# 宝箱等事件（公共事件＋已转换地图）里调用的成就全都有定义

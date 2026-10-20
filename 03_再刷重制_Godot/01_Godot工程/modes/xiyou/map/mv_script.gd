@@ -145,7 +145,7 @@ static func _statements(js: String, interp) -> Array:
 		# 成就（Star_AchievementSystem，见 XAchievement）：宝箱、守层者、传送等事件里的 GetAcReward(N)；公共事件 431 打开成就界面
 		m = RegEx.create_from_string("^Star\\.AchievementSystem\\.GetAcReward\\((\\d+)\\)$").search(st)
 		if m:
-			XAchievement.reward(int(m.get_string(1)), s)
+			XAchievement.reward(XAchievement.event_id_fix(int(m.get_string(1)), interp.map_id, interp.event_id), s)
 			continue
 		if st == "SceneManager.push(Scene_AchievementBook)" and interp.host.has_method("open_achievements"):
 			await interp.host.open_achievements()

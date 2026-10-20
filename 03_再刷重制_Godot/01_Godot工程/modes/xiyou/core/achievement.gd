@@ -13,11 +13,15 @@ extends RefCounted
 ## 优化 O-076（可回退，见 00_设计/优化登记.md）：
 ## - GAIN_ONLY：原版失去物品（gainItem 负数）也触发；改为只在得到时触发。
 ## - BEFORE_REDIRECT：原版在 CodexEconomy 改记之后判定，魂灯 184～187 一律改记成 188，108～111 正常游戏拿不到；改为改记前的物品也判定。
+## - FLOOR12_FIX：十二层两张图（Map023 冰封洞穴事件 1、Map065 苍白雪岭事件 2）的守层者给的是 13「十三层通关」，12 正常游戏拿不到；
+##   改为给 12（EVENT_FIX，按「地图:事件:原 ID」）。
 ## - SAVE_NOW：原版不写配置（要等设置等页面关闭时 ConfigManager.save），中途退出游戏就丢；改为达成即写。
 
 const GAIN_ONLY := true
 const BEFORE_REDIRECT := true
 const SAVE_NOW := true
+const FLOOR12_FIX := true
+const EVENT_FIX := {"23:1:13": 12, "65:2:13": 12}
 const PLUGIN := "Star_AchievementSystem"
 ## installKyoAchievementRuntime：测试模式授权后才能首次获得（重制没有测试模式，故只有全局已得时才照常记）
 const KYO_ID := 143
@@ -121,6 +125,13 @@ static func now_text() -> String:
 		return time_override
 	var t := Time.get_datetime_dict_from_system()
 	return "%d年%d月%d日 %d:%d:%d" % [t.year, t.month, t.day, t.hour, t.minute, t.second]
+
+
+## 事件脚本里的 GetAcReward(id)：O-076 FLOOR12_FIX 按地图与事件改号
+static func event_id_fix(id: int, map_id: int, event_id: int) -> int:
+	if FLOOR12_FIX:
+		return int(EVENT_FIX.get("%d:%d:%d" % [map_id, event_id, id], id))
+	return id
 
 
 ## Star.AchievementSystem.GetAcReward
