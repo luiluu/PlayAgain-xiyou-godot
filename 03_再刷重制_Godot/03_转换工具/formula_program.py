@@ -340,11 +340,22 @@ class Compiler:
             if name in self.locals and self.locals[name] != 'var':
                 raise Unsupported('duplicate_local:' + name, n['pos'])
             self.locals[name] = kind
-        if not self.custom and (not tree or tree[-1]['op'] != 'expr'):
+        if not self.custom and (not tree or not yields_result(tree[-1])):
             raise Unsupported('missing_expression_result')
         steps = [self.lower(x) for x in tree]
         return {'status': 'effectful' if any(x.startswith('write.') for x in self.caps) else 'pure', 'capabilities': sorted(self.caps), 'locals': list(self.locals),
                 'steps': steps, 'result': 'value' if self.custom else 'completion'}
+
+
+def yields_result(n):
+    """脚本完成值：末条语句是表达式，或 if／块的每条路径都以表达式收尾（JS 的 if 语句完成值是所选分支的完成值）。"""
+    if n['op'] == 'expr':
+        return True
+    if n['op'] == 'block':
+        return bool(n['steps']) and yields_result(n['steps'][-1])
+    if n['op'] == 'if':
+        return yields_result(n['yes']) and yields_result(n['no'])
+    return False
 
 
 def compile_formula(source, item_id=0, custom=False, table='Skills'):
