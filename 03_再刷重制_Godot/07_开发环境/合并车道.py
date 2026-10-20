@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""总装合并：默认准备合并；手改交接板/进度账后 --finish 检查、提交、清理。失败保留现场。"""
+"""总装合并：默认准备合并；手改交接板/进度账后 --finish 检查、提交、清理。失败保留现场。
+
+几条车道同时可合时（用户 2026-10-20 同意）：前几条 --finish --batch，照常登记、提交收尾，但不跑检查、
+不清理工作树、不推送，记进本批清单；最后一条不加 --batch 的 --finish 跑一次 检查.sh --oracle，
+通过后提交、清理本批全部工作树并推送。最后的检查失败时 main 上已有的本批收尾提交不推送、工作树都保留。"""
 import argparse
 import hashlib
 import json
@@ -288,7 +292,12 @@ def prepare(root, state, state_file, executor):
     print('已准备合并。请唐僧手改交接板（移除活动车道、加入待核查）与进度账，保持改动未提交；然后运行 --finish。', flush=True)
 
 
-def finish(root, state, state_file, executor):
+def load_batch(folder):
+    path = folder / 'batch.json'
+    return json.loads(path.read_text()) if path.exists() else []
+
+
+def finish(root, state, state_file, executor, batch=False):
     if state['phase'] not in ['prepared', 'committed']:
         raise RuntimeError('先运行准备合并，再手工登记，最后 --finish')
     if git(root, 'rev-parse', 'HEAD') != state['head']:
@@ -316,7 +325,10 @@ def finish(root, state, state_file, executor):
                 raise RuntimeError('交付单重新出现，先人工核对：' + s)
             if git(root, 'ls-files', '--', s):
                 run(root, ['git', 'add', '--', s])
-        run(root, [ENV / '检查.sh', '--oracle'])
+        if batch:
+            print('本批延后检查：等最后一条不加 --batch 的 --finish 统一跑 检查.sh --oracle', flush=True)
+        else:
+            run(root, [ENV / '检查.sh', '--oracle'])
         # 检查可能生成 .uid 等文件，仍须重新核对，不能顺带提交。
         changed = dirty(root)
         if changed - allowed:
@@ -333,11 +345,28 @@ def finish(root, state, state_file, executor):
         reviewer = 'Codex' if executor == 'Claude' else 'Claude'
         run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾',
                    '-m', '执行者: ' + actor + '\n核查: 待' + reviewer])
-        state.update(phase='committed', head=git(root, 'rev-parse', 'HEAD'))
+        state.update(phase='committed', head=git(root, 'rev-parse', 'HEAD'), batch=batch)
         save(state_file, state)
+    folder = state_file.parent
+    pending = load_batch(folder)
+    if state.get('batch'):
+        # 只登记，工作树与推送等本批最后一条通过检查后再做；中断后重跑同一命令不会重复登记。
+        if all(x['task'] != state['task'] for x in pending):
+            pending.append({k: state[k] for k in ['task', 'branch', 'worktree', 'target', 'head']})
+            save(folder / 'batch.json', pending)
+        state_file.unlink()
+        print('已收尾并记入本批（共 %d 条，未检查、未推送）；接着合下一条，最后一条不加 --batch 运行 --finish。' % len(pending), flush=True)
+        return
+    for lane in pending:
+        wt = Path(lane['worktree'])
+        if wt.exists():
+            if git(wt, 'rev-parse', 'HEAD') != lane['target'] or dirty(wt):
+                raise RuntimeError('本批车道交付后又发生改动，不清理其工作树：' + lane['worktree'])
+            run(root, [ENV / '清理工作树.sh', lane['worktree']])
     run(root, [ENV / '清理工作树.sh', state['worktree']])
+    (folder / 'batch.json').unlink(missing_ok=True)
     state_file.unlink()
-    print('合并、检查、提交与工作树清理全部完成。', flush=True)
+    print('合并、检查、提交与工作树清理全部完成%s。' % ('（本批共 %d 条）' % (len(pending) + 1) if pending else ''), flush=True)
     push_github(root)
 
 
@@ -373,6 +402,8 @@ def main(argv=None):
     modes.add_argument('--dry-run', action='store_true')
     modes.add_argument('--finish', action='store_true')
     ap.add_argument('--executor', choices=['Claude', 'Codex'], default='Claude')
+    ap.add_argument('--batch', action='store_true',
+                    help='--finish 时本条先不跑检查、不清理、不推送，记入本批；最后一条不加它统一检查')
     ap.add_argument('--also', action='append', default=[], metavar='路径',
                     help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则），可重复')
     a = ap.parse_args(argv)
@@ -384,6 +415,8 @@ def main(argv=None):
             raise RuntimeError('只能操作 main 主工作区')
         folder = Path(git(root, 'rev-parse', '--path-format=absolute', '--git-dir')) / 'lane-merge'
         state_file = folder / 'state.json'
+        if a.batch and not a.finish:
+            raise RuntimeError('--batch 只和 --finish 一起用')
         if a.dry_run:
             print(json.dumps(plan(root, a.task), ensure_ascii=False, indent=2)); return 0
         folder.mkdir(exist_ok=True)
@@ -412,8 +445,12 @@ def main(argv=None):
             if a.also:
                 state['also'] = sorted(set(state.get('also', [])) | set(a.also))
                 save(state_file, state)
-            finish(root, state, state_file, a.executor)
+            finish(root, state, state_file, a.executor, a.batch)
         else:
+            pending = load_batch(folder)
+            if pending and not any(x['task'] == a.task for x in pending):
+                print('提示：本批已有 %d 条收尾未检查（%s）；这条可 --finish --batch 继续攒，或直接 --finish 统一检查。'
+                      % (len(pending), '、'.join(x['task'] for x in pending)), flush=True)
             prepare(root, state, state_file, a.executor)
         return 0
     except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError, KeyError, IndexError) as error:
