@@ -151,12 +151,11 @@ func candidates() -> Array:
 
 func _raw_candidates() -> Array:
 	var a := actor()
-	var etype := int(a.equip_slots()[_slot])
 	var out := []
 	for kind in ["weapon", "armor"]:
 		var bag := XItemScene.bag_gear(kind)
 		for i in range(bag.size()):
-			if int(bag[i].get("etypeId", 0)) == etype and a.can_equip(bag[i]):
+			if XEquipment.fits(a, _slot, bag[i]):
 				out.append({"rec": bag[i], "carry": i + 1})
 	out.append({"rec": {}})
 	return out

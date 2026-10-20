@@ -24,16 +24,10 @@ func setup(id: int) -> XActor:
 	_lv = int(d.initialLevel)
 	nickname = str(d.get("nickname", ""))
 	exp_total = exp_for_level(_lv)
-	equips.resize(equip_slots().size())
-	var init: Array = d.get("equips", [])
-	for i in range(equips.size()):
-		var item_id := int(init[i]) if i < init.size() and init[i] != null else 0
-		equips[i] = make_equip("weapon" if i == 0 else "armor", item_id) if item_id > 0 else null
 	for l in class_data().get("learnings", []):
 		if int(l.level) <= _lv:
 			learn_skill(int(l.skillId))
-	release_unequippable()
-	refresh_passive()
+	init_equips(d.get("equips", []))
 	recover_all()
 	return self
 
@@ -55,12 +49,56 @@ func _level() -> int:
 
 
 # ---- 装备 ----
-## 西游正式版每位角色 19 个槽，对应 System.equipTypes 1..19。
+## 西游正式版每位角色 19 个槽，对应 System.equipTypes 1..19；双持时第 2 格（副手）改为武器（YEP_EquipCore equipSlots）。
 func equip_slots() -> Array:
 	var out := []
 	for i in range(1, XDB.system().equipTypes.size()):
 		out.append(i)
+	if out.size() >= 2 and is_dual_wield():
+		out[1] = 1
 	return out
+
+## MV Game_BattlerBase.slotType／isDualWield：特性 55 的最大值，1 为双持（职业、角色、装备、状态都可给，如刘备的专属剑 2005）
+func slot_type() -> int:
+	var types := traits_set(55)
+	return types.max() if not types.is_empty() else 0
+
+func is_dual_wield() -> bool:
+	return slot_type() == 1
+
+## 初始装备（YEP_ItemCore initIndependentEquips）：convertInitEquips 第 1 项与双持时的第 2 项查武器表、其余查防具表（编号 ≤0 跳过）；
+## 槽位类型在开头取一次，逐槽 grabInitEquips（武器槽取表里第一把武器，其余取同装备类型的第一件），能装备才装；
+## 最后 releaseUnequippableItems(true)：装上后槽位类型变了（如装了带双持的武器）而不合的直接丢掉，不进背包。
+func init_equips(ids: Array) -> void:
+	refresh_passive()   # 可装备判断要用已学技能的被动（passiveEWPN）
+	var dual := is_dual_wield()
+	var items := []
+	for i in range(ids.size()):
+		var id := int(ids[i]) if ids[i] != null else 0
+		if id <= 0:
+			continue
+		var weapon := i == 0 or (i == 1 and dual)
+		var base := XDB.rec("Weapons" if weapon else "Armors", id)
+		items.append(make_equip("weapon" if weapon else "armor", id) if not base.is_empty() else null)
+	var slots := equip_slots()
+	equips.clear()
+	equips.resize(slots.size())
+	for i in range(slots.size()):
+		var picked := -1
+		for j in range(items.size()):
+			var e = items[j]
+			if e != null and ((int(slots[i]) == 1 and e.kind == "weapon") or int(e.etypeId) == int(slots[i])):
+				picked = j
+				break
+		if picked < 0:
+			continue
+		var item: Dictionary = items[picked]
+		items[picked] = null
+		if can_equip(item):
+			equips[i] = item
+			refresh_passive()
+	release_unequippable()
+	refresh_passive()
 
 static func make_equip(kind: String, base_id: int) -> Dictionary:
 	return XGear.template(kind,base_id)
@@ -83,13 +121,13 @@ func can_equip(item: Dictionary) -> bool:
 	var at := int(item.atypeId)
 	return traits_set(52).has(at) or not passive_values("passiveEARM%02d" % at).is_empty()
 
-## 槽位类型不符或不能装备的卸下（MV releaseUnequippableItems，反复直到稳定）。
+## 槽位类型不符或不能装备的卸下（MV releaseUnequippableItems，反复直到稳定）。返回卸下的件（换装时退回背包）。
 func release_unequippable() -> Array:
 	var removed := []
-	var slots := equip_slots()
 	var changed := true
 	while changed:
 		changed = false
+		var slots := equip_slots()   # 每轮重取：卸下带双持的武器后第 2 格变回副手
 		for i in range(equips.size()):
 			var e = equips[i]
 			if e != null and not e.is_empty() and (int(e.etypeId) != int(slots[i]) or not can_equip(e)):
