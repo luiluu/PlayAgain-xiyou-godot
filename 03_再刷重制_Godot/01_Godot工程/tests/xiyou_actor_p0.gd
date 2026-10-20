@@ -48,6 +48,8 @@ func _run() -> void:
 		var mv_skills = row.skills.map(func(s): return int(s))
 		var missing = mv_skills.filter(func(s): return not my_skills.has(s) and not _is_boot_passive(d, s))
 		_check("skills_%d" % id, missing.is_empty(), missing)
+	# ④ 升级后被动：追加行动几率（passiveAPLUS）与伤害属性覆盖（DamageElements），参照 actor_passive.json（进度审查 35% 补）
+	_passive_levels()
 	# ① 招募路径
 	var s := XState.new_game(3, 1, [8, 10, 9])
 	s.map_id = 4
@@ -85,3 +87,35 @@ func _finish() -> void:
 	var passed := results.filter(func(r): return r["passed"]).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## actor_passive_probe：每个切片角色依次升到 1／10／35／65／99 级，已学技能、action_plus_set、被动缓存的 damageElement 逐项同参照
+func _passive_levels() -> void:
+	var ref = JSON.parse_string(FileAccess.get_file_as_string("res://modes/xiyou/generated/oracle/actor_passive.json"))
+	if not ref is Dictionary:
+		_check("actor_passive_present", false)
+		return
+	_check("actor_passive_cases", ref.cases.size() >= 200, ref.cases.size())
+	var made := {}
+	for c in ref.cases:
+		var id := int(c.setup.actor)
+		var lv := int(c.setup.level)
+		var tag := "passive_%d_lv%d" % [id, lv]
+		if not c.errors.is_empty():
+			_check(tag + ".source_clean", false, c.errors)
+			continue
+		if not made.has(id):
+			made[id] = XActor.new().setup(id)
+		var a: XActor = made[id]
+		a.change_level(lv)
+		var mine = a.skills().map(func(s): return int(s.id))
+		mine.sort()
+		_check(tag + ".skills", mine == c.observed.skills.map(func(v): return int(v)), [mine, c.observed.skills])
+		var aps := a.action_plus_set()
+		var want: Array = c.observed.actionPlus
+		var same := aps.size() == want.size()
+		for i in mini(aps.size(), want.size()):
+			same = same and absf(float(aps[i]) - float(want[i])) < 1e-6
+		_check(tag + ".actionPlus", same, [aps, want])
+		_check(tag + ".damageElement", int(a.passive_cache().get("damageElement", 0)) == int(c.observed.damageElement),
+			[a.passive_cache().get("damageElement", 0), c.observed.damageElement])
