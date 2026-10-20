@@ -276,6 +276,12 @@ fs.appendFileSync('.sandbox/pool.jsonl',JSON.stringify({event:'end',d,box})+'\n'
             sync.run_probes(io.StringIO(), None)
             full = {p.name: p.read_bytes() for p in (gen / 'oracle').glob('slice_d*.json')}
             self.assertEqual(incremental, full)
+            probe = oracle / 'slice_probe.cjs'
+            probe.write_text(probe.read_text().replace("if (process.argv.length", "if (d===3) throw Error('difficulty failed');\nif (process.argv.length"))
+            with self.assertRaisesRegex(RuntimeError, '探针失败'):
+                sync.run_probes(io.StringIO(), self.cache())
+            self.assertEqual(full, {p.name: p.read_bytes() for p in (gen / 'oracle').glob('slice_d*.json')})
+            self.assertNotIn('slice_probe.cjs', self.cache().entries)
 
 
 class ManualSandboxTests(unittest.TestCase):

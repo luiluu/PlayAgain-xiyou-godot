@@ -1,6 +1,7 @@
 """Temporary fixtures only: cache invalidation, failed output protection, and owned task lifecycle."""
 import contextlib
 import copy
+import hashlib
 import importlib.util
 import io
 import json
@@ -382,6 +383,11 @@ class CacheTests(unittest.TestCase):
         (self.oracle / 'event_probe.cjs').write_text(
             "const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));\n"
             "for (const id of SLICE.maps) {} // XIYOU_GENERATED")
+        # 此夹具明确只有已知的地图读取；允许该已审视内容，换代码会退回整份产物键。
+        audit = mock.patch.dict(sys.modules['incremental_sync'].GENERATED_SHARD_AUDITS,
+                                {'mv_oracle/event_probe.cjs': hashlib.sha256((self.oracle / 'event_probe.cjs').read_bytes()).hexdigest()})
+        audit.start()
+        self.addCleanup(audit.stop)
         (self.tools / 'xiyou_slice.json').write_text('{"maps":[1,2]}')
         for i in (1, 2, 3):
             (self.gen / 'maps' / ('Map%03d.json' % i)).write_text('{"events":[%d]}' % i)

@@ -185,7 +185,7 @@ class ProbeCache:
         if fields is None or spec['field'] not in fields:
             return None
         for dependency in dependencies:
-            code = re.sub(r'(?m)^\s*//.*$|(?m: //[^\n]*)', '', dependency.read_text(errors='replace'))
+            code = dependency.read_text(errors='replace')
             if any(marker in code for marker in GENERATED_MARKERS):
                 expected = GENERATED_SHARD_AUDITS.get(dependency.relative_to(self.tools).as_posix())
                 if expected != hashlib.sha256(dependency.read_bytes()).hexdigest():
