@@ -275,7 +275,7 @@ def run_probes(log, cache=None):
     import concurrent.futures
     import time
     jobs = max(1, int(os.environ.get('SYNC_JOBS', '4')))
-    plan, reused, keys, units, partial = [], [], {}, {}, {}
+    plan, reused, keys, units, partial, misses = [], [], {}, {}, {}, {}
     for command, outputs in PROBES:
         key = cache.key(command) if cache else None
         keys[command[0]] = key
@@ -286,6 +286,9 @@ def run_probes(log, cache=None):
             cache.record(command, outputs, key, units[command[0]])
             log.write('CACHE_HIT ' + command[0] + '\n')
         else:
+            if cache:
+                misses[command[0]] = cache.misses[command[0]]
+                log.write('CACHE_MISS ' + json.dumps({'probe': command[0], 'reasons': misses[command[0]]}, ensure_ascii=False) + '\n')
             if todo is not None:
                 # 分片探针：只跑变了的单元（[''] 表示只删了单元或换了顺序，不跑探针只合并）
                 partial[command[0]] = [u for u in todo if u]
@@ -296,7 +299,7 @@ def run_probes(log, cache=None):
     print('PROBE_PLAN=' + json.dumps({'executed': len(plan) - len(partial), 'partial': {k: len(v) for k, v in partial.items()},
                                       'reused': len(reused)}), flush=True)
     if not plan:
-        return {'executed': [], 'partial': {}, 'reused': reused, 'seconds': {}}
+        return {'executed': [], 'partial': {}, 'reused': reused, 'seconds': {}, 'missReasons': misses}
     gen_oracle = Path(os.environ['XIYOU_GENERATED']) / 'oracle'
     # 合并要用上次产物：作废缓存前先存一份（作废后 generated/oracle 仍是上次产物，失败时也不会被当作新结果发布）
     previous = SANDBOX / 'run-previous'
@@ -386,6 +389,7 @@ def run_probes(log, cache=None):
     shutil.rmtree(previous, ignore_errors=True)
     return {'executed': [cmd[0] for cmd, _ in plan if cmd[0] not in partial],
             'partial': {k: v for k, v in partial.items()}, 'reused': reused,
+            'missReasons': misses,
             'seconds': {cmd[0]: round(sec, 3) for cmd, _, _, sec in results}}
 
 

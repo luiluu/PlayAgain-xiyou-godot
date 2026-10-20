@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """缓存携带、未命中诊断与手动种子隔离；仅使用临时夹具，不读玩家存档。"""
 import json
+import importlib.util
+import io
 import os
 from pathlib import Path
 import subprocess
@@ -142,6 +144,42 @@ class PortableCacheTests(unittest.TestCase):
         cmd, outs = self.probes[0]
         self.assertIsNone(c.plan(cmd, outs, c.key(cmd)))
         self.assertEqual(c.misses[cmd[0]], [{'kind': 'forced-full'}])
+
+    def test_output_read_failure_remains_a_miss(self):
+        self.prime()
+        c = self.cache()
+        cmd, outs = self.probes[0]
+        key = c.key(cmd)
+        original = Path.read_bytes
+        def unreadable(path):
+            if path.resolve() == (self.paths('donor')[1] / 'oracle/plain.json').resolve():
+                raise PermissionError('fixture unreadable')
+            return original(path)
+        with mock.patch.object(Path, 'read_bytes', unreadable):
+            self.assertIsNone(c.plan(cmd, outs, key))
+        reason = c.misses[cmd[0]][0]
+        self.assertEqual(reason['kind'], 'output-sha')
+        self.assertEqual(reason['unavailable'], [{'name': 'plain.json', 'error': 'PermissionError'}])
+
+    def test_report_and_log_retain_miss_reasons_and_hits_are_clean(self):
+        spec = importlib.util.spec_from_file_location('speedup_sync_report_test', TOOLS / '同步正式西游.py')
+        sync = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sync)
+        oracle = self.paths('donor')[0] / 'mv_oracle'
+        (oracle / 'plain_probe.cjs').write_text("require('fs').writeFileSync('.sandbox/plain.json', '{\"cases\":[]}');")
+        with mock.patch.multiple(sync, PROBES=self.probes[:1], ORACLE_DIR=oracle, SANDBOX=oracle / '.sandbox'), \
+             mock.patch.dict(os.environ, XIYOU_GENERATED=str(self.paths('donor')[1])):
+            log, cache = io.StringIO(), self.cache()
+            result = sync.run_probes(log, cache)
+            self.assertEqual(result['missReasons'], {'plain_probe.cjs': [{'kind': 'cache-missing'}]})
+            event = next(line.removeprefix('CACHE_MISS ') for line in log.getvalue().splitlines() if line.startswith('CACHE_MISS '))
+            self.assertEqual(json.loads(event)['reasons'], result['missReasons']['plain_probe.cjs'])
+            cache.commit()
+            log = io.StringIO()
+            result = sync.run_probes(log, self.cache())
+            self.assertEqual(result['reused'], ['plain_probe.cjs'])
+            self.assertEqual(result['missReasons'], {})
+            self.assertNotIn('CACHE_MISS', log.getvalue())
 
 
 class ManualSandboxTests(unittest.TestCase):

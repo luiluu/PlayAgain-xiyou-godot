@@ -225,6 +225,8 @@ class ProbeCache:
         if not isinstance(old, dict):
             return [self.cache_issue or {'kind': 'probe-not-cached'}]
         why = []
+        if old.get('names') != output_names:
+            why.append({'kind': 'output-declaration'})
         if old.get('key') != key:
             current = self.details.get(command[0], {})
             previous = old.get('inputs') if isinstance(old.get('inputs'), dict) else {}
@@ -246,11 +248,21 @@ class ProbeCache:
             if not why:
                 why.append({'kind': 'input-fingerprint'})
         expected = old.get('outputs') if isinstance(old.get('outputs'), dict) else {}
-        changed = [Path(p).name for p in output_names
-                   if not (self.gen / 'oracle' / Path(p).name).is_file()
-                   or hashlib.sha256((self.gen / 'oracle' / Path(p).name).read_bytes()).hexdigest() != expected.get(Path(p).name)]
+        changed, unavailable = [], []
+        for p in output_names:
+            name = Path(p).name
+            try:
+                actual = hashlib.sha256((self.gen / 'oracle' / name).read_bytes()).hexdigest()
+            except OSError as error:
+                actual = None
+                unavailable.append({'name': name, 'error': type(error).__name__})
+            if actual is None or actual != expected.get(name):
+                changed.append(name)
         if changed:
-            why.append({'kind': 'output-sha', 'names': changed})
+            item = {'kind': 'output-sha', 'names': changed}
+            if unavailable:
+                item['unavailable'] = unavailable
+            why.append(item)
         previous = old.get('units')
         if units != previous or isinstance(units, dict) and isinstance(previous, dict) and list(units) != list(previous):
             item = {'kind': 'units'}
@@ -289,12 +301,10 @@ class ProbeCache:
         """None＝整体重跑；[]＝整体复用；单元列表＝只跑这些单元再合并。
         分片探针只删了或换了顺序时返回 ['']：不跑探针，只按新顺序合并。"""
         self.misses[command[0]] = self.explain(command, output_names, key, units)
-        if self.force:
+        if self.force or any(reason['kind'] != 'units' for reason in self.misses[command[0]]):
             return None
         try:
             old = self.entries[command[0]]
-            if old['key'] != key or old['outputs'] != self.outputs(output_names):
-                return None
             if units is None:
                 return [] if old.get('units') is None else None
             previous = old.get('units')
