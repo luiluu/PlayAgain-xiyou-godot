@@ -1,5 +1,5 @@
 extends Node
-## 角色模板 P0／P1：普通角色 11～80 的招募路径与基础战斗基线（能力曲线／伤害由 xiyou_rules 逐项对照 slice 参照）。
+## 角色模板 P0／P1：普通角色 11～100 的招募路径与基础战斗基线（能力曲线／伤害由 xiyou_rules 逐项对照 slice 参照）。
 ## 本测试补三件事：①招募——原版「召唤…」公共事件真的能让该角色入队、占出战栏；②初始装备与已学技能与 mv_oracle
 ## 参照行一致；③每个声明可用的角色在参照里都有独立行（等级采样 35／65／99 与伤害行），没有就不算可用。
 ## 完整养成（技能树、进阶、羁绊）不在 P0 范围：本测试不验也不声明。
@@ -12,6 +12,8 @@ const RECRUIT_2 := {26: 19, 27: 20, 29: 21, 30: 22, 31: 23, 32: 24, 33: 25, 69: 
 const RECRUIT_3 := {153: 41, 154: 42, 155: 43, 156: 44, 157: 45, 258: 46, 158: 47, 159: 48, 160: 49, 162: 50, 257: 51, 698: 52, 259: 53, 260: 54, 261: 55, 263: 56, 264: 57, 265: 58, 321: 59, 322: 60}
 ## 第四批（角色 61～80，同样由 129 指令得出；阿语用 399，374「召唤阿玉」是另一入口）
 const RECRUIT_4 := {323: 61, 326: 62, 329: 63, 333: 64, 380: 65, 327: 66, 337: 67, 332: 68, 341: 69, 338: 70, 342: 71, 399: 72, 405: 73, 389: 74, 394: 75, 530: 76, 685: 77, 529: 78, 832: 79, 818: 80}
+## 第五批（角色 81～100，同样由 129 指令得出，每人一个「召唤…」入口）
+const RECRUIT_5 := {1082: 81, 1096: 82, 869: 83, 1334: 84, 1502: 85, 1603: 86, 1611: 87, 1609: 88, 1623: 89, 1509: 90, 1511: 91, 1515: 92, 1539: 93, 1212: 94, 1535: 95, 1652: 96, 1536: 97, 1537: 98, 1557: 99, 1650: 100}
 const REGRESSION := [1, 8, 9, 10]
 var results: Array = []
 
@@ -35,13 +37,13 @@ func _run() -> void:
 		_check("oracle_present", false)
 		return _finish()
 	# ③ 参照行齐全
-	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values():
+	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values():
 		var row = d.actors.get(str(id))
 		_check("oracle_row_%d" % id, row != null and row.has("lv1") and row.has("lv10Battle") and row.get("levelSamples", {}).size() == 3, id)
 		var dmg = d.damage.filter(func(r): return r.get("actor") != null and int(r.actor) == id)
 		_check("oracle_damage_%d" % id, dmg.size() > 0 and dmg.all(func(r): return not r.has("error")), [id, dmg.size()])
 	# ② 初始装备与技能
-	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values():
+	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values():
 		var row: Dictionary = d.actors[str(id)]
 		var a := XActor.new().setup(id)
 		var mv_equips = row.equips.filter(func(e): return e != null).map(func(e): return int(e.base))
@@ -67,6 +69,7 @@ func _run() -> void:
 	all_recruit.merge(RECRUIT_2)
 	all_recruit.merge(RECRUIT_3)
 	all_recruit.merge(RECRUIT_4)
+	all_recruit.merge(RECRUIT_5)
 	for ce in all_recruit:
 		var id: int = all_recruit[ce]
 		_check("not_in_party_before_%d" % id, not s.party.has(id))
