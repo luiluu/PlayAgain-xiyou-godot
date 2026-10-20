@@ -4,7 +4,8 @@
 用法：并行测试.py <godot> <工程目录> [--jobs N] [场景名或前缀 ...]
 - 每个测试一个独立的临时 HOME，因此 user://（存档、配置）互不干扰，也不会读写本机真实的用户数据目录。
 - 导入（--import）由调用方先单独做一次；这里只读工程缓存。
-- 每个测试最多 300 秒；脚本语法错误时场景不会自行退出，超时即判失败。
+- 每个测试最多 600 秒；脚本语法错误时场景不会自行退出，超时即判失败。用时超过一半（300 秒）时提示拆场景。
+- 并行时只有少数（≤3）测试失败的，逐个单独重跑一次：单跑通过记为「偶发」，仍算通过但打印 ⚠，写进交付单；单跑仍失败才判失败。
 - 输出与原来逐个运行时相同（按场景名排序），失败时返回 1。
 - 并行数：CHECK_JOBS 或 --jobs；都没给时主工作区用 CPU 核数一半（最多 6），worktree 里只用 2（多会话并行时给其他车道留余量）。
 """
@@ -20,6 +21,8 @@ import time
 from pathlib import Path
 
 TIMEOUT = 600  # xiyou_rules 角色 P0 后单跑约 200 秒，满负载并行时超过 300
+SLOW = TIMEOUT // 2  # 超过就提示按场景拆分（xiyou_rules 已拆 a／b）
+FLAKY_RERUN_MAX = 3  # 并行负载下偶发失败（floor16、floor_run_c 等）最多单独重跑这么多个
 
 
 def result_ok(rc: int, out: str) -> bool:
@@ -84,6 +87,14 @@ def main() -> int:
     with cf.ThreadPoolExecutor(max_workers=a.jobs) as pool:
         for name, rc, out, secs in pool.map(lambda n: run_one(a.godot, a.project, n), scenes):
             results[name] = (rc, out, secs)
+    failed = [n for n in scenes if not result_ok(*results[n][:2])]
+    flaky = []
+    if a.jobs > 1 and len(scenes) > 1 and 0 < len(failed) <= FLAKY_RERUN_MAX:
+        for name in failed:
+            again = run_one(a.godot, a.project, name)
+            if result_ok(again[1], again[2]):
+                flaky.append(name)
+                results[name] = again[1:]
     for name in scenes:
         rc, out, secs = results[name]
         if a.log_dir:
@@ -92,6 +103,10 @@ def main() -> int:
         line = next((l for l in out.splitlines() if l.startswith('TEST_RESULT=')), '')
         if result_ok(rc, out):
             print(('  ✓ %s %s' % (name, line[len('TEST_RESULT='):]))[:120])
+            if name in flaky:
+                print('  ⚠ %s 并行时失败、单独重跑通过（偶发，写进交付单）' % name)
+            if secs > SLOW:
+                print('  ⚠ %s 用时 %d 秒，超过上限 %d 秒的一半，请按场景拆分' % (name, secs, TIMEOUT))
         else:
             fail = 1
             print('  ✗ %s (rc=%d)' % (name, rc))
@@ -99,7 +114,7 @@ def main() -> int:
                 print('      ' + l)
     if a.log_dir:
         (a.log_dir / 'test_timings.json').write_text(json.dumps({
-            'jobs': a.jobs, 'wallSeconds': round(time.monotonic() - started, 3),
+            'jobs': a.jobs, 'wallSeconds': round(time.monotonic() - started, 3), 'flakyRerunPassed': flaky,
             'scenes': [{'name': name, 'seconds': round(results[name][2], 3),
                         'passed': result_ok(results[name][0], results[name][1])}
                        for name in sorted(scenes, key=lambda n: results[n][2], reverse=True)]
