@@ -358,6 +358,28 @@ func _script_and_save() -> void:
 			if XAchievement.def(int(m.get_string(1))).is_empty():
 				missing.append(int(m.get_string(1)))
 	check("event_ids_defined", calls > 40 and missing.is_empty(), [calls, missing])
+	# 事件里出现过的每一种成就脚本写法都认得（不进 skipped）
+	var texts := {}
+	var walk := func(v, f: Callable) -> void:
+		if v is Dictionary:
+			if int(v.get("code", 0)) in [355, 655] and str(v.get("parameters", [""])[0]).contains("Achievement"):
+				texts[str(v.parameters[0])] = true
+			for k in v:
+				f.call(v[k], f)
+		elif v is Array:
+			for x in v:
+				f.call(x, f)
+	walk.call(lists, walk)
+	var unknown := []
+	_reset_config()
+	XState.new_game_blank()
+	for t in texts:
+		var left: Array = await MVScript.run(str(t), MVInterpreter.new(self, 0, 0, []))
+		if not left.is_empty():
+			unknown.append(t)
+	check("event_scripts_recognized", texts.size() > 100 and unknown.is_empty(), [texts.size(), unknown])
+	opened = 1
+	_popups()
 	# 存读档：本局记录随存档，全局记录不随
 	check("save", XSave.save(2))
 	var s2 := XState.new_game_blank()
