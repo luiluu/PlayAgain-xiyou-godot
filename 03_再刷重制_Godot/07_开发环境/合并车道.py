@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""总装合并：默认准备合并；手改交接板/进度账后 --finish 检查、提交、清理。失败保留现场。"""
+"""总装合并：默认准备合并；手改交接板/进度账后 --finish 检查、提交、清理。失败保留现场。
+
+几条车道同时可合时（用户 2026-10-20 同意）：前几条 --finish --batch，照常登记、提交收尾，但不跑检查、
+不清理工作树、不推送，记进本批清单；最后一条不加 --batch 的 --finish 跑一次 检查.sh --oracle，
+通过后提交、清理本批全部工作树并推送。最后的检查失败时 main 上已有的本批收尾提交不推送、工作树都保留，
+并列出本批每条车道的合并提交与改动文件，便于对照失败项定位；要撤出某条就 --abort-batch：先把当前 main
+（含未提交的登记改动）存成 refs/lane-merge/aborted-* 备份，再退回本批开始前的 main，各车道工作树不动，
+之后把没问题的车道重新合（可再攒一批），出问题的那条在自己的工作树修好再交付。"""
 import argparse
 import hashlib
 import json
@@ -8,6 +15,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 
 SUB = Path('03_再刷重制_Godot')
 ENV = SUB / '07_开发环境'
@@ -234,7 +242,8 @@ def prepare(root, state, state_file, executor):
                                    '放弃就 git merge --abort，让车道 git merge main 后重新交付，再运行即按新提交重排')
         elif subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode:
             raise RuntimeError('main 已改变且尚未包含目标车道；请人工核对状态文件')
-        state.update(phase='merged', head=git(root, 'rev-parse', 'HEAD'))
+        head = git(root, 'rev-parse', 'HEAD')
+        state.update(phase='merged', head=head, mergeCommit=head)
         save(state_file, state)
     if state['phase'] == 'merged':
         if state['refresh']:
@@ -288,7 +297,63 @@ def prepare(root, state, state_file, executor):
     print('已准备合并。请唐僧手改交接板（移除活动车道、加入待核查）与进度账，保持改动未提交；然后运行 --finish。', flush=True)
 
 
-def finish(root, state, state_file, executor):
+def load_batch(folder):
+    path = folder / 'batch.json'
+    return json.loads(path.read_text()) if path.exists() else []
+
+
+def report_batch(root, pending, state):
+    """本批最后的检查失败时：列出每条车道的合并提交和带进来的文件，对照检查输出里失败的场景／文件定位是哪条。"""
+    if not pending:
+        return
+    print('\n== 本批最后的检查未通过。各条车道带进来的改动（对照上面失败的场景或文件）：', flush=True)
+    for lane in pending + [state]:
+        mc = lane.get('mergeCommit')
+        files = git(root, 'diff', '--name-only', mc + '^1', mc).splitlines() if mc else []
+        print('- %s（%s）合并提交 %s，%d 个文件：%s%s' % (
+            lane['task'], lane['branch'], (mc or '未知')[:9], len(files), '、'.join(files[:12]), '……' if len(files) > 12 else ''), flush=True)
+    print('定位：在嫌疑车道自己的工作树单独跑失败的场景（并行测试.py <godot> <工程> <场景名>），能复现就是它；'
+          '都不复现说明是几条合在一起才出的问题。\n'
+          '撤出：确定要撤哪条后运行 合并车道.py --abort-batch，退回本批开始前的 main（当前状态先存备份），'
+          '再把没问题的车道重新合；只是检查本身的问题（偶发、环境）修好后重跑同一条 --finish 即可。', flush=True)
+
+
+def abort_batch(root, folder):
+    """退回本批开始前的 main：先存备份引用，不删任何车道工作树；已推送到 GitHub 的批不能退。"""
+    pending = load_batch(folder)
+    state_file = folder / 'state.json'
+    state = json.loads(state_file.read_text()) if state_file.exists() else None
+    if not pending:
+        raise RuntimeError('没有攒着的本批合并（batch.json），不需要撤')
+    base = pending[0].get('base')
+    if not base or subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', base, 'HEAD']).returncode:
+        raise RuntimeError('本批起点不在当前 main 历史里，先人工核对')
+    if merge_head(root):
+        raise RuntimeError('有进行中的合并冲突，先 git merge --abort 或解决')
+    if any(x.startswith('??') for x in porcelain(root)):
+        raise RuntimeError('有未跟踪文件，先移走或提交，免得退回时丢失')
+    tracking = 'refs/remotes/github/main'
+    first = pending[0].get('mergeCommit') or pending[0]['head']
+    if (subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', tracking], capture_output=True).returncode == 0
+            and subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', first, tracking]).returncode == 0):
+        raise RuntimeError('本批已推送到 GitHub，不能退回；改用新提交修复')
+    stamp = time.strftime('%Y%m%d_%H%M%S')
+    backup = 'refs/lane-merge/aborted-' + stamp
+    git(root, 'update-ref', backup, 'HEAD')
+    wip = git(root, 'stash', 'create')  # 只生成提交对象，不动共用的 stash 栈
+    if wip:
+        git(root, 'update-ref', backup + '-wip', wip)
+    git(root, 'reset', '--hard', base)
+    (folder / 'batch.json').unlink()
+    state_file.unlink(missing_ok=True)
+    lanes = pending + ([state] if state and all(x['task'] != state['task'] for x in pending) else [])
+    print('已退回本批开始前的 main（%s）。备份：%s%s。' % (base[:9], backup, '（未提交改动在 ' + backup + '-wip）' if wip else ''), flush=True)
+    for lane in lanes:
+        print('- %s：工作树保留在 %s' % (lane['task'], lane['worktree']), flush=True)
+    print('接着把没问题的车道重新合（可再 --finish --batch 攒一批）；撤出的那条在自己的工作树修好、git merge main 后再交付。', flush=True)
+
+
+def finish(root, state, state_file, executor, batch=False):
     if state['phase'] not in ['prepared', 'committed']:
         raise RuntimeError('先运行准备合并，再手工登记，最后 --finish')
     if git(root, 'rev-parse', 'HEAD') != state['head']:
@@ -316,7 +381,14 @@ def finish(root, state, state_file, executor):
                 raise RuntimeError('交付单重新出现，先人工核对：' + s)
             if git(root, 'ls-files', '--', s):
                 run(root, ['git', 'add', '--', s])
-        run(root, [ENV / '检查.sh', '--oracle'])
+        if batch:
+            print('本批延后检查：等最后一条不加 --batch 的 --finish 统一跑 检查.sh --oracle', flush=True)
+        else:
+            try:
+                run(root, [ENV / '检查.sh', '--oracle'])
+            except subprocess.CalledProcessError:
+                report_batch(root, load_batch(state_file.parent), state)
+                raise
         # 检查可能生成 .uid 等文件，仍须重新核对，不能顺带提交。
         changed = dirty(root)
         if changed - allowed:
@@ -333,11 +405,28 @@ def finish(root, state, state_file, executor):
         reviewer = 'Codex' if executor == 'Claude' else 'Claude'
         run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾',
                    '-m', '执行者: ' + actor + '\n核查: 待' + reviewer])
-        state.update(phase='committed', head=git(root, 'rev-parse', 'HEAD'))
+        state.update(phase='committed', head=git(root, 'rev-parse', 'HEAD'), batch=batch)
         save(state_file, state)
+    folder = state_file.parent
+    pending = load_batch(folder)
+    if state.get('batch'):
+        # 只登记，工作树与推送等本批最后一条通过检查后再做；中断后重跑同一命令不会重复登记。
+        if all(x['task'] != state['task'] for x in pending):
+            pending.append({k: state.get(k) for k in ['task', 'branch', 'worktree', 'target', 'head', 'base', 'mergeCommit']})
+            save(folder / 'batch.json', pending)
+        state_file.unlink()
+        print('已收尾并记入本批（共 %d 条，未检查、未推送）；接着合下一条，最后一条不加 --batch 运行 --finish。' % len(pending), flush=True)
+        return
+    for lane in pending:
+        wt = Path(lane['worktree'])
+        if wt.exists():
+            if git(wt, 'rev-parse', 'HEAD') != lane['target'] or dirty(wt):
+                raise RuntimeError('本批车道交付后又发生改动，不清理其工作树：' + lane['worktree'])
+            run(root, [ENV / '清理工作树.sh', lane['worktree']])
     run(root, [ENV / '清理工作树.sh', state['worktree']])
+    (folder / 'batch.json').unlink(missing_ok=True)
     state_file.unlink()
-    print('合并、检查、提交与工作树清理全部完成。', flush=True)
+    print('合并、检查、提交与工作树清理全部完成%s。' % ('（本批共 %d 条）' % (len(pending) + 1) if pending else ''), flush=True)
     push_github(root)
 
 
@@ -367,12 +456,16 @@ def push_github(root, remote='github'):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('task')
+    ap.add_argument('task', nargs='?')
     ap.add_argument('--root', type=Path, help='主工作区；默认从当前工具所属资料库定位')
     modes = ap.add_mutually_exclusive_group()
     modes.add_argument('--dry-run', action='store_true')
     modes.add_argument('--finish', action='store_true')
     ap.add_argument('--executor', choices=['Claude', 'Codex'], default='Claude')
+    modes.add_argument('--abort-batch', action='store_true',
+                       help='本批最后的检查失败、要撤出某条车道时：存备份后退回本批开始前的 main，车道工作树都保留')
+    ap.add_argument('--batch', action='store_true',
+                    help='--finish 时本条先不跑检查、不清理、不推送，记入本批；最后一条不加它统一检查')
     ap.add_argument('--also', action='append', default=[], metavar='路径',
                     help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则），可重复')
     a = ap.parse_args(argv)
@@ -384,6 +477,17 @@ def main(argv=None):
             raise RuntimeError('只能操作 main 主工作区')
         folder = Path(git(root, 'rev-parse', '--path-format=absolute', '--git-dir')) / 'lane-merge'
         state_file = folder / 'state.json'
+        if a.abort_batch:
+            folder.mkdir(exist_ok=True)
+            lock = folder / 'running.lock'
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            os.close(fd)
+            abort_batch(root, folder)
+            return 0
+        if not a.task:
+            raise RuntimeError('要给任务名（只有 --abort-batch 不用）')
+        if a.batch and not a.finish:
+            raise RuntimeError('--batch 只和 --finish 一起用')
         if a.dry_run:
             print(json.dumps(plan(root, a.task), ensure_ascii=False, indent=2)); return 0
         folder.mkdir(exist_ok=True)
@@ -412,8 +516,12 @@ def main(argv=None):
             if a.also:
                 state['also'] = sorted(set(state.get('also', [])) | set(a.also))
                 save(state_file, state)
-            finish(root, state, state_file, a.executor)
+            finish(root, state, state_file, a.executor, a.batch)
         else:
+            pending = load_batch(folder)
+            if pending and not any(x['task'] == a.task for x in pending):
+                print('提示：本批已有 %d 条收尾未检查（%s）；这条可 --finish --batch 继续攒，或直接 --finish 统一检查。'
+                      % (len(pending), '、'.join(x['task'] for x in pending)), flush=True)
             prepare(root, state, state_file, a.executor)
         return 0
     except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError, KeyError, IndexError) as error:
