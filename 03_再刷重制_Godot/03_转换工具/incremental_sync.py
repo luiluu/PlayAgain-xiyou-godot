@@ -24,6 +24,11 @@ SHARDS = {
 # 合并与缓存本身的代码：改了就让分片探针整体重跑
 TOOLING = ('incremental_sync.py', 'oracle_shard_merge.cjs')
 GENERATED_MARKERS = ('XIYOU_GENERATED', 'modes/xiyou/generated')
+# 只有审视过「仅 maps 与 manifest.slice.commonEvents」的事件读取器能按地图分片。
+# 新读取法（包括原读取器改代码）先退回全产物键，不能因 SHARDS 优先而漏掉 converted。
+GENERATED_SHARD_AUDITS = {
+    'mv_oracle/event_probe.cjs': '17f82a28ea935011b3d6ad658dce615680a8775a55678581b3d7417fdc01f01f',
+}
 
 
 def digest_files(paths, base):
@@ -175,10 +180,16 @@ class ProbeCache:
         spec = SHARDS.get(command[0])
         if spec is None:
             return None
-        _, texts = self._dependencies(command)
+        dependencies, texts = self._dependencies(command)
         fields = slice_fields(texts)
         if fields is None or spec['field'] not in fields:
             return None
+        for dependency in dependencies:
+            code = re.sub(r'(?m)^\s*//.*$|(?m: //[^\n]*)', '', dependency.read_text(errors='replace'))
+            if any(marker in code for marker in GENERATED_MARKERS):
+                expected = GENERATED_SHARD_AUDITS.get(dependency.relative_to(self.tools).as_posix())
+                if expected != hashlib.sha256(dependency.read_bytes()).hexdigest():
+                    return None
         return spec
 
     def key(self, command):

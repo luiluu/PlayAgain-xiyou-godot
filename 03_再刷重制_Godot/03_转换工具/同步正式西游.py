@@ -51,7 +51,7 @@ TOOLS_REL = HERE.relative_to(ROOT).as_posix()   # 03_再刷重制_Godot/03_转�
 READ_ONLY_TOOLS = {'内容覆盖检查.py', '事件指令统计.py', '共性参照验收.py', '验证西游来源.py', '角色模板预检.py'}
 GODOT = ROOT / '03_再刷重制_Godot/07_开发环境/godot'
 PROJECT = ROOT / '03_再刷重制_Godot/01_Godot工程'
-# 探针 → 产物（相对 .sandbox）；slice_probe 一次跑 6 个难度
+# 探针 → 产物（相对 .sandbox）；切片在调度时拆成六条命令，共用同一并发上限
 PROBES = [
     (['slice_probe.cjs', '1', '2', '3', '4', '5', '6'], ['slice/slice_d%d.json' % d for d in range(1, 7)]),
     (['equipment_probe.cjs'], ['equipment.json']),
@@ -313,18 +313,19 @@ def run_probes(log, cache=None):
     runs = SANDBOX / 'run'
     shutil.rmtree(runs, ignore_errors=True)
 
-    def one(cmd):
-        outputs = next(outputs for command, outputs in plan if command == cmd)
+    def one(work):
+        logical, cmd, outputs = work
         for rel in outputs:
             (SANDBOX / rel).unlink(missing_ok=True)
-        box = runs / Path(cmd[0]).stem
+        # 同一个切片探针的不同难度各有独立种子副本，不共享写入目录。
+        box = runs / (Path(cmd[0]).stem + ('-d' + cmd[1] if cmd[0] == 'slice_probe.cjs' and len(cmd) == 2 else ''))
         box.mkdir(parents=True)
         for name in ['save', 'macport']:
             if (SANDBOX / name).is_dir():
                 shutil.copytree(SANDBOX / name, box / name)
         env = dict(os.environ, XIYOU_ORACLE_SANDBOX=str(box))
         t = time.time()
-        part = partial.get(cmd[0])
+        part = partial.get(logical)
         if part is None:
             p = subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=env, capture_output=True, text=True)
             return cmd, p.returncode, p.stdout + p.stderr, time.time() - t
@@ -349,15 +350,25 @@ def run_probes(log, cache=None):
         text += '（增量：只跑 %d 个单元，其余取上次产物合并）\n' % len(part) + p.stdout + p.stderr
         return cmd, p.returncode, text, time.time() - t
 
-    slow = ['smart_ai_probe.cjs', 'event_probe.cjs', 'zhenqi_probe.cjs', 'dungeon_probe.cjs', 'sequence_probe.cjs']   # 最慢的先开跑
-    order = sorted(range(len(plan)), key=lambda i: slow.index(plan[i][0][0]) if plan[i][0][0] in slow else len(slow))
+    work = []
+    for cmd, outputs in plan:
+        if cmd[0] == 'slice_probe.cjs' and cmd[1:] == [str(d) for d in range(1, 7)]:
+            expected = ['slice/slice_d%d.json' % d for d in range(1, 7)]
+            if outputs != expected:
+                raise RuntimeError('切片难度分命令的产物声明不匹配')
+            work.extend((cmd[0], [cmd[0], str(d)], [expected[d - 1]]) for d in range(1, 7))
+        else:
+            work.append((cmd[0], cmd, outputs))
+    slow = ['slice_probe.cjs', 'smart_ai_probe.cjs', 'event_probe.cjs', 'zhenqi_probe.cjs', 'dungeon_probe.cjs', 'sequence_probe.cjs']
+    order = sorted(range(len(work)), key=lambda i: slow.index(work[i][0]) if work[i][0] in slow else len(slow))
     with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
-        futures = {i: pool.submit(one, plan[i][0]) for i in order}
-        results = [None] * len(plan)
+        futures = {i: pool.submit(one, work[i]) for i in order}
+        results = [None] * len(work)
         for future in concurrent.futures.as_completed({f: i for i, f in futures.items()}):
             i = next(i for i, f in futures.items() if f is future)
             results[i] = future.result()
             print('PROBE_DONE=' + json.dumps({'probe': results[i][0][0], 'seconds': round(results[i][3], 3),
+                                             'command': results[i][0],
                                              'exitCode': results[i][1]}), flush=True)
     failed = []
     for cmd, code, out, sec in results:
@@ -390,7 +401,9 @@ def run_probes(log, cache=None):
     return {'executed': [cmd[0] for cmd, _ in plan if cmd[0] not in partial],
             'partial': {k: v for k, v in partial.items()}, 'reused': reused,
             'missReasons': misses,
-            'seconds': {cmd[0]: round(sec, 3) for cmd, _, _, sec in results}}
+            # 多命令探针的合计为子进程用时之和；墙钟由同步报告 start/end 记录。
+            'seconds': {name: round(sum(r[3] for r in results if r[0][0] == name), 3) for name, _, _ in work},
+            'commands': [{'command': cmd, 'seconds': round(sec, 3), 'exitCode': code} for cmd, code, _, sec in results]}
 
 
 def _main() -> int:

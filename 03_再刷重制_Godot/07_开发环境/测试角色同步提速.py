@@ -145,6 +145,50 @@ class PortableCacheTests(unittest.TestCase):
         self.assertIsNone(c.plan(cmd, outs, c.key(cmd)))
         self.assertEqual(c.misses[cmd[0]], [{'kind': 'forced-full'}])
 
+    def test_unknown_generated_reader_disables_sharding_and_hashes_outputs(self):
+        tools, gen = self.paths('donor')
+        probe = tools / 'mv_oracle/slice_probe.cjs'
+        probe.write_text("const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));\n"
+                         "use(SLICE.troops); use(process.env.XIYOU_GENERATED);\n")
+        (tools / 'xiyou_slice.json').write_text('{"troops":[1,2]}')
+        cmd, outs = self.probes[1]
+        c = self.cache()
+        self.assertIsNone(c.shard(cmd))
+        self.assertIsNone(c.units(cmd))
+        c.record(cmd, outs, c.key(cmd))
+        c.commit()
+        (gen / 'db/Skills.json').write_text('[{"changed":true}]')
+        c = self.cache()
+        self.assertIsNone(c.plan(cmd, outs, c.key(cmd)))
+        self.assertIn({'kind': 'converted', 'names': ['db/Skills.json']}, c.misses[cmd[0]])
+
+    def test_new_generated_read_in_helper_also_disables_sharding(self):
+        tools, _ = self.paths('donor')
+        (tools / 'mv_oracle/slice_probe.cjs').write_text(
+            "const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));\nuse(SLICE.troops);")
+        self.assertIsNotNone(self.cache().shard(self.probes[1][0]))
+        (tools / 'mv_oracle/host.cjs').write_text('use(process.env.XIYOU_GENERATED);')
+        self.assertIsNone(self.cache().shard(self.probes[1][0]))
+
+    def test_modified_audited_reader_falls_back_to_whole_generated_key(self):
+        import hashlib
+        import incremental_sync
+        tools, gen = self.paths('donor')
+        probe = tools / 'mv_oracle/event_probe.cjs'
+        probe.write_text("const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));\n"
+                         "use(SLICE.maps); use(process.env.XIYOU_GENERATED);\n")
+        cmd, outs = ['event_probe.cjs'], ['plain.json']
+        with mock.patch.dict(incremental_sync.GENERATED_SHARD_AUDITS,
+                             {'mv_oracle/event_probe.cjs': hashlib.sha256(probe.read_bytes()).hexdigest()}):
+            self.assertIsNotNone(self.cache().shard(cmd))
+            with probe.open('a') as f:
+                f.write("use('new generated reader');")
+            c = self.cache()
+            self.assertIsNone(c.shard(cmd))
+            key = c.key(cmd)
+            (gen / 'db/Skills.json').write_text('[42]')
+            self.assertNotEqual(self.cache().key(cmd), key)
+
     def test_output_read_failure_remains_a_miss(self):
         self.prime()
         c = self.cache()
@@ -180,6 +224,58 @@ class PortableCacheTests(unittest.TestCase):
             self.assertEqual(result['reused'], ['plain_probe.cjs'])
             self.assertEqual(result['missReasons'], {})
             self.assertNotIn('CACHE_MISS', log.getvalue())
+
+    def test_six_difficulties_share_pool_isolate_seeds_and_merge_like_full(self):
+        spec = importlib.util.spec_from_file_location('speedup_six_difficulty_test', TOOLS / '同步正式西游.py')
+        sync = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sync)
+        tools, gen = self.paths('donor')
+        oracle = tools / 'mv_oracle'
+        (tools / 'oracle_shard_merge.cjs').write_bytes((TOOLS / 'oracle_shard_merge.cjs').read_bytes())
+        (tools / 'xiyou_slice.json').write_text('{"troops":[1,2]}')
+        (oracle / 'slice_probe.cjs').write_text(r'''const fs=require('fs'),path=require('path');
+const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));
+const box=process.env.XIYOU_ORACLE_SANDBOX, d=Number(process.argv[2]);
+if (process.argv.length !== 3) throw Error('must be one difficulty per command');
+if (fs.readFileSync(path.join(box,'save/test.rpgsave'),'utf8') !== 'fixture seed') throw Error('shared seed');
+fs.writeFileSync(path.join(box,'save/test.rpgsave'),'difficulty '+d);
+fs.appendFileSync('.sandbox/pool.jsonl', JSON.stringify({event:'start',d,box})+'\n');
+const units=process.env.XIYOU_PROBE_UNITS ? new Set(JSON.parse(process.env.XIYOU_PROBE_UNITS)) : null;
+const troops=SLICE.troops.filter(t=>!units||units.has(String(t)));
+setTimeout(()=>{
+const out={difficulty:d,enemies:{},damage:[]};
+for (const t of troops) {out.enemies[t]=[{id:t}]; for(const a of [1,8]) out.damage.push({troop:t,actor:a,value:d*100+t*10+a});}
+fs.mkdirSync('.sandbox/slice',{recursive:true});
+fs.writeFileSync('.sandbox/slice/slice_d'+d+'.json',JSON.stringify(out,null,1));
+fs.appendFileSync('.sandbox/pool.jsonl',JSON.stringify({event:'end',d,box})+'\n');
+},150);
+''')
+        commands = [(['slice_probe.cjs'] + [str(d) for d in range(1, 7)],
+                     ['slice/slice_d%d.json' % d for d in range(1, 7)])]
+        with mock.patch.multiple(sync, PROBES=commands, ORACLE_DIR=oracle, SANDBOX=oracle / '.sandbox', HERE=tools), \
+             mock.patch.dict(os.environ, XIYOU_GENERATED=str(gen), SYNC_JOBS='2'):
+            c = self.cache()
+            report = sync.run_probes(io.StringIO(), c)
+            c.commit()
+            self.assertEqual(len(report['commands']), 6)
+            events = [json.loads(line) for line in (oracle / '.sandbox/pool.jsonl').read_text().splitlines()]
+            active, peak = set(), 0
+            for event in events:
+                if event['event'] == 'start':
+                    active.add(event['d'])
+                else:
+                    active.remove(event['d'])
+                peak = max(peak, len(active))
+            self.assertEqual(peak, 2)
+            self.assertEqual(len({e['box'] for e in events}), 6)
+            self.assertEqual((oracle / '.sandbox/save/test.rpgsave').read_text(), 'fixture seed')
+            (tools / 'xiyou_slice.json').write_text('{"troops":[2,3,1]}')
+            report = sync.run_probes(io.StringIO(), self.cache())
+            self.assertEqual(report['partial'], {'slice_probe.cjs': ['3']})
+            incremental = {p.name: p.read_bytes() for p in (gen / 'oracle').glob('slice_d*.json')}
+            sync.run_probes(io.StringIO(), None)
+            full = {p.name: p.read_bytes() for p in (gen / 'oracle').glob('slice_d*.json')}
+            self.assertEqual(incremental, full)
 
 
 class ManualSandboxTests(unittest.TestCase):
