@@ -689,10 +689,10 @@ func enemy_transform(index: int, enemy_id: int) -> Array:
 	if e == null or XDB.rec("Enemies", enemy_id).is_empty():
 		return out
 	var before := _enemy_reading(e)
-	var old_name := str(e.data().get("name", ""))
+	var old_name := e.original_name()
 	var caps: Array = e.stale_caps if e.stale_caps.size() == 2 else [e.mhp, e.mmp]
 	e.enemy_id = enemy_id
-	if str(e.data().get("name", "")) != old_name:
+	if e.original_name() != old_name:
 		e.letter = ""
 		_letters.erase(e)
 	e.refresh_passive()
@@ -703,17 +703,18 @@ func enemy_transform(index: int, enemy_id: int) -> Array:
 	return out
 
 
-## Game_Troop.makeUniqueNames：出现着（isAlive）且还没字母的成员按原名依次分配 Ａ Ｂ Ｃ…；同名已分配 2 个以上时才显示字母（plural）
+## Game_Troop.makeUniqueNames：出现着（isAlive）且还没字母的成员按原名（originalName，神话带前缀）依次分配 Ａ Ｂ Ｃ…；
+## 同名已分配 2 个以上时才显示字母（plural）
 func make_unique_names() -> void:
 	const TABLE := "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"
 	for e in enemies:
 		if e.is_alive() and not _letters.has(e):
-			var n := str(e.data().get("name", ""))
+			var n: String = e.original_name()
 			var k := int(_names_count.get(n, 0))
 			_letters[e] = TABLE[k % TABLE.length()]
 			_names_count[n] = k + 1
 	for e in enemies:
-		if _letters.has(e) and int(_names_count.get(str(e.data().get("name", "")), 0)) >= 2:
+		if _letters.has(e) and int(_names_count.get(e.original_name(), 0)) >= 2:
 			e.letter = _letters[e]
 
 
@@ -799,7 +800,8 @@ func _change_enemy_state(p: Array) -> void:
 		e.refresh_resources(_rule())
 
 
-## Game_Action.setTarget 的序号按 smoothTarget（该序号阵亡时取第一个活着的）；-1 交给 targets_for 随机。
+## Game_Action.setTarget 的序号按 smoothTarget（该序号不是活着的就取第一个活着的；对阵亡者的技能按 smoothDeadTarget）；
+## -1 交给 targets_for 随机。没出现的隐藏敌人既不算活着也不算阵亡，两边都不选。
 func _forced_target(u: XBattler, skill: Dictionary, index: int) -> XBattler:
 	if index == -1:
 		return null
@@ -809,9 +811,10 @@ func _forced_target(u: XBattler, skill: Dictionary, index: int) -> XBattler:
 	var foe_side := scope <= 6
 	var unit: Array = (enemies if u.is_actor() else actors) if foe_side else (actors if u.is_actor() else enemies)
 	var dead_ok := [9, 10].has(scope)
-	if index >= 0 and index < unit.size() and (unit[index].is_dead() == dead_ok):
+	var fits := func(b: XBattler) -> bool: return b.is_dead() if dead_ok else b.is_alive()
+	if index >= 0 and index < unit.size() and fits.call(unit[index]):
 		return unit[index]
-	var pool := unit.filter(func(b): return b.is_dead() == dead_ok)
+	var pool := unit.filter(fits)
 	return pool[0] if not pool.is_empty() else null
 
 
