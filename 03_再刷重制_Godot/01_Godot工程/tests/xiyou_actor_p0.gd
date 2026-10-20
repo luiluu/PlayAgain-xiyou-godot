@@ -1,5 +1,5 @@
 extends Node
-## 角色模板 P0／P1：普通角色 11～40 的招募路径与基础战斗基线（能力曲线／伤害由 xiyou_rules 逐项对照 slice 参照）。
+## 角色模板 P0／P1：普通角色 11～60 的招募路径与基础战斗基线（能力曲线／伤害由 xiyou_rules 逐项对照 slice 参照）。
 ## 本测试补三件事：①招募——原版「召唤…」公共事件真的能让该角色入队、占出战栏；②初始装备与已学技能与 mv_oracle
 ## 参照行一致；③每个声明可用的角色在参照里都有独立行（等级采样 35／65／99 与伤害行），没有就不算可用。
 ## 完整养成（技能树、进阶、羁绊）不在 P0 范围：本测试不验也不声明。
@@ -8,6 +8,8 @@ extends Node
 const RECRUIT := {13: 11, 23: 12, 20: 13, 21: 14, 22: 15, 19: 16, 24: 17, 25: 18}
 ## 第二批（角色 19～40，同样由 129 指令得出；摇光的公共事件就叫「摇光」，涅斐莉的是 1208）
 const RECRUIT_2 := {26: 19, 27: 20, 29: 21, 30: 22, 31: 23, 32: 24, 33: 25, 69: 26, 70: 27, 71: 28, 86: 29, 87: 30, 90: 31, 1208: 32, 97: 33, 125: 34, 131: 35, 139: 36, 138: 37, 133: 38, 140: 39, 141: 40}
+## 第三批（角色 41～60，同样由 129 指令得出；孙悟空 52 是「小明邀请函」）
+const RECRUIT_3 := {153: 41, 154: 42, 155: 43, 156: 44, 157: 45, 258: 46, 158: 47, 159: 48, 160: 49, 162: 50, 257: 51, 698: 52, 259: 53, 260: 54, 261: 55, 263: 56, 264: 57, 265: 58, 321: 59, 322: 60}
 const REGRESSION := [1, 8, 9, 10]
 var results: Array = []
 
@@ -31,13 +33,13 @@ func _run() -> void:
 		_check("oracle_present", false)
 		return _finish()
 	# ③ 参照行齐全
-	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values():
+	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values():
 		var row = d.actors.get(str(id))
 		_check("oracle_row_%d" % id, row != null and row.has("lv1") and row.has("lv10Battle") and row.get("levelSamples", {}).size() == 3, id)
 		var dmg = d.damage.filter(func(r): return r.get("actor") != null and int(r.actor) == id)
 		_check("oracle_damage_%d" % id, dmg.size() > 0 and dmg.all(func(r): return not r.has("error")), [id, dmg.size()])
 	# ② 初始装备与技能
-	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values():
+	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values():
 		var row: Dictionary = d.actors[str(id)]
 		var a := XActor.new().setup(id)
 		var mv_equips = row.equips.filter(func(e): return e != null).map(func(e): return int(e.base))
@@ -61,6 +63,7 @@ func _run() -> void:
 		await get_tree().process_frame
 	var all_recruit := RECRUIT.duplicate()
 	all_recruit.merge(RECRUIT_2)
+	all_recruit.merge(RECRUIT_3)
 	for ce in all_recruit:
 		var id: int = all_recruit[ce]
 		_check("not_in_party_before_%d" % id, not s.party.has(id))
