@@ -18,9 +18,11 @@ import equipment_rules
 from formula_program import compile_formula
 import hashlib
 import json
+import os
 import re
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 TOOL_VERSION = 19
@@ -357,6 +359,8 @@ class Exporter:
         self.inputs, self.outputs, self.issues = {}, {}, []
         self.img, self.audio = set(), set()
         self.db = {}
+        self.pending_json = {}
+        self.written = self.unchanged = self.deleted = 0
 
     def read(self, rel):
         p = self.app / rel
@@ -365,11 +369,56 @@ class Exporter:
         return json.loads(b.decode('utf-8'))
 
     def write_json(self, rel, data):
-        p = self.out / rel
-        p.parent.mkdir(parents=True, exist_ok=True)
         b = (json.dumps(data, ensure_ascii=False, separators=(',', ':')) + '\n').encode('utf-8')
-        p.write_bytes(b)
+        # 部分表先补行动序列、再补装备字段：只落盘最终版本，避免无改动时仍写中间表。
+        self.pending_json[rel] = b
         self.outputs[rel] = sha(b)
+
+    def write_changed(self, rel, data, source=None):
+        """按字节比较；临时文件与目标同目录，关闭后原子替换，保留未变文件的导入旁文件。"""
+        p = self.out / rel
+        parent = p.parent.resolve()
+        if parent != p.parent or not parent.is_relative_to(self.out):
+            raise ValueError('输出父目录不能含符号链接或离开输出目录：' + rel)
+        if p.is_file() and not p.is_symlink() and p.read_bytes() == data:
+            self.unchanged += 1
+            return
+        p.parent.mkdir(parents=True, exist_ok=True)
+        fd, name = tempfile.mkstemp(dir=p.parent, prefix='.xiyou-export-', suffix='.tmp')
+        temp = Path(name)
+        try:
+            with os.fdopen(fd, 'wb') as output:
+                output.write(data)
+            if source is not None:
+                shutil.copystat(source, temp)
+            else:
+                temp.chmod((p.stat().st_mode & 0o777) if p.is_file() and not p.is_symlink() else 0o644)
+            os.replace(temp, p)
+            self.written += 1
+        finally:
+            temp.unlink(missing_ok=True)
+
+    def remove_stale(self):
+        """成功生成后清理五个自有子树；只给仍产出的文件保留 .import，oracle／同步指纹不动。"""
+        for sub in ('db', 'maps', 'img', 'audio', 'fonts'):
+            directory = self.out / sub
+            if directory.is_symlink():
+                raise ValueError('产物子目录不能是符号链接：' + sub)
+            for p in sorted(directory.rglob('*'), reverse=True):
+                if p.is_symlink() or p.is_file():
+                    rel = p.relative_to(self.out).as_posix()
+                    if rel in self.outputs or (rel.endswith('.import') and rel[:-7] in self.outputs):
+                        continue
+                    p.unlink()
+                    self.deleted += 1
+                elif p.is_dir() and not any(p.iterdir()):
+                    p.rmdir()
+            if directory.is_dir() and not any(directory.iterdir()):
+                directory.rmdir()
+        # SIGKILL 时 finally 无法运行，根目录的 manifest 临时文件也在下一次成功时清除。
+        for p in self.out.glob('.xiyou-export-*.tmp'):
+            p.unlink()
+            self.deleted += 1
 
     # ---- 数据库 ----
     def export_db(self):
@@ -672,10 +721,9 @@ class Exporter:
                 if not src:
                     self.issues.append({'missingAsset': f'{kind}/{rel}'})
                     continue
-                dst = self.out / kind / (rel + ext)
-                dst.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src, dst)
-                digest = sha(src.read_bytes())
+                data = src.read_bytes()
+                self.write_changed(f'{kind}/{rel}{ext}', data, source=src)
+                digest = sha(data)
                 self.inputs[f'{kind}/{rel}{ext}'] = digest
                 self.outputs[f'{kind}/{rel}{ext}'] = digest
         # 界面字体（原版 fonts/gamefont.css 指向的 GameFont）连同授权文件原样复制
@@ -684,18 +732,13 @@ class Exporter:
             if not src.exists():
                 self.issues.append({'missingAsset': f'fonts/{name}'})
                 continue
-            dst = self.out / 'fonts' / name
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dst)
-            digest = sha(src.read_bytes())
+            data = src.read_bytes()
+            self.write_changed(f'fonts/{name}', data, source=src)
+            digest = sha(data)
             self.inputs[f'fonts/{name}'] = digest
             self.outputs[f'fonts/{name}'] = digest
 
     def run(self):
-        # 只清理本工具生成的部分；oracle/ 由 mv_oracle/slice_probe.cjs 写入，保留
-        for sub in ('db', 'maps', 'img', 'audio', 'fonts'):
-            if (self.out / sub).exists():
-                shutil.rmtree(self.out / sub)
         self.out.mkdir(parents=True, exist_ok=True)
         pkg = self.read('package.json')
         # 脚本是运行规则来源；与数据库同时取指纹，便于阻止旧 oracle 混用。
@@ -738,11 +781,15 @@ class Exporter:
         if changed:
             raise RuntimeError('生成期间来源改变：' + ', '.join(changed[:10]))
         self.write_json('slice.json', self.cfg)
-        (self.out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + '\n')
+        for rel, data in self.pending_json.items():
+            self.write_changed(rel, data)
+        self.remove_stale()
+        self.write_changed('manifest.json', (json.dumps(manifest, ensure_ascii=False, indent=1) + '\n').encode('utf-8'))
         size = sum(p.stat().st_size for p in self.out.rglob('*') if p.is_file())
         print(json.dumps({'releaseVersion': manifest['releaseVersion'], 'outputs': len(self.outputs), 'bytes': size,
                           'img': len(self.img), 'audio': len(self.audio), 'issues': len(self.issues),
                           'untranslatedInSlice': len(untranslated), 'untranslatedAll': all_bad,
+                          'written': self.written, 'unchanged': self.unchanged, 'deleted': self.deleted,
                           'slice': {k: (len(v) if isinstance(v, list) else v) for k, v in self.slice_info.items()}}, ensure_ascii=False))
 
 
