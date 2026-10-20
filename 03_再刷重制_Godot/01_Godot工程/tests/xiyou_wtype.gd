@@ -59,6 +59,11 @@ func _run() -> void:
 				a.tp = a.max_tp()
 				var got := [XBattleLogic.wtype_ok(a, sk), full, empty, a.mmp]
 				var want := [bool(c.wtypeOk), bool(c.canUse), bool(c.canUseEmpty), float(c.mmp)]
+				# YEP_SkillCore noHiddenSkillConditionsMet：<Hide in Battle> 的技能战斗中恒不可用；
+				# XBattleLogic.can_use 不判这条（战斗技能列表 battle_skills 在入口过滤），只比武器判断与 MP 上限，并要求参照确为恒不可用
+				if "<Hide in Battle>" in str(sk.get("note", "")):
+					check("%s_%d_hidden" % [key, int(c.skill)], not c.canUse and not c.canUseEmpty, c)
+					got = [got[0], false, false, got[3]]
 				check("%s_%d" % [key, int(c.skill)], got == want, [got, want])
 		check("wtype_blocked_covered", data.cases.filter(func(c): return not c.wtypeOk).size() >= 50)
 		# MP/TP 清零时有因费用被拦的例子，canUse 比对才不只是武器判断的重复

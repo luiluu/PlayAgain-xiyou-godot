@@ -21,6 +21,7 @@ SUB = Path('03_再刷重制_Godot')
 ENV = SUB / '07_开发环境'
 TOOLS = SUB / '03_转换工具'
 PROJECT = SUB / '01_Godot工程'
+ACCEPT = SUB / '04_验证/测量接受'
 BOARD = Path('00_项目管理/交接板.md')
 LOG = Path('00_项目管理/变更记录.md')
 COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/交接板归档.md'), Path('00_项目管理/重制步骤清单.md'),
@@ -91,17 +92,22 @@ def draft(text):
 
 
 def relink(body, root):
-    """草稿里按交付目录口径写的相对链接，改成变更记录（00_项目管理/）口径；两处都不存在的原样保留，由检查.sh 报失效。"""
+    """草稿里的相对链接按交付目录口径解释（与交付单 README、检查.sh 一致），改成变更记录（00_项目管理/）口径。
+    歧义规则（沙僧_19 P3）：交付目录口径的目标存在就以它为准，即使变更记录目录下也有同名的另一个文件（此时提示一行）；
+    只有交付目录口径不存在、变更记录口径存在时原样保留（旧写法）；两处都不存在的原样保留，由检查.sh 报失效。"""
     log_dir, sheet_dir = (root / LOG).parent, root / '00_项目管理/交付'
 
     def fix(m):
         ref = m.group(2)
         path, _, anchor = ref.partition('#')
-        if not path or '://' in path or path.startswith(('/', '~')) or (log_dir / path).exists():
+        if not path or '://' in path or path.startswith(('/', '~')):
             return m.group(0)
         target = (sheet_dir / path).resolve()
         if not target.exists():
             return m.group(0)
+        other = (log_dir / path).resolve()
+        if other.exists() and other != target:
+            print('提示：链接 %s 在交付目录与变更记录目录各指一个文件，按交付目录口径改写' % ref, file=sys.stderr, flush=True)
         return m.group(1) + os.path.relpath(target, log_dir.resolve()) + ('#' + anchor if anchor else '') + ')'
     return re.sub(r'(\]\()([^)\s<>]+)\)', fix, body)
 
@@ -143,6 +149,9 @@ def plan(root, task):
                       file=sys.stderr, flush=True)
     refresh = any(p in [str(TOOLS / 'xiyou_slice.json'), str(TOOLS / 'xiyou_export.py')]
                   or (p.startswith(str(TOOLS / 'mv_oracle') + '/') and p.endswith('.cjs')) for p in changed)
+    # 车道带来的测量接受单（同步正式西游.py --accept-changes）：main 的同步对自己的旧基线同样逐条核对
+    accept = [p for p in sorted(changed) if p.startswith(str(ACCEPT) + '/') and p.endswith('.json') and (wt / p).is_file()]
+    refresh = refresh or bool(accept)
     game = any(p.startswith(str(PROJECT) + '/') and not p.startswith(str(PROJECT / 'tests') + '/')
                and p != str(PROJECT / 'content/build_info.json') for p in changed)
     # 只替换目标车道带来的编号占位，不扫描、暂存主工作区的其它文件。
@@ -151,7 +160,7 @@ def plan(root, task):
                      and (wt / p).is_file() and not (wt / p).is_symlink()
                      and VERSION_MARKER in (wt / p).read_text()]
     return dict(task=task, branch=lane['branch'], worktree=str(wt), base=base, target=target,
-                delivery=str(delivery), extraDeliveries=extra, refresh=refresh, gameplay=game, phase='planned', head=base,
+                delivery=str(delivery), extraDeliveries=extra, refresh=refresh, acceptChanges=accept, gameplay=game, phase='planned', head=base,
                 versionPaths=version_paths,
                 mainAdvancedAfterDelivery=fork != base)
 
@@ -250,6 +259,8 @@ def prepare(root, state, state_file, executor):
             # 提速提案 P3：车道已在同一套转换工具上同步过时直接用其产物（按指纹核对）；退出码 3＝条件不满足，改跑完整同步。
             # 同步脚本结束时自己跑 godot --import。
             sync = [sys.executable, TOOLS / '同步正式西游.py', '--accept-additions']
+            for spec in state.get('acceptChanges', []):
+                sync += ['--accept-changes', spec]
             cmd = list(map(str, sync + ['--from-worktree', state['worktree']]))
             print('== ' + ' '.join(cmd), flush=True)
             rc = subprocess.run(cmd, cwd=root).returncode

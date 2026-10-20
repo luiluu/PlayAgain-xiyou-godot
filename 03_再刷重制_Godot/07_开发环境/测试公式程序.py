@@ -23,6 +23,15 @@ class FormulaCompilerTests(unittest.TestCase):
                 self.assertEqual(program['status'], 'pure', program)
                 self.assertEqual(program, row['program'])
 
+    def test_if_statement_completion_value(self):
+        """断天休 4450 的写法：if(...) {表达式} else {表达式} 作整条公式，完成值是所选分支的值。"""
+        both = 'if(v[369] > 6) {(7125 + a.atk * 56)*(1+user.skillMasteryLevel(item.id))} else {(1125 + a.atk * 8)*(1+user.skillMasteryLevel(item.id))}'
+        self.assertEqual(compile_formula(both, 4450)['status'], 'pure')
+        self.assertEqual(compile_formula('if(a.atk > 1) {a.atk * 2} else if(a.def > 1) {a.def} else {1}', 1)['status'], 'pure')
+        # 有一条路径没有表达式收尾（缺 else、块尾是声明）时完成值可能为空，仍拒收
+        self.assertEqual(compile_formula('if(a.atk > 1) {a.atk * 2}', 1)['status'], 'unsupported')
+        self.assertEqual(compile_formula('if(a.atk > 1) {a.atk * 2} else {var x = 1;}', 1)['status'], 'unsupported')
+
     def test_effect_fixtures_and_equipment_query_bounds(self):
         path = TOOLS.parent / '01_Godot工程/tests/fixtures/formula_effect_programs.json'
         for key, row in json.loads(path.read_text()).items():

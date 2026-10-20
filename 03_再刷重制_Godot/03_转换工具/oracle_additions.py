@@ -1,5 +1,6 @@
 """保守识别扩切片的新增测量；既有用例必须逐条相同，未知结构不自动接受。"""
 import collections
+import hashlib
 import json
 from pathlib import Path
 
@@ -25,6 +26,7 @@ KEYS = {
     'formula_effects.json': {'cases': ('id',)},
     'formula_equipment.json': {'cases': ('id',)},
     'formula_actions.json': {'cases': ('id',)},
+    'review_fix.json': {'cases': ('id',)},
     'troop_events.json': {'cases': ('troop', 'paid')},
     'smart_ai.json': {'cases': ('troop', 'scene', 'actor', 'state'),
                       'damage': ('troop', 'actor', 'skill', 'target')},
@@ -51,6 +53,35 @@ def groups(rows, fields):
         key = canonical([[k, row[k]] for k in selected])
         out[key][canonical(row)] += 1
     return out
+
+
+def digest(row):
+    return hashlib.sha256(canonical(row).encode()).hexdigest()[:16]
+
+
+def changed_fields(old, new):
+    if not isinstance(old, dict) or not isinstance(new, dict):
+        return ['*']
+    return sorted(k for k in old.keys() | new.keys() if k not in old or k not in new or old[k] != new[k])
+
+
+def augmented(old_rows, new_rows):
+    """旧组每条行都对上一条「原字段逐项相同、只多字段」的新行，条数相同：返回多出的字段名；否则 None。"""
+    old = [json.loads(r) for r, n in old_rows.items() for _ in range(n)]
+    new = [json.loads(r) for r, n in new_rows.items() for _ in range(n)]
+    if len(old) != len(new) or not all(isinstance(r, dict) for r in old + new):
+        return None
+    extra, used = set(), [False] * len(new)
+    # 字段多的旧行先配，避免子集行抢走别人的对应行
+    for row in sorted(old, key=len, reverse=True):
+        for i, cand in enumerate(new):
+            if not used[i] and all(k in cand and cand[k] == v for k, v in row.items()):
+                used[i] = True
+                extra |= cand.keys() - row.keys()
+                break
+        else:
+            return None
+    return sorted(extra) if extra else None
 
 
 def has_error(x):
@@ -118,9 +149,16 @@ def valid_level_samples(samples):
     return True
 
 
-def compare_file(name, old, new):
-    """返回新增集合与问题。数组按稳定键分组，重复键的组内按多重集逐条精确比较。"""
+def compare_file(name, old, new, changes=None):
+    """返回新增集合与问题。数组按稳定键分组，重复键的组内按多重集逐条精确比较。
+    changes：传入列表时，把可经 --accept-changes 显式接受的单条既有用例改变追加进去（各带对应的问题文字）。"""
     old, new = payload(old), payload(new)
+    changes = [] if changes is None else changes
+
+    def change(collection, key, a, b, problem):
+        if not has_error(b):
+            changes.append({'collection': collection, 'key': key, 'fields': changed_fields(a, b),
+                            'oldDigest': digest(a), 'newDigest': digest(b), 'problem': problem})
     additions, problems = [], []
     if old == new:
         return additions, problems
@@ -169,6 +207,7 @@ def compare_file(name, old, new):
                 if field == 'actors' and key in b and isinstance(value, dict) and isinstance(b[key], dict):
                     if any(k not in b[key] or b[key][k] != v for k, v in value.items()):
                         problems.append('既有角色改变或删除：' + key)
+                        change(field, key, value, b[key], problems[-1])
                     elif set(b[key]) - set(value):
                         extra = {k: b[key][k] for k in set(b[key]) - set(value)}
                         samples = extra.get('levelSamples')
@@ -180,6 +219,8 @@ def compare_file(name, old, new):
                     continue
                 if key not in b or b[key] != value:
                     problems.append('既有' + ('敌人' if field == 'enemies' else '角色') + '改变或删除：' + key)
+                    if key in b:
+                        change(field, key, value, b[key], problems[-1])
             for key in b.keys() - a.keys():
                 if has_error(b[key]):
                     problems.append('新增' + ('敌人' if field == 'enemies' else '角色') + '有错误：' + key)
@@ -191,8 +232,16 @@ def compare_file(name, old, new):
             except ValueError as error:
                 problems.append(str(error)); continue
             for key, value in ga.items():
-                if gb.get(key) != value:
-                    problems.append(field + ' 既有用例改变、删除或同键追加：' + key[:160])
+                if gb.get(key) == value:
+                    continue
+                extra = augmented(value, gb[key]) if key in gb else None
+                if extra and not any(has_error(json.loads(row)) for row in gb[key]):
+                    additions.append({'collection': field + '.fields', 'key': key, 'count': sum(gb[key].values()),
+                                      'fields': extra})
+                    continue
+                problems.append(field + ' 既有用例改变、删除或同键追加：' + key[:160])
+                if key in gb and sum(value.values()) == 1 and sum(gb[key].values()) == 1:
+                    change(field, key, json.loads(next(iter(value))), json.loads(next(iter(gb[key]))), problems[-1])
             for key in gb.keys() - ga.keys():
                 if any(has_error(json.loads(row)) for row in gb[key]):
                     problems.append(field + ' 新用例有错误：' + key[:160])
@@ -217,7 +266,7 @@ def compare_directories(old_dir: Path, new_dir: Path, new_references=frozenset()
     """new_references：同步脚本 PROBES 登记的产物文件名。本批新增探针第一次生成的整份参照只要没有错误就算新增；
     不在登记里的新文件、任何参照被删除，仍须人工核查。"""
     files = sorted({p.name for d in [old_dir, new_dir] for p in d.glob('*.json')})
-    additions, problems = {}, {}
+    additions, problems, changes = {}, {}, {}
     for name in files:
         old, new = old_dir / name, new_dir / name
         if not old.exists() and new.exists() and name in new_references:
@@ -232,15 +281,71 @@ def compare_directories(old_dir: Path, new_dir: Path, new_references=frozenset()
             continue
         if not old.exists() or not new.exists():
             problems[name] = ['参照文件新增或删除，须人工核查']; continue
+        found = []
         try:
-            added, bad = compare_file(name, json.loads(old.read_text()), json.loads(new.read_text()))
+            added, bad = compare_file(name, json.loads(old.read_text()), json.loads(new.read_text()), found)
         except (ValueError, OSError) as error:
-            added, bad = [], ['无法读取参照：' + str(error)]
+            added, bad, found = [], ['无法读取参照：' + str(error)], []
         if added:
             additions[name] = added
         if bad:
             problems[name] = bad
-    return {'onlyAdditions': bool(additions) and not problems, 'additions': additions, 'problems': problems}
+        if found:
+            changes[name] = found
+    return {'onlyAdditions': bool(additions) and not problems, 'additions': additions, 'problems': problems,
+            'changes': changes}
+
+
+ACCEPT_FIELDS = ('file', 'collection', 'key', 'fields', 'oldDigest', 'newDigest', 'reason')
+
+
+def load_acceptances(paths):
+    """读接受单；格式不对直接报错（不当作空单）。返回 (条目列表, 接受单摘要)。"""
+    entries, sources = [], []
+    for path in paths:
+        raw = Path(path).read_bytes()
+        data = json.loads(raw)
+        if not isinstance(data, dict) or data.get('schema') != 1 or not isinstance(data.get('accept'), list) or not data['accept']:
+            raise ValueError('接受单须为 {"schema": 1, "accept": [...]}，且至少一条：' + str(path))
+        for row in data['accept']:
+            if (not isinstance(row, dict) or set(row) != set(ACCEPT_FIELDS)
+                    or not all(isinstance(row[k], str) and row[k] for k in ACCEPT_FIELDS if k != 'fields')
+                    or not isinstance(row['fields'], list) or not row['fields']
+                    or not all(isinstance(f, str) and f for f in row['fields'])
+                    or len(row['reason'].strip()) < 4):
+                raise ValueError('接受单条目须恰有 %s 七项、fields 非空、理由至少 4 字：%s' % ('／'.join(ACCEPT_FIELDS), path))
+            entries.append(dict(row, fields=sorted(row['fields']), source=str(path)))
+        sources.append({'path': str(path), 'sha256': hashlib.sha256(raw).hexdigest()})
+    seen = collections.Counter((e['file'], e['collection'], e['key']) for e in entries)
+    dup = [k for k, n in seen.items() if n > 1]
+    if dup:
+        raise ValueError('接受单有重复条目：' + str(dup[0]))
+    return entries, sources
+
+
+def apply_acceptances(check, entries):
+    """逐条对上 changes 里的单条既有用例改变，被接受的从问题里去掉；对不上的条目留在 unused。"""
+    problems = {k: list(v) for k, v in check['problems'].items()}
+    accepted, unused = [], []
+    for e in entries:
+        hit = next((c for c in check.get('changes', {}).get(e['file'], [])
+                    if c['collection'] == e['collection'] and c['key'] == e['key'] and c['fields'] == e['fields']
+                    and c['oldDigest'] == e['oldDigest'] and c['newDigest'] == e['newDigest']
+                    and c['problem'] in problems.get(e['file'], [])), None)
+        if hit is None:
+            unused.append({k: e[k] for k in ACCEPT_FIELDS[:6]})
+            continue
+        problems[e['file']].remove(hit['problem'])
+        if not problems[e['file']]:
+            del problems[e['file']]
+        accepted.append({k: e[k] for k in ACCEPT_FIELDS + ('source',)})
+    return {'problems': problems, 'accepted': accepted, 'unused': unused}
+
+
+def change_candidates(check):
+    """报告里给人看的可接受变化（不含理由）；只列出，不自动生成接受单。"""
+    return [{'file': name, **{k: c[k] for k in ACCEPT_FIELDS[1:6]}}
+            for name, rows in sorted(check.get('changes', {}).items()) for c in rows]
 
 
 def source_preserved(old, new):
