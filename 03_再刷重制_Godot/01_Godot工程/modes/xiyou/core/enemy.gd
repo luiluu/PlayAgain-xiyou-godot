@@ -75,7 +75,12 @@ func data() -> Dictionary:
 	return XDB.rec("Enemies", enemy_id)
 
 func display_name() -> String:
-	return (elite_title() if elite else "") + str(data().get("name", "")) + letter
+	return original_name() + letter
+
+## Game_Enemy.originalName：EliteEnemy 改写为神话敌人带「【神话】」前缀（不含同名字母）；makeUniqueNames 按它计数，
+## 所以同一敌人一只神话一只普通时两边都只有一个，都不加字母
+func original_name() -> String:
+	return (elite_title() if elite else "") + str(data().get("name", ""))
 
 static func elite_title() -> String:
 	return str(XDB.plugin("EliteEnemy").get("EliteEnemyTitle", "【精英】"))

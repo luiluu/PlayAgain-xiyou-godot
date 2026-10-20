@@ -28,7 +28,7 @@ const POWER_COLOR := Color8(255, 211, 115)
 const COMMANDS := [["物品", "item", true], ["技能", "skill", true], ["装备", "equip", true], ["状态", "status", true],
 	["真气", "zhenqi", true], ["整队", "formation", true], ["种族祝福", "race", false], ["宠物", "pet", false],
 	["制作", "crafting", false], ["宝珠坊", "orbs", true], ["异化工坊", "alienation", false], ["人物图鉴", "actorBook", false],
-	["怪物图鉴", "monsterBook", false], ["成就", "achievement", false], ["存档", "save", true], ["反馈", "feedback", false],
+	["怪物图鉴", "monsterBook", false], ["成就", "achievement", true], ["存档", "save", true], ["反馈", "feedback", false],
 	["设置", "options", true], ["游戏结束", "gameEnd", true]]
 const CMD_VISIBLE := 15
 ## 无队员时灰显的指令（冻结 v0.28 空队主菜单运行时：物品／技能／装备／状态／真气／整队 enabled=false，其余不变）
@@ -69,6 +69,7 @@ func command_names() -> Array:
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_to_group(XAchievementPopup.MBACK_GROUP)  # 成就弹窗在菜单里框与底只剩 30（MOG_MenuBackground）
 	theme = XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	XUI.menu_background(self)
@@ -309,6 +310,10 @@ func _ok() -> void:
 			"save":
 				# 正式版「存档」是公共事件 1（Menu 84 Ext）：回到地图后存到开局选的固定存档位
 				reserved_common_event = int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 84 Ext", "1")))
+				closed.emit()
+			"achievement":
+				# 「成就」是公共事件 431（Menu 79 Ext）：回到地图后 SceneManager.push(Scene_AchievementBook)，关闭回地图
+				reserved_common_event = int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 79 Ext", "431")))
 				closed.emit()
 			"options":
 				var page := XOptionsScene.new()
