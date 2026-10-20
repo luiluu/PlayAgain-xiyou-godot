@@ -5,8 +5,9 @@
 - 本轮接手：已读工作树规则、主工作区交接板及完整交代；ba0df2a 后工作区干净，继续原分支，不接管 main。旧版基准结束后才安装候选；正式实现 8 例回归通过，检查入口只新增一行。
 - 接手点：从 main 84aa727 独立开工。真实切片字节与 SIGKILL 恢复通过。证据与实测脚本保存在本工作树 `03_再刷重制_Godot/04_验证/本地结果/转换器写入/`（不入 Git）。
 - 已完成长任务：旧版基准 `/tmp/converter-main-benchmark.log`（等待工具确认 done／0）、补齐 `/tmp/converter-write-changed-prepare.log`、真实字节／中断 `/tmp/converter-real-acceptance.log`、隔离候选导入测时 `/tmp/converter-candidate-benchmark.log`。旧版预热及无改动同步均测量不变，后者 32/32 CACHE_HIT。
-- 接下来：本工作树测时与正式同步已通过，下一长任务 `/tmp/converter-write-changed-check.log` 运行全量 `检查.sh --oracle`；按新规则用 `长任务.py start` 启动、等待工具确认。未通过前不能写可合并。
-- 验收起点：8415be0 已合 main f0b0b7a；新增规则、交付 README 已重读。该次主线未改切片／转换器／探针，无需再次补齐。`/tmp/converter-branch-benchmark.log` 已由等待工具确认 done／0；首跑前只清本工作树五个可再生子树与 slice／manifest，oracle、同步指纹与探针缓存保留。
+- 接下来：首轮测时、正式同步、全量检查均已通过，但收尾时 main 新增角色被动探针与同步入口，已在 50408d2 合入 main bd3c52b。必须再补齐本工作树、同步新探针并验收，尚不可合并。按 40% 规则接力至重制_沙僧_16；未提交改动应为无。
+- 验收起点：8415be0 合 main f0b0b7a 后的首轮 `/tmp/converter-write-changed-check.log` 已由等待工具确认 done／0（84 个 Godot 场景、合并工具联跑 101 项含最新增量同步回归、公式 10 项、转换器写入 8 项全部通过，无偶发重跑）；证据目录保留 `检查-oracle.log` 与 `check-summary.json`。`/tmp/converter-branch-benchmark.log` 亦 done／0，严格首跑只清本工作树五个可再生子树与 slice／manifest，oracle、同步指纹及探针缓存保留。
+- 最新主线补验：50408d2 新合入 `actor_passive_probe.cjs`、同步 PROBES 新入口，以及 dungeon／mv_script 的当前存档随机流修复。尚未运行补齐，未启动第二轮同步／检查；先确认主工作区自身的同步是否仍在运行，避免在它改产物时复制，勿停止或重启他人的任务。随后用新日志（建议 `/tmp/converter-post-main-prepare.log`、`/tmp/converter-post-main-sync.log`、`/tmp/converter-post-main-check.log`），不覆盖首轮证据。当前预期 33 个探针；新增参照接受后再测一次无改动同步，全部 CACHE_HIT、测量不变；正常产物字节口径不变。AGENTS.md 与交付 README 在 bd3c52b 仍与首轮重读版本相同，交付前仍按规则再读。
 
 ## 变更记录草稿
 
@@ -26,11 +27,13 @@
 | 预热后无改动同步 | 52.175 | 27.374 |
 
 - 旧版首次 32 探针预热 1968.129 秒，不计入无改动同步对比；两版无改动同步均测量不变且 32/32 CACHE_HIT。隔离候选初测记录仍保留（首跑／无改动转换 15.602／12.208、导入 78.904／7.339），正式对比使用上表。原始日志及 `main-timing.json`／`branch-timing.json` 都在证据目录。
-- 未完成／已知问题：全量 `检查.sh --oracle` 尚未完成，不能合并。所有超时／断言／阈值未放宽，未跳过测试。
+- 首轮全量验证：`检查.sh --oracle` 全部通过，84 个 Godot 场景无偶发重跑，合并工具联跑 101/101（包含更新后的增量同步回归）、结构化公式 10/10、转换器写入 8/8，来源与六难度参照同源；日志 `/tmp/converter-write-changed-check.log`，本地副本及摘要在证据目录。该结论对应 f0b0b7a 基准，不能代替下一条新主线补验。
+- 未完成／已知问题：最新 main bd3c52b 的角色被动探针与同步入口已合入，尚未补齐／同步／全检，不能合并。所有超时／断言／阈值未放宽，未跳过测试。
 
 ## 交接板
 
 - 下一步：本分支通过同步与全量检查后交唐僧合并，Claude 独立核查；336 能力值缓存及两条审查车道核查仍按原依赖顺序另开分支。
+- 测试节奏事项：本轮全检观察到 xiyou_rules、xiyou_rules_b、xiyou_smart_ai 单场景用时超过 150 秒、仍在 300 秒原上限内正常通过；新规则要求过半上限时拆场景，由唐僧另排测试维护，本转换器分支只改约定四个文件。
 - 用户试玩说明：本轮只改善转换与导入时间，游戏产物内容不变，TOOL_VERSION 保持 19。
 - 需要用户决定：无。
 
@@ -47,3 +50,5 @@
 - 01465a9 安装增量实现、检查入口一行调用；8 例回归通过。
 - 8415be0 合并 main f0b0b7a 的规则与工具更新。
 - 62eecb6 记录旧版基准及本工作树验收起点。
+- 3615d7d 记录本工作树严格首跑／无改动耗时、32 探针复用与字节验收。
+- 50408d2 合并 main bd3c52b 新增角色被动探针及随机流修复，下一会话须补齐产物并补验。
