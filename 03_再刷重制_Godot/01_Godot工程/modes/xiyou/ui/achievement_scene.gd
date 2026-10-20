@@ -34,6 +34,7 @@ var count_win: XMVWindow
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_to_group(XAchievementPopup.MBACK_GROUP)  # 成就弹窗在菜单里框与底只剩 30（MOG_MenuBackground）
 	theme = XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	XUI.menu_background(self)

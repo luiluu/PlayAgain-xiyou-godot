@@ -10,6 +10,8 @@ const TIME := "2026年1月2日 3:4:5"
 var results := []
 var oracle := {}
 var opened := 0
+## 截图目录（-- --out=<目录>，非 headless 运行时与原版参照 achievement_01～03 对照）
+var out_dir := ""
 
 
 func check(name: String, ok: bool, detail = null) -> void:
@@ -67,7 +69,17 @@ func _ids(d: Dictionary) -> Array:
 	return out
 
 
+func shot(name: String) -> void:
+	if out_dir == "" or DisplayServer.get_name() == "headless":
+		return
+	await RenderingServer.frame_post_draw
+	check("screenshot_" + name, get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png")) == OK)
+
+
 func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out_dir = arg.substr(6)
 	XSave.dir_override = DIR
 	XConfig.path_override = ""
 	XAchievement.time_override = TIME
@@ -239,9 +251,27 @@ func _ui() -> void:
 	s.achievements["22"] = false
 	XConfig.achievements()["2"] = true
 	_popups()
+	for id in ["1", "22", "51"]:
+		XConfig.achievements()[id + "Time"] = TIME
 	var page := XAchievementScene.new()
 	add_child(page)
 	await get_tree().process_frame
+	await shot("achievement_01_challenge")
+	if out_dir != "":
+		page.select_type(1)
+		page.ok()
+		for i in range(7):
+			page._move(1, false)
+		await shot("achievement_02_event_list")
+		XAchievement.reward(60, s)
+		for i in range(90):
+			await get_tree().physics_frame
+		await shot("achievement_03_popup")
+		for k in ["60", "60Time"]:
+			XConfig.achievements().erase(k)
+		s.achievements.erase("60")
+		page.cancel()
+		page.select_type(0)
 	var u: Dictionary = oracle.ui
 	var rect := func(w: XMVWindow, r: Dictionary) -> bool:
 		return w.position == Vector2(r.x, r.y) and w.size == Vector2(r.width, r.height) and w.padding == float(r.padding)
