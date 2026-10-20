@@ -90,7 +90,7 @@ func _run() -> void:
 	toasts.clear()
 	check("comment_strip_keeps_quoted", (await script("$.toaster({ message : '见 http://a.b'}); // 注释")).is_empty() and toasts == ["见 http://a.b"], toasts)
 	# 认不出的脚本原样报告
-	check("unknown_reported", (await script("Star.AchievementSystem.GetAcReward(84)")) == ["Star.AchievementSystem.GetAcReward(84)"])
+	check("unknown_reported", (await script("Star.UnknownPlugin.Run(84)")) == ["Star.UnknownPlugin.Run(84)"])
 	# 插件指令设难度；增减技能（角色 0 为全队）
 	s.add_actor(1)
 	s.add_actor(8)

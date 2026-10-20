@@ -14,6 +14,7 @@ extends RefCounted
 ## - $gameVariables.setValue(N, 数字) → XState.set_variable（跨存档变量 900／899／1476 靠它存进 XGlobalVars）。
 ## - 副本 Boss 奖励（CE1439）：CodexEconomy.bossReward、CodexOrbs.rollInt、CodexV010Fixes.rewardNotice／awardQuantity、
 ##   甚尔／宿傩 rollAdvanceStone（见 XDungeon）；洪荒的 grantTicketBonus／rollPower 在非洪荒难度无操作。
+## - 成就：Star.AchievementSystem.GetAcReward(N) → XAchievement.reward；SceneManager.push(Scene_AchievementBook) → 成就界面（host.open_achievements）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## CodexReincarnationRandom.entry：open 之后的选择结果 {accepted, hard}
@@ -140,6 +141,14 @@ static func _statements(js: String, interp) -> Array:
 			await _reincarnation_open(interp)
 			continue
 		if st == "CodexReincarnationRandom.finishEntry()":
+			continue
+		# 成就（Star_AchievementSystem，见 XAchievement）：宝箱、守层者、传送等事件里的 GetAcReward(N)；公共事件 431 打开成就界面
+		m = RegEx.create_from_string("^Star\\.AchievementSystem\\.GetAcReward\\((\\d+)\\)$").search(st)
+		if m:
+			XAchievement.reward(int(m.get_string(1)), s)
+			continue
+		if st == "SceneManager.push(Scene_AchievementBook)" and interp.host.has_method("open_achievements"):
+			await interp.host.open_achievements()
 			continue
 		if st.begins_with("$.toaster"):
 			var text := _toaster_text(st)

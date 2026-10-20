@@ -843,6 +843,16 @@ func game_over() -> void:
 		a.recover_all()
 	await transfer(4, 14, 23, 8)
 
+## 公共事件 431「成就」：SceneManager.push(Scene_AchievementBook)，关闭后回到地图（事件接着往下执行）
+func open_achievements() -> void:
+	hud.visible = false
+	var page := XAchievementScene.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 func open_menu() -> void:
 	# 挂机中不能呼叫菜单（Scene_Map.isMenuCalled）
 	if busy or _menu_open or XHangUp.is_active(XState.current):

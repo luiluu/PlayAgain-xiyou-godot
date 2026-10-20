@@ -7,7 +7,7 @@ const {boot}=require('./hboot.cjs'),{sourceIdentity}=require('./source_identity.
 const APP=process.env.XIYOU_APP||'/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const identity=sourceIdentity(APP),r=boot(APP,{tolerant:true,log:false}),w=r.window;
 if(r.errors.length||!w.DataManager.isDatabaseLoaded())throw new Error('参照引擎启动失败');
-w.eval('ConfigManager.applyData({});Graphics.boxWidth=1280;Graphics.boxHeight=720;'+
+w.eval('ConfigManager.applyData({});Graphics.width=1280;Graphics.height=720;Graphics.boxWidth=1280;Graphics.boxHeight=720;'+
   'var __D=Date;Date=function(){return arguments.length?new (Function.prototype.bind.apply(__D,[null].concat([].slice.call(arguments))))():new __D(2026,0,2,3,4,5);};Date.now=function(){return new Date().getTime();};');
 const S=w.Star.AchievementSystem,M=w.Star.Achievement.Manager;
 w.Scene_Boot.prototype.start.call({});  // Star_AchievementShowPic：AchievementManager.init（PopupManager 要真场景，只量通知）
@@ -35,7 +35,7 @@ w.DataManager.setupNewGame();step('new_game_2');
 S.GetAcReward(2);step('reward_2_new_game');
 S.GetAcReward(51);S.GetAcReward(84);step('reward_51_84');
 {const before=popupWindows().length;S.GetAcReward(3);S.GetAcReward(4);
-  out.popupLayout=popupWindows().slice(before).map(p=>({id:p.item.id,x:p.x,y:p.y,width:p.width,height:p.height,opacity:p.opacity,contentsOpacity:p.contentsOpacity,padding:p.standardPadding(),fontSize:p.standardFontSize()}));
+  out.popupLayout=popupWindows().map(p=>({id:p.item.id,x:p.x,y:p.y,width:p.width,height:p.height,opacity:p.opacity,contentsOpacity:p.contentsOpacity,padding:p.standardPadding(),fontSize:p.standardFontSize()}));
   step('reward_3_4');}
 // 配置存取：makeData 带 SAchievementS，applyData 读回（缺省 {}）
 const made=w.ConfigManager.makeData();
