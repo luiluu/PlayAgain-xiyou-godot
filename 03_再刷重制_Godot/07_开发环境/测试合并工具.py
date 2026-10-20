@@ -788,6 +788,50 @@ for name in filter(None, files):
         self.assertFalse(self.wt.exists() or wt2.exists())
         self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
 
+    def test_batch_failure_lists_lanes_and_abort_restores_base(self):
+        bare = self.github()
+        wt2, _ = self.batch_fixture(check_rc=1)
+        base, pushed = self.g('rev-parse', 'HEAD'), self.g('rev-parse', 'main', cwd=bare)
+        self.assertEqual(self.call_task('x', '--abort-batch'), 1)  # 没有攒着的批
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--batch'), 0, self.last_output)
+        self.assertEqual(self.call_task('task2'), 0, self.last_output)
+        self.register_both()
+        self.assertEqual(self.call_task('task2', '--finish'), 1, self.last_output)
+        self.assertIn('本批最后的检查未通过', self.last_output)
+        self.assertRegex(self.last_output, r'- task（claude/task）合并提交 \w+，\d+ 个文件：.*测试\.gd')
+        self.assertRegex(self.last_output, r'- task2（claude/task2）合并提交 \w+，\d+ 个文件：.*docs2\.md')
+        failed_head = self.g('rev-parse', 'HEAD')
+        args = [sys.executable, str(HERE / '合并车道.py'), '--root', str(self.root), '--abort-batch']
+        result = subprocess.run(args, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), base)
+        self.assertFalse(merge.dirty(self.root))
+        refs = self.g('for-each-ref', '--format=%(refname) %(objectname)', 'refs/lane-merge/').splitlines()
+        self.assertIn(failed_head, [r.split()[1] for r in refs if not r.split()[0].endswith('-wip')])
+        self.assertTrue(any(r.split()[0].endswith('-wip') for r in refs))  # 未提交的登记改动也存了
+        self.assertTrue(self.wt.exists() and wt2.exists())
+        self.assertFalse((self.root / '.git/lane-merge/batch.json').exists())
+        self.assertFalse((self.root / '.git/lane-merge/state.json').exists())
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), pushed)  # GitHub 始终没动
+        # 撤出 task2，只把 task 重新合
+        (self.root / merge.ENV / '检查.sh').write_text('#!/bin/zsh\nexit 0\n')
+        self.g('commit', '-am', 'fixed checker')
+        self.g('merge', 'main', cwd=self.wt)
+        self.merge_and_finish()
+        self.assertTrue(wt2.exists())
+
+    def test_abort_refuses_pushed_batch(self):
+        self.github()
+        self.batch_fixture()
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--batch'), 0, self.last_output)
+        self.g('push', 'github', 'main')
+        self.assertEqual(self.call_task('x', '--abort-batch'), 1)
+        self.assertIn('已推送到 GitHub', self.last_output)
+
     def test_unreachable_github_only_warns(self):
         self.github(str(Path(self.tmp.name) / 'missing.git'))
         self.merge_and_finish()
