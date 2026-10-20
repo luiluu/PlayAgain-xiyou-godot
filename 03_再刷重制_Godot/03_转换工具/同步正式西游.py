@@ -63,6 +63,7 @@ PROBES = [
     (['sell_reward_probe.cjs'], ['sell_rewards.json']),
     (['power_probe.cjs'], ['power.json']),
     (['wtype_probe.cjs'], ['wtype.json']),
+    (['dual_wield_probe.cjs'], ['dual_wield.json']),
     (['shop_buy_probe.cjs'], ['shop_buy.json']),
     (['settlement_probe.cjs'], ['settlement.json']),
     (['item_marks_probe.cjs'], ['item_marks.json']),

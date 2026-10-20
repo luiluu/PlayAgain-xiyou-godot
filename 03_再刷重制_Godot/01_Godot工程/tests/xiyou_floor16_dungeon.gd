@@ -185,9 +185,11 @@ func _run() -> void:
 	_check("boss_transformed_to_175", info.form_at_transform == 175 and info.turn_at_transform >= 4, info)
 	var said: Array = XMessageBox.transcript.filter(func(t): return str(t).contains(BOSS_LINE))
 	_check("boss_dialogue_once", said.size() == 1, XMessageBox.transcript)
-	# 宝箱：再调查首领位，发奖、传回十六层、副本重置
+	# 宝箱：再调查首领位，发奖、传回十六层、副本重置。
+	# 没有邀请函 179 时变量 106 取随机 1～3，为 1 就出「深渊之门」选项（默认「进入此门」会去 Map050／051）；
+	# 出现时选「离开这是非之地」，同样传回十六层并重置副本，结果不随世界随机流变
 	map = _scene()
-	await _run_event(map, BOSS_EVENT, [])
+	await _run_event(map, BOSS_EVENT, [1])
 	_check("returned_floor16", await _wait_map(FLOOR_MAP))
 	_check("dungeon_reset", int(s.variable(5)) == 0 and int(s.variable(450)) == 0 and int(s.variable(113)) == 0, [s.variable(5), s.variable(450), s.variable(113)])
 	# 守护者海拉（敌群 796，开关 2303／2307 且变量 20≥31 时首领位的页）：第 3 页在敌人生命≤20% 时出 101 对话。

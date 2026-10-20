@@ -6,6 +6,11 @@ static func can_change(a: XActor, slot: int) -> bool:
 	var slots := a.equip_slots()
 	return slot >= 0 and slot < slots.size() and not a.traits_set(53).has(int(slots[slot])) and not a.traits_set(54).has(int(slots[slot]))
 
+## Window_EquipItem.includes／bestEquipItem：装备类型等于该槽当前的槽位类型（双持时第 2 格是武器）且能装备
+static func fits(a: XActor, slot: int, item: Dictionary) -> bool:
+	var slots := a.equip_slots()
+	return slot >= 0 and slot < slots.size() and not item.is_empty() and int(item.get("etypeId", 0)) == int(slots[slot]) and a.can_equip(item)
+
 static func clone(a: XActor) -> XActor:
 	var b := XActor.new()
 	b.actor_id = a.actor_id
@@ -40,7 +45,7 @@ static func change(s: XState, a: XActor, slot: int, item) -> bool:
 		return false
 	if item is Dictionary:
 		var index := s.gear.find_custom(func(e):return is_same(e,item))
-		if index < 0 or int(item.etypeId) != int(a.equip_slots()[slot]) or not a.can_equip(item):
+		if index < 0 or not fits(a, slot, item):
 			return false
 		# 同属性实例也逐件交换，不合并背包中的数量。
 		s.gear.remove_at(index)
@@ -71,9 +76,9 @@ static func optimize(s: XState, a: XActor) -> void:
 		if not can_change(a, slot) or excluded.has(str(a.equip_slots()[slot])):
 			continue
 		var best = null
-		var score := -1.0
+		var score := -1000.0   # MV bestEquipItem 的起点，能力值和为负的也能选上
 		for e in s.gear:
-			if int(e.etypeId) != int(a.equip_slots()[slot]) or not a.can_equip(e):
+			if not fits(a, slot, e):
 				continue
 			var value := 0.0
 			for p in e.params:
