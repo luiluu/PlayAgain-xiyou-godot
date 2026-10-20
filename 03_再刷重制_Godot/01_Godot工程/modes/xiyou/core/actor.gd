@@ -272,6 +272,11 @@ func attack_times_add() -> float:
 
 func action_plus_set() -> Array:
 	var out := super.action_plus_set()
+	# dsPassiveSkill Game_Actor.actionPlusSet：每个 <passiveAPLUS:N%> 被动加一项追加行动几率（取第一个整数 ×0.01）
+	for m in passive_values("passiveAPLUS"):
+		var found := RegEx.create_from_string("(\\d+)").search(str(m))
+		if found:
+			out.append(float(found.get_string(1)) * 0.01)
 	if XZhenqi.has_daofa(self, "fenshen"):
 		out.append(1.0)
 	return out
@@ -371,7 +376,7 @@ func passive_element_values(e: int) -> Array:
 func refresh_passive() -> void:
 	var c := {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "skillPass": {}, "skillTypeDvup": {},
 		"SkETypeHarmRi": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0, "itemRateUp": 0.0,
-		"certainHit": {"global": false, "bySkill": {}}}
+		"certainHit": {"global": false, "bySkill": {}}, "damageElement": 0}
 	var objs := equip_list() + skills() + states()
 	for o in objs:
 		var note := str(o.get("note", ""))
@@ -404,6 +409,9 @@ func refresh_passive() -> void:
 		for k in meta:
 			if str(k).begins_with("SkillCertainHit") and str(meta[k]).strip_edges().is_valid_int():
 				c.certainHit.bySkill[int(str(meta[k]).strip_edges())] = true
+		# dsPassiveSkill <DamageElements: N>：覆盖所有伤害技能的属性（摇光的圣光体：任何伤害都转神圣）；后读到的覆盖先读到的
+		if meta.has("DamageElements") and str(meta.DamageElements).strip_edges().is_valid_int():
+			c.damageElement = int(str(meta.DamageElements).strip_edges())
 		if meta.has("passiveIRUP"):
 			c.itemRateUp += _num(meta.passiveIRUP)
 	_passive_cache = c

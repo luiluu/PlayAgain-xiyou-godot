@@ -37,7 +37,8 @@ for(const c of picked.values()){
 }
 // 角色战力：切片角色（新开局的初始装备）1 级与 30 级，强制重算
 const actors=[];
-for(const id of SLICE.actors){const a=w.$gameActors.actor(id);if(!a)continue;
+// 角色战力对照只含 1～18 号：Kyo 2026-10-20 定，这次重制先不移植战力系统、等重制完再重做，战力对照不覆盖 19～40 号
+for(const id of SLICE.actors.filter(x=>x<=18)){const a=w.$gameActors.actor(id);if(!a)continue;
   for(const lv of [1,30]){a.changeLevel(lv,false);a.recoverAll();const p=P.actor(a,true),e=p.evaluation,o=p.ownEvaluation;
     actors.push({id,level:a.level,asked:lv,name:a.name(),equips:a.equips().map(x=>x?[w.DataManager.isWeapon(x)?'weapon':'armor',x.baseItemId||x.id,x.params]:null),
       total:p.total,self:p.self,gear:p.gear,gearScore:p.gearScore,parts:p.parts,selfParts:p.selfParts,

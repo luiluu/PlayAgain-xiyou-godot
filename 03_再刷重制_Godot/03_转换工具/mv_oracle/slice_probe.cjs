@@ -53,9 +53,11 @@ function run(difficulty) {
     a.refresh();
     battleRefresh(a);
     row.lv1Battle = snap(a);
+    // 升到 10 级会学到职业等级技能（含被动），回 1 级不会遗忘；伤害行要按「刚招募的 1 级角色」测，所以回 1 级时还原已学技能
+    const skillsAtLv1 = a._skills.slice();
     a.changeLevel(10, false); battleRefresh(a);
     row.lv10Battle = snap(a);
-    a.changeLevel(1, false); battleRefresh(a);
+    a.changeLevel(1, false); a._skills = skillsAtLv1; a.refresh(); battleRefresh(a);
     out.actors[id] = row;
   }
   w.eval('$gameParty._actors = []; [1, 8, 9, 10].forEach(function(id){ $gameParty.addActor(id); });');

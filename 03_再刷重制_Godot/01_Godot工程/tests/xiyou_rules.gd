@@ -4,7 +4,8 @@ extends Node
 ## 伤害比较的是结算后、取整前的值；正式版的成长修正 growth 首期未移植，按 oracle 值 ÷ growth 比较。
 ## 运行：godot --headless --path <工程> res://tests/xiyou_rules.tscn [-- --verbose]
 
-const DIFFICULTIES := [1, 2, 3, 4, 5, 6]
+## 六个难度的参照各约 100 秒：拆成两个场景并行（xiyou_rules 管 1～3，xiyou_rules_b 管 4～6），免得单个场景超过并行测试的 600 秒超时线
+@export var difficulties: Array = [1, 2, 3]
 var results: Array = []
 var mismatches: Array = []
 var verbose := false
@@ -23,6 +24,12 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 func _close(a: float, b: float, rel := 1e-6) -> bool:
 	return absf(a - b) <= maxf(1e-6, absf(b) * rel)
+
+
+## 参照行的 value 与 growth 在探针里都按 6 位小数取整，value/growth 的绝对误差可达 1e-6 量级；
+## 极小的伤害值（<1，如打满减伤的敌人）要放宽绝对误差，否则会误报
+func _close_r6(a: float, b: float) -> bool:
+	return absf(a - b) <= maxf(1e-5, absf(b) * 1e-6)
 
 
 func _arr_close(a: Array, b: Array, rel := 1e-6) -> bool:
@@ -93,7 +100,7 @@ func _run() -> void:
 	if not manifest is Dictionary:
 		_check("conversion_manifest_present", false)
 		return _finish()
-	for diff in DIFFICULTIES:
+	for diff in difficulties:
 		var path := "res://modes/xiyou/generated/oracle/slice_d%d.json" % diff
 		var d = JSON.parse_string(FileAccess.get_file_as_string(path))
 		if not d is Dictionary:
@@ -103,7 +110,7 @@ func _run() -> void:
 		_check("d%d.source_identity" % diff, issues.is_empty(), issues)
 		if not issues.is_empty():
 			continue
-		if diff == DIFFICULTIES[0]:
+		if diff == difficulties[0]:
 			var stale: Dictionary = d.duplicate(true)
 			stale.sourceIdentity.inputs["data/Classes.json"] = "旧来源"
 			_check("stale_oracle_rejected", not _reference_issues(manifest, stale).is_empty())
@@ -141,6 +148,7 @@ func _run() -> void:
 			troops[int(tid_s)] = list
 		# 伤害
 		var untranslated := []
+		var battle_actors := {}  # 伤害行里同一个角色反复出场：每难度只建一次（XDamage.calculate 不改角色），否则 22 个新角色把本测试拖过超时线
 		var zero_vars := []
 		zero_vars.resize(5000)
 		zero_vars.fill(0)
@@ -149,11 +157,15 @@ func _run() -> void:
 			var user: XBattler
 			var target: XBattler
 			if r.get("actor") != null:
-				user = _make_actor(int(r.actor), d, true)
+				if not battle_actors.has(int(r.actor)):
+					battle_actors[int(r.actor)] = _make_actor(int(r.actor), d, true)
+				user = battle_actors[int(r.actor)]
 				target = troops[int(r.troop)][0]
 			else:
 				user = troops[int(r.troop)][0]
-				target = _make_actor(int(r.target), d, true)
+				if not battle_actors.has(int(r.target)):
+					battle_actors[int(r.target)] = _make_actor(int(r.target), d, true)
+				target = battle_actors[int(r.target)]
 			var res: Dictionary = XDamage.calculate(item, user, target, {"variance": false, "critical": false, "vars": zero_vars})
 			var tag := "d%d.dmg.%s%s.skill%d" % [diff, "actor" if r.get("actor") != null else "enemy", str(r.get("actor", r.get("enemy"))), int(r.skill)]
 			if int(r.type) == 3 or int(r.type) == 4:
@@ -163,7 +175,7 @@ func _run() -> void:
 			var growth := float(mv_row.growth)
 			growth_seen.append(growth)
 			var expected := float(mv_row.value) / growth if growth != 0.0 else 0.0
-			_check(tag, _close(res.settled, expected), {"skill": r.skillName, "godot": res.settled, "mv_div_growth": expected,
+			_check(tag, _close_r6(res.settled, expected), {"skill": r.skillName, "godot": res.settled, "mv_div_growth": expected,
 				"godot_row": res.breakdown.row, "mv_row": mv_row, "godot_base": res.breakdown.base, "mv_base": r.breakdown.base})
 			# slice_probe 的 final 是 onPreDamageStateEffects（Confirm＋固定减伤），不含目标 React。
 			# 完整结算顺序另由 xiyou_settlement 对照真正的 onReactStateEffects。
