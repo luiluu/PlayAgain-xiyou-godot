@@ -11,8 +11,9 @@ import sys
 from pathlib import Path
 import subprocess
 import tempfile
+import shutil
 
-VERSION = 2
+VERSION = 3
 SLICE_NAME = 'xiyou_slice.json'
 # 分片探针：field 是按单元拆开的切片字段；first 表示该字段第一项另有整体用途（算进公共键）
 SHARDS = {
@@ -78,20 +79,62 @@ def atomic_json(path, value):
         Path(temp).unlink(missing_ok=True)
 
 
+def carry_cache(source, target):
+    """只携带初始种子与已发布缓存；不覆盖车道现场，不跟随种子符号链接。"""
+    source, target = Path(source), Path(target)
+    names = ('save', 'macport', 'incremental-cache.json')
+    for base in (source, target):
+        if base.is_symlink():
+            raise RuntimeError('探针种子目录不能是符号链接：' + str(base))
+    for name in names:
+        p = source / name
+        if p.is_symlink() or any(q.is_symlink() for q in p.rglob('*')):
+            raise RuntimeError('探针种子／缓存含符号链接，拒绝携带：' + str(p))
+        if (target / name).is_symlink():
+            raise RuntimeError('车道种子／缓存不能是符号链接：' + str(target / name))
+    target.mkdir(parents=True, exist_ok=True)
+    copied = []
+    with tempfile.TemporaryDirectory(prefix='carry-', dir=target) as temp:
+        for name in names:
+            src, dst, stage = source / name, target / name, Path(temp) / name
+            if dst.exists() or not src.exists():
+                continue
+            # 与 node_modules 一样优先 APFS 克隆；其它文件系统仍能安全地复制。
+            result = subprocess.run(['cp', '-cR', str(src), str(stage)], capture_output=True)
+            if result.returncode:
+                if stage.is_dir():
+                    shutil.rmtree(stage)
+                else:
+                    stage.unlink(missing_ok=True)
+                shutil.copytree(src, stage) if src.is_dir() else shutil.copy2(src, stage)
+            stage.rename(dst)
+            copied.append(name)
+    return copied
+
+
 class ProbeCache:
     def __init__(self, tools, app, generated, force=False):
         self.tools, self.app, self.gen = [Path(p).resolve() for p in (tools, app, generated)]
         self.oracle = self.tools / 'mv_oracle'
         self.path = self.oracle / '.sandbox/incremental-cache.json'
         self.force = force
+        self.cache_issue = None
         try:
             old = json.loads(self.path.read_text())
             self.entries = old['probes'] if old['version'] == VERSION else {}
+            if old['version'] != VERSION:
+                self.cache_issue = {'kind': 'cache-version', 'previous': old['version'], 'current': VERSION}
             if not isinstance(self.entries, dict):
                 self.entries = {}
+                self.cache_issue = {'kind': 'cache-invalid'}
+        except FileNotFoundError:
+            self.entries = {}
+            self.cache_issue = {'kind': 'cache-missing'}
         except (OSError, ValueError, KeyError, TypeError):
             self.entries = {}
+            self.cache_issue = {'kind': 'cache-invalid'}
         self.pending = {}
+        self.details, self.misses = {}, {}
         self.source_sha = digest_files(files(self.app), self.app)
         helpers = [p for p in files(self.oracle) if not any(x in p.relative_to(self.oracle).parts for x in ('.sandbox', 'node_modules'))
                    and p.suffix in ('.cjs', '.js', '.json') and not p.name.endswith('_probe.cjs')]
@@ -101,7 +144,7 @@ class ProbeCache:
         seeds = files(self.oracle / '.sandbox/save') + files(self.oracle / '.sandbox/macport')
         # 转换器（*.py）不进公共键：探针不执行 Python，读转换产物的探针另按产物内容算键（converted／地图单元）
         self.common = {'version': VERSION, 'source': self.source_sha, 'app': str(self.app.resolve()),
-                       'generated': str(self.gen.resolve()), 'runtime': runtime, 'node': node, 'python': sys.version, 'platform': sys.platform,
+                       'runtime': runtime, 'node': node, 'python': sys.version, 'platform': sys.platform,
                        'helpers': digest_files(helpers, self.oracle),
                        'seedFiles': digest_files(seeds, self.oracle),
                        'environment': {k: os.environ.get(k) for k in ('LANG', 'LC_ALL', 'TZ', 'NODE_OPTIONS', 'NODE_ENV', 'NODE_PATH')}}
@@ -142,23 +185,81 @@ class ProbeCache:
         dependencies, texts = self._dependencies(command)
         text = ''.join(texts)
         value = dict(self.common, command=command, dependencies=digest_files(dependencies, self.tools))
+        detail = {'common': {k: sha_json(v) for k, v in self.common.items()},
+                  'dependencies': self._file_details(dependencies, self.tools), 'command': command}
+        detail['common']['environment'] = {k: sha_json(v) for k, v in self.common['environment'].items()}
         spec = self.shard(command)
         if SLICE_NAME in text:
             fields = slice_fields(texts)
             if fields is None:
                 value['slice'] = hashlib.sha256((self.tools / SLICE_NAME).read_bytes()).hexdigest()
+                detail['slice'] = value['slice']
             else:
                 data = self._slice()
                 kept = sorted(fields - {spec['field']}) if spec else sorted(fields)
                 value['sliceFields'] = sha_json({f: data.get(f) for f in kept})
+                detail['sliceFields'] = {f: sha_json(data.get(f)) for f in kept}
                 if spec and spec.get('first'):
                     value['sliceFirst'] = (data.get(spec['field']) or [None])[0]
+                    detail['sliceFirst'] = sha_json(value['sliceFirst'])
         if spec:
             value['tooling'] = digest_files([self.tools / n for n in TOOLING], self.tools)
+            detail['tooling'] = self._file_details([self.tools / n for n in TOOLING], self.tools)
         elif any(m in text for m in GENERATED_MARKERS) or command[0] == 'event_probe.cjs':
-            value['converted'] = digest_files(files(self.gen / 'maps') + files(self.gen / 'db') +
-                                              [self.gen / 'manifest.json', self.gen / 'slice.json'], self.gen)
+            converted = files(self.gen / 'maps') + files(self.gen / 'db') + [self.gen / 'manifest.json', self.gen / 'slice.json']
+            value['converted'] = digest_files(converted, self.gen)
+            detail['converted'] = self._file_details(converted, self.gen)
+        self.details[command[0]] = detail
         return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+
+    @staticmethod
+    def _file_details(paths, base):
+        return {p.relative_to(base).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in sorted(set(paths)) if p.is_file()}
+
+    def explain(self, command, output_names, key, units=None):
+        """未命中原因只写字段名和相对文件名，不泄露环境变量或种子内容。"""
+        if self.force:
+            return [{'kind': 'forced-full'}]
+        old = self.entries.get(command[0])
+        if not isinstance(old, dict):
+            return [self.cache_issue or {'kind': 'probe-not-cached'}]
+        why = []
+        if old.get('key') != key:
+            current = self.details.get(command[0], {})
+            previous = old.get('inputs') if isinstance(old.get('inputs'), dict) else {}
+            old_common = previous.get('common') if isinstance(previous.get('common'), dict) else {}
+            for field in sorted(set(current.get('common', {})) | set(old_common)):
+                a, b = old_common.get(field), current.get('common', {}).get(field)
+                if a != b:
+                    item = {'kind': 'common-input', 'field': field}
+                    if field == 'environment' and isinstance(a, dict) and isinstance(b, dict):
+                        item['names'] = sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
+                    why.append(item)
+            for field in sorted((set(current) | set(previous)) - {'common'}):
+                a, b = previous.get(field), current.get(field)
+                if a != b:
+                    item = {'kind': field}
+                    if isinstance(a, dict) and isinstance(b, dict):
+                        item['names'] = sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
+                    why.append(item)
+            if not why:
+                why.append({'kind': 'input-fingerprint'})
+        expected = old.get('outputs') if isinstance(old.get('outputs'), dict) else {}
+        changed = [Path(p).name for p in output_names
+                   if not (self.gen / 'oracle' / Path(p).name).is_file()
+                   or hashlib.sha256((self.gen / 'oracle' / Path(p).name).read_bytes()).hexdigest() != expected.get(Path(p).name)]
+        if changed:
+            why.append({'kind': 'output-sha', 'names': changed})
+        previous = old.get('units')
+        if units != previous or isinstance(units, dict) and isinstance(previous, dict) and list(units) != list(previous):
+            item = {'kind': 'units'}
+            if isinstance(units, dict) and isinstance(previous, dict):
+                item.update(added=[u for u in units if u not in previous], removed=[u for u in previous if u not in units],
+                            changed=[u for u in units if u in previous and units[u] != previous[u]],
+                            reordered=[u for u in units if u in previous] != [u for u in previous if u in units])
+            why.append(item)
+        return why
 
     def units(self, command):
         """分片探针的当前单元 → 单元键；全量顺序即字典顺序。非分片探针返回 None。"""
@@ -187,6 +288,7 @@ class ProbeCache:
     def plan(self, command, output_names, key, units=None):
         """None＝整体重跑；[]＝整体复用；单元列表＝只跑这些单元再合并。
         分片探针只删了或换了顺序时返回 ['']：不跑探针，只按新顺序合并。"""
+        self.misses[command[0]] = self.explain(command, output_names, key, units)
         if self.force:
             return None
         try:
@@ -214,7 +316,7 @@ class ProbeCache:
 
     def record(self, command, output_names, key, units=None):
         self.pending[command[0]] = {'key': key, 'command': command, 'names': output_names, 'outputs': self.outputs(output_names),
-                                    'units': units}
+                                    'units': units, 'inputs': self.details.get(command[0], {})}
 
     def commit(self):
         if digest_files(files(self.app), self.app) != self.source_sha:
@@ -228,3 +330,11 @@ class ProbeCache:
                     or current.units(entry['command']) != entry.get('units')):
                 raise RuntimeError('同步期间探针输入或产物改变，不发布缓存：' + name)
         atomic_json(self.path, {'version': VERSION, 'probes': self.pending})
+
+
+if __name__ == '__main__':
+    import argparse
+    ap = argparse.ArgumentParser(description='携带探针缓存与起始种子（不会覆盖已有车道现场）')
+    ap.add_argument('--carry-cache', nargs=2, metavar=('SOURCE', 'TARGET'), required=True)
+    args = ap.parse_args()
+    print(json.dumps({'carried': carry_cache(*args.carry_cache)}, ensure_ascii=False))

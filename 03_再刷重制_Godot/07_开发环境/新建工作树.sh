@@ -50,6 +50,8 @@ prepare() {
   [[ -e $frozen || ! -d $MAIN/$GODOT_SUB/02_内容与素材/冻结正式源/app.nw ]] || ln -s "$MAIN/$GODOT_SUB/02_内容与素材/冻结正式源/app.nw" "$frozen"
   # 会被写或按路径解析的：克隆一份（链接到主工作区的目录会被 git 当成未跟踪文件，也会让 worktree 改到主工作区）
   [[ -e $tools/mv_oracle/node_modules ]] || cp -cR "$mtools/mv_oracle/node_modules" "$tools/mv_oracle/node_modules"
+  # 起始种子与缓存必须配套携带；已有车道现场不覆盖。缓存仍逐文件核对 oracle 的 SHA。
+  python3 "$tools/incremental_sync.py" --carry-cache "$mtools/mv_oracle/.sandbox" "$tools/mv_oracle/.sandbox"
   if [[ -e $gen ]]; then
     refresh_oracle "$mgen/oracle" "$gen/oracle"
   else
