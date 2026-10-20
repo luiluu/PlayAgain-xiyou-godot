@@ -13,6 +13,7 @@
 - `slice_probe.cjs`：内存新游戏的三难度首期能力/伤害对照，只输出到 `.sandbox/slice/`；每份数据附原始数据库、版本与运行脚本指纹。验收后在资料库侧复制到 Godot 的 `generated/oracle/`。
 - `equipment_rules.py`：将装备/强化备注、GT 套装与符文之语插件参数转成纯 JSON 规则，不执行来源备注代码。
 - `equipment_probe.cjs`：在内存新游戏中固定随机数，测装备、强化材料、套装与符文之语；输出只写 `.sandbox/equipment.json`，验收后复制到 `generated/oracle/`。
+- `dual_wield_probe.cjs`：双持装备槽（特性 55 时 equipSlots 第 2 格改为武器、convertInitEquips／grabInitEquips）：刘备（13，专属剑 2005 带双持）与曼德斯（26，职业双持）逐步换装、清空、最强装备后的槽位类型、装备、背包、装备页候选、能力值与 attackAnimationId1／2，及若干初始装备表；只写 `.sandbox/dual_wield.json`，Godot 侧对照见 `tests/xiyou_dual_wield`。
 - `help_probe.cjs`：在内存新游戏中对物品（1～200）、武器/防具（1～60）、切片角色技能、随机词缀装备实例调用正式版 `Sprite_ItemHelp.setItem`，记录实际画出的每一行（文字、字号、颜色、y、对齐）与卡片宽高；只写 `.sandbox/help_cards.json`，验收后复制到 `generated/oracle/`，供 Godot 说明卡（XHelpCard）对照。
 - `hang_up_probe.cjs`：七个挂机子页窗口、技能次数/顺序、正常战后回血/回蓝/复活、七档卖出状态与 64 种品质星级；只写 `.sandbox/hang_up.json`，核验后复制到 `generated/oracle/`。固定能力值隔离不移植的 growth；初始化成就为已领取、绕过场景退出与死亡停止以单测吃药分支，实际战后调用另由 Godot 测试覆盖。与其余四探针一起重跑并核验来源。
 - `source_identity.cjs`：两种探针共用的原始数据与运行脚本指纹。
