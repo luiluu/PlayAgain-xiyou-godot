@@ -58,6 +58,6 @@
 
 - 05b40b5 WIP：副本／RomGet 抽随机走传入存档（另含第一次 slice_probe 写法，已由 10afa35 撤回）
 - 10afa35 WIP：新探针 actor_passive、xiyou_actor_p0 逐级对照、O-062 补登记
-- 收尾提交：交付单
+- 893cdd0 交付单（检查.sh --oracle 全部通过）
 
 可合并。
