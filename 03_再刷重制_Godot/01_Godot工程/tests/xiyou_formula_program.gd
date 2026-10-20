@@ -43,7 +43,9 @@ func _ready() -> void:
 		var before := JSON.stringify(context)
 		var result := XFormulaProgram.evaluate(program, context, type)
 		var expected := float(c.observed.normalizedValue)
-		check(str(c.id), result.available and result.sourceValueKind == c.observed.valueKind and absf(float(result.value) - expected) <= maxf(0.000001, absf(expected) * 0.000001), [result, c.observed])
+		# 敌方当 a 时 a.actorId() 在原版抛 TypeError，evalDamageFormula 按 0 记；VM 报 actor_id_requires_actor 且值 0 即一致
+		var thrown_as_zero: bool = not result.available and str(result.diagnostic) == "actor_id_requires_actor" and expected == 0.0 and float(result.value) == 0.0
+		check(str(c.id), thrown_as_zero or (result.available and result.sourceValueKind == c.observed.valueKind and absf(float(result.value) - expected) <= maxf(0.000001, absf(expected) * 0.000001)), [result, c.observed])
 		check(str(c.id) + ".preview_does_not_write", before == JSON.stringify(context))
 		if c.observed.has("randomDraws"):
 			check(str(c.id) + ".short_circuit_draws", int(result.randomDraws) == int(c.observed.randomDraws), result)

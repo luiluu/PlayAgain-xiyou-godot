@@ -179,7 +179,11 @@ func _read(n: Dictionary):
 		"has_state": return row.get("stateIds", []).has(int(key)) if not key.is_empty() else false
 		"states_count": return row.get("states", []).size()
 		"max_tp": return row.get("maxTp", UNDEFINED)
-		"actor_id": return row.get("actorId", UNDEFINED)
+		"actor_id":
+			# Game_Enemy 没有 actorId 方法：公式里 a.actorId() 在敌方行为上抛 TypeError，原版按公式出错记 0
+			if row.get("actorId") == null:
+				return _fail("actor_id_requires_actor")
+			return row.get("actorId")
 		"hp_rate": return _divide(_number(p.get("hp")), _number(p.get("mhp")))
 		"mp_rate": return _divide(_number(p.get("mp")), _number(p.get("mmp"))) if _number(p.get("mmp")) != 0.0 else 0.0
 		"param", "xparam", "sparam":
