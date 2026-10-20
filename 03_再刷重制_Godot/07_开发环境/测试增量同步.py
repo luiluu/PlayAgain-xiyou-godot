@@ -556,6 +556,17 @@ class TaskWatchTests(unittest.TestCase):
                 w = subprocess.run([str(HERE / '等待任务.sh'), str(log)], capture_output=True, timeout=5)
                 self.assertEqual(w.returncode, expected, w.stdout + w.stderr)
 
+    def test_start_detaches_and_wait_sees_result(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for script, expected in [('import time; time.sleep(.5); print("ok")', 0), ('raise SystemExit(5)', 5)]:
+                log = Path(tmp) / ('start%d.log' % expected)
+                p = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'start', str(log), '--', sys.executable, '-c', script],
+                                   capture_output=True, text=True, timeout=35)
+                self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+                self.assertEqual(p.stdout.strip(), 'TASK_LOG=' + str(log.resolve()))
+                w = subprocess.run([str(HERE / '等待任务.sh'), str(log), '--timeout', '20'], capture_output=True, timeout=25)
+                self.assertEqual(w.returncode, expected, w.stdout + w.stderr)
+
     def test_non_utf8_output_does_not_hide_valid_completion_marker(self):
         with tempfile.TemporaryDirectory() as tmp:
             log = Path(tmp) / 'binary.log'

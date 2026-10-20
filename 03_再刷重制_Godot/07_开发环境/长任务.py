@@ -271,18 +271,51 @@ def wait(log, timeout=0, poll=0.2):
         time.sleep(poll)
 
 
+def start(log, command, idle=3600):
+    """在新会话里启动 run 后立即返回：启动它的会话被停（如 Remote Control 空闲）时任务不随之停止。
+    等状态文件出现本轮 runId 才打印 TASK_LOG，之后照常用 wait。run 自己的报错写在 <日志>.start.err。"""
+    log = Path(log).resolve()
+    log.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        before = json.loads(status_path(log).read_text()).get('runId')
+    except (OSError, ValueError):
+        before = None
+    err = Path(str(log) + '.start.err')
+    with open(os.devnull, 'rb') as null_in, open(os.devnull, 'wb') as null_out, err.open('wb') as err_out:
+        proc = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), 'run', str(log), '--idle-timeout', str(idle),
+                                 '--', *command], stdin=null_in, stdout=null_out, stderr=err_out, start_new_session=True)
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        try:
+            state = json.loads(status_path(log).read_text())
+        except (OSError, ValueError):
+            state = {}
+        if state.get('runId') not in (None, before) and state.get('pid') == proc.pid:
+            print('TASK_LOG=' + str(log), flush=True)
+            return 0
+        if proc.poll() is not None:
+            print('任务未能启动（退出码 %d）：%s' % (proc.returncode, err.read_text(errors='replace').strip()), file=sys.stderr)
+            return proc.returncode or 2
+        time.sleep(.05)
+    print('任务启动后 30 秒仍未写出状态：' + str(log), file=sys.stderr)
+    return 2
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     sub = ap.add_subparsers(dest='mode', required=True)
     runner = sub.add_parser('run')
     runner.add_argument('log', type=Path)
     runner.add_argument('--idle-timeout', type=float, default=float(os.environ.get('TASK_IDLE_TIMEOUT', '3600')))
+    starter = sub.add_parser('start')
+    starter.add_argument('log', type=Path)
+    starter.add_argument('--idle-timeout', type=float, default=float(os.environ.get('TASK_IDLE_TIMEOUT', '3600')))
     waiter = sub.add_parser('wait')
     waiter.add_argument('log', type=Path)
     waiter.add_argument('--timeout', type=float, default=0)
     argv = sys.argv[1:]
     command = []
-    if argv[:1] == ['run'] and '--' in argv:
+    if argv[:1] in (['run'], ['start']) and '--' in argv:
         sep = argv.index('--')
         command, argv = argv[sep + 1:], argv[:sep]
     a = ap.parse_args(argv)
@@ -290,6 +323,8 @@ def main():
         return wait(a.log, a.timeout)
     if not command:
         ap.error('缺少任务命令')
+    if a.mode == 'start':
+        return start(a.log, command, a.idle_timeout)
     return run(a.log, command, a.idle_timeout)
 
 
