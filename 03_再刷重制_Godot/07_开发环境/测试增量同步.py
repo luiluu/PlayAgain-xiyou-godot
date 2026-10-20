@@ -200,6 +200,93 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.assertEqual(self.run_sync()[0], 2)
         self.assertEqual(self.run_sync('--accept-additions')[0], 0)
 
+    def acceptance(self, report, reason='有意修正探针口径', **override):
+        rows = [dict(c, reason=reason, **override) for c in report['changeCandidates']]
+        path = self.root / ('accept_%d.json' % len(list(self.root.glob('accept_*.json'))))
+        path.write_text(json.dumps({'schema': 1, 'accept': rows}, ensure_ascii=False))
+        return path
+
+    def test_existing_case_with_new_fields_is_an_addition(self):
+        self.set_payload({'cases': [{'id': 'stable', 'value': 1, 'extra': [1, 2]}]})
+        result, report = self.run_sync()
+        self.assertEqual(result, 2)
+        self.assertEqual(report['additionCheck']['additions']['events.json'][0]['fields'], ['extra'])
+        self.assertEqual(self.run_sync('--accept-additions')[0], 0)
+        self.assertEqual(self.run_sync()[0], 0)
+        self.set_payload({'cases': [{'id': 'stable', 'value': 1, 'extra': [1, 2], 'more': 1}]})
+        self.assertEqual(self.run_sync()[0], 2)
+        for bad in [{'id': 'stable', 'value': 9, 'extra': [1, 2]}, {'id': 'stable', 'extra': [1, 2]},
+                    {'id': 'stable', 'value': 1, 'extra': [1, 3], 'more': 1}]:
+            self.set_payload({'cases': [bad]})
+            self.assertEqual(self.run_sync('--accept-additions')[0], 2, bad)
+        # 多出的字段带错误：探针阶段即拒收
+        self.set_payload({'cases': [{'id': 'stable', 'value': 1, 'extra': [1, 2], 'more': {'error': 'x'}}]})
+        with self.assertRaisesRegex(RuntimeError, '新增或变化的错误'):
+            self.run_sync('--accept-additions')
+
+    def test_explicit_change_acceptance_is_exact_single_use_and_audited(self):
+        result, report = self.run_sync('--accept-additions')
+        self.assertEqual(result, 2)
+        (candidate,) = report['changeCandidates']
+        self.assertEqual((candidate['file'], candidate['collection'], candidate['fields']), ('events.json', 'cases', ['value']))
+        # 字段多写、摘要不符都对不上；对不上的单整轮拒收，基线照留
+        for override in [{'fields': ['value', 'id']}, {'newDigest': '0' * 16}]:
+            result, report = self.run_sync('--accept-changes', str(self.acceptance(report, **override)))
+            self.assertEqual(result, 2)
+            self.assertTrue(report['acceptChanges']['unused'])
+        self.assertEqual(self.run_sync('--full')[0], 2)
+        spec = self.acceptance(report)
+        result, report = self.run_sync('--accept-changes', str(spec))
+        self.assertEqual(result, 0, report['result'])
+        self.assertEqual(report['acceptedChanges'][0]['reason'], '有意修正探针口径')
+        audit = (self.root / '03_再刷重制_Godot/04_验证/本地结果/测量接受记录.jsonl').read_text().splitlines()
+        self.assertEqual(len(audit), 1)
+        self.assertEqual(json.loads(audit[0])['accepted'][0]['newDigest'], candidate['newDigest'])
+        self.assertEqual(self.run_sync()[0], 0)
+        # 同一接受单不能放行之后的变化，也不能在没有变化时空用
+        self.assertEqual(self.run_sync('--accept-changes', str(spec))[0], 2)
+        self.set_payload({'cases': [{'id': 'stable', 'value': 3}]})
+        self.assertEqual(self.run_sync('--accept-changes', str(spec))[0], 2)
+        self.assertEqual(self.run_sync('--accept-additions')[0], 2)
+
+    def test_acceptance_needs_additions_flag_same_source_and_covers_every_problem(self):
+        self.set_payload({'cases': [{'id': 'stable', 'value': 2}, {'id': 'new', 'value': 3}]})
+        result, report = self.run_sync()
+        spec = self.acceptance(report)
+        self.assertEqual(self.run_sync('--accept-changes', str(spec))[0], 2)
+        self.manifest['runtimeInputs']['js/a.js'] = 'changed'
+        self.assertEqual(self.run_sync('--accept-changes', str(spec), '--accept-additions')[0], 2)
+        self.manifest['runtimeInputs']['js/a.js'] = 'r'
+        self.assertEqual(self.run_sync('--accept-changes', str(spec), '--accept-additions')[0], 0)
+        # 删除用例没有候选，不能接受；新行带错误在比较层也不给候选
+        self.set_payload({'cases': [{'id': 'new', 'value': 3}]})
+        result, report = self.run_sync()
+        self.assertEqual((result, report['changeCandidates']), (2, []))
+        changes = []
+        oracle_additions.compare_file('events.json', {'cases': [{'id': 'a', 'v': 1}]},
+                                      {'cases': [{'id': 'a', 'v': 2, 'error': 'x'}]}, changes)
+        self.assertEqual(changes, [])
+
+    def test_malformed_acceptance_stops_before_outputs_change(self):
+        before = sync.outputs_digest(self.gen)
+        for rows in [[], [{'file': 'events.json'}], [dict.fromkeys(oracle_additions.ACCEPT_FIELDS, 'x') | {'fields': ['v'], 'reason': '短'}]]:
+            spec = self.root / 'bad.json'
+            spec.write_text(json.dumps({'schema': 1, 'accept': rows}))
+            with self.assertRaises(ValueError):
+                self.run_sync('--accept-changes', str(spec))
+        self.assertEqual(sync.outputs_digest(self.gen), before)
+        self.assertFalse((self.root / '03_再刷重制_Godot/04_验证/本地结果/同步基线').exists())
+
+    def test_clone_uses_the_same_explicit_acceptance(self):
+        lane = self.root.parent / 'lane'
+        import shutil
+        shutil.copytree(self.gen, lane)
+        (lane / 'oracle/events.json').write_text((self.app / 'payload.json').read_text())
+        result, report = self.run_sync('--from-worktree', str(lane), lane=lane)
+        self.assertEqual(result, 2)
+        spec = self.acceptance(report)
+        self.assertEqual(self.run_sync('--from-worktree', str(lane), '--accept-changes', str(spec), lane=lane)[0], 0)
+
 
 class CacheTests(unittest.TestCase):
     def setUp(self):
@@ -539,6 +626,17 @@ class ActorSampleGuardTests(unittest.TestCase):
             self.assertEqual(bool(extra) and not bad, accepted, [extra, bad])
         samples['35']['level'] = 1
         self.assertFalse(oracle_additions.valid_level_samples(samples))
+
+    def test_field_augmentation_matches_every_row_once(self):
+        old = {'cases': [{'id': 'a', 'v': 1}, {'id': 'a', 'v': 1, 'w': 2}]}
+        ok = {'cases': [{'id': 'a', 'v': 1, 'x': 3}, {'id': 'a', 'v': 1, 'w': 2, 'x': 3}]}
+        self.assertEqual(oracle_additions.compare_file('events.json', old, ok),
+                         ([{'collection': 'cases.fields', 'key': '[["id","a"]]', 'count': 2, 'fields': ['x']}], []))
+        for new in [{'cases': [{'id': 'a', 'v': 1, 'w': 2, 'x': 3}, {'id': 'a', 'v': 2, 'x': 3}]},
+                    {'cases': ok['cases'] + [{'id': 'a', 'v': 1}]}]:
+            changes = []
+            extra, bad = oracle_additions.compare_file('events.json', old, new, changes)
+            self.assertEqual((extra, bool(bad), changes), ([], True, []))
 
 
 class TaskWatchTests(unittest.TestCase):

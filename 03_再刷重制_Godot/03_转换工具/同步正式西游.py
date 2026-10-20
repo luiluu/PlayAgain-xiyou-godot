@@ -13,6 +13,10 @@
    （03_转换工具 下受 Git 跟踪的文件，ui_reference 与 .md 除外）与全部产物摘要（不含 Godot 的 .import）。
 8. 最后 godot --import（--no-import 跳过），免得紧接着跑的专项测试读不到新图。
 
+--accept-changes <接受单.json>（可多次）：人工核过的单条既有用例测量改变（如有意修正探针）。接受单逐条写 file、collection、
+key、fields、oldDigest、newDigest、reason，须与本轮实际变化逐项相同且每条都用上，否则整轮拒收；可接受的变化列在
+同步报告 changeCandidates。接受单放 04_验证/测量接受/ 入 Git，成功后在 本地结果/测量接受记录.jsonl 追加审计行。
+
 --from-worktree <车道工作树>（总装合并时用，提速提案 P3）：车道在自己的工作树跑过同步、且合并后 main 的转换工具文件与车道
 同步时完全相同，则不再重跑转换器与探针，直接克隆车道的产物，核对产物摘要后照常比较测量、核对来源、登记。
 任一条件不满足退出码 3（未改动 main 的产物），调用方改跑完整同步。
@@ -36,7 +40,8 @@ ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE))
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT  # noqa: E402
 from incremental_sync import SHARDS, ProbeCache
-from oracle_additions import compare_directories, payload, source_preserved, has_error, retained_errors_unchanged  # noqa: E402
+from oracle_additions import (compare_directories, payload, source_preserved, has_error, retained_errors_unchanged,  # noqa: E402
+                              load_acceptances, apply_acceptances, change_candidates)
 
 ORACLE_DIR = HERE / 'mv_oracle'
 SANDBOX = ORACLE_DIR / '.sandbox'
@@ -391,6 +396,8 @@ def _main() -> int:
     ap.add_argument('--no-register', action='store_true', help='只同步与比较，不改来源登记/当前状态')
     ap.add_argument('--accept-additions', action='store_true',
                     help='同源且旧用例逐条相同、只增已知结构新用例时自动接受；不接受规则变化/删除/新用例错误')
+    ap.add_argument('--accept-changes', type=Path, action='append', default=[], metavar='接受单.json',
+                    help='显式接受接受单逐条列出的既有用例改变（须写理由、摘要逐项对上，每条都要用上）')
     ap.add_argument('--from-worktree', type=Path, help='合并时用车道已同步的产物（按指纹核对），不满足条件退出码 3')
     ap.add_argument('--full', action='store_true', help='忽略探针缓存，强制全量转换与全部探针')
     ap.add_argument('--no-import', action='store_true', help='结束时不跑 godot --import')
@@ -404,6 +411,8 @@ def _main() -> int:
         a.no_register = True
         print('在 worktree 里运行：只同步与比较，不写来源登记／当前状态（由总装在主工作区登记）')
     app, gen = a.app.resolve(), a.generated.resolve()
+    # 接受单先读：格式不对时在写任何产物之前停下
+    acceptances, acceptance_sources = load_acceptances(a.accept_changes) if a.accept_changes else ([], [])
     lane = None
     if a.from_worktree:
         lane, why = clone_from_worktree(a.from_worktree.resolve(), gen)
@@ -485,13 +494,27 @@ def _main() -> int:
     v = subprocess.run([sys.executable, str(HERE / '验证西游来源.py'), '--app', str(app), '--generated', str(gen)], capture_output=True, text=True)
     report['verify'] = (v.stdout.strip().splitlines() or [''])[-1]
     report['verifyOk'] = v.returncode == 0
-    accepted = bool(a.accept_additions and report['additionCheck']['onlyAdditions']
+    check = report['additionCheck']
+    report['changeCandidates'] = change_candidates(check)
+    resolved = apply_acceptances(check, acceptances)
+    if acceptances:
+        report['acceptChanges'] = {'sources': acceptance_sources, 'accepted': resolved['accepted'], 'unused': resolved['unused'],
+                                   'remainingProblems': resolved['problems']}
+    additions = bool(check['additions'])
+    # 新增与显式接受都处理完后不能剩任何问题；接受单每条都要用上；新增仍须 --accept-additions
+    clean = (not resolved['problems'] and not resolved['unused'] and (additions or bool(resolved['accepted'])))
+    accepted = bool(clean and (a.accept_additions or not additions)
                     and report['sameExistingSource'] and report['verifyOk'])
-    ok = report['verifyOk'] and (not measure or accepted)
-    report['acceptedAdditions'] = accepted
+    ok = report['verifyOk'] and not resolved['unused'] and (not measure or accepted)
+    report['acceptedAdditions'] = accepted and additions
+    report['acceptedChanges'] = resolved['accepted'] if accepted else []
     if accepted:
-        report['result'] = '只增新用例，已接受' + ('并登记' if not a.no_register else '（不登记）')
-    elif report['additionCheck']['onlyAdditions'] and report['sameExistingSource'] and report['verifyOk']:
+        what = '、'.join(x for x in ['新增用例' if additions else '', '显式接受 %d 条既有用例改变' % len(resolved['accepted'])
+                                      if resolved['accepted'] else ''] if x)
+        report['result'] = what + '，已接受' + ('并登记' if not a.no_register else '（不登记）')
+    elif resolved['unused']:
+        report['result'] = '接受单有 %d 条对不上本轮变化，整轮拒收' % len(resolved['unused'])
+    elif clean and report['sameExistingSource'] and report['verifyOk']:
         report['result'] = '只增新用例；加 --accept-additions 可自动接受'
     else:
         report['result'] = '测量不变，已登记' if ok and not a.no_register else ('测量不变' if ok else '有变化，请人工查看')
@@ -519,13 +542,20 @@ def _main() -> int:
             (backup / '同步报告.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
     if ok and not a.no_register:
         register(new_version, fingerprint, report)
-    usable = not report.get('cacheError') and not report.get('importError') and report['verifyOk'] and report['sameExistingSource'] and (not measure or report['additionCheck']['onlyAdditions'])
+    usable = (not report.get('cacheError') and not report.get('importError') and report['verifyOk'] and report['sameExistingSource']
+              and (not measure or (clean and not resolved['unused'])))
     if usable and lane is None:
         write_stamp(gen, report)
     elif not usable:
         (gen / STAMP).unlink(missing_ok=True)
     # 缓存只描述测量与输入，不能充当接受记录。登记、导入、缓存与指纹均成功才推进接受边界。
     if ok:
+        if report['acceptedChanges']:
+            audit = ROOT / '03_再刷重制_Godot/04_验证/本地结果/测量接受记录.jsonl'
+            with audit.open('a') as f:
+                f.write(json.dumps({'time': dt.datetime.now().isoformat(timespec='seconds'), 'generated': str(gen),
+                                    'backup': report['backup'], 'sources': acceptance_sources,
+                                    'accepted': report['acceptedChanges']}, ensure_ascii=False) + '\n')
         finish_comparison(baseline)
     print(json.dumps({k: report[k] for k in ['from', 'to', 'result', 'changedInputs', 'changedMaps', 'measurementChanges', 'verify', 'backup']},
                      ensure_ascii=False))
@@ -541,7 +571,9 @@ def register(version: str, fingerprint: Path, report: dict) -> None:
     for k in ['confirmedReleaseVersion', 'lastConvertedContentReleaseVersion', 'oracleReleaseVersion']:
         src[k] = version
     src['fingerprint'] = rel
-    conclusion = '既有用例逐条不变，只增新用例' if report.get('acceptedAdditions') else '全部参照去来源身份后测量不变'
+    conclusion = ('显式接受 %d 条既有用例改变（见同步报告 acceptedChanges）' % len(report['acceptedChanges'])
+                  if report.get('acceptedChanges') else
+                  '既有用例逐条不变，只增新用例' if report.get('acceptedAdditions') else '全部参照去来源身份后测量不变')
     src['note'] = src.get('note', '') + ' %s（%s 自动同步）：改动 %s；%s。' % (version, dt.date.today().isoformat(), changed, conclusion)
     data['review'] = '%s 由自动同步核对同源，待交叉核查' % version
     p.write_text(json.dumps(data, ensure_ascii=False, indent=1) + '\n')
