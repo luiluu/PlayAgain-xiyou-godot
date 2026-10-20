@@ -160,6 +160,49 @@ class DraftTests(unittest.TestCase):
             merge.draft('- 状态：可合并\n\n## 变更记录草稿\n\n## 交接板\n- y\n')
 
 
+    def test_placeholder_only_as_whole_line(self):
+        ok = '- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】x\n\n- 修了草稿里出现「待写」二字被拒的问题\n'
+        self.assertIn('待写', merge.draft(ok))
+        self.assertTrue(merge.draft('状态：**可合并**（八戒）\n\n## 变更记录草稿\n\n## 日期 【Claude】x\n\n- y\n'))
+        for line in ['待写', '（待写）', '- 待写']:
+            with self.assertRaises(RuntimeError):
+                merge.draft('- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】x\n\n' + line + '\n')
+
+    def test_relink_from_delivery_folder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / '00_项目管理/规则').mkdir(parents=True)
+            (root / '00_项目管理/规则/甲.md').write_text('x')
+            (root / 'A.md').write_text('x')
+            body = '[甲](../规则/甲.md#节) [乙](规则/甲.md) [根](../../A.md) [外](https://e.x) [缺](../无.md)'
+            self.assertEqual(merge.relink(body, root), '[甲](规则/甲.md#节) [乙](规则/甲.md) [根](../A.md) [外](https://e.x) [缺](../无.md)')
+
+
+class ParallelTestRunnerTests(unittest.TestCase):
+    """并行负载下偶发失败的测试单独重跑一次；单跑仍失败才判失败。"""
+
+    def test_flaky_rerun_and_real_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            (tmp / 'proj/tests').mkdir(parents=True)
+            for n in 'abc':
+                (tmp / 'proj/tests' / (n + '.tscn')).touch()
+            godot = tmp / 'godot'
+            ok, bad = 'TEST_RESULT={"passed":1,"total":1}', 'TEST_RESULT={"passed":0,"total":1}'
+            godot.write_text('#!/bin/zsh\nn=${@[-1]:t}\n'
+                             'if [[ $n == b.tscn && ! -e %s ]]; then touch %s; echo \'%s\'; exit 1; fi\n'
+                             'if [[ $n == c.tscn && -n ${FAIL_C:-} ]]; then echo \'%s\'; exit 1; fi\necho \'%s\'\n'
+                             % (tmp / 'seen', tmp / 'seen', bad, bad, ok))
+            godot.chmod(0o755)
+            cmd = [sys.executable, str(HERE / '并行测试.py'), '--jobs', '2', str(godot), str(tmp / 'proj')]
+            p = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            self.assertEqual(p.returncode, 0, p.stdout)
+            self.assertIn('⚠ b.tscn 并行时失败、单独重跑通过', p.stdout)
+            p = subprocess.run(cmd, capture_output=True, text=True, timeout=60, env=dict(os.environ, FAIL_C='1'))
+            self.assertEqual(p.returncode, 1, p.stdout)
+            self.assertIn('✗ c.tscn', p.stdout)
+
+
 def ledger():
     return '''## 进度账
 
@@ -620,6 +663,56 @@ for name in filter(None, files):
         self.assertTrue((self.root / '.git/MERGE_HEAD').exists())
         self.assertTrue(self.wt.exists())
         self.assertIn('<<<<<<<', (self.root / merge.PROJECT / 'modes/测试.gd').read_text())
+
+    def test_conflict_resolved_then_rerun_commits_and_continues(self):
+        self.put(str(merge.PROJECT / 'modes/测试.gd'), '# main version\n')
+        self.g('add', '.'); self.g('commit', '-m', 'conflicting main update')
+        self.assertEqual(self.call(), 1)
+        self.assertIn('解决后 git add', self.last_output)
+        self.assertEqual(self.call(), 1)
+        self.assertIn('冲突尚未解决', self.last_output)
+        self.put(str(merge.PROJECT / 'modes/测试.gd'), '# resolved\n')
+        self.g('add', str(merge.PROJECT / 'modes/测试.gd'))
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertIn('执行者: Claude（唐僧）', self.g('log', '-1', '--skip=0', '--format=%B', 'HEAD^{commit}'))
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertEqual((self.root / merge.PROJECT / 'modes/测试.gd').read_text(), '# resolved\n')
+
+    def test_abort_and_lane_redelivery_replans(self):
+        self.put(str(merge.PROJECT / 'modes/测试.gd'), '# main version\n')
+        self.g('add', '.'); self.g('commit', '-m', 'conflicting main update')
+        self.assertEqual(self.call(), 1)
+        self.g('merge', '--abort')
+        # 车道合 main、自己解冲突后重新交付
+        subprocess.run(['git', '-C', str(self.wt), 'merge', 'main'], capture_output=True)
+        (self.wt / merge.PROJECT / 'modes/测试.gd').write_text('# lane resolved\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'merge main', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertEqual((self.root / merge.PROJECT / 'modes/测试.gd').read_text(), '# lane resolved\n')
+
+    def test_second_delivery_sheet_merged_and_removed(self):
+        second = Path('00_项目管理/交付/claude_task_接续.md')
+        (self.wt / second).write_text('# 接续\n- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude·八戒】接续验收\n\n'
+                                      '- 见[规则](../规则/甲.md)\n')
+        (self.wt / '00_项目管理/规则').mkdir()
+        (self.wt / '00_项目管理/规则/甲.md').write_text('rule\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'second sheet', cwd=self.wt)
+        self.realistic_checker()
+        self.merge_and_finish()
+        log = (self.root / merge.LOG).read_text()
+        self.assertIn('fixture change', log)
+        self.assertIn('[规则](规则/甲.md)', log)
+        self.assertFalse((self.root / second).exists())
+
+    def test_also_allows_extra_change_at_finish(self):
+        self.assertEqual(self.call(), 0)
+        self.register(); self.put('AGENTS.md', 'rule tweak during merge\n')
+        self.assertEqual(self.call('--finish'), 1)
+        self.assertEqual(self.call('--finish', '--also', 'AGENTS.md'), 0, self.last_output)
+        self.assertIn('AGENTS.md', self.g('show', '--name-only', '--format=', 'HEAD'))
 
 
 if __name__ == '__main__':
