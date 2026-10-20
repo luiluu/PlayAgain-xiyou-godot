@@ -4,19 +4,33 @@
 - 状态：进行中
 - 开工：2026-10-20，从 main bf42625 独立建立工作树；已读 AGENTS.md、主线交接板、交付规则并核对干净现场。转换器已在独立分支交付（3ec7a5b），本分支不复用它。
 - 范围限制：当前悟空_25 与八戒_31 占满两条代码车道；本轮先做冻结源只读实测，只写本交付单和忽略的本地证据，不改受管代码、探针或参照基线。空出名额后才推进 Godot 实现。
-- 运行：工作树补齐由独立长任务 `/tmp/transform-param-cache-prepare.log` 执行（runId `86f9ce2924404799bb8ae7f3169aa34f`，PID 73282）；接着等待同一任务，不重复启动。
+- 环境：工作树补齐 `/tmp/transform-param-cache-prepare.log` 已由等待工具确认 done／0（runId `86f9ce2924404799bb8ae7f3169aa34f`）。没有仍运行的本分支任务。
+- 接力：沙僧_17 已完成 27 项本地只读预检，按上下文 40% 接力规则保存；下一会话沙僧_18 继续本工作树。受管代码尚未修改，当前只改本交付单；正式探针、参照发布、Godot 实现和全检均未开始，不能合并。
 
 ## 变更记录草稿
 
 ## 2026-10-20 【Codex·沙僧·未经Claude检验】336 变身能力值缓存预检
 
-- 原版行为须用 mv_oracle 实测：466→538 变身前暖过和没暖过的 ATK／DEF／MAT／MDF／AGI／LUK，以及普通 refresh、状态、buff、完全回复和回合边界的缓存失效。
-- 现有实现只把 HP／MP 上限留在 stale_caps；敌人 param 每次重算。冻结源 G_StateParam 按参数惰性缓存非零值，krz_state_re 只有 need_refresh 时清 _baseParamCache；YEP_EnemyLevels.transform 仅清 _cacheBaseParam。源码信息仅用于设计实验，不能代替参照。
-- 验证计划：守卫保持，只读冻结源、不加载真实存档，输出只落本工作树 mv_oracle/.sandbox；正式新增参照、只增接受、逐项 Godot 对照及全检留待代码车道可用后做。
+- 编号更正：交代里的「玉皇 466→538」混用了敌群与敌人编号。冻结源敌群 466 的成员是敌人 534，实际 336 参数为 [0,538]；Enemies[466] 是空记录。正式用例须写敌群 466、敌人 534→538。
+- 原版实测：mv_oracle 原引擎／全部启用插件，难度 3、固定非神话，真实 BattleManager.startBattle 并断言 inBattle=true，执行原指令 336。27 项实验无错误；九种预热组合（未读、逐项单读、2/4/6 混读、六项全读）逐项断言：只有变身前读过的参数留旧值，未读参数首次读取新值；连续变身两次仍保留暖过的旧值。不能在变身时先读取六项再统一保存，那会污染冷参数。
+- 实际敌人缓存：krz_state_re 的 Game_Enemy.param 使用 _ParamCache2／need_refresh_param（代码还明确接受缓存值 0）；不能仅依据 G_StateParam 的基类 _baseParamCache 非零缓存设计。预检同时记录两层缓存和 dirty 标记，实测此处 _baseParamCache 一直未使用。
+
+| 参数 | 变身前暖值 | 刷新后的新值 |
+| --- | ---: | ---: |
+| ATK | 29050 | 33250 |
+| DEF | 7425 | 7875 |
+| MAT | 29050 | 33250 |
+| MDF | 7425 | 7875 |
+| AGI | 47300 | 67300 |
+| LUK | 226250 | 426250 |
+
+- 十五项边界实验均先完成前置状态／buff 的待刷新，再暖缓存，避免把初始化 dirty 误归因给变身。无 dirty 的 refresh、setHp、setMp 不释放旧值；addState(4)、removeState(4)、addBuff、removeBuff 及 onTurnStart 在本夹具中先标 dirty，紧接着读取仍旧，后续 refresh 才更新；onTurnEnd 内部已刷新。直接 addDebuff(2) 未标 dirty，后续普通 refresh 仍旧。clearStates／recoverAll 在空状态与带 77 状态两组中均未释放缓存，77 确实被移除，随后普通 refresh 仍旧。显式 dirty＋refresh 控制组立即更新。以上是各实验顺序的观测，正式实现还须按战斗调度顺序对照，不直接把所有状态变化等同于立即清缓存。
+- 证据：本工作树 `03_再刷重制_Godot/04_验证/本地结果/变身能力缓存/` 的 transform-param-precheck.cjs／json／log 与 precheck-summary.json；原始执行文件和产物在 mv_oracle/.sandbox，同目录保留首轮未设战斗态的对照，仅最终 inBattle=true 的 27 项用于结论。文件系统守卫保持，只读冻结源，不读玩家存档，没有发布或接受参照。
+- 待实施：现有 Godot 仅用 stale_caps 保存 HP／MP 上限，敌人 param 每次重算；须在正式探针新增独立用例后做惰性参数缓存及实测刷新边界，保留已有 HP／MP 与 Permanent 语义。正式新增参照只增接受，逐项 Godot 对照与检查 --oracle 留待代码车道可用后完成；游戏代码变更条目届时加开发编号占位，由唐僧定编号。
 
 ## 交接板
 
-- 下一步：先完成原版只读预检，登记逐项观测；代码车道空出后再改 battle_event_probe／Godot 变身缓存及测试。新增参照只增接受，交付前检查 --oracle 全过。
+- 下一步：沙僧_18 先核对最新主线车道表；当前悟空_25／八戒_31 仍占满两条，不能开第三条代码车道。空出名额后把上述观测变成 battle_event_probe 的独立新用例（不向既有用例塞字段；同步尚不认这类新增），再做 Godot 逐项对照与实现。需要覆盖参数冷暖、实际 336→334、状态／buff 与回合调度、连续变身，新增参照只增接受、最终检查 --oracle 全过；交付前重读主线 AGENTS.md／交付 README。第三项两条审查车道只读核查仍未开工，按原三项顺序继续，不复用转换器分支。
 - 用户试玩说明：本阶段只做预检，游戏行为尚未修改。
 - 需要用户决定：无。
 
@@ -27,3 +41,4 @@
 ## 本分支提交
 
 - 从 main bf42625 开工，先登记范围与预检计划。
+- 0949ba9 登记只读预检范围，未改受管代码。
