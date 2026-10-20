@@ -161,7 +161,7 @@ func replay(trial_seed: int, visual: bool, icons: bool, camera: bool, sound: boo
  if visual and sound:
   check("real_animation_audio",XSound.play_count + MVAnimation.se_play_count > sound_before)
  var out := {"rounds":rounds,"commands":commands,"logs":artifact.logs,"journal":artifact.journal,"enemies":artifact.enemies,
-  "reward":reward,"items":s.items.duplicate(true),"gear":s.gear.duplicate(true),"rom":s.rom.duplicate(true),"random":s.random_save(),"actors":s.to_dict().actors}
+  "reward":reward,"items":s.items.duplicate(true),"gear":s.gear.duplicate(true),"rom":s.rom.duplicate(true),"random":s.runtime_random_snapshot(),"actors":s.to_dict().actors}
  logic.end_battle()
  if visual:scene.free()
  return out

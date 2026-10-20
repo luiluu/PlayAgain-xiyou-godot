@@ -527,7 +527,7 @@ func _opening() -> void:
 	_check("xiyou_title", entry.scene_file_path == ENTRY and XDB.available())
 	XMessageBox.auto_answers = [0, 0, 0, "流程测试", 0, 2, 0, 0]
 	entry._new_game()
-	# dev.099 起战斗用本场规则流（种子来自新开局的 orb_seed，每次新开局不同），全局 seed() 管不到；固定主种子才能复现
+	# dev.099 起战斗用本场规则流（种子只在运行时生成，每次读档不同），全局 seed() 管不到；固定主种子才能复现
 	XState.current.random_master = XRandomStream.hex64(seed_value)
 	_check("opening_map221", await _wait_map(221, 9000))
 	var map: XMapScene = _scene()
@@ -635,11 +635,14 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	await map.run_common_event(1)
 	_check(tag + "_saved", map.toasts.slice(toasts_before).has("存档成功，储存到了%d号存档！" % slot), map.toasts.slice(toasts_before))
 	var before := _state_json(s)
+	var runtime_fixture := s.runtime_random_snapshot() # Test-only deterministic continuation.
 	var pos: Vector2i = map.player.grid
 	var dir: int = map.player.direction
 	# 4. 读档：同标题画面「读取存档」——XSave.load_slot 后重建地图场景
 	if not _check(tag + "_load", XSave.load_slot(slot)):
 		return false
+	_check(tag + "_load_runtime_fresh", XState.current.random_master.is_empty() and XState.current._world_random == null and XState.current._equipment_random == null)
+	XState.current.restore_runtime_random(runtime_fixture)
 	_check(tag + "_load_state_same", _state_json(XState.current) == before, _first_diff(before, _state_json(XState.current)))
 	get_tree().change_scene_to_file(MAP_SCENE)
 	await _frames(2)

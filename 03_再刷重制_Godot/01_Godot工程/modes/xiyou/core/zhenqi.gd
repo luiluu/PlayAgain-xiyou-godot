@@ -393,14 +393,14 @@ static var trial_done := {}
 static var pending_scale := {}
 ## 正在 Game_Action.apply 的行动者（有破甲道法时；BattleLogic.apply 设定）
 static var pojia_actor = null
-## 测试注入 Math.randomInt 的序列（空时用 randi）
+## 测试注入 Math.randomInt 的序列（空时用本局 world 流）
 static var rand_seq: Array = []
 
 
-static func _random_int(n: int) -> int:
+static func _random_int(s: XState, n: int) -> int:
 	if not rand_seq.is_empty():
 		return int(rand_seq.pop_front()) % n
-	return randi() % n
+	return s.world_random().next_index_mod(n, "zhenqi_daofa")
 
 
 # ---- 奖励技能（备注 <CodexZhenqi: 键>）----
@@ -826,7 +826,7 @@ static func _pick_flow(s: XState, a: XActor) -> Dictionary:
 static func _roll_daofa(s: XState, a: XActor, i: int) -> Dictionary:
 	var d := data(a)
 	var left := DAOFA.filter(func(k): return not int(d.daofa.get(k, 0)))
-	var k: String = left[_random_int(left.size())]
+	var k: String = left[_random_int(s, left.size())]
 	var id := a.actor_id
 	if k == "benming" or k == "linggen":
 		var is_w := k == "benming"
@@ -838,7 +838,7 @@ static func _roll_daofa(s: XState, a: XActor, i: int) -> Dictionary:
 			if pool.has(int(x)):
 				known.append(int(x))
 		known.sort()
-		var rnd: int = pool[_random_int(pool.size())]
+		var rnd: int = pool[_random_int(s, pool.size())]
 		var done := func(x: int) -> Dictionary:
 			return {"page": "daofa_done", "id": id, "k": k, "i": i, "key": "daofa:%s:%d" % [k, x], "label": "%s·%s" % [DAOFA_NAME[k], names[x]]}
 		if known.is_empty():

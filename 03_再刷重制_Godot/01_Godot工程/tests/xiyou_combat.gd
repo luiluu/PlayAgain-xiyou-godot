@@ -16,7 +16,7 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 func _new_state() -> XState:
 	var s := XState.new_game(3, 1, [8, 9, 10])
-	# dev.099 起战斗用本场规则流（主种子来自新开局 orb_seed），全局 seed() 管不到；固定主种子才能复现
+	# dev.099 起战斗用本场规则流（主种子只在运行时生成），全局 seed() 管不到；固定主种子才能复现
 	s.random_master = XRandomStream.hex64(20261012)
 	for a in s.members():
 		# 原版开局（普通难度）实际所学：天道诅咒、难度适应、普通难度；开局可选的角色另有万众一心、SupperStar

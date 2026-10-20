@@ -12,6 +12,12 @@ var _tape: Array = []
 var _scripted := false
 var _seed_hex := ""
 
+## Runtime entropy is independent of the persistent orb seed and global RNG.
+static func fresh_seed() -> String:
+	var source := RandomNumberGenerator.new()
+	source.randomize()
+	return hex64(source.seed)
+
 static func hex64(value: int) -> String:
 	var bytes := PackedByteArray()
 	bytes.resize(8)
