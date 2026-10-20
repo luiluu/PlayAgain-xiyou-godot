@@ -272,6 +272,11 @@ func attack_times_add() -> float:
 
 func action_plus_set() -> Array:
 	var out := super.action_plus_set()
+	# dsPassiveSkill Game_Actor.actionPlusSet：每个 <passiveAPLUS:N%> 被动加一项追加行动几率（取第一个整数 ×0.01）
+	for m in passive_values("passiveAPLUS"):
+		var found := RegEx.create_from_string("(\\d+)").search(str(m))
+		if found:
+			out.append(float(found.get_string(1)) * 0.01)
 	if XZhenqi.has_daofa(self, "fenshen"):
 		out.append(1.0)
 	return out
