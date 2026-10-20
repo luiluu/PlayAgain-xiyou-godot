@@ -373,10 +373,27 @@ func collapse() -> void:
 	if battler is XActor:
 		set_motion("dead")
 		return
+	appeared = false
 	effect_left = maxi(effect_left, 32)  # MV Sprite_Enemy.startCollapse：32 帧
-	var t := create_tween()
-	t.tween_property(sprite, "modulate", Color(1, 0.3, 0.3, 0.0), 0.5)
-	await t.finished
+	_fade = create_tween()
+	_fade.tween_property(sprite, "modulate", Color(1, 0.3, 0.3, 0.0), 0.5)
+	await _fade.finished
+
+
+## MV Sprite_Enemy._appeared：开战时没出现的隐藏成员（initVisibility）与倒下后（startCollapse）为 false
+var appeared := true
+var _fade: Tween
+
+## MV Sprite_Enemy.startAppear：没出现的敌人又活着时（335 出现、334 复活倒下的成员）恢复正常色后 16 帧淡入；
+## 不等淡入（原版事件照常往下走，行动序列等效果时看 effect_left）
+func appear() -> void:
+	appeared = true
+	effect_left = maxi(effect_left, 16)
+	if _fade and _fade.is_running():
+		_fade.custom_step(3600.0)  # 收掉还在播的倒下淡出（照样发 finished，等它的演出不会卡住）
+	sprite.modulate = Color(1, 1, 1, 0)
+	_fade = create_tween()
+	_fade.tween_property(sprite, "modulate", Color.WHITE, 16 / 60.0)
 
 
 func revive_visual() -> void:

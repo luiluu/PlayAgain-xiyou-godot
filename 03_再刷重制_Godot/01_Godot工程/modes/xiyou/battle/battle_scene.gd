@@ -218,6 +218,7 @@ func _make_enemy_sprite(e: XEnemy) -> void:
 	# YEP_CoreEngine Reposition Battlers：侧视时敌人 y 加 (画面高 − 624) / 2
 	s.home = Vector2(float(e.get_meta("x")), float(e.get_meta("y")) + floorf((BOX.y - 624.0) / 2.0))
 	s.position = s.home
+	s.appeared = e.is_alive()  # Sprite_Enemy.initVisibility
 	sprites[e] = s
 
 
@@ -568,6 +569,7 @@ func _play_troop_events(logs: Array) -> void:
 				_apply_enemy_change(l)
 		if not rest.is_empty():
 			await _play(rest)
+			_sync_appeared()
 			otb.show_orders(logic.current_order, logic.next_order)
 			_refresh_status()
 		if not logic.is_event_waiting():
@@ -577,7 +579,8 @@ func _play_troop_events(logs: Array) -> void:
 		logs = logic.resume_event(int(w.token), response)
 
 
-## 敌人变化：出现时显示本体与血条，变身时换战斗图（同一个成员，按记录刷新，不再执行规则）
+## 敌人变化：出现时显示本体与血条，变身时换战斗图（同一个成员，按记录刷新，不再执行规则）；
+## 没出现（隐藏或已倒下）的成员此刻活着就淡入（Sprite_Enemy.setupEffect → startAppear：335 出现、334 复活）
 func _apply_enemy_change(l: Dictionary) -> void:
 	var e: XEnemy = l.target
 	if not sprites.has(e):
@@ -585,11 +588,21 @@ func _apply_enemy_change(l: Dictionary) -> void:
 	if l.kind == "transform" and int(l.before.enemy_id) != int(l.after.enemy_id):
 		var old: XBattlerSprite = sprites[e]
 		_make_enemy_sprite(e)
+		sprites[e].appeared = old.appeared
 		field.move_child(sprites[e], old.get_index())
 		old.queue_free()
 	_set_enemy_shown(e)
+	if not sprites[e].appeared and not bool(l.after.hidden) and not bool(l.get("views", {}).get(e, {}).get("dead", true)):
+		sprites[e].appear()
 	if l.has("views"):
 		show_views(l.views)
+
+
+## 记录播完后再对一次 Sprite_Enemy.setupEffect（同一页里先被强制行动打倒、后被 334 复活的成员，倒下演出在复活记录之后才播）
+func _sync_appeared() -> void:
+	for e in logic.enemies:
+		if sprites.has(e) and not sprites[e].appeared and e.is_alive():
+			sprites[e].appear()
 
 
 ## BattleManager.processEscape 成功：逃跑音效，消息窗「<队名>开始逃跑了！」（等按键；挂机中按 messageCount 自动翻页），结束战斗（结果 1）

@@ -6,8 +6,15 @@ extends Node
 ## 824 神劫使：变量 1178＝5 只有 0 号可见，＝6 时 335 依次出现 1～5、333 加状态只对可见成员、出现者首次行动在 T3；
 ##   受伤／死亡的隐藏成员出现后资源与状态不变。
 ## 不比：TP（Godot 开战 TP 随机）、伤害；CodexBossDifficulty 霸体 2651（重制版尚无 Boss 霸体系统，比较状态时去掉）。
+## 另按冻结源代码（无参照数据）：makeUniqueNames 按 originalName（神话带前缀）计数；强制行动的 smoothTarget 不选隐藏成员；
+##   画面上隐藏成员 335 出现、倒下的成员 334 复活都 16 帧淡入（Sprite_Enemy.startAppear）。
 var results := []
 const BOSS_GUARD := 2651
+
+
+class QuietBattle extends XBattleScene:
+	func _main() -> void:
+		pass
 
 
 ## 原版参照在开战生成后将 Math.random 固定为 0.5；仅替换夹具的本场 rule，不能靠全局 seed 控制它。
@@ -141,7 +148,84 @@ func _run() -> void:
 	_troop824(cases["troop824.variable1178-5-hidden"].observed, 5)
 	_troop824(cases["troop824.variable1178-6-appear"].observed, 6)
 	_unit_checks()
+	_name_checks()
+	_smooth_target_checks()
+	await _scene_checks()
 	finish()
+
+
+## Game_Troop.makeUniqueNames 按 originalName 计数，EliteEnemy 的 originalName 带「【神话】」：
+## 敌群 2（嘤嘤怪 ×3）一只神话、两只普通时，神话的只有一只不加字母，普通的两只是Ａ、Ｂ
+func _name_checks() -> void:
+	var logic := setup(2)
+	logic.enemies[0].elite = true
+	for e in logic.enemies:
+		e.letter = ""
+	logic._letters.clear()
+	logic._names_count.clear()
+	logic.make_unique_names()
+	var base := str(logic.enemies[0].data().name)
+	var names: Array = logic.enemies.map(func(e): return e.display_name())
+	check("names.elite_mixed", names == [XEnemy.elite_title() + base, base + "Ａ", base + "Ｂ"], names)
+
+
+## Game_Unit.smoothTarget：强制行动的序号不是活着的成员（含没出现的隐藏成员）时取第一个活着的；没有活着的就不选
+func _smooth_target_checks() -> void:
+	var logic := setup(824, {1178: 5})
+	var attack := XDB.rec("Skills", 1)
+	var t1 := logic._forced_target(logic.actors[0], attack, 1)
+	check("smooth.hidden_index", t1 == logic.enemies[0], key(t1, logic) if t1 != null else null)
+	logic.enemies[0].hp = 0
+	logic.enemies[0].refresh_resources()
+	var t0 := logic._forced_target(logic.actors[0], attack, 0)
+	check("smooth.no_alive", t0 == null, key(t0, logic) if t0 != null else null)
+
+
+## 画面：隐藏成员不画、335 出现后 16 帧淡入；倒下（淡出）的成员 334 复活后同样淡入（Sprite_Enemy.setupEffect／startAppear）
+func _scene_checks() -> void:
+	XSave.dir_override = "user://test_xiyou_battle_events"
+	XConfig.path_override = XSave.dir().path_join("options.json")
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	s.set_variable(1178, 5)
+	var scene := QuietBattle.new()
+	scene.setup(824, true, false, {})
+	add_child(scene)
+	await get_tree().physics_frame
+	var e0: XEnemy = scene.logic.enemies[0]
+	var e1: XEnemy = scene.logic.enemies[1]
+	check("scene.hidden_not_drawn", not scene.sprites[e1].visible and not scene.sprites[e1].appeared and scene.sprites[e0].appeared)
+	for l in scene.logic.enemy_appear(1):
+		scene._apply_enemy_change(l)
+	var start_a: float = scene.sprites[e1].sprite.modulate.a
+	await _wait_opaque(scene.sprites[e1])
+	check("scene.appear_fades_in", scene.sprites[e1].visible and scene.sprites[e1].appeared and start_a < 0.1
+		and scene.sprites[e1].sprite.modulate == Color.WHITE, [start_a, scene.sprites[e1].sprite.modulate])
+	# 神劫使 934 不免疫死亡：HP 0 即加死亡状态，倒下淡出后 334 才是真复活
+	e0.hp = 0
+	e0.refresh_resources()
+	var died := e0.is_dead() and e0.state_ids.has(1)
+	await scene.sprites[e0].collapse()
+	var faded: float = scene.sprites[e0].sprite.modulate.a
+	for l in scene.logic.enemy_recover_all(0):
+		scene._apply_enemy_change(l)
+	await _wait_opaque(scene.sprites[e0])
+	check("scene.revive_fades_in", died and faded < 0.1 and e0.is_alive() and scene.sprites[e0].appeared
+		and scene.sprites[e0].sprite.modulate == Color.WHITE, [died, faded, e0.is_alive(), scene.sprites[e0].sprite.modulate])
+	scene.queue_free()
+	for sp in XSound._players:
+		if is_instance_valid(sp):
+			sp.stop()
+	await get_tree().create_timer(0.5, true, false, true).timeout
+	DirAccess.remove_absolute(XConfig.path_override)
+	DirAccess.remove_absolute(XSave.dir())
+
+
+## 等淡入播完：按帧轮询，最多 120 帧（无画面时刚显示的图首帧可能很长，固定等一段真实时间会在补间开跑前就超时）
+func _wait_opaque(sp: XBattlerSprite) -> void:
+	for i in range(120):
+		if sp.sprite.modulate == Color.WHITE:
+			return
+		await get_tree().process_frame
 
 
 ## 336 之后轮到时按新形态选招（参照：原待行动 1 重做成 175 的 4023）
