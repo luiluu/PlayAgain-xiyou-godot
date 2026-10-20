@@ -135,6 +135,11 @@ func _run() -> void:
 				a.change_level(lv)
 				a.hp = a.mhp  # 参照取样时满血（HP 低于 60% 才生效的被动不应混进能力采样）；不用 recover_all——它会清掉战斗开始状态
 				_compare_snap("d%d.actor%d.lv%dBattle" % [diff, id, lv], _snap(a), samples[str(lv)])
+				var smp: Dictionary = samples[str(lv)]
+				_check("d%d.actor%d.lv%d.actionPlus" % [diff, id, lv], smp.has("actionPlus") and _arr_close(a.action_plus_set(), smp.get("actionPlus", [])),
+					{"godot": a.action_plus_set(), "mv": smp.get("actionPlus")})
+				_check("d%d.actor%d.lv%d.damageElement" % [diff, id, lv], int(a.passive_cache().get("damageElement", 0)) == int(smp.get("damageElement", -1)),
+					{"godot": a.passive_cache().get("damageElement", 0), "mv": smp.get("damageElement")})
 		# 敌人
 		var troops := {}
 		for tid_s in d.enemies:

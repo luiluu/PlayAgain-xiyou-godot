@@ -87,7 +87,9 @@ function run(difficulty) {
   w.eval('var __pm = {p: $gameParty.ActorMaxLevel, d: $dataActors.map(function(x){ return x ? x.maxLevel : null; })}; $gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
   for (const id of ACTORS) {
     const a = w.$gameActors.actor(id), samples = {};
-    for (const lv of [35, 65, 99]) { a.changeLevel(lv, false); a.recoverAll(); a.refresh(); battleRefresh(a); samples[lv] = Object.assign(snap(a), {level: a.level, hp: a.hp, mhp: a.mhp}); }
+    for (const lv of [35, 65, 99]) { a.changeLevel(lv, false); a.recoverAll(); a.refresh(); battleRefresh(a); samples[lv] = Object.assign(snap(a), {level: a.level, hp: a.hp, mhp: a.mhp,
+      // dsPassiveSkill <passiveAPLUS> 追加行动几率与 <DamageElements> 伤害属性覆盖（进度审查 35% 补）
+      actionPlus: a.actionPlusSet().map(r6), damageElement: (a._passiveCache || {}).damageElement || 0}); }
     a.changeLevel(1, false); battleRefresh(a);
     out.actors[id].levelSamples = samples;
   }
