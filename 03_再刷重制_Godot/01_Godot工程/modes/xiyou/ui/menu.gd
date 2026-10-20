@@ -33,6 +33,7 @@ const COMMANDS := [["物品", "item", true], ["技能", "skill", true], ["装备
 const CMD_VISIBLE := 15
 ## 无队员时灰显的指令（冻结 v0.28 空队主菜单运行时：物品／技能／装备／状态／真气／整队 enabled=false，其余不变）
 const NEEDS_MEMBERS := ["item", "skill", "equip", "status", "zhenqi", "formation"]
+## 整队另要至少 2 人：YEP_MainMenuManager「Menu 55 Enabled」= isFormationEnabled（rpg_windows.js：size() >= 2；冻结数据无 137 指令）
 
 var cmd_win: XMVWindow
 var gold_win: XMVWindow
@@ -57,6 +58,8 @@ var zhenqi_requested := false
 ## 指令第 i 项是否可用：已重制，且（需要队员的）队里有人
 func command_enabled(i: int) -> bool:
 	var cmd: Array = COMMANDS[i]
+	if cmd[1] == "formation" and _members().size() < 2:
+		return false
 	return cmd[2] and not (cmd[1] in NEEDS_MEMBERS and _members().is_empty())
 
 

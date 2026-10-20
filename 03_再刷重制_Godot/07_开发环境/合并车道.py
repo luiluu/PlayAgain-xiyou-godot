@@ -20,6 +20,7 @@ COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/交接板归档.md'
           SUB / '开发编号.json', PROJECT / 'project.godot', PROJECT / 'content/build_info.json']}
 VERSION_MARKER = 'dev.' + '待定'
 VERSION_EXEMPT = {'AGENTS.md', '00_项目管理/交付/README.md'}
+PLACEHOLDER = re.compile(r'^\s*(?:[-*]\s*)?[（(<]?待写[）)>]?[。.]?\s*$', re.M)
 
 
 def git(root, *args):
@@ -42,6 +43,16 @@ def dirty(root):
     return {x[3:] for x in records}
 
 
+def porcelain(root):
+    raw = subprocess.check_output(['git', '-C', str(root), 'status', '--porcelain', '-z']).decode()
+    return raw.rstrip('\0').split('\0') if raw else []
+
+
+def merge_head(root):
+    head = Path(git(root, 'rev-parse', '--path-format=absolute', '--git-dir')) / 'MERGE_HEAD'
+    return head.read_text().strip() if head.exists() else None
+
+
 def worktrees(root):
     raw = subprocess.check_output(['git', '-C', str(root), 'worktree', 'list', '--porcelain', '-z']).decode()
     records, current = [], {}
@@ -60,14 +71,35 @@ def worktrees(root):
 def draft(text):
     """取所有「…变更记录草稿」节。变更记录条目标题都带【执行者】；节止于下一个不带【的二级标题
     （如「## 交接板（由唐僧并入）」），不把交接板／进度账等节当成变更记录贴进去。"""
-    if not re.search(r'^- 状态：\**可合并\**(?:\s|[（(。，；：—]|$)', text, re.M):
+    if not re.search(r'^(?:[-*]\s*)?状态[：:]\s*\**可合并\**(?:\s|[（(。，；：—]|$)', text, re.M):
         raise RuntimeError('交付单尚未标为可合并')
     heads = list(re.finditer(r'^## (?!.*【).*$', text, re.M))
     parts = [text[h.end():heads[i + 1].start() if i + 1 < len(heads) else len(text)].strip()
              for i, h in enumerate(heads) if '变更记录草稿' in h[0]]
-    if not parts or not all(parts) or any('待写' in p for p in parts):
+    # 只认整行占位（「待写」「（待写）」「- 待写」），正文里提到这两个字不算未完成。
+    if not parts or not all(parts) or any(PLACEHOLDER.search(p) for p in parts):
         raise RuntimeError('交付单缺少完整变更记录草稿')
     return '\n\n'.join(parts)
+
+
+def relink(body, root):
+    """草稿里按交付目录口径写的相对链接，改成变更记录（00_项目管理/）口径；两处都不存在的原样保留，由检查.sh 报失效。"""
+    log_dir, sheet_dir = (root / LOG).parent, root / '00_项目管理/交付'
+
+    def fix(m):
+        ref = m.group(2)
+        path, _, anchor = ref.partition('#')
+        if not path or '://' in path or path.startswith(('/', '~')) or (log_dir / path).exists():
+            return m.group(0)
+        target = (sheet_dir / path).resolve()
+        if not target.exists():
+            return m.group(0)
+        return m.group(1) + os.path.relpath(target, log_dir.resolve()) + ('#' + anchor if anchor else '') + ')'
+    return re.sub(r'(\]\()([^)\s<>]+)\)', fix, body)
+
+
+def sheets(state):
+    return [state['delivery'], *state.get('extraDeliveries', [])]
 
 
 def plan(root, task):
@@ -90,17 +122,28 @@ def plan(root, task):
     text = (wt / delivery).read_text()
     draft(text)
     changed = git(root, 'diff', '--name-only', fork, target).splitlines()
+    # 同一分支带来的其它交付单（如接手者另写的一张）：标了可合并的一并归并删除；没标的提示唐僧处理。
+    extra = []
+    for p in sorted(changed):
+        if (p.startswith('00_项目管理/交付/') and p.endswith('.md') and p not in (str(delivery), '00_项目管理/交付/README.md')
+                and (wt / p).is_file()):
+            try:
+                draft((wt / p).read_text())
+                extra.append(p)
+            except RuntimeError:
+                print('提示：另有交付单 ' + p + ' 未标可合并或草稿不完整，未并入；不要它就在 main 删掉，--finish 时加 --also ' + p,
+                      file=sys.stderr, flush=True)
     refresh = any(p in [str(TOOLS / 'xiyou_slice.json'), str(TOOLS / 'xiyou_export.py')]
                   or (p.startswith(str(TOOLS / 'mv_oracle') + '/') and p.endswith('.cjs')) for p in changed)
     game = any(p.startswith(str(PROJECT) + '/') and not p.startswith(str(PROJECT / 'tests') + '/')
                and p != str(PROJECT / 'content/build_info.json') for p in changed)
     # 只替换目标车道带来的编号占位，不扫描、暂存主工作区的其它文件。
-    version_paths = [p for p in changed if p != str(delivery) and p not in VERSION_EXEMPT
+    version_paths = [p for p in changed if p != str(delivery) and p not in extra and p not in VERSION_EXEMPT
                      and Path(p).suffix in {'.md', '.json', '.gd', '.py', '.sh'}
                      and (wt / p).is_file() and not (wt / p).is_symlink()
                      and VERSION_MARKER in (wt / p).read_text()]
     return dict(task=task, branch=lane['branch'], worktree=str(wt), base=base, target=target,
-                delivery=str(delivery), refresh=refresh, gameplay=game, phase='planned', head=base,
+                delivery=str(delivery), extraDeliveries=extra, refresh=refresh, gameplay=game, phase='planned', head=base,
                 versionPaths=version_paths,
                 mainAdvancedAfterDelivery=fork != base)
 
@@ -170,13 +213,25 @@ def prepare(root, state, state_file, executor):
     if state['phase'] != 'planned' and git(root, 'rev-parse', 'HEAD') != state['head']:
         raise RuntimeError('准备过程中 main HEAD 已改变，先人工核对')
     if state['phase'] == 'planned':
+        actor = 'Claude（唐僧）' if executor == 'Claude' else 'Codex（沙僧）'
+        reviewer = 'Codex' if executor == 'Claude' else 'Claude'
+        message = ['-m', '合并 ' + state['branch'], '-m', '执行者: ' + actor + '\n核查: 待' + reviewer]
+        if merge_head(root) == state['target']:
+            # 上次合并停在冲突：唐僧解决并 git add 后重跑本工具，由它照规范提交合并，再往下接续。
+            unmerged = git(root, 'diff', '--name-only', '--diff-filter=U')
+            if unmerged:
+                raise RuntimeError('冲突尚未解决：' + '、'.join(unmerged.splitlines()))
+            if git(root, 'diff', '--name-only') or any(x.startswith('?') for x in porcelain(root)):
+                raise RuntimeError('冲突已解决但还有未暂存或未跟踪的改动，先 git add 或移走')
+            run(root, ['git', 'commit', *message])
         if dirty(root):
             raise RuntimeError('尚有冲突或未提交现场，须先人工处理；未自动回退')
         if git(root, 'rev-parse', 'HEAD') == state['base']:
-            actor = 'Claude（唐僧）' if executor == 'Claude' else 'Codex（沙僧）'
-            reviewer = 'Codex' if executor == 'Claude' else 'Claude'
-            run(root, ['git', 'merge', '--no-ff', state['target'], '-m', '合并 ' + state['branch'],
-                       '-m', '执行者: ' + actor + '\n核查: 待' + reviewer])
+            try:
+                run(root, ['git', 'merge', '--no-ff', state['target'], *message])
+            except subprocess.CalledProcessError:
+                raise RuntimeError('合并有冲突，现场保留：解决后 git add，再运行同一命令接续（工具会提交合并）；'
+                                   '放弃就 git merge --abort，让车道 git merge main 后重新交付，再运行即按新提交重排')
         elif subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode:
             raise RuntimeError('main 已改变且尚未包含目标车道；请人工核对状态文件')
         state.update(phase='merged', head=git(root, 'rev-parse', 'HEAD'))
@@ -217,16 +272,16 @@ def prepare(root, state, state_file, executor):
         save(state_file, state)
     if state['phase'] == 'versioned':
         replace_versions(root, state, state_file)
-        receipt = root / state['delivery']
         marker = '<!-- lane-merge:' + state['target'] + ' -->'
         log = (root / LOG).read_text()
-        if receipt.exists():
-            body = draft(receipt.read_text()).replace(VERSION_MARKER, state['version'])
-            if marker not in log:
-                (root / LOG).write_text(log.rstrip() + '\n\n' + body + '\n\n' + marker + '\n')
-            receipt.unlink()
-        elif marker not in log:
-            raise RuntimeError('交付单已不存在且变更记录无本批标记，先人工核对')
+        if marker not in log:
+            if any(not (root / s).exists() for s in sheets(state)):
+                raise RuntimeError('交付单已不存在且变更记录无本批标记，先人工核对')
+            body = '\n\n'.join(relink(draft((root / s).read_text()), root) for s in sheets(state))
+            body = body.replace(VERSION_MARKER, state['version'])
+            (root / LOG).write_text(log.rstrip() + '\n\n' + body + '\n\n' + marker + '\n')
+        for s in sheets(state):
+            (root / s).unlink(missing_ok=True)
         # 归并记录并删除交付单后若进程中断，凭本批标记安全接续，不重复追加或编号。
         state['phase'] = 'prepared'
         save(state_file, state)
@@ -249,28 +304,29 @@ def finish(root, state, state_file, executor):
         if state['branch'] not in pending and state['target'][:7] not in pending and state['head'][:7] not in pending:
             raise RuntimeError('待交叉核查尚未登记本车道分支或提交号')
         changed = dirty(root)
-        allowed = COMMON | {state['delivery']} | set(state.get('versionEdits', {}))
+        allowed = COMMON | set(sheets(state)) | set(state.get('versionEdits', {})) | set(state.get('also', []))
         if changed - allowed:
             raise RuntimeError('不自动暂存预期外文件：' + '、'.join(sorted(changed - allowed)))
         validate_version_edits(root, state)
         run(root, [sys.executable, ENV / '进度账.py', '--check'])
         # 检查.sh 按 git ls-files 枚举交付单；仅删除工作区文件仍会被它列出。
         # 先核对全部改动范围，再只暂存本批交付单的删除，不提前暂存其它内容。
-        if (root / state['delivery']).exists():
-            raise RuntimeError('交付单重新出现，先人工核对：' + state['delivery'])
-        if git(root, 'ls-files', '--', state['delivery']):
-            run(root, ['git', 'add', '--', state['delivery']])
+        for s in sheets(state):
+            if (root / s).exists():
+                raise RuntimeError('交付单重新出现，先人工核对：' + s)
+            if git(root, 'ls-files', '--', s):
+                run(root, ['git', 'add', '--', s])
         run(root, [ENV / '检查.sh', '--oracle'])
         # 检查可能生成 .uid 等文件，仍须重新核对，不能顺带提交。
         changed = dirty(root)
         if changed - allowed:
             raise RuntimeError('检查后出现预期外改动，先人工处理：' + '、'.join(sorted(changed - allowed)))
         validate_version_edits(root, state)
-        if (root / state['delivery']).exists():
-            raise RuntimeError('检查后交付单重新出现，先人工核对：' + state['delivery'])
+        if any((root / s).exists() for s in sheets(state)):
+            raise RuntimeError('检查后交付单重新出现，先人工核对')
         run(root, ['git', 'diff', '--check'])
         # 已暂存删除的路径已不在索引里，重复 git add 会报 pathspec 不存在。
-        remaining = changed - {state['delivery']}
+        remaining = changed - set(sheets(state))
         if remaining:
             run(root, ['git', 'add', '--', *sorted(remaining)])
         actor = 'Claude（唐僧）' if executor == 'Claude' else 'Codex（沙僧）'
@@ -317,6 +373,8 @@ def main(argv=None):
     modes.add_argument('--dry-run', action='store_true')
     modes.add_argument('--finish', action='store_true')
     ap.add_argument('--executor', choices=['Claude', 'Codex'], default='Claude')
+    ap.add_argument('--also', action='append', default=[], metavar='路径',
+                    help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则），可重复')
     a = ap.parse_args(argv)
     root = a.root or Path(git(Path(__file__).parent, 'rev-parse', '--path-format=absolute', '--git-common-dir')).parent
     root = root.resolve()
@@ -335,6 +393,13 @@ def main(argv=None):
         state = json.loads(state_file.read_text()) if state_file.exists() else None
         if state and state['task'] != a.task:
             raise RuntimeError('另一条车道尚未收尾：' + state['task'])
+        if (state and state['phase'] == 'planned' and merge_head(root) is None
+                and subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode):
+            # 还没合进来（放弃了冲突合并、车道重新交付，或 main 又前进）：按车道与 main 的现状重新计划。
+            executor = state.get('executor', a.executor)
+            state = plan(root, a.task)
+            state['executor'] = executor
+            save(state_file, state)
         if state is None:
             if a.finish:
                 raise RuntimeError('没有准备中的合并')
@@ -344,6 +409,9 @@ def main(argv=None):
         elif state.get('executor', a.executor) != a.executor:
             raise RuntimeError('接续执行者不同，请先核对原执行者登记')
         if a.finish:
+            if a.also:
+                state['also'] = sorted(set(state.get('also', [])) | set(a.also))
+                save(state_file, state)
             finish(root, state, state_file, a.executor)
         else:
             prepare(root, state, state_file, a.executor)
