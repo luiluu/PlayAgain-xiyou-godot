@@ -73,11 +73,11 @@ func _run() -> void:
 		check("oracle_present", false, "先运行 mv_oracle/smart_ai_probe.cjs")
 		return finish()
 	var manifest = JSON.parse_string(FileAccess.get_file_as_string(XDB.BASE + "manifest.json"))
-	var first := part == 0
-	if first:
+	var lead := part == 0
+	if lead:
 		check("source_identity", ref.sourceIdentity.get("releaseVersion") == manifest.releaseVersion
 			and ref.sourceIdentity.get("runtimeInputs") == manifest.runtimeInputs, [ref.sourceIdentity.get("releaseVersion"), manifest.releaseVersion])
-	for row in (ref.sequence if first else []):
+	for row in (ref.sequence if lead else []):
 		check("seq.%d" % int(row.skill), int(XDB.rec("Skills", int(row.skill)).get("yepEffects", 0)) == int(row.hits), [row.skill, row.hits])
 	for i in range(part, ref.damage.size(), parts):
 		var row: Dictionary = ref.damage[i]
@@ -108,7 +108,7 @@ func _run() -> void:
 			var m = r.candidates.filter(func(x): return x.id == int(cand.id) and x.item == bool(cand.item))
 			check(tag + ".score.%s%d" % ["i" if cand.item else "s", int(cand.id)], not m.is_empty() and close(float(m[0].score), float(cand.score), 2e-3),
 				{"godot": m[0].score if not m.is_empty() else null, "mv": cand.score})
-	if not first:
+	if not lead:
 		return finish()
 	routing(ref)
 	var edge_logic := setup(ref, int(ref.cases[0].troop), "full")
