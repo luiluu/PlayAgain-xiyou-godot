@@ -146,6 +146,7 @@ func _ready() -> void:
 	_world_visual_boundaries()
 	_formula_diagnostics()
 	_hidden_event_streams()
+	_owner_world_stream()
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failed.size(), "total": checks}))
 	get_tree().quit(0 if failed.is_empty() else 1)
 
@@ -327,3 +328,16 @@ func _formula_diagnostics() -> void:
 	var failed_vm := XFormulaExecution.run_item(item, a, enemy, [], {}, true)
 	check("vm_error_diagnostic", not failed_vm.available and XFormulaExecution.diagnostics.size() == 2, failed_vm)
 	XFormulaExecution.diagnostics.clear()
+
+
+## 进度审查 35%：副本抽奖／进阶石／秘境与 RomGet 预掷池抽随机要走传入存档的 world 流，不能落到 XState.current
+func _owner_world_stream() -> void:
+	var current := XState.new_game(3, 1, [8, 10, 9])
+	var other := XState.new_game(3, 1, [8, 10, 9])
+	XState.current = current
+	var cur_before := current.world_random().draws
+	var other_before := other.world_random().draws
+	XDungeon.roll_advance_stone(other, XDungeon.TOJI)
+	XDungeon.mijing_pick_here(other)
+	check("owner_world.dungeon_draws_owner", other.world_random().draws > other_before, other.world_random().draws)
+	check("owner_world.dungeon_skips_current", current.world_random().draws == cur_before, current.world_random().draws)

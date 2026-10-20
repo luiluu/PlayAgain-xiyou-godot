@@ -218,7 +218,7 @@ static func boss_reward(s: XState) -> Array:
 		msg += "，再打 %d 次领 +%d%s" % [int(next[0]) - n, int(next[1]), ("、专属书掉率×%d" % int(next[2])) if int(next[2]) > 1 else ""]
 	toasts.append(msg)
 	var book := int(BOSS_BOOKS.get(t, 0))
-	if book > 0 and MVInterpreter.random_float() < minf(1.0, BOOK_RATE * power_factor(s, t)):
+	if book > 0 and MVInterpreter.random_float(s) < minf(1.0, BOOK_RATE * power_factor(s, t)):
 		s.gain_item(book, 1)
 		toasts.append("副本Boss专属掉落：%s！" % str(XDB.rec("Items", book).get("name", "")))
 	# 神秘珠（O.dropBossPearl：本场胜利、每场一次）
@@ -275,7 +275,7 @@ static func race_supply(s: XState) -> String:
 ## 甚尔／宿傩的进阶石（rollAdvanceStone）：角色未进阶（重制版尚无这两个角色，进阶数按 0）、背包里不够数时 1/50 得一枚
 static func roll_advance_stone(s: XState, who: Dictionary) -> String:
 	var need := 1 if who == TOJI else 3
-	if s.item_count(int(who.stone)) >= need or MVInterpreter.random_int(0, 49) != 0:
+	if s.item_count(int(who.stone)) >= need or MVInterpreter.random_int(0, 49, s) != 0:
 		return ""
 	s.gain_item(int(who.stone), 1)
 	return "获得了 %s！" % ("甚尔进阶石" if who == TOJI else "咒王进阶石")
@@ -316,9 +316,9 @@ static func mijing_pick_here(s: XState) -> int:
 	var f := map_floor(s.map_id)
 	if f <= 0:
 		f = int(s.variable(20)) if s.variable(20) != 0 else 1
-	var fam: Array = pool.values()[floori(MVInterpreter.random_float() * pool.size())]
+	var fam: Array = pool.values()[floori(MVInterpreter.random_float(s) * pool.size())]
 	var w: Array = MIJING_WEIGHTS[mijing_tier(f)]
-	var r := MVInterpreter.random_float() * 100.0
+	var r := MVInterpreter.random_float(s) * 100.0
 	var level := w.size() - 1
 	for i in w.size():
 		if r < float(w[i]):
