@@ -126,6 +126,8 @@ var shop_stock := {"inv": {}, "schedules": []}
 var zhenqi_spec := {"w": {}, "e": {}, "weaponTrials": {}}
 ## 修行指引看过的区段里程碑（$gameSystem._codexGuideSeen：{"seg:a": 1}），随存档
 var guide_seen := {}
+## $gameParty.SAchievementS：本局得过的成就（ID 字符串→true）；全局记录在 XConfig（见 XAchievement）
+var achievements := {}
 var shop_pending := ""
 var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
@@ -354,6 +356,7 @@ const ECO_TO_ITEM := {184: [188, 1.0], 185: [188, 1.0], 186: [188, 1.0], 187: [1
 	2508: [2509, 1.0], 2510: [2511, 1.0], 2512: [2513, 1.0], 2514: [2515, 1.0], 2516: [2517, 1.0], 2518: [2519, 1.0], 2520: [2521, 1.0]}
 
 func gain_item(id: int, amount: int) -> void:
+	var before := id
 	if amount > 0:
 		# installNativeRaceRuntime：得到旧版祝福进阶石时换成正规 ID（CodexRaces.legacyItems）
 		var races = XDB.table("CodexRaces")
@@ -369,8 +372,11 @@ func gain_item(id: int, amount: int) -> void:
 			eco_frac[str(t[0])] = total - n
 			if n > 0:
 				_gain_raw(int(t[0]), n)
+				XAchievement.on_item_gain(self, int(t[0]), n, before)
 			return
 	_gain_raw(id, amount)
+	# Star_AchievementSystem 包在 Game_Party.gainItem 里层：判定的是改记之后的物品（O-076 另看改记前的）
+	XAchievement.on_item_gain(self, id, amount, before)
 
 func _gain_raw(id: int, amount: int) -> void:
 	items[id] = clampi(item_count(id) + amount, 0, 9999)  # $gameParty.maxItems（正式版运行时为 9999）
@@ -447,7 +453,7 @@ func to_dict() -> Dictionary:
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac,
-		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements}
 
 static func from_dict(d: Dictionary) -> XState:
 	# dev.099 once persisted strict engine-specific RNG state. Ignore that obsolete
@@ -529,6 +535,8 @@ static func from_dict(d: Dictionary) -> XState:
 	var gs = d.get("guideSeen", {})
 	s.guide_seen = gs.duplicate() if gs is Dictionary else {}
 	s.eco_frac = d.get("ecoFrac", {})
+	var ac = d.get("achievements", {})
+	s.achievements = ac.duplicate() if ac is Dictionary else {}
 	s.shop_stock = XShopStock.from_save(d.get("shopStock", {}))
 	var zs = d.get("zhenqiSpec", {})
 	for part in ["w", "e", "weaponTrials"]:
