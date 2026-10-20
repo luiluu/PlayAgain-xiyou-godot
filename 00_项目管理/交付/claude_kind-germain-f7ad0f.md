@@ -1,14 +1,14 @@
 # 交付：claude/kind-germain-f7ad0f
 
 - 车道／工作者：审查 35%·界面工具与流程／八戒（Claude，重制_八戒_30，Opus，medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
 ## 2026-10-20 【Claude·八戒·未经Codex检验】进度审查 35%（界面、工具与流程）（dev.待定）
 
 - 范围：dev.089～dev.103 的界面（双持攻击动画 dev.093、战斗消息窗 dev.091、出售筛选与设置页 symbol 表 dev.095、主菜单空队灰显 dev.096）与工具（增量同步与看门狗 dev.099、切片指纹分片、独立接受基线 b8749f8、合并车道.py）；按用户 2026-10-20 定，进度只粗估、不逐项重算，战力系统移出本次范围。
-- ①对照正式版：双持动画对 MV `attackAnimationId1／2`、`showActorAttackAnimation` 与 YEP MIRROR 一致，第二个动画先结束时已被 `queue_free`，不会卡在等待；出售筛选合一后两处只差旧档范围，与原版相同；设置页 `pingbiDrop` 在确定、左右、状态文字三处行为与改前一致。**发现并修**：主菜单「整队」原版另要至少 2 人（YEP_MainMenuManager「Menu 55 Enabled」＝`isFormationEnabled`，rpg_windows.js `size() >= 2`；冻结数据没有 137 指令），dev.096 只做了空队灰显，单人时 Godot 仍可点。`ui/menu.gd` 补上，`xiyou_panels` 加「单人只灰整队」一项（35/35）。
+- ①对照正式版：双持动画对 MV `attackAnimationId1／2`、`showActorAttackAnimation` 与 YEP MIRROR 一致，第二个动画先结束时已被 `queue_free`，不会卡在等待；出售筛选合一后两处只差旧档范围，与原版相同；设置页 `pingbiDrop` 在确定、左右、状态文字三处行为与改前一致。**发现并修**：主菜单「整队」原版另要至少 2 人（YEP_MainMenuManager「Menu 55 Enabled」＝`isFormationEnabled`，rpg_windows.js `size() >= 2`；冻结数据没有 137 指令），dev.096 只做了空队灰显，单人时 Godot 仍可点。`ui/menu.gd` 补上，`xiyou_panels` 加「单人只灰整队」一项。
 - ②③工具：增量同步、分片、接受基线、看门狗都有回归并在 `测试合并工具.py` 聚合入口里全过；分片与缓存放宽沙僧已核（发现的基线漂移已由 b8749f8 修）。
 - ④登记：O-062（三十三层落点，dev.097）只写在变更记录和代码里，优化登记表没有，已补一行（待用户决定）。上次审查以来新增 O 项：O-048、O-050、O-052、O-062，均已在交接板「需要用户决定」。
 - **学进规则与工具**（用户 2026-10-20 要求不写汇报、直接改）：
@@ -20,6 +20,8 @@
   - 合理测量变化仍无正式接受途径，只能手删 `04_验证/本地结果/同步基线/` 下对应目录（八戒_29 中级项，需沙僧设计 `--accept-changes` 一类入口）。
   - 交接板顶部「核查第三批」「Claude 核查 Codex（PR #4 待唐僧合并）」两段与「下一步」第 1 条（合并两条内容车道、dev.080）已过时，唐僧清理时挪进归档。
   - 战斗消息窗（dev.091）只读代码未另做截图对照；八戒_21 已按冻结版截图核过。
+  - 本轮 `检查.sh --oracle`（worktree，并行 2）：全部通过；`xiyou_floor16_dungeon` 并行时偶发失败、单跑通过（新重跑机制当场接住）；`xiyou_rules`（a）420 秒、`xiyou_rules_b` 409 秒、`xiyou_smart_ai` 391 秒，都超过 300 秒，下次碰到这几处时再拆。
+- 验证：`检查.sh --oracle` 全部通过；`测试合并工具.py` 101/101；`xiyou_panels` 34/34、`xiyou_party` 57/57。
 - 进度：本轮只修一处界面灰显，不改完成度。
 
 ## 交接板
@@ -41,3 +43,5 @@
 - ba5ecfb 规则与交付 README
 - 7c7f1ed 优化登记补 O-062
 - 2a5ba95 长任务说明补 start
+
+可合并。
