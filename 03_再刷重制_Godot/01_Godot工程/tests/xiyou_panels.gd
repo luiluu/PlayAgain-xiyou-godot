@@ -117,6 +117,12 @@ func _run() -> void:
 	_check("menu_gray_without_members", gray == ["物品", "技能", "装备", "状态", "真气", "整队"], gray)
 	menu._cmd_index = 0; menu._ok(); await _frames()
 	_check("menu_gray_item_not_opened", menu._mode == "command" and menu.get_children().all(func(n): return not n is XItemScene))
+	s.party.assign([saved_party[0]])
+	var solo: Array = cmd_ok.call()
+	gray = []
+	for i in menu.COMMANDS.size():
+		if full[i] and not solo[i]: gray.append(menu.COMMANDS[i][0])
+	_check("menu_formation_gray_single_member", gray == ["整队"], gray)
 	s.party.assign(saved_party)
 	menu.queue_free(); await _frames()
 	# 非自动场景截图：轮到角色时停在指令窗，验证顺序条实际接入。
