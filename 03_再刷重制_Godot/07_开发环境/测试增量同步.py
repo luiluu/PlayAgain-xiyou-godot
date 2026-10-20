@@ -30,6 +30,177 @@ def load(name, path):
 sync = load('incremental_sync_runner_tests', TOOLS / '同步正式西游.py')
 
 
+class AcceptedBaselineTests(unittest.TestCase):
+    """真实 Node／ProbeCache 和同步入口；只把转换、来源核验及导入换成临时夹具。"""
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix='xiyou_accepted_baseline_')
+        self.root = Path(self.tmp.name).resolve() / 'main'
+        self.tools, self.app = self.root / 'tools', self.root / 'app'
+        self.gen = self.root / 'generated'
+        self.oracle = self.tools / 'mv_oracle'
+        for path in (self.oracle / '.sandbox', self.app, self.gen / 'oracle'):
+            path.mkdir(parents=True)
+        self.manifest = {'releaseVersion': 'v0.28', 'inputs': {'data/A.json': 'a'},
+                         'runtimeInputs': {'js/a.js': 'r'}}
+        self.original = {'cases': [{'id': 'stable', 'value': 1}]}
+        (self.gen / 'manifest.json').write_text(json.dumps(self.manifest))
+        (self.gen / 'slice.json').write_text('{}')
+        (self.gen / 'oracle/events.json').write_text(json.dumps(self.original))
+        (self.app / 'package.json').write_text('{"releaseVersion":"v0.28"}')
+        (self.tools / 'xiyou_slice.json').write_text('{}')
+        self.count = self.root / 'executions.txt'
+        (self.oracle / 'baseline_probe.cjs').write_text(
+            "const fs = require('fs');\n"
+            "fs.appendFileSync(%s, 'run\\n');\n" % json.dumps(str(self.count)) +
+            "fs.copyFileSync(process.env.XIYOU_APP + '/payload.json', '.sandbox/events.json');\n")
+        self.set_payload({'cases': [{'id': 'stable', 'value': 2}]})
+        self.verify = True
+        self.import_error = None
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def set_payload(self, data):
+        (self.app / 'payload.json').write_text(json.dumps(data))
+
+    def run_sync(self, *extra, do_import=False, cache_error=False, lane=None):
+        real_run = subprocess.run
+
+        def external(command, **kwargs):
+            if command[0] == 'git':
+                return subprocess.CompletedProcess(command, 0, 'same\nsame\n', '')
+            if command[0] == 'cp':
+                return subprocess.CompletedProcess(command, 1, '', '')
+            if any(str(value).endswith('验证西游来源.py') for value in command):
+                return subprocess.CompletedProcess(command, 0 if self.verify else 1, 'fixture source', '')
+            return real_run(command, **kwargs)
+
+        def export(*args):
+            (self.gen / 'manifest.json').write_text(json.dumps(self.manifest))
+
+        def clone(*args):
+            return (lane, {'outputsDigest': sync.outputs_digest(lane)}), None
+
+        argv = ['sync', '--app', str(self.app), '--generated', str(self.gen), '--no-register', *extra]
+        if not do_import:
+            argv.append('--no-import')
+        output = io.StringIO()
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(mock.patch.multiple(sync, ROOT=self.root, HERE=self.tools, ORACLE_DIR=self.oracle,
+                                SANDBOX=self.oracle / '.sandbox', PROBES=[(['baseline_probe.cjs'], ['events.json'])],
+                                run=export, tools_digest=lambda *args: 'fixture'))
+            stack.enter_context(mock.patch.object(sync.subprocess, 'run', side_effect=external))
+            stack.enter_context(mock.patch.object(sync, 'godot_import', side_effect=self.import_error))
+            stack.enter_context(mock.patch.object(sys, 'argv', argv))
+            stack.enter_context(mock.patch.dict(os.environ))
+            stack.enter_context(contextlib.redirect_stdout(output))
+            if cache_error:
+                stack.enter_context(mock.patch.object(ProbeCache, 'commit', side_effect=RuntimeError('fixture changed input')))
+            if lane is not None:
+                stack.enter_context(mock.patch.object(sync, 'clone_from_worktree', side_effect=clone))
+            result = sync.main()
+        if result == 3:
+            return result, None
+        short = json.loads(output.getvalue().strip().splitlines()[-1])
+        report = json.loads((self.root / short['backup'] / '同步报告.json').read_text())
+        return result, report
+
+    def test_rejection_survives_cache_hits_pruning_and_full(self):
+        for index in range(5):
+            result, report = self.run_sync('--accept-additions')
+            self.assertEqual(result, 2)
+            self.assertIn('events.json', report['measurementChanges'])
+            self.assertEqual(report['probes']['reused'], ['baseline_probe.cjs'] if index else [])
+        result, report = self.run_sync('--full')
+        self.assertEqual(result, 2)
+        self.assertEqual(report['probes']['executed'], ['baseline_probe.cjs'])
+        self.assertEqual(len(self.count.read_text().splitlines()), 2)
+        backups = self.root / '03_再刷重制_Godot/04_验证/本地结果/自动同步'
+        self.assertEqual(len(list(backups.iterdir())), 3)
+
+    def test_additions_require_acceptance_and_then_become_the_new_baseline(self):
+        added = {'cases': self.original['cases'] + [{'id': 'new', 'value': 3}]}
+        self.set_payload(added)
+        for _ in range(2):
+            self.assertEqual(self.run_sync()[0], 2)
+        self.assertEqual(self.run_sync('--accept-additions')[0], 0)
+        self.assertEqual(self.run_sync()[0], 0)
+        added['cases'][1]['value'] = 4
+        self.set_payload(added)
+        self.assertEqual(self.run_sync('--accept-additions')[0], 2)
+
+    def test_withdrawn_change_is_successful_but_later_change_is_still_rejected(self):
+        self.assertEqual(self.run_sync()[0], 2)
+        self.set_payload(self.original)
+        self.assertEqual(self.run_sync()[0], 0)
+        self.set_payload({'cases': [{'id': 'stable', 'value': 3}]})
+        self.assertEqual(self.run_sync()[0], 2)
+
+    def test_source_manifest_is_retained_across_rejections(self):
+        self.set_payload({'cases': self.original['cases'] + [{'id': 'new', 'value': 3}]})
+        self.manifest['runtimeInputs']['js/a.js'] = 'changed'
+        for extra in [(), (), ('--full',)]:
+            result, report = self.run_sync('--accept-additions', *extra)
+            self.assertEqual(result, 2)
+            self.assertFalse(report['sameExistingSource'])
+        self.manifest['runtimeInputs']['js/a.js'] = 'r'
+        self.assertEqual(self.run_sync('--accept-additions')[0], 0)
+
+    def test_failed_source_import_or_cache_cannot_accept_the_next_baseline(self):
+        for failure in ['source', 'import', 'cache']:
+            with self.subTest(failure=failure):
+                self.set_payload({'cases': self.original['cases'] + [{'id': failure, 'value': 3}]})
+                self.verify = failure != 'source'
+                self.import_error = RuntimeError('fixture import') if failure == 'import' else None
+                self.assertEqual(self.run_sync('--accept-additions', do_import=True,
+                                               cache_error=failure == 'cache')[0], 2)
+                self.verify, self.import_error = True, None
+                # A successful retry without the acceptance flag must still reject the addition.
+                self.assertEqual(self.run_sync()[0], 2)
+                self.set_payload(self.original)
+                self.assertEqual(self.run_sync()[0], 0)
+
+    def test_clone_cannot_erase_an_unaccepted_baseline(self):
+        lane = self.root.parent / 'lane'
+        import shutil
+        shutil.copytree(self.gen, lane)
+        (lane / 'oracle/events.json').write_text((self.app / 'payload.json').read_text())
+        for _ in range(2):
+            result, report = self.run_sync('--from-worktree', str(lane), lane=lane)
+            self.assertEqual(result, 2)
+            self.assertIn('events.json', report['measurementChanges'])
+        # A normal forced run must also retain the target's accepted baseline after cloning.
+        self.assertEqual(self.run_sync('--full')[0], 2)
+
+    def test_failed_clone_preflight_does_not_create_a_baseline_or_change_outputs(self):
+        before = sync.outputs_digest(self.gen)
+        self.assertEqual(self.run_sync('--from-worktree', str(self.root.parent / 'missing'))[0], 3)
+        self.assertEqual(sync.outputs_digest(self.gen), before)
+        self.assertFalse((self.root / '03_再刷重制_Godot/04_验证/本地结果/同步基线').exists())
+
+    def test_partial_snapshot_is_not_published_and_corruption_fails_closed(self):
+        with mock.patch.object(sync.shutil, 'copytree', side_effect=OSError('fixture interrupted copy')):
+            with self.assertRaises(OSError):
+                self.run_sync()
+        parent = self.root / '03_再刷重制_Godot/04_验证/本地结果/同步基线'
+        self.assertEqual(list(parent.iterdir()), [])
+        result, report = self.run_sync()
+        self.assertEqual(result, 2)
+        baseline = self.root / report['comparisonBaseline']
+        (baseline / 'manifest.json').write_text('invalid')
+        with self.assertRaisesRegex(RuntimeError, '基线损坏'):
+            self.run_sync('--accept-additions')
+        self.assertTrue(baseline.exists())
+
+    def test_failed_stamp_write_cannot_advance_the_baseline(self):
+        self.set_payload({'cases': self.original['cases'] + [{'id': 'new', 'value': 3}]})
+        with mock.patch.object(sync, 'write_stamp', side_effect=OSError('fixture stamp write failed')):
+            with self.assertRaises(OSError):
+                self.run_sync('--accept-additions')
+        self.assertEqual(self.run_sync()[0], 2)
+        self.assertEqual(self.run_sync('--accept-additions')[0], 0)
+
+
 class CacheTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
