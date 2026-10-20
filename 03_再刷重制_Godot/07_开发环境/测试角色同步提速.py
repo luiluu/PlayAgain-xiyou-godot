@@ -104,6 +104,15 @@ class PortableCacheTests(unittest.TestCase):
             carry_cache(self.box('donor'), self.box('lane'))
         self.assertFalse(self.box('lane').exists())
 
+    def test_carry_rejects_link_inside_existing_target_seed_before_copying(self):
+        self.prime()
+        target = self.box('lane') / 'save'
+        target.mkdir(parents=True)
+        (target / 'link').symlink_to(self.app / 'source.js')
+        with self.assertRaisesRegex(RuntimeError, '符号链接'):
+            carry_cache(self.box('donor'), self.box('lane'))
+        self.assertFalse((self.box('lane') / 'incremental-cache.json').exists())
+
     def test_missing_and_corrupt_cache_have_distinct_reasons(self):
         self.assertEqual(self.misses()['plain_probe.cjs'], [{'kind': 'cache-missing'}])
         p = self.box('donor') / 'incremental-cache.json'

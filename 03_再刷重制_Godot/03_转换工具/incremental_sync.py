@@ -92,11 +92,10 @@ def carry_cache(source, target):
         if base.is_symlink():
             raise RuntimeError('探针种子目录不能是符号链接：' + str(base))
     for name in names:
-        p = source / name
-        if p.is_symlink() or any(q.is_symlink() for q in p.rglob('*')):
-            raise RuntimeError('探针种子／缓存含符号链接，拒绝携带：' + str(p))
-        if (target / name).is_symlink():
-            raise RuntimeError('车道种子／缓存不能是符号链接：' + str(target / name))
+        for base in (source, target):
+            p = base / name
+            if p.is_symlink() or any(q.is_symlink() for q in p.rglob('*')):
+                raise RuntimeError('探针种子／缓存含符号链接，拒绝携带：' + str(p))
     target.mkdir(parents=True, exist_ok=True)
     copied = []
     with tempfile.TemporaryDirectory(prefix='carry-', dir=target) as temp:
