@@ -16,6 +16,8 @@ const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库
 const identity = sourceIdentity(APP), r = boot(APP, {tolerant: true, log: false}), w = r.window;
 if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败');
 const PARTY = [1, 8, 9, 10], TROOPS = [4, 5, 8, 28, 39, 52, 53, 67, 69, 109, 110, 111, 118, 138, 172, 173, 174, 333, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 794, 526,
+  // 三十一层七位可选首领的敌群 830／125／816／831／818／126／817（开场同 467，HP 页见下方 hpRate 例）
+  125, 126, 816, 817, 818, 830, 831,
   // 二十七层副本墓池的二十八宿石像首领与四圣兽（607 角开场强制 8111；614／622／630／638 同 526：第 2 页第 1 回合给状态 44、强制 3813）
   607, 614, 622, 630, 638,
   // 二十九层副本太上老君藏身处的五位首领 733～737 与两位「太上老君」731／732（同 526）
@@ -132,7 +134,10 @@ const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
     .concat([run(466, false, null, 0, 0.25), run(466, true, null, 0, 0.25)])
     // 三十一至三十三层守层者 HP≤30%（第 3 页）与 HP≤10%（第 3 页已执行，第 4 页变身）；Map055 引路人 794 HP≤20%（第 4 页变身 922）
     .concat([467, 468, 469].flatMap(id => [run(id, false, null, 0, 0.3), run(id, false, null, 0, 0.1, [2])]))
-    .concat([run(794, false, null, 0, 0.2)])};
+    .concat([run(794, false, null, 0, 0.2)])
+    // 三十一层可选首领：HP≤20%（第 3 页对话＋1397）；瑞丁 818 HP≤10%（第 3 页）与 HP≤5%（预置第 3 页已执行，第 4 页变身 938＋1399）
+    .concat([125, 126, 816, 817, 830, 831].map(id => run(id, false, null, 0, 0.2)))
+    .concat([run(818, false, null, 0, 0.1), run(818, false, null, 0, 0.05, [2])])};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));
