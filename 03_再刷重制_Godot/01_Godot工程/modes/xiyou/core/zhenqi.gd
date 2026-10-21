@@ -13,7 +13,7 @@ extends RefCounted
 ## - 第二批（文件后半）：闭关菜单节点、瓶颈之战、突破、突破奖励与道法、灵根降服、奖励技能数值（参照 zhenqi_probe「break.*」，tests/xiyou_zhenqi_break）。
 ## - 第三批：道法的运行时钩子（连击、分神、金身、护法减伤与掩护、灵台保留 TP、破甲 2705、元婴护体，接在 XBattler／XActor／BattleLogic）、
 ##   神兵试炼（weapon 页、_pendingScale）、降服时含没出场的隐藏成员（troop_members）。参照 zhenqi_probe「daofa.*」「weapon.*」「hidden.*」
-##  （tests/xiyou_zhenqi_daofa）。金身的护盾加成先给出 shield_effect_bonus，护盾系统（ShieldSystem）接入时调用。
+##  （tests/xiyou_zhenqi_daofa）。金身的护盾加成 shield_effect_bonus 由 XBattler.shield_effect_bonus（ShieldSystem）调用。
 ##   天道使者旧档回退不移植（重制版不读 MV 存档）。
 
 const DIV := 10.0
@@ -463,7 +463,7 @@ static func daofa_scale(a: XActor) -> float:
 
 
 # ---- 道法的运行时效果（第三批）----
-## Game_Battler.shieldEffectBonus：道法「金身」加 daofaScale（自身获得的护盾 ×(1＋加成)）。护盾系统尚未移植，接入时调用。
+## Game_Battler.shieldEffectBonus：道法「金身」加 daofaScale（自身获得的护盾 ×(1＋加成)），XBattler.shield_effect_bonus 里加上。
 static func shield_effect_bonus(b) -> float:
 	return daofa_scale(b) if has_daofa(b, "jinshen") else 0.0
 
