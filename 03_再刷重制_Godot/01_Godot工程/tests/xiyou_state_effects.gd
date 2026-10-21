@@ -1,14 +1,8 @@
 extends Node
-## 状态效果阶段钩子第一期（XStateEffects）：分发次序逐例对照 mv_oracle/state_effects_probe.cjs（generated/oracle/state_effects.json）。
-## 参照往冻结版注入测试状态 T（每个 Custom Effect 槽只记录），在真实 BattleManager 流程里记 phase、状态、持有者与 a／b；
-## 这里注入同形的测试状态（每个 phase 一个 js 块），用 XStateEffects.observer 记 Godot 的分发，按同一用例比序列：
-## - 只比第一期接上的 phase（battle、turn_start、regenerate、turn_end、action_start、initiate／select／deselect／conclude、胜逃败）；
-##   参照里 confirm／react／respond／establish、apply／remove／leave 属后续期，比前先滤掉。
-## - action_end：参照里 OTB 行动结束从不触发，Godot 也不分发（逐例确认参照没有、Godot 也没有）。
-## - KRZ 热缓存（回合末到期移除后再生／回合结束仍对它触发；加状态不 refresh 仍按旧列表）：Godot 第一期按当前状态分发，
-##   这类行单列为「热缓存差异」逐条核对，不算通过也不算失败（要 battler.gd 的 dirty 跟踪，见交付单）。
-## - 开战：参照的敌人在 setup 之后才加 T；Godot 的敌人在 setup 内才建，只比我方部分，另查开战标签加的状态不跑本次 battle。
-## - 未翻译诊断：分发到 js 块时记进 XStateEffects.diagnostics（不静默跳过）。
+## State effects phase 2a: native lifecycle, KRZ hot lists, and existing-op migration.
+## Compare the complete action chain, including confirm/react/respond/establish,
+## misses/reflections/counters/guard/forced actions, natural expiry and origins.
+## No new JS shapes execute. OTB action_end remains absent.
 var results := []
 var trace := []
 const PHASES := {"battle": "battle", "turnStartState": "turn_start", "turnEndState": "turn_end", "regenerateState": "regenerate",
@@ -107,7 +101,7 @@ func _new_logic(ref_seed: int) -> XBattleLogic:
 func _compare(name: String, o: Dictionary, extra_check := Callable()) -> void:
 	var w := _want(o)
 	check(name + ".sequence", trace == w.rows, {"godot": trace, "mv": w.rows})
-	# 热缓存行 Godot 必须一条都没有（按当前状态分发）；参照里有几条照记
+	# 到期后旧热列表里的效果仍触发，逐条对照原版。
 	for row in w.stale:
 		check(name + ".stale_preserved.%s" % JSON.stringify(row), trace.has(row), row)
 	if not w.stale.is_empty():
@@ -176,6 +170,8 @@ func _run() -> void:
 				skill.hitType = 1
 			"action.guard":
 				skill = XDB.rec("Skills", 2)
+		a.param_refresh()
+		e.param_refresh()  # same pre-action refresh as the native fixture
 		_observe(logic)
 		if id == "action.forced":
 			logic.execute(a, skill, e, true)
@@ -190,6 +186,8 @@ func _run() -> void:
 	logic.actors[0].add_state(T)
 	logic.enemies[0].add_state(T)
 	logic.enemies[0].add_state(EXPIRE)
+	logic.actors[0].param_refresh()
+	logic.enemies[0].param_refresh()
 	_observe(logic)
 	logic.start_turn()
 	logic.end_turn()
@@ -213,6 +211,8 @@ func _run() -> void:
 	var te: XBattler = logic.enemies[0]
 	ua.add_state(T)
 	te.add_state(T)
+	ua.param_refresh()
+	te.param_refresh()
 	te.state_origins[T] = weakref(ua)
 	var seen := []
 	XStateEffects.observer = func(phase, sid, holder, ctx):
@@ -222,6 +222,9 @@ func _run() -> void:
 			check("ctx.restored_after_nested", XStateEffects.current() == ctx, XStateEffects.current().get("phase"))
 	XStateEffects.run("select", te, {"attacker": ua, "defender": te, "item": XDB.rec("Skills", 1)})
 	XStateEffects.run("turn_end", ua)
+	check("ctx.observed", seen.size() >= 2)
+	if seen.size() < 2:
+		return finish()
 	var sel: Dictionary = seen[0]
 	check("ctx.action", sel.user == ua and sel.target == te and sel.holder == te and sel.origin == ua, sel.keys())
 	var ts: Dictionary = seen[1]
@@ -253,7 +256,7 @@ func _lifecycle(cases: Dictionary) -> void:
 		h.remove_state(T)
 		h.remove_state(T)
 		h.add_state(EXPIRE)
-		h.remove_state(EXPIRE, true)
+		h.remove_state_auto(EXPIRE)
 		stage[0] = "nested add"
 		h.add_state(T)
 		check("lifecycle." + kind + ".nested_suppressed", not h.is_state_affected(T2))
@@ -261,7 +264,7 @@ func _lifecycle(cases: Dictionary) -> void:
 		stage[0] = "nested leave"
 		h.add_state(T)
 		h.add_state(T2)
-		h.remove_state(T, true)
+		h.remove_state_auto(T)
 		var want := []
 		var phases := {"addState": "apply", "removeState": "remove", "leaveState": "leave"}
 		for row in cases["lifecycle." + kind].observed.log:
@@ -288,6 +291,12 @@ func _lifecycle(cases: Dictionary) -> void:
 	h.param_refresh()
 	XStateEffects.run("turn_start", h)
 	_compare("krz.hot_cache", cases["krz.hot_cache"].observed)
+	var before := JSON.stringify([h.effect_snapshot, h.effect_lists, h.state_ids])
+	var observations := [0]
+	XStateEffects.observer = func(_p, _s, _h, _c): observations[0] += 1
+	XDamage.apply_state_effects(17.0, XDB.rec("Skills", 1), h, logic.enemies[0])
+	check("preview.no_cache_or_observer_write", observations[0] == 0 and before == JSON.stringify([h.effect_snapshot, h.effect_lists, h.state_ids]))
+
 	# Native Math.round(-0.5) is zero, not Godot roundf's -1.
 	var sid := _state("测试·乘数负半整数", [], {"effects": [{"phase": "confirm", "op": "mul", "cond": "nonzero", "k": 0.5, "round": "round"}]})
 	h.add_state(sid)

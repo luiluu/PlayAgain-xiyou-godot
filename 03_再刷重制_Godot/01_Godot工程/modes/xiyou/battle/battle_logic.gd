@@ -495,11 +495,11 @@ func act(u: XBattler, skill, target) -> Array:
 	elif int(skill.id) == GUARD_SKILL and not is_item(skill):
 		XStateEffects.run("action_start", u)  # 防御也走 startAction
 		# 防御技能在原版也对自己 Game_Action.apply 一次：initiate／select／deselect／conclude 四段都跑（无伤害段）
+		u.param_refresh()  # native useItem refresh precedes guard apply
 		var gctx := {"attacker": u, "defender": u, "item": skill}
 		XStateEffects.run("initiate", u, gctx)
 		XStateEffects.run("select", u, gctx)
 		u.guarding = true
-		u.param_refresh()  # 防御也是 useItem：付费后 refresh
 		_otb_user_shift(u, skill)
 		XStateEffects.run("deselect", u, gctx)
 		XStateEffects.run("conclude", u, gctx)
@@ -1441,7 +1441,7 @@ func _tick_states(b: XBattler, timing: int) -> void:
 			continue
 		b.state_turns[id] = int(b.state_turns.get(id, 1)) - 1
 		if b.state_turns[id] <= 0:
-			b.remove_state(id, true)
+			b.remove_state_auto(id)
 	if timing == 2:
 		for i in range(8):
 			if b.buff_turns[i] > 0:

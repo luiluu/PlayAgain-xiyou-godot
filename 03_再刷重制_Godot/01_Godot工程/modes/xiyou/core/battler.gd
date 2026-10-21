@@ -323,9 +323,12 @@ func roll_state_duration(lo: int, hi: int, random: XRandomStream = null, event_k
 		_outside_random = XRandomStream.create(XRandomStream.hex64(XState._fresh_seed()), "world")
 	return _outside_random.next_int_inclusive(lo, hi, "state_duration", event_key)
 
-func remove_state(id: int, expired := false) -> void:
-	if expired:
-		_leaving_state = true
+func remove_state_auto(id: int) -> void:
+	_leaving_state = true
+	remove_state(id)
+	_leaving_state = false
+
+func remove_state(id: int) -> void:
 	var had := state_ids.has(id)
 	if id == 1 and state_ids.has(id) and hp <= 0.0:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
@@ -342,8 +345,6 @@ func remove_state(id: int, expired := false) -> void:
 			XStateEffects.run_one("leave", self, st)
 		state_origins.erase(id)  # remove AND leave still see the original source
 	param_mark_dirty()
-	if expired:
-		_leaving_state = false
 
 func _sort_states() -> void:
 	# MV：按优先级降序，同优先级按 ID 升序
