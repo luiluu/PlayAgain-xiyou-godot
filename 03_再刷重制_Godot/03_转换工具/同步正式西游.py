@@ -32,6 +32,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import uuid
 from pathlib import Path
 
@@ -267,6 +268,27 @@ def prune_backups(root: Path, keep: int = KEEP_BACKUPS) -> list:
     return removed
 
 
+RUNNER = Path(__file__).resolve().parent.parent / '07_开发环境' / '并行测试.py'  # 共用槽位代码（测试替换 HERE 时也用真文件）
+_runner = None
+_runner_lock = threading.Lock()
+
+
+def run_node(cmd, env):
+    """跑一个 node 探针：先在 并行测试.py 的跨工作树共用槽（CHECK_GLOBAL_JOBS，状态目录同测试）占位再跑，
+    几条车道同时同步、跑测试时合起来不超上限（唐僧 2026-10-21：两条车道同步加测试曾把 8 核负载冲到 21）。
+    SYNC_JOBS 只决定本次同步最多同时排几个探针。"""
+    global _runner
+    with _runner_lock:  # 几个探针线程同时首次调用：模块执行完才公开，别的线程不会拿到半载入的模块
+        if _runner is None:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location('xiyou_parallel_tests', RUNNER)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            _runner = module
+    with _runner.global_slot(_runner.state_dir(str(ROOT)), _runner.global_limit()):
+        return subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=env, capture_output=True, text=True)
+
+
 def run(cmd, cwd, log):
     log.write('$ ' + ' '.join(cmd) + '\n')
     log.flush()
@@ -278,7 +300,8 @@ def run(cmd, cwd, log):
 def run_probes(log, cache=None):
     """互不依赖的探针并行跑（AGENTS.md「省额度约定」同步提速）。每个探针一个独立存档目录
     .sandbox/run/<探针>（开跑前复制 .sandbox 现有的 save／macport，各探针看到同样的起始状态），
-    产物照旧写 .sandbox/*.json；日志按 PROBES 顺序写回，并记每个探针的耗时。SYNC_JOBS=1 退回串行。"""
+    产物照旧写 .sandbox/*.json；日志按 PROBES 顺序写回，并记每个探针的耗时。SYNC_JOBS=1 退回串行。
+    每个探针运行时另占跨工作树共用槽（run_node），排队等槽的时间算在该探针耗时里。"""
     import concurrent.futures
     import time
     jobs = max(1, int(os.environ.get('SYNC_JOBS', '4')))
@@ -334,12 +357,12 @@ def run_probes(log, cache=None):
         t = time.time()
         part = partial.get(logical)
         if part is None:
-            p = subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=env, capture_output=True, text=True)
+            p = run_node(cmd, env)
             return cmd, p.returncode, p.stdout + p.stderr, time.time() - t
         text = ''
         if part:
             env['XIYOU_PROBE_UNITS'] = json.dumps(part)
-            p = subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=env, capture_output=True, text=True)
+            p = run_node(cmd, env)
             text = p.stdout + p.stderr
             if p.returncode:
                 return cmd, p.returncode, text, time.time() - t

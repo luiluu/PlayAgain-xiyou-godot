@@ -334,6 +334,30 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.assertEqual(len((self.tmp / 'runs').read_text().split()), 6)
         self.assertFalse((self.tmp / 'overlap').exists(), '共用上限 1 时仍有两个测试同时运行')
 
+    def test_sync_probes_share_global_slots(self):
+        # 两个假同步（各 3 个线程跑 node 假探针）加一轮假测试同时跑：共用上限 1 时任何时刻只能有一个在跑
+        oracle = self.tmp / 'oracle'
+        oracle.mkdir()
+        (oracle / 'busy.cjs').write_text(
+            "const fs = require('fs'), d = process.argv[2];\n"
+            "try { fs.mkdirSync(d + '/busy'); } catch (e) { fs.writeFileSync(d + '/overlap', ''); }\n"
+            "fs.appendFileSync(d + '/probes', 'p\\n');\n"
+            "const t = Date.now(); while (Date.now() - t < 300) {}\n"
+            "try { fs.rmdirSync(d + '/busy'); } catch (e) {}\n")
+        base = {k: v for k, v in os.environ.items() if k not in ('CHECK_FULL', 'CHECK_JOBS', 'CHECK_LOG_DIR')}
+        env = dict(base, XIYOU_TEST_STATE_DIR=str(self.state), CHECK_GLOBAL_JOBS='1', BUSY='1')
+        tests = subprocess.Popen([sys.executable, str(HERE / '并行测试.py'), '--jobs', '3', '--full', str(self.godot), str(self.tmp / 'proj')],
+                                 stdout=subprocess.PIPE, text=True, env=env)
+        import concurrent.futures
+        with mock.patch.dict(os.environ, env), mock.patch.object(sync, 'ORACLE_DIR', oracle), \
+                concurrent.futures.ThreadPoolExecutor(6) as pool:
+            codes = list(pool.map(lambda _: sync.run_node(['busy.cjs', str(self.tmp)], dict(os.environ)).returncode, range(6)))
+        out = tests.communicate(timeout=60)[0]
+        self.assertEqual((codes, tests.returncode), ([0] * 6, 0), out)
+        self.assertEqual(len((self.tmp / 'probes').read_text().split()), 6)
+        self.assertEqual(len((self.tmp / 'runs').read_text().split()), 3)
+        self.assertFalse((self.tmp / 'overlap').exists(), '共用上限 1 时同步探针与测试仍同时运行')
+
 
 def ledger():
     return '''## 进度账

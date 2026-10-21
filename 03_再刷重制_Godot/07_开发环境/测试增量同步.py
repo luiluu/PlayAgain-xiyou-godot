@@ -31,10 +31,19 @@ def load(name, path):
 sync = load('incremental_sync_runner_tests', TOOLS / '同步正式西游.py')
 
 
+def isolate_slots(test, tmp):
+    """同步探针走 并行测试.py 的共用槽，其状态目录靠 git 查；这里的用例把 subprocess.run 换成假探针，
+    git 也会拿到假输出，所以先指定临时状态目录（八戒_43：曾在 cwd 建出 "same\\nsame/" 等垃圾目录）。"""
+    patch = mock.patch.dict(os.environ, XIYOU_TEST_STATE_DIR=str(Path(tmp) / 'test_state'))
+    patch.start()
+    test.addCleanup(patch.stop)
+
+
 class AcceptedBaselineTests(unittest.TestCase):
     """真实 Node／ProbeCache 和同步入口；只把转换、来源核验及导入换成临时夹具。"""
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix='xiyou_accepted_baseline_')
+        isolate_slots(self, self.tmp.name)
         self.root = Path(self.tmp.name).resolve() / 'main'
         self.tools, self.app = self.root / 'tools', self.root / 'app'
         self.gen = self.root / 'generated'
@@ -293,6 +302,7 @@ class CacheTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         r = Path(self.tmp.name)
+        isolate_slots(self, r)
         self.tools, self.app, self.gen = r / 'tools', r / 'app', r / 'gen'
         self.oracle = self.tools / 'mv_oracle'
         for p in (self.oracle / '.sandbox', self.oracle / 'node_modules', self.gen / 'oracle', self.gen / 'maps', self.app):
@@ -537,6 +547,7 @@ class ShardTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         r = Path(self.tmp.name)
+        isolate_slots(self, r)
         self.tools, self.app, self.gen = r / 'tools', r / 'app', r / 'gen'
         self.oracle = self.tools / 'mv_oracle'
         for p in (self.oracle / '.sandbox', self.gen / 'oracle', self.gen / 'maps', self.app):

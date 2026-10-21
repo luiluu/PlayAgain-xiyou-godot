@@ -5,7 +5,7 @@ extends Node
 ## - executeHpDamage → execute_hp_damage（类型 5 为吸血；魔法反射回自己时 _reflecting）
 ## - executeMpDamage → execute_mp_damage（类型 6 为吸取）
 ## - 序列 gainHp／gainMp → sequence_gain（序列用例带行动者，无上下文用例不带）
-## - regenerateHp → _regenerate（敌人带由行动者附加的中毒 4）
+## - regenerateHp → _regenerate（敌人带由行动者附加的中毒 4；*.rec.* 例另按 setup.states 加 REC／HRG 测试状态与混合来源）
 ## 伤害公式与能力值不在此比（各角色的伤害行由 rules／custom_damage 管）；禁用角色另跑真实 apply／execute 确认对目标无效。
 var results := []
 ## caps.a<行动者> 用例：夹具开战后各战斗者的生命／魔法上限
@@ -47,6 +47,17 @@ func _battler(k: String) -> XBattler:
 	if k.begins_with("a"):
 		return BigActor.new().setup(int(k.substr(1)))
 	return BigEnemy.new().setup(int(XDB.rec("Troops", 2).members[0].enemyId), 3, 100.0)
+
+
+## 参照 setup.fake 的测试状态（只有给定特性）在 Godot 建一份同形的，同名复用
+var fakes := {}
+func _fake_state(name: String, fake: Dictionary) -> int:
+	if not fakes.has(name):
+		var t: Array = XDB.table("States")
+		fakes[name] = t.size()
+		t.append({"id": t.size(), "name": "测试·" + name, "traits": fake[name].traits, "note": "", "meta": {}, "iconIndex": 0,
+			"restriction": 0, "priority": 50, "autoRemovalTiming": 0, "minTurns": 1, "maxTurns": 1, "removeAtBattleEnd": false})
+	return fakes[name]
 
 
 func _replay(c: Dictionary) -> void:
@@ -96,9 +107,23 @@ func _replay(c: Dictionary) -> void:
 				var shown := logic.sequence_gain(t, "HP" if row.fn == "gainHp" else "MP", float(row.args[0]), seq)
 				check(name + ".popup", -shown == float(row.popup.hp if row.fn == "gainHp" else row.popup.mp), [shown, row.popup])
 			"regenerateHp":
-				XImportedBalance.set_acting(subject)
-				t.add_state(int(c.setup.state))
-				XImportedBalance.set_acting(null)
+				if c.setup.has("states"):
+					# REC≠1 例：依次按附加者加状态（null＝无来源），fake 名换成同形的 Godot 测试状态
+					for pair in c.setup.states:
+						var src = pair[1]
+						var by: XBattler = null
+						if src != null:
+							by = subject if str(src) == "a%d" % int(c.setup.actor) else bs.get(str(src))
+							if by == null:
+								by = _battler(str(src))
+						XImportedBalance.set_acting(by)
+						t.add_state(_fake_state(str(pair[0]), c.setup.fake) if pair[0] is String else int(pair[0]))
+					XImportedBalance.set_acting(null)
+					check(name + ".rec", is_equal_approx(t.rec, float(o.rec)), [t.rec, o.rec])
+				else:
+					XImportedBalance.set_acting(subject)
+					t.add_state(int(c.setup.state))
+					XImportedBalance.set_acting(null)
 				check(name + ".hrg", is_equal_approx(t.hrg, float(o.hrg)), [t.hrg, o.hrg])
 				logic._regenerate(t, [])
 			_:

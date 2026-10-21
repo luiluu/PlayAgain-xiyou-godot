@@ -12,7 +12,7 @@
 - 并行数：CHECK_JOBS 或 --jobs；都没给时主工作区用 CPU 核数一半（最多 6），worktree 里只用 2（多会话并行时给其他车道留余量）。
 - 派发顺序：按上次实测耗时从慢到快（没有记录的排最前，当作最慢），免得最慢的场景压到队尾。
 - 所有工作树共用一个并发上限（CHECK_GLOBAL_JOBS，默认 CPU 核数一半、最多 6）：每个测试先在共用状态目录里占一个槽位
-  （flock，进程退出即释放），几条车道同时跑检查也不会把机器压到超时。等槽位的时间不计入 600 秒。
+  （flock，进程退出即释放），几条车道同时跑检查也不会把机器压到超时。同步正式西游.py 的 node 探针占同一组槽位。等槽位的时间不计入 600 秒。
 - 沿用上轮结果（只在不指定场景的整轮运行时生效）：工程指纹与上次整轮相同时，上次通过的场景沿用、只重跑上次失败的。
   指纹 = 工程目录下除 .godot/ 外每个文件的路径与内容 SHA-256（跟随软链接，含未入 Git 的 generated/ 转换与参照数据）
   ＋ Godot 可执行文件的真实路径、大小、修改时间与 --version ＋ 本脚本内容 ＋ 超时上限。任何一项变了就整轮重跑；
@@ -116,8 +116,10 @@ def state_dir(project: str) -> Path:
         try:
             common = subprocess.run(['git', '-C', project, 'rev-parse', '--path-format=absolute', '--git-common-dir'],
                                     capture_output=True, text=True, check=True).stdout.strip()
+            if not Path(common).is_absolute():  # 只信绝对路径，免得在当前目录建出相对的状态目录
+                raise ValueError(common)
             d = Path(common) / 'xiyou_test_state'
-        except (OSError, subprocess.CalledProcessError):
+        except (OSError, ValueError, subprocess.CalledProcessError):
             d = Path(tempfile.gettempdir()) / 'xiyou_test_state'
     d.mkdir(parents=True, exist_ok=True)
     return d
@@ -144,6 +146,11 @@ def write_json(path: Path, data) -> None:
     tmp = path.with_name(path.name + '.%d.tmp' % os.getpid())
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=1) + '\n')
     os.replace(tmp, path)
+
+
+def global_limit() -> int:
+    """跨工作树共用并发上限：CHECK_GLOBAL_JOBS，默认 CPU 核数一半、最多 6（同步探针也用它，见 同步正式西游.py）。"""
+    return int(os.environ.get('CHECK_GLOBAL_JOBS', '0')) or max(1, min(6, (os.cpu_count() or 2) // 2))
 
 
 @contextlib.contextmanager
@@ -265,7 +272,7 @@ def main() -> int:
         a.jobs = int(os.environ.get('CHECK_JOBS', '0')) or (2 if in_linked_worktree(a.project) else cpu_half)
     if a.jobs < 1:
         ap.error('--jobs 必须大于 0')
-    limit = int(os.environ.get('CHECK_GLOBAL_JOBS', '0')) or cpu_half
+    limit = global_limit()
     scenes = sorted(p.name for p in (Path(a.project) / 'tests').glob('*.tscn'))
     if a.names:
         scenes = [s for s in scenes if any(s == n or s == n + '.tscn' or s.startswith(n) for n in a.names)]
