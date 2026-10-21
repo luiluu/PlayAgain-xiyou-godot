@@ -96,9 +96,9 @@ func _replay(c: Dictionary) -> void:
 				var shown := logic.sequence_gain(t, "HP" if row.fn == "gainHp" else "MP", float(row.args[0]), seq)
 				check(name + ".popup", -shown == float(row.popup.hp if row.fn == "gainHp" else row.popup.mp), [shown, row.popup])
 			"regenerateHp":
-				XImportedBalance.acting = subject
+				XImportedBalance.set_acting(subject)
 				t.add_state(int(c.setup.state))
-				XImportedBalance.acting = null
+				XImportedBalance.set_acting(null)
 				check(name + ".hrg", is_equal_approx(t.hrg, float(o.hrg)), [t.hrg, o.hrg])
 				logic._regenerate(t, [])
 			_:

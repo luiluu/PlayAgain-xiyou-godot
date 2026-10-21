@@ -1,5 +1,5 @@
 extends Node
-## 角色模板 P0／P1：普通角色 11～131 的招募路径与基础战斗基线（能力曲线／伤害由 xiyou_rules 逐项对照 slice 参照）。
+## 角色模板 P0／P1：普通角色 11～131 与导入角色 141／142 的招募路径与基础战斗基线（能力曲线／伤害由 xiyou_rules 逐项对照 slice 参照）。
 ## 本测试补三件事：①招募——原版「召唤…」公共事件真的能让该角色入队、占出战栏；②初始装备与已学技能与 mv_oracle
 ## 参照行一致；③每个声明可用的角色在参照里都有独立行（等级采样 35／65／99 与伤害行），没有就不算可用。
 ## 完整养成（技能树、进阶、羁绊）不在 P0 范围：本测试不验也不声明。
@@ -16,6 +16,9 @@ const RECRUIT_4 := {323: 61, 326: 62, 329: 63, 333: 64, 380: 65, 327: 66, 337: 6
 const RECRUIT_5 := {1082: 81, 1096: 82, 869: 83, 1334: 84, 1502: 85, 1603: 86, 1611: 87, 1609: 88, 1623: 89, 1509: 90, 1511: 91, 1515: 92, 1539: 93, 1212: 94, 1535: 95, 1652: 96, 1536: 97, 1537: 98, 1557: 99, 1650: 100}
 ## 第六批（角色 101～131，除 108 奈叶〔独立击杀归属模块〕与空位 116／125／126；同样由 129 指令得出）
 const RECRUIT_6 := {1651: 101, 1649: 102, 1538: 103, 1405: 104, 1534: 105, 1575: 106, 1665: 107, 1667: 109, 1655: 115, 1653: 117, 1660: 118, 1661: 119, 1658: 120, 1659: 121, 1668: 122, 1669: 123, 1654: 124, 1657: 127, 1656: 128, 1662: 129, 1663: 130, 1664: 131}
+## 第七批：导入角色 141 女儿国王、142 天海麒麟星（CE2501／2502「招募_…」的 129 指令）。两人造成的伤害结算 ×0.01 由
+## XImportedBalance 在结算处缩放（xiyou_imported_balance 对照）；参照伤害行是 makeDamageValue，原版模块不缩放这一层，与 Godot 的 XDamage.calculate 一致
+const RECRUIT_7 := {2501: 141, 2502: 142}
 ## 猫猫 110～114 不走公共事件：Map004 事件 57 一次给齐五只（129 指令），参照行／装备／技能照验，招募路径另在地图事件里
 const CATS := [110, 111, 112, 113, 114]
 const REGRESSION := [1, 8, 9, 10]
@@ -41,13 +44,13 @@ func _run() -> void:
 		_check("oracle_present", false)
 		return _finish()
 	# ③ 参照行齐全
-	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + CATS:
+	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + RECRUIT_7.values() + CATS:
 		var row = d.actors.get(str(id))
 		_check("oracle_row_%d" % id, row != null and row.has("lv1") and row.has("lv10Battle") and row.get("levelSamples", {}).size() == 3, id)
 		var dmg = d.damage.filter(func(r): return r.get("actor") != null and int(r.actor) == id)
 		_check("oracle_damage_%d" % id, dmg.size() > 0 and dmg.all(func(r): return not r.has("error")), [id, dmg.size()])
 	# ② 初始装备与技能
-	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + CATS:
+	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + RECRUIT_7.values() + CATS:
 		var row: Dictionary = d.actors[str(id)]
 		var a := XActor.new().setup(id)
 		var mv_equips = row.equips.filter(func(e): return e != null).map(func(e): return int(e.base))
@@ -75,6 +78,7 @@ func _run() -> void:
 	all_recruit.merge(RECRUIT_4)
 	all_recruit.merge(RECRUIT_5)
 	all_recruit.merge(RECRUIT_6)
+	all_recruit.merge(RECRUIT_7)
 	for ce in all_recruit:
 		var id: int = all_recruit[ce]
 		_check("not_in_party_before_%d" % id, not s.party.has(id))

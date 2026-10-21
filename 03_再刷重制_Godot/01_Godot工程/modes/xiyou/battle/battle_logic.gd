@@ -109,7 +109,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	_orders_made = false
 	state = s
 	troop_id = troop
-	XImportedBalance.acting = null
+	XImportedBalance.set_acting(null)
 	actors = s.battle_members()
 	XZhenqi.battle_setup(s, troop)  # 真气：本场路线、楼层、溢出计数（BattleManager.setup）
 	enemies.clear()
@@ -495,7 +495,7 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append({"type": "guard", "user": u})
 	else:
 		logs.append_array(execute(u, skill, target))
-		XImportedBalance.acting = null
+		XImportedBalance.set_acting(null)
 	_acted[u] = int(_acted.get(u, 0)) + 1
 	_tick_states(u, 1)
 	_sync_orders(before, true)
@@ -1030,7 +1030,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# 导入角色平衡：禁用角色／禁用号角的行动（含行动序列）对目标无效，付费照常
 	if XImportedBalance.blocks(u, skill):
 		return logs
-	XImportedBalance.acting = u  # YEP 附加状态记 BattleManager._subject 为来源
+	XImportedBalance.set_acting(u)  # YEP 附加状态记 BattleManager._subject 为来源
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
@@ -1436,7 +1436,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 	# 导入角色平衡：导入角色附加的状态里负的 HP 再生率（持续伤害）那部分 ×0.01（向下取整），其余照常
 	var imported_hrg := 0.0
 	for id in b.state_ids:
-		var src = b.state_origins.get(id)
+		var src := XImportedBalance.origin(b, id)
 		if src != null and src != b and XImportedBalance.outgoing_rate(src) != 1.0:
 			for tr in XDB.rec("States", id).get("traits", []):
 				if int(tr.code) == XBattler.TRAIT_XPARAM and int(tr.dataId) == 7 and float(tr.value) < 0.0:

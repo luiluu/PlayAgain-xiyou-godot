@@ -13,8 +13,22 @@ const DISABLED_ACTORS := [143, 144, 145, 157, 160]
 const DISABLED_HORNS := [255, 256, 257, 394, 440]
 const DOT_RATE := 0.01
 
-## 当前行动者：YEP 附加状态时把它记成状态来源（stateOrigin），持续伤害据此判断
-static var acting: XBattler
+## 当前行动者（弱引用）：YEP 附加状态时把它记成状态来源（stateOrigin），持续伤害据此判断。用 set_acting／acting_battler 读写。
+static var _acting: WeakRef
+
+
+static func set_acting(b: XBattler) -> void:
+	_acting = weakref(b) if b != null else null
+
+
+static func acting_battler() -> XBattler:
+	return _acting.get_ref() if _acting != null else null
+
+
+## 状态来源（XBattler.state_origins 里的弱引用）
+static func origin(b: XBattler, state_id: int) -> XBattler:
+	var w = b.state_origins.get(state_id)
+	return w.get_ref() if w is WeakRef else null
 
 
 static func outgoing_rate(b) -> float:

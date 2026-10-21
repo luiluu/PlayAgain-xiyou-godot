@@ -37,7 +37,8 @@ var mp := 0.0
 var tp := 0.0
 var state_ids: Array[int] = []
 var state_turns := {}
-## YEP stateOrigin：状态 ID → 附加时的行动者（XImportedBalance.acting）；导入角色平衡的持续伤害按来源判断
+## YEP stateOrigin：状态 ID → 附加时行动者的 WeakRef（XImportedBalance.acting_battler）；导入角色平衡的持续伤害按来源判断。
+## 用弱引用：自己给自己加状态、双方互相记来源都会成环，RefCounted 环在退出时泄漏
 var state_origins := {}
 var buffs: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var buff_turns: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -274,8 +275,9 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	var lo := int(s.get("minTurns", 1))
 	var hi := maxi(lo, int(s.get("maxTurns", lo)))
 	state_turns[id] = roll_state_duration(lo, hi, random, str(id))
-	if XImportedBalance.acting != null:
-		state_origins[id] = XImportedBalance.acting
+	var source := XImportedBalance.acting_battler()
+	if source != null:
+		state_origins[id] = weakref(source)
 	# Game_Battler.addState：新附加的状态 refresh 后由 krz 标 dirty；已有状态（_Fix_StackOverflow 分支）只续回合
 	if fresh:
 		param_refresh()
