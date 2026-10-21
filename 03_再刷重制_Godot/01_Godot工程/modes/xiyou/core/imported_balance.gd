@@ -7,7 +7,8 @@ extends RefCounted
 ## - 行动序列 HP／MP 减少（actionHpModify／actionMpModify 的 gainHp／gainMp）对序列目标同样缩放。
 ## - 持续伤害：敌人身上由导入角色附加的状态，其负的 HP 再生率（特性 22／7）那一部分 ×0.01（固定 0.01，163 也一样）。
 ## - 143／144／145／157／160 禁用：其行动与序列对目标都无效（付费照常）；禁用号角（物品 255／256／257／394／440）同理。
-## 未移植：行动内公式直接 gainHp／setHp 的缩放、Bailong A.C.S 合并尾段、反击状态脚本 1341／2550 的来源改写（Godot 无对应机制，见交付单）。
+## - 共用伤害技能的公式值 ÷10（formula_value，CodexImportedEffects）。
+## 未移植：导入角色专属装备的效果补丁（CodexImportedEffects.patches）、行动内公式直接 gainHp／setHp 的缩放、Bailong A.C.S 合并尾段、反击状态脚本 1341／2550 的来源改写（Godot 无对应机制，见交付单）。
 
 const DISABLED_ACTORS := [143, 144, 145, 157, 160]
 const DISABLED_HORNS := [255, 256, 257, 394, 440]
@@ -56,6 +57,18 @@ static func scales(subject: XBattler, target: XBattler, reflected := false) -> b
 
 static func reduced(value: float, subject: XBattler) -> float:
 	return floorf(value * outgoing_rate(subject))
+
+
+## CodexImportedEffects（同文件「12.27 authored effect/skill coefficient balance」）：导入角色 141～166 用不是本人专属的
+## 伤害技能（伤害类型 1／2／5／6；本人技能 9906～10121 与 10169 除外，普攻等共用技能都算）时，Game_Action.evalDamageFormula ÷10。
+## 混合模式求偏导的能力值代理（XDamage._ParamProxy）按它代理的行动者算，保证权重比例不变。
+static func formula_value(value: float, a, item: Dictionary) -> float:
+	var who = a.get("src") if a != null and "src" in a else a
+	var id := _actor_id(who)
+	var sid := int(item.get("id", 0))
+	if id < 141 or id > 166 or not int(item.get("damage", {}).get("type", 0)) in [1, 2, 5, 6] or (sid >= 9906 and sid <= 10121) or sid == 10169:
+		return value
+	return value / 10.0
 
 
 static func _actor_id(b) -> int:

@@ -28,8 +28,24 @@ func setup(id: int) -> XActor:
 		if int(l.level) <= _lv:
 			learn_skill(int(l.skillId))
 	init_equips(d.get("equips", []))
+	_fix_strong_classification()
 	recover_all()
 	return self
+
+
+## installNativeMiraRuntime 的 fixStrongClassification（Game_Actor.setup 之后）：141～172 号角色一律算强者——
+## 忘弱者压制 6235、学强者压制 6216、旧档 5970 换 5971，去掉 1035／1276／1277。强弱分档系数本身属五乘区，按数值平衡不移植。
+func _fix_strong_classification() -> void:
+	if actor_id < 141 or actor_id > 172:
+		return
+	forget_skill(6235)
+	learn_skill(6216)
+	if skill_ids.has(5970):
+		forget_skill(5970)
+		learn_skill(5971)
+	for sid in [1035, 1276, 1277]:
+		if state_ids.has(sid):
+			remove_state(sid)
 
 
 func data() -> Dictionary:

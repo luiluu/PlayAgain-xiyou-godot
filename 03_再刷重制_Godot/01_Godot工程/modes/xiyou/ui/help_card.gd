@@ -207,9 +207,11 @@ static func _terms(text: String) -> String:
 	return RegEx.create_from_string("全伤(?:害)?").sub(text, "全属性伤害", true)
 
 
+## installDisplayPreferencesRuntime.characterHelpTarget 的技能段（10122～10299）走角色专用说明（未做，原样显示）。
+## 例外：导入角色被动 10264「异界制约」（<CodexImportedBalance>）在原版没有专用副本与动态行，characterHelpView 的分组与普通视图同形，按普通视图显示（help_card 参照已对照）。
 static func _special_target(obj: Dictionary) -> bool:
 	var id := int(obj.get("id", 0))
-	return id >= 10122 and id <= 10299
+	return id >= 10122 and id <= 10299 and not str(obj.get("note", "")).contains("<CodexImportedBalance>")
 
 
 # ---- installDamageElementRuntime ----
