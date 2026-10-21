@@ -86,12 +86,22 @@ func _paint_list(c: XMVCanvas) -> void:
 ## Window_AchievementBookIndex.drawItem（rect = itemRectForText：x 6、宽 内容宽 − 12）
 static func paint_item(c: XMVCanvas, id: int, y: float, width: float) -> void:
 	var d := XAchievement.def(id)
-	if not XAchievement.global_has(id):
+	var owned := XAchievement.global_has(id)
+	# 142／143 专用徽章与名字样式（XAchievementBadge，参照 achievement_badges.json）
+	var plan := XAchievementBadge.list_plan(id, y, LIST_LH, owned)
+	if not plan.is_empty() and plan.only_badge:
+		XAchievementBadge.paint_op(c, plan.badge)
+		return
+	if not owned:
 		c.text("未获得", 6, y, width, "left", XUI.TEXT, XUI.FONT_SIZE, LIST_LH)
 		return
-	c.icon(int(d.icon), 6 + 16, y, 1.0, 64.0)
 	var x := 6.0 + LIST_LH
-	c.text(str(d.name), x, y, 0, "left", XUI.TEXT, XUI.FONT_SIZE, TEXT_EX_LH)
+	if plan.is_empty():
+		c.icon(int(d.icon), 6 + 16, y, 1.0, 64.0)
+		c.text(str(d.name), x, y, 0, "left", XUI.TEXT, XUI.FONT_SIZE, TEXT_EX_LH)
+	else:
+		XAchievementBadge.paint_op(c, plan.badge)
+		XAchievementBadge.paint_op(c, plan.name)
 	c.text(str(d.trigger), x, y + ROW, 0, "left", XUI.TEXT, XUI.FONT_SIZE, TEXT_EX_LH)
 	if str(d.evalText) != "":
 		c.text("特殊奖励: " + str(d.evalText), x, y + ROW * 2, 0, "left", XUI.TEXT, XUI.FONT_SIZE, TEXT_EX_LH)
