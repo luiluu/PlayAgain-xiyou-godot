@@ -1172,29 +1172,18 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		r.critical = _float("critical") < clampf(cri, 0.0, 1.0)
 		_action_resources.result(t).critical = r.critical
 		var value := _damage_value(u, skill, t, r.critical)
-		if [1, 3, 5].has(type) and troop_id > 0:
-			value = XZhenqi.hp_damage(t, value)  # executeHpDamage：我方受伤时护法减伤、元婴护体（只在战斗中）
-		if [1, 3, 5].has(type):
-			value = t.absorb_shield(value)  # ShieldSystem executeHpDamage（在真气之内、吸取取 min 之前）
 		_action_resources.result(t).success = true
 		match type:
-			1, 3:
-				r.hp = value
-				_action_resources.gain(t, "hp", -value)
+			1, 3, 5:
+				r.hp = execute_hp_damage(u, t, value, type == 5)
 			2, 4:
 				r.mp = value
 				_action_resources.gain(t, "mp", -value)
-			5:
-				r.hp = minf(value, t.hp)
-				_action_resources.gain(t, "hp", -r.hp)
-				_action_resources.gain(u, "hp", r.hp)
 			6:
 				r.mp = minf(value, t.mp)
 				_action_resources.gain(t, "mp", -r.mp)
 				_action_resources.gain(u, "mp", r.mp)
 		r.record_hp += floorf(maxf(0.0, float(r.hp)))
-		if value > 0.0 and [1, 5].has(type):
-			_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
 		_establish(u, t, r)
 	for eff in skill.get("effects", []):
 		_effect(u, t, eff, r)
@@ -1204,6 +1193,22 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_die(t)
 		r.died = true
 	return r
+
+
+## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
+## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
+func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
+	if troop_id > 0:
+		value = XZhenqi.hp_damage(t, value)
+	value = t.absorb_shield(value)
+	if drain:
+		value = minf(value, t.hp)
+	_action_resources.gain(t, "hp", -value)
+	if value > 0.0:
+		_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
+	if drain:
+		_action_resources.gain(u, "hp", value)
+	return value
 
 
 ## YEP_BuffsStatesCore onPostDamageStateEffects 的 Establish（行动者的状态）：executeDamage 之后、使用效果之前。
@@ -1373,11 +1378,16 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 	var dh := floorf(b.mhp * b.hrg)
 	var dm := floorf(b.mmp * b.mrg)
 	if dh != 0.0:
-		if dh < 0.0 and b.shield > 0.0:
-			# regenerateHp：先按 maxSlipDamage 夹到 hp−1，再经 ShieldSystem gainHp 吸收、减半
-			dh = -b.absorb_shield(minf(-dh, maxf(b.hp - 1.0, 0.0)))
+		var shown := dh
+		if dh < 0.0:
+			# regenerateHp：先按 maxSlipDamage 夹到 hp−1，再吸收护盾、减半（弹字同 gainHp：角色记夹后原值，敌人记减免后）
+			shown = maxf(dh, -maxf(b.hp - 1.0, 0.0))
+			dh = -b.absorb_shield(-shown)
+			if not b is XActor:
+				shown = dh
 		b.hp = clampf(b.hp + dh, 1.0, b.mhp) if dh < 0.0 else minf(b.mhp, b.hp + dh)
-		logs.append({"type": "regen", "target": b, "hp": -dh, "views": views([b])})
+		if shown != 0.0:  # 生命 1 时夹成 0，原版不调 gainHp、不弹字
+			logs.append({"type": "regen", "target": b, "hp": -shown, "views": views([b])})
 	if dm != 0.0:
 		b.mp = clampf(b.mp + dm, 0.0, b.mmp)
 	b.tp = minf(b.max_tp(), b.tp + 100.0 * b.trg)

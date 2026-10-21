@@ -77,11 +77,15 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		return {}
 	var before := snapshot(b)
 	var requested := amount
-	# ShieldSystem gainHp：扣血先吸收护盾，击穿后剩余减半（结果槽与实际变化都按减免后）
+	var shown := amount
+	# 扣血先吸收护盾，击穿后剩余减半。敌人走 ShieldSystem 的 gainHp 钩子，结果槽记减免后；角色的 gainHp 是
+	# krz_state_re 在 Game_Actor 上的自有方法（盖过后装的 gainHp 钩子），结果槽记原值，由 setHp 钩子减免实际扣量。
 	if resource == "hp" and amount < 0.0:
 		amount = -b.absorb_shield(-amount)
+		if not b is XActor:
+			shown = amount
 	var r := result(b)
-	r[resource + "Damage"] = -amount
+	r[resource + "Damage"] = -shown
 	if resource == "hp":
 		r.hpAffected = true
 	var old: float = b.get(resource)
