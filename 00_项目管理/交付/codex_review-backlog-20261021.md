@@ -119,3 +119,5 @@
 - 用户已明确选择“允许修复并继续验收”，增加tests/xiyou_achievement.gd与07_开发环境/测试合并工具.py两处写入；应用的是v2提案。修复只涉及测试夹具，不改游戏、转换器、探针、切片、缓存复用逻辑或守卫。
 - 实际修改后成就单场景50/50、首跑无资源ERROR；工具全局槽位专项1/1，外层test_timings.json哨兵保留。证据review_achievement_fixed/与review_merge_fixture_fixed_summary.json；不把候选当正式结果。两处修复仍待Claude核查。
 - 修复后唯一整轮日志review_20261021_check_p1_fixed.log、逐项目录review_20261021_check_p1_fixed/，通过现有CLI空闲时限10800秒运行；各场景600秒与并发2／共享4不变，不加full、不重同步／合main／补齐。工程测试改变指纹，预计实际跑全部场景；以终态为准。
+
+- 修复后草稿内存预验证已确认13条核查＋1条自身修复登记；第二期仍恰好只销指定十批。待Codex代码批50→47→37；因新增9d9e4bf待Claude修复批，总代码批为51→48→38，待Claude代码批始终2，修复没有被自核销掉。证据review_postfix_draft_preview.json；共用记录未改，正式交付仍待整轮终态。
