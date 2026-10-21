@@ -99,3 +99,11 @@
 - **不能据退出0标可合并**：xiyou_achievement首次50/50、rc0，但退出有20 ObjectDB实例与2资源仍占用的ERROR；单独重跑50/50无错，耗时2.505→2.626秒。共享偶发账累计2次，按多会话并行“同一测试第二次偶发就修测试”仍需处理，不以重跑销掉。真实首跑／重跑日志都保留，summary=review_20261021_check_p1_retry1_summary.json。
 - 新P2工具证据隔离问题：测试合并工具.py的test_global_slot_limit_across_runners直接继承CHECK_LOG_DIR，两个假Godot运行器将外层test_timings.json覆盖为a／b／c三场景。真实101场景日志与结果缓存未丢，已逐项复核；覆盖后的总计时文件不作本轮证据。隔离候选修复专项1/1，外层哨兵文件保留。
 - 已准备两份测试文件的最小补丁review_test_cleanup_proposal.patch，仅改成就退出清理（停整树音频、stream置空、延后退出）与工具夹具环境隔离；未改本分支源码。成就候选场景在本地结果目录验证，遵守现有共享4槽／并行2。原限定只写两份文档，应用前须由用户明确扩展这两个测试文件的写入范围；缓存P2不在修复提案中。
+
+## 修复候选验证完成，等待写入范围确认（最新）
+
+- 第一版“清stream＋延后退出”候选6次中2次仍报资源错误，未应用、不能作通过证据。verbose另6次中2次报错，具体残留为Saint5.ogg的AudioStreamOggVorbis／OggPacketSequence及播放句柄；原日志均保留。
+- 最终候选review_test_fixture_proposal_v2.patch：成就测试仅在本进程把成就提示音的XSound缓存设为null（同项目已有drop_dh静音夹具），继续核对真实Popup Sound参数，全部50项断言不变，不认证实际播放；不改游戏音效代码。共享4槽、并行2的8次候选验证均50/50且无资源ERROR，证据review_achievement_mute_candidate_summary.json。工具夹具隔离专项1/1及外层日志哨兵保留证据继续有效。
+- 原限定“只写两份文档”尚未被用户明确扩展；已通过异步问题请求额外允许两个测试文件，当前未收到确认，源码仍未修改。不得把候选验证冒作正式修复或整轮验收完成。
+- 若用户允许：应用v2补丁到tests/xiyou_achievement.gd及07_开发环境/测试合并工具.py；跑相关专项后只做一次必要整轮检查（测试源码改变会使旧指纹失效，不重同步），全过再交第一期。随后把review_phase2_draft_candidate.md里的10条正式核查放到“## 交接板”前，验证实际正文提取13条／只销十批，再做第二期唯一收工检查。仅两处测试小修另留待Claude核查，缓存P2继续只核不修。
+- 第二期完整候选正文已保存到本地结果review_phase2_draft_candidate.md，不用重新读大差异；内存预验证与Git事实缓存仍见review_phase2_full_draft_preview.json／review_clearance_git_cache.json。两期当前仍不可合并。
