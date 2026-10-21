@@ -333,6 +333,8 @@ func _unit_checks() -> void:
 	# Establish：负能力值不附加
 	var t: XBattler = logic.actors[1]
 	e0.add_state(1460)
+	# 与 drop_record_probe 的有效调用链一致：KRZ 已热身列表到 refresh 才更新。
+	e0.param_refresh()
 	var hp0 := t.hp
 	# Exercise the public action owner with a genuine compiled zero formula.
 	var probe := XDB.rec("Skills", 2).duplicate(true)
