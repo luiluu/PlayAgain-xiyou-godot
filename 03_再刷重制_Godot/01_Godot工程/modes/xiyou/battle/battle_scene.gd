@@ -542,7 +542,7 @@ func _main() -> void:
 			# 快速战斗只跳过失败信息（见 XHangUp）
 			if not XHangUp.fast_fighting(XState.current):
 				await _say("全军覆没……", 1.2)
-			logic.end_battle()
+			logic.end_battle(2)
 			# MV updateBattleEnd：允许失败时，只将阵亡出战成员复活到 1 HP。
 			if can_lose:
 				for member in XState.current.battle_members():
@@ -613,7 +613,7 @@ func _escape_success() -> void:
 	logic.escaped = true
 	XSound.system(8)
 	await message.run({"lines": [escape_text()]})
-	logic.end_battle()
+	logic.end_battle(1)
 	finished.emit(1)
 
 
@@ -1282,7 +1282,7 @@ func _victory() -> void:
 		before[a] = {"exp": a.exp_total, "level": a.level}
 	var r := logic.rewards()
 	logic.grant(r)
-	logic.end_battle()
+	logic.end_battle(0)
 	var params := XDB.plugin("Olivia_VictorySequenceUI")
 	bgm.stop()
 	var music := XDB.audio_path("bgm", str(params.get("Victory Screen BGM", "Ship3")))

@@ -92,6 +92,7 @@ PROBES = [
     (['achievement_badge_probe.cjs'], ['achievement_badges.json']),
     (['shield_probe.cjs'], ['shield.json']),
     (['imported_balance_probe.cjs'], ['imported_balance.json']),
+    (['state_effects_probe.cjs'], ['state_effects.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
 
