@@ -37,6 +37,8 @@ var mp := 0.0
 var tp := 0.0
 var state_ids: Array[int] = []
 var state_turns := {}
+## YEP stateOrigin：状态 ID → 附加时的行动者（XImportedBalance.acting）；导入角色平衡的持续伤害按来源判断
+var state_origins := {}
 var buffs: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var buff_turns: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var guarding := false
@@ -272,6 +274,8 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	var lo := int(s.get("minTurns", 1))
 	var hi := maxi(lo, int(s.get("maxTurns", lo)))
 	state_turns[id] = roll_state_duration(lo, hi, random, str(id))
+	if XImportedBalance.acting != null:
+		state_origins[id] = XImportedBalance.acting
 	# Game_Battler.addState：新附加的状态 refresh 后由 krz 标 dirty；已有状态（_Fix_StackOverflow 分支）只续回合
 	if fresh:
 		param_refresh()
@@ -292,6 +296,7 @@ func remove_state(id: int) -> void:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
 	state_ids.erase(id)
 	state_turns.erase(id)
+	state_origins.erase(id)
 	if id == XZhenqi.POJIA_STATE:
 		zq_pojia_rate = 0.5
 	# Game_Battler.removeState：有该状态才 refresh；krz 的 Game_Enemy.removeState 之后总标 dirty

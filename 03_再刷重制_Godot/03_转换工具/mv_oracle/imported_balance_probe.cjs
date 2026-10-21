@@ -159,6 +159,11 @@ for (const id of [141, 163, 143, 1]) {
     return {origin, states: foes[0]._states.slice(), hrg: foes[0].hrg, rec: foes[0].rec, mhp: foes[0].mhp, log, after: [a, ally, ...foes].map(snap)};
   }));
 }
+// 各行动者夹具开战后双方的生命／魔法上限（Godot 重放时按它截资源）
+for (const id of ACTORS) cases.push(makeCase(`caps.a${id}`, {actor: id, troop: 2}, () => {
+  const {a, ally, foes} = battle(id, 2);
+  return {caps: [a, ally, ...foes].map(b => ({key: key(b), mhp: b.mhp, mmp: b.mmp}))};
+}));
 // 无行动上下文的直接 gainHp（如回合事件）不缩放；敌人打导入角色不缩放
 cases.push(makeCase('direct.gainHp.noContext', {actor: 141, troop: 2}, () => {
   const {a, ally, foes} = battle(141, 2);
