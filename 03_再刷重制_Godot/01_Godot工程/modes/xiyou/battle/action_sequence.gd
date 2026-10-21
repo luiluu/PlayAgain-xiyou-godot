@@ -215,8 +215,7 @@ func _modify(kind: String, name: String, list: Array) -> void:
 	for t in list:
 		var base: float = t.mhp if kind == "HP" else (t.mmp if kind == "MP" else t.max_tp())
 		var v := js_parse_int(base * change * 0.01 if percent else change)
-		_gains.append([t, kind, v])
-		logic.sequence_gain(t, kind, v)
+		_gains.append([t, kind, logic.sequence_gain(t, kind, v)])
 
 
 ## JS parseInt(数字)：先转成字符串，绝对值 ≥ 1e21 时是指数写法，只取到小数点/e 之前（-1e+33 → -1）

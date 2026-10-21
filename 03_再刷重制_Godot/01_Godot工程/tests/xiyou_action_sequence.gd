@@ -130,6 +130,7 @@ func _run() -> void:
 	print("conditions: ", total, " unknown atoms: ", probe.unknown.size(), " kinds: ", kinds.keys())
 	check("conditions_translated", probe.unknown.is_empty(), kinds.keys())
 	_numeric_checks(ref)
+	_shield_checks()
 	finish()
 
 
@@ -149,6 +150,28 @@ func _numeric_checks(ref: Dictionary) -> void:
 		XActionSequence.create(logic, logic.actors[0], rec, [t]).run()
 		var got := {"hp": t.hp, "mp": t.mp, "tp": t.tp, "states": t.state_ids, "buffs": t.buffs, "buffTurns": t.buff_turns}
 		check("numeric_" + str(row.id), JSON.parse_string(JSON.stringify(got)) == row.result, [got, row.result])
+
+
+## 序列负 HP 走护盾吸收链：夹具同 shield.json 的 gain.actors.500_-1000（生命 10000、盾 500、HP 减 1000 → 原版 gainHp 后生命 9750、盾 0）；
+## 角色弹字记原值 1000、敌人记减免后 250（见 XResourceContext.gain）。
+func _shield_checks() -> void:
+	var data = JSON.parse_string(FileAccess.get_file_as_string("res://modes/xiyou/generated/oracle/shield.json"))
+	var want: Dictionary = {}
+	for c in data.cases:
+		if c.id == "gain.actors.500_-1000":
+			want = c.observed.after.b
+	check("shield_ref_present", not want.is_empty())
+	for who in ["actor", "enemy"]:
+		var logic := setup()
+		var t: XBattler = logic.actors[1] if who == "actor" else logic.enemies[0]
+		t.hp = t.mhp
+		t.shield = 500.0
+		var hp0 := t.hp
+		XActionSequence.create(logic, logic.actors[0], {"yepSeq": {"whole": [["HP -1000", ["TARGETS"]]]}}, [t]).run()
+		# 夹具里生命 10000 → 9750：吸收 500，击穿余 500 减半 250（与生命上限无关的扣量 250），盾清零
+		check("shield_seq_%s_hp" % who, hp0 - t.hp == 10000.0 - float(want.hp), [hp0, t.hp, want.hp])
+		check("shield_seq_%s_shield" % who, t.shield == float(want.shield), t.shield)
+	check("shield_ref_values", float(want.hp) == 9750.0 and float(want.shield) == 0.0, want)
 
 
 func finish() -> void:

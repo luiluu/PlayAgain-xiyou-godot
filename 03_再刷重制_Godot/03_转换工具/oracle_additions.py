@@ -27,7 +27,8 @@ KEYS = {
     'formula_equipment.json': {'cases': ('id',)},
     'formula_actions.json': {'cases': ('id',)},
     'review_fix.json': {'cases': ('id',)},
-    'troop_events.json': {'cases': ('troop', 'paid')},
+    # turnPreset 例（回合计数预置）与同敌群的开局例分开成组，新增这类例才算「新键」而非同键追加
+    'troop_events.json': {'cases': lambda row: ('troop', 'paid', 'turnPreset') if 'turnPreset' in row else ('troop', 'paid')},
     'smart_ai.json': {'cases': ('troop', 'scene', 'actor', 'state'),
                       'damage': ('troop', 'actor', 'skill', 'target')},
     'shop_buy.json': {'shops': ('map', 'event', 'raw'), 'goods': ('goods',),
