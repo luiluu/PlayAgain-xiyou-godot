@@ -70,6 +70,7 @@ PROBES = [
     (['wtype_probe.cjs'], ['wtype.json']),
     (['dual_wield_probe.cjs'], ['dual_wield.json']),
     (['magic_weapon_probe.cjs'], ['magic_weapon.json']),
+    (['custom_params_probe.cjs'], ['custom_params.json']),
     (['shop_buy_probe.cjs'], ['shop_buy.json']),
     (['settlement_probe.cjs'], ['settlement.json']),
     (['item_marks_probe.cjs'], ['item_marks.json']),

@@ -107,3 +107,88 @@ def runewords(plugins):
                     'armorSlots':json.loads(s['EMosaicAtepy'] or '[]'),
                     'materials':json.loads(s['EMosaicZID'] or '[]')}
     return result
+
+
+# YEP_EquipCore evalParamPlus：<Custom Parameters> 里给这些局部变量赋值，按能力值编号求和（all 加到每一项）。
+CUSTOM_PARAM_ALIASES = {'hp':0,'maxhp':0,'mhp':0,'mp':1,'maxmp':1,'mmp':1,'sp':1,'maxsp':1,'msp':1,
+                        'atk':2,'str':2,'def':3,'mat':4,'int':4,'spi':4,'mdf':5,'res':5,'agi':6,'spd':6,'luk':7,'all':None}
+_NUM = r'\d+(?:\.\d+)?'
+_TERM = re.compile(r'(?:(?:user|a)\.level\s*\*\s*(?P<l1>' + _NUM + r')|(?P<l2>' + _NUM + r')\s*\*\s*(?:user|a)\.level|(?:user|a)\.level'
+                   r'|v\[(?P<v1>\d+)\]\s*\*\s*(?P<c1>' + _NUM + r')|(?P<c2>' + _NUM + r')\s*\*\s*v\[(?P<v2>\d+)\]|v\[(?P<v3>\d+)\]|(?P<k>' + _NUM + r'))')
+
+
+def custom_params_code(note):
+    """与 processEquipNotetags2 相同：按行切分，标签行之间的原文逐行拼接。"""
+    code, on = '', False
+    for line in re.split(r'[\r\n]+', note or ''):
+        if re.search(r'<(?:PARAMETER EVAL|custom parameter|custom parameters)>', line, re.I):
+            on = True
+        elif re.search(r'</(?:PARAMETER EVAL|custom parameter|custom parameters)>', line, re.I):
+            on = False
+        elif on:
+            code += line + '\n'
+    return code
+
+
+def _linear(expr):
+    """等级与变量的线性式 → {'k':常数,'level':系数,'vars':{编号:系数}}；认不出返回 None。"""
+    out = {'k': 0.0, 'level': 0.0, 'vars': {}}
+    expr = expr.strip()
+    if not expr:
+        return None
+    for part in re.split(r'\s*\+\s*', expr):
+        m = _TERM.fullmatch(part.strip())
+        if not m:
+            return None
+        g = m.groupdict()
+        if g['k'] is not None:
+            out['k'] += float(g['k'])
+        elif any(g[x] is not None for x in ['v1', 'v2', 'v3']):
+            vid = g['v1'] or g['v2'] or g['v3']
+            out['vars'][vid] = out['vars'].get(vid, 0.0) + float(g['c1'] or g['c2'] or 1)
+        else:
+            out['level'] += float(g['l1'] or g['l2'] or 1)
+    return out
+
+
+def custom_params(rec):
+    """<Custom Parameters> → {'params':[每项能力 {k,level,vars}] , 'ignored':[无效赋值]}；
+    有认不出的语句时 {'unsupported':[语句], 'code':原文}（不静默当 0）。同一变量多次赋值以最后一次为准（同 JS）。"""
+    code = custom_params_code(rec.get('note', ''))
+    if not code.strip():
+        return None
+    assigned, ignored, bad = {}, [], []
+    for stmt in re.split(r'[;\n]', code):
+        stmt = stmt.strip()
+        if not stmt:
+            continue
+        m = re.fullmatch(r'([A-Za-z_]\w*)\s*(\+?=)\s*(.+)', stmt)
+        lin = _linear(m[3]) if m else None
+        if not m or lin is None:
+            bad.append(stmt)
+            continue
+        name = m[1]
+        if name not in CUSTOM_PARAM_ALIASES:
+            # 未声明的名字在非严格模式 eval 里写成全局变量，对能力值没有影响（如 tp）
+            if name in ('value', 'a', 'user', 's', 'v', 'code', 'item', 'paramId'):
+                bad.append(stmt)
+            else:
+                ignored.append(stmt)
+            continue
+        if m[2] == '+=' and name in assigned:
+            prev = assigned[name]
+            lin = {'k': prev['k'] + lin['k'], 'level': prev['level'] + lin['level'],
+                   'vars': {**prev['vars'], **{k: prev['vars'].get(k, 0.0) + c for k, c in lin['vars'].items()}}}
+        assigned[name] = lin
+    if bad:
+        return {'unsupported': bad, 'code': code}
+    params = [{'k': 0.0, 'level': 0.0, 'vars': {}} for _ in range(8)]
+    for name, lin in assigned.items():
+        idx = CUSTOM_PARAM_ALIASES[name]
+        for i in (range(8) if idx is None else [idx]):
+            p = params[i]
+            p['k'] += lin['k']
+            p['level'] += lin['level']
+            for vid, c in lin['vars'].items():
+                p['vars'][vid] = p['vars'].get(vid, 0.0) + c
+    return {'params': params, 'ignored': ignored}
