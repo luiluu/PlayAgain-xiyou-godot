@@ -51,7 +51,7 @@ w.BattleManager.alterBattleback = function (line) { return w.SceneManager._scene
 // hpRate：开战前把敌人 0 的 HP 设为上限的这个比例（向下取整），照常跑两回合；消息忙时直接关掉（模拟玩家读完），
 // 记录 messages（每条的回合与文字）与回合结束时各敌人的 enemyId（三十层敌群 466：HP≤25% 第 3 页 101 对话、336 变身 538、1399、强制 6070／6105）。
 // flags：开战前把这些敌群页标为已执行（$gameTroop._eventFlags），旧例不写字段。
-function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags = null) {
+function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags = null, turnPreset = 0) {
   w.eval('ConfigManager.applyData({});DataManager.setupNewGame();$gameSystem.setDifficultyId(3);for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
   w.eval('$gameParty._actors=[];' + JSON.stringify(PARTY) + '.forEach(function(id){$gameParty.addActor(id);});');
   w.$gameVariables.setValue(842, paid ? 1 : 0);
@@ -68,6 +68,9 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
   w.Math.random = () => 0.5;
   const out = {troop: troopId, paid, actions: [], invokes: [], errors: [], battlers: {}};
   if (target !== 0) out.target = target;   // 玩家普通攻击的敌人序号（默认 0 不写字段，旧例逐字节不变）
+  // turnPreset：开战前把回合计数设为这个值（金之巨人 830 第 20 回合强制 8203：从头打到 20 回合队伍早已倒下），跑到该回合结束；
+  // 开战检查与第 N 回合的消息一并记录
+  if (turnPreset) { out.turnPreset = turnPreset; out.messages = []; w.$gameTroop._turnCount = turnPreset; }
   if (flags) { out.flags = flags; for (const i of flags) w.$gameTroop._eventFlags[i] = true; }
   if (hpRate) {
     out.hpRate = hpRate; out.messages = [];
@@ -99,9 +102,9 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
   try {
     BM.startBattle();
     for (let i = 0; i < 20000; i++) {
-      if (BM._phase === 'battleEnd' || w.$gameTroop._turnCount > 2 || BM.isBattleEnd && BM._phase === null) break;
+      if (BM._phase === 'battleEnd' || w.$gameTroop._turnCount > (turnPreset ? turnPreset + 1 : 2) || BM.isBattleEnd && BM._phase === null) break;
       if (preset && BM._phase === 'input') break;
-      if (hpRate && w.$gameMessage.isBusy()) {
+      if ((hpRate || turnPreset) && w.$gameMessage.isBusy()) {
         out.messages.push({turn: w.$gameTroop._turnCount, texts: w.$gameMessage._texts.slice(), faceName: w.$gameMessage.faceName()});
         w.$gameMessage.clear();
         continue;
@@ -137,7 +140,9 @@ const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
     .concat([run(794, false, null, 0, 0.2)])
     // 三十一层可选首领：HP≤20%（第 3 页对话＋1397）；瑞丁 818 HP≤10%（第 3 页）与 HP≤5%（预置第 3 页已执行，第 4 页变身 938＋1399）
     .concat([125, 126, 816, 817, 830, 831].map(id => run(id, false, null, 0, 0.2)))
-    .concat([run(818, false, null, 0, 0.1), run(818, false, null, 0, 0.05, [2])])};
+    .concat([run(818, false, null, 0, 0.1), run(818, false, null, 0, 0.05, [2])])
+    // 金之巨人 830 第 20 回合（第 4 页：101 对话＋强制 8203「毁灭」）：回合计数预置 19，跑到第 20 回合
+    .concat([run(830, false, null, 0, 0, null, 19)])};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));

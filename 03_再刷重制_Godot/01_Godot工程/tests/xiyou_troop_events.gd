@@ -83,6 +83,9 @@ func _run() -> void:
 		if c.has("preset"):
 			_preset_case(c)
 			continue
+		if c.has("turnPreset"):
+			_turn_preset_case(c)
+			continue
 		if c.has("hpRate"):
 			for round in range(3):
 				_transform_case(c, round)
@@ -106,6 +109,46 @@ func _preset_case(c: Dictionary) -> void:
 		var want: Dictionary = c.battlers[k]
 		check("troop%d.preset.%s" % [int(c.troop), k], int(e.hp) == int(want.hp) and e.state_ids == Array(want.states).map(func(x): return int(x)),
 			[e.hp, e.state_ids, want])
+
+
+## 回合预置（参照 turnPreset）：回合计数从 N 开始跑下一回合（金之巨人 830 第 20 回合第 4 页：101 对话＋强制 8203「毁灭」，
+## 伤害公式 b.mhp * 2、无浮动、必中，每人 HP 清零）。比较：该回合的对话、强制行动、每名角色的首击伤害与 HP。
+func _turn_preset_case(c: Dictionary) -> void:
+	var name := "troop%d.turn%d" % [int(c.troop), int(c.turnPreset) + 1]
+	var logic := setup(int(c.troop), bool(c.get("paid", false)), 3000)
+	var mhp := {}
+	for a in logic.actors:
+		mhp[key(a, logic)] = a.mhp
+	logic.turn = int(c.turnPreset)
+	var cmds := {}
+	for a in logic.actors:
+		cmds[a] = [XDB.rec("Skills", 1), logic.enemies[0]]
+	var logs := logic.run_turn(cmds)
+	var msgs: Array = logs.filter(func(l): return l.type == "message").map(func(l): return [str(l.msg.face), "\n".join(l.msg.lines)])
+	var want_msgs: Array = c.messages.map(func(m): return [str(m.faceName), "\n".join(m.texts)])
+	check(name + ".messages", msgs == want_msgs, [msgs, want_msgs])
+	var want_forced: Array = c.actions.filter(func(a): return a.subject == "e0" and a.forced).map(func(a): return int(a.skill))
+	var got_forced: Array = logs.filter(func(l): return l.type == "action" and l.user == logic.enemies[0]).map(func(l): return int(l.skill.id))
+	check(name + ".forced", got_forced.slice(0, want_forced.size()) == want_forced, [got_forced, want_forced])
+	for inv in c.invokes:
+		if inv.subject != "e0" or not str(inv.target).begins_with("a"):
+			continue
+		var k := str(inv.target)
+		check(name + ".before_" + k, is_equal_approx(float(mhp[k]), float(inv.hpBefore)), [mhp[k], inv.hpBefore])
+		var hits: Array = logs.filter(func(l): return l.type == "hit" and l.user == logic.enemies[0] and key(l.target, logic) == k)
+		# 「action effect: actors」写了两遍：目标 HP 已空但还没倒下（60% 附加阵亡的掷骰没中）时第二遍再扣一次，
+		# 参照掷骰固定 0.5 必中、只一遍；Godot 掷骰随机，所以只比第一击的伤害与「HP 清零」
+		var want_dealt := 0.0
+		for p in inv.popups:
+			if p.target == k:
+				want_dealt += float(p.hpDamage)
+		check(name + ".damage_" + k, not hits.is_empty() and is_equal_approx(absf(float(hits[0].hp)), want_dealt), [hits.map(func(h): return h.hp), want_dealt])
+		var who: XBattler = null
+		for a in logic.actors:
+			if key(a, logic) == k:
+				who = a
+		check(name + ".after_" + k, who != null and who.hp == float(inv.hpAfter), [who.hp if who else null, inv.hpAfter])
+	check(name + ".skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
 
 
 ## 开战前敌人 0 的 HP 设为上限的 hpRate（向下取整），跑开战检查与两回合。比较：开战时的对话（文字与脸图）、变身后的敌人编号与
