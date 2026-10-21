@@ -106,6 +106,7 @@ if python3 "$ENV_DIR/测试转换器写入.py"; then ok "转换器增量写入�
 if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi
 if python3 "$ENV_DIR/测试云端准备.py"; then ok "云端导入失败保护"; else bad "云端导入保护回归失败"; fi
 if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi
+if python3 "$ENV_DIR/测试角色同步提速.py" >/dev/null 2>&1; then ok "扩角色同步提速（缓存携带、手动种子隔离、六难度共用并发池）"; else bad "扩角色同步提速回归失败，单跑 07_开发环境/测试角色同步提速.py 看详情"; fi
 # 内容覆盖（沙僧协助计划第 8 项）：缺素材／无效引用／未翻译不得出现基线外的新问题；修好或接受后 --update-baseline
 if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/内容覆盖检查.py" --check; then ok "内容覆盖（无基线外新问题）"; else bad "内容覆盖出现新问题，见 04_验证/本地结果/内容覆盖/报告.json"; fi
 
