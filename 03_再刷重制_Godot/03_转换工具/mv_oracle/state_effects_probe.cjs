@@ -86,7 +86,7 @@ function runAction(bm, user, skillId, targetIndex, extra) {
 }
 // 只保留 fx 与和测试相关的边界，去掉大量无关 refresh（只留紧邻 fx 的）
 function trim(log) { return log; }
-function capture(fn) { LOG = []; try { fn(); } finally { const out = LOG; LOG = null; return out; } }
+function capture(fn) { const out = LOG = []; try { fn(); } finally { LOG = null; } return out; }
 const cases = [];
 cases.push(makeCase('fixture', {T, T2, EXPIRE, MRF, CNT, EVA}, () => ({types: TYPES, states: [T, T2, EXPIRE, MRF, CNT, EVA].map(id => ({id, name: w.$dataStates[id].name,
   traits: w.$dataStates[id].traits, autoRemovalTiming: w.$dataStates[id].autoRemovalTiming, slots: Object.keys(w.$dataStates[id].customEffectEval).filter(k => w.$dataStates[id].customEffectEval[k] !== '')}))})));

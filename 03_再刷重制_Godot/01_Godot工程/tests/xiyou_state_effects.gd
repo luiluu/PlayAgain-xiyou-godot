@@ -54,7 +54,7 @@ func _observe(logic: XBattleLogic) -> void:
 		trace.append(row)
 
 
-## 参照序列：只留第一期 phase 的 fx 行，换成 Godot 名；Action 版带 [a, b]。热缓存行（该持有者已 remove 该状态后又触发）单列
+## 参照序列：fx 行换成 Godot phase 名；Action 版带 [a, b]。热缓存行（持有者已 remove 该状态后又触发）单列
 func _want(o: Dictionary) -> Dictionary:
 	var rows := []
 	var stale := []
@@ -248,7 +248,7 @@ func _lifecycle(cases: Dictionary) -> void:
 				return
 			rows.append([phase, sid, _key(holder, logic), _key(ctx.origin, logic), holder.is_state_affected(sid)])
 			if sid == T and stage[0] == "nested add" and phase == "apply":
-				h.add_state(T2)  # FIX rejects even another battler's nested add
+				h.add_state(T2)  # FIX rejects nested add
 			if sid == T and stage[0] == "nested leave" and phase == "remove":
 				h.remove_state(T2)  # inherits the outer natural-expiry scope
 		h.add_state(T)
