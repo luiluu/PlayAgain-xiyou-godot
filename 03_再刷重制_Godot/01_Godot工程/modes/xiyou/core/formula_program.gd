@@ -151,6 +151,9 @@ func _expr(n: Dictionary):
 		"gain":
 			var amount := _number(_expr(n.amount))
 			return _gain(str(n.receiver), str(n.resource), amount) if _error.is_empty() else UNDEFINED
+		"shield":
+			var amount := _number(_expr(n.amount))
+			return _add_shield(str(n.receiver), amount) if _error.is_empty() else UNDEFINED
 		"math": return _math(n)
 	return _fail("unknown_expression")
 
@@ -161,6 +164,9 @@ func _property(receiver: String, name: String):
 	return _row(receiver).get("properties", {}).get(name, UNDEFINED)
 
 func _gain(_receiver: String, _resource: String, _amount: float):
+	return _fail("write_capability_required")
+
+func _add_shield(_receiver: String, _amount: float):
 	return _fail("write_capability_required")
 
 func _read(n: Dictionary):

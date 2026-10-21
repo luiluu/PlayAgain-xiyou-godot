@@ -504,6 +504,7 @@ func end_turn() -> Array:
 		if b.is_alive():
 			_tick_states(b, 2)
 			_regenerate(b, logs)
+		b.decay_shield()  # ShieldSystem 包在 regenerateAll 最外层，倒下的也衰减
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs
@@ -1173,6 +1174,8 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		var value := _damage_value(u, skill, t, r.critical)
 		if [1, 3, 5].has(type) and troop_id > 0:
 			value = XZhenqi.hp_damage(t, value)  # executeHpDamage：我方受伤时护法减伤、元婴护体（只在战斗中）
+		if [1, 3, 5].has(type):
+			value = t.absorb_shield(value)  # ShieldSystem executeHpDamage（在真气之内、吸取取 min 之前）
 		_action_resources.result(t).success = true
 		match type:
 			1, 3:
@@ -1370,6 +1373,9 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 	var dh := floorf(b.mhp * b.hrg)
 	var dm := floorf(b.mmp * b.mrg)
 	if dh != 0.0:
+		if dh < 0.0 and b.shield > 0.0:
+			# regenerateHp：先按 maxSlipDamage 夹到 hp−1，再经 ShieldSystem gainHp 吸收、减半
+			dh = -b.absorb_shield(minf(-dh, maxf(b.hp - 1.0, 0.0)))
 		b.hp = clampf(b.hp + dh, 1.0, b.mhp) if dh < 0.0 else minf(b.mhp, b.hp + dh)
 		logs.append({"type": "regen", "target": b, "hp": -dh, "views": views([b])})
 	if dm != 0.0:
@@ -1522,7 +1528,11 @@ func end_battle() -> void:
 	_clear_event_cursor()
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
+	# ShieldSystem Scene_Battle.terminate：全队与敌群护盾清零
+	for e in enemies:
+		e.shield = 0.0
 	for b in state.members():
+		b.shield = 0.0
 		b.immortal = false
 		b.guarding = false
 		b.buffs.fill(0)
