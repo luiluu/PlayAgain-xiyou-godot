@@ -100,6 +100,13 @@ func _gain(receiver: String, resource: String, amount: float):
 		return _fail(resources.error)
 	return UNDEFINED
 
+## ShieldSystem addShield：返回 undefined（公式通常写 x.addShield(...); 0）
+func _add_shield(receiver: String, amount: float):
+	if not _error.is_empty():
+		return UNDEFINED
+	resources.add_shield(_battlers[receiver], amount)
+	return _fail(resources.error) if not resources.error.is_empty() else UNDEFINED
+
 func _math(node: Dictionary):
 	if node.name == "random" and _random != null:
 		_draws += 1

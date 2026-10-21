@@ -37,6 +37,7 @@ KEYS = {
     'wtype.json': {'cases': ('actor', 'variant', 'weapon', 'skill')},
     'dual_wield.json': {'flows': ('name',), 'inits': ('actor', 'ids'), 'setups': ('actor',)},
     'magic_weapon.json': {'cases': ('name',)},
+    'custom_params.json': {'cases': ('name',)},
     'help_cards.json': {k: ('id',) for k in ['skills', 'items', 'weapons', 'armors']},
 }
 

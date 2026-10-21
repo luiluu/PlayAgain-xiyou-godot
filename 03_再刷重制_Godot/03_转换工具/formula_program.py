@@ -3,7 +3,7 @@ import hashlib
 import re
 
 VERSION = 1
-PROPERTIES = set('hp mp tp mhp mmp atk def mat mdf agi luk level hit eva cri cev mev mrf cnt hrg mrg trg tgr grd rec pha mcr tcr pdr mdr fdr exr'.split())
+PROPERTIES = set('hp mp tp mhp mmp atk def mat mdf agi luk level hit eva cri cev mev mrf cnt hrg mrg trg tgr grd rec pha mcr tcr pdr mdr fdr exr shield'.split())
 METHODS = {'elementRate': (1, 'element'), 'skillMasteryLevel': (1, 'mastery'),
            'isStateAffected': (1, 'has_state'), 'maxTp': (0, 'max_tp'),
            'hpRate': (0, 'hp_rate'), 'mpRate': (0, 'mp_rate'), 'actorId': (0, 'actor_id'),
@@ -303,7 +303,11 @@ class Compiler:
                 self.caps.add('write.' + resource)
                 return out('gain', receiver=ALIASES[owner], resource=resource, amount=self.lower(args[0]))
             if owner in ALIASES and method == 'addShield':
-                raise Unsupported('shield_runtime_pending', pos)
+                # ShieldSystem Game_Battler.addShield(value)：返回 undefined
+                if len(args) != 1:
+                    raise Unsupported('invalid_arity:' + method, pos)
+                self.caps.add('write.shield')
+                return out('shield', receiver=ALIASES[owner], amount=self.lower(args[0]))
             raise Unsupported('unsupported_call:' + owner + '.' + method, pos)
         if op in ('declare', 'assign'):
             if n['name'] not in self.locals:

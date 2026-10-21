@@ -70,6 +70,7 @@ PROBES = [
     (['wtype_probe.cjs'], ['wtype.json']),
     (['dual_wield_probe.cjs'], ['dual_wield.json']),
     (['magic_weapon_probe.cjs'], ['magic_weapon.json']),
+    (['custom_params_probe.cjs'], ['custom_params.json']),
     (['shop_buy_probe.cjs'], ['shop_buy.json']),
     (['settlement_probe.cjs'], ['settlement.json']),
     (['item_marks_probe.cjs'], ['item_marks.json']),
@@ -88,6 +89,7 @@ PROBES = [
     (['global_vars_probe.cjs'], ['global_vars.json']),
     (['actor_passive_probe.cjs'], ['actor_passive.json']),
     (['achievement_probe.cjs'], ['achievements.json']),
+    (['shield_probe.cjs'], ['shield.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
 

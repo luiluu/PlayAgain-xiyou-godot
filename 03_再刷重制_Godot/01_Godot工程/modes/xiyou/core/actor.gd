@@ -388,6 +388,26 @@ func param_plus(i: int) -> float:
 			for m in passive_values(tag):
 				v += _param_boost(p, m)
 		v += magic_param(e, i)
+		v += custom_param(e, i)
+	return v
+
+## YEP_EquipCore evalParamPlus：<Custom Parameters> 由转换器解析成每项能力的 常数 + 等级系数 × 等级 + Σ 变量系数 × v[编号]，
+## 每次按当前等级与变量求值；不受 passiveWPNM／ARMM 放大（那只看 item.params）。原件按数据库基础编号取（实例复制原件的 parameterEval）。
+static var _custom_param_cache := {}
+func custom_param(e: Dictionary, i: int) -> float:
+	var kind := str(e.get("kind", ""))
+	var base := int(e.get("base", e.get("id", 0)))
+	var key := kind + ":" + str(base)
+	if not _custom_param_cache.has(key):
+		var rec := XDB.rec("Weapons" if kind == "weapon" else "Armors", base)
+		_custom_param_cache[key] = (rec if not rec.is_empty() else e).get("customParams", {}).get("params", [])
+	var terms: Array = _custom_param_cache[key]
+	if terms.is_empty():
+		return 0.0
+	var t: Dictionary = terms[i]
+	var v := float(t.k) + float(t.level) * _lv
+	for vid in t.vars:
+		v += float(t.vars[vid]) * (XState.current.variable(int(vid)) if XState.current else 0.0)
 	return v
 
 ## CP_MagicWeapon paramPlus：法宝加 等级 × 每级成长；成长在载入时从数据库原件备注解析一次（实例复制原件的 paramPlusPerLevel），

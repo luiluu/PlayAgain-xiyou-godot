@@ -77,7 +77,13 @@ static func template(kind: String, id: int) -> Dictionary:
 	item["boostCount"] = 0
 	item["upgrades"] = []
 	item["baseName"] = str(item.name)
+	_apply_note_params(item)
 	return item
+
+## YEP_CoreEngine 备注参数（<atk: +20> 等）覆盖基础值；初始装备不掷浮动，但这一步照做（天虎令的布丁 atk／mat 20 而非数据库 25）。
+static func _apply_note_params(item: Dictionary) -> void:
+	for m in RegEx.create_from_string("(?i)<(HP|MAXHP|MAX HP|MHP|MP|MAXMP|MAX MP|MMP|ATK|STR|DEF|MAT|INT|SPI|MDF|RES|AGI|SPD|LUK):\\s*([+-]\\d+)>").search_all(str(item.note)):
+		item.params[param_id(m.get_string(1))] = int(m.get_string(2))
 
 static func create(kind: String, id: int, owner: XState = null) -> Dictionary:
 	var item := template(kind, id)
@@ -103,9 +109,7 @@ static func create(kind: String, id: int, owner: XState = null) -> Dictionary:
 			item.affixIds.append({"table":table,"id":affix_id,"kind":row.kind})
 			break
 	# YEP_CoreEngine 备注参数覆盖合并值；原版处理完这些标签才掷属性浮动。
-	for m in RegEx.create_from_string("(?i)<(HP|MAXHP|MAX HP|MHP|MP|MAXMP|MAX MP|MMP|ATK|STR|DEF|MAT|INT|SPI|MDF|RES|AGI|SPD|LUK):\\s*([+-]\\d+)>").search_all(str(item.note)):
-		var p := param_id(m.get_string(1))
-		item.params[p] = int(m.get_string(2))
+	_apply_note_params(item)
 	var variance := int(item.get("meta", {}).get("Random Variance", definition.get("variance",0)))
 	_pool_enter(false, owner)             # ItemManager.randomizeInitialStats
 	for i in range(8):

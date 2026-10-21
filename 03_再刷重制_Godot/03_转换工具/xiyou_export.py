@@ -23,7 +23,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOOL_VERSION = 19
+TOOL_VERSION = 20
 HERE = Path(__file__).resolve().parent
 # 用户 2026-10-15：重制期间冻结在 v0.28 的只读副本（不入 Git，见 02_内容与素材/冻结正式源/README.md），重制完成后再统一同步正式版
 DEFAULT_APP = Path('/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw')
@@ -459,13 +459,18 @@ class Exporter:
                 if not rec: continue
                 if table != 'Items':
                     rec['equipment'] = equipment_rules.definition(rec, enabled['YEP_X_ItemUpgradeSlots'])
+                    custom = equipment_rules.custom_params(rec)
+                    if custom:
+                        rec['customParams'] = custom
+                        if 'unsupported' in custom:
+                            issues.append({'table':table,'id':rec['id'],'customParams':custom['unsupported']})
                 if table == 'Items':
                     rule = equipment_rules.upgrade(rec)
                     if rule['weapon'] or rule['armor'] or rule['issues']:
                         rec['upgrade'] = rule
                         issues += [{'table':table,'id':rec['id'],'line':line} for line in rule['issues']]
             self.write_json('db/%s.json' % table,self.db[table])
-        self.issues += [{'unsupportedUpgrade':r} for r in issues]
+        self.issues += [{'unsupportedCustomParams' if 'customParams' in r else 'unsupportedUpgrade':r} for r in issues]
 
     # ---- 切片引用收集 ----
     def ref_img(self, folder, name):

@@ -26,7 +26,8 @@ for(const [kind,db] of [['weapon',w.$dataWeapons],['armor',w.$dataArmors]]){
   for(let id=1;id<db.length;id++){const o=db[id];if(!o||!o.name)continue;
     for(const k of keys(o))if(!seen[k]){seen[k]=true;want(kind,id,k);}}
 }
-for(const aid of SLICE.actors){const a=w.$dataActors[aid];if(!a)continue;
+// 104 天虎令后加入切片：排在最后认领，免得与 130 共用的装备（5200）改标签、动既有用例键
+for(const aid of [...SLICE.actors.filter(x=>x!==104),...SLICE.actors.filter(x=>x===104)]){const a=w.$dataActors[aid];if(!a)continue;
   (a.equips||[]).forEach((id,slot)=>{if(id>0)want(slot===0?'weapon':'armor',id,'actor'+aid);});}
 const gear=[];
 for(const c of picked.values()){

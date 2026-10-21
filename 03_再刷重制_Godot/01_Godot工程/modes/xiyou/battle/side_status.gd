@@ -4,6 +4,8 @@ extends Control
 ## - 窗口 (1280−200, 序号×121, 296, 121)，不透明度 0，内边距 0；内容是暗底：左 74px 由透明渐变到黑 0.6，其余黑 0.6。
 ## - 子窗口（缩放 0.6：字号 16、行高 22、文字边距 4）：名字 (0,6)；HP (8,28)、MP (16,50)、TP (24,72)，量条宽 160、高 6；
 ##   名字按 HP 颜色（濒危黄、死亡红）；HP/MP 为 YEP drawCurrentAndMax「当前/最大」，TP 只显示数值。
+## - 护盾（ShieldSystem 钩 Window_BattleSideHP.refresh）：护盾大于 0 时，在 HP 条上按 max(生命上限, HP＋护盾) 折算，
+##   从 HP 位置到 HP＋护盾位置叠一段蓝色 rgba(0,136,255,0.7)（高 6，贴行底）；HP 字样右侧 6px 写「盾＋数值」（12 号、#88ccff，万／亿／兆…一位小数）。
 ## - 状态格（installEquipmentStatusRuntime）：(−36, 20) 36×36，有图标状态时每 1.4 秒轮换显示一个，否则深色方块里写「i」。
 ## - 轮到输入或正在行动的角色左移 48，被选为目标时左移 24，每帧移动 4px。
 
@@ -89,6 +91,7 @@ func _paint(c: XMVCanvas) -> void:
 	# HP / MP / TP
 	var v := _v()
 	_param(c, ox + 8 + PAD, 28, "HP", v.hp, v.mhp, XUI.GAUGES.hp, _hp_color(), true)
+	_shield(c, ox + 8 + PAD, 28, v)
 	_param(c, ox + 16 + PAD, 50, "MP", v.mp, v.mmp, XUI.GAUGES.mp, XUI.TEXT, true)
 	_param(c, ox + 24 + PAD, 72, "TP", v.tp, v.mtp, XUI.GAUGES.tp, XUI.TEXT, false)
 
@@ -96,7 +99,31 @@ func _paint(c: XMVCanvas) -> void:
 func _v() -> Dictionary:
 	if not view.is_empty():
 		return view
-	return {"hp": actor.hp, "mhp": actor.mhp, "mp": actor.mp, "mmp": actor.mmp, "tp": actor.tp, "mtp": actor.max_tp(), "dead": actor.is_dead()}
+	return {"hp": actor.hp, "mhp": actor.mhp, "mp": actor.mp, "mmp": actor.mmp, "tp": actor.tp, "mtp": actor.max_tp(), "dead": actor.is_dead(),
+		"shield": actor.shield}
+
+
+func _shield(c: XMVCanvas, x: float, y: float, v: Dictionary) -> void:
+	var s := float(v.get("shield", 0.0))
+	if s <= 0.0:
+		return
+	var mx := maxf(maxf(v.mhp, v.hp + s), 1.0)
+	var start := floorf(x + GAUGE_W * minf(v.hp / mx, 1.0))
+	var end := floorf(x + GAUGE_W * minf((v.hp + s) / mx, 1.0))
+	if end > start:
+		c.draw_rect(Rect2(start, y + LH - 6.0, end - start, 6.0), Color8(0, 136, 255, 179))
+	var label := "盾" + shield_text(s)
+	c.text(label, x + c.text_width("HP", FS) + 6.0, y, c.text_width(label, 12) + 4.0, "left", Color.html("#88ccff"), 12, LH)
+
+
+## formatShieldText：一万起按 万／亿／兆／京／垓／秭／穰／沟／涧／正／载 取一位小数，以下取整
+static func shield_text(value: float) -> String:
+	const UNITS := [[1e44, "载"], [1e40, "正"], [1e36, "涧"], [1e32, "沟"], [1e28, "穰"], [1e24, "秭"], [1e20, "垓"],
+		[1e16, "京"], [1e12, "兆"], [1e8, "亿"], [1e4, "万"]]
+	for u in UNITS:
+		if value >= u[0]:
+			return "%.1f%s" % [value / u[0], u[1]]
+	return str(int(floorf(value)))
 
 
 func _param(c: XMVCanvas, x: float, y: float, label: String, cur: float, mx: float, colors: Array, color: Color, with_max: bool) -> void:

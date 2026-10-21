@@ -1,7 +1,7 @@
 class_name XFormulaContext
 extends RefCounted
 ## Trusted adapter: expressions only see detached dictionaries, never battler methods.
-const PROPERTIES := "hp mp tp mhp mmp atk def mat mdf agi luk level hit eva cri cev mev mrf cnt hrg mrg trg tgr grd rec pha mcr tcr pdr mdr fdr exr"
+const PROPERTIES := "hp mp tp mhp mmp atk def mat mdf agi luk level hit eva cri cev mev mrf cnt hrg mrg trg tgr grd rec pha mcr tcr pdr mdr fdr exr shield"
 
 static var _plans := {}
 
@@ -68,7 +68,7 @@ static func clone_battler(b: XBattler) -> XBattler:
 	# getters share that flag, so exclude the read-only parameter facade explicitly.
 	var out: XBattler = b.get_script().new()
 	for property in b.get_property_list():
-		if int(property.usage) & PROPERTY_USAGE_SCRIPT_VARIABLE and (not str(property.name) in PROPERTIES.split(" ") or str(property.name) in ["hp", "mp", "tp"]):
+		if int(property.usage) & PROPERTY_USAGE_SCRIPT_VARIABLE and (not str(property.name) in PROPERTIES.split(" ") or str(property.name) in ["hp", "mp", "tp", "shield"]):
 			var value = b.get(property.name)
 			if not XFormulaProgram._detached(value):
 				return null
