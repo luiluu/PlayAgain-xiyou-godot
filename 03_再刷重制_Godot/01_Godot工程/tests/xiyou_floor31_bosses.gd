@@ -2,11 +2,13 @@ extends Node
 ## 三十一层（Map148 德颜天）的可选首领与副本协会主席：事件在大厅门之外没有页条件，站在三十一层直接按事件。
 ## 每位首领：选「我已经做好准备」（选项 0）→ 公共事件 1387 换战斗背景 → 战斗 → 战后变量记 1（时之恶魔 1111、暗夜哥布林 1107、奇异兽 1108……）。
 ## 战斗只查流程：开战后直接击倒敌人（数值与敌群事件由 xiyou_troop_events 对照）。「离开」（选项 1）不开战。
+## 龙之祖（8）战后全员学 5565；瑞丁（6，要先过龙之祖）战后变量 206 加 20000、人道意志碎片 2530 +100、变量 1115 记 1。
 ## 副本协会主席（9）是没有分支的战斗事件（敌群 661）。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const FLOOR_MAP := 148
 ## 事件号 → [敌群, 战后置 1 的变量（0＝无）]
-const BOSSES := {2: [125, 1111], 3: [816, 1107], 13: [817, 1108], 9: [661, 0]}
+## 龙之祖（8）要先于瑞丁（6，页条件：变量 1109≥1）；神·金之巨人（1）1112、怨之脑·魇之眼（4）1113。
+const BOSSES := {2: [125, 1111], 3: [816, 1107], 13: [817, 1108], 9: [661, 0], 8: [126, 1109], 6: [818, 1115], 1: [830, 1112], 4: [831, 1113]}
 const TIMEOUT_MS := 90000
 
 var results: Array = []
@@ -109,6 +111,11 @@ func _run() -> void:
 		_finish()
 		return
 	var map: XMapScene = _scene()
+	var v206 := s.variable(206)
+	# 瑞丁要先过龙之祖：未过时只说话、不开战
+	var before_ruiding := battles.size()
+	await _run_event(map, 6, [0])
+	_check("ev6_locked_before_dragon", battles.size() == before_ruiding, battles.size() - before_ruiding)
 	for ev in BOSSES:
 		var troop: int = BOSSES[ev][0]
 		var flag_var: int = BOSSES[ev][1]
@@ -122,6 +129,10 @@ func _run() -> void:
 		_check("ev%d_battle_won" % ev, battles.size() == b0 + 1 and battles[-1].troop == troop and battles[-1].result == 0, battles.slice(b0))
 		if flag_var > 0:
 			_check("ev%d_flag" % ev, s.variable(flag_var) == 1, s.variable(flag_var))
+		if ev == 8:
+			_check("ev8_dragon_skill", s.members().all(func(a): return a.skill_ids.has(5565)), s.members().map(func(a): return a.skill_ids.has(5565)))
+		if ev == 6:
+			_check("ev6_rewards", s.variable(206) == v206 + 20000 and s.item_count(2530) == 100, [s.variable(206) - v206, s.item_count(2530)])
 		map = _scene()
 		_check("ev%d_back_on_floor" % ev, map is XMapScene and map.map_id == FLOOR_MAP, map.map_id if map is XMapScene else null)
 	_check("battleback_changed", map.battleback_override == ["DemonicWorld", "DemonCastle2"], map.battleback_override)
