@@ -86,6 +86,36 @@ func icon(index: int, x: float, y: float, alpha := 1.0, size := 32.0) -> void:
 			draw_texture_rect(t, Rect2(x, y, size, size), false, Color(1, 1, 1, alpha))
 
 
+## 成就专用徽章（img/codex_achievements/<file>.png，256²）缩到 size×size；图没导出时不画（见 XAchievementBadge）
+func badge(file: String, x: float, y: float, size: float, alpha := 1.0) -> void:
+	var p := XDB.img_path("codex_achievements", file)
+	if p == "":
+		return
+	if not _cache.has(p):
+		_cache[p] = load(p)
+	var tex: Texture2D = _cache[p]
+	if tex == null:
+		return
+	draw_texture_rect(tex, Rect2(x, y, size, size), false, Color(1, 1, 1, alpha))
+
+
+func fill_rect(r: Rect2, color: Color) -> void:
+	draw_rect(r, color)
+
+
+## 渐变描边字（成就 142 名字）：外圈阴影色、描边色、中间渐变色填充近似（参数见 XAchievementBadge.name_plan）
+func gradient_text(plan: Dictionary) -> void:
+	var s := str(plan.text)
+	var size := int(plan.size)
+	var pos := Vector2(roundf(float(plan.x)), roundf(float(plan.baseline)))
+	var shadow := Color(str(plan.shadow), 0.6)
+	var mid := Color(str(plan.stops[1][1]))
+	draw_string_outline(font, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, int(float(plan.lineWidth) + float(plan.shadowBlur)), shadow)
+	draw_string_outline(font, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, int(float(plan.lineWidth)), Color(str(plan.stroke)))
+	# 填充：用渐变中间色近似（Godot 画布没有逐字渐变）
+	draw_string(font, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, mid)
+
+
 ## Window_Base.drawFace(faceName, faceIndex, x, y, width, height)
 func face(face_name: String, index: int, x: float, y: float, w := 144.0, h := 144.0, alpha := 1.0) -> void:
 	var p := XDB.img_path("faces", face_name) if face_name != "" else ""

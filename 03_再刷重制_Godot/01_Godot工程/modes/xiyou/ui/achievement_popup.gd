@@ -53,15 +53,25 @@ static func show_for(d: Dictionary) -> void:
 			break
 		y += HEIGHT + GAP
 	pop.base_y = y
-	pop.position = Vector2((SCREEN.x - WIDTH - GAP) / 2.0, y)
+	pop.position = Vector2((SCREEN.x - pop.plan_width() - GAP) / 2.0, y)
 	layer.add_child(pop)
 	_stack.append(pop)
 	_stack.sort_custom(func(a, b): return a.position.y < b.position.y)
 	XSound.play(str(st.get("Popup Sound", "")), 90, 100)
 
 
+## 142／143 的专用弹窗（XAchievementBadge.popup_plan）；其余成就为空
+func plan() -> Dictionary:
+	return XAchievementBadge.popup_plan(int(item.get("id", -1)), WIDTH, HEIGHT)
+
+
+func plan_width() -> float:
+	var p := plan()
+	return float(p.width) if not p.is_empty() else WIDTH
+
+
 func _ready() -> void:
-	size = Vector2(WIDTH, HEIGHT)
+	size = Vector2(plan_width(), HEIGHT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	win = XMVWindow.make(self, Rect2(Vector2.ZERO, size), 255, _paint)
 	win.padding = 0.0
@@ -72,6 +82,9 @@ func _ready() -> void:
 func _apply(a: float) -> void:
 	var mback := is_inside_tree() and not get_tree().get_nodes_in_group(MBACK_GROUP).filter(func(n): return n.is_visible_in_tree()).is_empty()
 	var o := XUI.MENU_WINDOW_OPACITY if mback else roundi(255 * a)
+	var pl := plan()
+	if not pl.is_empty() and int(pl.opacity) >= 0:
+		o = int(pl.opacity)   # kyo专属：窗口不透明度 0（只剩内容渐变）
 	if win.opacity != o:
 		win.opacity = o
 		win.queue_redraw()
@@ -79,6 +92,15 @@ func _apply(a: float) -> void:
 
 
 func _paint(c: XMVCanvas) -> void:
+	var pl := plan()
+	if not pl.is_empty():
+		for op in pl.ops:
+			XAchievementBadge.paint_op(c, op)
+		if bool(pl.message):
+			c.text(str(XAchievementPopup.settings().get("Popup Message", "")), 50, 29, WIDTH - 60, "left", XUI.TEXT, 12, 12)
+		for op in pl.get("after", []):
+			XAchievementBadge.paint_op(c, op)
+		return
 	c.icon(int(item.get("icon", 0)), 10, 10)
 	c.text(str(item.get("name", "")), 50, 5, WIDTH - 50, "left", XUI.text_color(1), 16, 24)
 	c.text(str(XAchievementPopup.settings().get("Popup Message", "")), 50, 29, WIDTH - 60, "left", XUI.TEXT, 12, 12)
