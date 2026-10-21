@@ -13,7 +13,11 @@ const GUARDS := [3, 4, 5, 6]   # 敌群 169／170／167／168
 const BOSS_EVENT := 2
 const BOSS_LINE := "很久没有打的这么尽兴了"
 const STUN := 29   # 眩晕（行动限制 4：不能行动）
-const TIMEOUT_MS := 90000
+## 各段等待上限（墙钟）。原 90 秒在多车道满负载并行时不够（单跑全程约 51 秒，首领战占一半），放宽到 300 秒，仍在单场 600 秒上限内
+const TIMEOUT_MS := 300000
+## 眩晕的剩余回合直接拉满：它本是回合末自动解除（1 回合），测试按渲染帧补；战斗主循环按物理帧推进，负载高时一渲染帧可跑多达 8 个物理帧，
+## 回合末解除后到下回合角色出手之间可能来不及补，队伍提前打死首领、到不了第 4 回合。拉满后不再依赖补的时机。
+const STUN_TURNS := 999999
 
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result, turn}
@@ -126,16 +130,19 @@ func _run_event(map: XMapScene, id: int, answers: Array, watch_boss := false) ->
 						for a in b.logic.actors:
 							a.remove_state(STUN)
 				elif not boosted:
-					# 变身之前队伍一直眩晕不能行动（每帧补上，回合末会自动解除），保证打到第 4 回合
+					# 变身之前队伍一直眩晕不能行动（剩余回合拉满，回合末不会解除），保证打到第 4 回合
 					for a in b.logic.actors:
-						if a.is_alive():
+						if a.is_alive() and not a.is_state_affected(STUN):
 							a.add_state(STUN)
+						if a.is_state_affected(STUN):
+							a.state_turns[STUN] = STUN_TURNS
 		await get_tree().process_frame
 	return info
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_floor16_dungeon"
+	# 各工作树共用同一 user://（工程名相同），按进程分目录，免得同时跑的另一份删掉本份的存档／设置
+	XSave.dir_override = "user://test_xiyou_floor16_dungeon_%d" % OS.get_process_id()
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
