@@ -21,6 +21,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -714,6 +715,16 @@ class Exporter:
         self.transfer_enemies = sorted(enemies)
 
     def copy_assets(self):
+        def as_png(src, data):
+            # 原版有扩展名是 .png、内容是 JPEG／WebP 的图（如 162 诛仙的 小诛仙、guanxi7_1），NW.js 按内容解码，
+            # Godot 按扩展名导入会报 Not a PNG file；这类图用 sips 转成真 PNG（结果可重复），其余原样
+            if data.startswith(b'\x89PNG\r\n\x1a\n'):
+                return data
+            with tempfile.TemporaryDirectory(prefix='xiyou-png-') as tmp:
+                out = Path(tmp) / 'out.png'
+                subprocess.run(['sips', '-s', 'format', 'png', str(src), '--out', str(out)], check=True, capture_output=True)
+                return out.read_bytes()
+
         def find(base, rel, exts):
             for ext in exts:
                 p = self.app / base / (rel + ext)
@@ -727,10 +738,10 @@ class Exporter:
                     self.issues.append({'missingAsset': f'{kind}/{rel}'})
                     continue
                 data = src.read_bytes()
-                self.write_changed(f'{kind}/{rel}{ext}', data, source=src)
-                digest = sha(data)
-                self.inputs[f'{kind}/{rel}{ext}'] = digest
-                self.outputs[f'{kind}/{rel}{ext}'] = digest
+                out = as_png(src, data) if kind == 'img' and ext == '.png' else data
+                self.write_changed(f'{kind}/{rel}{ext}', out, source=src)
+                self.inputs[f'{kind}/{rel}{ext}'] = sha(data)
+                self.outputs[f'{kind}/{rel}{ext}'] = sha(out)
         # 界面字体（原版 fonts/gamefont.css 指向的 GameFont）连同授权文件原样复制
         for name in self.cfg.get('fonts', []):
             src = self.app / 'fonts' / name
