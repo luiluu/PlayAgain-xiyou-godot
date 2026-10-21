@@ -134,6 +134,9 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 			if not bool(XDB.rec("States", sid).get("removeAtBattleEnd", false)):
 				continue
 			a.remove_state(sid)
+	# YEP_BuffsStatesCore Custom Battle Effect：startBattle 里我方（含后备）再敌方逐成员，在 dsPassiveSkill 开战标签加状态之前
+	XStateEffects.run_unit("battle", s.members())
+	XStateEffects.run_unit("battle", enemies)
 	_battle_start_states()
 	# MV Game_Battler.onBattleStart：没有「保留 TP」（特殊旗标 3）时 TP 随机 0～24
 	for b in actors + enemies:
@@ -456,6 +459,7 @@ func start_turn() -> void:
 	# YEP_X_SkillCooldowns：Game_Troop.increaseTurn 时双方冷却/预热各减 1
 	for b in actors + enemies:
 		b.update_cooldowns()
+		XStateEffects.run("turn_start", b)  # Custom Turn Start Effect：onTurnStart 内，Unit.refresh 之前
 		# krz onTurnStart 标 dirty，Game_Unit.onTurnStart 紧接 refresh：本回合起能力值重新读取
 		b.param_mark_dirty()
 		b.param_refresh()
@@ -489,9 +493,16 @@ func act(u: XBattler, skill, target) -> Array:
 	elif skill == null:
 		pass
 	elif int(skill.id) == GUARD_SKILL and not is_item(skill):
+		XStateEffects.run("action_start", u)  # 防御也走 startAction
+		# 防御技能在原版也对自己 Game_Action.apply 一次：initiate／select／deselect／conclude 四段都跑（无伤害段）
+		var gctx := {"attacker": u, "defender": u, "item": skill}
+		XStateEffects.run("initiate", u, gctx)
+		XStateEffects.run("select", u, gctx)
 		u.guarding = true
 		u.param_refresh()  # 防御也是 useItem：付费后 refresh
 		_otb_user_shift(u, skill)
+		XStateEffects.run("deselect", u, gctx)
+		XStateEffects.run("conclude", u, gctx)
 		logs.append({"type": "guard", "user": u})
 	else:
 		logs.append_array(execute(u, skill, target))
@@ -526,6 +537,9 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 		b.param_refresh()
 		_tick_states(b, 2)
 		_regenerate(b, logs)
+	# Custom Regenerate → Custom Turn End（regenerateAll 外层与 onTurnEnd 不看存活，倒下的也跑）
+	XStateEffects.run("regenerate", b)
+	XStateEffects.run("turn_end", b)
 	b.decay_shield()  # ShieldSystem 包在 regenerateAll 最外层，倒下的也衰减
 	b.param_mark_dirty()
 
@@ -1014,6 +1028,7 @@ static func _note_int(rec: Dictionary, tag: String) -> int:
 ## 执行一次行动：消耗、目标、连击、命中、伤害、效果。
 func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false) -> Array:
 	var logs := []
+	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
 	if not forcing and not can_use(u, skill):
 		skill = XDB.rec("Skills", ATTACK_SKILL)
 	if is_item(skill):
@@ -1158,7 +1173,17 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if u != t:
 		_action_resources.labels[t] = "b"
 	_formula_outcome = {}
+	# Game_Action.apply 的 YEP 包装：initiate（行动者）→ select（目标）→ 原 apply → deselect（目标）→ conclude（行动者）；
+	# 未命中也四段齐全；导入平衡禁用的行动在更外层直接返回，不跑
+	var blocked := XImportedBalance.blocks(u, skill)
+	var ctx := {"attacker": u, "defender": t, "item": skill}
+	if not blocked:
+		XStateEffects.run("initiate", u, ctx)
+		XStateEffects.run("select", t, ctx)
 	var r := _apply(u, skill, t)
+	if not blocked:
+		XStateEffects.run("deselect", t, ctx)
+		XStateEffects.run("conclude", u, ctx)
 	var result := _action_resources.result(t)
 	result.missed = r.missed
 	result.evaded = r.evaded
@@ -1602,7 +1627,16 @@ func grant(r: Dictionary) -> Array:
 	return ups
 
 
-func end_battle() -> void:
+## result：0 胜、1 逃、2 败，-1 不跑胜逃败效果（测试夹具等）。
+## Custom Victory／Escape／Defeat Effect 只对我方（含后备），在原 endBattle 之前；胜利时 processVictory 已先 removeBattleStates。
+func end_battle(result := -1) -> void:
+	if result == 0:
+		for b in state.members():
+			for id in b.state_ids.duplicate():
+				if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):
+					b.remove_state(id)
+	if result >= 0 and result <= 2:
+		XStateEffects.run_unit(["victory", "escape", "defeat"][result], state.members())
 	_clear_event_cursor()
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
