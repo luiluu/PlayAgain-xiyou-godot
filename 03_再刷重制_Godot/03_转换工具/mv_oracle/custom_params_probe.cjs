@@ -39,12 +39,13 @@ function snap(a,item,slot,label){
 const cases=[];
 for(const [name,kind,bases] of PICKS){
   const db=kind==='weapon'?w.$dataWeapons:w.$dataArmors;
+  // 挑穿戴者时跳过 104 与导入角色 141～166（多有专属装备；加回切片会改挑他们、搅动既有用例，见八戒_42 交付单）
   // 先挑能正常装上的（装备类型有槽、武器／防具类型与专属允许）；都不能时取有该槽的，直接写进槽位
   let base=0,aid=0,direct=false;
   for(const pass of [0,1]){
     for(const b of bases){
       if(!db[b]||!db[b].parameterEval)throw new Error('没有 Custom Parameters '+kind+b);
-      aid=SLICE_ACTORS.find(id=>{if(id===104)return false;const x=w.$gameActors.actor(id);return x.equipSlots().indexOf(db[b].etypeId)>=0&&(pass||x.canEquip(db[b]));});
+      aid=SLICE_ACTORS.find(id=>{if(id===104||(id>=141&&id<=166))return false;const x=w.$gameActors.actor(id);return x.equipSlots().indexOf(db[b].etypeId)>=0&&(pass||x.canEquip(db[b]));});
       if(aid){base=b;direct=!!pass;break;}
     }
     if(aid)break;
