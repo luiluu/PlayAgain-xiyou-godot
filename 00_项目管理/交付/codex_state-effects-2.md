@@ -18,9 +18,9 @@
 - **行为**：新增状态只发一次 apply；重复附加只续时长，不重复 apply；FIX 全局锁拒绝 apply 内再次 add_state。remove／leave 在状态已移除后触发，来源保留到两段结束，自然到期中的嵌套驱散继承 leave 范围。保留角色既有 remove_state 签名，以 remove_state_auto 专门承接到期，未改角色实现。
 - **KRZ 缓存**：角色与敌人各持有状态效果快照、各 phase 热列表与 dirty。add/remove 结束标脏，param_refresh 消费脏标记时才更新；phase 入口不自动刷新，已移除状态可留在旧热列表中继续触发。battle/胜逃败仍按单位直接列表分发。预览读取已有列表或私下算列表，不热身真实缓存、不调用 observer。
 - **统一旧 op**：damage.gd 的 confirm/react 倍率与 battle_logic.gd 的 establish 参数追加伤害都转给 XStateEffects 同一路径；固定减伤仍夹在 confirm 与 react 之间，respond／establish 在实际伤害结算后。既有额外伤害的资源上下文、记录量和最后弹字约定保留，不双跑。每状态调用使用自己的 user/target/origin/value/critical 与上下文栈。Math.round 走 JS 取整（含负半整数），已有 Math.ceil/floor 次序不改。
-- **先参照后实现**：state_effects_probe 加 actor/enemy 生命周期（重复／不存在的移除／自然到期／嵌套 add 与 leave／来源保留）及原生 Math.round 边界，原 14 例保持不变。Godot 专项扩成完整 action 四段＋伤害四段，并把原先“热缓存差异”改为严格比较；克隆预览不写缓存有专项断言。
+- **先参照后实现**：state_effects_probe 加 actor/enemy 生命周期（重复／不存在的移除／自然到期／嵌套 add 与 leave／来源保留）及原生 Math.round 边界，原 14 例保持不变。日志收集的 finally 只清理、不再 return，原版异常须交给 makeCase 记录，不能吞掉后记作通过。Godot 专项扩成完整 action 四段＋伤害四段，并把原先“热缓存差异”改为严格比较；克隆预览不写缓存有专项断言。
 - **范围与尾巴**：仅迁两个旧 op，没有翻译任何新 js 形状；crit、OTB action_end 按原版不触发；13 个畸形标签漏导、重复同 phase 脚本合槽、状态私有数据／永久参数／公共事件、错误数据与奈叶等留后续分期。转换器本期未改，未把原版报错变成有效效果。2652 的不续时长特例、完整 Reapply Rules 与资源层直接清状态等既有差异不在本小期宣称完成，需后续专门参照，不能据此开放依赖它们的新形状。
-- **验证**：九个相关专项全过：state_effects 60、actor_p0 3124、determinism 372、formula_effects 908、formula_rest 1352、imported_balance 273、rules 124138、shield 565、transform_params 249；本轮 311 秒，无偶发。rules 单场 311 秒超过 300 秒提示，属本机满载，未改工具／角色测试。额外 Establish／记录专项和同步结论收尾补入。
+- **验证**：九个相关专项全过：state_effects 60、actor_p0 3124、determinism 372、formula_effects 908、formula_rest 1352、imported_balance 273、rules 124138、shield 565、transform_params 249；本轮 311 秒，无偶发。rules 单场 311 秒超过 300 秒提示，属本机满载，未改工具／角色测试。额外 drop_record 26/26 通过；troop_events 首次与单独重跑均有同样的两条 Establish 失败，定位为直接 apply 的测试夹具跳过了 drop_record_probe 已明确要求的 refresh。只给此直接依赖的敌群测试补一次 param_refresh，不改原版热缓存规则；修后专项与最终同步结论收尾补入。
 - **维护**：新 shape 必须整块匹配、先有有效源参照；不要把本期诊断过的 js 计作已实现。车道只跑专项，合并后全量由总装统一检查。
 
 ## 交接板
