@@ -24,10 +24,14 @@ var hp := 0.0
 var immortal := false
 ## A resource refresh can leave HP zero while death is resisted/removed in this result.
 var resource_death_blocked := false
-## 冻结源 G_StateParam 的能力值缓存（_baseParamCache）在 336 变身时不清（YEP_EnemyLevels 只清 _cacheBaseParam），
-## 要等 krz_state_re 的 need_refresh（加减状态、回合开始／结束等）后下一次 refresh 才重算。变身后到那之前
-## 334 完全回复按旧形态的 [生命上限, 魔法上限] 回满。enemy_transform 写入，下次 334 用掉，加减状态与回合交界清掉。
-var stale_caps: Array = []
+## krz_state_re 的能力值缓存（Game_Enemy.param 的 _ParamCache2／need_refresh_param，正式版战斗中才用）：开战后读过的格子
+## 一直返回旧值，只有 param_dirty（need_refresh）为真时的下一次刷新（param_refresh）才让八格一起变冷；冷格首次读取才算新值。
+## dirty 与格子有效分开：加减状态、buff、非零 gain、回合开始／结束先标 dirty，当场读取仍旧。336 变身不标 dirty，
+## 所以变身前读过的格子（含生命／魔法上限）留旧形态的值。目前只有敌人启用（XEnemy.param），角色仍每次重算。
+var param_cache_on := false
+var param_dirty := false
+## 8 格，null＝冷格；数值 0 也算命中
+var param_cells: Array = []
 static var _outside_random: XRandomStream
 var mp := 0.0
 var tp := 0.0
@@ -247,7 +251,7 @@ func is_state_affected(id: int) -> bool:
 func add_state(id: int, random: XRandomStream = null) -> void:
 	if XDB.rec("States", id).is_empty():
 		return
-	stale_caps = []
+	var fresh := not state_ids.has(id)
 	if id == XZhenqi.POJIA_STATE:
 		zq_pojia_rate = XZhenqi.pojia_rate()  # 本次行动者有破甲道法时 1−0.5×scale，否则 0.5
 	if id == 1:
@@ -268,6 +272,10 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	var lo := int(s.get("minTurns", 1))
 	var hi := maxi(lo, int(s.get("maxTurns", lo)))
 	state_turns[id] = roll_state_duration(lo, hi, random, str(id))
+	# Game_Battler.addState：新附加的状态 refresh 后由 krz 标 dirty；已有状态（_Fix_StackOverflow 分支）只续回合
+	if fresh:
+		param_refresh()
+		param_mark_dirty()
 
 func roll_state_duration(lo: int, hi: int, random: XRandomStream = null, event_key := "") -> int:
 	if random != null:
@@ -279,13 +287,17 @@ func roll_state_duration(lo: int, hi: int, random: XRandomStream = null, event_k
 	return _outside_random.next_int_inclusive(lo, hi, "state_duration", event_key)
 
 func remove_state(id: int) -> void:
-	stale_caps = []
+	var had := state_ids.has(id)
 	if id == 1 and state_ids.has(id) and hp <= 0.0:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
 	state_ids.erase(id)
 	state_turns.erase(id)
 	if id == XZhenqi.POJIA_STATE:
 		zq_pojia_rate = 0.5
+	# Game_Battler.removeState：有该状态才 refresh；krz 的 Game_Enemy.removeState 之后总标 dirty
+	if had:
+		param_refresh()
+	param_mark_dirty()
 
 func _sort_states() -> void:
 	# MV：按优先级降序，同优先级按 ID 升序
@@ -346,6 +358,44 @@ func param_rate(i: int) -> float:
 
 func param_buff_rate(i: int) -> float:
 	return buffs[i] * 0.25 + 1.0
+
+
+## 开战（Game_Battler.onBattleStart 标 need_refresh，随后 refreshAllBattlers）：启用缓存，八格变冷后截资源读上限
+func param_cache_begin() -> void:
+	param_cache_on = true
+	param_dirty = true
+	param_refresh()
+
+## 战斗结束（inBattle 为假）：不再走缓存
+func param_cache_end() -> void:
+	param_cache_on = false
+	param_dirty = false
+	param_cells = []
+
+func param_mark_dirty() -> void:
+	if param_cache_on:
+		param_dirty = true
+
+## krz Game_Enemy.refresh：need_refresh 为真才让八格变冷，再由原 refresh 截 HP／MP 读上限（生命、魔法上限当场重新填入），最后清 need_refresh。
+## 只做缓存这一层，不截资源；截资源的 refresh 是 XResourceContext.refresh（开头调用本函数）。
+func param_refresh() -> void:
+	if not param_cache_on:
+		return
+	if param_dirty or param_cells.size() != 8:
+		param_cells = [null, null, null, null, null, null, null, null]
+	param_dirty = false
+	param(0)
+	param(1)
+
+## 惰性读格：冷格才用 compute 重算并填入
+func cached_param(i: int, compute: Callable) -> float:
+	if not param_cache_on:
+		return compute.call(i)
+	if param_cells.size() != 8:
+		param_cells = [null, null, null, null, null, null, null, null]
+	if param_cells[i] == null:
+		param_cells[i] = compute.call(i)
+	return param_cells[i]
 
 ## G_StateParam（未装 YEP_BaseParamControl 的分支）：(基础＋加值)×比率×强化率 之后再加状态备注 <G_ShuXing> 的固定值
 func param(i: int) -> float:
@@ -522,14 +572,21 @@ func buff_limit(pid: int, positive: bool) -> int:
 	return clampi(limit, 1, int(p.get("Maximum Limit", "8"))) * (1 if positive else -1)
 
 
-func recover_all() -> void:
+## Game_BattlerBase.clearStates（PermanentState 保留 <Permanent>）：不 refresh、不标 dirty
+func clear_states() -> void:
 	for sid in state_ids.duplicate():
 		if not XResourceContext.permanent(sid):
 			state_ids.erase(sid)
 			state_turns.erase(sid)
+
+
+## Game_BattlerBase.recoverAll：清状态后按（可能是旧缓存的）上限回满，YEP_BattleEngineCore 再 refresh（只消费 dirty，不截资源）
+func recover_all() -> void:
+	clear_states()
 	resource_death_blocked = false
 	hp = mhp
 	mp = mmp
+	param_refresh()
 
 func is_dead() -> bool:
 	return state_ids.has(1) or (hp <= 0.0 and not immortal and not resource_death_blocked and not traits_set(TRAIT_STATE_RESIST).has(1))

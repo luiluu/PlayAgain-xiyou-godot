@@ -93,6 +93,9 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	if old + amount != old:
 		b.set(resource, old + amount)
 		refresh(b)
+	# krz_state_re 的 gainHp／gainMp／gainTp：按请求值非零在调用结束后才标 dirty（本次内部 refresh 仍用旧缓存）
+	if requested != 0.0:
+		b.param_mark_dirty()
 	var after := snapshot(b)
 	var entry := {"receiver": labels.get(b, "b"), "resource": resource, "requestedDelta": requested,
 		"actualDelta": float(b.get(resource)) - old, "before": before, "after": after}
@@ -119,6 +122,7 @@ func silent_gain(b: XBattler, resource: String, amount: float) -> void:
 		refresh(b)
 
 func refresh(b: XBattler) -> void:
+	b.param_refresh()
 	var resisted := b.traits_set(XBattler.TRAIT_STATE_RESIST)
 	for id in b.state_ids.duplicate():
 		if resisted.has(id):

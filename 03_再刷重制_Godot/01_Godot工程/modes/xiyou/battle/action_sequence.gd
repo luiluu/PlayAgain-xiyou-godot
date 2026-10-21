@@ -151,7 +151,9 @@ func _command(name: String, args: Array) -> void:
 			seen.append(t)
 			if on:
 				t.immortal = true
-			elif t.immortal:
+				continue
+			t.param_refresh()  # removeImmortal 对每个目标都 refresh
+			if t.immortal:
 				t.immortal = false
 				if t.hp <= 0.0 and not t.state_ids.has(XBattleLogic.DEATH_STATE):
 					logic._die(t)

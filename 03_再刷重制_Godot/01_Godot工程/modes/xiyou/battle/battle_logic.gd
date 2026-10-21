@@ -139,6 +139,9 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	for b in actors + enemies:
 		b.start_warmups()
 	_escape_ratio = 0.5 * _avg_agi(actors) / maxf(_avg_agi(enemies), 1.0)
+	# BattleManager.startBattle：inBattle 起敌人走 krz 能力值缓存；逃跑率等开战前的读取不留在格子里
+	for e in enemies:
+		e.param_cache_begin()
 
 
 ## dsPassiveSkill Scene_Battle.start：每个出战角色依次处理开战状态标签——自己、随机队友、随机敌人、随机任一目标、
@@ -450,7 +453,9 @@ func start_turn() -> void:
 	# YEP_X_SkillCooldowns：Game_Troop.increaseTurn 时双方冷却/预热各减 1
 	for b in actors + enemies:
 		b.update_cooldowns()
-		b.stale_caps = []
+		# krz onTurnStart 标 dirty，Game_Unit.onTurnStart 紧接 refresh：本回合起能力值重新读取
+		b.param_mark_dirty()
+		b.param_refresh()
 	_make_action_orders()
 
 
@@ -482,6 +487,7 @@ func act(u: XBattler, skill, target) -> Array:
 		pass
 	elif int(skill.id) == GUARD_SKILL and not is_item(skill):
 		u.guarding = true
+		u.param_refresh()  # 防御也是 useItem：付费后 refresh
 		_otb_user_shift(u, skill)
 		logs.append({"type": "guard", "user": u})
 	else:
@@ -499,15 +505,25 @@ func end_turn() -> Array:
 	var before := _movable_snapshot()
 	_acted.clear()
 	for b in actors + enemies:
-		b.guarding = false
-		b.stale_caps = []
-		if b.is_alive():
-			_tick_states(b, 2)
-			_regenerate(b, logs)
-		b.decay_shield()  # ShieldSystem 包在 regenerateAll 最外层，倒下的也衰减
+		turn_end_battler(b, logs)
+	# BattleManager.refreshAllMembers
+	for b in actors + enemies:
+		b.param_refresh()
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs
+
+
+## 单个战斗者的 onTurnEnd。krz 前后各标一次 dirty，中间 regenerateAll 已 refresh（活着时）。
+func turn_end_battler(b: XBattler, logs: Array) -> void:
+	b.guarding = false
+	b.param_mark_dirty()
+	if b.is_alive():
+		b.param_refresh()
+		_tick_states(b, 2)
+		_regenerate(b, logs)
+	b.decay_shield()  # ShieldSystem 包在 regenerateAll 最外层，倒下的也衰减
+	b.param_mark_dirty()
 
 
 ## 无界面测试用：跑完一整个回合。commands: actor -> [技能, 目标]（[null, null] 表示放弃）。
@@ -646,19 +662,14 @@ func _enemy_reading(e: XEnemy) -> Dictionary:
 
 
 ## 334 敌人完全回复（Game_BattlerBase.recoverAll：清状态、HP/MP 回满；TP、buff 不变；隐藏成员也回复，仍隐藏）。
-## 冻结源能力值缓存：回满用的是清状态之前的上限（状态 77 使最大 HP ×0.8 时，清掉后上限回升，HP 停在旧上限），见战斗内事件预检；
-## 336 变身后缓存还没重算时用变身前的上限（stale_caps，玉皇 466 变 538 后 1399 的 334 按 466 的上限回满）。
+## krz 能力值缓存：回满读的是缓存里的上限——状态 77 使最大 HP ×0.8 后已读过上限时，清掉 77 仍按旧上限回满；336 变身后
+## 缓存还没重算时按变身前的上限（玉皇 466 变 538 后 1399 的 334 按 466 的上限回满）。随后的 refresh 才消费此前的 dirty。
 func enemy_recover_all(index: int) -> Array:
 	var out := []
 	for i in _enemy_slots(index):
 		var e: XEnemy = enemies[i]
 		var before := _enemy_reading(e)
-		var old_mhp: float = e.stale_caps[0] if e.stale_caps.size() == 2 else e.mhp
-		var old_mmp: float = e.stale_caps[1] if e.stale_caps.size() == 2 else e.mmp
-		e.stale_caps = []
 		e.recover_all()
-		e.hp = old_mhp
-		e.mp = old_mmp
 		e.refresh_resources(_rule())
 		e.refresh_passive()
 		out.append(_enemy_change("recover", i, before))
@@ -682,8 +693,7 @@ func enemy_appear(index: int) -> Array:
 ## 不重新抽神话、等级，不走开战流程；原名变了就清字母，再 makeUniqueNames。
 ## 本工程敌人在轮到时才决定行动（decide），变身后轮到时自然按新形态选招，不另生成待行动。
 ## 未实现：CodexBossDifficulty 霸体（2651）的形态同步——重制版尚无 Boss 霸体系统。
-## 冻结源能力值缓存不随变身清空：变身前的上限记进 stale_caps，供紧接的 334 用（见 enemy_recover_all）。原版截 HP 也按旧缓存上限，
-## 本版按新上限截；冻结源 11 处 336 的新形态基础生命上限都不低于旧形态，不会因此不同。
+## krz 能力值缓存不随变身清空（变身不标 dirty，内部 refresh 只截资源）：读过的格子留旧形态的值，截 HP 也按缓存上限。
 func enemy_transform(index: int, enemy_id: int) -> Array:
 	var out := []
 	var e := enemy_at(index)
@@ -691,14 +701,12 @@ func enemy_transform(index: int, enemy_id: int) -> Array:
 		return out
 	var before := _enemy_reading(e)
 	var old_name := e.original_name()
-	var caps: Array = e.stale_caps if e.stale_caps.size() == 2 else [e.mhp, e.mmp]
 	e.enemy_id = enemy_id
 	if e.original_name() != old_name:
 		e.letter = ""
 		_letters.erase(e)
 	e.refresh_passive()
 	e.refresh_resources(_rule())
-	e.stale_caps = caps
 	make_unique_names()
 	out.append(_enemy_change("transform", index, before))
 	return out
@@ -1009,6 +1017,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		u.tp -= c.tp
 		u.pay_cooldown(skill)
 		_otb_user_shift(u, skill)
+	u.param_refresh()  # YEP_BattleEngineCore useItem：付费后 refresh，消费行动者此前的 dirty
 	logs.append({"type": "action", "user": u, "skill": skill, "views": views()})
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
@@ -1025,13 +1034,17 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	var repeats := int(skill.get("repeats", 1))
 	if not is_item(skill) and int(skill.id) == ATTACK_SKILL:
 		repeats = floori(repeats + u.attack_times_add())
-	for t in targets_for(u, skill, chosen):
+	var targets := targets_for(u, skill, chosen)
+	for t in targets:
 		for i in range(maxi(1, repeats)):
 			if t.is_dead() and not [9, 10].has(int(skill.scope)):
 				break
 			if u.is_dead():
 				break
 			logs.append_array(mark_views(_invoke(u, skill, t)))
+	# YEP 默认收尾序列 immortal: targets, false → removeImmortal 逐个 refresh
+	for t in targets:
+		t.param_refresh()
 	return logs
 
 
@@ -1296,6 +1309,7 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 				t.buffs[id] = 0
 				t.buff_turns[id] = 0
 				t.refresh_resources(_rule())
+				t.param_mark_dirty()  # krz removeBuff
 		43:
 			if t is XActor:
 				t.learn_skill(int(eff.dataId))
@@ -1324,6 +1338,8 @@ func sequence_gain(t: XBattler, kind: String, value: float) -> void:
 		"TP":
 			t.tp = clampf(t.tp + value, 0.0, t.max_tp())
 	t.refresh_resources(_rule())
+	if value != 0.0:
+		t.param_mark_dirty()  # krz gainHp／gainMp／gainTp
 
 
 ## 行动序列 ADD/REMOVE BUFF/DEBUFF（Game_Battler.addBuff/addDebuff：活着才加，等级 ±2 封顶，回合取较大者；remove 只去同方向）
@@ -1339,6 +1355,8 @@ func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int) -> 
 		t.buffs[pid] = 0
 		t.buff_turns[pid] = 0
 	t.refresh_resources(_rule())
+	if buff or not add:
+		t.param_mark_dirty()  # krz 包了 addBuff／removeBuff，没包 addDebuff
 
 
 ## Game_Action.lukEffectRate：1 + (行动者幸运 − 目标幸运) × 0.001，不低于 0
@@ -1541,6 +1559,7 @@ func end_battle() -> void:
 	# ShieldSystem Scene_Battle.terminate：全队与敌群护盾清零
 	for e in enemies:
 		e.shield = 0.0
+		e.param_cache_end()
 	for b in state.members():
 		b.shield = 0.0
 		b.immortal = false

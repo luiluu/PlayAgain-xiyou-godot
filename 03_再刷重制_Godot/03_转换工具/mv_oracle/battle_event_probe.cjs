@@ -230,6 +230,65 @@ function appearCase(o, variable1178) {
     }
   } finally {restore.reverse().forEach(f => f());}
 }
+// 336 变身能力值缓存（krz_state_re Game_Enemy.param 的 _ParamCache2／need_refresh_param）：敌群 466 的敌人 534→538，
+// 开战后（inBattle）才走缓存。只读原始缓存字段与 dirty，规定的预热／终点才读 2～7 号参数，不用 snap()／enemy()（会读全八项）。
+const PARAM_IDS = [2, 3, 4, 5, 6, 7];
+function cacheBattle() {
+  const bm = setup(466); const e = w.$gameTroop.members()[0];
+  assert.equal(e.enemyId(), 534); bm.startBattle(); assert.equal(w.$gameParty.inBattle(), true); e.clearActions();
+  return e;
+}
+const cacheRaw = e => ({enemyId: e.enemyId(), needRefresh: !!e.need_refresh, dirtyParams: json((e.need_refresh_param || []).slice(0, 8)),
+  cache: json((e._ParamCache2 || []).slice(0, 8)), states: json(e._states), buffs: json(e._buffs), hp: e._hp, mp: e._mp, tp: e._tp});
+const cacheRead = e => ({before: cacheRaw(e), params: PARAM_IDS.map(i => e.param(i))});
+function interpret(list) {
+  const it = new w.Game_Interpreter();
+  it.setup(list.map(([code, parameters]) => ({code, indent: 0, parameters})).concat([{code: 0, indent: 0, parameters: []}]), 0);
+  it.update(); assert.equal(it.isRunning(), false);
+}
+const transform538 = (e, id = 538) => { assert.equal(command(336, [e.index(), id]), true); assert.equal(e.enemyId(), id); };
+function paramCacheCase(o) {
+  o.fixture = {troop: 466, slot: 0, from: 534, to: 538, paramIds: PARAM_IDS, inBattle: true,
+    ops: 'refresh/setHp/setMp/addState/removeState/clearStates/recoverAll/addBuff/addDebuff/removeBuff/onTurnStart/onTurnEnd/gain*/command333/334/336'};
+  o.initialized = cacheRaw(cacheBattle());
+  o.warm = [];
+  for (const warm of [[], ...PARAM_IDS.map(i => [i]), [2, 4, 6], PARAM_IDS]) {
+    const e = cacheBattle(), warmed = warm.map(i => e.param(i)), before = cacheRaw(e);
+    transform538(e); o.warm.push({warm, warmed, before, after: cacheRead(e)});
+  }
+  { const e = cacheBattle(), old = PARAM_IDS.map(i => e.param(i)); transform538(e); const first = cacheRead(e);
+    transform538(e, 534); o.twice = {old, first, second: cacheRead(e)}; }
+  const boundaries = [
+    ['refresh', null, e => e.refresh()], ['setHp', null, e => e.setHp(e._hp - 1)], ['setMp', null, e => e.setMp(e._mp - 1)],
+    ['addState4', null, e => e.addState(4)], ['removeState4', e => e.addState(4), e => e.removeState(4)],
+    ['clearStates', null, e => e.clearStates()], ['clearStates.state77', e => e.addState(77), e => e.clearStates()],
+    ['recoverAll', null, e => e.recoverAll()], ['recoverAll.state77', e => e.addState(77), e => e.recoverAll()],
+    ['addBuff2', null, e => e.addBuff(2, 3)], ['addDebuff2', null, e => e.addDebuff(2, 3)],
+    ['removeBuff2', e => e.addBuff(2, 3), e => e.removeBuff(2)], ['onTurnStart', null, e => e.onTurnStart()],
+    ['onTurnEnd', null, e => e.onTurnEnd()], ['dirtyRefresh', null, e => {e.need_refresh = true; e.refresh();}],
+    ['gainHp-1', null, e => e.gainHp(-1)], ['gainMp-1', null, e => e.gainMp(-1)], ['gainTp1', null, e => e.gainTp(1)],
+    ['gainSilentTp1', null, e => e.gainSilentTp(1)], ['gainHp0', null, e => e.gainHp(0)], ['gainMp0', null, e => e.gainMp(0)],
+    ['gainTp0', null, e => e.gainTp(0)]];
+  o.boundaries = [];
+  for (const [id, prepare, fn] of boundaries) {
+    const e = cacheBattle(); if (prepare) prepare(e); e.refresh(); assert.equal(!!e.need_refresh, false);
+    const old = PARAM_IDS.map(i => e.param(i)); transform538(e); const transformed = cacheRead(e);
+    fn(e); const after = cacheRead(e); e.refresh();
+    o.boundaries.push({id, old, transformed, after, followingRefresh: cacheRead(e)});
+  }
+  o.interpreter = [];
+  for (const [id, list, state] of [
+    ['336-334', [[336, [0, 538]], [334, [-1]]], 0], ['336-334-334', [[336, [0, 538]], [334, [-1]], [334, [-1]]], 0],
+    ['336-333add4-334', [[336, [0, 538]], [333, [0, 0, 4]], [334, [-1]]], 0],
+    ['336-333add77-334', [[336, [0, 538]], [333, [0, 0, 77]], [334, [-1]]], 0],
+    ['336-333remove4-334', [[336, [0, 538]], [333, [0, 1, 4]], [334, [-1]]], 4]]) {
+    const e = cacheBattle(); if (state) e.addState(state); e.refresh();
+    e.setHp(Math.floor(e._hp / 3)); e.setMp(0);
+    const old = PARAM_IDS.map(i => e.param(i)), before = cacheRaw(e); interpret(list);
+    o.interpreter.push({id, state, old, before, after: cacheRead(e)});
+    assert.equal(e._hp, before.cache[0], '334 先按旧缓存上限写回');
+  }
+}
 const result = {schemaVersion: 1, hostScope: 'headless-rule-timing', sourceIdentity: identity, scan: scanSource(),
   fixture: {party: PARTY, difficulty: 3, randomSetup: 0.99, randomBattle: 0.5, partyHpParamPlus: 999999999,
     actorInput: 'guard', messageClose: 'after 3 real BattleManager.update calls; UI frames are not measured'},
@@ -238,7 +297,8 @@ const result = {schemaVersion: 1, hostScope: 'headless-rule-timing', sourceIdent
     assert.equal(o.troops, 35); assert.equal(o.pages, 47);
   }), caseRun('troop165.real-turns1-4', realFourTurns), caseRun('command334.revive-and-recover', recoverCase), caseRun('command334.living-and-hidden', livingHiddenRecoverCase),
     caseRun('command336.no-queued-action', o => transformCase(o, false)), caseRun('command336.rebuild-queued-action', o => transformCase(o, true)),
-    caseRun('troop824.variable1178-5-hidden', o => appearCase(o, 5)), caseRun('troop824.variable1178-6-appear', o => appearCase(o, 6))]};
+    caseRun('troop824.variable1178-5-hidden', o => appearCase(o, 5)), caseRun('troop824.variable1178-6-appear', o => appearCase(o, 6)),
+    caseRun('command336.param-cache-466', paramCacheCase)]};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.writeFileSync(path.join(__dirname, '.sandbox/battle_events.json'), JSON.stringify(result, null, 1));
 process.stdout.write(JSON.stringify({troops: result.scan.troops.length, pages: result.scan.troops.reduce((n,t) => n+t.pages.length, 0),
