@@ -1,7 +1,8 @@
 # 交付：claude/bajie-40-25f7f4
 
 - 车道／工作者：C 规则·机制／八戒（Claude，重制_八戒_40）
-- 状态：进行中
+- 状态：可合并
+- 收尾验证：两次 git merge main（第二次解决 sequence_gain 一处冲突）后 `新建工作树.sh --补齐`、`同步正式西游.py --accept-additions`（测量不变，battle_events 两例新增已在本分支前两次同步接受），`检查.sh --oracle` 全部通过（105 个 Godot 场景，无偶发重跑；floor16 25/25、transform_params 249/249、battle_events 108/108），runId 1888eed87a634446a745f5137bfcf4da。
 
 ## 变更记录草稿
 
