@@ -20,6 +20,7 @@
 - 原版实测（battle_event_probe 新增 actor104.seal-release-1691）：难度 3、角色 104 学 6168／5980／5548，开战按标签顺序附加 995／1691／1631；附加 1691（特性 54 封印 15 圣器／16 坐骑／18 宝宝／19 形态）时 addState 内部的 Game_Actor.refresh 先 releaseUnequippableItems(false)，布丁（宝宝）与特殊[变大]（形态）卸进队伍背包，生命上限 1250→800；战后 1691（Permanent、不随战斗结束解除）仍在，两件 canEquip 为假，不会自动穿回。
 - 不登记优化：被动 5980「难度适应」的说明写明「无法装备宝宝，坐骑，圣器，形态」，难度 2～4 卸下且战后不能再装是原版设计，不是缺陷。
 - 实现：XActor.release_to_party（release_unequippable 后刷新被动；只有 XState.current 里的本体才把卸下的件放回背包，战力预览等克隆只卸不入包），接在 add_state（新附加）、remove_state（有该状态）与 refresh_resources（Game_Actor.refresh）上。xiyou_rules 去掉 _mv_refresh 模拟，改走真实 add_state／refresh_resources；xiyou_battle_events 新增 seal1691 四项对照（开战前、开战后、战后、仍不能装）。
+- 接入后对齐的测试夹具（都是夹具先前绕过了原版会做的卸装／刷新）：xiyou_combat 把指虎（武器类型 5）改给能用的修 8（狗逍遥 1 职业不能用，开战附加状态时会被卸）；xiyou_custom_params 对参照 direct 例（直接装上别的角色专属件，参照在实例上停掉 releaseUnequippableItems）设 XActor.keep_unequippable；xiyou_zhenqi_daofa 同参照在加／去 2705 后 refresh 再读防御（期一缓存）；测试共性验收的 battle_events 用例数改按契约 CASE_IDS。
 - 观察未核实：参照直接调 $gameParty.onBattleEnd 后 1631（removeAtBattleEnd）仍在，Godot 战后会去掉；未经真实战斗结束流程确认，seal1691 战后对照不比 1631，留作后续查证。
 
 ## 2026-10-21 【Claude·八戒·未经Codex检验】十六层副本测试并行偶发（dev.待定）
@@ -49,3 +50,5 @@
 - adf8a1c 期二：seal1691 战后只比 1691 与装备背包
 - 1817fd9 期三：xiyou_floor16_dungeon 去掉负载相关的竞态
 - 2ad07da 合并 main
+- eaa5191 全检修正：测试夹具对齐参照
+- 8414298 再合并 main（sequence_gain 返回弹字值与 krz dirty 并存）
