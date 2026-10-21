@@ -22,7 +22,7 @@ const num=x=>Number.isFinite(x)?x:null;  // NaN 写成 null
 const LEVELS=[1,20,60],VAR_LEVEL=20;
 // [写法, kind, 基础编号]：覆盖全部出现过的别名（maxhp／maxmp／mhp／mmp／atk／mat／def／mdf／agi／luk）、无效的 tp、
 // 等级＋变量、变量后又被等级覆盖（最后一次赋值为准）、法宝同时读变量
-// 每种写法给几件候选，取第一件有切片角色能装的
+// 每种写法给几件候选，取第一件有切片角色能装的（104 天虎令进切片前的挑选不变：千古啸等专属装备有等级需求，用 104 一级时装不上，仍直接写槽位）
 const PICKS=[['atk_only','weapon',[1595,1596,1600,1601]],['mat_only','weapon',[1598,1599]],
   ['maxhp_maxmp_def_mdf','armor',[130,131,132,133,134,135,4160,4161,4164,4165]],['luk_agi_def_mdf','armor',[4162,4166,4170,4174]],
   ['mhp_mmp_eight','weapon',[1925,2019,2020,2021]],['maxhp_atk_mat_agi','armor',[4188,4190,4192]],['tp_ignored','weapon',[78]],
@@ -44,7 +44,7 @@ for(const [name,kind,bases] of PICKS){
   for(const pass of [0,1]){
     for(const b of bases){
       if(!db[b]||!db[b].parameterEval)throw new Error('没有 Custom Parameters '+kind+b);
-      aid=SLICE_ACTORS.find(id=>{const x=w.$gameActors.actor(id);return x.equipSlots().indexOf(db[b].etypeId)>=0&&(pass||x.canEquip(db[b]));});
+      aid=SLICE_ACTORS.find(id=>{if(id===104)return false;const x=w.$gameActors.actor(id);return x.equipSlots().indexOf(db[b].etypeId)>=0&&(pass||x.canEquip(db[b]));});
       if(aid){base=b;direct=!!pass;break;}
     }
     if(aid)break;
