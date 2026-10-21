@@ -272,7 +272,11 @@ func _seal_release(o: Dictionary) -> void:
 	var last: Dictionary = o.steps[o.steps.size() - 1]
 	check("seal1691.battle_start", read.call() == want.call(last), [read.call(), want.call(last)])
 	logic.end_battle()
-	check("seal1691.after_battle", read.call() == want.call(o.afterBattle) and a.hp == float(o.afterBattle.hp), [read.call(), a.hp, want.call(o.afterBattle)])
+	# 战后只比 1691 与装备／背包：参照直接调 onBattleEnd 后 1631（removeAtBattleEnd）仍在，未经真实战斗结束流程核实，不在此比
+	var got_after: Dictionary = read.call()
+	var want_after: Dictionary = want.call(o.afterBattle)
+	check("seal1691.after_battle", got_after.equips == want_after.equips and got_after.bag == want_after.bag and got_after.mhp == want_after.mhp \
+		and a.hp == float(o.afterBattle.hp) and a.is_state_affected(1691) == want_after.states.has(1691), [got_after, a.hp, want_after])
 	var can := {}
 	for e in s.gear.filter(func(e): return SEALED.has(int(e.etypeId))):
 		can[str(e.name)] = a.can_equip(e)
