@@ -13,6 +13,8 @@ extends RefCounted
 ## deselect／conclude）a＝user＝行动者、b＝target＝目标、origin 取持有者身上的来源。
 ## 第一期只分发与诊断：js 记进未翻译清单（不静默跳过）；confirm／react／respond／establish 与 apply／remove／leave 不在本期
 ## （现有 mul 与 user_param_damage 执行点不动，不双跑）；crit 冻结版无触发插件，不接。
+## FIX（_Fix_StackOverflow）的重复施加只续回合、加状态期间再次 addState 被全局锁拒绝：属 apply 生命周期，第二期接 apply 时照它，
+## 这里不做递归层数或重复 apply（XBattler.add_state 已有状态只续回合，与 FIX 一致）。
 ## 未做（停在设计，见交付单）：KRZ typestates 热缓存（同一回合内加状态不 refresh 时仍按旧列表，回合末到期移除后再生／回合结束
 ## 仍对它触发）要所有战斗者的 dirty 跟踪，在 battler.gd；导出时畸形结束标签漏掉的 13 个状态在转换器。
 
@@ -24,8 +26,10 @@ const HANDLED_ELSEWHERE := ["mul", "user_param_damage"]
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
 
-## 测试观察者：每次某状态在某 phase 被分发时调用 (phase, state_id, holder, ctx)
+## 测试观察者：每次某状态在某 phase 被分发时调用 (phase, state_id, holder, ctx)；ctx 是该状态这次调用的完整上下文
 static var observer := Callable()
+## 正在执行的上下文栈：每个状态每次调用压一层、返回后弹出（嵌套分发时外层上下文原样恢复，不用静态 acting 代替 user／origin）
+static var _stack: Array = []
 ## 未翻译清单：{phase, state, holder, op}，同键只记一次
 static var diagnostics: Array = []
 static var _seen := {}
@@ -39,12 +43,37 @@ static func run(phase: String, holder: XBattler, ctx := {}) -> void:
 		var effs: Array = st.get("effects", []).filter(func(e): return str(e.get("phase", "")) == phase)
 		if effs.is_empty():
 			continue
+		var c := context_for(phase, holder, int(st.id), ctx)
+		_stack.push_back(c)
 		if observer.is_valid():
-			observer.call(phase, int(st.id), holder, ctx)
+			observer.call(phase, int(st.id), holder, c)
 		for e in effs:
 			var op := str(e.get("op", ""))
 			if not HANDLED_ELSEWHERE.has(op):
 				_diagnose(phase, int(st.id), holder, op)
+		_stack.pop_back()
+
+
+## 一个状态一次调用的上下文。Battler 版（Game_Battler.customEffectEval）：user＝target＝持有者；
+## Action 版（Game_Action.customEffectEval）：user＝attacker、target＝defender，item 为当前行动。
+## origin：持有者身上该状态的来源，没有或已失效时回退为持有者（BSC stateOrigin 的无来源回退）。
+static func context_for(phase: String, holder: XBattler, state_id: int, ctx := {}) -> Dictionary:
+	var origin: XBattler = holder
+	var ref = holder.state_origins.get(state_id)
+	if ref is WeakRef and ref.get_ref() != null:
+		origin = ref.get_ref()
+	var c := {"phase": phase, "state_id": state_id, "holder": holder, "origin": origin}
+	if phase in ACTION_PHASES:
+		c.merge({"attacker": ctx.get("attacker"), "defender": ctx.get("defender"), "item": ctx.get("item"),
+			"user": ctx.get("attacker"), "target": ctx.get("defender")})
+	else:
+		c.merge({"user": holder, "target": holder})
+	return c
+
+
+## 当前正在执行的上下文（栈顶）；不在分发中时为空字典
+static func current() -> Dictionary:
+	return _stack.back() if not _stack.is_empty() else {}
 
 
 ## 一个单位（我方含后备或敌群）逐成员分发 Battler 版 phase

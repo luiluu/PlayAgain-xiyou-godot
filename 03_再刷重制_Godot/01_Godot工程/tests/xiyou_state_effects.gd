@@ -204,6 +204,26 @@ func _run() -> void:
 	# ---- 未翻译诊断：上面分发到的 js 块都已登记 ----
 	check("diagnostics.recorded", XStateEffects.diagnostics.any(func(d): return int(d.state) == T and d.kind == "untranslated"), XStateEffects.diagnostics.slice(0, 5))
 	check("never_fired_listed", XStateEffects.NEVER_FIRED.has("action_end") and XStateEffects.NEVER_FIRED.has("crit"))
+	# ---- 上下文：两套 user／target、origin 回退、嵌套分发后外层上下文恢复 ----
+	logic = _new_logic(4305)
+	var ua: XBattler = logic.actors[0]
+	var te: XBattler = logic.enemies[0]
+	ua.add_state(T)
+	te.add_state(T)
+	te.state_origins[T] = weakref(ua)
+	var seen := []
+	XStateEffects.observer = func(phase, sid, holder, ctx):
+		seen.append(ctx)
+		if phase == "select":
+			XStateEffects.run("turn_start", ua)  # 嵌套一层
+			check("ctx.restored_after_nested", XStateEffects.current() == ctx, XStateEffects.current().get("phase"))
+	XStateEffects.run("select", te, {"attacker": ua, "defender": te, "item": XDB.rec("Skills", 1)})
+	XStateEffects.run("turn_end", ua)
+	var sel: Dictionary = seen[0]
+	check("ctx.action", sel.user == ua and sel.target == te and sel.holder == te and sel.origin == ua, sel.keys())
+	var ts: Dictionary = seen[1]
+	check("ctx.battler", ts.phase == "turn_start" and ts.user == ua and ts.target == ua and ts.origin == ua and not ts.has("attacker"), ts.keys())
+	check("ctx.stack_empty", XStateEffects.current().is_empty())
 	XStateEffects.observer = Callable()
 	finish()
 
