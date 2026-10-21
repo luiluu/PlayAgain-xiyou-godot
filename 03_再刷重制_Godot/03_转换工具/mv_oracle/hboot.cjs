@@ -10,6 +10,7 @@ const fs = require('fs'), path = require('path'), zlib = require('zlib');
 
 const ORACLE_DIR = __dirname;
 const {installGuard} = require('./fs_guard.cjs');
+const {manualSandbox} = require('./manual_sandbox.cjs');
 
 function deepNoop() {
   const f = function() {};
@@ -25,10 +26,10 @@ function boot(root, opts = {}) {
   // 同步正式西游.py 并行跑探针时用 XIYOU_ORACLE_SANDBOX 给每个探针单独的存档目录（在 .sandbox/run/ 下）；
   // 产物仍写 .sandbox/*.json，所以这时 .sandbox 本身也加进可写目录（守卫范围不变，仍只限 .sandbox）
   const base = path.join(ORACLE_DIR, '.sandbox');
-  const sandbox = path.resolve(opts.sandbox || process.env.XIYOU_ORACLE_SANDBOX || base);
+  const sandbox = path.resolve(opts.sandbox || process.env.XIYOU_ORACLE_SANDBOX || manualSandbox(base));
   fs.mkdirSync(sandbox, {recursive: true});
   const allow = (opts.allowWrite || []).map(d => path.resolve(d));
-  if (!opts.sandbox && process.env.XIYOU_ORACLE_SANDBOX) allow.push(base);
+  if (!opts.sandbox) allow.push(base);
   installGuard(root, sandbox, allow);
   const errors = [];
   const vc = new VirtualConsole();
