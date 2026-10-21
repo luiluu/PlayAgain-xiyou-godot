@@ -103,7 +103,7 @@ class BattleEventContractTests(unittest.TestCase):
         next(c for c in self.ref['cases'] if c['id'] == 'scan.inventory')['observed'] = {'troops': 35, 'pages': 47}
 
     def test_complete_transport_contract(self):
-        self.assertEqual(len(self.ref['cases']), 8)
+        self.assertEqual(len(self.ref['cases']), len(CASE_IDS))
         self.assertFalse(validate_battle_events(self.ref, self.manifest))
 
     def test_missing_extra_duplicate_and_nonfinite_measurements_fail(self):

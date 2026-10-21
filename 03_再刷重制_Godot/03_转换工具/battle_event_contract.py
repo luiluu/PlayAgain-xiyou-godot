@@ -14,6 +14,8 @@ CASE_IDS = frozenset({
     'command336.rebuild-queued-action',
     'troop824.variable1178-5-hidden',
     'troop824.variable1178-6-appear',
+    'command336.param-cache-466',
+    'actor104.seal-release-1691',
 })
 
 

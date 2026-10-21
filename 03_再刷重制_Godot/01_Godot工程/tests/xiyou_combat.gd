@@ -68,7 +68,7 @@ func _run() -> void:
 
 	# ---- 冷却 ----
 	s = _new_state()
-	var a := s.actor(1)
+	var a := s.actor(8)
 	a.learn_skill(401)          # 击木楔 <Cooldown: 2>，单体伤害；要求武器类型 5，换上指虎（练习剑是类型 2）
 	_equip_wtype5(a)
 	a.learn_skill(6028)         # 旋龙斩 <Warmup: 2>
@@ -93,7 +93,7 @@ func _run() -> void:
 	logic.end_battle()
 	_check("after_battle_minus10", is_equal_approx(float(a.cooldowns.get(499, 0)), 1.0) and not a.cooldowns.has(401) and a.warmups.is_empty(), a.cooldowns)
 	var back := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
-	_check("cooldown_saved", is_equal_approx(float(back.actor(1).cooldowns.get(499, 0)), 1.0), back.actor(1).cooldowns)
+	_check("cooldown_saved", is_equal_approx(float(back.actor(8).cooldowns.get(499, 0)), 1.0), back.actor(8).cooldowns)
 
 	# ---- 战斗中用物品 ----
 	s = _new_state()
@@ -116,7 +116,7 @@ func _run() -> void:
 
 	# ---- 反击 / 魔法反射 ----
 	s = _new_state()
-	a = s.actor(1)
+	a = s.actor(8)
 	logic = XBattleLogic.new()
 	logic.elite_roll = 100.0
 	logic.setup(2, s)
@@ -187,6 +187,8 @@ func _run() -> void:
 
 
 ## 击木楔(401) 要求武器类型 5（isSkillWtypeOk）：换上类型 5 的指虎(武器 6)
+## 指虎（武器类型 5）：要职业能用类型 5 的角色（修 8 可以，狗逍遥 1 不行）；装了不能装的，开战附加状态时
+## Game_Actor.refresh 的 releaseUnequippableItems 会把它卸掉
 func _equip_wtype5(a: XActor) -> void:
 	a.equips[0] = XGear.create("weapon", 6)
 	a.refresh_passive()

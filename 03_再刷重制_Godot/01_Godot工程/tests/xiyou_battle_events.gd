@@ -88,6 +88,13 @@ func put(e: XEnemy, w: Dictionary) -> void:
 		e.buffs[i] = int(w.buffs[i])
 		e.buff_turns[i] = int(w.buffTurns[i])
 	e.refresh_passive()
+	# krz 能力值缓存按参照夹具同步：快照 snap() 读过全部八项（格子按当前状态全暖），夹具最后一步（addBuff／addState）留下 need_refresh。
+	# 334.hidden 参照在战斗外，起作用的是同周期的 paramRate 缓存（状态 77 的 ×0.8 留到 334 之后的 refresh）；这里用战斗内的格子表达同一结果。
+	e.param_mark_dirty()
+	e.param_refresh()
+	for i in range(8):
+		e.param(i)
+	e.param_mark_dirty()
 
 
 ## 与参照快照比：身份、隐藏、活着、HP/MP、状态、buff；名字可选
@@ -147,6 +154,7 @@ func _run() -> void:
 	_troop165(cases["troop165.real-turns1-4"].observed)
 	_troop824(cases["troop824.variable1178-5-hidden"].observed, 5)
 	_troop824(cases["troop824.variable1178-6-appear"].observed, 6)
+	_seal_release(cases["actor104.seal-release-1691"].observed)
 	_unit_checks()
 	_name_checks()
 	_smooth_target_checks()
@@ -226,6 +234,56 @@ func _wait_opaque(sp: XBattlerSprite) -> void:
 		if sp.sprite.modulate == Color.WHITE:
 			return
 		await get_tree().process_frame
+
+
+## 难度 3 的 5980 难度适应：开战附加 1691 后，104 的布丁（宝宝 18）与特殊[变大]（形态 19）卸进背包；战后 1691 留着、仍不能装。
+## 参照按开战标签顺序直接附加 995／1691／1631；这里走真实开战（_battle_start_states）与 end_battle。
+func _seal_release(o: Dictionary) -> void:
+	const SEALED := [15, 16, 18, 19]
+	var s := XState.new_game(int(o.fixture.difficulty), int(o.fixture.actor), [])
+	s.random_master = XRandomStream.hex64(1691)
+	var a: XActor = s.actor(int(o.fixture.actor))
+	for sid in o.fixture.skills:
+		a.learn_skill(int(sid))
+	a.refresh_passive()
+	a.recover_all()
+	var read := func() -> Dictionary:
+		var eq := []
+		var slots := a.equip_slots()
+		for i in range(a.equips.size()):
+			var e = a.equips[i]
+			if e is Dictionary and not e.is_empty() and SEALED.has(int(slots[i])):
+				eq.append([i, int(slots[i]), str(e.name)])
+		var bag := s.gear.filter(func(e): return SEALED.has(int(e.etypeId))).map(func(e): return [int(e.etypeId), str(e.name)])
+		bag.sort()
+		var st := states_of(a.state_ids)
+		st.sort()
+		return {"equips": eq, "bag": bag, "mhp": a.mhp, "states": st}
+	var want := func(w: Dictionary) -> Dictionary:
+		var bag: Array = w.sealedBag.map(func(x): return [int(x.etype), str(x.name)])
+		bag.sort()
+		var st := states_of(w.states)
+		st.sort()
+		return {"equips": w.sealedEquips.map(func(x): return [int(x.slot), int(x.etype), str(x.name)]), "bag": bag, "mhp": float(w.mhp), "states": st}
+	check("seal1691.before", read.call() == want.call(o.before), [read.call(), want.call(o.before)])
+	var logic := XBattleLogic.new()
+	logic.elite_roll = 100.0
+	logic.setup(int(o.fixture.troop), s)
+	var last: Dictionary = o.steps[o.steps.size() - 1]
+	check("seal1691.battle_start", read.call() == want.call(last), [read.call(), want.call(last)])
+	logic.end_battle()
+	# 战后只比 1691 与装备／背包：参照直接调 onBattleEnd 后 1631（removeAtBattleEnd）仍在，未经真实战斗结束流程核实，不在此比
+	var got_after: Dictionary = read.call()
+	var want_after: Dictionary = want.call(o.afterBattle)
+	check("seal1691.after_battle", got_after.equips == want_after.equips and got_after.bag == want_after.bag and got_after.mhp == want_after.mhp \
+		and a.hp == float(o.afterBattle.hp) and a.is_state_affected(1691) == want_after.states.has(1691), [got_after, a.hp, want_after])
+	var can := {}
+	for e in s.gear.filter(func(e): return SEALED.has(int(e.etypeId))):
+		can[str(e.name)] = a.can_equip(e)
+	var want_can := {}
+	for x in o.canEquipAfter:
+		want_can[str(x.name)] = bool(x.canEquip)
+	check("seal1691.still_sealed", can == want_can, [can, want_can])
 
 
 ## 336 之后轮到时按新形态选招（参照：原待行动 1 重做成 175 的 4023）
