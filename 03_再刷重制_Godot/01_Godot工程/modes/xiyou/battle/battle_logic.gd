@@ -1457,8 +1457,10 @@ func _tick_states(b: XBattler, timing: int) -> void:
 
 
 func _regenerate(b: XBattler, logs: Array) -> void:
-	var dh := floorf(b.mhp * b.hrg)
-	# 导入角色平衡：导入角色附加的状态里负的 HP 再生率（持续伤害）那部分 ×0.01（向下取整），其余照常
+	# krz regenerateHp：floor(mhp × hrg × rec)，含目标的恢复效果率（MP 再生不含）
+	var dh := floorf(b.mhp * b.hrg * b.rec)
+	# 导入角色平衡：导入角色附加的状态里负的 HP 再生率（持续伤害）那部分 ×0.01（向下取整），其余照常；
+	# 两个值都按原顺序先乘 rec 再 floor，之后才拆出导入部分缩放（installImportedBalanceRuntime.js:496／506）
 	var imported_hrg := 0.0
 	for id in b.state_ids:
 		var src := XImportedBalance.origin(b, id)
@@ -1467,7 +1469,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 				if int(tr.code) == XBattler.TRAIT_XPARAM and int(tr.dataId) == 7 and float(tr.value) < 0.0:
 					imported_hrg += float(tr.value)
 	if imported_hrg != 0.0:
-		var other := floorf(b.mhp * (b.hrg - imported_hrg))
+		var other := floorf(b.mhp * (b.hrg - imported_hrg) * b.rec)
 		dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
 	var dm := floorf(b.mmp * b.mrg)
 	if dh != 0.0:

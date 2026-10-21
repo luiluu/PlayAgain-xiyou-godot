@@ -27,6 +27,18 @@ const MRF_STATE = w.$dataStates.length;
   Object.assign(st, {id: MRF_STATE, name: '测试·魔法反射', traits: [{code: 22, dataId: 5, value: 1}], note: '', meta: {}, autoRemovalTiming: 0, iconIndex: 0});
   for (const k of Object.keys(st.customEffectEval || {})) st.customEffectEval[k] = '';
   w.$dataStates.push(st); }
+// REC／HRG 测试状态（同形复制中毒 4、自定义效果清空，只留给定特性）：DOT 与再生都含目标的恢复效果率 REC（krz regenerateHp、
+// installImportedBalanceRuntime 的 full／other 两值都是 floor(mhp×hrg×rec)）。Godot 按 setup.fake 的特性建同形状态。
+const FAKE = {};
+for (const [name, traits] of [['rec2', [{code: 23, dataId: 2, value: 2}]], ['rec06', [{code: 23, dataId: 2, value: 0.6}]],
+  ['rec08', [{code: 23, dataId: 2, value: 0.8}]], ['hrg-5', [{code: 22, dataId: 7, value: -0.05}]], ['hrg+3', [{code: 22, dataId: 7, value: 0.03}]],
+  ['hrg+5', [{code: 22, dataId: 7, value: 0.05}]]]) {
+  const st = w.JsonEx.makeDeepCopy(w.$dataStates[4]);
+  FAKE[name] = w.$dataStates.length;
+  Object.assign(st, {id: FAKE[name], name: '测试·' + name, traits, note: '', meta: {}, autoRemovalTiming: 0, iconIndex: 0});
+  for (const k of Object.keys(st.customEffectEval || {})) st.customEffectEval[k] = '';
+  w.$dataStates.push(st);
+}
 
 function battle(actorId, troop) {
   newGame();
@@ -157,6 +169,33 @@ for (const id of [141, 163, 143, 1]) {
     const origin = foes[0].stateOrigin ? key(foes[0].stateOrigin(4)) : null;
     const log = record(() => { foes[0].regenerateHp(); }, [a, ally, ...foes]);
     return {origin, states: foes[0]._states.slice(), hrg: foes[0].hrg, rec: foes[0].rec, mhp: foes[0].mhp, log, after: [a, ally, ...foes].map(snap)};
+  }));
+}
+// REC≠1 的再生（稳定新键，旧 dot.* 不动）：setup.states 依次 [状态, 附加者]，附加者 null 表示直接 addState（无来源）；
+// 状态写 fake 名或真实编号，fake 名的特性见 setup.fake。target：e0 敌人或 a1 同伴（同伴先把 HP 降到一半，正再生才看得到）。
+const recCases = [
+  ['dot.rec.a141.mixed', 141, 'e0', [['rec2', null], [4, 'a141'], ['hrg-5', 'a1']]],
+  ['dot.rec.a141.only', 141, 'e0', [['rec06', null], [4, 'a141']]],
+  ['dot.rec.a1.plain', 1, 'e0', [['rec06', null], [4, 'a1'], ['hrg+3', null]]],
+  ['regen.rec.actor', 141, 'a1', [['rec08', null], ['hrg+5', null]]],
+];
+for (const [id, actor, target, states] of recCases) {
+  const fake = {};
+  for (const [st] of states) if (typeof st === 'string') fake[st] = {id: FAKE[st], traits: w.$dataStates[FAKE[st]].traits};
+  cases.push(makeCase(id, {actor, troop: 2, target, states, fake}, () => {
+    const {bm, a, ally, foes} = battle(actor, 2);
+    const t = target === 'a1' ? ally : foes[0];
+    const by = k => k === null ? null : k === 'a1' ? ally : a;
+    for (const [st, src] of states) {
+      const sid = typeof st === 'string' ? FAKE[st] : st, u = by(src);
+      if (u) { bm._subject = u; applyItem(u, custom(0, '0', 1, 0, [{code: 21, dataId: sid, value1: 1, value2: 0}]), t); }
+      else { bm._subject = null; t.addState(sid); }
+    }
+    if (target === 'a1') t.setHp(Math.floor(t.mhp / 2));
+    t.need_refresh = true; t.refresh();
+    const origins = t._states.map(sid => [sid, t.stateOrigin ? key(t.stateOrigin(sid)) : null]);
+    const log = record(() => { t.regenerateHp(); }, [a, ally, ...foes]);
+    return {origins, states: t._states.slice(), hrg: t.hrg, rec: t.rec, mhp: t.mhp, log, after: [a, ally, ...foes].map(snap)};
   }));
 }
 // 各行动者夹具开战后双方的生命／魔法上限（Godot 重放时按它截资源）
