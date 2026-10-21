@@ -1,7 +1,7 @@
 # 交付：codex/state-effects-2
 
 - 车道／工作者：翻译／核查 · Codex（沙僧）
-- 状态：进行中
+- 状态：**可合并**（本期实现待 Claude 交叉核查）
 - 独占：battler.gd、damage.gd、core/state_effects.gd、battle_logic.gd 的状态接线、state_effects_probe 与测试、转换器状态效果解析；不碰切片、角色测试、界面和工具脚本。
 
 ## 变更记录草稿
@@ -10,7 +10,7 @@
 
 - 核查覆盖：claude/bajie-44、claude/wukong-35、0a5ec4c、36696e3；文档登记 1f5e218、4835d00、5efdd50、fc79c3e、4aab2c4、4d5e9c6。
 - 报告：[本批核查](../核查报告_20261022_dev122.md)。bajie-44 通过。wukong-35 的图片编码与敌群 163 误删两项 P2 已由 0a5ec4c／36696e3 修复；图片修复又使 8 项工具测试夹具报错，仍需八戒处理。最终同步确认六个难度各保留敌群 163 的 351 条伤害参照，不再沿用中途副本的 315 条口径。
-- 发布状态：两批已合入本机 main；收尾实查 main 为 36696e3，GitHub main 为 4d5e9c6，尚未推送，总装统一检查仍在进行。
+- 发布状态：两批已合入本机 main；收尾实查 main 为 36696e3，GitHub main 为 4d5e9c6，尚未推送，由总装收尾检查与推送。最终待核查清单没有新增批次，本单并入变更记录后再销账。
 - 混合批只核 Claude 的合并登记；沙僧自己的报告、formula-rest 仍待 Claude，不能以本条自销。
 
 ## 2026-10-22 【Codex·沙僧·未经Claude检验】状态效果第二期第一小期：生命周期／热缓存与旧 op 迁移（dev.待定）
@@ -20,8 +20,9 @@
 - **统一旧 op**：damage.gd 的 confirm/react 倍率与 battle_logic.gd 的 establish 参数追加伤害都转给 XStateEffects 同一路径；固定减伤仍夹在 confirm 与 react 之间，respond／establish 在实际伤害结算后。既有额外伤害的资源上下文、记录量和最后弹字约定保留，不双跑。每状态调用使用自己的 user/target/origin/value/critical 与上下文栈。Math.round 走 JS 取整（含负半整数），已有 Math.ceil/floor 次序不改。
 - **先参照后实现**：state_effects_probe 加 actor/enemy 生命周期（重复／不存在的移除／自然到期／嵌套 add 与 leave／来源保留）及原生 Math.round 边界，原 14 例保持不变。日志收集的 finally 只清理、不再 return，原版异常须交给 makeCase 记录，不能吞掉后记作通过。Godot 专项扩成完整 action 四段＋伤害四段，并把原先“热缓存差异”改为严格比较；克隆预览不写缓存有专项断言。
 - **范围与尾巴**：仅迁两个旧 op，没有翻译任何新 js 形状；crit、OTB action_end 按原版不触发；13 个畸形标签漏导、重复同 phase 脚本合槽、状态私有数据／永久参数／公共事件、错误数据与奈叶等留后续分期。转换器本期未改，未把原版报错变成有效效果。2652 的不续时长特例、完整 Reapply Rules 与资源层直接清状态等既有差异不在本小期宣称完成，需后续专门参照，不能据此开放依赖它们的新形状。
-- **验证**：九个相关专项全过：state_effects 60、actor_p0 3124、determinism 372、formula_effects 908、formula_rest 1352、imported_balance 273、rules 124138、shield 565、transform_params 249；本轮 311 秒，无偶发。rules 单场 311 秒超过 300 秒提示，属本机满载，未改工具／角色测试。额外 drop_record 26/26 通过；troop_events 首次与单独重跑均有同样的两条 Establish 失败，定位为直接 apply 的测试夹具跳过了 drop_record_probe 已明确要求的 refresh。只给此直接依赖的敌群测试补一次 param_refresh，不改原版热缓存规则；修后专项与最终同步结论收尾补入。
-- **维护**：新 shape 必须整块匹配、先有有效源参照；不要把本期诊断过的 js 计作已实现。车道只跑专项，合并后全量由总装统一检查。
+- **验证**：九个相关专项全过：state_effects 60、actor_p0 3124、determinism 372、formula_effects 908、formula_rest 1352、imported_balance 273、rules 124138、shield 565、transform_params 249；本轮 311 秒，无偶发。rules 单场 311 秒超过 300 秒提示，属本机满载，未改工具／角色测试。额外 drop_record 26/26 通过。troop_events 首次与单独重跑均有同样的两条 Establish 失败，定位为直接 apply 的测试夹具跳过了 drop_record_probe 已明确要求的 refresh；只给此直接依赖的敌群测试补一次 param_refresh，不改原版热缓存规则。修后 state_effects 60/60、troop_events 7699/7699 均首次通过，无重跑、无偶发；这两项共 1109 秒含共用槽位长时间排队，不作为单场性能数据。
+- **最终同步**：`--accept-additions` 通过（20261022_013838_176044），1655 项输入、382 项运行输入、1629 项产物，issues 为空、测量不变。修正日志收集后重新跑出的 17 例无异常，且与上述专项使用的状态效果参照完全一致；原 14 例不变、新增 3 例。已留下产物指纹供总装复用。
+- **维护**：新 shape 必须整块匹配、先有有效源参照；不要把本期诊断过的 js 计作已实现。damage.gd 只改 finish／apply_state_effects，不改八戒车道的 attack_elements。车道只跑专项，合并后全量由总装统一检查。
 
 ## 交接板
 
