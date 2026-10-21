@@ -295,7 +295,8 @@ class ParallelTestRunnerTests(unittest.TestCase):
 
     def test_global_slot_limit_across_runners(self):
         cmd = [sys.executable, str(HERE / '并行测试.py'), '--jobs', '3', '--full', str(self.godot), str(self.tmp / 'proj')]
-        env = dict(os.environ, XIYOU_TEST_STATE_DIR=str(self.state), CHECK_GLOBAL_JOBS='1', BUSY='1')
+        base = {k: v for k, v in os.environ.items() if k not in ('CHECK_FULL', 'CHECK_JOBS', 'CHECK_LOG_DIR')}
+        env = dict(base, XIYOU_TEST_STATE_DIR=str(self.state), CHECK_GLOBAL_JOBS='1', BUSY='1')
         procs = [subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True, env=env) for _ in range(2)]
         outs = [pr.communicate(timeout=60)[0] for pr in procs]
         self.assertEqual([pr.returncode for pr in procs], [0, 0], outs)
