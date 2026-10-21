@@ -76,6 +76,8 @@ func _ready() -> void:
 		check(c.id + ".preview_isolated", before == JSON.stringify([resources.snapshot(a), resources.snapshot(b), a.equips, b.equips, variables, rng.snapshot()]) and resources.journal.is_empty())
 		var actual := XFormulaExecution.run_item(item, a, b, variables, {}, true, rng, resources)
 		check(c.id + ".value", actual.available and actual.sourceValueKind == c.observed.valueKind and is_equal_approx(actual.value, c.observed.value), [actual, c.observed])
+		if not actual.available:
+			continue
 		check(c.id + ".resources", same(actual.after.a.resources, c.observed.resourcesA) and same(actual.after.b.resources, c.observed.resourcesB), actual.after)
 		check(c.id + ".result_slots", same(result_fields(actual.results.a), c.observed.resultA) and same(result_fields(actual.results.b), c.observed.resultB), actual.results)
 		check(c.id + ".preview_matches", preview.available and preview.value == actual.value and same(preview.after, actual.after) and same(preview.effectJournal, actual.effectJournal), preview)

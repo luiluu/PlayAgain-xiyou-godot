@@ -57,6 +57,7 @@ for (const source of custom) {
       try {
         const action = new w.Game_Action(a); action.setSkill(source.id);
         const value = action.evalDamageFormula(b);
+        if (diagnostics.length) throw new Error('unexpected formula diagnostic: ' + JSON.stringify(diagnostics));
         return {value: Number.isFinite(value) ? value : 0,
           valueKind: Number.isNaN(value) ? 'nan' : Number.isFinite(value) ? 'finite' : 'infinity',
           resourcesA: [a.hp, a.mp, a.tp], resourcesB: [b.hp, b.mp, b.tp],
