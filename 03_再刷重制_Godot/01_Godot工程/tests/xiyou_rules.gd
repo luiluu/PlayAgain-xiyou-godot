@@ -71,8 +71,15 @@ func _make_actor(id: int, d: Dictionary, battle: bool) -> XActor:
 	if battle:
 		for s in d.startStates:
 			a.add_state(int(s))
+		_mv_refresh(a)
 	a.refresh_passive()
 	return a
+
+
+## 参照探针在加状态／升级后调 Game_Actor.refresh()，会 releaseUnequippableItems：难度适应 1691 封印的装备类型上的装备（104 的布丁）随之卸下
+func _mv_refresh(a: XActor) -> void:
+	a.release_unequippable()
+	a.refresh_passive()
 
 
 ## 数据、规则脚本与版本必须同源；旧 oracle 即使数值碰巧相同也不能作为本轮对照。
@@ -136,6 +143,7 @@ func _run() -> void:
 			var a := _make_actor(id, d, true)
 			_compare_snap("d%d.actor%d.lv1Battle" % [diff, id], _snap(a), row.lv1Battle)
 			a.change_level(10)
+			_mv_refresh(a)
 			_compare_snap("d%d.actor%d.lv10Battle" % [diff, id], _snap(a), row.lv10Battle)
 			# 角色模板 P0：等级采样 35／65／99（升序，同一实例连续升级；参照由 slice_probe 的 levelSamples 给出）
 			var samples: Dictionary = row.get("levelSamples", {})
@@ -143,6 +151,7 @@ func _run() -> void:
 			lvs.sort()
 			for lv in lvs:
 				a.change_level(lv)
+				_mv_refresh(a)
 				a.hp = a.mhp  # 参照取样时满血（HP 低于 60% 才生效的被动不应混进能力采样）；不用 recover_all——它会清掉战斗开始状态
 				_compare_snap("d%d.actor%d.lv%dBattle" % [diff, id, lv], _snap(a), samples[str(lv)])
 		# 敌人
