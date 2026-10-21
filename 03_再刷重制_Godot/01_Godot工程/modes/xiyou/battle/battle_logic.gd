@@ -33,6 +33,8 @@ var replay_battle_start := {}
 var _ids := {}
 var _action_resources: XResourceContext
 var _formula_outcome := {}
+## 魔法反射回行动者自己的这次 apply（导入角色平衡照样缩放）
+var _reflecting := false
 
 func _rule() -> XRandomStream:
 	if random == null and state != null and troop_id == 0:
@@ -107,6 +109,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	_orders_made = false
 	state = s
 	troop_id = troop
+	XImportedBalance.set_acting(null)
 	actors = s.battle_members()
 	XZhenqi.battle_setup(s, troop)  # 真气：本场路线、楼层、溢出计数（BattleManager.setup）
 	enemies.clear()
@@ -492,6 +495,7 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append({"type": "guard", "user": u})
 	else:
 		logs.append_array(execute(u, skill, target))
+		XImportedBalance.set_acting(null)
 	_acted[u] = int(_acted.get(u, 0)) + 1
 	_tick_states(u, 1)
 	_sync_orders(before, true)
@@ -1023,6 +1027,10 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		_otb_user_shift(u, skill)
 	u.param_refresh()  # YEP_BattleEngineCore useItem：付费后 refresh，消费行动者此前的 dirty
 	logs.append({"type": "action", "user": u, "skill": skill, "views": views()})
+	# 导入角色平衡：禁用角色／禁用号角的行动（含行动序列）对目标无效，付费照常
+	if XImportedBalance.blocks(u, skill):
+		return logs
+	XImportedBalance.set_acting(u)  # YEP 附加状态记 BattleManager._subject 为来源
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
@@ -1061,7 +1069,9 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	var sure := certain_hit(u, skill)
 	var mrf := t.mrf if XDamage.is_magical(skill) and not sure else 0.0
 	if _float("reflection") < mrf:
+		_reflecting = true  # 导入角色平衡：反射回行动者自己的结算照样缩放
 		var r := apply(u, skill, u)
+		_reflecting = false
 		r.reflected = true
 		return [{"type": "reflect", "user": u, "target": t}, r]
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure else 0.0
@@ -1171,6 +1181,8 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var r := {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
 		"hp": 0.0, "mp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false}
 	var dmg: Dictionary = skill.damage
+	if XImportedBalance.blocks(u, skill):
+		return r  # 导入角色平衡：Game_Action.apply 对禁用角色／号角直接返回
 	if t.is_dead() and not int(skill.get("scope", 0)) in [9, 10]:
 		return r
 	var physical := XDamage.is_physical(skill)
@@ -1193,13 +1205,8 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		match type:
 			1, 3, 5:
 				r.hp = execute_hp_damage(u, t, value, type == 5)
-			2, 4:
-				r.mp = value
-				_action_resources.gain(t, "mp", -value)
-			6:
-				r.mp = minf(value, t.mp)
-				_action_resources.gain(t, "mp", -r.mp)
-				_action_resources.gain(u, "mp", r.mp)
+			2, 4, 6:
+				r.mp = execute_mp_damage(u, t, value, type == 6)
 		r.record_hp += floorf(maxf(0.0, float(r.hp)))
 		_establish(u, t, r)
 	for eff in skill.get("effects", []):
@@ -1215,6 +1222,9 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 ## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
 ## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
+	# 导入角色平衡在最外层：先按行动者的导入倍率缩放正伤害，之后才走真气减伤与护盾
+	if value > 0.0 and XImportedBalance.scales(u, t, _reflecting):
+		value = XImportedBalance.reduced(value, u)
 	if troop_id > 0:
 		value = XZhenqi.hp_damage(t, value)
 	value = t.absorb_shield(value)
@@ -1225,6 +1235,19 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> f
 		_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
 	if drain:
 		_action_resources.gain(u, "hp", value)
+	return value
+
+
+## Game_Action.executeMpDamage（类型 2／4／6）：导入角色平衡先缩放正伤害；MP 伤害（非回复）以目标现有 MP 为上限；
+## 吸取再给行动者回 MP。返回结果槽的 MP 伤害。
+func execute_mp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
+	if value > 0.0 and XImportedBalance.scales(u, t, _reflecting):
+		value = XImportedBalance.reduced(value, u)
+	if value >= 0.0:
+		value = minf(t.mp, value)
+	_action_resources.gain(t, "mp", -value)
+	if drain:
+		_action_resources.gain(u, "mp", value)
 	return value
 
 
@@ -1335,7 +1358,10 @@ func sequence_add_state(t: XBattler, id: int) -> void:
 ## 行动序列 HP/MP/TP ±（gainHp/gainMp/gainTp）：HP 归零即倒下
 ## 返回弹字值：负 HP 与伤害同走护盾吸收链（Game_Battler.gainHp：先吸收、击穿后减半，ShieldSystem）；
 ## 弹字角色记原值、敌人记减免后（同 XResourceContext.gain）。
-func sequence_gain(t: XBattler, kind: String, value: float) -> float:
+## subject：序列的行动者。导入角色平衡：对序列目标的 HP／MP 减少按行动者倍率缩放（actionHpModify／actionMpModify 的 gainHp／gainMp）。
+func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = null) -> float:
+	if value < 0.0 and kind in ["HP", "MP"] and XImportedBalance.scales(subject, t):
+		value = -XImportedBalance.reduced(-value, subject)
 	var shown := value
 	match kind:
 		"HP":
@@ -1407,6 +1433,17 @@ func _tick_states(b: XBattler, timing: int) -> void:
 
 func _regenerate(b: XBattler, logs: Array) -> void:
 	var dh := floorf(b.mhp * b.hrg)
+	# 导入角色平衡：导入角色附加的状态里负的 HP 再生率（持续伤害）那部分 ×0.01（向下取整），其余照常
+	var imported_hrg := 0.0
+	for id in b.state_ids:
+		var src := XImportedBalance.origin(b, id)
+		if src != null and src != b and XImportedBalance.outgoing_rate(src) != 1.0:
+			for tr in XDB.rec("States", id).get("traits", []):
+				if int(tr.code) == XBattler.TRAIT_XPARAM and int(tr.dataId) == 7 and float(tr.value) < 0.0:
+					imported_hrg += float(tr.value)
+	if imported_hrg != 0.0:
+		var other := floorf(b.mhp * (b.hrg - imported_hrg))
+		dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
 	var dm := floorf(b.mmp * b.mrg)
 	if dh != 0.0:
 		var shown := dh

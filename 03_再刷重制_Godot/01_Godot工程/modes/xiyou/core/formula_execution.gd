@@ -57,6 +57,7 @@ static func run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swit
 	out.results = {"a": vm.resources.result(first).duplicate(true), "b": vm.resources.result(second).duplicate(true)}
 	out.after = {"a": vm.resources.snapshot(first), "b": vm.resources.snapshot(second)}
 	out.executed = execute
+	out.value = XImportedBalance.formula_value(float(out.value), a, item)  # Game_Action.evalDamageFormula 的导入效果平衡（÷10）
 	return _report(item, execute, out)
 
 func _row(receiver: String) -> Dictionary:
