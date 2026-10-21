@@ -220,11 +220,11 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 
 
 ## 正式 executeDamage 的顺序：攻击方 Confirm → 固定减伤（onPreDamageStateEffects 的包装）→ 目标 React。
-static func finish(res: Dictionary, item: Dictionary, a: XBattler, b: XBattler) -> float:
+static func finish(res: Dictionary, item: Dictionary, a: XBattler, b: XBattler, execute := false) -> float:
 	# installDamageElementRuntime：HP 伤害／吸取被元素吸收时跳过攻击方 Confirm（普通回复仍照常）。
 	var absorbed: bool = float(res.value) < 0.0 and int(item.damage.type) in [1, 5]
-	var confirmed: float = res.value if absorbed else apply_state_effects(res.value, item, a, b, [], "confirm")
-	return apply_state_effects(apply_fixed_mitigation(confirmed, res), item, a, b, [], "react")
+	var confirmed: float = res.value if absorbed else apply_state_effects(res.value, item, a, b, [], "confirm", execute)
+	return apply_state_effects(apply_fixed_mitigation(confirmed, res), item, a, b, [], "react", execute)
 
 
 ## 正式 installDamageElementRuntime 的 entered 阶段：Confirm 之后的伤害按比例摊回各属性候选，各减固定减伤，取最大；
@@ -323,31 +323,11 @@ static func _independent(a: XBattler, item: Dictionary, e: int) -> float:
 
 # ---- 状态脚本（YEP BuffsStatesCore）：Confirm = 行动者的状态，React = 目标的状态 ----
 ## 转换器已把常见写法变成 {op: "mul", cond, k, round}；op == "js" 的尚未翻译，跳过并计数。
-static func apply_state_effects(value: float, item: Dictionary, a: XBattler, b: XBattler, untranslated: Array = [], phase := "") -> float:
-	var is_hp := [1, 3, 5].has(int(item.damage.type))
+static func apply_state_effects(value: float, item: Dictionary, a: XBattler, b: XBattler, untranslated: Array = [], phase := "", execute := false) -> float:
 	for pair in [["confirm", a], ["react", b]]:
 		if phase != "" and pair[0] != phase:
 			continue
-		for s in pair[1].states():
-			for eff in s.get("effects", []):
-				if eff.phase != pair[0]:
-					continue
-				if eff.op != "mul":
-					untranslated.append({"state": int(s.id), "phase": eff.phase})
-					continue
-				if eff.get("hpOnly", false) and not is_hp:
-					continue
-				var ok := false
-				match str(eff.cond):
-					"nonzero": ok = value != 0.0
-					"positive": ok = value > 0.0
-					"nonnegative": ok = value >= 0.0
-				if ok:
-					var x := value * float(eff.k)
-					match str(eff.round):
-						"ceil": value = ceilf(x)
-						"floor": value = floorf(x)
-						_: value = roundf(x)
+		value = XStateEffects.run(pair[0], pair[1], {"attacker": a, "defender": b, "item": item, "value": value, "untranslated": untranslated, "execute": execute})
 	return value
 
 

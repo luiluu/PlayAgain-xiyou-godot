@@ -13,8 +13,9 @@ var results := []
 var trace := []
 const PHASES := {"battle": "battle", "turnStartState": "turn_start", "turnEndState": "turn_end", "regenerateState": "regenerate",
 	"actionStartState": "action_start", "initiateState": "initiate", "selectState": "select", "deselectState": "deselect",
-	"concludeState": "conclude", "victory": "victory", "escape": "escape", "defeat": "defeat", "actionEndState": "action_end"}
+	"concludeState": "conclude", "confirmState": "confirm", "reactState": "react", "respondState": "respond", "establishState": "establish", "victory": "victory", "escape": "escape", "defeat": "defeat", "actionEndState": "action_end"}
 var T := 0
+var T2 := 0
 var EXPIRE := 0
 var MRF := 0
 var CNT := 0
@@ -51,6 +52,8 @@ func _key(b: XBattler, logic: XBattleLogic) -> String:
 func _observe(logic: XBattleLogic) -> void:
 	trace.clear()
 	XStateEffects.observer = func(phase: String, sid: int, holder: XBattler, ctx: Dictionary) -> void:
+		if phase in ["apply", "remove", "leave"]:
+			return
 		var row := [phase, sid, _key(holder, logic)]
 		if ctx.has("attacker"):
 			row.append_array([_key(ctx.attacker, logic), _key(ctx.defender, logic)])
@@ -78,14 +81,13 @@ func _want(o: Dictionary) -> Dictionary:
 		var row := [g, sid]
 		if g in XStateEffects.ACTION_PHASES:
 			# Action 版持有者：initiate／conclude 是行动者 a，select／deselect 是目标 b
-			row.append(str(r[3]) if g in ["initiate", "conclude"] else str(r[4]))
+			row.append(str(r[3]) if g in ["initiate", "conclude", "confirm", "establish"] else str(r[4]))
 			row.append_array([str(r[3]), str(r[4])])
 		else:
 			row.append(holder)
 		if removed.has("%d|%s" % [sid, row[2]]):
 			stale.append(row)
-		else:
-			rows.append(row)
+		rows.append(row)
 	return {"rows": rows, "stale": stale}
 
 
@@ -107,9 +109,9 @@ func _compare(name: String, o: Dictionary, extra_check := Callable()) -> void:
 	check(name + ".sequence", trace == w.rows, {"godot": trace, "mv": w.rows})
 	# 热缓存行 Godot 必须一条都没有（按当前状态分发）；参照里有几条照记
 	for row in w.stale:
-		check(name + ".stale_absent.%s" % JSON.stringify(row), not trace.has(row), row)
+		check(name + ".stale_preserved.%s" % JSON.stringify(row), trace.has(row), row)
 	if not w.stale.is_empty():
-		print("热缓存差异 ", name, " ", JSON.stringify(w.stale))
+		print("热缓存已对照 ", name, " ", JSON.stringify(w.stale))
 	if extra_check.is_valid():
 		extra_check.call()
 
@@ -125,14 +127,15 @@ func _run() -> void:
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
 		cases[c.id] = c
-	var all_phases: Array = PHASES.values()
+	var all_phases: Array = PHASES.values() + ["apply", "remove", "leave"]
 	T = _state("测试·阶段记录", all_phases)
+	T2 = _state("测试·阶段记录二", all_phases)
 	EXPIRE = _state("测试·一回合到期", all_phases, {"autoRemovalTiming": 2})
 	MRF = _state("测试·魔法反射", [], {"traits": [{"code": 22, "dataId": 5, "value": 1.0}]})
 	CNT = _state("测试·反击", [], {"traits": [{"code": 22, "dataId": 6, "value": 1.0}]})
 	EVA = _state("测试·魔法回避", [], {"traits": [{"code": 22, "dataId": 4, "value": 1.0}]})
 	for st in cases["fixture"].observed.states:
-		var mine := {"测试·阶段记录": T, "测试·一回合到期": EXPIRE, "测试·魔法反射": MRF, "测试·反击": CNT, "测试·魔法回避": EVA}
+		var mine := {"测试·阶段记录": T, "测试·阶段记录二": T2, "测试·一回合到期": EXPIRE, "测试·魔法反射": MRF, "测试·反击": CNT, "测试·魔法回避": EVA}
 		if mine.has(str(st.name)):
 			ids[int(st.id)] = mine[str(st.name)]
 	var o: Dictionary
@@ -224,8 +227,75 @@ func _run() -> void:
 	var ts: Dictionary = seen[1]
 	check("ctx.battler", ts.phase == "turn_start" and ts.user == ua and ts.target == ua and ts.origin == ua and not ts.has("attacker"), ts.keys())
 	check("ctx.stack_empty", XStateEffects.current().is_empty())
+	_lifecycle(cases)
 	XStateEffects.observer = Callable()
 	finish()
+
+
+func _lifecycle(cases: Dictionary) -> void:
+	for kind in ["actor", "enemy"]:
+		var logic := _new_logic(4310)
+		var h: XBattler = logic.actors[0] if kind == "actor" else logic.enemies[0]
+		var origin: XBattler = logic.enemies[0] if kind == "actor" else logic.actors[0]
+		var rows := []
+		var stage := [""]
+		XImportedBalance.set_acting(origin)
+		XStateEffects.observer = func(phase, sid, holder, ctx):
+			if phase not in ["apply", "remove", "leave"]:
+				return
+			rows.append([phase, sid, _key(holder, logic), _key(ctx.origin, logic), holder.is_state_affected(sid)])
+			if sid == T and stage[0] == "nested add" and phase == "apply":
+				h.add_state(T2)  # FIX rejects even another battler's nested add
+			if sid == T and stage[0] == "nested leave" and phase == "remove":
+				h.remove_state(T2)  # inherits the outer natural-expiry scope
+		h.add_state(T)
+		h.add_state(T)
+		h.remove_state(T)
+		h.remove_state(T)
+		h.add_state(EXPIRE)
+		h.remove_state(EXPIRE, true)
+		stage[0] = "nested add"
+		h.add_state(T)
+		check("lifecycle." + kind + ".nested_suppressed", not h.is_state_affected(T2))
+		h.remove_state(T)
+		stage[0] = "nested leave"
+		h.add_state(T)
+		h.add_state(T2)
+		h.remove_state(T, true)
+		var want := []
+		var phases := {"addState": "apply", "removeState": "remove", "leaveState": "leave"}
+		for row in cases["lifecycle." + kind].observed.log:
+			if row[0] == "life":
+				want.append([phases[row[1]], ids[int(row[2])], row[3], row[4], row[5]])
+		check("lifecycle." + kind + ".sequence_origin", rows == want, {"godot": rows, "mv": want})
+		check("lifecycle." + kind + ".origin_cleared", not h.state_origins.has(T) and not h.state_origins.has(T2) and not h.state_origins.has(EXPIRE))
+	XImportedBalance.set_acting(null)
+	# KRZ: warm -> add without dirty-refresh -> refresh -> remove without
+	# dirty-refresh -> refresh. Compare every native turnStart slot, including T
+	# after it has been removed.
+	var logic := _new_logic(4311)
+	var h: XBattler = logic.actors[0]
+	h.add_state(T)
+	h.param_refresh()
+	h.effect_states("turn_start")
+	_observe(logic)
+	h.add_state(T2)
+	XStateEffects.run("turn_start", h)
+	h.param_refresh()
+	XStateEffects.run("turn_start", h)
+	h.remove_state(T)
+	XStateEffects.run("turn_start", h)
+	h.param_refresh()
+	XStateEffects.run("turn_start", h)
+	_compare("krz.hot_cache", cases["krz.hot_cache"].observed)
+	# Native Math.round(-0.5) is zero, not Godot roundf's -1.
+	var sid := _state("测试·乘数负半整数", [], {"effects": [{"phase": "confirm", "op": "mul", "cond": "nonzero", "k": 0.5, "round": "round"}]})
+	h.add_state(sid)
+	h.param_refresh()
+	XStateEffects.observer = Callable()
+	for pair in cases["mul.round_boundaries"].observed["values"]:
+		var value := XStateEffects.run("confirm", h, {"attacker": h, "defender": logic.enemies[0], "item": XDB.rec("Skills", 1), "value": pair[0]})
+		check("mul.round." + str(pair[0]), value == pair[1], value)
 
 
 func finish() -> void:

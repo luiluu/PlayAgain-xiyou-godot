@@ -535,8 +535,8 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 	b.param_mark_dirty()
 	if b.is_alive():
 		b.param_refresh()
-		_tick_states(b, 2)
 		_regenerate(b, logs)
+		_tick_states(b, 2)
 	# Custom Regenerate → Custom Turn End（regenerateAll 外层与 onTurnEnd 不看存活，倒下的也跑）
 	XStateEffects.run("regenerate", b)
 	XStateEffects.run("turn_end", b)
@@ -1159,7 +1159,7 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 ## 伤害计算与 apply 的扣血／记账分开，模块对照可固定这一步（同正式 Game_Action.makeDamageValue 夹具）。
 func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
 	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
-	return XDamage.finish(XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule()}), skill, u, t)
+	return XDamage.finish(XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule()}), skill, u, t, true)
 
 
 ## Game_Action.apply：行动者有道法「破甲」时，期间附加的破甲·真气（2705）用它的倍率（XZhenqi.pojia_actor）
@@ -1226,6 +1226,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		r.critical = _float("critical") < clampf(cri, 0.0, 1.0)
 		_action_resources.result(t).critical = r.critical
 		var value := _damage_value(u, skill, t, r.critical)
+		r.state_value = value
 		_action_resources.result(t).success = true
 		match type:
 			1, 3, 5:
@@ -1280,16 +1281,9 @@ func execute_mp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> f
 ## user_param_damage（轮回困难 1460/1461）：行动者每个为正的能力值各一次 target.gainHp(-值)（不经伤害计算，可致死）并弹字。
 ## 记录 r.extra（附加值列表）；原版普通伤害弹字被改写为最后一次附加值（r.popup_hp，见 ESTABLISH_TRUE_POPUP）。
 func _establish(u: XBattler, t: XBattler, r: Dictionary) -> void:
-	for s in u.states():
-		for eff in s.get("effects", []):
-			if eff.phase != "establish" or eff.op != "user_param_damage":
-				continue
-			for p in eff.params:
-				var v := float(u.get(str(p)))
-				if v > 0.0:
-					_action_resources.gain(t, "hp", -v)
-					r.extra = r.get("extra", []) + [v]
-					r.record_hp = float(r.get("record_hp", 0.0)) + floorf(v)
+	var ctx := {"attacker": u, "defender": t, "item": r.skill, "value": r.get("state_value", 0.0), "critical": r.critical, "resources": _action_resources, "record": r}
+	XStateEffects.run("respond", t, ctx)
+	XStateEffects.run("establish", u, ctx)
 	if r.has("extra") and not ESTABLISH_TRUE_POPUP:
 		r.popup_hp = r.extra[-1]
 
@@ -1447,7 +1441,7 @@ func _tick_states(b: XBattler, timing: int) -> void:
 			continue
 		b.state_turns[id] = int(b.state_turns.get(id, 1)) - 1
 		if b.state_turns[id] <= 0:
-			b.remove_state(id)
+			b.remove_state(id, true)
 	if timing == 2:
 		for i in range(8):
 			if b.buff_turns[i] > 0:
