@@ -48,9 +48,12 @@ static func format(v: float) -> String:
 	return str(int(v))
 
 
-## JS Math.round：.5 向正无穷
+## JS Math.round：.5 向正无穷。先取 floor 再按小数部分进位，不对原值先加 0.5——大整数（如 ±2^52 以上的奇数）
+## 加 0.5 会在双精度里先被舍入改值（-4503599627370497 + 0.5 得 -4503599627370496），floor 再也还原不了。
+## NaN／±Infinity 原样返回；负零（Math.round(-0.4)＝-0）不区分。
 static func js_round(v: float) -> float:
-	return floorf(v + 0.5)
+	var f := floorf(v)
+	return f + 1.0 if v - f >= 0.5 else f
 
 
 ## 背包实例（kind）或数据库基础记录（wtypeId／atypeId）

@@ -226,7 +226,7 @@ static func comp_for(route_key: String, floor: int) -> float:
 ## Z.bossReward：1～15 层保留 1/3，16～25 层 1/2，26 层起 2/3；JS Math.round
 static func boss_reward(f: int, c: int) -> int:
 	var r := 1.0 / 3.0 if f <= 15 else (0.5 if f <= 25 else 2.0 / 3.0)
-	return int(floor(float(COEF.boss) * f * c * r + 0.5))
+	return _js_round(float(COEF.boss) * f * c * r)
 
 
 # ---- Boss 判定（CodexBossDifficulty.isBoss 的 bossId，再加名字标记）----
@@ -350,7 +350,7 @@ static func _toast(msg: String) -> void:
 # ---- 显示格式（CodexGuide.format）----
 static func group(n: float) -> String:
 	var v := absf(n)
-	var t := str(int(floor(v + 0.5)))
+	var t := str(int(XPower.js_round(v)))
 	var out := ""
 	while t.length() > 3:
 		out = "," + t.right(3) + out
@@ -616,12 +616,12 @@ static func skill_view(sk: Dictionary, a: XActor) -> Dictionary:
 
 
 static func _js_round(x: float) -> int:
-	return int(floor(x + 0.5))
+	return int(XPower.js_round(x))
 
 
 ## String(Math.round(v*100)/100)
 static func _pct(v: float) -> String:
-	var r := floorf(v * 100 + 0.5) / 100.0
+	var r := XPower.js_round(v * 100) / 100.0
 	return str(int(r)) if r == floorf(r) else str(r)
 
 
