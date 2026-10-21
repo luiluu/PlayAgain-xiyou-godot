@@ -6,7 +6,9 @@
 
 覆盖规则（核查者只能销对方的提交：Codex 的核查条目只销 `核查: 待Codex` 的提交，反之亦然）：
   - 核查条目 = 标题形如 `## 日期 【Claude…】核查 …` 或 `【Codex…】核查 …` 的一段（含正文）。
-  - 段里写到的提交号（7 位以上）销该提交；写到合并提交号、分支名或开发编号（dev.NNN、dev.A～B、dev.A／B）时销整批。
+  - 只看段里的销账范围：标题行，以及以「核查覆盖／核查范围／范围／核查文档登记／核查／提交」开头的列表行；
+    验证、结论、证据、问题等其余行里提到的提交号、分支名与开发编号不算（沙僧 2026-10-21：验证行写「开发编号（dev.118）通过」曾误销 dev.118 整批）。
+  - 范围里写到的提交号（7 位以上）销该提交；写到合并提交号、分支名或开发编号（dev.NNN、dev.A～B、dev.A／B）时销整批。
   - 分支名与开发编号只销核查当天及以前的批，避免早先的核查盖住同一分支后来的合并。
 批的划分：main 第一父链上的每个 `合并 <分支>` 合并提交连同它带进来的分支提交、紧随其后的同分支「收尾／登记」提交算一批，其余提交各自一批。
 """
@@ -27,6 +29,8 @@ ENTRY = re.compile(r'^## \d{4}-\d{2}-\d{2}\b', re.M)
 HASH = re.compile(r'(?<![0-9A-Za-z])[0-9a-f]{7,40}(?![0-9A-Za-z])')  # 纯数字的提交号（如 7432182）也算
 BRANCH = re.compile(r'(?:claude|codex)/[A-Za-z0-9_\-.]*[A-Za-z0-9_\-]')
 DEV = re.compile(r'dev\.(\d{3})((?:\s*[～~至到\-]\s*(?:dev\.)?\d{3})?)((?:[／/]\s*(?:dev\.)?\d{3}|、\d{3})*)')
+# 核查条目里的销账范围行（标题行另算）：列表行开头是这些标签，后面不紧跟别的汉字（「核查结果」不算）
+SCOPE_LINE = re.compile(r'^\s*[-*]\s*(?:\*\*)?(?:核查覆盖|核查范围|范围|核查文档登记|核查|提交)(?![\u4e00-\u9fff])')
 MERGE = re.compile(r'^(?:合并|并入)\s+((?:claude|codex)/[^\s（(]+)')
 DOC_ONLY = re.compile(r'^(?:00_项目管理/|AGENTS\.md$|CLAUDE\.md$|README[^/]*\.md$)|\.md$')
 
@@ -47,6 +51,12 @@ def dev_numbers(text):
                 out.update(range(a, b + 1))
         out.update(int(x) for x in re.findall(r'\d{3}', m.group(3)))
     return out
+
+
+def scope_text(text):
+    """核查条目里用来销账的部分：标题行加范围行（见模块说明）。"""
+    lines = text.split('\n')
+    return '\n'.join(lines[:1] + [l for l in lines[1:] if SCOPE_LINE.match(l)])
 
 
 def reviews(root):
@@ -115,6 +125,7 @@ def pending(root):
     for b in batches:
         b['dev'] = set().union(*(c['dev'] for c in b['commits']))
     for date, who, text in revs:
+        text = scope_text(text)
         hashes = HASH.findall(text)
         branches = set(BRANCH.findall(text))
         devs = dev_numbers(text)

@@ -148,6 +148,22 @@ class ReviewListTests(unittest.TestCase):
         self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【Codex·沙僧】核查 dev.003～006\n')
         self.assertNotIn('合并 claude/lane', self.labels())
 
+    def test_only_scope_lines_count(self):
+        # 沙僧复现：别的核查条目验证行写「开发编号（dev.005）通过」，不能销 dev.005 整批；证据、结论行里的提交号也不算
+        self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【Codex·沙僧】核查 c6d964a：提案需改\n\n- 结论：需改\n'
+                           f'- 验证：文档段退出码 0，JSON／链接／开发编号（dev.005）通过\n- 证据：claude/lane 的 {self.tool} 只读复现\n')
+        items = self.labels()
+        self.assertIn('合并 claude/lane', items)
+        self.assertIn('工具改动', items)
+        # 范围行（核查覆盖、核查 <完整合并号>）照销
+        full = self.repo.git('rev-parse', self.merge).strip()
+        self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【Codex·沙僧】核查晚间批\n\n'
+                           f'- 核查 `{full}`（收尾 {self.tail}）：通过\n- 核查覆盖：{self.tool}\n- 验证：dev.009 通过\n')
+        items = self.labels()
+        self.assertNotIn('合并 claude/lane', items)
+        self.assertNotIn('工具改动', items)
+        self.assertEqual(review.scope_text('## t\n- 核查结果：dev.001\n- **核查覆盖**：x\n- 范围：y'), '## t\n- **核查覆盖**：x\n- 范围：y')
+
     def test_fix_heading_and_old_review_do_not_count(self):
         self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【Codex·沙僧·未经Claude检验】修复 claude/lane 核查问题\n\n'
                            '## 2000-01-01 【Codex·沙僧】核查 claude/lane\n')
