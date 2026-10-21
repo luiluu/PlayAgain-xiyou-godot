@@ -47,6 +47,40 @@ class FormulaCompilerTests(unittest.TestCase):
                      prefix.replace('=>!!equip', '=>evil() && !!equip')+'value=level;']:
             self.assertEqual(compile_formula(text, custom=True)['status'], 'unsupported')
 
+    def test_plan12_all_native_custom_blocks_and_branch_boundaries(self):
+        """Actual frozen blocks, not a synthetic prefix standing in for coverage."""
+        import hashlib
+        reference = json.loads((TOOLS.parent / '01_Godot工程/tests/fixtures/formula_rest_oracle.json').read_text())
+        expected = {857, 858, 1051, 1054, 1055, 1060, 1068, 2192, 2194, 2195,
+                    2391, 2494, 4013, 4938, 4939, 4940, 4941, 5309, 5437, 5445,
+                    5906, 5919, 7485, 7486, 7487, 7508, 8087, 10116, 10117, 10118, 10121}
+        self.assertEqual({r['id'] for r in reference['inventory']}, expected)
+        self.assertEqual(len(reference['inventory']), 31)
+        for row in reference['inventory']:
+            with self.subTest(skill=row['id']):
+                self.assertEqual(hashlib.sha256(row['formula'].encode()).hexdigest(), row['sha256'])
+                program = compile_formula(row['formula'], row['id'], custom=True)
+                self.assertEqual(program['status'], 'effectful' if row['id'] in {857, 858, 4013} else 'pure', program)
+        cases = reference['cases']
+        expected_cases = set()
+        for row in reference['inventory']:
+            equipment = 'getEquipItemObject' in row['formula']
+            branch = 'user.atk > target.atk' in row['formula']
+            expected_cases.update(f"s{row['id']}.{mode}.{relation}"
+                                  for mode in (('none', 'first', 'zero', 'nonmagic') if equipment else ('none',))
+                                  for relation in ((-1, 0, 1) if branch else (0,)))
+        self.assertEqual(len(expected_cases), 135)
+        self.assertEqual({r['id'] for r in cases}, expected_cases)
+        self.assertEqual(len(cases), len({r['id'] for r in cases}))
+        self.assertEqual({r['setup']['skill'] for r in cases}, expected)
+        for row in cases:
+            self.assertFalse(row['errors'], row['id'])
+            self.assertFalse(row['observed']['diagnostics'], row['id'])
+        for sid in (2192, 2194, 2195, 2494):
+            rows = [r for r in cases if r['setup']['skill'] == sid]
+            self.assertEqual({(r['setup']['mode'], r['setup']['relation']) for r in rows},
+                             {(mode, relation) for mode in ('none', 'first', 'zero', 'nonmagic') for relation in (-1, 0, 1)})
+
     def test_unknown_and_host_access_rejected_as_whole_program(self):
         for source in ['eval(1)', 'a.constructor()', 'a.hp=1; 0', 'v[0]=2;0', 'Math.unknown(2)',
                        'while(true){}',
