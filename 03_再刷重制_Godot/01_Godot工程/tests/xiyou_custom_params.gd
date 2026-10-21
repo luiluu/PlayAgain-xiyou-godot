@@ -51,6 +51,7 @@ func _run() -> void:
 		XState.current = st
 		st.actor_max_level = int(data.maxLevel)
 		var a := st.actor(int(c.actor))
+		a.keep_unequippable = bool(c.get("direct", false))  # 参照 direct 例在本实例上停掉 releaseUnequippableItems
 		st.gear.clear()
 		for r in c.rows:
 			for i in range(a.equips.size()):

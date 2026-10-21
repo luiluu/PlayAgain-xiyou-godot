@@ -140,7 +140,12 @@ func release_unequippable() -> Array:
 ## 难度 2～4 的被动 5980「难度适应」开战附加 Permanent 状态 1691（封印宝宝／坐骑／圣器／形态 18／16／15／19），首战就把这几格卸进背包，
 ## 战后状态不解除、仍不能装（技能说明写明「无法装备宝宝，坐骑，圣器，形态」，属原版设计）。加减状态内部的 refresh 同样会卸。
 ## 只有队伍里的本体才把卸下的件放回背包；战力预览等克隆只卸不入包。
+## 只给参照对照夹具用：同 custom_params_probe 在实例上停掉 releaseUnequippableItems（直接装上别的角色专属的件）
+var keep_unequippable := false
+
 func release_to_party() -> void:
+	if keep_unequippable:
+		return
 	var removed := release_unequippable()
 	if removed.is_empty():
 		return

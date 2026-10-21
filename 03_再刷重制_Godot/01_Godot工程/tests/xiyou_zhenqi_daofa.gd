@@ -162,11 +162,14 @@ func _pojia(o: Dictionary) -> Dictionary:
 		# 附加几率 0.99：固定本场规则流（dev.099 起战斗不认全局 seed），结果不随运行变化
 		logic.random = XBattleRandom.create(XRandomStream.hex64(20261018), 0)
 		logic.apply(a, ATTACK_STATE_SKILL, e)
+	e.refresh_resources()  # 同参照：krz 能力值缓存到 refresh 才放掉加状态前读过的格子
 	out.merge({"affected": e.is_state_affected(XZhenqi.POJIA_STATE), "rate": rate.call(), "traits": traits.call(), "after": [e.param(3), e.param(5)]})
 	if o.get("erase", false):
 		e.remove_state(XZhenqi.POJIA_STATE)
+		e.refresh_resources()
 		out.erased = rate.call()
 		e.add_state(XZhenqi.POJIA_STATE)
+		e.refresh_resources()
 		out.readd = {"affected": e.is_state_affected(XZhenqi.POJIA_STATE), "rate": rate.call(), "traits": traits.call(), "after": [e.param(3), e.param(5)]}
 	return out
 
