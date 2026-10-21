@@ -161,7 +161,8 @@ func _row(receiver: String) -> Dictionary:
 	return _context.get(receiver, {})
 
 func _property(receiver: String, name: String):
-	return _row(receiver).get("properties", {}).get(name, UNDEFINED)
+	# ShieldSystem 的 shield 读数经 validNumber，没设过时是 0（较早的参照上下文没录这一项）
+	return _row(receiver).get("properties", {}).get(name, 0.0 if name == "shield" else UNDEFINED)
 
 func _gain(_receiver: String, _resource: String, _amount: float):
 	return _fail("write_capability_required")
