@@ -387,7 +387,22 @@ func param_plus(i: int) -> float:
 			var tag := ("passiveWPNM%02d" % int(e.wtypeId)) if e.kind == "weapon" else ("passiveARMM%02d" % int(e.atypeId))
 			for m in passive_values(tag):
 				v += _param_boost(p, m)
+		v += magic_param(e, i)
 	return v
+
+## CP_MagicWeapon paramPlus：法宝加 等级 × 每级成长；成长在载入时从数据库原件备注解析一次（实例复制原件的 paramPlusPerLevel），
+## 不受 passiveWPNM／ARMM 放大。等级取 XEquipmentView.level（实例 level，缺省 <Init Level>）。
+static var _magic_growth_cache := {}
+static func magic_param(e: Dictionary, i: int) -> float:
+	var lv = XEquipmentView.level(e)
+	if float(lv) < 0.0:
+		return 0.0
+	var kind := str(e.get("kind", ""))
+	var key := kind + ":" + str(int(e.get("base", e.get("id", 0))))
+	if not _magic_growth_cache.has(key):
+		var rec := XDB.rec("Weapons" if kind == "weapon" else "Armors", int(e.get("base", e.get("id", 0))))
+		_magic_growth_cache[key] = XPower.magic_growth(rec if not rec.is_empty() else e)
+	return float(lv) * float(_magic_growth_cache[key][i])
 
 ## 正式版运行时对角色命中率保底 0.9（命中 = xparam 0）。
 func xparam(i: int) -> float:
