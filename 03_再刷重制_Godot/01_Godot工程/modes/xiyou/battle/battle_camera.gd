@@ -89,7 +89,7 @@ func screen_offset() -> Vector2:
 
 
 static func _round(v: float) -> float:
-	return floorf(v + 0.5)
+	return XPower.js_round(v)
 
 
 # ---- BattleManager.targetPosX/Y 与 Game_Battler.cameraPosX/Y ----

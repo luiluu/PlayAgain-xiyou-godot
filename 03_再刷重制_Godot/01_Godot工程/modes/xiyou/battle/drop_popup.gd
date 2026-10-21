@@ -188,7 +188,7 @@ func _bounce(g: Dictionary) -> void:
 	if g.ry >= 0.0:
 		g.ry = 0.0
 		g.dy *= -0.7
-	g.y = -g.intY + floorf(g.ry + 0.5)      # JS Math.round
+	g.y = -g.intY + XPower.js_round(g.ry)      # JS Math.round
 	if g.y < -g.intY:
 		g.x += g.vx
 	if g.y == -g.intY:

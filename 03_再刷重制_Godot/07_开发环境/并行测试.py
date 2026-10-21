@@ -17,6 +17,10 @@
   指纹 = 工程目录下除 .godot/ 外每个文件的路径与内容 SHA-256（跟随软链接，含未入 Git 的 generated/ 转换与参照数据）
   ＋ Godot 可执行文件的真实路径、大小、修改时间与 --version ＋ 本脚本内容 ＋ 超时上限。任何一项变了就整轮重跑；
   读不到、解析不了上次记录也整轮重跑。--full 或 CHECK_FULL=1 强制整轮。
+  沿用前逐条严格校验（reusable_results）：记录须是对象、场景集合相同、每条只含布尔 passed 与字符串 line；
+  passed 为真的那条 line 还要用 result_ok 复核（passed＝total＞0）。任一条结构不对或自相矛盾，整份当作没有记录、整轮重跑。
+- 心跳：批测与排槽期间每 XIYOU_TEST_HEARTBEAT 秒（默认 300，0 关闭）打印一行进度（完成数、等槽数、在跑的场景），
+  免得长任务.py 的无输出看门狗（默认 3600 秒）把仍在推进的批测判成卡住；不放宽看门狗、不改并发。
 - 共用状态目录：XIYOU_TEST_STATE_DIR，否则 <git-common-dir>/xiyou_test_state（主工作区与各 worktree 共用），不在 Git 里时用系统临时目录。
 """
 import argparse
@@ -31,6 +35,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 
@@ -38,6 +43,7 @@ TIMEOUT = 600  # xiyou_rules 角色 P0 后单跑约 200 秒，满负载并行时
 SLOW = TIMEOUT // 2  # 超过就提示按场景拆分（xiyou_rules、smart_ai 已拆成约 100 秒一份）
 FLAKY_RERUN_MAX = 3  # 并行负载下偶发失败（floor16、floor_run_c 等）最多单独重跑这么多个
 RESULTS_KEEP = 20  # 共用状态目录里最多保留这么多份整轮结果（按指纹）
+HEARTBEAT = 300  # 默认心跳间隔（秒），远小于长任务.py 的 3600 秒无输出上限
 
 
 def result_ok(rc: int, out: str) -> bool:
@@ -51,6 +57,56 @@ def result_ok(rc: int, out: str) -> bool:
         return False
     return (isinstance(result, dict) and type(result.get('total')) is int and result['total'] > 0
             and type(result.get('passed')) is int and result['passed'] == result['total'])
+
+
+def reusable_results(prev, fingerprint: str, scenes: list) -> dict:
+    """上轮整轮记录里可沿用的场景 → TEST_RESULT 行。记录结构不对或任一条自相矛盾时整份作废（返回空，整轮重跑）。"""
+    if not isinstance(prev, dict) or prev.get('fingerprint') != fingerprint:
+        return {}
+    rows = prev.get('scenes')
+    if not isinstance(rows, dict) or sorted(rows) != scenes:
+        return {}
+    out = {}
+    for name, row in rows.items():
+        if not isinstance(row, dict) or set(row) != {'passed', 'line'} or type(row['passed']) is not bool \
+                or not isinstance(row['line'], str):
+            return {}
+        if row['passed']:
+            if not result_ok(0, 'TEST_RESULT=' + row['line']):
+                return {}
+            out[name] = row['line']
+    return out
+
+
+class Progress:
+    """心跳用的进度：等槽、在跑、完成。"""
+    def __init__(self, total: int):
+        self.lock = threading.Lock()
+        self.total, self.done = total, 0
+        self.waiting, self.running = set(), set()
+
+    def line(self) -> str:
+        with self.lock:
+            return '  · 进行中：完成 %d/%d，等槽 %d，在跑 %s' % (
+                self.done, self.total, len(self.waiting), '、'.join(sorted(self.running)) or '无')
+
+
+@contextlib.contextmanager
+def heartbeat(progress: Progress, interval: float):
+    stop = threading.Event()
+
+    def beat():
+        while not stop.wait(interval):
+            print(progress.line(), flush=True)
+    t = threading.Thread(target=beat, daemon=True)
+    if interval > 0:
+        t.start()
+    try:
+        yield
+    finally:
+        stop.set()
+        if interval > 0:
+            t.join()
 
 
 def state_dir(project: str) -> Path:
@@ -112,8 +168,15 @@ def global_slot(sdir: Path, limit: int):
         time.sleep(0.5)
 
 
-def run_one(godot: str, project: str, name: str, sdir: Path, limit: int) -> tuple:
+def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progress: Progress = None) -> tuple:
+    if progress:
+        with progress.lock:
+            progress.waiting.add(name)
     with global_slot(sdir, limit):
+        if progress:
+            with progress.lock:
+                progress.waiting.discard(name)
+                progress.running.add(name)
         start = time.time()
         with tempfile.TemporaryDirectory(prefix='xiyou_test_home_') as home:
             env = dict(os.environ, HOME=home)
@@ -125,6 +188,10 @@ def run_one(godot: str, project: str, name: str, sdir: Path, limit: int) -> tupl
                 out = ''.join(x.decode(errors='replace') if isinstance(x, bytes) else (x or '')
                               for x in (e.stdout, e.stderr))
                 rc = 142
+        if progress:
+            with progress.lock:
+                progress.running.discard(name)
+                progress.done += 1
         return name, rc, out, time.time() - start
 
 
@@ -210,25 +277,25 @@ def main() -> int:
     fingerprint = project_fingerprint(a.godot, a.project, sdir) if whole else ''
     reused = {}  # 场景 → 上轮通过时的 TEST_RESULT 行
     if whole and not a.full:
-        prev = read_json(sdir / 'results' / (fingerprint + '.json'), {})
-        if prev.get('fingerprint') == fingerprint and sorted(prev.get('scenes', {})) == scenes:
-            reused = {n: r['line'] for n, r in prev['scenes'].items()
-                      if r.get('passed') is True and isinstance(r.get('line'), str)}
+        reused = reusable_results(read_json(sdir / 'results' / (fingerprint + '.json'), {}), fingerprint, scenes)
     timings = read_json(sdir / 'timings.json', {})
     todo = sorted((n for n in scenes if n not in reused), key=lambda n: (-float(timings.get(n, 1e9)), n))
     attempts = {}  # 场景 → [(rc, out, secs), …]：首次在前，重跑依次追加，不覆盖
     started = time.monotonic()
-    with cf.ThreadPoolExecutor(max_workers=a.jobs) as pool:
-        for name, rc, out, secs in pool.map(lambda n: run_one(a.godot, a.project, n, sdir, limit), todo):
-            attempts[name] = [(rc, out, secs)]
-    failed = [n for n in todo if not result_ok(*attempts[n][0][:2])]
+    progress = Progress(len(todo))
     flaky = []
-    if a.jobs > 1 and len(todo) > 1 and 0 < len(failed) <= FLAKY_RERUN_MAX:
-        for name in failed:
-            again = run_one(a.godot, a.project, name, sdir, limit)[1:]
-            attempts[name].append(again)
-            if result_ok(again[0], again[1]):
-                flaky.append(name)
+    with heartbeat(progress, float(os.environ.get('XIYOU_TEST_HEARTBEAT', HEARTBEAT))):
+        with cf.ThreadPoolExecutor(max_workers=a.jobs) as pool:
+            for name, rc, out, secs in pool.map(lambda n: run_one(a.godot, a.project, n, sdir, limit, progress), todo):
+                attempts[name] = [(rc, out, secs)]
+        failed = [n for n in todo if not result_ok(*attempts[n][0][:2])]
+        if a.jobs > 1 and len(todo) > 1 and 0 < len(failed) <= FLAKY_RERUN_MAX:
+            progress.total += len(failed)
+            for name in failed:
+                again = run_one(a.godot, a.project, name, sdir, limit, progress)[1:]
+                attempts[name].append(again)
+                if result_ok(again[0], again[1]):
+                    flaky.append(name)
     final = {n: result_ok(*attempts[n][-1][:2]) for n in todo}
     fail = 0
     for name in scenes:

@@ -30,6 +30,21 @@ cases.push(makeCase('heal.none', {type: 3}, () => { newGame(); const a = w.$game
 cases.push(makeCase('heal.enemy', {troop: 770, type: 3}, () => { newGame(); w.$gameTroop.setup(770); const e = w.$gameTroop.members()[0];
   const b = w.$gameActors.actor(8); clean(b); return {value: calc(e, b, heal(3))}; }));
 
+// 2b) Math.round 取整边界（沙僧 2026-10-21 P2）：真实 healing 入口，公式写成字面量 X（回复型 sign＝-1，取整前即 -X）；
+//     覆盖正负半数、已是整数的大奇数、2^52／2^53 邻域。另录原生 Math.round(±x) 表，供 Godot 取整辅助逐例对照（含正值结算方向）。
+const ROUND_INPUTS = ['0.5', '1.5', '2.5', '0.49999999999999994', '631187.5', '631186.5', '4503599627370495.5',
+  '4503599627370495', '4503599627370496', '4503599627370497', '4503599627370499', '9007199254740991', '9007199254740992', '9007199254740994', '1e21'];
+const healFormula = (type, formula) => Object.assign(heal(type), {damage: Object.assign(heal(type).damage, {formula})});
+for (const x of ROUND_INPUTS)
+  cases.push(makeCase('heal.round.' + x, {type: 3, input: Number(x), formula: x}, () => { newGame(); const a = w.$gameActors.actor(1), b = w.$gameActors.actor(8);
+    clean(a); clean(b); return {value: calc(a, b, healFormula(3, x))}; }));
+cases.push(makeCase('round.native', {inputs: ROUND_INPUTS}, () => ({rows: ROUND_INPUTS.map(Number).flatMap(x => [x, -x])
+  .map(x => [x, Math.round(x)])})));
+// 同一张表按 IEEE-754 双精度位（小端十六进制）记录：Godot 的数字解析不是正确舍入（4503599627370495.5 读成 …495.0），按位才能逐例对照
+const bits = x => { const b = Buffer.alloc(8); b.writeDoubleLE(x); return b.toString('hex'); };
+cases.push(makeCase('round.native.bits', {inputs: ROUND_INPUTS, encoding: 'float64-le-hex'}, () => ({rows: ROUND_INPUTS.map(Number).flatMap(x => [x, -x])
+  .map(x => [bits(x), bits(Math.round(x))])})));
+
 // 3) 指令 283 更改战斗背景的存档行为（悟空_24 低级项）：$gameMap 整个进存档（makeSaveContents.map），同版本读档不重设地图；
 //    同图移动不 setup、换图 setupBattleback 重设为地图指定；版本号不同时 reloadMapIfUpdated 重载本图也会重设。
 //    放在可败战斗之前：updateBattleEnd 留下的换场景状态会让之后的解释器停在原地。

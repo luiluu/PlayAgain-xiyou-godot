@@ -155,7 +155,7 @@ static func drops(s: XState, enemy: Dictionary) -> Array:
 		if not TYPES.has(kind) or float(d.denominator) <= 0:
 			continue
 		var item := XDB.rec(TABLES[kind], int(d.dataId))
-		var rate := minf(floorf((1.0 / float(d.denominator)) * base * 100000.0 + 0.5) / 1000.0, 100.0)
+		var rate := minf(XPower.js_round((1.0 / float(d.denominator)) * base * 100000.0) / 1000.0, 100.0)
 		out.append({"type": TYPES[kind], "kind": kind, "id": int(d.dataId), "rate": rate, "item": item, "order": out.size()})
 	out.sort_custom(func(a, b):
 		var qa := quality(a.item)

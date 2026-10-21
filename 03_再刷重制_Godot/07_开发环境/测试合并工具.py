@@ -226,7 +226,7 @@ class ParallelTestRunnerTests(unittest.TestCase):
         (self.tmp / 'runs').unlink(missing_ok=True)
         cmd = [sys.executable, str(HERE / '并行测试.py'), '--jobs', str(jobs), str(self.godot), str(self.tmp / 'proj'), *args]
         base = {k: v for k, v in os.environ.items() if k not in ('CHECK_FULL', 'CHECK_JOBS', 'CHECK_LOG_DIR')}
-        env = dict(base, XIYOU_TEST_STATE_DIR=str(self.state), CHECK_GLOBAL_JOBS='4', **env)
+        env = dict(base, XIYOU_TEST_STATE_DIR=str(self.state), **{'CHECK_GLOBAL_JOBS': '4', **env})
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=60, env=env)
         runs = (self.tmp / 'runs').read_text().split() if (self.tmp / 'runs').exists() else []
         return p, runs
@@ -292,6 +292,37 @@ class ParallelTestRunnerTests(unittest.TestCase):
             f.write_text('坏')  # 记录读不了：整轮
         _, runs = self.run_tests(jobs=1)
         self.assertEqual(len(runs), 4)
+
+    def test_corrupt_or_contradictory_cache_is_not_reused(self):
+        # 沙僧 2026-10-21 P2 复现（review_phase2_cache_corruption.json）：passed=true 但 line 是失败计数仍被沿用、退出 0；
+        # 合法 JSON 但结构是数组时 AttributeError。两种都应当作没有记录、整轮重跑并正常通过。
+        p, runs = self.run_tests(jobs=1)
+        self.assertEqual((p.returncode, len(runs)), (0, 3), p.stdout)
+        [result] = list((self.state / 'results').glob('*.json'))
+        data = json.loads(result.read_text())
+        data['scenes']['a.tscn']['line'] = '{"passed":0,"total":999}'
+        result.write_text(json.dumps(data))
+        p, runs = self.run_tests(jobs=1)
+        self.assertEqual((p.returncode, sorted(runs)), (0, ['a.tscn', 'b.tscn', 'c.tscn']), p.stdout)
+        self.assertNotIn('沿用', p.stdout)
+        self.assertNotIn('"total":999', p.stdout)
+        for bad in ([], {'fingerprint': data['fingerprint'], 'scenes': []},
+                    {'fingerprint': data['fingerprint'], 'scenes': dict(data['scenes'], **{'b.tscn': ['x']})},
+                    {'fingerprint': data['fingerprint'], 'scenes': dict(data['scenes'], **{'b.tscn': {'passed': 1, 'line': '{"passed":1,"total":1}'}})}):
+            result.write_text(json.dumps(bad))
+            p, runs = self.run_tests(jobs=1)
+            self.assertEqual((p.returncode, len(runs)), (0, 3), (bad, p.stdout, p.stderr))
+            self.assertNotIn('Traceback', p.stderr)
+
+    def test_heartbeat_while_waiting_and_running(self):
+        # 排槽（共用上限 1、另一份占着）与长测试期间按间隔打印进度，免得长任务.py 无输出看门狗误判卡住
+        p, _ = self.run_tests('--full', jobs=3, BUSY='1', XIYOU_TEST_HEARTBEAT='0.1', CHECK_GLOBAL_JOBS='1')
+        self.assertEqual(p.returncode, 0, p.stdout)
+        beats = [l for l in p.stdout.splitlines() if '进行中：完成' in l]
+        self.assertTrue(beats, p.stdout)
+        self.assertTrue(any('等槽' in l and '在跑' in l for l in beats))
+        p, _ = self.run_tests('--full', jobs=3, BUSY='1', XIYOU_TEST_HEARTBEAT='0')
+        self.assertNotIn('进行中：完成', p.stdout)
 
     def test_global_slot_limit_across_runners(self):
         cmd = [sys.executable, str(HERE / '并行测试.py'), '--jobs', '3', '--full', str(self.godot), str(self.tmp / 'proj')]

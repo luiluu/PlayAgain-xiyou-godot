@@ -2,6 +2,7 @@ extends Node
 ## 2026-10-18 核查第二批（沙僧）修复的回归：与 mv_oracle/review_fix_probe.cjs 逐例比（generated/oracle/review_fix.json）。
 ## - 回春：治疗被动 passiveHEUP 在浮动与取整前相乘（HP／MP 回复、三个境界、无道法与敌人施法基线）。
 ##   实战 Game_Action.apply 原版还会在 executeDamage 再乘一次（dsPassiveSkill），重制只乘一次（O-052）：heal.apply.r3 比预览值。
+## - Math.round 取整边界：heal.round.*（正负半数、大整数、2^52／2^53 邻域）与原生取整表 round.native。
 ## - 可败战斗全灭：真实 XBattleScene 结束链，canLose 时阵亡出战者复活到 1 HP；不可败时不复活。
 ##   参照里的部分阵亡（lose.770.partial）不会进全灭分支，原版也不复活，只核参照本身。
 class QuickBattle extends XBattleScene:
@@ -37,6 +38,10 @@ func _clean(a: XActor) -> void:
 	a.recover_all()
 
 
+## round.native.bits 还原的取整输入：公式字面量 → 精确双精度
+var round_inputs := {}
+
+
 static func _heal(type: int) -> Dictionary:
 	return {"id": 0, "name": "核查固定恢复", "stypeId": 1, "hitType": 0, "scope": 7, "note": "", "meta": {}, "effects": [],
 		"damage": {"type": type, "formula": "100", "formulaGd": "100", "formulaProgram": JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/formula_effect_programs.json"))["runtime.constant100"].program, "elementId": 0, "variance": 0, "critical": false}}
@@ -59,6 +64,9 @@ func _heal_case(id: String, o: Dictionary):
 	if id == "heal.enemy":
 		var e := XEnemy.new().setup(int(XDB.rec("Troops", 770).members[0].enemyId), s.difficulty, 100.0)
 		return {"value": XDamage.calculate(_heal(3), e, b, {"variance": false}).value}
+	if id.begins_with("heal.round."):
+		# Math.round 取整边界：参照公式写字面量 X，回复型取整前即 -X；这里直接给同一取整前值（按 round.native.bits 的位还原 X）
+		return {"value": XDamage.calculate(_heal(3), a, b, {"variance": false, "rawValue": -float(round_inputs[str(o.formula)])}).value}
 	if id == "heal.none":
 		return {"value": XDamage.calculate(_heal(3), a, b, {"variance": false}).value}
 	_huichun(a, int(o.realm))
@@ -98,6 +106,10 @@ func _run() -> void:
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
 	if check("oracle_loaded", data is Dictionary, ORACLE):
 		for c in data.cases:
+			if c.id == "round.native.bits" and c.errors.is_empty():
+				for i in range(c.setup.inputs.size()):
+					round_inputs[str(c.setup.inputs[i])] = str(c.observed.rows[2 * i][0]).hex_decode().decode_double(0)
+		for c in data.cases:
 			if not c.errors.is_empty():
 				check("oracle_" + c.id, false, c.errors)
 				continue
@@ -112,6 +124,16 @@ func _run() -> void:
 					check(c.id + ".single", got.hp == got.preview, got)
 				else:
 					check(c.id, JSON.stringify(got) == JSON.stringify(want) or (got.value == float(want.value) and got.get("passive", []) == want.get("passive", [])), [got, want])
+			elif c.id == "round.native":
+				# 可读表；逐例对照用下面按位记录的 round.native.bits（Godot 数字解析不是正确舍入）
+				check(c.id + ".rows", want.rows.size() == 2 * c.setup.inputs.size(), want.rows.size())
+			elif c.id == "round.native.bits":
+				# 原生 Math.round(±x) 逐例对照 XPower.js_round（伤害结算、治疗、真气、掉落弹字等共用的取整），输入与期望都按双精度位还原
+				for row in want.rows:
+					var x := str(row[0]).hex_decode().decode_double(0)
+					var got := XPower.js_round(x)
+					var exp := str(row[1]).hex_decode().decode_double(0)
+					check("round.bits.%s" % row[0], got == exp and (got == 0.0 or signf(got) == signf(exp)), [row, x, got, exp])
 			elif c.id == "lose.770.partial":
 				check(c.id + ".mv_no_revive", want.dead == [true, false, true, false] and want.hp[0] == 0, want)
 			elif c.id.begins_with("lose."):
