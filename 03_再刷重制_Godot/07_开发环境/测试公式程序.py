@@ -66,8 +66,12 @@ class FormulaCompilerTests(unittest.TestCase):
         p = compile_formula('var x=b.hp; b.gainHp(-3); if(x>2)b.gainMp(-1); value=b.hp;', custom=True)
         self.assertEqual(p['status'], 'effectful')
         self.assertTrue({'write.hp', 'write.mp'} <= set(p['capabilities']))
-        for source in ['b.gainHp()', 'b.gainMp(1,2)', 'b.addShield(1);value=0;', 'b.setHp(1);value=0;']:
+        for source in ['b.gainHp()', 'b.gainMp(1,2)', 'b.addShield()', 'b.addShield(1,2);value=0;', 'b.setHp(1);value=0;']:
             self.assertEqual(compile_formula(source, custom=True)['status'], 'unsupported')
+        # ShieldSystem：addShield 要显式写能力，a.shield 只读
+        p = compile_formula('b.addShield(Math.floor(a.mhp*0.2+a.shield)); 0')
+        self.assertEqual((p['status'], p['capabilities']), ('effectful', ['read.battler', 'write.shield']))
+        self.assertEqual(p['steps'][0]['value']['op'], 'shield')
 
     def test_production_random_ownership_guard(self):
         core = TOOLS.parent / '01_Godot工程/modes/xiyou'

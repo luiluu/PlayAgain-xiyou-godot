@@ -16,6 +16,7 @@
 - `dual_wield_probe.cjs`：双持装备槽（特性 55 时 equipSlots 第 2 格改为武器、convertInitEquips／grabInitEquips）：刘备（13，专属剑 2005 带双持）与曼德斯（26，职业双持）逐步换装、清空、最强装备后的槽位类型、装备、背包、装备页候选、能力值与 attackAnimationId1／2，及若干初始装备表；只写 `.sandbox/dual_wield.json`，Godot 侧对照见 `tests/xiyou_dual_wield`。
 - `magic_weapon_probe.cjs`：法宝每级成长（CP_MagicWeapon paramPlus：等级 × 数据库原件备注 `<xxx Param +N per Level>`）：八重樱 92 入队自带赤染樱在法宝 1／7／40 级，及诛仙剑（各项成长不同）、落芸之力（无专属）、带土的面具（头部法宝）装上后改等级时的能力值与 paramPlus；只写 `.sandbox/magic_weapon.json`，Godot 侧对照见 `tests/xiyou_magic_weapon`。
 - `custom_params_probe.cjs`：装备 `<Custom Parameters>`（YEP_EquipCore evalParamPlus，转换器解析成 `customParams`：每项能力 常数＋等级系数＋变量系数）：每种写法一件，单独装到切片角色上量 1／20／60 级，读变量的再设两组变量（未设的变量原版是 NaN，记 null）；只写 `.sandbox/custom_params.json`，Godot 侧对照见 `tests/xiyou_custom_params`。
+- `shield_probe.cjs`：护盾（ShieldSystem，冻结参数 decayRate 0.20／damageReduction 0.5）：加盾公式（ShieldEffect 状态／装备、真气金身、已有护盾）、读 `a.shield` 的公式、executeHpDamage（含吸取、护法）、gainHp（角色结果槽记原值、敌人记减免后）、regenerateAll（流血经护盾、每回合衰减、倒下的也衰减）；夹具固定能力值、特性对象只用写明的状态与装备，只写 `.sandbox/shield.json`，Godot 侧对照见 `tests/xiyou_shield`。
 - `help_probe.cjs`：在内存新游戏中对物品（1～200）、武器/防具（1～60）、切片角色技能、随机词缀装备实例调用正式版 `Sprite_ItemHelp.setItem`，记录实际画出的每一行（文字、字号、颜色、y、对齐）与卡片宽高；只写 `.sandbox/help_cards.json`，验收后复制到 `generated/oracle/`，供 Godot 说明卡（XHelpCard）对照。
 - `hang_up_probe.cjs`：七个挂机子页窗口、技能次数/顺序、正常战后回血/回蓝/复活、七档卖出状态与 64 种品质星级；只写 `.sandbox/hang_up.json`，核验后复制到 `generated/oracle/`。固定能力值隔离不移植的 growth；初始化成就为已领取、绕过场景退出与死亡停止以单测吃药分支，实际战后调用另由 Godot 测试覆盖。与其余四探针一起重跑并核验来源。
 - `source_identity.cjs`：两种探针共用的原始数据与运行脚本指纹。

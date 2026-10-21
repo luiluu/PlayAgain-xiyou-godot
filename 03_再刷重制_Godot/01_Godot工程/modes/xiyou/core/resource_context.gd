@@ -1,6 +1,6 @@
 class_name XResourceContext
 extends RefCounted
-## Explicit action-owned gain/set/refresh chain for the currently ported, unshielded capabilities.
+## Explicit action-owned gain/set/refresh chain for the currently ported capabilities (ShieldSystem included).
 ## Result slots store requested deltas; journal stores actual changes separately.
 var random: XRandomStream
 var journal: Array = []
@@ -54,8 +54,6 @@ static func permanent(id: int) -> bool:
 static func supported(b: XBattler) -> String:
 	if b.has_meta("resource_hooks") and not b.get_meta("resource_hooks").is_empty():
 		return "unregistered_resource_hooks"
-	if b.has_meta("shield") and float(b.get_meta("shield")) > 0.0:
-		return "shield_resource_pending"
 	for state in b.states():
 		if state.get("meta", {}).has("SC触发开关解除"):
 			return "state_remove_switch_pending"
@@ -78,8 +76,16 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		error = unsupported
 		return {}
 	var before := snapshot(b)
+	var requested := amount
+	var shown := amount
+	# 扣血先吸收护盾，击穿后剩余减半。敌人走 ShieldSystem 的 gainHp 钩子，结果槽记减免后；角色的 gainHp 是
+	# krz_state_re 在 Game_Actor 上的自有方法（盖过后装的 gainHp 钩子），结果槽记原值，由 setHp 钩子减免实际扣量。
+	if resource == "hp" and amount < 0.0:
+		amount = -b.absorb_shield(-amount)
+		if not b is XActor:
+			shown = amount
 	var r := result(b)
-	r[resource + "Damage"] = -amount
+	r[resource + "Damage"] = -shown
 	if resource == "hp":
 		r.hpAffected = true
 	var old: float = b.get(resource)
@@ -88,8 +94,20 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		b.set(resource, old + amount)
 		refresh(b)
 	var after := snapshot(b)
-	var entry := {"receiver": labels.get(b, "b"), "resource": resource, "requestedDelta": amount,
+	var entry := {"receiver": labels.get(b, "b"), "resource": resource, "requestedDelta": requested,
 		"actualDelta": float(b.get(resource)) - old, "before": before, "after": after}
+	journal.append(entry)
+	return entry
+
+## 公式 a.addShield(x)／b.addShield(x)：不写结果槽；逐句记录里 resource 记 shield，前后快照照常（快照不含护盾，另记 shieldBefore／shieldAfter）。
+func add_shield(b: XBattler, amount: float) -> Dictionary:
+	if not error.is_empty():
+		return {}
+	var before := snapshot(b)
+	var old := b.shield
+	b.add_shield(amount)
+	var entry := {"receiver": labels.get(b, "b"), "resource": "shield", "requestedDelta": amount,
+		"actualDelta": b.shield - old, "shieldBefore": old, "shieldAfter": b.shield, "before": before, "after": snapshot(b)}
 	journal.append(entry)
 	return entry
 

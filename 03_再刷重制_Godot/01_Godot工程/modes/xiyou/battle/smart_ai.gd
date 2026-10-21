@@ -10,7 +10,9 @@ extends RefCounted
 ##   期望值再 × 命中（XBattleLogic.item_hit：必中被动、YEP_HitAccuracy 公式）×（1−闪避）×（1＋暴击率×0.5）。
 ## - 分数：伤害效用（威胁度 ×(11000×伤害/剩余HP ＋ 能击杀 7000 ＋ 4000×伤害/本回合最大伤害)）、治疗/复活/回蓝/TP 急需度、
 ##   增减益与状态收益（长战才计满）、代价倍率（药 0.65；技能按 MP/TP 消耗比例），全体取合计、单体取最佳目标、随机按期望段数。
-## - 没移植（重制版尚无这些角色/系统）：奈叶小魔炮、米拉/渡鸦/宿傩等角色专属估算与 profile、护盾、Boss 霸体（CodexBossDifficulty）。
+## - 护盾（ShieldSystem）：剩余 HP 与急需度按 HP＋护盾算；对友方的加盾技能按 shieldEstimate 加分（缺口＝生命上限 80%−现有护盾）。
+##   重制版没有 YEP 吸收屏障与来源护盾账本，shieldPoints 只算原生护盾。
+## - 没移植（重制版尚无这些角色/系统）：奈叶小魔炮、米拉/渡鸦/宿傩等角色专属估算与 profile、Boss 霸体（CodexBossDifficulty）。
 ##   这些在正式版里也只对对应角色/敌人生效；随相关内容接入时补上。
 
 const MASTERY_NOTE := "<Custom Damage Mastery Formula:\\s*value\\s*\\*\\s*\\(1\\s*\\+\\s*level\\s*\\*\\s*([\\d.]+)\\)\\s*>"
@@ -190,8 +192,40 @@ func threat(t: XBattler, foes: Array) -> float:
 	return minf(1.4, 0.8 + 0.35 * power.call(t) / highest + (0.15 if is_boss(t) else 0.0))
 
 
+## shieldPoints：原生护盾（没有吸收屏障与来源护盾账本）
+static func shield_points(t: XBattler) -> float:
+	return maxf(0.0, t.shield)
+
+
+## shieldEstimate：公式整条是「b／target.addShield(式子); 0」（对自己时也认 a／user）且式子只含能力值与 Math 函数时，
+## 按本次行动预演（不写入）得到的护盾增量，已含受益者护盾加成；其余 0。
+static var _shield_formula_re := RegEx.create_from_string("^(?:b|target)\\.addShield\\((.+)\\)\\s*;\\s*0\\s*$")
+static var _self_shield_re := RegEx.create_from_string("^(?:a|user)\\.addShield\\((.+)\\)\\s*;\\s*0\\s*$")
+static var _shield_reads_re := RegEx.create_from_string("(?:a|b|user|target)\\.(?:mhp|mmp|hp|mp|atk|def|mat|mdf|agi|luk|level)\\b")
+static var _shield_math_re := RegEx.create_from_string("Math\\.(?:floor|ceil|round|max|min|abs|pow|sqrt)\\b")
+static var _shield_plain_re := RegEx.create_from_string("^[\\d\\s.+*/()%\\-,]+$")
+func shield_estimate(a: XBattler, t: XBattler, rec: Dictionary) -> float:
+	var formula := str(rec.get("damage", {}).get("formula", ""))
+	var m := _shield_formula_re.search(formula)
+	if m == null and a == t:
+		m = _self_shield_re.search(formula)
+	if m == null:
+		return 0.0
+	var stripped := _shield_math_re.sub(_shield_reads_re.sub(m.get_string(1), "1", true), "1", true)
+	if _shield_plain_re.search(stripped) == null:
+		return 0.0
+	var out := XFormulaExecution.run_item(rec, a, t, logic.vars(), {}, false)
+	if not out.get("available", false):
+		return 0.0
+	var gained := 0.0
+	for e in out.effectJournal:
+		if e.resource == "shield" and e.receiver == ("a" if a == t else "b"):
+			gained += maxf(0.0, float(e.actualDelta))
+	return gained
+
+
 func damage_utility(t: XBattler, damage: float, foes: Array, ctx := {}) -> float:
-	var hp := maxf(1.0, t.hp)
+	var hp := maxf(1.0, t.hp + shield_points(t))
 	var effective := minf(hp, maxf(0.0, damage))
 	if effective <= 0.0:
 		return 0.0
@@ -217,7 +251,7 @@ func recovery_utility(t: XBattler, rec: Dictionary, item: bool) -> float:
 		return 0.0
 	var mx := maxf(1.0, t.mhp)
 	var missing := maxf(0.0, mx - t.hp)
-	var rate := minf(1.0, t.hp / mx)
+	var rate := minf(1.0, (t.hp + shield_points(t)) / mx)
 	var score := 0.0
 	var effective := minf(missing, healing_amount(t, rec, item, false))
 	if missing / mx >= 0.18 or rate < 0.4:
@@ -294,6 +328,9 @@ func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary) -> Dictionary
 		var score := recovery_utility(t, rec, item) if for_friend(rec) else 0.0
 		var hit_damage := 0.0
 		var hit_score := 0.0
+		if for_friend(rec):
+			var gap := maxf(0.0, t.mhp * 0.8 - shield_points(t))
+			score += 16000.0 * minf(gap, shield_estimate(actor, t, rec)) / maxf(1.0, t.mhp) * (1.0 if ctx.longFight else 0.12)
 		score += benefit(t, rec, ctx)
 		if for_opponent(rec) and dmg_type in [1, 5]:
 			hit_damage = expected_damage(actor, t, rec)
@@ -341,7 +378,7 @@ func _choose() -> Dictionary:
 			candidates.append({"rec": s, "item": false})
 	if legal(attack, false) and not candidates.any(func(c): return int(c.rec.id) == int(attack.id)):
 		candidates.append({"rec": attack, "item": false})
-	var urgent := friends.any(func(t): return t.is_dead() or t.hp / maxf(1.0, t.mhp) < 0.25)
+	var urgent := friends.any(func(t): return t.is_dead() or (t.hp + shield_points(t)) / maxf(1.0, t.mhp) < 0.25)
 	context = {"friends": friends, "foes": foes, "urgent": urgent, "longFight": false, "damageScale": 0.0}
 	var scale := 0.0
 	for c in candidates:
@@ -358,7 +395,7 @@ func _choose() -> Dictionary:
 			best_attack = maxf(best_attack, float(score_candidate(c.rec, false, context).score))
 	var whole := 0.0
 	for t in foes:
-		whole += damage_utility(t, t.hp, foes)
+		whole += damage_utility(t, t.hp + shield_points(t), foes)
 	context.longFight = not foes.is_empty() and best_attack < whole * 0.92
 	var ids := logic.state.items.keys().map(func(k): return int(k))
 	ids.sort()

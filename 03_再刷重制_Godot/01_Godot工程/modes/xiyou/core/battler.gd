@@ -44,6 +44,8 @@ var warmups := {}
 ## 真气道法（XZhenqi）：元婴护体本场已用（_codexZqGuard，BattleManager.setup 时清）；破甲·真气 2705 的双防倍率（_codexZqPojiaRate，0.5＝原状态）
 var zq_guard := false
 var zq_pojia_rate := 0.5
+## ShieldSystem 护盾（Game_Battler._shield）：受击先吸收，击穿后剩余伤害减半；每回合末衰减；战斗结束清零。
+var shield := 0.0
 
 var mhp: float:
 	get: return param(0)
@@ -186,6 +188,48 @@ func end_battle_cooldowns() -> void:
 ## 公式兼容：技能熟练度（YEP_SkillMasteryLevels），首期统一为 0。
 func skillMasteryLevel(_skill_id: int) -> int:
 	return 0
+
+
+# ---- 护盾（ShieldSystem v2.8；参数 decayRate／damageReduction 取自插件设置）----
+static var _shield_effect_re: RegEx
+
+static func _shield_param(key: String, def: String) -> float:
+	return float(XDB.plugin("ShieldSystem").get(key, def))
+
+## shieldEffectBonus：特性对象备注 <ShieldEffect:n> 各取第一处相加（n/100），再加真气道法「金身」。
+func shield_effect_bonus() -> float:
+	if _shield_effect_re == null:
+		_shield_effect_re = RegEx.create_from_string("(?i)<ShieldEffect\\s*:\\s*(\\d+)>")
+	var bonus := 0.0
+	for obj in trait_objects():
+		var m := _shield_effect_re.search(str(obj.get("note", "")))
+		if m:
+			bonus += int(m.get_string(1)) / 100.0
+	return bonus + XZhenqi.shield_effect_bonus(self)
+
+## addShield：正数乘 (1＋加成)，负数直接扣；不取整，不低于 0。非有限数按 0。
+func add_shield(value: float) -> void:
+	if is_nan(value) or is_inf(value):
+		value = 0.0
+	if value > 0.0:
+		value *= 1.0 + shield_effect_bonus()
+	shield = maxf(0.0, shield + value)
+
+## executeHpDamage／gainHp／setHp 三处钩子的共同部分：正伤害先扣护盾，扣完还有剩余就按 damageReduction 减免后取整。
+func absorb_shield(damage: float) -> float:
+	if damage <= 0.0 or shield <= 0.0:
+		return damage
+	var absorb := minf(shield, damage)
+	shield = maxf(0.0, shield - absorb)
+	damage -= absorb
+	return floorf(damage * (1.0 - _shield_param("damageReduction", "0.5"))) if damage > 0.0 else 0.0
+
+## regenerateAll 之后（不论存活）：护盾减 floor(护盾×decayRate)。
+func decay_shield() -> void:
+	if shield > 0.0:
+		var decrease := floorf(shield * _shield_param("decayRate", "0.25"))
+		if decrease > 0.0:
+			shield = maxf(0.0, shield - decrease)
 
 
 # ---- 状态 ----
