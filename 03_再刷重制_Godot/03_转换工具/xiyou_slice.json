@@ -218,7 +218,23 @@
     130,
     131,
     141,
-    142
+    142,
+    146,
+    147,
+    148,
+    149,
+    150,
+    151,
+    152,
+    153,
+    155,
+    156,
+    159,
+    161,
+    162,
+    164,
+    165,
+    166
   ],
   "troops": [
     2,
@@ -409,7 +425,6 @@
     160,
     161,
     162,
-    163,
     164,
     189,
     190,
@@ -604,7 +619,9 @@
     "titles2/Particles",
     "titles2/Particles2",
     "titles2/Particles3",
-    "pictures/Ui_HangUpTCLH"
+    "pictures/Ui_HangUpTCLH",
+    "codex_achievements/EssenceMaster",
+    "codex_achievements/KYO"
   ],
   "fonts": [
     "FZLanTYJW_ZhongCu.TTF"

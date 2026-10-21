@@ -64,6 +64,11 @@ func _run() -> void:
 	check("same_source", ref.sourceIdentity.runtimeInputs == manifest.runtimeInputs)
 	check("files", XAchievementBadge.file_of(240201) == "EssenceMaster" and XAchievementBadge.file_of(240202) == "KYO" and XAchievementBadge.file_of(1) == "")
 	check("defs_icons", int(XAchievement.def(142).icon) == 240201 and int(XAchievement.def(143).icon) == 240202)
+	# 徽章 PNG 随切片导出并能加载为 256² 贴图
+	for f in ["EssenceMaster", "KYO"]:
+		var bp := XDB.img_path("codex_achievements", f)
+		var tex = load(bp) if bp != "" else null
+		check("png.%s" % f, tex is Texture2D and tex.get_width() == 256 and tex.get_height() == 256, bp)
 	for c in ref.cases:
 		var id := int(c.ach)
 		var name := str(c.id)
