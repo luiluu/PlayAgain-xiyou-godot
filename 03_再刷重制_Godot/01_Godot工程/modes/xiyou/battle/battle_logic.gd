@@ -1315,15 +1315,24 @@ func sequence_add_state(t: XBattler, id: int) -> void:
 
 
 ## 行动序列 HP/MP/TP ±（gainHp/gainMp/gainTp）：HP 归零即倒下
-func sequence_gain(t: XBattler, kind: String, value: float) -> void:
+## 返回弹字值：负 HP 与伤害同走护盾吸收链（Game_Battler.gainHp：先吸收、击穿后减半，ShieldSystem）；
+## 弹字角色记原值、敌人记减免后（同 XResourceContext.gain）。
+func sequence_gain(t: XBattler, kind: String, value: float) -> float:
+	var shown := value
 	match kind:
 		"HP":
-			t.hp = clampf(t.hp + value, 0.0, t.mhp)
+			var applied := value
+			if value < 0.0:
+				applied = -t.absorb_shield(-value)
+				if not t is XActor:
+					shown = applied
+			t.hp = clampf(t.hp + applied, 0.0, t.mhp)
 		"MP":
 			t.mp = clampf(t.mp + value, 0.0, t.mmp)
 		"TP":
 			t.tp = clampf(t.tp + value, 0.0, t.max_tp())
 	t.refresh_resources(_rule())
+	return shown
 
 
 ## 行动序列 ADD/REMOVE BUFF/DEBUFF（Game_Battler.addBuff/addDebuff：活着才加，等级 ±2 封顶，回合取较大者；remove 只去同方向）
