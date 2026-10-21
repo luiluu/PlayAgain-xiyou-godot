@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.110",
-  "sequence": 110,
-  "next": "dev.111",
-  "nextSequence": 111,
+  "current": "dev.111",
+  "sequence": 111,
+  "next": "dev.112",
+  "nextSequence": 112,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "project-thread-g69hjy",
+  "currentChange": "beautiful-ardinghelli-c2273d",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
