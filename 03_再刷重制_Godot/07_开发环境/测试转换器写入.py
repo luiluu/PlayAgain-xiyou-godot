@@ -120,7 +120,7 @@ class ExportWriteTests(unittest.TestCase):
         raw = (self.out / 'manifest.json').read_bytes()
         manifest = json.loads(raw)
         self.assertEqual(raw, (json.dumps(manifest, ensure_ascii=False, indent=1) + '\n').encode())
-        self.assertEqual(manifest['toolVersion'], 19)
+        self.assertEqual(manifest['toolVersion'], exporter.TOOL_VERSION)
         self.assertNotIn('manifest.json', manifest['outputs'])
         self.assertEqual(manifest['outputs']['slice.json'], exporter.sha((self.out / 'slice.json').read_bytes()))
         self.assertEqual((self.out / 'db/Items.json').read_bytes(), b'{"stage":"final","value":1}\n')
