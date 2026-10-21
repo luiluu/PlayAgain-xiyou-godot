@@ -88,6 +88,13 @@ func put(e: XEnemy, w: Dictionary) -> void:
 		e.buffs[i] = int(w.buffs[i])
 		e.buff_turns[i] = int(w.buffTurns[i])
 	e.refresh_passive()
+	# krz 能力值缓存按参照夹具同步：快照 snap() 读过全部八项（格子按当前状态全暖），夹具最后一步（addBuff／addState）留下 need_refresh。
+	# 334.hidden 参照在战斗外，起作用的是同周期的 paramRate 缓存（状态 77 的 ×0.8 留到 334 之后的 refresh）；这里用战斗内的格子表达同一结果。
+	e.param_mark_dirty()
+	e.param_refresh()
+	for i in range(8):
+		e.param(i)
+	e.param_mark_dirty()
 
 
 ## 与参照快照比：身份、隐藏、活着、HP/MP、状态、buff；名字可选

@@ -806,7 +806,11 @@ func _change_enemy_state(p: Array) -> void:
 			sequence_add_state(e, int(p[2]))
 		elif e.is_state_affected(int(p[2])):
 			e.remove_state(int(p[2]))
+		# 补的截资源对应 addState／removeState 内部的 refresh，原版在 krz 标 dirty 之前：不能当场消费刚标的 dirty
+		var dirty: bool = e.param_dirty
+		e.param_dirty = false
 		e.refresh_resources(_rule())
+		e.param_dirty = dirty
 
 
 ## Game_Action.setTarget 的序号按 smoothTarget（该序号不是活着的就取第一个活着的；对阵亡者的技能按 smoothDeadTarget）；
