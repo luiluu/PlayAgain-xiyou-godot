@@ -86,6 +86,9 @@ func _ready() -> void:
 	XSave.dir_override = DIR
 	XConfig.path_override = ""
 	XAchievement.time_override = TIME
+	# 本专项核对提示音参数，不验异步播放；批量达成会堆积 Saint5 的 Ogg 播放句柄（同 drop_dh 静音夹具）。
+	var popup_sound := str(XAchievementPopup.settings().get("Popup Sound", ""))
+	XSound._cache[popup_sound] = null
 	var f := FileAccess.open(ORACLE, FileAccess.READ)
 	if f == null:
 		print("FAIL missing oracle ", ORACLE)
