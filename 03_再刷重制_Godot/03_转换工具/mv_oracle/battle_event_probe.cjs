@@ -289,6 +289,31 @@ function paramCacheCase(o) {
     assert.equal(e._hp, before.cache[0], '334 先按旧缓存上限写回');
   }
 }
+// 难度 3 的被动 5980「难度适应」：开战附加 Permanent 状态 1691（特性 54 封印装备类型 15／16／18／19），addState 内部 Game_Actor.refresh
+// 的 releaseUnequippableItems(false) 把已装的件退回队伍背包。开战状态照 dsPassiveSkill 开战标签顺序直接附加（同 slice_probe）。
+function sealReleaseCase(o) {
+  const SEALED = [15, 16, 18, 19], ACTOR = 104;
+  w.eval('ConfigManager.applyData({});DataManager.setupNewGame();$gameSystem.setDifficultyId(3);for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
+  w.eval('$gameParty._actors=[];$gameParty.addActor(' + ACTOR + ');');
+  const a = w.$gameActors.actor(ACTOR);
+  for (const s of [6168, 5980, 5548]) a.learnSkill(s);
+  a.refresh(); a.recoverAll();
+  const read = () => ({states: json(a._states), mhp: a.mhp, mmp: a.mmp, hp: a.hp, inBattle: w.$gameParty.inBattle(),
+    sealedEquips: a.equips().map((e, i) => e && SEALED.includes(a.equipSlots()[i]) ? {slot: i, etype: a.equipSlots()[i], name: e.name} : null).filter(Boolean),
+    sealedBag: w.$gameParty.armors().filter(x => SEALED.includes(x.etypeId)).map(x => ({etype: x.etypeId, name: x.name, n: w.$gameParty.numItems(x)}))});
+  o.fixture = {actor: ACTOR, difficulty: 3, skills: [6168, 5980, 5548], troop: 2, startStates: [995, 1691, 1631]};
+  o.before = read();
+  w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
+  w.Math.random = () => 0.99;
+  const bm = w.BattleManager; bm.setup(2, true, false); bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
+  bm.startBattle(); w.Math.random = () => 0.5;
+  o.steps = [];
+  for (const s of o.fixture.startStates) { a.addState(s); o.steps.push(Object.assign({added: s}, read())); }
+  w.$gameParty.onBattleEnd(); w.$gameTroop.onBattleEnd(); a.refresh(); o.afterBattle = read();
+  o.canEquipAfter = w.$gameParty.armors().filter(x => SEALED.includes(x.etypeId)).map(x => ({name: x.name, canEquip: a.canEquip(x)}));
+  assert.ok(o.before.sealedEquips.length > 0, '104 开局装着被封印类型的装备');
+  assert.equal(o.afterBattle.sealedEquips.length, 0); assert.ok(o.afterBattle.states.includes(1691), '1691 战后不解除');
+}
 const result = {schemaVersion: 1, hostScope: 'headless-rule-timing', sourceIdentity: identity, scan: scanSource(),
   fixture: {party: PARTY, difficulty: 3, randomSetup: 0.99, randomBattle: 0.5, partyHpParamPlus: 999999999,
     actorInput: 'guard', messageClose: 'after 3 real BattleManager.update calls; UI frames are not measured'},
@@ -298,7 +323,7 @@ const result = {schemaVersion: 1, hostScope: 'headless-rule-timing', sourceIdent
   }), caseRun('troop165.real-turns1-4', realFourTurns), caseRun('command334.revive-and-recover', recoverCase), caseRun('command334.living-and-hidden', livingHiddenRecoverCase),
     caseRun('command336.no-queued-action', o => transformCase(o, false)), caseRun('command336.rebuild-queued-action', o => transformCase(o, true)),
     caseRun('troop824.variable1178-5-hidden', o => appearCase(o, 5)), caseRun('troop824.variable1178-6-appear', o => appearCase(o, 6)),
-    caseRun('command336.param-cache-466', paramCacheCase)]};
+    caseRun('command336.param-cache-466', paramCacheCase), caseRun('actor104.seal-release-1691', sealReleaseCase)]};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.writeFileSync(path.join(__dirname, '.sandbox/battle_events.json'), JSON.stringify(result, null, 1));
 process.stdout.write(JSON.stringify({troops: result.scan.troops.length, pages: result.scan.troops.reduce((n,t) => n+t.pages.length, 0),
