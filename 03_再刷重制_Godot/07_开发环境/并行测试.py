@@ -116,8 +116,10 @@ def state_dir(project: str) -> Path:
         try:
             common = subprocess.run(['git', '-C', project, 'rev-parse', '--path-format=absolute', '--git-common-dir'],
                                     capture_output=True, text=True, check=True).stdout.strip()
+            if not Path(common).is_absolute():  # 只信绝对路径，免得在当前目录建出相对的状态目录
+                raise ValueError(common)
             d = Path(common) / 'xiyou_test_state'
-        except (OSError, subprocess.CalledProcessError):
+        except (OSError, ValueError, subprocess.CalledProcessError):
             d = Path(tempfile.gettempdir()) / 'xiyou_test_state'
     d.mkdir(parents=True, exist_ok=True)
     return d

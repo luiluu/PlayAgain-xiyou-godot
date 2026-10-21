@@ -32,6 +32,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import uuid
 from pathlib import Path
 
@@ -269,6 +270,7 @@ def prune_backups(root: Path, keep: int = KEEP_BACKUPS) -> list:
 
 RUNNER = Path(__file__).resolve().parent.parent / '07_开发环境' / '并行测试.py'  # 共用槽位代码（测试替换 HERE 时也用真文件）
 _runner = None
+_runner_lock = threading.Lock()
 
 
 def run_node(cmd, env):
@@ -276,11 +278,13 @@ def run_node(cmd, env):
     几条车道同时同步、跑测试时合起来不超上限（唐僧 2026-10-21：两条车道同步加测试曾把 8 核负载冲到 21）。
     SYNC_JOBS 只决定本次同步最多同时排几个探针。"""
     global _runner
-    if _runner is None:
-        import importlib.util
-        spec = importlib.util.spec_from_file_location('xiyou_parallel_tests', RUNNER)
-        _runner = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(_runner)
+    with _runner_lock:  # 几个探针线程同时首次调用：模块执行完才公开，别的线程不会拿到半载入的模块
+        if _runner is None:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location('xiyou_parallel_tests', RUNNER)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            _runner = module
     with _runner.global_slot(_runner.state_dir(str(ROOT)), _runner.global_limit()):
         return subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=env, capture_output=True, text=True)
 
