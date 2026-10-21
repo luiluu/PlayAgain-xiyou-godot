@@ -1461,16 +1461,28 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 	var dh := floorf(b.mhp * b.hrg * b.rec)
 	# 导入角色平衡：导入角色附加的状态里负的 HP 再生率（持续伤害）那部分 ×0.01（向下取整），其余照常；
 	# 两个值都按原顺序先乘 rec 再 floor，之后才拆出导入部分缩放（installImportedBalanceRuntime.js:496／506）
-	var imported_hrg := 0.0
+	var imported := []  # 导入角色附加的状态（来源倍率不为 1）
 	for id in b.state_ids:
 		var src := XImportedBalance.origin(b, id)
 		if src != null and src != b and XImportedBalance.outgoing_rate(src) != 1.0:
-			for tr in XDB.rec("States", id).get("traits", []):
-				if int(tr.code) == XBattler.TRAIT_XPARAM and int(tr.dataId) == 7 and float(tr.value) < 0.0:
-					imported_hrg += float(tr.value)
-	if imported_hrg != 0.0:
-		var other := floorf(b.mhp * (b.hrg - imported_hrg) * b.rec)
-		dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
+			imported.append(id)
+	if not imported.is_empty():
+		# 原版把这些状态的负 hrg 特性换成 0，再按特性对象原顺序重新求和（不能用 hrg 减去它们：浮点会差，floor 后差 1）
+		var states := b.states()
+		var hrg := 0.0
+		var altered := false
+		for o in b.trait_objects():
+			var dot_state: bool = imported.has(int(o.get("id", -1))) and states.any(func(x): return is_same(x, o))
+			for tr in o.get("traits", []):
+				if int(tr.code) != XBattler.TRAIT_XPARAM or int(tr.dataId) != 7:
+					continue
+				if dot_state and float(tr.value) < 0.0:
+					altered = true
+				else:
+					hrg += float(tr.value)
+		if altered:
+			var other := floorf(b.mhp * hrg * b.rec)
+			dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
 	var dm := floorf(b.mmp * b.mrg)
 	if dh != 0.0:
 		var shown := dh
