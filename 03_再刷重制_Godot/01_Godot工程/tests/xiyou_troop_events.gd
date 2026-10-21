@@ -122,7 +122,7 @@ func _transform_case(c: Dictionary, round: int) -> void:
 	# 开战检查（第 0 回合）：第 3 页的对话停住规则，run_events 按默认应答续上
 	var logs := {0: logic.run_events(), 1: [], 2: []}
 	var msgs: Array = logs[0].filter(func(l): return l.type == "message").map(func(l): return [str(l.msg.face), "\n".join(l.msg.lines)])
-	var want_msgs: Array = c.messages.map(func(m): return [str(m.faceName), "\n".join(m.texts)])
+	var want_msgs: Array = c.messages.filter(func(m): return int(m.turn) == 0).map(func(m): return [str(m.faceName), "\n".join(m.texts)])
 	check(name + ".messages", msgs == want_msgs, [msgs, want_msgs])
 	var want_ids: Array = c.enemyIds.map(func(x): return int(x))
 	check(name + ".transformed", logic.enemies.map(func(e): return e.enemy_id) == want_ids, [logic.enemies.map(func(e): return e.enemy_id), want_ids])
@@ -141,6 +141,10 @@ func _transform_case(c: Dictionary, round: int) -> void:
 		for a in logic.actors:
 			cmds[a] = [XDB.rec("Skills", 1), e0]
 		logs[t] = logic.run_turn(cmds)
+		# 第 1、2 回合的敌群事件对话（三十一层可选首领 830／831 第 2 页的提示）也按回合比
+		var turn_msgs: Array = logs[t].filter(func(l): return l.type == "message").map(func(l): return [str(l.msg.face), "\n".join(l.msg.lines)])
+		var want_turn: Array = c.messages.filter(func(m): return int(m.turn) == t).map(func(m): return [str(m.faceName), "\n".join(m.texts)])
+		check(name + ".messages_t%d" % t, turn_msgs == want_turn, [turn_msgs, want_turn])
 		if t == 1:
 			t1_states = e0.state_ids.duplicate()
 			check(name + ".atk_mat", int(e0.atk) == int(c.battlers.e0.atk) and int(e0.mat) == int(c.battlers.e0.mat),
