@@ -14,6 +14,10 @@ class ProbeActor extends XActor:
 	func passive_values(_tag: String) -> Array: return []
 	func attack_elements() -> Array: return [1]
 
+class ViewActor extends ProbeActor:
+	var view: Array = []
+	func stat_equips() -> Array: return view
+
 class ProbeEnemy extends XEnemy:
 	var fixture := {}
 	func sparam(i: int) -> float: return float(fixture.get("pdr",1)) if i==6 else float(fixture.get("mdr",1)) if i==7 else 1.0
@@ -217,8 +221,28 @@ func registration() -> void:
 	check("caller_unchanged",frame.finalAdd==0 and not ctx.is_read_only() and not ctx.facts.nested.is_read_only())
 	check("standard_valid",XModuleRegistry.standard().valid(),XModuleRegistry.standard().diagnostics())
 
+func equipment_view() -> void:
+	# Copy of the actor lane's completed frozen-native 671 case; this exercises
+	# only this lane's reader, and does not import/activate XCat prematurely.
+	var reference: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/module_equipment_view.json"))
+	check("view.same_source",reference.runtimeInputs==XDB.load_json("manifest.json").runtimeInputs)
+	var actor := ViewActor.new();actor.actor_id=178
+	var raw := XDB.rec("Weapons",671).duplicate(true)
+	var view := raw.duplicate(true)
+	for field in ["elementAmplify","elementAmplifyN","elementMagnify"]:
+		for key in view.get("yep",{}).get(field,{}):view.yep[field][key]*=2.0
+	actor.equips=[raw];actor.view=[view]
+	var before := JSON.stringify(actor.equips)
+	for level in reference.rows:
+		var observed := (reference.elementIds as Array).map(func(e):return XDamage.element_bonus(actor,int(e)))
+		check("view.native_671.level"+level,same(observed,reference.rows[level]),[observed,reference.rows[level]])
+	var legacy := ProbeActor.new();legacy.actor_id=178;legacy.equips=[raw]
+	check("view.legacy_actor",same(XDamage.element_bonus(legacy,1),float(reference.rows["1"][0])/2.0))
+	check("view.no_instance_write",before==JSON.stringify(actor.equips))
+
 func _ready() -> void:
 	registration()
+	equipment_view()
 	check("oracle.exists",FileAccess.file_exists(ORACLE))
 	if FileAccess.file_exists(ORACLE):
 		var data=JSON.parse_string(FileAccess.get_file_as_string(ORACLE))

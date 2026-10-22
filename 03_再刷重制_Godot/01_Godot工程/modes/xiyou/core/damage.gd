@@ -90,7 +90,10 @@ static func _yep_objects(b: XBattler) -> Array:
 	var objs := b.states()
 	if b is XActor:
 		var x := b as XActor
-		objs = objs + x.equip_list() + [x.data(), x.class_data()]
+		# The actor lane supplies stat_equips for scoped weapon views (178).
+		# Before that lane is merged, the legacy actor exposes only equip_list.
+		var equips: Array = x.call("stat_equips") if x.has_method("stat_equips") else x.equip_list()
+		objs = objs + equips + [x.data(), x.class_data()]
 	return objs
 
 static func own_bonus(a: XBattler, e: int) -> float:
