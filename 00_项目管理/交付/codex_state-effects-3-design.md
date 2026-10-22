@@ -60,3 +60,4 @@
 - 合main 092fba1（hajimi）；唯一冲突在battle_logic的伤害计算入口：保留2b的_calculate_damage→统一finish与状态上下文，并在calculate选项保留hajimi的battleRound=max(1,turn)，避免重复finish。其他main改动正常合入。
 - 下一步长任务：补齐本树转换产物与导入缓存；随后核对17例状态参照，再正式同步只接受4例新增，并跑单槽组合专项。运行记录写在本地结果state-effects-3-review/，完成前状态仍进行中。
 - 已从只读交接板确认actor.gd／XState／resource_context.gd明确交接给沙僧；期三仍等本修复批合main，期二2e现场保持未动。
+- 补齐refill-hajimi.log已exitCode0。刷新14个main较新参照后，状态参照确认仍为17例，SHA256 fa68062f7092905cc34889ca1005b2c33c09347a6833c6bbc5de7bd8ac68c83a；已另存pre-formal-sync-hajimi/state_effects.json。现启动一次正式同步--accept-additions（sync-hajimi.log），不得重复启动、不得修改转换器或探针；只应新增既定4例到21。
