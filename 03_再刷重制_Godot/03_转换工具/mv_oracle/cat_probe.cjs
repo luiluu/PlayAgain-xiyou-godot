@@ -110,4 +110,94 @@ for (const gear of [[], ['sword2', 'relic']]) {
     return {rows};
   }));
 }
+// ⑤ 剑技连携（CAT BEGIN／CAT STRIKE，processActionSequence 包装）：真实 BattleManager 跑整个行动序列，敌群 2 第一个敌人。
+// 每步记：C.trace（逐段 key／命中／伤害／暴击／是否连携段）、每段 CodexCat.formula 原值、之后的剑心层数与状态、目标的识破／剑痕标记与状态、
+// 至圣斩冷却 holyReady。回合直接写 $gameTroop._turnCount（round()＝max(1, turnCount)）。防御步（技能 2）走 endAction 的喵铃。
+const stub = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
+const sprites = new Map();
+w.Game_Battler.prototype.battler = function () {
+  if (!sprites.has(this)) sprites.set(this, new Proxy({x: 0, y: 0, _homeX: 0, _homeY: 0, width: 64, height: 64,
+    scale: {x: 1, y: 1}, anchor: {x: 0.5, y: 1}, opacity: 255},
+  {get: (t, k) => k in t ? t[k] : (() => false), set: (t, k, v) => {t[k] = v; return true;}}));
+  return sprites.get(this);
+};
+w.BattleManager.actionBattleHud = () => true;
+w.BattleManager.otbDisplayWindow = () => stub;
+const BIG_HP = 1e12;
+// 五乘区修正（CodexZones，伤害里的 growthMultiplier）按数值平衡不移植（O-044），同 attack_element／settlement 探针关掉
+w.eval('CodexZones.ENABLED=false;');
+function chainBattle(level, learn, relic, extra) {
+  const a = fresh();
+  a.releaseUnequippableItems = function () {};
+  a.changeLevel(level, false);
+  putWeapon(a, 2);
+  if (relic) putRelic(a);
+  for (const s of learn) a.learnSkill(s);
+  for (const s of extra.forget || []) a.forgetSkill(s);
+  w.eval('$gameParty._actors=[];');
+  w.$gameParty.addActor(178); w.$gameParty.addActor(1);
+  for (const x of [a, w.$gameActors.actor(1)]) x._paramPlus[0] = BIG_HP;
+  w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
+  const bm = w.BattleManager; bm.setup(2, false, false);
+  bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
+  w.$gameParty._inBattle = true;
+  w.CodexYunshang._acted = [];
+  for (const e of w.$gameTroop.members()) { e._paramPlus[0] = BIG_HP; e._paramPlus[6] = extra.enemyAgiPlus || 0; }
+  for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) { b.need_refresh = true; b.refresh(); b.recoverAll(); }
+  return {bm, a, t: w.$gameTroop.members()[0]};
+}
+function act(bm, user, skillId, targetIndex) {
+  const action = new w.Game_Action(user);
+  if (skillId === 2) action.setGuard(); else action.setSkill(skillId);
+  action.setTarget(targetIndex);
+  user._actions = [action]; bm._subject = user; bm._action = null;
+  bm.startAction();
+  for (let i = 0; i < 20000; i++) {
+    const ph = bm._phase;
+    if (ph === 'phaseChange') bm.updatePhase(); else if (ph === 'actionList') bm.updateActionList();
+    else if (ph === 'actionTargetList') bm.updateActionTargetList(); else break;
+  }
+  return action;
+}
+const CAT_STATES = [2713, 2714, 2715, 2716, 2717];
+function chainCase(name, level, learn, relic, steps, extra = {}) {
+  cases.push(makeCase('chain.' + name, {actor: 178, troop: 2, target: 0, level, learn, relic, sword: 2, bigHp: BIG_HP, steps,
+    forget: extra.forget || [], enemyAgiPlus: extra.enemyAgiPlus || 0}, () => {
+    const {bm, a, t} = chainBattle(level, learn, relic, extra);
+    const head = {skills: a._skills.slice(), atk: a.atk, agi: a.agi, cri: r(a.cri), hit: r(a.hit), level: a.level,
+      enemy: {id: t.enemyId(), level: t.level === undefined ? null : t.level, params: P.map(i => t.param(i)), xparam: X.map(i => r(t.xparam(i))), hp: t.hp}};
+    const old = C.formula, rows = [];
+    let raw = [];
+    C.formula = function () { const v = old.apply(this, arguments); raw.push(v); return v; };
+    try {
+      for (const st of steps) {
+        w.$gameTroop._turnCount = st.round;
+        a.setTp(100);
+        C.trace = []; raw = [];
+        const hp0 = t.hp, action = act(bm, a, st.skill, 0), cast = action._catCast;
+        rows.push({skill: st.skill, round: st.round, trace: C.trace.slice(), raw: raw.slice(), hpLost: hp0 - t.hp,
+          heart: C.heart(a), actorStates: CAT_STATES.filter(id => a.isStateAffected(id)), targetStates: CAT_STATES.filter(id => t.isStateAffected(id)),
+          marks: JSON.parse(JSON.stringify(t._codexCatMarks || {})), holyReady: a._codexCatBattle ? a._codexCatBattle.holyReady : null,
+          bellRound: a._codexCatBattle ? a._codexCatBattle.bellRound : null, ended: !!(cast && cast.ended), chain: !!(cast && cast.chain), tp: a.tp});
+      }
+    } finally { C.formula = old; C.trace = null; }
+    return Object.assign(head, {rows});
+  }));
+}
+const S = C.ids.skill;
+chainCase('basic', 10, [S.slash, S.cross], false, [{skill: S.slash, round: 1}, {skill: S.slash, round: 1}, {skill: S.cross, round: 2}, {skill: S.cross, round: 4}]);
+chainCase('noheart', 30, [S.slash, S.cross, S.flurry, S.holy, S.sword], false,
+  [{skill: S.cross, round: 1}, {skill: S.slash, round: 1}, {skill: S.cross, round: 1}, {skill: S.flurry, round: 2}, {skill: S.holy, round: 2}, {skill: S.slash, round: 5}],
+  {forget: [S.heart]});
+chainCase('heart30', 30, [S.slash, S.cross, S.flurry, S.holy, S.sword], false,
+  [{skill: S.cross, round: 1}, {skill: S.slash, round: 1}, {skill: S.cross, round: 1}, {skill: S.flurry, round: 2}, {skill: S.holy, round: 2}, {skill: S.slash, round: 5}]);
+chainCase('full', 30, [S.slash, S.cross, S.flurry, S.holy, S.sword, S.speed, S.heart], true,
+  [{skill: S.slash, round: 1}, {skill: S.cross, round: 1}, {skill: S.flurry, round: 2}, {skill: 2, round: 2}, {skill: 2, round: 2},
+    {skill: S.holy, round: 2}, {skill: S.slash, round: 3}, {skill: 2, round: 3}, {skill: S.cross, round: 4}, {skill: S.flurry, round: 4}]);
+chainCase('speed35', 35, [S.slash, S.cross, S.flurry, S.holy, S.sword, S.speed, S.heart], true,
+  [{skill: S.flurry, round: 1}, {skill: S.cross, round: 1}, {skill: S.flurry, round: 1}, {skill: S.holy, round: 1}]);
+chainCase('slow20', 20, [S.slash, S.cross, S.flurry, S.sword], false, [{skill: S.flurry, round: 1}, {skill: S.slash, round: 1}, {skill: S.cross, round: 1}]);
+// 连斩速度段：敌人速度加到与哈基米相近（+0 段）、略慢（+1 段）
+chainCase('agiEven', 30, [S.slash, S.cross, S.flurry, S.sword], false, [{skill: S.flurry, round: 1}, {skill: S.slash, round: 1}, {skill: S.cross, round: 1}], {enemyAgiPlus: 600});
+chainCase('agiNear', 30, [S.slash, S.cross, S.flurry, S.sword], false, [{skill: S.flurry, round: 1}], {enemyAgiPlus: 150});
 process.exit(finish(host, 'cat.json', {hostScope: '新游戏（Math.random 0.5）；小猫剑圣第一期：招募、槽位、能力值与被动、公式', cases}) ? 0 : 1);

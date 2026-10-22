@@ -8,7 +8,8 @@ extends RefCounted
 ## - 持剑（学了 10441 且武器槽是剑 wtype 2）：剑的贡献翻倍——paramPlus＝全量＋(全量−去剑)；特性对象与被动缓存用 sword_view
 ##   （能力值 ×2，特性 11／21／23 的 1+(v−1)×2、22／33／34／61 ×2，备注数值标签 ×2，元素增幅／倍率 ×2）；sparam 6／7 ×0.8／×0.88。
 ## - 公式 CodexCat.formula(user,item,b)＝(atk×1500＋agi×3000)×权重×成长×(1＋熟练)×段倍率（段倍率只在连携剑段里不是 1）。
-## 未移植（交付单写明）：剑技连携 CAT BEGIN／CAT STRIKE、剑心、识破／剑痕、技能使用条件、进阶（Godot 无 _AdvancedNum，advanced 恒假）、
+## - 剑技连携（CAT BEGIN／CAT STRIKE、剑心、识破／剑痕、喵铃）：见文末「剑技连携」。
+## 未移植（交付单写明）：技能使用条件、进阶（Godot 无 _AdvancedNum，advanced 恒假）、
 ## 守誓巨龙试炼、伤害钩子 cat-sword（持剑技伤害／抱剑护身减伤／巨龙减伤，要 damage.gd 的模块挂接点）、元素增幅翻倍进伤害
 ## （damage.gd 的 _yep_objects 直接读 equip_list，提案改读 stat_equips）、号角 2899 入队后不可用、Map132 商店补号角、自定义图标。
 ## 参照：mv_oracle/cat_probe.cjs（generated/oracle/cat.json），测试 tests/xiyou_cat.gd。
@@ -81,9 +82,13 @@ static func mastery(a) -> int:
 	return best
 
 
+## 剑段里（a._codexCatFormula）速度取开招时的快照、乘段倍率（连携段 0.6）
 static func formula(a, item: Dictionary) -> float:
 	var weight: float = WEIGHTS.get(int(item.get("id", 0)), 0.0)
-	return (a.atk * 1500.0 + a.agi * 3000.0) * weight * growth(a) * (1.0 + mastery(a))
+	var snap = _formula_snap if not _formula_snap.is_empty() and _formula_snap.actor == a else null
+	var agi: float = snap.agi if snap != null else a.agi
+	var rate: float = snap.rate if snap != null else 1.0
+	return (a.atk * 1500.0 + agi * 3000.0) * weight * growth(a) * (1.0 + mastery(a)) * rate
 
 
 ## Game_Actor.param 的包装（v 是包装前、已取整夹值的值）
@@ -249,3 +254,311 @@ static func help_text(text: String, item: Dictionary, a) -> String:
 	if k == "holy" and text.contains("冷却4"):
 		return "冷却时间：4个自然回合；进阶后消耗剑心追加神圣剑影，满层冷却3回合"  # 未进阶（Godot 无进阶）
 	return text
+
+
+# ---- 剑技连携（processActionSequence 包装的 CAT BEGIN／CAT STRIKE、endAction、endTurn） ----
+## 四个剑技的行动序列只有 CAT BEGIN：开招时按剑技排出剑段，每段是一个独立的 Game_Action（技能换成该段的剑技，经 invokeAction，
+## 有反射／反击／掩护），段间原版插 WAIT 6（画面）；一段剑技打完再按条件连携下一招（连携段伤害 ×0.6，连携招不再连携）。
+## - 斩：1 段＋剑心≥1 时 1 段，打完给目标「识破」；十字斩：2 段＋剑心≥2 时 2 段，任一对相邻段都命中时给「剑痕」；
+##   连斩：4 段＋剑心 3 层 2 段＋速度段（非连携：开招速度≥目标 1.5 倍 2 段、快于目标 1 段）＋剑痕 2 段，消费剑痕与识破；
+##   至圣斩：1 段＋剑痕 2 段剑影（进阶后再加剑心层数段，并清空剑心），消费剑痕与识破，冷却到 回合＋4（进阶满层 3）。
+## - 连携：斩→十字斩；十字斩开招时目标有识破→连斩；连斩开招时有剑痕→斩；至圣斩消费了标记→斩。
+## - 「必中」段（开招时目标有识破、且不是斩）：命中 1、闪避 0、不被反击；学了 10443 时还必定暴击。
+## - 标记归施放者、有效到 放下时回合＋1，回合结束删过期的；目标身上的 2716／2717 状态跟着同步。
+## - 行动结束：连携过就剑心＋1（学了 10443）；防御且学了 10443、带法宝时每回合一次剑心＋1，并把最近目标的标记续到下回合。
+## 战斗数据挂在本场 XBattleLogic 上（新战斗即清空，同原版 startBattle／endBattle 的 reset）；剑心与标记状态都是 removeAtBattleEnd。
+const IDS := {"slash": 10437, "cross": 10438, "flurry": 10439, "holy": 10440, "echo": 10445}
+const SKILL_HEART := 10443
+const HEART_STATES := [2713, 2714, 2715]
+const MARK_STATES := {"read": 2716, "scar": 2717}
+## 当前剑段（Game_Action 的 _catSure／_catWeak）与公式快照（_codexCatFormula）
+static var segment := {}
+static var _formula_snap := {}
+## 测试用：非空数组时逐段追加 {key, hit, damage, critical, chain}（同原版 CodexCat.trace）
+static var trace = null
+
+
+static func _key(item: Dictionary) -> String:
+	var id := int(item.get("id", 0))
+	for k in IDS:
+		if IDS[k] == id:
+			return k
+	return ""
+
+
+## own(行动者) 且技能是四个剑技（物品不算）
+static func casts(u, item: Dictionary) -> bool:
+	return own(u) and int(item.get("id", 0)) in ACTIVE and not XBattleLogic.is_item(item)
+
+
+static func _store(logic) -> Dictionary:
+	if not logic.has_meta("xcat"):
+		logic.set_meta("xcat", {"actors": {}, "marks": {}, "cast": null})
+	return logic.get_meta("xcat")
+
+
+static func _round(logic) -> int:
+	return maxi(1, int(logic.turn))
+
+
+static func _data(logic, a) -> Dictionary:
+	var st := _store(logic)
+	if not st.actors.has(a):
+		st.actors[a] = {"heart": 0, "holyReady": 0, "bellRound": 0, "recent": null}
+	return st.actors[a]
+
+
+## 本场数据的只读视图（测试、说明卡用）
+static func battle_data(logic, a) -> Dictionary:
+	return _data(logic, a)
+
+
+static func heart_of(logic, a) -> int:
+	return int(_data(logic, a).heart)
+
+
+static func marks_of(logic, t) -> Dictionary:
+	return _store(logic).marks.get(t, {})
+
+
+static func _alive(t) -> bool:
+	return t != null and t.is_alive() and t.hp > 0.0
+
+
+static func mark(logic, a, t, k: String) -> bool:
+	var m: Dictionary = marks_of(logic, t).get(int(a.actor_id), {})
+	return m.has(k) and int(m[k]) >= _round(logic) and _alive(t)
+
+
+static func _sync_marks(logic, t) -> void:
+	if t == null:
+		return
+	var r := _round(logic)
+	for k in MARK_STATES:
+		var yes := false
+		for id in marks_of(logic, t):
+			yes = yes or int(marks_of(logic, t)[id].get(k, -1)) >= r
+		var sid: int = MARK_STATES[k]
+		if yes and not t.is_state_affected(sid):
+			t.add_state(sid)
+		elif not yes and t.is_state_affected(sid):
+			t.remove_state(sid)
+
+
+static func _put(logic, a, t, k: String) -> void:
+	if not _alive(t):
+		return
+	var marks: Dictionary = _store(logic).marks
+	if not marks.has(t):
+		marks[t] = {}
+	if not marks[t].has(int(a.actor_id)):
+		marks[t][int(a.actor_id)] = {}
+	marks[t][int(a.actor_id)][k] = _round(logic) + 1
+	_sync_marks(logic, t)
+
+
+static func _consume(logic, a, t, k: String) -> bool:
+	var yes := mark(logic, a, t, k)
+	var m: Dictionary = marks_of(logic, t).get(int(a.actor_id), {})
+	m.erase(k)
+	_sync_marks(logic, t)
+	return yes
+
+
+static func _set_heart(logic, a, n: int) -> void:
+	var d := _data(logic, a)
+	d.heart = clampi(n, 0, 3)
+	for i in range(HEART_STATES.size()):
+		var sid: int = HEART_STATES[i]
+		if i + 1 == int(d.heart):
+			if not a.is_state_affected(sid):
+				a.add_state(sid)
+		elif a.is_state_affected(sid):
+			a.remove_state(sid)
+
+
+static func _begin(logic, a, item: Dictionary, t) -> Dictionary:
+	var st := _store(logic)
+	if st.cast != null and st.cast.action == item and st.cast.actor == a:
+		return st.cast
+	var k := _key(item)
+	var c := {"actor": a, "target": t, "key": k, "heart": heart_of(logic, a) if learned(a, SKILL_HEART) else 0, "agi": a.agi,
+		"read": mark(logic, a, t, "read"), "scar": mark(logic, a, t, "scar"), "count": 1, "steps": [], "hits": [], "chain": false,
+		"done": false, "ended": false, "action": item, "consumed": false}
+	st.cast = c
+	_build(logic, c, k, false)
+	return c
+
+
+static func _build(logic, c: Dictionary, k: String, chain: bool) -> void:
+	var a = c.actor
+	var t = c.target
+	var h := int(c.heart)
+	var rd := mark(logic, a, t, "read")
+	var sc := mark(logic, a, t, "scar")
+	var n := 0
+	var sure := rd and k != "slash"
+	c.phaseKey = k
+	c.phaseChain = chain
+	c.hits = []
+	if k == "slash":
+		n = 1 + (1 if h >= 1 else 0)
+	elif k == "cross":
+		n = 2 + (2 if h >= 2 else 0)
+	elif k == "flurry":
+		var speed := 0
+		if not chain:
+			speed = 2 if float(c.agi) >= t.agi * 1.5 else (1 if float(c.agi) > t.agi else 0)
+		n = 4 + (2 if h >= 3 else 0) + speed + (2 if sc else 0)
+		if sc:
+			_consume(logic, a, t, "scar")
+		if rd:
+			_consume(logic, a, t, "read")
+	if k == "holy":
+		c.consumed = sc or rd
+		if sc:
+			_consume(logic, a, t, "scar")
+		if rd:
+			_consume(logic, a, t, "read")
+		var echoes := h if advanced(a) else 0
+		if echoes > 0:
+			_set_heart(logic, a, 0)
+		_data(logic, a).holyReady = _round(logic) + (3 if advanced(a) and h == 3 else 4)
+		c.steps.append({"key": k, "rate": 1.0, "sure": sure})
+		for j in range((2 if sc else 0) + echoes):
+			c.steps.append({"key": "echo", "rate": 1.0, "sure": sure})
+	else:
+		for i in range(n):
+			c.steps.append({"key": k, "rate": 0.6 if chain else 1.0, "sure": sure})
+	c.segment = 0
+	c.segmentRepeat = 0
+
+
+static func _complete_phase(logic, c: Dictionary) -> void:
+	var a = c.actor
+	var t = c.target
+	var k: String = c.phaseKey
+	if k == "slash":
+		_put(logic, a, t, "read")
+	if k == "cross":
+		var i := 0
+		while i + 1 < c.hits.size():
+			if c.hits[i] and c.hits[i + 1]:
+				_put(logic, a, t, "scar")
+				break
+			i += 2
+	if c.phaseChain:
+		c.done = true
+		return
+	var next := ""
+	if k == "slash":
+		next = "cross"
+	elif k == "cross" and c.read:
+		next = "flurry"
+	elif k == "flurry" and c.scar:
+		next = "slash"
+	elif k == "holy" and c.consumed:
+		next = "slash"
+	if next != "" and learned(a, IDS[next]) and a.is_alive() and _alive(t):
+		c.chain = true
+		_build(logic, c, next, true)
+	else:
+		c.done = true
+
+
+## 一段 CAT STRIKE：返回是否还有下一段
+static func _strike(logic, c: Dictionary, logs: Array) -> bool:
+	var a = c.actor
+	var t = c.target
+	if c.done or not a.is_alive() or not _alive(t):
+		c.done = true
+		return false
+	var step: Dictionary = c.steps[c.segment]
+	var child := XDB.rec("Skills", int(IDS[step.key]))
+	_formula_snap = {"actor": a, "agi": c.agi, "rate": step.rate}
+	segment = {"actor": a, "sure": step.sure}
+	var raw := formula(a, child) if trace is Array else 0.0
+	var got: Array = logic._invoke(a, child, t)
+	_formula_snap = {}
+	segment = {}
+	var r = null
+	for e in got:
+		if str(e.get("type", "")) == "hit" and e.target == t:
+			r = e
+	var hit: bool = r != null and not r.missed and not r.evaded
+	while c.hits.size() <= int(c.segment):
+		c.hits.append(null)
+	c.hits[c.segment] = false if c.hits[c.segment] == false else hit
+	if trace is Array:
+		trace.append({"key": step.key, "raw": raw, "hit": hit, "damage": float(r.hp) if r != null else 0.0,
+			"critical": bool(r.critical) if r != null else false, "chain": c.phaseChain})
+	logs.append_array(logic.mark_views(got))
+	_data(logic, a).recent = t
+	c.segmentRepeat += 1
+	if c.segmentRepeat >= int(c.count):
+		c.segmentRepeat = 0
+		c.segment += 1
+	if c.segment >= c.steps.size():
+		c.steps = []
+		_complete_phase(logic, c)
+	return not c.done and a.is_alive() and _alive(t)
+
+
+## 行动序列的 CAT BEGIN：开招并依次打完全部剑段（原版逐条插 CAT STRIKE＋WAIT 6）；目标已倒下时什么都不做
+static func cast(logic, u, item: Dictionary, t) -> Array:
+	var logs := []
+	if t == null or not t.is_alive():
+		return logs
+	var c := _begin(logic, u, item, t)
+	while _strike(logic, c, logs):
+		pass
+	return logs
+
+
+## 剑段的必中（itemHit 1、itemEva 0、itemCnt 0）
+static func sure_segment(u) -> bool:
+	return not segment.is_empty() and segment.actor == u and bool(segment.sure)
+
+
+## 剑段的必暴（itemCri 1）：必中段且学了 10443
+static func weak_segment(u) -> bool:
+	return sure_segment(u) and learned(u, SKILL_HEART)
+
+
+## BattleManager.endAction：结束剑技（连携过则剑心＋1）；防御时的喵铃
+static func end_action(logic, u, item) -> void:
+	if not own(u) or item == null:
+		return
+	var st := _store(logic)
+	var c = st.cast
+	if c != null and c.actor == u and not c.ended:
+		c.ended = true
+		if c.chain and learned(u, SKILL_HEART) and u.is_alive():
+			_set_heart(logic, u, heart_of(logic, u) + 1)
+	st.cast = null
+	if int(item.get("id", 0)) == XBattleLogic.GUARD_SKILL and not XBattleLogic.is_item(item) and learned(u, SKILL_HEART) and has_relic(u) and u.is_alive():
+		var d := _data(logic, u)
+		var r := _round(logic)
+		if int(d.bellRound) != r:
+			d.bellRound = r
+			_set_heart(logic, u, int(d.heart) + 1)
+			var t = d.recent
+			if t != null and t.is_alive():
+				var m: Dictionary = marks_of(logic, t).get(int(u.actor_id), {})
+				if not m.is_empty():
+					for k in ["read", "scar"]:
+						if m.has(k) and int(m[k]) >= r:
+							m[k] = r + 1
+					_sync_marks(logic, t)
+
+
+## BattleManager.endTurn（进入回合结束时）：删掉已过期的标记
+static func end_turn(logic) -> void:
+	var r := _round(logic)
+	for t in logic.enemies:
+		var all: Dictionary = marks_of(logic, t)
+		for id in all:
+			for k in ["read", "scar"]:
+				if all[id].has(k) and int(all[id][k]) <= r:
+					all[id].erase(k)
+		_sync_marks(logic, t)

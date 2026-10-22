@@ -141,6 +141,11 @@ func _command(name: String, args: Array) -> void:
 				continue
 			logs.append_array(logic.mark_views(logic._invoke(user, skill, t)))
 		return
+	if name == "CAT BEGIN" or name == "CAT STRIKE":
+		# 小猫剑圣包装 processActionSequence：178 的四个剑技在这里打完全部剑段（XCat.cast）；其余情况原版也什么都不做
+		if XCat.casts(user, skill):
+			logs.append_array(XCat.cast(logic, user, skill, targets[0] if not targets.is_empty() else null))
+		return
 	if name == "IMMORTAL":
 		# actionImmortal：参数二 eval 成真＝加，否则解除；解除时 HP 为 0 的倒下（removeImmortal → refresh）
 		var on := not args.is_empty() and args.size() > 1 and str(args[1]).to_lower() == "true"

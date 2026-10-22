@@ -5,6 +5,8 @@ extends Node
 ## - stats.*：武器槽放各种剑／斧（不卸，同参照）、法宝 7999，1／9／10／35／65／99 级逐级比 param、paramPlus、xparam、sparam、
 ##   元素增幅（持剑 671 例外：剑视图里已翻倍，伤害读元素增幅走 damage.gd 的 _yep_objects，待沙僧挂接，这里比视图本身）、攻击次数加值。
 ## - formula.*：五个剑技 × 10 个等级，未持剑与持剑＋法宝，比 CodexCat.formula 与成长。
+## - chain.*：剑技连携（CAT BEGIN／CAT STRIKE）。敌群 2 第一个敌人（生命加 1e12，部分例加速度），随机数全取 0.5（同参照 Math.random）；
+##   每步逐段比剑技 key、是否连携段、命中、暴击、CodexCat.formula 原值与伤害，再比剑心层数与状态、目标标记与状态、至圣斩冷却、喵铃回合。
 const ORACLE := "oracle/cat.json"
 var results := []
 
@@ -159,8 +161,92 @@ func _run() -> void:
 				_stats(c)
 			"formula":
 				_formula(c)
-	check("covers_all", seen.keys().size() == 5, seen.keys())
+			"chain":
+				_chain(c)
+	check("covers_all", seen.keys().size() == 6, seen.keys())
 	finish()
+
+
+## 参照的 Math.random 恒 0.5：浮点取 0.5，整数取 2^31
+class HalfStream extends XRandomStream:
+	func _take(kind: String, _reason: String, _event_key: String):
+		draws += 1
+		return 0.5 if kind == "float" else 2147483648
+
+
+func _chain(c: Dictionary) -> void:
+	var o: Dictionary = c.observed
+	var st: Dictionary = c.setup
+	# 参照：新局（难度取 Init Difficulty ID）、等级上限放开到 99、队伍只有 178 与 1
+	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [8])
+	s.actor_max_level = 99
+	s.party.clear()
+	s.battle_slots.clear()
+	var a := s.actor(XCat.ACTOR)
+	a.change_level_mv(int(st.level))
+	a.equips[0] = XGear.template("weapon", int(st.sword))
+	if bool(st.relic):
+		a.equips[a.equip_slots().find(13)] = XGear.template("armor", XCat.RELIC)
+	a.skill_ids.assign((o.skills as Array).map(func(v): return int(v)))
+	a.refresh_passive()
+	s.add_actor(XCat.ACTOR)
+	s.add_actor(1)
+	var rand := XBattleRandom.create("0000000000000178")
+	rand.rule = HalfStream.new()
+	rand.rule.domain = "rule"
+	var logic := XBattleLogic.new()
+	logic.setup(int(st.troop), s, rand)
+	var t: XEnemy = logic.enemies[int(st.target)]
+	var p: Array = (t.data().params as Array).map(func(v): return float(v))
+	p[0] += float(st.bigHp)
+	p[6] += float(st.enemyAgiPlus)
+	t.zq_ref = {"p": p, "k": 1.0}
+	for b in [a, t]:
+		b.param_mark_dirty()
+		b.param_refresh()
+		b.recover_all()
+	var tag := str(c.id)
+	check(tag + ".actor", a.atk == float(o.atk) and a.agi == float(o.agi) and a.skill_ids == (o.skills as Array).map(func(v): return int(v)),
+		[a.atk, a.agi, o.atk, o.agi])
+	var ep := range(8).map(func(i): return t.param(i))
+	check(tag + ".enemy", _close(ep, o.enemy.params), [ep, o.enemy.params])
+	for i in o.rows.size():
+		var row: Dictionary = o.rows[i]
+		var step := "%s.%d" % [tag, i]
+		logic.turn = int(row.round)
+		a.tp = 100.0
+		XCat.trace = []
+		var hp0 := t.hp
+		logic.act(a, XDB.rec("Skills", int(row.skill)), t)
+		var got: Array = XCat.trace
+		XCat.trace = null
+		var keys := got.map(func(x): return [str(x.key), bool(x.hit), bool(x.critical), bool(x.chain)])
+		var want := (row.trace as Array).map(func(x): return [str(x.key), bool(x.hit), bool(x.critical), bool(x.chain)])
+		check(step + ".segments", keys == want, [keys, want])
+		var raw := got.map(func(x): return float(x.raw))
+		check(step + ".raw", _close(raw, row.raw), [raw, row.raw])
+		var dmg := got.map(func(x): return float(x.damage))
+		check(step + ".damage", _close(dmg, (row.trace as Array).map(func(x): return float(x.damage))), [dmg, row.trace.map(func(x): return x.damage)])
+		check(step + ".hp_lost", absf((hp0 - t.hp) - float(row.hpLost)) <= maxf(1.0, absf(float(row.hpLost)) * 1e-9), [hp0 - t.hp, row.hpLost])
+		var d := XCat.battle_data(logic, a)
+		check(step + ".heart", XCat.heart_of(logic, a) == int(row.heart) and _cat_states(a) == (row.actorStates as Array).map(func(v): return int(v)),
+			[XCat.heart_of(logic, a), _cat_states(a), row.heart, row.actorStates])
+		var marks := {}
+		var mine: Dictionary = XCat.marks_of(logic, t)
+		for id in mine:
+			marks[str(id)] = {}
+			for k in mine[id]:
+				marks[str(id)][k] = float(mine[id][k])
+		check(step + ".marks", marks == row.marks and _cat_states(t) == (row.targetStates as Array).map(func(v): return int(v)),
+			[marks, _cat_states(t), row.marks, row.targetStates])
+		check(step + ".holy_bell", int(d.holyReady) == int(row.holyReady if row.holyReady != null else 0)
+			and int(d.bellRound) == int(row.bellRound if row.bellRound != null else 0), [d.holyReady, d.bellRound, row.holyReady, row.bellRound])
+		if int(row.skill) != XBattleLogic.GUARD_SKILL:  # 防御的 TP 获得（技能 2 tpGain）Godot 通用防御分支没有，另报，不在本模块
+			check(step + ".tp", a.tp == float(row.tp), [a.tp, row.tp])
+
+
+static func _cat_states(b: XBattler) -> Array:
+	return [2713, 2714, 2715, 2716, 2717].filter(func(id): return b.is_state_affected(id))
 
 
 func finish() -> void:
