@@ -1,7 +1,7 @@
 # 交付：claude/qiyu-163
 
 - 车道／工作者：A 内容·角色／悟空（Claude，悟空_36）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -15,7 +15,7 @@
   - **加回**：163 琦玉（CE2523）、154 夏娜（CE2514）、158 炮姐（CE2518，八戒 attack-element 已修空手普攻属性）加回切片 `actors` 与 `xiyou_actor_p0` RECRUIT_7。
   - **帮助卡**：163 学的 10169「欢迎来到异次元」在 characterHelpTarget 段（10122～10299），原版 characterHelpView 对技能去掉与描述相同的行，Godot 多显示了一行「被动／效果…」；`help_card.gd` 把 10169 与 10264 一样按普通视图显示并去掉描述行。
   - **二期（只出文档）**：[167～178 专属模块只读预检表](../协助预检_专属模块167-178_20261022.md)：各人模块文件与大小、挂点数与落在哪些 Godot 文件、公式调模块条数、招募入口、建议顺序与分期（建议先 178 哈基米，再 168 米拉→167 渡鸦，174 云裳最后）。
-- 验证：待写
+- 验证（车道不跑全量，只跑相关专项）：第一轮只加 163 时在工作树跑 `同步正式西游.py --accept-additions`（只增用例，新跑 slice 六段、actor_passive、help、power、wtype、custom_params、formula_program／equipment 与 qiyu，已接受）；合 main（attack-element dev.123、codex/state-effects-2）并加回 154／158 后 `新建工作树.sh --补齐`、再同步一轮（只增用例、已接受），最后再合一次 main 后同步测量不变、核对 0 问题、留指纹。`内容覆盖检查.py` 无新增、无消解，基线未改。专项（最终合 main 后）全过、无偶发：`xiyou_rules` 12 段（每段 126255～126328 项）、`xiyou_actor_p0` 3190、`xiyou_wtype` 15658、`xiyou_attack_element` 66、`xiyou_qiyu` 231、`xiyou_imported_balance` 273、`xiyou_help_card` 965、`xiyou_power` 137、`xiyou_state_effects` 60、`xiyou_combat` 34、`xiyou_magic_weapon` 43。
 - 未完成／已知问题：
   - 物品（非技能）由 163 使用时照常算命中／反击／反射，与原版一致（参照 rates.a163.item*）。
   - 帮助卡 10122～10299 段其余技能的角色专用说明仍未做（原样显示），本次只放行 10169。
@@ -37,4 +37,5 @@
 - c77cd43 二期：167～178 专属模块只读预检表
 - c7a6d2a 帮助卡：10169 去掉与描述相同的行
 - e9da75c 合并 main（attack-element 已合）
-- 154／158 加回与本交付单见分支末尾提交
+- 3ccf4fb 154／158 加回切片与招募表
+- 22c42db 交付单草稿；e54d6be 再合 main
