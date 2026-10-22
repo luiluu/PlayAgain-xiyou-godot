@@ -39,3 +39,11 @@
 - 新原版伤害链参照通过：四段输入 7→14→7→21，实际扣血 7；探针共 19 例无 errors，旧17例逐项不变。
 - 已实现 28 块 value_steps，125 个 mul＋2 个 user_param_damage 输出保持原样，js 511→483；4 个翻译边界测试通过（含逐源块拒绝附带未知语句）。
 - 接下来通过长任务包装运行转换与同步；日志目录 `03_再刷重制_Godot/04_验证/本地结果/state-effects-2b/`。转换后先跑状态效果专项与直接依赖，最终同步通过后交付。
+
+## 兼容边界与后续具体提案
+
+- 本期保留 `_damage_value(u, skill, t, critical)` 的既有「已结算终值」接口；新增 `_calculate_damage` 提供可覆写的基础分解值，默认路径统一 Confirm→固定减伤→React，并带资源／记录／随机／变量／开关／critical。新专项通过这个基础入口量真实四段链。`respond` 返回值已传给 `establish`。
+- **完整迁移旧终值夹具暂缓，不能宣称旧 `_damage_value` 覆写也经过 Confirm/React**：尝试在所有覆写返回后统一执行时，`xiyou_drop_record` 的两条精确记录从 100／167 变成 600／667（其余直接依赖通过）；原版 drop_record_probe 直接调用 BattleManager.startBattle，状态表是 []／[1460]，Godot setup 还执行 dsPassiveSkill 开战标签，夹具多带状态 995。旧接口跳过 Confirm 隐藏了这个初始条件差异。
+- 下一条有角色／掉落测试权限的车道可做：将 drop_record Godot 夹具初始状态与原版 row.states 逐项对齐并使热缓存刷新，改覆写新 `_calculate_damage` 返回 `{value: row.baseDamage, critical: ...}`，保留原生参照不动；再把旧 `_damage_value` 终值入口迁为基础入口或移除，统一所有扩展的伤害段。必须确认两条精确记录仍为100／167，并保留一个有确认效果的基础值覆写用例。沙僧本期不改该测试或其探针。
+- 首次状态效果专项 1639/1640，唯一失败为 JSON 浮点数314与本地整数314的严格嵌套数组比较；数值全对，已改测试输入类型。此为确定性测试错误，非偶发。
+- 首轮依赖10场景中9个通过：battle 8、battle_events108、battle_options92、battle_ui43、battleback_save5、formula_effects908、imported_balance273、shield565、state_effects1640；drop_record上述两项确定性失败后已按旧接口约定修兼容，下一轮仅复跑受修复影响的状态效果／掉落和先前漏选的transform_params／random_streams／custom_damage。

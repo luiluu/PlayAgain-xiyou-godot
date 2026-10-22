@@ -20,8 +20,8 @@ var ids := {}
 
 class FixedDamageLogic:
 	extends XBattleLogic
-	func _damage_value(_u: XBattler, _skill: Dictionary, _t: XBattler, _critical: bool) -> float:
-		return 7.0
+	func _calculate_damage(_u: XBattler, _skill: Dictionary, _t: XBattler, critical: bool) -> Dictionary:
+		return {"value": 7.0, "critical": critical}
 	func _float(reason: String) -> float:
 		return 0.0 if reason == "critical" else super._float(reason)
 
@@ -373,7 +373,7 @@ func _damage_chain(o: Dictionary) -> void:
 	var log := []
 	XStateEffects.observer = func(phase, id, _holder, ctx):
 		if id == sid:
-			log.append([phase, ctx.value, ctx.critical, ctx.variables[27], ctx.switches[28]])
+			log.append([phase, ctx.value, ctx.critical, float(ctx.variables[27]), ctx.switches[28]])
 			check("damage.ctx." + phase, ctx.resources != null and ctx.random == logic._rule()
 				and ctx.record.target == b and ctx.resources.result(b).critical == ctx.critical)
 	var skill := XDB.rec("Skills", 1).duplicate(true)

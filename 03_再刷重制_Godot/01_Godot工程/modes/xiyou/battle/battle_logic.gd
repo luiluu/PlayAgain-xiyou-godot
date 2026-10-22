@@ -33,7 +33,7 @@ var replay_battle_start := {}
 var _ids := {}
 var _action_resources: XResourceContext
 var _formula_outcome := {}
-var _damage_outcome := {}
+var _damage_record := {}
 ## 魔法反射回行动者自己的这次 apply（导入角色平衡照样缩放）
 var _reflecting := false
 
@@ -1157,11 +1157,15 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 	return float(v) if not expr.has_execute_failed() and (v is float or v is int) else 0.0
 
 
-## 伤害计算与 apply 的扣血／记账分开，模块对照可固定这一步（同正式 Game_Action.makeDamageValue 夹具）。
+## 兼容现有扩展：_damage_value 覆写的是已结算终值，不能在其返回后再乘一轮状态倍率。
+## 新的基础数值夹具／扩展覆写 _calculate_damage，默认路径会统一执行 Confirm→固定减伤→React。
 func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
+	return XDamage.finish(_calculate_damage(u, skill, t, critical), skill, u, t, true, _state_context(u, skill, t, _damage_record))
+
+
+func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
 	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
-	_damage_outcome = XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule()})
-	return float(_damage_outcome.value)
+	return XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule()})
 
 
 func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -> Dictionary:
@@ -1233,10 +1237,10 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		var cri := u.cri * (1.0 - t.cev) if bool(dmg.critical) else 0.0
 		r.critical = _float("critical") < clampf(cri, 0.0, 1.0)
 		_action_resources.result(t).critical = r.critical
-		_damage_outcome = {}  # An extension may override _damage_value without setting a breakdown.
+		var previous_record := _damage_record
+		_damage_record = r
 		var value := _damage_value(u, skill, t, r.critical)
-		_damage_outcome.merge({"value": value, "critical": r.critical}, true)
-		value = XDamage.finish(_damage_outcome, skill, u, t, true, _state_context(u, skill, t, r))
+		_damage_record = previous_record
 		r.state_value = value
 		_action_resources.result(t).success = true
 		match type:
