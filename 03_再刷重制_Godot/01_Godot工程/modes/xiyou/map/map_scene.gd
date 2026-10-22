@@ -195,6 +195,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	var s := XState.current
 	if id != s.map_id:
 		s.battleback = []
+		s.erased_events.clear()
 	map_id = id
 	map_data = XDB.map(id)
 	s.map_id = id
@@ -219,6 +220,9 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 		var e := MVEvent.new()
 		e.tilemap = lower
 		chars.add_child(e)
+		if s.erased_events.has(int(ev.id)):
+			e.erased = true
+			e.page_index = -2   # refresh 照空页设置（透明、可穿过）
 		e.setup_event(id, ev)
 		events.append(e)
 	lower.tile_events = _tile_events_at
@@ -328,8 +332,10 @@ func set_followers_visible(v: bool) -> void:
 	refresh_party_sprites()
 
 
-## 指令 214 暂时消除：本次进图期间该事件不再出现（Game_Event.erase）
+## 指令 214 暂时消除：本次进图期间该事件不再出现（Game_Event.erase）；记进 XState.erased_events 随档保存
 func erase_event(id: int) -> void:
+	if not XState.current.erased_events.has(id):
+		XState.current.erased_events.append(id)
 	for e in events:
 		if e.event_id == id:
 			e.erased = true
