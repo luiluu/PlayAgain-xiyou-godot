@@ -39,3 +39,4 @@
 - 已确认b0cbf868是main祖先，main fd975959已合整批状态修复（dev.135内容），期二前置满足；本树已无冲突git merge main。唐僧main未提交收尾只读，不接总装。
 - 既有原版22例未重测，已在本地结果state-effects-2e/native22-preserved.json保存完整副本；SHA256 24100228be3102a9dcca56fa0bb5ed9b08bbbd9b5819742308772c478876b0a0。原.sandbox/state_effects.json与native-v2日志仍保留，不删除。
 - 下一步长任务refill-resume.log补齐本树产物与导入；随后设计显式生命周期资源上下文及嵌套保存／恢复，先读现有run／run_one、add_state与_action_resources路径。仍只做5个纯TP整块，不做8个addState候选，不提前改actor／XState或开第三期。
+- refill-resume.log已done／exitCode0，runId a6cb074edcd74025b0e79de7a4bcd2d4，22:49:01 Europe/Paris结束，无需重跑。当前没有活动任务、没有新增游戏实现或手动原版测量。按40%上下文规则接力至下一沙僧聊天，沿用本树；完整续做brief在本树本地结果state-effects-2e/brief-resume.md，不创建新工作树。
