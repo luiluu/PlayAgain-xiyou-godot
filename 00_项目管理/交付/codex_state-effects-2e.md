@@ -1,7 +1,7 @@
 # 交付：codex/state-effects-2e
 
 - 车道／工作者：翻译／核查 · Codex（沙僧，重制_沙僧_48，按40%规则接续47）。
-- 状态：进行中（设计与原版参照收尾；48已接手，沿用最终同步，五块玩法尚未实施）。
+- 状态：进行中（同步与严格只增校验已通过；待state_effects专项收尾，五块玩法尚未实施）。
 - 位置：沿用`.claude/worktrees/state-effects-2b`，分支`codex/state-effects-2e`；未新开、重建工作树，未改main或其他车道。
 - 本期交付类型：**资源上下文具体设计＋原版证据**。确认需要修改仍留给期三的`resource_context.gd`，按本期交代的停手条件收口；不交孤立TP数值、不进入永久加算／存档期三。五块仍JS，未翻译仍444，完成度不增加。
 - 开工只读主库交接板、两树status／log，main为fd975959且b0cbf868为祖先；2e前置已合。续作开工额度五小时32%／周5%，最近44%／7%；按95%收尾线，无需因旧交付中的90%历史停手。
@@ -41,7 +41,19 @@
 - tp-context-native.log失败根因：夹具把VM的_states替换为宿主Array，丢MV contains扩展；改为保留VM数组、清空并push内容。修后v2首次通过。失败原始输出保留，不算偶发，不改源算法。
 - tp-context-native-v3.log在测量启动前失败：本地共享槽包装器上溯目录多一级，找不到并行测试模块；已修本地路径；v4轮询等槽4分53秒仍未启动node，核实本轮进程身份后仅停止该排队器（exit143），v5改为共享0号槽阻塞排队后首次运行第四例通过。未提高全局4槽上限，不算原版测量或偶发。
 - 按车道规则不跑全量检查。没有Godot生产改动，收尾只跑state_effects专项与严格原版增量校验；主库由唐僧合并后统一检查。
-- 932b4df后已执行交付前git merge main（Already up to date，fd975959）；最终正式同步`--accept-additions`已用单槽启动于sync-design.log（runId `cc997a743fba4cb18bc912c9b37cc4df`），48接手时继续原任务。来源／工具／产物双指纹与专项结果在本轮收尾后补入；只接受原21→26例新增，旧值变化即停，不写放宽接受单。
+- 932b4df后已执行交付前git merge main（Already up to date，fd975959）；最终正式同步`--accept-additions`（runId `cc997a743fba4cb18bc912c9b37cc4df`）于2026-10-22 23:25:09 Europe/Paris结束，exit0。沿用32组、重测14组（切片按六难度拆成6个命令，合计19条命令全exit0），耗时含共享槽排队。未重启同步，未提高并发上限。
+- 正式只增比较：基线21→26例，只新增`tp.native_blocks`及本轮四例；`onlyAdditions=true`，`problems={}`、`changes={}`、`acceptedChanges=[]`。来源数据／运行时代码、数据库记录、地图、切片均无变化；来源核验1665项输入／382项运行时／1639项输出，issues=[]，Godot导入成功。没有写接受单放宽旧值。
+- 本地`verify-final.py`于同步后exit0：保存的旧native22全部逐项相同；新增四例与独立测量相同（仅抵抗夹具动态ID归一化）；来源身份三方一致；正式26例errors=[]。五块仍JS、总未翻译444。最终26例文件SHA256为`7eff2c8a0c7632f25f9b419cfe5e2edb6e363094ee5f0ee6af57f2293a2160ad`。
+- 本批证据目录为本树`03_再刷重制_Godot/04_验证/本地结果/state-effects-2e/`：`sync-design.log`及status.json、`final-validation.json`保留。正式同步报告／来源清单／导入日志在`04_验证/本地结果/自动同步/20261022_230421_367006_v0.28-v0.28/`（相对`03_再刷重制_Godot`）；原始失败输出亦保留。
+
+### 来源与正式双指纹（同步后重算一致）
+
+- 冻结来源v0.28；完整来源身份规范化SHA256：`1ae5c84535eeb519e7110920edaaf0b3b6ed84def7938fbd1a2202594c46b224`。
+- 来源数据inputs规范化SHA256：`7b3c911a8e9d645c9edc68c0bd6ef431a6f6853b897e58843eb0b6e5e3abc210`；运行时runtimeInputs规范化SHA256：`e40e0c9204a2e478a991e2447bae5bd42cae90a7e07369c90beebdbe2a994de0`。规范化为UTF-8 JSON，sort_keys=True、separators=(',',':')、ensure_ascii=False，与文件原始SHA区分。
+- 官方`sync_stamp.json`的toolsDigest：`45514c37c33712a890eaaf7b0efa4b641e7bf57e2432b97c4d5e08f16f81ad98`。
+- 官方`sync_stamp.json`的outputsDigest：`60fe0aa4898ca6c2cedcef639e9708581afcf522b1d9f92943eb9e9c45cf39fc`。
+- 两项均由本分支原同步模块的`tools_digest()`／`outputs_digest()`重新计算核对；正式stamp时间2026-10-22 23:25:08。后续只改交付文档，不改工具、探针或转换产物。
+- 单槽Godot专项日志预定为上述证据目录的`state-specialty.log`／`state-specialty/`，专项尚未执行，结果不提前记通过；该专项只验证现有状态效果，不能冒称新增四例已有Godot逐项实现。
 
 ## 变更记录草稿
 
