@@ -29,7 +29,7 @@ function battler(actorId, target, setup) {
   b.elementRate = e => setup.absorb && e===8 ? -.5 : setup.immune ? 0 : 1;
   b.elementAmplifyRate = () => 0; b.elementAmplifyNRate = () => 0; b.elementMagnifyRate = () => 1;
   b.iteratePassiveSkill = () => {}; b.skillMasteryLevel = () => 0;
-  b._states = []; b._hp = 999999; b._mp = 1000; b._tp = 33; b._level=35; b._AdvancedNum=setup.advanced?1:0;
+  b._states = new w.Array(); b._hp = 999999; b._mp = 1000; b._tp = 33; b._level=35; b._AdvancedNum=setup.advanced?1:0;
   b._skills = actorId===178 ? [10441].concat(setup.heart?[10443]:[],setup.advanced?[10444]:[]) : [];
   b.skills = () => b._skills.map(id=>w.$dataSkills[id]);
   b._passiveCache = {harmRe:{1:11,8:22}};
