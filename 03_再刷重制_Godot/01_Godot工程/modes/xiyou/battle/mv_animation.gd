@@ -77,6 +77,8 @@ var hiding_duration := 0
 var flash: Node2D               # 屏幕闪光（ScreenSprite）
 var _sprites: Array[Sprite2D] = []
 var se_player: AudioStreamPlayer
+## 由外部逐帧推进（行动序列演出时 XSequencePlayer 照 MV 帧序调 tick），自己的 _physics_process 不动
+var external := false
 
 
 static func play(parent: Node, anim_id: int, at: Vector2, mirror := false, frame_rate := 4) -> MVAnimation:
@@ -137,8 +139,13 @@ func _ready() -> void:
 	add_child(flash)
 
 
-## 自己跑时：播完的下一帧移除，否则推进一帧
 func _physics_process(_delta: float) -> void:
+	if not external:
+		tick()
+
+
+## 一帧：播完的下一帧移除（Sprite_Base.updateAnimationSprites），否则推进一帧
+func tick() -> void:
 	if not playing():
 		finish()
 		return
