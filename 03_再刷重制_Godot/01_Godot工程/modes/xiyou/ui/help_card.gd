@@ -463,8 +463,7 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 			s[0] = "\\c[1]" + t
 			effects.append(s)
 	var priority := ["伤害属性", "目标", "伤害类型", "命中", "暴击", "段数", "冷却", "准备时间"]
-	var cat := XCat.is_cat_item(obj)  # characterHelpView：目标排在伤害属性前，目标与伤害属性／类型也并成一行
-	if cat:
+	if XCat.is_cat_item(obj):  # characterHelpView：目标排在伤害属性前
 		priority = ["目标", "伤害类型", "伤害属性", "命中", "暴击", "段数", "冷却", "准备时间"]
 	var basic := []
 	var other := []
@@ -491,12 +490,18 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 				common = k
 		for r in body:
 			r[1] = common
+	if XCat.is_cat_item(obj):
+		# 近似 characterHelpView（未移植）对小猫剑技卡的结果：伤害属性行是备注里的原文（不着色），字号取 info 首行的 14，
+		# 因此不与目标并行。只对照了参照里的 10437／10438，完整的 characterHelpView 留给界面车道。
+		for r in element_rows:
+			r[0] = RegEx.create_from_string("\\\\C\\[\\d+\\]").sub(str(r[0]), "", true)
+			r[1] = 14
 	var compact := []
 	for row in info:
 		var last = compact.back() if not compact.is_empty() else null
 		var left := plain(str(last[0])) if last != null else ""
 		var right := plain(str(row[0]))
-		var pair := last != null and ((cat and _re("^目标[：:]", left) and _re("^伤害(?:属性|类型)[：:]", right)) or (_re("^命中[：:]", left) and _re("^暴击[：:]", right)) or (_re("^(?:暴击|段数)[：:]", left) and _re("^(?:段数|冷却)[：:]", right)))
+		var pair := last != null and ((_re("^命中[：:]", left) and _re("^暴击[：:]", right)) or (_re("^(?:暴击|段数)[：:]", left) and _re("^(?:段数|冷却)[：:]", right)))
 		if pair and left.length() + right.length() <= 28 and last[1] == row[1]:
 			last[0] = str(last[0]) + "；" + RegEx.create_from_string("^\\\\c\\[0\\]").sub(str(row[0]), "")
 		else:
