@@ -9,9 +9,9 @@
 
 ## 待补验证与结论
 
-- 本期尚无通过结论，不宣称第二期全部声明式族已完成。剩余完整盘点见本地结果state-effects-2b/remaining-js-inventory.json（483块）。
+- 本期专项通过；第二期全部声明式族尚未完成。更新后的剩余448块完整盘点在本地结果state-effects-2c/remaining-js-inventory.json。
 - 原版错误／不触发、复合副作用、元素数组、武器／队伍查询等未在本期白名单的整块保留js。
-- 下一步：运行新增value.native_blocks；旧19例逐项不变后再实现翻译。专项全过后一次最终同步，车道不跑全量检查。
+- 下一步：等待本期一次最终同步，核对报告与指纹后可合并；车道不跑全量检查。
 
 ## 原版与实现检查点
 
@@ -21,3 +21,11 @@
 - 未改formula_program.py／formula_program.gd／formula_execution.gd／formula_context.gd，未改角色测试或角色源码。当前代码待专项，不能按已通过登记。
 
 - 首次Godot专项11332/12880，1548项随机相关断言失败：新夹具误用裸数字随机带，而XRandomStream.scripted要求kind/value对象，因random_tape_mismatch未取数。已修夹具为float＋reason/event精确匹配；生产执行器未因此修改。保留focused原始日志，修后结果另存final-focused，不按偶发销账。
+
+## 验证通过，最终同步待结论
+
+- 最终state_effects：12880/12880（final-focused）。直接依赖12场景2906项全过（dependencies）：battle8、battle_events108、battle_options92、battle_ui43、battleback_save5、drop_record26、formula_effects908、imported_balance273、shield565、custom_damage145、random_streams484、transform_params249；合计13场景15786项。
+- 翻译边界6项、既有公式编译12项通过。Godot导入exitCode0，无新增资源／存档测试改动。11235行逐项数值与实际随机draw数相等，随机带还校验reason/event；预览不改HP、变量、真实随机流、状态／参数缓存、诊断、资源槽／资源日志。
+- 导出op统计：125 mul、2 user_param_damage、28 value_steps均保留，新增35 value_program，js由483降至448。没有宣称全库状态效果已支持。
+- main仍09ebfb0，交付前git merge main确认无新提交；唐僧主工作区的未提交收尾未触碰。代码与自测结论全部待Claude交叉核查，不自销账。
+- 最终同步使用长任务.py，日志state-effects-2c/sync.log；尚未结束前不得改转换器／探针或重复启动。
