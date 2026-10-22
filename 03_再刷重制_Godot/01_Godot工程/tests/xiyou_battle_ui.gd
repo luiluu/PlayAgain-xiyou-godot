@@ -294,6 +294,8 @@ func _message_101(b: XBattleScene) -> void:
 	# 原版窗口层 Window_Message 在 Window_OTBDisplay 之后：消息窗压在行动顺序条上（头像盖住条左端），也在敌人血条（z 5）之上
 	_check("msg101_above_otb", b.message.z_index >= b.otb.z_index and b.message.get_index() > b.otb.get_index() and b.message.get_parent() == b.otb.get_parent(),
 		[b.message.z_index, b.otb.z_index, b.message.get_index(), b.otb.get_index()])
+	# 伤害数字在战斗图（z 0）与敌人血条（z 5）之上、窗口层（消息窗 8、帮助卡 10）之下：弹出时消息窗不被数字盖住
+	_check("popup_below_windows", XBattleScene.POPUP_Z > 5 and XBattleScene.POPUP_Z < b.message.z_index, [XBattleScene.POPUP_Z, b.message.z_index])
 	await _message_case(b, "msg101", {"face": "", "index": 0, "background": 0, "position": 2, "lines": ["\\n<海拉的幻影>很久没有打的这么尽兴了，哈哈哈。"]},
 		Rect2(0, 548, 1280, 172), Rect2(0, 484, 298, 64), 0.0, "battle_49_message_101")
 	await _message_case(b, "msg101_face", {"face": "QY touxiang", "index": 2, "background": 0, "position": 2, "lines": ["\\n<玉皇大帝>你确实很强，不过到此为止了！"]},
