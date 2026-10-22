@@ -5,7 +5,8 @@ extends Control
 ## - 子窗口（缩放 0.6：字号 16、行高 22、文字边距 4）：名字 (0,6)；HP (8,28)、MP (16,50)、TP (24,72)，量条宽 160、高 6；
 ##   名字按 HP 颜色（濒危黄、死亡红）；HP/MP 为 YEP drawCurrentAndMax「当前/最大」，TP 只显示数值。
 ## - 护盾（ShieldSystem 钩 Window_BattleSideHP.refresh）：护盾大于 0 时，在 HP 条上按 max(生命上限, HP＋护盾) 折算，
-##   从 HP 位置到 HP＋护盾位置叠一段蓝色 rgba(0,136,255,0.7)（高 6，贴行底）；HP 字样右侧 6px 写「盾＋数值」（12 号、#88ccff，万／亿／兆…一位小数）。
+##   从 HP 位置到 HP＋护盾位置叠一段蓝色 rgba(0,136,255,0.7)（高 6，贴行底）；HP 字样右侧 6px 写「盾＋数值」（12 号、#88ccff、描边黑 0.7，万／亿／兆…一位小数）。
+##   画面对照（八戒_50，原版参照 battle_shield_side）：蓝段四种情形逐像素一致。
 ## - 状态格（installEquipmentStatusRuntime）：(−36, 20) 36×36，有图标状态时每 1.4 秒轮换显示一个，否则深色方块里写「i」。
 ## - 轮到输入或正在行动的角色左移 48，被选为目标时左移 24，每帧移动 4px。
 
@@ -20,6 +21,10 @@ const FS := 16
 const PAD := 4.0
 const GAUGE_W := 160.0
 const CYCLE_MS := 1400
+const SHIELD_SEG := Color8(0, 136, 255, 179)
+const SHIELD_COLOR := Color("#88ccff")
+## ShieldSystem 设 outlineColor rgba(0,0,0,0.7)、outlineWidth 2；宽度被正式版封顶 0.75px（同通用细描边），颜色照设
+const SHIELD_OUTLINE := Color(0, 0, 0, 0.7)
 
 var actor: XActor
 ## 演出中的读数（XBattleScene.show_views 设、clear_views 清）；空时读实时状态
@@ -107,13 +112,17 @@ func _shield(c: XMVCanvas, x: float, y: float, v: Dictionary) -> void:
 	var s := float(v.get("shield", 0.0))
 	if s <= 0.0:
 		return
-	var mx := maxf(maxf(v.mhp, v.hp + s), 1.0)
-	var start := floorf(x + GAUGE_W * minf(v.hp / mx, 1.0))
-	var end := floorf(x + GAUGE_W * minf((v.hp + s) / mx, 1.0))
-	if end > start:
-		c.draw_rect(Rect2(start, y + LH - 6.0, end - start, 6.0), Color8(0, 136, 255, 179))
+	var seg := shield_segment(v.hp, v.mhp, s, x)
+	if seg.y > seg.x:
+		c.draw_rect(Rect2(seg.x, y + LH - 6.0, seg.y - seg.x, 6.0), SHIELD_SEG)
 	var label := "盾" + shield_text(s)
-	c.text(label, x + c.text_width("HP", FS) + 6.0, y, c.text_width(label, 12) + 4.0, "left", Color.html("#88ccff"), 12, LH)
+	c.text(label, x + c.text_width("HP", FS) + 6.0, y, c.text_width(label, 12) + 4.0, "left", SHIELD_COLOR, 12, LH, 1.0, 1.0, Vector2.ZERO, SHIELD_OUTLINE)
+
+
+## 蓝段的起止 x（HP 位置到 HP＋护盾位置，按 max(生命上限, HP＋护盾, 1) 折算，取整同原版 Math.floor）
+static func shield_segment(hp: float, mhp: float, s: float, x: float) -> Vector2i:
+	var mx := maxf(maxf(mhp, hp + s), 1.0)
+	return Vector2i(int(floorf(x + GAUGE_W * minf(hp / mx, 1.0))), int(floorf(x + GAUGE_W * minf((hp + s) / mx, 1.0))))
 
 
 ## formatShieldText：一万起按 万／亿／兆／京／垓／秭／穰／沟／涧／正／载 取一位小数，以下取整
