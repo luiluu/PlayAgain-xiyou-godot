@@ -1,7 +1,7 @@
 # 交付：codex/state-effects-2b
 
 - 车道／工作者：翻译／核查 · Codex（沙僧）
-- 状态：进行中（专项全过，最终同步正在运行）
+- 状态：可合并（专项、最终同步、来源核验与产物指纹均通过）
 - 基点：main 09ebfb0（合并 codex/state-effects-2）。交付前 `git merge main` 已确认无新提交；唐僧主工作区的未提交收尾只读，未改共用文件。
 - 范围：第二期第二小期：四种整块常量加成、默认伤害链上下文、原有终值扩展兼容。旧终值覆写的全面迁移另有具体提案，不能宣称完成。
 - 独占：battler.gd、damage.gd、core/state_effects.gd、state_effects_probe.cjs、xiyou_state_effects测试、转换器状态效果翻译部分。battle_logic.gd只改状态挂点，未动certain_hit()。
@@ -43,8 +43,10 @@
 ## 长任务与接力状态
 
 - 最终同步用长任务.py包装运行`同步正式西游.py --accept-additions`，日志`03_再刷重制_Godot/04_验证/本地结果/state-effects-2b/sync.log`。不能重复启动；用等待任务.sh等现有任务。
-- 同步计划执行42个探针（转换器源变更导致缓存失效）；结束后核对退出码、同步报告和sync_stamp.json，再改状态为可合并并提交。
+- 最终同步2026-10-22 04:32（Europe/Paris）结束，TASK_RESULT done／exitCode 0。同步报告：verifyOk=true、sameExistingSource=true、measurementChanges={}、无cacheError/importError；来源1655输入＋382运行时输入核验issues=[]。sync_stamp.json工具摘要与产物摘要均复算匹配。
+- 同步的接受基线已含转换时复制的19例，因此报告结论为“测量不变”，不是接受新增；另与main的17例独立对照，旧17逐项相等，只增bonus.native_blocks和damage.full_chain，19例errors均为空。报告目录：04_验证/本地结果/自动同步/20261022_041154_428418_v0.28-v0.28。
+- 重制_沙僧_41接手后只等待既有长任务，未重复启动、未终止进程；未重跑已过专项。全部代码提交仍待Claude交叉核查。
 - main当前仍在09ebfb0，本轮未出现新的Claude提交；若后续出现先核查，不自销Codex提交。
 - 本期此前WIP均已提交。没有活动heartbeat；旧临时监视已删除，不重建。
 
-- 自动同树接力点：下一会话`重制_沙僧_41`从本工作树继续，先等现有sync.log任务（包装PID64254，子组64255；不要据PID盲目终止），核对同步报告再标可合并；随后第二期其余形状。未提交改动应为无。不能把本期已记录的旧终值接口兼容边界重新改成失败的基础值语义。
+- 下一小期：在本工作树切出codex/state-effects-2c，保持本分支可独立合并；第二期剩余纯value整块已完整盘点，先量原版再接受控执行。未翻译483块的清单在本地结果state-effects-2b/remaining-js-inventory.json，不入Git。
