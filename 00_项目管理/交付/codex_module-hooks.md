@@ -64,3 +64,8 @@
 - 新增参照的只增稳定键已登记到oracle_additions.py；4/4检查：新增案例ID接受、既有值改变拒绝、既有案例删除拒绝、总装首次接收整份27例新参照接受。未放宽守卫。
 - sync-carried-env.log于14:17（Europe/Paris）退出0：34组复用，10组重测（含6难度切片，15条原版命令），全部0退出；测量不变、changedInputs=[]、changedMaps=[]、measurementChanges={}，来源issues=[]；本工作树不写主工作区登记。最后只增键／登记位置调整后再做一次全缓存快验固化指纹，不再重跑参照。
 - 两车道兼容预演：与state-effects-2d、与claude/wukong-hajimi（含4ea173d）的merge-tree均无冲突；共用探针表和只增表的新增位置已错开，避免与悟空同处插入产生文本冲突。不是运行时的跨分支验收；总装合并后统一全量 --oracle仍必需。
+
+## 指纹收尾的排槽处理
+
+- 普通sync-stamp.log因manifest登记摘要更新，规则要求补测formula_program／formula_equipment两组（42组命中）；但新任务长期轮询抢不到共享槽。核实自己的childIdentity后主动停止此轮，退出143，日志保留；没有停止他人任务。
+- 本地证据目录fair_sync.py仅将本轮调度改为单并发，并用原并行测试模块已有file_lock在同一个slots/0.lock上阻塞等待；仍占原共享槽，不增并发，不改原同步器、探针、比较逻辑、缓存校验或FS守卫。此临时调度适配器不入Git、不成为项目功能。最终结果看sync-fair-stamp.log。
