@@ -1,7 +1,7 @@
 # 交付：codex/state-effects-3-design
 
 - 车道／工作者：状态效果·框架／Codex（沙僧，重制_沙僧_44～46）。
-- 状态：进行中
+- 状态：可合并（最终同步与22专项全部通过，待Claude交叉核查）
 - 整批范围：此前撤回的2b～2d状态翻译、第三／四期接口设计、三十一层流程夹具修复。只合本分支即可带入2b～2d；不要再按旧分支分别合。
 - 最终组合基点：main 77f41c73（dev.134内容），本树e37d5660已合入，无冲突。main的未提交收尾只读；没有接总装或修改共用登记。
 - 本批所有实现与夹具均待Claude交叉核查，不自核、不记完成度增量。第三期永久加算与第四期预约事件仍只有设计。
@@ -23,8 +23,9 @@
 - main后续修改转换器PNG正规化和review_fix探针，所以按规则合main后再次补齐、刷新最终同步指纹。refill-final.log通过，带入main状态17例和review_fix40例；pre-final-sync/保存比较边界。首次成功21例也从保留的原版产物存为verified-first-21.json。
 - 最终同步sync-final.log已exitCode0（22:06:23 Europe/Paris），重跑4／复用41探针；17→21只增同四例、旧17不变、与首次21例按id完全一致、其他测量不变、来源与双指纹已核对。报告：04_验证/本地结果/自动同步/20261022_214400_831283_v0.28-v0.28/同步报告.json，独立核对：final-sync-verification.json。
 - 最终指纹：toolsDigest=30d36d91fd4e6c766d5df19e4cdbdfbca9efd86fb97cec0dc0651afac7814509；outputsDigest=eac232bf2178fcd29aa7e229259d0bc45b7dd77b761183ec87601f861cc00d43。没有接受单、cacheError或importError。
-- 22场景组合final-validation.log已开始，尚待结果。单槽使用同一个slots/0.lock，不突破全局四槽上限，不改正式测试工具或守卫；同步首个探针耗时含等待共享槽约20分钟，不能当探针自身性能。
-- 22个专项：state_effects、battle*、combat、shield、imported_balance、custom_damage、drop_record、formula_effects、random_streams、transform_params、floor_run*、cat、actor_p0、help_card、sequence_visual、interp_review。最终结果未出前不能宣称全过。
+- 22场景组合final-validation.log于22:19:31 Europe/Paris exitCode0，29,290／29,290项断言全部通过，无失败、无偶发重跑、无结果复用。单槽使用同一个slots/0.lock，globalJobs=4，未改正式测试工具或守卫；测试墙钟787秒含排队，同步首个探针也含等待共享槽约20分钟，不能当探针自身性能。
+- 分场景结果：state_effects19944、actor_p03212、cat951、help_card970、floor_run273／floor_run_b332／floor_run_c560（floors[21,33]）、formula_effects908、shield565、random_streams484、imported_balance273、transform_params249、custom_damage145、drop_record26、battle8／battle_events108／battle_options92／battle_ui68／battleback_save5、combat34、sequence_visual70、interp_review13。日志与逐次耗时在final-specialties/，汇总final-acceptance-summary.json。
+- 专项结束后已再次复算工具与全部产物摘要，仍与最终同步指纹一致；15份原版证据归档摘要也全匹配。没有活动长任务。
 - 本轮额外检查：翻译边界7项、公式程序12项通过；内容覆盖检查通过（1906页、new=0、resolved=0），未改覆盖基线。合入新主线后的日志为final-translation.log／final-formula-program.log／final-coverage.log。
 
 ## 原始证据与失败边界
@@ -40,7 +41,7 @@
 
 - 三十一层流程回归来自正确启用1047物理免疫后，原纯物理夹具无法推进。已用完整原版BattleManager开场确认1047经1053刷新进入热缓存；元素1正伤害归零、另一元素保留，Godot同点免疫分支相同。完整因果与证据边界见[返工分析](../返工分析_20261022_三十一层.md)。
 - 仅F31临时给修安排正式技能533，第二阶段由原有普通攻击结束，保存恢复排表／临时技能／observer；保留全部开场和原胜利断言，新增开场与免疫双阶段断言。没有停用敌人状态或改变游戏免疫规则；测试侧调整待总装／悟空交叉复核。
-- 合主线hajimi时保留统一状态结算与battleRound回合上下文，随后组合dev.132～134。翻译边界7项、公式程序12项、内容覆盖基线检查通过；最终同步与22专项尚待结果，完成前本批不可合并。全量检查由总装统一执行。
+- 合主线hajimi时保留统一状态结算与battleRound回合上下文，随后组合dev.132～134。最终正式同步只增既定四例，旧17例不变、与首次成功21例相同，其他测量不变、来源和双指纹通过；22专项29,290项全过，无偶发或复用，其中三十一层560／560、流程至33层。翻译边界7项、公式程序12项与内容覆盖基线检查也通过。全量检查由总装合main后统一执行。
 - 2b～2d各期翻译范围、未支持边界与历史验收见随分支携带的各期变更记录草稿；本次组合验收不能用历史专项替代。全部待Claude交叉核查，不自销账或增加进度。
 
 ## 接口设计变更记录草稿
@@ -54,7 +55,7 @@
 
 ## 交接板与下一步（由总装并入）
 
-- 本批验收完成后标可合并；总装合本分支即包含2b～2d与设计，工具会一并归并三个前期交付单。不要重复合旧分支；待Claude核查整批实现、F31测试夹具和伤害入口冲突处理。
+- 本批已可合并；总装合本分支即包含2b～2d与设计，工具会一并归并三个前期交付单。不要重复合旧分支；待Claude核查整批实现、F31测试夹具和伤害入口冲突处理。合后统一检查.sh --oracle并推main。
 - 本批未合main前不进入2e或第三期。合入后期二回state-effects-2b树续2e；第三期actor／XState／resource_context虽已明确交接，仍按brief先交2e后开新期。
 - 需要用户决定：无。原版报错／无效块仍留js，OTB Action End不补，未支持边界不自动修成有效效果。
 - 进度账：本批不自记完成度增量，留Claude交叉核查。
