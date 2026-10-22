@@ -105,6 +105,7 @@ func _run() -> void:
 	_check("actor_scale", is_equal_approx(b.sprites[b.logic.actors[0]].body_scale, 0.75))
 	await _frames(30)
 	await _shot("battle_40_input")
+	await _shield_side(b, s)
 	await _message_101(b)
 	# 指令窗（原版：851,462,220,196；6 条居中）
 	var cw: XBattleList = b.cmd_win
@@ -341,3 +342,45 @@ func _message_case(b: XBattleScene, tag: String, msg: Dictionary, rect: Rect2, n
 	cw.show()
 	cw.active = true
 	await _frames(2)
+
+
+## 护盾侧栏（ShieldSystem 钩 Window_BattleSideHP.refresh）：原版参照 battle_shield_side（ui_reference 战斗夹具四人，
+## 美娜在输入左移 48；狗逍遥 242/485＋盾 100 蓝段在条内，修 450/450＋盾 225 按 max(上限, HP＋盾) 折算，
+## 罗琳 300/525＋盾 123456 写「盾12.3万」，美娜 120/480＋盾 2.5 亿写「盾2.5亿」）。原版 HP 窗口 (1080＋8, 序号×121＋28)，内边距 4。
+func _shield_side(b: XBattleScene, s) -> void:
+	var cfg := [[1, 242.0, 100.0, 1171, 1204, "盾100"], [8, 450.0, 225.0, 1198, 1252, "盾225"],
+		[9, 300.0, 123456.0, 1092, 1252, "盾12.3万"], [10, 120.0, 250000000.0, 1044, 1204, "盾2.5亿"]]
+	var keep := []
+	for c in cfg:
+		var a: XActor = s.actor(c[0])
+		keep.append([a, a.hp, a.shield])
+		a.hp = c[1]
+		a.shield = c[2]
+	for row in b.status_rows.values():
+		row.refresh()
+	await _frames(20)
+	for i in cfg.size():
+		var c: Array = cfg[i]
+		var row: XSideStatus = b.status_rows[s.actor(c[0])]
+		var seg := XSideStatus.shield_segment(row.actor.hp, row.actor.mhp, row.actor.shield, row.position.x + 8 + XSideStatus.PAD)
+		_check("shield_seg_%d" % c[0], seg == Vector2i(c[3], c[4]), [seg, row.position.x])
+		_check("shield_label_%d" % c[0], "盾" + XSideStatus.shield_text(c[2]) == c[5], XSideStatus.shield_text(c[2]))
+	_check("shield_label_style", XSideStatus.SHIELD_COLOR == Color8(0x88, 0xcc, 0xff) and XSideStatus.SHIELD_OUTLINE == Color(0, 0, 0, 0.7)
+		and XSideStatus.SHIELD_SEG == Color8(0, 136, 255, 179), [XSideStatus.SHIELD_COLOR, XSideStatus.SHIELD_OUTLINE])
+	await _shot("battle_50_shield_side")
+	# 窗口模式：截图上蓝段的起止列与原版 battle_shield_side 逐像素一致（行 y＝序号×121＋28＋16～21）
+	if out_dir != "" and DisplayServer.get_name() != "headless":
+		var img := get_viewport().get_texture().get_image()
+		var blue := func(px: Color) -> bool: return px.b8 > 150 and px.r8 < 80 and px.b8 - px.g8 > 40
+		for i in cfg.size():
+			var c: Array = cfg[i]
+			var cols := []
+			for x in range(c[3] - 3, c[4] + 3):
+				if blue.call(img.get_pixel(x, i * 121 + 28 + 18)):
+					cols.append(x)
+			_check("shield_pixels_%d" % c[0], not cols.is_empty() and cols.min() == c[3] and cols.max() == c[4] - 1, [cols.min() if cols else null, cols.max() if cols else null])
+	for k in keep:
+		k[0].hp = k[1]
+		k[0].shield = k[2]
+	for row in b.status_rows.values():
+		row.refresh()
