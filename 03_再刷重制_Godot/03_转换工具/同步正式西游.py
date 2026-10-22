@@ -99,6 +99,7 @@ PROBES = [
     (['attack_element_probe.cjs'], ['attack_elements.json']),
     (['qiyu_probe.cjs'], ['qiyu.json']),
     (['cat_probe.cjs'], ['cat.json']),
+    (['lobby_shop_probe.cjs'], ['lobby_shops.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
 
