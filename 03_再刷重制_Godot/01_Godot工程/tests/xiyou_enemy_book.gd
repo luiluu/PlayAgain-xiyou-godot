@@ -10,12 +10,34 @@ const FIXTURE := "res://tests/fixtures/enemy_book_oracle.json"
 const POS_TOL := 0.05
 
 var results := []
+var out_dir := ""
+
+
+## 地图宿主替身：只接图鉴与事件刷新
+class FakeHost extends Node:
+	var opened := 0
+	func open_enemy_book() -> void:
+		opened += 1
+		await get_tree().process_frame
+	func refresh_events() -> void:
+		pass
 ## 属性百分比只差浮点末位的条数：XBattler.additive_rate 的求和次序是 1+(v−1)，原版 reduce 是 (s+v)−1
 static var float_tail := []
 
 
 func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out_dir = arg.substr(6)
 	_run.call_deferred()
+
+
+func shot(name: String) -> void:
+	if out_dir == "" or DisplayServer.get_name() == "headless":
+		return
+	await frames(3)
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
 
 
 func check(name: String, ok: bool, detail = null) -> bool:
@@ -170,6 +192,7 @@ func _run() -> void:
 	await frames()
 	await _flow(ref)
 	_registration()
+	await _interpreter()
 	await _menu_entry()
 	for pl in XSound._players:
 		if is_instance_valid(pl):
@@ -193,6 +216,7 @@ func _flow(ref: Dictionary) -> void:
 		and rect.call(book.status_win) == geo.status.map(func(x): return float(x))
 		and rect.call(book.drop_win) == geo.drops.map(func(x): return float(x)) and int(geo.rows) == XEnemyBookPage.ROWS,
 		[rect.call(book.index_win), rect.call(book.status_win)])
+	await shot("enemy_book_0")
 	check("open_first", book.index == 0 and not book._status_ops.is_empty() and book.mode == "index" and not book.drop_win.visible)
 	# 第 3 项（敌人 3）未登记：状态窗空、确定不开掉落
 	book.select(2)
@@ -203,12 +227,13 @@ func _flow(ref: Dictionary) -> void:
 	book.select(0)
 	book.ok()
 	await frames()
-	check("drops_open", book.mode == "drops" and book.drop_win.visible and book.drop_index == 0 and not book.drop_list.is_empty())
+	check("drops_open", book.mode == "drops" and book.drop_win.visible and not book.status_win.visible and book.drop_index == 0 and not book.drop_list.is_empty())
+	await shot("enemy_book_0_drops")
 	check("drops_help", book.help_card.visible and book.help_card.position == Vector2(880, 32), [book.help_card.position, book.help_card.size])
 	book._move(1, true)
 	check("drops_move", book.drop_index == 1 and book.help_card.visible)
 	book.cancel()
-	check("drops_cancel", book.mode == "index" and not book.drop_win.visible and not book.help_card.visible and book.index == 0)
+	check("drops_cancel", book.mode == "index" and not book.drop_win.visible and book.status_win.visible and not book.help_card.visible and book.index == 0)
 	book._page_jump(1)
 	check("page_jump", book.index == XEnemyBookPage.ROWS and book.top > 0)
 	var closed := [false]
@@ -278,6 +303,23 @@ func _registration() -> void:
 	blank.erase("enemyBook")
 	var old := XState.from_dict(blank)
 	check("old_save_blank", not XEnemyBook.registered(old, 1) and XEnemyBook.defeat_number(old, 1) == 0)
+
+
+## 公共事件 2 走地图解释器：插件指令 EnemyBook open 交给宿主打开图鉴；EnemyBook complete 全登记
+func _interpreter() -> void:
+	var s := XState.new_game_blank()
+	for id in [1, 8, 9, 10]:
+		s.add_actor(id)
+	var h := FakeHost.new()
+	add_child(h)
+	var it := MVInterpreter.new(h, s.map_id, 0, XDB.rec("CommonEvents", 2).list)
+	await it.run()
+	check("ce2_opens_book", h.opened == 1 and it.skipped.is_empty(), [h.opened, it.skipped])
+	var it2 := MVInterpreter.new(h, s.map_id, 0, [{"code": 356, "indent": 0, "parameters": ["EnemyBook complete"]}, {"code": 0, "indent": 0, "parameters": []}])
+	await it2.run()
+	check("plugin_complete_via_event", h.opened == 1 and it2.skipped.is_empty() and XEnemyBook.ids().all(func(id): return XEnemyBook.registered(s, id)))
+	h.queue_free()
+	await frames()
 
 
 func _menu_entry() -> void:

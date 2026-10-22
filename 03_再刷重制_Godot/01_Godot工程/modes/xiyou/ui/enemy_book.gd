@@ -348,8 +348,10 @@ func _refresh() -> void:
 		w.refresh()
 
 
+## MV WindowLayer 会把后建的窗口范围从前面的窗口里挖掉：掉落列表打开时状态窗整片被盖住
 func _show_drops(on: bool) -> void:
 	drop_win.visible = on
+	status_win.visible = not on
 	if not on:
 		help_card.show_for({})
 
