@@ -1,49 +1,48 @@
 # 交付：codex/state-effects-2b
 
 - 车道／工作者：翻译／核查 · Codex（沙僧）
-- 状态：进行中（同树接力已接手；main 的唐僧现场只读，未改共用文件）
-- 基点：main 09ebfb0（合并 codex/state-effects-2），按用户要求新建工作树。
-- 范围：第二期第二小期。完整伤害链上下文贯通，先接整块匹配的四种常量加成子形状；余项下一期。
-- 独占与停手：照本聊天用户分工，不碰 actor.gd、切片、角色／界面／工具测试；某期必须改范围外核心先写提案跳下一期，连续两期无可交付成果停。
-- 原版行为：每种新形状先补 mv_oracle；原版报错与不触发不自动修复。
+- 状态：进行中（专项全过，最终同步正在运行）
+- 基点：main 09ebfb0（合并 codex/state-effects-2）。交付前 `git merge main` 已确认无新提交；唐僧主工作区的未提交收尾只读，未改共用文件。
+- 范围：第二期第二小期：四种整块常量加成、默认伤害链上下文、原有终值扩展兼容。旧终值覆写的全面迁移另有具体提案，不能宣称完成。
+- 独占：battler.gd、damage.gd、core/state_effects.gd、state_effects_probe.cjs、xiyou_state_effects测试、转换器状态效果翻译部分。battle_logic.gd只改状态挂点，未动certain_hit()。
+- 未碰 actor.gd、xiyou_slice.json、角色／界面／工具既有脚本；新增的测试状态效果翻译.py只用于本车道翻译边界验收。
 
 ## 变更记录草稿
 
 ## 2026-10-22 【Codex·沙僧·未经Claude检验】状态效果第二期第二小期（dev.待定）
 
-- 原版参照已通过：新增 bonus.native_blocks，四种整块子形状、28 个状态 confirm 槽 × 7 个 value × 4 个伤害类型 × 2 个暴击布尔，共 1568 行；探针总 18 例，退出 0，无 errors。旧 17 例与本工作树 generated/oracle 中的既有参照逐项相等。产物在本树 03_再刷重制_Godot/03_转换工具/mv_oracle/.sandbox/state_effects.json，尚未改翻译器或运行时。
-- 接续：重制_沙僧_40 在同一工作树接力，实现四类整块常量加成（local bonus；finalRate；finalRate＋critical bonusRate；前者后接独立 floor 语句）。保持每一步基于已更新 value，负系数也原样，不能合并总倍率；原 127 个旧 op 输出不变。用 1568 行逐项比对并补半匹配不能接受的拒绝断言。
-- 完整伤害链仍需做：贯通资源／结果槽、vars／switches／RNG 与 critical 上下文，预览不写真实状态与诊断。注意 BSC 的 confirm/react 位于 executeDamage，makeDamageValue 只做数值计算；当前 _damage_value 直接 finish，测试 xiyou_drop_record 子类覆写它会绕过 confirm/react，统一时要保留这个覆写签名，不改该角色外测试。respond 的返回 value 在原版会传给 establish，现 _establish 丢弃返回值，这也是本小期挂点改动要覆盖的边界。不得动 certain_hit()。
-- 核查交付另见 codex/review-dev122-123（最新 157e08e），main 新的 dev.123 收尾 5c1bf82 仅登记／版本变化，需随核查单补登记。09ebfb0 的沙僧实现仍待 Claude，不自核。
+- 四类已取原版参照的常量加成翻译成 `value_steps`：local bonus、finalRate、finalRate＋critical bonusRate、前者后接独立 floor。28个真实状态confirm块；按更新后的value逐步加法与取整，尾部独立条件重新检查，保留负系数与负结果，不合并总倍率。
+- 全块／词法边界匹配；带未知副作用、半块、破坏标识符、额外语句的全部保留js。旧125个mul＋2个user_param_damage逐源块输出不变；js由511降至483（仍有483未翻译，不代表所有声明式形状已完成）。
+- 默认伤害路径统一经XStateEffects，Confirm／React得到资源／结果槽、record、vars／switches、规则RNG、critical；respond返回的value传给establish。新增基础分解挂点 `_calculate_damage`，可固定基础数值并保留四段效果；保留旧 `_damage_value`「已结算终值」覆写契约，相关限制见下。
+- 原版：state_effects_probe共19例退出0、无errors；旧17例与既有generated参照逐项不变。新增28状态×7value×4伤害类型×2暴击=1568行全对；固定基础7的真实四段输入为7→14→7→21，扣血7。输出 `.sandbox/state_effects.json`。
+- Godot：最终相关13场景共4546项断言通过：state_effects1640、battle8、battle_events108、battle_options92、battle_ui43、battleback_save5、drop_record26、formula_effects908、imported_balance273、shield565、custom_damage145、random_streams484、transform_params249。额外翻译边界4项、既有公式编译12项通过；预览未写真实资源、状态缓存、RNG、诊断或资源槽。
+- 日志：`03_再刷重制_Godot/04_验证/本地结果/state-effects-2b/`；最终测试分别在dependencies（首轮通过的8个旧依赖）和final-dependencies（state_effects／drop_record／custom_damage／random_streams／transform_params最终结果）。首次测试确定性失败及修复见下，未靠偶发重跑销账。
+- 车道只跑专项；全量检查留给总装合main统一一轮，全部提交待Claude交叉核查，不自核。
 
-## 交接板
+## 完整迁移旧终值夹具的具体提案（本期未做）
 
-- 本期不调整进度账。
+- `_damage_value(u, skill, t, critical)`原来返回已完成Confirm／React的终值；旧drop_record测试子类覆写它返回100。尝试把所有覆写返回值当基础数再统一过状态时，两条精确记录由100／167变成600／667。其余首轮直接依赖均通过。
+- 原因是夹具初始条件不同：原版drop_record_probe直接调用BattleManager.startBattle，状态表[]／[1460]；Godot setup还跑dsPassiveSkill开战标签，多带状态995。旧终值覆写跳过Confirm，隐藏了这个差异。不能把这个角色测试的失败当作纯倍率错误，也不能为了它跳过生产路径的状态效果。
+- 后续有掉落／角色测试权限的车道：将Godot该夹具的初始状态与原版row.states对齐并刷新热缓存；把FixedDamageLogic改覆写本期新增`_calculate_damage`返回`{value: row.baseDamage, critical: ...}`，参照不改；两条记录仍应100／167。再迁移／移除旧终值入口，才能宣称全部覆写也经过Confirm／React。沙僧本期未改该测试及其探针。
+- 本期默认路径与新的基础挂点已验证四段链；**旧 `_damage_value` 终值覆写依旧跳过Confirm／React，是保留的兼容边界，非已修完**。
 
-## 本分支提交
+## 验证中的确定性失败记录
 
-- 见历史。
+- 首次状态效果专项1639/1640：JSON浮点314与本地整数314的嵌套数组严格比较失败，数值一致；已统一测试类型，最终1640/1640。
+- 首轮依赖drop_record24/26：上述终值接口变化造成，恢复兼容契约并新增基础挂点后26/26。未改角色测试、未改参照、未标偶发。
 
-## 后续期与边界提醒
+## 交接板／进度账草稿
 
-- 第二期其余形状接着做；每种先有原版参照，整块匹配，不把未知副作用吞掉。
-- 第三期 param_add 必须接 actor.param_plus／保存加载，actor.gd 被用户明确排除；若确认无法在现有接口完整实现，按停手规则写具体提案到该期单并跳第四期，不擅自改 actor.gd。
-- 第四期原版 reserveCommonEvent 是覆盖单槽；若预约消费必须改 battle_event_runner 或 XState 等范围外核心，同样具体提案后跳第五期。连续两期无可交付成果则停手回报，不能为了触达第五期违反条件。
-- 第五期只做1741～1749状态效果：1741/1742的this.user、1743畸形结束标签、1747括号语法错、1748 attackCount、1749 criticalRate都要先量实际无效／报错；1744～1746无 Custom 块。108奈叶归悟空。
-- 本聊天临时等待跟进已删除（条件已触发），没有活动自动化；不要另开重复监视。主工作区和其他车道保持原样。未提交改动为无，当前无长任务仍在跑。
+- 本期不调整进度账；待Claude核查本分支和main内此前的沙僧实现。
+- 核查分支`codex/review-dev122-123`（同级工作树review-dev122-123，最新56e57fc）已可合并，原dev.122／dev.123及5c1bf82无需重复核。P2 sips转PNG时ICC带当前时间，源不变输出SHA仍变，留工具车道修；89811f2已修8个假图片夹具，以接续报告为准。
+- 下一步直接接第二期其余声明式形状：每种先mv_oracle，只接整块。原版报错／不触发不自动修成有效。难尾写明未支持，不冒称完成。
+- 第三期状态私有数据、param_add和兼容Godot旧档的保存字段；若必须改actor.gd的param_plus／存取，按用户边界写具体提案再跳第四期，不能只加字段漏执行和存档。
+- 第四期公共事件预约与消费：原版覆盖单槽（1771两次最终2479），不能暗改FIFO；若必须改battle_event_runner／XState等范围外核心，写具体提案。连续两期无可交付成果即停手回报，不强行做到第五期。
+- 第五期只1741～1749：1741／1742的this.user、1743畸形标签、1747语法错、1748 attackCount、1749 criticalRate先量真实无效／报错；1744～1746无Custom块。108奈叶归悟空。
 
-- 接手新增完整伤害链参照：覆写 makeDamageValue 为 7，四段乘数 2／0.5／3／0.5，量 respond→establish 的 value 传递及 critical／变量／开关。先跑原版再改运行时。
+## 长任务与接力状态
 
-## 本轮验证进行中
-
-- 新原版伤害链参照通过：四段输入 7→14→7→21，实际扣血 7；探针共 19 例无 errors，旧17例逐项不变。
-- 已实现 28 块 value_steps，125 个 mul＋2 个 user_param_damage 输出保持原样，js 511→483；4 个翻译边界测试通过（含逐源块拒绝附带未知语句）。
-- 接下来通过长任务包装运行转换与同步；日志目录 `03_再刷重制_Godot/04_验证/本地结果/state-effects-2b/`。转换后先跑状态效果专项与直接依赖，最终同步通过后交付。
-
-## 兼容边界与后续具体提案
-
-- 本期保留 `_damage_value(u, skill, t, critical)` 的既有「已结算终值」接口；新增 `_calculate_damage` 提供可覆写的基础分解值，默认路径统一 Confirm→固定减伤→React，并带资源／记录／随机／变量／开关／critical。新专项通过这个基础入口量真实四段链。`respond` 返回值已传给 `establish`。
-- **完整迁移旧终值夹具暂缓，不能宣称旧 `_damage_value` 覆写也经过 Confirm/React**：尝试在所有覆写返回后统一执行时，`xiyou_drop_record` 的两条精确记录从 100／167 变成 600／667（其余直接依赖通过）；原版 drop_record_probe 直接调用 BattleManager.startBattle，状态表是 []／[1460]，Godot setup 还执行 dsPassiveSkill 开战标签，夹具多带状态 995。旧接口跳过 Confirm 隐藏了这个初始条件差异。
-- 下一条有角色／掉落测试权限的车道可做：将 drop_record Godot 夹具初始状态与原版 row.states 逐项对齐并使热缓存刷新，改覆写新 `_calculate_damage` 返回 `{value: row.baseDamage, critical: ...}`，保留原生参照不动；再把旧 `_damage_value` 终值入口迁为基础入口或移除，统一所有扩展的伤害段。必须确认两条精确记录仍为100／167，并保留一个有确认效果的基础值覆写用例。沙僧本期不改该测试或其探针。
-- 首次状态效果专项 1639/1640，唯一失败为 JSON 浮点数314与本地整数314的严格嵌套数组比较；数值全对，已改测试输入类型。此为确定性测试错误，非偶发。
-- 首轮依赖10场景中9个通过：battle 8、battle_events108、battle_options92、battle_ui43、battleback_save5、formula_effects908、imported_balance273、shield565、state_effects1640；drop_record上述两项确定性失败后已按旧接口约定修兼容，下一轮仅复跑受修复影响的状态效果／掉落和先前漏选的transform_params／random_streams／custom_damage。
+- 最终同步用长任务.py包装运行`同步正式西游.py --accept-additions`，日志`03_再刷重制_Godot/04_验证/本地结果/state-effects-2b/sync.log`。不能重复启动；用等待任务.sh等现有任务。
+- 同步计划执行42个探针（转换器源变更导致缓存失效）；结束后核对退出码、同步报告和sync_stamp.json，再改状态为可合并并提交。
+- main当前仍在09ebfb0，本轮未出现新的Claude提交；若后续出现先核查，不自销Codex提交。
+- 本期此前WIP均已提交。没有活动heartbeat；旧临时监视已删除，不重建。
