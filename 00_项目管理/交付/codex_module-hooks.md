@@ -1,71 +1,58 @@
 # 交付：codex/module-hooks
 
 - 车道／工作者：框架 · Codex（沙僧）。
-- 状态：进行中
-- 用户 2026-10-22 插队：第二期2b～2d已经可合并，2e仅原版TP测量WIP保留，先做架构审查13「模块挂接点表」，之后回状态效果第三期往后。
-- 基于 main e5e283b；不改主工作区共用登记。独占 damage.gd、新 module_registry.gd、自己的探针／专项、框架约定本节；不改 battle_logic.gd／actor.gd／battler.gd、切片或角色实现。
-- 本期：登记表校验、稳定次序、只读上下文、有类型的数值变换与逐次trace；先迁既有orb-sets。以冻结cat-sword原版数值与临时减伤为首个扩展用例，不提前开放178。资源提交与其他宿主挂点保持pending，不能冒充已挂接。
-- 哈基米提案在 claude/wukong-hajimi 尚未落盘；交付前读取。原版先测后实现。长任务脱离会话运行；车道只跑相关专项，合并后由唐僧统一全量 --oracle。全部提交待Claude交叉核查。
-
-## 检查点
-
-- 冻结引擎注册表23项，cat-sword索引9、orb-sets索引19；每项enter→build，cleanup逆序。native-v2原版15例errors=[]，保留首轮探针夹具错误日志（Node数组缺MV contains，已改MV数组），没有改原版守卫／生产。
-- 注册表与伤害数值入口首版专项605/605通过（test-v3.log）；持剑／剑心／进阶／echo／其他技能／吸收／免疫／速度减伤／巨龙减伤／治疗／live浮动逐例对照；原版资源与缓存均无残留。
-- 接下来补全数值字段组合参照、真实行动入口回归、框架文档与最终同步；尚不可合并。初次专项两处测试API拼写与StringName值复制已修，保留失败日志，不算偶发重跑。
+- 状态：可合并
+- 工作树：`.claude/worktrees/module-hooks`；基线main 925dcce。
+- 执行者：Codex；全部待Claude交叉核查。车道未跑全量检查，由总装合并后统一 `检查.sh --oracle`、登记开发编号与推送。
 
 ## 变更记录草稿
 
 ## 2026-10-22 【Codex·沙僧·未经Claude检验】架构13：模块挂接点表与伤害数值入口（dev.待定）
 
-- 用户插队顺序：第二期2b／2c／2d已分别交可合并；2e仅保留原版TP测量WIP，不把它冒充玩法完成。本批先做模块挂接点表，之后回状态效果第三期往后。
-- 新增XModuleRegistry只读编译表，条目带id／version／capabilities／contexts／hooks；校验未知／pending挂点、重复id、能力冲突、上下文及嵌套读路径、依赖环与源次序冲突、处理器签名、写字段及有限数值。固定order＋稳定id；表没有运行时增删。处理器只接深拷贝且递归冻结的值上下文，返回set／add／mul操作；每个处理器的整组变换原子接受。
-- XDamage.calculate新增damage.before入口与moduleTrace；原orb-sets只走表一次，既有公式、Confirm→固定减伤→React与护盾／导入平衡边界保留。数值帧补齐技能／普通／元素／最终／暴击、物魔防御率／伤害率／穿透、承伤、成长／结算倍率、无属性／种类最大值与临时固定减伤覆盖。
-- 冻结原版CodexDamageHooks有23项，依次enter→build，cleanup逆序。哈基米cat-sword索引9（order18／19）、orb-sets索引19（order39）。以测试适配器对照哈基米持剑、剑心、进阶、echo、速度保护、巨龙减伤、吸收／免疫／治疗和live随机；不把178测试夹具注册到游戏默认表，不提前开放角色。持剑把真实缓存临时改写的做法在Godot中转为本次flatMitigationAdd覆盖。
-- 边界：damage.after及其他宿主挂点明确pending，注册会拒收；原版f.after在Confirm后／React前，不能冒充扣血后挂点。moduleTrace由calculate返回，既有battle_logic的float接口尚未消费到战斗日志／replay，待占该宿主的车道接线；不声称完整角色模块、来源护盾账本或完整模块重播已实现。11转换规格／12会话启用仍待实施，本期用显式table／facts参数过渡。
-- 新module_hooks_probe：27例、errors=[]，实际原引擎handler与计算器参照；含额外frame-probe操作组验证所有本期数值字段组合（与原生cat用例分别标识）。新xiyou_module_hooks检验逐例伤害／倍率／减伤、源序、重播、只读、注册拒收与嵌套派发。探针加入同步PROBES，专项校验runtimeInputs。
-- 合并基线：已合main 925dcce（不重复合main、不重复全量验收）；与state-effects-2d的merge-tree预演无冲突，保留其finish/apply_state_effects显式ctx接口。建议先按顺序合2b→2c→2d，再本分支，一批统一 --oracle。
-- 原版守卫未改；不读写玩家存档。车道不跑全量检查，由总装统一检查与推送；回退用本批Git逆补丁恢复原orb内联入口，不同时启用两条路径。
+- 按用户插队顺序，先交模块挂接点表的伤害数值首期，再回状态效果第三期往后。2b／2c／2d仍按原交付分别可合并；2e的TP原版测量WIP原样保留，没有冒充玩法完成。
+- 新增XModuleRegistry只读编译表，条目带id／version／capabilities／contexts／hooks；校验未知或pending挂点、重复id、能力冲突、上下文及嵌套读路径、依赖环和源次序冲突、处理器签名、写字段及有限数值。固定order＋稳定id；无运行时增删入口。
+- XDamage.calculate在恢复分流／公式求值前新增damage.before入口；处理器只接递归冻结的值快照，返回有类型的set／add／mul操作，每个处理器整组原子接受。原orb-sets仅走注册表，移除旧内联叠乘；既有Confirm→固定减伤→React、护盾、导入平衡边界保持。
+- 数值帧支持技能／普通／元素／最终／暴击、物魔防御率和伤害率、穿透／承伤、成长／结算倍率、无属性、种类最大值及临时固定减伤覆盖。显式preview=true时禁止浮动抽样，即使调用方误带实战随机流。返回moduleTrace记录模块／版本／挂点／order／operationId、输入帧、操作及诊断；失败告警并返回unavailable，不伪装成零伤害。
+- 冻结引擎实际装载23项，逐项enter→build，cleanup逆序；cat-sword索引9（order18／19），orb-sets索引19（order39）。以真实原版cat-sword函数验证持剑、剑心、进阶、echo、速度保护、巨龙减伤、吸收／免疫／治疗等；Godot临时减伤只写本次flatMitigationAdd，不改真实passiveCache。
+- 已读悟空claude/wukong-hajimi交付提案（含4ea173d）。落实其装备视图漏点：XDamage._yep_objects优先读actor.stat_equips；旧actor尚无该方法时读equip_list，因此元素增幅／放大／固定增幅和共用该入口的暴击倍率均能消费统计视图，无178伤害核心特判。截取其cat_probe的stats.sword671冻结参照（6个等级、物理加成0.36），附探针SHA、案例ID及runtimeInputs，验证读取与不改装备实例。
+- 新module_hooks_probe含27例，加入同步PROBES与只增稳定键；新xiyou_module_hooks逐项对照原版，并验证注册拒收、嵌套派发、重复计算、预览、随机消费和显式tape重播。设计原件已更新到[框架维护约定](../../03_再刷重制_Godot/00_设计/框架维护约定.md)第13项。
 
-## 给悟空的挂接契约
+## 验证
 
-- 接入点：`XModuleRegistry.compile([XModuleRegistry.orb_descriptor(), <角色描述条目>])`；描述条目可来自新的角色脚本，enter／build分别挂damage.before的order18／19。默认standard当前只有orb-sets；正式启用178时才在工厂加角色条目。
-- `XDamage.calculate(..., {moduleRegistry: table, moduleFacts: <角色只读快照>, operationId: <本次行动/伤害段ID>, ...})`。现有damage.calculate仍兼容原options；宿主先捕获持剑、已学技能、进阶、目标速度、回合和本段连携数据，再以facts传入。处理器不接battler或随机流，也不自己消费标记／剑心／资源。
-- build写normalAdd／elementAdd／finalAdd／criticalAdd／settlementMultiplier；enter写flatMitigationAdd。elementAdd／elementMultiplier／flatMitigationAdd操作必须给0～15的整数element。字段名按原版frame命名。writes逐项列准确字段，contexts／reads列所需facts，缺值会返回unavailable。
-- 每段calculate独立派发；连携步骤／目标／命中／标记消费、临时公式上下文、行动结束和剑心层数由角色宿主负责。未命中不应调用伤害计算；反击／反射用实际使用者和目标；预览使用影子facts，不能把真实资源写接口塞进值快照。正式接入前必须处理available=false，不能按0伤害继续。
-- 已读取悟空`claude/wukong-hajimi`交付单（4ea173d后草稿）的3项提案：build／enter数值与本期27例原版参照一致，逐项映射见上；剑技连携仍由CAT BEGIN／STRIKE宿主调度，不塞进damage.before。
-- 提案1已经落实：`XDamage._yep_objects`优先读actor的stat_equips（已提供时），旧actor尚无该方法则读equip_list；因此Amplify／Magnify／AmplifyN及共用此入口的critical_multiplier_bonus都能消费持剑统计视图。没有加actor.gd补丁或在damage里写178特判，支持两条车道任意先后合入。新增fixture截取悟空cat_probe的stats.sword671冻结参照（6个等级、物理加成0.36），含原探针SHA、案例ID及runtimeInputs；测试本车道的视图读取、旧actor回退与不改装备实例。
-- 提案2的建议`damage_frame(item,a,b,frame)`需要按只读契约改成`damage_enter(context,frame)`／`damage_build(context,frame)`返回ops，Callable可放在XCat脚本，由描述条目引用；真实a／b与mutable frame不传给数值处理器。本期测试适配器验证接口，不抢悟空的cat.gd角色实现，也不提前把未完成角色模块注册到standard。
+- 相关专项13/13全过，无偶发。首批48126项；悟空提案落盘后再验其直接影响的module_hooks／orbs／attack_element：1166／63／66项。按最新结果替换旧3项，不重复计数为 **48187/48187**。
+- 覆盖：模块挂点、攻击属性、战斗、掉落、公式程序与副作用／余项、导入平衡、宝珠、琦玉、结算、护盾、状态阶段。日志：`04_验证/本地结果/module-hooks/related.log`、`related-final.log`；最后3项原始日志在`final-scenes/`，去重汇总在`verification-summary.json`。
+- 原版新探针27例errors=[]。只增接收4/4通过：新案例ID接受，既有值改变／案例删除拒绝，主工作区首次接收整份27例参照接受；证据`addition-keys.json`。
+- 正式同步`sync-carried-env.log`退出0：34组复用、10组重测（含6难度切片，共15条原版命令），全部通过；测量不变，changedInputs／changedMaps为空，measurementChanges={}，来源issues=[]。
+- 最终登记指纹验收`sync-fair-stamp.log`退出0（14:38，Europe/Paris）：42组复用，只补测manifest摘要变化要求重测的formula_program／formula_equipment两组，均通过；测量不变、来源0问题，已生成sync_stamp.json。
+- 与state-effects-2d（b34efa5）、claude/wukong-hajimi的merge-tree预演均无冲突；探针表／只增表新增位置已错开。此为文本兼容预演，组合运行验收仍由总装统一完成。
 
-## 交接板草稿
+## 给悟空的接入契约
 
-- 架构13：数值注册表与damage.before已交；damage.after、split及其他宿主点、日志/replay接线仍pending。哈基米下一期可依本接口接角色模块，不再新增伤害核心特判。
-- 沙僧下一步：用户要求回状态效果第三期往后；2e的TP整块前置保留，不抢在插队任务之前扩做。第三期若仍禁actor.gd／XState，则先按2d交付约定写addParam存档／刷新完整接口提案，再处理第四／第五期，不靠孤立字段冒充完成。
-- 用户试玩说明：已有宝珠套装与伤害结果保持；本期为后续167～178模块接入提供挂点，不宣称新角色已开放。
-- 需要用户决定：无。
+- 详细接口以框架维护约定第13项为原件。compile([orb_descriptor(), 角色描述条目])构造表；角色Callable可放cat.gd，enter／build分别用damage.before的order18／19。
+- 建议的damage_frame(item,a,b,frame)须改为damage_enter(context,frame)／damage_build(context,frame)返回ops；不向数值处理器传真实a／b或可写frame。宿主捕获持剑、技能、进阶、速度、回合、本段连携等facts，经calculate的moduleFacts／operationId显式传入，正式启用前消费available=false。
+- build对应normalAdd／elementAdd／finalAdd／criticalAdd／settlementMultiplier；enter对应flatMitigationAdd。每个伤害段独立派发，连携步骤、命中／暴击、标记消费、剑心层数、临时公式上下文及行动结束由CAT BEGIN／STRIKE宿主负责。
+- 本期Cat是测试适配器；standard当前只登记已有效的orb-sets，不抢悟空cat.gd实现，不提前开放178或新增角色机制。
 
-## 进度账
+## 边界／已知未完成
 
-- 不重算完成度；本批是框架入口，全部待Claude交叉核查。
+- damage.after、split及其他宿主挂点仍pending；注册表不会因存在名字便让未实现点生效。原版f.after位于Confirm后／React前，不能冒充扣血后挂点；资源journal仍归原XResourceContext宿主应用。
+- moduleTrace随calculate返回，既有battle_logic的float接口尚未写入战斗日志／replay；不宣称完整模块重播已完成。第11转换规格／第12会话启用仍未实施，本期显式table／facts为过渡接口。
+- 回退用本批Git逆补丁恢复原orb内联入口；空表会停用宝珠，不能当兼容回退。原版FS守卫未改，不读写玩家存档。
 
-## 同步环境修正
+## 同步调度记录
 
-- 首轮sync.log因Codex继承了LANG／LC_ALL，而携带缓存里二者均为未设置，规划44探针全失效；首份slice_d1已通过（含排槽488.743秒），其余与专项都长时间排共享槽。核实本车道childIdentity后主动终止本轮自己的同步进程组，退出143；保留日志，不作偶发失败、不声称该轮通过，未动其他车道进程。
-- 按携带缓存的实际环境恢复：从main重新复制42条缓存，第二次同步显式移除LANG／LC_ALL；缓存仍逐项验证输入及输出SHA。新的module_hooks和未缓存／实质变化的用例正常重跑，不放宽比对／守卫／并发。这样避免仅因会话工具环境不同重复全量探针。
+- sync.log：LANG／LC_ALL与携带缓存不同，误触发44组全重跑；核实自己的childIdentity后主动停止，退出143，非偶发失败。恢复携带缓存的原语言环境后，sync-carried-env.log正常完成。
+- sync-stamp.log：最后两组长期轮询抢不到共享槽，核实自己的childIdentity后主动停止，退出143。最终用本地证据目录fair_sync.py调用原同步器，仅把本轮调度改为单并发，使用原并行测试模块已有file_lock在同一个slots/0.lock上阻塞等待；不增全局并发、不改探针／比较／缓存／守卫，不停止其他车道任务。临时适配器不入Git，成功结果以sync-fair-stamp.log为准。
+- 大型证据均在本工作树`03_再刷重制_Godot/04_验证/本地结果/module-hooks/`，不入Git。所有本车道长任务均已结束。
 
-## 最终验收接续点
+## 交接板／进度账
 
-- 13场景相关专项已经跑到12/13，最后一项仍等共享槽位；未把排槽当失败。悟空提案在等待期间落盘，已审入并补stat_equips读取，故对其直接依赖另跑module_hooks／orbs／attack_element三项，日志related-final.log（这三项以最后一轮为准，其余相关专项不重复）。
-- 显式preview=true的浮动抽样保护也已补入；对应空随机tape回归检验draws与error，防止误传实战随机流。
-- 最终同步是sync-carried-env.log：34组复用、10组确有变化／未缓存重测；目前已过5份切片及help／wtype／公式程序／Custom Parameters。sync.log为前面主动取消的语言环境误失效轮，不能拿它当成功证据。完成后再填实际结果、标可合并。
+- 架构13数值首期可合并；建议先按序合2b→2c→2d，再本分支，一批统一 --oracle。保留2d的finish／apply_state_effects显式ctx接口；不需再次合main排整轮验收。
+- 下一步回状态效果第三期往后。若actor.gd／XState仍在禁止范围，先按2d交付约定交永久addParam存档／刷新完整接口提案，再处理第四／第五期；不以孤立字段冒充完成。2e测量检查点保留。
+- 玩家方向：既有宝珠与伤害结果保持，本批为后续167～178提供挂点；角色开放与连携交角色车道。无需用户决定；不重算进度，全部待Claude交叉核查。
 
-## 验证结果（最终登记快验前）
+## 主要提交
 
-- 相关专项13/13全部通过，无偶发；首批48126项。提案后的module_hooks／orbs／attack_element三项再验全部通过：1166／63／66；按最新结果替换旧3项、不重复计数，13场景为48187/48187。日志related.log、related-final.log，汇总verification-summary.json，最后3项原始日志在final-scenes/。
-- 新增参照的只增稳定键已登记到oracle_additions.py；4/4检查：新增案例ID接受、既有值改变拒绝、既有案例删除拒绝、总装首次接收整份27例新参照接受。未放宽守卫。
-- sync-carried-env.log于14:17（Europe/Paris）退出0：34组复用，10组重测（含6难度切片，15条原版命令），全部0退出；测量不变、changedInputs=[]、changedMaps=[]、measurementChanges={}，来源issues=[]；本工作树不写主工作区登记。最后只增键／登记位置调整后再做一次全缓存快验固化指纹，不再重跑参照。
-- 两车道兼容预演：与state-effects-2d、与claude/wukong-hajimi（含4ea173d）的merge-tree均无冲突；共用探针表和只增表的新增位置已错开，避免与悟空同处插入产生文本冲突。不是运行时的跨分支验收；总装合并后统一全量 --oracle仍必需。
-
-## 指纹收尾的排槽处理
-
-- 普通sync-stamp.log因manifest登记摘要更新，规则要求补测formula_program／formula_equipment两组（42组命中）；但新任务长期轮询抢不到共享槽。核实自己的childIdentity后主动停止此轮，退出143，日志保留；没有停止他人任务。
-- 本地证据目录fair_sync.py仅将本轮调度改为单并发，并用原并行测试模块已有file_lock在同一个slots/0.lock上阻塞等待；仍占原共享槽，不增并发，不改原同步器、探针、比较逻辑、缓存校验或FS守卫。此临时调度适配器不入Git、不成为项目功能。最终结果看sync-fair-stamp.log。
+- 02dfa9e 注册表与伤害数值覆盖；eb2ddd6／5166778 原版字段组合与同步接入。
+- 9e0be07 显式预览随机保护；f6b7015 哈基米统计视图与671剑参照。
+- bd7620c／af911b1 只增稳定键及共用登记位置；其余检查点见本分支历史。
