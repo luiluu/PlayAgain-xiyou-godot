@@ -5,10 +5,11 @@ extends Node
 ## 运行：godot --headless --path <工程> res://tests/xiyou_rules.tscn [-- --verbose]
 
 ## 六个难度、每个难度的角色／敌群／伤害行再按序号轮流分 parts 份，一个场景管一份（xiyou_rules 是难度 1 第 0 份，
-## xiyou_rules_d1b 是难度 1 第 1 份，xiyou_rules_d2／_d2b……同理），免得单场景随切片扩大逼近 600 秒超时线；并行测试按耗时慢的先派
+## xiyou_rules_d1b／_d1c／_d1d 是难度 1 第 1～3 份，xiyou_rules_d2／_d2b……同理），免得单场景随切片扩大逼近 600 秒超时线；并行测试按耗时慢的先派
+## （2026-10-22 由每难度两份改为四份：满负载并行时单份约 395 秒，超过上限一半）
 @export var difficulties: Array = [1]
 @export var part := 0
-@export var parts := 2
+@export var parts := 4
 ## 过期参照必须被拒的两项自检：拆分前 1～3、4～6 两份各做一次，现在由难度 1 与难度 4 的第 0 份各做一次，断言总数不变
 @export var stale_checks := true
 var results: Array = []
