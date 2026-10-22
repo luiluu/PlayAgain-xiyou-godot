@@ -56,6 +56,8 @@ static var REAL_SELL_PRICE := true
 var rows: Array = []          # content() 的结果
 var quality := 0
 var min_font := MIN_FONT
+## 卡宽（Sprite_ItemHelp 构造参数；人物图鉴技能详情为 727，其余 400）
+var card_width := WIDTH
 var _lines: Array = []        # layout() 的结果：[{glyphs, y, h, line}]
 var canvas: XMVCanvas
 var frame: Control
@@ -685,9 +687,9 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 		return
 	rows = content(obj, kind)
 	quality = _quality(obj)
-	var lay := layout(rows, min_font)
+	var lay := layout(rows, min_font, card_width)
 	_lines = lay.lines
-	size = Vector2(WIDTH, lay.height)
+	size = Vector2(card_width, lay.height)
 	frame.position = Vector2(-10, -10)
 	frame.size = size + Vector2(20, 20)
 	canvas.position = Vector2.ZERO
