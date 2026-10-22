@@ -32,3 +32,10 @@
 - 用户插队的架构13已交codex/module-hooks（a8fcb0d），可合并；之后已回状态第三／四期，在codex/state-effects-3-design（1ff5c0c）交具体接口设计，运行时需actor／XState／事件宿主范围交接，不强推第五期。2e继续保留为纯TP原版测量WIP，未实现、不可合并为玩法完成；不要在此枝重复测量或擅自扩做。
 - 本目录恢复2e以保留其未入Git的native22例及日志。第三／四期设计移到独立state-effects-3-design工作树；总装清理2b／2c／2d时不要删除本目录或2e分支。
 - main的AGENTS.md已在7608538记录用户把5小时收尾线改为95%；上面的90%是当时测量收尾历史，后续开工读取当前main规则与实际额度。
+
+## 恢复期二（2026-10-22，沙僧_46）
+
+- 用户明确要求在总装合并期间继续；开工已只读交接板、两树状态与日志，当前额度5小时28%／周4%。本树cb59b460干净，没有活动任务。
+- 已确认b0cbf868是main祖先，main fd975959已合整批状态修复（dev.135内容），期二前置满足；本树已无冲突git merge main。唐僧main未提交收尾只读，不接总装。
+- 既有原版22例未重测，已在本地结果state-effects-2e/native22-preserved.json保存完整副本；SHA256 24100228be3102a9dcca56fa0bb5ed9b08bbbd9b5819742308772c478876b0a0。原.sandbox/state_effects.json与native-v2日志仍保留，不删除。
+- 下一步长任务refill-resume.log补齐本树产物与导入；随后设计显式生命周期资源上下文及嵌套保存／恢复，先读现有run／run_one、add_state与_action_resources路径。仍只做5个纯TP整块，不做8个addState候选，不提前改actor／XState或开第三期。
