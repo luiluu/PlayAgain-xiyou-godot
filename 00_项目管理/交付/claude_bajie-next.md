@@ -30,3 +30,4 @@
 - 3485177 交付单
 - 99a679c floor_run：查地图与战斗不取全局随机，记各层守层者前 world 流取数
 - 220c52d 合并 main
+- 4a97361 属二期：`xiyou_troop_events` 按用例序号拆两份（新 `xiyou_troop_events_b.tscn`），3837＋3862＝7699 项与拆前相同；二期其余说明另写交付单
