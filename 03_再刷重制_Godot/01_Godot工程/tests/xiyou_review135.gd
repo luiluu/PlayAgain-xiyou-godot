@@ -131,7 +131,13 @@ func _reservations(o: Dictionary, reset: Dictionary) -> void:
 	check("reservation.clear_before_execute", s.writes == [[1.0, 0]], s.writes)
 	rows.append(["after_setup", s.writes[0][1] if not s.writes.is_empty() else -1])
 	rows.append(["while_running", s.peek_common_event()])
-	check("reservation.native_shared_sequence", rows == o.rows, rows)
+	# JSON numbers are float Variants; event IDs from the runtime API are ints.
+	var native_rows := []
+	var integer_ids := true
+	for row in o.rows:
+		integer_ids = integer_ids and float(row[1]) == floorf(float(row[1]))
+		native_rows.append([str(row[0]), int(row[1])])
+	check("reservation.native_shared_sequence", integer_ids and rows == native_rows, {"got": rows, "want": native_rows})
 	check("reservation.running_after_clear", map.busy and bool(o.running))
 	for i in range(120):
 		if not map.busy: break
