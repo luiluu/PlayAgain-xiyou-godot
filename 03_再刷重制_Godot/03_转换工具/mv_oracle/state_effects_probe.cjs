@@ -330,8 +330,8 @@ cases.push(makeCase('query.native_blocks', {states: [1047, 1048, 1834, 2544, 254
     const party = [];
     for (const [inBattle, dead, hpZero] of [[true, [], false], [true, [8], false], [true, [1, 8], false],
       [true, [], true], [false, [8], false]]) {
-      w.$gameParty._actors = [1, 8, 9]; w.$gameParty._battleMembers = [1, 8]; w.$gameParty._inBattle = inBattle;
-      for (const id of [1, 8, 9]) { const x = w.$gameActors.actor(id); x._states = dead.includes(id) ? [1] : []; x._hp = hpZero ? 0 : 100; }
+      w.$gameParty._actors = w.eval('[1, 8, 9]'); w.$gameParty._battleMembers = w.eval('[1, 8]'); w.$gameParty._inBattle = inBattle;
+      for (const id of [1, 8, 9]) { const x = w.$gameActors.actor(id); x._states = w.eval(dead.includes(id) ? '[1]' : '[]'); x._hp = hpZero ? 0 : 100; }
       const profile = party.length, members = w.$gameParty.members().map(x => x.actorId());
       party.push({inBattle, dead, hpZero, members, alive: w.$gameParty.aliveMembers().map(x => x.actorId())});
       for (const enemyUser of [false, true]) for (const type of [0, 1, 2, 3, 4, 5, 6]) for (const value of values) {
