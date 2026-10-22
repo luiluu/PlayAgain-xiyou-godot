@@ -203,6 +203,22 @@ cases.push(makeCase('mul.round_boundaries', {}, () => {
   const values = [-3, -1, 0, 1, 3].map(value => [value, action.customEffectEval(e, sid, 'confirmState', a, value)]);
   return {values};
 }));
+// Phase 2b: real constant bonus blocks, measured before adding any new translator.
+// Four complete source shapes: local bonus, finalRate, final+critical, and final+critical followed by floor.
+const BONUS_STATES = [34, 52, 1160, 1161, 1397, 1406, 1445, 1446, 1447, 1448, 1454, 1522, 1545, 1669, 1671, 1684,
+  1717, 1718, 1719, 1720, 1766, 2525, 2526, 2529, 2539, 2556, 2563, 2565];
+cases.push(makeCase('bonus.native_blocks', {states: BONUS_STATES, values: [-3, -1, 0, 1, 3, 7, 101], types: [0, 1, 2, 3]}, () => {
+  const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
+  const original = action.item().damage.type, rows = [];
+  try {
+    for (const sid of BONUS_STATES) for (const type of [0, 1, 2, 3]) for (const critical of [false, true]) for (const value of [-3, -1, 0, 1, 3, 7, 101]) {
+      action.item().damage.type = type; e.result().critical = critical;
+      const after = action.customEffectEval(e, sid, 'confirmState', a, value);
+      rows.push({state: sid, type, critical, before: value, after});
+    }
+  } finally { action.item().damage.type = original; }
+  return {rows};
+}));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
 cases.push(makeCase('action.counter', {troop: 2, user: 'a1', skill: 'physical clone of 1', target: 'e0'}, () => {
   const {bm, a, e} = battle(2);
