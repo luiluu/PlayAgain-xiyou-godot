@@ -921,15 +921,15 @@ class Exporter:
         all_bad = sum(1 for s in self.db['Skills'] if s and s['damage']['type'] and s['damage']['formulaProgram']['status'] == 'unsupported')
         program_stats = {}
         for table in ['Skills', 'Items']:
-            counts = {'pureSupported': 0, 'effectfulSupported': 0, 'unsupportedActiveDamage': 0, 'unsupportedNoDamage': 0}
+            counts = {'pureSupported': 0, 'effectfulSupported': 0, 'moduleSupported': 0, 'unsupportedActiveDamage': 0, 'unsupportedNoDamage': 0}
             for rec in self.db[table]:
                 if not rec or 'damage' not in rec:
                     continue
                 status = rec['damage']['formulaProgram']['status']
-                key = 'pureSupported' if status == 'pure' else 'effectfulSupported' if status == 'effectful' else 'unsupportedActiveDamage' if rec['damage']['type'] else 'unsupportedNoDamage'
+                key = 'pureSupported' if status == 'pure' else 'effectfulSupported' if status == 'effectful' else 'moduleSupported' if status == 'module' else 'unsupportedActiveDamage' if rec['damage']['type'] else 'unsupportedNoDamage'
                 counts[key] += 1
             reachable = set(self.slice_info.get('skills' if table == 'Skills' else 'items', []))
-            counts['reachableSupported'] = sum(1 for rec in self.db[table] if isinstance(rec, dict) and rec.get('id') in reachable and 'damage' in rec and rec['damage']['formulaProgram']['status'] in ('pure', 'effectful'))
+            counts['reachableSupported'] = sum(1 for rec in self.db[table] if isinstance(rec, dict) and rec.get('id') in reachable and 'damage' in rec and rec['damage']['formulaProgram']['status'] in ('pure', 'effectful', 'module'))
             counts['reachablePending'] = sum(1 for rec in self.db[table] if isinstance(rec, dict) and rec.get('id') in reachable and 'damage' in rec and rec['damage']['formulaProgram']['status'] == 'unsupported')
             counts['reachabilityUnknown'] = sum(1 for rec in self.db[table] if isinstance(rec, dict) and rec.get('id') not in reachable and 'damage' in rec)
             program_stats[table] = counts

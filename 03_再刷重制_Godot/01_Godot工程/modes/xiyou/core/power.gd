@@ -574,10 +574,11 @@ static func _expected(logic: XBattleLogic, a: XActor, t: XBattler, skill: Dictio
 	a.mp = maxf(0.0, a.mp - float(cost.mp))
 	a.tp = maxf(0.0, a.tp - float(cost.tp))
 	var vars := _vars()
-	var normal := XDamage.finish(XDamage.calculate(item, a, t, {"critical": false, "variance": false, "vars": vars}), item, a, t)
+	# battleRound：同实战传自然回合（哈基米巨龙减伤钩子缺它会返回 unavailable）
+	var normal := XDamage.finish(XDamage.calculate(item, a, t, {"critical": false, "variance": false, "vars": vars, "battleRound": maxi(1, logic.turn)}), item, a, t)
 	var critical := normal
 	if bool(item.damage.get("critical", false)):
-		critical = XDamage.finish(XDamage.calculate(item, a, t, {"critical": true, "variance": false, "vars": vars}), item, a, t)
+		critical = XDamage.finish(XDamage.calculate(item, a, t, {"critical": true, "variance": false, "vars": vars, "battleRound": maxi(1, logic.turn)}), item, a, t)
 	var p := _clamp01(a.cri * (1.0 - t.cev)) if bool(item.damage.get("critical", false)) else 0.0
 	var hit := _clamp01(logic.item_hit(a, item, t)) * (1.0 - _clamp01(logic.item_eva(a, item, t)))
 	a.mp = saved[0]

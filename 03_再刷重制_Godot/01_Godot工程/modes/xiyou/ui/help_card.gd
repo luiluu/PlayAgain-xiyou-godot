@@ -439,6 +439,10 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 		t = RegEx.create_from_string("[-－]\\s*\\[敌·(?:物抗|魔抗|物防|魔防)\\s*[*×]\\s*[\\d.]+\\](?:\\s*[*×]\\s*\\[[^\\]]*\\])*").sub(t, "", true)
 		t = RegEx.create_from_string("[-－]\\s*敌·(?:物抗|魔抗|物防|魔防)(?:\\s*[*×]\\s*[\\d.]+)?").sub(t, "", true)
 		t = RegEx.create_from_string("\\(\\s*\\)").sub(t, "", true)
+		if XCat.is_cat_item(obj):  # 小猫剑圣：characterHelpView 里 currentHelpText 换成 C.helpText，keep 去掉「条件：…进阶／N级」
+			t = XCat.help_text(t, obj, XCat.help_actor())
+			if _re("^条件[：:]", t) and _re("(?:\\d+级|进阶)", t):
+				continue
 		if unlock.search(t) != null or _re("^(?:装备限制|冷却)[：:]无$", t) or seen.has(t):
 			continue
 		seen[t] = true
@@ -459,6 +463,8 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 			s[0] = "\\c[1]" + t
 			effects.append(s)
 	var priority := ["伤害属性", "目标", "伤害类型", "命中", "暴击", "段数", "冷却", "准备时间"]
+	if XCat.is_cat_item(obj):  # characterHelpView：目标排在伤害属性前
+		priority = ["目标", "伤害类型", "伤害属性", "命中", "暴击", "段数", "冷却", "准备时间"]
 	var basic := []
 	var other := []
 	for row in element_rows + info:
@@ -484,6 +490,12 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 				common = k
 		for r in body:
 			r[1] = common
+	if XCat.is_cat_item(obj):
+		# 近似 characterHelpView（未移植）对小猫剑技卡的结果：伤害属性行是备注里的原文（不着色），字号取 info 首行的 14，
+		# 因此不与目标并行。只对照了参照里的 10437／10438，完整的 characterHelpView 留给界面车道。
+		for r in element_rows:
+			r[0] = RegEx.create_from_string("\\\\C\\[\\d+\\]").sub(str(r[0]), "", true)
+			r[1] = 14
 	var compact := []
 	for row in info:
 		var last = compact.back() if not compact.is_empty() else null
