@@ -6,6 +6,19 @@ extends RefCounted
 const SAVE_VERSION := 2
 static var current: XState
 
+## Game_Temp's one runtime slot: menu/map producers overwrite each other.
+## Ordinary saves omit it; every new/restored XState starts empty.
+var _reserved_common_event_id := 0
+
+func reserve_common_event(id: int) -> void:
+	_reserved_common_event_id = id
+
+func peek_common_event() -> int:
+	return _reserved_common_event_id
+
+func clear_common_event() -> void:
+	_reserved_common_event_id = 0
+
 var difficulty := 3
 var party: Array[int] = []          # 队伍顺序（$gameParty._actors；出战成员在前，见 battle_slots）
 ## YEP_PartySystem 的 $gameParty._battleMembers：出战栏位（长度＝上限 5，空位为 0）

@@ -49,8 +49,8 @@ var _overlay: Control
 ## 打开菜单前的地图截图与玩家画面格（设置 → 挂机设置页的背景与范围图；Scene_Map.terminate 的 snapForHangUp）
 var map_shot: Texture2D
 var player_tile := Vector2.ZERO
-## 关闭菜单后要在地图上执行的公共事件（YEP_MainMenuManager callCommonEvent：reserveCommonEvent 后 popScene）
-var reserved_common_event := 0
+## Captured owner of Game_Temp's shared reservation; opening map passes it explicitly.
+var event_state: XState = XState.current
 ## 「真气」：CodexZhenqi.openFromMenu 关菜单回地图后，由地图执行闭关（XZhenqiRetreat）
 var zhenqi_requested := false
 
@@ -309,11 +309,11 @@ func _ok() -> void:
 				_refresh()
 			"save":
 				# 正式版「存档」是公共事件 1（Menu 84 Ext）：回到地图后存到开局选的固定存档位
-				reserved_common_event = int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 84 Ext", "1")))
+				event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 84 Ext", "1"))))
 				closed.emit()
 			"achievement":
 				# 「成就」是公共事件 431（Menu 79 Ext）：回到地图后 SceneManager.push(Scene_AchievementBook)，关闭回地图
-				reserved_common_event = int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 79 Ext", "431")))
+				event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 79 Ext", "431"))))
 				closed.emit()
 			"options":
 				var page := XOptionsScene.new()

@@ -370,6 +370,47 @@ cases.push(makeCase('query.native_blocks', {states: [1047, 1048, 1834, 2544, 254
     w.Yanfly.Util.displayError = oldError;
   }
 }));
+// Phase 2e: whole constant gainTp blocks, including native slots/refresh and
+// the real addState reapplication path. No translation precedes this measure.
+cases.push(makeCase('tp.native_blocks', {states: [607, 609, 857, 1334, 1336]}, () => {
+  const {a, e} = battle(2), rows = [], applyRows = [], errors = [];
+  const oldError = w.Yanfly.Util.displayError;
+  w.Yanfly.Util.displayError = error => errors.push(String(error && error.stack || error));
+  const snapshot = b => ({hp: b.hp, mp: b.mp, tp: b.tp, cap: b.maxTp(), states: Array.from(b._states),
+    turns: Object.assign({}, b._stateTurns), dirty: !!b.need_refresh,
+    result: {hpAffected: b.result().hpAffected, hpDamage: b.result().hpDamage,
+      mpDamage: b.result().mpDamage, tpDamage: b.result().tpDamage,
+      success: b.result().success, addedStates: Array.from(b.result().addedStates), removedStates: Array.from(b.result().removedStates)}});
+  const prepare = (b, tp, dead) => {
+    b.clearStates(); b._tp = tp; b._hp = dead ? 0 : b.mhp; b._mp = b.mmp;
+    b.need_refresh = true; b.refresh(); b.states(); b.typestates('turnStartState');
+    // Warm the caches, then inject requested boundary resources without refresh.
+    b._tp = tp; b._hp = dead ? 0 : b.mhp;
+    b.clearResult(); Object.assign(b.result(), {hpAffected: true, hpDamage: 17, mpDamage: 19, tpDamage: 23, success: true});
+  };
+  let draws = 0; const oldRandom = w.Math.random;
+  try {
+    w.Math.random = () => { draws++; return 0.5; };
+    for (const [kind, b] of [['actor', a], ['enemy', e]]) for (const sid of [607, 609, 857, 1334, 1336]) {
+      const slot = sid >= 1334 ? 'addState' : 'battle';
+      for (const tp of [-1, 0, 1, 150, 199, 200, 250]) for (const dead of [false, true]) {
+        prepare(b, tp, dead); const before = snapshot(b); draws = 0;
+        const log = capture(() => b.customEffectEval(sid, slot));
+        rows.push({kind, state: sid, phase: slot === 'battle' ? 'battle' : 'apply', tp, dead,
+          before, after: snapshot(b), draws, log});
+      }
+    }
+    for (const [kind, b] of [['actor', a], ['enemy', e]]) for (const sid of [1334, 1336]) {
+      prepare(b, 1, false); const before = snapshot(b); draws = 0;
+      const log = capture(() => { b.addState(sid); b.addState(sid); });
+      applyRows.push({kind, state: sid, before, after: snapshot(b), draws, log});
+    }
+  } finally { w.Math.random = oldRandom; w.Yanfly.Util.displayError = oldError; }
+  if (errors.length) throw new Error('native TP errors: ' + JSON.stringify(errors));
+  return {rows, applyRows};
+}));
+// Supplemental 2e boundaries are separately runnable without repeating native22.
+cases.push(...require('./state_effects_tp_context_probe.cjs').measureCases(host));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
 cases.push(makeCase('action.counter', {troop: 2, user: 'a1', skill: 'physical clone of 1', target: 'e0'}, () => {
   const {bm, a, e} = battle(2);
