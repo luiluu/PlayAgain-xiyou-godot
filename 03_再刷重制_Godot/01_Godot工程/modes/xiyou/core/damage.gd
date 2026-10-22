@@ -220,11 +220,11 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 
 
 ## 正式 executeDamage 的顺序：攻击方 Confirm → 固定减伤（onPreDamageStateEffects 的包装）→ 目标 React。
-static func finish(res: Dictionary, item: Dictionary, a: XBattler, b: XBattler, execute := false) -> float:
+static func finish(res: Dictionary, item: Dictionary, a: XBattler, b: XBattler, execute := false, ctx := {}) -> float:
 	# installDamageElementRuntime：HP 伤害／吸取被元素吸收时跳过攻击方 Confirm（普通回复仍照常）。
 	var absorbed: bool = float(res.value) < 0.0 and int(item.damage.type) in [1, 5]
-	var confirmed: float = res.value if absorbed else apply_state_effects(res.value, item, a, b, [], "confirm", execute, bool(res.get("critical", false)))
-	return apply_state_effects(apply_fixed_mitigation(confirmed, res), item, a, b, [], "react", execute, bool(res.get("critical", false)))
+	var confirmed: float = res.value if absorbed else apply_state_effects(res.value, item, a, b, [], "confirm", execute, bool(res.get("critical", false)), ctx)
+	return apply_state_effects(apply_fixed_mitigation(confirmed, res), item, a, b, [], "react", execute, bool(res.get("critical", false)), ctx)
 
 
 ## 正式 installDamageElementRuntime 的 entered 阶段：Confirm 之后的伤害按比例摊回各属性候选，各减固定减伤，取最大；
@@ -323,11 +323,14 @@ static func _independent(a: XBattler, item: Dictionary, e: int) -> float:
 
 # ---- 状态脚本（YEP BuffsStatesCore）：Confirm = 行动者的状态，React = 目标的状态 ----
 ## 转换器已把常见写法变成 {op: "mul", cond, k, round}；op == "js" 的尚未翻译，跳过并计数。
-static func apply_state_effects(value: float, item: Dictionary, a: XBattler, b: XBattler, untranslated: Array = [], phase := "", execute := false, critical := false) -> float:
+static func apply_state_effects(value: float, item: Dictionary, a: XBattler, b: XBattler, untranslated: Array = [], phase := "", execute := false, critical := false, ctx := {}) -> float:
+	var c: Dictionary = ctx.duplicate()
+	c.merge({"attacker": a, "defender": b, "item": item, "untranslated": untranslated, "execute": execute, "critical": critical}, true)
 	for pair in [["confirm", a], ["react", b]]:
 		if phase != "" and pair[0] != phase:
 			continue
-		value = XStateEffects.run(pair[0], pair[1], {"attacker": a, "defender": b, "item": item, "value": value, "untranslated": untranslated, "execute": execute, "critical": critical})
+		c.value = value
+		value = XStateEffects.run(pair[0], pair[1], c)
 	return value
 
 

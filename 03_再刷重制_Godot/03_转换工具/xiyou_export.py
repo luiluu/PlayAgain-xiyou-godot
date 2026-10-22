@@ -163,6 +163,34 @@ def strip_js_comments(js):
 PARAM_HIT = re.compile(r'if \(user\.(atk|mat|def|mdf|agi|luk) > 0\) \{ target\.gainHp\(-user\.(\w+)\); target\.startDamagePopup\(\); \}\s*')
 
 
+def constant_bonus_effect(code):
+    """Only four complete, native-measured shapes; never accept a known prefix."""
+    number = r'(-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?)'
+    def pattern(text):
+        # Preserve token boundaries: deleting all whitespace would accept e.g. "val ue".
+        return r'\s*'.join(number if token == 'NUMBER' else r'var\s+' if token == 'var'
+                            else re.escape(token) for token in text.split())
+    gate = 'if ( this . isHpEffect ( ) && value > 0 ) { '
+    local = re.fullmatch(pattern(gate + 'var bonus = Math . ceil ( value * NUMBER ) ; value += bonus ; }'), code)
+    final = re.fullmatch(pattern(gate + 'var finalRate = NUMBER ; value += Math . ceil ( value * finalRate ) ; }'), code)
+    critical = re.fullmatch(pattern(gate + 'var finalRate = NUMBER ; var bonusRate = NUMBER ; '
+                                    'value += Math . ceil ( value * finalRate ) ; if ( target . result ( ) . critical ) { '
+                                    'value += Math . ceil ( value * bonusRate ) ; } }') +
+                            r'(?:\s*' + pattern(gate + 'value = Math . floor ( value * NUMBER ) ; }') + r')?', code)
+    if not (local or final or critical):
+        return None
+    rates = critical.groups() if critical else (local or final).groups()
+    steps = [{'kind': 'add', 'k': float(rates[0]), 'round': 'ceil'}]
+    if critical:
+        steps.append({'kind': 'add', 'k': float(rates[1]), 'round': 'ceil', 'criticalOnly': True})
+    groups = [{'cond': 'positive', 'hpOnly': True, 'steps': steps}]
+    if critical and rates[2] is not None:
+        # This is an independent if: retest the already updated value.
+        groups.append({'cond': 'positive', 'hpOnly': True,
+                       'steps': [{'kind': 'mul', 'k': float(rates[2]), 'round': 'floor'}]})
+    return {'op': 'value_steps', 'groups': groups}
+
+
 def parse_state_effects(note):
     """返回 [{phase, op, cond, k, round} 或 {phase, op:'js', source}]；op=js 表示尚未翻译。"""
     out = []
@@ -183,6 +211,10 @@ def parse_state_effects(note):
         blocks = PARAM_HIT.findall(code)
         if blocks and PARAM_HIT.sub('', code).strip() == '' and all(a == b for a, b in blocks):
             out.append({'phase': phase, 'op': 'user_param_damage', 'params': [a for a, _ in blocks]})
+            continue
+        bonus = constant_bonus_effect(code) if phase in ('confirm', 'react') else None
+        if bonus:
+            out.append({'phase': phase, **bonus})
             continue
         out.append({'phase': phase, 'op': 'js', 'source': body.strip()})
     return out

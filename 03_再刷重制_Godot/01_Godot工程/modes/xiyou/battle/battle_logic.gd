@@ -33,6 +33,7 @@ var replay_battle_start := {}
 var _ids := {}
 var _action_resources: XResourceContext
 var _formula_outcome := {}
+var _damage_outcome := {}
 ## 魔法反射回行动者自己的这次 apply（导入角色平衡照样缩放）
 var _reflecting := false
 
@@ -1159,7 +1160,14 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 ## 伤害计算与 apply 的扣血／记账分开，模块对照可固定这一步（同正式 Game_Action.makeDamageValue 夹具）。
 func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
 	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
-	return XDamage.finish(XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule()}), skill, u, t, true)
+	_damage_outcome = XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule()})
+	return float(_damage_outcome.value)
+
+
+func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -> Dictionary:
+	return {"attacker": u, "defender": t, "item": skill, "resources": _action_resources, "record": record,
+		"variables": vars(), "switches": state.switches if state != null else {}, "random": _rule(),
+		"critical": bool(record.get("critical", false)), "value": float(record.get("state_value", 0.0))}
 
 
 ## Game_Action.apply：行动者有道法「破甲」时，期间附加的破甲·真气（2705）用它的倍率（XZhenqi.pojia_actor）
@@ -1176,7 +1184,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	# Game_Action.apply 的 YEP 包装：initiate（行动者）→ select（目标）→ 原 apply → deselect（目标）→ conclude（行动者）；
 	# 未命中也四段齐全；导入平衡禁用的行动在更外层直接返回，不跑
 	var blocked := XImportedBalance.blocks(u, skill)
-	var ctx := {"attacker": u, "defender": t, "item": skill}
+	var ctx := _state_context(u, skill, t)
 	if not blocked:
 		XStateEffects.run("initiate", u, ctx)
 		XStateEffects.run("select", t, ctx)
@@ -1225,7 +1233,10 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		var cri := u.cri * (1.0 - t.cev) if bool(dmg.critical) else 0.0
 		r.critical = _float("critical") < clampf(cri, 0.0, 1.0)
 		_action_resources.result(t).critical = r.critical
+		_damage_outcome = {}  # An extension may override _damage_value without setting a breakdown.
 		var value := _damage_value(u, skill, t, r.critical)
+		_damage_outcome.merge({"value": value, "critical": r.critical}, true)
+		value = XDamage.finish(_damage_outcome, skill, u, t, true, _state_context(u, skill, t, r))
 		r.state_value = value
 		_action_resources.result(t).success = true
 		match type:
@@ -1281,8 +1292,8 @@ func execute_mp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> f
 ## user_param_damage（轮回困难 1460/1461）：行动者每个为正的能力值各一次 target.gainHp(-值)（不经伤害计算，可致死）并弹字。
 ## 记录 r.extra（附加值列表）；原版普通伤害弹字被改写为最后一次附加值（r.popup_hp，见 ESTABLISH_TRUE_POPUP）。
 func _establish(u: XBattler, t: XBattler, r: Dictionary) -> void:
-	var ctx := {"attacker": u, "defender": t, "item": r.skill, "value": r.get("state_value", 0.0), "critical": r.critical, "resources": _action_resources, "record": r}
-	XStateEffects.run("respond", t, ctx)
+	var ctx := _state_context(u, r.skill, t, r)
+	ctx.value = XStateEffects.run("respond", t, ctx)
 	XStateEffects.run("establish", u, ctx)
 	if r.has("extra") and not ESTABLISH_TRUE_POPUP:
 		r.popup_hp = r.extra[-1]

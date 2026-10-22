@@ -1,13 +1,13 @@
 class_name XStateEffects
 extends RefCounted
 ## YEP/BSC phase dispatcher. KRZ cached lists and direct lifecycle slots share
-## one execution path; only previously supported mul/user_param_damage execute.
+## one execution path, including native-measured constant bonus steps.
 ## JS remains diagnostic-only. OTB action_end and unknown crit stay unfired.
 
 const BATTLER_PHASES := ["battle", "turn_start", "turn_end", "regenerate", "action_start", "victory", "escape", "defeat"]
 const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm", "react", "respond", "establish"]
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
-const SUPPORTED_OPS := ["mul", "user_param_damage"]
+const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -49,12 +49,17 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	for e in effects:
 		var op := str(e.get("op", ""))
 		if op == "mul":
-			var hp: bool = int(ctx.get("item", {}).get("damage", {}).get("type", 0)) in [1, 3, 5]
-			var cond := str(e.get("cond", ""))
-			var active: bool = c.value != 0.0 if cond == "nonzero" else c.value > 0.0 if cond == "positive" else c.value >= 0.0 if cond == "nonnegative" else false
-			if active and (not e.get("hpOnly", false) or hp):
-				var x: float = c.value * float(e.k)
-				c.value = ceilf(x) if e.round == "ceil" else floorf(x) if e.round == "floor" else XPower.js_round(x)
+			if _active(e, c):
+				c.value = _rounded(c.value * float(e.k), str(e.round))
+		elif op == "value_steps":
+			for group in e.groups:
+				if not _active(group, c):
+					continue
+				for step in group.steps:
+					if step.get("criticalOnly", false) and not c.get("critical", false):
+						continue
+					var amount := _rounded(c.value * float(step.k), str(step.round))
+					c.value = c.value + amount if step.kind == "add" else amount
 		elif op == "user_param_damage" and execute and ctx.get("resources") != null:
 			var r: Dictionary = ctx.record
 			for p in e.params:
@@ -70,6 +75,17 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				_diagnose(phase, int(st.id), holder, op)
 	_stack.pop_back()
 	return c.value
+
+
+static func _active(effect: Dictionary, ctx: Dictionary) -> bool:
+	var hp: bool = int(ctx.get("item", {}).get("damage", {}).get("type", 0)) in [1, 3, 5]
+	var cond := str(effect.get("cond", ""))
+	var active: bool = ctx.value != 0.0 if cond == "nonzero" else ctx.value > 0.0 if cond == "positive" else ctx.value >= 0.0 if cond == "nonnegative" else false
+	return active and (not effect.get("hpOnly", false) or hp)
+
+
+static func _rounded(value: float, kind: String) -> float:
+	return ceilf(value) if kind == "ceil" else floorf(value) if kind == "floor" else XPower.js_round(value)
 
 ## 一个状态一次调用的上下文。Battler 版（Game_Battler.customEffectEval）：user＝target＝持有者；
 ## Action 版（Game_Action.customEffectEval）：user＝attacker、target＝defender，item 为当前行动。
