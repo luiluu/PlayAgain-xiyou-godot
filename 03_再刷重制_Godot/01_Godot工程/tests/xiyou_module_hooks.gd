@@ -1,6 +1,6 @@
 extends Node
-## Test-only cat-sword adapter exercises the same registry contract requested by
-## 178 without shipping/enabling that character or its lifecycle prematurely.
+## Production cat-sword handlers against frozen native observations, plus the
+## default host bridge when the separately owned character base is installed.
 const ORACLE := "res://modes/xiyou/generated/oracle/module_hooks.json"
 var total := 0
 var failures := []
@@ -245,6 +245,18 @@ func production_cat() -> void:
 		a.equips=[{"kind":"weapon","wtypeId":2}]
 		var live:=XCatDamageHooks.capture({},a,b,{"battleRound":9})
 		check("cat.base_live_capture",live.enabled and live.subjectSword and live.targetSword and live.advanced==base.call("advanced",a),live)
+		# Exercise the default registry through XDamage, without caller-provided
+		# facts or a special registry, using the character lane's real base getter.
+		var item:=XDB.rec("Skills",10437).duplicate(true)
+		var options:={"rawValue":123457.0,"preview":true,"variance":false,"battleRound":9,"operationId":"cat-live-host"}
+		var before:=JSON.stringify([a.equips,a.skill_ids,b.equips,b.skill_ids,a.hp,a.mp,a.tp,b.hp,b.mp,b.tp])
+		var automatic:=XDamage.calculate(item,a,b,options)
+		var explicit:=options.duplicate();explicit.moduleFacts={"cat":live}
+		check("cat.default_host_available",automatic.get("available",true),automatic)
+		check("cat.default_host_snapshot",same(automatic,XDamage.calculate(item,a,b,explicit)))
+		check("cat.default_host_handlers",automatic.moduleTrace.map(func(t):return [t.module,t.order])==[["cat-sword",18],["cat-sword",19],["orb-sets",39]] and not automatic.moduleTrace[0].ops.is_empty() and not automatic.moduleTrace[1].ops.is_empty(),automatic.moduleTrace)
+		check("cat.default_host_repeat",same(automatic,XDamage.calculate(item,a,b,options)))
+		check("cat.default_host_isolated",before==JSON.stringify([a.equips,a.skill_ids,b.equips,b.skill_ids,a.hp,a.mp,a.tp,b.hp,b.mp,b.tp]))
 
 func _ready() -> void:
 	registration()
