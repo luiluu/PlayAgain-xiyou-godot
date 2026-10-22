@@ -370,19 +370,12 @@ cases.push(makeCase('query.native_blocks', {states: [1047, 1048, 1834, 2544, 254
     w.Yanfly.Util.displayError = oldError;
   }
 }));
-// 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
-cases.push(makeCase('action.counter', {troop: 2, user: 'a1', skill: 'physical clone of 1', target: 'e0'}, () => {
-  const {bm, a, e} = battle(2);
-  a.addState(T); e.addState(T); e.addState(CNT);
-  for (const x of [a, e]) { x.need_refresh = true; x.refresh(); }
-  const id = w.$dataSkills.length; w.$dataSkills.push(Object.assign(w.JsonEx.makeDeepCopy(w.$dataSkills[1]), {id, hitType: 1}));
-  const log = capture(() => runAction(bm, a, id, 0));
-  return {log};
-}));
 // Phase 2e: whole constant gainTp blocks, including native slots/refresh and
 // the real addState reapplication path. No translation precedes this measure.
 cases.push(makeCase('tp.native_blocks', {states: [607, 609, 857, 1334, 1336]}, () => {
-  const {a, e} = battle(2), rows = [], applyRows = [];
+  const {a, e} = battle(2), rows = [], applyRows = [], errors = [];
+  const oldError = w.Yanfly.Util.displayError;
+  w.Yanfly.Util.displayError = error => errors.push(String(error && error.stack || error));
   const snapshot = b => ({hp: b.hp, mp: b.mp, tp: b.tp, cap: b.maxTp(), states: Array.from(b._states),
     turns: Object.assign({}, b._stateTurns), dirty: !!b.need_refresh,
     result: {hpAffected: b.result().hpAffected, hpDamage: b.result().hpDamage,
@@ -412,7 +405,17 @@ cases.push(makeCase('tp.native_blocks', {states: [607, 609, 857, 1334, 1336]}, (
       const log = capture(() => { b.addState(sid); b.addState(sid); });
       applyRows.push({kind, state: sid, before, after: snapshot(b), draws, log});
     }
-  } finally { w.Math.random = oldRandom; }
+  } finally { w.Math.random = oldRandom; w.Yanfly.Util.displayError = oldError; }
+  if (errors.length) throw new Error('native TP errors: ' + JSON.stringify(errors));
   return {rows, applyRows};
+}));
+// 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
+cases.push(makeCase('action.counter', {troop: 2, user: 'a1', skill: 'physical clone of 1', target: 'e0'}, () => {
+  const {bm, a, e} = battle(2);
+  a.addState(T); e.addState(T); e.addState(CNT);
+  for (const x of [a, e]) { x.need_refresh = true; x.refresh(); }
+  const id = w.$dataSkills.length; w.$dataSkills.push(Object.assign(w.JsonEx.makeDeepCopy(w.$dataSkills[1]), {id, hitType: 1}));
+  const log = capture(() => runAction(bm, a, id, 0));
+  return {log};
 }));
 process.exit(finish(host, 'state_effects.json', {hostScope: '真实 BattleManager／Game_Action／Scene_Battle.start（dsPassiveSkill 包装），Math.random 0.5；测试状态的效果只记录不改值', cases}) ? 0 : 1);

@@ -8,3 +8,8 @@
 - 独占仍限状态翻译、state_effects.gd、battler.gd、battle_logic.gd状态挂点、自己的探针／专项；不改actor.gd、XState或角色测试。
 - 当前生命周期run／run_one不传入行动资源上下文。不能为了降低js数只改TP数值而丢掉结果槽；须完整处理嵌套apply上下文，并先证实外层结果槽语义。若本步骤到收尾线，只提交原版证据及明确前置，不登记可合并。
 - 原版测量将由长任务.py启动，日志state-effects-2e/native.log；尚未启动最终同步。车道不跑全量，由唐僧合并后统一检查。全部提交待Claude交叉核查。
+
+## 测量检查点
+
+- 首轮native退出1：新case误放在必须最后执行的action.counter之后；既有反击夹具会令location失效，后续新局ReferenceError。已将新case移到counter之前；不修改生产或原版环境。保留native.log，修后日志native-v2.log。
+- 测量执行期间额度到90%，按规则只收尾本测量，不进入翻译／同步／自动接力。2e仍进行中，不能合并为玩法完成。
