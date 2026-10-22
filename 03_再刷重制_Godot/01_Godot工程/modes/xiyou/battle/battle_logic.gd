@@ -255,6 +255,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return a.is_actor() and state.items.get(int(skill.id), 0) > 0
 	if a.cooldown_left(int(skill.id)) > 0:
 		return false
+	if not XCat.legal(self, a, skill):  # 小猫剑圣的剑技／试炼条件、178 没持剑不能用物理技能
+		return false
 	if a.is_actor() and int(skill.stypeId) > 0:
 		if not a.traits_set(XBattler.TRAIT_STYPE_ADD).has(int(skill.stypeId)) or a.traits_set(XBattler.TRAIT_STYPE_SEAL).has(int(skill.stypeId)):
 			return false
@@ -507,6 +509,7 @@ func act(u: XBattler, skill, target) -> Array:
 	else:
 		logs.append_array(execute(u, skill, target))
 		XImportedBalance.set_acting(null)
+	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
 	_acted[u] = int(_acted.get(u, 0)) + 1
 	_tick_states(u, 1)
 	_sync_orders(before, true)
@@ -519,6 +522,7 @@ func end_turn() -> Array:
 	var logs := []
 	var before := _movable_snapshot()
 	_acted.clear()
+	XCat.end_turn(self)  # BattleManager.endTurn 的小猫剑圣包装：删过期的识破／剑痕
 	for b in actors + enemies:
 		turn_end_battler(b, logs)
 	# BattleManager.refreshAllMembers
@@ -810,6 +814,7 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 			_cleared[u] = true
 		var before := _movable_snapshot()
 		logs.append_array(execute(u, skill, _forced_target(u, skill, int(p[3])), true))
+		XCat.end_action(self, u, skill)
 		_tick_states(u, 1)
 		_sync_orders(before, true)
 	return logs
@@ -1115,6 +1120,8 @@ static func certain_hit(u: XBattler, skill: Dictionary) -> bool:
 		return false
 	if XQiyu.certain_skill(u, skill):  # 琦玉 163 的技能必中、不被反击反射（installQiyuDimensionRuntime）
 		return true
+	if XCat.sure_segment(u):  # 哈基米剑技的必中剑段：itemHit 1、itemEva／itemCnt 0（技能都是物理，魔法反射本来就是 0）
+		return true
 	var ch: Dictionary = u.passive_cache().get("certainHit", {})
 	return bool(ch.get("global", false)) or ch.get("bySkill", {}).has(int(skill.id))
 
@@ -1161,7 +1168,8 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 ## 伤害计算与 apply 的扣血／记账分开，模块对照可固定这一步（同正式 Game_Action.makeDamageValue 夹具）。
 func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
 	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
-	return XDamage.finish(XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule()}), skill, u, t, true)
+	return XDamage.finish(XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule(),
+		"battleRound": maxi(1, turn)}), skill, u, t, true)  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
 
 
 ## Game_Action.apply：行动者有道法「破甲」时，期间附加的破甲·真气（2705）用它的倍率（XZhenqi.pojia_actor）
@@ -1225,6 +1233,8 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var type := int(dmg.type)
 	if type > 0:
 		var cri := u.cri * (1.0 - t.cev) if bool(dmg.critical) else 0.0
+		if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
+			cri = 1.0
 		r.critical = _float("critical") < clampf(cri, 0.0, 1.0)
 		_action_resources.result(t).critical = r.critical
 		var value := _damage_value(u, skill, t, r.critical)

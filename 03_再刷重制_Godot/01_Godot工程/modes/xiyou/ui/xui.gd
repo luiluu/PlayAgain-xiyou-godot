@@ -239,6 +239,8 @@ static func face_texture(face_name: String, index: int) -> AtlasTexture:
 static func icon_texture(index: int) -> AtlasTexture:
 	if index <= 0:
 		return null
+	if index >= XCat.ICON and index < XCat.ICON + 9:  # 小猫剑圣自带的图标条（CatSwordSaint_Icons，9 格横排）
+		return XCat.icon_texture(index)
 	var sheet := floori(index / 1600.0)
 	var p := XDB.img_path("system", "IconSet_%d" % (sheet + 1))
 	if p == "":
