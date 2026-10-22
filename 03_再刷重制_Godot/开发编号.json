@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.137",
-  "sequence": 137,
-  "next": "dev.138",
-  "nextSequence": 138,
+  "current": "dev.138",
+  "sequence": 138,
+  "next": "dev.139",
+  "nextSequence": 139,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "sharp-einstein-864a15",
+  "currentChange": "jovial-napier-ef0df2",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
