@@ -12,6 +12,9 @@
 - 静态候选：2d 新翻译 1047 物理免疫／1048 元素免疫，三十一层女娲开场实际加 1047；仅为线索，尚未判定根因，不据此调整测试。
 - 2c／2d 本次补齐变更记录草稿；原验收数据是各原分支的历史记录，合 main 后验证另记。
 - 下一步：补齐→复现→分期隔离→原版证据；规则正确时先形成具体测试夹具调整方案，规则偏差则修实现。不进入 2e，直至本批修复并由总装合 main。
+- 补齐已通过（refill.log）；合并态 floor_run_c 已确定性复现 505／507，f31_boss_won、floors_cleared 失败，停在 [21,30]；详细日志 state-effects-3-review/reproduce/。基线 558／558 对照仍在期一证据。
+- 原版小实验首轮夹具漏初始化 CodexYunshang._acted，六例在 apply 同报错；保留 native-f31.log 与 .sandbox/f31_native.json，不把夹具错误当原版结论。修夹具后重跑同一个小实验。
+- 将做因果隔离：只在本树未跟踪 generated/db/States.json 临时停用 1047 effects，保留 2b／2c／2d 其他实现后跑 floor_run_c；测试结束自动还原字节。备份在本地结果 state-effects-3-review/States.before-isolate.json，如长任务失联先核恢复，不得把停用免疫当修复提交。
 
 ## 变更记录草稿
 
