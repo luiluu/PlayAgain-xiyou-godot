@@ -203,3 +203,49 @@ static func icon_texture(index: int) -> AtlasTexture:
 	a.atlas = load(p)
 	a.region = Rect2((index - ICON) * 32, 0, 32, 32)
 	return a
+
+
+# ---- 说明卡（C.helpText，installDisplayPreferencesRuntime.characterHelpView 对 <CodexCat:> 物品调用） ----
+const SKILL_KEYS := {10437: "slash", 10438: "cross", 10439: "flurry", 10440: "holy", 10441: "sword", 10442: "speed", 10443: "heart",
+	10444: "advanced", 10445: "echo", 10446: "trial"}
+
+static func is_cat_item(obj: Dictionary) -> bool:
+	return str(obj.get("note", "")).contains("<CodexCat:")
+
+
+## characterHelpActor：已有 178 就用它，否则是初始状态的预览（1 级、没学技能、速度读不到）
+static func help_actor():
+	var s := XState.current
+	if s != null and s.actors.has(ACTOR):
+		return s.actors[ACTOR]
+	return null
+
+
+static func _n(v: float) -> String:
+	return _js_num(roundf(v * 1000.0) / 1000.0)
+
+
+## 返回改写后的一行；actor 为 null 时按预览（等级 1、速度 0）
+static func help_text(text: String, item: Dictionary, a) -> String:
+	var k: String = SKILL_KEYS.get(int(item.get("id", 0)), "")
+	var weight: float = WEIGHTS.get(int(item.get("id", 0)), 0.0)
+	var g := growth(a) if a != null else 0.06
+	var adv := advanced(a)
+	var agi: float = a.agi if a != null else 0.0
+	if weight != 0.0 and RegEx.create_from_string("^伤害[：:]").search(text) != null:
+		return "伤害：[己·物理攻击×" + _n(1500.0 * weight * g) + "＋己·速度×" + _n(3000.0 * weight * g) + "]×[1＋剑技等级]×[1＋剑技等级×0.1]"
+	if k == "sword" and text.contains("抱剑护身"):
+		if agi == 0.0:
+			return "效果：抱剑护身，速度提供物理及元素固定减伤"
+		return "效果：抱剑护身，物理减伤" + str(mini(16000, mini(floori(3.0 * agi), 15030 + floori(agi / 8.0)))) + "；元素减伤" + str(mini(18000, mini(floori(3.2 * agi), 16400 + floori(2.0 * agi / 11.0))))
+	if k == "trial" and text.contains("哈基米独自挑战守誓巨龙"):
+		return "效果：哈基米独自挑战守誓巨龙，巨龙使用固定试炼难度"
+	if k == "heart" and text.contains("进阶后专属剑技"):
+		return "效果：专属剑技结算伤害+100%" if adv else "条件：进阶后专属剑技结算伤害+100%"
+	if k == "speed" and text.contains("进阶后额外"):
+		return "效果：额外行动＋1" if adv else "条件：进阶后额外获得1次行动"
+	if k == "heart" and text.contains("进阶后终技"):
+		return "效果：终技消费剑心，追加同层数神圣剑段；满层冷却减1" if adv else "条件：进阶后终技消费剑心，追加同层数神圣剑段；满层冷却减1"
+	if k == "holy" and text.contains("冷却4"):
+		return "冷却时间：4个自然回合；进阶后消耗剑心追加神圣剑影，满层冷却3回合"  # 未进阶（Godot 无进阶）
+	return text

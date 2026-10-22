@@ -439,6 +439,10 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 		t = RegEx.create_from_string("[-－]\\s*\\[敌·(?:物抗|魔抗|物防|魔防)\\s*[*×]\\s*[\\d.]+\\](?:\\s*[*×]\\s*\\[[^\\]]*\\])*").sub(t, "", true)
 		t = RegEx.create_from_string("[-－]\\s*敌·(?:物抗|魔抗|物防|魔防)(?:\\s*[*×]\\s*[\\d.]+)?").sub(t, "", true)
 		t = RegEx.create_from_string("\\(\\s*\\)").sub(t, "", true)
+		if XCat.is_cat_item(obj):  # 小猫剑圣：characterHelpView 里 currentHelpText 换成 C.helpText，keep 去掉「条件：…进阶／N级」
+			t = XCat.help_text(t, obj, XCat.help_actor())
+			if _re("^条件[：:]", t) and _re("(?:\\d+级|进阶)", t):
+				continue
 		if unlock.search(t) != null or _re("^(?:装备限制|冷却)[：:]无$", t) or seen.has(t):
 			continue
 		seen[t] = true
@@ -459,6 +463,9 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 			s[0] = "\\c[1]" + t
 			effects.append(s)
 	var priority := ["伤害属性", "目标", "伤害类型", "命中", "暴击", "段数", "冷却", "准备时间"]
+	var cat := XCat.is_cat_item(obj)  # characterHelpView：目标排在伤害属性前，目标与伤害属性／类型也并成一行
+	if cat:
+		priority = ["目标", "伤害类型", "伤害属性", "命中", "暴击", "段数", "冷却", "准备时间"]
 	var basic := []
 	var other := []
 	for row in element_rows + info:
@@ -489,7 +496,7 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 		var last = compact.back() if not compact.is_empty() else null
 		var left := plain(str(last[0])) if last != null else ""
 		var right := plain(str(row[0]))
-		var pair := last != null and ((_re("^命中[：:]", left) and _re("^暴击[：:]", right)) or (_re("^(?:暴击|段数)[：:]", left) and _re("^(?:段数|冷却)[：:]", right)))
+		var pair := last != null and ((cat and _re("^目标[：:]", left) and _re("^伤害(?:属性|类型)[：:]", right)) or (_re("^命中[：:]", left) and _re("^暴击[：:]", right)) or (_re("^(?:暴击|段数)[：:]", left) and _re("^(?:段数|冷却)[：:]", right)))
 		if pair and left.length() + right.length() <= 28 and last[1] == row[1]:
 			last[0] = str(last[0]) + "；" + RegEx.create_from_string("^\\\\c\\[0\\]").sub(str(row[0]), "")
 		else:

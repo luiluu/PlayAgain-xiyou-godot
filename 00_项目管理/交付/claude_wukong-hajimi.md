@@ -25,6 +25,10 @@
   - 熟练度：Godot 技能熟练度首期恒 0，`XCat.mastery` 照原版写了但读到的都是 0；剑技备注的 `Custom DAMAGE Mastery Formula` 同样没生效（原版新游戏里也是 0 级，结果一致）。
   - 招募时原版对法宝槽、练习剑装备失败会抛错，Godot 只 push_error 并返回 false。
 
+### 附：四期查证（二十九层一护彩蛋 962，不改代码）
+
+- Map213 EV2「来修炼卍解吧！」第 1 页要求角色 109 在队**且变量 1309 ≥ 1**；第 2、3 页要求本事件的独立开关 B／A，而这两个开关只由第 1 页设。冻结 v0.28 全部地图事件、公共事件（指令 122 区间与脚本）、`js/` 插件与数据库备注里都**没有任何地方写变量 1309**（全库只在图标编号、公共事件编号等无关处出现这个数）。另外角色 109 是「牢大」，不是黑崎一护（148），敌群 962 也没有成员。结论：这是原版留下的死内容，正常流程永远不出现，Godot 照现在不放（`xiyou_floor_run` 的 `UNOPENED_EVENTS` 已核它不在地图上），不做。
+
 ### 给沙僧的提案（damage.gd，不由本车道改）
 
 1. **元素增幅翻倍进伤害**：`XDamage._yep_objects` 现在直接读 `x.equip_list()`，178 持剑时剑的 `Element Amplify／Magnify` 翻倍读不到（`xiyou_cat` 里 671 剑这一项改比视图本身）。改成 `x.stat_equips()` 一词即可（非 178 返回值与 `equip_list` 相同）；`critical_multiplier_bonus` 同理。
@@ -32,10 +36,17 @@
    - build（行动者 178 持剑、技能是四个剑技或剑影 10445）：`normalAdd += 6`；元素 1、8 的 `elementAdd += 6`（加在元素加成上）；学了 10443 时 `finalAdd += 8`、`criticalAdd += 12`，进阶后结算倍率 ×2。
    - enter（目标是持剑的 178，抱剑护身）：`harmRe[1] += min(16000, ⌊3×速度⌋, 15030＋⌊速度/8⌋)`，元素 2～9、11～15 各 `+= min(18000, ⌊3.2×速度⌋, 16400＋⌊2×速度/11⌋)`；目标是敌人 1999（守誓巨龙）且 `(回合−1) % 5 ≠ 3` 时 `harmRe[1] += 1e11`、`harmRe[8] += 5e10`。只在本次结算里生效、结束后还原。
    - XCat 可以提供 `XCat.damage_frame(item, a, b, frame)` 由挂接点调用，数值逻辑放在 cat.gd，damage.gd 只留调用。参照：再补一批 `cat_probe` 伤害例即可对照。
-3. 其余 167～177 的模块也都往 `CodexDamageHooks` 挂了钩子（谷雨 175 除外），挂接点表做好后各人都能用。
+3. 其余 167～177 的模块也都往 `CodexDamageHooks` 挂了钩子（谷雨 175 除外），而且渡鸦、米拉（含共用 NumberBoost）、甚尔、饿狼还包了 `Game_Action.makeDamageValue`。所以不做挂接点，这几人第一期加进切片后伤害行就对不上（悟空_37 逐个读过，三期因此改做楼层）。挂接点要能表达的用例如下，原版 frame 字段名照录：
+   - **改结算模式** `f.mode`：米拉按技能定物理／魔法／混合，甚尔主技能物理、反射技魔法，饿狼按每段公式里有没有 A／M，渡鸦魔法。
+   - **加算池**：`normalAdd`（渡鸦非暗、小猫）、`elementAdd[e]`（渡鸦暗 9，小猫 1／8）、`finalAdd`（渡鸦、小猫）、`criticalAdd`（米拉 40 级 10145 +9.99、小猫）。
+   - **乘区**：`finalMultiplier`（渡鸦 10136 ×1.1）、`skillMultiplier`（渡鸦法宝 ×1.6，甚尔 ×3、×1.11、成长、熟练、扩散率，饿狼进化层数）、`settlementMultiplier`（渡鸦冠冕×成长，NumberBoost 米拉 ×2、渡鸦 ×1.15／×4.25，小猫进阶 ×2）、`incomingMultiplier`（米拉黑龙 3 层 ×0.8）。
+   - **防御与穿透**：`physicalDefenseRate`／`magicalDefenseRate`（渡鸦 defenseFactor，甚尔五感 ×0.67，饿狼解析层数），`physicalIncomingPierce`（甚尔 0.33～0.80）。
+   - **enter 临时改目标再还原**：小猫抱剑护身与巨龙减伤（目标 `_passiveCache.harmRe`），饿狼记当前行动。
+   - **makeDamageValue 外层**：渡鸦 `floor(value × damageMultiplier)`，NumberBoost 米拉 `floor(×7.66)`、`floor(×2)`（与 build 里的同名倍率是两条路径，要先对参照确认是否重复），米拉黑龙 `floor(×0.8)`，甚尔穿透临时写到目标上（`_tojiPdrPierce`）。
 
 ## 交接板
 
+- 下一步：「下一步」第 2 条「未接：一护彩蛋 962」改为「一护彩蛋 962 是原版死内容（变量 1309 无处写入），不做」。
 - 下一步：0d 条改为「178 哈基米第一期已加回（招募、能力值、剑技公式；剑技连携 CAT BEGIN／STRIKE、使用条件、进阶与试炼、伤害钩子未做）；167～177 按预检表排期，都依赖 damage.gd 模块挂接点」。
 - 用户试玩说明：哈基米可以通过公共事件招募（自带法宝抱剑喵铃与练习剑），能力值与原版一致；**他的剑技在战斗里暂时打不出伤害**，普通攻击可用。
 - 需要用户决定：无（是否在剑技连携做好前先不开放招募，由总装定；默认照现在开放）。

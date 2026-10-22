@@ -95,13 +95,19 @@ func _run() -> void:
 	_check("oracle_loaded", data is Dictionary and data.has("skills"))
 	# 参照是原版 HelpExtend 的出售价格（四舍五入），逐行比对时关掉 O-049
 	XHelpCard.REAL_SELL_PRICE = false
+	# 探针把切片角色都 changeLevel(maxLevel)，新局等级上限 10 夹住；178 哈基米的说明卡按已有的 178（characterHelpActor）算，这里同样建一个 10 级的
+	var prior := XState.current
+	var cat_state := XState.new()
+	cat_state.actor(XCat.ACTOR).change_level(10)
 	if data is Dictionary:
 		for cat in ["skills", "items", "weapons", "armors", "gear"]:
+			XState.current = cat_state if cat == "skills" else prior  # 只给技能卡用（XPower 等读 XState.current，物品／装备卡照旧）
 			var before := results.size()
 			for card in data.get(cat, []):
 				_compare(cat, card)
 			var cat_results := results.slice(before)
 			print("%s %d/%d" % [cat, cat_results.filter(func(r): return r.passed).size(), cat_results.size()])
+	XState.current = prior
 	XHelpCard.REAL_SELL_PRICE = true
 	# O-049：出售价格与商店实卖一致（半价向下取整，<Sell Price> 优先）；关掉回到原版四舍五入
 	var odd := {"kind": "item", "name": "测试药", "description": "", "price": 7}
