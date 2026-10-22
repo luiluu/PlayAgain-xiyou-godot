@@ -203,6 +203,173 @@ cases.push(makeCase('mul.round_boundaries', {}, () => {
   const values = [-3, -1, 0, 1, 3].map(value => [value, action.customEffectEval(e, sid, 'confirmState', a, value)]);
   return {values};
 }));
+// Fix makeDamageValue as extension modules do; the real executeDamage still owns all four state phases.
+cases.push(makeCase('damage.full_chain', {raw: 7, confirm: 2, react: 0.5, respond: 3, establish: 0.5}, () => {
+  const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
+  const saved = w.$dataStates[T].customEffectEval, log = [];
+  w.__seDamage = (phase, value, target) => log.push([phase, value, target.result().critical, w.$gameVariables.value(27), w.$gameSwitches.value(28)]);
+  w.$gameVariables.setValue(27, 314); w.$gameSwitches.setValue(28, true);
+  w.$dataStates[T].customEffectEval = Object.fromEntries(Object.keys(saved).map(k => [k, '']));
+  for (const [phase, rate] of [['confirm', 2], ['react', 0.5], ['respond', 3], ['establish', 0.5]]) {
+    w.$dataStates[T].customEffectEval[phase + 'State'] = `__seDamage('${phase}', value, target); if (value !== 0) { value = Math.round(value * ${rate}); }`;
+  }
+  try {
+    a.addState(T); e.addState(T);
+    for (const x of [a, e]) { x.need_refresh = true; x.refresh(); }
+    action.makeDamageValue = () => 7;
+    action.itemCri = () => 1;
+    const hp = e.hp; action.apply(e);
+    return {log, hpDelta: e.hp - hp, hpDamage: e.result().hpDamage, critical: e.result().critical};
+  } finally { w.$dataStates[T].customEffectEval = saved; delete w.__seDamage; }
+}));
+// Phase 2b: real constant bonus blocks, measured before adding any new translator.
+// Four complete source shapes: local bonus, finalRate, final+critical, and final+critical followed by floor.
+const BONUS_STATES = [34, 52, 1160, 1161, 1397, 1406, 1445, 1446, 1447, 1448, 1454, 1522, 1545, 1669, 1671, 1684,
+  1717, 1718, 1719, 1720, 1766, 2525, 2526, 2529, 2539, 2556, 2563, 2565];
+cases.push(makeCase('bonus.native_blocks', {states: BONUS_STATES, values: [-3, -1, 0, 1, 3, 7, 101], types: [0, 1, 2, 3]}, () => {
+  const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
+  const original = action.item().damage.type, rows = [];
+  try {
+    for (const sid of BONUS_STATES) for (const type of [0, 1, 2, 3]) for (const critical of [false, true]) for (const value of [-3, -1, 0, 1, 3, 7, 101]) {
+      action.item().damage.type = type; e.result().critical = critical;
+      const after = action.customEffectEval(e, sid, 'confirmState', a, value);
+      rows.push({state: sid, type, critical, before: value, after});
+    }
+  } finally { action.item().damage.type = original; }
+  return {rows};
+}));
+// Phase 2c: whole native value-only blocks, before translating any of them.
+const VALUE_STATES = [543, 1228, 1259, 1375, 1420, 1421, 1422, 1424, 1441, 1442, 1451, 1540, 1668, 1701, 1702,
+  1703, 1707, 1717, 1718, 1719, 1720, 1722, 1726, 1732, 1733, 1770, 1779, 1836, 2522, 2558, 2561, 2583, 2676, 2677, 2678];
+const VALUE_REACT = new Set([1228, 1375, 1451, 1540, 1668, 1701, 1702, 1717, 1718, 1719, 1720, 1779, 2558, 2561]);
+cases.push(makeCase('value.native_blocks', {states: VALUE_STATES, values: [-3, -1, 0, 1, 3, 7, 101],
+  columns: ['state', 'phase', 'profile', 'type', 'hit', 'critical', 'before', 'random', 'after', 'draws']}, () => {
+  const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
+  const item = action.item(), originalType = item.damage.type, originalHit = item.hitType;
+  const vars = [967, 965, 1181, 1184, 206, 966, 20];
+  // [level, user mhp, target hp, target mhp, target def, target state count, variable values].
+  const profiles = [
+    [40, 1000, 800, 1000, 10, 3, [10, 10, 1250, 6, 1000, 1, 15]],
+    [1, 1000, 0, 1000, 0, 0, [-10, -10, -20000, -200, -51000, -20, -1]],
+    [30, 1000, 400, 1000, 10, 1, [0, 0, 0, 0, 0, 0, 7]],
+    [31, 1000, 700, 1000, 1, 5, [1, 1, 999, 4, -49999, -10, 16]],
+    [53, 1000, 401, 1000, 100, 10, [11, 11, 1000, 5, 50000, 2, 30]],
+    [100, 1000, 9999, 10000, -10, 30, [100, 100, 99999, 999, 99999, 100, 100]]
+  ];
+  const property = (obj, key, value) => Object.defineProperty(obj, key, {configurable: true, value});
+  const randomBefore = w.Math.random, oldError = w.Yanfly.Util.displayError, errors = [], rows = [];
+  let draws = 0;
+  w.Yanfly.Util.displayError = (error, code, message) => errors.push({error: String(error), message});
+  function configure(p) {
+    property(a, 'level', p[0]); property(a, 'mhp', p[1]);
+    property(e, 'hp', p[2]); property(e, 'mhp', p[3]); property(e, 'def', p[4]);
+    e.states = () => Array.from({length: p[5]}, (_, i) => w.$dataStates[i + 4]);
+    vars.forEach((id, i) => w.$gameVariables.setValue(id, p[6][i]));
+  }
+  function measure(sid, profile, type, hit, critical, value, random) {
+    item.damage.type = type; item.hitType = hit; e.result().critical = critical;
+    draws = 0; w.Math.random = () => { draws++; return random; };
+    const phase = VALUE_REACT.has(sid) ? 'react' : 'confirm';
+    const after = action.customEffectEval(e, sid, phase + 'State', a, value);
+    if (!Number.isFinite(after)) throw new Error('nonfinite native value ' + sid);
+    rows.push([sid, phase, profile, type, hit, critical, value, random, after, draws]);
+  }
+  try {
+    configure(profiles[0]);
+    for (const sid of VALUE_STATES) for (const type of [0, 1, 2, 3]) for (const hit of [0, 1, 2])
+      for (const critical of [false, true]) for (const value of [-3, -1, 0, 1, 3, 7, 101]) measure(sid, 0, type, hit, critical, value, 0.5);
+    for (let profile = 1; profile < profiles.length; profile++) {
+      configure(profiles[profile]);
+      for (const sid of VALUE_STATES) for (const hit of [0, 1, 2]) for (const value of [-3, -1, 0, 1, 3, 7, 101])
+        measure(sid, profile, 1, hit, true, value, 0.5);
+    }
+    configure(profiles[0]);
+    for (const sid of [1441, 1703, 1707, 1732]) for (const random of [0, 0.500001, 0.8, 0.800001, 0.999999])
+      for (const type of [0, 1, 2, 3]) for (const hit of [0, 1, 2]) for (const value of [-3, -1, 0, 1, 3, 7, 101])
+        measure(sid, 0, type, hit, false, value, random);
+    if (errors.length) throw new Error('native block errors: ' + JSON.stringify(errors));
+    return {profiles, variables: vars, rows};
+  } finally {
+    item.damage.type = originalType; item.hitType = originalHit; w.Math.random = randomBefore; w.Yanfly.Util.displayError = oldError;
+    for (const name of ['level', 'mhp']) delete a[name];
+    for (const name of ['hp', 'mhp', 'def', 'states']) delete e[name];
+  }
+}));
+// Phase 2d: native read-only action queries; no new translation until measured.
+cases.push(makeCase('query.native_blocks', {states: [1047, 1048, 1834, 2544, 2545, 2711]}, () => {
+  const {a, b, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
+  const item = action.item(), originalDamage = Object.assign({}, item.damage), originalMultiple = item.multipleElements;
+  const rows = [], errors = [], oldError = w.Yanfly.Util.displayError;
+  w.Yanfly.Util.displayError = (error, code, message) => errors.push({error: String(error), message});
+  const values = [-101, -3, -1, 0, 0.5, 1, 3, 7, 101];
+  // [elementId, multiple, attackElements, passive override, null, forced, added]
+  const elements = [[1, [], [], 0, false, null, []], [2, [], [], 0, false, null, []],
+    [0, [], [], 0, false, null, []], [-1, [], [2, 1], 0, false, null, []],
+    [2, [1, 2, 1], [], 0, false, null, []], [1, [], [], 2, false, null, []],
+    [2, [], [], 1, false, null, []], [1, [], [], 0, true, null, []],
+    [1, [], [], 0, false, [], [1]], [2, [], [], 0, true, [1, 1, 16], []],
+    [1, [], [], 0, false, [2], []], [2, [], [], 0, false, null, [1]]];
+  const savedCache = a._passiveCache;
+  try {
+    for (let profile = 0; profile < elements.length; profile++) {
+      const p = elements[profile]; item.damage.elementId = p[0]; item.multipleElements = p[1];
+      a.attackElements = () => p[2]; a._passiveCache = Object.assign({}, savedCache, {damageElement: p[3]});
+      a.isNullElement = () => p[4];
+      if (p[5] === null) delete w.$gameTemp._forcedElements; else w.$gameTemp._forcedElements = p[5];
+      w.$gameTemp._addedElements = p[6];
+      for (const sid of [1047, 1048]) for (const type of [0, 1, 2, 3, 4, 5, 6]) for (const value of values) {
+        item.damage.type = type;
+        rows.push({state: sid, profile, type, before: value, elements: action.getItemElements(),
+          after: action.customEffectEval(e, sid, 'reactState', e, value)});
+      }
+    }
+    delete a.attackElements; delete a.isNullElement; a._passiveCache = savedCache;
+    delete w.$gameTemp._forcedElements; delete w.$gameTemp._addedElements;
+    // Actual party lists: battle slots exclude reserves; death-state membership,
+    // rather than bare hp=0, determines aliveMembers (including enemy attackers).
+    const party = [];
+    for (const [inBattle, dead, hpZero] of [[true, [], false], [true, [8], false], [true, [1, 8], false],
+      [true, [], true], [false, [8], false]]) {
+      w.$gameParty._actors = w.eval('[1, 8, 9]'); w.$gameParty._battleMembers = w.eval('[1, 8, 0, 0, 0]'); w.$gameParty._inBattle = inBattle;
+      for (const id of [1, 8, 9]) { const x = w.$gameActors.actor(id); x._states = w.eval(dead.includes(id) ? '[1]' : '[]'); x._hp = hpZero ? 0 : 100; }
+      const profile = party.length, members = w.$gameParty.members().map(x => x.actorId());
+      party.push({inBattle, dead, hpZero, members, alive: w.$gameParty.aliveMembers().map(x => x.actorId())});
+      for (const enemyUser of [false, true]) for (const type of [0, 1, 2, 3, 4, 5, 6]) for (const value of values) {
+        const act = new w.Game_Action(enemyUser ? e : a); act.setSkill(1); item.damage.type = type;
+        rows.push({state: 1834, profile, enemyUser, type, before: value,
+          after: act.customEffectEval(enemyUser ? a : e, 1834, 'confirmState', enemyUser ? e : a, value)});
+      }
+    }
+    const defenders = [];
+    for (const target of [e, a]) for (const hp of [0, 19, 20, 21, 100]) {
+      Object.defineProperty(target, 'mhp', {value: 100, configurable: true}); target._hp = hp;
+      const profile = defenders.length; defenders.push({enemy: target === e, hp, mhp: 100});
+      for (const type of [0, 1, 2, 3, 4, 5, 6]) for (const value of values) {
+        item.damage.type = type;
+        rows.push({state: 2711, profile, type, before: value,
+          after: action.customEffectEval(target, 2711, 'confirmState', a, value)});
+      }
+      delete target.mhp;
+    }
+    // Weapons and replacement attack are measured but stay JS pending that core.
+    const weapons = [];
+    for (const weaponType of [null, 2, 11, 1]) for (const replace of [0, 12]) for (const skill of [1, 12]) {
+      a.weapons = () => weaponType === null ? [] : [{wtypeId: weaponType}];
+      a._replaceAttackSkillId = replace; action.setSkill(skill);
+      const profile = weapons.length; weapons.push({weaponType, replace, skill, isAttack: action.isAttack()});
+      for (const sid of [2544, 2545]) for (const value of values) rows.push({state: sid, profile, before: value,
+        after: action.customEffectEval(e, sid, 'confirmState', a, value)});
+    }
+    if (errors.length) throw new Error('native query errors: ' + JSON.stringify(errors));
+    return {elements, party, defenders, weapons, rows};
+  } finally {
+    Object.assign(item.damage, originalDamage); item.multipleElements = originalMultiple;
+    a._passiveCache = savedCache; delete a.attackElements; delete a.isNullElement; delete a.weapons;
+    delete a.mhp; delete e.mhp;
+    delete w.$gameTemp._forcedElements; delete w.$gameTemp._addedElements;
+    w.Yanfly.Util.displayError = oldError;
+  }
+}));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
 cases.push(makeCase('action.counter', {troop: 2, user: 'a1', skill: 'physical clone of 1', target: 'e0'}, () => {
   const {bm, a, e} = battle(2);

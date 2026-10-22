@@ -2,7 +2,7 @@ extends Node
 ## State effects phase 2a: native lifecycle, KRZ hot lists, and existing-op migration.
 ## Compare the complete action chain, including confirm/react/respond/establish,
 ## misses/reflections/counters/guard/forced actions, natural expiry and origins.
-## No new JS shapes execute. OTB action_end remains absent.
+## Phase 2b also compares all native constant-bonus rows. OTB action_end remains absent.
 var results := []
 var trace := []
 const PHASES := {"battle": "battle", "turnStartState": "turn_start", "turnEndState": "turn_end", "regenerateState": "regenerate",
@@ -16,6 +16,35 @@ var CNT := 0
 var EVA := 0
 ## 参照测试状态编号 → Godot 测试状态编号（按参照 fixture 的名字对应）
 var ids := {}
+
+
+class FixedDamageLogic:
+	extends XBattleLogic
+	func _calculate_damage(_u: XBattler, _skill: Dictionary, _t: XBattler, critical: bool) -> Dictionary:
+		return {"value": 7.0, "critical": critical}
+	func _float(reason: String) -> float:
+		return 0.0 if reason == "critical" else super._float(reason)
+
+
+class ValueBattler:
+	extends XBattler
+	var values := {}
+	func _level() -> int:
+		return int(values.get("level", 1))
+	func param(i: int) -> float:
+		return float(values.get(["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"][i], 1.0))
+	func passive_cache() -> Dictionary:
+		return {"damageElement": values.get("damageElement", 0)}
+	func attack_elements() -> Array:
+		return values.get("attackElements", [])
+	func trait_objects() -> Array:
+		return [{"note": "<ELEMENT NULL>"}] if values.get("nullElement", false) else super()
+
+
+class QueryEnemy:
+	extends XEnemy
+	func param(_i: int) -> float:
+		return 100.0
 
 
 func check(name: String, ok: bool, detail = null) -> void:
@@ -121,6 +150,9 @@ func _run() -> void:
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
 		cases[c.id] = c
+	check("query.oracle_present", cases.has("query.native_blocks"))
+	if not cases.has("query.native_blocks"):
+		return finish()
 	var all_phases: Array = PHASES.values() + ["apply", "remove", "leave"]
 	T = _state("测试·阶段记录", all_phases)
 	T2 = _state("测试·阶段记录二", all_phases)
@@ -231,6 +263,10 @@ func _run() -> void:
 	check("ctx.battler", ts.phase == "turn_start" and ts.user == ua and ts.target == ua and ts.origin == ua and not ts.has("attacker"), ts.keys())
 	check("ctx.stack_empty", XStateEffects.current().is_empty())
 	_lifecycle(cases)
+	_bonus_blocks(cases["bonus.native_blocks"].observed.rows)
+	_damage_chain(cases["damage.full_chain"].observed)
+	_value_blocks(cases["value.native_blocks"].observed)
+	_query_blocks(cases["query.native_blocks"].observed)
 	XStateEffects.observer = Callable()
 	finish()
 
@@ -305,6 +341,211 @@ func _lifecycle(cases: Dictionary) -> void:
 	for pair in cases["mul.round_boundaries"].observed["values"]:
 		var value := XStateEffects.run("confirm", h, {"attacker": h, "defender": logic.enemies[0], "item": XDB.rec("Skills", 1), "value": pair[0]})
 		check("mul.round." + str(pair[0]), value == pair[1], value)
+
+
+func _bonus_blocks(rows: Array) -> void:
+	var logic := _new_logic(4312)
+	var a: XBattler = logic.actors[0]
+	var b: XBattler = logic.enemies[0]
+	XStateEffects.observer = Callable()
+	check("bonus.native_rows", rows.size() == 1568, rows.size())
+	for row in rows:
+		var skill := XDB.rec("Skills", 1).duplicate(true)
+		skill.damage.type = row.type
+		var st := XDB.rec("States", int(row.state))
+		var ctx := {"attacker": a, "defender": b, "item": skill, "critical": row.critical, "value": row.before}
+		var got := XStateEffects.run_one("confirm", a, st, ctx)
+		check("bonus.%d.%d.%s.%s" % [row.state, row.type, row.critical, row.before], got == row.after, [got, row.after])
+	# Unwarmed caches and live capabilities must remain untouched by a preview.
+	a.add_state(1522)
+	a.param_refresh()
+	a.effect_lists.clear()
+	b.effect_lists.clear()
+	var resources := XResourceContext.new()
+	var stream := logic._rule()
+	var before := [a.hp, b.hp, a.effect_lists.duplicate(true), b.effect_lists.duplicate(true),
+		a.effect_snapshot.duplicate(true), b.effect_snapshot.duplicate(true), a.param_cells.duplicate(), b.param_cells.duplicate(),
+		a.effect_dirty, b.effect_dirty, a.param_dirty, b.param_dirty, stream.snapshot(), XStateEffects.diagnostics.duplicate(true)]
+	var vars := [1, 2]
+	var switches := {2: true}
+	var skill := XDB.rec("Skills", 1)
+	var got := XDamage.finish({"value": 7.0, "critical": true}, skill, a, b, false,
+		{"resources": resources, "random": stream, "variables": vars, "switches": switches})
+	check("preview.bonus_value", got == 17.0, got)
+	var after := [a.hp, b.hp, a.effect_lists, b.effect_lists, a.effect_snapshot, b.effect_snapshot, a.param_cells, b.param_cells,
+		a.effect_dirty, b.effect_dirty, a.param_dirty, b.param_dirty, stream.snapshot(), XStateEffects.diagnostics]
+	check("preview.no_live_mutation", before == after and resources.slots.is_empty() and resources.journal.is_empty()
+		and vars == [1, 2] and switches == {2: true})
+
+
+func _damage_chain(o: Dictionary) -> void:
+	var logic := FixedDamageLogic.new()
+	var state := XState.new_game(3, 1, [8])
+	state.random_master = XRandomStream.hex64(4313)
+	logic.elite_roll = 100.0
+	logic.setup(2, state)
+	state.variables[27] = 314
+	state.switches[28] = true
+	var a: XBattler = logic.actors[0]
+	var b: XBattler = logic.enemies[0]
+	var effects := []
+	for pair in [["confirm", 2.0], ["react", 0.5], ["respond", 3.0], ["establish", 0.5]]:
+		effects.append({"phase": pair[0], "op": "mul", "cond": "nonzero", "k": pair[1], "round": "round"})
+	var sid := _state("测试·完整伤害链", [], {"effects": effects})
+	a.add_state(sid)
+	b.add_state(sid)
+	a.param_refresh()
+	b.param_refresh()
+	var log := []
+	XStateEffects.observer = func(phase, id, _holder, ctx):
+		if id == sid:
+			log.append([phase, ctx.value, ctx.critical, float(ctx.variables[27]), ctx.switches[28]])
+			check("damage.ctx." + phase, ctx.resources != null and ctx.random == logic._rule()
+				and ctx.record.target == b and ctx.resources.result(b).critical == ctx.critical)
+	var skill := XDB.rec("Skills", 1).duplicate(true)
+	skill.damage.critical = true
+	var hp := b.hp
+	var r := logic.apply(a, skill, b)
+	check("damage.full_chain.values", log == o.log, [log, o.log])
+	check("damage.full_chain.settlement", b.hp - hp == o.hpDelta and r.result.hpDamage == o.hpDamage
+		and r.critical == o.critical, r)
+	# The existing resource opcode also needs the same live capability before settlement.
+	var resource_sid := _state("测试·确认阶段资源", [], {"effects": [{"phase": "confirm", "op": "user_param_damage", "params": ["atk"]}]})
+	a.add_state(resource_sid)
+	a.param_refresh()
+	XStateEffects.observer = Callable()
+	r = logic.apply(a, skill, b)
+	check("damage.confirm_resource", r.get("extra", []).size() == 1 and r.effectJournal.any(func(e):
+		return e.resource == "hp" and e.requestedDelta == -a.atk), r.get("effectJournal", []))
+
+
+func _value_blocks(o: Dictionary) -> void:
+	XStateEffects.observer = Callable()
+	var a := ValueBattler.new()
+	var b := ValueBattler.new()
+	var variables := {}
+	var profile := -1
+	check("value.native_rows", o.rows.size() == 11235, o.rows.size())
+	for index in range(o.rows.size()):
+		var row: Array = o.rows[index]
+		if int(row[2]) != profile:
+			profile = int(row[2])
+			var p: Array = o.profiles[profile]
+			a.values = {"level": p[0], "mhp": p[1]}
+			b.values = {"mhp": p[3], "def": p[4]}
+			b.hp = float(p[2])
+			b.state_ids.assign(range(4, 4 + int(p[5])))
+			for i in range(o.variables.size()):
+				variables[str(int(o.variables[i]))] = p[6][i]
+		var skill := {"damage": {"type": row[3]}, "hitType": row[4]}
+		var stream := XRandomStream.scripted([{"kind": "float", "value": row[7], "reason": "state_effect", "event": "%s:%d" % [row[1], row[0]]}])
+		var ctx := {"attacker": a, "defender": b, "item": skill, "critical": row[5], "value": row[6],
+			"variables": variables, "random": stream}
+		var st := XDB.rec("States", int(row[0]))
+		var got := XStateEffects.run_one(str(row[1]), a if row[1] == "confirm" else b, st, ctx)
+		check("value.%d.%d" % [row[0], index], absf(got - float(row[8])) < 0.0000000001
+			and stream.draws == int(row[9]) and stream.error.is_empty(), {"row": row, "got": got, "draws": stream.draws})
+	# Preview a random block with unwarmed parameter/state caches and live resources.
+	var stream := XRandomStream.scripted([{"kind": "float", "value": 0.9}])
+	var resources := XResourceContext.new()
+	var before := [a.hp, b.hp, a.effect_lists.duplicate(true), b.effect_lists.duplicate(true),
+		a.effect_snapshot.duplicate(true), b.effect_snapshot.duplicate(true), a.param_cells.duplicate(), b.param_cells.duplicate(),
+		a.effect_dirty, b.effect_dirty, a.param_dirty, b.param_dirty, stream.snapshot(), XStateEffects.diagnostics.duplicate(true)]
+	var vars_before := variables.duplicate(true)
+	var ctx := {"attacker": a, "defender": b, "item": {"damage": {"type": 1}, "hitType": 1}, "critical": false,
+		"value": -3.0, "variables": variables, "random": stream, "resources": resources, "execute": false}
+	var got := XStateEffects.run_one("react", b, XDB.rec("States", 1540), ctx)
+	check("value.preview.signed_unconditional", got == -1.0, got)
+	ctx.value = 7.0
+	got = XStateEffects.run_one("confirm", a, XDB.rec("States", 1441), ctx)
+	check("value.preview.random", got == 7.0, got)
+	var after := [a.hp, b.hp, a.effect_lists, b.effect_lists, a.effect_snapshot, b.effect_snapshot, a.param_cells, b.param_cells,
+		a.effect_dirty, b.effect_dirty, a.param_dirty, b.param_dirty, stream.snapshot(), XStateEffects.diagnostics]
+	check("value.preview.isolated", before == after and variables == vars_before and resources.slots.is_empty() and resources.journal.is_empty())
+
+
+func _query_blocks(o: Dictionary) -> void:
+	XStateEffects.observer = Callable()
+	check("query.native_rows", o.rows.size() == 3060, o.rows.size())
+	check("query.native_party_scope", o.party[0].members == [1.0, 8.0] and o.party[4].members == [1.0, 8.0, 9.0], o.party)
+	var a := ValueBattler.new()
+	var b := ValueBattler.new()
+	var enemy := QueryEnemy.new()
+	var executed := 0
+	for index in range(o.rows.size()):
+		var row: Dictionary = o.rows[index]
+		var sid := int(row.state)
+		if sid in [2544, 2545]:
+			continue # Native evidence retained; attack replacement is outside this small phase.
+		var item := {"id": 1, "damage": {"type": row.type, "elementId": 0}}
+		var ctx := {"attacker": a, "defender": b, "item": item, "value": row.before}
+		var phase := "confirm"
+		if sid in [1047, 1048]:
+			phase = "react"
+			var p: Array = o.elements[int(row.profile)]
+			a.values = {"attackElements": p[2], "damageElement": p[3], "nullElement": p[4]}
+			item.damage.elementId = p[0]
+			item.yep = {"multipleElements": p[1]}
+			ctx.added_elements = p[6]
+			if p[5] != null:
+				ctx.forced_elements = p[5]
+			check("query.elements.%d" % index, XStateEffects._query_elements(ctx, a) == row.elements.map(func(e): return int(e)))
+		elif sid == 1834:
+			var p: Dictionary = o.party[int(row.profile)]
+			ctx.party_members = []
+			for id in p.members:
+				var member := ValueBattler.new()
+				member.hp = 0.0 if p.hpZero else 100.0
+				if p.dead.has(id):
+					member.state_ids.append(1)
+				ctx.party_members.append(member)
+			if row.enemyUser:
+				ctx.attacker = enemy
+				ctx.defender = a
+		else:
+			var p: Dictionary = o.defenders[int(row.profile)]
+			ctx.defender = enemy if p.enemy else b
+			ctx.defender.hp = float(p.hp)
+			b.values = {"mhp": p.mhp}
+		var st := XDB.rec("States", sid)
+		var holder: XBattler = ctx.attacker if phase == "confirm" else ctx.defender
+		var got := XStateEffects.run_one(phase, holder, st, ctx)
+		check("query.execute.%d" % index, got == float(row.after), {"row": row, "got": got})
+		ctx.execute = false
+		got = XStateEffects.run_one(phase, holder, st, ctx)
+		check("query.preview.%d" % index, got == float(row.after), {"row": row, "got": got})
+		executed += 1
+	check("query.supported_rows", executed == 2772, executed)
+	# Production action context uses actual battle actors, independent of attacker.
+	var logic := XBattleLogic.new()
+	logic.state = XState.new()
+	var live := ValueBattler.new()
+	live.hp = 0.0 # Native aliveMembers still includes it without death state.
+	logic.actors = [live]
+	var c := logic._state_context(enemy, {"damage": {"type": 1}}, b)
+	c.value = 7.0
+	check("query.party.action_context", XStateEffects.run_one("confirm", enemy, XDB.rec("States", 1834), c) == 10.0)
+	# Preview fallback reads resolved battle slots; reserves do not increase count,
+	# and no slot initialization, actor creation, RNG or parameter cache writes occur.
+	var saved := XState.current
+	var state := XState.new()
+	state.party.assign([1, 8, 9])
+	state.battle_slots = [1, 8, 0, 0, 0]
+	var dead := ValueBattler.new()
+	dead.state_ids.append(1)
+	state.actors = {1: live, 8: dead, 9: ValueBattler.new()}
+	XState.current = state
+	var random := XRandomStream.scripted([])
+	var resources := XResourceContext.new()
+	var before := [state.battle_slots.duplicate(), state.actors.keys(), live.param_cells.duplicate(), live.effect_lists.duplicate(true),
+		live.param_dirty, live.effect_dirty, random.snapshot(), XStateEffects.diagnostics.duplicate(true)]
+	c = {"attacker": enemy, "defender": b, "item": {"damage": {"type": 1}}, "value": 7.0,
+		"execute": false, "random": random, "resources": resources}
+	check("query.party.preview_fallback", XStateEffects.run_one("confirm", enemy, XDB.rec("States", 1834), c) == 10.0)
+	var after := [state.battle_slots, state.actors.keys(), live.param_cells, live.effect_lists,
+		live.param_dirty, live.effect_dirty, random.snapshot(), XStateEffects.diagnostics]
+	check("query.preview.no_mutation", before == after and resources.slots.is_empty() and resources.journal.is_empty())
+	XState.current = saved
 
 
 func finish() -> void:

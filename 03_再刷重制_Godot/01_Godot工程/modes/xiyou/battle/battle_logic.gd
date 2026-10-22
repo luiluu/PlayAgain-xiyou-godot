@@ -33,6 +33,7 @@ var replay_battle_start := {}
 var _ids := {}
 var _action_resources: XResourceContext
 var _formula_outcome := {}
+var _damage_record := {}
 ## 魔法反射回行动者自己的这次 apply（导入角色平衡照样缩放）
 var _reflecting := false
 
@@ -1165,11 +1166,23 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 	return float(v) if not expr.has_execute_failed() and (v is float or v is int) else 0.0
 
 
-## 伤害计算与 apply 的扣血／记账分开，模块对照可固定这一步（同正式 Game_Action.makeDamageValue 夹具）。
+## 兼容现有扩展：_damage_value 覆写的是已结算终值，不能在其返回后再乘一轮状态倍率。
+## 新的基础数值夹具／扩展覆写 _calculate_damage，默认路径会统一执行 Confirm→固定减伤→React。
 func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
+	return XDamage.finish(_calculate_damage(u, skill, t, critical), skill, u, t, true, _state_context(u, skill, t, _damage_record))
+
+
+func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
 	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
-	return XDamage.finish(XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule(),
-		"battleRound": maxi(1, turn)}), skill, u, t, true)  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
+	return XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule(),
+		"battleRound": maxi(1, turn)})  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
+
+
+func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -> Dictionary:
+	return {"attacker": u, "defender": t, "item": skill, "resources": _action_resources, "record": record,
+		"party_members": actors,
+		"variables": vars(), "switches": state.switches if state != null else {}, "random": _rule(),
+		"critical": bool(record.get("critical", false)), "value": float(record.get("state_value", 0.0))}
 
 
 ## Game_Action.apply：行动者有道法「破甲」时，期间附加的破甲·真气（2705）用它的倍率（XZhenqi.pojia_actor）
@@ -1186,7 +1199,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	# Game_Action.apply 的 YEP 包装：initiate（行动者）→ select（目标）→ 原 apply → deselect（目标）→ conclude（行动者）；
 	# 未命中也四段齐全；导入平衡禁用的行动在更外层直接返回，不跑
 	var blocked := XImportedBalance.blocks(u, skill)
-	var ctx := {"attacker": u, "defender": t, "item": skill}
+	var ctx := _state_context(u, skill, t)
 	if not blocked:
 		XStateEffects.run("initiate", u, ctx)
 		XStateEffects.run("select", t, ctx)
@@ -1237,7 +1250,10 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 			cri = 1.0
 		r.critical = _float("critical") < clampf(cri, 0.0, 1.0)
 		_action_resources.result(t).critical = r.critical
+		var previous_record := _damage_record
+		_damage_record = r
 		var value := _damage_value(u, skill, t, r.critical)
+		_damage_record = previous_record
 		r.state_value = value
 		_action_resources.result(t).success = true
 		match type:
@@ -1293,8 +1309,8 @@ func execute_mp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> f
 ## user_param_damage（轮回困难 1460/1461）：行动者每个为正的能力值各一次 target.gainHp(-值)（不经伤害计算，可致死）并弹字。
 ## 记录 r.extra（附加值列表）；原版普通伤害弹字被改写为最后一次附加值（r.popup_hp，见 ESTABLISH_TRUE_POPUP）。
 func _establish(u: XBattler, t: XBattler, r: Dictionary) -> void:
-	var ctx := {"attacker": u, "defender": t, "item": r.skill, "value": r.get("state_value", 0.0), "critical": r.critical, "resources": _action_resources, "record": r}
-	XStateEffects.run("respond", t, ctx)
+	var ctx := _state_context(u, r.skill, t, r)
+	ctx.value = XStateEffects.run("respond", t, ctx)
 	XStateEffects.run("establish", u, ctx)
 	if r.has("extra") and not ESTABLISH_TRUE_POPUP:
 		r.popup_hp = r.extra[-1]

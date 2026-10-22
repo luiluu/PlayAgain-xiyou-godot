@@ -1,13 +1,13 @@
 class_name XStateEffects
 extends RefCounted
 ## YEP/BSC phase dispatcher. KRZ cached lists and direct lifecycle slots share
-## one execution path; only previously supported mul/user_param_damage execute.
+## one execution path, including native-measured constant bonus steps.
 ## JS remains diagnostic-only. OTB action_end and unknown crit stay unfired.
 
 const BATTLER_PHASES := ["battle", "turn_start", "turn_end", "regenerate", "action_start", "victory", "escape", "defeat"]
 const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm", "react", "respond", "establish"]
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
-const SUPPORTED_OPS := ["mul", "user_param_damage"]
+const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -19,6 +19,55 @@ static var _stack: Array = []
 ## 未翻译清单：{phase, state, holder, op}，同键只记一次
 static var diagnostics: Array = []
 static var _seen := {}
+
+
+## Private value-only adapter: current signed phase input, without the damage
+## entry's zero initial value, nonnegative clamp or healing sign conversion.
+class PhaseValueProgram:
+	extends XFormulaProgram
+	var _battlers := {}
+	var _random: XRandomStream
+	var _tag := ""
+
+	func run_phase(program: Dictionary, ctx: Dictionary, value: float, execute: bool) -> Dictionary:
+		if program.get("version") != 1 or program.get("status") != "pure":
+			return {"available": false, "value": value}
+		var a: XBattler = ctx.user if execute else XFormulaContext.clone_battler(ctx.user)
+		var b: XBattler = a if ctx.user == ctx.target else (ctx.target if execute else XFormulaContext.clone_battler(ctx.target))
+		if a == null or b == null:
+			return {"available": false, "value": value}
+		_battlers = {"a": a, "b": b}
+		_context = {"v": ctx.get("variables", {}), "s": ctx.get("switches", {})}
+		_random = ctx.get("random") if execute else null
+		_tag = "%s:%s" % [ctx.phase, ctx.state_id]
+		for name in program.locals:
+			_locals[str(name)] = UNDEFINED
+		var item: Dictionary = ctx.get("item", {})
+		_locals.merge({"value": value, "se_hp": int(item.get("damage", {}).get("type", 0)) in [1, 3, 5],
+			"se_magic": int(item.get("hitType", 0)) == 2, "se_physical": int(item.get("hitType", 0)) == 1,
+			"se_critical": bool(ctx.get("critical", false))}, true)
+		for step in program.steps:
+			_step(step)
+			if not _error.is_empty():
+				break
+		return {"available": _error.is_empty(), "value": _number(_locals.value), "diagnostic": _error}
+
+	func _property(receiver: String, name: String):
+		return _battlers[receiver].get(name) if name in XFormulaContext.PROPERTIES.split(" ") else _fail("unknown_property")
+
+	func _read(node: Dictionary):
+		var b: XBattler = _battlers[node.receiver]
+		match str(node.name):
+			"states_count": return b.states().size()
+			"hp_rate": return _divide(b.hp, b.mhp)
+		return _fail("unsupported_phase_read")
+
+	func _math(node: Dictionary):
+		if node.name == "random" and _random != null:
+			_draws += 1
+			var value := _random.next_float("state_effect", _tag)
+			return value if _random.error.is_empty() else _fail(_random.error)
+		return super._math(node)
 
 
 ## 对持有者当前的状态（快照、按状态顺序）分发一个 phase。ctx：Action 版给 {"attacker", "defender", "item"}；Battler 版可空。
@@ -49,12 +98,25 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	for e in effects:
 		var op := str(e.get("op", ""))
 		if op == "mul":
-			var hp: bool = int(ctx.get("item", {}).get("damage", {}).get("type", 0)) in [1, 3, 5]
-			var cond := str(e.get("cond", ""))
-			var active: bool = c.value != 0.0 if cond == "nonzero" else c.value > 0.0 if cond == "positive" else c.value >= 0.0 if cond == "nonnegative" else false
-			if active and (not e.get("hpOnly", false) or hp):
-				var x: float = c.value * float(e.k)
-				c.value = ceilf(x) if e.round == "ceil" else floorf(x) if e.round == "floor" else XPower.js_round(x)
+			if _active(e, c):
+				c.value = _rounded(c.value * float(e.k), str(e.round))
+		elif op == "value_steps":
+			for group in e.groups:
+				if not _active(group, c):
+					continue
+				for step in group.steps:
+					if step.get("criticalOnly", false) and not c.get("critical", false):
+						continue
+					var amount := _rounded(c.value * float(step.k), str(step.round))
+					c.value = c.value + amount if step.kind == "add" else amount
+		elif op == "value_program":
+			var out := PhaseValueProgram.new().run_phase(e.program, c, c.value, execute)
+			if out.available:
+				c.value = out.value
+			elif execute:
+				_diagnose(phase, int(st.id), holder, "value_program_unavailable")
+		elif op == "value_query":
+			c.value = _query_value(e, c, execute)
 		elif op == "user_param_damage" and execute and ctx.get("resources") != null:
 			var r: Dictionary = ctx.record
 			for p in e.params:
@@ -71,6 +133,70 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	_stack.pop_back()
 	return c.value
 
+
+## Four complete measured blocks. Preserve each native short circuit; queries
+## never run on the other branch. In particular, party is the player party even
+## for enemy attackers, and aliveMembers tests death-state membership, not HP.
+static func _query_value(effect: Dictionary, ctx: Dictionary, execute: bool) -> float:
+	var value := float(ctx.value)
+	if effect.query == "defender_hp":
+		if value <= 0.0 or not ctx.target is XEnemy:
+			return value
+		var target: XBattler = ctx.target if execute else XFormulaContext.clone_battler(ctx.target)
+		return ceilf(value * 2.0) if target != null and target.hp / target.mhp < 0.2 else value
+	if not _active({"cond": "positive", "hpOnly": true}, ctx):
+		return value
+	if effect.query == "element_contains":
+		var user: XBattler = ctx.user if execute else XFormulaContext.clone_battler(ctx.user)
+		if user != null and _query_elements(ctx, user).has(int(effect.element)) == bool(effect.present):
+			return 0.0
+	elif effect.query == "party_alive":
+		var party: Array = ctx.get("party_members", [])
+		if not ctx.has("party_members") and XState.current != null:
+			# Read already resolved members only: preview must not initialize slots
+			# or lazily create real actors via XState.actor()/battle_members().
+			for id in XState.current.battle_slots:
+				var member = XState.current.actors.get(int(id))
+				if member != null and XState.current.party.has(int(id)):
+					party.append(member)
+		if party.filter(func(member): return not member.state_ids.has(1)).size() == 1:
+			return floorf(value * 1.5)
+	return value
+
+
+## installDamageElementRuntime.getItemElements: forced wins over null, then
+## passive/attack/item elements, multiple and added, unique and range 1..15.
+## Forced/added inputs are action-owned; future sequence support can pass them
+## here without global mutable state. Current battle has no such sequence ops.
+static func _query_elements(ctx: Dictionary, user: XBattler) -> Array:
+	var item: Dictionary = ctx.item
+	if user is XActor and user.actor_id == 172 and int(item.get("id", 0)) in [10234, 10235]:
+		return [13]
+	var elements: Array
+	if ctx.has("forced_elements"):
+		elements = ctx.forced_elements
+	else:
+		if user.trait_objects().any(func(obj): return str(obj.get("note", "")).to_upper().contains("<ELEMENT NULL>")):
+			return []
+		elements = XDamage.action_elements(item, user)
+		elements.append_array(ctx.get("added_elements", []))
+	var out := []
+	for element in elements:
+		if int(element) >= 1 and int(element) <= 15 and not out.has(int(element)):
+			out.append(int(element))
+	return out
+
+
+static func _active(effect: Dictionary, ctx: Dictionary) -> bool:
+	var hp: bool = int(ctx.get("item", {}).get("damage", {}).get("type", 0)) in [1, 3, 5]
+	var cond := str(effect.get("cond", ""))
+	var active: bool = ctx.value != 0.0 if cond == "nonzero" else ctx.value > 0.0 if cond == "positive" else ctx.value >= 0.0 if cond == "nonnegative" else false
+	return active and (not effect.get("hpOnly", false) or hp)
+
+
+static func _rounded(value: float, kind: String) -> float:
+	return ceilf(value) if kind == "ceil" else floorf(value) if kind == "floor" else XPower.js_round(value)
+
 ## 一个状态一次调用的上下文。Battler 版（Game_Battler.customEffectEval）：user＝target＝持有者；
 ## Action 版（Game_Action.customEffectEval）：user＝attacker、target＝defender，item 为当前行动。
 ## origin：持有者身上该状态的来源，没有或已失效时回退为持有者（BSC stateOrigin 的无来源回退）。
@@ -85,7 +211,7 @@ static func context_for(phase: String, holder: XBattler, state_id: int, ctx := {
 			"user": ctx.get("attacker"), "target": ctx.get("defender")})
 	else:
 		c.merge({"user": holder, "target": holder})
-	for key in ["item", "critical", "resources", "record", "random", "variables", "switches"]:
+	for key in ["item", "critical", "resources", "record", "random", "variables", "switches", "party_members", "forced_elements", "added_elements"]:
 		if ctx.has(key):
 			c[key] = ctx[key]
 	return c
