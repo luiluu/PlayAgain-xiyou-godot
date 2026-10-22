@@ -82,3 +82,10 @@
 - 已核对子进程组身份后终止combined-acceptance的等待组（runId d7b4cf6f1d314af4a7c936a5efec178d）；它未进入状态核对或任何组合专项，停止不影响独立sync任务。**不会在停手后自动启动21专项**。其failed／143是本次主动停止，不是测试失败或偶发。
 - 恢复后先等同步结果并看正式报告；必须旧17例不变、只增指定4例、其他测量不变、来源与指纹通过，才能继续单槽21专项。可重新运行本地combined-acceptance.py（它等待同一个sync并执行严格守卫），用新的长任务日志保留此次停止记录。原成功F31 560项只是hajimi组合前，不能当组合验收。
 - 最终还缺：同步结论与指纹、组合专项、返工变更记录草稿补齐、Claude对夹具的交叉复核；完成前不得写可合并。第三期虽已明确交接文件，仍等本批合main；2e与native22未动。
+
+## 继续验收（2026-10-22，额度恢复后）
+
+- 用户要求继续；开工只读主库交接板与两边Git，本树1604f0ee干净，额度5小时1%／周0%。唐僧main正在收尾dev.134，不触碰其未提交改动。
+- 原sync-hajimi于18:41:37 Europe/Paris结束，exitCode0；未重跑。独立守卫已核实旧17例按id逐项不变，只新增bonus.native_blocks、damage.full_chain、value.native_blocks、query.native_blocks到21；其他测量不变，verifyOk／sameExistingSource均真，无接受单、cacheError或importError，21例无错误。
+- 首次正式同步指纹已复算匹配：toolsDigest=60b06ba84d261ba09d13b7311c8e618d8107e3c25e8d4b487c9d362cd30cae3f，outputsDigest=8c7016669fbd2922948f7e113dd61dec4a350396399c23be5771e5332bc8c1c5；formal-sync-verification.json保存核对结果。
+- main自092fba1后又改转换器PNG正规化、review_fix探针和战斗／地图表现；最终验收前合一次当前main 77f41c73、补齐与刷新同步指纹，再单槽跑原21场景及直接依赖interp_review。新同步仍须核查状态只增指定4例或沿用21例不变，不接受其他旧值改变。
