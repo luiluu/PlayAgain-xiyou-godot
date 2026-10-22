@@ -295,6 +295,81 @@ cases.push(makeCase('value.native_blocks', {states: VALUE_STATES, values: [-3, -
     for (const name of ['hp', 'mhp', 'def', 'states']) delete e[name];
   }
 }));
+// Phase 2d: native read-only action queries; no new translation until measured.
+cases.push(makeCase('query.native_blocks', {states: [1047, 1048, 1834, 2544, 2545, 2711]}, () => {
+  const {a, b, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
+  const item = action.item(), originalDamage = Object.assign({}, item.damage), originalMultiple = item.multipleElements;
+  const rows = [], errors = [], oldError = w.Yanfly.Util.displayError;
+  w.Yanfly.Util.displayError = (error, code, message) => errors.push({error: String(error), message});
+  const values = [-101, -3, -1, 0, 0.5, 1, 3, 7, 101];
+  // [elementId, multiple, attackElements, passive override, null, forced, added]
+  const elements = [[1, [], [], 0, false, null, []], [2, [], [], 0, false, null, []],
+    [0, [], [], 0, false, null, []], [-1, [], [2, 1], 0, false, null, []],
+    [2, [1, 2, 1], [], 0, false, null, []], [1, [], [], 2, false, null, []],
+    [2, [], [], 1, false, null, []], [1, [], [], 0, true, null, []],
+    [1, [], [], 0, false, [], [1]], [2, [], [], 0, true, [1, 1, 16], []],
+    [1, [], [], 0, false, [2], []], [2, [], [], 0, false, null, [1]]];
+  const savedCache = a._passiveCache;
+  try {
+    for (let profile = 0; profile < elements.length; profile++) {
+      const p = elements[profile]; item.damage.elementId = p[0]; item.multipleElements = p[1];
+      a.attackElements = () => p[2]; a._passiveCache = Object.assign({}, savedCache, {damageElement: p[3]});
+      a.isNullElement = () => p[4];
+      if (p[5] === null) delete w.$gameTemp._forcedElements; else w.$gameTemp._forcedElements = p[5];
+      w.$gameTemp._addedElements = p[6];
+      for (const sid of [1047, 1048]) for (const type of [0, 1, 2, 3, 4, 5, 6]) for (const value of values) {
+        item.damage.type = type;
+        rows.push({state: sid, profile, type, before: value, elements: action.getItemElements(),
+          after: action.customEffectEval(e, sid, 'reactState', e, value)});
+      }
+    }
+    delete a.attackElements; delete a.isNullElement; a._passiveCache = savedCache;
+    delete w.$gameTemp._forcedElements; delete w.$gameTemp._addedElements;
+    // Actual party lists: battle slots exclude reserves; death-state membership,
+    // rather than bare hp=0, determines aliveMembers (including enemy attackers).
+    const party = [];
+    for (const [inBattle, dead, hpZero] of [[true, [], false], [true, [8], false], [true, [1, 8], false],
+      [true, [], true], [false, [8], false]]) {
+      w.$gameParty._actors = [1, 8, 9]; w.$gameParty._battleMembers = [1, 8]; w.$gameParty._inBattle = inBattle;
+      for (const id of [1, 8, 9]) { const x = w.$gameActors.actor(id); x._states = dead.includes(id) ? [1] : []; x._hp = hpZero ? 0 : 100; }
+      const profile = party.length, members = w.$gameParty.members().map(x => x.actorId());
+      party.push({inBattle, dead, hpZero, members, alive: w.$gameParty.aliveMembers().map(x => x.actorId())});
+      for (const enemyUser of [false, true]) for (const type of [0, 1, 2, 3, 4, 5, 6]) for (const value of values) {
+        const act = new w.Game_Action(enemyUser ? e : a); act.setSkill(1); item.damage.type = type;
+        rows.push({state: 1834, profile, enemyUser, type, before: value,
+          after: act.customEffectEval(enemyUser ? a : e, 1834, 'confirmState', enemyUser ? e : a, value)});
+      }
+    }
+    const defenders = [];
+    for (const target of [e, a]) for (const hp of [0, 19, 20, 21, 100]) {
+      Object.defineProperty(target, 'mhp', {value: 100, configurable: true}); target._hp = hp;
+      const profile = defenders.length; defenders.push({enemy: target === e, hp, mhp: 100});
+      for (const type of [0, 1, 2, 3, 4, 5, 6]) for (const value of values) {
+        item.damage.type = type;
+        rows.push({state: 2711, profile, type, before: value,
+          after: action.customEffectEval(target, 2711, 'confirmState', a, value)});
+      }
+      delete target.mhp;
+    }
+    // Weapons and replacement attack are measured but stay JS pending that core.
+    const weapons = [];
+    for (const weaponType of [null, 2, 11, 1]) for (const replace of [0, 12]) for (const skill of [1, 12]) {
+      a.weapons = () => weaponType === null ? [] : [{wtypeId: weaponType}];
+      a._replaceAttackSkillId = replace; action.setSkill(skill);
+      const profile = weapons.length; weapons.push({weaponType, replace, skill, isAttack: action.isAttack()});
+      for (const sid of [2544, 2545]) for (const value of values) rows.push({state: sid, profile, before: value,
+        after: action.customEffectEval(e, sid, 'confirmState', a, value)});
+    }
+    if (errors.length) throw new Error('native query errors: ' + JSON.stringify(errors));
+    return {elements, party, defenders, weapons, rows};
+  } finally {
+    Object.assign(item.damage, originalDamage); item.multipleElements = originalMultiple;
+    a._passiveCache = savedCache; delete a.attackElements; delete a.isNullElement; delete a.weapons;
+    delete a.mhp; delete e.mhp;
+    delete w.$gameTemp._forcedElements; delete w.$gameTemp._addedElements;
+    w.Yanfly.Util.displayError = oldError;
+  }
+}));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
 cases.push(makeCase('action.counter', {troop: 2, user: 'a1', skill: 'physical clone of 1', target: 'e0'}, () => {
   const {bm, a, e} = battle(2);
