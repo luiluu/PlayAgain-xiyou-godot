@@ -33,15 +33,15 @@
 - `tp.actor_custom_caps`：14行，合成技能经真实passiveEXTTP=-160／+100使角色上限40／300。5块直接执行与2块真实addState逐项记录，直接执行截上限，真实Apply可到64／114或324／374。不是替换maxTp函数，也不冒称覆盖全部上限机制。
 - `tp.refresh_state_boundary`：4行，注入陈旧被抵抗状态后比较直接调用／真实addState。角色真实Apply保留该状态到独立refresh；敌人真实Apply当场清除。基础erase不写removedStates，也不新增Remove／Leave回调。
 - 以上3例26行已在tp-context-native-v2.log退出0、errors=[]；原始副本`tp-context-native3-preserved.json` SHA256 `f705f6ab39b9ce057be49dd55e3cb6b725819bef3611d68f8fbf44c5a5985413`。
-- `tp.battle_initialization`：新第四例，经真实Game_Unit.onBattleStart记录随机TP初始化与607／857的Custom Battle先后；在共享槽排队的tp-context-native-v4.log验证，结束后更新本单。
+- `tp.battle_initialization`：新第四例，经真实Game_Unit.onBattleStart记录随机TP初始化与607／857的Custom Battle先后；tp-context-native-v5.log在共享0号槽取得占位后退出0，4例errors=[]。真实开战先17→12随机初始TP，再由607到200、857到62（角色8与敌人均62）；共7次随机抽取，其中包括本场其他成员。四例独立副本tp-context-native4-preserved.json SHA256 `a4844cba500477723f593b997a9517df9eef8d9fb310f398ce30a3630debe5b5`。
 
 ## 验证、失败与同步
 
 - 新补充探针与主探针语法检查通过；现有状态整块翻译测试7/7通过。未改变转换器，五个TP块仍JS。
 - tp-context-native.log失败根因：夹具把VM的_states替换为宿主Array，丢MV contains扩展；改为保留VM数组、清空并push内容。修后v2首次通过。失败原始输出保留，不算偶发，不改源算法。
-- tp-context-native-v3.log在测量启动前失败：本地共享槽包装器上溯目录多一级，找不到并行测试模块；已修本地路径，v4重新排队。正式探针未改，不算原版测量或偶发。
+- tp-context-native-v3.log在测量启动前失败：本地共享槽包装器上溯目录多一级，找不到并行测试模块；已修本地路径；v4轮询等槽4分53秒仍未启动node，核实本轮进程身份后仅停止该排队器（exit143），v5改为共享0号槽阻塞排队后首次运行第四例通过。未提高全局4槽上限，不算原版测量或偶发。
 - 按车道规则不跑全量检查。没有Godot生产改动，收尾只跑state_effects专项与严格原版增量校验；主库由唐僧合并后统一检查。
-- 最终合main、正式同步`--accept-additions`、来源／工具／产物双指纹与专项结果均在本轮收尾后补入；只接受原21→26例新增，旧值变化即停，不写放宽接受单。
+- 932b4df后已执行交付前git merge main（Already up to date，fd975959）；即将用单槽启动sync-design.log作最终正式同步`--accept-additions`。来源／工具／产物双指纹与专项结果在本轮收尾后补入；只接受原21→26例新增，旧值变化即停，不写放宽接受单。
 
 ## 变更记录草稿
 
@@ -66,3 +66,5 @@
 - 3faf0cd：补充探针测量前检查点。
 - fb9f73d：修正VM数组夹具、保留首轮失败记录。
 - 9d249fb：保存26行补充证据、接入正式探针与可独立入口。
+
+- 932b4df：显式资源域／分层刷新具体设计与停手边界，交付前已合main。
