@@ -69,7 +69,10 @@ for(const setup of [
   {id:'cat.immune',actor:178,skill:10437,sword:true,heart:true,immune:true},
   {id:'target.sword',actor:1,skill:1,target:178,sword:true,agi:537},
   {id:'target.sword.cap',actor:1,skill:1,target:178,sword:true,agi:100000},
+  {id:'target.sword.knee',actor:1,skill:1,target:178,sword:true,agi:6000},
   {id:'target.dragon',actor:1,skill:1,dragon:true},
+  {id:'target.dragon.round4',actor:1,skill:1,dragon:true,round:4},
+  {id:'target.dragon.round9',actor:1,skill:1,dragon:true,round:9},
   {id:'healing',actor:178,skill:10437,sword:true,heart:true,healing:true},
   {id:'live.variance',actor:178,skill:10437,sword:true,preview:false},
   ...frameCases,
@@ -86,6 +89,8 @@ for(const setup of [
   const resources=[a.hp,a.mp,a.tp,b.hp,b.mp,b.tp]; trace=[];frame=null;draws=0;
   const oldRandom=w.Math.random;w.Math.random=()=>{draws++;return .5;};
   let res;
+  const previousRound=w.$gameTroop._turnCount;
+  if(setup.round!==undefined)w.$gameTroop._turnCount=setup.round;
   if(setup.patches) w.CodexDamageHooks.push({build:function(action,target,f){
     trace.push(['frame-probe','build']);
     for(const p of setup.patches) {
@@ -97,7 +102,7 @@ for(const setup of [
   }});
   try {res=w.CodexDamage.calculate(action,b,{reference:true,raw:setup.healing?-123457:123457,
     critical:!!setup.critical,preview:setup.preview!==false,isolated:true});}
-  finally {w.Math.random=oldRandom;if(setup.patches)w.CodexDamageHooks.pop();}
+  finally {w.Math.random=oldRandom;if(setup.patches)w.CodexDamageHooks.pop();w.$gameTroop._turnCount=previousRound;}
   return {frame,trace:J(trace),draws,resourcesBefore:resources,resourcesAfter:[a.hp,a.mp,a.tp,b.hp,b.mp,b.tp],
     cachesUnchanged:a._passiveCache===priorA&&b._passiveCache===priorB&&JSON.stringify(before)===JSON.stringify([a._passiveCache,b._passiveCache]),
     frameRestored:action._codexDamageFrame===undefined,value:res.value,kind:res.kind,breakdown:J(res.breakdown),

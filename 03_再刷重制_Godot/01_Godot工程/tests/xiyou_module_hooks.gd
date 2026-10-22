@@ -58,7 +58,7 @@ func op(field: String, value: float, element := -1, operation := "add") -> Dicti
 func cat_facts(setup: Dictionary) -> Dictionary:
 	return {"enabled": true, "subjectSword": int(setup.actor)==178 and not setup.has("target") and setup.get("sword",false),
 		"targetSword": int(setup.get("target",0))==178 and setup.get("sword",false), "heart": setup.get("heart",false),
-		"advanced": setup.get("advanced",false), "targetSpeed": float(setup.get("agi",100)), "round": 1}
+		"advanced": setup.get("advanced",false), "targetSpeed": float(setup.get("agi",100)), "round": int(setup.get("round",1))}
 
 func frame_probe(context: Dictionary,_frame: Dictionary) -> Dictionary:
 	var ops: Array = context.facts.fixture.patches.duplicate(true)
@@ -254,7 +254,7 @@ func _ready() -> void:
 	if FileAccess.file_exists(ORACLE):
 		var data=JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 		check("oracle.same_source",data.sourceIdentity.runtimeInputs==XDB.load_json("manifest.json").runtimeInputs)
-		check("oracle.case_count",data.cases.size()==27)
+		check("oracle.case_count",data.cases.size()==30)
 		check("oracle.native_registry",data.cases[0].observed.hooks[9].id=="cat-sword" and data.cases[0].observed.hooks[19].id=="orb-sets")
 		for c in data.cases.slice(1):
 			check(c.id+".native_errors",c.errors.is_empty(),c.errors)
