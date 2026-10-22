@@ -2,7 +2,18 @@
 
 - 车道／工作者：状态效果·框架／Codex（沙僧）
 - 状态：进行中
-- 只交第三／四期接口设计，没有新增运行时或翻译完成度。前置：按序合state-effects-2b／2c／2d；本文档随后合入。
+- 本次整批重交包含2b～2d状态翻译、第三／四期接口设计，以及三十一层流程夹具修复。下列旧交付／接力记录保留历史；本批状态与最终验收以本单为准，不能按2b～2d旧分支的历史「可合并」单独再合。
+- 已组合main 092fba1（hajimi，合并提交aaa4555）；第三期永久加算与第四期预约事件仍只有设计，不记运行时完成度。
+- 本轮只改F31测试夹具及合并冲突处的上下文接线，没有为过关停用1047或改变游戏免疫规则；全部待Claude交叉核查。
+
+## 本次整批返工结论与待验收
+
+- 根因：2d正确翻译1047物理免疫后，原流程夹具的四名队员首武器均带元素1，三十一层完整开场使1047进入热缓存，原纯物理夹具打不动。505／507失败、仅诊断停1047后558／558、还原状态表三项因果证据见[返工分析](../返工分析_20261022_三十一层.md)。隔离改动未提交、原产物已恢复。
+- 原版完整BattleManager两例保留Troop467全部开场、1397与五个强制技能、842=0及682 ON时1053。add1047后缓存仍旧，add1053后含1047；常量公式1e20保证正输入，元素1经React1047归零且实际hpDamage=0，元素2保留正值并实际扣血。Godot同点React1460→1047→1108一致。本证据只证明缓存与免疫分支，不宣称整条非固定数值链逐值相等。
+- 最小夹具：仅F31临时让actor8修学习533、用正式ActSkill排前16回合，保存恢复排表、临时技能与旧observer；不动敌人状态、不设842跳开场。新增开场保留与实际正输入的1047/533→1048/普通攻击1双阶段断言，原胜利断言保留。hajimi组合前f31-fixture-min.log为560／560、floors[21,33]；本轮组合专项另记，不能替代总装／悟空对夹具的交叉复核。
+- 正式同步进行中：同步前17例已存档，只允许bonus.native_blocks、damage.full_chain、value.native_blocks、query.native_blocks四个新增到21，其他测量变化须停。不得把早前跨版本pre-sync-comparison.json当接受依据。
+- 组合专项待跑：state_effects、battle*、combat、shield、imported_balance、custom_damage、drop_record、formula_effects、random_streams、transform_params、floor_run*，以及hajimi的cat／actor_p0／help_card／sequence_visual直接依赖；单槽、全局上限不变。全量检查由总装合main统一运行。
+- 原始证据在本树本地结果state-effects-3-review/与mv_oracle/.sandbox/f31_*；复核前保留成功、失败和冷缓存记录。另一个state-effects-2b工作树承载2e的native22，不能随本批清理或重测。
 
 ## 期一半返工（重制_沙僧_44，2026-10-22）
 
