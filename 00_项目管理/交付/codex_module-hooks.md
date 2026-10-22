@@ -57,3 +57,10 @@
 - 13场景相关专项已经跑到12/13，最后一项仍等共享槽位；未把排槽当失败。悟空提案在等待期间落盘，已审入并补stat_equips读取，故对其直接依赖另跑module_hooks／orbs／attack_element三项，日志related-final.log（这三项以最后一轮为准，其余相关专项不重复）。
 - 显式preview=true的浮动抽样保护也已补入；对应空随机tape回归检验draws与error，防止误传实战随机流。
 - 最终同步是sync-carried-env.log：34组复用、10组确有变化／未缓存重测；目前已过5份切片及help／wtype／公式程序／Custom Parameters。sync.log为前面主动取消的语言环境误失效轮，不能拿它当成功证据。完成后再填实际结果、标可合并。
+
+## 验证结果（最终登记快验前）
+
+- 相关专项13/13全部通过，无偶发；首批48126项。提案后的module_hooks／orbs／attack_element三项再验全部通过：1166／63／66；按最新结果替换旧3项、不重复计数，13场景为48187/48187。日志related.log、related-final.log，汇总verification-summary.json，最后3项原始日志在final-scenes/。
+- 新增参照的只增稳定键已登记到oracle_additions.py；4/4检查：新增案例ID接受、既有值改变拒绝、既有案例删除拒绝、总装首次接收整份27例新参照接受。未放宽守卫。
+- sync-carried-env.log于14:17（Europe/Paris）退出0：34组复用，10组重测（含6难度切片，15条原版命令），全部0退出；测量不变、changedInputs=[]、changedMaps=[]、measurementChanges={}，来源issues=[]；本工作树不写主工作区登记。最后只增键／登记位置调整后再做一次全缓存快验固化指纹，不再重跑参照。
+- 两车道兼容预演：与state-effects-2d、与claude/wukong-hajimi（含4ea173d）的merge-tree均无冲突；共用探针表和只增表的新增位置已错开，避免与悟空同处插入产生文本冲突。不是运行时的跨分支验收；总装合并后统一全量 --oracle仍必需。
