@@ -179,6 +179,7 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 	if not extras is Dictionary:
 		return _module_failure({"trace": [], "diagnostics": ["invalid_module_facts"]})
 	facts.merge(extras)
+	facts.merge(registry.capture_facts(item, a, b, options, facts))
 	var context := {"item": item, "subject": _module_snapshot(a), "target": _module_snapshot(b),
 		"options": {"critical": options.get("critical", false), "preview": options.get("preview", not options.has("random"))},
 		"facts": facts, "operationId": str(options.get("operationId", ""))}

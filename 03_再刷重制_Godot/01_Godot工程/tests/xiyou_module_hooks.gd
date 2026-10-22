@@ -14,6 +14,9 @@ class ProbeActor extends XActor:
 	func passive_values(_tag: String) -> Array: return []
 	func attack_elements() -> Array: return [1]
 
+class CatBaseFixture extends RefCounted:
+	static func advanced(a: XActor) -> bool: return a.level>=35
+
 class ViewActor extends ProbeActor:
 	var view: Array = []
 	func stat_equips() -> Array: return view
@@ -52,27 +55,10 @@ func op(field: String, value: float, element := -1, operation := "add") -> Dicti
 	if element >= 0: result.element = element
 	return result
 
-func cat_enter(context: Dictionary, _frame: Dictionary) -> Dictionary:
-	var setup: Dictionary = context.facts.fixture
-	var ops := []
-	if int(context.target.id) == 178 and setup.get("sword", false):
-		var speed := float(setup.get("agi", 100))
-		ops.append(op("flatMitigationAdd", minf(16000.0,minf(floorf(3*speed),15030+floorf(speed/8))),1))
-		for e in XDamage.ACTIVE:
-			ops.append(op("flatMitigationAdd", minf(18000.0,minf(floorf(3.2*speed),16400+floorf(2*speed/11))),e))
-	if int(context.target.id) == 1999:
-		ops.append(op("flatMitigationAdd",1e11,1)); ops.append(op("flatMitigationAdd",5e10,8))
-	return {"ops": ops}
-
-func cat_build(context: Dictionary, _frame: Dictionary) -> Dictionary:
-	var setup: Dictionary = context.facts.fixture
-	var ops := []
-	if int(context.subject.id) == 178 and setup.get("sword",false) and int(context.item.id) in [10437,10438,10439,10440,10445]:
-		ops = [op("normalAdd",6),op("elementAdd",6,1),op("elementAdd",6,8)]
-		if setup.get("heart",false):
-			ops.append(op("finalAdd",8));ops.append(op("criticalAdd",12))
-			if setup.get("advanced",false): ops.append(op("settlementMultiplier",2,-1,"mul"))
-	return {"ops": ops}
+func cat_facts(setup: Dictionary) -> Dictionary:
+	return {"enabled": true, "subjectSword": int(setup.actor)==178 and not setup.has("target") and setup.get("sword",false),
+		"targetSword": int(setup.get("target",0))==178 and setup.get("sword",false), "heart": setup.get("heart",false),
+		"advanced": setup.get("advanced",false), "targetSpeed": float(setup.get("agi",100)), "round": 1}
 
 func frame_probe(context: Dictionary,_frame: Dictionary) -> Dictionary:
 	var ops: Array = context.facts.fixture.patches.duplicate(true)
@@ -86,10 +72,7 @@ func descriptor(id: String, order: int, handler: Callable, writes: Array) -> Dic
 		"hooks":[{"point":"damage.before","order":order,"reads":["facts"],"writes":writes,"handler":handler}]}
 
 func cat_descriptor() -> Dictionary:
-	var entry := descriptor("cat-sword",18,cat_enter,["flatMitigationAdd"])
-	entry.version = "1.0.1-test-only"
-	entry.hooks.append({"point":"damage.before","order":19,"reads":["facts"],"writes":["normalAdd","elementAdd","finalAdd","criticalAdd","settlementMultiplier"],"handler":cat_build})
-	return entry
+	return XCatDamageHooks.descriptor()
 
 func fixture_pair(setup: Dictionary) -> Array:
 	var a := ProbeActor.new();a.actor_id=int(setup.actor);a.fixture=setup if not setup.has("target") else {}
@@ -120,7 +103,7 @@ func run_native(c: Dictionary) -> void:
 	var live: bool = setup.get("preview",true) == false
 	var random := XRandomStream.scripted([{"kind":"uint32","value":2147483648},{"kind":"uint32","value":2147483648}])
 	var options := {"critical":setup.get("critical",false),"rawValue":-123457.0 if setup.get("healing",false) else 123457.0,
-		"variance":live,"moduleRegistry":registry,"moduleFacts":{"fixture":setup},"operationId":c.id}
+		"variance":live,"moduleRegistry":registry,"moduleFacts":{"fixture":setup,"cat":cat_facts(setup)},"operationId":c.id}
 	if live: options.random=random
 	var result := XDamage.calculate(item,a,b,options)
 	check(c.id+".available",result.get("available",true),result)
@@ -134,7 +117,7 @@ func run_native(c: Dictionary) -> void:
 	if setup.has("patches"): order.append(["frame-probe",100])
 	check(c.id+".trace_order",result.moduleTrace.map(func(t):return [t.module,t.order])==order,result.moduleTrace)
 	var replay_frame := initial_frame()
-	var context := {"item":item,"subject":XDamage._module_snapshot(a),"target":XDamage._module_snapshot(b),"options":{},"facts":{"fixture":setup,"orbMultiplier":1.0},"operationId":c.id}
+	var context := {"item":item,"subject":XDamage._module_snapshot(a),"target":XDamage._module_snapshot(b),"options":{},"facts":{"fixture":setup,"orbMultiplier":1.0,"cat":cat_facts(setup)},"operationId":c.id}
 	var dispatch := registry.dispatch("damage.before",context,replay_frame)
 	for key in o.frame:
 		if dispatch.frame.has(key):
@@ -240,8 +223,32 @@ func equipment_view() -> void:
 	check("view.legacy_actor",same(XDamage.element_bonus(legacy,1),float(reference.rows["1"][0])/2.0))
 	check("view.no_instance_write",before==JSON.stringify(actor.equips))
 
+func production_cat() -> void:
+	var a:=ProbeActor.new();a.actor_id=178;a._lv=35;a.skill_ids.assign([10441,10443,10444]);a.equips=[{"kind":"weapon","wtypeId":2}]
+	var b:=ViewActor.new();b.actor_id=178;b.skill_ids.assign([10441]);b.equips=[{"kind":"weapon","wtypeId":2}]
+	var provider:=CatBaseFixture.new()
+	var facts:=XCatDamageHooks.capture({},a,b,{"battleRound":4},provider)
+	check("cat.production_capture",facts.enabled and facts.subjectSword and facts.targetSword and facts.heart and facts.advanced and facts.targetSpeed==100 and facts.round==4,facts)
+	a.equips=[{"kind":"weapon","wtypeId":3}]
+	check("cat.non_sword",not XCatDamageHooks.capture({},a,b,{},provider).subjectSword)
+	var context:={"item":{"id":10437},"subject":{"kind":"actor","id":178},"target":{"kind":"enemy","id":1999},"facts":{"cat":facts},"options":{},"operationId":"dragon"}
+	var registry:=XModuleRegistry.compile([XCatDamageHooks.descriptor()])
+	check("cat.dragon_round4_open",registry.dispatch("damage.before",context,initial_frame()).frame.flatMitigationAdd.is_empty())
+	context.facts.cat.round=1
+	check("cat.dragon_round1_protected",registry.dispatch("damage.before",context,initial_frame()).frame.flatMitigationAdd["1"]==1e11)
+	context.facts.cat.round=null
+	check("cat.dragon_missing_context",not registry.dispatch("damage.before",context,initial_frame()).available)
+	var auto:=XCatDamageHooks.capture({},a,b,{})
+	var base:=XCatDamageHooks.base_provider()
+	check("cat.base_gate",auto.enabled==(base!=null),auto)
+	if base!=null:
+		a.equips=[{"kind":"weapon","wtypeId":2}]
+		var live:=XCatDamageHooks.capture({},a,b,{"battleRound":9})
+		check("cat.base_live_capture",live.enabled and live.subjectSword and live.targetSword and live.advanced==base.call("advanced",a),live)
+
 func _ready() -> void:
 	registration()
+	production_cat()
 	equipment_view()
 	check("oracle.exists",FileAccess.file_exists(ORACLE))
 	if FileAccess.file_exists(ORACLE):
