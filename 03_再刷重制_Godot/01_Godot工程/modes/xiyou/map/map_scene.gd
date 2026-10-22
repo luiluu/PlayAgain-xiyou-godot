@@ -46,8 +46,6 @@ var _bgm_name := ""
 var _menu_open := false
 var _milestone_tick := 0
 var _backup_until := 0
-## Game_Temp.reserveCommonEvent：事件进行中点的枫叶，等事件结束后执行
-var _reserved_common_event := 0
 ## Scene_Map.create / update：变量 21（副本）为 0 时建出地图传送按钮，建出后到下次换场景前一直在
 var _transfer_shown := false
 ## O-012：事件/对话期间不开放地图传送（原版事件中也能打开并传送）。设 false 恢复。
@@ -326,10 +324,8 @@ func _process(delta: float) -> void:
 		_flush_popups()
 	if not busy and not _menu_open and player:
 		# Game_Map.setupStartingEvent：预约的公共事件先于自动执行事件
-		if _reserved_common_event > 0:
-			var id := _reserved_common_event
-			_reserved_common_event = 0
-			run_common_event(id)
+		if XState.current.peek_common_event() > 0:
+			run_reserved_common_event(XState.current)
 		else:
 			_check_autorun()
 		if not busy and transfer_page == null:
@@ -736,13 +732,22 @@ func run_zhenqi_retreat() -> void:
 	refresh_events()
 
 
-## Game_Temp.reserveCommonEvent：回到地图后执行的公共事件（事件 ID 为 0）
-func run_common_event(id: int) -> void:
+## Consume the captured session's shared slot; an old menu cannot drain a new game.
+func run_reserved_common_event(owner: XState) -> void:
+	if owner == null or owner != XState.current or busy or _menu_open or owner.peek_common_event() <= 0:
+		return
+	await run_common_event(owner.peek_common_event(), owner)
+
+
+## 公共事件（事件 ID 为 0）。预约消费按原版先 setup 游标，再 clear，再执行。
+func run_common_event(id: int, reservation: XState = null) -> void:
 	var ce := XDB.rec("CommonEvents", id)
 	if ce.is_empty() or busy:
 		return
 	_set_busy(true)
 	var interp := MVInterpreter.new(self, map_id, 0, ce.list)
+	if reservation != null:
+		reservation.clear_common_event()
 	await interp.run()
 	if not interp.skipped.is_empty():
 		skipped_log.append_array(interp.skipped)
@@ -886,23 +891,23 @@ func open_menu() -> void:
 	if busy or _menu_open or XHangUp.is_active(XState.current):
 		return
 	_menu_open = true
+	var owner := XState.current
 	XSound.system(1)  # Scene_Map.callMenu：SoundManager.playOk
 	# Scene_Map.terminate：snapForBackground／snapForHangUp（含地图 HUD），挂机设置页的背景与范围图
 	var shot := await _snapshot()
 	hud.visible = false
 	var menu := XMenu.new()
+	menu.event_state = owner
 	menu.map_shot = shot
 	menu.player_tile = player_screen_tile()
 	ui.add_child(menu)
 	await menu.closed
-	var reserved := menu.reserved_common_event
 	var zhenqi := menu.zhenqi_requested
 	menu.queue_free()
 	_menu_open = false
 	hud.visible = true
 	_reset_transfer_button()
-	if reserved > 0:
-		await run_common_event(reserved)
+	await run_reserved_common_event(owner)
 	if zhenqi:
 		await run_zhenqi_retreat()
 	# 整队/换人后队首与跟随的行走图
@@ -1023,10 +1028,9 @@ func return_to_hub() -> void:
 	if _menu_open:
 		return
 	play_se({"name": "Coin"})
-	if busy:
-		_reserved_common_event = 10
-		return
-	await run_common_event(10)
+	var owner := XState.current
+	owner.reserve_common_event(10)
+	await run_reserved_common_event(owner)
 
 
 ## 开战时交给 XBattleScene 的地图数据：283 改过战斗背景就当作「地图指定」这两张（Spriteset_Battle.battleback1Name 先看 $gameMap）

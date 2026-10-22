@@ -37,7 +37,8 @@ class PhaseValueProgram:
 		if a == null or b == null:
 			return {"available": false, "value": value}
 		_battlers = {"a": a, "b": b}
-		_context = {"v": ctx.get("variables", {}), "s": ctx.get("switches", {})}
+		var variables = ctx.variables if ctx.has("variables") else (XState.current.variable_array() if XState.current else {})
+		_context = {"v": variables, "s": ctx.get("switches", {})}
 		_random = ctx.get("random") if execute else null
 		_tag = "%s:%s" % [ctx.phase, ctx.state_id]
 		for name in program.locals:
@@ -51,6 +52,14 @@ class PhaseValueProgram:
 			if not _error.is_empty():
 				break
 		return {"available": _error.is_empty(), "value": _number(_locals.value), "diagnostic": _error}
+
+	func _expr(node: Dictionary):
+		var value = super._expr(node)
+		# These measured blocks use Game_Variables.value(), whose missing value is 0.
+		# Keep the general formula VM's raw v[index]/undefined behavior unchanged.
+		if node.get("op") == "lookup" and node.get("pool") == "v" and value is StringName and value == UNDEFINED:
+			return 0.0
+		return value
 
 	func _property(receiver: String, name: String):
 		return _battlers[receiver].get(name) if name in XFormulaContext.PROPERTIES.split(" ") else _fail("unknown_property")
