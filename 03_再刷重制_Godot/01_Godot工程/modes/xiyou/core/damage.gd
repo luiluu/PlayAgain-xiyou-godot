@@ -3,7 +3,8 @@ extends RefCounted
 ## 伤害结算：移植自正式版 js/codex/runtime/installDamageElementRuntime.js v3（CodexDamage.calculate）。
 ## 首期精简：
 ## - 成长修正 growth 固定为 1（正式版的「五乘区预算软上限」/真气钩子未移植，见首期规格）。
-## - 其余 CodexDamageHooks（角色专属机制）未移植；首期角色不依赖它们。已接：orb-sets（宝珠套装通用效果，见 orb_set_multiplier）。
+## - 模块数值经 XModuleRegistry 的 damage.before；现有 orb-sets 仅走注册表。
+## - 其余专属模块保持 pending，测试注入表不代表开放角色。damage.after 尚无资源提交宿主。
 ## - 混合模式（spec.mode == "mixed"）的物理/魔法权重按公式对 atk/mat 的偏导数估算，与原版相同。
 
 const ACTIVE := [2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
@@ -89,7 +90,10 @@ static func _yep_objects(b: XBattler) -> Array:
 	var objs := b.states()
 	if b is XActor:
 		var x := b as XActor
-		objs = objs + x.equip_list() + [x.data(), x.class_data()]
+		# The actor lane supplies stat_equips for scoped weapon views (178).
+		# Before that lane is merged, the legacy actor exposes only equip_list.
+		var equips: Array = x.call("stat_equips") if x.has_method("stat_equips") else x.equip_list()
+		objs = objs + equips + [x.data(), x.class_data()]
 	return objs
 
 static func own_bonus(a: XBattler, e: int) -> float:
@@ -160,63 +164,104 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 			normal_add += float(cache.get("skillTypeDvup", {}).get(str(t), 0.0))
 
 	var dmg_type := int(item.damage.type)
+	var initial := {"mode": mode, "kind": kind, "skillMultiplier": maxf(0.0, 1.0 + float(skill_pass.get("rate", 0.0))),
+		"flatSkill": float(skill_pass.get("flat", 0.0)), "normalAdd": normal_add, "criticalAdd": critical_add,
+		"elementAdd": {}, "elementMultiplier": {}, "flatMitigationAdd": {}, "finalAdd": final_add,
+		"finalMultiplier": 1.0, "growthMultiplier": 1.0, "settlementMultiplier": 1.0,
+		"physicalDefenseRate": 1.0, "magicalDefenseRate": 1.0, "physicalDamageMultiplier": 1.0, "magicalDamageMultiplier": 1.0,
+		"flatMitigationRate": 1.0, "healingMultiplier": 1.0, "physicalIncomingPierce": 0.0, "magicalIncomingPierce": 0.0,
+		"resistancePierce": 0.0, "incomingMultiplier": 1.0, "elements": null, "noElement": false, "categoryMax": false}
+	var registry: XModuleRegistry = options.get("moduleRegistry", XModuleRegistry.standard())
+	var facts := {"orbMultiplier": orb_set_multiplier(item, a) if not dmg_type in [3, 4] else 1.0}
+	# Extra module facts are explicitly supplied value snapshots. The registered
+	# orb fact belongs to this boundary and cannot be replaced by an option.
+	var extras = XModuleRegistry.value_copy(options.get("moduleFacts", {}))
+	if not extras is Dictionary:
+		return _module_failure({"trace": [], "diagnostics": ["invalid_module_facts"]})
+	facts.merge(extras)
+	facts.merge(registry.capture_facts(item, a, b, options, facts))
+	var context := {"item": item, "subject": _module_snapshot(a), "target": _module_snapshot(b),
+		"options": {"critical": options.get("critical", false), "preview": options.get("preview", not options.has("random"))},
+		"facts": facts, "operationId": str(options.get("operationId", ""))}
+	var report := registry.dispatch("damage.before", context, initial)
+	if not report.available:
+		return _module_failure(report)
+	var frame: Dictionary = report.frame
+	mode = str(options.get("mode", frame.mode))  # Native explicit mode wins after hooks.
+	frame.mode = mode
+	kind = str(frame.kind)
 	if dmg_type == 3 or dmg_type == 4:
-		return _healing(item, a, b, options, vars)
+		var healing := _healing(item, a, b, options, vars, frame)
+		healing.moduleTrace = report.trace
+		return healing
 
 	var raw := maxf(0.0, float(options.rawValue) if options.has("rawValue") else eval_formula(item, a, b, vars))
-	var basis := maxf(0.0, raw + float(skill_pass.get("flat", 0.0))) * maxf(0.0, 1.0 + float(skill_pass.get("rate", 0.0)))
+	if kind == "settled":
+		return {"value": XPower.js_round(raw), "critical": false, "breakdown": {"base": raw}, "moduleTrace": report.trace}
+	var basis := maxf(0.0, (raw + float(frame.flatSkill)) * float(frame.skillMultiplier))
 	var weights := [0.0, 1.0] if mode == "magical" else [1.0, 0.0]
 	if mode == "mixed":
 		weights = _mixed_weights(item, a, b, vars)
 	var defense := 1.0
 	if not ["true", "fixed", "percent"].has(kind):
-		defense = weights[0] * defense_rate(a.atk, b.def) + weights[1] * defense_rate(a.mat, b.mdf)
+		defense = weights[0] * defense_rate(a.atk, b.def * maxf(0.0, frame.physicalDefenseRate)) + weights[1] * defense_rate(a.mat, b.mdf * maxf(0.0, frame.magicalDefenseRate))
+	if mode == "mixed" and kind == "normal":
+		defense = weights[0] * defense_rate(a.atk, b.def * maxf(0.0, frame.physicalDefenseRate)) * float(frame.physicalDamageMultiplier) + weights[1] * defense_rate(a.mat, b.mdf * maxf(0.0, frame.magicalDefenseRate)) * float(frame.magicalDamageMultiplier)
+	else:
+		defense *= weights[0] * float(frame.physicalDamageMultiplier) + weights[1] * float(frame.magicalDamageMultiplier)
 
 	var critical: bool = options.get("critical", false)
 	var critical_base := 1.5 + critical_multiplier_bonus(a)
-	var critical_mult := maxf(1.0, critical_base + critical_add) if critical else 1.0
-	var final_mult := maxf(0.0, 1.0 + final_add) * maxf(0.0, orb_set_multiplier(item, a))
-	var normal_mult := maxf(0.0, 1.0 + normal_add)
+	var critical_mult := maxf(1.0, critical_base + float(frame.criticalAdd)) if critical else 1.0
+	var final_mult := maxf(0.0, 1.0 + float(frame.finalAdd)) * maxf(0.0, float(frame.finalMultiplier))
+	var normal_mult := maxf(0.0, 1.0 + float(frame.normalAdd))
 	var race := _race_factors(a, b)
-	var es := action_elements(item, a)
+	var es: Array = options.get("elements", frame.elements if frame.elements != null else action_elements(item, a))
+	if frame.noElement: es = [0]
 	if es.is_empty():
 		es = [0]
-	var physical := is_physical(item)
-	var magical := is_magical(item)
+	var physical := mode == "physical" if options.has("mode") else is_physical(item)
+	var magical := mode == "magical" if options.has("mode") else is_magical(item)
 	var incoming := 1.0
 	if kind != "true":
 		incoming = maxf(0.0, b.pdr) if physical else (maxf(0.0, b.mdr) if magical else 1.0)
+	var pierce: float = frame.physicalIncomingPierce if physical else frame.magicalIncomingPierce
+	if incoming > 0.0 and incoming < 1.0:
+		incoming = 1.0 - (1.0 - incoming) * (1.0 - clampf(pierce, 0.0, 1.0))
+	incoming *= maxf(0.0, frame.incomingMultiplier)
 	var guard := 1.0 if kind == "true" else (1.0 / (2.0 * b.grd) if b.guarding else 1.0)
-	var growth := 1.0
+	var growth := maxf(0.0, frame.growthMultiplier)
 	var best := {}
 	var cands := []
 	for e in es:
 		var resistance: float = 1.0 if kind == "true" or e == 0 else b.element_rate(e)
 		var absorb := resistance < 0.0
+		if resistance > 0.0 and resistance < 1.0:
+			resistance = 1.0 - (1.0 - resistance) * (1.0 - clampf(frame.resistancePierce, 0.0, 1.0))
 		var match_rate: float = 1.0 if kind == "true" else matchup(e, affinity(b))
-		var bonus: float = maxf(0.0, 1.0 + element_bonus(a, e))
-		var flat_element := _sum_yep(a, "elementAmplifyN", e, _yep_objects(a))
-		var multiplied: float = (basis + flat_element * (1.0 + float(skill_pass.get("rate", 0.0)))) * normal_mult * bonus * race.multiplier * final_mult * (1.0 if absorb else growth)
+		var bonus: float = 1.0 if frame.noElement else _module_element_bonus(a, e, frame)
+		var flat_element := 0.0 if frame.noElement else _sum_yep(a, "elementAmplifyN", e, _yep_objects(a))
+		var multiplied: float = (basis + flat_element * float(frame.skillMultiplier)) * normal_mult * bonus * race.multiplier * final_mult * (1.0 if absorb else growth)
 		var crit: float = 1.0 if absorb else critical_mult
 		var before_fixed: float = multiplied * defense * match_rate * absf(resistance) * incoming * crit
-		var flat: float = 0.0 if kind == "true" else _flat_mitigation(a, b, e) + race.flat
-		var independent: float = 1.0 if absorb else _independent(a, item, e)
+		var flat: float = 0.0 if kind == "true" else _flat_mitigation(a, b, e, frame) + race.flat
+		var independent: float = 1.0 if absorb else _independent(a, item, e, frame)
 		var gross: float = 0.0 if resistance == 0.0 else maxf(0.0, before_fixed) * independent * guard
 		# 固定减伤（harmRe、种族减免）在 Confirm 之后、React 之前扣（apply_fixed_mitigation），这里只算扣之前的；吸收时照原版先扣
 		var value: float = -maxf(0.0, before_fixed - flat) * guard if absorb else gross
 		cands.append({"gross": value, "flat": flat, "resistance": resistance})
 		var row := {"element": e, "bonus": bonus, "defense": defense, "matchup": match_rate, "resistance": resistance,
-			"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": growth,
+			"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": 1.0 if absorb else growth,
 			"critical": crit, "independent": independent, "guard": guard, "fixedMitigation": flat, "beforeFixed": gross, "value": value}
 		if best.is_empty() or value > best.value:
 			best = row
 	var settled: float = best.value
-	if options.get("variance", true):
+	if options.get("variance", true) and not options.get("preview", false):
 		settled = apply_variance(settled, int(item.damage.variance), options.get("random"))
 	var out_value := XPower.js_round(settled)  # JS Math.round：负数的 .5 往大取整（roundf 会远离零）
 	if settled > 0.0 and out_value == 0.0:
 		out_value = 1.0
-	return {"value": out_value, "settled": settled, "critical": critical, "breakdown": {"base": raw, "basis": basis, "weights": weights, "row": best, "candidates": cands}}
+	return {"value": out_value, "settled": settled, "critical": critical, "moduleTrace": report.trace, "breakdown": {"base": raw, "basis": basis, "weights": weights, "row": best, "candidates": cands}}
 
 
 ## 正式 executeDamage 的顺序：攻击方 Confirm → 固定减伤（onPreDamageStateEffects 的包装）→ 目标 React。
@@ -246,21 +291,21 @@ static func apply_fixed_mitigation(amount: float, res: Dictionary) -> float:
 	return roundf(best) if best > -INF else amount
 
 
-static func _healing(item: Dictionary, a: XBattler, b: XBattler, options: Dictionary, vars: Array) -> Dictionary:
+static func _healing(item: Dictionary, a: XBattler, b: XBattler, options: Dictionary, vars: Array, frame: Dictionary) -> Dictionary:
 	var base := float(options.rawValue) if options.has("rawValue") else eval_formula(item, a, b, vars)
 	var es := action_elements(item, a)
 	var mult := 1.0
 	if not es.is_empty():
 		mult = 0.0
 		for e in es:
-			mult += maxf(0.0, 1.0 + element_bonus(a, e))
+			mult += _module_element_bonus(a, e, frame)
 		mult /= es.size()
-	var value: float = base * mult * maxf(0.0, b.rec)
+	var value: float = base * mult * maxf(0.0, frame.healingMultiplier) * maxf(0.0, b.rec)
 	# installDamageElementRuntime.healing：治疗被动在浮动与取整之前相乘。
 	if value < 0.0 and a is XActor:
 		for bonus in a.passive_values("passiveHEUP"):
 			value *= 1.0 + float(bonus) * 0.01
-	if options.get("variance", true):
+	if options.get("variance", true) and not options.get("preview", false):
 		value = apply_variance(value, int(item.damage.variance), options.get("random"))
 	return {"value": XPower.js_round(minf(0.0, value)), "settled": value, "critical": false, "breakdown": {"base": base, "elementMultiplier": mult}}  # Math.round
 
@@ -299,15 +344,15 @@ static func _race_factors(a: XBattler, b: XBattler) -> Dictionary:
 	return {"multiplier": maxf(0.0, 1.0 + boost), "flat": maxf(0.0, flat)}
 
 
-static func _flat_mitigation(a: XBattler, b: XBattler, e: int) -> float:
+static func _flat_mitigation(a: XBattler, b: XBattler, e: int, frame: Dictionary) -> float:
 	var target: Dictionary = b.passive_cache()
 	var source: Dictionary = a.passive_cache()
-	var value: float = float(target.get("harmRe", {}).get(e, 0.0))
+	var value: float = float(target.get("harmRe", {}).get(e, 0.0)) + float(frame.flatMitigationAdd.get(str(e), 0.0))
 	value = maxf(0.0, value - float(source.get("penetrateFixed", {}).get(e, 0.0)))
-	return value * (1.0 - clampf(float(source.get("penetratePercent", {}).get(e, 0.0)), 0.0, 100.0) / 100.0)
+	return value * (1.0 - clampf(float(source.get("penetratePercent", {}).get(e, 0.0)), 0.0, 100.0) / 100.0) * maxf(0.0, frame.flatMitigationRate)
 
 
-static func _independent(a: XBattler, item: Dictionary, e: int) -> float:
+static func _independent(a: XBattler, item: Dictionary, e: int, frame: Dictionary) -> float:
 	var pr := 1.0
 	var er := 1.0
 	for o in objects(a):
@@ -318,7 +363,9 @@ static func _independent(a: XBattler, item: Dictionary, e: int) -> float:
 			pr *= float(p.get_string(1))
 		if q:
 			er *= float(q.get_string(1))
-	return maxf(0.0, (pr if e == 1 else 1.0) * (er if ACTIVE.has(e) else 1.0))
+	var physical: bool = frame.mode == "physical" if frame.noElement else e == 1
+	var category: float = maxf(pr, er) if frame.categoryMax and not frame.noElement else (pr if physical else 1.0) * (er if ACTIVE.has(e) else 1.0)
+	return maxf(0.0, frame.settlementMultiplier * category)
 
 
 # ---- 状态脚本（YEP BuffsStatesCore）：Confirm = 行动者的状态，React = 目标的状态 ----
@@ -350,3 +397,16 @@ class _ParamProxy:
 		return src.sparam(i)
 	func skillMasteryLevel(id: int) -> int:
 		return src.skillMasteryLevel(id)
+
+
+static func _module_element_bonus(a: XBattler, element: int, frame: Dictionary) -> float:
+	return maxf(0.0, 1.0 + element_bonus(a, element) + float(frame.elementAdd.get(str(element), 0.0))) * float(frame.elementMultiplier.get(str(element), 1.0))
+
+static func _module_snapshot(b: XBattler) -> Dictionary:
+	return {"kind": "actor" if b.is_actor() else "enemy", "id": b.actor_id if b is XActor else b.enemy_id if b is XEnemy else 0,
+		"hp": b.hp, "mp": b.mp, "tp": b.tp, "states": b.state_ids.duplicate()}
+
+static func _module_failure(report: Dictionary) -> Dictionary:
+	var diagnostic := ";".join(report.diagnostics)
+	push_warning("damage module unavailable: " + diagnostic)
+	return {"available": false, "value": NAN, "critical": false, "breakdown": {}, "diagnostic": diagnostic, "moduleTrace": report.trace}

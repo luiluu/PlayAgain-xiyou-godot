@@ -422,7 +422,11 @@ window.__refJson = function (name, obj) {
                         return [r3(sp.x),r3(sp.y),r3(sp._offsetX),r3(sp._offsetY),sp.scale.x<0?1:0,r3(sp.opacity),r3(sp._floatHeight||0),r3(jump(sp)),
                             b.isActor()?motionName(sp):'',b.isActor()?sp._pattern:0,r3(main&&main.bitmap?main.anchor.y:sp.anchor.y),sp.visible?1:0];}),
                     // 敌人：[实际 HP, YEP_X_VisualHpGauge 显示值]（多段攻击血条逐段变化用）
-                    hp:list.map(function(sp){var b=sp._battler,g=sp._visualHpGauge;return b.isEnemy()?[b.hp,g?g._displayedValue:null]:null;})});
+                    hp:list.map(function(sp){var b=sp._battler,g=sp._visualHpGauge;return b.isEnemy()?[b.hp,g?g._displayedValue:null]:null;}),
+                    // 战场上的 Sprite_Animation：[目标, x, y, _duration, _delay]（动画随浮空／跳跃高度用；目标取 _target 或其父精灵的战斗者）
+                    anims:ss._battleField.children.filter(function(c){return c instanceof Sprite_Animation;}).map(function(a){
+                        var t=a._target,b=t&&(t._battler||(t.parent&&t.parent._battler));
+                        return [b?(b.isActor()?'a'+b.actorId():'e'+b.index()):'',r3(a.x),r3(a.y),a._duration,a._delay];})});
                 if(BattleManager._subject!==actor||BattleManager._phase==='input'||T.frames.length>=1500)T.done=true;
             };
             s._actorCommandWindow.deactivate();

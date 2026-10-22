@@ -55,4 +55,34 @@ with tempfile.TemporaryDirectory(prefix='xiyou_worktree_cleanup_') as tmp:
     assert not clean.exists()
     assert (main / evidence / 'worktree_clean/result.txt').read_text() == 'keep me'
     assert run(main, 'git', 'show-ref', '--verify', 'refs/heads/fixture/clean', check=False).returncode != 0
-print('TEST_RESULT={"passed":4,"total":4}')
+    # 同一路径复用：第二次清理时归档目录已有同名 自动同步/，逐层合并，两次的证据都保留。
+    def reuse(branch_name, files):
+        run(main, 'git', 'worktree', 'add', '-b', branch_name, str(clean))
+        for rel, text in files.items():
+            (clean / evidence / rel).parent.mkdir(parents=True, exist_ok=True)
+            (clean / evidence / rel).write_text(text)
+        return run(main, 'zsh', str(helper), str(clean), check=False)
+    keep = main / evidence / 'worktree_clean'
+    p = reuse('fixture/reuse1', {'自动同步/run_a/log.txt': 'a', 'sync.lock': ''})
+    assert p.returncode == 0 and not clean.exists(), p.stdout + p.stderr
+    p = reuse('fixture/reuse2', {'自动同步/run_b/log.txt': 'b', 'sync.lock': ''})
+    assert p.returncode == 0 and not clean.exists(), p.stdout + p.stderr
+    assert (keep / '自动同步/run_a/log.txt').read_text() == 'a'
+    assert (keep / '自动同步/run_b/log.txt').read_text() == 'b'
+    assert (keep / 'sync.lock').exists() and not (keep / 'sync.lock.2').exists()  # 内容相同的空锁只留一份
+    # 同名文件内容不同：旧的不被覆盖，新来的加后缀。
+    p = reuse('fixture/reuse3', {'自动同步/run_a/log.txt': 'a2', 'result.txt': 'second'})
+    assert p.returncode == 0 and not clean.exists(), p.stdout + p.stderr
+    assert (keep / '自动同步/run_a/log.txt').read_text() == 'a'
+    assert (keep / '自动同步/run_a/log.txt.2').read_text() == 'a2'
+    assert (keep / 'result.txt').read_text() == 'keep me'
+    assert (keep / 'result.txt.2').read_text() == 'second'
+    # 归档失败（目标不可写）时非零退出，worktree 与分支都保留。
+    (keep / '自动同步').chmod(0o500)
+    try:
+        p = reuse('fixture/reuse4', {'自动同步/run_c/log.txt': 'c'})
+    finally:
+        (keep / '自动同步').chmod(0o700)
+    assert p.returncode != 0 and clean.exists(), p.stdout + p.stderr
+    assert run(main, 'git', 'show-ref', '--verify', 'refs/heads/fixture/reuse4', check=False).returncode == 0
+print('TEST_RESULT={"passed":7,"total":7}')

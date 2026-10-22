@@ -291,7 +291,7 @@ func _info_valid(fx: Dictionary, page: XSaveScene, rc: RecCanvas) -> void:
 class RecCanvas extends XMVCanvas:
 	var log := []
 
-	func text(s: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, lh := XUI.LINE_HEIGHT, alpha := 1.0, zoom := 1.0, pivot := Vector2.ZERO) -> void:
+	func text(s: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, lh := XUI.LINE_HEIGHT, alpha := 1.0, zoom := 1.0, pivot := Vector2.ZERO, outline := OUTLINE) -> void:
 		log.append(["text", s, x, y, max_w, align, size, color, alpha])
 
 	func icon(index: int, x: float, y: float, alpha := 1.0, size := 32.0) -> void:

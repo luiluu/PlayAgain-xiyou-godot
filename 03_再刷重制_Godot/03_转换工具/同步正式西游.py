@@ -77,6 +77,7 @@ PROBES = [
     (['settlement_probe.cjs'], ['settlement.json']),
     (['item_marks_probe.cjs'], ['item_marks.json']),
     (['orb_probe.cjs'], ['orbs.json']),
+    (['module_hooks_probe.cjs'], ['module_hooks.json']),
     (['orb_shop_probe.cjs'], ['orb_shop.json']),
     (['dungeon_probe.cjs'], ['dungeon.json']),
     (['shared_system_probe.cjs'], ['shop_stock.json', 'battle_messages.json', 'challenge_passives.json']),
@@ -96,6 +97,9 @@ PROBES = [
     (['imported_balance_probe.cjs'], ['imported_balance.json']),
     (['state_effects_probe.cjs'], ['state_effects.json']),
     (['attack_element_probe.cjs'], ['attack_elements.json']),
+    (['qiyu_probe.cjs'], ['qiyu.json']),
+    (['cat_probe.cjs'], ['cat.json']),
+    (['lobby_shop_probe.cjs'], ['lobby_shops.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
 

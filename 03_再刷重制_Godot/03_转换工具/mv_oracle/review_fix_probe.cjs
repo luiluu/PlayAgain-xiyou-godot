@@ -68,6 +68,62 @@ cases.push(makeCase('battleback.versionReload', {map: 55, common: 1387, versionI
   const reserved = w.$gamePlayer.isTransferring(); w.DataManager.loadMapData(w.$gamePlayer._newMapId); w.$gamePlayer.performTransfer();
   return {reserved, after: names()}; }));
 
+// 4) 云端审查（dev.049～081）转来的解释器三项（八戒_47）：
+//    a) 指令 214 只在 isOnCurrentMap（解释器起跑时的地图＝当前地图）时 eraseEvent：先 201 换图再 214 不消除新图同号事件；
+//    b) Game_Event._erased 随 $gameMap 进存档，同版本读档不重设地图，消除的事件读档后仍不出现；同图移动不 setup 也仍消除；
+//       换图再回来 setupEvents 重建，恢复出现。Map008 事件 3／5 是只靠 214 消除的副本怪（冻结数据共 131 页这样的事件）。
+//    c) 225 勾等待时 wait(时间)：之前由指令直接加进 $gameMessage 的文字（316 升级提示）在等待期间显示，等待结束后才执行下一条；
+//       不勾等待时同一帧接着执行下一条。记下一条（122 设变量 1）执行时的帧号与消息是否还在。
+const erasedIds = () => w.$gameMap.events().filter(e => e._erased).map(e => e.eventId());
+const runList = (list, eventId, max) => { const it = new w.Game_Interpreter(); it.setup(list, eventId); let n = 0;
+  while (it.isRunning() && n++ < (max || 100)) { it.update(); if (w.$gamePlayer.isTransferring()) { w.DataManager.loadMapData(w.$gamePlayer._newMapId); w.$gamePlayer.performTransfer(); } }
+  return n; };
+const cmd = (code, parameters, indent) => ({code, indent: indent || 0, parameters});
+const erase8 = () => { newGame(); goMap(8, 29, 26); runList([cmd(214, []), cmd(0, [])], 3); return erasedIds(); };
+cases.push(makeCase('erase.save', {map: 8, event: 3}, () => { const after = erase8(); roundtrip();
+  return {after, loaded: erasedIds(), map: w.$gameMap.mapId()}; }));
+cases.push(makeCase('erase.sameMap', {map: 8, event: 3, transfer: 8}, () => { erase8(); roundtrip(); goMap(8, 28, 26);
+  return {after: erasedIds()}; }));
+cases.push(makeCase('erase.otherMap', {map: 8, event: 3, transfer: 4}, () => { erase8(); roundtrip(); goMap(4, 14, 23); goMap(8, 29, 26);
+  return {back: erasedIds()}; }));
+cases.push(makeCase('erase.afterTransfer', {map: 4, event: 3, transfer: 8}, () => { newGame(); goMap(4, 14, 23);
+  runList([cmd(201, [0, 8, 29, 26, 2, 0]), cmd(214, []), cmd(0, [])], 3); return {map: w.$gameMap.mapId(), after: erasedIds()}; }));
+
+// 5) 同图场所移动（八戒_48）：performTransfer 只在新地图 ID 与当前不同（或 _needsMapReload）时 $gameMap.setup，
+//    同图只 locate 玩家（含跟随者 synchronize、makeEncounterCount）；事件对象、位置、朝向、强制移动路线及其索引、
+//    当前页、事件自己的（并行）解释器与地图解释器都原样保留。换到别图再回来 setupEvents 重建，全部回到初始。
+//    Map008 事件 3（17,8）／6（26,13）都是固定不动的副本怪：先改位置朝向、挂一条强制路线并推进到第 2 步、
+//    给事件 3 挂一个停在等待里的解释器（模拟并行事件），再由事件 7 的解释器执行同图 201。
+const evState = id => { const e = w.$gameMap.event(id); return {x: e.x, y: e.y, d: e.direction(), page: e._pageIndex,
+  forcing: !!e._moveRouteForcing, routeIndex: e._moveRouteIndex, route: e._moveRoute ? e._moveRoute.list.length : 0,
+  interp: e._interpreter ? {index: e._interpreter._index, wait: e._interpreter._waitCount} : null}; };
+const dressEvents = () => { const route = {list: [cmd(12, []), cmd(12, []), cmd(12, []), cmd(0, [])], repeat: false, skippable: true, wait: false};
+  const marks = {};
+  for (const id of [3, 6]) { const e = w.$gameMap.event(id); e.setPosition(e.x + 1, e.y); e.setDirection(8);
+    e.forceMoveRoute(w.JsonEx.makeDeepCopy(route)); e._moveRouteIndex = 2; marks[id] = e; }
+  const it = new w.Game_Interpreter(); it.setup([cmd(230, [600]), cmd(0, [])], 3); it.update(); w.$gameMap.event(3)._interpreter = it;
+  return marks; };
+const playerState = () => ({x: w.$gamePlayer.x, y: w.$gamePlayer.y, d: w.$gamePlayer.direction(),
+  followers: w.$gamePlayer.followers()._data.map(f => [f.x, f.y, f.direction()])});
+cases.push(makeCase('transfer.sameMap.events', {map: 8, events: [3, 6], runner: 7, transfer: [8, 28, 26, 4]}, () => {
+  newGame(); goMap(8, 29, 26); const marks = dressEvents(), mapInterp = w.$gameMap._interpreter;
+  const before = {3: evState(3), 6: evState(6)};
+  runList([cmd(201, [0, 8, 28, 26, 4, 0]), cmd(0, [])], 7);
+  return {map: w.$gameMap.mapId(), before, after: {3: evState(3), 6: evState(6)},
+    sameObjects: [3, 6].map(id => w.$gameMap.event(id) === marks[id]), sameMapInterpreter: w.$gameMap._interpreter === mapInterp,
+    player: playerState()}; }));
+cases.push(makeCase('transfer.otherMap.events', {map: 8, events: [3, 6], transfer: [4, 14, 23, 2], back: [8, 29, 26, 2]}, () => {
+  newGame(); goMap(8, 29, 26); const marks = dressEvents();
+  goMap(4, 14, 23); goMap(8, 29, 26);
+  return {map: w.$gameMap.mapId(), back: {3: evState(3), 6: evState(6)}, sameObjects: [3, 6].map(id => w.$gameMap.event(id) === marks[id]),
+    player: playerState()}; }));
+for (const wait of [true, false])
+  cases.push(makeCase('flush.225.' + (wait ? 'wait' : 'nowait'), {actor: 1, shake: [5, 5, 10, wait]}, () => { newGame(); w.$gameMessage.clear();
+    const it = new w.Game_Interpreter(); it.setup([cmd(316, [0, 1, 0, 0, 1, true]), cmd(225, [5, 5, 10, wait]), cmd(122, [1, 1, 0, 0, 1]), cmd(0, [])], 0);
+    let frame = 0, at = null;
+    while (it.isRunning() && frame < 100) { frame++; it.update(); if (at === null && w.$gameVariables.value(1) === 1) at = {frame, busy: w.$gameMessage.isBusy()}; }
+    return {lines: w.$gameMessage._texts.slice(), varSet: at, level: w.$gameActors.actor(1).level}; }));
+
 const lose = (troop, canLose, dead) => { newGame(); w.BattleManager.setup(troop, false, canLose); w.$gameParty._inBattle = true;
   const members = w.$gameParty.battleMembers();
   members.forEach((a, i) => { if (dead.includes(i)) a.addState(1); else a.setHp(Math.floor(a.mhp / 2)); });

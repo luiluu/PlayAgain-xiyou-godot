@@ -72,7 +72,7 @@ func equip_slots() -> Array:
 		out.append(i)
 	if out.size() >= 2 and is_dual_wield():
 		out[1] = 1
-	return out
+	return XCat.equip_slots(self, out)  # 178 哈基米去掉副手
 
 ## MV Game_BattlerBase.slotType／isDualWield：特性 55 的最大值，1 为双持（职业、角色、装备、状态都可给，如刘备的专属剑 2005）
 func slot_type() -> int:
@@ -80,7 +80,7 @@ func slot_type() -> int:
 	return types.max() if not types.is_empty() else 0
 
 func is_dual_wield() -> bool:
-	return slot_type() == 1
+	return slot_type() == 1 and not XCat.own(self)
 
 ## 初始装备（YEP_ItemCore initIndependentEquips）：convertInitEquips 第 1 项与双持时的第 2 项查武器表、其余查防具表（编号 ≤0 跳过）；
 ## 槽位类型在开头取一次，逐槽 grabInitEquips（武器槽取表里第一把武器，其余取同装备类型的第一件），能装备才装；
@@ -171,6 +171,8 @@ func release_to_party() -> void:
 		s.gear.append_array(removed)
 
 func add_state(id: int, random: XRandomStream = null) -> void:
+	if XQiyu.blocks_state(actor_id, id):
+		return
 	var fresh := not state_ids.has(id)
 	super(id, random)
 	if fresh and state_ids.has(id):
@@ -187,7 +189,17 @@ func refresh_resources(random: XRandomStream = null) -> void:
 	super(random)
 
 func equip_list() -> Array:
-	return equips.filter(func(e): return e != null and not e.is_empty())
+	var list := equips.slice(1) if _cat_bare else equips
+	return list.filter(func(e): return e != null and not e.is_empty())
+
+
+## 算能力值／特性／被动缓存用的装备：178 持剑时武器槽换成剑的翻倍视图（XCat.sword_view），其余同 equip_list
+var _cat_bare := false
+func stat_equips() -> Array:
+	var list := equip_list()
+	if XCat.enabled_sword(self):
+		list[0] = XCat.sword_view(equips[0])
+	return list
 
 
 ## Game_Actor.weapons()[0]
@@ -335,7 +347,7 @@ func all_traits() -> Array:
 
 func trait_objects() -> Array:
 	var out := [data(), class_data()]
-	out.append_array(equip_list())
+	out.append_array(stat_equips())
 	out.append_array(states())
 	var resistance := []
 	for id in XEquipSuits.ids(self,"statesResist"):
@@ -437,7 +449,17 @@ func param_base(i: int) -> float:
 	return v
 
 ## 装备属性；被动 passiveWPNMxx / passiveARMMxx 按武器/防具类型放大该装备的正值属性。
+## 178 持剑：全量＋(全量−去掉武器槽)，即剑的整份贡献再算一遍（CodexCat paramPlus 包装）
 func param_plus(i: int) -> float:
+	var full := _param_plus(i)
+	if not XCat.enabled_sword(self):
+		return full
+	_cat_bare = true
+	var bare := _param_plus(i)
+	_cat_bare = false
+	return full + (full - bare)
+
+func _param_plus(i: int) -> float:
 	var v := XEquipSuits.value(self,"param",i,false)
 	for e in equip_list():
 		var p := float(e.params[i])
@@ -483,6 +505,10 @@ static func magic_param(e: Dictionary, i: int) -> float:
 		_magic_growth_cache[key] = XPower.magic_growth(rec if not rec.is_empty() else e)
 	return float(lv) * float(_magic_growth_cache[key][i])
 
+## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
+func param(i: int) -> float:
+	return XCat.param(self, i, super(i))
+
 ## 正式版运行时对角色命中率保底 0.9（命中 = xparam 0）。
 func xparam(i: int) -> float:
 	var v := super.xparam(i)
@@ -497,7 +523,7 @@ func sparam(i: int) -> float:
 		v += _num(m) * 0.01
 	v = (v + XEquipSuits.value(self,"sparam",i,false)/100) * XEquipSuits.value(self,"sparam",i,true)
 	if i == 6 or i == 7:
-		return additive_rate(TRAIT_SPARAM, i, v, [])
+		return XCat.sparam(self, i, additive_rate(TRAIT_SPARAM, i, v, []))
 	return v
 
 func passive_element_values(e: int) -> Array:
@@ -509,7 +535,7 @@ func refresh_passive() -> void:
 	var c := {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "skillPass": {}, "skillTypeDvup": {},
 		"SkETypeHarmRi": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0, "itemRateUp": 0.0,
 		"certainHit": {"global": false, "bySkill": {}}, "damageElement": 0}
-	var objs := equip_list() + skills() + states()
+	var objs := stat_equips() + skills() + states()
 	for o in objs:
 		var note := str(o.get("note", ""))
 		var meta: Dictionary = o.get("meta", {})

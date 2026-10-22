@@ -10,6 +10,10 @@ class QuietBattle extends XBattleScene:
 const ORACLE := "res://tests/fixtures/action_sequence_oracle.json"
 ## 画面快照用的正式版读数（__seqRef.suite(列表, 'action_sequence_hp_oracle')）：s131 多段攻击敌人 HP 逐帧、s104 反击致死
 const HP_ORACLE := "res://tests/fixtures/action_sequence_hp_oracle.json"
+## 动画随敌人浮空／跳跃抬高的正式版读数（__seqRef.suite(列表, 'action_sequence_float_oracle')，开技能动画）：
+## s414 投掷（动画 1 播着时浮空 2000%：动画跟着抬高，浮空每帧多走一步）、s463 升龙拳（动画 302 播着时跳跃 500%）、
+## s161（角色自己浮空时身上放动画 129：角色同样抬高、浮空变快）、s414 关动画
+const FLOAT_ORACLE := "res://tests/fixtures/action_sequence_float_oracle.json"
 ## 普通攻击动画（双持）的正式版读数（ui_reference __atkAniRef.suite()）
 const ATK_ORACLE := "res://tests/fixtures/attack_animation_oracle.json"
 ## 窗口模式加 -- --out=<目录>：在这些帧截图（镜头拉近、跳跃最高、透明度最低）
@@ -56,6 +60,9 @@ func _run() -> void:
 		e.hp = e.mhp
 	for key in oracle.traces:
 		await _trace(scene, s, key, oracle.traces[key])
+	var float_oracle: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FLOAT_ORACLE))
+	for key in float_oracle.traces:
+		await _trace(scene, s, key, float_oracle.traces[key])
 	var hp_oracle: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(HP_ORACLE))
 	await _counter_death(scene, hp_oracle.traces.s104_counter_death)
 	await _multi_hit_gauge(scene, hp_oracle.traces.s131)
@@ -97,7 +104,7 @@ func _trace(scene: XBattleScene, s: XState, key: String, t: Dictionary) -> void:
 		# Native UI fixture fixes Math.random at 0.5, so the 3% state never fires.
 		# It adds three log methods when triggered; keep that fixture input explicit.
 		check("s161_fixed_no_status", logs.filter(func(l): return l.type == "hit").all(func(l): return l.added.is_empty() and l.removed.is_empty()))
-	var got := {"cmds": [], "frames": [], "sprites": {}}
+	var got := {"cmds": [], "frames": [], "sprites": {}, "anims": []}
 	for k in t.sprites:
 		got.sprites[k] = []
 	var hook := func(p: XSequencePlayer):
@@ -109,6 +116,13 @@ func _trace(scene: XBattleScene, s: XState, key: String, t: Dictionary) -> void:
 			if got.sprites.has(k):
 				var sp: XBattlerSprite = scene.sprites[b]
 				got.sprites[k].append([snappedf(sp.seq_opacity, 0.001), snappedf(sp.float_height, 0.001), snappedf(sp.jump_height(), 0.001), sp.motion])
+		# 动画相对目标的位置（还在 _delay 里、没定过位置的不收：正式版停在 0,0）
+		var row := []
+		for a in scene.fx.get_children():
+			if a is MVAnimation and a.target is XBattlerSprite and a.duration < a.anim.frames.size() * a.rate + 1:
+				var ts: XBattlerSprite = a.target
+				row.append([_key(ts.battler, scene), snappedf(a.position.x - ts.position.x, 0.001), snappedf(a.position.y - ts.position.y, 0.001)])
+		got.anims.append(row)
 		if out_dir != "" and DisplayServer.get_name() != "headless" and SHOTS.get(key, []).has(got.frames.size() - 1):
 			_pending_shot = "%s_f%d" % [key, got.frames.size() - 1]
 	# 行动记录 → 演出（同 XBattleScene._play 的序列分支）
@@ -151,6 +165,22 @@ func _trace(scene: XBattleScene, s: XState, key: String, t: Dictionary) -> void:
 					or (k.begins_with("a") and gs[3] != str(ws[3])):
 				bad.append([f, k, gs, ws])
 	check("%s_frames" % key, bad.is_empty(), bad.slice(0, 6))
+	# 动画相对目标的位置逐帧（新读数才有）：头上／中心的动画随敌人浮空、跳跃抬高
+	if t.has("anims"):
+		var bad_anim := []
+		for f in range(n):
+			# 同一帧几只动画的先后不比（正式版按精灵建立先后排在战场子节点里）
+			var w: Array = t.anims[f].duplicate()
+			var g: Array = got.anims[f].duplicate() if f < got.anims.size() else []
+			w.sort_custom(func(x, y): return str(x[0]) < str(y[0]))
+			g.sort_custom(func(x, y): return str(x[0]) < str(y[0]))
+			var same := w.size() == g.size()
+			for ai in range(mini(w.size(), g.size())):
+				same = same and str(w[ai][0]) == g[ai][0] and absf(float(w[ai][1]) - g[ai][1]) < 0.01 and absf(float(w[ai][2]) - g[ai][2]) < 0.01
+			if not same:
+				bad_anim.append([f, g, w])
+		var lifted: bool = t.anims.any(func(r): return r.any(func(a): return str(a[0]).begins_with("e") and float(a[2]) < -200.0))
+		check("%s_anim_follow" % key, bad_anim.is_empty() and (lifted or not key.begins_with("s414_anim")), bad_anim.slice(0, 6))
 
 
 # ---- 画面快照（日志写入时记下的值，表现层只读日志） ----

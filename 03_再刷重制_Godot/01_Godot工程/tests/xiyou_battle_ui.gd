@@ -105,6 +105,7 @@ func _run() -> void:
 	_check("actor_scale", is_equal_approx(b.sprites[b.logic.actors[0]].body_scale, 0.75))
 	await _frames(30)
 	await _shot("battle_40_input")
+	await _shield_side(b, s)
 	await _message_101(b)
 	# 指令窗（原版：851,462,220,196；6 条居中）
 	var cw: XBattleList = b.cmd_win
@@ -285,27 +286,101 @@ func _finish() -> void:
 
 ## 战斗里的 101（十六层敌群 165 第 4 回合）：原版参照 battle_msg_101_formal（ui_reference 战斗夹具加同一条消息，无头像、背景 0、
 ## 位置 2）：消息窗 0,548,1280,172；名字框 \\n<海拉的幻影> 左对齐 0,484,298,64，黄字（\\c[6]）；右侧状态与行动顺序条照常显示。
+## 另三种切片里真有的写法（八戒_45 用同一夹具截 battle_msg_101_face／_middle／_bigfont，读数见各行）：
+## 带头像（三十层敌群 466 玉皇大帝，QY touxiang 2）：正文从 168 起（newLineX），名字框 0,484,272,64；
+## 中间位置（敌群 825 圣劫使，位置 1）：消息窗 0,274,1280,172，无名字框；
+## 放大字（敌群 831 魇脑，KH06-2_faces_MV_03 4，\\{\\{…\\}\\}\\!）：名字框 0,484,220,64，正文 168 起。
 ## 敌群事件只在回合里跑（没有指令窗），这里先收起指令窗模拟回合中，确认后再放回。
 func _message_101(b: XBattleScene) -> void:
+	# 原版窗口层 Window_Message 在 Window_OTBDisplay 之后：消息窗压在行动顺序条上（头像盖住条左端），也在敌人血条（z 5）之上
+	_check("msg101_above_otb", b.message.z_index >= b.otb.z_index and b.message.get_index() > b.otb.get_index() and b.message.get_parent() == b.otb.get_parent(),
+		[b.message.z_index, b.otb.z_index, b.message.get_index(), b.otb.get_index()])
+	# 伤害数字在战斗图（z 0）与敌人血条（z 5）之上、窗口层（消息窗 8、帮助卡 10）之下：弹出时消息窗不被数字盖住
+	_check("popup_below_windows", XBattleScene.POPUP_Z > 5 and XBattleScene.POPUP_Z < b.message.z_index, [XBattleScene.POPUP_Z, b.message.z_index])
+	await _message_case(b, "msg101", {"face": "", "index": 0, "background": 0, "position": 2, "lines": ["\\n<海拉的幻影>很久没有打的这么尽兴了，哈哈哈。"]},
+		Rect2(0, 548, 1280, 172), Rect2(0, 484, 298, 64), 0.0, "battle_49_message_101")
+	await _message_case(b, "msg101_face", {"face": "QY touxiang", "index": 2, "background": 0, "position": 2, "lines": ["\\n<玉皇大帝>你确实很强，不过到此为止了！"]},
+		Rect2(0, 548, 1280, 172), Rect2(0, 484, 272, 64), 168.0, "battle_49b_message_101_face")
+	await _message_case(b, "msg101_middle", {"face": "", "index": 0, "background": 0, "position": 1, "lines": ["天空中的圣雷积攒到了极限"]},
+		Rect2(0, 274, 1280, 172), Rect2(), 0.0, "battle_49c_message_101_middle")
+	await _message_case(b, "msg101_bigfont", {"face": "KH06-2_faces_MV_03", "index": 4, "background": 0, "position": 2, "lines": ["\\n<魇脑>\\{\\{前所未有的兴奋！\\}\\}\\!"]},
+		Rect2(0, 548, 1280, 172), Rect2(0, 484, 220, 64), 168.0, "battle_49d_message_101_bigfont")
+
+
+## name_rect 为空时应没有名字框；left 是正文起点（有头像时 168）
+func _message_case(b: XBattleScene, tag: String, msg: Dictionary, rect: Rect2, name_rect: Rect2, left: float, shot: String) -> void:
 	var cw: XBattleList = b.cmd_win
 	cw.active = false
 	cw.hide()
 	var done := {"v": false}
 	var go := func():
-		await b.message.run({"face": "", "index": 0, "background": 0, "position": 2, "lines": ["\\n<海拉的幻影>很久没有打的这么尽兴了，哈哈哈。"]})
+		await b.message.run(msg)
 		done.v = true
 	go.call()
-	var shown := await _until(func(): return b.message.win.openness >= 255 and b.message._state == null)
+	var shown := await _until(func(): return b.message.win.openness >= 255 and (b.message._state == null or b.message.win.pause))
 	await _frames(40)
 	var w := b.message.win
 	var nw := b.message.name_win
 	var origin: Vector2 = b.message.global_position
-	_check("msg101_shown", shown)
-	_check("msg101_rect", [origin + w.position, w.size] == [Vector2(0, 548), Vector2(1280, 172)], [origin + w.position, w.size])
-	_check("msg101_name_rect", nw.visible and nw.openness >= 255 and [origin + nw.position, nw.size] == [Vector2(0, 484), Vector2(298, 64)], [origin + nw.position, nw.size, nw.openness])
-	await _shot("battle_49_message_101")
-	await _press("ui_accept")
-	_check("msg101_closed", await _until(func(): return done.v and w.openness == 0 and nw.openness == 0, 120), [done.v, w.openness, nw.openness])
+	_check(tag + "_shown", shown)
+	_check(tag + "_rect", Rect2(origin + w.position, w.size) == rect, [origin + w.position, w.size])
+	if name_rect.has_area():
+		_check(tag + "_name_rect", nw.visible and nw.openness >= 255 and Rect2(origin + nw.position, nw.size) == name_rect, [origin + nw.position, nw.size, nw.openness])
+	else:
+		_check(tag + "_no_name", not nw.visible or nw.openness == 0, [nw.visible, nw.openness])
+	if left > 0.0:
+		var xs: Array = b.message._page_glyphs.filter(func(g): return g.has("t")).map(func(g): return float(g.x))
+		_check(tag + "_text_left", not xs.is_empty() and xs.min() == left, xs.slice(0, 3))
+	await _shot(shot)
+	# \\! 停住时按一次继续，文字完再按一次关闭
+	for i in range(3):
+		if done.v:
+			break
+		await _press("ui_accept")
+		await _until(func(): return done.v or b.message.win.pause, 120)
+	_check(tag + "_closed", await _until(func(): return done.v and w.openness == 0 and nw.openness == 0, 120), [done.v, w.openness, nw.openness])
 	cw.show()
 	cw.active = true
 	await _frames(2)
+
+
+## 护盾侧栏（ShieldSystem 钩 Window_BattleSideHP.refresh）：原版参照 battle_shield_side（ui_reference 战斗夹具四人，
+## 美娜在输入左移 48；狗逍遥 242/485＋盾 100 蓝段在条内，修 450/450＋盾 225 按 max(上限, HP＋盾) 折算，
+## 罗琳 300/525＋盾 123456 写「盾12.3万」，美娜 120/480＋盾 2.5 亿写「盾2.5亿」）。原版 HP 窗口 (1080＋8, 序号×121＋28)，内边距 4。
+func _shield_side(b: XBattleScene, s) -> void:
+	var cfg := [[1, 242.0, 100.0, 1171, 1204, "盾100"], [8, 450.0, 225.0, 1198, 1252, "盾225"],
+		[9, 300.0, 123456.0, 1092, 1252, "盾12.3万"], [10, 120.0, 250000000.0, 1044, 1204, "盾2.5亿"]]
+	var keep := []
+	for c in cfg:
+		var a: XActor = s.actor(c[0])
+		keep.append([a, a.hp, a.shield])
+		a.hp = c[1]
+		a.shield = c[2]
+	for row in b.status_rows.values():
+		row.refresh()
+	await _frames(20)
+	for i in cfg.size():
+		var c: Array = cfg[i]
+		var row: XSideStatus = b.status_rows[s.actor(c[0])]
+		var seg := XSideStatus.shield_segment(row.actor.hp, row.actor.mhp, row.actor.shield, row.position.x + 8 + XSideStatus.PAD)
+		_check("shield_seg_%d" % c[0], seg == Vector2i(c[3], c[4]), [seg, row.position.x])
+		_check("shield_label_%d" % c[0], "盾" + XSideStatus.shield_text(c[2]) == c[5], XSideStatus.shield_text(c[2]))
+	_check("shield_label_style", XSideStatus.SHIELD_COLOR == Color8(0x88, 0xcc, 0xff) and XSideStatus.SHIELD_OUTLINE == Color(0, 0, 0, 0.7)
+		and XSideStatus.SHIELD_SEG == Color8(0, 136, 255, 179), [XSideStatus.SHIELD_COLOR, XSideStatus.SHIELD_OUTLINE])
+	await _shot("battle_50_shield_side")
+	# 窗口模式：截图上蓝段的起止列与原版 battle_shield_side 逐像素一致（行 y＝序号×121＋28＋16～21）
+	if out_dir != "" and DisplayServer.get_name() != "headless":
+		var img := get_viewport().get_texture().get_image()
+		var blue := func(px: Color) -> bool: return px.b8 > 150 and px.r8 < 80 and px.b8 - px.g8 > 40
+		for i in cfg.size():
+			var c: Array = cfg[i]
+			var cols := []
+			for x in range(c[3] - 3, c[4] + 3):
+				if blue.call(img.get_pixel(x, i * 121 + 28 + 18)):
+					cols.append(x)
+			_check("shield_pixels_%d" % c[0], not cols.is_empty() and cols.min() == c[3] and cols.max() == c[4] - 1, [cols.min() if cols else null, cols.max() if cols else null])
+	for k in keep:
+		k[0].hp = k[1]
+		k[0].shield = k[2]
+	for row in b.status_rows.values():
+		row.refresh()

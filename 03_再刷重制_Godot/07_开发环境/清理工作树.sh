@@ -24,11 +24,32 @@ fi
 if ! git -C "$MAIN" merge-base --is-ancestor "$(git -C "$wt" rev-parse HEAD)" main; then
   print -u2 "✗ 工作区 HEAD（$branch）还没有并入 main，不删除"; exit 1
 fi
+# 把 $1 的内容并进 $2：同一路径的 worktree 会被复用，第二次清理时 keep 里可能已有同名目录（如 自动同步/），
+# 直接 mv 会报 Directory not empty。同名目录逐层合并；同名文件内容相同（如空的 sync.lock）就丢掉新来的，
+# 内容不同则新来的改名为 名字.2、名字.3…，旧证据不被覆盖。用后缀而不用时间戳子目录，是为了文件仍挨着原名、按原路径就能找到。
+merge_into() {
+  local src=$1 dst=$2 item name target n
+  mkdir -p "$dst"
+  for item in "$src"/*(DN); do
+    name=${item:t}; target=$dst/$name
+    if [[ ! -e $target && ! -L $target ]]; then
+      mv "$item" "$target"
+    elif [[ -d $item && ! -L $item && -d $target && ! -L $target ]]; then
+      merge_into "$item" "$target"
+      rmdir "$item"
+    elif [[ -f $item && -f $target ]] && cmp -s "$item" "$target"; then
+      rm -f "$item"
+    else
+      n=2; while [[ -e $target.$n || -L $target.$n ]]; do (( n++ )); done
+      mv "$item" "$target.$n"
+    fi
+  done
+}
+
 evidence=$wt/$GODOT_SUB/04_验证/本地结果
 if [[ -d $evidence ]] && [[ -n $(ls -A "$evidence") ]]; then
   keep=$MAIN/$GODOT_SUB/04_验证/本地结果/worktree_${wt:t}
-  mkdir -p "$keep"
-  mv "$evidence"/*(D) "$keep"/
+  merge_into "$evidence" "$keep"
   print "  证据已移到 $keep"
 fi
 # 剩下的都是 .gitignore 里的再生成文件（generated、.godot、node_modules、链接），git 不阻止删除

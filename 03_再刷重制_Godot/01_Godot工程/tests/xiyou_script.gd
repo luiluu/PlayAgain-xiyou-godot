@@ -91,6 +91,14 @@ func _run() -> void:
 	check("comment_strip_keeps_quoted", (await script("$.toaster({ message : '见 http://a.b'}); // 注释")).is_empty() and toasts == ["见 http://a.b"], toasts)
 	# 认不出的脚本原样报告
 	check("unknown_reported", (await script("Star.UnknownPlugin.Run(84)")) == ["Star.UnknownPlugin.Run(84)"])
+	# 正则静态缓存：同一模式只编译一次；逐条语句再跑一遍不再新增缓存，结果不变
+	var multi := "ConfigManager.MapXy=false;\n$gameParty.DCultyL4 = true;\n$gameVariables.setValue(1476, 3);\nStar.UnknownPlugin.Run(85)"
+	var first: Array = await script(multi)
+	var cached: int = MVScript._re_cache.size()
+	var again: Array = await script(multi)
+	check("regex_cache_reused", cached > 0 and MVScript._re_cache.size() == cached and first == again and again == ["Star.UnknownPlugin.Run(85)"]
+		and MVScript._re("^a$") == MVScript._re("^a$"), [cached, MVScript._re_cache.size(), first, again])
+	check("regex_cache_same_result", s.flags.get("DCultyL4") == true and s.variable(1476) == 3, [s.flags, s.variable(1476)])
 	# 插件指令设难度；增减技能（角色 0 为全队）
 	s.add_actor(1)
 	s.add_actor(8)

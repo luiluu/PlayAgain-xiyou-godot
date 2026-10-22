@@ -14,7 +14,7 @@ extends Node
 ## 用到的测试辅助（都只为速度或稳定，不改变流程本身）：
 ## - XMessageBox.auto：文字立即结束，选项按 auto_answers 依次应答（选项下标也从事件数据里按选项文字取）。
 ## - XBattleScene.force_auto：战斗全自动；XEnemy.force_roll=100：不出神话敌人（神话另由 xiyou_combat 测）。
-## - 固定随机种子 seed()；时钟加快（去掉 headless 每帧睡眠、物理帧 600／秒、time_scale 30，见 _fast_clock）。
+## - 固定 random_master（world 流与各场规则流由它派生；全局 seed() 只用来查地图与战斗没取全局随机）；时钟加快（去掉 headless 每帧睡眠、物理帧 600／秒、time_scale 30，见 _fast_clock）。
 ## - 队伍增强：出战成员第一件装备的能力值加到很大并回满。开局等级打不过守层者（一层里德 500 万生命，xiyou_flow 验证必败），
 ##   本测试查的是流程而不是数值；增强写在装备实例里，随存档一起存读，也顺带验证了装备实例的存读。
 ## - 移动：按地图通行度（MVTilemap.is_passable、事件碰撞）广度优先寻路，再逐格按方向键行走（玩家输入路径：计步、遇敌、自动战斗）；
@@ -446,6 +446,41 @@ func _boost_party(s: XState, atk := 2.0e16) -> void:
 		a.mp = a.mmp
 
 
+## 女娲完整开场带1047物理免疫，30%页换1048元素免疫；原版完整宿主首击已确认1047热缓存生效。
+## 仅本场临时排修的533（元素9、必中、零耗），第二阶段由原有物理属性攻击结束。
+## 走正式自动战斗排表，不改敌人状态／842；战后恢复排表、临时技能和原观察者。
+func _f31_fixture(s: XState) -> Dictionary:
+	var fixture := {"had_table": s.hang_up.has("ActSkill"), "table": s.hang_up.get("ActSkill", {}).duplicate(true),
+		"observer": XStateEffects.observer, "learned": [], "stages": []}
+	var table: Dictionary = fixture.table.duplicate(true)
+	for entry in [[8, 533]]:
+		var a := s.actor(entry[0])
+		if not a.skill_ids.has(entry[1]):
+			a.learn_skill(entry[1])
+			fixture.learned.append([a, entry[1]])
+		for round in range(1, 17):
+			table[a.display_name() + XHangUpAuto.three(round)] = entry[1]
+	s.hang_up["ActSkill"] = table
+	XStateEffects.observer = func(phase, sid, holder, ctx):
+		if fixture.observer.is_valid():
+			fixture.observer.call(phase, sid, holder, ctx)
+		if phase == "react" and sid in [1047, 1048] and holder is XEnemy and fixture.stages.size() < 64:
+			fixture.stages.append([sid, int(ctx.item.id), ctx.value, holder.state_ids.duplicate()])
+	return fixture
+
+
+func _restore_f31_fixture(s: XState, fixture: Dictionary) -> void:
+	if fixture.is_empty():
+		return
+	if fixture.had_table:
+		s.hang_up["ActSkill"] = fixture.table
+	else:
+		s.hang_up.erase("ActSkill")
+	for entry in fixture.learned:
+		entry[0].forget_skill(entry[1])
+	XStateEffects.observer = fixture.observer
+
+
 func _state_json(s: XState) -> String:
 	return JSON.stringify(JSON.parse_string(JSON.stringify(s.to_dict())))
 
@@ -561,6 +596,13 @@ func _talk(map: XMapScene, ev_id: int, answers: Array, tag: String, full: bool, 
 func _floor(f: Dictionary, full: bool) -> bool:
 	var n: int = f.floor
 	var tag := "f%d" % n
+	# 全局随机不再被地图与战斗取用（遇敌、事件随机、走动、打字音、战斗都有各自的流）：进层前后各取一次全局随机，
+	# 守层者战后取到的应正好是同一种子下的第二个数（_boss_no_global_random）
+	seed(seed_value + n)
+	var global_first := randi()
+	var global_next := randi()
+	seed(seed_value + n)
+	randi()
 	var map: XMapScene = _scene()
 	_watch(map)
 	var s := XState.current
@@ -602,10 +644,11 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	var boss := boss_of(f.map)
 	if not _check(tag + "_boss_found", not boss.is_empty() and boss.choice >= 0, boss):
 		return false
-	# 每场战斗的规则流按 battle_serial 派生；之前打了几场遇敌，要看地图随机走动与遇敌步数（全局随机，按物理帧取数，
-	# 并行负载下每帧跑的物理帧数不同），所以守层者战拿到哪条流每次不同，二十八层并行下偶发打输（f28_boss_won）。按层固定序号与全局种子。
+	# 每场战斗的规则流按 battle_serial 派生。dev.099 时遇敌步数与随机走动还走全局随机、按物理帧取数，并行负载下守层者战拿到哪条流
+	# 每次不同（二十八层偶发打输 f28_boss_won），所以按层固定序号。dev.102 起遇敌／事件随机／真气／挂机走 world 流，随机走动与打字音
+	# 用各自的 RNG，同一种子下各层遇敌场数与 world 流取数逐次相同（下面这行日志，八戒_45 并行连跑比对）；固定序号仍留着，让每层与前面各段无关。
+	log_lines.append("第 %d 层守层者前：battle_serial %d，world 流已取 %d 次，遇敌步数 %d" % [n, s.battle_serial, s.world_random().draws, _scene().encounter_count])
 	s.battle_serial = 1000 + n
-	seed(seed_value + n)
 	wrapped_steps = 0
 	var boss_answers := [boss.choice]
 	if PAY_GIFT.has(f.map):
@@ -613,14 +656,25 @@ func _floor(f: Dictionary, full: bool) -> bool:
 		_check(tag + "_gift_choice", boss_answers.size() == 2, boss_answers)
 		s.gain_item(182, 999)
 		s.set_variable(206, 99999)
+	var f31 := {}
+	if f.map == 148:
+		_check(tag + "_opening_kept", s.variable(842) == 0 and s.switch(682), [s.variable(842), s.switch(682)])
+		f31 = _f31_fixture(s)
 	if not await _talk(map, boss.id, boss_answers, tag + "_boss", full):
+		_restore_f31_fixture(s, f31)
 		return false
 	if full and WRAP_BOSS.has("%d:%d" % [f.map, boss.id]):
 		_check(tag + "_boss_wrapped", wrapped_steps > 0, wrapped_steps)
 	var idle := await _wait_idle(map, WAIT_EVENT * 3)
 	var won := s.variable(20) == n + 1 and s.self_switch(f.map, boss.id, "A")
+	_restore_f31_fixture(s, f31)
+	if not f31.is_empty():
+		var first: int = f31.stages.find_custom(func(row): return row[0] == 1047 and row[1] == 533 and row[2] > 0 and row[3].has(1050) and row[3].has(1053))
+		var second: int = f31.stages.find_custom(func(row): return row[0] == 1048 and row[1] == XBattleLogic.ATTACK_SKILL and row[2] > 0 and row[3].has(1051) and not row[3].has(1047))
+		_check(tag + "_immunity_stages", first >= 0 and second > first, f31.stages)
 	if not _check(tag + "_boss_won", idle and won and map.map_id == f.map, [idle, s.variable(20), map.map_id, boss, _boss_debug(map, s)]):
 		return false
+	_check(tag + "_boss_no_global_random", randi() == global_next, global_first)
 	if PAY_GIFT.has(f.map):
 		_check(tag + "_gift_paid", s.variable(842) == 0 and s.variable(PAY_GIFT[f.map]) == 0, [s.variable(842), s.variable(PAY_GIFT[f.map])])
 	_check(tag + "_clear_toast", map.toasts.any(func(t): return str(t).begins_with("通关神魔之塔第")), map.toasts.slice(-4))

@@ -115,6 +115,9 @@ func _ready() -> void:
 	_build_ui(vs)
 	message = XMessageBox.new()
 	message.position = _origin
+	# 原版窗口层里 Window_Message 排在 Window_OTBDisplay 之后：消息窗底色压在行动顺序条上、头像盖住条的左端（八戒_45 截图对照）。
+	# 行动顺序条是 z 8（要在敌人血条 z 5 之上），消息窗同 z、树序在后
+	message.z_index = 8
 	ui.add_child(message)
 	camera.sprites = sprites
 	for visual in get_children():
@@ -1197,7 +1200,9 @@ func _start_animation(id: int, target: XBattler) -> MVAnimation:
 	var a := MVAnimation.play(fx, id, place.call(), false, XConfig.battle_speed())
 	if a:
 		a.target = ts            # 目标闪光、隐藏作用在被打的战斗者上
-		a.follow = place         # updatePosition：每帧跟随目标
+		# updatePosition：每帧跟随目标；头上／中心的再随目标浮空、跳跃抬高（YEP_X_ActSeqPack2，见 XBattlerSprite.anim_lift）
+		var pos := int(data.get("position", 1))
+		a.follow = func() -> Vector2: return place.call() - Vector2(0, ts.anim_lift() if pos in [0, 1] else 0.0)
 	return a
 
 
@@ -1229,6 +1234,7 @@ func _attack_animation(u: XBattler) -> int:
 
 ## 伤害数字（XDamagePopup，LGP_BetterDamagePopup）。位置：敌人 = 脚底 + (0, −图高/2 + 16)（MOG Center Y-Axis），
 ## 角色 = 脚底；同一目标已有的弹出数决定叠加高度。text: "miss" 显示 Miss。
+const POPUP_Z := 7
 var _popups := {}          # XBattler -> Array[XDamagePopup]
 
 
@@ -1239,7 +1245,8 @@ func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := fals
 	var live: Array = _popups.get(b, []).filter(func(x): return is_instance_valid(x))
 	var p := XDamagePopup.new()
 	p.position = s.position + (Vector2.ZERO if b is XActor else Vector2(0, -s.height() / s.body_scale / 2.0 + 16))
-	p.z_index = 20
+	# 原版弹出数加在 Spriteset_Battle 里（LGP_BetterDamagePopup 第 665 行），在窗口层之下：在敌人血条（z 5）之上、行动顺序条／消息窗（z 8）与帮助卡（z 10）之下
+	p.z_index = POPUP_Z
 	p.setup(value, is_mp, critical, text == "miss", b is XActor, live.size(), is_tp)
 	fx.add_child(p)
 	live.append(p)

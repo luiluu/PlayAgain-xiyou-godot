@@ -82,6 +82,8 @@ static func content(obj: Dictionary, kind := "") -> Array:
 	if (type == 1 or type == 2) and XPower.enabled():
 		rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
 	if type == 3 and not _special_target(obj):
+		if _generic_character_skill(obj):  # characterHelpView：技能去掉与描述相同的行
+			rows = rows.filter(func(r): return str(r[0]) != str(obj.get("description", "")))
 		rows = _generic_view(obj, rows)
 	for r in rows:
 		r[0] = _terms(str(r[0]))
@@ -208,10 +210,16 @@ static func _terms(text: String) -> String:
 
 
 ## installDisplayPreferencesRuntime.characterHelpTarget 的技能段（10122～10299）走角色专用说明（未做，原样显示）。
-## 例外：导入角色被动 10264「异界制约」（<CodexImportedBalance>）在原版没有专用副本与动态行，characterHelpView 的分组与普通视图同形，按普通视图显示（help_card 参照已对照）。
+## 例外（_generic_character_skill）：导入角色被动 10264「异界制约」（<CodexImportedBalance>）与琦玉 10169「欢迎来到异次元」在原版没有专用副本与动态行，
+## characterHelpView 的分组与普通视图同形，按普通视图显示，只是技能另把与描述相同的行去掉（10169 的描述「被动／效果…」不显示）；help_card 参照已对照。
 static func _special_target(obj: Dictionary) -> bool:
 	var id := int(obj.get("id", 0))
-	return id >= 10122 and id <= 10299 and not str(obj.get("note", "")).contains("<CodexImportedBalance>")
+	return id >= 10122 and id <= 10299 and not _generic_character_skill(obj)
+
+
+static func _generic_character_skill(obj: Dictionary) -> bool:
+	var id := int(obj.get("id", 0))
+	return id >= 10122 and id <= 10299 and (str(obj.get("note", "")).contains("<CodexImportedBalance>") or id == 10169)
 
 
 # ---- installDamageElementRuntime ----
@@ -431,6 +439,10 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 		t = RegEx.create_from_string("[-－]\\s*\\[敌·(?:物抗|魔抗|物防|魔防)\\s*[*×]\\s*[\\d.]+\\](?:\\s*[*×]\\s*\\[[^\\]]*\\])*").sub(t, "", true)
 		t = RegEx.create_from_string("[-－]\\s*敌·(?:物抗|魔抗|物防|魔防)(?:\\s*[*×]\\s*[\\d.]+)?").sub(t, "", true)
 		t = RegEx.create_from_string("\\(\\s*\\)").sub(t, "", true)
+		if XCat.is_cat_item(obj):  # 小猫剑圣：characterHelpView 里 currentHelpText 换成 C.helpText，keep 去掉「条件：…进阶／N级」
+			t = XCat.help_text(t, obj, XCat.help_actor())
+			if _re("^条件[：:]", t) and _re("(?:\\d+级|进阶)", t):
+				continue
 		if unlock.search(t) != null or _re("^(?:装备限制|冷却)[：:]无$", t) or seen.has(t):
 			continue
 		seen[t] = true
@@ -451,6 +463,8 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 			s[0] = "\\c[1]" + t
 			effects.append(s)
 	var priority := ["伤害属性", "目标", "伤害类型", "命中", "暴击", "段数", "冷却", "准备时间"]
+	if XCat.is_cat_item(obj):  # characterHelpView：目标排在伤害属性前
+		priority = ["目标", "伤害类型", "伤害属性", "命中", "暴击", "段数", "冷却", "准备时间"]
 	var basic := []
 	var other := []
 	for row in element_rows + info:
@@ -476,6 +490,12 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 				common = k
 		for r in body:
 			r[1] = common
+	if XCat.is_cat_item(obj):
+		# 近似 characterHelpView（未移植）对小猫剑技卡的结果：伤害属性行是备注里的原文（不着色），字号取 info 首行的 14，
+		# 因此不与目标并行。只对照了参照里的 10437／10438，完整的 characterHelpView 留给界面车道。
+		for r in element_rows:
+			r[0] = RegEx.create_from_string("\\\\C\\[\\d+\\]").sub(str(r[0]), "", true)
+			r[1] = 14
 	var compact := []
 	for row in info:
 		var last = compact.back() if not compact.is_empty() else null

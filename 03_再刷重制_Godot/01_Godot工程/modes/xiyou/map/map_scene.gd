@@ -188,13 +188,27 @@ func _show_map_name(text: String) -> void:
 
 
 func load_map(id: int, x: int, y: int, d: int) -> void:
+	var s := XState.current
+	# Game_Player.performTransfer：新地图 ID 与当前相同时不 $gameMap.setup，事件（位置、朝向、强制路线、页、消除）原样保留，
+	# 只重新放置玩家与跟随者（locate：synchronize、makeEncounterCount）；场景本身照常重建（地图名、自动播放、传送按钮）
+	if id == map_id and id == s.map_id and chars != null and is_instance_valid(chars):
+		XMapTransfer.on_arrive(s, id)
+		_reset_transfer_button()
+		_clear_treasure_popups()
+		camera.reparent(self)
+		for c in followers + [player]:
+			if c != null and is_instance_valid(c):
+				chars.remove_child(c)
+				c.queue_free()
+		_place_party(x, y, d)
+		return
 	for n in [lower, upper, chars]:
 		if n:
 			n.queue_free()
 	events.clear()
-	var s := XState.current
 	if id != s.map_id:
 		s.battleback = []
+		s.erased_events.clear()
 	map_id = id
 	map_data = XDB.map(id)
 	s.map_id = id
@@ -219,13 +233,25 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 		var e := MVEvent.new()
 		e.tilemap = lower
 		chars.add_child(e)
+		if s.erased_events.has(int(ev.id)):
+			e.erased = true
+			e.page_index = -2   # refresh 照空页设置（透明、可穿过）
 		e.setup_event(id, ev)
 		events.append(e)
 	lower.tile_events = _tile_events_at
-	# MOG_TreasurePopup：换地图时上一张图的获得提示不带过来（场所移动之后才执行的获得指令照常出现在新地图）
+	_clear_treasure_popups()
+	_place_party(x, y, d)
+
+
+## MOG_TreasurePopup：换地图时上一张图的获得提示不带过来（场所移动之后才执行的获得指令照常出现在新地图）
+func _clear_treasure_popups() -> void:
 	for n in get_children():
 		if n is XTreasurePopup:
 			n.queue_free()
+
+
+## 放玩家与跟随者、镜头、地图名、自动播放、遇敌步数（换图与同图移动共用）
+func _place_party(x: int, y: int, d: int) -> void:
 	# 队伍跟随在玩家之前加入（Spriteset_Map 先倒序放跟随、最后放玩家；同一行时玩家画在最上面）。
 	# MV 的跟随者总是存在，显示与否看 Game_Followers._visible（XState.followers_visible，refresh_party_sprites 里套用）。
 	followers.clear()
@@ -328,8 +354,10 @@ func set_followers_visible(v: bool) -> void:
 	refresh_party_sprites()
 
 
-## 指令 214 暂时消除：本次进图期间该事件不再出现（Game_Event.erase）
+## 指令 214 暂时消除：本次进图期间该事件不再出现（Game_Event.erase）；记进 XState.erased_events 随档保存
 func erase_event(id: int) -> void:
+	if not XState.current.erased_events.has(id):
+		XState.current.erased_events.append(id)
 	for e in events:
 		if e.event_id == id:
 			e.erased = true

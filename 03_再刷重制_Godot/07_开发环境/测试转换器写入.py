@@ -6,8 +6,12 @@ import json
 import os
 from pathlib import Path
 import sys
+import shutil
+import struct
 import tempfile
+import time
 import unittest
+import zlib
 from unittest import mock
 
 TOOLS = Path(__file__).resolve().parents[1] / '03_转换工具'
@@ -178,6 +182,104 @@ class ExportWriteTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.run_export()
         self.assertEqual(before, self.snapshot(oracle, metadata=True))
+
+
+FIXTURES = Path(__file__).resolve().parent / '测试夹具'
+PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
+
+
+def png_size(data):
+    """PNG 的 IHDR 宽高"""
+    return int.from_bytes(data[16:20], 'big'), int.from_bytes(data[20:24], 'big')
+
+
+class FakePngTranscodeTests(ExportWriteTests):
+    """扩展名 .png、内容是 JPEG／WebP 的图（原版 162 诛仙 小诛仙、guanxi7_1）：转换器用 sips 转成真 PNG。
+    夹具是真的 JPEG（sips 生成的 2×2）与 WebP（1×1 无损）；其余图（真 PNG、测试里的假字节）原样复制、不调 sips。
+    继承 ExportWriteTests：写入生命周期各项在有转码图时再跑一遍。"""
+    def setUp(self):
+        super().setUp()
+        self.jpeg = (FIXTURES / '红色_2x2.jpg').read_bytes()
+        self.webp = (FIXTURES / '1x1.webp').read_bytes()
+        self.real_png = (self.app / 'real.png')
+        self.real_png.write_bytes(PNG_SIGNATURE + b'fixture-not-decoded')
+        for rel, data in {'img/pictures/jpeg.png': self.jpeg, 'img/pictures/webp.png': self.webp,
+                          'img/pictures/real.png': self.real_png.read_bytes(), 'img/pictures/photo.jpg': self.jpeg}.items():
+            (self.app / rel).write_bytes(data)
+        self.cfg = dict(self.cfg, pictures=['pictures/a', 'pictures/b', 'pictures/jpeg', 'pictures/webp',
+                                            'pictures/real', 'pictures/photo'])
+
+    def manifest(self):
+        return json.loads((self.out / 'manifest.json').read_bytes())
+
+    def test_fixtures_are_real_jpeg_and_webp(self):
+        self.assertTrue(self.jpeg.startswith(b'\xff\xd8\xff'))
+        self.assertEqual((self.webp[:4], self.webp[8:12]), (b'RIFF', b'WEBP'))
+
+    def test_jpeg_and_webp_named_png_become_real_png(self):
+        self.run_export()
+        manifest = self.manifest()
+        for name, source, size in [('jpeg', self.jpeg, (2, 2)), ('webp', self.webp, (1, 1))]:
+            rel = f'img/pictures/{name}.png'
+            data = (self.out / rel).read_bytes()
+            self.assertTrue(data.startswith(PNG_SIGNATURE), name)
+            self.assertEqual(png_size(data), size, name)
+            self.assertEqual(manifest['inputs'][rel], exporter.sha(source))
+            self.assertEqual(manifest['outputs'][rel], exporter.sha(data))
+            self.assertNotEqual(manifest['inputs'][rel], manifest['outputs'][rel])
+
+    def test_other_images_copied_verbatim_without_sips(self):
+        real_run = exporter.subprocess.run
+        calls = []
+        def run(args, *a, **k):
+            calls.append(Path(args[4]).name)  # sips -s format png <源> --out <临时>
+            return real_run(args, *a, **k)
+        with mock.patch.object(exporter.subprocess, 'run', side_effect=run):
+            self.run_export()
+        # 只有两张伪 PNG 调了 sips；测试用的假字节图、真 PNG、.jpg 原样
+        self.assertEqual(sorted(calls), ['jpeg.png', 'webp.png'])
+        manifest = self.manifest()
+        for rel in ['img/pictures/a.png', 'img/pictures/b.png', 'img/pictures/real.png', 'img/pictures/photo.jpg']:
+            self.assertEqual((self.out / rel).read_bytes(), (self.app / rel).read_bytes(), rel)
+            self.assertEqual(manifest['inputs'][rel], manifest['outputs'][rel], rel)
+
+    def test_transcode_is_repeatable_so_rerun_writes_nothing(self):
+        self.run_export()
+        before = self.snapshot(self.out, metadata=True)
+        second = self.run_export()
+        self.assertEqual(second['written'], 0)
+        self.assertEqual(before, self.snapshot(self.out, metadata=True))
+
+    def test_real_transcode_bytes_stable_across_time(self):
+        # 真调 sips，中间跨过 1 秒以上：同一源图两次转码输出必须逐字节相同
+        self.run_export()
+        first = {n: (self.out / f'img/pictures/{n}.png').read_bytes() for n in ('jpeg', 'webp')}
+        time.sleep(1.2)
+        shutil.rmtree(self.out / 'img/pictures')
+        os.remove(self.out / 'manifest.json')
+        self.run_export()
+        for n, data in first.items():
+            self.assertEqual(data, (self.out / f'img/pictures/{n}.png').read_bytes(), n)
+
+    def test_normalize_png_drops_time_and_fixes_icc_date(self):
+        def chunk(kind, body):
+            return struct.pack('>I4s', len(body), kind) + body + struct.pack('>I', zlib.crc32(kind + body))
+        def png(date, time_body):
+            profile = bytearray(128)
+            profile[24:36] = date
+            iccp = b'p\0\0' + zlib.compress(bytes(profile))
+            return (PNG_SIGNATURE + chunk(b'IHDR', struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0))
+                    + chunk(b'iCCP', iccp) + chunk(b'tIME', time_body) + chunk(b'tEXt', b'k\0v')
+                    + chunk(b'IDAT', zlib.compress(b'\0\1\2\3')) + chunk(b'IEND', b''))
+        a = exporter.normalize_png(png(bytes(range(12)), b'\x07\xea\x0a\x16\x01\x02\x03'))
+        b = exporter.normalize_png(png(bytes(range(12, 24)), b'\x07\xea\x0a\x17\x04\x05\x06'))
+        self.assertEqual(a, b)
+        kinds, i = [], 8
+        while i < len(a):
+            n = int.from_bytes(a[i:i + 4], 'big')
+            kinds.append(a[i + 4:i + 8])
+            i += 12 + n
+        self.assertEqual(kinds, [b'IHDR', b'iCCP', b'IDAT', b'IEND'])
 
 
 if __name__ == '__main__':
