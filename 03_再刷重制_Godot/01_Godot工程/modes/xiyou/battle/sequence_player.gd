@@ -3,7 +3,7 @@ extends RefCounted
 ## YEP 行动序列的画面部分，逐物理帧复现正式版的行动机（读数见 ui_reference __seqRef 与 tests/fixtures/action_sequence_oracle.json）。
 ## 结算已由 XActionSequence 做完，这里只按它记下的 seq_phase / seq / seq_target / seq_end 与命中记录演出。
 ## 每帧顺序同 Scene_Battle.update：镜头（$gameScreen.update）→ 行动机（BattleManager.update，日志窗忙时跳过）
-## → 战斗者精灵 → 日志窗（Window_BattleLog.update：等待计数每帧 −2，否则检查等待模式，否则执行一个排队方法）。
+## → 战斗者精灵 → 技能动画（见 _tick_anims）→ 日志窗（Window_BattleLog.update：等待计数每帧 −2，否则检查等待模式，否则执行一个排队方法）。
 ## - 行动机：phaseChange 一帧换段（下一帧才执行该段指令）；段内指令连续执行到返回 false 为止，段空了当帧转 phaseChange；
 ##   target 段换下一个目标在同一帧继续；最后一段之后再一帧 endAction。
 ## - 返回 false（占一帧以上）的指令照正式版各插件：DISPLAY ACTION、CLEAR BATTLE LOG、WAIT 系列、MOTION、FACE、FLOAT、
@@ -58,10 +58,12 @@ func play() -> void:
 		sp.seq_driven = true
 	while not done:
 		scene.camera.update()
+		var running := _live_anims()
 		if not _busy():
 			_step()
 		for sp in scene.sprites.values():
 			(sp as XBattlerSprite).seq_update()
+		_tick_anims(running)
 		scene.update_gauges()
 		scene.apply_camera()
 		if on_frame.is_valid():
@@ -71,7 +73,23 @@ func play() -> void:
 		await tree.physics_frame
 	for sp in scene.sprites.values():
 		sp.seq_driven = false
+	for a in _live_anims():
+		a.external = false
 	scene.seq_player = null
+
+
+func _live_anims() -> Array:
+	return scene.fx.get_children().filter(func(n): return n is MVAnimation and n.is_inside_tree())
+
+
+## Spriteset_Battle.update 里的动画：先移除上一帧播完的（Sprite_Base.updateAnimationSprites），再推进其余的。
+## 本帧行动机新建的动画由 Sprite_Battler.updateAnimation 加进战场子节点，正式版本帧的 forEach 走不到它，下一帧才开始推进。
+func _tick_anims(running: Array) -> void:
+	for a in _live_anims():
+		a.external = true
+	for a in running:
+		if is_instance_valid(a) and a.is_inside_tree():
+			a.tick()
 
 
 func _busy() -> bool:

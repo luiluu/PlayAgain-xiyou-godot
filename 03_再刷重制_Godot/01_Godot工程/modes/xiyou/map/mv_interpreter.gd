@@ -187,8 +187,9 @@ func _host_command(c: Dictionary):
 			host.player.transparent = int(p[0]) == 0
 			host.player.queue_redraw()
 		214:
-			# 暂时消除事件（Game_Map.eraseEvent）：换地图重建事件后复原
-			if event_id > 0 and host.has_method("erase_event"):
+			# 暂时消除事件（Game_Map.eraseEvent）：换地图重建事件后复原。
+			# 同 isOnCurrentMap：先 201 换了图再 214 时不动新图的同号事件
+			if event_id > 0 and map_id == state().map_id and host.has_method("erase_event"):
 				host.erase_event(event_id)
 		212:
 			# 显示动画 [角色, 动画, 等待]

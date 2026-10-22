@@ -112,6 +112,9 @@ var battle_bgm: Dictionary = {}     # $gameSystem._battleBgm（指令 132 更改
 ## $gameMap._battleback1Name／_battleback2Name 被指令 283 改过时的 [背景1, 背景2]；空＝用地图指定的（Game_Map.setupBattleback）。
 ## 原版 $gameMap 整个进存档，读档同版本不重设地图，所以随档保存；换到别的地图时由 XMapScene.load_map 清掉。
 var battleback: Array = []
+## 当前地图上被指令 214 暂时消除的事件 ID（Game_Event._erased）：同上随 $gameMap 进存档，同图移动也保留；换到别的地图时清掉。
+## 副本里只靠 214 消失的明雷怪（冻结数据 131 页）读档后不再出现。
+var erased_events: Array[int] = []
 var followers_visible := true      # Game_Followers._visible（初值 System optFollowers；指令 216、设置「队列跟随」）
 var pingbi_quality: Array = []      # 屏蔽掉落：旧档 0～7 是否屏蔽（$gameSystem._pingbiQuality）
 ## 副本上下文（XDungeon：进门时的 pending、进入后的 context）、副本 Boss 熟练度（$gameSystem._codexBossMastery：敌群 → 次数）、
@@ -451,7 +454,7 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements}
 
@@ -548,6 +551,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.battle_bgm = d.get("battleBgm", {}) if d.get("battleBgm", {}) is Dictionary else {}
 	var bb = d.get("battleback", [])
 	s.battleback = [str(bb[0]), str(bb[1])] if bb is Array and bb.size() == 2 else []
+	s.erased_events.assign(Array(d.get("erasedEvents", [])).map(func(v): return int(v)))
 	s.encounter_enabled = bool(d.get("encounterEnabled", true))
 	# dev.032 以前的存档没有这一项：按初值（原版开局就是插件参数）
 	s.actor_max_level = int(d.get("actorMaxLevel", default_max_level()))

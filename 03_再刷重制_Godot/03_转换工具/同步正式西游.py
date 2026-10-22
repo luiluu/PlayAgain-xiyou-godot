@@ -77,6 +77,7 @@ PROBES = [
     (['settlement_probe.cjs'], ['settlement.json']),
     (['item_marks_probe.cjs'], ['item_marks.json']),
     (['orb_probe.cjs'], ['orbs.json']),
+    (['module_hooks_probe.cjs'], ['module_hooks.json']),
     (['orb_shop_probe.cjs'], ['orb_shop.json']),
     (['dungeon_probe.cjs'], ['dungeon.json']),
     (['shared_system_probe.cjs'], ['shop_stock.json', 'battle_messages.json', 'challenge_passives.json']),

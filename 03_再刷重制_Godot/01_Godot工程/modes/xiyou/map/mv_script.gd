@@ -19,6 +19,16 @@ extends RefCounted
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## CodexReincarnationRandom.entry：open 之后的选择结果 {accepted, hard}
 static var reincarnation_entry := {}
+## 编译好的正则（按模式串缓存）：脚本每条语句都要试一遍全部写法，不再逐条现编译
+static var _re_cache := {}
+
+
+static func _re(pattern: String) -> RegEx:
+	var r: RegEx = _re_cache.get(pattern)
+	if r == null:
+		r = RegEx.create_from_string(pattern)
+		_re_cache[pattern] = r
+	return r
 
 
 ## 执行一段脚本；返回认不出的语句（空数组表示全部认得）。
@@ -75,25 +85,25 @@ static func _statements(js: String, interp) -> Array:
 		var st := raw.strip_edges()
 		if st == "" or st == "}" or st == "{":
 			continue
-		var m := RegEx.create_from_string("^\\$gameParty\\.(DCultyL\\d+)\\s*=\\s*(true|false)$").search(st)
+		var m := _re("^\\$gameParty\\.(DCultyL\\d+)\\s*=\\s*(true|false)$").search(st)
 		if m:
 			s.flags[m.get_string(1)] = m.get_string(2) == "true"
 			continue
-		m = RegEx.create_from_string("^\\$gamePlayer\\.SaveGameId\\s*=\\s*(\\d+)$").search(st)
+		m = _re("^\\$gamePlayer\\.SaveGameId\\s*=\\s*(\\d+)$").search(st)
 		if m:
 			s.flags["SaveGameId"] = int(m.get_string(1))
 			continue
-		m = RegEx.create_from_string("^ConfigManager\\.MapXy\\s*=\\s*(true|false)$").search(st)
+		m = _re("^ConfigManager\\.MapXy\\s*=\\s*(true|false)$").search(st)
 		if m:
 			XConfig.set_map_xy(m.get_string(1) == "true")
 			continue
-		if RegEx.create_from_string("^ConfigManager\\.\\w+\\s*=\\s*\\w+$").search(st) or st == "$gameSystem.onBeforeSave()":
+		if _re("^ConfigManager\\.\\w+\\s*=\\s*\\w+$").search(st) or st == "$gameSystem.onBeforeSave()":
 			continue
-		m = RegEx.create_from_string("^\\$gamePlayer\\.SaveActorName\\s*=\\s*prompt\\(\\s*\"([^\"]*)\"\\s*,\\s*\"([^\"]*)\"\\s*\\)$").search(st)
+		m = _re("^\\$gamePlayer\\.SaveActorName\\s*=\\s*prompt\\(\\s*\"([^\"]*)\"\\s*,\\s*\"([^\"]*)\"\\s*\\)$").search(st)
 		if m:
 			s.actor_name = await interp.host.input_text(m.get_string(1), m.get_string(2))
 			continue
-		m = RegEx.create_from_string("^\\$gameParty\\.gainItem\\(\\$dataItems\\[\\$gameVariables\\.value\\((\\d+)\\)\\]\\s*,\\s*(\\d+)").search(st)
+		m = _re("^\\$gameParty\\.gainItem\\(\\$dataItems\\[\\$gameVariables\\.value\\((\\d+)\\)\\]\\s*,\\s*(\\d+)").search(st)
 		if m:
 			s.gain_item(int(s.variable(int(m.get_string(1)))), int(m.get_string(2)))
 			continue
@@ -105,24 +115,24 @@ static func _statements(js: String, interp) -> Array:
 		# 洪荒（难度 8）的诅咒加成券与不朽之力：其他难度不做任何事
 		if st in ["if(window.CodexHonghuang)CodexHonghuang.grantTicketBonus()", "if(window.CodexHonghuang)CodexHonghuang.rollPower()"] and s.difficulty != 8:
 			continue
-		m = RegEx.create_from_string("^\\$gameVariables\\.setValue\\((\\d+),window\\.CodexOrbs&&CodexOrbs\\.rollInt\\?CodexOrbs\\.rollInt\\('(\\w+)',(\\d+),(\\d+)\\):1\\+Math\\.randomInt\\(\\d+\\)\\)$").search(st)
+		m = _re("^\\$gameVariables\\.setValue\\((\\d+),window\\.CodexOrbs&&CodexOrbs\\.rollInt\\?CodexOrbs\\.rollInt\\('(\\w+)',(\\d+),(\\d+)\\):1\\+Math\\.randomInt\\(\\d+\\)\\)$").search(st)
 		if m:
 			s.set_variable(int(m.get_string(1)), XOrbs.roll_int(s, m.get_string(2), int(m.get_string(3)), int(m.get_string(4))))
 			continue
 		# CodexV010Fixes.rewardNotice(this, '前'+CodexV010Fixes.awardQuantity(this,'种类',ID,默认)+'后')：宝箱里不提示；数量取本解释器最近一次实际所得
-		m = RegEx.create_from_string("^CodexV010Fixes\\.rewardNotice\\(this,\\s*'([^']*)'\\s*\\+\\s*CodexV010Fixes\\.awardQuantity\\(this,'(\\w+)',(\\d+),(\\d+)\\)\\s*\\+\\s*'([^']*)'\\)$").search(st)
+		m = _re("^CodexV010Fixes\\.rewardNotice\\(this,\\s*'([^']*)'\\s*\\+\\s*CodexV010Fixes\\.awardQuantity\\(this,'(\\w+)',(\\d+),(\\d+)\\)\\s*\\+\\s*'([^']*)'\\)$").search(st)
 		if m:
 			if interp.receipt == null:
 				var g: Dictionary = interp.last_gain
 				var qty := int(g.amount) if str(g.get("kind", "")) == m.get_string(2) and int(g.get("id", -1)) == int(m.get_string(3)) else int(m.get_string(4))
 				interp.host.toast(m.get_string(1) + str(qty) + m.get_string(5))
 			continue
-		m = RegEx.create_from_string("^\\$gameVariables\\.setValue\\((\\d+),window\\.CodexMijing\\?CodexMijing\\.pickHere\\(\\):(\\d+)\\)$").search(st)
+		m = _re("^\\$gameVariables\\.setValue\\((\\d+),window\\.CodexMijing\\?CodexMijing\\.pickHere\\(\\):(\\d+)\\)$").search(st)
 		if m:
 			s.set_variable(int(m.get_string(1)), XDungeon.mijing_pick_here(s))
 			continue
 		# $gameVariables.setValue(N, 数字)：玉皇大帝礼物 900、奇异石碑 899、Map158 古龙祭坛 1476 等。经 set_variable 才会记进跨存档（XGlobalVars）
-		m = RegEx.create_from_string("^\\$gameVariables\\.setValue\\((\\d+)\\s*,\\s*(-?\\d+(?:\\.\\d+)?)\\)$").search(st)
+		m = _re("^\\$gameVariables\\.setValue\\((\\d+)\\s*,\\s*(-?\\d+(?:\\.\\d+)?)\\)$").search(st)
 		if m:
 			s.set_variable(int(m.get_string(1)), float(m.get_string(2)))
 			continue
@@ -146,7 +156,7 @@ static func _statements(js: String, interp) -> Array:
 		if st == "CodexReincarnationRandom.finishEntry()":
 			continue
 		# 成就（Star_AchievementSystem，见 XAchievement）：宝箱、守层者、传送等事件里的 GetAcReward(N)；公共事件 431 打开成就界面
-		m = RegEx.create_from_string("^Star\\.AchievementSystem\\.GetAcReward\\((\\d+)\\)$").search(st)
+		m = _re("^Star\\.AchievementSystem\\.GetAcReward\\((\\d+)\\)$").search(st)
 		if m:
 			XAchievement.reward(XAchievement.event_id_fix(int(m.get_string(1)), interp.map_id, interp.event_id), s)
 			continue
@@ -193,21 +203,21 @@ static func _reincarnation_open(interp) -> void:
 ## $.toaster({ message : '…' })：字面文字与下列部分用 + 拼接（引号里的 + 不算）：
 ## $dataItems[$gameVariables.value(N)].name、$gameVariables.value(N)（JS 数字写法）
 static func _toaster_text(js: String) -> String:
-	var m := RegEx.create_from_string("\\$\\.toaster\\(\\s*\\{\\s*message\\s*:\\s*(.*?)\\s*\\}\\s*\\)").search(js)
+	var m := _re("\\$\\.toaster\\(\\s*\\{\\s*message\\s*:\\s*(.*?)\\s*\\}\\s*\\)").search(js)
 	if m == null:
 		return ""
 	var out := ""
 	for part in _concat_parts(m.get_string(1)):
 		var p := str(part).strip_edges()
-		var lit := RegEx.create_from_string("^['\"](.*)['\"]$").search(p)
+		var lit := _re("^['\"](.*)['\"]$").search(p)
 		if lit:
 			out += lit.get_string(1)
 			continue
-		var item := RegEx.create_from_string("^\\$dataItems\\[\\$gameVariables\\.value\\((\\d+)\\)\\]\\.name$").search(p)
+		var item := _re("^\\$dataItems\\[\\$gameVariables\\.value\\((\\d+)\\)\\]\\.name$").search(p)
 		if item:
 			out += str(XDB.rec("Items", int(XState.current.variable(int(item.get_string(1))))).get("name", ""))
 			continue
-		var v := RegEx.create_from_string("^\\$gameVariables\\.value\\((\\d+)\\)$").search(p)
+		var v := _re("^\\$gameVariables\\.value\\((\\d+)\\)$").search(p)
 		if v:
 			out += js_number(XState.current.variable(int(v.get_string(1))))
 			continue
@@ -258,14 +268,14 @@ static func eval_expr(js: String) -> Variant:
 		["CodexReincarnationRandom.entryAccepted()", "entry_accepted()"], ["CodexReincarnationRandom.entryHard()", "entry_hard()"]]
 	for s in subs:
 		e = e.replace(s[0], s[1])
-	e = RegEx.create_from_string("\\$gameParty\\.numItems\\(\\$dataItems\\[(\\d+)\\]\\)").sub(e, "items($1)", true)
-	e = RegEx.create_from_string("!(?!=)").sub(e, " not ", true)
+	e = _re("\\$gameParty\\.numItems\\(\\$dataItems\\[(\\d+)\\]\\)").sub(e, "items($1)", true)
+	e = _re("!(?!=)").sub(e, " not ", true)
 	var allowed := ["v", "sw", "playtime", "gold", "steps", "party_size", "map_id", "items", "entry_accepted", "entry_hard", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
-	for w in RegEx.create_from_string("[A-Za-z_$][A-Za-z_0-9$.]*").search_all(e):
+	for w in _re("[A-Za-z_$][A-Za-z_0-9$.]*").search_all(e):
 		if not allowed.has(w.get_string()):
 			return null
 	# JS 除法是浮点：整数字面量一律写成浮点
-	e = RegEx.create_from_string("(?<![\\d.])(\\d+)(?![\\d.])").sub(e, "$1.0", true)
+	e = _re("(?<![\\d.])(\\d+)(?![\\d.])").sub(e, "$1.0", true)
 	var ex := Expression.new()
 	if ex.parse(e) != OK:
 		return null
@@ -291,31 +301,31 @@ class ExprEnv:
 static func _actor_loop(js: String) -> Array:
 	var flat := js.replace("\n", " ")
 	# 按 ID 列表：var ids = [..]; ids.forEach(function(actorId){ …forgetSkill(A); learnSkill(B); }); 以及列表外有名字的角色 learnSkill(C)
-	var list := RegEx.create_from_string("var\\s+(\\w+)\\s*=\\s*\\[([\\d,\\s]*)\\]").search(flat)
+	var list := _re("var\\s+(\\w+)\\s*=\\s*\\[([\\d,\\s]*)\\]").search(flat)
 	if list and flat.contains(list.get_string(1) + ".forEach"):
 		var name := list.get_string(1)
 		var ids := Array(list.get_string(2).split(",", false)).map(func(v): return int(v.strip_edges()))
 		var ops := []
-		var each := RegEx.create_from_string(name + "\\.forEach\\(function\\s*\\(\\w+\\)\\s*\\{(.*?)\\}\\s*\\)").search(flat)
+		var each := _re(name + "\\.forEach\\(function\\s*\\(\\w+\\)\\s*\\{(.*?)\\}\\s*\\)").search(flat)
 		if each == null:
 			return []
-		for call in RegEx.create_from_string("(forgetSkill|learnSkill)\\((\\d+)\\)").search_all(each.get_string(1)):
+		for call in _re("(forgetSkill|learnSkill)\\((\\d+)\\)").search_all(each.get_string(1)):
 			ops.append({"op": "forget" if call.get_string(1) == "forgetSkill" else "learn", "skill": int(call.get_string(2)), "ids": ids, "exclude": [], "named": false})
 		var rest := flat.substr(each.get_end())
 		if rest.contains("!" + name + ".includes"):
-			var others := RegEx.create_from_string("learnSkill\\((\\d+)\\)").search(rest)
+			var others := _re("learnSkill\\((\\d+)\\)").search(rest)
 			if others:
-				ops.append({"op": "learn", "skill": int(others.get_string(1)), "ids": [], "exclude": ids, "named": RegEx.create_from_string(_NAMED).search(rest) != null})
+				ops.append({"op": "learn", "skill": int(others.get_string(1)), "ids": [], "exclude": ids, "named": _re(_NAMED).search(rest) != null})
 		return ops
 	# for (var j = 1; j < $dataActors.length 或 999; j++) { [if (名字非空)] …actor(j)…learnSkill(N) / forgetSkill(N) }
-	var head := RegEx.create_from_string("^for\\s*\\(\\s*(?:var|let)\\s+j\\s*=\\s*1\\s*;\\s*j\\s*<\\s*(\\$dataActors\\.length|999)\\s*;\\s*j\\+\\+\\s*\\)\\s*\\{(.*)\\}$").search(flat.strip_edges().trim_prefix("var j = $gameParty._targetActorId;").strip_edges())
+	var head := _re("^for\\s*\\(\\s*(?:var|let)\\s+j\\s*=\\s*1\\s*;\\s*j\\s*<\\s*(\\$dataActors\\.length|999)\\s*;\\s*j\\+\\+\\s*\\)\\s*\\{(.*)\\}$").search(flat.strip_edges().trim_prefix("var j = $gameParty._targetActorId;").strip_edges())
 	if head == null:
 		return []
 	var body := head.get_string(2)
-	var calls := RegEx.create_from_string("(forgetSkill|learnSkill)\\((\\d+)\\)").search_all(body)
-	if calls.is_empty() or RegEx.create_from_string("\\b(if|else)\\b").search(body.replace("if($dataActors[j].name != '')", "").replace("if ($dataActors[j].name != '')", "")):
+	var calls := _re("(forgetSkill|learnSkill)\\((\\d+)\\)").search_all(body)
+	if calls.is_empty() or _re("\\b(if|else)\\b").search(body.replace("if($dataActors[j].name != '')", "").replace("if ($dataActors[j].name != '')", "")):
 		return []
-	var named := RegEx.create_from_string(_NAMED).search(body) != null
+	var named := _re(_NAMED).search(body) != null
 	var out := []
 	for call in calls:
 		out.append({"op": "forget" if call.get_string(1) == "forgetSkill" else "learn", "skill": int(call.get_string(2)), "ids": [], "exclude": [], "named": named})
