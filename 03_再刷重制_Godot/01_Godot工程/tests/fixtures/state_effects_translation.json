@@ -1,2087 +1,2087 @@
 {
- "legacy": [
-  {
-   "state": 407,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.85,
-     "round": "floor"
-    }
-   ],
-   "note": "<Custom React Effect>\nif (value > 0 && this.isHpEffect()) {\nvalue *= 1 - 0.15;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
-  },
-  {
-   "state": 414,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.5,
-     "round": "floor"
-    }
-   ],
-   "note": "<BuffType:祝福>\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()) {\nvalue *= 1 - 0.5;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
-  },
-  {
-   "state": 712,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<DNShow>\n<Custom Confirm Effect>\n\tif (value !== 0) {\n\tvalue = Math.ceil(value * 1.5);\n\t}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 713,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 2.0,
-     "round": "ceil"
-    }
-   ],
-   "note": "<DNShow>\n<Custom Confirm Effect>\n\tif (value !== 0) {\n\tvalue = Math.ceil(value * 2.0);\n\t}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 720,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.85,
-     "round": "floor"
-    }
-   ],
-   "note": "<DNShow>\n\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()) {\nvalue *= 1 - 0.15;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()) {\n  var mpDmg = Math.floor(value * 0.50);\n  mpDmg = Math.min(mpDmg, target.mp);\n  target.gainMp(-mpDmg);\n  value -= mpDmg;\n  if (target.mp === 0) {\n  \n  }\n}\n</Custom React Effect>\n<Permanent>\n"
-  },
-  {
-   "state": 721,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.85,
-     "round": "floor"
-    }
-   ],
-   "note": "<Custom React Effect>\nif (value > 0 && this.isHpEffect()) {\nvalue *= 1 - 0.15;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
-  },
-  {
-   "state": 838,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.3,
-     "round": "ceil"
-    }
-   ],
-   "note": "<DNShow>\n<Custom Confirm Effect>\n\tif (value !== 0) {\n\tvalue = Math.ceil(value * 1.3);\n\t}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 851,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.7,
-     "round": "floor"
-    }
-   ],
-   "note": "<BuffType:眩晕>\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.3;\nvalue = Math.floor(value);\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 968,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.5,
-     "round": "floor"
-    }
-   ],
-   "note": "<StateNote>\n睡眠且不可被伤害唤醒，但所受伤害*50%\n</StateNote>\n<RightDownNote:\"长梦即是永恒……\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.5;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
-  },
-  {
-   "state": 978,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.1,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*110%\n</StateNote>\n<RightDownNote:\"逆转乾坤，向天而战！\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 991,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.1,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*110%\n</StateNote>\n<RightDownNote:\"来自天外世界的绝顶道术\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 992,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.5,
-     "round": "floor"
-    }
-   ],
-   "note": "<StateNote>\n眩晕且不可被伤害唤醒，但所受伤害*50%\n</StateNote>\n<RightDownNote:\"向神挥拳！\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.5;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
-  },
-  {
-   "state": 995,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.8,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*80%，敏捷*80%\n</StateNote>\n<RightDownNote:\"天道诅咒\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.8);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1001,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.01,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*101%\n</StateNote>\n<RightDownNote:\"挣脱天道的枷锁\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.01);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1002,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.03,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*103%\n</StateNote>\n<RightDownNote:\"挣脱天道的枷锁\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.03);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1003,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.05,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*105%\n</StateNote>\n<RightDownNote:\"挣脱天道的枷锁\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.05);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1034,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*50%\n</StateNote>\n<RightDownNote:\"强者压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1035,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"弱者强化\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Element Amplify 1: +200%>\n<Element Amplify 2: +200%>\n<Element Amplify 3: +200%>\n<Element Amplify 4: +200%>\n<Element Amplify 5: +200%>\n<Element Amplify 6: +200%>\n<Element Amplify 7: +200%>\n<Element Amplify 8: +200%>\n<Element Amplify 9: +200%>\n<Permanent>"
-  },
-  {
-   "state": 1038,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*150%，但封印头盔、护甲、裤子和鞋子\n</StateNote>\n<RightDownNote:\"红魔遗泽\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1052,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.7,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*70%\n</StateNote>\n<RightDownNote:\"强者压制·削弱\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.7);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1056,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.04,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*4%\n</StateNote>\n<RightDownNote:\"神魔威压\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.04);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1073,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.35,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*135%\n</StateNote>\n<RightDownNote:\"逆鳞之怒\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.35);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1074,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.1,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*10%\n</StateNote>\n<RightDownNote:\"神魔威压\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1087,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.35,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*135%\n</StateNote>\n<RightDownNote:\"1\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.35);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1088,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.6,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*160%\n</StateNote>\n<RightDownNote:\"1\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.6);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1089,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 2.4,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*240%\n</StateNote>\n<RightDownNote:\"1\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 2.4);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1096,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"\"创可贴>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1098,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"\"创可贴>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1103,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.8,
-     "round": "floor"
-    }
-   ],
-   "note": "<StateNote>\n所受伤害*70%\n</StateNote>\n<RightDownNote:\"不灭之躯\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.2;\nvalue = Math.floor(value);\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1104,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.7,
-     "round": "floor"
-    }
-   ],
-   "note": "<StateNote>\n所受伤害*70%\n</StateNote>\n<RightDownNote:\"不灭之躯\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.3;\nvalue = Math.floor(value);\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1107,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.8,
-     "round": "floor"
-    }
-   ],
-   "note": "<StateNote>\n所受伤害*70%\n</StateNote>\n<RightDownNote:\"不灭之躯\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.2;\nvalue = Math.floor(value);\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1108,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.7,
-     "round": "floor"
-    }
-   ],
-   "note": "<StateNote>\n所受伤害*70%\n</StateNote>\n<RightDownNote:\"不灭之躯\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.3;\nvalue = Math.floor(value);\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1115,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.75,
-     "round": "floor"
-    }
-   ],
-   "note": "<StateNote>\n所受伤害*75%\n</StateNote>\n<RightDownNote:\"不灭之躯\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.25;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
-  },
-  {
-   "state": 1120,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.15,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*115%\n</StateNote>\n<RightDownNote:\"人鱼真身\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.15);\n}\n</Custom Confirm Effect>\n<Permanent>\n<passiveCrHarmRi:300>\n<passiveHarmRi:300>\n<SvPngFd: 2>"
-  },
-  {
-   "state": 1123,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.1,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*110%\n</StateNote>\n<RightDownNote:\"人鱼祝福\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1124,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"天籁\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1126,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 0.25,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*25%\n</StateNote>\n<RightDownNote:\"万物回春\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.25);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1132,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.25,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*125%\n</StateNote>\n<RightDownNote:\"碧游决\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.25);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1134,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 0.01,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*1%\n</StateNote>\n<RightDownNote:\"碧霄云裳\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.01);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1143,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.35,
-     "round": "ceil"
-    }
-   ],
-   "note": "<passiveELUP03:750%>\n<passiveHarmRi:500>\n<passiveCrHarmRi:500>\n<StateNote>\n造成的所有伤害结果*135%\n</StateNote>\n<RightDownNote:\"过饱和心意注射\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.35);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1146,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"最美丽的精灵，可否拒绝衰朽\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.20);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1149,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.15,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*115%\n</StateNote>\n<RightDownNote:\"最光辉的精灵，可否为我祷告\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.15);\n}\n</Custom Confirm Effect>\n<passiveCrHarmRi:500>\n<passiveELUP03:1000%>\n<SelfElemRate:1.50>\n<Permanent>"
-  },
-  {
-   "state": 1150,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"最光辉的精灵，可否为我祷告\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.20);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1151,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.25,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*125%\n</StateNote>\n<RightDownNote:\"最光辉的精灵，可否为我祷告\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.25);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1152,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.3,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*130%\n</StateNote>\n<RightDownNote:\"最光辉的精灵，可否为我祷告\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.30);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1153,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"最光辉的精灵，可否为我祷告\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.50);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1154,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 2.0,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*200%\n</StateNote>\n<RightDownNote:\"最光辉的精灵，可否为我祷告\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 2.00);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1165,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.25,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*125%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.25);\n}\n</Custom Confirm Effect>\n<Element Amplify 1: +300%>\n<passiveCrHarmRi:300>\n<Permanent>"
-  },
-  {
-   "state": 1168,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1177,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<Permanent>\n<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<ShieldEffect:75>"
-  },
-  {
-   "state": 1186,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1187,
-   "effects": [
-    {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.5,
-     "round": "floor"
-    }
-   ],
-   "note": "<StateNote>\n眩晕且不可被伤害唤醒，但所受伤害*50%\n</StateNote>\n<RightDownNote:\"11！\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.5;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
-  },
-  {
-   "state": 1189,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 0.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<Permanent>\n<StateNote>\n造成的所有伤害结果*20%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.2);\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 1192,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.15,
-     "round": "ceil"
-    }
-   ],
-   "note": "<Permanent>\n<StateNote>\n造成的所有伤害结果*115%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.15);\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 1245,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.05,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*105%\n</StateNote>\n<RightDownNote:\"抽奖被动\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.05);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1246,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.1,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*110%\n</StateNote>\n<RightDownNote:\"抽奖被动\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.10);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1247,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.15,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*115%\n</StateNote>\n<RightDownNote:\"抽奖被动\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.15);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1248,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"抽奖被动\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.20);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1254,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 3.0,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*300%\n</StateNote>\n<RightDownNote:\"\"因果丝线>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 3.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1261,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 35.0,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*3500%\n</StateNote>\n<RightDownNote:\"劲儿特大\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 35.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1266,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*50%\n</StateNote>\n<RightDownNote:\"\"因果丝线>\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1273,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 2.0,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*200%\n</StateNote>\n<RightDownNote:\"\"弱者增强·天灾>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 2.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1275,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"\"强者增强·天灾>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1276,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 5.0,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*500%\n</StateNote>\n<RightDownNote:\"\"弱者增强·灭世>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 5.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1278,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 2.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*250%\n</StateNote>\n<RightDownNote:\"\"强者增强·灭世>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 2.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1279,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 7.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*750%\n</StateNote>\n<RightDownNote:\"\"弱者增强·洪荒>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 7.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1281,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 3.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*350%\n</StateNote>\n<RightDownNote:\"\"强者增强·灭世>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 3.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1287,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"\"111>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1289,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"\"神丹>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1311,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.13,
-     "round": "ceil"
+  "legacy": [
+    {
+      "state": 407,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.85,
+          "round": "floor"
+        }
+      ],
+      "note": "<Custom React Effect>\nif (value > 0 && this.isHpEffect()) {\nvalue *= 1 - 0.15;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
     },
     {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.74,
-     "round": "floor"
-    }
-   ],
-   "note": "<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.13);\n}\n</Custom Confirm Effect>\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.26;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
-  },
-  {
-   "state": 1419,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 0.1,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*10%\n</StateNote>\n<RightDownNote:\"\"欠债还钱>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1443,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 1.5,
-     "round": "floor"
-    }
-   ],
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.5);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1444,
-   "effects": [
-    {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.5,
-     "round": "floor"
-    }
-   ],
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 0.5);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1460,
-   "effects": [
-    {
-     "phase": "establish",
-     "op": "user_param_damage",
-     "params": [
-      "atk",
-      "mat"
-     ]
+      "state": 414,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.5,
+          "round": "floor"
+        }
+      ],
+      "note": "<BuffType:祝福>\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()) {\nvalue *= 1 - 0.5;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
     },
     {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<Permanent>\n<Custom Establish Effect>\n//附加伤害只使用正数属性；减益可令属性为负，但不能把伤害反转为治疗。\nif (user.atk > 0) {\n  target.gainHp(-user.atk);\n  target.startDamagePopup();\n}\nif (user.mat > 0) {\n  target.gainHp(-user.mat);\n  target.startDamagePopup();\n}\n</Custom Establish Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value * 0.5);\n}\n</Custom React Effect>\n"
-  },
-  {
-   "state": 1461,
-   "effects": [
-    {
-     "phase": "establish",
-     "op": "user_param_damage",
-     "params": [
-      "atk",
-      "mat"
-     ]
+      "state": 712,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<DNShow>\n<Custom Confirm Effect>\n\tif (value !== 0) {\n\tvalue = Math.ceil(value * 1.5);\n\t}\n</Custom Confirm Effect>\n<Permanent>"
     },
     {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<Permanent>\n<Custom Establish Effect>\n//附加伤害只使用正数属性；减益可令属性为负，但不能把伤害反转为治疗。\nif (user.atk > 0) {\n  target.gainHp(-user.atk);\n  target.startDamagePopup();\n}\nif (user.mat > 0) {\n  target.gainHp(-user.mat);\n  target.startDamagePopup();\n}\n</Custom Establish Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value * 0.5);\n}\n</Custom React Effect>\n"
-  },
-  {
-   "state": 1462,
-   "effects": [
+      "state": 713,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 2.0,
+          "round": "ceil"
+        }
+      ],
+      "note": "<DNShow>\n<Custom Confirm Effect>\n\tif (value !== 0) {\n\tvalue = Math.ceil(value * 2.0);\n\t}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.9,
-     "round": "ceil"
-    }
-   ],
-   "note": "<Permanent>\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value * 0.9);\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1463,
-   "effects": [
+      "state": 720,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.85,
+          "round": "floor"
+        }
+      ],
+      "note": "<DNShow>\n\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()) {\nvalue *= 1 - 0.15;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()) {\n  var mpDmg = Math.floor(value * 0.50);\n  mpDmg = Math.min(mpDmg, target.mp);\n  target.gainMp(-mpDmg);\n  value -= mpDmg;\n  if (target.mp === 0) {\n  \n  }\n}\n</Custom React Effect>\n<Permanent>\n"
+    },
     {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.9,
-     "round": "ceil"
-    }
-   ],
-   "note": "<Permanent>\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value * 0.9);\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1466,
-   "effects": [
+      "state": 721,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.85,
+          "round": "floor"
+        }
+      ],
+      "note": "<Custom React Effect>\nif (value > 0 && this.isHpEffect()) {\nvalue *= 1 - 0.15;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
+    },
     {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.9,
-     "round": "ceil"
-    }
-   ],
-   "note": "<Permanent>\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value * 0.9);\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1469,
-   "effects": [
+      "state": 838,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.3,
+          "round": "ceil"
+        }
+      ],
+      "note": "<DNShow>\n<Custom Confirm Effect>\n\tif (value !== 0) {\n\tvalue = Math.ceil(value * 1.3);\n\t}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.9,
-     "round": "ceil"
-    }
-   ],
-   "note": "<Permanent>\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value * 0.9);\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1521,
-   "effects": [
+      "state": 851,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.7,
+          "round": "floor"
+        }
+      ],
+      "note": "<BuffType:眩晕>\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.3;\nvalue = Math.floor(value);\n}\n</Custom React Effect>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.05,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*105%\n</StateNote>\n<RightDownNote:\"儿时的乐章\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.05);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1531,
-   "effects": [
+      "state": 968,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.5,
+          "round": "floor"
+        }
+      ],
+      "note": "<StateNote>\n睡眠且不可被伤害唤醒，但所受伤害*50%\n</StateNote>\n<RightDownNote:\"长梦即是永恒……\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.5;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 0.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*20%\n</StateNote>\n<RightDownNote:\"儿时的乐章\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1571,
-   "effects": [
+      "state": 978,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.1,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*110%\n</StateNote>\n<RightDownNote:\"逆转乾坤，向天而战！\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<Permanent>\n<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1609,
-   "effects": [
+      "state": 991,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.1,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*110%\n</StateNote>\n<RightDownNote:\"来自天外世界的绝顶道术\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "react",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.7,
-     "round": "floor"
-    }
-   ],
-   "note": "<BuffType:眩晕>\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.3;\nvalue = Math.floor(value);\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1624,
-   "effects": [
+      "state": 992,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.5,
+          "round": "floor"
+        }
+      ],
+      "note": "<StateNote>\n眩晕且不可被伤害唤醒，但所受伤害*50%\n</StateNote>\n<RightDownNote:\"向神挥拳！\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.5;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.1,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*10%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1629,
-   "effects": [
+      "state": 995,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.8,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*80%，敏捷*80%\n</StateNote>\n<RightDownNote:\"天道诅咒\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.8);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 99999.0,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*9999900%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 99999);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1630,
-   "effects": [
+      "state": 1001,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.01,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*101%\n</StateNote>\n<RightDownNote:\"挣脱天道的枷锁\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.01);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 3.0,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*300%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 3);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1631,
-   "effects": [
+      "state": 1002,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.03,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*103%\n</StateNote>\n<RightDownNote:\"挣脱天道的枷锁\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.03);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 1.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1637,
-   "effects": [
+      "state": 1003,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.05,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*105%\n</StateNote>\n<RightDownNote:\"挣脱天道的枷锁\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.05);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"天龙之力\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1638,
-   "effects": [
+      "state": 1034,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*50%\n</StateNote>\n<RightDownNote:\"强者压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.9,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*90%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.9);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1639,
-   "effects": [
+      "state": 1035,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"弱者强化\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Element Amplify 1: +200%>\n<Element Amplify 2: +200%>\n<Element Amplify 3: +200%>\n<Element Amplify 4: +200%>\n<Element Amplify 5: +200%>\n<Element Amplify 6: +200%>\n<Element Amplify 7: +200%>\n<Element Amplify 8: +200%>\n<Element Amplify 9: +200%>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.7,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*70%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.7);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1640,
-   "effects": [
+      "state": 1038,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*150%，但封印头盔、护甲、裤子和鞋子\n</StateNote>\n<RightDownNote:\"红魔遗泽\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.1,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*10%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1644,
-   "effects": [
+      "state": 1052,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.7,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*70%\n</StateNote>\n<RightDownNote:\"强者压制·削弱\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.7);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*20%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1645,
-   "effects": [
+      "state": 1056,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.04,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*4%\n</StateNote>\n<RightDownNote:\"神魔威压\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.04);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.3,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*130%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.3);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1647,
-   "effects": [
+      "state": 1073,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.35,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*135%\n</StateNote>\n<RightDownNote:\"逆鳞之怒\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.35);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.3,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*130%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.3);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1648,
-   "effects": [
+      "state": 1074,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.1,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*10%\n</StateNote>\n<RightDownNote:\"神魔威压\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1651,
-   "effects": [
+      "state": 1087,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.35,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*135%\n</StateNote>\n<RightDownNote:\"1\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.35);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1681,
-   "effects": [
+      "state": 1088,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.6,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*160%\n</StateNote>\n<RightDownNote:\"1\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.6);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.04,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*4%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.04);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1685,
-   "effects": [
+      "state": 1089,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 2.4,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*240%\n</StateNote>\n<RightDownNote:\"1\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 2.4);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.1,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*110%\n</StateNote>\n<RightDownNote:\"元素领域\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1688,
-   "effects": [
+      "state": 1096,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"\"创可贴>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.08,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*8%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.08);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1689,
-   "effects": [
+      "state": 1098,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"\"创可贴>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.4,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*40%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.4);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1690,
-   "effects": [
+      "state": 1103,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.8,
+          "round": "floor"
+        }
+      ],
+      "note": "<StateNote>\n所受伤害*70%\n</StateNote>\n<RightDownNote:\"不灭之躯\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.2;\nvalue = Math.floor(value);\n}\n</Custom React Effect>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 0.003,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*0.3%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.003);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1691,
-   "effects": [
+      "state": 1104,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.7,
+          "round": "floor"
+        }
+      ],
+      "note": "<StateNote>\n所受伤害*70%\n</StateNote>\n<RightDownNote:\"不灭之躯\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.3;\nvalue = Math.floor(value);\n}\n</Custom React Effect>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 5.0,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*500%\n</StateNote>\n<RightDownNote:\"难度适应\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 5.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1708,
-   "effects": [
+      "state": 1107,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.8,
+          "round": "floor"
+        }
+      ],
+      "note": "<StateNote>\n所受伤害*70%\n</StateNote>\n<RightDownNote:\"不灭之躯\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.2;\nvalue = Math.floor(value);\n}\n</Custom React Effect>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 0.05,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*5%\n</StateNote>\n<RightDownNote:\"适应\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.05);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1712,
-   "effects": [
+      "state": 1108,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.7,
+          "round": "floor"
+        }
+      ],
+      "note": "<StateNote>\n所受伤害*70%\n</StateNote>\n<RightDownNote:\"不灭之躯\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.3;\nvalue = Math.floor(value);\n}\n</Custom React Effect>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 1.4,
-     "round": "floor"
-    }
-   ],
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.4);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1713,
-   "effects": [
+      "state": 1115,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.75,
+          "round": "floor"
+        }
+      ],
+      "note": "<StateNote>\n所受伤害*75%\n</StateNote>\n<RightDownNote:\"不灭之躯\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.25;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 1.8,
-     "round": "floor"
-    }
-   ],
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.8);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1714,
-   "effects": [
+      "state": 1120,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.15,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*115%\n</StateNote>\n<RightDownNote:\"人鱼真身\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.15);\n}\n</Custom Confirm Effect>\n<Permanent>\n<passiveCrHarmRi:300>\n<passiveHarmRi:300>\n<SvPngFd: 2>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 2.2,
-     "round": "floor"
-    }
-   ],
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 2.2);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1715,
-   "effects": [
+      "state": 1123,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.1,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*110%\n</StateNote>\n<RightDownNote:\"人鱼祝福\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.6,
-     "round": "floor"
-    }
-   ],
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 0.6);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1735,
-   "effects": [
+      "state": 1124,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"天籁\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.2,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1831,
-   "effects": [
+      "state": 1126,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 0.25,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*25%\n</StateNote>\n<RightDownNote:\"万物回春\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.25);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.15,
-     "round": "ceil"
-    }
-   ],
-   "note": "<Permanent>\n<StateNote>\n造成的所有伤害结果*115%\n</StateNote>\n<RightDownNote:\"怒马凌关\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.15);\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 1838,
-   "effects": [
+      "state": 1132,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.25,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*125%\n</StateNote>\n<RightDownNote:\"碧游决\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.25);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"恨魂不屈\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2300,
-   "effects": [
+      "state": 1134,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 0.01,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*1%\n</StateNote>\n<RightDownNote:\"碧霄云裳\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.01);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 2.0,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*200%\n</StateNote>\n<RightDownNote:\"天顶剑\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 2.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2301,
-   "effects": [
+      "state": 1143,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.35,
+          "round": "ceil"
+        }
+      ],
+      "note": "<passiveELUP03:750%>\n<passiveHarmRi:500>\n<passiveCrHarmRi:500>\n<StateNote>\n造成的所有伤害结果*135%\n</StateNote>\n<RightDownNote:\"过饱和心意注射\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.35);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 2.49,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*249%\n</StateNote>\n<RightDownNote:\"紫炎\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 2.49);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2302,
-   "effects": [
+      "state": 1146,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"最美丽的精灵，可否拒绝衰朽\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.20);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 10.0,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*1000%\n</StateNote>\n<RightDownNote:\"紫炎\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 10.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2441,
-   "effects": [
+      "state": 1149,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.15,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*115%\n</StateNote>\n<RightDownNote:\"最光辉的精灵，可否为我祷告\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.15);\n}\n</Custom Confirm Effect>\n<passiveCrHarmRi:500>\n<passiveELUP03:1000%>\n<SelfElemRate:1.50>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.8,
-     "round": "ceil"
-    }
-   ],
-   "note": "<DNShow>\n<Custom Confirm Effect>\n\tif (value !== 0) {\n\tvalue = Math.ceil(value * 1.8);\n\t}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2442,
-   "effects": [
+      "state": 1150,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"最光辉的精灵，可否为我祷告\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.20);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.25,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*125%\n</StateNote>\n<RightDownNote:\"挣脱天道的枷锁\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.25);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2588,
-   "effects": [
+      "state": 1151,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.25,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*125%\n</StateNote>\n<RightDownNote:\"最光辉的精灵，可否为我祷告\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.25);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.005,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*100.5%\n</StateNote>\n<RightDownNote:\"麒麟逆转乾坤乱，天诛一语灭苍穹！\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.005);\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 2626,
-   "effects": [
+      "state": 1152,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.3,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*130%\n</StateNote>\n<RightDownNote:\"最光辉的精灵，可否为我祷告\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.30);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": true,
-     "k": 0.01,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n结算伤害×0.01\n</StateNote>\n<RightDownNote:\"欢迎来到异次元\">\n<Custom Confirm Effect>\nif (value > 0 && this.isHpEffect()) {\n  value = Math.ceil(value * 0.01);\n}\n</Custom Confirm Effect>\n<Permanent>\n"
-  },
-  {
-   "state": 2672,
-   "effects": [
+      "state": 1153,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"最光辉的精灵，可否为我祷告\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.50);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.9,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的伤害*0.9（轮回模式·神话挑战·天灾Lv7 的终伤-600%按比例折算）\n</StateNote>\n<RightDownNote:\"终伤折算\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.9);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2673,
-   "effects": [
+      "state": 1154,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 2.0,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*200%\n</StateNote>\n<RightDownNote:\"最光辉的精灵，可否为我祷告\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 2.00);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.9,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的伤害*0.9（灭世挑战【神罚】 的终伤-750%按比例折算）\n</StateNote>\n<RightDownNote:\"终伤折算\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.9);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2674,
-   "effects": [
+      "state": 1165,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.25,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*125%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.25);\n}\n</Custom Confirm Effect>\n<Element Amplify 1: +300%>\n<passiveCrHarmRi:300>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.9,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的伤害*0.9（灭世挑战【天劫】 的终伤-1000%按比例折算）\n</StateNote>\n<RightDownNote:\"终伤折算\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.9);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2675,
-   "effects": [
+      "state": 1168,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.9,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的伤害*0.9（终途溃灭 的终伤-750%按比例折算）\n</StateNote>\n<RightDownNote:\"终伤折算\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.9);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2679,
-   "effects": [
+      "state": 1177,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<Permanent>\n<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<ShieldEffect:75>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "positive",
-     "hpOnly": false,
-     "k": 0.1,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*0.1\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2709,
-   "effects": [
+      "state": 1186,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.5,
-     "round": "ceil"
-    }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果×1.5\n</StateNote>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<CodexPowerState: karma>"
-  },
-  {
-   "state": 2718,
-   "effects": [
+      "state": 1187,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.5,
+          "round": "floor"
+        }
+      ],
+      "note": "<StateNote>\n眩晕且不可被伤害唤醒，但所受伤害*50%\n</StateNote>\n<RightDownNote:\"11！\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.5;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
+    },
     {
-     "phase": "confirm",
-     "op": "mul",
-     "cond": "nonzero",
-     "hpOnly": false,
-     "k": 1.149,
-     "round": "ceil"
+      "state": 1189,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 0.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<Permanent>\n<StateNote>\n造成的所有伤害结果*20%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.2);\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 1192,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.15,
+          "round": "ceil"
+        }
+      ],
+      "note": "<Permanent>\n<StateNote>\n造成的所有伤害结果*115%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.15);\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 1245,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.05,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*105%\n</StateNote>\n<RightDownNote:\"抽奖被动\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.05);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1246,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.1,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*110%\n</StateNote>\n<RightDownNote:\"抽奖被动\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.10);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1247,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.15,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*115%\n</StateNote>\n<RightDownNote:\"抽奖被动\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.15);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1248,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"抽奖被动\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.20);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1254,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 3.0,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*300%\n</StateNote>\n<RightDownNote:\"\"因果丝线>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 3.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1261,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 35.0,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*3500%\n</StateNote>\n<RightDownNote:\"劲儿特大\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 35.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1266,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*50%\n</StateNote>\n<RightDownNote:\"\"因果丝线>\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1273,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 2.0,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*200%\n</StateNote>\n<RightDownNote:\"\"弱者增强·天灾>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 2.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1275,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"\"强者增强·天灾>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1276,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 5.0,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*500%\n</StateNote>\n<RightDownNote:\"\"弱者增强·灭世>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 5.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1278,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 2.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*250%\n</StateNote>\n<RightDownNote:\"\"强者增强·灭世>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 2.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1279,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 7.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*750%\n</StateNote>\n<RightDownNote:\"\"弱者增强·洪荒>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 7.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1281,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 3.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*350%\n</StateNote>\n<RightDownNote:\"\"强者增强·灭世>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 3.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1287,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"\"111>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1289,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"\"神丹>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1311,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.13,
+          "round": "ceil"
+        },
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.74,
+          "round": "floor"
+        }
+      ],
+      "note": "<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.13);\n}\n</Custom Confirm Effect>\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.26;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
+    },
+    {
+      "state": 1419,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 0.1,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*10%\n</StateNote>\n<RightDownNote:\"\"欠债还钱>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1443,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 1.5,
+          "round": "floor"
+        }
+      ],
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.5);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1444,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.5,
+          "round": "floor"
+        }
+      ],
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 0.5);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1460,
+      "effects": [
+        {
+          "phase": "establish",
+          "op": "user_param_damage",
+          "params": [
+            "atk",
+            "mat"
+          ]
+        },
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<Permanent>\n<Custom Establish Effect>\n//附加伤害只使用正数属性；减益可令属性为负，但不能把伤害反转为治疗。\nif (user.atk > 0) {\n  target.gainHp(-user.atk);\n  target.startDamagePopup();\n}\nif (user.mat > 0) {\n  target.gainHp(-user.mat);\n  target.startDamagePopup();\n}\n</Custom Establish Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value * 0.5);\n}\n</Custom React Effect>\n"
+    },
+    {
+      "state": 1461,
+      "effects": [
+        {
+          "phase": "establish",
+          "op": "user_param_damage",
+          "params": [
+            "atk",
+            "mat"
+          ]
+        },
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<Permanent>\n<Custom Establish Effect>\n//附加伤害只使用正数属性；减益可令属性为负，但不能把伤害反转为治疗。\nif (user.atk > 0) {\n  target.gainHp(-user.atk);\n  target.startDamagePopup();\n}\nif (user.mat > 0) {\n  target.gainHp(-user.mat);\n  target.startDamagePopup();\n}\n</Custom Establish Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value * 0.5);\n}\n</Custom React Effect>\n"
+    },
+    {
+      "state": 1462,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.9,
+          "round": "ceil"
+        }
+      ],
+      "note": "<Permanent>\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value * 0.9);\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1463,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.9,
+          "round": "ceil"
+        }
+      ],
+      "note": "<Permanent>\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value * 0.9);\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1466,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.9,
+          "round": "ceil"
+        }
+      ],
+      "note": "<Permanent>\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value * 0.9);\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1469,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.9,
+          "round": "ceil"
+        }
+      ],
+      "note": "<Permanent>\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value * 0.9);\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1521,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.05,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*105%\n</StateNote>\n<RightDownNote:\"儿时的乐章\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.05);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1531,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 0.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*20%\n</StateNote>\n<RightDownNote:\"儿时的乐章\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1571,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<Permanent>\n<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"111\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1609,
+      "effects": [
+        {
+          "phase": "react",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.7,
+          "round": "floor"
+        }
+      ],
+      "note": "<BuffType:眩晕>\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1-0.3;\nvalue = Math.floor(value);\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1624,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.1,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*10%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1629,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 99999.0,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*9999900%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 99999);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1630,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 3.0,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*300%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 3);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1631,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 1.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1637,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"天龙之力\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1638,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.9,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*90%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.9);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1639,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.7,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*70%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.7);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1640,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.1,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*10%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1644,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*20%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1645,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.3,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*130%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.3);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1647,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.3,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*130%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.3);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1648,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1651,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1681,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.04,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*4%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.04);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1685,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.1,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*110%\n</StateNote>\n<RightDownNote:\"元素领域\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1688,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.08,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*8%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.08);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1689,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.4,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*40%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.4);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1690,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 0.003,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*0.3%\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.003);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1691,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 5.0,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*500%\n</StateNote>\n<RightDownNote:\"难度适应\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 5.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1708,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 0.05,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*5%\n</StateNote>\n<RightDownNote:\"适应\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 0.05);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1712,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 1.4,
+          "round": "floor"
+        }
+      ],
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.4);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1713,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 1.8,
+          "round": "floor"
+        }
+      ],
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.8);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1714,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 2.2,
+          "round": "floor"
+        }
+      ],
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 2.2);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1715,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.6,
+          "round": "floor"
+        }
+      ],
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 0.6);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1735,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.2,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*120%\n</StateNote>\n<RightDownNote:\"666\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.2);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1831,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.15,
+          "round": "ceil"
+        }
+      ],
+      "note": "<Permanent>\n<StateNote>\n造成的所有伤害结果*115%\n</StateNote>\n<RightDownNote:\"怒马凌关\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.15);\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 1838,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*150%\n</StateNote>\n<RightDownNote:\"恨魂不屈\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2300,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 2.0,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*200%\n</StateNote>\n<RightDownNote:\"天顶剑\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 2.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2301,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 2.49,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*249%\n</StateNote>\n<RightDownNote:\"紫炎\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 2.49);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2302,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 10.0,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*1000%\n</StateNote>\n<RightDownNote:\"紫炎\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 10.0);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2441,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.8,
+          "round": "ceil"
+        }
+      ],
+      "note": "<DNShow>\n<Custom Confirm Effect>\n\tif (value !== 0) {\n\tvalue = Math.ceil(value * 1.8);\n\t}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2442,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.25,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*125%\n</StateNote>\n<RightDownNote:\"挣脱天道的枷锁\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.25);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2588,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.005,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*100.5%\n</StateNote>\n<RightDownNote:\"麒麟逆转乾坤乱，天诛一语灭苍穹！\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.005);\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 2626,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": true,
+          "k": 0.01,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n结算伤害×0.01\n</StateNote>\n<RightDownNote:\"欢迎来到异次元\">\n<Custom Confirm Effect>\nif (value > 0 && this.isHpEffect()) {\n  value = Math.ceil(value * 0.01);\n}\n</Custom Confirm Effect>\n<Permanent>\n"
+    },
+    {
+      "state": 2672,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.9,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的伤害*0.9（轮回模式·神话挑战·天灾Lv7 的终伤-600%按比例折算）\n</StateNote>\n<RightDownNote:\"终伤折算\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.9);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2673,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.9,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的伤害*0.9（灭世挑战【神罚】 的终伤-750%按比例折算）\n</StateNote>\n<RightDownNote:\"终伤折算\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.9);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2674,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.9,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的伤害*0.9（灭世挑战【天劫】 的终伤-1000%按比例折算）\n</StateNote>\n<RightDownNote:\"终伤折算\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.9);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2675,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.9,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的伤害*0.9（终途溃灭 的终伤-750%按比例折算）\n</StateNote>\n<RightDownNote:\"终伤折算\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.9);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2679,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "positive",
+          "hpOnly": false,
+          "k": 0.1,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*0.1\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * 0.1);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2709,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.5,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果×1.5\n</StateNote>\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.5);\n}\n</Custom Confirm Effect>\n<CodexPowerState: karma>"
+    },
+    {
+      "state": 2718,
+      "effects": [
+        {
+          "phase": "confirm",
+          "op": "mul",
+          "cond": "nonzero",
+          "hpOnly": false,
+          "k": 1.149,
+          "round": "ceil"
+        }
+      ],
+      "note": "<StateNote>\n造成的所有伤害结果*114.9%\n</StateNote>\n<RightDownNote:\"紫炎\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.149);\n}\n</Custom Confirm Effect>\n<Permanent>"
     }
-   ],
-   "note": "<StateNote>\n造成的所有伤害结果*114.9%\n</StateNote>\n<RightDownNote:\"紫炎\">\n<Custom Confirm Effect>\nif (value !== 0) {\nvalue = Math.ceil(value * 1.149);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  }
- ],
- "bonus": [
-  {
-   "state": 34,
-   "note": "<DNShow>\nThe Truthseeker is a passive ability from Final Fantasy Record Keeper. When the user of the passive has a sword-type weapon equipped, the user will deal more damage overall. Here’s how to recreate the effect in RPG Maker MV!\n\nYou can grab the copy/paste code here: Insert the following Lunatic Mode code into your passive state’s notebox. Change the values in red to reflect your game’s settings.\n\n<Custom Passive Condition>\n// Set the default condition to false.\ncondition = false;\n// Check if the party is in battle.\nif ($gameParty.inBattle()) {\n  // Check if the user is an actor.\n  if (user.isActor()) {\n    // Get the sword weapon-type ID\n    var swordTypeId = 2;\n    // get the user's currently equipped weapons.\n    var weapons = user.weapons();\n    // Loop through each weapon\n    for (var i = 0; i < weapons.length; ++i) {\n      // Get the currently looped weapon\n      var weapon = weapons[i];\n      // Check if the weapon exists and if the weapon's type is a sword\n      if (weapon && weapon.wtypeId === swordTypeId) {\n        // Set the condition to true\n        condition = true;\n      }\n    }\n  }\n}\n</Custom Passive Condition>\n\n<Custom Confirm Effect>\n// Check if the action dealt HP damage\nif (this.isHpEffect() && value > 0) {\n  // Calculate the amount of bonus damage dealt\n  var bonus = Math.ceil(value * 0.10);\n  // Add that to the finalized damage\n  value += bonus;\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 52,
-   "note": "<DNShow>\nThe Truthseeker is a passive ability from Final Fantasy Record Keeper. When the user of the passive has a sword-type weapon equipped, the user will deal more damage overall. Here’s how to recreate the effect in RPG Maker MV!\n\nYou can grab the copy/paste code here: Insert the following Lunatic Mode code into your passive state’s notebox. Change the values in red to reflect your game’s settings.\n\n<Custom Passive Condition>\n// Set the default condition to false.\ncondition = false;\n// Check if the party is in battle.\nif ($gameParty.inBattle()) {\n  // Check if the user is an actor.\n  if (user.isActor()) {\n    // Get the sword weapon-type ID\n    var swordTypeId = 2;\n    // get the user's currently equipped weapons.\n    var weapons = user.weapons();\n    // Loop through each weapon\n    for (var i = 0; i < weapons.length; ++i) {\n      // Get the currently looped weapon\n      var weapon = weapons[i];\n      // Check if the weapon exists and if the weapon's type is a sword\n      if (weapon && weapon.wtypeId === swordTypeId) {\n        // Set the condition to true\n        condition = true;\n      }\n    }\n  }\n}\n</Custom Passive Condition>\n\n<Custom Confirm Effect>\n// Check if the action dealt HP damage\nif (this.isHpEffect() && value > 0) {\n  // Calculate the amount of bonus damage dealt\n  var bonus = Math.ceil(value * 0.12);\n  // Add that to the finalized damage\n  value += bonus;\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 1160,
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0;\n  var bonusRate = 0.35;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1161,
-   "note": "<Permanent>\n<SelfPhysRate:1.25>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0;\n  var bonusRate = 0.25;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 1397,
-   "note": "<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = -0.9;\n  var bonusRate = -0.9;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1406,
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 2;\n  var bonusRate = -1;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1445,
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0;\n  var bonusRate = 3.0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1446,
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0;\n  var bonusRate = -3.0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1447,
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 3.0;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1448,
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = -3.0;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1454,
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 2;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1522,
-   "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.5;\n  var bonusRate = 0.5;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1545,
-   "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.4;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n}\n</Custom Confirm Effect>\n<Element Amplify 3: +120%>"
-  },
-  {
-   "state": 1669,
-   "note": "<Custom Battle Effect>\nif(Math.random() > 0)\n</Custom Battle Effect>\n<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 2.0;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1671,
-   "note": "<Custom Battle Effect>\nif(Math.random() > 0)\n</Custom Battle Effect>\n<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 1;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1684,
-   "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 1.50;\n  var bonusRate = 1.50;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1717,
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.20;\n  var bonusRate = 0.20;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.10);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.10);\n  value -= bonus;\n}\n</Custom React Effect>\n"
-  },
-  {
-   "state": 1718,
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.4;\n  var bonusRate = 0.4;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.2);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.2);\n  value -= bonus;\n}\n</Custom React Effect>\n"
-  },
-  {
-   "state": 1719,
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.6;\n  var bonusRate = 0.6;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.30);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.30);\n  value -= bonus;\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1720,
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.8;\n  var bonusRate = 0.8;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.4);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.4);\n  value -= bonus;\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1766,
-   "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.25;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n<Permanent>\n"
-  },
-  {
-   "state": 2525,
-   "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.07;\n  var bonusRate = 0.07;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 2526,
-   "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.035;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 2529,
-   "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.07;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 2539,
-   "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.5;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 2556,
-   "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0;\n  var bonusRate = 0.15;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 2563,
-   "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.18;\n  var bonusRate = 0.18;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 2565,
-   "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.188;\n  var bonusRate = 0.188;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
-  }
- ],
- "value": [
-  {
-   "state": 543,
-   "phase": "confirm",
-   "note": "<DNShow>\n<Custom Confirm Effect>\n\tif (this.isMagical() && value !== 0) {\n\tvalue = Math.ceil(value * 1.50);\n\t}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 1228,
-   "phase": "react",
-   "note": "<StateNote>\n眩晕且不可被伤害唤醒，但所受伤害*50%\n</StateNote>\n<RightDownNote:\"受到伤害\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1+1;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
-  },
-  {
-   "state": 1259,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * $gameVariables.value(967) * 0.1);\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 1375,
-   "phase": "react",
-   "note": "<Permanent>\n<Custom React Effect>\nif(this.isHpEffect() && value > 0) {\n  value = 0;\n}\n</Custom React Effect>\n"
-  },
-  {
-   "state": 1420,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value - ( value * user.level * 0.01));\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1421,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = value * Math.min(1 + $gameVariables.value(1181) * 0.0001 , 1.1);\n}\n</Custom Confirm Effect>\n\n"
-  },
-  {
-   "state": 1422,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = value * Math.min(1 + $gameVariables.value(1184) * 0.01 , 1.05);\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 1424,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  var allin = Math.floor($gameVariables.value(206) / 1000);\n  if (allin > 50) {\n    allin = 50;\n  }\n  if (allin < -50) {\n    allin = -50;\n  }\n  value = value * Math.floor(allin * 0.01);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1441,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value + value * (Math.random() * 2 - 1));\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1442,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value + value * target.states().length * 0.025);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1451,
-   "phase": "react",
-   "note": "<Permanent>\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.1);\n  value -= bonus;\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1540,
-   "phase": "react",
-   "note": "<Custom React Effect>\nvalue = Math.floor(value * 0.05);\n</Custom React Effect>\n<Permanent>"
-  },
-  {
-   "state": 1668,
-   "phase": "react",
-   "note": "<Custom React Effect>\nif(value > target.hp){\nvalue = target.hp-1\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1701,
-   "phase": "react",
-   "note": "<Permanent>\n<Custom React Effect>\n//被确认命中但未造成伤害时触发\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value / Math.max(target.def*0.9 , 1));\n}\n</Custom React Effect>\n"
-  },
-  {
-   "state": 1702,
-   "phase": "react",
-   "note": "<Permanent>\n<Custom React Effect>\n//被确认命中但未造成伤害时触发\nif (this.isHpEffect() && value > 0) {\n  value = 1;\n}\n</Custom React Effect>\n"
-  },
-  {
-   "state": 1703,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\nif (value > 0 !== this.isMagical() || this.isPhysical()) {\n  if (Math.random() > 0.5) {\n    value = 0;\n  } else {\n    value = Math.ceil(value * 0.1);\n  }\n} else if (value > 0 && this.isMagical() || this.isPhysical()) {\n  value = Math.ceil(value * 2);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1707,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\nif (value > 0 !== this.isMagical() || this.isPhysical()) {\n  if (Math.random() > 0.8) {\n    value = 0;\n  } else {\n    value = Math.ceil(value * 0.01);\n  }\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1717,
-   "phase": "react",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.20;\n  var bonusRate = 0.20;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.10);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.10);\n  value -= bonus;\n}\n</Custom React Effect>\n"
-  },
-  {
-   "state": 1718,
-   "phase": "react",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.4;\n  var bonusRate = 0.4;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.2);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.2);\n  value -= bonus;\n}\n</Custom React Effect>\n"
-  },
-  {
-   "state": 1719,
-   "phase": "react",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.6;\n  var bonusRate = 0.6;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.30);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.30);\n  value -= bonus;\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1720,
-   "phase": "react",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.8;\n  var bonusRate = 0.8;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.4);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.4);\n  value -= bonus;\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1722,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (value > 0 !== this.isMagical() || this.isPhysical()) {\n  value = Math.floor(value * 1.2);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1726,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * $gameVariables.value(965) * 0.1);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1732,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\nif (value > 0 && Math.random() > 0.5) {\n  value = 0;\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 1733,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Battle Effect>\n//战斗开始时触发\n$gameVariables.setValue(966,1);\n</Custom Battle Effect>\n\n<Custom Turn Start Effect>\n//回合开始时触发\n$gameVariables.setValue(966,$gameVariables.value(966)+1);\n</Custom Turn Start Effect>\n\n<Custom Confirm Effect>\n//确认命中但未造成伤害时触发\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * (1 + $gameVariables.value(966) * 0.1));\n}\n</Custom Confirm Effect>\n\n<Custom Deselect Effect>\n//被选中并一切结算之后时触发\nif (target.hp <= 0 && $gameVariables.value(966) > 1) {\n  target.gainHp(target.mhp * 0.01);\n  target.startDamagePopup();\n  target.clearResult();\n  $gameVariables.setValue(966,$gameVariables.value(966)-1);\n}\n</Custom Deselect Effect>"
-  },
-  {
-   "state": 1770,
-   "phase": "confirm",
-   "note": "<Custom Confirm Effect>\n// 若当前为HP伤害技能\nif (this.isHpEffect() && value > 0) {\n    // 获取角色等级\n    var actorLevel = user.level;\n    \n    // 计算等级衰减系数（仅30级后生效）\n    var levelDecay = (actorLevel > 30) \n        ? Math.min(0.90, 0.04 * (actorLevel - 30))  // 最大衰减90%\n        : 0;\n    var finalRate = 1 - levelDecay;  // 终伤系数\n    \n    // 应用终伤衰减\n    value = Math.ceil(value * finalRate);\n    \n    // 暴击伤害处理（保持原有结构）\n    if (target.result().critical) {\n        var bonusRate = 0; // 暴击系数可扩展\n        value += Math.ceil(value * bonusRate);\n    }\n}\n</Custom Confirm Effect>\n<Permanent>\n"
-  },
-  {
-   "state": 1779,
-   "phase": "react",
-   "note": "\n<Custom React Effect>\nvalue = Math.floor(value * 0.9);\n</Custom React Effect>\n<Permanent>\n"
-  },
-  {
-   "state": 1836,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//确认命中但未造成伤害时触发\nif (value > 0 && this.isHpEffect() && target.hpRate() > 0.4) {\n    var bonusRate = target.hpRate() - 0.4;\n    value = Math.floor(value * (1 + bonusRate));\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 2522,
-   "phase": "confirm",
-   "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value + value * target.states().length * 0.01);\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 2558,
-   "phase": "react",
-   "note": "<Custom React Effect>\nvalue = Math.floor(value * 0.9);\n</Custom React Effect>"
-  },
-  {
-   "state": 2561,
-   "phase": "react",
-   "note": "<Custom React Effect>\nvalue = Math.floor(value * 0.91);\n</Custom React Effect>"
-  },
-  {
-   "state": 2583,
-   "phase": "confirm",
-   "note": "<Custom Confirm Effect>\nif (this.isPhysical() && this.isHpEffect() && value > 0) {\nif(target.hp>target.mhp*0.7){\nvar xs=Math.min((target.mhp*0.00001/user.mhp*10000),1.3);//伤害系数，敌人最大HP/角色最大HP\nvalue = Math.ceil(value*xs*0.1);\n}\n}\n</Custom Confirm Effect>\n"
-  },
-  {
-   "state": 2676,
-   "phase": "confirm",
-   "note": "<StateNote>\n第8～30层每层造成的伤害*0.8\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * Math.pow(0.8, Math.max(0, Math.min($gameVariables.value(20), 30) - 7)));\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2677,
-   "phase": "confirm",
-   "note": "<StateNote>\n第17～30层每层造成的伤害*0.8\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * Math.pow(0.8, Math.max(0, Math.min($gameVariables.value(20), 30) - 16)));\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2678,
-   "phase": "confirm",
-   "note": "<StateNote>\n第12～26层每层造成的伤害*0.9\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * Math.pow(0.9, Math.max(0, Math.min($gameVariables.value(20), 26) - 11)));\n}\n</Custom Confirm Effect>\n<Permanent>"
-  }
- ],
- "query": [
-  {
-   "state": 1047,
-   "phase": "react",
-   "note": "<StateNote>\n物理免疫\n</StateNote>\n<RightDownNote:\"物理免疫！\">\n<Custom React Effect>\n// Check if HP damage is dealt\nif (this.isHpEffect() && value > 0) {\n  // Get the elements used for the effect\n  var elements = this.getItemElements();\n  // Get the element ID for the lightning element\n  var lightningElementId = 1;\n  // Check if the lightning element isn't involved\n  if (elements.contains(lightningElementId)) {\n    // If isn't involved, set the damage to 0\n    value = 0;\n  }\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1048,
-   "phase": "react",
-   "note": "<StateNote>\n元素免疫\n</StateNote>\n<RightDownNote:\"元素免疫！\">\n<Custom React Effect>\n// Check if HP damage is dealt\nif (this.isHpEffect() && value > 0) {\n  // Get the elements used for the effect\n  var elements = this.getItemElements();\n  // Get the element ID for the lightning element\n  var lightningElementId = 1;\n  // Check if the lightning element isn't involved\n  if (!elements.contains(lightningElementId)) {\n    // If isn't involved, set the damage to 0\n    value = 0;\n  }\n}\n</Custom React Effect>"
-  },
-  {
-   "state": 1834,
-   "phase": "confirm",
-   "note": "<Custom Confirm Effect>\n//确认命中但未造成伤害时触发\nif (value > 0 && this.isHpEffect() && $gameParty.aliveMembers().length === 1) {\n  value = Math.floor(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
-  },
-  {
-   "state": 2711,
-   "phase": "confirm",
-   "note": "<StateNote>\n对生命低于20%的敌人伤害×2\n</StateNote>\n<Custom Confirm Effect>\nif (value > 0 && defender && defender.isEnemy && defender.isEnemy() && defender.hpRate() < 0.2) {\nvalue = Math.ceil(value * 2);\n}\n</Custom Confirm Effect>\n<CodexPowerState: reap>"
-  }
- ],
- "query_pending": [
-  {
-   "state": 2544,
-   "note": "<Custom Confirm Effect>\n// Check if the user is an actor\nif (user.isActor()) {\n  // Make an empty pool for ranged weapon types.\n  var rangedTypes = [];\n  // Insert the ranged weapon TYPE ID's here.\n  rangedTypes.push(2);\n  // Get the user's first weapon.\n  var weapon = user.weapons()[0];\n  // Check if the weapon exists and if this action is an attack.\n  if (weapon && this.isAttack()) {\n    // Check if the ranged pool contains the current weapon's weapon type ID.\n    if (rangedTypes.contains(weapon.wtypeId)) {\n      // If it does, add the bonus damage.\n      value += Math.ceil(value * 0.01);\n    }\n  }\n}\n</Custom Confirm Effect>"
-  },
-  {
-   "state": 2545,
-   "note": "<Custom Confirm Effect>\n// Check if the user is an actor\nif (user.isActor()) {\n  // Make an empty pool for ranged weapon types.\n  var rangedTypes = [];\n  // Insert the ranged weapon TYPE ID's here.\n  rangedTypes.push(11);\n  // Get the user's first weapon.\n  var weapon = user.weapons()[0];\n  // Check if the weapon exists and if this action is an attack.\n  if (weapon && this.isAttack()) {\n    // Check if the ranged pool contains the current weapon's weapon type ID.\n    if (rangedTypes.contains(weapon.wtypeId)) {\n      // If it does, add the bonus damage.\n      value += Math.ceil(value * 0.01);\n    }\n  }\n}\n</Custom Confirm Effect>"
-  }
- ]
+  ],
+  "bonus": [
+    {
+      "state": 34,
+      "note": "<DNShow>\nThe Truthseeker is a passive ability from Final Fantasy Record Keeper. When the user of the passive has a sword-type weapon equipped, the user will deal more damage overall. Here’s how to recreate the effect in RPG Maker MV!\n\nYou can grab the copy/paste code here: Insert the following Lunatic Mode code into your passive state’s notebox. Change the values in red to reflect your game’s settings.\n\n<Custom Passive Condition>\n// Set the default condition to false.\ncondition = false;\n// Check if the party is in battle.\nif ($gameParty.inBattle()) {\n  // Check if the user is an actor.\n  if (user.isActor()) {\n    // Get the sword weapon-type ID\n    var swordTypeId = 2;\n    // get the user's currently equipped weapons.\n    var weapons = user.weapons();\n    // Loop through each weapon\n    for (var i = 0; i < weapons.length; ++i) {\n      // Get the currently looped weapon\n      var weapon = weapons[i];\n      // Check if the weapon exists and if the weapon's type is a sword\n      if (weapon && weapon.wtypeId === swordTypeId) {\n        // Set the condition to true\n        condition = true;\n      }\n    }\n  }\n}\n</Custom Passive Condition>\n\n<Custom Confirm Effect>\n// Check if the action dealt HP damage\nif (this.isHpEffect() && value > 0) {\n  // Calculate the amount of bonus damage dealt\n  var bonus = Math.ceil(value * 0.10);\n  // Add that to the finalized damage\n  value += bonus;\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 52,
+      "note": "<DNShow>\nThe Truthseeker is a passive ability from Final Fantasy Record Keeper. When the user of the passive has a sword-type weapon equipped, the user will deal more damage overall. Here’s how to recreate the effect in RPG Maker MV!\n\nYou can grab the copy/paste code here: Insert the following Lunatic Mode code into your passive state’s notebox. Change the values in red to reflect your game’s settings.\n\n<Custom Passive Condition>\n// Set the default condition to false.\ncondition = false;\n// Check if the party is in battle.\nif ($gameParty.inBattle()) {\n  // Check if the user is an actor.\n  if (user.isActor()) {\n    // Get the sword weapon-type ID\n    var swordTypeId = 2;\n    // get the user's currently equipped weapons.\n    var weapons = user.weapons();\n    // Loop through each weapon\n    for (var i = 0; i < weapons.length; ++i) {\n      // Get the currently looped weapon\n      var weapon = weapons[i];\n      // Check if the weapon exists and if the weapon's type is a sword\n      if (weapon && weapon.wtypeId === swordTypeId) {\n        // Set the condition to true\n        condition = true;\n      }\n    }\n  }\n}\n</Custom Passive Condition>\n\n<Custom Confirm Effect>\n// Check if the action dealt HP damage\nif (this.isHpEffect() && value > 0) {\n  // Calculate the amount of bonus damage dealt\n  var bonus = Math.ceil(value * 0.12);\n  // Add that to the finalized damage\n  value += bonus;\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 1160,
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0;\n  var bonusRate = 0.35;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1161,
+      "note": "<Permanent>\n<SelfPhysRate:1.25>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0;\n  var bonusRate = 0.25;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 1397,
+      "note": "<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = -0.9;\n  var bonusRate = -0.9;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1406,
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 2;\n  var bonusRate = -1;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1445,
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0;\n  var bonusRate = 3.0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1446,
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0;\n  var bonusRate = -3.0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1447,
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 3.0;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1448,
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = -3.0;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1454,
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 2;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1522,
+      "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.5;\n  var bonusRate = 0.5;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1545,
+      "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.4;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n}\n</Custom Confirm Effect>\n<Element Amplify 3: +120%>"
+    },
+    {
+      "state": 1669,
+      "note": "<Custom Battle Effect>\nif(Math.random() > 0)\n</Custom Battle Effect>\n<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 2.0;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1671,
+      "note": "<Custom Battle Effect>\nif(Math.random() > 0)\n</Custom Battle Effect>\n<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 1;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1684,
+      "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 1.50;\n  var bonusRate = 1.50;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1717,
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.20;\n  var bonusRate = 0.20;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.10);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.10);\n  value -= bonus;\n}\n</Custom React Effect>\n"
+    },
+    {
+      "state": 1718,
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.4;\n  var bonusRate = 0.4;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.2);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.2);\n  value -= bonus;\n}\n</Custom React Effect>\n"
+    },
+    {
+      "state": 1719,
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.6;\n  var bonusRate = 0.6;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.30);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.30);\n  value -= bonus;\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1720,
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.8;\n  var bonusRate = 0.8;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.4);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.4);\n  value -= bonus;\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1766,
+      "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.25;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>\n<Permanent>\n"
+    },
+    {
+      "state": 2525,
+      "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.07;\n  var bonusRate = 0.07;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 2526,
+      "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.035;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 2529,
+      "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.07;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 2539,
+      "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.5;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 2556,
+      "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0;\n  var bonusRate = 0.15;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 2563,
+      "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.18;\n  var bonusRate = 0.18;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 2565,
+      "note": "<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.188;\n  var bonusRate = 0.188;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
+    }
+  ],
+  "value": [
+    {
+      "state": 543,
+      "phase": "confirm",
+      "note": "<DNShow>\n<Custom Confirm Effect>\n\tif (this.isMagical() && value !== 0) {\n\tvalue = Math.ceil(value * 1.50);\n\t}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 1228,
+      "phase": "react",
+      "note": "<StateNote>\n眩晕且不可被伤害唤醒，但所受伤害*50%\n</StateNote>\n<RightDownNote:\"受到伤害\">\n<Custom React Effect>\nif (value > 0 && this.isHpEffect()){\nvalue *=1+1;\nvalue = Math.floor(value);\n}\n</Custom React Effect>\n<Permanent>"
+    },
+    {
+      "state": 1259,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * $gameVariables.value(967) * 0.1);\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 1375,
+      "phase": "react",
+      "note": "<Permanent>\n<Custom React Effect>\nif(this.isHpEffect() && value > 0) {\n  value = 0;\n}\n</Custom React Effect>\n"
+    },
+    {
+      "state": 1420,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value - ( value * user.level * 0.01));\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1421,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = value * Math.min(1 + $gameVariables.value(1181) * 0.0001 , 1.1);\n}\n</Custom Confirm Effect>\n\n"
+    },
+    {
+      "state": 1422,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = value * Math.min(1 + $gameVariables.value(1184) * 0.01 , 1.05);\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 1424,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  var allin = Math.floor($gameVariables.value(206) / 1000);\n  if (allin > 50) {\n    allin = 50;\n  }\n  if (allin < -50) {\n    allin = -50;\n  }\n  value = value * Math.floor(allin * 0.01);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1441,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value + value * (Math.random() * 2 - 1));\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1442,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value + value * target.states().length * 0.025);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1451,
+      "phase": "react",
+      "note": "<Permanent>\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.1);\n  value -= bonus;\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1540,
+      "phase": "react",
+      "note": "<Custom React Effect>\nvalue = Math.floor(value * 0.05);\n</Custom React Effect>\n<Permanent>"
+    },
+    {
+      "state": 1668,
+      "phase": "react",
+      "note": "<Custom React Effect>\nif(value > target.hp){\nvalue = target.hp-1\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1701,
+      "phase": "react",
+      "note": "<Permanent>\n<Custom React Effect>\n//被确认命中但未造成伤害时触发\nif (this.isHpEffect() && value > 0) {\n  value = Math.ceil(value / Math.max(target.def*0.9 , 1));\n}\n</Custom React Effect>\n"
+    },
+    {
+      "state": 1702,
+      "phase": "react",
+      "note": "<Permanent>\n<Custom React Effect>\n//被确认命中但未造成伤害时触发\nif (this.isHpEffect() && value > 0) {\n  value = 1;\n}\n</Custom React Effect>\n"
+    },
+    {
+      "state": 1703,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\nif (value > 0 !== this.isMagical() || this.isPhysical()) {\n  if (Math.random() > 0.5) {\n    value = 0;\n  } else {\n    value = Math.ceil(value * 0.1);\n  }\n} else if (value > 0 && this.isMagical() || this.isPhysical()) {\n  value = Math.ceil(value * 2);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1707,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\nif (value > 0 !== this.isMagical() || this.isPhysical()) {\n  if (Math.random() > 0.8) {\n    value = 0;\n  } else {\n    value = Math.ceil(value * 0.01);\n  }\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1717,
+      "phase": "react",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.20;\n  var bonusRate = 0.20;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.10);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.10);\n  value -= bonus;\n}\n</Custom React Effect>\n"
+    },
+    {
+      "state": 1718,
+      "phase": "react",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.4;\n  var bonusRate = 0.4;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.2);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.2);\n  value -= bonus;\n}\n</Custom React Effect>\n"
+    },
+    {
+      "state": 1719,
+      "phase": "react",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.6;\n  var bonusRate = 0.6;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.30);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.30);\n  value -= bonus;\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1720,
+      "phase": "react",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//自定义确认效果\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 0.8;\n  var bonusRate = 0.8;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n//结算伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 1.4);\n}\n</Custom Confirm Effect>\n\n<Custom React Effect>\nif (this.isHpEffect() && value > 0) {\n  var bonus = Math.ceil(value * 0.4);\n  value -= bonus;\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1722,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (value > 0 !== this.isMagical() || this.isPhysical()) {\n  value = Math.floor(value * 1.2);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1726,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * $gameVariables.value(965) * 0.1);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1732,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\nif (value > 0 && Math.random() > 0.5) {\n  value = 0;\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 1733,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Battle Effect>\n//战斗开始时触发\n$gameVariables.setValue(966,1);\n</Custom Battle Effect>\n\n<Custom Turn Start Effect>\n//回合开始时触发\n$gameVariables.setValue(966,$gameVariables.value(966)+1);\n</Custom Turn Start Effect>\n\n<Custom Confirm Effect>\n//确认命中但未造成伤害时触发\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * (1 + $gameVariables.value(966) * 0.1));\n}\n</Custom Confirm Effect>\n\n<Custom Deselect Effect>\n//被选中并一切结算之后时触发\nif (target.hp <= 0 && $gameVariables.value(966) > 1) {\n  target.gainHp(target.mhp * 0.01);\n  target.startDamagePopup();\n  target.clearResult();\n  $gameVariables.setValue(966,$gameVariables.value(966)-1);\n}\n</Custom Deselect Effect>"
+    },
+    {
+      "state": 1770,
+      "phase": "confirm",
+      "note": "<Custom Confirm Effect>\n// 若当前为HP伤害技能\nif (this.isHpEffect() && value > 0) {\n    // 获取角色等级\n    var actorLevel = user.level;\n    \n    // 计算等级衰减系数（仅30级后生效）\n    var levelDecay = (actorLevel > 30) \n        ? Math.min(0.90, 0.04 * (actorLevel - 30))  // 最大衰减90%\n        : 0;\n    var finalRate = 1 - levelDecay;  // 终伤系数\n    \n    // 应用终伤衰减\n    value = Math.ceil(value * finalRate);\n    \n    // 暴击伤害处理（保持原有结构）\n    if (target.result().critical) {\n        var bonusRate = 0; // 暴击系数可扩展\n        value += Math.ceil(value * bonusRate);\n    }\n}\n</Custom Confirm Effect>\n<Permanent>\n"
+    },
+    {
+      "state": 1779,
+      "phase": "react",
+      "note": "\n<Custom React Effect>\nvalue = Math.floor(value * 0.9);\n</Custom React Effect>\n<Permanent>\n"
+    },
+    {
+      "state": 1836,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//确认命中但未造成伤害时触发\nif (value > 0 && this.isHpEffect() && target.hpRate() > 0.4) {\n    var bonusRate = target.hpRate() - 0.4;\n    value = Math.floor(value * (1 + bonusRate));\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 2522,
+      "phase": "confirm",
+      "note": "<Permanent>\n<Custom Confirm Effect>\n//如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value + value * target.states().length * 0.01);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 2558,
+      "phase": "react",
+      "note": "<Custom React Effect>\nvalue = Math.floor(value * 0.9);\n</Custom React Effect>"
+    },
+    {
+      "state": 2561,
+      "phase": "react",
+      "note": "<Custom React Effect>\nvalue = Math.floor(value * 0.91);\n</Custom React Effect>"
+    },
+    {
+      "state": 2583,
+      "phase": "confirm",
+      "note": "<Custom Confirm Effect>\nif (this.isPhysical() && this.isHpEffect() && value > 0) {\nif(target.hp>target.mhp*0.7){\nvar xs=Math.min((target.mhp*0.00001/user.mhp*10000),1.3);//伤害系数，敌人最大HP/角色最大HP\nvalue = Math.ceil(value*xs*0.1);\n}\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 2676,
+      "phase": "confirm",
+      "note": "<StateNote>\n第8～30层每层造成的伤害*0.8\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * Math.pow(0.8, Math.max(0, Math.min($gameVariables.value(20), 30) - 7)));\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2677,
+      "phase": "confirm",
+      "note": "<StateNote>\n第17～30层每层造成的伤害*0.8\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * Math.pow(0.8, Math.max(0, Math.min($gameVariables.value(20), 30) - 16)));\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2678,
+      "phase": "confirm",
+      "note": "<StateNote>\n第12～26层每层造成的伤害*0.9\n</StateNote>\n<RightDownNote:\"神魔压制\">\n<Custom Confirm Effect>\nif (value > 0) {\nvalue = Math.ceil(value * Math.pow(0.9, Math.max(0, Math.min($gameVariables.value(20), 26) - 11)));\n}\n</Custom Confirm Effect>\n<Permanent>"
+    }
+  ],
+  "query": [
+    {
+      "state": 1047,
+      "phase": "react",
+      "note": "<StateNote>\n物理免疫\n</StateNote>\n<RightDownNote:\"物理免疫！\">\n<Custom React Effect>\n// Check if HP damage is dealt\nif (this.isHpEffect() && value > 0) {\n  // Get the elements used for the effect\n  var elements = this.getItemElements();\n  // Get the element ID for the lightning element\n  var lightningElementId = 1;\n  // Check if the lightning element isn't involved\n  if (elements.contains(lightningElementId)) {\n    // If isn't involved, set the damage to 0\n    value = 0;\n  }\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1048,
+      "phase": "react",
+      "note": "<StateNote>\n元素免疫\n</StateNote>\n<RightDownNote:\"元素免疫！\">\n<Custom React Effect>\n// Check if HP damage is dealt\nif (this.isHpEffect() && value > 0) {\n  // Get the elements used for the effect\n  var elements = this.getItemElements();\n  // Get the element ID for the lightning element\n  var lightningElementId = 1;\n  // Check if the lightning element isn't involved\n  if (!elements.contains(lightningElementId)) {\n    // If isn't involved, set the damage to 0\n    value = 0;\n  }\n}\n</Custom React Effect>"
+    },
+    {
+      "state": 1834,
+      "phase": "confirm",
+      "note": "<Custom Confirm Effect>\n//确认命中但未造成伤害时触发\nif (value > 0 && this.isHpEffect() && $gameParty.aliveMembers().length === 1) {\n  value = Math.floor(value * 1.5);\n}\n</Custom Confirm Effect>\n<Permanent>"
+    },
+    {
+      "state": 2711,
+      "phase": "confirm",
+      "note": "<StateNote>\n对生命低于20%的敌人伤害×2\n</StateNote>\n<Custom Confirm Effect>\nif (value > 0 && defender && defender.isEnemy && defender.isEnemy() && defender.hpRate() < 0.2) {\nvalue = Math.ceil(value * 2);\n}\n</Custom Confirm Effect>\n<CodexPowerState: reap>"
+    }
+  ],
+  "query_pending": [
+    {
+      "state": 2544,
+      "note": "<Custom Confirm Effect>\n// Check if the user is an actor\nif (user.isActor()) {\n  // Make an empty pool for ranged weapon types.\n  var rangedTypes = [];\n  // Insert the ranged weapon TYPE ID's here.\n  rangedTypes.push(2);\n  // Get the user's first weapon.\n  var weapon = user.weapons()[0];\n  // Check if the weapon exists and if this action is an attack.\n  if (weapon && this.isAttack()) {\n    // Check if the ranged pool contains the current weapon's weapon type ID.\n    if (rangedTypes.contains(weapon.wtypeId)) {\n      // If it does, add the bonus damage.\n      value += Math.ceil(value * 0.01);\n    }\n  }\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 2545,
+      "note": "<Custom Confirm Effect>\n// Check if the user is an actor\nif (user.isActor()) {\n  // Make an empty pool for ranged weapon types.\n  var rangedTypes = [];\n  // Insert the ranged weapon TYPE ID's here.\n  rangedTypes.push(11);\n  // Get the user's first weapon.\n  var weapon = user.weapons()[0];\n  // Check if the weapon exists and if this action is an attack.\n  if (weapon && this.isAttack()) {\n    // Check if the ranged pool contains the current weapon's weapon type ID.\n    if (rangedTypes.contains(weapon.wtypeId)) {\n      // If it does, add the bonus damage.\n      value += Math.ceil(value * 0.01);\n    }\n  }\n}\n</Custom Confirm Effect>"
+    }
+  ]
 }
