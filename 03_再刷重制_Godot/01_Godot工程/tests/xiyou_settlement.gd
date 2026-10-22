@@ -21,6 +21,8 @@ func _ready() -> void:
 			for id in c.enemyStates:
 				b.add_state(int(id))
 			b.refresh_passive()
+			a.param_refresh()  # 行动前的 refresh：add_state 只标 dirty，状态效果列表要到下次 refresh 才更新（dev.124 krz 缓存）
+			b.param_refresh()
 			var item := XDB.rec("Skills", 1).duplicate(true)
 			item.damage.formula = "1000000"
 			item.damage.formulaGd = "1000000"
