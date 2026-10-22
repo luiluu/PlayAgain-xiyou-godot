@@ -19,6 +19,8 @@ const RECRUIT_6 := {1651: 101, 1649: 102, 1538: 103, 1405: 104, 1534: 105, 1575:
 ## 第七批：导入角色 141 女儿国王、142 天海麒麟星（CE2501／2502「招募_…」的 129 指令）。两人造成的伤害结算 ×0.01 由
 ## XImportedBalance 在结算处缩放（xiyou_imported_balance 对照；163 琦玉为 ×0.001，其技能必中／免反击反射由 XQiyu 管，xiyou_qiyu 对照）；参照伤害行是 makeDamageValue，原版模块不缩放这一层，与 Godot 的 XDamage.calculate 一致
 const RECRUIT_7 := {2501: 141, 2502: 142, 2506: 146, 2507: 147, 2508: 148, 2509: 149, 2510: 150, 2511: 151, 2512: 152, 2513: 153, 2514: 154, 2515: 155, 2516: 156, 2518: 158, 2519: 159, 2521: 161, 2522: 162, 2523: 163, 2524: 164, 2525: 165, 2526: 166}
+## 第八批：专属模块角色。178 哈基米的公共事件 9017 不是 129 指令，是脚本 CodexCat.recruit()（XCat.recruit：入队并装上法宝 7999 与练习剑 2，xiyou_cat 对照）
+const RECRUIT_8 := {9017: 178}
 ## 猫猫 110～114 不走公共事件：Map004 事件 57 一次给齐五只（129 指令），参照行／装备／技能照验，招募路径另在地图事件里
 const CATS := [110, 111, 112, 113, 114]
 const REGRESSION := [1, 8, 9, 10]
@@ -44,13 +46,13 @@ func _run() -> void:
 		_check("oracle_present", false)
 		return _finish()
 	# ③ 参照行齐全
-	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + RECRUIT_7.values() + CATS:
+	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + RECRUIT_7.values() + RECRUIT_8.values() + CATS:
 		var row = d.actors.get(str(id))
 		_check("oracle_row_%d" % id, row != null and row.has("lv1") and row.has("lv10Battle") and row.get("levelSamples", {}).size() == 3, id)
 		var dmg = d.damage.filter(func(r): return r.get("actor") != null and int(r.actor) == id)
 		_check("oracle_damage_%d" % id, dmg.size() > 0 and dmg.all(func(r): return not r.has("error")), [id, dmg.size()])
 	# ② 初始装备与技能
-	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + RECRUIT_7.values() + CATS:
+	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + RECRUIT_7.values() + RECRUIT_8.values() + CATS:
 		var row: Dictionary = d.actors[str(id)]
 		var a := XActor.new().setup(id)
 		var mv_equips = row.equips.filter(func(e): return e != null).map(func(e): return int(e.base))
@@ -79,6 +81,7 @@ func _run() -> void:
 	all_recruit.merge(RECRUIT_5)
 	all_recruit.merge(RECRUIT_6)
 	all_recruit.merge(RECRUIT_7)
+	all_recruit.merge(RECRUIT_8)
 	for ce in all_recruit:
 		var id: int = all_recruit[ce]
 		_check("not_in_party_before_%d" % id, not s.party.has(id))

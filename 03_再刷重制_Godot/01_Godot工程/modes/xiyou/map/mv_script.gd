@@ -131,6 +131,9 @@ static func _statements(js: String, interp) -> Array:
 			if got != "":
 				interp.host.toast(got)
 			continue
+		if st == "CodexCat.recruit()":  # 公共事件 9017：178 哈基米入队（见 XCat.recruit）
+			XCat.recruit(s)
+			continue
 		if st == "CodexGuide.advise(this)":
 			await _guide_advise(interp)  # 方桌大厅「商店向导」→「下一步建议」
 			continue
