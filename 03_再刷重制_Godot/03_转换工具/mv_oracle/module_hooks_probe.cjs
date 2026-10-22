@@ -25,7 +25,7 @@ function battler(actorId, target, setup) {
   const b = actorId ? new w.Game_Actor(actorId) : new w.Game_Enemy(setup.dragon?1999:1,0,0);
   const params = [1000000,1000,321,456,210,789,Number(setup.agi||100),100];
   b.param = i => params[i]; b.paramBase = i => params[i];
-  b.traitObjects = () => []; b.criticalMultiplierBonus = () => 0; b.attackElements = () => [1];
+  b.traitObjects = () => !target && setup.selfRates ? [{note:"<SelfPhysRate: 2><SelfElemRate: 3>",traits:[]}] : []; b.criticalMultiplierBonus = () => 0; b.attackElements = () => [1];
   b.elementRate = e => setup.absorb && e===8 ? -.5 : setup.immune ? 0 : setup.resistance||1;
   b.elementAmplifyRate = () => 0; b.elementAmplifyNRate = () => 0; b.elementMagnifyRate = () => 1;
   b.iteratePassiveSkill = () => {}; b.skillMasteryLevel = () => 0;
@@ -47,11 +47,13 @@ const patches = [
   ['physicalIncomingPierce',.7],['magicalIncomingPierce',.3],['resistancePierce',.8],['incomingMultiplier',.5],
 ].map(([field,value])=>({op:'set',field,value})).concat([
   {op:'add',field:'elementAdd',element:1,value:1.5},{op:'mul',field:'elementMultiplier',element:1,value:.8}]);
-const frameCases = ['physical','magical','mixed','true','fixed','percent','settled','noElement','categoryMax','healing'].map(mode=>({
-  id:'frame.'+mode,actor:1,skill:1,critical:true,pdr:.2,mdr:.3,resistance:.25,healing:mode==='healing',
+const frameCases = ['physical','magical','mixed','true','fixed','percent','settled','noElement','categoryMax','elements','clamps','healing'].map(mode=>({
+  id:'frame.'+mode,actor:1,skill:1,critical:true,pdr:.2,mdr:.3,resistance:.25,selfRates:true,guard:true,healing:mode==='healing',
   patches: patches.concat(mode==='noElement'?[{op:'set',field:'noElement',value:true}]:
     mode==='categoryMax'?[{op:'set',field:'categoryMax',value:true}]:
     ['true','fixed','percent','settled'].includes(mode)?[{op:'set',field:'kind',value:mode}]:
+    mode==='elements'?[{op:'set',field:'elements',value:[1,8]}]:
+    mode==='clamps'?[{op:'set',field:'finalMultiplier',value:-1},{op:'set',field:'incomingMultiplier',value:-1}]:
     mode==='healing'?[]:[{op:'set',field:'mode',value:mode}])
 }));
 const cases = [makeCase('registry.native', {}, () => ({hooks}))];

@@ -7,8 +7,9 @@ var failures := []
 var nested := false
 
 class ProbeActor extends XActor:
+	var fixture := {}
 	func param(i: int) -> float: return [1000000.0, 1000.0, 321.0, 456.0, 210.0, 789.0, 100.0, 100.0][i]
-	func trait_objects() -> Array: return []
+	func trait_objects() -> Array: return [{"note":"<SelfPhysRate: 2><SelfElemRate: 3>"}] if fixture.get("selfRates",false) else []
 	func skills() -> Array: return []
 	func passive_cache() -> Dictionary: return {"harmRe": {1: 11.0, 8: 22.0}}
 	func passive_values(_tag: String) -> Array: return []
@@ -88,7 +89,7 @@ func cat_descriptor() -> Dictionary:
 	return entry
 
 func fixture_pair(setup: Dictionary) -> Array:
-	var a := ProbeActor.new();a.actor_id=int(setup.actor)
+	var a := ProbeActor.new();a.actor_id=int(setup.actor);a.fixture=setup if not setup.has("target") else {}
 	var b: XBattler
 	if setup.has("target"):
 		b=ProbeActor.new();b.actor_id=int(setup.target)
@@ -96,6 +97,7 @@ func fixture_pair(setup: Dictionary) -> Array:
 		b=ProbeEnemy.new();b.enemy_id=1999 if setup.get("dragon",false) else 1;b.fixture=setup
 	for member in [a,b]:
 		member.hp=999999;member.mp=1000;member.tp=33
+	b.guarding=setup.get("guard",false)
 	return [a,b]
 
 func run_native(c: Dictionary) -> void:
@@ -132,13 +134,14 @@ func run_native(c: Dictionary) -> void:
 	var context := {"item":item,"subject":XDamage._module_snapshot(a),"target":XDamage._module_snapshot(b),"options":{},"facts":{"fixture":setup,"orbMultiplier":1.0},"operationId":c.id}
 	var dispatch := registry.dispatch("damage.before",context,replay_frame)
 	for key in o.frame:
-		if dispatch.frame.has(key) and key != "elements":
+		if dispatch.frame.has(key):
 			check(c.id+".native_frame."+key,same(dispatch.frame[key],o.frame[key]),[dispatch.frame[key],o.frame[key]])
 	check(c.id+".isolated",before==JSON.stringify([a.hp,a.mp,a.tp,b.hp,b.mp,b.tp,a.passive_cache(),b.passive_cache(),a.effect_snapshot,b.effect_snapshot]))
 	check(c.id+".native_isolated",o.cachesUnchanged and o.frameRestored and same(o.resourcesBefore,o.resourcesAfter))
 	check(c.id+".random",random.error.is_empty() and random.draws==int(o.draws),[random.draws,o.draws,random.error])
 	# Repeated targets/hits and explicit replay never reuse a prior overlay.
-	check(c.id+".replay",same(result,XDamage.calculate(item,a,b,options)) if not live else true)
+	if live: options.random=XRandomStream.scripted([{"kind":"uint32","value":2147483648},{"kind":"uint32","value":2147483648}])
+	check(c.id+".replay",same(result,XDamage.calculate(item,a,b,options)))
 
 func initial_frame() -> Dictionary:
 	var frame := {"mode":"physical","kind":"normal","elements":null,"noElement":false,"categoryMax":false}
@@ -207,6 +210,8 @@ func _ready() -> void:
 	check("oracle.exists",FileAccess.file_exists(ORACLE))
 	if FileAccess.file_exists(ORACLE):
 		var data=JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
+		check("oracle.same_source",data.sourceIdentity.runtimeInputs==XDB.load_json("manifest.json").runtimeInputs)
+		check("oracle.case_count",data.cases.size()==27)
 		check("oracle.native_registry",data.cases[0].observed.hooks[9].id=="cat-sword" and data.cases[0].observed.hooks[19].id=="orb-sets")
 		for c in data.cases.slice(1):
 			check(c.id+".native_errors",c.errors.is_empty(),c.errors)

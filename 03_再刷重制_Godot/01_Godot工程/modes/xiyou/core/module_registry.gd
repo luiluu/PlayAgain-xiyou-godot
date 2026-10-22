@@ -73,7 +73,7 @@ func _compile(entries: Array) -> void:
 			_errors.append("duplicate_module:" + id)
 		ids[id] = entry
 		for field in ["capabilities", "contexts", "hooks", "dependsOn"]:
-			if not entry.get(field, []) is Array:
+			if (field != "dependsOn" and not entry.has(field)) or not entry.get(field, []) is Array:
 				_errors.append("invalid_module_array:" + id + ":" + field)
 		if not _errors.is_empty():
 			continue

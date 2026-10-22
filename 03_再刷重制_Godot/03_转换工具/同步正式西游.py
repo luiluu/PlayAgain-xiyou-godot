@@ -97,6 +97,7 @@ PROBES = [
     (['state_effects_probe.cjs'], ['state_effects.json']),
     (['attack_element_probe.cjs'], ['attack_elements.json']),
     (['qiyu_probe.cjs'], ['qiyu.json']),
+    (['module_hooks_probe.cjs'], ['module_hooks.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
 
