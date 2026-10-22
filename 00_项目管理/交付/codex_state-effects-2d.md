@@ -25,3 +25,6 @@
 - 首轮focused遗漏复制新oracle，读到旧20例后缺query.native_blocks；已诊断、保留日志并核实身份后终止自有测试组，不计偶发。修后final-focused的1134个数组断言因JSON浮点数组与整数数组严格比较失败，标量执行／预览2772×2均相等；另一个夹具少给logic.state，出现vars()运行时错误。补整数归一与独立state后verified-focused全部通过，未改生产数值算法。
 - 翻译边界7项、既有公式编译12项通过。导入exitCode0。12个直接依赖专项正在运行，日志state-effects-2d/dependencies；最终同步尚未开始。
 - 交付前已git merge main：Already up to date，main仍09ebfb0，无新Claude批次需要核查。
+
+- 12个依赖专项已全部通过，共2906项：battle8、battle_events108、battle_options92、battle_ui43、battleback_save5、drop_record26、formula_effects908、imported_balance273、shield565、custom_damage145、random_streams484、transform_params249；连同状态专项共13场景22850项。无偶发通过。
+- 最终同步将用长任务.py启动，日志state-effects-2d/sync.log；任务在跑时不再改转换器／探针，不重复启动。当前剩余444整块清单已保存在state-effects-2d/remaining-js-inventory.json（本地证据，不入Git）。
