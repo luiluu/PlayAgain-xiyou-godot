@@ -91,6 +91,10 @@ func _data_changed() -> void:
 func _execute_env(c: Dictionary):
 	if HOST_CODES.has(int(c.code)):
 		return _request("command", "command", {"command": c})
+	match int(c.code):
+		339:
+			# 强制战斗行动：MV iterateBattler 只在战斗内遍历战斗者，地图上空操作（CE2499 炭治郎-免疫负面）
+			return null
 	return super(c)
 
 

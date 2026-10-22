@@ -2,7 +2,7 @@ extends Node
 ## 妄语深渊（Map211）流程（地图场景里真走一遍；数值与事件对照由 xiyou_event_compare 承担，这里查流程跑得通）：
 ## - 入口：二十八／二十九层副本首领宝箱问「是否前往妄语深渊」→ Map211 (19,23)。
 ## - 封印 EV5：第 1 页「解开封印」→ 开关 75；第 2 页「继续解开封印」→ 变量 108 取 1～6 对应敌群 717～722，胜后成就 82、
-##   肝帝积分（变量 206 至少加变量 214 的 2～5，公共事件 1439 另有积分券）、开关 76；「前往未知存在」（Map210，未开放）选否留在原地；「离开」什么也不变。
+##   肝帝积分（变量 206 至少加变量 214 的 2～5，公共事件 1439 另有积分券）、开关 76；「前往未知存在」选否留在原地、选是传 Map210 (9,14)；「离开」什么也不变。
 ## - 出口 EV8：按变量 6（38／39／40）传回 Map145 并公共事件 1024 重置副本变量（变量 5／6 归零）、关开关 75～78。
 ## 队伍生命攻击都很大（只查流程）；战斗中直接击倒敌人。事件走地图场景的 run_event。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -174,6 +174,11 @@ func _seal() -> void:
 	_check("seal2_points", int(s.variable(214)) >= 2 and int(s.variable(214)) <= 5 and gain >= int(s.variable(214)), [gain, s.variable(214)])
 	_check("seal2_reward_switch", s.switch(76), s.switch(76))
 	_check("seal2_stay", _scene() is XMapScene and _scene().map_id == ABYSS, _scene().name)
+	# 再来一场，这次选「前往未知存在」：传到 Map210 (9,14)
+	s.set_switch(76, false)
+	map.refresh_events()
+	await _run_event(map, SEAL, [0, 0], "win")
+	_check("seal2_to_unknown", await _wait_map(210) and _scene().player.grid == Vector2i(9, 14), _scene().name)
 
 
 func _exit() -> void:
