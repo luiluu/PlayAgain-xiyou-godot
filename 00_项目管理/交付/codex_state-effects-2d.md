@@ -1,7 +1,7 @@
 # 交付：codex/state-effects-2d
 
 - 车道／工作者：翻译／核查 · Codex（沙僧，重制_沙僧_42）。
-- 状态：进行中，未验收；2b／2c保持原分支可独立合并。
+- 状态：可合并（13专项22850项、最终同步、来源核验与指纹复算均通过；待Claude交叉核查）。2b／2c保持原分支可独立合并。
 - 工作树：沿用state-effects-2b，分支从4760a54切出，不新建工作树。
 - 开工2026-10-22（Europe/Paris）：已只读main交接板及两边status／log。本树干净；main仍09ebfb0，唐僧未提交收尾不触碰。无新Claude待核查提交，不重复核dev122／123。
 - 独占：状态效果翻译、state_effects.gd、state_effects_probe、自己的专项；不改actor.gd、xstate、battle_event_runner、角色／界面／工具已有脚本或共用登记。
@@ -28,3 +28,17 @@
 
 - 12个依赖专项已全部通过，共2906项：battle8、battle_events108、battle_options92、battle_ui43、battleback_save5、drop_record26、formula_effects908、imported_balance273、shield565、custom_damage145、random_streams484、transform_params249；连同状态专项共13场景22850项。无偶发通过。
 - 最终同步将用长任务.py启动，日志state-effects-2d/sync.log；任务在跑时不再改转换器／探针，不重复启动。当前剩余444整块清单已保存在state-effects-2d/remaining-js-inventory.json（本地证据，不入Git）。
+
+
+## 最终同步与下一会话
+
+- 最终同步2026-10-22 05:02（Europe/Paris）结束，exitCode0，重跑3／复用39探针；verifyOk=true、sameExistingSource=true、measurementChanges={}，无cacheError/importError。1655输入／382运行时输入／1629产物核验issues=[]；sync_stamp.json工具摘要与产物摘要复算均匹配。
+- 报告：04_验证/本地结果/自动同步/20261022_050058_814761_v0.28-v0.28/同步报告.json。专项复制了21例，所以同步报告为“测量不变”；另对保存的2c最终20例独立逐项比较，旧20完全相等，仅增query.native_blocks，21例errors均空。无需重跑同步或已通过专项。
+- 本分支可交唐僧；2b固定ad7c867、2c固定4760a54，依次合2b→2c→2d后统一全量一次。车道未跑全量，不改main未提交收尾，不自销Codex待Claude核查。开发编号与变更记录由唐僧合并时登记；本期不动进度账。
+- 下一聊天按40%上下文规则自动同树接力到重制_沙僧_43。开工仍只读交接板、main与本树status/log；不要新建worktree。先从本分支切codex/state-effects-2e，保留2d可独立合并。
+- 继续第二期其余完整声明式形状；可先实测8个仅user.addState(常数)整块：1298 turn_start→1299，1556 battle→1557，1665 turn_start→1666，1667 battle→1668，2528 turn_start→1527，2546 battle→1557，2555 turn_start→1621，2566 battle→1666。以及5个仅gainTp：607／609 battle200、857 battle50、1334 apply25、1336 apply75。每种先mv_oracle；不能只调add_state/gain而漏状态时长、来源、结果槽、刷新、短路随机、嵌套guard及预览隔离。不支持的完整块留js，不能截取熟悉半段。
+- 元素查询新增独立value_query，复用XDamage.action_elements，forced/added是显式上下文；原版两项172专属技能10234/10235会固定13。当前Godot没有终末咒式或forced/added行动序列操作，本期未声称移植这些角色／序列机制。首武器两个块的Replace Attack前置仍未做，详见上文，不能id==1冒充isAttack。
+- 第三期actor.gd仍禁改；param_add须actor.param_plus、xstate.to_dict/from_dict保存与旧Godot档缺省、refresh完整链，不能只加孤立字段。若范围不允许，写具体提案再跳第四期。第四期公共事件消费需XState／battle_event_runner范围外核心，先具体提案；原版覆盖单槽，1771最终2479，不能暗换FIFO。连续两期无可交付即停手回报，不强行第五期。第五期只1741～1749先量实际无效／错误；108奈叶归悟空。
+- 保留2b的_damage_value终值覆写兼容契约，不能重演旧drop_record100／167变600／667的失败；角色测试／探针禁止动。完整外车道迁移提案在2b交付。
+- 核查优先：新Claude批次先核；dev122／123与5c1bf82已由codex/review-dev122-123（56e57fc）核完，不重复核，不自核Codex实现。main目前仍09ebfb0。
+- 检查点额度：5小时86%、周55%，尚未到90%收尾线；下一会话先核额度，到90%只收尾当前步骤、不再接力。当前无活动长任务／heartbeat，未提交应为无。
