@@ -203,6 +203,25 @@ cases.push(makeCase('mul.round_boundaries', {}, () => {
   const values = [-3, -1, 0, 1, 3].map(value => [value, action.customEffectEval(e, sid, 'confirmState', a, value)]);
   return {values};
 }));
+// Fix makeDamageValue as extension modules do; the real executeDamage still owns all four state phases.
+cases.push(makeCase('damage.full_chain', {raw: 7, confirm: 2, react: 0.5, respond: 3, establish: 0.5}, () => {
+  const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
+  const saved = w.$dataStates[T].customEffectEval, log = [];
+  w.__seDamage = (phase, value, target) => log.push([phase, value, target.result().critical, w.$gameVariables.value(27), w.$gameSwitches.value(28)]);
+  w.$gameVariables.setValue(27, 314); w.$gameSwitches.setValue(28, true);
+  w.$dataStates[T].customEffectEval = Object.fromEntries(Object.keys(saved).map(k => [k, '']));
+  for (const [phase, rate] of [['confirm', 2], ['react', 0.5], ['respond', 3], ['establish', 0.5]]) {
+    w.$dataStates[T].customEffectEval[phase + 'State'] = `__seDamage('${phase}', value, target); if (value !== 0) { value = Math.round(value * ${rate}); }`;
+  }
+  try {
+    a.addState(T); e.addState(T);
+    for (const x of [a, e]) { x.need_refresh = true; x.refresh(); }
+    action.makeDamageValue = () => 7;
+    action.itemCri = () => 1;
+    const hp = e.hp; action.apply(e);
+    return {log, hpDelta: e.hp - hp, hpDamage: e.result().hpDamage, critical: e.result().critical};
+  } finally { w.$dataStates[T].customEffectEval = saved; delete w.__seDamage; }
+}));
 // Phase 2b: real constant bonus blocks, measured before adding any new translator.
 // Four complete source shapes: local bonus, finalRate, final+critical, and final+critical followed by floor.
 const BONUS_STATES = [34, 52, 1160, 1161, 1397, 1406, 1445, 1446, 1447, 1448, 1454, 1522, 1545, 1669, 1671, 1684,
