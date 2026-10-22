@@ -18,3 +18,10 @@
 - 2544／2545测量保留但仍js：YEP_WeaponUnleash.isAttack()依赖_replaceAttackSkillId缓存与states顺序的Replace Attack（冻结插件replaceAttackSkillId已只扫states）。技能1与替换12相互切换时isAttack真假相反，不能用id==1代替；完整移植须普攻选择／计数／反击／预览共用基础入口并核缓存生命周期，当前actor.gd禁改，交后续规则车道。
 - 初次原版测量失败为夹具跨Node/window数组域，导致_states.contains不存在，改用w.eval构造数组后通过；随后发现两槽表被YEP自动重建，补足五槽再测native-v3。首个边界测试失败是对2711替换不存在的数字1，变体没有变化，修成改0.2；生产白名单未为这些失败放宽。原日志全部保留。
 - 代码已写，翻译边界7项通过；Godot专项尚待验收，不按完成登记。
+
+## 专项验收
+
+- 状态效果专项verified-focused：19944/19944，通过全部2772条已支持原版查询的执行及预览对照，包含元素实际数组、玩家与敌人攻击、行动上下文与只读预览兜底；另288条首武器测量只作未实现边界证据。
+- 首轮focused遗漏复制新oracle，读到旧20例后缺query.native_blocks；已诊断、保留日志并核实身份后终止自有测试组，不计偶发。修后final-focused的1134个数组断言因JSON浮点数组与整数数组严格比较失败，标量执行／预览2772×2均相等；另一个夹具少给logic.state，出现vars()运行时错误。补整数归一与独立state后verified-focused全部通过，未改生产数值算法。
+- 翻译边界7项、既有公式编译12项通过。导入exitCode0。12个直接依赖专项正在运行，日志state-effects-2d/dependencies；最终同步尚未开始。
+- 交付前已git merge main：Already up to date，main仍09ebfb0，无新Claude批次需要核查。
