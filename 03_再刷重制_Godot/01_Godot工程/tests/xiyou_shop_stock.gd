@@ -356,7 +356,7 @@ func _old_save() -> void:
 class RecCanvas extends XMVCanvas:
 	var log := []
 
-	func text(t: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, lh := XUI.LINE_HEIGHT, alpha := 1.0, zoom := 1.0, pivot := Vector2.ZERO) -> void:
+	func text(t: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, lh := XUI.LINE_HEIGHT, alpha := 1.0, zoom := 1.0, pivot := Vector2.ZERO, outline := OUTLINE) -> void:
 		log.append([t, x, y, max_w, align, size, color.to_html(false), alpha])
 
 	func icon(index: int, x: float, y: float, alpha := 1.0, size := 32.0) -> void:
