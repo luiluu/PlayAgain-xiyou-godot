@@ -141,6 +141,14 @@ func run_native(c: Dictionary) -> void:
 	# Repeated targets/hits and explicit replay never reuse a prior overlay.
 	if live: options.random=XRandomStream.scripted([{"kind":"uint32","value":2147483648},{"kind":"uint32","value":2147483648}])
 	check(c.id+".replay",same(result,XDamage.calculate(item,a,b,options)))
+	# Even an accidentally supplied live stream must remain untouched when the
+	# caller explicitly requests a preview; the handler gets no RNG capability.
+	var preview_options := options.duplicate()
+	var untouched := XRandomStream.scripted([])
+	preview_options.preview=true;preview_options.variance=true;preview_options.random=untouched
+	var preview_result := XDamage.calculate(item,a,b,preview_options)
+	check(c.id+".explicit_preview_rng",untouched.draws==0 and untouched.error.is_empty())
+	check(c.id+".explicit_preview_value",same(preview_result.value,result.value))
 
 func initial_frame() -> Dictionary:
 	var frame := {"mode":"physical","kind":"normal","elements":null,"noElement":false,"categoryMax":false}

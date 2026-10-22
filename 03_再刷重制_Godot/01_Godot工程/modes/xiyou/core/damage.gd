@@ -252,7 +252,7 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 		if best.is_empty() or value > best.value:
 			best = row
 	var settled: float = best.value
-	if options.get("variance", true):
+	if options.get("variance", true) and not options.get("preview", false):
 		settled = apply_variance(settled, int(item.damage.variance), options.get("random"))
 	var out_value := XPower.js_round(settled)  # JS Math.round：负数的 .5 往大取整（roundf 会远离零）
 	if settled > 0.0 and out_value == 0.0:
@@ -301,7 +301,7 @@ static func _healing(item: Dictionary, a: XBattler, b: XBattler, options: Dictio
 	if value < 0.0 and a is XActor:
 		for bonus in a.passive_values("passiveHEUP"):
 			value *= 1.0 + float(bonus) * 0.01
-	if options.get("variance", true):
+	if options.get("variance", true) and not options.get("preview", false):
 		value = apply_variance(value, int(item.damage.variance), options.get("random"))
 	return {"value": XPower.js_round(minf(0.0, value)), "settled": value, "critical": false, "breakdown": {"base": base, "elementMultiplier": mult}}  # Math.round
 
