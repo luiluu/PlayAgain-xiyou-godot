@@ -6,6 +6,7 @@ extends Node
 ## 不勾等待时同一帧执行 122。Godot 把「等待期间显示」做成等待前先显示（同 230），对照「122 执行前消息是否已显示」。
 ## transfer.*（八戒_48）：同图 201 不重建事件——事件节点、位置、朝向、强制路线与索引、页原样保留，玩家与跟随者重新放置；
 ## 换图再回来恢复初始。参照里给事件 3 挂的等待解释器（模拟并行事件）Godot 无对应（切片地图没有并行事件），不比 interp。
+## MV 不强制路线时 _moveRoute 是当前页的自主路线，Godot 留在 page.moveRoute，route 长度按此取。
 ## 为免过渡淡入淡出期间路线自己往前走，两个事件先停掉 _physics_process（参照引擎里同样不推进帧）。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const ORACLE := "res://modes/xiyou/generated/oracle/review_fix.json"
@@ -126,7 +127,7 @@ static func _ev_state(map: XMapScene, id: int) -> Dictionary:
 	for e in map.events:
 		if e.event_id == id:
 			return {"x": float(e.grid.x), "y": float(e.grid.y), "d": float(e.direction), "page": float(e.page_index),
-				"forcing": e._route_forcing, "routeIndex": float(e._route_index), "route": float(e._route.get("list", []).size())}
+				"forcing": e._route_forcing, "routeIndex": float(e._route_index), "route": float((e._route if e._route_forcing else e.page.get("moveRoute", {})).get("list", []).size())}
 	return {}
 
 static func _event_node(map: XMapScene, id: int) -> MVEvent:
