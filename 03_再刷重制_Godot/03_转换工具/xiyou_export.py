@@ -718,7 +718,7 @@ class Exporter:
         def as_png(src, data):
             # 原版有扩展名是 .png、内容是 JPEG／WebP 的图（如 162 诛仙的 小诛仙、guanxi7_1），NW.js 按内容解码，
             # Godot 按扩展名导入会报 Not a PNG file；这类图用 sips 转成真 PNG（结果可重复），其余原样
-            if data.startswith(b'\x89PNG\r\n\x1a\n'):
+            if not (data.startswith(b'\xff\xd8\xff') or (data[:4] == b'RIFF' and data[8:12] == b'WEBP')):
                 return data
             with tempfile.TemporaryDirectory(prefix='xiyou-png-') as tmp:
                 out = Path(tmp) / 'out.png'
