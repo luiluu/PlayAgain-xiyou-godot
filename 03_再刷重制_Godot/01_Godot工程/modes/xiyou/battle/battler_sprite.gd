@@ -471,6 +471,13 @@ func jump_height() -> float:
 	return -_jump_height / (h * h) * (x - h) * (x - h) + _jump_height
 
 
+## YEP_X_ActSeqPack2 Sprite_Animation.updateBattlerPosition：头上／中心的动画每帧再抬高（浮空率＋跳跃率）× 战斗者精灵的图高
+## （敌人：单图是原图，侧视是取整后的一格；角色：YEP_BattleEngineCore updateFrame 给 Sprite_Actor 建的一格大小 Bitmap）。
+## 原版这里取浮空率（getFloatHeight）也会让浮空再向目标走一步，所以身上有动画时浮空变快，照原样。
+func anim_lift() -> float:
+	return (float_step() + jump_height()) * floorf(look.cell.y if look.cell.y > 0 else 64.0)
+
+
 func is_floating() -> bool:
 	return _float_dur > 0
 
