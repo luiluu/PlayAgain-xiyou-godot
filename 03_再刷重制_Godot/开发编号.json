@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.134",
-  "sequence": 134,
-  "next": "dev.135",
-  "nextSequence": 135,
+  "current": "dev.135",
+  "sequence": 135,
+  "next": "dev.136",
+  "nextSequence": 136,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-shield-ui",
+  "currentChange": "state-effects-3-design",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
