@@ -489,7 +489,7 @@ func _query_blocks(o: Dictionary) -> void:
 			ctx.added_elements = p[6]
 			if p[5] != null:
 				ctx.forced_elements = p[5]
-			check("query.elements.%d" % index, XStateEffects._query_elements(ctx, a) == row.elements)
+			check("query.elements.%d" % index, XStateEffects._query_elements(ctx, a) == row.elements.map(func(e): return int(e)))
 		elif sid == 1834:
 			var p: Dictionary = o.party[int(row.profile)]
 			ctx.party_members = []
@@ -518,6 +518,7 @@ func _query_blocks(o: Dictionary) -> void:
 	check("query.supported_rows", executed == 2772, executed)
 	# Production action context uses actual battle actors, independent of attacker.
 	var logic := XBattleLogic.new()
+	logic.state = XState.new()
 	var live := ValueBattler.new()
 	live.hp = 0.0 # Native aliveMembers still includes it without death state.
 	logic.actors = [live]
