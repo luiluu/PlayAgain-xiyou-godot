@@ -24,7 +24,7 @@
 
 - 普通攻击动画（双持，页面内 JS：在战斗夹具等到角色指令窗口后 `await __atkAniRef.suite()`）：第一位角色直接设成双持（独立物品武器 2005 鸾凤和鸣剑＋武器 2，不经 canEquip）、单武器、空手，再加敌人出手，对两只敌人调日志窗 `showAttackAnimation` 与 `showActorAtkAniMirror`，包住 `Sprite_Base.startAnimation` 记每个新建动画的目标、动画号、镜像与 `_delay`。`__refJson('attack_animation_oracle', …)` 写到截图目录，复制到 `01_Godot工程/tests/fixtures/attack_animation_oracle.json`，由 `tests/xiyou_sequence_visual` 对照。窗格隐藏时整段放进不等待的异步函数里跑（先 `__dhRef.pump` 推到标题再点夹具），再轮询结果。
 
-- 战斗里的 101 消息窗：战斗夹具到角色指令窗口后 `$gameMessage` 设无头像、背景 0、位置 2，加 `\n<海拉的幻影>很久没有打的这么尽兴了，哈哈哈。`，推到文字全显再 `__refShot('battle_msg_101_formal')`。读数：消息窗 0,548,1280,172，名字框 0,484,298,64（`\c[6]`），角色／队伍指令窗关上（`Scene_Battle.updateStatusWindow`），右侧状态与行动顺序条照常。Godot 对应 `tests/xiyou_battle_ui` 的 `battle_49_message_101`。
+- 战斗里的 101 消息窗：战斗夹具到角色指令窗口后 `$gameMessage` 设无头像、背景 0、位置 2，加 `\n<海拉的幻影>很久没有打的这么尽兴了，哈哈哈。`，推到文字全显再 `__refShot('battle_msg_101_formal')`。读数：消息窗 0,548,1280,172，名字框 0,484,298,64（`\c[6]`），角色／队伍指令窗关上（`Scene_Battle.updateStatusWindow`），右侧状态与行动顺序条照常。Godot 对应 `tests/xiyou_battle_ui` 的 `battle_49_message_101`。另三种切片里真有的写法用同一夹具截（`$gameMessage.clear()` 后 setFaceImage／setBackground(0)／setPositionType 再 add，推到文字停住）：带头像 `battle_msg_101_face`（QY touxiang 2，`\n<玉皇大帝>你确实很强，不过到此为止了！`：消息窗同上、名字框 0,484,272,64、正文 newLineX 168）、中间位置 `battle_msg_101_middle`（无头像、位置 1，`天空中的圣雷积攒到了极限`：消息窗 0,274,1280,172、无名字框）、放大字 `battle_msg_101_bigfont`（KH06-2_faces_MV_03 4，`\n<魇脑>\{\{前所未有的兴奋！\}\}\!`：名字框 0,484,220,64）。窗口层里 Window_OTBDisplay 在 Window_Message 之前：消息窗底色压在行动顺序条上、头像盖住条左端。Godot 对应 `battle_49b`～`battle_49d`。
 
 - `index.html?item_marks_ref=1`：一键出售与多货币买入的内存夹具；「多货币买入夹具」打开 2230／4375／732 三件商品并显示窗口几何，「买入数量窗」进入实际最多能买 1 件的数量窗，「买入复核截图」保存当前商店原尺寸画面。金币、变量与物品都只属于新建测试局，不加载玩家存档。
 
