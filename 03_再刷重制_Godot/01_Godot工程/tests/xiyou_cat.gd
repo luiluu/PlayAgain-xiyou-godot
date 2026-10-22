@@ -166,6 +166,7 @@ func _run() -> void:
 			"legal":
 				_legal(c)
 	check("covers_all", seen.keys().size() == 7, seen.keys())
+	_dragon_round()
 	finish()
 
 
@@ -197,6 +198,37 @@ func _legal(c: Dictionary) -> void:
 			bad.append([row, got])
 	check("legal.rows", bad.is_empty() and c.observed.rows.size() == 330, bad.slice(0, 5))
 	check("legal.skills", a.skill_ids == (c.observed.skills as Array).map(func(v): return int(v)), [a.skill_ids, c.observed.skills])
+
+
+## 生产路径的巨龙回合：battle_logic._damage_value 与 XPower._expected 都把自然回合（max(1, turn)）传给伤害钩子，
+## 打守誓巨龙 1999 时结果有限；第 4、9 回合（(回合−1)%5＝3）护甲开放有伤害，其余回合物理减伤 1e11 打成 0。
+func _dragon_round() -> void:
+	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [8])
+	s.actor_max_level = 99
+	s.party.clear()
+	s.battle_slots.clear()
+	var a := s.actor(XCat.ACTOR)
+	a.change_level_mv(35)
+	a.equips[0] = XGear.template("weapon", 2)
+	for id in [10437, 10441]:
+		a.learn_skill(id)
+	a.refresh_passive()
+	s.add_actor(XCat.ACTOR)
+	var logic := XBattleLogic.new()
+	logic.setup(1999, s)
+	var dragon: XEnemy = logic.enemies[0]
+	var skill := XDB.rec("Skills", 10437)
+	check("dragon.enemy", dragon.enemy_id == 1999, dragon.enemy_id)
+	var got := {}
+	for r in [0, 1, 3, 4, 5, 9]:
+		logic.turn = r
+		logic._formula_outcome = {}
+		var v := logic._damage_value(a, skill, dragon, false)
+		var preview := XPower._expected(logic, a, dragon, skill, {"mp": 0, "tp": 0})
+		got[r] = [v, preview]
+		check("dragon.round%d.finite" % r, is_finite(v) and is_finite(preview), got[r])
+	check("dragon.open_rounds", got[4][0] > 0.0 and got[9][0] > 0.0 and got[4][0] == got[9][0], got)
+	check("dragon.guarded_rounds", got[0][0] == 0.0 and got[1][0] == 0.0 and got[3][0] == 0.0 and got[5][0] == 0.0, got)
 
 
 ## 参照的 Math.random 恒 0.5：浮点取 0.5，整数取 2^31

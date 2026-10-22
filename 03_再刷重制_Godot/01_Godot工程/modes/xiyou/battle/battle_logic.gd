@@ -1168,7 +1168,8 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 ## 伤害计算与 apply 的扣血／记账分开，模块对照可固定这一步（同正式 Game_Action.makeDamageValue 夹具）。
 func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
 	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
-	return XDamage.finish(XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule()}), skill, u, t, true)
+	return XDamage.finish(XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule(),
+		"battleRound": maxi(1, turn)}), skill, u, t, true)  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
 
 
 ## Game_Action.apply：行动者有道法「破甲」时，期间附加的破甲·真气（2705）用它的倍率（XZhenqi.pojia_actor）
