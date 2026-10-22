@@ -58,7 +58,7 @@ func _run() -> void:
 	var goods_seen := {}
 	for c in oracle.cases:
 		var got := await _run_case(c, states[str(c.state)], host)
-		check("case_" + str(c.id), JSON.stringify(got) == JSON.stringify(c.trace), {"want": c.trace, "got": got})
+		check("case_" + str(c.id), JSON.stringify(_norm(got)) == JSON.stringify(_norm(c.trace)), {"want": c.trace, "got": got})
 		for e in c.trace:
 			if e.t == "shop":
 				shops += 1
@@ -72,6 +72,20 @@ func _run() -> void:
 			missing.append(k)
 	check("goods_in_db", missing.is_empty(), missing)
 	_finish()
+
+
+## JSON 读入的数都是浮点：整数值一律转 int 再比
+static func _norm(v):
+	if v is float and v == floorf(v):
+		return int(v)
+	if v is Array:
+		return v.map(func(x): return _norm(x))
+	if v is Dictionary:
+		var d := {}
+		for k in v:
+			d[k] = _norm(v[k])
+		return d
+	return v
 
 
 func _run_case(c: Dictionary, st: Dictionary, host: LobbyHost) -> Array:
