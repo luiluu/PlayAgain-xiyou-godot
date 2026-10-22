@@ -58,7 +58,9 @@ func manifest() -> Array:
 	var result := _entries.duplicate(true)
 	for entry in result:
 		for hook in entry.get("hooks", []):
-			hook.handler = str(hook.handler.get_method())
+			if hook is Dictionary:
+				var handler = hook.get("handler")
+				hook.handler = str(handler.get_method()) if handler is Callable else "<invalid>"
 	return result
 
 func _compile(entries: Array) -> void:

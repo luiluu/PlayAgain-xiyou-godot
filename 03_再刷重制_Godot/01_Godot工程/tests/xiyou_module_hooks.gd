@@ -165,7 +165,7 @@ func reentrant(context: Dictionary,_frame: Dictionary) -> Dictionary:
 
 func registration() -> void:
 	var entry := descriptor("a",0,noop,[])
-	for name in ["duplicate","point","pending","capability","context","handler","arity","cycle","dependency","order","write"]:
+	for name in ["duplicate","point","pending","capability","context","handler","arity","shape","cycle","dependency","order","write"]:
 		var list := [entry.duplicate(true)]
 		match name:
 			"duplicate":list.append(entry.duplicate(true))
@@ -175,12 +175,14 @@ func registration() -> void:
 			"context":list[0].contexts=["rng"]
 			"handler":list[0].hooks[0].handler=Callable()
 			"arity":list[0].hooks[0].handler=func(_x): return {}
+			"shape":list[0].hooks=[1]
 			"cycle":list[0].dependsOn=["a"]
 			"dependency":list[0].dependsOn=["absent"]
 			"order":list[0].hooks[0].order=0.5
 			"write":list[0].hooks[0].writes=["hp"]
 		var r := XModuleRegistry.compile(list)
 		check("registration."+name,not r.valid() and not r.diagnostics().is_empty(),r.diagnostics())
+		check("invalid_manifest."+name,r.manifest() is Array)
 	var ctx := {"facts":{"nested":[]},"item":{},"subject":{},"target":{},"options":{},"operationId":"test"}
 	var frame := initial_frame()
 	var a := descriptor("a",0,add_final,["finalAdd"]);var b := descriptor("b",0,mult_final,["finalAdd"])
