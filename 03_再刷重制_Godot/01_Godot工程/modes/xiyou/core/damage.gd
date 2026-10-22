@@ -247,7 +247,7 @@ static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {})
 		var value: float = -maxf(0.0, before_fixed - flat) * guard if absorb else gross
 		cands.append({"gross": value, "flat": flat, "resistance": resistance})
 		var row := {"element": e, "bonus": bonus, "defense": defense, "matchup": match_rate, "resistance": resistance,
-			"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": growth,
+			"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": 1.0 if absorb else growth,
 			"critical": crit, "independent": independent, "guard": guard, "fixedMitigation": flat, "beforeFixed": gross, "value": value}
 		if best.is_empty() or value > best.value:
 			best = row
