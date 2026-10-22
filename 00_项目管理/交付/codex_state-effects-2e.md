@@ -13,3 +13,16 @@
 
 - 首轮native退出1：新case误放在必须最后执行的action.counter之后；既有反击夹具会令location失效，后续新局ReferenceError。已将新case移到counter之前；不修改生产或原版环境。保留native.log，修后日志native-v2.log。
 - 测量执行期间额度到90%，按规则只收尾本测量，不进入翻译／同步／自动接力。2e仍进行中，不能合并为玩法完成。
+
+## 原版测量已完成，额度到线停在检查点
+
+- native-v2于2026-10-22 05:06（Europe/Paris）退出0，22例errors=[]。tp.native_blocks有140条直接执行边界行、4条真实addState两次重加行；与generated保留的2d最终21例独立逐项比较全部相同，仅新增本case，sourceIdentity相同。摘要在本地state-effects-2e/native-verified.json，完整参照仍在mv_oracle/.sandbox/state_effects.json。
+- 直接行覆盖角色1与敌人、5块、初始TP -1/0/1/150/199/200/250、存活／死亡两组。测试两者maxTp均200，未声称已测角色自定义上限。TP增量按最终上限截断，即使已经饱和，tpDamage仍记负的请求增量（-200/-50/-25/-75）；HP/MP结果原有字段保留，gain结束dirty=true，140行draws均0。
+- 实际1334／1336连续addState两次：TP从1到26／76，apply只生效一次；4行各抽2次时长随机，最终turns=1，addedStates仅含该状态。刷新边界记录在log；本期没有把重加当第二次gain。
+- 首轮失败是明确的探针排列问题，已保留native.log并修正；不是偶发重跑，未修改原版或生产算法。native-v2是修正后的首次运行。
+- 本分支尚未改变Godot生产、转换器或自己的Godot专项；5块仍为js，第二期未翻译仍444。本分支仅原版参照检查点，**不标可合并**；没有最终同步，不把本期探针指纹冒充2d最终指纹。generated/oracle仍保留2d的21例，未将22例复制进去。
+- 后续实现前置：XStateEffects的battle与apply入口目前没有资源上下文；battle_logic.gd技能附加状态分支里的add_state也没有将_action_resources传给apply回调。必须设计显式生命周期资源上下文与嵌套保存／恢复（可考虑battler.add_state可选context、battle_logic状态挂点显式传入），让apply里的gain写回外层同一结果槽和日志；不能只用临时XResourceContext丢掉结果。独立battle资源槽的消费也须明确，预览不触碰真实对象／缓存／RNG／结果槽。此处仅列前置，未设计完或实现，不能据此宣称支持。
+- 后续可按这些原版行补Godot逐项对照；角色自定义TP上限、刷新导致状态变化与嵌套guard仍需补参照，不能把当前140条当完整族验收。8个纯addState候选仍未开工。
+- 额度到五小时90%后只完成本次测量收尾，不再开新步骤、不自动创建接力聊天。下次恢复沿用本树codex/state-effects-2e；不要重复已完成的原版测量，新增覆盖时另加case并保留旧22例。
+- 可交唐僧的仍为2b ad7c867、2c 4760a54、2d b34efa5，按序合并后统一全量检查，全部Codex实现待Claude交叉核查。2e是后续WIP，不并入该完成批。
+- 本轮车道按规则不跑全量检查；主工作区共用登记未改。无同步／测试活动任务，无heartbeat，不重建监视。
