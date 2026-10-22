@@ -49,7 +49,7 @@ func _run() -> void:
 func _variables(o: Dictionary) -> void:
 	var s := XState.new_game(3, 1, [])
 	var a := s.actor(1)
-	var b := XEnemy.new().setup(1)
+	var b := XEnemy.new().setup(1, 3, 100.0)
 	for row in o.rows:
 		s.variables.clear()
 		if row.mode != "unset": s.set_variable(int(row.variable), float(row.getter))
@@ -79,10 +79,13 @@ func _variables(o: Dictionary) -> void:
 func _power_context() -> void:
 	var s := XState.new_game(3, 1, [])
 	var a := s.actor(1)
-	var b := XEnemy.new().setup(1)
+	var b := XEnemy.new().setup(1, 3, 100.0)
 	var logic := XBattleLogic.new()
 	var skill := XDB.rec("Skills", 1).duplicate(true)
 	skill.damage.critical = true
+	skill.damage.formulaProgram = {"version": 1, "status": "pure", "locals": [],
+		"source": {"sha256": "review135-constant100"}, "result": "completion",
+		"steps": [{"op": "expr", "value": {"op": "literal", "value": 100.0}}]}
 	a.state_ids.assign([2676]) # Native variable-20 modifier: power deliberately evaluates with v[20] = 0.
 	a.param_refresh()
 	s.set_variable(20, 0)

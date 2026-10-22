@@ -8,6 +8,8 @@
 - 原版独立测量`review135_probe.cjs`三例已首次exit0、errors=[]；六状态各zero／set7／unset共18行均有限，未设置的getter与Custom Confirm结果和0一致。真实菜单保存→枫叶→菜单成就的槽为1→10→431；解释器setup时仍431，setup后0，运行中预约10保留。JsonEx普通读档、新局、另一Game_Temp均空。原始副本`04_验证/本地结果/state-effects-0b/native-preserved.json`（相对03_再刷重制_Godot），SHA256 `8959f36300b6585e05de92c4f493bf116ecee5f6f743c5967d0e20bb7fdef5c4`；native.log runId `ae8d7b946dfb47e3924d75594224d082`。
 - 已按测量实现：PhaseValueProgram缺上下文取当前state变量，六块等已测getter缺键按0；power普通／暴击finish明确传同一预览vars（含v20=0规则）。通用公式VM的raw v[index]未改。预约迁入XState唯一运行时槽，地图按setup→clear→执行，菜单跨await保存owner，现有HUD测试改查共用槽。新增review135专项覆盖原版行、预览无副作用、战力预览vars、覆盖／busy／运行中新预约／普通读档及旧菜单跨state隔离。
 - Godot编辑器导入预检exit0，未报脚本错误，日志`state-effects-0b/import.log`。现启动本批唯一一次最终正式同步`state-effects-0b/sync.log`，再跑相关专项；尚未标可合并。源探针、同步注册与生产修改已作检查点，长操作使用原单槽共享上限4包装。
+- 正式同步已于23:42:48 exit0，仅新增review135.json三例，其他46组沿用；旧26例SHA保持一致，新增正式产物与独立测量逐项相同，官方双指纹重算一致，见本地final-validation.json。未重新测旧native22。
+- 首轮专项的新review135场景未启动：夹具两处XEnemy.setup漏传第二个参数，编辑器的全局类导入没有覆盖此普通Node脚本。另用共享槽做check-only已定位语法错误（Godot此模式仍exit0，故按错误文本判失败）；核对PID／父进程／命令后只结束本轮该Godot场景，原批其余场景继续，首次输出／退出码／耗时由原批保留。修正夹具，不改生产／探针，不把此失败算偶发；原批结束后只重跑新场景，不重跑同步。
 
 ## 变更记录草稿
 
