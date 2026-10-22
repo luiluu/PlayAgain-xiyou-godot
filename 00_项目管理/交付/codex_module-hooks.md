@@ -32,7 +32,9 @@
 - `XDamage.calculate(..., {moduleRegistry: table, moduleFacts: <角色只读快照>, operationId: <本次行动/伤害段ID>, ...})`。现有damage.calculate仍兼容原options；宿主先捕获持剑、已学技能、进阶、目标速度、回合和本段连携数据，再以facts传入。处理器不接battler或随机流，也不自己消费标记／剑心／资源。
 - build写normalAdd／elementAdd／finalAdd／criticalAdd／settlementMultiplier；enter写flatMitigationAdd。elementAdd／elementMultiplier／flatMitigationAdd操作必须给0～15的整数element。字段名按原版frame命名。writes逐项列准确字段，contexts／reads列所需facts，缺值会返回unavailable。
 - 每段calculate独立派发；连携步骤／目标／命中／标记消费、临时公式上下文、行动结束和剑心层数由角色宿主负责。未命中不应调用伤害计算；反击／反射用实际使用者和目标；预览使用影子facts，不能把真实资源写接口塞进值快照。正式接入前必须处理available=false，不能按0伤害继续。
-- 本期已按冻结Cat v1.0.1做首用例；截至本检查点，claude/wukong-hajimi交付目录还只有上批wukong-next单，未见新钩子提案。最终交付前再读一次；不将尚未写出的提案冒称已审。
+- 已读取悟空`claude/wukong-hajimi`交付单（4ea173d后草稿）的3项提案：build／enter数值与本期27例原版参照一致，逐项映射见上；剑技连携仍由CAT BEGIN／STRIKE宿主调度，不塞进damage.before。
+- 提案1已经落实：`XDamage._yep_objects`优先读actor的stat_equips（已提供时），旧actor尚无该方法则读equip_list；因此Amplify／Magnify／AmplifyN及共用此入口的critical_multiplier_bonus都能消费持剑统计视图。没有加actor.gd补丁或在damage里写178特判，支持两条车道任意先后合入。新增fixture截取悟空cat_probe的stats.sword671冻结参照（6个等级、物理加成0.36），含原探针SHA、案例ID及runtimeInputs；测试本车道的视图读取、旧actor回退与不改装备实例。
+- 提案2的建议`damage_frame(item,a,b,frame)`需要按只读契约改成`damage_enter(context,frame)`／`damage_build(context,frame)`返回ops，Callable可放在XCat脚本，由描述条目引用；真实a／b与mutable frame不传给数值处理器。本期测试适配器验证接口，不抢悟空的cat.gd角色实现，也不提前把未完成角色模块注册到standard。
 
 ## 交接板草稿
 
