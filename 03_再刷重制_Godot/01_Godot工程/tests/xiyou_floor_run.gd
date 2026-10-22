@@ -447,13 +447,13 @@ func _boost_party(s: XState, atk := 2.0e16) -> void:
 
 
 ## 女娲完整开场带1047物理免疫，30%页换1048元素免疫；原版完整宿主首击已确认1047热缓存生效。
-## 仅本场临时排修的533（元素9、必中、零耗）与狗逍遥的200（元素1、必中、零耗）。
+## 仅本场临时排修的533（元素9、必中、零耗），第二阶段由原有物理属性攻击结束。
 ## 走正式自动战斗排表，不改敌人状态／842；战后恢复排表、临时技能和原观察者。
 func _f31_fixture(s: XState) -> Dictionary:
 	var fixture := {"had_table": s.hang_up.has("ActSkill"), "table": s.hang_up.get("ActSkill", {}).duplicate(true),
 		"observer": XStateEffects.observer, "learned": [], "stages": []}
 	var table: Dictionary = fixture.table.duplicate(true)
-	for entry in [[8, 533], [1, 200]]:
+	for entry in [[8, 533]]:
 		var a := s.actor(entry[0])
 		if not a.skill_ids.has(entry[1]):
 			a.learn_skill(entry[1])
@@ -670,7 +670,7 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	_restore_f31_fixture(s, f31)
 	if not f31.is_empty():
 		var first: int = f31.stages.find_custom(func(row): return row[0] == 1047 and row[1] == 533 and row[2] > 0 and row[3].has(1050) and row[3].has(1053))
-		var second: int = f31.stages.find_custom(func(row): return row[0] == 1048 and row[1] == 200 and row[2] > 0 and row[3].has(1051) and not row[3].has(1047))
+		var second: int = f31.stages.find_custom(func(row): return row[0] == 1048 and row[1] == XBattleLogic.ATTACK_SKILL and row[2] > 0 and row[3].has(1051) and not row[3].has(1047))
 		_check(tag + "_immunity_stages", first >= 0 and second > first, f31.stages)
 	if not _check(tag + "_boss_won", idle and won and map.map_id == f.map, [idle, s.variable(20), map.map_id, boss, _boss_debug(map, s)]):
 		return false
