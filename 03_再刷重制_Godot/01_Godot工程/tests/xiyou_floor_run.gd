@@ -446,6 +446,41 @@ func _boost_party(s: XState, atk := 2.0e16) -> void:
 		a.mp = a.mmp
 
 
+## 女娲完整开场带1047物理免疫，30%页换1048元素免疫；原版完整宿主首击已确认1047热缓存生效。
+## 仅本场临时排修的533（元素9、必中、零耗）与狗逍遥的200（元素1、必中、零耗）。
+## 走正式自动战斗排表，不改敌人状态／842；战后恢复排表、临时技能和原观察者。
+func _f31_fixture(s: XState) -> Dictionary:
+	var fixture := {"had_table": s.hang_up.has("ActSkill"), "table": s.hang_up.get("ActSkill", {}).duplicate(true),
+		"observer": XStateEffects.observer, "learned": [], "stages": []}
+	var table: Dictionary = fixture.table.duplicate(true)
+	for entry in [[8, 533], [1, 200]]:
+		var a := s.actor(entry[0])
+		if not a.skill_ids.has(entry[1]):
+			a.learn_skill(entry[1])
+			fixture.learned.append([a, entry[1]])
+		for round in range(1, 17):
+			table[a.display_name() + XHangUpAuto.three(round)] = entry[1]
+	s.hang_up["ActSkill"] = table
+	XStateEffects.observer = func(phase, sid, holder, ctx):
+		if fixture.observer.is_valid():
+			fixture.observer.call(phase, sid, holder, ctx)
+		if phase == "react" and sid in [1047, 1048] and holder is XEnemy and fixture.stages.size() < 64:
+			fixture.stages.append([sid, int(ctx.item.id), ctx.value, holder.state_ids.duplicate()])
+	return fixture
+
+
+func _restore_f31_fixture(s: XState, fixture: Dictionary) -> void:
+	if fixture.is_empty():
+		return
+	if fixture.had_table:
+		s.hang_up["ActSkill"] = fixture.table
+	else:
+		s.hang_up.erase("ActSkill")
+	for entry in fixture.learned:
+		entry[0].forget_skill(entry[1])
+	XStateEffects.observer = fixture.observer
+
+
 func _state_json(s: XState) -> String:
 	return JSON.stringify(JSON.parse_string(JSON.stringify(s.to_dict())))
 
@@ -621,12 +656,22 @@ func _floor(f: Dictionary, full: bool) -> bool:
 		_check(tag + "_gift_choice", boss_answers.size() == 2, boss_answers)
 		s.gain_item(182, 999)
 		s.set_variable(206, 99999)
+	var f31 := {}
+	if f.map == 148:
+		_check(tag + "_opening_kept", s.variable(842) == 0 and s.switch(682), [s.variable(842), s.switch(682)])
+		f31 = _f31_fixture(s)
 	if not await _talk(map, boss.id, boss_answers, tag + "_boss", full):
+		_restore_f31_fixture(s, f31)
 		return false
 	if full and WRAP_BOSS.has("%d:%d" % [f.map, boss.id]):
 		_check(tag + "_boss_wrapped", wrapped_steps > 0, wrapped_steps)
 	var idle := await _wait_idle(map, WAIT_EVENT * 3)
 	var won := s.variable(20) == n + 1 and s.self_switch(f.map, boss.id, "A")
+	_restore_f31_fixture(s, f31)
+	if not f31.is_empty():
+		var first: int = f31.stages.find_custom(func(row): return row[0] == 1047 and row[1] == 533 and row[2] > 0 and row[3].has(1050) and row[3].has(1053))
+		var second: int = f31.stages.find_custom(func(row): return row[0] == 1048 and row[1] == 200 and row[2] > 0 and row[3].has(1051) and not row[3].has(1047))
+		_check(tag + "_immunity_stages", first >= 0 and second > first, f31.stages)
 	if not _check(tag + "_boss_won", idle and won and map.map_id == f.map, [idle, s.variable(20), map.map_id, boss, _boss_debug(map, s)]):
 		return false
 	_check(tag + "_boss_no_global_random", randi() == global_next, global_first)
