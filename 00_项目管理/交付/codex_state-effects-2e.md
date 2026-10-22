@@ -40,3 +40,11 @@
 - 既有原版22例未重测，已在本地结果state-effects-2e/native22-preserved.json保存完整副本；SHA256 24100228be3102a9dcca56fa0bb5ed9b08bbbd9b5819742308772c478876b0a0。原.sandbox/state_effects.json与native-v2日志仍保留，不删除。
 - 下一步长任务refill-resume.log补齐本树产物与导入；随后设计显式生命周期资源上下文及嵌套保存／恢复，先读现有run／run_one、add_state与_action_resources路径。仍只做5个纯TP整块，不做8个addState候选，不提前改actor／XState或开第三期。
 - refill-resume.log已done／exitCode0，runId a6cb074edcd74025b0e79de7a4bcd2d4，22:49:01 Europe/Paris结束，无需重跑。当前没有活动任务、没有新增游戏实现或手动原版测量。按40%上下文规则接力至下一沙僧聊天，沿用本树；完整续做brief在本树本地结果state-effects-2e/brief-resume.md，不创建新工作树。
+
+## 生命周期上下文续查（2026-10-22）
+
+- 本轮只读主库交接板、两树状态／日志后继续，开工额度五小时32%／周5%，本树26fe46f干净。未接总装、不触碰main未提交收尾。
+- 已核对XActor.add_state覆写，不能给基类加第三参数后直接调用角色。显式资源域应使用保持原虚方法签名的包装入口，域在调用结束后恢复。
+- 原版_Fix_StackOverflow.js:46的刷新抑制覆盖整个真实addState；现XResourceContext.gain直接refresh，尚无接入该锁的能力。native22的140条直接执行不经过此锁，另4条实际重加的初值1也未触到TP上限，不能据此判定完整闭环。
+- 已准备独立补充探针state_effects_tp_context_probe.cjs，输出只写.sandbox/state_effects_tp_context.json；待启动长任务tp-context-native.log，量真实apply超上限／0HP、合成技能passiveEXTTP改变上限、刷新清抵抗状态在直接调用与真实addState中的差异。旧native22与其独立副本保持不动，不重测。
+- 当前仍未改转换器或生产代码；若确认需要修改已留给期三的resource_context／actor才能完整实现，按本期停手条件交具体设计与证据，不交孤立TP数值或冒称2e玩法完成。
