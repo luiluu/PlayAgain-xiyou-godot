@@ -71,6 +71,8 @@ var _cam_applied := false
 var seq_player: XSequencePlayer
 ## 自动测试用：强制自动战斗，胜利界面自动关闭。
 static var force_auto := false
+## 怪物图鉴（AB_EnemyBook ResisterTiming 2）本场出现过的敌人 ID：战斗结束时登记
+var book_appeared: Array = []
 
 
 func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Texture2D = null) -> void:
@@ -81,6 +83,7 @@ func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Te
 	logic.can_escape = escape
 	logic.setup(troop, XState.current)
 	logic.auto = force_auto
+	book_appeared = XEnemyBook.on_battle_start(XState.current, troop, map, logic.enemies)
 
 
 func _ready() -> void:
@@ -545,6 +548,7 @@ func _main() -> void:
 			# 快速战斗只跳过失败信息（见 XHangUp）
 			if not XHangUp.fast_fighting(XState.current):
 				await _say("全军覆没……", 1.2)
+			XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
 			logic.end_battle(2)
 			# MV updateBattleEnd：允许失败时，只将阵亡出战成员复活到 1 HP。
 			if can_lose:
@@ -586,6 +590,8 @@ func _play_troop_events(logs: Array) -> void:
 ## 没出现（隐藏或已倒下）的成员此刻活着就淡入（Sprite_Enemy.setupEffect → startAppear：335 出现、334 复活）
 func _apply_enemy_change(l: Dictionary) -> void:
 	var e: XEnemy = l.target
+	if l.kind == "appear" or l.kind == "transform":
+		book_appeared.append(e.enemy_id)
 	if not sprites.has(e):
 		return
 	if l.kind == "transform" and int(l.before.enemy_id) != int(l.after.enemy_id):
@@ -616,6 +622,7 @@ func _escape_success() -> void:
 	logic.escaped = true
 	XSound.system(8)
 	await message.run({"lines": [escape_text()]})
+	XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
 	logic.end_battle(1)
 	finished.emit(1)
 
@@ -1289,6 +1296,7 @@ func _victory() -> void:
 		before[a] = {"exp": a.exp_total, "level": a.level}
 	var r := logic.rewards()
 	logic.grant(r)
+	XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
 	logic.end_battle(0)
 	var params := XDB.plugin("Olivia_VictorySequenceUI")
 	bgm.stop()

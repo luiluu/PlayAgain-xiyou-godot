@@ -210,6 +210,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	map_id = id
 	map_data = XDB.map(id)
 	s.map_id = id
+	XEnemyBook.on_map_setup(s, map_data)  # AB_EnemyBook Game_Map.setup：记遇敌表敌人的出没地图
 	XMapTransfer.on_arrive(s, id)
 	_reset_transfer_button()
 	lower = MVTilemap.new()
@@ -890,6 +891,16 @@ func open_achievements() -> void:
 func open_actor_book() -> void:
 	hud.visible = false
 	var page := XActorBook.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
+## 公共事件 2「怪物图鉴」：插件指令 EnemyBook open（SceneManager.push(Scene_EnemyBook)），关闭后回到地图
+func open_enemy_book() -> void:
+	hud.visible = false
+	var page := XEnemyBookPage.new()
 	ui.add_child(page)
 	await page.closed
 	page.queue_free()
