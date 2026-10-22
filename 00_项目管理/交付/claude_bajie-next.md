@@ -27,6 +27,6 @@
 
 ## 本分支提交
 
+- 3485177 交付单
 - 99a679c floor_run：查地图与战斗不取全局随机，记各层守层者前 world 流取数
 - 220c52d 合并 main
-- 二期另见 [claude_bajie-next_慢场景拆分.md](claude_bajie-next_慢场景拆分.md)
