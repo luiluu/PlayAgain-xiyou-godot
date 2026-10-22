@@ -22,6 +22,7 @@ KEYS = {
     'zhenqi.json': {'cases': ('id',)},
     'guide.json': {'cases': ('id',)},
     'custom_damage.json': {'cases': ('id',)},
+    'module_hooks.json': {'cases': ('id',)},
     'formula_programs.json': {'cases': ('id',)},
     'formula_effects.json': {'cases': ('id',)},
     'formula_equipment.json': {'cases': ('id',)},

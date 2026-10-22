@@ -7,6 +7,15 @@
 - 范围：第二期第三小期，35个纯value整块。先量原版，随后全块白名单＋受控phase执行；不改既有公式编译器或VM的伤害入口语义。
 - 独占同上一小期：转换器状态效果部分、state_effects.gd、state_effects_probe与自己的专项。未获actor／xstate／battle_event_runner修改权限。
 
+## 变更记录草稿
+
+## 2026-10-22 【Codex·沙僧·未经Claude检验】状态效果第二期：35 个纯 value 整块（dev.待定）
+
+- 原版先测 value.native_blocks：35 状态、6 套条件、11235 行，只增一例、旧 19 例不变。按整块 token 白名单翻译 35 块，新增 value_program，保留其余副作用块与未量形状为 js；不扩共享公式 VM 入口。
+- 私有 PhaseValueProgram 使用当前有符号 value，保留短路与实际随机消费、纯局部变量及预览隔离；js 483→448，其余已有 op 不变。
+- 原分支验收记录：state_effects 12880／12880，12 依赖场景 2906 项全过；最终同步 verifyOk=true、旧测量不变，仅新增 value.native_blocks。合 main 后本轮返工验证以 3-design 的期一半记录为准，不能据历史专项掩盖三十一层流程回归。
+- 未完成：元素／队伍等查询另见 2d；首武器、复合副作用及其余未翻译整块仍开放。全部待 Claude 交叉核查，不自记完成度增量。
+
 ## 待补验证与结论
 
 - 本期专项通过；第二期全部声明式族尚未完成。更新后的剩余448块完整盘点在本地结果state-effects-2c/remaining-js-inventory.json。
