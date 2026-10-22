@@ -33,6 +33,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import uuid
 from pathlib import Path
 
@@ -94,6 +95,7 @@ PROBES = [
     (['shield_probe.cjs'], ['shield.json']),
     (['imported_balance_probe.cjs'], ['imported_balance.json']),
     (['state_effects_probe.cjs'], ['state_effects.json']),
+    (['attack_element_probe.cjs'], ['attack_elements.json']),
     (['qiyu_probe.cjs'], ['qiyu.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
@@ -256,6 +258,26 @@ def finish_comparison(baseline: Path) -> None:
     retired = baseline.with_name(baseline.name + '.accepted-' + uuid.uuid4().hex)
     baseline.rename(retired)
     shutil.rmtree(retired, ignore_errors=True)
+
+
+MANUAL_STALE_HOURS = 12
+
+
+def prune_manual_copies(sandbox: Path, hours: float = MANUAL_STALE_HOURS) -> list:
+    """手动跑探针时 manual_sandbox.cjs 每次复制一份种子到 .sandbox/manual/probe-XXXXXX（约 9 MB），自己从不清理
+    （主工作区攒到上百 MB）。同步时顺带删掉 hours 小时没动过的旧副本：刚跑完的留着备查，仍在跑的不删。
+    只删该命名的普通目录，不跟随符号链接。清理放在这里而不放进 manual_sandbox.cjs：mv_oracle 下的辅助 .cjs 是
+    每个探针缓存键的一部分，改它会让所有探针整轮重跑。"""
+    manual = sandbox / 'manual'
+    if not manual.is_dir() or manual.is_symlink():
+        return []
+    cutoff = time.time() - hours * 3600
+    removed = []
+    for d in sorted(manual.iterdir()):
+        if re.fullmatch(r'probe-[A-Za-z0-9]{6}', d.name) and d.is_dir() and not d.is_symlink() and d.stat().st_mtime < cutoff:
+            shutil.rmtree(d)
+            removed.append(d.name)
+    return removed
 
 
 def prune_backups(root: Path, keep: int = KEEP_BACKUPS) -> list:
@@ -476,6 +498,7 @@ def _main() -> int:
     backup = ROOT / '03_再刷重制_Godot/04_验证/本地结果/自动同步' / ('%s_%s-%s' % (stamp, old_version, new_version))
     backup.mkdir(parents=True)
     report_pruned = prune_backups(backup.parent)
+    pruned_manual = prune_manual_copies(SANDBOX)
     for name in ['oracle', 'db', 'maps', 'manifest.json', 'slice.json']:
         src = gen / name
         if src.is_dir():
@@ -483,7 +506,7 @@ def _main() -> int:
         elif src.exists():
             shutil.copy2(src, backup / name)
     report = {'from': old_version, 'to': new_version, 'backup': str(backup.relative_to(ROOT)), 'generated': str(gen),
-              'prunedBackups': report_pruned, 'comparisonBaseline': str(baseline.relative_to(ROOT))}
+              'prunedBackups': report_pruned, 'prunedManualCopies': len(pruned_manual), 'comparisonBaseline': str(baseline.relative_to(ROOT))}
     # 探针按环境变量取正式源（XIYOU_APP）与转换产物（XIYOU_GENERATED，event_probe 读地图），与 --app/--generated 一致
     os.environ['XIYOU_APP'] = str(app)
     os.environ['XIYOU_GENERATED'] = str(gen)

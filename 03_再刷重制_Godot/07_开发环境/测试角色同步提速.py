@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -23,6 +24,11 @@ class PortableCacheTests(unittest.TestCase):
         self.app = self.root / 'app'
         self.app.mkdir()
         (self.app / 'source.js').write_text('frozen source')
+        # 探针经 并行测试.py 的跨工作树共用槽排队：用本测试自己的状态目录与上限，不和机器上正在跑的同步、检查抢槽
+        # （共用槽被占满时只能一个个跑，六难度共用并发池的峰值就量不到 2）
+        slots = mock.patch.dict(os.environ, XIYOU_TEST_STATE_DIR=str(self.root / 'test_state'), CHECK_GLOBAL_JOBS='4')
+        slots.start()
+        self.addCleanup(slots.stop)
         self.probes = [([name + '_probe.cjs'], [name + '.json']) for name in ('plain', 'slice', 'converted')]
         for name in ('donor', 'lane'):
             tools, gen = self.paths(name)
@@ -257,7 +263,7 @@ for (const t of troops) {out.enemies[t]=[{id:t}]; for(const a of [1,8]) out.dama
 fs.mkdirSync('.sandbox/slice',{recursive:true});
 fs.writeFileSync('.sandbox/slice/slice_d'+d+'.json',JSON.stringify(out,null,1));
 fs.appendFileSync('.sandbox/pool.jsonl',JSON.stringify({event:'end',d,box})+'\n');
-},150);
+},1000);
 ''')
         commands = [(['slice_probe.cjs'] + [str(d) for d in range(1, 7)],
                      ['slice/slice_d%d.json' % d for d in range(1, 7)])]
@@ -396,6 +402,26 @@ class ManualSandboxTests(unittest.TestCase):
         a, b = [json.loads(self.run_node(code).stdout) for _ in range(2)]
         self.assertNotEqual(a, b)
         self.assertEqual((Path(b) / 'macport/save/config.rpgsave').read_text(), 'initial seed')
+
+    def test_sync_prunes_stale_manual_copies_only(self):
+        """同步正式西游.prune_manual_copies：删 12 小时没动过的 probe-XXXXXX，留新的、别的名字与符号链接。"""
+        spec = importlib.util.spec_from_file_location('speedup_manual_prune_test', TOOLS / '同步正式西游.py')
+        sync = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sync)
+        box = Path(json.loads(self.run_node('console.log(JSON.stringify(manualSandbox(base)));').stdout))
+        manual = self.base / 'manual'
+        old, other, outside = manual / 'probe-OLD123', manual / 'keep-me', self.base.parent / 'outside'
+        for d in (old, other, outside):
+            (d / 'save').mkdir(parents=True)
+            (d / 'save/test.rpgsave').write_text('x')
+        (manual / 'probe-LNK456').symlink_to(outside)
+        day_ago = time.time() - 24 * 3600
+        for d in (old, other, outside):
+            os.utime(d, (day_ago, day_ago))
+        self.assertEqual(sync.prune_manual_copies(self.base), ['probe-OLD123'])
+        self.assertFalse(old.exists())
+        self.assertTrue(box.exists() and other.exists() and (outside / 'save/test.rpgsave').exists())
+        self.assertEqual(sync.prune_manual_copies(self.base / 'missing'), [])
 
     def test_guard_still_blocks_common_seed_writes(self):
         guard = json.dumps(str(TOOLS / 'mv_oracle/fs_guard.cjs'))

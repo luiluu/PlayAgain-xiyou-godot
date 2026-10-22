@@ -546,10 +546,9 @@ func is_substitute() -> bool:
 func is_preserve_tp() -> bool:
 	return traits_set(62).has(3)
 
-## 没有攻击元素特性时（如空手）按物理(1)处理，与正式版一致。
+## Game_BattlerBase.attackElements：只取特性 31，可为空（无特性 31 的敌人普攻无属性）；角色的空手物理见 XActor。
 func attack_elements() -> Array:
-	var es := traits_set(TRAIT_ATTACK_ELEMENT)
-	return es if not es.is_empty() else [1]
+	return traits_set(TRAIT_ATTACK_ELEMENT)
 
 
 # ---- 资源 ----

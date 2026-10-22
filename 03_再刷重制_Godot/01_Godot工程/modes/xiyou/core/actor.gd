@@ -200,6 +200,15 @@ func first_weapon() -> Dictionary:
 	return {}
 
 
+## Game_Actor.attackElements（rpg_οbjects.js:3970）：没装武器时另加空手属性物理(1)，
+## 所以带攻击属性特性的角色（154 火、158 雷）空手普攻是「本属性＋物理」。
+func attack_elements() -> Array:
+	var es := super()
+	if first_weapon().is_empty() and not es.has(1):
+		es.append(1)
+	return es
+
+
 ## YEP_ItemCore hasWeapon/hasArmor → hasBaseItem：已装备的独立装备按基础编号比较
 func has_base_equip(kind: String, base_id: int) -> bool:
 	return equip_list().any(func(e): return e.get("kind", "") == kind and int(e.get("base", 0)) == base_id)
