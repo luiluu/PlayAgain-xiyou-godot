@@ -115,6 +115,9 @@ func _ready() -> void:
 	_build_ui(vs)
 	message = XMessageBox.new()
 	message.position = _origin
+	# 原版窗口层里 Window_Message 排在 Window_OTBDisplay 之后：消息窗底色压在行动顺序条上、头像盖住条的左端（八戒_45 截图对照）。
+	# 行动顺序条是 z 8（要在敌人血条 z 5 之上），消息窗同 z、树序在后
+	message.z_index = 8
 	ui.add_child(message)
 	camera.sprites = sprites
 	for visual in get_children():

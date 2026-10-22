@@ -9,6 +9,10 @@ extends Node
 ## 比较：第 1 回合强制行动排在最前且清掉守层者本回合的普通行动、敌方行动者、状态 1460 与第 1 回合加上的其余状态、
 ## 守层者攻击/魔攻、第 2 回合守层者每次命中的附加伤害（行动者正的攻击/魔攻各一次）。伤害浮动由 Godot 随机，不比 HP。
 var results := []
+## 参照用例按序号轮流分 parts 份，一个场景管一份（xiyou_troop_events 是第 0 份，_b 是第 1 份），免得单场景在并行全量里逼近 300 秒；
+## 来源指纹与 _unit_checks 只在第 0 份做，断言总数与拆分前相同
+@export var part := 0
+@export var parts := 2
 ## 敌群 462（金角、银角）：强制 8111（全体友方，必中）给银角附加轮回困难 1460——必中技能附加状态不乘状态有效度与幸运差。
 ## 三十层起变身例：336 变身后紧接的 334 按变身前的生命上限回满（冻结源能力值缓存）；334 保留 <Permanent> 状态（686 天道*祝福）。
 
@@ -74,11 +78,14 @@ func _run() -> void:
 		check("oracle_present", false)
 		return finish()
 	var manifest: Dictionary = XDB.load_json("manifest.json")
-	check("same_source", ref.sourceIdentity.runtimeInputs == manifest.runtimeInputs)
+	var same: bool = ref.sourceIdentity.runtimeInputs == manifest.runtimeInputs
+	if part == 0 or not same:  # 其他份只在不同源时补一项失败
+		check("same_source", same)
 	# 事件里的随机变量（122 随机）同参照固定 Math.random＝0.5：Map055 引路人 794 第 3 页第 1 回合按随机变量 4 选强制 6063／6064／1393＋6065
 	# （参照取 2 → 6064）；其余守层者的随机强制（变量 844）在第 3 回合起，两回合内用不到
 	MVInterpreter.fixed_random = 0.5
-	for c in ref.cases:
+	for k in range(part, ref.cases.size(), parts):
+		var c: Dictionary = ref.cases[k]
 		check("troop%d.oracle_clean" % int(c.troop), c.errors.is_empty(), c.errors)
 		if c.has("preset"):
 			_preset_case(c)
@@ -92,7 +99,8 @@ func _run() -> void:
 			continue
 		for round in range(5):
 			_case(c, round)
-	_unit_checks()
+	if part == 0:
+		_unit_checks()
 	finish()
 
 
