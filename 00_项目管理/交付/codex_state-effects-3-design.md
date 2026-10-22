@@ -21,7 +21,9 @@
 - 首次正式同步sync-hajimi.log已exitCode0：旧17例按id逐项不变，只增bonus.native_blocks、damage.full_chain、value.native_blocks、query.native_blocks到21；其他测量不变、21例无错误，无接受单、cacheError或importError，来源核验通过。报告：04_验证/本地结果/自动同步/20261022_180454_467280_v0.28-v0.28/同步报告.json。
 - 首次双指纹已复算：toolsDigest=60b06ba84d261ba09d13b7311c8e618d8107e3c25e8d4b487c9d362cd30cae3f；outputsDigest=8c7016669fbd2922948f7e113dd61dec4a350396399c23be5771e5332bc8c1c5。
 - main后续修改转换器PNG正规化和review_fix探针，所以按规则合main后再次补齐、刷新最终同步指纹。refill-final.log通过，带入main状态17例和review_fix40例；pre-final-sync/保存比较边界。首次成功21例也从保留的原版产物存为verified-first-21.json。
-- 最终同步sync-final.log与22场景组合final-validation.log进行中：先严格核对17→21只增同四例、与首次21例按id完全一致、其他测量不变、来源与双指纹，再调用原并行测试模块。单槽使用同一个slots/0.lock，不突破全局四槽上限，不改正式测试工具或守卫。
+- 最终同步sync-final.log已exitCode0（22:06:23 Europe/Paris），重跑4／复用41探针；17→21只增同四例、旧17不变、与首次21例按id完全一致、其他测量不变、来源与双指纹已核对。报告：04_验证/本地结果/自动同步/20261022_214400_831283_v0.28-v0.28/同步报告.json，独立核对：final-sync-verification.json。
+- 最终指纹：toolsDigest=30d36d91fd4e6c766d5df19e4cdbdfbca9efd86fb97cec0dc0651afac7814509；outputsDigest=eac232bf2178fcd29aa7e229259d0bc45b7dd77b761183ec87601f861cc00d43。没有接受单、cacheError或importError。
+- 22场景组合final-validation.log已开始，尚待结果。单槽使用同一个slots/0.lock，不突破全局四槽上限，不改正式测试工具或守卫；同步首个探针耗时含等待共享槽约20分钟，不能当探针自身性能。
 - 22个专项：state_effects、battle*、combat、shield、imported_balance、custom_damage、drop_record、formula_effects、random_streams、transform_params、floor_run*、cat、actor_p0、help_card、sequence_visual、interp_review。最终结果未出前不能宣称全过。
 - 本轮额外检查：翻译边界7项、公式程序12项通过；内容覆盖检查通过（1906页、new=0、resolved=0），未改覆盖基线。合入新主线后的日志为final-translation.log／final-formula-program.log／final-coverage.log。
 
