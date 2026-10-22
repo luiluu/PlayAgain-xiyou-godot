@@ -49,7 +49,8 @@ func text_width(s: String, size := XUI.FONT_SIZE) -> float:
 
 ## Window_Base.drawText(text, x, y, maxWidth, align)，行高 lh。
 ## zoom/pivot：整体以 pivot 为中心缩放（MV 精灵 scale，如胜利结算的「等级提升！」）。
-func text(s: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, lh := XUI.LINE_HEIGHT, alpha := 1.0, zoom := 1.0, pivot := Vector2.ZERO) -> void:
+## outline：描边色（正式版 Bitmap 默认 rgba(0,0,0,0.45)；宽度被 installDisplayPreferencesRuntime 封顶 0.75px，颜色不封顶）。
+func text(s: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, lh := XUI.LINE_HEIGHT, alpha := 1.0, zoom := 1.0, pivot := Vector2.ZERO, outline := OUTLINE) -> void:
 	if s == "":
 		return
 	var w := text_width(s, size)
@@ -68,7 +69,7 @@ func text(s: String, x: float, y: float, max_w: float, align := "left", color :=
 	if zoom != 1.0:
 		xf = Transform2D(0.0, Vector2(zoom, zoom), 0.0, pivot - pivot * zoom) * xf
 	draw_set_transform_matrix(xf)
-	draw_string_outline(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 1, Color(OUTLINE, OUTLINE.a * alpha))
+	draw_string_outline(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 1, Color(outline, outline.a * alpha))
 	if EMBOLDEN > 0:
 		draw_string_outline(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, EMBOLDEN, c)
 	draw_string(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, c)

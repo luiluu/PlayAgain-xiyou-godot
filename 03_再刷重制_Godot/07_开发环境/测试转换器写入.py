@@ -6,8 +6,12 @@ import json
 import os
 from pathlib import Path
 import sys
+import shutil
+import struct
 import tempfile
+import time
 import unittest
+import zlib
 from unittest import mock
 
 TOOLS = Path(__file__).resolve().parents[1] / '03_转换工具'
@@ -245,6 +249,37 @@ class FakePngTranscodeTests(ExportWriteTests):
         second = self.run_export()
         self.assertEqual(second['written'], 0)
         self.assertEqual(before, self.snapshot(self.out, metadata=True))
+
+    def test_real_transcode_bytes_stable_across_time(self):
+        # 真调 sips，中间跨过 1 秒以上：同一源图两次转码输出必须逐字节相同
+        self.run_export()
+        first = {n: (self.out / f'img/pictures/{n}.png').read_bytes() for n in ('jpeg', 'webp')}
+        time.sleep(1.2)
+        shutil.rmtree(self.out / 'img/pictures')
+        os.remove(self.out / 'manifest.json')
+        self.run_export()
+        for n, data in first.items():
+            self.assertEqual(data, (self.out / f'img/pictures/{n}.png').read_bytes(), n)
+
+    def test_normalize_png_drops_time_and_fixes_icc_date(self):
+        def chunk(kind, body):
+            return struct.pack('>I4s', len(body), kind) + body + struct.pack('>I', zlib.crc32(kind + body))
+        def png(date, time_body):
+            profile = bytearray(128)
+            profile[24:36] = date
+            iccp = b'p\0\0' + zlib.compress(bytes(profile))
+            return (PNG_SIGNATURE + chunk(b'IHDR', struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0))
+                    + chunk(b'iCCP', iccp) + chunk(b'tIME', time_body) + chunk(b'tEXt', b'k\0v')
+                    + chunk(b'IDAT', zlib.compress(b'\0\1\2\3')) + chunk(b'IEND', b''))
+        a = exporter.normalize_png(png(bytes(range(12)), b'\x07\xea\x0a\x16\x01\x02\x03'))
+        b = exporter.normalize_png(png(bytes(range(12, 24)), b'\x07\xea\x0a\x17\x04\x05\x06'))
+        self.assertEqual(a, b)
+        kinds, i = [], 8
+        while i < len(a):
+            n = int.from_bytes(a[i:i + 4], 'big')
+            kinds.append(a[i + 4:i + 8])
+            i += 12 + n
+        self.assertEqual(kinds, [b'IHDR', b'iCCP', b'IDAT', b'IEND'])
 
 
 if __name__ == '__main__':

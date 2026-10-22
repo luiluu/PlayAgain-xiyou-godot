@@ -23,7 +23,9 @@ import re
 import shutil
 import subprocess
 import sys
+import struct
 import tempfile
+import zlib
 from pathlib import Path
 
 TOOL_VERSION = 20
@@ -35,6 +37,27 @@ TABLES = ['Actors', 'Classes', 'Skills', 'Items', 'Weapons', 'Armors', 'Enemies'
           'Animations', 'CommonEvents', 'Tilesets', 'MapInfos', 'System',
           'CodexDamageElements', 'CodexOrbs', 'CodexRaces']  # 后三张是西游自定义表：伤害元素/克制、法珠、种族
 META_RE = re.compile(r'<([^<>:]+)(:?)([^>]*)>')
+
+
+def normalize_png(data):
+    """sips 转出的 PNG 里 iCCP 的 ICC 头带转码时的日期、另有 tIME／eXIf／文本块：源图不变输出也会变，破坏增量同步与指纹。
+    只留解码与颜色需要的块（IHDR PLTE tRNS IDAT IEND sRGB gAMA cHRM iCCP），iCCP 的 ICC 头日期（24..36）清零并
+    用固定压缩参数重压，CRC 重算；像素数据（IDAT）不动。"""
+    keep = {b'IHDR', b'PLTE', b'tRNS', b'IDAT', b'IEND', b'sRGB', b'gAMA', b'cHRM', b'iCCP'}
+    out, i = [data[:8]], 8
+    while i + 12 <= len(data):
+        n, kind = struct.unpack('>I4s', data[i:i + 8])
+        body = data[i + 8:i + 8 + n]
+        i += 12 + n
+        if kind not in keep:
+            continue
+        if kind == b'iCCP':
+            z = body.index(b'\0')
+            profile = bytearray(zlib.decompress(body[z + 2:]))
+            profile[24:36] = bytes(12)
+            body = body[:z + 2] + zlib.compress(bytes(profile), 9)
+        out.append(struct.pack('>I4s', len(body), kind) + body + struct.pack('>I', zlib.crc32(kind + body)))
+    return b''.join(out)
 
 
 def sha(b):
@@ -866,13 +889,13 @@ class Exporter:
     def copy_assets(self):
         def as_png(src, data):
             # 原版有扩展名是 .png、内容是 JPEG／WebP 的图（如 162 诛仙的 小诛仙、guanxi7_1），NW.js 按内容解码，
-            # Godot 按扩展名导入会报 Not a PNG file；这类图用 sips 转成真 PNG（结果可重复），其余原样
+            # Godot 按扩展名导入会报 Not a PNG file；这类图用 sips 转成真 PNG 再 normalize_png（输出逐字节稳定），其余原样
             if not (data.startswith(b'\xff\xd8\xff') or (data[:4] == b'RIFF' and data[8:12] == b'WEBP')):
                 return data
             with tempfile.TemporaryDirectory(prefix='xiyou-png-') as tmp:
                 out = Path(tmp) / 'out.png'
                 subprocess.run(['sips', '-s', 'format', 'png', str(src), '--out', str(out)], check=True, capture_output=True)
-                return out.read_bytes()
+                return normalize_png(out.read_bytes())
 
         def find(base, rel, exts):
             for ext in exts:
