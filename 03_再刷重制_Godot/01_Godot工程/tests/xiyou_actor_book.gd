@@ -177,6 +177,22 @@ func _flow(ref: Dictionary) -> void:
 		and not book.index_win.visible and not book.status_win.visible and book.skill_index == 0)
 	check("help_card", book.help_card.visible and book.help_card.position == Vector2(ref.geo.help[0], ref.geo.help[1])
 		and book.help_card.size.x == XActorBook.HELP_WIDTH and int(book.help_card.rows.size()) > 0, [book.help_card.position, book.help_card.size])
+	# Codex_ActorBookSkillDetails 给说明卡的是技能浅拷贝（isSkill 为假）：伤害技能也不插「伤害属性」行
+	var dmg_i := -1
+	for k in book.skill_list.size():
+		if [1, 2, 5, 6].has(int(book.skill_list[k].get("damage", {}).get("type", 0))):
+			dmg_i = k
+			break
+	var has_attr := func(rows: Array) -> bool:
+		return rows.any(func(r): return str(r[0]).contains("伤害属性："))
+	if dmg_i >= 0:
+		book.select_skill(dmg_i)
+		await frames()
+	var dmg_skill: Dictionary = book.skill_list[dmg_i] if dmg_i >= 0 else {}
+	check("help_skill_copy_no_element_row", dmg_i >= 0 and book.help_card.skill_copy and not has_attr.call(book.help_card.rows)
+		and has_attr.call(XHelpCard.content(dmg_skill, "skill")), [dmg_i, book.help_card.rows.slice(0, 4)])
+	book.select_skill(0)
+	await frames()
 	await shot("actor_book_1_skills")
 	book._move(1, true)
 	check("details_move", book.skill_index == 1)
