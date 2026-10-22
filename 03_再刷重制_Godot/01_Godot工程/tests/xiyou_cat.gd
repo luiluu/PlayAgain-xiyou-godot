@@ -163,8 +163,40 @@ func _run() -> void:
 				_formula(c)
 			"chain":
 				_chain(c)
-	check("covers_all", seen.keys().size() == 6, seen.keys())
+			"legal":
+				_legal(c)
+	check("covers_all", seen.keys().size() == 7, seen.keys())
 	finish()
+
+
+## legal：战斗中逐个技能比 canUse（等级 × 武器 × 至圣斩冷却）
+func _legal(c: Dictionary) -> void:
+	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [8])
+	s.actor_max_level = 99
+	s.party.clear()
+	s.battle_slots.clear()
+	var a := s.actor(XCat.ACTOR)
+	s.add_actor(XCat.ACTOR)
+	s.add_actor(1)
+	var logic := XBattleLogic.new()
+	logic.setup(int(c.setup.troop), s)
+	var bad := []
+	var level := -1
+	for row in c.observed.rows:
+		if int(row.level) != level:
+			level = int(row.level)
+			a.change_level_mv(level)
+			for id in range(10437, 10447):
+				a.learn_skill(id)
+		a.equips[0] = XGear.template("weapon", int(row.weapon)) if int(row.weapon) > 0 else null
+		logic.turn = int(row.round)
+		XCat.battle_data(logic, a).holyReady = int(c.setup.holyReady)
+		a.tp = 100.0
+		var got := logic.can_use(a, XDB.rec("Skills", int(row.skill)))
+		if got != bool(row.canUse):
+			bad.append([row, got])
+	check("legal.rows", bad.is_empty() and c.observed.rows.size() == 330, bad.slice(0, 5))
+	check("legal.skills", a.skill_ids == (c.observed.skills as Array).map(func(v): return int(v)), [a.skill_ids, c.observed.skills])
 
 
 ## 参照的 Math.random 恒 0.5：浮点取 0.5，整数取 2^31

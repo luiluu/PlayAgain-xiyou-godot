@@ -255,6 +255,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return a.is_actor() and state.items.get(int(skill.id), 0) > 0
 	if a.cooldown_left(int(skill.id)) > 0:
 		return false
+	if not XCat.legal(self, a, skill):  # 小猫剑圣的剑技／试炼条件、178 没持剑不能用物理技能
+		return false
 	if a.is_actor() and int(skill.stypeId) > 0:
 		if not a.traits_set(XBattler.TRAIT_STYPE_ADD).has(int(skill.stypeId)) or a.traits_set(XBattler.TRAIT_STYPE_SEAL).has(int(skill.stypeId)):
 			return false

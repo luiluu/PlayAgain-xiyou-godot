@@ -200,4 +200,28 @@ chainCase('slow20', 20, [S.slash, S.cross, S.flurry, S.sword], false, [{skill: S
 // 连斩速度段：敌人速度加到与哈基米相近（+0 段）、略慢（+1 段）
 chainCase('agiEven', 30, [S.slash, S.cross, S.flurry, S.sword], false, [{skill: S.flurry, round: 1}, {skill: S.slash, round: 1}, {skill: S.cross, round: 1}], {enemyAgiPlus: 600});
 chainCase('agiNear', 30, [S.slash, S.cross, S.flurry, S.sword], false, [{skill: S.flurry, round: 1}], {enemyAgiPlus: 150});
+// ⑥ 使用条件（meetsSkillConditions 包装的 legal＋178 物理技能要持剑）：战斗中、TP 100、学会 10437～10446，
+// 等级 × 武器（无、练习剑 2、木棒 3）× 至圣斩冷却（holyReady 5，回合 4／5）逐个技能比 meetsSkillConditions 与 canUse。
+cases.push(makeCase('legal', {actor: 178, troop: 2, levels: [1, 10, 20, 30, 35], weapons: [0, 2, 3], holyReady: 5, rounds: [4, 5],
+  skills: [1, 10437, 10438, 10439, 10440, 10441, 10442, 10443, 10444, 10445, 10446]}, () => {
+  const {a} = chainBattle(1, [], false, {});
+  const rows = [];
+  for (const lv of [1, 10, 20, 30, 35]) {
+    a.changeLevel(lv, false);
+    for (let id = 10437; id <= 10446; id++) a.learnSkill(id);
+    for (const wp of [0, 2, 3]) {
+      if (wp) putWeapon(a, wp); else a._equips[0].setObject(null);
+      for (const round of [4, 5]) {
+        w.$gameTroop._turnCount = round;
+        a._codexCatBattle = {heart: 0, holyReady: 5, bellRound: 0};
+        a.setTp(100); a.refresh();
+        for (const id of [1, 10437, 10438, 10439, 10440, 10441, 10442, 10443, 10444, 10445, 10446]) {
+          const sk = w.$dataSkills[id];
+          rows.push({level: a.level, weapon: wp, round, skill: id, meets: a.meetsSkillConditions(sk), canUse: a.canUse(sk), stype: sk.stypeId});
+        }
+      }
+    }
+  }
+  return {skills: a._skills.slice(), rows};
+}));
 process.exit(finish(host, 'cat.json', {hostScope: '新游戏（Math.random 0.5）；小猫剑圣第一期：招募、槽位、能力值与被动、公式', cases}) ? 0 : 1);

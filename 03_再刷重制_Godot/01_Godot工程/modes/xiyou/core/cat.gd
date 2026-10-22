@@ -9,9 +9,10 @@ extends RefCounted
 ##   （能力值 ×2，特性 11／21／23 的 1+(v−1)×2、22／33／34／61 ×2，备注数值标签 ×2，元素增幅／倍率 ×2）；sparam 6／7 ×0.8／×0.88。
 ## - 公式 CodexCat.formula(user,item,b)＝(atk×1500＋agi×3000)×权重×成长×(1＋熟练)×段倍率（段倍率只在连携剑段里不是 1）。
 ## - 剑技连携（CAT BEGIN／CAT STRIKE、剑心、识破／剑痕、喵铃）：见文末「剑技连携」。
-## 未移植（交付单写明）：技能使用条件、进阶（Godot 无 _AdvancedNum，advanced 恒假）、
-## 守誓巨龙试炼、伤害钩子 cat-sword（持剑技伤害／抱剑护身减伤／巨龙减伤，要 damage.gd 的模块挂接点）、元素增幅翻倍进伤害
-## （damage.gd 的 _yep_objects 直接读 equip_list，提案改读 stat_equips）、号角 2899 入队后不可用、Map132 商店补号角、自定义图标。
+## - 使用条件：见文末 legal。
+## - 伤害钩子 cat-sword（持剑技加成、抱剑护身、巨龙减伤）在 cat_damage_hooks.gd（沙僧，模块挂接点），读这里的 advanced。
+## 未移植（交付单写明）：进阶（Godot 无 _AdvancedNum，advanced 恒假）、守誓巨龙试炼（9018，伤害钩子要宿主传 battleRound）、
+## 号角 2899 入队后不可用、Map132 商店补号角、段间 WAIT 6 的画面节奏。
 ## 参照：mv_oracle/cat_probe.cjs（generated/oracle/cat.json），测试 tests/xiyou_cat.gd。
 
 const ACTOR := 178
@@ -562,3 +563,24 @@ static func end_turn(logic) -> void:
 				if all[id].has(k) and int(all[id][k]) <= r:
 					all[id].erase(k)
 		_sync_marks(logic, t)
+
+
+# ---- 使用条件（Game_Actor／Game_BattlerBase.meetsSkillConditions 包装） ----
+const SKILL_TRIAL := 10446
+const LEVELS := {10437: 1, 10438: 10, 10439: 20, 10440: 30}
+
+## 剑技：自己、持剑、学会、到等级，至圣斩还要不在冷却（holyReady > 回合）；试炼：自己、35 级、持剑、不在战斗中；剑影不能直接用；
+## 178 的物理技能（stypeId 1）没持剑也不能用。原版按技能编号判断（物品不算）。
+static func legal(logic, a, item: Dictionary) -> bool:
+	if XBattleLogic.is_item(item):
+		return true
+	var id := int(item.get("id", 0))
+	if id in ACTIVE:
+		if not (own(a) and has_sword(a) and learned(a, id) and int(a.level) >= int(LEVELS[id])):
+			return false
+		return id != IDS.holy or int(_data(logic, a).holyReady) <= _round(logic)
+	if id == SKILL_TRIAL:
+		return own(a) and int(a.level) >= 35 and has_sword(a) and int(logic.troop_id) == 0
+	if id == IDS.echo:
+		return false
+	return not (own(a) and int(item.get("stypeId", 0)) == 1 and not has_sword(a))
