@@ -237,7 +237,8 @@
     163,
     164,
     165,
-    166
+    166,
+    178
   ],
   "troops": [
     2,
@@ -665,7 +666,8 @@
     "newIcon",
     "anjian_level_up",
     "Combo_A",
-    "Combo_D"
+    "Combo_D",
+    "CatSwordSaint_Icons"
   ],
   "keepEvents": {
     "1": "*",

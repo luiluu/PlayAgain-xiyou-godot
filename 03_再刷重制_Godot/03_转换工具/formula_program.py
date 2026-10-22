@@ -362,10 +362,19 @@ def yields_result(n):
     return False
 
 
+# 角色专属模块的公式入口：整条公式只是一次模块调用，Godot 由对应模块求值（XFormulaExecution.run_item 按 module 分派）。
+# 键是去掉空白后的原文；写法稍有不同就仍按普通公式编译（拒收），不猜。
+MODULE_FORMULAS = {'CodexCat.formula(user,item,b)': 'cat'}
+
+
 def compile_formula(source, item_id=0, custom=False, table='Skills'):
     source = source or ''
     result = {'version': VERSION, 'source': {'table': table, 'id': item_id, 'custom': custom,
                'sha256': hashlib.sha256(source.encode()).hexdigest()}}
+    module = None if custom else MODULE_FORMULAS.get(re.sub(r'\s+', '', source))
+    if module:
+        result.update(status='module', module=module, capabilities=[], locals=[], steps=[], result=None)
+        return result
     try:
         result.update(Compiler(item_id, custom).compile(source))
     except (Unsupported, RecursionError) as error:

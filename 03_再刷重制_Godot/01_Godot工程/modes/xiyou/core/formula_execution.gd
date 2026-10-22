@@ -25,6 +25,8 @@ var _random: XRandomStream
 static func run_item(item: Dictionary, a: XBattler, b: XBattler, variables, switches := {}, execute := false, random: XRandomStream = null, resource_context: XResourceContext = null) -> Dictionary:
 	var program: Dictionary = item.get("damage", {}).get("formulaProgram", {})
 	var status := str(program.get("status", "unsupported"))
+	if status == "module" and program.get("module") == "cat":  # 整条公式是 CodexCat.formula(user,item,b)（转换器 MODULE_FORMULAS）
+		return {"available": true, "value": XCat.formula(a, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if int(program.get("version", 0)) != 1 or not status in ["pure", "effectful"]:
 		return _unavailable(item, execute, "unsupported_program")
 	var mode: String = str(XDamage.elements_data().skills.get(str(int(item.id)), {}).get("mode", ""))
