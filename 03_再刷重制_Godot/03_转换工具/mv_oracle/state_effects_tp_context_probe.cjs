@@ -24,9 +24,9 @@ function battle() {
 function prepare(b, tp, hpZero = false, fixtureStates = []) {
   // Explicit fixture injection permits testing stale resisted states and 0 HP
   // without death. The operation under measurement is always the native method.
-  b._states = fixtureStates.slice(); b._stateTurns = {};
+  b._states.length = 0; b._states.push(...fixtureStates); b._stateTurns = {};
   b.need_refresh = true; b.refresh(); b.states(); b.typestates('turnStartState');
-  b._states = fixtureStates.slice(); b._stateTurns = {};
+  b._states.length = 0; b._states.push(...fixtureStates); b._stateTurns = {};
   b._tp = tp; b._hp = hpZero ? 0 : b.mhp; b._mp = b.mmp;
   b.clearResult();
   Object.assign(b.result(), {hpAffected: true, hpDamage: 17, mpDamage: 19, tpDamage: 23, success: true});
