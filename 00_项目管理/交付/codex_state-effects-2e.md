@@ -1,53 +1,68 @@
 # 交付：codex/state-effects-2e
 
-- 车道／工作者：翻译／核查 · Codex（沙僧，重制_沙僧_43）。
-- 状态：进行中（纯TP整块先取原版参照，尚未翻译或验收）。
-- 沿用state-effects-2b工作树，从b34efa5切本分支；2b／2c／2d固定可独立合并，不重复已过验证。
-- 开工只读main交接板及两树status／log，main仍09ebfb0；唐僧未提交登记未触碰。额度五小时88%、周56%。到90%只收尾手头步骤，不开新步骤或自动接力。
-- 本批收窄为5个仅user.gainTp常量整块：607／609 battle200，857 battle50，1334 apply25，1336 apply75。先原版比较资源、上限、结果槽、刷新、随机与实际apply重加路径，再决定能否完整翻译。
-- 独占仍限状态翻译、state_effects.gd、battler.gd、battle_logic.gd状态挂点、自己的探针／专项；不改actor.gd、XState或角色测试。
-- 当前生命周期run／run_one不传入行动资源上下文。不能为了降低js数只改TP数值而丢掉结果槽；须完整处理嵌套apply上下文，并先证实外层结果槽语义。若本步骤到收尾线，只提交原版证据及明确前置，不登记可合并。
-- 原版测量将由长任务.py启动，日志state-effects-2e/native.log；尚未启动最终同步。车道不跑全量，由唐僧合并后统一检查。全部提交待Claude交叉核查。
+- 车道／工作者：翻译／核查 · Codex（沙僧，接续沙僧_46）。
+- 状态：进行中（设计与原版参照收尾；五块玩法尚未实施）。
+- 位置：沿用`.claude/worktrees/state-effects-2b`，分支`codex/state-effects-2e`；未新开、重建工作树，未改main或其他车道。
+- 本期交付类型：**资源上下文具体设计＋原版证据**。确认需要修改仍留给期三的`resource_context.gd`，按本期交代的停手条件收口；不交孤立TP数值、不进入永久加算／存档期三。五块仍JS，未翻译仍444，完成度不增加。
+- 开工只读主库交接板、两树status／log，main为fd975959且b0cbf868为祖先；2e前置已合。续作开工额度五小时32%／周5%，最近44%／7%；按95%收尾线，无需因旧交付中的90%历史停手。
 
-## 测量检查点
+## 具体设计与停手原因
 
-- 首轮native退出1：新case误放在必须最后执行的action.counter之后；既有反击夹具会令location失效，后续新局ReferenceError。已将新case移到counter之前；不修改生产或原版环境。保留native.log，修后日志native-v2.log。
-- 测量执行期间额度到90%，按规则只收尾本测量，不进入翻译／同步／自动接力。2e仍进行中，不能合并为玩法完成。
+原件在[框架维护约定：状态效果2e生命周期资源上下文](../../03_再刷重制_Godot/00_设计/框架维护约定.md)目标节，尚未实现、待Claude核查：
 
-## 原版测量已完成，额度到线停在检查点
+- 保持`XActor.add_state(id, random)`虚方法签名，新增显式域包装入口；保存／恢复holder旧ctx，嵌套同域共享同一资源对象与随机流，跨holder显式传递，不用场景全局槽。
+- 技能附加状态的Apply结果进入现有`_action_resources.result(target)`、同一日志与弹字出口；开战由logic单独持有资源槽和阶段结束快照，不能自动生成原版没有请求的弹字，也不把开战槽带入下一行动。
+- `XResourceContext.refresh`必须区分类型外层工作、基础抵抗清除／截取、阵亡同步；不能统一“加状态时不刷新”。角色真实Apply允许TP暂超上限；敌人当场截取，但内部再次add阵亡仍受全局锁抑制。现资源层直接截TP／改状态数组，无法复现这一区别。
+- 地图／菜单的直接add_state也需要所属state宿主持有根域及操作结果；只给battle_logic传ctx不足以把全库Apply块标为已支持。预览不得取真实默认域、资源、状态／参数与效果缓存、RNG、诊断或结果槽。
+- Godot开战当前先Battle效果、后随机初始TP，启用607／857会被覆盖；新补充case单查真实Game_Unit.onBattleStart顺序，修正须与资源域一起交，不做孤立数值实现。
+- 最少需把`resource_context.gd`作为**2e前置**明确交接；若角色刷新分层或地图／菜单根域必须改其他宿主，再先交接相应文件。交接板给沙僧期三的范围不能自动当成本期授权。本分支没有改actor、XState、resource_context、角色测试或任何Godot生产代码。
 
-- native-v2于2026-10-22 05:06（Europe/Paris）退出0，22例errors=[]。tp.native_blocks有140条直接执行边界行、4条真实addState两次重加行；与generated保留的2d最终21例独立逐项比较全部相同，仅新增本case，sourceIdentity相同。摘要在本地state-effects-2e/native-verified.json，完整参照仍在mv_oracle/.sandbox/state_effects.json。
-- 直接行覆盖角色1与敌人、5块、初始TP -1/0/1/150/199/200/250、存活／死亡两组。测试两者maxTp均200，未声称已测角色自定义上限。TP增量按最终上限截断，即使已经饱和，tpDamage仍记负的请求增量（-200/-50/-25/-75）；HP/MP结果原有字段保留，gain结束dirty=true，140行draws均0。
-- 实际1334／1336连续addState两次：TP从1到26／76，apply只生效一次；4行各抽2次时长随机，最终turns=1，addedStates仅含该状态。刷新边界记录在log；本期没有把重加当第二次gain。
-- 首轮失败是明确的探针排列问题，已保留native.log并修正；不是偶发重跑，未修改原版或生产算法。native-v2是修正后的首次运行。
-- 本分支尚未改变Godot生产、转换器或自己的Godot专项；5块仍为js，第二期未翻译仍444。本分支仅原版参照检查点，**不标可合并**；没有最终同步，不把本期探针指纹冒充2d最终指纹。generated/oracle仍保留2d的21例，未将22例复制进去。
-- 后续实现前置：XStateEffects的battle与apply入口目前没有资源上下文；battle_logic.gd技能附加状态分支里的add_state也没有将_action_resources传给apply回调。必须设计显式生命周期资源上下文与嵌套保存／恢复（可考虑battler.add_state可选context、battle_logic状态挂点显式传入），让apply里的gain写回外层同一结果槽和日志；不能只用临时XResourceContext丢掉结果。独立battle资源槽的消费也须明确，预览不触碰真实对象／缓存／RNG／结果槽。此处仅列前置，未设计完或实现，不能据此宣称支持。
-- 后续可按这些原版行补Godot逐项对照；角色自定义TP上限、刷新导致状态变化与嵌套guard仍需补参照，不能把当前140条当完整族验收。8个纯addState候选仍未开工。
-- 额度到五小时90%后只完成本次测量收尾，不再开新步骤、不自动创建接力聊天。下次恢复沿用本树codex/state-effects-2e；不要重复已完成的原版测量，新增覆盖时另加case并保留旧22例。
-- 可交唐僧的仍为2b ad7c867、2c 4760a54、2d b34efa5，按序合并后统一全量检查，全部Codex实现待Claude交叉核查。2e是后续WIP，不并入该完成批。
-- 本轮车道按规则不跑全量检查；主工作区共用登记未改。无同步／测试活动任务，无heartbeat，不重建监视。
+## 原版参照与原始证据
 
-## 2026-10-22 后续接续指向
+### 已保留的native22（不重复手动测量）
 
-- 用户插队的架构13已交codex/module-hooks（a8fcb0d），可合并；之后已回状态第三／四期，在codex/state-effects-3-design（1ff5c0c）交具体接口设计，运行时需actor／XState／事件宿主范围交接，不强推第五期。2e继续保留为纯TP原版测量WIP，未实现、不可合并为玩法完成；不要在此枝重复测量或擅自扩做。
-- 本目录恢复2e以保留其未入Git的native22例及日志。第三／四期设计移到独立state-effects-3-design工作树；总装清理2b／2c／2d时不要删除本目录或2e分支。
-- main的AGENTS.md已在7608538记录用户把5小时收尾线改为95%；上面的90%是当时测量收尾历史，后续开工读取当前main规则与实际额度。
+- 原`mv_oracle/.sandbox/state_effects.json`及native-v2.log保留。独立副本`04_验证/本地结果/state-effects-2e/native22-preserved.json`，SHA256 `24100228be3102a9dcca56fa0bb5ed9b08bbbd9b5819742308772c478876b0a0`。
+- `tp.native_blocks`：140条直接执行边界（角色1／敌人、5块、初始TP -1/0/1/150/199/200/250、活／死），另4条真实连续addState两次。旧21例与2d最终参照相同，原22例errors=[]。
+- 初值1的真实重加不会碰上限；140条直接调用不经过真实addState锁。不能用这些行声称自定义上限／刷新嵌套已经闭环。
 
-## 恢复期二（2026-10-22，沙僧_46）
+### 新补充入口（可只跑本组，不跑native22）
 
-- 用户明确要求在总装合并期间继续；开工已只读交接板、两树状态与日志，当前额度5小时28%／周4%。本树cb59b460干净，没有活动任务。
-- 已确认b0cbf868是main祖先，main fd975959已合整批状态修复（dev.135内容），期二前置满足；本树已无冲突git merge main。唐僧main未提交收尾只读，不接总装。
-- 既有原版22例未重测，已在本地结果state-effects-2e/native22-preserved.json保存完整副本；SHA256 24100228be3102a9dcca56fa0bb5ed9b08bbbd9b5819742308772c478876b0a0。原.sandbox/state_effects.json与native-v2日志仍保留，不删除。
-- 下一步长任务refill-resume.log补齐本树产物与导入；随后设计显式生命周期资源上下文及嵌套保存／恢复，先读现有run／run_one、add_state与_action_resources路径。仍只做5个纯TP整块，不做8个addState候选，不提前改actor／XState或开第三期。
-- refill-resume.log已done／exitCode0，runId a6cb074edcd74025b0e79de7a4bcd2d4，22:49:01 Europe/Paris结束，无需重跑。当前没有活动任务、没有新增游戏实现或手动原版测量。按40%上下文规则接力至下一沙僧聊天，沿用本树；完整续做brief在本树本地结果state-effects-2e/brief-resume.md，不创建新工作树。
+`03_转换工具/mv_oracle/state_effects_tp_context_probe.cjs`独立执行只输出`.sandbox/state_effects_tp_context.json`；正式`state_effects_probe`复用同组case，追加在反击前。补充探针没有修改冻结源，所有原版写入受原有.sandbox守卫约束。
 
-## 生命周期上下文续查（2026-10-22）
+- `tp.guarded_apply`：8行，角色／敌人 ×1334／1336 ×正常HP／0HP未死。每行记录首次、重加、独立refresh。角色199→224／274，重加不再gain，独立refresh才回200；敌人首次即200。0HP未死两者都延后到独立refresh才加阵亡；两次重加共2次时长随机，若后续独立refresh加阵亡则合计3次。
+- `tp.actor_custom_caps`：14行，合成技能经真实passiveEXTTP=-160／+100使角色上限40／300。5块直接执行与2块真实addState逐项记录，直接执行截上限，真实Apply可到64／114或324／374。不是替换maxTp函数，也不冒称覆盖全部上限机制。
+- `tp.refresh_state_boundary`：4行，注入陈旧被抵抗状态后比较直接调用／真实addState。角色真实Apply保留该状态到独立refresh；敌人真实Apply当场清除。基础erase不写removedStates，也不新增Remove／Leave回调。
+- 以上3例26行已在tp-context-native-v2.log退出0、errors=[]；原始副本`tp-context-native3-preserved.json` SHA256 `f705f6ab39b9ce057be49dd55e3cb6b725819bef3611d68f8fbf44c5a5985413`。
+- `tp.battle_initialization`：新第四例，经真实Game_Unit.onBattleStart记录随机TP初始化与607／857的Custom Battle先后；在共享槽排队的tp-context-native-v4.log验证，结束后更新本单。
 
-- 本轮只读主库交接板、两树状态／日志后继续，开工额度五小时32%／周5%，本树26fe46f干净。未接总装、不触碰main未提交收尾。
-- 已核对XActor.add_state覆写，不能给基类加第三参数后直接调用角色。显式资源域应使用保持原虚方法签名的包装入口，域在调用结束后恢复。
-- 原版_Fix_StackOverflow.js:46的刷新抑制覆盖整个真实addState；现XResourceContext.gain直接refresh，尚无接入该锁的能力。native22的140条直接执行不经过此锁，另4条实际重加的初值1也未触到TP上限，不能据此判定完整闭环。
-- 已准备独立补充探针state_effects_tp_context_probe.cjs，输出只写.sandbox/state_effects_tp_context.json；待启动长任务tp-context-native.log，量真实apply超上限／0HP、合成技能passiveEXTTP改变上限、刷新清抵抗状态在直接调用与真实addState中的差异。旧native22与其独立副本保持不动，不重测。
-- 当前仍未改转换器或生产代码；若确认需要修改已留给期三的resource_context／actor才能完整实现，按本期停手条件交具体设计与证据，不交孤立TP数值或冒称2e玩法完成。
-- 补充探针首轮tp-context-native.log明确失败：夹具把VM的_states换成宿主Array，缺少MV的contains扩展；已改为保留VM原数组、只清空并push内容。原失败日志保留，修后另用tp-context-native-v2.log；不算偶发，不改源引擎。
-- tp-context-native-v2.log已退出0，3例26行均errors=[]。已证实角色真实apply从199到224／274，敌人真实apply截到200；0HP未死夹具的阵亡同步延后到独立refresh；角色真实passiveEXTTP技能使上限40／300，直接执行截上限、真实apply可暂超。原始副本tp-context-native3-preserved.json SHA256 f705f6ab39b9ce057be49dd55e3cb6b725819bef3611d68f8fbf44c5a5985413。
-- 增加第四个小case，经过真实Game_Unit.onBattleStart观察TP初始化相对Custom Battle的顺序；补充探针同时改为可被正式state_effects_probe复用。将单独运行tp-context-native-v3.log验证新case，不手动重跑native22；最后正式同步将按规范重新生成并严格只增验收。
+## 验证、失败与同步
+
+- 新补充探针与主探针语法检查通过；现有状态整块翻译测试7/7通过。未改变转换器，五个TP块仍JS。
+- tp-context-native.log失败根因：夹具把VM的_states替换为宿主Array，丢MV contains扩展；改为保留VM数组、清空并push内容。修后v2首次通过。失败原始输出保留，不算偶发，不改源算法。
+- tp-context-native-v3.log在测量启动前失败：本地共享槽包装器上溯目录多一级，找不到并行测试模块；已修本地路径，v4重新排队。正式探针未改，不算原版测量或偶发。
+- 按车道规则不跑全量检查。没有Godot生产改动，收尾只跑state_effects专项与严格原版增量校验；主库由唐僧合并后统一检查。
+- 最终合main、正式同步`--accept-additions`、来源／工具／产物双指纹与专项结果均在本轮收尾后补入；只接受原21→26例新增，旧值变化即停，不写放宽接受单。
+
+## 变更记录草稿
+
+## 2026-10-22 【Codex·沙僧·未经Claude检验】2e生命周期资源上下文设计与真实Apply刷新边界参照（玩法未实施）
+
+- 为607／609／857／1334／1336五个纯TP整块补齐具体资源域、嵌套恢复、结果槽与宿主消费设计；原版测量发现角色真实Apply可暂时超TP上限、敌人当场截取，不能直接复用现资源refresh而忽略全局锁与类型差异。
+- 需要修改本期未获范围的resource_context刷新层，按停手条件只交设计与参照；五块仍JS、未翻译444、完成度不变。没有永久addParam／存档实现，不算进入期三。
+- 验证与指纹：按本交付单最终收尾记录并入；主库统一全量检查由唐僧执行。全部提交待Claude交叉核查。
+
+## 交接板草稿
+
+- 下一步：先交接resource_context给2e作必要前置，按框架原件分层刷新与共享结果槽完成五块、Godot逐项对照后再交2e玩法；此前不启动永久加算期三。若地图／菜单宿主未交接，Apply完整块不能仅靠战斗入口宣称完成。
+- 用户试玩说明：本批只补设计与参照，玩家行为未变。
+- 需要用户决定：无新增玩法取舍；范围交接由唐僧登记，本轮不自行借用期三文件。
+- 待交叉核查：本分支所有提交，执行者Codex（沙僧），核查待Claude；不能由沙僧自核。
+- 进度账：不变，原版参照或接口设计不计已实现。
+- 清理：本树有未入Git的native22、补充原始测量与失败日志；未归档核查前不要删目录。
+
+## 本分支检查点
+
+- 26fe46f：恢复期二、已合main并补齐环境；native22保留。
+- 3faf0cd：补充探针测量前检查点。
+- fb9f73d：修正VM数组夹具、保留首轮失败记录。
+- 9d249fb：保存26行补充证据、接入正式探针与可独立入口。
