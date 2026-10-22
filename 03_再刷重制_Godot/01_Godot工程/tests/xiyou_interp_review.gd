@@ -4,6 +4,10 @@ extends Node
 ## 同图移动保留，换图再回来恢复。真实 XMapScene（Map008 副本怪事件 3）、真实 XSave 存读档后重开地图场景、真实 transfer。
 ## flush.225.*：316 升级提示进待显示文字后，225 勾等待时 MV 在等待的 10 帧里显示消息、等完才执行 122（参照帧号 > 1）；
 ## 不勾等待时同一帧执行 122。Godot 把「等待期间显示」做成等待前先显示（同 230），对照「122 执行前消息是否已显示」。
+## transfer.*（八戒_48）：同图 201 不重建事件——事件节点、位置、朝向、强制路线与索引、页原样保留，玩家与跟随者重新放置；
+## 换图再回来恢复初始。参照里给事件 3 挂的等待解释器（模拟并行事件）Godot 无对应（切片地图没有并行事件），不比 interp。
+## MV 不强制路线时 _moveRoute 是当前页的自主路线，Godot 留在 page.moveRoute，route 长度按此取。
+## 为免过渡淡入淡出期间路线自己往前走，两个事件先停掉 _physics_process（参照引擎里同样不推进帧）。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const ORACLE := "res://modes/xiyou/generated/oracle/review_fix.json"
 const TIMEOUT_MS := 60000
@@ -117,6 +121,73 @@ func _erase_case(id: String) -> Dictionary:
 	return {}
 
 
+const EV_FIELDS := ["x", "y", "d", "page", "forcing", "routeIndex", "route"]
+
+static func _ev_state(map: XMapScene, id: int) -> Dictionary:
+	for e in map.events:
+		if e.event_id == id:
+			return {"x": float(e.grid.x), "y": float(e.grid.y), "d": float(e.direction), "page": float(e.page_index),
+				"forcing": e._route_forcing, "routeIndex": float(e._route_index), "route": float((e._route if e._route_forcing else e.page.get("moveRoute", {})).get("list", []).size())}
+	return {}
+
+static func _event_node(map: XMapScene, id: int) -> MVEvent:
+	for e in map.events:
+		if e.event_id == id:
+			return e
+	return null
+
+static func _pick(d: Dictionary) -> Dictionary:
+	var out := {}
+	for k in EV_FIELDS:
+		out[k] = d.get(k)
+	return out
+
+static func _player_state(map: XMapScene, n: int) -> Dictionary:
+	var fs := []
+	for i in range(n):
+		var f: MVFollower = map.followers[i]
+		fs.append([float(f.grid.x), float(f.grid.y), float(f.direction)])
+	return {"x": float(map.player.grid.x), "y": float(map.player.grid.y), "d": float(map.player.direction), "followers": fs}
+
+func _transfer_case(id: String, want: Dictionary) -> Dictionary:
+	s = XState.new_game(3, 1, [8, 9, 10])
+	var map := await _open(8, 29, 26)
+	if map == null:
+		return {"error": "Map008 未载入"}
+	var route := {"list": [_cmd(12, []), _cmd(12, []), _cmd(12, []), _cmd(0, [])], "repeat": false, "skippable": true, "wait": false}
+	var marks := {}
+	for eid in [3, 6]:
+		var e := _event_node(map, eid)
+		e.process_mode = Node.PROCESS_MODE_DISABLED
+		e.locate(e.grid.x + 1, e.grid.y)
+		e.set_direction(8)
+		e.force_move_route(route.duplicate(true))
+		e._route_index = 2
+		marks[eid] = e
+	var nf: int = want.player.followers.size()
+	if id == "transfer.sameMap.events":
+		var before := {"3": _pick(_ev_state(map, 3)), "6": _pick(_ev_state(map, 6))}
+		await _run_list(map, [_cmd(201, [0, 8, 28, 26, 4, 0]), _cmd(0, [])], 7)
+		map = await _wait_map(8)
+		return {"map": float(map.map_id), "before": before, "after": {"3": _pick(_ev_state(map, 3)), "6": _pick(_ev_state(map, 6))},
+			"sameObjects": [_event_node(map, 3) == marks[3], _event_node(map, 6) == marks[6]], "player": _player_state(map, nf)}
+	await map.transfer(4, 14, 23, 2)
+	map = await _wait_map(4)
+	await map.transfer(8, 29, 26, 2)
+	map = await _wait_map(8)
+	return {"map": float(map.map_id), "back": {"3": _pick(_ev_state(map, 3)), "6": _pick(_ev_state(map, 6))},
+		"sameObjects": [_event_node(map, 3) == marks.get(3), _event_node(map, 6) == marks.get(6)], "player": _player_state(map, nf)}
+
+static func _want_transfer(want: Dictionary) -> Dictionary:
+	var out := want.duplicate(true)
+	out.erase("sameMapInterpreter")
+	for part in ["before", "after", "back"]:
+		if out.has(part):
+			for k in out[part]:
+				out[part][k] = _pick(out[part][k])
+	return out
+
+
 ## 只推进核心：记下待显示文字是在 122（设变量 1）之前还是之后显示的
 func _flush_case(wait: bool) -> Dictionary:
 	s = XState.new_game(3, 1, [8, 9, 10])
@@ -143,14 +214,18 @@ func _run() -> void:
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
-	var cases: Array = (data.cases if data is Dictionary else []).filter(func(c): return str(c.id).begins_with("erase.") or str(c.id).begins_with("flush.225."))
-	if _check("oracle_cases", cases.size() == 6, cases.map(func(c): return c.id)):
+	var cases: Array = (data.cases if data is Dictionary else []).filter(func(c): return str(c.id).begins_with("erase.") or str(c.id).begins_with("flush.225.") or str(c.id).begins_with("transfer."))
+	if _check("oracle_cases", cases.size() == 8, cases.map(func(c): return c.id)):
 		for c in cases:
 			if not c.errors.is_empty():
 				_check("oracle_" + c.id, false, c.errors)
 				continue
 			var want: Dictionary = c.observed
-			if str(c.id).begins_with("erase."):
+			if str(c.id).begins_with("transfer."):
+				var got := await _transfer_case(c.id, want)
+				var exp := _want_transfer(want)
+				_check(c.id, JSON.stringify(got) == JSON.stringify(exp), [got, exp])
+			elif str(c.id).begins_with("erase."):
 				var got := await _erase_case(c.id)
 				_check(c.id, JSON.stringify(got) == JSON.stringify(want), [got, want])
 			else:
