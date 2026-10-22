@@ -881,6 +881,16 @@ func open_achievements() -> void:
 	hud.visible = true
 
 
+## 公共事件 3「人物图鉴」：SceneManager.push(Scene_ActorBook)，关闭后回到地图
+func open_actor_book() -> void:
+	hud.visible = false
+	var page := XActorBook.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 func open_menu() -> void:
 	# 挂机中不能呼叫菜单（Scene_Map.isMenuCalled）
 	if busy or _menu_open or XHangUp.is_active(XState.current):
