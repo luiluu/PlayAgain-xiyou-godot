@@ -21,7 +21,7 @@
 
 - 核查范围：be81f3b、9968e1d、816372f、d1db0b4，以 `f96cc9b^1..f96cc9b` 差异为准：新 formula_rest_probe.cjs（不进同步探针表，固化为 tests/fixtures/formula_rest_oracle.json）、xiyou_formula_rest 专项、测试公式程序.py 新增 31 块清单回归；be81f3b 的 dev.121 核查报告只核结论。
 - **结论：通过，无 P0～P2**。31 块清单、135 例的组合（装备 4 种×攻击力三向分支）在 Python 回归里逐项断言；Godot 专项同时核实际执行、影子预览隔离、资源与结果槽、随机次数、只读程序与实际执行一致，并用 sourceIdentity 绑定冻结源。
-- P3（已修，见下）：`.value` 一项用 `is_equal_approx` 比对原版值，相对容差约 1e-5，值在百万量级时可容下个位数误差，会掩盖取整差一；实测 135 例改成精确相等全部通过，已收紧。
+- P3（已修，见下）：`.value` 一项用 `is_equal_approx` 比对原版值，相对容差约 1e-5，值在百万量级时可容下个位数误差，会掩盖取整差一；实测 135 例改成精确相等全部通过，已收紧（8d88ca5）。
 
 ## 2026-10-22 【Claude·八戒_48】核查 codex/converter-write-changed（合并提交 635734a）
 
@@ -43,13 +43,22 @@
   - 晚间批核查（dev.116～120）：两条新 P2 结论成立且均已修——导入 DOT 漏乘 REC（当前 battle_logic.gd:1473、1496 已乘 rec，与冻结 installImportedBalanceRuntime.js:496、506 一致）；待核查.py 误销同号批（292fb24 改为只认销账范围行）。
   - dev.122／123 核查：结论与已列 P2（sips ICC 时间）与上条 converter 核查一致。
 
+## 2026-10-22 【Claude·八戒_48】核查 0a72150（codex/module-hooks-cat，dev.130）
+
+- 核查范围：合并提交 0a72150（含 codex/module-hooks 与 codex/module-hooks-cat，30 个提交 0085b0f…300b2c3），以 `0a72150^1..0a72150` 差异为准：新 core/module_registry.gd、core/cat_damage_hooks.gd，改 core/damage.gd，新 module_hooks_probe.cjs、xiyou_module_hooks 与装备视图夹具，同步 PROBES／只增键各一行；收尾 33a6303 只核登记。
+- **结论：通过，无 P0／P1；留一条潜在 P2（接入哈基米基础模块时才生效）**。
+  - **cat-sword 对照冻结 installImportedBalanceRuntime.js:57～69、214～226**：build 只对 10437～10440 与 echo 10445、学会 10441 且主手 wtypeId 2 生效，普通＋6、物理／神圣元素各＋6，剑心 10443 再加最终＋8、暴击＋12，进阶时结算 ×2；enter 的抱剑护身两组上界（物理 min(16000, ⌊3s⌋, 15030＋⌊s/8⌋)，13 个元素 min(18000, ⌊3.2s⌋, 16400＋⌊2s/11⌋)）与巨龙 1999 `(round−1)%5≠3` 时物理 1e11／神圣 5e10 固定减伤，数值与条件逐项一致。原版临时改写 target._passiveCache 再还原，Godot 改为只写本次 flatMitigationAdd，不碰真实缓存，等价且更安全。
+  - **damage.gd 数值帧**：初始帧取原技能倍率／普通／暴击／最终加成，orb-sets 从内联乘改为注册表 finalMultiplier，结果由 30 例原版参照覆盖；preview 时不抽浮动；模块失败返回 available=false、value=NAN 并告警。
+  - **P2（潜在，留沙僧，damage.gd／接线不改）**：cat_damage_hooks.capture 只认 options.battleRound，生产路径 battle_logic.gd:1164 `_damage_value` 与 power.gd:577／580 都没传；巨龙 1999 的 enter 在 round 缺失时返回 `cat_dragon_round_missing`，整次伤害变成 unavailable／NAN。现在 core/cat.gd 未合入、模块整体禁用，所以不触发；悟空 178 基础模块合入后，只要打到敌人 1999 就会出现 NaN 伤害。建议在 `_damage_value` 传 `"battleRound": turn`（原版 round() 为 max(1, $gameTroop.turnCount())），战力面板预览按原版无战斗时 round()=1 处理，并补一条走 battle_logic 实战入口的巨龙回合用例。另：巨龙护甲只在 cat 模块启用时生效，原版是运行时常驻；敌群 1999 不在切片里，暂无影响，接入该敌群时一并核。
+- 验证：见本单「验证」。
+
 ## 2026-10-22 【Claude·八戒_48】修复 9968e1d 核查问题：formula_rest 原版值改精确比较
 
 - xiyou_formula_rest 的 `.value` 断言由 `is_equal_approx` 改为精确相等（JSON 数值与 GDScript float 都是双精度），135 例全过；只改测试，游戏代码不变。
 
 ## 交接板
 
-- 下一步：无新增。sips 转码 PNG 的 ICC 时间 P2（review-dev122-123 登记）仍待工具车道。
+- 下一步：dev.130 哈基米巨龙回合 P2——battle_logic `_damage_value` 未传 battleRound，178 基础模块合入前要补（见 0a72150 核查条目）。sips 转码 PNG 的 ICC 时间 P2（review-dev122-123 登记）仍待工具车道。
 - 用户试玩说明：本批只有核查与一处测试收紧，玩家看不到变化。
 - 需要用户决定：无。
 
@@ -59,12 +68,14 @@
 
 ## 验证
 
-- 基点 main fe726f6，未合新 main（一期只读核查＋一处测试收紧）。车道不跑全量。
+- 分支已按总装要求重建在 main 515a772 上（原分支混入已撤回的合并，备份为 backup/bajie48-phase1），只含本车道两个提交；重建后跑过 `新建工作树.sh --补齐`。车道不跑全量。
 - Godot 专项（并行测试.py，并行 2、共用上限 4，无偶发）：xiyou_state_effects 19944/19944、xiyou_settlement 11/11、xiyou_troop_events 3839/3839＋xiyou_troop_events_b 3862/3862、xiyou_achievement 50/50、xiyou_achievement_badge 34/34；改精确比较后的 xiyou_formula_rest 1352/1352。
+- 二期 Godot 专项（重建后、并行 2、无偶发）：xiyou_module_hooks 1304/1304、xiyou_custom_damage 145/145、xiyou_formula_effects 908/908、xiyou_imported_balance 273/273、xiyou_shield 565/565、xiyou_orbs 63/63、xiyou_attack_element 66/66、xiyou_battle_events 108/108、xiyou_rules_d1b 63206/63206，共 99 秒。
 - Python 回归：测试转换器写入.py 20/20、测试公式程序.py 12/12、测试合并工具.py 120/120。
 - 只读核对：冻结 States.json／generated States.json（638 块、13 个漏导状态）、冻结 Troops.json 敌群 466、参照 generated/oracle/state_effects.json 的 turn.start_end 日志。
 
 ## 本分支提交
 
-- 045d92c 修复 9968e1d 核查问题：formula_rest 原版值改精确比较
-- 本提交：一期核查结论与交付单
+- 8d88ca5 修复 9968e1d 核查问题：formula_rest 原版值改精确比较
+- 一期核查结论与交付单
+- 二期：核查 0a72150（module-hooks-cat）
