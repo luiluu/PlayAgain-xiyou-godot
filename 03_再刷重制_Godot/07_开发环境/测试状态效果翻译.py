@@ -71,6 +71,22 @@ class StateEffectTranslationTests(unittest.TestCase):
                 got = [e for e in parse_state_effects(row['note']) if e['op'] in ('mul', 'user_param_damage')]
                 self.assertEqual(got, row['effects'])
 
+    def test_native_query_complete_blocks(self):
+        fixtures = json.loads(FIXTURES.read_text())
+        self.assertEqual(len(fixtures['query']), 4)
+        for row in fixtures['query']:
+            effect = next(e for e in parse_state_effects(row['note']) if e['phase'] == row['phase'])
+            self.assertEqual(effect['op'], 'value_query')
+            body = next(m.group(2) for m in EFFECT_RE.finditer(row['note']) if m.group(1).lower() == row['phase'])
+            tag = row['phase'].title()
+            for code in [body + ';', body + ' user.gainHp(1);', 'evil();' + body, body + body,
+                         body.replace('value', 'val ue'), body.replace('1.5', '1.6') if '1.5' in body else body.replace('0.2', '0.3') if '0.2' in body else body.replace('1', '2')]:
+                self.assertEqual(parse_state_effects('<Custom ' + tag + ' Effect>' + code + '</Custom ' + tag + ' Effect>')[0]['op'], 'js')
+            wrong = 'Confirm' if tag == 'React' else 'React'
+            self.assertEqual(parse_state_effects('<Custom ' + wrong + ' Effect>' + body + '</Custom ' + wrong + ' Effect>')[0]['op'], 'js')
+        for row in fixtures['query_pending']:
+            self.assertEqual(next(e for e in parse_state_effects(row['note']) if e['phase'] == 'confirm')['op'], 'js')
+
 
 if __name__ == '__main__':
     unittest.main()

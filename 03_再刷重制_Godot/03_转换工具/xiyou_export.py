@@ -281,6 +281,25 @@ def pure_state_value_effect(code, phase):
         return None
     return {'op': 'value_program', 'program': program}
 
+# Complete native-measured phase-2d query signatures. Weapons await attack replacement.
+MEASURED_QUERY_BLOCKS = {
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { var elements = this . getItemElements ( ) ; var lightningElementId = 1 ; if ( elements . contains ( lightningElementId ) ) { value = 0 ; } }'): {'query': 'element_contains', 'element': 1, 'present': True},
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { var elements = this . getItemElements ( ) ; var lightningElementId = 1 ; if ( ! elements . contains ( lightningElementId ) ) { value = 0 ; } }'): {'query': 'element_contains', 'element': 1, 'present': False},
+    ('confirm', 'if ( value > 0 && this . isHpEffect ( ) && $gameParty . aliveMembers ( ) . length === 1 ) { value = Math . floor ( value * 1.5 ) ; }'): {'query': 'party_alive'},
+    ('confirm', 'if ( value > 0 && defender && defender . isEnemy && defender . isEnemy ( ) && defender . hpRate ( ) < 0.2 ) { value = Math . ceil ( value * 2 ) ; }'): {'query': 'defender_hp'},
+}
+
+
+def query_state_value_effect(code, phase):
+    from formula_program import Parser, Unsupported
+    try:
+        signature = ' '.join(row[0] for row in Parser(code).tokens[:-1])
+    except Unsupported:
+        return None
+    query = MEASURED_QUERY_BLOCKS.get((phase, signature))
+    return {'op': 'value_query', **query} if query else None
+
+
 def parse_state_effects(note):
     """返回 [{phase, op, cond, k, round} 或 {phase, op:'js', source}]；op=js 表示尚未翻译。"""
     out = []
@@ -305,6 +324,10 @@ def parse_state_effects(note):
         bonus = constant_bonus_effect(code) if phase in ('confirm', 'react') else None
         if bonus:
             out.append({'phase': phase, **bonus})
+            continue
+        query = query_state_value_effect(code, phase)
+        if query:
+            out.append({'phase': phase, **query})
             continue
         value_program = pure_state_value_effect(code, phase)
         if value_program:

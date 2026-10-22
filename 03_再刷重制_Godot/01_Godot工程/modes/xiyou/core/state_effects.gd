@@ -7,7 +7,7 @@ extends RefCounted
 const BATTLER_PHASES := ["battle", "turn_start", "turn_end", "regenerate", "action_start", "victory", "escape", "defeat"]
 const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm", "react", "respond", "establish"]
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
-const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program"]
+const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -115,6 +115,8 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				c.value = out.value
 			elif execute:
 				_diagnose(phase, int(st.id), holder, "value_program_unavailable")
+		elif op == "value_query":
+			c.value = _query_value(e, c, execute)
 		elif op == "user_param_damage" and execute and ctx.get("resources") != null:
 			var r: Dictionary = ctx.record
 			for p in e.params:
@@ -130,6 +132,59 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				_diagnose(phase, int(st.id), holder, op)
 	_stack.pop_back()
 	return c.value
+
+
+## Four complete measured blocks. Preserve each native short circuit; queries
+## never run on the other branch. In particular, party is the player party even
+## for enemy attackers, and aliveMembers tests death-state membership, not HP.
+static func _query_value(effect: Dictionary, ctx: Dictionary, execute: bool) -> float:
+	var value := float(ctx.value)
+	if effect.query == "defender_hp":
+		if value <= 0.0 or not ctx.target is XEnemy:
+			return value
+		var target: XBattler = ctx.target if execute else XFormulaContext.clone_battler(ctx.target)
+		return ceilf(value * 2.0) if target != null and target.hp / target.mhp < 0.2 else value
+	if not _active({"cond": "positive", "hpOnly": true}, ctx):
+		return value
+	if effect.query == "element_contains":
+		var user: XBattler = ctx.user if execute else XFormulaContext.clone_battler(ctx.user)
+		if user != null and _query_elements(ctx, user).has(int(effect.element)) == bool(effect.present):
+			return 0.0
+	elif effect.query == "party_alive":
+		var party: Array = ctx.get("party_members", [])
+		if not ctx.has("party_members") and XState.current != null:
+			# Read already resolved members only: preview must not initialize slots
+			# or lazily create real actors via XState.actor()/battle_members().
+			for id in XState.current.battle_slots:
+				var member = XState.current.actors.get(int(id))
+				if member != null and XState.current.party.has(int(id)):
+					party.append(member)
+		if party.filter(func(member): return not member.state_ids.has(1)).size() == 1:
+			return floorf(value * 1.5)
+	return value
+
+
+## installDamageElementRuntime.getItemElements: forced wins over null, then
+## passive/attack/item elements, multiple and added, unique and range 1..15.
+## Forced/added inputs are action-owned; future sequence support can pass them
+## here without global mutable state. Current battle has no such sequence ops.
+static func _query_elements(ctx: Dictionary, user: XBattler) -> Array:
+	var item: Dictionary = ctx.item
+	if user is XActor and user.actor_id == 172 and int(item.get("id", 0)) in [10234, 10235]:
+		return [13]
+	var elements: Array
+	if ctx.has("forced_elements"):
+		elements = ctx.forced_elements
+	else:
+		if user.trait_objects().any(func(obj): return str(obj.get("note", "")).to_upper().contains("<ELEMENT NULL>")):
+			return []
+		elements = XDamage.action_elements(item, user)
+		elements.append_array(ctx.get("added_elements", []))
+	var out := []
+	for element in elements:
+		if int(element) >= 1 and int(element) <= 15 and not out.has(int(element)):
+			out.append(int(element))
+	return out
 
 
 static func _active(effect: Dictionary, ctx: Dictionary) -> bool:
@@ -156,7 +211,7 @@ static func context_for(phase: String, holder: XBattler, state_id: int, ctx := {
 			"user": ctx.get("attacker"), "target": ctx.get("defender")})
 	else:
 		c.merge({"user": holder, "target": holder})
-	for key in ["item", "critical", "resources", "record", "random", "variables", "switches"]:
+	for key in ["item", "critical", "resources", "record", "random", "variables", "switches", "party_members", "forced_elements", "added_elements"]:
 		if ctx.has(key):
 			c[key] = ctx[key]
 	return c

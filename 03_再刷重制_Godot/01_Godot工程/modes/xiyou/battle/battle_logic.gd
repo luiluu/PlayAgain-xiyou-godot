@@ -1170,6 +1170,7 @@ func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bo
 
 func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -> Dictionary:
 	return {"attacker": u, "defender": t, "item": skill, "resources": _action_resources, "record": record,
+		"party_members": actors,
 		"variables": vars(), "switches": state.switches if state != null else {}, "random": _rule(),
 		"critical": bool(record.get("critical", false)), "value": float(record.get("state_value", 0.0))}
 
