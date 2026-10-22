@@ -285,27 +285,57 @@ func _finish() -> void:
 
 ## 战斗里的 101（十六层敌群 165 第 4 回合）：原版参照 battle_msg_101_formal（ui_reference 战斗夹具加同一条消息，无头像、背景 0、
 ## 位置 2）：消息窗 0,548,1280,172；名字框 \\n<海拉的幻影> 左对齐 0,484,298,64，黄字（\\c[6]）；右侧状态与行动顺序条照常显示。
+## 另三种切片里真有的写法（八戒_45 用同一夹具截 battle_msg_101_face／_middle／_bigfont，读数见各行）：
+## 带头像（三十层敌群 466 玉皇大帝，QY touxiang 2）：正文从 168 起（newLineX），名字框 0,484,272,64；
+## 中间位置（敌群 825 圣劫使，位置 1）：消息窗 0,274,1280,172，无名字框；
+## 放大字（敌群 831 魇脑，KH06-2_faces_MV_03 4，\\{\\{…\\}\\}\\!）：名字框 0,484,220,64，正文 168 起。
 ## 敌群事件只在回合里跑（没有指令窗），这里先收起指令窗模拟回合中，确认后再放回。
 func _message_101(b: XBattleScene) -> void:
+	# 原版窗口层 Window_Message 在 Window_OTBDisplay 之后：消息窗压在行动顺序条上（头像盖住条左端），也在敌人血条（z 5）之上
+	_check("msg101_above_otb", b.message.z_index >= b.otb.z_index and b.message.get_index() > b.otb.get_index() and b.message.get_parent() == b.otb.get_parent(),
+		[b.message.z_index, b.otb.z_index, b.message.get_index(), b.otb.get_index()])
+	await _message_case(b, "msg101", {"face": "", "index": 0, "background": 0, "position": 2, "lines": ["\\n<海拉的幻影>很久没有打的这么尽兴了，哈哈哈。"]},
+		Rect2(0, 548, 1280, 172), Rect2(0, 484, 298, 64), 0.0, "battle_49_message_101")
+	await _message_case(b, "msg101_face", {"face": "QY touxiang", "index": 2, "background": 0, "position": 2, "lines": ["\\n<玉皇大帝>你确实很强，不过到此为止了！"]},
+		Rect2(0, 548, 1280, 172), Rect2(0, 484, 272, 64), 168.0, "battle_49b_message_101_face")
+	await _message_case(b, "msg101_middle", {"face": "", "index": 0, "background": 0, "position": 1, "lines": ["天空中的圣雷积攒到了极限"]},
+		Rect2(0, 274, 1280, 172), Rect2(), 0.0, "battle_49c_message_101_middle")
+	await _message_case(b, "msg101_bigfont", {"face": "KH06-2_faces_MV_03", "index": 4, "background": 0, "position": 2, "lines": ["\\n<魇脑>\\{\\{前所未有的兴奋！\\}\\}\\!"]},
+		Rect2(0, 548, 1280, 172), Rect2(0, 484, 220, 64), 168.0, "battle_49d_message_101_bigfont")
+
+
+## name_rect 为空时应没有名字框；left 是正文起点（有头像时 168）
+func _message_case(b: XBattleScene, tag: String, msg: Dictionary, rect: Rect2, name_rect: Rect2, left: float, shot: String) -> void:
 	var cw: XBattleList = b.cmd_win
 	cw.active = false
 	cw.hide()
 	var done := {"v": false}
 	var go := func():
-		await b.message.run({"face": "", "index": 0, "background": 0, "position": 2, "lines": ["\\n<海拉的幻影>很久没有打的这么尽兴了，哈哈哈。"]})
+		await b.message.run(msg)
 		done.v = true
 	go.call()
-	var shown := await _until(func(): return b.message.win.openness >= 255 and b.message._state == null)
+	var shown := await _until(func(): return b.message.win.openness >= 255 and (b.message._state == null or b.message.win.pause))
 	await _frames(40)
 	var w := b.message.win
 	var nw := b.message.name_win
 	var origin: Vector2 = b.message.global_position
-	_check("msg101_shown", shown)
-	_check("msg101_rect", [origin + w.position, w.size] == [Vector2(0, 548), Vector2(1280, 172)], [origin + w.position, w.size])
-	_check("msg101_name_rect", nw.visible and nw.openness >= 255 and [origin + nw.position, nw.size] == [Vector2(0, 484), Vector2(298, 64)], [origin + nw.position, nw.size, nw.openness])
-	await _shot("battle_49_message_101")
-	await _press("ui_accept")
-	_check("msg101_closed", await _until(func(): return done.v and w.openness == 0 and nw.openness == 0, 120), [done.v, w.openness, nw.openness])
+	_check(tag + "_shown", shown)
+	_check(tag + "_rect", Rect2(origin + w.position, w.size) == rect, [origin + w.position, w.size])
+	if name_rect.has_area():
+		_check(tag + "_name_rect", nw.visible and nw.openness >= 255 and Rect2(origin + nw.position, nw.size) == name_rect, [origin + nw.position, nw.size, nw.openness])
+	else:
+		_check(tag + "_no_name", not nw.visible or nw.openness == 0, [nw.visible, nw.openness])
+	if left > 0.0:
+		var xs: Array = b.message._page_glyphs.filter(func(g): return g.has("t")).map(func(g): return float(g.x))
+		_check(tag + "_text_left", not xs.is_empty() and xs.min() == left, xs.slice(0, 3))
+	await _shot(shot)
+	# \\! 停住时按一次继续，文字完再按一次关闭
+	for i in range(3):
+		if done.v:
+			break
+		await _press("ui_accept")
+		await _until(func(): return done.v or b.message.win.pause, 120)
+	_check(tag + "_closed", await _until(func(): return done.v and w.openness == 0 and nw.openness == 0, 120), [done.v, w.openness, nw.openness])
 	cw.show()
 	cw.active = true
 	await _frames(2)
