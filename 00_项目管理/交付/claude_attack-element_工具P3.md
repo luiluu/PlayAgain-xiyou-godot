@@ -1,7 +1,7 @@
 # 交付：claude/attack-element（二期：工具 P3）
 
 - 车道／工作者：工具／八戒（Claude，八戒_44）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -12,12 +12,9 @@
   - **`.sandbox/manual/probe-*` 种子副本清理**（P3）：手动直接跑探针时 `manual_sandbox.cjs` 每次复制一份种子（约 10 MB）从不删，主工作区已攒 11 份、116 MB。清理放进 `同步正式西游.py` 的 `prune_manual_copies`：每次同步删掉 12 小时没动过的 `probe-XXXXXX` 普通目录（刚跑完的留着备查，在跑的不删，不跟随符号链接），同步报告记 `prunedManualCopies`。没改 `manual_sandbox.cjs`：mv_oracle 下的辅助 `.cjs` 是每个探针缓存键的一部分，改它会让所有探针整轮重跑。新回归 `test_sync_prunes_stale_manual_copies_only`。
   - **`长任务与增量同步.md` 补「携带、隔离与分难度」一节**（P3）：`--补齐` 携带种子与增量缓存的条件、`CACHE_MISS` 行与 `probes.missReasons` 的看法、每探针 `.sandbox/run/<探针>` 隔离与手动副本、切片六难度拆命令共用 `SYNC_JOBS` 池和跨工作树共用槽，以及回归在哪。
   - **合并车道.py relink 歧义策略**（P3）：查到沙僧_19 已做（交付目录口径优先、两处同名时提示一行，`测试合并工具.py` 的 `test_relink_ambiguous_target_follows_delivery_folder` 覆盖），本期不再改，交接板可划掉这条。
-- 验证：见本单「验证」节。
+- 验证：`测试角色同步提速.py` 24 项全过（本机负载 8～16、总装检查并行时，约 28～40 秒；改前同条件失败 1 项），`测试增量同步.py`、`测试合并工具.py` 全过，`zsh -n 检查.sh` 通过；`同步正式西游.py --accept-additions` 在本工作树跑通（见一期交付单）。
+- 提交：5d8c0e6、093d563（文档措辞）。
 - 未完成／已知问题：P3 里 event_probe 审视哈希写死、`slice-actors` 合并类型无调用两条不在本期范围，留着。
-
-## 验证
-
-（待写）
 
 ## 交接板
 
@@ -31,4 +28,5 @@
 
 ## 本分支提交
 
-- （待补）
+- 5d8c0e6 测试角色同步提速接进检查.sh、同步时清理旧手动副本、长任务文档补携带／隔离／分难度
+- 093d563 文档措辞与两张交付单草稿
