@@ -317,7 +317,7 @@ func _ok() -> void:
 				closed.emit()
 			"actorBook":
 				# 「人物图鉴」是公共事件 3（Menu 82 Ext）：回到地图后 SceneManager.push(Scene_ActorBook)，关闭回地图
-				reserved_common_event = int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 82 Ext", "3")))
+				event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 82 Ext", "3"))))
 				closed.emit()
 			"options":
 				var page := XOptionsScene.new()

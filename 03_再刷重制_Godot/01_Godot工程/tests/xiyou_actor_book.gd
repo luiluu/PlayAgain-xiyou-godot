@@ -207,7 +207,8 @@ func _menu_entry() -> void:
 	check("menu_enabled", i >= 0 and menu.command_enabled(i))
 	menu._cmd_index = i
 	menu._ok()
-	check("menu_reserves_ce3", menu.reserved_common_event == 3, menu.reserved_common_event)
+	check("menu_reserves_ce3", menu.event_state.peek_common_event() == 3, menu.event_state.peek_common_event())
+	menu.event_state.clear_common_event()
 	var ce := XDB.rec("CommonEvents", 3)
 	check("ce3_script", ce.get("list", []).size() > 0 and str(ce.list[0].parameters[0]) == "SceneManager.push(Scene_ActorBook)", ce.get("list", []))
 	menu.queue_free()
