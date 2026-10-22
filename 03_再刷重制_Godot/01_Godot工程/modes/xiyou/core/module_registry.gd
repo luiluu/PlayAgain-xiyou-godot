@@ -108,7 +108,7 @@ func _compile(entries: Array) -> void:
 					continue
 				for field in hook[access]:
 					var root := str(field).get_slice(".", 0)
-					if not field is String or not (SCALARS + MAPS + OTHER + (CONTEXTS if access == "reads" else [])).has(root):
+					if not field is String or not (SCALARS + MAPS + OTHER + (CONTEXTS if access == "reads" else [])).has(root if access == "reads" else field):
 						_errors.append("unknown_access:" + id + ":" + str(field))
 					if access == "reads" and CONTEXTS.has(root) and not entry.get("contexts", []).has(root):
 						_errors.append("undeclared_context:" + id + ":" + root)

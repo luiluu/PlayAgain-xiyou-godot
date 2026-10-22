@@ -16,11 +16,12 @@ class ProbeActor extends XActor:
 
 class ProbeEnemy extends XEnemy:
 	var fixture := {}
+	func sparam(i: int) -> float: return float(fixture.get("pdr",1)) if i==6 else float(fixture.get("mdr",1)) if i==7 else 1.0
 	func param(i: int) -> float: return [1000000.0, 1000.0, 321.0, 456.0, 210.0, 789.0, 100.0, 100.0][i]
 	func trait_objects() -> Array: return []
 	func skills() -> Array: return []
 	func passive_cache() -> Dictionary: return {"harmRe": {1: 11.0, 8: 22.0}}
-	func element_rate(e: int) -> float: return -0.5 if fixture.get("absorb", false) and e == 8 else 0.0 if fixture.get("immune", false) else 1.0
+	func element_rate(e: int) -> float: return -0.5 if fixture.get("absorb", false) and e == 8 else 0.0 if fixture.get("immune", false) else float(fixture.get("resistance",1))
 
 func check(label: String, ok: bool, detail = null) -> void:
 	total += 1
@@ -69,6 +70,13 @@ func cat_build(context: Dictionary, _frame: Dictionary) -> Dictionary:
 			if setup.get("advanced",false): ops.append(op("settlementMultiplier",2,-1,"mul"))
 	return {"ops": ops}
 
+func frame_probe(context: Dictionary,_frame: Dictionary) -> Dictionary:
+	var ops: Array = context.facts.fixture.patches.duplicate(true)
+	for operation in ops:
+		if operation.has("element"): operation.element=int(operation.element)
+		if operation.field=="elements": operation.value=operation.value.map(func(e):return int(e))
+	return {"ops":ops}
+
 func descriptor(id: String, order: int, handler: Callable, writes: Array) -> Dictionary:
 	return {"id":id,"version":"test-1","capabilities":["test."+id],"contexts":XModuleRegistry.CONTEXTS.duplicate(),
 		"hooks":[{"point":"damage.before","order":order,"reads":["facts"],"writes":writes,"handler":handler}]}
@@ -98,7 +106,11 @@ func run_native(c: Dictionary) -> void:
 	var item: Dictionary = o.item.duplicate(true)
 	for key in ["id","hitType","stypeId"]: item[key]=int(item[key])
 	item.damage.type=int(item.damage.type);item.damage.elementId=int(item.damage.elementId)
-	var registry := XModuleRegistry.compile([XModuleRegistry.orb_descriptor(),cat_descriptor()])
+	var entries := [XModuleRegistry.orb_descriptor(),cat_descriptor()]
+	if setup.has("patches"): entries.append(descriptor("frame-probe",100,frame_probe,XModuleRegistry.SCALARS+XModuleRegistry.MAPS+XModuleRegistry.OTHER))
+	var registry := XModuleRegistry.compile(entries)
+	item.damage.formulaProgram=JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/formula_effect_programs.json"))["runtime.constant1000000"].program
+	item.damage.formulaProgram.steps[0].value.value=123457.0
 	var before := JSON.stringify([a.hp,a.mp,a.tp,b.hp,b.mp,b.tp,a.passive_cache(),b.passive_cache(),a.effect_snapshot,b.effect_snapshot])
 	var live: bool = setup.get("preview",true) == false
 	var random := XRandomStream.scripted([{"kind":"uint32","value":2147483648},{"kind":"uint32","value":2147483648}])
@@ -110,10 +122,12 @@ func run_native(c: Dictionary) -> void:
 	if not result.get("available",true): return
 	var value := float(result.value) if live else XDamage.finish(result,item,a,b)
 	check(c.id+".value",same(value,o.value),[value,o.value])
-	if o.breakdown.has("rows"):
+	if o.breakdown.has("rows") and not o.breakdown.rows.is_empty():
 		for key in ["element","bonus","defense","matchup","resistance","incoming","terminal","growth","critical","independent","guard","fixedMitigation"]:
 			check(c.id+".row."+key,same(result.breakdown.row[key],o.breakdown.rows[0][key]),[result.breakdown.row[key],o.breakdown.rows[0][key]])
-	check(c.id+".trace_order",result.moduleTrace.map(func(t):return [t.module,t.order])==[["cat-sword",18],["cat-sword",19],["orb-sets",39]],result.moduleTrace)
+	var order := [["cat-sword",18],["cat-sword",19],["orb-sets",39]]
+	if setup.has("patches"): order.append(["frame-probe",100])
+	check(c.id+".trace_order",result.moduleTrace.map(func(t):return [t.module,t.order])==order,result.moduleTrace)
 	var replay_frame := initial_frame()
 	var context := {"item":item,"subject":XDamage._module_snapshot(a),"target":XDamage._module_snapshot(b),"options":{},"facts":{"fixture":setup,"orbMultiplier":1.0},"operationId":c.id}
 	var dispatch := registry.dispatch("damage.before",context,replay_frame)
