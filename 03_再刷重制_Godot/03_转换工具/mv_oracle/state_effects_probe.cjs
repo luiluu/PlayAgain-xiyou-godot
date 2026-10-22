@@ -238,6 +238,63 @@ cases.push(makeCase('bonus.native_blocks', {states: BONUS_STATES, values: [-3, -
   } finally { action.item().damage.type = original; }
   return {rows};
 }));
+// Phase 2c: whole native value-only blocks, before translating any of them.
+const VALUE_STATES = [543, 1228, 1259, 1375, 1420, 1421, 1422, 1424, 1441, 1442, 1451, 1540, 1668, 1701, 1702,
+  1703, 1707, 1717, 1718, 1719, 1720, 1722, 1726, 1732, 1733, 1770, 1779, 1836, 2522, 2558, 2561, 2583, 2676, 2677, 2678];
+const VALUE_REACT = new Set([1228, 1375, 1451, 1540, 1668, 1701, 1702, 1717, 1718, 1719, 1720, 1779, 2558, 2561]);
+cases.push(makeCase('value.native_blocks', {states: VALUE_STATES, values: [-3, -1, 0, 1, 3, 7, 101],
+  columns: ['state', 'phase', 'profile', 'type', 'hit', 'critical', 'before', 'random', 'after', 'draws']}, () => {
+  const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
+  const item = action.item(), originalType = item.damage.type, originalHit = item.hitType;
+  const vars = [967, 965, 1181, 1184, 206, 966, 20];
+  // [level, user mhp, target hp, target mhp, target def, target state count, variable values].
+  const profiles = [
+    [40, 1000, 800, 1000, 10, 3, [10, 10, 1250, 6, 1000, 1, 15]],
+    [1, 1000, 0, 1000, 0, 0, [-10, -10, -20000, -200, -51000, -20, -1]],
+    [30, 1000, 400, 1000, 10, 1, [0, 0, 0, 0, 0, 0, 7]],
+    [31, 1000, 700, 1000, 1, 5, [1, 1, 999, 4, -49999, -10, 16]],
+    [53, 1000, 401, 1000, 100, 10, [11, 11, 1000, 5, 50000, 2, 30]],
+    [100, 1000, 9999, 10000, -10, 30, [100, 100, 99999, 999, 99999, 100, 100]]
+  ];
+  const property = (obj, key, value) => Object.defineProperty(obj, key, {configurable: true, value});
+  const randomBefore = w.Math.random, oldError = w.Yanfly.Util.displayError, errors = [], rows = [];
+  let draws = 0;
+  w.Yanfly.Util.displayError = (error, code, message) => errors.push({error: String(error), message});
+  function configure(p) {
+    property(a, 'level', p[0]); property(a, 'mhp', p[1]);
+    property(e, 'hp', p[2]); property(e, 'mhp', p[3]); property(e, 'def', p[4]);
+    e.states = () => Array.from({length: p[5]}, (_, i) => w.$dataStates[i + 4]);
+    vars.forEach((id, i) => w.$gameVariables.setValue(id, p[6][i]));
+  }
+  function measure(sid, profile, type, hit, critical, value, random) {
+    item.damage.type = type; item.hitType = hit; e.result().critical = critical;
+    draws = 0; w.Math.random = () => { draws++; return random; };
+    const phase = VALUE_REACT.has(sid) ? 'react' : 'confirm';
+    const after = action.customEffectEval(e, sid, phase + 'State', a, value);
+    if (!Number.isFinite(after)) throw new Error('nonfinite native value ' + sid);
+    rows.push([sid, phase, profile, type, hit, critical, value, random, after, draws]);
+  }
+  try {
+    configure(profiles[0]);
+    for (const sid of VALUE_STATES) for (const type of [0, 1, 2, 3]) for (const hit of [0, 1, 2])
+      for (const critical of [false, true]) for (const value of [-3, -1, 0, 1, 3, 7, 101]) measure(sid, 0, type, hit, critical, value, 0.5);
+    for (let profile = 1; profile < profiles.length; profile++) {
+      configure(profiles[profile]);
+      for (const sid of VALUE_STATES) for (const hit of [0, 1, 2]) for (const value of [-3, -1, 0, 1, 3, 7, 101])
+        measure(sid, profile, 1, hit, true, value, 0.5);
+    }
+    configure(profiles[0]);
+    for (const sid of [1441, 1703, 1707, 1732]) for (const random of [0, 0.500001, 0.8, 0.800001, 0.999999])
+      for (const type of [0, 1, 2, 3]) for (const hit of [0, 1, 2]) for (const value of [-3, -1, 0, 1, 3, 7, 101])
+        measure(sid, 0, type, hit, false, value, random);
+    if (errors.length) throw new Error('native block errors: ' + JSON.stringify(errors));
+    return {profiles, variables: vars, rows};
+  } finally {
+    item.damage.type = originalType; item.hitType = originalHit; w.Math.random = randomBefore; w.Yanfly.Util.displayError = oldError;
+    for (const name of ['level', 'mhp']) delete a[name];
+    for (const name of ['hp', 'mhp', 'def', 'states']) delete e[name];
+  }
+}));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
 cases.push(makeCase('action.counter', {troop: 2, user: 'a1', skill: 'physical clone of 1', target: 'e0'}, () => {
   const {bm, a, e} = battle(2);
