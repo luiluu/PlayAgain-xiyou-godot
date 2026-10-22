@@ -422,7 +422,7 @@ func _value_blocks(o: Dictionary) -> void:
 			for i in range(o.variables.size()):
 				variables[str(int(o.variables[i]))] = p[6][i]
 		var skill := {"damage": {"type": row[3]}, "hitType": row[4]}
-		var stream := XRandomStream.scripted([row[7]])
+		var stream := XRandomStream.scripted([{"kind": "float", "value": row[7], "reason": "state_effect", "event": "%s:%d" % [row[1], row[0]]}])
 		var ctx := {"attacker": a, "defender": b, "item": skill, "critical": row[5], "value": row[6],
 			"variables": variables, "random": stream}
 		var st := XDB.rec("States", int(row[0]))
@@ -430,7 +430,7 @@ func _value_blocks(o: Dictionary) -> void:
 		check("value.%d.%d" % [row[0], index], absf(got - float(row[8])) < 0.0000000001
 			and stream.draws == int(row[9]) and stream.error.is_empty(), {"row": row, "got": got, "draws": stream.draws})
 	# Preview a random block with unwarmed parameter/state caches and live resources.
-	var stream := XRandomStream.scripted([0.9])
+	var stream := XRandomStream.scripted([{"kind": "float", "value": 0.9}])
 	var resources := XResourceContext.new()
 	var before := [a.hp, b.hp, a.effect_lists.duplicate(true), b.effect_lists.duplicate(true),
 		a.effect_snapshot.duplicate(true), b.effect_snapshot.duplicate(true), a.param_cells.duplicate(), b.param_cells.duplicate(),

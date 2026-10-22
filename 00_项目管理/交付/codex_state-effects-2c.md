@@ -19,3 +19,5 @@
 - 35块对应34个去注释token签名（1779／2558同形同值）；只对整块精确白名单做phase条件／变量输入适配，不接受前后追加语句、标识符破坏、其他phase、未量形状。新增value_program是纯IR。
 - 私有PhaseValueProgram复用VM内部_step／_expr：显式设置当前有符号value、HP／物理／魔法／critical输入，局部变量单次隔离；不走原_run的零初值／非负夹取／回复变号。属性／状态数按需读取，预览克隆持有对象且不用真实随机流。
 - 未改formula_program.py／formula_program.gd／formula_execution.gd／formula_context.gd，未改角色测试或角色源码。当前代码待专项，不能按已通过登记。
+
+- 首次Godot专项11332/12880，1548项随机相关断言失败：新夹具误用裸数字随机带，而XRandomStream.scripted要求kind/value对象，因random_tape_mismatch未取数。已修夹具为float＋reason/event精确匹配；生产执行器未因此修改。保留focused原始日志，修后结果另存final-focused，不按偶发销账。
