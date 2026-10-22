@@ -3,14 +3,14 @@
 - 车道／工作者：核查／Codex（沙僧）
 - 状态：可合并
 - 现场：主工作区由唐僧继续总装，未修改其未提交改动；本工作树基点 b80804b。
-- 自动续做：本聊天已设置每 10 分钟跟进（应用内 automation id：automation），无变化保持安静；合入 state-effects-2 后启动后续工作，避免另建重复监视。
+- 接续：main 已出现 09ebfb0「合并 codex/state-effects-2」，临时等待跟进已删除；已按用户要求创建 codex/state-effects-2b，原版新参照通过，接力继续实现。
 - 接续任务：本批核查已交付；main 出现「合并 codex/state-effects-2」后，按用户要求新建 state-effects-2b，推进下一小期。每有新 Claude 批次优先核查。
 
 ## 变更记录草稿
 
 ## 2026-10-22 【Codex·沙僧】核查 dev.122／123 接续
 
-- 核查覆盖：claude/bajie-44（66150d7、056b954）、claude/wukong-35（b11c7ec、89811f2）、0a5ec4c、36696e3、claude/attack-element（b80804b）。
+- 核查覆盖：claude/bajie-44（66150d7、056b954）、claude/wukong-35（b11c7ec、89811f2）、0a5ec4c、36696e3、claude/attack-element（b80804b、登记收尾 5c1bf82）。
 - 报告：[本批接续核查](../核查报告_20261022_dev122-123.md)。bajie-44、wukong-35 内容与 attack-element 通过，无新 P0／P1；转码稳定性留一项 P2。
 - 新 P2：sips 对「小诛仙」JPEG 转 PNG 时把当前时间写进 ICC 配置，源不变仍令输出 SHA 改变；应由唐僧／八戒工具车道作稳定正规化并补真实转码回归。沙僧未改工具代码。
 - 更正旧问题：89811f2 已收窄格式识别，转换器写入 8 个夹具回归全部通过，上一张 dev.122 报告的假图片报错可销。
