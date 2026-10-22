@@ -7,7 +7,7 @@ import unittest
 
 TOOLS = Path(__file__).resolve().parents[1] / '03_转换工具'
 sys.path.insert(0, str(TOOLS))
-from xiyou_export import parse_state_effects
+from xiyou_export import parse_state_effects, EFFECT_RE
 
 FIXTURES = TOOLS.parent / '01_Godot工程/tests/fixtures/state_effects_translation.json'
 
@@ -40,6 +40,27 @@ class StateEffectTranslationTests(unittest.TestCase):
                      body.replace('Math.ceil', 'Math.floor'), body + body]:
             self.assertEqual(parse_state_effects('<Custom Confirm Effect>' + code + '</Custom Confirm Effect>')[0]['op'], 'js')
         self.assertEqual(parse_state_effects('<Custom Apply Effect>' + body + '</Custom Apply Effect>')[0]['op'], 'js')
+
+    def test_native_value_inventory(self):
+        rows = json.loads(FIXTURES.read_text())['value']
+        self.assertEqual(len(rows), 35)
+        for row in rows:
+            with self.subTest(state=row['state']):
+                effect = next(e for e in parse_state_effects(row['note']) if e['phase'] == row['phase'])
+                self.assertEqual(effect['op'], 'value_program')
+                self.assertEqual(effect['program']['status'], 'pure')
+                self.assertFalse(any(c.startswith('write.') for c in effect['program']['capabilities']))
+
+    def test_native_value_whole_token_boundary(self):
+        for row in json.loads(FIXTURES.read_text())['value']:
+            body = next(m.group(2) for m in EFFECT_RE.finditer(row['note']) if m.group(1).lower() == row['phase'])
+            tag = row['phase'].title()
+            for code in [body + ' user.gainMp(-1);', 'evil();' + body, body + body,
+                         body.replace('value', 'val ue'), body.replace('Math.', 'Ma th.') if 'Math.' in body else body + ';']:
+                with self.subTest(state=row['state']):
+                    self.assertEqual(parse_state_effects('<Custom ' + tag + ' Effect>' + code + '</Custom ' + tag + ' Effect>')[0]['op'], 'js')
+            wrong = 'Confirm' if tag == 'React' else 'React'
+            self.assertEqual(parse_state_effects('<Custom ' + wrong + ' Effect>' + body + '</Custom ' + wrong + ' Effect>')[0]['op'], 'js')
 
     def test_legacy_ops_remain_exact(self):
         fixtures = json.loads(FIXTURES.read_text())

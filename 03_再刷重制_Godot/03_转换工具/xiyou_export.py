@@ -191,6 +191,96 @@ def constant_bonus_effect(code):
     return {'op': 'value_steps', 'groups': groups}
 
 
+
+# Whole token signatures of the native-measured phase-2c blocks; no runtime source lookup.
+MEASURED_VALUE_BLOCKS = frozenset([
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = Math . floor ( value * $gameVariables . value ( 965 ) * 0.1 ) ; }'),
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = Math . floor ( value * $gameVariables . value ( 967 ) * 0.1 ) ; }'),
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = Math . floor ( value * ( 1 + $gameVariables . value ( 966 ) * 0.1 ) ) ; }'),
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = Math . floor ( value + value * ( Math . random ( ) * 2 - 1 ) ) ; }'),
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = Math . floor ( value + value * target . states ( ) . length * 0.01 ) ; }'),
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = Math . floor ( value + value * target . states ( ) . length * 0.025 ) ; }'),
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = Math . floor ( value - ( value * user . level * 0.01 ) ) ; }'),
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = value * Math . min ( 1 + $gameVariables . value ( 1181 ) * 0.0001 , 1.1 ) ; }'),
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = value * Math . min ( 1 + $gameVariables . value ( 1184 ) * 0.01 , 1.05 ) ; }'),
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var actorLevel = user . level ; var levelDecay = ( actorLevel > 30 ) ? Math . min ( 0.90 , 0.04 * ( actorLevel - 30 ) ) : 0 ; var finalRate = 1 - levelDecay ; value = Math . ceil ( value * finalRate ) ; if ( target . result ( ) . critical ) { var bonusRate = 0 ; value + = Math . ceil ( value * bonusRate ) ; } }'),
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var allin = Math . floor ( $gameVariables . value ( 206 ) / 1000 ) ; if ( allin > 50 ) { allin = 50 ; } if ( allin < - 50 ) { allin = - 50 ; } value = value * Math . floor ( allin * 0.01 ) ; }'),
+    ('confirm', 'if ( this . isMagical ( ) && value !== 0 ) { value = Math . ceil ( value * 1.50 ) ; }'),
+    ('confirm', 'if ( this . isPhysical ( ) && this . isHpEffect ( ) && value > 0 ) { if ( target . hp > target . mhp * 0.7 ) { var xs = Math . min ( ( target . mhp * 0.00001 / user . mhp * 10000 ) , 1.3 ) ; value = Math . ceil ( value * xs * 0.1 ) ; } }'),
+    ('confirm', 'if ( value > 0 !== this . isMagical ( ) || this . isPhysical ( ) ) { if ( Math . random ( ) > 0.5 ) { value = 0 ; } else { value = Math . ceil ( value * 0.1 ) ; } } else if ( value > 0 && this . isMagical ( ) || this . isPhysical ( ) ) { value = Math . ceil ( value * 2 ) ; }'),
+    ('confirm', 'if ( value > 0 !== this . isMagical ( ) || this . isPhysical ( ) ) { if ( Math . random ( ) > 0.8 ) { value = 0 ; } else { value = Math . ceil ( value * 0.01 ) ; } }'),
+    ('confirm', 'if ( value > 0 !== this . isMagical ( ) || this . isPhysical ( ) ) { value = Math . floor ( value * 1.2 ) ; }'),
+    ('confirm', 'if ( value > 0 && Math . random ( ) > 0.5 ) { value = 0 ; }'),
+    ('confirm', 'if ( value > 0 && this . isHpEffect ( ) && target . hpRate ( ) > 0.4 ) { var bonusRate = target . hpRate ( ) - 0.4 ; value = Math . floor ( value * ( 1 + bonusRate ) ) ; }'),
+    ('confirm', 'if ( value > 0 ) { value = Math . ceil ( value * Math . pow ( 0.8 , Math . max ( 0 , Math . min ( $gameVariables . value ( 20 ) , 30 ) - 16 ) ) ) ; }'),
+    ('confirm', 'if ( value > 0 ) { value = Math . ceil ( value * Math . pow ( 0.8 , Math . max ( 0 , Math . min ( $gameVariables . value ( 20 ) , 30 ) - 7 ) ) ) ; }'),
+    ('confirm', 'if ( value > 0 ) { value = Math . ceil ( value * Math . pow ( 0.9 , Math . max ( 0 , Math . min ( $gameVariables . value ( 20 ) , 26 ) - 11 ) ) ) ; }'),
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { value = 0 ; }'),
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { value = 1 ; }'),
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { value = Math . ceil ( value / Math . max ( target . def * 0.9 , 1 ) ) ; }'),
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonus = Math . ceil ( value * 0.1 ) ; value - = bonus ; }'),
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonus = Math . ceil ( value * 0.10 ) ; value - = bonus ; }'),
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonus = Math . ceil ( value * 0.2 ) ; value - = bonus ; }'),
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonus = Math . ceil ( value * 0.30 ) ; value - = bonus ; }'),
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonus = Math . ceil ( value * 0.4 ) ; value - = bonus ; }'),
+    ('react', 'if ( value > 0 && this . isHpEffect ( ) ) { value * = 1 + 1 ; value = Math . floor ( value ) ; }'),
+    ('react', 'if ( value > target . hp ) { value = target . hp - 1 }'),
+    ('react', 'value = Math . floor ( value * 0.05 ) ;'),
+    ('react', 'value = Math . floor ( value * 0.9 ) ;'),
+    ('react', 'value = Math . floor ( value * 0.91 ) ;'),
+])
+
+
+def pure_state_value_effect(code, phase):
+    """Only the complete 35 native-measured blocks. Adapt bounded input tokens,
+    then reuse the pure formula IR; never reinterpret an unmatched JS fragment.
+    The phase VM supplies current signed value and leaves damage-formula output alone.
+    """
+    from formula_program import Parser, Unsupported
+    try:
+        tokens = [row[0] for row in Parser(code).tokens[:-1]]
+    except Unsupported:
+        return None
+    if (phase, ' '.join(tokens)) not in MEASURED_VALUE_BLOCKS:
+        return None
+    aliases = [
+        (['this', '.', 'isHpEffect', '(', ')'], ['se_hp']),
+        (['this', '.', 'isMagical', '(', ')'], ['se_magic']),
+        (['this', '.', 'isPhysical', '(', ')'], ['se_physical']),
+        (['target', '.', 'result', '(', ')', '.', 'critical'], ['se_critical']),
+    ]
+    adapted, i = [], 0
+    while i < len(tokens):
+        for native, replacement in aliases:
+            if tokens[i:i + len(native)] == native:
+                adapted.extend(replacement)
+                i += len(native)
+                break
+        else:
+            if tokens[i:i + 4] == ['$gameVariables', '.', 'value', '(']:
+                # Every accepted native call has one constant index and closing ')'.
+                adapted.extend(['v', '[', tokens[i + 4], ']'])
+                i += 6
+            else:
+                adapted.append(tokens[i])
+                i += 1
+    # The shared parser accepts simple assignments only. These measured compound
+    # assignments all have a semicolon and write local value, without side effects.
+    tokens, adapted, i = adapted, [], 0
+    while i < len(tokens):
+        if tokens[i] == 'value' and tokens[i + 1:i + 3] in (['+', '='], ['-', '='], ['*', '=']):
+            end = tokens.index(';', i + 3)
+            adapted.extend(['value', '=', 'value', tokens[i + 1], '('] + tokens[i + 3:end] + [')', ';'])
+            i = end + 1
+        else:
+            adapted.append(tokens[i])
+            i += 1
+    source = 'var se_hp; var se_magic; var se_physical; var se_critical;\n' + ' '.join(adapted)
+    program = compile_formula(source, custom=True, table='States')
+    if program['status'] != 'pure' or not set(program['capabilities']) <= {'read.battler', 'read.variables', 'random.rule'}:
+        return None
+    return {'op': 'value_program', 'program': program}
+
 def parse_state_effects(note):
     """返回 [{phase, op, cond, k, round} 或 {phase, op:'js', source}]；op=js 表示尚未翻译。"""
     out = []
@@ -215,6 +305,10 @@ def parse_state_effects(note):
         bonus = constant_bonus_effect(code) if phase in ('confirm', 'react') else None
         if bonus:
             out.append({'phase': phase, **bonus})
+            continue
+        value_program = pure_state_value_effect(code, phase)
+        if value_program:
+            out.append({'phase': phase, **value_program})
             continue
         out.append({'phase': phase, 'op': 'js', 'source': body.strip()})
     return out

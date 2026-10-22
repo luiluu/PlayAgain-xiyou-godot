@@ -26,6 +26,15 @@ class FixedDamageLogic:
 		return 0.0 if reason == "critical" else super._float(reason)
 
 
+class ValueBattler:
+	extends XBattler
+	var values := {}
+	func _level() -> int:
+		return int(values.get("level", 1))
+	func param(i: int) -> float:
+		return float(values.get(["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"][i], 1.0))
+
+
 func check(name: String, ok: bool, detail = null) -> void:
 	results.append({"name": name, "passed": ok})
 	if not ok:
@@ -241,6 +250,7 @@ func _run() -> void:
 	_lifecycle(cases)
 	_bonus_blocks(cases["bonus.native_blocks"].observed.rows)
 	_damage_chain(cases["damage.full_chain"].observed)
+	_value_blocks(cases["value.native_blocks"].observed)
 	XStateEffects.observer = Callable()
 	finish()
 
@@ -391,6 +401,51 @@ func _damage_chain(o: Dictionary) -> void:
 	r = logic.apply(a, skill, b)
 	check("damage.confirm_resource", r.get("extra", []).size() == 1 and r.effectJournal.any(func(e):
 		return e.resource == "hp" and e.requestedDelta == -a.atk), r.get("effectJournal", []))
+
+
+func _value_blocks(o: Dictionary) -> void:
+	XStateEffects.observer = Callable()
+	var a := ValueBattler.new()
+	var b := ValueBattler.new()
+	var variables := {}
+	var profile := -1
+	check("value.native_rows", o.rows.size() == 11235, o.rows.size())
+	for index in range(o.rows.size()):
+		var row: Array = o.rows[index]
+		if int(row[2]) != profile:
+			profile = int(row[2])
+			var p: Array = o.profiles[profile]
+			a.values = {"level": p[0], "mhp": p[1]}
+			b.values = {"mhp": p[3], "def": p[4]}
+			b.hp = float(p[2])
+			b.state_ids.assign(range(4, 4 + int(p[5])))
+			for i in range(o.variables.size()):
+				variables[str(int(o.variables[i]))] = p[6][i]
+		var skill := {"damage": {"type": row[3]}, "hitType": row[4]}
+		var stream := XRandomStream.scripted([row[7]])
+		var ctx := {"attacker": a, "defender": b, "item": skill, "critical": row[5], "value": row[6],
+			"variables": variables, "random": stream}
+		var st := XDB.rec("States", int(row[0]))
+		var got := XStateEffects.run_one(str(row[1]), a if row[1] == "confirm" else b, st, ctx)
+		check("value.%d.%d" % [row[0], index], absf(got - float(row[8])) < 0.0000000001
+			and stream.draws == int(row[9]) and stream.error.is_empty(), {"row": row, "got": got, "draws": stream.draws})
+	# Preview a random block with unwarmed parameter/state caches and live resources.
+	var stream := XRandomStream.scripted([0.9])
+	var resources := XResourceContext.new()
+	var before := [a.hp, b.hp, a.effect_lists.duplicate(true), b.effect_lists.duplicate(true),
+		a.effect_snapshot.duplicate(true), b.effect_snapshot.duplicate(true), a.param_cells.duplicate(), b.param_cells.duplicate(),
+		a.effect_dirty, b.effect_dirty, a.param_dirty, b.param_dirty, stream.snapshot(), XStateEffects.diagnostics.duplicate(true)]
+	var vars_before := variables.duplicate(true)
+	var ctx := {"attacker": a, "defender": b, "item": {"damage": {"type": 1}, "hitType": 1}, "critical": false,
+		"value": -3.0, "variables": variables, "random": stream, "resources": resources, "execute": false}
+	var got := XStateEffects.run_one("react", b, XDB.rec("States", 1540), ctx)
+	check("value.preview.signed_unconditional", got == -1.0, got)
+	ctx.value = 7.0
+	got = XStateEffects.run_one("confirm", a, XDB.rec("States", 1441), ctx)
+	check("value.preview.random", got == 7.0, got)
+	var after := [a.hp, b.hp, a.effect_lists, b.effect_lists, a.effect_snapshot, b.effect_snapshot, a.param_cells, b.param_cells,
+		a.effect_dirty, b.effect_dirty, a.param_dirty, b.param_dirty, stream.snapshot(), XStateEffects.diagnostics]
+	check("value.preview.isolated", before == after and variables == vars_before and resources.slots.is_empty() and resources.journal.is_empty())
 
 
 func finish() -> void:

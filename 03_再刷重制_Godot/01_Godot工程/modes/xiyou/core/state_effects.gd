@@ -7,7 +7,7 @@ extends RefCounted
 const BATTLER_PHASES := ["battle", "turn_start", "turn_end", "regenerate", "action_start", "victory", "escape", "defeat"]
 const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm", "react", "respond", "establish"]
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
-const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps"]
+const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -19,6 +19,55 @@ static var _stack: Array = []
 ## 未翻译清单：{phase, state, holder, op}，同键只记一次
 static var diagnostics: Array = []
 static var _seen := {}
+
+
+## Private value-only adapter: current signed phase input, without the damage
+## entry's zero initial value, nonnegative clamp or healing sign conversion.
+class PhaseValueProgram:
+	extends XFormulaProgram
+	var _battlers := {}
+	var _random: XRandomStream
+	var _tag := ""
+
+	func run_phase(program: Dictionary, ctx: Dictionary, value: float, execute: bool) -> Dictionary:
+		if program.get("version") != 1 or program.get("status") != "pure":
+			return {"available": false, "value": value}
+		var a: XBattler = ctx.user if execute else XFormulaContext.clone_battler(ctx.user)
+		var b: XBattler = a if ctx.user == ctx.target else (ctx.target if execute else XFormulaContext.clone_battler(ctx.target))
+		if a == null or b == null:
+			return {"available": false, "value": value}
+		_battlers = {"a": a, "b": b}
+		_context = {"v": ctx.get("variables", {}), "s": ctx.get("switches", {})}
+		_random = ctx.get("random") if execute else null
+		_tag = "%s:%s" % [ctx.phase, ctx.state_id]
+		for name in program.locals:
+			_locals[str(name)] = UNDEFINED
+		var item: Dictionary = ctx.get("item", {})
+		_locals.merge({"value": value, "se_hp": int(item.get("damage", {}).get("type", 0)) in [1, 3, 5],
+			"se_magic": int(item.get("hitType", 0)) == 2, "se_physical": int(item.get("hitType", 0)) == 1,
+			"se_critical": bool(ctx.get("critical", false))}, true)
+		for step in program.steps:
+			_step(step)
+			if not _error.is_empty():
+				break
+		return {"available": _error.is_empty(), "value": _number(_locals.value), "diagnostic": _error}
+
+	func _property(receiver: String, name: String):
+		return _battlers[receiver].get(name) if name in XFormulaContext.PROPERTIES.split(" ") else _fail("unknown_property")
+
+	func _read(node: Dictionary):
+		var b: XBattler = _battlers[node.receiver]
+		match str(node.name):
+			"states_count": return b.states().size()
+			"hp_rate": return _divide(b.hp, b.mhp)
+		return _fail("unsupported_phase_read")
+
+	func _math(node: Dictionary):
+		if node.name == "random" and _random != null:
+			_draws += 1
+			var value := _random.next_float("state_effect", _tag)
+			return value if _random.error.is_empty() else _fail(_random.error)
+		return super._math(node)
 
 
 ## 对持有者当前的状态（快照、按状态顺序）分发一个 phase。ctx：Action 版给 {"attacker", "defender", "item"}；Battler 版可空。
@@ -60,6 +109,12 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 						continue
 					var amount := _rounded(c.value * float(step.k), str(step.round))
 					c.value = c.value + amount if step.kind == "add" else amount
+		elif op == "value_program":
+			var out := PhaseValueProgram.new().run_phase(e.program, c, c.value, execute)
+			if out.available:
+				c.value = out.value
+			elif execute:
+				_diagnose(phase, int(st.id), holder, "value_program_unavailable")
 		elif op == "user_param_damage" and execute and ctx.get("resources") != null:
 			var r: Dictionary = ctx.record
 			for p in e.params:
