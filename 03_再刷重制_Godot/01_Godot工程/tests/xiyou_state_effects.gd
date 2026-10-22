@@ -1,20 +1,15 @@
 extends Node
-## 状态效果阶段钩子第一期（XStateEffects）：分发次序逐例对照 mv_oracle/state_effects_probe.cjs（generated/oracle/state_effects.json）。
-## 参照往冻结版注入测试状态 T（每个 Custom Effect 槽只记录），在真实 BattleManager 流程里记 phase、状态、持有者与 a／b；
-## 这里注入同形的测试状态（每个 phase 一个 js 块），用 XStateEffects.observer 记 Godot 的分发，按同一用例比序列：
-## - 只比第一期接上的 phase（battle、turn_start、regenerate、turn_end、action_start、initiate／select／deselect／conclude、胜逃败）；
-##   参照里 confirm／react／respond／establish、apply／remove／leave 属后续期，比前先滤掉。
-## - action_end：参照里 OTB 行动结束从不触发，Godot 也不分发（逐例确认参照没有、Godot 也没有）。
-## - KRZ 热缓存（回合末到期移除后再生／回合结束仍对它触发；加状态不 refresh 仍按旧列表）：Godot 第一期按当前状态分发，
-##   这类行单列为「热缓存差异」逐条核对，不算通过也不算失败（要 battler.gd 的 dirty 跟踪，见交付单）。
-## - 开战：参照的敌人在 setup 之后才加 T；Godot 的敌人在 setup 内才建，只比我方部分，另查开战标签加的状态不跑本次 battle。
-## - 未翻译诊断：分发到 js 块时记进 XStateEffects.diagnostics（不静默跳过）。
+## State effects phase 2a: native lifecycle, KRZ hot lists, and existing-op migration.
+## Compare the complete action chain, including confirm/react/respond/establish,
+## misses/reflections/counters/guard/forced actions, natural expiry and origins.
+## No new JS shapes execute. OTB action_end remains absent.
 var results := []
 var trace := []
 const PHASES := {"battle": "battle", "turnStartState": "turn_start", "turnEndState": "turn_end", "regenerateState": "regenerate",
 	"actionStartState": "action_start", "initiateState": "initiate", "selectState": "select", "deselectState": "deselect",
-	"concludeState": "conclude", "victory": "victory", "escape": "escape", "defeat": "defeat", "actionEndState": "action_end"}
+	"concludeState": "conclude", "confirmState": "confirm", "reactState": "react", "respondState": "respond", "establishState": "establish", "victory": "victory", "escape": "escape", "defeat": "defeat", "actionEndState": "action_end"}
 var T := 0
+var T2 := 0
 var EXPIRE := 0
 var MRF := 0
 var CNT := 0
@@ -51,13 +46,15 @@ func _key(b: XBattler, logic: XBattleLogic) -> String:
 func _observe(logic: XBattleLogic) -> void:
 	trace.clear()
 	XStateEffects.observer = func(phase: String, sid: int, holder: XBattler, ctx: Dictionary) -> void:
+		if phase in ["apply", "remove", "leave"]:
+			return
 		var row := [phase, sid, _key(holder, logic)]
 		if ctx.has("attacker"):
 			row.append_array([_key(ctx.attacker, logic), _key(ctx.defender, logic)])
 		trace.append(row)
 
 
-## 参照序列：只留第一期 phase 的 fx 行，换成 Godot 名；Action 版带 [a, b]。热缓存行（该持有者已 remove 该状态后又触发）单列
+## 参照序列：fx 行换成 Godot phase 名；Action 版带 [a, b]。热缓存行（持有者已 remove 该状态后又触发）单列
 func _want(o: Dictionary) -> Dictionary:
 	var rows := []
 	var stale := []
@@ -78,14 +75,13 @@ func _want(o: Dictionary) -> Dictionary:
 		var row := [g, sid]
 		if g in XStateEffects.ACTION_PHASES:
 			# Action 版持有者：initiate／conclude 是行动者 a，select／deselect 是目标 b
-			row.append(str(r[3]) if g in ["initiate", "conclude"] else str(r[4]))
+			row.append(str(r[3]) if g in ["initiate", "conclude", "confirm", "establish"] else str(r[4]))
 			row.append_array([str(r[3]), str(r[4])])
 		else:
 			row.append(holder)
 		if removed.has("%d|%s" % [sid, row[2]]):
 			stale.append(row)
-		else:
-			rows.append(row)
+		rows.append(row)
 	return {"rows": rows, "stale": stale}
 
 
@@ -105,11 +101,11 @@ func _new_logic(ref_seed: int) -> XBattleLogic:
 func _compare(name: String, o: Dictionary, extra_check := Callable()) -> void:
 	var w := _want(o)
 	check(name + ".sequence", trace == w.rows, {"godot": trace, "mv": w.rows})
-	# 热缓存行 Godot 必须一条都没有（按当前状态分发）；参照里有几条照记
+	# 到期后旧热列表里的效果仍触发，逐条对照原版。
 	for row in w.stale:
-		check(name + ".stale_absent.%s" % JSON.stringify(row), not trace.has(row), row)
+		check(name + ".stale_preserved.%s" % JSON.stringify(row), trace.has(row), row)
 	if not w.stale.is_empty():
-		print("热缓存差异 ", name, " ", JSON.stringify(w.stale))
+		print("热缓存已对照 ", name, " ", JSON.stringify(w.stale))
 	if extra_check.is_valid():
 		extra_check.call()
 
@@ -125,14 +121,15 @@ func _run() -> void:
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
 		cases[c.id] = c
-	var all_phases: Array = PHASES.values()
+	var all_phases: Array = PHASES.values() + ["apply", "remove", "leave"]
 	T = _state("测试·阶段记录", all_phases)
+	T2 = _state("测试·阶段记录二", all_phases)
 	EXPIRE = _state("测试·一回合到期", all_phases, {"autoRemovalTiming": 2})
 	MRF = _state("测试·魔法反射", [], {"traits": [{"code": 22, "dataId": 5, "value": 1.0}]})
 	CNT = _state("测试·反击", [], {"traits": [{"code": 22, "dataId": 6, "value": 1.0}]})
 	EVA = _state("测试·魔法回避", [], {"traits": [{"code": 22, "dataId": 4, "value": 1.0}]})
 	for st in cases["fixture"].observed.states:
-		var mine := {"测试·阶段记录": T, "测试·一回合到期": EXPIRE, "测试·魔法反射": MRF, "测试·反击": CNT, "测试·魔法回避": EVA}
+		var mine := {"测试·阶段记录": T, "测试·阶段记录二": T2, "测试·一回合到期": EXPIRE, "测试·魔法反射": MRF, "测试·反击": CNT, "测试·魔法回避": EVA}
 		if mine.has(str(st.name)):
 			ids[int(st.id)] = mine[str(st.name)]
 	var o: Dictionary
@@ -173,6 +170,8 @@ func _run() -> void:
 				skill.hitType = 1
 			"action.guard":
 				skill = XDB.rec("Skills", 2)
+		a.param_refresh()
+		e.param_refresh()  # same pre-action refresh as the native fixture
 		_observe(logic)
 		if id == "action.forced":
 			logic.execute(a, skill, e, true)
@@ -187,6 +186,8 @@ func _run() -> void:
 	logic.actors[0].add_state(T)
 	logic.enemies[0].add_state(T)
 	logic.enemies[0].add_state(EXPIRE)
+	logic.actors[0].param_refresh()
+	logic.enemies[0].param_refresh()
 	_observe(logic)
 	logic.start_turn()
 	logic.end_turn()
@@ -210,6 +211,8 @@ func _run() -> void:
 	var te: XBattler = logic.enemies[0]
 	ua.add_state(T)
 	te.add_state(T)
+	ua.param_refresh()
+	te.param_refresh()
 	te.state_origins[T] = weakref(ua)
 	var seen := []
 	XStateEffects.observer = func(phase, sid, holder, ctx):
@@ -219,13 +222,89 @@ func _run() -> void:
 			check("ctx.restored_after_nested", XStateEffects.current() == ctx, XStateEffects.current().get("phase"))
 	XStateEffects.run("select", te, {"attacker": ua, "defender": te, "item": XDB.rec("Skills", 1)})
 	XStateEffects.run("turn_end", ua)
+	check("ctx.observed", seen.size() >= 2)
+	if seen.size() < 2:
+		return finish()
 	var sel: Dictionary = seen[0]
 	check("ctx.action", sel.user == ua and sel.target == te and sel.holder == te and sel.origin == ua, sel.keys())
 	var ts: Dictionary = seen[1]
 	check("ctx.battler", ts.phase == "turn_start" and ts.user == ua and ts.target == ua and ts.origin == ua and not ts.has("attacker"), ts.keys())
 	check("ctx.stack_empty", XStateEffects.current().is_empty())
+	_lifecycle(cases)
 	XStateEffects.observer = Callable()
 	finish()
+
+
+func _lifecycle(cases: Dictionary) -> void:
+	for kind in ["actor", "enemy"]:
+		var logic := _new_logic(4310)
+		var h: XBattler = logic.actors[0] if kind == "actor" else logic.enemies[0]
+		var origin: XBattler = logic.enemies[0] if kind == "actor" else logic.actors[0]
+		var rows := []
+		var stage := [""]
+		XImportedBalance.set_acting(origin)
+		XStateEffects.observer = func(phase, sid, holder, ctx):
+			if phase not in ["apply", "remove", "leave"]:
+				return
+			rows.append([phase, sid, _key(holder, logic), _key(ctx.origin, logic), holder.is_state_affected(sid)])
+			if sid == T and stage[0] == "nested add" and phase == "apply":
+				h.add_state(T2)  # FIX rejects nested add
+			if sid == T and stage[0] == "nested leave" and phase == "remove":
+				h.remove_state(T2)  # inherits the outer natural-expiry scope
+		h.add_state(T)
+		h.add_state(T)
+		h.remove_state(T)
+		h.remove_state(T)
+		h.add_state(EXPIRE)
+		h.remove_state_auto(EXPIRE)
+		stage[0] = "nested add"
+		h.add_state(T)
+		check("lifecycle." + kind + ".nested_suppressed", not h.is_state_affected(T2))
+		h.remove_state(T)
+		stage[0] = "nested leave"
+		h.add_state(T)
+		h.add_state(T2)
+		h.remove_state_auto(T)
+		var want := []
+		var phases := {"addState": "apply", "removeState": "remove", "leaveState": "leave"}
+		for row in cases["lifecycle." + kind].observed.log:
+			if row[0] == "life":
+				want.append([phases[row[1]], ids[int(row[2])], row[3], row[4], row[5]])
+		check("lifecycle." + kind + ".sequence_origin", rows == want, {"godot": rows, "mv": want})
+		check("lifecycle." + kind + ".origin_cleared", not h.state_origins.has(T) and not h.state_origins.has(T2) and not h.state_origins.has(EXPIRE))
+	XImportedBalance.set_acting(null)
+	# KRZ: warm -> add without dirty-refresh -> refresh -> remove without
+	# dirty-refresh -> refresh. Compare every native turnStart slot, including T
+	# after it has been removed.
+	var logic := _new_logic(4311)
+	var h: XBattler = logic.actors[0]
+	h.add_state(T)
+	h.param_refresh()
+	h.effect_states("turn_start")
+	_observe(logic)
+	h.add_state(T2)
+	XStateEffects.run("turn_start", h)
+	h.param_refresh()
+	XStateEffects.run("turn_start", h)
+	h.remove_state(T)
+	XStateEffects.run("turn_start", h)
+	h.param_refresh()
+	XStateEffects.run("turn_start", h)
+	_compare("krz.hot_cache", cases["krz.hot_cache"].observed)
+	var before := JSON.stringify([h.effect_snapshot, h.effect_lists, h.state_ids])
+	var observations := [0]
+	XStateEffects.observer = func(_p, _s, _h, _c): observations[0] += 1
+	XDamage.apply_state_effects(17.0, XDB.rec("Skills", 1), h, logic.enemies[0])
+	check("preview.no_cache_or_observer_write", observations[0] == 0 and before == JSON.stringify([h.effect_snapshot, h.effect_lists, h.state_ids]))
+
+	# Native Math.round(-0.5) is zero, not Godot roundf's -1.
+	var sid := _state("测试·乘数负半整数", [], {"effects": [{"phase": "confirm", "op": "mul", "cond": "nonzero", "k": 0.5, "round": "round"}]})
+	h.add_state(sid)
+	h.param_refresh()
+	XStateEffects.observer = Callable()
+	for pair in cases["mul.round_boundaries"].observed["values"]:
+		var value := XStateEffects.run("confirm", h, {"attacker": h, "defender": logic.enemies[0], "item": XDB.rec("Skills", 1), "value": pair[0]})
+		check("mul.round." + str(pair[0]), value == pair[1], value)
 
 
 func finish() -> void:
