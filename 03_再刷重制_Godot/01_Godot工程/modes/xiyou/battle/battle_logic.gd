@@ -1114,6 +1114,8 @@ func substitute_for(skill: Dictionary, t: XBattler) -> XBattler:
 static func certain_hit(u: XBattler, skill: Dictionary) -> bool:
 	if not u.is_actor():
 		return false
+	if XQiyu.certain_skill(u, skill):  # 琦玉 163 的技能必中、不被反击反射（installQiyuDimensionRuntime）
+		return true
 	var ch: Dictionary = u.passive_cache().get("certainHit", {})
 	return bool(ch.get("global", false)) or ch.get("bySkill", {}).has(int(skill.id))
 

@@ -171,6 +171,8 @@ func release_to_party() -> void:
 		s.gear.append_array(removed)
 
 func add_state(id: int, random: XRandomStream = null) -> void:
+	if XQiyu.blocks_state(actor_id, id):
+		return
 	var fresh := not state_ids.has(id)
 	super(id, random)
 	if fresh and state_ids.has(id):
