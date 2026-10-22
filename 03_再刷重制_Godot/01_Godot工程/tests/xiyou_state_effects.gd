@@ -150,6 +150,9 @@ func _run() -> void:
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
 		cases[c.id] = c
+	check("query.oracle_present", cases.has("query.native_blocks"))
+	if not cases.has("query.native_blocks"):
+		return finish()
 	var all_phases: Array = PHASES.values() + ["apply", "remove", "leave"]
 	T = _state("测试·阶段记录", all_phases)
 	T2 = _state("测试·阶段记录二", all_phases)
