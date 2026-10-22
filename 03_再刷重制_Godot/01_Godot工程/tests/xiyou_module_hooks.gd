@@ -1,0 +1,201 @@
+extends Node
+## Test-only cat-sword adapter exercises the same registry contract requested by
+## 178 without shipping/enabling that character or its lifecycle prematurely.
+const ORACLE := "res://modes/xiyou/generated/oracle/module_hooks.json"
+var total := 0
+var failures := []
+var nested := false
+
+class ProbeActor extends XActor:
+	func param(i: int) -> float: return [1000000.0, 1000.0, 321.0, 456.0, 210.0, 789.0, 100.0, 100.0][i]
+	func trait_objects() -> Array: return []
+	func skills() -> Array: return []
+	func passive_cache() -> Dictionary: return {"harmRe": {1: 11.0, 8: 22.0}}
+	func passive_values(_tag: String) -> Array: return []
+	func attack_elements() -> Array: return [1]
+
+class ProbeEnemy extends XEnemy:
+	var fixture := {}
+	func param(i: int) -> float: return [1000000.0, 1000.0, 321.0, 456.0, 210.0, 789.0, 100.0, 100.0][i]
+	func trait_objects() -> Array: return []
+	func skills() -> Array: return []
+	func passive_cache() -> Dictionary: return {"harmRe": {1: 11.0, 8: 22.0}}
+	func element_rate(e: int) -> float: return -0.5 if fixture.get("absorb", false) and e == 8 else 0.0 if fixture.get("immune", false) else 1.0
+
+func check(label: String, ok: bool, detail = null) -> void:
+	total += 1
+	if not ok:
+		failures.append(label)
+		if failures.size() < 15: print("FAIL ", label, " ", JSON.stringify(detail))
+
+func same(a, b) -> bool:
+	if (a is int or a is float) and (b is int or b is float): return absf(float(a)-float(b)) <= maxf(0.000001,absf(float(b))*0.000000000001)
+	if a is Array and b is Array:
+		if a.size() != b.size(): return false
+		for i in a.size():
+			if not same(a[i],b[i]): return false
+		return true
+	if a is Dictionary and b is Dictionary:
+		if a.size() != b.size(): return false
+		for key in a:
+			if not b.has(key) or not same(a[key],b[key]): return false
+		return true
+	return a == b
+
+func op(field: String, value: float, element := -1, operation := "add") -> Dictionary:
+	var result := {"op": operation, "field": field, "value": value}
+	if element >= 0: result.element = element
+	return result
+
+func cat_enter(context: Dictionary, _frame: Dictionary) -> Dictionary:
+	var setup: Dictionary = context.facts.fixture
+	var ops := []
+	if int(context.target.id) == 178 and setup.get("sword", false):
+		var speed := float(setup.get("agi", 100))
+		ops.append(op("flatMitigationAdd", minf(16000.0,minf(floorf(3*speed),15030+floorf(speed/8))),1))
+		for e in XDamage.ACTIVE:
+			ops.append(op("flatMitigationAdd", minf(18000.0,minf(floorf(3.2*speed),16400+floorf(2*speed/11))),e))
+	if int(context.target.id) == 1999:
+		ops.append(op("flatMitigationAdd",1e11,1)); ops.append(op("flatMitigationAdd",5e10,8))
+	return {"ops": ops}
+
+func cat_build(context: Dictionary, _frame: Dictionary) -> Dictionary:
+	var setup: Dictionary = context.facts.fixture
+	var ops := []
+	if int(context.subject.id) == 178 and setup.get("sword",false) and int(context.item.id) in [10437,10438,10439,10440,10445]:
+		ops = [op("normalAdd",6),op("elementAdd",6,1),op("elementAdd",6,8)]
+		if setup.get("heart",false):
+			ops.append(op("finalAdd",8));ops.append(op("criticalAdd",12))
+			if setup.get("advanced",false): ops.append(op("settlementMultiplier",2,-1,"mul"))
+	return {"ops": ops}
+
+func descriptor(id: String, order: int, handler: Callable, writes: Array) -> Dictionary:
+	return {"id":id,"version":"test-1","capabilities":["test."+id],"contexts":XModuleRegistry.CONTEXTS.duplicate(),
+		"hooks":[{"point":"damage.before","order":order,"reads":["facts"],"writes":writes,"handler":handler}]}
+
+func cat_descriptor() -> Dictionary:
+	var entry := descriptor("cat-sword",18,cat_enter,["flatMitigationAdd"])
+	entry.version = "1.0.1-test-only"
+	entry.hooks.append({"point":"damage.before","order":19,"reads":["facts"],"writes":["normalAdd","elementAdd","finalAdd","criticalAdd","settlementMultiplier"],"handler":cat_build})
+	return entry
+
+func fixture_pair(setup: Dictionary) -> Array:
+	var a := ProbeActor.new();a.actor_id=int(setup.actor)
+	var b: XBattler
+	if setup.has("target"):
+		b=ProbeActor.new();b.actor_id=int(setup.target)
+	else:
+		b=ProbeEnemy.new();b.enemy_id=1999 if setup.get("dragon",false) else 1;b.fixture=setup
+	for member in [a,b]:
+		member.hp=999999;member.mp=1000;member.tp=33
+	return [a,b]
+
+func run_native(c: Dictionary) -> void:
+	var setup: Dictionary = c.setup
+	var o: Dictionary = c.observed
+	var pair := fixture_pair(setup)
+	var a: XBattler=pair[0];var b: XBattler=pair[1]
+	var item: Dictionary = o.item.duplicate(true)
+	for key in ["id","hitType","stypeId"]: item[key]=int(item[key])
+	item.damage.type=int(item.damage.type);item.damage.elementId=int(item.damage.elementId)
+	var registry := XModuleRegistry.compile([XModuleRegistry.orb_descriptor(),cat_descriptor()])
+	var before := JSON.stringify([a.hp,a.mp,a.tp,b.hp,b.mp,b.tp,a.passive_cache(),b.passive_cache(),a.effect_snapshot,b.effect_snapshot])
+	var live: bool = setup.get("preview",true) == false
+	var random := XRandomStream.scripted([{"kind":"uint32","value":2147483648},{"kind":"uint32","value":2147483648}])
+	var options := {"critical":setup.get("critical",false),"rawValue":-123457.0 if setup.get("healing",false) else 123457.0,
+		"variance":live,"moduleRegistry":registry,"moduleFacts":{"fixture":setup},"operationId":c.id}
+	if live: options.random=random
+	var result := XDamage.calculate(item,a,b,options)
+	check(c.id+".available",result.get("available",true),result)
+	if not result.get("available",true): return
+	var value := float(result.value) if live else XDamage.finish(result,item,a,b)
+	check(c.id+".value",same(value,o.value),[value,o.value])
+	if o.breakdown.has("rows"):
+		for key in ["element","bonus","defense","matchup","resistance","incoming","terminal","growth","critical","independent","guard","fixedMitigation"]:
+			check(c.id+".row."+key,same(result.breakdown.row[key],o.breakdown.rows[0][key]),[result.breakdown.row[key],o.breakdown.rows[0][key]])
+	check(c.id+".trace_order",result.moduleTrace.map(func(t):return [t.module,t.order])==[["cat-sword",18],["cat-sword",19],["orb-sets",39]],result.moduleTrace)
+	var replay_frame := initial_frame()
+	var context := {"item":item,"subject":XDamage._module_snapshot(a),"target":XDamage._module_snapshot(b),"options":{},"facts":{"fixture":setup,"orbMultiplier":1.0},"operationId":c.id}
+	var dispatch := registry.dispatch("damage.before",context,replay_frame)
+	for key in o.frame:
+		if dispatch.frame.has(key) and key != "elements":
+			check(c.id+".native_frame."+key,same(dispatch.frame[key],o.frame[key]),[dispatch.frame[key],o.frame[key]])
+	check(c.id+".isolated",before==JSON.stringify([a.hp,a.mp,a.tp,b.hp,b.mp,b.tp,a.passive_cache(),b.passive_cache(),a.effect_snapshot,b.effect_snapshot]))
+	check(c.id+".native_isolated",o.cachesUnchanged and o.frameRestored and same(o.resourcesBefore,o.resourcesAfter))
+	check(c.id+".random",random.error.is_empty() and random.draws==int(o.draws),[random.draws,o.draws,random.error])
+	# Repeated targets/hits and explicit replay never reuse a prior overlay.
+	check(c.id+".replay",same(result,XDamage.calculate(item,a,b,options)) if not live else true)
+
+func initial_frame() -> Dictionary:
+	var frame := {"mode":"physical","kind":"normal","elements":null,"noElement":false,"categoryMax":false}
+	for field in XModuleRegistry.SCALARS:
+		frame[field] = 0.0 if field in ["flatSkill","normalAdd","criticalAdd","finalAdd","physicalIncomingPierce","magicalIncomingPierce","resistancePierce"] else 1.0
+	for field in XModuleRegistry.MAPS: frame[field]={}
+	return frame
+
+func noop(_context: Dictionary,_frame: Dictionary) -> Dictionary: return {"ops":[]}
+func add_final(_context: Dictionary,_frame: Dictionary) -> Dictionary: return {"ops":[op("finalAdd",2)]}
+func mult_final(_context: Dictionary,_frame: Dictionary) -> Dictionary: return {"ops":[op("finalAdd",3,-1,"mul")]}
+func illegal(_context: Dictionary,_frame: Dictionary) -> Dictionary: return {"ops":[op("finalAdd",2),op("criticalAdd",8)]}
+func invalid_number(_context: Dictionary,_frame: Dictionary) -> Dictionary: return {"ops":[op("finalAdd",INF)]}
+func bad_result(_context: Dictionary,_frame: Dictionary): return 1
+func frozen(context: Dictionary,frame: Dictionary) -> Dictionary:
+	check("handler.recursive_frozen",context.is_read_only() and context.facts.is_read_only() and context.facts.nested.is_read_only() and frame.is_read_only() and frame.elementAdd.is_read_only())
+	return {"ops":[]}
+func reentrant(context: Dictionary,_frame: Dictionary) -> Dictionary:
+	var child := XModuleRegistry.compile([descriptor("child",0,add_final,["finalAdd"])])
+	check("nested.independent",child.dispatch("damage.before",context,initial_frame()).frame.finalAdd==2)
+	return {"ops":[op("finalAdd",4)]}
+
+func registration() -> void:
+	var entry := descriptor("a",0,noop,[])
+	for name in ["duplicate","point","pending","capability","context","handler","arity","cycle","dependency","order","write"]:
+		var list := [entry.duplicate(true)]
+		match name:
+			"duplicate":list.append(entry.duplicate(true))
+			"point":list[0].hooks[0].point="typo"
+			"pending":list[0].hooks[0].point="damage.after"
+			"capability":var other=descriptor("b",1,noop,[]);other.capabilities=list[0].capabilities.duplicate();list.append(other)
+			"context":list[0].contexts=["rng"]
+			"handler":list[0].hooks[0].handler=Callable()
+			"arity":list[0].hooks[0].handler=func(_x): return {}
+			"cycle":list[0].dependsOn=["a"]
+			"dependency":list[0].dependsOn=["absent"]
+			"order":list[0].hooks[0].order=0.5
+			"write":list[0].hooks[0].writes=["hp"]
+		var r := XModuleRegistry.compile(list)
+		check("registration."+name,not r.valid() and not r.diagnostics().is_empty(),r.diagnostics())
+	var ctx := {"facts":{"nested":[]},"item":{},"subject":{},"target":{},"options":{},"operationId":"test"}
+	var frame := initial_frame()
+	var a := descriptor("a",0,add_final,["finalAdd"]);var b := descriptor("b",0,mult_final,["finalAdd"])
+	var registry := XModuleRegistry.compile([b,a])
+	check("stable_tie",registry.dispatch("damage.before",ctx,frame).frame.finalAdd==6)
+	check("compile_copies_input",registry.valid())
+	a.hooks[0].order=100
+	check("immutable_table",registry.dispatch("damage.before",ctx,frame).frame.finalAdd==6)
+	var manifest := registry.manifest();manifest[0].id="changed"
+	check("manifest_is_copy",registry.manifest()[0].id!="changed")
+	for handler in [illegal,invalid_number,bad_result]:
+		var result := XModuleRegistry.compile([descriptor("invalid",0,handler,["finalAdd"])]).dispatch("damage.before",ctx,frame)
+		check("invalid_handler."+str(handler.get_method()),not result.available and result.frame.finalAdd==0 and not result.diagnostics.is_empty(),result)
+	check("missing_context",not registry.dispatch("damage.before",{},frame).available)
+	check("invalid_frame",not registry.dispatch("damage.before",ctx,{}).available)
+	var live_context := ctx.duplicate(true);live_context.facts.rng=XRandomStream.create("0000000000000001","rule")
+	check("no_live_context",not registry.dispatch("damage.before",live_context,frame).available)
+	var freeze_registry := XModuleRegistry.compile([descriptor("frozen",0,frozen,[])])
+	check("readonly_handler",freeze_registry.dispatch("damage.before",ctx,frame).available)
+	check("parent_nested",XModuleRegistry.compile([descriptor("parent",0,reentrant,["finalAdd"])]).dispatch("damage.before",ctx,frame).frame.finalAdd==4)
+	check("caller_unchanged",frame.finalAdd==0 and not ctx.is_read_only() and not ctx.facts.nested.is_read_only())
+	check("standard_valid",XModuleRegistry.standard().valid(),XModuleRegistry.standard().diagnostics())
+
+func _ready() -> void:
+	registration()
+	check("oracle.exists",FileAccess.file_exists(ORACLE))
+	if FileAccess.file_exists(ORACLE):
+		var data=JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
+		check("oracle.native_registry",data.cases[0].observed.hooks[9].id=="cat-sword" and data.cases[0].observed.hooks[19].id=="orb-sets")
+		for c in data.cases.slice(1):
+			check(c.id+".native_errors",c.errors.is_empty(),c.errors)
+			if c.errors.is_empty():run_native(c)
+	print("TEST_RESULT="+JSON.stringify({"passed":total-failures.size(),"total":total,"failures":failures}))
+	get_tree().quit(0 if failures.is_empty() else 1)

@@ -6,3 +6,9 @@
 - 基于 main e5e283b；不改主工作区共用登记。独占 damage.gd、新 module_registry.gd、自己的探针／专项、框架约定本节；不改 battle_logic.gd／actor.gd／battler.gd、切片或角色实现。
 - 本期：登记表校验、稳定次序、只读上下文、有类型的数值变换与逐次trace；先迁既有orb-sets。以冻结cat-sword原版数值与临时减伤为首个扩展用例，不提前开放178。资源提交与其他宿主挂点保持pending，不能冒充已挂接。
 - 哈基米提案在 claude/wukong-hajimi 尚未落盘；交付前读取。原版先测后实现。长任务脱离会话运行；车道只跑相关专项，合并后由唐僧统一全量 --oracle。全部提交待Claude交叉核查。
+
+## 检查点
+
+- 冻结引擎注册表23项，cat-sword索引9、orb-sets索引19；每项enter→build，cleanup逆序。native-v2原版15例errors=[]，保留首轮探针夹具错误日志（Node数组缺MV contains，已改MV数组），没有改原版守卫／生产。
+- 注册表与伤害数值入口首版专项605/605通过（test-v3.log）；持剑／剑心／进阶／echo／其他技能／吸收／免疫／速度减伤／巨龙减伤／治疗／live浮动逐例对照；原版资源与缓存均无残留。
+- 接下来补全数值字段组合参照、真实行动入口回归、框架文档与最终同步；尚不可合并。初次专项两处测试API拼写与StringName值复制已修，保留失败日志，不算偶发重跑。
