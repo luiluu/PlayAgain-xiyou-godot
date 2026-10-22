@@ -1,7 +1,7 @@
 # 交付：claude/jovial-napier-ef0df2
 
 - 车道／工作者：B 界面／八戒（Claude，重制_八戒_52 起头，重制_八戒_53 接 WIP 收尾；原分支 claude/bajie-menu-sys 已整支并入本分支）
-- 状态：进行中
+- 状态：可合并
 
 ## 盘点
 
@@ -45,8 +45,8 @@
 
 - 02bcfd50 主菜单 7 项未接入系统盘点
 - 1da02965 人物图鉴 XActorBook、主菜单接公共事件 3、专项对照原版参照
-- （本提交）合 main 后菜单预约改走 XState 单槽，交付单
+- e3efcfb9 合 main 后菜单预约改走 XState 单槽，交付单
 
 ## 验证
 
-- 相关专项（`并行测试.py`）：（待写）
+- 相关专项（`并行测试.py`，合 main 后）：`xiyou_actor_book` 21/21、`xiyou_review135` 84/84、`xiyou_panels` 35/35、`xiyou_help_card` 970/970，全部通过。合 main 后要先 `godot --import` 刷新类缓存（新类 XActorBook），否则两个专项报解析错误。
