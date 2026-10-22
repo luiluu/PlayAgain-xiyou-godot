@@ -4,7 +4,6 @@ extends Node
 const ORACLE := "res://modes/xiyou/generated/oracle/module_hooks.json"
 var total := 0
 var failures := []
-var nested := false
 
 class ProbeActor extends XActor:
 	var fixture := {}
@@ -196,6 +195,9 @@ func registration() -> void:
 		var result := XModuleRegistry.compile([descriptor("invalid",0,handler,["finalAdd"])]).dispatch("damage.before",ctx,frame)
 		check("invalid_handler."+str(handler.get_method()),not result.available and result.frame.finalAdd==0 and not result.diagnostics.is_empty(),result)
 	check("missing_context",not registry.dispatch("damage.before",{},frame).available)
+	check("missing_nested_context",not XModuleRegistry.standard().dispatch("damage.before",ctx,frame).available)
+	var dependency := descriptor("dependent",-1,noop,[]);dependency.dependsOn=["b"]
+	check("dependency_source_order",not XModuleRegistry.compile([b,dependency]).valid())
 	check("invalid_frame",not registry.dispatch("damage.before",ctx,{}).available)
 	var live_context := ctx.duplicate(true);live_context.facts.rng=XRandomStream.create("0000000000000001","rule")
 	check("no_live_context",not registry.dispatch("damage.before",live_context,frame).available)

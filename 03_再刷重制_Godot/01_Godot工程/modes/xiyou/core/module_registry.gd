@@ -204,6 +204,10 @@ func dispatch(point: String, context: Dictionary, initial: Dictionary) -> Dictio
 		if hook.point != point: continue
 		for required in row.contexts:
 			if not snapshot.has(required): errors.append("missing_context:" + row.id + ":" + required)
+		for path in hook.reads:
+			var root: String = str(path).get_slice(".", 0)
+			if CONTEXTS.has(root) and not _has_path(snapshot, str(path)):
+				errors.append("missing_read_context:" + row.id + ":" + str(path))
 		if not errors.is_empty(): break
 		var before: Dictionary = frame.duplicate(true)
 		var readonly: Dictionary = frame.duplicate(true)
@@ -257,3 +261,10 @@ static func _apply(frame: Dictionary, operation, writes: Array) -> String:
 	elif field == "elements" and value is Array and value.all(func(e): return e is int and e >= 0 and e <= 15): frame[field] = value.duplicate()
 	else: return "invalid_field_value:" + field
 	return ""
+
+static func _has_path(snapshot: Dictionary, path: String) -> bool:
+	var value = snapshot
+	for key in path.split("."):
+		if not value is Dictionary or not value.has(key): return false
+		value = value[key]
+	return true
