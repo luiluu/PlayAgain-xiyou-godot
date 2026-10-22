@@ -88,6 +88,35 @@ cases.push(makeCase('erase.otherMap', {map: 8, event: 3, transfer: 4}, () => { e
   return {back: erasedIds()}; }));
 cases.push(makeCase('erase.afterTransfer', {map: 4, event: 3, transfer: 8}, () => { newGame(); goMap(4, 14, 23);
   runList([cmd(201, [0, 8, 29, 26, 2, 0]), cmd(214, []), cmd(0, [])], 3); return {map: w.$gameMap.mapId(), after: erasedIds()}; }));
+
+// 5) 同图场所移动（八戒_48）：performTransfer 只在新地图 ID 与当前不同（或 _needsMapReload）时 $gameMap.setup，
+//    同图只 locate 玩家（含跟随者 synchronize、makeEncounterCount）；事件对象、位置、朝向、强制移动路线及其索引、
+//    当前页、事件自己的（并行）解释器与地图解释器都原样保留。换到别图再回来 setupEvents 重建，全部回到初始。
+//    Map008 事件 3（17,8）／6（26,13）都是固定不动的副本怪：先改位置朝向、挂一条强制路线并推进到第 2 步、
+//    给事件 3 挂一个停在等待里的解释器（模拟并行事件），再由事件 7 的解释器执行同图 201。
+const evState = id => { const e = w.$gameMap.event(id); return {x: e.x, y: e.y, d: e.direction(), page: e._pageIndex,
+  forcing: !!e._moveRouteForcing, routeIndex: e._moveRouteIndex, route: e._moveRoute ? e._moveRoute.list.length : 0,
+  interp: e._interpreter ? {index: e._interpreter._index, wait: e._interpreter._waitCount} : null}; };
+const dressEvents = () => { const route = {list: [cmd(12, []), cmd(12, []), cmd(12, []), cmd(0, [])], repeat: false, skippable: true, wait: false};
+  const marks = {};
+  for (const id of [3, 6]) { const e = w.$gameMap.event(id); e.setPosition(e.x + 1, e.y); e.setDirection(8);
+    e.forceMoveRoute(w.JsonEx.makeDeepCopy(route)); e._moveRouteIndex = 2; marks[id] = e; }
+  const it = new w.Game_Interpreter(); it.setup([cmd(230, [600]), cmd(0, [])], 3); it.update(); w.$gameMap.event(3)._interpreter = it;
+  return marks; };
+const playerState = () => ({x: w.$gamePlayer.x, y: w.$gamePlayer.y, d: w.$gamePlayer.direction(),
+  followers: w.$gamePlayer.followers()._data.map(f => [f.x, f.y, f.direction()])});
+cases.push(makeCase('transfer.sameMap.events', {map: 8, events: [3, 6], runner: 7, transfer: [8, 28, 26, 4]}, () => {
+  newGame(); goMap(8, 29, 26); const marks = dressEvents(), mapInterp = w.$gameMap._interpreter;
+  const before = {3: evState(3), 6: evState(6)};
+  runList([cmd(201, [0, 8, 28, 26, 4, 0]), cmd(0, [])], 7);
+  return {map: w.$gameMap.mapId(), before, after: {3: evState(3), 6: evState(6)},
+    sameObjects: [3, 6].map(id => w.$gameMap.event(id) === marks[id]), sameMapInterpreter: w.$gameMap._interpreter === mapInterp,
+    player: playerState()}; }));
+cases.push(makeCase('transfer.otherMap.events', {map: 8, events: [3, 6], transfer: [4, 14, 23, 2], back: [8, 29, 26, 2]}, () => {
+  newGame(); goMap(8, 29, 26); const marks = dressEvents();
+  goMap(4, 14, 23); goMap(8, 29, 26);
+  return {map: w.$gameMap.mapId(), back: {3: evState(3), 6: evState(6)}, sameObjects: [3, 6].map(id => w.$gameMap.event(id) === marks[id]),
+    player: playerState()}; }));
 for (const wait of [true, false])
   cases.push(makeCase('flush.225.' + (wait ? 'wait' : 'nowait'), {actor: 1, shake: [5, 5, 10, wait]}, () => { newGame(); w.$gameMessage.clear();
     const it = new w.Game_Interpreter(); it.setup([cmd(316, [0, 1, 0, 0, 1, true]), cmd(225, [5, 5, 10, wait]), cmd(122, [1, 1, 0, 0, 1]), cmd(0, [])], 0);
