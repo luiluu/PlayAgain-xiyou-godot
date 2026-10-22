@@ -89,3 +89,4 @@
 - 原sync-hajimi于18:41:37 Europe/Paris结束，exitCode0；未重跑。独立守卫已核实旧17例按id逐项不变，只新增bonus.native_blocks、damage.full_chain、value.native_blocks、query.native_blocks到21；其他测量不变，verifyOk／sameExistingSource均真，无接受单、cacheError或importError，21例无错误。
 - 首次正式同步指纹已复算匹配：toolsDigest=60b06ba84d261ba09d13b7311c8e618d8107e3c25e8d4b487c9d362cd30cae3f，outputsDigest=8c7016669fbd2922948f7e113dd61dec4a350396399c23be5771e5332bc8c1c5；formal-sync-verification.json保存核对结果。
 - main自092fba1后又改转换器PNG正规化、review_fix探针和战斗／地图表现；最终验收前合一次当前main 77f41c73、补齐与刷新同步指纹，再单槽跑原21场景及直接依赖interp_review。新同步仍须核查状态只增指定4例或沿用21例不变，不接受其他旧值改变。
+- e37d5660无冲突合main 77f41c73；refill-final.log已exitCode0，刷新16个主线参照，状态17例／review_fix40例已存pre-final-sync/。启动sync-final.log刷新同步（SYNC_JOBS=1，不改变原工具），结束后final-validation.log严格核对17→21只增四例、与首次成功21例按id完全一致、其他测量不变及双指纹，再单槽运行22个相关场景。没有重复原版完整开场或2e native22测量。
