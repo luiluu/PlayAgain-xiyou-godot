@@ -86,7 +86,7 @@ function runAction(bm, user, skillId, targetIndex, extra) {
 }
 // 只保留 fx 与和测试相关的边界，去掉大量无关 refresh（只留紧邻 fx 的）
 function trim(log) { return log; }
-function capture(fn) { LOG = []; try { fn(); } finally { const out = LOG; LOG = null; return out; } }
+function capture(fn) { const out = LOG = []; try { fn(); } finally { LOG = null; } return out; }
 const cases = [];
 cases.push(makeCase('fixture', {T, T2, EXPIRE, MRF, CNT, EVA}, () => ({types: TYPES, states: [T, T2, EXPIRE, MRF, CNT, EVA].map(id => ({id, name: w.$dataStates[id].name,
   traits: w.$dataStates[id].traits, autoRemovalTiming: w.$dataStates[id].autoRemovalTiming, slots: Object.keys(w.$dataStates[id].customEffectEval).filter(k => w.$dataStates[id].customEffectEval[k] !== '')}))})));
@@ -166,6 +166,43 @@ for (const [name, result] of [['victory', 0], ['escape', 1], ['defeat', 2]]) {
     return {log};
   }));
 }
+// Phase 2a: native lifecycle and cached phase lists. No production JS is translated here.
+for (const kind of ['actor', 'enemy']) {
+  cases.push(makeCase('lifecycle.' + kind, {troop: 2, kind}, () => {
+    const {bm, a, e} = battle(2), h = kind === 'actor' ? a : e, origin = kind === 'actor' ? e : a;
+    bm._subject = origin;
+    const describe = (phase, sid, holder) => mark('life', phase, sid, key(holder), key(holder.stateOrigin(sid)), holder.isStateAffected(sid));
+    w.__life = describe;
+    const saved = [T, T2, EXPIRE].map(id => [id, Object.assign({}, w.$dataStates[id].customEffectEval)]);
+    for (const id of [T, T2, EXPIRE]) for (const phase of ['addState', 'removeState', 'leaveState'])
+      w.$dataStates[id].customEffectEval[phase] = `__life('${phase}', ${id}, a);`;
+    let log;
+    try {
+      log = capture(() => {
+        h.addState(T); mark('reapply'); h.addState(T); mark('dispel'); h.removeState(T); h.removeState(T);
+        mark('expire'); h.addState(EXPIRE); h._stateTurns[EXPIRE] = 0; h.removeStatesAuto(2);
+        mark('nested add'); h.clearResult();
+        w.$dataStates[T].customEffectEval.addState += `target.addState(${T2});`;
+        h.addState(T); mark('nested absent', h.isStateAffected(T2)); h.removeState(T); h.clearResult();
+        mark('nested leave');
+        h.addState(T); h.addState(T2);
+        w.$dataStates[T].customEffectEval.removeState += `target.removeState(${T2});`;
+        h._stateTurns[T] = 0; h.removeStatesAuto(0);
+      });
+    } finally { for (const [id, slots] of saved) w.$dataStates[id].customEffectEval = slots; }
+    return {log};
+  }));
+}
+cases.push(makeCase('mul.round_boundaries', {}, () => {
+  const {a, e} = battle(2);
+  const sid = testState('测试·乘数负半整数');
+  for (const k of TYPES) w.$dataStates[sid].customEffectEval[k] = '';
+  w.$dataStates[sid].customEffectEval.confirmState = 'if (value !== 0) { value = Math.round(value * 0.5); }';
+  a.addState(sid); a.need_refresh = true; a.refresh();
+  const action = new w.Game_Action(a); action.setSkill(1);
+  const values = [-3, -1, 0, 1, 3].map(value => [value, action.customEffectEval(e, sid, 'confirmState', a, value)]);
+  return {values};
+}));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
 cases.push(makeCase('action.counter', {troop: 2, user: 'a1', skill: 'physical clone of 1', target: 'e0'}, () => {
   const {bm, a, e} = battle(2);

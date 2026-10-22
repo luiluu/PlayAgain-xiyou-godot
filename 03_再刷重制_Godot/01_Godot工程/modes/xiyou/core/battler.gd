@@ -32,6 +32,14 @@ var param_cache_on := false
 var param_dirty := false
 ## 8 格，null＝冷格；数值 0 也算命中
 var param_cells: Array = []
+# KRZ need_refresh / states / typestates are separate from enemy parameter cells.
+# These caches contain detached database records, so formula shadow copies stay isolated.
+var effect_dirty := true
+var effect_snapshot: Array = []
+var effect_snapshot_valid := false
+var effect_lists := {}
+static var _adding_state := false
+static var _leaving_state := false
 static var _outside_random: XRandomStream
 var mp := 0.0
 var tp := 0.0
@@ -248,10 +256,32 @@ func states() -> Array:
 			out.append(XZhenqi.pojia_state(s, zq_pojia_rate) if id == XZhenqi.POJIA_STATE else s)
 	return out
 
+## KRZ cached phase lists can retain removed states until a dirty refresh.
+## Preview reads an existing list, or computes a private list without warming it.
+func effect_states(phase: String, execute := true) -> Array:
+	if effect_lists.has(phase):
+		return effect_lists[phase]
+	var source: Array = effect_snapshot if effect_snapshot_valid else states()
+	var rows := source.filter(func(st): return st.get("effects", []).any(func(e): return str(e.get("phase", "")) == phase))
+	if execute:
+		if not effect_snapshot_valid:
+			effect_snapshot = source.duplicate()
+			effect_snapshot_valid = true
+		effect_lists[phase] = rows
+	return rows
+
 func is_state_affected(id: int) -> bool:
 	return state_ids.has(id)
 
 func add_state(id: int, random: XRandomStream = null) -> void:
+	# _Fix_StackOverflow: one global lock, including additions to another battler.
+	if _adding_state:
+		return
+	_adding_state = true
+	_add_state(id, random)
+	_adding_state = false
+
+func _add_state(id: int, random: XRandomStream = null) -> void:
 	if XDB.rec("States", id).is_empty():
 		return
 	var fresh := not state_ids.has(id)
@@ -281,6 +311,7 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	# Game_Battler.addState：新附加的状态 refresh 后由 krz 标 dirty；已有状态（_Fix_StackOverflow 分支）只续回合
 	if fresh:
 		param_refresh()
+		XStateEffects.run_one("apply", self, s)
 		param_mark_dirty()
 
 func roll_state_duration(lo: int, hi: int, random: XRandomStream = null, event_key := "") -> int:
@@ -292,18 +323,27 @@ func roll_state_duration(lo: int, hi: int, random: XRandomStream = null, event_k
 		_outside_random = XRandomStream.create(XRandomStream.hex64(XState._fresh_seed()), "world")
 	return _outside_random.next_int_inclusive(lo, hi, "state_duration", event_key)
 
+func remove_state_auto(id: int) -> void:
+	_leaving_state = true
+	remove_state(id)
+	_leaving_state = false
+
 func remove_state(id: int) -> void:
 	var had := state_ids.has(id)
 	if id == 1 and state_ids.has(id) and hp <= 0.0:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
 	state_ids.erase(id)
 	state_turns.erase(id)
-	state_origins.erase(id)
 	if id == XZhenqi.POJIA_STATE:
 		zq_pojia_rate = 0.5
 	# Game_Battler.removeState：有该状态才 refresh；krz 的 Game_Enemy.removeState 之后总标 dirty
 	if had:
 		param_refresh()
+		var st := XDB.rec("States", id)
+		XStateEffects.run_one("remove", self, st)
+		if _leaving_state:
+			XStateEffects.run_one("leave", self, st)
+		state_origins.erase(id)  # remove AND leave still see the original source
 	param_mark_dirty()
 
 func _sort_states() -> void:
@@ -380,12 +420,18 @@ func param_cache_end() -> void:
 	param_cells = []
 
 func param_mark_dirty() -> void:
+	effect_dirty = true
 	if param_cache_on:
 		param_dirty = true
 
 ## krz Game_Enemy.refresh：need_refresh 为真才让八格变冷，再由原 refresh 截 HP／MP 读上限（生命、魔法上限当场重新填入），最后清 need_refresh。
 ## 只做缓存这一层，不截资源；截资源的 refresh 是 XResourceContext.refresh（开头调用本函数）。
 func param_refresh() -> void:
+	if effect_dirty:
+		effect_lists.clear()
+		effect_snapshot = states().duplicate()
+		effect_snapshot_valid = true
+		effect_dirty = false
 	if not param_cache_on:
 		return
 	if param_dirty or param_cells.size() != 8:
