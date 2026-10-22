@@ -14,6 +14,8 @@ extends RefCounted
 
 ## 会让 MV 解释器等待（或在消息忙时停住）的指令：执行前先显示待显示的文字
 const FLUSH_BEFORE := [101, 102, 103, 104, 201, 205, 212, 213, 217, 221, 222, 230, 301, 302, 303, 353, 354]
+## 勾了「等待」才等的指令 → 等待参数下标（225 画面震动 wait(时间)）
+const FLUSH_IF_WAIT := {225: 3}
 ## 只是续行、注释或分支结尾，执行时什么也不做
 const PASS_CODES := [401, 405, 408, 655, 404, 412, 604, 0, 108, 505]
 static var skip_common_events := [1386, 1435]   # 战斗背景、轮回模式：首期无对应系统
@@ -107,7 +109,7 @@ func advance() -> Dictionary:
 				return _flush_request()
 			return {"kind": "done"}
 		var c: Dictionary = list[index]
-		if not pending_lines.is_empty() and FLUSH_BEFORE.has(int(c.code)):
+		if not pending_lines.is_empty() and _waits(c):
 			return _flush_request()
 		if max_steps > 0:
 			steps += 1
@@ -124,6 +126,15 @@ func advance() -> Dictionary:
 				continue
 			return r
 	return {"kind": "done"}
+
+
+## 这条指令会让 MV 解释器等待：先显示待显示的文字
+static func _waits(c: Dictionary) -> bool:
+	var code := int(c.code)
+	if FLUSH_IF_WAIT.has(code):
+		var p: Array = c.parameters
+		return p.size() > FLUSH_IF_WAIT[code] and bool(p[FLUSH_IF_WAIT[code]])
+	return FLUSH_BEFORE.has(code)
 
 
 ## 外部处理完本层发出的请求后调用：选项结果、数值、宿主指令是否继续（false 结束本列表）

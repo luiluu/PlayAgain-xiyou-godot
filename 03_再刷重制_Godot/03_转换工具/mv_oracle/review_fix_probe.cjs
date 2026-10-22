@@ -79,15 +79,15 @@ const runList = (list, eventId, max) => { const it = new w.Game_Interpreter(); i
   while (it.isRunning() && n++ < (max || 100)) { it.update(); if (w.$gamePlayer.isTransferring()) { w.DataManager.loadMapData(w.$gamePlayer._newMapId); w.$gamePlayer.performTransfer(); } }
   return n; };
 const cmd = (code, parameters, indent) => ({code, indent: indent || 0, parameters});
-const erase8 = () => { newGame(); goMap(8, 30, 26); runList([cmd(214, []), cmd(0, [])], 3); return erasedIds(); };
+const erase8 = () => { newGame(); goMap(8, 29, 26); runList([cmd(214, []), cmd(0, [])], 3); return erasedIds(); };
 cases.push(makeCase('erase.save', {map: 8, event: 3}, () => { const after = erase8(); roundtrip();
   return {after, loaded: erasedIds(), map: w.$gameMap.mapId()}; }));
-cases.push(makeCase('erase.sameMap', {map: 8, event: 3, transfer: 8}, () => { erase8(); roundtrip(); goMap(8, 29, 26);
+cases.push(makeCase('erase.sameMap', {map: 8, event: 3, transfer: 8}, () => { erase8(); roundtrip(); goMap(8, 28, 26);
   return {after: erasedIds()}; }));
-cases.push(makeCase('erase.otherMap', {map: 8, event: 3, transfer: 4}, () => { erase8(); roundtrip(); goMap(4, 14, 23); goMap(8, 30, 26);
+cases.push(makeCase('erase.otherMap', {map: 8, event: 3, transfer: 4}, () => { erase8(); roundtrip(); goMap(4, 14, 23); goMap(8, 29, 26);
   return {back: erasedIds()}; }));
 cases.push(makeCase('erase.afterTransfer', {map: 4, event: 3, transfer: 8}, () => { newGame(); goMap(4, 14, 23);
-  runList([cmd(201, [0, 8, 30, 26, 2, 0]), cmd(214, []), cmd(0, [])], 3); return {map: w.$gameMap.mapId(), after: erasedIds()}; }));
+  runList([cmd(201, [0, 8, 29, 26, 2, 0]), cmd(214, []), cmd(0, [])], 3); return {map: w.$gameMap.mapId(), after: erasedIds()}; }));
 for (const wait of [true, false])
   cases.push(makeCase('flush.225.' + (wait ? 'wait' : 'nowait'), {actor: 1, shake: [5, 5, 10, wait]}, () => { newGame(); w.$gameMessage.clear();
     const it = new w.Game_Interpreter(); it.setup([cmd(316, [0, 1, 0, 0, 1, true]), cmd(225, [5, 5, 10, wait]), cmd(122, [1, 1, 0, 0, 1]), cmd(0, [])], 0);
