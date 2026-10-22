@@ -3,8 +3,10 @@
 // preserved native22. The host keeps the frozen source read-only and all writes
 // in .sandbox. No player saves, render loop, or production-method replacement.
 const {start, makeCase: nativeCase, finish} = require('./shared/host.cjs');
-const host = start(), {w, newGame} = host;
+function measureCases(host) {
+const {w, newGame} = host;
 const evalErrors = [];
+const oldError = w.Yanfly.Util.displayError;
 w.Yanfly.Util.displayError = error => evalErrors.push(String(error && error.stack || error));
 function makeCase(id, setup, fn) {
   return nativeCase(id, setup, () => {
@@ -112,6 +114,40 @@ cases.push(makeCase('tp.refresh_state_boundary', {effect: 'native 1334 apply25',
   }
   return {victim, resister, rows};
 }));
-process.exit(finish(host, 'state_effects_tp_context.json', {
-  hostScope: '补充2e：真实addState/refresh、合成技能passiveEXTTP上限、显式陈旧抵抗状态夹具；不重跑native22', cases,
-}) ? 0 : 1);
+cases.push(makeCase('tp.battle_initialization', {entry: 'native Game_Unit.onBattleStart', states: [607, 857], initialTp: 17}, () => {
+  const {actor: a, enemy: e} = battle(), b = w.$gameActors.actor(8), events = [], saved = [];
+  for (const [key, holder, state] of [['a1', a, 607], ['a8', b, 857], ['e0', e, 857]]) {
+    prepare(holder, 17); holder.addState(state);
+    for (const name of ['onBattleStart', 'customEffectEval']) {
+      const own = Object.prototype.hasOwnProperty.call(holder, name), old = holder[name];
+      saved.push(() => { if (own) holder[name] = old; else delete holder[name]; });
+      holder[name] = function (...args) {
+        const tracked = name === 'onBattleStart' || args[1] === 'battle';
+        if (tracked) events.push([key, name, 'before', this.tp]);
+        const result = old.apply(this, args);
+        if (tracked) events.push([key, name, 'after', this.tp]);
+        return result;
+      };
+    }
+  }
+  const before = [a, b, e].map(snapshot);
+  try {
+    const got = measure(() => {
+      w.$gameParty.onBattleStart(); w.$gameTroop.onBattleStart();
+      return [a, b, e].map(snapshot);
+    });
+    return {before, after: got.value, events, draws: got.draws()};
+  } finally { for (const restore of saved.reverse()) restore(); }
+}));
+w.Yanfly.Util.displayError = oldError;
+return cases;
+}
+
+module.exports = {measureCases};
+if (require.main === module) {
+  const host = start();
+  process.exit(finish(host, 'state_effects_tp_context.json', {
+    hostScope: '补充2e：真实addState/refresh、合成技能passiveEXTTP上限、抵抗状态与开战初始化；不重跑native22',
+    cases: measureCases(host),
+  }) ? 0 : 1);
+}

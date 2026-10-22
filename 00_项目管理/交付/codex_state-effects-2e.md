@@ -49,3 +49,5 @@
 - 已准备独立补充探针state_effects_tp_context_probe.cjs，输出只写.sandbox/state_effects_tp_context.json；待启动长任务tp-context-native.log，量真实apply超上限／0HP、合成技能passiveEXTTP改变上限、刷新清抵抗状态在直接调用与真实addState中的差异。旧native22与其独立副本保持不动，不重测。
 - 当前仍未改转换器或生产代码；若确认需要修改已留给期三的resource_context／actor才能完整实现，按本期停手条件交具体设计与证据，不交孤立TP数值或冒称2e玩法完成。
 - 补充探针首轮tp-context-native.log明确失败：夹具把VM的_states换成宿主Array，缺少MV的contains扩展；已改为保留VM原数组、只清空并push内容。原失败日志保留，修后另用tp-context-native-v2.log；不算偶发，不改源引擎。
+- tp-context-native-v2.log已退出0，3例26行均errors=[]。已证实角色真实apply从199到224／274，敌人真实apply截到200；0HP未死夹具的阵亡同步延后到独立refresh；角色真实passiveEXTTP技能使上限40／300，直接执行截上限、真实apply可暂超。原始副本tp-context-native3-preserved.json SHA256 f705f6ab39b9ce057be49dd55e3cb6b725819bef3611d68f8fbf44c5a5985413。
+- 增加第四个小case，经过真实Game_Unit.onBattleStart观察TP初始化相对Custom Battle的顺序；补充探针同时改为可被正式state_effects_probe复用。将单独运行tp-context-native-v3.log验证新case，不手动重跑native22；最后正式同步将按规范重新生成并严格只增验收。

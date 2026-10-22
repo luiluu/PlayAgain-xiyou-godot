@@ -409,6 +409,8 @@ cases.push(makeCase('tp.native_blocks', {states: [607, 609, 857, 1334, 1336]}, (
   if (errors.length) throw new Error('native TP errors: ' + JSON.stringify(errors));
   return {rows, applyRows};
 }));
+// Supplemental 2e boundaries are separately runnable without repeating native22.
+cases.push(...require('./state_effects_tp_context_probe.cjs').measureCases(host));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
 cases.push(makeCase('action.counter', {troop: 2, user: 'a1', skill: 'physical clone of 1', target: 'e0'}, () => {
   const {bm, a, e} = battle(2);
