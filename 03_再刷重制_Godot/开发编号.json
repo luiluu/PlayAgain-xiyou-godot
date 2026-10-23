@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.139",
-  "sequence": 139,
-  "next": "dev.140",
-  "nextSequence": 140,
+  "current": "dev.140",
+  "sequence": 140,
+  "next": "dev.141",
+  "nextSequence": 141,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-monster-book",
+  "currentChange": "wukong-heir",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
