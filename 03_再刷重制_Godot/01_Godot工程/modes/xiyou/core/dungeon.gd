@@ -308,16 +308,21 @@ static func mijing_tier(floor_no: int) -> int:
 	return 4 if floor_no >= 26 else 3 if floor_no >= 19 else 2 if floor_no >= 13 else 1
 
 
-## CodexMijing.pickHere：先等概率选系列，再按所在塔层的档位掷等级（没有该级的往下找）
+## CodexMijing.pickHere：按所在塔层的档位抽（见 mijing_pick）
 static func mijing_pick_here(s: XState) -> int:
-	var pool := mijing_pool()
-	if pool.is_empty():
-		return 0
 	var f := map_floor(s.map_id)
 	if f <= 0:
 		f = int(s.variable(20)) if s.variable(20) != 0 else 1
+	return mijing_pick(s, mijing_tier(f))
+
+
+## CodexMijing.pick(档位)：先等概率选系列，再按档位掷等级（没有该级的往下找；档位不在 1～4 按 1）
+static func mijing_pick(s: XState, tier: int) -> int:
+	var pool := mijing_pool()
+	if pool.is_empty():
+		return 0
 	var fam: Array = pool.values()[floori(MVInterpreter.random_float(s) * pool.size())]
-	var w: Array = MIJING_WEIGHTS[mijing_tier(f)]
+	var w: Array = MIJING_WEIGHTS.get(tier, MIJING_WEIGHTS[1])
 	var r := MVInterpreter.random_float(s) * 100.0
 	var level := w.size() - 1
 	for i in w.size():
