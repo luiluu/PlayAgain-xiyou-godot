@@ -392,6 +392,11 @@ func _open_detail(page: Control) -> void:
 	page.closed.connect(func():
 		if "actor_index" in page:
 			_selected_actor = page.actor_index
+		# 子页面用了带公共事件的物品：整个菜单关掉，地图接着执行预约的公共事件
+		if "to_map" in page and page.to_map:
+			page.queue_free()
+			closed.emit()
+			return
 		page.queue_free()
 		for node in get_children():
 			if node is CanvasItem and node != page:
