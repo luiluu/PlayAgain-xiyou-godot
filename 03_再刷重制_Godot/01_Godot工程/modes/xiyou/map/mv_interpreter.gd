@@ -92,6 +92,9 @@ func _execute_env(c: Dictionary):
 	if HOST_CODES.has(int(c.code)):
 		return _request("command", "command", {"command": c})
 	match int(c.code):
+		202:
+			# 设置载具位置（神魔战场门 Map116 EV5 把飞艇停到 Map186）：重制没有载具，只记不动
+			return null
 		339:
 			# 强制战斗行动：MV iterateBattler 只在战斗内遍历战斗者，地图上空操作（CE2499 炭治郎-免疫负面）
 			return null

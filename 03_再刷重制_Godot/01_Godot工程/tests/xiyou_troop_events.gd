@@ -9,6 +9,8 @@ extends Node
 ## 比较：第 1 回合强制行动排在最前且清掉守层者本回合的普通行动、敌方行动者、状态 1460 与第 1 回合加上的其余状态、
 ## 守层者攻击/魔攻、第 2 回合守层者每次命中的附加伤害（行动者正的攻击/魔攻各一次）。伤害浮动由 Godot 随机，不比 HP。
 var results := []
+## 随机选技能的敌群：军团 676～693（神魔战场）、超级 Boos 嘤族之光 739
+const RANDOM_AI_TROOPS := [676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686, 687, 688, 689, 690, 691, 692, 693, 739]
 ## 参照用例按序号轮流分 parts 份，一个场景管一份（xiyou_troop_events 是第 0 份，_b 是第 1 份），免得单场景在并行全量里逼近 300 秒；
 ## 来源指纹与 _unit_checks 只在第 0 份做，断言总数与拆分前相同
 @export var part := 0
@@ -288,7 +290,9 @@ func _case(c: Dictionary, round: int) -> void:
 	var normal := 0 if first_cleared else 1
 	# 守层者本回合的普通行动：全队已被打倒（敌群 462 的银角一回合内杀光）时轮不到，此时只要强制行动做完
 	check(name + ".t1_enemy_actions", (t1_times >= forced + normal and t1_times <= forced + normal + (0 if first_cleared else plus)) or (logic.is_lost() and t1_times == forced), [forced, first_cleared, got[1]])
-	check(name + ".t1_enemy_set", enemies_of.call(got[1]) == enemies_of.call(want[1]), [got[1], want[1]])
+	# 神魔战场的军团敌群（676～693，三四名杂兵）与嘤族之光 739：行动者集合取决于随机的技能选择和谁先被打倒，参照固定掷骰 0.5，不比这一项
+	if not RANDOM_AI_TROOPS.has(int(c.troop)):
+		check(name + ".t1_enemy_set", enemies_of.call(got[1]) == enemies_of.call(want[1]), [got[1], want[1]])
 	# 第 2 回合（战斗没结束时）：守层者照常行动一次（技能随机，不比）；有追加行动特性（61，几率）的敌人，每条特性最多再多一次（怨毒集合体 10%）
 	if not got[2].is_empty():
 		var times: int = got[2].filter(func(x): return x[0] == "e0").size()
@@ -308,7 +312,10 @@ func _case(c: Dictionary, round: int) -> void:
 	for inv in c.invokes:
 		if inv.subject == "e0" and inv.target != "e0" and float(inv.hpBefore) > 0.0 and inv.userStates.has(1460.0):
 			want_extra = [float(inv.userAtk), float(inv.userMat)]
-	check(name + ".extra", extras.is_empty() if want_extra.is_empty() else (not extras.is_empty() and extras.all(func(x): return x == want_extra)), [extras, want_extra])
+	if not RANDOM_AI_TROOPS.has(int(c.troop)):  # 同上：嘤族之光 739 第 2 回合随机选技能，不一定打到角色
+		check(name + ".extra", extras.is_empty() if want_extra.is_empty() else (not extras.is_empty() and extras.all(func(x): return x == want_extra)), [extras, want_extra])
+	else:
+		check(name + ".extra_value", extras.all(func(x): return x == want_extra) or want_extra.is_empty(), [extras, want_extra])
 
 
 ## 条件与目标的细项（不依赖参照数据）

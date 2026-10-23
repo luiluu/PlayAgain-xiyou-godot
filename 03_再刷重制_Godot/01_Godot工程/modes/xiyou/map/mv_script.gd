@@ -238,6 +238,11 @@ static func _toaster_text(js: String) -> String:
 		if v:
 			out += js_number(XState.current.variable(int(v.get_string(1))))
 			continue
+		# (变量 N * 常数)：封刀奖励 CE999～1001 的「肝帝积分」提示
+		var mul := _re("^\\(\\s*\\$gameVariables\\.value\\((\\d+)\\)\\s*\\*\\s*(\\d+)\\s*\\)$").search(p)
+		if mul:
+			out += js_number(XState.current.variable(int(mul.get_string(1))) * float(mul.get_string(2)))
+			continue
 		return ""
 	return out
 
