@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.138",
-  "sequence": 138,
-  "next": "dev.139",
-  "nextSequence": 139,
+  "current": "dev.139",
+  "sequence": 139,
+  "next": "dev.140",
+  "nextSequence": 140,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "jovial-napier-ef0df2",
+  "currentChange": "bajie-monster-book",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

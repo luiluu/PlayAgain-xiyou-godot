@@ -13,12 +13,12 @@ extends Control
 ##   没登记的敌人状态窗全空。所有文字照 EnemyNameColorByDifficulty：与数据库敌人原名相同的文字改画成难度色。
 ## - 目录确定：已登记的打开掉落列表（盖在状态窗上，按品质从高到低、品质 0 不列，「名字   掉率%」或「【绝对掉落】」），
 ##   说明卡（宽 400）跟在选中行右下（Window_EnemyBookItemList.updateHelp）；确定或取消都回目录。没登记的提示「未解锁」。
-## 与原版不同（O-待定）：原版本想在图鉴里关掉神话（Morpho_EliteEnemy_Switch），但该参数读成 NaN 没关上，每次打开都按 50% 随机
+## 与原版不同（O-078）：原版本想在图鉴里关掉神话（Morpho_EliteEnemy_Switch），但该参数读成 NaN 没关上，每次打开都按 50% 随机
 ## 把敌人显示成「【神话】」（能力 ×3.5、掉率 ×5）；这里固定按普通敌人显示，BOOK_FIXED_NORMAL 设 false 恢复原版的随机。
 
 signal closed
 
-## O-待定：图鉴固定按普通（非神话）敌人显示；false 恢复原版随机神话
+## O-078：图鉴固定按普通（非神话）敌人显示；false 恢复原版随机神话
 const BOOK_FIXED_NORMAL := true
 const INDEX_RECT := Rect2(0, 0, 426, 720)
 const STATUS_RECT := Rect2(426, 0, 854, 720)
