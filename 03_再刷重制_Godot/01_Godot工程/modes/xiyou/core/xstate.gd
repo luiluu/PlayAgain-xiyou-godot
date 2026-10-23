@@ -146,6 +146,8 @@ var guide_seen := {}
 var achievements := {}
 ## 怪物图鉴（AB_EnemyBook）：flags 登记、defeat 击败数、maps 出没地图（$gameSystem._enemyBookFlags／_defeatNumbers／_recordEnemyMap），见 XEnemyBook
 var enemy_book := {"flags": {}, "defeat": {}, "maps": {}}
+## 制作（hc.js）：known 已知配方、level／exp 四类别等级与经验（$gameParty._recipesKnown／_craftingLevel／_craftingExp），见 XCrafting
+var crafting := {"known": {}, "level": [1, 1, 1, 1], "exp": [0, 0, 0, 0]}
 var shop_pending := ""
 var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
@@ -471,7 +473,7 @@ func to_dict() -> Dictionary:
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac,
-		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting}
 
 static func from_dict(d: Dictionary) -> XState:
 	# dev.099 once persisted strict engine-specific RNG state. Ignore that obsolete
@@ -557,6 +559,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.achievements = ac.duplicate() if ac is Dictionary else {}
 	var eb = d.get("enemyBook", {})
 	s.enemy_book = eb.duplicate(true) if eb is Dictionary else {}
+	var cr = d.get("crafting", {})
+	s.crafting = cr.duplicate(true) if cr is Dictionary else {}
 	s.shop_stock = XShopStock.from_save(d.get("shopStock", {}))
 	var zs = d.get("zhenqiSpec", {})
 	for part in ["w", "e", "weaponTrials"]:
