@@ -195,7 +195,7 @@ func _run() -> void:
 	await press("ui_down")
 	check("menu_cursor", menu._cmd_index == 1 and XSound.system_log == [0], XSound.system_log)
 	# 灰显指令（异化工坊；种族祝福 dev.149 起可用）蜂鸣；技能页 dev.030 起可用，真气第二批起可用
-	menu._cmd_index = XMenu.COMMANDS.map(func(c): return c[1]).find("alienation")
+	menu._cmd_index = XMenu.COMMANDS.map(func(c): return c[1]).find("feedback")
 	XSound.system_log.clear()
 	await press("ui_accept")
 	check("menu_disabled_buzzer", menu._mode == "command" and XSound.system_log == [3], XSound.system_log)
