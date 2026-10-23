@@ -61,6 +61,9 @@
 		],
 		"m65e3p0": [
 			"trace"
+		],
+		"m82e4p0": [
+			"trace"
 		]
 	},
 	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。",

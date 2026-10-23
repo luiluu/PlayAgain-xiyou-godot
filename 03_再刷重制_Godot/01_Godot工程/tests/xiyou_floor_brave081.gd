@@ -218,6 +218,7 @@ func _tower_gate() -> void:
 
 func _floor1() -> void:
 	var s := _start(82, 15, 24)
+	s.direction = 2   # 逃离点 EV3 只在面朝下时问
 	if not _check("f1_loaded", await _wait_map(82)):
 		return
 	var map: XMapScene = _scene()
@@ -246,6 +247,7 @@ func _floor1() -> void:
 	s.set_variable(5, 1)
 	s.set_variable(6, 18)
 	s.set_variable(21, 1)
+	map.player.direction = 2
 	await _run_event(map, 3, [1], "")
 	_check("f1_escape_no", _scene().map_id == 82)
 	await _run_event(map, 3, [0], "")
