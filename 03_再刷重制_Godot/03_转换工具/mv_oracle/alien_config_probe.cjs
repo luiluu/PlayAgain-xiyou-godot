@@ -93,7 +93,8 @@ function flow(name,prep,steps){setup();const made=prep();toasts.length=0;A.openW
   return {name,made,steps,screens,toasts:toasts.slice(),configs:A.owned().filter(A.mark).map(i=>({name:i.name,config:cfgOf(i)}))};}
 const pages=[];
 const S=C.ids.stone,gain=(id,n)=>w.$gameParty.gainItem(w.$dataItems[id],n);
-const one=(k,extra)=>()=>{if(extra)extra();const b=baseOf(k);make(b[0],b[1],'boss',k);return [{affix:k,kind:b[0],base:b[1]}];};
+// 本体八项属性随参照抄（独立装备的属性浮动不在本参照范围）
+const one=(k,extra)=>()=>{if(extra)extra();const b=baseOf(k),i=make(b[0],b[1],'boss',k);return [{affix:k,kind:b[0],base:b[1],params:J(i.params)}];};
 pages.push(flow('bound',one('lifelink'),['配置异化','sel:绑定队友#1','保存配置','配置异化','sel:使用角色#1','sel:绑定队友#2','保存配置','配置异化','解除配置']));
 pages.push(flow('skill',one('silence'),['配置异化','sel:作用技能#1','保存配置','配置异化','sel:使用角色#1','保存配置']));
 pages.push(flow('swallow',()=>{[1,6].forEach(plain);return one('swallow')();},['配置异化','sel:借用武器#1','保存配置','配置异化','解除配置']));

@@ -37,6 +37,8 @@ var cfg_vals := {}
 var error_text := ""
 var recent_open := false
 var root: Control
+## 列表按钮的选中样式：原版只在整页重画（render）时按当时的 selected 定；展开配置、分解确认、换下拉框、出错都只是局部改动，不重画列表
+var shown_selected := ""
 ## 最近一次 render 的节点树（屏上显示的就是它；测试读它、按它点按钮）
 var tree: Array = []
 var _font: Font
@@ -142,7 +144,7 @@ func build() -> Array:
 		detail.append(el("div", null, "alien-guide", guide))
 	for i in all:
 		var uid := str(XAlienation.mark(i).uid)
-		list.append(btn(str(i.name) + ("　[锁定]" if XAlienation.locked(i) else ""), _select.bind(uid), false, "selected" if uid == selected else ""))
+		list.append(btn(str(i.name) + ("　[锁定]" if XAlienation.locked(i) else ""), _select.bind(uid), false, "selected" if uid == shown_selected else ""))
 	var picked = all.filter(func(e): return str(XAlienation.mark(e).uid) == selected)
 	var item = picked[0] if not picked.is_empty() else (all[0] if not all.is_empty() else null)
 	if item != null:
@@ -210,8 +212,9 @@ static func flatten(nodes: Array, depth := 0, out := []) -> Array:
 func _act(fn: Callable) -> void:
 	var r: Dictionary = fn.call()
 	error_text = str(r.error) if r.has("error") else ""
-	cfg_open = false
-	render()
+	if not r.has("error"):
+		cfg_open = false
+	render(r.has("error"))
 
 
 func _select(uid: String) -> void:
@@ -223,7 +226,7 @@ func _select(uid: String) -> void:
 
 func _confirm() -> void:
 	confirming = true
-	render()
+	render(true)
 
 
 func _cancel_confirm() -> void:
@@ -241,12 +244,12 @@ func _dismantle(item: Dictionary) -> void:
 		selected = ""
 		confirming = false
 		cfg_open = false
-	render()
+	render(r.has("error"))
 
 
 func _toggle_recent() -> void:
 	recent_open = not recent_open
-	render()
+	render(true)
 
 
 ## 测试用：按按钮文字点（参照路线的写法）；@n 点列表第 n 项
@@ -378,7 +381,7 @@ func _open_config(item: Dictionary) -> void:
 	var actors := _actor_options(st)
 	cfg_vals = {"actor": _initial(actors, cfg_saved.get("actorId") if cfg_saved.get("actorId", 0) else (actors[0].value if not actors.is_empty() else null))}
 	_fill(st, item)
-	render()
+	render(true)
 
 
 func _select_node(label: String, options: Array, value, key: String) -> Dictionary:
@@ -436,7 +439,7 @@ func set_value(key: String, value) -> void:
 		cfg_vals[key] = value
 		if key == "actor" and item != null:
 			_fill(st, item)
-	render()
+	render(true)
 
 
 func _selected_item(st: XState):
@@ -464,7 +467,7 @@ func _save_config(item: Dictionary) -> void:
 	else:
 		error_text = ""
 		cfg_open = false
-	render()
+	render(r.has("error"))
 
 
 func _clear_config(item: Dictionary) -> void:
@@ -474,7 +477,7 @@ func _clear_config(item: Dictionary) -> void:
 	else:
 		error_text = ""
 		cfg_open = false
-	render()
+	render(r.has("error"))
 
 
 func _close_config() -> void:
@@ -514,7 +517,9 @@ static func _collect(nodes: Array, pred: Callable, out := []) -> Array:
 
 ## ---- 摆放（照原版 CSS） ----
 
-func render() -> void:
+func render(partial := false) -> void:
+	if not partial:
+		shown_selected = selected
 	var nodes := build()
 	tree = nodes
 	if root != null:
@@ -535,6 +540,7 @@ func render() -> void:
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.custom_minimum_size = Vector2(0, 0)
+	scroll.follow_focus = true  # 键盘移到下方的配置项时跟着滚
 	panel.add_child(scroll)
 	var box := _vbox()
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
