@@ -384,6 +384,7 @@ static func paint_info(c: XMVCanvas, item: Dictionary) -> void:
 	var dw := c.size.x - dx * 2
 	c.icon(int(item.get("iconIndex", 0)), dx + 2, 2)
 	c.text(XQuality.list_name(item), dx + 36, 0, dw - 36, "left", XGear.color(item), XUI.FONT_SIZE, LH)
+	XItemRow.paint_magic_level(c, item, dx, 0)
 	if not item.has("instanceId"):
 		return
 	var dy := LH

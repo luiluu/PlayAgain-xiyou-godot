@@ -32,6 +32,22 @@ static func paint(c: XMVCanvas, rec: Dictionary, y: float, right_text: String, a
 		c.text(right_text, 0, y, w, "right", XUI.TEXT, QTY_FONT, LH, alpha)
 
 
+## CP_MagicWeapon 包过的 Window_Base.drawItemName：法宝（<Magic Weapon>）在图标上写等级（drawLevelOnIcon：
+## (x+2)+16−2、(y+2)−8，宽 textWidth("00")，靠右，字号 Level Font Size、色 textColor(Level Font Color)，changePaintOpacity(true)）。
+## 只有走 Window_Base 那条 drawItemName 的窗口画：商店买入、装备槽、物品详情头、怪物图鉴掉落、制作配方列表；
+## 物品列表一系（物品页、出售、装备候选、战斗物品）有自己的 drawItemName 链，不画（magic_level_oracle.json classes）。
+## 画了返回 true：原版画完把不透明度改回不透明，同一行后面画的（如商店价格）不再半透明。
+static func paint_magic_level(c: XMVCanvas, rec: Dictionary, x: float, y: float) -> bool:
+	var lv = XEquipmentView.level(rec)
+	if not (lv is float and lv >= 0.0):
+		return false
+	var p := XDB.plugin("CP_MagicWeapon")
+	var size := int(str(p.get("Level Font Size", "16")))
+	c.text(XEnemyBookPage.js_num(lv), x + 16, y - 6, XActorBook.js_width("00", size), "right",
+		XUI.text_color(int(str(p.get("Level Font Color", "12")))), size, LH)
+	return true
+
+
 ## Galv becomeOld／drawItemName 认得的类型：itypeId、wtypeId、atypeId 有一个为真值
 static func new_tracked(rec: Dictionary) -> bool:
 	return not rec.is_empty() and (int(rec.get("itypeId", 0)) != 0 or int(rec.get("wtypeId", 0)) != 0 or int(rec.get("atypeId", 0)) != 0)
