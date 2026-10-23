@@ -907,6 +907,16 @@ func open_enemy_book() -> void:
 	hud.visible = true
 
 
+## 公共事件 169「宠物」：SceneManager.push(Scene_PetSystem)，关闭后回到地图
+func open_pets() -> void:
+	hud.visible = false
+	var page := XPetScene.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 func open_menu() -> void:
 	# 挂机中不能呼叫菜单（Scene_Map.isMenuCalled）
 	if busy or _menu_open or XHangUp.is_active(XState.current):

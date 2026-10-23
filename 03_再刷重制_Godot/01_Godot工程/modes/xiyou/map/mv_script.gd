@@ -180,6 +180,10 @@ static func _statements(js: String, interp) -> Array:
 		if st == "SceneManager.push(Scene_ActorBook)" and interp.host.has_method("open_actor_book"):
 			await interp.host.open_actor_book()
 			continue
+		# 宠物（Star_PetSystem）：公共事件 169
+		if st == "SceneManager.push(Scene_PetSystem)" and interp.host.has_method("open_pets"):
+			await interp.host.open_pets()
+			continue
 		if st.begins_with("$.toaster"):
 			var text := _toaster_text(st)
 			if text != "":
