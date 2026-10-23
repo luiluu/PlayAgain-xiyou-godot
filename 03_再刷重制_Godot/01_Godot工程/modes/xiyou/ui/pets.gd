@@ -9,7 +9,9 @@ extends Control
 ## - 底部指令 (0,456,427,264)：出战／休息／放生／修改共享角色／查看技能，一直显示，目录确定后才可选。
 ## - 技能列表 (426,540,854,180)：drawItemName（宽 826−6−textWidth("000")），说明卡（宽 400）跟在选中行右下；取消回底部指令。
 ## - 共享角色窗 (426.67,548,854,172)：「N号角色」，当前的加「[当前共享]」；确定后换共享角色并重学宠物技能。
-## 目录为空时确定不做事（原版会打开底部指令，选了出战等会因宠物不存在报错）。
+## 目录为空时确定不做事（O-079：原版会打开底部指令，选了出战等会因宠物不存在报错）。
+## 喂养（Star_PetUpLevel）：列表与技能列表同位，确定吃一件（出战宠物与满级的不吃，口粮退回）；合成（Star_PetSynthesis）：先在目录选宠物、
+## 底部「合成」里按宠物一／宠物二登记（名字加「[合成A]」「[合成B]」），再按「合成」；规则在 XPets。
 
 signal closed
 
@@ -28,9 +30,12 @@ const SPRITE_CENTER := Vector2(CW / 4.0, CW / 4.0)
 const ATTR := ["生命", "魔法", "物理攻击", "物理防御", "魔法攻击", "魔法防御", "敏捷", "幸运", "命中", "闪避", "暴击", "暴击闪避", "魔法闪避", "反击"]
 ## 状态窗七行两列：[左, 右]（加成序号）
 const ATTR_ROWS := [[0, 1], [2, 6], [4, 7], [3, 8], [5, 9], [11, 10], [12, 13]]
-## Star_PetSynthesis 在变量 21 为 0 时加「合成」，Star_PetUpLevel 加「喂养」（期二，暂时灰显）；窗口可见 6 行，第 7 行要滚动
+## Star_PetSynthesis 在变量 21 为 0 时加「合成」，Star_PetUpLevel 加「喂养」；窗口可见 6 行，第 7 行要滚动
 const COMMANDS := [["出战", "war"], ["休息", "rest"], ["放生", "release"], ["修改共享角色", "team"], ["查看技能", "skills"], ["合成", "synthesis"], ["喂养", "feed"]]
-const NOT_YET := ["synthesis", "feed"]
+## 合成窗 (426.67,584,854,136)：宠物一／宠物二／合成；喂养列表与技能列表同位 (426,540,854,180)
+const SYN_RECT := Rect2(1280.0 / 3.0, 584, 854, 136)
+const SYN_COMMANDS := ["宠物一", "宠物二", "合成"]
+const FEED_ROWS := 4
 const BOTTOM_ROWS := 6
 const MUTANT := "【变异】"
 
@@ -39,6 +44,14 @@ var index := 0
 var top := 0
 var cmd := -1
 var cmd_top := 0
+## 选为宠物一／二的宠物（$gameParty.SynWarA／B，离开本页即清空）
+var syn_a: Dictionary = {}
+var syn_b: Dictionary = {}
+var syn := -1
+var feed_index := -1
+var feed_top := 0
+var syn_win: XMVWindow
+var feed_win: XMVWindow
 var team := -1
 var skill_index := -1
 var skill_top := 0
@@ -66,10 +79,14 @@ func _ready() -> void:
 	skill_win = XMVWindow.make(self, SKILL_RECT, op, _paint_skills)
 	bottom_win = XMVWindow.make(self, BOTTOM_RECT, op, _paint_bottom)
 	team_win = XMVWindow.make(self, TEAM_RECT, op, _paint_team)
-	for w in [index_win, skill_win, bottom_win, team_win]:
+	feed_win = XMVWindow.make(self, SKILL_RECT, op, _paint_feed)
+	syn_win = XMVWindow.make(self, SYN_RECT, op, _paint_syn)
+	for w in [index_win, skill_win, bottom_win, team_win, feed_win, syn_win]:
 		w.canvas.blink = true
 	skill_win.openness = 0
 	team_win.openness = 0
+	feed_win.openness = 0
+	syn_win.openness = 0
 	help_card = XHelpCard.new()
 	add_child(help_card)
 	help_card.show_for({})
@@ -99,11 +116,12 @@ static func _t(text: String, x: float, y: float, w: float, color := XUI.TEXT, si
 
 
 ## Window_PetSystemStatus.drawAllContents
-static func status_ops(s: XState, pet: Dictionary) -> Array:
+## suffix：Star_PetSynthesis 的 name 包装，选为宠物一／二的加「[合成A]」「[合成B]」
+static func status_ops(s: XState, pet: Dictionary, suffix := "") -> Array:
 	var ops := []
 	if pet.is_empty():
 		return ops
-	var name := XPets.pet_name(s, pet)
+	var name := XPets.pet_name(s, pet) + suffix
 	if name.contains(MUTANT):
 		ops.append(_t("变异", 0, 0, COLW, Color("FFAF00")))
 		ops.append(_t(name.replace(MUTANT, ""), COL2, 0, COLW))
@@ -149,6 +167,18 @@ static func skill_ids(pet: Dictionary) -> Array:
 	return out
 
 
+func syn_suffix(pet: Dictionary) -> String:
+	if not syn_a.is_empty() and is_same(pet, syn_a):
+		return "[合成A]"
+	if not syn_b.is_empty() and is_same(pet, syn_b):
+		return "[合成B]"
+	return ""
+
+
+func display_name(pet: Dictionary) -> String:
+	return XPets.pet_name(XState.current, pet) + syn_suffix(pet)
+
+
 func team_names() -> Array:
 	var cur := int(XPets._data(XState.current).team_a)
 	var out := []
@@ -164,7 +194,7 @@ func _paint_index(c: XMVCanvas) -> void:
 	if index >= top and index < top + ROWS and not l.is_empty():
 		c.cursor(Rect2(0, (index - top) * LH, c.size.x, LH), mode == "index")
 	for i in range(top, mini(top + ROWS, l.size())):
-		_paint_ops(c, [_t(XPets.pet_name(s, l[i]).replace(MUTANT, ""), 6, (i - top) * LH, c.size.x - 12)])
+		_paint_ops(c, [_t(display_name(l[i]).replace(MUTANT, ""), 6, (i - top) * LH, c.size.x - 12)])
 
 
 func _paint_status(c: XMVCanvas) -> void:
@@ -182,7 +212,7 @@ func _paint_status(c: XMVCanvas) -> void:
 		c.draw_texture_rect_region(_sprite_tex, Rect2(center - sz / 2.0, sz), src)
 	# 技能列表打开时 MV WindowLayer 把它的范围从状态窗里挖掉（y 540 以下）
 	var ops := _status_ops
-	if skill_win.openness > 0:
+	if skill_win.openness > 0 or feed_win.openness > 0:
 		ops = ops.filter(func(o): return STATUS_RECT.position.y + XMVWindow.PADDING + float(o[3]) + LH <= SKILL_RECT.position.y + 4)
 	_paint_ops(c, ops)
 
@@ -199,7 +229,7 @@ func _paint_bottom(c: XMVCanvas) -> void:
 	if mode == "bottom" and cmd >= cmd_top and cmd < cmd_top + BOTTOM_ROWS:
 		c.cursor(Rect2(0, (cmd - cmd_top) * LH, c.size.x, LH), true)
 	for i in range(cmd_top, mini(cmd_top + BOTTOM_ROWS, COMMANDS.size())):
-		c.text(COMMANDS[i][0], 6, (i - cmd_top) * LH, c.size.x - 12, "left", XUI.TEXT, XUI.FONT_SIZE, LH, XUI.DIM.a if NOT_YET.has(COMMANDS[i][1]) else 1.0)
+		c.text(COMMANDS[i][0], 6, (i - cmd_top) * LH, c.size.x - 12)
 
 
 func _paint_team(c: XMVCanvas) -> void:
@@ -208,6 +238,37 @@ func _paint_team(c: XMVCanvas) -> void:
 	var names := team_names()
 	for i in names.size():
 		c.text(names[i], 6, i * LH, c.size.x - 12)
+
+
+func _paint_syn(c: XMVCanvas) -> void:
+	if syn >= 0:
+		c.cursor(Rect2(0, syn * LH, c.size.x, LH), mode == "syn")
+	for i in SYN_COMMANDS.size():
+		_paint_ops(c, [_t(SYN_COMMANDS[i], 6, i * LH, c.size.x - 12)])
+
+
+## Window_PetUpLevelList.drawItem：drawItemName（宽 −textWidth("000")），右边「:」与持有数；没有的半透明
+static func feed_row_ops(s: XState, item_id: int, y: float) -> Array:
+	var it := XDB.rec("Items", item_id)
+	var n := s.item_count(item_id)
+	var op := 1.0 if n > 0 else XUI.DIM.a
+	var w := CW - 6.0
+	return [["i", int(it.get("iconIndex", 0)), 2.0, y + 2, op],
+		["t", str(it.get("name", "")), 36.0, y, w - XActorBook.js_width("000", XUI.FONT_SIZE) - 36, LH, "left", XUI.FONT_SIZE, XQuality.list_color(it), op],
+		["t", ":", 0.0, y, w - XActorBook.js_width("00", XUI.FONT_SIZE), LH, "right", XUI.FONT_SIZE, XUI.TEXT, op],
+		["t", str(n), 0.0, y, w, LH, "right", XUI.FONT_SIZE, XUI.TEXT, op]]
+
+
+func _paint_feed(c: XMVCanvas) -> void:
+	var food := XPets.food_items()
+	if feed_index >= feed_top and feed_index < feed_top + FEED_ROWS:
+		c.cursor(Rect2(0, (feed_index - feed_top) * LH, c.size.x, LH), mode == "feed")
+	for i in range(feed_top, mini(feed_top + FEED_ROWS, food.size())):
+		for o in feed_row_ops(XState.current, int(food[i]), (i - feed_top) * LH):
+			if o[0] == "i":
+				c.icon(int(o[1]), o[2], o[3], o[4])
+			else:
+				c.text(o[1], o[2], o[3], o[4], o[6], o[8], int(o[7]), o[5], o[9])
 
 
 func _paint_skills(c: XMVCanvas) -> void:
@@ -225,7 +286,7 @@ func _paint_skills(c: XMVCanvas) -> void:
 ## Scene_PetSystem.update：目录选中项变了刷新状态窗
 func _select_pet() -> void:
 	var pet := current()
-	_status_ops = status_ops(XState.current, pet)
+	_status_ops = status_ops(XState.current, pet, syn_suffix(pet))
 	_sprite_tex = null
 	_sprite_sv = false
 	if not pet.is_empty():
@@ -247,7 +308,9 @@ func _refresh() -> void:
 	bottom_win.down_arrow = cmd_top + BOTTOM_ROWS < COMMANDS.size()
 	skill_win.up_arrow = skill_top > 0
 	skill_win.down_arrow = skill_top + SKILL_ROWS < skill_ids(current()).size()
-	for w in [index_win, status_win, skill_win, bottom_win, team_win]:
+	feed_win.up_arrow = feed_top > 0
+	feed_win.down_arrow = feed_top + FEED_ROWS < XPets.food_items().size()
+	for w in [index_win, status_win, skill_win, bottom_win, team_win, feed_win, syn_win]:
 		w.refresh()
 
 
@@ -275,9 +338,6 @@ func ok() -> void:
 			mode = "bottom"
 			cmd = 0
 		"bottom":
-			if NOT_YET.has(COMMANDS[cmd][1]):
-				XSound.system(3)
-				return
 			XSound.system(1)
 			match COMMANDS[cmd][1]:
 				"war":
@@ -305,6 +365,26 @@ func ok() -> void:
 					skill_top = 0
 					skill_win.open()
 					_update_help()
+				"synthesis":
+					mode = "syn"
+					syn = 0
+					syn_win.open()
+				"feed":
+					mode = "feed"
+					feed_index = 0
+					feed_top = 0
+					feed_win.open()
+		"syn":
+			XSound.system(1)
+			_syn_ok()
+			return
+		"feed":
+			var food: Array = XPets.food_items()
+			if feed_index < 0 or feed_index >= food.size() or s.item_count(int(food[feed_index])) <= 0:
+				XSound.system(3)
+				return
+			XSound.system(1)
+			XPets.feed(s, index, int(food[feed_index]))
 		"team":
 			XSound.system(1)
 			XPets.set_team_a(s, team)
@@ -312,6 +392,55 @@ func ok() -> void:
 		"skills":
 			pass
 	_select_pet()
+
+
+## onSynthesisConfirmOk：宠物一／二按条件选上（否则「未满足合成条件」）后回底部指令；合成成功选中结果、回目录，失败回底部指令
+func _syn_ok() -> void:
+	var s := XState.current
+	var l := pets()
+	if syn == 0 or syn == 1:
+		var other := syn_b if syn == 0 else syn_a
+		var other_i := -1
+		for k in l.size():
+			if not other.is_empty() and is_same(l[k], other):
+				other_i = k
+		if XPets.can_pick(s, index, other_i):
+			if syn == 0:
+				syn_a = l[index]
+			else:
+				syn_b = l[index]
+		else:
+			_toast("未满足合成条件")
+		_close_syn()
+		_select_pet()
+		return
+	var ia := -1
+	var ib := -1
+	for k in l.size():
+		if not syn_a.is_empty() and is_same(l[k], syn_a):
+			ia = k
+		if not syn_b.is_empty() and is_same(l[k], syn_b):
+			ib = k
+	var r := XPets.synthesize(s, ia, ib) if ia >= 0 and ib >= 0 else -1
+	syn_a = {}
+	syn_b = {}
+	if r >= 0:
+		_toast("合成成功")
+		syn_win.close()
+		syn = -1
+		_back_to_index()
+		index = r
+		top = XMenu._scroll_to(index, top, ROWS)
+	else:
+		_toast("合成失败")
+		_close_syn()
+	_select_pet()
+
+
+func _close_syn() -> void:
+	syn_win.close()
+	syn = -1
+	mode = "bottom"
 
 
 ## onCancel：底部指令停用（不关），回目录
@@ -341,6 +470,13 @@ func cancel() -> void:
 			skill_win.close()
 			skill_index = -1
 			help_card.show_for({})
+			mode = "bottom"
+		"syn":
+			_close_syn()
+		"feed":
+			# onUpLeveListCancel
+			feed_win.close()
+			feed_index = -1
 			mode = "bottom"
 	_select_pet()
 
@@ -375,6 +511,17 @@ func _move(d: int, wrap: bool) -> void:
 			team = XMenu._move(team, d, 4, wrap)
 			XSound.system(0)
 			_refresh()
+		"syn":
+			syn = XMenu._move(syn, d, SYN_COMMANDS.size(), wrap)
+			XSound.system(0)
+			_refresh()
+		"feed":
+			var nf := XPets.food_items().size()
+			if nf > 0:
+				feed_index = XMenu._move(feed_index, d, nf, wrap)
+				feed_top = XMenu._scroll_to(feed_index, feed_top, FEED_ROWS)
+				XSound.system(0)
+				_refresh()
 		"skills":
 			var n := skill_ids(current()).size()
 			if n > 0:
