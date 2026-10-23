@@ -9,7 +9,8 @@ static func can_change(a: XActor, slot: int) -> bool:
 ## Window_EquipItem.includes／bestEquipItem：装备类型等于该槽当前的槽位类型（双持时第 2 格是武器）且能装备
 static func fits(a: XActor, slot: int, item: Dictionary) -> bool:
 	var slots := a.equip_slots()
-	return slot >= 0 and slot < slots.size() and not item.is_empty() and int(item.get("etypeId", 0)) == int(slots[slot]) and a.can_equip(item)
+	return slot >= 0 and slot < slots.size() and not item.is_empty() and int(item.get("etypeId", 0)) == int(slots[slot]) and a.can_equip(item) \
+		and (XState.current == null or XAlienation.can_wear(XState.current, a, item))  # 异化装备要就绪（installAlienationRuntime canEquip）
 
 static func clone(a: XActor) -> XActor:
 	var b := XActor.new()
@@ -41,7 +42,7 @@ static func preview(a: XActor, slot: int, item) -> XActor:
 	return b
 
 static func change(s: XState, a: XActor, slot: int, item) -> bool:
-	if not can_change(a, slot):
+	if not can_change(a, slot) or not XAlienation.can_change(s, a, slot, item):  # 异化：待选、每人一件、就绪（changeEquip）
 		return false
 	if item is Dictionary:
 		var index := s.gear.find_custom(func(e):return is_same(e,item))

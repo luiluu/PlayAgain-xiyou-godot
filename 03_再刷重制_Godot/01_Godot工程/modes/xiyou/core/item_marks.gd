@@ -168,8 +168,9 @@ static func draws_gold(rec: Dictionary) -> bool:
 
 ## Window_ShopSell.isEnabled（YEP_ShopMenuCore）：有价格，或有卖出报酬备注（MoreCurrencies 设 canSell）。
 ## 正式数据没有 <Can Sell>／<Cannot Sell>／<Price>／<Sell Price> 备注。
+## installAlienationRuntime：异化装备不能在商店出售（Window_ShopSell.isEnabled）
 static func can_sell(rec: Dictionary) -> bool:
-	return not rec.is_empty() and (int(rec.get("price", 0)) > 0 or has_sell_rewards(rec))
+	return not rec.is_empty() and (int(rec.get("price", 0)) > 0 or has_sell_rewards(rec)) and XAlienation.mark(rec).is_empty()
 
 
 ## Scene_Shop.doSell(number)／XdRsData.hangUp.doSell：金币 sellingPrice×数量，报酬变量与物品各加 值×数量，再失去物品。
@@ -402,7 +403,8 @@ static func sellable_gear(s: XState, legacy: Array) -> Array:
 	var out := []
 	for e in s.gear:
 		var q := str(e.get("meta", {}).get("quality", "")).strip_edges()
-		if q.is_valid_int() and legacy.has(int(q)) and not is_locked(s, e):
+		# 异化装备跳过：原版挂机卖出（XdRsData.hangUp.doSell）挡了；一键出售原版没挡，这里一并跳过（O-待定）
+		if q.is_valid_int() and legacy.has(int(q)) and not is_locked(s, e) and XAlienation.mark(e).is_empty():
 			out.append(e)
 	return out
 
