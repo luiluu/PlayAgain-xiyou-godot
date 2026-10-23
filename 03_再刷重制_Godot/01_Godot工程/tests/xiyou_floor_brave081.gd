@@ -149,7 +149,7 @@ func _run() -> void:
 	await _teleport_room()
 	await _tower_gate()
 	await _floor1()
-	_finish()
+	await _finish()
 
 
 ## 未知存在出口接到传送室／勇者之塔
@@ -271,4 +271,8 @@ func _finish() -> void:
 	print("战斗：", JSON.stringify(battles))
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
+	for player in get_tree().root.find_children("*", "AudioStreamPlayer", true, false):
+		player.stop()
+		player.stream = null
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)

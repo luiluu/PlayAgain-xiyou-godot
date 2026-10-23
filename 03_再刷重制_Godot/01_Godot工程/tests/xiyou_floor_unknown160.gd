@@ -155,7 +155,7 @@ func _run() -> void:
 		await _chair(m)
 		await _exit(m)
 	MVEventCore.fixed_random = -1.0
-	_finish()
+	await _finish()
 
 
 func _seal(m: int) -> void:
@@ -250,4 +250,8 @@ func _finish() -> void:
 	print("战斗：", JSON.stringify(battles))
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
+	for player in get_tree().root.find_children("*", "AudioStreamPlayer", true, false):
+		player.stop()
+		player.stream = null
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)

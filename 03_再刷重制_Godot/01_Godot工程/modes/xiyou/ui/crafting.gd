@@ -222,6 +222,9 @@ func _paint_detail(c: XMVCanvas) -> void:
 
 
 func _paint_confirm(c: XMVCanvas) -> void:
+	# 原版金币窗在列表／类别阶段盖住确认窗内容。
+	if mode != "confirm" and mode != "popup":
+		return
 	if mode == "confirm":
 		c.cursor(Rect2(0, 0, c.size.x, LH), true)
 	paint_ops(c, confirm_ops())

@@ -24,9 +24,9 @@
                 status.textContent = name;
             }
             async function fresh() {
-                await wait(function () { return DataManager.isDatabaseLoaded() && window.Scene_Title && SceneManager._scene; });
+                await wait(function () { return DataManager.isDatabaseLoaded() && window.Scene_Title && SceneManager._scene && !(SceneManager._scene instanceof Scene_Boot); });
                 if (window.CodexAlienation) CodexAlienation.closeWorkshop();
-                if (SceneManager._scene) { SceneManager._scene.isBusy = function(){return false;}; }
+                if (SceneManager._scene) { SceneManager._scene.update = function(){}; SceneManager._scene.isBusy = function(){return false;}; }
                 ConfigManager.applyData({}); DataManager.setupNewGame(); Math.random = function(){return 0.75;};
                 $gameParty._actors = [1,8,9,10]; $gameParty._battleMembers = [1,8,9,10];
                 Game_Map.prototype.updateInterpreter = function(){};
@@ -51,10 +51,10 @@
                 await wait(function(){return window.$gameRecipes && $gameRecipes.length>458;});
                 $gameRecipes[1]._materials.forEach(function(m){$gameParty.gainItem(m._item,m._amount*3);});
                 var m=$gameRecipes[2]._materials[0];$gameParty.gainItem(m._item,m._amount);
-                var s=await go(Scene_Crafting);s._commandWindow.select(2);s.update();s.commandOk();s._listWindow.select(0);s.update();
-                await shot('craft_1_list');s.listSuccess();s._confirmWindow._amount=3;await shot('craft_3_confirm_x3');s.craftSuccess();await shot('craft_4_popup');
+                var s=await go(Scene_Menu);s.commandRecipe();await wait(function(){return SceneManager._scene.constructor.name==='Scene_Crafting' && SceneManager._sceneStarted && ImageManager.isReady();});s=SceneManager._scene;await frames(12);s._commandWindow.select(2);s.update();s._commandWindow.processOk();s._listWindow.select(0);s.update();
+                await shot('craft_1_list');s.listSuccess();s._confirmWindow._amount=3;s._confirmWindow.refresh();await shot('craft_3_confirm_x3');s.craftSuccess();await shot('craft_4_popup');
                 await fresh();pets(__reviewMenuConfig.pet.pets);s=await go(Scene_PetSystem);s._indexWindow.select(1);s._windowIdx=-1;s.update();
-                await shot('pet_0');s.onRangeOk();s.onLookSkOK();await shot('pet_1_skills');
+                await frames(30);s._statusWindow.refresh($gameParty.Pets[1]);await shot('pet_0');s.onRangeOk();s.onLookSkOK();await shot('pet_1_skills');
                 await fresh();pets(__reviewMenuConfig.pet.pets);$gameParty.gainItem($dataItems[426],5);s=await go(Scene_PetSystem);s._indexWindow.select(1);s._windowIdx=-1;s.update();s.onRangeOk();s.onEatUpOk();await shot('pet_feed');
                 s.onUpLeveListCancel();s.onRangeOk();s.onSynthesisOk();await shot('pet_synthesis');
                 await fresh();CodexRaces.openMenu();await frames(40);await shot('race_defaults');
@@ -65,7 +65,7 @@
                 await wait(function(){return SceneManager._scene instanceof Scene_Shop && SceneManager._sceneStarted && ImageManager.isReady();});
                 var shop=SceneManager._scene;shop.commandBuy();shop._buyWindow.select(-1);await shot('magic_shop');
                 await fresh();var A=CodexAlienation;
-                $gameParty.gainItem($dataItems[A.config.ids.energy],45);$gameParty.gainItem(A.create('w',1042,'mob','inversebone'),1);$gameParty.gainItem(A.create('a',1013,'boss','pest'),1);A.openWorkshop();
+                $gameParty.gainItem($dataItems[A.config.ids.energy],45);$gameParty.gainItem(A.create('w',1042,'mob','inversebone'),1);$gameParty.gainItem(A.create('a',1013,'boss','pest'),1);$gameParty.gainItem(A.create('w',1042,'mob','mimic'),1);[3,4,5,9,10].forEach(function(id){$gameActors.actor(1).learnSkill(id);});A.openWorkshop();
                 var host=document.getElementById('alien-workshop');
                 result.alien={rect:host.getBoundingClientRect().toJSON(),buttons:Array.from(host.querySelectorAll('button')).map(function(b){return {text:b.textContent,rect:b.getBoundingClientRect().toJSON(),disabled:b.disabled};})};
             } catch(error) { result.errors.push(String(error.stack||error)); }
