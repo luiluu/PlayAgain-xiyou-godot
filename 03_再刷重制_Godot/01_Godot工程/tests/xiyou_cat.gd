@@ -113,6 +113,9 @@ func _formula(c: Dictionary) -> void:
 
 
 func _recruit(c: Dictionary) -> void:
+	if c.setup.has("bagSword"):
+		_recruit_bag_sword(c)
+		return
 	var o: Dictionary = c.observed
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	var first := XCat.recruit(s)
@@ -130,6 +133,23 @@ func _recruit(c: Dictionary) -> void:
 	a.equips[a.equip_slots().find(13)] = null
 	XCat.recruit(s)
 	check("recruit.relic_once", a.equip_list().filter(func(e): return int(e.base) == XCat.RELIC).is_empty() and s.gear.is_empty(), _equip_rows(a))
+
+
+## 招募前背包已有练习剑 2：新生成一把装上，背包里原来那把保留（沙僧50 早期批 P2-2）
+func _recruit_bag_sword(c: Dictionary) -> void:
+	var o: Dictionary = c.observed
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	s.gain_gear("weapon", int(c.setup.bagSword), 1)
+	var kept: Dictionary = s.gear[s.gear.size() - 1]
+	var before := s.gear.filter(func(e): return str(e.kind) == "weapon").map(func(e): return int(e.base))
+	var first := XCat.recruit(s)
+	var a := s.actor(XCat.ACTOR)
+	var inv := {"weapons": s.gear.filter(func(e): return str(e.kind) == "weapon").map(func(e): return int(e.base)),
+		"armors": s.gear.filter(func(e): return str(e.kind) != "weapon").map(func(e): return int(e.base))}
+	check("recruit.bagSword.result", first == bool(o.first) and before == (o.before as Array).map(func(v): return int(v)), [first, before, o])
+	check("recruit.bagSword.inventory", inv.weapons == (o.inventory.weapons as Array).map(func(v): return int(v)) and inv.armors == (o.inventory.armors as Array).map(func(v): return int(v)), [inv, o.inventory])
+	check("recruit.bagSword.kept_instance", s.gear.any(func(e): return is_same(e, kept)) and not is_same(a.equips[0], kept))
+	check("recruit.bagSword.equips", _same_equips(_equip_rows(a), o.equips), [_equip_rows(a), o.equips])
 
 
 func _run() -> void:
@@ -247,6 +267,7 @@ func _chain(c: Dictionary) -> void:
 	s.party.clear()
 	s.battle_slots.clear()
 	var a := s.actor(XCat.ACTOR)
+	a.keep_unequippable = true  # 同参照 chainBattle 的 releaseUnequippableItems 空操作（剑 92 只限李逍遥装备）
 	a.change_level_mv(int(st.level))
 	a.equips[0] = XGear.template("weapon", int(st.sword))
 	if bool(st.relic):
@@ -306,7 +327,9 @@ func _chain(c: Dictionary) -> void:
 		check(step + ".holy_bell", int(d.holyReady) == int(row.holyReady if row.holyReady != null else 0)
 			and int(d.bellRound) == int(row.bellRound if row.bellRound != null else 0), [d.holyReady, d.bellRound, row.holyReady, row.bellRound])
 		if int(row.skill) != XBattleLogic.GUARD_SKILL:  # 防御的 TP 获得（技能 2 tpGain）Godot 通用防御分支没有，另报，不在本模块
-			check(step + ".tp", a.tp == float(row.tp), [a.tp, row.tp])
+			# tpGap：参照里技能消耗被被动 ConsumeReduce 打折（1817「海军王」战技 −50%），Godot 尚未接（交沙僧，见 claude_bajie-p2fix 交付单），只比剑段
+			if not st.has("tpGap"):
+				check(step + ".tp", a.tp == float(row.tp), [a.tp, row.tp])
 
 
 static func _cat_states(b: XBattler) -> Array:

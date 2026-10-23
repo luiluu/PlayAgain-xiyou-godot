@@ -74,6 +74,16 @@ cases.push(makeCase('recruit', {actor: 178, ce: C.ids.ce.recruit}, () => {
     relicGranted: !!w.$gameSystem._codexCatRelicGranted, starterGranted: !!a._codexCatStarterGranted, inventory: inv,
     hornBefore, hornAfter: w.$gameActors.actor(1).canUse(w.$dataItems[C.ids.horn]), level: a.level, stats: stats(a)};
 }));
+// ① 招募前背包已有练习剑 2：练习剑照样新生成并装上，背包里原来那把保留（沙僧50 早期批 P2-2）；法宝仍复用背包里的
+cases.push(makeCase('recruit.existingSword2', {actor: 178, ce: C.ids.ce.recruit, bagSword: 2}, () => {
+  const a = fresh();
+  w.$gameParty.gainItem(w.$dataWeapons[2], 1);
+  const before = w.$gameParty.weapons().map(x => x.baseItemId || x.id);
+  const first = C.recruit();
+  const inv = {weapons: w.$gameParty.weapons().map(x => x.baseItemId || x.id), armors: w.$gameParty.armors().map(x => x.baseItemId || x.id)};
+  return {first, before, inventory: inv, equips: equipInfo(a), party: w.$gameParty._actors.slice(), skills: a._skills.slice(),
+    relicGranted: !!w.$gameSystem._codexCatRelicGranted, starterGranted: !!a._codexCatStarterGranted};
+}));
 // ③ 能力值：配置 × 等级（同一实例连续升级）
 const CONFIGS = {none: [], sword: ['sword2'], relic: ['relic'], both: ['sword2', 'relic'], sword56: ['sword56'],
   sword671: ['sword671'], sword1044: ['sword1044'], axe: ['weapon3']};
@@ -130,7 +140,7 @@ function chainBattle(level, learn, relic, extra) {
   const a = fresh();
   a.releaseUnequippableItems = function () {};
   a.changeLevel(level, false);
-  putWeapon(a, 2);
+  putWeapon(a, extra.sword || 2);
   if (relic) putRelic(a);
   for (const s of learn) a.learnSkill(s);
   for (const s of extra.forget || []) a.forgetSkill(s);
@@ -142,7 +152,7 @@ function chainBattle(level, learn, relic, extra) {
   bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
   w.$gameParty._inBattle = true;
   w.CodexYunshang._acted = [];
-  for (const e of w.$gameTroop.members()) { e._paramPlus[0] = BIG_HP; e._paramPlus[6] = extra.enemyAgiPlus || 0; }
+  for (const e of w.$gameTroop.members()) { e._paramPlus[0] = extra.bigHp || BIG_HP; e._paramPlus[6] = extra.enemyAgiPlus || 0; }
   for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) { b.need_refresh = true; b.refresh(); b.recoverAll(); }
   return {bm, a, t: w.$gameTroop.members()[0]};
 }
@@ -161,8 +171,8 @@ function act(bm, user, skillId, targetIndex) {
 }
 const CAT_STATES = [2713, 2714, 2715, 2716, 2717];
 function chainCase(name, level, learn, relic, steps, extra = {}) {
-  cases.push(makeCase('chain.' + name, {actor: 178, troop: 2, target: 0, level, learn, relic, sword: 2, bigHp: BIG_HP, steps,
-    forget: extra.forget || [], enemyAgiPlus: extra.enemyAgiPlus || 0}, () => {
+  cases.push(makeCase('chain.' + name, {actor: 178, troop: 2, target: 0, level, learn, relic, sword: extra.sword || 2, bigHp: extra.bigHp || BIG_HP, steps,
+    forget: extra.forget || [], enemyAgiPlus: extra.enemyAgiPlus || 0, ...(extra.tpGap ? {tpGap: extra.tpGap} : {})}, () => {
     const {bm, a, t} = chainBattle(level, learn, relic, extra);
     const head = {skills: a._skills.slice(), atk: a.atk, agi: a.agi, cri: r(a.cri), hit: r(a.hit), level: a.level,
       enemy: {id: t.enemyId(), level: t.level === undefined ? null : t.level, params: P.map(i => t.param(i)), xparam: X.map(i => r(t.xparam(i))), hp: t.hp}};
@@ -178,7 +188,8 @@ function chainCase(name, level, learn, relic, steps, extra = {}) {
         rows.push({skill: st.skill, round: st.round, trace: C.trace.slice(), raw: raw.slice(), hpLost: hp0 - t.hp,
           heart: C.heart(a), actorStates: CAT_STATES.filter(id => a.isStateAffected(id)), targetStates: CAT_STATES.filter(id => t.isStateAffected(id)),
           marks: JSON.parse(JSON.stringify(t._codexCatMarks || {})), holyReady: a._codexCatBattle ? a._codexCatBattle.holyReady : null,
-          bellRound: a._codexCatBattle ? a._codexCatBattle.bellRound : null, ended: !!(cast && cast.ended), chain: !!(cast && cast.chain), tp: a.tp});
+          bellRound: a._codexCatBattle ? a._codexCatBattle.bellRound : null, ended: !!(cast && cast.ended), chain: !!(cast && cast.chain), tp: a.tp,
+          count: cast ? cast.count : null});
       }
     } finally { C.formula = old; C.trace = null; }
     return Object.assign(head, {rows});
@@ -197,6 +208,12 @@ chainCase('full', 30, [S.slash, S.cross, S.flurry, S.holy, S.sword, S.speed, S.h
 chainCase('speed35', 35, [S.slash, S.cross, S.flurry, S.holy, S.sword, S.speed, S.heart], true,
   [{skill: S.flurry, round: 1}, {skill: S.cross, round: 1}, {skill: S.flurry, round: 1}, {skill: S.holy, round: 1}]);
 chainCase('slow20', 20, [S.slash, S.cross, S.flurry, S.sword], false, [{skill: S.flurry, round: 1}, {skill: S.slash, round: 1}, {skill: S.cross, round: 1}]);
+// 原生额外重复（installImportedBalanceRuntime begin 的 nativeRepeats：atkk＋AgainUse 掷骰，Math.random 0.5）：每段按次数重复。
+// 剑 92「天外天·轩辕剑」<AgainUseAll: 100%>；技能 1817「海军王」atkk +1（沙僧50 早期批 P2-1）
+// 剑 92 攻击很高，敌人生命加到 1e16，免得第一段就打倒、看不出每段的重复
+chainCase('sword92', 30, [S.slash, S.cross, S.sword], false, [{skill: S.slash, round: 1}, {skill: S.cross, round: 1}], {sword: 92, bigHp: 1e16});
+// 1817 另带 ConsumeReduceZj 50%（战技消耗减半），Godot 尚未接这个被动，tpGap 标出（交沙僧）
+chainCase('atkk1817', 30, [S.slash, S.cross, S.sword, 1817], false, [{skill: S.slash, round: 1}, {skill: S.cross, round: 1}], {tpGap: 'ConsumeReduceZj'});
 // 连斩速度段：敌人速度加到与哈基米相近（+0 段）、略慢（+1 段）
 chainCase('agiEven', 30, [S.slash, S.cross, S.flurry, S.sword], false, [{skill: S.flurry, round: 1}, {skill: S.slash, round: 1}, {skill: S.cross, round: 1}], {enemyAgiPlus: 600});
 chainCase('agiNear', 30, [S.slash, S.cross, S.flurry, S.sword], false, [{skill: S.flurry, round: 1}], {enemyAgiPlus: 150});
