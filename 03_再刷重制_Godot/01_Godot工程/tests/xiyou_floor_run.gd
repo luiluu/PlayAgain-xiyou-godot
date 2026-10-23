@@ -453,7 +453,7 @@ func _boost_party(s: XState, atk := 2.0e16) -> void:
 ## 走正式自动战斗排表，不改敌人状态／842；战后恢复排表、临时技能和原观察者。
 func _f31_fixture(s: XState) -> Dictionary:
 	var fixture := {"had_table": s.hang_up.has("ActSkill"), "table": s.hang_up.get("ActSkill", {}).duplicate(true),
-		"observer": XStateEffects.observer, "learned": [], "stages": []}
+		"observer": XStateEffects.observer, "learned": [], "stages": [], "stage_counts": {1047: 0, 1048: 0}}
 	var table: Dictionary = fixture.table.duplicate(true)
 	for entry in [[8, 533]]:
 		var a := s.actor(entry[0])
@@ -466,7 +466,8 @@ func _f31_fixture(s: XState) -> Dictionary:
 	XStateEffects.observer = func(phase, sid, holder, ctx):
 		if fixture.observer.is_valid():
 			fixture.observer.call(phase, sid, holder, ctx)
-		if phase == "react" and sid in [1047, 1048] and holder is XEnemy and fixture.stages.size() < 64:
+		if phase == "react" and sid in [1047, 1048] and holder is XEnemy and fixture.stage_counts[sid] < 64:
+			fixture.stage_counts[sid] += 1
 			fixture.stages.append([sid, int(ctx.item.id), ctx.value, holder.state_ids.duplicate()])
 	return fixture
 

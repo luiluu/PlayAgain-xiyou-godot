@@ -164,7 +164,7 @@ func _calls(rows: Array) -> void:
 		var mine: Dictionary = got[k]
 		if mine.has("r"):
 			mine.r = mine.r.error if mine.r.has("error") else mine.r
-			want.r = want.r.error if want.r.has("error") else want.r.ok
+			want.r = want.r.thrown if want.r.has("thrown") else want.r.ok
 			if mine.r is Dictionary and mine.r.has("ok"):
 				mine.r = true if k.begins_with("resolve") else mine.r.ok
 		check("call_" + k, norm(mine) == norm(want), [mine, want])

@@ -23,8 +23,6 @@ class FakeHost extends Node:
 		await get_tree().process_frame
 	func refresh_events() -> void:
 		pass
-## 属性百分比只差浮点末位的条数：XBattler.additive_rate 的求和次序是 1+(v−1)，原版 reduce 是 (s+v)−1
-static var float_tail := []
 
 
 func _ready() -> void:
@@ -97,23 +95,12 @@ static func diff(got: Array, want: Array) -> String:
 		if not bad:
 			for k in w.size():
 				if w[k] is String:
-					if str(g[k]) != w[k] and _float_tail(str(g[k]), w[k]):
-						float_tail.append([g[k], w[k]])
-						continue
 					bad = bad or str(g[k]) != w[k]
 				else:
 					bad = bad or absf(float(g[k]) - float(w[k])) > POS_TOL
 		if bad:
 			return "#%d got %s want %s" % [i, JSON.stringify(g), JSON.stringify(w)]
 	return ""
-
-
-static func _float_tail(g: String, w: String) -> bool:
-	if not (g.ends_with("%") and w.ends_with("%")):
-		return false
-	var a := g.trim_suffix("%")
-	var b := w.trim_suffix("%")
-	return a.is_valid_float() and b.is_valid_float() and absf(a.to_float() - b.to_float()) < 1e-9
 
 
 func _setup_state(ref: Dictionary) -> XState:
@@ -166,7 +153,6 @@ func _run() -> void:
 		if d != "":
 			bad.append("%d(敌人%d) %s" % [i, ids[i], d])
 	check("oracle_status", bad.is_empty(), {"count": bad.size(), "first": bad.slice(0, 6)})
-	print("属性百分比浮点末位不同 %d 处（见 float_tail 注释）：%s" % [float_tail.size(), JSON.stringify(float_tail.slice(0, 3))])
 	# 掉落列表
 	bad = []
 	for key in ref.drops:
