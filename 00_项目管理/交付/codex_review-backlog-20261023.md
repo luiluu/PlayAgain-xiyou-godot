@@ -19,8 +19,9 @@
 
 - 专项任务1：`03_再刷重制_Godot/04_验证/本地结果/review-20261023/specialties.log`，47场景、并行2；runId=7294baeab1c64bdfb491a9478034c07d，长任务PID9103、子进程9104。
 - 专项任务2：同目录 `dependencies.log`，event_compare/transfer两个场景、并行1；长任务PID10717、子进程10718。
-- 最后观测均在等待共用槽位，0个场景完成。主工作区唐僧_16 正在跑150场景全量，占满共用上限4；没有停它、抢槽或提高并发。以各 `.status.json` 和最终 TASK_RESULT 为准，不据PID存在推定通过。
+- 任务1/2最后观测均在等待共用槽位，0个场景完成。主工作区唐僧_16 正在跑150场景全量，占满共用上限4；没有停它、抢槽或提高并发。以各 `.status.json` 和最终 TASK_RESULT 为准，不据PID存在推定通过。
 - 续做先按规则开工，**不要重复启动或清理本工作树**。前台用 `等待任务.sh <上述日志> --timeout 540` 接续等待；orphaned先处理现场，不重启。若任务自然完成，读 test_timings.json 与每场首轮输出、重跑输出，补实际结论后再决定早期／内容批的精确销账范围。
+- 余下直接依赖已另排专项任务3：同目录 `dependencies2.log`，只跑现有场景 battleback_save、shield、drop_dh、flow、floor28_dungeon、script、opening_branches、dungeon、random_streams、orb_shop_ui、gear_ui、gear_search、map（精确场景名避免与任务1重复），并行1；仍以 TASK_RESULT 为准，未通过前不销账。
 - 本轮未跑全量检查：车道规则由总装合并后统一 `检查.sh --oracle`；当前没有游戏改动。不得把主工作区正在运行的全量或排队任务写成已通过。
 - 截图后续：已有分开的popup和101图不能证明重叠。原版复用ui_reference `index.html?battle_ref=1` 四人夹具并组合真实弹数/消息；Godot现测试先后分拍，要补重叠夹具。系统9批的输出入口/手工参照身份缺口详见系统报告。
 - 只读原版新证据：本树 `03_转换工具/mv_oracle/.sandbox/review50_early/`、`.sandbox/review_content_44*`；已复制到本地结果的 `review-20261023/source-evidence/` 并记SHA。失败输出也保留，不改guard。原state-effects-2b的2e/0b/2f证据未动。
