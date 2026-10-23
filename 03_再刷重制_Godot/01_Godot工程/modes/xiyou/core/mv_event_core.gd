@@ -343,6 +343,9 @@ func _execute(c: Dictionary):
 					a.forget_skill(int(p[3]))
 				a.refresh_passive()
 		356:
+			# 要宿主画面的插件指令（怪物图鉴 EnemyBook open）交给宿主，其余在这里执行
+			if _host_plugin(str(p[0])):
+				return _request("command", "command", {"command": c})
 			_plugin_command(str(p[0]))
 		601:
 			if _branch.get(indent) != 0:
@@ -416,6 +419,11 @@ func _condition_env(_p: Array):
 
 ## 本核心不认的插件指令；认得返回 true
 func _plugin_env(_args: PackedStringArray, _line: String) -> bool:
+	return false
+
+
+## 由宿主画面执行的插件指令（地图解释器覆盖）
+func _host_plugin(_line: String) -> bool:
 	return false
 
 
@@ -534,6 +542,9 @@ func _plugin_command(line: String) -> void:
 		"ShopInventory":
 			XShopStock.plugin_command(state(), args)  # KMS_ShopInventory 限购（八戒车道）
 			return
+		"EnemyBook":
+			if XEnemyBook.plugin_command(state(), args):  # AB_EnemyBook 登记（八戒车道）
+				return
 	if _plugin_env(args, line):
 		return
 	skipped.append({"code": 356, "text": line.left(80)})

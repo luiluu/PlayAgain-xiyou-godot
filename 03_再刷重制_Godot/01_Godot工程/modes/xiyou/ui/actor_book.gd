@@ -11,7 +11,8 @@ extends Control
 ##   （每 32 字一行，原版循环多画一行空串）。渡鸦 167、173 特殊：技能行高 32、20 号、列宽 298，掌握放到「其他」列、四项一行用「、」连。
 ## - 目录确定进技能详情（空槽蜂鸣）：抬头窗 (0,0,537,100)「名字 · 技能详情」居中 systemColor＋18 号操作提示；
 ##   列表窗 (0,100,537,620) 每行「【类型】」(战技等 textColor 3、被动 14、其他 6)＋drawItemName，特殊角色未学会的技能右端灰字「未解锁」；
-##   说明卡 Sprite_ItemHelp 宽 1280−537−16 = 727，固定在 (545, 8)，去掉备注里的 <HelpWidth:N>。取消回目录。
+##   说明卡 Sprite_ItemHelp 宽 1280−537−16 = 727，固定在 (545, 8)，去掉备注里的 <HelpWidth:N>；传的是技能浅拷贝，
+##   所以不插「伤害属性」行（XHelpCard.skill_copy）。描述字号沿用说明卡的最小字号优化（O-007）。取消回目录。
 ## - 技能来源（CodexActorBookSkills）：角色与职业特性 43、职业学习表；排除 stypeId 3、系统技能（5968～5973、5980、6216、6235、
 ##   公共事件 1442 里 learnSkill 的）、<CodexRetired> 与难度／轮回类名字；详情页另补特殊角色 167～174 的专属技能段。
 ## 与原版不同：原版进过技能详情再返回，说明卡的品质边框（4 层 Window_ItemHelp）留在状态页上；这里返回时整张卡隐藏（原版缺陷，不照搬）。
@@ -77,6 +78,7 @@ func _ready() -> void:
 	list_win.canvas.blink = true
 	help_card = XHelpCard.new()
 	help_card.card_width = HELP_WIDTH
+	help_card.skill_copy = true
 	add_child(help_card)
 	_show_skills(false)
 	_select_actor()

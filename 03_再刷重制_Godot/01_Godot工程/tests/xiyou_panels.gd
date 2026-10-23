@@ -108,11 +108,11 @@ func _run() -> void:
 	var full: Array = cmd_ok.call()
 	var wanted := menu.COMMANDS.map(func(c): return c[2])
 	_check("menu_enabled_with_party", full == wanted, full)
-	# 有队员时正式版 18 项全可用；Godot 只灰显还没接入系统的 6 项（八戒_46 2026-10-22 按 dev.126 复核；人物图鉴八戒_52 接入；接入时改这里）
+	# 有队员时正式版 18 项全可用；Godot 只灰显还没接入系统的 5 项（八戒_46 2026-10-22 按 dev.126 复核；人物图鉴八戒_52、怪物图鉴八戒_54 接入；接入时改这里）
 	var unmade := []
 	for i in menu.COMMANDS.size():
 		if not full[i]: unmade.append(menu.COMMANDS[i][0])
-	_check("menu_gray_unmade_only", unmade == ["种族祝福", "宠物", "制作", "异化工坊", "怪物图鉴", "反馈"], unmade)
+	_check("menu_gray_unmade_only", unmade == ["种族祝福", "宠物", "制作", "异化工坊", "反馈"], unmade)
 	var saved_party: Array = s.party.duplicate()
 	s.party.clear()
 	var empty: Array = cmd_ok.call()
