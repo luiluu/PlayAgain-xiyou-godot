@@ -403,7 +403,7 @@ static func sellable_gear(s: XState, legacy: Array) -> Array:
 	var out := []
 	for e in s.gear:
 		var q := str(e.get("meta", {}).get("quality", "")).strip_edges()
-		# 异化装备跳过：原版挂机卖出（XdRsData.hangUp.doSell）挡了；一键出售原版没挡，这里一并跳过（O-待定）
+		# 异化装备跳过：原版挂机卖出（XdRsData.hangUp.doSell）挡了；一键出售原版没挡，这里一并跳过（O-081）
 		if q.is_valid_int() and legacy.has(int(q)) and not is_locked(s, e) and XAlienation.mark(e).is_empty():
 			out.append(e)
 	return out
