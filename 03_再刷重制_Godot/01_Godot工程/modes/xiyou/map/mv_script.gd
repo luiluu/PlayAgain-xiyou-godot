@@ -38,6 +38,19 @@ static func run(code: String, interp) -> Array:
 		return []
 	var s := XState.current
 	# ---- 整段写法 ----
+	# 指定一个角色（变量里存角色 ID）学会/忘记技能：var actor = $gameActors.actor($gameVariables.value(N)); [actor.forgetSkill(A);] actor.learnSkill(B);（传承人的学习公共事件 1348～1368）
+	var one := _actor_by_variable(js)
+	if not one.is_empty():
+		var aid := int(s.variable(int(one.variable)))
+		if not XDB.rec("Actors", aid).is_empty():
+			var who := s.actor(aid)
+			for call in one.calls:
+				if call[0] == "forgetSkill":
+					who.forget_skill(int(call[1]))
+				else:
+					who.learn_skill(int(call[1]))
+			who.refresh_passive()
+		return []
 	var loop := _actor_loop(js)
 	if not loop.is_empty():
 		for op in loop:
@@ -299,6 +312,21 @@ class ExprEnv:
 	func items(id: float) -> float: return float(XState.current.item_count(int(id)))
 	func entry_accepted() -> bool: return bool(MVScript.reincarnation_entry.get("accepted", false))
 	func entry_hard() -> bool: return bool(MVScript.reincarnation_entry.get("hard", false))
+
+
+## var actor = $gameActors.actor($gameVariables.value(N)); 后跟若干 actor.learnSkill(X)/forgetSkill(X)；认不出返回空
+static func _actor_by_variable(js: String) -> Dictionary:
+	var flat := js.replace("\n", ";")
+	var head := _re("^var\\s+actor\\s*=\\s*\\$gameActors\\.actor\\(\\$gameVariables\\.value\\((\\d+)\\)\\)\\s*;(.*)$").search(flat.strip_edges())
+	if head == null:
+		return {}
+	var calls := []
+	for st in head.get_string(2).split(";", false):
+		var m := _re("^\\s*actor\\.(learnSkill|forgetSkill)\\((\\d+)\\)\\s*$").search(st)
+		if m == null:
+			return {}
+		calls.append([m.get_string(1), m.get_string(2)])
+	return {} if calls.is_empty() else {"variable": int(head.get_string(1)), "calls": calls}
 
 
 ## 「所有角色学会/忘记技能」的几种循环写法 → actor_op 列表；认不出返回空
