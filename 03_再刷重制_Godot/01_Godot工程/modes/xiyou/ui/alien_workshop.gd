@@ -6,7 +6,8 @@ extends Control
 ## 测试直接比对节点树（tests/xiyou_alien_workshop，参照 alien_workshop_probe.cjs 的 jsdom 读数）。
 ## 页：标题＋返回；能量与异化石＋合成；有待选重抽时只显示两张选择卡；否则左列表右详情（重抽、分解与确认、配置异化），
 ## 没有异化装备时右侧是获取说明；最后是可展开的「最近异化掉落」。Esc 关闭。规则在 XAlienation。
-## 「配置异化」按钮照原版显示与灰显，配置页属期二，点了暂不打开。
+## 「配置异化」（期二）在详情下方展开「战前技能配置」：使用角色，再按词条给绑定队友／作用技能／借用武器／替换原生技能／两组借入技能；
+## 原版是网页下拉框，这里用 OptionButton（节点树里是 select，记选项与当前值）。保存成功或取消就收起，保存失败留在原处并显示错误。
 
 signal closed
 
@@ -29,6 +30,10 @@ const PARAM_NAMES := ["生命", "法力", "物攻", "物防", "魔攻", "魔防"
 ## 选中的异化装备 uid：原版是工坊模块的变量，关掉再开、读档后都还记着（uid 对上才生效）
 static var selected := ""
 var confirming := false
+## 配置页：是否展开、打开时的已存配置（原版 configure 打开时取一次）、各下拉框当前值（null＝没选中）
+var cfg_open := false
+var cfg_saved := {}
+var cfg_vals := {}
 var error_text := ""
 var recent_open := false
 var root: Control
@@ -159,12 +164,14 @@ func build() -> Array:
 		var actions := [btn("使用1颗异化石重抽", _act.bind(XAlienation.reroll.bind(st, item)), not eligible or stones < 1),
 			btn("分解为%d点能量" % (5 if boss else 1), _confirm, not eligible)]
 		if XAlienation.needs_configuration(item):
-			actions.append(btn("配置异化", func(): pass, not eligible))
+			actions.append(btn("配置异化", _open_config.bind(item), not eligible))
 		detail.append(el("div", null, "alien-actions", actions))
 		if confirming:
 			detail.append(el("section", null, "alien-confirm", [el("h3", "确认分解 " + str(item.name)),
 				el("p", "整件装备及其普通词条、强化、宝石、经验和成长将全部销毁。分解不会保留异化词条。"),
 				btn("确认分解", _dismantle.bind(item)), btn("取消", _cancel_confirm)]))
+		if cfg_open:
+			detail.append(_config_section(st, item))
 	pane.append(el("div", null, "alien-body", [el("div", null, "alien-list", list), el("div", null, "alien-detail", detail)]))
 	var recent: Array = lg.recent
 	if not recent.is_empty():
@@ -184,13 +191,17 @@ static func flatten(nodes: Array, depth := 0, out := []) -> Array:
 			row.class = n.class
 		if n.has("text"):
 			row.text = n.text
+		if n.tag == "select":
+			row.options = n.options.map(func(o): return str(o.label))
+			var hit: Array = n.options.filter(func(o): return n.value != null and str(o.value) == str(n.value))
+			row.value = str(hit[0].label) if not hit.is_empty() else null
 		if n.tag == "button":
 			row.disabled = bool(n.get("disabled", false))
 		if n.get("hidden", false):
 			row.hidden = true
 		out.append(row)
-		if not n.has("text"):
-			flatten(n.children, depth + 1, out)
+		if not n.has("text") or n.tag == "label":
+			flatten(n.get("children", []), depth + 1, out)
 	return out
 
 
@@ -199,12 +210,14 @@ static func flatten(nodes: Array, depth := 0, out := []) -> Array:
 func _act(fn: Callable) -> void:
 	var r: Dictionary = fn.call()
 	error_text = str(r.error) if r.has("error") else ""
+	cfg_open = false
 	render()
 
 
 func _select(uid: String) -> void:
 	selected = uid
 	confirming = false
+	cfg_open = false
 	render()
 
 
@@ -215,6 +228,7 @@ func _confirm() -> void:
 
 func _cancel_confirm() -> void:
 	confirming = false
+	cfg_open = false
 	render()
 
 
@@ -226,6 +240,7 @@ func _dismantle(item: Dictionary) -> void:
 		error_text = ""
 		selected = ""
 		confirming = false
+		cfg_open = false
 	render()
 
 
@@ -256,6 +271,245 @@ func _find(nodes: Array, label: String, list_index := [-1]) -> Dictionary:
 			if not r.is_empty():
 				return r
 	return {}
+
+
+## ---- 配置异化（原版 configure） ----
+
+static func _opt(value, label: String) -> Dictionary:
+	return {"value": value, "label": label}
+
+
+## 原版 select(parent,label,entries,value)：没给值选第一项；给的值不在选项里就什么都不选
+static func _initial(options: Array, value):
+	if value == null:
+		return options[0].value if not options.is_empty() else null
+	for o in options:
+		if str(o.value) == str(value):
+			return o.value
+	return null
+
+
+## Number(select.value)：没选中是 0
+static func _num(v) -> int:
+	return int(v) if v != null and str(v).is_valid_int() else 0
+
+
+func _actor_options(st: XState) -> Array:
+	return XAlienation.actors(st).map(func(a): return _opt(a.actor_id, a.display_name()))
+
+
+func _field_kind(item: Dictionary) -> String:
+	var k := str(XAlienation.mark(item).affix)
+	if Array(XAlienation.config().boundKeys).has(k):
+		return "bound"
+	if Array(XAlienation.config().skillKeys).has(k):
+		return "skill"
+	if k in ["swallow", "mimic"]:
+		return k
+	return "faceless"
+
+
+func _cfg_actor(st: XState) -> XActor:
+	var id := _num(cfg_vals.get("actor"))
+	return st.actor(id) if st.party.has(id) else null
+
+
+func _skill_options(st: XState, item: Dictionary, actor: XActor) -> Array:
+	var pool := "silence" if str(XAlienation.mark(item).affix) == "silence" else "attack"
+	return XAlienation.original_active(actor).filter(func(sk): return XAlienation._in(pool, int(sk.id))).map(func(sk): return _opt(int(sk.id), str(sk.name)))
+
+
+func _donor_options(st: XState, item: Dictionary) -> Array:
+	var out := []
+	for e in XAlienation.owned(st):
+		if str(e.kind) == "weapon" and XAlienation.mark(e).is_empty() and not XAlienation.locked(e) and not XAlienation.reserved(st, e, item) and not XAlienation.effect_ghost(e).is_empty():
+			out.append(_opt(str(e.instanceId), str(e.name)))
+	return out
+
+
+func _own_options(actor: XActor) -> Array:
+	return XAlienation.original_active(actor).map(func(sk): return _opt(int(sk.id), str(sk.name)))
+
+
+func _source_options(st: XState, actor: XActor) -> Array:
+	return XAlienation.actors(st).filter(func(a): return a != actor).map(func(a): return _opt(a.actor_id, a.display_name()))
+
+
+func _borrow_options(st: XState, actor: XActor, source) -> Array:
+	var owner: XActor = st.actor(_num(source)) if _num(source) > 0 else null
+	if owner == null or actor == null:
+		return []
+	return XAlienation.native_skills(owner).filter(func(sk): return owner.skill_ids.has(int(sk.id)) and XAlienation.borrowable(sk) and not actor.skill_ids.has(int(sk.id))).map(func(sk): return _opt(int(sk.id), str(sk.name)))
+
+
+## fill()：按打开时的已存配置给各字段设初值（换使用角色时重来）
+func _fill(st: XState, item: Dictionary) -> void:
+	var c := cfg_saved
+	var actor := _cfg_actor(st)
+	if actor == null:
+		cfg_vals.rows = []
+		return
+	match _field_kind(item):
+		"bound":
+			cfg_vals.partner = _initial(XAlienation.binding_options(st, actor, str(XAlienation.mark(item).affix)).map(func(a): return _opt(a.actor_id, a.display_name())), c.get("partnerId"))
+		"skill":
+			cfg_vals.skill = _initial(_skill_options(st, item, actor), c.get("skillId"))
+		"swallow":
+			cfg_vals.donor = _initial(_donor_options(st, item), c.get("donorId"))
+		"mimic":
+			cfg_vals.replace = _initial(_own_options(actor), c.get("replace"))
+		_:
+			var rows := []
+			for n in 2:
+				var pairs: Array = c.get("pairs", [])
+				var p: Dictionary = pairs[n] if n < pairs.size() else {}
+				var row := {"initial": p.get("skillId")}
+				row.replace = _initial([_opt(0, "不配置")] + _own_options(actor), p.get("replaceId", 0) if p.get("replaceId", 0) else 0)
+				row.source = _initial(_source_options(st, actor), p.get("ownerId"))
+				row.skill = _initial(_borrow_options(st, actor, row.source), row.initial)
+				rows.append(row)
+			cfg_vals.rows = rows
+
+
+func _open_config(item: Dictionary) -> void:
+	var st := s()
+	cfg_open = true
+	cfg_saved = XAlienation.mark(item).get("config", {}).duplicate(true)
+	var actors := _actor_options(st)
+	cfg_vals = {"actor": _initial(actors, cfg_saved.get("actorId") if cfg_saved.get("actorId", 0) else (actors[0].value if not actors.is_empty() else null))}
+	_fill(st, item)
+	render()
+
+
+func _select_node(label: String, options: Array, value, key: String) -> Dictionary:
+	return el("label", label, "", [{"tag": "select", "options": options, "value": value, "key": key, "children": []}])
+
+
+func _config_section(st: XState, item: Dictionary) -> Dictionary:
+	var actor := _cfg_actor(st)
+	var kids := [el("h3", "战前技能配置"), _select_node("使用角色", _actor_options(st), cfg_vals.get("actor"), "actor")]
+	var fields := []
+	var k := str(XAlienation.mark(item).affix)
+	if actor != null:
+		match _field_kind(item):
+			"bound":
+				fields.append(_select_node("绑定队友", XAlienation.binding_options(st, actor, k).map(func(a): return _opt(a.actor_id, a.display_name())), cfg_vals.get("partner"), "partner"))
+				fields.append(el("p", "绑定对象需存活并出战，且不能被其他生命或夺舍关系重复占用。"))
+				fields.append(btn("保存配置", _save_config.bind(item)))
+				fields.append(btn("解除配置", _clear_config.bind(item)))
+			"skill":
+				fields.append(_select_node("作用技能", _skill_options(st, item, actor), cfg_vals.get("skill"), "skill"))
+				fields.append(btn("保存配置", _save_config.bind(item)))
+			"swallow":
+				fields.append(_select_node("借用武器", _donor_options(st, item), cfg_vals.get("donor"), "donor"))
+				fields.append(el("p", "仅借用登记特性；供体保留但被占用，战斗中关闭衣服栏。解除配置可释放供体。"))
+				fields.append(btn("保存配置", _save_config.bind(item)))
+				fields.append(btn("解除配置", _clear_config.bind(item)))
+			"mimic":
+				fields.append(_select_node("替换原生技能", _own_options(actor), cfg_vals.get("replace"), "replace"))
+				fields.append(btn("保存配置", _save_config.bind(item)))
+				fields.append(el("p", "每场战斗重新观察敌人；最多记录3项，只有一个仿形槽。"))
+			_:
+				for n in 2:
+					var row: Dictionary = cfg_vals.rows[n]
+					fields.append(el("fieldset", null, "", [el("legend", "借入技能 %d%s" % [n + 1, "（可留空）" if n else ""]),
+						_select_node("替换原生技能", [_opt(0, "不配置")] + _own_options(actor), row.replace, "row%d.replace" % n),
+						_select_node("来源角色", _source_options(st, actor), row.source, "row%d.source" % n),
+						el("div", null, "", [_select_node("借入技能", _borrow_options(st, actor, row.source), row.skill, "row%d.skill" % n)])]))
+				fields.append(btn("保存配置", _save_config.bind(item)))
+	kids.append(el("div", null, "", fields))
+	kids.append(btn("取消", _close_config))
+	return el("section", null, "alien-config", kids)
+
+
+## 下拉框换了值（actor 换人就重填各字段；来源角色换了就重填那一组的借入技能）
+func set_value(key: String, value) -> void:
+	var st := s()
+	var item = _selected_item(st)
+	if key.begins_with("row"):
+		var n := int(key.substr(3, 1))
+		var f := key.get_slice(".", 1)
+		cfg_vals.rows[n][f] = value
+		if f == "source":
+			cfg_vals.rows[n].skill = _initial(_borrow_options(st, _cfg_actor(st), value), cfg_vals.rows[n].initial)
+	else:
+		cfg_vals[key] = value
+		if key == "actor" and item != null:
+			_fill(st, item)
+	render()
+
+
+func _selected_item(st: XState):
+	var hit := XAlienation.owned(st).filter(func(e): return str(XAlienation.mark(e).get("uid", "")) == selected)
+	return hit[0] if not hit.is_empty() else null
+
+
+func _save_config(item: Dictionary) -> void:
+	var st := s()
+	var c := {"actorId": _num(cfg_vals.get("actor"))}
+	match _field_kind(item):
+		"bound":
+			c.partnerId = _num(cfg_vals.get("partner"))
+		"skill":
+			c.skillId = _num(cfg_vals.get("skill"))
+		"swallow":
+			c.donorId = str(cfg_vals.get("donor")) if cfg_vals.get("donor") != null else ""
+		"mimic":
+			c.replace = _num(cfg_vals.get("replace"))
+		_:
+			c.pairs = cfg_vals.get("rows", []).filter(func(r): return _num(r.replace) > 0).map(func(r): return {"replaceId": _num(r.replace), "ownerId": _num(r.source), "skillId": _num(r.skill)})
+	var r := XAlienation.configure(st, item, c)
+	if r.has("error"):
+		error_text = str(r.error)
+	else:
+		error_text = ""
+		cfg_open = false
+	render()
+
+
+func _clear_config(item: Dictionary) -> void:
+	var r := XAlienation.clear_configuration(s(), item)
+	if r.has("error"):
+		error_text = str(r.error)
+	else:
+		error_text = ""
+		cfg_open = false
+	render()
+
+
+func _close_config() -> void:
+	cfg_open = false
+	error_text = ""
+	render()
+
+
+## 测试用：按标签找下拉框（"借入技能 2/来源角色" 先找那一组），选第 index 项
+func choose_option(spec: String, index: int) -> bool:
+	var scope := tree
+	var label := spec
+	if spec.contains("/"):
+		var legend := spec.get_slice("/", 0)
+		label = spec.get_slice("/", 1)
+		var sets := _collect(tree, func(n): return n.tag == "fieldset" and str(n.children[0].text).begins_with(legend))
+		if sets.is_empty():
+			return false
+		scope = [sets[0]]
+	var labels := _collect(scope, func(n): return n.tag == "label" and str(n.get("text", "")) == label)
+	if labels.is_empty():
+		return false
+	var sel: Dictionary = labels[0].children[0]
+	if index < 0 or index >= sel.options.size():
+		return false
+	set_value(str(sel.key), sel.options[index].value)
+	return true
+
+
+static func _collect(nodes: Array, pred: Callable, out := []) -> Array:
+	for n in nodes:
+		if pred.call(n):
+			out.append(n)
+		_collect(n.get("children", []), pred, out)
+	return out
 
 
 ## ---- 摆放（照原版 CSS） ----
@@ -350,6 +604,33 @@ func _make(n: Dictionary) -> Control:
 				pc.add_child(_label(str(n.text), BODY_SIZE, ERROR))
 				return pc
 			return _label(str(n.text), BODY_SIZE, NOTE if cls == "alien-note" else TEXT)
+		"legend":
+			return _label(str(n.text))
+		"label":
+			var lv := _vbox(5)
+			lv.add_child(_label(str(n.text)))
+			for k in n.children:
+				lv.add_child(_make(k))
+			return lv
+		"select":
+			var ob := OptionButton.new()
+			ob.add_theme_font_override("font", _font)
+			ob.add_theme_font_size_override("font_size", BODY_SIZE)
+			ob.add_theme_color_override("font_color", TEXT)
+			ob.add_theme_stylebox_override("normal", _box(BUTTON, BUTTON_BORDER, 7, 9))
+			ob.add_theme_stylebox_override("focus", _box(BUTTON_FOCUS, Color("b595d1"), 7, 9, 2))
+			ob.add_theme_stylebox_override("hover", _box(BUTTON_FOCUS, Color("b595d1"), 7, 9, 2))
+			ob.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var pick := -1
+			for idx in n.options.size():
+				ob.add_item(str(n.options[idx].label), idx)
+				if n.value != null and str(n.options[idx].value) == str(n.value):
+					pick = idx
+			ob.select(pick)
+			var opts: Array = n.options
+			var key := str(n.key)
+			ob.item_selected.connect(func(idx): set_value(key, opts[idx].value))
+			return ob
 		"button", "summary":
 			var b := Button.new()
 			b.text = str(n.text)
@@ -407,6 +688,11 @@ func _make(n: Dictionary) -> Control:
 			return sc
 	var v := _vbox()
 	var wrap: Control = v
+	if n.tag == "fieldset":
+		var fc := PanelContainer.new()
+		fc.add_theme_stylebox_override("panel", _box(Color(0, 0, 0, 0), Color("665572"), 0, 10))
+		fc.add_child(v)
+		wrap = fc
 	if n.tag == "section":
 		var pc := PanelContainer.new()
 		pc.add_theme_stylebox_override("panel", _box(Color(0, 0, 0, 0), Color("b8787a") if cls == "alien-confirm" else Color("675475"), 8, 18 if cls == "" else 15))

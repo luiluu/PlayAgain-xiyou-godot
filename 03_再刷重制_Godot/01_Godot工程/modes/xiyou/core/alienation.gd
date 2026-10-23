@@ -240,3 +240,229 @@ static func dismantle(s: XState, i: Dictionary) -> Dictionary:
 	s.gear.remove_at(idx)
 	s.gain_item(energy_id(), n)
 	return {"ok": n}
+
+
+## ---- 期二：配置异化与就绪判定（installAlienationAffixes／installAlienationAdvanced） ----
+
+const AFFIX_ERROR := "配置不合法：替换技能必须已学会，借入技能必须来自另一名已拥有角色且通过白名单。"
+const ADVANCED_ERROR := "配置不兼容：请选择已拥有队友、登记技能或未占用的供体装备。"
+## 首发六种（Affixes 模块）；其余 14 种由 Advanced 模块接管就绪判定与配置
+const FIRST_SIX := ["inversebone", "blessing", "mimic", "prayer", "pest", "faceless"]
+const LIFE_KEYS := ["lifelink", "scapegoat", "possession"]
+const PARTNER_TAKEN := ["lifelink", "scapegoat", "possession", "offer", "sacrifice", "hollow", "jail", "insulation"]
+
+
+static func templates() -> Dictionary:
+	return config().get("templates", {})
+
+
+static func _in(list_key: String, id: int) -> bool:
+	return templates().get(list_key, []).any(func(x): return int(x) == id)
+
+
+## A.actors：队伍全员（$gameParty._actors 顺序）
+static func actors(s: XState) -> Array:
+	return s.members()
+
+
+static func _member(s: XState, id) -> XActor:
+	return s.actor(int(id)) if id != null and s.party.has(int(id)) else null
+
+
+## A.forActor（战斗外）：身上第一件异化装备
+static func for_actor(a: XActor) -> Dictionary:
+	for e in a.equip_list():
+		if not mark(e).is_empty():
+			return {"item": e, "affix": str(mark(e).affix), "config": mark(e).get("config", {})}
+	return {}
+
+
+## CodexYunshang.key：身上云裳天衣（本体 7920～7934）的序号，没有为 -1
+static func yunshang_key(a: XActor) -> int:
+	for e in a.equip_list():
+		var b := int(e.get("base", 0))
+		if b >= 7920 and b < 7935:
+			return b - 7920
+	return -1
+
+
+## A.nativeSkills：角色的技能（不含异化改动）
+static func native_skills(a: XActor) -> Array:
+	return a.skills()
+
+
+## A.originalActive：已学会的主动技能（不含被动、仅菜单／不能用的、普攻防御与百相切换）
+static func original_active(a: XActor) -> Array:
+	var sw := int(config().ids.switch)
+	var out := []
+	for sk in native_skills(a):
+		var id := int(sk.id)
+		if a.skill_ids.has(id) and id > 2 and int(sk.get("stypeId", 0)) != 4 and int(sk.get("occasion", 0)) != 3 and int(sk.get("occasion", 0)) != 2 and id != sw:
+			out.append(sk)
+	return out
+
+
+## A.borrowable：登记攻击技能、名字不含处决等字样、效果只有可传播的减益或可共享的增益
+static func borrowable(sk: Dictionary) -> bool:
+	if sk.is_empty() or int(sk.id) <= 2 or not _in("attack", int(sk.id)):
+		return false
+	if RegEx.create_from_string("处决|秒杀|剧情|阶段|召唤|变身").search(str(sk.get("name", ""))):
+		return false
+	var debuffs: Array = config().get("transferDebuffs", [])
+	var buffs: Array = config().get("shareBuffs", [])
+	for e in sk.get("effects", []):
+		var code := int(e.code)
+		var id := int(e.dataId)
+		if not (code == 21 and (_in("pestStates", id) or debuffs.any(func(x): return int(x) == id)) or code == 22 and buffs.any(func(x): return int(x) == id)):
+			return false
+	return true
+
+
+## A.lifeCompatible：不穿云裳第 3 件、特性里没有免死／复活类备注
+static func life_compatible(a: XActor) -> bool:
+	if a == null or yunshang_key(a) == 3:
+		return false
+	var re := RegEx.create_from_string("(?:死亡免疫|不死|自动复活|复活自己|濒死复活|<Custom (?:React|Respond|Confirm|Establish|Deselect) Effect>[\\s\\S]*(?:revive|deathStateId|\\.die\\(|setHp\\())")
+	return not a.trait_objects().any(func(o): return o is Dictionary and re.search(str(o.get("note", ""))) != null)
+
+
+## A.bindingOptions：可绑定的队友（不是自己；生命类双方都要兼容；对方身上没有生命／绑定类异化；对方不穿云裳第 3 件）
+static func binding_options(s: XState, a: XActor, k: String) -> Array:
+	return actors(s).filter(func(p): return p != a and (not LIFE_KEYS.has(k) or life_compatible(a) and life_compatible(p)) and (for_actor(p).is_empty() or not PARTNER_TAKEN.has(str(for_actor(p).affix))) and yunshang_key(p) != 3)
+
+
+## A.effectGhost：装备能借出的登记效果（特性限 gearTraitCodes，备注限护盾、自身物理／元素倍率）；唯一、神话等不借
+static func effect_ghost(i) -> Dictionary:
+	if not (i is Dictionary) or i.is_empty() or not mark(i).is_empty():
+		return {}
+	if RegEx.create_from_string("(?i)Unique|Myth|Heartsteel|Yunshang|MagicWeapon|神器|唯一|神话|<quality:\\s*10>").search(str(i.get("note", ""))):
+		return {}
+	var codes: Array = templates().get("gearTraitCodes", [])
+	var traits := []
+	for t in i.get("traits", []):
+		var code := int(t.code)
+		var id := int(t.dataId)
+		if codes.any(func(x): return int(x) == code) and not (code == 22 and id >= 6) and not (code == 23 and [1, 3, 4, 5, 6, 7, 8, 9].has(id)):
+			traits.append(t.duplicate())
+	var note := ""
+	for tag in ["ShieldEffect", "SelfPhysRate", "SelfElemRate"]:
+		for m in RegEx.create_from_string("(?i)<" + tag + "\\s*:\\s*([+-]?[\\d.]+%?)\\s*>").search_all(str(i.get("note", ""))):
+			note += m.get_string() + "\n"
+	if traits.is_empty() and note == "":
+		return {}
+	return {"id": 0, "name": "异化借用效果", "note": note, "meta": {}, "traits": traits, "params": [0, 0, 0, 0, 0, 0, 0, 0], "_alienEffect": true}
+
+
+## 原版 bound（未含吞器占用）：已装备（或另有占用记号）
+static func _bound_base(s: XState, i: Dictionary) -> bool:
+	return _has(_equipped(s), i)
+
+
+static func _gear_by_id(s: XState, id) -> Dictionary:
+	for e in owned(s) + _equipped(s):
+		if str(e.get("instanceId", "")) == str(id):
+			return e
+	return {}
+
+
+## A.ready：异化装备在这名角色身上能否生效（穿戴与配置都用它）
+static func ready(s: XState, a: XActor, i: Dictionary) -> bool:
+	var m := mark(i)
+	if m.is_empty():
+		return true
+	var k := str(m.affix)
+	var c: Dictionary = m.get("config", {})
+	var natives := native_skills(a)
+	var attack_id := XBattleLogic.ATTACK_SKILL
+	if FIRST_SIX.has(k):
+		var owned_ids := original_active(a).map(func(sk): return int(sk.id))
+		match k:
+			"blessing":
+				return natives.any(func(sk): return _in("blessing", int(sk.id)))
+			"prayer":
+				return _in("attack", attack_id) or natives.any(func(sk): return _in("attack", int(sk.id)))
+			"inversebone":
+				return _in("inversebone", attack_id) or natives.any(func(sk): return _in("inversebone", int(sk.id)))
+			"mimic":
+				return c.has("actorId") and int(c.actorId) == a.actor_id and owned_ids.has(int(c.get("replace", -1)))
+			"faceless":
+				var pairs: Array = c.get("pairs", [])
+				if not (c.has("actorId") and int(c.actorId) == a.actor_id and pairs.size() > 0 and pairs.size() <= 2):
+					return false
+				var used := []
+				for p in pairs:
+					var owner := _member(s, p.get("ownerId"))
+					var sk := XDB.rec("Skills", int(p.get("skillId", 0)))
+					var rid := int(p.get("replaceId", 0))
+					if owner == null or owner == a or used.has(rid) or not owned_ids.has(rid) or a.skill_ids.has(int(p.get("skillId", 0))) \
+							or not borrowable(sk) or not owner.skill_ids.has(int(p.get("skillId", 0))):
+						return false
+					used.append(rid)
+				return true
+		return k == "pest"
+	if Array(config().boundKeys).has(k):
+		var p := _member(s, c.get("partnerId"))
+		if not c.has("actorId") or int(c.actorId) != a.actor_id or p == null or not binding_options(s, a, k).has(p):
+			return false
+		if k == "possession" and not native_skills(p).any(func(sk): return p.skill_ids.has(int(sk.id)) and _in("possessionSkills", int(sk.id))):
+			return false
+		if k == "offer" and not a.equip_list().any(func(e): return not effect_ghost(e).is_empty()):
+			return false
+		return true
+	if k == "swallow":
+		var donor := _gear_by_id(s, c.get("donorId", ""))
+		return c.has("actorId") and int(c.actorId) == a.actor_id and kind(i) == "w" and not donor.is_empty() and str(donor.kind) == "weapon" \
+			and _has(owned(s), donor) and not locked(donor) and not _bound_base(s, donor) and not reserved(s, donor, i) and not effect_ghost(donor).is_empty()
+	if Array(config().skillKeys).has(k):
+		var sid := int(c.get("skillId", 0))
+		return c.has("actorId") and int(c.actorId) == a.actor_id and original_active(a).any(func(sk): return int(sk.id) == sid) and _in("silence" if k == "silence" else "attack", sid)
+	if k == "wish":
+		return natives.any(func(sk): return _in("wish", int(sk.id)))
+	return true
+
+
+## A.configure：先查能否操作，换上新配置后用 ready 验，不合法就还原
+static func configure(s: XState, i: Dictionary, c: Dictionary) -> Dictionary:
+	if not can_operate(s, i):
+		return {"error": OPERATE_ERROR}
+	var m := mark(i)
+	var prev = m.get("config", {})
+	m.config = c.duplicate(true)
+	var a := _member(s, c.get("actorId"))
+	if a == null or not ready(s, a, i):
+		m.config = prev
+		return {"error": AFFIX_ERROR if FIRST_SIX.has(str(m.affix)) else ADVANCED_ERROR}
+	return {"ok": true}
+
+
+static func clear_configuration(s: XState, i: Dictionary) -> Dictionary:
+	if not can_operate(s, i):
+		return {"error": OPERATE_ERROR}
+	mark(i).config = {}
+	return {"ok": true}
+
+
+## ---- 期二：穿戴限制（Game_Actor.changeEquip／forceChangeEquip／canEquip 的异化部分） ----
+
+static func is_pending(s: XState, i) -> bool:
+	var p = ledger(s).pending
+	return p != null and i is Dictionary and not mark(i).is_empty() and str(mark(i).uid) == str(p.uid)
+
+
+## canEquip 附加条件：异化装备要在这名角色身上就绪
+static func can_wear(s: XState, a: XActor, i) -> bool:
+	return not (i is Dictionary) or mark(i).is_empty() or ready(s, a, i)
+
+
+## changeEquip 附加条件：待选重抽的装备不能换上换下；同一角色只能穿一件异化装备；要就绪（战斗中不换装，菜单外不涉及）
+static func can_change(s: XState, a: XActor, slot: int, next) -> bool:
+	var current = a.equips[slot] if slot >= 0 and slot < a.equips.size() else null
+	if is_pending(s, next) or is_pending(s, current):
+		return false
+	if next is Dictionary and not mark(next).is_empty():
+		for n in a.equips.size():
+			if n != slot and a.equips[n] is Dictionary and not mark(a.equips[n]).is_empty():
+				return false
+		if not ready(s, a, next):
+			return false
+	return true
