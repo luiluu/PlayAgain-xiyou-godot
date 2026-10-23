@@ -17,7 +17,7 @@ def main():
     source = args.source.resolve()
     args.out.mkdir(parents=True, exist_ok=True)
     serve.SHOTS = str(args.out.resolve())
-    inputs = ["index.html", "js/plugins.js", "js/rpg_sprites.js", "js/rpg_windows.js", "js/rpg_objects.js",
+    inputs = ["index.html", "js/plugins.js", "js/rpg_sprites.js", "js/rpg_windows.js", "js/rpg_οbjects.js",
               "js/plugins/Star_ActorsBook.js", "js/plugins/Codex_ActorBookSkillDetails.js",
               "js/plugins/Star_ActorAdvanced.js", "data/Actors.json", "data/Classes.json", "data/Skills.json"]
     identity = {p: hashlib.sha256((source / p).read_bytes()).hexdigest() for p in inputs}

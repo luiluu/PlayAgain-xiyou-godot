@@ -13,11 +13,16 @@
             var r = {fixture: '冻结v0.28；内存新局1/8/9/10；地图5；无存档', actors: {}, errors: []};
             function check(ok, msg) { if (!ok) throw new Error(msg); }
             function rect(w) { return [w.x, w.y, w.width, w.height]; }
+            function color(c) {
+                var m = /^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,[^)]+)?\)$/.exec(c);
+                return m ? m.slice(1, 4).map(function (n) { return Number(n).toString(16).padStart(2, '0'); }).join('') : c.replace(/^#/, '');
+            }
             function round(n) { return typeof n === 'number' ? Math.round(n * 100) / 100 : n; }
+            var activeCapture = null;
             function capture(w, fn) {
                 var ops = [];
-                w.contents.__reviewActorOps = ops;
-                try { fn(); } finally { delete w.contents.__reviewActorOps; }
+                activeCapture = {window: w, ops: ops};
+                try { fn(); } finally { activeCapture = null; }
                 return ops;
             }
             try {
@@ -46,15 +51,15 @@
                 var hw = s._actorSkillHeader, lw = s._actorSkillList, help = s._actorSkillHelp;
                 var draw = Bitmap.prototype.drawText, icon = Window_Base.prototype.drawIcon;
                 Bitmap.prototype.drawText = function (text, x, y, width, height, align) {
-                    if (this.__reviewActorOps) {
-                        var o = [String(text), round(x), round(y), round(width), this.fontSize, this.textColor.replace(/^#/, '')];
+                    if ((activeCapture && this === activeCapture.window.contents ? activeCapture.ops : null)) {
+                        var o = [String(text), round(x), round(y), round(width), this.fontSize, color(this.textColor)];
                         if (align && align !== 'left') o.push(align);
-                        this.__reviewActorOps.push(o);
+                        (activeCapture && this === activeCapture.window.contents ? activeCapture.ops : null).push(o);
                     }
                     return draw.apply(this, arguments);
                 };
                 Window_Base.prototype.drawIcon = function (id, x, y) {
-                    if (this.contents.__reviewActorOps) this.contents.__reviewActorOps.push([id, round(x), round(y)]);
+                    if ((activeCapture && this === activeCapture.window ? activeCapture.ops : null)) (activeCapture && this === activeCapture.window ? activeCapture.ops : null).push([id, round(x), round(y)]);
                     return icon.apply(this, arguments);
                 };
                 try {
@@ -75,6 +80,9 @@
                         }
                     }
                 } finally { Bitmap.prototype.drawText = draw; Window_Base.prototype.drawIcon = icon; }
+                // 全角色取数会让隐藏列表反复刷新说明卡；清理仅由夹具造成的卡片，再走真实可见流程。
+                s.closeActorSkillDetails();
+                s.children.filter(function (c) { return c.constructor.name === 'Window_ItemHelp'; }).forEach(function (c) { c.visible = false; });
                 iw.select(0); s._windowIdx = -1; s.update(); s.openActorSkillDetails();
                 r.emptySlotRejected = iw.visible && !lw.visible;
                 iw.select(1); s._windowIdx = -1; s.update();
