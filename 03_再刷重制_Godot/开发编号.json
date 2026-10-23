@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.140",
-  "sequence": 140,
-  "next": "dev.141",
-  "nextSequence": 141,
+  "current": "dev.141",
+  "sequence": 141,
+  "next": "dev.142",
+  "nextSequence": 142,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "wukong-heir",
+  "currentChange": "bajie-crafting",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
