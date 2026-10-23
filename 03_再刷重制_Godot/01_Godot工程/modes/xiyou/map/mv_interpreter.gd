@@ -98,6 +98,12 @@ func _execute_env(c: Dictionary):
 	return super(c)
 
 
+## 插件指令 EnemyBook open 要打开图鉴画面
+func _host_plugin(line: String) -> bool:
+	var args := line.split(" ", false)
+	return args.size() >= 2 and args[0] == "EnemyBook" and args[1] == "open" and host.has_method("open_enemy_book")
+
+
 ## 角色朝向 [6, 角色, 方向]
 func _condition_env(p: Array):
 	if int(p[0]) == 6:
@@ -225,4 +231,7 @@ func _host_command(c: Dictionary):
 				code += "\n" + str(list[index].parameters[0])
 			for st in await MVScript.run(code, self):
 				skipped.append({"code": 355, "text": str(st).left(80)})
+		356:
+			# 怪物图鉴（AB_EnemyBook EnemyBook open；公共事件 2）：SceneManager.push(Scene_EnemyBook)，关闭回地图
+			await host.open_enemy_book()
 	return true

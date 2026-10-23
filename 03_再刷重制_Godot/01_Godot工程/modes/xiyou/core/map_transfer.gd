@@ -142,9 +142,10 @@ static func drop_item_rate(s: XState, enemy: Dictionary) -> float:
 	return (1.0 if has_drop_item_double(s) else 0.2) * elite * team_drop_factor(s)
 
 
-## parseEnemyDrops：[{type, kind, id, rate, item}]，按品质降序（同品质保持原顺序）
-static func drops(s: XState, enemy: Dictionary) -> Array:
-	var base := drop_item_rate(s, enemy)
+## parseEnemyDrops：[{type, kind, id, rate, item}]，按品质降序（同品质保持原顺序）。
+## rate_base ≥ 0 时用它作 dropItemRate（怪物图鉴按图鉴里那只敌人算，可能是神话）
+static func drops(s: XState, enemy: Dictionary, rate_base := -1.0) -> Array:
+	var base := drop_item_rate(s, enemy) if rate_base < 0.0 else rate_base
 	var out := []
 	# YEP_ExtraEnemyDrops 在读数据库时把 <Enemy Drops> 的「Armor N: x%」追加进 dropItems（分母 = 1/几率）
 	var list: Array = enemy.get("dropItems", []).duplicate()

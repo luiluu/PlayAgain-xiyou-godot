@@ -58,6 +58,8 @@ var quality := 0
 var min_font := MIN_FONT
 ## 卡宽（Sprite_ItemHelp 构造参数；人物图鉴技能详情为 727，其余 400）
 var card_width := WIDTH
+## 人物图鉴技能详情：内容按技能浅拷贝取（见 content 的 skill_copy）
+var skill_copy := false
 var _lines: Array = []        # layout() 的结果：[{glyphs, y, h, line}]
 var canvas: XMVCanvas
 var frame: Control
@@ -73,14 +75,16 @@ var _frame_style: XWindowStyle
 # ======================================================================
 
 ## obj：数据库条目或装备实例；kind：item / weapon / armor / skill（省略时自动判断）
-static func content(obj: Dictionary, kind := "") -> Array:
+## skill_copy：人物图鉴技能详情（Codex_ActorBookSkillDetails）传的是技能的浅拷贝，DataManager.isSkill 为假——
+## installDamageElementRuntime 只删备注里的「伤害属性」行，不插技能的伤害属性
+static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	if obj.is_empty():
 		return []
 	if kind == "":
 		kind = kind_of(obj)
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
 	var rows := desc_params(obj, type)
-	rows = _element_wrapper(obj, type, rows)
+	rows = _element_wrapper(obj, 0 if skill_copy else type, rows)
 	if (type == 1 or type == 2) and XPower.enabled():
 		rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
 	if type == 3 and not _special_target(obj):
@@ -685,7 +689,7 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 		visible = false
 		_set_extras({})
 		return
-	rows = content(obj, kind)
+	rows = content(obj, kind, skill_copy)
 	quality = _quality(obj)
 	var lay := layout(rows, min_font, card_width)
 	_lines = lay.lines
