@@ -744,7 +744,8 @@ class Exporter:
 
     def collect_slice(self):
         cfg, db = self.cfg, self.db
-        troops, self.common_events = set(cfg.get('troops', [])), set()
+        # extraCommonEvents：只经物品／技能效果（code 44）调用、地图事件不会 117 到的公共事件（如物品 1653 洪荒技能书随机抽奖 → CE1441）
+        troops, self.common_events = set(cfg.get('troops', [])), set(cfg.get('extraCommonEvents', []))
         self.event_actors, self.event_animations = set(), set()
         actors = set(cfg['actors'])
         for mid in cfg['maps']:

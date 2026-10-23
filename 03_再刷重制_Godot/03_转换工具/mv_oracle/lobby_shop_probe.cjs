@@ -1,6 +1,6 @@
 'use strict';
 // 【Claude·未经Codex检验】大厅人族首领与特殊物品商店参照（悟空_39）：用正式引擎的 Game_Interpreter 跑 Map004 EV054（人族首领，
-// 变量 20 ≥1／13／21／28 四页）与 EV063（特殊物品购买，≥12／21 两页）的每一条选项路径，
+// 变量 20 ≥1／13／21／28 四页）、EV063（特殊物品购买，≥12／21 两页）与 EV065（洪荒女皇，变量 1476 有无限购组）的每一条选项路径，
 // 记录每次打开商店时的商品（种类、ID、价格方式、价格）与当时待用的限购组（KMS_ShopInventory 的 $gameTemp.nextInventoryId）。
 // event_probe 只走默认项（每页第一条路径），这里补全其余分支：丹药按开关 2466／2467 三档、变量 1476 决定是否套限购组。
 // - 每例新游戏、难度 3、队伍 1/8/10/9、随机数固定 0.5；商店只记录不打开；记录后清掉待用组（同打开商店时消耗）。
@@ -9,7 +9,7 @@
 const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs'), {sourceIdentity} = require('./source_identity.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
-const MAP = 4, EVENTS = [54, 63], PARTY = [1, 8, 10, 9], DIFFICULTY = 3, MAX_FRAMES = 2000;
+const MAP = 4, EVENTS = [54, 63, 65], PARTY = [1, 8, 10, 9], DIFFICULTY = 3, MAX_FRAMES = 2000;
 const STATES = [   // 预设：变量 1476（≥1 时商店前套限购组）、开关 2466／2467（21 层起丹药档次）
   {id: 'base', variables: {}, switches: []},
   {id: 'v1476', variables: {1476: 1}, switches: []},
