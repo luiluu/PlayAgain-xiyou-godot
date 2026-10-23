@@ -545,6 +545,9 @@ func _plugin_command(line: String) -> void:
 		"EnemyBook":
 			if XEnemyBook.plugin_command(state(), args):  # AB_EnemyBook 登记（八戒车道）
 				return
+		"crafting":
+			if XCrafting.plugin_command(state(), args):  # hc.js 制作：设计图学会配方（八戒车道）
+				return
 	if _plugin_env(args, line):
 		return
 	skipped.append({"code": 356, "text": line.left(80)})
