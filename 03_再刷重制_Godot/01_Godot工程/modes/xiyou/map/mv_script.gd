@@ -184,6 +184,15 @@ static func _statements(js: String, interp) -> Array:
 		if st == "SceneManager.push(Scene_PetSystem)" and interp.host.has_method("open_pets"):
 			await interp.host.open_pets()
 			continue
+		# 种族祝福（installNativeRaceRuntime）：种族向导 Map4 EV22、进阶石公共事件 openMenu({rank:N})、开局默认公共事件 841～847
+		m = _re("^CodexRaces\\.openMenu\\((?:\\{rank:(\\d)\\})?\\)$").search(st)
+		if m and interp.host.has_method("open_race_menu"):
+			await interp.host.open_race_menu(int(m.get_string(1)) if m.get_string(1) != "" else 0)
+			continue
+		m = _re("^CodexRaces\\.setDefault\\((\\d)\\)$").search(st)
+		if m:
+			XRace.set_default(s, int(m.get_string(1)))
+			continue
 		if st.begins_with("$.toaster"):
 			var text := _toaster_text(st)
 			if text != "":
