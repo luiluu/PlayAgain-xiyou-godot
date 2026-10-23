@@ -329,6 +329,16 @@ def parse_state_effects(note):
     for m in EFFECT_RE.finditer(note or ''):
         phase, body = m.group(1).lower().replace(' ', '_'), m.group(2)
         code = re.sub(r'\s+', ' ', strip_js_comments(body)).strip()
+        # Only these complete measured phase/token pairs, not partial JS calls.
+        from formula_program import Parser, Unsupported
+        try:
+            tokens = tuple(row[0] for row in Parser(code).tokens[:-1])
+        except Unsupported:
+            tokens = ()
+        tp_blocks = {('battle', '200'), ('battle', '50'), ('apply', '25'), ('apply', '75')}
+        if len(tokens) == 7 and tokens[:4] == ('user', '.', 'gainTp', '(') and tokens[5:] == (')', ';') and (phase, tokens[4]) in tp_blocks:
+            out.append({'phase': phase, 'op': 'gain_resource', 'recipient': 'user', 'resource': 'tp', 'amount': int(tokens[4]), 'requires': ['resources']})
+            continue
         mm = SIMPLE_MUL.match(code)
         if mm:
             out.append({'phase': phase, 'op': 'mul', 'cond': {'!==': 'nonzero', '>': 'positive', '>=': 'nonnegative'}[mm.group(1)],

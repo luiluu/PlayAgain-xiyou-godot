@@ -32,6 +32,9 @@ var replay_runtime_start := {}
 var replay_battle_start := {}
 var _ids := {}
 var _action_resources: XResourceContext
+var _battle_resources: XResourceContext
+var battle_start_effects := {}
+var lifecycle_effects: Array = []
 var _formula_outcome := {}
 var _damage_record := {}
 ## 魔法反射回行动者自己的这次 apply（导入角色平衡照样缩放）
@@ -109,6 +112,9 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	_speed.clear()
 	_orders_made = false
 	state = s
+	_battle_resources = null
+	battle_start_effects.clear()
+	lifecycle_effects.clear()
 	troop_id = troop
 	XImportedBalance.set_acting(null)
 	actors = s.battle_members()
@@ -134,21 +140,74 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		for sid in a.state_ids.duplicate():
 			if not bool(XDB.rec("States", sid).get("removeAtBattleEnd", false)):
 				continue
-			a.remove_state(sid)
-	# YEP_BuffsStatesCore Custom Battle Effect：startBattle 里我方（含后备）再敌方逐成员，在 dsPassiveSkill 开战标签加状态之前
-	XStateEffects.run_unit("battle", s.members())
-	XStateEffects.run_unit("battle", enemies)
-	_battle_start_states()
-	# MV Game_Battler.onBattleStart：没有「保留 TP」（特殊旗标 3）时 TP 随机 0～24
-	for b in actors + enemies:
-		if not b.is_preserve_tp():
-			b.tp = float(_mod(25, "initial_tp"))
+			_state_remove(a, sid)
+	_start_battle_effects()
 	for b in actors + enemies:
 		b.start_warmups()
 	_escape_ratio = 0.5 * _avg_agi(actors) / maxf(_avg_agi(enemies), 1.0)
 	# BattleManager.startBattle：inBattle 起敌人走 krz 能力值缓存；逃跑率等开战前的读取不留在格子里
 	for e in enemies:
 		e.param_cache_begin()
+
+func _new_lifecycle_resources() -> XResourceContext:
+	var resources := XResourceContext.new()
+	resources.random = _rule()
+	resources.lifecycle_inputs = {"variables": vars(), "switches": state.switches if state != null else {}, "party_members": actors}
+	return resources
+
+func _start_battle_effects() -> void:
+	_battle_resources = _new_lifecycle_resources()
+	for b in state.members() + enemies:
+		if not _ids.has(b):
+			_ids[b] = "reserve:%d" % b.actor_id
+		_battle_resources.labels[b] = stable_id(b)
+		_battle_resources.seed_result(b, b.runtime_result)
+	# Native Game_Unit: initialize all unit members, then evaluate Battle effects.
+	for members in [actors, enemies]:
+		for b in members:
+			if not b.is_preserve_tp():
+				var initial := float(_mod(25, "initial_tp"))
+				_battle_resources.silent_gain(b, "tp", initial - b.tp)
+			b.param_mark_dirty()
+		var effect_members: Array = state.members() if members == actors else enemies
+		for b in effect_members:
+			_refresh_battler(b)
+			XStateEffects.run("battle", b, _battle_resources.state_context(b))
+	_battle_start_states()
+	var snapshots := {}
+	for b in state.members() + enemies:
+		snapshots[stable_id(b)] = _battle_resources.snapshot(b).duplicate(true)
+	battle_start_effects = {"members": snapshots, "journal": _battle_resources.journal.duplicate(true), "error": _battle_resources.error}
+	_battle_resources.publish()
+	_battle_resources = null
+
+func _operation_resources(b: XBattler) -> XResourceContext:
+	var resources := _action_resources if _action_resources != null else _battle_resources
+	if resources == null:
+		resources = _new_lifecycle_resources()
+		resources.labels[b] = stable_id(b)
+		resources.seed_result(b, b.runtime_result)
+	return resources
+
+func _finish_lifecycle_operation(resources: XResourceContext, b: XBattler) -> void:
+	if resources != _action_resources and resources != _battle_resources:
+		resources.publish()
+		lifecycle_effects.append({"member": stable_id(b), "after": resources.snapshot(b).duplicate(true), "journal": resources.journal.duplicate(true), "error": resources.error})
+
+func _state_add(b: XBattler, id: int) -> void:
+	var resources := _operation_resources(b)
+	b.add_state_with_context(id, _rule(), resources.state_context(b))
+	_finish_lifecycle_operation(resources, b)
+
+func _state_remove(b: XBattler, id: int, automatic := false) -> void:
+	var resources := _operation_resources(b)
+	b.remove_state_with_context(id, resources.state_context(b), automatic)
+	_finish_lifecycle_operation(resources, b)
+
+func _refresh_battler(b: XBattler) -> void:
+	var resources := _operation_resources(b)
+	b.refresh_with_context(_rule(), resources.state_context(b))
+	_finish_lifecycle_operation(resources, b)
 
 
 ## dsPassiveSkill Scene_Battle.start：每个出战角色依次处理开战状态标签——自己、随机队友、随机敌人、随机任一目标、
@@ -161,24 +220,24 @@ func _battle_start_states() -> void:
 			var sid := int(tag[1])
 			match str(tag[0]):
 				"StartPushState":
-					a.add_state(sid, _rule())
+					_state_add(a, sid)
 				"StartRomActPushState":
 					var others := actors.filter(func(x): return x != a)
 					if not others.is_empty():
-						others[_mod(others.size(), "start_ally")].add_state(sid, _rule())
+						_state_add(others[_mod(others.size(), "start_ally")], sid)
 				"StartRomEmePushState":
 					var foes := alive(enemies)
 					if not foes.is_empty():
-						foes[_mod(foes.size(), "start_enemy")].add_state(sid, _rule())
+						_state_add(foes[_mod(foes.size(), "start_enemy")], sid)
 				"StartRomPushState":
 					var all: Array = actors + alive(enemies)
-					all[_mod(all.size(), "start_any")].add_state(sid, _rule())
+					_state_add(all[_mod(all.size(), "start_any")], sid)
 				"StartAEPushState":
 					for e in alive(enemies):
-						e.add_state(sid, _rule())
+						_state_add(e, sid)
 				"StartWTPushState":
 					for x in actors:
-						x.add_state(sid, _rule())
+						_state_add(x, sid)
 	for a in actors:
 		a.refresh_passive()
 	for e in enemies:
@@ -693,7 +752,7 @@ func enemy_recover_all(index: int) -> Array:
 		var e: XEnemy = enemies[i]
 		var before := _enemy_reading(e)
 		e.recover_all()
-		e.refresh_resources(_rule())
+		_refresh_battler(e)
 		e.refresh_passive()
 		out.append(_enemy_change("recover", i, before))
 	return out
@@ -729,7 +788,7 @@ func enemy_transform(index: int, enemy_id: int) -> Array:
 		e.letter = ""
 		_letters.erase(e)
 	e.refresh_passive()
-	e.refresh_resources(_rule())
+	_refresh_battler(e)
 	make_unique_names()
 	out.append(_enemy_change("transform", index, before))
 	return out
@@ -762,8 +821,8 @@ func _change_actor_state(p: Array) -> void:
 		if int(p[2]) == 0:
 			sequence_add_state(a, int(p[3]))
 		elif a.is_state_affected(int(p[3])):
-			a.remove_state(int(p[3]))
-		a.refresh_resources(_rule())
+			_state_remove(a, int(p[3]))
+		_refresh_battler(a)
 
 
 func _page_meets(page: Dictionary, turn_end: bool) -> bool:
@@ -829,11 +888,11 @@ func _change_enemy_state(p: Array) -> void:
 		if int(p[1]) == 0:
 			sequence_add_state(e, int(p[2]))
 		elif e.is_state_affected(int(p[2])):
-			e.remove_state(int(p[2]))
+			_state_remove(e, int(p[2]))
 		# 补的截资源对应 addState／removeState 内部的 refresh，原版在 krz 标 dirty 之前：不能当场消费刚标的 dirty
 		var dirty: bool = e.param_dirty
 		e.param_dirty = false
-		e.refresh_resources(_rule())
+		_refresh_battler(e)
 		e.param_dirty = dirty
 
 
@@ -1190,8 +1249,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var before = XZhenqi.pojia_actor
 	XZhenqi.pojia_actor = u if XZhenqi.has_daofa(u, "pojia") else null
 	var previous_resources := _action_resources
-	_action_resources = XResourceContext.new()
-	_action_resources.random = _rule()
+	_action_resources = _new_lifecycle_resources()
 	_action_resources.labels = {u: "a"}
 	if u != t:
 		_action_resources.labels[t] = "b"
@@ -1220,6 +1278,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	r.tp = result.tpDamage
 	r.added = result.addedStates.duplicate()
 	r.removed = result.removedStates.duplicate()
+	_action_resources.publish()
 	_action_resources = previous_resources
 	XZhenqi.pojia_actor = before
 	return r
@@ -1362,17 +1421,14 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 				if _float("add_state") < chance and t.is_alive():
 					if id == DEATH_STATE:
 						t.immortal = false  # itemEffectAddNormalState：附加阵亡前先解除 IMMORTAL
-						t.add_state(DEATH_STATE, _rule())
-						_action_resources.result(t).addedStates.append(DEATH_STATE)
+						_state_add(t, DEATH_STATE)
 					else:
-						t.add_state(id, _rule())
+						_state_add(t, id)
 						r.added.append(id)
-						_action_resources.result(t).addedStates.append(id)
 		22:
 			if _float("remove_state") < v1:
-				t.remove_state(int(eff.dataId))
+				_state_remove(t, int(eff.dataId))
 				r.removed.append(int(eff.dataId))
-				_action_resources.result(t).removedStates.append(int(eff.dataId))
 		31:
 			sequence_buff(t, int(eff.dataId), true, true, int(v1))
 		32:
@@ -1382,7 +1438,7 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 			if (int(eff.code) == 33 and t.buffs[id] > 0) or (int(eff.code) == 34 and t.buffs[id] < 0):
 				t.buffs[id] = 0
 				t.buff_turns[id] = 0
-				t.refresh_resources(_rule())
+				_refresh_battler(t)
 				t.param_mark_dirty()  # krz removeBuff
 		43:
 			if t is XActor:
@@ -1399,7 +1455,7 @@ func sequence_add_state(t: XBattler, id: int) -> void:
 	if id == DEATH_STATE:
 		_die(t)
 		return
-	t.add_state(id, _rule())
+	_state_add(t, id)
 
 
 ## 行动序列 HP/MP/TP ±（gainHp/gainMp/gainTp）：HP 归零即倒下
@@ -1422,7 +1478,7 @@ func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = 
 			t.mp = clampf(t.mp + value, 0.0, t.mmp)
 		"TP":
 			t.tp = clampf(t.tp + value, 0.0, t.max_tp())
-	t.refresh_resources(_rule())
+	_refresh_battler(t)
 	if value != 0.0:
 		t.param_mark_dirty()  # krz gainHp／gainMp／gainTp
 	return shown
@@ -1440,7 +1496,7 @@ func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int) -> 
 	elif (buff and t.buffs[pid] > 0) or (not buff and t.buffs[pid] < 0):
 		t.buffs[pid] = 0
 		t.buff_turns[pid] = 0
-	t.refresh_resources(_rule())
+	_refresh_battler(t)
 	if buff or not add:
 		t.param_mark_dirty()  # krz 包了 addBuff／removeBuff，没包 addDebuff
 
@@ -1458,7 +1514,7 @@ func _die(b: XBattler) -> void:
 	# Resource refresh has already performed death. Never clear permanent states or
 	# redraw the death duration when another gain/action observes the same corpse.
 	if not b.state_ids.has(DEATH_STATE):
-		b.add_state(DEATH_STATE, _rule())
+		_state_add(b, DEATH_STATE)
 
 
 ## timing 1 = 行动结束，2 = 回合结束（MV autoRemovalTiming）
@@ -1469,7 +1525,7 @@ func _tick_states(b: XBattler, timing: int) -> void:
 			continue
 		b.state_turns[id] = int(b.state_turns.get(id, 1)) - 1
 		if b.state_turns[id] <= 0:
-			b.remove_state_auto(id)
+			_state_remove(b, id, true)
 	if timing == 2:
 		for i in range(8):
 			if b.buff_turns[i] > 0:
@@ -1670,7 +1726,7 @@ func end_battle(result := -1) -> void:
 		for b in state.members():
 			for id in b.state_ids.duplicate():
 				if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):
-					b.remove_state(id)
+					_state_remove(b, id)
 	if result >= 0 and result <= 2:
 		XStateEffects.run_unit(["victory", "escape", "defeat"][result], state.members())
 	_clear_event_cursor()
@@ -1692,7 +1748,7 @@ func end_battle(result := -1) -> void:
 		b.end_battle_cooldowns()
 		for id in b.state_ids.duplicate():
 			if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):
-				b.remove_state(id)
+				_state_remove(b, id)
 		b.refresh_passive()
 		b.hp = minf(b.hp, b.mhp)
 		b.mp = minf(b.mp, b.mmp)

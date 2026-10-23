@@ -8,6 +8,22 @@ var slots := {}
 var labels := {}
 var error := ""
 var preview := false
+## Host inputs without this context itself (avoid a reference cycle).
+var lifecycle_inputs := {}
+
+func state_context(b: XBattler) -> Dictionary:
+	var ctx := lifecycle_inputs.duplicate()
+	if b.lifecycle_context.get("resources") == self:
+		ctx.merge(b.lifecycle_context, true)
+	ctx.resources = self
+	ctx.random = random
+	ctx.execute = not preview
+	ctx.preview = preview
+	return ctx
+
+func publish() -> void:
+	for b in slots:
+		b.runtime_result = result(b).duplicate(true)
 
 static func empty_result() -> Dictionary:
 	return {"hpAffected": false, "hpDamage": 0.0, "mpDamage": 0.0, "tpDamage": 0.0,
@@ -122,7 +138,23 @@ func silent_gain(b: XBattler, resource: String, amount: float) -> void:
 		refresh(b)
 
 func refresh(b: XBattler) -> void:
+	var previous := b.lifecycle_context
+	b.lifecycle_context = state_context(b)
+	_refresh_type_before(b)
+	# Actor's saved refresh reaches the global add lock; enemy's saved alias
+	# still reaches the base clamp. Both retain their outer KRZ refresh work.
+	if not (b is XActor and XBattler._adding_state):
+		_refresh_base(b)
+		_refresh_death(b)
+	_refresh_type_after(b)
+	b.lifecycle_context = previous
+
+func _refresh_type_before(b: XBattler) -> void:
 	b.param_refresh()
+	if b is XActor:
+		b.release_to_party()
+
+func _refresh_base(b: XBattler) -> void:
 	var resisted := b.traits_set(XBattler.TRAIT_STATE_RESIST)
 	for id in b.state_ids.duplicate():
 		if resisted.has(id):
@@ -131,33 +163,18 @@ func refresh(b: XBattler) -> void:
 	b.hp = clampf(b.hp, 0.0, b.mhp)
 	b.mp = clampf(b.mp, 0.0, b.mmp)
 	b.tp = clampf(b.tp, 0.0, b.max_tp())
+
+func _refresh_death(b: XBattler) -> void:
 	var r := result(b)
-	if b.hp == 0.0 and not b.state_ids.has(1) and not b.immortal and not resisted.has(1) and not r.removedStates.has(1):
-		b.hp = 0.0
-		for id in b.state_ids.duplicate():
-			if not permanent(id):
-				b.state_ids.erase(id)
-				b.state_turns.erase(id)
-		b.buffs.fill(0)
-		b.buff_turns.fill(0)
-		b.zq_pojia_rate = 0.5
-		b.state_ids.append(1)
-		b._sort_states()
-		var state := XDB.rec("States", 1)
-		var lo := int(state.get("minTurns", 1))
-		var hi := int(state.get("maxTurns", lo))
-		var duration := floori(0.5 * (hi - lo + 1)) + lo if preview else b.roll_state_duration(lo, hi, random, str(labels.get(b, "b")) + ":1")
-		b.state_turns[1] = duration
-		if not r.addedStates.has(1):
-			r.addedStates.append(1)
+	if b.hp == 0.0 and not b.state_ids.has(1) and not b.immortal and not b.traits_set(XBattler.TRAIT_STATE_RESIST).has(1) and not r.removedStates.has(1):
+		var ctx := state_context(b)
+		ctx.duration_key = str(labels.get(b, "b")) + ":1"
+		b.add_state_with_context(1, random, ctx)
 	elif b.hp > 0.0 and b.state_ids.has(1):
-		b.state_ids.erase(1)
-		b.state_turns.erase(1)
-		if not r.removedStates.has(1):
-			r.removedStates.append(1)
+		b.remove_state_with_context(1, state_context(b))
 	b.resource_death_blocked = b.hp == 0.0 and not b.state_ids.has(1)
-	# The add-state recursion guard suppresses another resource clamp inside death.
-	# Recompute portable passive data, but leave the newly changed resource caps for
-	# the next setter, matching the measured state-dependent-cap sequence.
+
+func _refresh_type_after(b: XBattler) -> void:
 	if b is XActor or b is XEnemy:
 		b.refresh_passive()
+	b.param_dirty = false
