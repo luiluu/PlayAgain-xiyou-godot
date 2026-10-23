@@ -1,0 +1,776 @@
+[
+ {
+  "label": "规则：车道模型强度按任务难度（用户 2026-10-22）；车道表改悟空_38、八戒_48 现况",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "ee44d13"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "车道表：沙僧四期登记（review-dev122-129），期二期三前置写明",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "2267906"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 claude/magical-cori-e77cba",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "8d88ca5",
+   "898d4d8",
+   "a7820ca"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "交接板：核查积压降到 9 批，解除超限",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "2091bfc"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "车道表：八戒三期改由八戒_49 新会话做（提案卡）",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "792396f"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 codex/review-dev122-129",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "3d24ce5",
+   "60a1961"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "车道表：八戒三期由八戒_48 在重建工作树续做（claude/bajie-samemap）",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "d18526a"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 claude/wukong-hajimi",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "4ea173d",
+   "23d4714",
+   "b0afad1",
+   "93b8491",
+   "4c76710",
+   "4d4f072",
+   "5ce354a",
+   "e5aec25",
+   "092fba1",
+   "50cd2e2"
+  ],
+  "executor": "Claude（悟空_37）、Claude（悟空）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "车道表：悟空_38 下一批楼层余项（claude/wukong-floors）",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "234b604"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "规则：复用车道会话接下一批先清上下文（用户 2026-10-22）",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "901941e"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "车道表：A 行改悟空_39（会话清空后续用）",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "0925b6d"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "唐僧_13 额度 95% 停：八戒三期 bajie-samemap 待合",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "6336141"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "交接板：唐僧_14 开工（合 bajie-samemap）",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "1b1ba18"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 claude/bajie-samemap",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "1dd9fdd",
+   "d92471a",
+   "187bc71",
+   "7086fdf",
+   "f48107b",
+   "ed0c03c"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "车道表：八戒_49 小修两项（claude/bajie-icc-z）；变更记录补 dev.125 统计更正",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "90f1989"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "交接板：唐僧_14 合 dev.132 后状态，八戒_49 已派",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "c766140"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 claude/bajie-icc-z",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "31b4ef2",
+   "3e6d3a2",
+   "ca4ccdf",
+   "d73e1d2",
+   "bdb90e1"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "车道表：八戒_50 清理工具同名归档＋护盾侧栏画面对照（claude/bajie-shield-ui）",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "575a7a6"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 claude/bajie-shield-ui",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "89ecad5",
+   "d7f846f",
+   "15815ef",
+   "77f41c7",
+   "3372658"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/wukong-floors",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "c1725d1",
+   "ab7a10a",
+   "4ebd0fb",
+   "4bcbae7",
+   "c29b834",
+   "e628d30",
+   "ed767b8"
+  ],
+  "executor": "Claude（悟空）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 codex/state-effects-3-design",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "fd97595",
+   "4859340"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "车道表：悟空_40 Map211、八戒_51 核查 dev.135",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "423e9de"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 claude/bajie-review135",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "311aede",
+   "53ec97b",
+   "c376006",
+   "62dd77e"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "车道表：八戒_52 主菜单未接入系统盘点与接入一项（claude/bajie-menu-sys）",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "6c0b3b7"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "唐僧_14 额度 92% 收工：交接板与变更记录",
+  "date": "2026-10-22",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "05f087b"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "唐僧_15 开工：接手总装，合 state-effects-2e 与 wukong-map211",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "8ac917c"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 codex/state-effects-2e",
+  "date": "2026-10-23",
+  "need": [
+   "Claude",
+   "Codex"
+  ],
+  "commits": [
+   "4bf9996",
+   "3bda37b",
+   "961443e",
+   "cb59b46",
+   "c95a05d",
+   "77e8bfc",
+   "26fe46f",
+   "3faf0cd",
+   "fb9f73d",
+   "9d249fb",
+   "932b4df",
+   "4b3700d",
+   "3f4e6c0",
+   "c545f83",
+   "76fff4b",
+   "b84f1a8",
+   "7c99d19",
+   "e3c347a",
+   "4ea36d6",
+   "8deeab9",
+   "6b270df",
+   "b58b9fc",
+   "8317db8",
+   "c572e51",
+   "925204b",
+   "e861f80"
+  ],
+  "executor": "Codex（沙僧）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/wukong-map211",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "64a9302",
+   "7c6693c",
+   "649be06",
+   "1f73398"
+  ],
+  "executor": "Claude（悟空）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "唐僧_15：登记车道分支与本轮总装记录",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "f6f7f9a"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 claude/sharp-einstein-864a15",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "53965ab",
+   "2d696fd",
+   "fc6073b",
+   "2d73578"
+  ],
+  "executor": "Claude（悟空）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/jovial-napier-ef0df2",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "02bcfd5",
+   "1da0296",
+   "e3efcfb",
+   "7b87b97",
+   "4f35237",
+   "f6d3f21"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "唐僧_15：悟空改做传承人与轮回变体（Map163 已于 dev.081 接通）",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "eb3fac2"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "唐僧_15：登记八戒_52 遗留改动 734ba18d 交八戒_54 带上",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "d704c2f"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 claude/bajie-monster-book",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "142fa9e",
+   "710a9bb",
+   "c7aef56",
+   "5366ec7",
+   "c58e171",
+   "7bfc4b2",
+   "8357c6e",
+   "3633ae2"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/wukong-heir",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "e2d6f0b",
+   "ff792f2",
+   "a966a0c",
+   "1f0ca1f",
+   "18e40b6",
+   "e4cae20",
+   "ae43165"
+  ],
+  "executor": "Claude（悟空）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/bajie-crafting",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "513ab06",
+   "f8c5395",
+   "3215919",
+   "84213fd",
+   "9f0ee0e"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/bajie-crafting2",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "6c5e425",
+   "a7b5fa8",
+   "2ae343c",
+   "92d0734",
+   "9511942"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/wukong-map186",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "ded9a64",
+   "5ee5666",
+   "bd9f067",
+   "97f6f80",
+   "dc6bdd4"
+  ],
+  "executor": "Claude（悟空）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/bajie-pet",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "3799b99",
+   "75bda67",
+   "9cfcef0",
+   "3137adc"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/wukong-legion-tech",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "7cc4499",
+   "0fd5153",
+   "405b2c6",
+   "34cee0f"
+  ],
+  "executor": "Claude（悟空）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/bajie-companion",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "03fe666",
+   "ca00f18",
+   "d39135c",
+   "8e08d47",
+   "6a72a65",
+   "03dc60d"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/wukong-empress",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "93be0a3",
+   "8f4150f",
+   "73e9b37",
+   "dec00c0"
+  ],
+  "executor": "Claude（悟空）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/bajie-pet-synth",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "86c0d84",
+   "7948510",
+   "b44dee1",
+   "12546ba",
+   "59d3f82"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "唐僧_15：沙僧整份交代登记进车道表",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "3ac5779"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 claude/bajie-race",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "133c797",
+   "c7f9b21",
+   "8b5d14d",
+   "bc4b826"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/wukong-map-census",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "73fd307",
+   "c6379b8",
+   "4b8da62",
+   "0e7041a",
+   "4edc105",
+   "33fab43"
+  ],
+  "executor": "Claude（悟空）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "唐僧_16 接手总装，登记主工作区行",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "0c37610"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "车道表：八戒_59 改在 claude/youthful-rubin-d03e77",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "feb6b0f"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 claude/youthful-rubin-d03e77",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "a0d8f45",
+   "48df8c4",
+   "ffd0222",
+   "59720ed",
+   "6be66cb",
+   "114fb06"
+  ],
+  "executor": "Claude（八戒）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/wukong-abyss2",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "ccf9f6f",
+   "73489d1",
+   "eb5c6f1",
+   "b90ca78",
+   "377e180",
+   "7244818"
+  ],
+  "executor": "Claude（悟空）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "合并 claude/wukong-abyss-batch",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "56f6c42",
+   "3ba5ba3",
+   "39788ce",
+   "ceffde7"
+  ],
+  "executor": "Claude（悟空）、Claude（唐僧）",
+  "docOnly": false
+ },
+ {
+  "label": "交接板：核查积压 27 批超限，登记需要用户决定",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "3a9aabc"
+  ],
+  "executor": "Claude（唐僧）",
+  "docOnly": true
+ },
+ {
+  "label": "合并 claude/wukong-abyss3",
+  "date": "2026-10-23",
+  "need": [
+   "Codex"
+  ],
+  "commits": [
+   "af4d48f",
+   "ebc5c0a",
+   "0a7ded1"
+  ],
+  "executor": "Claude（悟空）、Claude（唐僧）",
+  "docOnly": false
+ }
+]
