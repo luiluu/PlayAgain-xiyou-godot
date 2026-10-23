@@ -32,7 +32,7 @@ function plain(id){const before=Object.keys(w.$gameParty._weapons).map(Number);w
 const BASE={blessing:['w',1523],pest:['a',1013]};
 const baseOf=k=>BASE[k]||['w',1044];
 const cfgOf=i=>J(A.mark(i).config||{});
-const err=fn=>{try{const v=fn();return {ok:true};}catch(e){return {error:e.message};}};
+const err=fn=>{try{const v=fn();return {ok:true};}catch(e){return {thrown:e.message};}};
 
 // 1. 导出
 const exportData={templates:{attack:T.attack,inversebone:T.inversebone,blessing:T.blessing,pestStates:T.pestStates,possessionSkills:T.possessionSkills,wish:T.wish,silence:T.silence,gearTraitCodes:T.gearTraitCodes},

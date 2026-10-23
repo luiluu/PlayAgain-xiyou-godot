@@ -175,7 +175,7 @@ func _judgements() -> void:
 					conf.donorId = donor_ids.get(str(int(conf.donorId)), "xg:99999")
 				var i: Dictionary = items[str(c.affix)]
 				var r := XAlienation.configure(s, i, conf)
-				var got := {"result": {"ok": true} if r.has("ok") else {"error": r.error}, "saved": _cfg(i.alien.config),
+				var got := {"result": {"ok": true} if r.has("ok") else {"thrown": r.error}, "saved": _cfg(i.alien.config),
 					"ready": PARTY.map(func(id): return XAlienation.ready(s, s.actor(id), i)), "details": XAlienation.details(s, i)}
 				var want := {"result": c.result, "saved": c.saved, "ready": c.ready, "details": c.details}
 				check("configure_" + str(c.name), norm(got) == norm(want), [got, want])
