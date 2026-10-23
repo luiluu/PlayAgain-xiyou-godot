@@ -7,7 +7,7 @@ extends RefCounted
 const BATTLER_PHASES := ["battle", "turn_start", "turn_end", "regenerate", "action_start", "victory", "escape", "defeat"]
 const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm", "react", "respond", "establish"]
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
-const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "gain_resource"]
+const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -97,7 +97,7 @@ static func run(phase: String, holder: XBattler, ctx := {}) -> float:
 static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) -> float:
 	var c := context_for(phase, holder, int(st.id), ctx)
 	c.value = float(ctx.get("value", 0.0))
-	var execute := bool(c.execute)
+	var execute := bool(ctx.get("execute", true))
 	var effects: Array = st.get("effects", []).filter(func(e): return str(e.get("phase", "")) == phase)
 	if effects.is_empty():
 		return c.value
@@ -126,14 +126,6 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				_diagnose(phase, int(st.id), holder, "value_program_unavailable")
 		elif op == "value_query":
 			c.value = _query_value(e, c, execute)
-		elif op == "gain_resource" and execute:
-			var resources: XResourceContext = c.get("resources")
-			if resources == null:
-				_diagnose(phase, int(st.id), holder, "resource_context_missing")
-			else:
-				resources.gain(c.user, str(e.resource), float(e.amount))
-				if not resources.error.is_empty():
-					_diagnose(phase, int(st.id), holder, resources.error)
 		elif op == "user_param_damage" and execute and ctx.get("resources") != null:
 			var r: Dictionary = ctx.record
 			for p in e.params:
@@ -218,22 +210,19 @@ static func _rounded(value: float, kind: String) -> float:
 ## Action 版（Game_Action.customEffectEval）：user＝attacker、target＝defender，item 为当前行动。
 ## origin：持有者身上该状态的来源，没有或已失效时回退为持有者（BSC stateOrigin 的无来源回退）。
 static func context_for(phase: String, holder: XBattler, state_id: int, ctx := {}) -> Dictionary:
-	# Preview cannot borrow real mutation capabilities, even inside a live callback.
-	var inputs: Dictionary = holder.lifecycle_context.duplicate() if bool(ctx.get("execute", true)) else {}
-	inputs.merge(ctx, true)
 	var origin: XBattler = holder
 	var ref = holder.state_origins.get(state_id)
 	if ref is WeakRef and ref.get_ref() != null:
 		origin = ref.get_ref()
-	var c := {"phase": phase, "state_id": state_id, "holder": holder, "origin": origin, "execute": bool(inputs.get("execute", true))}
+	var c := {"phase": phase, "state_id": state_id, "holder": holder, "origin": origin}
 	if phase in ACTION_PHASES:
-		c.merge({"attacker": inputs.get("attacker"), "defender": inputs.get("defender"), "item": inputs.get("item"),
-			"user": inputs.get("attacker"), "target": inputs.get("defender")})
+		c.merge({"attacker": ctx.get("attacker"), "defender": ctx.get("defender"), "item": ctx.get("item"),
+			"user": ctx.get("attacker"), "target": ctx.get("defender")})
 	else:
 		c.merge({"user": holder, "target": holder})
 	for key in ["item", "critical", "resources", "record", "random", "variables", "switches", "party_members", "forced_elements", "added_elements"]:
-		if inputs.has(key):
-			c[key] = inputs[key]
+		if ctx.has(key):
+			c[key] = ctx[key]
 	return c
 
 
@@ -243,9 +232,9 @@ static func current() -> Dictionary:
 
 
 ## 一个单位（我方含后备或敌群）逐成员分发 Battler 版 phase
-static func run_unit(phase: String, members: Array, ctx := {}) -> void:
+static func run_unit(phase: String, members: Array) -> void:
 	for b in members:
-		run(phase, b, ctx)
+		run(phase, b)
 
 
 static func _diagnose(phase: String, state_id: int, holder: XBattler, op: String) -> void:
