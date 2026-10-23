@@ -393,7 +393,7 @@ func _open_detail(page: Control) -> void:
 		if "actor_index" in page:
 			_selected_actor = page.actor_index
 		# 子页面用了带公共事件的物品：整个菜单关掉，地图接着执行预约的公共事件
-		if bool(page.get("to_map")):
+		if "to_map" in page and page.to_map:
 			page.queue_free()
 			closed.emit()
 			return
