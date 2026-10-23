@@ -73,6 +73,8 @@ var seq_player: XSequencePlayer
 static var force_auto := false
 ## 怪物图鉴（AB_EnemyBook ResisterTiming 2）本场出现过的敌人 ID：战斗结束时登记
 var book_appeared: Array = []
+## 战斗内「怪物信息」（AB_EnemyBook，Shift 打开；见 _open_battle_book）
+var book_page: XEnemyBookPage
 
 
 func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Texture2D = null) -> void:
@@ -970,6 +972,15 @@ func _select_target(b) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if book_page != null:
+		return
+	# AB_EnemyBook v1.28：角色指令窗、技能／物品列表开着且可操作时按 Shift（ShortCutButtonName）打开「怪物信息」
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SHIFT and _target_mode == "" and not logic.auto:
+		var w: XBattleList = list_win if list_win != null and list_win.active else (cmd_win if cmd_win != null and cmd_win.active else null)
+		if w != null and w.is_visible_in_tree():
+			get_viewport().set_input_as_handled()
+			_open_battle_book(w)
+			return
 	if _target_mode != "":
 		var i := _target_pool.find(_hover)
 		if event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_down", true):
@@ -985,6 +996,20 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_cancel"):
 		_picked.emit("cancel" if list_win != null else "back")
+
+
+## Scene_Battle.battleEnemyBook：发出窗口先停（播确定音），图鉴关掉（取消）后回到它
+func _open_battle_book(w: XBattleList) -> void:
+	XSound.system(1)
+	w.active = false
+	book_page = XEnemyBookPage.new()
+	book_page.setup_battle(logic.enemies)
+	ui.add_child(book_page)
+	await book_page.closed
+	book_page.queue_free()
+	book_page = null
+	if is_instance_valid(w):
+		w.active = true
 
 
 # ---- 播放行动记录 ----
