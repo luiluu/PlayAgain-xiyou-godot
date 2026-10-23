@@ -1,7 +1,7 @@
 # 交付：claude/bajie-crafting
 
 - 车道／工作者：B 界面／八戒（Claude，重制_八戒_55）
-- 状态：进行中
+- 状态：可合并
 
 本分支分两期：期一＝怪物图鉴期二（战斗内怪物信息），先交；期二＝制作系统第一期，期一合并后再做（规模估算届时写在本单或接续单）。
 
@@ -26,8 +26,9 @@
 
 ## 本分支提交
 
-- （本提交）战斗内怪物信息、参照与专项、交付单
+- 战斗内怪物信息、参照与专项（WIP 提交）
+- 合 main，交付单可合并
 
 ## 验证
 
-- 相关专项（`并行测试.py`）：（待写）
+- 相关专项（`并行测试.py`）：`xiyou_enemy_book` 41/41、`xiyou_battle_ui` 70/70、`xiyou_battle_options` 92/92、`xiyou_battle_events` 108/108；合 main（悟空传承人／变体）并 `--补齐` 后重跑 `xiyou_enemy_book`、`xiyou_battle_ui` 仍全过。窗口模式 `xiyou_battle_ui -- --out=` 的截图 battle_42_enemy_book 与原版战斗夹具截图版面一致（窗口模式下 `shield_pixels_*` 4 项本来就只在无头下验，与本改动无关）。
