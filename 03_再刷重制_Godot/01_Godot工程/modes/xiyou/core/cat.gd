@@ -182,15 +182,20 @@ static func recruit(s: XState) -> bool:
 		if not (cur is Dictionary and int(cur.get("base", 0)) == RELIC):
 			a.equips[slot] = _take_gear(s, "armor", RELIC)
 		s.flags["_codexCatRelicGranted"] = true
+	# 练习剑总是新生成一把（gainIndependentItem）再装上，背包里原有的同款不动；原来武器槽里的东西回背包（changeEquip 的交换）
 	if not has_sword(a) and not bool(s.flags.get("_codexCatStarterGranted", false)):
-		a.equips[0] = _take_gear(s, "weapon", STARTER_SWORD)
+		var sword := XGear.create("weapon", STARTER_SWORD, s)
+		s.register_gear(sword)
+		if a.equips[0] is Dictionary and not a.equips[0].is_empty():
+			s.gear.append(a.equips[0])
+		a.equips[0] = sword
 		s.flags["_codexCatStarterGranted"] = true
 	a.refresh_passive()
 	s.add_actor(ACTOR)
 	return true
 
 
-## 背包里有同基础编号的就拿那件（getMatchingBaseItem），否则生成新实例；从背包取出、装上（changeEquip 的交换）
+## 法宝：背包里有同基础编号的就拿那件（getMatchingBaseItem），否则生成新实例；从背包取出、装上（changeEquip 的交换）
 static func _take_gear(s: XState, kind: String, base_id: int) -> Dictionary:
 	var idx := s.gear.find_custom(func(e): return e.kind == kind and int(e.base) == base_id)
 	if idx < 0:
@@ -378,13 +383,39 @@ static func _set_heart(logic, a, n: int) -> void:
 			a.remove_state(sid)
 
 
+## begin 时捕获的原生重复次数 Math.max(1, floor(nativeRepeats))：Game_Action.numRepeats（技能 repeats，普攻加追加次数）
+## 再经 dsPassiveSkill 加被动 atkk 与 AgainUse（全局／战技／魔法／指定技能几率合计，Math.random×100 < 几率时 +1）。
+## 被动来源同 dsPassiveSkill：装备＋技能＋状态的备注元数据。每一剑段按这个次数重复（_strike 的 segmentRepeat），不重复整个连携。
+static func native_repeats(logic, a, item: Dictionary) -> int:
+	var n := float(item.get("repeats", 1))
+	if int(item.get("id", 0)) == XBattleLogic.ATTACK_SKILL:
+		n += a.attack_times_add()
+	var atkk := 0
+	var again := 0.0
+	var by := "AgainUseZj" if int(item.get("stypeId", 0)) == 1 else ("AgainUseMf" if int(item.get("stypeId", 0)) == 2 else "")
+	for o in a.equip_list() + a.skills() + a.states():
+		var meta: Dictionary = o.get("meta", {})
+		if meta.has("atkk"):
+			var m := RegEx.create_from_string("(\\d+)").search(str(meta.atkk))
+			if m:
+				atkk += int(m.get_string(1))
+		for k in meta:
+			var key := str(k)
+			if key == "AgainUseAll" or (by != "" and key == by) or key == "AgainUse%d" % int(item.get("id", 0)):
+				again += float(str(meta[k]).to_int())
+	n += atkk
+	if again > 0.0 and logic._float("cat_again_use") * 100.0 < again:
+		n += 1
+	return maxi(1, floori(n))
+
+
 static func _begin(logic, a, item: Dictionary, t) -> Dictionary:
 	var st := _store(logic)
 	if st.cast != null and st.cast.action == item and st.cast.actor == a:
 		return st.cast
 	var k := _key(item)
 	var c := {"actor": a, "target": t, "key": k, "heart": heart_of(logic, a) if learned(a, SKILL_HEART) else 0, "agi": a.agi,
-		"read": mark(logic, a, t, "read"), "scar": mark(logic, a, t, "scar"), "count": 1, "steps": [], "hits": [], "chain": false,
+		"read": mark(logic, a, t, "read"), "scar": mark(logic, a, t, "scar"), "count": native_repeats(logic, a, item), "steps": [], "hits": [], "chain": false,
 		"done": false, "ended": false, "action": item, "consumed": false}
 	st.cast = c
 	_build(logic, c, k, false)

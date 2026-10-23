@@ -90,6 +90,18 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
     out.preset = preset;
     for (const i of Object.keys(preset)) w.$gameTroop.members()[Number(i)].setHp(preset[i]);
   }
+  // 下一回合开始（BattleManager.startTurn，回合末事件已跑完）时各敌人的状态与剩余回合：Godot run_turn 跑完一回合（含回合末事件）后就是这个时点
+  // （沙僧50 内容批 P2-C1：领域事件给全体敌人的 44 第 1 回合末 2→1）
+  const st0 = BM.startTurn;
+  out.turnStarts = [];
+  BM.startTurn = function () {
+    if (w.$gameTroop._turnCount > 0) {
+      const enemies = {};
+      for (const e of w.$gameTroop.members()) enemies[key(e)] = {hp: e.hp, states: e._states.slice(), turns: Object.assign({}, e._stateTurns)};
+      out.turnStarts.push({after: w.$gameTroop._turnCount, enemies});
+    }
+    return st0.apply(this, arguments);
+  };
   const inv = BM.invokeAction, sa = BM.startAction;
   BM.startAction = function () {
     const s = this._subject, act = s && s.currentAction();
@@ -125,7 +137,7 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
       BM.update();
     }
   } catch (e) { out.errors.push(String(e && e.stack || e).slice(0, 800)); }
-  BM.invokeAction = inv; BM.startAction = sa;
+  BM.invokeAction = inv; BM.startAction = sa; BM.startTurn = st0;
   for (const b of w.$gameParty.battleMembers().concat(w.$gameTroop.members()))
     out.battlers[key(b)] = {hp: b.hp, mhp: b.mhp, atk: b.atk, mat: b.mat, agi: b.agi, states: b._states.slice()};
   if (hpRate) out.enemyIds = w.$gameTroop.members().map(e => e.enemyId());

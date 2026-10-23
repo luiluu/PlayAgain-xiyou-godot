@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "cat.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"chain.basic\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "fe220c5b0362dec2",
+      "newDigest": "8baadc861b227346",
+      "reason": "八戒_59 P2-1 修哈基米剑段重复：cat_probe 改捕获原版 nativeRepeats 每段重复次数，chain 各例观测随之更新"
+    },
+    {
+      "file": "cat.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"chain.noheart\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "a8518e9c99877999",
+      "newDigest": "3ee371999e1e87ee",
+      "reason": "八戒_59 P2-1 修哈基米剑段重复：cat_probe 改捕获原版 nativeRepeats 每段重复次数，chain 各例观测随之更新"
+    },
+    {
+      "file": "cat.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"chain.heart30\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "4a39dc555c8f7e69",
+      "newDigest": "0d25b7068e241e5e",
+      "reason": "八戒_59 P2-1 修哈基米剑段重复：cat_probe 改捕获原版 nativeRepeats 每段重复次数，chain 各例观测随之更新"
+    },
+    {
+      "file": "cat.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"chain.full\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "6e6ff37b4767dba4",
+      "newDigest": "5c746fc925abd740",
+      "reason": "八戒_59 P2-1 修哈基米剑段重复：cat_probe 改捕获原版 nativeRepeats 每段重复次数，chain 各例观测随之更新"
+    },
+    {
+      "file": "cat.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"chain.speed35\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "60e8e1357839560c",
+      "newDigest": "286908946d5c18f1",
+      "reason": "八戒_59 P2-1 修哈基米剑段重复：cat_probe 改捕获原版 nativeRepeats 每段重复次数，chain 各例观测随之更新"
+    },
+    {
+      "file": "cat.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"chain.slow20\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "6c0fcb6fc0c2198a",
+      "newDigest": "d302b301590a8c9f",
+      "reason": "八戒_59 P2-1 修哈基米剑段重复：cat_probe 改捕获原版 nativeRepeats 每段重复次数，chain 各例观测随之更新"
+    },
+    {
+      "file": "cat.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"chain.agiEven\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "d4bb240d48fae368",
+      "newDigest": "222e4d9b409adafa",
+      "reason": "八戒_59 P2-1 修哈基米剑段重复：cat_probe 改捕获原版 nativeRepeats 每段重复次数，chain 各例观测随之更新"
+    },
+    {
+      "file": "cat.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"chain.agiNear\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "a3a923485dbf75d4",
+      "newDigest": "aa3b716e352a053c",
+      "reason": "八戒_59 P2-1 修哈基米剑段重复：cat_probe 改捕获原版 nativeRepeats 每段重复次数，chain 各例观测随之更新"
+    }
+  ]
+}

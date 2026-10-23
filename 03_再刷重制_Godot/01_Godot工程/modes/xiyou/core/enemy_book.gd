@@ -84,8 +84,22 @@ static func on_map_setup(s: XState, map: Dictionary) -> void:
 		_record(s, int(en.troopId), str(map.get("displayName", "")))
 
 
+## 本场已在死亡时计过击败数的敌人（实例）：on_enemy_death 记，结算时不再按「倒着」补记
+static var _death_counted: Array = []
+
+
+## AB_EnemyBook 的 Game_Enemy.die 包装：每次死亡立刻 incrementDefeatNumber(当时的敌人编号)。死亡→复活→再死亡记 2；
+## 死后被事件变身，原编号已记，变身里再走一次死亡时新编号也记（参照 enemy_book_defeat_probe）。
+## 接口：战斗规则在敌人死亡转移处（battle_logic／battler，沙僧独占）调用；接上之前结算时仍按 on_battle_end 补记倒着的。
+static func on_enemy_death(s: XState, e) -> void:
+	add_defeat(s, int(e.enemy_id))
+	if not _death_counted.any(func(x): return is_same(x, e)):
+		_death_counted.append(e)
+
+
 ## 战斗开始（BattleManager.setup＋Game_Troop.setup）：记出没地图，返回本场名单（开战时出现着的成员）
 static func on_battle_start(s: XState, troop_id: int, map: Dictionary, enemies: Array) -> Array:
+	_death_counted = []
 	_record(s, troop_id, str(map.get("displayName", "")))
 	var appeared := []
 	for e in enemies:
@@ -94,13 +108,15 @@ static func on_battle_start(s: XState, troop_id: int, map: Dictionary, enemies: 
 	return appeared
 
 
-## Game_Troop.onBattleEnd：本场名单全部登记；倒下的成员各记一次击败
+## Game_Troop.onBattleEnd：本场名单全部登记。击败数原版在死亡时就计了（on_enemy_death）；
+## 死亡钩子还没接的敌人（本场没经 on_enemy_death）在这里按「倒着」补记一次（过渡做法，钩子接上后不再走到）
 static func on_battle_end(s: XState, appeared: Array, enemies: Array) -> void:
 	for id in appeared:
 		add(s, int(id))
 	for e in enemies:
-		if not e.hidden and e.is_dead():
+		if not e.hidden and e.is_dead() and not _death_counted.any(func(x): return is_same(x, e)):
 			add_defeat(s, e.enemy_id)
+	_death_counted = []
 
 
 ## 插件指令 EnemyBook（open 由地图宿主处理）；正式数据只用到 open 与 complete，另接 add／remove／clear。返回是否认得

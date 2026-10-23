@@ -182,6 +182,7 @@ func _run() -> void:
 	await frames()
 	await _flow(ref)
 	_registration()
+	_death_counting()
 	await _interpreter()
 	await _battle_book()
 	await _menu_entry()
@@ -243,6 +244,76 @@ func _flow(ref: Dictionary) -> void:
 
 
 ## 登记规则（ResisterTiming 2）与存档字段
+## 击败数在死亡时即时计（沙僧50 系统批 P2-1）：按参照 enemy_book_defeat_probe 的四例走 on_enemy_death／on_battle_end 接口
+## （死亡钩子在战斗规则里，接线交沙僧；这里核接口语义与参照读数一致）
+func _death_counting() -> void:
+	var ref = XDB.load_json("oracle/enemy_book_defeat.json")
+	if not check("defeat_oracle_present", ref is Dictionary and ref.has("cases")):
+		return
+	var by := {}
+	for c in ref.cases:
+		check(str(c.id) + ".oracle_clean", c.errors.is_empty(), c.errors)
+		by[str(c.id)] = c.observed
+	var mk := func() -> Array:
+		var s := XState.new_game_blank()
+		for id in [1, 8, 9, 10]:
+			s.add_actor(id)
+		var logic := XBattleLogic.new()
+		logic.setup(2, s)
+		return [s, logic, XEnemyBook.on_battle_start(s, 2, {"displayName": ""}, logic.enemies)]
+	# 死亡→复活→再死亡
+	var o: Dictionary = by.dieReviveDie
+	var r: Array = mk.call()
+	var s: XState = r[0]
+	var e = r[1].enemies[0]
+	var id := int(e.enemy_id)
+	e.hp = 0.0
+	XEnemyBook.on_enemy_death(s, e)
+	var first := XEnemyBook.defeat_number(s, id)
+	e.hp = 1.0
+	var revived := XEnemyBook.defeat_number(s, id)
+	e.hp = 0.0
+	XEnemyBook.on_enemy_death(s, e)
+	var second := XEnemyBook.defeat_number(s, id)
+	XEnemyBook.on_battle_end(s, r[2], r[1].enemies)
+	check("defeat.dieReviveDie", id == int(o.enemyId) and [first, revived, second, XEnemyBook.defeat_number(s, id)] == [int(o.afterFirstDeath), int(o.afterRevive), int(o.afterSecondDeath), int(o.afterBattleEnd)],
+		[first, revived, second, XEnemyBook.defeat_number(s, id), o])
+	# 死亡→复活→逃跑（结束时活着）
+	o = by.dieReviveEscape
+	r = mk.call()
+	s = r[0]
+	e = r[1].enemies[0]
+	e.hp = 0.0
+	XEnemyBook.on_enemy_death(s, e)
+	e.hp = 1.0
+	var before := XEnemyBook.defeat_number(s, id)
+	XEnemyBook.on_battle_end(s, r[2], r[1].enemies)
+	check("defeat.dieReviveEscape", [before, XEnemyBook.defeat_number(s, id)] == [int(o.beforeEnd), int(o.afterBattleEnd)], [before, XEnemyBook.defeat_number(s, id), o])
+	# 死亡后变身：原编号已记；原版变身里 refresh 又走一次死亡，新编号也记
+	o = by.dieThenTransform
+	r = mk.call()
+	s = r[0]
+	e = r[1].enemies[0]
+	e.hp = 0.0
+	XEnemyBook.on_enemy_death(s, e)
+	e.enemy_id = int(o.otherId)
+	XEnemyBook.on_enemy_death(s, e)
+	XEnemyBook.on_battle_end(s, r[2], r[1].enemies)
+	check("defeat.dieThenTransform", [XEnemyBook.defeat_number(s, id), XEnemyBook.defeat_number(s, int(o.otherId))] == [int(o.original), int(o.transformed)],
+		[XEnemyBook.defeat_number(s, id), XEnemyBook.defeat_number(s, int(o.otherId)), o])
+	# 死亡后立刻读（战斗中打开图鉴）
+	o = by.dieThenRead
+	r = mk.call()
+	s = r[0]
+	e = r[1].enemies[0]
+	var b0 := XEnemyBook.defeat_number(s, id)
+	e.hp = 0.0
+	XEnemyBook.on_enemy_death(s, e)
+	check("defeat.dieThenRead", [b0, XEnemyBook.defeat_number(s, id)] == [int(o.before), int(o.inBattleAfterDeath)], [b0, XEnemyBook.defeat_number(s, id), o])
+	XEnemyBook.on_battle_end(s, r[2], r[1].enemies)
+	check("defeat.no_double_at_end", XEnemyBook.defeat_number(s, id) == int(o.inBattleAfterDeath))
+
+
 func _registration() -> void:
 	var s := XState.new_game_blank()
 	for id in [1, 8, 9, 10]:
