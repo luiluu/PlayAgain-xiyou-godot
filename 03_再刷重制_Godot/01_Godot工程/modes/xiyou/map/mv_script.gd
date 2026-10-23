@@ -140,9 +140,11 @@ static func _statements(js: String, interp) -> Array:
 				var qty := int(g.amount) if str(g.get("kind", "")) == m.get_string(2) and int(g.get("id", -1)) == int(m.get_string(3)) else int(m.get_string(4))
 				interp.host.toast(m.get_string(1) + str(qty) + m.get_string(5))
 			continue
-		m = _re("^\\$gameVariables\\.setValue\\((\\d+),window\\.CodexMijing\\?CodexMijing\\.pickHere\\(\\):(\\d+)\\)$").search(st)
+		m = _re("^\\$gameVariables\\.setValue\\((\\d+),window\\.CodexMijing\\?CodexMijing\\.pick(Here\\(\\)|\\((\\d+)\\)):(\\d+)\\)$").search(st)
 		if m:
-			s.set_variable(int(m.get_string(1)), XDungeon.mijing_pick_here(s))
+			# pickHere() 按所在塔层，pick(档位) 按给定档位（深渊主席抽奖公共事件 1421～1424）
+			var tier := m.get_string(3)
+			s.set_variable(int(m.get_string(1)), XDungeon.mijing_pick_here(s) if tier == "" else XDungeon.mijing_pick(s, int(tier)))
 			continue
 		# $gameVariables.setValue(N, 数字)：玉皇大帝礼物 900、奇异石碑 899、Map158 古龙祭坛 1476 等。经 set_variable 才会记进跨存档（XGlobalVars）
 		m = _re("^\\$gameVariables\\.setValue\\((\\d+)\\s*,\\s*(-?\\d+(?:\\.\\d+)?)\\)$").search(st)
