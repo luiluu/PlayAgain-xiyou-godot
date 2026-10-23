@@ -11,8 +11,8 @@ const DATA := "res://modes/xiyou/alienation.json"
 const MAX_ITEMS := 9999
 const OPERATE_ERROR := "仅可操作背包中未装备、未锁定、未绑定的异化装备；先完成待选重抽。"
 static var _config := {}
-## 相当于 Math.random（测试固定）
-static var random: Callable = func() -> float: return randf()
+## 测试用：≥0 时 Math.random 固定取它
+static var force_roll := -1.0
 
 
 static func config() -> Dictionary:
@@ -38,7 +38,8 @@ static func stone_id() -> int:
 
 
 static func choose(xs: Array):
-	return xs[mini(floori(float(random.call()) * xs.size()), xs.size() - 1)]
+	var r := force_roll if force_roll >= 0 else randf()
+	return xs[mini(floori(r * xs.size()), xs.size() - 1)]
 
 
 static func kind(i: Dictionary) -> String:

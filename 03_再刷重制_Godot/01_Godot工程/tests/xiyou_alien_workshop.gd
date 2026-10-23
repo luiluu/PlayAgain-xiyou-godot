@@ -68,7 +68,7 @@ func _state() -> XState:
 	s.gear = []
 	for id in [1, 8]:
 		s.add_actor(id)
-	XAlienation.random = func() -> float: return 0.5
+	XAlienation.force_roll = 0.5
 	return s
 
 
@@ -247,6 +247,7 @@ func _menu_entry() -> void:
 
 
 func _finish() -> void:
+	XAlienation.force_roll = -1.0
 	for pl in XSound._players:
 		if is_instance_valid(pl):
 			pl.stop()
