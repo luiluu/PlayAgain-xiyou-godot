@@ -19,6 +19,8 @@ extends Control
 ##   信息窗在插槽信息之后画「镶嵌物」标题（x −32 居中，系统色）与每个孔一行（x 226）。读数见 tests/fixtures/orb_ui_oracle.json。
 
 signal closed
+## 用了带公共事件的物品：关闭后菜单也要关，回地图执行预约（Scene_ItemBase.checkCommonEvent → goto(Scene_Map)）
+var to_map := false
 
 const CAT_RECT := Rect2(0, 0, 240, 172)
 const STATUS_RECT := Rect2(240, 1, 1040, 172)
@@ -216,8 +218,9 @@ func _augment_row() -> Dictionary:
 	return d[_aug_index] if _aug_index >= 0 and _aug_index < d.size() else {}
 
 
+## $gameParty.canUse：菜单里能用（occasion 0／2）且持有；不看效果范围——没有目标的（范围 0 等）在 determineItem 里直接用
 func _usable(item: Dictionary) -> bool:
-	return not item.has("instanceId") and [0, 2].has(int(item.get("occasion", 0))) and [7, 8, 9, 10, 11].has(int(item.get("scope", 0))) \
+	return not item.has("instanceId") and [0, 2].has(int(item.get("occasion", 0))) \
 		and XState.current.item_count(int(item.get("id", 0))) > 0
 
 
@@ -538,7 +541,11 @@ func _ok_inner() -> void:
 			XSound.system(1)
 			match str(a.symbol):
 				"use":
-					_open_actor()
+					# Scene_ItemBase.determineItem：对队友的先选人，否则直接用
+					if _scope() in [7, 8, 9, 10, 11]:
+						_open_actor()
+					else:
+						_use_direct()
 				"upgrade":
 					_mode = "upgrade"
 					_up_index = 0
@@ -708,6 +715,33 @@ func _use() -> void:
 			logic._effect(user, t, e, {"skill": _item, "hp": 0.0, "mp": 0.0, "added": [], "removed": []})
 	if bool(_item.get("consumable", true)):
 		s.gain_item(int(_item.id), -1)
+	_after_use()
+
+
+## 不对队友的物品（determineItem 的 else）：useItem 不经选人、没有对象，消耗后只做全局效果
+func _use_direct() -> void:
+	var s := XState.current
+	if s.item_count(int(_item.get("id", 0))) <= 0:
+		XSound.system(3)
+		return
+	XSound.system(22)   # SoundManager.playUseItem
+	if bool(_item.get("consumable", true)):
+		s.gain_item(int(_item.id), -1)
+	_after_use()
+
+
+## Game_Action.applyGlobal：效果里的公共事件（44）逐条 reserveCommonEvent（单槽，后一条盖前一条）；
+## Scene_ItemBase.checkCommonEvent：有预约就回地图执行——物品页与菜单一起关掉（to_map 由菜单接着关）
+func _after_use() -> void:
+	var s := XState.current
+	var reserved := false
+	for e in _item.get("effects", []):
+		if int(e.code) == 44:
+			s.reserve_common_event(int(e.dataId))
+			reserved = true
+	if reserved:
+		to_map = true
+		closed.emit()
 
 
 # ---- 鼠标：先选中再点确定；右键取消；滚轮滚动 ----
