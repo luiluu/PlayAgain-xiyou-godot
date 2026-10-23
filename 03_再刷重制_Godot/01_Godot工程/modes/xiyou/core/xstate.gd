@@ -154,6 +154,8 @@ var enemy_book := {"flags": {}, "defeat": {}, "maps": {}}
 var crafting := {"known": {}, "level": [1, 1, 1, 1], "exp": [0, 0, 0, 0]}
 ## 宠物（Star_PetSystem）：list 宠物、war 出战序号、team_a 共享角色序号（$gameParty.Pets／GTWar／TeamATo），见 XPets
 var pets := {"list": [], "war": -1, "team_a": 0}
+## 修炼（Star_ActorAttributePlusPoints）：{"角色ID": {"修炼表编号": 等级}}（actor.pushattribute 的等级一栏），见 XTraining
+var training := {}
 var shop_pending := ""
 var hang_up_active := false
 var hang_up_origin := Vector2i(-1, -1)
@@ -479,7 +481,7 @@ func to_dict() -> Dictionary:
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "ecoFrac": eco_frac,
-		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training}
 
 static func from_dict(d: Dictionary) -> XState:
 	# dev.099 once persisted strict engine-specific RNG state. Ignore that obsolete
@@ -573,6 +575,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.crafting = cr.duplicate(true) if cr is Dictionary else {}
 	var pt = d.get("pets", {})
 	s.pets = pt.duplicate(true) if pt is Dictionary else {}
+	var tr = d.get("training", {})
+	s.training = tr.duplicate(true) if tr is Dictionary else {}
 	s.shop_stock = XShopStock.from_save(d.get("shopStock", {}))
 	var zs = d.get("zhenqiSpec", {})
 	for part in ["w", "e", "weaponTrials"]:
