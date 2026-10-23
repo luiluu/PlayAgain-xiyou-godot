@@ -247,6 +247,8 @@ static func floor_table() -> Array:
 	out.sort_custom(func(a, b): return a.floor < b.floor)
 	for f in out:
 		_follow_via(f, maps)
+	# 跟过 via 仍没有守层者的层不进楼层表：三十四层 Map158「决战：天外天」（dev.148 悟空_45 接入，由 xiyou_census1 覆盖）
+	out = out.filter(func(f): return not boss_of(f.map).is_empty())
 	# 只取从一层起连续的楼层（中间缺一层就到此为止）
 	var cont := []
 	for f in out:
