@@ -9,6 +9,9 @@ extends Node
 ## 比较：第 1 回合强制行动排在最前且清掉守层者本回合的普通行动、敌方行动者、状态 1460 与第 1 回合加上的其余状态、
 ## 守层者攻击/魔攻、第 2 回合守层者每次命中的附加伤害（行动者正的攻击/魔攻各一次）。伤害浮动由 Godot 随机，不比 HP。
 var results := []
+## 739 嘤族之光：确有命中且 extra 与参照相符的例数（随机技能可能某轮没打到角色，全套至少要有一例证明附加伤害确实执行）
+var _extra_hits := 0
+var _seen739 := false
 ## 随机选技能的敌群：军团 676～693（神魔战场）、超级 Boos 嘤族之光 739
 const RANDOM_AI_TROOPS := [676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686, 687, 688, 689, 690, 691, 692, 693, 739]
 ## 参照用例按序号轮流分 parts 份，一个场景管一份（xiyou_troop_events 是第 0 份，_b 是第 1 份），免得单场景在并行全量里逼近 300 秒；
@@ -101,6 +104,8 @@ func _run() -> void:
 			continue
 		for round in range(5):
 			_case(c, round)
+	if _seen739:
+		check("troop739.extra_hit_exists", _extra_hits > 0, _extra_hits)
 	if part == 0:
 		_unit_checks()
 	finish()
@@ -230,6 +235,8 @@ func _case(c: Dictionary, round: int) -> void:
 	# 每回合单独记录 [行动者, 技能]（多敌人的敌群里角色可能在行动前被打倒，行动者集合随随机数变，只比敌方）
 	var got := {1: [], 2: []}
 	var first_cleared := false
+	var t1_others := {}   # 第 1 回合末各非首敌：{有无 44, 44 剩余回合}
+	var t2_finished := false
 	for t in range(2):
 		if logic.is_won() or logic.is_lost():
 			break
@@ -241,9 +248,16 @@ func _case(c: Dictionary, round: int) -> void:
 		for l in turn_logs:
 			if l.type == "action":
 				got[t + 1].append([key(l.user, logic), int(l.skill.id)])
+		if t == 1:
+			t2_finished = not (logic.is_won() or logic.is_lost())
 		if t == 0:
 			first_cleared = logic.cleared_action(e0)
 			t1_states = e0.state_ids.duplicate()
+			for i in range(1, logic.enemies.size()):
+				var en: XBattler = logic.enemies[i]
+				# ended：Godot 这一回合走到了回合末（run_turn 分出胜负就不跑 end_turn，剩余回合还没减）
+				t1_others["e%d" % i] = {"alive": en.hp > 0.0, "has44": en.state_ids.has(44), "turns44": int(en.state_turns.get(44, -1)),
+					"ended": not (logic.is_won() or logic.is_lost())}
 			check(name + ".state1460", e0.state_ids.has(1460) == c.battlers.e0.states.has(1460.0), e0.state_ids)
 			check(name + ".atk_mat", int(e0.atk) == int(c.battlers.e0.atk) and int(e0.mat) == int(c.battlers.e0.mat),
 				[e0.atk, e0.mat, c.battlers.e0.atk, c.battlers.e0.mat])
@@ -254,10 +268,26 @@ func _case(c: Dictionary, round: int) -> void:
 			continue
 		var ex: XBattler = logic.enemies[int(str(k).substr(1))]
 		var want_b: Dictionary = c.battlers[k]
+		# 状态 44「再次行动」（trait 61，2 回合）由领域公共事件 1396／1397 用 333 [-1,0,44] 给全体敌人确定附加（沙僧50 内容批 P2-C1）。
+		# 参照记了下一回合开始时（回合末事件已跑完，turnStarts）各敌人的状态与剩余回合，与 Godot run_turn 跑完一回合同一时点：
+		# 第 1 回合末非首敌的 44 有无要对上；Godot 也走到了回合末（没在第 1 回合内分出胜负）时剩余回合也要对上（参照 2→1）
+		var t1o: Dictionary = t1_others.get(str(k), {})
+		var end1: Array = c.get("turnStarts", []).filter(func(x): return int(x.after) == 1)
+		var ref1: Dictionary = end1[0].enemies.get(str(k), {}) if not end1.is_empty() else {}
+		if not t1o.is_empty() and bool(t1o.alive):
+			if not ref1.is_empty() and float(ref1.hp) > 0.0:
+				var want44: bool = Array(ref1.states).has(44.0)
+				check(name + ".t1_44_" + str(k), bool(t1o.has44) == want44, [t1o, ref1])
+				if want44 and bool(t1o.ended):
+					check(name + ".t1_44_turns_" + str(k), int(t1o.turns44) == int(ref1.turns.get("44", -1)), [t1o, ref1.turns])
+			elif end1.is_empty() and float(want_b.hp) > 0.0:
+				# 参照第 1 回合内就分出胜负（没有第 1 回合末）：末态就是当时的，只比 44 有无
+				check(name + ".t1_44_" + str(k), bool(t1o.has44) == Array(want_b.states).has(44.0), [t1o, want_b.states])
 		if ex.hp > 0.0 and float(want_b.hp) > 0.0:
-			# 状态 44「再次行动」（trait 61）按掷骰每回合重新附加：参照掷骰固定 0.5 总附上，Godot 随机，第二回合末可能没有，不比
-			check(name + ".other_" + str(k), int(ex.atk) == int(want_b.atk) and int(ex.mat) == int(want_b.mat) and Array(want_b.states).all(func(id): return int(id) == 44 or ex.state_ids.has(int(id))),
-				[ex.atk, ex.mat, ex.state_ids, want_b])
+			# 末态：Godot 走完第 2 回合末时 44 照规则到期，只有这时才允许缺 44
+			check(name + ".other_" + str(k), int(ex.atk) == int(want_b.atk) and int(ex.mat) == int(want_b.mat)
+				and Array(want_b.states).all(func(id): return ex.state_ids.has(int(id)) or (int(id) == 44 and t2_finished)),
+				[ex.atk, ex.mat, ex.state_ids, want_b, t2_finished])
 	var want := {1: [], 2: []}
 	var forced := 0
 	for a in c.actions:
@@ -293,6 +323,10 @@ func _case(c: Dictionary, round: int) -> void:
 	# 神魔战场的军团敌群（676～693，三四名杂兵）与嘤族之光 739：行动者集合取决于随机的技能选择和谁先被打倒，参照固定掷骰 0.5，不比这一项
 	if not RANDOM_AI_TROOPS.has(int(c.troop)):
 		check(name + ".t1_enemy_set", enemies_of.call(got[1]) == enemies_of.call(want[1]), [got[1], want[1]])
+	# 事件强制行动（339）逐条比 [行动者, 技能]：都在第 1 回合最先，含非首敌（军团 676 第 1 回合 e3 强制 3813，沙僧50 内容批 P2-C2）
+	var want_forced: Array = c.actions.filter(func(a): return int(a.turn) == 1 and bool(a.forced)).map(func(a): return [str(a.subject), int(a.skill)])
+	if not want_forced.is_empty():
+		check(name + ".t1_forced_all", got[1].slice(0, want_forced.size()) == want_forced, [got[1], want_forced])
 	# 第 2 回合（战斗没结束时）：守层者照常行动一次（技能随机，不比）；有追加行动特性（61，几率）的敌人，每条特性最多再多一次（怨毒集合体 10%）
 	if not got[2].is_empty():
 		var times: int = got[2].filter(func(x): return x[0] == "e0").size()
@@ -312,10 +346,18 @@ func _case(c: Dictionary, round: int) -> void:
 	for inv in c.invokes:
 		if inv.subject == "e0" and inv.target != "e0" and float(inv.hpBefore) > 0.0 and inv.userStates.has(1460.0):
 			want_extra = [float(inv.userAtk), float(inv.userMat)]
-	if not RANDOM_AI_TROOPS.has(int(c.troop)):  # 同上：嘤族之光 739 第 2 回合随机选技能，不一定打到角色
+	if not RANDOM_AI_TROOPS.has(int(c.troop)):
 		check(name + ".extra", extras.is_empty() if want_extra.is_empty() else (not extras.is_empty() and extras.all(func(x): return x == want_extra)), [extras, want_extra])
 	else:
-		check(name + ".extra_value", extras.all(func(x): return x == want_extra) or want_extra.is_empty(), [extras, want_extra])
+		# 随机技能的敌群（军团、嘤族之光 739）：命中次数随技能与谁先倒下而变，但每一次实际命中都要带精确的 [攻击, 魔攻]
+		# （参照有命中时就是参照值；参照没命中时是守层者自己的攻击／魔攻）。没有命中时记下来，全套另要求 739 至少有一例确有命中（_extra_hits）
+		var own := [float(int(e0.atk)), float(int(e0.mat))]
+		var expect: Array = want_extra if not want_extra.is_empty() else own
+		check(name + ".extra_value", extras.all(func(x): return x == expect), [extras, want_extra, own])
+		if int(c.troop) == 739:
+			_seen739 = true
+			if not extras.is_empty() and not want_extra.is_empty():
+				_extra_hits += 1
 
 
 ## 条件与目标的细项（不依赖参照数据）
