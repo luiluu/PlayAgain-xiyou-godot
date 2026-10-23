@@ -220,3 +220,109 @@ static func set_team_a(s: XState, i: int) -> void:
 static func war_param_plus(s: XState, i: int) -> float:
 	var pet := war_pet(s)
 	return float(pet.push[i]) if not pet.is_empty() and i < 8 and i < pet.push.size() else 0.0
+
+
+# ---- 喂养（Star_PetUpLevel）----
+## 插件参数 PetEatItem 1～6，但读的循环只到 5（431 是技能教学书，不算口粮）
+static func food_items() -> Array:
+	var p := XDB.plugin("Star_PetUpLevel")
+	var out := []
+	for i in range(1, 6):
+		var id := int(str(p.get("PetEatItem %d" % i, "0")))
+		if id > 0:
+			out.append(id)
+	return out
+
+
+## Scene_PetSystem.onUpLeveListOk（列表只在有这件口粮时可确定）：先扣一件；不是出战宠物且没满级时，
+## 等级 + <PetUpLevel>（上限 50），经验设为该级起点，补学到这一级为止的等级技能；否则把口粮还回去。返回是否喂成
+static func feed(s: XState, i: int, item_id: int) -> bool:
+	var pet: Dictionary = list(s)[i]
+	s.gain_item(item_id, -1)
+	if i == war_index(s) or level(pet) >= MAX_LEVEL:
+		s.gain_item(item_id, 1)
+		return false
+	var up := mini(level(pet) + int(str(XDB.rec("Items", item_id).get("meta", {}).get("PetUpLevel", "0")).strip_edges()), MAX_LEVEL)
+	pet.exp = exp_for_level(up)
+	var lv := level(pet)
+	var keys: Array = pet.lv_skills.keys().map(func(k): return int(k))
+	keys.sort()
+	for k in keys:
+		if k <= lv and not pet.skills.has(int(pet.lv_skills[str(k)])):
+			pet.skills.append(int(pet.lv_skills[str(k)]))
+	return true
+
+
+# ---- 合成（Star_PetSynthesis）----
+## 选为宠物一／二的条件：不是出战宠物、不是另一只、满 50 级
+static func can_pick(s: XState, i: int, other: int) -> bool:
+	return i >= 0 and i < list(s).size() and i != war_index(s) and i != other and level(list(s)[i]) == MAX_LEVEL
+
+
+## O-080：原版 getRandomArrayElements 在要的个数多于技能数时（两只合起来不到 4 个技能）会把空位换进结果，得到 undefined 技能；
+## 这里把个数限在 0～技能数。设 false 恢复原版算法（空位记为 0）
+const SYNTH_CLAMP_SKILLS := true
+
+
+## Star.PetSynthesis.RefStat：随机取 A 或 B 当结果，学习次数清零，14 项加成 = (A+B)/2 × floor(随机×41+80)/100，
+## 技能 = A、B 技能去重后随机留 floor(n/2)+floor(随机×5−2) 个（上限 12）；结果放到列表最后，A、B 原位删除。返回结果的新序号，失败 −1
+static func synthesize(s: XState, a: int, b: int, rnd := Callable()) -> int:
+	if not rnd.is_valid():
+		rnd = func(): return randf()
+	var l := list(s)
+	if a < 0 or b < 0 or a >= l.size() or b >= l.size():
+		return -1
+	var pa: Dictionary = l[a]
+	var pb: Dictionary = l[b]
+	var war := war_pet(s)
+	var r: Dictionary = pa if roundi(float(rnd.call())) == 1 else pb
+	r.ls_max = 0
+	r.ls = 0
+	var push := []
+	for i in r.push.size():
+		push.append((float(pa.push[i]) + float(pb.push[i])) / 2.0 * (floorf(float(rnd.call()) * 41.0 + 80.0) / 100.0))
+	var skills := []
+	for id in pa.skills + pb.skills:
+		if not skills.has(int(id)):
+			skills.append(int(id))
+	var count := mini(floori(skills.size() / 2.0) + floori(float(rnd.call()) * 5.0 - 2.0), 12)
+	r.push = push
+	r.skills = _random_elements(skills, count, rnd)
+	l.append(r)
+	_erase_same(l, pa)
+	_erase_same(l, pb)
+	_data(s).war = -1
+	for i in l.size():
+		if not war.is_empty() and is_same(l[i], war):
+			_data(s).war = i
+	return l.size() - 1
+
+
+## Array.prototype.remove：删掉第一个（按同一个对象）
+static func _erase_same(l: Array, x: Dictionary) -> void:
+	for i in l.size():
+		if is_same(l[i], x):
+			l.remove_at(i)
+			return
+
+
+## Star.PetSynthesis.getRandomArrayElements（洗牌取尾部 count 个）
+static func _random_elements(arr: Array, count: int, rnd: Callable) -> Array:
+	var shuffled := arr.duplicate()
+	var n := arr.size()
+	if SYNTH_CLAMP_SKILLS:
+		count = clampi(count, 0, n)
+	var m := n - count
+	if m >= n:
+		return []
+	var i := n
+	while i > m:
+		i -= 1
+		var idx := floori((i + 1) * float(rnd.call()))
+		var get_at := func(k: int) -> int: return int(shuffled[k]) if k >= 0 and k < shuffled.size() else 0
+		var tmp: int = get_at.call(idx)
+		if idx >= 0 and idx < shuffled.size():
+			shuffled[idx] = get_at.call(i)
+		if i >= 0 and i < shuffled.size():
+			shuffled[i] = tmp
+	return shuffled.slice(maxi(m, 0)) if m >= 0 else shuffled.slice(shuffled.size() + m)
