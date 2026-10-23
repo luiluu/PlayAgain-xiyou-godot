@@ -1,0 +1,460 @@
+{
+  "geometry": {
+    "formal": {
+      "index": [
+        0,
+        0,
+        426,
+        720
+      ],
+      "status": [
+        426,
+        0,
+        854,
+        720
+      ],
+      "drops": [
+        426,
+        0,
+        854,
+        720
+      ],
+      "rows": 19,
+      "lineHeight": 36,
+      "font": 26,
+      "padding": 14
+    },
+    "godot": {
+      "drops": [
+        426.0,
+        0.0,
+        854.0,
+        720.0
+      ],
+      "font": 26,
+      "index": [
+        0.0,
+        0.0,
+        426.0,
+        720.0
+      ],
+      "lineHeight": 36.0,
+      "padding": 14.0,
+      "rows": 19,
+      "status": [
+        426.0,
+        0.0,
+        854.0,
+        720.0
+      ]
+    }
+  },
+  "checks": {
+    "menuGeometry": true,
+    "all823Names": true,
+    "dropRows": true,
+    "helpPositionAndWidth": true,
+    "unknown": true,
+    "originalFontRestoresHelpSize": true
+  },
+  "namesCount": 823,
+  "drops": {
+    "formal": {
+      "rows": [
+        [
+          52,
+          "草帽   13.3%"
+        ],
+        [
+          53,
+          "毛布裤   1.33%"
+        ],
+        [
+          4542,
+          "布丁   0.133%"
+        ]
+      ],
+      "help": [
+        880,
+        32,
+        400,
+        239
+      ]
+    },
+    "godot": {
+      "help": [
+        880.0,
+        32.0,
+        400.0,
+        267.0
+      ],
+      "rows": [
+        [
+          52,
+          "草帽   13.3%"
+        ],
+        [
+          53,
+          "毛布裤   1.33%"
+        ],
+        [
+          4542,
+          "布丁   0.133%"
+        ]
+      ]
+    },
+    "godotOriginalFontHelpSize": [
+      400.0,
+      239.0
+    ]
+  },
+  "deathCases": [
+    {
+      "id": "immediate",
+      "formal": {
+        "before": {
+          "id": 1,
+          "hp": 7500,
+          "dead": false,
+          "count1": 0,
+          "count2": 0,
+          "registered1": false
+        },
+        "afterFirstDeath": {
+          "id": 1,
+          "hp": 0,
+          "dead": true,
+          "count1": 1,
+          "count2": 0,
+          "registered1": false
+        },
+        "afterEnd": {
+          "id": 1,
+          "hp": 0,
+          "dead": true,
+          "count1": 1,
+          "count2": 0,
+          "registered1": true
+        }
+      },
+      "godot": {
+        "afterEnd": {
+          "count1": 1,
+          "count2": 0,
+          "dead": true,
+          "hp": 0.0,
+          "id": 1,
+          "registered1": true
+        },
+        "afterFirstDeath": {
+          "count1": 0,
+          "count2": 0,
+          "dead": true,
+          "hp": 0.0,
+          "id": 1,
+          "registered1": false
+        },
+        "before": {
+          "count1": 0,
+          "count2": 0,
+          "dead": false,
+          "hp": 7500.0,
+          "id": 1,
+          "registered1": false
+        }
+      }
+    },
+    {
+      "id": "revive_die",
+      "formal": {
+        "before": {
+          "id": 1,
+          "hp": 7500,
+          "dead": false,
+          "count1": 0,
+          "count2": 0,
+          "registered1": false
+        },
+        "afterFirstDeath": {
+          "id": 1,
+          "hp": 0,
+          "dead": true,
+          "count1": 1,
+          "count2": 0,
+          "registered1": false
+        },
+        "afterRevive": {
+          "id": 1,
+          "hp": 7500,
+          "dead": false,
+          "count1": 1,
+          "count2": 0,
+          "registered1": false
+        },
+        "afterSecondDeath": {
+          "id": 1,
+          "hp": 0,
+          "dead": true,
+          "count1": 2,
+          "count2": 0,
+          "registered1": false
+        },
+        "afterEnd": {
+          "id": 1,
+          "hp": 0,
+          "dead": true,
+          "count1": 2,
+          "count2": 0,
+          "registered1": true
+        }
+      },
+      "godot": {
+        "afterEnd": {
+          "count1": 1,
+          "count2": 0,
+          "dead": true,
+          "hp": 0.0,
+          "id": 1,
+          "registered1": true
+        },
+        "afterFirstDeath": {
+          "count1": 0,
+          "count2": 0,
+          "dead": true,
+          "hp": 0.0,
+          "id": 1,
+          "registered1": false
+        },
+        "afterRevive": {
+          "count1": 0,
+          "count2": 0,
+          "dead": false,
+          "hp": 7500.0,
+          "id": 1,
+          "registered1": false
+        },
+        "afterSecondDeath": {
+          "count1": 0,
+          "count2": 0,
+          "dead": true,
+          "hp": 0.0,
+          "id": 1,
+          "registered1": false
+        },
+        "before": {
+          "count1": 0,
+          "count2": 0,
+          "dead": false,
+          "hp": 7500.0,
+          "id": 1,
+          "registered1": false
+        }
+      }
+    },
+    {
+      "id": "revive_escape",
+      "formal": {
+        "before": {
+          "id": 1,
+          "hp": 7500,
+          "dead": false,
+          "count1": 0,
+          "count2": 0,
+          "registered1": false
+        },
+        "afterFirstDeath": {
+          "id": 1,
+          "hp": 0,
+          "dead": true,
+          "count1": 1,
+          "count2": 0,
+          "registered1": false
+        },
+        "afterRevive": {
+          "id": 1,
+          "hp": 7500,
+          "dead": false,
+          "count1": 1,
+          "count2": 0,
+          "registered1": false
+        },
+        "afterEnd": {
+          "id": 1,
+          "hp": 7500,
+          "dead": false,
+          "count1": 1,
+          "count2": 0,
+          "registered1": true
+        }
+      },
+      "godot": {
+        "afterEnd": {
+          "count1": 0,
+          "count2": 0,
+          "dead": false,
+          "hp": 7500.0,
+          "id": 1,
+          "registered1": true
+        },
+        "afterFirstDeath": {
+          "count1": 0,
+          "count2": 0,
+          "dead": true,
+          "hp": 0.0,
+          "id": 1,
+          "registered1": false
+        },
+        "afterRevive": {
+          "count1": 0,
+          "count2": 0,
+          "dead": false,
+          "hp": 7500.0,
+          "id": 1,
+          "registered1": false
+        },
+        "before": {
+          "count1": 0,
+          "count2": 0,
+          "dead": false,
+          "hp": 7500.0,
+          "id": 1,
+          "registered1": false
+        }
+      }
+    },
+    {
+      "id": "dead_transform",
+      "formal": {
+        "before": {
+          "id": 1,
+          "hp": 7500,
+          "dead": false,
+          "count1": 0,
+          "count2": 0,
+          "registered1": false
+        },
+        "afterFirstDeath": {
+          "id": 1,
+          "hp": 0,
+          "dead": true,
+          "count1": 1,
+          "count2": 0,
+          "registered1": false
+        },
+        "afterTransform": {
+          "id": 2,
+          "hp": 0,
+          "dead": true,
+          "count1": 1,
+          "count2": 0,
+          "registered1": false
+        },
+        "afterEnd": {
+          "id": 2,
+          "hp": 0,
+          "dead": true,
+          "count1": 1,
+          "count2": 0,
+          "registered1": true
+        }
+      },
+      "godot": {
+        "afterEnd": {
+          "count1": 0,
+          "count2": 1,
+          "dead": true,
+          "hp": 0.0,
+          "id": 2,
+          "registered1": true
+        },
+        "afterFirstDeath": {
+          "count1": 0,
+          "count2": 0,
+          "dead": true,
+          "hp": 0.0,
+          "id": 1,
+          "registered1": false
+        },
+        "afterTransform": {
+          "count1": 0,
+          "count2": 0,
+          "dead": true,
+          "hp": 0.0,
+          "id": 2,
+          "registered1": false
+        },
+        "before": {
+          "count1": 0,
+          "count2": 0,
+          "dead": false,
+          "hp": 7500.0,
+          "id": 1,
+          "registered1": false
+        }
+      }
+    }
+  ],
+  "screenshotsInspected": [
+    {
+      "side": "formal-ui",
+      "name": "enemy_book_0",
+      "sha256": "f627394379610acc741aa27df313d056f3dfbc9b466450eb03a65d950796bd09",
+      "bytes": 1659682
+    },
+    {
+      "side": "formal-ui",
+      "name": "enemy_book_0_drops",
+      "sha256": "8f4d158c44be18c72dd7024256f3dc7b71d4a39fd983059b96868c124f2a4e88",
+      "bytes": 1439351
+    },
+    {
+      "side": "formal-ui",
+      "name": "enemy_book_unknown",
+      "sha256": "45f7b1cf7278b752a70a1b509e2bc6125c29be275f622ac887434776f15c96ff",
+      "bytes": 1587327
+    },
+    {
+      "side": "formal-ui",
+      "name": "battle_enemy_book_unknown",
+      "sha256": "bfb8519f037b73aa47fb008797f31a746e9839849288425e2dc2d6612b666117",
+      "bytes": 1507123
+    },
+    {
+      "side": "formal-ui",
+      "name": "battle_enemy_book_known",
+      "sha256": "9f86ce0e0945f33f5586e6424b9a532513735f159a358e5210331f8c1e9925e3",
+      "bytes": 1515542
+    },
+    {
+      "side": "godot-ui",
+      "name": "enemy_book_0",
+      "sha256": "17e7ff915e620d96c4ca5adaf152e5db190544f56b0559138063e09ae98873e2",
+      "bytes": 1264570
+    },
+    {
+      "side": "godot-ui",
+      "name": "enemy_book_0_drops",
+      "sha256": "2b4a6b980e24203a1e66428e9a754f95ae9e108d3d4ef467e19bdd9d4ec2a59c",
+      "bytes": 1064512
+    },
+    {
+      "side": "godot-ui",
+      "name": "enemy_book_unknown",
+      "sha256": "3c80e1c6a93b86ce1bedecfc22a3f698cc3387982e35d6959b9cfaa8c4e67773",
+      "bytes": 1177096
+    },
+    {
+      "side": "battle-ui",
+      "name": "battle_42_enemy_book",
+      "sha256": "fe134e875ed4974dd0812c8404277b55e20ecc627d8c654a1153edc7e1b9b5c6",
+      "bytes": 932082
+    }
+  ],
+  "visualNotes": [
+    "实际查看菜单目录／掉落／未登记三对截图，以及战斗图鉴同类窗口截图；核对位置与关键文字，不作逐像素认证。",
+    "说明卡高度239→267来自O-007最小字号；仅在取证对象设min_font=0后实测恢复239，没有修改生产默认。",
+    "P3：原版此掉落入口Sprite_ItemHelp.hide后只visible=true，无外部品质框；Godot公共XHelpCard仍画白框，交界面车道确认／登记。",
+    "按用户清理要求，PNG及大日志交付前删除，只保留本小型测量与SHA。",
+    "窗口两次诊断均exit0，第二次专门验证O-007高度差；不是失败重跑。Mac启动器各有sandbox_extension_issue_file_to_process诊断，场景无SCRIPT ERROR／ERROR且结果exit0。"
+  ]
+}

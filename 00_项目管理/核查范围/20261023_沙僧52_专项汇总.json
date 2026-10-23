@@ -1,0 +1,98 @@
+{
+  "head": "75000855",
+  "headless": {
+    "scenes": [
+      {
+        "name": "xiyou_actor_book.tscn",
+        "passed": 22,
+        "total": 22,
+        "seconds": 50.62,
+        "exit": 0,
+        "attempts": 1,
+        "logSha256": "cc45d0d1686542a67b7f865aa974e4e38750a956203ab8d44a6705ba0e052ff6"
+      },
+      {
+        "name": "xiyou_help_card.tscn",
+        "passed": 970,
+        "total": 970,
+        "seconds": 43.49,
+        "exit": 0,
+        "attempts": 1,
+        "logSha256": "d336b69f260c55f3ac48637859355c8bbaaf2b7288858e8d0db62843a688e1e3"
+      },
+      {
+        "name": "xiyou_panels.tscn",
+        "passed": 35,
+        "total": 35,
+        "seconds": 8.894,
+        "exit": 0,
+        "attempts": 1,
+        "logSha256": "8d8496014c0bfaed5ab9aa5f8fc49d72e1165e5b6f5bd16501ac17794f3fec09"
+      },
+      {
+        "name": "xiyou_interp_review.tscn",
+        "passed": 13,
+        "total": 13,
+        "seconds": 7.257,
+        "exit": 0,
+        "attempts": 1,
+        "logSha256": "8e013b62eb9f678327e957391b75e7acf8bed69e119871fa6b983b68c1a1de69"
+      },
+      {
+        "name": "xiyou_battle_events.tscn",
+        "passed": 108,
+        "total": 108,
+        "seconds": 4.492,
+        "exit": 0,
+        "attempts": 1,
+        "logSha256": "ce4ef850280024c345031f5ad943773a9b6bbea775b7a34d45d7502fc1238956"
+      },
+      {
+        "name": "xiyou_enemy_book.tscn",
+        "passed": 41,
+        "total": 41,
+        "seconds": 4.096,
+        "exit": 0,
+        "attempts": 1,
+        "logSha256": "6c1cfbda92bfb4aecba67de6601f130e15bc0a3924fe5d3d7290c8da01115bfb"
+      },
+      {
+        "name": "xiyou_save_page.tscn",
+        "passed": 40,
+        "total": 40,
+        "seconds": 3.467,
+        "exit": 0,
+        "attempts": 1,
+        "logSha256": "fb087d8c7e4ef2dd8941840594816513f7901c2c43bab196141ee4024719f472"
+      }
+    ],
+    "total": 1229,
+    "reused": [],
+    "flaky": [],
+    "globalLimit": 4,
+    "wallSeconds": 153.849
+  },
+  "battleWindow": {
+    "name": "xiyou_battle_ui.tscn",
+    "exit": 0,
+    "seconds": 26.456384897232056,
+    "result": {
+      "passed": 90,
+      "total": 90
+    }
+  },
+  "queueNotes": "原两个窗口排队器和7场专项在未执行任何Godot前停止（143）；仅把本进程取槽等待从0.5秒改为0.01秒，仍使用原global_slot和4个全局槽。场景首次执行均通过，不记偶发。 追加O-007诊断首次排队器也在未执行前停止143，随后仍按4个共用槽完成。",
+  "sourceIdentityUnchanged": true,
+  "diagnosticWindow": [
+    {
+      "name": "xiyou_review_cap_tmp.tscn",
+      "exit": 0,
+      "seconds": 5.971067905426025
+    },
+    {
+      "exit": 0,
+      "seconds": 5.649431943893433,
+      "purpose": "确认O-007字体优化解释说明卡高度差"
+    }
+  ]
+}

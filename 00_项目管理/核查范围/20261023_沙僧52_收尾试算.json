@@ -1,0 +1,280 @@
+{
+  "baseMain": "796b61d3da5c5f6a32221b959130638425099674",
+  "laneCheckpoint": "75000855111917be500e6226d967c4a6dde8066b",
+  "syntheticMerge": "dd551625c55379d31dd3409b6335b174f234c1e4",
+  "previousReviewTip": "b9b3de9acf08e1755986597e91327623bc338a04",
+  "beforeCurrentReview": {
+    "commits": 108,
+    "substantive": 12,
+    "docs": 3
+  },
+  "afterCurrentReview": {
+    "commits": 95,
+    "substantive": 10,
+    "docs": 3
+  },
+  "removedExactly": [
+    "142fa9e79efffaf9f3dd4d1e09706968518b5d37",
+    "710a9bbde232034f6ab318fb039e9889b10818f0",
+    "c7aef560091e4fb2a77977160016fc82e3afa185",
+    "5366ec76d4f6f6081c2ea63d6335ecebee3b3769",
+    "c58e171a65b966a36512409f42c58bd932c48057",
+    "7bfc4b2727149f01b91e7b82e747a5fb0c4272c0",
+    "8357c6ec60b2df74d9c5b03fe2e2b32cee22c089",
+    "3633ae221b0d37940e082874ad0bbe9c98575046",
+    "513ab06521bf0fbc59b1e7c9a3e9e47dd0ceccee",
+    "f8c539583c09159e4f4e10ef2a546e72822db8db",
+    "3215919d0d980a27f56f2e029703f6fff8ef1b0c",
+    "84213fddbf8b553d333e079b8b8c93feafe0d15a",
+    "9f0ee0e5981ae1647ef057045da658ce23a527a8"
+  ],
+  "unexpectedRemoved": [],
+  "remaining": [
+    {
+      "label": "合并 codex/state-effects-2e",
+      "date": "2026-10-23",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "4bf9996",
+        "3bda37b",
+        "961443e",
+        "cb59b46",
+        "c95a05d",
+        "77e8bfc",
+        "26fe46f",
+        "3faf0cd",
+        "fb9f73d",
+        "9d249fb",
+        "932b4df",
+        "4b3700d",
+        "3f4e6c0",
+        "c545f83",
+        "76fff4b",
+        "b84f1a8",
+        "7c99d19",
+        "e3c347a",
+        "4ea36d6",
+        "8deeab9",
+        "6b270df",
+        "b58b9fc",
+        "8317db8",
+        "c572e51"
+      ],
+      "executor": "Codex（沙僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/bajie-crafting2",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "6c5e425",
+        "a7b5fa8",
+        "2ae343c",
+        "92d0734",
+        "9511942"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/bajie-pet",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "3799b99",
+        "75bda67",
+        "9cfcef0",
+        "3137adc"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/bajie-companion",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "03fe666",
+        "ca00f18",
+        "d39135c",
+        "8e08d47",
+        "6a72a65",
+        "03dc60d"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/bajie-pet-synth",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "86c0d84",
+        "7948510",
+        "b44dee1",
+        "12546ba",
+        "59d3f82"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/youthful-rubin-d03e77",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "a0d8f45",
+        "48df8c4",
+        "ffd0222",
+        "59720ed",
+        "6be66cb",
+        "114fb06"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 codex/state-effects-2f",
+      "date": "2026-10-23",
+      "need": [
+        "Claude",
+        "Codex"
+      ],
+      "commits": [
+        "1a12281",
+        "308927f",
+        "7d7b8f3",
+        "811c08d",
+        "d6f046b",
+        "aa15d3b",
+        "e96ff6f",
+        "0e2f86e",
+        "5b08334",
+        "47168ca"
+      ],
+      "executor": "Codex（沙僧）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/bajie-alien",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "29940f0",
+        "c5bd42e",
+        "1f37003",
+        "12c7374",
+        "5a2ef6e",
+        "dd89a99",
+        "93e8856"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/wukong-tower",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "aa17070",
+        "c1ebbc8",
+        "796b61d"
+      ],
+      "executor": "Claude（悟空）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "核查上限期开工：固定三单后83提交与最早Claude实质批",
+      "date": "2026-10-23",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "cdf8fc7"
+      ],
+      "executor": "Codex（沙僧）",
+      "docOnly": true
+    },
+    {
+      "label": "核查检查点：怪物图鉴四例原版死亡计数与取证边界",
+      "date": "2026-10-23",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "79f86a1"
+      ],
+      "executor": "Codex（沙僧）",
+      "docOnly": true
+    },
+    {
+      "label": "核查检查点：计入旧核查分支的新待核批并补战斗图鉴原版证据",
+      "date": "2026-10-23",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "7500085"
+      ],
+      "executor": "Codex（沙僧）",
+      "docOnly": true
+    },
+    {
+      "label": "合并 codex/review-systems-20261023",
+      "date": "2026-10-23",
+      "need": [
+        "Claude",
+        "Codex"
+      ],
+      "commits": [
+        "a04b78e",
+        "93be777",
+        "a323910",
+        "6bf8f3b",
+        "80b2cd3",
+        "0d12c78",
+        "a9cb3d5",
+        "d7dea52",
+        "1639644",
+        "c83a0fd",
+        "a00dc65",
+        "e15ed4f",
+        "d490e57",
+        "b20c0c6",
+        "c612515",
+        "4b09b82",
+        "a8efd02",
+        "444d9c4",
+        "3fdeb4b",
+        "d057fcd",
+        "28521a5",
+        "b9b3de9"
+      ],
+      "executor": "Codex（沙僧）、Claude（唐僧）",
+      "docOnly": false
+    }
+  ],
+  "notes": [
+    "只构造Git对象并内存追加草稿，不移动main／旧分支指针，不写共用文件。",
+    "含三期核查分支新带入的实质批；本分支只有文档与小型读数，合并后归入文档批。",
+    "提交总数含本轮已提交的3个文档检查点；总装新增合并／收尾提交另计。",
+    "现有清单算法的历史边界缺口保留待期三，不自核Codex实现。"
+  ]
+}
