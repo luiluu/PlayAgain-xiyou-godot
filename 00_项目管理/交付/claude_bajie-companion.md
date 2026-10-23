@@ -33,6 +33,10 @@
 - **参照与测试**：`tests/fixtures/pet_oracle.json`（冻结 v0.28 浏览器参照：固定随机数按原版 GetingPet 造敌人 1、288、10 三只宠物；窗口几何、目录、三只状态窗、底部指令、技能列表与说明卡位置、共享角色窗；出战、休息、放生后的队员技能与 _paramPlus）；新专项 `xiyou_pets` 27 项；`xiyou_panels` 灰显名单 4→3 项。
 - **改到的非独占文件**：`map/mv_script.gd`（识别一处）、`map/map_scene.gd`（`open_pets()`）、`core/xstate.gd`（存档字段）、`ui/menu.gd`。
 
+## 优化登记
+
+- O-待定 | 宠物菜单目录为空时确定（XPetScene.ok） | 原版照常打开底部指令，选出战／休息／放生等会读不存在的宠物而报错 | 目录为空时确定不做事 | 避免报错，正常游戏宠物菜单当前恒为空 | `XPetScene.ok` 去掉 `pets().is_empty()` 的提前返回 | Claude（八戒_56） | 待用户决定
+
 ## 交接板
 
 - 下一步：宠物期二＝喂养（Star_PetUpLevel，吃 426～431）与合成（Star_PetSynthesis）；之后才有意义的依赖：出战加成接进角色能力（actor.gd，沙僧）、命中等加成（战斗规则，沙僧）、捕获（楼层事件悟空＋战斗捕捉道具）。
