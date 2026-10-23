@@ -80,6 +80,7 @@ PROBES = [
     (['module_hooks_probe.cjs'], ['module_hooks.json']),
     (['orb_shop_probe.cjs'], ['orb_shop.json']),
     (['race_menu_probe.cjs'], ['race_menu.json']),
+    (['alien_workshop_probe.cjs'], ['alien_workshop.json']),
     (['dungeon_probe.cjs'], ['dungeon.json']),
     (['shared_system_probe.cjs'], ['shop_stock.json', 'battle_messages.json', 'challenge_passives.json']),
     (['zhenqi_probe.cjs'], ['zhenqi.json']),
