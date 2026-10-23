@@ -512,7 +512,7 @@ func additive_rate(code: int, id: int, current: float, passive: Array) -> float:
 	var sum := 1.0
 	for v in values:
 		pure *= v
-		sum += v - 1.0
+		sum = sum + v - 1.0
 	if current == 0.0:
 		return maxf(minf(0.01, pure), sum)
 	var product := traits_pi(code, id) * passive_product
