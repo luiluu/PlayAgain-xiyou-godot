@@ -31,7 +31,7 @@ const config={ids:C.ids,energyCost:C.energyCost,pools:C.pools,bossOnly:C.bossOnl
   mapNames:(C.mobSources||[]).map(s=>w.$dataMapInfos[s.mapId]&&w.$dataMapInfos[s.mapId].name)};
 
 // 2. 直接调用
-const err=fn=>{try{return {ok:J(fn())};}catch(e){return {error:e.message};}};
+const err=fn=>{try{return {ok:J(fn())};}catch(e){return {thrown:e.message};}};
 const calls=[];
 {setup();
   calls.push({step:'craft-short',r:err(()=>A.craft(1))});
