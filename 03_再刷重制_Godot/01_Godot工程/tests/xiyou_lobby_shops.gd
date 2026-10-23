@@ -48,7 +48,7 @@ func _run() -> void:
 		_finish()
 		return
 	var keep: Array = XMapScene.slice().get("keepEvents", {}).get("4", []).map(func(v): return int(v))
-	check("kept_on_lobby", keep.has(54) and keep.has(63), keep)
+	check("kept_on_lobby", keep.has(54) and keep.has(63) and keep.has(65), keep)
 	var host := LobbyHost.new()
 	add_child(host)
 	var states := {}
