@@ -19,7 +19,8 @@
 
 - 专项任务1：`03_再刷重制_Godot/04_验证/本地结果/review-20261023/specialties.log`，47场景、并行2；runId=7294baeab1c64bdfb491a9478034c07d，长任务PID9103、子进程9104。
 - 专项任务2：同目录 `dependencies.log`，event_compare/transfer两个场景、并行1；长任务PID10717、子进程10718。
-- 任务1/2最后观测均在等待共用槽位，0个场景完成。主工作区唐僧_16 正在跑150场景全量，占满共用上限4；没有停它、抢槽或提高并发。以各 `.status.json` 和最终 TASK_RESULT 为准，不据PID存在推定通过。
+- 初始任务1/2均在等待共用槽位。主工作区唐僧_16 正在跑150场景全量，占满共用上限4；没有停它、抢槽或提高并发。以各 `.status.json` 和最终 TASK_RESULT 为准，不据PID存在推定通过。
+- 14:37 Europe/Paris 更新：任务2 exit0，event_compare 5/5＋transfer 38/38＝43/43，无重跑；已用等待脚本确认最终 TASK_RESULT。任务1已取得槽位，开始 map186／map186_legions，仍没有整批结论。任务3 runId=b29f4fd407d84565a9cd0010b0f98478、PID16438，运行状态以同目录dependencies2.log.status.json为准。
 - 续做先按规则开工，**不要重复启动或清理本工作树**。前台用 `等待任务.sh <上述日志> --timeout 540` 接续等待；orphaned先处理现场，不重启。若任务自然完成，读 test_timings.json 与每场首轮输出、重跑输出，补实际结论后再决定早期／内容批的精确销账范围。
 - 余下直接依赖已另排专项任务3：同目录 `dependencies2.log`，只跑现有场景 battleback_save、shield、drop_dh、flow、floor28_dungeon、script、opening_branches、dungeon、random_streams、orb_shop_ui、gear_ui、gear_search、map（精确场景名避免与任务1重复），并行1；仍以 TASK_RESULT 为准，未通过前不销账。
 - 本轮未跑全量检查：车道规则由总装合并后统一 `检查.sh --oracle`；当前没有游戏改动。不得把主工作区正在运行的全量或排队任务写成已通过。
@@ -58,4 +59,6 @@
 - 93be777a 登记与混合边界核查。
 - a3239105 早期／内容报告与原版证据。
 - 6bf8f3bc 系统报告、保持待核。
-- 本次WIP：保存精确草稿、销账试算与长任务接续现场。
+- 80b2cd39 保存精确草稿、销账试算与长任务接续现场。
+- 0d12c784 补排13个剩余直接依赖。
+- 本次WIP：确认2场43项通过，保存余下长任务接续现场。
