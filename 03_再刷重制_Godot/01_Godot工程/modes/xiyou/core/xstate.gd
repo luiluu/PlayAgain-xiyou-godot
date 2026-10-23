@@ -135,6 +135,8 @@ var pingbi_quality: Array = []      # 屏蔽掉落：旧档 0～7 是否屏蔽�
 var dungeon := {}
 var boss_mastery := {}
 var race_supply := {}
+## 种族祝福（XRace：开局默认、每名角色的种族与阶位等），随存档
+var race := {}
 var eco_frac := {}
 ## KMS_ShopInventory 商店库存（见 XShopStock；随存档）与下一次商店用的库存组（$gameTemp.nextInventoryId，不存档）
 var shop_stock := {"inv": {}, "schedules": []}
@@ -474,7 +476,7 @@ func to_dict() -> Dictionary:
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
-		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "ecoFrac": eco_frac,
+		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets}
 
 static func from_dict(d: Dictionary) -> XState:
@@ -554,6 +556,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.dungeon = d.get("dungeon", {})
 	s.boss_mastery = d.get("bossMastery", {})
 	s.race_supply = d.get("raceSupply", {})
+	var rc = d.get("race", {})
+	s.race = rc.duplicate(true) if rc is Dictionary else {}
 	var gs = d.get("guideSeen", {})
 	s.guide_seen = gs.duplicate() if gs is Dictionary else {}
 	s.eco_frac = d.get("ecoFrac", {})
