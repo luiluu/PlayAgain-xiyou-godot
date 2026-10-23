@@ -2,7 +2,8 @@
 # 多会话并行：车道合并回 main 后删除其 worktree 与分支（规则见 AGENTS.md「多会话并行」）。
 # 用法：清理工作树.sh <任务名或 worktree 路径>
 # 只删除干净且已并入 main 的 worktree；未并入的分支不删，请先合并或自行处理。
-# worktree 里 04_验证/本地结果/ 的证据先移到主工作区 04_验证/本地结果/worktree_<目录名>/ 再删除。
+# worktree 里 04_验证/本地结果/ 的临时输出随工作树一起删，不再移到主工作区（用户 2026-10-23：临时文件及时删，
+# 旧 worktree_<目录名>/ 攒到 52G）；合并工具只在检查通过后才清理。主工作区里同名的旧 worktree_<目录名>/ 一并删掉。
 set -eu
 ENV_DIR=${0:A:h}
 SELF_ROOT=${ENV_DIR:h:h}
@@ -24,33 +25,10 @@ fi
 if ! git -C "$MAIN" merge-base --is-ancestor "$(git -C "$wt" rev-parse HEAD)" main; then
   print -u2 "✗ 工作区 HEAD（$branch）还没有并入 main，不删除"; exit 1
 fi
-# 把 $1 的内容并进 $2：同一路径的 worktree 会被复用，第二次清理时 keep 里可能已有同名目录（如 自动同步/），
-# 直接 mv 会报 Directory not empty。同名目录逐层合并；同名文件内容相同（如空的 sync.lock）就丢掉新来的，
-# 内容不同则新来的改名为 名字.2、名字.3…，旧证据不被覆盖。用后缀而不用时间戳子目录，是为了文件仍挨着原名、按原路径就能找到。
-merge_into() {
-  local src=$1 dst=$2 item name target n
-  mkdir -p "$dst"
-  for item in "$src"/*(DN); do
-    name=${item:t}; target=$dst/$name
-    if [[ ! -e $target && ! -L $target ]]; then
-      mv "$item" "$target"
-    elif [[ -d $item && ! -L $item && -d $target && ! -L $target ]]; then
-      merge_into "$item" "$target"
-      rmdir "$item"
-    elif [[ -f $item && -f $target ]] && cmp -s "$item" "$target"; then
-      rm -f "$item"
-    else
-      n=2; while [[ -e $target.$n || -L $target.$n ]]; do (( n++ )); done
-      mv "$item" "$target.$n"
-    fi
-  done
-}
-
-evidence=$wt/$GODOT_SUB/04_验证/本地结果
-if [[ -d $evidence ]] && [[ -n $(ls -A "$evidence") ]]; then
-  keep=$MAIN/$GODOT_SUB/04_验证/本地结果/worktree_${wt:t}
-  merge_into "$evidence" "$keep"
-  print "  证据已移到 $keep"
+keep=$MAIN/$GODOT_SUB/04_验证/本地结果/worktree_${wt:t}
+if [[ -d $keep ]]; then
+  rm -rf "$keep"
+  print "  已删旧临时输出 $keep"
 fi
 # 剩下的都是 .gitignore 里的再生成文件（generated、.godot、node_modules、链接），git 不阻止删除
 git -C "$MAIN" worktree remove "$wt"
