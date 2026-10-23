@@ -2,9 +2,9 @@ extends Node
 ## 勇者之塔二层 Map083、三层 Map084、王座 Map085 流程（地图场景里真走一遍；数值与事件对照由 xiyou_event_compare 承担）：
 ## - 楼梯（触碰）：一层 Map082 EV2 → 二层 (5,8)；二层 EV2／EV3 → 三层 (25,8)／(15,5)，EV1 回一层；三层 EV3 → 王座 (5,10)，EV1／EV2 回二层；王座 EV2 回三层 (5,8)。
 ##   一层主席带活力水行贿 → 王座 (15,13)。
-## - 精英：二层 EV4 敌群 293（开关 122）、EV5／6 291（开关 924）、EV7 295（开关 124）；三层 EV4 294（123）、EV5～8 291（924）、EV9 297（125）。
+## - 精英：二层 EV4 敌群 293（开关 122）、EV5／6 291（打完暂时消除）、EV7 295（开关 124）；三层 EV4 294（123）、EV5～8 291（暂时消除）、EV9 297（125）。
 ## - 三层魔塔教师 EV10「进行修炼」（修炼界面未做）与被困的灵魂 EV11「认证 魔塔之主」（三顶王冠，称号脚本未接）只测「离开」与缺物品。
-## - 王座 EV1 霍格尔（开关 1709～1712 每档一页，敌群 296）：胜后开关 126、开下一档开关、肝帝积分；宝箱（开关 126、变量 450 档）发奖，
+## - 王座 EV1 霍格尔（开关 1709～1712 每档一页，敌群 296）：胜后开关 126、909（主席）、所选档＝本档时开下一档开关、肝帝积分；宝箱（开关 126、变量 450 档）发奖，
 ##   有邀请函 179 必出深渊之门：「进入此门」按变量 136／107 去 Map056～059，「离开这是非之地」回 Map081 (17,33) 重置并退还邀请函。
 ## 队伍生命攻击都很大（只查流程）；用 MVEventCore.fixed_random 固定事件随机数。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -179,7 +179,7 @@ func _stairs() -> void:
 
 
 func _elites() -> void:
-	for c in [[83, [[4, 293, 122], [5, 291, 924], [7, 295, 124]]], [84, [[4, 294, 123], [6, 291, 924], [9, 297, 125]]]]:
+	for c in [[83, [[4, 293, 122], [5, 291, 0], [7, 295, 124]]], [84, [[4, 294, 123], [6, 291, 0], [9, 297, 125]]]]:
 		var s := _start(c[0], 15, 14)
 		if not _check("m%d_elite_loaded" % c[0], await _wait_map(c[0])):
 			return
@@ -189,7 +189,7 @@ func _elites() -> void:
 			var n0 := battles.size()
 			await _run_event(map, e[0], [], "win")
 			map = _scene()
-			_check("m%d_elite%d" % [c[0], e[0]], battles.size() == n0 + 1 and battles[-1].troop == e[1] and battles[-1].result == 0 and s.switch(e[2]), [battles.slice(n0), s.switch(e[2])])
+			_check("m%d_elite%d" % [c[0], e[0]], battles.size() == n0 + 1 and battles[-1].troop == e[1] and battles[-1].result == 0 and (e[2] == 0 or s.switch(e[2])), [battles.slice(n0), e[2]])
 
 
 func _floor3_npcs() -> void:
@@ -211,13 +211,13 @@ func _throne() -> void:
 			return
 		var map: XMapScene = _scene()
 		s.set_switch(1708 + tier, true)
-		s.set_switch(909, true)
+		s.set_variable(450, tier)
 		map.refresh_events()
 		var n0 := battles.size()
 		var j0 := int(s.variable(206))
 		await _run_event(map, 1, [], "win")
 		_check("throne_boss_%d" % tier, battles.size() == n0 + 1 and battles[-1].troop == 296 and battles[-1].result == 0, battles.slice(n0))
-		_check("throne_after_%d" % tier, s.switch(126) and not s.switch(909) and int(s.variable(206)) > j0, [s.switch(126), s.switch(909), int(s.variable(206)) - j0])
+		_check("throne_after_%d" % tier, s.switch(126) and s.switch(909) and int(s.variable(206)) > j0, [s.switch(126), s.switch(909), int(s.variable(206)) - j0])
 		if tier < 4:
 			_check("throne_next_tier_%d" % tier, s.switch(1709 + tier) and not s.switch(1708 + tier), [s.switch(1708 + tier), s.switch(1709 + tier)])
 
@@ -231,7 +231,8 @@ func _chest() -> void:
 	await _run_event(_scene(), 1, [1], "")
 	_check("chest_leave", await _wait_map(81) and _scene().player.grid == Vector2i(17, 33), [_scene().name])
 	_check("chest_leave_reset", int(s.variable(6)) == 0 and int(s.variable(21)) == 0 and not s.switch(126) and s.item_count(INVITE) == 1, [s.variable(6), s.variable(21), s.switch(126), s.item_count(INVITE)])
-	_check("chest_loot", _item_total(s) > 1, s.items)
+	# 普通档宝箱档次 1：武器 1350
+	_check("chest_loot", s.gear_count("weapon", 1350) == 1, s.gear.size())
 	# 进入此门：变量 136／107 由固定随机数决定，去 Map056～059 之一
 	s = await _chest_start()
 	if s == null:
