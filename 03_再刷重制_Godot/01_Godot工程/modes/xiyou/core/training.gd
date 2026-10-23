@@ -45,7 +45,8 @@ static func level(s: XState, actor_id: int, id: int) -> int:
 	return int(s.training.get(str(actor_id), {}).get(str(id), 0))
 
 
-## paramBaseBoost 里修炼那一份：该角色全部表项 等级×每级加值 中能力编号为 i 的和
+## paramBaseBoost 里修炼那一份：该角色全部表项 等级×每级加值 中能力编号为 i 的和。XActor.param_base 末尾读它；
+## 只读、不写状态，按 actor_id 从 XState.current 取（不在角色上挂字段，公式影子克隆照样可用），没有修炼数据时为 0
 static func param_bonus(a: XActor, i: int) -> float:
 	var s := XState.current
 	if s == null or i >= 8:

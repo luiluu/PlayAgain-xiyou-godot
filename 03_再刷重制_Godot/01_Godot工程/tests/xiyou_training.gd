@@ -1,7 +1,6 @@
 extends Node
 ## 修炼（XTraining／XTrainingScene）：按正式 training_probe.cjs（真实插件的 PoLites、makeCommandList、onConfirmOk、paramBaseBoost）逐项比对——
-## 修炼表、七组流程每一步的行文／提示／精魂／存档等级／八项加成、存读档；能力值本身（paramBase 里加修炼）要 actor.gd 接 XTraining.param_bonus，
-## 接上前 actor_params_with_training 只报告不判失败（见 PARAMS_HOOKED）。
+## 修炼表、七组流程每一步的行文／提示／精魂／存档等级／八项加成与含修炼的能力值（XActor.param_base 读 XTraining.param_bonus）、存读档。
 ## 界面对照冻结 v0.28 浏览器参照 tests/fixtures/training_ui_oracle.json（新局 1/8/9/10、精魂 1234567890、XiuLian [8,9,14,15]）：
 ## 五个窗口的几何、目录／状态窗／精魂窗／底部／修炼项的逐条绘制、目录→底部→修炼项→修炼→取消的焦点流转；
 ## 优化 O-082（ALIGN_COST）开着时「下一级费用」各行同一列、文字与原版拼起来相同；入口脚本（mv_script）与 Map180 EV12 进切片。
@@ -9,8 +8,8 @@ extends Node
 const ORACLE := "res://modes/xiyou/generated/oracle/training.json"
 const FIXTURE := "res://tests/fixtures/training_ui_oracle.json"
 const POS_TOL := 0.05
-## actor.gd 的 param_base 是否已读 XTraining.param_bonus（沙僧独占，待定）
-const PARAMS_HOOKED := false
+## actor.gd 的 param_base 已读 XTraining.param_bonus（唐僧_17 批准的独占例外）；设 false 时只报告能力值差异
+const PARAMS_HOOKED := true
 
 var results := []
 var out_dir := ""
