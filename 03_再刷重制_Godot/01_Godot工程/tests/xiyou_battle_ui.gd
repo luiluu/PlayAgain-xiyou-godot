@@ -44,6 +44,29 @@ func _until(cond: Callable, n := 900) -> bool:
 	return false
 
 
+func _key(code: Key) -> void:
+	for down in [true, false]:
+		var e := InputEventKey.new()
+		e.keycode = code
+		e.physical_keycode = code
+		e.pressed = down
+		get_viewport().push_input(e)
+		await _frames(2)
+
+
+## AB_EnemyBook v1.28：指令窗按 Shift 打开「怪物信息」（本场敌人；没登记的写「？？？」），取消回到指令窗
+func _battle_book(b: XBattleScene) -> void:
+	await _key(KEY_SHIFT)
+	await _frames(3)
+	var p := b.book_page
+	_check("shift_opens_battle_book", p != null and p.in_battle and p.ids == [1] and not b.cmd_win.active
+		and p._status_ops.any(func(o): return o[0] == "t" and o[1] == "？？？"), null if p == null else p.ids)
+	await _shot("battle_42_enemy_book")
+	await _press("ui_cancel")
+	await _frames(3)
+	_check("battle_book_cancel_back", b.book_page == null and b.cmd_win != null and b.cmd_win.active and b.list_win == null)
+
+
 func _press(action: String) -> void:
 	var e := InputEventAction.new()
 	e.action = action
@@ -128,6 +151,7 @@ func _run() -> void:
 	await _press("ui_cancel")
 	await _frames(3)
 	_check("list_cancel_back_to_command", b.list_win == null and b.cmd_win != null and b.cmd_win.active)
+	await _battle_book(b)
 	await _press("ui_up")
 	await _press("ui_accept")
 	await _frames(10)
