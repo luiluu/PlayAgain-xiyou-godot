@@ -305,6 +305,7 @@ func _paint_slot(c: XMVCanvas, a: XActor, i: int, y: float, nw: float) -> void:
 	if e is Dictionary and not e.is_empty():
 		c.icon(int(e.get("iconIndex", 0)), x + nw + 2, y + 2, alpha)
 		c.text(XQuality.list_name(e), x + nw + 36, y, w - nw - 36, "left", XGear.color(e), XUI.FONT_SIZE, LH, alpha)
+		XItemRow.paint_magic_level(c, e, x + nw, y)
 	else:
 		c.icon(int(XDB.plugin("YEP_EquipCore").get("Empty Icon", 0)), x + nw + 2, y + 2, XUI.DIM.a)
 		c.text(str(XDB.plugin("YEP_EquipCore").get("Empty Text", "")), x + nw + 36, y, w - nw - 36, "left", XUI.TEXT, XUI.FONT_SIZE, LH, XUI.DIM.a)

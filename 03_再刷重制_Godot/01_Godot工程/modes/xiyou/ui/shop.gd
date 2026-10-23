@@ -301,9 +301,13 @@ func _paint_list(c: XMVCanvas) -> void:
 				# KMS Window_ShopBuy.drawItem：售完的画名字（宽减 96）与右侧「售完」，不画价格
 				if not XShopStock.available(s, stock_group, int(d[i].kind), int(d[i].gid)):
 					_item_name(c, d[i].rec, 0, y, w - SOLD_OUT_W, a)
+					if XItemRow.paint_magic_level(c, d[i].rec, 0, y):
+						a = 1.0
 					c.text(SOLD_OUT, w - SOLD_OUT_W, y, SOLD_OUT_W, "right", XUI.TEXT, XUI.FONT_SIZE, LH, a)
 					continue
 				_item_name(c, d[i].rec, 0, y, w, a)
+				if XItemRow.paint_magic_level(c, d[i].rec, 0, y):
+					a = 1.0
 				_paint_buy_price(c, d[i], y, w, a)
 		"sell":
 			# Window_ShopSell 继承 Window_ItemList：同物品页一行（XItemRow：NEW、物品「×数量」、装备「序号/9,999」），
