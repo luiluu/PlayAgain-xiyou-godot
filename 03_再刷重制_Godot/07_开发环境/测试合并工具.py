@@ -796,6 +796,8 @@ for name in filter(None, files):
         bare = Path(self.tmp.name) / 'github.git'
         if url is None:
             subprocess.run(['git', 'init', '--bare', '-b', 'main', str(bare)], capture_output=True, check=True)
+            # push 返回后后台自动维护仍可能写裸库，与临时目录清理竞争；夹具不需要维护。
+            self.g('config', 'receive.autoGC', 'false', cwd=bare)
             url = str(bare)
         self.g('remote', 'add', 'github', url)
         if url == str(bare):
