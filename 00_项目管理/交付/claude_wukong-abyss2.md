@@ -1,4 +1,4 @@
-# 交付：claude/wukong-abyss-batch
+# 交付：claude/wukong-abyss2（悟空 claude/wukong-abyss-batch 的 eb5c6f1b，交付后分支又加了第三批 WIP，唐僧另开此分支只合第二批）
 
 - 车道／工作者：A 内容·楼层／悟空（Claude，重制_悟空_46）
 - 状态：可合并
@@ -30,4 +30,4 @@
 
 ## 本分支提交
 
-- 见 `git log main..claude/wukong-abyss-batch`
+- 见 `git log main..claude/wukong-abyss2`
