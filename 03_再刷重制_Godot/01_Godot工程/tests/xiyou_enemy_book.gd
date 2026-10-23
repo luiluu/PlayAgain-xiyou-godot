@@ -7,6 +7,8 @@ extends Node
 ## 登记规则（战斗开始记出没地图、结束登记出现过的与击败数、地图遇敌表、插件指令、存读档）与主菜单入口（公共事件 2）。
 
 const FIXTURE := "res://tests/fixtures/enemy_book_oracle.json"
+## 战斗内「怪物信息」参照（ui_reference ?battle_ref=1：地图 5、敌群 2、难度 3，未登记与已登记）
+const BATTLE_FIXTURE := "res://tests/fixtures/battle_enemy_book_oracle.json"
 const POS_TOL := 0.05
 
 var results := []
@@ -74,7 +76,9 @@ static func got_form(ops: Array) -> Array:
 		if o[0] == "i":
 			out.append([int(o[1]), float(o[2]), float(o[3])])
 		else:
-			out.append([str(o[1]), float(o[2]), float(o[3]), float(o[4]), str(o[6]), float(o[7]), (o[8] as Color).to_html(false)])
+			# MV drawText 不给宽（0xffffffff）在参照里记成 0
+			var w := 0.0 if float(o[4]) >= XEnemyBookPage.NO_WIDTH else float(o[4])
+			out.append([str(o[1]), float(o[2]), float(o[3]), w, str(o[6]), float(o[7]), (o[8] as Color).to_html(false)])
 	return _sorted(out)
 
 
@@ -193,6 +197,7 @@ func _run() -> void:
 	await _flow(ref)
 	_registration()
 	await _interpreter()
+	await _battle_book()
 	await _menu_entry()
 	for pl in XSound._players:
 		if is_instance_valid(pl):
@@ -319,6 +324,49 @@ func _interpreter() -> void:
 	await it2.run()
 	check("plugin_complete_via_event", h.opened == 1 and it2.skipped.is_empty() and XEnemyBook.ids().all(func(id): return XEnemyBook.registered(s, id)))
 	h.queue_free()
+	await frames()
+
+
+## 战斗内「怪物信息」：本场敌人目录、未登记写「？？？」、登记后照常，取消关闭
+func _battle_book() -> void:
+	var ref = JSON.parse_string(FileAccess.get_file_as_string(BATTLE_FIXTURE))
+	if not check("battle_fixture_loaded", ref is Dictionary and ref.has("unknown")):
+		return
+	var s := XState.new_game_blank()
+	s.party.clear()
+	for id in [1, 8, 9, 10]:
+		s.add_actor(id)
+	s.difficulty = int(ref.difficulty)
+	XEnemyBook.on_map_setup(s, XDB.map(5))
+	XEnemy.force_roll = 100.0
+	var logic := XBattleLogic.new()
+	logic.setup(int(ref.troop), s)
+	XEnemy.force_roll = -1.0
+	XEnemyBook.on_battle_start(s, int(ref.troop), XDB.map(5), logic.enemies)
+	var page := XEnemyBookPage.new()
+	page.setup_battle(logic.enemies)
+	add_child(page)
+	await frames()
+	var rect := func(w: Control) -> Array: return [w.position.x, w.position.y, w.size.x, w.size.y]
+	check("battle_geometry", rect.call(page.index_win) == ref.geo.index.map(func(x): return float(x))
+		and rect.call(page.status_win) == ref.geo.status.map(func(x): return float(x)), [rect.call(page.index_win), rect.call(page.status_win)])
+	var idx := [XEnemyBookPage._t(page.index_name(0), 6, 0, XEnemyBookPage.INDEX_NAME_W + 40)]
+	var d := diff(got_form(idx), want_form(ref.unknown.index, s.difficulty))
+	check("battle_index", page.ids == [1] and d == "", [page.ids, d])
+	d = diff(got_form(page._status_ops), want_form(ref.unknown.status, s.difficulty))
+	check("battle_status_unknown", d == "", d)
+	XEnemyBook.add(s, 1)
+	d = diff(got_form(XEnemyBookPage.status_ops(page.enemy(1), false)), want_form(ref.known.status, s.difficulty))
+	check("battle_status_known", d == "", d)
+	page.ok()
+	check("battle_ok_noop", page.mode == "index" and not page.drop_win.visible)
+	var closed := [false]
+	page.closed.connect(func(): closed[0] = true)
+	XEnemyBookPage.last_index = 7
+	page.cancel()
+	check("battle_cancel_closes", closed[0] and XEnemyBookPage.last_index == 7)
+	XEnemyBookPage.last_index = 0
+	page.queue_free()
 	await frames()
 
 

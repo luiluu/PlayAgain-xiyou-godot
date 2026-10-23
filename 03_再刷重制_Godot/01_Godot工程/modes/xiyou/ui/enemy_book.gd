@@ -13,6 +13,10 @@ extends Control
 ##   没登记的敌人状态窗全空。所有文字照 EnemyNameColorByDifficulty：与数据库敌人原名相同的文字改画成难度色。
 ## - 目录确定：已登记的打开掉落列表（盖在状态窗上，按品质从高到低、品质 0 不列，「名字   掉率%」或「【绝对掉落】」），
 ##   说明卡（宽 400）跟在选中行右下（Window_EnemyBookItemList.updateHelp）；确定或取消都回目录。没登记的提示「未解锁」。
+## - 战斗内「怪物信息」（Scene_Battle.battleEnemyBook）：角色指令窗、技能列表、物品列表打开时按 Shift（AB_EnemyBook ShortCutButtonName）。
+##   目录只列本场活着的敌人（同一 ID 一项，不写序号，名字 (6, 宽 386)）；状态窗高 1066（calcStatusWindowHeight，超出画面），
+##   没登记的也画，但能力、命中等、属性、技能都写「？？？」；目录确定不做事，取消回到原来的窗口。窗口不透明度照战斗窗口。
+##   队伍指令窗里的「怪物信息」「图鉴」两项：Olivia OTB 不开队伍指令窗，原版玩家点不到，不做。
 ## 与原版不同（O-078）：原版本想在图鉴里关掉神话（Morpho_EliteEnemy_Switch），但该参数读成 NaN 没关上，每次打开都按 50% 随机
 ## 把敌人显示成「【神话】」（能力 ×3.5、掉率 ×5）；这里固定按普通敌人显示，BOOK_FIXED_NORMAL 设 false 恢复原版的随机。
 
@@ -31,10 +35,18 @@ const COLW := CW / 2.0 - 14.0               # 399
 const HALF := COLW / 2.0 - 14.0             # 185.5
 const SPRITE_CENTER := Vector2(854.0 / 4.0, 854.0 / 4.0 + 36.0)
 const UNKNOWN_ENEMY := "？？？？？？"
+const UNKNOWN_DATA := "？？？"
 const XPARAM_ROWS := [["命中率", 0], ["回避率", 1], ["暴击率", 2], ["暴击闪避率", 3], ["魔法闪避率", 4], ["魔法反射率", 5], ["反击率", 6]]
 
 ## Window_EnemyBookIndex.lastIndex：本次运行内记住上次的光标
 static var last_index := 0
+## 战斗内「怪物信息」的状态窗（高 = calcStatusWindowHeight）
+const BATTLE_STATUS_RECT := Rect2(426, 0, 854, 1066)
+## MV Bitmap.drawText 不给宽时按 0xffffffff
+const NO_WIDTH := 4294967295.0
+
+## 战斗内：只列本场敌人、不写序号、没登记也画（isAllEnemies 为假）
+var in_battle := false
 
 var ids: Array = []
 var index := 0
@@ -59,16 +71,18 @@ func _ready() -> void:
 	add_to_group(XAchievementPopup.MBACK_GROUP)
 	theme = XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	XUI.menu_background(self)
-	ids = XEnemyBook.ids()
-	index_win = XMVWindow.make(self, INDEX_RECT, XUI.MENU_WINDOW_OPACITY, _paint_index)
-	status_win = XMVWindow.make(self, STATUS_RECT, XUI.MENU_WINDOW_OPACITY, _paint_status)
-	drop_win = XMVWindow.make(self, STATUS_RECT, XUI.MENU_WINDOW_OPACITY, _paint_drops)
+	var opacity := 255 if in_battle else XUI.MENU_WINDOW_OPACITY
+	if not in_battle:
+		XUI.menu_background(self)
+		ids = XEnemyBook.ids()
+	index_win = XMVWindow.make(self, INDEX_RECT, opacity, _paint_index)
+	status_win = XMVWindow.make(self, BATTLE_STATUS_RECT if in_battle else STATUS_RECT, opacity, _paint_status)
+	drop_win = XMVWindow.make(self, STATUS_RECT, opacity, _paint_drops)
 	index_win.canvas.blink = true
 	drop_win.canvas.blink = true
 	help_card = XHelpCard.new()
 	add_child(help_card)
-	index = clampi(last_index, 0, maxi(0, ids.size() - 1))
+	index = 0 if in_battle else clampi(last_index, 0, maxi(0, ids.size() - 1))
 	top = XMenu._scroll_to(index, 0, ROWS)
 	_show_drops(false)
 	_select_enemy()
@@ -82,6 +96,16 @@ func _process(_delta: float) -> void:
 
 
 # ---- 数据 ----
+## 战斗内「怪物信息」：Window_EnemyBookIndex.refresh 的 !isAllEnemies 分支（本场活着的敌人，按 ID 去重，<book:no> 不列）。
+## 在 add_child 之前调用
+func setup_battle(enemies: Array) -> void:
+	in_battle = true
+	ids = []
+	for e in enemies:
+		if e.is_alive() and str(e.data().get("meta", {}).get("book", "")) != "no" and not ids.has(e.enemy_id):
+			ids.append(e.enemy_id)
+
+
 ## 目录用的 Game_Enemy(i, 0, 0)：本次打开内建一次
 func enemy(id: int) -> XEnemy:
 	if not _enemies.has(id):
@@ -101,7 +125,7 @@ static func _difficulty() -> int:
 ## Window_EnemyBookIndex.drawItem：登记过的写名字（Game_Enemy.name，神话带前缀）
 func index_name(i: int) -> String:
 	var id: int = ids[i]
-	return enemy(id).display_name() if XEnemyBook.registered(XState.current, id) else UNKNOWN_ENEMY
+	return enemy(id).display_name() if in_battle or XEnemyBook.registered(XState.current, id) else UNKNOWN_ENEMY
 
 
 ## JS Number.prototype.toString（最短往返小数，整数不带小数点）
@@ -158,7 +182,7 @@ static func action_text(a: Dictionary) -> String:
 
 
 ## 弱化（rate > 1）／抗性（rate < 1）属性一行：标题 systemColor，下一行图标，图标上 dx/2 号字写百分比
-static func _element_row(ops: Array, e: XEnemy, y: float, weak: bool) -> void:
+static func _element_row(ops: Array, e: XEnemy, y: float, weak: bool, hide := false) -> void:
 	var icons := []
 	var n: int = (XDB.system().get("elements", []) as Array).size()
 	for i in range(1, n):
@@ -168,6 +192,9 @@ static func _element_row(ops: Array, e: XEnemy, y: float, weak: bool) -> void:
 			if icon > 0:
 				icons.append([icon, rate])
 	ops.append(_t("弱化属性" if weak else "抗性属性", 0, y, COLW, XUI.SYSTEM))
+	if hide:
+		ops.append(_t(UNKNOWN_DATA, 0, y + LH, NO_WIDTH))
+		return
 	var dx := 32.0
 	if 32.0 * icons.size() > COLW:
 		dx = floorf(COLW / icons.size())
@@ -180,11 +207,13 @@ static func _element_row(ops: Array, e: XEnemy, y: float, weak: bool) -> void:
 
 
 ## Window_EnemyBookStatus.drawAllContents 的全部绘制（没登记的不画）
-static func status_ops(e: XEnemy) -> Array:
+## all：图鉴（isAllEnemies）——没登记的整窗不画；战斗内「怪物信息」为假——照画，数值写「？？？」（isHideStatus）
+static func status_ops(e: XEnemy, all := true) -> Array:
 	var ops := []
 	var s := XState.current
-	if e == null or not XEnemyBook.registered(s, e.enemy_id):
+	if e == null or (all and not XEnemyBook.registered(s, e.enemy_id)):
 		return ops
+	var hide := not XEnemyBook.registered(s, e.enemy_id)
 	var d := e.data()
 	ops.append(_t(e.display_name(), 0, 0, COLW))
 	var y11 := 64.0
@@ -212,11 +241,11 @@ static func status_ops(e: XEnemy) -> Array:
 	var terms: Array = XDB.system().get("terms", {}).get("params", [])
 	for i in 8:
 		ops.append(_t(str(terms[i]) if i < terms.size() else "", x, y, HALF, XUI.SYSTEM))
-		ops.append(_t(js_num(e.param(i)), x + HALF, y, HALF, XUI.TEXT, "right"))
+		ops.append(_t(UNKNOWN_DATA if hide else js_num(e.param(i)), x + HALF, y, HALF, XUI.TEXT, "right"))
 		y += LH
 	for r in XPARAM_ROWS:
 		ops.append(_t(r[0], x, y, HALF, XUI.SYSTEM))
-		ops.append(_t(js_num(floorf(e.xparam(r[1]) * 100.0)) + "%", x + HALF, y, HALF, XUI.TEXT, "right"))
+		ops.append(_t(UNKNOWN_DATA if hide else js_num(floorf(e.xparam(r[1]) * 100.0)) + "%", x + HALF, y, HALF, XUI.TEXT, "right"))
 		y += LH
 	var in_note := false
 	for line in tags:
@@ -230,9 +259,9 @@ static func status_ops(e: XEnemy) -> Array:
 					y += LH
 	# 左栏：属性、技能
 	y = LH * 7 + 6.0
-	_element_row(ops, e, y, true)
+	_element_row(ops, e, y, true, hide)
 	y += LH * 2 + 6.0
-	_element_row(ops, e, y, false)
+	_element_row(ops, e, y, false, hide)
 	y += LH * 2 + 6.0
 	var buckets := []
 	buckets.resize(14)
@@ -246,6 +275,10 @@ static func status_ops(e: XEnemy) -> Array:
 	for b in buckets:
 		for pair in b:
 			var sk: Dictionary = pair[0]
+			if hide:
+				ops.append(_t(UNKNOWN_DATA, 0, y, COLW))
+				y += LH
+				continue
 			# Window_Base.drawItemName 不论图标号都画（0 号是空格）
 			ops.append(["i", int(sk.get("iconIndex", 0)), 2.0, y + 2])
 			ops.append(_t(str(sk.get("name", "")) + "   " + pair[1], 36, y, COLW - 36, XQuality.list_color(sk)))
@@ -291,7 +324,10 @@ func _paint_index(c: XMVCanvas) -> void:
 		c.cursor(Rect2(0, (index - top) * LH, c.size.x, LH), mode == "index")
 	for i in range(top, mini(top + ROWS, ids.size())):
 		var y := (i - top) * LH
-		XActorBook.paint_ops(c, [_t(str(i + 1), 6, y, 40), _t(index_name(i), 46, y, INDEX_NAME_W)])
+		if in_battle:
+			XActorBook.paint_ops(c, [_t(index_name(i), 6, y, INDEX_NAME_W + 40)])
+		else:
+			XActorBook.paint_ops(c, [_t(str(i + 1), 6, y, 40), _t(index_name(i), 46, y, INDEX_NAME_W)])
 
 
 func _paint_status(c: XMVCanvas) -> void:
@@ -329,7 +365,7 @@ func _select_enemy() -> void:
 		_refresh()
 		return
 	var e := enemy(ids[index])
-	_status_ops = status_ops(e)
+	_status_ops = status_ops(e, not in_battle)
 	if not _status_ops.is_empty():
 		var side := str(e.data().get("meta", {}).get("Sideview Battler", "")).strip_edges()
 		if side != "":
@@ -394,6 +430,8 @@ func _update_help() -> void:
 
 ## Scene_EnemyBook.onRangeOk：登记过的打开掉落列表，否则提示「未解锁」
 func ok() -> void:
+	if in_battle:
+		return
 	if mode == "drops":
 		_close_drops()
 		return
@@ -425,7 +463,8 @@ func cancel() -> void:
 	if mode == "drops":
 		_close_drops()
 	else:
-		last_index = index
+		if not in_battle:
+			last_index = index
 		closed.emit()
 
 
