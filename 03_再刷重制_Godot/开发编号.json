@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.145",
-  "sequence": 145,
-  "next": "dev.146",
-  "nextSequence": 146,
+  "current": "dev.146",
+  "sequence": 146,
+  "next": "dev.147",
+  "nextSequence": 147,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "wukong-legion-tech",
+  "currentChange": "bajie-companion",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
