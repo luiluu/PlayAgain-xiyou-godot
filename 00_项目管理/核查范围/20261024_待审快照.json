@@ -20,7 +20,8 @@
         "9511942"
       ],
       "executor": "Claude（八戒）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "92d073456af7a9fea3274b85fc6fac4757a747e1"
     },
     {
       "label": "合并 claude/bajie-pet",
@@ -35,7 +36,8 @@
         "3137adc"
       ],
       "executor": "Claude（八戒）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "9cfcef0623d732c635ebe64c83520cb426fe822e"
     },
     {
       "label": "合并 claude/bajie-companion",
@@ -52,7 +54,8 @@
         "03dc60d"
       ],
       "executor": "Claude（八戒）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "6a72a65a6fb9d2a6b8e17c09ba3fb5ea63aca7f4"
     },
     {
       "label": "合并 claude/bajie-pet-synth",
@@ -68,7 +71,8 @@
         "59d3f82"
       ],
       "executor": "Claude（八戒）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "12546babd9695fe2ae0a83691fe9d8c2ede72038"
     },
     {
       "label": "合并 claude/youthful-rubin-d03e77",
@@ -85,7 +89,8 @@
         "114fb06"
       ],
       "executor": "Claude（八戒）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "6be66cb2c7f20807273860fa1b35e5b8aca93641"
     },
     {
       "label": "合并 codex/state-effects-2f",
@@ -107,7 +112,8 @@
         "47168ca"
       ],
       "executor": "Codex（沙僧）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "5b083343efd39b22ca0865eedfcedfde4cecfe05"
     },
     {
       "label": "合并 claude/bajie-alien",
@@ -125,7 +131,8 @@
         "93e8856"
       ],
       "executor": "Claude（八戒）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "dd89a99bcb00b45e77a4d1387830534107e2f54f"
     },
     {
       "label": "合并 claude/wukong-tower",
@@ -140,7 +147,8 @@
         "c653ff8"
       ],
       "executor": "Claude（悟空）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "796b61d3da5c5f6a32221b959130638425099674"
     },
     {
       "label": "合并 codex/review-systems-20261023",
@@ -177,7 +185,8 @@
         "7ce5b14"
       ],
       "executor": "Codex（沙僧）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "fae52dbb8169e63ea6da161004dd3d195b93e0c7"
     },
     {
       "label": "合并 codex/delivery-audit-20261023",
@@ -194,7 +203,8 @@
         "4689529"
       ],
       "executor": "Codex（沙僧）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "4ea9b83985537d6e058422077a7abc574d03fad7"
     },
     {
       "label": "合并 claude/bajie-forge2",
@@ -212,7 +222,8 @@
         "ad64865"
       ],
       "executor": "Claude（八戒）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "90deefcb8b10ccfb647fc373b38aa13cbc3a81ba"
     },
     {
       "label": "合并 claude/wukong-brave",
@@ -227,7 +238,8 @@
         "40257bc"
       ],
       "executor": "Claude（悟空）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "454357e9cbf56897a56a302f9dcc46edc1482ae7"
     },
     {
       "label": "规则：参照探针产物不用 error 键，原版抛出提示记 thrown",
@@ -239,7 +251,8 @@
         "65598ef"
       ],
       "executor": "Claude（唐僧）",
-      "docOnly": true
+      "docOnly": true,
+      "mainCommit": "65598ef01da0ceefe75ee25cadda5d8f6110e21d"
     },
     {
       "label": "合并 codex/review-cap-20261023",
@@ -257,7 +270,8 @@
         "5a7e994"
       ],
       "executor": "Codex（沙僧）、Claude（唐僧）",
-      "docOnly": true
+      "docOnly": true,
+      "mainCommit": "b15fd7889c6b5891f8806c9a159edb12732a1991"
     },
     {
       "label": "合并 claude/wukong-throne",
@@ -272,7 +286,8 @@
         "cdd184b"
       ],
       "executor": "Claude（悟空）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "fbf75aebf620066b680c6fcc73157faa175ca905"
     },
     {
       "label": "合并 claude/bajie-p2fix",
@@ -291,7 +306,8 @@
         "fef1925"
       ],
       "executor": "Claude（八戒）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "6866b3585768854c1af12f90b8893de63468af8e"
     },
     {
       "label": "合并 claude/wukong-guild",
@@ -306,7 +322,8 @@
         "b8a83ce"
       ],
       "executor": "Claude（悟空）、Claude（唐僧）",
-      "docOnly": false
+      "docOnly": false,
+      "mainCommit": "05a802190cf0d16101ff17f00f198b7dd26fb549"
     },
     {
       "label": "审查点改为 50%、75%、95%（用户 2026-10-23）",
@@ -318,7 +335,8 @@
         "b100439"
       ],
       "executor": "Claude（唐僧）",
-      "docOnly": true
+      "docOnly": true,
+      "mainCommit": "b100439096e8f04bbe362fc745d44b2d3e72cf6f"
     },
     {
       "label": "登记唐僧_17 接手主工作区：合并 tangseng-review 核查单",
@@ -330,7 +348,8 @@
         "8e521eb"
       ],
       "executor": "Claude（唐僧）",
-      "docOnly": true
+      "docOnly": true,
+      "mainCommit": "8e521eb23424a4768b781b305dbffcbfca2056b6"
     },
     {
       "label": "合并 claude/tangseng-review",
@@ -343,7 +362,8 @@
         "b84cb77"
       ],
       "executor": "Claude（唐僧）",
-      "docOnly": true
+      "docOnly": true,
+      "mainCommit": "b84cb772eeff12cbea385af54b794ac1e4b5adb0"
     }
   ],
   "reservedForClaude": [
