@@ -8,7 +8,7 @@ extends Control
 ##   称号与 HP/MP/TP 在右列（x 314、宽 686），行高 33；YEP 描边量条与「当前/最大」数值。
 ## - 选「技能/装备/状态」后光标移到队伍窗选人（整行高亮），确定进入该角色页面，取消回到指令窗。
 ## - 窗口整体不透明度 30（MOG_MenuBackground）；底图与粒子 XUI.menu_background。
-## 尚未重制的指令（异化工坊等；种族祝福 dev.149 起可用、技能页 dev.030 起可用、真气随身闭关第二批起可用、人物图鉴 dev.138 起可用、怪物图鉴 dev.139 起可用、制作 dev.142 起可用、宠物 dev.146 起可用）暂时灰显，原版均可用；见 界面风格.md。
+## 尚未重制的指令（反馈；异化工坊 dev.待定 起可用、种族祝福 dev.149 起可用、技能页 dev.030 起可用、真气随身闭关第二批起可用、人物图鉴 dev.138 起可用、怪物图鉴 dev.139 起可用、制作 dev.142 起可用、宠物 dev.146 起可用）暂时灰显，原版均可用；见 界面风格.md。
 ## - 音效照 Window_Selectable：换行播光标音；确定播确定音（灰显指令蜂鸣）；取消播取消音。
 ## - 正式 v0.24 已移除菜单底部一键存档；快速存档的后端规则仍保留。
 
@@ -27,7 +27,7 @@ const POWER_COLOR := Color8(255, 211, 115)
 ## [名称, 符号, 已重制]
 const COMMANDS := [["物品", "item", true], ["技能", "skill", true], ["装备", "equip", true], ["状态", "status", true],
 	["真气", "zhenqi", true], ["整队", "formation", true], ["种族祝福", "race", true], ["宠物", "pet", true],
-	["制作", "crafting", true], ["宝珠坊", "orbs", true], ["异化工坊", "alienation", false], ["人物图鉴", "actorBook", true],
+	["制作", "crafting", true], ["宝珠坊", "orbs", true], ["异化工坊", "alienation", true], ["人物图鉴", "actorBook", true],
 	["怪物图鉴", "monsterBook", true], ["成就", "achievement", true], ["存档", "save", true], ["反馈", "feedback", false],
 	["设置", "options", true], ["游戏结束", "gameEnd", true]]
 const CMD_VISIBLE := 15
@@ -344,6 +344,9 @@ func _ok() -> void:
 			"zhenqi":
 				zhenqi_requested = true
 				closed.emit()
+			"alienation":
+				# installAlienationWorkshop：CodexAlienation.openWorkshop（原版是盖在菜单上的网页叠加层，见 XAlienWorkshop）
+				_open_detail(XAlienWorkshop.new())
 			"orbs":
 				# installNativeOrbRuntime：CodexOrbs.open → 宝珠坊（XOrbShop）
 				_open_detail(XOrbShop.new())
