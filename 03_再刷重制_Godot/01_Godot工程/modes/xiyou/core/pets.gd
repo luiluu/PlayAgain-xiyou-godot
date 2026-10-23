@@ -259,7 +259,7 @@ static func can_pick(s: XState, i: int, other: int) -> bool:
 	return i >= 0 and i < list(s).size() and i != war_index(s) and i != other and level(list(s)[i]) == MAX_LEVEL
 
 
-## O-待定：原版 getRandomArrayElements 在要的个数多于技能数时（两只合起来不到 4 个技能）会把空位换进结果，得到 undefined 技能；
+## O-080：原版 getRandomArrayElements 在要的个数多于技能数时（两只合起来不到 4 个技能）会把空位换进结果，得到 undefined 技能；
 ## 这里把个数限在 0～技能数。设 false 恢复原版算法（空位记为 0）
 const SYNTH_CLAMP_SKILLS := true
 
