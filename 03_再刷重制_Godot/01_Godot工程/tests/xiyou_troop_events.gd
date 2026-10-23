@@ -253,7 +253,8 @@ func _case(c: Dictionary, round: int) -> void:
 		var ex: XBattler = logic.enemies[int(str(k).substr(1))]
 		var want_b: Dictionary = c.battlers[k]
 		if ex.hp > 0.0 and float(want_b.hp) > 0.0:
-			check(name + ".other_" + str(k), int(ex.atk) == int(want_b.atk) and int(ex.mat) == int(want_b.mat) and Array(want_b.states).all(func(id): return ex.state_ids.has(int(id))),
+			# 状态 44「再次行动」（trait 61）按掷骰每回合重新附加：参照掷骰固定 0.5 总附上，Godot 随机，第二回合末可能没有，不比
+			check(name + ".other_" + str(k), int(ex.atk) == int(want_b.atk) and int(ex.mat) == int(want_b.mat) and Array(want_b.states).all(func(id): return int(id) == 44 or ex.state_ids.has(int(id))),
 				[ex.atk, ex.mat, ex.state_ids, want_b])
 	var want := {1: [], 2: []}
 	var forced := 0

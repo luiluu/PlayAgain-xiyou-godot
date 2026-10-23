@@ -18,7 +18,7 @@ const FLUSH_BEFORE := [101, 102, 103, 104, 201, 205, 212, 213, 217, 221, 222, 23
 const FLUSH_IF_WAIT := {225: 3}
 ## 只是续行、注释或分支结尾，执行时什么也不做
 const PASS_CODES := [401, 405, 408, 655, 404, 412, 604, 0, 108, 505]
-static var skip_common_events := [1386, 1435]   # 战斗背景、轮回模式：首期无对应系统
+static var skip_common_events := [1386]   # 战斗背景：首期无对应系统（1435 轮回模式·困难的脚本循环 MVScript 已认得，开关 2282 时才有动作）
 ## 对照工具用：全部解释器（含公共事件子游标、战斗事件）合计最多执行的指令数，0 为不限；超过就停止并置 aborted
 static var max_steps := 0
 static var steps := 0
