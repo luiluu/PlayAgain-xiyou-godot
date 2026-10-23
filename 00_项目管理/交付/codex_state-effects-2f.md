@@ -20,6 +20,7 @@
 
 ## 验证
 
+- 当前长任务：`04_验证/本地结果/state-effects-2f/final-small-items.log`（相对 `03_再刷重制_Godot`），长任务 start 脱离会话运行；前台 `等待任务.sh --timeout 540` 等待。固定源码 `aa15d3b2`，仅文档可再提交；32 场景＝rules 24 段＋state_effects＋troop_events 两段＋settlement＋review135＋enemy_book＋floor_run_c＋combat，jobs=2，不跑全量检查。已合 main `8b5d14d6`（只涉及菜单入口与对应测试，无切片／转换器／探针变化），无需补齐或同步。
 - 两小项最终专项待跑。预检批次选到了不存在的 floor_run_d 且 rules 前缀扩大到 24 场景，随后开始 TP 草案会使测试版本漂移，已主动中止，不计通过。长任务状态曾标 orphaned；已核对进程表，包装器及其独占进程组 77660 均无进程，未终止其他车道。
 - 草案转换边界测试 8/8、Godot 导入无脚本错误；均只代表草案可加载，不代表 TP 功能验收。
 - 预览边界现场复现（原生测试场景、exit0、无脚本错误）：`plain_clone=true`、`scoped_clone=false`、`live_context_preserved=true`。证据：本树 `03_再刷重制_Godot/04_验证/本地结果/state-effects-2f/preview-boundary-scene.log` 及同目录 `_state_effects_boundary.gd/.tscn`。此前两次入口错误日志也原样保留，不算成功证据。
@@ -28,7 +29,7 @@
 
 - 2e 要求 holder 绑定显式资源域，并保证生命周期内调用预览时不继承／操作真实资源域。`core/formula_context.gd:66` 的 `clone_battler` 遍历全部脚本变量，除 state_origins 外没有运行时域排除；新 `lifecycle_context` 含 XResourceContext、队员等对象，`XFormulaProgram._detached` 会拒绝，直接返回 null。不是数值差或随机容差问题。
 - 需要补交 **`03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/formula_context.gd`**：把新运行时域按明确规则从影子克隆中剥离，并补生命周期内预览回归；不能把引用复制给影子，也不应放宽通用 `_detached` 守卫。该文件未列入本轮交接，按用户指令停手，未修改。
-- TP 草案已以 `WIP:` 提交保存，再单独提交撤回，最终分支不含其生产／转换器变更。尚未完成五块与 26 例 Godot 对照，未翻译仍 444。地图／菜单根域未接，期二至六未开；期五仍等八戒接口。
+- TP 草案已以 `WIP:` 提交 `7d7b8f37` 保存，再由 `811c08d4` 单独提交撤回，最终分支不含其生产／转换器变更。尚未完成五块与 26 例 Godot 对照，未翻译仍 444（已从当前 generated/db/States.json 核实，五块均为 js）。地图／菜单根域未接，期二至六未开；期五仍等八戒接口。
 - 后续可从 WIP 提交恢复草案作参考（不是已验收实现）；先明确上述文件交接，再接续原 2f 验收，不跳到期三。
 
 ## 交接板／进度账
