@@ -14,6 +14,7 @@ extends RefCounted
 ## - $gameVariables.setValue(N, 数字) → XState.set_variable（跨存档变量 900／899／1476 靠它存进 XGlobalVars）。
 ## - 副本 Boss 奖励（CE1439）：CodexEconomy.bossReward、CodexOrbs.rollInt、CodexV010Fixes.rewardNotice／awardQuantity、
 ##   甚尔／宿傩 rollAdvanceStone（见 XDungeon）；洪荒的 grantTicketBonus／rollPower 在非洪荒难度无操作。
+## - 修炼：Star.ActorAttributePlusPoints.XiuLian = [...] → XTraining.xiulian；SceneManager.push(Scene_ActorAttributePlusPoints) → 修炼界面（host.open_training）。
 ## - 成就：Star.AchievementSystem.GetAcReward(N) → XAchievement.reward；SceneManager.push(Scene_AchievementBook) → 成就界面（host.open_achievements）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
@@ -185,6 +186,14 @@ static func _statements(js: String, interp) -> Array:
 		# 宠物（Star_PetSystem）：公共事件 169
 		if st == "SceneManager.push(Scene_PetSystem)" and interp.host.has_method("open_pets"):
 			await interp.host.open_pets()
+			continue
+		# 修炼（Star_ActorAttributePlusPoints，见 XTraining）：魔塔教师、二十六层小萝莉等先设列出的表项再打开
+		m = _re("^Star\\.ActorAttributePlusPoints\\.XiuLian\\s*=\\s*\\[([\\d,\\s]*)\\]$").search(st)
+		if m:
+			XTraining.xiulian = Array(m.get_string(1).split(",", false)).map(func(v): return int(v))
+			continue
+		if st == "SceneManager.push(Scene_ActorAttributePlusPoints)" and interp.host.has_method("open_training"):
+			await interp.host.open_training()
 			continue
 		# 种族祝福（installNativeRaceRuntime）：种族向导 Map4 EV22、进阶石公共事件 openMenu({rank:N})、开局默认公共事件 841～847
 		m = _re("^CodexRaces\\.openMenu\\((?:\\{rank:(\\d)\\})?\\)$").search(st)

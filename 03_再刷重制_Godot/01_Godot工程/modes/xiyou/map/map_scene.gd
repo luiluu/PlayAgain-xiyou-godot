@@ -917,6 +917,16 @@ func open_pets() -> void:
 	hud.visible = true
 
 
+## 修炼（SceneManager.push(Scene_ActorAttributePlusPoints)）：魔塔教师、二十六层小萝莉等，关闭后回到地图
+func open_training() -> void:
+	hud.visible = false
+	var page := XTrainingScene.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 ## 种族祝福（CodexRaces.openMenu → Scene_CodexBindMenu）：种族向导与进阶石公共事件，关闭后回到地图
 func open_race_menu(rank := 0) -> void:
 	hud.visible = false

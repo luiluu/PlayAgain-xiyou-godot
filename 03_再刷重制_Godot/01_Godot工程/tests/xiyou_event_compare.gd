@@ -68,6 +68,9 @@ class EventHost:
 	func open_shop(goods: Array, _purchase_only: bool) -> void:
 		trace.append({"t": "shop", "goods": goods.map(func(g): return [int(g[0]), int(g[1])])})
 
+	func open_training() -> void:
+		trace.append({"t": "scene", "name": "Scene_ActorAttributePlusPoints"})
+
 	func input_text(prompt: String, _default := "") -> String:
 		trace.append({"t": "prompt", "text": prompt})
 		return "测试"
