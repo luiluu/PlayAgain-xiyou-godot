@@ -50,17 +50,34 @@ func _run() -> void:
 	_check("popup_alive_and_overlaps", p._duration == 80 and pr.intersects(mr), [p._duration, pr.position, pr.size])
 	_check("production_popup_layer", p.z_index == XBattleScene.POPUP_Z and p.z_index > 5 and p.z_index < b.message.z_index, [p.z_index, b.message.z_index])
 	await _shot("popup_overlap")
+	var red_covered := _red_pixels(pr.intersection(mr))
 	b.message.hide()
 	await _shot("popup_window_hidden")
 	b.message.show()
 	# 故意恢复修复前z20，仅作负控截图；截图后恢复，不作为游戏行为。
 	p.z_index = 20
 	await _shot("popup_z20_negative_control")
+	var red_z20 := _red_pixels(pr.intersection(mr))
+	if red_covered >= 0:
+		_check("rendered_window_covers_popup", red_z20 > red_covered + 20, [red_covered, red_z20])
 	p.z_index = XBattleScene.POPUP_Z
 	if out_dir != "":
 		var f := FileAccess.open(out_dir.path_join("popup_overlap.json"), FileAccess.WRITE)
-		f.store_string(JSON.stringify({"message": [mr.position.x, mr.position.y, mr.size.x, mr.size.y], "popup": [pr.position.x, pr.position.y, pr.size.x, pr.size.y], "duration": p._duration, "z": [p.z_index, b.message.z_index], "text": p.text}, "  "))
+		f.store_string(JSON.stringify({"message": [mr.position.x, mr.position.y, mr.size.x, mr.size.y], "popup": [pr.position.x, pr.position.y, pr.size.x, pr.size.y], "duration": p._duration, "z": [p.z_index, b.message.z_index], "text": p.text, "redCoveredAndZ20": [red_covered, red_z20]}, "  "))
 	for pl in get_tree().root.find_children("*", "AudioStreamPlayer", true, false):
 		pl.stop()
 	await get_tree().create_timer(0.5, true, false, true).timeout
 	_finish()
+
+
+func _red_pixels(rect: Rect2) -> int:
+	if out_dir == "" or DisplayServer.get_name() == "headless":
+		return -1
+	var img := get_viewport().get_texture().get_image()
+	var count := 0
+	for y in range(int(rect.position.y), int(ceilf(rect.end.y))):
+		for x in range(int(rect.position.x), int(ceilf(rect.end.x))):
+			var c := img.get_pixel(x, y)
+			if c.r8 > 180 and c.r > c.g * 1.4 and c.r > c.b * 1.4:
+				count += 1
+	return count

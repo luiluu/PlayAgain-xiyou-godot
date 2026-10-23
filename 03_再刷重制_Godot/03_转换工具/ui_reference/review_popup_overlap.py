@@ -22,12 +22,11 @@ def main():
               "js/plugins/YEP_BattleEngineCore.js"]
     identity = {p: hashlib.sha256((source / p).read_bytes()).hexdigest() for p in inputs}
     (args.out / "source_before.json").write_text(json.dumps(identity, indent=2) + "\n")
-    extra = Path(__file__).with_suffix(".js").read_bytes()
 
     class Handler(serve.H):
         def do_GET(self):
             if self.path.split("?", 1)[0] == "/js/mac-preload.js" and self.allowed():
-                body = Path(serve.SHIM).read_bytes() + b"\n" + extra
+                body = Path(serve.SHIM).read_bytes() + b"\n" + Path(__file__).with_suffix(".js").read_bytes()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/javascript")
                 self.send_header("Content-Length", str(len(body)))

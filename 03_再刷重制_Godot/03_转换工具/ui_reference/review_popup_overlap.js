@@ -14,6 +14,17 @@
                 check(await __dhRef.pump({until: function () {
                     return window.DataManager && DataManager.isDatabaseLoaded() && SceneManager._scene instanceof Scene_Title;
                 }, ms: 60000}), '标题未就绪');
+                // 原工具的地图就绪条件早于贴图渲染；等地图真正启动再让它进战斗，避免黑色背景快照。
+                var nativePush = SceneManager.push;
+                SceneManager.push = function (sceneClass) {
+                    if (sceneClass !== Scene_Battle) return nativePush.apply(this, arguments);
+                    var timer = setInterval(function () {
+                        if (!(SceneManager._scene instanceof Scene_Map) || !SceneManager._sceneStarted || !ImageManager.isReady() || SceneManager._scene._fadeDuration > 0) return;
+                        clearInterval(timer); SceneManager.push = nativePush;
+                        SceneManager._scene.update(); SceneManager.renderScene();
+                        nativePush.call(SceneManager, sceneClass);
+                    }, 100);
+                };
                 Array.from(document.querySelectorAll('button')).filter(function (b) {
                     return b.textContent === '战斗夹具 4 人';
                 })[0].click();
@@ -22,6 +33,12 @@
                     return s instanceof Scene_Battle && s._actorCommandWindow && s._actorCommandWindow.active;
                 }, ms: 60000}), '战斗输入未就绪');
                 var scene = SceneManager._scene;
+                check(await __dhRef.pump({until: function () {
+                    return ImageManager.isReady() && scene._spriteset._actorSprites.every(function (s) {
+                        return !s._battler || (s._mainSprite.bitmap && s._mainSprite.bitmap.isReady() && s._mainSprite._frame.width > 0);
+                    });
+                }, ms: 30000}), '战斗贴图未就绪');
+                await document.fonts.ready;
                 $gameMessage.setFaceImage('', 0); $gameMessage.setBackground(0); $gameMessage.setPositionType(1);
                 $gameMessage.add('天空中的圣雷积攒到了极限');
                 check(await __dhRef.pump({until: function () {
@@ -41,6 +58,11 @@
                 for (var i = 0; i < 5; i++) scene.update();
                 SceneManager.renderScene();
                 result.popup = rect(popup.getBounds()); result.duration = popup._duration;
+                result.popupRoot = [popup.x, popup.y];
+                result.popupChildren = popup.children.map(function (s) {
+                    return {xy: [s.x, s.y], scale: [s.scale.x, s.scale.y], anchor: [s.anchor.x, s.anchor.y],
+                        bitmap: s.bitmap && [s.bitmap.width, s.bitmap.height, s.bitmap.fontFace, s.bitmap.fontSize]};
+                });
                 result.popupParent = popup.parent.constructor.name;
                 result.sceneOrder = [scene.children.indexOf(scene._spriteset), scene.children.indexOf(scene._windowLayer)];
                 var p = result.popup, m = result.message;
