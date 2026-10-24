@@ -913,6 +913,16 @@ func open_enemy_book() -> void:
 	hud.visible = true
 
 
+## 仓库（PHWarehouse show <名字> → Scene_Warehouse）：仓库管理员「装备道具仓库」，关闭后回到地图
+func open_warehouse() -> void:
+	hud.visible = false
+	var page := XWarehouseScene.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 ## 装备镶嵌图鉴（SceneManager.push(Scene_EquipInlayBook)）：魂灯商人「查看图鉴」，关闭后回到地图
 func open_inlay_book() -> void:
 	hud.visible = false
