@@ -6,7 +6,7 @@ extends Node
 ## - exact.*：O-095 开着：角色本来就会的共享／羁绊／领袖技能不被忘掉；读档后存档前已失效的共享技能会被忘掉（原版留着）；记录随存档往返。
 ##   另把参照各场景在开着时再跑一遍，只比技能（读档那步提示不同：开着时记录没丢，不重弹）；EXACT_DIFF 是开着时按设计不同的步：
 ##   羁绊仍激活、但某人离开出战栏时，原版那人留着该羁绊技能，开着时忘掉（他已不在任何成立的组合里）。
-## - hooks.*：整队完成、仓库退出、开战、读档四处挂点确实调到刷新。
+## - hooks.*：整队完成、仓库退出、读档三处挂点确实调到刷新（开战挂在 map_scene.start_battle，由 battle_start 的参照步覆盖）；领袖旗标判定。
 const FIXTURE := "res://tests/fixtures/party_skills_oracle.json"
 var results := []
 ## O-095 开着时与原版按设计不同的步：{"场景.步": {"角色": [开着时没有的技能]}}
@@ -222,6 +222,12 @@ func _hooks() -> void:
 	page.call("_perform", "load")
 	page.queue_free()
 	check("hooks.load", XState.current.actor(8).skill_ids.has(1000), Array(XState.current.actor(8).skill_ids))
+	# 领袖旗标：首格是领袖角色才画
+	s = _fresh([1, 8, 9], [8, 1, 9])
+	var flags := [XLeadActor.is_leader(s, 8), XLeadActor.is_leader(s, 1)]
+	_party(s, [1, 8, 9], [1, 8, 9])
+	flags.append(XLeadActor.is_leader(s, 1))
+	check("hooks.leader_flag", flags == [false, false, true] and XLeadActor.skill_of(1) == 717 and XLeadActor.rows().size() == 29, flags)
 
 
 func finish() -> void:

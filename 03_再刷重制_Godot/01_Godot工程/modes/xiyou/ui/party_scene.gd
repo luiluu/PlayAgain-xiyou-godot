@@ -10,7 +10,8 @@ extends Control
 ## - 操作：指令「整队」「离队」→ 出战栏选第 0 格；整队时在出战栏确定 → 名单选人，名单确定播装备音：
 ##   选「离队」行把该格清空，选角色放进该格（已在别格的两格互换）；离队时在出战栏确定直接清空该格（装备音）。
 ##   出战栏 Q/E（上一页/下一页）与相邻格互换（光标音＋装备音）。取消逐层返回；「还原」恢复进页时的出战栏；
-##   「完成」或在指令窗取消返回主菜单（完成在出战栏全空/全员阵亡时灰显，确定蜂鸣）。
+##   「完成」或在指令窗取消返回主菜单（完成在出战栏全空/全员阵亡时灰显，确定蜂鸣）；返回前 XPartySkills.finish 刷新技能共享／羁绊／领袖。
+## - 领袖旗标（Star_LeadActor 的 drawActor 包装）：首位是领袖角色时出战栏首格右上角画 LeaderFlag。
 
 signal closed
 
@@ -106,6 +107,17 @@ func _paint_slots(c: XMVCanvas) -> void:
 		c.face(str(a.data().faceName), int(a.data().faceIndex), inner.position.x, inner.position.y, inner.size.x, inner.size.y)
 		c.character(str(a.data().characterName), int(a.data().characterIndex), inner.position.x + inner.size.x / 2.0, inner.size.y * 19.0 / 20.0)
 		c.text(a.display_name(), inner.position.x, inner.position.y, inner.size.x, "left", XMenu._hp_color(a))
+		# Star_LeadActor：首位是领袖角色时画 img/system/LeaderFlag，x＝格宽（内缩后）−图宽、y＝0（照原版不加格子的 x）
+		if XLeadActor.is_leader(XState.current, id):
+			var tex := _leader_flag()
+			if tex != null:
+				c.draw_texture(tex, Vector2(inner.size.x - tex.get_width(), 0))
+
+
+## 图要随切片的 systemImages 导出（交付单 claude_bajie-skillshare 提案）；没导出时不画
+static func _leader_flag() -> Texture2D:
+	var p := XDB.img_path("system", "LeaderFlag")
+	return load(p) as Texture2D if p != "" else null
 
 
 func _paint_list(c: XMVCanvas) -> void:
