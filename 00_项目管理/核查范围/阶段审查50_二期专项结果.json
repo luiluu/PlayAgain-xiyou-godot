@@ -176,7 +176,8 @@
     "errors": []
    }
   ],
-  "scope": "冻结v0.28，内存JsonEx往返、154实际出战，技能12物理入射触发invokeAction反击；来源前后身份一致，无eval错误"
+  "scope": "冻结v0.28，内存JsonEx往返、154实际出战，技能12物理入射触发invokeAction反击；来源前后身份一致，无eval错误",
+  "sha256": "9a1b4cf8b6bb9d22b270fe1c873422f34db51e78727a02d6a7dd7a6c0580604f"
  },
  "crossRed": {
   "passed": 6,
@@ -195,10 +196,72 @@
   "saveChecksPassed": true,
   "counterStillInvalid": true
  },
- "crossGreenPending": {
-  "pid": 8559,
-  "session": 51717,
-  "path": "03_再刷重制_Godot/04_验证/本地结果/stage-review-50-phase2/cross-green",
-  "note": "最终物理入射用例及依赖专项已启动，等待test_timings.json才认证"
+ "crossGreen": {
+  "wallSeconds": 61.409,
+  "scenes": [
+   {
+    "name": "xiyou_event_compare.tscn",
+    "seconds": 61.404,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 61.404,
+      "passed": true
+     }
+    ]
+   },
+   {
+    "name": "xiyou_state_effects.tscn",
+    "seconds": 3.694,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 3.694,
+      "passed": true
+     }
+    ]
+   },
+   {
+    "name": "xiyou_imported_balance.tscn",
+    "seconds": 2.59,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 2.59,
+      "passed": true
+     }
+    ]
+   },
+   {
+    "name": "xiyou_stage50_review.tscn",
+    "seconds": 2.579,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 2.579,
+      "passed": true
+     }
+    ]
+   }
+  ],
+  "passed": 20237,
+  "total": 20237,
+  "exitCode": 0,
+  "flakyRerunPassed": [],
+  "counts": {
+   "xiyou_event_compare": 5,
+   "xiyou_imported_balance": 273,
+   "xiyou_stage50_review": 10,
+   "xiyou_state_effects": 19949
+  },
+  "unmatchedPrefix": "xiyou_battle_runtime没有匹配场景，不算验证"
+ },
+ "cleanup": {
+  "removed": "本车道stage-review-50-phase2临时日志／失败草稿输出目录；已保存精简结果",
+  "preserved": "该树其他历史原版证据、mv_oracle/.sandbox与generated产物"
  }
 }
