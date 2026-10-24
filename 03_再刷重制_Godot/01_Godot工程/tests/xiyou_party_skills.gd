@@ -2,15 +2,15 @@ extends Node
 ## 队伍技能刷新（XPartySkills／XSkillShare）：逐步对照冻结 v0.28 参照 tests/fixtures/party_skills_oracle.json
 ## （mv_oracle/party_skills_probe.cjs：新游戏、开超强角色开关 2494；整队完成、仓库退出、开战、读档四种刷新）。
 ## - <场景>.<步>：O-095 关掉（照原版内存记录）逐步比相关角色的已学技能（参照里羁绊技能是字符串 ID，按数值比）、
-##   本次弹出的提示（参照记录的是插件原样提示，照 codex 包装去掉逐条「技能共享：X 激活！」）、共享记录。
-##   还没移植的系统（PENDING：羁绊、领袖）的技能与提示先不比，场景里只跑已有的。
-## - exact.*：O-095 开着：角色本来就会的共享技能不被忘掉；读档后存档前已失效的共享技能会被忘掉（原版留着）；记录随存档往返。
+##   本次弹出的提示（参照记录的是插件原样提示，照 codex 包装去掉逐条「技能共享：X 激活！」）、共享／羁绊／领袖三套记录。
+## - exact.*：O-095 开着：角色本来就会的共享／羁绊／领袖技能不被忘掉；读档后存档前已失效的共享技能会被忘掉（原版留着）；记录随存档往返。
+##   另把参照各场景在开着时再跑一遍，只比技能（读档那步提示不同：开着时记录没丢，不重弹）；EXACT_DIFF 是开着时按设计不同的步：
+##   羁绊仍激活、但某人离开出战栏时，原版那人留着该羁绊技能，开着时忘掉（他已不在任何成立的组合里）。
 ## - hooks.*：整队完成、仓库退出、开战、读档四处挂点确实调到刷新。
 const FIXTURE := "res://tests/fixtures/party_skills_oracle.json"
-## 已移植的场景前缀
-const SCENARIOS := ["share."]
 var results := []
-var pending := {}
+## O-095 开着时与原版按设计不同的步：{"场景.步": {"角色": [开着时没有的技能]}}
+const EXACT_DIFF := {"bond.mygo.2": {"130": [5607, 5642], "131": [5607, 5642]}}
 
 
 func check(name: String, ok: bool, detail = null) -> bool:
@@ -26,34 +26,15 @@ func _ready() -> void:
 	_run.call_deferred()
 
 
-## 还没移植的两套的技能 ID：领袖 LeadSkiId、羁绊 JiBanSkiId
-func _pending() -> Dictionary:
-	var out := {}
-	var lead := XDB.plugin("Star_LeadActor")
-	for k in lead:
-		var d = JSON.parse_string(str(lead[k])) if str(k).begins_with("Lead ") and str(lead[k]) != "" else null
-		if d is Dictionary:
-			out[int(d.get("LeadSkiId", 0))] = true
-	var bond := XDB.plugin("Star_JiBanSiklls")
-	for k in bond:
-		var d = JSON.parse_string(str(bond[k])) if str(k).begins_with("JiBan ") and str(bond[k]) != "" else null
-		if d is Dictionary:
-			for v in JSON.parse_string(str(d.get("JiBanSkiId", "[]"))):
-				out[int(v)] = true
-	return out
-
-
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if not (ref is Dictionary and ref.has("cases")):
 		check("fixture_present", false)
 		return finish()
-	pending = _pending()
-	check("pending_ids", pending.has(717) and pending.has(5594))
 	for c in ref.cases:
 		check(str(c.id) + ".oracle_clean", (c.errors as Array).is_empty(), c.errors)
-		if SCENARIOS.any(func(p): return str(c.id).begins_with(p)):
-			_scenario(c)
+		_scenario(c, false)
+		_scenario(c, true)
 	_exact()
 	await _hooks()
 	XPartySkills.EXACT = true
@@ -84,22 +65,26 @@ func _equip(s: XState, actor_id: int, kind: String, id: int) -> Array:
 	return [actor_id, slot]
 
 
-## 参照的 _skills（字符串 ID 写成 "s5594"）→ 整数，去掉还没移植的
+## 参照的 _skills（字符串 ID 写成 "s5594"）→ 整数
 func _ids(raw: Array) -> Array:
-	var out := raw.map(func(v): return int(str(v).trim_prefix("s"))).filter(func(v): return not pending.has(v))
+	var out := raw.map(func(v): return int(str(v).trim_prefix("s")))
 	out.sort()
 	return out
 
 
 func _mine(a: XActor) -> Array:
-	var out := Array(a.skill_ids).filter(func(v): return not pending.has(v))
+	var out := Array(a.skill_ids)
 	out.sort()
 	return out
 
 
-## 照 codex 包装：逐条「技能共享：X 激活！」不弹；还没移植的系统的提示不比
+## 照 codex 包装：逐条「技能共享：X 激活！」不弹
 func _toasts(raw: Array) -> Array:
-	return raw.filter(func(t): return not RegEx.create_from_string("^技能共享：.+ 激活！$").search(str(t)) and str(t).begins_with("技能共享"))
+	return raw.filter(func(t): return not RegEx.create_from_string("^技能共享：.+ 激活！$").search(str(t)))
+
+
+func _ints(v) -> Array:
+	return (v as Array).map(func(x): return int(x)) if v is Array else []
 
 
 func _act(s: XState, what: String) -> Array:
@@ -117,8 +102,8 @@ func _act(s: XState, what: String) -> Array:
 	return []
 
 
-func _scenario(c: Dictionary) -> void:
-	XPartySkills.EXACT = false
+func _scenario(c: Dictionary, exact: bool) -> void:
+	XPartySkills.EXACT = exact
 	var st: Dictionary = c.setup
 	var s := _fresh(st.actors, st.battle)
 	var slots := {}
@@ -139,16 +124,22 @@ func _scenario(c: Dictionary) -> void:
 			_:
 				got = _act(s, str(step.do))
 				s = XState.current
-		var tag := "%s.%d.%s" % [c.id, i, step.do]
+		var tag := "%s%s.%d.%s" % ["exact." if exact else "", c.id, i, step.do]
 		var bad := {}
+		var diff: Dictionary = EXACT_DIFF.get("%s.%d" % [c.id, i], {}) if exact else {}
 		for k in r.skills:
 			var mine := _mine(s.actor(int(k)))
-			if mine != _ids(r.skills[k]):
-				bad[k] = [mine, _ids(r.skills[k])]
+			var want := _ids(r.skills[k]).filter(func(v): return not (diff.get(k, []) as Array).has(v))
+			if mine != want:
+				bad[k] = [mine, want]
 		check(tag + ".skills", bad.is_empty(), bad)
+		if exact:
+			continue
 		check(tag + ".toasts", got == _toasts(r.toasts), [got, r.toasts])
-		var shared := XSkillShare.shared_ids(XPartySkills.records(s)).map(func(v): return int(v))
-		check(tag + ".shared", shared == (r.shared as Array).map(func(v): return int(v)), [shared, r.shared])
+		var rec := XPartySkills.records(s)
+		var mine := [_ints(XSkillShare.shared_ids(rec)), XBonds.active_ids(rec), XLeadActor.ranks(rec), _ints(rec.get("lead", {}).get("learners", []))]
+		var theirs := [_ints(r.shared), _ints(r.bonds), _ints(r.lead), _ints(r.leadLearners)]
+		check(tag + ".records", mine == theirs, [mine, theirs])
 
 
 ## O-095：本来就会的不被忘掉；读档后失效的共享技能被忘掉；记录随存档往返
@@ -177,6 +168,21 @@ func _exact() -> void:
 		XPartySkills.loaded(s2)
 		check(tag + ".stale_after_load", s2.actor(10).skill_ids.has(1000) != exact and s2.actor(8).skill_ids.has(1000),
 			[Array(s2.actor(10).skill_ids).has(1000), Array(s2.actor(8).skill_ids).has(1000)])
+	# 羁绊：101 自己学会 5594，三霄两人成立后再拆散；领袖：8 自己学会 717，首位 1 换成 9
+	for exact in [false, true]:
+		XPartySkills.EXACT = exact
+		var tag := "exact.%s" % ("on" if exact else "off")
+		var s := _fresh([100, 101, 1, 8, 9], [1, 100, 101, 8])
+		s.actor(101).learn_skill(5594)
+		s.actor(8).learn_skill(717)
+		XPartySkills.finish(s)
+		var mid := [s.actor(100).skill_ids.has(5594), s.actor(9).skill_ids.has(717), s.actor(1).skill_ids.has(717)]
+		_party(s, [100, 101, 1, 8, 9], [9, 100, 1, 8])
+		XPartySkills.finish(s)
+		check(tag + ".bond_own_kept", mid[0] and not s.actor(100).skill_ids.has(5594) and s.actor(101).skill_ids.has(5594) == exact,
+			[mid, Array(s.actor(100).skill_ids).has(5594), Array(s.actor(101).skill_ids).has(5594)])
+		check(tag + ".lead_own_kept", mid[2] and not s.actor(1).skill_ids.has(717) and s.actor(8).skill_ids.has(717) == exact,
+			[mid, Array(s.actor(1).skill_ids).has(717), Array(s.actor(8).skill_ids).has(717)])
 	# 旧档没有 partySkills
 	XPartySkills.EXACT = true
 	var old := XState.new_game_blank().to_dict()
@@ -188,7 +194,7 @@ class Page extends Node:
 	signal closed
 
 
-## 挂点：整队页「完成」、指令窗取消，仓库页退出，读档 XSave.load_slot
+## 挂点：整队页「完成」、指令窗取消，仓库页退出，读档页读档（XSaveScene._perform；XSave.load_slot 本身不刷新，读档往返测试不受影响）
 func _hooks() -> void:
 	XPartySkills.EXACT = true
 	for how in ["party_finish", "party_cancel", "warehouse"]:
@@ -208,7 +214,13 @@ func _hooks() -> void:
 	var s := _fresh([1, 8, 9, 10], [1, 8, 9, 10])
 	_equip(s, 1, "armor", 1583)
 	XSave.save(1)
-	XSave.load_slot(1)
+	var page := XSaveScene.new()
+	page.mode = "load"
+	page.index = 0
+	add_child(page)
+	await get_tree().process_frame
+	page.call("_perform", "load")
+	page.queue_free()
 	check("hooks.load", XState.current.actor(8).skill_ids.has(1000), Array(XState.current.actor(8).skill_ids))
 
 

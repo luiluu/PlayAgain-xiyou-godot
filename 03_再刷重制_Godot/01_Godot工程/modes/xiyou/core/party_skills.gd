@@ -10,7 +10,6 @@ extends RefCounted
 ## O-095（可回退，EXACT）：开着时记录随存档（XState.party_skills，存档键 partySkills），读档用本档记录、每次都刷新；
 ##   遗忘只忘「本系统学会的」（学之前已有就不记），角色本来就会的同一技能不被忘掉。关掉时照原版：内存记录、不分来源遗忘。
 ## 提示照 codex installV019UsabilityRuntime：逐条「技能共享：X 激活！」不弹，一次刷新只弹一条新激活的（见 XSkillShare）。
-## 羁绊、领袖两套在后续期补（交付单 claude_bajie-skillshare）。
 
 ## O-095 开关：false 时照原版（内存记录、不分来源遗忘）
 static var EXACT := true
@@ -30,8 +29,11 @@ static func reset_session() -> void:
 
 ## Scene_Party.commandFinish／Star_Scene_ActorWarehouse.cancelNowScene（都在菜单里，提示总显示）
 static func finish(s: XState) -> Array:
-	var out := []
-	out.append_array(XSkillShare.refresh(s, records(s)))
+	var rec := records(s)
+	var out := XSkillShare.refresh(s, rec)
+	if XBonds.changed(s, rec):
+		out.append_array(XBonds.refresh(s, rec))
+	out.append_array(XLeadActor.refresh(s, rec))
 	_show(out, true)
 	return out
 
@@ -42,16 +44,23 @@ static func battle_start(s: XState) -> Array:
 	var rec := records(s)
 	if XSkillShare.equip_changed(s, rec):
 		out.append_array(XSkillShare.refresh(s, rec))
+	if XBonds.changed(s, rec):
+		out.append_array(XBonds.refresh(s, rec))
 	_show(out, false)
 	return out
 
 
-## DataManager.loadGame 成功之后（XState.current 已换成读出的档）
+## DataManager.loadGame 成功之后（XState.current 已换成读出的档）。原版只在领袖记录为空时（本会话第一次读档，或从没有过领袖）刷新，
+## 羁绊、共享再各看自己的记录；O-095 开着时三套都按本档记录刷新
 static func loaded(s: XState) -> Array:
 	var out := []
 	var rec := records(s)
-	if EXACT or XSkillShare.shared_ids(rec).is_empty():
-		out.append_array(XSkillShare.refresh(s, rec))
+	if EXACT or XLeadActor.ranks(rec).is_empty():
+		out.append_array(XLeadActor.refresh(s, rec))
+		if EXACT or XBonds.never(rec):
+			out.append_array(XBonds.refresh(s, rec))
+		if EXACT or XSkillShare.shared_ids(rec).is_empty():
+			out.append_array(XSkillShare.refresh(s, rec))
 	_show(out, false)
 	return out
 

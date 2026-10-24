@@ -450,6 +450,7 @@ func _perform(kind: String) -> void:
 	match kind:
 		"load":
 			if XSave.load_slot(slot()):
+				XPartySkills.loaded(XState.current)  # Star_LeadActor 的 DataManager.loadGame 包装：读档后刷新领袖／羁绊／技能共享
 				XSound.system(6)
 				loaded.emit()
 				return
