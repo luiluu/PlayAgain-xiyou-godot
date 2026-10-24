@@ -1,7 +1,7 @@
 # 交付：claude/wukong-reach2
 
 - 车道／工作者：A 内容·楼层／悟空（Claude，重制_悟空_53）
-- 状态：可合并（期一；期二见 `claude_wukong-reach2_期二.md`）
+- 状态：可合并（期一；期二见 `claude_wukong-reach2_期二.md`，也已可合并）
 
 ## 变更记录草稿
 
