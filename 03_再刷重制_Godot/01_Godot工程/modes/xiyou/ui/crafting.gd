@@ -66,6 +66,7 @@ var buttons_visible := false
 var _button_down := -1
 var _buttons: Control
 var _gold_covering := true
+var _gold_band := 0.0
 
 
 func _ready() -> void:
@@ -87,6 +88,7 @@ func _ready() -> void:
 	cat_win.canvas.blink = true
 	confirm_win.canvas.blink = true
 	popup_win.openness = 0
+	confirm_win.draw.connect(_clip_confirm)
 	_buttons = Control.new()
 	_buttons.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_buttons.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -96,12 +98,29 @@ func _ready() -> void:
 	_refresh()
 
 
-## 金币窗开合跨过 0 时重画确认窗（挖掉／露出）
+## 金币窗开合跨过 0 时重画确认窗（挖掉／露出）；窗口本身按金币窗的开合范围截掉（金币窗全开时只剩底下 8px 的边）
 func _process(_delta: float) -> void:
 	var cover := gold_win.openness > 0
 	if cover != _gold_covering:
 		_gold_covering = cover
 		confirm_win.refresh()
+	var band := 0.0
+	if cover:
+		band = GOLD_RECT.size.y / 2.0 * gold_win.openness / 255.0
+	if band != _gold_band:
+		_gold_band = band
+		confirm_win.queue_redraw()
+
+
+## Control 每次重画都会重设自己的裁剪矩形，所以在 draw 信号（重设之后）里再套上
+func _clip_confirm() -> void:
+	if _gold_band <= 0.0:
+		return
+	# 金币窗以中线 y 680 上下展开；确认窗只留下面露出的部分（展开途中上面露出的一小段也一并截掉）
+	var top := GOLD_RECT.position.y + GOLD_RECT.size.y / 2.0 + _gold_band - CONFIRM_RECT.position.y
+	var ci := confirm_win.get_canvas_item()
+	RenderingServer.canvas_item_set_custom_rect(ci, true, Rect2(0, top, CONFIRM_RECT.size.x, CONFIRM_RECT.size.y - top))
+	RenderingServer.canvas_item_set_clip(ci, true)
 
 
 # ---- 数据 ----

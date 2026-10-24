@@ -74,7 +74,19 @@ func _run() -> void:
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
 
 
+## 上一页留下的提示条与成就弹窗不带进下一页的截图
+func _clear_overlays(n: Node = null) -> void:
+	if n == null:
+		n = get_tree().root
+	for c in n.get_children():
+		if c is XToast or c is XAchievementPopup:
+			c.queue_free()
+		else:
+			_clear_overlays(c)
+
+
 func _party(ids: Array) -> XState:
+	_clear_overlays()
 	var s := XState.new_game_blank()
 	s.party.clear()
 	for id in ids:

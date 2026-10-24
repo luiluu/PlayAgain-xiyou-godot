@@ -77,6 +77,7 @@ func _ready() -> void:
 	var op := XUI.MENU_WINDOW_OPACITY
 	index_win = XMVWindow.make(self, INDEX_RECT, op, _paint_index)
 	status_win = XMVWindow.make(self, STATUS_RECT, op, _paint_status)
+	status_win.canvas.draw.connect(_apply_status_clip)
 	skill_win = XMVWindow.make(self, SKILL_RECT, op, _paint_skills)
 	bottom_win = XMVWindow.make(self, BOTTOM_RECT, op, _paint_bottom)
 	team_win = XMVWindow.make(self, TEAM_RECT, op, _paint_team)
@@ -111,8 +112,15 @@ func _clip_status() -> void:
 	if cover == status_cover:
 		return
 	status_cover = cover
+	status_win.canvas.queue_redraw()
+
+
+## Control 每次重画都会重设自己的裁剪矩形，所以在 draw 信号（重设之后）里再套上
+func _apply_status_clip() -> void:
 	var c := status_win.canvas
-	var h := maxf(0.0, cover - status_win.position.y - c.position.y)
+	if status_cover < 0 or status_cover >= STATUS_RECT.end.y:
+		return
+	var h := maxf(0.0, status_cover - status_win.position.y - c.position.y)
 	RenderingServer.canvas_item_set_custom_rect(c.get_canvas_item(), true, Rect2(-c.position, Vector2(c.size.x + 2 * c.position.x, h + c.position.y)))
 	RenderingServer.canvas_item_set_clip(c.get_canvas_item(), true)
 
