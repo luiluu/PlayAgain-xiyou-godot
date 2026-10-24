@@ -230,7 +230,7 @@ func _paint_confirm(c: XMVCanvas) -> void:
 ## 原版金币窗内容层按 Window_Gold 初始宽 240 建好（内容宽 212）后没重建：金额 (6, 宽 164) 靠右、图标在 174
 func _paint_gold(c: XMVCanvas) -> void:
 	var ww := 240.0 - 28 - 12
-	c.text(XMenu._group(XState.current.gold), 6, 0, ww - 32 - 4, "right", XUI.TEXT, 20, LH)
+	c.text(XMenu.currency_text(c, XState.current.gold, ww - 32), 6, 0, ww - 32 - 4, "right", XUI.TEXT, 20, LH)
 	c.icon(GOLD_ICON, 6 + ww - 32, 2)
 
 

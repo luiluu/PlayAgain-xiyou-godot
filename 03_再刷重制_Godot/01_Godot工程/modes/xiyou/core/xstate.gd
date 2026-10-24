@@ -459,8 +459,15 @@ func mark_seen(rec: Dictionary) -> void:
 	if not rec.is_empty():
 		seen[seen_key(rec)] = true
 
+## Game_Party.gainGold：clamp(GOLD_MIN, maxGold)。上限是 YEP_CoreEngine「Gold Max」999999999999（9999 亿）；
+## 正式版 rpg_objects 把下限改成 -99999999，精魂可以扣成负数（O-085：重制下限为 0）
+const GOLD_MAX := 999999999999
+const GOLD_MIN_ORIGINAL := -99999999
+## O-085：精魂不扣成负数；设 false 恢复原版下限 -99999999
+const GOLD_FLOOR_ZERO := true
+
 func gain_gold(amount: int) -> void:
-	gold = clampi(gold + amount, 0, 999999999)
+	gold = clampi(gold + amount, 0 if GOLD_FLOOR_ZERO else GOLD_MIN_ORIGINAL, GOLD_MAX)
 
 
 # ---- 存档 ----

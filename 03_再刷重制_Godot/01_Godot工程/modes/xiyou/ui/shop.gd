@@ -283,7 +283,7 @@ func _item_name(c: XMVCanvas, rec: Dictionary, x: float, y: float, w: float, alp
 
 ## YEP drawCurrencyValue：字号 20，数值右对齐，金钱图标在最右
 func _currency(c: XMVCanvas, value: String, x: float, y: float, w: float, alpha := 1.0) -> void:
-	c.text(value, x, y, w - 32 - 4, "right", XUI.TEXT, GOLD_FONT, LH, alpha)
+	c.text(XMenu.currency_text(c, value, w - 32), x, y, w - 32 - 4, "right", XUI.TEXT, GOLD_FONT, LH, alpha)
 	c.icon(XMenu.GOLD_ICON, x + w - 32, y + 2, alpha)
 
 

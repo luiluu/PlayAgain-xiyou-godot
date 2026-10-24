@@ -81,6 +81,7 @@ PROBES = [
     (['orb_shop_probe.cjs'], ['orb_shop.json']),
     (['race_menu_probe.cjs'], ['race_menu.json']),
     (['training_probe.cjs'], ['training.json']),
+    (['gold_probe.cjs'], ['gold.json']),
     (['alien_workshop_probe.cjs'], ['alien_workshop.json']),
     (['alien_config_probe.cjs'], ['alien_config.json']),
     (['dungeon_probe.cjs'], ['dungeon.json']),

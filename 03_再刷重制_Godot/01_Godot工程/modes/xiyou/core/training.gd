@@ -97,8 +97,7 @@ static func confirm(s: XState, actor_id: int, id: int) -> String:
 		var mine: Dictionary = s.training.get(str(actor_id), {})
 		mine[str(id)] = lv + 1
 		s.training[str(actor_id)] = mine
-		# loseGold：原版精魂上限 9999 亿（YEP Gold Max），这里直接扣，不经 gain_gold 的 9.99 亿夹取（上限差异见交付单）
-		s.gold = maxi(0, s.gold - int(e.gold))
+		s.gain_gold(-int(e.gold))  # loseGold
 		return "修炼成功"
 	if lv == int(e.max):
 		return "等级已满"

@@ -107,7 +107,7 @@ func _paint_commands(c: XMVCanvas) -> void:
 
 func _paint_gold(c: XMVCanvas) -> void:
 	var ww := c.size.x - 12
-	c.text(str(XState.current.gold), 6, 0, ww - 32 - 4, "right", XUI.TEXT, 20, CMD_LH)
+	c.text(currency_text(c, XState.current.gold, ww - 32), 6, 0, ww - 32 - 4, "right", XUI.TEXT, 20, CMD_LH)
 	c.icon(GOLD_ICON, 6 + ww - 32, 2)
 
 
@@ -190,6 +190,13 @@ static func _hp_color(a: XActor) -> Color:
 	if a.hp < a.mhp / 4.0:
 		return XUI.CRISIS
 	return XUI.TEXT
+
+
+## YEP drawCurrencyValue：千位逗号的金额（字号 20）宽过 avail（金额区宽减图标 32）时整段换成 Gold Overlap「A lotta」
+const GOLD_OVERLAP := "A lotta"
+static func currency_text(c: XMVCanvas, value, avail: float) -> String:
+	var t := str(value) if value is String else _group(value)
+	return GOLD_OVERLAP if c.text_width(t, 20) > avail else t
 
 
 ## Yanfly.Util.toGroup：千位逗号
