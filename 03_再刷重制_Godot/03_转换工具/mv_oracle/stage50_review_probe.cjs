@@ -31,6 +31,8 @@ measure('save.state_effects', () => {
 });
 // Counter goes last: this frozen plugin chain changes the emulated location.
 measure('counter.state_origin', () => {
+  const {w, newGame} = start(); // independent host: save restoration must not leak runtime state
+  w.Yanfly.Util.displayError = e => evalThrown.push(String(e && e.stack || e));
   newGame();
   // The engine's Array has MV.contains; a Node-owned [] does not.
   w.eval('$gameSwitches.setValue(2494,true); $gameParty._actors = []; $gameParty._battleMembers = null; $gameParty.addActor(154); $gameParty.addActor(1); $gameParty.initializeBattleMembers();');
@@ -57,7 +59,7 @@ measure('counter.state_origin', () => {
   const counterRate = a.cnt, beforeStates = Array.from(e._states), originCalls = [];
   const originalOrigin = e.setStateOrigin;
   e.setStateOrigin = function(state, source) {
-    originCalls.push({state,sourceActor:source && source.isActor() ? source.actorId():null,inBattle:w.$gameParty.inBattle()});
+    originCalls.push({state,sourceActor:source && source.isActor() ? source.actorId():null,inBattle:w.$gameParty.inBattle(),stack:String(new Error().stack).split('\n').slice(1,12)});
     return originalOrigin.apply(this, arguments);
   };
   bm.invokeCounterAttack(e, a);
