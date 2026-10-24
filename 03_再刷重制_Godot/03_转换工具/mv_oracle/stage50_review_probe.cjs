@@ -1,9 +1,7 @@
 'use strict';
 // Stage review 50: native in-memory save/reload and
 // counterattack source. The frozen source stays read-only; no player saves.
-const fs = require('fs'), path = require('path');
-const {start, APP} = require('./shared/host.cjs');
-const {sourceIdentity} = require('./source_identity.cjs');
+const {start, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host, cases = [];
 const evalThrown = [];
 w.Yanfly.Util.displayError = e => evalThrown.push(String(e && e.stack || e));
@@ -11,7 +9,7 @@ function measure(id, fn) {
   const first = evalThrown.length;
   const observed = fn();
   if (first !== evalThrown.length) throw new Error(evalThrown.slice(first).join('\n'));
-  cases.push({id, observed});
+  cases.push({id, observed, errors:[]});
 }
 function phaseValue(a, b) {
   const action = new w.Game_Action(a); action.setSkill(1);
@@ -35,7 +33,7 @@ measure('save.state_effects', () => {
 measure('counter.state_origin', () => {
   newGame();
   // The engine's Array has MV.contains; a Node-owned [] does not.
-  w.eval('$gameParty._actors = []; $gameParty.addActor(154); $gameParty.addActor(1);');
+  w.eval('$gameSwitches.setValue(2494,true); $gameParty._actors = []; $gameParty._battleMembers = null; $gameParty.addActor(154); $gameParty.addActor(1); $gameParty.initializeBattleMembers();');
   const bm = w.BattleManager;
   const stub = new Proxy(function () {}, {get: (_, key) => key === '_waitCount' ? 0 : (() => false), set: () => true});
   const sprites = new Map();
@@ -47,6 +45,8 @@ measure('counter.state_origin', () => {
   bm.setup(2, false, false); bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
   bm.actionBattleHud = () => true; bm.otbDisplayWindow = () => stub;
   w.$gameParty._inBattle = true; w.CodexYunshang._acted = [];
+  const battleMembers = Array.from(w.$gameParty.battleMembers(), x => x.actorId());
+  if (!battleMembers.includes(154)) throw new Error('154 is not a deployed battle member: '+JSON.stringify(battleMembers));
   const a = w.$gameActors.actor(154), e = w.$gameTroop.members()[0];
   a.addState(92); e._paramPlus[0] = 1e9;
   for (const x of [a, e]) { x.need_refresh = true; x.refresh(); x.recoverAll(); }
@@ -59,10 +59,7 @@ measure('counter.state_origin', () => {
   const origin = e.stateOrigin(522), hp = e.hp;
   const sourceActor = origin && origin.isActor() ? origin.actorId() : null;
   e.regenerateHp();
-  return {actor:154,state:522,counterRate,originActor:sourceActor,hasState:e.isStateAffected(522),
+  return {actor:154,state:522,battleMembers,counterRate,originActor:sourceActor,hasState:e.isStateAffected(522),
     maxHp:e.mhp,hpBeforeRegen:hp,hpAfterRegen:e.hp,hpDelta:e.hp-hp,sourceRate:w.CodexImportedBalance.outgoingRate(a)};
 });
-if (JSON.stringify(host.identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('source changed');
-const file = path.join(__dirname, '.sandbox', 'stage50_review.json');
-fs.writeFileSync(file, JSON.stringify({schemaVersion:1,sourceIdentity:host.identity,cases},null,1)+'\n');
-console.log(JSON.stringify({file:'stage50_review.json',cases:cases.length}));
+process.exit(finish(host, 'stage50_review.json', {hostScope:'内存JsonEx往返与真实BattleManager.invokeCounterAttack，154实际出战', cases}) ? 0 : 1);
