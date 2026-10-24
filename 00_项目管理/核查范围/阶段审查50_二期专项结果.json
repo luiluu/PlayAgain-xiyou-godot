@@ -287,26 +287,324 @@
   "developmentVersion": "dev.165",
   "scope": "仅检查.sh文档与登记段，JSON/链接/编号通过；非全量"
  },
- "finalSyncPending": {
-  "runId": "126c6d6c96a746c3ab4b2566a60369ca",
-  "pid": 9805,
-  "childPid": 9806,
-  "path": "03_再刷重制_Godot/04_验证/本地结果/stage-review-50-phase2-final/sync.log",
-  "plan": {
-   "executed": 18,
-   "reused": 36
-  },
-  "lastCompleted": 23,
-  "state": "running",
-  "completedProbeGroups": 18,
-  "plannedProbeGroups": 18,
-  "remainingProbes": [],
-  "counting": "计划按探针组计，slice分六难度命令；PROBE_DONE按命令计，最终以整轮退出和导入为准"
- },
  "initialDepsStopped": {
   "pid": 9808,
   "reason": "同步会更新参照，主动终止自己的deps进程组，等同步导入完成再运行",
   "passed": false,
   "flaky": false
+ },
+ "finalSync": {
+  "status": {
+   "runId": "126c6d6c96a746c3ab4b2566a60369ca",
+   "status": "done",
+   "exitCode": 0,
+   "pid": 9805,
+   "startedAt": "2026-10-24T21:52:45.203566+00:00",
+   "command": [
+    "python3",
+    "03_再刷重制_Godot/03_转换工具/同步正式西游.py",
+    "--accept-additions"
+   ],
+   "childPGID": 9806,
+   "childIdentity": {
+    "pid": 9806,
+    "pgid": 9806,
+    "startedAt": "Sat Oct 24 23:52:45 2026    "
+   },
+   "finishedAt": "2026-10-24T22:54:15.890573+00:00"
+  },
+  "wallSeconds": 3690.687,
+  "result": "测量不变",
+  "measurementChanges": {},
+  "verify": "{\"releaseVersion\": \"v0.28\", \"inputs\": 1785, \"runtimeInputs\": 382, \"outputs\": 1779, \"issues\": []}",
+  "verifyOk": true,
+  "sameExistingSource": true,
+  "acceptedAdditions": false,
+  "acceptedChanges": [],
+  "probeGroups": {
+   "executed": [
+    "slice_probe.cjs",
+    "map_probe.cjs",
+    "smart_ai_probe.cjs",
+    "troop_event_probe.cjs",
+    "custom_params_probe.cjs",
+    "shop_buy_probe.cjs",
+    "race_menu_probe.cjs",
+    "training_probe.cjs",
+    "gold_probe.cjs",
+    "alien_workshop_probe.cjs",
+    "alien_config_probe.cjs",
+    "formula_program_probe.cjs",
+    "formula_equipment_probe.cjs",
+    "stage50_review_probe.cjs",
+    "cat_probe.cjs",
+    "enemy_book_defeat_probe.cjs",
+    "lobby_shop_probe.cjs",
+    "event_probe.cjs"
+   ],
+   "reused": [
+    "equipment_probe.cjs",
+    "help_probe.cjs",
+    "hang_up_probe.cjs",
+    "options_probe.cjs",
+    "sequence_probe.cjs",
+    "party_probe.cjs",
+    "battle_event_probe.cjs",
+    "drop_record_probe.cjs",
+    "sell_reward_probe.cjs",
+    "power_probe.cjs",
+    "wtype_probe.cjs",
+    "dual_wield_probe.cjs",
+    "magic_weapon_probe.cjs",
+    "settlement_probe.cjs",
+    "item_marks_probe.cjs",
+    "orb_probe.cjs",
+    "module_hooks_probe.cjs",
+    "orb_shop_probe.cjs",
+    "dungeon_probe.cjs",
+    "shared_system_probe.cjs",
+    "zhenqi_probe.cjs",
+    "guide_probe.cjs",
+    "custom_damage_probe.cjs",
+    "formula_effect_probe.cjs",
+    "formula_action_probe.cjs",
+    "review_fix_probe.cjs",
+    "global_vars_probe.cjs",
+    "actor_passive_probe.cjs",
+    "achievement_probe.cjs",
+    "achievement_badge_probe.cjs",
+    "shield_probe.cjs",
+    "imported_balance_probe.cjs",
+    "state_effects_probe.cjs",
+    "review135_probe.cjs",
+    "attack_element_probe.cjs",
+    "qiyu_probe.cjs"
+   ],
+   "partial": {}
+  },
+  "commands": [
+   {
+    "probe": "slice_probe.cjs",
+    "seconds": 256.721,
+    "command": [
+     "slice_probe.cjs",
+     "4"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "slice_probe.cjs",
+    "seconds": 279.614,
+    "command": [
+     "slice_probe.cjs",
+     "1"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "slice_probe.cjs",
+    "seconds": 300.313,
+    "command": [
+     "slice_probe.cjs",
+     "2"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "slice_probe.cjs",
+    "seconds": 325.207,
+    "command": [
+     "slice_probe.cjs",
+     "5"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "slice_probe.cjs",
+    "seconds": 327.683,
+    "command": [
+     "slice_probe.cjs",
+     "6"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "map_probe.cjs",
+    "seconds": 9.164,
+    "command": [
+     "map_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "troop_event_probe.cjs",
+    "seconds": 458.189,
+    "command": [
+     "troop_event_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "custom_params_probe.cjs",
+    "seconds": 8.553,
+    "command": [
+     "custom_params_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "slice_probe.cjs",
+    "seconds": 1087.16,
+    "command": [
+     "slice_probe.cjs",
+     "3"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "shop_buy_probe.cjs",
+    "seconds": 14.514,
+    "command": [
+     "shop_buy_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "race_menu_probe.cjs",
+    "seconds": 571.034,
+    "command": [
+     "race_menu_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "gold_probe.cjs",
+    "seconds": 11.246,
+    "command": [
+     "gold_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "alien_workshop_probe.cjs",
+    "seconds": 16.603,
+    "command": [
+     "alien_workshop_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "alien_config_probe.cjs",
+    "seconds": 16.03,
+    "command": [
+     "alien_config_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "formula_program_probe.cjs",
+    "seconds": 9.144,
+    "command": [
+     "formula_program_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "smart_ai_probe.cjs",
+    "seconds": 2839.883,
+    "command": [
+     "smart_ai_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "formula_equipment_probe.cjs",
+    "seconds": 1439.208,
+    "command": [
+     "formula_equipment_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "cat_probe.cjs",
+    "seconds": 32.698,
+    "command": [
+     "cat_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "event_probe.cjs",
+    "seconds": 2716.617,
+    "command": [
+     "event_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "stage50_review_probe.cjs",
+    "seconds": 250.318,
+    "command": [
+     "stage50_review_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "lobby_shop_probe.cjs",
+    "seconds": 144.653,
+    "command": [
+     "lobby_shop_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "training_probe.cjs",
+    "seconds": 2362.314,
+    "command": [
+     "training_probe.cjs"
+    ],
+    "exitCode": 0
+   },
+   {
+    "probe": "enemy_book_defeat_probe.cjs",
+    "seconds": 391.079,
+    "command": [
+     "enemy_book_defeat_probe.cjs"
+    ],
+    "exitCode": 0
+   }
+  ],
+  "stamp": {
+   "toolsDigest": "2343ebe300c158ca65077f95381c869a37a4c68e89ceb9a88c38955960edf79c",
+   "outputsDigest": "a4fd5b25375f4c6e0b1ed1a91022970691798f16dfd91356d33d90c299c0e341",
+   "releaseVersion": "v0.28",
+   "result": "测量不变",
+   "time": "2026-10-25T00:54:15",
+   "backup": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261024_235245_880021_v0.28-v0.28"
+  },
+  "importPassed": true,
+  "retainedEvents": {
+   "unfinished": [
+    "m221e3p0",
+    "m4e8p1",
+    "ce1344"
+   ],
+   "errors": [
+    "m4e8p1"
+   ],
+   "scope": "原基线中相同未完成／错误保留，不作本轮新成功用例"
+  }
+ },
+ "eventFilterGuard": {
+  "before": {
+   "rc": 0,
+   "testResult": [
+    "TEST_RESULT={\"passed\":5,\"total\":5}"
+   ],
+   "zeroCases": true,
+   "guardRejected": false,
+   "runnerAccepts": true
+  },
+  "status": "一行断言已修，修后拒收负控及普通全场专项待跑"
  }
 }

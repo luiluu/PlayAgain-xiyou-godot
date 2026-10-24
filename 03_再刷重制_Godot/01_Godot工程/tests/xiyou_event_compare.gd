@@ -227,7 +227,7 @@ func _run() -> void:
 		_write_report(report, oracle_errors)
 	check("no_regressions", regressions.is_empty() or update_baseline, regressions)
 	check("no_new_oracle_errors", oracle_errors.all(func(id): return KNOWN_ORACLE_ERRORS.has(id)), oracle_errors)
-	check("cases_ran", report.size() > 0 or not only.is_empty())
+	check("cases_ran", report.size() > 0)
 	_finish()
 
 
