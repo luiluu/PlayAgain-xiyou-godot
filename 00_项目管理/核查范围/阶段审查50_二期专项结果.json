@@ -88,5 +88,117 @@
   "runId": "3582cc52e82c4a5fa938d2ad086ef6f9",
   "exitCode": 1,
   "reason": "Node数组不带MV.contains，MOG_CharPoses.addActor抛错；不是原版测量结论"
+ },
+ "warehouseGreen": {
+  "exitCode": 0,
+  "passed": 32,
+  "total": 32,
+  "seconds": 3.507,
+  "flaky": false
+ },
+ "inlayGreen": {
+  "exitCode": 0,
+  "passed": 19,
+  "total": 19,
+  "seconds": 7.748,
+  "flaky": false
+ },
+ "nativeFinal": {
+  "runId": "2a59b90e60474298ac0594c9d67fbeec",
+  "exitCode": 0,
+  "cases": [
+   {
+    "id": "save.state_effects",
+    "observed": {
+     "before": {
+      "confirm": 140,
+      "value": 126,
+      "aStates": [
+       1712
+      ],
+      "bStates": [
+       1779
+      ],
+      "confirmStates": [
+       1712
+      ],
+      "reactStates": [
+       1779
+      ]
+     },
+     "after": {
+      "confirm": 140,
+      "value": 126,
+      "aStates": [
+       1712
+      ],
+      "bStates": [
+       1779
+      ],
+      "confirmStates": [
+       1712
+      ],
+      "reactStates": [
+       1779
+      ]
+     }
+    },
+    "errors": []
+   },
+   {
+    "id": "counter.state_origin",
+    "observed": {
+     "actor": 154,
+     "state": 522,
+     "battleMembers": [
+      154,
+      1
+     ],
+     "counterRate": 1,
+     "attackSkill": 1,
+     "initialSkill": 12,
+     "initialHitType": 1,
+     "counterCalls": 1,
+     "beforeStates": [],
+     "originIsSelf": true,
+     "rawOrigin": [
+      1,
+      0
+     ],
+     "originActor": null,
+     "hasState": true,
+     "maxHp": 75000007500,
+     "hpBeforeRegen": 75000007500,
+     "hpAfterRegen": 69000006900,
+     "hpDelta": -6000000600,
+     "sourceRate": 0.01
+    },
+    "errors": []
+   }
+  ],
+  "scope": "冻结v0.28，内存JsonEx往返、154实际出战，技能12物理入射触发invokeAction反击；来源前后身份一致，无eval错误"
+ },
+ "crossRed": {
+  "passed": 6,
+  "total": 12,
+  "exitCode": 1,
+  "validSaveFailures": [
+   "save.after",
+   "save.state_lists"
+  ],
+  "invalidCounterFixture": "把魔法技能1误作物理入射，Godot实际走反射；反击与嵌套断言不是确认缺陷"
+ },
+ "crossAfterSaveFix": {
+  "passed": 8,
+  "total": 12,
+  "exitCode": 1,
+  "saveChecksPassed": true,
+  "counterStillInvalid": true
+ },
+ "crossGreenPending": {
+  "pid": 8559,
+  "session": 51717,
+  "path": "03_再刷重制_Godot/04_验证/本地结果/stage-review-50-phase2/cross-green",
+  "note": "最终物理入射用例及依赖专项已启动，等待test_timings.json才认证"
  }
 }
