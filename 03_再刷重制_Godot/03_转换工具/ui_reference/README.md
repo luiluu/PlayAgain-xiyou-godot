@@ -29,3 +29,5 @@
 - `index.html?item_marks_ref=1`：一键出售与多货币买入的内存夹具；「多货币买入夹具」打开 2230／4375／732 三件商品并显示窗口几何，「买入数量窗」进入实际最多能买 1 件的数量窗，「买入复核截图」保存当前商店原尺寸画面。金币、变量与物品都只属于新建测试局，不加载玩家存档。
 
 - `index.html?item_list_ref=1`：物品列表一组（NEW 角标、「序号/9,999」、战斗物品窗口）参照。不放工具栏，用页面内 JS 调 `__ilr`：`newGame()` 建四人内存新局（1/8/9/10，不读写存档），`go(场景类)` 切场景并等就绪，`rows(窗口)` 读每行的数据、`$gameSystem._seenItems` 与此刻画面（`newShown` 是否画着 newIcon、`texts` 该行文字的 x／宽／对齐／字号；包装 Bitmap 的 blt/drawText/clearRect/clear 记录），`saveRoundTrip()` 只在内存里做存读档序列化。移光标用 `cursorDown(false)`／`processOk()`，换分类后先等几帧（分类窗在 update 里才 setCategory）。读数存 `01_Godot工程/tests/fixtures/item_list_oracle.json`。
+
+- 伤害弹数纵向锚点（八戒_61）：`python3 popup_anchor_ref.py <app.nw> <输出目录>`（只读，127.0.0.1:8768，沿用 serve.py 守卫，追加 `popup_anchor_ref.js`），打开 `index.html?battle_ref=1&popup_anchor=1`，页面内 `await __popupAnchor.run()`：四人内存夹具上对敌人 0／角色 0 用真实 startDamagePopup／setupDamagePopup 依次弹七种普通伤害／回复组合（间隔 5 帧、最后再推 5 帧），记每个弹数子精灵锚点、根位置与边界，`__refJson("popup_anchor_oracle")`。压缩后存 `01_Godot工程/tests/fixtures/popup_anchor_oracle.json`，由 `tests/xiyou_popup_overlap` 对照。
