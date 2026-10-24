@@ -123,6 +123,7 @@ func cancel() -> void:
 			index = -1
 			_refresh()
 		"command":
+			XPartySkills.finish(XState.current)  # cancelNowScene：技能共享／羁绊／领袖刷新
 			closed.emit()
 
 
