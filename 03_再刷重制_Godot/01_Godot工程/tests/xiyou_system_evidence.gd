@@ -48,7 +48,7 @@ func shot(name: String, wins: Dictionary, extra := {}) -> void:
 		var w: Control = wins[k]
 		data.windows[k] = {"rect": rect(w), "visible": w.is_visible_in_tree(),
 			"openness": w.openness if "openness" in w else null}
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw(false)
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
 	var f := FileAccess.open(out_dir.path_join(name + ".json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify(data, "  "))

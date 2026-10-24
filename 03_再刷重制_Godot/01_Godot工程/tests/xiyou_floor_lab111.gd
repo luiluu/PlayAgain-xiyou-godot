@@ -178,8 +178,10 @@ func _lab() -> void:
 	await _run_event(map, 9, [], "win")
 	map = _scene()
 	_check("final_fight", battles.size() == n2 + 1 and battles[-1].troop == 368 and battles[-1].result == 0 and s.switch(148), [battles.slice(n2), s.switch(148)])
-	# 宝箱页：发奖后传回 Map031 (8,5) 并重置
-	await _run_event(map, 9, [], "")
+	# 宝箱页：强制有邀请函而出现传送门，明确选择「离开这是非之地」，验证固定的回程与重置分支。
+	s.gain_item(179, 1)
+	await _run_event(map, 9, [1], "")
+	_check("chest_portal_declined", int(s.variable(106)) == 1, s.variable(106))
 	_check("chest_returned", await _wait_map(31) and _scene().player.grid == Vector2i(8, 5), [_scene().map_id])
 	_check("chest_reset", int(s.variable(5)) == 0 and int(s.variable(450)) == 0 and not s.switch(148) and not s.switch(142), [s.variable(5), s.variable(450), s.switch(148)])
 

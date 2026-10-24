@@ -38,7 +38,7 @@ func shot(name: String, book: XEnemyBookPage = null) -> void:
 		return
 	_clear_toasts(get_tree().root)
 	await frames(3)
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw(false)
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
 	if book != null:
 		var data := {"shot": name, "windows": {}}
