@@ -167,6 +167,7 @@ func ok() -> void:
 					XState.current.battle_slots = _former.duplicate()
 					XState.current.rearrange_actors()
 				"cancel":
+					XPartySkills.finish(XState.current)  # commandFinish：技能共享／羁绊／领袖刷新
 					closed.emit()
 					return
 		"slot":
@@ -201,6 +202,7 @@ func cancel() -> void:
 	XSound.system(2)
 	match mode:
 		"command":
+			XPartySkills.finish(XState.current)  # 指令窗取消＝commandFinish
 			closed.emit()
 			return
 		"slot":

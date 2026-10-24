@@ -42,6 +42,8 @@ var saved_actors: Array[int] = []   # 角色仓库（Star_ActorWarehouse 的 $ga
 var player_costume := {}
 ## 角色进阶次数（Star_ActorAdvanced 的 Game_Actor._AdvancedNum，存档 actorAdvance，见 XAdvance；角色 ID → 次数，旧档没有为空＝全 0）
 var actor_advance := {}
+## 技能共享／羁绊／领袖技能的上次记录（XPartySkills，O-095 开着时随存档，存档键 partySkills；旧档没有为空）
+var party_skills := {}
 var switches := {}                  # id -> bool
 var variables := {}                 # id -> 数值
 var self_switches := {}             # "map,event,A" -> bool
@@ -504,7 +506,7 @@ func to_dict() -> Dictionary:
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "ecoFrac": eco_frac,
-		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "actorAdvance": XAdvance.to_save(actor_advance)}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills)}
 
 static func from_dict(d: Dictionary) -> XState:
 	# dev.099 once persisted strict engine-specific RNG state. Ignore that obsolete
@@ -560,6 +562,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.saved_actors = XActorWarehouse.from_save(d.get("saveactors", []))
 	s.player_costume = XChangeClothes.from_save(d.get("playerCostume"))
 	s.actor_advance = XAdvance.from_save(d.get("actorAdvance"))
+	s.party_skills = XPartySkills.from_save(d.get("partySkills"))
 	for a in s.actors.values():a.refresh_passive()
 	for k in d.switches:
 		s.switches[int(k)] = bool(d.switches[k])

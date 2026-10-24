@@ -664,6 +664,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	var shot := await _snapshot()
 	# 原版战斗没有 _tipSpr；只保留快照里的那一帧，活提示在后台继续倒数。
 	difficulty_notice.hide()
+	XPartySkills.battle_start(XState.current)  # BattleManager.startBattle 包装：装备学技能变了刷共享、成员变了刷羁绊
 	var battle := XBattleScene.new()
 	battle.setup(troop_id, can_escape, can_lose, battle_map(), shot)
 	ui.add_child(battle)
