@@ -285,7 +285,10 @@
   "finalDocs": {
     "exitCode": 0,
     "developmentVersion": "dev.165",
-    "scope": "仅检查.sh文档与登记段，JSON/链接/编号通过；非全量"
+    "scope": "最终报告及交付单更新、final临时目录清理后，仅执行检查.sh文档与登记Python正文；非全量",
+    "checkedAt": "2026-10-25T01:15:41+02:00",
+    "stdout": "  待Codex核查 3 批，另有只改文档、登记的 1 批（只看结论与编号）：\n    2026-10-24 合并 claude/bajie-warehouse 期一（装备镶嵌图鉴）｜b503c77 ef051ee 7aba3d2 38eaddf｜Claude（八戒）、Claude（唐僧）\n    2026-10-24 合并 codex/review-pending-20261024（全部待审核查）｜21 个提交 1bd0430…2fba4b5｜Codex（沙僧）、Codex、Claude（唐僧）\n    2026-10-24 合并 claude/bajie-warehouse 期二（装备道具仓库）｜040606a 0ae13bf bf0aa77 7fc0c31｜Claude（八戒）、Claude（唐僧）\n    文档：58d9281\n  待Claude核查 20 批，另有只改文档、登记的 23 批（只看结论与编号）：\n    2026-10-23 合并 codex/state-effects-2e｜24 个提交 4bf9996…c572e51｜Codex（沙僧）\n    2026-10-24 修复进度核算收工检查：临时接收库自动维护与清理竞争｜117ba14｜Codex（沙僧）\n    2026-10-24 合并 codex/review-pending-20261024（全部待审核查）｜21 个提交 1bd0430…2fba4b5｜Codex（沙僧）、Codex、Claude（唐僧）\n    2026-10-24 WIP: 补50%原版读档、仓库边界与反击来源参照入口｜2aa2c6d｜Codex（沙僧）\n    2026-10-24 交付50%审查一期：7专项通过，dev165正式进度49.8%｜62a508e｜Codex（沙僧）\n    2026-10-24 开工50%审查二期，调整原版私有窗口补证入口｜5ad1d14｜Codex（沙僧）\n    2026-10-24 WIP: 保存50%二期已读发现与原版两例运行现场，接力沙僧54｜eaca3e1｜Codex（沙僧）\n    2026-10-24 50%二期补仓库旧档回归与界面现状登记｜13795a2｜Codex（沙僧）\n    2026-10-24 修复旧Godot档已解锁仓库入口并记录两项红灯｜b8fb97d｜Codex（沙僧）\n    2026-10-24 WIP: 保存50%二期工具验证与跨批回归草稿，接力沙僧55｜2fa5ceb｜Codex（沙僧）\n    2026-10-24 修正阶段审查回归草稿的条件返回并登记接手｜c87a3f8｜Codex（沙僧）\n    2026-10-24 补原版跨批探针真实出战夹具与显式退出｜7bfb05e｜Codex（沙僧）\n    2026-10-24 记录真实反击的攻击替换与来源调用，核对补证夹具｜8d7ccfb｜Codex（沙僧）\n    2026-10-24 隔离跨批原版用例运行时并追踪状态来源链｜f844d12｜Codex（沙僧）\n    2026-10-24 修复读档后状态效果快照仍沿用setup空状态｜60c4f7b｜Codex（沙僧）\n    2026-10-24 按原版实测修正反击候选与物理入射夹具｜9e95848｜Codex（沙僧）\n    2026-10-24 修复系统页面取证漏检浏览器错误日志的假通过入口｜8650bac｜Codex（沙僧）\n    2026-10-24 补大厅商店参照完成与状态不变的拒收检查，登记补审边界｜33dd82b｜Codex（沙僧）\n    2026-10-25 拒绝事件对照空过滤零用例的假通过，保存最终同步通过凭证｜3242ddd｜Codex（沙僧）\n    2026-10-25 登记最终同步通过、空过滤红灯与修后排队现场｜09140c9｜Codex（沙僧）\n    文档：bb5d965 fc73ed6 5e371a2 cb86443 b4706af 62f6596 00ffe8c 281df98 bec8a16 9d8b320 fe5229c db57e57 8273b80 674d5c0 342cdc6 fb60540 e8926db 4ad62e2 98147f2 d9f7f5f d57b77e d2f470c 525c500\n  待交叉核查共 46 批，计入上限 22 批（只改文档、登记的不计；按提交尾注减去变更记录核查条目）\n  ⚠ 待交叉核查 22 批，超过 10 批上限：停派新车道、停新功能，先启动 Codex（沙僧）核查\n  ✓ JSON、链接、开发编号（dev.165）\n",
+    "stderr": ""
   },
   "initialDepsStopped": {
     "pid": 9808,
@@ -901,8 +904,11 @@
   },
   "updatedAt": "2026-10-25T01:15:11+02:00",
   "finalCleanup": {
-    "status": "pending",
+    "status": "done",
     "directory": "03_再刷重制_Godot/04_验证/本地结果/stage-review-50-phase2-final",
-    "scope": "精简入Git后仅删除此final临时目录，保留旧原版证据、mv_oracle/.sandbox、generated和整个工作树"
+    "scope": "精简入Git后仅删除此final临时目录，保留旧原版证据、mv_oracle/.sandbox、generated和整个工作树",
+    "evidenceCommit": "525c500b",
+    "removedFiles": 30,
+    "finishedAt": "2026-10-25T01:15:35+02:00"
   }
 }

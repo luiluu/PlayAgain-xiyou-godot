@@ -29,7 +29,7 @@
 - 最终精确12场：`xiyou_rules.tscn`、`xiyou_rules_d1b.tscn`、`xiyou_rules_d1c.tscn`、`xiyou_rules_d1d.tscn`、`xiyou_save_page.tscn`、`xiyou_battleback_save.tscn`、`xiyou_gear_query_cache.tscn`、`xiyou_battle_events.tscn`、`xiyou_warehouse.tscn`、`xiyou_event_compare.tscn`、`xiyou_lobby_shops.tscn`、`xiyou_stage50_review.tscn`。只跑选测，不跑全量，不改并行测试沿用指纹。
 - 机器摘要已保存同步测量结论、产物指纹、12场逐场TEST_RESULT／首次退出码／耗时及负控。12场397825/397825、整轮退出0，604.032秒，全部首次通过，无重跑／偶发／缓存复用。车道合并后的选测／每日全量由总装按三级检查安排。
 - 哪吒独占07检查／合并工具与rules过滤，不碰；本期已有测试共性验收.py的PageEvidenceErrorTests合并时保留即可。
-- 清理仅限本车道final临时目录，须先将精简结果入Git；其他旧原版证据、mv_oracle/.sandbox、generated和整个state-effects-2b树保留。12场结果已提取入摘要，final目录在精简提交后删除。
+- 清理仅限本车道final临时目录，须先将精简结果入Git；其他旧原版证据、mv_oracle/.sandbox、generated和整个state-effects-2b树保留。12场精简结果已入Git（525c500b），本车道final临时目录已清理；旧原版证据及整个工作树保留。
 
 ## 交接板
 
@@ -55,6 +55,8 @@
 
 - 沙僧57于2026-10-25 01:07 Paris沿用指定树接手，HEAD `d9f7f5f2`、工作区干净；五小时90%、周75%。共用登记只读，未合后来main、未创建或清理工作树、未reset／cherry-pick。
 - 原runId `8b5c19c54a284f3a9451c6ae4e9aafcc`于01:14 Paris完成，12场全部首次退出0；最终同步、原版补证、红绿负控均沿用已完成结果。
+
+- 最终收尾：12场精简结果先提交为`525c500b`，再仅清理本车道final临时目录；文档登记段重新检查退出0（见机器摘要finalDocs），未跑全量。
 
 ## 可优化
 
