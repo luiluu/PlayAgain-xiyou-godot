@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.166",
-  "sequence": 166,
-  "next": "dev.167",
-  "nextSequence": 167,
+  "current": "dev.167",
+  "sequence": 167,
+  "next": "dev.168",
+  "nextSequence": 168,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-warehouse",
+  "currentChange": "bajie-clothes-d34623",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
