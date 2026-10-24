@@ -1,0 +1,44 @@
+[
+  {
+    "source": "/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/bajie-train-f372aa/03_再刷重制_Godot/04_验证/本地结果/原版参照/大厅三界面/inlay_1_weapon.png",
+    "file": "inlay_1_weapon.png",
+    "sha256": "0c3f44d2ca8180424f9b4b97f57d8000cba129cc1ac4077764c02501ae1d0c2b",
+    "note": "既有dev.163/165证据副本；本轮尚未目视或复放，不代表新抽查通过"
+  },
+  {
+    "source": "/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/bajie-train-f372aa/03_再刷重制_Godot/04_验证/本地结果/原版参照/大厅三界面/godot/inlay_1_weapon.png",
+    "file": "godot/inlay_1_weapon.png",
+    "sha256": "d04131a3902eb3cb8c1b7bb53fe181759adad992aeebdb18cefd520b223ab909",
+    "note": "既有dev.163/165证据副本；本轮尚未目视或复放，不代表新抽查通过"
+  },
+  {
+    "source": "/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/bajie-train-f372aa/03_再刷重制_Godot/04_验证/本地结果/原版参照/大厅三界面/wh_3_withdraw_weapon.png",
+    "file": "wh_3_withdraw_weapon.png",
+    "sha256": "ed52e05b99fd021c24c34bc1a247236feccb691ac390310c538577b402953475",
+    "note": "既有dev.163/165证据副本；本轮尚未目视或复放，不代表新抽查通过"
+  },
+  {
+    "source": "/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/bajie-train-f372aa/03_再刷重制_Godot/04_验证/本地结果/原版参照/大厅三界面/godot/wh_3_withdraw_weapon.png",
+    "file": "godot/wh_3_withdraw_weapon.png",
+    "sha256": "34befa95b6c7906dcfcdf25fdd0a149b89d1f3972268c16ac6afb00f383a506d",
+    "note": "既有dev.163/165证据副本；本轮尚未目视或复放，不代表新抽查通过"
+  },
+  {
+    "source": "/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/bajie-train-f372aa/03_再刷重制_Godot/04_验证/本地结果/原版参照/大厅三界面/run.json",
+    "file": "run.json",
+    "sha256": "6bc8548ad07879af7b07346475478ac2db2626abf2df2a48efcabd995f9b42ba",
+    "note": "既有dev.163/165证据副本；本轮尚未目视或复放，不代表新抽查通过"
+  },
+  {
+    "source": "/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/bajie-train-f372aa/03_再刷重制_Godot/04_验证/本地结果/原版参照/大厅三界面/source_before.json",
+    "file": "source_before.json",
+    "sha256": "0858eb4d1c203c477a4fe66f859ab403bc0e7a7291dda61c51a37521a3e041b4",
+    "note": "既有dev.163/165证据副本；本轮尚未目视或复放，不代表新抽查通过"
+  },
+  {
+    "source": "/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/bajie-train-f372aa/03_再刷重制_Godot/04_验证/本地结果/原版参照/大厅三界面/source_after.json",
+    "file": "source_after.json",
+    "sha256": "0858eb4d1c203c477a4fe66f859ab403bc0e7a7291dda61c51a37521a3e041b4",
+    "note": "既有dev.163/165证据副本；本轮尚未目视或复放，不代表新抽查通过"
+  }
+]
