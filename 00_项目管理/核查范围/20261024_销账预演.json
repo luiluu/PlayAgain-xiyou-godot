@@ -1,5 +1,6 @@
 {
-  "draftReviewEntries": 22,
+  "cutoff": "33d39d06",
+  "draftReviewEntries": 36,
   "pendingCodexAfterApplyingDraft": [],
   "reservedForClaude": [
     {
@@ -108,7 +109,103 @@
       ],
       "executor": "Codex",
       "docOnly": false
+    },
+    {
+      "label": "完成旧截点22项核查与宠物遮盖反例，保存并发新增14批待审",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "4266e01"
+      ],
+      "executor": "Codex",
+      "docOnly": false
+    },
+    {
+      "label": "保留原版画面身份与修后专项精简证据，接续并发新增核查",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "4fd089f"
+      ],
+      "executor": "Codex",
+      "docOnly": true
+    },
+    {
+      "label": "修复2648e18核查问题：原版截图先关工坊层，禁止遮挡画面假通过",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "1a938bb"
+      ],
+      "executor": "Codex",
+      "docOnly": false
+    },
+    {
+      "label": "续批核查：保留24态原版画面摘要，补七个专项停音与真实等待",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "3999e01"
+      ],
+      "executor": "Codex",
+      "docOnly": false
+    },
+    {
+      "label": "修复9b806e8核查问题：雪粒子圆心半径对齐原版绘图参照",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "87e01f5"
+      ],
+      "executor": "Codex",
+      "docOnly": false
+    },
+    {
+      "label": "修复af5e600核查问题：实验室回程显式拒绝传送门，取证显式绘制视口",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "dee90b2"
+      ],
+      "executor": "Codex",
+      "docOnly": false
+    },
+    {
+      "label": "修复e3db221核查问题：清邀请函仍可能出门，要塞回程显式选择离开",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "fe91537"
+      ],
+      "executor": "Codex",
+      "docOnly": false
+    },
+    {
+      "label": "事件参照按审查截点校正：1798共同项全同，既有原版异常按原守卫保留",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "bc0dab1"
+      ],
+      "executor": "Codex",
+      "docOnly": true
     }
   ],
-  "simulation": "只在内存把交付单核查条目加入解析，没有写共用变更记录。"
+  "simulation": "仅在内存加入交付草稿，没有改共用变更记录；标题不使用ASCII分支名作销账范围，避免覆盖之后同名分支的提交。"
 }
