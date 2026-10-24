@@ -344,6 +344,13 @@ def run_probes(log, cache=None):
         keys[command[0]] = key
         units[command[0]] = cache.units(command) if cache else None
         todo = cache.plan(command, outputs, key, units[command[0]]) if cache else None
+        issue = getattr(cache, 'shard_issues', {}).get(command[0]) if cache else None
+        if issue:
+            line = 'SHARD_OFF ' + json.dumps(dict(issue, probe=command[0], hint='读取面与审过的不同，本轮不按单元增量；'
+                                                 '核对它仍只读允许的产物后把 incremental_sync.GENERATED_SHARD_AUDITS 改成 reads:<上面的值>'),
+                                            ensure_ascii=False)
+            log.write(line + '\n')
+            print(line, flush=True)
         if todo == []:
             reused.append(command[0])
             cache.record(command, outputs, key, units[command[0]])
