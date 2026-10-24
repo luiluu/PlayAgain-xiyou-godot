@@ -1,8 +1,8 @@
 # 交付：codex/state-effects-2g
 
 - 车道／工作者：框架／沙僧（Codex）
-- 状态：进行中
-- 本次独立可合并范围：资源刷新前置、预览克隆剥离生命周期域、607／609／857 三个 Battle TP 整块；**不是五块 TP 整期完成**。
+- 状态：进行中（WIP；用户2026-10-24改为先做50%阶段审查，2g往后排）
+- 本次保留的WIP范围：资源刷新前置、预览克隆剥离生命周期域、607／609／857 三个 Battle TP 整块；**不是五块 TP 整期完成**。
 - 工作树：沿用 `.claude/worktrees/state-effects-2b`，旧未入 Git 原版证据必须保留，合并后不要清理整个工作树。
 - 起点：先 fetch，从 main `2fba4b52`（dev.164）新建；交付前已合 main `7fc0c310`（dev.165），无冲突并重新导入。
 
@@ -15,7 +15,7 @@
 - formula_context 的影子克隆明确跳过 lifecycle_context 与状态来源，保留其他对象值的拒绝守卫；已有结果槽的生命周期预览可执行且不写真实资源、状态、缓存、随机流、诊断、结果槽或观察者。actor.gd 只改 add_state／资源刷新；XTraining.param_bonus 原样保留。
 - 转换器仅接受完整 Battle `user.gainTp(200);`／`user.gainTp(50);` 的 token 签名；未翻译 **444→441**。1334／1336 Apply 仍为 JS（见停手边界）。
 - 新专项逐项比较原版 TP 边界：140 条直接执行、4 条重加、8 条真实 Apply guard、14 条被动上限与4条抵抗状态边界，再比开战顺序与作用域隔离，共537项。Apply 的未来 op 仅在测试中临时替换后还原，不当作生产翻译完成。
-- 验证：专项验收运行中，不能据此合并；不运行全量检查，不复核本人的完成度。
+- 验证：最终13场中12场通过，公式资源专项906/908，2项失败，**不可合并**；不运行全量检查，不复核本人的完成度。
 - 未完成：五块中的两个 Apply、完整预览的空结果槽边界、期二两处接线及期三；未动 P2-1 异化 ready。
 
 ## 验证
@@ -29,7 +29,7 @@
 
 ## 按用户停手条件留下的接口
 
-1. **`core/formula_execution.gd:48～50`**：预览复制旧结果时调用 `resource_context.result(a/b)`，该读法会在真实域注册空槽。需要改为只读读取 slots，缺槽用 `XResourceContext.empty_result()`，或在资源层提供 peek_result 后调用；不能放宽影子克隆的detached守卫。此文件未交接，本批未改，因此不声称所有预览入口隔离完成。
+1. **`core/formula_execution.gd:48～50`**：预览复制旧结果时调用 `resource_context.result(a/b)`，该读法会在真实域注册空槽。需要改为只读读取 slots，缺槽用 `XResourceContext.empty_result()`，或在资源层提供 peek_result 后调用；不能放宽影子克隆的detached守卫。复现入口：空 `resources`、a/b绑定生命周期域后，调用 `XFormulaExecution.run_item(XDB.rec("Skills", 857), a, b, [], {}, false, null, resources)`，真实slots从0变2。此文件未交接，本批未改，因此不声称所有预览入口隔离完成。
 2. **地图／菜单状态宿主**：`core/mv_event_core.gd` 的313仍直调 add_state／remove_state。需要宿主拥有一次显式XResourceContext，以旧runtime_result种槽，经 add_state_with_context／remove_state_with_context 调用，结束publish并把journal／结束快照保存到操作结果；嵌套复用同域、不能无故clearResult。菜单道具等入口使用战斗结算时沿用行动域；直接附加的入口也须交接相同接口。不能只接战斗就把1334／1336全局标为已支持。
 3. 未来应一并盘点 `battle/action_sequence.gd` 的直接 remove_state、`core/cat.gd` 直接增删、`core/power.gd` 的开战状态预演；这些不在本批独占。本批只交Battle三个完整块，不自行扩到上述文件。
 
@@ -47,3 +47,11 @@
 
 - `dc65ca43` 开工范围；`aeb46e8a` 资源域与三块Battle草案；`e6002317` 原版刷新尾部与夹具修正；`593a4da` 合main dev.165。
 - 文档检查点 `a2fb0e1a`／`fd36e95f`；最终交付另见HEAD。
+
+## 2026-10-24 接到阶段审查后的保存现场
+
+- 最终长任务已结束：runId `26af575857bb41d28809e002ab3b4a1d`，2026-10-24 15:46:22～16:12:19 Europe/Paris，exit1，含排槽1556秒。12/13场通过；formula_effects为906/908，失败 `boundary.capState_buffs.after` 和 `.journal`，首次与单跑重跑均失败，不是偶发，未放宽参照。
+- 差异：阵亡清掉增加MP上限的状态后，Godot在嵌套refresh中先把MP1500夹到1000，再扣51得949；原版第一次保持1500，下一setter才夹到1000。已定位当前 `_adding_state` 基础夹值guard只排除XActor，通用XBattler仍进入基础夹值；续接时按原版最终别名链修正“除XEnemy外的基类add锁分支”，重跑formula_effects与TP矩阵后再判断能否交付。当前**没有**先改成未经专项确认的修复。
+- 其余12场：enemy_book52、floor_run_c560、formula_equipment1804、formula_program43458、formula_rest1352、formulas7、review13584、settlement11、state_effects19949、state_effects_tp537、troop_events6574、troop_events_b6450，均全过。Python翻译边界8/8。
+- 用户新指令：先做 `codex/stage-review-50`，固定审查d287ea37之后至7fc0c310；审查交付后再接本分支。故本分支保持WIP、不可合并，不推进期二／期三。未翻译441只表示当前WIP产物，不入main完成度。
+- 本轮新增的临时输出目录state-effects-2g、临时场景与临时HOME已清理；旧state-effects-2e／2f及其他未入Git原版证据完全保留。合并／复用时不要删除工作树。
