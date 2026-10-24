@@ -1,6 +1,6 @@
 # 交付：codex/stage-review-50-phase2
 
-- 车道／工作者：阶段审查／沙僧（Codex，重制_沙僧_56）
+- 车道／工作者：阶段审查／沙僧（Codex，重制_沙僧_57）
 - 状态：进行中
 - 固定范围：`d287ea37`不含至`7fc0c310`含（dev.165），927提交、516净路径，不论作者。未合后来main，reach3／dev.166及之后不在本期。
 - 一期`codex/stage-review-50`的`62a508e0`已独立可合并，承接①原版抽查与⑤进度；本期完成②代码、③测试、④登记。总装可先合一期再合本期。
@@ -64,3 +64,5 @@
 - 后续新顺序仍二期审查→四零散→2g→rng-compare-review→actor-bonus→passive-content→race-battle。check-tiers归哪吒，沙僧跳过，核查积压暂后。四零散单独分支、不夹2g。下一期已只读定位：battle/battle_logic.gd:244 skill_cost；core/battler.gd:287实际死亡转移；core/enemy_book.gd:94已有计数接口，不能在对尸体重复观察处无条件记数；cat_probe.cjs:216及xiyou_cat.gd:330旧tpGap须去。冻结dsPassiveSkill.js:1823／1853：仅actor，汇总All／Zj(stype1)／Mf(stype2)／技能N，折扣只封顶100、不夹负，基础消耗后乘再floor；自身缓存顺序仍须按原版取证。b3ab53e6的冻结参照在js/codex/runtime/installDamageElementRuntime.js:117 ownBonus。F31上限尚未定位，不把formula_program深度64误当该项。未开始下一期实现。
 - 2g原分支bf585fdc，先读其交付单；五TP块13专项12过，formula_effects两capState_buffs待修：通用add_state锁应除XEnemy外生效；另做formula_context影子克隆剥离运行时域和生命周期预览。XParamPlus／mv_param_plus复用，actor末尾XTraining挂点保留。
 - 最近额度五小时86%、周74%，95%必须WIP收尾停；上下文接力按用户已授权同工作区新聊天。所有本轮文件命令显式workdir=state-effects-2b，未改main、未创建／清理树、未reset/cherry-pick。
+
+- 沙僧57于2026-10-25 01:07 Paris沿用指定树接手，HEAD d9f7f5f2、工作区干净；五小时90%、周75%。确认唯一最终12场runId未变且仍running，已用等待任务.sh前台续等，未重启测试、未重同步、未改并发及共用登记。
