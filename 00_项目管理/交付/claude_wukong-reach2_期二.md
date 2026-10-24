@@ -32,3 +32,13 @@
 ## 本分支提交
 
 - 见 `git log main..claude/wukong-reach2`
+
+## 追加：超强者获取限制（合并后 xiyou_shop_buy 失败的返工）
+
+## 2026-10-24 【Claude·悟空_53·未经Codex检验】超强者伙伴号角／角色限地狱及以上难度获取（dev.待定）
+
+- 原因：Map139 等新商店带来的新用例里，伙伴号角 245（女儿国王）、254（天海麒麟星）、274（苍龙破晓）、277（天剑 非天）在原版 exact／rich 状态下不可买，重制版可买。冻结源 `js/codex/runtime/installBossDifficultyRuntime.js` 的规则：超强者（`superStrongIds` 46 人）仅限地狱及以上难度获取，`superStrongEnabled`＝持久挑战开关 2494／2489／2487／2483／2461／2462／2463 任一开，或难度 ID 9（混沌）；`canAcquireItem(item)＝canAcquireId(recruitActorId(item))`，`recruitActorId` 依次取新原生号角表（2902→167 等 11 项）、备注 `<CodexRecruitActor: n>`、效果公共事件里唯一的一条「加入队伍」(129)。
+- 实现（`core/item_marks.gd` 新增 `super_enabled`、`can_acquire_actor`、`recruit_actor_id`、`can_acquire_item`、`acquisition_notice`）：① 商店 `can_buy` 拦（Window_ShopBuy.isEnabled）；② `XState.gain_item` 得到数量大于 0 时不给（Game_Party.gainItem，原版不弹提示）；③ `XState.add_actor` 对未持有的超强者拦下并弹「超强者仅限地狱及以上难度获取。」（addActor；已持有的再加入不拦）；④ 物品页「使用」`_usable` 灰（meetsItemConditions）。冻结数据里招募角色在超强者名单内的号角共 45 件。
+- 未做：各 `Codex*.recruit()` 入口（渡鸦等新原生接入，重制版无对应入口）、物品／商店帮助窗的「仅限地狱及以上难度获取与招募」文字（重制版是悬停说明卡，需界面参照）、战斗里的物品条件（`battle_logic.gd` 是沙僧独占，没动）。
+- 新专项 `xiyou_super_acquire`（27 项）：招募角色解析、45 件计数、默认难度拦商店／得到／入队，七个挑战开关与难度 9 放行，减少与已持有不拦。`xiyou_item_use` 的「全部可用」扫描先开挑战开关 2494（否则 45 件号角按原版规则灰着）。
+- 验证：xiyou_shop_buy 9613/9613；achievement、actor_book、alien_workshop、event_compare、flow、hangup、imported_balance、item_*、lobby_shops、orb*、party、save_page、shop_*、super_acquire、floor_* 共 46 个场景全过。未跑全量（全量 168 个场景在 worktree 里 18 分钟才完成 8 个）。

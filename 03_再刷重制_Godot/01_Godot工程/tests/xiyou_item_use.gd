@@ -51,6 +51,9 @@ static func ce_items() -> Array:
 
 func _run() -> void:
 	var s := _state()
+	# 超强者伙伴号角在地狱以下「使用」灰（installBossDifficultyRuntime.meetsItemConditions，见 xiyou_super_acquire）；
+	# 这里扫「持有时能不能用」要先放开超强者（挑战开关 2494），否则 45 件号角灰着
+	s.set_switch(2494, true)
 	var items := ce_items()
 	check("ce_items_count", items.size() == 1029, items.size())
 	var page := XItemScene.new()
