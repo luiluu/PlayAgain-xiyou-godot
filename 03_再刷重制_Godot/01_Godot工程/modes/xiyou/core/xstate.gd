@@ -623,4 +623,8 @@ static func from_dict(d: Dictionary) -> XState:
 		s.unlocked_maps[4] = true
 	XGlobalVars.apply(s)  # extractSaveContents 之后：跨存档变量盖掉档里的值
 	_become_current(s)
+	# setup时曾缓存空状态；恢复完当前存档后重建效果快照，不额外夹HP／MP。
+	for a in s.actors.values():
+		a.param_mark_dirty()
+		a.param_refresh()
 	return s
