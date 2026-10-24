@@ -551,6 +551,12 @@ func _plugin_command(line: String) -> void:
 		"PHWarehouse":
 			if XWarehouse.plugin_command(state(), args):  # PH_Warehouse create／remove（show 交给宿主）
 				return
+		"Autosave", "EnableAutosave", "DisableAutosave":
+			# YEP_X_Autosave：「Autosave」存到最近用过的存档位（没手动存过就不存）；Enable／Disable 只开关该插件的选项，
+			# 重制版没有这个选项，所以只保留存档动作（原版弹的「存档成功！」小字不做）
+			if args[0] == "Autosave" and XSave.current_slot > 0:
+				XSave.save(XSave.current_slot)
+			return
 		"StarEIBook":
 			# Star_EquipInlayBook：GetAll／RomGet 解锁图鉴条目。正式版只在打开图鉴前 GetAll，图鉴总是全部列出（见 XInlayBook），不记解锁
 			if args.size() >= 2 and ["getall", "romget"].has(args[1].to_lower()):
