@@ -275,7 +275,14 @@ func fixed_save_slot() -> int:
 	return 0
 
 ## Game_Party.addActor（YEP_PartySystem）：加入队尾；出战栏位有空位时填入第一个空位并重排
+## installBossDifficultyRuntime 在外层前后各清一次出战栏里的超强者（XItemMarks.enforce_party）
 func add_actor(id: int) -> void:
+	XItemMarks.enforce_party(self)
+	_add_actor(id)
+	XItemMarks.enforce_party(self)
+
+
+func _add_actor(id: int) -> void:
 	if XDB.rec("Actors", id).is_empty():
 		return
 	# installBossDifficultyRuntime：未持有的超强者在地狱以下不能入队（提示后不加）
@@ -302,10 +309,13 @@ func remove_actor(id: int) -> void:
 
 
 ## initializeBattleMembers：按队伍前 5 人建立出战栏位（不足补 0）
+## （前后各清一次超强者，同 add_actor）
 func init_battle_slots() -> void:
+	XItemMarks.enforce_party(self)
 	battle_slots = []
 	for i in MAX_BATTLE_MEMBERS:
 		battle_slots.append(party[i] if i < party.size() else 0)
+	XItemMarks.enforce_party(self)
 
 
 func _ensure_slots() -> void:
@@ -313,9 +323,15 @@ func _ensure_slots() -> void:
 		init_battle_slots()
 
 
-## rearrangeActors：出战栏位（按栏位顺序）在前，其余按角色编号升序
+## rearrangeActors：出战栏位（按栏位顺序）在前，其余按角色编号升序（前后各清一次超强者，同 add_actor）
 func rearrange_actors() -> void:
 	_ensure_slots()
+	XItemMarks.enforce_party(self)
+	_rearrange_actors()
+	XItemMarks.enforce_party(self)
+
+
+func _rearrange_actors() -> void:
 	var battle: Array[int] = []
 	for id in battle_slots:
 		if int(id) > 0 and party.has(int(id)):
@@ -339,9 +355,10 @@ func party_ability(id: int) -> bool:
 	return battle_members().any(func(a): return not a.traits_with_id(64, id).is_empty())
 
 
-## YEP Game_Party.battleMembers：出战栏位里的非空角色（栏位顺序）
+## YEP Game_Party.battleMembers：出战栏位里的非空角色（栏位顺序）；先清掉出战栏里的超强者（XItemMarks.enforce_party）
 func battle_members() -> Array:
 	_ensure_slots()
+	XItemMarks.enforce_party(self)
 	var out := []
 	for id in battle_slots:
 		if int(id) > 0 and party.has(int(id)):
