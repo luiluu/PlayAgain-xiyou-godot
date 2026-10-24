@@ -8,6 +8,9 @@
 （含未提交的登记改动）存成 refs/lane-merge/aborted-* 备份，再退回本批开始前的 main，各车道工作树不动，
 之后把没问题的车道重新合（可再攒一批），出问题的那条在自己的工作树修好再交付。
 
+白天合并可用 --finish --affected 只跑选测（三级检查②，基准为本次（或本批第一条）合并前的 main），通过后照常提交、清理、推送；
+收尾提交带「验证: 选测」尾注，当天全量前算选测已验；全量仍是不加 --affected 的 --finish。
+
 车道交付后在同一工作树接着做（换新分支、新提交或未提交改动）不拦合并：只跳过该工作树的清理，交付分支不再是当前分支就照删。"""
 import argparse
 import hashlib
@@ -366,7 +369,7 @@ def abort_batch(root, folder):
     print('接着把没问题的车道重新合（可再 --finish --batch 攒一批）；撤出的那条在自己的工作树修好、git merge main 后再交付。', flush=True)
 
 
-def finish(root, state, state_file, executor, batch=False):
+def finish(root, state, state_file, executor, batch=False, affected=False):
     if state['phase'] not in ['prepared', 'committed']:
         raise RuntimeError('先运行准备合并，再手工登记，最后 --finish')
     if git(root, 'rev-parse', 'HEAD') != state['head']:
@@ -400,8 +403,13 @@ def finish(root, state, state_file, executor, batch=False):
         if batch:
             print('本批延后检查：等最后一条不加 --batch 的 --finish 统一跑 检查.sh --oracle', flush=True)
         else:
+            check = [ENV / '检查.sh', '--oracle']
+            if affected:
+                # 选测（三级检查②）：基准取本批第一条合并前的 main，攒着的几条一并覆盖
+                pending_batch = load_batch(state_file.parent)
+                check += ['--affected', (pending_batch[0] if pending_batch else state)['base']]
             try:
-                run(root, [ENV / '检查.sh', '--oracle'])
+                run(root, check)
             except subprocess.CalledProcessError:
                 report_batch(root, load_batch(state_file.parent), state)
                 raise
@@ -419,8 +427,10 @@ def finish(root, state, state_file, executor, batch=False):
             run(root, ['git', 'add', '--', *sorted(remaining)])
         actor = 'Claude（唐僧）' if executor == 'Claude' else 'Codex（沙僧）'
         reviewer = 'Codex' if executor == 'Claude' else 'Claude'
-        run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾',
-                   '-m', '执行者: ' + actor + '\n核查: 待' + reviewer])
+        trailer = '执行者: ' + actor + '\n核查: 待' + reviewer
+        if affected and not batch:
+            trailer += '\n验证: 选测（基准 %s，当天全量前算选测已验）' % check[-1][:9]
+        run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾', '-m', trailer])
         state.update(phase='committed', head=git(root, 'rev-parse', 'HEAD'), batch=batch)
         save(state_file, state)
     folder = state_file.parent
@@ -517,6 +527,8 @@ def main(argv=None):
                        help='本批最后的检查失败、要撤出某条车道时：存备份后退回本批开始前的 main，车道工作树都保留')
     ap.add_argument('--batch', action='store_true',
                     help='--finish 时本条先不跑检查、不清理、不推送，记入本批；最后一条不加它统一检查')
+    ap.add_argument('--affected', action='store_true',
+                    help='--finish 时只跑选测（检查.sh --oracle --affected <本次合并前的 main>），通过后照常提交、清理、推送；不和 --batch 同用')
     ap.add_argument('--also', action='append', default=[], metavar='路径',
                     help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则），可重复')
     a = ap.parse_args(argv)
@@ -539,6 +551,8 @@ def main(argv=None):
             raise RuntimeError('要给任务名（只有 --abort-batch 不用）')
         if a.batch and not a.finish:
             raise RuntimeError('--batch 只和 --finish 一起用')
+        if a.affected and (not a.finish or a.batch):
+            raise RuntimeError('--affected 只和 --finish 一起用，不配 --batch（批末那条不加 --batch 时加 --affected，覆盖整批）')
         if a.dry_run:
             print(json.dumps(plan(root, a.task), ensure_ascii=False, indent=2)); return 0
         folder.mkdir(exist_ok=True)
@@ -567,7 +581,7 @@ def main(argv=None):
             if a.also:
                 state['also'] = sorted(set(state.get('also', [])) | set(a.also))
                 save(state_file, state)
-            finish(root, state, state_file, a.executor, a.batch)
+            finish(root, state, state_file, a.executor, a.batch, a.affected)
         else:
             pending = load_batch(folder)
             if pending and not any(x['task'] == a.task for x in pending):
