@@ -172,6 +172,7 @@ P('- **扫描范围**：')
 P('  - 已算作来源：固定地图的 201 传送（地图事件页、公共事件）、新游戏起点、公共事件调用链（117，含物品／技能效果 44、切片敌群战斗页、自动／并行触发的公共事件，一律按“可能调用”宽算，共 '+str(INDIRECT_N)+' 个）；脚本 355/655 里的 reserveTransfer（冻结源中 0 处）。')
 P('  - **没覆盖**：变量指定的 201（冻结源中 0 处，若有则目标未解析）；脚本传送的其它写法（setupTransfer 等）与变量拼出的地图号；插件传送（MapTransferPlugin 菜单只按配置做了“有无条目”判断，未核解锁条件与传送道具；其它插件如死亡回城、NGP 起点等未逐个分析）；敌群战斗页以外的事件（如状态／技能里的脚本）；事件页条件与开关使其永不触发的情形（本脚本不看条件，所以对“可达”偏宽，对“未发现来源”偏窄）。')
 P('  - 因此“未发现来源”只是一条线索，不据此排除内容、认定死图或扣减总工作量；“缺指令”只按指令码分支是否存在判断，未证 355 脚本与各插件参数均可翻译。')
+P('- **真实可达性（带条件的不动点，见文末「真实可达性逐图结论」）**：上面“静态扫描没找到来源”的口径偏宽也偏窄；按开关／变量／独立开关能否被写入重算后，原版里的传送途径只有固定 201 与传送菜单（菜单不产生新入口），结论以文末那一节为准。')
 cls=collections.Counter(classify(by[m]) for m in by)
 P('- 按名称／事件分类：'+'、'.join(f'{k} {v}' for k,v in cls.items())+'。')
 P('- 进度账「楼层、副本与剧情内容」的分母若按全部地图数 231 计，当前实际 '+f'{len(slice_maps)}/{len(maps)}；若扣除疑似测试／备份与空图（{sum(1 for m in by if classify(by[m])!="正常内容")} 张）后为 {len(slice_maps)}/{len(maps)-sum(1 for m in by if classify(by[m])!="正常内容")}。\n')
@@ -228,3 +229,79 @@ for m in sorted(cand,key=key):
     P2.append(f'| {m} | {r["name"] or r["disp"]} | {"、".join("Map%d EV%d"%x for x in srcs[:4])} | {"、".join(names_)} | {r["nev"]}／{r["npages"]} | {nt} | {mi or "—"} |')
 open(OUT,'a',encoding='utf-8').write('\n'.join(P2)+'\n')
 print('cand maps',len(cand))
+
+# ---------- 第四部分：带条件的真实可达性（reach.py）----------
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent))
+import reach
+R_reached,R_parent,R_lc,R_lt=reach.fixpoint()
+targets=sorted(set(orphans)|set(cand))
+def evname(m,ev):
+    e=[x for x in maps[m]['events'] if x and x['id']==ev]
+    return e[0]['name'] if e else ''
+def src_txt(s):
+    if s.kind=='ce': return 'CE%d'%s.m
+    return 'Map%d EV%d「%s」第%d页'%(s.m,s.ev,evname(s.m,s.ev),s.pg+1)
+verdict={}
+for m in targets:
+    r=by[m]; cl=classify(r)
+    if m in R_reached:
+        ch=reach.route(m,R_parent,slice_maps)
+        notes=[n for _,ns in ch for n in ns]
+        root=ch[0][0]
+        verdict[m]=('条件可达' if notes else '可达',ch,notes,root)
+    else:
+        bl=reach.blockers(m,R_reached,R_lc,R_lt)
+        kind='测试或备份图' if cl=='疑似测试／备份' else ('确认不可达（空图）' if cl=='空图（无事件）' else '确认不可达')
+        verdict[m]=(kind,None,bl,None)
+cnt_v=collections.Counter(v[0] for v in verdict.values())
+Q=[]
+Q.append('\n## 真实可达性逐图结论（悟空_52，2026-10-24）\n')
+Q.append('由 `00_项目管理/盘点脚本/reach.py` 对冻结正式源做带条件的不动点（见该文件开头说明），覆盖上面「静态扫描没找到可达来源」与「来源在已接地图、没放进 keepEvents」两张表的并集 '+f'{len(targets)} 张。\n')
+Q.append('**玩家能把角色传到另一张地图的途径，冻结源里只有两条**：地图事件与公共事件里的固定地图 201（变量指定的 201、敌群页里的 201 均为 0 处；脚本传送只有 MapTransferPlugin 自己的 reserveTransfer；NGP_Final_Complete 未启用，My_FastTravel 不在 plugins.js 里），以及 MapTransferPlugin 传送菜单。菜单的条目 canTransfer 为 true 才能传，hidden 的条目进入过一次会自动解锁（performTransfer 钩子），所以菜单只是已进过地图的快捷方式，**不会带来新入口**；也没有任何事件用 UnlockMapTransfer 直接解锁。\n')
+Q.append('口径：从新游戏起点出发，一条 201 可走当且仅当它所在地图可达、事件页条件与外层条件分支“可能满足”（开关要 ON 需有处写入，变量比较在初值 0 不成立需有处写入，独立开关需同事件置 ON；持有物品／角色等不核实际能否拿到，列为条件）。写入处只认可达地图／公共事件里的。其它限定见「扫描范围」，特别是：未核事件页之间的先后与具体数值、变量值可能来自旧存档或 MV 版插件之外的路径。\n')
+Q.append('统计：'+'、'.join(f'{k} {v}' for k,v in sorted(cnt_v.items()))+f'（整体：全部 {len(maps)} 张里原版可达 {len(R_reached)} 张）。\n')
+bad_slice=sorted(slice_maps-R_reached)
+if bad_slice:
+    Q.append('**切片已接但原版算不可达**：'+'、'.join(f'{m} {names.get(m,"")}' for m in bad_slice)+'。这是本模型的发现而非接入问题：十二层冰封洞穴(23)只能从 Map34 EV15 的 BOSS 页在变量152「12层随机」=1 时进入，而该变量在冻结源里只有读取、没有任何写入（含插件），公共事件 94（12层冰封洞窟）也无物品／技能／状态／菜单调用——原版里玩家永远走 65 十二层:苍白雪岭这条线。同类的七层科维努斯镇(11)与 7 层猪猪农场(61) 同理（公共事件 45 无人调用，Map142／143 入口在不可达图里）。若变量由旧存档带入则另当别论，需用户确认是否保留 23。\n')
+Q.append('| 图 | 名称 | 结论 | 入口（由外向里）与条件 / 卡住的原因 | 事件／页 | 未入切片敌群 | 缺指令／插件 |')
+Q.append('|---|---|---|---|---|---|---|')
+for m in targets:
+    r=by[m]; miss,pm=unsupported(r)
+    v,ch,notes,root=verdict[m]
+    nt=len([t for t in r['troops'] if t not in slice_troops])
+    mi='、'.join(f'{k}×{n}' for k,n in sorted(miss.items()))+(' 插件:'+','.join(pm) if pm else '')
+    if ch is not None:
+        ent=' → '.join(src_txt(s) for s,_ in ch)
+        detail=ent+('；条件：'+'；'.join(sorted(set(notes))) if notes else '')
+        if root.kind=='map' and not kept(root.m,root.ev) and root.m in slice_maps: detail+='（入口事件现被 keepEvents 挡掉）'
+    else:
+        detail=('；'.join(notes) if notes else '无任何 201 指向')
+        if r['nev']==0: detail+='；空图'
+    nm=r['name'] or r['disp'] or '（未登记）'
+    Q.append(f'| {m} | {nm} | {v} | {detail} | {r["nev"]}／{r["npages"]} | {nt} | {mi or "—"} |')
+# 入口簇：同一个“要放开的入口”下面带出哪些图
+clusters=collections.defaultdict(list)
+for m in targets:
+    v,ch,notes,root=verdict[m]
+    if ch is not None: clusters[(root.kind,root.m,root.ev)].append(m)
+Q.append('\n### 建议接入顺序（按“要放开的入口”分簇，成本低、价值高在前）\n')
+Q.append('一个簇 = 放开同一个入口事件后能带出的图（含入口之后一层层的地图）。成本 = 缺指令／插件种数、敌群数、事件数；价值 = 簇内正常内容图数。只列真实可达的簇；确认不可达与测试图不列。\n')
+Q.append('| 序 | 入口（已接地图事件） | 带出的图 | 正常内容图 | 事件合计 | 未入切片敌群 | 缺指令／插件 | 入口条件 |')
+Q.append('|---|---|---|---|---|---|---|---|')
+def cluster_cost(item):
+    (k,mm,ev),ms=item
+    miss=collections.Counter();pms=set();troops=set();nev=0
+    for m in ms:
+        a,b=unsupported(by[m]); miss.update(a); pms|=set(b)
+        troops|={t for t in by[m]['troops'] if t not in slice_troops}; nev+=by[m]['nev']
+    return (len(miss)+len(pms),len(troops),nev),miss,pms,troops,nev
+ordered=sorted(clusters.items(),key=lambda it:(cluster_cost(it)[0],-len(it[1])))
+for i,((k,mm,ev),ms) in enumerate(ordered,1):
+    c,miss,pms,troops,nev=cluster_cost(((k,mm,ev),ms))
+    good=[m for m in ms if classify(by[m])=='正常内容']
+    ent=('CE%d'%mm) if k=='ce' else 'Map%d EV%d「%s」'%(mm,ev,evname(mm,ev))
+    mi='、'.join(f'{a}×{b}' for a,b in sorted(miss.items()))+(' 插件:'+','.join(sorted(pms)) if pms else '')
+    cond=sorted(set(n for m in ms for n in verdict[m][2]))
+    Q.append(f'| {i} | {ent} | {"、".join(f"{m} {by[m]["name"] or by[m]["disp"]}" for m in ms)} | {len(good)} | {nev} | {len(troops)} | {mi or "—"} | {"；".join(cond[:4]) or "无"} |')
+open(OUT,'a',encoding='utf-8').write('\n'.join(Q)+'\n')
+print('reach',dict(cnt_v),'clusters',len(clusters))
