@@ -2,6 +2,8 @@ class_name XConfig
 extends RefCounted
 ## 西游界面配置（MV ConfigManager），与局内存档分开；默认值照正式引擎内存测量。
 ## 测试传入自己的 path_override；其余使用 XSave.dir_override 的测试只在内存改配置。
+## 截图模式（命令行带 -- --out=<目录>，只有专项取证会传）也只用内存默认值，不读写本机开发档的 options.json，
+## 免得「装备战力」等开关随开发者的设置变、不同机器截出来不一样（八戒_64）。
 
 static var path_override := ""
 static var _loaded_path := "<unloaded>"
@@ -32,7 +34,14 @@ const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反
 static func path() -> String:
 	if path_override != "":
 		return path_override
-	return "" if XSave.dir_override != "" else "user://modes/xiyou/options.json"
+	return "" if XSave.dir_override != "" or screenshot_mode() else "user://modes/xiyou/options.json"
+
+
+static func screenshot_mode() -> bool:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--out="):
+			return true
+	return false
 
 
 static func ensure_loaded() -> void:

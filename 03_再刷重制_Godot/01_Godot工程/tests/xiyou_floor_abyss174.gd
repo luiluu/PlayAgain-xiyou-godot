@@ -12,7 +12,7 @@ const ABYSS := {174: [551, 552, 553, 554, 555], 184: [640, 641, 642, 643, 644, 6
 const ABYSS_EXIT := {174: [34, 120, Vector2i(41, 1)], 184: [36, 180, Vector2i(22, 5)]}
 const UNKNOWN := 177
 const UNKNOWN_TROOPS := [584, 585, 586, 588, 587, 589]
-const TIMEOUT_MS := 90000
+const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}

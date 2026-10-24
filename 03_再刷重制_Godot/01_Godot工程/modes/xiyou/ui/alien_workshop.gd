@@ -8,23 +8,45 @@ extends Control
 ## 没有异化装备时右侧是获取说明；最后是可展开的「最近异化掉落」。Esc 关闭。规则在 XAlienation。
 ## 「配置异化」（期二）在详情下方展开「战前技能配置」：使用角色，再按词条给绑定队友／作用技能／借用武器／替换原生技能／两组借入技能；
 ## 原版是网页下拉框，这里用 OptionButton（节点树里是 select，记选项与当前值）。保存成功或取消就收起，保存失败留在原处并显示错误。
+## 外观（八戒_63 成对截图补）：原版另有 installGamePanelTheme 盖在工坊自带 CSS 上，实际画面是「游戏窗口」主题（与 XWebPanel 同一套）：
+## 暗底黑 0.5；面板底 #16161f、Window 皮肤边框 12px、内边距 16/20（面板 x100 宽 1080，内容 x132 宽 1016）；正文 18 号白字黑描边、行高 1.6；
+## h1 28／h2 22 粗体白、h3 18 粗体系统色；标题区下 1px 分隔线（下内距 10、下距 12）；资源条金字、黑 0.3 底、金 0.45 边、内距 12/14（下距 15）；
+## 说明 #c9ced8；收益 #98e598、代价 #ff8f86；按钮 17 号、黑 0.28 底、白 0.4 边、圆角 6、内距 9/12、高 47.2，
+## 合成／重抽／采用新／保存配置／确认类加青边（gp-primary），分解类红字红边（gp-danger），不可点整体 0.4；
+## 列表宽 33%（右 1px 分隔线、右内距 14），与详情间距 20；分解确认框暗红底红边；配置框黑 0.25 底、白 0.22 边、无内距。
+## 相邻按钮原版另有 margin-left 7（button+button）：操作行间距 8+7＝15、确认框里两键同一行间隔 7，照画；
+## 列表里第 2 个起也被右推 7 并撑出横向滚动条——O-087 不照搬，列表按钮左对齐、不出横向滚动条。
 
 signal closed
 
-const BACKDROP := Color("070912e8")
-const PANE := Color("151325")
-const PANE_BORDER := Color("72618d")
-const TEXT := Color("e9e5f3")
-const NOTE := Color("b8aec7")
-const BUTTON := Color("29233e")
-const BUTTON_BORDER := Color("76618e")
-const BUTTON_FOCUS := Color("473459")
-const SELECTED := Color("53385f")
-const SELECTED_BORDER := Color("c6a2df")
+const BACKDROP := Color(0, 0, 0, 0.5)
+const PANE := Color("16161f")
+const TEXT := XWebPanel.TEXT
+const NOTE := XWebPanel.MUTED
+const GOOD := Color("98e598")
+const BAD := Color("ff8f86")
+const PRIMARY := Color(160 / 255.0, 230 / 255.0, 235 / 255.0, 0.14)
+const SUMMARY_BACK := Color(0, 0, 0, 0.3)
+const SUMMARY_EDGE := Color(1, 211 / 255.0, 115 / 255.0, 0.45)
+const SECTION_BACK := Color(0, 0, 0, 0.25)
+const CONFIRM_BACK := Color(80 / 255.0, 20 / 255.0, 20 / 255.0, 0.45)
+const FIELDSET_EDGE := Color("665572")
 const ERROR := Color("ffb5ba")
 const ERROR_BACK := Color("512934")
 const SIZES := {"h1": 28, "h2": 22, "h3": 18}
-const BODY_SIZE := 17
+const BODY_SIZE := 18
+const BUTTON_SIZE := 17
+const BUTTON_H := 47.19                    # 17×1.6 ＋ 内距 9×2 ＋ 边 1×2
+const PANE_W := 1080.0
+const PANE_BORDER := 12.0
+const PANE_PAD := Vector2(20, 16)
+const LIST_W := 1016.0 * 0.33              # .alien-list width:33%（含右内距 14 与 1px 线）
+const PRIMARY_RE := "采用新|保存配置|合成|能量 →|应用到|使用1颗|开始抽取|确认"
+const DANGER_RE := "确认分解|分解为"
+## 优化 O-087：false（默认）列表按钮左对齐、不出横向滚动条；true 照原版 button+button 把第 2 个起右推 7，宽仍 100%，撑出横向滚动条
+static var list_indent_quirk := false
+## 优化 O-089：true（默认）打开／重画后焦点放在第一个按钮（不画框，方向键可直接走）；false 照原版不聚焦任何按钮（键盘先按 Tab）
+static var focus_first := true
 const PARAM_NAMES := ["生命", "法力", "物攻", "物防", "魔攻", "魔防", "速度", "幸运"]
 
 ## 选中的异化装备 uid：原版是工坊模块的变量，关掉再开、读档后都还记着（uid 对上才生效）
@@ -41,13 +63,11 @@ var root: Control
 var shown_selected := ""
 ## 最近一次 render 的节点树（屏上显示的就是它；测试读它、按它点按钮）
 var tree: Array = []
-var _font: Font
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	_font = XUI.font()  # 原版是系统字（PingFang SC）；系统字回退会缺字（如「敌」），用游戏字体
 	XUI.menu_background(self)
 	var back := ColorRect.new()
 	back.color = BACKDROP
@@ -534,29 +554,48 @@ func render(partial := false) -> void:
 	root = center
 	var pane: Dictionary = nodes[0]
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", _box(PANE, PANE_BORDER, 12, 22))
-	panel.custom_minimum_size = Vector2(minf(1080.0, size.x - 36.0), 0)
+	var frame := PaneFrame.new()
+	frame.set_content_margin(SIDE_LEFT, PANE_BORDER + PANE_PAD.x)
+	frame.set_content_margin(SIDE_RIGHT, PANE_BORDER + PANE_PAD.x)
+	frame.set_content_margin(SIDE_TOP, PANE_BORDER + PANE_PAD.y)
+	frame.set_content_margin(SIDE_BOTTOM, PANE_BORDER + PANE_PAD.y)
+	panel.add_theme_stylebox_override("panel", frame)
+	panel.custom_minimum_size = Vector2(minf(PANE_W, size.x - 36.0), 0)
 	center.add_child(panel)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.custom_minimum_size = Vector2(0, 0)
 	scroll.follow_focus = true  # 键盘移到下方的配置项时跟着滚
+	_scrollbar(scroll)
 	panel.add_child(scroll)
-	var box := _vbox()
+	var box := _vbox(10)
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(box)
 	for n in pane.children:
 		var c := _make(n)
 		if c != null:
+			# 标题区下距 12、资源条下距 15（其余段落 10＝行距）
+			var extra: int = {"alien-heading": 2, "alien-summary": 5}.get(str(n.get("class", "")), 0)
+			if extra > 0:
+				var m := MarginContainer.new()
+				m.add_theme_constant_override("margin_bottom", extra)
+				m.add_child(c)
+				c = m
 			box.add_child(c)
-	# 高度最多 96%（max-height:96vh，超出滚动）
+	# 高度最多 94%（主题 max-height:94vh，超出滚动）
 	await get_tree().process_frame
 	if not is_instance_valid(scroll):
 		return
-	scroll.custom_minimum_size.y = minf(box.get_combined_minimum_size().y, size.y * 0.96 - 44.0)
+	scroll.custom_minimum_size.y = minf(box.get_combined_minimum_size().y, size.y * 0.94 - (PANE_BORDER + PANE_PAD.y) * 2)
 	var first := _first_button(box)
-	if first != null:
-		first.grab_focus()
+	if first != null and focus_first:
+		# 原版重画后不聚焦任何按钮，焦点框只在键盘操作后画（:focus-visible）。这里仍把焦点放在第一个按钮，方向键可直接走，
+		# 但先不画框（hide_focus），键盘移动焦点后才显示（O-089）
+		first.grab_focus(true)
+	# 原版重画后停在顶部（键盘焦点跟随只在之后移动时滚）
+	await get_tree().process_frame
+	if is_instance_valid(scroll):
+		scroll.scroll_vertical = 0
 
 
 func _first_button(n: Node) -> Button:
@@ -569,31 +608,104 @@ func _first_button(n: Node) -> Button:
 	return null
 
 
+## 面板：底 #16161f（圆角 8、阴影 0 10 40 黑 0.65）＋ border-image：Window 皮肤 (96,0,96,96) 切 24 画进 12px 边，中间不画
+class PaneFrame extends StyleBox:
+	func _draw(ci: RID, rect: Rect2) -> void:
+		var bg := StyleBoxFlat.new()
+		bg.bg_color = PANE
+		bg.set_corner_radius_all(8)
+		bg.shadow_color = Color(0, 0, 0, 0.65)
+		bg.shadow_size = 20
+		bg.shadow_offset = Vector2(0, 10)
+		bg.draw(ci, rect)
+		var skin := XUI.skin()
+		if skin == null:
+			return
+		var s := 24.0
+		var b := PANE_BORDER
+		var xs := [[0.0, s, rect.position.x, b], [s, 48.0, rect.position.x + b, rect.size.x - b * 2], [72.0, s, rect.end.x - b, b]]
+		var ys := [[0.0, s, rect.position.y, b], [s, 48.0, rect.position.y + b, rect.size.y - b * 2], [72.0, s, rect.end.y - b, b]]
+		for xi in range(3):
+			for yi in range(3):
+				if xi == 1 and yi == 1:
+					continue
+				var x: Array = xs[xi]
+				var y: Array = ys[yi]
+				RenderingServer.canvas_item_add_texture_rect_region(ci, Rect2(x[2], y[2], x[3], y[3]), skin.get_rid(), Rect2(96 + x[0], y[0], x[1], y[1]))
+
+
+## 滚动条 8 宽、白 0.35 圆角 4，轨道透明
+static func _scrollbar(sc: ScrollContainer) -> void:
+	var grab := XWebPanel._box(Color(1, 1, 1, 0.35), Color(0, 0, 0, 0), 4, 0, Vector2(4, 0))
+	var bar := sc.get_v_scroll_bar()
+	for k in ["grabber", "grabber_highlight", "grabber_pressed"]:
+		bar.add_theme_stylebox_override(k, grab)
+	bar.add_theme_stylebox_override("scroll", StyleBoxEmpty.new())
+
+
 func _vbox(sep := 10) -> VBoxContainer:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", sep)
 	return v
 
 
-func _box(bg: Color, border: Color, radius := 7, pad := 12, width := 1) -> StyleBoxFlat:
-	var b := StyleBoxFlat.new()
-	b.bg_color = bg
-	b.border_color = border
-	b.set_border_width_all(width)
-	b.set_corner_radius_all(radius)
-	b.set_content_margin_all(pad)
+## 段落：白字黑描边、行高＝字号×1.6；标题粗体（h1／h2 字距 1）
+func _label(text: String, size_px := BODY_SIZE, color := TEXT, bold := false) -> Label:
+	var l := XWebPanel._para(text, size_px, color, size_px * 1.6, bold)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.mouse_filter = Control.MOUSE_FILTER_PASS
+	return l
+
+
+## 按钮：XWebPanel 主题（内距 9/12、高 47.2）；gp-primary 青边浅青底、gp-danger 红字红边；选中项光标色；不可点整体 0.4
+func _button(text: String, cls := "", disabled := false) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.disabled = disabled
+	XWebPanel.style_button(b, Vector2(12, 9))
+	b.custom_minimum_size.y = BUTTON_H
+	var pad := Vector2(12, 9)
+	if cls == "selected":
+		b.add_theme_stylebox_override("normal", XWebPanel._box(XWebPanel.CURSOR, XWebPanel.CURSOR_EDGE, 6, 1, pad))
+	elif RegEx.create_from_string(DANGER_RE).search(text) != null:
+		b.add_theme_stylebox_override("normal", XWebPanel._box(XWebPanel.BUTTON_BG, BAD, 6, 1, pad))
+		for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color", "font_disabled_color"]:
+			b.add_theme_color_override(k, BAD)
+	elif RegEx.create_from_string(PRIMARY_RE).search(text) != null:
+		b.add_theme_stylebox_override("normal", XWebPanel._box(PRIMARY, XWebPanel.CURSOR_EDGE, 6, 1, pad))
+	if disabled:
+		b.add_theme_stylebox_override("disabled", b.get_theme_stylebox("normal"))
+		if not b.has_theme_color_override("font_disabled_color"):
+			b.add_theme_color_override("font_disabled_color", TEXT)
+		b.modulate.a = 0.4
 	return b
 
 
-func _label(text: String, size_px := BODY_SIZE, color := TEXT) -> Label:
-	var l := Label.new()
-	l.text = text
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.add_theme_font_override("font", _font)
-	l.add_theme_font_size_override("font_size", size_px)
-	l.add_theme_color_override("font_color", color)
-	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	return l
+## 盒子：底、边、圆角与内距（CSS 内距＋边框）
+func _panel(bg: Color, edge: Color, radius: int, pad: Vector2, border := 1) -> PanelContainer:
+	var pc := PanelContainer.new()
+	pc.add_theme_stylebox_override("panel", XWebPanel._box(bg, edge, radius, border, pad))
+	return pc
+
+
+## 一串子节点：连着的按钮排成一行（行内块，button+button 左距 7），其余各占一行
+func _stack(kids: Array, sep := 10) -> VBoxContainer:
+	var v := _vbox(sep)
+	var row: HBoxContainer = null
+	for k in kids:
+		var c := _make(k)
+		if c == null:
+			continue
+		if c is Button and str(k.tag) == "button":
+			if row == null:
+				row = HBoxContainer.new()
+				row.add_theme_constant_override("separation", 7)
+				v.add_child(row)
+			row.add_child(c)
+			continue
+		row = null
+		v.add_child(c)
+	return v
 
 
 func _make(n: Dictionary) -> Control:
@@ -602,14 +714,24 @@ func _make(n: Dictionary) -> Control:
 	var cls := str(n.get("class", ""))
 	match str(n.tag):
 		"h1", "h2", "h3":
-			return _label(str(n.text), SIZES[n.tag])
+			var t := str(n.text)
+			# h3 系统色；「战力 …」「装备战力 …」标题金色（gp-power）
+			var col := XWebPanel.GOLD if RegEx.create_from_string("^(?:装备)?战力\\s").search(t) != null else (XWebPanel.SYSTEM if n.tag == "h3" else TEXT)
+			return _label(t, SIZES[n.tag], col, true)
 		"p", "span":
 			if cls == "alien-error":
-				var pc := PanelContainer.new()
-				pc.add_theme_stylebox_override("panel", _box(ERROR_BACK, ERROR_BACK, 0, 10, 0))
+				var pc := _panel(ERROR_BACK, ERROR_BACK, 0, Vector2(10, 10), 0)
 				pc.add_child(_label(str(n.text), BODY_SIZE, ERROR))
 				return pc
-			return _label(str(n.text), BODY_SIZE, NOTE if cls == "alien-note" else TEXT)
+			var col := TEXT
+			match cls:
+				"alien-note":
+					col = NOTE
+				"alien-benefit":
+					col = GOOD
+				"alien-cost":
+					col = BAD
+			return _label(str(n.text), BODY_SIZE, col)
 		"legend":
 			return _label(str(n.text))
 		"label":
@@ -620,12 +742,9 @@ func _make(n: Dictionary) -> Control:
 			return lv
 		"select":
 			var ob := OptionButton.new()
-			ob.add_theme_font_override("font", _font)
-			ob.add_theme_font_size_override("font_size", BODY_SIZE)
-			ob.add_theme_color_override("font_color", TEXT)
-			ob.add_theme_stylebox_override("normal", _box(BUTTON, BUTTON_BORDER, 7, 9))
-			ob.add_theme_stylebox_override("focus", _box(BUTTON_FOCUS, Color("b595d1"), 7, 9, 2))
-			ob.add_theme_stylebox_override("hover", _box(BUTTON_FOCUS, Color("b595d1"), 7, 9, 2))
+			XWebPanel.style_button(ob, Vector2(12, 9))
+			ob.add_theme_stylebox_override("normal", XWebPanel._box(XWebPanel.FIELD_BG, XWebPanel.BUTTON_EDGE, 6, 1, Vector2(12, 9)))
+			ob.custom_minimum_size.y = BUTTON_H
 			ob.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			var pick := -1
 			for idx in n.options.size():
@@ -638,76 +757,115 @@ func _make(n: Dictionary) -> Control:
 			ob.item_selected.connect(func(idx): set_value(key, opts[idx].value))
 			return ob
 		"button", "summary":
-			var b := Button.new()
-			b.text = str(n.text)
-			b.disabled = bool(n.get("disabled", false))
-			b.add_theme_font_override("font", _font)
-			b.add_theme_font_size_override("font_size", BODY_SIZE)
-			for c in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
-				b.add_theme_color_override(c, TEXT)
-			b.add_theme_color_override("font_disabled_color", Color(TEXT, 0.4))
-			var on_sel := cls == "selected"
-			b.add_theme_stylebox_override("normal", _box(SELECTED if on_sel else BUTTON, SELECTED_BORDER if on_sel else BUTTON_BORDER, 7, 9))
-			b.add_theme_stylebox_override("hover", _box(BUTTON_FOCUS, Color("b595d1"), 7, 9, 2))
-			b.add_theme_stylebox_override("focus", _box(BUTTON_FOCUS, Color("b595d1"), 7, 9, 2))
-			b.add_theme_stylebox_override("pressed", _box(BUTTON_FOCUS, Color("b595d1"), 7, 9, 2))
-			b.add_theme_stylebox_override("disabled", _box(Color(BUTTON, 0.4), Color(BUTTON_BORDER, 0.4), 7, 9))
+			var b := _button(str(n.text), cls, bool(n.get("disabled", false)))
 			b.alignment = HORIZONTAL_ALIGNMENT_LEFT if n.tag == "summary" else HORIZONTAL_ALIGNMENT_CENTER
 			if n.has("on"):
 				b.pressed.connect(n.on)
 			return b
 	var kids: Array = n.children
 	match cls:
-		"alien-heading", "alien-summary", "alien-actions":
+		"alien-heading":
+			# 标题区：下 1px 分隔线、下内距 10；按钮比标题高，标题竖直居中
+			var pc := PanelContainer.new()
+			var line := StyleBoxFlat.new()
+			line.bg_color = Color(0, 0, 0, 0)
+			line.border_color = XWebPanel.LINE
+			line.border_width_bottom = 1
+			line.content_margin_bottom = 11
+			pc.add_theme_stylebox_override("panel", line)
 			var h := HBoxContainer.new()
-			h.add_theme_constant_override("separation", 16 if cls != "alien-actions" else 8)
+			h.add_theme_constant_override("separation", 16)
 			for k in kids:
 				var c := _make(k)
 				if c != null:
+					c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 					if c is Label:
 						c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					h.add_child(c)
+			pc.add_child(h)
+			return pc
+		"alien-summary":
+			var pc := _panel(SUMMARY_BACK, SUMMARY_EDGE, 6, Vector2(14, 12))
+			var h := HBoxContainer.new()
+			h.add_theme_constant_override("separation", 16)
+			for k in kids:
+				var c := _make(k)
+				if c != null:
+					c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+					if c is Label:
+						c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+						c.label_settings.font_color = XWebPanel.GOLD
+					h.add_child(c)
+			pc.add_child(h)
+			return pc
+		"alien-actions":
+			# flex gap 8 ＋ button+button 左距 7
+			var h := HBoxContainer.new()
+			h.add_theme_constant_override("separation", 15)
+			for k in kids:
+				var c := _make(k)
+				if c != null:
 					h.add_child(c)
 			return h
 		"alien-body", "alien-choices":
 			var h := HBoxContainer.new()
-			h.add_theme_constant_override("separation", 18)
+			h.add_theme_constant_override("separation", 20 if cls == "alien-body" else 18)
 			h.custom_minimum_size.y = 260
 			for k in kids:
 				var c := _make(k)
-				if c != null:
+				if c == null:
+					continue
+				if str(k.get("class", "")) == "alien-list":
+					c.custom_minimum_size.x = LIST_W
+				else:
 					c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-					c.size_flags_stretch_ratio = 1.0 if str(k.get("class", "")) != "alien-detail" else 2.0
-					h.add_child(c)
+				h.add_child(c)
 			return h
 		"alien-list":
+			# 右 1px 分隔线、右内距 14；最多 430 高，超出竖向滚动（O-087：不照搬第 2 个起右推 7 与横向滚动条）
+			var pc := PanelContainer.new()
+			var line := StyleBoxFlat.new()
+			line.bg_color = Color(0, 0, 0, 0)
+			line.border_color = XWebPanel.LINE
+			line.border_width_right = 1
+			line.content_margin_right = 15
+			pc.add_theme_stylebox_override("panel", line)
 			var sc := ScrollContainer.new()
-			sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-			sc.custom_minimum_size.y = mini(430, 52 * kids.size())
+			sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO if list_indent_quirk else ScrollContainer.SCROLL_MODE_DISABLED
+			sc.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+			sc.custom_minimum_size.y = minf(430.0, (BUTTON_H + 8) * kids.size())
+			_scrollbar(sc)
 			var v := _vbox(8)
 			v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			for k in kids:
 				var c := _make(k)
 				if c is Button:
 					c.alignment = HORIZONTAL_ALIGNMENT_LEFT
-				v.add_child(c)
+					if list_indent_quirk and v.get_child_count() > 0:
+						c.custom_minimum_size.x = LIST_W - 15
+						var m := MarginContainer.new()
+						m.add_theme_constant_override("margin_left", 7)
+						m.add_child(c)
+						c = m
+				if c != null:
+					v.add_child(c)
 			sc.add_child(v)
-			return sc
-	var v := _vbox()
-	var wrap: Control = v
+			pc.add_child(sc)
+			return pc
+	var v := _stack(kids.filter(func(k): return not (n.tag == "details" and k.tag != "summary" and not recent_open)))
 	if n.tag == "fieldset":
-		var fc := PanelContainer.new()
-		fc.add_theme_stylebox_override("panel", _box(Color(0, 0, 0, 0), Color("665572"), 0, 10))
+		var fc := _panel(Color(0, 0, 0, 0), FIELDSET_EDGE, 0, Vector2(10, 10))
 		fc.add_child(v)
-		wrap = fc
+		return fc
 	if n.tag == "section":
-		var pc := PanelContainer.new()
-		pc.add_theme_stylebox_override("panel", _box(Color(0, 0, 0, 0), Color("b8787a") if cls == "alien-confirm" else Color("675475"), 8, 18 if cls == "" else 15))
+		var pc: PanelContainer
+		match cls:
+			"alien-confirm":
+				pc = _panel(CONFIRM_BACK, BAD, 6, Vector2(15, 15))
+			"alien-config":
+				pc = _panel(SECTION_BACK, XWebPanel.LINE, 6, Vector2.ZERO)
+			_:
+				pc = _panel(SECTION_BACK, XWebPanel.LINE, 6, Vector2(18, 18))
 		pc.add_child(v)
-		wrap = pc
-	for k in kids:
-		if n.tag == "details" and k.tag != "summary" and not recent_open:
-			continue
-		var c := _make(k)
-		if c != null:
-			v.add_child(c)
-	return wrap
+		return pc
+	return v

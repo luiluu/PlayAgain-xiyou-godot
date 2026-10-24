@@ -68,6 +68,12 @@ class EventHost:
 	func open_shop(goods: Array, _purchase_only: bool) -> void:
 		trace.append({"t": "shop", "goods": goods.map(func(g): return [int(g[0]), int(g[1])])})
 
+	func open_training() -> void:
+		trace.append({"t": "scene", "name": "Scene_ActorAttributePlusPoints"})
+
+	func open_race_menu(_rank := 0) -> void:
+		trace.append({"t": "scene", "name": "Scene_CodexBindMenu"})
+
 	func input_text(prompt: String, _default := "") -> String:
 		trace.append({"t": "prompt", "text": prompt})
 		return "测试"
@@ -208,7 +214,7 @@ func _run() -> void:
 		print("REGRESSION ", id, " ", report.filter(func(r): return r.id == id)[0].diffs.slice(0, 3))
 	if update_baseline and only.is_empty():
 		var f := FileAccess.open(ProjectSettings.globalize_path(BASELINE), FileAccess.WRITE)
-		f.store_string(JSON.stringify({"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。",
+		f.store_string(JSON.stringify({"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 6 例都是原版有而重制版未做的系统：m4e8p0 仓库（PHWarehouse）、m4e17p0／p1 更衣（Scene_ChangeClothes）、m4e40p1／p3 装备镶嵌图鉴（Scene_EquipInlayBook）三处界面未接；m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。",
 			"source": str(oracle.get("sourceIdentity", {}).get("releaseVersion", "")), "match": ok_count, "cases": report.size(), "mismatch": mismatched}, "\t", true))
 		f.close()
 	if out_dir != "":
@@ -309,7 +315,8 @@ func _snap(s: XState) -> Dictionary:
 			flags[str(k)] = float(s.flags[k])
 	return {"switches": sw, "variables": vars, "selfSwitches": ss, "gold": s.gold, "items": items, "weapons": weapons, "armors": armors,
 		"party": Array(s.party).duplicate(), "actors": actors, "difficulty": s.difficulty, "encounter": s.encounter_enabled,
-		"followers": s.followers_visible, "actorName": s.actor_name, "actorMaxLevel": s.actor_max_level, "flags": flags}
+		"followers": s.followers_visible, "actorName": s.actor_name, "actorMaxLevel": s.actor_max_level, "flags": flags,
+		"screen": s.screen.target_snapshot()}
 
 
 func _map_delta(a: Dictionary, b: Dictionary, empty) -> Dictionary:
@@ -356,6 +363,8 @@ func _delta(a: Dictionary, b: Dictionary) -> Dictionary:
 		if a[k] != b[k]:
 			d[k] = b[k]
 	put.call("flags", _map_delta(a.flags, b.flags, null))
+	if JSON.stringify(a.screen) != JSON.stringify(b.screen):
+		d.screen = b.screen
 	return d
 
 
@@ -378,6 +387,12 @@ func _trace_norm(trace: Array) -> Array:
 func _compare(c: Dictionary, got: Dictionary) -> Array:
 	var diffs := []
 	var want_trace := _trace_norm(c.trace)
+	# O-027／O-062：落点修正是有意的优化，参照里的原版落点按同一张表换算后再比
+	for e in want_trace:
+		if e.t == "transfer":
+			var to: Vector2i = MVInterpreter.TRANSFER_FIX.get("%d:%d:%d:%d:%d" % [int(c.map), int(c.get("event", 0)), int(e.map), int(e.x), int(e.y)], Vector2i(int(e.x), int(e.y)))
+			e.x = float(to.x)
+			e.y = float(to.y)
 	var got_trace := _trace_norm(got.trace)
 	for i in range(maxi(want_trace.size(), got_trace.size())):
 		var w = want_trace[i] if i < want_trace.size() else null

@@ -58,6 +58,8 @@ var quality := 0
 var min_font := MIN_FONT
 ## 卡宽（Sprite_ItemHelp 构造参数；人物图鉴技能详情为 727，其余 400）
 var card_width := WIDTH
+## 是否画四层品质外框：怪物图鉴掉落入口为 false（AB_EnemyBook updateHelp 设好卡后 HEw.hide() 移除发光窗口与附卡，再只把卡设可见）
+var show_frame := true
 ## 人物图鉴技能详情：内容按技能浅拷贝取（见 content 的 skill_copy）
 var skill_copy := false
 var _lines: Array = []        # layout() 的结果：[{glyphs, y, h, line}]
@@ -696,8 +698,10 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 	size = Vector2(card_width, lay.height)
 	frame.position = Vector2(-10, -10)
 	frame.size = size + Vector2(20, 20)
+	frame.visible = show_frame
 	canvas.position = Vector2.ZERO
 	canvas.size = size
+	canvas.visible = true
 	visible = lay.height > PAD * 2
 	frame.queue_redraw()
 	canvas.queue_redraw()

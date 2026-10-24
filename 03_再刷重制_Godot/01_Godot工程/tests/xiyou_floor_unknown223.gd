@@ -15,7 +15,7 @@ const MAPS := {
 	176: {"troops": [570, 571, 572, 573, 574, 575], "chair": 7, "events": 7,
 		"exits": [[28, 116, Vector2i(17, 2)], [29, 117, Vector2i(35, 1)]]},
 }
-const TIMEOUT_MS := 90000
+const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}

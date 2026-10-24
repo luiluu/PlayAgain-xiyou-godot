@@ -199,6 +199,8 @@ func _flow(p: Dictionary) -> void:
 	add_child(page)
 	await frames()
 	await shot("alien_" + name)
+	if name == "list":
+		await _layout(page)
 	var bad := []
 	var screen := 0
 	if norm(XAlienWorkshop.flatten(page.tree)) != norm(p.screens[0]):
@@ -228,6 +230,71 @@ func _flow(p: Dictionary) -> void:
 		[_bag(s), p.bag, _gear(s), p.gear, XAlienation.ledger(s), p.ledger])
 	page.queue_free()
 	await frames()
+
+
+## 版面对原版游戏窗口主题（installGamePanelTheme）的实测读数（八戒_63 ui_reference/review_system_pages：alien_list）：
+## 面板 x100 宽 1080；列表按钮 x132 宽 320.27、两键相距 55.19（O-087：第 2 个不右推 7）；详情标题 x487.27；收益绿、代价红
+func _layout(page: XAlienWorkshop) -> void:
+	for i in 3:
+		await get_tree().process_frame
+	var found := {}
+	var walk := func(n: Node, f: Callable) -> void:
+		for c in n.get_children():
+			if c is PanelContainer and not found.has("pane") and c.get_theme_stylebox("panel") is XAlienWorkshop.PaneFrame:
+				found.pane = c.get_global_rect()
+			if c is Button and c.text in ["逆骨·血吼", "疫囊·尼伯龙根指环"]:
+				found[c.text] = c.get_global_rect()
+			if c is Label and c.text == "逆骨·血吼":
+				found.h2 = c.get_global_rect()
+			if c is Label and c.text.begins_with("收益："):
+				found.good = c.label_settings.font_color
+			if c is Label and c.text.begins_with("代价："):
+				found.bad = c.label_settings.font_color
+			f.call(c, f)
+	walk.call(page, walk)
+	var near := func(a: float, b: float) -> bool: return absf(a - b) <= 1.0
+	var ok: bool = found.size() == 6 and near.call(found.pane.position.x, 100) and near.call(found.pane.size.x, 1080) \
+		and near.call(found["逆骨·血吼"].position.x, 132) and near.call(found["逆骨·血吼"].size.x, 320.27) \
+		and near.call(found["疫囊·尼伯龙根指环"].position.x, 132) and near.call(found["疫囊·尼伯龙根指环"].position.y - found["逆骨·血吼"].position.y, 55.19) \
+		and near.call(found.h2.position.x, 487.27) and found.good == XAlienWorkshop.GOOD and found.bad == XAlienWorkshop.BAD
+	check("layout_game_panel_theme", ok, found)
+	# 焦点框照原版 :focus-visible：打开时焦点在第一个按钮但不画框，键盘移动焦点后才画
+	var first := get_viewport().gui_get_focus_owner()
+	check("focus_hidden_on_open", first is Button and first.has_focus() and not first.has_focus(true), first)
+	for down in [true, false]:
+		var e := InputEventAction.new()
+		e.action = "ui_down"
+		e.pressed = down
+		get_viewport().push_input(e)
+		await get_tree().process_frame
+	var moved := get_viewport().gui_get_focus_owner()
+	check("focus_visible_after_key", moved is Button and moved != first and moved.has_focus(true), [first, moved])
+	# O-089 回退：不预先聚焦（原版重画后焦点不在任何按钮上）
+	XAlienWorkshop.focus_first = false
+	moved.release_focus()
+	var plain := XAlienWorkshop.new()
+	add_child(plain)
+	for i in 4:
+		await get_tree().process_frame
+	check("o089_original_no_focus", get_viewport().gui_get_focus_owner() == null, get_viewport().gui_get_focus_owner())
+	XAlienWorkshop.focus_first = true
+	plain.queue_free()
+	await get_tree().process_frame
+	# O-087 回退：第 2 个起右推 7（与原版读数 x139 一致）
+	# 另开一个实例看，不动流程页（静态选中项先存后还）
+	var keep := XAlienWorkshop.selected
+	XAlienWorkshop.list_indent_quirk = true
+	var other := XAlienWorkshop.new()
+	add_child(other)
+	for i in 3:
+		await get_tree().process_frame
+	found.clear()
+	walk.call(other, walk)
+	XAlienWorkshop.list_indent_quirk = false
+	other.queue_free()
+	XAlienWorkshop.selected = keep
+	await get_tree().process_frame
+	check("o087_original_indent", found.has("疫囊·尼伯龙根指环") and near.call(found["疫囊·尼伯龙根指环"].position.x, 139), found.get("疫囊·尼伯龙根指环"))
 
 
 func _menu_entry() -> void:

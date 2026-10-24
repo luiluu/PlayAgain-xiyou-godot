@@ -14,6 +14,7 @@ extends RefCounted
 ## - $gameVariables.setValue(N, 数字) → XState.set_variable（跨存档变量 900／899／1476 靠它存进 XGlobalVars）。
 ## - 副本 Boss 奖励（CE1439）：CodexEconomy.bossReward、CodexOrbs.rollInt、CodexV010Fixes.rewardNotice／awardQuantity、
 ##   甚尔／宿傩 rollAdvanceStone（见 XDungeon）；洪荒的 grantTicketBonus／rollPower 在非洪荒难度无操作。
+## - 修炼：Star.ActorAttributePlusPoints.XiuLian = [...] → XTraining.xiulian；SceneManager.push(Scene_ActorAttributePlusPoints) → 修炼界面（host.open_training）。
 ## - 成就：Star.AchievementSystem.GetAcReward(N) → XAchievement.reward；SceneManager.push(Scene_AchievementBook) → 成就界面（host.open_achievements）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
@@ -65,6 +66,10 @@ static func run(code: String, interp) -> Array:
 				pool.append(MVInterpreter.random_int(1, 9999, s))
 			s.rom.g = pool
 			s.rom.gn = 0
+		return []
+	var roster := _re("^if\\(window\\.CodexBossDifficulty\\)\\{CodexBossDifficulty\\.showRoster\\('(strong|super)'\\);\\}else\\{.*\\}this\\.setWaitMode\\('message'\\);?$").search(js)
+	if roster:
+		await _boss_roster(roster.get_string(1), interp)
 		return []
 	var unknown := []
 	# 存档分支：if (DataManager.saveGame($gamePlayer.SaveGameId)) { …成功… } else { …失败… }
@@ -186,6 +191,14 @@ static func _statements(js: String, interp) -> Array:
 		if st == "SceneManager.push(Scene_PetSystem)" and interp.host.has_method("open_pets"):
 			await interp.host.open_pets()
 			continue
+		# 修炼（Star_ActorAttributePlusPoints，见 XTraining）：魔塔教师、二十六层小萝莉等先设列出的表项再打开
+		m = _re("^Star\\.ActorAttributePlusPoints\\.XiuLian\\s*=\\s*\\[([\\d,\\s]*)\\]$").search(st)
+		if m:
+			XTraining.xiulian = Array(m.get_string(1).split(",", false)).map(func(v): return int(v))
+			continue
+		if st == "SceneManager.push(Scene_ActorAttributePlusPoints)" and interp.host.has_method("open_training"):
+			await interp.host.open_training()
+			continue
 		# 种族祝福（installNativeRaceRuntime）：种族向导 Map4 EV22、进阶石公共事件 openMenu({rank:N})、开局默认公共事件 841～847
 		m = _re("^CodexRaces\\.openMenu\\((?:\\{rank:(\\d)\\})?\\)$").search(st)
 		if m and interp.host.has_method("open_race_menu"):
@@ -209,6 +222,48 @@ static func _statements(js: String, interp) -> Array:
 ## CodexGuide.advise：interp.setupChild 插入建议文字（每段一页），显示完回到原事件
 static func _guide_advise(interp) -> void:
 	var sub := MVInterpreter.new(interp.host, interp.map_id, interp.event_id, XGuide.page_list(XGuide.advice_texts(XState.current)), interp._depth + 1)
+	sub.pending_lines = interp.pending_lines
+	await sub.run()
+	interp.skipped.append_array(sub.skipped)
+
+
+## CodexBossDifficulty.showRoster（破阵·投影的强者／超强者名单）：名单 ＋ 导入角色哈基米（强者）＋ 备注带 <CodexSuperStrong> 的角色（超强者），
+## 停用角色（XImportedBalance.DISABLED_ACTORS）名字后加「（停用）」，每行不超过 24 字，之后接固定说明
+const _STRONG_IDS := [1, 8, 9, 10, 11, 13, 17, 38, 45, 47, 50, 59, 70, 71, 82, 84, 85, 92, 93, 95, 99, 109, 110, 111, 112, 113, 114, 115, 117, 118, 119, 128, 129, 130, 131, 170]
+const _SUPER_IDS := [106, 101, 100, 102, 104, 127, 124, 96, 120, 107, 108, 122, 123, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 171, 172, 173, 175]
+
+
+static func _boss_roster(kind: String, interp) -> void:
+	var is_super := kind == "super"
+	var ids: Array = (_SUPER_IDS if is_super else _STRONG_IDS).duplicate()
+	if is_super:
+		for a in XDB.table("Actors"):
+			if a is Dictionary and str(a.get("note", "")).to_lower().contains("<codexsuperstrong>") and not ids.has(int(a.id)):
+				ids.append(int(a.id))
+	else:
+		ids.append(XCat.ACTOR)
+	var lines := ["\\n<破阵·投影>%s（%d人）" % ["超强者名单" if is_super else "强者名单", ids.size()]]
+	var line := ""
+	for id in ids:
+		var nm := str(XDB.rec("Actors", int(id)).get("name", ""))
+		if XImportedBalance.DISABLED_ACTORS.has(int(id)):
+			nm += "（停用）"
+		if line != "" and line.length() + nm.length() + 1 > 24:
+			lines.append(line)
+			line = ""
+		line += ("、" if line != "" else "") + nm
+	if line != "":
+		lines.append(line)
+	if is_super:
+		lines.append_array(["超强者仅限地狱及以上难度出战。", "每名出战超强者：Boss八项属性+20%。", "第2、4、6…回合霸体，持续一整回合。",
+			"霸体回合每名超强者再令Boss输出+20%。", "洪荒以下路线压制：灭世微幅、天灾小幅、地狱大幅。", "天灾、地狱：受到伤害×1.2、×1.5，", "给队友的治疗、护盾、增益×0.8、×0.5。"])
+	else:
+		lines.append_array(["镜流属于强者，不计入超强者难度加成。", "强者在普通、困难、地狱路线有小幅压制。"])
+	var list := [{"code": 101, "indent": 0, "parameters": ["SF_People2", 5, 0, 2]}]
+	for l in lines:
+		list.append({"code": 401, "indent": 0, "parameters": [l]})
+	list.append({"code": 0, "indent": 0, "parameters": []})
+	var sub := MVInterpreter.new(interp.host, interp.map_id, interp.event_id, list, interp._depth + 1)
 	sub.pending_lines = interp.pending_lines
 	await sub.run()
 	interp.skipped.append_array(sub.skipped)

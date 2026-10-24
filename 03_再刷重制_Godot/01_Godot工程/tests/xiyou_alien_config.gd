@@ -80,6 +80,8 @@ func _state() -> XState:
 		a.refresh_passive()
 	s.gear = []
 	XAlienation.force_roll = 0.5
+	# 参照探针 Math.random 固定 0.5：装备的随机前后缀、品质、浮动也固定（新局装备随机流每次换种子，原来偶尔抽出前后缀／别的品质）
+	XGear.force_roll = 0.5
 	return s
 
 
@@ -289,6 +291,7 @@ func _sell_filters() -> void:
 
 func _finish() -> void:
 	XAlienation.force_roll = -1.0
+	XGear.force_roll = -1.0
 	for pl in XSound._players:
 		if is_instance_valid(pl):
 			pl.stop()

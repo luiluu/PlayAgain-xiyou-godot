@@ -32,12 +32,30 @@ func _ready() -> void:
 	_run.call_deferred()
 
 
-func shot(name: String) -> void:
+## 截图与窗口读数（与 ui_reference/review_system_pages.js 的原版重放同态，review_system_pages_compare.py 核对）
+func shot(name: String, book: XEnemyBookPage = null) -> void:
 	if out_dir == "" or DisplayServer.get_name() == "headless":
 		return
+	_clear_toasts(get_tree().root)
 	await frames(3)
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
+	if book != null:
+		var data := {"shot": name, "windows": {}}
+		for k in ["index_win", "status_win", "drop_win", "help_card"]:
+			var w: Control = book.get(k)
+			data.windows[k] = {"rect": [w.position.x, w.position.y, w.size.x, w.size.y], "visible": w.is_visible_in_tree()}
+		var f := FileAccess.open(out_dir.path_join(name + ".json"), FileAccess.WRITE)
+		f.store_string(JSON.stringify(data, "  "))
+
+
+## 前面操作（未登记项按确定）留下的「未解锁」提示条不带进截图
+func _clear_toasts(n: Node) -> void:
+	for c in n.get_children():
+		if c is XToast:
+			c.queue_free()
+		else:
+			_clear_toasts(c)
 
 
 func check(name: String, ok: bool, detail = null) -> bool:
@@ -208,7 +226,7 @@ func _flow(ref: Dictionary) -> void:
 		and rect.call(book.status_win) == geo.status.map(func(x): return float(x))
 		and rect.call(book.drop_win) == geo.drops.map(func(x): return float(x)) and int(geo.rows) == XEnemyBookPage.ROWS,
 		[rect.call(book.index_win), rect.call(book.status_win)])
-	await shot("enemy_book_0")
+	await shot("enemy_book_0", book)
 	check("open_first", book.index == 0 and not book._status_ops.is_empty() and book.mode == "index" and not book.drop_win.visible)
 	# 第 3 项（敌人 3）未登记：状态窗空、确定不开掉落
 	book.select(2)
@@ -220,8 +238,11 @@ func _flow(ref: Dictionary) -> void:
 	book.ok()
 	await frames()
 	check("drops_open", book.mode == "drops" and book.drop_win.visible and not book.status_win.visible and book.drop_index == 0 and not book.drop_list.is_empty())
-	await shot("enemy_book_0_drops")
+	await shot("enemy_book_0_drops", book)
 	check("drops_help", book.help_card.visible and book.help_card.position == Vector2(880, 32), [book.help_card.position, book.help_card.size])
+	# AB_EnemyBook updateHelp 末尾 HEw.hide()：掉落入口不画品质外框、不带附卡（其余说明卡照常有框）
+	check("drops_help_no_frame", not book.help_card.frame.visible and book.help_card.extras.is_empty(),
+		[book.help_card.frame.visible, book.help_card.extras.size()])
 	book._move(1, true)
 	check("drops_move", book.drop_index == 1 and book.help_card.visible)
 	book.cancel()

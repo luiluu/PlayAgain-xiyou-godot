@@ -446,6 +446,7 @@ func param_base(i: int) -> float:
 		var parts := str(m).split(",")
 		if parts.size() >= 3 and _condition(parts[1].strip_edges(), float(parts[2])):
 			v += _param_boost(base, parts[0])
+	v += XTraining.param_bonus(self, i)
 	return v
 
 ## 装备属性；被动 passiveWPNMxx / passiveARMMxx 按武器/防具类型放大该装备的正值属性。
