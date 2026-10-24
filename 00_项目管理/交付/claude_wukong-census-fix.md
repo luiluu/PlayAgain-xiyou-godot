@@ -1,7 +1,7 @@
 # 交付：claude/wukong-census-fix
 
 - 车道／工作者：A 内容·楼层／悟空（Claude，重制_悟空_51）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -23,6 +23,6 @@
 
 ## 本分支提交
 
-- 见 `git log main..HEAD`
+- 见 `git log main..HEAD`（含删除已并入的 evfix 交付单）；专项 xiyou_lobby_shops 92、xiyou_shop_buy 5714、xiyou_event_compare 5、xiyou_census1 47 全过
 
 本车道临时输出已清理（无本地输出文件）。
