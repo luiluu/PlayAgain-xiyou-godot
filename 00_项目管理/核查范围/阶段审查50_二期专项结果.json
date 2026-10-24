@@ -1,0 +1,92 @@
+{
+ "time": "2026-10-24T19:06:18.641498+02:00",
+ "rows": [
+  {
+   "command": [
+    "node",
+    "03_再刷重制_Godot/03_转换工具/mv_oracle/guard_check.cjs"
+   ],
+   "exitCode": 0,
+   "output": "TEST_RESULT={\"passed\":16,\"total\":16}\n"
+  },
+  {
+   "command": [
+    "python3",
+    "03_再刷重制_Godot/03_转换工具/ui_reference/guard_check.py"
+   ],
+   "exitCode": 0,
+   "output": "TEST_RESULT={\"passed\": 12, \"total\": 12, \"failures\": []}\n"
+  },
+  {
+   "command": [
+    "python3",
+    "03_再刷重制_Godot/07_开发环境/测试公式程序.py"
+   ],
+   "exitCode": 0,
+   "output": "............\n----------------------------------------------------------------------\nRan 12 tests in 0.240s\n\nOK\n"
+  },
+  {
+   "command": [
+    "python3",
+    "03_再刷重制_Godot/07_开发环境/测试状态效果翻译.py"
+   ],
+   "exitCode": 0,
+   "output": ".......\n----------------------------------------------------------------------\nRan 7 tests in 0.062s\n\nOK\n"
+  },
+  {
+   "command": [
+    "python3",
+    "03_再刷重制_Godot/07_开发环境/测试增量同步.py"
+   ],
+   "exitCode": 0,
+   "output": "PROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"a_probe.cjs\", \"seconds\": 0.0, \"command\": [\"a_probe.cjs\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"a_probe.cjs\", \"seconds\": 0.0, \"command\": [\"a_probe.cjs\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"a_probe.cjs\", \"seconds\": 0.0, \"command\": [\"a_probe.cjs\"], \"exitCode\": 7}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"a_probe.cjs\", \"seconds\": 0.0, \"command\": [\"a_probe.cjs\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"a_probe.cjs\", \"seconds\": 0.001, \"command\": [\"a_probe.cjs\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"event_probe.cjs\", \"seconds\": 0.0, \"command\": [\"event_probe.cjs\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 0, \"partial\": {}, \"reused\": 3}\n..............................................\n----------------------------------------------------------------------\nRan 46 tests in 34.492s\n\nOK\n"
+  },
+  {
+   "command": [
+    "python3",
+    "03_再刷重制_Godot/07_开发环境/测试转换器写入.py"
+   ],
+   "exitCode": 0,
+   "output": "......................\n----------------------------------------------------------------------\nRan 22 tests in 2.535s\n\nOK\n"
+  },
+  {
+   "command": [
+    "python3",
+    "03_再刷重制_Godot/07_开发环境/测试角色同步提速.py"
+   ],
+   "exitCode": 0,
+   "output": "PROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"plain_probe.cjs\", \"seconds\": 0.162, \"command\": [\"plain_probe.cjs\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 0, \"partial\": {}, \"reused\": 1}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.14, \"command\": [\"slice_probe.cjs\", \"1\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.139, \"command\": [\"slice_probe.cjs\", \"2\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.138, \"command\": [\"slice_probe.cjs\", \"3\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.141, \"command\": [\"slice_probe.cjs\", \"4\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.145, \"command\": [\"slice_probe.cjs\", \"5\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.144, \"command\": [\"slice_probe.cjs\", \"6\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 0, \"partial\": {\"slice_probe.cjs\": 1}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.256, \"command\": [\"slice_probe.cjs\", \"2\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.258, \"command\": [\"slice_probe.cjs\", \"1\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.248, \"command\": [\"slice_probe.cjs\", \"3\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.25, \"command\": [\"slice_probe.cjs\", \"4\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.261, \"command\": [\"slice_probe.cjs\", \"5\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.263, \"command\": [\"slice_probe.cjs\", \"6\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.132, \"command\": [\"slice_probe.cjs\", \"1\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.132, \"command\": [\"slice_probe.cjs\", \"2\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.127, \"command\": [\"slice_probe.cjs\", \"4\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.129, \"command\": [\"slice_probe.cjs\", \"3\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.139, \"command\": [\"slice_probe.cjs\", \"5\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.137, \"command\": [\"slice_probe.cjs\", \"6\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.129, \"command\": [\"slice_probe.cjs\", \"1\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.128, \"command\": [\"slice_probe.cjs\", \"2\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 0.133, \"command\": [\"slice_probe.cjs\", \"3\"], \"exitCode\": 1}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.132, \"command\": [\"slice_probe.cjs\", \"4\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.125, \"command\": [\"slice_probe.cjs\", \"5\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.132, \"command\": [\"slice_probe.cjs\", \"6\"], \"exitCode\": 0}\n.........................\n----------------------------------------------------------------------\nRan 25 tests in 24.214s\n\nOK\n"
+  }
+ ],
+ "mergeTools": {
+  "command": [
+   "python3",
+   "03_再刷重制_Godot/07_开发环境/测试合并工具.py"
+  ],
+  "exitCode": 0,
+  "passed": 120,
+  "total": 120,
+  "seconds": 84.115
+ },
+ "recipes": {
+  "check": true,
+  "exitCode": 0,
+  "result": "配方产物一致"
+ },
+ "warehouseRed": {
+  "exitCode": 1,
+  "passed": 30,
+  "total": 32,
+  "wallSeconds": 288,
+  "failed": [
+   "old_unlocked_save_migrates",
+   "legacy_ev8_p1_opens"
+  ],
+  "detail": "第二页show宿主打开次数0；其余30项通过"
+ },
+ "nativeFirstFailure": {
+  "runId": "3582cc52e82c4a5fa938d2ad086ef6f9",
+  "exitCode": 1,
+  "reason": "Node数组不带MV.contains，MOG_CharPoses.addActor抛错；不是原版测量结论"
+ }
+}
