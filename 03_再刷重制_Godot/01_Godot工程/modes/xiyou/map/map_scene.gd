@@ -111,6 +111,7 @@ func _ready() -> void:
 	add_child(screen_fx)
 	var s := XState.current
 	await load_map(s.map_id, s.x, s.y, s.direction)
+	XItemMarks.deploy_start(XState.current)  # Scene_Map.start 包装：清出战栏里的超强者并提示
 
 
 func _difficulty_notice_active() -> bool:
@@ -688,6 +689,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 		if XHangUpAuto.after_battle_sell(XState.current) >= 0:
 			XToast.show_text("装备出售完成")
 	hud.visible = true
+	XItemMarks.deploy_start(XState.current)  # 战后回地图＝Scene_Map.start
 	_reset_transfer_button()
 	bgm.stream_paused = false
 	bgs.stream_paused = false
@@ -1020,6 +1022,7 @@ func open_menu() -> void:
 	var zhenqi := menu.zhenqi_requested
 	menu.queue_free()
 	_menu_open = false
+	XItemMarks.deploy_start(XState.current)  # 回地图＝Scene_Map.start
 	hud.visible = true
 	_reset_transfer_button()
 	await run_reserved_common_event(owner)

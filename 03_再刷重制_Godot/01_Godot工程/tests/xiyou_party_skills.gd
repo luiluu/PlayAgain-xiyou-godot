@@ -44,6 +44,7 @@ func _run() -> void:
 func _fresh(actors: Array, battle: Array) -> XState:
 	XPartySkills.reset_session()
 	var s := XState.new_game_blank()
+	s.set_switch(2494, true)  # 同参照：开挑战开关，三霄不被超强者出战限制（XItemMarks.enforce_party）清出
 	XState.current = s
 	_party(s, actors, battle)
 	return s
