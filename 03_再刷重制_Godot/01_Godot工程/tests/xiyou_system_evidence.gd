@@ -61,9 +61,9 @@ func _run() -> void:
 	check("power_line_default_on", XPower.enabled())
 	await _crafting()
 	await _magic_level()
+	await _race()
 	await _pets()
 	await _pet_synth()
-	await _race()
 	for pl in XSound._players:
 		if is_instance_valid(pl):
 			pl.stop()
