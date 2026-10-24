@@ -605,6 +605,16 @@
    "guardRejected": false,
    "runnerAccepts": true
   },
-  "status": "一行断言已修，修后拒收负控及普通全场专项待跑"
+  "status": "红绿负控完成；修后Godot预期非零退出并拒收，负控自身成功，不计常规全过",
+  "after": {
+   "rc": 1,
+   "testResult": [
+    "TEST_RESULT={\"passed\":4,\"total\":5}"
+   ],
+   "zeroCases": true,
+   "guardRejected": true,
+   "runnerAccepts": false
+  },
+  "helperExitCode": 0
  }
 }

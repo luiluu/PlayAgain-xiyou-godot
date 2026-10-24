@@ -25,7 +25,7 @@
 - 不重做已完成的覆盖审查；固定范围、方法与边界见报告。dev.165历史Godot缓存170场记录不是同轮完整检查.sh凭证。
 - 最终同步已结束：runId`126c6d6c96a746c3ab4b2566a60369ca`退出0，18组执行／36组复用；slice拆六难度，共23条命令全退出0。测量不变，来源核验issues空，Godot导入通过，产物指纹已保存机器摘要。原events三例未结束／m4e8p1错误与基线相同保留，不认证为新成功用例。不要再次同步。
 - 最初deps在同步改写参照期间由本车道主动SIGTERM，不计通过或偶发。同步及导入结束后再做下面负控和专项。
-- 事件负控：filter-red已捕获旧零例5/5、退出0假绿；3242ddd8已将cases_ran改为仅要求report.size()>0。当前filter-green（PID37759，helper final/run_event_filter.py）正在共享槽排队，继续等，不重复启动；预期Godot rc1／FAIL cases_ran／4/5、helper确认后退出0。负控不能当普通全通过。
+- 事件负控：filter-red已捕获旧零例5/5、退出0假绿；3242ddd8已将cases_ran改为仅要求report.size()>0。filter-green已得到Godot rc1／FAIL cases_ran／4/5，验收器拒收；helper确认预期后退出0。两次实跑结果已保存机器摘要，负控不能当普通全通过。
 - 最终精确12场：`xiyou_rules.tscn`、`xiyou_rules_d1b.tscn`、`xiyou_rules_d1c.tscn`、`xiyou_rules_d1d.tscn`、`xiyou_save_page.tscn`、`xiyou_battleback_save.tscn`、`xiyou_gear_query_cache.tscn`、`xiyou_battle_events.tscn`、`xiyou_warehouse.tscn`、`xiyou_event_compare.tscn`、`xiyou_lobby_shops.tscn`、`xiyou_stage50_review.tscn`。只跑选测，不跑全量，不改并行测试沿用指纹。
 - 全部完成后机器摘要保存同步测量结论、产物指纹、12场首次／重跑、负控；报告和本单更新终验句，状态改可合并。车道合并后的选测／每日全量由总装按三级检查安排。
 - 哪吒独占07检查／合并工具与rules过滤，不碰；本期已有测试共性验收.py的PageEvidenceErrorTests合并时保留即可。
@@ -48,5 +48,5 @@
 ## 接手记录
 
 - 沙僧56于2026-10-25沿用指定树接手，开工HEAD342cdc6a、工作区干净，额度五小时66%、周71%。主库交接板只读，共用登记未改。
-- 原版最终两例runId2a59b90e60474298ac0594c9d67fbeec已退出0、errors空，来源前后一致，不重做旧原型。早期任务和仓库修后任务均已结束；最终同步现已结束，当前等filter-green，然后跑12场。
+- 原版最终两例runId2a59b90e60474298ac0594c9d67fbeec已退出0、errors空，来源前后一致，不重做旧原型。早期任务和仓库修后任务均已结束；最终同步现已结束，红绿负控也已结束，当前接12场最终专项。
 - 每小步尾注执行者Codex（沙僧）／核查待Claude；95%额度收尾，上下文40%保存现场后按用户授权同工作区接力。
