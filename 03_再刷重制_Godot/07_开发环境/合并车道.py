@@ -127,27 +127,48 @@ def plan(root, task):
     if git(root, 'branch', '--show-current') != 'main' or dirty(root):
         raise RuntimeError('main 必须干净，包含未跟踪文件；本工具不自动保存或覆盖现场')
     lanes = [w for w in worktrees(root) if w.get('branch') in ['claude/' + task, 'codex/' + task]]
-    if len(lanes) != 1:
+    if len(lanes) > 1:
         raise RuntimeError('须有且只有一个对应任务的已登记车道工作树')
-    lane = lanes[0]
-    wt = Path(lane['path'])
-    if dirty(wt):
-        raise RuntimeError('车道工作树不干净，先由车道提交')
-    base, target = git(root, 'rev-parse', 'HEAD'), git(wt, 'rev-parse', 'HEAD')
+    if lanes:
+        branch, wt = lanes[0]['branch'], Path(lanes[0]['path'])
+        if dirty(wt):
+            raise RuntimeError('车道工作树不干净，先由车道提交')
+        target = git(wt, 'rev-parse', 'HEAD')
+
+        def read(rel):
+            f = wt / rel
+            return f.read_text() if f.is_file() and not f.is_symlink() else None
+    else:
+        # 车道交付后已在同一工作树换新分支接着做：没有工作树停在交付分支上，按分支引用合并，文件从交付提交里读
+        refs = [b for b in ['claude/' + task, 'codex/' + task]
+                if subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', 'refs/heads/' + b],
+                                  capture_output=True).returncode == 0]
+        if len(refs) != 1:
+            raise RuntimeError('须有且只有一个对应任务的车道工作树或车道分支')
+        branch, wt = refs[0], None
+        target = git(root, 'rev-parse', 'refs/heads/' + branch)
+        print('提示：没有工作树停在 %s 上（车道已换分支继续），按分支引用 %s 合并' % (branch, target[:9]), file=sys.stderr, flush=True)
+
+        def read(rel):
+            entry = git(root, 'ls-tree', target, '--', str(rel))
+            return git(root, 'show', target + ':' + str(rel)) + '\n' if entry.split(' ')[:2] in (['100644', 'blob'], ['100755', 'blob']) else None
+    base = git(root, 'rev-parse', 'HEAD')
     if base == target or not git(root, 'rev-list', base + '..' + target):
         raise RuntimeError('车道没有待合并提交')
     fork = git(root, 'merge-base', base, target)
-    delivery = Path('00_项目管理/交付') / (lane['branch'].replace('/', '_') + '.md')
-    text = (wt / delivery).read_text()
+    delivery = Path('00_项目管理/交付') / (branch.replace('/', '_') + '.md')
+    text = read(delivery)
+    if text is None:
+        raise RuntimeError('车道分支缺少交付单：' + str(delivery))
     draft(text)
     changed = git(root, 'diff', '--name-only', fork, target).splitlines()
     # 同一分支带来的其它交付单（如接手者另写的一张）：标了可合并的一并归并删除；没标的提示唐僧处理。
     extra = []
     for p in sorted(changed):
         if (p.startswith('00_项目管理/交付/') and p.endswith('.md') and p not in (str(delivery), '00_项目管理/交付/README.md')
-                and (wt / p).is_file()):
+                and read(p) is not None):
             try:
-                draft((wt / p).read_text())
+                draft(read(p))
                 extra.append(p)
             except RuntimeError:
                 print('提示：另有交付单 ' + p + ' 未标可合并或草稿不完整，未并入；不要它就在 main 删掉，--finish 时加 --also ' + p,
@@ -155,16 +176,15 @@ def plan(root, task):
     refresh = any(p in [str(TOOLS / 'xiyou_slice.json'), str(TOOLS / 'xiyou_export.py')]
                   or (p.startswith(str(TOOLS / 'mv_oracle') + '/') and p.endswith('.cjs')) for p in changed)
     # 车道带来的测量接受单（同步正式西游.py --accept-changes）：main 的同步对自己的旧基线同样逐条核对
-    accept = [p for p in sorted(changed) if p.startswith(str(ACCEPT) + '/') and p.endswith('.json') and (wt / p).is_file()]
+    accept = [p for p in sorted(changed) if p.startswith(str(ACCEPT) + '/') and p.endswith('.json') and read(p) is not None]
     refresh = refresh or bool(accept)
     game = any(p.startswith(str(PROJECT) + '/') and not p.startswith(str(PROJECT / 'tests') + '/')
                and p != str(PROJECT / 'content/build_info.json') for p in changed)
     # 只替换目标车道带来的编号占位，不扫描、暂存主工作区的其它文件。
     version_paths = [p for p in changed if p != str(delivery) and p not in extra and p not in VERSION_EXEMPT
                      and Path(p).suffix in {'.md', '.json', '.gd', '.py', '.sh'}
-                     and (wt / p).is_file() and not (wt / p).is_symlink()
-                     and VERSION_MARKER in (wt / p).read_text()]
-    return dict(task=task, branch=lane['branch'], worktree=str(wt), base=base, target=target,
+                     and VERSION_MARKER in (read(p) or '')]
+    return dict(task=task, branch=branch, worktree=str(wt) if wt else '', base=base, target=target,
                 delivery=str(delivery), extraDeliveries=extra, refresh=refresh, acceptChanges=accept, gameplay=game, phase='planned', head=base,
                 versionPaths=version_paths,
                 mainAdvancedAfterDelivery=fork != base)
@@ -267,8 +287,9 @@ def prepare(root, state, state_file, executor):
             for spec in state.get('acceptChanges', []):
                 sync += ['--accept-changes', spec]
             cmd = list(map(str, sync + ['--from-worktree', state['worktree']]))
-            print('== ' + ' '.join(cmd), flush=True)
-            rc = subprocess.run(cmd, cwd=root).returncode
+            if state['worktree']:
+                print('== ' + ' '.join(cmd), flush=True)
+            rc = subprocess.run(cmd, cwd=root).returncode if state['worktree'] else 3  # 无车道工作树：直接完整同步
             if rc == 3:
                 run(root, sync)
             elif rc:
@@ -383,7 +404,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
         board = (root / BOARD).read_text()
         active = board.split('## 正在进行', 1)[1].split('\n## ', 1)[0]
         pending = board.split('## 待交叉核查', 1)[1].split('\n## ', 1)[0]
-        if state['branch'] in active or state['worktree'] in active:
+        if state['branch'] in active or (state['worktree'] and state['worktree'] in active):
             raise RuntimeError('交接板仍将该车道列为正在进行，请唐僧更新')
         if state['branch'] not in pending and state['target'][:7] not in pending and state['head'][:7] not in pending:
             raise RuntimeError('待交叉核查尚未登记本车道分支或提交号')
@@ -453,6 +474,8 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
 
 def lane_moved(lane):
     """车道交付后若在同一工作树接着做（会话绑在这个路径上，常换新分支继续），返回原因；没动返回空串。"""
+    if not lane['worktree']:
+        return '合并时就没有工作树停在交付分支上'
     wt = Path(lane['worktree'])
     if not wt.exists():
         return '已不存在'
@@ -476,8 +499,8 @@ def cleanup_lane(root, lane):
         run(root, [ENV / '清理工作树.sh', lane['worktree']])
         return
     print('提示：%s 的工作树%s，跳过清理：%s' % (lane['task'], moved, lane['worktree']), flush=True)
-    wt = Path(lane['worktree'])
-    current = git(wt, 'branch', '--show-current') if wt.exists() else None
+    wt = Path(lane['worktree']) if lane['worktree'] else None
+    current = git(wt, 'branch', '--show-current') if wt and wt.exists() else None
     exists = subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', 'refs/heads/' + lane['branch']],
                             capture_output=True).returncode == 0
     if not exists:
