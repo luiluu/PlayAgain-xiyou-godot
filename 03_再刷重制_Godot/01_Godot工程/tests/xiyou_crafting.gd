@@ -2,7 +2,7 @@ extends Node
 ## 制作（XCrafting／XCraftingScene）：对照冻结 v0.28 浏览器参照 tests/fixtures/crafting_oracle.json
 ## （新局 1/8/9/10，学会 setup.learn 的配方，配方 1 的材料各 ×3、配方 2 的第一种材料 ×1，金币 150000，打造经验 30）：
 ## 配方数据（458 条）、窗口几何、类别窗、四个类别的列表／每条配方的详情／确认窗／类别等级窗、金币窗逐条绘制（文字、字号、颜色、不透明度相等，坐标差 ≤ POS_TOL），
-## 再走一遍配方 1 做 3 件（扣材料、得 3 件独立武器、加工经验 +30、弹窗文字与位置、做完后的列表与详情、弹窗确定后回列表），
+## 再走一遍配方 1 做 3 件（数量按钮矩形与点按、扣材料、得 3 件独立武器、加工经验 +30、弹窗文字与位置、做完后的列表与详情、弹窗确定后回列表），
 ## 插件指令 crafting learn／forget（解释器）、存读档与主菜单入口。
 
 const FIXTURE := "res://tests/fixtures/crafting_oracle.json"
@@ -131,7 +131,7 @@ func _run() -> void:
 		and rect.call(page.list_win) == geo.list.map(func(x): return float(x)) and rect.call(page.detail_win) == geo.detail.map(func(x): return float(x))
 		and rect.call(page.confirm_win) == geo.confirm.map(func(x): return float(x)) and rect.call(page.gold_win) == geo.gold.map(func(x): return float(x))
 		and rect.call(page.gauge_win) == geo.gauge.map(func(x): return float(x)), [rect.call(page.cat_win), rect.call(page.gold_win)])
-	check("start_category", page.mode == "category" and page.cat_index == 0 and page.index == -1)
+	check("start_category", page.mode == "category" and page.cat_index == 0 and page.index == -1 and not page.buttons_visible)
 	cmp("category_ops", XCraftingScene.category_ops(), ref.catOps)
 	var gold := [XCraftingScene._t(XMenu._group(s.gold), 6, 0, 164, XUI.TEXT, "right", 255, 20), ["i", XCraftingScene.GOLD_ICON, 174, 2, 255]]
 	cmp("gold_ops", gold, ref.goldOps.map(func(o): return o if o[0] == "t" else o))
@@ -190,6 +190,26 @@ func _flow(page: XCraftingScene, s: XState, ref: Dictionary) -> void:
 	for i in 3:
 		page._side(1)
 	check("amount_3", page.amount == int(f.amount))
+	# 数量按钮（ButtonSet 五个，八戒_63 补）：矩形对原版重放读数；松开在同一按钮上才算点
+	check("buttons_rects", page.buttons_visible and XCraftingScene.button_rects().map(func(r: Rect2): return [r.position.x, r.position.y, r.size.x, r.size.y])
+		== ref.buttons.map(func(r): return r.map(func(x): return float(x))), XCraftingScene.button_rects())
+	page.press_button(0)
+	check("button_minus10", page.amount == 1, page.amount)
+	page.press_button(3)
+	check("button_plus10", page.amount == 3, page.amount)
+	var b1: Rect2 = XCraftingScene.button_rects()[1]
+	var ev := InputEventMouseButton.new()
+	ev.button_index = MOUSE_BUTTON_LEFT
+	ev.position = b1.get_center()
+	ev.pressed = true
+	page._gui_input(ev)
+	var held := page.amount == 3 and page._button_down == 1
+	ev = ev.duplicate()
+	ev.pressed = false
+	page._gui_input(ev)
+	check("button_release_minus1", held and page.amount == 2 and page._button_down == -1, page.amount)
+	page.press_button(2)
+	check("button_plus1", page.amount == 3, page.amount)
 	cmp("confirm_x3", page.confirm_ops(), f.confOps)
 	await frames(10)
 	await shot("craft_3_confirm_x3")
@@ -198,6 +218,7 @@ func _flow(page: XCraftingScene, s: XState, ref: Dictionary) -> void:
 		and s.crafting.exp == f.after.exp.map(func(x): return int(x)) and s.crafting.level == f.after.lv.map(func(x): return int(x)),
 		[s.gear_count("weapon", 393), s.gear_count("weapon", 392), s.item_count(47), s.crafting.exp])
 	var pr: Array = f.popup[0]
+	check("buttons_stay_in_popup", page.buttons_visible)
 	check("popup", page.mode == "popup" and page.popup_text == str(f.popup[3][0][1]) and page.popup_icon == int(f.popup[3][1][1])
 		and absf(page.popup_win.position.x - float(pr[0])) < 1.0 and page.popup_win.position.y == float(pr[1])
 		and absf(page.popup_win.size.x - float(pr[2])) < 1.0, [page.popup_text, page.popup_win.position, page.popup_win.size])
@@ -210,7 +231,8 @@ func _flow(page: XCraftingScene, s: XState, ref: Dictionary) -> void:
 	cmp("detail_after", XCraftingScene.detail_ops(s, page.current()), f.detailAfter)
 	page.ok()
 	await frames(12)
-	check("after_popup", page.mode == "list" and page.popup_win.openness < 255 and page.gold_win.openness < 255, [page.mode, page.gold_win.openness])
+	check("after_popup", page.mode == "list" and page.popup_win.openness < 255 and page.gold_win.openness < 255 and not page.buttons_visible,
+		[page.mode, page.gold_win.openness, page.buttons_visible])
 	page.ok()
 	check("not_craftable_buzz", page.mode == "list")
 
