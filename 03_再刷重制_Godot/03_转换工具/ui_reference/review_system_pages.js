@@ -231,24 +231,6 @@
         }
     };
 
-    // 战斗内怪物信息：battle_enemy_book_oracle.json 的场面（地图 5、敌群 2、难度 3、四人），角色指令窗按 Shift 的原入口
-    P.battle_book = {
-        setup: async function () {
-            $gameSystem._difficultyId = 3;
-            $gameParty.members().forEach(function (a) { a.recoverAll(); });
-            BattleManager.setup(2, true, false);
-            SceneManager.push(Scene_Battle);
-            await wait(function () {
-                var s = scene();
-                return s instanceof Scene_Battle && SceneManager._sceneStarted && ImageManager.isReady() && s._actorCommandWindow && s._actorCommandWindow.isOpenAndActive();
-            }, 60000);
-            await settle(40);
-        },
-        shots: {
-            battle_42_enemy_book: async function () { scene()._actorCommandWindow.processAB_EnemyBook(); }
-        }
-    };
-
     // 修炼（八戒_64）：training_ui_oracle.json 的 setup（精魂 1234567890、XiuLian=[8,9,14,15]）；目录确定后的底部「修炼」，
     // 读数另记 44 个空格与「修炼」在原版字体下的实测宽（Godot 按它定「修炼」的横坐标）
     P.training = {
@@ -325,5 +307,23 @@
             alien_config_bound: async function () { domClick('配置异化'); }
         },
         extra: domReadout
+    };
+
+    // 战斗内怪物信息（放最后：进了战斗就回不到下一页的新局）：battle_enemy_book_oracle.json 的场面（地图 5、敌群 2、难度 3、四人），角色指令窗按 Shift 的原入口
+    P.battle_book = {
+        setup: async function () {
+            $gameSystem._difficultyId = 3;
+            $gameParty.members().forEach(function (a) { a.recoverAll(); });
+            BattleManager.setup(2, true, false);
+            SceneManager.push(Scene_Battle);
+            await wait(function () {
+                var s = scene();
+                return s instanceof Scene_Battle && SceneManager._sceneStarted && ImageManager.isReady() && s._actorCommandWindow && s._actorCommandWindow.isOpenAndActive();
+            }, 60000);
+            await settle(40);
+        },
+        shots: {
+            battle_42_enemy_book: async function () { scene()._actorCommandWindow.processAB_EnemyBook(); }
+        }
     };
 })();

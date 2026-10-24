@@ -38,7 +38,10 @@ static func path() -> String:
 
 
 static func screenshot_mode() -> bool:
-	return OS.get_cmdline_user_args().any(func(a: String) -> bool: return a.begins_with("--out="))
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--out="):
+			return true
+	return false
 
 
 static func ensure_loaded() -> void:
