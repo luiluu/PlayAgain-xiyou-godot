@@ -34,7 +34,7 @@ func shot(name: String) -> void:
 	if out_dir == "" or DisplayServer.get_name() == "headless":
 		return
 	await frames(3)
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw(false)
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
 
 
@@ -219,11 +219,28 @@ func _run() -> void:
 	var moved := team_skills.all(func(id): return second.skill_ids.has(id) and not s.actor(1).skill_ids.has(id))
 	check("team_a_switch", not team_skills.is_empty() and moved, [team_skills, second.actor_id])
 	XPets.rest(s, 1)
+	_identity_names(s, ref)
 	_create_and_save(s)
 	await _entry()
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## 两只属性相同的宠物仍是不同个体，出战标签只跟随原版 GTWar 对象身份。
+func _identity_names(s: XState, ref: Dictionary) -> void:
+	var oracle = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/pet_identity_oracle.json"))
+	var pet: Dictionary = pet_from(ref.pets[0])
+	pet.elite = false
+	var twin := pet.duplicate(true)
+	var old := s.pets
+	s.pets = {"list": [pet, twin], "war": 0, "team_a": 0}
+	var names := [XPets.pet_name(s, pet), XPets.pet_name(s, twin)]
+	check("duplicate_pet_war_name", names == oracle.names, names)
+	s.pets.war = 1
+	names = [XPets.pet_name(s, pet), XPets.pet_name(s, twin)]
+	check("duplicate_pet_war_name_switched", names == oracle.switchedNames, names)
+	s.pets = old
 
 
 func _create_and_save(s: XState) -> void:

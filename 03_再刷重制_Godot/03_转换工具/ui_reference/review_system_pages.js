@@ -42,6 +42,8 @@
         return out;
     }
     async function fresh() {
+        // 工坊是独立 DOM 层，SceneManager 换场景不会替它关闭。
+        if (window.CodexAlienation) CodexAlienation.closeWorkshop();
         Math.random = function () { return 0.5; };  // 同 mv_oracle 各探针：新局初始装备的随机浮动、宝珠孔数固定
         __ilr.newGame();
         if (window.CodexGuide) CodexGuide.MILESTONE_ENABLED = false;
@@ -64,7 +66,9 @@
     S.show = async function (name, shot) { await P[name].shots[shot](); await settle(); return true; };
     S.readout = function (name, shot) {
         var s = scene(), extra = P[name].extra ? P[name].extra(shot) : null;
-        return {fixture: '冻结v0.28；内存新局 1/8/9/10；地图 5；无存档', page: name, shot: shot, scene: s.constructor.name,
+        var alien = document.getElementById('alien-workshop');
+        var alienVisible = !!(alien && alien.getBoundingClientRect().width > 0 && alien.getBoundingClientRect().height > 0 && getComputedStyle(alien).display !== 'none');
+        return {fixture: '冻结v0.28；内存新局 1/8/9/10；地图 5；无存档', page: name, shot: shot, scene: s.constructor.name, alienOverlayVisible: alienVisible,
             windows: walk(s, []), extra: extra, errors: (window.__refErrors || []).slice()};
     };
 
@@ -286,6 +290,51 @@
         });
         s._indexTypeWindow.select(0);
         return out;
+    };
+
+    // 仓库（八戒_65）：方桌大厅仓库管理员 Map4 EV8「装备道具仓库」＝PHWarehouse create <仓库:999> 再 show <仓库>（PH_Warehouse 的 Scene_Warehouse，在插件闭包里）。
+    // 摆法：药水 1×5、2×3、蘑菇 6×2、指路灯 4×1、武器 2／9 各一件、防具 2 一件；开仓库后先真按存入：物品 1 两次、钥匙 4 一次、武器第 1 件、防具第 1 件，再回选项窗
+    function whCmd(args) { Game_Interpreter.prototype.pluginCommand.call(new Game_Interpreter(), 'PHWarehouse', args); }
+    function whDeposit(s, cat, pick) {
+        s._optionWindow.select(1); s.onOptionOk();
+        s._categoryWindow.selectSymbol(cat); s._categoryWindow.update(); s._itemWindow.refresh(); s.onCategoryOk();
+        var i = s._itemWindow._data.findIndex(pick); s._itemWindow.select(i); s.onItemOk();
+        s.onItemCancel(); s.onCategoryCancel();
+    }
+    P.warehouse = {
+        setup: async function () {
+            [[1, 5], [2, 3], [6, 2], [4, 1]].forEach(function (p) { $gameParty.gainItem($dataItems[p[0]], p[1]); });
+            $gameParty.gainItem($dataWeapons[2], 1); $gameParty.gainItem($dataWeapons[9], 1); $gameParty.gainItem($dataArmors[2], 1);
+            whCmd(['create', '<仓库:999>']);
+            await push('Scene_Warehouse', null, function () { whCmd(['show', '<仓库>']); });
+            var s = scene();
+            whDeposit(s, 'item', function (it) { return it && it.id === 1; });
+            whDeposit(s, 'item', function (it) { return it && it.id === 1; });
+            whDeposit(s, 'keyItem', function (it) { return it && it.id === 4; });
+            whDeposit(s, 'weapon', function (it) { return it && it.baseItemId === 2; });
+            whDeposit(s, 'armor', function (it) { return it && it.baseItemId === 2; });
+            s._optionWindow.select(0); s._optionWindow.activate(); s._infoLocationWindow.refresh();
+        },
+        shots: {
+            wh_0: async function () {},
+            wh_1_withdraw_category: async function () { scene().onOptionOk(); },
+            wh_2_withdraw_items: async function () { scene().onCategoryOk(); },
+            wh_3_withdraw_weapon: async function () { var s = scene(); s.onItemCancel(); s._categoryWindow.selectSymbol('weapon'); s._categoryWindow.update(); s.onCategoryOk(); },
+            wh_4_deposit_items: async function () { var s = scene(); s.onItemCancel(); s.onCategoryCancel(); s._optionWindow.select(1); s.onOptionOk(); s._categoryWindow.selectSymbol('item'); s._categoryWindow.update(); s.onCategoryOk(); },
+            wh_5_deposit_weapon: async function () { var s = scene(); s.onItemCancel(); s._categoryWindow.selectSymbol('weapon'); s._categoryWindow.update(); s.onCategoryOk(); s._itemWindow.select(1); },
+            wh_6_withdraw_one: async function () {
+                var s = scene(); s.onItemCancel(); s.onCategoryCancel(); s._optionWindow.select(0); s.onOptionOk();
+                s._categoryWindow.selectSymbol('item'); s._categoryWindow.update(); s.onCategoryOk(); s.onItemOk();
+            }
+        },
+        extra: function () {
+            var w = PHPlugins.PHWarehouse, s = scene();
+            return {seen: $gameSystem._seenItems, newRows: (s._itemWindow.contents.__ilrNew || []).slice(), warehouses: JSON.parse(JSON.stringify(w._warehouses, function (k, v) { return v; })), lastOption: w._lastOption, lastCategory: w._lastCategory,
+                data: s._itemWindow._data.map(function (it) { return it && [it.id, it.baseItemId || 0, it.name, DataManager.isWeapon(it) ? 'w' : DataManager.isArmor(it) ? 'a' : 'i']; }),
+                party: {items: $gameParty._items, weapons: Object.keys($gameParty._weapons).map(function (id) { return [Number(id), $dataWeapons[id].baseItemId]; }),
+                    armors: Object.keys($gameParty._armors).map(function (id) { return [Number(id), $dataArmors[id].baseItemId]; })},
+                list: {maxCols: s._itemWindow.maxCols(), itemHeight: s._itemWindow.itemHeight(), category: {cols: s._categoryWindow.maxCols(), rows: s._categoryWindow.numVisibleRows ? s._categoryWindow.numVisibleRows() : null}}};
+        }
     };
 
     // 异化工坊：alien_workshop 探针的 list 路线、alien_config 探针的 bound 路线（DOM 叠加层，整页截图）

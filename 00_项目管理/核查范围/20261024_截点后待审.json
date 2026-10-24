@@ -1,0 +1,62 @@
+{
+  "mainHead": "ffe51ae15ba79c55dc8bcf66981a0fe2858eda54",
+  "notCoveredBy36Entries": [
+    {
+      "label": "唐僧_17 交接：夜间合并 dev.155～161、悟空 reach2 返工中",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "6592dc4"
+      ],
+      "executor": "Claude（唐僧）",
+      "docOnly": true
+    },
+    {
+      "label": "唐僧_18 开工登记",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "c42d928"
+      ],
+      "executor": "Claude（唐僧_18）",
+      "docOnly": true
+    },
+    {
+      "label": "登记用户拍板：待决项全部按默认（O-048～089 保留、Map023 入口照原版等）",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "2da73e9"
+      ],
+      "executor": "Claude（唐僧_18）",
+      "docOnly": true
+    },
+    {
+      "label": "合并 claude/wukong-reach2",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "9402b66",
+        "f0e7ed8",
+        "abdc8c1",
+        "c26755e",
+        "9300b8b",
+        "9a9f14c",
+        "0aa0557",
+        "ffe51ae"
+      ],
+      "executor": "Claude（悟空）、Claude（唐僧）",
+      "docOnly": false
+    }
+  ],
+  "status": "四项已完成，后续三条登记亦核查，详最终清单",
+  "finalCutoff": "3614777a"
+}

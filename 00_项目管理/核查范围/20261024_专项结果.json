@@ -1,0 +1,320 @@
+{
+  "runId": "d6ebd78e6d3f4cbb91df30a462dad7a4",
+  "sceneCount": 26,
+  "totalAssertions": 15260,
+  "flaky": [],
+  "scenes": [
+    {
+      "scene": "xiyou_floor_unknown160.tscn",
+      "passed": 173,
+      "total": 173,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 118.016,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_troop_events.tscn",
+      "passed": 6574,
+      "total": 6574,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 69.348,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_troop_events_b.tscn",
+      "passed": 6450,
+      "total": 6450,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 67.371,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_floor_brave083.tscn",
+      "passed": 101,
+      "total": 101,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 65.044,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_event_compare.tscn",
+      "passed": 5,
+      "total": 5,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 57.782,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_floor_brave081.tscn",
+      "passed": 66,
+      "total": 66,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 30.97,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_battle_ui.tscn",
+      "passed": 70,
+      "total": 70,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 23.495,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_floor_guild197.tscn",
+      "passed": 62,
+      "total": 62,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 19.844,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_panels.tscn",
+      "passed": 35,
+      "total": 35,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 9.38,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_gear_ui.tscn",
+      "passed": 47,
+      "total": 47,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 8.14,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_interp_review.tscn",
+      "passed": 13,
+      "total": 13,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 7.758,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_enemy_book.tscn",
+      "passed": 51,
+      "total": 51,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 5.244,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_item_marks.tscn",
+      "passed": 108,
+      "total": 108,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.759,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_cat.tscn",
+      "passed": 992,
+      "total": 992,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.631,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_save_page.tscn",
+      "passed": 40,
+      "total": 40,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.48,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_alien_workshop.tscn",
+      "passed": 40,
+      "total": 40,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.433,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_popup_overlap.tscn",
+      "passed": 6,
+      "total": 6,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.352,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_review135.tscn",
+      "passed": 84,
+      "total": 84,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.273,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_crafting.tscn",
+      "passed": 43,
+      "total": 43,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.262,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_race_menu.tscn",
+      "passed": 66,
+      "total": 66,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.148,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_alien_config.tscn",
+      "passed": 95,
+      "total": 95,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.955,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_notice_options.tscn",
+      "passed": 71,
+      "total": 71,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.865,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_magic_level.tscn",
+      "passed": 7,
+      "total": 7,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.863,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_pet_synth.tscn",
+      "passed": 23,
+      "total": 23,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.862,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_pets.tscn",
+      "passed": 27,
+      "total": 27,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.486,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scene": "xiyou_item_use.tscn",
+      "passed": 11,
+      "total": 11,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.475,
+          "passed": true
+        }
+      ]
+    }
+  ]
+}

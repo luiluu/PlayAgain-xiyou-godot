@@ -1,0 +1,1633 @@
+{
+ "source": "冻结 v0.28；ui_reference/review_system_pages.js warehouse（内存新局 1/8/9/10、地图 5；药水 1×5、2×3、蘑菇 6×2、指路灯 4×1、武器 2／9、防具 2；先存入物品 1 两次、钥匙 4、武器 2、防具 2）",
+ "shots": {
+  "wh_0": {
+   "windows": {
+    "Window_WarehouseTitle": {
+     "rect": [
+      0,
+      0,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "仓库",
+       0,
+       0,
+       1280,
+       "center",
+       26,
+       "#ffff40"
+      ]
+     ]
+    },
+    "Window_WarehouseOption": {
+     "rect": [
+      0,
+      64,
+      1280,
+      64
+     ],
+     "index": 0,
+     "active": true,
+     "texts": [
+      [
+       "取出",
+       6,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "储存",
+       638,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseCategory": {
+     "rect": [
+      0,
+      136,
+      1280,
+      64
+     ],
+     "index": -1,
+     "active": true,
+     "texts": [
+      [
+       "物品",
+       6,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "武器",
+       322,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "护甲",
+       638,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "重要物品",
+       954,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseItemList": {
+     "rect": [
+      0,
+      208,
+      1280,
+      440
+     ],
+     "index": -1,
+     "active": true,
+     "texts": []
+    },
+    "Window_WarehouseInfo": {
+     "rect": [
+      0,
+      656,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "可用空间: 994 / 999",
+       0,
+       0,
+       0,
+       "left",
+       26,
+       "#ffffff"
+      ]
+     ]
+    }
+   },
+   "newRows": [],
+   "data": [],
+   "party": {
+    "items": {
+     "1": 3,
+     "2": 3,
+     "6": 2
+    },
+    "weapons": [
+     [
+      4081,
+      9
+     ]
+    ],
+    "armors": []
+   },
+   "warehouses": {
+    "仓库": {
+     "title": "仓库",
+     "maxCapacity": 999,
+     "currentCapacity": 5,
+     "rule": null,
+     "lootBonus": false,
+     "items": {
+      "item": [
+       1
+      ],
+      "weapon": [
+       4080
+      ],
+      "armor": [
+       8018
+      ],
+      "keyItem": [
+       4
+      ]
+     },
+     "qtty": {
+      "item": {
+       "1": 2
+      },
+      "weapon": {
+       "4080": 1
+      },
+      "armor": {
+       "8018": 1
+      },
+      "keyItem": {
+       "4": 1
+      }
+     }
+    }
+   },
+   "lastOption": 1,
+   "lastCategory": "item",
+   "list": {
+    "maxCols": 2,
+    "itemHeight": 36,
+    "category": {
+     "cols": 4,
+     "rows": 1
+    }
+   }
+  },
+  "wh_1_withdraw_category": {
+   "windows": {
+    "Window_WarehouseTitle": {
+     "rect": [
+      0,
+      0,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "仓库",
+       0,
+       0,
+       1280,
+       "center",
+       26,
+       "#ffff40"
+      ]
+     ]
+    },
+    "Window_WarehouseOption": {
+     "rect": [
+      0,
+      64,
+      1280,
+      64
+     ],
+     "index": 0,
+     "active": false,
+     "texts": [
+      [
+       "取出",
+       6,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "储存",
+       638,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseCategory": {
+     "rect": [
+      0,
+      136,
+      1280,
+      64
+     ],
+     "index": 0,
+     "active": true,
+     "texts": [
+      [
+       "物品",
+       6,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "武器",
+       322,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "护甲",
+       638,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "重要物品",
+       954,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseItemList": {
+     "rect": [
+      0,
+      208,
+      1280,
+      440
+     ],
+     "index": -1,
+     "active": true,
+     "texts": [
+      [
+       "治疗药水(小)",
+       36,
+       0,
+       464.13,
+       "left",
+       26,
+       "rgba(235,240,247,1)"
+      ],
+      [
+       "×2",
+       0,
+       0,
+       596,
+       "right",
+       20,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseInfo": {
+     "rect": [
+      0,
+      656,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "可用空间: 994 / 999",
+       0,
+       0,
+       0,
+       "left",
+       26,
+       "#ffffff"
+      ]
+     ]
+    }
+   },
+   "newRows": [
+    [
+     2,
+     2
+    ]
+   ],
+   "data": [
+    [
+     1,
+     0,
+     "治疗药水(小)",
+     "i"
+    ]
+   ],
+   "party": {
+    "items": {
+     "1": 3,
+     "2": 3,
+     "6": 2
+    },
+    "weapons": [
+     [
+      4081,
+      9
+     ]
+    ],
+    "armors": []
+   },
+   "warehouses": {
+    "仓库": {
+     "title": "仓库",
+     "maxCapacity": 999,
+     "currentCapacity": 5,
+     "rule": null,
+     "lootBonus": false,
+     "items": {
+      "item": [
+       1
+      ],
+      "weapon": [
+       4080
+      ],
+      "armor": [
+       8018
+      ],
+      "keyItem": [
+       4
+      ]
+     },
+     "qtty": {
+      "item": {
+       "1": 2
+      },
+      "weapon": {
+       "4080": 1
+      },
+      "armor": {
+       "8018": 1
+      },
+      "keyItem": {
+       "4": 1
+      }
+     }
+    }
+   },
+   "lastOption": 0,
+   "lastCategory": "item",
+   "list": {
+    "maxCols": 2,
+    "itemHeight": 36,
+    "category": {
+     "cols": 4,
+     "rows": 1
+    }
+   }
+  },
+  "wh_2_withdraw_items": {
+   "windows": {
+    "Window_WarehouseTitle": {
+     "rect": [
+      0,
+      0,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "仓库",
+       0,
+       0,
+       1280,
+       "center",
+       26,
+       "#ffff40"
+      ]
+     ]
+    },
+    "Window_WarehouseOption": {
+     "rect": [
+      0,
+      64,
+      1280,
+      64
+     ],
+     "index": 0,
+     "active": false,
+     "texts": [
+      [
+       "取出",
+       6,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "储存",
+       638,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseCategory": {
+     "rect": [
+      0,
+      136,
+      1280,
+      64
+     ],
+     "index": 0,
+     "active": false,
+     "texts": [
+      [
+       "物品",
+       6,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "武器",
+       322,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "护甲",
+       638,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "重要物品",
+       954,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseItemList": {
+     "rect": [
+      0,
+      208,
+      1280,
+      440
+     ],
+     "index": 0,
+     "active": true,
+     "texts": [
+      [
+       "治疗药水(小)",
+       36,
+       0,
+       464.13,
+       "left",
+       26,
+       "rgba(235,240,247,1)"
+      ],
+      [
+       "×2",
+       0,
+       0,
+       596,
+       "right",
+       20,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseInfo": {
+     "rect": [
+      0,
+      656,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "可用空间: 994 / 999",
+       0,
+       0,
+       0,
+       "left",
+       26,
+       "#ffffff"
+      ]
+     ]
+    }
+   },
+   "newRows": [
+    [
+     2,
+     2
+    ]
+   ],
+   "data": [
+    [
+     1,
+     0,
+     "治疗药水(小)",
+     "i"
+    ]
+   ],
+   "party": {
+    "items": {
+     "1": 3,
+     "2": 3,
+     "6": 2
+    },
+    "weapons": [
+     [
+      4081,
+      9
+     ]
+    ],
+    "armors": []
+   },
+   "warehouses": {
+    "仓库": {
+     "title": "仓库",
+     "maxCapacity": 999,
+     "currentCapacity": 5,
+     "rule": null,
+     "lootBonus": false,
+     "items": {
+      "item": [
+       1
+      ],
+      "weapon": [
+       4080
+      ],
+      "armor": [
+       8018
+      ],
+      "keyItem": [
+       4
+      ]
+     },
+     "qtty": {
+      "item": {
+       "1": 2
+      },
+      "weapon": {
+       "4080": 1
+      },
+      "armor": {
+       "8018": 1
+      },
+      "keyItem": {
+       "4": 1
+      }
+     }
+    }
+   },
+   "lastOption": 0,
+   "lastCategory": "item",
+   "list": {
+    "maxCols": 2,
+    "itemHeight": 36,
+    "category": {
+     "cols": 4,
+     "rows": 1
+    }
+   }
+  },
+  "wh_3_withdraw_weapon": {
+   "windows": {
+    "Window_WarehouseTitle": {
+     "rect": [
+      0,
+      0,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "仓库",
+       0,
+       0,
+       1280,
+       "center",
+       26,
+       "#ffff40"
+      ]
+     ]
+    },
+    "Window_WarehouseOption": {
+     "rect": [
+      0,
+      64,
+      1280,
+      64
+     ],
+     "index": 0,
+     "active": false,
+     "texts": [
+      [
+       "取出",
+       6,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "储存",
+       638,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseCategory": {
+     "rect": [
+      0,
+      136,
+      1280,
+      64
+     ],
+     "index": 1,
+     "active": false,
+     "texts": [
+      [
+       "物品",
+       6,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "武器",
+       322,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "护甲",
+       638,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "重要物品",
+       954,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseItemList": {
+     "rect": [
+      0,
+      208,
+      1280,
+      440
+     ],
+     "index": 0,
+     "active": true,
+     "texts": [
+      [
+       "练习剑",
+       36,
+       0,
+       464.13,
+       "left",
+       26,
+       "rgba(235,240,247,1)"
+      ],
+      [
+       "×1",
+       0,
+       0,
+       596,
+       "right",
+       20,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseInfo": {
+     "rect": [
+      0,
+      656,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "可用空间: 994 / 999",
+       0,
+       0,
+       0,
+       "left",
+       26,
+       "#ffffff"
+      ]
+     ]
+    }
+   },
+   "newRows": [
+    [
+     2,
+     2
+    ]
+   ],
+   "data": [
+    [
+     4080,
+     2,
+     "练习剑",
+     "w"
+    ]
+   ],
+   "party": {
+    "items": {
+     "1": 3,
+     "2": 3,
+     "6": 2
+    },
+    "weapons": [
+     [
+      4081,
+      9
+     ]
+    ],
+    "armors": []
+   },
+   "warehouses": {
+    "仓库": {
+     "title": "仓库",
+     "maxCapacity": 999,
+     "currentCapacity": 5,
+     "rule": null,
+     "lootBonus": false,
+     "items": {
+      "item": [
+       1
+      ],
+      "weapon": [
+       4080
+      ],
+      "armor": [
+       8018
+      ],
+      "keyItem": [
+       4
+      ]
+     },
+     "qtty": {
+      "item": {
+       "1": 2
+      },
+      "weapon": {
+       "4080": 1
+      },
+      "armor": {
+       "8018": 1
+      },
+      "keyItem": {
+       "4": 1
+      }
+     }
+    }
+   },
+   "lastOption": 0,
+   "lastCategory": "weapon",
+   "list": {
+    "maxCols": 2,
+    "itemHeight": 36,
+    "category": {
+     "cols": 4,
+     "rows": 1
+    }
+   }
+  },
+  "wh_4_deposit_items": {
+   "windows": {
+    "Window_WarehouseTitle": {
+     "rect": [
+      0,
+      0,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "仓库",
+       0,
+       0,
+       1280,
+       "center",
+       26,
+       "#ffff40"
+      ]
+     ]
+    },
+    "Window_WarehouseOption": {
+     "rect": [
+      0,
+      64,
+      1280,
+      64
+     ],
+     "index": 1,
+     "active": false,
+     "texts": [
+      [
+       "取出",
+       6,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "储存",
+       638,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseCategory": {
+     "rect": [
+      0,
+      136,
+      1280,
+      64
+     ],
+     "index": 0,
+     "active": false,
+     "texts": [
+      [
+       "物品",
+       6,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "武器",
+       322,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "护甲",
+       638,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "重要物品",
+       954,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseItemList": {
+     "rect": [
+      0,
+      208,
+      1280,
+      440
+     ],
+     "index": 0,
+     "active": true,
+     "texts": [
+      [
+       "治疗药水(小)",
+       36,
+       0,
+       464.13,
+       "left",
+       26,
+       "rgba(235,240,247,1)"
+      ],
+      [
+       "×3",
+       0,
+       0,
+       596,
+       "right",
+       20,
+       "#ffffff"
+      ],
+      [
+       "魔力药水(小)",
+       686,
+       0,
+       464.13,
+       "left",
+       26,
+       "rgba(235,240,247,1)"
+      ],
+      [
+       "×3",
+       650,
+       0,
+       596,
+       "right",
+       20,
+       "#ffffff"
+      ],
+      [
+       "可口的蘑菇",
+       36,
+       36,
+       464.13,
+       "left",
+       26,
+       "rgba(235,240,247,1)"
+      ],
+      [
+       "×2",
+       0,
+       36,
+       596,
+       "right",
+       20,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseInfo": {
+     "rect": [
+      0,
+      656,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "可用空间: 994 / 999",
+       0,
+       0,
+       0,
+       "left",
+       26,
+       "#ffffff"
+      ]
+     ]
+    }
+   },
+   "newRows": [
+    [
+     2,
+     2
+    ],
+    [
+     652,
+     2
+    ],
+    [
+     2,
+     38
+    ]
+   ],
+   "data": [
+    [
+     1,
+     0,
+     "治疗药水(小)",
+     "i"
+    ],
+    [
+     2,
+     0,
+     "魔力药水(小)",
+     "i"
+    ],
+    [
+     6,
+     0,
+     "可口的蘑菇",
+     "i"
+    ]
+   ],
+   "party": {
+    "items": {
+     "1": 3,
+     "2": 3,
+     "6": 2
+    },
+    "weapons": [
+     [
+      4081,
+      9
+     ]
+    ],
+    "armors": []
+   },
+   "warehouses": {
+    "仓库": {
+     "title": "仓库",
+     "maxCapacity": 999,
+     "currentCapacity": 5,
+     "rule": null,
+     "lootBonus": false,
+     "items": {
+      "item": [
+       1
+      ],
+      "weapon": [
+       4080
+      ],
+      "armor": [
+       8018
+      ],
+      "keyItem": [
+       4
+      ]
+     },
+     "qtty": {
+      "item": {
+       "1": 2
+      },
+      "weapon": {
+       "4080": 1
+      },
+      "armor": {
+       "8018": 1
+      },
+      "keyItem": {
+       "4": 1
+      }
+     }
+    }
+   },
+   "lastOption": 1,
+   "lastCategory": "item",
+   "list": {
+    "maxCols": 2,
+    "itemHeight": 36,
+    "category": {
+     "cols": 4,
+     "rows": 1
+    }
+   }
+  },
+  "wh_5_deposit_weapon": {
+   "windows": {
+    "Window_WarehouseTitle": {
+     "rect": [
+      0,
+      0,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "仓库",
+       0,
+       0,
+       1280,
+       "center",
+       26,
+       "#ffff40"
+      ]
+     ]
+    },
+    "Window_WarehouseOption": {
+     "rect": [
+      0,
+      64,
+      1280,
+      64
+     ],
+     "index": 1,
+     "active": false,
+     "texts": [
+      [
+       "取出",
+       6,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "储存",
+       638,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseCategory": {
+     "rect": [
+      0,
+      136,
+      1280,
+      64
+     ],
+     "index": 1,
+     "active": false,
+     "texts": [
+      [
+       "物品",
+       6,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "武器",
+       322,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "护甲",
+       638,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "重要物品",
+       954,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseItemList": {
+     "rect": [
+      0,
+      208,
+      1280,
+      440
+     ],
+     "index": 1,
+     "active": true,
+     "texts": [
+      [
+       "短弓",
+       36,
+       0,
+       464.13,
+       "left",
+       26,
+       "rgba(235,240,247,1)"
+      ],
+      [
+       "1/9,999",
+       0,
+       0,
+       596,
+       "right",
+       20,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseInfo": {
+     "rect": [
+      0,
+      656,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "可用空间: 994 / 999",
+       0,
+       0,
+       0,
+       "left",
+       26,
+       "#ffffff"
+      ]
+     ]
+    }
+   },
+   "newRows": [
+    [
+     2,
+     2
+    ]
+   ],
+   "data": [
+    [
+     4081,
+     9,
+     "短弓",
+     "w"
+    ]
+   ],
+   "party": {
+    "items": {
+     "1": 3,
+     "2": 3,
+     "6": 2
+    },
+    "weapons": [
+     [
+      4081,
+      9
+     ]
+    ],
+    "armors": []
+   },
+   "warehouses": {
+    "仓库": {
+     "title": "仓库",
+     "maxCapacity": 999,
+     "currentCapacity": 5,
+     "rule": null,
+     "lootBonus": false,
+     "items": {
+      "item": [
+       1
+      ],
+      "weapon": [
+       4080
+      ],
+      "armor": [
+       8018
+      ],
+      "keyItem": [
+       4
+      ]
+     },
+     "qtty": {
+      "item": {
+       "1": 2
+      },
+      "weapon": {
+       "4080": 1
+      },
+      "armor": {
+       "8018": 1
+      },
+      "keyItem": {
+       "4": 1
+      }
+     }
+    }
+   },
+   "lastOption": 1,
+   "lastCategory": "weapon",
+   "list": {
+    "maxCols": 2,
+    "itemHeight": 36,
+    "category": {
+     "cols": 4,
+     "rows": 1
+    }
+   }
+  },
+  "wh_6_withdraw_one": {
+   "windows": {
+    "Window_WarehouseTitle": {
+     "rect": [
+      0,
+      0,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "仓库",
+       0,
+       0,
+       1280,
+       "center",
+       26,
+       "#ffff40"
+      ]
+     ]
+    },
+    "Window_WarehouseOption": {
+     "rect": [
+      0,
+      64,
+      1280,
+      64
+     ],
+     "index": 0,
+     "active": false,
+     "texts": [
+      [
+       "取出",
+       6,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "储存",
+       638,
+       0,
+       608,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseCategory": {
+     "rect": [
+      0,
+      136,
+      1280,
+      64
+     ],
+     "index": 0,
+     "active": false,
+     "texts": [
+      [
+       "物品",
+       6,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "武器",
+       322,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "护甲",
+       638,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ],
+      [
+       "重要物品",
+       954,
+       0,
+       292,
+       "center",
+       26,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseItemList": {
+     "rect": [
+      0,
+      208,
+      1280,
+      440
+     ],
+     "index": 0,
+     "active": true,
+     "texts": [
+      [
+       "治疗药水(小)",
+       36,
+       0,
+       464.13,
+       "left",
+       26,
+       "rgba(235,240,247,1)"
+      ],
+      [
+       "×1",
+       0,
+       0,
+       596,
+       "right",
+       20,
+       "#ffffff"
+      ]
+     ]
+    },
+    "Window_WarehouseInfo": {
+     "rect": [
+      0,
+      656,
+      1280,
+      64
+     ],
+     "index": null,
+     "active": true,
+     "texts": [
+      [
+       "可用空间: 995 / 999",
+       0,
+       0,
+       0,
+       "left",
+       26,
+       "#ffffff"
+      ]
+     ]
+    }
+   },
+   "newRows": [
+    [
+     2,
+     2
+    ]
+   ],
+   "data": [
+    [
+     1,
+     0,
+     "治疗药水(小)",
+     "i"
+    ]
+   ],
+   "party": {
+    "items": {
+     "1": 4,
+     "2": 3,
+     "6": 2
+    },
+    "weapons": [
+     [
+      4081,
+      9
+     ]
+    ],
+    "armors": []
+   },
+   "warehouses": {
+    "仓库": {
+     "title": "仓库",
+     "maxCapacity": 999,
+     "currentCapacity": 4,
+     "rule": null,
+     "lootBonus": false,
+     "items": {
+      "item": [
+       1
+      ],
+      "weapon": [
+       4080
+      ],
+      "armor": [
+       8018
+      ],
+      "keyItem": [
+       4
+      ]
+     },
+     "qtty": {
+      "item": {
+       "1": 1
+      },
+      "weapon": {
+       "4080": 1
+      },
+      "armor": {
+       "8018": 1
+      },
+      "keyItem": {
+       "4": 1
+      }
+     }
+    }
+   },
+   "lastOption": 0,
+   "lastCategory": "item",
+   "list": {
+    "maxCols": 2,
+    "itemHeight": 36,
+    "category": {
+     "cols": 4,
+     "rows": 1
+    }
+   }
+  }
+ }
+}
