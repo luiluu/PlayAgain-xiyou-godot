@@ -226,9 +226,10 @@ func _castle() -> void:
 	map = _scene()
 	_check("tuck_fight", battles.size() == n3 + 1 and battles[-1].troop == 142 and battles[-1].result == 0 and s.switch(64), [battles.slice(n3), s.switch(64)])
 	# 通关页：没有 38 号角色就回 Map029 (10,31) 并重置
-	# 原版持有物品 179 时先掷变量 106／107，可能改传 Map037／038；本例走固定回 Map029 的分支，先清掉 179
-	s.gain_item(179, -s.item_count(179))
-	await _run_event(map, 2, [], "")
+	# 原版持有179必出门；没有179也有随机出门的可能。强制出现门并选「离开」，固定本例的回程。
+	s.gain_item(179, 1)
+	await _run_event(map, 2, [1], "")
+	_check("lab_portal_declined", int(s.variable(106)) == 1, s.variable(106))
 	_check("lab_exit", await _wait_map(29) and _scene().player.grid == Vector2i(10, 31), [_scene().map_id])
 	_check("lab_reset", int(s.variable(5)) == 0 and int(s.variable(6)) == 0 and not s.switch(61) and not s.switch(64), [s.variable(5), s.switch(61)])
 	# 回 Map035，逃离阵

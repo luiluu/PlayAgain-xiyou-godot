@@ -110,7 +110,8 @@ def main():
     for d, label in ((a.formal, "formal"), (a.godot, "godot")):
         for shot in list(PAIRS) + RACE + ["craft_1_list", "craft_3_confirm_x3", "craft_4_popup", "pet_0", "pet_1_skills",
                                           "alien_list", "alien_list_pending", "alien_config_bound"] + list(BOOK) + ["training_bottom"]:
-            checks["png_%s_%s" % (label, shot)] = png_ok(d / (shot + ".png"))
+            image_name = "training_2_bottom" if label == "godot" and shot == "training_bottom" else shot
+            checks["png_%s_%s" % (label, shot)] = png_ok(d / (image_name + ".png"))
     result = {"checks": checks, "passed": sum(checks.values()), "total": len(checks), "differences": diffs,
               "limits": ["只比窗口矩形与行文；文字逐条绘制由各专项对 fixture 断言，画面观感逐张人工看",
                          "说明卡位置／字号／出售价分别是已登记 O-008／O-007／O-049，不比",
