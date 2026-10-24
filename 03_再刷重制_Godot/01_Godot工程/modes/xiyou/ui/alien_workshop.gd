@@ -587,7 +587,9 @@ func render(partial := false) -> void:
 	scroll.custom_minimum_size.y = minf(box.get_combined_minimum_size().y, size.y * 0.94 - (PANE_BORDER + PANE_PAD.y) * 2)
 	var first := _first_button(box)
 	if first != null:
-		first.grab_focus()
+		# 原版重画后不聚焦任何按钮，焦点框只在键盘操作后画（:focus-visible）。这里仍把焦点放在第一个按钮，方向键可直接走，
+		# 但先不画框（hide_focus），键盘移动焦点后才显示
+		first.grab_focus(true)
 	# 原版重画后停在顶部（键盘焦点跟随只在之后移动时滚）
 	await get_tree().process_frame
 	if is_instance_valid(scroll):
