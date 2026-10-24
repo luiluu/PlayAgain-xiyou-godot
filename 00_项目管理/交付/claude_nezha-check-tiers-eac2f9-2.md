@@ -28,6 +28,13 @@
 - `xiyou_rules` 过滤实测（并行测试.py，机器负载 40～65，多数时间在等共用槽位）：`RULES_ONLY_TROOPS=833 RULES_ONLY_ACTORS=178` 跑 `xiyou_rules.tscn` 5307/5307、`xiyou_rules_d4.tscn` 5307/5307、`xiyou_rules_d1b.tscn` 1/1（由第 0 份覆盖）；`RULES_ONLY_TROOPS=999999` 跑 `xiyou_rules.tscn` 判失败（`d1.rules_only_matched`）；不设变量跑 `xiyou_rules_d1b.tscn` 101542/101542，与 main 最近一轮整轮记录相同。
 - 车道不跑全量 `检查.sh`。临时输出都在会话草稿目录，资料库里没有留下。
 
+## 可优化（流程／工具／效率）
+
+- 已做：白天合并按影响面选测（`检查.sh --affected`、`合并车道.sh --finish --affected`），只改文档的合并从约 10 分钟降到几秒（回退：不加 `--affected` 即原全量；对照表某组改 `"full": true` 即把该类改回整轮）。
+- 已做：`xiyou_rules` 按编号过滤，车道过程中验新增敌群／角色只跑 6 个第 0 份里的选中行（回退：不设环境变量即原行为）。
+- 建议：选测碰到 `xstate.gd`、地图解释器时几乎全选（140+ 场景），收益集中在窄改动；以后可按「引用它的测试」再细化 xstate 的入口（预计收益中，归车道 D）。
+- 建议：`并行测试.py` 整轮时检测 `RULES_ONLY_*` 并拒绝或不写沿用记录（属沿用规则改动，待总装定）。
+
 ## 本分支提交
 
 - 见 `git log main..claude/nezha-check-tiers-eac2f9-2`
