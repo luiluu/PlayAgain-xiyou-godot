@@ -1,7 +1,7 @@
 # 交付：claude/bajie-goldcap
 
 - 车道／工作者：B 界面／八戒（Claude，重制_八戒_62）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -27,9 +27,16 @@
 
 ## 验证
 
-（待写）
+- `并行测试.py` 专项 26 场，全部首次通过、无偶发（并行 2）：gold_cap 30、training 188、shop_buy 5680、shop_stock 46、crafting 43、save_page 40、hud 34、hangup 25、hangup_auto 226、hangup_options 57、lobby_shops 92、orb_shop 22、orb_shop_ui 27、item_marks 108、settlement 11、event_compare 5、flow 48、script 19、battle 8、battle_events 108、battle_options 92、battle_ui 70、battleback_save 5、panels 35、review_regressions 29、window_rects 9。
+- O-085 回退：临时把 `GOLD_FLOOR_ZERO` 设为 false 单跑 `xiyou_gold_cap`，30/30（扣到负数的几段与原版逐步相同），之后已改回 true。
+- 合 main（a6bc3128，带进悟空的哥布林／机械实验室切片，`优化登记.md` 冲突已解：保留 main 的 O-084，再接 O-085）后，跑了 `新建工作树.sh --补齐`、`同步正式西游.py --accept-additions`（测量不变，留下产物指纹；gold_probe 新增产物 gold.json），并单跑 `xiyou_gold_cap` 30/30。按车道规则没跑全量。
+- 原版读数取自另一会话已开着的只读参照服务（127.0.0.1:8766，同一冻结源 app.nw），只在浏览器内存新局里读，不读写存档。
+- 临时输出已清理：`04_验证/本地结果/bajie-goldcap/`（测试与同步日志）、两份 `自动同步/` 备份、`原版参照/goldcap/`、草稿区日志都已删除。`mv_oracle/.sandbox/` 和 `同步基线` 是同步指纹用的，保留。
 
 ## 本分支提交
 
 - d444680a 精魂上限对齐原版 9999 亿：gain_gold 上下限常量（O-085 下限 0）、修炼走统一扣钱、菜单金额分组与 A lotta 超宽规则、gold_probe
 - 69c49bce WIP: 精魂上限测试 xiyou_gold_cap、优化登记 O-085、界面风格注明金钱窗超宽规则
+- 9e081296 WIP: xiyou_gold_cap 修类型推断，交付单草稿
+- 82b890b2 WIP: xiyou_gold_cap.gd.uid
+- b3d42f13 合并 main（解 优化登记.md 冲突）
