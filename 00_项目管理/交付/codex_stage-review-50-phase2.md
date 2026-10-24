@@ -45,24 +45,13 @@
 - 对后来main只应用一期该分类增量，保留其新增初值，不用49.8覆盖后来main，也不重复加分。
 - 50%审查完成后，nextReviewAtPercent应为75，之后95；一期已列11项O由总装登记。
 
-## 接手记录
+## 后续定位（尚未实施）
 
-- 沙僧56于2026-10-25沿用指定树接手，开工HEAD342cdc6a、工作区干净，额度五小时66%、周71%。主库交接板只读，共用登记未改。
-- 原版最终两例runId2a59b90e60474298ac0594c9d67fbeec已退出0、errors空，来源前后一致，不重做旧原型。早期任务和仓库修后任务均已结束；最终同步现已结束，红绿负控也已结束，当前接12场最终专项。
-- 每小步尾注执行者Codex（沙僧）／核查待Claude；95%额度收尾，上下文40%保存现场后按用户授权同工作区接力。
+- 四零散项另开分支，与2g分开交付。已只读定位：`battle/battle_logic.gd:244`技能消耗；`core/battler.gd:287`实际死亡转移；`core/enemy_book.gd:94`已有计数接口，不能在对尸体重复观察处无条件记数；`cat_probe.cjs:216`及`xiyou_cat.gd:330`旧tpGap须去。
+- 冻结`dsPassiveSkill.js:1823／1853`：仅actor，汇总All／Zj(stype1)／Mf(stype2)／技能N，折扣只封顶100、不夹负，基础消耗后乘再floor；自身缓存顺序仍须按原版取证。`b3ab53e6`冻结参照在`js/codex/runtime/installDamageElementRuntime.js:117`的ownBonus。F31上限尚未定位，不能把formula_program深度64误当该项。
+- 2g原分支`bf585fdc`，先读其交付单；五TP块13专项12过，formula_effects两capState_buffs待修：通用add_state锁应除XEnemy外生效；另做formula_context影子克隆剥离运行时域和生命周期预览。永久加算复用`XParamPlus／mv_param_plus`，actor末尾`XTraining`挂点保留。
 
-## 沙僧56→57（2026-10-25，上下文接力）
+## 本轮收尾记录
 
-- 当前状态仍进行中；覆盖审查、最终同步、事件空过滤修复及红绿负控均完成。**只剩已启动12场专项→最终摘要／报告／交付单／清本车道final临时目录**，不要再读大范围、再同步或重做原版补证。
-- 本轮检查点：fb60540d接手；e8926dbf整理交付单；4ad62e28同步分组计数；3242ddd8事件cases_ran只要求实际大于0＋最终同步通过凭证；09140c92补测试uid和记录；98147f25红绿负控确认。代码与验证门仍待Claude。
-- **同步已彻底结束**：runId126c6d6c96a746c3ab4b2566a60369ca，23条命令（18探针组，slice六难度）全退出0，36组复用；总耗时3690.687秒含排槽，测量不变，来源1785／runtime382／outputs1779核验issues空，Godot import通过、整轮退出0。报告／toolsDigest及outputsDigest已入机器摘要finalSync，不再同步。原events三未结束及m4e8p1错误保持原基线，不能冒充新成功。
-- **事件红绿已结束**：filter-red旧零例5/5／rc0、runner接受；3242ddd8一行修复；filter-green零例4/5／FAIL cases_ran／rc1、runner拒收，helper预期验证退出0。机器摘要eventFilterGuard已有原始结构化结果，不重跑。
-- **唯一活跃任务**：最终精确12场deps，runId8b5c19c54a284f3a9451c6ae4e9aafcc，PID51809／childPGID51812，日志stage-review-50-phase2-final/deps.log，启动2026-10-25 01:04 Paris。下一聊天先读.status.json，再用等待任务.sh --timeout 540续等；不重启、不另起测试、不动其他车道进程、不改并发／指纹。结果在final/deps/test_timings.json；首次／重跑／flaky和各场TEST_RESULT都要保留到精简摘要。
-- 最终12场清单见本单上文。测完只修真实失败；无新影响的不重复跑旧状态效果19949、工具260／共性25、仓库／镶嵌。文档登记段旧exit0，最终文档改完可再执行检查.sh的29～85行Python正文（只文档登记，不能整脚本或全量），保存最新结果。
-- 最终交付：机器摘要移除finalDepsPending加入最终12场及总数；报告事件／商店／依赖待终验句改准确；本单状态改可合并并清掉在途说明，保留变更草稿、遗留、验证、进度；先精简入Git再只删本车道stage-review-50-phase2-final目录。**整树、其他旧原版证据、mv_oracle/.sandbox与generated保留**。主库共用文件不改，不合后来main，由唐僧合。
-- 一期codex/stage-review-50的62a508e0独立可合；本二期含其祖先。固定范围d287ea37不含..7fc0c310含，927提交／516净路径，不论作者；范围覆盖已完成，方法边界在报告／矩阵，别再因非逐行全审拖交付。进度49.804→49.8，后来main只应用界面68→72增量，不覆盖新初值；不销交叉核查。
-- 后续新顺序仍二期审查→四零散→2g→rng-compare-review→actor-bonus→passive-content→race-battle。check-tiers归哪吒，沙僧跳过，核查积压暂后。四零散单独分支、不夹2g。下一期已只读定位：battle/battle_logic.gd:244 skill_cost；core/battler.gd:287实际死亡转移；core/enemy_book.gd:94已有计数接口，不能在对尸体重复观察处无条件记数；cat_probe.cjs:216及xiyou_cat.gd:330旧tpGap须去。冻结dsPassiveSkill.js:1823／1853：仅actor，汇总All／Zj(stype1)／Mf(stype2)／技能N，折扣只封顶100、不夹负，基础消耗后乘再floor；自身缓存顺序仍须按原版取证。b3ab53e6的冻结参照在js/codex/runtime/installDamageElementRuntime.js:117 ownBonus。F31上限尚未定位，不把formula_program深度64误当该项。未开始下一期实现。
-- 2g原分支bf585fdc，先读其交付单；五TP块13专项12过，formula_effects两capState_buffs待修：通用add_state锁应除XEnemy外生效；另做formula_context影子克隆剥离运行时域和生命周期预览。XParamPlus／mv_param_plus复用，actor末尾XTraining挂点保留。
-- 最近额度五小时86%、周74%，95%必须WIP收尾停；上下文接力按用户已授权同工作区新聊天。所有本轮文件命令显式workdir=state-effects-2b，未改main、未创建／清理树、未reset/cherry-pick。
-
-- 沙僧57于2026-10-25 01:07 Paris沿用指定树接手，HEAD d9f7f5f2、工作区干净；五小时90%、周75%。确认唯一最终12场runId未变且仍running，已用等待任务.sh前台续等，未重启测试、未重同步、未改并发及共用登记。
+- 沙僧57于2026-10-25 01:07 Paris沿用指定树接手，HEAD `d9f7f5f2`、工作区干净；五小时90%、周75%。共用登记只读，未合后来main、未创建或清理工作树、未reset／cherry-pick。
+- 已续等原runId `8b5c19c54a284f3a9451c6ae4e9aafcc`的精确12场，未重复启动；最终同步、原版补证、红绿负控均沿用已完成结果。
