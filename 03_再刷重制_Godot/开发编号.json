@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.164",
-  "sequence": 164,
-  "next": "dev.165",
-  "nextSequence": 165,
+  "current": "dev.165",
+  "sequence": 165,
+  "next": "dev.166",
+  "nextSequence": 166,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "沙僧全部待审核查的小修复（宠物身份、雪粒子）",
+  "currentChange": "bajie-warehouse 期二：装备道具仓库",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
