@@ -29,6 +29,21 @@ for m in slice_maps:
         if e and kept(m,e['id']):
             for p in e['pages']: walk_ce(p['list'],slice_ce)
 slice_ce|=set(S.get('extraCommonEvents',[]))
+# 间接调用公共事件：物品／技能效果44、切片敌群战斗页的117、自动／并行触发的公共事件（只要有一条可能就算可达，宁宽勿窄）
+def _load(n): return json.load(open(R+n))
+indirect_ce=set()
+for fn in ('Items.json','Skills.json'):
+    for it in _load(fn):
+        for ef in (it or {}).get('effects',[]): 
+            if ef.get('code')==44: indirect_ce.add(ef['dataId'])
+for tr in _load('Troops.json'):
+    if tr and tr['id'] in slice_troops:
+        for pg in tr['pages']: walk_ce(pg['list'],indirect_ce)
+for n,c in enumerate(CE):
+    if c and c.get('trigger',0)>0: indirect_ce.add(n)
+for ce in list(indirect_ce): 
+    if ce not in slice_ce: slice_ce.add(ce); walk_ce(CE[ce]['list'],slice_ce)
+INDIRECT_N=len(indirect_ce)
 # transfers: (src_kind, src_map, ev, target map)
 incoming=collections.defaultdict(list)
 def scan(lst,src):
@@ -96,6 +111,14 @@ def plug_names(text):
         if re.match(r'^\t\t"',line): names.update(re.findall(r'"([^"]+)"',line.split(':',1)[0]))
     return names
 plugs=plug_names(interp)
+# 插件传送菜单（MapTransferPlugin 的 Map Settings）：canTransfer 且（未隐藏或被 UnlockMapTransfer 解锁）的地图玩家可直接传送
+_pl=open(R+'../js/plugins.js',encoding='utf-8').read()
+_pl=json.loads(_pl[_pl.index('['):_pl.rindex(']')+1])
+_mt=[x for x in _pl if x['name']=='MapTransferPlugin'][0]['parameters']
+plugin_menu={}
+for _s in json.loads(_mt['Map Settings']):
+    _s=json.loads(_s)
+    if _s.get('canTransfer')!='false': plugin_menu[int(_s.get('transmitid') or _s['id'])]=_s.get('hidden')=='true'
 # 脚本里的 reserveTransfer
 scr_inc=collections.defaultdict(list)
 for m,d in maps.items():
@@ -140,9 +163,15 @@ P=out.append
 P('# 未接地图盘点（2026-10-23，悟空_45）\n')
 P('由 `00_项目管理/盘点脚本/census.py`（只读冻结正式源与 xiyou_slice.json）生成，可重跑。\n')
 P('## 结论\n')
+P('> **2026-10-24 修订（悟空_51，答沙僧核查 P3-C3）**：原稿写“余下 100 张在原版里没有任何可达来源”超出了静态算法能证明的范围，已改为“静态扫描没找到可达来源”并列出未覆盖的来源类型；同时补了公共事件的间接调用（物品／技能效果、切片敌群战斗页、自动／并行触发）与 MapTransferPlugin 传送菜单两类来源。数字随之变动：旧版“第 1 层 4 张、可达 10 张”只算直接 201 传送，口径更窄，不可与本版直接比较。上一版里已接入的 17 张（Map024～028、111、029、023、035、036 等）见变更记录。\n')
 P(f'- 冻结正式源共 **{len(maps)}** 张地图数据（Map*.json），切片已接 **{len(slice_maps)}** 张（{len(slice_maps)*100/len(maps):.1f}%），未接 **{len(rows)}** 张。')
-P(f'- 其中现在就能从切片里的事件走到的 **{len(layers[0]) if layers else 0}** 张（第 1 层），再往里一层层展开共 {sum(len(l) for l in layers)} 张可达；其余 {len(orphans)} 张在原版里没有任何可达来源（或来源本身不可达）：')
+P(f'- 其中静态扫描**可能**从切片里的事件走到的（公共事件间接调用按宽口径计，是候选而非已证可达） **{len(layers[0]) if layers else 0}** 张（第 1 层），再往里一层层展开共 {sum(len(l) for l in layers)} 张；其余 {len(orphans)} 张**静态扫描没找到可达来源**（不等于原版里不可达，见下「扫描范围」）：')
 P(f'  - 只被未接地图／公共事件指向：{len([m for m in orphans if by[m]["dead"]])}；完全没有传送指向：{len([m for m in orphans if not by[m]["dead"]])}。')
+P(f'  - 其中在地图传送插件菜单（MapTransferPlugin）里有条目的：{len([m for m in orphans if m in plugin_menu])} 张（可传送且隐藏需解锁 {len([m for m in orphans if plugin_menu.get(m)])}），这些玩家可能通过传送菜单到达，不能算死图。')
+P('- **扫描范围**：')
+P('  - 已算作来源：固定地图的 201 传送（地图事件页、公共事件）、新游戏起点、公共事件调用链（117，含物品／技能效果 44、切片敌群战斗页、自动／并行触发的公共事件，一律按“可能调用”宽算，共 '+str(INDIRECT_N)+' 个）；脚本 355/655 里的 reserveTransfer（冻结源中 0 处）。')
+P('  - **没覆盖**：变量指定的 201（冻结源中 0 处，若有则目标未解析）；脚本传送的其它写法（setupTransfer 等）与变量拼出的地图号；插件传送（MapTransferPlugin 菜单只按配置做了“有无条目”判断，未核解锁条件与传送道具；其它插件如死亡回城、NGP 起点等未逐个分析）；敌群战斗页以外的事件（如状态／技能里的脚本）；事件页条件与开关使其永不触发的情形（本脚本不看条件，所以对“可达”偏宽，对“未发现来源”偏窄）。')
+P('  - 因此“未发现来源”只是一条线索，不据此排除内容、认定死图或扣减总工作量；“缺指令”只按指令码分支是否存在判断，未证 355 脚本与各插件参数均可翻译。')
 cls=collections.Counter(classify(by[m]) for m in by)
 P('- 按名称／事件分类：'+'、'.join(f'{k} {v}' for k,v in cls.items())+'。')
 P('- 进度账「楼层、副本与剧情内容」的分母若按全部地图数 231 计，当前实际 '+f'{len(slice_maps)}/{len(maps)}；若扣除疑似测试／备份与空图（{sum(1 for m in by if classify(by[m])!="正常内容")} 张）后为 {len(slice_maps)}/{len(maps)-sum(1 for m in by if classify(by[m])!="正常内容")}。\n')
@@ -166,13 +195,13 @@ for li,l in enumerate(layers):
         mi='、'.join(f'{k}×{v}' for k,v in sorted(miss.items()))+(' 插件:'+','.join(pm) if pm else '')
         P(f'| {m} | {r["name"] or r["disp"]} | {r["w"]}×{r["h"]} | {r["nev"]}／{r["npages"]} | {nt} | {"、".join(src)} | {mi or "—"} | {classify(r)} |')
     P('')
-P('## 原版里到不了的地图\n')
-P('| 图 | 名称 | 尺寸 | 事件／页 | 指向它的来源（均不可达） | 分类 |')
-P('|---|---|---|---|---|---|')
+P('## 静态扫描没找到可达来源的地图\n')
+P('| 图 | 名称 | 尺寸 | 事件／页 | 指向它的来源（均不可达） | 传送菜单 | 分类 |')
+P('|---|---|---|---|---|---|---|')
 for m in orphans:
     r=by[m]
     src=sorted(set(('Map%d EV%d'%(x[1],x[2]) if x[0]=='map' else 'CE%d'%x[1]) for x in r['dead']+scr_inc.get(m,[]) if x[0] in('map','ce') ) | set('脚本 Map%d EV%d'%(x[1],x[2]) for x in scr_inc.get(m,[])))
-    P(f'| {m} | {r["name"] or r["disp"]} | {r["w"]}×{r["h"]} | {r["nev"]}／{r["npages"]} | {"、".join(src[:4]) or "无"} | {classify(r)} |')
+    P(f'| {m} | {r["name"] or r["disp"]} | {r["w"]}×{r["h"]} | {r["nev"]}／{r["npages"]} | {"、".join(src[:4]) or "无"} | {("需解锁" if plugin_menu[m] else "有条目") if m in plugin_menu else "—"} | {classify(r)} |')
 open(OUT,'w',encoding='utf-8').write('\n'.join(out)+'\n')
 print('layers',[len(l) for l in layers],'orphans',len(orphans))
 
