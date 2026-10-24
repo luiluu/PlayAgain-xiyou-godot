@@ -6,7 +6,9 @@
 通过后提交、清理本批全部工作树并推送。最后的检查失败时 main 上已有的本批收尾提交不推送、工作树都保留，
 并列出本批每条车道的合并提交与改动文件，便于对照失败项定位；要撤出某条就 --abort-batch：先把当前 main
 （含未提交的登记改动）存成 refs/lane-merge/aborted-* 备份，再退回本批开始前的 main，各车道工作树不动，
-之后把没问题的车道重新合（可再攒一批），出问题的那条在自己的工作树修好再交付。"""
+之后把没问题的车道重新合（可再攒一批），出问题的那条在自己的工作树修好再交付。
+
+车道交付后在同一工作树接着做（换新分支、新提交或未提交改动）不拦合并：只跳过该工作树的清理，交付分支不再是当前分支就照删。"""
 import argparse
 import hashlib
 import json
@@ -369,8 +371,11 @@ def finish(root, state, state_file, executor, batch=False):
         raise RuntimeError('先运行准备合并，再手工登记，最后 --finish')
     if git(root, 'rev-parse', 'HEAD') != state['head']:
         raise RuntimeError('准备后 main HEAD 已改变；保留现场，先人工核对')
-    if git(Path(state['worktree']), 'rev-parse', 'HEAD') != state['target'] or dirty(Path(state['worktree'])):
-        raise RuntimeError('车道交付后又发生改动，不清理其工作树')
+    if subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode:
+        raise RuntimeError('交付提交不在 main 历史里，先人工核对')
+    moved = lane_moved(state)
+    if moved:
+        print('提示：车道工作树%s，收尾时跳过清理该工作树' % moved, flush=True)
     if state['phase'] == 'prepared':
         board = (root / BOARD).read_text()
         active = board.split('## 正在进行', 1)[1].split('\n## ', 1)[0]
@@ -428,17 +433,52 @@ def finish(root, state, state_file, executor, batch=False):
         state_file.unlink()
         print('已收尾并记入本批（共 %d 条，未检查、未推送）；接着合下一条，最后一条不加 --batch 运行 --finish。' % len(pending), flush=True)
         return
-    for lane in pending:
-        wt = Path(lane['worktree'])
-        if wt.exists():
-            if git(wt, 'rev-parse', 'HEAD') != lane['target'] or dirty(wt):
-                raise RuntimeError('本批车道交付后又发生改动，不清理其工作树：' + lane['worktree'])
-            run(root, [ENV / '清理工作树.sh', lane['worktree']])
-    run(root, [ENV / '清理工作树.sh', state['worktree']])
+    for lane in pending + [state]:
+        cleanup_lane(root, lane)
     (folder / 'batch.json').unlink(missing_ok=True)
     state_file.unlink()
     print('合并、检查、提交与工作树清理全部完成%s。' % ('（本批共 %d 条）' % (len(pending) + 1) if pending else ''), flush=True)
     push_github(root)
+
+
+def lane_moved(lane):
+    """车道交付后若在同一工作树接着做（会话绑在这个路径上，常换新分支继续），返回原因；没动返回空串。"""
+    wt = Path(lane['worktree'])
+    if not wt.exists():
+        return '已不存在'
+    reasons = []
+    if git(wt, 'branch', '--show-current') != lane['branch']:
+        reasons.append('已换到分支 ' + (git(wt, 'branch', '--show-current') or '（游离 HEAD）'))
+    elif git(wt, 'rev-parse', 'HEAD') != lane['target']:
+        reasons.append('交付后又有新提交')
+    if porcelain(wt):
+        reasons.append('有未提交改动')
+    return '，'.join(reasons)
+
+
+def cleanup_lane(root, lane):
+    """交付提交已并入 main 后清理车道。工作树仍停在交付提交、干净且在交付分支上才删工作树；
+    车道已在同一工作树继续工作（换了分支、有新提交或未提交改动）时只跳过工作树，交付分支不再是当前分支就照删。"""
+    if subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', lane['target'], 'HEAD']).returncode:
+        raise RuntimeError('交付提交不在 main 历史里，不清理：' + lane['worktree'])
+    moved = lane_moved(lane)
+    if not moved:
+        run(root, [ENV / '清理工作树.sh', lane['worktree']])
+        return
+    print('提示：%s 的工作树%s，跳过清理：%s' % (lane['task'], moved, lane['worktree']), flush=True)
+    wt = Path(lane['worktree'])
+    current = git(wt, 'branch', '--show-current') if wt.exists() else None
+    exists = subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', 'refs/heads/' + lane['branch']],
+                            capture_output=True).returncode == 0
+    if not exists:
+        return
+    if current == lane['branch']:
+        print('提示：交付分支 %s 仍是该工作树的当前分支，保留' % lane['branch'], flush=True)
+        return
+    # -d 只删已并入 main 的分支；交付后在这条分支上又有提交（再换走）时 Git 会拒绝，保留并提示。
+    p = subprocess.run(['git', '-C', str(root), 'branch', '-d', lane['branch']], capture_output=True, text=True)
+    print(('已删交付分支 ' + lane['branch']) if p.returncode == 0 else
+          ('提示：交付分支 %s 有未并入 main 的提交，保留：%s' % (lane['branch'], p.stderr.strip())), flush=True)
 
 
 def push_github(root, remote='github'):

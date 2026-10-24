@@ -1001,6 +1001,63 @@ for name in filter(None, files):
         self.assertIn('[规则](规则/甲.md)', log)
         self.assertFalse((self.root / second).exists())
 
+    def branches(self):
+        return self.g('branch', '--format=%(refname:short)').split()
+
+    def test_lane_on_new_branch_skips_worktree_but_deletes_delivery_branch(self):
+        # 车道交付后在同一工作树换新分支接着做（会话绑在路径上）：工作树保留，交付分支照删。
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.g('switch', '-c', 'claude/task-2', cwd=self.wt)
+        (self.wt / 'next.md').write_text('phase 2\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'phase 2', cwd=self.wt)
+        (self.wt / 'wip.md').write_text('uncommitted\n')
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertIn('跳过清理', self.last_output)
+        self.assertTrue((self.wt / 'wip.md').exists())
+        self.assertEqual(self.g('branch', '--show-current', cwd=self.wt), 'claude/task-2')
+        self.assertNotIn('claude/task', self.branches())
+        self.assertIn('claude/task-2', self.branches())
+        self.assertFalse((self.root / '.git/lane-merge/state.json').exists())
+        self.assertIn('合并 claude/task（dev.002）收尾', self.g('log', '--format=%s', '-1'))
+
+    def test_lane_new_commit_or_dirty_on_same_branch_keeps_both(self):
+        for case in ['commit', 'dirty']:
+            with self.subTest(case=case):
+                self.tearDown(); self.setUp()
+                self.assertEqual(self.call(), 0, self.last_output)
+                (self.wt / 'later.md').write_text('later\n')
+                if case == 'commit':
+                    self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'later', cwd=self.wt)
+                self.register()
+                self.assertEqual(self.call('--finish'), 0, self.last_output)
+                self.assertTrue((self.wt / 'later.md').exists())
+                self.assertIn('claude/task', self.branches())
+                self.assertIn('仍是该工作树的当前分支', self.last_output)
+
+    def test_lane_on_new_branch_without_commits_is_not_removed(self):
+        # 新分支还没提交（HEAD 仍是交付提交、干净）：也不能删工作树和新分支。
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.g('switch', '-c', 'claude/task-2', cwd=self.wt)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertTrue(self.wt.exists())
+        self.assertEqual(self.branches(), ['claude/task-2', 'main'])
+
+    def test_batch_cleans_finished_lane_and_skips_continuing_one(self):
+        wt2, checks = self.batch_fixture()
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--batch'), 0, self.last_output)
+        self.g('switch', '-c', 'claude/task-2', cwd=self.wt)  # 第一条在批中途接着做
+        self.assertEqual(self.call_task('task2'), 0, self.last_output)
+        self.register_both()
+        self.assertEqual(self.call_task('task2', '--finish'), 0, self.last_output)
+        self.assertTrue(self.wt.exists())
+        self.assertFalse(wt2.exists())
+        self.assertEqual(self.branches(), ['claude/task-2', 'main'])
+        self.assertFalse((self.root / '.git/lane-merge/batch.json').exists())
+
     def test_also_allows_extra_change_at_finish(self):
         self.assertEqual(self.call(), 0)
         self.register(); self.put('AGENTS.md', 'rule tweak during merge\n')
