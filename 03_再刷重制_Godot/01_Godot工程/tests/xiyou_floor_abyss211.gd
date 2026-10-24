@@ -9,7 +9,7 @@ const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const ABYSS := 211
 const SEAL := 5
 const EXIT := 8
-const TIMEOUT_MS := 90000
+const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
