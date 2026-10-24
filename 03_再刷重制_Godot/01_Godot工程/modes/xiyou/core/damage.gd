@@ -102,6 +102,16 @@ static func own_bonus(a: XBattler, e: int) -> float:
 	if a.is_actor():
 		for m in a.passive_values("passiveELUP%02d" % e):
 			value += XActor._num(m) / 100.0
+	elif a is XEnemy:
+		# 敌人没有 iteratePassiveSkill（dsPassiveSkill 只挂 Game_Actor）：原版 ownBonus 扫状态、敌人本身与行动表技能的备注（如 932 草中炎的 428「火焰增幅」）
+		var seen := {}
+		for o in a.states() + [(a as XEnemy).data()] + (a as XEnemy).skills():
+			if seen.has(o):
+				continue
+			seen[o] = true
+			var m = o.get("meta", {}).get("passiveELUP%02d" % e)
+			if m != null:
+				value += XActor._num(m) / 100.0
 	return value + (1.0 + _sum_yep(a, "elementMagnify", e, objs)) - 1.0
 
 ## 虚空～风（11–15）：取 max(自身, 火～暗中最低的一项)
