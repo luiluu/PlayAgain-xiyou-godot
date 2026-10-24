@@ -188,6 +188,9 @@ func _beasts() -> void:
 	var s := _start(195, 8, 34, 2)
 	if not _check("beast_door_loaded", await _wait_map(195)):
 		return
+	# 魔塔外围 EV21 页条件：变量 14「是否开启高难度」≥1
+	s.set_variable(14, 1)
+	_scene().refresh_events()
 	await _run_event(_scene(), 21, [], "")
 	if not _check("beast_entered", await _wait_map(207) and _scene().player.grid == Vector2i(8, 35), [_scene().map_id]):
 		return
@@ -196,22 +199,30 @@ func _beasts() -> void:
 	s.set_switch(2303, true)
 	s.set_variable(14, 1)
 	map.refresh_events()
-	# 没有许可证：不开战
+	# 没有许可证：只提示，不开战，留在原图
 	var n0 := battles.size()
 	s.set_variable(754, -100000)
 	await _run_event(map, 3, [], "win")
-	_check("beast_no_permit", battles.size() == n0, [battles.slice(n0)])
-	for i in range(BEASTS.size()):
-		# 固定随机数：变量 755 ＝ 1 + floor(13 × r)
-		MVEventCore.fixed_random = (float(i) + 0.5) / 13.0
-		s.gain_item(1974, 1)
-		s.set_variable(754, -100000)
-		n0 = battles.size()
-		await _run_event(map, 3, [], "win")
-		_check("beast_%d_fight" % BEASTS[i], battles.size() == n0 + 1 and battles[-1].troop == BEASTS[i] and battles[-1].result == 0, [battles.slice(n0)])
-		_check("beast_%d_permit_used" % BEASTS[i], s.item_count(1974) == 0, [s.item_count(1974)])
+	_check("beast_no_permit", battles.size() == n0 and _scene().map_id == 207, [battles.slice(n0), _scene().map_id])
+	# 出口
 	await _run_event(map, 1, [], "")
 	_check("beast_back", await _wait_map(4) and _scene().player.grid == Vector2i(14, 15), [_scene().map_id, _scene().player.grid])
+	for i in range(BEASTS.size()):
+		# 每只重新进图（捕捉完会被送回 Map004）；固定随机数：变量 755 ＝ 1 + floor(13 × r)
+		MVEventCore.fixed_random = (float(i) + 0.5) / 13.0
+		s = _start(207, 8, 30, 2)
+		if not _check("beast_%d_loaded" % BEASTS[i], await _wait_map(207)):
+			return
+		s.set_switch(2303, true)
+		s.set_variable(14, 1)
+		s.set_variable(754, -100000)
+		s.gain_item(1974, 1)
+		_scene().refresh_events()
+		n0 = battles.size()
+		await _run_event(_scene(), 3, [], "win")
+		_check("beast_%d_fight" % BEASTS[i], battles.size() == n0 + 1 and battles[-1].troop == BEASTS[i] and battles[-1].result == 0, [battles.slice(n0)])
+		_check("beast_%d_permit_used" % BEASTS[i], s.item_count(1974) == 0, [s.item_count(1974)])
+		_check("beast_%d_sent_back" % BEASTS[i], await _wait_map(4) and _scene().player.grid == Vector2i(14, 15), [_scene().map_id, _scene().player.grid])
 
 
 func _finish() -> void:

@@ -12,7 +12,7 @@ const ORACLE := "res://modes/xiyou/generated/oracle/events.json"
 const BASELINE := "res://tests/event_compare_baseline.json"
 const PARTY := [1, 8, 10, 9]
 const MAX_STEPS := 20000
-const KNOWN_ORACLE_ERRORS := ["m4e8p1", "m221e3p0", "ce1344"]
+const KNOWN_ORACLE_ERRORS := ["m221e3p0", "ce1344"]
 
 var results := []
 var out_dir := ""
@@ -266,6 +266,12 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 			if e is Dictionary and int(e.id) == int(c.event):
 				ev = e
 		list = ev.pages[int(c.page)].list.duplicate(true) if ev != null else []
+	# 第一条仓库指令就是 show 的页（如青霞第 2 页，正常流程里仓库已由第 1 页建好）：参照探针先建好默认仓库，这边同样
+	for cmd in list:
+		if int(cmd.code) == 356 and str(cmd.parameters[0]).begins_with("PHWarehouse "):
+			if str(cmd.parameters[0]).begins_with("PHWarehouse show "):
+				XWarehouse.create(s, str(cmd.parameters[0]).substr(len("PHWarehouse show ")))
+			break
 	XDungeon.battle = {}       # $gameTroop 每例新游戏都是空的
 	s.orb_seed = 2147483648    # 参照固定 Math.random＝0.5 后开新局：宝珠随机流种子 floor(0.5×2³²)
 	var before := _snap(s)
