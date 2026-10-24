@@ -175,7 +175,7 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 		return
 	var fresh := not state_ids.has(id)
 	super(id, random)
-	if fresh and state_ids.has(id):
+	if fresh and state_ids.has(id) and lifecycle_context.get("resources") == null:
 		release_to_party()
 
 func remove_state(id: int) -> void:
@@ -185,7 +185,6 @@ func remove_state(id: int) -> void:
 		release_to_party()
 
 func refresh_resources(random: XRandomStream = null) -> void:
-	release_to_party()
 	super(random)
 
 func equip_list() -> Array:

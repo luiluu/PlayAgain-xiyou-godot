@@ -69,8 +69,11 @@ static func clone_battler(b: XBattler) -> XBattler:
 	var out: XBattler = b.get_script().new()
 	for property in b.get_property_list():
 		if int(property.usage) & PROPERTY_USAGE_SCRIPT_VARIABLE and (not str(property.name) in PROPERTIES.split(" ") or str(property.name) in ["hp", "mp", "tp", "shield"]):
-			if str(property.name) == "state_origins":
-				continue  # 指向其他战斗者的状态来源（导入角色平衡的持续伤害用），预览克隆不需要
+			if str(property.name) in ["state_origins", "lifecycle_context"]:
+				# Runtime capabilities belong to the live operation. A shadow starts
+				# without origins/resources/party/RNG; never deep-copy their references
+				# or weaken the generic detached-data guard for other properties.
+				continue
 			var value = b.get(property.name)
 			if not XFormulaProgram._detached(value):
 				return null

@@ -13,6 +13,18 @@ FIXTURES = TOOLS.parent / '01_Godot工程/tests/fixtures/state_effects_translati
 
 
 class StateEffectTranslationTests(unittest.TestCase):
+    def test_battle_tp_complete_measured_phase_tokens_only(self):
+        wrap = lambda p, code: f'<Custom {p} Effect>{code}</Custom {p} Effect>'
+        for amount in [200, 50]:
+            body = f'user.gainTp({amount});'
+            self.assertEqual(parse_state_effects(wrap('Battle', body)), [{'phase': 'battle', 'op': 'gain_resource', 'recipient': 'user', 'resource': 'tp', 'amount': amount, 'requires': ['resources']}])
+            for code in [body + ';', body + body, body + 'user.gainHp(1);', body.replace('user', 'target'), body.replace(str(amount), 'user.atk'), body.replace(str(amount), str(amount + 1))]:
+                self.assertEqual(parse_state_effects(wrap('Battle', code))[0]['op'], 'js')
+            for phase in ['Confirm', 'Apply', 'Turn Start']:
+                self.assertEqual(parse_state_effects(wrap(phase, body))[0]['op'], 'js')
+        for amount in [25, 75]:
+            self.assertEqual(parse_state_effects(wrap('Apply', f'user.gainTp({amount});'))[0]['op'], 'js')
+
     def test_native_bonus_inventory(self):
         rows = json.loads(FIXTURES.read_text())['bonus']
         self.assertEqual(len(rows), 28)

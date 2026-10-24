@@ -329,6 +329,16 @@ def parse_state_effects(note):
     for m in EFFECT_RE.finditer(note or ''):
         phase, body = m.group(1).lower().replace(' ', '_'), m.group(2)
         code = re.sub(r'\s+', ' ', strip_js_comments(body)).strip()
+        # Three complete Battle blocks only. Apply 1334/1336 awaits the
+        # map/menu operation host; do not declare global support from battle.
+        from formula_program import Parser, Unsupported
+        try:
+            tokens = tuple(row[0] for row in Parser(code).tokens[:-1])
+        except Unsupported:
+            tokens = ()
+        if phase == 'battle' and tokens in [('user', '.', 'gainTp', '(', n, ')', ';') for n in ('200', '50')]:
+            out.append({'phase': phase, 'op': 'gain_resource', 'recipient': 'user', 'resource': 'tp', 'amount': int(tokens[4]), 'requires': ['resources']})
+            continue
         mm = SIMPLE_MUL.match(code)
         if mm:
             out.append({'phase': phase, 'op': 'mul', 'cond': {'!==': 'nonzero', '>': 'positive', '>=': 'nonnegative'}[mm.group(1)],
