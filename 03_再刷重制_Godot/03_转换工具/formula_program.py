@@ -365,6 +365,8 @@ def yields_result(n):
 # 角色专属模块的公式入口：整条公式只是一次模块调用，Godot 由对应模块求值（XFormulaExecution.run_item 按 module 分派）。
 # 键是去掉空白后的原文；写法稍有不同就仍按普通公式编译（拒收），不猜。
 MODULE_FORMULAS = {'CodexCat.formula(user,item,b)': 'cat'}
+# 173 饿狼 CodexGarou.base(a,b,id)：拳法 10250～10263（XGarou.formula）
+MODULE_FORMULAS.update({f'CodexGarou.base(a,b,{i})': 'garou' for i in range(10250, 10264)})
 
 
 def compile_formula(source, item_id=0, custom=False, table='Skills'):

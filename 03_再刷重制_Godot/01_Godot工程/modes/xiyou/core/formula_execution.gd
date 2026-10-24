@@ -27,6 +27,8 @@ static func run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swit
 	var status := str(program.get("status", "unsupported"))
 	if status == "module" and program.get("module") == "cat":  # 整条公式是 CodexCat.formula(user,item,b)（转换器 MODULE_FORMULAS）
 		return {"available": true, "value": XCat.formula(a, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
+	if status == "module" and program.get("module") == "garou":  # CodexGarou.base(a,b,id)（173 饿狼，XGarou.formula）
+		return {"available": true, "value": XGarou.formula(a, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if int(program.get("version", 0)) != 1 or not status in ["pure", "effectful"]:
 		return _unavailable(item, execute, "unsupported_program")
 	var mode: String = str(XDamage.elements_data().skills.get(str(int(item.id)), {}).get("mode", ""))
