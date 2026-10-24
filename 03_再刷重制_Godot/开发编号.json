@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.165",
-  "sequence": 165,
-  "next": "dev.166",
-  "nextSequence": 166,
+  "current": "dev.168",
+  "sequence": 168,
+  "next": "dev.169",
+  "nextSequence": 169,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-warehouse 期二：装备道具仓库",
+  "currentChange": "bajie-advanced",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

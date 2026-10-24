@@ -18,6 +18,9 @@ extends RefCounted
 ## - 成就：Star.AchievementSystem.GetAcReward(N) → XAchievement.reward；SceneManager.push(Scene_AchievementBook) → 成就界面（host.open_achievements）。
 ## - 装备镶嵌图鉴：SceneManager.push(Scene_EquipInlayBook) → host.open_inlay_book（XInlayBook）。
 ## - 角色仓库：SceneManager.push(Star_Scene_ActorWarehouse) → host.open_actor_warehouse（XActorWarehouse）。
+## - 更衣：if(ConfigManager.ChangeClothesLite.indexOf(N) == -1){ ConfigManager.ChangeClothesLite.push(N); } → XChangeClothes.unlock；
+##   SceneManager.push(Scene_ChangeClothes) → host.open_change_clothes（XChangeClothes）。
+## - 角色进阶：SceneManager.push(Scene_ActorAdvanced) → host.open_actor_advanced（XAdvance）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## CodexReincarnationRandom.entry：open 之后的选择结果 {accepted, hard}
@@ -72,6 +75,11 @@ static func run(code: String, interp) -> Array:
 	var roster := _re("^if\\(window\\.CodexBossDifficulty\\)\\{CodexBossDifficulty\\.showRoster\\('(strong|super)'\\);\\}else\\{.*\\}this\\.setWaitMode\\('message'\\);?$").search(js)
 	if roster:
 		await _boss_roster(roster.get_string(1), interp)
+		return []
+	# 更衣解锁（Star_ChangeClothes，见 XChangeClothes）：衣橱管理员 Map4 EV17 与各层宝箱、特殊事件，全游戏只这一种写法
+	var lite := _re("^if\\s*\\(\\s*ConfigManager\\.ChangeClothesLite\\.indexOf\\((-?\\d+)\\)\\s*==\\s*-1\\s*\\)\\s*\\{\\s*ConfigManager\\.ChangeClothesLite\\.push\\((-?\\d+)\\);?\\s*\\}$").search(js)
+	if lite and lite.get_string(1) == lite.get_string(2):
+		XChangeClothes.unlock(int(lite.get_string(1)))
 		return []
 	var unknown := []
 	# 存档分支：if (DataManager.saveGame($gamePlayer.SaveGameId)) { …成功… } else { …失败… }
@@ -196,6 +204,14 @@ static func _statements(js: String, interp) -> Array:
 		# 角色仓库（Star_ActorWarehouse，见 XActorWarehouse）：方桌大厅仓库管理员 Map4 EV8「角色仓库」
 		if st == "SceneManager.push(Star_Scene_ActorWarehouse)" and interp.host.has_method("open_actor_warehouse"):
 			await interp.host.open_actor_warehouse()
+			continue
+		# 更衣（Star_ChangeClothes，见 XChangeClothes）：方桌大厅衣橱管理员 Map4 EV17「查看衣橱」
+		if st == "SceneManager.push(Scene_ChangeClothes)" and interp.host.has_method("open_change_clothes"):
+			await interp.host.open_change_clothes()
+			continue
+		# 角色进阶（Star_ActorAdvanced，见 XAdvance）：兑换大厅奉神老妪 Map132 EV6「进阶」
+		if st == "SceneManager.push(Scene_ActorAdvanced)" and interp.host.has_method("open_actor_advanced"):
+			await interp.host.open_actor_advanced()
 			continue
 		# 宠物（Star_PetSystem）：公共事件 169
 		if st == "SceneManager.push(Scene_PetSystem)" and interp.host.has_method("open_pets"):

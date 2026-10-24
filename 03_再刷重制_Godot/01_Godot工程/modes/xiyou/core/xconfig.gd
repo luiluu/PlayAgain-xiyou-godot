@@ -21,7 +21,7 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"MOG_TrPopUpBattle_Key": false, "CombatDamageRecordKey": false,
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
 	"codexSkillLevelNotice": true, "cq": false, "codexPowerEnabled": true,
-	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}}
+	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": []}
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
 const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
@@ -72,6 +72,10 @@ static func ensure_loaded() -> void:
 					# Star_AchievementSystem applyData：config.SAchievementS || {}（成就 ID→true，"<ID>Time"→完成时间）
 					var saved = data.get(key)
 					_values[key] = saved.duplicate() if saved is Dictionary else {}
+				elif key == "ChangeClothesLite":
+					# Star_ChangeClothes applyData：config.ChangeClothesLite || []（更衣解锁表，见 XChangeClothes）
+					var saved = data.get(key)
+					_values[key] = Array(saved).map(func(v): return int(v)) if saved is Array else []
 				elif key == "codexSkillLevelNotice" or key == "codexPowerEnabled":
 					# installCombatPowerRuntime applyData：只有存成 false 才关
 					_values[key] = not (data.get(key) is bool and data[key] == false)
@@ -209,6 +213,17 @@ static func achievements() -> Dictionary:
 
 
 static func save_achievements() -> bool:
+	ensure_loaded()
+	return _write()
+
+
+## 更衣解锁表（ConfigManager.ChangeClothesLite，所有存档共用；见 XChangeClothes）。返回的数组可直接改，改完 save_clothes。
+static func clothes_unlocked() -> Array:
+	ensure_loaded()
+	return _values.ChangeClothesLite
+
+
+static func save_clothes() -> bool:
 	ensure_loaded()
 	return _write()
 

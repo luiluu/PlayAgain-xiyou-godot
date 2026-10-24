@@ -1,0 +1,6468 @@
+{
+"source": "冻结 v0.28；ui_reference/review_system_pages.js actor_advanced（内存新局 1/8/9/10，金币 0；依次：第 2 行、第 1 行确定开底部、条件不足、补齐角色 1 第 0 阶物品（经 installNativeEconomyRuntime 换成 188 魂灯）与金币再确定、底部确定开确认窗、取消、再走一遍、确认进阶、角色 9 进阶次数设 4 选第 3 行、已满时确定）。状态窗 SV 战斗图每 12 帧换一格（frame 横向随帧变化，只比行与格宽）。Window_AchievementPopup 是成就弹窗，不属本页。",
+"shots": {
+"adv_0": {
+"windows": {
+"Window_ActorAdvancedIndex": {
+"rect": [
+0,
+0,
+426,
+720
+],
+"index": 0,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"修",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedStatus": {
+"rect": [
+426,
+0,
+854,
+720
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+140,
+0,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+140,
+36,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶次数:0",
+140,
+72,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"最大进阶次数:4",
+140,
+108,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"生命",
+0,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔法",
+252,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"力量",
+0,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"物防",
+252,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"敏捷",
+504,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"智力",
+0,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔防",
+252,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"幸运",
+504,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"485",
+66.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"200",
+318.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"当前值",
+504,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"47",
+66.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"0",
+570.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+66.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶需求:",
+0,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"魂灯",
+36,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+],
+[
+"x1",
+95.27,
+324,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+0,
+360,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"100000精魂",
+34.67,
+396,
+740,
+"left",
+26,
+"#ffffff"
+],
+[
+"进化技能:",
+420,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"超越极限I",
+456,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+]
+]
+},
+"Window_ActorAdvancedGold": {
+"rect": [
+0,
+656,
+426,
+64
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"0精魂",
+34.67,
+0,
+312,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_AAdvBottomConfirm": {
+"rect": [
+426.67,
+656,
+854,
+64
+],
+"index": -1,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"                                            进阶",
+6,
+0,
+814,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_SaveConfirm": {
+"rect": [
+0,
+0,
+240,
+136
+],
+"index": 0,
+"active": true,
+"openness": 0,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"是",
+6,
+36,
+200,
+"center",
+26,
+"#ffffff"
+],
+[
+"否",
+6,
+72,
+200,
+"center",
+26,
+"#ffffff"
+]
+]
+}
+},
+"extra": {
+"toasts": [],
+"gold": 0,
+"members": [
+{
+"id": 1,
+"name": "狗逍遥",
+"level": 1,
+"num": 0,
+"params": [
+485,
+200,
+47,
+20,
+20,
+20,
+0,
+20
+],
+"row": {
+"id": 1,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 8,
+"name": "修",
+"level": 1,
+"params": [
+450,
+220,
+28,
+20,
+35,
+20,
+20,
+20
+],
+"row": null
+},
+{
+"id": 9,
+"name": "罗琳",
+"level": 1,
+"params": [
+525,
+150,
+47,
+20,
+25,
+20,
+20,
+20
+],
+"row": null
+},
+{
+"id": 10,
+"name": "美娜",
+"level": 1,
+"params": [
+480,
+200,
+28,
+20,
+25,
+20,
+30,
+20
+],
+"row": null
+}
+],
+"actor1": {
+"skills": [],
+"has1240": false,
+"items": [
+[
+188,
+0
+]
+]
+},
+"item188": 0,
+"item180": 0,
+"index": {
+"index": 0,
+"active": true,
+"windowIdx": 0
+},
+"bottom": {
+"index": -1,
+"active": false,
+"openness": 255
+},
+"confirm": {
+"index": 0,
+"active": true,
+"openness": 0
+},
+"sprite": {
+"bitmap": "img/sv_actors/gxysv2.png",
+"x": 82.6,
+"y": 82.6,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+128,
+0,
+64,
+64
+],
+"bitmapSize": [
+576,
+384
+],
+"frameCount": 318
+}
+}
+},
+"adv_1_row1": {
+"windows": {
+"Window_ActorAdvancedIndex": {
+"rect": [
+0,
+0,
+426,
+720
+],
+"index": 1,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"修",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedStatus": {
+"rect": [
+426,
+0,
+854,
+720
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"修",
+140,
+0,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+140,
+36,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶次数:0",
+140,
+72,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"最大进阶次数:4",
+140,
+108,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"生命",
+0,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔法",
+252,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"力量",
+0,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"物防",
+252,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"敏捷",
+504,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"智力",
+0,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔防",
+252,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"幸运",
+504,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"450",
+66.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"220",
+318.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"当前值",
+504,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"28",
+66.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"35",
+66.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶需求:",
+0,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"魂灯",
+36,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+],
+[
+"x1",
+95.27,
+324,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+0,
+360,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"100000精魂",
+34.67,
+396,
+740,
+"left",
+26,
+"#ffffff"
+],
+[
+"进化技能:",
+420,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"超越极限I",
+456,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+]
+]
+},
+"Window_ActorAdvancedGold": {
+"rect": [
+0,
+656,
+426,
+64
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"0精魂",
+34.67,
+0,
+312,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_AAdvBottomConfirm": {
+"rect": [
+426.67,
+656,
+854,
+64
+],
+"index": -1,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"                                            进阶",
+6,
+0,
+814,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_SaveConfirm": {
+"rect": [
+0,
+0,
+240,
+136
+],
+"index": 0,
+"active": true,
+"openness": 0,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"是",
+6,
+36,
+200,
+"center",
+26,
+"#ffffff"
+],
+[
+"否",
+6,
+72,
+200,
+"center",
+26,
+"#ffffff"
+]
+]
+}
+},
+"extra": {
+"toasts": [],
+"gold": 0,
+"members": [
+{
+"id": 1,
+"name": "狗逍遥",
+"level": 1,
+"num": 0,
+"params": [
+485,
+200,
+47,
+20,
+20,
+20,
+0,
+20
+],
+"row": {
+"id": 1,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 8,
+"name": "修",
+"level": 1,
+"num": 0,
+"params": [
+450,
+220,
+28,
+20,
+35,
+20,
+20,
+20
+],
+"row": {
+"id": 22,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 9,
+"name": "罗琳",
+"level": 1,
+"params": [
+525,
+150,
+47,
+20,
+25,
+20,
+20,
+20
+],
+"row": null
+},
+{
+"id": 10,
+"name": "美娜",
+"level": 1,
+"params": [
+480,
+200,
+28,
+20,
+25,
+20,
+30,
+20
+],
+"row": null
+}
+],
+"actor1": {
+"skills": [],
+"has1240": false,
+"items": [
+[
+188,
+0
+]
+]
+},
+"item188": 0,
+"item180": 0,
+"index": {
+"index": 1,
+"active": true,
+"windowIdx": 1
+},
+"bottom": {
+"index": -1,
+"active": false,
+"openness": 255
+},
+"confirm": {
+"index": 0,
+"active": true,
+"openness": 0
+},
+"sprite": {
+"bitmap": "img/sv_actors/Actor2_3.png",
+"x": 82.6,
+"y": 82.6,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+64,
+0,
+64,
+64
+],
+"bitmapSize": [
+576,
+384
+],
+"frameCount": 518
+}
+}
+},
+"adv_2_bottom": {
+"windows": {
+"Window_ActorAdvancedIndex": {
+"rect": [
+0,
+0,
+426,
+720
+],
+"index": 0,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"修",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedStatus": {
+"rect": [
+426,
+0,
+854,
+720
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+140,
+0,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+140,
+36,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶次数:0",
+140,
+72,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"最大进阶次数:4",
+140,
+108,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"生命",
+0,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔法",
+252,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"力量",
+0,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"物防",
+252,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"敏捷",
+504,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"智力",
+0,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔防",
+252,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"幸运",
+504,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"485",
+66.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"200",
+318.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"当前值",
+504,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"47",
+66.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"0",
+570.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+66.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶需求:",
+0,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"魂灯",
+36,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+],
+[
+"x1",
+95.27,
+324,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+0,
+360,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"100000精魂",
+34.67,
+396,
+740,
+"left",
+26,
+"#ffffff"
+],
+[
+"进化技能:",
+420,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"超越极限I",
+456,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+]
+]
+},
+"Window_ActorAdvancedGold": {
+"rect": [
+0,
+656,
+426,
+64
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"0精魂",
+34.67,
+0,
+312,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_AAdvBottomConfirm": {
+"rect": [
+426.67,
+656,
+854,
+64
+],
+"index": 0,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"                                            进阶",
+6,
+0,
+814,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_SaveConfirm": {
+"rect": [
+0,
+0,
+240,
+136
+],
+"index": 0,
+"active": true,
+"openness": 0,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"是",
+6,
+36,
+200,
+"center",
+26,
+"#ffffff"
+],
+[
+"否",
+6,
+72,
+200,
+"center",
+26,
+"#ffffff"
+]
+]
+}
+},
+"extra": {
+"toasts": [],
+"gold": 0,
+"members": [
+{
+"id": 1,
+"name": "狗逍遥",
+"level": 1,
+"num": 0,
+"params": [
+485,
+200,
+47,
+20,
+20,
+20,
+0,
+20
+],
+"row": {
+"id": 1,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 8,
+"name": "修",
+"level": 1,
+"num": 0,
+"params": [
+450,
+220,
+28,
+20,
+35,
+20,
+20,
+20
+],
+"row": {
+"id": 22,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 9,
+"name": "罗琳",
+"level": 1,
+"params": [
+525,
+150,
+47,
+20,
+25,
+20,
+20,
+20
+],
+"row": null
+},
+{
+"id": 10,
+"name": "美娜",
+"level": 1,
+"params": [
+480,
+200,
+28,
+20,
+25,
+20,
+30,
+20
+],
+"row": null
+}
+],
+"actor1": {
+"skills": [],
+"has1240": false,
+"items": [
+[
+188,
+0
+]
+]
+},
+"item188": 0,
+"item180": 0,
+"index": {
+"index": 0,
+"active": false,
+"windowIdx": 0
+},
+"bottom": {
+"index": 0,
+"active": true,
+"openness": 255
+},
+"confirm": {
+"index": 0,
+"active": true,
+"openness": 0
+},
+"sprite": {
+"bitmap": "img/sv_actors/gxysv2.png",
+"x": 82.6,
+"y": 82.6,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+64,
+0,
+64,
+64
+],
+"bitmapSize": [
+576,
+384
+],
+"frameCount": 811
+}
+}
+},
+"adv_3_fail": {
+"windows": {
+"Window_ActorAdvancedIndex": {
+"rect": [
+0,
+0,
+426,
+720
+],
+"index": 0,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"修",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedStatus": {
+"rect": [
+426,
+0,
+854,
+720
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+140,
+0,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+140,
+36,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶次数:0",
+140,
+72,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"最大进阶次数:4",
+140,
+108,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"生命",
+0,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔法",
+252,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"力量",
+0,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"物防",
+252,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"敏捷",
+504,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"智力",
+0,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔防",
+252,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"幸运",
+504,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"485",
+66.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"200",
+318.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"当前值",
+504,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"47",
+66.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"0",
+570.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+66.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶需求:",
+0,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"魂灯",
+36,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+],
+[
+"x1",
+95.27,
+324,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+0,
+360,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"100000精魂",
+34.67,
+396,
+740,
+"left",
+26,
+"#ffffff"
+],
+[
+"进化技能:",
+420,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"超越极限I",
+456,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+]
+]
+},
+"Window_ActorAdvancedGold": {
+"rect": [
+0,
+656,
+426,
+64
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"0精魂",
+34.67,
+0,
+312,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_AAdvBottomConfirm": {
+"rect": [
+426.67,
+656,
+854,
+64
+],
+"index": -1,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"                                            进阶",
+6,
+0,
+814,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_SaveConfirm": {
+"rect": [
+0,
+0,
+240,
+136
+],
+"index": 0,
+"active": true,
+"openness": 0,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"是",
+6,
+36,
+200,
+"center",
+26,
+"#ffffff"
+],
+[
+"否",
+6,
+72,
+200,
+"center",
+26,
+"#ffffff"
+]
+]
+}
+},
+"extra": {
+"toasts": [
+"进阶条件未达成"
+],
+"gold": 0,
+"members": [
+{
+"id": 1,
+"name": "狗逍遥",
+"level": 1,
+"num": 0,
+"params": [
+485,
+200,
+47,
+20,
+20,
+20,
+0,
+20
+],
+"row": {
+"id": 1,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 8,
+"name": "修",
+"level": 1,
+"num": 0,
+"params": [
+450,
+220,
+28,
+20,
+35,
+20,
+20,
+20
+],
+"row": {
+"id": 22,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 9,
+"name": "罗琳",
+"level": 1,
+"params": [
+525,
+150,
+47,
+20,
+25,
+20,
+20,
+20
+],
+"row": null
+},
+{
+"id": 10,
+"name": "美娜",
+"level": 1,
+"params": [
+480,
+200,
+28,
+20,
+25,
+20,
+30,
+20
+],
+"row": null
+}
+],
+"actor1": {
+"skills": [],
+"has1240": false,
+"items": [
+[
+188,
+0
+]
+]
+},
+"item188": 0,
+"item180": 0,
+"index": {
+"index": 0,
+"active": true,
+"windowIdx": 0
+},
+"bottom": {
+"index": -1,
+"active": false,
+"openness": 255
+},
+"confirm": {
+"index": 0,
+"active": true,
+"openness": 0
+},
+"sprite": {
+"bitmap": "img/sv_actors/gxysv2.png",
+"x": 82.6,
+"y": 82.6,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+64,
+0,
+64,
+64
+],
+"bitmapSize": [
+576,
+384
+],
+"frameCount": 998
+}
+}
+},
+"adv_4_ready": {
+"windows": {
+"Window_ActorAdvancedIndex": {
+"rect": [
+0,
+0,
+426,
+720
+],
+"index": 0,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"修",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedStatus": {
+"rect": [
+426,
+0,
+854,
+720
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+140,
+0,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+140,
+36,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶次数:0",
+140,
+72,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"最大进阶次数:4",
+140,
+108,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"生命",
+0,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔法",
+252,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"力量",
+0,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"物防",
+252,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"敏捷",
+504,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"智力",
+0,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔防",
+252,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"幸运",
+504,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"485",
+66.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"200",
+318.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"当前值",
+504,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"47",
+66.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"0",
+570.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+66.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶需求:",
+0,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"魂灯",
+36,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+],
+[
+"x1",
+95.27,
+324,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+0,
+360,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"100000精魂",
+34.67,
+396,
+740,
+"left",
+26,
+"#ffffff"
+],
+[
+"进化技能:",
+420,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"超越极限I",
+456,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+]
+]
+},
+"Window_ActorAdvancedGold": {
+"rect": [
+0,
+656,
+426,
+64
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"100000精魂",
+34.67,
+0,
+312,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_AAdvBottomConfirm": {
+"rect": [
+426.67,
+656,
+854,
+64
+],
+"index": 0,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"                                            进阶",
+6,
+0,
+814,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_SaveConfirm": {
+"rect": [
+0,
+0,
+240,
+136
+],
+"index": 0,
+"active": true,
+"openness": 0,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"是",
+6,
+36,
+200,
+"center",
+26,
+"#ffffff"
+],
+[
+"否",
+6,
+72,
+200,
+"center",
+26,
+"#ffffff"
+]
+]
+}
+},
+"extra": {
+"toasts": [
+"进阶条件未达成"
+],
+"gold": 100000,
+"members": [
+{
+"id": 1,
+"name": "狗逍遥",
+"level": 1,
+"num": 0,
+"params": [
+485,
+200,
+47,
+20,
+20,
+20,
+0,
+20
+],
+"row": {
+"id": 1,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 8,
+"name": "修",
+"level": 1,
+"num": 0,
+"params": [
+450,
+220,
+28,
+20,
+35,
+20,
+20,
+20
+],
+"row": {
+"id": 22,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 9,
+"name": "罗琳",
+"level": 1,
+"params": [
+525,
+150,
+47,
+20,
+25,
+20,
+20,
+20
+],
+"row": null
+},
+{
+"id": 10,
+"name": "美娜",
+"level": 1,
+"params": [
+480,
+200,
+28,
+20,
+25,
+20,
+30,
+20
+],
+"row": null
+}
+],
+"actor1": {
+"skills": [],
+"has1240": false,
+"items": [
+[
+188,
+1
+]
+]
+},
+"item188": 1,
+"item180": 0,
+"index": {
+"index": 0,
+"active": false,
+"windowIdx": 0
+},
+"bottom": {
+"index": 0,
+"active": true,
+"openness": 255
+},
+"confirm": {
+"index": 0,
+"active": true,
+"openness": 0
+},
+"sprite": {
+"bitmap": "img/sv_actors/gxysv2.png",
+"x": 82.6,
+"y": 82.6,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+64,
+0,
+64,
+64
+],
+"bitmapSize": [
+576,
+384
+],
+"frameCount": 1318
+}
+}
+},
+"adv_5_confirm": {
+"windows": {
+"Window_ActorAdvancedIndex": {
+"rect": [
+0,
+0,
+426,
+720
+],
+"index": 0,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"修",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedStatus": {
+"rect": [
+426,
+0,
+854,
+720
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+140,
+0,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+140,
+36,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶次数:0",
+140,
+72,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"最大进阶次数:4",
+140,
+108,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"生命",
+0,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔法",
+252,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"力量",
+0,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"物防",
+252,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"敏捷",
+504,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"智力",
+0,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔防",
+252,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"幸运",
+504,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"485",
+66.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"200",
+318.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"当前值",
+504,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"47",
+66.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"0",
+570.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+66.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶需求:",
+0,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"魂灯",
+36,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+],
+[
+"x1",
+95.27,
+324,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+0,
+360,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"100000精魂",
+34.67,
+396,
+740,
+"left",
+26,
+"#ffffff"
+],
+[
+"进化技能:",
+420,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"超越极限I",
+456,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+]
+]
+},
+"Window_ActorAdvancedGold": {
+"rect": [
+0,
+656,
+426,
+64
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"100000精魂",
+34.67,
+0,
+312,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_AAdvBottomConfirm": {
+"rect": [
+426.67,
+656,
+854,
+64
+],
+"index": -1,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"                                            进阶",
+6,
+0,
+814,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_SaveConfirm": {
+"rect": [
+568,
+292,
+144,
+136
+],
+"index": 0,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"是",
+6,
+36,
+104,
+"center",
+26,
+"#ffffff"
+],
+[
+"否",
+6,
+72,
+104,
+"center",
+26,
+"#ffffff"
+],
+[
+"是",
+6,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"否",
+32,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"进",
+58,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"阶",
+84,
+0,
+52,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"extra": {
+"toasts": [
+"进阶条件未达成"
+],
+"gold": 100000,
+"members": [
+{
+"id": 1,
+"name": "狗逍遥",
+"level": 1,
+"num": 0,
+"params": [
+485,
+200,
+47,
+20,
+20,
+20,
+0,
+20
+],
+"row": {
+"id": 1,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 8,
+"name": "修",
+"level": 1,
+"num": 0,
+"params": [
+450,
+220,
+28,
+20,
+35,
+20,
+20,
+20
+],
+"row": {
+"id": 22,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 9,
+"name": "罗琳",
+"level": 1,
+"params": [
+525,
+150,
+47,
+20,
+25,
+20,
+20,
+20
+],
+"row": null
+},
+{
+"id": 10,
+"name": "美娜",
+"level": 1,
+"params": [
+480,
+200,
+28,
+20,
+25,
+20,
+30,
+20
+],
+"row": null
+}
+],
+"actor1": {
+"skills": [],
+"has1240": false,
+"items": [
+[
+188,
+1
+]
+]
+},
+"item188": 1,
+"item180": 0,
+"index": {
+"index": 0,
+"active": false,
+"windowIdx": 0
+},
+"bottom": {
+"index": -1,
+"active": false,
+"openness": 255
+},
+"confirm": {
+"index": 0,
+"active": true,
+"openness": 255
+},
+"sprite": {
+"bitmap": "img/sv_actors/gxysv2.png",
+"x": 82.6,
+"y": 82.6,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+128,
+0,
+64,
+64
+],
+"bitmapSize": [
+576,
+384
+],
+"frameCount": 1520
+}
+}
+},
+"adv_6_cancel": {
+"windows": {
+"Window_ActorAdvancedIndex": {
+"rect": [
+0,
+0,
+426,
+720
+],
+"index": 0,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"修",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedStatus": {
+"rect": [
+426,
+0,
+854,
+720
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+140,
+0,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+140,
+36,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶次数:0",
+140,
+72,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"最大进阶次数:4",
+140,
+108,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"生命",
+0,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔法",
+252,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"力量",
+0,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"物防",
+252,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"敏捷",
+504,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"智力",
+0,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔防",
+252,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"幸运",
+504,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"485",
+66.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"200",
+318.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"当前值",
+504,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"47",
+66.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"0",
+570.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+66.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶需求:",
+0,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"魂灯",
+36,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+],
+[
+"x1",
+95.27,
+324,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+0,
+360,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"100000精魂",
+34.67,
+396,
+740,
+"left",
+26,
+"#ffffff"
+],
+[
+"进化技能:",
+420,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"超越极限I",
+456,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+]
+]
+},
+"Window_ActorAdvancedGold": {
+"rect": [
+0,
+656,
+426,
+64
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"100000精魂",
+34.67,
+0,
+312,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_AAdvBottomConfirm": {
+"rect": [
+426.67,
+656,
+854,
+64
+],
+"index": -1,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"                                            进阶",
+6,
+0,
+814,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_SaveConfirm": {
+"rect": [
+568,
+292,
+144,
+136
+],
+"index": 0,
+"active": false,
+"openness": 0,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"是",
+6,
+36,
+104,
+"center",
+26,
+"#ffffff"
+],
+[
+"否",
+6,
+72,
+104,
+"center",
+26,
+"#ffffff"
+],
+[
+"是",
+6,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"否",
+32,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"进",
+58,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"阶",
+84,
+0,
+52,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"extra": {
+"toasts": [
+"进阶条件未达成"
+],
+"gold": 100000,
+"members": [
+{
+"id": 1,
+"name": "狗逍遥",
+"level": 1,
+"num": 0,
+"params": [
+485,
+200,
+47,
+20,
+20,
+20,
+0,
+20
+],
+"row": {
+"id": 1,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 8,
+"name": "修",
+"level": 1,
+"num": 0,
+"params": [
+450,
+220,
+28,
+20,
+35,
+20,
+20,
+20
+],
+"row": {
+"id": 22,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 9,
+"name": "罗琳",
+"level": 1,
+"params": [
+525,
+150,
+47,
+20,
+25,
+20,
+20,
+20
+],
+"row": null
+},
+{
+"id": 10,
+"name": "美娜",
+"level": 1,
+"params": [
+480,
+200,
+28,
+20,
+25,
+20,
+30,
+20
+],
+"row": null
+}
+],
+"actor1": {
+"skills": [],
+"has1240": false,
+"items": [
+[
+188,
+1
+]
+]
+},
+"item188": 1,
+"item180": 0,
+"index": {
+"index": 0,
+"active": true,
+"windowIdx": 0
+},
+"bottom": {
+"index": -1,
+"active": false,
+"openness": 255
+},
+"confirm": {
+"index": 0,
+"active": false,
+"openness": 0
+},
+"sprite": {
+"bitmap": "img/sv_actors/gxysv2.png",
+"x": 82.6,
+"y": 82.6,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+128,
+0,
+64,
+64
+],
+"bitmapSize": [
+576,
+384
+],
+"frameCount": 1706
+}
+}
+},
+"adv_7_confirm2": {
+"windows": {
+"Window_ActorAdvancedIndex": {
+"rect": [
+0,
+0,
+426,
+720
+],
+"index": 0,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"修",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedStatus": {
+"rect": [
+426,
+0,
+854,
+720
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+140,
+0,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+140,
+36,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶次数:0",
+140,
+72,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"最大进阶次数:4",
+140,
+108,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"生命",
+0,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔法",
+252,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"力量",
+0,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"物防",
+252,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"敏捷",
+504,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"智力",
+0,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔防",
+252,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"幸运",
+504,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"485",
+66.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"200",
+318.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"当前值",
+504,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"47",
+66.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"0",
+570.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+66.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶需求:",
+0,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"魂灯",
+36,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+],
+[
+"x1",
+95.27,
+324,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+0,
+360,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"100000精魂",
+34.67,
+396,
+740,
+"left",
+26,
+"#ffffff"
+],
+[
+"进化技能:",
+420,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"超越极限I",
+456,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+]
+]
+},
+"Window_ActorAdvancedGold": {
+"rect": [
+0,
+656,
+426,
+64
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"100000精魂",
+34.67,
+0,
+312,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_AAdvBottomConfirm": {
+"rect": [
+426.67,
+656,
+854,
+64
+],
+"index": -1,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"                                            进阶",
+6,
+0,
+814,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_SaveConfirm": {
+"rect": [
+568,
+292,
+144,
+136
+],
+"index": 0,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"是",
+6,
+36,
+104,
+"center",
+26,
+"#ffffff"
+],
+[
+"否",
+6,
+72,
+104,
+"center",
+26,
+"#ffffff"
+],
+[
+"是",
+6,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"否",
+32,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"进",
+58,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"阶",
+84,
+0,
+52,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"extra": {
+"toasts": [
+"进阶条件未达成"
+],
+"gold": 100000,
+"members": [
+{
+"id": 1,
+"name": "狗逍遥",
+"level": 1,
+"num": 0,
+"params": [
+485,
+200,
+47,
+20,
+20,
+20,
+0,
+20
+],
+"row": {
+"id": 1,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 8,
+"name": "修",
+"level": 1,
+"num": 0,
+"params": [
+450,
+220,
+28,
+20,
+35,
+20,
+20,
+20
+],
+"row": {
+"id": 22,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 9,
+"name": "罗琳",
+"level": 1,
+"params": [
+525,
+150,
+47,
+20,
+25,
+20,
+20,
+20
+],
+"row": null
+},
+{
+"id": 10,
+"name": "美娜",
+"level": 1,
+"params": [
+480,
+200,
+28,
+20,
+25,
+20,
+30,
+20
+],
+"row": null
+}
+],
+"actor1": {
+"skills": [],
+"has1240": false,
+"items": [
+[
+188,
+1
+]
+]
+},
+"item188": 1,
+"item180": 0,
+"index": {
+"index": 0,
+"active": false,
+"windowIdx": 0
+},
+"bottom": {
+"index": -1,
+"active": false,
+"openness": 255
+},
+"confirm": {
+"index": 0,
+"active": true,
+"openness": 255
+},
+"sprite": {
+"bitmap": "img/sv_actors/gxysv2.png",
+"x": 82.6,
+"y": 82.6,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+128,
+0,
+64,
+64
+],
+"bitmapSize": [
+576,
+384
+],
+"frameCount": 1999
+}
+}
+},
+"adv_8_done": {
+"windows": {
+"Window_ActorAdvancedIndex": {
+"rect": [
+0,
+0,
+426,
+720
+],
+"index": 0,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"修",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedStatus": {
+"rect": [
+426,
+0,
+854,
+720
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+140,
+0,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+140,
+36,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶次数:1",
+140,
+72,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"最大进阶次数:4",
+140,
+108,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"生命",
+0,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔法",
+252,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"力量",
+0,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"物防",
+252,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"敏捷",
+504,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"智力",
+0,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔防",
+252,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"幸运",
+504,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"685",
+66.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"400",
+318.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"当前值",
+504,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"62",
+66.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"35",
+318.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"15",
+570.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"35",
+66.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"35",
+318.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶需求:",
+0,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"魂灯",
+36,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+],
+[
+"x2",
+95.27,
+324,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽碎片",
+36,
+360,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+],
+[
+"x15",
+147.27,
+360,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+0,
+396,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"500000精魂",
+34.67,
+432,
+740,
+"left",
+26,
+"#ffffff"
+],
+[
+"进化技能:",
+420,
+288,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"超越极限II",
+456,
+324,
+363,
+"left",
+26,
+"rgba(255,214,90,1)"
+]
+]
+},
+"Window_ActorAdvancedGold": {
+"rect": [
+0,
+656,
+426,
+64
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"0精魂",
+34.67,
+0,
+312,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_AAdvBottomConfirm": {
+"rect": [
+426.67,
+656,
+854,
+64
+],
+"index": -1,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"                                            进阶",
+6,
+0,
+814,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_SaveConfirm": {
+"rect": [
+568,
+292,
+144,
+136
+],
+"index": 0,
+"active": false,
+"openness": 0,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"是",
+6,
+36,
+104,
+"center",
+26,
+"#ffffff"
+],
+[
+"否",
+6,
+72,
+104,
+"center",
+26,
+"#ffffff"
+],
+[
+"是",
+6,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"否",
+32,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"进",
+58,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"阶",
+84,
+0,
+52,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"extra": {
+"toasts": [
+"进阶条件未达成",
+"进阶完成"
+],
+"gold": 0,
+"members": [
+{
+"id": 1,
+"name": "狗逍遥",
+"level": 1,
+"num": 1,
+"params": [
+685,
+400,
+62,
+35,
+35,
+35,
+15,
+20
+],
+"row": {
+"id": 2,
+"num": 1,
+"max": 4,
+"level": 1,
+"gold": 500000,
+"items": [
+[
+188,
+2
+],
+[
+180,
+15
+]
+],
+"learn": [
+1241
+],
+"forget": []
+}
+},
+{
+"id": 8,
+"name": "修",
+"level": 1,
+"num": 0,
+"params": [
+450,
+220,
+28,
+20,
+35,
+20,
+20,
+20
+],
+"row": {
+"id": 22,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 9,
+"name": "罗琳",
+"level": 1,
+"params": [
+525,
+150,
+47,
+20,
+25,
+20,
+20,
+20
+],
+"row": null
+},
+{
+"id": 10,
+"name": "美娜",
+"level": 1,
+"params": [
+480,
+200,
+28,
+20,
+25,
+20,
+30,
+20
+],
+"row": null
+}
+],
+"actor1": {
+"skills": [
+1240
+],
+"has1240": true,
+"items": [
+[
+188,
+0
+],
+[
+180,
+0
+]
+]
+},
+"item188": 0,
+"item180": 0,
+"index": {
+"index": 0,
+"active": true,
+"windowIdx": 0
+},
+"bottom": {
+"index": -1,
+"active": false,
+"openness": 255
+},
+"confirm": {
+"index": 0,
+"active": false,
+"openness": 0
+},
+"sprite": {
+"bitmap": "img/sv_actors/gxysv2.png",
+"x": 82.6,
+"y": 82.6,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+128,
+0,
+64,
+64
+],
+"bitmapSize": [
+576,
+384
+],
+"frameCount": 2196
+}
+}
+},
+"adv_9_max": {
+"windows": {
+"Window_ActorAdvancedIndex": {
+"rect": [
+0,
+0,
+426,
+720
+],
+"index": 2,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"修",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedStatus": {
+"rect": [
+426,
+0,
+854,
+720
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"罗琳",
+140,
+0,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+140,
+36,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶次数:4",
+140,
+72,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"最大进阶次数:4",
+140,
+108,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"生命",
+0,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔法",
+252,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"力量",
+0,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"物防",
+252,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"敏捷",
+504,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"智力",
+0,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔防",
+252,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"幸运",
+504,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"525",
+66.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"150",
+318.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"当前值",
+504,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"47",
+66.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"25",
+66.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"已达最大进阶次数",
+0,
+288,
+399,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedGold": {
+"rect": [
+0,
+656,
+426,
+64
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"0精魂",
+34.67,
+0,
+312,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_AAdvBottomConfirm": {
+"rect": [
+426.67,
+656,
+854,
+64
+],
+"index": -1,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"                                            进阶",
+6,
+0,
+814,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_SaveConfirm": {
+"rect": [
+568,
+292,
+144,
+136
+],
+"index": 0,
+"active": false,
+"openness": 0,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"是",
+6,
+36,
+104,
+"center",
+26,
+"#ffffff"
+],
+[
+"否",
+6,
+72,
+104,
+"center",
+26,
+"#ffffff"
+],
+[
+"是",
+6,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"否",
+32,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"进",
+58,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"阶",
+84,
+0,
+52,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"extra": {
+"toasts": [
+"进阶条件未达成",
+"进阶完成"
+],
+"gold": 0,
+"members": [
+{
+"id": 1,
+"name": "狗逍遥",
+"level": 1,
+"num": 1,
+"params": [
+685,
+400,
+62,
+35,
+35,
+35,
+15,
+20
+],
+"row": {
+"id": 2,
+"num": 1,
+"max": 4,
+"level": 1,
+"gold": 500000,
+"items": [
+[
+188,
+2
+],
+[
+180,
+15
+]
+],
+"learn": [
+1241
+],
+"forget": []
+}
+},
+{
+"id": 8,
+"name": "修",
+"level": 1,
+"num": 0,
+"params": [
+450,
+220,
+28,
+20,
+35,
+20,
+20,
+20
+],
+"row": {
+"id": 22,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 9,
+"name": "罗琳",
+"level": 1,
+"num": 4,
+"params": [
+525,
+150,
+47,
+20,
+25,
+20,
+20,
+20
+],
+"row": null
+},
+{
+"id": 10,
+"name": "美娜",
+"level": 1,
+"params": [
+480,
+200,
+28,
+20,
+25,
+20,
+30,
+20
+],
+"row": null
+}
+],
+"actor1": {
+"skills": [
+1240
+],
+"has1240": true,
+"items": [
+[
+188,
+0
+],
+[
+180,
+0
+]
+]
+},
+"item188": 0,
+"item180": 0,
+"index": {
+"index": 2,
+"active": true,
+"windowIdx": 2
+},
+"bottom": {
+"index": -1,
+"active": false,
+"openness": 255
+},
+"confirm": {
+"index": 0,
+"active": false,
+"openness": 0
+},
+"sprite": {
+"bitmap": "img/sv_actors/Actor1_2.png",
+"x": 82.6,
+"y": 82.6,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+64,
+0,
+64,
+64
+],
+"bitmapSize": [
+576,
+384
+],
+"frameCount": 2391
+}
+}
+},
+"adv_10_max_ok": {
+"windows": {
+"Window_ActorAdvancedIndex": {
+"rect": [
+0,
+0,
+426,
+720
+],
+"index": 2,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"狗逍遥",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"修",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedStatus": {
+"rect": [
+426,
+0,
+854,
+720
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"罗琳",
+140,
+0,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"等级:1",
+140,
+36,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"进阶次数:4",
+140,
+72,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"最大进阶次数:4",
+140,
+108,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"生命",
+0,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔法",
+252,
+144,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"力量",
+0,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"物防",
+252,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"敏捷",
+504,
+180,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"智力",
+0,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"魔防",
+252,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"幸运",
+504,
+216,
+399,
+"left",
+26,
+"#84aaff"
+],
+[
+"525",
+66.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"150",
+318.42,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"当前值",
+504,
+144,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"47",
+66.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+180,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"25",
+66.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+318.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"20",
+570.42,
+216,
+399,
+"left",
+26,
+"#ffffff"
+],
+[
+"已达最大进阶次数",
+0,
+288,
+399,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ActorAdvancedGold": {
+"rect": [
+0,
+656,
+426,
+64
+],
+"index": null,
+"active": true,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"0精魂",
+34.67,
+0,
+312,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_AAdvBottomConfirm": {
+"rect": [
+426.67,
+656,
+854,
+64
+],
+"index": -1,
+"active": false,
+"openness": 255,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"                                            进阶",
+6,
+0,
+814,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_SaveConfirm": {
+"rect": [
+568,
+292,
+144,
+136
+],
+"index": 0,
+"active": false,
+"openness": 0,
+"opacity": 30,
+"backOpacity": 192,
+"visible": true,
+"padding": 14,
+"lineHeight": 36,
+"texts": [
+[
+"是",
+6,
+36,
+104,
+"center",
+26,
+"#ffffff"
+],
+[
+"否",
+6,
+72,
+104,
+"center",
+26,
+"#ffffff"
+],
+[
+"是",
+6,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"否",
+32,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"进",
+58,
+0,
+52,
+"left",
+26,
+"#ffffff"
+],
+[
+"阶",
+84,
+0,
+52,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"extra": {
+"toasts": [
+"进阶条件未达成",
+"进阶完成"
+],
+"gold": 0,
+"members": [
+{
+"id": 1,
+"name": "狗逍遥",
+"level": 1,
+"num": 1,
+"params": [
+685,
+400,
+62,
+35,
+35,
+35,
+15,
+20
+],
+"row": {
+"id": 2,
+"num": 1,
+"max": 4,
+"level": 1,
+"gold": 500000,
+"items": [
+[
+188,
+2
+],
+[
+180,
+15
+]
+],
+"learn": [
+1241
+],
+"forget": []
+}
+},
+{
+"id": 8,
+"name": "修",
+"level": 1,
+"num": 0,
+"params": [
+450,
+220,
+28,
+20,
+35,
+20,
+20,
+20
+],
+"row": {
+"id": 22,
+"num": 0,
+"max": 4,
+"level": 1,
+"gold": 100000,
+"items": [
+[
+188,
+1
+]
+],
+"learn": [
+1240
+],
+"forget": []
+}
+},
+{
+"id": 9,
+"name": "罗琳",
+"level": 1,
+"num": 4,
+"params": [
+525,
+150,
+47,
+20,
+25,
+20,
+20,
+20
+],
+"row": null
+},
+{
+"id": 10,
+"name": "美娜",
+"level": 1,
+"params": [
+480,
+200,
+28,
+20,
+25,
+20,
+30,
+20
+],
+"row": null
+}
+],
+"actor1": {
+"skills": [
+1240
+],
+"has1240": true,
+"items": [
+[
+188,
+0
+],
+[
+180,
+0
+]
+]
+},
+"item188": 0,
+"item180": 0,
+"index": {
+"index": 2,
+"active": true,
+"windowIdx": 2
+},
+"bottom": {
+"index": -1,
+"active": false,
+"openness": 255
+},
+"confirm": {
+"index": 0,
+"active": false,
+"openness": 0
+},
+"sprite": {
+"bitmap": "img/sv_actors/Actor1_2.png",
+"x": 82.6,
+"y": 82.6,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+64,
+0,
+64,
+64
+],
+"bitmapSize": [
+576,
+384
+],
+"frameCount": 2584
+}
+}
+}
+}
+}
