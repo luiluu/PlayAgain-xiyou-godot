@@ -1,0 +1,43 @@
+{
+  "cutoff": "33d39d06",
+  "mapsAdded": [
+    19,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    35,
+    36,
+    111,
+    198,
+    199,
+    200,
+    201,
+    202,
+    203
+  ],
+  "allNewMapsKeepAllEvents": true,
+  "rawMapCount": 231,
+  "modelReached": 201,
+  "unlockedMenuWithoutPriorEntry": [],
+  "documentReproducedExactly": true,
+  "difference": [],
+  "map23Reasons": [
+    "Map34 EV15：变量152「12层随机」=1 无处写入",
+    "Map34 EV15：变量152「12层随机」=1 无处写入",
+    "Map34 EV15：变量152「12层随机」=1 无处写入",
+    "Map34 EV15：变量152「12层随机」=1 无处写入",
+    "CE94（无处调用）"
+  ],
+  "map11Reasons": [
+    "Map142 EV3（所在地图不可达）",
+    "Map142 EV9（所在地图不可达）",
+    "Map143 EV11（所在地图不可达）",
+    "Map143 EV17（所在地图不可达）",
+    "CE45（无处调用）"
+  ],
+  "limits": "带条件的静态宽模型，不证明每页实际可执行；新局起点，不迁移原版存档，不据此删内容或改完成度分母。"
+}

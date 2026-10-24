@@ -90,6 +90,10 @@ def main():
     for shot in ["alien_list", "alien_list_pending", "alien_config_bound"]:
         pane = read(a.formal / (shot + ".json"))["extra"]["pane"]
         checks["alien_pane_" + shot] = abs(pane[0] - 100) <= 0.5 and abs(pane[2] - 1080) <= 0.5
+    # 窗口读数正确也可能被旧网页层盖住；必须确认实际取证时没有遗留的工坊遮挡。
+    non_alien = set(PAIRS) | set(RACE) | {"craft_1_list", "craft_3_confirm_x3", "craft_4_popup", "pet_0", "pet_1_skills", "training_bottom"} | set(BOOK)
+    for shot in sorted(non_alien):
+        checks["no_alien_overlay_" + shot] = read(a.formal / (shot + ".json")).get("alienOverlayVisible") is False
     for shot, pairs in BOOK.items():
         f, g = read(a.formal / (shot + ".json")), read(a.godot / (shot + ".json"))
         bad = [k for k, cls in pairs.items() if not near(g["windows"][k]["rect"], formal_rect(f, cls) or [])]
