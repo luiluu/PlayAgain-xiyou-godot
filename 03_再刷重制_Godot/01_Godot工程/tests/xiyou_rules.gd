@@ -12,13 +12,37 @@ extends Node
 @export var parts := 4
 ## 过期参照必须被拒的两项自检：拆分前 1～3、4～6 两份各做一次，现在由难度 1 与难度 4 的第 0 份各做一次，断言总数不变
 @export var stale_checks := true
+## 按编号过滤（车道只比新增的敌群／角色）：环境变量 RULES_ONLY_TROOPS、RULES_ONLY_ACTORS 填逗号或空格分隔的编号，
+## 只比这些敌群的敌人能力值、这些角色的能力值，以及涉及它们的伤害行；两个都不设时行为不变。过滤时不再按 parts 分份：
+## 每个难度的第 0 份（xiyou_rules、xiyou_rules_d2……）管全部选中的行，其它份只记一项「由第 0 份覆盖」；
+## 每个难度另断言过滤至少选中一行，编号写错不会空跑通过。只给车道专项用，检查.sh 设了这两个变量会拒绝运行。
+var only_troops := {}
+var only_actors := {}
+var filtered := false
 var results: Array = []
 var mismatches: Array = []
 var verbose := false
 
 
+## 伤害行里的角色：角色出手时是 actor，敌人出手时是 target
+static func _row_actor(r: Dictionary) -> int:
+	if r.get("actor") != null:
+		return int(r.actor)
+	return int(r.target) if r.get("target") != null else -1
+
+
+static func _id_set(text: String) -> Dictionary:
+	var out := {}
+	for t in text.replace(",", " ").split(" ", false):
+		out[int(t)] = true
+	return out
+
+
 func _ready() -> void:
 	verbose = OS.get_cmdline_user_args().has("--verbose")
+	only_troops = _id_set(OS.get_environment("RULES_ONLY_TROOPS"))
+	only_actors = _id_set(OS.get_environment("RULES_ONLY_ACTORS"))
+	filtered = not only_troops.is_empty() or not only_actors.is_empty()
 	_run.call_deferred()
 
 
@@ -109,6 +133,11 @@ func _run() -> void:
 	if not manifest is Dictionary:
 		_check("conversion_manifest_present", false)
 		return _finish()
+	if filtered and part != 0:
+		_check("rules_only_covered_by_part0", true, {"troops": only_troops.keys(), "actors": only_actors.keys()})
+		return _finish()
+	var my_part := 0 if filtered else part
+	var my_parts := 1 if filtered else parts
 	for diff in difficulties:
 		var path := "res://modes/xiyou/generated/oracle/slice_d%d.json" % diff
 		var d = JSON.parse_string(FileAccess.get_file_as_string(path))
@@ -128,11 +157,15 @@ func _run() -> void:
 			stale.sourceIdentity.runtimeInputs["js/plugins.js"] = "旧脚本"
 			_check("stale_runtime_rejected", not _reference_issues(manifest, stale).is_empty())
 		var growth_seen := []
+		var matched := 0
 		# 能力值
 		var actor_keys: Array = d.actors.keys()
-		for k in range(part, actor_keys.size(), parts):
+		for k in range(my_part, actor_keys.size(), my_parts):
 			var id_s = actor_keys[k]
 			var id := int(id_s)
+			if filtered and not only_actors.has(id):
+				continue
+			matched += 1
 			var row: Dictionary = d.actors[id_s]
 			_compare_snap("d%d.actor%d.lv1" % [diff, id], _snap(_make_actor(id, d, false)), row.lv1)
 			var a := _make_actor(id, d, true)
@@ -155,6 +188,9 @@ func _run() -> void:
 		for t in range(troop_keys.size()):
 			var tid_s = troop_keys[t]
 			var mine := t % parts == part
+			if filtered:
+				mine = only_troops.has(int(tid_s))
+				matched += 1 if mine else 0
 			var list := []
 			for e in d.enemies[tid_s]:
 				var en := XEnemy.new().setup(int(e.id), diff, 100.0)  # 参照数据取自非神话（Math.random=0.99）
@@ -171,8 +207,11 @@ func _run() -> void:
 		var zero_vars := []
 		zero_vars.resize(5000)
 		zero_vars.fill(0)
-		for k in range(part, d.damage.size(), parts):
+		for k in range(my_part, d.damage.size(), my_parts):
 			var r: Dictionary = d.damage[k]
+			if filtered and not (only_troops.has(int(r.troop)) or only_actors.has(_row_actor(r))):
+				continue
+			matched += 1
 			var item := XDB.rec("Skills", int(r.skill))
 			var user: XBattler
 			var target: XBattler
@@ -207,7 +246,9 @@ func _run() -> void:
 		# 第 0 份照旧记一项；其他份只在查出未翻译时补一项失败（通过时断言总数与拆分前相同，失败也不漏）
 		if part == 0 or not untranslated.is_empty():
 			_check("d%d.no_untranslated_state_effects" % diff, untranslated.is_empty(), untranslated.slice(0, 5))
-		if verbose:
+		if filtered:
+			_check("d%d.rules_only_matched" % diff, matched > 0, {"troops": only_troops.keys(), "actors": only_actors.keys()})
+		if verbose and not growth_seen.is_empty():
 			print("d%d growth range: %s..%s" % [diff, growth_seen.min(), growth_seen.max()])
 	_finish()
 

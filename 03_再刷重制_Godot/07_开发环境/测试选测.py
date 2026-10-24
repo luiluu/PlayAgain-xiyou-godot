@@ -270,6 +270,12 @@ class CheckerTests(Fixture):
         self.assertEqual(len(next(l for l in ran if l.startswith('并行测试.py')).split()), 3)
         self.assertIn('全部通过', out)
 
+    def test_rules_filter_env_is_refused(self):
+        self.env['RULES_ONLY_TROOPS'] = '833'
+        rc, out, ran = self.check()
+        self.assertEqual(rc, 2)
+        self.assertEqual(ran, [])
+
     def test_bad_arguments(self):
         self.assertEqual(self.check('--affected')[0], 2)
         rc, out, ran = self.check('--affected', 'no-such-commit')

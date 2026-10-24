@@ -28,6 +28,10 @@ while (( $# )); do
 done
 ok()   { print -r -- "  ✓ $1"; }
 bad()  { print -r -- "  ✗ $1"; FAIL=1; }
+# xiyou_rules 按编号过滤只给车道专项用：检查（尤其整轮会被记作通过、下轮沿用）里不许带着它跑
+if [[ -n ${RULES_ONLY_TROOPS:-}${RULES_ONLY_ACTORS:-} ]]; then
+  print -r -- "环境里设了 RULES_ONLY_TROOPS／RULES_ONLY_ACTORS（只给车道专项用），先 unset 再跑检查"; exit 2
+fi
 # 选测：SEL_FULL=1 时与不加 --affected 完全相同；否则只跑 SEL_SCENES 与 SEL_CHECKS 选中的部分
 SEL_FULL=1; SEL_SCENES=(); SEL_CHECKS=()
 if [[ -n $AFFECTED ]]; then
