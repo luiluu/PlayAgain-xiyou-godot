@@ -30,6 +30,7 @@ func setup(id: int) -> XActor:
 	init_equips(d.get("equips", []))
 	_fix_strong_classification()
 	recover_all()
+	XActorModules.setup(self)  # 专属角色模块的 Game_Actor.setup 包装（饿狼同步形态等）
 	return self
 
 
@@ -277,6 +278,7 @@ func _level_up() -> void:
 	if var_id.is_valid_int() and int(var_id) > 0 and XState.current:
 		var points := str(XDB.plugin("PKD_SimpleSkillsTree").get("skillPointsPerLevelUpGain:i", "1"))
 		XState.current.set_variable(int(var_id), XState.current.variable(int(var_id)) + (int(points) if points.is_valid_int() else 1))
+	XActorModules.level_up(self)  # 专属角色模块的 levelUp 包装
 
 ## Game_Actor.changeLevel（事件「增减等级」316）：夹在 1～上限，按 changeExp 逐级升降（降级不忘技能、不扣技能点），
 ## 返回新学会的技能 ID（displayLevelUp 用）
@@ -318,6 +320,8 @@ func gain_exp(amount: int, rate := 1.0, random: XRandomStream = null) -> int:
 
 # ---- 技能 ----
 func learn_skill(id: int) -> void:
+	if not XActorModules.can_learn(self, id):  # 专属角色模块的 learnSkill 包装（饿狼被动按形态准入等）
+		return
 	if not skill_ids.has(id) and not XDB.rec("Skills", id).is_empty():
 		skill_ids.append(id)
 		skill_ids.sort()
