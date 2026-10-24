@@ -42,3 +42,10 @@
 - 未做：各 `Codex*.recruit()` 入口（渡鸦等新原生接入，重制版无对应入口）、物品／商店帮助窗的「仅限地狱及以上难度获取与招募」文字（重制版是悬停说明卡，需界面参照）、战斗里的物品条件（`battle_logic.gd` 是沙僧独占，没动）。
 - 新专项 `xiyou_super_acquire`（27 项）：招募角色解析、45 件计数、默认难度拦商店／得到／入队，七个挑战开关与难度 9 放行，减少与已持有不拦。`xiyou_item_use` 的「全部可用」扫描先开挑战开关 2494（否则 45 件号角按原版规则灰着）。
 - 验证：xiyou_shop_buy 9613/9613；achievement、actor_book、alien_workshop、event_compare、flow、hangup、imported_balance、item_*、lobby_shops、orb*、party、save_page、shop_*、super_acquire、floor_* 共 46 个场景全过。未跑全量（全量 168 个场景在 worktree 里 18 分钟才完成 8 个）。
+
+## 追加：超强者限制连带的测试前提与 fortress029 偶发（第二次返工）
+
+- `xiyou_actor_p0` 的 `recruit_96／100`：原版 `addActor` 在地狱以下对未持有的超强者直接拦下（实测参照引擎：难度 3、挑战开关全关时 `addActor(104／96／100／141)` 一个都进不了队），actor_p0 的招募断言是 Godot 自己的流程检查、不是原版参照数值，所以按原版语义补前提：测试开头开挑战开关 2494。规则没放宽。
+- `xiyou_battle_events` 的 `seal1691.*`：参照 `battle_event_probe.cjs` 是直接在角色对象 `$gameActors.actor(104)` 上做的，104 在原版里根本没进队伍（addActor 被拦）；Godot 测试走真实开战要队伍里有 104，所以临时开挑战开关 2494 把 104 编入再关掉，参照数值不变。
+- `xiyou_floor_fortress029` 偶发（60 秒，快速失败，与上限无关）：复现到的是 `ice_snow_view`——换到 Map034 后只等一帧就读 `screen_fx._weather.visible`，天气层在物理帧里才刷新可见性，负载高时还没轮到。改为最多等 600 帧至可见。Map029／023／035／036 的 EV2 等随机只写 94／137／140 变量，不影响路线，宝箱页已在期一固定。
+- 验证：xiyou_actor_p0 3212/3212、xiyou_battle_events 108/108、shop_buy 9613、item_use 11、lobby_shops 92、super_acquire 27、screen_fx 28，以及全部 floor_* 专项通过；fortress029＋lab111 并行 2 又连跑 3 次全过；另单独并行 12 次循环里改前复现 1 次 ice_snow_view 失败。

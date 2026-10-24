@@ -67,6 +67,8 @@ func _run() -> void:
 	_passive_levels()
 	# ① 招募路径
 	var s := XState.new_game(3, 1, [8, 10, 9])
+	# 超强者（96、100 等）在地狱以下招不进来（installBossDifficultyRuntime，见 xiyou_super_acquire）：招募路径先开挑战开关 2494
+	s.set_switch(2494, true)
 	s.map_id = 4
 	s.x = 14
 	s.y = 23

@@ -242,6 +242,10 @@ func _seal_release(o: Dictionary) -> void:
 	const SEALED := [15, 16, 18, 19]
 	var s := XState.new_game(int(o.fixture.difficulty), int(o.fixture.actor), [])
 	s.random_master = XRandomStream.hex64(1691)
+	# 参照直接在角色对象上做（原版 addActor 对地狱以下的超强者 104 其实拦下，角色没进队伍）；真实开战要在队伍里，所以临时放开挑战开关把 104 编入
+	s.set_switch(2494, true)
+	s.add_actor(int(o.fixture.actor))
+	s.set_switch(2494, false)
 	var a: XActor = s.actor(int(o.fixture.actor))
 	for sid in o.fixture.skills:
 		a.learn_skill(int(sid))

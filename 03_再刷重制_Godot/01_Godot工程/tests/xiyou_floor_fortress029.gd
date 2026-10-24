@@ -262,7 +262,11 @@ func _ice() -> void:
 	await _run_event(map, 2, [0], "")
 	_check("ice_door_entered", await _wait_map(34) and _scene().player.grid == Vector2i(33, 21), [_scene().map_id])
 	_check("ice_snow", s.screen.weather_type == "snow" and s.screen.weather_power_target == 7.0, s.screen.to_dict())
-	await _frames(1)
+	# 天气画面层在物理帧里刷新可见性，负载高时一帧里还没轮到：等它出现（最多 600 帧）
+	var w := 0
+	while w < 600 and not _scene().screen_fx._weather.visible:
+		await get_tree().process_frame
+		w += 1
 	_check("ice_snow_view", _scene().screen_fx._weather.visible)
 	# 洞穴里的出口回 Map023；辛德瑞回大厅
 	s.map_id = 23
