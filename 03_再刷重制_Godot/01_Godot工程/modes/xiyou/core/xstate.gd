@@ -121,6 +121,8 @@ var encounter_enabled := true      # Game_System._encounterEnabled（指令 136�
 ## YEP_CoreEngine 的 $gameParty.ActorMaxLevel：全体角色的等级上限（每次换场景写回 $dataActors[i].maxLevel，
 ## 所以角色数据库与备注里的上限都被它取代）。初值为插件参数 Max Level（西游 10），插件指令 maxlevel add/equal 改它。
 var actor_max_level := 0
+## $gameScreen 的色调与天气（指令 223／236；换地图不清，读档保留）
+var screen := XScreenFx.new()
 var battle_bgm: Dictionary = {}     # $gameSystem._battleBgm（指令 132 更改战斗 BGM；空＝用 System 里的）
 ## $gameMap._battleback1Name／_battleback2Name 被指令 283 改过时的 [背景1, 背景2]；空＝用地图指定的（Game_Map.setupBattleback）。
 ## 原版 $gameMap 整个进存档，读档同版本不重设地图，所以随档保存；换到别的地图时由 XMapScene.load_map 清掉。
@@ -479,7 +481,7 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "actorMaxLevel": actor_max_level,
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training}
 
@@ -590,6 +592,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.battleback = [str(bb[0]), str(bb[1])] if bb is Array and bb.size() == 2 else []
 	s.erased_events.assign(Array(d.get("erasedEvents", [])).map(func(v): return int(v)))
 	s.encounter_enabled = bool(d.get("encounterEnabled", true))
+	s.screen = XScreenFx.from_dict(d.get("screen"))
 	# dev.032 以前的存档没有这一项：按初值（原版开局就是插件参数）
 	s.actor_max_level = int(d.get("actorMaxLevel", default_max_level()))
 	if d.has("unlockedMaps"):
