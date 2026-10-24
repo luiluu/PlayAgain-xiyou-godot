@@ -110,7 +110,6 @@ func _paint_slots(c: XMVCanvas) -> void:
 
 func _paint_list(c: XMVCanvas) -> void:
 	var data := list_data()
-	var section := c.size.x / 6.0
 	var battle := XState.current.battle_members()
 	for i in range(list_top, mini(list_top + _rows(), data.size())):
 		var y := (i - list_top) * LH
@@ -122,17 +121,24 @@ func _paint_list(c: XMVCanvas) -> void:
 			c.text("离队", 36, y, c.size.x - TEXT_PADDING - 36)
 			continue
 		var a := XState.current.actor(id)
-		c.character(str(a.data().characterName), int(a.data().characterIndex), 32.0 / 2.0 + TEXT_PADDING / 2.0, y + LH + 16.0, LH - 4.0)
-		c.text(a.display_name(), 36, y, c.size.x - 36, "left", XUI.text_color(IN_PARTY_COLOR) if battle.has(a) else XUI.TEXT)
-		var lv_w := c.text_width("Lv")
-		c.text("Lv", section * 2, y, lv_w, "left", XUI.SYSTEM)
-		c.text(XMenu._group(a.level), section * 2 + lv_w, y, c.text_width(XMenu._group(a.max_level())), "right")
-		_value(c, "HP", a.hp, a.mhp, section * 3, y, section - 6, "hp", XMenu._hp_color(a))
-		_value(c, "MP", a.mp, a.mmp, section * 4, y, section - 6, "mp", XUI.TEXT)
-		var tp: Array = XUI.GAUGES.tp
-		c.gauge(section * 5, y, section - 6, a.tp / a.max_tp(), tp[0], tp[1])
-		c.text("TP", section * 5, y, 44, "left", XUI.SYSTEM)
-		c.text(str(int(a.tp)), section * 5 + section - 6 - 64, y, 64, "right")
+		paint_actor_row(c, a, y, battle.has(a))
+
+
+## Window_PartyList.drawBasic／drawExtra 的一行（角色仓库 XActorWarehouseScene 共用）：行走图上半、名字（出战成员 textColor 6；
+## 不可用时只有名字半透明，同 changePaintOpacity 只包住 drawText）、Lv、HP/MP/TP
+static func paint_actor_row(c: XMVCanvas, a: XActor, y: float, in_battle: bool, enabled := true) -> void:
+	var section := c.size.x / 6.0
+	c.character(str(a.data().characterName), int(a.data().characterIndex), 32.0 / 2.0 + TEXT_PADDING / 2.0, y + LH + 16.0, LH - 4.0)
+	c.text(a.display_name(), 36, y, c.size.x - 36, "left", XUI.text_color(IN_PARTY_COLOR) if in_battle else XUI.TEXT, XUI.FONT_SIZE, LH, 1.0 if enabled else XUI.DIM.a)
+	var lv_w := c.text_width("Lv")
+	c.text("Lv", section * 2, y, lv_w, "left", XUI.SYSTEM)
+	c.text(XMenu._group(a.level), section * 2 + lv_w, y, c.text_width(XMenu._group(a.max_level())), "right")
+	_value(c, "HP", a.hp, a.mhp, section * 3, y, section - 6, "hp", XMenu._hp_color(a))
+	_value(c, "MP", a.mp, a.mmp, section * 4, y, section - 6, "mp", XUI.TEXT)
+	var tp: Array = XUI.GAUGES.tp
+	c.gauge(section * 5, y, section - 6, a.tp / a.max_tp(), tp[0], tp[1])
+	c.text("TP", section * 5, y, 44, "left", XUI.SYSTEM)
+	c.text(str(int(a.tp)), section * 5 + section - 6 - 64, y, 64, "right")
 
 
 ## Window_PartyList.drawCurrentAndMax：只写当前值，右对齐在最大值宽度内

@@ -17,6 +17,7 @@ extends RefCounted
 ## - 修炼：Star.ActorAttributePlusPoints.XiuLian = [...] → XTraining.xiulian；SceneManager.push(Scene_ActorAttributePlusPoints) → 修炼界面（host.open_training）。
 ## - 成就：Star.AchievementSystem.GetAcReward(N) → XAchievement.reward；SceneManager.push(Scene_AchievementBook) → 成就界面（host.open_achievements）。
 ## - 装备镶嵌图鉴：SceneManager.push(Scene_EquipInlayBook) → host.open_inlay_book（XInlayBook）。
+## - 角色仓库：SceneManager.push(Star_Scene_ActorWarehouse) → host.open_actor_warehouse（XActorWarehouse）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## CodexReincarnationRandom.entry：open 之后的选择结果 {accepted, hard}
@@ -191,6 +192,10 @@ static func _statements(js: String, interp) -> Array:
 		# 装备镶嵌图鉴（Star_EquipInlayBook）：方桌大厅魂灯商人 Map4 EV40 p1／p3 等
 		if st == "SceneManager.push(Scene_EquipInlayBook)" and interp.host.has_method("open_inlay_book"):
 			await interp.host.open_inlay_book()
+			continue
+		# 角色仓库（Star_ActorWarehouse，见 XActorWarehouse）：方桌大厅仓库管理员 Map4 EV8「角色仓库」
+		if st == "SceneManager.push(Star_Scene_ActorWarehouse)" and interp.host.has_method("open_actor_warehouse"):
+			await interp.host.open_actor_warehouse()
 			continue
 		# 宠物（Star_PetSystem）：公共事件 169
 		if st == "SceneManager.push(Scene_PetSystem)" and interp.host.has_method("open_pets"):

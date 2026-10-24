@@ -74,6 +74,9 @@ class EventHost:
 	func open_warehouse() -> void:
 		trace.append({"t": "scene", "name": "Scene_Warehouse"})
 
+	func open_actor_warehouse() -> void:
+		trace.append({"t": "scene", "name": "Star_Scene_ActorWarehouse"})
+
 	func open_inlay_book() -> void:
 		trace.append({"t": "scene", "name": "Scene_EquipInlayBook"})
 
