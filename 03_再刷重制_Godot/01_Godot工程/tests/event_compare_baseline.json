@@ -1,17 +1,11 @@
 {
-	"cases": 1673,
-	"match": 1657,
+	"cases": 1795,
+	"match": 1789,
 	"mismatch": {
 		"m4e17p0": [
 			"trace"
 		],
 		"m4e17p1": [
-			"trace"
-		],
-		"m4e22p0": [
-			"trace"
-		],
-		"m4e22p1": [
 			"trace"
 		],
 		"m4e40p1": [
@@ -20,37 +14,13 @@
 		"m4e40p3": [
 			"trace"
 		],
-		"m4e41p0": [
-			"trace"
-		],
-		"m4e41p1": [
-			"trace"
-		],
-		"m4e41p2": [
-			"trace"
-		],
-		"m4e41p3": [
-			"trace"
-		],
-		"m4e41p4": [
-			"trace"
-		],
-		"m4e41p5": [
-			"trace"
-		],
 		"m4e73p0": [
 			"trace"
 		],
 		"m4e8p0": [
 			"trace"
-		],
-		"m61e9p0": [
-			"trace"
-		],
-		"m65e3p0": [
-			"trace"
 		]
 	},
-	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。",
+	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 6 例都是原版有而重制版未做的系统：m4e8p0 仓库（PHWarehouse）、m4e17p0／p1 更衣（Scene_ChangeClothes）、m4e40p1／p3 装备镶嵌图鉴（Scene_EquipInlayBook）三处界面未接；m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。",
 	"source": "v0.28"
 }
