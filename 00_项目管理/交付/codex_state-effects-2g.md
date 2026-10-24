@@ -12,3 +12,10 @@
 
 - 期二：死亡图鉴与 ConsumeReduceAll|Zj|Mf|N 结算，相关 cat_probe／xiyou_cat 收紧；期三历史两项可砍，未开。
 - 阶段审查职责已接收；未收到“阶段审查 N%”不启动，现账面49.6%。
+
+## 验收现场（接手入口）
+
+- 资源层前置与三块 Battle 已实现；转换器未翻译 444→441。1334／1336 Apply 只在专项里临时提供未来 op 验证刷新前置，生产仍 JS。
+- 537 项 TP 专项初步通过（不放宽比较，不改参照）。合入 main `7fc0c310`（dev.165）后已重导入；无探针／切片改动，只有转换器状态块分支重生成。
+- 即将以长任务运行相关专项：state_effects 两场、formula 前缀、rules 24 段、troop_events 两场、settlement、review135、enemy_book、floor_run_c、combat。日志在 `03_再刷重制_Godot/04_验证/本地结果/state-effects-2g/final.log`；不运行全量检查。结束后将结果抄入本单，再删除本车道临时输出。
+- 另有完整预览隔离边界待交接：`formula_execution.gd` 的预览复制结果槽调用 `resource_context.result(a/b)`，空槽会插入真实 slots；应由该文件改为只读读取（缺槽用 empty_result），本车道不越界修改。已存在槽的生命周期预览专项通过；不能声称所有预览入口已闭环。
