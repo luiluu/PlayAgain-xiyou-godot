@@ -258,6 +258,28 @@ func _layout(page: XAlienWorkshop) -> void:
 		and near.call(found["疫囊·尼伯龙根指环"].position.x, 132) and near.call(found["疫囊·尼伯龙根指环"].position.y - found["逆骨·血吼"].position.y, 55.19) \
 		and near.call(found.h2.position.x, 487.27) and found.good == XAlienWorkshop.GOOD and found.bad == XAlienWorkshop.BAD
 	check("layout_game_panel_theme", ok, found)
+	# 焦点框照原版 :focus-visible：打开时焦点在第一个按钮但不画框，键盘移动焦点后才画
+	var first := get_viewport().gui_get_focus_owner()
+	check("focus_hidden_on_open", first is Button and first.has_focus() and not first.has_focus(true), first)
+	for down in [true, false]:
+		var e := InputEventAction.new()
+		e.action = "ui_down"
+		e.pressed = down
+		get_viewport().push_input(e)
+		await get_tree().process_frame
+	var moved := get_viewport().gui_get_focus_owner()
+	check("focus_visible_after_key", moved is Button and moved != first and moved.has_focus(true), [first, moved])
+	# O-089 回退：不预先聚焦（原版重画后焦点不在任何按钮上）
+	XAlienWorkshop.focus_first = false
+	moved.release_focus()
+	var plain := XAlienWorkshop.new()
+	add_child(plain)
+	for i in 4:
+		await get_tree().process_frame
+	check("o089_original_no_focus", get_viewport().gui_get_focus_owner() == null, get_viewport().gui_get_focus_owner())
+	XAlienWorkshop.focus_first = true
+	plain.queue_free()
+	await get_tree().process_frame
 	# O-087 回退：第 2 个起右推 7（与原版读数 x139 一致）
 	# 另开一个实例看，不动流程页（静态选中项先存后还）
 	var keep := XAlienWorkshop.selected

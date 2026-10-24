@@ -17,7 +17,8 @@ INPUTS = ["index.html", "js/plugins.js", "js/rpg_scenes.js", "js/rpg_windows.js"
           "js/codex/runtime/installNativeRaceRuntime.js", "js/codex/runtime/installNativeYunshangRuntime.js",
           "js/codex/runtime/installNativeBindingChargeRuntime.js",
           "js/codex/runtime/installAlienationWorkshop.js", "js/codex/runtime/installAlienationAffixes.js",
-          "js/codex/runtime/installGamePanelTheme.js", "js/codex/runtime/installCombatPowerRuntime.js"]
+          "js/codex/runtime/installGamePanelTheme.js", "js/codex/runtime/installCombatPowerRuntime.js",
+          "js/plugins/AB_EnemyBook.js", "js/plugins/EliteEnemy.js", "js/plugins/EnemyNameColorByDifficulty.js"]
 
 
 def identity(source):

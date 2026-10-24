@@ -7,6 +7,7 @@ extends Control
 ##   八项能力值「生命 485」照原版的三列 280／462／630 与三行（敏捷、幸运在第三列，第一行第三列空着）。
 ## - 精魂窗 (0,656,426,64)：图标 272，「数值＋精魂」在 x 34.67。
 ## - 底部「修炼」窗 (426.67,656,854,64)：一行（原版用 44 个空格把「修炼」推到中间），目录确定后才可选。
+##   本工程字体的空格比原版窄，「修炼」按原版实测的空格宽（SPACE_W）定横坐标（ui_reference review_system_pages 的 training 读数）。
 ## - 修炼项窗 (426.67,136,854,388)：一直显示，XTraining.lines 的行文；「修炼」确定后才可选，修炼后留在本窗。
 ## 流程：目录确定 → 底部「修炼」→ 修炼项确定（XTraining.confirm，提示照原版 $.toaster）；修炼项取消回底部，底部取消回目录，目录取消关闭。
 ## 优化 O-082（ALIGN_COST，可回退）：原版用空格补齐「下一级费用」，中文字宽不同，各行对不齐（参照截图里差 3～20 像素）；
@@ -31,6 +32,8 @@ const ATTR := ["生命", "魔法", "物理攻击", "物理防御", "魔法攻击
 const ATTR_CELLS := [[0, COL2 / 3.0 * 2.0, 0], [1, COL2 / 10.0 * 11.0, 0], [2, COL2 / 3.0 * 2.0, 1], [3, COL2 / 10.0 * 11.0, 1],
 	[6, COL2 / 10.0 * 15.0, 1], [4, COL2 / 3.0 * 2.0, 2], [5, COL2 / 10.0 * 11.0, 2], [7, COL2 / 10.0 * 15.0, 2]]
 const BOTTOM_TEXT := "                                            修炼"
+## 原版 CodexUserUI 26 号下 44 个空格实测宽 317.28125（training_bottom 读数），即每个空格 7.2109375
+const SPACE_W := 317.28125 / 44.0
 const GOLD_ICON := 272
 const COST_MARK := "下一级费用"
 
@@ -188,7 +191,11 @@ func _paint_gold(c: XMVCanvas) -> void:
 func _paint_bottom(c: XMVCanvas) -> void:
 	if cmd == 0:
 		c.cursor(Rect2(0, 0, c.size.x, LH), mode == "bottom")
-	_paint_ops(c, bottom_ops())
+	# 行首空格按原版空格宽折成横坐标，免得「修炼」随本工程字体的空格宽偏左
+	for o in bottom_ops():
+		var word := str(o[1]).strip_edges(true, false)
+		var pad := (str(o[1]).length() - word.length()) * SPACE_W
+		c.text(word, o[2] + pad, o[3], o[4] - pad, o[6], o[8], int(o[7]), o[5])
 
 
 func _paint_list(c: XMVCanvas) -> void:

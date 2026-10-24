@@ -45,6 +45,8 @@ const PRIMARY_RE := "采用新|保存配置|合成|能量 →|应用到|使用1�
 const DANGER_RE := "确认分解|分解为"
 ## 优化 O-087：false（默认）列表按钮左对齐、不出横向滚动条；true 照原版 button+button 把第 2 个起右推 7，宽仍 100%，撑出横向滚动条
 static var list_indent_quirk := false
+## 优化 O-089：true（默认）打开／重画后焦点放在第一个按钮（不画框，方向键可直接走）；false 照原版不聚焦任何按钮（键盘先按 Tab）
+static var focus_first := true
 const PARAM_NAMES := ["生命", "法力", "物攻", "物防", "魔攻", "魔防", "速度", "幸运"]
 
 ## 选中的异化装备 uid：原版是工坊模块的变量，关掉再开、读档后都还记着（uid 对上才生效）
@@ -586,8 +588,10 @@ func render(partial := false) -> void:
 		return
 	scroll.custom_minimum_size.y = minf(box.get_combined_minimum_size().y, size.y * 0.94 - (PANE_BORDER + PANE_PAD.y) * 2)
 	var first := _first_button(box)
-	if first != null:
-		first.grab_focus()
+	if first != null and focus_first:
+		# 原版重画后不聚焦任何按钮，焦点框只在键盘操作后画（:focus-visible）。这里仍把焦点放在第一个按钮，方向键可直接走，
+		# 但先不画框（hide_focus），键盘移动焦点后才显示（O-089）
+		first.grab_focus(true)
 	# 原版重画后停在顶部（键盘焦点跟随只在之后移动时滚）
 	await get_tree().process_frame
 	if is_instance_valid(scroll):

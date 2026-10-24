@@ -59,6 +59,12 @@ func _run() -> void:
 	XSave.dir_override = "user://test_system_evidence"
 	XConfig._loaded_path = "<unloaded>"
 	check("power_line_default_on", XPower.enabled())
+	# 截图模式统一不读开发档设置（XConfig.screenshot_mode：带 --out= 时 path 为空，即使没设 dir_override）
+	if out_dir != "":
+		var keep := XSave.dir_override
+		XSave.dir_override = ""
+		check("screenshot_mode_memory_config", XConfig.screenshot_mode() and XConfig.path() == "", XConfig.path())
+		XSave.dir_override = keep
 	await _crafting()
 	await _magic_level()
 	await _race()
