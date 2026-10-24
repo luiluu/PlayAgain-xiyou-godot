@@ -74,6 +74,8 @@ class _WeatherCanvas extends Node2D:
 	var _power := 0.0
 	var _origin := Vector2.ZERO
 	var _sprites: Array = []     # {ax, ay, op}
+	## 粒子只是画面效果，用自己的随机流，不动全局随机（遇敌、事件、战斗各有各的流）
+	var _rng := RandomNumberGenerator.new()
 
 	func has_sprites() -> bool:
 		return not _sprites.is_empty()
@@ -102,9 +104,9 @@ class _WeatherCanvas extends Node2D:
 				sp.ay += speed * cos(rot)
 				sp.op -= speed
 			if sp.op < 40.0:
-				sp.ax = float(randi() % 1380) - 100.0 + origin.x
-				sp.ay = float(randi() % 920) - 200.0 + origin.y
-				sp.op = 160.0 + float(randi() % 60)
+				sp.ax = float(_rng.randi() % 1380) - 100.0 + origin.x
+				sp.ay = float(_rng.randi() % 920) - 200.0 + origin.y
+				sp.op = 160.0 + float(_rng.randi() % 60)
 		queue_redraw()
 
 	func _rotation() -> float:
