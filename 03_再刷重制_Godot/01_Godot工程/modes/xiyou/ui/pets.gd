@@ -65,6 +65,7 @@ var _status_ops: Array = []
 var _sprite_tex: Texture2D
 var _sprite_sv := false
 var _frame := 0
+var status_cover := -1.0      # 状态窗内容被挖掉的起点（画面 y）；没有窗口盖住时为 720
 
 
 func _ready() -> void:
@@ -76,6 +77,7 @@ func _ready() -> void:
 	var op := XUI.MENU_WINDOW_OPACITY
 	index_win = XMVWindow.make(self, INDEX_RECT, op, _paint_index)
 	status_win = XMVWindow.make(self, STATUS_RECT, op, _paint_status)
+	status_win.canvas.draw.connect(_apply_status_clip)
 	skill_win = XMVWindow.make(self, SKILL_RECT, op, _paint_skills)
 	bottom_win = XMVWindow.make(self, BOTTOM_RECT, op, _paint_bottom)
 	team_win = XMVWindow.make(self, TEAM_RECT, op, _paint_team)
@@ -97,6 +99,30 @@ func _process(_delta: float) -> void:
 	_frame += 1
 	if _sprite_tex != null and _sprite_sv and _frame % 12 == 0:
 		status_win.canvas.queue_redraw()
+	_clip_status()
+
+
+## MV WindowLayer：后建的技能列表／喂养列表／共享角色窗／合成窗把自己的范围从状态窗里挖掉（随开合从窗口中线上下展开），
+## 按像素截：合成窗 y 584 时「技能数」下第二行只剩上半截（八戒_63 成对截图核对）
+func _clip_status() -> void:
+	var cover := STATUS_RECT.end.y
+	for w in [skill_win, team_win, feed_win, syn_win]:
+		if w.openness > 0:
+			cover = minf(cover, w.position.y + w.size.y / 2.0 * (1.0 - w.openness / 255.0))
+	if cover == status_cover:
+		return
+	status_cover = cover
+	status_win.canvas.queue_redraw()
+
+
+## Control 每次重画都会重设自己的裁剪矩形，所以在 draw 信号（重设之后）里再套上
+func _apply_status_clip() -> void:
+	var c := status_win.canvas
+	if status_cover < 0 or status_cover >= STATUS_RECT.end.y:
+		return
+	var h := maxf(0.0, status_cover - status_win.position.y - c.position.y)
+	RenderingServer.canvas_item_set_custom_rect(c.get_canvas_item(), true, Rect2(-c.position, Vector2(c.size.x + 2 * c.position.x, h + c.position.y)))
+	RenderingServer.canvas_item_set_clip(c.get_canvas_item(), true)
 
 
 # ---- 数据 ----
@@ -210,11 +236,8 @@ func _paint_status(c: XMVCanvas) -> void:
 			scale = CW / src.size.x / 2.0
 		var sz := src.size * scale
 		c.draw_texture_rect_region(_sprite_tex, Rect2(center - sz / 2.0, sz), src)
-	# 技能列表打开时 MV WindowLayer 把它的范围从状态窗里挖掉（y 540 以下）
-	var ops := _status_ops
-	if skill_win.openness > 0 or feed_win.openness > 0:
-		ops = ops.filter(func(o): return STATUS_RECT.position.y + XMVWindow.PADDING + float(o[3]) + LH <= SKILL_RECT.position.y + 4)
-	_paint_ops(c, ops)
+	# 被后建窗口盖住的部分由 _clip_status 截掉
+	_paint_ops(c, _status_ops)
 
 
 static func _paint_ops(c: XMVCanvas, ops: Array) -> void:
@@ -225,9 +248,10 @@ static func _paint_ops(c: XMVCanvas, ops: Array) -> void:
 			c.text(o[1], o[2], o[3], o[4], o[6], o[8], int(o[7]), o[5])
 
 
+## 进技能／喂养／合成／共享角色时原版只 deactivate（不 select(-1)），光标留着不闪；回目录（onCancel）才清掉
 func _paint_bottom(c: XMVCanvas) -> void:
-	if mode == "bottom" and cmd >= cmd_top and cmd < cmd_top + BOTTOM_ROWS:
-		c.cursor(Rect2(0, (cmd - cmd_top) * LH, c.size.x, LH), true)
+	if cmd >= cmd_top and cmd < cmd_top + BOTTOM_ROWS:
+		c.cursor(Rect2(0, (cmd - cmd_top) * LH, c.size.x, LH), mode == "bottom")
 	for i in range(cmd_top, mini(cmd_top + BOTTOM_ROWS, COMMANDS.size())):
 		c.text(COMMANDS[i][0], 6, (i - cmd_top) * LH, c.size.x - 12)
 

@@ -12,7 +12,10 @@ extends Control
 ##   做完弹窗确定后不再打开（原版如此）。
 ## - 类别等级窗 (0,656,640,64)：图标、等级、经验条（tp 色）与「经验/下一级」，满级（99）写 MAX LEVEL。
 ## - 结果弹窗：屏幕中线 y 328，「N x 名字 制作成功!」（全失败写 Crafting failed!），宽按文字；x 照原版算法（没扣内边距，略偏右）。
-## 未做：确认数量时鼠标用的 ButtonSet 五个按钮（−10／−1／+1／+10／确定），键盘与鼠标点窗口照常可用。
+## - 数量按钮（Scene_Crafting.createButtons／placeButtons）：ButtonSet 五个 Sprite_Button（−10／−1／+1／+10／确定），
+##   x 在详情窗内居中（间隔 16）、y = 确认窗 y − 行高×2.5；进确认时显示，弹窗确定或取消确认时藏（做完弹窗期间仍在）。
+##   松开时在同一按钮上才算点（Sprite_Button.processTouch），按住时用下一排（hot 帧）。确定键：弹窗时数量清回再关弹窗，确认时制作。
+## - MV WindowLayer 把后建的金币窗范围从确认窗里挖掉：金币窗开着时确认窗内容（「制作」等）看不见。
 
 signal closed
 
@@ -39,6 +42,9 @@ const REQ_LEVEL := "制作等级需求:"
 const REQ_MATERIAL := "制作材料需求:"
 const COST_TEXT := "制作费用:"
 const CRAFT_TEXT := "制作"
+## ButtonSet.png 冷帧（y 0）；按下时 y 48。第 5 个宽 96
+const BUTTON_SRC := [Rect2(0, 0, 48, 48), Rect2(48, 0, 48, 48), Rect2(96, 0, 48, 48), Rect2(144, 0, 48, 48), Rect2(192, 0, 96, 48)]
+const BUTTON_STEPS := [-10, -1, 1, 10, 0]
 
 var mode := "category"        # category / list / confirm / popup
 var cat_index := 0
@@ -56,6 +62,11 @@ var confirm_win: XMVWindow
 var gold_win: XMVWindow
 var gauge_win: XMVWindow
 var popup_win: XMVWindow
+var buttons_visible := false
+var _button_down := -1
+var _buttons: Control
+var _gold_covering := true
+var _gold_band := 0.0
 
 
 func _ready() -> void:
@@ -77,8 +88,39 @@ func _ready() -> void:
 	cat_win.canvas.blink = true
 	confirm_win.canvas.blink = true
 	popup_win.openness = 0
+	confirm_win.draw.connect(_clip_confirm)
+	_buttons = Control.new()
+	_buttons.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_buttons.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_buttons.draw.connect(_draw_buttons)
+	add_child(_buttons)
 	_reset_list()
 	_refresh()
+
+
+## 金币窗开合跨过 0 时重画确认窗（挖掉／露出）；窗口本身按金币窗的开合范围截掉（金币窗全开时只剩底下 8px 的边）
+func _process(_delta: float) -> void:
+	var cover := gold_win.openness > 0
+	if cover != _gold_covering:
+		_gold_covering = cover
+		confirm_win.refresh()
+	var band := 0.0
+	if cover:
+		band = GOLD_RECT.size.y / 2.0 * gold_win.openness / 255.0
+	if band != _gold_band:
+		_gold_band = band
+		confirm_win.queue_redraw()
+
+
+## Control 每次重画都会重设自己的裁剪矩形，所以在 draw 信号（重设之后）里再套上
+func _clip_confirm() -> void:
+	if _gold_band <= 0.0:
+		return
+	# 金币窗以中线 y 680 上下展开；确认窗只留下面露出的部分（展开途中上面露出的一小段也一并截掉）
+	var top := GOLD_RECT.position.y + GOLD_RECT.size.y / 2.0 + _gold_band - CONFIRM_RECT.position.y
+	var ci := confirm_win.get_canvas_item()
+	RenderingServer.canvas_item_set_custom_rect(ci, true, Rect2(0, top, CONFIRM_RECT.size.x, CONFIRM_RECT.size.y - top))
+	RenderingServer.canvas_item_set_clip(ci, true)
 
 
 # ---- 数据 ----
@@ -222,6 +264,8 @@ func _paint_detail(c: XMVCanvas) -> void:
 
 
 func _paint_confirm(c: XMVCanvas) -> void:
+	if gold_win.openness > 0:
+		return
 	if mode == "confirm":
 		c.cursor(Rect2(0, 0, c.size.x, LH), true)
 	paint_ops(c, confirm_ops())
@@ -262,6 +306,57 @@ func _refresh() -> void:
 	list_win.down_arrow = top + LIST_ROWS < list.size()
 	for w in [help_win, cat_win, list_win, detail_win, confirm_win, gold_win, gauge_win, popup_win]:
 		w.refresh()
+	_buttons.queue_redraw()
+
+
+## placeButtons：五个按钮总宽 352（含间隔），在详情窗内居中；y 在确认窗上方 2.5 行
+static func button_rects() -> Array:
+	var total := -16.0
+	for b in BUTTON_SRC:
+		total += b.size.x + 16
+	var x := DETAIL_RECT.position.x + (DETAIL_RECT.size.x - total) / 2.0
+	var y := CONFIRM_RECT.position.y - LH * 2.5
+	var out := []
+	for b in BUTTON_SRC:
+		out.append(Rect2(x, y, b.size.x, b.size.y))
+		x += b.size.x + 16
+	return out
+
+
+func _draw_buttons() -> void:
+	if not buttons_visible:
+		return
+	var tex: Texture2D = XMessageBox._button_texture()
+	if tex == null:
+		return
+	var rects := button_rects()
+	for i in BUTTON_SRC.size():
+		var src: Rect2 = BUTTON_SRC[i]
+		if i == _button_down:
+			src.position.y += 48
+		_buttons.draw_texture_rect_region(tex, rects[i], src)
+
+
+func _button_at(p: Vector2) -> int:
+	if not buttons_visible:
+		return -1
+	var rects := button_rects()
+	for i in rects.size():
+		if rects[i].has_point(p):
+			return i
+	return -1
+
+
+## 按钮点击：前四个改确认窗数量（原版绑在确认窗上，弹窗时也能点），确定键见 onButtonOk
+func press_button(i: int) -> void:
+	if i < 4:
+		change_amount(BUTTON_STEPS[i])
+	elif mode == "popup":
+		amount = mini(1, XCrafting.amount_craftable(XState.current, current()))
+		_popup_ok()
+	elif mode == "confirm":
+		XSound.system(1)
+		craft()
 
 
 # ---- 操作 ----
@@ -343,6 +438,7 @@ func ok() -> void:
 			mode = "confirm"
 			amount = 1
 			gold_win.close()
+			buttons_visible = true
 		"confirm":
 			XSound.system(1)
 			craft()
@@ -356,6 +452,7 @@ func ok() -> void:
 ## popupOk：关弹窗回列表（金币窗不重开）
 func _popup_ok() -> void:
 	popup_win.close()
+	buttons_visible = false
 	mode = "list"
 	_refresh()
 
@@ -375,6 +472,7 @@ func cancel() -> void:
 			XSound.system(2)
 			mode = "list"
 			gold_win.open()
+			buttons_visible = false
 		"popup":
 			_popup_ok()
 			return
@@ -399,9 +497,20 @@ func _side(d: int) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and _button_down >= 0 and not event.pressed:
+		var i := _button_down
+		_button_down = -1
+		_buttons.queue_redraw()
+		if _button_at(event.position) == i:
+			press_button(i)
+		return
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
+	if event.button_index == MOUSE_BUTTON_LEFT and _button_at(p) >= 0:
+		_button_down = _button_at(p)
+		_buttons.queue_redraw()
+		return
 	match event.button_index:
 		MOUSE_BUTTON_RIGHT:
 			cancel()
