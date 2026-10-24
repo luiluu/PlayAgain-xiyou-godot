@@ -81,6 +81,7 @@ func _ready() -> void:
 	index_win.canvas.blink = true
 	drop_win.canvas.blink = true
 	help_card = XHelpCard.new()
+	help_card.show_frame = false
 	add_child(help_card)
 	index = 0 if in_battle else clampi(last_index, 0, maxi(0, ids.size() - 1))
 	top = XMenu._scroll_to(index, 0, ROWS)
@@ -411,13 +412,14 @@ func select_drop(i: int) -> void:
 	_refresh()
 
 
-## Window_EnemyBookItemList.updateHelp：说明卡放在选中行右下，超出画面就靠右／靠下
+## Window_EnemyBookItemList.updateHelp：说明卡放在选中行右下，超出画面就靠右／靠下；
+## 末尾 HEw.hide() 再 visible=true，品质外框与技能书附卡都被移除，只留卡本体
 func _update_help() -> void:
 	if drop_index < 0 or drop_index >= drop_list.size():
 		help_card.show_for({})
 		return
 	var row: Dictionary = drop_list[drop_index]
-	help_card.show_for(row.base, row.kind)
+	help_card.show_for(row.base, row.kind, false)
 	var ry := (drop_index - drop_top) * LH
 	var sx := STATUS_RECT.position.x + CW - 4.0
 	var sy := STATUS_RECT.position.y + ry + LH - 4.0

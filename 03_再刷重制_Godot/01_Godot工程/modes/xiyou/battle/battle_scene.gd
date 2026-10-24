@@ -1265,7 +1265,7 @@ func _attack_animation(u: XBattler) -> int:
 
 
 ## 伤害数字（XDamagePopup，LGP_BetterDamagePopup）。位置：敌人 = 脚底 + (0, −图高/2 + 16)（MOG Center Y-Axis），
-## 角色 = 脚底；同一目标已有的弹出数决定叠加高度。text: "miss" 显示 Miss。
+## 角色 = 脚底；同一目标仍存活的回复弹数决定纵向锚点（XDamagePopup.anchor_y）。text: "miss" 显示 Miss。
 const POPUP_Z := 7
 var _popups := {}          # XBattler -> Array[XDamagePopup]
 
@@ -1279,7 +1279,7 @@ func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := fals
 	p.position = s.position + (Vector2.ZERO if b is XActor else Vector2(0, -s.height() / s.body_scale / 2.0 + 16))
 	# 原版弹出数加在 Spriteset_Battle 里（LGP_BetterDamagePopup 第 665 行），在窗口层之下：在敌人血条（z 5）之上、行动顺序条／消息窗（z 8）与帮助卡（z 10）之下
 	p.z_index = POPUP_Z
-	p.setup(value, is_mp, critical, text == "miss", b is XActor, live.size(), is_tp)
+	p.setup(value, is_mp, critical, text == "miss", b is XActor, live.filter(func(x): return x.is_heal()).size(), is_tp)
 	fx.add_child(p)
 	live.append(p)
 	_popups[b] = live

@@ -222,6 +222,9 @@ func _flow(ref: Dictionary) -> void:
 	check("drops_open", book.mode == "drops" and book.drop_win.visible and not book.status_win.visible and book.drop_index == 0 and not book.drop_list.is_empty())
 	await shot("enemy_book_0_drops")
 	check("drops_help", book.help_card.visible and book.help_card.position == Vector2(880, 32), [book.help_card.position, book.help_card.size])
+	# AB_EnemyBook updateHelp 末尾 HEw.hide()：掉落入口不画品质外框、不带附卡（其余说明卡照常有框）
+	check("drops_help_no_frame", not book.help_card.frame.visible and book.help_card.extras.is_empty(),
+		[book.help_card.frame.visible, book.help_card.extras.size()])
 	book._move(1, true)
 	check("drops_move", book.drop_index == 1 and book.help_card.visible)
 	book.cancel()
