@@ -1,0 +1,1367 @@
+{
+  "专项": {
+    "jobs": 2,
+    "globalJobs": 4,
+    "wallSeconds": 2425.401,
+    "reused": [],
+    "flakyRerunPassed": [
+      "xiyou_floor_lab111.tscn"
+    ],
+    "scenes": [
+      {
+        "name": "xiyou_floor_lab111.tscn",
+        "seconds": 311.248,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 1,
+            "seconds": 311.248,
+            "passed": false
+          },
+          {
+            "rc": 0,
+            "seconds": 69.541,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 59,
+            "total": 61
+          }
+        ],
+        "errors": [
+          "FAIL chest_returned [51]",
+          "FAIL chest_reset [1.0,0.0,true]"
+        ],
+        "rerunTestResult": [
+          {
+            "passed": 61,
+            "total": 61
+          }
+        ]
+      },
+      {
+        "name": "xiyou_floor_goblin024.tscn",
+        "seconds": 100.207,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 100.207,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 96,
+            "total": 96
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_floor_brave083.tscn",
+        "seconds": 64.581,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 64.581,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 101,
+            "total": 101
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_event_compare.tscn",
+        "seconds": 62.593,
+        "passed": false,
+        "attempts": [
+          {
+            "rc": 1,
+            "seconds": 62.593,
+            "passed": false
+          },
+          {
+            "rc": 1,
+            "seconds": 61.43,
+            "passed": false
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 3,
+            "total": 5
+          }
+        ],
+        "errors": [
+          "FAIL oracle_cases_complete [1798, 1877]",
+          "FAIL no_regressions [\"m139e1p0\", \"m139e1p1\", \"m139e2p0\", \"m139e2p1\", \"m139e3p0\", \"m139e3p1\", \"m139e4p0\", \"m139e4p1\", \"m139e5p0\", \"m139e5p1\", \"m139e6p0\", \"m139e6p1\", \"m139e6p2\", \"m139e7p0\", \"m139e8p0\", \"m139e9p0\", \"m139e10p0\", \"m139e10p1\", \"m139e11p0\", \"m139e11p1\", \"m139e12p0\", \"m139e19p0\", \"m139e19p1\", \"m132e1p0\", \"m132e3p0\", \"m132e3p1\", \"m132e4p0\", \"m132e4p1\", \"m132e5p0\", \"m132e6p0\", \"m132e7p0\", \"m132e8p0\", \"m132e8p1\", \"m132e9p0\", \"m132e10p0\", \"m132e10p1\", \"m132e11p0\", \"m132e11p1\", \"m132e12p0\", \"m132e12p1\", \"m132e12p2\", \"m132e12p3\", \"m132e13p0\", \"m132e13p1\", \"m132e13p2\", \"m132e13p3\", \"m132e13p4\", \"m132e14p0\", \"m132e15p0\", \"m132e16p0\", \"m132e16p1\", \"m132e16p2\", \"m204e1p0\", \"m204e1p1\", \"m204e1p2\", \"m204e2p0\", \"m204e3p0\", \"m204e3p1\", \"m204e3p2\", \"m204e3p3\", \"m204e4p0\", \"m204e4p1\", \"m204e4p2\", \"m204e4p3\", \"m204e5p0\", \"m204e5p1\", \"m204e5p2\", \"m192e1p0\", \"m192e2p0\", \"m192e3p0\", \"m192e3p1\", \"m192e4p0\", \"m192e4p1\", \"m192e5p0\", \"m192e5p1\", \"m192e6p0\"]",
+          "ERROR: XDB: 读取失败 maps/Map139.json",
+          "ERROR: XDB: 读取失败 maps/Map132.json",
+          "ERROR: XDB: 读取失败 maps/Map204.json",
+          "ERROR: XDB: 读取失败 maps/Map192.json"
+        ],
+        "rerunTestResult": [
+          {
+            "passed": 3,
+            "total": 5
+          }
+        ]
+      },
+      {
+        "name": "xiyou_floor_fortress029.tscn",
+        "seconds": 59.207,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 59.207,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 70,
+            "total": 70
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_floor_guild198.tscn",
+        "seconds": 55.785,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 55.785,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 143,
+            "total": 143
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_battle_ui.tscn",
+        "seconds": 24.116,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 24.116,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 70,
+            "total": 70
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_system_evidence.tscn",
+        "seconds": 9.675,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 9.675,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 15,
+            "total": 15
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_screen_fx.tscn",
+        "seconds": 9.517,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 9.517,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "failed": [],
+            "name": "xiyou_screen_fx",
+            "passed": 28,
+            "total": 28
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_interp_review.tscn",
+        "seconds": 8.089,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 8.089,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "failed": [],
+            "name": "xiyou_interp_review",
+            "passed": 13,
+            "total": 13
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_options_misc.tscn",
+        "seconds": 5.412,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 5.412,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 86,
+            "total": 86
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_race_menu.tscn",
+        "seconds": 5.152,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 5.152,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 66,
+            "total": 66
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_alien_workshop.tscn",
+        "seconds": 4.975,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.975,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 45,
+            "total": 45
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_enemy_book.tscn",
+        "seconds": 4.838,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.838,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 52,
+            "total": 52
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_options_basic.tscn",
+        "seconds": 4.755,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.755,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 139,
+            "total": 139
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_popup_overlap.tscn",
+        "seconds": 4.604,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.604,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 8,
+            "total": 8
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_crafting.tscn",
+        "seconds": 4.484,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.484,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 49,
+            "total": 49
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_transfer.tscn",
+        "seconds": 4.479,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.479,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 38,
+            "total": 38
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_pet_synth.tscn",
+        "seconds": 3.872,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.872,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 26,
+            "total": 26
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_lobby_shops.tscn",
+        "seconds": 3.858,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.858,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 92,
+            "total": 92
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_actor_book_review.tscn",
+        "seconds": 3.787,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.787,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 6,
+            "total": 6
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_save_page.tscn",
+        "seconds": 3.777,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.777,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 40,
+            "total": 40
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_training.tscn",
+        "seconds": 3.677,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.677,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 188,
+            "total": 188
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_pets.tscn",
+        "seconds": 3.472,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.472,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 29,
+            "total": 29
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_magic_level.tscn",
+        "seconds": 3.38,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.38,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 7,
+            "total": 7
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_alien_config.tscn",
+        "seconds": 3.272,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.272,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 95,
+            "total": 95
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_gold_cap.tscn",
+        "seconds": 2.884,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 2.884,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 30,
+            "total": 30
+          }
+        ],
+        "errors": []
+      },
+      {
+        "name": "xiyou_script.tscn",
+        "seconds": 2.207,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 2.207,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 21,
+            "total": 21
+          }
+        ],
+        "errors": []
+      }
+    ]
+  },
+  "实验室_修后": {
+    "jobs": 1,
+    "globalJobs": 4,
+    "wallSeconds": 81.851,
+    "reused": [],
+    "flakyRerunPassed": [],
+    "scenes": [
+      {
+        "name": "xiyou_floor_lab111.tscn",
+        "seconds": 70.203,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 70.203,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 62,
+            "total": 62
+          }
+        ],
+        "errors": []
+      }
+    ]
+  },
+  "要塞_修后": {
+    "jobs": 1,
+    "globalJobs": 4,
+    "wallSeconds": 59.328,
+    "reused": [],
+    "flakyRerunPassed": [],
+    "scenes": [
+      {
+        "name": "xiyou_floor_fortress029.tscn",
+        "seconds": 59.322,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 59.322,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 71,
+            "total": 71
+          }
+        ],
+        "errors": []
+      }
+    ]
+  },
+  "事件对照_校正后": {
+    "jobs": 1,
+    "globalJobs": 4,
+    "wallSeconds": 923.973,
+    "reused": [],
+    "flakyRerunPassed": [],
+    "scenes": [
+      {
+        "name": "xiyou_event_compare.tscn",
+        "seconds": 62.176,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 62.176,
+            "passed": true
+          }
+        ],
+        "testResult": [
+          {
+            "passed": 5,
+            "total": 5
+          }
+        ],
+        "errors": []
+      }
+    ]
+  },
+  "nativeRender": [
+    {
+      "scene": "xiyou_system_evidence",
+      "exitCode": 0,
+      "testResult": [
+        "TEST_RESULT={\"passed\":16,\"total\":16}"
+      ],
+      "errors": []
+    },
+    {
+      "scene": "xiyou_crafting",
+      "exitCode": 0,
+      "testResult": [
+        "TEST_RESULT={\"passed\":49,\"total\":49}"
+      ],
+      "errors": []
+    },
+    {
+      "scene": "xiyou_pets",
+      "exitCode": 0,
+      "testResult": [
+        "TEST_RESULT={\"passed\":29,\"total\":29}"
+      ],
+      "errors": []
+    },
+    {
+      "scene": "xiyou_alien_workshop",
+      "exitCode": 0,
+      "testResult": [
+        "TEST_RESULT={\"passed\":45,\"total\":45}"
+      ],
+      "errors": []
+    },
+    {
+      "scene": "xiyou_alien_config",
+      "exitCode": 0,
+      "testResult": [
+        "TEST_RESULT={\"passed\":95,\"total\":95}"
+      ],
+      "errors": []
+    },
+    {
+      "scene": "xiyou_enemy_book",
+      "exitCode": 0,
+      "testResult": [
+        "TEST_RESULT={\"passed\":52,\"total\":52}"
+      ],
+      "errors": []
+    },
+    {
+      "scene": "xiyou_training",
+      "exitCode": 0,
+      "testResult": [
+        "TEST_RESULT={\"passed\":188,\"total\":188}"
+      ],
+      "errors": []
+    },
+    {
+      "scene": "xiyou_battle_ui",
+      "exitCode": 0,
+      "testResult": [
+        "TEST_RESULT={\"passed\":90,\"total\":90}"
+      ],
+      "errors": []
+    }
+  ],
+  "imageComparison": {
+    "checks": {
+      "formal_no_engine_errors": true,
+      "source_identity_unchanged": true,
+      "rects_craft_0_category": true,
+      "rects_magic_shop_buy": true,
+      "rects_magic_equip_slot": true,
+      "rects_magic_item_info": true,
+      "rects_pet_bottom": true,
+      "rects_pet_feed": true,
+      "rects_pet_synth": true,
+      "race_race_1_default": true,
+      "race_race_2_confirm": true,
+      "race_race_3_members": true,
+      "race_race_4_actor": true,
+      "race_race_5_change": true,
+      "fixture_geo_craft_1_list": true,
+      "buttons_craft_1_list": true,
+      "fixture_geo_craft_3_confirm_x3": true,
+      "buttons_craft_3_confirm_x3": true,
+      "fixture_geo_craft_4_popup": true,
+      "buttons_craft_4_popup": true,
+      "fixture_geo_pet_0": true,
+      "pets_regenerated_pet_0": true,
+      "fixture_geo_pet_1_skills": true,
+      "pets_regenerated_pet_1_skills": true,
+      "alien_pane_alien_list": true,
+      "alien_pane_alien_list_pending": true,
+      "alien_pane_alien_config_bound": true,
+      "no_alien_overlay_battle_42_enemy_book": true,
+      "no_alien_overlay_craft_0_category": true,
+      "no_alien_overlay_craft_1_list": true,
+      "no_alien_overlay_craft_3_confirm_x3": true,
+      "no_alien_overlay_craft_4_popup": true,
+      "no_alien_overlay_enemy_book_0": true,
+      "no_alien_overlay_enemy_book_0_drops": true,
+      "no_alien_overlay_magic_equip_slot": true,
+      "no_alien_overlay_magic_item_info": true,
+      "no_alien_overlay_magic_shop_buy": true,
+      "no_alien_overlay_pet_0": true,
+      "no_alien_overlay_pet_1_skills": true,
+      "no_alien_overlay_pet_bottom": true,
+      "no_alien_overlay_pet_feed": true,
+      "no_alien_overlay_pet_synth": true,
+      "no_alien_overlay_race_1_default": true,
+      "no_alien_overlay_race_2_confirm": true,
+      "no_alien_overlay_race_3_members": true,
+      "no_alien_overlay_race_4_actor": true,
+      "no_alien_overlay_race_5_change": true,
+      "no_alien_overlay_training_bottom": true,
+      "book_rects_enemy_book_0": true,
+      "book_rects_enemy_book_0_drops": true,
+      "book_rects_battle_42_enemy_book": true,
+      "book_help_card_pos": true,
+      "training_space_width": true,
+      "png_formal_craft_0_category": true,
+      "png_formal_magic_shop_buy": true,
+      "png_formal_magic_equip_slot": true,
+      "png_formal_magic_item_info": true,
+      "png_formal_pet_bottom": true,
+      "png_formal_pet_feed": true,
+      "png_formal_pet_synth": true,
+      "png_formal_race_1_default": true,
+      "png_formal_race_2_confirm": true,
+      "png_formal_race_3_members": true,
+      "png_formal_race_4_actor": true,
+      "png_formal_race_5_change": true,
+      "png_formal_craft_1_list": true,
+      "png_formal_craft_3_confirm_x3": true,
+      "png_formal_craft_4_popup": true,
+      "png_formal_pet_0": true,
+      "png_formal_pet_1_skills": true,
+      "png_formal_alien_list": true,
+      "png_formal_alien_list_pending": true,
+      "png_formal_alien_config_bound": true,
+      "png_formal_enemy_book_0": true,
+      "png_formal_enemy_book_0_drops": true,
+      "png_formal_battle_42_enemy_book": true,
+      "png_formal_training_bottom": true,
+      "png_godot_craft_0_category": true,
+      "png_godot_magic_shop_buy": true,
+      "png_godot_magic_equip_slot": true,
+      "png_godot_magic_item_info": true,
+      "png_godot_pet_bottom": true,
+      "png_godot_pet_feed": true,
+      "png_godot_pet_synth": true,
+      "png_godot_race_1_default": true,
+      "png_godot_race_2_confirm": true,
+      "png_godot_race_3_members": true,
+      "png_godot_race_4_actor": true,
+      "png_godot_race_5_change": true,
+      "png_godot_craft_1_list": true,
+      "png_godot_craft_3_confirm_x3": true,
+      "png_godot_craft_4_popup": true,
+      "png_godot_pet_0": true,
+      "png_godot_pet_1_skills": true,
+      "png_godot_alien_list": true,
+      "png_godot_alien_list_pending": true,
+      "png_godot_alien_config_bound": true,
+      "png_godot_enemy_book_0": true,
+      "png_godot_enemy_book_0_drops": true,
+      "png_godot_battle_42_enemy_book": true,
+      "png_godot_training_bottom": true
+    },
+    "passed": 101,
+    "total": 101,
+    "differences": {},
+    "limits": [
+      "只比窗口矩形与行文；文字逐条绘制由各专项对 fixture 断言，画面观感逐张人工看",
+      "说明卡位置／字号／出售价分别是已登记 O-008／O-007／O-049，不比",
+      "背景粒子（MOG 菜单粒子）为动态，不比",
+      "怪物图鉴说明卡高随 O-007 最小字号（原版 239、Godot 267），只比位置与宽"
+    ]
+  },
+  "screenshots": [
+    {
+      "path": "Godot/alien_config_bound.png",
+      "sha256": "5149e14a9afe8e3b15a243c2e6a9cf59a99f4cfd0fa7fcddd8112e924183e0ad",
+      "bytes": 324480
+    },
+    {
+      "path": "Godot/alien_config_faceless.png",
+      "sha256": "57c3271c37915893b4b1ea3d3c9e3fffc488b45b271a156c2b5f22f0b74e642c",
+      "bytes": 330093
+    },
+    {
+      "path": "Godot/alien_config_mimic.png",
+      "sha256": "faf83dcc10627ae9049814207de88d3d9149fdbbb780477369fb1fe271d0eb18",
+      "bytes": 328958
+    },
+    {
+      "path": "Godot/alien_config_possession.png",
+      "sha256": "b0f1a4787f7ca4d55fd84c54fedfb36861554e738becf76da662da97e2426246",
+      "bytes": 349898
+    },
+    {
+      "path": "Godot/alien_config_skill.png",
+      "sha256": "9b56f1ae5382dd31c492e67382e77894459cce2a6da41c3c9b44b5b10ced1e97",
+      "bytes": 354591
+    },
+    {
+      "path": "Godot/alien_config_swallow.png",
+      "sha256": "278287d16718d87fbedd5f7965382571055a5ef7422b9a16eb119d6eedf1bc0a",
+      "bytes": 344518
+    },
+    {
+      "path": "Godot/alien_empty.png",
+      "sha256": "c07de7beb47e4b352942503f9a5b2eedc394fe72f9cccc4b3f53b1ceab6ef8f3",
+      "bytes": 491095
+    },
+    {
+      "path": "Godot/alien_keep-old.png",
+      "sha256": "c4ec946e1f732874f7a26ea885f82df70e9c62394418825916f51f538eeffe6e",
+      "bytes": 418435
+    },
+    {
+      "path": "Godot/alien_list.png",
+      "sha256": "05e682d4ea7a9e2015fa70f9f0562f57aec47ddcb54019595708d676726b3f90",
+      "bytes": 409934
+    },
+    {
+      "path": "Godot/alien_list_pending.png",
+      "sha256": "5a1431d438d08c9dca97d8231ad39cbe66d56fe26615dd858b70e3531695fcf0",
+      "bytes": 402225
+    },
+    {
+      "path": "Godot/alien_locked-equipped.png",
+      "sha256": "0a07857ad6e4d209bb2e1f1b9bd488d764de9e08b6131ef26594991aed40ba4b",
+      "bytes": 395030
+    },
+    {
+      "path": "Godot/alien_recent.png",
+      "sha256": "f2fcdf298b47f2d04d3588e319c4526b6100e764d2c1113b4395a6d9d2657412",
+      "bytes": 336840
+    },
+    {
+      "path": "Godot/battle_40_input.png",
+      "sha256": "f6d5d7bad442fe0b7be3596f71335903fb291b5efe3666693523d248c9206e58",
+      "bytes": 885711
+    },
+    {
+      "path": "Godot/battle_41_skill.png",
+      "sha256": "e024636a60f5f7418ef0babb0687b001d4ae898f732d13cca5c2ca4c7f03f32b",
+      "bytes": 849262
+    },
+    {
+      "path": "Godot/battle_42_enemy_book.png",
+      "sha256": "f9b55f782156c32510e1df69568ce472cc4e7a70ae80721c3e2d0655083e5b43",
+      "bytes": 931403
+    },
+    {
+      "path": "Godot/battle_42_target.png",
+      "sha256": "5cb9c3f5b7c5bddd8ded18357af741a99305d60e3be0b5f91ca0d89f81861232",
+      "bytes": 862229
+    },
+    {
+      "path": "Godot/battle_43_item.png",
+      "sha256": "761e49fb38e3c246aba2b343affa8ed50013b4622b47b94a4f5d379b2802c744",
+      "bytes": 858662
+    },
+    {
+      "path": "Godot/battle_43b_ally_target.png",
+      "sha256": "c92ab65c43680fd5c643cd18b6ac5b56c27339c9836a79e53185b4a1077911eb",
+      "bytes": 858422
+    },
+    {
+      "path": "Godot/battle_44_victory_5_empty.png",
+      "sha256": "71e9760f174c4b3179147135f3490ac32ef81b52f8c8d3a3b0957ed53f7ee586",
+      "bytes": 1067156
+    },
+    {
+      "path": "Godot/battle_46_victory_window.png",
+      "sha256": "68bd05bd69f5624d6042aff256bed7e62d4c042f5ecefcd3c3f179f22373cfcd",
+      "bytes": 1159339
+    },
+    {
+      "path": "Godot/battle_47_victory_later.png",
+      "sha256": "7a9921a93f914e1b6562185df9af32b0a9a342338904beb7e25aafa157d465bd",
+      "bytes": 993519
+    },
+    {
+      "path": "Godot/battle_48_attack.png",
+      "sha256": "c833fbf9543de2c1dee4f0b7ed4b7dfa5e4b165aa8409fa2a70a1612a073ef5c",
+      "bytes": 857664
+    },
+    {
+      "path": "Godot/battle_48b_popup.png",
+      "sha256": "54a93347ef47d11878ed87dd88e151fb214d99d63bf42230b427375de06cf9a1",
+      "bytes": 857729
+    },
+    {
+      "path": "Godot/battle_49_message_101.png",
+      "sha256": "1ebe198f2100602cb9d5b816c6f7cb17fd72fe65a21e393763cb5abde37c8fcb",
+      "bytes": 865801
+    },
+    {
+      "path": "Godot/battle_49b_message_101_face.png",
+      "sha256": "ca6ff10298d5977ecf9f80d12560cdf087df6f9ce42c7375c31f8075077348b0",
+      "bytes": 883383
+    },
+    {
+      "path": "Godot/battle_49c_message_101_middle.png",
+      "sha256": "734128d13606aee92279540f283c94545ec39b3fe4f7458afece7be26c7f613a",
+      "bytes": 849824
+    },
+    {
+      "path": "Godot/battle_49d_message_101_bigfont.png",
+      "sha256": "ad90658bf8fa60a16de3610f06ec7a77b261d031d0449afefd6dd5de11f7c55f",
+      "bytes": 874811
+    },
+    {
+      "path": "Godot/battle_50_shield_side.png",
+      "sha256": "72efc721306623c160e9ac8fc95d1d67db293354af0b628a5cdb2dd39f9482fb",
+      "bytes": 888643
+    },
+    {
+      "path": "Godot/craft_0_category.png",
+      "sha256": "c35e1d70df498f8951fed260891834b879ad5f1095a4251afc223b8f9abf2b70",
+      "bytes": 1140096
+    },
+    {
+      "path": "Godot/craft_1_list.png",
+      "sha256": "c6a358778a82a2aaa0e200aad8a8a911fb864c452cedf2db50dbf4d279bb304a",
+      "bytes": 1163553
+    },
+    {
+      "path": "Godot/craft_3_confirm_x3.png",
+      "sha256": "3d1649a4e6a756cc9b1c5e40f9834c3e0518d6fdf3b33c74c2c3f2901435082c",
+      "bytes": 1149222
+    },
+    {
+      "path": "Godot/craft_4_popup.png",
+      "sha256": "356b9195cca586c6d15e00ce81d5da0f1e6ad91383959f56eb537f2135acace7",
+      "bytes": 1167782
+    },
+    {
+      "path": "Godot/enemy_book_0.png",
+      "sha256": "e5590c80aaa53e099bf465d8ca6f6e92137633624dad963fc6497c33f4584091",
+      "bytes": 1264068
+    },
+    {
+      "path": "Godot/enemy_book_0_drops.png",
+      "sha256": "684c4aeee7a69e49efdbfaa1ec45cd80f9db8080f6d696e0ce96217f38401d02",
+      "bytes": 1066384
+    },
+    {
+      "path": "Godot/magic_equip_slot.png",
+      "sha256": "3bdec18b5197cc7408b4da1819f617756d257c2d26fb30450e2c2e1678edda39",
+      "bytes": 1111133
+    },
+    {
+      "path": "Godot/magic_item_info.png",
+      "sha256": "c8ab941f9bbb1551b85d2599238a77de32cde6b6ff7886476511570fe9408ac6",
+      "bytes": 998305
+    },
+    {
+      "path": "Godot/magic_shop_buy.png",
+      "sha256": "cd86bed40f10b6d8f124319dff17970860233f4dc4690659350954d9d846c375",
+      "bytes": 1007586
+    },
+    {
+      "path": "Godot/pet_0.png",
+      "sha256": "daea3d34a796555f8f80ffc1e74c2778aa6b046bc860f56d2de19c9c36914c7a",
+      "bytes": 1187606
+    },
+    {
+      "path": "Godot/pet_1_skills.png",
+      "sha256": "b5fb7304e3af42fe0a014ba79132f3489c199c07a9f6533d1ccb5172c76dbc95",
+      "bytes": 1154829
+    },
+    {
+      "path": "Godot/pet_bottom.png",
+      "sha256": "15efed49743401bbf3efc9c5247545bb12148e9d741456a1df9f00db75e9ee1b",
+      "bytes": 1187839
+    },
+    {
+      "path": "Godot/pet_feed.png",
+      "sha256": "4a4deabf1fae0aa6ae8141be5ac61e5f783592298307a944f7a738a91c719b04",
+      "bytes": 1214470
+    },
+    {
+      "path": "Godot/pet_synth.png",
+      "sha256": "9d00615251453b5a3814fcf4c6fe50d14a1a04436e62c1bb84cd70a21014654e",
+      "bytes": 1197646
+    },
+    {
+      "path": "Godot/race_1_default.png",
+      "sha256": "228083a36063a364b555f002aafb78194b24fbe7f3a3fba68851e83fb7d643ac",
+      "bytes": 1095538
+    },
+    {
+      "path": "Godot/race_2_confirm.png",
+      "sha256": "427f8b2aac6e947fd6ea05db73819da04062b44080b75343a7bfc1b6eed851aa",
+      "bytes": 1114003
+    },
+    {
+      "path": "Godot/race_3_members.png",
+      "sha256": "39c4c2cfa0cf08fd72d48234ffba46bfded12cc1a0fe0168a204bca5d080f5a6",
+      "bytes": 1105984
+    },
+    {
+      "path": "Godot/race_4_actor.png",
+      "sha256": "5485f9161a5ac3cb1e508671a34ad7ed254f4fee154d03cb54a512a6c4a9a0c9",
+      "bytes": 1113353
+    },
+    {
+      "path": "Godot/race_5_change.png",
+      "sha256": "d4ede1c22edfc8f1a03f5d3251bbe4ef45cac318237c9045a0ca1cb87b12d7da",
+      "bytes": 1101554
+    },
+    {
+      "path": "Godot/training_0_index.png",
+      "sha256": "c5c1fd1c2c2bcb6f409b5913340ef57b3cad249eb56c39be2d6f5cc869b7f0bc",
+      "bytes": 1193419
+    },
+    {
+      "path": "Godot/training_2_bottom.png",
+      "sha256": "202fa842657b3ec10f7c2053058302d7e56fba8fe6c55e61f2bb3eb9262666d5",
+      "bytes": 1188603
+    },
+    {
+      "path": "Godot/training_4_bought.png",
+      "sha256": "83974c7e2f2e8ed72d0a5bbed880035dae39ceabb035b8053ff7c545d7115ef5",
+      "bytes": 1185334
+    },
+    {
+      "path": "Godot_首轮/alien_config_bound.png",
+      "sha256": "a388beefc3597013c8575b0dd02a99a0631a7a43945aca8127cf802fb17e377a",
+      "bytes": 325371
+    },
+    {
+      "path": "Godot_首轮/alien_config_mimic.png",
+      "sha256": "097a239512b6bb06b1bb577926e2a453403e6cd44a79a40f488133de681b734a",
+      "bytes": 328406
+    },
+    {
+      "path": "Godot_首轮/alien_config_skill.png",
+      "sha256": "d37851c63b62db237f8dd19d725ca590d5d1ed1cd6498068379b3fa324796b0e",
+      "bytes": 355407
+    },
+    {
+      "path": "Godot_首轮/alien_config_swallow.png",
+      "sha256": "0389f1880b6e9c30f7a0cb4f63bf530e9cace55e2ff811e97a39ba8fca76bb6f",
+      "bytes": 345527
+    },
+    {
+      "path": "Godot_首轮/alien_empty.png",
+      "sha256": "a0cbe53bbf3f0cf618e38c73012fa63917a53cb592215fb66e8e8f206c5a20fd",
+      "bytes": 492316
+    },
+    {
+      "path": "Godot_首轮/alien_keep-old.png",
+      "sha256": "8cefee131eec7c08068a676fbd74602890a77c814b5d77a844e030eb2389522c",
+      "bytes": 420140
+    },
+    {
+      "path": "Godot_首轮/alien_list.png",
+      "sha256": "9cd52e6fd06bf5278027044d171e5202f2ab19e52215dff92caa4b80cc356762",
+      "bytes": 408388
+    },
+    {
+      "path": "Godot_首轮/alien_list_pending.png",
+      "sha256": "97c1505349b812304b71a84c1289727416dde1da23222c7f3a857f3bb1b61c0b",
+      "bytes": 400825
+    },
+    {
+      "path": "Godot_首轮/alien_locked-equipped.png",
+      "sha256": "04f1e40abf7f72dd645e1168e99f113f0c53489605af6d0eadc83ec058f8bf09",
+      "bytes": 395194
+    },
+    {
+      "path": "Godot_首轮/alien_recent.png",
+      "sha256": "f1dbe3742201bccde8246fbbc939c84009dceb791c8b10f8a2cd8333f190e6c7",
+      "bytes": 337324
+    },
+    {
+      "path": "Godot_首轮/craft_0_category.png",
+      "sha256": "96e3f0a6b64d33a454b4e5fe0e39f23457aafbda4edf324a0974c3425c13c724",
+      "bytes": 1141173
+    },
+    {
+      "path": "Godot_首轮/craft_1_list.png",
+      "sha256": "e05684011fde851946204b6166d2f5af482593060200f5396d1f5cba14d8921e",
+      "bytes": 1163516
+    },
+    {
+      "path": "Godot_首轮/craft_3_confirm_x3.png",
+      "sha256": "41c51353172f213c2345c585204bb9c466a90c69bd89b3f2832a6081bc245f64",
+      "bytes": 1148752
+    },
+    {
+      "path": "Godot_首轮/craft_4_popup.png",
+      "sha256": "3ceb2f087c0b0c802a7a37ce5ed37fc3b29e89949c25c64d9c6420f57b081e2d",
+      "bytes": 1169314
+    },
+    {
+      "path": "Godot_首轮/enemy_book_0.png",
+      "sha256": "06bb05270f5a8017800e95e6bd148aa626fac7dae7384b1c14fde1146fa03c65",
+      "bytes": 1263656
+    },
+    {
+      "path": "Godot_首轮/magic_equip_slot.png",
+      "sha256": "c8c6e322647b7fa065f6cd4b5385bc07d31f06140c7a2ea3762cb93c9e10f6ee",
+      "bytes": 1110301
+    },
+    {
+      "path": "Godot_首轮/magic_item_info.png",
+      "sha256": "3c10e27c9164c6bc7c22c63b820605027903c5904b1bab5f4513b6f39f00c1e4",
+      "bytes": 997179
+    },
+    {
+      "path": "Godot_首轮/magic_shop_buy.png",
+      "sha256": "d0a46c4f1a21927b6694c057898ba01c98ce0136898642dbe3946e857661011d",
+      "bytes": 1005766
+    },
+    {
+      "path": "Godot_首轮/pet_0.png",
+      "sha256": "8b08b99f1e2de11cf865765850835486b1513b2465b0de62f39a585d45eaa9e5",
+      "bytes": 1190491
+    },
+    {
+      "path": "Godot_首轮/pet_bottom.png",
+      "sha256": "128679481a26c641daaca0e083ded031392414ef225684e8b7cf4b76c28b5de5",
+      "bytes": 1188144
+    },
+    {
+      "path": "Godot_首轮/pet_feed.png",
+      "sha256": "7c1f144ab6ca2898401164b034cdea8e1a6258d6250b9239c998e94356a25e03",
+      "bytes": 1215257
+    },
+    {
+      "path": "Godot_首轮/pet_synth.png",
+      "sha256": "c6413bc2b0573bfad0efe3f7f15046758e6c88592e6f750b8ef2b5c39dada18f",
+      "bytes": 1198237
+    },
+    {
+      "path": "Godot_首轮/race_1_default.png",
+      "sha256": "a3074f332c7b138e8bc4a6cbe94a0e2e5d5c13ce7e179c8cec316028dfd4a4f2",
+      "bytes": 1097258
+    },
+    {
+      "path": "Godot_首轮/race_2_confirm.png",
+      "sha256": "76bac3e0d15d7b1250f3be732963f415c392f631854146a3fcd9451cb91881c5",
+      "bytes": 1116405
+    },
+    {
+      "path": "Godot_首轮/race_3_members.png",
+      "sha256": "a31273fda62e3c9c0f221bb0380420da823e44d7d4c122699541a92a5f38e3ed",
+      "bytes": 1103738
+    },
+    {
+      "path": "Godot_首轮/race_4_actor.png",
+      "sha256": "918f788de88142746a91bfa15666fe5e9f4aeeb74dd4ca7588e1bc33ce827fb8",
+      "bytes": 1113437
+    },
+    {
+      "path": "Godot_首轮/race_5_change.png",
+      "sha256": "21f6d5ddcace8ea6ce57e56e98fcc7b43c86416c212646f3b0d2f45897325134",
+      "bytes": 1099992
+    },
+    {
+      "path": "Godot_首轮/training_0_index.png",
+      "sha256": "bd3a40fab7f91edf4984ac9a6c05d18d8fb63a3e2fc11e8b782955b8630c66b2",
+      "bytes": 1192483
+    },
+    {
+      "path": "Godot_首轮/training_2_bottom.png",
+      "sha256": "1886f7e93fbd6c2213fc13a5d42c215a0f14d3327a3cea22bb0ecc086f4383f8",
+      "bytes": 1188391
+    },
+    {
+      "path": "Godot_首轮/training_4_bought.png",
+      "sha256": "fcb2fbbf3a0c98a31b1bd2e84d3a023c8fb9a654a06ff4f8d691f9acffd6c355",
+      "bytes": 1184745
+    },
+    {
+      "path": "原版/alien_config_bound.png",
+      "sha256": "dbe46febba4049005b7eed97f87e7bb39180b5e8353594ecc6fb318d8b71dbef",
+      "bytes": 900608
+    },
+    {
+      "path": "原版/alien_list.png",
+      "sha256": "131d1a77b5c9e32e6372ba4b655a661bb2f380756a916015781bcd14eb5d502d",
+      "bytes": 900837
+    },
+    {
+      "path": "原版/alien_list_pending.png",
+      "sha256": "a6ddfd96e3ac1c6c2e2c364cfe650367f10ac302872a5d0c12bbdb1085f6e8c6",
+      "bytes": 900328
+    },
+    {
+      "path": "原版/battle_42_enemy_book.png",
+      "sha256": "e37df4124fd90f066a23f0015a0eee8bb6d3366fb03aa12882ad5ff68226314f",
+      "bytes": 1338727
+    },
+    {
+      "path": "原版/craft_0_category.png",
+      "sha256": "fc8b97b3cdd026c4effe4f1f36e0e1dccafbc6419c6a06f3298a5a458fda2151",
+      "bytes": 1555775
+    },
+    {
+      "path": "原版/craft_1_list.png",
+      "sha256": "8883caacbb7dbc45e376d7fc80b299fe74f1e8c61d3adcc0e7252140c662b87d",
+      "bytes": 1573877
+    },
+    {
+      "path": "原版/craft_3_confirm_x3.png",
+      "sha256": "d6707a5f67615c9659dbae53c70bf7b9e28927aad8280fff924c4891786f83e4",
+      "bytes": 1555653
+    },
+    {
+      "path": "原版/craft_4_popup.png",
+      "sha256": "148f2d30bc8b99365baba6f9a99bd88735ef7b200c303d3dee3b2f6378932278",
+      "bytes": 1576975
+    },
+    {
+      "path": "原版/enemy_book_0.png",
+      "sha256": "f2667f1e617a403018d36a757ed88e988d7f52e893775a78db30c9e79ec60d1f",
+      "bytes": 1659561
+    },
+    {
+      "path": "原版/enemy_book_0_drops.png",
+      "sha256": "12d770fb75d693b5037bac6431a4eedae904a2bb12e907e6a87e5f8c9930a171",
+      "bytes": 1441100
+    },
+    {
+      "path": "原版/magic_equip_slot.png",
+      "sha256": "15c73ecf3eaf0fa81220df93cd766789670dd57951478ba7b543dcd943ee650f",
+      "bytes": 1469934
+    },
+    {
+      "path": "原版/magic_item_info.png",
+      "sha256": "11ac77a5fcf0f4ec5a9926ac656b7c1292ce8b89576ca3811efa8e5d023a9d47",
+      "bytes": 1373672
+    },
+    {
+      "path": "原版/magic_shop_buy.png",
+      "sha256": "dad859c70c0ba40a7e0f32fbebf81cec015a347c3d120b705387df2992874f28",
+      "bytes": 1386196
+    },
+    {
+      "path": "原版/pet_0.png",
+      "sha256": "c55f133a96580d314d4cc7ff6c668e2eee81037b8fc60cd111b10792687a90af",
+      "bytes": 1596420
+    },
+    {
+      "path": "原版/pet_1_skills.png",
+      "sha256": "2fae288fa5684b9638b1dc766eb61646f9061b9205152e349e5d21e3ddf2e08e",
+      "bytes": 1539675
+    },
+    {
+      "path": "原版/pet_bottom.png",
+      "sha256": "24d3832d2944723a21de481e8f9f4def4b61ac93406010df24bbc86a9aa37a49",
+      "bytes": 1595228
+    },
+    {
+      "path": "原版/pet_feed.png",
+      "sha256": "877c41e9fdae5191530db1ae1453cf82d30b51a4ba293e72ce65ac2a178c45d4",
+      "bytes": 1616901
+    },
+    {
+      "path": "原版/pet_synth.png",
+      "sha256": "cc551f0520cda3bd6ab07f3e3501187ac9f25e9f9886f2ffb97865977094bedb",
+      "bytes": 1600540
+    },
+    {
+      "path": "原版/race_1_default.png",
+      "sha256": "dad40020b385b6c2701ea6ca2b0e23be3dc497e884f2f3851d7a773bb607f84f",
+      "bytes": 1517163
+    },
+    {
+      "path": "原版/race_2_confirm.png",
+      "sha256": "9b555ad0a7483ec2baefb1b2fc843a9827ae1d6dd1b3b45880bc1b13f61a772f",
+      "bytes": 1538343
+    },
+    {
+      "path": "原版/race_3_members.png",
+      "sha256": "2133023f98bbb941d275ad0e55bd360160729e149a65212f3e003fe8025fcee4",
+      "bytes": 1526589
+    },
+    {
+      "path": "原版/race_4_actor.png",
+      "sha256": "7a68deb59c699d39e83485d73fd68ab7f29865d401face478745a0b8c443ce73",
+      "bytes": 1536449
+    },
+    {
+      "path": "原版/race_5_change.png",
+      "sha256": "9d0aba7b3dffc80601582e50a31d3c3cd4ada9cdf5b2ac6c7b5cd34f701f0b20",
+      "bytes": 1518357
+    },
+    {
+      "path": "原版/training_bottom.png",
+      "sha256": "5a880237adbf8983129dc69f2299f66bfc01394455a9046bee365c3762e53709",
+      "bytes": 1597653
+    }
+  ]
+}

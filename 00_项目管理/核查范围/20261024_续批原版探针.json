@@ -1,0 +1,34 @@
+[
+  {
+    "probe": "training",
+    "exitCode": 0,
+    "payloadAndSourceIdentityEqual": true,
+    "stdout": "{\"table\":65,\"flows\":[\"map082:6\",\"map084-poor:3\",\"map180-p0:3\",\"map180-p1:11\",\"map180-p2:5\",\"default:1\",\"book-first:1\"]}",
+    "fields": [
+      "sourceIdentity",
+      "currencyUnit",
+      "party",
+      "table",
+      "flows",
+      "save"
+    ]
+  },
+  {
+    "probe": "gold",
+    "exitCode": 0,
+    "payloadAndSourceIdentityEqual": true,
+    "stdout": "{\"maxGold\":999999999999,\"seqs\":[\"cap:999999999999\",\"over_999m:1100000000/2600000000/1100000000\",\"near_max:999999999999/999999999999/999999999999/0\",\"below_zero:50/-50/-99999999/-99999999\",\"from_floor:-99999999/0\",\"training_15e8:3500000000/2000000000/500000000\"]}",
+    "fields": [
+      "sourceIdentity",
+      "maxGold",
+      "goldFontSize",
+      "goldOverlap",
+      "digitGroup",
+      "goldIcon",
+      "currencyUnit",
+      "seqs",
+      "groups",
+      "saves"
+    ]
+  }
+]

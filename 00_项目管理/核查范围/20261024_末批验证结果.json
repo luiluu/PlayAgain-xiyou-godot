@@ -1,0 +1,220 @@
+{
+  "cutoff": "3614777a",
+  "gameCodeCutoff": "ffe51ae1",
+  "reused": [],
+  "flakyRerunPassed": [],
+  "scenes": [
+    {
+      "name": "xiyou_floor_lab111.tscn",
+      "seconds": 72.98,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 72.98,
+          "passed": true
+        }
+      ],
+      "testResult": [
+        {
+          "passed": 62,
+          "total": 62
+        }
+      ],
+      "errors": [],
+      "logSHA256": "518e6637a1e6008fbb2b02a0de774967696af355157f95fbcd5900f07000432d"
+    },
+    {
+      "name": "xiyou_floor_fortress029.tscn",
+      "seconds": 62.428,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 62.428,
+          "passed": true
+        }
+      ],
+      "testResult": [
+        {
+          "passed": 71,
+          "total": 71
+        }
+      ],
+      "errors": [],
+      "logSHA256": "694c5eee347dd98fc6818c7c36964453a2a5dc3243c45eab28b07a46ee145289"
+    },
+    {
+      "name": "xiyou_actor_p0.tscn",
+      "seconds": 26.672,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 26.672,
+          "passed": true
+        }
+      ],
+      "testResult": [
+        {
+          "passed": 3212,
+          "total": 3212
+        }
+      ],
+      "errors": [],
+      "logSHA256": "e03827a34a99c1f516f2f0b86cca1ab5e7bd803b8f83d2e7d78c915c42d92823"
+    },
+    {
+      "name": "xiyou_floor_reach139.tscn",
+      "seconds": 15.482,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 15.482,
+          "passed": true
+        }
+      ],
+      "testResult": [
+        {
+          "passed": 46,
+          "total": 46
+        }
+      ],
+      "errors": [],
+      "logSHA256": "f1200713e272efa914eb35f3bf6ebabb14e37cfdaad752d89463b0d1849df101"
+    },
+    {
+      "name": "xiyou_battle_events.tscn",
+      "seconds": 4.624,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.624,
+          "passed": true
+        }
+      ],
+      "testResult": [
+        {
+          "passed": 108,
+          "total": 108
+        }
+      ],
+      "errors": [],
+      "logSHA256": "ce4ef850280024c345031f5ad943773a9b6bbea775b7a34d45d7502fc1238956"
+    },
+    {
+      "name": "xiyou_item_marks.tscn",
+      "seconds": 4.171,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.171,
+          "passed": true
+        }
+      ],
+      "testResult": [
+        {
+          "passed": 108,
+          "total": 108
+        }
+      ],
+      "errors": [],
+      "logSHA256": "ce4ef850280024c345031f5ad943773a9b6bbea775b7a34d45d7502fc1238956"
+    },
+    {
+      "name": "xiyou_shop_buy.tscn",
+      "seconds": 4.151,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.151,
+          "passed": true
+        }
+      ],
+      "testResult": [
+        {
+          "passed": 9613,
+          "total": 9613
+        }
+      ],
+      "errors": [],
+      "logSHA256": "ce85c5d38b1e8f04577b718fe07bf5f53ea8ead60939695313fc83f5297e2661"
+    },
+    {
+      "name": "xiyou_item_use.tscn",
+      "seconds": 3.567,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.567,
+          "passed": true
+        }
+      ],
+      "testResult": [
+        {
+          "passed": 11,
+          "total": 11
+        }
+      ],
+      "errors": [],
+      "logSHA256": "3a83c2fa5cfd05a909e0fab6c88a8b9cf7f33289426cb0cce9640e0f97ce8c7c"
+    },
+    {
+      "name": "xiyou_super_acquire.tscn",
+      "seconds": 2.496,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 2.496,
+          "passed": true
+        }
+      ],
+      "testResult": [
+        {
+          "passed": 27,
+          "total": 27
+        }
+      ],
+      "errors": [],
+      "logSHA256": "414d2ff8feb5737f7960c11166d21c7a9958b4088e7fc30f3a0cf8f3c57728ef"
+    },
+    {
+      "name": "xiyou_event_compare.tscn",
+      "seconds": 62.827,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 62.827,
+          "passed": true
+        }
+      ],
+      "testResult": [
+        {
+          "passed": 5,
+          "total": 5
+        }
+      ],
+      "errors": [],
+      "logSHA256": "ff5ea676cd198a247f80dad692db07e5ef25ac31e9bbc30fc59b99b243fe2d22"
+    }
+  ],
+  "eventComparison": {
+    "cases": 1874,
+    "match": 1867,
+    "mismatch": 7,
+    "nowMatching": [],
+    "oracleErrors": [
+      "m221e3p0",
+      "m4e8p1",
+      "ce1344"
+    ],
+    "regressions": []
+  }
+}

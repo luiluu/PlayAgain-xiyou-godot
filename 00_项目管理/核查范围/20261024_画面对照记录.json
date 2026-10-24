@@ -1,0 +1,1131 @@
+{
+  "cutoff": "6bcf0b7d",
+  "sourceBefore": {
+    "index.html": "8d1045eb2246b26f35b672be38cc0f2f20883ced92ecc1bf619fbdde8404c2a3",
+    "js/plugins.js": "b1adbb72a2680cadea24962336d213c076f3e9bb6a771bc02403c18c04bdd0ba",
+    "js/plugins/hc.js": "ce540810fdaacfad82b0a245b881916728e92f450b7481235a96e5eb5b4da317",
+    "js/plugins/CP_MagicWeapon.js": "2696d69c18999f4e136aa1d764805ae37fbac09081b493f2d4ae1c0cf51af230",
+    "js/plugins/Star_PetSystem.js": "3563d8a390c20ccbce2a17e42a7844fa710bafd33eeb48400ef64eaeffbfd5a0",
+    "js/plugins/Star_PetSynthesis.js": "b9b935a8ad341874435feaea1dc7be243e70e487f45769bc8eedfed723c082d3",
+    "js/plugins/Star_PetUpLevel.js": "75f83b50a72365f0d369cdc56d8469b9e666fc2bacdfc0490f2cd00fce556a56",
+    "js/codex/runtime/installNativeRaceRuntime.js": "34ec02fc74ff696d7b6b608fd6b273d90f45c5d7523b472f3c2d6acaf090b65a",
+    "data/Recipes.txt": "83a6b32367010a7e515c5ff3addd9cd7e321af07375283d37f6257498628cb3e",
+    "data/Enemies.json": "2e3219605257dde212dce0a576ba1b4bc8d86c915d88ddcbd66895dfda5a5aab"
+  },
+  "sourceAfter": {
+    "index.html": "8d1045eb2246b26f35b672be38cc0f2f20883ced92ecc1bf619fbdde8404c2a3",
+    "js/plugins.js": "b1adbb72a2680cadea24962336d213c076f3e9bb6a771bc02403c18c04bdd0ba",
+    "js/plugins/hc.js": "ce540810fdaacfad82b0a245b881916728e92f450b7481235a96e5eb5b4da317",
+    "js/plugins/CP_MagicWeapon.js": "2696d69c18999f4e136aa1d764805ae37fbac09081b493f2d4ae1c0cf51af230",
+    "js/plugins/Star_PetSystem.js": "3563d8a390c20ccbce2a17e42a7844fa710bafd33eeb48400ef64eaeffbfd5a0",
+    "js/plugins/Star_PetSynthesis.js": "b9b935a8ad341874435feaea1dc7be243e70e487f45769bc8eedfed723c082d3",
+    "js/plugins/Star_PetUpLevel.js": "75f83b50a72365f0d369cdc56d8469b9e666fc2bacdfc0490f2cd00fce556a56",
+    "js/codex/runtime/installNativeRaceRuntime.js": "34ec02fc74ff696d7b6b608fd6b273d90f45c5d7523b472f3c2d6acaf090b65a",
+    "data/Recipes.txt": "83a6b32367010a7e515c5ff3addd9cd7e321af07375283d37f6257498628cb3e",
+    "data/Enemies.json": "2e3219605257dde212dce0a576ba1b4bc8d86c915d88ddcbd66895dfda5a5aab"
+  },
+  "sourceIdentityUnchanged": true,
+  "originalReplay": {
+    "fixture": "冻结v0.28，独立端口内存新局，无存档",
+    "screens": {
+      "craft_1_list": {
+        "scene": "Scene_Crafting",
+        "windows": [
+          {
+            "type": "Window_Help",
+            "rect": [
+              0,
+              0,
+              1280,
+              100
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecipeList",
+            "rect": [
+              0,
+              172,
+              640,
+              476
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecipeDetail",
+            "rect": [
+              640,
+              172,
+              640,
+              476
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecipeConfirm",
+            "rect": [
+              640,
+              648,
+              640,
+              72
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_Gold",
+            "rect": [
+              640,
+              648,
+              640,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecPopup",
+            "rect": [
+              580,
+              328,
+              120,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_RecCategory",
+            "rect": [
+              0,
+              100,
+              1280,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecGauge",
+            "rect": [
+              0,
+              656,
+              640,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_ItemList",
+            "rect": [
+              0,
+              172,
+              640,
+              476
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": false,
+            "openness": 255
+          }
+        ]
+      },
+      "craft_3_confirm_x3": {
+        "scene": "Scene_Crafting",
+        "windows": [
+          {
+            "type": "Window_Help",
+            "rect": [
+              0,
+              0,
+              1280,
+              100
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecipeList",
+            "rect": [
+              0,
+              172,
+              640,
+              476
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecipeDetail",
+            "rect": [
+              640,
+              172,
+              640,
+              476
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecipeConfirm",
+            "rect": [
+              640,
+              648,
+              640,
+              72
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_Gold",
+            "rect": [
+              640,
+              648,
+              640,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_RecPopup",
+            "rect": [
+              580,
+              328,
+              120,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_RecCategory",
+            "rect": [
+              0,
+              100,
+              1280,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecGauge",
+            "rect": [
+              0,
+              656,
+              640,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_ItemList",
+            "rect": [
+              0,
+              172,
+              640,
+              476
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": false,
+            "openness": 255
+          }
+        ]
+      },
+      "craft_4_popup": {
+        "scene": "Scene_Crafting",
+        "windows": [
+          {
+            "type": "Window_Help",
+            "rect": [
+              0,
+              0,
+              1280,
+              100
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecipeList",
+            "rect": [
+              0,
+              172,
+              640,
+              476
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecipeDetail",
+            "rect": [
+              640,
+              172,
+              640,
+              476
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecipeConfirm",
+            "rect": [
+              640,
+              648,
+              640,
+              72
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_Gold",
+            "rect": [
+              640,
+              648,
+              640,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_RecPopup",
+            "rect": [
+              505.8828125,
+              328,
+              297,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecCategory",
+            "rect": [
+              0,
+              100,
+              1280,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_RecGauge",
+            "rect": [
+              0,
+              656,
+              640,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_ItemList",
+            "rect": [
+              0,
+              172,
+              640,
+              476
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": false,
+            "openness": 255
+          }
+        ]
+      },
+      "pet_0": {
+        "scene": "Scene_PetSystem",
+        "windows": [
+          {
+            "type": "Window_PetSystemIndex",
+            "rect": [
+              0,
+              0,
+              426,
+              440
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetSystemStatus",
+            "rect": [
+              426,
+              0,
+              854,
+              720
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetSkillList",
+            "rect": [
+              426,
+              540,
+              854,
+              180
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_PotBottomConfirm",
+            "rect": [
+              0,
+              456,
+              427,
+              264
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetLittleConfirm",
+            "rect": [
+              426.6666666666667,
+              548,
+              854,
+              172
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_PetSynthesisConfirm",
+            "rect": [
+              426.6666666666667,
+              584,
+              854,
+              136
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_PetUpLevelList",
+            "rect": [
+              426,
+              540,
+              854,
+              180
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          }
+        ]
+      },
+      "pet_1_skills": {
+        "scene": "Scene_PetSystem",
+        "windows": [
+          {
+            "type": "Window_PetSystemIndex",
+            "rect": [
+              0,
+              0,
+              426,
+              440
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetSystemStatus",
+            "rect": [
+              426,
+              0,
+              854,
+              720
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetSkillList",
+            "rect": [
+              426,
+              540,
+              854,
+              180
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PotBottomConfirm",
+            "rect": [
+              0,
+              456,
+              427,
+              264
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetLittleConfirm",
+            "rect": [
+              426.6666666666667,
+              548,
+              854,
+              172
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_PetSynthesisConfirm",
+            "rect": [
+              426.6666666666667,
+              584,
+              854,
+              136
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_PetUpLevelList",
+            "rect": [
+              426,
+              540,
+              854,
+              180
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          }
+        ]
+      },
+      "pet_feed": {
+        "scene": "Scene_PetSystem",
+        "windows": [
+          {
+            "type": "Window_PetSystemIndex",
+            "rect": [
+              0,
+              0,
+              426,
+              440
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetSystemStatus",
+            "rect": [
+              426,
+              0,
+              854,
+              720
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetSkillList",
+            "rect": [
+              426,
+              540,
+              854,
+              180
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_PotBottomConfirm",
+            "rect": [
+              0,
+              456,
+              427,
+              264
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetLittleConfirm",
+            "rect": [
+              426.6666666666667,
+              548,
+              854,
+              172
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_PetSynthesisConfirm",
+            "rect": [
+              426.6666666666667,
+              584,
+              854,
+              136
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_PetUpLevelList",
+            "rect": [
+              426,
+              540,
+              854,
+              180
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          }
+        ]
+      },
+      "pet_synthesis": {
+        "scene": "Scene_PetSystem",
+        "windows": [
+          {
+            "type": "Window_PetSystemIndex",
+            "rect": [
+              0,
+              0,
+              426,
+              440
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetSystemStatus",
+            "rect": [
+              426,
+              0,
+              854,
+              720
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetSkillList",
+            "rect": [
+              426,
+              540,
+              854,
+              180
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_PotBottomConfirm",
+            "rect": [
+              0,
+              456,
+              427,
+              264
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetLittleConfirm",
+            "rect": [
+              426.6666666666667,
+              548,
+              854,
+              172
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          },
+          {
+            "type": "Window_PetSynthesisConfirm",
+            "rect": [
+              426.6666666666667,
+              584,
+              854,
+              136
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_PetUpLevelList",
+            "rect": [
+              426,
+              540,
+              854,
+              180
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 0
+          }
+        ]
+      },
+      "race_defaults": {
+        "scene": "Scene_CodexBindMenu",
+        "windows": [
+          {
+            "type": "Window_YunChoices",
+            "rect": [
+              260,
+              196,
+              760,
+              328
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          }
+        ]
+      },
+      "race_members": {
+        "scene": "Scene_CodexBindMenu",
+        "windows": [
+          {
+            "type": "Window_YunChoices",
+            "rect": [
+              260,
+              232,
+              760,
+              256
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          }
+        ]
+      },
+      "magic_shop": {
+        "scene": "Scene_Shop",
+        "windows": [
+          {
+            "type": "Window_ShopCommand",
+            "rect": [
+              0,
+              1,
+              240,
+              172
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_ShopInfo",
+            "rect": [
+              240,
+              1,
+              1040,
+              172
+            ],
+            "lineHeight": 36,
+            "fontSize": 20,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_Base",
+            "rect": [
+              0,
+              173,
+              768,
+              547
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": false,
+            "openness": 255
+          },
+          {
+            "type": "Window_ShopNumber",
+            "rect": [
+              0,
+              173,
+              768,
+              547
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": false,
+            "openness": 255
+          },
+          {
+            "type": "Window_ShopBuy",
+            "rect": [
+              0,
+              173,
+              768,
+              547
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_ShopCategory",
+            "rect": [
+              0,
+              1,
+              240,
+              172
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": false,
+            "openness": 255
+          },
+          {
+            "type": "Window_ShopSell",
+            "rect": [
+              0,
+              173,
+              768,
+              547
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": false,
+            "openness": 255
+          },
+          {
+            "type": "Window_Gold",
+            "rect": [
+              768,
+              656,
+              512,
+              64
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_ShopStatus",
+            "rect": [
+              768,
+              173,
+              512,
+              483
+            ],
+            "lineHeight": 36,
+            "fontSize": 20,
+            "visible": true,
+            "openness": 255
+          },
+          {
+            "type": "Window_MenuActor",
+            "rect": [
+              0,
+              0,
+              1280,
+              720
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": false,
+            "openness": 255
+          },
+          {
+            "type": "Window_OnekeySellCommand",
+            "rect": [
+              350,
+              150,
+              240,
+              280
+            ],
+            "lineHeight": 36,
+            "fontSize": 26,
+            "visible": false,
+            "openness": 255
+          }
+        ]
+      }
+    },
+    "errors": [],
+    "alien": {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720,
+        "top": 0,
+        "right": 1280,
+        "bottom": 720,
+        "left": 0
+      },
+      "buttons": [
+        {
+          "text": "返回",
+          "rect": {
+            "x": 1088,
+            "y": 97.8203125,
+            "width": 60,
+            "height": 47.1953125,
+            "top": 97.8203125,
+            "right": 1148,
+            "bottom": 145.015625,
+            "left": 1088
+          },
+          "disabled": false
+        },
+        {
+          "text": "20点能量 → 1颗异化石",
+          "rect": {
+            "x": 931.0859375,
+            "y": 181.015625,
+            "width": 201.9140625,
+            "height": 47.1953125,
+            "top": 181.015625,
+            "right": 1133,
+            "bottom": 228.2109375,
+            "left": 931.0859375
+          },
+          "disabled": false
+        },
+        {
+          "text": "逆骨·血吼",
+          "rect": {
+            "x": 132,
+            "y": 295.0078125,
+            "width": 320.2734375,
+            "height": 47.1953125,
+            "top": 295.0078125,
+            "right": 452.2734375,
+            "bottom": 342.203125,
+            "left": 132
+          },
+          "disabled": false
+        },
+        {
+          "text": "百相·血吼",
+          "rect": {
+            "x": 139,
+            "y": 350.203125,
+            "width": 320.2734375,
+            "height": 47.1953125,
+            "top": 350.203125,
+            "right": 459.2734375,
+            "bottom": 397.3984375,
+            "left": 139
+          },
+          "disabled": false
+        },
+        {
+          "text": "疫囊·尼伯龙根指环",
+          "rect": {
+            "x": 139,
+            "y": 405.3984375,
+            "width": 320.2734375,
+            "height": 47.1953125,
+            "top": 405.3984375,
+            "right": 459.2734375,
+            "bottom": 452.59375,
+            "left": 139
+          },
+          "disabled": false
+        },
+        {
+          "text": "使用1颗异化石重抽",
+          "rect": {
+            "x": 487.2734375,
+            "y": 574.984375,
+            "width": 172.1640625,
+            "height": 47.1953125,
+            "top": 574.984375,
+            "right": 659.4375,
+            "bottom": 622.1796875,
+            "left": 487.2734375
+          },
+          "disabled": true
+        },
+        {
+          "text": "分解为1点能量",
+          "rect": {
+            "x": 674.4375,
+            "y": 574.984375,
+            "width": 138.1640625,
+            "height": 47.1953125,
+            "top": 574.984375,
+            "right": 812.6015625,
+            "bottom": 622.1796875,
+            "left": 674.4375
+          },
+          "disabled": false
+        }
+      ]
+    },
+    "engineErrors": [],
+    "done": true
+  },
+  "imagesSha256": {
+    "Godot/alien_config_bound.png": "86aecef3a6918b3bfeda7916cdd2cdebdc4c7ba2b175f8d08007bbd75185f05d",
+    "Godot/alien_config_faceless.png": "20e4876d9ac6debb2869dcde7465ba726ab352a8a46d52410ba9a3effb73a836",
+    "Godot/alien_config_mimic.png": "46209c888f6c6eedb1f8a85e1f1cabbd6ce8c3e0ed39eae763a23b71e1264a99",
+    "Godot/alien_config_possession.png": "8849a26e33e5fafc82f6bd1ec40826dde8f542097eb16a65c6654a74785eb095",
+    "Godot/alien_config_skill.png": "7ca66c7465e3a966d8b63fecc5b4a37763f905c1b57ed64097839778546d88a7",
+    "Godot/alien_config_swallow.png": "0a5209f103191c2333661e7929a546ecb1cd48be612597a0befc728d00c10725",
+    "Godot/alien_empty.png": "74ba190c1652e7a37c88cde9d8325dd56adf13a5655b7a3522f8e11b6ec6a7f2",
+    "Godot/alien_keep-old.png": "9f4ad445bc9ae64a7d0bcf9b36611070ad24902049400237387662d451305ff7",
+    "Godot/alien_list.png": "6caf2f856d9fe4fe8e9d6ea8db367ece0973ad503764519f6fd41a1c6d331bd4",
+    "Godot/alien_list_pending.png": "befe393cbe7d2ca5e12be6cebbc9fe4e61e14aaec41c3b08d48cf03cc506f225",
+    "Godot/alien_locked-equipped.png": "acb096a653860e5ef21429865426aa805e514e1b4eb5bb400f373d90b583f5e3",
+    "Godot/alien_recent.png": "2f01002942dd3e1a2cfb8098d3aeba966bfce3e365e0ea19fb32b4b847c42e82",
+    "Godot/craft_1_list.png": "39538dd22864d2577def3f78a20c691afee4af5dc05f044ff5091582234856ac",
+    "Godot/craft_3_confirm_x3.png": "2760c8d7dd2116b58877dc117ff3a25c18f868c6bc5442d6a403179c0b5b9487",
+    "Godot/craft_4_popup.png": "cbee1fc176ce38e9b02e87073d4554c9ce0ed9c8af6106c3c7739a8671cf3659",
+    "Godot/magic_shop.png": "fa250d4dabdf405748fc46270ea0b91158dd167d8d1ab3894fe3d8562991d5a9",
+    "Godot/pet_0.png": "3422e19294bf638b0bbc02a0073d88ecb46470688412ced566f83ed6180d0b14",
+    "Godot/pet_1_skills.png": "c41f22bbbaebe7f83cbebd278feb8829febdd201ed7fe27b187c9bebd3ddefc1",
+    "Godot/pet_feed.png": "b032431664979e078a23ed5c49e95ad0ef45cd95856760f3e55382ab0d559367",
+    "Godot/pet_synthesis.png": "782f6c32dcbf4393f0c4e732447a2a1e269e24dec8f9c35d2f133ae2cf1764c8",
+    "Godot/race_defaults.png": "653565c5dd6dcda689ab9db51324b48d030e7715da4db03aadbd160eff1d2098",
+    "Godot/race_members.png": "cfae967d027d605319cccb617bf381dc462dd61cda5592022e393f072b38e2fa",
+    "Godot/修后/craft_1_list.png": "32e6213c854711fa89a88a61cb370c89baee7dcbddd22e12578094b85aad9711",
+    "Godot/修后/craft_3_confirm_x3.png": "ca423caa7edfd22f779e147b69a115791fd4f0ed981b2ec7fb32ef4f8b15e5e8",
+    "Godot/修后/craft_4_popup.png": "3b1c1f4e55ed14651ad1a31339f0145442ee58f24d23a27ddcb83887134dc2ec",
+    "Godot/修后/pet_feed.png": "9f245d18022dc04ee2f793b46e868f44ff0e7d6d331d602eead85ef6da687cf9",
+    "Godot/修后/pet_feed_final.png": "abb0b35433a8166cef3c3a340e6af0d4ca6d80a4788aec3e08253b4601b49f8c",
+    "Godot/修后/pet_synthesis.png": "f682e12e542538b2454f641da66df9b1f4323d0afac124d1cd5d16c52bf72848",
+    "原版/craft_1_list.png": "0092819ba6d903f1ae8b28ee14bf8d1983d28ceea857b6d9c66c6359d79b15e4",
+    "原版/craft_3_confirm_x3.png": "bff993dd459588dd52bfb4039f507d237513d109d8dc999db88c25b2d810a9ae",
+    "原版/craft_4_popup.png": "148f2d30bc8b99365baba6f9a99bd88735ef7b200c303d3dee3b2f6378932278",
+    "原版/magic_shop.png": "dea585715462d385372085cf7536671bc3f621f3c0247dae104d5c0334ead5f4",
+    "原版/pet_0.png": "09e4a39807f7c46229849dde509c897e90aecd3390eb978acdd28db140db8b61",
+    "原版/pet_1_skills.png": "4bfae36f7e28356e4939e6449226e9217e0ea627231a7baca8d4400b34877024",
+    "原版/pet_feed.png": "2f3ec1e29506cb6b5e8cefb358440c729031c9ea0c90f4c0a12b894f4992af59",
+    "原版/pet_synthesis.png": "9e35b96ac9a2fdc697394bbed145037d5d7fab729f873bc788e4e2519f7654d9",
+    "原版/race_defaults.png": "9b537b099a4b5f4a08daa7e388470f3626a389b517d179e0c9fa8f262a85fcd5",
+    "原版/race_members.png": "2559bd5322e604eccd5ea4ca772feb20e163e34a5ed99b4139bc02b6b3a016fa"
+  },
+  "observations": {
+    "crafting": "列表／确认／成功弹窗已实拍；列表透字在后续 main 由更完整的金币窗遮盖修复接替。",
+    "pets": "身份标签反例独立验证；喂养／合成原版与 Godot 实拍确认浮窗透字，修后同态画面通过。",
+    "race": "默认页／队员页实拍，窗口几何与行文相同；粒子与提示动画相位不同。",
+    "magic": "商店等级字两端实拍，字号坐标透明度另由严格绘制记录比较；未选择行时既有状态栏残留非该批引入。",
+    "alien": "原版 DOM 工坊与配置实际查看；Godot 工坊／配置实际渲染，交互与文字结构一致，沿用已实现的原生控件皮肤。"
+  },
+  "renderFailures": "早期独立驱动因等渲染帧超时；未当通过。后续每页独立驱动和明确渲染帧完成、无脚本错误。",
+  "cleanup": "大型截图与日志按车道规则在交付前删除；本记录保留来源身份、几何、截图摘要，输入夹具与可重放入口在 Git。"
+}

@@ -90,6 +90,10 @@ def main():
     for shot in ["alien_list", "alien_list_pending", "alien_config_bound"]:
         pane = read(a.formal / (shot + ".json"))["extra"]["pane"]
         checks["alien_pane_" + shot] = abs(pane[0] - 100) <= 0.5 and abs(pane[2] - 1080) <= 0.5
+    # 窗口读数正确也可能被旧网页层盖住；必须确认实际取证时没有遗留的工坊遮挡。
+    non_alien = set(PAIRS) | set(RACE) | {"craft_1_list", "craft_3_confirm_x3", "craft_4_popup", "pet_0", "pet_1_skills", "training_bottom"} | set(BOOK)
+    for shot in sorted(non_alien):
+        checks["no_alien_overlay_" + shot] = read(a.formal / (shot + ".json")).get("alienOverlayVisible") is False
     for shot, pairs in BOOK.items():
         f, g = read(a.formal / (shot + ".json")), read(a.godot / (shot + ".json"))
         bad = [k for k, cls in pairs.items() if not near(g["windows"][k]["rect"], formal_rect(f, cls) or [])]
@@ -106,7 +110,8 @@ def main():
     for d, label in ((a.formal, "formal"), (a.godot, "godot")):
         for shot in list(PAIRS) + RACE + ["craft_1_list", "craft_3_confirm_x3", "craft_4_popup", "pet_0", "pet_1_skills",
                                           "alien_list", "alien_list_pending", "alien_config_bound"] + list(BOOK) + ["training_bottom"]:
-            checks["png_%s_%s" % (label, shot)] = png_ok(d / (shot + ".png"))
+            image_name = "training_2_bottom" if label == "godot" and shot == "training_bottom" else shot
+            checks["png_%s_%s" % (label, shot)] = png_ok(d / (image_name + ".png"))
     result = {"checks": checks, "passed": sum(checks.values()), "total": len(checks), "differences": diffs,
               "limits": ["只比窗口矩形与行文；文字逐条绘制由各专项对 fixture 断言，画面观感逐张人工看",
                          "说明卡位置／字号／出售价分别是已登记 O-008／O-007／O-049，不比",

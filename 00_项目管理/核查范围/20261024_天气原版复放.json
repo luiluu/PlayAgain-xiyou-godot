@@ -1,0 +1,276 @@
+{
+  "rows": [
+    {
+      "label": "tint1",
+      "tone": [
+        1.1333333333333333,
+        -0.5666666666666667,
+        -0.5666666666666667,
+        2.8333333333333335
+      ],
+      "toneTarget": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneDuration": 59,
+      "weatherType": "none",
+      "power": 0,
+      "powerTarget": 0,
+      "weatherDuration": 0
+    },
+    {
+      "label": "tint10",
+      "tone": [
+        11.333333333333334,
+        -5.666666666666667,
+        -5.666666666666667,
+        28.333333333333343
+      ],
+      "toneTarget": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneDuration": 50,
+      "weatherType": "none",
+      "power": 0,
+      "powerTarget": 0,
+      "weatherDuration": 0
+    },
+    {
+      "label": "tint59",
+      "tone": [
+        66.86666666666667,
+        -33.43333333333334,
+        -33.43333333333334,
+        167.16666666666669
+      ],
+      "toneTarget": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneDuration": 1,
+      "weatherType": "none",
+      "power": 0,
+      "powerTarget": 0,
+      "weatherDuration": 0
+    },
+    {
+      "label": "tint60",
+      "tone": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneTarget": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneDuration": 0,
+      "weatherType": "none",
+      "power": 0,
+      "powerTarget": 0,
+      "weatherDuration": 0
+    },
+    {
+      "label": "snow1",
+      "tone": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneTarget": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneDuration": 0,
+      "weatherType": "snow",
+      "power": 0.11666666666666667,
+      "powerTarget": 7,
+      "weatherDuration": 59
+    },
+    {
+      "label": "snow30",
+      "tone": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneTarget": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneDuration": 0,
+      "weatherType": "snow",
+      "power": 3.5000000000000004,
+      "powerTarget": 7,
+      "weatherDuration": 30
+    },
+    {
+      "label": "snow60",
+      "tone": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneTarget": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneDuration": 0,
+      "weatherType": "snow",
+      "power": 7,
+      "powerTarget": 7,
+      "weatherDuration": 0
+    },
+    {
+      "label": "none0",
+      "tone": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneTarget": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneDuration": 0,
+      "weatherType": "snow",
+      "power": 7,
+      "powerTarget": 0,
+      "weatherDuration": 60
+    },
+    {
+      "label": "off1",
+      "tone": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneTarget": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneDuration": 0,
+      "weatherType": "snow",
+      "power": 6.883333333333334,
+      "powerTarget": 0,
+      "weatherDuration": 59
+    },
+    {
+      "label": "off59",
+      "tone": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneTarget": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneDuration": 0,
+      "weatherType": "snow",
+      "power": 0.11666666666666663,
+      "powerTarget": 0,
+      "weatherDuration": 1
+    },
+    {
+      "label": "off60",
+      "tone": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneTarget": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneDuration": 0,
+      "weatherType": "none",
+      "power": 0,
+      "powerTarget": 0,
+      "weatherDuration": 0
+    },
+    {
+      "label": "storm0",
+      "tone": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneTarget": [
+        68,
+        -34,
+        -34,
+        170
+      ],
+      "toneDuration": 0,
+      "weatherType": "storm",
+      "power": 3,
+      "powerTarget": 3,
+      "weatherDuration": 0
+    }
+  ],
+  "bitmaps": [
+    {
+      "kind": "rect",
+      "size": [
+        1,
+        60
+      ],
+      "color": "white"
+    },
+    {
+      "kind": "rect",
+      "size": [
+        2,
+        100
+      ],
+      "color": "white"
+    },
+    {
+      "kind": "circle",
+      "bitmap": [
+        9,
+        9
+      ],
+      "x": 4,
+      "y": 4,
+      "radius": 4,
+      "color": "white"
+    }
+  ],
+  "errors": [],
+  "sourceIdentitySha256": "e5074868564e76d3ff072510dab66e844bbd68591da356426d831e9160aef51a",
+  "sourceIdentityUnchanged": true
+}

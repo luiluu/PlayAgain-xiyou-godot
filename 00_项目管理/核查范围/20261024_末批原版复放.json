@@ -1,0 +1,19 @@
+{
+  "cutoff": "ffe51ae1",
+  "freshUnits": [
+    "m132",
+    "m139",
+    "m192",
+    "m204",
+    "ce514",
+    "ce1187"
+  ],
+  "freshCases": 79,
+  "changedCases": [],
+  "sameSourceIdentity": true,
+  "sameSetup": true,
+  "base1798FreshReplay": "20261024_事件参照范围校正.json",
+  "totalCases": 1877,
+  "errors": [],
+  "eventProbeSHA256": "93e65043539807799733a8cb4223e60cbbbba3b35eacda0b14032dd4e5a91d3d"
+}
