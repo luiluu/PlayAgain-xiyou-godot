@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.161",
-  "sequence": 161,
-  "next": "dev.162",
-  "nextSequence": 162,
+  "current": "dev.162",
+  "sequence": 162,
+  "next": "dev.163",
+  "nextSequence": 163,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-bookshots",
+  "currentChange": "wukong-reach2",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
