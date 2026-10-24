@@ -4,7 +4,7 @@ extends RefCounted
 ## 「重置仓库」＝remove 再 create（里面的东西全部清掉）。正式版参数：All Together 0（分四类）、Stack Item Quantity 0（容量按件数）。
 ## 存档：XState.warehouses（正式版 contents.phwarehouse）＝{名字: {title, maxCapacity, currentCapacity, rule, lootBonus,
 ##   items: {item: [ID], weapon: [装备实例], armor: [装备实例], keyItem: [ID]}, qtty: {item: {"ID": 数}, keyItem: {"ID": 数}}}}；
-##   旧档没有这一项时为空（没有仓库，按原版要先经 EV8 第 1 页 create）。
+##   旧Godot档缺字段时为空；已开 EV8 自开关 A 的旧档由 XState.from_dict 补空「仓库:999」，免得第二页只有 show 无法打开。
 ## 原版的武器、防具都是 YEP 独立装备，仓库记的是实例自己的 ID（存入后实例仍留在数据库里），这里直接存实例；每件 qtty 1。
 ## 当前仓库、取出／储存、分类（_lastActive／_lastOption／_lastCategory）不存档，读档后回到初值。
 ## 规则（rule）、loot、add、capacity 指令正式版事件里没有用到，只实现 create／show／remove（其余认作无操作并留在 skipped 外）。

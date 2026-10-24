@@ -35,7 +35,7 @@ var orb_seed: int = _fresh_seed()
 ## 宝珠坊：随机流序号 n、暂存宝珠 returns、神秘珠暂存箱 inbox、最近鉴定 recent（见 XOrbs）
 var orb_state := {"n": {}, "returns": {}, "inbox": {}, "recent": []}
 var gear: Array = []                # 背包里的装备实例
-var warehouses := {}                # PH_Warehouse 仓库（存档 phwarehouse，见 XWarehouse；旧档没有为空）
+var warehouses := {}                # PH_Warehouse 仓库（存档 phwarehouse，旧Godot档兼容见 from_dict）
 var switches := {}                  # id -> bool
 var variables := {}                 # id -> 数值
 var self_switches := {}             # "map,event,A" -> bool
@@ -557,6 +557,10 @@ static func from_dict(d: Dictionary) -> XState:
 	for k in d.variables:
 		s.variables[int(k)] = d.variables[k]
 	s.self_switches = d.selfSwitches
+	# dev.165 前的 Godot 档可能跳过未知 PHWarehouse create，却已开启管理员第二页；
+	# 第二页只有 show。只补这种缺新字段且已解锁的旧档，不改变普通 show 或已有仓库。
+	if not d.has("phwarehouse") and s.self_switch(4, 8, "A"):
+		XWarehouse.create(s, "<仓库:999>")
 	s.map_id = int(d.mapId)
 	s.x = int(d.x)
 	s.y = int(d.y)

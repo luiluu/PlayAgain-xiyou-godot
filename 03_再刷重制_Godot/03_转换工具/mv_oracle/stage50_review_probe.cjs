@@ -34,7 +34,8 @@ measure('save.state_effects', () => {
 // Counter goes last: this frozen plugin chain changes the emulated location.
 measure('counter.state_origin', () => {
   newGame();
-  w.$gameParty._actors = []; w.$gameParty.addActor(154); w.$gameParty.addActor(1);
+  // The engine's Array has MV.contains; a Node-owned [] does not.
+  w.eval('$gameParty._actors = []; $gameParty.addActor(154); $gameParty.addActor(1);');
   const bm = w.BattleManager;
   const stub = new Proxy(function () {}, {get: (_, key) => key === '_waitCount' ? 0 : (() => false), set: () => true});
   const sprites = new Map();
