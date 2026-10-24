@@ -47,6 +47,8 @@ func _run() -> void:
 	if not check("oracle_loaded", oracle is Dictionary and oracle.has("cases")):
 		_finish()
 		return
+	check("oracle_finished", oracle.cases.all(func(c): return c.get("finished", false) == true))
+	check("oracle_state_unchanged", oracle.cases.all(func(c): return c.get("stateUnchanged", false) == true))
 	var keep: Array = XMapScene.slice().get("keepEvents", {}).get("4", []).map(func(v): return int(v))
 	check("kept_on_lobby", keep.has(54) and keep.has(63) and keep.has(65), keep)
 	var host := LobbyHost.new()
