@@ -155,6 +155,19 @@ static func stop(s: XState) -> void:
 				s.set_self_switch(m.maps[k], m.events[k], m.switches[k], false)
 
 
+## 原版 setInterval(isrefreshGTEveWar, 300000)：新游戏／读档成功时先查一次，之后每 5 分钟（真实时间，本次运行只开一个）。
+## 重制由地图场景每帧调用：到点返回要弹的提示（可能为空数组），没到点返回 null。战斗、菜单期间到点的，回地图第一帧补查一次。
+static var _next_check_ms := -1
+
+
+static func tick(s: XState) -> Variant:
+	var t := Time.get_ticks_msec()
+	if _next_check_ms >= 0 and t < _next_check_ms:
+		return null
+	_next_check_ms = t + 300000
+	return check(s)
+
+
 static func _in_window(minute: int) -> bool:
 	return (minute >= 0 and minute < 5) or (minute >= 30 and minute < 35)
 

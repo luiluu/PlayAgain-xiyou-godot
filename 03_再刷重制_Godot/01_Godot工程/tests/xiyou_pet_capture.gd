@@ -141,10 +141,30 @@ func _run() -> void:
 		and [p1.get("ref_day"), p1.get("ref_hour"), p1.get("ref_minute")] == ref.troop1.ref.map(func(x): return int(x)), [l1.enemies[0].enemy_id, p1])
 	troop1.enemyId = 1
 	XPetCapture.clock = Callable()
+	_books()
 	_battle_flow()
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## 魔兽要诀（XPets.learn_book）对照参照；再查 O-098 的 372 改学 1672
+func _books() -> void:
+	for b in ref.books:
+		var s := XState.new_game(3, 1, [8, 9, 10])
+		s.last_item = 343
+		var pet := {"enemy": 1, "elite": false, "letter": "", "push": range(14).map(func(_i): return 0), "skills": [1365, 1374], "lv_skills": {},
+			"exp": 0, "ls": int(b.lsBefore[0]), "ls_max": int(b.lsBefore[1])}
+		s.pets.list = [pet]
+		s.pets.war = 0 if bool(b.war) else -1
+		var shown := XPets.learn_book(s, int(b.skill))
+		check("book_" + str(b.name), [shown] == b.toasts and pet.skills == b.skills.map(func(x): return int(x))
+			and [pet.ls, pet.ls_max] == b.ls.map(func(x): return int(x)) and s.item_count(343) == int(b.refund), [shown, pet, s.item_count(343)])
+	var s2 := XState.new_game(3, 1, [8, 9, 10])
+	s2.last_item = 372
+	s2.pets.list = [{"enemy": 1, "push": range(14).map(func(_i): return 0), "skills": [], "lv_skills": {}, "exp": 0, "ls": 0, "ls_max": 3}]
+	s2.pets.war = 0
+	check("book_372_fix", XPets.learn_book(s2, 1673) == "高级灵根 学习成功" and s2.pets.list[0].skills == [1672], s2.pets.list[0])
 
 
 ## 战斗里真的用一次：角色对可捕捉的嘤嘤怪用大师级捕获器（成功率 80%，掷 0），被捕的敌人隐藏、不算阵亡，结算不给它的经验

@@ -2632,5 +2632,113 @@
    9,
    31
   ]
- }
+ },
+ "books": [
+  {
+   "name": "no_war",
+   "skill": 1493,
+   "war": false,
+   "lsBefore": [
+    0,
+    2
+   ],
+   "toasts": [
+    "当前无出战宠物"
+   ],
+   "skills": [
+    1365,
+    1374
+   ],
+   "ls": [
+    0,
+    2
+   ],
+   "refund": 1
+  },
+  {
+   "name": "learn",
+   "skill": 1493,
+   "war": true,
+   "lsBefore": [
+    0,
+    2
+   ],
+   "toasts": [
+    "苦力 学习成功"
+   ],
+   "skills": [
+    1365,
+    1374,
+    1493
+   ],
+   "ls": [
+    1,
+    2
+   ],
+   "refund": 0
+  },
+  {
+   "name": "exists",
+   "skill": 1374,
+   "war": true,
+   "lsBefore": [
+    0,
+    2
+   ],
+   "toasts": [
+    "该技能已存在"
+   ],
+   "skills": [
+    1365,
+    1374
+   ],
+   "ls": [
+    0,
+    2
+   ],
+   "refund": 1
+  },
+  {
+   "name": "full",
+   "skill": 1493,
+   "war": true,
+   "lsBefore": [
+    2,
+    2
+   ],
+   "toasts": [
+    "可学习技能已达上限"
+   ],
+   "skills": [
+    1365,
+    1374
+   ],
+   "ls": [
+    2,
+    2
+   ],
+   "refund": 1
+  },
+  {
+   "name": "over",
+   "skill": 1493,
+   "war": true,
+   "lsBefore": [
+    3,
+    2
+   ],
+   "toasts": [
+    "可学习技能已达上限"
+   ],
+   "skills": [
+    1365,
+    1374
+   ],
+   "ls": [
+    2,
+    2
+   ],
+   "refund": 1
+  }
+ ]
 }

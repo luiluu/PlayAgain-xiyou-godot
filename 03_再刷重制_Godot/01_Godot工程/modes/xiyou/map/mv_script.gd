@@ -21,6 +21,7 @@ extends RefCounted
 ## - 更衣：if(ConfigManager.ChangeClothesLite.indexOf(N) == -1){ ConfigManager.ChangeClothesLite.push(N); } → XChangeClothes.unlock；
 ##   SceneManager.push(Scene_ChangeClothes) → host.open_change_clothes（XChangeClothes）。
 ## - 角色进阶：SceneManager.push(Scene_ActorAdvanced) → host.open_actor_advanced（XAdvance）。
+## - 魔兽要诀：Star.PetSystem.ComEveLearnSkill(N) → XPets.learn_book（出战宠物学技能，提示走 host.toast）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## CodexReincarnationRandom.entry：open 之后的选择结果 {accepted, hard}
@@ -184,6 +185,11 @@ static func _statements(js: String, interp) -> Array:
 			await _reincarnation_open(interp)
 			continue
 		if st == "CodexReincarnationRandom.finishEntry()":
+			continue
+		# 魔兽要诀（Star_PetSystem，公共事件 190～292）：出战宠物学技能，见 XPets.learn_book
+		m = _re("^Star\\.PetSystem\\.ComEveLearnSkill\\((\\d+)\\)$").search(st)
+		if m:
+			interp.host.toast(XPets.learn_book(s, int(m.get_string(1))))
 			continue
 		# 成就（Star_AchievementSystem，见 XAchievement）：宝箱、守层者、传送等事件里的 GetAcReward(N)；公共事件 431 打开成就界面
 		m = _re("^Star\\.AchievementSystem\\.GetAcReward\\((\\d+)\\)$").search(st)

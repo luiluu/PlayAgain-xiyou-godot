@@ -122,10 +122,26 @@ w.$gameTroop.setup(1);
 const troop1 = {enemy: w.$gameTroop.members()[0].enemyId(), capture: !!w.$gameTroop.members()[0].Capture, ref: [w.$gameParty.PetRefDay, w.$gameParty.PetRefHour, w.$gameParty.PetRefMinute]};
 w.Date = RealDate;
 
+// 6. 魔兽要诀 ComEveLearnSkill：无出战宠物、学会、已会、次数满（失败都退还 $gameParty._lastItem）
+function book(name, skill, war, ls) {
+  w.$gameParty._items = {};
+  w.$gameParty.setLastItem(w.$dataItems[343]);
+  const pet = new w.Game_Enemy(1, 0, 0);
+  pet._paramPush = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]; pet._skills = [w.$dataSkills[1365], w.$dataSkills[1374]]; pet._Levelskills = [];
+  pet.extraLS = ls[0]; pet.extraLSMax = ls[1];
+  w.$gameParty.Pets = [pet]; w.$gameParty.GTWar = war ? pet : null;
+  w.Star.PetSystem.ComEveLearnSkill(skill);
+  const out = {name, skill, war, lsBefore: ls, toasts: take(), skills: pet._skills.map(s => s.id), ls: [pet.extraLS, pet.extraLSMax], refund: w.$gameParty.numItems(w.$dataItems[343])};
+  w.$gameParty.GTWar = null; w.$gameParty.Pets = [];
+  return out;
+}
+const books = [book('no_war', 1493, false, [0, 2]), book('learn', 1493, true, [0, 2]), book('exists', 1374, true, [0, 2]), book('full', 1493, true, [2, 2]),
+  book('over', 1493, true, [3, 2])];
+
 const petMap = w.Star.PetSystem.PetMap.map((m, i) => m ? Object.assign({index: i}, m) : null).filter(Boolean);
 const src = f => crypto.createHash('sha256').update(fs.readFileSync(path.join(APP, f))).digest('hex');
 const out = {source: 'js/plugins/Star_PetSystem.js', sha256: src('js/plugins/Star_PetSystem.js'), petRefNum: w.Star.PetSystem.PetRefNum,
-  petMap, capture, starts, turns, gets, refreshes, troop1};
+  petMap, capture, starts, turns, gets, refreshes, troop1, books};
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox', 'pet_capture.json'), JSON.stringify(out, null, 1));
 console.log(JSON.stringify({capture: capture.length, starts: starts.map(s => s.enemies.map(e => e.capture)), turns: turns.map(t => t.enemies.map(e => e.dead)), gets: gets.map(g => [g.name, g.toasts, g.count, g.pets]), refreshes: refreshes.map(x => [x.name, x.on.length, x.troop1])}));

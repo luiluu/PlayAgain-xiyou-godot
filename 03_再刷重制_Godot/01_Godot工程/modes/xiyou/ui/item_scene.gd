@@ -734,6 +734,7 @@ func _use_direct() -> void:
 ## Scene_ItemBase.checkCommonEvent：有预约就回地图执行——物品页与菜单一起关掉（to_map 由菜单接着关）
 func _after_use() -> void:
 	var s := XState.current
+	s.last_item = int(_item.get("id", 0))  # Scene_Item.useItem：$gameParty.setLastItem（魔兽要诀失败时按它退还）
 	var reserved := false
 	for e in _item.get("effects", []):
 		if int(e.code) == 44:
