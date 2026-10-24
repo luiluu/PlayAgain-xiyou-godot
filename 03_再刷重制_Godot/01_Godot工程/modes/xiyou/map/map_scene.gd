@@ -25,6 +25,7 @@ var camera: Camera2D
 var ui: CanvasLayer
 var message: XMessageBox
 var fader: ColorRect
+var screen_fx: XScreenFxView
 var bgm: AudioStreamPlayer
 var se: AudioStreamPlayer
 var bgs: AudioStreamPlayer
@@ -105,6 +106,9 @@ func _ready() -> void:
 	me.finished.connect(func(): bgm.stream_paused = false)
 	camera = Camera2D.new()
 	add_child(camera)
+	screen_fx = XScreenFxView.new()
+	screen_fx.camera = camera
+	add_child(screen_fx)
 	var s := XState.current
 	await load_map(s.map_id, s.x, s.y, s.direction)
 
@@ -433,6 +437,8 @@ func _on_action() -> void:
 func _physics_process(_delta: float) -> void:
 	_hang_up_physics()
 	_update_shake()
+	if XState.current and not _menu_open:
+		XState.current.screen.update()
 	# 玩家朝同层事件走却被挡住：MV 的 checkEventTriggerTouch（触发 1/2）；挂机中不能手动移动
 	if busy or player == null or player.is_moving() or XHangUp.is_active(XState.current):
 		return

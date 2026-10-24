@@ -109,7 +109,9 @@ function snap() {
     weapons: baseCount(g.$gameParty._weapons, g.$dataWeapons), armors: baseCount(g.$gameParty._armors, g.$dataArmors),
     party: g.$gameParty._actors.slice(), actors, difficulty: g.$gameSystem.difficultyId(), encounter: g.$gameSystem.isEncounterEnabled(),
     followers: g.$gamePlayer.followers().isVisible(), actorName: g.$gamePlayer.SaveActorName === undefined ? '' : String(g.$gamePlayer.SaveActorName),
-    actorMaxLevel: Number(g.$gameParty.ActorMaxLevel || 0), flags};
+    actorMaxLevel: Number(g.$gameParty.ActorMaxLevel || 0), flags,
+    // 画面色调与天气只取指令设下的目标（223／236）：色调目标、天气强度目标，天气类型仅在目标强度不为 0 时记（渐弱中的旧类型不算）
+    screen: {tone: g.$gameScreen._toneTarget.map(Number), weather: g.$gameScreen._weatherPowerTarget ? String(g.$gameScreen._weatherType) : 'none', power: Number(g.$gameScreen._weatherPowerTarget)}};
 }
 function mapDelta(a, b, empty) {
   const out = {};
@@ -137,6 +139,7 @@ function delta(a, b) {
   put('actors', actors);
   for (const k of ['difficulty', 'encounter', 'followers', 'actorName', 'actorMaxLevel']) if (a[k] !== b[k]) d[k] = b[k];
   put('flags', mapDelta(a.flags, b.flags, null));
+  if (JSON.stringify(a.screen) !== JSON.stringify(b.screen)) d.screen = b.screen;
   return d;
 }
 
