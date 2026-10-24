@@ -1,0 +1,41 @@
+[
+  {
+    "probe": "race_menu",
+    "exactPayloadMatch": true,
+    "sourceIdentityMatch": true,
+    "cases": [
+      "config",
+      "fresh",
+      "calls",
+      "migrate",
+      "inbox",
+      "pages"
+    ]
+  },
+  {
+    "probe": "alien_config",
+    "exactPayloadMatch": true,
+    "sourceIdentityMatch": true,
+    "cases": [
+      "export",
+      "actors",
+      "ghosts",
+      "ready",
+      "binding",
+      "needs",
+      "configure",
+      "pages",
+      "equip"
+    ]
+  },
+  {
+    "probe": "alien_workshop",
+    "exactPayloadMatch": true,
+    "sourceIdentityMatch": true,
+    "cases": [
+      "config",
+      "calls",
+      "pages"
+    ]
+  }
+]

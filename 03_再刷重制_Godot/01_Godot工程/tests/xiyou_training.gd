@@ -35,7 +35,7 @@ func shot(name: String) -> void:
 	if out_dir == "" or DisplayServer.get_name() == "headless":
 		return
 	await frames(3)
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw(false)
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
 
 
@@ -122,7 +122,7 @@ func _run() -> void:
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 	var ui = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if not check("oracle_loaded", oracle is Dictionary and oracle.has("flows") and ui is Dictionary):
-		_finish()
+		await _finish()
 		return
 	XTrainingScene.ALIGN_COST = false
 	_check_table(oracle)
@@ -132,7 +132,7 @@ func _run() -> void:
 	await _check_entries()
 	XTrainingScene.ALIGN_COST = true
 	XTraining.xiulian = XTraining.DEFAULT_LIST.duplicate()
-	_finish()
+	await _finish()
 
 
 func _check_table(oracle: Dictionary) -> void:
@@ -295,6 +295,10 @@ func _check_entries() -> void:
 
 
 func _finish() -> void:
+	for player in get_tree().root.find_children("*", "AudioStreamPlayer", true, false):
+		player.stop()
+		player.stream = null
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)

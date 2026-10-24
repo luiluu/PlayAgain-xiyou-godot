@@ -32,7 +32,7 @@ func _frames(n: int) -> void:
 func _shot(name: String) -> void:
 	if out_dir == "" or DisplayServer.get_name() == "headless":
 		return
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw(false)
 	_check("screenshot_" + name, get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png")) == OK)
 
 

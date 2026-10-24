@@ -1,0 +1,54 @@
+{
+  "mapAndCraftRun": {
+    "runId": "2c068ba2b5f14ed7a683f29ef9919031",
+    "status": "done",
+    "exitCode": 0,
+    "pid": 15559,
+    "startedAt": "2026-10-23T23:04:54.939402+00:00",
+    "command": [
+      "python3",
+      "03_再刷重制_Godot/07_开发环境/并行测试.py",
+      "--full",
+      "--jobs",
+      "2",
+      "--log-dir",
+      "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024/修后专项",
+      "03_再刷重制_Godot/07_开发环境/godot",
+      "03_再刷重制_Godot/01_Godot工程",
+      "xiyou_crafting.tscn",
+      "xiyou_floor_brave083.tscn"
+    ],
+    "childPGID": 15560,
+    "childIdentity": {
+      "pid": 15560,
+      "pgid": 15560,
+      "startedAt": "Sat Oct 24 01:04:54 2026    "
+    },
+    "finishedAt": "2026-10-23T23:06:01.756911+00:00"
+  },
+  "mapAndCraftResult": [
+    "  ✓ xiyou_crafting.tscn {\"passed\":43,\"total\":43}",
+    "  ✓ xiyou_floor_brave083.tscn {\"passed\":101,\"total\":101}"
+  ],
+  "petOcclusionBefore": {
+    "passed": 24,
+    "total": 26,
+    "failed": [
+      "syn_occludes_status",
+      "feed_occludes_status"
+    ]
+  },
+  "petOcclusionAfter": {
+    "passed": 26,
+    "total": 26
+  },
+  "petBaseAfter": {
+    "passed": 29,
+    "total": 29
+  },
+  "craftRenderAfter": "43/43",
+  "feedFinalRender": [
+    "FEED_STATE=feed/255/526.0"
+  ],
+  "flaky": []
+}

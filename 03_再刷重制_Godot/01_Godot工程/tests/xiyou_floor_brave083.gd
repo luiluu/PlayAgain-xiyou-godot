@@ -151,7 +151,7 @@ func _run() -> void:
 	await _throne()
 	await _chest()
 	MVEventCore.fixed_random = -1.0
-	_finish()
+	await _finish()
 
 
 func _goto(from: int, x: int, y: int, ev: int, to: int, cell: Vector2i, answers := []) -> void:
@@ -197,11 +197,12 @@ func _floor3_npcs() -> void:
 	if not _check("f3_npc_loaded", await _wait_map(84)):
 		return
 	var map: XMapScene = _scene()
+	var n0 := battles.size()
 	await _run_event(map, 10, [1], "")
 	_check("f3_teacher_leave", _scene().map_id == 84)
 	await _run_event(map, 11, [1], "")
 	await _run_event(map, 11, [0], "")
-	_check("f3_soul_no_crowns", _scene().map_id == 84 and battles.size() >= 0)
+	_check("f3_soul_no_crowns", _scene().map_id == 84 and battles.size() == n0)
 
 
 func _throne() -> void:
@@ -285,4 +286,8 @@ func _finish() -> void:
 	print("战斗：", JSON.stringify(battles))
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
+	for player in get_tree().root.find_children("*", "AudioStreamPlayer", true, false):
+		player.stop()
+		player.stream = null
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)

@@ -127,4 +127,4 @@ class _WeatherCanvas extends Node2D:
 				"storm":
 					draw_rect(Rect2(0, 0, 2, 100), col)
 				"snow":
-					draw_circle(Vector2(4.5, 4.5), 4.5, col)
+					draw_circle(Vector2(4, 4), 4, col)

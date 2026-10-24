@@ -1,0 +1,246 @@
+{
+  "states": [
+    {
+      "name": "race_4_actor",
+      "scene": "Scene_CodexBindMenu",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_YunChoices=260,214,760,292",
+      "readoutSummarySha256": "71df9422385f6a06a0957f1c6ca42082d86802f764274f005079b49022e5d6ad",
+      "pngSha256": "7a68deb59c699d39e83485d73fd68ab7f29865d401face478745a0b8c443ce73",
+      "errors": []
+    },
+    {
+      "name": "magic_shop_buy",
+      "scene": "Scene_Shop",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_ShopCommand=0,1,240,172; Window_ShopInfo=240,1,1040,172; Window_Base=0,173,768,547; Window_ShopNumber=0,173,768,547; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,96,48; Window_ShopBuy=0,173,768,547; Window_ShopCategory=0,1,240,172; Window_ShopSell=0,173,768,547; Window_Gold=768,656,512,64; Window_ShopStatus=768,173,512,483; Window_MenuActor=0,0,1280,720; Window_OnekeySellCommand=350,150,240,280; Window_ItemHelp=778,227,420,320; Window_ItemHelp=778,227,420,320; Window_ItemHelp=778,227,420,320; Window_ItemHelp=778,227,420,320; Sprite_ItemHelp=788,237,400,300",
+      "readoutSummarySha256": "4154bb3ab32fd1d3d871155c2d0a29b82ec3c54ed316a2a750ffffd693dc7394",
+      "pngSha256": "dad859c70c0ba40a7e0f32fbebf81cec015a347c3d120b705387df2992874f28",
+      "errors": []
+    },
+    {
+      "name": "magic_item_info",
+      "scene": "Scene_Item",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_ItemCategory=0,0,240,172; Window_ItemList=0,172,640,548; Window_ItemStatus=240,1,1040,172; Window_ItemInfo=640,172,640,548; Window_ItemActionCommand=0,172,640,548; Window_UpgradeItemList=0,172,640,548; Window_AugmentItemList=0,172,640,548; Window_MenuActor=0,0,1280,720; Window_ItemHelp=650,226,420,320; Window_ItemHelp=650,226,420,320; Window_ItemHelp=650,226,420,320; Window_ItemHelp=650,226,420,320; Sprite_ItemHelp=660,236,400,300",
+      "readoutSummarySha256": "d01ac06716c0bef477ceecaf869db0fc997218b1ae8891a714c27e128e93583c",
+      "pngSha256": "11ac77a5fcf0f4ec5a9926ac656b7c1292ce8b89576ca3811efa8e5d023a9d47",
+      "errors": []
+    },
+    {
+      "name": "craft_1_list",
+      "scene": "Scene_Crafting",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_Help=0,0,1280,100; Window_RecipeList=0,172,640,476; Window_RecipeDetail=640,172,640,476; Window_RecipeConfirm=640,648,640,72; Window_Gold=640,648,640,64; Window_RecPopup=580,328,120,64; Window_RecCategory=0,100,1280,64; Window_RecGauge=0,656,640,64; Window_ItemList=0,172,640,476; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,96,48; Sprite_ItemHelp=0,0,400,1",
+      "readoutSummarySha256": "3174ce3a0f10b0f36cb5b0f204bb3755355e6560731d8a074a3098cb29e6e2bc",
+      "pngSha256": "8883caacbb7dbc45e376d7fc80b299fe74f1e8c61d3adcc0e7252140c662b87d",
+      "errors": []
+    },
+    {
+      "name": "race_3_members",
+      "scene": "Scene_CodexBindMenu",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_YunChoices=260,250,760,220",
+      "readoutSummarySha256": "9ae8f9f6da5d4a0b28960a662ebb896bdd0b4b73ce7d73666f0828a336dfd9e6",
+      "pngSha256": "2133023f98bbb941d275ad0e55bd360160729e149a65212f3e003fe8025fcee4",
+      "errors": []
+    },
+    {
+      "name": "craft_3_confirm_x3",
+      "scene": "Scene_Crafting",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_Help=0,0,1280,100; Window_RecipeList=0,172,640,476; Window_RecipeDetail=640,172,640,476; Window_RecipeConfirm=640,648,640,72; Window_Gold=640,648,640,64; Window_RecPopup=580,328,120,64; Window_RecCategory=0,100,1280,64; Window_RecGauge=0,656,640,64; Window_ItemList=0,172,640,476; Sprite_Button=784,558,48,48; Sprite_Button=848,558,48,48; Sprite_Button=912,558,48,48; Sprite_Button=976,558,48,48; Sprite_Button=1040,558,96,48; Sprite_ItemHelp=0,0,400,1",
+      "readoutSummarySha256": "021410fd79fe15d0eeddcb904f16683179a461e62702cac0f67aa461b5adf5b8",
+      "pngSha256": "d6707a5f67615c9659dbae53c70bf7b9e28927aad8280fff924c4891786f83e4",
+      "errors": []
+    },
+    {
+      "name": "pet_synth",
+      "scene": "Scene_PetSystem",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_PetSystemIndex=0,0,426,440; Window_PetSystemStatus=426,0,854,720; Window_PetSkillList=426,540,854,180; Window_PotBottomConfirm=0,456,427,264; Window_PetLittleConfirm=426.67,548,854,172; Window_PetSynthesisConfirm=426.67,584,854,136; Window_PetUpLevelList=426,540,854,180; Sprite_ItemHelp=0,0,400,1",
+      "readoutSummarySha256": "10ec390af56a0328010ea8ccf96351bb61687931e97addc9dc19f193ed7fdfba",
+      "pngSha256": "cc551f0520cda3bd6ab07f3e3501187ac9f25e9f9886f2ffb97865977094bedb",
+      "errors": []
+    },
+    {
+      "name": "race_1_default",
+      "scene": "Scene_CodexBindMenu",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_YunChoices=260,196,760,328",
+      "readoutSummarySha256": "ebaf2601cc2928fe97bb7f317c4140eb8bb490577b51e7f5e78ef4672e1ec705",
+      "pngSha256": "dad40020b385b6c2701ea6ca2b0e23be3dc497e884f2f3851d7a773bb607f84f",
+      "errors": []
+    },
+    {
+      "name": "training_bottom",
+      "scene": "Scene_ActorAttributePlusPoints",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_ActorAttributePlusPointsIndex=0,0,426,720; Window_ActorAttributePlusPointsStatus=426,0,854,720; Window_ActorAttributePlusPointsGold=0,656,426,64; Window_BottomConfirm=426.67,656,854,64; Window_AddLittleConfirm=426.67,136,854,388",
+      "readoutSummarySha256": "5ddcd4aa445516f0bce392e1ec7d8eca5b43b01f6655c62dd98cdedff87a13f6",
+      "pngSha256": "5a880237adbf8983129dc69f2299f66bfc01394455a9046bee365c3762e53709",
+      "errors": []
+    },
+    {
+      "name": "magic_equip_slot",
+      "scene": "Scene_Equip",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_EquipCommand=0,1,240,172; Window_SkillStatus=240,1,1040,172; Window_EquipSlot=0,173,640,547; Window_EquipItem=0,173,640,547; Window_StatCompare=640,173,640,547; Window_ItemInfo=640,173,640,547; Window_ItemHelp=218,297,420,320; Window_ItemHelp=218,297,420,320; Window_ItemHelp=218,297,420,320; Window_ItemHelp=218,297,420,320; Sprite_ItemHelp=228,307,400,300",
+      "readoutSummarySha256": "4cccd7279e4aa0bbd0e6289f583f1002e7ca8e77426f1a50b085ef1f3de2bd00",
+      "pngSha256": "15c73ecf3eaf0fa81220df93cd766789670dd57951478ba7b543dcd943ee650f",
+      "errors": []
+    },
+    {
+      "name": "alien_config_bound",
+      "scene": "Scene_Map",
+      "alienOverlayVisible": true,
+      "windowRects": "Window_MapName=0,18,1280,36; Window_Message=0,548,1280,172; Window_Gold=1040,0,240,64; Window_ChoiceList=0,0,0,64; Window_NumberInput=0,0,0,0; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,96,48; Window_EventItem=0,0,1280,172; Window_ScrollText=0,0,1280,720; Window_NameBox=0,0,240,64; Window_Autosave=1000,648,1280,36",
+      "readoutSummarySha256": "e358378120231366950b61df0006909ddd83c8ff30a8358e5e9ca623a0532aa1",
+      "pngSha256": "dbe46febba4049005b7eed97f87e7bb39180b5e8353594ecc6fb318d8b71dbef",
+      "errors": []
+    },
+    {
+      "name": "pet_0",
+      "scene": "Scene_PetSystem",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_PetSystemIndex=0,0,426,440; Window_PetSystemStatus=426,0,854,720; Window_PetSkillList=426,540,854,180; Window_PotBottomConfirm=0,456,427,264; Window_PetLittleConfirm=426.67,548,854,172; Window_PetSynthesisConfirm=426.67,584,854,136; Window_PetUpLevelList=426,540,854,180; Sprite_ItemHelp=0,0,400,1",
+      "readoutSummarySha256": "b24d96c978d337a4816a8c791af5059f2f00ea8fa87d4017415e103406c1c70d",
+      "pngSha256": "c55f133a96580d314d4cc7ff6c668e2eee81037b8fc60cd111b10792687a90af",
+      "errors": []
+    },
+    {
+      "name": "pet_1_skills",
+      "scene": "Scene_PetSystem",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_PetSystemIndex=0,0,426,440; Window_PetSystemStatus=426,0,854,720; Window_PetSkillList=426,540,854,180; Window_PotBottomConfirm=0,456,427,264; Window_PetLittleConfirm=426.67,548,854,172; Window_PetSynthesisConfirm=426.67,584,854,136; Window_PetUpLevelList=426,540,854,180; Sprite_ItemHelp=880,572,400,133",
+      "readoutSummarySha256": "9b7e65c6b845c95e2935c964637322bfca4dafdeeeeab15d12bae20eafea7657",
+      "pngSha256": "2fae288fa5684b9638b1dc766eb61646f9061b9205152e349e5d21e3ddf2e08e",
+      "errors": []
+    },
+    {
+      "name": "alien_list_pending",
+      "scene": "Scene_Map",
+      "alienOverlayVisible": true,
+      "windowRects": "Window_MapName=0,18,1280,36; Window_Message=0,548,1280,172; Window_Gold=1040,0,240,64; Window_ChoiceList=0,0,0,64; Window_NumberInput=0,0,0,0; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,96,48; Window_EventItem=0,0,1280,172; Window_ScrollText=0,0,1280,720; Window_NameBox=0,0,240,64; Window_Autosave=1000,648,1280,36",
+      "readoutSummarySha256": "582e95315e6282e5096e5b6ea0fce94d5966a124a03bdc121c18166ffc9f10b6",
+      "pngSha256": "a6ddfd96e3ac1c6c2e2c364cfe650367f10ac302872a5d0c12bbdb1085f6e8c6",
+      "errors": []
+    },
+    {
+      "name": "race_2_confirm",
+      "scene": "Scene_CodexBindMenu",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_YunChoices=260,214,760,292",
+      "readoutSummarySha256": "4752169dbaaa7aa5a8fbda650bcd86b93dcf2c0c668aea1160876e1ab7c75af4",
+      "pngSha256": "9b555ad0a7483ec2baefb1b2fc843a9827ae1d6dd1b3b45880bc1b13f61a772f",
+      "errors": []
+    },
+    {
+      "name": "craft_4_popup",
+      "scene": "Scene_Crafting",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_Help=0,0,1280,100; Window_RecipeList=0,172,640,476; Window_RecipeDetail=640,172,640,476; Window_RecipeConfirm=640,648,640,72; Window_Gold=640,648,640,64; Window_RecPopup=505.88,328,297,64; Window_RecCategory=0,100,1280,64; Window_RecGauge=0,656,640,64; Window_ItemList=0,172,640,476; Sprite_Button=784,558,48,48; Sprite_Button=848,558,48,48; Sprite_Button=912,558,48,48; Sprite_Button=976,558,48,48; Sprite_Button=1040,558,96,48; Sprite_ItemHelp=0,0,400,1",
+      "readoutSummarySha256": "ebe16a282e1b11432670c9845e06666e669da8225c44ade7aa1f70e438a42f74",
+      "pngSha256": "148f2d30bc8b99365baba6f9a99bd88735ef7b200c303d3dee3b2f6378932278",
+      "errors": []
+    },
+    {
+      "name": "battle_42_enemy_book",
+      "scene": "Scene_Battle",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_VisualHPGauge=158,301,208,64; Window_VisualHPGauge=249,379,208,64; Window_VisualHPGauge=97,433,208,64; Window_VisualHPGauge=715,200,208,64; Window_VisualHPGauge=715,299,208,64; Window_VisualHPGauge=715,397,208,64; Window_VisualHPGauge=715,482,208,64; Window_WeaknessDisplay=-58,304,640,72; Window_WeaknessDisplay=33,382,640,72; Window_WeaknessDisplay=-119,436,640,72; Sprite_Button=10,10,48,48; Window_BattleLog=0,92,1280,388; Window_BattleStatus=192,2160,1088,172; Window_BattleSideStatus=1080,0,296,121; Window_BattleSideName=0,6,200,36; Window_BattleSideHP=8,28,192,36; Window_BattleSideMP=16,50,184,36; Window_BattleSideMP=24,72,176,36; Window_BattleSideStates=-36,20,36,36; Window_BattleSideStatus=1080,121,296,121; Window_BattleSideName=0,6,200,36; Window_BattleSideHP=8,28,192,36; Window_BattleSideMP=16,50,184,36; Window_BattleSideMP=24,72,176,36; Window_BattleSideStates=-36,20,36,36; Window_BattleSideStatus=1080,242,296,121; Window_BattleSideName=0,6,200,36; Window_BattleSideHP=8,28,192,36; Window_BattleSideMP=16,50,184,36; Window_BattleSideMP=24,72,176,36; Window_BattleSideStates=-36,20,36,36; Window_BattleSideStatus=1032,363,296,121; Window_BattleSideName=0,6,200,36; Window_BattleSideHP=8,28,192,36; Window_BattleSideMP=16,50,184,36; Window_BattleSideMP=24,72,176,36; Window_BattleSideStates=-36,20,36,36; Window_BattleSideStatus=1080,484,296,121; Window_BattleSideName=0,6,200,36; Window_BattleSideHP=8,28,192,36; Window_BattleSideMP=16,50,184,36; Window_BattleSideMP=24,72,176,36; Window_BattleSideStates=-36,20,36,36; Window_PartyCommand=0,582,220,196; Window_ActorCommand=851,462,220,196; Window_OTBDisplay=58,618,830,108; Window_BattleSkill=0,582,450,138; Window_BattleItem=0,582,450,138; Window_BattleActor=192,2160,1088,172; Window_BattleEnemy=192,-141840,1088,172; Window_Message=0,548,1280,172; Window_Gold=1040,0,240,64; Window_ChoiceList=0,0,0,64; Window_NumberInput=0,0,0,0; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,96,48; Window_EventItem=0,0,1280,172; Window_ScrollText=0,0,1280,720; Window_EnemyBookIndex=0,0,426,720; Window_EnemyBookStatus=426,0,854,1066; Window_AlienMimic=450,100,380,28; Window_GuyuTransfer=480,310,320,100; Window_StateHelp=539,120,202,188; Sprite_ItemHelp=0,92,400,1; Window_NameBox=0,0,240,64; Window_EnemyVisualSelect=197,257,130,88; Window_EnemyVisualSelect=288,335,130,88; Window_EnemyVisualSelect=136,389,130,88",
+      "readoutSummarySha256": "c53345c442408dca73f5ff4332d6c13a6e05ef8cdd33bc58299742aa97fcd112",
+      "pngSha256": "e37df4124fd90f066a23f0015a0eee8bb6d3366fb03aa12882ad5ff68226314f",
+      "errors": []
+    },
+    {
+      "name": "enemy_book_0_drops",
+      "scene": "Scene_EnemyBook",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_EnemyBookPercent=0,80,426,64; Window_EnemyBookIndex=0,0,426,720; Window_EnemyBookStatus=426,0,854,720; Window_EnemyBookStatus2=426,0,854,720; Window_EnemyBookItemList=426,0,854,720; Window_SaveConfirm=0,0,240,136; Sprite_ItemHelp=880,32,400,239",
+      "readoutSummarySha256": "694d5bb5a3a8f779aae14f90a1b0b919cebb3a675873fe858f2265c68b4bf762",
+      "pngSha256": "12d770fb75d693b5037bac6431a4eedae904a2bb12e907e6a87e5f8c9930a171",
+      "errors": []
+    },
+    {
+      "name": "pet_feed",
+      "scene": "Scene_PetSystem",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_PetSystemIndex=0,0,426,440; Window_PetSystemStatus=426,0,854,720; Window_PetSkillList=426,540,854,180; Window_PotBottomConfirm=0,456,427,264; Window_PetLittleConfirm=426.67,548,854,172; Window_PetSynthesisConfirm=426.67,584,854,136; Window_PetUpLevelList=426,540,854,180; Sprite_ItemHelp=0,0,400,1",
+      "readoutSummarySha256": "9b7f4d985079a3e1a8687600950a30fde20382d6fc72cf18e03fc075f86f4105",
+      "pngSha256": "877c41e9fdae5191530db1ae1453cf82d30b51a4ba293e72ce65ac2a178c45d4",
+      "errors": []
+    },
+    {
+      "name": "enemy_book_0",
+      "scene": "Scene_EnemyBook",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_EnemyBookPercent=0,80,426,64; Window_EnemyBookIndex=0,0,426,720; Window_EnemyBookStatus=426,0,854,720; Window_EnemyBookStatus2=426,0,854,720; Window_EnemyBookItemList=426,0,854,720; Window_SaveConfirm=0,0,240,136; Sprite_ItemHelp=0,0,400,1",
+      "readoutSummarySha256": "7cd7bf3ff6f5f51b1d447ee838ef2f3f53de9cb0b2682b8b3b5af13c69abab7f",
+      "pngSha256": "f2667f1e617a403018d36a757ed88e988d7f52e893775a78db30c9e79ec60d1f",
+      "errors": []
+    },
+    {
+      "name": "craft_0_category",
+      "scene": "Scene_Crafting",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_Help=0,0,1280,100; Window_RecipeList=0,172,640,476; Window_RecipeDetail=640,172,640,476; Window_RecipeConfirm=640,648,640,72; Window_Gold=640,648,640,64; Window_RecPopup=580,328,120,64; Window_RecCategory=0,100,1280,64; Window_RecGauge=0,656,640,64; Window_ItemList=0,172,640,476; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,96,48; Sprite_ItemHelp=0,0,400,1",
+      "readoutSummarySha256": "b9287e0b0298bbb72302cc7aa6d2da941fd06fd7bf4595b693505ad15bd7c4d9",
+      "pngSha256": "fc8b97b3cdd026c4effe4f1f36e0e1dccafbc6419c6a06f3298a5a458fda2151",
+      "errors": []
+    },
+    {
+      "name": "race_5_change",
+      "scene": "Scene_CodexBindMenu",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_YunChoices=260,196,760,328",
+      "readoutSummarySha256": "80ae060a2a794e3cd6f45b01d622b10b1dc4ab799b1ad1784b3565531a1a1384",
+      "pngSha256": "9d0aba7b3dffc80601582e50a31d3c3cd4ada9cdf5b2ac6c7b5cd34f701f0b20",
+      "errors": []
+    },
+    {
+      "name": "pet_bottom",
+      "scene": "Scene_PetSystem",
+      "alienOverlayVisible": false,
+      "windowRects": "Window_PetSystemIndex=0,0,426,440; Window_PetSystemStatus=426,0,854,720; Window_PetSkillList=426,540,854,180; Window_PotBottomConfirm=0,456,427,264; Window_PetLittleConfirm=426.67,548,854,172; Window_PetSynthesisConfirm=426.67,584,854,136; Window_PetUpLevelList=426,540,854,180; Sprite_ItemHelp=0,0,400,1",
+      "readoutSummarySha256": "9892b0c2c66ac7deb6dd46ebcc5df1b63a7579ee40fe942bc758dafe096a76b2",
+      "pngSha256": "24d3832d2944723a21de481e8f9f4def4b61ac93406010df24bbc86a9aa37a49",
+      "errors": []
+    },
+    {
+      "name": "alien_list",
+      "scene": "Scene_Map",
+      "alienOverlayVisible": true,
+      "windowRects": "Window_MapName=0,18,1280,36; Window_Message=0,548,1280,172; Window_Gold=1040,0,240,64; Window_ChoiceList=0,0,0,64; Window_NumberInput=0,0,0,0; Sprite_Button=0,0,48,48; Sprite_Button=0,0,48,48; Sprite_Button=0,0,96,48; Window_EventItem=0,0,1280,172; Window_ScrollText=0,0,1280,720; Window_NameBox=0,0,240,64; Window_Autosave=1000,648,1280,36",
+      "readoutSummarySha256": "9d11fe1e0ac6f510658b7e33cef0cc46bbb23f958e837c7672604a19e4169a7d",
+      "pngSha256": "131d1a77b5c9e32e6372ba4b655a661bb2f380756a916015781bcd14eb5d502d",
+      "errors": []
+    }
+  ],
+  "sourceIdentityUnchanged": true,
+  "sourceInputs": {
+    "index.html": "8d1045eb2246b26f35b672be38cc0f2f20883ced92ecc1bf619fbdde8404c2a3",
+    "js/plugins.js": "b1adbb72a2680cadea24962336d213c076f3e9bb6a771bc02403c18c04bdd0ba",
+    "js/rpg_scenes.js": "d7a1cc37a681cfc0be9c0777e3970d1040ac6e801c6425ccf1cf4b3f1120f298",
+    "js/rpg_windows.js": "4c5c65c5c80170bd9898f1f94ad5e7e5f31282e81c898f5201473f80b940f15f",
+    "js/rpg_οbjects.js": "455b1890ff891795df24653e3b8c15ab6ef5050661656c2dd1840339b34d5b7d",
+    "js/plugins/hc.js": "ce540810fdaacfad82b0a245b881916728e92f450b7481235a96e5eb5b4da317",
+    "js/plugins/CP_MagicWeapon.js": "2696d69c18999f4e136aa1d764805ae37fbac09081b493f2d4ae1c0cf51af230",
+    "js/plugins/Star_PetSystem.js": "3563d8a390c20ccbce2a17e42a7844fa710bafd33eeb48400ef64eaeffbfd5a0",
+    "js/plugins/Star_PetUpLevel.js": "75f83b50a72365f0d369cdc56d8469b9e666fc2bacdfc0490f2cd00fce556a56",
+    "js/plugins/Star_PetSynthesis.js": "b9b935a8ad341874435feaea1dc7be243e70e487f45769bc8eedfed723c082d3",
+    "js/codex/runtime/installNativeRaceRuntime.js": "34ec02fc74ff696d7b6b608fd6b273d90f45c5d7523b472f3c2d6acaf090b65a",
+    "js/codex/runtime/installNativeYunshangRuntime.js": "4cbbcd3559156f99ae5dd60ce830fe81c7e3753da20c81e908f89276b39411f8",
+    "js/codex/runtime/installNativeBindingChargeRuntime.js": "c2b00e64b41fe9876cdc16e4cfb62da0882e41d2bced2fca0db2353569540d57",
+    "js/codex/runtime/installAlienationWorkshop.js": "984f22edb0a976dc563c6d8943c2cb22828efc9bf86111090e1970e92b3370a3",
+    "js/codex/runtime/installAlienationAffixes.js": "2bdad47dd6739a2a628d8f74c955e4f17062ff920bf9ac8279d98946a82d738e",
+    "js/codex/runtime/installGamePanelTheme.js": "3e1f9b88bc3b7ac066b151feef5bc397d44b00d7e6b6b2008e83484307820f55",
+    "js/codex/runtime/installCombatPowerRuntime.js": "def2ec0ee30478c54a9f016b8a7c6f6b6c51360432235120059ebc6dc3fccacc",
+    "js/plugins/AB_EnemyBook.js": "4b451e6f83b786206436dbb79bf4255bb96591924730bb79190f26eed4601e94",
+    "js/plugins/EliteEnemy.js": "3a383fe8663d2ddb9a6d548eec6407c6123522e7c63ce36402059b3639d7b26a",
+    "js/plugins/EnemyNameColorByDifficulty.js": "6851a85f26b9bb5b84b9b1b74a9d27f863921b020c263ddfbc896a6031777945",
+    "js/plugins/Star_ActorAttributePlusPoints.js": "10fddd68b4c6f736836b8706b9ee4f24d49976052407a0a18eeba11f17a39ba6"
+  },
+  "nonAlienStatesCovered": [],
+  "note": "真实浏览器通过页面重放按钮执行本仓库取证入口；最终战斗图鉴实际截屏确认没有工坊 DOM 层。工坊 PNG 为画布底图，DOM 画面另经浏览器实际查看，不拿底图冒充工坊截图。"
+}

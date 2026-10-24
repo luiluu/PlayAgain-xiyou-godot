@@ -1,0 +1,455 @@
+{
+  "date": "2026-10-24",
+  "cleanupComplete": true,
+  "removed": [
+    {
+      "directory": "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024",
+      "files": 107,
+      "bytes": 37078489,
+      "tasks": [
+        {
+          "file": "专项.log.status.json",
+          "runId": "d6ebd78e6d3f4cbb91df30a462dad7a4",
+          "status": "done",
+          "exitCode": 0,
+          "pid": 8760,
+          "startedAt": "2026-10-23T22:34:26.042633+00:00",
+          "command": [
+            "env",
+            "CHECK_LOG_DIR=03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024/专项",
+            "python3",
+            "03_再刷重制_Godot/07_开发环境/并行测试.py",
+            "03_再刷重制_Godot/07_开发环境/godot",
+            "03_再刷重制_Godot/01_Godot工程",
+            "xiyou_crafting",
+            "xiyou_magic_level",
+            "xiyou_pets",
+            "xiyou_pet_synth",
+            "xiyou_race_menu",
+            "xiyou_alien_workshop",
+            "xiyou_alien_config",
+            "xiyou_cat",
+            "xiyou_enemy_book",
+            "xiyou_troop_events",
+            "xiyou_floor_unknown160",
+            "xiyou_floor_brave081",
+            "xiyou_floor_brave083",
+            "xiyou_floor_guild197",
+            "xiyou_panels",
+            "xiyou_notice_options",
+            "xiyou_item_use",
+            "xiyou_item_marks",
+            "xiyou_gear_ui",
+            "xiyou_save_page",
+            "xiyou_interp_review",
+            "xiyou_event_compare",
+            "xiyou_battle_ui",
+            "xiyou_review135",
+            "xiyou_popup_overlap"
+          ],
+          "childPGID": 8761,
+          "childIdentity": {
+            "pid": 8761,
+            "pgid": 8761,
+            "startedAt": "Sat Oct 24 00:34:26 2026    "
+          },
+          "finishedAt": "2026-10-23T22:38:56.555501+00:00"
+        },
+        {
+          "file": "修后专项.log.status.json",
+          "runId": "2c068ba2b5f14ed7a683f29ef9919031",
+          "status": "done",
+          "exitCode": 0,
+          "pid": 15559,
+          "startedAt": "2026-10-23T23:04:54.939402+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/07_开发环境/并行测试.py",
+            "--full",
+            "--jobs",
+            "2",
+            "--log-dir",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024/修后专项",
+            "03_再刷重制_Godot/07_开发环境/godot",
+            "03_再刷重制_Godot/01_Godot工程",
+            "xiyou_crafting.tscn",
+            "xiyou_floor_brave083.tscn"
+          ],
+          "childPGID": 15560,
+          "childIdentity": {
+            "pid": 15560,
+            "pgid": 15560,
+            "startedAt": "Sat Oct 24 01:04:54 2026    "
+          },
+          "finishedAt": "2026-10-23T23:06:01.756911+00:00"
+        }
+      ]
+    },
+    {
+      "directory": "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续",
+      "files": 307,
+      "bytes": 106773929,
+      "tasks": [
+        {
+          "file": "专项.log.status.json",
+          "runId": "4c7fcacc08684f59b354c0a86db45842",
+          "status": "failed",
+          "exitCode": 1,
+          "pid": 92095,
+          "startedAt": "2026-10-24T09:54:31.163279+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/07_开发环境/并行测试.py",
+            "--full",
+            "--jobs",
+            "2",
+            "--log-dir",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续/专项",
+            "03_再刷重制_Godot/07_开发环境/godot",
+            "03_再刷重制_Godot/01_Godot工程",
+            "xiyou_floor_guild198.tscn",
+            "xiyou_floor_goblin024.tscn",
+            "xiyou_floor_lab111.tscn",
+            "xiyou_floor_fortress029.tscn",
+            "xiyou_training.tscn",
+            "xiyou_gold_cap.tscn",
+            "xiyou_screen_fx.tscn",
+            "xiyou_script.tscn",
+            "xiyou_event_compare.tscn",
+            "xiyou_lobby_shops.tscn",
+            "xiyou_interp_review.tscn",
+            "xiyou_transfer.tscn",
+            "xiyou_battle_ui.tscn",
+            "xiyou_enemy_book.tscn",
+            "xiyou_popup_overlap.tscn",
+            "xiyou_actor_book_review.tscn",
+            "xiyou_crafting.tscn",
+            "xiyou_pets.tscn",
+            "xiyou_pet_synth.tscn",
+            "xiyou_system_evidence.tscn",
+            "xiyou_alien_workshop.tscn",
+            "xiyou_alien_config.tscn",
+            "xiyou_options_basic.tscn",
+            "xiyou_options_misc.tscn",
+            "xiyou_save_page.tscn",
+            "xiyou_floor_brave083.tscn",
+            "xiyou_magic_level.tscn",
+            "xiyou_race_menu.tscn"
+          ],
+          "childPGID": 92096,
+          "childIdentity": {
+            "pid": 92096,
+            "pgid": 92096,
+            "startedAt": "Sat Oct 24 11:54:31 2026    "
+          },
+          "finishedAt": "2026-10-24T10:34:56.792382+00:00"
+        },
+        {
+          "file": "事件参照校正.log.status.json",
+          "runId": "cb67087369b84f859633f6b09ffb5945",
+          "status": "failed",
+          "exitCode": 1,
+          "pid": 99071,
+          "startedAt": "2026-10-24T10:49:06.228424+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续/rebuild_events.py"
+          ],
+          "childPGID": 99072,
+          "childIdentity": {
+            "pid": 99072,
+            "pgid": 99072,
+            "startedAt": "Sat Oct 24 12:49:06 2026    "
+          },
+          "finishedAt": "2026-10-24T11:09:47.277934+00:00"
+        },
+        {
+          "file": "事件对照_校正后.log.status.json",
+          "runId": "d4cd0212175b4e13bd7077acb5a9cf65",
+          "status": "done",
+          "exitCode": 0,
+          "pid": 3141,
+          "startedAt": "2026-10-24T11:27:12.831681+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/07_开发环境/并行测试.py",
+            "--full",
+            "--jobs",
+            "1",
+            "--log-dir",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续/事件对照_校正后",
+            "03_再刷重制_Godot/07_开发环境/godot",
+            "03_再刷重制_Godot/01_Godot工程",
+            "xiyou_event_compare.tscn"
+          ],
+          "childPGID": 3142,
+          "childIdentity": {
+            "pid": 3142,
+            "pgid": 3142,
+            "startedAt": "Sat Oct 24 13:27:12 2026    "
+          },
+          "finishedAt": "2026-10-24T11:42:37.266101+00:00"
+        },
+        {
+          "file": "实验室_修后.log.status.json",
+          "runId": "ee25306fc3ae4f938f9ab1630f61f53d",
+          "status": "done",
+          "exitCode": 0,
+          "pid": 99126,
+          "startedAt": "2026-10-24T10:50:21.623487+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/07_开发环境/并行测试.py",
+            "--full",
+            "--jobs",
+            "1",
+            "--log-dir",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续/实验室_修后",
+            "03_再刷重制_Godot/07_开发环境/godot",
+            "03_再刷重制_Godot/01_Godot工程",
+            "xiyou_floor_lab111.tscn"
+          ],
+          "childPGID": 99127,
+          "childIdentity": {
+            "pid": 99127,
+            "pgid": 99127,
+            "startedAt": "Sat Oct 24 12:50:21 2026    "
+          },
+          "finishedAt": "2026-10-24T10:51:43.852908+00:00"
+        },
+        {
+          "file": "招募原版复放.log.status.json",
+          "runId": "e600aed628d54f9bb588770b9d6bab79",
+          "status": "failed",
+          "exitCode": 1,
+          "pid": 9246,
+          "startedAt": "2026-10-24T11:46:40.374012+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续/招募原版复放.py"
+          ],
+          "childPGID": 9247,
+          "childIdentity": {
+            "pid": 9247,
+            "pgid": 9247,
+            "startedAt": "Sat Oct 24 13:46:40 2026    "
+          },
+          "finishedAt": "2026-10-24T11:46:45.756204+00:00"
+        },
+        {
+          "file": "招募原版复放_修驱动.log.status.json",
+          "runId": "e89fe198c9b244abb72515241a66ef8b",
+          "status": "done",
+          "exitCode": 0,
+          "pid": 9464,
+          "startedAt": "2026-10-24T11:47:25.538269+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续/招募原版复放.py"
+          ],
+          "childPGID": 9465,
+          "childIdentity": {
+            "pid": 9465,
+            "pgid": 9465,
+            "startedAt": "Sat Oct 24 13:47:25 2026    "
+          },
+          "finishedAt": "2026-10-24T11:47:38.825228+00:00"
+        },
+        {
+          "file": "末批专项.log.status.json",
+          "runId": "cd2efeff7b724d76963f89f2bf4e5aed",
+          "status": "done",
+          "exitCode": 0,
+          "pid": 8792,
+          "startedAt": "2026-10-24T11:45:53.646290+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/07_开发环境/并行测试.py",
+            "--full",
+            "--jobs",
+            "2",
+            "--log-dir",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续/末批专项",
+            "03_再刷重制_Godot/07_开发环境/godot",
+            "03_再刷重制_Godot/01_Godot工程",
+            "xiyou_floor_reach139.tscn",
+            "xiyou_super_acquire.tscn",
+            "xiyou_item_marks.tscn",
+            "xiyou_item_use.tscn",
+            "xiyou_actor_p0.tscn",
+            "xiyou_battle_events.tscn",
+            "xiyou_shop_buy.tscn",
+            "xiyou_floor_lab111.tscn",
+            "xiyou_floor_fortress029.tscn"
+          ],
+          "childPGID": 8793,
+          "childIdentity": {
+            "pid": 8793,
+            "pgid": 8793,
+            "startedAt": "Sat Oct 24 13:45:53 2026    "
+          },
+          "finishedAt": "2026-10-24T11:47:33.210014+00:00"
+        },
+        {
+          "file": "末批事件对照.log.status.json",
+          "runId": "ae588947411e4026ba50cc2b4e9393c7",
+          "status": "done",
+          "exitCode": 0,
+          "pid": 9442,
+          "startedAt": "2026-10-24T11:47:15.857265+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/07_开发环境/并行测试.py",
+            "--full",
+            "--jobs",
+            "1",
+            "--log-dir",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续/末批事件对照",
+            "03_再刷重制_Godot/07_开发环境/godot",
+            "03_再刷重制_Godot/01_Godot工程",
+            "xiyou_event_compare.tscn"
+          ],
+          "childPGID": 9443,
+          "childIdentity": {
+            "pid": 9443,
+            "pgid": 9443,
+            "startedAt": "Sat Oct 24 13:47:15 2026    "
+          },
+          "finishedAt": "2026-10-24T11:48:34.012844+00:00"
+        },
+        {
+          "file": "末批原版复放.log.status.json",
+          "runId": "f8328b9871044bfe8be21f5ff6aeaafc",
+          "status": "done",
+          "exitCode": 0,
+          "pid": 8703,
+          "startedAt": "2026-10-24T11:45:43.959949+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续/末批原版复放.py"
+          ],
+          "childPGID": 8704,
+          "childIdentity": {
+            "pid": 8704,
+            "pgid": 8704,
+            "startedAt": "Sat Oct 24 13:45:43 2026    "
+          },
+          "finishedAt": "2026-10-24T11:46:45.404445+00:00"
+        },
+        {
+          "file": "末批补齐.log.status.json",
+          "runId": "dfc945370923447bb63e5bdeb892be8a",
+          "status": "done",
+          "exitCode": 0,
+          "pid": 8191,
+          "startedAt": "2026-10-24T11:44:36.697536+00:00",
+          "command": [
+            "03_再刷重制_Godot/07_开发环境/新建工作树.sh",
+            "--补齐",
+            "/Users/kyo/.codex/worktrees/review-pending-20261024/再刷项目资料库"
+          ],
+          "childPGID": 8192,
+          "childIdentity": {
+            "pid": 8192,
+            "pgid": 8192,
+            "startedAt": "Sat Oct 24 13:44:36 2026    "
+          },
+          "finishedAt": "2026-10-24T11:44:47.140786+00:00"
+        },
+        {
+          "file": "渲染.log.status.json",
+          "runId": "d9470519622d454cb0395aa142d21320",
+          "status": "stuck",
+          "exitCode": 124,
+          "pid": 94010,
+          "startedAt": "2026-10-24T10:21:44.162195+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续/render_review.py"
+          ],
+          "childPGID": 94011,
+          "childIdentity": {
+            "pid": 94011,
+            "pgid": 94011,
+            "startedAt": "Sat Oct 24 12:21:44 2026    "
+          },
+          "reason": "任务包装器失联；已确认旧任务进程组退出",
+          "finishedAt": "2026-10-24T10:44:29.184772+00:00"
+        },
+        {
+          "file": "渲染_修后.log.status.json",
+          "runId": "ad05d9fd68284dc698923a914c3289b5",
+          "status": "done",
+          "exitCode": 0,
+          "pid": 99085,
+          "startedAt": "2026-10-24T10:49:37.156898+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续/render_review.py"
+          ],
+          "childPGID": 99086,
+          "childIdentity": {
+            "pid": 99086,
+            "pgid": 99086,
+            "startedAt": "Sat Oct 24 12:49:37 2026    "
+          },
+          "finishedAt": "2026-10-24T10:50:33.303140+00:00"
+        },
+        {
+          "file": "补齐.log.status.json",
+          "runId": "c3cf0060cc834503b42e02ff6d1cd1c7",
+          "status": "done",
+          "exitCode": 0,
+          "pid": 91653,
+          "startedAt": "2026-10-24T09:49:58.079360+00:00",
+          "command": [
+            "03_再刷重制_Godot/07_开发环境/新建工作树.sh",
+            "--补齐",
+            "/Users/kyo/.codex/worktrees/review-pending-20261024/再刷项目资料库"
+          ],
+          "childPGID": 91654,
+          "childIdentity": {
+            "pid": 91654,
+            "pgid": 91654,
+            "startedAt": "Sat Oct 24 11:49:58 2026    "
+          },
+          "finishedAt": "2026-10-24T09:50:10.194162+00:00"
+        },
+        {
+          "file": "要塞_修后.log.status.json",
+          "runId": "2d1848d8dc0a40e9b0b91758ddde8cfc",
+          "status": "done",
+          "exitCode": 0,
+          "pid": 193,
+          "startedAt": "2026-10-24T11:02:32.208318+00:00",
+          "command": [
+            "python3",
+            "03_再刷重制_Godot/07_开发环境/并行测试.py",
+            "--full",
+            "--jobs",
+            "1",
+            "--log-dir",
+            "03_再刷重制_Godot/04_验证/本地结果/review-pending-20261024-续/要塞_修后",
+            "03_再刷重制_Godot/07_开发环境/godot",
+            "03_再刷重制_Godot/01_Godot工程",
+            "xiyou_floor_fortress029.tscn"
+          ],
+          "childPGID": 194,
+          "childIdentity": {
+            "pid": 194,
+            "pgid": 194,
+            "startedAt": "Sat Oct 24 13:02:32 2026    "
+          },
+          "finishedAt": "2026-10-24T11:03:31.685836+00:00"
+        }
+      ]
+    }
+  ],
+  "additionalOwnSandboxDirectories": [
+    "review_pending",
+    "manual"
+  ],
+  "retainedEvidence": "00_项目管理/核查范围/20261024_*.json；宠物正式回归fixture",
+  "protectedWorktreeUntouched": true,
+  "deliveryWorktreeRetainedForMerge": true
+}

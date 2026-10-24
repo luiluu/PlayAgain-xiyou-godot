@@ -42,6 +42,8 @@
         return out;
     }
     async function fresh() {
+        // 工坊是独立 DOM 层，SceneManager 换场景不会替它关闭。
+        if (window.CodexAlienation) CodexAlienation.closeWorkshop();
         Math.random = function () { return 0.5; };  // 同 mv_oracle 各探针：新局初始装备的随机浮动、宝珠孔数固定
         __ilr.newGame();
         if (window.CodexGuide) CodexGuide.MILESTONE_ENABLED = false;
@@ -64,7 +66,9 @@
     S.show = async function (name, shot) { await P[name].shots[shot](); await settle(); return true; };
     S.readout = function (name, shot) {
         var s = scene(), extra = P[name].extra ? P[name].extra(shot) : null;
-        return {fixture: '冻结v0.28；内存新局 1/8/9/10；地图 5；无存档', page: name, shot: shot, scene: s.constructor.name,
+        var alien = document.getElementById('alien-workshop');
+        var alienVisible = !!(alien && alien.getBoundingClientRect().width > 0 && alien.getBoundingClientRect().height > 0 && getComputedStyle(alien).display !== 'none');
+        return {fixture: '冻结v0.28；内存新局 1/8/9/10；地图 5；无存档', page: name, shot: shot, scene: s.constructor.name, alienOverlayVisible: alienVisible,
             windows: walk(s, []), extra: extra, errors: (window.__refErrors || []).slice()};
     };
 

@@ -121,7 +121,7 @@ static func pet_name(s: XState, pet: Dictionary) -> String:
 	var n := (XEnemy.elite_title() if bool(pet.get("elite", false)) else "") + str(XDB.rec("Enemies", int(pet.enemy)).get("name", "")) + str(pet.get("letter", ""))
 	for t in RARITY_TAGS:
 		n = n.replace(t, "")
-	if s != null and war_pet(s) == pet and not pet.is_empty():
+	if s != null and is_same(war_pet(s), pet) and not pet.is_empty():
 		n += "[出战]"
 	return n
 
