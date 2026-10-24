@@ -22,4 +22,4 @@
 - `tests/xiyou_stage50_review.gd/.tscn`已写但**未跑**，等两例原版成功后接generated/oracle再红灯复现；源码中from_dict缓存与apply来源两处仍未修。测试用真实1712／1779、154＋92附522、DOT与嵌套acting恢复。检查新测试编译、Godot自身fixture设定后才计结果。
 - **补证夹具再核一项**：native队伍addActor154受superStrong门槛，需成功后检查154确在battleMembers；当前retry未设2494，不能在运行中改。若不在队伍，任务结束后加`$gameSwitches.setValue(2494,true)`再加人、记录并断言成员包含154，最终增量同步重跑这一probe。Godot新测试已先设s.set_switch(2494,true)。不要用未在队伍的反击夹具冒称真实出战证据。
 - 最后get_usage_limits五小时79%，离95%还有空间，开工再查；本轮不因等待排槽开并发或绕守卫。下一会话先做原版两例→Godot红灯→两个最小修复→专项及增量同步→二期交付；补齐历史／内容／工具覆盖方法与边界后才写可合并，别只审三个候选。
-- 后续优先级主库已写「阶段审查→codex/check-tiers选测工具→2g」，检查工具任务的完整交代尚未转来时先只登记，不凭摘要造路线。2g原任务细节见二期现场之前的交代／其交付单；不改actor末尾XTraining挂点。主库共用文件仍未改。
+- 主库另写了codex/check-tiers选测工具待排；完整交代尚未转来，不凭板上摘要插入当前路线。本聊天明确交代仍为阶段审查交付后回2g，后续以用户完整交代为准。2g原任务细节见二期现场之前的交代／其交付单；不改actor末尾XTraining挂点。主库共用文件仍未改。
