@@ -263,5 +263,46 @@
  "cleanup": {
   "removed": "本车道stage-review-50-phase2临时日志／失败草稿输出目录；已保存精简结果",
   "preserved": "该树其他历史原版证据、mv_oracle/.sandbox与generated产物"
+ },
+ "pageEvidenceGuard": {
+  "before": {
+   "passed": 22,
+   "total": 25,
+   "exitCode": 1,
+   "failures": "浏览器异常／console.error／缺logs负控被错误接受"
+  },
+  "after": {
+   "passed": 25,
+   "total": 25,
+   "exitCode": 0
+  },
+  "savedWarehouse": {
+   "formal_no_engine_errors": true,
+   "formal_no_browser_errors": true
+  },
+  "commit": "8650bac4"
+ },
+ "finalDocs": {
+  "exitCode": 0,
+  "developmentVersion": "dev.165",
+  "scope": "仅检查.sh文档与登记段，JSON/链接/编号通过；非全量"
+ },
+ "finalSyncPending": {
+  "runId": "126c6d6c96a746c3ab4b2566a60369ca",
+  "pid": 9805,
+  "childPid": 9806,
+  "path": "03_再刷重制_Godot/04_验证/本地结果/stage-review-50-phase2-final/sync.log",
+  "plan": {
+   "executed": 18,
+   "reused": 36
+  },
+  "lastCompleted": 11,
+  "state": "running，不重启"
+ },
+ "initialDepsStopped": {
+  "pid": 9808,
+  "reason": "同步会更新参照，主动终止自己的deps进程组，等同步导入完成再运行",
+  "passed": false,
+  "flaky": false
  }
 }

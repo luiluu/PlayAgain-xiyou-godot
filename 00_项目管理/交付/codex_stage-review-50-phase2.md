@@ -58,3 +58,17 @@
 
 - 开工HEAD fe5229c9、工作区干净，额度13%。三位只读子代理按项目「长差异交给子代理读」补探针／页面取证／覆盖与测试差异；均只看固定截点，不改共用文件或主工作区。
 - 最后一次增量同步准备启动：日志stage-review-50-phase2-final/sync.log（长任务.py）；直接依赖专项另记deps，含规则难度1四段、保存页／战斗背景保存／能力查询缓存／战斗事件与仓库。没有全量。期间不修改probe或同步工具，不重复同步。
+
+### 沙僧55→56（用户2026-10-25授权开新会话省额度）
+
+- **最新顺序**：二期审查→四个零散项→2g→rng-compare-review→actor-bonus→passive-content→race-battle。用户已明确期三check-tiers跳过，哪吒做；不要再开codex/check-tiers。核查积压暂后、不停派。
+- HEAD从fe5229c9推进至674d5c0c，工作区干净。新检查点8650bac4系统截图比较器漏查CDP/console.error修复（共性工具旧22/25→新25/25），33dd82bc大厅商店finished/stateUnchanged消费检查，8273b80e覆盖矩阵，674d5c0c清理报告。所有新修复仍待Claude。
+- **覆盖收尾已完成，不再重做大范围审阅**：三位只读子代理全部结束，30探针、16页面取证净差异完整读；927 SHA和516路径集合逐项等Git；88变更测试脚本豁免标记扫描，重点12份测试补审。完整方法／限制在核查范围/阶段审查50_二期覆盖方法.json。报告已重写为最终发现／边界，剩验证状态待更新，不能又因为“不是逐行全审”反复拖住交付。结论应为固定范围对账和声明范围内风险审查，不冒称927逐次验收或516逐行全审。
+- **唯一活跃任务**：最后一次增量同步，runId126c6d6c96a746c3ab4b2566a60369ca，PID9805/9806，stage-review-50-phase2-final/sync.log；计划18执行＋36复用，最后已11个PROBE_DONE均exit0（六难度slice已全完，含slice3排槽1087秒；smart_ai仍较重）。**不重启、不加并发，不改正在跑的probe／同步器**。用等待任务.sh --timeout 540前台续等，或短等待保持沟通。主库新定同一时间只启一份同步；本任务启动早于此规则更新，已运行的继续等完，不再另起。
+- 原deps曾与同步同时启动，已主动SIGTERM本车道PID9808进程组，避免参照变化期间验收；不算通过／偶发。下一步等同步和import完成再跑最终deps。没有别的在途本轮测试。
+- **事件空过滤P3尚未改，下一小步明确**：tests/xiyou_event_compare.gd的cases_ran仍report.size()>0 or not only.is_empty()。final目录有run_event_filter.py，包共享global_slot＋独立临时HOME；先python3该脚本 filter-red，应捕获旧0例5/5的假绿（脚本自身expected成功退出0）。然后cases_ran只要求report.size()>0，提交；再跑filter-green，预期Godot rc1、FAIL cases_ran、4/5，脚本自身确认后exit0。这是真实负控，不算常规测试全过。helper及旧输出都在忽略目录；最终摘要入Git后只清本车道final目录。
+- **最终deps（精确场景名，别用不存在前缀）**：xiyou_rules.tscn、xiyou_rules_d1b.tscn、xiyou_rules_d1c.tscn、xiyou_rules_d1d.tscn、xiyou_save_page.tscn、xiyou_battleback_save.tscn、xiyou_gear_query_cache.tscn、xiyou_battle_events.tscn、xiyou_warehouse.tscn、xiyou_event_compare.tscn、xiyou_lobby_shops.tscn、xiyou_stage50_review.tscn。相关选测，不跑全量。上轮20237项／仓库32／镶嵌19结果已保存在机器摘要，不重复跑无新影响的状态效果19949等。
+- 文档登记段已实跑exit0，JSON／链接／dev.165一致，raw docs.json/log在final目录。旧工具260项＋本轮共性25项已经过，不再反复重跑。阶段审查不销交叉核查，输出的本树积压提示不改变用户新顺序。
+- 验证都过后：机器摘要保存sync状态／测量结果／指纹和deps＋两个负控；更新报告待终验句；重写交付单含【Codex·沙僧】变更记录草稿／遗留／验证／进度／可合并。期一49.8及界面68→72增量不变，只给后来main应用增量，不覆盖后来初值。由唐僧合并。本分支不合后来main，别扩出截点。清本车道final临时输出，保留整树和其他旧原版证据。
+- 本轮新增07_开发环境/测试共性验收.py的PageEvidenceErrorTests，是截图取证拒收门回归；哪吒后来接工具车道，合并时保留此类即可。不要再改并行测试指纹，或碰其新增检查／合并工具与rules过滤，需先提案。
+- 最新额度五小时64%、周71%，95%收尾。按用户授权开重制_沙僧_56同工作区接手，55停止采样，所有Git改动已提交。
