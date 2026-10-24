@@ -296,8 +296,12 @@
    "executed": 18,
    "reused": 36
   },
-  "lastCompleted": 11,
-  "state": "running，不重启"
+  "lastCompleted": 23,
+  "state": "running",
+  "completedProbeGroups": 18,
+  "plannedProbeGroups": 18,
+  "remainingProbes": [],
+  "counting": "计划按探针组计，slice分六难度命令；PROBE_DONE按命令计，最终以整轮退出和导入为准"
  },
  "initialDepsStopped": {
   "pid": 9808,
