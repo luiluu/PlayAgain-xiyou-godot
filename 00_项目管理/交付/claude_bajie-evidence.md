@@ -12,6 +12,7 @@
 - **宠物**：①进查看技能／喂养／合成／共享角色时，底部指令保留非活动光标（原版只 deactivate）；②状态窗被技能列表、口粮列表、共享角色窗、合成窗盖住的部分按像素挖掉（随开合从中线展开），原来只按整行过滤且漏了合成窗与共享角色窗，合成窗 y584 处技能行现在和原版一样只剩上半截。
 - **异化工坊**：原版工坊自带 CSS 被 `installGamePanelTheme` 盖过，实际画面是游戏窗口主题，Godot 原来只照了自带 CSS。改用 XWebPanel 的部件重画：暗底黑 0.5，面板皮肤边框 12、内边距 16/20，正文 18 号描边白字、行高 1.6，标题粗体、h3 系统色，资源条金框，收益绿／代价红，主按钮青边，分解键红字红边，不可点整体 0.4，确认框暗红，配置框黑底细边；版面对上原版读数（面板 x100 宽 1080、列表 x132 宽 320、详情 x487）。确认框里相邻按钮排成一行；重画后停在顶部（原来展开配置会自动滚到配置区）。
 - **优化 O-087**：原版 `button+button{margin-left:7px}` 也作用在列表上，第 2 个起的装备按钮右推 7px，宽度仍是 100%，撑出一条横向滚动条。重制让列表按钮左对齐、不出滚动条；`XAlienWorkshop.list_indent_quirk = true` 可回到原版画法，有专项核对。
+- **偶发修复 `xiyou_alien_config`**（总装全量里第二次偶发，2026-10-23 19:09、2026-10-24 06:20，失败与通过耗时都约 3 秒，是断言失败不是启动失败）：8 份并行×4 轮复现 3/32，失败项是 `pages_possession`／`configs_possession`（装备名多出随机前后缀「天外天·超赛·红」）和 `sellable_skips_alien`（异化件与普通件品质随机不同，可卖列表为空）。原因：`XGear.roll` 走新局自己的装备随机流，种子每局不同，测试只固定了 `XAlienation.force_roll`，没固定装备随机；与并行无关，只是低概率。修法：`_state()` 里照参照探针（Math.random 固定 0.5）加 `XGear.force_roll = 0.5`，`_finish()` 复原。修后同样 8 并行×6 轮 48/48。`xiyou_alien_workshop` 按参照覆盖了装备名与属性，不受影响，没改。
 - 不是差异的：说明卡位置、字号、出售价分别是已登记的 O-008、O-007、O-049；装备页角色战力原版 590 是地图 5 的区域加成计入了，关掉后是 646，与 Godot 相同；背景粒子是动态的。
 - 提交：见「本分支提交」。
 
@@ -34,6 +35,7 @@
 ## 验证
 
 - 合 main（`15bc6b30`，`优化登记.md` 冲突已解：保留 main 的 O-085，再接 O-087）前后两轮 headless 专项均单次通过：alien_config 95、alien_workshop 42、crafting 49、gold_cap 30、pet_synth 23、pets 27、system_evidence 15、magic_level 7、race_menu 66、panels 35；合并前另跑 gear_search 58、power 137。没跑全量 `检查.sh`；没改 mv_oracle 探针，不需要同步。
+- 偶发修复：`xiyou_alien_config` 修前 8 并行×4 轮 29/32（日志留在草稿区），修后 8 并行×6 轮 48/48、单跑 95/95。
 - 成对核对：`python3 -I 03_转换工具/ui_reference/review_system_pages_compare.py …` 67/67。异化工坊版面与 O-087 回退有专项断言（`layout_game_panel_theme`、`o087_original_indent`），制作按钮矩形对 fixture `buttons`，宠物挖掉起点有 `pet_feed_status_clip`／`pet_synth_status_clip`。
 - **证据目录保留到合并后由总装处理**（不入 Git）：工作树 `03_再刷重制_Godot/04_验证/本地结果/bajie-evidence/`（`formal/` 原版 20 张 PNG＋JSON＋来源身份、`godot/` 同名截图、`compare.json`、`logs/` 两轮专项日志）。临时文件只在草稿区，参照服务已停。
 - `交付/` 里另有 main 带来的 `claude_wukong-evfix.md`（悟空的，未动）。
@@ -45,4 +47,4 @@
 - 4e8dba7a 宠物页：状态窗按 MV 窗口层像素挖掉被技能／喂养／共享角色／合成窗盖住的部分；底部指令进子窗后保留非活动光标
 - d570fbc1 异化工坊按原版游戏窗口主题（installGamePanelTheme）重画；列表右推 7 的副作用登记 O-087
 - 19180e1f 制作确认窗与宠物状态窗的窗口层挖掉改在 draw 信号里套裁剪（Control 重画会重设）；成对截图读数核对脚本
-- （补证汇总 WIP 与合并 main、本交付单各一条，见 git log）
+- （补证汇总 WIP、合并 main、交付单、alien_config 偶发修复各一条，见 git log）
