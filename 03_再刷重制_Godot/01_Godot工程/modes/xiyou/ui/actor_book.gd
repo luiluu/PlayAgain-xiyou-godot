@@ -15,7 +15,7 @@ extends Control
 ##   所以不插「伤害属性」行（XHelpCard.skill_copy）。描述字号沿用说明卡的最小字号优化（O-007）。取消回目录。
 ## - 技能来源（CodexActorBookSkills）：角色与职业特性 43、职业学习表；排除 stypeId 3、系统技能（5968～5973、5980、6216、6235、
 ##   公共事件 1442 里 learnSkill 的）、<CodexRetired> 与难度／轮回类名字；详情页另补特殊角色 167～174 的专属技能段。
-## 与原版不同：原版进过技能详情再返回，说明卡的品质边框（4 层 Window_ItemHelp）留在状态页上；这里返回时整张卡隐藏（原版缺陷，不照搬）。
+## 与原版不同（O-084）：原版进过技能详情再返回，说明卡的品质边框（4 层 Window_ItemHelp）留在状态页上；这里返回时整张卡隐藏。
 ## 切片外 17 个角色（108、143～145、157、160、167～177）没导出 SV 图，状态页不画立绘（补图要扩切片）。
 
 signal closed
@@ -46,6 +46,8 @@ const PREVIEW_ACTORS := [167, 168, 169, 170, 172, 173, 174]
 ## installNativeRavenRuntime 的 [等级, 进阶] 解锁表里要进阶的技能：新建的渡鸦（进阶 0）没有学会
 const RAVEN_ADVANCE_GATED := [10123, 10124, 10125, 10126, 10127, 10133, 10136, 10139, 10170]
 const ATTR_INK := Color("c1c9d5")
+## 优化 O-084：返回目录时整张说明卡隐藏；false 照原版只藏卡本体、把 4 层品质边框留在状态页上（矩形 [535,-2,747,卡高+20]）
+static var HIDE_HELP_ON_RETURN := true
 
 var index := 0
 var top := 0
@@ -479,7 +481,10 @@ func _show_skills(on: bool) -> void:
 	header_win.visible = on
 	list_win.visible = on
 	if not on:
-		help_card.show_for({})
+		if HIDE_HELP_ON_RETURN or not help_card.visible:
+			help_card.show_for({})
+		else:
+			help_card.canvas.visible = false
 
 
 func select(i: int) -> void:

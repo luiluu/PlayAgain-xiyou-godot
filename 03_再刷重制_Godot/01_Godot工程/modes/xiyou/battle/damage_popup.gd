@@ -1,7 +1,7 @@
 class_name XDamagePopup
 extends Node2D
 ## 伤害数字，照正式版 LGP_BetterDamagePopup（＋MOG_DmgPopupEffects 位置）运行时逐帧读数：
-## - 文字弹出：字号 38、正式版字体；位图宽 = 字宽 + 10、高 38，文字靠左，精灵锚点 (0.5, 1)。
+## - 文字弹出：字号 38、正式版字体；位图宽 = 字宽 + 10、高 38，文字靠左。
 ## - 颜色（文字/描边）：HP 伤害 rgb(255,50,50)/(100,0,0)、暴击 (255,128,0)/(100,25,0)、HP 回复 (50,255,50)/(0,100,0)、
 ##   MP 伤害 (100,150,150)/(0,50,50)、MP 回复 (150,255,255)/(50,100,100)、Miss (168,145,200)/(100,100,100)。
 ## - 格式：伤害「数字」，回复「治疗  数字」（数字带负号，照原样），暴击「暴击  数字  ！」；
@@ -10,7 +10,9 @@ extends Node2D
 ##   敌人 x −0.3、y = 0.2/x² + 5x（向左上），角色 x +0.3、y = −(−0.2/x² + 5x)（向右上）；
 ##   暴击放大 = clamp(0.2×暴击剩余, 1, 2)（暴击剩余 20 次）；回复在暴击计时走完后才出现，每次上移 0.4；
 ##   Miss 每次 x −0.5（角色 +0.5）、y = 0.1/x² + 5x。
-## - 同一目标已有 n 个弹出时，新的锚点 y 再加 0.9×n（YEP Popup Overlap Rate）。
+## - 锚点 (0.5, y)：drawDefaultNumber 先设 y = 1，再加「该目标此刻存活的回复弹数（含自己）− 1」，所以普通伤害无回复时 y = 0
+##   （数字顶在根点）、回复 y = 1；YEP Popup Overlap Rate 0.9 加在 setup 时还没有子精灵的新弹数上，实际不起作用
+##   （原版读数 tests/fixtures/popup_anchor_oracle.json，七种普通伤害／回复叠加 × 敌人／角色）。Miss 为 (0.5, 0.5)。
 
 const FONT_SIZE := 38
 const BUFFER := 10.0
@@ -30,7 +32,7 @@ const COLORS := {
 var text := ""
 var kind := "hp"            # hp / crit / hp_heal / mp / mp_heal / miss
 var on_actor := false
-var stack := 0
+var stack := 0             # 同一目标此前仍存活的回复弹数
 var _duration := UPDATES
 var _crit := CRIT_UPDATES
 var _x := 0.0
@@ -119,13 +121,21 @@ func _update() -> void:
 		_alpha = _duration / 10.0
 
 
+func is_heal() -> bool:
+	return kind.ends_with("_heal")
+
+
+## 文字精灵的纵向锚点（见文件头）
+func anchor_y() -> float:
+	return 0.5 if kind == "miss" else float(stack + (1 if is_heal() else 0))
+
+
 func _draw() -> void:
 	if _scale <= 0.0 or text == "":
 		return
 	var w := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x + BUFFER
 	var h := float(FONT_SIZE)
-	# 锚点：数字/回复 (0.5, 1 + 0.9×叠加)，Miss (0.5, 0.5)
-	var ay := 0.5 if kind == "miss" else 1.0 + 0.9 * stack
+	var ay := anchor_y()
 	var top_left := Vector2(-w * 0.5, -h * ay)
 	var base := FONT_SIZE - (FONT_SIZE - FONT_SIZE * 0.7) / 2.0
 	var c: Array = COLORS[kind]
