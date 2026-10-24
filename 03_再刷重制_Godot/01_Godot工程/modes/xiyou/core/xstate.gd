@@ -37,6 +37,9 @@ var orb_state := {"n": {}, "returns": {}, "inbox": {}, "recent": []}
 var gear: Array = []                # 背包里的装备实例
 var warehouses := {}                # PH_Warehouse 仓库（存档 phwarehouse，见 XWarehouse；旧档没有为空）
 var saved_actors: Array[int] = []   # 角色仓库（Star_ActorWarehouse 的 $gameParty._saveactors，存档 saveactors，见 XActorWarehouse；旧档没有为空）
+## 更衣的替换形象（Star_ChangeClothes 的 $gamePlayer.Set_OcharacterName／Set_OcharacterIndex，存档 playerCostume，见 XChangeClothes；
+## {"characterName", "characterIndex"}，空＝不替换；旧档没有为空）
+var player_costume := {}
 var switches := {}                  # id -> bool
 var variables := {}                 # id -> 数值
 var self_switches := {}             # "map,event,A" -> bool
@@ -499,7 +502,7 @@ func to_dict() -> Dictionary:
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "ecoFrac": eco_frac,
-		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "phwarehouse": warehouses, "saveactors": saved_actors}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume}
 
 static func from_dict(d: Dictionary) -> XState:
 	# dev.099 once persisted strict engine-specific RNG state. Ignore that obsolete
@@ -553,6 +556,7 @@ static func from_dict(d: Dictionary) -> XState:
 	for e in s.gear:s.register_gear(e)
 	s.warehouses = XWarehouse.from_save(s, d.get("phwarehouse", {}))
 	s.saved_actors = XActorWarehouse.from_save(d.get("saveactors", []))
+	s.player_costume = XChangeClothes.from_save(d.get("playerCostume"))
 	for a in s.actors.values():a.refresh_passive()
 	for k in d.switches:
 		s.switches[int(k)] = bool(d.switches[k])
