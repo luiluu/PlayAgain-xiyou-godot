@@ -80,6 +80,9 @@ class EventHost:
 	func open_change_clothes() -> void:
 		trace.append({"t": "scene", "name": "Scene_ChangeClothes"})
 
+	func open_actor_advanced() -> void:
+		trace.append({"t": "scene", "name": "Scene_ActorAdvanced"})
+
 	func open_inlay_book() -> void:
 		trace.append({"t": "scene", "name": "Scene_EquipInlayBook"})
 
@@ -226,7 +229,7 @@ func _run() -> void:
 		print("REGRESSION ", id, " ", report.filter(func(r): return r.id == id)[0].diffs.slice(0, 3))
 	if update_baseline and only.is_empty():
 		var f := FileAccess.open(ProjectSettings.globalize_path(BASELINE), FileAccess.WRITE)
-		f.store_string(JSON.stringify({"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 2 例：m132e6p0 奉神老妪「进阶」（Scene_ActorAdvanced）界面未接；m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。",
+		f.store_string(JSON.stringify({"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 1 例：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。",
 			"source": str(oracle.get("sourceIdentity", {}).get("releaseVersion", "")), "match": ok_count, "cases": report.size(), "mismatch": mismatched}, "\t", true))
 		f.close()
 	if out_dir != "":

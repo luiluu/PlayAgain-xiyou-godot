@@ -20,6 +20,7 @@ extends RefCounted
 ## - 角色仓库：SceneManager.push(Star_Scene_ActorWarehouse) → host.open_actor_warehouse（XActorWarehouse）。
 ## - 更衣：if(ConfigManager.ChangeClothesLite.indexOf(N) == -1){ ConfigManager.ChangeClothesLite.push(N); } → XChangeClothes.unlock；
 ##   SceneManager.push(Scene_ChangeClothes) → host.open_change_clothes（XChangeClothes）。
+## - 角色进阶：SceneManager.push(Scene_ActorAdvanced) → host.open_actor_advanced（XAdvance）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## CodexReincarnationRandom.entry：open 之后的选择结果 {accepted, hard}
@@ -207,6 +208,10 @@ static func _statements(js: String, interp) -> Array:
 		# 更衣（Star_ChangeClothes，见 XChangeClothes）：方桌大厅衣橱管理员 Map4 EV17「查看衣橱」
 		if st == "SceneManager.push(Scene_ChangeClothes)" and interp.host.has_method("open_change_clothes"):
 			await interp.host.open_change_clothes()
+			continue
+		# 角色进阶（Star_ActorAdvanced，见 XAdvance）：兑换大厅奉神老妪 Map132 EV6「进阶」
+		if st == "SceneManager.push(Scene_ActorAdvanced)" and interp.host.has_method("open_actor_advanced"):
+			await interp.host.open_actor_advanced()
 			continue
 		# 宠物（Star_PetSystem）：公共事件 169
 		if st == "SceneManager.push(Scene_PetSystem)" and interp.host.has_method("open_pets"):

@@ -949,6 +949,16 @@ func open_change_clothes() -> void:
 	refresh_party_sprites()
 
 
+## 角色进阶（SceneManager.push(Scene_ActorAdvanced)）：奉神老妪「进阶」，关闭后回到地图
+func open_actor_advanced() -> void:
+	hud.visible = false
+	var page := XActorAdvancedScene.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 ## 装备镶嵌图鉴（SceneManager.push(Scene_EquipInlayBook)）：魂灯商人「查看图鉴」，关闭后回到地图
 func open_inlay_book() -> void:
 	hud.visible = false
