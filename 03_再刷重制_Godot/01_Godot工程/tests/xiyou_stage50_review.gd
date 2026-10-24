@@ -24,10 +24,11 @@ class NestedLogic extends ProbeLogic:
 			sources.append(XImportedBalance.acting_battler() == u)
 		return super(u, skill, t)
 
-func check(name: String, ok: bool, detail = null) -> void:
+func check(name: String, ok: bool, detail = null) -> bool:
 	results.append({"name": name, "passed": ok})
 	if not ok:
 		print("FAIL ", name, " ", JSON.stringify(detail))
+	return ok
 
 func _ready() -> void:
 	_run.call_deferred()
@@ -64,6 +65,7 @@ func _save(ref: Dictionary) -> void:
 func _counter(ref: Dictionary) -> void:
 	var s := _state()
 	var a: XActor = s.actors[int(ref.actor)]
+	check("counter.party_member", s.members().has(a))
 	var e := BigEnemy.new()
 	e.max_hp = float(ref.maxHp)
 	e.setup(int(XDB.rec("Troops", 2).members[0].enemyId), 3, 100.0)
