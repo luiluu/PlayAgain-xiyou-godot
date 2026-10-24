@@ -21,9 +21,9 @@ class RecCanvas extends XMVCanvas:
 	func text(s: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, _lh := XUI.LINE_HEIGHT, alpha := 1.0, _zoom := 1.0, _pivot := Vector2.ZERO, _outline := OUTLINE) -> void:
 		if s != "":
 			texts.append([s, x, y, max_w, align, float(size), color.to_html(false), alpha])
-	func character(_n: String, _i: int, _x: float, _y: float, _h := 0.0) -> void:
+	func character(_n: String, _i: int, _x: float, _y: float, _h := 0.0, _alpha := 1.0) -> void:
 		pass
-	func gauge(_x: float, _y: float, _w: float, _r: float, _c1: Color, _c2: Color) -> void:
+	func gauge(_x: float, _y: float, _w: float, _r: float, _c1: Color, _c2: Color, _lh := XUI.LINE_HEIGHT) -> void:
 		pass
 	func cursor(_r: Rect2, _active := true) -> void:
 		pass
