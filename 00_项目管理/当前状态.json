@@ -43,7 +43,7 @@
     "editorStartupVerified": true,
     "visibleProjectManagerVerified": true,
     "runnableBuildKind": "playable_slice",
-    "developmentVersion": "dev.161",
+    "developmentVersion": "dev.162",
     "developmentRegistry": "03_再刷重制_Godot/开发编号.json",
     "deferredPlatforms": [
       "Windows",
@@ -68,8 +68,8 @@
     "sourceId": "legacy_xiyou_mod_kyo",
     "releaseVersion": "v0.28",
     "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
-    "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261024_042944_352182_v0.28-v0.28/当前西游来源清单.json",
-    "fingerprintedFiles": 1772,
+    "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261024_130159_828129_v0.28-v0.28/当前西游来源清单.json",
+    "fingerprintedFiles": 1785,
     "convertedContentReleaseVersion": "v0.28",
     "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.15(help_cards,difficulty_notice),v0.16(options,hangup_options),v0.17(hangup_subpages),v0.27(shop_buy),v0.28(gear_search,status_power,equip_compare)",
     "contentRefreshPending": false,
@@ -92,7 +92,7 @@
     "devVersionTool": "03_再刷重制_Godot/07_开发环境/开发编号.py"
   },
   "progress": {
-    "percent": 48.9,
+    "percent": 49.6,
     "ledger": "00_项目管理/重制步骤清单.md（进度账）",
     "lastReviewAtPercent": 35,
     "nextReviewAtPercent": 50,
