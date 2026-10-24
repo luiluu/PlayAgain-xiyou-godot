@@ -34,3 +34,7 @@
 ## 本分支提交
 
 - 见 `git log main..claude/wukong-fortress`
+
+## 偶发修复（唐僧_17 转来）
+
+- `xiyou_floor_lab111` 总装并行时失败一次（159 秒，单跑 68 秒通过）：该测试每个事件／等地图的等待都用 90 秒墙钟 `TIMEOUT_MS`，并行负载下单个战斗事件慢一倍就会超时；随机已固定（`seed`、`force_roll`），所以判为负载超时。把 `xiyou_floor_lab111`、同写法的 `xiyou_floor_goblin024` 的 `TIMEOUT_MS` 改为 240 秒（总上限 600 秒不变）。未能复现，只改了等待上限；若再偶发，需要抓失败时的 FAIL 行。
