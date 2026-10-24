@@ -1021,6 +1021,46 @@ for name in filter(None, files):
         self.assertFalse((self.root / '.git/lane-merge/state.json').exists())
         self.assertIn('合并 claude/task（dev.002）收尾', self.g('log', '--format=%s', '-1'))
 
+    def test_lane_switched_before_prepare_merges_branch_ref(self):
+        # 交付后、总装准备前车道就换了新分支：按交付分支引用合并，不带进新分支的提交
+        delivered = self.g('rev-parse', 'HEAD', cwd=self.wt)
+        self.g('switch', '-c', 'claude/task-2', cwd=self.wt)
+        (self.wt / 'next.md').write_text('phase 2\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'phase 2', cwd=self.wt)
+        (self.wt / 'wip.md').write_text('uncommitted\n')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertIn('按分支引用', self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD^2'), delivered)
+        self.assertFalse((self.root / 'next.md').exists())
+        self.assertIn('fixture change', (self.root / merge.LOG).read_text())
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertTrue((self.wt / 'wip.md').exists())
+        self.assertEqual(self.branches(), ['claude/task-2', 'main'])
+
+    def test_branch_ref_lane_with_synced_slice_runs_full_sync(self):
+        # 没有工作树可取同步产物指纹：直接跑完整同步，不传 --from-worktree
+        slice_ = self.wt / merge.TOOLS / 'xiyou_slice.json'
+        slice_.parent.mkdir(parents=True, exist_ok=True); slice_.write_text('{}\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'slice', cwd=self.wt)
+        self.g('switch', '-c', 'claude/task-2', cwd=self.wt)
+        calls = []
+        orig = merge.run
+        merge.run = lambda root, args: calls.append(list(map(str, args)))
+        try:
+            state = merge.plan(self.root, 'task')
+            self.assertEqual(state['worktree'], '')
+            self.assertTrue(state['refresh'])
+            state_file = Path(self.tmp.name) / 'state.json'
+            state['phase'] = 'merged'
+            merge.prepare(self.root, dict(state, phase='merged', head=self.g('rev-parse', 'HEAD')), state_file, 'Claude')
+        except RuntimeError:
+            pass
+        finally:
+            merge.run = orig
+        self.assertTrue(calls and calls[0][-1] == '--accept-additions', calls)
+        self.assertFalse(any('--from-worktree' in c for c in calls))
+
     def test_lane_new_commit_or_dirty_on_same_branch_keeps_both(self):
         for case in ['commit', 'dirty']:
             with self.subTest(case=case):
