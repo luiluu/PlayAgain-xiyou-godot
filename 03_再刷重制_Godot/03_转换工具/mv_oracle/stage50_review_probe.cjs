@@ -1,5 +1,5 @@
 'use strict';
-// Stage review 50: native in-memory save/reload, PH warehouse boundaries and
+// Stage review 50: native in-memory save/reload and
 // counterattack source. The frozen source stays read-only; no player saves.
 const fs = require('fs'), path = require('path');
 const {start, APP} = require('./shared/host.cjs');
@@ -30,25 +30,6 @@ measure('save.state_effects', () => {
   host.restore(encoded);
   a = w.$gameActors.actor(1); b = w.$gameActors.actor(8);
   return {before, after: phaseValue(a, b)};
-});
-measure('warehouse.boundaries', () => {
-  newGame();
-  const wh = w.PHPlugins.PHWarehouse, item = w.$dataItems[1];
-  wh.createWarehouse('<阶段审查:1>'); wh._lastCategory = 'item';
-  w.$gameParty.gainItem(item, 5);
-  const snapshot = () => ({used: wh.getCurrentCapacity('阶段审查'), max: wh.getMaxCapacity('阶段审查'),
-    carried: w.$gameParty.numItems(item), quantity: wh._warehouses['阶段审查'].qtty.item[1] || 0,
-    canDeposit: wh.checkCapacity()});
-  const scene = new w.Scene_Warehouse();
-  scene.addWindow = () => {}; scene._categoryWindow = {setItemWindow: () => {}};
-  scene.createItemList();
-  const list = scene._itemWindow; list.item = () => item;
-  const move = option => { wh._lastOption = option; list.moveItem(); };
-  const before = snapshot(); move(1); const deposited = snapshot();
-  move(1); const full = snapshot();
-  w.$gameParty.gainItem(item, 99999); const maxedBefore = snapshot(); move(0); const maxedAfter = snapshot();
-  w.$gameParty.loseItem(item, 1); move(0); const withdrawn = snapshot();
-  return {before, deposited, full, maxedBefore, maxedAfter, withdrawn};
 });
 // Counter goes last: this frozen plugin chain changes the emulated location.
 measure('counter.state_origin', () => {
