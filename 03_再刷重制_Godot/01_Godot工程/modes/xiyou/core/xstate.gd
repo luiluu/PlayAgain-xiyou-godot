@@ -158,6 +158,7 @@ var guide_seen := {}
 ## $gameParty.SAchievementS：本局得过的成就（ID 字符串→true）；全局记录在 XConfig（见 XAchievement）
 var achievements := {}
 ## 怪物图鉴（AB_EnemyBook）：flags 登记、defeat 击败数、maps 出没地图（$gameSystem._enemyBookFlags／_defeatNumbers／_recordEnemyMap），见 XEnemyBook
+var mv_param_plus := {}   # 事件指令 317（更改能力值）的永久加成 {"角色ID": [8 项]}（Game_Actor._paramPlus），见 XParamPlus；旧档没有为空
 var enemy_book := {"flags": {}, "defeat": {}, "maps": {}}
 ## 制作（hc.js）：known 已知配方、level／exp 四类别等级与经验（$gameParty._recipesKnown／_craftingLevel／_craftingExp），见 XCrafting
 var crafting := {"known": {}, "level": [1, 1, 1, 1], "exp": [0, 0, 0, 0]}
@@ -504,7 +505,7 @@ func to_dict() -> Dictionary:
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "ecoFrac": eco_frac,
-		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "actorAdvance": XAdvance.to_save(actor_advance)}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "actorAdvance": XAdvance.to_save(actor_advance)}
 
 static func from_dict(d: Dictionary) -> XState:
 	# dev.099 once persisted strict engine-specific RNG state. Ignore that obsolete
@@ -602,6 +603,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.crafting = cr.duplicate(true) if cr is Dictionary else {}
 	var pt = d.get("pets", {})
 	s.pets = pt.duplicate(true) if pt is Dictionary else {}
+	var pp = d.get("mvParamPlus", {})
+	s.mv_param_plus = pp.duplicate(true) if pp is Dictionary else {}
 	var tr = d.get("training", {})
 	s.training = tr.duplicate(true) if tr is Dictionary else {}
 	s.shop_stock = XShopStock.from_save(d.get("shopStock", {}))

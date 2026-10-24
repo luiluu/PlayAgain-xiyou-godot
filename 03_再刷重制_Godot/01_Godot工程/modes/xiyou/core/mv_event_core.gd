@@ -332,6 +332,15 @@ func _execute(c: Dictionary):
 				var learned: Array = a.change_level_mv(a.level + value)
 				if bool(p[5]) and a.level > before:
 					_display_level_up(a, learned)
+		317:
+			# 更改能力值 [指定方式, 角色/变量, 能力编号, 0 增 1 减, 操作数类型, 操作数]；Game_Actor.addParam 后 refresh 把 HP／MP 截到上限
+			var amount := _operand(int(p[4]), int(p[5]))
+			if int(p[3]) == 1:
+				amount = -amount
+			for a in _actors_ex(int(p[0]), int(p[1])):
+				XParamPlus.add(state(), a.actor_id, int(p[2]), amount)
+				a.hp = minf(a.hp, a.mhp)
+				a.mp = minf(a.mp, a.mmp)
 		318:
 			# 增减技能 [指定方式, 角色/变量, 0 学会 1 遗忘, 技能]；角色 0 为全队
 			var aid := int(p[1]) if int(p[0]) == 0 else int(state().variable(int(p[1])))
