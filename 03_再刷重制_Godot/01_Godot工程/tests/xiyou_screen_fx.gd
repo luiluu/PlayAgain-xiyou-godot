@@ -102,7 +102,7 @@ func _run() -> void:
 	get_tree().change_scene_to_file(MAP_SCENE)
 	var map := await _wait_map(4)
 	if not _check("map_loaded", map != null):
-		_finish()
+		await _finish()
 		return
 	var view: XScreenFxView = map.screen_fx
 	_check("idle_hidden", not view._tone_rect.visible and not view._weather.visible)
@@ -136,10 +136,14 @@ func _run() -> void:
 	await _frames(3)
 	_check("cleared", XState.current.screen.weather_type == "none" and not XState.current.screen.has_tone())
 	_check("view_cleared", not map.screen_fx._tone_rect.visible and not map.screen_fx._weather.visible, map.screen_fx._weather._sprites.size())
-	_finish()
+	await _finish()
 
 
 func _finish() -> void:
+	for player in get_tree().root.find_children("*", "AudioStreamPlayer", true, false):
+		player.stop()
+		player.stream = null
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	for i in range(1, XSave.SLOTS + 1):
 		if XSave.exists(i):
 			DirAccess.remove_absolute(XSave.path(i))

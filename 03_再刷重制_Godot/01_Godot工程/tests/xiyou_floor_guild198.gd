@@ -147,7 +147,7 @@ func _run() -> void:
 	await _bosses()
 	await _chairman()
 	await _training()
-	_finish()
+	await _finish()
 
 
 func _goto(from: int, x: int, y: int, ev: int, to: int, cell: Vector2i, setup := Callable(), answers := []) -> void:
@@ -240,6 +240,10 @@ func _training() -> void:
 
 
 func _finish() -> void:
+	for player in get_tree().root.find_children("*", "AudioStreamPlayer", true, false):
+		player.stop()
+		player.stream = null
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	for i in range(1, XSave.SLOTS + 1):
 		if XSave.exists(i):
 			DirAccess.remove_absolute(XSave.path(i))
