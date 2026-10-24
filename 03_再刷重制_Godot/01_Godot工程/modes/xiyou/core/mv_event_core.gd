@@ -548,6 +548,10 @@ func _plugin_command(line: String) -> void:
 		"crafting":
 			if XCrafting.plugin_command(state(), args):  # hc.js 制作：设计图学会配方（八戒车道）
 				return
+		"StarEIBook":
+			# Star_EquipInlayBook：GetAll／RomGet 解锁图鉴条目。正式版只在打开图鉴前 GetAll，图鉴总是全部列出（见 XInlayBook），不记解锁
+			if args.size() >= 2 and ["getall", "romget"].has(args[1].to_lower()):
+				return
 	if _plugin_env(args, line):
 		return
 	skipped.append({"code": 356, "text": line.left(80)})

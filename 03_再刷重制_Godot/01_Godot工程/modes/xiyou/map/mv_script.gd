@@ -16,6 +16,7 @@ extends RefCounted
 ##   甚尔／宿傩 rollAdvanceStone（见 XDungeon）；洪荒的 grantTicketBonus／rollPower 在非洪荒难度无操作。
 ## - 修炼：Star.ActorAttributePlusPoints.XiuLian = [...] → XTraining.xiulian；SceneManager.push(Scene_ActorAttributePlusPoints) → 修炼界面（host.open_training）。
 ## - 成就：Star.AchievementSystem.GetAcReward(N) → XAchievement.reward；SceneManager.push(Scene_AchievementBook) → 成就界面（host.open_achievements）。
+## - 装备镶嵌图鉴：SceneManager.push(Scene_EquipInlayBook) → host.open_inlay_book（XInlayBook）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## CodexReincarnationRandom.entry：open 之后的选择结果 {accepted, hard}
@@ -186,6 +187,10 @@ static func _statements(js: String, interp) -> Array:
 		# 人物图鉴（Star_ActorsBook）：公共事件 3
 		if st == "SceneManager.push(Scene_ActorBook)" and interp.host.has_method("open_actor_book"):
 			await interp.host.open_actor_book()
+			continue
+		# 装备镶嵌图鉴（Star_EquipInlayBook）：方桌大厅魂灯商人 Map4 EV40 p1／p3 等
+		if st == "SceneManager.push(Scene_EquipInlayBook)" and interp.host.has_method("open_inlay_book"):
+			await interp.host.open_inlay_book()
 			continue
 		# 宠物（Star_PetSystem）：公共事件 169
 		if st == "SceneManager.push(Scene_PetSystem)" and interp.host.has_method("open_pets"):
