@@ -37,7 +37,10 @@ static func rect(w: Control) -> Array:
 
 ## 截图与读数：wins 为 {名: 窗口}，记矩形、可见与开合
 func shot(name: String, wins: Dictionary, extra := {}) -> void:
-	await frames(12)
+	# 窗口开合在 _physics_process 里每帧 ±32：按物理帧等开合走完
+	for i in 20:
+		await get_tree().physics_frame
+	await frames(2)
 	if out_dir == "" or DisplayServer.get_name() == "headless":
 		return
 	var data := {"shot": name, "windows": {}, "extra": extra}
@@ -52,6 +55,10 @@ func shot(name: String, wins: Dictionary, extra := {}) -> void:
 
 
 func _run() -> void:
+	# 设置用内存默认值（不读本机开发档的 options.json，免得「战力显示」等开关跟着开发者的设置变）
+	XSave.dir_override = "user://test_system_evidence"
+	XConfig._loaded_path = "<unloaded>"
+	check("power_line_default_on", XPower.enabled())
 	await _crafting()
 	await _magic_level()
 	await _pets()
@@ -109,6 +116,8 @@ func _magic_level() -> void:
 	shop.queue_free()
 	await frames()
 	var a := s.actor(1)
+	XPower.clear_cache()
+	var bare: float = XPower.actor(a, true).total
 	var inst := XGear.create("armor", 13, s)
 	s.register_gear(inst)
 	a.equips[12] = inst
@@ -119,7 +128,10 @@ func _magic_level() -> void:
 	eq._slot = 12
 	eq._refresh()
 	check("magic_equip_slot", eq._mode == "slot" and eq._slot_item() == inst, [eq._mode])
-	await shot("magic_equip_slot", {"cmd": eq.cmd_win, "status": eq.status_win, "list": eq.list_win, "lower": eq.lower_win})
+	XPower.clear_cache()
+	await shot("magic_equip_slot", {"cmd": eq.cmd_win, "status": eq.status_win, "list": eq.list_win, "lower": eq.lower_win},
+		{"power": {"bare": bare, "equipped": XPower.actor(a, true).total, "equipment": XPower.equipment(inst).total},
+			"armor": {"upgradeSlots": inst.get("upgradeSlots"), "augmentSlots": inst.get("augmentSlots")}})
 	eq.queue_free()
 	await frames()
 	a.equips[12] = {}
@@ -180,20 +192,29 @@ func _pet_synth() -> void:
 	await frames()
 	page.select(2)
 	page.ok()
-	page.cmd = 6
+	for i in 6:
+		page._move(1, false)
 	page.ok()
-	check("pet_feed_mode", page.mode == "feed", page.mode)
+	check("pet_feed_mode", page.mode == "feed" and page.cmd == 6 and page.cmd_top == 1, [page.mode, page.cmd, page.cmd_top])
 	await shot("pet_feed", _pet_wins(page))
+	check("pet_feed_status_clip", page.status_cover == 540.0, page.status_cover)
 	page.cancel()
 	await frames()
 	page.cancel()
 	await frames()
 	page.select(0)
 	page.ok()
-	page.cmd = 5
+	for i in 5:
+		page._move(1, false)
 	page.ok()
-	check("pet_synth_mode", page.mode == "syn", page.mode)
+	check("pet_synth_mode", page.mode == "syn" and page.cmd == 5, [page.mode, page.cmd])
 	await shot("pet_synth", _pet_wins(page))
+	check("pet_synth_status_clip", page.status_cover == 584.0, page.status_cover)
+	page.cancel()
+	for i in 20:
+		await get_tree().physics_frame
+	await frames(2)
+	check("pet_closed_status_unclipped", page.status_cover == 720.0 and page.mode == "bottom", [page.status_cover, page.mode])
 	page.queue_free()
 	await frames()
 

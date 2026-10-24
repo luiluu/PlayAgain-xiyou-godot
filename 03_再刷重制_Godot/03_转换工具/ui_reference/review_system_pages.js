@@ -42,6 +42,7 @@
         return out;
     }
     async function fresh() {
+        Math.random = function () { return 0.5; };  // 同 mv_oracle 各探针：新局初始装备的随机浮动、宝珠孔数固定
         __ilr.newGame();
         if (window.CodexGuide) CodexGuide.MILESTONE_ENABLED = false;
         $gameScreen.clear(); $gamePlayer.clearTransferInfo();
@@ -129,7 +130,14 @@
                 s._itemWindow.activate(); s._itemWindow.select(s._itemWindow._data.indexOf(magicArmor));
             }
         },
-        extra: function () { return {armor: magicArmor && {id: magicArmor.id, base: magicArmor.baseItemId, name: magicArmor.name}}; }
+        extra: function () {
+            var a = $gameActors.actor(1), P = window.CodexCombatPower, shown = P && P.actor(a), fresh = P && (P.clearCache(), P.actor(a, true));
+            return {armor: magicArmor && {id: magicArmor.id, base: magicArmor.baseItemId, name: magicArmor.name,
+                upgradeSlots: magicArmor.upgradeSlots, augmentSlots: magicArmor.augmentSlots},
+                power: {shown: shown && shown.total, fresh: fresh && fresh.total, equipment: P && magicArmor && P.equipment(magicArmor).total,
+                    noZones: P && window.CodexZones && (function () { var z = CodexZones.ENABLED; CodexZones.ENABLED = false; P.clearCache();
+                        var v = P.actor(a, true).total; CodexZones.ENABLED = z; P.clearCache(); return v; })()}};
+        }
     };
 
     // 宠物：pet_oracle.json／pet_synth_oracle.json（固定随机序列按原版 GetingPet 造敌人 1、288、10）；造出的宠物与参照逐项比对写进读数
