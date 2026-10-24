@@ -249,6 +249,24 @@
         }
     };
 
+    // 修炼（八戒_64）：training_ui_oracle.json 的 setup（精魂 1234567890、XiuLian=[8,9,14,15]）；目录确定后的底部「修炼」，
+    // 读数另记 44 个空格与「修炼」在原版字体下的实测宽（Godot 按它定「修炼」的横坐标）
+    P.training = {
+        setup: async function () {
+            $gameParty._gold = 1234567890;
+            Star.ActorAttributePlusPoints.XiuLian = [8, 9, 14, 15];
+            await push(Scene_ActorAttributePlusPoints);
+        },
+        shots: {
+            training_bottom: async function () { var s = scene(); s._indexWindow.select(0); s._indexWindow.processOk(); }
+        },
+        extra: function () {
+            var w = scene()._BottomconfirmWindow;
+            w.resetFontSettings();
+            return {spaces44: w.textWidth(new Array(45).join(' ')), word: w.textWidth('修炼'), fontFace: w.contents.fontFace, fontSize: w.contents.fontSize};
+        }
+    };
+
     // 异化工坊：alien_workshop 探针的 list 路线、alien_config 探针的 bound 路线（DOM 叠加层，整页截图）
     function domReadout() {
         var host = document.getElementById('alien-workshop');

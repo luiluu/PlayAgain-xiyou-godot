@@ -100,9 +100,12 @@ def main():
     card = [w for w in f["windows"] if w["type"] == "Sprite_ItemHelp"][0]
     checks["book_help_card_pos"] = card["visible"] and g["windows"]["help_card"]["visible"] \
         and near(g["windows"]["help_card"]["rect"][:3] + [0], card["rect"][:3] + [0])
+    # 修炼底部「修炼」：Godot XTrainingScene.SPACE_W 取自这项读数（44 个空格的原版实测宽）
+    t = read(a.formal / "training_bottom.json")["extra"]
+    checks["training_space_width"] = abs(t["spaces44"] - 317.28125) < 0.01 and t["fontSize"] == 26
     for d, label in ((a.formal, "formal"), (a.godot, "godot")):
         for shot in list(PAIRS) + RACE + ["craft_1_list", "craft_3_confirm_x3", "craft_4_popup", "pet_0", "pet_1_skills",
-                                          "alien_list", "alien_list_pending", "alien_config_bound"] + list(BOOK):
+                                          "alien_list", "alien_list_pending", "alien_config_bound"] + list(BOOK) + ["training_bottom"]:
             checks["png_%s_%s" % (label, shot)] = png_ok(d / (shot + ".png"))
     result = {"checks": checks, "passed": sum(checks.values()), "total": len(checks), "differences": diffs,
               "limits": ["只比窗口矩形与行文；文字逐条绘制由各专项对 fixture 断言，画面观感逐张人工看",
