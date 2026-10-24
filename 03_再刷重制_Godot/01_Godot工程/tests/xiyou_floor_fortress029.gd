@@ -162,10 +162,13 @@ func _fortress() -> void:
 	map = _scene()
 	_check("guard_fight", battles.size() == n0 + 1 and battles[-1].troop == 111 and battles[-1].result == 0, battles.slice(n0))
 	_check("guard_reward", int(s.variable(20)) == 14 and s.self_switch(29, 1, "A") and s.item_count(249) == 1 and s.actor_max_level == 38, [s.variable(20), s.item_count(249), s.actor_max_level])
+	# 嘤嘤怪只在独立开关 A 开启时出现（原版由成就系统类事件触发，这里直接打开）
+	s.set_self_switch(29, 3, "A", true)
+	map.refresh_events()
 	var n1 := battles.size()
 	await _run_event(map, 3, [], "win")
 	map = _scene()
-	_check("yingying", battles.size() == n1 + 1 and battles[-1].troop == 1 and s.self_switch(29, 3, "A"), battles.slice(n1))
+	_check("yingying", battles.size() == n1 + 1 and battles[-1].troop == 1 and not s.self_switch(29, 3, "A"), battles.slice(n1))
 	# 副本门：缺符文挡住，有符文进 Map035 (14,25)
 	var rune := s.item_count(RUNE)
 	s.gain_item(RUNE, -rune)
@@ -189,6 +192,8 @@ func _fortress() -> void:
 
 func _castle() -> void:
 	var s := _start(35, 14, 25)
+	s.set_variable(5, 1)     # 进副本时已加一，离开时再减回 0
+	s.set_variable(21, 1)
 	if not _check("f035_loaded", await _wait_map(35)):
 		return
 	var map: XMapScene = _scene()
@@ -228,6 +233,8 @@ func _castle() -> void:
 	s.map_id = 35
 	s.x = 14
 	s.y = 25
+	s.direction = 2        # 逃离阵要玩家面朝下
+	s.set_variable(5, 1)
 	get_tree().change_scene_to_file(MAP_SCENE)
 	if not _check("f035_reloaded", await _wait_map(35)):
 		return

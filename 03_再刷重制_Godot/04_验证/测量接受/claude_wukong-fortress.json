@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m220e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "25673d4416bde5e0",
+      "newDigest": "8858390e23360965",
+      "reason": "悟空_49 解释器补 223／236：event_probe 的状态快照加 screen（色调目标与天气目标），Map220 EV8 页 0 的 236 snow 1 现在记进 delta.screen，其余字段不变"
+    }
+  ]
+}
