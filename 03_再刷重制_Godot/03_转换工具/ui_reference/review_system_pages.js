@@ -249,6 +249,45 @@
         }
     };
 
+    // 装备镶嵌图鉴（八戒_65）：魂灯商人 Map4 EV40 p1／p3「查看图鉴」＝插件指令 StarEIBook GetAll 再 SceneManager.push(Scene_EquipInlayBook)。
+    // 截图：开场（类型窗）、武器第 1 项、武器第 20 项（滚动）、防具第 1 项；__sysRef.inlayAll() 逐项读状态窗的全部 drawText 与 drawIcon
+    P.inlay_book = {
+        setup: async function () {
+            Game_Interpreter.prototype.pluginCommand.call(new Game_Interpreter(), 'StarEIBook', ['GetAll']);
+            await push(Scene_EquipInlayBook);
+        },
+        shots: {
+            inlay_0: async function () {},
+            inlay_1_weapon: async function () { scene().onRangeOk(); },
+            inlay_2_weapon_20: async function () { scene()._indexWindow.select(19); },
+            inlay_3_armor: async function () { var s = scene(); s.OnCancel(); s._indexTypeWindow.select(1); s.onRangeOk(); }
+        }
+    };
+    S.inlayAll = async function () {
+        await fresh(); await P.inlay_book.setup();
+        var s = scene(), w = s._statusWindow, out = {geo: {}, lists: {}, status: {}};
+        [['type', s._indexTypeWindow], ['index', s._indexWindow], ['status', w]].forEach(function (p) {
+            out.geo[p[0]] = [p[1].x, p[1].y, p[1].width, p[1].height];
+        });
+        out.geo.rows = s._indexWindow.maxPageRows();
+        out.geo.statusLineHeight = w.lineHeight();
+        var icons = [], drawIcon = w.drawIcon;
+        w.drawIcon = function (i, x, y) { icons.push([i, x, y]); return drawIcon.apply(this, arguments); };
+        [['weapon', 0, s._WIdlist], ['armor', 1, s._AIdlist]].forEach(function (p) {
+            s._indexTypeWindow.select(p[1]);
+            out.lists[p[0]] = p[2].map(function (e) { return [e.id, e.name]; });
+            out.status[p[0]] = p[2].map(function (e) {
+                icons = [];
+                w.setupWhenCheck(e);
+                return {id: e.id, x: w.x, texts: (w.contents.__ilrText || []).map(function (t) {
+                    return [t.text, round(t.x), round(t.y), round(t.w), t.align, t.size, t.color];
+                }), icons: icons};
+            });
+        });
+        s._indexTypeWindow.select(0);
+        return out;
+    };
+
     // 异化工坊：alien_workshop 探针的 list 路线、alien_config 探针的 bound 路线（DOM 叠加层，整页截图）
     function domReadout() {
         var host = document.getElementById('alien-workshop');
