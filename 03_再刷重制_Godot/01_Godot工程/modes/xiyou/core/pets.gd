@@ -158,9 +158,9 @@ static func team_a_actor(s: XState) -> XActor:
 	return null
 
 
-## 出战宠物的技能撤回或学会（$gameParty.members 全体；<TeamA> 的只给共享角色）
+## 出战宠物的技能撤回或学会（$gameParty.members 全体与角色仓库里的 _saveactors；<TeamA> 的只给共享角色）
 static func _apply_skills(s: XState, pet: Dictionary, on: bool) -> void:
-	for a in s.members():
+	for a in s.members() + XActorWarehouse.stored(s).map(func(id): return s.actor(id)):
 		for id in pet.skills:
 			if not on:
 				a.forget_skill(int(id))

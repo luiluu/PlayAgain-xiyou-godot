@@ -923,6 +923,18 @@ func open_warehouse() -> void:
 	hud.visible = true
 
 
+## 角色仓库（SceneManager.push(Star_Scene_ActorWarehouse)）：仓库管理员「角色仓库」，关闭后回到地图；
+## 存取时原版 $gamePlayer.refresh／$gameMap.requestRefresh，所以回地图后刷新队首行走图与事件页
+func open_actor_warehouse() -> void:
+	hud.visible = false
+	var page := XActorWarehouseScene.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+	refresh_events()
+
+
 ## 装备镶嵌图鉴（SceneManager.push(Scene_EquipInlayBook)）：魂灯商人「查看图鉴」，关闭后回到地图
 func open_inlay_book() -> void:
 	hud.visible = false

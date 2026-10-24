@@ -333,6 +333,39 @@
         }
     };
 
+    // 角色仓库（八戒_66）：仓库管理员 Map4 EV8「角色仓库」＝SceneManager.push(Star_Scene_ActorWarehouse)。
+    // 摆法：队伍 1/8/9/10 加 11、12（出战栏 1/8/9/10/11，12 候补），仓库里放 13 与停用角色 143；
+    // 截图：开场、存入列表、存入出战中的 8（出战栏重建）、存入最后一行的 12（光标留在空行）、取出列表、取出 13、停用 143 确定（蜂鸣不动）
+    function awState() {
+        var p = $gameParty, s = scene(), l = s && s._listWindow;
+        return {actors: p._actors.slice(), battleMembers: p._battleMembers.slice(), saveactors: (p._saveactors || []).slice(),
+            battle: p.battleMembers().map(function (a) { return a.actorId(); }),
+            list: l ? {category: l._category, data: l._data.slice(), index: l.index(), active: l.active, enabled: l.isCurrentItemEnabled(),
+                itemHeight: l.itemHeight(), section: l.itemSection(), opacity: l._data.map(function (id) { var a = $gameActors.actor(id); return a ? l.actorIsEnabled(a) : null; })} : null,
+            category: s && s._categoryWindow ? {index: s._categoryWindow.index(), active: s._categoryWindow.active, symbol: s._categoryWindow.currentSymbol()} : null};
+    }
+    P.actor_warehouse = {
+        setup: async function () {
+            $gameParty.addActor(11); $gameParty.addActor(12);
+            $gameParty._saveactors = [13, 143];
+            $gameActors.actor(13); $gameActors.actor(143);
+            $gamePlayer.refresh();
+            await push(Star_Scene_ActorWarehouse);
+        },
+        shots: {
+            aw_0: async function () {},
+            aw_1_save_list: async function () { scene().onCategoryOk(); },
+            aw_2_save_battle: async function () { var l = scene()._listWindow; l.select(1); l.processOk(); },
+            aw_3_save_last: async function () { var l = scene()._listWindow; l.select(l._data.length - 1); l.processOk(); },
+            aw_4_load_list: async function () {
+                var s = scene(); s._listWindow.processCancel(); s._categoryWindow.select(1); s._categoryWindow.update(); s._categoryWindow.processOk();
+            },
+            aw_5_load_one: async function () { var l = scene()._listWindow; l.select(0); l.processOk(); },
+            aw_6_disabled: async function () { var l = scene()._listWindow; l.select(l._data.indexOf(143)); l.processOk(); }
+        },
+        extra: function () { return awState(); }
+    };
+
     // 异化工坊：alien_workshop 探针的 list 路线、alien_config 探针的 bound 路线（DOM 叠加层，整页截图）
     function domReadout() {
         var host = document.getElementById('alien-workshop');
