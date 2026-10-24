@@ -118,7 +118,7 @@ func _check_ui() -> void:
 	for pair in [["menu", menu._paint_gold], ["crafting", craft._paint_gold], ["shop", shop._paint_gold]]:
 		var got: Array = await _paint(pair[0], pair[1])
 		var w: Array = UI_REF[pair[0]]
-		var ok := got.size() == 1 and got[0][1] == w[1] and absf(float(got[0][2]) - w[2]) <= 1.0 and float(got[0][3]) == w[3] and int(got[0][4]) == 20 and got[0][5] == "right"
+		var ok: bool = got.size() == 1 and got[0][1] == w[1] and absf(float(got[0][2]) - w[2]) <= 1.0 and float(got[0][3]) == w[3] and int(got[0][4]) == 20 and got[0][5] == "right"
 		check("ui_" + pair[0], ok, [got, w])
 	menu.free()
 	craft.free()
