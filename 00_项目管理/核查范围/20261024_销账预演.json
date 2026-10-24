@@ -1,0 +1,114 @@
+{
+  "draftReviewEntries": 22,
+  "pendingCodexAfterApplyingDraft": [],
+  "reservedForClaude": [
+    {
+      "label": "合并 codex/state-effects-2e",
+      "date": "2026-10-23",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "4bf9996",
+        "3bda37b",
+        "961443e",
+        "cb59b46",
+        "c95a05d",
+        "77e8bfc",
+        "26fe46f",
+        "3faf0cd",
+        "fb9f73d",
+        "9d249fb",
+        "932b4df",
+        "4b3700d",
+        "3f4e6c0",
+        "c545f83",
+        "76fff4b",
+        "b84f1a8",
+        "7c99d19",
+        "e3c347a",
+        "4ea36d6",
+        "8deeab9",
+        "6b270df",
+        "b58b9fc",
+        "8317db8",
+        "c572e51"
+      ],
+      "executor": "Codex（沙僧）",
+      "docOnly": false
+    },
+    {
+      "label": "修复进度核算收工检查：临时接收库自动维护与清理竞争",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "117ba14"
+      ],
+      "executor": "Codex（沙僧）",
+      "docOnly": false
+    },
+    {
+      "label": "交接板同步本轮测试夹具修复的待核查批数",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "bb5d965"
+      ],
+      "executor": "Codex（沙僧）",
+      "docOnly": true
+    },
+    {
+      "label": "登记全部待审核查范围：15 批代码与 5 批文档，main 留唐僧",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "1bd0430"
+      ],
+      "executor": "Codex（沙僧）",
+      "docOnly": true
+    },
+    {
+      "label": "修复 03fe666 核查问题：同值宠物按身份显示出战，补原版参照回归",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "a0425cc"
+      ],
+      "executor": "Codex（沙僧）",
+      "docOnly": false
+    },
+    {
+      "label": "补待审菜单的可重放原版画面取证入口，沿用存档访问守卫",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "86c052c"
+      ],
+      "executor": "Codex（沙僧）",
+      "docOnly": false
+    },
+    {
+      "label": "核查发现异化实际普攻漏查，修制作遮盖及地图测试收尾",
+      "date": "2026-10-24",
+      "need": [
+        "Claude"
+      ],
+      "commits": [
+        "64469ac"
+      ],
+      "executor": "Codex",
+      "docOnly": false
+    }
+  ],
+  "simulation": "只在内存把交付单核查条目加入解析，没有写共用变更记录。"
+}

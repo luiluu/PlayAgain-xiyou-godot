@@ -1,0 +1,321 @@
+{
+  "cutoff": "6bcf0b7d",
+  "codeBatches": 15,
+  "documentBatches": 7,
+  "claudeOnly": [
+    {
+      "label": "合并 claude/bajie-crafting2",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "6c5e425",
+        "a7b5fa8",
+        "2ae343c",
+        "92d0734",
+        "9511942"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/bajie-pet",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "3799b99",
+        "75bda67",
+        "9cfcef0",
+        "3137adc"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/bajie-companion",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "03fe666",
+        "ca00f18",
+        "d39135c",
+        "8e08d47",
+        "6a72a65",
+        "03dc60d"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/bajie-pet-synth",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "86c0d84",
+        "7948510",
+        "b44dee1",
+        "12546ba",
+        "59d3f82"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/youthful-rubin-d03e77",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "a0d8f45",
+        "48df8c4",
+        "ffd0222",
+        "59720ed",
+        "6be66cb",
+        "114fb06"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 codex/state-effects-2f",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "5b08334",
+        "47168ca"
+      ],
+      "executor": "Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/bajie-alien",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "29940f0",
+        "c5bd42e",
+        "1f37003",
+        "12c7374",
+        "5a2ef6e",
+        "dd89a99",
+        "93e8856"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/wukong-tower",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "aa17070",
+        "c1ebbc8",
+        "796b61d",
+        "c653ff8"
+      ],
+      "executor": "Claude（悟空）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 codex/review-systems-20261023",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "d7dea52",
+        "ce016f2",
+        "fae52db",
+        "7ce5b14"
+      ],
+      "executor": "Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 codex/delivery-audit-20261023",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "4ea9b83",
+        "4689529"
+      ],
+      "executor": "Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/bajie-forge2",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "b67c523",
+        "2d7b3b1",
+        "430dc3c",
+        "64b239b",
+        "30ad039",
+        "90deefc",
+        "ad64865"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/wukong-brave",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "9196978",
+        "a7908e5",
+        "454357e",
+        "40257bc"
+      ],
+      "executor": "Claude（悟空）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "规则：参照探针产物不用 error 键，原版抛出提示记 thrown",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "65598ef"
+      ],
+      "executor": "Claude（唐僧）",
+      "docOnly": true
+    },
+    {
+      "label": "合并 codex/review-cap-20261023",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "b15fd78",
+        "5a7e994"
+      ],
+      "executor": "Claude（唐僧）",
+      "docOnly": true
+    },
+    {
+      "label": "合并 claude/wukong-throne",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "cffa790",
+        "163fee7",
+        "fbf75ae",
+        "cdd184b"
+      ],
+      "executor": "Claude（悟空）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/bajie-p2fix",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "4c10b71",
+        "81df317",
+        "76ebbd6",
+        "09af940",
+        "129728f",
+        "131b5e4",
+        "6866b35",
+        "fef1925"
+      ],
+      "executor": "Claude（八戒）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "合并 claude/wukong-guild",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "7965200",
+        "a974e95",
+        "05a8021",
+        "b8a83ce"
+      ],
+      "executor": "Claude（悟空）、Claude（唐僧）",
+      "docOnly": false
+    },
+    {
+      "label": "审查点改为 50%、75%、95%（用户 2026-10-23）",
+      "date": "2026-10-23",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "b100439"
+      ],
+      "executor": "Claude（唐僧）",
+      "docOnly": true
+    },
+    {
+      "label": "登记唐僧_17 接手主工作区：合并 tangseng-review 核查单",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "8e521eb"
+      ],
+      "executor": "Claude（唐僧）",
+      "docOnly": true
+    },
+    {
+      "label": "合并 claude/tangseng-review",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "458f962",
+        "b84cb77"
+      ],
+      "executor": "Claude（唐僧）",
+      "docOnly": true
+    },
+    {
+      "label": "唐僧核查收尾登记",
+      "commits": [
+        "443b2139"
+      ],
+      "docOnly": true
+    },
+    {
+      "label": "唐僧并行派工登记",
+      "commits": [
+        "6bcf0b7d"
+      ],
+      "docOnly": true
+    }
+  ],
+  "excluded": "Codex 自己的实现、核查报告、进度核算和本轮修复不在销账范围；留 Claude。"
+}

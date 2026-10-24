@@ -159,6 +159,8 @@ func _flow(ref: Dictionary) -> void:
 	page.cmd = 5
 	page.ok()
 	check("syn_open", page.mode == "syn" and page.syn == 0)
+	for _frame in 10: await get_tree().physics_frame
+	check("syn_occludes_status", is_equal_approx(page.status_win.canvas.get_global_rect().end.y, float(ref.geo.syn[1])))
 	page.ok()
 	check("syn_a", page.mode == "bottom" and is_same(page.syn_a, s.pets.list[0]) and page.display_name(s.pets.list[0]) == str(ref.afterA.index[0][1])
 		and page._status_ops[0][1] == str(ref.afterA.statusName[1]), [page.display_name(s.pets.list[0]), page._status_ops[0]])
@@ -191,7 +193,9 @@ func _flow(ref: Dictionary) -> void:
 	page.ok()
 	page.cmd = 6
 	page.ok()
-	check("feed_open", page.mode == "feed" and page.feed_index == 0 and page.feed_win.openness < 255 or page.feed_win._opening)
+	check("feed_open", page.mode == "feed" and page.feed_index == 0 and (page.feed_win.openness < 255 or page.feed_win._opening))
+	for _frame in 10: await get_tree().physics_frame
+	check("feed_occludes_status", is_equal_approx(page.status_win.canvas.get_global_rect().end.y, float(ref.geo.feed[1])))
 	page.ok()
 	check("feed_done", XPets.level(s.pets.list[0]) == 6 and s.item_count(426) == 2 and page.mode == "feed")
 	page.feed_index = 1
@@ -199,5 +203,7 @@ func _flow(ref: Dictionary) -> void:
 	check("feed_none_buzz", s.item_count(427) == 0 and XPets.level(s.pets.list[0]) == 6)
 	page.cancel()
 	check("feed_cancel", page.mode == "bottom")
+	for _frame in 10: await get_tree().physics_frame
+	check("status_restored_after_feed", is_equal_approx(page.status_win.canvas.size.y, page.status_win.size.y - XMVWindow.PADDING * 2))
 	page.queue_free()
 	await frames()

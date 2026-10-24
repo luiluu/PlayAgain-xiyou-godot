@@ -94,6 +94,14 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	# MV WindowLayer 从下层内容挖去浮窗范围；用内容裁剪保留边界处的半行。
+	var h := STATUS_RECT.size.y - XMVWindow.PADDING * 2
+	for w in [skill_win, feed_win, team_win, syn_win]:
+		if w.openness > 0:
+			h = minf(h, w.position.y - status_win.canvas.global_position.y)
+	if not is_equal_approx(status_win.canvas.size.y, h):
+		status_win.canvas.size.y = h
+		status_win.canvas.queue_redraw()
 	_frame += 1
 	if _sprite_tex != null and _sprite_sv and _frame % 12 == 0:
 		status_win.canvas.queue_redraw()
@@ -210,11 +218,7 @@ func _paint_status(c: XMVCanvas) -> void:
 			scale = CW / src.size.x / 2.0
 		var sz := src.size * scale
 		c.draw_texture_rect_region(_sprite_tex, Rect2(center - sz / 2.0, sz), src)
-	# 技能列表打开时 MV WindowLayer 把它的范围从状态窗里挖掉（y 540 以下）
-	var ops := _status_ops
-	if skill_win.openness > 0 or feed_win.openness > 0:
-		ops = ops.filter(func(o): return STATUS_RECT.position.y + XMVWindow.PADDING + float(o[3]) + LH <= SKILL_RECT.position.y + 4)
-	_paint_ops(c, ops)
+	_paint_ops(c, _status_ops)
 
 
 static func _paint_ops(c: XMVCanvas, ops: Array) -> void:
