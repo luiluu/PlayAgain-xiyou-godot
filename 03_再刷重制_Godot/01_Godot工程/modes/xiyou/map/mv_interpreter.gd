@@ -101,9 +101,11 @@ func _execute_env(c: Dictionary):
 	return super(c)
 
 
-## 插件指令 EnemyBook open 要打开图鉴画面
+## 插件指令 EnemyBook open 要打开图鉴画面；PHWarehouse show <名字> 要打开仓库画面
 func _host_plugin(line: String) -> bool:
 	var args := line.split(" ", false)
+	if args.size() >= 3 and args[0] == "PHWarehouse" and args[1] == "show":
+		return host.has_method("open_warehouse")
 	return args.size() >= 2 and args[0] == "EnemyBook" and args[1] == "open" and host.has_method("open_enemy_book")
 
 
@@ -247,6 +249,12 @@ func _host_command(c: Dictionary):
 			for st in await MVScript.run(code, self):
 				skipped.append({"code": 355, "text": str(st).left(80)})
 		356:
+			var line := str(p[0])
+			if line.begins_with("PHWarehouse"):
+				# 仓库（PH_Warehouse PHWarehouse show <名字>）：设为当前仓库并打开 Scene_Warehouse，关闭回地图；仓库不存在时不打开
+				if XWarehouse.open(state(), " ".join(line.split(" ", false).slice(2))):
+					await host.open_warehouse()
+				return true
 			# 怪物图鉴（AB_EnemyBook EnemyBook open；公共事件 2）：SceneManager.push(Scene_EnemyBook)，关闭回地图
 			await host.open_enemy_book()
 	return true
