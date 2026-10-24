@@ -269,6 +269,17 @@ func _layout(page: XAlienWorkshop) -> void:
 		await get_tree().process_frame
 	var moved := get_viewport().gui_get_focus_owner()
 	check("focus_visible_after_key", moved is Button and moved != first and moved.has_focus(true), [first, moved])
+	# O-089 回退：不预先聚焦（原版重画后焦点不在任何按钮上）
+	XAlienWorkshop.focus_first = false
+	moved.release_focus()
+	var plain := XAlienWorkshop.new()
+	add_child(plain)
+	for i in 4:
+		await get_tree().process_frame
+	check("o089_original_no_focus", get_viewport().gui_get_focus_owner() == null, get_viewport().gui_get_focus_owner())
+	XAlienWorkshop.focus_first = true
+	plain.queue_free()
+	await get_tree().process_frame
 	# O-087 回退：第 2 个起右推 7（与原版读数 x139 一致）
 	# 另开一个实例看，不动流程页（静态选中项先存后还）
 	var keep := XAlienWorkshop.selected
