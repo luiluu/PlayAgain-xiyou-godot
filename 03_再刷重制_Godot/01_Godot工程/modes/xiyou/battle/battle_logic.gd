@@ -159,7 +159,7 @@ func _start_battle_effects() -> void:
 	_battle_resources = _new_lifecycle_resources()
 	for b in state.members() + enemies:
 		if not _ids.has(b):
-			_ids[b] = "reserve:%d" % b.actor_id
+			_ids[b] = "reserve:%d" % b.actor_id if b is XActor else stable_id(b)
 		_battle_resources.labels[b] = stable_id(b)
 		_battle_resources.seed_result(b, b.runtime_result)
 	# Native Game_Unit: initialize all unit members, then evaluate Battle effects.

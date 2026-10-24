@@ -73,7 +73,7 @@ func snapshot(b: XBattler, r: XResourceContext) -> Dictionary:
 	for key in ["missed", "evaded", "critical"]:
 		result.erase(key)
 	return {"hp": b.hp, "mp": b.mp, "tp": b.tp, "cap": b.max_tp(), "states": b.state_ids.duplicate(),
-		"turns": b.state_turns.duplicate(), "dirty": b.param_dirty, "result": result}
+		"turns": b.state_turns.duplicate(), "dirty": b.effect_dirty, "result": result}
 
 func expected(want: Dictionary) -> Dictionary:
 	var w := want.duplicate(true)
@@ -89,7 +89,7 @@ func compare(label: String, b: XBattler, r: XResourceContext, want: Dictionary) 
 	check(label, same(got, expected(want)), {"got": got, "want": expected(want)})
 
 func fixture_state(name: String, traits: Array) -> int:
-	var table := XDB.table("States")
+	var table: Array = XDB.table("States")
 	var id := table.size()
 	table.append({"id": id, "name": name, "traits": traits, "note": "", "meta": {}, "priority": 50,
 		"minTurns": 1, "maxTurns": 1, "autoRemovalTiming": 0, "effects": []})
@@ -151,7 +151,7 @@ func matrix(cases: Dictionary) -> void:
 		check("guard.draws", r.random.draws == int(row.draws), [r.random.draws, row.draws])
 	for row in cases["tp.actor_custom_caps"].rows:
 		var b := holder("actor") as XActor
-		var skills := XDB.table("Skills")
+		var skills: Array = XDB.table("Skills")
 		var skill := XDB.rec("Skills", 1).duplicate(true)
 		skill.id = skills.size()
 		skill.note = "<passiveEXTTP:%d>" % row.extra

@@ -177,4 +177,7 @@ func _refresh_death(b: XBattler) -> void:
 func _refresh_type_after(b: XBattler) -> void:
 	if b is XActor or b is XEnemy:
 		b.refresh_passive()
+	# KRZ's outer type refresh clears need_refresh even when death's nested
+	# addState marked it again. gain() marks dirty only after this returns.
+	b.effect_dirty = false
 	b.param_dirty = false
