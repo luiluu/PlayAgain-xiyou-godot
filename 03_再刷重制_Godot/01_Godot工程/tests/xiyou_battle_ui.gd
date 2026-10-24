@@ -62,6 +62,13 @@ func _battle_book(b: XBattleScene) -> void:
 	_check("shift_opens_battle_book", p != null and p.in_battle and p.ids == [1] and not b.cmd_win.active
 		and p._status_ops.any(func(o): return o[0] == "t" and o[1] == "？？？"), null if p == null else p.ids)
 	await _shot("battle_42_enemy_book")
+	# 窗口读数：与 ui_reference/review_system_pages.js 的 battle_book 同态，review_system_pages_compare.py 核对
+	if p != null and out_dir != "" and DisplayServer.get_name() != "headless":
+		var data := {"shot": "battle_42_enemy_book", "windows": {}}
+		for k in ["index_win", "status_win"]:
+			var w: Control = p.get(k)
+			data.windows[k] = {"rect": [w.position.x, w.position.y, w.size.x, w.size.y], "visible": w.is_visible_in_tree()}
+		FileAccess.open(out_dir.path_join("battle_42_enemy_book.json"), FileAccess.WRITE).store_string(JSON.stringify(data, "  "))
 	await _press("ui_cancel")
 	await _frames(3)
 	_check("battle_book_cancel_back", b.book_page == null and b.cmd_win != null and b.cmd_win.active and b.list_win == null)

@@ -211,6 +211,44 @@
         extra: function () { var w = scene()._yunChoices; return w ? {rows: w.rows.map(function (r) { return [r.label, r.enabled !== false]; }), info: w.info} : null; }
     };
 
+    // 怪物图鉴（八戒_64）：enemy_book_oracle.json 的 setup（难度 2，全登记后去掉 3/5/40，敌人 2 出没「草原、新手村」击败 5；
+    // onElite 关掉不随机神话）；走 Scene_EnemyBook 目录第 1 项与掉落第 1 行（说明卡）
+    P.enemy_book = {
+        setup: async function () {
+            Game_Enemy.prototype.onElite = function () { return false; };
+            $gameSystem._difficultyId = 2;
+            $gameSystem.completeEnemyBook();
+            [3, 5, 40].forEach(function (id) { $gameSystem.removeFromEnemyBook(id); });
+            $gameSystem._recordEnemyMap = [];  // 地图 5 建图时登记的出没清掉，只留参照的这一条
+            $gameSystem._recordEnemyMap[2] = ['草原', '新手村'];
+            $gameSystem.clearDefeatNumber(); $gameSystem._defeatNumbers[2] = 5;
+            Window_EnemyBookIndex.lastIndex = 0;
+            await push(Scene_EnemyBook);
+        },
+        shots: {
+            enemy_book_0: async function () {},
+            enemy_book_0_drops: async function () { scene().onRangeOk(); }
+        }
+    };
+
+    // 战斗内怪物信息：battle_enemy_book_oracle.json 的场面（地图 5、敌群 2、难度 3、四人），角色指令窗按 Shift 的原入口
+    P.battle_book = {
+        setup: async function () {
+            $gameSystem._difficultyId = 3;
+            $gameParty.members().forEach(function (a) { a.recoverAll(); });
+            BattleManager.setup(2, true, false);
+            SceneManager.push(Scene_Battle);
+            await wait(function () {
+                var s = scene();
+                return s instanceof Scene_Battle && SceneManager._sceneStarted && ImageManager.isReady() && s._actorCommandWindow && s._actorCommandWindow.isOpenAndActive();
+            }, 60000);
+            await settle(40);
+        },
+        shots: {
+            battle_42_enemy_book: async function () { scene()._actorCommandWindow.processAB_EnemyBook(); }
+        }
+    };
+
     // 异化工坊：alien_workshop 探针的 list 路线、alien_config 探针的 bound 路线（DOM 叠加层，整页截图）
     function domReadout() {
         var host = document.getElementById('alien-workshop');
