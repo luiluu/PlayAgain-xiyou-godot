@@ -10,6 +10,7 @@ extends Control
 ##   核心杂项开关（只遇稀有/罕见/极其稀有、穿墙、三条宣传行、对话跳过、禁用遇敌、步步遇敌）：确定取反、右开左关；
 ##   除穿墙外不存配置，开局未设置时状态空白（正式版 statusText 返回 undefined）。
 ##   队列跟随：变量 24 为 0 时 ON；切换写变量 24（开 0、关 1）并显示/隐藏跟随（重制版只能在游戏中打开设置，不会是「进入游戏」）。
+##   角色换装（XCostumes）：状态「打开」，确定不播音直接打开 XCostumesScene，左右无作用（战斗外观的接入见 XCostumes）。
 ##   屏蔽掉落：状态恒空白，确定无音效直接打开 XPingbiScene，左右只改无作用的 pingbiDrop（值变了播光标音）。
 ##   其余选项的机制还没做，暂时灰显、不显示状态，确定时蜂鸣；原版都可用（见 界面风格.md）。
 ## - 上下键：按住连续移动、首按可首尾循环，换行播光标音；取消（Esc/右键）播取消音返回主菜单。
@@ -33,7 +34,7 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 	["对话跳过", "dhtg", true], ["禁用遇敌", "ydgb", true], ["步步遇敌", "yd100", true], ["消息提醒", "codexNotices", true],
 	["队列跟随", "codexFollow", true],
 	["战力显示与估算", "codexPowerEnabled", true], ["测试模式", "codexTestMode", false], ["GM 工具", "codexGM", false],
-	["角色换装", "codexCostumes", false], ["待提交反馈", "codexFeedbackPending", false]]
+	["角色换装", "codexCostumes", true], ["待提交反馈", "codexFeedbackPending", false]]
 
 ## 开关类符号只在这里列一份：存配置的 ON/OFF 开关、四路音量用 XConfig.VOLUMES、本次运行开关用 XConfig.SESSION_FLAGS
 ## （含 pingbiDrop：状态恒空白、确定打开屏蔽页，只有左右键会改它）
@@ -90,6 +91,8 @@ func status_text(i: int) -> String:
 			return XConfig.notices_text()
 		"codexFollow":
 			return "ON" if _follow_on() else "OFF"
+		"codexCostumes":
+			return "打开" if XCostumes.can_open(XState.current) else "进入游戏"
 	return ""
 
 
@@ -154,6 +157,12 @@ func ok() -> void:
 		"codexNotices":
 			XSound.system(1)
 			_open_page(XNoticeOptionsScene.new())
+		"codexCostumes":
+			# C.open：Window_Options.processOk 被整个换掉，不播确定音；不能开时蜂鸣
+			if XCostumes.can_open(XState.current):
+				_open_page(XCostumesScene.new())
+			else:
+				XSound.system(3)
 
 
 ## Window_Options.changeValue：值变了才存、重画并播光标音；HangUp 不改值
