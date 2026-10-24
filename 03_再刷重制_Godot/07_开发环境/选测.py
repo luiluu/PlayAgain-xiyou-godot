@@ -76,6 +76,12 @@ def read_any(root, base, path, head=None):
     return ''
 
 
+def exists(root, path, head=None):
+    if not head:
+        return (root / path).exists()
+    return subprocess.run(['git', '-C', str(root), 'cat-file', '-e', head + ':' + path], capture_output=True).returncode == 0
+
+
 class Tests:
     """tests/ 下的场景与脚本文本，以及脚本 → 用它的场景。"""
     def __init__(self, root):
@@ -128,7 +134,10 @@ def select(root, base, table=TABLE, head=None):
                 terms += re.findall(r'^class_name\s+(\w+)', read_any(root, base, key, head), re.M)
             own = tests.users(name) if g.get('self') else []
             refs = tests.refs(terms, exclude={name}) | set(own)
-            if not refs and g.get('fallback'):
+            gone = not exists(root, key, head)
+            if not refs and gone:
+                why += '，已删除且没有测试再引用它'
+            elif not refs and g.get('fallback'):
                 if 'FULL' in g['fallback']:
                     full, why = True, why + '，找不到用它的测试，整轮'
                 else:
@@ -140,6 +149,9 @@ def select(root, base, table=TABLE, head=None):
         scenes |= picked
         checks |= set(g.get('checks', []))
         reasons.append((path, why, g.get('说明', ''), sorted(picked), g.get('full', False)))
+    if not full and tests.scenes and scenes >= set(tests.scenes):
+        full = True  # 选中了全部场景：按整轮跑，才能沿用上轮通过结果
+        reasons.append(('（全部场景）', '选中了全部 %d 个场景，按整轮跑' % len(tests.scenes), '', [], True))
     return dict(base=base, files=files, full=full, scenes=sorted(scenes), checks=sorted(checks), reasons=reasons)
 
 

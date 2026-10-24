@@ -140,6 +140,15 @@ class SelectTests(Fixture):
         self.put(TESTS / 'fixtures/orphan.json', '{}\n')
         self.assertTrue(self.pick()['full'])
 
+    def test_deleted_test_and_fixture_need_nothing(self):
+        for rel in ['xiyou_orbs.gd', 'xiyou_orbs.tscn']:
+            (self.root / TESTS / rel).unlink()
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertEqual(s['scenes'], [])
+        (self.root / TESTS / 'fixtures/battle_oracle.json').unlink()
+        self.assertEqual(self.pick()['scenes'], ['xiyou_battle.tscn'])  # 还有测试引用它：照跑（会暴露缺夹具）
+
     def test_version_bump_is_registry_but_other_project_edit_is_full(self):
         self.put(PROJECT / 'project.godot', 'config/name="x"\nconfig/version="dev.002"\n')
         self.put(PROJECT / 'content/build_info.json', '{\n  "developmentVersion": "dev.002",\n  "kind": "slice"\n}\n')
@@ -147,6 +156,19 @@ class SelectTests(Fixture):
         self.assertFalse(s['full'])
         self.assertEqual(s['scenes'], [])
         self.put(PROJECT / 'project.godot', 'config/name="y"\nconfig/version="dev.002"\n')
+        self.assertTrue(self.pick()['full'])
+
+    def test_selecting_every_scene_becomes_full(self):
+        self.put(PROJECT / 'modes/xiyou/core/xstate.gd', 'class_name XState\n')
+        self.commit('xstate')
+        self.base = self.g('rev-parse', 'HEAD')
+        for name in sel.Tests(self.root).scenes:
+            p = self.root / TESTS / name.replace('.tscn', '.gd')
+            if p.exists():
+                p.write_text(p.read_text() + 'XState\n')
+        self.commit('everyone uses XState')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.put(PROJECT / 'modes/xiyou/core/xstate.gd', 'class_name XState\n# 2\n')
         self.assertTrue(self.pick()['full'])
 
     def test_unknown_path_is_full(self):
