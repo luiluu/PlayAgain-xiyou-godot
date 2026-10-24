@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.154",
-  "sequence": 154,
-  "next": "dev.155",
-  "nextSequence": 155,
+  "current": "dev.155",
+  "sequence": 155,
+  "next": "dev.156",
+  "nextSequence": 156,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-p2fix",
+  "currentChange": "bajie-train-f372aa",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
