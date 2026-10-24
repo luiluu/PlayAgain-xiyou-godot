@@ -1,7 +1,7 @@
 {
-  "cutoff": "33d39d06",
-  "codeBatches": 25,
-  "documentBatches": 11,
+  "cutoff": "3614777a",
+  "codeBatches": 26,
+  "documentBatches": 17,
   "claudeOnly": [
     {
       "label": "合并 claude/bajie-crafting2",
@@ -569,8 +569,108 @@
       "docOnly": true,
       "reviewConclusion": "通过",
       "reviewEvidence": "仅派工登记，边界包含楼层专项分支固定和可达入口三簇；不把尚在进行的后续功能算进本轮33d39d06截点。"
+    },
+    {
+      "label": "唐僧_17 夜间交接",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "6592dc4"
+      ],
+      "executor": "Claude",
+      "docOnly": true,
+      "conclusion": "通过"
+    },
+    {
+      "label": "唐僧_18 开工登记",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "c42d928"
+      ],
+      "executor": "Claude",
+      "docOnly": true,
+      "conclusion": "通过"
+    },
+    {
+      "label": "用户默认决策登记",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "2da73e9"
+      ],
+      "executor": "Claude",
+      "docOnly": true,
+      "conclusion": "文档一致性通过"
+    },
+    {
+      "label": "可达三簇与超强者获取限制",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "9402b66",
+        "f0e7ed8",
+        "abdc8c1",
+        "c26755e",
+        "9300b8b",
+        "9a9f14c",
+        "0aa0557",
+        "ffe51ae"
+      ],
+      "executor": "Claude",
+      "docOnly": false,
+      "conclusion": "通过；新专项退出处理已补"
+    },
+    {
+      "label": "可达三簇总装收尾登记",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "f823df1"
+      ],
+      "executor": "Claude",
+      "docOnly": true,
+      "conclusion": "编号与范围通过；补记遗漏"
+    },
+    {
+      "label": "悟空_54 与八戒_65 派工登记",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "0148d54"
+      ],
+      "executor": "Claude",
+      "docOnly": true,
+      "conclusion": "登记范围通过"
+    },
+    {
+      "label": "唐僧_18 收工登记",
+      "date": "2026-10-24",
+      "need": [
+        "Codex"
+      ],
+      "commits": [
+        "3614777"
+      ],
+      "executor": "Claude",
+      "docOnly": true,
+      "conclusion": "通过"
     }
   ],
   "excluded": "Codex 自己的实现、核查报告、进度核算和本轮修复不在销账范围；留 Claude。",
-  "reviewRecords": 36
+  "reviewRecords": 36,
+  "gameCodeCutoff": "ffe51ae1",
+  "countingNote": "43条核查记录；总装收尾与历史拆项单列，不等同机器归并批数"
 }

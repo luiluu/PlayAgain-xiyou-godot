@@ -1,211 +1,339 @@
 {
-  "cutoff": "33d39d06",
-  "draftReviewEntries": 36,
-  "pendingCodexAfterApplyingDraft": [],
-  "reservedForClaude": [
-    {
-      "label": "合并 codex/state-effects-2e",
-      "date": "2026-10-23",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "4bf9996",
-        "3bda37b",
-        "961443e",
-        "cb59b46",
-        "c95a05d",
-        "77e8bfc",
-        "26fe46f",
-        "3faf0cd",
-        "fb9f73d",
-        "9d249fb",
-        "932b4df",
-        "4b3700d",
-        "3f4e6c0",
-        "c545f83",
-        "76fff4b",
-        "b84f1a8",
-        "7c99d19",
-        "e3c347a",
-        "4ea36d6",
-        "8deeab9",
-        "6b270df",
-        "b58b9fc",
-        "8317db8",
-        "c572e51"
-      ],
-      "executor": "Codex（沙僧）",
-      "docOnly": false
-    },
-    {
-      "label": "修复进度核算收工检查：临时接收库自动维护与清理竞争",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "117ba14"
-      ],
-      "executor": "Codex（沙僧）",
-      "docOnly": false
-    },
-    {
-      "label": "交接板同步本轮测试夹具修复的待核查批数",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "bb5d965"
-      ],
-      "executor": "Codex（沙僧）",
-      "docOnly": true
-    },
-    {
-      "label": "登记全部待审核查范围：15 批代码与 5 批文档，main 留唐僧",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "1bd0430"
-      ],
-      "executor": "Codex（沙僧）",
-      "docOnly": true
-    },
-    {
-      "label": "修复 03fe666 核查问题：同值宠物按身份显示出战，补原版参照回归",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "a0425cc"
-      ],
-      "executor": "Codex（沙僧）",
-      "docOnly": false
-    },
-    {
-      "label": "补待审菜单的可重放原版画面取证入口，沿用存档访问守卫",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "86c052c"
-      ],
-      "executor": "Codex（沙僧）",
-      "docOnly": false
-    },
-    {
-      "label": "核查发现异化实际普攻漏查，修制作遮盖及地图测试收尾",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "64469ac"
-      ],
-      "executor": "Codex",
-      "docOnly": false
-    },
-    {
-      "label": "完成旧截点22项核查与宠物遮盖反例，保存并发新增14批待审",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "4266e01"
-      ],
-      "executor": "Codex",
-      "docOnly": false
-    },
-    {
-      "label": "保留原版画面身份与修后专项精简证据，接续并发新增核查",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "4fd089f"
-      ],
-      "executor": "Codex",
-      "docOnly": true
-    },
-    {
-      "label": "修复2648e18核查问题：原版截图先关工坊层，禁止遮挡画面假通过",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "1a938bb"
-      ],
-      "executor": "Codex",
-      "docOnly": false
-    },
-    {
-      "label": "续批核查：保留24态原版画面摘要，补七个专项停音与真实等待",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "3999e01"
-      ],
-      "executor": "Codex",
-      "docOnly": false
-    },
-    {
-      "label": "修复9b806e8核查问题：雪粒子圆心半径对齐原版绘图参照",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "87e01f5"
-      ],
-      "executor": "Codex",
-      "docOnly": false
-    },
-    {
-      "label": "修复af5e600核查问题：实验室回程显式拒绝传送门，取证显式绘制视口",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "dee90b2"
-      ],
-      "executor": "Codex",
-      "docOnly": false
-    },
-    {
-      "label": "修复e3db221核查问题：清邀请函仍可能出门，要塞回程显式选择离开",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "fe91537"
-      ],
-      "executor": "Codex",
-      "docOnly": false
-    },
-    {
-      "label": "事件参照按审查截点校正：1798共同项全同，既有原版异常按原守卫保留",
-      "date": "2026-10-24",
-      "need": [
-        "Claude"
-      ],
-      "commits": [
-        "bc0dab1"
-      ],
-      "executor": "Codex",
-      "docOnly": true
-    }
-  ],
-  "simulation": "仅在内存加入交付草稿，没有改共用变更记录；标题不使用ASCII分支名作销账范围，避免覆盖之后同名分支的提交。"
+  "cutoff": "3614777a",
+  "draftReviewEntries": 43,
+  "note": "仅内存预演；未写交接板或变更记录；Codex自身全部留Claude",
+  "reviewWorktree": {
+    "head": "63a3a65d40b5905d49816333f5a4810df46267be",
+    "pendingCodexAfterApplyingDraft": [],
+    "reservedForClaude": [
+      {
+        "label": "合并 codex/state-effects-2e",
+        "date": "2026-10-23",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "4bf9996",
+          "3bda37b",
+          "961443e",
+          "cb59b46",
+          "c95a05d",
+          "77e8bfc",
+          "26fe46f",
+          "3faf0cd",
+          "fb9f73d",
+          "9d249fb",
+          "932b4df",
+          "4b3700d",
+          "3f4e6c0",
+          "c545f83",
+          "76fff4b",
+          "b84f1a8",
+          "7c99d19",
+          "e3c347a",
+          "4ea36d6",
+          "8deeab9",
+          "6b270df",
+          "b58b9fc",
+          "8317db8",
+          "c572e51"
+        ],
+        "executor": "Codex（沙僧）",
+        "docOnly": false
+      },
+      {
+        "label": "修复进度核算收工检查：临时接收库自动维护与清理竞争",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "117ba14"
+        ],
+        "executor": "Codex（沙僧）",
+        "docOnly": false
+      },
+      {
+        "label": "交接板同步本轮测试夹具修复的待核查批数",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "bb5d965"
+        ],
+        "executor": "Codex（沙僧）",
+        "docOnly": true
+      },
+      {
+        "label": "登记全部待审核查范围：15 批代码与 5 批文档，main 留唐僧",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "1bd0430"
+        ],
+        "executor": "Codex（沙僧）",
+        "docOnly": true
+      },
+      {
+        "label": "修复 03fe666 核查问题：同值宠物按身份显示出战，补原版参照回归",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "a0425cc"
+        ],
+        "executor": "Codex（沙僧）",
+        "docOnly": false
+      },
+      {
+        "label": "补待审菜单的可重放原版画面取证入口，沿用存档访问守卫",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "86c052c"
+        ],
+        "executor": "Codex（沙僧）",
+        "docOnly": false
+      },
+      {
+        "label": "核查发现异化实际普攻漏查，修制作遮盖及地图测试收尾",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "64469ac"
+        ],
+        "executor": "Codex",
+        "docOnly": false
+      },
+      {
+        "label": "完成旧截点22项核查与宠物遮盖反例，保存并发新增14批待审",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "4266e01"
+        ],
+        "executor": "Codex",
+        "docOnly": false
+      },
+      {
+        "label": "保留原版画面身份与修后专项精简证据，接续并发新增核查",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "4fd089f"
+        ],
+        "executor": "Codex",
+        "docOnly": true
+      },
+      {
+        "label": "修复2648e18核查问题：原版截图先关工坊层，禁止遮挡画面假通过",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "1a938bb"
+        ],
+        "executor": "Codex",
+        "docOnly": false
+      },
+      {
+        "label": "续批核查：保留24态原版画面摘要，补七个专项停音与真实等待",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "3999e01"
+        ],
+        "executor": "Codex",
+        "docOnly": false
+      },
+      {
+        "label": "修复9b806e8核查问题：雪粒子圆心半径对齐原版绘图参照",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "87e01f5"
+        ],
+        "executor": "Codex",
+        "docOnly": false
+      },
+      {
+        "label": "修复af5e600核查问题：实验室回程显式拒绝传送门，取证显式绘制视口",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "dee90b2"
+        ],
+        "executor": "Codex",
+        "docOnly": false
+      },
+      {
+        "label": "修复e3db221核查问题：清邀请函仍可能出门，要塞回程显式选择离开",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "fe91537"
+        ],
+        "executor": "Codex",
+        "docOnly": false
+      },
+      {
+        "label": "事件参照按审查截点校正：1798共同项全同，既有原版异常按原守卫保留",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "bc0dab1"
+        ],
+        "executor": "Codex",
+        "docOnly": true
+      },
+      {
+        "label": "核查36项销账草稿及最终事件复验通过，登记截点后4项",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "dcf950c"
+        ],
+        "executor": "Codex",
+        "docOnly": true
+      },
+      {
+        "label": "补查末批：同步四地图与招募难度限制到独立核查工作树",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "14e9eb8"
+        ],
+        "executor": "Codex",
+        "docOnly": false
+      },
+      {
+        "label": "修复ffe51ae核查问题：新增地图专项退出前停音并等真实半秒",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "23aafd6"
+        ],
+        "executor": "Codex",
+        "docOnly": false
+      },
+      {
+        "label": "末批独立原版复放：79事件与45受限号角一致，保留续批精简证据",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "8416058"
+        ],
+        "executor": "Codex",
+        "docOnly": true
+      },
+      {
+        "label": "收尾仅同步总装登记：保留主工作区及新车道占用",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "63a3a65"
+        ],
+        "executor": "Codex",
+        "docOnly": false
+      }
+    ]
+  },
+  "main": {
+    "head": "3614777adb9d89e31cd19d8576e16b39c408e451",
+    "pendingCodexAfterApplyingDraft": [],
+    "reservedForClaude": [
+      {
+        "label": "合并 codex/state-effects-2e",
+        "date": "2026-10-23",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "4bf9996",
+          "3bda37b",
+          "961443e",
+          "cb59b46",
+          "c95a05d",
+          "77e8bfc",
+          "26fe46f",
+          "3faf0cd",
+          "fb9f73d",
+          "9d249fb",
+          "932b4df",
+          "4b3700d",
+          "3f4e6c0",
+          "c545f83",
+          "76fff4b",
+          "b84f1a8",
+          "7c99d19",
+          "e3c347a",
+          "4ea36d6",
+          "8deeab9",
+          "6b270df",
+          "b58b9fc",
+          "8317db8",
+          "c572e51"
+        ],
+        "executor": "Codex（沙僧）",
+        "docOnly": false
+      },
+      {
+        "label": "修复进度核算收工检查：临时接收库自动维护与清理竞争",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "117ba14"
+        ],
+        "executor": "Codex（沙僧）",
+        "docOnly": false
+      },
+      {
+        "label": "交接板同步本轮测试夹具修复的待核查批数",
+        "date": "2026-10-24",
+        "need": [
+          "Claude"
+        ],
+        "commits": [
+          "bb5d965"
+        ],
+        "executor": "Codex（沙僧）",
+        "docOnly": true
+      }
+    ]
+  }
 }
