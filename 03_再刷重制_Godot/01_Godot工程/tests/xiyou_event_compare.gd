@@ -214,7 +214,7 @@ func _run() -> void:
 		print("REGRESSION ", id, " ", report.filter(func(r): return r.id == id)[0].diffs.slice(0, 3))
 	if update_baseline and only.is_empty():
 		var f := FileAccess.open(ProjectSettings.globalize_path(BASELINE), FileAccess.WRITE)
-		f.store_string(JSON.stringify({"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 6 例都是原版有而重制版未做的系统：m4e8p0 仓库（PHWarehouse）、m4e17p0／p1 更衣（Scene_ChangeClothes）、m4e40p1／p3 装备镶嵌图鉴（Scene_EquipInlayBook）三处界面未接；m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。",
+		f.store_string(JSON.stringify({"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 7 例都是原版有而重制版未做的系统：m4e8p0 仓库（PHWarehouse）、m4e17p0／p1 更衣（Scene_ChangeClothes）、m4e40p1／p3 装备镶嵌图鉴（Scene_EquipInlayBook）、m132e6p0 奉神老妪「进阶」（Scene_ActorAdvanced）四处界面未接；m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。",
 			"source": str(oracle.get("sourceIdentity", {}).get("releaseVersion", "")), "match": ok_count, "cases": report.size(), "mismatch": mismatched}, "\t", true))
 		f.close()
 	if out_dir != "":

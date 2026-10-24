@@ -322,14 +322,70 @@ static func stone_locked(s: XState, rec: Dictionary) -> bool:
 	return k >= 0 and progress_floor(s) < int(races.bands[k][0])
 
 
+## installBossDifficultyRuntime：超强者（CodexBossDifficulty.superStrongIds）仅限地狱及以上难度出战、获取与招募。
+const SUPER_STRONG_IDS := [106, 101, 100, 102, 104, 127, 124, 96, 120, 107, 108, 122, 123, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 171, 172, 173, 175]
+## 持久挑战开关（不看副本事件临时改的敌方难度）；混沌难度（原生 ID 9）也在地狱之上
+const SUPER_SWITCHES := [2494, 2489, 2487, 2483, 2461, 2462, 2463]
+## 新原生接入的伙伴号角（D.recruitments：号角物品 → 角色）
+const RECRUIT_HORNS := {2902: 167, 2904: 168, 2931: 169, 2932: 170, 2936: 171, 2938: 172, 2940: 173, 2941: 174, 2943: 175, 2945: 176, 2946: 177}
+const SUPER_NOTICE := "超强者仅限地狱及以上难度获取。"
+static var _recruit_cache := {}
+
+
+static func super_enabled(s: XState) -> bool:
+	return SUPER_SWITCHES.any(func(id): return s.switch(id)) or s.difficulty == 9
+
+
+static func can_acquire_actor(s: XState, actor_id: int) -> bool:
+	return not SUPER_STRONG_IDS.has(actor_id) or super_enabled(s)
+
+
+## D.recruitActorId：号角表 → 备注 <CodexRecruitActor: n> → 效果公共事件里唯一的一条「加入队伍」(129)；其余物品为 0
+static func recruit_actor_id(rec: Dictionary) -> int:
+	if rec.is_empty() or is_gear(rec):
+		return 0
+	var id := int(rec.get("baseItemId", rec.get("id", 0)))
+	if _recruit_cache.has(id):
+		return _recruit_cache[id]
+	var out := 0
+	if RECRUIT_HORNS.has(id):
+		out = RECRUIT_HORNS[id]
+	else:
+		var tag := RegEx.create_from_string("(?i)<CodexRecruitActor:\\s*(\\d+)>").search(str(rec.get("note", "")))
+		if tag != null:
+			out = int(tag.get_string(1))
+		else:
+			var found := []
+			for e in rec.get("effects", []):
+				if int(e.code) != 44:
+					continue
+				for c in XDB.rec("CommonEvents", int(e.dataId)).get("list", []):
+					if int(c.code) == 129 and int(c.parameters[1]) == 0 and not found.has(int(c.parameters[0])):
+						found.append(int(c.parameters[0]))
+			out = found[0] if found.size() == 1 else 0
+	_recruit_cache[id] = out
+	return out
+
+
+static func can_acquire_item(s: XState, rec: Dictionary) -> bool:
+	return can_acquire_actor(s, recruit_actor_id(rec))
+
+
+static func acquisition_notice() -> void:
+	XToast.show_text(SUPER_NOTICE)
+
+
+
 ## Window_ShopBuy.isEnabled 整条链（price 为商品的买入价，指定价格优先）：停用号角、进阶石层数、
 ## MoreCurrencies 变量/物品买入价都够、YEP_ItemCore 独立装备该类不超过 9999 件、MV 价格不超过金钱且物品未满。
-## 未移植：超强者伙伴号角限地狱及以上（installBossDifficultyRuntime）、轮回随机阵容限制（installReincarnationRandomRuntime）。
+## 超强者伙伴号角限地狱及以上（installBossDifficultyRuntime，can_acquire_item）已移植；未移植：轮回随机阵容限制（installReincarnationRandomRuntime）。
 ## KMS_ShopInventory 库存在 XShop._buy_enabled 另乘（XShopStock，链的最后一环）。
 static func can_buy(s: XState, rec: Dictionary, price: int) -> bool:
 	if rec.is_empty():
 		return false
 	if not is_gear(rec) and DISABLED_HORNS.has(int(rec.get("id", 0))):
+		return false
+	if not is_gear(rec) and not can_acquire_item(s, rec):
 		return false
 	if stone_locked(s, rec):
 		return false
