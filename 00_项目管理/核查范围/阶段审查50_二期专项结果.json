@@ -616,5 +616,43 @@
    "runnerAccepts": false
   },
   "helperExitCode": 0
+ },
+ "finalDepsPending": {
+  "status": {
+   "runId": "8b5c19c54a284f3a9451c6ae4e9aafcc",
+   "status": "running",
+   "exitCode": null,
+   "pid": 51809,
+   "startedAt": "2026-10-24T23:04:22.193614+00:00",
+   "command": [
+    "python3",
+    "03_再刷重制_Godot/07_开发环境/并行测试.py",
+    "03_再刷重制_Godot/07_开发环境/godot",
+    "03_再刷重制_Godot/01_Godot工程",
+    "--log-dir",
+    "03_再刷重制_Godot/04_验证/本地结果/stage-review-50-phase2-final/deps",
+    "xiyou_rules.tscn",
+    "xiyou_rules_d1b.tscn",
+    "xiyou_rules_d1c.tscn",
+    "xiyou_rules_d1d.tscn",
+    "xiyou_save_page.tscn",
+    "xiyou_battleback_save.tscn",
+    "xiyou_gear_query_cache.tscn",
+    "xiyou_battle_events.tscn",
+    "xiyou_warehouse.tscn",
+    "xiyou_event_compare.tscn",
+    "xiyou_lobby_shops.tscn",
+    "xiyou_stage50_review.tscn"
+   ],
+   "childPGID": 51812,
+   "childIdentity": {
+    "pid": 51812,
+    "pgid": 51812,
+    "startedAt": "Sun Oct 25 01:04:22 2026    "
+   }
+  },
+  "path": "03_再刷重制_Godot/04_验证/本地结果/stage-review-50-phase2-final/deps.log",
+  "results": "03_再刷重制_Godot/04_验证/本地结果/stage-review-50-phase2-final/deps/test_timings.json",
+  "scope": "精确12场，沿用共享槽及默认worktree两并发；本轮尚无最终结果，不重复启动"
  }
 }
