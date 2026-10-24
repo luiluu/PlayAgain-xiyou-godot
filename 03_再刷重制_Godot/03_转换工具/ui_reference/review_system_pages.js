@@ -419,6 +419,64 @@
         extra: function () { return ccState(); }
     };
 
+    // 角色进阶（八戒_68）：奉神老妪 Map132 EV6「进阶」＝SceneManager.push(Scene_ActorAdvanced)。
+    // 摆法：队伍 1/8/9/10，金币 0；$.toaster 包一层记下提示文字。
+    // 截图：开场、第 2 行、确定开底部「进阶」、条件不足、补齐角色 1 第 0 阶的物品与金币后再开底部、确认窗「是否进阶」、
+    // 确认窗取消、再走一遍确定、进阶完成（次数 1、学会技能、扣物品金币）、角色 9 进阶次数设 4（已达最大）、已满时确定
+    var advToasts = [];
+    function advRow(a) {
+        return $dataStarAdvancedOpt.filter(function (o) { return o && a._actorId == o.AdvancedActId && a._AdvancedNum == o.AdvancedActNum; })[0] || null;
+    }
+    function advState() {
+        var s = scene(), st = s && s._statusWindow, sp = st && st._Sprite, a1 = $gameActors.actor(1), r1 = advRow(a1);
+        return {toasts: advToasts.slice(), gold: $gameParty._gold,
+            members: $gameParty.members().map(function (a) {
+                var r = advRow(a);
+                return {id: a._actorId, name: a._name, level: a._level, num: a._AdvancedNum, params: [0, 1, 2, 3, 4, 5, 6, 7].map(function (i) { return a.param(i); }),
+                    row: r ? {id: r.id, num: r.AdvancedActNum, max: r.AdvancedActNumMaX, level: r.AdvancedActLevel, gold: r.AdvancedGold,
+                        items: r.AdvancedItem, learn: r.AdvancedSkiId, forget: r.AdvancedForId} : null};
+            }),
+            actor1: {skills: a1._skills.slice(), has1240: a1._skills.indexOf(1240) >= 0, items: (r1 || {AdvancedItem: []}).AdvancedItem.map(function (p) { return [p[0], $gameParty.numItems($dataItems[p[0]])]; })},
+            item188: $gameParty.numItems($dataItems[188]), item180: $gameParty.numItems($dataItems[180]),
+            index: s && s._indexWindow ? {index: s._indexWindow.index(), active: s._indexWindow.active, windowIdx: s._windowIdx} : null,
+            bottom: s && s._BottomconfirmWindow ? {index: s._BottomconfirmWindow.index(), active: s._BottomconfirmWindow.active, openness: s._BottomconfirmWindow.openness} : null,
+            confirm: s && s._confirmWindow ? {index: s._confirmWindow.index(), active: s._confirmWindow.active, openness: s._confirmWindow.openness} : null,
+            sprite: sp ? {bitmap: sp.bitmap ? sp.bitmap._url : null, x: round(sp.x), y: round(sp.y), scale: [sp.scale.x, sp.scale.y],
+                anchor: [sp.anchor.x, sp.anchor.y], frame: sp.bitmap ? [sp._frame.x, sp._frame.y, sp._frame.width, sp._frame.height] : null,
+                bitmapSize: sp.bitmap ? [sp.bitmap.width, sp.bitmap.height] : null, frameCount: st._spriteFrameCount} : null};
+    }
+    P.actor_advanced = {
+        setup: async function () {
+            $gameParty._gold = 0;
+            advToasts = [];
+            var toaster = $.toaster;
+            $.toaster = function (o) { advToasts.push(o && o.message); return toaster.apply(this, arguments); };
+            await push(Scene_ActorAdvanced);
+        },
+        shots: {
+            adv_0: async function () {},
+            adv_1_row1: async function () { scene()._indexWindow.select(1); },
+            adv_2_bottom: async function () { var w = scene()._indexWindow; w.select(0); await settle(); w.processOk(); },
+            adv_3_fail: async function () { scene()._BottomconfirmWindow.processOk(); },
+            adv_4_ready: async function () {
+                var s = scene(), r = advRow($gameActors.actor(1));
+                r.AdvancedItem.forEach(function (p) { $gameParty.gainItem($dataItems[p[0]], p[1]); });
+                $gameParty._gold = r.AdvancedGold;
+                s._goldWindow.setupWhenCheck(); s._statusWindow.setupWhenCheck($gameActors.actor(1));
+                await settle(); s._indexWindow.processOk();
+            },
+            adv_5_confirm: async function () { scene()._BottomconfirmWindow.processOk(); },
+            adv_6_cancel: async function () { scene()._confirmWindow.processCancel(); },
+            adv_7_confirm2: async function () {
+                var s = scene(); s._indexWindow.processOk(); await settle(); s._BottomconfirmWindow.processOk();
+            },
+            adv_8_done: async function () { scene()._confirmWindow.processOk(); },
+            adv_9_max: async function () { $gameActors.actor(9)._AdvancedNum = 4; scene()._indexWindow.select(2); },
+            adv_10_max_ok: async function () { scene()._indexWindow.processOk(); }
+        },
+        extra: function () { return advState(); }
+    };
+
     // 异化工坊：alien_workshop 探针的 list 路线、alien_config 探针的 bound 路线（DOM 叠加层，整页截图）
     function domReadout() {
         var host = document.getElementById('alien-workshop');
