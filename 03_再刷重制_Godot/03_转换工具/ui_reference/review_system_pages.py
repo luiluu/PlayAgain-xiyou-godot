@@ -18,7 +18,7 @@ INPUTS = ["index.html", "js/plugins.js", "js/rpg_scenes.js", "js/rpg_windows.js"
           "js/codex/runtime/installNativeBindingChargeRuntime.js",
           "js/codex/runtime/installAlienationWorkshop.js", "js/codex/runtime/installAlienationAffixes.js",
           "js/codex/runtime/installGamePanelTheme.js", "js/codex/runtime/installCombatPowerRuntime.js",
-          "js/plugins/AB_EnemyBook.js", "js/plugins/Star_EquipInlayBook.js", "js/plugins/Star_EquipmentMosaic.js", "js/plugins/PH_Warehouse.js", "js/plugins/Star_ActorWarehouse.js", "js/plugins/EliteEnemy.js", "js/plugins/EnemyNameColorByDifficulty.js"]
+          "js/plugins/AB_EnemyBook.js", "js/plugins/Star_EquipInlayBook.js", "js/plugins/Star_EquipmentMosaic.js", "js/plugins/PH_Warehouse.js", "js/plugins/Star_ActorWarehouse.js", "js/plugins/Star_ChangeClothes.js", "js/codex/runtime/installUnifiedQualityRuntime.js", "js/plugins/EliteEnemy.js", "js/plugins/EnemyNameColorByDifficulty.js"]
 
 
 def identity(source):

@@ -379,7 +379,9 @@ func refresh_party_sprites() -> void:
 	var s := XState.current
 	var leader: XActor = s.leader() if s else null
 	if leader:
-		player.set_image(str(leader.data().characterName), int(leader.data().characterIndex))
+		# 更衣的替换形象只换玩家（Star_ChangeClothes 改 Game_Player 的 characterName／characterIndex，见 XChangeClothes）
+		var img := XChangeClothes.player_image(s, str(leader.data().characterName), int(leader.data().characterIndex))
+		player.set_image(img[0], img[1])
 	else:
 		player.set_image("", 0)
 	for f in followers:
@@ -933,6 +935,18 @@ func open_actor_warehouse() -> void:
 	page.queue_free()
 	hud.visible = true
 	refresh_events()
+
+
+## 更衣（SceneManager.push(Scene_ChangeClothes)）：衣橱管理员「查看衣橱」，关闭后回到地图；
+## 替换／还原形象改的是玩家行走图（原版 characterName 每帧现取），回地图后刷新队首行走图
+func open_change_clothes() -> void:
+	hud.visible = false
+	var page := XChangeClothesScene.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+	refresh_party_sprites()
 
 
 ## 装备镶嵌图鉴（SceneManager.push(Scene_EquipInlayBook)）：魂灯商人「查看图鉴」，关闭后回到地图

@@ -847,6 +847,11 @@ class Exporter:
                     weapon_images.add(int(found.group(1)))
         for page in sorted({(i - 1) // 12 + 1 for i in weapon_images}):
             self.ref_img('system', 'Weapons%d' % page)
+        # 更衣换装表（Star_ChangeClothes「ChangeClothes 1～150」）的行走图：衣橱名单与形象展示、替换后的玩家行走图（XChangeClothes）
+        for i in range(1, 151):
+            raw = self.plugins.get('Star_ChangeClothes', {}).get(f'ChangeClothes {i}') or ''
+            if raw.strip():
+                self.ref_img('characters', json.loads(raw).get('characterName'))
         # 界面用图（标题、菜单底图等），写成「文件夹/文件名」
         for rel in cfg.get('extraImages', []):
             self.img.add(rel)
