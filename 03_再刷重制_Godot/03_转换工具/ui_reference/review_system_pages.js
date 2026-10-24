@@ -370,6 +370,55 @@
         extra: function () { return awState(); }
     };
 
+    // 更衣（八戒_67）：衣橱管理员 Map4 EV17「查看衣橱」＝SceneManager.push(Scene_ChangeClothes)。
+    // 摆法：队伍 1/8/9/10，仓库 [13]；ConfigManager.ChangeClothesLite 先放 -9、-12、-20（换装表第 9／12／20 项），
+    // 打开时 initialize 再补上队伍与仓库的角色。$.toaster 包一层记下提示文字。
+    // 截图：开场、更换（普通档）、优秀档（光标在分类）、优秀档确定（名单第 1 行）、未解锁行、未解锁确定、已解锁确定（替换）、
+    // 名单取消回分类、神话档（换装表）确定、换装表已解锁行确定、典藏档、回底部还原
+    var ccToasts = [];
+    function ccState() {
+        var s = scene(), l = s && s._AListWindow, st = s && s._statusWindow, sp = st && st._Sprite;
+        return {lite: ConfigManager.ChangeClothesLite.slice(), toasts: ccToasts.slice(),
+            player: {setName: $gamePlayer.Set_OcharacterName, setIndex: $gamePlayer.Set_OcharacterIndex,
+                characterName: $gamePlayer.characterName(), characterIndex: $gamePlayer.characterIndex()},
+            followers: $gamePlayer.followers()._data.map(function (f) { return [f.characterName(), f.characterIndex()]; }),
+            category: s && s._indexWindow ? {index: s._indexWindow.index(), active: s._indexWindow.active} : null,
+            list: l ? {lid: l.Lid, ids: l._list.map(function (a) { return a.id; }), index: l.index(), active: l.active, top: l.topRow(),
+                itemHeight: l.itemHeight(), maxPageRows: l.maxPageRows()} : null,
+            bottom: s && s._BottomconfirmWindow ? {index: s._BottomconfirmWindow.index(), active: s._BottomconfirmWindow.active} : null,
+            sprite: sp ? {bitmap: sp.bitmap ? sp.bitmap._url : null, x: round(sp.x), y: round(sp.y), scale: [sp.scale.x, sp.scale.y],
+                anchor: [sp.anchor.x, sp.anchor.y], frame: sp.bitmap ? [sp._frame.x, sp._frame.y, sp._frame.width, sp._frame.height] : null,
+                bitmapSize: sp.bitmap ? [sp.bitmap.width, sp.bitmap.height] : null, frameCount: st._spriteFrameCount, fref: st._spriteFRef} : null};
+    }
+    P.change_clothes = {
+        setup: async function () {
+            $gameParty._saveactors = [13]; $gameActors.actor(13);
+            ConfigManager.ChangeClothesLite = [-9, -12, -20];
+            ccToasts = [];
+            var toaster = $.toaster;
+            $.toaster = function (o) { ccToasts.push(o && o.message); return toaster.apply(this, arguments); };
+            await push(Scene_ChangeClothes);
+        },
+        shots: {
+            cc_0: async function () {},
+            cc_1_change: async function () { scene()._BottomconfirmWindow.processOk(); },
+            cc_2_cat1: async function () { scene()._indexWindow.select(1); },
+            cc_3_cat1_ok: async function () { scene()._indexWindow.processOk(); },
+            cc_4_locked: async function () { scene()._AListWindow.select(3); },
+            cc_5_locked_ok: async function () { scene()._AListWindow.processOk(); },
+            cc_6_apply: async function () { var l = scene()._AListWindow; l.select(0); await settle(); l.processOk(); },
+            cc_7_list_cancel: async function () { scene()._AListWindow.processCancel(); },
+            cc_8_myth: async function () { var c = scene()._indexWindow; c.select(6); await settle(); c.processOk(); },
+            cc_9_myth_apply: async function () { var l = scene()._AListWindow; l.select(3); await settle(); l.processOk(); },
+            cc_10_dian: async function () { var s = scene(); s._AListWindow.processCancel(); await settle(); s._indexWindow.select(7); },
+            cc_11_restore: async function () {
+                var s = scene(); s._indexWindow.processCancel(); await settle();
+                s._BottomconfirmWindow.select(1); s._BottomconfirmWindow.processOk();
+            }
+        },
+        extra: function () { return ccState(); }
+    };
+
     // 异化工坊：alien_workshop 探针的 list 路线、alien_config 探针的 bound 路线（DOM 叠加层，整页截图）
     function domReadout() {
         var host = document.getElementById('alien-workshop');

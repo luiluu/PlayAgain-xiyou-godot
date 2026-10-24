@@ -1,0 +1,3767 @@
+{
+"source": "冻结 v0.28；ui_reference/review_system_pages.js change_clothes（内存新局 1/8/9/10，仓库 _saveactors=[13]；ChangeClothesLite 先放 -9/-12/-20；依次：更换、优秀档、确定、未解锁行（里德）与确定、修 确定替换、名单取消、神话档确定、牛头人酋长 确定替换、典藏档、回底部还原）。状态窗精灵每 20 帧换一格（frame 横向随帧变化，只比行与格宽）。",
+"shots": {
+"cc_0": {
+"windows": {
+"Window_ChangeClothesC": {
+"rect": [
+0,
+0,
+426,
+620
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"普通",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"优秀",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"精良",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"史诗",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"传说",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"神话",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"典藏",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesIndex": {
+"rect": [
+426,
+0,
+426,
+720
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"？？？",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesStatus": {
+"rect": [
+852,
+0,
+428,
+720
+],
+"index": null,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": []
+},
+"Window_ChangeClothesConfirm": {
+"rect": [
+0,
+620,
+427,
+100
+],
+"index": 0,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"更换",
+6,
+0,
+387,
+"left",
+26,
+"#ffffff"
+],
+[
+"还原当前形象",
+6,
+36,
+387,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"state": {
+"lite": [
+-9,
+-12,
+-20,
+1,
+8,
+9,
+10,
+13
+],
+"toasts": [],
+"player": {
+"characterName": "PF_3",
+"characterIndex": 6
+},
+"followers": [
+[
+"Actor2",
+2
+],
+[
+"Actor1",
+1
+],
+[
+"Actor13",
+5
+]
+],
+"category": {
+"index": -1,
+"active": false
+},
+"list": {
+"lid": 1,
+"ids": [
+52,
+99
+],
+"index": -1,
+"active": false,
+"top": 0,
+"itemHeight": 36,
+"maxPageRows": 19
+},
+"bottom": {
+"index": 0,
+"active": true
+},
+"sprite": {
+"bitmap": null,
+"x": 107,
+"y": 143,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": null,
+"bitmapSize": null
+}
+}
+},
+"cc_1_change": {
+"windows": {
+"Window_ChangeClothesC": {
+"rect": [
+0,
+0,
+426,
+620
+],
+"index": 0,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"普通",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"优秀",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"精良",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"史诗",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"传说",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"神话",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"典藏",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesIndex": {
+"rect": [
+426,
+0,
+426,
+720
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"？？？",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesStatus": {
+"rect": [
+852,
+0,
+428,
+720
+],
+"index": null,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": []
+},
+"Window_ChangeClothesConfirm": {
+"rect": [
+0,
+620,
+427,
+100
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"更换",
+6,
+0,
+387,
+"left",
+26,
+"#ffffff"
+],
+[
+"还原当前形象",
+6,
+36,
+387,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"state": {
+"lite": [
+-9,
+-12,
+-20,
+1,
+8,
+9,
+10,
+13
+],
+"toasts": [],
+"player": {
+"characterName": "PF_3",
+"characterIndex": 6
+},
+"followers": [
+[
+"Actor2",
+2
+],
+[
+"Actor1",
+1
+],
+[
+"Actor13",
+5
+]
+],
+"category": {
+"index": 0,
+"active": true
+},
+"list": {
+"lid": 1,
+"ids": [
+52,
+99
+],
+"index": -1,
+"active": false,
+"top": 0,
+"itemHeight": 36,
+"maxPageRows": 19
+},
+"bottom": {
+"index": -1,
+"active": false
+},
+"sprite": {
+"bitmap": null,
+"x": 107,
+"y": 143,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": null,
+"bitmapSize": null
+}
+}
+},
+"cc_2_cat1": {
+"windows": {
+"Window_ChangeClothesC": {
+"rect": [
+0,
+0,
+426,
+620
+],
+"index": 1,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"普通",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"优秀",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"精良",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"史诗",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"传说",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"神话",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"典藏",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesIndex": {
+"rect": [
+426,
+0,
+426,
+720
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"修",
+36,
+0,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+36,
+36,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+36,
+72,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesStatus": {
+"rect": [
+852,
+0,
+428,
+720
+],
+"index": null,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": []
+},
+"Window_ChangeClothesConfirm": {
+"rect": [
+0,
+620,
+427,
+100
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"更换",
+6,
+0,
+387,
+"left",
+26,
+"#ffffff"
+],
+[
+"还原当前形象",
+6,
+36,
+387,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"state": {
+"lite": [
+-9,
+-12,
+-20,
+1,
+8,
+9,
+10,
+13
+],
+"toasts": [],
+"player": {
+"characterName": "PF_3",
+"characterIndex": 6
+},
+"followers": [
+[
+"Actor2",
+2
+],
+[
+"Actor1",
+1
+],
+[
+"Actor13",
+5
+]
+],
+"category": {
+"index": 1,
+"active": true
+},
+"list": {
+"lid": 2,
+"ids": [
+8,
+9,
+10,
+11,
+16,
+21,
+22
+],
+"index": -1,
+"active": false,
+"top": 0,
+"itemHeight": 36,
+"maxPageRows": 19
+},
+"bottom": {
+"index": -1,
+"active": false
+},
+"sprite": {
+"bitmap": null,
+"x": 107,
+"y": 143,
+"scale": [
+1,
+1
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": null,
+"bitmapSize": null
+}
+}
+},
+"cc_3_cat1_ok": {
+"windows": {
+"Window_ChangeClothesC": {
+"rect": [
+0,
+0,
+426,
+620
+],
+"index": 1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"普通",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"优秀",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"精良",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"史诗",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"传说",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"神话",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"典藏",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesIndex": {
+"rect": [
+426,
+0,
+426,
+720
+],
+"index": 0,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"修",
+36,
+0,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+36,
+36,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+36,
+72,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesStatus": {
+"rect": [
+852,
+0,
+428,
+720
+],
+"index": null,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"形象展示",
+139.46,
+0,
+400,
+"left",
+26,
+"#ffffff"
+],
+[
+"获得途径:获得伙伴修",
+0,
+432,
+400,
+"left",
+26,
+"#ffffff"
+],
+[
+"状态:已解锁",
+0,
+468,
+400,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesConfirm": {
+"rect": [
+0,
+620,
+427,
+100
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"更换",
+6,
+0,
+387,
+"left",
+26,
+"#ffffff"
+],
+[
+"还原当前形象",
+6,
+36,
+387,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"state": {
+"lite": [
+-9,
+-12,
+-20,
+1,
+8,
+9,
+10,
+13
+],
+"toasts": [],
+"player": {
+"characterName": "PF_3",
+"characterIndex": 6
+},
+"followers": [
+[
+"Actor2",
+2
+],
+[
+"Actor1",
+1
+],
+[
+"Actor13",
+5
+]
+],
+"category": {
+"index": 1,
+"active": false
+},
+"list": {
+"lid": 2,
+"ids": [
+8,
+9,
+10,
+11,
+16,
+21,
+22
+],
+"index": 0,
+"active": true,
+"top": 0,
+"itemHeight": 36,
+"maxPageRows": 19
+},
+"bottom": {
+"index": -1,
+"active": false
+},
+"sprite": {
+"bitmap": "img/characters/Actor2.png",
+"x": 213.33,
+"y": 360,
+"scale": [
+2,
+2
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+336,
+0,
+48,
+48
+],
+"bitmapSize": [
+576,
+384
+]
+}
+}
+},
+"cc_4_locked": {
+"windows": {
+"Window_ChangeClothesC": {
+"rect": [
+0,
+0,
+426,
+620
+],
+"index": 1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"普通",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"优秀",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"精良",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"史诗",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"传说",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"神话",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"典藏",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesIndex": {
+"rect": [
+426,
+0,
+426,
+720
+],
+"index": 3,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"修",
+36,
+0,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+36,
+36,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+36,
+72,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesStatus": {
+"rect": [
+852,
+0,
+428,
+720
+],
+"index": null,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"获得途径:获得伙伴里德",
+0,
+432,
+400,
+"left",
+26,
+"#ffffff"
+],
+[
+"状态:未解锁",
+0,
+468,
+400,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesConfirm": {
+"rect": [
+0,
+620,
+427,
+100
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"更换",
+6,
+0,
+387,
+"left",
+26,
+"#ffffff"
+],
+[
+"还原当前形象",
+6,
+36,
+387,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"state": {
+"lite": [
+-9,
+-12,
+-20,
+1,
+8,
+9,
+10,
+13
+],
+"toasts": [],
+"player": {
+"characterName": "PF_3",
+"characterIndex": 6
+},
+"followers": [
+[
+"Actor2",
+2
+],
+[
+"Actor1",
+1
+],
+[
+"Actor13",
+5
+]
+],
+"category": {
+"index": 1,
+"active": false
+},
+"list": {
+"lid": 2,
+"ids": [
+8,
+9,
+10,
+11,
+16,
+21,
+22
+],
+"index": 3,
+"active": true,
+"top": 0,
+"itemHeight": 36,
+"maxPageRows": 19
+},
+"bottom": {
+"index": -1,
+"active": false
+},
+"sprite": {
+"bitmap": null,
+"x": 40,
+"y": 30.77,
+"scale": [
+2,
+2
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": null,
+"bitmapSize": null
+}
+}
+},
+"cc_5_locked_ok": {
+"windows": {
+"Window_ChangeClothesC": {
+"rect": [
+0,
+0,
+426,
+620
+],
+"index": 1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"普通",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"优秀",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"精良",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"史诗",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"传说",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"神话",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"典藏",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesIndex": {
+"rect": [
+426,
+0,
+426,
+720
+],
+"index": 3,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"修",
+36,
+0,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+36,
+36,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+36,
+72,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesStatus": {
+"rect": [
+852,
+0,
+428,
+720
+],
+"index": null,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"获得途径:获得伙伴里德",
+0,
+432,
+400,
+"left",
+26,
+"#ffffff"
+],
+[
+"状态:未解锁",
+0,
+468,
+400,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesConfirm": {
+"rect": [
+0,
+620,
+427,
+100
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"更换",
+6,
+0,
+387,
+"left",
+26,
+"#ffffff"
+],
+[
+"还原当前形象",
+6,
+36,
+387,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"state": {
+"lite": [
+-9,
+-12,
+-20,
+1,
+8,
+9,
+10,
+13
+],
+"toasts": [
+"未解锁"
+],
+"player": {
+"characterName": "PF_3",
+"characterIndex": 6
+},
+"followers": [
+[
+"Actor2",
+2
+],
+[
+"Actor1",
+1
+],
+[
+"Actor13",
+5
+]
+],
+"category": {
+"index": 1,
+"active": false
+},
+"list": {
+"lid": 2,
+"ids": [
+8,
+9,
+10,
+11,
+16,
+21,
+22
+],
+"index": 3,
+"active": true,
+"top": 0,
+"itemHeight": 36,
+"maxPageRows": 19
+},
+"bottom": {
+"index": -1,
+"active": false
+},
+"sprite": {
+"bitmap": null,
+"x": 40,
+"y": 30.77,
+"scale": [
+2,
+2
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": null,
+"bitmapSize": null
+}
+}
+},
+"cc_6_apply": {
+"windows": {
+"Window_ChangeClothesC": {
+"rect": [
+0,
+0,
+426,
+620
+],
+"index": 1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"普通",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"优秀",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"精良",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"史诗",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"传说",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"神话",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"典藏",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesIndex": {
+"rect": [
+426,
+0,
+426,
+720
+],
+"index": 0,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"修",
+36,
+0,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+36,
+36,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+36,
+72,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesStatus": {
+"rect": [
+852,
+0,
+428,
+720
+],
+"index": null,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"形象展示",
+139.46,
+0,
+400,
+"left",
+26,
+"#ffffff"
+],
+[
+"获得途径:获得伙伴修",
+0,
+432,
+400,
+"left",
+26,
+"#ffffff"
+],
+[
+"状态:已解锁",
+0,
+468,
+400,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesConfirm": {
+"rect": [
+0,
+620,
+427,
+100
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"更换",
+6,
+0,
+387,
+"left",
+26,
+"#ffffff"
+],
+[
+"还原当前形象",
+6,
+36,
+387,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"state": {
+"lite": [
+-9,
+-12,
+-20,
+1,
+8,
+9,
+10,
+13
+],
+"toasts": [
+"未解锁",
+"替换完成"
+],
+"player": {
+"setName": "Actor2",
+"setIndex": 2,
+"characterName": "Actor2",
+"characterIndex": 2
+},
+"followers": [
+[
+"Actor2",
+2
+],
+[
+"Actor1",
+1
+],
+[
+"Actor13",
+5
+]
+],
+"category": {
+"index": 1,
+"active": false
+},
+"list": {
+"lid": 2,
+"ids": [
+8,
+9,
+10,
+11,
+16,
+21,
+22
+],
+"index": 0,
+"active": true,
+"top": 0,
+"itemHeight": 36,
+"maxPageRows": 19
+},
+"bottom": {
+"index": -1,
+"active": false
+},
+"sprite": {
+"bitmap": "img/characters/Actor2.png",
+"x": 213.33,
+"y": 360,
+"scale": [
+2,
+2
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+384,
+0,
+48,
+48
+],
+"bitmapSize": [
+576,
+384
+]
+}
+}
+},
+"cc_7_list_cancel": {
+"windows": {
+"Window_ChangeClothesC": {
+"rect": [
+0,
+0,
+426,
+620
+],
+"index": 1,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"普通",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"优秀",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"精良",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"史诗",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"传说",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"神话",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"典藏",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesIndex": {
+"rect": [
+426,
+0,
+426,
+720
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"修",
+36,
+0,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"罗琳",
+36,
+36,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"美娜",
+36,
+72,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesStatus": {
+"rect": [
+852,
+0,
+428,
+720
+],
+"index": null,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": []
+},
+"Window_ChangeClothesConfirm": {
+"rect": [
+0,
+620,
+427,
+100
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"更换",
+6,
+0,
+387,
+"left",
+26,
+"#ffffff"
+],
+[
+"还原当前形象",
+6,
+36,
+387,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"state": {
+"lite": [
+-9,
+-12,
+-20,
+1,
+8,
+9,
+10,
+13
+],
+"toasts": [
+"未解锁",
+"替换完成"
+],
+"player": {
+"setName": "Actor2",
+"setIndex": 2,
+"characterName": "Actor2",
+"characterIndex": 2
+},
+"followers": [
+[
+"Actor2",
+2
+],
+[
+"Actor1",
+1
+],
+[
+"Actor13",
+5
+]
+],
+"category": {
+"index": 1,
+"active": true
+},
+"list": {
+"lid": 2,
+"ids": [
+8,
+9,
+10,
+11,
+16,
+21,
+22
+],
+"index": -1,
+"active": false,
+"top": 0,
+"itemHeight": 36,
+"maxPageRows": 19
+},
+"bottom": {
+"index": -1,
+"active": false
+},
+"sprite": {
+"bitmap": null,
+"x": 213.33,
+"y": 360,
+"scale": [
+2,
+2
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": null,
+"bitmapSize": null
+}
+}
+},
+"cc_8_myth": {
+"windows": {
+"Window_ChangeClothesC": {
+"rect": [
+0,
+0,
+426,
+620
+],
+"index": 6,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"普通",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"优秀",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"精良",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"史诗",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"传说",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"神话",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"典藏",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesIndex": {
+"rect": [
+426,
+0,
+426,
+720
+],
+"index": 0,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"士兵",
+36,
+0,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"牛头人酋长",
+36,
+108,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"斩龙勇士",
+36,
+216,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+288,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+324,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+360,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+396,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+432,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+468,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+504,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+540,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+576,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+612,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+648,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesStatus": {
+"rect": [
+852,
+0,
+428,
+720
+],
+"index": null,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"形象展示",
+139.46,
+0,
+400,
+"left",
+26,
+"#ffffff"
+],
+[
+"获得途径:称号认证",
+0,
+432,
+400,
+"left",
+26,
+"#ffffff"
+],
+[
+"状态:已解锁",
+0,
+468,
+400,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesConfirm": {
+"rect": [
+0,
+620,
+427,
+100
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"更换",
+6,
+0,
+387,
+"left",
+26,
+"#ffffff"
+],
+[
+"还原当前形象",
+6,
+36,
+387,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"state": {
+"lite": [
+-9,
+-12,
+-20,
+1,
+8,
+9,
+10,
+13
+],
+"toasts": [
+"未解锁",
+"替换完成"
+],
+"player": {
+"setName": "Actor2",
+"setIndex": 2,
+"characterName": "Actor2",
+"characterIndex": 2
+},
+"followers": [
+[
+"Actor2",
+2
+],
+[
+"Actor1",
+1
+],
+[
+"Actor13",
+5
+]
+],
+"category": {
+"index": 6,
+"active": false
+},
+"list": {
+"lid": 0,
+"ids": [
+-9,
+-10,
+-11,
+-12,
+-13,
+-15,
+-20,
+-24,
+-25,
+-32,
+-33,
+-34,
+-35,
+-36,
+-37,
+-38,
+-39,
+-40,
+-41,
+-42,
+-43,
+-44,
+-45,
+-46,
+-47,
+-48,
+-49,
+-50,
+-51,
+-52,
+-53,
+-54,
+-55,
+-56,
+-57,
+-58,
+-59,
+-60,
+-61,
+-62,
+-63,
+-64,
+-65,
+-66,
+-67,
+-68,
+-69,
+-70,
+-71,
+-72,
+-73,
+-74,
+-75,
+-76,
+-77,
+-78,
+-79,
+-80,
+-81,
+-82,
+-83,
+-84,
+-85,
+-86,
+-87,
+-88,
+-89,
+-90,
+-91,
+-92,
+-93,
+-94,
+-95,
+-96,
+-97,
+-98,
+-99,
+-100,
+-101,
+-102,
+-103,
+-104,
+-105,
+-106,
+-107,
+-108,
+-109,
+-110,
+-111,
+-112,
+-113,
+-114,
+-115,
+-116,
+-117
+],
+"index": 0,
+"active": true,
+"top": 0,
+"itemHeight": 36,
+"maxPageRows": 19
+},
+"bottom": {
+"index": -1,
+"active": false
+},
+"sprite": {
+"bitmap": "img/characters/RTPRecreation1.png",
+"x": 213.33,
+"y": 360,
+"scale": [
+2,
+2
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+336,
+192,
+48,
+48
+],
+"bitmapSize": [
+576,
+384
+]
+}
+}
+},
+"cc_9_myth_apply": {
+"windows": {
+"Window_ChangeClothesC": {
+"rect": [
+0,
+0,
+426,
+620
+],
+"index": 6,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"普通",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"优秀",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"精良",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"史诗",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"传说",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"神话",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"典藏",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesIndex": {
+"rect": [
+426,
+0,
+426,
+720
+],
+"index": 3,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"士兵",
+36,
+0,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"牛头人酋长",
+36,
+108,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"斩龙勇士",
+36,
+216,
+362,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+288,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+324,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+360,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+396,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+432,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+468,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+504,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+540,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+576,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+612,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"？？？",
+6,
+648,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesStatus": {
+"rect": [
+852,
+0,
+428,
+720
+],
+"index": null,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"形象展示",
+139.46,
+0,
+400,
+"left",
+26,
+"#ffffff"
+],
+[
+"获得途径:形象卡片",
+0,
+432,
+400,
+"left",
+26,
+"#ffffff"
+],
+[
+"状态:已解锁",
+0,
+468,
+400,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesConfirm": {
+"rect": [
+0,
+620,
+427,
+100
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"更换",
+6,
+0,
+387,
+"left",
+26,
+"#ffffff"
+],
+[
+"还原当前形象",
+6,
+36,
+387,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"state": {
+"lite": [
+-9,
+-12,
+-20,
+1,
+8,
+9,
+10,
+13
+],
+"toasts": [
+"未解锁",
+"替换完成",
+"替换完成"
+],
+"player": {
+"setName": "Monster",
+"setIndex": 3,
+"characterName": "Monster",
+"characterIndex": 3
+},
+"followers": [
+[
+"Actor2",
+2
+],
+[
+"Actor1",
+1
+],
+[
+"Actor13",
+5
+]
+],
+"category": {
+"index": 6,
+"active": false
+},
+"list": {
+"lid": 0,
+"ids": [
+-9,
+-10,
+-11,
+-12,
+-13,
+-15,
+-20,
+-24,
+-25,
+-32,
+-33,
+-34,
+-35,
+-36,
+-37,
+-38,
+-39,
+-40,
+-41,
+-42,
+-43,
+-44,
+-45,
+-46,
+-47,
+-48,
+-49,
+-50,
+-51,
+-52,
+-53,
+-54,
+-55,
+-56,
+-57,
+-58,
+-59,
+-60,
+-61,
+-62,
+-63,
+-64,
+-65,
+-66,
+-67,
+-68,
+-69,
+-70,
+-71,
+-72,
+-73,
+-74,
+-75,
+-76,
+-77,
+-78,
+-79,
+-80,
+-81,
+-82,
+-83,
+-84,
+-85,
+-86,
+-87,
+-88,
+-89,
+-90,
+-91,
+-92,
+-93,
+-94,
+-95,
+-96,
+-97,
+-98,
+-99,
+-100,
+-101,
+-102,
+-103,
+-104,
+-105,
+-106,
+-107,
+-108,
+-109,
+-110,
+-111,
+-112,
+-113,
+-114,
+-115,
+-116,
+-117
+],
+"index": 3,
+"active": true,
+"top": 0,
+"itemHeight": 36,
+"maxPageRows": 19
+},
+"bottom": {
+"index": -1,
+"active": false
+},
+"sprite": {
+"bitmap": "img/characters/Monster.png",
+"x": 213.33,
+"y": 360,
+"scale": [
+2,
+2
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": [
+480,
+0,
+48,
+48
+],
+"bitmapSize": [
+576,
+384
+]
+}
+}
+},
+"cc_10_dian": {
+"windows": {
+"Window_ChangeClothesC": {
+"rect": [
+0,
+0,
+426,
+620
+],
+"index": 7,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"普通",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"优秀",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"精良",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"史诗",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"传说",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"神话",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"典藏",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesIndex": {
+"rect": [
+426,
+0,
+426,
+720
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": []
+},
+"Window_ChangeClothesStatus": {
+"rect": [
+852,
+0,
+428,
+720
+],
+"index": null,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": []
+},
+"Window_ChangeClothesConfirm": {
+"rect": [
+0,
+620,
+427,
+100
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"更换",
+6,
+0,
+387,
+"left",
+26,
+"#ffffff"
+],
+[
+"还原当前形象",
+6,
+36,
+387,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"state": {
+"lite": [
+-9,
+-12,
+-20,
+1,
+8,
+9,
+10,
+13
+],
+"toasts": [
+"未解锁",
+"替换完成",
+"替换完成"
+],
+"player": {
+"setName": "Monster",
+"setIndex": 3,
+"characterName": "Monster",
+"characterIndex": 3
+},
+"followers": [
+[
+"Actor2",
+2
+],
+[
+"Actor1",
+1
+],
+[
+"Actor13",
+5
+]
+],
+"category": {
+"index": 7,
+"active": true
+},
+"list": {
+"lid": 8,
+"ids": [],
+"index": -1,
+"active": false,
+"top": 0,
+"itemHeight": 36,
+"maxPageRows": 19
+},
+"bottom": {
+"index": -1,
+"active": false
+},
+"sprite": {
+"bitmap": null,
+"x": 213.33,
+"y": 360,
+"scale": [
+2,
+2
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": null,
+"bitmapSize": null
+}
+}
+},
+"cc_11_restore": {
+"windows": {
+"Window_ChangeClothesC": {
+"rect": [
+0,
+0,
+426,
+620
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"普通",
+6,
+0,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"优秀",
+6,
+36,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"精良",
+6,
+72,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"史诗",
+6,
+108,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"传说",
+6,
+144,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"不朽",
+6,
+180,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"神话",
+6,
+216,
+386,
+"left",
+26,
+"#ffffff"
+],
+[
+"典藏",
+6,
+252,
+386,
+"left",
+26,
+"#ffffff"
+]
+]
+},
+"Window_ChangeClothesIndex": {
+"rect": [
+426,
+0,
+426,
+720
+],
+"index": -1,
+"active": false,
+"opacity": 30,
+"backOpacity": 192,
+"texts": []
+},
+"Window_ChangeClothesStatus": {
+"rect": [
+852,
+0,
+428,
+720
+],
+"index": null,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": []
+},
+"Window_ChangeClothesConfirm": {
+"rect": [
+0,
+620,
+427,
+100
+],
+"index": 1,
+"active": true,
+"opacity": 30,
+"backOpacity": 192,
+"texts": [
+[
+"更换",
+6,
+0,
+387,
+"left",
+26,
+"#ffffff"
+],
+[
+"还原当前形象",
+6,
+36,
+387,
+"left",
+26,
+"#ffffff"
+]
+]
+}
+},
+"state": {
+"lite": [
+-9,
+-12,
+-20,
+1,
+8,
+9,
+10,
+13
+],
+"toasts": [
+"未解锁",
+"替换完成",
+"替换完成",
+"还原完成"
+],
+"player": {
+"setName": null,
+"setIndex": null,
+"characterName": "PF_3",
+"characterIndex": 6
+},
+"followers": [
+[
+"Actor2",
+2
+],
+[
+"Actor1",
+1
+],
+[
+"Actor13",
+5
+]
+],
+"category": {
+"index": -1,
+"active": false
+},
+"list": {
+"lid": 8,
+"ids": [],
+"index": -1,
+"active": false,
+"top": 0,
+"itemHeight": 36,
+"maxPageRows": 19
+},
+"bottom": {
+"index": 1,
+"active": true
+},
+"sprite": {
+"bitmap": null,
+"x": 213.33,
+"y": 360,
+"scale": [
+2,
+2
+],
+"anchor": [
+0.5,
+0.5
+],
+"frame": null,
+"bitmapSize": null
+}
+}
+}
+}
+}
