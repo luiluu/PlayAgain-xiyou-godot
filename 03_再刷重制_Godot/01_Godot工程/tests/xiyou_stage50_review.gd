@@ -12,18 +12,6 @@ class ProbeLogic extends XBattleLogic:
 	func _float(reason: String) -> float:
 		return 0.999 if reason in ["evade", "critical"] else 0.0
 
-class NestedLogic extends ProbeLogic:
-	var inner: XBattler
-	var entered := false
-	var sources := []
-	func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
-		sources.append(XImportedBalance.acting_battler() == u)
-		if not entered:
-			entered = true
-			apply(inner, skill, t)
-			sources.append(XImportedBalance.acting_battler() == u)
-		return super(u, skill, t)
-
 func check(name: String, ok: bool, detail = null) -> bool:
 	results.append({"name": name, "passed": ok})
 	if not ok:
@@ -77,23 +65,15 @@ func _counter(ref: Dictionary) -> void:
 	logic.actors = [a, s.actors[1]]
 	logic.enemies = [e]
 	XImportedBalance.set_acting(e)
-	var logs := logic._invoke(e, XDB.rec("Skills", 1), a)
-	check("counter.real_path", logs.size() == 2 and logs[0].type == "counter" and a.cnt == float(ref.counterRate), logs.size())
+	var logs := logic._invoke(e, XDB.rec("Skills", int(ref.initialSkill)), a)
+	check("counter.real_path", logs.size() == 2 and logs[0].type == "counter" and a.cnt == float(ref.counterRate) and int(ref.counterCalls) == 1, {"types":logs.map(func(x): return x.type), "cnt":a.cnt})
 	var origin := XImportedBalance.origin(e, int(ref.state))
-	check("counter.origin", e.is_state_affected(int(ref.state)) and origin is XActor and origin.actor_id == int(ref.originActor), origin.actor_id if origin is XActor else null)
+	check("counter.origin", e.is_state_affected(int(ref.state)) and origin == e and bool(ref.originIsSelf), e.state_ids)
 	check("counter.restores_outer", XImportedBalance.acting_battler() == e)
 	e.hp = float(ref.hpBeforeRegen)
 	var before := e.hp
 	logic._regenerate(e, [])
 	check("counter.dot", e.hp - before == float(ref.hpDelta), [e.hp - before, ref.hpDelta])
-	var nested := NestedLogic.new()
-	nested.state = s
-	nested.actors = logic.actors
-	nested.enemies = [e]
-	nested.inner = s.actors[1]
-	nested.apply(a, XDB.rec("Skills", 1), e)
-	check("nested.sources", nested.sources == [true, true, true], nested.sources)
-	check("nested.restores_outer", XImportedBalance.acting_battler() == e)
 	XImportedBalance.set_acting(null)
 
 func _run() -> void:

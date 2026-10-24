@@ -55,18 +55,16 @@ measure('counter.state_origin', () => {
   // recoverAll clears temporary barrier, so attach it after the resource fixture.
   a.addState(92); a.need_refresh = true; a.refresh();
   bm._subject = e;
-  const initial = new w.Game_Action(e); initial.setAttack(); bm._action = initial; e._actions = [initial];
-  const counterRate = a.cnt, beforeStates = Array.from(e._states), originCalls = [];
-  const originalOrigin = e.setStateOrigin;
-  e.setStateOrigin = function(state, source) {
-    originCalls.push({state,sourceActor:source && source.isActor() ? source.actorId():null,inBattle:w.$gameParty.inBattle(),stack:String(new Error().stack).split('\n').slice(1,12)});
-    return originalOrigin.apply(this, arguments);
-  };
-  bm.invokeCounterAttack(e, a);
+  const initial = new w.Game_Action(e); initial.setSkill(12); bm._action = initial; e._actions = [initial];
+  const counterRate = a.cnt, beforeStates = Array.from(e._states);
+  let counterCalls = 0;
+  const invokeCounter = bm.invokeCounterAttack;
+  bm.invokeCounterAttack = function() { counterCalls++; return invokeCounter.apply(this, arguments); };
+  bm.invokeAction(e, a);
   const origin = e.stateOrigin(522), hp = e.hp;
   const sourceActor = origin && origin.isActor() ? origin.actorId() : null;
   e.regenerateHp();
-  return {actor:154,state:522,battleMembers,counterRate,attackSkill:a.attackSkillId(),beforeStates,originCalls,rawOrigin:e._stateOrigin[522],originActor:sourceActor,hasState:e.isStateAffected(522),
+  return {actor:154,state:522,battleMembers,counterRate,attackSkill:a.attackSkillId(),initialSkill:12,initialHitType:initial.item().hitType,counterCalls,beforeStates,originIsSelf:origin===e,rawOrigin:e._stateOrigin[522],originActor:sourceActor,hasState:e.isStateAffected(522),
     maxHp:e.mhp,hpBeforeRegen:hp,hpAfterRegen:e.hp,hpDelta:e.hp-hp,sourceRate:w.CodexImportedBalance.outgoingRate(a)};
 });
 process.exit(finish(host, 'stage50_review.json', {hostScope:'内存JsonEx往返与真实BattleManager.invokeCounterAttack，154实际出战', cases}) ? 0 : 1);
