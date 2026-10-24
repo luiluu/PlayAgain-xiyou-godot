@@ -49,6 +49,8 @@ Game_CharacterBase.prototype.isAnimationPlaying = function() { return false; };
 Game_CharacterBase.prototype.isBalloonPlaying = function() { return false; };
 Game_Player.prototype.areFollowersGathering = function() { return false; };
 `);
+// 成就弹窗管理器正常在 Scene_Boot.start 里 init（建成就清单）；探针不走 Scene_Boot，获得物品触发成就奖励时 ShowPopUp 会读未建的 _items 而抛错，这里照原版补一次 init（无回调、不改状态）
+w.eval(`if (Star.Achievement && Star.Achievement.Manager && !Star.Achievement.Manager._items) Star.Achievement.Manager.init();`);
 // 脚本常读 SceneManager._scene（是否在地图、虚拟按键等）：给一个地图场景替身，未知方法一律空操作
 const sceneStub = new Proxy(Object.create(w.Scene_Map.prototype), {
   get(o, k) {

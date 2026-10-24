@@ -221,7 +221,7 @@ func _augment_row() -> Dictionary:
 ## $gameParty.canUse：菜单里能用（occasion 0／2）且持有；不看效果范围——没有目标的（范围 0 等）在 determineItem 里直接用
 func _usable(item: Dictionary) -> bool:
 	return not item.has("instanceId") and [0, 2].has(int(item.get("occasion", 0))) \
-		and XState.current.item_count(int(item.get("id", 0))) > 0
+		and XState.current.item_count(int(item.get("id", 0))) > 0 and XItemMarks.can_acquire_item(XState.current, item)
 
 
 func _make_actions() -> void:

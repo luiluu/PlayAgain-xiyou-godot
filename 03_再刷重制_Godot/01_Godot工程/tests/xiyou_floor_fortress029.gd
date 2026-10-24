@@ -226,9 +226,9 @@ func _castle() -> void:
 	map = _scene()
 	_check("tuck_fight", battles.size() == n3 + 1 and battles[-1].troop == 142 and battles[-1].result == 0 and s.switch(64), [battles.slice(n3), s.switch(64)])
 	# 通关页：没有 38 号角色就回 Map029 (10,31) 并重置
-	# 原版持有物品 179 时先掷变量 106／107，可能改传 Map037／038；本例走固定回 Map029 的分支，先清掉 179
-	s.gain_item(179, -s.item_count(179))
-	await _run_event(map, 2, [], "")
+	# 原版持有 179 必出「深渊之门」选项；没有 179 则变量 106 取随机 1～3、为 1 才出（默认「进入此门」会去 Map037／038）；
+	# 出现时选「离开这是非之地」才回 Map029，没出现则直接回，答案不会被取用，结果不随世界随机流变
+	await _run_event(map, 2, [1], "")
 	_check("lab_exit", await _wait_map(29) and _scene().player.grid == Vector2i(10, 31), [_scene().map_id])
 	_check("lab_reset", int(s.variable(5)) == 0 and int(s.variable(6)) == 0 and not s.switch(61) and not s.switch(64), [s.variable(5), s.switch(61)])
 	# 回 Map035，逃离阵
@@ -262,7 +262,11 @@ func _ice() -> void:
 	await _run_event(map, 2, [0], "")
 	_check("ice_door_entered", await _wait_map(34) and _scene().player.grid == Vector2i(33, 21), [_scene().map_id])
 	_check("ice_snow", s.screen.weather_type == "snow" and s.screen.weather_power_target == 7.0, s.screen.to_dict())
-	await _frames(1)
+	# 天气画面层在物理帧里刷新可见性，负载高时一帧里还没轮到：等它出现（最多 600 帧）
+	var w := 0
+	while w < 600 and not _scene().screen_fx._weather.visible:
+		await get_tree().process_frame
+		w += 1
 	_check("ice_snow_view", _scene().screen_fx._weather.visible)
 	# 洞穴里的出口回 Map023；辛德瑞回大厅
 	s.map_id = 23

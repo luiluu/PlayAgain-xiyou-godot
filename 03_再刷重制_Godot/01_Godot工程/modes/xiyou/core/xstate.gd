@@ -269,6 +269,10 @@ func fixed_save_slot() -> int:
 func add_actor(id: int) -> void:
 	if XDB.rec("Actors", id).is_empty():
 		return
+	# installBossDifficultyRuntime：未持有的超强者在地狱以下不能入队（提示后不加）
+	if not party.has(id) and not XItemMarks.can_acquire_actor(self, id):
+		XItemMarks.acquisition_notice()
+		return
 	if not party.has(id):
 		actor(id)
 		party.append(id)
@@ -387,6 +391,9 @@ const ECO_TO_ITEM := {184: [188, 1.0], 185: [188, 1.0], 186: [188, 1.0], 187: [1
 
 func gain_item(id: int, amount: int) -> void:
 	var before := id
+	# installBossDifficultyRuntime 包在 Game_Party.gainItem 外：超强者伙伴号角在地狱以下得不到（不弹提示）
+	if amount > 0 and not XItemMarks.can_acquire_item(self, XDB.rec("Items", id)):
+		return
 	if amount > 0:
 		# installNativeRaceRuntime：得到旧版祝福进阶石时换成正规 ID（CodexRaces.legacyItems）
 		var races = XDB.table("CodexRaces")
