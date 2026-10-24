@@ -2,7 +2,7 @@
 
 - 车道／工作者：B 界面·养成／八戒（Claude，重制_八戒_69）
 - 状态：可合并
-- 期一：进阶次数读取（已完成）；期二：技能共享／羁绊／领袖技能范围与参照（已完成，见「期二：范围清单」）；期三起：实现（进行中）
+- 期一：进阶次数读取；期二：三套系统范围与参照（见「期二：范围清单」）；期三～五：技能共享、羁绊、领袖技能实现（三套一起做完，全部可合并）
 
 ## 变更记录草稿
 
@@ -17,6 +17,21 @@
 - 未接（写进 cat.gd 文件头）：进阶后额外行动（原版 makeActionTimes＋1，在 battler，沙僧独占）、进阶后终技帮助改品质 10（helpItem）。小猫进阶要的「小猫进阶石」与进阶表行本来就在 XAdvance 表里，奉神老妪界面已可进阶。
 - 验证：并行测试 `xiyou_advance_reads`（8/8）、`xiyou_cat`（992/992）、`xiyou_actor_advanced`（33/33）、`xiyou_actor_book`（22/22）、`xiyou_actor_book_review`（6/6）、`xiyou_dungeon`（6954/6954）、`xiyou_random_streams`（484/484）、`xiyou_module_hooks`（1310/1310）；必跑 `xiyou_event_compare`（5/5）、`xiyou_rules.tscn xiyou_rules_d1b xiyou_rules_d1c xiyou_rules_d1d`（101600／101542／101385／101422 全过）。
 - 提交：f6b131b9
+
+## 2026-10-24 【Claude·八戒·未经Codex检验】技能共享、羁绊、领袖技能（dev.待定）
+
+- 移植冻结 v0.28 的三套队伍技能系统，三个新核心由 `core/party_skills.gd`（XPartySkills）统一调用：
+  - `core/skill_share.gd`（XSkillShare，Star_SkilsShare）：出战栏 5 格成员；先忘上次共享与上次装备学的，再学装备 `<ShareLearnSkill:n>`，再按「技能 meta Share＝ShareSkill（含其 `<ShareSkill:n>`）∩ 成员技能与装备里所有 `<ShareSkill:n>`」共享给全体出战成员。**重制从此有了「穿装备学技能」**（护甲 142 件、武器 8 件，如护甲 13 学 34），宝珠 `<继承词缀>` 接进实例备注的也算。提示照 codex 包装：一次刷新只弹一条「技能共享激活：a、b」（新激活的）。
+  - `core/bonds.gd`（XBonds，Star_JiBanSiklls，7 条）：出战成员集合变了才刷；2～5 人组合命中某羁绊组合就给组合内各人学技能；失效的提示「羁绊：X失效！」并遗忘，每次刷新重播「羁绊：X激活！」；不足 2 人全部遗忘。「三霄羁绊」（1 人）照原版永不成立。
+  - `core/lead_actor.gd`（XLeadActor，Star_LeadActor，29 条）：首位（出战栏第 0 格）是领袖角色时全体出战成员学其领袖技能，换首位时先忘上次的；整队出战栏首格右上角画 LeaderFlag（`ui/party_scene.gd`；图要随切片导出，见交接板提案，未导出时不画）。
+- 挂点与顺序照原版插件包装：整队「完成」／指令窗取消（`ui/party_scene.gd`）、角色仓库退出（`ui/actor_warehouse.gd`）：共享 → 羁绊（成员变了）→ 领袖；开战（`map/map_scene.gd` 的 `start_battle`，建战斗场景前）：装备学技能变了刷共享、成员变了刷羁绊；读档（`ui/save_scene.gd` 读档成功后，`XSave.load_slot` 本身不刷新，读档往返测试不受影响）：领袖 → 羁绊 → 共享。
+- 存档：`XState.party_skills`，新键 `partySkills`（旧档没有为空），没有改已有字段，没改 actor.gd（只用已有的 learn_skill／forget_skill／skills()／equips）。
+- 优化 O-095（待用户决定，`XPartySkills.EXACT` 可回退，默认开）：三套记录随存档、每次读档按本档刷新；只忘本系统学会的（角色本来会的不误删）；羁绊仍成立时离开出战栏的人忘掉该羁绊技能。关掉即照原版（内存记录、同会话首次读档才刷新、不分来源遗忘）。已写进 `00_设计/优化登记.md`。
+- 参照：探针 `mv_oracle/party_skills_probe.cjs`（6 场景 45 步，整队完成／仓库退出／开战／读档，`tests/fixtures/party_skills_oracle.json`）；专项 `tests/xiyou_party_skills`（214 项：原版模式逐步比技能、提示、三套记录全部一致；O-095 模式重跑各场景比技能（MyGO 一步按设计不同）、本来会的不误删、读档清掉失效技能、存档往返、旧档；四处挂点；领袖旗标判定）。
+- 原版里三霄、MyGO 等「超强角色」没开挑战开关时会被 installBossDifficultyRuntime 清出出战栏，重制还没有这条限制（不在本车道，见交接板）；参照开开关 2494 只测三套本身。
+- 原版羁绊技能以字符串 ID 推进 `_skills`，重制按整数学（只影响按数值查 isLearnedSkill 的地方，三条羁绊技能都是纯被动）。
+- 验证：见「验证」节。
+- 提交：aaeff5af、7b901e3e、3ab4748a 及本交付单提交
 
 ## 期二：范围清单（Star_SkilsShare／Star_JiBanSiklls／Star_LeadActor）
 
@@ -66,14 +81,28 @@
 
 ## 交接板
 
-- 下一步：八戒_69 继续期二（技能共享／羁绊／领袖技能范围清单）与期三（先做技能共享）。
-- 用户试玩说明：小猫进阶后剑技成长曲线与说明文字变化；图鉴「最大进阶次数」按当前阶显示；甚尔、宿傩进阶后不再掉多余的进阶石。
-- 需要用户决定：无
+- 下一步：
+  - 提案（悟空独占切片）：`03_转换工具/xiyou_slice.json` 的 `systemImages` 加 `LeaderFlag`（冻结源 `img/system/LeaderFlag.png`，33×30），加上后整队页领袖旗标即显示；画法已在 `XPartyScene._paint_slots`，位置照原版 (内缩格宽−图宽, 0)，加图后可补一张原版截图对位置（标准级）。
+  - 后续（另开）：installBossDifficultyRuntime 的「超强角色」出战限制（没开挑战开关 2494／2489／2487／2483／2461～2463 或混沌难度时 `battleMembers()` 清出 `superStrongActorIds`）重制还没有；影响三霄、MyGO 等能否出战。
+  - 小猫进阶后额外行动（makeActionTimes＋1）在 battler（沙僧独占），可随状态效果一起接。
+- 用户试玩说明：小猫进阶后剑技成长曲线与说明文字变化；图鉴「最大进阶次数」按当前阶显示；甚尔、宿傩进阶后不再掉多余的进阶石。整队「完成」或角色仓库退出后：穿着带共享光环的装备（如学习光环护甲）全队学会光环，弹「技能共享激活：…」；穿特定装备的角色学会装备技能；三霄／MyGO 同时出战弹「羁绊：…激活！」；狗逍遥等领袖角色在首位时全队学会领袖被动。开战前装备变了也会刷新。
+- 需要用户决定：O-095（队伍技能记录随存档、只忘本系统学会的；`XPartySkills.EXACT`）。
 
 ## 进度账
 
-- 养成：角色进阶读点补齐，完成度小幅上升（总装按账面口径定）
+- 养成：角色进阶读点补齐；技能共享、羁绊、领袖技能三套移植（含穿装备学技能），完成度上升（总装按账面口径定）
 
 ## 本分支提交
 
 - f6b131b9 进阶次数读取三处改读 XAdvance；参照 advance_reads_probe、专项 xiyou_advance_reads
+- 486636bd 期二范围清单；参照 party_skills_probe
+- aaeff5af 技能共享骨架、挂点、存档字段、专项
+- 7b901e3e 羁绊、领袖；读档挂点移到读档页
+- 3ab4748a 整队页领袖旗标、O-095 登记
+
+## 验证
+
+- 期一：见上面变更记录。
+- 期三～五：`并行测试.py` 相关专项＋必跑项全部通过——`xiyou_party_skills` 214/214、`xiyou_party` 57/57、`xiyou_actor_warehouse` 26/26、`xiyou_save_page` 40/40、`xiyou_flow` 48/48、`xiyou_floor_run`／`_b`／`_c` 273／332／560、`xiyou_floor16_dungeon` 25/25、`xiyou_dungeon` 6954/6954、`xiyou_battle_ui` 70/70、`xiyou_hangup_auto` 226/226、`xiyou_review_regressions` 29/29；必跑 `xiyou_event_compare` 5/5、`xiyou_rules.tscn xiyou_rules_d1b xiyou_rules_d1c xiyou_rules_d1d`（101600／101542／101385／101422）。更早一轮（读档挂点还在 XSave 时）另跑过 achievement、actor_advanced、battleback_save、difficulty_notice、drop_record、drop_dh、global_vars、hud、interp_review、mac_export、options_basic、orbs、equipment、warehouse、popup_overlap、random_streams、screen_fx、zhenqi_break、zhenqi_daofa，全过（当时只有楼层三段与 flow 的读档前后相同失败，已把挂点移到读档页解决）。
+- 没改切片、转换器、同步脚本的探针表（两个新探针产物随测试提交为 fixtures），不需同步。车道未跑全量 `检查.sh`。
+- 临时输出（/private/tmp/claude-501/bajie69 下的日志与调试脚本、mv_oracle/.sandbox 里本车道的两个产物）收工时已清理。
