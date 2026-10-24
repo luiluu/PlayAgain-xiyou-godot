@@ -1,7 +1,7 @@
 'use strict';
 // 系统页成对截图驱动（八戒_63）：无头 Chrome（临时用户目录，1280×720）打开 review_system_pages.py 的只读服务，
 // 逐页 await __sysRef.run(页名) 后整页截图（含异化工坊的 DOM 叠加层），读数写 <页名>.json。只写输出目录。
-// 用法：node review_system_pages.cjs <输出目录> [页名…]（默认全部）；服务须已在 --port（默认 8769）上运行。
+// 用法：node review_system_pages.cjs <输出目录> [页名…] [--inlay-all]（默认全部）；服务须已在 --port（默认 8769）上运行。
 const fs = require('fs'), os = require('os'), path = require('path'), {spawn} = require('child_process');
 const out = path.resolve(process.argv[2] || '.');
 const only = process.argv.slice(3).filter(a => !a.startsWith('--'));
@@ -49,6 +49,11 @@ async function main() {
   for (let i = 0; i < 600; i++) {
     await sleep(500);
     try { if (await evaluate('!!(window.__sysRef && __sysRef.ready())', 5000)) break; } catch (e) { /* 页面加载中 */ }
+  }
+  // --inlay-all：装备镶嵌图鉴逐项状态窗读数（八戒_65），写 inlay_book_all.json
+  if (process.argv.includes('--inlay-all')) {
+    fs.writeFileSync(path.join(out, 'inlay_book_all.json'), JSON.stringify(await evaluate('__sysRef.inlayAll()', 600000)) + '\n');
+    console.log('inlay_book_all ok');
   }
   const pages = await evaluate('__sysRef.pages()');
   const result = {pages: {}, logs};
