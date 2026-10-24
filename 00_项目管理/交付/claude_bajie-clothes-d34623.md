@@ -39,15 +39,26 @@
 
 ## 变更记录草稿
 
-（期二完成后写）
+## 2026-10-24 【Claude·八戒·未经Codex检验】大厅三界面：更衣（dev.待定）
+
+- 生效链：Map4 EV17「衣橱管理员」两页「查看衣橱」＝先解锁换装表再 `SceneManager.push(Scene_ChangeClothes)`（全游戏只这两处）；第 0 页无条件解锁换装表全部 95 项，第 1 页（「备份」，要独立开关 A）按开关 295～354 逐项解锁。插件只改 Game_Player 的 characterName／characterIndex：替换形象只换玩家行走图，跟随、脸图、战斗图不变。设置页「角色换装」（installCostumePreferencesRuntime，战斗换装卡外观开关）是另一套系统，不在本期。
+- 新 `core/change_clothes.gd`（XChangeClothes）：换装表（插件参数，编号 −i）、8 档分类（CodexQuality.actorGrade）、解锁、替换／还原、获得途径文字。解锁表 ConfigManager.ChangeClothesLite 是**全局配置**（所有存档共用，同成就）：`XConfig` 新增键 `ChangeClothesLite`（旧配置没有为空）；打开界面时补进队伍与角色仓库的角色。替换形象随局内存档：`XState.player_costume`，存档键 `playerCostume`（旧档没有为空），没有改已有字段。
+- 新界面 `ui/change_clothes.gd`（XChangeClothesScene）：分类 (0,0,426,620)、名单 (426,0,426,720) 行高 36、状态 (852,0,428,720)、底部「更换／还原当前形象」(0,620,427,100)；名单已解锁行＝行走图上半＋名字，未解锁「？？？」；状态窗行走图正面放大 2 倍、在窗口皮肤之下、每 20 帧换一格，「形象展示」、获得途径、已解锁／未解锁；提示「替换完成／未解锁／还原完成」。名单离开后状态窗照原版在下一次 20 帧检查时清空。
+- 接线：`mv_script.gd` 认解锁写法（全游戏 62 个文件 324 处只有这一种）与 `SceneManager.push(Scene_ChangeClothes)`；`map_scene.gd` 新增 `open_change_clothes`（关闭后刷新队首行走图），`refresh_party_sprites` 给玩家套替换形象（XAppearance 未改）；`xiyou_event_compare` 宿主补 `open_change_clothes`，基线删 m4e17p0／p1（现存 2 例）。
+- 转换器：`xiyou_export.py` 带上换装表的 73 张行走图（原来缺 53 张）。
+- 优化 O-093（待用户决定）：原版 v0.15 插入「神话」后入口序号没改，「神话」档列的是换装表、64 个神话角色永远看不到、「典藏」是空表；重制「神话」列神话角色、「典藏」列换装表（`XChangeClothes.FIX_TABS` 可回退）。典藏空表确定原版报错，重制蜂鸣；解锁即写配置。
+- 参照：`review_system_pages.js` 新增 `change_clothes` 页（12 个截图状态，附解锁表、提示、玩家形象、状态窗精灵读数），压成 `tests/fixtures/change_clothes_oracle.json`。
+- 验证：见交付单「验证」。
 
 ## 交接板
 
-- 下一步：（期二完成后写）
+- 下一步：大厅三界面全部接完；余下奉神老妪「进阶」（Scene_ActorAdvanced，事件对照 m132e6p0）。设置页「角色换装」（战斗换装卡外观开关）仍为禁用，等换装卡系统移植时接。
+- 用户试玩说明：方桌大厅衣橱管理员「查看衣橱」可以把玩家地图形象换成已解锁的角色或换装（获得过的角色、换装表），「还原当前形象」换回；替换随存档，解锁记录所有存档共用。
+- 需要用户决定：O-093（更衣分档修正、空表确定蜂鸣、解锁即存）。
 
 ## 进度账
 
-- （期二完成后写）
+- 界面：大厅未接界面 1 → 0（更衣已接）
 
 ## 验证
 
