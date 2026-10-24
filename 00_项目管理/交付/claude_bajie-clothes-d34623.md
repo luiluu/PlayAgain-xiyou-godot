@@ -2,7 +2,7 @@
 
 - 车道／工作者：B 界面／八戒（Claude，重制_八戒_67）
 - 状态：可合并
-- 期一：更衣范围与参照；期二：实现（见「追加：期二」）
+- 期一：更衣范围与参照；期二：实现（同一交付单，变更记录草稿写的是两期合起来的结果）
 
 ## 期一：范围清单（Scene_ChangeClothes）
 
@@ -62,8 +62,21 @@
 
 ## 验证
 
-- 参照：`node review_system_pages.cjs <目录> change_clothes`（新页 change_clothes，12 态，无报错），压成 `tests/fixtures/change_clothes_oracle.json`。
+- 参照：`node review_system_pages.cjs <目录> change_clothes`（新页 change_clothes，12 态，无报错；服务收尾核对冻结源身份未变），压成 `tests/fixtures/change_clothes_oracle.json`。
+- 成对截图：原版 12 态与 Godot 同态（`xiyou_change_clothes -- --out=<目录>`）目视一致（窗口、名单行走图上半、状态窗放大行走图、光标、提示）。截图在会话临时目录，没进工作树。
+- 同步：`同步正式西游.py --accept-additions`（worktree，长任务）结果「测量不变」，变化只有转换器新带上的换装表行走图（输入新增 53 张）。
+- `并行测试.py` 相关专项全部通过：`xiyou_change_clothes` 32/32、`xiyou_event_compare` 5/5（基线删 m4e17p0／p1 后无退步）、`xiyou_actor_warehouse` 26/26、`xiyou_party` 57/57、`xiyou_save_page` 40/40、`xiyou_achievement` 50/50（XConfig 新键）、`xiyou_options_basic` 139/139、`xiyou_options_misc` 86/86。车道未跑全量 `检查.sh`。
+- 已合 main（c6fe4f07；带进来的是 damage.gd 修复与上一张交付单删除，没碰切片、转换器、探针，不重跑）。
+- 已清理：参照服务已停，临时输出都在会话临时目录。
+
+## 交接板补充
+
+- 合并时：本分支改了转换器（`xiyou_export.py` 新增换装表行走图引用），总装在 main 跑同步时测量应不变、只多 53 张图。
 
 ## 本分支提交
 
-- （见 git log）
+- 23b48819 更衣期一：范围清单、参照页 change_clothes 与夹具
+- 9513b57b 期一交付单标可合并
+- 12cd81e9 XChangeClothes／界面／存档与配置键／脚本接线／专项
+- 3e2ffdee 专项 32/32、事件对照基线、O-093 登记、交付单草稿
+- c6fe4f07 合并 main；（本提交）交付单定稿
