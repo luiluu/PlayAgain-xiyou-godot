@@ -2,7 +2,7 @@
 
 - 车道／工作者：B 界面／八戒（Claude，重制_八戒_68）
 - 状态：可合并
-- 期一：角色进阶范围与参照（本节）；期二：实现（见「期二提案」）
+- 期一：角色进阶范围与参照（本节）；期二：实现（已完成，见「期二：实现」）
 
 ## 期一：范围清单（Scene_ActorAdvanced）
 
@@ -58,35 +58,48 @@
 
 **要动到的文件**：新增 `core/advance.gd`（XAdvance：表、条件、进阶、存档字段读写）、`ui/actor_advanced.gd`（XActorAdvancedScene）、专项 `tests/xiyou_actor_advanced.gd/.tscn`；`xstate.gd` 新增 `actor_advance`／`actorAdvance`；`mv_script.gd`（`SceneManager.push(Scene_ActorAdvanced)` → `host.open_actor_advanced`）；`map_scene.gd`（`open_actor_advanced`）；`xiyou_event_compare.gd` 宿主补 `open_actor_advanced`、基线删 m132e6p0。**不动** actor.gd、battler.gd 等沙僧独占文件，也不动悟空独占的切片与转换器。
 
-## 期二提案
+## 期二：实现（照期一提案，一期做完）
 
-工作量与更衣期二相当（核心约 150 行、界面约 350 行、专项一份），一期能做完：
-1. `XAdvance`：解析插件参数＋经济改表、`row(state, actor)`、`check(state, actor)`（返回缺项）、`advance(state, actor)`（遗忘→学会→次数+1→扣金钱物品）、存档字段。
-2. 界面五窗按参照几何复现，SV 图动画、确认窗、提示；O-094 两项做成可回退开关（默认开优化，`XConfig` 不加键，模块常量开关，交付单写明）。
-3. 接线：mv_script、map_scene、事件对照宿主与基线。
-4. 专项 `xiyou_actor_advanced`：逐态对照参照的窗口矩形、文字、光标与活动；进阶后能力值对照参照（685/400/62/35/15/35/35/20）；存读档往返；旧档缺字段为 0。
+- `core/advance.gd`（XAdvance）：进阶表（插件参数 462 行＋经济合并 184～187→188；参数里两条不是合法 JSON——末尾逗号 `[1244,5846,]` 与逗号表达式 `[[2793,1]],[[180,1]]`——照 JS eval 读成 `[1244,5846]`、`[[180,1]]`）、`rank`／`row`／`max_text`、条件 `missing`、`advance`（遗忘→学会→次数+1→扣金钱物品→刷新被动）。
+- 存档：`XState.actor_advance`，键 `actorAdvance`（{角色ID: 次数}，旧档没有为空＝全 0，坏值丢掉）。没有改 actor.gd，也没有改已有字段。
+- `ui/actor_advanced.gd`（XActorAdvancedScene）：五窗按参照几何；SV 战斗图每 12 帧 0,1,2,1；确认窗下层清底（同存读档页）；底部 44 空格与「xN」「能力值」的横坐标按原版空格宽（修炼页 SPACE_W、`XActorBook.js_width`）。
+- 接线：`mv_script.gd`（`SceneManager.push(Scene_ActorAdvanced)` → `host.open_actor_advanced`）、`map_scene.gd`（`open_actor_advanced`）、事件对照宿主补同名函数，基线删 m132e6p0（手改：只删这一条、match +1；用 `--update-baseline` 会顺带改写别的车道带来的用例数，没用）。
+- O-094 写进 `00_设计/优化登记.md` 与 `界面风格.md`「界面类优化」。
 
 ## 变更记录草稿
 
-## 2026-10-24 【Claude·八戒·未经Codex检验】角色进阶期一：范围与参照（dev.待定）
+## 2026-10-24 【Claude·八戒·未经Codex检验】角色进阶界面（dev.待定）
 
-- 读冻结源 `Star_ActorAdvanced.js` 与引用它的 20 余个专属运行时，写出范围清单（见交付单「期一」）：入口三处（切片里只 Map132 EV6；公共事件 9008 无调用者）、进阶表 462 条与两处运行时改表（经济合并 184～187→188、渡鸦补 5 条）、基础进阶只遗忘／学会技能、次数 +1、扣金钱物品，能力变化全来自被动技能，不需改 actor.gd；存档提案为 XState 顶层新字段 `actorAdvance`。
-- 原版参照：`ui_reference/review_system_pages.js` 新页 actor_advanced（11 态：开场、换行、底部、条件不足、补料、确认窗、取消、完成、已满），压成 `tests/fixtures/actor_advanced_oracle.json`。
-- 优化候选 O-094：条件不足时列出缺项、已满时放蜂鸣音（期二做成可回退）。
-- 专属运行时（饿狼、云裳、渡鸦、甚尔等，角色 167～177 都不在切片）的钩子只记清单。
+- 范围（期一）：读冻结源 `Star_ActorAdvanced.js` 与引用它的 20 余个专属运行时。入口三处：Map132 EV6、Map137 EV4（不在切片）的奉神老妪「进阶」，公共事件 9008「饿狼进阶入口」（没有调用者，不接）。基础进阶只遗忘／学会技能、次数 +1、扣金钱物品；进阶后能力变化全来自学会的被动技能（如 1240 超越极限I），重制被动解析已能算，所以不改 actor.gd。
+- 新 `core/advance.gd`（XAdvance）：进阶表取插件参数 462 行，照 installNativeEconomyRuntime 把物品 184～187 合成 188（魂灯）；两条畸形参数照 JS eval 读。条件（等级、金钱、物品）、进阶、进阶次数读写；别的模块以后读进阶次数都走 `XAdvance.rank`。
+- 存档：`XState.actor_advance`，新键 `actorAdvance`（旧档没有为空＝全 0），没有改已有字段。
+- 新界面 `ui/actor_advanced.gd`（XActorAdvancedScene）：名单 (0,0,426,720)、状态 (426,0,854,720)（SV 战斗图动画、名字等级进阶次数、8 项能力、进阶需求与进化技能／已达最大）、金钱 (0,656,426,64)、底部「进阶」、确认窗「是否进阶」；提示「进阶条件未达成／进阶完成」。
+- 接线：`mv_script.gd`、`map_scene.gd` 的 `open_actor_advanced`；事件对照基线删 m132e6p0（现存 1 例）。
+- 优化 O-094（待用户决定）：条件不足时提示列出缺项；已满时确定放蜂鸣（`XAdvance.SHOW_MISSING`／`MAX_BUZZER` 可回退）。
+- 参照：`review_system_pages.js` 新页 `actor_advanced`（11 态），压成 `tests/fixtures/actor_advanced_oracle.json`；专项 `xiyou_actor_advanced`。
+- 未做（钩子清单见交付单期一）：饿狼、云裳、渡鸦、甚尔等专属运行时（角色 167～177 不在切片）；切片内要接进阶次数的读点：小猫 178 `cat.gd advanced()`、角色图鉴 `advance_max`、`dungeon.gd` 甚尔／宿傩进阶石、战力签名。
 
 ## 交接板
 
-- 下一步：八戒_68 继续角色进阶期二（XAdvance 核心、界面、接线、专项）。
+- 下一步：角色进阶已接（兑换大厅奉神老妪）。后续可接进阶次数的读点：小猫进阶（`cat.gd advanced()` 恒假，要小猫进阶石＋35 级＋学会 10444）、角色图鉴「最大进阶次数」按当前阶取行、甚尔／宿傩进阶石按实际阶；专属角色运行时钩子随这些角色进切片时做。
+- 用户试玩说明：兑换大厅奉神老妪选「进阶」打开角色进阶：左边选队员，右边看需求（物品、等级、精魂）与进化技能，底部「进阶」→「是否进阶」确认后学会技能、扣材料；进阶次数随存档。
+- 需要用户决定：O-094（进阶条件不足列缺项、已满确定蜂鸣）。
 
 ## 进度账
 
-- 不变（期一只有范围与参照）。
+- 界面：角色进阶已接；事件对照里因界面未接的不一致 1 → 0（基线只剩 m4e73p0，按数值平衡不移植）。
 
 ## 验证
 
 - 参照：`python3 review_system_pages.py <冻结 app.nw> <目录>` ＋ `node review_system_pages.cjs <目录> actor_advanced`（新页 actor_advanced，11 态，无报错），压成 `tests/fixtures/actor_advanced_oracle.json`。
+- 成对截图：原版 11 态与 Godot 同态（`xiyou_actor_advanced -- --out=<目录>`）目视一致（五窗、SV 图、能力值、需求与技能、确认窗清底）。
+- `并行测试.py` 相关专项＋必跑项全部通过：`xiyou_actor_advanced` 33/33（11 态窗口文字／矩形／光标、提示、金钱物品、队伍 8 项能力值含进阶后 685/400/62/35/15/35/35/20、精灵；O-094；进阶表；遗忘技能；存读档；Map132 EV6 分支）、`xiyou_event_compare` 5/5（删 m132e6p0 后无退步）、`xiyou_save_page` 40/40、`xiyou_change_clothes` 32/32。车道未跑全量 `检查.sh`；没改切片、转换器、探针，不需同步。
+- 已合 main（只带进来交接板登记，不重跑）。
+- 已清理：参照服务已停，原版与 Godot 截图等临时输出已删。
 
 ## 本分支提交
 
-- （见 git log）
+- eb5ca834 进阶期一：范围清单、参照页 actor_advanced 与夹具
+- 2f161298 期一交付单可合并
+- 44163d2b 进阶期二：XAdvance／界面／存档字段／接线／专项／事件对照
+- （本提交）O-094 登记、交付单定稿
