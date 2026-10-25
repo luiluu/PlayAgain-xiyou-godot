@@ -27,3 +27,5 @@
 - 原版完整121／121、唯一ID、errors空（任务9f6e96297146456d9431d8a4eb2d97f3），复制独立fixture与原件字节一致。导入06f68fa307544d2c918eecc511f88b68 exit0、无Script／Parse／Compile错误；只收新专项UID，非车道附带UID移存.sandbox/boss70_unrelated_import_uid.txt。下一步Godot新增与直接依赖验收。
 
 - Godot首批7df73c0ad8cd445c8459ebfa8c2e3bbf：新专项80行old从Dictionary动态值推断类型失败，导致场景未启动；单独check-only已复现，未将exit0当通过。已认证自身包装器后停止本批，保留日志；修为显式Dictionary类型，重新check-only后重验。不将首批其他场景算已通过。
+
+- 第二批d6c7b29a5e8a41e9912ef5ca5afc4c6b：七直接依赖单次通过，新专项15723项表面全对但Action对照夹具漏传item，触发_active读取Nil的Script错误，严格判失败；自动复跑同错误，非偶发。补齐Action宿主item输入；运行时未变，七依赖结果保留，只重验新专项。单独check-only的无GameApp错误来自脚本模式缺Autoload，未当实际场景编译结论。

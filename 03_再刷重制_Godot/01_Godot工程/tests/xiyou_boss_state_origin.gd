@@ -156,7 +156,7 @@ func boundary_checks() -> void:
 		check("preview.domain_unchanged", r.boss_output.frames.size() == 1)
 		b.state_origins[2998] = weakref(low)
 		XStateEffects.observer = func(_p,_id,_holder,_ctx): r.gain(b,"hp",-7.0)
-		XStateEffects.run_one("react", b, {"id":2998,"effects":[{"phase":"react","op":"mul","cond":"never","k":1.0,"round":"floor"}]}, {"attacker":a,"defender":b,"resources":r})
+		XStateEffects.run_one("react", b, {"id":2998,"effects":[{"phase":"react","op":"mul","cond":"never","k":1.0,"round":"floor"}]}, {"attacker":a,"defender":b,"resources":r,"item":{"damage":{"type":1}}})
 		check("action.ordinary_keeps_outer", b.hp == old - 11.0)
 		XStateEffects.observer = Callable()
 		XStateEffects.run_one("turn_end", b, {"id":2998,"effects":[{"phase":"turn_end","op":"js"}]})
