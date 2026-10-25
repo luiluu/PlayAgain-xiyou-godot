@@ -52,6 +52,8 @@ func _run() -> void:
 	check("fixture", fixture.cases.size() == 338)
 	check("source", fixture.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	var s := XState.new_game_blank()
+	s.difficulty = int(fixture.difficulty)
+	s.set_variable(9,999)
 	s.party.assign([1])
 	s.battle_slots = [1, 0, 0, 0, 0]
 	var a := s.actor(1)
