@@ -28,3 +28,5 @@
 - 原版完整boss69-sequence-full（2a09c4d4c2054d06bcc97a25e1c341f4）87／87 errors空，含实际三位出战对象；独立原件.sandbox/boss_sequence.json已复制为fixture且逐对象一致。新增专项比较解析目标、所有已观察单位的前后资源／护盾／dirty／结果槽、退出后的域外gain，并检查列表域嵌套／空域遮蔽与敌群事件无来源；Godot验收待跑。
 
 - 首轮Godot boss69-sequence-godot exit1，8213项中42项失败，全部定位到原规则make_targets缺ENEMY 1／ACTOR 0／FIRST（对应三组HP／MP）；非倍率或护盾差异，未归偶发、未盲重跑。按新增87例原版补这三种已采选择器，保留首败日志，不把画面选择器全部扩到规则侧。
+
+- 第二轮boss69-sequence-final exit1：9场通过；序列仍8项失败，确认为新增索引选择器错误读取XActor不存在的hidden，已改仅敌人检查hidden；日志含SCRIPT ERROR已判失败。另xiyou_determinism稳定8个early_inventory_rule失败（首跑／自动重跑同样），尚未归因；不称偶发。下一步用本树.sandbox内只读链接快照、仅三文件取e1925bea原版本跑相同场景，区分本期回归与继承失败；不reset／改当前运行时／建新worktree。

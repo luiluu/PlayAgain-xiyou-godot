@@ -284,7 +284,7 @@ func make_targets(spec: String) -> Array:
 		if m:
 			var members: Array = logic.actors if kind == "ACTOR" else logic.enemies
 			var at := int(m.get_string(1))
-			if at < members.size() and not members[at].hidden:
+			if at < members.size() and (not members[at] is XEnemy or not members[at].hidden):
 				return [members[at]]
 	return []
 
