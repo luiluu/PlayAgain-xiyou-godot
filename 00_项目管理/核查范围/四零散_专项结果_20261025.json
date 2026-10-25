@@ -31,37 +31,6 @@
     "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/loose_fixes_oracle.json",
     "sha256": "73d97f458b9fa99b4c06f0c5dbc8fdc1e87d49e1dbb5645fe14e6fe71506a81f"
   },
-  "redPending": {
-    "status": {
-      "runId": "3e597bbc32464e5db8db7f55c89b9eb6",
-      "status": "running",
-      "exitCode": null,
-      "pid": 39842,
-      "startedAt": "2026-10-25T06:55:18.169250+00:00",
-      "command": [
-        "python3",
-        "03_再刷重制_Godot/07_开发环境/并行测试.py",
-        "03_再刷重制_Godot/07_开发环境/godot",
-        "03_再刷重制_Godot/01_Godot工程",
-        "--log-dir",
-        "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/red",
-        "xiyou_loose_fixes.tscn"
-      ],
-      "childPGID": 39843,
-      "childIdentity": {
-        "pid": 39843,
-        "pgid": 39843,
-        "startedAt": "Sun Oct 25 07:55:18 2026    "
-      }
-    },
-    "log": "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/red.log",
-    "scope": "仅xiyou_loose_fixes.tscn，当前排槽；不得重复启动"
-  },
-  "productionPatchPrepared": {
-    "path": "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/apply_production.py",
-    "sha256": "9c56469f17c32896a19f1aa738242d8fec5db3fb24795d094b82e5e85b8ce6ea",
-    "applied": true
-  },
   "F31": {
     "alreadyImplementedBy": "308927f8",
     "productionChangeNeeded": false,
@@ -74,20 +43,12 @@
     "finding": "普通932火增伤正确；重复／大小写／无前导零标签漏算已由修前专项证实。Codex补修后126/126通过，补修待Claude交叉核查。"
   },
   "usageAtHandoff": {
-    "fiveHourUsedPercent": 1,
-    "weeklyUsedPercent": 15
+    "fiveHourUsedPercent": 4,
+    "weeklyUsedPercent": 16
   },
   "handoffDocs": {
     "exitCode": 0,
     "scope": "仅文档登记正文，非全量"
-  },
-  "handoff58": {
-    "productionApplied": false,
-    "redStillQueued": true,
-    "patchReplacementDryRun": "7 files, each replacement uniquely matches; no writes",
-    "consumeReduceDataTags": 168,
-    "evidencePreservingSyncWrapper": "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/sync_preserve_evidence.py",
-    "wrapperRun": false
   },
   "redFinal": {
     "runId": "3e597bbc32464e5db8db7f55c89b9eb6",
@@ -165,9 +126,160 @@
     "oldOracle": 0,
     "alreadyKnownUpstreamFixtureProblem": true,
     "fixMergedIntoMain": "946df0b7",
-    "retestAfterSyncRequired": true
+    "retestAfterSyncRequired": true,
+    "scenes": [
+      {
+        "scene": "xiyou_rules.tscn",
+        "passed": false,
+        "attemptExitCodes": [
+          1,
+          1
+        ],
+        "result": {
+          "failedSample": [
+            "d1.dmg.enemy947.0.skill5557"
+          ],
+          "passed": 105855,
+          "total": 105856
+        }
+      },
+      {
+        "scene": "xiyou_rules_d1d.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "failedSample": [],
+          "passed": 105670,
+          "total": 105670
+        }
+      },
+      {
+        "scene": "xiyou_rules_d1b.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "failedSample": [],
+          "passed": 105778,
+          "total": 105778
+        }
+      },
+      {
+        "scene": "xiyou_rules_d1c.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "failedSample": [],
+          "passed": 105608,
+          "total": 105608
+        }
+      },
+      {
+        "scene": "xiyou_floor_run_c.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "floors": [
+            21,
+            33
+          ],
+          "passed": 560,
+          "total": 560
+        }
+      },
+      {
+        "scene": "xiyou_battle_options.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 92,
+          "total": 92
+        }
+      },
+      {
+        "scene": "xiyou_state_effects.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 19949,
+          "total": 19949
+        }
+      },
+      {
+        "scene": "xiyou_battle.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 8,
+          "total": 8
+        }
+      },
+      {
+        "scene": "xiyou_formula_effects.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 908,
+          "total": 908
+        }
+      },
+      {
+        "scene": "xiyou_settlement.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 11,
+          "total": 11
+        }
+      },
+      {
+        "scene": "xiyou_formula_equipment.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 1804,
+          "total": 1804
+        }
+      },
+      {
+        "scene": "xiyou_formula_rest.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 1352,
+          "total": 1352
+        }
+      }
+    ]
   },
-  "powerPending": {
+  "mainMerged": {
+    "main": "545ebd37",
+    "merge": "30b7f97c",
+    "conflicts": false,
+    "sixSliceAcceptancesVerifiedAgainstActualMain": true
+  },
+  "powerFinal": {
     "status": {
       "runId": "e17287b26ec844429fcd3449f7d9782e",
       "status": "done",
@@ -197,10 +309,24 @@
       "total": 137
     }
   },
-  "mainMerged": {
-    "main": "545ebd37",
-    "merge": "30b7f97c",
-    "conflicts": false,
-    "sixSliceAcceptancesVerifiedAgainstActualMain": true
+  "productionPatch": {
+    "commit": "10da1d87",
+    "applied": true,
+    "crossReview": "待Claude"
+  },
+  "finalSync": {
+    "status": "not_started",
+    "waitingForOtherLaneSyncs": true,
+    "acceptanceFiles": [
+      "03_再刷重制_Godot/04_验证/测量接受/四零散_cat去tpGap_20261025.json",
+      "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+    ],
+    "expectedExistingChanges": {
+      "cat": 1,
+      "slice": 6
+    },
+    "expectedNewCases": {
+      "enemy_book_defeat": 34
+    }
   }
 }
