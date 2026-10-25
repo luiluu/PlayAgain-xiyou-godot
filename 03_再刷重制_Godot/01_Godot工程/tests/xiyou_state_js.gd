@@ -68,6 +68,10 @@ func _run() -> void:
 	_set_variable(cases["set_variable.battle"].observed)
 	_battle_start_order(cases["battle.start_order"])
 	_syntax_errors(cases["syntax_error.blocks"].observed)
+	_counter_init(cases["counter.init"].observed)
+	_counter_carry(cases["counter.carry"].observed)
+	_counter_battle(cases["counter.battle"].observed)
+	_counter_save()
 	finish()
 
 
@@ -343,6 +347,79 @@ func _syntax_errors(o: Dictionary) -> void:
 			var value := XStateEffects.run_one(str(e.phase), a, st, {"attacker": a, "defender": t, "item": XDB.rec("Skills", 1), "value": 7.0})
 			ok = ok and value == 7.0 and before == [_state_view(a), a.hp, a.mp, a.tp, _state_view(t), t.hp]
 		check("syntax_error.%d.%s" % [sid, row.slot], ok, [effects, row])
+
+
+# ---- 第三批：状态计数 ----
+func _params(b: XBattler) -> Array:
+	b.param_mark_dirty()
+	b.param_refresh()
+	return range(8).map(func(i): return b.param(i))
+
+
+func _minus(x: Array, y: Array) -> Array:
+	return range(x.size()).map(func(i): return float(x[i]) - float(y[i]))
+
+
+func _counter(b: XBattler, sid: int):
+	return b.state_data.get("_stateCounter", {}).get(str(sid))
+
+
+## 附加时 计数 = 计数 || 变量：能力值按计数乘；变量为 0 时计数 0（层数按 1）；移除后计数留着，再附加不改
+func _counter_init(o: Dictionary) -> void:
+	for row in o.rows:
+		var s := XState.new_game(3, 1, [8])
+		var b := FixedActor.new().setup(8)
+		var sid := int(row.state)
+		var p0 := _params(b)
+		s.set_variable(int(row.variable), float(row.value))
+		b.add_state(sid)
+		var counter = _counter(b, sid)
+		var p1 := _params(b)
+		b.remove_state(sid)
+		var after_remove = _counter(b, sid)
+		s.set_variable(int(row.variable), 99.0)
+		b.add_state(sid)
+		var got := [counter, after_remove, _counter(b, sid)] + _minus(p1, p0) + _minus(_params(b), p0)
+		var want: Array = [row.counter, row.get("afterRemove"), row.readd] + _minus(row.refreshed, row.p0) + _minus(row.readdParams, row.p0)
+		check("counter.init.%d.%d" % [sid, row.value], _same(got, want), {"godot": got, "mv": want})
+
+
+## 层数沿用：排在计数状态后面的普通状态也乘计数，前面的不乘
+func _counter_carry(o: Dictionary) -> void:
+	for row in o.rows:
+		var s := XState.new_game(3, 1, [8])
+		var b := FixedActor.new().setup(8)
+		var A := XDB.rec("States", int(row.counterState))
+		s.set_variable(int(A.effects.filter(func(e): return e.op == "counter_init")[0].variable), 12.0)
+		var p0 := _params(b)
+		b.add_state(int(row.plain))
+		var pb := _params(b)
+		b.add_state(int(row.counterState))
+		var pab := _params(b)
+		var got := _minus(pb, p0) + _minus(pab, p0) + [b.state_ids.duplicate()]
+		var want: Array = _minus(row.pB, row.p0) + _minus(row.pAB, row.p0) + [row.states.map(func(x): return int(x))]
+		check("counter.carry.%d.%d" % [row.counterState, row.plain], _same(got.slice(0, 16), want.slice(0, 16)) and got[16] == want[16],
+			{"godot": got, "mv": want})
+
+
+## 开战 1763：计数 = floor(MP×0.3)。原版只写计数不 refresh，战斗中 krz 能力值缓存到下次标 dirty 才变（探针 p1 与 p0 相同），这里只比计数
+func _counter_battle(o: Dictionary) -> void:
+	for row in o.rows:
+		XState.new_game(3, 1, [8])
+		var b := FixedActor.new().setup(8)
+		b.add_state(1763)
+		b.mp = float(row.mp)
+		XStateEffects.run_one("battle", b, XDB.rec("States", 1763), {})
+		check("counter.battle.%d" % row.mp, _same([_counter(b, 1763)], [row.counter]), [_counter(b, 1763), row])
+
+
+## 角色的计数随存档（原版 Game_Actor._stateCounter 在存档里）
+func _counter_save() -> void:
+	var s := XState.new_game(3, 1, [8])
+	var a: XActor = s.members()[0]
+	a.state_data["_stateCounter"] = {"1781": 37.0}
+	var back := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
+	check("save.state_counter", float(back.actors[a.actor_id].state_data.get("_stateCounter", {}).get("1781", 0)) == 37.0)
 
 
 func finish() -> void:

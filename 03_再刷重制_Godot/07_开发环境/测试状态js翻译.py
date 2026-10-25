@@ -140,5 +140,33 @@ class Batch2TranslationTests(unittest.TestCase):
                     self.assertEqual(one(tag, m.group(2) + ';')['op'], 'js')
 
 
+class CounterTranslationTests(unittest.TestCase):
+    """第三批：YEP 状态计数 _stateCounter（附加时取变量、1763 开战取 MP）。"""
+    rows = json.loads(FIXTURES.read_text())['counter']
+
+    def test_inventory(self):
+        ops = [(row['state'], e) for row in self.rows for e in parse_state_effects(row['note']) if e['op'].startswith('counter')]
+        init = sorted(s for s, e in ops if e['op'] == 'counter_init')
+        self.assertEqual(init, [1775, 1781, 1782, 1783, 1784, 1785, 1786] + list(range(1792, 1808)))
+        for s, e in ops:
+            self.assertEqual(e['state'], s)  # 每块都只写自己的计数
+        self.assertEqual([s for s, e in ops if e['op'] == 'counter_set'], [1763])
+
+    def test_boundaries(self):
+        ok = 'user._stateCounter[5] = user._stateCounter[5] || $gameVariables.value(9);'
+        self.assertEqual(one('Apply', ok), {'phase': 'apply', 'op': 'counter_init', 'state': 5, 'variable': 9})
+        for tag, code in [('Remove', ok), ('Apply', ok.replace('[5] ||', '[6] ||')), ('Apply', ok.replace('||', '&&')),
+                          ('Apply', ok.replace('user.', 'target.')), ('Apply', ok + ' user.refresh();'),
+                          ('Apply', ok.replace('$gameVariables.value(9)', '9'))]:
+            with self.subTest(code=code):
+                self.assertEqual(one(tag, code)['op'], 'js')
+        battle = 'user._stateCounter[7] = user._stateCounter[7] || 0; user._stateCounter[7] = Math.floor(user.mp * 0.3);'
+        self.assertEqual(one('Battle', battle)['op'], 'counter_set')
+        for tag, code in [('Apply', battle), ('Battle', battle.replace('user.mp', 'user.atk')), ('Battle', battle.replace('Math.floor', 'Math.round')),
+                          ('Battle', battle.replace('[7] = Math', '[8] = Math'))]:
+            with self.subTest(code=code):
+                self.assertEqual(one(tag, code)['op'], 'js')
+
+
 if __name__ == '__main__':
     unittest.main()

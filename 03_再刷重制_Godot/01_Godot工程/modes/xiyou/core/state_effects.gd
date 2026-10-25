@@ -8,7 +8,7 @@ const BATTLER_PHASES := ["battle", "turn_start", "turn_end", "regenerate", "acti
 const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm", "react", "respond", "establish"]
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
 const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "poison_stack", "poison_tick",
-	"add_state", "gain_steps", "set_variable", "syntax_error"]
+	"add_state", "gain_steps", "set_variable", "syntax_error", "counter_init", "counter_set"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -144,6 +144,20 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 			var vid := int(e.id)
 			if XState.current != null and vid > 0 and vid < XDB.system().get("variables", []).size():
 				XState.current.set_variable(vid, float(e.value))
+		elif op == "counter_init" and execute:
+			# 计数 = 计数 || $gameVariables.value(V)：已有的（移除后也留着）不改
+			var counters: Dictionary = c.user.state_data.get("_stateCounter", {})
+			if _truthy_number(counters.get(str(e.state))) == 0.0:
+				counters[str(e.state)] = XState.current.variable(int(e.variable)) if XState.current != null else 0.0
+			c.user.state_data["_stateCounter"] = counters
+		elif op == "counter_set" and execute:
+			var out := PhaseValueProgram.new().run_phase(e.program, c, 0.0, true)
+			if out.available:
+				var counters: Dictionary = c.user.state_data.get("_stateCounter", {})
+				counters[str(e.state)] = out.value
+				c.user.state_data["_stateCounter"] = counters
+			else:
+				_diagnose(phase, int(st.id), holder, "counter_set_unavailable")
 		elif op == "syntax_error":
 			pass  # 原版这块解析失败（SyntaxError），customEffectEval 只报错，什么都不改
 		elif op == "user_param_damage" and execute and ctx.get("resources") != null:

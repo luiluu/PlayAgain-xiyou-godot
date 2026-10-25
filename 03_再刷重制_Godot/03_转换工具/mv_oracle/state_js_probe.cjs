@@ -240,6 +240,71 @@ cases.push(makeCase('syntax_error.blocks', {blocks: SYNTAX}, () => {
   return {rows};
 }));
 
+// ---- 第三批：YEP 状态计数 _stateCounter（G_StateParam paramState 按计数乘 <G_ShuXing>） ----
+// paramState 的层数变量 ceng 在循环外：某状态计数为真后，排在它后面的状态都沿用这个层数（原版写法，照测）
+const COUNTER = blocks(['addState'], c => /^user\._stateCounter\[(\d+)\]=user\._stateCounter\[\1\]\|\|\$gameVariables\.value\(\d+\);?$/.test(c)).map(([sid]) => sid);
+const gOf = st => st.G_ShuXing || [0, 0, 0, 0, 0, 0, 0, 0];
+const params = b => [0, 1, 2, 3, 4, 5, 6, 7].map(i => b.param(i));
+function fresh() {
+  const {a, b} = battle(2);
+  b._paramPlus[0] = 0; b.need_refresh = true; b.refresh(); b.clearResult();
+  return b;
+}
+cases.push(makeCase('counter.init', {states: COUNTER, values: [37, 0]}, () => {
+  const rows = [];
+  for (const sid of COUNTER) for (const value of [37, 0]) {
+    const b = fresh();
+    const v = +squash(w.$dataStates[sid].customEffectEval.addState).match(/value\((\d+)\)/)[1];
+    const p0 = params(b);
+    w.$gameVariables.setValue(v, value);
+    b.addState(sid);
+    const immediate = params(b), counter = b._stateCounter[sid];
+    b.refresh();
+    const refreshed = params(b);
+    b.removeState(sid); b.clearResult();
+    const afterRemove = b._stateCounter[sid];
+    w.$gameVariables.setValue(v, 99);
+    b.addState(sid);
+    rows.push({state: sid, variable: v, value, p0, immediate, refreshed, counter, afterRemove, readd: b._stateCounter[sid], readdParams: params(b)});
+  }
+  return {rows};
+}));
+// 层数沿用：计数状态 A（变量 12）＋普通 <G_ShuXing> 状态 B；B 排在 A 前或后
+const PLAIN = w.$dataStates.filter(st => st && gOf(st).some(x => x) && !Object.keys(st.customEffectEval || {}).some(k => st.customEffectEval[k])
+  && !st.traits.length && !COUNTER.includes(st.id));
+const order = (x, y) => (y.priority - x.priority) || (x.id - y.id);
+cases.push(makeCase('counter.carry', {}, () => {
+  const rows = [];
+  for (const sid of [COUNTER[0], COUNTER[COUNTER.length - 1]]) {
+    const A = w.$dataStates[sid];
+    const after = PLAIN.filter(st => order(A, st) < 0).slice(0, 3), before = PLAIN.filter(st => order(A, st) > 0).slice(0, 2);
+    for (const B of after.concat(before)) {
+      const b = fresh();
+      const v = +squash(A.customEffectEval.addState).match(/value\((\d+)\)/)[1];
+      w.$gameVariables.setValue(v, 12);
+      const p0 = params(b);
+      b.addState(B.id); b.refresh();
+      const pB = params(b);
+      b.addState(sid); b.refresh();
+      rows.push({counterState: sid, plain: B.id, plainAfter: order(A, B) < 0, states: b._states.slice(), p0, pB, pAB: params(b)});
+    }
+  }
+  return {rows};
+}));
+cases.push(makeCase('counter.battle', {state: 1763, mp: [0, 7, 150]}, () => {
+  const rows = [];
+  for (const mp of [0, 7, 150]) {
+    const b = fresh();
+    b.addState(1763); b.refresh();
+    const p0 = params(b);
+    b._mp = mp;
+    b.customEffectEval(1763, 'battle');
+    b.refresh();
+    rows.push({mp, counter: b._stateCounter[1763], p0, p1: params(b)});
+  }
+  return {rows};
+}));
+
 const ok = finish(host, 'state_js.json', {cases, nativeErrors: errors});
 w.Yanfly.Util.displayError = oldError;
 process.exit(ok ? 0 : 1);

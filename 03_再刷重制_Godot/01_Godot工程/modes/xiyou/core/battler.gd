@@ -338,6 +338,9 @@ func remove_state(id: int) -> void:
 	state_turns.erase(id)
 	if id == XZhenqi.POJIA_STATE:
 		zq_pojia_rate = 0.5
+	# YEP_BuffsStatesCore removeState：不论有没有该状态都清掉它的状态计数（死亡、抵抗等直接去状态的路径不清）
+	if state_data.has("_stateCounter"):
+		state_data._stateCounter.erase(str(id))
 	# Game_Battler.removeState：有该状态才 refresh；krz 的 Game_Enemy.removeState 之后总标 dirty
 	if had:
 		param_refresh()
@@ -459,15 +462,20 @@ func param(i: int) -> float:
 	v += param_state(i)
 	return roundf(clampf(v, param_min(i), param_max(i)))
 
-## G_StateParam paramState：各状态 <G_ShuXing> 的固定值之和。原版乘以 YEP 状态计数（_stateCounter，层数）；
-## Godot 没有状态计数，按 1 层（正式版没设计数时同样是 1）。
+## G_StateParam paramState：各状态 <G_ShuXing> 的固定值 × 层数之和。层数取 YEP 状态计数（state_data._stateCounter，
+## 状态脚本写入）；原版层数变量在循环外，某状态计数为真后排在后面的状态都沿用它（state_js_probe counter.carry）。
 static var _state_param_cache := {}
 func param_state(i: int) -> float:
 	var v := 0.0
+	var ceng := 1.0
+	var counters: Dictionary = state_data.get("_stateCounter", {})
 	for id in state_ids:
 		if not _state_param_cache.has(id):
 			_state_param_cache[id] = XPower.state_params(XDB.rec("States", id))
-		v += float(_state_param_cache[id][i])
+		var c := XStateEffects._truthy_number(counters.get(str(id)))
+		if c != 0.0:
+			ceng = c
+		v += float(_state_param_cache[id][i]) * ceng
 	return v
 
 func xparam(i: int) -> float:

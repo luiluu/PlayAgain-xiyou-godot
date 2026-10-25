@@ -461,6 +461,18 @@ def simple_script_effect(body, code, phase):
         m = re.fullmatch(r'\$gameVariables \. setValue \( (%s) , (0|%s) \)(?: ;)?' % (INT, INT), sig)
         if m:
             return {'op': 'set_variable', 'id': int(m.group(1)), 'value': int(m.group(2))}
+    # YEP 状态计数（G_StateParam 按计数乘 <G_ShuXing>）：附加时 计数 = 计数 || 变量；开战时 计数 = 计数 || 0 再改写为式子
+    if phase == 'apply':
+        m = re.fullmatch(r'user \. _stateCounter \[ (%s) \] = user \. _stateCounter \[ \1 \] \|\| \$gameVariables \. value \( (%s) \)(?: ;)?' % (INT, INT), sig)
+        if m:
+            return {'op': 'counter_init', 'state': int(m.group(1)), 'variable': int(m.group(2))}
+    if phase == 'battle':
+        m = re.fullmatch(r'user \. _stateCounter \[ (%s) \] = user \. _stateCounter \[ \1 \] \|\| 0 ; '
+                         r'user \. _stateCounter \[ \1 \] = (Math \. floor \( user \. m[hm]?p \* (?:0|[1-9][0-9]*)(?:\.[0-9]+)? \)) ;' % INT, sig)
+        if m:
+            program = compile_formula('value = %s;' % m.group(2).replace('user .', 'a .'), custom=True, table='States')
+            if program['status'] == 'pure' and set(program['capabilities']) <= {'read.battler'}:
+                return {'op': 'counter_set', 'state': int(m.group(1)), 'program': program}
     if phase in GAIN_PHASES and tokens[:1] in (['user'], ['var']):
         steps = _gain_steps(tokens)
         if steps:

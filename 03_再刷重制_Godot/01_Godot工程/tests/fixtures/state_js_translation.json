@@ -1,5 +1,5 @@
 {
- "说明": "冻结 v0.28 States.json 的 <Custom … Effect> 原文（只取效果块）：poison 为含 _stackingPoison 的状态，batch2 为第二批（加状态、回复、设变量、原版语法错误块）",
+ "说明": "冻结 v0.28 States.json 的 <Custom … Effect> 原文（只取效果块）：poison 为含 _stackingPoison 的状态，batch2 为第二批（加状态、回复、设变量、原版语法错误块），counter 为第三批（状态计数）",
  "poison": [
   {
    "state": 106,
@@ -258,6 +258,104 @@
   {
    "state": 2566,
    "note": "<Custom Battle Effect>\n  user.addState(1666);\n</Custom Battle Effect>"
+  }
+ ],
+ "counter": [
+  {
+   "state": 1763,
+   "note": "<Custom Battle Effect>\n//战斗开始时触发\nuser._stateCounter[1763] = user._stateCounter[1763] || 0;\nuser._stateCounter[1763] = Math.floor(user.mp * 0.3);\n\n</Custom Battle Effect>"
+  },
+  {
+   "state": 1775,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1775] = user._stateCounter[1775] || $gameVariables.value(1139);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1781,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1781] = user._stateCounter[1781] || $gameVariables.value(1133); // \n</Custom Apply Effect>"
+  },
+  {
+   "state": 1782,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1782] = user._stateCounter[1782] || $gameVariables.value(1131); // \n</Custom Apply Effect>"
+  },
+  {
+   "state": 1783,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1783] = user._stateCounter[1783] || $gameVariables.value(1134); // \n</Custom Apply Effect>"
+  },
+  {
+   "state": 1784,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1784] = user._stateCounter[1784] || $gameVariables.value(1132); // \n</Custom Apply Effect>"
+  },
+  {
+   "state": 1785,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1785] = user._stateCounter[1785] || $gameVariables.value(1135); // \n</Custom Apply Effect>"
+  },
+  {
+   "state": 1786,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1786] = user._stateCounter[1786] || $gameVariables.value(1135); //\n \n</Custom Apply Effect>"
+  },
+  {
+   "state": 1792,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1792] = user._stateCounter[1792] || $gameVariables.value(1121);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1793,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1793] = user._stateCounter[1793] || $gameVariables.value(1122);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1794,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1794] = user._stateCounter[1794] || $gameVariables.value(1123);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1795,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1795] = user._stateCounter[1795] || $gameVariables.value(1124);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1796,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1796] = user._stateCounter[1796] || $gameVariables.value(1125);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1797,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1797] = user._stateCounter[1797] || $gameVariables.value(1126);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1798,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1798] = user._stateCounter[1798] || $gameVariables.value(1127);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1799,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1799] = user._stateCounter[1799] || $gameVariables.value(1128);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1800,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1800] = user._stateCounter[1800] || $gameVariables.value(1121);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1801,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1801] = user._stateCounter[1801] || $gameVariables.value(1122);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1802,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1802] = user._stateCounter[1802] || $gameVariables.value(1123);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1803,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1803] = user._stateCounter[1803] || $gameVariables.value(1124);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1804,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1804] = user._stateCounter[1804] || $gameVariables.value(1125);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1805,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1805] = user._stateCounter[1805] || $gameVariables.value(1126);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1806,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1806] = user._stateCounter[1806] || $gameVariables.value(1127);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1807,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1807] = user._stateCounter[1807] || $gameVariables.value(1128);\n</Custom Apply Effect>"
   }
  ]
 }
