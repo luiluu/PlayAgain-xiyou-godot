@@ -4,3 +4,4 @@
 
 [node name="XiyouVariants" type="Node"]
 script = ExtResource("1")
+parts = 2
