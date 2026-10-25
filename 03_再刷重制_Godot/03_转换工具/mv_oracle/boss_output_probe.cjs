@@ -2,6 +2,8 @@
 // 冻结原版普通HP/MP结算入口；内存新局，只写.sandbox。不替换任何数值方法。
 const {start,makeCase,finish}=require('./shared/host.cjs');
 const host=start(),{w,newGame}=host,D=w.CodexBossDifficulty;
+// 仅省略OTB复活行动条绘图，沿用otb_probe的无界面宿主。
+w.BattleManager.otbDisplayWindow=function(){return {createReturnedBattlerSprite:function(){}};};
 const sprites=new Map();
 w.Game_Battler.prototype.battler=function(){
   if(!sprites.has(this))sprites.set(this,new Proxy({}, {get:(t,k)=>k in t?t[k]:(()=>false),set:(t,k,v)=>{t[k]=v;return true;}}));
