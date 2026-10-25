@@ -1,0 +1,234 @@
+{
+  "status": "dedicated and nine direct dependencies passed; awaiting Claude cross-review",
+  "baseline": "b91b1a14",
+  "scope": "Special Action customEffectEval reactState domains for 1341 and 2550 only; original resource scripts not migrated",
+  "oracleCases": 72,
+  "oracleErrors": [],
+  "sourceIdentityEqual": true,
+  "nativeEqualsFixture": true,
+  "fixtureSha256": "5d103d894e1974720b5a78c015411021758cb923fad1fbcbd29739f02fc60ac2",
+  "nativeSha256": "5d103d894e1974720b5a78c015411021758cb923fad1fbcbd29739f02fc60ac2",
+  "finalResults": {
+    "xiyou_state_effects": {
+      "passed": 19949,
+      "total": 19949
+    },
+    "xiyou_boss_sequence": {
+      "failures": [],
+      "passed": 8315,
+      "total": 8315
+    },
+    "xiyou_boss_react": {
+      "failures": [],
+      "passed": 9074,
+      "total": 9074
+    },
+    "xiyou_formula_effects": {
+      "passed": 908,
+      "total": 908
+    },
+    "xiyou_boss_output_context": {
+      "failures": [],
+      "passed": 16621,
+      "total": 16621
+    },
+    "xiyou_state_effects_tp": {
+      "failures": [],
+      "passed": 537,
+      "test": "xiyou_state_effects_tp",
+      "total": 537
+    },
+    "xiyou_boss_output": {
+      "failures": [],
+      "passed": 3823,
+      "total": 3823
+    },
+    "xiyou_boss_state_origin": {
+      "failures": [],
+      "passed": 15723,
+      "total": 15723
+    },
+    "xiyou_boss_lifecycle": {
+      "failures": [],
+      "passed": 5080,
+      "total": 5080
+    },
+    "xiyou_imported_balance": {
+      "passed": 273,
+      "total": 273
+    }
+  },
+  "finalAssertions": 80303,
+  "finalTimings": {
+    "jobs": 2,
+    "globalJobs": 4,
+    "wallSeconds": 17.557,
+    "flakyRerunPassed": [],
+    "fingerprint": "",
+    "reused": [],
+    "scenes": [
+      {
+        "name": "xiyou_state_effects.tscn",
+        "seconds": 4.625,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.625,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_boss_sequence.tscn",
+        "seconds": 3.675,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.675,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_boss_react.tscn",
+        "seconds": 3.67,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.67,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_formula_effects.tscn",
+        "seconds": 3.413,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.413,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_boss_output_context.tscn",
+        "seconds": 3.369,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.369,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_state_effects_tp.tscn",
+        "seconds": 3.368,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.368,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_boss_output.tscn",
+        "seconds": 3.283,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.283,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_boss_state_origin.tscn",
+        "seconds": 3.201,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.201,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_boss_lifecycle.tscn",
+        "seconds": 3.197,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.197,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_imported_balance.tscn",
+        "seconds": 3.075,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.075,
+            "passed": true
+          }
+        ]
+      }
+    ]
+  },
+  "finalTask": {
+    "runId": "f57722677ed9486eb32856fb7da4ce64",
+    "status": "done",
+    "exitCode": 0,
+    "pid": 38674,
+    "startedAt": "2026-10-25T23:38:50.735210+00:00",
+    "command": [
+      "python3",
+      "-u",
+      "03_再刷重制_Godot/07_开发环境/并行测试.py",
+      "03_再刷重制_Godot/07_开发环境/godot",
+      "03_再刷重制_Godot/01_Godot工程",
+      "--log-dir",
+      "03_再刷重制_Godot/04_验证/本地结果/boss70-react-final",
+      "xiyou_boss_react.tscn",
+      "xiyou_boss_state_origin.tscn",
+      "xiyou_state_effects.tscn",
+      "xiyou_state_effects_tp.tscn",
+      "xiyou_boss_output.tscn",
+      "xiyou_boss_output_context.tscn",
+      "xiyou_boss_sequence.tscn",
+      "xiyou_boss_lifecycle.tscn",
+      "xiyou_formula_effects.tscn",
+      "xiyou_imported_balance.tscn"
+    ],
+    "childPGID": 38675,
+    "childIdentity": {
+      "pid": 38675,
+      "pgid": 38675,
+      "startedAt": "Mon Oct 26 00:38:50 2026    "
+    },
+    "finishedAt": "2026-10-25T23:39:08.527313+00:00"
+  },
+  "runtimeCommit": "86f3c8f1",
+  "runtimeSha256": "05593fc57bfa20925501e1e739541e3a47802ba1d07931f0ec52c078f5d307ba",
+  "checks": "original 检查.sh JSON/link/version block passed dev.173; node --check, MV guard 16/16 and git diff --check passed",
+  "limitations": [
+    "Synthetic native resource scripts; translated phase observer replays resource operations; no full state1341/2550 script migration claim",
+    "Native malformed stateOrigin indexes and absent action subjects not sampled in this period",
+    "No arbitrary fatal GDScript error recovery claim",
+    "Inherited determinism eight early_inventory_rule failures unchanged and not rerun"
+  ]
+}
