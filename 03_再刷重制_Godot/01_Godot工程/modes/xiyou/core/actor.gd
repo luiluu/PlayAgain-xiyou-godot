@@ -446,6 +446,7 @@ func param_base(i: int) -> float:
 		if parts.size() >= 3 and _condition(parts[1].strip_edges(), float(parts[2])):
 			v += _param_boost(base, parts[0])
 	v += XTraining.param_bonus(self, i)
+	v += XParamPlus.bonus(self, i)
 	return v
 
 ## 装备属性；被动 passiveWPNMxx / passiveARMMxx 按武器/防具类型放大该装备的正值属性。
@@ -534,7 +535,8 @@ func passive_element_values(e: int) -> Array:
 func refresh_passive() -> void:
 	var c := {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "skillPass": {}, "skillTypeDvup": {},
 		"SkETypeHarmRi": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0, "itemRateUp": 0.0,
-		"certainHit": {"global": false, "bySkill": {}}, "damageElement": 0}
+		"certainHit": {"global": false, "bySkill": {}}, "damageElement": 0,
+		"consumeReduce": {"bySkill": {}, "byType": {"Zj": 0, "Mf": 0}, "all": 0}}
 	var objs := stat_equips() + skills() + states()
 	for o in objs:
 		var note := str(o.get("note", ""))
@@ -572,6 +574,24 @@ func refresh_passive() -> void:
 			c.damageElement = int(str(meta.DamageElements).strip_edges())
 		if meta.has("passiveIRUP"):
 			c.itemRateUp += _num(meta.passiveIRUP)
+		# dsPassiveSkill读取meta（重复同名标签取最后一条），parseInt按首个有符号整数解析。
+		for key in meta:
+			var tag := str(key)
+			if not tag.begins_with("ConsumeReduce"):
+				continue
+			var number := RegEx.create_from_string("^\\s*([+-]?\\d+)").search(str(meta[key]))
+			if number == null:
+				push_error("ConsumeReduce标签不是整数：" + tag + ":" + str(meta[key]))
+				continue
+			var value := int(number.get_string(1))
+			var suffix := tag.substr(13)
+			if suffix == "All":
+				c.consumeReduce.all += value
+			elif suffix in ["Zj", "Mf"]:
+				c.consumeReduce.byType[suffix] += value
+			elif suffix.is_valid_int():
+				var id := int(suffix)
+				c.consumeReduce.bySkill[id] = c.consumeReduce.bySkill.get(id, 0) + value
 	_passive_cache = c
 
 func passive_cache() -> Dictionary:

@@ -1,6 +1,9 @@
 extends Node
 ## 神魔战场 Map186 其余八个军团（EV24～31）：变量 666～673 档 7 时连打八场（精英小队＋元帅），犒劳后换到自开关 A 页。
 ## 与 xiyou_map186 拆开，免得单场景逼近 300 秒。
+## 分段：xiyou_map186_legions 跑 EV24～27，xiyou_map186_legions_b 跑 EV28～31（每个军团自己开新局，合计断言不变）
+@export var first_event := 24
+@export var last_event := 31
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 90000
 var results: Array = []
@@ -14,6 +17,8 @@ func _ready() -> void:
 	# 换场景（传送）时测试节点不能挂在当前场景下，挂到根节点
 	var runner := Node.new()
 	runner.set_script(get_script())
+	runner.set("first_event", first_event)
+	runner.set("last_event", last_event)
 	runner.set_meta("runner", true)
 	get_tree().root.add_child.call_deferred(runner)
 
@@ -158,7 +163,7 @@ func _in_war(x := 46, y := 52) -> Array:
 
 ## 其余八个军团（EV24～31）：变量 666～673 档 7 时连打八场（精英小队＋元帅），犒劳后换到自开关 A 页
 func _other_legions() -> void:
-	for id in range(24, 32):
+	for id in range(first_event, last_event + 1):
 		var r := await _in_war(46, 52)
 		if r.is_empty():
 			return

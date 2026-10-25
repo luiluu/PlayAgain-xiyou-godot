@@ -329,6 +329,7 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 				state_turns.erase(sid)
 		buffs.fill(0)
 		buff_turns.fill(0)
+		XEnemyBook.note_death(self)
 	if not state_ids.has(id):
 		state_ids.append(id)
 		_sort_states()

@@ -359,6 +359,164 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.assertFalse((self.tmp / 'overlap').exists(), '共用上限 1 时同步探针与测试仍同时运行')
 
 
+
+class SlotWeightTests(unittest.TestCase):
+    """共用槽按权重占（吃内存的探针多占几槽）、多槽进程不被单槽进程饿死、排队心跳、同步与占槽.py 都走这个池。"""
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.state = Path(self.tmpdir.name)
+        self.par = load('par_slots', HERE / '并行测试.py')
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    def hold(self, weight, limit, until, out, name):
+        """在子线程里占 weight 槽，记下占到的槽号，直到 until 事件被置位。"""
+        import threading
+        def body():
+            with self.par.global_slot(self.state, limit, weight) as got:
+                out[name] = got
+                until.wait(10)
+        t = threading.Thread(target=body, daemon=True)
+        t.start()
+        return t
+
+    def wait_for(self, cond, seconds=5):
+        import time
+        t0 = time.monotonic()
+        while not cond() and time.monotonic() - t0 < seconds:
+            time.sleep(0.05)
+        return cond()
+
+    def test_weight_takes_several_slots_and_others_queue(self):
+        import threading
+        got, release_a, release_b = {}, threading.Event(), threading.Event()
+        a = self.hold(2, 3, release_a, got, 'a')
+        self.assertTrue(self.wait_for(lambda: 'a' in got))
+        self.assertEqual(len(got['a']), 2)
+        b = self.hold(1, 3, release_b, got, 'b')
+        self.assertTrue(self.wait_for(lambda: 'b' in got))  # 第三槽还空着
+        c = self.hold(2, 3, threading.Event(), got, 'c')
+        self.assertFalse(self.wait_for(lambda: 'c' in got, 1))  # 只剩 0 槽，两槽的要等
+        release_a.set(); a.join(5)
+        self.assertTrue(self.wait_for(lambda: 'c' in got))
+        self.assertEqual(len(set(got['c']) | {got['b']}), 3)
+        release_b.set(); b.join(5)
+
+    def locked(self, name):
+        """另开一个文件描述去试锁：被别人占着返回 True（flock 按打开的文件描述算，同进程不同线程也互斥）。"""
+        import fcntl
+        with open(self.state / 'slots' / name, 'a') as f:
+            try:
+                fcntl.flock(f, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            except OSError:
+                return True
+            fcntl.flock(f, fcntl.LOCK_UN)
+            return False
+
+    def test_heavy_waiter_keeps_partial_slots_so_singles_cannot_starve_it(self):
+        # 不靠时间：每一步都等到能观察到的锁状态再往下走（负载高时只是等得久，不会判错）
+        import threading
+        got, ra = {}, threading.Event()
+        a = self.hold(1, 2, ra, got, 'a')
+        self.assertTrue(self.wait_for(lambda: 'a' in got, 30))
+        rh = threading.Event()
+        h = self.hold(2, 2, rh, got, 'heavy')
+        # 多槽进程攒到了另一槽、独占着 heavy.lock，两个槽都被占
+        self.assertTrue(self.wait_for(lambda: self.locked('heavy.lock') and self.locked('0.lock') and self.locked('1.lock'), 30))
+        self.assertNotIn('heavy', got)
+        rs = threading.Event()
+        s = self.hold(1, 2, rs, got, 'single')
+        ra.set(); a.join(30)
+        # a 放出的槽只能归多槽进程：单槽的在 heavy.lock 独占期间让路
+        self.assertTrue(self.wait_for(lambda: 'heavy' in got, 30))
+        self.assertEqual(sorted(got['heavy']), [0, 1])
+        self.assertNotIn('single', got)  # 两槽都在多槽进程手里，单槽的不可能占到
+        rh.set(); h.join(30)
+        self.assertTrue(self.wait_for(lambda: 'single' in got, 30))
+        rs.set(); s.join(30)
+
+    def test_single_waits_while_heavy_is_gathering(self):
+        # 有多槽进程在攒槽（heavy.lock 独占）时，即使有空槽单槽的也让路；独占一放就能占到
+        import fcntl, threading
+        (self.state / 'slots').mkdir(exist_ok=True)
+        gate = open(self.state / 'slots/heavy.lock', 'a')
+        fcntl.flock(gate, fcntl.LOCK_EX)
+        got, release = {}, threading.Event()
+        t = self.hold(1, 2, release, got, 'single')
+        self.assertFalse(self.wait_for(lambda: 'single' in got, 1))
+        self.assertFalse(self.locked('0.lock') or self.locked('1.lock'))
+        fcntl.flock(gate, fcntl.LOCK_UN); gate.close()
+        self.assertTrue(self.wait_for(lambda: 'single' in got, 30))
+        release.set(); t.join(30)
+
+    def test_weight_above_limit_is_capped_and_waiting_reports_progress(self):
+        import threading
+        got, release = {}, threading.Event()
+        a = self.hold(9, 2, release, got, 'a')
+        self.assertTrue(self.wait_for(lambda: 'a' in got))
+        self.assertEqual(sorted(got['a']), [0, 1])
+        beats = []
+        def late():
+            with self.par.global_slot(self.state, 2, 1, beats.append, 0.2):
+                pass
+        t = threading.Thread(target=late, daemon=True); t.start()
+        self.assertTrue(self.wait_for(lambda: len(beats) >= 2))
+        release.set(); a.join(5); t.join(5)
+        self.assertFalse(t.is_alive())
+
+    def test_sync_heavy_probe_weight_and_waiting_heartbeat(self):
+        seen = []
+        real = sync.runner().global_slot
+
+        def spy(sdir, limit, weight=1, on_wait=None, interval=60.0):
+            seen.append(weight)
+            if on_wait:
+                on_wait(61.0)
+            return real(self.state, limit, weight)
+        out = io.StringIO()
+        with mock.patch.object(sync.runner(), 'global_slot', spy), mock.patch.object(sync.subprocess, 'run') as run, \
+                contextlib.redirect_stdout(out):
+            run.return_value = subprocess.CompletedProcess([], 0, '', '')
+            sync.run_node(['event_probe.cjs'], {})
+            sync.run_node(['cat_probe.cjs'], {})
+            with mock.patch.dict(os.environ, XIYOU_PROBE_WEIGHTS='{"cat_probe.cjs": 2}'):
+                sync.run_node(['cat_probe.cjs'], {})
+        self.assertEqual(seen, [3, 1, 2])
+        self.assertIn('等槽：event_probe.cjs 已等 61 秒（占 3 槽', out.getvalue())
+
+    def test_godot_import_in_sync_takes_a_slot(self):
+        labels = []
+        @contextlib.contextmanager
+        def spy(label, weight=1):
+            labels.append(label)
+            yield
+        with mock.patch.object(sync, 'heavy_slot', spy), mock.patch.object(sync.subprocess, 'run') as run, \
+                mock.patch.object(sync, 'GODOT', Path(sys.executable)), mock.patch.object(sync, 'PROJECT', self.state):
+            run.return_value = subprocess.CompletedProcess([], 0, '', '')
+            sync.godot_import()
+        self.assertEqual(labels, ['godot --import'])
+
+    def test_slot_cli_runs_command_and_sends_heartbeat_to_notice_fd(self):
+        import threading
+        env = dict(os.environ, XIYOU_TEST_STATE_DIR=str(self.state), CHECK_GLOBAL_JOBS='1', XIYOU_SLOT_HEARTBEAT='0.2')
+        cli = [sys.executable, str(HERE / '占槽.py')]
+        self.assertEqual(subprocess.run(cli + ['--', 'sh', '-c', 'exit 7'], env=env).returncode, 7)
+        self.assertEqual(subprocess.run(cli + ['--weight', '2'], env=env, capture_output=True).returncode, 64)
+        got, release = {}, threading.Event()
+        with mock.patch.dict(os.environ, env):
+            a = self.hold(1, 1, release, got, 'a')
+            self.assertTrue(self.wait_for(lambda: 'a' in got))
+            p = subprocess.Popen(['zsh', '-c', 'out=$("$@" 3>&2 2>&1); print -r -- "OUT:$out"', '_', *cli,
+                                  '--label', 'godot --import', '--notice-fd', '3', '--', 'echo', 'done'],
+                                 env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            self.assertTrue(self.wait_for(lambda: False, 0.8) or True)
+            release.set(); a.join(5)
+            out, err = p.communicate(timeout=10)
+        self.assertEqual(out.strip(), 'OUT:done')  # 心跳不混进捕获的命令输出
+        self.assertIn('等槽：godot --import', err)
+
+
 def ledger():
     return '''## 进度账
 
@@ -1000,6 +1158,152 @@ for name in filter(None, files):
         self.assertIn('fixture change', log)
         self.assertIn('[规则](规则/甲.md)', log)
         self.assertFalse((self.root / second).exists())
+
+    def branches(self):
+        return self.g('branch', '--format=%(refname:short)').split()
+
+    def test_lane_on_new_branch_skips_worktree_but_deletes_delivery_branch(self):
+        # 车道交付后在同一工作树换新分支接着做（会话绑在路径上）：工作树保留，交付分支照删。
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.g('switch', '-c', 'claude/task-2', cwd=self.wt)
+        (self.wt / 'next.md').write_text('phase 2\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'phase 2', cwd=self.wt)
+        (self.wt / 'wip.md').write_text('uncommitted\n')
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertIn('跳过清理', self.last_output)
+        self.assertTrue((self.wt / 'wip.md').exists())
+        self.assertEqual(self.g('branch', '--show-current', cwd=self.wt), 'claude/task-2')
+        self.assertNotIn('claude/task', self.branches())
+        self.assertIn('claude/task-2', self.branches())
+        self.assertFalse((self.root / '.git/lane-merge/state.json').exists())
+        self.assertIn('合并 claude/task（dev.002）收尾', self.g('log', '--format=%s', '-1'))
+
+    def test_lane_switched_before_prepare_merges_branch_ref(self):
+        # 交付后、总装准备前车道就换了新分支：按交付分支引用合并，不带进新分支的提交
+        delivered = self.g('rev-parse', 'HEAD', cwd=self.wt)
+        self.g('switch', '-c', 'claude/task-2', cwd=self.wt)
+        (self.wt / 'next.md').write_text('phase 2\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'phase 2', cwd=self.wt)
+        (self.wt / 'wip.md').write_text('uncommitted\n')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertIn('按分支引用', self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD^2'), delivered)
+        self.assertFalse((self.root / 'next.md').exists())
+        self.assertIn('fixture change', (self.root / merge.LOG).read_text())
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertTrue((self.wt / 'wip.md').exists())
+        self.assertEqual(self.branches(), ['claude/task-2', 'main'])
+
+    def test_branch_ref_lane_with_synced_slice_runs_full_sync(self):
+        # 没有工作树可取同步产物指纹：直接跑完整同步，不传 --from-worktree
+        slice_ = self.wt / merge.TOOLS / 'xiyou_slice.json'
+        slice_.parent.mkdir(parents=True, exist_ok=True); slice_.write_text('{}\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'slice', cwd=self.wt)
+        self.g('switch', '-c', 'claude/task-2', cwd=self.wt)
+        calls = []
+        orig = merge.run
+        merge.run = lambda root, args: calls.append(list(map(str, args)))
+        try:
+            state = merge.plan(self.root, 'task')
+            self.assertEqual(state['worktree'], '')
+            self.assertTrue(state['refresh'])
+            state_file = Path(self.tmp.name) / 'state.json'
+            state['phase'] = 'merged'
+            merge.prepare(self.root, dict(state, phase='merged', head=self.g('rev-parse', 'HEAD')), state_file, 'Claude')
+        except RuntimeError:
+            pass
+        finally:
+            merge.run = orig
+        self.assertTrue(calls and calls[0][-1] == '--accept-additions', calls)
+        self.assertFalse(any('--from-worktree' in c for c in calls))
+
+    def test_lane_new_commit_or_dirty_on_same_branch_keeps_both(self):
+        for case in ['commit', 'dirty']:
+            with self.subTest(case=case):
+                self.tearDown(); self.setUp()
+                self.assertEqual(self.call(), 0, self.last_output)
+                (self.wt / 'later.md').write_text('later\n')
+                if case == 'commit':
+                    self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'later', cwd=self.wt)
+                self.register()
+                self.assertEqual(self.call('--finish'), 0, self.last_output)
+                self.assertTrue((self.wt / 'later.md').exists())
+                self.assertIn('claude/task', self.branches())
+                self.assertIn('仍是该工作树的当前分支', self.last_output)
+
+    def test_lane_on_new_branch_without_commits_is_not_removed(self):
+        # 新分支还没提交（HEAD 仍是交付提交、干净）：也不能删工作树和新分支。
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.g('switch', '-c', 'claude/task-2', cwd=self.wt)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertTrue(self.wt.exists())
+        self.assertEqual(self.branches(), ['claude/task-2', 'main'])
+
+    def test_batch_cleans_finished_lane_and_skips_continuing_one(self):
+        wt2, checks = self.batch_fixture()
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--batch'), 0, self.last_output)
+        self.g('switch', '-c', 'claude/task-2', cwd=self.wt)  # 第一条在批中途接着做
+        self.assertEqual(self.call_task('task2'), 0, self.last_output)
+        self.register_both()
+        self.assertEqual(self.call_task('task2', '--finish'), 0, self.last_output)
+        self.assertTrue(self.wt.exists())
+        self.assertFalse(wt2.exists())
+        self.assertEqual(self.branches(), ['claude/task-2', 'main'])
+        self.assertFalse((self.root / '.git/lane-merge/batch.json').exists())
+
+    def args_checker(self):
+        """检查.sh 替身：把收到的参数记一行。"""
+        log = Path(self.tmp.name) / 'check_args'
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\necho "$*" >> %s\n' % log); checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'args checker')
+        self.g('merge', 'main', cwd=self.wt)
+        return log
+
+    def test_finish_affected_uses_premerge_main_and_marks_commit(self):
+        bare = self.github()
+        log = self.args_checker()
+        base = self.g('rev-parse', 'main')
+        self.assertEqual(self.call('--affected'), 1)  # 只配 --finish
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--batch', '--affected'), 1)
+        self.assertEqual(self.call('--finish', '--affected'), 0, self.last_output)
+        self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base])
+        body = self.g('log', '-1', '--format=%B')
+        self.assertIn('验证: 选测（基准 ' + base[:9], body)
+        self.assertFalse(self.wt.exists())
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
+
+    def test_batch_final_affected_covers_whole_batch(self):
+        wt2, _ = self.batch_fixture()
+        log = Path(self.tmp.name) / 'check_args'
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\necho "$*" >> %s\n' % log); checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'args checker')
+        base = self.g('rev-parse', 'main')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--batch'), 0, self.last_output)
+        self.assertEqual(self.call_task('task2'), 0, self.last_output)
+        self.register_both()
+        self.assertEqual(self.call_task('task2', '--finish', '--affected'), 0, self.last_output)
+        self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base])
+        self.assertFalse(wt2.exists())
+        self.assertFalse(self.wt.exists())
+
+    def test_finish_without_affected_runs_full_check(self):
+        log = self.args_checker()
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertEqual(log.read_text().split(), ['--oracle'])
+        self.assertNotIn('验证:', self.g('log', '-1', '--format=%B'))
 
     def test_also_allows_extra_change_at_finish(self):
         self.assertEqual(self.call(), 0)

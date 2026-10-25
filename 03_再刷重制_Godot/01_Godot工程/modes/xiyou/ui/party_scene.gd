@@ -10,7 +10,9 @@ extends Control
 ## - 操作：指令「整队」「离队」→ 出战栏选第 0 格；整队时在出战栏确定 → 名单选人，名单确定播装备音：
 ##   选「离队」行把该格清空，选角色放进该格（已在别格的两格互换）；离队时在出战栏确定直接清空该格（装备音）。
 ##   出战栏 Q/E（上一页/下一页）与相邻格互换（光标音＋装备音）。取消逐层返回；「还原」恢复进页时的出战栏；
-##   「完成」或在指令窗取消返回主菜单（完成在出战栏全空/全员阵亡时灰显，确定蜂鸣）。
+##   「完成」或在指令窗取消返回主菜单（完成在出战栏全空/全员阵亡时灰显，确定蜂鸣）；返回前 XPartySkills.finish 刷新技能共享／羁绊／领袖。
+## - 超强者（installBossDifficultyRuntime）：没开挑战开关时名单里名字半透明、确定蜂鸣；开页先清出战栏里的超强者并提示（XItemMarks.deploy_start）。
+## - 领袖旗标（Star_LeadActor 的 drawActor 包装）：首位是领袖角色时出战栏首格右上角画 LeaderFlag。
 
 signal closed
 
@@ -41,6 +43,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	XUI.menu_background(self)
 	XState.current._ensure_slots()
+	XItemMarks.deploy_start(XState.current)  # Scene_Party.start 包装：先清出战栏里的超强者、开页后提示
 	_former = XState.current.battle_slots.duplicate()
 	cmd_win = XMVWindow.make(self, CMD_RECT, XUI.MENU_WINDOW_OPACITY, _paint_cmd)
 	slot_win = XMVWindow.make(self, SLOT_RECT, XUI.MENU_WINDOW_OPACITY, _paint_slots)
@@ -106,11 +109,21 @@ func _paint_slots(c: XMVCanvas) -> void:
 		c.face(str(a.data().faceName), int(a.data().faceIndex), inner.position.x, inner.position.y, inner.size.x, inner.size.y)
 		c.character(str(a.data().characterName), int(a.data().characterIndex), inner.position.x + inner.size.x / 2.0, inner.size.y * 19.0 / 20.0)
 		c.text(a.display_name(), inner.position.x, inner.position.y, inner.size.x, "left", XMenu._hp_color(a))
+		# Star_LeadActor：首位是领袖角色时画 img/system/LeaderFlag，x＝格宽（内缩后）−图宽、y＝0（照原版不加格子的 x）
+		if XLeadActor.is_leader(XState.current, id):
+			var tex := _leader_flag()
+			if tex != null:
+				c.draw_texture(tex, Vector2(inner.size.x - tex.get_width(), 0))
+
+
+## 图要随切片的 systemImages 导出（交付单 claude_bajie-skillshare 提案）；没导出时不画
+static func _leader_flag() -> Texture2D:
+	var p := XDB.img_path("system", "LeaderFlag")
+	return load(p) as Texture2D if p != "" else null
 
 
 func _paint_list(c: XMVCanvas) -> void:
 	var data := list_data()
-	var section := c.size.x / 6.0
 	var battle := XState.current.battle_members()
 	for i in range(list_top, mini(list_top + _rows(), data.size())):
 		var y := (i - list_top) * LH
@@ -122,17 +135,24 @@ func _paint_list(c: XMVCanvas) -> void:
 			c.text("离队", 36, y, c.size.x - TEXT_PADDING - 36)
 			continue
 		var a := XState.current.actor(id)
-		c.character(str(a.data().characterName), int(a.data().characterIndex), 32.0 / 2.0 + TEXT_PADDING / 2.0, y + LH + 16.0, LH - 4.0)
-		c.text(a.display_name(), 36, y, c.size.x - 36, "left", XUI.text_color(IN_PARTY_COLOR) if battle.has(a) else XUI.TEXT)
-		var lv_w := c.text_width("Lv")
-		c.text("Lv", section * 2, y, lv_w, "left", XUI.SYSTEM)
-		c.text(XMenu._group(a.level), section * 2 + lv_w, y, c.text_width(XMenu._group(a.max_level())), "right")
-		_value(c, "HP", a.hp, a.mhp, section * 3, y, section - 6, "hp", XMenu._hp_color(a))
-		_value(c, "MP", a.mp, a.mmp, section * 4, y, section - 6, "mp", XUI.TEXT)
-		var tp: Array = XUI.GAUGES.tp
-		c.gauge(section * 5, y, section - 6, a.tp / a.max_tp(), tp[0], tp[1])
-		c.text("TP", section * 5, y, 44, "left", XUI.SYSTEM)
-		c.text(str(int(a.tp)), section * 5 + section - 6 - 64, y, 64, "right")
+		paint_actor_row(c, a, y, battle.has(a), XItemMarks.can_deploy(XState.current, id))
+
+
+## Window_PartyList.drawBasic／drawExtra 的一行（角色仓库 XActorWarehouseScene 共用）：行走图上半、名字（出战成员 textColor 6；
+## 不可用时只有名字半透明，同 changePaintOpacity 只包住 drawText）、Lv、HP/MP/TP
+static func paint_actor_row(c: XMVCanvas, a: XActor, y: float, in_battle: bool, enabled := true) -> void:
+	var section := c.size.x / 6.0
+	c.character(str(a.data().characterName), int(a.data().characterIndex), 32.0 / 2.0 + TEXT_PADDING / 2.0, y + LH + 16.0, LH - 4.0)
+	c.text(a.display_name(), 36, y, c.size.x - 36, "left", XUI.text_color(IN_PARTY_COLOR) if in_battle else XUI.TEXT, XUI.FONT_SIZE, LH, 1.0 if enabled else XUI.DIM.a)
+	var lv_w := c.text_width("Lv")
+	c.text("Lv", section * 2, y, lv_w, "left", XUI.SYSTEM)
+	c.text(XMenu._group(a.level), section * 2 + lv_w, y, c.text_width(XMenu._group(a.max_level())), "right")
+	_value(c, "HP", a.hp, a.mhp, section * 3, y, section - 6, "hp", XMenu._hp_color(a))
+	_value(c, "MP", a.mp, a.mmp, section * 4, y, section - 6, "mp", XUI.TEXT)
+	var tp: Array = XUI.GAUGES.tp
+	c.gauge(section * 5, y, section - 6, a.tp / a.max_tp(), tp[0], tp[1])
+	c.text("TP", section * 5, y, 44, "left", XUI.SYSTEM)
+	c.text(str(int(a.tp)), section * 5 + section - 6 - 64, y, 64, "right")
 
 
 ## Window_PartyList.drawCurrentAndMax：只写当前值，右对齐在最大值宽度内
@@ -161,6 +181,7 @@ func ok() -> void:
 					XState.current.battle_slots = _former.duplicate()
 					XState.current.rearrange_actors()
 				"cancel":
+					XPartySkills.finish(XState.current)  # commandFinish：技能共享／羁绊／领袖刷新
 					closed.emit()
 					return
 		"slot":
@@ -172,10 +193,14 @@ func ok() -> void:
 				XState.current.battle_slots[slot_index] = 0
 				XState.current.rearrange_actors()
 		"list":
-			XSound.system(1)
-			XSound.system(4)
 			var id := int(list_data()[list_index])
 			var s := XState.current
+			# Window_PartyList.isCurrentItemEnabled／Scene_Party.switchActors 包装：超强者（未开挑战）不能编入，蜂鸣
+			if id > 0 and not XItemMarks.can_deploy(s, id):
+				XSound.system(3)
+				return
+			XSound.system(1)
+			XSound.system(4)
 			if id <= 0:
 				s.battle_slots[slot_index] = 0
 			else:
@@ -195,6 +220,7 @@ func cancel() -> void:
 	XSound.system(2)
 	match mode:
 		"command":
+			XPartySkills.finish(XState.current)  # 指令窗取消＝commandFinish
 			closed.emit()
 			return
 		"slot":

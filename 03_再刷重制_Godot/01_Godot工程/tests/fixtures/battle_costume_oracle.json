@@ -1,0 +1,95 @@
+{
+ "source": "ui_reference/review_system_pages.js battle_costume（冻结 v0.28，地图 5、敌群 2、难度 3、角色 1 学会 6801）",
+ "actors": [
+  {
+   "actor": 1,
+   "battlerName": "Enemy_General_M",
+   "states": [
+    1201
+   ],
+   "x": 819,
+   "y": 230,
+   "bitmap": [
+    "img/sv_actors/Enemy_General_M.png",
+    576,
+    384
+   ],
+   "frame": [
+    64,
+    0,
+    64,
+    64
+   ],
+   "scale": [
+    1,
+    1
+   ]
+  },
+  {
+   "actor": 8,
+   "battlerName": "Actor2_3",
+   "states": [],
+   "x": 819,
+   "y": 329,
+   "bitmap": [
+    "img/sv_actors/Actor2_3.png",
+    576,
+    384
+   ],
+   "frame": [
+    64,
+    0,
+    64,
+    64
+   ],
+   "scale": [
+    1,
+    1
+   ]
+  },
+  {
+   "actor": 9,
+   "battlerName": "Actor1_2",
+   "states": [],
+   "x": 819,
+   "y": 427,
+   "bitmap": [
+    "img/sv_actors/Actor1_2.png",
+    576,
+    384
+   ],
+   "frame": [
+    64,
+    0,
+    64,
+    64
+   ],
+   "scale": [
+    1,
+    1
+   ]
+  },
+  {
+   "actor": 10,
+   "battlerName": "Actor13_6",
+   "states": [],
+   "x": 819,
+   "y": 526,
+   "bitmap": [
+    "img/sv_actors/Actor13_6.png",
+    576,
+    384
+   ],
+   "frame": [
+    64,
+    0,
+    64,
+    64
+   ],
+   "scale": [
+    1,
+    1
+   ]
+  }
+ ]
+}

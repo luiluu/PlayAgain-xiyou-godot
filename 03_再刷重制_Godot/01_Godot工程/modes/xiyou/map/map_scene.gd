@@ -111,6 +111,7 @@ func _ready() -> void:
 	add_child(screen_fx)
 	var s := XState.current
 	await load_map(s.map_id, s.x, s.y, s.direction)
+	XItemMarks.deploy_start(XState.current)  # Scene_Map.start 包装：清出战栏里的超强者并提示
 
 
 func _difficulty_notice_active() -> bool:
@@ -297,6 +298,12 @@ func _place_party(x: int, y: int, d: int) -> void:
 func _process(delta: float) -> void:
 	if XState.current:
 		XState.current.play_seconds += delta
+		# Star_PetSystem：新游戏／读档后每 5 分钟查一次神秘生物刷新（改事件独立开关，见 XPetCapture）
+		var pet_notes = XPetCapture.tick(XState.current)
+		if pet_notes != null:
+			refresh_events()
+			for t in pet_notes:
+				XToast.show_text(str(t))
 	if player:
 		var hanging := XHangUp.is_active(XState.current)
 		player.input_enabled = not busy and not _menu_open and not hanging
@@ -379,7 +386,9 @@ func refresh_party_sprites() -> void:
 	var s := XState.current
 	var leader: XActor = s.leader() if s else null
 	if leader:
-		player.set_image(str(leader.data().characterName), int(leader.data().characterIndex))
+		# 更衣的替换形象只换玩家（Star_ChangeClothes 改 Game_Player 的 characterName／characterIndex，见 XChangeClothes）
+		var img := XChangeClothes.player_image(s, str(leader.data().characterName), int(leader.data().characterIndex))
+		player.set_image(img[0], img[1])
 	else:
 		player.set_image("", 0)
 	for f in followers:
@@ -662,6 +671,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	var shot := await _snapshot()
 	# 原版战斗没有 _tipSpr；只保留快照里的那一帧，活提示在后台继续倒数。
 	difficulty_notice.hide()
+	XPartySkills.battle_start(XState.current)  # BattleManager.startBattle 包装：装备学技能变了刷共享、成员变了刷羁绊
 	var battle := XBattleScene.new()
 	battle.setup(troop_id, can_escape, can_lose, battle_map(), shot)
 	ui.add_child(battle)
@@ -685,6 +695,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 		if XHangUpAuto.after_battle_sell(XState.current) >= 0:
 			XToast.show_text("装备出售完成")
 	hud.visible = true
+	XItemMarks.deploy_start(XState.current)  # 战后回地图＝Scene_Map.start
 	_reset_transfer_button()
 	bgm.stream_paused = false
 	bgs.stream_paused = false
@@ -923,6 +934,40 @@ func open_warehouse() -> void:
 	hud.visible = true
 
 
+## 角色仓库（SceneManager.push(Star_Scene_ActorWarehouse)）：仓库管理员「角色仓库」，关闭后回到地图；
+## 存取时原版 $gamePlayer.refresh／$gameMap.requestRefresh，所以回地图后刷新队首行走图与事件页
+func open_actor_warehouse() -> void:
+	hud.visible = false
+	var page := XActorWarehouseScene.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+	refresh_events()
+
+
+## 更衣（SceneManager.push(Scene_ChangeClothes)）：衣橱管理员「查看衣橱」，关闭后回到地图；
+## 替换／还原形象改的是玩家行走图（原版 characterName 每帧现取），回地图后刷新队首行走图
+func open_change_clothes() -> void:
+	hud.visible = false
+	var page := XChangeClothesScene.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+	refresh_party_sprites()
+
+
+## 角色进阶（SceneManager.push(Scene_ActorAdvanced)）：奉神老妪「进阶」，关闭后回到地图
+func open_actor_advanced() -> void:
+	hud.visible = false
+	var page := XActorAdvancedScene.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 ## 装备镶嵌图鉴（SceneManager.push(Scene_EquipInlayBook)）：魂灯商人「查看图鉴」，关闭后回到地图
 func open_inlay_book() -> void:
 	hud.visible = false
@@ -983,6 +1028,7 @@ func open_menu() -> void:
 	var zhenqi := menu.zhenqi_requested
 	menu.queue_free()
 	_menu_open = false
+	XItemMarks.deploy_start(XState.current)  # 回地图＝Scene_Map.start
 	hud.visible = true
 	_reset_transfer_button()
 	await run_reserved_common_event(owner)

@@ -130,18 +130,13 @@ static func quality_grade(raw: int) -> int:
 	return int(ACTOR_GRADES.get(raw, 0))
 
 
-## Star_ActorAdvanced 进阶表：本角色、当前进阶次数（重制未做进阶，恒 0）的那条
+## Star_ActorAdvanced 进阶表：本角色当前进阶次数（XAdvance.rank）那一行的 AdvancedActNumMaX；没有行（已满）显示当前次数
 static func advance_max(id: int) -> String:
-	var p := XDB.plugin("Star_ActorAdvanced")
-	for i in range(1, 1001):
-		var raw = p.get("Advanced %d" % i)
-		if raw == null or str(raw) == "":
-			continue
-		var d = JSON.parse_string(str(raw))
-		if d is Dictionary and int(d.get("AdvancedActId", 0)) == id and int(d.get("AdvancedActNum", 0)) == 0:
-			return str(int(d.get("AdvancedActNumMaX", 0)))
-	# installNativeRavenRuntime 运行时补登渡鸦 0～4 阶五条（AdvancedActNumMaX 5）
-	return "5" if id == 167 else "0"
+	# installNativeRavenRuntime 运行时补登渡鸦 0～4 阶五条（AdvancedActNumMaX 5；XAdvance 不含，渡鸦不在切片），满后显示次数
+	var n := XAdvance.rank(XState.current, id)
+	if id == 167:
+		return str(5 if n < 5 else n)
+	return str(XAdvance.max_text(XState.current, id))
 
 
 static func _external_skill(skill: Dictionary) -> bool:

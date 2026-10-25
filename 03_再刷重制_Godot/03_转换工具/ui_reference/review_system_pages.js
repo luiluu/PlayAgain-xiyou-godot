@@ -337,6 +337,146 @@
         }
     };
 
+    // 角色仓库（八戒_66）：仓库管理员 Map4 EV8「角色仓库」＝SceneManager.push(Star_Scene_ActorWarehouse)。
+    // 摆法：队伍 1/8/9/10 加 11、12（出战栏 1/8/9/10/11，12 候补），仓库里放 13 与停用角色 143；
+    // 截图：开场、存入列表、存入出战中的 8（出战栏重建）、存入最后一行的 12（光标留在空行）、取出列表、取出 13、停用 143 确定（蜂鸣不动）
+    function awState() {
+        var p = $gameParty, s = scene(), l = s && s._listWindow;
+        return {actors: p._actors.slice(), battleMembers: p._battleMembers.slice(), saveactors: (p._saveactors || []).slice(),
+            battle: p.battleMembers().map(function (a) { return a.actorId(); }),
+            list: l ? {category: l._category, data: l._data.slice(), index: l.index(), active: l.active, enabled: l.isCurrentItemEnabled(),
+                itemHeight: l.itemHeight(), section: l.itemSection(), opacity: l._data.map(function (id) { var a = $gameActors.actor(id); return a ? l.actorIsEnabled(a) : null; })} : null,
+            category: s && s._categoryWindow ? {index: s._categoryWindow.index(), active: s._categoryWindow.active, symbol: s._categoryWindow.currentSymbol()} : null};
+    }
+    P.actor_warehouse = {
+        setup: async function () {
+            $gameParty.addActor(11); $gameParty.addActor(12);
+            $gameParty._saveactors = [13, 143];
+            $gameActors.actor(13); $gameActors.actor(143);
+            $gamePlayer.refresh();
+            await push(Star_Scene_ActorWarehouse);
+        },
+        shots: {
+            aw_0: async function () {},
+            aw_1_save_list: async function () { scene().onCategoryOk(); },
+            aw_2_save_battle: async function () { var l = scene()._listWindow; l.select(1); l.processOk(); },
+            aw_3_save_last: async function () { var l = scene()._listWindow; l.select(l._data.length - 1); l.processOk(); },
+            aw_4_load_list: async function () {
+                var s = scene(); s._listWindow.processCancel(); s._categoryWindow.select(1); s._categoryWindow.update(); s._categoryWindow.processOk();
+            },
+            aw_5_load_one: async function () { var l = scene()._listWindow; l.select(0); l.processOk(); },
+            aw_6_disabled: async function () { var l = scene()._listWindow; l.select(l._data.indexOf(143)); l.processOk(); }
+        },
+        extra: function () { return awState(); }
+    };
+
+    // 更衣（八戒_67）：衣橱管理员 Map4 EV17「查看衣橱」＝SceneManager.push(Scene_ChangeClothes)。
+    // 摆法：队伍 1/8/9/10，仓库 [13]；ConfigManager.ChangeClothesLite 先放 -9、-12、-20（换装表第 9／12／20 项），
+    // 打开时 initialize 再补上队伍与仓库的角色。$.toaster 包一层记下提示文字。
+    // 截图：开场、更换（普通档）、优秀档（光标在分类）、优秀档确定（名单第 1 行）、未解锁行、未解锁确定、已解锁确定（替换）、
+    // 名单取消回分类、神话档（换装表）确定、换装表已解锁行确定、典藏档、回底部还原
+    var ccToasts = [];
+    function ccState() {
+        var s = scene(), l = s && s._AListWindow, st = s && s._statusWindow, sp = st && st._Sprite;
+        return {lite: ConfigManager.ChangeClothesLite.slice(), toasts: ccToasts.slice(),
+            player: {setName: $gamePlayer.Set_OcharacterName, setIndex: $gamePlayer.Set_OcharacterIndex,
+                characterName: $gamePlayer.characterName(), characterIndex: $gamePlayer.characterIndex()},
+            followers: $gamePlayer.followers()._data.map(function (f) { return [f.characterName(), f.characterIndex()]; }),
+            category: s && s._indexWindow ? {index: s._indexWindow.index(), active: s._indexWindow.active} : null,
+            list: l ? {lid: l.Lid, ids: l._list.map(function (a) { return a.id; }), index: l.index(), active: l.active, top: l.topRow(),
+                itemHeight: l.itemHeight(), maxPageRows: l.maxPageRows()} : null,
+            bottom: s && s._BottomconfirmWindow ? {index: s._BottomconfirmWindow.index(), active: s._BottomconfirmWindow.active} : null,
+            sprite: sp ? {bitmap: sp.bitmap ? sp.bitmap._url : null, x: round(sp.x), y: round(sp.y), scale: [sp.scale.x, sp.scale.y],
+                anchor: [sp.anchor.x, sp.anchor.y], frame: sp.bitmap ? [sp._frame.x, sp._frame.y, sp._frame.width, sp._frame.height] : null,
+                bitmapSize: sp.bitmap ? [sp.bitmap.width, sp.bitmap.height] : null, frameCount: st._spriteFrameCount, fref: st._spriteFRef} : null};
+    }
+    P.change_clothes = {
+        setup: async function () {
+            $gameParty._saveactors = [13]; $gameActors.actor(13);
+            ConfigManager.ChangeClothesLite = [-9, -12, -20];
+            ccToasts = [];
+            var toaster = $.toaster;
+            $.toaster = function (o) { ccToasts.push(o && o.message); return toaster.apply(this, arguments); };
+            await push(Scene_ChangeClothes);
+        },
+        shots: {
+            cc_0: async function () {},
+            cc_1_change: async function () { scene()._BottomconfirmWindow.processOk(); },
+            cc_2_cat1: async function () { scene()._indexWindow.select(1); },
+            cc_3_cat1_ok: async function () { scene()._indexWindow.processOk(); },
+            cc_4_locked: async function () { scene()._AListWindow.select(3); },
+            cc_5_locked_ok: async function () { scene()._AListWindow.processOk(); },
+            cc_6_apply: async function () { var l = scene()._AListWindow; l.select(0); await settle(); l.processOk(); },
+            cc_7_list_cancel: async function () { scene()._AListWindow.processCancel(); },
+            cc_8_myth: async function () { var c = scene()._indexWindow; c.select(6); await settle(); c.processOk(); },
+            cc_9_myth_apply: async function () { var l = scene()._AListWindow; l.select(3); await settle(); l.processOk(); },
+            cc_10_dian: async function () { var s = scene(); s._AListWindow.processCancel(); await settle(); s._indexWindow.select(7); },
+            cc_11_restore: async function () {
+                var s = scene(); s._indexWindow.processCancel(); await settle();
+                s._BottomconfirmWindow.select(1); s._BottomconfirmWindow.processOk();
+            }
+        },
+        extra: function () { return ccState(); }
+    };
+
+    // 角色进阶（八戒_68）：奉神老妪 Map132 EV6「进阶」＝SceneManager.push(Scene_ActorAdvanced)。
+    // 摆法：队伍 1/8/9/10，金币 0；$.toaster 包一层记下提示文字。
+    // 截图：开场、第 2 行、确定开底部「进阶」、条件不足、补齐角色 1 第 0 阶的物品与金币后再开底部、确认窗「是否进阶」、
+    // 确认窗取消、再走一遍确定、进阶完成（次数 1、学会技能、扣物品金币）、角色 9 进阶次数设 4（已达最大）、已满时确定
+    var advToasts = [];
+    function advRow(a) {
+        return $dataStarAdvancedOpt.filter(function (o) { return o && a._actorId == o.AdvancedActId && a._AdvancedNum == o.AdvancedActNum; })[0] || null;
+    }
+    function advState() {
+        var s = scene(), st = s && s._statusWindow, sp = st && st._Sprite, a1 = $gameActors.actor(1), r1 = advRow(a1);
+        return {toasts: advToasts.slice(), gold: $gameParty._gold,
+            members: $gameParty.members().map(function (a) {
+                var r = advRow(a);
+                return {id: a._actorId, name: a._name, level: a._level, num: a._AdvancedNum, params: [0, 1, 2, 3, 4, 5, 6, 7].map(function (i) { return a.param(i); }),
+                    row: r ? {id: r.id, num: r.AdvancedActNum, max: r.AdvancedActNumMaX, level: r.AdvancedActLevel, gold: r.AdvancedGold,
+                        items: r.AdvancedItem, learn: r.AdvancedSkiId, forget: r.AdvancedForId} : null};
+            }),
+            actor1: {skills: a1._skills.slice(), has1240: a1._skills.indexOf(1240) >= 0, items: (r1 || {AdvancedItem: []}).AdvancedItem.map(function (p) { return [p[0], $gameParty.numItems($dataItems[p[0]])]; })},
+            item188: $gameParty.numItems($dataItems[188]), item180: $gameParty.numItems($dataItems[180]),
+            index: s && s._indexWindow ? {index: s._indexWindow.index(), active: s._indexWindow.active, windowIdx: s._windowIdx} : null,
+            bottom: s && s._BottomconfirmWindow ? {index: s._BottomconfirmWindow.index(), active: s._BottomconfirmWindow.active, openness: s._BottomconfirmWindow.openness} : null,
+            confirm: s && s._confirmWindow ? {index: s._confirmWindow.index(), active: s._confirmWindow.active, openness: s._confirmWindow.openness} : null,
+            sprite: sp ? {bitmap: sp.bitmap ? sp.bitmap._url : null, x: round(sp.x), y: round(sp.y), scale: [sp.scale.x, sp.scale.y],
+                anchor: [sp.anchor.x, sp.anchor.y], frame: sp.bitmap ? [sp._frame.x, sp._frame.y, sp._frame.width, sp._frame.height] : null,
+                bitmapSize: sp.bitmap ? [sp.bitmap.width, sp.bitmap.height] : null, frameCount: st._spriteFrameCount} : null};
+    }
+    P.actor_advanced = {
+        setup: async function () {
+            $gameParty._gold = 0;
+            advToasts = [];
+            var toaster = $.toaster;
+            $.toaster = function (o) { advToasts.push(o && o.message); return toaster.apply(this, arguments); };
+            await push(Scene_ActorAdvanced);
+        },
+        shots: {
+            adv_0: async function () {},
+            adv_1_row1: async function () { scene()._indexWindow.select(1); },
+            adv_2_bottom: async function () { var w = scene()._indexWindow; w.select(0); await settle(); w.processOk(); },
+            adv_3_fail: async function () { scene()._BottomconfirmWindow.processOk(); },
+            adv_4_ready: async function () {
+                var s = scene(), r = advRow($gameActors.actor(1));
+                r.AdvancedItem.forEach(function (p) { $gameParty.gainItem($dataItems[p[0]], p[1]); });
+                $gameParty._gold = r.AdvancedGold;
+                s._goldWindow.setupWhenCheck(); s._statusWindow.setupWhenCheck($gameActors.actor(1));
+                await settle(); s._indexWindow.processOk();
+            },
+            adv_5_confirm: async function () { scene()._BottomconfirmWindow.processOk(); },
+            adv_6_cancel: async function () { scene()._confirmWindow.processCancel(); },
+            adv_7_confirm2: async function () {
+                var s = scene(); s._indexWindow.processOk(); await settle(); s._BottomconfirmWindow.processOk();
+            },
+            adv_8_done: async function () { scene()._confirmWindow.processOk(); },
+            adv_9_max: async function () { $gameActors.actor(9)._AdvancedNum = 4; scene()._indexWindow.select(2); },
+            adv_10_max_ok: async function () { scene()._indexWindow.processOk(); }
+        },
+        extra: function () { return advState(); }
+    };
+
     // 异化工坊：alien_workshop 探针的 list 路线、alien_config 探针的 bound 路线（DOM 叠加层，整页截图）
     function domReadout() {
         var host = document.getElementById('alien-workshop');
@@ -395,6 +535,34 @@
             alien_config_bound: async function () { domClick('配置异化'); }
         },
         extra: domReadout
+    };
+
+    // 换装卡战斗外观（八戒_71 期一，单独跑：node review_system_pages.cjs <目录> battle_costume）：角色 1 学会 6801「变身——深渊骑士」，
+    // 开战 StartPushState1201 100% 推上卡状态，Custom Apply Effect setBattlerImage('Enemy_General_M')；地图 5、敌群 2、难度 3、四人
+    P.battle_costume = {
+        setup: async function () {
+            $gameSystem._difficultyId = 3;
+            $gameParty.members().forEach(function (a) { a.recoverAll(); });
+            $gameActors.actor(1).learnSkill(6801);
+            BattleManager.setup(2, true, false);
+            SceneManager.push(Scene_Battle);
+            await wait(function () {
+                var s = scene();
+                return s instanceof Scene_Battle && SceneManager._sceneStarted && ImageManager.isReady() && s._actorCommandWindow && s._actorCommandWindow.isOpenAndActive();
+            }, 60000);
+            await settle(40);
+        },
+        shots: {
+            battle_costume_card: async function () {}
+        },
+        extra: function () {
+            return scene()._spriteset._actorSprites.filter(function (sp) { return sp._actor; }).map(function (sp) {
+                var m = sp._mainSprite, b = m && m.bitmap;
+                return {actor: sp._actor.actorId(), battlerName: sp._actor.battlerName(), states: sp._actor._states.slice(), x: sp.x, y: sp.y,
+                    bitmap: b ? [b._url || '', b.width, b.height] : null, frame: m ? [m._frame.x, m._frame.y, m._frame.width, m._frame.height] : null,
+                    scale: [sp.scale.x, sp.scale.y]};
+            });
+        }
     };
 
     // 战斗内怪物信息（放最后：进了战斗就回不到下一页的新局）：battle_enemy_book_oracle.json 的场面（地图 5、敌群 2、难度 3、四人），角色指令窗按 Shift 的原入口

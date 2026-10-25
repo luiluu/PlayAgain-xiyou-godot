@@ -129,6 +129,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		e.set_meta("y", float(m.y))
 		e.hidden = bool(m.get("hidden", false))
 		enemies.append(e)
+	XEnemyBook.bind_battle(s, enemies)
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
 	for i in range(actors.size()):
 		_ids[actors[i]] = "actor:%d:%d" % [i, actors[i].actor_id]
@@ -256,7 +257,7 @@ func view_of(b: XBattler) -> Dictionary:
 		if int(st.get("iconIndex", 0)) > 0:
 			icons.append(int(st.iconIndex))
 	return {"hp": b.hp, "mp": b.mp, "tp": b.tp, "mhp": b.mhp, "mmp": b.mmp, "mtp": b.max_tp(), "dead": b.is_dead(),
-		"guarding": b.guarding, "can_move": can_move(b), "icons": icons, "shield": b.shield}
+		"guarding": b.guarding, "can_move": can_move(b), "icons": icons, "shield": b.shield, "look": XAppearance.battler_key(b)}  # look：换装卡换图（画面用）
 
 
 ## 全体战斗者 → view_of
@@ -303,7 +304,18 @@ static func is_item(rec: Dictionary) -> bool:
 func skill_cost(a: XBattler, skill: Dictionary) -> Dictionary:
 	if is_item(skill):
 		return {"mp": 0, "tp": 0}
-	return {"mp": floori(float(skill.get("mpCost", 0)) * a.mcr), "tp": int(skill.get("tpCost", 0))}
+	var cost := {"mp": floori(float(skill.get("mpCost", 0)) * a.mcr), "tp": int(skill.get("tpCost", 0))}
+	if a is XActor:
+		var cache: Dictionary = a.passive_cache().get("consumeReduce", {})
+		var reduce := float(cache.get("bySkill", {}).get(int(skill.get("id", 0)), 0))
+		var stype := int(skill.get("stypeId", 0))
+		if stype in [1, 2]:
+			reduce += float(cache.get("byType", {}).get("Zj" if stype == 1 else "Mf", 0))
+		reduce += float(cache.get("all", 0))
+		reduce = minf(reduce, 100.0)
+		cost.mp = floori(cost.mp * (1.0 - reduce / 100.0))
+		cost.tp = floori(cost.tp * (1.0 - reduce / 100.0))
+	return cost
 
 func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if skill.is_empty():
@@ -583,6 +595,7 @@ func end_turn() -> Array:
 	var before := _movable_snapshot()
 	_acted.clear()
 	XCat.end_turn(self)  # BattleManager.endTurn 的小猫剑圣包装：删过期的识破／剑痕
+	logs.append_array(XPetCapture.end_turn(self))  # Star_PetSystem 的 endTurn 包装：第 5 回合可捕捉的敌人逃跑
 	for b in actors + enemies:
 		turn_end_battler(b, logs)
 	# BattleManager.refreshAllMembers
@@ -1444,6 +1457,8 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 			if t is XActor:
 				t.learn_skill(int(eff.dataId))
 				t.refresh_passive()
+		44:
+			r.events = r.get("events", []) + XPetCapture.item_event(self, r.skill, int(eff.dataId), t)  # 只认捕捉的公共事件 173
 
 
 ## 行动序列 ADD STATE（Game_Battler.addState → isStateAddable：活着、未抵抗（IMMORTAL 期间阵亡视为抵抗）；阵亡状态直接倒下）

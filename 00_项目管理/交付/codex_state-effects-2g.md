@@ -60,3 +60,5 @@
 
 - 已完成四零散b135ee33并独立交付，继续本期bf585fdc旧现场；额度五小时52%、周23%。本树无未提交改动。先并入已验证四零散分支作为依赖基线（含此前已合main545ebd37），不再追无关main，不重复阶段审查或全量同步。总装按四零散→2g顺序合并；四零散仍待Claude核查。
 - 仅修已定位的add锁基类夹值边界，先验formula_effects与state_effects_tp；完整预览空槽及Apply宿主接口仍留原停手范围。原版证据／.sandbox／generated与整树保留，共用登记只读。
+
+- 依赖合并仅resource_context死亡分发一处冲突：保留2g add_state_with_context生命周期入口；四零散的note_death在battler._add_state真实死亡处已自动合入，避免在资源层重复计数。后续专项同时覆盖四零散死亡回归。

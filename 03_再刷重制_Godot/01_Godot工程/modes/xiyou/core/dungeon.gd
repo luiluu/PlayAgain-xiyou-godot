@@ -272,9 +272,12 @@ static func race_supply(s: XState) -> String:
 	return "获得%s×%d%s" % [str(XDB.rec("Items", id).get("name", "")), total, "；背包已满，暂存祝福管理" if pending > 0 else ""]
 
 
-## 甚尔／宿傩的进阶石（rollAdvanceStone）：角色未进阶（重制版尚无这两个角色，进阶数按 0）、背包里不够数时 1/50 得一枚
+## 甚尔／宿傩的进阶石（rollAdvanceStone）：甚尔已进阶或背包已有一枚、宿傩还差的枚数（3－进阶次数）不大于背包数时不掷；否则 1/50 得一枚
 static func roll_advance_stone(s: XState, who: Dictionary) -> String:
-	var need := 1 if who == TOJI else 3
+	var rank := XAdvance.rank(s, int(who.actor))
+	var need := (1 if rank < 1 else 0) if who == TOJI else 3 - rank
+	if need <= 0:
+		return ""
 	if s.item_count(int(who.stone)) >= need or MVInterpreter.random_int(0, 49, s) != 0:
 		return ""
 	s.gain_item(int(who.stone), 1)

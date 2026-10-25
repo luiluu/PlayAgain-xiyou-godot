@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.165",
-  "sequence": 165,
-  "next": "dev.166",
-  "nextSequence": 166,
+  "current": "dev.173",
+  "sequence": 173,
+  "next": "dev.174",
+  "nextSequence": 174,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-warehouse 期二：装备道具仓库",
+  "currentChange": "bajie-pets-source-97efd5-2",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
