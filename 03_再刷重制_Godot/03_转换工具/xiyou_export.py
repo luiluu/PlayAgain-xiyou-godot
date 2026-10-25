@@ -524,6 +524,32 @@ def yep_action_copy(group, skills, items):
                 obj['yepSeq'] = {k: [list(x) for x in target['yepSeq'][k]] for k in YEP_PHASES}
 
 
+def boot_database_records(plugins):
+    """专属角色模块在 DataManager.isDatabaseLoaded 里对开机数据库的改动（参照取开机后的数据库，这里照做）。
+    167 渡鸦（installNativeRavenRuntime finishRavenDatabaseCompatibility）：原版角色进阶表里没有渡鸦第 rank 次的行时，
+    在表尾补一行（id＝当时表长；表由插件参数「Advanced 1～1000」建成，表长＝最大编号＋1），写法同插件参数（字符串）。"""
+    adv = plugins.get('Star_ActorAdvanced')
+    if adv is None:
+        return
+    rows = {}
+    for key, raw in adv.items():
+        if key.startswith('Advanced ') and str(raw).strip():
+            try:
+                rows[int(key[9:])] = json.loads(raw)
+            except ValueError:
+                continue
+    levels = [15, 25, 35, 45, 45]
+    skills = [[10131], [10132], [10133], [10134], [10127, 10170]]
+    for rank in range(5):
+        if any(str(r.get('AdvancedActId')) == '167' and str(r.get('AdvancedActNum')) == str(rank) for r in rows.values()):
+            continue
+        nid = max(rows, default=0) + 1
+        rows[nid] = row = {'AdvancedName': '渡鸦·冥羽进阶', 'AdvancedActNum': str(rank), 'AdvancedActNumMaX': '5',
+                           'AdvancedActId': '167', 'AdvancedActLevel': str(levels[rank]), 'AdvancedGold': '0',
+                           'AdvancedItem': '[[2901, 1]]', 'AdvancedSkiId': json.dumps(skills[rank]), 'AdvancedForId': '[]'}
+        adv['Advanced %d' % nid] = json.dumps(row, ensure_ascii=False)
+
+
 class Exporter:
     def __init__(self, app, out, slice_cfg):
         self.app, self.out, self.cfg = app.resolve(), out.resolve(), slice_cfg
@@ -671,6 +697,7 @@ class Exporter:
                 'gearTags': dict(re.findall(r"(\d+):\s*'([^']*)'", tags[1])),
                 'starMarks': dict(re.findall(r"(\d+):\s*'([^']*)'", stars[1])) if stars else {},
             })
+        boot_database_records(enabled)
         self.plugins = enabled
         self.write_json('db/Plugins.json', enabled)
         self.write_json('db/EquipSuits.json', equipment_rules.suits(enabled))

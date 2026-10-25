@@ -367,6 +367,15 @@ def yields_result(n):
 MODULE_FORMULAS = {'CodexCat.formula(user,item,b)': 'cat'}
 # 173 饿狼 CodexGarou.base(a,b,id)：拳法 10250～10263（XGarou.formula）
 MODULE_FORMULAS.update({f'CodexGarou.base(a,b,{i})': 'garou' for i in range(10250, 10264)})
+# 168 米拉 CodexMira.damage(a,b,id)：10140～10151（10147 原文写的是 10146，XMira.formula 按原文的 id 算）
+MODULE_FORMULAS.update({f'CodexMira.damage(a,b,{i})': 'mira' for i in range(10140, 10152)})
+# 167 渡鸦 5 个伤害技能：整条公式含 CodexRaven.legionStrikeRate／skillCoefficient（XRaven.formula 照原文逐技能写）
+MODULE_FORMULAS.update({re.sub(r'\s+', '', f): 'raven' for f in [
+    '(a.mat * 78 + a.mmp * 39) * (CodexRaven.legionStrikeRate(a) * CodexRaven.skillCoefficient(a, 10122))',
+    '(a.mat * 78 + a.mmp * 39) * (CodexRaven.legionStrikeRate(a) * CodexRaven.skillCoefficient(a, 10123))',
+    '(a.mat * 798 + a.mmp * 399) * (CodexRaven.legionStrikeRate(a) * CodexRaven.skillCoefficient(a, 10124))',
+    'a.mat * (3999 + 3999 * (1 - b.hpRate())) * (CodexRaven.legionStrikeRate(a) * CodexRaven.skillCoefficient(a, 10125))',
+    '(a.mat * 33333 + a.mmp * 3333) * (CodexRaven.legionStrikeRate(a) * CodexRaven.skillCoefficient(a, 10126))']})
 
 
 def compile_formula(source, item_id=0, custom=False, table='Skills'):

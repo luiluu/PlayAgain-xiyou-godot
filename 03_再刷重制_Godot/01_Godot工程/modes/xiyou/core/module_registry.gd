@@ -28,7 +28,7 @@ static var _standard: XModuleRegistry
 
 static func standard() -> XModuleRegistry:
 	if _standard == null:
-		_standard = compile([orb_descriptor(), XCatDamageHooks.descriptor()])
+		_standard = compile([orb_descriptor(), XCatDamageHooks.descriptor(), XActorDamageHooks.descriptor()])
 	return _standard
 
 static func orb_descriptor() -> Dictionary:
@@ -275,6 +275,9 @@ static func _has_path(snapshot: Dictionary, path: String) -> bool:
 ## Explicit caller snapshots support previews; each handler still sees frozen
 ## copies. Legacy orbMultiplier remains owned by XDamage's existing boundary.
 func capture_facts(item: Dictionary, a: XBattler, b: XBattler, options: Dictionary, existing: Dictionary) -> Dictionary:
+	var out := {}
 	if not existing.has("cat") and _entries.any(func(entry): return entry.id == "cat-sword"):
-		return {"cat": XCatDamageHooks.capture(item, a, b, options)}
-	return {}
+		out.cat = XCatDamageHooks.capture(item, a, b, options)
+	if not existing.has("actorModules") and _entries.any(func(entry): return entry.id == "actor-modules"):
+		out.actorModules = XActorDamageHooks.capture(item, a, b)
+	return out
