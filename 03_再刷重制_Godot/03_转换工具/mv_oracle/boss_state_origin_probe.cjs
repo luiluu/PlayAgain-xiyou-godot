@@ -41,7 +41,7 @@ for(const {id,spec} of specs)cases.push(makeCase(id,spec,()=>{
  const bs={a,b,c},rows=[],before=Object.fromEntries(Object.entries(bs).map(([k,x])=>[k,snap(x)]));
  // Only script-bearing state data is synthetic; the native customEffectEval host and wrappers stay intact.
  const stateId=2998, savedState=w.$dataStates[stateId],state=JSON.parse(JSON.stringify(w.$dataStates[2]));
- state.id=stateId;state.customEffectEval=Object.fromEntries(Object.keys(savedState.customEffectEval).map(k=>[k,'']));
+ state.id=stateId;state.customEffectEval=Object.fromEntries(Object.keys(state.customEffectEval).map(k=>[k,'']));
  state.customEffectEval[spec.phase]='window.__stateOriginStep();';w.$dataStates[stateId]=state;
  function setOrigin(origin){b.clearStateOrigin(stateId);if(origin==='missing')b._stateOrigin[stateId]=w.Array.from([1,999]);else if(origin!=='none')b.setStateOrigin(stateId,bs[origin]);}
  function run(ops){for(const op of ops){
