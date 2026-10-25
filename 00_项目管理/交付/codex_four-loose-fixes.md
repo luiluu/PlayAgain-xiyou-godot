@@ -106,3 +106,12 @@
 - 已无冲突合入main `545ebd37`，本树合并提交`30b7f97c`；只包含上游probe／工具／登记与seal1691测试修复，游戏规则文件未变。
 - 本树旧slice与main已全量通过的新slice逐条比较，六难度均恰好一条854／947／5557数值修复，完全匹配哪吒已核六条接受单，其他字段无变化。最终同步将同时使用此单与本期cat元数据接受单。
 - 其他车道同步在途，暂未启动本树最终同步；不重复任何已过专项或50%审查。
+
+## 沙僧59→60（同树上下文接力，用户已继续）
+
+- 当前仍为本期唯一执行者；59创建60后停止。HEAD在本节提交之后；分支codex/four-loose-fixes，沿state-effects-2b旧树，所有文件命令继续显式workdir。无生产未提交改动。
+- 本轮恢复后已合main `545ebd37`（merge `30b7f97c`），无冲突；不必再次追无关main。power已137/137通过。上游六难度实际旧／新slice比较仅一条854/947/5557，全部与`claude_nezha-check-tiers-eac2f9-5.json`精确匹配；MV访问守卫16/16。
+- 当前本树**没有在途测试或同步**。red、green-first、related、power均已终态；不再等／重启它们。唯一必补Godot是同步后rules基础段（旧参照0造成唯一失败），不是再跑之前所有11场。新专项与cat／enemy_book在同步后可按参照输出实际影响补测（新enemy_book含34扩展，cat只删metadata）；不要全量。
+- 最后查到其他车道白龙和悟空同步在途，本树最终同步仍未启动；接手先pgrep核对，空闲才开。包装器已读且未运行`four-loose-fixes/sync_preserve_evidence.py`，只停prune_manual_copies/prune_backups，不改原工具；需长任务start＋前台等待，单次工具等待≤60秒。传--accept-additions，以及本期cat接受单和哪吒6条接受单两份--accept-changes。缓存照常沿用，不能--full；保留旧证据/.sandbox/generated。
+- 同步必须查看报告：预期既有测量变化仅cat setup.tpGap删一条＋slice6条，新增enemy_book_defeat 34条；若还有变化先分析，绝不放宽接受。同步和导入退出0后重测rules基础段并核947已非0；精简结果入核查范围JSON，清理仅本期four-loose-fixes临时输出，再写可合并交唐僧（自己的修复仍待Claude）。不要再执行apply_production.py，生产已改`10da1d87`。
+- 上轮额度96%已保存c05b5c26后停；本轮用户说继续，实际额度已重置到1%／周15%，并未使用赠送reset。不是额度停手，当前是上下文接力。继续四项交付→2g→rng-compare-review→actor-bonus→passive-content→race-battle；2g未改，旧branch bf585fdc现场仍保留；50%审查二期0b00c374交总装另合，完全不重做。不要创建自动任务或改共用登记。

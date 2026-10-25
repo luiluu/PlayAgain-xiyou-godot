@@ -1,7 +1,7 @@
 {
   "base": "926f914f",
   "branch": "codex/four-loose-fixes",
-  "scope": "生产补丁与3专项已通过；直接依赖11/12，旧947参照污染待同步上游修复；power在途，最终同步未开；95%额度规则停手，四项未完成",
+  "scope": "生产补丁与3专项、power通过；直接依赖11/12，旧947参照污染对应的main修复已合并、6条接受单精确匹配，最终同步与rules基础段复测待完成",
   "nativeFinal": {
     "status": {
       "runId": "c007f95c1c134f6ca50e269b0c88c432",
@@ -74,7 +74,7 @@
     "finding": "普通932火增伤正确；重复／大小写／无前导零标签漏算已由修前专项证实。Codex补修后126/126通过，补修待Claude交叉核查。"
   },
   "usageAtHandoff": {
-    "fiveHourUsedPercent": 96,
+    "fiveHourUsedPercent": 1,
     "weeklyUsedPercent": 15
   },
   "handoffDocs": {
@@ -170,8 +170,8 @@
   "powerPending": {
     "status": {
       "runId": "e17287b26ec844429fcd3449f7d9782e",
-      "status": "running",
-      "exitCode": null,
+      "status": "done",
+      "exitCode": 0,
       "pid": 44580,
       "startedAt": "2026-10-25T08:09:39.140661+00:00",
       "command": [
@@ -188,8 +188,19 @@
         "pid": 44581,
         "pgid": 44581,
         "startedAt": "Sun Oct 25 09:09:39 2026    "
-      }
+      },
+      "finishedAt": "2026-10-25T08:12:46.220925+00:00"
     },
-    "log": "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/power.log"
+    "log": "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/power.log",
+    "result": {
+      "passed": 137,
+      "total": 137
+    }
+  },
+  "mainMerged": {
+    "main": "545ebd37",
+    "merge": "30b7f97c",
+    "conflicts": false,
+    "sixSliceAcceptancesVerifiedAgainstActualMain": true
   }
 }
