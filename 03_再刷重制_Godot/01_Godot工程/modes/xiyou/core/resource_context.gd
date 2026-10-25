@@ -141,6 +141,8 @@ func refresh(b: XBattler) -> void:
 		b.buffs.fill(0)
 		b.buff_turns.fill(0)
 		b.zq_pojia_rate = 0.5
+		if not preview:
+			XEnemyBook.note_death(b)
 		b.state_ids.append(1)
 		b._sort_states()
 		var state := XDB.rec("States", 1)

@@ -123,6 +123,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		e.set_meta("y", float(m.y))
 		e.hidden = bool(m.get("hidden", false))
 		enemies.append(e)
+	XEnemyBook.bind_battle(s, enemies)
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
 	for i in range(actors.size()):
 		_ids[actors[i]] = "actor:%d:%d" % [i, actors[i].actor_id]
@@ -244,7 +245,18 @@ static func is_item(rec: Dictionary) -> bool:
 func skill_cost(a: XBattler, skill: Dictionary) -> Dictionary:
 	if is_item(skill):
 		return {"mp": 0, "tp": 0}
-	return {"mp": floori(float(skill.get("mpCost", 0)) * a.mcr), "tp": int(skill.get("tpCost", 0))}
+	var cost := {"mp": floori(float(skill.get("mpCost", 0)) * a.mcr), "tp": int(skill.get("tpCost", 0))}
+	if a is XActor:
+		var cache: Dictionary = a.passive_cache().get("consumeReduce", {})
+		var reduce := float(cache.get("bySkill", {}).get(int(skill.get("id", 0)), 0))
+		var stype := int(skill.get("stypeId", 0))
+		if stype in [1, 2]:
+			reduce += float(cache.get("byType", {}).get("Zj" if stype == 1 else "Mf", 0))
+		reduce += float(cache.get("all", 0))
+		reduce = minf(reduce, 100.0)
+		cost.mp = floori(cost.mp * (1.0 - reduce / 100.0))
+		cost.tp = floori(cost.tp * (1.0 - reduce / 100.0))
+	return cost
 
 func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if skill.is_empty():

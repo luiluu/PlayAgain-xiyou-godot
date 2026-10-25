@@ -327,9 +327,7 @@ func _chain(c: Dictionary) -> void:
 		check(step + ".holy_bell", int(d.holyReady) == int(row.holyReady if row.holyReady != null else 0)
 			and int(d.bellRound) == int(row.bellRound if row.bellRound != null else 0), [d.holyReady, d.bellRound, row.holyReady, row.bellRound])
 		if int(row.skill) != XBattleLogic.GUARD_SKILL:  # 防御的 TP 获得（技能 2 tpGain）Godot 通用防御分支没有，另报，不在本模块
-			# tpGap：参照里技能消耗被被动 ConsumeReduce 打折（1817「海军王」战技 −50%），Godot 尚未接（交沙僧，见 claude_bajie-p2fix 交付单），只比剑段
-			if not st.has("tpGap"):
-				check(step + ".tp", a.tp == float(row.tp), [a.tp, row.tp])
+			check(step + ".tp", a.tp == float(row.tp), [a.tp, row.tp])
 
 
 static func _cat_states(b: XBattler) -> Array:

@@ -81,6 +81,15 @@ func _deaths() -> void:
 		preview.preview = true
 		preview.gain(shadow, "hp", -shadow.hp)
 		check("death.preview_no_book_write", _number(logic, e) == 0)
+	if shadow != null:
+		shadow.remove_state(1)
+		shadow.hp = 1
+		XResourceContext.new().gain(shadow, "hp", -1)
+		check("death.nonpreview_clone_no_book_write", _number(logic, e) == 0)
+		shadow.remove_state(1)
+		shadow.hp = 1
+		shadow.add_state(1)
+		check("death.explicit_clone_no_book_write", _number(logic, e) == 0)
 	XResourceContext.new().gain(e, "hp", -e.hp)
 	var o: Dictionary = rows["death.hpAndQueries"].observed
 	check("death.hp_first", _number(logic, e) == int(o.first), _number(logic, e))
@@ -92,8 +101,18 @@ func _deaths() -> void:
 	e.hp = 1
 	XResourceContext.new().gain(e, "hp", -1)
 	check("death.second_after_revive", _number(logic, e) == int(o.second), _number(logic, e))
+	XEnemyBook.on_battle_start(logic.state, 2, {"displayName": ""}, logic.enemies)
+	check("death.same_roster_keeps_death_record", _number(logic, e) == int(o.second))
 	XEnemyBook.on_battle_end(logic.state, [], logic.enemies)
 	check("death.end_does_not_recount", _number(logic, e) == int(o.second))
+	e.remove_state(1)
+	e.hp = 1
+	XResourceContext.new().gain(e, "hp", -1)
+	check("death.ended_battle_resource_no_write", _number(logic, e) == int(o.second))
+	e.remove_state(1)
+	e.hp = 1
+	e.add_state(1)
+	check("death.ended_battle_explicit_no_write", _number(logic, e) == int(o.second))
 	logic = _battle()
 	e = logic.enemies[0]
 	e.add_state(1)
