@@ -3,6 +3,7 @@ extends Node
 ## tests/fixtures/actor_change_oracle.json（mv_oracle/actor_change_probe.cjs）：
 ## 招募公共事件 29／125／153／1209／1575 后的名字、称号、职业、等级、经验、图像与 mhp；绿司机戴帽、脱帽（689／690）；
 ## 大厅「更改形象」460～463 把改乱的图像改回；狗逍遥 10 级来回换职业（保留与不保留经验）。
+## 增减 HP／MP／TP（311／312／326）与公共事件 46 一掷千金、624 快捷回血。
 ## 另有不靠参照的：存档往返、地图上 322 后队首行走图跟着换、\N[n] 用改过的名字、数据库记录不被改动。
 
 const FIXTURE := "res://tests/fixtures/actor_change_oracle.json"
@@ -68,13 +69,14 @@ func _ce(id: int) -> void:
 
 func _run() -> void:
 	var data = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE)) if FileAccess.file_exists(FIXTURE) else null
-	if not check("oracle_loaded", data is Dictionary and data.get("cases", []).size() == 4 and data.cases.all(func(c): return c.errors.is_empty()), FIXTURE):
+	if not check("oracle_loaded", data is Dictionary and data.get("cases", []).size() == 5 and data.cases.all(func(c): return c.errors.is_empty()), FIXTURE):
 		_finish()
 		return
 	_recruit(_case(data, "recruit"))
 	_hat(_case(data, "hat"))
 	_reset(_case(data, "reset"))
 	_change_class(_case(data, "changeClass"))
+	_resources(_case(data, "resources"))
 	_synthetic()
 	_finish()
 
@@ -137,6 +139,37 @@ func _change_class(o: Dictionary) -> void:
 		check("class_%s" % str(r.step), _look(a) == _want(r) and a.skill_ids.size() == int(r.skills), [_look(a), r, a.skill_ids.size()])
 
 
+## ⑤ 311／312／326：不允许死亡最多扣到 1、允许时倒下、倒下后不加；变量操作数、全队；一掷千金、快捷回血
+func _resources(o: Dictionary) -> void:
+	var s := _state()
+	s.actor(1).hp = 100.0
+	s.actor(8).mp = 5.0
+	s.actor(8).tp = 10.0
+	var steps := {
+		"hp_minus_nodeath": [{"code": 311, "indent": 0, "parameters": [0, 1, 1, 0, 3000, false]}],
+		"mp_minus_floor": [{"code": 312, "indent": 0, "parameters": [0, 8, 1, 0, 50]}],
+		"tp_plus": [{"code": 326, "indent": 0, "parameters": [0, 0, 0, 0, 20]}],
+		"tp_over_cap": [{"code": 326, "indent": 0, "parameters": [0, 8, 0, 0, 500]}],
+		"hp_minus_death": [{"code": 311, "indent": 0, "parameters": [0, 1, 1, 0, 3000, true]}],
+		"hp_plus_dead": [{"code": 311, "indent": 0, "parameters": [0, 1, 0, 0, 500, false]}],
+		"hp_var_all": [{"code": 122, "indent": 0, "parameters": [317, 317, 0, 0, 77]}, {"code": 311, "indent": 0, "parameters": [0, 0, 1, 1, 317, false]}],
+		"mp_var_actor_var": [{"code": 122, "indent": 0, "parameters": [318, 318, 0, 0, 9]}, {"code": 312, "indent": 0, "parameters": [1, 318, 0, 1, 317]}],
+	}
+	for r in o.rows:
+		var step := str(r.step)
+		if steps.has(step):
+			_run_list(steps[step])
+		elif step == "ce46_poor":
+			s.gold = 100
+			_ce(46)
+		elif step == "ce624":
+			s.gain_item(793, 1)
+			_ce(624)
+		var got := s.members().map(func(a): return {"actor": float(a.actor_id), "hp": roundf(a.hp), "mp": roundf(a.mp), "tp": roundf(a.tp),
+			"mhp": roundf(a.mhp), "mmp": roundf(a.mmp), "dead": a.is_dead()})
+		check("res_%s" % step, got == r.actors and float(s.gold) == float(r.gold), [got, r.actors, s.gold, r.gold])
+
+
 ## 不靠参照：存档往返；数据库记录原样；\N[n]、地图队首行走图读改过的值；不存在的角色／职业不出错
 func _synthetic() -> void:
 	var s := _state()
@@ -165,6 +198,14 @@ func _synthetic() -> void:
 	var plain := back.actor(8)
 	check("plain_row_unchanged", not s.to_dict().actors["8"].has("looks") and not s.to_dict().actors["8"].has("classId"), s.to_dict().actors["8"].keys())
 	check("plain_actor_data_is_db", is_same(plain.data(), XDB.rec("Actors", 8)))
+	# 224 画面闪烁、352 打开存档画面交给地图宿主；闪烁强度每帧 ×(d−1)/d
+	var map := XMapScene.new()
+	map.flash_screen([255, 0, 0, 170], 30)
+	var a0: float = map._flash.color.a
+	map._update_flash()
+	check("flash_decay", is_equal_approx(a0, 170.0 / 255.0) and is_equal_approx(map._flash.color.a, a0 * 29.0 / 30.0) and map._flash.duration == 29, [a0, map._flash])
+	check("host_codes", MVInterpreter.HOST_CODES.has(224) and MVInterpreter.HOST_CODES.has(352) and map.has_method("open_save"))
+	map.free()
 
 
 func _finish() -> void:

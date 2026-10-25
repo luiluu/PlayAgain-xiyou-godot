@@ -5,6 +5,8 @@
 // ② hat：绿司机 2 跑 689 戴帽子、690 脱帽子（技能与图像）。
 // ③ reset：先把 1～4 号的图像改乱，再跑大厅「更改形象」460～463，记 1～93 号的图像。
 // ④ changeClass：狗逍遥 1 升到 30 级，321 换职业 2 不保留经验 → 换回 1 不保留 → 换 3 保留 → 换 3 不保留，每步记职业、等级、经验与 _exp。
+// ⑤ resources：「增减 HP／MP／TP」311／312／326：不允许死亡最多扣到 1、允许时倒下、倒下后不再加；变量操作数（317）、全队（角色 0）；
+//    公共事件 46 一掷千金（钱不够扣 3000 HP、允许死亡）、624 快捷回血（持有物品 793 时 HP、MP 各加变量 317＝99999）。
 // 真实新游戏、Math.random 0.5，只在内存；产物 .sandbox/actor_change.json，
 // 复制进 01_Godot工程/tests/fixtures/actor_change_oracle.json（tests/xiyou_actor_change.gd 读）。
 const {start, makeCase, finish, round} = require('./shared/host.cjs');
@@ -68,6 +70,32 @@ cases.push(makeCase('changeClass', {actor: 1, level: 30}, () => {
     run([{code: 321, indent: 0, parameters: [1, cls, keep]}]);
     rows.push(snap(cls + (keep ? '_keep' : '_reset')));
   }
+  return {rows};
+}));
+
+cases.push(makeCase('resources', {}, () => {
+  newGame();
+  const party = w.$gameParty.members();
+  const snap = step => ({step, gold: w.$gameParty.gold(), actors: party.map(a => ({actor: a.actorId(), hp: round(a.hp), mp: round(a.mp), tp: round(a.tp),
+    mhp: round(a.mhp), mmp: round(a.mmp), dead: a.isDead()}))});
+  const a1 = w.$gameActors.actor(1), a8 = w.$gameActors.actor(8);
+  a1.setHp(100); a8.setMp(5); a8.setTp(10);
+  const rows = [snap('init')];
+  const steps = [
+    ['hp_minus_nodeath', [{code: 311, indent: 0, parameters: [0, 1, 1, 0, 3000, false]}]],
+    ['mp_minus_floor', [{code: 312, indent: 0, parameters: [0, 8, 1, 0, 50]}]],
+    ['tp_plus', [{code: 326, indent: 0, parameters: [0, 0, 0, 0, 20]}]],
+    ['tp_over_cap', [{code: 326, indent: 0, parameters: [0, 8, 0, 0, 500]}]],
+    ['hp_minus_death', [{code: 311, indent: 0, parameters: [0, 1, 1, 0, 3000, true]}]],
+    ['hp_plus_dead', [{code: 311, indent: 0, parameters: [0, 1, 0, 0, 500, false]}]],
+    ['hp_var_all', [{code: 122, indent: 0, parameters: [317, 317, 0, 0, 77]}, {code: 311, indent: 0, parameters: [0, 0, 1, 1, 317, false]}]],
+    ['mp_var_actor_var', [{code: 122, indent: 0, parameters: [318, 318, 0, 0, 9]}, {code: 312, indent: 0, parameters: [1, 318, 0, 1, 317]}]],
+  ];
+  for (const [label, list] of steps) { run(list); rows.push(snap(label)); }
+  w.$gameParty.loseGold(w.$gameParty.gold()); w.$gameParty.gainGold(100);
+  ce(46); rows.push(snap('ce46_poor'));
+  w.$gameParty.gainItem(w.$dataItems[793], 1);
+  ce(624); rows.push(snap('ce624'));
   return {rows};
 }));
 

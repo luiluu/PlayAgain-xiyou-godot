@@ -2459,6 +2459,477 @@
     ]
    },
    "errors": []
+  },
+  {
+   "id": "resources",
+   "setup": {},
+   "observed": {
+    "rows": [
+     {
+      "step": "init",
+      "gold": 0,
+      "actors": [
+       {
+        "actor": 1,
+        "hp": 100,
+        "mp": 200,
+        "tp": 0,
+        "mhp": 485,
+        "mmp": 200,
+        "dead": false
+       },
+       {
+        "actor": 8,
+        "hp": 450,
+        "mp": 5,
+        "tp": 10,
+        "mhp": 450,
+        "mmp": 220,
+        "dead": false
+       },
+       {
+        "actor": 9,
+        "hp": 525,
+        "mp": 150,
+        "tp": 0,
+        "mhp": 525,
+        "mmp": 150,
+        "dead": false
+       },
+       {
+        "actor": 10,
+        "hp": 480,
+        "mp": 200,
+        "tp": 0,
+        "mhp": 480,
+        "mmp": 200,
+        "dead": false
+       }
+      ]
+     },
+     {
+      "step": "hp_minus_nodeath",
+      "gold": 0,
+      "actors": [
+       {
+        "actor": 1,
+        "hp": 1,
+        "mp": 200,
+        "tp": 0,
+        "mhp": 485,
+        "mmp": 200,
+        "dead": false
+       },
+       {
+        "actor": 8,
+        "hp": 450,
+        "mp": 5,
+        "tp": 10,
+        "mhp": 450,
+        "mmp": 220,
+        "dead": false
+       },
+       {
+        "actor": 9,
+        "hp": 525,
+        "mp": 150,
+        "tp": 0,
+        "mhp": 525,
+        "mmp": 150,
+        "dead": false
+       },
+       {
+        "actor": 10,
+        "hp": 480,
+        "mp": 200,
+        "tp": 0,
+        "mhp": 480,
+        "mmp": 200,
+        "dead": false
+       }
+      ]
+     },
+     {
+      "step": "mp_minus_floor",
+      "gold": 0,
+      "actors": [
+       {
+        "actor": 1,
+        "hp": 1,
+        "mp": 200,
+        "tp": 0,
+        "mhp": 485,
+        "mmp": 200,
+        "dead": false
+       },
+       {
+        "actor": 8,
+        "hp": 450,
+        "mp": 0,
+        "tp": 10,
+        "mhp": 450,
+        "mmp": 220,
+        "dead": false
+       },
+       {
+        "actor": 9,
+        "hp": 525,
+        "mp": 150,
+        "tp": 0,
+        "mhp": 525,
+        "mmp": 150,
+        "dead": false
+       },
+       {
+        "actor": 10,
+        "hp": 480,
+        "mp": 200,
+        "tp": 0,
+        "mhp": 480,
+        "mmp": 200,
+        "dead": false
+       }
+      ]
+     },
+     {
+      "step": "tp_plus",
+      "gold": 0,
+      "actors": [
+       {
+        "actor": 1,
+        "hp": 1,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 485,
+        "mmp": 200,
+        "dead": false
+       },
+       {
+        "actor": 8,
+        "hp": 450,
+        "mp": 0,
+        "tp": 30,
+        "mhp": 450,
+        "mmp": 220,
+        "dead": false
+       },
+       {
+        "actor": 9,
+        "hp": 525,
+        "mp": 150,
+        "tp": 20,
+        "mhp": 525,
+        "mmp": 150,
+        "dead": false
+       },
+       {
+        "actor": 10,
+        "hp": 480,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 480,
+        "mmp": 200,
+        "dead": false
+       }
+      ]
+     },
+     {
+      "step": "tp_over_cap",
+      "gold": 0,
+      "actors": [
+       {
+        "actor": 1,
+        "hp": 1,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 485,
+        "mmp": 200,
+        "dead": false
+       },
+       {
+        "actor": 8,
+        "hp": 450,
+        "mp": 0,
+        "tp": 200,
+        "mhp": 450,
+        "mmp": 220,
+        "dead": false
+       },
+       {
+        "actor": 9,
+        "hp": 525,
+        "mp": 150,
+        "tp": 20,
+        "mhp": 525,
+        "mmp": 150,
+        "dead": false
+       },
+       {
+        "actor": 10,
+        "hp": 480,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 480,
+        "mmp": 200,
+        "dead": false
+       }
+      ]
+     },
+     {
+      "step": "hp_minus_death",
+      "gold": 0,
+      "actors": [
+       {
+        "actor": 1,
+        "hp": 0,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 485,
+        "mmp": 200,
+        "dead": true
+       },
+       {
+        "actor": 8,
+        "hp": 450,
+        "mp": 0,
+        "tp": 200,
+        "mhp": 450,
+        "mmp": 220,
+        "dead": false
+       },
+       {
+        "actor": 9,
+        "hp": 525,
+        "mp": 150,
+        "tp": 20,
+        "mhp": 525,
+        "mmp": 150,
+        "dead": false
+       },
+       {
+        "actor": 10,
+        "hp": 480,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 480,
+        "mmp": 200,
+        "dead": false
+       }
+      ]
+     },
+     {
+      "step": "hp_plus_dead",
+      "gold": 0,
+      "actors": [
+       {
+        "actor": 1,
+        "hp": 0,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 485,
+        "mmp": 200,
+        "dead": true
+       },
+       {
+        "actor": 8,
+        "hp": 450,
+        "mp": 0,
+        "tp": 200,
+        "mhp": 450,
+        "mmp": 220,
+        "dead": false
+       },
+       {
+        "actor": 9,
+        "hp": 525,
+        "mp": 150,
+        "tp": 20,
+        "mhp": 525,
+        "mmp": 150,
+        "dead": false
+       },
+       {
+        "actor": 10,
+        "hp": 480,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 480,
+        "mmp": 200,
+        "dead": false
+       }
+      ]
+     },
+     {
+      "step": "hp_var_all",
+      "gold": 0,
+      "actors": [
+       {
+        "actor": 1,
+        "hp": 0,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 485,
+        "mmp": 200,
+        "dead": true
+       },
+       {
+        "actor": 8,
+        "hp": 373,
+        "mp": 0,
+        "tp": 200,
+        "mhp": 450,
+        "mmp": 220,
+        "dead": false
+       },
+       {
+        "actor": 9,
+        "hp": 448,
+        "mp": 150,
+        "tp": 20,
+        "mhp": 525,
+        "mmp": 150,
+        "dead": false
+       },
+       {
+        "actor": 10,
+        "hp": 403,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 480,
+        "mmp": 200,
+        "dead": false
+       }
+      ]
+     },
+     {
+      "step": "mp_var_actor_var",
+      "gold": 0,
+      "actors": [
+       {
+        "actor": 1,
+        "hp": 0,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 485,
+        "mmp": 200,
+        "dead": true
+       },
+       {
+        "actor": 8,
+        "hp": 373,
+        "mp": 0,
+        "tp": 200,
+        "mhp": 450,
+        "mmp": 220,
+        "dead": false
+       },
+       {
+        "actor": 9,
+        "hp": 448,
+        "mp": 150,
+        "tp": 20,
+        "mhp": 525,
+        "mmp": 150,
+        "dead": false
+       },
+       {
+        "actor": 10,
+        "hp": 403,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 480,
+        "mmp": 200,
+        "dead": false
+       }
+      ]
+     },
+     {
+      "step": "ce46_poor",
+      "gold": 100,
+      "actors": [
+       {
+        "actor": 1,
+        "hp": 0,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 485,
+        "mmp": 200,
+        "dead": true
+       },
+       {
+        "actor": 8,
+        "hp": 0,
+        "mp": 0,
+        "tp": 200,
+        "mhp": 450,
+        "mmp": 220,
+        "dead": true
+       },
+       {
+        "actor": 9,
+        "hp": 0,
+        "mp": 150,
+        "tp": 20,
+        "mhp": 525,
+        "mmp": 150,
+        "dead": true
+       },
+       {
+        "actor": 10,
+        "hp": 0,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 480,
+        "mmp": 200,
+        "dead": true
+       }
+      ]
+     },
+     {
+      "step": "ce624",
+      "gold": 100,
+      "actors": [
+       {
+        "actor": 1,
+        "hp": 0,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 485,
+        "mmp": 200,
+        "dead": true
+       },
+       {
+        "actor": 8,
+        "hp": 0,
+        "mp": 220,
+        "tp": 200,
+        "mhp": 450,
+        "mmp": 220,
+        "dead": true
+       },
+       {
+        "actor": 9,
+        "hp": 0,
+        "mp": 150,
+        "tp": 20,
+        "mhp": 525,
+        "mmp": 150,
+        "dead": true
+       },
+       {
+        "actor": 10,
+        "hp": 0,
+        "mp": 200,
+        "tp": 20,
+        "mhp": 480,
+        "mmp": 200,
+        "dead": true
+       }
+      ]
+     }
+    ]
+   },
+   "errors": []
   }
  ]
 }

@@ -320,6 +320,13 @@ func _execute(c: Dictionary):
 		136:
 			# 更改禁止遇敌 [0 禁止 1 允许]
 			state().encounter_enabled = int(p[0]) != 0
+		311, 312, 326:
+			# 增减 HP／MP／TP [指定方式, 角色/变量, 0 增 1 减, 操作数类型, 操作数(, 允许死亡)]（Game_Interpreter.command311／312／326）
+			var value := float(_operand(int(p[3]), int(p[4])))
+			if int(p[2]) == 1:
+				value = -value
+			for a in _actors_ex(int(p[0]), int(p[1])):
+				_change_resource(a, code, value, bool(p[5]) if code == 311 and p.size() > 5 else false)
 		313:
 			_change_actor_state(p)
 		314:
@@ -433,6 +440,25 @@ func _treasure_popup(_rec: Dictionary, _amount: int) -> void:
 ## $gameParty.members()：地图是全队，战斗是出战成员
 func _party_members() -> Array:
 	return state().members()
+
+
+## Game_Interpreter.changeHp（活着才改；不允许死亡时最多扣到 1）、Game_Battler.gainMp／gainTp；之后 refresh（HP 归零即倒下）
+func _change_resource(a: XActor, code: int, value: float, allow_death: bool) -> void:
+	match code:
+		311:
+			if a.is_dead():
+				return
+			if not allow_death and a.hp <= -value:
+				value = 1.0 - a.hp
+			var applied := -a.absorb_shield(-value) if value < 0.0 else value
+			a.hp = clampf(a.hp + applied, 0.0, a.mhp)
+		312:
+			a.mp = clampf(a.mp + value, 0.0, a.mmp)
+		326:
+			a.tp = clampf(a.tp + value, 0.0, a.max_tp())
+	a.refresh_resources(rule_random())
+	if value != 0.0:
+		a.param_mark_dirty()
 
 
 ## $gameActors.actor(id)：数据库有这个角色才有（没建过的现建）
