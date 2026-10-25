@@ -44,3 +44,17 @@
 - 855323f6：出战人数快照、缓存外倍率、生命周期接线。
 - 32b3e716：逐行原版夹具与专项、隐藏／死亡守卫。
 - 75387a6b／a8b87421／73077a15：缓存边界修正、承伤削弱参照与静默清除。
+
+## 沙僧65→66（同树自动接力）
+
+- 本小期79f86dcc已可合并，本节提交后以最新HEAD为准。当前codex/passive-content-boss，工作区干净；本期所有长任务已终态、无在途长任务或前台等待。本次为上下文接力；65创建66后停止，66唯一后续执行者。最后实查五小时61%、周39%，95%保存停、周98%收尾，不假定重置。
+- 第一条及所有文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b；只用此已有树，不在main改、不创建／清理worktree、不reset／cherry-pick、不建automation、不向唐僧或其他已有会话发消息。开工只读交接板顶部／车道行、git status/log、get_usage_limits与本交付最后范围／本节。
+- 65交Boss属性／生命周期：实现73077a15，29组冻结原版errors空，新专项5080，最终8场42602项全过、无偶发；main已是祖先，不需重复合无关main或重同步。精简证据已入Git，本期boss65-*临时输出已清，自动导入的其他车道battle_common_events.gd.uid已清；所有原版.sandbox、旧证据、generated及整树保留。不要重做29组／8场或前期338组／5场。
+- 下一期同树新建codex/passive-content-boss-output。尚未取输出新参照，尚未实现boss_output_rate；先补冻结原版输出入口（installBossDifficultyRuntime.js后半context及scaled开始），分小期交普通executeHp／MpDamage，再接原始gain／set与序列、状态来源等难尾巴。设计／疑难上下文用high；66创建时显式传high，不虚称运行中已切；机械收尾用可用接口调medium，不可用就照实说。
+- 当前实现入口在modes/xiyou/core/enemy.gd（所有Boss字段和属性倍率）、battle/battle_logic.gd（setup/start_turn/transform/end_battle）；并未改damage.gd／resource_context.gd／state_effects.gd的输出链。普通执行伤害入口execute_hp_damage／execute_mp_damage，XResourceContext.gain／silent_gain／refresh与XStateEffects资源能力可复用。不要动未交接formula_execution／mv_event_core或原两个TP Apply宿主。
+- 输出边界：D.outputRate只看Boss身份＋boss_hyper_armor布尔，等于属性倍率；不要改成查2651图标（死亡复活后标志仍真而图标可能缺）。executeHp/MpDamage只放大正伤害、非自身，Math.floor(value*rate)，在已有角色平衡／护盾等旧链外；真实顺序先取参照，治疗／自身代价不放大。action.apply／executeDamage／applyPostDamageEval上下文里负gain与set下降才放大，目标必须匹配当前target／targets，settled/direct栈只结算一次；别用残留BattleManager subject猜来源。
+- 后续难尾巴：BattleManager processActionSequence与actionHp/MpModify各自targets域；Game_Battler.customEffectEval用stateOrigin；Game_Action.customEffectEval只有reactState且1341／2550用特殊来源／受害人（1341取side.stateOrigin，2550 source=side,victim=action.subject）。要各自取原版参照；没有接的宿主明确诊断／遗留，别为难尾巴拖住可交小期。
+- 本期最重要的缓存教训：倍率必须在param_cells外；sync(false)不存在状态不做任何移除。原版dropState调用removeStateCompletely对非叠层不生效，然后直接eraseState；冻结源全部控制与2651非叠层，静默清ID／turns、不refresh、不标dirty、不跑remove、不清origin。最终专项对此有非叠层前提断言。未来若动清除路径，需重跑新专项和变身依赖。
+- 隐藏／HP0边界：Boss守卫用原版not hidden且含死亡1语义，不能用Godot更宽的is_dead；隐藏敌人add_state拒收，HP0无死亡1仍按原版可附加。recoverAll本期已会重补霸体。别回退这些已验行为。
+- 前期未完成清单和依赖顺序见本单／codex_passive-content最后64→65；不自销核、不自评完成度。五本权能／容量满／PREE-ASUP／穿武器动态链→race-battle等接口→全部完成且额度足再核他人；50%二期审查另合。以后需合main用--no-commit再加执行者: Codex（沙僧）与核查: 待Claude尾注，不改历史。
+- 长批python3 -u、XIYOU_TEST_HEARTBEAT=30，用长任务.py start脱离会话＋前台等待（单次不超过60秒以便进度沟通），先占槽导入无错误再专项。三级车道只相关专项与直接依赖，不跑旧全量／同步。新完整交付登记自己分支交付单。
