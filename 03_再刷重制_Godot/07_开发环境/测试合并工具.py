@@ -475,8 +475,9 @@ class SlotWeightTests(unittest.TestCase):
                 on_wait(61.0)
             return real(self.state, limit, weight)
         out = io.StringIO()
+        # 共用上限默认按核数一半，4 核机器只有 2 槽、权重 3 会被截成 2；固定上限，断言不随机器变
         with mock.patch.object(sync.runner(), 'global_slot', spy), mock.patch.object(sync.subprocess, 'run') as run, \
-                contextlib.redirect_stdout(out):
+                mock.patch.dict(os.environ, CHECK_GLOBAL_JOBS='4'), contextlib.redirect_stdout(out):
             run.return_value = subprocess.CompletedProcess([], 0, '', '')
             sync.run_node(['event_probe.cjs'], {})
             sync.run_node(['cat_probe.cjs'], {})
