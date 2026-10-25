@@ -1,7 +1,7 @@
 {
   "base": "926f914f",
   "branch": "codex/four-loose-fixes",
-  "scope": "生产补丁与3专项、power通过；直接依赖11/12，旧947参照污染对应的main修复已合并、6条接受单精确匹配，最终同步与rules基础段复测待完成",
+  "scope": "四项可合并；最终同步与Godot导入通过，7条精确变化＋34新增；规则基础段与三专项首次全部通过；Codex实现待Claude交叉核查",
   "nativeFinal": {
     "status": {
       "runId": "c007f95c1c134f6ca50e269b0c88c432",
@@ -43,12 +43,12 @@
     "finding": "普通932火增伤正确；重复／大小写／无前导零标签漏算已由修前专项证实。Codex补修后126/126通过，补修待Claude交叉核查。"
   },
   "usageAtHandoff": {
-    "fiveHourUsedPercent": 42,
-    "weeklyUsedPercent": 22
+    "fiveHourUsedPercent": 52,
+    "weeklyUsedPercent": 23
   },
   "handoffDocs": {
     "exitCode": 0,
-    "scope": "仅文档登记正文，非全量"
+    "scope": "从检查.sh原样提取文档与登记检查，dev.173；不是全量"
   },
   "redFinal": {
     "runId": "3e597bbc32464e5db8db7f55c89b9eb6",
@@ -126,7 +126,7 @@
     "oldOracle": 0,
     "alreadyKnownUpstreamFixtureProblem": true,
     "fixMergedIntoMain": "946df0b7",
-    "retestAfterSyncRequired": true,
+    "retestAfterSyncRequired": false,
     "scenes": [
       {
         "scene": "xiyou_rules.tscn",
@@ -494,5 +494,145 @@
       },
       "final": 468
     }
+  },
+  "finalFour": {
+    "status": {
+      "runId": "24723637d00c44fe8368f1c0b197bcbf",
+      "status": "done",
+      "exitCode": 0,
+      "pid": 36685,
+      "startedAt": "2026-10-25T15:39:17.761583+00:00",
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/07_开发环境/并行测试.py",
+        "03_再刷重制_Godot/07_开发环境/godot",
+        "03_再刷重制_Godot/01_Godot工程",
+        "--log-dir",
+        "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/final-four",
+        "xiyou_rules.tscn",
+        "xiyou_cat.tscn",
+        "xiyou_enemy_book.tscn",
+        "xiyou_loose_fixes.tscn"
+      ],
+      "childPGID": 36686,
+      "childIdentity": {
+        "pid": 36686,
+        "pgid": 36686,
+        "startedAt": "Sun Oct 25 16:39:17 2026    "
+      },
+      "finishedAt": "2026-10-25T15:41:49.788607+00:00"
+    },
+    "tests": {
+      "xiyou_cat.tscn": {
+        "passed": 994,
+        "total": 994
+      },
+      "xiyou_enemy_book.tscn": {
+        "passed": 86,
+        "total": 86
+      },
+      "xiyou_loose_fixes.tscn": {
+        "passed": 126,
+        "total": 126
+      },
+      "xiyou_rules.tscn": {
+        "failedSample": [],
+        "passed": 105856,
+        "total": 105856
+      }
+    },
+    "timings": {
+      "jobs": 2,
+      "globalJobs": 4,
+      "wallSeconds": 151.775,
+      "flakyRerunPassed": [],
+      "fingerprint": "",
+      "reused": [],
+      "scenes": [
+        {
+          "name": "xiyou_rules.tscn",
+          "seconds": 151.771,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 151.771,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_cat.tscn",
+          "seconds": 4.273,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 4.273,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_enemy_book.tscn",
+          "seconds": 4.179,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 4.179,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_loose_fixes.tscn",
+          "seconds": 2.685,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 2.685,
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    "flaky": false
+  },
+  "additionSchemaRegression": {
+    "file": "oracle_additions.py",
+    "key": {
+      "enemy_book_defeat.json": {
+        "cases": [
+          "id"
+        ]
+      }
+    },
+    "oldCasesUnchanged": 4,
+    "newCases": 34,
+    "negativeGuardsPassed": [
+      "changedOldValue",
+      "removedOldCase",
+      "duplicateOldKey",
+      "newError",
+      "missingKey"
+    ],
+    "mergeToolTests": {
+      "passed": 136,
+      "total": 136,
+      "exitCode": 0
+    }
+  },
+  "temporaryOutputCleanup": {
+    "removed": "four-loose-fixes",
+    "preserved": [
+      "旧原版证据",
+      "mv_oracle/.sandbox",
+      "generated",
+      "自动同步报告与备份",
+      "state-effects-2b整树"
+    ]
   }
 }
