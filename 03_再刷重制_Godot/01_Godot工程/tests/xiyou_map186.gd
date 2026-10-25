@@ -3,6 +3,9 @@ extends Node
 ## 胜后封刀奖励 CE999、自开关 A／B 重建城、C 科技与商店）、农田（EV3～15：占领连打五场、收取果实按 playtime、增减奴隶）、
 ## 矿（EV16～23）、超级 Boos EV32（敌群 739，playtime−变量 707≥180）、外界使者 EV33（送物品 1634）。
 ## 走地图场景真走一遍；数值（敌群事件）由 xiyou_troop_events 对照参照。
+## 分段（照 xiyou_rules 拆场景，免得单场景超过 600 秒上限的一半）：xiyou_map186 跑入口门＋九军团，_b 跑农田与矿，_c 跑超级 Boss 与使者；
+## 各段都自己开新局，三个场景断言合计与不拆时相同。不设时四段全跑。
+@export var sections: Array = ["gate", "legion", "farm", "boss"]
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 90000
 var results: Array = []
@@ -16,6 +19,7 @@ func _ready() -> void:
 	# 换场景（传送）时测试节点不能挂在当前场景下，挂到根节点
 	var runner := Node.new()
 	runner.set_script(get_script())
+	runner.set("sections", sections)
 	runner.set_meta("runner", true)
 	get_tree().root.add_child.call_deferred(runner)
 
@@ -147,10 +151,14 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0
 	XGuide.MILESTONE_ENABLED = false
 	seed(20261023)
-	await _gate()
-	await _legion()
-	await _farm()
-	await _boss_and_envoy()
+	if "gate" in sections:
+		await _gate()
+	if "legion" in sections:
+		await _legion()
+	if "farm" in sections:
+		await _farm()
+	if "boss" in sections:
+		await _boss_and_envoy()
 	_finish()
 
 
