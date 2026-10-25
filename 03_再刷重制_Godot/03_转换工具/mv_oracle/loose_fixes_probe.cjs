@@ -9,6 +9,7 @@ w.Game_Battler.prototype.battler = function () {
 };
 newGame();
 const cases = [];
+function realmArray(values) { const out = w.eval('[]'); for (const value of values) out.push(value); return out; }
 function state(note) {
   const st = w.JsonEx.makeDeepCopy(w.$dataStates[4]);
   Object.assign(st, {id: w.$dataStates.length, name: '四零散参照', traits: [], note, meta: {}, restriction: 0});
@@ -16,7 +17,7 @@ function state(note) {
   w.DataManager.extractMetadata(st); w.$dataStates.push(st); return st.id;
 }
 const a = w.$gameActors.actor(1);
-a._skills = []; a._states = []; a._equips.forEach(x => x.setObject(null));
+a._skills = realmArray([]); a._states = realmArray([]); a._equips.forEach(x => x.setObject(null));
 Object.defineProperty(a, 'mcr', {get: () => 0.63, configurable: true});
 const variants = [
   ['base', []], ['all', ['<ConsumeReduceAll:10>']],
@@ -29,20 +30,20 @@ const variants = [
 ];
 for (const [name, notes] of variants) for (const stypeId of [1, 2, 3]) {
   cases.push(makeCase('cost.' + name + '.' + stypeId, {notes, mcr: 0.63, skill: {id: 12, stypeId, mpCost: 37, tpCost: 19}}, () => {
-    a._states = notes.map(state); a.refreshPassiveCache();
+    a._states = realmArray(notes.map(state)); a.need_refresh = true; a.refresh(); a.refreshPassiveCache();
     const skill = Object.assign({}, w.$dataSkills[12], {id: 12, stypeId, mpCost: 37, tpCost: 19});
-    return {mp: a.skillMpCost(skill), tp: a.skillTpCost(skill), cache: w.JsonEx.makeDeepCopy(a._passiveCache.consumeReduce)};
+    return {mp: a.skillMpCost(skill), tp: a.skillTpCost(skill), cache: w.JsonEx.makeDeepCopy(a._passiveCache.consumeReduce), states: a.states().map(st => ({id: st.id, meta: st.meta}))};
   }));
 }
 w.$gameParty._inBattle = true;
 function enemy() {
-  w.$gameSystem.clearDefeatNumber(); w.$gameTroop.setup(2); return w.$gameTroop.members()[0];
+  w.$gameSystem.clearDefeatNumber(); w.BattleManager.setup(2, true, true); return w.$gameTroop.members()[0];
 }
 const count = e => w.$gameSystem.defeatNumber(e.enemyId());
 cases.push(makeCase('death.hpAndQueries', {}, () => {
   const e = enemy(); e.gainHp(-e.hp); const first = count(e);
   for (let i = 0; i < 8; i++) { e.isDead(); e.isAlive(); }
-  const afterQueries = count(e); e.removeState(1); e.setHp(1); e.gainHp(-1);
+  const afterQueries = count(e); e.removeState(1); e.setHp(1); e.clearResult(); e.gainHp(-1);
   return {enemyId: e.enemyId(), first, afterQueries, second: count(e)};
 }));
 cases.push(makeCase('death.explicitState', {}, () => {
@@ -56,12 +57,12 @@ cases.push(makeCase('death.refreshAndTransform', {}, () => {
 }));
 for (const [name, notes] of [['actual932', []], ['duplicates', ['<passiveELUP02:10%>\n<passiveELUP02:20%>']], ['caseAndPadding', ['<PASSIVEELUP2:13%>\n<passiveELUP02:7%>']]]) {
   cases.push(makeCase('bonus.' + name, {enemyId: 932, notes}, () => {
-    const e = new w.Game_Enemy(932, 0, 0); e._states = notes.map(state); e.need_refresh = true; e.refresh();
+    const e = new w.Game_Enemy(932, 0, 0); e._states = realmArray(notes.map(state)); e.need_refresh = true; e.refresh();
     return {values: Array.from({length: 15}, (_, i) => w.CodexElements.bonus(e, i + 1))};
   }));
 }
 cases.push(makeCase('cost.enemyNotReduced', {}, () => {
-  const e = enemy(); e._states = [state('<ConsumeReduceAll:100>')]; e.refreshPassiveCache();
+  const e = enemy(); e._states = realmArray([state('<ConsumeReduceAll:100>')]); e.refreshPassiveCache();
   const skill = Object.assign({}, w.$dataSkills[12], {mpCost: 37, tpCost: 19});
   return {mp: e.skillMpCost(skill), tp: e.skillTpCost(skill), mcr: e.mcr};
 }));
