@@ -7,7 +7,8 @@
   "fixtureSha256": "1142f6b31b1ce2c8cab0abe8197b2dda8123e32da4f4449c95f9d35e29b60a8e",
   "nativeArtifacts": [
     "boss_output_context.json (123 cases); preserved unchanged",
-    "boss_output_context_selected.json (six full-shield cases pending)"
+    "boss_output_context_selected.json (six full-shield cases); errors empty, same sourceIdentity",
+    "boss_output_context_combined129.json (123+6 unique cases); final fixture update waits for original dedicated terminal state"
   ],
   "runtimeChange": "0396ae52 dirty uses value entering native KRZ hook after Boss scaling and enemy gainHp shield",
   "preFixDependencies": {
@@ -105,5 +106,25 @@
     "First Godot scene hit explicit XEnemy type inference issue; preserved failed smoke log, fixed before 281-case smoke",
     "check-only script missed GameApp autoload despite rc0; treated as failure and not used for acceptance",
     "Complete oracle proved -0.4 floor-to-zero must not mark dirty; full shield six cases added to close previously uncovered boundary"
-  ]
+  ],
+  "combinedOracleCases": 129,
+  "combinedSha256": "ec80acae15f37cdbf0a8e76b5cace6ddd707208b6f902fc76045732736738091",
+  "nativeArtifactSha256": {
+    "boss_output_context.json": "1142f6b31b1ce2c8cab0abe8197b2dda8123e32da4f4449c95f9d35e29b60a8e",
+    "boss_output_context_selected.json": "6a03293c5cf5a3a09998748ce0dfaa681a98a511d1f197930a61f0f86027654a"
+  },
+  "fullShieldRun": {
+    "runId": "3d5b2c4385044940b74aea05f63bd761",
+    "status": "done",
+    "exitCode": 0,
+    "pid": 22410,
+    "startedAt": "2026-10-25T22:49:57.161447+00:00",
+    "childPGID": 22413,
+    "childIdentity": {
+      "pid": 22413,
+      "pgid": 22413,
+      "startedAt": "Sun Oct 25 23:49:57 2026    "
+    },
+    "finishedAt": "2026-10-25T23:05:19.356261+00:00"
+  }
 }
