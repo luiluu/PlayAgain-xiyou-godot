@@ -149,6 +149,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	# BattleManager.startBattle：inBattle 起敌人走 krz 能力值缓存；逃跑率等开战前的读取不留在格子里
 	for e in enemies:
 		e.param_cache_begin()
+	XRaceBattle.start(self)  # 种族祝福：BattleManager.startBattle 包装清本场数据，出战成员建数据（记开战最大生命）
 
 
 ## dsPassiveSkill Scene_Battle.start：每个出战角色依次处理开战状态标签——自己、随机队友、随机敌人、随机任一目标、
@@ -244,7 +245,8 @@ static func is_item(rec: Dictionary) -> bool:
 func skill_cost(a: XBattler, skill: Dictionary) -> Dictionary:
 	if is_item(skill):
 		return {"mp": 0, "tp": 0}
-	return {"mp": floori(float(skill.get("mpCost", 0)) * a.mcr), "tp": int(skill.get("tpCost", 0))}
+	# 种族祝福：鬼族 skillMpCost／skillTpCost 打折（XRaceBattle.cost）
+	return {"mp": XRaceBattle.cost(a, floori(float(skill.get("mpCost", 0)) * a.mcr)), "tp": XRaceBattle.cost(a, int(skill.get("tpCost", 0)))}
 
 func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if skill.is_empty():
@@ -510,6 +512,7 @@ func act(u: XBattler, skill, target) -> Array:
 	else:
 		logs.append_array(execute(u, skill, target))
 		XImportedBalance.set_acting(null)
+	XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
 	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
 	_acted[u] = int(_acted.get(u, 0)) + 1
 	_tick_states(u, 1)
@@ -530,6 +533,7 @@ func end_turn() -> Array:
 	# BattleManager.refreshAllMembers
 	for b in actors + enemies:
 		b.param_refresh()
+	logs.append_array(XRaceBattle.round_end(self))  # endTurn 的种族包装：毒鸡汤结算、残响交接
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs
@@ -816,6 +820,7 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 			_cleared[u] = true
 		var before := _movable_snapshot()
 		logs.append_array(execute(u, skill, _forced_target(u, skill, int(p[3])), true))
+		XRaceBattle.finish(self, logs)
 		XCat.end_action(self, u, skill)
 		_tick_states(u, 1)
 		_sync_orders(before, true)
@@ -883,6 +888,7 @@ func _make_action_orders() -> void:
 	_clear_unable()
 	_action_times_modification(next_order)
 	_orders_made = true
+	XRaceBattle.insert_human(self, current_order)  # 人族九九六（makeActionOrders 的 OTB 分支）
 
 
 func _sorted_by_speed(list: Array) -> Array:
@@ -1063,12 +1069,14 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		for t in targets_for(u, skill, chosen):
 			for i in range(maxi(1, times)):
 				list.append(t)
+		XRaceBattle.begin(self, u, skill, list, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		return logs
 	var repeats := int(skill.get("repeats", 1))
 	if not is_item(skill) and int(skill.id) == ATTACK_SKILL:
 		repeats = floori(repeats + u.attack_times_add())
 	var targets := targets_for(u, skill, chosen)
+	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 	for t in targets:
 		for i in range(maxi(1, repeats)):
 			if t.is_dead() and not [9, 10].has(int(skill.scope)):
@@ -1092,13 +1100,17 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	var mrf := t.mrf if XDamage.is_magical(skill) and not sure else 0.0
 	if _float("reflection") < mrf:
 		_reflecting = true  # 导入角色平衡：反射回行动者自己的结算照样缩放
+		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反射是独立数值来源，不是原行动
 		var r := apply(u, skill, u)
+		XRaceBattle.derived_end(self, race_prev)
 		_reflecting = false
 		r.reflected = true
 		return [{"type": "reflect", "user": u, "target": t}, r]
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure else 0.0
 	if _float("counter") < cnt:
+		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反击是独立数值来源，不是原行动
 		var r := apply(t, XDB.rec("Skills", ATTACK_SKILL), u)
+		XRaceBattle.derived_end(self, race_prev)
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
 	return [apply(u, skill, substitute_for(skill, t))]
@@ -1176,7 +1188,7 @@ func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) 
 func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
 	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
 	return XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule(),
-		"battleRound": maxi(1, turn)})  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
+		"battleRound": maxi(1, turn), "raceAction": true})  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
 
 
 func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -> Dictionary:
@@ -1259,9 +1271,13 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_action_resources.result(t).success = true
 		match type:
 			1, 3, 5:
+				var race_mark := XRaceBattle.before_hp(self, u, skill, t)
 				r.hp = execute_hp_damage(u, t, value, type == 5)
+				XRaceBattle.after_hp(self, u, skill, t, race_mark)
 			2, 4, 6:
+				var mp_before := t.mp
 				r.mp = execute_mp_damage(u, t, value, type == 6)
+				XRaceBattle.after_mp(self, skill, t, mp_before)
 		r.record_hp += floorf(maxf(0.0, float(r.hp)))
 		_establish(u, t, r)
 	for eff in skill.get("effects", []):
@@ -1285,7 +1301,8 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> f
 	value = t.absorb_shield(value)
 	if drain:
 		value = minf(value, t.hp)
-	_action_resources.gain(t, "hp", -value)
+	# 种族蛮骨（YEP setHp 里的 CodexRaces.limitHp）只限扣血量；受伤充 TP 仍按原值（onDamage(value)）
+	_action_resources.gain(t, "hp", -XRaceBattle.limit_loss(self, t, value))
 	if value > 0.0:
 		_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
 	if drain:

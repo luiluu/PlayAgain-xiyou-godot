@@ -242,6 +242,7 @@ func actor(id: int) -> XActor:
 			_apply_actor_op(actors[id], op)
 		actors[id].refresh_passive()
 		for e in actors[id].equip_list():register_gear(e)
+		XRace.on_actor_created(self, actors[id])  # installNativeRaceRuntime：Game_Actor.setup 包装建种族数据
 	return actors[id]
 
 

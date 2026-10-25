@@ -152,6 +152,8 @@ func refresh(b: XBattler) -> void:
 			r.addedStates.append(1)
 		if b is XEnemy and not preview:
 			XEnemyBook.note_death(b)  # AB_EnemyBook Game_Enemy.die：击败数即时 +1
+		if not preview:
+			XRaceBattle.on_death(b)  # 种族 die 包装：清反攻
 	elif b.hp > 0.0 and b.state_ids.has(1):
 		b.state_ids.erase(1)
 		b.state_turns.erase(1)
