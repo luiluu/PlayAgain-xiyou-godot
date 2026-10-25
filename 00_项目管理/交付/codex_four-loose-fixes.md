@@ -161,3 +161,7 @@
 - 同步真正通过后仅跑rules基础段＋cat／enemy_book／loose_fixes四场。规则947／5557应从旧参照0变为非0；此前其余11场直接依赖、power137/137、新专项126/126、cat994/994、enemy_book52/52已过，不重跑整批／全量／旧50%审查。apply_production.py已10da1d87执行，绝不能重复。
 - 完成后精简JSON、交付单写可合并交唐僧，自己的实现仍待Claude；只清本期four-loose-fixes临时输出（未完成前不清运行中的包装器目录）。旧原版证据、.sandbox、generated和整树永久保留，共用交接板／变更记录／步骤清单／当前状态只读。所有文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b；不新建／清理工作树，不reset/cherry-pick，不追无关main。
 - 2g仍bf585fdc未改，13场12过、formula_effects906/908；按最终别名链把resource_context.refresh add锁guard从仅XActor改为除XEnemy的基类分支，先跑formula_effects与state_effects_tp再判断。完整预览空结果槽／两个Apply宿主接口仍按2g原交付停手范围，不混四零散。50%审查二期0b00c374交总装另合，不重做。全局排队入口／证据保留开关优化建议已登记，不动哪吒／木吒工具。
+
+## 沙僧62接手（2026-10-25）
+
+- 沿既有树继续，HEAD b71f3105，接手时工作区干净；额度五小时46%、周22%。唯一最终同步仍运行，不重复启动。日志已有14项探针通过，未见失败；先等待终态，再核范围与补测约定四场。共用登记只读，原版证据与运行目录保留。
