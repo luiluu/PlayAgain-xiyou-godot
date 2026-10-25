@@ -14,6 +14,7 @@ function fresh(count=0){
   w.$gameParty._actors=w.Array.from(ids);w.$gameParty._battleMembers=w.Array.from(ids.concat(Array(5-ids.length).fill(0)));
   ids.forEach(id=>{const a=w.$gameActors.actor(id);a._level=37;});
   w.$gameSystem.setDifficultyId(3);w.$gameParty._inBattle=false;w.$gameTroop.clear();
+  w.BattleManager._actionBattlers=[];w.BattleManager._otbTurnOrder=[];w.BattleManager._otbNextTurnOrder=[];
 }
 function snap(e,name){return {name,id:e.enemyId(),count:e._codexBossStrongCount,boss:D.isBoss(e),rate:D.attributeRate(e),armor:D.hasHyperArmor(e),
   hp:e.hp,mp:e.mp,param:Array.from({length:8},(_,i)=>e.param(i)),states:Array.from(e._states),turns:Object.fromEntries(Object.entries(e._stateTurns).filter(([id])=>e.isStateAffected(+id)))};}
