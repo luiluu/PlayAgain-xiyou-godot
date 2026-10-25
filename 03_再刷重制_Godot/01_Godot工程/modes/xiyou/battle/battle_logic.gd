@@ -197,7 +197,7 @@ func view_of(b: XBattler) -> Dictionary:
 		if int(st.get("iconIndex", 0)) > 0:
 			icons.append(int(st.iconIndex))
 	return {"hp": b.hp, "mp": b.mp, "tp": b.tp, "mhp": b.mhp, "mmp": b.mmp, "mtp": b.max_tp(), "dead": b.is_dead(),
-		"guarding": b.guarding, "can_move": can_move(b), "icons": icons, "shield": b.shield}
+		"guarding": b.guarding, "can_move": can_move(b), "icons": icons, "shield": b.shield, "look": XAppearance.battler_key(b)}  # look：换装卡换图（画面用）
 
 
 ## 全体战斗者 → view_of
