@@ -21267,6 +21267,261 @@
     }
    },
    "errors": []
+  },
+  {
+   "id": "interleaved.results",
+   "setup": {
+    "count": 3,
+    "armor": true,
+    "entry": "process",
+    "kind": "HP",
+    "change": "-7",
+    "selector": "TARGETS",
+    "targets": [
+     "b"
+    ],
+    "interleaved": true
+   },
+   "observed": {
+    "rate": 1.6,
+    "resolved": [
+     "b"
+    ],
+    "returned": true,
+    "before": {
+     "a": {
+      "hp": 500,
+      "mp": 300,
+      "tp": 0,
+      "shield": 0,
+      "dirty": true,
+      "states": [
+       2651
+      ],
+      "result": {
+       "hpAffected": false,
+       "hpDamage": 0,
+       "mpDamage": 0,
+       "tpDamage": 0,
+       "addedStates": [],
+       "removedStates": []
+      }
+     },
+     "b": {
+      "hp": 500,
+      "mp": 300,
+      "tp": 0,
+      "shield": 0,
+      "dirty": false,
+      "states": [],
+      "result": {
+       "hpAffected": false,
+       "hpDamage": 0,
+       "mpDamage": 0,
+       "tpDamage": 0,
+       "addedStates": [],
+       "removedStates": []
+      }
+     },
+     "c": {
+      "hp": 500,
+      "mp": 300,
+      "tp": 0,
+      "shield": 0,
+      "dirty": false,
+      "states": [],
+      "result": {
+       "hpAffected": false,
+       "hpDamage": 0,
+       "mpDamage": 0,
+       "tpDamage": 0,
+       "addedStates": [],
+       "removedStates": []
+      }
+     },
+     "p106": {
+      "hp": 500,
+      "mp": 300,
+      "tp": 0,
+      "shield": 0,
+      "dirty": false,
+      "states": [],
+      "result": {
+       "hpAffected": false,
+       "hpDamage": 0,
+       "mpDamage": 0,
+       "tpDamage": 0,
+       "addedStates": [],
+       "removedStates": []
+      }
+     },
+     "p101": {
+      "hp": 500,
+      "mp": 200,
+      "tp": 0,
+      "shield": 0,
+      "dirty": false,
+      "states": [],
+      "result": {
+       "hpAffected": false,
+       "hpDamage": 0,
+       "mpDamage": 0,
+       "tpDamage": 0,
+       "addedStates": [],
+       "removedStates": []
+      }
+     },
+     "p100": {
+      "hp": 500,
+      "mp": 300,
+      "tp": 0,
+      "shield": 0,
+      "dirty": false,
+      "states": [],
+      "result": {
+       "hpAffected": false,
+       "hpDamage": 0,
+       "mpDamage": 0,
+       "tpDamage": 0,
+       "addedStates": [],
+       "removedStates": []
+      }
+     }
+    },
+    "after": {
+     "a": {
+      "hp": 500,
+      "mp": 300,
+      "tp": 0,
+      "shield": 0,
+      "dirty": true,
+      "states": [
+       2651
+      ],
+      "result": {
+       "hpAffected": false,
+       "hpDamage": 0,
+       "mpDamage": 0,
+       "tpDamage": 0,
+       "addedStates": [],
+       "removedStates": []
+      }
+     },
+     "b": {
+      "hp": 489,
+      "mp": 292,
+      "tp": 0,
+      "shield": 0,
+      "dirty": true,
+      "states": [],
+      "result": {
+       "hpAffected": true,
+       "hpDamage": 11,
+       "mpDamage": 8,
+       "tpDamage": 0,
+       "addedStates": [],
+       "removedStates": []
+      }
+     },
+     "c": {
+      "hp": 489,
+      "mp": 300,
+      "tp": 0,
+      "shield": 0,
+      "dirty": true,
+      "states": [],
+      "result": {
+       "hpAffected": true,
+       "hpDamage": 11,
+       "mpDamage": 0,
+       "tpDamage": 0,
+       "addedStates": [],
+       "removedStates": []
+      }
+     },
+     "p106": {
+      "hp": 500,
+      "mp": 300,
+      "tp": 0,
+      "shield": 0,
+      "dirty": false,
+      "states": [],
+      "result": {
+       "hpAffected": false,
+       "hpDamage": 0,
+       "mpDamage": 0,
+       "tpDamage": 0,
+       "addedStates": [],
+       "removedStates": []
+      }
+     },
+     "p101": {
+      "hp": 500,
+      "mp": 200,
+      "tp": 0,
+      "shield": 0,
+      "dirty": false,
+      "states": [],
+      "result": {
+       "hpAffected": false,
+       "hpDamage": 0,
+       "mpDamage": 0,
+       "tpDamage": 0,
+       "addedStates": [],
+       "removedStates": []
+      }
+     },
+     "p100": {
+      "hp": 500,
+      "mp": 300,
+      "tp": 0,
+      "shield": 0,
+      "dirty": false,
+      "states": [],
+      "result": {
+       "hpAffected": false,
+       "hpDamage": 0,
+       "mpDamage": 0,
+       "tpDamage": 0,
+       "addedStates": [],
+       "removedStates": []
+      }
+     }
+    },
+    "outsideBefore": {
+     "hp": 489,
+     "mp": 292,
+     "tp": 0,
+     "shield": 0,
+     "dirty": true,
+     "states": [],
+     "result": {
+      "hpAffected": true,
+      "hpDamage": 11,
+      "mpDamage": 8,
+      "tpDamage": 0,
+      "addedStates": [],
+      "removedStates": []
+     }
+    },
+    "outsideAfter": {
+     "hp": 488,
+     "mp": 292,
+     "tp": 0,
+     "shield": 0,
+     "dirty": true,
+     "states": [],
+     "result": {
+      "hpAffected": true,
+      "hpDamage": 1,
+      "mpDamage": 8,
+      "tpDamage": 0,
+      "addedStates": [],
+      "removedStates": []
+     }
+    }
+   },
+   "errors": []
   }
  ]
 }

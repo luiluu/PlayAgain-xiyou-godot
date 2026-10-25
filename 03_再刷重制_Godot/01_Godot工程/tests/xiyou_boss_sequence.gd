@@ -83,6 +83,17 @@ func run_case(c: Dictionary) -> void:
 		seq._modify(str(spec.kind), command, seq.make_targets(str(spec.selector)))
 	else:
 		seq.run()
+	if spec.get("interleaved", false):
+		# 原版：一次数值指令后执行普通MP伤害，再对另一目标执行数值指令。
+		# 后一指令不能把前一目标的结果槽回写为旧值。
+		var mid := XResourceContext.new()
+		mid.seed_result(b, b.runtime_result)
+		logic._action_resources = mid
+		logic.execute_mp_damage(a, b, 5.0, false)
+		mid.publish()
+		logic._action_resources = null
+		seq.targets = [third]
+		seq._modify(str(spec.kind), command, [third])
 	check(c.id + ".domain_restored", seq._resources.boss_output.is_empty())
 	check(c.id + ".diagnostic", seq._resources.error.is_empty(), seq._resources.error)
 	for k in bs:
@@ -127,11 +138,11 @@ func _ready() -> void:
 func _run() -> void:
 	var fixture: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/boss_sequence_oracle.json"))
 	check("source", fixture.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("complete", fixture.cases.size() == 87)
+	check("complete", fixture.cases.size() == 88)
 	var ids := {}
 	for c in fixture.cases:
 		ids[c.id] = true
-	check("unique", ids.size() == 87)
+	check("unique", ids.size() == 88)
 	boundaries()
 	for c in fixture.cases:
 		check(c.id + ".native", c.errors.is_empty())
