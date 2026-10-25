@@ -112,8 +112,9 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	# YEP Core setters skip refresh for an exactly unchanged input, after gain writes slots.
 	_set_resource(b, resource, old + amount)
 	boss_output.leave_direct()
-	# krz_state_re 的 gainHp／gainMp／gainTp：按请求值非零在调用结束后才标 dirty（本次内部 refresh 仍用旧缓存）
-	if requested != 0.0:
+	# KRZ 收到 Boss 缩放后的值；敌人 gainHp 另在 ShieldSystem 吸收之后才进入 KRZ。
+	# 角色 gainHp 自有包装收到护盾前值。取整／敌人护盾归零均不额外置 dirty。
+	if shown != 0.0:
 		b.param_mark_dirty()
 	var after := snapshot(b)
 	var entry := {"receiver": labels.get(b, "b"), "resource": resource, "requestedDelta": requested,
