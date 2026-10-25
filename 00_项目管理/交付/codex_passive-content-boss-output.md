@@ -1,7 +1,7 @@
 # 交付：codex/passive-content-boss-output
 
 - 车道／工作者：规则／沙僧（Codex，重制_沙僧_66）
-- 状态：进行中；从已验04e54453在同树新分支接手，工作区干净，无在途长任务。
+- 状态：可合并；从已验04e54453在同树新分支接手，工作区干净，无在途长任务。
 - 开工：2026-10-25；实查五小时66%、周40%。只改本车道交付单，共用登记只读。
 - 本期先补冻结原版参照，交普通executeHpDamage／executeMpDamage输出倍率；直接gain／set、行动序列和状态来源上下文另分可验小期，不宣称已完成。
 - 依赖／已交：Boss属性与生命周期04e54453、普通静态eb6fff3f及其前置顺序照各自交付单；不重做旧29组或8场。
@@ -19,9 +19,11 @@
 - 冻结原版78组：0／1／3／5名超强者、霸体开关、HP／MP正负零与小数、吸取／自身吸取、普通／名单／备注Boss、角色来源、角色／敌人护盾、死亡复活缺图标。MP伤害类型冻结库缺失，使用普通技能数据副本仅指定damage.type=2，所有结算方法均为原版；HP与两类吸取用真实技能1／865／500。
 - 只交普通结算入口；直接gain／set与action.apply／executeDamage／applyPostDamageEval上下文、行动序列、状态来源与1341／2550特殊反应仍未接，不自评完成度、不自销核。
 
-## 验证（收尾填写）
+## 验证
 
-- 78组原版errors空；最终修正before结果数组深复制及结算后图标比较，重新采样中。
+- [精简证据](../核查范围/Boss普通输出专项_20261025.json)：最终78组原版errors空，夹具与.sandbox原件逐对象相等，专项核对runtimeInputs与generated manifest。before结果数组深复制，图标按结算后时点比较。
+- 最终专项3823／3823；直接依赖formula_effects908、imported_balance273、shield565、troop_events_half2951（严格集合19＋额外伤害19仍全保留）、zhenqi_daofa68，总8588／8588；各场最终单次通过、无偶发。
+- 检查.sh原文档／JSON／链接／开发编号块通过，MV访问守卫16／16，git diff --check通过。数值实现00524617，后续仅修测试入口、快照与验收记录。
 - Godot导入无SCRIPT ERROR／ERROR。首次专项测试有误写的XDB.load_db入口，已主动终止自己的任务并修正；初次短跑3823项中3817项通过，六项失败均为快照／图标时点，未改数值实现来绕过。
 - 原版早期宿主失败与浅快照原件全部留在mv_oracle/.sandbox；不当作有效参照／不称偶发。未改切片／转换器，不重同步或跑旧8场；本期只新增专项和直接依赖。
 
@@ -31,3 +33,9 @@
 - 普通入口缩放落在battle_logic.gd的_boss_output_value，后期settled栈必须避免这次已缩放值在gain／set再次被放大。当前resource_context.gd、damage.gd、state_effects.gd均未动；formula_execution／mv_event_core和两块TP Apply宿主仍未交接，不碰。
 - 后续分别取BattleManager.processActionSequence、actionHp／MpModify目标域、Game_Battler.customEffectEval的stateOrigin、Game_Action.customEffectEval仅reactState的1341／2550来源参照。未接宿主明确留诊断，不为尾巴拖住已交小期。
 - 前期权能五本／容量满返书与预约1317／PREE-ASUP／穿武器动态链、race-battle接口等沿用旧单，不重复旧338组。50%审查二期仍另合，依赖顺序保持。
+
+## 收尾与保留
+
+- 未改共用交接板／变更记录／步骤清单／当前状态；本期全部提交待Claude核查。主工作区main仍为祖先，无新提交需合；未重同步、未重复前期29组／8场或338组。
+- 全部长任务已终态。本期boss66-*临时输出在精简证据入Git后清理；所有原版.sandbox／旧证据／generated及整树保留，交付后不得清理此工作树。
+- 保留high强度完成此次设计与排查；当前没有运行中调到medium的接口，未声称已切换。
