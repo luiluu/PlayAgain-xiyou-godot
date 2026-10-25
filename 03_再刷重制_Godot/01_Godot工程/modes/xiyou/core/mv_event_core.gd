@@ -332,6 +332,15 @@ func _execute(c: Dictionary):
 				var learned: Array = a.change_level_mv(a.level + value)
 				if bool(p[5]) and a.level > before:
 					_display_level_up(a, learned)
+		317:
+			# 更改能力值 [指定方式, 角色/变量, 能力编号, 0 增 1 减, 操作数类型, 操作数]；Game_Actor.addParam 后 refresh 把 HP／MP 截到上限
+			var amount := _operand(int(p[4]), int(p[5]))
+			if int(p[3]) == 1:
+				amount = -amount
+			for a in _actors_ex(int(p[0]), int(p[1])):
+				XParamPlus.add(state(), a.actor_id, int(p[2]), amount)
+				a.hp = minf(a.hp, a.mhp)
+				a.mp = minf(a.mp, a.mmp)
 		318:
 			# 增减技能 [指定方式, 角色/变量, 0 学会 1 遗忘, 技能]；角色 0 为全队
 			var aid := int(p[1]) if int(p[0]) == 0 else int(state().variable(int(p[1])))
@@ -551,6 +560,12 @@ func _plugin_command(line: String) -> void:
 		"PHWarehouse":
 			if XWarehouse.plugin_command(state(), args):  # PH_Warehouse create／remove（show 交给宿主）
 				return
+		"Autosave", "EnableAutosave", "DisableAutosave":
+			# YEP_X_Autosave：「Autosave」存到最近用过的存档位（没手动存过就不存）；Enable／Disable 只开关该插件的选项，
+			# 重制版没有这个选项，所以只保留存档动作（原版弹的「存档成功！」小字不做）
+			if args[0] == "Autosave" and XSave.current_slot > 0:
+				XSave.save(XSave.current_slot)
+			return
 		"StarEIBook":
 			# Star_EquipInlayBook：GetAll／RomGet 解锁图鉴条目。正式版只在打开图鉴前 GetAll，图鉴总是全部列出（见 XInlayBook），不记解锁
 			if args.size() >= 2 and ["getall", "romget"].has(args[1].to_lower()):
