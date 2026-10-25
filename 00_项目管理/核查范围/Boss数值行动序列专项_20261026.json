@@ -405,5 +405,17 @@
     "modes/xiyou/core/boss_output_context.gd": "a36e3bd14f3159f7dcec7b87547350744eacef8f0fcb849ee87aef58d63d29a6",
     "modes/xiyou/battle/action_sequence.gd": "a59cc93f774d04d21c21b5264112d35dc844e5c379c8ca1b54f3b7ceaf3817bd",
     "modes/xiyou/battle/battle_logic.gd": "58363c492d876a65b17743fc7a77e0d9297b0ebc1d475aa45aaa032301a6621f"
+  },
+  "cleanup": {
+    "successfulTaskNames": [
+      "boss69-sequence-smoke",
+      "boss69-sequence-full",
+      "boss69-sequence-final2",
+      "boss69-sequence-interleaved",
+      "boss69-sequence-import",
+      "boss69-sequence-final3"
+    ],
+    "removedTemporaryPaths": 32,
+    "preserved": "All failed logs, determinism baseline snapshot and logs, all native .sandbox artifacts, generated and worktree"
   }
 }

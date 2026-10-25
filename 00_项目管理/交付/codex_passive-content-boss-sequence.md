@@ -14,7 +14,7 @@
 - **继承失败**：此前本期11场批次的xiyou_determinism为374／382，8个early_inventory_rule稳定失败；隔离e1925bea基线同374／382且失败行逐条相等，无Script错误。快照929个基线已跟踪文件逐字节等于e1925bea后固化为副本，generated仅共享且记录manifest SHA。不是偶发，不将11场写成全过，不夹带无关掉落／测试修复。最后slots小修后验证10场；不声称最终版本的确定性场景已通过。
 - 限制：通用EVAL宿主未移植，空targets的FIRST原版异常行为未声明对齐；其他选择器暂为空表，不扩已采范围。stateOrigin、1341／2550反应来源下一期另取参照，尚未开始。本期没有完整战斗预览／两块TP Apply或敌人永久账本的新结论。
 - 合并：依赖e1925bea（上一独立交付）；同树分支codex/passive-content-boss-sequence。共用交接板／变更记录／步骤清单／当前状态未改。全部本车道提交待Claude核查，不自销核、不自评进度。总装按战斗规则影响面选测；基线确定性遗留请登记并派测试／掉落车道归因，精简证据与失败原件均在。
-- 清理：精简证据入Git后只清本车道成功临时输出；所有失败日志、所有.sandbox、generated与整树保留。文档／JSON／链接／编号、node语法、MV守卫16项与差异格式在最后编辑后复跑。
+- 收尾与清理：文档／JSON／链接／编号、node语法、MV守卫16／16与差异格式通过。精简证据20969375入Git后，已清本车道6项成功任务临时输出；所有失败日志、确定性基线快照、所有.sandbox、generated与整树保留。
 
 ## 本小期范围
 
@@ -48,3 +48,15 @@
 - 追加interleaved原版1例通过（4f6e98727f6e49ceb0b9a02fb1f54dcb），与87原件来源一致、合成88唯一ID并保留两原件。Godot旧实现实测8312／8315，三处结果槽确实把普通MP伤害8回写成0；已在每次数值gain开始清理该序列resources的旧slots后seed目标，publish仅本次操作所触及对象。TP继续原路径，不扩本期未采的TP资源语义。相关10场需按最终版本再跑。
 
 - boss69-sequence-import exit0且无SCRIPT ERROR／ERROR／Parse／Compile Error；新增xiyou_boss_sequence UID已生成，顺带非车道xiyou_battle_common_events.gd.uid移存.sandbox/boss69_unrelated_import_uid.txt，未夹带。下一步最终88例＋九依赖，不重复已确认的确定性基线失败。
+
+## 沙僧69→70（同树自动上下文接力）
+
+- 69按既定上下文40%接力，创建70后停，70是唯一后续执行者；不是额度停手。最后实查五小时75%、周57%，先实查，95%才WIP停、周98%收尾。设计／疑难显式high；本轮无本会话thinking切换接口，未虚称切换。下一会话创建时请求high。
+- 所有文件命令必须显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。只用此树，当前分支codex/passive-content-boss-sequence，以本节提交后HEAD为准，工作区应干净、无在途长任务。不在main写、不创建／清理worktree、不reset／cherry-pick、不建automation、不向唐僧或其他已有会话发消息。共用交接板／变更记录／步骤清单／当前状态只读，只写自己车道交付单。保留所有.sandbox、generated与整树。全部提交待Claude，不自销核、不自评完成度。
+- **本轮独立两期已交，不重跑**：① codex/passive-content-boss-context最终e1925bea，可合并，原123＋护盾完全吸收6＝129例，与夹具并集相等；Boss域16621＋四依赖25217＝41838／41838，无偶发。69补完0396ae52 dirty修复最终验收，精简证据Boss行动资源域专项_20261025.json，成功67／68／69临时输出已清，失败和原版.sandbox保留。② 当前Boss数值序列本单：运行时最终83fc68f4、专项UID72b69b64、证据20969375；原87＋交错1＝88例，新增8315＋九直接依赖＝50671／50671，均单次通过。最终任务5db85d0042fe4933a9deb3fb156df054已done exit0、无SCRIPT ERROR；精简证据Boss数值行动序列专项_20261026.json，成功6任务临时输出已清，失败保留。
+- 序列实现：XBossOutputContext.enter_targets显式列表帧；XActionSequence.run独立_resources，嵌套只共享Boss域；_modify按实际make_targets列表推域，sequence_gain有resources时clear旧slots→seed目标空result→gain→publish→返回显示值。清旧slots有原版交错样本确认：第一目标HP数值后普通MP伤害8，再另一目标HP数值，不能把前目标mpDamage回写成0。TP／无resources的敌群事件仍走原路径；索引ACTOR／ENEMY与FIRST只补有样本的写法。任意GDScript致命错误恢复、通用EVAL宿主、空targets的FIRST原版异常均未宣称实现。
+- **确定性继承失败不要盲重跑／夹带无关修复**：本期第一次11场中xiyou_determinism为374／382，8个early_inventory_rule稳定失败。用.sandbox/boss69_determinism_baseline_project隔离e1925bea基线也374／382且失败行逐条相等，无Script错误；该快照929个基线跟踪文件逐字节等于e1925bea并固化，generated共享且manifest SHA入证据。两边日志和失败任务保留；最后slots小修后验收10场，未声称最终版本确定性通过。已写交付单留总装登记／派测试或掉落车道处理，不说整轮全绿。
+- 下一期仍按原排程：已交本期后，先开同树新分支做stateOrigin，再接1341／2550特殊react来源（可各自独立小期），每入口先原版宿主冒烟、再矩阵，不能仅读码改规则。**这两项69尚未开始代码或采样**。来源位置：冻结源js/codex/runtime/installBossDifficultyRuntime.js最后stateEval／actionStateEval；YEP_BuffsStatesCore.js的stateOrigin、Game_Battler.customEffectEval与Game_Action.customEffectEval。Godot core/state_effects.gd的context_for已有origin，run_one尚未按Boss来源推域；resources来自ctx／lifecycle。普通action phase不应一律改用stateOrigin；原版仅action reactState1341／2550特殊改写，其余沿外层action域。Battler版所有customEffectEval则按origin→holder域，必须有低倍率／空域遮蔽，防借外层Boss域。1341来源side.stateOrigin(id)，受害人target；2550来源side，受害人action.subject。再读原宿主调用参数，勿照此简写直接实现。
+- 不改未交接formula_execution.gd／mv_event_core；公式set仍unsupported，post／execute脚本等价域回放不代表customPre／PostDamageEval宿主移植。数值序列探针独立文件、未加入同步PROBES，不覆盖旧参照。导入若又生xiyou_battle_common_events.gd.uid，移存.sandbox独立名，勿夹带；此次存boss69_unrelated_import_uid.txt。
+- 长期顺序：Boss剩余来源尾巴→权能五本1654／1656／1674／1683／1718→容量满变量9返书／预约1317→PREE／ASUP→WPNM／SkEType与race-battle等八戒接口→全部完成且额度足才核他人。旧04e54453 Boss属性／2651生命周期、ec75a3b1普通输出不重做。两块TP Apply／完整预览空槽、敌人永久账本未做。依赖链b135ee33→026f6ee3→b495833a→7ef7584a→7bfb4807→eb6fff3f→04e54453→ec75a3b1→e1925bea→当前分支；50%审查二期0b00c374另合。不夹带无关main或大范围重审；确需合main用--no-commit，执行者Codex（沙僧）／待Claude尾注。
+- 共用4槽排队仍遵守，不绕槽、不加上限、不杀别人、不动工具车道文件。长批python3 -u、XIYOU_TEST_HEARTBEAT=30、长任务.py start脱离会话＋等待任务.sh --timeout45，每次不超过60秒。先commit再长操作，收尾专项＋直接依赖、原检查.sh文档块、node --check、MV守卫16项、git diff --check；精简证据入Git后清自己成功临时输出，失败与所有.sandbox不删。
