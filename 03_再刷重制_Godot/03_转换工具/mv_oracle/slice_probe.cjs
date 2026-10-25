@@ -11,7 +11,8 @@
 const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
-const OUT = path.resolve(__dirname, '.sandbox/slice');
+// XIYOU_SLICE_OUT：回归测试把产物写到自己的临时目录（不碰同步用的 .sandbox/slice）
+const OUT = process.env.XIYOU_SLICE_OUT || path.resolve(__dirname, '.sandbox/slice');
 const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));
 // 增量同步只跑部分敌群时，由 XIYOU_PROBE_UNITS 给出（其余由 oracle_shard_merge.cjs 从上次产物取回）
 const UNITS = process.env.XIYOU_PROBE_UNITS ? new Set(JSON.parse(process.env.XIYOU_PROBE_UNITS)) : null;
@@ -101,6 +102,9 @@ function measure(w, user, target, sid, tag) {
   item.damage.variance = 0;
   // onPreDamageStateEffects 会把命中附带的状态（如陈 74 的普攻给目标加灼伤）留在目标上，污染之后的伤害行；量完撤掉新增状态
   const stateBefore = [user, target].map(b => b._states.slice());
+  // 有的公式带副作用会改目标生命（敌人 160 的技能 857「净化之雷」custom 公式把角色 9 打到 0），之后拿同一个目标量的行就在 0 血下算
+  // （reach4 敌人 947 技能 5557「b.hp*0.99」量出 0，哪吒 2026-10-25）：量完还原双方 hp／mp／tp，取样口径始终是满血目标，与 Godot xiyou_rules 一致
+  const vitals = [user, target].map(b => [b._hp, b._mp, b._tp]);
   const act = new w.Game_Action(user); act.setSkill(sid);
   act.itemCri = () => 0;
   const row = {...tag, skill: sid, skillName: item.name, type: item.damage.type, element: item.damage.elementId, physical: act.isPhysical(), magical: act.isMagical()};
@@ -111,6 +115,7 @@ function measure(w, user, target, sid, tag) {
   } catch (e) { row.error = String(e.message || e); }
   item.damage.variance = saved;
   [user, target].forEach((b, i) => b._states.filter(id => !stateBefore[i].includes(id)).forEach(id => b.removeState(id)));
+  [user, target].forEach((b, i) => { [b._hp, b._mp, b._tp] = vitals[i]; });
   return row;
 }
 
