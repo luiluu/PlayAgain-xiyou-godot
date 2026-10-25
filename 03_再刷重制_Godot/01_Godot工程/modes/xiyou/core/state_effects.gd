@@ -167,7 +167,7 @@ static func _add_params(effect: Dictionary, ctx: Dictionary) -> void:
 			return
 		# Native isDead also requires isAppeared. HP<=0 is an independent
 		# short-circuit, so hidden HP0 still grants the permanent bonus.
-		var death_state := target.state_ids.has(1) and (not target is XEnemy or not target.hidden)
+		var death_state: bool = target.state_ids.has(1) and (not target is XEnemy or not (target as XEnemy).hidden)
 		if not (target.hp <= 0.0 or death_state):
 			return
 	if not ctx.user is XActor:
