@@ -136,6 +136,10 @@ func _execute_env(c: Dictionary):
 			if _member_states_script(code):
 				index = at
 				return null
+			if code.strip_edges() == "Star.PetSystem.PetGet()":  # 公共事件 173：捕获网（XPetCapture）
+				logs.append_array(XPetCapture.pet_get(logic))
+				index = at
+				return null
 			return super(c)
 		_:
 			return super(c)

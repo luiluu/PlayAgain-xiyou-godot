@@ -618,6 +618,7 @@ func _drive_events() -> Array:
 	var logs := []
 	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
 	while not _check.is_empty():
+		if _runner == null: _runner = XBattleCommonEvent.take(self)  # setupBattleEvent：预约的公共事件（技能／物品效果 44）先于敌群页
 		if _runner == null:
 			if is_won() or is_lost() or int(_check.guard) > pages.size():
 				break
@@ -1389,8 +1390,6 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 			if t is XActor:
 				t.learn_skill(int(eff.dataId))
 				t.refresh_passive()
-		44:
-			r.events = r.get("events", []) + XPetCapture.item_event(self, r.skill, int(eff.dataId), t)  # 只认捕捉的公共事件 173
 
 
 ## 行动序列 ADD STATE（Game_Battler.addState → isStateAddable：活着、未抵抗（IMMORTAL 期间阵亡视为抵抗）；阵亡状态直接倒下）
