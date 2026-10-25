@@ -27,6 +27,7 @@ if(!process.argv.includes('--smoke')){
   add(`percent.${kind}`,{kind,change:'-10%'});
   add(`variable.${kind}`,{kind,change:'-VAR 20',variable:7.9});
  }
+ add('interleaved.results',{targets:['b'],interleaved:true});
  for(const actorTarget of [false,true])for(const shield of [3,50,1000])
   add(`shield.${+actorTarget}.${shield}`,{actorTarget,shield,targets:['b'],change:'-101'});
 }
@@ -51,6 +52,7 @@ const cases=specs.filter(row=>!only||only.test(row.id)).map(({id,spec})=>makeCas
  const command=spec.kind+' '+spec.change,args=w.Array.from([spec.selector]);
  const resolved=BM.makeActionTargets(spec.selector).map(x=>Object.entries(bs).find(([,v])=>v===x)?.[0]||'party');
  const returned=spec.entry==='direct'?BM[spec.kind==='HP'?'actionHpModify':'actionMpModify'](command,args):BM.processActionSequence(command,args);
+ if(spec.interleaved){action.executeMpDamage(b,5);BM._targets=w.Array.from([c]);BM.processActionSequence(command,args);}
  const after=Object.fromEntries(Object.entries(bs).map(([k,v])=>[k,snap(v)]));
  const outsideBefore=snap(b);b.gainHp(-1);const outsideAfter=snap(b);
  return {rate:D.outputRate(a),resolved,returned,before,after,outsideBefore,outsideAfter};
