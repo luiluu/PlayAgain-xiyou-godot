@@ -1073,6 +1073,258 @@
    "errors": []
   },
   {
+   "id": "battle_image",
+   "setup": {
+    "actors": [
+     1,
+     174
+    ],
+    "learn": 6801,
+    "state": 1201
+   },
+   "observed": {
+    "rows": [
+     {
+      "actor": 1,
+      "tag": "plain",
+      "battle": "gxysv2",
+      "sv": [],
+      "states": []
+     },
+     {
+      "actor": 1,
+      "tag": "card",
+      "battle": "Enemy_General_M",
+      "sv": [],
+      "states": [
+       1201
+      ]
+     },
+     {
+      "actor": 1,
+      "tag": "card_disabled",
+      "battle": "gxysv2",
+      "sv": [],
+      "states": [
+       1201
+      ]
+     },
+     {
+      "actor": 1,
+      "tag": "removed",
+      "battle": "gxysv2",
+      "sv": [],
+      "states": []
+     },
+     {
+      "actor": 1,
+      "tag": "dead",
+      "battle": "gxysv2",
+      "sv": [],
+      "states": [
+       1
+      ]
+     },
+     {
+      "actor": 1,
+      "tag": "revived",
+      "battle": "gxysv2",
+      "sv": [],
+      "states": []
+     },
+     {
+      "actor": 1,
+      "tag": "map",
+      "battle": "gxysv2",
+      "sv": [],
+      "states": []
+     },
+     {
+      "actor": 174,
+      "tag": "plain",
+      "battle": "Yunshang",
+      "sv": [
+       "SVspeed",
+       "SVzs0",
+       "SVzs1",
+       "SVzs10",
+       "SVzs11",
+       "SVzs12",
+       "SVzs13",
+       "SVzs14",
+       "SVzs15",
+       "SVzs16",
+       "SVzs17",
+       "SVzs2",
+       "SVzs3",
+       "SVzs4",
+       "SVzs5",
+       "SVzs6",
+       "SVzs7",
+       "SVzs8",
+       "SVzs9",
+       "sv"
+      ],
+      "states": []
+     },
+     {
+      "actor": 174,
+      "tag": "card",
+      "battle": "Enemy_General_M",
+      "sv": [],
+      "states": [
+       1201
+      ]
+     },
+     {
+      "actor": 174,
+      "tag": "card_disabled",
+      "battle": "Yunshang",
+      "sv": [
+       "SVspeed",
+       "SVzs0",
+       "SVzs1",
+       "SVzs10",
+       "SVzs11",
+       "SVzs12",
+       "SVzs13",
+       "SVzs14",
+       "SVzs15",
+       "SVzs16",
+       "SVzs17",
+       "SVzs2",
+       "SVzs3",
+       "SVzs4",
+       "SVzs5",
+       "SVzs6",
+       "SVzs7",
+       "SVzs8",
+       "SVzs9",
+       "sv"
+      ],
+      "states": [
+       1201
+      ]
+     },
+     {
+      "actor": 174,
+      "tag": "removed",
+      "battle": "Yunshang",
+      "sv": [
+       "SVspeed",
+       "SVzs0",
+       "SVzs1",
+       "SVzs10",
+       "SVzs11",
+       "SVzs12",
+       "SVzs13",
+       "SVzs14",
+       "SVzs15",
+       "SVzs16",
+       "SVzs17",
+       "SVzs2",
+       "SVzs3",
+       "SVzs4",
+       "SVzs5",
+       "SVzs6",
+       "SVzs7",
+       "SVzs8",
+       "SVzs9",
+       "sv"
+      ],
+      "states": []
+     },
+     {
+      "actor": 174,
+      "tag": "dead",
+      "battle": "Yunshang",
+      "sv": [
+       "SVspeed",
+       "SVzs0",
+       "SVzs1",
+       "SVzs10",
+       "SVzs11",
+       "SVzs12",
+       "SVzs13",
+       "SVzs14",
+       "SVzs15",
+       "SVzs16",
+       "SVzs17",
+       "SVzs2",
+       "SVzs3",
+       "SVzs4",
+       "SVzs5",
+       "SVzs6",
+       "SVzs7",
+       "SVzs8",
+       "SVzs9",
+       "sv"
+      ],
+      "states": [
+       1
+      ]
+     },
+     {
+      "actor": 174,
+      "tag": "revived",
+      "battle": "Yunshang",
+      "sv": [
+       "SVspeed",
+       "SVzs0",
+       "SVzs1",
+       "SVzs10",
+       "SVzs11",
+       "SVzs12",
+       "SVzs13",
+       "SVzs14",
+       "SVzs15",
+       "SVzs16",
+       "SVzs17",
+       "SVzs2",
+       "SVzs3",
+       "SVzs4",
+       "SVzs5",
+       "SVzs6",
+       "SVzs7",
+       "SVzs8",
+       "SVzs9",
+       "sv"
+      ],
+      "states": []
+     },
+     {
+      "actor": 174,
+      "tag": "map",
+      "battle": "Yunshang",
+      "sv": [
+       "SVspeed",
+       "SVzs0",
+       "SVzs1",
+       "SVzs10",
+       "SVzs11",
+       "SVzs12",
+       "SVzs13",
+       "SVzs14",
+       "SVzs15",
+       "SVzs16",
+       "SVzs17",
+       "SVzs2",
+       "SVzs3",
+       "SVzs4",
+       "SVzs5",
+       "SVzs6",
+       "SVzs7",
+       "SVzs8",
+       "SVzs9",
+       "sv"
+      ],
+      "states": []
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
    "id": "owned",
    "setup": {
     "party": [

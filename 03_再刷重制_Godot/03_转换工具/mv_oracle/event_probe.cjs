@@ -159,6 +159,13 @@ function runCase(c) {
   trace = []; choiceSeen = {};
   const before = snap();
   const list = c.kind === 'common' ? w.$dataCommonEvents[c.common].list : w.$dataMap.events[c.event].pages[c.page].list;
+  // 第一条仓库指令就是「PHWarehouse show」（前面没有 create）的页（如青霞的第 2 页，正常流程里仓库已由第 1 页建好）：照原流程先建好默认仓库，
+  // 否则 PH_Warehouse.openWarehouse 取不到仓库、抛 lootBonus 错
+  const firstWarehouse = list.find(cmd => cmd.code === 356 && /^PHWarehouse /.test(String(cmd.parameters[0])));
+  if (firstWarehouse && /^PHWarehouse show /.test(String(firstWarehouse.parameters[0]))) {
+    const named = String(firstWarehouse.parameters[0]).match(/<([^>:]*)/);
+    if (named) w.PHPlugins.PHWarehouse.createWarehouse('<' + named[1] + '>');
+  }
   const it = new w.Game_Interpreter();
   it.setup(w.JsonEx.makeDeepCopy(list), c.event);
   const errors = [];

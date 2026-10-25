@@ -298,6 +298,12 @@ func _place_party(x: int, y: int, d: int) -> void:
 func _process(delta: float) -> void:
 	if XState.current:
 		XState.current.play_seconds += delta
+		# Star_PetSystem：新游戏／读档后每 5 分钟查一次神秘生物刷新（改事件独立开关，见 XPetCapture）
+		var pet_notes = XPetCapture.tick(XState.current)
+		if pet_notes != null:
+			refresh_events()
+			for t in pet_notes:
+				XToast.show_text(str(t))
 	if player:
 		var hanging := XHangUp.is_active(XState.current)
 		player.input_enabled = not busy and not _menu_open and not hanging

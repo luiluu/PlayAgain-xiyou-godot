@@ -4,3 +4,4 @@
 
 [node name="XiyouMap186" type="Node"]
 script = ExtResource("1")
+sections = ["gate", "legion"]

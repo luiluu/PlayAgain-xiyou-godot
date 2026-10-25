@@ -53,15 +53,30 @@ static func _tex(path: String) -> Texture2D:
 
 
 ## 战斗者外观：角色用 battlerName 侧视图；敌人有 <Sideview Battler> 时用侧视图，否则 sv_enemies 单图。
+## 角色的 battlerName 走 XCostumes.battler_name（换装卡：战斗中有卡状态且启用＝卡图，参照 costume_oracle 的 battle_image），
+## 启用卡图时 Mx.SuperSVMetaProvider 去掉角色自身的 SV 标签（XCostumes.sv_meta），卡图按原侧视图播放。
 static func for_battler(b: XBattler) -> XAppearance:
 	var data: Dictionary = (b as XActor).data() if b is XActor else (b as XEnemy).data()
-	var key := ""
 	if b is XActor:
-		key = "sv_actors/" + str(data.get("battlerName", ""))
-	else:
-		var side = data.get("meta", {}).get("Sideview Battler")
-		key = "sv_actors/" + str(side).strip_edges() if side != null else "sv_enemies/" + str(data.get("battlerName", ""))
+		var s := XState.current
+		return for_image("sv_actors/" + XCostumes.battler_name(s, b), XCostumes.sv_meta(s, b, data.get("meta", {})))
+	var side = data.get("meta", {}).get("Sideview Battler")
+	var key := "sv_actors/" + str(side).strip_edges() if side != null else "sv_enemies/" + str(data.get("battlerName", ""))
 	return for_image(key, data.get("meta", {}))
+
+
+## 按 battler_key（显示中的读数里记的）取角色外观：「图名」或「图名|card」（去掉自身 SV 标签）
+static func for_look(a: XActor, key: String) -> XAppearance:
+	var meta: Dictionary = a.data().get("meta", {})
+	return for_image("sv_actors/" + key.trim_suffix("|card"), XCostumes.strip_sv(meta) if key.ends_with("|card") else meta)
+
+
+## for_battler 会取的图与标签取舍；精灵比对它决定要不要换外观（Sprite_Actor.updateBitmap 每帧比 battlerName）
+static func battler_key(b: XBattler) -> String:
+	if b is XActor:
+		var s := XState.current
+		return XCostumes.battler_name(s, b) + ("|card" if XCostumes.active(s, b) else "")
+	return ""
 
 
 ## key：「文件夹/名」。meta：数据库备注（Mx_SuperSV 标签）。

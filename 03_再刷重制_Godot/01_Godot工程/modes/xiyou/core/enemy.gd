@@ -13,6 +13,8 @@ var difficulty_id := 2
 var letter := ""
 ## 敌群的隐藏成员（Game_BattlerBase._hidden）：没出现前不算活着也不算阵亡（isAppeared），335 出现
 var hidden := false
+## 可捕捉（Star_PetSystem 的 Game_Enemy.Capture，开战时掷，见 XPetCapture）：名字加「宝宝」
+var capture := false
 var _rates: Array = [1, 1, 1, 1, 1, 1, 1, 1]
 var _passive_cache := {}
 var elite := false
@@ -75,7 +77,7 @@ func data() -> Dictionary:
 	return XDB.rec("Enemies", enemy_id)
 
 func display_name() -> String:
-	return original_name() + letter
+	return original_name() + letter + ("宝宝" if capture else "")
 
 ## Game_Enemy.originalName：EliteEnemy 改写为神话敌人带「【神话】」前缀（不含同名字母）；makeUniqueNames 按它计数，
 ## 所以同一敌人一只神话一只普通时两边都只有一个，都不加字母

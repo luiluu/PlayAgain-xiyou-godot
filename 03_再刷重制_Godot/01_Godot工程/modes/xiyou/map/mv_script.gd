@@ -21,6 +21,7 @@ extends RefCounted
 ## - 更衣：if(ConfigManager.ChangeClothesLite.indexOf(N) == -1){ ConfigManager.ChangeClothesLite.push(N); } → XChangeClothes.unlock；
 ##   SceneManager.push(Scene_ChangeClothes) → host.open_change_clothes（XChangeClothes）。
 ## - 角色进阶：SceneManager.push(Scene_ActorAdvanced) → host.open_actor_advanced（XAdvance）。
+## - 魔兽要诀：Star.PetSystem.ComEveLearnSkill(N) → XPets.learn_book（出战宠物学技能，提示走 host.toast）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## CodexReincarnationRandom.entry：open 之后的选择结果 {accepted, hard}
@@ -185,6 +186,11 @@ static func _statements(js: String, interp) -> Array:
 			continue
 		if st == "CodexReincarnationRandom.finishEntry()":
 			continue
+		# 魔兽要诀（Star_PetSystem，公共事件 190～292）：出战宠物学技能，见 XPets.learn_book
+		m = _re("^Star\\.PetSystem\\.ComEveLearnSkill\\((\\d+)\\)$").search(st)
+		if m:
+			interp.host.toast(XPets.learn_book(s, int(m.get_string(1))))
+			continue
 		# 成就（Star_AchievementSystem，见 XAchievement）：宝箱、守层者、传送等事件里的 GetAcReward(N)；公共事件 431 打开成就界面
 		m = _re("^Star\\.AchievementSystem\\.GetAcReward\\((\\d+)\\)$").search(st)
 		if m:
@@ -320,7 +326,7 @@ static func _toaster_text(js: String) -> String:
 	if m == null:
 		return ""
 	var out := ""
-	for part in _concat_parts(m.get_string(1)):
+	for part in _concat_parts(_before_option(m.get_string(1))):
 		var p := str(part).strip_edges()
 		var lit := _re("^['\"](.*)['\"]$").search(p)
 		if lit:
@@ -341,6 +347,26 @@ static func _toaster_text(js: String) -> String:
 			continue
 		return ""
 	return out
+
+
+## message 后面跟的 ,color:'yellow' 之类选项不是文字：在引号和括号外的第一个逗号处截断
+static func _before_option(expr: String) -> String:
+	var quote := ""
+	var depth := 0
+	for i in range(expr.length()):
+		var ch := expr[i]
+		if quote != "":
+			if ch == quote:
+				quote = ""
+		elif ch == "'" or ch == "\"":
+			quote = ch
+		elif ch == "(":
+			depth += 1
+		elif ch == ")":
+			depth -= 1
+		elif ch == "," and depth <= 0:
+			return expr.left(i)
+	return expr
 
 
 ## 按引号外的 + 切开字符串拼接表达式

@@ -242,10 +242,10 @@ func _seal_release(o: Dictionary) -> void:
 	const SEALED := [15, 16, 18, 19]
 	var s := XState.new_game(int(o.fixture.difficulty), int(o.fixture.actor), [])
 	s.random_master = XRandomStream.hex64(1691)
-	# 参照直接在角色对象上做（原版 addActor 对地狱以下的超强者 104 其实拦下，角色没进队伍）；真实开战要在队伍里，所以临时放开挑战开关把 104 编入
+	# 参照直接在角色对象上做（原版 addActor 对地狱以下的超强者 104 其实拦下，角色没进队伍）；真实开战要在队伍里，所以放开挑战开关把 104 编入。
+	# 开关要开到战斗结束：battle_members 每次先 enforce_party，关着会把 104 清出出战栏（dev.170 起），开战就没有它
 	s.set_switch(2494, true)
 	s.add_actor(int(o.fixture.actor))
-	s.set_switch(2494, false)
 	var a: XActor = s.actor(int(o.fixture.actor))
 	for sid in o.fixture.skills:
 		a.learn_skill(int(sid))
@@ -276,6 +276,7 @@ func _seal_release(o: Dictionary) -> void:
 	var last: Dictionary = o.steps[o.steps.size() - 1]
 	check("seal1691.battle_start", read.call() == want.call(last), [read.call(), want.call(last)])
 	logic.end_battle()
+	s.set_switch(2494, false)
 	# 战后只比 1691 与装备／背包：参照直接调 onBattleEnd 后 1631（removeAtBattleEnd）仍在，未经真实战斗结束流程核实，不在此比
 	var got_after: Dictionary = read.call()
 	var want_after: Dictionary = want.call(o.afterBattle)

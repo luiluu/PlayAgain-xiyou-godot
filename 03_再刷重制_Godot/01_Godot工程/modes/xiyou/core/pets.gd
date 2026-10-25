@@ -216,6 +216,36 @@ static func set_team_a(s: XState, i: int) -> void:
 		_apply_skills(s, pet, true)
 
 
+## O-098：物品 372「魔兽要诀:高级灵根」原版指向公共事件 218，教的是 1673 高级灵甲术（与 373 相同），217「高级林根」(1672)
+## 没有物品引用。重制用 372 时改学 1672；设 false 恢复原版
+static var BOOK_FIX_372 := true
+
+
+## 魔兽要诀（公共事件 190～292 的 Star.PetSystem.ComEveLearnSkill）：出战宠物没学过且学习次数没满 → 学会、次数 +1、
+## refreshGTWar（撤掉再学会），提示「<技能名> 学习成功」；否则提示「该技能已存在」／「可学习技能已达上限」／「当前无出战宠物」，
+## 并退还最后用的道具（$gameParty._lastItem）。返回提示
+static func learn_book(s: XState, skill_id: int) -> String:
+	if BOOK_FIX_372 and s.last_item == 372 and skill_id == 1673:
+		skill_id = 1672
+	var pet := war_pet(s)
+	if not pet.is_empty():
+		pet.ls_max = maxi(int(pet.get("ls_max", 1)), 0)
+		pet.ls = clampi(int(pet.get("ls", 0)), 0, int(pet.ls_max))  # ensurePetLearningSlots
+	if not pet.is_empty() and int(pet.ls) < int(pet.ls_max) and not pet.skills.has(skill_id):
+		_apply_skills(s, pet, false)
+		pet.skills.append(skill_id)
+		pet.ls = int(pet.ls) + 1
+		_apply_skills(s, pet, true)
+		return str(XDB.rec("Skills", skill_id).get("name", "")) + " 学习成功"
+	if not XDB.rec("Items", s.last_item).is_empty():
+		s.gain_item(s.last_item, 1)
+	if not pet.is_empty() and pet.skills.has(skill_id):
+		return "该技能已存在"
+	if not pet.is_empty() and int(pet.ls) == int(pet.ls_max):
+		return "可学习技能已达上限"
+	return "当前无出战宠物"
+
+
 ## 出战宠物前 8 项加成（原版加进各队员 _paramPlus；角色能力里还没读，见文件头）
 static func war_param_plus(s: XState, i: int) -> float:
 	var pet := war_pet(s)
