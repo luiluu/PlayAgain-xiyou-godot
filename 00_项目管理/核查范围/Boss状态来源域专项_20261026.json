@@ -1,0 +1,229 @@
+{
+  "status": "dedicated and seven direct dependencies passed; awaiting Claude cross-review",
+  "baseline": "f8046576",
+  "scope": "Battler customEffectEval stateOrigin domain; ordinary Action phases retain outer domain",
+  "oracleCases": 121,
+  "oracleErrors": [],
+  "sourceIdentityEqual": true,
+  "nativeEqualsFixture": true,
+  "fixtureSha256": "23b9fdc27d98794fb56a16f091cb9b8d92aaa5c99440d4fc6ec91d7e45ddcb49",
+  "nativeSha256": "23b9fdc27d98794fb56a16f091cb9b8d92aaa5c99440d4fc6ec91d7e45ddcb49",
+  "finalResults": {
+    "xiyou_state_effects": {
+      "passed": 19949,
+      "total": 19949
+    },
+    "xiyou_formula_effects": {
+      "passed": 908,
+      "total": 908
+    },
+    "xiyou_boss_lifecycle": {
+      "failures": [],
+      "passed": 5080,
+      "total": 5080
+    },
+    "xiyou_boss_sequence": {
+      "failures": [],
+      "passed": 8315,
+      "total": 8315
+    },
+    "xiyou_boss_output": {
+      "failures": [],
+      "passed": 3823,
+      "total": 3823
+    },
+    "xiyou_boss_output_context": {
+      "failures": [],
+      "passed": 16621,
+      "total": 16621
+    },
+    "xiyou_state_effects_tp": {
+      "failures": [],
+      "passed": 537,
+      "test": "xiyou_state_effects_tp",
+      "total": 537
+    },
+    "xiyou_boss_state_origin": {
+      "failures": [],
+      "passed": 15723,
+      "total": 15723
+    }
+  },
+  "finalAssertions": 70956,
+  "finalTimings": {
+    "boss70-state-final": {
+      "jobs": 2,
+      "globalJobs": 4,
+      "wallSeconds": 26.232,
+      "flakyRerunPassed": [],
+      "fingerprint": "",
+      "reused": [],
+      "scenes": [
+        {
+          "name": "xiyou_state_effects.tscn",
+          "seconds": 7.358,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 7.358,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_boss_state_origin.tscn",
+          "seconds": 6.373,
+          "passed": false,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 6.373,
+              "passed": false
+            },
+            {
+              "rc": 0,
+              "seconds": 4.249,
+              "passed": false
+            }
+          ]
+        },
+        {
+          "name": "xiyou_formula_effects.tscn",
+          "seconds": 5.734,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 5.734,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_boss_lifecycle.tscn",
+          "seconds": 5.268,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 5.268,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_boss_sequence.tscn",
+          "seconds": 5.162,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 5.162,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_boss_output.tscn",
+          "seconds": 4.776,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 4.776,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_boss_output_context.tscn",
+          "seconds": 4.565,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 4.565,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_state_effects_tp.tscn",
+          "seconds": 4.362,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 4.362,
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    "boss70-state-dedicated-final": {
+      "jobs": 2,
+      "globalJobs": 4,
+      "wallSeconds": 4.696,
+      "flakyRerunPassed": [],
+      "fingerprint": "",
+      "reused": [],
+      "scenes": [
+        {
+          "name": "xiyou_boss_state_origin.tscn",
+          "seconds": 4.689,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 4.689,
+              "passed": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "runtimeSha256": "e6b1fbfaa9e7f11ebcd42c676df23a9cd23cc43ec699f2b69db61cde151eec8d",
+  "runtimeCommit": "d3fee911",
+  "testFinalCommit": "bee2a6b6",
+  "dedicatedFinalTask": {
+    "runId": "353e072770634e83a69802320f6cc802",
+    "status": "done",
+    "exitCode": 0,
+    "pid": 37731,
+    "startedAt": "2026-10-25T23:34:40.015046+00:00",
+    "command": [
+      "python3",
+      "-u",
+      "03_再刷重制_Godot/07_开发环境/并行测试.py",
+      "03_再刷重制_Godot/07_开发环境/godot",
+      "03_再刷重制_Godot/01_Godot工程",
+      "--log-dir",
+      "03_再刷重制_Godot/04_验证/本地结果/boss70-state-dedicated-final",
+      "xiyou_boss_state_origin.tscn"
+    ],
+    "childPGID": 37732,
+    "childIdentity": {
+      "pid": 37732,
+      "pgid": 37732,
+      "startedAt": "Mon Oct 26 00:34:40 2026    "
+    },
+    "finishedAt": "2026-10-25T23:34:44.981944+00:00"
+  },
+  "checks": "original 检查.sh JSON/link/version block passed dev.173; node --check, MV guard 16/16 and git diff --check passed",
+  "limitations": [
+    "Synthetic resource script fixtures; only gain_resource translated operations executed directly, other ops replayed by run_one observer",
+    "Direct action_end invocation verifies host scope only; OTB action_end scheduler remains inactive",
+    "react1341/2550 source domains remain next period",
+    "Inherited determinism eight early_inventory_rule failures unchanged and not rerun",
+    "No arbitrary fatal GDScript error recovery claim"
+  ],
+  "failedRuns": [
+    "boss70-state-smoke initial: absent state2998 template key lookup, before native eval; fixed template key source",
+    "boss70-state-godot: test inferred Dictionary type parse error; own wrapper verified then stopped, exit143",
+    "boss70-state-final: action control fixture omitted item, SCRIPT ERROR despite numeric results passing; seven other scenes passed; fixed fixture only and reran dedicated"
+  ],
+  "preserved": "All native .sandbox, failed task logs including seven dependency result logs, generated and worktree"
+}
