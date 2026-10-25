@@ -32,7 +32,9 @@ if(!process.argv.includes('--smoke')){
   add(`settled.${kind}`,{host:'apply',ops:[{op:'damage',who:'b',kind,value:7},{op:'gain',who:'b',kind,value:-7}]});
  }
 }
-for(const {id,spec} of specs)cases.push(makeCase(id,spec,()=>{
+const onlyIndex=process.argv.indexOf("--only"),filter=onlyIndex>=0?new RegExp(process.argv[onlyIndex+1]):null;
+for(const {id,spec} of specs.filter(row=>!filter||filter.test(row.id)))cases.push(makeCase(id,spec,()=>{
+ console.log("CASE_START "+id);
  newGame();errors.length=0;w.$gameSwitches.setValue(2494,true);w.$gameSystem.setDifficultyId(3);
  const ids=spec.count?[106,101,100,102,104].slice(0,spec.count):[1];
  w.$gameParty._actors=w.Array.from(ids);w.$gameParty._battleMembers=w.Array.from(ids.concat(Array(5-ids.length).fill(0)));
@@ -63,6 +65,8 @@ for(const {id,spec} of specs)cases.push(makeCase(id,spec,()=>{
  if(spec.host==='apply'){action.item().damage.formula='window.__bossStep();0';action.item().customPostDamageEval='';action.apply(b);}
  else if(spec.host==='execute'){action.item().customPreDamageEval='window.__bossStep();';action.item().customPostDamageEval='';action.executeDamage(b,0);}
  else if(spec.host==='post')action.applyPostDamageEval(b,0);else run(spec.ops,action);
+ if(errors.some(e=>e.thrown!=="boss-context-probe"))throw Error("unexpected native eval diagnostic: "+JSON.stringify(errors));
+ if(!rows.length)throw Error("script fixture did not execute");
  // 上下文退出后直接扣同一目标，检查无残留来源/目标域。
  const pre=snap(b);b.gainHp(-1);rows.push({op:{op:'outside',who:'b',kind:'hp',value:-1},before:pre,after:snap(b)});
  return {rate:D.outputRate(a),icon:a.isStateAffected(2651),before,rows,after:Object.fromEntries(Object.entries(bs).map(([k,x])=>[k,snap(x)])),caught:errors.slice()};
