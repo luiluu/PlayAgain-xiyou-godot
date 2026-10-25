@@ -561,5 +561,158 @@
   },
   "reason": "任务包装器失联；已确认旧任务进程组退出",
   "finishedAt": "2026-10-25T17:06:27.329990+00:00"
+ },
+ "postMerge": {
+  "commit": "d370a7fb",
+  "task": {
+   "runId": "8c02fe25462b4e1289e0140bb52728dc",
+   "status": "done",
+   "exitCode": 0,
+   "pid": 55417,
+   "startedAt": "2026-10-25T17:09:04.660274+00:00",
+   "command": [
+    "python3",
+    "-u",
+    "03_再刷重制_Godot/04_验证/本地结果/actor-bonus-states/postmerge.py"
+   ],
+   "childPGID": 55420,
+   "childIdentity": {
+    "pid": 55420,
+    "pgid": 55420,
+    "startedAt": "Sun Oct 25 18:09:04 2026    "
+   },
+   "finishedAt": "2026-10-25T17:09:21.583869+00:00"
+  },
+  "timings": {
+   "jobs": 2,
+   "globalJobs": 4,
+   "wallSeconds": 13.512,
+   "flakyRerunPassed": [],
+   "fingerprint": "",
+   "reused": [],
+   "scenes": [
+    {
+     "name": "xiyou_battle_common_events.tscn",
+     "seconds": 6.449,
+     "passed": true,
+     "attempts": [
+      {
+       "rc": 0,
+       "seconds": 6.449,
+       "passed": true
+      }
+     ]
+    },
+    {
+     "name": "xiyou_state_effects.tscn",
+     "seconds": 4.053,
+     "passed": true,
+     "attempts": [
+      {
+       "rc": 0,
+       "seconds": 4.053,
+       "passed": true
+      }
+     ]
+    },
+    {
+     "name": "xiyou_actor_bonus.tscn",
+     "seconds": 3.679,
+     "passed": true,
+     "attempts": [
+      {
+       "rc": 0,
+       "seconds": 3.679,
+       "passed": true
+      }
+     ]
+    },
+    {
+     "name": "xiyou_formula_effects.tscn",
+     "seconds": 3.653,
+     "passed": true,
+     "attempts": [
+      {
+       "rc": 0,
+       "seconds": 3.653,
+       "passed": true
+      }
+     ]
+    },
+    {
+     "name": "xiyou_param_states.tscn",
+     "seconds": 3.376,
+     "passed": true,
+     "attempts": [
+      {
+       "rc": 0,
+       "seconds": 3.376,
+       "passed": true
+      }
+     ]
+    },
+    {
+     "name": "xiyou_state_effects_tp.tscn",
+     "seconds": 3.187,
+     "passed": true,
+     "attempts": [
+      {
+       "rc": 0,
+       "seconds": 3.187,
+       "passed": true
+      }
+     ]
+    }
+   ]
+  },
+  "scenes": [
+   {
+    "scene": "xiyou_battle_common_events.tscn",
+    "result": {
+     "passed": 22,
+     "total": 22
+    }
+   },
+   {
+    "scene": "xiyou_state_effects.tscn",
+    "result": {
+     "passed": 19949,
+     "total": 19949
+    }
+   },
+   {
+    "scene": "xiyou_actor_bonus.tscn",
+    "result": {
+     "passed": 736,
+     "total": 736
+    }
+   },
+   {
+    "scene": "xiyou_formula_effects.tscn",
+    "result": {
+     "passed": 908,
+     "total": 908
+    }
+   },
+   {
+    "scene": "xiyou_param_states.tscn",
+    "result": {
+     "failures": [],
+     "passed": 582,
+     "total": 582
+    }
+   },
+   {
+    "scene": "xiyou_state_effects_tp.tscn",
+    "result": {
+     "failures": [],
+     "passed": 537,
+     "test": "xiyou_state_effects_tp",
+     "total": 537
+    }
+   }
+  ],
+  "total": 22734,
+  "documentsExit": 0
  }
 }
