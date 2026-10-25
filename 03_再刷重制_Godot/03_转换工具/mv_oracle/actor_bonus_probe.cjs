@@ -72,6 +72,15 @@ cases.push(makeCase('pet.membership',{push:pushes[0], scope:'current party / war
   w.Scene_PetSystem.prototype.onRestOk.call(scene(0)); record('rest');
   return {rows};
 }));
+cases.push(makeCase('pet.permanent',{push:pushes[0]},()=>{
+  fresh();const a=w.$gameActors.actor(1);w.$gameParty.Pets=[pet(pushes[0])];const rows=[];
+  a.addParam(2,12.5);rows.push(snap()[0]);
+  w.Scene_PetSystem.prototype.onGotowarOk.call(scene(0)); rows.push(snap()[0]);
+  a.addParam(2,1.25); rows.push(snap()[0]);
+  w.Star.PetSystem.refreshGTWar(); rows.push(snap()[0]);
+  w.Scene_PetSystem.prototype.onRestOk.call(scene(0)); rows.push(snap()[0]);
+  return {rows};
+}));
 cases.push(makeCase('pet.mapping',{},()=>{
   fresh();const a=w.$gameActors.actor(1), enemy=new w.Game_Enemy(1,0,0);
   const before=snap()[0], e0=Array.from({length:10},(_,i)=>enemy.traitsSum(22,i));

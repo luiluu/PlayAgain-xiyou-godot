@@ -48,7 +48,7 @@ func compare_party(s: XState, row: Dictionary) -> void:
 
 func _run() -> void:
 	var fixture = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	check("fixture", fixture is Dictionary and fixture.cases.size() == 4)
+	check("fixture", fixture is Dictionary and fixture.cases.size() == 5)
 	for c in fixture.cases:
 		check(str(c.id) + ".oracle", c.errors.is_empty())
 	var s := fresh()
@@ -141,9 +141,23 @@ func _run() -> void:
 	XPets.rest(s, 0)
 	check("optimization.no_ungranted_subtraction", range(8).all(func(i): return s.actor(9).param_plus(i) == 0))
 	check("optimization.granted_retracted", [1, 8, 11].all(func(id): return range(8).all(func(i): return s.actor(id).param_plus(i) == 0)))
+	# 出战期间新增永久小数，重学／休息只撤宠物份额。
+	s = fresh()
+	s.pets.list = [{"enemy": 1, "push": setup.pushes[0], "skills": SKILLS.duplicate()}]
+	rows = fixture.cases[3].observed.rows
+	s.actor(1).add_param(2, 12.5)
+	compare("shared.before", s.actor(1), rows[0])
+	XPets.go_to_war(s, 0)
+	compare("shared.war", s.actor(1), rows[1])
+	s.actor(1).add_param(2, 1.25)
+	compare("shared.add", s.actor(1), rows[2])
+	XPets.refresh_war(s)
+	compare("shared.refresh", s.actor(1), rows[3])
+	XPets.rest(s, 0)
+	compare("shared.rest", s.actor(1), rows[4])
 	# traitsSum 是全体角色可读；宠物属性仅队伍及仓库拥有，敌人无特性加成。
 	s = fresh()
-	var o: Dictionary = fixture.cases[3].observed
+	var o: Dictionary = fixture.cases[4].observed
 	compare("mapping.before", s.actor(1), o.before)
 	s.pets.list = [{"enemy": 1, "push": setup.pushes[0], "skills": []}]
 	s.pets.war = 0
