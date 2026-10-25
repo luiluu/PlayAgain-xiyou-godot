@@ -403,21 +403,52 @@ class SlotWeightTests(unittest.TestCase):
         self.assertEqual(len(set(got['c']) | {got['b']}), 3)
         release_b.set(); b.join(5)
 
+    def locked(self, name):
+        """另开一个文件描述去试锁：被别人占着返回 True（flock 按打开的文件描述算，同进程不同线程也互斥）。"""
+        import fcntl
+        with open(self.state / 'slots' / name, 'a') as f:
+            try:
+                fcntl.flock(f, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            except OSError:
+                return True
+            fcntl.flock(f, fcntl.LOCK_UN)
+            return False
+
     def test_heavy_waiter_keeps_partial_slots_so_singles_cannot_starve_it(self):
+        # 不靠时间：每一步都等到能观察到的锁状态再往下走（负载高时只是等得久，不会判错）
         import threading
         got, ra = {}, threading.Event()
         a = self.hold(1, 2, ra, got, 'a')
-        self.assertTrue(self.wait_for(lambda: 'a' in got))
+        self.assertTrue(self.wait_for(lambda: 'a' in got, 30))
         rh = threading.Event()
-        h = self.hold(2, 2, rh, got, 'heavy')        # 攒到一槽，还差 a 那一槽
-        self.assertFalse(self.wait_for(lambda: 'heavy' in got, 1))
-        s = self.hold(1, 2, threading.Event(), got, 'single')
-        self.assertFalse(self.wait_for(lambda: 'single' in got, 1))  # 空出的槽已被多槽进程攒着，单槽的插不进来
-        ra.set(); a.join(5)
-        self.assertTrue(self.wait_for(lambda: 'heavy' in got))
-        self.assertNotIn('single', got)
-        rh.set(); h.join(5)
-        self.assertTrue(self.wait_for(lambda: 'single' in got))
+        h = self.hold(2, 2, rh, got, 'heavy')
+        # 多槽进程攒到了另一槽、独占着 heavy.lock，两个槽都被占
+        self.assertTrue(self.wait_for(lambda: self.locked('heavy.lock') and self.locked('0.lock') and self.locked('1.lock'), 30))
+        self.assertNotIn('heavy', got)
+        rs = threading.Event()
+        s = self.hold(1, 2, rs, got, 'single')
+        ra.set(); a.join(30)
+        # a 放出的槽只能归多槽进程：单槽的在 heavy.lock 独占期间让路
+        self.assertTrue(self.wait_for(lambda: 'heavy' in got, 30))
+        self.assertEqual(sorted(got['heavy']), [0, 1])
+        self.assertNotIn('single', got)  # 两槽都在多槽进程手里，单槽的不可能占到
+        rh.set(); h.join(30)
+        self.assertTrue(self.wait_for(lambda: 'single' in got, 30))
+        rs.set(); s.join(30)
+
+    def test_single_waits_while_heavy_is_gathering(self):
+        # 有多槽进程在攒槽（heavy.lock 独占）时，即使有空槽单槽的也让路；独占一放就能占到
+        import fcntl, threading
+        (self.state / 'slots').mkdir(exist_ok=True)
+        gate = open(self.state / 'slots/heavy.lock', 'a')
+        fcntl.flock(gate, fcntl.LOCK_EX)
+        got, release = {}, threading.Event()
+        t = self.hold(1, 2, release, got, 'single')
+        self.assertFalse(self.wait_for(lambda: 'single' in got, 1))
+        self.assertFalse(self.locked('0.lock') or self.locked('1.lock'))
+        fcntl.flock(gate, fcntl.LOCK_UN); gate.close()
+        self.assertTrue(self.wait_for(lambda: 'single' in got, 30))
+        release.set(); t.join(30)
 
     def test_weight_above_limit_is_capped_and_waiting_reports_progress(self):
         import threading
