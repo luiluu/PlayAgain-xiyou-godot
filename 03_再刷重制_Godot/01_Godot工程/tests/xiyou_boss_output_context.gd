@@ -35,8 +35,10 @@ func same(a, b) -> bool:
 	return JSON.parse_string(JSON.stringify(a)) == JSON.parse_string(JSON.stringify(b))
 
 func compare(tag: String, b: XBattler, row: Dictionary) -> void:
-	var got := {"hp": b.hp, "mp": b.mp, "tp": b.tp, "shield": b.shield, "states": b.state_ids.duplicate()}
+	var got := {"hp": b.hp, "mp": b.mp, "tp": b.tp, "shield": b.shield, "dirty": b.effect_dirty, "states": b.state_ids.duplicate()}
 	for key in got:
+		if not row.has(key):
+			continue
 		check(tag + "." + key, same(got[key], row[key]), [got[key], row[key]])
 	for key in row.result:
 		check(tag + ".result." + key, same(resources.result(b)[key], row.result[key]), [resources.result(b)[key], row.result[key]])
