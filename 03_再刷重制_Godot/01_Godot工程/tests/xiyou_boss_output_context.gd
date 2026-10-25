@@ -235,13 +235,16 @@ func _ready() -> void:
 func _run() -> void:
 	var fixture: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/boss_output_context_oracle.json"))
 	check("source", fixture.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("fixture.complete", fixture.cases.size() == 123, fixture.cases.size())
+	check("fixture.complete", fixture.cases.size() == 129, fixture.cases.size())
 	var ids: Array = fixture.cases.map(func(c): return str(c.id))
 	var unique := {}
 	for id in ids:
 		unique[id] = true
 	check("fixture.unique", ids.size() == unique.size())
 	check("fixture.real_formulas", ids.has("formula.hp") and ids.has("formula.mp"))
+	for who in [0, 1]:
+		for op in ["gain", "set", "damage"]:
+			check("fixture.full_shield.%d.%s" % [who, op], ids.has("shield.%d.%s.1000" % [who, op]))
 	boundary_checks()
 	for c in fixture.cases:
 		check(c.id + ".native", c.errors.is_empty())

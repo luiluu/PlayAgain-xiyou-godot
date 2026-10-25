@@ -1,10 +1,10 @@
 {
   "status": "pending final dedicated and post-fix dependency validation",
   "scope": "Explicit action.apply HP/MP gain context and resource set API; post/execute scripted entrypoints replay equivalent domains, their custom eval hosts are not ported",
-  "oracleCases": 123,
+  "oracleCases": 129,
   "oracleErrors": [],
   "nativeEqualsFixture": true,
-  "fixtureSha256": "1142f6b31b1ce2c8cab0abe8197b2dda8123e32da4f4449c95f9d35e29b60a8e",
+  "fixtureSha256": "ec80acae15f37cdbf0a8e76b5cace6ddd707208b6f902fc76045732736738091",
   "nativeArtifacts": [
     "boss_output_context.json (123 cases); preserved unchanged",
     "boss_output_context_selected.json (six full-shield cases); errors empty, same sourceIdentity",
@@ -126,5 +126,28 @@
       "startedAt": "Sun Oct 25 23:49:57 2026    "
     },
     "finishedAt": "2026-10-25T23:05:19.356261+00:00"
+  },
+  "nativeUnionEqualsFixture": true,
+  "intermediate123Timings": {
+    "jobs": 2,
+    "globalJobs": 4,
+    "wallSeconds": 1154.291,
+    "flakyRerunPassed": [],
+    "fingerprint": "",
+    "reused": [],
+    "scenes": [
+      {
+        "name": "xiyou_boss_output_context.tscn",
+        "seconds": 3.757,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.757,
+            "passed": true
+          }
+        ]
+      }
+    ]
   }
 }

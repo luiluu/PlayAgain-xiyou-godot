@@ -131,3 +131,5 @@
 - 69接手前置核验：检查.sh原文档块（含JSON／链接／编号dev.173）、node --check、MV文件守卫16／16及git diff --check通过。原版123例结构和errors全空已确认；无新运行时变更，两条原runId仍等槽，不将排队写成专项通过。收尾编辑后仍重复必要文档检查。
 
 - 69护盾补采终态：boss68-shield-full exit0，6例errors全空，sourceIdentity与原123完全相等；保留两原件并合成.sandbox/boss_output_context_combined129.json（129唯一ID），尚未替换在途专项读取的123夹具。敌人gain／set／damage完全吸收均dirty=false；角色gainHp护盾前结果161且dirty=true，set／damage不额外置dirty，待Godot最终129专项核对。精简证据已保存原件与并集SHA。
+
+- 69中间专项：boss68-context终态exit0，完整123例与边界通过，详细断言／timings见精简证据。终态后才将夹具替换为两份原版并集129例，逐对象相等且sourceIdentity一致；完整性断言改129并逐一要求六个shield1000 ID。最终129专项及四依赖下一步启动。
