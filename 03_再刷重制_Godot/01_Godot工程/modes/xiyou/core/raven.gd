@@ -91,7 +91,7 @@ static func growth_pools(a) -> Array:
 	var knots := [[1, 0, 0], [10, 20, 15], [25, 80, 60], [40, 180, 140], [55, 300, 240], [70, 500, 399]]
 	for i in range(1, knots.size()):
 		if lv <= knots[i][0]:
-			var p := float(lv - knots[i - 1][0]) / (knots[i][0] - knots[i - 1][0])
+			var p: float = float(lv - knots[i - 1][0]) / (knots[i][0] - knots[i - 1][0])
 			return [knots[i - 1][1] + p * (knots[i][1] - knots[i - 1][1]), knots[i - 1][2] + p * (knots[i][2] - knots[i - 1][2])]
 	return [500.0, 399.0]
 
