@@ -63,7 +63,7 @@ func sync_boss_armor(active: bool, random: XRandomStream = null) -> void:
 			add_state(BOSS_ARMOR_STATE, random)
 		if is_state_affected(BOSS_ARMOR_STATE):
 			state_turns[BOSS_ARMOR_STATE] = 1
-	else:
+	elif is_state_affected(BOSS_ARMOR_STATE):
 		remove_state(BOSS_ARMOR_STATE)
 	_updating_boss_armor = false
 
