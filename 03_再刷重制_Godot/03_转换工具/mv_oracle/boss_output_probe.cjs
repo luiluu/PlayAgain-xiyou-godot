@@ -23,7 +23,7 @@ function add(id,spec){cases.push(makeCase(id,spec,()=>{
   const ids=spec.count?[106,101,100,102,104].slice(0,spec.count):[1];
   w.$gameParty._actors=w.Array.from(ids);w.$gameParty._battleMembers=w.Array.from(ids.concat(Array(5-ids.length).fill(0)));
   ids.forEach(id=>w.$gameActors.actor(id)._level=37);
-  w.$gameParty._inBattle=false;w.$gameTroop.clear();w.BattleManager._actionBattlers=[];w.BattleManager._nextTurnActionBattlers=[];
+  w.$gameParty._inBattle=false;w.$gameTroop.clear();w.BattleManager._actionBattlers=w.Array.from([]);w.BattleManager._nextTurnActionBattlers=w.Array.from([]);
   const e=new w.Game_Enemy(spec.enemy||6,0,0),other=new w.Game_Enemy(1,0,0),actor=w.$gameActors.actor(1);
   w.$gameTroop._enemies=w.Array.from([e,other]);
   w.$gameParty._inBattle=true;for(const b of [e,other,actor]){b.onBattleStart();b.refresh();}
