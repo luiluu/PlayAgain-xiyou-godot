@@ -6,6 +6,7 @@ var modes: Array = []
 var current_mode: String = ""
 
 func _ready() -> void:
+	_headless_frame_sleep()
 	if WindowFit.should_apply(OS.get_cmdline_args()):
 		WindowFit.apply(get_window())
 	var data = JSON.parse_string(FileAccess.get_file_as_string(MODE_FILE))
@@ -16,6 +17,16 @@ func _ready() -> void:
 	# 官方导出模板不允许用命令行覆盖场景路径；调试包通过显式验收参数在包内跳转。
 	if OS.is_debug_build() and OS.get_cmdline_user_args().has("--verify-export"):
 		_verify_export.call_deferred()
+
+## 无窗口（--headless，只有测试与工具这样跑）时 Godot 每帧固定睡 low_processor_mode_sleep_usec（默认 6900 微秒），
+## 只等帧的测试大半时间在睡（xiyou_dungeon 204→18 秒）。headless 下改为不睡；帧的 delta 仍是真实经过的时间，
+## 计时器、补间照旧按真实秒数走，所以按时间等的测试不变（木吒 2026-10-25）。有窗口的游戏不受影响。
+## 回退：XIYOU_HEADLESS_SLEEP_USEC=6900（或其他微秒数）。
+func _headless_frame_sleep() -> void:
+	if DisplayServer.get_name() != "headless":
+		return
+	var usec := OS.get_environment("XIYOU_HEADLESS_SLEEP_USEC")
+	OS.low_processor_usage_mode_sleep_usec = int(usec) if usec.is_valid_int() else 0
 
 func _verify_export() -> void:
 	await get_tree().process_frame
