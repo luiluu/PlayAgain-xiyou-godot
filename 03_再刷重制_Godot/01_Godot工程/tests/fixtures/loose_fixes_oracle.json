@@ -640,7 +640,7 @@
    "js/rpg_οbjects.js": "455b1890ff891795df24653e3b8c15ab6ef5050661656c2dd1840339b34d5b7d"
   }
  },
- "hostScope": "一局内存宿主；合成状态仅覆盖消耗与ownBonus解析边界，真实敌群2死亡与真实敌人932；不认证全部玩法",
+ "hostScope": "新游戏（Math.random 0.5）；怪物图鉴击败数在死亡时即时计（沙僧50 系统批 P2-1）",
  "cases": [
   {
    "id": "cost.base.1",

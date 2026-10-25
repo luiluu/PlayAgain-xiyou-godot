@@ -1,14 +1,15 @@
 'use strict';
 // 四零散项：原版真实消耗查询、死亡入口、敌人元素 ownBonus；全程内存，输出仅 .sandbox。
-const {start, makeCase, finish} = require('./shared/host.cjs');
-const host = start(), {w, newGame} = host;
+const {makeCase} = require('./host.cjs');
+module.exports = function (host, cases) {
+const {w, newGame} = host;
 const sprites = new Map();
 w.Game_Battler.prototype.battler = function () {
   if (!sprites.has(this)) sprites.set(this, new Proxy({}, {get: (t, k) => k in t ? t[k] : (() => false), set: (t, k, v) => {t[k] = v; return true;}}));
   return sprites.get(this);
 };
+w.$gameParty._inBattle = false;
 newGame();
-const cases = [];
 function realmArray(values) { const out = w.eval('[]'); for (const value of values) out.push(value); return out; }
 function state(note) {
   const st = w.JsonEx.makeDeepCopy(w.$dataStates[4]);
@@ -66,4 +67,4 @@ cases.push(makeCase('cost.enemyNotReduced', {}, () => {
   const skill = Object.assign({}, w.$dataSkills[12], {mpCost: 37, tpCost: 19});
   return {mp: e.skillMpCost(skill), tp: e.skillTpCost(skill), mcr: e.mcr};
 }));
-process.exit(finish(host, 'loose_fixes.json', {hostScope: '一局内存宿主；合成状态仅覆盖消耗与ownBonus解析边界，真实敌群2死亡与真实敌人932；不认证全部玩法', cases}) ? 0 : 1);
+};

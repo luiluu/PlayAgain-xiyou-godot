@@ -143,7 +143,7 @@ func _f31_limits() -> void:
 	runner.free()
 
 func _run() -> void:
-	var ref = XDB.load_json(FIXTURE)
+	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if ref is Dictionary:
 		for c in ref.get("cases", []):
 			check(str(c.id) + ".oracle_clean", c.errors.is_empty())
