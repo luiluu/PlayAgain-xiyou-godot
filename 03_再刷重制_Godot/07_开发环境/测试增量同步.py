@@ -656,6 +656,70 @@ class ActorSampleGuardTests(unittest.TestCase):
             self.assertEqual((extra, bool(bad), changes), ([], True, []))
 
 
+class StopAndHeartbeatTests(unittest.TestCase):
+    """长任务 stop() 在 killpg 抛 EPERM 时仍停掉进程组并写终态；同步等探针时打 PROBE_RUNNING 心跳，看门狗不误判卡死。"""
+    def setUp(self):
+        self.task = load('long_task_eperm', HERE / '长任务.py')
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmp = Path(self.tmpdir.name)
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    def eperm(self):
+        def refuse(group, sig):
+            raise PermissionError(1, 'Operation not permitted')
+        return mock.patch.object(self.task.os, 'killpg', side_effect=refuse)
+
+    def test_stop_falls_back_to_killing_group_members(self):
+        proc = subprocess.Popen([sys.executable, '-c', 'import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(30)'],
+                                start_new_session=True)
+        with self.eperm():
+            self.task.stop(proc)  # 不抛异常
+        self.assertIsNotNone(proc.poll(), '逐个 kill 的退路没把忽略 SIGTERM 的进程停掉')
+        self.assertFalse(self.task.signal_group(proc.pid, signal.SIGTERM))  # 组已不存在
+
+    def test_stuck_task_writes_terminal_state_even_when_killpg_is_refused(self):
+        log = self.tmp / 'eperm.log'
+        with self.eperm(), contextlib.redirect_stdout(io.StringIO()):
+            code = self.task.run(log, [sys.executable, '-c', 'import time; time.sleep(30)'], idle=0.5)
+        self.assertEqual(code, 124)
+        data = json.loads(Path(str(log) + '.status.json').read_text())
+        self.assertEqual(data['status'], 'stuck')
+        self.assertEqual(Path(str(log) + '.exit').read_text().strip(), '124')
+        self.assertIn('TASK_RESULT=', log.read_text())
+
+    def test_quiet_probe_with_heartbeat_is_not_judged_stuck(self):
+        # 真实路径：长任务.py（看门狗 1.5 秒）→ 跑同步的 run_probes → 一个 3 秒不出声的 node 假探针；有 0.4 秒一次的心跳就判完成
+        tools = self.tmp / 'tools'
+        sandbox = tools / 'mv_oracle/.sandbox'
+        (tools / 'mv_oracle').mkdir(parents=True); sandbox.mkdir()
+        gen = self.tmp / 'gen'
+        (gen / 'oracle').mkdir(parents=True)
+        (tools / 'mv_oracle/quiet_probe.cjs').write_text(
+            "const fs = require('fs'); const t = Date.now(); while (Date.now() - t < 3000) {}\n"
+            "fs.writeFileSync(__dirname + '/.sandbox/quiet.json', '{}');\n")
+        driver = self.tmp / 'driver.py'
+        driver.write_text(
+            'import importlib.util, io, os, sys\nfrom unittest import mock\nfrom pathlib import Path\n'
+            'spec = importlib.util.spec_from_file_location("s", %r)\nsync = importlib.util.module_from_spec(spec); spec.loader.exec_module(sync)\n'
+            'o = Path(%r)\nos.environ["XIYOU_GENERATED"] = %r\n'
+            'with mock.patch.multiple(sync, PROBES=[(["quiet_probe.cjs"], ["quiet.json"])], ORACLE_DIR=o, SANDBOX=o / ".sandbox"):\n'
+            '    sync.run_probes(io.StringIO(), None)\n' % (str(TOOLS / '同步正式西游.py'), str(tools / 'mv_oracle'), str(gen)))
+        log = self.tmp / 'quiet.log'
+        env = dict(os.environ, XIYOU_PROBE_HEARTBEAT='0.4', XIYOU_TEST_STATE_DIR=str(self.tmp / 'state'))
+        p = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'run', str(log), '--idle-timeout', '1.5', '--',
+                            sys.executable, str(driver)], capture_output=True, text=True, timeout=60, env=env)
+        out = log.read_text()
+        self.assertEqual(p.returncode, 0, out)
+        self.assertIn('PROBE_RUNNING={"probe": "quiet_probe.cjs"', out)
+        self.assertIn('PROBE_DONE=', out)
+        env['XIYOU_PROBE_HEARTBEAT'] = '0'  # 关掉心跳：同一个探针就会被看门狗判卡死
+        p = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'run', str(self.tmp / 'silent.log'), '--idle-timeout', '1.5', '--',
+                            sys.executable, str(driver)], capture_output=True, text=True, timeout=60, env=env)
+        self.assertEqual(p.returncode, 124)
+
+
 class TaskWatchTests(unittest.TestCase):
     def test_success_failure_and_stall_have_consistent_marker_exit_and_wait(self):
         with tempfile.TemporaryDirectory() as tmp:

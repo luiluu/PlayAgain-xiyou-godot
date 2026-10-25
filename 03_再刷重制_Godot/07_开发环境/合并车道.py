@@ -50,7 +50,8 @@ def run(root, args):
 
 
 def dirty(root):
-    raw = subprocess.check_output(['git', '-C', str(root), 'status', '--porcelain', '-z']).decode()
+    # -uall：未跟踪目录逐个列文件，免得新目录里的一个允许文件（如新写的接受单）被当成整个目录拦下
+    raw = subprocess.check_output(['git', '-C', str(root), 'status', '--porcelain', '-z', '-uall']).decode()
     records = raw.rstrip('\0').split('\0') if raw else []
     if any(len(x) < 3 or 'R' in x[:2] or 'C' in x[:2] for x in records):
         raise RuntimeError('工作区含改名/复制记录，先人工处理')
@@ -291,8 +292,16 @@ def prepare(root, state, state_file, executor):
                 print('== ' + ' '.join(cmd), flush=True)
             rc = subprocess.run(cmd, cwd=root).returncode if state['worktree'] else 3  # 无车道工作树：直接完整同步
             if rc == 3:
-                run(root, sync)
-            elif rc:
+                print('== ' + ' '.join(map(str, sync)), flush=True)
+                rc = subprocess.run(list(map(str, sync)), cwd=root).returncode
+            if rc:
+                if rc == 2:
+                    sheet = ACCEPT / (state['branch'].replace('/', '_') + '.json')
+                    print('同步拒收（测量有改变）。核对报告里的变化无误后：\n'
+                          '  python3 %s --out %s --reason-from %s\n'
+                          '  （或 --reason "理由"；打开生成的接受单逐条核对、补理由）\n'
+                          '  然后 合并车道.sh %s --accept-changes %s 接着同步' % (
+                              TOOLS / '生成接受单.py', sheet, state['delivery'], state['task'], sheet), file=sys.stderr, flush=True)
                 raise RuntimeError('同步未通过（退出码 %d），保留现场' % rc)
         state['phase'] = 'synced'
         save(state_file, state)
@@ -472,6 +481,57 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
     push_github(root)
 
 
+def add_acceptances(root, state, paths):
+    """把接受单记进合并状态（acceptChanges），同步拒收后接着跑不用手改 state.json。只在还没同步完时有效；
+    接受单是在 main 上新写的（不是车道带来的）就记进 also，收尾时一并提交。"""
+    if state['phase'] not in ('planned', 'merged'):
+        raise RuntimeError('本次合并已同步过（阶段 %s），--accept-changes 用不上；要改测量请另走流程' % state['phase'])
+    for raw in paths:
+        p = Path(raw)
+        p = (p if p.is_absolute() else Path.cwd() / p).resolve()
+        if not p.is_file():
+            raise RuntimeError('接受单不存在：' + raw)
+        try:
+            rel = str(p.relative_to(root))
+        except ValueError:
+            raise RuntimeError('接受单须在主工作区里（要提交入 Git）：' + raw)
+        if not rel.startswith(str(ACCEPT) + '/') or not rel.endswith('.json'):
+            raise RuntimeError('接受单须放在 %s/ 下：%s' % (ACCEPT, rel))
+        state['acceptChanges'] = sorted(set(state.get('acceptChanges', [])) | {rel})
+        state['refresh'] = True
+        if git(root, 'status', '--porcelain', '--', rel):
+            state['also'] = sorted(set(state.get('also', [])) | {rel})
+        print('已记入接受单 ' + rel + '，接着同步', flush=True)
+
+
+def close_batch(root, folder, affected=False):
+    """本批都 --finish --batch 收尾、没有新车道要合时统一收口：跑一次 检查.sh --oracle（--affected 时以本批第一条合并前的 main 为基准），
+    通过后清理本批工作树、删 batch.json、推送；失败照 report_batch 列出各条车道带进来的改动，什么都不清理、不推送。"""
+    pending = load_batch(folder)
+    if not pending:
+        raise RuntimeError('没有攒着的本批合并（batch.json），不需要收口')
+    if (folder / 'state.json').exists():
+        raise RuntimeError('还有一条车道在合并中（state.json），先把它 --finish（可 --batch）再收口')
+    if git(root, 'rev-parse', 'HEAD') != pending[-1]['head']:
+        print('提示：本批最后一条收尾后 main 又有提交（%s），一并检查' % git(root, 'log', '--oneline', pending[-1]['head'] + '..HEAD').replace('\n', '；'),
+              flush=True)
+    if dirty(root):
+        raise RuntimeError('main 有未提交改动，先提交或移走再收口')
+    check = [ENV / '检查.sh', '--oracle'] + (['--affected', pending[0]['base']] if affected else [])
+    try:
+        run(root, check)
+    except subprocess.CalledProcessError:
+        report_batch(root, pending[:-1], pending[-1])
+        raise
+    if dirty(root):
+        raise RuntimeError('检查后 main 出现未提交改动，先人工处理：' + '、'.join(sorted(dirty(root))))
+    for lane in pending:
+        cleanup_lane(root, lane)
+    (folder / 'batch.json').unlink()
+    print('本批 %d 条收口：检查通过（%s）、工作树已清理。' % (len(pending), '选测' if affected else '全量'), flush=True)
+    push_github(root)
+
+
 def lane_moved(lane):
     """车道交付后若在同一工作树接着做（会话绑在这个路径上，常换新分支继续），返回原因；没动返回空串。"""
     if not lane['worktree']:
@@ -546,12 +606,16 @@ def main(argv=None):
     modes.add_argument('--dry-run', action='store_true')
     modes.add_argument('--finish', action='store_true')
     ap.add_argument('--executor', choices=['Claude', 'Codex'], default='Claude')
+    modes.add_argument('--close-batch', action='store_true',
+                       help='本批都 --finish --batch 收尾后、没有新车道要合时：统一跑 检查.sh --oracle（可加 --affected），通过后清理本批工作树、推送')
     modes.add_argument('--abort-batch', action='store_true',
                        help='本批最后的检查失败、要撤出某条车道时：存备份后退回本批开始前的 main，车道工作树都保留')
     ap.add_argument('--batch', action='store_true',
                     help='--finish 时本条先不跑检查、不清理、不推送，记入本批；最后一条不加它统一检查')
     ap.add_argument('--affected', action='store_true',
                     help='--finish 时只跑选测（检查.sh --oracle --affected <本次合并前的 main>），通过后照常提交、清理、推送；不和 --batch 同用')
+    ap.add_argument('--accept-changes', action='append', default=[], metavar='接受单',
+                    help='同步因测量改变被拒后：把接受单记进本次合并状态再接着同步（不用手改 state.json），可重复')
     ap.add_argument('--also', action='append', default=[], metavar='路径',
                     help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则），可重复')
     a = ap.parse_args(argv)
@@ -563,6 +627,15 @@ def main(argv=None):
             raise RuntimeError('只能操作 main 主工作区')
         folder = Path(git(root, 'rev-parse', '--path-format=absolute', '--git-dir')) / 'lane-merge'
         state_file = folder / 'state.json'
+        if a.close_batch:
+            if a.task or a.batch:
+                raise RuntimeError('--close-batch 不带任务名、不配 --batch')
+            folder.mkdir(exist_ok=True)
+            lock = folder / 'running.lock'
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            os.close(fd)
+            close_batch(root, folder, a.affected)
+            return 0
         if a.abort_batch:
             folder.mkdir(exist_ok=True)
             lock = folder / 'running.lock'
@@ -571,11 +644,13 @@ def main(argv=None):
             abort_batch(root, folder)
             return 0
         if not a.task:
-            raise RuntimeError('要给任务名（只有 --abort-batch 不用）')
+            raise RuntimeError('要给任务名（只有 --abort-batch、--close-batch 不用）')
         if a.batch and not a.finish:
             raise RuntimeError('--batch 只和 --finish 一起用')
         if a.affected and (not a.finish or a.batch):
-            raise RuntimeError('--affected 只和 --finish 一起用，不配 --batch（批末那条不加 --batch 时加 --affected，覆盖整批）')
+            raise RuntimeError('--affected 只和 --finish 或 --close-batch 一起用，不配 --batch（批末那条不加 --batch 时加 --affected，覆盖整批）')
+        if a.accept_changes and (a.finish or a.dry_run):
+            raise RuntimeError('--accept-changes 只用于准备阶段接着同步（不配 --finish、--dry-run）')
         if a.dry_run:
             print(json.dumps(plan(root, a.task), ensure_ascii=False, indent=2)); return 0
         folder.mkdir(exist_ok=True)
@@ -593,13 +668,16 @@ def main(argv=None):
             state['executor'] = executor
             save(state_file, state)
         if state is None:
-            if a.finish:
+            if a.finish or a.accept_changes:
                 raise RuntimeError('没有准备中的合并')
             state = plan(root, a.task)
             state['executor'] = a.executor
             save(state_file, state)
         elif state.get('executor', a.executor) != a.executor:
             raise RuntimeError('接续执行者不同，请先核对原执行者登记')
+        if a.accept_changes:
+            add_acceptances(root, state, a.accept_changes)
+            save(state_file, state)
         if a.finish:
             if a.also:
                 state['also'] = sorted(set(state.get('also', [])) | set(a.also))

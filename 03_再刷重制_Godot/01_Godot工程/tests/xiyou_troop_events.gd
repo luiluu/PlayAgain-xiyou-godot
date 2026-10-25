@@ -189,6 +189,11 @@ func _transform_case(c: Dictionary, round: int) -> void:
 	for inv in c.invokes:
 		if int(inv.turn) == 0 and inv.subject == "e0" and inv.target == "e0":
 			want_hp0 = float(inv.hpBefore)
+			# 6067～6070 领域技能带公共事件 1401「敌人恢复所有血量」（八戒_71 期四起执行）：行动结束后变量 40 = 9999999999999999
+			#（JS 读成 1e16），331 全体敌人 HP + 变量 40；参照的 hpBefore 是出手前，开战检查结束时还要加上这一下（到上限为止）
+			for eff in XDB.rec("Skills", int(inv.skill)).get("effects", []):
+				if int(eff.code) == 44 and int(eff.dataId) == 1401:
+					want_hp0 = minf(want_hp0 + 1e16, e0.mhp)
 			break
 	check(name + ".hp_after_transform", is_equal_approx(e0.hp, want_hp0), [e0.hp, e0.mhp, want_hp0])
 	var t1_states: Array = []

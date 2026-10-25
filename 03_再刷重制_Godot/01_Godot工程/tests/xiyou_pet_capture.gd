@@ -115,7 +115,7 @@ func _run() -> void:
 		if g.pet != null:
 			rolls.append(0.99)  # 学习次数上限：参照在建敌人时掷（setup 的随机 0.99），这里捕到时掷
 		l.set_meta("pet_random", tape(rolls))
-		var logs := XPetCapture.item_event(l, item, 173, l.enemies[1])
+		var logs := XPetCapture.capture(l, item, l.enemies[1])
 		var tg := l.enemies.map(func(e): return {"dead": e.is_dead(), "hidden": e.hidden, "hp0": e.hp == 0.0})
 		var want_t: Array = g.targets.map(func(e): return {"dead": bool(e.dead), "hidden": bool(e.hidden), "hp0": int(e.hp) == 0})
 		var ok: bool = toasts(logs) == g.toasts and s.item_count(int(g.item)) == int(g.count) and s.pets.list.size() == int(g.pets) and tg == want_t
@@ -195,7 +195,8 @@ func _books() -> void:
 	check("book_372_fix", XPets.learn_book(s2, 1673) == "高级灵根 学习成功" and s2.pets.list[0].skills == [1672], s2.pets.list[0])
 
 
-## 战斗里真的用一次：角色对可捕捉的嘤嘤怪用大师级捕获器（成功率 80%，掷 0），被捕的敌人隐藏、不算阵亡，结算不给它的经验
+## 战斗里真的用一次：角色对可捕捉的嘤嘤怪用大师级捕获器（成功率 80%，掷 0）：行动只预约公共事件 173，事件检查时才捕到；
+## 被捕的敌人隐藏、不算阵亡，结算不给它的经验
 func _battle_flow() -> void:
 	var l := battle(2)
 	var s := l.state
@@ -206,8 +207,9 @@ func _battle_flow() -> void:
 	l.set_meta("pet_random", tape([0.0] + range(40).map(func(_i): return 0.5)))
 	var exp_before := int(l.rewards().exp)
 	var logs := l.execute(l.actors[0], XDB.rec("Items", 317), l.enemies[0])
-	var hit: Array = logs.filter(func(x): return x.type == "hit")
-	var events: Array = hit[0].get("events", []) if not hit.is_empty() else []
+	# 道具的 44 效果在收尾序列 ACTION COMMON EVENT 预约公共事件 173，行动结束后的事件检查才执行 PetGet
+	check("battle_capture_reserved", XBattleCommonEvent.reserved(l) == 173 and s.pets.list.is_empty() and not l.enemies[0].hidden, XBattleCommonEvent.reserved(l))
+	var events := l.run_events()
 	check("battle_capture", s.pets.list.size() == 1 and l.enemies[0].hidden and not l.enemies[0].is_dead() and not l.enemies[0].is_alive()
 		and s.item_count(317) == 0 and toasts(events) == ["捕捉成功"] and events.any(func(x): return x.type == "enemy_change" and x.kind == "vanish"),
 		[s.pets.list.size(), l.enemies[0].hidden, s.item_count(317), events.map(func(x): return x.type)])
