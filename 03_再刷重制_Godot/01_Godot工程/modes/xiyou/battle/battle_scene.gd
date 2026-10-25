@@ -84,6 +84,7 @@ func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Te
 	map_data = map
 	logic.can_escape = escape
 	logic.setup(troop, XState.current)
+	XPetCapture.roll_battle(logic)  # Star_PetSystem 的 Scene_Battle.start 包装：掷可捕捉（名字加「宝宝」）
 	logic.auto = force_auto
 	book_appeared = XEnemyBook.on_battle_start(XState.current, troop, map, logic.enemies)
 

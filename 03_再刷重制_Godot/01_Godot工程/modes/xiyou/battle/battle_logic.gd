@@ -149,7 +149,6 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	# BattleManager.startBattle：inBattle 起敌人走 krz 能力值缓存；逃跑率等开战前的读取不留在格子里
 	for e in enemies:
 		e.param_cache_begin()
-	XPetCapture.roll_battle(self)  # Star_PetSystem 的 Scene_Battle.start：掷可捕捉
 
 
 ## dsPassiveSkill Scene_Battle.start：每个出战角色依次处理开战状态标签——自己、随机队友、随机敌人、随机任一目标、
