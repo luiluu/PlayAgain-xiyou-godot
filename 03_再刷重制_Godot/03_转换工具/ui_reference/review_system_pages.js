@@ -537,6 +537,25 @@
         extra: domReadout
     };
 
+    // 整队页领袖旗标（八戒_71 期三，Star_LeadActor 的 Window_PartySelect.drawActor 包装）：队伍 1/8/9/10/2/3/4，首位狗逍遥（领袖 5 号）。
+    // 原版 ImageManager.loadSystem("LeaderFlag") 在绘制时才载入：打开时那一次可能还没载好（不画），重画一次才有。两态都截。
+    P.party_leader = {
+        setup: async function () {
+            [2, 3, 4].forEach(function (id) { $gameParty.addActor(id); });
+            await push(Scene_Party);
+        },
+        shots: {
+            party_leader_open: async function () {},
+            party_leader_redraw: async function () { scene()._partyWindow.refresh(); }
+        },
+        extra: function () {
+            var w = scene()._partyWindow, flag = ImageManager.loadSystem('LeaderFlag'), r = w.itemRect(0);
+            return {battleMembers: $gameParty._battleMembers.slice(), window: [w.x, w.y, w.width, w.height], padding: w.standardPadding(),
+                textPadding: w.textPadding(), itemRect0: [r.x, r.y, r.width, r.height], flag: [flag.width, flag.height, flag.isReady()],
+                flagAt: [r.width - w.textPadding() - flag.width + w.standardPadding() + w.x, w.y + w.standardPadding()]};
+        }
+    };
+
     // 换装卡战斗外观（八戒_71 期一，单独跑：node review_system_pages.cjs <目录> battle_costume）：角色 1 学会 6801「变身——深渊骑士」，
     // 开战 StartPushState1201 100% 推上卡状态，Custom Apply Effect setBattlerImage('Enemy_General_M')；地图 5、敌群 2、难度 3、四人
     P.battle_costume = {
