@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m4e8p1\"]]",
+      "fields": [
+        "errors",
+        "finished",
+        "frames",
+        "trace"
+      ],
+      "oldDigest": "c5282ad8eec824e5",
+      "newDigest": "d8f7ba5d2cbc7100",
+      "reason": "悟空_55 event_probe 对不先 create 的 PHWarehouse show 页先建好默认仓库（青霞等第 2 页正常流程里仓库已由第 1 页建好），原先抛 lootBonus 错的 Map004 EV8 页 1 现在正常记 Scene_Warehouse"
+    }
+  ]
+}
