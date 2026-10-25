@@ -359,6 +359,133 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.assertFalse((self.tmp / 'overlap').exists(), '共用上限 1 时同步探针与测试仍同时运行')
 
 
+
+class SlotWeightTests(unittest.TestCase):
+    """共用槽按权重占（吃内存的探针多占几槽）、多槽进程不被单槽进程饿死、排队心跳、同步与占槽.py 都走这个池。"""
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.state = Path(self.tmpdir.name)
+        self.par = load('par_slots', HERE / '并行测试.py')
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    def hold(self, weight, limit, until, out, name):
+        """在子线程里占 weight 槽，记下占到的槽号，直到 until 事件被置位。"""
+        import threading
+        def body():
+            with self.par.global_slot(self.state, limit, weight) as got:
+                out[name] = got
+                until.wait(10)
+        t = threading.Thread(target=body, daemon=True)
+        t.start()
+        return t
+
+    def wait_for(self, cond, seconds=5):
+        import time
+        t0 = time.monotonic()
+        while not cond() and time.monotonic() - t0 < seconds:
+            time.sleep(0.05)
+        return cond()
+
+    def test_weight_takes_several_slots_and_others_queue(self):
+        import threading
+        got, release_a, release_b = {}, threading.Event(), threading.Event()
+        a = self.hold(2, 3, release_a, got, 'a')
+        self.assertTrue(self.wait_for(lambda: 'a' in got))
+        self.assertEqual(len(got['a']), 2)
+        b = self.hold(1, 3, release_b, got, 'b')
+        self.assertTrue(self.wait_for(lambda: 'b' in got))  # 第三槽还空着
+        c = self.hold(2, 3, threading.Event(), got, 'c')
+        self.assertFalse(self.wait_for(lambda: 'c' in got, 1))  # 只剩 0 槽，两槽的要等
+        release_a.set(); a.join(5)
+        self.assertTrue(self.wait_for(lambda: 'c' in got))
+        self.assertEqual(len(set(got['c']) | {got['b']}), 3)
+        release_b.set(); b.join(5)
+
+    def test_heavy_waiter_keeps_partial_slots_so_singles_cannot_starve_it(self):
+        import threading
+        got, ra = {}, threading.Event()
+        a = self.hold(1, 2, ra, got, 'a')
+        self.assertTrue(self.wait_for(lambda: 'a' in got))
+        rh = threading.Event()
+        h = self.hold(2, 2, rh, got, 'heavy')        # 攒到一槽，还差 a 那一槽
+        self.assertFalse(self.wait_for(lambda: 'heavy' in got, 1))
+        s = self.hold(1, 2, threading.Event(), got, 'single')
+        self.assertFalse(self.wait_for(lambda: 'single' in got, 1))  # 空出的槽已被多槽进程攒着，单槽的插不进来
+        ra.set(); a.join(5)
+        self.assertTrue(self.wait_for(lambda: 'heavy' in got))
+        self.assertNotIn('single', got)
+        rh.set(); h.join(5)
+        self.assertTrue(self.wait_for(lambda: 'single' in got))
+
+    def test_weight_above_limit_is_capped_and_waiting_reports_progress(self):
+        import threading
+        got, release = {}, threading.Event()
+        a = self.hold(9, 2, release, got, 'a')
+        self.assertTrue(self.wait_for(lambda: 'a' in got))
+        self.assertEqual(sorted(got['a']), [0, 1])
+        beats = []
+        def late():
+            with self.par.global_slot(self.state, 2, 1, beats.append, 0.2):
+                pass
+        t = threading.Thread(target=late, daemon=True); t.start()
+        self.assertTrue(self.wait_for(lambda: len(beats) >= 2))
+        release.set(); a.join(5); t.join(5)
+        self.assertFalse(t.is_alive())
+
+    def test_sync_heavy_probe_weight_and_waiting_heartbeat(self):
+        seen = []
+        real = sync.runner().global_slot
+
+        def spy(sdir, limit, weight=1, on_wait=None, interval=60.0):
+            seen.append(weight)
+            if on_wait:
+                on_wait(61.0)
+            return real(self.state, limit, weight)
+        out = io.StringIO()
+        with mock.patch.object(sync.runner(), 'global_slot', spy), mock.patch.object(sync.subprocess, 'run') as run, \
+                contextlib.redirect_stdout(out):
+            run.return_value = subprocess.CompletedProcess([], 0, '', '')
+            sync.run_node(['event_probe.cjs'], {})
+            sync.run_node(['cat_probe.cjs'], {})
+            with mock.patch.dict(os.environ, XIYOU_PROBE_WEIGHTS='{"cat_probe.cjs": 2}'):
+                sync.run_node(['cat_probe.cjs'], {})
+        self.assertEqual(seen, [3, 1, 2])
+        self.assertIn('等槽：event_probe.cjs 已等 61 秒（占 3 槽', out.getvalue())
+
+    def test_godot_import_in_sync_takes_a_slot(self):
+        labels = []
+        @contextlib.contextmanager
+        def spy(label, weight=1):
+            labels.append(label)
+            yield
+        with mock.patch.object(sync, 'heavy_slot', spy), mock.patch.object(sync.subprocess, 'run') as run, \
+                mock.patch.object(sync, 'GODOT', Path(sys.executable)), mock.patch.object(sync, 'PROJECT', self.state):
+            run.return_value = subprocess.CompletedProcess([], 0, '', '')
+            sync.godot_import()
+        self.assertEqual(labels, ['godot --import'])
+
+    def test_slot_cli_runs_command_and_sends_heartbeat_to_notice_fd(self):
+        import threading
+        env = dict(os.environ, XIYOU_TEST_STATE_DIR=str(self.state), CHECK_GLOBAL_JOBS='1', XIYOU_SLOT_HEARTBEAT='0.2')
+        cli = [sys.executable, str(HERE / '占槽.py')]
+        self.assertEqual(subprocess.run(cli + ['--', 'sh', '-c', 'exit 7'], env=env).returncode, 7)
+        self.assertEqual(subprocess.run(cli + ['--weight', '2'], env=env, capture_output=True).returncode, 64)
+        got, release = {}, threading.Event()
+        with mock.patch.dict(os.environ, env):
+            a = self.hold(1, 1, release, got, 'a')
+            self.assertTrue(self.wait_for(lambda: 'a' in got))
+            p = subprocess.Popen(['zsh', '-c', 'out=$("$@" 3>&2 2>&1); print -r -- "OUT:$out"', '_', *cli,
+                                  '--label', 'godot --import', '--notice-fd', '3', '--', 'echo', 'done'],
+                                 env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            self.assertTrue(self.wait_for(lambda: False, 0.8) or True)
+            release.set(); a.join(5)
+            out, err = p.communicate(timeout=10)
+        self.assertEqual(out.strip(), 'OUT:done')  # 心跳不混进捕获的命令输出
+        self.assertIn('等槽：godot --import', err)
+
+
 def ledger():
     return '''## 进度账
 

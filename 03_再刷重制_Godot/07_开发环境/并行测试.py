@@ -154,25 +154,60 @@ def global_limit() -> int:
 
 
 @contextlib.contextmanager
-def global_slot(sdir: Path, limit: int):
-    """所有工作树共用的并发槽位：slots/<i>.lock 上的非阻塞 flock，占到哪个用哪个；进程退出时系统自动释放。"""
+def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_interval: float = 60.0):
+    """所有工作树共用的并发槽位：slots/<i>.lock 上的非阻塞 flock，占到哪个用哪个；进程退出时系统自动释放。
+    weight：一个进程占几槽（特别吃内存的探针如 event_probe 单进程约 4.5GB，按实际占用多占几槽），超过上限按上限算。
+    多槽的先占 heavy.lock（同一时间只有一个多槽进程在攒槽，免得两个各攒一半互相等死），再一槽一槽攒齐；
+    单槽的照旧有空就占，所以多槽进程等的是自然空出来的槽，不会被单槽进程永远插队（攒到的槽不放）。
+    on_wait(已等秒数)：排队期间每 wait_interval 秒调一次（同步用它打印「等槽」心跳，长任务看门狗据此算作有进展）。"""
     slots = sdir / 'slots'
     slots.mkdir(exist_ok=True)
-    while True:
-        for i in range(limit):
-            f = open(slots / ('%d.lock' % i), 'a')
-            try:
-                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except OSError:
-                f.close()
-                continue
-            try:
-                yield i
-            finally:
-                fcntl.flock(f, fcntl.LOCK_UN)
-                f.close()
-            return
-        time.sleep(0.5)
+    weight = max(1, min(int(weight), limit))
+    held, heavy = [], None
+    t0 = last = time.monotonic()
+
+    def tick():
+        nonlocal last
+        now = time.monotonic()
+        if on_wait and now - last >= wait_interval:
+            last = now
+            on_wait(now - t0)
+
+    try:
+        if weight > 1:
+            heavy = open(slots / 'heavy.lock', 'a')
+            while True:
+                try:
+                    fcntl.flock(heavy, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except OSError:
+                    tick()
+                    time.sleep(0.5)
+        while len(held) < weight:
+            for i in range(limit):
+                if len(held) == weight or any(n == i for n, _ in held):
+                    continue
+                f = open(slots / ('%d.lock' % i), 'a')
+                try:
+                    fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except OSError:
+                    f.close()
+                    continue
+                held.append((i, f))
+            if len(held) < weight:
+                tick()
+                time.sleep(0.5)
+        if heavy:
+            fcntl.flock(heavy, fcntl.LOCK_UN)
+            heavy.close()
+            heavy = None
+        yield held[0][0] if weight == 1 else [n for n, _ in held]
+    finally:
+        for _, f in held:
+            fcntl.flock(f, fcntl.LOCK_UN)
+            f.close()
+        if heavy:
+            heavy.close()
 
 
 def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progress: Progress = None) -> tuple:

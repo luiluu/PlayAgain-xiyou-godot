@@ -23,6 +23,7 @@ key、fields、oldDigest、newDigest、reason，须与本轮实际变化逐项�
 只读正式应用；不读写任何玩家存档。
 """
 import argparse
+import contextlib
 import datetime as dt
 import hashlib
 import json
@@ -182,8 +183,9 @@ def write_stamp(gen: Path, report: dict) -> None:
 
 def godot_import(log=None) -> None:
     if GODOT.exists() and PROJECT.is_dir():
-        p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--import'],
-                           capture_output=True, text=True, timeout=300)
+        with heavy_slot('godot --import'):  # Godot 导入也是重进程，走同一个共用池
+            p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--import'],
+                               capture_output=True, text=True, timeout=300)
         out = (p.stdout or '') + (p.stderr or '')
         if log:
             log.write(out)
@@ -306,10 +308,13 @@ _runner = None
 _runner_lock = threading.Lock()
 
 
-def run_node(cmd, env):
-    """跑一个 node 探针：先在 并行测试.py 的跨工作树共用槽（CHECK_GLOBAL_JOBS，状态目录同测试）占位再跑，
-    几条车道同时同步、跑测试时合起来不超上限（唐僧 2026-10-21：两条车道同步加测试曾把 8 核负载冲到 21）。
-    SYNC_JOBS 只决定本次同步最多同时排几个探针。"""
+# 特别吃内存的探针多占几槽（2026-10-25 哪吒）：event_probe 一个进程连跑全部事件页，常驻 4.5GB、堆上限放到 10GB，
+# 本机 16GB／8 核；按 1 槽算时四个槽可能同时塞进两个这种进程加两场 Godot 测试，压到换页、负载 40 以上。没列的占 1 槽。
+# XIYOU_PROBE_WEIGHTS='{"x_probe.cjs": 2}' 可临时覆盖（超过共用上限按上限算）。
+PROBE_WEIGHTS = {'event_probe.cjs': 3}
+
+
+def runner():
     global _runner
     with _runner_lock:  # 几个探针线程同时首次调用：模块执行完才公开，别的线程不会拿到半载入的模块
         if _runner is None:
@@ -318,7 +323,36 @@ def run_node(cmd, env):
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             _runner = module
-    with _runner.global_slot(_runner.state_dir(str(ROOT)), _runner.global_limit()):
+    return _runner
+
+
+def probe_weight(name):
+    try:
+        extra = json.loads(os.environ.get('XIYOU_PROBE_WEIGHTS') or '{}')
+    except ValueError:
+        extra = {}
+    return int(extra.get(name, PROBE_WEIGHTS.get(name, 1)))
+
+
+@contextlib.contextmanager
+def heavy_slot(label, weight=1):
+    """占共用槽再跑重进程（node 探针、Godot 导入）。排队时每 60 秒打一行「等槽」到标准输出：
+    长任务.py 的看门狗按输出判断有没有进展，排队不再被误判卡死（XIYOU_SLOT_HEARTBEAT 调间隔）。"""
+    r = runner()
+
+    def waiting(seconds):
+        print('等槽：%s 已等 %d 秒（占 %d 槽，共用上限 %d）' % (label, seconds, min(weight, r.global_limit()), r.global_limit()),
+              flush=True)
+    with r.global_slot(r.state_dir(str(ROOT)), r.global_limit(), weight, waiting,
+                       float(os.environ.get('XIYOU_SLOT_HEARTBEAT', '60'))):
+        yield
+
+
+def run_node(cmd, env):
+    """跑一个 node 探针：先在 并行测试.py 的跨工作树共用槽（CHECK_GLOBAL_JOBS，状态目录同测试）占位再跑，
+    几条车道同时同步、跑测试时合起来不超上限（唐僧 2026-10-21：两条车道同步加测试曾把 8 核负载冲到 21）。
+    吃内存的探针按 PROBE_WEIGHTS 多占几槽。SYNC_JOBS 只决定本次同步最多同时排几个探针。"""
+    with heavy_slot(' '.join(cmd), probe_weight(cmd[0])):
         # event_probe 在一个进程里连跑全部事件页，内存随事件数涨；切片事件过千页后撞 node 默认 4GB 堆上限（悟空_55 簇 8／13 同步 OOM），放宽到 10GB
         env = dict(env)
         env.setdefault('NODE_OPTIONS', '--max-old-space-size=10240')

@@ -222,6 +222,8 @@ class CheckerTests(Fixture):
         record = 'import sys, pathlib\nwith open(%r, "a") as f: f.write(pathlib.Path(sys.argv[0]).name + " " + " ".join(sys.argv[1:]) + "\\n")\n' % str(self.calls)
         for name in STUB_CHECKS + ['并行测试.py']:
             self.put(ENV / name, record)
+        # 占槽.py 替身：直接跑 -- 后面的命令（真的占槽要用真的 并行测试.py）
+        self.put(ENV / '占槽.py', 'import subprocess, sys\nsys.exit(subprocess.run(sys.argv[sys.argv.index("--") + 1:]).returncode)\n')
         for rel in ['共性参照验收.py', '内容覆盖检查.py', '验证西游来源.py', 'ui_reference/guard_check.py']:
             self.put(TOOLS / rel, record)
         self.put(TOOLS / 'mv_oracle/guard_check.cjs', 'require("fs").appendFileSync(%r, "guard_check.cjs\\n")\n' % str(self.calls))
