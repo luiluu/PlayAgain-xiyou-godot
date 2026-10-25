@@ -520,6 +520,14 @@ func to_dict() -> Dictionary:
 		# Persist only this exceptional state; legacy saves retain their HP fallback.
 		if x2.resource_death_blocked:
 			a[str(id)]["resourceDeathBlocked"] = true
+		# 事件改过的职业、称号、名字与图像（321／324／320／322）；没改过的不写，旧档读回照数据库
+		if x2.class_id != int(x2.data().get("classId", 0)) or not x2.class_exp.is_empty():
+			a[str(id)]["classId"] = x2.class_id
+			a[str(id)]["classExp"] = x2.class_exp
+		if x2.nickname != str(x2.data().get("nickname", "")):
+			a[str(id)]["nickname"] = x2.nickname
+		if not x2.looks.is_empty():
+			a[str(id)]["looks"] = x2.looks
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "battleSlots": battle_slots, "actors": a, "gold": gold,
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
@@ -536,6 +544,14 @@ static func from_dict(d: Dictionary) -> XState:
 	for id_s in d.actors:
 		var row: Dictionary = d.actors[id_s]
 		var x2 := XActor.new().setup(int(id_s))
+		if row.has("classId") and not XDB.rec("Classes", int(row.classId)).is_empty():
+			x2.class_id = int(row.classId)
+		for k in row.get("classExp", {}):
+			x2.class_exp[int(k)] = int(row.classExp[k])
+		if row.has("nickname"):
+			x2.nickname = str(row.nickname)
+		if row.get("looks") is Dictionary:
+			x2.set_looks(row.looks)
 		x2.change_level(int(row.level))
 		x2.exp_total = int(row.exp)
 		x2.skill_ids.assign(row.skills.map(func(v): return int(v)))

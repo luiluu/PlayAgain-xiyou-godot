@@ -111,6 +111,13 @@ static func valid_data(d) -> bool:
 			return false
 		if row.has("resourceDeathBlocked") and not row.resourceDeathBlocked is bool:
 			return false
+		if row.has("classId") and not (row.classId is int or row.classId is float):
+			return false
+		for field in ["classExp", "looks"]:
+			if row.has(field) and not row[field] is Dictionary:
+				return false
+		if row.has("nickname") and not row.nickname is String:
+			return false
 		if not row.equips.all(func(e): return e == null or _valid_gear(e)):
 			return false
 	if not d.gear.all(_valid_gear):
