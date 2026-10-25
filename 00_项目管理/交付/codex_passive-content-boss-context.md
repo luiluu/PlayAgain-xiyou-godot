@@ -76,3 +76,22 @@
 - 67定向apply补宿主第二步：原版已执行到AB_EnemyBook尾钩子，因行动仅覆写item取测试技能而内部_item为空失败；改用真实setSkill(1)初始化_item，测试副本仍由item getter提供。失败原件另存 .sandbox/boss_output_context_selected_67a_failed.json。--check-only单脚本模式缺GameApp autoload，虽rc0但编译日志报错，判不通过；该命令不适合本工程，撤销作为通用编译关的建议，继续用真实场景＋无SCRIPT ERROR验收（boss67-godot-smoke2在途），不改GameApp等无关文件。
 
 - 67小样结果：真实setSkill补齐后，boss67-apply2定向apply原版1/1通过（runId 6f8aeb0ce75f4595be8ded18f7d0d77f）；Godot boss67-godot-smoke2两例＋边界281/281、无偶发。下一步启动boss67-full原版123例（原121＋HP/MP真实公式各1），四项直接依赖boss67-deps在途；不重采以前Boss普通输出／生命周期参照，不跑旧全量。
+
+## 沙僧67→68（同树自动接力，非额度停手）
+
+- 用户既定上下文40%接力；67创建68后停止，68为唯一后续执行者。最后实查五小时25%、周49%，不是95%停手；恢复先实查额度，95%才WIP停、周98%收尾。设计与疑难显式high；机械收尾有真实接口再medium，不虚称切换。
+- 第一条及所有文件命令必须显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。只用这棵已有树，不在main写、不建或清理worktree、不reset/cherry-pick、不建automation、不向唐僧或其他已有会话发消息。共用交接板／变更记录／步骤清单／当前状态只读，只登记本单。保留旧原版证据、所有.sandbox、generated与整树。
+- 当前分支codex/passive-content-boss-context；以本节提交后HEAD为准，代码均已检查点保存，工作区干净。导入顺带生成的非本车道tests/xiyou_battle_common_events.gd.uid已移存mv_oracle/.sandbox/boss67_unrelated_import_uid.txt，原gd未改；以后导入可能再次生成，不夹带提交。
+- 67已实现草稿：新增core/boss_output_context.gd（非静态frames／settled／direct）；resource_context持有域，gain在护盾前按当前单目标及Boss来源缩放负值；新增set_resource／内部_set_resource，不写伤害槽、不做gain尾dirty、不加额外gain日志行；battle.apply新resources与上一层共享域，进退配对；普通execute_hp/mp_damage先沿00524617缩放，再settled包住原结算防止gain/set重放大。显式XEnemy转型修了首轮倍率类型推断错误。还未完整验收，不可合并。
+- 原版宿主已补两项真实数据：CodexYunshang._acted空战斗列表；actionFor调用真实setSkill(1)填内部_item，再用实例item getter提供测试技能副本。没有替换原版结算／上下文方法，冻结源只读。smoke66c失败原件存.sandbox/boss_output_context_smoke_66c_failed.json；apply第二次尾钩子失败存boss_output_context_selected_67a_failed.json。setSkill修后boss67-apply2原版1/1通过，runId6f8aeb0ce75f4595be8ded18f7d0d77f。
+- **当前仅两条在途长任务，先读日志／状态，禁止重复开**：
+  1. `03_再刷重制_Godot/04_验证/本地结果/任务/boss67-full.log`，runId `2ab62fa65bf04a7584ab0415142b87af`，原版完整123例（原121＋真实公式HP/MP各1），最后等共用4槽240秒。使用等待任务.sh --timeout 45，单次不超60秒。默认写.sandbox/boss_output_context.json；--only只写_selected不覆盖完整产物。
+  2. 同目录 `boss67-deps.log`，runId `b8abd86ebc8f4bec81c1367772bac8e2`；四项直接依赖：xiyou_boss_output.tscn、xiyou_formula_effects.tscn、xiyou_state_effects.tscn、xiyou_state_effects_tp.tscn。日志最后完成3/4、剩1等槽，未出最终总结果，不能据此说四项都过。细日志与timings会写04_验证/本地结果/boss67-deps。
+- **已验证的小样，不等于完整通过**：boss67-godot-smoke2（runId c9450d6cdeda47fe8eefd30644050f34）两例有效原版＋边界281/281，无偶发；包含真实XFormulaExecution公式嵌套、正常和unsupported_program诊断后恢复、外层恢复后域外gain不放大、settled/direct按目标＋资源区分、TP不缩放、独立resource域与预览隔离、set相等不refresh且无gain脏标记／结果槽写入。测试默认夹具boss_output_context_oracle.json目前**只有两例post.set与death**，全123原版通过后再替换，不要误认已有全量夹具。
+- 两个真实公式测试已写在同一Godot专项：b.gainHp(-7.9);0与b.gainMp(-7.9);0走真正XBattleLogic.apply／XFormulaExecution，程序夹具boss_output_context_programs.json由compile_formula生成；它们要等完整原版formula.hp/mp两例才会执行。set公式b.setHp(b.hp-7);0仍unsupported，明确保留，不改未交接formula_execution.gd／mv_event_core。HookBattle仅把资源脚本插入真实apply公式位置；post／execute为等价域回放，不能宣称对应customPre/PostDamageEval宿主已移植。
+- **下一步**：等完整原版与依赖结果；原版失败先看诊断／保留原件再--only定向补，不盲跑整轮。完整原版过后把.sandbox/boss_output_context.json复制为tests/fixtures/boss_output_context_oracle.json，检查123例errors全空、来源指纹一致，跑新增专项。新增native快照已加dirty（need_refresh），Godot对照effect_dirty；注意-0.4放大floor成0、敌人护盾完全吸收时gain尾dirty可能需按KRZ实际收到的值处理，当前代码仍以原requested非零标记，**仅是待核疑点，须看全原版再改，不先假定通过**。若改资源实现，重跑新增专项及本轮四个直接依赖，不重采以前78组／29组、不跑旧全量。
+- GDScript不支持JS try/finally；当前只保证正常返回与翻译VM诊断返回。native测试throw由YEP捕获，Godot回放用返回false模拟，不设resources.error阻断外层。不要宣称任意GDScript致命错误必能恢复。不得根据BattleManager残留subject猜来源。
+- 导入boss67-import曾rc0无报错但首次场景才发现类型错误，修后smoke2已真过。尝试的boss67-compile --check-only --script缺GameApp autoload，虽然rc0但SCRIPT ERROR，判失败，**不适合本工程，不再跑或推广**；不去改GameApp等无关文件。原件日志保留供精简证据。UID已生成并提交。文档/JSON/链接/编号与MV守卫16/16已过，收尾再跑文档与链接（按检查.sh内块）＋必要守卫并登记。
+- 共用槽仍很拥挤：67第一次定向原版等约11分钟，后提交的导入、专项、编译检查先拿槽；已登记可优化交总装／工具车道。不得绕槽、提高上限、杀别人任务或改工具车道文件。长批用python3 -u、XIYOU_TEST_HEARTBEAT=30、长任务.py start脱离会话＋前台等待。
+- 本小期完整通过后先独立交付：精简证据写核查范围、本单最终范围／限制／验证／待Claude，清自己的临时任务输出（失败与原版.sandbox保留），再接序列targets、stateOrigin、1341/2550特殊react来源，各入口另采原版，不为尾巴拖住已交小期。所有自己提交待Claude，不自销核、不自评完成度。
+- 旧交付/长期顺序仍按66→67及本单前文：Boss属性/2651生命周期04e54453、普通输出ec75a3b1均已独立交待Claude，不重做。权能五本1654/1656/1674/1683/1718→容量满变量9返书＋预约1317→PREE/ASUP→WPNM/SkEType与race-battle等八戒接口→全部完成且额度足才核他人；两块TP Apply/完整预览空槽与敌人永久账本仍未做。依赖链b135ee33→026f6ee3→b495833a→7ef7584a→7bfb4807→eb6fff3f→04e54453→ec75a3b1，不cherry-pick；50%审查二期0b00c374另合。不要夹带无关main合并或大范围重审；若以后确需合main，用--no-commit并显式执行者/待Claude尾注。
