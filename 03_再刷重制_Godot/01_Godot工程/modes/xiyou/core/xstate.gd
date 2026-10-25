@@ -660,4 +660,5 @@ static func from_dict(d: Dictionary) -> XState:
 		s.unlocked_maps[4] = true
 	XGlobalVars.apply(s)  # extractSaveContents 之后：跨存档变量盖掉档里的值
 	_become_current(s)
+	XPets.loaded(s)
 	return s

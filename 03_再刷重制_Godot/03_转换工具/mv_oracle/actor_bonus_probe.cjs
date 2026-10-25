@@ -53,8 +53,23 @@ cases.push(makeCase('pet.lifecycle',{pushes,skills},()=>{
   [w.$gameParty._battleMembers[0],w.$gameParty._battleMembers[1]]=[w.$gameParty._battleMembers[1],w.$gameParty._battleMembers[0]];
   w.$gameParty.rearrangeActors(); w.Star.PetSystem.TeamAForget(); record('swap');
   w.$gameParty.TeamATo=1; w.Star.PetSystem.refreshGTWar(); record('team');
+  // 目标槽清空、重建五个出战槽；同槽重排仍需把被忘掉的共享技能重学回来。
+  w.Star.PetSystem.TeamALearn(); w.$gameParty._battleMembers[1]=0;
+  w.$gameParty.rearrangeActors(); w.Star.PetSystem.TeamAForget(); record('empty');
+  w.$gameParty.initializeBattleMembers(); record('initialize');
+  const target=w.$gameActors.actor(w.$gameParty._battleMembers[1]); target.forgetSkill(1475);
+  w.Star.PetSystem.TeamALearn(); w.$gameParty.rearrangeActors(); w.Star.PetSystem.TeamAForget(); record('relearn');
   w.Scene_PetSystem.prototype.onGotowarOk.call(scene(1)); record('switch');
   w.Scene_PetSystem.prototype.onRestOk.call(scene(1)); record('rest');
+  return {rows};
+}));
+cases.push(makeCase('pet.membership',{push:pushes[0], scope:'current party / warehouse plus newly recruited actor 9'},()=>{
+  fresh(); w.$gameParty._actors=w.Array.from([1,8]); w.$gameParty._battleMembers=w.Array.from([1,8,0,0,0]);
+  w.$gameParty.Pets=[pet(pushes[0])]; const rows=[];
+  const record=name=>rows.push({name,actors:snap().filter(a=>a.id!==10)});
+  w.Scene_PetSystem.prototype.onGotowarOk.call(scene(0)); record('war');
+  w.$gameParty.addActor(9); record('add');
+  w.Scene_PetSystem.prototype.onRestOk.call(scene(0)); record('rest');
   return {rows};
 }));
 cases.push(makeCase('pet.mapping',{},()=>{

@@ -10,12 +10,15 @@ extends RefCounted
 ##   indexOf("变异")（−1 为真），所以几乎总是补学到 2 个技能。学习次数上限 1～3。
 ## - 等级：经验表照职业 1 的 expParams（与角色同式）再 /10 取整，满级 50（GetLevel）。
 ## - 出战（onGotowarOk）：先撤掉原出战宠物，再给全队（$gameParty.members）学会宠物技能——带 <TeamA> 的只给出战栏位第 team_a 位；
-##   前 8 项加成加进各队员的 _paramPlus。重制通过 actor_param_plus 动态读，不把可撤回加成写进永久字段。
+##   前 8 项加成加进各队员的 _paramPlus。重制复用 XParamPlus 账本逐项加减，并记录本次收到加成的角色。
 ##   后 6 项由 war_xparam_plus 接进角色 traits_sum；整队槽位变化时 sync_team_a 即时迁移共享技能。
 ## - 捕获（地图神秘生物、战斗捕捉道具）、宠物参战与战后经验不在这里（见交付单）。
 
 const RARITY_TAGS := ["【罕见】", "【十分罕见】", "【精英】", "【亘古未见】", "【首领】", "【稀有】", "【前所未见】", "【亘古未有】"]
 const MAX_LEVEL := 50
+## 原版缺陷：出战后新加入的角色未收到属性，休息却照扣。默认只撤实际发过的加成；false 恢复原版。
+## 待总装分配优化编号，详见本车道交付单。
+static var FIX_UNGRANTED_BONUS := true
 
 
 static func _data(s: XState) -> Dictionary:
@@ -167,9 +170,13 @@ static func _apply_skills(s: XState, pet: Dictionary, on: bool) -> void:
 			elif not team_a_skill(int(id)):
 				a.learn_skill(int(id))
 		a.refresh_passive()
-		a.param_mark_dirty()
-		a.refresh_resources()
+		var recipients: Array = _data(s).get("bonus_actors", [])
+		if on or not FIX_UNGRANTED_BONUS or recipients.any(func(id): return int(id) == a.actor_id):
+			for i in mini(8, pet.push.size()):
+				XParamPlus.add(s, a.actor_id, i, float(pet.push[i]) * (1.0 if on else -1.0))
 	if on:
+		_data(s).bonus_actors = (s.party + s.saved_actors).duplicate()
+		_data(s).bonus_ledger = true
 		var t := team_a_actor(s)
 		if t != null:
 			for id in pet.skills:
@@ -181,6 +188,7 @@ static func _apply_skills(s: XState, pet: Dictionary, on: bool) -> void:
 		s.pet_team_actor = t.actor_id if t != null else 0
 	else:
 		s.pet_team_actor = 0
+		_data(s).bonus_actors = []
 
 
 ## TeamALearn → 槽位修改 → TeamAForget。只撤旧接收者，不误忘其他角色原本会的同名技能。
@@ -190,8 +198,6 @@ static func sync_team_a(s: XState) -> void:
 		return
 	var target := team_a_actor(s)
 	var next_id := target.actor_id if target != null else 0
-	if s.pet_team_actor == next_id:
-		return
 	var old: XActor = s.actors.get(s.pet_team_actor)
 	for id in pet.skills:
 		if team_a_skill(int(id)):
@@ -206,15 +212,12 @@ static func sync_team_a(s: XState) -> void:
 	s.pet_team_actor = next_id
 
 
-## refreshGTWar：先撤回技能及属性、截资源，再重学；加成不写永久字段，不会重复累加。
+## refreshGTWar：先撤回技能及属性、截资源，再重学；本次发放名单防止未加先扣。
 static func refresh_war(s: XState) -> void:
-	var i := war_index(s)
 	var pet := war_pet(s)
 	if pet.is_empty():
 		return
-	_data(s).war = -1
 	_apply_skills(s, pet, false)
-	_data(s).war = i
 	_apply_skills(s, pet, true)
 
 
@@ -224,7 +227,7 @@ static func go_to_war(s: XState, i: int) -> bool:
 		return false
 	var old := war_pet(s)
 	if not old.is_empty():
-		rest(s, war_index(s))
+		_apply_skills(s, old, false)
 	_data(s).war = i
 	_apply_skills(s, list(s)[i], true)
 	return true
@@ -235,8 +238,8 @@ static func rest(s: XState, i: int) -> bool:
 	if i != war_index(s) or i < 0:
 		return false
 	var pet := war_pet(s)
-	_data(s).war = -1
 	_apply_skills(s, pet, false)
+	_data(s).war = -1
 	return true
 
 
@@ -290,8 +293,16 @@ static func war_param_plus(s: XState, i: int) -> float:
 	return float(pet.push[i]) if not pet.is_empty() and i >= 0 and i < 8 and i < pet.push.size() else 0.0
 
 
-static func actor_param_plus(s: XState, a: XActor, i: int) -> float:
-	return war_param_plus(s, i) if s.party.has(a.actor_id) or s.saved_actors.has(a.actor_id) else 0.0
+## 仅兼容重制旧档：以前出战宠物没把前八项接到能力值；新档已经入账，不重复加。MV 旧档不迁移。
+static func loaded(s: XState) -> void:
+	var pet := war_pet(s)
+	if pet.is_empty() or bool(_data(s).get("bonus_ledger", false)):
+		return
+	for a in s.members() + XActorWarehouse.stored(s).map(func(id): return s.actor(id)):
+		for i in mini(8, pet.push.size()):
+			XParamPlus.add(s, a.actor_id, i, float(pet.push[i]))
+	_data(s).bonus_actors = (s.party + s.saved_actors).duplicate()
+	_data(s).bonus_ledger = true
 
 
 ## 原版 traitsSum：push8..12 → XP0..4；XP5 不加，XP6 优先 push14、不存在时回退 push13。

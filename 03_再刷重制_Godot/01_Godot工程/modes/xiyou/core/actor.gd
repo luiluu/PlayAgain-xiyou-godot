@@ -461,8 +461,6 @@ func param_plus(i: int) -> float:
 
 func _param_plus(i: int) -> float:
 	var v := XParamPlus.bonus(self, i) + XEquipSuits.value(self,"param",i,false)
-	if XState.current != null:
-		v += XPets.actor_param_plus(XState.current, self, i)
 	for e in equip_list():
 		var p := float(e.params[i])
 		v += p

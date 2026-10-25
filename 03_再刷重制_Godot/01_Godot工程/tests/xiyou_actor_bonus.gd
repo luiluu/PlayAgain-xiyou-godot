@@ -48,7 +48,7 @@ func compare_party(s: XState, row: Dictionary) -> void:
 
 func _run() -> void:
 	var fixture = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	check("fixture", fixture is Dictionary and fixture.cases.size() == 3)
+	check("fixture", fixture is Dictionary and fixture.cases.size() == 4)
 	for c in fixture.cases:
 		check(str(c.id) + ".oracle", c.errors.is_empty())
 	var s := fresh()
@@ -91,22 +91,59 @@ func _run() -> void:
 	compare_party(s, rows[4])
 	XPets.set_team_a(s, 1)
 	compare_party(s, rows[5])
-	# 有宠物的存档往返不能把临时加成重复写入永久字段；读后整队仍能迁移旧接收者。
+	# 宠物加成与原版同入 paramPlus 账本；存档往返不得重复加，读后整队仍能迁移旧接收者。
 	s = XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
 	compare_party(s, rows[5])
-	check("pet.no_permanent", s.mv_param_plus.is_empty())
+	check("pet.ledger_not_duplicated", IDS.all(func(id): return XParamPlus.bonus(s.actor(id), 0) == 100.0))
+	var old_pet_save := s.to_dict()
+	old_pet_save.mvParamPlus = {}
+	old_pet_save.pets.erase("bonus_ledger")
+	old_pet_save.pets.erase("bonus_actors")
+	s = XState.from_dict(old_pet_save)
+	compare_party(s, rows[5])
 	s.battle_slots = [1, 8, 9, 10, 0]
 	s.rearrange_actors()
 	check("pet.loaded_swap", s.actor(8).skill_ids.has(1475) and not s.actor(1).skill_ids.has(1475))
 	s.battle_slots = [8, 1, 9, 10, 0]
 	s.rearrange_actors()
-	XPets.go_to_war(s, 1)
+	s.battle_slots[1] = 0
+	s.rearrange_actors()
 	compare_party(s, rows[6])
-	XPets.rest(s, 1)
+	s.init_battle_slots()
 	compare_party(s, rows[7])
+	s.actor(int(s.battle_slots[1])).forget_skill(1475)
+	s.rearrange_actors()
+	compare_party(s, rows[8])
+	XPets.go_to_war(s, 1)
+	compare_party(s, rows[9])
+	XPets.rest(s, 1)
+	compare_party(s, rows[10])
+	# 新加入者原版休息时会未加先扣：开关 false 严格对照，默认 true 验证修正。
+	XPets.FIX_UNGRANTED_BONUS = false
+	s = fresh()
+	s.party.assign([1, 8])
+	s.battle_slots = [1, 8, 0, 0, 0]
+	s.pets.list = [{"enemy": 1, "push": setup.pushes[0], "skills": SKILLS.duplicate()}]
+	rows = fixture.cases[2].observed.rows
+	XPets.go_to_war(s, 0)
+	compare_party(s, rows[0])
+	s.add_actor(9)
+	compare_party(s, rows[1])
+	XPets.rest(s, 0)
+	compare_party(s, rows[2])
+	XPets.FIX_UNGRANTED_BONUS = true
+	s = fresh()
+	s.party.assign([1, 8])
+	s.battle_slots = [1, 8, 0, 0, 0]
+	s.pets.list = [{"enemy": 1, "push": setup.pushes[0], "skills": SKILLS.duplicate()}]
+	XPets.go_to_war(s, 0)
+	s.add_actor(9)
+	XPets.rest(s, 0)
+	check("optimization.no_ungranted_subtraction", range(8).all(func(i): return s.actor(9).param_plus(i) == 0))
+	check("optimization.granted_retracted", [1, 8, 11].all(func(id): return range(8).all(func(i): return s.actor(id).param_plus(i) == 0)))
 	# traitsSum 是全体角色可读；宠物属性仅队伍及仓库拥有，敌人无特性加成。
 	s = fresh()
-	var o: Dictionary = fixture.cases[2].observed
+	var o: Dictionary = fixture.cases[3].observed
 	compare("mapping.before", s.actor(1), o.before)
 	s.pets.list = [{"enemy": 1, "push": setup.pushes[0], "skills": []}]
 	s.pets.war = 0
