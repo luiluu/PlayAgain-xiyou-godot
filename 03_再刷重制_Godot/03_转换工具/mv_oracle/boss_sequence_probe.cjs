@@ -38,10 +38,11 @@ const cases=specs.filter(row=>!only||only.test(row.id)).map(({id,spec})=>makeCas
  w.$gameTroop.clear();w.CodexYunshang._acted=w.Array.from([]);w.BattleManager._actionBattlers=w.Array.from([]);w.BattleManager._nextTurnActionBattlers=w.Array.from([]);
  const boss=new w.Game_Enemy(spec.enemy||6,0,0),actor=w.$gameActors.actor(1),other=new w.Game_Enemy(6,0,0),c=new w.Game_Enemy(6,0,0);
  const a=spec.actorSource?actor:boss,b=spec.actorTarget?actor:other,bs={a,b,c};
+ for(const x of w.$gameParty.battleMembers())if(!Object.values(bs).includes(x))bs['p'+x.actorId()]=x;
  w.$gameTroop._enemies=w.Array.from([boss,other,c]);w.$gameParty._inBattle=true;
- for(const x of new Set([boss,actor,other,c])){x.onBattleStart();x.refresh();}
+ for(const x of new Set([boss,actor,other,c,...Object.values(bs)])){x.onBattleStart();x.refresh();}
  D.syncArmor(boss,spec.armor);
- for(const x of new Set([boss,actor,other,c])){x._hp=Math.min(500,x.mhp);x._mp=Math.min(300,x.mmp);x._tp=0;x._shield=0;x.clearResult();}
+ for(const x of new Set([boss,actor,other,c,...Object.values(bs)])){x._hp=Math.min(500,x.mhp);x._mp=Math.min(300,x.mmp);x._tp=0;x._shield=0;x.clearResult();}
  b._shield=spec.shield||0;
  const BM=w.BattleManager,action=new w.Game_Action(a);action.setSkill(1);BM._action=action;BM._subject=spec.stale?c:a;
  BM._targets=w.Array.from(spec.targets.map(k=>bs[k]));BM._allTargets=BM._targets.slice();
