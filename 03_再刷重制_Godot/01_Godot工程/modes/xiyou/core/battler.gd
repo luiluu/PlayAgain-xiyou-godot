@@ -48,6 +48,8 @@ var state_turns := {}
 ## YEP stateOrigin：状态 ID → 附加时行动者的 WeakRef（XImportedBalance.acting_battler）；导入角色平衡的持续伤害按来源判断。
 ## 用弱引用：自己给自己加状态、双方互相记来源都会成环，RefCounted 环在退出时泄漏
 var state_origins := {}
+## 状态脚本写在战斗者身上的私有字段，按原名存（如叠毒 `_stackingPoison`），所有状态共用；角色的随存档（stateData）
+var state_data := {}
 var buffs: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var buff_turns: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var guarding := false

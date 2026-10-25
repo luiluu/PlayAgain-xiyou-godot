@@ -1094,6 +1094,8 @@ func _play(logs: Array) -> void:
 			"guard":
 				sprites[l.user].set_motion("guard")
 			"regen":
+				if l.has("animation"):  # 状态 Regenerate 脚本（叠毒）的 target.startAnimation
+					_start_animation(int(l.animation), l.target)
 				if float(l.hp) != 0.0:
 					_popup(l.target, -float(l.hp), false)
 			"collapse":

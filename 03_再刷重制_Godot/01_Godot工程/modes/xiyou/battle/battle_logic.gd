@@ -544,7 +544,11 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 		_regenerate(b, logs)
 		_tick_states(b, 2)
 	# Custom Regenerate → Custom Turn End（regenerateAll 外层与 onTurnEnd 不看存活，倒下的也跑）
-	XStateEffects.run("regenerate", b)
+	# 叠毒等 Regenerate 脚本的扣血按状态各弹一次字（regenerateStateEffects 每个状态 clearResult → eval → startDamagePopup）
+	var emit := func(entry: Dictionary) -> void:
+		entry.views = views([entry.target])
+		logs.append(entry)
+	XStateEffects.run("regenerate", b, {"random": _rule(), "variables": vars(), "emit": emit})
 	XStateEffects.run("turn_end", b)
 	b.decay_shield()  # ShieldSystem 包在 regenerateAll 最外层，倒下的也衰减
 	b.param_mark_dirty()

@@ -323,6 +323,69 @@ def query_state_value_effect(code, phase):
     return {'op': 'value_query', **query} if query else None
 
 
+# ---- 叠毒 _stackingPoison（state_js_probe poison.*）：持有者上一个共用层数 ----
+POISON_PREFIX = 'target . _stackingPoison = target . _stackingPoison || 1 ; var stacks = target . _stackingPoison'.split()
+POISON_SUFFIX = ('target . startAnimation ( N ) ; target . gainHp ( - damage ) ; target . startDamagePopup ( ) ; '
+                 'target . clearResult ( ) ; if ( target . isDead ( ) ) { target . performCollapse ( ) ; }').split()
+POISON_ORIGIN = {'atk', 'mat', 'agi', 'luk', 'mhp', 'mmp', 'tp', 'level', '_level'}
+
+
+def _tokens(code):
+    from formula_program import Parser, Unsupported
+    try:
+        return [row[0] for row in Parser(code).tokens[:-1]]
+    except Unsupported:
+        return None
+
+
+def poison_stack_effect(body, code, phase):
+    """Apply 加层、Remove 清零、Regenerate 扣血三种整块。Regenerate 的伤害式只许层数、
+    `var damageK = origin.能力` 局部量、数字与 + - * 括号；来源 _level 与 level 同值（YEP_EnemyLevels 的 getter）。"""
+    tokens = _tokens(code)
+    if tokens is None:
+        return None
+    sig = ' '.join(tokens)
+    if phase == 'apply':
+        m = re.fullmatch(r'target \. _stackingPoison = target \. _stackingPoison \|\| 0 ; '
+                         r'target \. _stackingPoison \+ = ([1-9][0-9]*) ;', sig)
+        return {'op': 'poison_stack', 'mode': 'add', 'n': int(m.group(1))} if m else None
+    if phase == 'remove':
+        return {'op': 'poison_stack', 'mode': 'reset'} if sig == 'target . _stackingPoison = 0 ;' else None
+    if phase != 'regenerate' or tokens[:len(POISON_PREFIX)] != POISON_PREFIX:
+        return None
+    # 原文「var stacks = target._stackingPoison」后没有分号，靠换行自动补；同一行接 var 就是语法错误
+    if not re.search(r'var\s+stacks\s*=\s*target\._stackingPoison[ \t]*(?://[^\n]*)?\n', strip_js_comments(body).replace('\r', '')):
+        return None
+    rest = tokens[len(POISON_PREFIX):]
+    tail = len(POISON_SUFFIX)
+    if len(rest) <= tail:
+        return None
+    suffix = rest[-tail:]
+    anim = suffix[4]
+    if [('N' if i == 4 else t) for i, t in enumerate(suffix)] != POISON_SUFFIX or not re.fullmatch(r'[1-9][0-9]*', anim):
+        return None
+    rest, names, source = rest[:-tail], {'stacks'}, ['var stacks;']
+    while rest[:1] == ['var'] and len(rest) >= 7 and rest[1] != 'damage':
+        name, eq, origin, dot, prop, semi = rest[1:7]
+        if not re.fullmatch(r'damage[1-9]', name) or name in names or (eq, origin, dot, semi) != ('=', 'origin', '.', ';') \
+                or prop not in POISON_ORIGIN:
+            return None
+        names.add(name)
+        source.append('var %s = a.%s;' % (name, 'level' if prop == '_level' else prop))
+        rest = rest[7:]
+    if rest[:3] != ['var', 'damage', '='] or rest[-1:] != [';'] or ';' in rest[3:-1]:
+        return None
+    expr = rest[3:-1]
+    if not expr or any(not (t in names or t in ('+', '-', '*', '(', ')') or re.fullmatch(r'(?:0|[1-9][0-9]*)(?:\.[0-9]+)?', t))
+                       for t in expr):
+        return None
+    source.append('value = %s;' % ' '.join(expr))
+    program = compile_formula(' '.join(source), custom=True, table='States')
+    if program['status'] != 'pure' or set(program['capabilities']) - {'read.battler'}:
+        return None
+    return {'op': 'poison_tick', 'animation': int(anim), 'program': program}
+
+
 def parse_state_effects(note):
     """返回 [{phase, op, cond, k, round} 或 {phase, op:'js', source}]；op=js 表示尚未翻译。"""
     out = []
@@ -347,6 +410,10 @@ def parse_state_effects(note):
         bonus = constant_bonus_effect(code) if phase in ('confirm', 'react') else None
         if bonus:
             out.append({'phase': phase, **bonus})
+            continue
+        poison = poison_stack_effect(body, code, phase)
+        if poison:
+            out.append({'phase': phase, **poison})
             continue
         query = query_state_value_effect(code, phase)
         if query:
