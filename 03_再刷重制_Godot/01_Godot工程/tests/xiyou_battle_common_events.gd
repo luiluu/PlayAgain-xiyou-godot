@@ -124,11 +124,11 @@ func _inventory() -> void:
 		var l := battle([1, 8, 9, 10])
 		l.message_responder = func(_m): return null
 		XBattleCommonEvent.reserve(l, id)
-		l.troop_event_skipped.clear()
+		l.common_event_skipped.clear()
 		l.run_events()
-		if not l.troop_event_skipped.is_empty():
+		if not l.common_event_skipped.is_empty():
 			with_skip.append(id)
-		for sk in l.troop_event_skipped:
+		for sk in l.common_event_skipped:
 			var k := str(sk).split(" ")[0]
 			skipped[k] = int(skipped.get(k, 0)) + 1
 	print("INVENTORY battle CE=%d, with skipped=%d %s, skipped codes=%s" % [ids.size(), with_skip.size(), JSON.stringify(with_skip), JSON.stringify(skipped)])

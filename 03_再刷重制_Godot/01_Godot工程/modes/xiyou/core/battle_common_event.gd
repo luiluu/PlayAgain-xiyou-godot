@@ -9,7 +9,7 @@ extends RefCounted
 ##   与事件进行中都不判定，所以**打倒最后一只敌人后预约的公共事件照样跑完**（参照 thunder_battle_end：84 仍强制 533），之后才胜利；
 ##   重制的战斗画面在打赢／打输后、进结算前先跑一次（XBattleScene._main），无界面 run_turn 本来就先查事件。
 ## 重制：预约记在 XBattleLogic 的 meta "battle_ce"；XBattleLogic._drive_events 选页之前调 take 取成 XBattleEventRunner 执行，
-## 指令与敌群页同一套（MVEventCore＋战斗环境），没翻译的照样记进 troop_event_skipped（页号记 0）。
+## 指令与敌群页同一套（MVEventCore＋战斗环境），没翻译的记进 XBattleLogic.common_event_skipped（敌群页的另记 troop_event_skipped）。
 ## 一次事件检查里接连预约（强制行动再预约）最多 CHAIN_LIMIT 次，防止条件写错时死循环（原版会一直跑）。
 ## Star_PetSystem 的 PetGet 读「最后一个 setItem 的行动」：用道具时记在 meta "last_item_action"（XPetCapture.pet_get 读）。
 

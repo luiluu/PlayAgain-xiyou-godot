@@ -73,6 +73,8 @@ var _event_flags := {}
 var _cleared := {}
 ## 敌群事件里尚未翻译、本次跳过的指令（"代码 内容 页"）
 var troop_event_skipped: Array = []
+## 技能／物品公共事件（XBattleCommonEvent）里尚未翻译、本次跳过的指令（"代码 内容 公共事件N"）
+var common_event_skipped: Array = []
 ## 战斗内事件的游标（XBattleEventRunner）：当前页没执行完时非空；本次检查的条件 {first, turn_end, moment, guard}
 var _runner: XBattleEventRunner = null
 var _check := {}
@@ -648,7 +650,8 @@ func _drive_events() -> Array:
 				pass
 			_:
 				for sk in _runner.skipped:
-					troop_event_skipped.append("%d %s 第%d页" % [int(sk.code), str(sk.text), int(_runner.get_meta("page")) + 1])
+					if _runner.has_meta("common_event"): common_event_skipped.append("%d %s 公共事件%d" % [int(sk.code), str(sk.text), int(_runner.get_meta("common_event"))])
+					else: troop_event_skipped.append("%d %s 第%d页" % [int(sk.code), str(sk.text), int(_runner.get_meta("page")) + 1])
 				_runner = null
 	_runner = null
 	_check = {}
