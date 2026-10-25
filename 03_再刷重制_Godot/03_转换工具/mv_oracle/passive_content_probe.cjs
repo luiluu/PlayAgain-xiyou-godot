@@ -19,10 +19,13 @@ function snap(){
     actionPlus:Array.from(a.actionPlusSet()),weapons:Array.from({length:12},(_,i)=>a.isEquipWtypeOk(i+1)),
     armors:Array.from({length:3},(_,i)=>a.isEquipAtypeOk(i+1)),damage};
 }
-const books=[];
+const books=[], excludedPowerBooks=[];
 for(const item of w.$dataItems)if(item)for(const effect of item.effects||[]){
   const skill=effect.code===43&&w.$dataSkills[effect.dataId];
-  if(skill&&/<(?:passive|SkEType)/i.test(skill.note||''))books.push({item:item.id,skill:skill.id});
+  if(skill&&/<(?:passive|SkEType)/i.test(skill.note||'')){
+    const spec={item:item.id,skill:skill.id};
+    if(/<CodexPower:/i.test(item.note||''))excludedPowerBooks.push(spec);else books.push(spec);
+  }
 }
 const tech=w.$dataSkills.slice(4555,4653).filter(s=>s&&/科技:/.test(s.name)).map(s=>({skill:s.id}));
 const cases=[];reset();const baseline=snap();
@@ -37,4 +40,4 @@ for(const setup of books.concat(tech))cases.push(makeCase((setup.item?'book.':'t
   return {learned,full,repeat,low,forgot};
 }));
 const target=new w.Game_Enemy(1,0,0);
-process.exit(finish(host,'passive_content.json',{scope:'actor1 level37,empty equips,253 passive book effect43 plus90 technologies; static facade and3 damage skills; no dynamic boss armor',difficulty:w.$gameSystem.difficultyId(),target:{enemy:1,level:target.level,param:Array.from({length:8},(_,i)=>target.param(i))},damageSkills,baseline,cases})?0:1);
+process.exit(finish(host,'passive_content.json',{scope:'actor1 level37,empty equips,248 ordinary passive book effect43 plus90 technologies;5 power books excluded; static facade and3 damage skills; no dynamic boss armor',difficulty:w.$gameSystem.difficultyId(),target:{enemy:1,level:target.level,param:Array.from({length:8},(_,i)=>target.param(i))},excludedPowerBooks,damageSkills,baseline,cases})?0:1);

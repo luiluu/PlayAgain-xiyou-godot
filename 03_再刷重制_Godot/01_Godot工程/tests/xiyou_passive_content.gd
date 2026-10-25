@@ -1,5 +1,5 @@
 extends Node
-## 定向静态被动内容：253本书、90项科技；通用解析与物品43入口严格对照。
+## 定向静态被动内容：248本普通被动书、90项科技；5本权能另期；通用解析与物品43入口严格对照。
 var checks := 0
 var failures: Array = []
 var samples: Array = []
@@ -26,6 +26,7 @@ func compare(tag: String, got, want) -> void:
 func snapshot(a: XActor) -> Dictionary:
 	var e := XEnemy.new()
 	e.setup(int(fixture.target.enemy), int(fixture.difficulty), 100.0)
+	e.enemy_level = int(fixture.target.level)
 	var damage := []
 	for id in fixture.damageSkills:
 		var item := XDB.rec("Skills", int(id)).duplicate(true)
@@ -48,7 +49,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	fixture = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/passive_content_oracle.json"))
-	check("fixture", fixture.cases.size() == 343)
+	check("fixture", fixture.cases.size() == 338)
 	check("source", fixture.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	var s := XState.new_game_blank()
 	s.party.assign([1])
