@@ -11,6 +11,7 @@ extends Control
 ##   选「离队」行把该格清空，选角色放进该格（已在别格的两格互换）；离队时在出战栏确定直接清空该格（装备音）。
 ##   出战栏 Q/E（上一页/下一页）与相邻格互换（光标音＋装备音）。取消逐层返回；「还原」恢复进页时的出战栏；
 ##   「完成」或在指令窗取消返回主菜单（完成在出战栏全空/全员阵亡时灰显，确定蜂鸣）；返回前 XPartySkills.finish 刷新技能共享／羁绊／领袖。
+## - 超强者（installBossDifficultyRuntime）：没开挑战开关时名单里名字半透明、确定蜂鸣；开页先清出战栏里的超强者并提示（XItemMarks.deploy_start）。
 ## - 领袖旗标（Star_LeadActor 的 drawActor 包装）：首位是领袖角色时出战栏首格右上角画 LeaderFlag。
 
 signal closed
@@ -42,6 +43,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	XUI.menu_background(self)
 	XState.current._ensure_slots()
+	XItemMarks.deploy_start(XState.current)  # Scene_Party.start 包装：先清出战栏里的超强者、开页后提示
 	_former = XState.current.battle_slots.duplicate()
 	cmd_win = XMVWindow.make(self, CMD_RECT, XUI.MENU_WINDOW_OPACITY, _paint_cmd)
 	slot_win = XMVWindow.make(self, SLOT_RECT, XUI.MENU_WINDOW_OPACITY, _paint_slots)
@@ -133,7 +135,7 @@ func _paint_list(c: XMVCanvas) -> void:
 			c.text("离队", 36, y, c.size.x - TEXT_PADDING - 36)
 			continue
 		var a := XState.current.actor(id)
-		paint_actor_row(c, a, y, battle.has(a))
+		paint_actor_row(c, a, y, battle.has(a), XItemMarks.can_deploy(XState.current, id))
 
 
 ## Window_PartyList.drawBasic／drawExtra 的一行（角色仓库 XActorWarehouseScene 共用）：行走图上半、名字（出战成员 textColor 6；
@@ -191,10 +193,14 @@ func ok() -> void:
 				XState.current.battle_slots[slot_index] = 0
 				XState.current.rearrange_actors()
 		"list":
-			XSound.system(1)
-			XSound.system(4)
 			var id := int(list_data()[list_index])
 			var s := XState.current
+			# Window_PartyList.isCurrentItemEnabled／Scene_Party.switchActors 包装：超强者（未开挑战）不能编入，蜂鸣
+			if id > 0 and not XItemMarks.can_deploy(s, id):
+				XSound.system(3)
+				return
+			XSound.system(1)
+			XSound.system(4)
 			if id <= 0:
 				s.battle_slots[slot_index] = 0
 			else:

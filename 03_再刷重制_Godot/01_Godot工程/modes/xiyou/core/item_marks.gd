@@ -375,6 +375,59 @@ static func acquisition_notice() -> void:
 	XToast.show_text(SUPER_NOTICE)
 
 
+## ---- 出战限制（D.enforceParty／canDeploy，参照 mv_oracle/super_deploy_probe.cjs） ----
+const DEPLOY_NOTICE := "超强者仅限地狱及以上难度出战，已移至替补。"
+## deploymentNotice：清出过超强者的那份 XState（只在内存，不进存档）；回地图／开整队页时弹一次
+static var _deploy_notice: WeakRef = null
+
+
+## D.canDeploy：不是超强者，或已开挑战开关／混沌难度
+static func can_deploy(s: XState, actor_id: int) -> bool:
+	return can_acquire_actor(s, actor_id)
+
+
+## D.enforceParty：出战栏里的超强者换成 0，只把这些空出的格按 party 顺序补上「不是超强者、不在出战栏」的角色（补不满留 0）；
+## 原本就空的格不动，party 不重排、角色仍在队伍里。有清出返回 true 并记下提示。
+## XState 的 battle_members／init_battle_slots／add_actor／rearrange_actors 前后都调（原版还包 swapOrderBattleMembers、changeBattleMax，重制没有这两处）。
+static func enforce_party(s: XState) -> bool:
+	if s == null or s.battle_slots.size() != XState.MAX_BATTLE_MEMBERS or super_enabled(s):
+		return false
+	var slots := s.battle_slots
+	var vacancies := []
+	for i in slots.size():
+		if SUPER_STRONG_IDS.has(int(slots[i])):
+			vacancies.append(i)
+			slots[i] = 0
+	if vacancies.is_empty():
+		return false
+	# 原版另要求 isAppeared（隐藏角色不补）；重制没有隐藏角色
+	var reserves := []
+	for id in s.party:
+		if not SUPER_STRONG_IDS.has(id) and not slots.has(id):
+			reserves.append(id)
+	for i in vacancies:
+		slots[i] = reserves.pop_front() if not reserves.is_empty() else 0
+	_deploy_notice = weakref(s)
+	return true
+
+
+## Scene_Map／Scene_Party.start 包装：先清，再 flush
+static func deploy_start(s: XState) -> void:
+	enforce_party(s)
+	flush_deploy_notice(s)
+
+
+## D.flushDeploymentNotice：弹一次「已移至替补」；提示属于别的 XState（已读档换掉）时不弹也不清
+static func flush_deploy_notice(s: XState) -> void:
+	if _deploy_notice == null:
+		return
+	var owner = _deploy_notice.get_ref()
+	if owner != s:
+		return
+	_deploy_notice = null
+	XToast.show_text(DEPLOY_NOTICE)
+
+
 
 ## Window_ShopBuy.isEnabled 整条链（price 为商品的买入价，指定价格优先）：停用号角、进阶石层数、
 ## MoreCurrencies 变量/物品买入价都够、YEP_ItemCore 独立装备该类不超过 9999 件、MV 价格不超过金钱且物品未满。
