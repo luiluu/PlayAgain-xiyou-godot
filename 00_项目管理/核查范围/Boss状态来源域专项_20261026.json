@@ -225,5 +225,15 @@
     "boss70-state-godot: test inferred Dictionary type parse error; own wrapper verified then stopped, exit143",
     "boss70-state-final: action control fixture omitted item, SCRIPT ERROR despite numeric results passing; seven other scenes passed; fixed fixture only and reran dedicated"
   ],
-  "preserved": "All native .sandbox, failed task logs including seven dependency result logs, generated and worktree"
+  "preserved": "All native .sandbox, failed task logs including seven dependency result logs, generated and worktree",
+  "cleanup": {
+    "successfulTasks": [
+      "boss70-state-smoke2",
+      "boss70-state-native",
+      "boss70-state-import",
+      "boss70-state-dedicated-final"
+    ],
+    "removedTemporaryPaths": 21,
+    "preserved": "All native .sandbox artifacts; all failed tasks and the eight-scene failed batch with seven passing dependency logs; generated and worktree"
+  }
 }
