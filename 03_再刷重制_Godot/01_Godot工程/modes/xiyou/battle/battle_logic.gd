@@ -197,7 +197,7 @@ func view_of(b: XBattler) -> Dictionary:
 		if int(st.get("iconIndex", 0)) > 0:
 			icons.append(int(st.iconIndex))
 	return {"hp": b.hp, "mp": b.mp, "tp": b.tp, "mhp": b.mhp, "mmp": b.mmp, "mtp": b.max_tp(), "dead": b.is_dead(),
-		"guarding": b.guarding, "can_move": can_move(b), "icons": icons, "shield": b.shield}
+		"guarding": b.guarding, "can_move": can_move(b), "icons": icons, "shield": b.shield, "look": XAppearance.battler_key(b)}  # look：换装卡换图（画面用）
 
 
 ## 全体战斗者 → view_of
@@ -524,6 +524,7 @@ func end_turn() -> Array:
 	var before := _movable_snapshot()
 	_acted.clear()
 	XCat.end_turn(self)  # BattleManager.endTurn 的小猫剑圣包装：删过期的识破／剑痕
+	logs.append_array(XPetCapture.end_turn(self))  # Star_PetSystem 的 endTurn 包装：第 5 回合可捕捉的敌人逃跑
 	for b in actors + enemies:
 		turn_end_battler(b, logs)
 	# BattleManager.refreshAllMembers
@@ -1388,6 +1389,8 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 			if t is XActor:
 				t.learn_skill(int(eff.dataId))
 				t.refresh_passive()
+		44:
+			r.events = r.get("events", []) + XPetCapture.item_event(self, r.skill, int(eff.dataId), t)  # 只认捕捉的公共事件 173
 
 
 ## 行动序列 ADD STATE（Game_Battler.addState → isStateAddable：活着、未抵抗（IMMORTAL 期间阵亡视为抵抗）；阵亡状态直接倒下）
