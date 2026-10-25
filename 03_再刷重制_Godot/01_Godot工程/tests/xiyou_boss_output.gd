@@ -76,8 +76,8 @@ func _ready() -> void:
 	_run.call_deferred()
 
 func _run() -> void:
-	XDB.load_db()
 	var fixture: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/boss_output_oracle.json"))
+	check("source", fixture.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	for c in fixture.cases:
 		check(c.id + ".native", c.errors.is_empty())
 		run_case(c)
