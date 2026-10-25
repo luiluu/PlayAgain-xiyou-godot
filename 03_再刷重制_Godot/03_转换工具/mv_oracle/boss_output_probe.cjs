@@ -26,6 +26,7 @@ function add(id,spec){cases.push(makeCase(id,spec,()=>{
   w.$gameParty._inBattle=false;w.$gameTroop.clear();w.BattleManager._actionBattlers=[];w.BattleManager._nextTurnActionBattlers=[];
   const e=new w.Game_Enemy(spec.enemy||6,0,0),other=new w.Game_Enemy(1,0,0),actor=w.$gameActors.actor(1);
   w.$gameTroop._enemies=w.Array.from([e,other]);
+  w.$gameParty._inBattle=true;for(const b of [e,other,actor]){b.onBattleStart();b.refresh();}
   D.syncArmor(e,spec.armor);
   if(spec.noIcon){e.addState(1);e.removeState(1);}
   const source=spec.actorSource?actor:e,target=spec.self?source:spec.actorTarget?actor:other;
