@@ -1,9 +1,11 @@
 #!/bin/zsh
 # 共用提交前检查：Claude 与 Codex 每次提交前都跑这一条。
-# 用法：03_再刷重制_Godot/07_开发环境/检查.sh [--oracle] [--full]
+# 用法：03_再刷重制_Godot/07_开发环境/检查.sh [--oracle] [--full] [--affected <基准提交>]
 #   在 worktree（多会话车道）里也可运行：测试自动只并行 2 个；交付单／开发编号占位检查只在主工作区做
 #   --oracle  另外启动 MV 参照引擎做一次启动检查（约 5 秒）
 #   --full    Godot 测试整轮重跑，不沿用上轮通过结果（也可 CHECK_FULL=1；沿用条件见 并行测试.py 文件头）
+#   --affected <基准>  选测（三级检查②）：按 选测对照.json 只跑与「基准到工作区」改动相关的 Godot 场景和非 Godot 检查，
+#             先打印选了什么、为什么；文档与登记检查照常；有拿不准的改动就整轮。不加时行为不变（全量）
 set -u
 ENV_DIR=${0:A:h}
 ROOT=${ENV_DIR:h:h}
@@ -14,16 +16,29 @@ fi
 PROJECT=$ROOT/03_再刷重制_Godot/01_Godot工程
 GODOT=${GODOT:-$ENV_DIR/godot}   # 云端等没有本机 Godot.app 时用环境变量指定（见 云端测试.md）
 FAIL=0
-ORACLE=0; TEST_ARGS=()
-for arg in "$@"; do
-  case $arg in
+ORACLE=0; TEST_ARGS=(); AFFECTED=
+while (( $# )); do
+  case $1 in
     --oracle) ORACLE=1 ;;
     --full) TEST_ARGS+=(--full) ;;
-    *) print -r -- "未知参数：$arg（只认 --oracle、--full）"; exit 2 ;;
+    --affected) (( $# >= 2 )) || { print -r -- "--affected 要跟基准提交"; exit 2; }; AFFECTED=$2; shift ;;
+    *) print -r -- "未知参数：$1（只认 --oracle、--full、--affected <基准>）"; exit 2 ;;
   esac
+  shift
 done
 ok()   { print -r -- "  ✓ $1"; }
 bad()  { print -r -- "  ✗ $1"; FAIL=1; }
+# xiyou_rules 按编号过滤只给车道专项用：检查（尤其整轮会被记作通过、下轮沿用）里不许带着它跑
+if [[ -n ${RULES_ONLY_TROOPS:-}${RULES_ONLY_ACTORS:-} ]]; then
+  print -r -- "环境里设了 RULES_ONLY_TROOPS／RULES_ONLY_ACTORS（只给车道专项用），先 unset 再跑检查"; exit 2
+fi
+# 选测：SEL_FULL=1 时与不加 --affected 完全相同；否则只跑 SEL_SCENES 与 SEL_CHECKS 选中的部分
+SEL_FULL=1; SEL_SCENES=(); SEL_CHECKS=()
+if [[ -n $AFFECTED ]]; then
+  sel_out=$(python3 "$ENV_DIR/选测.py" "$AFFECTED" --root "$ROOT" --shell) || { print -r -- "选测失败，未运行检查"; exit 2; }
+  eval "$sel_out"
+fi
+want() { (( SEL_FULL )) || (( ${SEL_CHECKS[(Ie)$1]} )); }
 
 print "== 文档与登记"
 python3 - "$ROOT" <<'PY' || FAIL=1
@@ -85,30 +100,35 @@ sys.exit(1 if bad else 0)
 PY
 
 print "== Godot 测试"
+if (( ! SEL_FULL && ${#SEL_SCENES} == 0 )); then
+  print "  （选测：没有要跑的 Godot 场景，跳过导入与测试）"
+else
 import_out=$(perl -e 'alarm 300; exec @ARGV' "$GODOT" --headless --path "$PROJECT" --import 2>&1); import_rc=$?
 if (( import_rc != 0 )) || print -r -- "$import_out" | grep -qE 'SCRIPT ERROR|^ERROR:'; then
   bad "Godot 导入失败 (rc=$import_rc)"; print -r -- "$import_out" | grep -E 'ERROR|FAIL' | head -8
 fi
 # 测试并行运行（每个测试独立临时 HOME，互不干扰、不碰真实用户数据）；CHECK_JOBS=1 时逐个运行
 # 慢的先跑、各工作树共用并发上限、工程未变时沿用上轮通过结果（--full 强制整轮），见 并行测试.py 文件头
-if ! python3 "$ENV_DIR/并行测试.py" "$GODOT" "$PROJECT" "${TEST_ARGS[@]}"; then FAIL=1; fi
+if ! python3 "$ENV_DIR/并行测试.py" "$GODOT" "$PROJECT" "${TEST_ARGS[@]}" "${SEL_SCENES[@]}"; then FAIL=1; fi
+fi
 
 print "== 参照工具访问守卫"
-if node "$ROOT/03_再刷重制_Godot/03_转换工具/mv_oracle/guard_check.cjs"; then ok "MV 文件守卫"; else bad "MV 文件守卫"; fi
-if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/ui_reference/guard_check.py"; then ok "界面参照服务守卫"; else bad "界面参照服务守卫"; fi
-if python3 "$ENV_DIR/测试工作树清理.py" >/dev/null; then ok "工作树清理保护"; else bad "工作树清理保护"; fi
-if python3 "$ENV_DIR/测试导出过滤.py"; then ok "导出包排除测试与参照数据"; else bad "导出过滤没挡住测试或参照数据"; fi
-if python3 "$ENV_DIR/测试共性验收.py"; then ok "共性参照对照工具保护"; else bad "共性验收工具回归失败"; fi
-if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/共性参照验收.py"; then ok "共性参照完整性（尚非Godot实现验收）"; else bad "共性参照缺失或异常"; fi
-if python3 "$ENV_DIR/测试合并工具.py"; then ok "新增用例、进度账与合并保护"; else bad "合并工具回归失败"; fi
-if python3 "$ENV_DIR/测试公式程序.py"; then ok "结构化公式编译边界"; else bad "公式编译边界失败"; fi
-if python3 "$ENV_DIR/测试转换器写入.py"; then ok "转换器增量写入与中断恢复"; else bad "转换器写入回归失败"; fi
-if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi
-if python3 "$ENV_DIR/测试云端准备.py"; then ok "云端导入失败保护"; else bad "云端导入保护回归失败"; fi
-if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi
-if python3 "$ENV_DIR/测试角色同步提速.py" >/dev/null 2>&1; then ok "扩角色同步提速（缓存携带、手动种子隔离、六难度共用并发池）"; else bad "扩角色同步提速回归失败，单跑 07_开发环境/测试角色同步提速.py 看详情"; fi
+want guards && { if node "$ROOT/03_再刷重制_Godot/03_转换工具/mv_oracle/guard_check.cjs"; then ok "MV 文件守卫"; else bad "MV 文件守卫"; fi; }
+want guards && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/ui_reference/guard_check.py"; then ok "界面参照服务守卫"; else bad "界面参照服务守卫"; fi; }
+want tools && { if python3 "$ENV_DIR/测试工作树清理.py" >/dev/null; then ok "工作树清理保护"; else bad "工作树清理保护"; fi; }
+want guards && { if python3 "$ENV_DIR/测试导出过滤.py"; then ok "导出包排除测试与参照数据"; else bad "导出过滤没挡住测试或参照数据"; fi; }
+want tools && { if python3 "$ENV_DIR/测试共性验收.py"; then ok "共性参照对照工具保护"; else bad "共性验收工具回归失败"; fi; }
+want content && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/共性参照验收.py"; then ok "共性参照完整性（尚非Godot实现验收）"; else bad "共性参照缺失或异常"; fi; }
+want tools && { if python3 "$ENV_DIR/测试合并工具.py"; then ok "新增用例、进度账与合并保护"; else bad "合并工具回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试公式程序.py"; then ok "结构化公式编译边界"; else bad "公式编译边界失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试转换器写入.py"; then ok "转换器增量写入与中断恢复"; else bad "转换器写入回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试云端准备.py"; then ok "云端导入失败保护"; else bad "云端导入保护回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试选测.py" >/dev/null 2>&1; then ok "选测对照与 检查.sh --affected"; else bad "选测回归失败，单跑 07_开发环境/测试选测.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试角色同步提速.py" >/dev/null 2>&1; then ok "扩角色同步提速（缓存携带、手动种子隔离、六难度共用并发池）"; else bad "扩角色同步提速回归失败，单跑 07_开发环境/测试角色同步提速.py 看详情"; fi; }
 # 内容覆盖（沙僧协助计划第 8 项）：缺素材／无效引用／未翻译不得出现基线外的新问题；修好或接受后 --update-baseline
-if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/内容覆盖检查.py" --check; then ok "内容覆盖（无基线外新问题）"; else bad "内容覆盖出现新问题，见 04_验证/本地结果/内容覆盖/报告.json"; fi
+want content && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/内容覆盖检查.py" --check; then ok "内容覆盖（无基线外新问题）"; else bad "内容覆盖出现新问题，见 04_验证/本地结果/内容覆盖/报告.json"; fi; }
 
 if (( ORACLE )); then
   print "== MV 参照引擎"
@@ -116,13 +136,23 @@ if (( ORACLE )); then
   if [[ -d $oracle/node_modules ]]; then
     res=$(cd "$oracle" && node boot_check.cjs); oracle_rc=$?
     if (( oracle_rc == 0 )) && python3 -c 'import json,sys; d=json.loads(sys.argv[1]); sys.exit(0 if d.get("db") is True and d.get("modulesFailed")==[] and d.get("errors")==[] else 1)' "$res"; then ok "$res" | cut -c1-120; else bad "参照引擎启动异常：$res"; fi
-    if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/验证西游来源.py"; then ok "当前西游来源、转换产物、六难度参照同源"; else bad "西游来源/转换/参照不一致"; fi
+    if want same_source; then
+      if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/验证西游来源.py"; then ok "当前西游来源、转换产物、六难度参照同源"; else bad "西游来源/转换/参照不一致"; fi
+    fi
   else
     bad "mv_oracle 未安装依赖（在该目录运行 npm install）"
   fi
 fi
 
+if (( ! ORACLE && ! SEL_FULL && ${SEL_CHECKS[(Ie)same_source]} )); then
+  print -r -- "  ⚠ 选测选中了同源检查，但没加 --oracle，未跑（合并车道.sh --affected 会带 --oracle）"
+fi
+
 print "== Git"
 git -C "$ROOT" -c core.quotePath=false status --short | sed 's/^/  /'
-(( FAIL == 0 )) && print "全部通过" || print "有失败项，请先处理再提交"
+if [[ -n $AFFECTED ]] && (( ! SEL_FULL )); then
+  (( FAIL == 0 )) && print "选测全部通过（基准 $AFFECTED；当天全量前算「选测已验」）" || print "有失败项，请先处理再提交"
+else
+  (( FAIL == 0 )) && print "全部通过" || print "有失败项，请先处理再提交"
+fi
 exit $FAIL
