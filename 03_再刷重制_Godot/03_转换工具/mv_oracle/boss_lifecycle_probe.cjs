@@ -2,6 +2,12 @@
 // 冻结原版Boss快照与2651生命周期。真实接口，全内存新局，仅写.sandbox。
 const {start,makeCase,finish}=require('./shared/host.cjs');
 const host=start(),{w,newGame}=host,D=w.CodexBossDifficulty;
+// 与既有enemy_book_defeat_probe相同：只补精灵占位，不替换数值或生命周期方法。
+const sprites=new Map();
+w.Game_Battler.prototype.battler=function(){
+  if(!sprites.has(this))sprites.set(this,new Proxy({}, {get:(t,k)=>k in t?t[k]:(()=>false),set:(t,k,v)=>{t[k]=v;return true;}}));
+  return sprites.get(this);
+};
 function fresh(count=0){
   newGame();w.$gameSwitches.setValue(2494,true);
   const ids=count?[106,101,100,102,104].slice(0,count):[1];
@@ -26,7 +32,7 @@ for(const count of [0,3])cases.push(makeCase(`turns.${count}`,{count},()=>{
     if(n===2){for(const op of ['removeState','eraseState','removeStateCompletely']){e[op](2651);rows.push(snap(e,op));}
       for(const id of [6,7,8,10,4]){e.addState(id);rows.push(snap(e,'add'+id));}
       e.addNewState(6);rows.push(snap(e,'direct6'));e.recoverAll();rows.push(snap(e,'recover'));}}
-  // Use the real cleanup wrapper with a lightweight replacement of the older battle body.
+  // 真实endBattle包装与原流程，不替换数值或清理方法。
   w.BattleManager.endBattle(1);rows.push(snap(e,'end'));return {rows};
 }));
 for(const count of [0,3])for(const turn of [0,1,2,3])cases.push(makeCase(`transform.${count}.${turn}`,{count,turn},()=>{
