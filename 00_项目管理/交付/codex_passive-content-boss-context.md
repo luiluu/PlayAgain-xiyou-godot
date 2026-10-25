@@ -35,3 +35,9 @@
 - 最后实查五小时95%、周45%；按用户95%保存停手规则收尾，本次不是上下文接力，不创建后续会话或automation。预设计72d612bc已WIP保存，本节提交后以最新HEAD为准；工作区干净，无在途长任务／前台等待。
 - 普通输出可合并分支仍为codex/passive-content-boss-output（ec75a3b1），完整78组参照、六场8588项验证与待Claude核查均已交，不因当前设计WIP而撤销已交范围。当前分支codex/passive-content-boss-context，唯一工作树仍state-effects-2b，保留全部.sandbox和generated。
 - 恢复时先实查额度；按本单先补行动直接gain／set新参照，再推进。不要重做旧29组／8场、78组／六场或338组；此次未新增数值规则，未产生新的同步需求。
+
+
+## 恢复（2026-10-25，同会话）
+
+- 用户明确继续；实查五小时0%、周45%，HEAD dc81efb9、工作区干净、无在途任务。沿用当前树／分支，先做原版入口冒烟样本，再扩参照。
+- 本小期先交明确资源域框架与action.apply已有公式gain链；新增set资源接口按原版直接入口单独验。Godot尚无customPostDamageEval专门宿主、formula set编译能力亦未交接，不把原版入口采样等同于完整迁移这些宿主。
