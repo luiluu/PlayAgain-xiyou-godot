@@ -55,3 +55,8 @@
 - 其余12场：enemy_book52、floor_run_c560、formula_equipment1804、formula_program43458、formula_rest1352、formulas7、review13584、settlement11、state_effects19949、state_effects_tp537、troop_events6574、troop_events_b6450，均全过。Python翻译边界8/8。
 - 用户新指令：先做 `codex/stage-review-50`，固定审查d287ea37之后至7fc0c310；审查交付后再接本分支。故本分支保持WIP、不可合并，不推进期二／期三。未翻译441只表示当前WIP产物，不入main完成度。
 - 本轮新增的临时输出目录state-effects-2g、临时场景与临时HOME已清理；旧state-effects-2e／2f及其他未入Git原版证据完全保留。合并／复用时不要删除工作树。
+
+## 沙僧62续接（2026-10-25）
+
+- 已完成四零散b135ee33并独立交付，继续本期bf585fdc旧现场；额度五小时52%、周23%。本树无未提交改动。先并入已验证四零散分支作为依赖基线（含此前已合main545ebd37），不再追无关main，不重复阶段审查或全量同步。总装按四零散→2g顺序合并；四零散仍待Claude核查。
+- 仅修已定位的add锁基类夹值边界，先验formula_effects与state_effects_tp；完整预览空槽及Apply宿主接口仍留原停手范围。原版证据／.sandbox／generated与整树保留，共用登记只读。
