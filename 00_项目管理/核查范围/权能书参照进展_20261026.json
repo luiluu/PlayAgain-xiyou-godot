@@ -1,0 +1,140 @@
+{
+  "status": "WIP reference only; stopped at five-hour 95%; no Godot implementation or acceptance claim",
+  "baseline": "1132e919",
+  "validSmokeCases": 5,
+  "smokeTask": "2b43a6bb9e78467889c6959d43f8861c",
+  "smokeSha256": "1dcb1d25f57a46600d3e71acdc266f578706943a511e9469e9aa72406c7fef66",
+  "smokeSemanticChecks": "Each of five books learned; repeat test refused; ordinary forget refused; missing token refused; paid forget succeeded and consumed one3044; power removed",
+  "initialFullTask": "47176071312442e5853e16624530bd84",
+  "initialFullArtifactSha256": "e57280e0a139a0a98785dfcfb14071932ad3099f5b0ead02d2f9d705add9332f",
+  "initialFullSourceSha256": "7a547349d5fa2cde409a98d91b0482504fc5cbaa7a5a0ca07f454674b42b118d",
+  "initialFullCases": 8,
+  "initialFullUniqueIds": 7,
+  "initialFullLimitations": "actor1 is strong; initial list [106,1,1] repeats strong actor, lacks weak; not valid complete matrix",
+  "initialFullSummary": [
+    {
+      "id": "book.1654",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true
+      ],
+      "learnedPowers": []
+    },
+    {
+      "id": "book.1656",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true
+      ],
+      "learnedPowers": []
+    },
+    {
+      "id": "book.1674",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true
+      ],
+      "learnedPowers": []
+    },
+    {
+      "id": "book.1683",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true
+      ],
+      "learnedPowers": []
+    },
+    {
+      "id": "book.1718",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true
+      ],
+      "learnedPowers": []
+    },
+    {
+      "id": "limit.106",
+      "actor": 106,
+      "class": "超强者",
+      "limit": 3,
+      "accepted": [
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "learnedPowers": [
+        7238,
+        7240,
+        7245
+      ]
+    },
+    {
+      "id": "limit.1",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true,
+        true,
+        true,
+        true,
+        false
+      ],
+      "learnedPowers": [
+        7238,
+        7240,
+        7245,
+        7246
+      ]
+    },
+    {
+      "id": "limit.1",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true,
+        true,
+        true,
+        true,
+        false
+      ],
+      "learnedPowers": [
+        7238,
+        7240,
+        7245,
+        7246
+      ]
+    }
+  ],
+  "nextProbeSourceSha256": "cf9869208b94a95c2f107855acd49758c7b8b77af9e9db19d46aba3f990fc2a4",
+  "nextProbeInputs": [
+    106,
+    1,
+    2
+  ],
+  "nextProbeNotRun": true,
+  "frozenClassEvidence": "CodexZones.classOf in installNativePowerZonesRuntime.js:19 uses Boss superStrongIds/strongIds; actor2 absent from both => weak",
+  "pending": "Rerun corrected full matrix under global slot; review class/limit/uniqueness then expand boundary coverage; design actor/item/paid-forget integration; full Godot authority implementation and acceptance not begun",
+  "usageAtStop": {
+    "fiveHourUsedPercent": 95,
+    "weeklyUsedPercent": 60
+  },
+  "preserved": "All .sandbox evidence, initial incomplete full logs, earlier failed tasks, generated and worktree",
+  "cleanup": {
+    "validSmokeTemporaryPathsRemoved": 5,
+    "incompleteFullAndAllSandboxPreserved": true
+  }
+}
