@@ -1,6 +1,6 @@
 # 交付：codex/four-loose-fixes
 
-- 车道／工作者：规则／沙僧（Codex，重制_沙僧_59）
+- 车道／工作者：规则／沙僧（Codex，重制_沙僧_60）
 - 状态：进行中
 - 开工：2026-10-25 07:43 Paris；五小时1%、周0%；当前规则任务已显式使用high，机械收尾时再评估。
 - 基点：`926f914fe8483950b3a021ab5df2a00c9be69ccd`（开工main）；工作区干净。50%审查分支`codex/stage-review-50-phase2`完整保留，尚未合main；本分支从main独立开始，不重复夹带审查交付。
@@ -115,3 +115,9 @@
 - 最后查到其他车道白龙和悟空同步在途，本树最终同步仍未启动；接手先pgrep核对，空闲才开。包装器已读且未运行`four-loose-fixes/sync_preserve_evidence.py`，只停prune_manual_copies/prune_backups，不改原工具；需长任务start＋前台等待，单次工具等待≤60秒。传--accept-additions，以及本期cat接受单和哪吒6条接受单两份--accept-changes。缓存照常沿用，不能--full；保留旧证据/.sandbox/generated。
 - 同步必须查看报告：预期既有测量变化仅cat setup.tpGap删一条＋slice6条，新增enemy_book_defeat 34条；若还有变化先分析，绝不放宽接受。同步和导入退出0后重测rules基础段并核947已非0；精简结果入核查范围JSON，清理仅本期four-loose-fixes临时输出，再写可合并交唐僧（自己的修复仍待Claude）。不要再执行apply_production.py，生产已改`10da1d87`。
 - 上轮额度96%已保存c05b5c26后停；本轮用户说继续，实际额度已重置到1%／周15%，并未使用赠送reset。不是额度停手，当前是上下文接力。继续四项交付→2g→rng-compare-review→actor-bonus→passive-content→race-battle；2g未改，旧branch bf585fdc现场仍保留；50%审查二期0b00c374交总装另合，完全不重做。不要创建自动任务或改共用登记。
+
+## 沙僧60接手（2026-10-25）
+
+- HEAD `419c5d29`、工作区干净；本树继续，五小时4%、周16%，未到停手线。
+- 已核全部旧测试终态，不重启。其他车道白龙与悟空同步在途，本树最终同步继续排队；同步前先保存此检查点。
+- 仅本期交付与核查证据可写，共用登记只读；保留旧原版证据、.sandbox、generated。生产补丁已应用，不再执行。
