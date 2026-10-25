@@ -308,6 +308,8 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 	var lo := int(s.get("minTurns", 1))
 	var hi := maxi(lo, int(s.get("maxTurns", lo)))
 	state_turns[id] = roll_state_duration(lo, hi, random, str(id))
+	if id == XAlienBattle.corrosion_id():
+		XAlienBattle.sync_corrosion(self)  # 异化 resetStateCounts 包装：腐蚀按回合定到期
 	var source := XImportedBalance.acting_battler()
 	if source != null:
 		state_origins[id] = weakref(source)
