@@ -319,6 +319,9 @@ def run_node(cmd, env):
             spec.loader.exec_module(module)
             _runner = module
     with _runner.global_slot(_runner.state_dir(str(ROOT)), _runner.global_limit()):
+        # event_probe 在一个进程里连跑全部事件页，内存随事件数涨；切片事件过千页后撞 node 默认 4GB 堆上限（悟空_55 簇 8／13 同步 OOM），放宽到 10GB
+        env = dict(env)
+        env.setdefault('NODE_OPTIONS', '--max-old-space-size=10240')
         return subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=env, capture_output=True, text=True)
 
 

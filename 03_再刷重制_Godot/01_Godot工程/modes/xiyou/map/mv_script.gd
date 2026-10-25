@@ -348,7 +348,7 @@ static func _toaster_text(js: String) -> String:
 	if m == null:
 		return ""
 	var out := ""
-	for part in _concat_parts(m.get_string(1)):
+	for part in _concat_parts(_before_option(m.get_string(1))):
 		var p := str(part).strip_edges()
 		var lit := _re("^['\"](.*)['\"]$").search(p)
 		if lit:
@@ -369,6 +369,26 @@ static func _toaster_text(js: String) -> String:
 			continue
 		return ""
 	return out
+
+
+## message 后面跟的 ,color:'yellow' 之类选项不是文字：在引号和括号外的第一个逗号处截断
+static func _before_option(expr: String) -> String:
+	var quote := ""
+	var depth := 0
+	for i in range(expr.length()):
+		var ch := expr[i]
+		if quote != "":
+			if ch == quote:
+				quote = ""
+		elif ch == "'" or ch == "\"":
+			quote = ch
+		elif ch == "(":
+			depth += 1
+		elif ch == ")":
+			depth -= 1
+		elif ch == "," and depth <= 0:
+			return expr.left(i)
+	return expr
 
 
 ## 按引号外的 + 切开字符串拼接表达式
