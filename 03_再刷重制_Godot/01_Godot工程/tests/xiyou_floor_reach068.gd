@@ -7,6 +7,9 @@ extends Node
 ##   独立开关 A；牛马之森入口 EV9（开关 134＋1717）缺符文提示，有符文 24 扣一张进 Map138 (29,36)，变量 450＝1、5＝1、21＋1、6＝44；
 ## - 牛马之森 Map138：五处牛马护卫 EV1～5（敌群 592，变量 351＋1，暂时消除），351≥3 后首领 EV6（敌群 593，开 910、274，
 ##   1717→1718 升档）；开关 274 后宝箱页（变量 450＝1，奖励随变量 94）传回 Map067 (1,25) 并重置；逃离阵 EV7。
+## - 恰兰吉尔 Map071：指路灯 411 的公共事件 240 → (40,35)；武器店入口 EV13 → Map072 (8,12)、EV1 回 (25,60)；
+##   挑战者协会 EV26 → Map097 (8,16)；食人魔颅骨 469×10 换演武令 470（EV15，独立开关 A）；去图书馆 Map098 再回来；
+##   南出口 EV3（朝下）去天之上 Map069 未接，提示后留在原地。
 ## 原版随机分支一律固定（变量 94 的奖励档）；队伍生命攻击都很大（只查流程）。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
@@ -148,6 +151,7 @@ func _run() -> void:
 	await _heijin()
 	await _gandi()
 	await _niuma()
+	await _chalanjier()
 	_finish()
 
 
@@ -259,6 +263,47 @@ func _niuma() -> void:
 	await _run_event(_scene(), 7, [0], "")
 	_check("forest_escape", await _wait_map(67) and _scene().player.grid == Vector2i(1, 25) and int(s.variable(5)) == 0 and int(s.variable(21)) == 0 and not s.switch(274),
 		[_scene().map_id, s.variable(5), s.variable(21)])
+
+
+## 恰兰吉尔：进城、店铺进出、挑战者协会换演武令、通天之上的出口未接
+func _chalanjier() -> void:
+	var s := _start(10, 10, 10, 2)
+	if not _check("town_start", await _wait_map(10)):
+		return
+	await _lamp(240)
+	if not _check("town_entered", await _wait_map(71) and _scene().player.grid == Vector2i(40, 35), [_scene().map_id]):
+		return
+	var map: XMapScene = _scene()
+	_check("town_events", range(1, 39).all(func(i): return _event(map, i) != null))
+	await _run_event(map, 13, [], "")
+	if not _check("weapon_shop", await _wait_map(72) and _scene().player.grid == Vector2i(8, 12), [_scene().map_id]):
+		return
+	_check("weapon_shop_goods", _event(_scene(), 2) != null and _event(_scene(), 2).command_list().any(func(c): return int(c.code) == 302 and int(c.parameters[1]) == 1240))
+	await _run_event(_scene(), 1, [], "")
+	if not _check("weapon_shop_back", await _wait_map(71) and _scene().player.grid == Vector2i(25, 60), [_scene().map_id]):
+		return
+	await _run_event(_scene(), 26, [], "")
+	if not _check("guild_entered", await _wait_map(97) and _scene().player.grid == Vector2i(8, 16), [_scene().map_id]):
+		return
+	map = _scene()
+	s.gain_item(469, 9)
+	await _run_event(map, 15, [0, 0], "")
+	_check("token_short", s.item_count(470) == 0 and s.item_count(469) == 9 and not s.self_switch(97, 15, "A"), [s.item_count(469), s.item_count(470)])
+	s.gain_item(469, 1)
+	await _run_event(map, 15, [0, 0], "")
+	_check("token_exchanged", s.item_count(470) == 1 and s.item_count(469) == 0 and s.self_switch(97, 15, "A"), [s.item_count(469), s.item_count(470)])
+	await _run_event(map, 2, [], "")
+	if not _check("library", await _wait_map(98) and _scene().player.grid == Vector2i(5, 5), [_scene().map_id]):
+		return
+	await _run_event(_scene(), 1, [], "")
+	_check("library_back", await _wait_map(97) and _scene().player.grid == Vector2i(5, 6), [_scene().map_id])
+	# 南出口（朝下踩）通天之上：未接，留在恰兰吉尔
+	s = _start(71, 38, 75, 2)
+	if not _check("exit_loaded", await _wait_map(71)):
+		return
+	await _run_event(_scene(), 3, [], "")
+	await _frames(10)
+	_check("exit_to_sky_closed", _scene().map_id == 71, [_scene().map_id])
 
 
 func _finish() -> void:
