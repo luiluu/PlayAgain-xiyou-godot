@@ -23,3 +23,5 @@
 - 原版冒烟第二次3／3、errors空（任务6900e426b10a43ea938a3039c3767c4c）；包括Boss来源、低倍率来源遮蔽、死亡与恢复，宿主无需补丁。开始完整矩阵。
 
 - 接线草稿：run_one执行Battler阶段且有resources时，origin→holder成对推入／退出；execute=false不借实时域，Action阶段不改。新增专项以真实gain_resource验单条持有者gain，其余set／跨目标／嵌套脚本通过run_one观察者回放域语义，未声称通用JS宿主已移植。五小时83%、周58%。
+
+- 原版完整121／121、唯一ID、errors空（任务9f6e96297146456d9431d8a4eb2d97f3），复制独立fixture与原件字节一致。导入06f68fa307544d2c918eecc511f88b68 exit0、无Script／Parse／Compile错误；只收新专项UID，非车道附带UID移存.sandbox/boss70_unrelated_import_uid.txt。下一步Godot新增与直接依赖验收。
