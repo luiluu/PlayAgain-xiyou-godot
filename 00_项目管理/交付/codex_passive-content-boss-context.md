@@ -1,7 +1,7 @@
 # 交付：codex/passive-content-boss-context
 
 - 车道／工作者：规则／沙僧（Codex，重制_沙僧_68）
-- 状态：来源域与资源接口已实现草稿，两例原版对照及边界专项281项通过；完整参照与依赖验收进行中，尚不可合并。
+- 状态：来源域与资源接口已实现；完整123例原版通过、四项直接依赖25217项通过（刷新修复前）；零损失刷新标记已据原版修正，完整专项与六例护盾完全吸收补采在途，尚不可合并。
 - 基线：ec75a3b1（Boss普通输出78组、六场8588项全过；可合并交付见codex_passive-content-boss-output.md）。同树新分支，无在途任务；所有boss66-*临时输出已清理，原版.sandbox、旧证据、generated及整树全部保留。
 - 开工额度：五小时92%、周44%；上轮从66%接手，95%时以WIP保存并停，不因额度高而漏交已经验收的普通输出。
 
@@ -103,3 +103,22 @@
 - 68验证进展：boss67-deps最终exit0，四项直接依赖3823＋908＋19949＋537＝25217／25217，全单次通过、无偶发；原版boss67-full已取得槽并逐例运行。文档／JSON／链接／编号与MV守卫16／16再过。完整夹具尚未替换，新增专项仍待完整参照。
 
 - 68完整原版123／123通过，夹具替换且来源一致；新增完整性断言，boss68-context专项在途。原版domain.hp/mp.gain.b.-0.4均不置dirty，确认待修。原有护盾3／50均击穿，尚无完全吸收参照；追加shield1000六例，仅定向采集（boss68-shield-full），不重跑123例，原始完整产物保留。
+
+## 沙僧68→69（同树自动上下文接力，非额度停手）
+
+- 68按既定上下文40%自动接力；创建69后停止，69唯一后续执行者。最后实查五小时40%、周51%，不是额度停手；先实查额度，95%才WIP停，周98%收尾。设计／疑难用high，机械收尾有真实接口再medium，不虚称已切。所有文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。
+- 只用此已有树，分支codex/passive-content-boss-context；以本节提交后HEAD为准，工作区应干净。不在main写、不创建／清理worktree、不reset／cherry-pick、不建automation、不向唐僧或其他已有会话发消息。共用交接板／变更记录／步骤清单／当前状态只读，只登记本单。保留全部.sandbox、旧证据、generated及整树。所有自己提交待Claude，不自销核、不自评完成度。
+- **已结束的67两条不要重跑**：boss67-full runId2ab62fa65bf04a7584ab0415142b87af，exit0、完整123例errors全空，原件mv_oracle/.sandbox/boss_output_context.json。55344491已把它复制为tests/fixtures/boss_output_context_oracle.json（目前确为123例，与原件逐对象相等、sourceIdentity一致）。boss67-deps runIdb8abd86ebc8f4bec81c1367772bac8e2 exit0，四场：boss_output3823、formula_effects908、state_effects19949、state_effects_tp537，总25217／25217，无偶发；细日志与timings现在在04_验证/本地结果/boss67-deps（结束时才落盘）。此依赖结果在下述0396ae52运行时修复之前，最终需重跑四场。
+- **68已据完整原版修复**：domain.hp/mp.gain.b.-0.4放大后floor成0，原版dirty=false；0396ae52把resource_context.gain的尾部dirty判断从原始requested改为shown，即实际进入KRZ的值。敌人HP先过ShieldSystem用护盾后值，角色gainHp自有包装用护盾前值，MP用Boss缩放后值。原始requestedDelta仍保留作日志，不改日志结构。不先把此修复说成验收通过。
+- **当前只有两条在途长任务，先日志／状态＋等待任务.sh --timeout 45，禁止重复启动**：
+  1. 04_验证/本地结果/任务/boss68-context.log，runId a3dbb686d633497cb6ca4e99017b80f0，Godot完整123例＋边界专项，最新仍等槽0/1。它在0396ae52之前启动包装器，但修复时尚未拿槽，后续真正场景会载入修复后的代码。细日志预计04_验证/本地结果/boss68-context。测试新增fixture.complete=123、ID唯一和真实formula.hp/mp必在，防临时小样误报。**等该任务终态后才能替换129例夹具／修改断言，避免在途读文件竞态**。
+  2. 同目录boss68-shield-full.log，runId 3d5b2c4385044940b74aea05f63bd761，最新已等槽301秒；原版新增6例shield1000，--only '^shield\.[01]\.(gain|set|damage)\.1000$'。只写.sandbox/boss_output_context_selected.json，不覆盖完整123原件。原探针原有盾3／50全部击穿，68发现“完全吸收”未覆盖，故追加敌人／角色×gain／set／damage六例，默认探针现在129例。不要为补这6例重跑旧123。上次apply定向成功原件已另存.sandbox/boss_output_context_selected_67_apply_success.json。
+- **下一步按顺序**：先看123专项及6原版结果。若123失败，保留日志、定位真实差异，别归偶发。六例必须errors空、sourceIdentity与123完全一致；保留两份原件，合成.sandbox/boss_output_context_combined129.json，再复制为fixture（原123案例＋新6唯一ID），专项完整性断言123改129，然后跑新增专项＋上面四场直接依赖。若运行时再改，相关专项与直接依赖都以最终版本重跑；不重采此前78／29组，不跑旧全量。首轮123专项无论过或败只是中间结果，最终以129为准。
+- 68新增精简证据00_项目管理/核查范围/Boss行动资源域专项_20261025.json（f3f85b6c），现在status明确pending，含原123SHA、修复前依赖结果/timings、限制及迭代原因。最终更新为129夹具／两原件并集相等证明、最终专项和四依赖结果、timings与无偶发；收尾重跑检查.sh原文档块、node --check、git diff --check和MV守卫16项，再独立交付可合并。清理自己boss67／68临时成功输出前先保存精简证据；失败日志与所有原版.sandbox不删，导入顺带产生的非本车道xiyou_battle_common_events.gd.uid若再出现移存.sandbox，别夹带提交。
+- 运行时设计仍是67已交草稿：非静态XBossOutputContext保存frames／settled／direct，XResourceContext持有；apply的新resources共享父域、退出恢复；gain/set按当前显式来源＋目标、Boss倍率>1、非自身损失在护盾前一次缩放；普通HP/MP伤害沿00524617且settled防双缩放。GDScript无try/finally，只保证正常与翻译VM诊断返回，不声称任意致命错误可恢复。不得借BattleManager残留subject猜来源。
+- 两条真实公式b.gainHp(-7.9);0／b.gainMp(-7.9);0已在123原版和Godot专项内，走XBattleLogic.apply／XFormulaExecution；set公式仍unsupported_program，不改未交接formula_execution.gd／mv_event_core。HookBattle仅在真实apply公式位置注入资源脚本；post／execute为等价域回放，不能宣称customPre/PostDamageEval脚本宿主已移植。预览隔离、嵌套、诊断返回恢复与set相等不refresh等沿原281项边界保留。
+- 本期完整通过先独立交付，再接sequence targets、stateOrigin、1341／2550特殊react来源，各入口另采原版。68等待时只读确认入口：冻结源js/codex/runtime/installBossDifficultyRuntime.js最后contexts/settled/direct段；YEP_BuffsStatesCore.js的stateOrigin/customEffectEval；YEP_X_ActSeqPack1.js的actionHp/MpModify。Godot state_effects.gd已有context_for.origin但尚未为Boss推域；action_sequence._modify调用battle.sequence_gain，后者目前直接改资源且无Boss域。**尚未开始下一期代码／参照**，不要误报已接。
+- 共用4槽等待不公平仍存在，已在本单可优化登记交工具车道；不绕槽、不提高上限、不杀别人、不动工具车道文件。长批python3 -u、XIYOU_TEST_HEARTBEAT=30、长任务.py start＋前台等待，每次不超过60秒。
+- 长期顺序与依赖仍按67→68末尾：先交本小期，再尾巴，再权能五本1654/1656/1674/1683/1718→容量满变量9返书／预约1317→PREE/ASUP→WPNM/SkEType与race-battle等八戒接口→全部完成且额度足才核他人。已交04e54453 Boss属性／2651生命周期、ec75a3b1普通输出不重做；两块TP Apply／完整预览空槽及敌人永久账本未做。依赖链b135ee33→026f6ee3→b495833a→7ef7584a→7bfb4807→eb6fff3f→04e54453→ec75a3b1，不cherry-pick；50%审查二期0b00c374另合。不夹带无关main或大范围重审；确需合main用--no-commit且执行者Codex（沙僧）／待Claude尾注。
+
+- 68接力收尾：最终文档／JSON／链接／编号块、node --check、MV守卫16／16及git diff --check通过；两条在途仍排队，未清理其日志。
