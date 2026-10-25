@@ -104,7 +104,28 @@ func run_case(c: Dictionary) -> void:
 	caught = 0
 	for k in bs:
 		compare(c.id + ".before." + k, bs[k], c.observed.before[k])
-	if spec.host == "apply":
+	if spec.has("formula"):
+		var item := XDB.rec("Skills", 1).duplicate(true)
+		item.hitType = 0
+		item.effects = []
+		item.tpGain = 0
+		item.damage.critical = false
+		item.damage.variance = 0
+		item.damage.formula = spec.formula
+		var programs: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/boss_output_context_programs.json"))
+		var kind := "mp" if str(spec.formula).contains("gainMp") else "hp"
+		item.damage.formulaProgram = programs[kind]
+		var actual_battle := XBattleLogic.new()
+		actual_battle.state = s
+		actual_battle._action_resources = resources
+		var out := actual_battle.apply(a, item, b)
+		check(c.id + ".formula_diagnostic", out.formulaDiagnostic.is_empty(), out.formulaDiagnostic)
+		check(c.id + ".formula_one_gain", out.effectJournal.size() == 2, out.effectJournal)
+		check(c.id + ".resource_restore", actual_battle._action_resources == resources)
+		resources.seed_result(b, out.result)
+		compare(c.id + ".formula.after", b, expected[0].after)
+		row_at = 1
+	elif spec.host == "apply":
 		var item := XDB.rec("Skills", 1).duplicate(true)
 		item.hitType = 0
 		item.effects = []

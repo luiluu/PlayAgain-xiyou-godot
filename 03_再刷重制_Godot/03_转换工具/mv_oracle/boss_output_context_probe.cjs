@@ -27,6 +27,7 @@ if(!process.argv.includes('--smoke')){
  for(const actorTarget of [false,true])for(const op of ['gain','set','damage'])for(const shield of [3,50])
   add(`shield.${+actorTarget}.${op}.${shield}`,{actorTarget,shield,ops:[{op,who:'b',kind:'hp',value:op==='set'?399:op==='gain'?-101:101}]});
  for(const kind of ['hp','mp']){
+  add(`formula.${kind}`,{host:'apply',formula:`b.gain${kind==='hp'?'Hp':'Mp'}(-7.9);0`});
   add(`nested.${kind}`,{ops:[{op:'gain',who:'b',kind,value:-7},{op:'nested',source:'c',target:'b',ops:[{op:'gain',who:'b',kind,value:-7}]},{op:'gain',who:'b',kind,value:-7}]});
   add(`caught.${kind}`,{ops:[{op:'nested',source:'a',target:'c',ops:[{op:'gain',who:'c',kind,value:-7},{op:'throw'}]},{op:'gain',who:'b',kind,value:-7}]});
   add(`settled.${kind}`,{host:'apply',ops:[{op:'damage',who:'b',kind,value:7},{op:'gain',who:'b',kind,value:-7}]});
@@ -62,10 +63,11 @@ for(const {id,spec} of specs.filter(row=>!filter||filter.test(row.id)))cases.pus
  }}
  const action=actionFor(a,'window.__bossStep();');w.__bossStep=()=>run(spec.ops,action);
  w.BattleManager._subject=c; // stale/incorrect subject must never supply the source
- if(spec.host==='apply'){action.item().damage.formula='window.__bossStep();0';action.item().customPostDamageEval='';action.apply(b);}
+ if(spec.host==='apply'){action.item().damage.formula=spec.formula||'window.__bossStep();0';action.item().customPostDamageEval='';action.apply(b);}
  else if(spec.host==='execute'){action.item().customPreDamageEval='window.__bossStep();';action.item().customPostDamageEval='';action.executeDamage(b,0);}
  else if(spec.host==='post')action.applyPostDamageEval(b,0);else run(spec.ops,action);
  if(errors.some(e=>e.thrown!=="boss-context-probe"))throw Error("unexpected native eval diagnostic: "+JSON.stringify(errors));
+ if(spec.formula)rows.push({op:{op:'formula',who:'b'},before:before.b,after:snap(b)});
  if(!rows.length)throw Error("script fixture did not execute");
  // 上下文退出后直接扣同一目标，检查无残留来源/目标域。
  const pre=snap(b);b.gainHp(-1);rows.push({op:{op:'outside',who:'b',kind:'hp',value:-1},before:pre,after:snap(b)});
