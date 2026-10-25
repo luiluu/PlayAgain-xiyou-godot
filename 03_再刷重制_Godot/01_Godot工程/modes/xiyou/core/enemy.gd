@@ -59,7 +59,7 @@ func sync_boss_armor(active: bool, random: XRandomStream = null) -> void:
 		for id in state_ids.duplicate():
 			if boss_control_state(id):
 				remove_state(id)
-		if not is_dead() and not is_state_affected(BOSS_ARMOR_STATE):
+		if not hidden and not state_ids.has(1) and not is_state_affected(BOSS_ARMOR_STATE):
 			add_state(BOSS_ARMOR_STATE, random)
 		if is_state_affected(BOSS_ARMOR_STATE):
 			state_turns[BOSS_ARMOR_STATE] = 1
@@ -68,12 +68,15 @@ func sync_boss_armor(active: bool, random: XRandomStream = null) -> void:
 	_updating_boss_armor = false
 
 func add_state(id: int, random: XRandomStream = null) -> void:
+	# 原生 isStateAddable 要求 isAlive；HP0本身不等于原版阵亡状态。
+	if hidden or state_ids.has(1):
+		return
 	if boss_hyper_armor and boss_difficulty_boss and boss_control_state(id):
 		return
 	super(id, random)
 
 func remove_state(id: int) -> void:
-	if id == BOSS_ARMOR_STATE and boss_hyper_armor and boss_difficulty_boss and not _updating_boss_armor and not is_dead():
+	if id == BOSS_ARMOR_STATE and boss_hyper_armor and boss_difficulty_boss and not _updating_boss_armor and not (not hidden and state_ids.has(1)):
 		return
 	super(id)
 
