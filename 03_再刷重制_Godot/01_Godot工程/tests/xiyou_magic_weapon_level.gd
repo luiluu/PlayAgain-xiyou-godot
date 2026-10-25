@@ -201,8 +201,8 @@ func _traits(o: Dictionary) -> void:
 		var obj := XDB.rec("Armors", 4409)
 		var n := a.trait_objects().filter(func(t): return t == obj).size()
 		check("traits_objects_lv%d" % int(r.level), n == int(r.levelUpObjects), [n, r.levelUpObjects])
-		var xs := range(10).map(func(i): return snappedf(a.xparam(i), 0.000001))
-		check("traits_xparam_lv%d" % int(r.level), xs == r.xparams.map(func(v): return float(v)), [xs, r.xparams])
+		var xs := range(10).map(func(i): return a.xparam(i))
+		check("traits_xparam_lv%d" % int(r.level), range(10).all(func(i): return absf(xs[i] - float(r.xparams[i])) <= 1e-6), [xs, r.xparams])
 
 
 ## ⑦ 按等级学技能（烽舞 7510～7513）；经 gain_exp 升级后技能马上更新
