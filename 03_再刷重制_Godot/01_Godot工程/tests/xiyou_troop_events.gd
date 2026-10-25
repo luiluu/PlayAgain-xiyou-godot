@@ -12,6 +12,8 @@ var results := []
 ## 739 嘤族之光：确有命中且 extra 与参照相符的例数（随机技能可能某轮没打到角色，全套至少要有一例证明附加伤害确实执行）
 var _extra_hits := 0
 var _seen739 := false
+var _strict_random_set_checks := 0
+var _strict_random_extra_checks := 0
 ## 随机选技能的敌群：军团 676～693（神魔战场）、超级 Boos 嘤族之光 739
 const RANDOM_AI_TROOPS := [676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686, 687, 688, 689, 690, 691, 692, 693, 739]
 ## 参照用例按序号轮流分 parts 份，一个场景管一份（xiyou_troop_events 是第 0 份，_b 是第 1 份），免得单场景在并行全量里逼近 300 秒；
@@ -84,6 +86,7 @@ func setup(troop: int, paid := false, trial_seed := 1000) -> XBattleLogic:
 		var context := s.reserve_battle_random()
 		context.rule = OracleHalfStream.new()
 		context.rule.domain = "rule"
+		context.rule._seed_hex = "0000000000000000"
 		logic.setup(troop, s, context)
 	else:
 		logic.setup(troop, s)
@@ -342,6 +345,8 @@ func _case(c: Dictionary, round: int) -> void:
 	check(name + ".t1_enemy_actions", (t1_times >= forced + normal and t1_times <= forced + normal + (0 if first_cleared else plus)) or (logic.is_lost() and t1_times == forced), [forced, first_cleared, got[1]])
 	# 神魔战场的军团敌群（676～693，三四名杂兵）与嘤族之光 739：行动者集合取决于随机的技能选择和谁先被打倒，参照固定掷骰 0.5，不比这一项
 	if oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop)):
+		if oracle_half and RANDOM_AI_TROOPS.has(int(c.troop)):
+			_strict_random_set_checks += 1
 		check(name + ".t1_enemy_set", enemies_of.call(got[1]) == enemies_of.call(want[1]), [got[1], want[1]])
 	# 事件强制行动（339）逐条比 [行动者, 技能]：都在第 1 回合最先，含非首敌（军团 676 第 1 回合 e3 强制 3813，沙僧50 内容批 P2-C2）
 	var want_forced: Array = c.actions.filter(func(a): return int(a.turn) == 1 and bool(a.forced)).map(func(a): return [str(a.subject), int(a.skill)])
@@ -367,6 +372,8 @@ func _case(c: Dictionary, round: int) -> void:
 		if inv.subject == "e0" and inv.target != "e0" and float(inv.hpBefore) > 0.0 and inv.userStates.has(1460.0):
 			want_extra = [float(inv.userAtk), float(inv.userMat)]
 	if oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop)):
+		if oracle_half and RANDOM_AI_TROOPS.has(int(c.troop)):
+			_strict_random_extra_checks += 1
 		check(name + ".extra", extras.is_empty() if want_extra.is_empty() else (not extras.is_empty() and extras.all(func(x): return x == want_extra)), [extras, want_extra])
 	else:
 		# 随机技能的敌群（军团、嘤族之光 739）：命中次数随技能与谁先倒下而变，但每一次实际命中都要带精确的 [攻击, 魔攻]
@@ -425,5 +432,5 @@ func _unit_checks() -> void:
 
 func finish() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
-	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
+	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size(), "oracleHalf": oracle_half, "strictRandomSetChecks": _strict_random_set_checks, "strictRandomExtraChecks": _strict_random_extra_checks}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
