@@ -107,11 +107,14 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		c.execute = false
 	var execute := bool(c.execute)
 	# Game_Battler.customEffectEval always shadows the enclosing action domain,
-	# including non-Boss/missing origins. Action phases keep the outer action.
+	# including non-Boss/missing origins. Only native react1341/2550 override Action.
 	var resources: XResourceContext = c.get("resources")
-	var origin_domain := execute and resources != null and not phase in ACTION_PHASES
+	var special_react := phase == "react" and int(st.id) in [1341, 2550]
+	var origin_domain := execute and resources != null and (not phase in ACTION_PHASES or special_react)
 	if origin_domain:
-		resources.boss_output.enter_action(c.origin, holder)
+		var source: XBattler = holder if special_react and int(st.id) == 2550 else c.origin
+		var victim: XBattler = (c.user if int(st.id) == 2550 else c.target) if special_react else holder
+		resources.boss_output.enter_action(source, victim)
 	_stack.push_back(c)
 	if execute and observer.is_valid():
 		observer.call(phase, int(st.id), holder, c)
