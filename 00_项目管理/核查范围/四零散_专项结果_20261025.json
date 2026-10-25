@@ -43,8 +43,8 @@
     "finding": "普通932火增伤正确；重复／大小写／无前导零标签漏算已由修前专项证实。Codex补修后126/126通过，补修待Claude交叉核查。"
   },
   "usageAtHandoff": {
-    "fiveHourUsedPercent": 17,
-    "weeklyUsedPercent": 18
+    "fiveHourUsedPercent": 42,
+    "weeklyUsedPercent": 22
   },
   "handoffDocs": {
     "exitCode": 0,
@@ -315,8 +315,8 @@
     "crossReview": "待Claude"
   },
   "finalSync": {
-    "status": "queued",
-    "waitingForOtherLaneSyncs": true,
+    "status": "running",
+    "waitingForOtherLaneSyncs": false,
     "acceptanceFiles": [
       "03_再刷重制_Godot/04_验证/测量接受/四零散_cat去tpGap_20261025.json",
       "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
@@ -346,6 +346,14 @@
       }
     },
     "queueOnlyUntilOtherSyncsExit": true,
-    "completedWaitWindows": 3
+    "completedWaitWindows": 3,
+    "phase": "probes",
+    "handoff61CompletedWaitWindows": 13,
+    "probePlan": {
+      "executed": 53,
+      "partial": {},
+      "reused": 0
+    },
+    "fullFlagUsed": false
   }
 }
