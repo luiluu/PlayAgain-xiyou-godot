@@ -236,7 +236,7 @@ func _modify(kind: String, name: String, list: Array) -> void:
 	for t in list:
 		var base: float = t.mhp if kind == "HP" else (t.mmp if kind == "MP" else t.max_tp())
 		var v := js_parse_int(base * change * 0.01 if percent else change)
-		_gains.append([t, kind, logic.sequence_gain(t, kind, v, user, _resources)])
+		_gains.append([t, kind, logic.sequence_gain(t, kind, v, user, _resources if kind in ["HP", "MP"] else null)])
 	_resources.boss_output.leave_action()
 
 

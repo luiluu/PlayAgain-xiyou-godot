@@ -1523,6 +1523,8 @@ func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = 
 		value = -XImportedBalance.reduced(-value, subject)
 	if resources != null:
 		# 数值行动序列每个目标先clearResult，再gain；沿已对照的Boss→护盾→setter／refresh链。
+		# 每次gain只发布本次操作的槽，避免覆盖两条序列指令之间普通行动的新结果。
+		resources.slots.clear()
 		resources.seed_result(t, XResourceContext.empty_result())
 		resources.gain(t, kind.to_lower(), value)
 		resources.publish()

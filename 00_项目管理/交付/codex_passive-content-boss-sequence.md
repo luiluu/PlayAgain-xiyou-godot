@@ -32,3 +32,5 @@
 - 第二轮boss69-sequence-final exit1：9场通过；序列仍8项失败，确认为新增索引选择器错误读取XActor不存在的hidden，已改仅敌人检查hidden；日志含SCRIPT ERROR已判失败。另xiyou_determinism稳定8个early_inventory_rule失败（首跑／自动重跑同样），尚未归因；不称偶发。下一步用本树.sandbox内只读链接快照、仅三文件取e1925bea原版本跑相同场景，区分本期回归与继承失败；不reset／改当前运行时／建新worktree。
 
 - boss69-sequence-final2终态exit0，10场50569／50569（新增8213、action_sequence115、事件108／22、导入273、既有Boss／公式／状态链），均单次且无SCRIPT ERROR；确定性隔离基线boss69-determinism-baseline同为374／382，8个early_inventory_rule与本期一致，证明继承失败，保留原件与快照不夹带无关修复。另发现同一序列resources跨命令保留slots可能在数值→普通MP伤害→另一目标数值时publish旧目标槽，追加单个interleaved原版样本，不重采87例。
+
+- 追加interleaved原版1例通过（4f6e98727f6e49ceb0b9a02fb1f54dcb），与87原件来源一致、合成88唯一ID并保留两原件。Godot旧实现实测8312／8315，三处结果槽确实把普通MP伤害8回写成0；已在每次数值gain开始清理该序列resources的旧slots后seed目标，publish仅本次操作所触及对象。TP继续原路径，不扩本期未采的TP资源语义。相关10场需按最终版本再跑。
