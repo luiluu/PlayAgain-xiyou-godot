@@ -1,7 +1,7 @@
 # 交付：codex/passive-content-boss-context
 
 - 车道／工作者：规则／沙僧（Codex，重制_沙僧_67）
-- 状态：预设计进行中，尚不可合并；本小期未新增原版参照、未写运行时代码。
+- 状态：来源域与资源接口已实现草稿，两例原版对照及边界专项281项通过；完整参照与依赖验收进行中，尚不可合并。
 - 基线：ec75a3b1（Boss普通输出78组、六场8588项全过；可合并交付见codex_passive-content-boss-output.md）。同树新分支，无在途任务；所有boss66-*临时输出已清理，原版.sandbox、旧证据、generated及整树全部保留。
 - 开工额度：五小时92%、周44%；上轮从66%接手，95%时以WIP保存并停，不因额度高而漏交已经验收的普通输出。
 
@@ -74,3 +74,5 @@
 - 可优化（67已在本车道执行）：--import 只证明导入扫描无报错，首次运行仍发现来源变量倍率的类型推断失败（boss67-godot-smoke，失败原件保留）。修为显式 XEnemy 转型后，新增先占槽 --check-only --script 新专项的编译关，再跑场景；不凭导入输出宣称脚本均可执行。工具车道可评估推广，不改其文件。
 
 - 67定向apply补宿主第二步：原版已执行到AB_EnemyBook尾钩子，因行动仅覆写item取测试技能而内部_item为空失败；改用真实setSkill(1)初始化_item，测试副本仍由item getter提供。失败原件另存 .sandbox/boss_output_context_selected_67a_failed.json。--check-only单脚本模式缺GameApp autoload，虽rc0但编译日志报错，判不通过；该命令不适合本工程，撤销作为通用编译关的建议，继续用真实场景＋无SCRIPT ERROR验收（boss67-godot-smoke2在途），不改GameApp等无关文件。
+
+- 67小样结果：真实setSkill补齐后，boss67-apply2定向apply原版1/1通过（runId 6f8aeb0ce75f4595be8ded18f7d0d77f）；Godot boss67-godot-smoke2两例＋边界281/281、无偶发。下一步启动boss67-full原版123例（原121＋HP/MP真实公式各1），四项直接依赖boss67-deps在途；不重采以前Boss普通输出／生命周期参照，不跑旧全量。
