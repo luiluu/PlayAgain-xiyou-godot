@@ -10,7 +10,7 @@ w.Game_Battler.prototype.battler=function(){
 };
 const errors=[];
 w.Yanfly.Util.displayError=(e,code,kind)=>errors.push({kind,thrown:String(e.message||e)});
-function snap(b){const r=b.result();return {hp:b.hp,mp:b.mp,tp:b.tp,shield:b.shield,states:Array.from(b._states),
+function snap(b){const r=b.result();return {hp:b.hp,mp:b.mp,tp:b.tp,shield:b.shield,dirty:!!b.need_refresh,states:Array.from(b._states),
  result:Object.fromEntries(['hpAffected','hpDamage','mpDamage','tpDamage','addedStates','removedStates'].map(k=>[k,Array.isArray(r[k])?Array.from(r[k]):r[k]]))};}
 const cases=[];
 const specs=[];
