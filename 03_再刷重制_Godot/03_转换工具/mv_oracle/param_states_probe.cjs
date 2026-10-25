@@ -31,4 +31,10 @@ for(const mode of ['alive','hp0','dead_state','both','self']) cases.push(makeCas
   action.offApplyStateEffects(b);rows.push(snap(a,'repeat'));
   const saved=host.encode();host.restore(saved);a=w.$gameActors.actor(1);rows.push(snap(a,'save'));return {rows};
 }));
+for(const zero of [false,true]) cases.push(makeCase('1768.apply_miss_'+(zero?'hp0':'alive'),{},()=>{
+  const a=fresh();a.addState(1768);a.refresh();const b=new w.Game_Enemy(1,0,0);if(zero)b._hp=0;
+  const action=new w.Game_Action(a);action.setSkill(1);action.itemHit=()=>0;
+  const rows=[snap(a,'before')];action.apply(b);rows.push(snap(a,'apply'));
+  return {rows,missed:b.result().missed,evaded:b.result().evaded};
+}));
 process.exit(finish(host,'param_states.json',{scope:'Frozen1612 lifecycle and1768 native offApplyStateEffects; actor host only',states:[1612,1768].map(id=>({id,note:w.$dataStates[id].note,autoRemovalTiming:w.$dataStates[id].autoRemovalTiming})),cases})?0:1);
