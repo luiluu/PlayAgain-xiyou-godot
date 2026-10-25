@@ -77,7 +77,7 @@ func run_ops(ops: Array, tag: String) -> bool:
 		if op.op == "throw":
 			return false
 		if op.op == "nested":
-			var old := bs.b.state_origins.duplicate()
+			var old: Dictionary = bs.b.state_origins.duplicate()
 			set_origin(op.origin)
 			dispatch(op.ops, tag)
 			bs.b.state_origins = old

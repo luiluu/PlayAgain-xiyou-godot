@@ -25,3 +25,5 @@
 - 接线草稿：run_one执行Battler阶段且有resources时，origin→holder成对推入／退出；execute=false不借实时域，Action阶段不改。新增专项以真实gain_resource验单条持有者gain，其余set／跨目标／嵌套脚本通过run_one观察者回放域语义，未声称通用JS宿主已移植。五小时83%、周58%。
 
 - 原版完整121／121、唯一ID、errors空（任务9f6e96297146456d9431d8a4eb2d97f3），复制独立fixture与原件字节一致。导入06f68fa307544d2c918eecc511f88b68 exit0、无Script／Parse／Compile错误；只收新专项UID，非车道附带UID移存.sandbox/boss70_unrelated_import_uid.txt。下一步Godot新增与直接依赖验收。
+
+- Godot首批7df73c0ad8cd445c8459ebfa8c2e3bbf：新专项80行old从Dictionary动态值推断类型失败，导致场景未启动；单独check-only已复现，未将exit0当通过。已认证自身包装器后停止本批，保留日志；修为显式Dictionary类型，重新check-only后重验。不将首批其他场景算已通过。
