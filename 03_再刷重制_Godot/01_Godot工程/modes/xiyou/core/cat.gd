@@ -11,7 +11,8 @@ extends RefCounted
 ## - 剑技连携（CAT BEGIN／CAT STRIKE、剑心、识破／剑痕、喵铃）：见文末「剑技连携」。
 ## - 使用条件：见文末 legal。
 ## - 伤害钩子 cat-sword（持剑技加成、抱剑护身、巨龙减伤）在 cat_damage_hooks.gd（沙僧，模块挂接点），读这里的 advanced。
-## 未移植（交付单写明）：进阶（Godot 无 _AdvancedNum，advanced 恒假）、守誓巨龙试炼（9018，伤害钩子要宿主传 battleRound）、
+## 进阶 advanced() 读 XAdvance.rank（进阶后成长曲线、说明文字都随之变）。
+## 未移植（交付单写明）：进阶后额外行动（makeActionTimes＋1，在 battler，未接）、进阶后终技帮助品质 10（helpItem）、守誓巨龙试炼（9018，伤害钩子要宿主传 battleRound）、
 ## 号角 2899 入队后不可用、Map132 商店补号角、段间 WAIT 6 的画面节奏。
 ## 参照：mv_oracle/cat_probe.cjs（generated/oracle/cat.json），测试 tests/xiyou_cat.gd。
 
@@ -21,6 +22,7 @@ const STARTER_SWORD := 2
 const SWORD_WTYPE := 2
 const SKILL_SWORD := 10441
 const SKILL_SPEED := 10442
+const SKILL_ADVANCED := 10444
 const ACTIVE := [10437, 10438, 10439, 10440]
 ## 自带图标：280000～280008 画 img/system/CatSwordSaint_Icons 的第 n 格（32×32 横排）
 const ICON := 280000
@@ -55,15 +57,24 @@ static func enabled_sword(a) -> bool:
 	return learned(a, SKILL_SWORD) and has_sword(a)
 
 
-## 进阶（35 级＋小猫进阶石＋学会 10444）：Godot 还没有角色进阶次数（_AdvancedNum），恒为假
-static func advanced(_a) -> bool:
-	return false
+## 进阶：35 级起、进阶次数（XAdvance.rank）≥1 且学会 10444
+static func advanced(a) -> bool:
+	return own(a) and int(a.level) >= 35 and XAdvance.rank(XState.current, ACTOR) >= 1 and learned(a, SKILL_ADVANCED)
 
 
-## 成长：35 级前按 1／10／20／30／35 级插值 0.06～1；35 级起未进阶为 1（进阶后的另一条曲线随进阶系统接）
+## 成长：35 级前按 1／10／20／30／35 级插值 0.06～1；35 级起未进阶为 1，进阶后按 35／50／60／70／81 级插值 0.30～0.875（不低于 0.5）
 static func growth(a) -> float:
 	var l := int(a.level)
 	if l >= 35:
+		if not advanced(a):
+			return 1.0
+		var al := [35, 50, 60, 70, 81]
+		var ar := [0.30, 0.45, 0.62, 0.80, 0.875]
+		if l >= 81:
+			return ar[4]
+		for j in range(1, al.size()):
+			if l <= al[j]:
+				return maxf(0.5, ar[j - 1] + (ar[j] - ar[j - 1]) * (l - al[j - 1]) / float(al[j] - al[j - 1]))
 		return 1.0
 	var ls := [1, 10, 20, 30, 35]
 	var rs := [0.06, 0.15, 0.3, 0.7, 1.0]

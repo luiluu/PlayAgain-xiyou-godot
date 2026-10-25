@@ -40,8 +40,12 @@ var saved_actors: Array[int] = []   # 角色仓库（Star_ActorWarehouse 的 $ga
 ## 更衣的替换形象（Star_ChangeClothes 的 $gamePlayer.Set_OcharacterName／Set_OcharacterIndex，存档 playerCostume，见 XChangeClothes；
 ## {"characterName", "characterIndex"}，空＝不替换；旧档没有为空）
 var player_costume := {}
+## 角色换装开关关掉的角色（installCostumePreferencesRuntime 的 Game_Actor._codexCostumeEnabled === false，存档 costumeOff，见 XCostumes；旧档没有为空＝全启用）
+var costume_off: Array[int] = []
 ## 角色进阶次数（Star_ActorAdvanced 的 Game_Actor._AdvancedNum，存档 actorAdvance，见 XAdvance；角色 ID → 次数，旧档没有为空＝全 0）
 var actor_advance := {}
+## 技能共享／羁绊／领袖技能的上次记录（XPartySkills，O-095 开着时随存档，存档键 partySkills；旧档没有为空）
+var party_skills := {}
 var switches := {}                  # id -> bool
 var variables := {}                 # id -> 数值
 var self_switches := {}             # "map,event,A" -> bool
@@ -274,7 +278,14 @@ func fixed_save_slot() -> int:
 	return 0
 
 ## Game_Party.addActor（YEP_PartySystem）：加入队尾；出战栏位有空位时填入第一个空位并重排
+## installBossDifficultyRuntime 在外层前后各清一次出战栏里的超强者（XItemMarks.enforce_party）
 func add_actor(id: int) -> void:
+	XItemMarks.enforce_party(self)
+	_add_actor(id)
+	XItemMarks.enforce_party(self)
+
+
+func _add_actor(id: int) -> void:
 	if XDB.rec("Actors", id).is_empty():
 		return
 	# installBossDifficultyRuntime：未持有的超强者在地狱以下不能入队（提示后不加）
@@ -301,10 +312,13 @@ func remove_actor(id: int) -> void:
 
 
 ## initializeBattleMembers：按队伍前 5 人建立出战栏位（不足补 0）
+## （前后各清一次超强者，同 add_actor）
 func init_battle_slots() -> void:
+	XItemMarks.enforce_party(self)
 	battle_slots = []
 	for i in MAX_BATTLE_MEMBERS:
 		battle_slots.append(party[i] if i < party.size() else 0)
+	XItemMarks.enforce_party(self)
 
 
 func _ensure_slots() -> void:
@@ -312,9 +326,15 @@ func _ensure_slots() -> void:
 		init_battle_slots()
 
 
-## rearrangeActors：出战栏位（按栏位顺序）在前，其余按角色编号升序
+## rearrangeActors：出战栏位（按栏位顺序）在前，其余按角色编号升序（前后各清一次超强者，同 add_actor）
 func rearrange_actors() -> void:
 	_ensure_slots()
+	XItemMarks.enforce_party(self)
+	_rearrange_actors()
+	XItemMarks.enforce_party(self)
+
+
+func _rearrange_actors() -> void:
 	var battle: Array[int] = []
 	for id in battle_slots:
 		if int(id) > 0 and party.has(int(id)):
@@ -338,9 +358,10 @@ func party_ability(id: int) -> bool:
 	return battle_members().any(func(a): return not a.traits_with_id(64, id).is_empty())
 
 
-## YEP Game_Party.battleMembers：出战栏位里的非空角色（栏位顺序）
+## YEP Game_Party.battleMembers：出战栏位里的非空角色（栏位顺序）；先清掉出战栏里的超强者（XItemMarks.enforce_party）
 func battle_members() -> Array:
 	_ensure_slots()
+	XItemMarks.enforce_party(self)
 	var out := []
 	for id in battle_slots:
 		if int(id) > 0 and party.has(int(id)):
@@ -505,7 +526,7 @@ func to_dict() -> Dictionary:
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "ecoFrac": eco_frac,
-		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "actorAdvance": XAdvance.to_save(actor_advance)}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "costumeOff": costume_off, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills)}
 
 static func from_dict(d: Dictionary) -> XState:
 	# dev.099 once persisted strict engine-specific RNG state. Ignore that obsolete
@@ -560,7 +581,9 @@ static func from_dict(d: Dictionary) -> XState:
 	s.warehouses = XWarehouse.from_save(s, d.get("phwarehouse", {}))
 	s.saved_actors = XActorWarehouse.from_save(d.get("saveactors", []))
 	s.player_costume = XChangeClothes.from_save(d.get("playerCostume"))
+	s.costume_off = XCostumes.from_save(d.get("costumeOff"))
 	s.actor_advance = XAdvance.from_save(d.get("actorAdvance"))
+	s.party_skills = XPartySkills.from_save(d.get("partySkills"))
 	for a in s.actors.values():a.refresh_passive()
 	for k in d.switches:
 		s.switches[int(k)] = bool(d.switches[k])

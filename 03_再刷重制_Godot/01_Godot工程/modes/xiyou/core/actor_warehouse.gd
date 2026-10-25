@@ -12,8 +12,8 @@ extends RefCounted
 ## - 取出：编号追加到队伍末尾（不重排、不进出战栏），从仓库去掉。
 ## - 存取后出战栏前 4 格全空时把队伍第 1 人放进第 1 格（原版两处都有这条判断）。
 ## - 停用角色（installImportedBalanceRuntime：XImportedBalance.DISABLED_ACTORS）在列表里名字半透明、不可确定（蜂鸣）。
-## - 退出时原版由 Star_SkilsShare／Star_JiBanSiklls／Star_LeadActor 刷新共享技能、羁绊与领袖技能；这三套重制还没有移植
-##   （整队页同样没有），所以这里不刷新。
+## - 退出时原版由 Star_SkilsShare／Star_JiBanSiklls／Star_LeadActor 刷新共享技能、羁绊与领袖技能：界面退出时调 XPartySkills.finish
+##   （整队页「完成」同此）。
 ## O-091：光标停在空行（存／取掉最后一行后原版光标不动）时确定，原版把 undefined 存进仓库或队伍（之后读写都会出错）；
 ## 重制返回 "empty"，界面蜂鸣不动（deposit／withdraw 开头的空行判断）。
 
