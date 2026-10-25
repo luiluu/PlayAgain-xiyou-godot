@@ -34,3 +34,9 @@
 
 - loose_fixes 34例最终runId以本车道oracle-battle.log.status.json为准，来源前后一致、cases错误全空；消耗27种边界＋敌人不打折、死亡3条自然入口、932元素及重复／大小写标签3条。早期夹具Node数组及未初始化OTB结果不作游戏缺陷结论。
 - F31分阶段计数已由`308927f8`实现（2026-10-23），本期仅补100＋100次反应的饥饿边界验证。
+
+## 在途（2026-10-25）
+
+- 已从开工main补齐转换产物和Godot导入（退出0；排槽约420秒）。最终注册探针enemy_book_defeat扩为38例（原4＋扩展34），runId以oracle-final.log.status.json为准，退出0、全部errors空，34例已精简入tests/fixtures/loose_fixes_oracle.json。
+- 新专项`xiyou_loose_fixes.tscn`修前runId `3e597bbc32464e5db8db7f55c89b9eb6`，日志`four-loose-fixes/red.log`，仍在共享槽队列；没有第二份同专项任务。当前尚未应用生产补丁。
+- 补丁脚本已准备在本树忽略目录`03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/apply_production.py`：先读完修前结果，修夹具错误后才认语义红灯，再执行此脚本；补丁包括图鉴真实本场弱引用绑定（覆盖直接阵亡／资源死亡，隔离预览）、消耗缓存与两次取整、敌人备注正则扫描、去cat的tpGap。必须再检查脚本替换结果，不冒称已经改完。
