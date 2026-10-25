@@ -2740,5 +2740,38 @@
    ],
    "refund": 1
   }
- ]
+ ],
+ "order": {
+  "turn": 5,
+  "enemies": [
+   {
+    "capture": true,
+    "hidden": true,
+    "hpRate": 0,
+    "states": [
+     1
+    ]
+   },
+   {
+    "capture": false,
+    "hidden": false,
+    "hpRate": 0.9,
+    "states": [
+     4
+    ]
+   },
+   {
+    "capture": true,
+    "hidden": true,
+    "hpRate": 0,
+    "states": [
+     1
+    ]
+   }
+  ],
+  "toasts": [
+   "敌人逃跑",
+   "敌人逃跑"
+  ]
+ }
 }

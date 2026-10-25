@@ -29,8 +29,6 @@ func battle(troop: int) -> XBattleLogic:
 	var l := XBattleLogic.new()
 	l.elite_roll = 100.0
 	l.setup(troop, XState.new_game(3, 1, [8, 9, 10]))
-	for e in l.enemies:
-		e.capture = false
 	return l
 
 
@@ -70,6 +68,35 @@ func _run() -> void:
 		var got := l.enemies.map(func(e): return {"capture": e.capture, "dead": e.is_dead(), "hidden": e.hidden, "hp0": e.hp == 0.0, "states": e.state_ids})
 		var want: Array = tr.enemies.map(func(e): return {"capture": bool(e.capture), "dead": bool(e.dead), "hidden": bool(e.hidden), "hp0": int(e.hp) == 0, "states": e.states.map(func(x): return int(x))})
 		check("turn_%d" % int(tr.turn), got == want and toasts(logs) == tr.toasts, [got, want, toasts(logs)])
+	# 3b. 先后：逃跑先于各成员回合结束（毒伤）：完整 end_turn
+	var lo := battle(2)
+	for i in lo.enemies.size():
+		lo.enemies[i].capture = i != 1
+		if i < 2:
+			lo.enemies[i].add_state(4)
+	lo.turn = 5
+	var olog := lo.end_turn()
+	var og := lo.enemies.map(func(e): return {"capture": e.capture, "hidden": e.hidden, "hpRate": snappedf(e.hp / e.mhp, 0.0001), "states": e.state_ids})
+	var ow: Array = ref.order.enemies.map(func(e): return {"capture": bool(e.capture), "hidden": bool(e.hidden), "hpRate": snappedf(float(e.hpRate), 0.0001), "states": e.states.map(func(x): return int(x))})
+	check("turn_5_before_regen", og == ow and toasts(olog) == ref.order.toasts, [og, ow, toasts(olog)])
+	# 只建 logic 不掷（Scene_Battle.start 才掷）；pet 流不动 rule／reward 的取数
+	var seed := XRandomStream.hex64(12345)
+	var la := XBattleLogic.new()
+	la.elite_roll = 100.0
+	la.setup(2, XState.new_game(3, 1, [8, 9, 10]), XBattleRandom.create(seed))
+	var lb := XBattleLogic.new()
+	lb.elite_roll = 100.0
+	lb.setup(2, XState.new_game(3, 1, [8, 9, 10]), XBattleRandom.create(seed))
+	var plain_names := la.enemies.map(func(e): return e.display_name())
+	XPetCapture.roll_battle(lb)
+	check("setup_does_not_roll", plain_names == ["嘤嘤怪Ａ", "嘤嘤怪Ｂ", "嘤嘤怪Ｃ"] and not la.enemies.any(func(e): return e.capture), plain_names)
+	check("pet_stream_separate", la.random.rule.snapshot() == lb.random.rule.snapshot() and la.random.reward.snapshot() == lb.random.reward.snapshot()
+		and lb.random.pet.draws == 3 and la.random.pet.draws == 0)
+	var restored := XBattleRandom.restore(JSON.parse_string(JSON.stringify(lb.random.snapshot())))
+	var legacy: Dictionary = JSON.parse_string(JSON.stringify(la.random.snapshot()))
+	legacy.erase("pet")
+	var old := XBattleRandom.restore(legacy)
+	check("pet_stream_snapshot", restored != null and restored.pet.draws == 3 and old != null and old.pet.snapshot() == la.random.pet.snapshot())
 	# 4. 捕捉道具（last_action_wins 是原版全局行动的取法，OTB 下不会出现，见 XPetCapture 文件头）
 	for g in ref.gets:
 		if str(g.name) == "last_action_wins":
@@ -136,6 +163,7 @@ func _run() -> void:
 	var l1 := XBattleLogic.new()
 	l1.elite_roll = 100.0
 	l1.setup(1, XState.new_game(3, 1, [8, 9, 10]))
+	XPetCapture.roll_battle(l1)  # 战斗画面开场时掷（Scene_Battle.start）
 	var p1 := l1.state.pets
 	check("troop1_setup", l1.enemies[0].enemy_id == int(ref.troop1.enemy) and l1.enemies[0].capture
 		and [p1.get("ref_day"), p1.get("ref_hour"), p1.get("ref_minute")] == ref.troop1.ref.map(func(x): return int(x)), [l1.enemies[0].enemy_id, p1])
@@ -172,6 +200,7 @@ func _battle_flow() -> void:
 	var l := battle(2)
 	var s := l.state
 	s.gain_item(317, 1)
+	XPetCapture.roll_battle(l)
 	for e in l.enemies:
 		e.capture = true
 	l.set_meta("pet_random", tape([0.0] + range(40).map(func(_i): return 0.5)))

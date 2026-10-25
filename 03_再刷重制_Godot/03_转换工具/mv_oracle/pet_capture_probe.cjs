@@ -52,6 +52,22 @@ function endTurn(turn) {
 }
 const turns = [4, 5, 6].map(endTurn);
 
+// 3b. 先后：Star 的包装在原版 endTurn 之前（外层只有 Raven／Mira 等角色专属的前置代码），逃跑先于各成员 onTurnEnd（毒伤、状态回合）。
+// 内层换成「全体 onTurnEnd」：中毒的可捕捉敌人先逃跑、不吃毒伤；中毒的不可捕捉敌人照常扣 10%。
+w.Star.PetSystem.BattleManager_endTurn = function () { w.$gameTroop.members().forEach(m => m.onTurnEnd()); };
+const order = (() => {
+  queue = [0.99, 0.99, 0.99, 0.99, 0.99, 0.99];
+  w.$gameTroop.setup(2);
+  const es = w.$gameTroop.members();
+  es.forEach((e, i) => { e.Capture = i !== 1; if (i < 2) e.addState(4); });
+  w.$gameTroop._turnCount = 5;
+  w.BattleManager._actionBattlers = []; w.BattleManager._nextTurnActionBattlers = [];
+  queue = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
+  w.BattleManager.endTurn();
+  return {turn: 5, enemies: es.map(e => ({capture: !!e.Capture, hidden: e.isHidden(), hpRate: e.hp / e.mhp, states: e._states.slice()})), toasts: take()};
+})();
+w.Star.PetSystem.BattleManager_endTurn = function () {};
+
 // 4. PetGet：成功、失败（掷不中）、不可捕捉（退还道具）；Game_Action.setItem 记下的是最后一个
 function petGet(name, itemId, roll, capturable, extra) {
   queue = [0.99, 0.99, 0.99, 0.99, 0.99, 0.99];
@@ -141,7 +157,7 @@ const books = [book('no_war', 1493, false, [0, 2]), book('learn', 1493, true, [0
 const petMap = w.Star.PetSystem.PetMap.map((m, i) => m ? Object.assign({index: i}, m) : null).filter(Boolean);
 const src = f => crypto.createHash('sha256').update(fs.readFileSync(path.join(APP, f))).digest('hex');
 const out = {source: 'js/plugins/Star_PetSystem.js', sha256: src('js/plugins/Star_PetSystem.js'), petRefNum: w.Star.PetSystem.PetRefNum,
-  petMap, capture, starts, turns, gets, refreshes, troop1, books};
+  petMap, capture, starts, turns, gets, refreshes, troop1, books, order};
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox', 'pet_capture.json'), JSON.stringify(out, null, 1));
 console.log(JSON.stringify({capture: capture.length, starts: starts.map(s => s.enemies.map(e => e.capture)), turns: turns.map(t => t.enemies.map(e => e.dead)), gets: gets.map(g => [g.name, g.toasts, g.count, g.pets]), refreshes: refreshes.map(x => [x.name, x.on.length, x.troop1])}));

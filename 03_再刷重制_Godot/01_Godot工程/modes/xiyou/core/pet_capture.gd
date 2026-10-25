@@ -11,7 +11,7 @@ extends RefCounted
 ##   宠物的学习次数上限（extraLSMax）原版在建敌人时（initMembers）就掷了，这里捕到时才掷（XPets.create 最后一次抽取），分布相同。
 ##   原版读全局 Star.PetSystem.Game_Action（最后一个 setItem 的行动），OTB 下轮到谁谁才输入并立即行动，就是这次行动本身。
 ## - die＋hide 后 HP 0、带阵亡状态但隐藏：不算阵亡也不算活着（isAppeared），不给经验、金钱、掉落，全灭判定照常成立。
-## - 随机数：原版是 Math.random。重制不占战斗 rule 流（会让所有战斗对照的抽取顺序错位），从本场 master_seed 派生 "pet" 流。
+## - 随机数：原版是 Math.random。重制不占战斗 rule 流（会让所有战斗对照的抽取顺序错位），用本场 XBattleRandom 的 "pet" 流。
 ## - 神秘生物（isrefreshGTEveWar，真实时钟）：每小时 0～4、30～34 分是刷新窗口。窗口外（或本窗口已打过敌群 1）把 PetMap 各图的
 ##   事件独立开关全关；窗口内从候选里随机挑一处打开（不关别处），PetEneId 里随机一个写进敌群 1（$dataTroops，不存档），
 ##   PetShowTextT 时提示 PetShowText（空时「在<地图名>出现了神秘生物」）。候选：PetRef_Capture 关时取 PetRefNum 以外的
@@ -47,22 +47,19 @@ static func threshold(enemy_id: int) -> int:
 	return int(n.get_string(1)) if n != null else -1
 
 
-## 本场的 "pet" 随机流（第一次用时从 master_seed 派生，记在 logic 上）
+## 本场的 "pet" 随机流（XBattleRandom.pet）；测试可用 logic 的 meta "pet_random" 换成脚本流
 static func random(logic) -> XRandomStream:
 	if logic.has_meta("pet_random"):
 		return logic.get_meta("pet_random")
-	var seed: String = logic.random.master_seed if logic.random != null and logic.random.master_seed != "" else XRandomStream.fresh_seed()
-	var r := XRandomStream.create(XRandomStream.derive(seed, "pet"), "pet")
-	logic.set_meta("pet_random", r)
-	return r
+	if logic.random == null:
+		return XRandomStream.create(XRandomStream.fresh_seed(), "pet")  # 没有本场随机（不应发生：只在战斗里调）
+	return logic.random.pet
 
 
-## 开战（XBattleLogic.setup 末尾）：敌群 1 强制可捕捉并记时间，再按 <Capture> 掷。rnd：本场的 pet 流（测试传入脚本流），缺省新派生
+## 开战（XBattleScene.setup 里 logic.setup 之后＝Scene_Battle.start；只建 logic 的规则测试不掷，名字不带「宝宝」）：敌群 1 强制可捕捉并记时间，再按 <Capture> 掷。rnd：本场的 pet 流（测试传入脚本流），缺省新派生
 static func roll_battle(logic, rnd: XRandomStream = null) -> void:
 	if rnd != null:
 		logic.set_meta("pet_random", rnd)
-	elif logic.has_meta("pet_random"):
-		logic.remove_meta("pet_random")
 	if int(logic.troop_id) == 1 and not logic.enemies.is_empty():
 		logic.enemies[0].capture = true
 		var t := now()
