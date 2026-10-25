@@ -1518,9 +1518,15 @@ func sequence_add_state(t: XBattler, id: int) -> void:
 ## 返回弹字值：负 HP 与伤害同走护盾吸收链（Game_Battler.gainHp：先吸收、击穿后减半，ShieldSystem）；
 ## 弹字角色记原值、敌人记减免后（同 XResourceContext.gain）。
 ## subject：序列的行动者。导入角色平衡：对序列目标的 HP／MP 减少按行动者倍率缩放（actionHpModify／actionMpModify 的 gainHp／gainMp）。
-func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = null) -> float:
+func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = null, resources: XResourceContext = null) -> float:
 	if value < 0.0 and kind in ["HP", "MP"] and XImportedBalance.scales(subject, t):
 		value = -XImportedBalance.reduced(-value, subject)
+	if resources != null:
+		# 数值行动序列每个目标先clearResult，再gain；沿已对照的Boss→护盾→setter／refresh链。
+		resources.seed_result(t, XResourceContext.empty_result())
+		resources.gain(t, kind.to_lower(), value)
+		resources.publish()
+		return -float(resources.result(t)[kind.to_lower() + "Damage"])
 	var shown := value
 	match kind:
 		"HP":

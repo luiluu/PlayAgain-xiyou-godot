@@ -9,6 +9,9 @@ var direct: Array = []
 func enter_action(source: XBattler, target: XBattler) -> void:
 	frames.append({"source": source, "target": target})
 
+func enter_targets(source: XBattler, targets: Array) -> void:
+	frames.append({"source": source, "target": null, "targets": targets.duplicate()})
+
 func leave_action() -> void:
 	frames.pop_back()
 
@@ -44,7 +47,8 @@ func loss_value(target: XBattler, kind: String, loss: float) -> float:
 		return loss
 	var ctx: Dictionary = frames[-1]
 	var source: XBattler = ctx.source
-	if target == source or target != ctx.target or not source is XEnemy:
+	var in_domain: bool = target == ctx.target if ctx.target != null else ctx.get("targets", []).has(target)
+	if target == source or not in_domain or not source is XEnemy:
 		return loss
 	var rate: float = (source as XEnemy).boss_output_rate()
 	return floorf(loss * rate) if rate > 1.0 else loss
