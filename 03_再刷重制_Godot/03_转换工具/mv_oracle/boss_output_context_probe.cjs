@@ -38,7 +38,7 @@ for(const {id,spec} of specs.filter(row=>!filter||filter.test(row.id)))cases.pus
  newGame();errors.length=0;w.$gameSwitches.setValue(2494,true);w.$gameSystem.setDifficultyId(3);
  const ids=spec.count?[106,101,100,102,104].slice(0,spec.count):[1];
  w.$gameParty._actors=w.Array.from(ids);w.$gameParty._battleMembers=w.Array.from(ids.concat(Array(5-ids.length).fill(0)));
- w.$gameTroop.clear();w.BattleManager._actionBattlers=w.Array.from([]);w.BattleManager._nextTurnActionBattlers=w.Array.from([]);
+ w.$gameTroop.clear();w.CodexYunshang._acted=w.Array.from([]);w.BattleManager._actionBattlers=w.Array.from([]);w.BattleManager._nextTurnActionBattlers=w.Array.from([]);
  const a=new w.Game_Enemy(6,0,0),other=new w.Game_Enemy(6,0,0),c=new w.Game_Enemy(6,0,0),b=spec.actorTarget?w.$gameActors.actor(1):other;
  w.$gameTroop._enemies=w.Array.from([a,other,c]);w.$gameParty._inBattle=true;
  for(const x of [a,b,c]){x.onBattleStart();x.refresh();}

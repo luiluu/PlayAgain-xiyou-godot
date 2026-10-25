@@ -1,6 +1,6 @@
 # 交付：codex/passive-content-boss-context
 
-- 车道／工作者：规则／沙僧（Codex，重制_沙僧_66）
+- 车道／工作者：规则／沙僧（Codex，重制_沙僧_67）
 - 状态：预设计进行中，尚不可合并；本小期未新增原版参照、未写运行时代码。
 - 基线：ec75a3b1（Boss普通输出78组、六场8588项全过；可合并交付见codex_passive-content-boss-output.md）。同树新分支，无在途任务；所有boss66-*临时输出已清理，原版.sandbox、旧证据、generated及整树全部保留。
 - 开工额度：五小时92%、周44%；上轮从66%接手，95%时以WIP保存并停，不因额度高而漏交已经验收的普通输出。
@@ -62,3 +62,7 @@
 - 重要限制：GDScript没有JS try/finally；当前翻译VM用诊断返回，先验证正常／诊断路径恢复，不虚称能捕获任意GDScript致命错误。测试throw在native由YEP eval捕获，Godot骨架用返回false模拟受控诊断，不设resources.error阻断外层后续操作。完整任意异常生命周期若未保证，要明确保留。
 - 已交普通输出ec75a3b1、实现00524617，78组＋六场8588项全过待Claude，不重做。上期Boss生命周期04e54453、29组＋八场42602项亦不重做。只跑新增专项＋直接依赖，先占槽导入无错误；长任务.py start、python3 -u、XIYOU_TEST_HEARTBEAT=30，交付后精简证据再清自己临时输出。先交小期再接序列／stateOrigin／1341／2550尾巴，各入口另采参照。
 - 前期未完成、依赖、文件禁区见本单前文和普通输出交付，不重读大范围审查。五本权能／容量满返书与1317／PREE-ASUP／WPNM-SkEType→race-battle接口→全部完成且额度足再核他人。自己的提交全待Claude，不自销核、不自评完成度。95%才WIP保存停，周98%收尾。
+
+## 沙僧67接手（2026-10-25）
+
+- HEAD 29847686、工作区干净；实查五小时10%、周47%，继续本期。boss66c-smoke 已失败退出，未重复启动；两例成功，apply 缺 CodexYunshang._acted 战斗列表。仅补测试宿主数据、不替换原版方法；失败原件另存 .sandbox/boss_output_context_smoke_66c_failed.json，先 --only 定向确认。
