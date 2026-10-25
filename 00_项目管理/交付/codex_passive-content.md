@@ -41,3 +41,16 @@
 - 实现fcec2676，夹具0838a3c7；main在验证时已是祖先，不再合无关提交或重复同步。当前首批可合并。本期临时目录已清；初期两次Godot失败只保留精简证据，全部原版.sandbox、generated、旧证据和整树保留。导入自动产生的未跟踪battle_common_events.gd.uid由本车道清掉，不夹带别车道文件。
 - 可优化：Git夹具每例一行，仍逐对象与原版JSON相等，13万行降为约1千多行；完整格式原版证据保留，恢复格式不改数据。下期只补新增参照，不重复本338组。
 - 后续：从本可合并首批新建codex/passive-content-boss，在同树补冻结原版Boss属性／2651生命周期，再分小期接倍率与霸体；输出倍率的行动／原始gain/set／状态来源上下文较难，单独验收，不为复杂尾巴卡住可验证首批。五本权能／容量满宿主另期保留；race-battle等八戒接口。
+
+## 沙僧64→65（同树自动接力）
+
+- 本首批02b9411f已可合并；本节提交后以新HEAD为准。当前codex/passive-content，工作区干净、无在途长任务或前台等待；64创建65后停止，65唯一执行者。本次是上下文接力，不是额度停手；实查五小时31%、周35%，95%保存停、周98%收尾，不假定重置。
+- 第一条及所有文件命令必须显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。只用已有树，不在main改、不创建／清理worktree、不reset／cherry-pick、不建automation、不向唐僧或别的已有会话发消息。共用交接板／变更记录／步骤清单／当前状态只读，只写自己的车道交付单。全部旧原版证据、.sandbox、generated及整树保留。
+- 开工只读交接板顶部／车道行、status／log、实际额度与本节，不重读大范围审查；不重复上期6场或本期338组、5场、旧全量／同步。永久状态角色宿主7bfb4807与本首批分别可合并，自己的实现均待Claude，不自销核，不自评进度。
+- 下一小期从当前已验首批新建codex/passive-content-boss（同树，不新worktree），先补冻结原版Boss属性／2651生命周期参照。尚未取新参照／尚未实现，不把本节初读当已做。源在03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw/js/codex/runtime/installBossDifficultyRuntime.js（后半约211行起）；2651仅说明无effects，不凭说明实现。
+- 已初读的实际边界：setup时按当前出战超强者数快照，Boss识别读MOG boss_list及备注；八项在native param缓存外最后Math.round(value*(1+0.2*count))，在setup填HP/MP之前设因子，不复合放大缓存。transform保留快照count、重判Boss，并按当前回合>0且偶数同步霸体。increaseTurn在原流程之后逐敌人同步；第2／4／6回合开，奇数关，endBattle去除。**原版即便count=0，Boss偶数回合仍有控制免疫的霸体，只有属性／输出倍率为1**，别擅加count>0门槛。
+- 控制定义：restriction>0，或BuffType沉默／封印／眩晕／睡眠／麻痹／混乱／魅惑／恐惧／冰冻，或traits42／44；死亡1与2651排除。开霸体时先去已有控制、再附2651；不能驱散／erase／removeCompletely，已死可去；recoverAll重补。伤害、属性削弱和死亡照常有效。先测缓存、HP/MP初始填值、变身、死亡／复活与移除边界，小步交付。
+- 难尾巴另期：输出倍率D.outputRate在霸体时=属性倍率，普通executeHp/MpDamage只对正伤害且目标非自己放大；action／executeDamage／postDamage上下文里的负gain和set下降也放大，settled／direct栈只结算一次；序列targets域与状态来源域（1341／2550特殊来源）也需分别取样。治疗与自身代价不放大。涉及生命周期／上下文按实际设计用high；先交可独立验证小期再接难尾巴，不碰未交接formula_execution／mv_event_core或原两个TP Apply宿主。
+- 静态首批遗留继续保留：5本权能书的学习上限／禁止普通遗忘／专用遗忘入口；羁绊容量满（变量9）返本道具与预约1317；PREE／ASUP、穿武器时WPNM／SkEType。未经专项不要将它们并入本首批完成；本首批只247本道具248个效果＋90科技、空装备容量999的静态范围。已验通用静态链，不重复造轮子。
+- 再race-battle（等八戒接口），全部做完且额度足再核他人的待核项。四零散b135ee33→2g026f6ee3→随机b495833a→actor-bonus7ef7584a→actor-bonus-states7bfb4807→本首批按依赖合。50%审查二期0b00c374仍由唐僧另合，不夹带／重做。2g两个TP Apply与完整预览空槽、敌人永久账本仍未交。
+- 64曾合main d370a7fb无冲突，新增公共事件通用化；合后6场22734已过，最新静态5场115390已过，无偶发。d370默认合并信息漏尾注已在actor-bonus-states交付单明确登记待Claude，不改写历史；以后合main用--no-commit后显式提交尾注。当前main已是祖先，没有新提交，不追无关main或重同步。长批用python3 -u、XIYOU_TEST_HEARTBEAT=30，先占槽导入过再启动测试。
