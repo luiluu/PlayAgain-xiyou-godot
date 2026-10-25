@@ -43,8 +43,8 @@
     "finding": "普通932火增伤正确；重复／大小写／无前导零标签漏算已由修前专项证实。Codex补修后126/126通过，补修待Claude交叉核查。"
   },
   "usageAtHandoff": {
-    "fiveHourUsedPercent": 4,
-    "weeklyUsedPercent": 16
+    "fiveHourUsedPercent": 17,
+    "weeklyUsedPercent": 18
   },
   "handoffDocs": {
     "exitCode": 0,
@@ -345,6 +345,7 @@
         "startedAt": "Sun Oct 25 13:06:28 2026    "
       }
     },
-    "queueOnlyUntilOtherSyncsExit": true
+    "queueOnlyUntilOtherSyncsExit": true,
+    "completedWaitWindows": 3
   }
 }

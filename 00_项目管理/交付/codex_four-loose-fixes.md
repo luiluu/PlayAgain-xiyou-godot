@@ -130,3 +130,13 @@
 - 启动后只等待此日志，不重复启动同步；两份接受单保持7条既有改变，预期新增enemy_book_defeat34例。同步含Godot导入，退出0并核报告后只补规则基础段与参照实际受影响专项。
 
 - 同一final-sync任务runId `ebfcb32ee7d64a4fa4620b8e541fb27f`：前三次前台540秒等待均124（仅等待到时），本树同步尚未启动；白龙event_probe进程仍有CPU活动，悟空同步亦在途。不得重复启动。
+
+## 沙僧60→61（同树接力，机械等待／收尾用medium）
+
+- 当前分支仍`codex/four-loose-fixes`，本轮仅交付登记与核查范围JSON变化，没有生产改动。已提交检查点82375f84／5ac03faf／3541cbb6／0224f637／5a9a30e3，HEAD以本节提交为准。四项仍进行中，不可报可合并。
+- **唯一在途**：`final-sync.log`，runId `ebfcb32ee7d64a4fa4620b8e541fb27f`，长任务PID3389／childPGID3394。它先运行本期忽略目录`queue_final_sync.py`，每30秒pgrep核对其他同步；全部退出后才调用已读`sync_preserve_evidence.py`。已启动，**不要再启动同步或另一个排队任务**。此任务不是automation。
+- 当前三轮540秒等待均124，只表示尚未结束。第四次等待会话可自然到时；接手查status与日志尾，继续`等待任务.sh <final-sync.log> --timeout 540`。单次工具阻塞≤60秒（可functions.exec pragma yield60000＋write_stdin50000），减少空转推理，不重复叙述不变状态。最后仍白龙73004／悟空74882同步在途，白龙event_probe9013持续CPU约100%，不是卡死。不能动其他车道进程／槽位。
+- 排队脚本已固定`--accept-additions`＋两份接受单（cat去tpGap一条、哪吒slice六条）；缓存沿用，不带--full，保留旧证据/.sandbox/generated。同步预计仅cat1＋slice6既有变化、新enemy_book_defeat34例（总38）；同步含Godot导入。拿到exit0后必须读报告，额外变化要分析，不扩大接受。
+- 同步成功后只补`xiyou_rules.tscn`基础段及cat／enemy_book／loose_fixes三场（受参照输出更新影响）；此前另外11场依赖及power全部通过，不重跑整批／全量／旧50%审查。947/5557参照应已从0修正。完成后精简报告入JSON、交付单写可合并（自己的实现待Claude），只清本期four-loose-fixes临时输出。**apply_production.py已执行，不可再执行**；没完成前不清目录。
+- 本轮只读定位2g，无任何修改／切支。以后2g仍bf585fdc现场：13场12过、formula_effects906/908，两capState_buffs MP夹值失败；按原最终链把resource_context add锁guard由仅XActor改成除XEnemy的基类分支，先跑formula_effects与state_effects_tp再定。生产文件在`01_Godot工程/modes/xiyou/core/`。formula_execution空结果槽预览问题与两个Apply宿主接口仍按2g原交付的停手范围，不混进本期。
+- 机械收尾61创建时实际设medium，不虚称本轮已切；疑难2g按实际难度再提高。60创建61后停止，61唯一执行者。额度五小时17%、周18%，不是停手线。后续仍四项→2g→rng-compare-review→actor-bonus→passive-content→race-battle；自己的实现待Claude。50%审查二期分支0b00c374交总装另合。只用此已有树、所有文件命令显式workdir，共用登记只读，不新开automation。
