@@ -30,7 +30,21 @@
   - `同步正式西游.py` 的 `run_node`：给 node 默认 `--max-old-space-size=10240`。切片事件页过 5000 后 event_probe 一个进程撞 node 4GB 堆上限（同步 OOM，白跑 2 轮）；现在实测约 4.5GB。
 - 事件对照：4302 例，4298 一致，4 例已知不一致不变，无新增退步。覆盖检查 new 0。
 - 提醒总装：同步在 worktree 里单轮约 50～60 分钟（探针 event_probe／smart_ai／slice_probe 全跑，2 并行），合并后在 main 上若指纹对不上要重跑。
-- 序 9（Map147 EV2 → Map173／175，70 事件、20 敌群，随机变量入口）与序 12／14（317）尚未做。
+- 序 9（Map147 EV2 → Map173／175，70 事件、20 敌群，随机变量入口）未做（任务标「可砍」）。
+
+## 追加：期五前的补做（序 14、12 与指令 317，总装已同意方案）
+
+- **指令 317 更改能力值**（原版 Game_Interpreter.command317＋Game_Actor.addParam）：解释器新补分支，作用对象（指定角色／变量角色／全队）、常量／变量操作数、增／减都照原版；加完把 HP／MP 截到上限。永久加成存 `XState.mv_param_plus`（`{"角色ID":[8项]}`，存档键 `mvParamPlus`，旧档缺省为空），新建 `core/param_plus.gd`（`XParamPlus.add／bonus`）。
+- **改沙僧独占 `actor.gd` 一行**：`param_base` 末尾 `XTraining.param_bonus` 旁加 `v += XParamPlus.bonus(self, i)`（总装同意的单行例外）。**沙僧期三的「永久加算」应复用或并入 XParamPlus，不另起一套。** 注意：加成放在 `param_base`（百分比被动之前），原版 `_paramPlus` 在 `paramPlus`；差别只在被动百分比是否放大这份加成，需要的话沙僧后续移到 `param_plus`。
+- **参照引擎实测**（脚本 `hboot` 起正式引擎跑 317）：加生命上限不回血；敏捷 20−100 → 0；减到上限 1 时生命截到 1。专项 `xiyou_floor_reach225` 里同样的几例都对上。
+- **簇 14**：Map166 EV9／EV10 → Map171 神庙（敌群 793 入切片）；九尾狐 16 种结果逐个固定随机数验证（生命／魔法 ±1000、其余 ±100）。**簇 12**：Map004 EV70（开关 2496）→ Map225 蜜雪冰城；福利助手 ±5000／±1000 与开启宝宝增益（技能 5561）。切片地图 153 → 155／231。
+- 专项 `xiyou_floor_reach225`：151 项通过。
+
+## 验证补充
+
+- 总装新增要求：`xiyou_rules.tscn xiyou_rules_d1b xiyou_rules_d1c xiyou_rules_d1d`。结果见下「规则段」。
+- **战斗规则缺口（不是我能改的，写给总装／沙僧）**：`xiyou_rules.tscn` 一项不过：`d1.dmg.enemy947.0.skill5557`。敌人 947「【洪荒】帝者·虚影」（只在敌群 854，Map224 遇敌表里，随序 7 入切片）技能 5557「地狱黑洞」公式 `b.hp*0.99`、必暴、寒冰：参照引擎算出 0，Godot 算出 467.775（base 519.75，抗性 0.9）。疑似参照里目标当前生命为 0 或此公式被特殊处理，需要查 `damage.gd`／公式取值。其余 d1b／d1c／d1d 三段全过。
+- 规则段结果：（见下，跑完补）
 
 ## 交接板
 

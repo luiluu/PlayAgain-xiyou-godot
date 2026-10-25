@@ -977,7 +977,8 @@
     "anjian_level_up",
     "Combo_A",
     "Combo_D",
-    "CatSwordSaint_Icons"
+    "CatSwordSaint_Icons",
+    "LeaderFlag"
   ],
   "keepEvents": {
     "1": "*",
