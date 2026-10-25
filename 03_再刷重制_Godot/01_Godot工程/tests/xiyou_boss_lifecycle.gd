@@ -1,8 +1,12 @@
 extends Node
-## 冻结原版27组Boss快照／缓存与2651生命周期；输出倍率单列后期。
+## 冻结原版29组Boss快照／缓存与2651生命周期；输出倍率单列后期。
 var checks := 0
 var failures: Array = []
 var fixture: Dictionary
+
+class HalfStream extends XRandomStream:
+	func next_int_inclusive(lo: int, hi: int, _reason: String, _event_key := "") -> int:
+		return lo + floori((hi - lo + 1) * 0.5)
 
 func check(tag: String, ok: bool, detail = null) -> void:
 	checks += 1
@@ -153,6 +157,25 @@ func death_case(c: Dictionary) -> void:
 	e.sync_boss_armor(true)
 	compare(c.id + ".sync", e, rows[at + 1])
 
+func armor_edges(c: Dictionary) -> void:
+	var battle := battle_for(int(c.setup.count))
+	var e: XEnemy = battle.enemies[0]
+	battle.enemy_transform(0, 6)
+	e.sync_boss_armor(true)
+	var rows: Array = c.observed.rows
+	compare(c.id + ".armor", e, rows[0])
+	var resources := XResourceContext.new()
+	resources.gain(e, "hp", -123)
+	compare(c.id + ".damage", e, rows[1])
+	battle.sequence_buff(e, 2, true, false, 3)
+	compare(c.id + ".debuff", e, rows[2])
+	battle.sequence_buff(e, 2, false, false, 0)
+	compare(c.id + ".remove_debuff", e, rows[3])
+	e.add_state(77, HalfStream.new())
+	compare(c.id + ".hp_state", e, rows[4])
+	e.remove_state(77)
+	compare(c.id + ".remove_hp_state", e, rows[5])
+
 func integration() -> void:
 	for count in [0, 1, 3, 5]:
 		var s := fresh(count)
@@ -177,16 +200,20 @@ func _ready() -> void:
 
 func _run() -> void:
 	fixture = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/boss_lifecycle_oracle.json"))
-	check("fixture", fixture.cases.size() == 27)
+	check("fixture", fixture.cases.size() == 29)
 	check("source", fixture.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	for st in fixture.controls:
 		check("control.%d" % int(st.id), XEnemy.boss_control_state(int(st.id)) == st.control)
+		if st.control or int(st.id) == 2651:
+			check("control.no_stack.%d" % int(st.id), not XDB.rec("States", int(st.id)).get("meta", {}).has("State Can Added Floor"))
 	for c in fixture.cases:
 		check(c.id + ".oracle", c.errors.is_empty())
 		if c.id.begins_with("setup."):
 			setup_case(c)
 		elif c.id.begins_with("turns."):
 			turns_case(c)
+		elif c.id.begins_with("armor_edges."):
+			armor_edges(c)
 		elif c.id.begins_with("transform."):
 			transform_case(c)
 		else:

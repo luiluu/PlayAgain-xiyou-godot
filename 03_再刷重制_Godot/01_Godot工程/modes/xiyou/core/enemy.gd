@@ -58,14 +58,20 @@ func sync_boss_armor(active: bool, random: XRandomStream = null) -> void:
 	if boss_hyper_armor:
 		for id in state_ids.duplicate():
 			if boss_control_state(id):
-				remove_state(id)
+				_boss_drop_state(id)
 		if not hidden and not state_ids.has(1) and not is_state_affected(BOSS_ARMOR_STATE):
 			add_state(BOSS_ARMOR_STATE, random)
 		if is_state_affected(BOSS_ARMOR_STATE):
 			state_turns[BOSS_ARMOR_STATE] = 1
 	elif is_state_affected(BOSS_ARMOR_STATE):
-		remove_state(BOSS_ARMOR_STATE)
+		_boss_drop_state(BOSS_ARMOR_STATE)
 	_updating_boss_armor = false
+
+## 冻结源控制状态与2651均不带State Can Added Floor；removeStateCompletely不处理它们，
+## dropState随后直接eraseState：不走remove效果、不refresh、不标dirty，也不清stateOrigin。
+func _boss_drop_state(id: int) -> void:
+	state_ids.erase(id)
+	state_turns.erase(id)
 
 func add_state(id: int, random: XRandomStream = null) -> void:
 	# 原生 isStateAddable 要求 isAlive；HP0本身不等于原版阵亡状态。
