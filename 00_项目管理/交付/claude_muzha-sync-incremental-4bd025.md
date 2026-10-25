@@ -25,7 +25,7 @@
 
 接续：
 1. 单跑 xiyou_dungeon、xiyou_event_compare（各应约 18、15 秒、断言数 6954／5 不变）。
-2. 查清 battle_events 失败归因（关缓存单跑；再在 main 上单跑对照）。是缓存引起就必须修好再交。
+2. battle_events：已关缓存＋恢复睡眠单跑（`XIYOU_JSON_CACHE=0 XIYOU_HEADLESS_SLEEP_USEC=6900`），`seal1691.*` 三项照样失败（105／108），**与本分支的缓存、不睡无关**；`scene.revive_fades_in` 这次通过（全局不睡时才失败）。还要在 main 上单跑对照，确认是基线已有的问题，报给总装。
 3. 用全量轮 `test_timings.json`（不睡）对比基线耗时，找更多「不睡大幅提速、且只按帧或条件等」的测试逐个选用、逐个单跑验证。
 4. `xiyou_rules*` 改用 `XDB.parse_file` 读 slice_d*（每份约省 2 秒）——哪吒的文件，写提案给总装。
 5. 收尾：`git merge main`、填下面各节、状态改可合并。
