@@ -1,14 +1,14 @@
 {
-  "status": "pending final dedicated and post-fix dependency validation",
+  "status": "dedicated and direct dependencies passed; awaiting Claude cross-review",
   "scope": "Explicit action.apply HP/MP gain context and resource set API; post/execute scripted entrypoints replay equivalent domains, their custom eval hosts are not ported",
   "oracleCases": 129,
   "oracleErrors": [],
   "nativeEqualsFixture": true,
-  "fixtureSha256": "ec80acae15f37cdbf0a8e76b5cace6ddd707208b6f902fc76045732736738091",
+  "fixtureSha256": "5c47952b2e8854c38b673fe5d98cd1fbfd3c1cdd2f4bd4e2b1acc06e1faa1fb9",
   "nativeArtifacts": [
     "boss_output_context.json (123 cases); preserved unchanged",
-    "boss_output_context_selected.json (six full-shield cases); errors empty, same sourceIdentity",
-    "boss_output_context_combined129.json (123+6 unique cases); final fixture update waits for original dedicated terminal state"
+    "boss_output_context_selected.json (six full-shield cases); preserved unchanged",
+    "boss_output_context_combined129.json (123+6 unique cases); JSON object equals fixture"
   ],
   "runtimeChange": "0396ae52 dirty uses value entering native KRZ hook after Boss scaling and enemy gainHp shield",
   "preFixDependencies": {
@@ -94,7 +94,7 @@
     "passed": 16,
     "total": 16
   },
-  "documentation": "original 检查.sh JSON/link/version block passed before final edits; final repeat pending",
+  "documentation": "final original 检查.sh JSON/link/version block passed (dev.173); node --check, git diff --check and MV guard 16/16 passed",
   "limitations": [
     "No formula setHp/setMp compiler capability; explicit unsupported_program retained",
     "No customPre/PostDamageEval script host migration claim",
@@ -149,5 +149,115 @@
         ]
       }
     ]
+  },
+  "fixtureJsonEqualsCombined": true,
+  "sourceIdentityEqual": true,
+  "finalResults": {
+    "xiyou_state_effects_tp": {
+      "failures": [],
+      "passed": 537,
+      "test": "xiyou_state_effects_tp",
+      "total": 537
+    },
+    "xiyou_formula_effects": {
+      "passed": 908,
+      "total": 908
+    },
+    "xiyou_state_effects": {
+      "passed": 19949,
+      "total": 19949
+    },
+    "xiyou_boss_output": {
+      "failures": [],
+      "passed": 3823,
+      "total": 3823
+    },
+    "xiyou_boss_output_context": {
+      "failures": [],
+      "passed": 16621,
+      "total": 16621
+    }
+  },
+  "finalTimings": {
+    "jobs": 2,
+    "globalJobs": 4,
+    "wallSeconds": 25.931,
+    "flakyRerunPassed": [],
+    "fingerprint": "",
+    "reused": [],
+    "scenes": [
+      {
+        "name": "xiyou_formula_effects.tscn",
+        "seconds": 5.675,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 5.675,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_state_effects.tscn",
+        "seconds": 5.537,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 5.537,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_boss_output.tscn",
+        "seconds": 5.055,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 5.055,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_boss_output_context.tscn",
+        "seconds": 4.914,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.914,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_state_effects_tp.tscn",
+        "seconds": 4.712,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.712,
+            "passed": true
+          }
+        ]
+      }
+    ]
+  },
+  "finalAssertions": 41838,
+  "intermediate123Result": {
+    "passed": 15853,
+    "total": 15853,
+    "failures": []
+  },
+  "fixtureFormatting": "Restored existing one-space JSON indentation after terminal test result; JSON object unchanged; runtime code unchanged since 0396ae52",
+  "runtimeFilesSha256": {
+    "modes/xiyou/core/boss_output_context.gd": "fc3618a8da5fef54f22e07f72eabf6f2472e8be9be6c150f32e9da6a980899ed",
+    "modes/xiyou/core/resource_context.gd": "8d8024763df4ac2ee9a0fef3a681b3f7c497af3ef527c105625735f4ad9e4c09",
+    "modes/xiyou/battle/battle_logic.gd": "f35cc5404ce09293697bb7eb262f724171b9f7cbc8ceb1ebc1e56779ba0513ad"
   }
 }

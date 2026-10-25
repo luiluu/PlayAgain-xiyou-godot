@@ -1,9 +1,19 @@
 # 交付：codex/passive-content-boss-context
 
 - 车道／工作者：规则／沙僧（Codex，重制_沙僧_69）
-- 状态：来源域与资源接口已实现；完整123例原版通过、四项直接依赖25217项通过（刷新修复前）；零损失刷新标记已据原版修正，完整专项与六例护盾完全吸收补采在途，尚不可合并。
+- 状态：可合并（专项已验，待Claude交叉核查）。完整129例原版参照与Godot专项16621／16621；修复后四项直接依赖25217／25217，五场41838／41838均单次通过、无偶发。
 - 基线：ec75a3b1（Boss普通输出78组、六场8588项全过；可合并交付见codex_passive-content-boss-output.md）。同树新分支，无在途任务；所有boss66-*临时输出已清理，原版.sandbox、旧证据、generated及整树全部保留。
 - 开工额度：五小时92%、周44%；上轮从66%接手，95%时以WIP保存并停，不因额度高而漏交已经验收的普通输出。
+
+
+## 最终交付范围（沙僧69，2026-10-26）
+
+- 修复与行为：显式行动apply的Boss来源域跟随本次resources；负HP／MP gain与资源set下降仅对域内非自身目标放大一次，先于护盾。普通伤害沿原输出链，用settled／direct阻止二次缩放；KRZ刷新标记按实际进入原版包装的值判定，覆盖取整为零与完全吸收护盾。
+- 参照：原123例＋补采完全吸收6例＝129唯一ID，errors全空，sourceIdentity一致；最终夹具与两原件并集逐对象相等。保留全部原版.sandbox；SHA、结果、timings及运行时指纹见[Boss行动资源域专项证据](../核查范围/Boss行动资源域专项_20261025.json)。夹具恢复原一空格格式，JSON对象与已测版本完全相同。
+- 验证：boss69-final runId0351059389764aa5959bb3ccdb85108c exit0，context16621、boss_output3823、formula_effects908、state_effects19949、state_effects_tp537，总41838／41838；五场各一次、无偶发、无SCRIPT ERROR／ERROR。中间123专项15853／15853只作迭代证据，不代替最终129验收。
+- 限制：post／execute脚本只回放等价来源域，未移植customPre／PostDamageEval宿主；公式set保留unsupported_program，未改formula_execution.gd／mv_event_core。正常与翻译VM诊断返回恢复已测，不保证任意GDScript致命错误恢复。sequence targets／stateOrigin／1341／2550仍属下一期，未计入本期。
+- 合并与登记：同树分支codex/passive-content-boss-context，基于ec75a3b1续接，不重做／重采前期78／29组与旧全量；无需夹带无关main。全部提交执行者Codex（沙僧），核查待Claude；不自销核、不自评进度。总装按战斗规则影响面选测并合并登记，本车道未改共用交接板／变更记录／步骤清单／当前状态。
+- 收尾必跑项与临时成功输出清理：最后编辑后复跑文档块、探针语法、MV守卫与差异格式；证据入Git后仅清本车道成功临时输出，失败日志、所有.sandbox、generated与整树保留。下文历史中的在途状态以本节最终结果为准。
 
 ## 下一小期范围与先取参照
 
