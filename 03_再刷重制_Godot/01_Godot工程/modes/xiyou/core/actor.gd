@@ -332,6 +332,8 @@ func skills() -> Array:
 			ids.append(int(t.dataId))
 	for id in XEquipSuits.ids(self,"skills"):
 		if not ids.has(id):ids.append(id)
+	for id in XMagicWeapon.skills(equips):  # CP_X_MagicWeaponLearnSkill：法宝按等级学的技能
+		if not ids.has(id):ids.append(id)
 	var out := []
 	for id in ids:
 		var s := XDB.rec("Skills", id)
@@ -349,6 +351,7 @@ func trait_objects() -> Array:
 	var out := [data(), class_data()]
 	out.append_array(stat_equips())
 	out.append_array(states())
+	out.append_array(XMagicWeapon.trait_objects(equips))  # CP_MagicWeapon：升级特性对象按法宝等级重复
 	var resistance := []
 	for id in XEquipSuits.ids(self,"statesResist"):
 		resistance.append({"code":TRAIT_STATE_RESIST,"dataId":id,"value":1})

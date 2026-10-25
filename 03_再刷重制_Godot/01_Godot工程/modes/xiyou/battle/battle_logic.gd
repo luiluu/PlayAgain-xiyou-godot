@@ -1663,6 +1663,8 @@ func grant(r: Dictionary) -> Array:
 		var n: int = a.gain_exp(r.exp, 1.0 if actors.has(a) else bench_rate, _rule())
 		if n > 0:
 			ups.append({"actor": a, "levels": n})
+	# CP_MagicWeapon 包在 gainRewards 之后：法宝经验（$gameTroop.members()：enemies 已含没出场的隐藏成员）
+	XMagicWeapon.gain_victory_exp(state.members(), actors, enemies)
 	return ups
 
 
