@@ -290,17 +290,20 @@ func change_level_mv(lv: int) -> Array:
 		_level_up()
 	while _lv > lv:
 		_lv -= 1
+		XActorModules.level_down(self)  # 专属角色模块的 levelDown 包装
 	refresh_passive()
 	refresh_resources()  # Game_Actor.changeExp 最后 refresh，降级后夹回新 HP/MP 上限。
 	return skill_ids.filter(func(id): return not before.has(id))
 
 ## 直接设定等级（读档、测试夹具用）：只按数据库上限夹，不看队伍上限，不加技能点
 func change_level(lv: int) -> void:
+	var before := _lv
 	_lv = clampi(lv, 1, int(data().get("maxLevel", 99)))
 	exp_total = exp_for_level(_lv)
 	for l in class_data().get("learnings", []):
 		if int(l.level) <= _lv:
 			learn_skill(int(l.skillId))
+	XActorModules.level_changed(self, before)  # 直接改等级：按升／降调专属角色模块的 levelUp／levelDown 包装
 	refresh_passive()
 
 ## 获得经验，返回升了几级。
@@ -512,7 +515,7 @@ static func magic_param(e: Dictionary, i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XCat.param(self, i, super(i))
+	return XActorModules.param(self, i, XCat.param(self, i, super(i)))  # 专属角色模块的 Game_Actor.param 包装（米拉等）
 
 ## 正式版运行时对角色命中率保底 0.9（命中 = xparam 0）。
 func xparam(i: int) -> float:
@@ -520,6 +523,7 @@ func xparam(i: int) -> float:
 	for m in passive_values(_tag("passiveXPBST", i)):
 		v += _num(m) * 0.01
 	v = (v + XEquipSuits.value(self,"xparam",i,false)/100) * XEquipSuits.value(self,"xparam",i,true)
+	v = XActorModules.xparam(self, i, v)  # 专属角色模块的 Game_Actor.xparam 包装（米拉／渡鸦面板暴击）
 	return maxf(0.9, v) if i == 0 else v
 
 func sparam(i: int) -> float:
@@ -577,6 +581,7 @@ func refresh_passive() -> void:
 			c.damageElement = int(str(meta.DamageElements).strip_edges())
 		if meta.has("passiveIRUP"):
 			c.itemRateUp += _num(meta.passiveIRUP)
+	XActorModules.passive_cache(self, c)  # 专属角色模块的 initPassiveCache 包装（渡鸦魂海刻度的暴伤／终伤池）
 	_passive_cache = c
 
 func passive_cache() -> Dictionary:
