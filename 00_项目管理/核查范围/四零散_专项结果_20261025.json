@@ -88,5 +88,14 @@
     "consumeReduceDataTags": 168,
     "evidencePreservingSyncWrapper": "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/sync_preserve_evidence.py",
     "wrapperRun": false
+  },
+  "redFinal": {
+    "runId": "3e597bbc32464e5db8db7f55c89b9eb6",
+    "exitCode": 1,
+    "passed": 88,
+    "total": 121,
+    "scriptErrors": false,
+    "semanticFailures": 33,
+    "F31Passed": true
   }
 }
