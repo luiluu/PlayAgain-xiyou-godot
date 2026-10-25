@@ -64,20 +64,14 @@ def recover_abandoned(log, job):
                 if identity(process_table().get(group)) != expected:
                     reason = '进程组身份已改变，不能确认旧任务已结束'
                 else:
-                    try:
-                        os.killpg(group, signal.SIGTERM)
-                    except ProcessLookupError:
-                        pass
+                    signal_group(group, signal.SIGTERM)
                     deadline = time.monotonic() + 3
                     while time.monotonic() < deadline:
                         if not any(r['pgid'] == group and not r['zombie'] for r in process_table().values()):
                             break
                         time.sleep(.05)
                     else:
-                        try:
-                            os.killpg(group, signal.SIGKILL)
-                        except ProcessLookupError:
-                            pass
+                        signal_group(group, signal.SIGKILL)
                     deadline = time.monotonic() + 3
                     while time.monotonic() < deadline and any(
                             r['pgid'] == group and not r['zombie'] for r in process_table().values()):
@@ -102,21 +96,46 @@ def recover_abandoned(log, job):
     return 2
 
 
+def signal_group(group, sig):
+    """给本任务自己的进程组发信号。macOS 上组里有不能发信号的成员（或刚退出的僵尸）时 killpg 抛 PermissionError：
+    退一步逐个给进程表里属于该组的 pid 发，发不到的跳过（2026-10-26 哪吒：悟空 sync11 包装器因此崩掉，状态停在 running）。
+    返回 False 表示组已不存在。"""
+    try:
+        os.killpg(group, sig)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        pass
+    try:
+        members = [r['pid'] for r in process_table().values() if r['pgid'] == group and not r['zombie']]
+    except (OSError, subprocess.SubprocessError):
+        members = [group]
+    for pid in members:
+        try:
+            os.kill(pid, sig)
+        except (ProcessLookupError, PermissionError):
+            pass
+    return bool(members)
+
+
 def stop(proc):
+    """尽力停掉任务进程组；不抛异常，调用方随后照常写终态（status 与 .exit）。"""
     try:
-        os.killpg(proc.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        return
-    try:
-        proc.wait(timeout=3)
-    except subprocess.TimeoutExpired:
-        pass
-    # The group may still contain a child holding the log pipe after its parent exited.
-    try:
-        os.killpg(proc.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass
-    proc.wait()
+        if not signal_group(proc.pid, signal.SIGTERM):
+            return
+        try:
+            proc.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            pass
+        # The group may still contain a child holding the log pipe after its parent exited.
+        signal_group(proc.pid, signal.SIGKILL)
+        try:
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            pass
+    except Exception as error:  # 停不干净也要让包装器活着写终态
+        print('停止任务进程组时出错：%s' % error, file=sys.stderr)
 
 
 def run(log, command, idle=3600, poll=0.2):
