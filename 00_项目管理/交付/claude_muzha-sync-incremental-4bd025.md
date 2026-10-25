@@ -23,6 +23,7 @@
 - **JSON 缓存**：`xiyou_json_cache` 100/100；命中／未命中与直接解析 `var_to_bytes` 逐字节相同（db 全部表、manifest、slice、Map004／186、smart_ai、formula_programs、events，另 slice_d2 一次性脚本比对相同）。
 - **拆分**：xiyou_variants 135/135、xiyou_variants_b 140/140（合计 275＝拆分前）。
 - **合并 main 后选测**（`并行测试.py … xiyou_json_cache xiyou_dungeon xiyou_event_compare xiyou_variants xiyou_variants_b xiyou_battle_events xiyou_crafting xiyou_hud xiyou_popup_overlap xiyou_opening_branches xiyou_battle_ui`）：11/11 通过——json_cache 100、dungeon 6954（12 秒）、event_compare 5（21 秒）、variants 135、variants_b 140、battle_events 108（含 revive_fades_in：只在全局不睡时失败，逐个选用后不受影响）、crafting 49、hud 34、popup_overlap 8、opening_branches 16、battle_ui 70。墙钟 9118 秒是排共用槽（两条车道同步占满 4 槽），各场景实跑见括号。
+- **云端复验（2026-10-25，本机额度用尽后由云端会话接手）**：分支 216b455（已含 main 545ebd3），产物用项目文件夹 generated.tgz（Mac main d6d1f99a，整包 SHA-256 核对一致），Godot 4.7.2 Linux 版，`并行测试.py --jobs 4 --full` 同上 11 个场景：11/11 通过，断言数与本机相同，墙钟 225 秒。PR 分支 `claude/project-thread-pd90zn`。
 - 车道不跑全量 `检查.sh`。xdb.gd 落在选测对照的 game 组。
 
 ## 变更记录草稿
