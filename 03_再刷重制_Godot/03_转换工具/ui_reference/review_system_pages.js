@@ -537,6 +537,34 @@
         extra: domReadout
     };
 
+    // 换装卡战斗外观（八戒_71 期一，单独跑：node review_system_pages.cjs <目录> battle_costume）：角色 1 学会 6801「变身——深渊骑士」，
+    // 开战 StartPushState1201 100% 推上卡状态，Custom Apply Effect setBattlerImage('Enemy_General_M')；地图 5、敌群 2、难度 3、四人
+    P.battle_costume = {
+        setup: async function () {
+            $gameSystem._difficultyId = 3;
+            $gameParty.members().forEach(function (a) { a.recoverAll(); });
+            $gameActors.actor(1).learnSkill(6801);
+            BattleManager.setup(2, true, false);
+            SceneManager.push(Scene_Battle);
+            await wait(function () {
+                var s = scene();
+                return s instanceof Scene_Battle && SceneManager._sceneStarted && ImageManager.isReady() && s._actorCommandWindow && s._actorCommandWindow.isOpenAndActive();
+            }, 60000);
+            await settle(40);
+        },
+        shots: {
+            battle_costume_card: async function () {}
+        },
+        extra: function () {
+            return scene()._spriteset._actorSprites.filter(function (sp) { return sp._actor; }).map(function (sp) {
+                var m = sp._mainSprite, b = m && m.bitmap;
+                return {actor: sp._actor.actorId(), battlerName: sp._actor.battlerName(), states: sp._actor._states.slice(), x: sp.x, y: sp.y,
+                    bitmap: b ? [b._url || '', b.width, b.height] : null, frame: m ? [m._frame.x, m._frame.y, m._frame.width, m._frame.height] : null,
+                    scale: [sp.scale.x, sp.scale.y]};
+            });
+        }
+    };
+
     // 战斗内怪物信息（放最后：进了战斗就回不到下一页的新局）：battle_enemy_book_oracle.json 的场面（地图 5、敌群 2、难度 3、四人），角色指令窗按 Shift 的原入口
     P.battle_book = {
         setup: async function () {

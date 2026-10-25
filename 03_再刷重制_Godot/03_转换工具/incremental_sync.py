@@ -25,10 +25,31 @@ SHARDS = {
 TOOLING = ('incremental_sync.py', 'oracle_shard_merge.cjs')
 GENERATED_MARKERS = ('XIYOU_GENERATED', 'modes/xiyou/generated')
 # 只有审视过「仅 maps 与 manifest.slice.commonEvents」的事件读取器能按地图分片。
-# 新读取法（包括原读取器改代码）先退回全产物键，不能因 SHARDS 优先而漏掉 converted。
+# 新读取法先退回全产物键，不能因 SHARDS 优先而漏掉 converted。
+# 审过的值有两种：整份文件的 SHA-256（旧写法，探针改任何一行都失效），或 'reads:' 加「读取面」的 SHA-256：
+# 只取含文件读写、转换产物路径、require、切片／manifest、环境变量的行（READ_SURFACE），改别的逻辑不影响分片资格，
+# 改了读法才失效、退回整轮（2026-10-25 哪吒：event_probe 10-24 两次只改运行逻辑，整份哈希失效后每次加地图都整轮跑 50 分钟）。
+# 探针本身改了照样整体重跑一次（依赖指纹进键）；这里只决定之后能否按地图增量。
+READ_SURFACE = re.compile(r'\bfs\b|\bGEN\b|XIYOU_GENERATED|modes/xiyou/generated|\brequire\s*\(|\bMANIFEST\b|\bSLICE\b'
+                          r'|process\.env|readFile|readdir')
 GENERATED_SHARD_AUDITS = {
-    'mv_oracle/event_probe.cjs': '17f82a28ea935011b3d6ad658dce615680a8775a55678581b3d7417fdc01f01f',
+    # a558a0ed（沙僧审过的整份 17f82a28…）与 c26755e8 的读取面相同
+    'mv_oracle/event_probe.cjs': 'reads:46f0696a9f62e039',
 }
+
+
+def read_surface(code):
+    return hashlib.sha256('\n'.join(l.strip() for l in code.splitlines() if READ_SURFACE.search(l)).encode()).hexdigest()
+
+
+def audit_ok(expected, data):
+    """data 为文件字节；expected 为整份 SHA-256，或 'reads:' 加读取面 SHA-256（可只写前缀，至少 16 位）。"""
+    if not expected:
+        return False
+    if expected.startswith('reads:'):
+        want = expected[len('reads:'):]
+        return len(want) >= 16 and read_surface(data.decode(errors='replace')).startswith(want)
+    return expected == hashlib.sha256(data).hexdigest()
 
 
 def digest_files(paths, base):
@@ -186,8 +207,11 @@ class ProbeCache:
         for dependency in dependencies:
             code = dependency.read_text(errors='replace')
             if any(marker in code for marker in GENERATED_MARKERS):
-                expected = GENERATED_SHARD_AUDITS.get(dependency.relative_to(self.tools).as_posix())
-                if expected != hashlib.sha256(dependency.read_bytes()).hexdigest():
+                rel = dependency.relative_to(self.tools).as_posix()
+                if not audit_ok(GENERATED_SHARD_AUDITS.get(rel), dependency.read_bytes()):
+                    # 记下原因，同步日志打 SHARD_OFF：之前失效时一声不响地整轮跑
+                    self.shard_issues = getattr(self, 'shard_issues', {})
+                    self.shard_issues[command[0]] = {'file': rel, 'reads': read_surface(code)[:16]}
                     return None
         return spec
 

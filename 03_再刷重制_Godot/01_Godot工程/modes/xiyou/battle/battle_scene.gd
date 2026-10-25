@@ -84,6 +84,7 @@ func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Te
 	map_data = map
 	logic.can_escape = escape
 	logic.setup(troop, XState.current)
+	XPetCapture.roll_battle(logic)  # Star_PetSystem 的 Scene_Battle.start 包装：掷可捕捉（名字加「宝宝」）
 	logic.auto = force_auto
 	book_appeared = XEnemyBook.on_battle_start(XState.current, troop, map, logic.enemies)
 
@@ -1074,6 +1075,13 @@ func _play(logs: Array) -> void:
 				await _wait_frames(ACT_HIT_FRAMES)
 			"hit":
 				await _show_hit(l)
+				if l.has("events"):
+					await _play(l.events)  # 捕捉道具的公共事件 173（XPetCapture）：提示与被捕的敌人隐藏
+			"toast":
+				XToast.show_text(str(l.text))
+			"enemy_change":
+				if l.kind == "vanish":
+					_apply_enemy_change(l)  # die＋hide（XPetCapture：被捕或逃跑）；335／336 由 _play_troop_events 先处理
 			"counter":
 				# YEP Show Counter Text：日志「%1的反击！」
 				_banner(str(XDB.system().terms.messages.counterAttack).replace("%1", l.user.display_name()))

@@ -44,6 +44,31 @@ cases.push(makeCase('actor', {actor: 1, learn: [6801, 6803], state: 1201}, () =>
   rows.push({tag: 'reenabled', enabled: C.enabled(b), battle: battlerName(b, true)});
   return {rows};
 }));
+// 战斗外观（八戒_71 期一）：卡状态加上／去掉（Custom Remove Effect 还原）、阵亡清状态（不跑 Remove Effect，靠 stale 分支回自身形态）、
+// 启用卡图时 Mx.SuperSVMetaProvider 去掉角色自身的 sv／SVspeed／SVzs／Cfdz／YCyy 标签（角色 174 云裳带这些标签）。
+cases.push(makeCase('battle_image', {actors: [1, 174], learn: 6801, state: 1201}, () => {
+  newGame();
+  w.BattleManager._actionBattlers = new w.Array(); w.BattleManager._nextTurnActionBattlers = new w.Array();
+  w.BattleManager.otbDisplayWindow = function () { return {createReturnedBattlerSprite: function () {}, createBattlerSprite: function () {}, addBattlerSprite: function () {}}; };  // 只测外观，不画行动条
+  const rows = [];
+  const svKeys = a => Object.keys(w.Mx.SuperSVMetaProvider(a, a.actor().meta) || {}).filter(k => /^(sv|SVspeed|SVzs\d+|Cfdz\d+|YCyy)$/i.test(k)).sort();
+  [1, 174].forEach(id => {
+    const a = w.$gameActors.actor(id);
+    a.learnSkill(6801);
+    w.$gameParty._inBattle = true;
+    const snap = tag => rows.push({actor: id, tag, battle: a.battlerName(), sv: svKeys(a), states: a._states.slice()});
+    snap('plain');
+    a.addState(1201); snap('card');
+    C.setEnabled(a, false); snap('card_disabled');
+    C.setEnabled(a, true);
+    a.removeState(1201); snap('removed');
+    a.addState(1201); a.addState(1); snap('dead');
+    a.removeState(1); a.recoverAll(); snap('revived');
+    w.$gameParty._inBattle = false;
+    rows.push({actor: id, tag: 'map', battle: a.battlerName(), sv: svKeys(a), states: a._states.slice()});
+  });
+  return {rows};
+}));
 cases.push(makeCase('owned', {party: [1, 8, 9], saveactors: [10, 8, 29]}, () => {
   newGame();
   w.$gameParty._actors = w.JSON.parse('[1,8,9]');

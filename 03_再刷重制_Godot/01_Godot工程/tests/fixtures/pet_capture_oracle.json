@@ -1,0 +1,2777 @@
+{
+ "source": "js/plugins/Star_PetSystem.js",
+ "sha256": "3563d8a390c20ccbce2a17e42a7844fa710bafd33eeb48400ef64eaeffbfd5a0",
+ "petRefNum": [
+  12,
+  13,
+  14,
+  15
+ ],
+ "petMap": [
+  {
+   "index": 1,
+   "PetMapName": "十三层",
+   "PetMapIDA": 29,
+   "PetMapIDB": 64,
+   "PetMapEveIDA": 3,
+   "PetMapEveIDB": 3,
+   "PetMapEveSwA": "A",
+   "PetMapEveSwB": "A",
+   "PetEneId": [
+    288,
+    289,
+    290
+   ],
+   "PetShowText": "天生异象，第十三层疑似出现神秘生物！！！"
+  },
+  {
+   "index": 2,
+   "PetMapName": "8层",
+   "PetMapIDA": 12,
+   "PetMapIDB": 0,
+   "PetMapEveIDA": 23,
+   "PetMapEveIDB": 0,
+   "PetMapEveSwA": "A",
+   "PetMapEveSwB": "",
+   "PetEneId": [
+    291,
+    292,
+    295
+   ],
+   "PetShowText": "天生异象，第八层疑似出现神秘生物！！！"
+  },
+  {
+   "index": 3,
+   "PetMapName": "5层",
+   "PetMapIDA": 10,
+   "PetMapIDB": 62,
+   "PetMapEveIDA": 11,
+   "PetMapEveIDB": 5,
+   "PetMapEveSwA": "A",
+   "PetMapEveSwB": "A",
+   "PetEneId": [
+    399,
+    400,
+    401,
+    402
+   ],
+   "PetShowText": "天生异象，第五层疑似出现神秘生物！！！"
+  },
+  {
+   "index": 4,
+   "PetMapName": "19层",
+   "PetMapIDA": 47,
+   "PetMapIDB": 0,
+   "PetMapEveIDA": 15,
+   "PetMapEveIDB": 0,
+   "PetMapEveSwA": "A",
+   "PetMapEveSwB": "",
+   "PetEneId": [
+    404,
+    405,
+    406,
+    407,
+    408
+   ],
+   "PetShowText": "天生异象，第十九层疑似出现神秘生物！！！"
+  },
+  {
+   "index": 12,
+   "PetMapName": "猴山",
+   "PetMapIDA": 93,
+   "PetMapIDB": 0,
+   "PetMapEveIDA": 2,
+   "PetMapEveIDB": 0,
+   "PetMapEveSwA": "A",
+   "PetMapEveSwB": "",
+   "PetEneId": [
+    359,
+    360,
+    361
+   ],
+   "PetShowText": "天生异象，天地之间凝聚出了一股仙气，似有异兽出没！"
+  },
+  {
+   "index": 13,
+   "PetMapName": "鹿吴山",
+   "PetMapIDA": 105,
+   "PetMapIDB": 0,
+   "PetMapEveIDA": 2,
+   "PetMapEveIDB": 0,
+   "PetMapEveSwA": "A",
+   "PetMapEveSwB": "",
+   "PetEneId": [
+    364
+   ],
+   "PetShowText": "天生异象，天地之间凝聚出了一股仙气，似有异兽出没！"
+  },
+  {
+   "index": 14,
+   "PetMapName": "猛虎岭",
+   "PetMapIDA": 94,
+   "PetMapIDB": 0,
+   "PetMapEveIDA": 2,
+   "PetMapEveIDB": 0,
+   "PetMapEveSwA": "A",
+   "PetMapEveSwB": "",
+   "PetEneId": [
+    365
+   ],
+   "PetShowText": "天生异象，天地之间凝聚出了一股仙气，似有异兽出没！"
+  },
+  {
+   "index": 15,
+   "PetMapName": "洛水河",
+   "PetMapIDA": 92,
+   "PetMapIDB": 0,
+   "PetMapEveIDA": 4,
+   "PetMapEveIDB": 0,
+   "PetMapEveSwA": "A",
+   "PetMapEveSwB": "",
+   "PetEneId": [
+    363
+   ],
+   "PetShowText": "天生异象，天地之间凝聚出了一股仙气，似有异兽出没！"
+  }
+ ],
+ "capture": [
+  [
+   1,
+   100,
+   false
+  ],
+  [
+   2,
+   40,
+   false
+  ],
+  [
+   3,
+   30,
+   false
+  ],
+  [
+   4,
+   20,
+   false
+  ],
+  [
+   9,
+   40,
+   false
+  ],
+  [
+   10,
+   30,
+   false
+  ],
+  [
+   11,
+   20,
+   false
+  ],
+  [
+   12,
+   40,
+   false
+  ],
+  [
+   13,
+   40,
+   false
+  ],
+  [
+   14,
+   30,
+   false
+  ],
+  [
+   15,
+   20,
+   false
+  ],
+  [
+   16,
+   10,
+   false
+  ],
+  [
+   17,
+   20,
+   false
+  ],
+  [
+   18,
+   30,
+   false
+  ],
+  [
+   19,
+   10,
+   false
+  ],
+  [
+   20,
+   10,
+   false
+  ],
+  [
+   22,
+   40,
+   false
+  ],
+  [
+   23,
+   40,
+   false
+  ],
+  [
+   24,
+   40,
+   false
+  ],
+  [
+   25,
+   30,
+   false
+  ],
+  [
+   26,
+   40,
+   false
+  ],
+  [
+   27,
+   10,
+   false
+  ],
+  [
+   30,
+   40,
+   false
+  ],
+  [
+   31,
+   40,
+   false
+  ],
+  [
+   32,
+   30,
+   false
+  ],
+  [
+   33,
+   30,
+   false
+  ],
+  [
+   34,
+   20,
+   false
+  ],
+  [
+   35,
+   20,
+   false
+  ],
+  [
+   36,
+   10,
+   false
+  ],
+  [
+   37,
+   30,
+   false
+  ],
+  [
+   38,
+   20,
+   false
+  ],
+  [
+   39,
+   10,
+   false
+  ],
+  [
+   41,
+   40,
+   false
+  ],
+  [
+   42,
+   30,
+   false
+  ],
+  [
+   43,
+   30,
+   false
+  ],
+  [
+   44,
+   20,
+   false
+  ],
+  [
+   45,
+   40,
+   false
+  ],
+  [
+   46,
+   40,
+   false
+  ],
+  [
+   47,
+   40,
+   false
+  ],
+  [
+   48,
+   40,
+   false
+  ],
+  [
+   49,
+   30,
+   false
+  ],
+  [
+   50,
+   30,
+   false
+  ],
+  [
+   51,
+   20,
+   false
+  ],
+  [
+   52,
+   10,
+   false
+  ],
+  [
+   57,
+   40,
+   false
+  ],
+  [
+   58,
+   30,
+   false
+  ],
+  [
+   59,
+   40,
+   false
+  ],
+  [
+   60,
+   20,
+   false
+  ],
+  [
+   61,
+   10,
+   false
+  ],
+  [
+   62,
+   40,
+   false
+  ],
+  [
+   63,
+   10,
+   false
+  ],
+  [
+   64,
+   10,
+   false
+  ],
+  [
+   65,
+   10,
+   false
+  ],
+  [
+   66,
+   40,
+   false
+  ],
+  [
+   67,
+   30,
+   false
+  ],
+  [
+   68,
+   30,
+   false
+  ],
+  [
+   69,
+   20,
+   false
+  ],
+  [
+   70,
+   10,
+   false
+  ],
+  [
+   79,
+   40,
+   false
+  ],
+  [
+   80,
+   30,
+   false
+  ],
+  [
+   81,
+   30,
+   false
+  ],
+  [
+   82,
+   20,
+   false
+  ],
+  [
+   83,
+   10,
+   false
+  ],
+  [
+   84,
+   10,
+   false
+  ],
+  [
+   85,
+   10,
+   false
+  ],
+  [
+   86,
+   10,
+   false
+  ],
+  [
+   87,
+   40,
+   false
+  ],
+  [
+   88,
+   10,
+   false
+  ],
+  [
+   89,
+   40,
+   false
+  ],
+  [
+   90,
+   10,
+   false
+  ],
+  [
+   91,
+   10,
+   false
+  ],
+  [
+   93,
+   5,
+   false
+  ],
+  [
+   94,
+   30,
+   false
+  ],
+  [
+   95,
+   5,
+   false
+  ],
+  [
+   96,
+   10,
+   false
+  ],
+  [
+   97,
+   5,
+   false
+  ],
+  [
+   98,
+   10,
+   false
+  ],
+  [
+   99,
+   5,
+   false
+  ],
+  [
+   100,
+   5,
+   false
+  ],
+  [
+   101,
+   5,
+   false
+  ],
+  [
+   102,
+   40,
+   false
+  ],
+  [
+   103,
+   40,
+   false
+  ],
+  [
+   104,
+   40,
+   false
+  ],
+  [
+   105,
+   10,
+   false
+  ],
+  [
+   106,
+   10,
+   false
+  ],
+  [
+   107,
+   40,
+   false
+  ],
+  [
+   108,
+   30,
+   false
+  ],
+  [
+   109,
+   30,
+   false
+  ],
+  [
+   110,
+   20,
+   false
+  ],
+  [
+   111,
+   10,
+   false
+  ],
+  [
+   115,
+   40,
+   false
+  ],
+  [
+   116,
+   30,
+   false
+  ],
+  [
+   118,
+   10,
+   false
+  ],
+  [
+   119,
+   10,
+   false
+  ],
+  [
+   120,
+   10,
+   false
+  ],
+  [
+   122,
+   40,
+   false
+  ],
+  [
+   123,
+   30,
+   false
+  ],
+  [
+   124,
+   20,
+   false
+  ],
+  [
+   125,
+   20,
+   false
+  ],
+  [
+   126,
+   10,
+   false
+  ],
+  [
+   132,
+   10,
+   false
+  ],
+  [
+   133,
+   10,
+   false
+  ],
+  [
+   134,
+   10,
+   false
+  ],
+  [
+   135,
+   10,
+   false
+  ],
+  [
+   136,
+   40,
+   false
+  ],
+  [
+   137,
+   10,
+   false
+  ],
+  [
+   138,
+   40,
+   false
+  ],
+  [
+   139,
+   30,
+   false
+  ],
+  [
+   140,
+   40,
+   false
+  ],
+  [
+   141,
+   20,
+   false
+  ],
+  [
+   142,
+   10,
+   false
+  ],
+  [
+   143,
+   40,
+   false
+  ],
+  [
+   144,
+   10,
+   false
+  ],
+  [
+   145,
+   10,
+   false
+  ],
+  [
+   146,
+   10,
+   false
+  ],
+  [
+   147,
+   40,
+   false
+  ],
+  [
+   157,
+   40,
+   false
+  ],
+  [
+   158,
+   40,
+   false
+  ],
+  [
+   159,
+   40,
+   false
+  ],
+  [
+   160,
+   10,
+   false
+  ],
+  [
+   161,
+   10,
+   false
+  ],
+  [
+   162,
+   40,
+   false
+  ],
+  [
+   163,
+   10,
+   false
+  ],
+  [
+   164,
+   40,
+   false
+  ],
+  [
+   166,
+   40,
+   false
+  ],
+  [
+   167,
+   40,
+   false
+  ],
+  [
+   168,
+   10,
+   false
+  ],
+  [
+   169,
+   40,
+   false
+  ],
+  [
+   170,
+   10,
+   false
+  ],
+  [
+   171,
+   10,
+   false
+  ],
+  [
+   172,
+   10,
+   false
+  ],
+  [
+   173,
+   10,
+   false
+  ],
+  [
+   176,
+   40,
+   false
+  ],
+  [
+   177,
+   30,
+   false
+  ],
+  [
+   178,
+   30,
+   false
+  ],
+  [
+   179,
+   20,
+   false
+  ],
+  [
+   180,
+   10,
+   false
+  ],
+  [
+   187,
+   40,
+   false
+  ],
+  [
+   188,
+   30,
+   false
+  ],
+  [
+   189,
+   30,
+   false
+  ],
+  [
+   193,
+   10,
+   false
+  ],
+  [
+   196,
+   40,
+   false
+  ],
+  [
+   197,
+   30,
+   false
+  ],
+  [
+   198,
+   30,
+   false
+  ],
+  [
+   199,
+   20,
+   false
+  ],
+  [
+   200,
+   10,
+   false
+  ],
+  [
+   204,
+   40,
+   false
+  ],
+  [
+   205,
+   20,
+   false
+  ],
+  [
+   207,
+   10,
+   false
+  ],
+  [
+   208,
+   40,
+   false
+  ],
+  [
+   209,
+   10,
+   false
+  ],
+  [
+   210,
+   10,
+   false
+  ],
+  [
+   212,
+   40,
+   false
+  ],
+  [
+   213,
+   30,
+   false
+  ],
+  [
+   214,
+   30,
+   false
+  ],
+  [
+   215,
+   10,
+   false
+  ],
+  [
+   216,
+   10,
+   false
+  ],
+  [
+   217,
+   10,
+   false
+  ],
+  [
+   218,
+   10,
+   false
+  ],
+  [
+   233,
+   40,
+   false
+  ],
+  [
+   234,
+   10,
+   false
+  ],
+  [
+   235,
+   10,
+   false
+  ],
+  [
+   236,
+   10,
+   false
+  ],
+  [
+   237,
+   10,
+   false
+  ],
+  [
+   238,
+   10,
+   false
+  ],
+  [
+   258,
+   40,
+   false
+  ],
+  [
+   259,
+   40,
+   false
+  ],
+  [
+   260,
+   30,
+   false
+  ],
+  [
+   261,
+   20,
+   false
+  ],
+  [
+   262,
+   10,
+   false
+  ],
+  [
+   265,
+   40,
+   false
+  ],
+  [
+   266,
+   40,
+   false
+  ],
+  [
+   267,
+   40,
+   false
+  ],
+  [
+   268,
+   40,
+   false
+  ],
+  [
+   269,
+   40,
+   false
+  ],
+  [
+   270,
+   40,
+   false
+  ],
+  [
+   271,
+   40,
+   false
+  ],
+  [
+   274,
+   10,
+   false
+  ],
+  [
+   276,
+   40,
+   false
+  ],
+  [
+   277,
+   30,
+   false
+  ],
+  [
+   278,
+   30,
+   false
+  ],
+  [
+   279,
+   20,
+   false
+  ],
+  [
+   280,
+   10,
+   false
+  ],
+  [
+   283,
+   10,
+   false
+  ],
+  [
+   284,
+   10,
+   false
+  ],
+  [
+   285,
+   10,
+   false
+  ],
+  [
+   286,
+   10,
+   false
+  ],
+  [
+   288,
+   100,
+   true
+  ],
+  [
+   289,
+   100,
+   true
+  ],
+  [
+   290,
+   100,
+   true
+  ],
+  [
+   291,
+   100,
+   true
+  ],
+  [
+   292,
+   100,
+   true
+  ],
+  [
+   295,
+   100,
+   true
+  ],
+  [
+   305,
+   40,
+   false
+  ],
+  [
+   306,
+   40,
+   false
+  ],
+  [
+   307,
+   20,
+   false
+  ],
+  [
+   308,
+   10,
+   false
+  ],
+  [
+   309,
+   40,
+   false
+  ],
+  [
+   310,
+   40,
+   false
+  ],
+  [
+   311,
+   20,
+   false
+  ],
+  [
+   312,
+   10,
+   false
+  ],
+  [
+   313,
+   10,
+   false
+  ],
+  [
+   315,
+   10,
+   false
+  ],
+  [
+   316,
+   10,
+   false
+  ],
+  [
+   317,
+   10,
+   false
+  ],
+  [
+   318,
+   10,
+   false
+  ],
+  [
+   320,
+   10,
+   false
+  ],
+  [
+   321,
+   10,
+   false
+  ],
+  [
+   322,
+   10,
+   false
+  ],
+  [
+   323,
+   10,
+   false
+  ],
+  [
+   324,
+   10,
+   false
+  ],
+  [
+   330,
+   40,
+   false
+  ],
+  [
+   331,
+   10,
+   false
+  ],
+  [
+   332,
+   10,
+   false
+  ],
+  [
+   333,
+   10,
+   false
+  ],
+  [
+   334,
+   10,
+   false
+  ],
+  [
+   335,
+   10,
+   false
+  ],
+  [
+   336,
+   10,
+   false
+  ],
+  [
+   338,
+   40,
+   false
+  ],
+  [
+   339,
+   30,
+   false
+  ],
+  [
+   340,
+   10,
+   false
+  ],
+  [
+   341,
+   10,
+   false
+  ],
+  [
+   342,
+   10,
+   false
+  ],
+  [
+   350,
+   40,
+   false
+  ],
+  [
+   351,
+   40,
+   false
+  ],
+  [
+   352,
+   10,
+   false
+  ],
+  [
+   353,
+   10,
+   false
+  ],
+  [
+   354,
+   40,
+   false
+  ],
+  [
+   355,
+   40,
+   false
+  ],
+  [
+   356,
+   10,
+   false
+  ],
+  [
+   357,
+   10,
+   false
+  ],
+  [
+   359,
+   100,
+   false
+  ],
+  [
+   360,
+   100,
+   false
+  ],
+  [
+   361,
+   100,
+   false
+  ],
+  [
+   362,
+   100,
+   false
+  ],
+  [
+   363,
+   100,
+   false
+  ],
+  [
+   364,
+   100,
+   false
+  ],
+  [
+   365,
+   100,
+   false
+  ],
+  [
+   366,
+   40,
+   false
+  ],
+  [
+   367,
+   40,
+   false
+  ],
+  [
+   368,
+   10,
+   false
+  ],
+  [
+   369,
+   10,
+   false
+  ],
+  [
+   378,
+   40,
+   false
+  ],
+  [
+   379,
+   40,
+   false
+  ],
+  [
+   380,
+   40,
+   false
+  ],
+  [
+   381,
+   40,
+   false
+  ],
+  [
+   399,
+   100,
+   false
+  ],
+  [
+   400,
+   100,
+   false
+  ],
+  [
+   401,
+   100,
+   false
+  ],
+  [
+   402,
+   100,
+   false
+  ],
+  [
+   404,
+   100,
+   false
+  ],
+  [
+   405,
+   100,
+   false
+  ],
+  [
+   406,
+   100,
+   false
+  ],
+  [
+   407,
+   100,
+   false
+  ],
+  [
+   408,
+   100,
+   false
+  ],
+  [
+   409,
+   100,
+   false
+  ],
+  [
+   410,
+   40,
+   false
+  ],
+  [
+   411,
+   10,
+   false
+  ],
+  [
+   412,
+   10,
+   false
+  ],
+  [
+   413,
+   10,
+   false
+  ],
+  [
+   414,
+   10,
+   false
+  ],
+  [
+   415,
+   10,
+   false
+  ],
+  [
+   416,
+   10,
+   false
+  ],
+  [
+   417,
+   10,
+   false
+  ],
+  [
+   465,
+   100,
+   false
+  ],
+  [
+   475,
+   30,
+   false
+  ],
+  [
+   476,
+   30,
+   false
+  ],
+  [
+   477,
+   30,
+   false
+  ],
+  [
+   478,
+   30,
+   false
+  ],
+  [
+   480,
+   30,
+   false
+  ],
+  [
+   481,
+   30,
+   false
+  ],
+  [
+   482,
+   30,
+   false
+  ],
+  [
+   483,
+   30,
+   false
+  ],
+  [
+   484,
+   30,
+   false
+  ],
+  [
+   492,
+   30,
+   false
+  ],
+  [
+   493,
+   30,
+   false
+  ],
+  [
+   494,
+   30,
+   false
+  ],
+  [
+   495,
+   30,
+   false
+  ],
+  [
+   496,
+   30,
+   false
+  ],
+  [
+   498,
+   40,
+   false
+  ],
+  [
+   499,
+   40,
+   false
+  ],
+  [
+   500,
+   40,
+   false
+  ],
+  [
+   501,
+   40,
+   false
+  ],
+  [
+   502,
+   30,
+   false
+  ],
+  [
+   504,
+   40,
+   false
+  ],
+  [
+   505,
+   40,
+   false
+  ],
+  [
+   506,
+   40,
+   false
+  ],
+  [
+   507,
+   40,
+   false
+  ],
+  [
+   508,
+   30,
+   false
+  ],
+  [
+   510,
+   30,
+   false
+  ],
+  [
+   511,
+   30,
+   false
+  ],
+  [
+   514,
+   40,
+   false
+  ],
+  [
+   515,
+   30,
+   false
+  ],
+  [
+   542,
+   40,
+   false
+  ],
+  [
+   543,
+   40,
+   false
+  ],
+  [
+   544,
+   20,
+   false
+  ],
+  [
+   545,
+   10,
+   false
+  ],
+  [
+   547,
+   40,
+   false
+  ],
+  [
+   548,
+   40,
+   false
+  ],
+  [
+   549,
+   20,
+   false
+  ],
+  [
+   550,
+   10,
+   false
+  ],
+  [
+   552,
+   40,
+   false
+  ],
+  [
+   553,
+   30,
+   false
+  ],
+  [
+   554,
+   10,
+   false
+  ],
+  [
+   555,
+   10,
+   false
+  ],
+  [
+   556,
+   10,
+   false
+  ],
+  [
+   558,
+   40,
+   false
+  ],
+  [
+   559,
+   40,
+   false
+  ],
+  [
+   560,
+   10,
+   false
+  ],
+  [
+   561,
+   10,
+   false
+  ],
+  [
+   568,
+   40,
+   false
+  ],
+  [
+   569,
+   40,
+   false
+  ],
+  [
+   570,
+   10,
+   false
+  ],
+  [
+   571,
+   10,
+   false
+  ],
+  [
+   604,
+   10,
+   false
+  ],
+  [
+   605,
+   40,
+   false
+  ],
+  [
+   607,
+   10,
+   false
+  ],
+  [
+   608,
+   10,
+   false
+  ],
+  [
+   861,
+   30,
+   false
+  ],
+  [
+   862,
+   30,
+   false
+  ],
+  [
+   863,
+   30,
+   false
+  ],
+  [
+   864,
+   30,
+   false
+  ],
+  [
+   865,
+   30,
+   false
+  ],
+  [
+   866,
+   30,
+   false
+  ]
+ ],
+ "starts": [
+  {
+   "troop": 2,
+   "rolls": [
+    0.39,
+    0.41,
+    0.4
+   ],
+   "enemies": [
+    {
+     "id": 1,
+     "capture": true,
+     "name": "嘤嘤怪Ａ宝宝",
+     "letter": "Ａ"
+    },
+    {
+     "id": 1,
+     "capture": true,
+     "name": "嘤嘤怪Ｂ宝宝",
+     "letter": "Ｂ"
+    },
+    {
+     "id": 1,
+     "capture": true,
+     "name": "嘤嘤怪Ｃ宝宝",
+     "letter": "Ｃ"
+    }
+   ]
+  },
+  {
+   "troop": 3,
+   "rolls": [
+    0,
+    0.999,
+    0.3
+   ],
+   "enemies": [
+    {
+     "id": 2,
+     "capture": true,
+     "name": "萌萌怪Ａ宝宝",
+     "letter": "Ａ"
+    },
+    {
+     "id": 2,
+     "capture": false,
+     "name": "萌萌怪Ｂ",
+     "letter": "Ｂ"
+    },
+    {
+     "id": 2,
+     "capture": true,
+     "name": "萌萌怪Ｃ宝宝",
+     "letter": "Ｃ"
+    }
+   ]
+  },
+  {
+   "troop": 4,
+   "rolls": [],
+   "enemies": [
+    {
+     "id": 6,
+     "capture": false,
+     "name": "【守层者】里德",
+     "letter": "Ａ"
+    }
+   ]
+  },
+  {
+   "troop": 5,
+   "rolls": [],
+   "enemies": [
+    {
+     "id": 7,
+     "capture": false,
+     "name": "【守层者】克力",
+     "letter": "Ａ"
+    }
+   ]
+  },
+  {
+   "troop": 6,
+   "rolls": [
+    0.05,
+    0.31,
+    0.29
+   ],
+   "enemies": [
+    {
+     "id": 2,
+     "capture": true,
+     "name": "萌萌怪Ａ宝宝",
+     "letter": "Ａ"
+    },
+    {
+     "id": 2,
+     "capture": true,
+     "name": "萌萌怪Ｂ宝宝",
+     "letter": "Ｂ"
+    },
+    {
+     "id": 3,
+     "capture": true,
+     "name": "【罕见】成年嘤嘤怪宝宝",
+     "letter": "Ａ"
+    }
+   ]
+  },
+  {
+   "troop": 1,
+   "rolls": [
+    0.999
+   ],
+   "enemies": [
+    {
+     "id": 1,
+     "capture": true,
+     "name": "嘤嘤怪宝宝",
+     "letter": "Ａ"
+    }
+   ]
+  }
+ ],
+ "turns": [
+  {
+   "turn": 4,
+   "enemies": [
+    {
+     "capture": true,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500,
+     "states": []
+    },
+    {
+     "capture": false,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500,
+     "states": []
+    },
+    {
+     "capture": true,
+     "dead": true,
+     "hidden": false,
+     "hp": 0,
+     "states": [
+      1
+     ]
+    }
+   ],
+   "toasts": []
+  },
+  {
+   "turn": 5,
+   "enemies": [
+    {
+     "capture": true,
+     "dead": false,
+     "hidden": true,
+     "hp": 0,
+     "states": [
+      1
+     ]
+    },
+    {
+     "capture": false,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500,
+     "states": []
+    },
+    {
+     "capture": true,
+     "dead": true,
+     "hidden": false,
+     "hp": 0,
+     "states": [
+      1
+     ]
+    }
+   ],
+   "toasts": [
+    "敌人逃跑"
+   ]
+  },
+  {
+   "turn": 6,
+   "enemies": [
+    {
+     "capture": true,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500,
+     "states": []
+    },
+    {
+     "capture": false,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500,
+     "states": []
+    },
+    {
+     "capture": true,
+     "dead": true,
+     "hidden": false,
+     "hp": 0,
+     "states": [
+      1
+     ]
+    }
+   ],
+   "toasts": []
+  }
+ ],
+ "gets": [
+  {
+   "name": "success",
+   "item": 200,
+   "successRate": 40,
+   "roll": 0.4,
+   "capturable": true,
+   "toasts": [
+    "捕捉成功"
+   ],
+   "count": 2,
+   "pets": 1,
+   "targets": [
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500
+    },
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": true,
+     "hp": 0
+    },
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500
+    }
+   ],
+   "pet": {
+    "enemy": 1,
+    "push": [
+     16,
+     16,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     0.01,
+     0.01,
+     0,
+     0,
+     0,
+     0
+    ],
+    "skills": [
+     1365,
+     1374,
+     1383,
+     1391
+    ],
+    "lv": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     1398,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     1400
+    ],
+    "ls": [
+     0,
+     3
+    ]
+   },
+   "draws": 26
+  },
+  {
+   "name": "success_80",
+   "item": 317,
+   "successRate": 80,
+   "roll": 0.79,
+   "capturable": true,
+   "toasts": [
+    "捕捉成功"
+   ],
+   "count": 2,
+   "pets": 1,
+   "targets": [
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500
+    },
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": true,
+     "hp": 0
+    },
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500
+    }
+   ],
+   "pet": {
+    "enemy": 1,
+    "push": [
+     16,
+     16,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     0.01,
+     0.01,
+     0,
+     0,
+     0,
+     0
+    ],
+    "skills": [
+     1365,
+     1374,
+     1383,
+     1391
+    ],
+    "lv": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     1398,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     1400
+    ],
+    "ls": [
+     0,
+     3
+    ]
+   },
+   "draws": 26
+  },
+  {
+   "name": "fail",
+   "item": 200,
+   "successRate": 40,
+   "roll": 0.41,
+   "capturable": true,
+   "toasts": [
+    "捕捉失败"
+   ],
+   "count": 2,
+   "pets": 0,
+   "targets": [
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500
+    },
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500
+    },
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500
+    }
+   ],
+   "pet": null,
+   "draws": 1
+  },
+  {
+   "name": "not_capturable",
+   "item": 316,
+   "successRate": 60,
+   "roll": 0,
+   "capturable": false,
+   "toasts": [
+    "不可捕捉"
+   ],
+   "count": 3,
+   "pets": 0,
+   "targets": [
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500
+    },
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500
+    },
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500
+    }
+   ],
+   "pet": null,
+   "draws": 1
+  },
+  {
+   "name": "last_action_wins",
+   "item": 200,
+   "successRate": 40,
+   "roll": 0.9,
+   "capturable": true,
+   "toasts": [
+    "捕捉成功"
+   ],
+   "count": 2,
+   "pets": 1,
+   "targets": [
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": true,
+     "hp": 0
+    },
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500
+    },
+    {
+     "id": 1,
+     "dead": false,
+     "hidden": false,
+     "hp": 7500
+    }
+   ],
+   "pet": {
+    "enemy": 1,
+    "push": [
+     16,
+     16,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     0.01,
+     0.01,
+     0,
+     0,
+     0,
+     0
+    ],
+    "skills": [
+     1365,
+     1374,
+     1383,
+     1391
+    ],
+    "lv": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     1398,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     1400
+    ],
+    "ls": [
+     0,
+     3
+    ]
+   },
+   "draws": 26
+  }
+ ],
+ "refreshes": [
+  {
+   "name": "window_00",
+   "hm": [
+    10,
+    2
+   ],
+   "refCapture": false,
+   "last": null,
+   "on": [
+    "29,3,A",
+    "64,3,A"
+   ],
+   "troop1": 288,
+   "toasts": [
+    "天生异象，第十三层疑似出现神秘生物！！！"
+   ],
+   "draws": [
+    0.3,
+    0.6
+   ]
+  },
+  {
+   "name": "window_30",
+   "hm": [
+    10,
+    34
+   ],
+   "refCapture": false,
+   "last": null,
+   "on": [
+    "29,3,A",
+    "64,3,A"
+   ],
+   "troop1": 288,
+   "toasts": [
+    "天生异象，第十三层疑似出现神秘生物！！！"
+   ],
+   "draws": [
+    0.3,
+    0.6
+   ]
+  },
+  {
+   "name": "outside",
+   "hm": [
+    10,
+    5
+   ],
+   "refCapture": false,
+   "last": null,
+   "on": [],
+   "troop1": 1,
+   "toasts": [],
+   "draws": []
+  },
+  {
+   "name": "outside_29",
+   "hm": [
+    10,
+    29
+   ],
+   "refCapture": false,
+   "last": null,
+   "on": [],
+   "troop1": 1,
+   "toasts": [],
+   "draws": []
+  },
+  {
+   "name": "done_same_window",
+   "hm": [
+    10,
+    3
+   ],
+   "refCapture": false,
+   "last": [
+    15,
+    10,
+    1
+   ],
+   "on": [],
+   "troop1": 1,
+   "toasts": [],
+   "draws": []
+  },
+  {
+   "name": "done_other_half",
+   "hm": [
+    10,
+    31
+   ],
+   "refCapture": false,
+   "last": [
+    15,
+    10,
+    1
+   ],
+   "on": [
+    "29,3,A",
+    "64,3,A"
+   ],
+   "troop1": 288,
+   "toasts": [
+    "天生异象，第十三层疑似出现神秘生物！！！"
+   ],
+   "draws": [
+    0.3,
+    0.6
+   ]
+  },
+  {
+   "name": "done_other_hour",
+   "hm": [
+    11,
+    1
+   ],
+   "refCapture": false,
+   "last": [
+    15,
+    10,
+    1
+   ],
+   "on": [
+    "29,3,A",
+    "64,3,A"
+   ],
+   "troop1": 288,
+   "toasts": [
+    "天生异象，第十三层疑似出现神秘生物！！！"
+   ],
+   "draws": [
+    0.3,
+    0.6
+   ]
+  },
+  {
+   "name": "ref_capture",
+   "hm": [
+    10,
+    2
+   ],
+   "refCapture": true,
+   "last": null,
+   "on": [
+    "93,2,A"
+   ],
+   "troop1": 359,
+   "toasts": [
+    "天生异象，天地之间凝聚出了一股仙气，似有异兽出没！"
+   ],
+   "draws": [
+    0.3,
+    0.6
+   ]
+  },
+  {
+   "name": "ref_capture_31",
+   "hm": [
+    10,
+    31
+   ],
+   "refCapture": true,
+   "last": null,
+   "on": [
+    "93,2,A"
+   ],
+   "troop1": 359,
+   "toasts": [
+    "天生异象，天地之间凝聚出了一股仙气，似有异兽出没！"
+   ],
+   "draws": [
+    0.3,
+    0.6
+   ]
+  },
+  {
+   "name": "outside_preset",
+   "hm": [
+    10,
+    5
+   ],
+   "refCapture": false,
+   "last": null,
+   "on": [],
+   "troop1": 1,
+   "toasts": [],
+   "draws": []
+  },
+  {
+   "name": "done_preset",
+   "hm": [
+    10,
+    3
+   ],
+   "refCapture": false,
+   "last": [
+    15,
+    10,
+    1
+   ],
+   "on": [],
+   "troop1": 1,
+   "toasts": [],
+   "draws": []
+  },
+  {
+   "name": "window_preset",
+   "hm": [
+    10,
+    2
+   ],
+   "refCapture": false,
+   "last": null,
+   "on": [
+    "29,3,A",
+    "64,3,A",
+    "12,23,A",
+    "10,11,A",
+    "62,5,A",
+    "47,15,A",
+    "93,2,A",
+    "105,2,A",
+    "94,2,A",
+    "92,4,A"
+   ],
+   "troop1": 288,
+   "toasts": [
+    "天生异象，第十三层疑似出现神秘生物！！！"
+   ],
+   "draws": [
+    0.3,
+    0.6
+   ]
+  }
+ ],
+ "troop1": {
+  "enemy": 290,
+  "capture": true,
+  "ref": [
+   16,
+   9,
+   31
+  ]
+ },
+ "books": [
+  {
+   "name": "no_war",
+   "skill": 1493,
+   "war": false,
+   "lsBefore": [
+    0,
+    2
+   ],
+   "toasts": [
+    "当前无出战宠物"
+   ],
+   "skills": [
+    1365,
+    1374
+   ],
+   "ls": [
+    0,
+    2
+   ],
+   "refund": 1
+  },
+  {
+   "name": "learn",
+   "skill": 1493,
+   "war": true,
+   "lsBefore": [
+    0,
+    2
+   ],
+   "toasts": [
+    "苦力 学习成功"
+   ],
+   "skills": [
+    1365,
+    1374,
+    1493
+   ],
+   "ls": [
+    1,
+    2
+   ],
+   "refund": 0
+  },
+  {
+   "name": "exists",
+   "skill": 1374,
+   "war": true,
+   "lsBefore": [
+    0,
+    2
+   ],
+   "toasts": [
+    "该技能已存在"
+   ],
+   "skills": [
+    1365,
+    1374
+   ],
+   "ls": [
+    0,
+    2
+   ],
+   "refund": 1
+  },
+  {
+   "name": "full",
+   "skill": 1493,
+   "war": true,
+   "lsBefore": [
+    2,
+    2
+   ],
+   "toasts": [
+    "可学习技能已达上限"
+   ],
+   "skills": [
+    1365,
+    1374
+   ],
+   "ls": [
+    2,
+    2
+   ],
+   "refund": 1
+  },
+  {
+   "name": "over",
+   "skill": 1493,
+   "war": true,
+   "lsBefore": [
+    3,
+    2
+   ],
+   "toasts": [
+    "可学习技能已达上限"
+   ],
+   "skills": [
+    1365,
+    1374
+   ],
+   "ls": [
+    2,
+    2
+   ],
+   "refund": 1
+  }
+ ],
+ "order": {
+  "turn": 5,
+  "enemies": [
+   {
+    "capture": true,
+    "hidden": true,
+    "hpRate": 0,
+    "states": [
+     1
+    ]
+   },
+   {
+    "capture": false,
+    "hidden": false,
+    "hpRate": 0.9,
+    "states": [
+     4
+    ]
+   },
+   {
+    "capture": true,
+    "hidden": true,
+    "hpRate": 0,
+    "states": [
+     1
+    ]
+   }
+  ],
+  "toasts": [
+   "敌人逃跑",
+   "敌人逃跑"
+  ]
+ }
+}

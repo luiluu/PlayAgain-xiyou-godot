@@ -4,3 +4,4 @@
 
 [node name="XiyouMap186Legions" type="Node"]
 script = ExtResource("1")
+last_event = 27
