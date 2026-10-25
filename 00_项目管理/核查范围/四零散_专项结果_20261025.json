@@ -74,11 +74,19 @@
     "finding": "元数据末条读取漏掉原版正则扫描支持的重复和大小写／无前导零标签；待专项确认及补修，不冒称已核通过"
   },
   "usageAtHandoff": {
-    "fiveHourUsedPercent": 18,
-    "weeklyUsedPercent": 3
+    "fiveHourUsedPercent": 30,
+    "weeklyUsedPercent": 5
   },
   "handoffDocs": {
     "exitCode": 0,
     "scope": "仅文档登记正文，非全量"
+  },
+  "handoff58": {
+    "productionApplied": false,
+    "redStillQueued": true,
+    "patchReplacementDryRun": "7 files, each replacement uniquely matches; no writes",
+    "consumeReduceDataTags": 168,
+    "evidencePreservingSyncWrapper": "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/sync_preserve_evidence.py",
+    "wrapperRun": false
   }
 }
