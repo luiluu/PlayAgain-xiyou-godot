@@ -88,6 +88,7 @@ func _press(action: String) -> void:
 
 
 func _run() -> void:
+	GameApp.fast_forward()  # 真走地图打战斗、等的是物理帧与计时器：headless 快进 4 倍（见 07_开发环境/测试提速.md）
 	XMessageBox.auto = true
 	XEnemy.force_roll = 100.0
 	seed(20261013)

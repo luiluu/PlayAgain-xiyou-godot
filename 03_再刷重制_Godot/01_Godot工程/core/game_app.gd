@@ -7,6 +7,8 @@ var current_mode: String = ""
 
 func _ready() -> void:
 	_headless_frame_sleep()
+	if OS.get_environment("XIYOU_TEST_FAST_FORWARD").is_valid_int():
+		fast_forward()
 	if WindowFit.should_apply(OS.get_cmdline_args()):
 		WindowFit.apply(get_window())
 	var data = JSON.parse_string(FileAccess.get_file_as_string(MODE_FILE))
@@ -31,6 +33,22 @@ func _headless_frame_sleep() -> void:
 func fast_headless_frames() -> void:
 	if DisplayServer.get_name() == "headless" and not OS.get_environment("XIYOU_HEADLESS_SLEEP_USEC").is_valid_int():
 		OS.low_processor_usage_mode_sleep_usec = 0
+
+## 测试快进（木吒 2026-10-26）：地图与战斗的逐帧逻辑在 _physics_process 里，Godot 每真实秒只跑 60 个物理帧，计时器、补间按真实秒走，
+## 所以 floor 一类真走地图打战斗的测试大半时间在等。headless 下把物理帧率与 Engine.time_scale 一起乘 n：物理帧的 delta 仍是 1/60 秒，
+## 逐帧逻辑、计时器、补间同比加快，彼此的先后不变，就像真实时间快了 n 倍（只有 ignore_time_scale 的计时器和墙钟照旧）。
+## 只在测试开头调用，有窗口的游戏不受影响。设了 XIYOU_TEST_FAST_FORWARD 就以它为准，并且对所有 headless 运行生效（=1 即回退，实验时也可设别的倍数）。
+const FAST_FORWARD := 4
+func fast_forward(n := FAST_FORWARD) -> void:
+	if DisplayServer.get_name() != "headless":
+		return
+	var env := OS.get_environment("XIYOU_TEST_FAST_FORWARD")
+	if env.is_valid_int():
+		n = int(env)
+	n = maxi(1, n)
+	Engine.physics_ticks_per_second = 60 * n
+	Engine.max_physics_steps_per_frame = 8 * n
+	Engine.time_scale = float(n)
 
 func _verify_export() -> void:
 	await get_tree().process_frame

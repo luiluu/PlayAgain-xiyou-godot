@@ -141,6 +141,7 @@ func _run_event(map: XMapScene, id: int, answers: Array, watch_boss := false) ->
 
 
 func _run() -> void:
+	GameApp.fast_forward()  # 真走地图打战斗、等的是物理帧与计时器：headless 快进 4 倍（见 07_开发环境/测试提速.md）
 	# 各工作树共用同一 user://（工程名相同），按进程分目录，免得同时跑的另一份删掉本份的存档／设置
 	XSave.dir_override = "user://test_xiyou_floor16_dungeon_%d" % OS.get_process_id()
 	XConfig.path_override = XSave.dir().path_join("options.json")

@@ -34,6 +34,7 @@ func check(label: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
+	GameApp.fast_forward()  # 真走地图打战斗、等的是物理帧与计时器：headless 快进 4 倍（见 07_开发环境/测试提速.md）
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
