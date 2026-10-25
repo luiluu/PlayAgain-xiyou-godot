@@ -2,9 +2,9 @@ extends Node
 ## 桂树小屋（盘点序 9，悟空_56）流程（地图场景里真走一遍）：
 ## - Map147 EV2（开关 1657「25层普通」页）：挑战副本→缺不朽灵魂(640)提示／有则扣一个，变量 450＝1、21＋1、5＋1、6＝35、94 随机 1～40、250 随机 1～10，
 ##   按 250 落到 Map173 十个起点之一；变量 5＝1 时提示「请重置副本」；重置副本（5＝1 且 6＝35）清变量与开关 254～263；
-## - Map173 十个房间：首领 EV（敌群 528～537）打赢开 255，再进同一事件的宝箱页（公共事件 1413 按 94 发奖）→ 异门选「是」按变量 251 落到 Map175 起点（变量 450 清 0）、选「否」回 Map147 并重置；
+## - Map173 十个房间：首领 EV（敌群 528～537）打赢各开 254～263，再进同一事件的宝箱页（公共事件 1413 按 94 发奖）→ 异门选「是」按变量 251 落到 Map175 起点（变量 450 清 0）、选「否」回 Map147 并重置；
 ##   出口 EV31～40（接触）回 Map147 (12,7)；
-## - Map175 十个房间：首领 EV（敌群 559～568）打赢开 265，选「前往未知存在」→ Map177 (9,15)。
+## - Map175 十个房间：首领 EV（敌群 559～568）打赢各开 264～273，选「前往未知存在」→ Map177 (9,15)。
 ## 原版随机分支一律固定（变量 94／250／251 在需要处直接设定）；队伍生命攻击都很大（只查流程）。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
@@ -233,7 +233,7 @@ func _rooms() -> void:
 		_check("r%d_events" % k, _event(map, BOSS173[k - 1]) != null and _event(map, 30 + k) != null)
 		var n0 := battles.size()
 		await _run_event(map, BOSS173[k - 1], [], "win")
-		_check("r%d_boss173" % k, battles.size() == n0 + 1 and battles[-1].troop == TROOP173[k - 1] and battles[-1].result == 0 and s.switch(255), [battles.slice(n0), s.switch(255)])
+		_check("r%d_boss173" % k, battles.size() == n0 + 1 and battles[-1].troop == TROOP173[k - 1] and battles[-1].result == 0 and s.switch(253 + k), [battles.slice(n0), s.switch(253 + k)])
 		map = _scene()
 		map.refresh_events()
 		s.set_variable(251, 1)   # 仅占位；异门处会重新掷 1～10
@@ -247,7 +247,7 @@ func _rooms() -> void:
 		_check("r%d_events175" % k, _event(map, BOSS175[b]) != null)
 		n0 = battles.size()
 		await _run_event(map, BOSS175[b], [0], "win")
-		_check("r%d_boss175" % k, battles.size() == n0 + 1 and battles[-1].troop == TROOP175[b] and battles[-1].result == 0, [battles.slice(n0), TROOP175[b]])
+		_check("r%d_boss175" % k, battles.size() == n0 + 1 and battles[-1].troop == TROOP175[b] and battles[-1].result == 0 and s.switch(264 + b), [battles.slice(n0), TROOP175[b], s.switch(264 + b)])
 		_check("r%d_unknown_door" % k, await _wait_map(177) and _scene().player.grid == Vector2i(9, 15), [_scene().map_id])
 
 
