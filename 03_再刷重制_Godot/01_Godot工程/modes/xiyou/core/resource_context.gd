@@ -141,9 +141,9 @@ func refresh(b: XBattler) -> void:
 	var previous := b.lifecycle_context
 	b.lifecycle_context = state_context(b)
 	_refresh_type_before(b)
-	# Actor's saved refresh reaches the global add lock; enemy's saved alias
+	# The base/actor refresh reaches the global add lock; enemy's saved alias
 	# still reaches the base clamp. Both retain their outer KRZ refresh work.
-	if not (b is XActor and XBattler._adding_state):
+	if not (not b is XEnemy and XBattler._adding_state):
 		_refresh_base(b)
 		_refresh_death(b)
 	_refresh_type_after(b)
