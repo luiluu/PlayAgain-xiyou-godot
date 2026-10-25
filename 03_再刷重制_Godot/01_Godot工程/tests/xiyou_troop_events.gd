@@ -18,6 +18,7 @@ const RANDOM_AI_TROOPS := [676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686
 ## 来源指纹与 _unit_checks 只在第 0 份做，断言总数与拆分前相同
 @export var part := 0
 @export var parts := 2
+@export var oracle_half := false
 ## 敌群 462（金角、银角）：强制 8111（全体友方，必中）给银角附加轮回困难 1460——必中技能附加状态不乘状态有效度与幸运差。
 ## 三十层起变身例：336 变身后紧接的 334 按变身前的生命上限回满（冻结源能力值缓存）；334 保留 <Permanent> 状态（686 天道*祝福）。
 
@@ -38,6 +39,19 @@ func key(b: XBattler, logic: XBattleLogic) -> String:
 
 ## 参照固定 Math.random＝0.5：战斗不认 MVEventCore.fixed_random（沙僧 dev.099 规定战斗只用本场规则流），
 ## 本测试对敌群事件的 122 随机变量单独按 0.5 取值，其余规则抽样照常走本场规则流。只用于引路人 794（第 3 页按随机变量 4 选强制）。
+## 原版参照把 Math.random 固定为0.5；整数是floor(n*0.5)，不能以uint32%n替代。
+## 仅确定性对照场景注入，原五种种子的场景仍走真实本场流。
+class OracleHalfStream extends XRandomStream:
+	func next_float(reason: String, event_key := "") -> float:
+		journal.append({"domain": domain, "ordinal": draws, "kind": "float", "reason": reason, "event": event_key, "value": 0.5})
+		draws += 1
+		return 0.5
+	func next_index_mod(n: int, reason: String, event_key := "") -> int:
+		return floori(n * next_float(reason, event_key))
+	func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
+		return lo + floori((hi - lo + 1) * next_float(reason, event_key))
+
+
 class EventHalfStream extends XRandomStream:
 	func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
 		if reason == "event_variable":
@@ -66,8 +80,14 @@ func setup(troop: int, paid := false, trial_seed := 1000) -> XBattleLogic:
 	s.set_variable(842, 1 if paid else 0)
 	var logic := XBattleLogic.new()
 	logic.level_roll = 0.99  # 参照：敌群生成时 Math.random=0.99
-	logic.setup(troop, s)
-	if troop == 794:
+	if oracle_half:
+		var context := s.reserve_battle_random()
+		context.rule = OracleHalfStream.new()
+		context.rule.domain = "rule"
+		logic.setup(troop, s, context)
+	else:
+		logic.setup(troop, s)
+	if troop == 794 and not oracle_half:
 		logic.random.rule = _half_events(logic.random.rule)
 	for a in logic.actors:
 		for sk in [6168, 5980, 5548] + ([2571, 2786] if int(a.data().id) in [1, 2, 3, 4, 5, 6, 7, 52] else []):
@@ -99,10 +119,10 @@ func _run() -> void:
 			_turn_preset_case(c)
 			continue
 		if c.has("hpRate"):
-			for round in range(3):
+			for round in range(1 if oracle_half else 3):
 				_transform_case(c, round)
 			continue
-		for round in range(5):
+		for round in range(1 if oracle_half else 5):
 			_case(c, round)
 	if _seen739:
 		check("troop739.extra_hit_exists", _extra_hits > 0, _extra_hits)
@@ -321,7 +341,7 @@ func _case(c: Dictionary, round: int) -> void:
 	# 守层者本回合的普通行动：全队已被打倒（敌群 462 的银角一回合内杀光）时轮不到，此时只要强制行动做完
 	check(name + ".t1_enemy_actions", (t1_times >= forced + normal and t1_times <= forced + normal + (0 if first_cleared else plus)) or (logic.is_lost() and t1_times == forced), [forced, first_cleared, got[1]])
 	# 神魔战场的军团敌群（676～693，三四名杂兵）与嘤族之光 739：行动者集合取决于随机的技能选择和谁先被打倒，参照固定掷骰 0.5，不比这一项
-	if not RANDOM_AI_TROOPS.has(int(c.troop)):
+	if oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop)):
 		check(name + ".t1_enemy_set", enemies_of.call(got[1]) == enemies_of.call(want[1]), [got[1], want[1]])
 	# 事件强制行动（339）逐条比 [行动者, 技能]：都在第 1 回合最先，含非首敌（军团 676 第 1 回合 e3 强制 3813，沙僧50 内容批 P2-C2）
 	var want_forced: Array = c.actions.filter(func(a): return int(a.turn) == 1 and bool(a.forced)).map(func(a): return [str(a.subject), int(a.skill)])
@@ -346,7 +366,7 @@ func _case(c: Dictionary, round: int) -> void:
 	for inv in c.invokes:
 		if inv.subject == "e0" and inv.target != "e0" and float(inv.hpBefore) > 0.0 and inv.userStates.has(1460.0):
 			want_extra = [float(inv.userAtk), float(inv.userMat)]
-	if not RANDOM_AI_TROOPS.has(int(c.troop)):
+	if oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop)):
 		check(name + ".extra", extras.is_empty() if want_extra.is_empty() else (not extras.is_empty() and extras.all(func(x): return x == want_extra)), [extras, want_extra])
 	else:
 		# 随机技能的敌群（军团、嘤族之光 739）：命中次数随技能与谁先倒下而变，但每一次实际命中都要带精确的 [攻击, 魔攻]
