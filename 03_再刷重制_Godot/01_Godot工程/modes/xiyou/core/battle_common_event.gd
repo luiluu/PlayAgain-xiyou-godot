@@ -4,8 +4,10 @@ extends RefCounted
 ## - YEP_BattleEngineCore 把 Game_Action.applyGlobal 在战斗中关掉，改由行动序列预约：默认收尾段的 ACTION COMMON EVENT
 ##   （actionActionCommonEvent）把这次行动道具的每个 44 效果依次 $gameTemp.reserveCommonEvent——单槽，后一个盖前一个；
 ##   ActSeqPack1 的 COMMON EVENT: X 没有事件在跑时同样预约（有事件在跑时插成子事件立即执行，重制排到当前事件之后，见交付单）。
-## - 行动结束后 BattleManager.updateEventMain：先 checkBattleEnd（打赢／打输就不跑），再 Game_Troop.setupBattleEvent——
-##   解释器空闲时预约的公共事件优先于敌群页（setupReservedCommonEvent），跑完下一次检查再看敌群页或新的预约。
+## - 行动结束后 BattleManager.updateEventMain → Game_Troop.setupBattleEvent：解释器空闲时预约的公共事件优先于敌群页
+##   （setupReservedCommonEvent），跑完下一次检查再看敌群页或新的预约。YEP 的 checkBattleEnd 在行动刚结束的 actionList 阶段
+##   与事件进行中都不判定，所以**打倒最后一只敌人后预约的公共事件照样跑完**（参照 thunder_battle_end：84 仍强制 533），之后才胜利；
+##   重制的战斗画面在打赢／打输后、进结算前先跑一次（XBattleScene._main），无界面 run_turn 本来就先查事件。
 ## 重制：预约记在 XBattleLogic 的 meta "battle_ce"；XBattleLogic._drive_events 选页之前调 take 取成 XBattleEventRunner 执行，
 ## 指令与敌群页同一套（MVEventCore＋战斗环境），没翻译的照样记进 troop_event_skipped（页号记 0）。
 ## 一次事件检查里接连预约（强制行动再预约）最多 CHAIN_LIMIT 次，防止条件写错时死循环（原版会一直跑）。
@@ -36,10 +38,10 @@ static func last_item_action(logic) -> Dictionary:
 	return logic.get_meta("last_item_action", {})
 
 
-## setupBattleEvent 的预约分支：打赢／打输时不跑；取走预约，返回执行游标（没有时 null）
+## setupBattleEvent 的预约分支：取走预约，返回执行游标（没有时 null）
 static func take(logic) -> XBattleEventRunner:
 	var id := reserved(logic)
-	if id <= 0 or logic.is_won() or logic.is_lost():
+	if id <= 0:
 		return null
 	logic.remove_meta("battle_ce")
 	var ce := XDB.rec("CommonEvents", id)

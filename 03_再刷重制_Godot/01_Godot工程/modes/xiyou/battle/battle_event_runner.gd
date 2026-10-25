@@ -140,6 +140,12 @@ func _execute_env(c: Dictionary):
 				logs.append_array(XPetCapture.pet_get(logic))
 				index = at
 				return null
+			# 整段只有一条 $.toaster（技能公共事件里的「当前剑思为 N」之类）：文字照地图的 MVScript 拼，记成提示
+			var one := code.strip_edges()
+			if RegEx.create_from_string("^\\$\\.toaster\\(\\{[^;]*\\}\\);?$").search(one) != null and MVScript._toaster_text(one) != "":
+				logs.append({"type": "toast", "text": MVScript._toaster_text(one)})
+				index = at
+				return null
 			return super(c)
 		_:
 			return super(c)

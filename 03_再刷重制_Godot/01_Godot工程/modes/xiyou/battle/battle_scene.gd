@@ -537,6 +537,7 @@ func _main() -> void:
 			_set_active(null)
 			var logs := logic.act(u, cmd[0], cmd[1])
 			await _play(logs)
+			if (logic.is_won() or logic.is_lost()) and XBattleCommonEvent.reserved(logic) > 0: await _play_troop_events(logic.troop_events())  # 打完最后一击，预约的公共事件照样跑（YEP checkBattleEnd）
 			otb.clear_subject()
 			otb.show_orders(logic.current_order, logic.next_order)
 			_refresh_status()
