@@ -31,3 +31,7 @@
 - 需要专项覆盖：真实add／重复add／remove／remove_state_auto及存读、HP／MP截回、Conclude各死亡分支与真实battle.apply未命中仍Conclude、execute=false＋预览资源域＋影子实例调用不得改真实账本／缓存／资源／RNG／诊断／观察者。不碰已留交接的formula_execution和mv_event_core。
 - 转换后未翻译数预计441→437；既有xiyou_state_effects_tp.gd有441硬编码，届时同步更新名称与计数，保持两个TP Apply仍为JS。别为了这四块重跑旧19场；按新代码实际依赖选测。
 - 当前同树分支codex/actor-bonus-states；actor-bonus 7ef7584a仍独立可合并。本小期尚不可合并，游戏代码和转换器完全未改。下一期完成后再passive-content→race-battle；自己的提交均待Claude。
+
+## 2026-10-25 额度重置后续做
+
+- 开工实查五小时0%、周30%，bd0e2306干净续接。四块最小受控翻译与真实角色账本能力检查草案已写，尚待转换、导入与专项。预览显式标记在类型列表、观察者和诊断之前处理；addParam逐次刷新绑定同一生命周期资源域，未碰外部宿主。

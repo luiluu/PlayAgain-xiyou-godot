@@ -509,9 +509,16 @@ static func magic_param(e: Dictionary, i: int) -> float:
 func param(i: int) -> float:
 	return XCat.param(self, i, super(i))
 
-## 永久 addParam 复用事件 317 的同一存档字段；状态脚本翻译接线另期。
+## 永久写能力属于当前真实实例；影子克隆虽保留actor_id，也不能借它写真实账本。
+func can_add_param() -> bool:
+	if XState.current == null or XState.current.actors.get(actor_id) != self:
+		return false
+	var resources: XResourceContext = lifecycle_context.get("resources")
+	return bool(lifecycle_context.get("execute", true)) and not bool(lifecycle_context.get("preview", false)) and (resources == null or not resources.preview)
+
+## 永久 addParam 复用事件 317 的同一存档字段，每次调用按原版单独刷新。
 func add_param(i: int, value: float) -> void:
-	if XState.current != null:
+	if can_add_param():
 		XParamPlus.add(XState.current, actor_id, i, value)
 
 

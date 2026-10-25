@@ -106,7 +106,7 @@ func _ready() -> void:
 		if st is Dictionary:
 			for effect in st.get("effects", []):
 				untranslated += int(effect.op == "js")
-	check("inventory.444_to_441", untranslated == 441, untranslated)
+	check("inventory.444_to_437", untranslated == 437, untranslated)
 	for id in [607, 609, 857]:
 		check("production.battle.%d" % id, XDB.rec("States", id).effects.any(func(e): return e.phase == "battle" and e.op == "gain_resource"))
 	var saved := {}

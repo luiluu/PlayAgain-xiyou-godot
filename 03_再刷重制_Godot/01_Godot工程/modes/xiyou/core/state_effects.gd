@@ -7,7 +7,7 @@ extends RefCounted
 const BATTLER_PHASES := ["battle", "turn_start", "turn_end", "regenerate", "action_start", "victory", "escape", "defeat"]
 const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm", "react", "respond", "establish"]
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
-const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "gain_resource"]
+const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "gain_resource", "param_add"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -84,11 +84,12 @@ static func run(phase: String, holder: XBattler, ctx := {}) -> float:
 	var value := float(ctx.get("value", 0.0))
 	if holder == null:
 		return value
-	var execute := bool(ctx.get("execute", true))
+	var execute := _execution_requested(holder, ctx)
 	# processStateEval uses states directly; typestates owns all action/turn lists.
 	var rows: Array = holder.states().duplicate() if phase in ["battle", "victory", "escape", "defeat"] else holder.effect_states(phase, execute).duplicate()
 	for st in rows:
 		var next := ctx.duplicate()
+		next.execute = execute
 		next.value = value
 		value = run_one(phase, holder, st, next)
 	return value
@@ -97,10 +98,14 @@ static func run(phase: String, holder: XBattler, ctx := {}) -> float:
 static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) -> float:
 	var c := context_for(phase, holder, int(st.id), ctx)
 	c.value = float(ctx.get("value", 0.0))
-	var execute := bool(c.execute)
 	var effects: Array = st.get("effects", []).filter(func(e): return str(e.get("phase", "")) == phase)
 	if effects.is_empty():
 		return c.value
+	# A cloned actor has no persistent capability. Keep this invocation silent,
+	# including observer/diagnostics, even when its caller forgot execute=false.
+	if effects.any(func(e): return e.get("op") == "param_add") and c.user is XActor and not c.user.can_add_param():
+		c.execute = false
+	var execute := bool(c.execute)
 	_stack.push_back(c)
 	if execute and observer.is_valid():
 		observer.call(phase, int(st.id), holder, c)
@@ -126,6 +131,8 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				_diagnose(phase, int(st.id), holder, "value_program_unavailable")
 		elif op == "value_query":
 			c.value = _query_value(e, c, execute)
+		elif op == "param_add" and execute:
+			_add_params(e, c)
 		elif op == "gain_resource" and execute:
 			var resources: XResourceContext = c.get("resources")
 			if resources == null:
@@ -149,6 +156,38 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				_diagnose(phase, int(st.id), holder, op)
 	_stack.pop_back()
 	return c.value
+
+
+## Execute-only permanent writes. Native refresh runs after EVERY addParam,
+## in the enclosing operation's resource domain (including nested death hooks).
+static func _add_params(effect: Dictionary, ctx: Dictionary) -> void:
+	var target: XBattler = ctx.target
+	if effect.get("when") == "target_dead" and (target == null or not (target.hp <= 0.0 or target.state_ids.has(1))):
+		return
+	if not ctx.user is XActor:
+		_diagnose(ctx.phase, int(ctx.state_id), ctx.holder, "param_add_actor_required")
+		return
+	var user: XActor = ctx.user
+	if not user.can_add_param():
+		return
+	var previous := user.lifecycle_context
+	user.lifecycle_context = ctx
+	for step in effect.steps:
+		var amount := float(step.amount)
+		if effect.scale == "level":
+			amount *= user.level
+		user.add_param(int(step.param), amount)
+	user.lifecycle_context = previous
+
+
+## Explicit preview markers cannot be overridden by execute=true. Resolve this
+## before typestates, observer and diagnostics, as well as before mutation.
+static func _execution_requested(holder: XBattler, ctx: Dictionary) -> bool:
+	for inputs in [holder.lifecycle_context, ctx]:
+		var resources: XResourceContext = inputs.get("resources")
+		if bool(inputs.get("preview", false)) or (resources != null and resources.preview):
+			return false
+	return bool(ctx.get("execute", holder.lifecycle_context.get("execute", true)))
 
 
 ## Four complete measured blocks. Preserve each native short circuit; queries
@@ -225,7 +264,7 @@ static func context_for(phase: String, holder: XBattler, state_id: int, ctx := {
 	var ref = holder.state_origins.get(state_id)
 	if ref is WeakRef and ref.get_ref() != null:
 		origin = ref.get_ref()
-	var c := {"phase": phase, "state_id": state_id, "holder": holder, "origin": origin, "execute": bool(inputs.get("execute", true))}
+	var c := {"phase": phase, "state_id": state_id, "holder": holder, "origin": origin, "execute": _execution_requested(holder, ctx)}
 	if phase in ACTION_PHASES:
 		c.merge({"attacker": inputs.get("attacker"), "defender": inputs.get("defender"), "item": inputs.get("item"),
 			"user": inputs.get("attacker"), "target": inputs.get("defender")})

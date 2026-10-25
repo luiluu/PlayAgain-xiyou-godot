@@ -323,6 +323,26 @@ def query_state_value_effect(code, phase):
     return {'op': 'value_query', **query} if query else None
 
 
+def permanent_state_effect(tokens, phase):
+    """Four complete native-measured blocks; actor ledger capability only.
+    Do not accept arbitrary addParam fragments or infer enemy persistence.
+    """
+    signature = ' '.join(tokens)
+    if phase in ('apply', 'remove', 'leave'):
+        sign = '' if phase == 'apply' else '- '
+        expected = ' '.join(f'user . addParam ( {i} , {sign}user . level * {n} ) ;'
+                            for i, n in ((0, 250), (1, 250), (2, 50), (4, 50)))
+        if signature == expected:
+            scale = 1 if phase == 'apply' else -1
+            return {'op': 'param_add', 'recipient': 'user', 'scale': 'level',
+                    'steps': [{'param': i, 'amount': n * scale} for i, n in ((0, 250), (1, 250), (2, 50), (4, 50))],
+                    'requires': ['persistent_actor']}
+    if phase == 'conclude' and signature == 'if ( target . hp <= 0 || target . isDead ( ) ) { user . addParam ( 0 , 10 ) ; user . addParam ( 1 , 30 ) ; }':
+        return {'op': 'param_add', 'recipient': 'user', 'scale': 'constant', 'when': 'target_dead',
+                'steps': [{'param': 0, 'amount': 10}, {'param': 1, 'amount': 30}], 'requires': ['persistent_actor']}
+    return None
+
+
 def parse_state_effects(note):
     """返回 [{phase, op, cond, k, round} 或 {phase, op:'js', source}]；op=js 表示尚未翻译。"""
     out = []
@@ -338,6 +358,10 @@ def parse_state_effects(note):
             tokens = ()
         if phase == 'battle' and tokens in [('user', '.', 'gainTp', '(', n, ')', ';') for n in ('200', '50')]:
             out.append({'phase': phase, 'op': 'gain_resource', 'recipient': 'user', 'resource': 'tp', 'amount': int(tokens[4]), 'requires': ['resources']})
+            continue
+        permanent = permanent_state_effect(tokens, phase)
+        if permanent:
+            out.append({'phase': phase, **permanent})
             continue
         mm = SIMPLE_MUL.match(code)
         if mm:
