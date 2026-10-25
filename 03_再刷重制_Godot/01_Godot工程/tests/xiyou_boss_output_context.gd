@@ -9,6 +9,12 @@ var expected: Array
 var row_at := 0
 var caught := 0
 
+class RefreshProbe extends XResourceContext:
+	var refresh_calls := 0
+	func refresh(b: XBattler) -> void:
+		refresh_calls += 1
+		super.refresh(b)
+
 class HookBattle extends XBattleLogic:
 	var fixture_resources: XResourceContext
 	var steps := Callable()
@@ -151,12 +157,83 @@ func run_case(c: Dictionary) -> void:
 		compare(c.id + ".after." + k, bs[k], c.observed.after[k])
 	check(c.id + ".icon", a.is_state_affected(2651) == c.observed.icon)
 
+func boundary_checks() -> void:
+	var s := fresh(3)
+	var a := XEnemy.new().setup(6, 3, 100.0)
+	var b := XEnemy.new().setup(6, 3, 100.0)
+	var c := XEnemy.new().setup(6, 3, 100.0)
+	for x in [a, b, c]:
+		x.param_cache_begin()
+		x.refresh_resources()
+		x.hp = 500.0
+		x.mp = 300.0
+	a.sync_boss_armor(true)
+	var r := RefreshProbe.new()
+	var scope := r.boss_output
+	var peer := XResourceContext.new()
+	scope.with_action(a, b, func():
+		# settled／direct must distinguish target AND resource.
+		scope.enter_settled(b, "hp")
+		check("settled.same", scope.loss_value(b, "hp", 7.0) == 7.0)
+		check("settled.other_resource", scope.loss_value(b, "mp", 7.0) == 11.0)
+		scope.with_action(a, c, func(): check("settled.other_target", scope.loss_value(c, "hp", 7.0) == 11.0))
+		scope.leave_settled()
+		scope.enter_direct(b, "hp")
+		check("direct.same", scope.loss_value(b, "hp", 7.0) == 7.0)
+		check("direct.other_resource", scope.loss_value(b, "mp", 7.0) == 11.0)
+		scope.leave_direct()
+		check("tp.unscaled", scope.loss_value(b, "tp", 7.9) == 7.9)
+		check("peer.isolated", peer.boss_output.loss_value(b, "hp", 7.0) == 7.0)
+		var programs: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/boss_output_context_programs.json"))
+		var item := XDB.rec("Skills", 1).duplicate(true)
+		item.hitType = 0
+		item.effects = []
+		item.tpGain = 0
+		item.damage.critical = false
+		item.damage.variance = 0
+		item.damage.formulaProgram = programs.hp
+		var before_hp := b.hp
+		var preview := XFormulaExecution.run_item(item, a, b, {}, {}, false, null, r)
+		check("preview.available", preview.available)
+		check("preview.private_domain", is_equal_approx(preview.after.b.resources[0], before_hp - 7.9))
+		check("preview.no_mutation", b.hp == before_hp and r.journal.is_empty())
+		var inner := XBattleLogic.new()
+		inner.state = s
+		inner._action_resources = r
+		var out := inner.apply(c, item, b)
+		check("nested.real_formula", out.formulaDiagnostic.is_empty() and is_equal_approx(b.hp, before_hp - 7.9), out)
+		check("nested.resources_restored", inner._action_resources == r)
+		check("nested.outer_restored", scope.frames.size() == 1 and scope.frames[-1].source == a)
+		check("nested.outer_rate", scope.loss_value(b, "hp", 7.0) == 11.0)
+		# A genuine VM diagnostic returns normally through apply and restores the outer frame.
+		item.damage.formulaProgram = programs.set_unsupported
+		out = inner.apply(c, item, b)
+		check("diagnostic.explicit", out.formulaDiagnostic == "unsupported_program", out.formulaDiagnostic)
+		check("diagnostic.outer_restored", inner._action_resources == r and scope.frames.size() == 1 and scope.frames[-1].source == a)
+		check("diagnostic.resources_not_poisoned", r.error.is_empty())
+	)
+	check("nested.all_restored", scope.is_empty())
+	var old := b.hp
+	r.gain(b, "hp", -7.0)
+	check("diagnostic.outside_unscaled", b.hp == old - 7.0)
+	# Setter does not create gain slots, mark dirty, or refresh an equal input.
+	r.refresh(b)
+	var result_before := r.result(b).duplicate(true)
+	var refresh_before := r.refresh_calls
+	r.set_resource(b, "hp", b.hp)
+	check("set.equal_no_refresh", r.refresh_calls == refresh_before)
+	r.set_resource(b, "mp", b.mp - 1.0)
+	check("set.no_gain_dirty", not b.effect_dirty and not b.param_dirty)
+	check("set.no_result_write", same(result_before, r.result(b)))
+	check("set.no_scope_leak", scope.is_empty())
+
 func _ready() -> void:
 	_run.call_deferred()
 
 func _run() -> void:
 	var fixture: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/boss_output_context_oracle.json"))
 	check("source", fixture.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
+	boundary_checks()
 	for c in fixture.cases:
 		check(c.id + ".native", c.errors.is_empty())
 		run_case(c)
