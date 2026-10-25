@@ -495,7 +495,20 @@ def run_probes(log, cache=None):
     runs = SANDBOX / 'run'
     shutil.rmtree(runs, ignore_errors=True)
 
+    running = {}  # 正在跑的探针命令 → 开始时间（含等槽），心跳用
+    running_lock = threading.Lock()
+
     def one(work):
+        logical, cmd, outputs = work
+        with running_lock:
+            running[' '.join(cmd)] = time.time()
+        try:
+            return one_inner(work)
+        finally:
+            with running_lock:
+                running.pop(' '.join(cmd), None)
+
+    def one_inner(work):
         logical, cmd, outputs = work
         for rel in outputs:
             (SANDBOX / rel).unlink(missing_ok=True)
@@ -548,12 +561,26 @@ def run_probes(log, cache=None):
     with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
         futures = {i: pool.submit(one, work[i]) for i in order}
         results = [None] * len(work)
-        for future in concurrent.futures.as_completed({f: i for i, f in futures.items()}):
-            i = next(i for i, f in futures.items() if f is future)
-            results[i] = future.result()
-            print('PROBE_DONE=' + json.dumps({'probe': results[i][0][0], 'seconds': round(results[i][3], 3),
-                                             'command': results[i][0],
-                                             'exitCode': results[i][1]}), flush=True)
+        # 探针心跳（2026-10-26 哪吒）：event_probe 整轮约 100 分钟一行不出，长任务.py 的无输出看门狗（默认 3600 秒）会把正常进行的
+        # 同步判成卡死。等探针时每 XIYOU_PROBE_HEARTBEAT 秒（默认 60，0 关闭）为每个在跑的探针打一行 PROBE_RUNNING。
+        beat = float(os.environ.get('XIYOU_PROBE_HEARTBEAT', '60'))
+        waiting = {f: i for i, f in futures.items()}
+        while waiting:
+            done, _ = concurrent.futures.wait(waiting, timeout=beat if beat > 0 else None,
+                                              return_when=concurrent.futures.FIRST_COMPLETED)
+            for future in done:
+                i = waiting.pop(future)
+                results[i] = future.result()
+                print('PROBE_DONE=' + json.dumps({'probe': results[i][0][0], 'seconds': round(results[i][3], 3),
+                                                 'command': results[i][0],
+                                                 'exitCode': results[i][1]}), flush=True)
+            if not done:
+                now = time.time()
+                with running_lock:
+                    alive = sorted(running.items(), key=lambda x: x[1])
+                for label, t in alive:
+                    print('PROBE_RUNNING=' + json.dumps({'probe': label.split()[0], 'command': label.split(),
+                                                        'seconds': round(now - t)}), flush=True)
     failed = []
     for cmd, code, out, sec in results:
         log.write('$ node %s（%.0f 秒）\n' % (' '.join(cmd), sec))

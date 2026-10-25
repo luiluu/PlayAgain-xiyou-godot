@@ -70,6 +70,24 @@ func _member_states_script(code: String) -> bool:
 	return true
 
 
+## 331 改敌人 HP [敌人序号（<0 全体）, 0 增／1 减, 0 常数／1 变量, 数值, 允许倒下]（command331 → changeHp）：
+## 只改活着的；不允许倒下时减到 1；gainHp 走护盾与夹值（XBattleLogic.sequence_gain，HP 归零即倒下），不弹伤害数字
+func _change_enemy_hp(p: Array) -> void:
+	var value := float(_operand(int(p[2]), int(p[3])))
+	if int(p[1]) != 0:
+		value = -value
+	for i in logic._enemy_slots(int(p[0])):
+		var e: XEnemy = logic.enemies[i]
+		if not e.is_alive():
+			continue
+		var v := value
+		if not bool(p[4]) and e.hp <= -v:
+			v = 1.0 - e.hp
+		var before := logic._enemy_reading(e)
+		logic.sequence_gain(e, "HP", v)
+		logs.append(logic._enemy_change("hp", i, before))
+
+
 ## 战斗中 $gameParty.members() 是出战成员
 func _party_members() -> Array:
 	return logic.actors
@@ -117,6 +135,8 @@ func _execute_env(c: Dictionary):
 	match int(c.code):
 		333:
 			logic._change_enemy_state(p)
+		331:
+			_change_enemy_hp(p)
 		334:
 			logs.append_array(logic.enemy_recover_all(int(p[0])))
 		335:
@@ -134,6 +154,23 @@ func _execute_env(c: Dictionary):
 				at += 1
 				code += "\n" + str(list[at].parameters[0])
 			if _member_states_script(code):
+				index = at
+				return null
+			if code.strip_edges() == "Star.PetSystem.PetGet()":  # 公共事件 173：捕获网（XPetCapture）
+				logs.append_array(XPetCapture.pet_get(logic))
+				index = at
+				return null
+			# 整段只有一条 $gameVariables.setValue(N, 数字)（公共事件 1401「敌人恢复所有血量」：先把变量 40 设成极大值）；
+			# JS 数字按双精度，9999999999999999 读成 1e16
+			var sv := RegEx.create_from_string("^\\$gameVariables\\.setValue\\(\\s*(\\d+)\\s*,\\s*(-?\\d+(?:\\.\\d+)?)\\s*\\);?$").search(code.strip_edges())
+			if sv != null:
+				state().set_variable(int(sv.get_string(1)), float(sv.get_string(2)))
+				index = at
+				return null
+			# 整段只有一条 $.toaster（技能公共事件里的「当前剑思为 N」之类）：文字照地图的 MVScript 拼，记成提示
+			var one := code.strip_edges()
+			if RegEx.create_from_string("^\\$\\.toaster\\(\\{[^;]*\\}\\);?$").search(one) != null and MVScript._toaster_text(one) != "":
+				logs.append({"type": "toast", "text": MVScript._toaster_text(one)})
 				index = at
 				return null
 			return super(c)
