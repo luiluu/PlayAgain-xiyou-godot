@@ -315,117 +315,184 @@
     "crossReview": "待Claude"
   },
   "finalSync": {
-    "status": "running",
-    "waitingForOtherLaneSyncs": false,
-    "acceptanceFiles": [
-      "03_再刷重制_Godot/04_验证/测量接受/四零散_cat去tpGap_20261025.json",
-      "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
-    ],
-    "expectedExistingChanges": {
-      "cat": 1,
-      "slice": 6
-    },
-    "expectedNewCases": {
-      "enemy_book_defeat": 34
-    },
-    "longTaskStatus": {
-      "runId": "ebfcb32ee7d64a4fa4620b8e541fb27f",
-      "status": "running",
-      "exitCode": null,
-      "pid": 3389,
-      "startedAt": "2026-10-25T12:06:28.884885+00:00",
+    "status": {
+      "runId": "c9b79e51415a490cb6e15ae9bc03f25d",
+      "status": "done",
+      "exitCode": 0,
+      "pid": 33406,
+      "startedAt": "2026-10-25T15:36:51.331449+00:00",
       "command": [
         "python3",
-        "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/queue_final_sync.py"
+        "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/sync_preserve_evidence.py",
+        "--accept-additions",
+        "--accept-changes",
+        "03_再刷重制_Godot/04_验证/测量接受/四零散_cat去tpGap_20261025.json",
+        "--accept-changes",
+        "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
       ],
-      "childPGID": 3394,
+      "childPGID": 33407,
       "childIdentity": {
-        "pid": 3394,
-        "pgid": 3394,
-        "startedAt": "Sun Oct 25 13:06:28 2026    "
-      }
+        "pid": 33407,
+        "pgid": 33407,
+        "startedAt": "Sun Oct 25 16:36:51 2026    "
+      },
+      "finishedAt": "2026-10-25T15:38:58.515936+00:00"
     },
-    "queueOnlyUntilOtherSyncsExit": true,
-    "completedWaitWindows": 3,
-    "phase": "probes",
-    "handoff61CompletedWaitWindows": 16,
+    "report": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261025_163651_399538_v0.28-v0.28/同步报告.json",
+    "result": "新增用例、显式接受 7 条既有用例改变，已接受（不登记）",
+    "verifyOk": true,
+    "sameExistingSource": true,
+    "acceptedChanges": [
+      {
+        "file": "cat.json",
+        "collection": "cases",
+        "key": "[[\"id\",\"chain.atkk1817\"]]",
+        "fields": [
+          "setup"
+        ],
+        "oldDigest": "6dd559bc445b42f1",
+        "newDigest": "511862cf8879383d",
+        "reason": "哈基米1817被动减耗已接入；仅删除setup.tpGap旧豁免元数据，全部原版测量数值保持不变。",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/四零散_cat去tpGap_20261025.json"
+      },
+      {
+        "file": "slice_d1.json",
+        "collection": "damage",
+        "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+        "fields": [
+          "breakdown",
+          "final",
+          "value"
+        ],
+        "oldDigest": "431a17c4b5d62714",
+        "newDigest": "169fcb99ff46deca",
+        "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      },
+      {
+        "file": "slice_d2.json",
+        "collection": "damage",
+        "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+        "fields": [
+          "breakdown",
+          "final",
+          "value"
+        ],
+        "oldDigest": "431a17c4b5d62714",
+        "newDigest": "169fcb99ff46deca",
+        "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      },
+      {
+        "file": "slice_d3.json",
+        "collection": "damage",
+        "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+        "fields": [
+          "breakdown",
+          "final",
+          "value"
+        ],
+        "oldDigest": "431a17c4b5d62714",
+        "newDigest": "169fcb99ff46deca",
+        "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      },
+      {
+        "file": "slice_d4.json",
+        "collection": "damage",
+        "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+        "fields": [
+          "breakdown",
+          "final",
+          "value"
+        ],
+        "oldDigest": "431a17c4b5d62714",
+        "newDigest": "169fcb99ff46deca",
+        "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      },
+      {
+        "file": "slice_d5.json",
+        "collection": "damage",
+        "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+        "fields": [
+          "breakdown",
+          "final",
+          "value"
+        ],
+        "oldDigest": "431a17c4b5d62714",
+        "newDigest": "169fcb99ff46deca",
+        "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      },
+      {
+        "file": "slice_d6.json",
+        "collection": "damage",
+        "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+        "fields": [
+          "breakdown",
+          "final",
+          "value"
+        ],
+        "oldDigest": "431a17c4b5d62714",
+        "newDigest": "169fcb99ff46deca",
+        "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      }
+    ],
+    "additionCount": 34,
+    "enemyBookTotalCases": 38,
+    "remainingProblems": {},
     "probePlan": {
-      "executed": 53,
-      "partial": {},
-      "reused": 0
+      "executed": 0,
+      "reused": 53,
+      "partial": {}
     },
-    "fullFlagUsed": false,
-    "completedProbes": [
-      {
-        "probe": "slice_probe.cjs",
-        "seconds": 227.195,
-        "command": [
-          "slice_probe.cjs",
-          "4"
+    "originalProbeExecutions": 58,
+    "originalExitCode": 2,
+    "originalRejection": "enemy_book_defeat cases stable key missing; fixed with cases/id; old4 unchanged and five negative guards passed",
+    "godotImportSucceeded": true,
+    "rule947Reference": {
+      "troop": 854,
+      "enemy": 947,
+      "target": 9,
+      "skill": 5557,
+      "skillName": "地狱黑洞",
+      "type": 1,
+      "element": 9,
+      "physical": false,
+      "magical": false,
+      "value": 468,
+      "breakdown": {
+        "base": 519.75,
+        "basis": 519.75,
+        "weights": [
+          1,
+          0
         ],
-        "exitCode": 0
+        "normal": 1,
+        "terminal": 1,
+        "row": {
+          "element": 9,
+          "name": "黑暗",
+          "share": 1,
+          "bonus": 1,
+          "defense": 1,
+          "matchup": 1,
+          "resistance": 0.9,
+          "incoming": 1,
+          "terminal": 1,
+          "growth": 1,
+          "beforeFixed": 467.775,
+          "fixedMitigation": 0,
+          "afterFixed": 467.775,
+          "critical": 1,
+          "independent": 1,
+          "guard": 1,
+          "value": 467.775
+        }
       },
-      {
-        "probe": "slice_probe.cjs",
-        "seconds": 228.431,
-        "command": [
-          "slice_probe.cjs",
-          "1"
-        ],
-        "exitCode": 0
-      },
-      {
-        "probe": "slice_probe.cjs",
-        "seconds": 229.999,
-        "command": [
-          "slice_probe.cjs",
-          "2"
-        ],
-        "exitCode": 0
-      },
-      {
-        "probe": "slice_probe.cjs",
-        "seconds": 248.05,
-        "command": [
-          "slice_probe.cjs",
-          "3"
-        ],
-        "exitCode": 0
-      },
-      {
-        "probe": "slice_probe.cjs",
-        "seconds": 226.224,
-        "command": [
-          "slice_probe.cjs",
-          "5"
-        ],
-        "exitCode": 0
-      },
-      {
-        "probe": "slice_probe.cjs",
-        "seconds": 233.203,
-        "command": [
-          "slice_probe.cjs",
-          "6"
-        ],
-        "exitCode": 0
-      },
-      {
-        "probe": "smart_ai_probe.cjs",
-        "seconds": 1619.567,
-        "command": [
-          "smart_ai_probe.cjs"
-        ],
-        "exitCode": 0
-      },
-      {
-        "probe": "sequence_probe.cjs",
-        "seconds": 65.45,
-        "command": [
-          "sequence_probe.cjs"
-        ],
-        "exitCode": 0
-      }
-    ]
+      "final": 468
+    }
   }
 }
