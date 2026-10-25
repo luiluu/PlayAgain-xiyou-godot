@@ -1098,6 +1098,55 @@ for name in filter(None, files):
         self.assertEqual(self.branches(), ['claude/task-2', 'main'])
         self.assertFalse((self.root / '.git/lane-merge/batch.json').exists())
 
+    def args_checker(self):
+        """检查.sh 替身：把收到的参数记一行。"""
+        log = Path(self.tmp.name) / 'check_args'
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\necho "$*" >> %s\n' % log); checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'args checker')
+        self.g('merge', 'main', cwd=self.wt)
+        return log
+
+    def test_finish_affected_uses_premerge_main_and_marks_commit(self):
+        bare = self.github()
+        log = self.args_checker()
+        base = self.g('rev-parse', 'main')
+        self.assertEqual(self.call('--affected'), 1)  # 只配 --finish
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--batch', '--affected'), 1)
+        self.assertEqual(self.call('--finish', '--affected'), 0, self.last_output)
+        self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base])
+        body = self.g('log', '-1', '--format=%B')
+        self.assertIn('验证: 选测（基准 ' + base[:9], body)
+        self.assertFalse(self.wt.exists())
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
+
+    def test_batch_final_affected_covers_whole_batch(self):
+        wt2, _ = self.batch_fixture()
+        log = Path(self.tmp.name) / 'check_args'
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\necho "$*" >> %s\n' % log); checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'args checker')
+        base = self.g('rev-parse', 'main')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--batch'), 0, self.last_output)
+        self.assertEqual(self.call_task('task2'), 0, self.last_output)
+        self.register_both()
+        self.assertEqual(self.call_task('task2', '--finish', '--affected'), 0, self.last_output)
+        self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base])
+        self.assertFalse(wt2.exists())
+        self.assertFalse(self.wt.exists())
+
+    def test_finish_without_affected_runs_full_check(self):
+        log = self.args_checker()
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertEqual(log.read_text().split(), ['--oracle'])
+        self.assertNotIn('验证:', self.g('log', '-1', '--format=%B'))
+
     def test_also_allows_extra_change_at_finish(self):
         self.assertEqual(self.call(), 0)
         self.register(); self.put('AGENTS.md', 'rule tweak during merge\n')
