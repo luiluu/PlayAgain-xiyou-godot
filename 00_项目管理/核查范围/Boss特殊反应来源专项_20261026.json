@@ -230,5 +230,15 @@
     "Native malformed stateOrigin indexes and absent action subjects not sampled in this period",
     "No arbitrary fatal GDScript error recovery claim",
     "Inherited determinism eight early_inventory_rule failures unchanged and not rerun"
-  ]
+  ],
+  "cleanup": {
+    "successfulTasks": [
+      "boss70-react-smoke",
+      "boss70-react-native",
+      "boss70-react-import",
+      "boss70-react-final"
+    ],
+    "removedTemporaryPaths": 21,
+    "preserved": "All .sandbox artifacts, earlier failed tasks, generated and worktree"
+  }
 }
