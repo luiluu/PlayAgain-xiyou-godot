@@ -62,7 +62,7 @@ prepare() {
   python3 "$tools/xiyou_export.py" --out "$gen" | tail -1 | cut -c1-160
   print "== godot --import"
   local out rc=0
-  out=$(perl -e 'alarm 300; exec @ARGV' "$env/godot" --headless --path "$proj" --import 2>&1) || rc=$?
+  out=$(python3 "$ENV_DIR/占槽.py" --label "godot --import" --notice-fd 3 -- perl -e 'alarm 300; exec @ARGV' "$env/godot" --headless --path "$proj" --import 3>&2 2>&1) || rc=$?
   if (( rc != 0 )) || grep -qE 'SCRIPT ERROR|^ERROR:' <<< "$out"; then
     print -r -- "$out" | grep -E 'ERROR|FAIL' | head -8
     print -u2 "✗ 导入失败 (rc=$rc)"; exit 1

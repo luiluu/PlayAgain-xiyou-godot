@@ -204,6 +204,37 @@ class PortableCacheTests(unittest.TestCase):
             (gen / 'db/Skills.json').write_text('[42]')
             self.assertNotEqual(self.cache().key(cmd), key)
 
+    def test_read_surface_audit_survives_logic_edits_but_not_new_reads(self):
+        import incremental_sync
+        tools, _ = self.paths('donor')
+        probe = tools / 'mv_oracle/event_probe.cjs'
+        probe.write_text("const GEN = process.env.XIYOU_GENERATED;\n"
+                         "const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));\n"
+                         "for (const id of SLICE.maps) use(id);\n")
+        cmd = ['event_probe.cjs']
+        audit = 'reads:' + incremental_sync.read_surface(probe.read_text())[:16]
+        with mock.patch.dict(incremental_sync.GENERATED_SHARD_AUDITS, {'mv_oracle/event_probe.cjs': audit}):
+            self.assertIsNotNone(self.cache().shard(cmd))
+            with probe.open('a') as f:
+                f.write("w.eval('patch runtime');\nconst extra = 1 + 2;\n")  # 只改运行逻辑：仍可分片
+            self.assertIsNotNone(self.cache().shard(cmd))
+            with probe.open('a') as f:
+                f.write("const db = fs.readFileSync(path.join(GEN, 'db/Items.json'));\n")  # 新读法：退回整轮并说明
+            c = self.cache()
+            self.assertIsNone(c.shard(cmd))
+            self.assertEqual(c.shard_issues['event_probe.cjs']['file'], 'mv_oracle/event_probe.cjs')
+        self.assertFalse(incremental_sync.audit_ok('reads:abc', b''))  # 前缀过短不算
+        self.assertFalse(incremental_sync.audit_ok(None, b''))
+
+    def test_real_event_probe_is_still_audited_for_map_sharding(self):
+        # 改了 event_probe.cjs 的读法（读取面）时这里失败：核对它仍只读 maps 与 manifest.slice.commonEvents 后，
+        # 把 incremental_sync.GENERATED_SHARD_AUDITS 改成 reads:<新读取面前 16 位>；否则每次加地图都会整轮重跑事件页
+        import incremental_sync
+        probe = TOOLS / 'mv_oracle/event_probe.cjs'
+        expected = incremental_sync.GENERATED_SHARD_AUDITS['mv_oracle/event_probe.cjs']
+        self.assertTrue(incremental_sync.audit_ok(expected, probe.read_bytes()),
+                        '读取面变了：reads:' + incremental_sync.read_surface(probe.read_text())[:16])
+
     def test_output_read_failure_remains_a_miss(self):
         self.prime()
         c = self.cache()
