@@ -348,12 +348,84 @@
     "queueOnlyUntilOtherSyncsExit": true,
     "completedWaitWindows": 3,
     "phase": "probes",
-    "handoff61CompletedWaitWindows": 13,
+    "handoff61CompletedWaitWindows": 16,
     "probePlan": {
       "executed": 53,
       "partial": {},
       "reused": 0
     },
-    "fullFlagUsed": false
+    "fullFlagUsed": false,
+    "completedProbes": [
+      {
+        "probe": "slice_probe.cjs",
+        "seconds": 227.195,
+        "command": [
+          "slice_probe.cjs",
+          "4"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "slice_probe.cjs",
+        "seconds": 228.431,
+        "command": [
+          "slice_probe.cjs",
+          "1"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "slice_probe.cjs",
+        "seconds": 229.999,
+        "command": [
+          "slice_probe.cjs",
+          "2"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "slice_probe.cjs",
+        "seconds": 248.05,
+        "command": [
+          "slice_probe.cjs",
+          "3"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "slice_probe.cjs",
+        "seconds": 226.224,
+        "command": [
+          "slice_probe.cjs",
+          "5"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "slice_probe.cjs",
+        "seconds": 233.203,
+        "command": [
+          "slice_probe.cjs",
+          "6"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "smart_ai_probe.cjs",
+        "seconds": 1619.567,
+        "command": [
+          "smart_ai_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "sequence_probe.cjs",
+        "seconds": 65.45,
+        "command": [
+          "sequence_probe.cjs"
+        ],
+        "exitCode": 0
+      }
+    ]
   }
 }

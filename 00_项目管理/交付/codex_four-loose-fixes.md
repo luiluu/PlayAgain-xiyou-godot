@@ -151,3 +151,13 @@
 - 接手后13轮540秒前台等待均只到时（exit124）；其他白龙／悟空同步已经退出，唯一排队任务自动输出SYNC_QUEUE_START，开始本树最终同步。没有重启或增加同步任务，没有改其他进程或槽位。
 - 原runId仍ebfcb32ee7d64a4fa4620b8e541fb27f、status running；默认PROBE_PLAN executed53／reused0，未加--full。两份精确接受单及保留证据包装器不变，等待探针、比较、Godot导入终态。不能把“已启动”记为“通过”。
 - 本轮文档段已exit0；当前额度五小时42%、周22%，继续等待后按原计划核报告与补测四场。其他车道结果只用于判定已退出，不代它们作验收结论。
+
+## 沙僧61→62（同树自动接力，继续medium等待／收尾）
+
+- 当前codex/four-loose-fixes，61仅改交付单与核查范围JSON；生产没有新修改，工作区以本节提交后为准。61创建62后停止，62唯一执行者。继续原授权四零散→2g→rng-compare-review→actor-bonus→passive-content→race-battle；不是额度停止（最后五小时42%、周22%）。
+- **最新状态已改变：不再排队等白龙／悟空！** 两个外部同步已退出；原队列自动进入本树最终同步，日志有SYNC_QUEUE_START。同一runId ebfcb32ee7d64a4fa4620b8e541fb27f、PID3389／childPGID3394、status running。默认PROBE_PLAN 53执行／0复用，未加--full；不能因为0复用而重启／取消／另开同步。
+- **已有7/53探针exit0，无失败**：slice六难度＋smart_ai。其余仍在执行或等槽；最近smart_ai seconds1619.567（含排槽）。61累计16轮540秒前台等待均124，只表示仍running；创建62前没有遗留前台等待会话，但长任务本身仍在跑。继续等待任务.sh final-sync.log --timeout540，单次工具阻塞≤60秒。可functions.exec pragma yield1000，循环write_stdin50000，再functions.wait50000，避免空转推理与频繁重读日志；别把脚本初次返回session_id当作退出码。
+- 两份精确接受单不变：cat去tpGap一条、哪吒slice六条；预期既有变化仅cat1＋slice6，新enemy_book_defeat34（总38）。保留证据包装器只停两个prune，不改来源、守卫、槽位或工具。完成后必须exit0、核同步报告无额外变化；如有额外变化先分析，不扩大接受。同步包括Godot导入。
+- 同步真正通过后仅跑rules基础段＋cat／enemy_book／loose_fixes四场。规则947／5557应从旧参照0变为非0；此前其余11场直接依赖、power137/137、新专项126/126、cat994/994、enemy_book52/52已过，不重跑整批／全量／旧50%审查。apply_production.py已10da1d87执行，绝不能重复。
+- 完成后精简JSON、交付单写可合并交唐僧，自己的实现仍待Claude；只清本期four-loose-fixes临时输出（未完成前不清运行中的包装器目录）。旧原版证据、.sandbox、generated和整树永久保留，共用交接板／变更记录／步骤清单／当前状态只读。所有文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b；不新建／清理工作树，不reset/cherry-pick，不追无关main。
+- 2g仍bf585fdc未改，13场12过、formula_effects906/908；按最终别名链把resource_context.refresh add锁guard从仅XActor改为除XEnemy的基类分支，先跑formula_effects与state_effects_tp再判断。完整预览空结果槽／两个Apply宿主接口仍按2g原交付停手范围，不混四零散。50%审查二期0b00c374交总装另合，不重做。全局排队入口／证据保留开关优化建议已登记，不动哪吒／木吒工具。
