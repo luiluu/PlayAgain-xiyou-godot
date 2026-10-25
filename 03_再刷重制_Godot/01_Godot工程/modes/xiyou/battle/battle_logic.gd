@@ -1405,6 +1405,13 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 
 
 func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
+	# Learn-skill payloads can omit value1/value2 (native item1998 does).
+	# Native effect43 only reads dataId; don't read unrelated numeric fields.
+	if int(eff.code) == 43:
+		if t is XActor:
+			t.learn_skill(int(eff.dataId))
+			t.refresh_passive()
+		return
 	var v1 := float(eff.value1)
 	var v2 := float(eff.value2)
 	match int(eff.code):
@@ -1457,10 +1464,6 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 				t.buff_turns[id] = 0
 				_refresh_battler(t)
 				t.param_mark_dirty()  # krz removeBuff
-		43:
-			if t is XActor:
-				t.learn_skill(int(eff.dataId))
-				t.refresh_passive()
 
 
 ## 行动序列 ADD STATE（Game_Battler.addState → isStateAddable：活着、未抵抗（IMMORTAL 期间阵亡视为抵抗）；阵亡状态直接倒下）

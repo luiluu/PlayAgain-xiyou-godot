@@ -11,7 +11,8 @@ function snap(){
   for(const sid of damageSkills)for(const critical of [false,true]){
     const item=w.JsonEx.makeDeepCopy(w.$dataSkills[sid]);item.damage.variance=0;
     const action=new w.Game_Action(a);action.setSkill(sid);action.item=()=>item;
-    damage.push(action.makeDamageValue(e,critical));
+    const value=action.makeDamageValue(e,critical),row=action._codexDamageBreakdown.rows[0];
+    damage.push({value,settled:row.value,growth:row.growth});
   }
   return {base:Array.from({length:8},(_,i)=>a.paramBase(i)),param:Array.from({length:8},(_,i)=>a.param(i)),
     xparam:Array.from({length:10},(_,i)=>a.xparam(i)),sparam:Array.from({length:10},(_,i)=>a.sparam(i)),
