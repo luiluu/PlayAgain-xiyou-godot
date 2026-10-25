@@ -39,6 +39,13 @@
 - 扩角色每期都要跑一整轮同步（6 个难度的 slice_probe 各约 7 分钟，全是旧角色×全部敌群）。可以让增量同步对「只加角色」只量新角色的行（slice_probe 按角色分片，旧角色行从上次产物取回），一期能省掉大半同步时间。属转换工具／增量同步，建议派给管同步的车道。
 - 同步槽位抢不到：几条车道都在「看没人跑就开」，常常前后脚撞上。建议 `同步正式西游.py` 加 `--queue`（自己等到没有别的同步再开始，等待时每 30 秒打心跳，免被长任务空闲超时停掉），白龙用过一个临时脚本版本可行。注意 pgrep 用 `'Python.*同步正[式]西游'` 这类写法，免得匹配到等待脚本自身的命令行。
 
+## 接续要点（2026-10-25 16:05 云端接手后暂停：用户要先做完小小鱼审查）
+
+- 云端分支 `claude/project-thread-gwws80`＝本分支 9c288311 ＋ fd4a953（172 宿傩第一期接线，**未跑测试**）。宿傩已接进 XActorModules（setup／levelUp／levelDown 同步、param／xparam／passive_cache）、XActorDamageHooks（descriptor writes 加 kind／elements／physicalDefenseRate）、formula_program MODULE_FORMULAS（8 个 CodexSukuna.damage）、formula_execution、mv_script 号角 CodexSukuna（toast）；切片 actors 加 172，actor_p0 RECRUIT_8 加 9007；xiyou_actor_modules 加 13 项宿傩检查。草稿修正：神灶：开权重×准备层数（第一期 0）、stage 3 makeDamageValue ×1.99 并进钩子 settlementMultiplier。
+- **同步仍未跑完**：云端同步跑到 slice_probe 时被停（PROBE_PLAN 53 个全跑、0 复用，共用槽 2）。云端跑同步要先放 sips 替身（见团队记忆 cloud-sync-sips-shim）。
+- 接着做：① 还原素材（/mnt/project-files/云端素材还原说明.md）→ `云端准备.sh` → sips 替身 → `同步正式西游.py --app <冻结 app.nw> --no-register --accept-additions`（现已含 172，一轮同步覆盖两期）；② 跑原「接续要点」②的专项（含 xiyou_actor_modules）与内容覆盖；③ 宿傩伤害行对不上就看 slice_probe 的 172 行（1 级 0 进阶、无施放帧）；④ 全过开 PR（不合并）。
+- 车道还没做：169 黄泉／170 镜流（共享笔记草稿 `白龙_草稿_yomi_jingliu.gd`，云端读不到）、171 伏黑甚尔。
+
 ## 接续要点（2026-10-25 08:15 额度 80% 收尾时）
 
 - 代码三人（173／167／168）都已写完并提交；已合入 main 到 6a28e127（无冲突）。`core/sukuna.gd`（172 宿傩）是下一期草稿，已提交但**未接线、未测**，留到新分支 `-2` 再接（XActorModules、XActorDamageHooks、formula_program、mv_script 的 CodexSukuna 分派）。
