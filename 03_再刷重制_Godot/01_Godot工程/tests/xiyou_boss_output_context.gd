@@ -237,7 +237,10 @@ func _run() -> void:
 	check("source", fixture.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	check("fixture.complete", fixture.cases.size() == 123, fixture.cases.size())
 	var ids: Array = fixture.cases.map(func(c): return str(c.id))
-	check("fixture.unique", ids.size() == Dictionary.from_keys(ids).size())
+	var unique := {}
+	for id in ids:
+		unique[id] = true
+	check("fixture.unique", ids.size() == unique.size())
 	check("fixture.real_formulas", ids.has("formula.hp") and ids.has("formula.mp"))
 	boundary_checks()
 	for c in fixture.cases:
