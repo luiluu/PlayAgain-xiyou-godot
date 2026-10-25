@@ -64,3 +64,5 @@
 - 依赖合并仅resource_context死亡分发一处冲突：保留2g add_state_with_context生命周期入口；四零散的note_death在battler._add_state真实死亡处已自动合入，避免在资源层重复计数。后续专项同时覆盖四零散死亡回归。
 
 - add锁guard已改为非XEnemy的基类／角色分支，敌人仍经原夹值链；只改这一处行为，不改原版参照。Python翻译边界8/8。下一步本地重生成＋占槽导入，先跑formula_effects/state_effects_tp，没通过前不交付。
+
+- 本地重生成与Godot导入exit0；焦点两场首次通过：formula_effects908/908（两处capState_buffs失败关闭）、state_effects_tp537/537。接着只补本期原13场其余11场＋四零散loose_fixes死亡回归，前两场不重复。
