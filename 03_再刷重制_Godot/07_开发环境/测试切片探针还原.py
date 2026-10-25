@@ -3,9 +3,9 @@
 
 敌群 157 的敌人 160 技能 857「净化之雷」custom 公式有副作用，会把被测角色 9 的生命打到 0；探针没还原时，之后拿角色 9 当目标
 的敌人行都在 0 血下算（reach4 敌人 947 技能 5557「b.hp*0.99」量出 0，Godot 满血算 467.775）。这里断言：
-- 857 那行量完、角色 9 在下一个敌群仍是满血：158 的 4013、854 的 5557 都不是 0；
-- 5557 的取整前值 = 角色 9 满血 × 0.99 × 元素与其余修正后的数，与只跑敌群 854 时完全相同（顺序无关）。
-产物写到临时目录（XIYOU_SLICE_OUT），不碰同步用的 .sandbox/slice；手动运行的种子副本由 manual_sandbox 管理。
+- 857 那行量完、角色 9 回到满血：854 的 5557（b.hp*0.99）量出 468，不是 0；
+- 敌群 854 的各敌人行与只跑敌群 854 时完全相同（与前面跑过哪些敌群无关）。
+产物写到 .sandbox 下的临时目录（XIYOU_SLICE_OUT；文件守卫只许写 .sandbox），不碰同步用的 .sandbox/slice；手动运行的种子副本由 manual_sandbox 管理。
 约 1～2 分钟（先建全部角色），不接进 检查.sh 的工具回归；改 slice_probe 测量口径时手动跑。
 """
 import json
@@ -20,7 +20,9 @@ ORACLE = Path(__file__).resolve().parents[1] / '03_转换工具/mv_oracle'
 
 
 def probe(units):
-    with tempfile.TemporaryDirectory(prefix='xiyou_slice_probe_') as out:
+    # 参照引擎的文件守卫只许写 mv_oracle/.sandbox/，临时目录也开在那里
+    (ORACLE / '.sandbox').mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='test-slice-restore-', dir=ORACLE / '.sandbox') as out:
         env = dict(os.environ, XIYOU_SLICE_OUT=out, XIYOU_PROBE_UNITS=json.dumps(units))
         p = subprocess.run(['node', 'slice_probe.cjs', '1'], cwd=ORACLE, env=env, capture_output=True, text=True, timeout=900)
         if p.returncode:
@@ -39,8 +41,8 @@ class SliceProbeRestoreTests(unittest.TestCase):
         cls.alone = probe(['854'])
 
     def test_side_effect_formula_does_not_leak_into_later_rows(self):
-        self.assertNotEqual(enemy_rows(self.together, 158)[4013]['value'], 0)
-        self.assertNotEqual(enemy_rows(self.together, 854)[5557]['value'], 0)
+        # 857、4013 自己的 0 是公式副作用本身（修正前后都一样），不断言；断言的是之后的行在满血目标下取样
+        self.assertEqual(enemy_rows(self.together, 854)[5557]['value'], 468)
 
     def test_rows_do_not_depend_on_which_troops_ran_before(self):
         self.assertEqual(enemy_rows(self.together, 854), enemy_rows(self.alone, 854))

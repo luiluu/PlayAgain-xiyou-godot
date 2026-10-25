@@ -11,7 +11,7 @@
 const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
-// XIYOU_SLICE_OUT：回归测试把产物写到自己的临时目录（不碰同步用的 .sandbox/slice）
+// XIYOU_SLICE_OUT：回归测试把产物写到 .sandbox 下自己的临时目录（文件守卫只许写 .sandbox；不碰同步用的 .sandbox/slice）
 const OUT = process.env.XIYOU_SLICE_OUT || path.resolve(__dirname, '.sandbox/slice');
 const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));
 // 增量同步只跑部分敌群时，由 XIYOU_PROBE_UNITS 给出（其余由 oracle_shard_merge.cjs 从上次产物取回）
