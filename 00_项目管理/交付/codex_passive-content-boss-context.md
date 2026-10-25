@@ -72,3 +72,5 @@
 - 67验证进展：boss67-import（runId b4d7df3d65354831b803dacf9842e3f6）退出0、无 SCRIPT ERROR／ERROR／Parse／Compile Error，新增域和专项UID已生成。文档／JSON／链接／编号通过，MV访问守卫16/16。原版定向任务先排、导入后排而导入先取得槽，原版已等360秒；公平性记录追加，不改工具。
 
 - 可优化（67已在本车道执行）：--import 只证明导入扫描无报错，首次运行仍发现来源变量倍率的类型推断失败（boss67-godot-smoke，失败原件保留）。修为显式 XEnemy 转型后，新增先占槽 --check-only --script 新专项的编译关，再跑场景；不凭导入输出宣称脚本均可执行。工具车道可评估推广，不改其文件。
+
+- 67定向apply补宿主第二步：原版已执行到AB_EnemyBook尾钩子，因行动仅覆写item取测试技能而内部_item为空失败；改用真实setSkill(1)初始化_item，测试副本仍由item getter提供。失败原件另存 .sandbox/boss_output_context_selected_67a_failed.json。--check-only单脚本模式缺GameApp autoload，虽rc0但编译日志报错，判不通过；该命令不适合本工程，撤销作为通用编译关的建议，继续用真实场景＋无SCRIPT ERROR验收（boss67-godot-smoke2在途），不改GameApp等无关文件。

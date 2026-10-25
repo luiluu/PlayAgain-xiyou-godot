@@ -50,7 +50,7 @@ for(const {id,spec} of specs.filter(row=>!filter||filter.test(row.id)))cases.pus
  const actionFor=(source,code)=>{const act=new w.Game_Action(source),item=JSON.parse(JSON.stringify(w.$dataSkills[1]));
   item.damage={...item.damage,type:1,formula:'0',custom:false,variance:0,critical:false};item.hitType=0;item.effects=[];item.tpGain=0;
   item.customBeforeEval='';item.customAfterEval='';item.customPreDamageEval='';item.customPostDamageEval=code;
-  act.item=()=>item;return act;};
+  act.setSkill(1);act.item=()=>item;return act;};
  function run(ops,action){for(const op of ops){
   if(op.op==='throw')throw Error('boss-context-probe');
   if(op.op==='nested'){
