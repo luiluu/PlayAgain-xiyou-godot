@@ -39,3 +39,9 @@
 ## 本分支提交
 
 - 见 `git log main..claude/project-thread-47bcr5`
+
+## 暂停现场（2026-10-25 16:05 UTC，用户要求先把额度留给其他审查）
+
+- 整轮同步（`--full --no-register --no-import --accept-additions`）跑了约 10 分钟后按要求停掉，没写缓存、没改 `generated/`。前一次整轮同步因 event_probe 内存不足失败，堆上限已修（本分支最后一条提交）。
+- 接着做：① 重跑整轮同步（`CHECK_GLOBAL_JOBS=3`，约 2～3 小时）；② `检查.sh` 全量，修失败项，填上面的「验证」行并把状态改成可合并；③ 更新 PR #9 说明并推送（不合并）。
+- 其后：`-actor-cmds` 分支（角色指令，专项 48/48）开 PR；`-reach-lamps`（灯笼地图 68/185/67/138、71～74、95～99，专项 reach068 未跑）叠在它后面开 PR；`-sky`（天之上，待做飞艇）未开 PR。
