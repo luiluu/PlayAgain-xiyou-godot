@@ -1,0 +1,368 @@
+{
+  "branch": "codex/state-effects-2g",
+  "scope": "首批三个Battle TP块与资源生命周期前置可合并；两个Apply和完整预览空槽接口仍未交接，不宣称五块整期完成",
+  "dependency": "codex/four-loose-fixes b135ee33; 总装按四零散→2g顺序合并",
+  "fix": "4f7cad5b; add锁基类分支除XEnemy以外跳过基础夹值",
+  "mergeConflictResolution": "保留add_state_with_context，note_death经battler._add_state调用，不重复计数",
+  "preparation": {
+    "runId": "d03c1f86836b4df4979ce7471bdb02eb",
+    "status": "done",
+    "exitCode": 0,
+    "pid": 38156,
+    "startedAt": "2026-10-25T15:45:05.090906+00:00",
+    "command": [
+      "python3",
+      "03_再刷重制_Godot/04_验证/本地结果/state-effects-2g/prepare.py"
+    ],
+    "childPGID": 38157,
+    "childIdentity": {
+      "pid": 38157,
+      "pgid": 38157,
+      "startedAt": "Sun Oct 25 16:45:05 2026    "
+    },
+    "finishedAt": "2026-10-25T15:45:13.841984+00:00"
+  },
+  "batches": [
+    {
+      "status": {
+        "runId": "17898af68e2b4ca48a6ff4d4c3d0c545",
+        "status": "done",
+        "exitCode": 0,
+        "pid": 38201,
+        "startedAt": "2026-10-25T15:45:27.475314+00:00",
+        "command": [
+          "python3",
+          "03_再刷重制_Godot/07_开发环境/并行测试.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "--log-dir",
+          "03_再刷重制_Godot/04_验证/本地结果/state-effects-2g/focused",
+          "xiyou_formula_effects.tscn",
+          "xiyou_state_effects_tp.tscn"
+        ],
+        "childPGID": 38202,
+        "childIdentity": {
+          "pid": 38202,
+          "pgid": 38202,
+          "startedAt": "Sun Oct 25 16:45:27 2026    "
+        },
+        "finishedAt": "2026-10-25T15:45:30.641943+00:00"
+      },
+      "timings": {
+        "jobs": 2,
+        "globalJobs": 4,
+        "wallSeconds": 2.866,
+        "flakyRerunPassed": [],
+        "fingerprint": "",
+        "reused": [],
+        "scenes": [
+          {
+            "name": "xiyou_state_effects_tp.tscn",
+            "seconds": 2.861,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 2.861,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "name": "xiyou_formula_effects.tscn",
+            "seconds": 2.858,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 2.858,
+                "passed": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "status": {
+        "runId": "18a885e84b1342569465f8ed21e34e90",
+        "status": "done",
+        "exitCode": 0,
+        "pid": 38255,
+        "startedAt": "2026-10-25T15:45:53.312850+00:00",
+        "command": [
+          "python3",
+          "03_再刷重制_Godot/07_开发环境/并行测试.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "--log-dir",
+          "03_再刷重制_Godot/04_验证/本地结果/state-effects-2g/final-related",
+          "xiyou_state_effects.tscn",
+          "xiyou_formula_equipment.tscn",
+          "xiyou_formula_program.tscn",
+          "xiyou_formula_rest.tscn",
+          "xiyou_formulas.tscn",
+          "xiyou_troop_events.tscn",
+          "xiyou_troop_events_b.tscn",
+          "xiyou_settlement.tscn",
+          "xiyou_review135.tscn",
+          "xiyou_enemy_book.tscn",
+          "xiyou_floor_run_c.tscn",
+          "xiyou_loose_fixes.tscn"
+        ],
+        "childPGID": 38256,
+        "childIdentity": {
+          "pid": 38256,
+          "pgid": 38256,
+          "startedAt": "Sun Oct 25 16:45:53 2026    "
+        },
+        "finishedAt": "2026-10-25T15:48:23.574054+00:00"
+      },
+      "timings": {
+        "jobs": 2,
+        "globalJobs": 4,
+        "wallSeconds": 150.103,
+        "flakyRerunPassed": [],
+        "fingerprint": "",
+        "reused": [],
+        "scenes": [
+          {
+            "name": "xiyou_formula_program.tscn",
+            "seconds": 74.803,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 74.803,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "name": "xiyou_floor_run_c.tscn",
+            "seconds": 68.695,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 68.695,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "name": "xiyou_troop_events_b.tscn",
+            "seconds": 67.058,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 67.058,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "name": "xiyou_troop_events.tscn",
+            "seconds": 66.183,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 66.183,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "name": "xiyou_enemy_book.tscn",
+            "seconds": 3.882,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 3.882,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "name": "xiyou_state_effects.tscn",
+            "seconds": 3.468,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 3.468,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "name": "xiyou_review135.tscn",
+            "seconds": 3.165,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 3.165,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "name": "xiyou_loose_fixes.tscn",
+            "seconds": 2.584,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 2.584,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "name": "xiyou_settlement.tscn",
+            "seconds": 2.465,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 2.465,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "name": "xiyou_formula_equipment.tscn",
+            "seconds": 2.355,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 2.355,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "name": "xiyou_formula_rest.tscn",
+            "seconds": 2.274,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 2.274,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "name": "xiyou_formulas.tscn",
+            "seconds": 2.252,
+            "passed": true,
+            "attempts": [
+              {
+                "rc": 0,
+                "seconds": 2.252,
+                "passed": true
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "tests": {
+    "xiyou_formula_effects.tscn": {
+      "passed": 908,
+      "total": 908
+    },
+    "xiyou_state_effects_tp.tscn": {
+      "failures": [],
+      "passed": 537,
+      "test": "xiyou_state_effects_tp",
+      "total": 537
+    },
+    "xiyou_enemy_book.tscn": {
+      "passed": 86,
+      "total": 86
+    },
+    "xiyou_floor_run_c.tscn": {
+      "floors": [
+        21,
+        33
+      ],
+      "passed": 560,
+      "total": 560
+    },
+    "xiyou_formula_equipment.tscn": {
+      "passed": 1804,
+      "total": 1804
+    },
+    "xiyou_formula_program.tscn": {
+      "failedSample": [],
+      "passed": 43458,
+      "total": 43458
+    },
+    "xiyou_formula_rest.tscn": {
+      "passed": 1352,
+      "total": 1352
+    },
+    "xiyou_formulas.tscn": {
+      "passed": 7,
+      "total": 7
+    },
+    "xiyou_loose_fixes.tscn": {
+      "passed": 126,
+      "total": 126
+    },
+    "xiyou_review135.tscn": {
+      "passed": 84,
+      "total": 84
+    },
+    "xiyou_settlement.tscn": {
+      "passed": 11,
+      "total": 11
+    },
+    "xiyou_state_effects.tscn": {
+      "passed": 19949,
+      "total": 19949
+    },
+    "xiyou_troop_events.tscn": {
+      "passed": 6574,
+      "total": 6574
+    },
+    "xiyou_troop_events_b.tscn": {
+      "passed": 6450,
+      "total": 6450
+    }
+  },
+  "passedScenes": 14,
+  "flaky": false,
+  "translationTests": {
+    "passed": 8,
+    "total": 8
+  },
+  "nativeReference": {
+    "cases": 26,
+    "sha256": "7eff2c8a0c7632f25f9b419cfe5e2edb6e363094ee5f0ee6af57f2293a2160ad",
+    "unchanged": true
+  },
+  "sourceVerify": {
+    "exitCode": 0,
+    "releaseVersion": "v0.28",
+    "inputs": 1931,
+    "runtimeInputs": 382,
+    "outputs": 1927,
+    "issues": []
+  },
+  "remainingInterfaces": [
+    "formula_execution预览读空槽副作用",
+    "地图／菜单313等状态Apply宿主显式资源结果域",
+    "action_sequence/cat/power状态直接增删接口盘点"
+  ],
+  "crossReview": "待Claude",
+  "temporaryOutputCleanup": "仅删除本期state-effects-2g，旧原版证据/.sandbox/generated及整树保留"
+}
