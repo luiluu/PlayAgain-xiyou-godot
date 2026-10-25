@@ -21,3 +21,5 @@
 - 冒烟初次失败：夹具引用未存在的2998原状态来取phase键，尚未进入原版宿主；改为从被克隆状态2取键，原失败日志与JSON保留。
 
 - 原版冒烟第二次3／3、errors空（任务6900e426b10a43ea938a3039c3767c4c）；包括Boss来源、低倍率来源遮蔽、死亡与恢复，宿主无需补丁。开始完整矩阵。
+
+- 接线草稿：run_one执行Battler阶段且有resources时，origin→holder成对推入／退出；execute=false不借实时域，Action阶段不改。新增专项以真实gain_resource验单条持有者gain，其余set／跨目标／嵌套脚本通过run_one观察者回放域语义，未声称通用JS宿主已移植。五小时83%、周58%。

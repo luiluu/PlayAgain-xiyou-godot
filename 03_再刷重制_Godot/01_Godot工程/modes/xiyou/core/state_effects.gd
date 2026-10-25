@@ -106,6 +106,12 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	if effects.any(func(e): return e.get("op") == "param_add") and c.user is XActor and not c.user.can_add_param():
 		c.execute = false
 	var execute := bool(c.execute)
+	# Game_Battler.customEffectEval always shadows the enclosing action domain,
+	# including non-Boss/missing origins. Action phases keep the outer action.
+	var resources: XResourceContext = c.get("resources")
+	var origin_domain := execute and resources != null and not phase in ACTION_PHASES
+	if origin_domain:
+		resources.boss_output.enter_action(c.origin, holder)
 	_stack.push_back(c)
 	if execute and observer.is_valid():
 		observer.call(phase, int(st.id), holder, c)
@@ -134,7 +140,6 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		elif op == "param_add" and execute:
 			_add_params(e, c)
 		elif op == "gain_resource" and execute:
-			var resources: XResourceContext = c.get("resources")
 			if resources == null:
 				_diagnose(phase, int(st.id), holder, "resource_context_missing")
 			else:
@@ -155,6 +160,8 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 			if execute:
 				_diagnose(phase, int(st.id), holder, op)
 	_stack.pop_back()
+	if origin_domain:
+		resources.boss_output.leave_action()
 	return c.value
 
 
