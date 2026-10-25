@@ -315,7 +315,7 @@
     "crossReview": "待Claude"
   },
   "finalSync": {
-    "status": "not_started",
+    "status": "queued",
     "waitingForOtherLaneSyncs": true,
     "acceptanceFiles": [
       "03_再刷重制_Godot/04_验证/测量接受/四零散_cat去tpGap_20261025.json",
@@ -327,6 +327,24 @@
     },
     "expectedNewCases": {
       "enemy_book_defeat": 34
-    }
+    },
+    "longTaskStatus": {
+      "runId": "ebfcb32ee7d64a4fa4620b8e541fb27f",
+      "status": "running",
+      "exitCode": null,
+      "pid": 3389,
+      "startedAt": "2026-10-25T12:06:28.884885+00:00",
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/queue_final_sync.py"
+      ],
+      "childPGID": 3394,
+      "childIdentity": {
+        "pid": 3394,
+        "pgid": 3394,
+        "startedAt": "Sun Oct 25 13:06:28 2026    "
+      }
+    },
+    "queueOnlyUntilOtherSyncsExit": true
   }
 }
