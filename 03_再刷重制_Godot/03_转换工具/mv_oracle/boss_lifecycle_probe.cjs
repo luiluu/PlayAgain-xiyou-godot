@@ -50,5 +50,12 @@ for(const mode of ['death','hidden_death','hp0','remove_dead','recover'])cases.p
   if(mode==='recover')e.recoverAll();else e.removeState(1);rows.push(snap(e,'revive'));
   D.syncArmor(e,true);rows.push(snap(e,'sync'));return {rows};
 }));
+for(const count of [0,3])cases.push(makeCase('armor_edges.'+count,{count},()=>{
+  fresh(count);w.$gameTroop.setup(1);const e=w.$gameTroop.members()[0];e.transform(6);
+  w.$gameTroop.increaseTurn();w.$gameTroop.increaseTurn();const rows=[snap(e,'armor')];
+  e.gainHp(-123);rows.push(snap(e,'damage'));e.addDebuff(2,3);rows.push(snap(e,'debuff'));
+  e.removeBuff(2);rows.push(snap(e,'remove_debuff'));e.addState(77);rows.push(snap(e,'hp_state'));
+  e.removeState(77);rows.push(snap(e,'remove_hp_state'));return {rows};
+}));
 const controls=w.$dataStates.filter(Boolean).map(s=>({id:s.id,control:D.isControlState(s.id)}));
 process.exit(finish(host,'boss_lifecycle.json',{scope:'Boss attributes/cache and2651 lifecycle only;output contexts separate',controls,cases})?0:1);
