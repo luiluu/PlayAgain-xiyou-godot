@@ -13,7 +13,7 @@
 - 验证：boss69-final runId0351059389764aa5959bb3ccdb85108c exit0，context16621、boss_output3823、formula_effects908、state_effects19949、state_effects_tp537，总41838／41838；五场各一次、无偶发、无SCRIPT ERROR／ERROR。中间123专项15853／15853只作迭代证据，不代替最终129验收。
 - 限制：post／execute脚本只回放等价来源域，未移植customPre／PostDamageEval宿主；公式set保留unsupported_program，未改formula_execution.gd／mv_event_core。正常与翻译VM诊断返回恢复已测，不保证任意GDScript致命错误恢复。sequence targets／stateOrigin／1341／2550仍属下一期，未计入本期。
 - 合并与登记：同树分支codex/passive-content-boss-context，基于ec75a3b1续接，不重做／重采前期78／29组与旧全量；无需夹带无关main。全部提交执行者Codex（沙僧），核查待Claude；不自销核、不自评进度。总装按战斗规则影响面选测并合并登记，本车道未改共用交接板／变更记录／步骤清单／当前状态。
-- 收尾必跑项与临时成功输出清理：最后编辑后复跑文档块、探针语法、MV守卫与差异格式；证据入Git后仅清本车道成功临时输出，失败日志、所有.sandbox、generated与整树保留。下文历史中的在途状态以本节最终结果为准。
+- 收尾：最终文档块、探针语法、MV守卫16／16与差异格式通过。证据7777d4f1入Git后已清boss67／68／69的8项成功任务临时输出；失败日志（含rc0但SCRIPT ERROR的compile）、所有.sandbox、generated与整树保留。下文历史中的在途状态以本节最终结果为准。
 
 ## 下一小期范围与先取参照
 
