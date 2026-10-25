@@ -37,10 +37,20 @@
 ## 可优化
 
 - 扩角色每期都要跑一整轮同步（6 个难度的 slice_probe 各约 7 分钟，全是旧角色×全部敌群）。可以让增量同步对「只加角色」只量新角色的行（slice_probe 按角色分片，旧角色行从上次产物取回），一期能省掉大半同步时间。属转换工具／增量同步，建议派给管同步的车道。
+- 同步槽位抢不到：几条车道都在「看没人跑就开」，常常前后脚撞上。建议 `同步正式西游.py` 加 `--queue`（自己等到没有别的同步再开始，等待时每 30 秒打心跳，免被长任务空闲超时停掉），白龙用过一个临时脚本版本可行。注意 pgrep 用 `'Python.*同步正[式]西游'` 这类写法，免得匹配到等待脚本自身的命令行。
+
+## 接续要点（2026-10-25 08:15 额度 80% 收尾时）
+
+- 代码三人（173／167／168）都已写完并提交；已合入 main 到 6a28e127（无冲突）。`core/sukuna.gd`（172 宿傩）是下一期草稿，已提交但**未接线、未测**，留到新分支 `-2` 再接（XActorModules、XActorDamageHooks、formula_program、mv_script 的 CodexSukuna 分派）。
+- 169 黄泉／170 镜流模块草稿在共享笔记目录 `白龙_草稿_yomi_jingliu.gd`（未进仓库、未测）；还要 actor.gd 加 param_base／param_plus／action_plus_set 三个单行挂点。
+- **还差同步**：本分支尚未跑 `同步正式西游.py --accept-additions`（槽位一直被悟空／主工作区的同步占着；排队任务已撤，没开始过）。接着做：① 没有别的同步时跑 `新建工作树.sh --补齐` ＋ 同步；② 跑 `xiyou_actor_p0`、`xiyou_rules.tscn xiyou_rules_d1b xiyou_rules_d1c xiyou_rules_d1d`、`xiyou_actor_modules`、`xiyou_party_skills`、`xiyou_module_hooks`、`xiyou_actor_advanced`、`xiyou_cat`、`xiyou_qiyu`；③ 内容覆盖检查 ＋ `--update-baseline`；④ 标可合并。
+- 同步前的手动预跑（只难度 1，合 main 之前）：`xiyou_rules` 难度 1 四段全过（含 173 的伤害行）；`xiyou_actor_p0` 因读难度 2 参照（还没 173）失败，属预期。
 
 ## 验证
 
-（待写）
+- `xiyou_actor_modules` 25/25（单跑通过）。
+- 难度 1 手动参照下 `xiyou_rules.tscn`／`d1b`／`d1c`／`d1d` 全过（只含 173，渡鸦／米拉加入前）。
+- 其余见「接续要点」，同步后补齐。
 
 ## 本分支提交
 
