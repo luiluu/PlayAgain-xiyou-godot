@@ -68,3 +68,5 @@
 - HEAD 29847686、工作区干净；实查五小时10%、周47%，继续本期。boss66c-smoke 已失败退出，未重复启动；两例成功，apply 缺 CodexYunshang._acted 战斗列表。仅补测试宿主数据、不替换原版方法；失败原件另存 .sandbox/boss_output_context_smoke_66c_failed.json，先 --only 定向确认。
 
 - 67检查点：已有两例有效原版参照后，实现独立 XBossOutputContext、资源 set 入口及 apply／普通输出 settled 接线草稿；尚未导入／验收，不可合并。定向 apply 原版任务仍在共用槽排队；下一步先确认宿主，再全121例与真实公式测试。
+
+- 67验证进展：boss67-import（runId b4d7df3d65354831b803dacf9842e3f6）退出0、无 SCRIPT ERROR／ERROR／Parse／Compile Error，新增域和专项UID已生成。文档／JSON／链接／编号通过，MV访问守卫16/16。原版定向任务先排、导入后排而导入先取得槽，原版已等360秒；公平性记录追加，不改工具。
