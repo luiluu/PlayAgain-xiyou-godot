@@ -369,6 +369,8 @@ MODULE_FORMULAS = {'CodexCat.formula(user,item,b)': 'cat'}
 MODULE_FORMULAS.update({f'CodexGarou.base(a,b,{i})': 'garou' for i in range(10250, 10264)})
 # 168 米拉 CodexMira.damage(a,b,id)：10140～10151（10147 原文写的是 10146，XMira.formula 按原文的 id 算）
 MODULE_FORMULAS.update({f'CodexMira.damage(a,b,{i})': 'mira' for i in range(10140, 10152)})
+# 172 宿傩 CodexSukuna.damage(a,b,id,this)：10229～10233、10236～10238（XSukuna.formula）
+MODULE_FORMULAS.update({f'CodexSukuna.damage(a,b,{i},this)': 'sukuna' for i in [10229, 10230, 10231, 10232, 10233, 10236, 10237, 10238]})
 # 167 渡鸦 5 个伤害技能：整条公式含 CodexRaven.legionStrikeRate／skillCoefficient（XRaven.formula 照原文逐技能写）
 MODULE_FORMULAS.update({re.sub(r'\s+', '', f): 'raven' for f in [
     '(a.mat * 78 + a.mmp * 39) * (CodexRaven.legionStrikeRate(a) * CodexRaven.skillCoefficient(a, 10122))',

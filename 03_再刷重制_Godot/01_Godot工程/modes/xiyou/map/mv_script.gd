@@ -47,6 +47,12 @@ static func _module_recruit(module: String) -> Callable:
 					return false
 				await interp.host.show_text("", 0, [XGarou.RECRUIT_TEXT])  # $gameMessage.add
 				return true
+		"CodexSukuna":
+			return func(s: XState, interp) -> bool:
+				if not XSukuna.recruit(s):
+					return false
+				interp.host.toast(XSukuna.RECRUIT_TEXT)  # $.toaster
+				return true
 	return Callable()
 
 

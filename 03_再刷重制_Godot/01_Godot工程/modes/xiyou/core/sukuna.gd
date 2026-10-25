@@ -7,16 +7,18 @@ extends RefCounted
 ##   没学黑闪 10225 就学。
 ## - 能力值：stage 3 时八项 ×3（取整、夹上限）；xparam 命中／暴击加 stage 1／2／3 → 3／6.66／9.99；被动缓存 stage 2／3 时
 ##   终伤与暴伤各加 6.66／9.99（refreshPassiveCache 包装）。
-## - 公式 CodexSukuna.damage(a,b,id,this)：权重 × (火术用魔攻，否则攻击) × coefficient × (1＋0.15×熟练度)；CodexDamage 结算里减防项为 0
+## - 公式 CodexSukuna.damage(a,b,id,this)：权重 × (火术用魔攻，否则攻击) × coefficient × (1＋0.15×熟练度)，神灶：开的权重另乘准备层数（第一期 0）；CodexDamage 结算里减防项为 0
 ##   （防御由伤害钩子 sukuna 的物防／魔防率 ×0.5、捌 ×0.15 处理）。coefficient：没学 10247 为 88888，否则 50～上限级插值。
 ##   斩击另乘：适应层（战斗内，第一期 0）、捌打护盾 ×1.5、领域 ×1.3、黑闪觉醒、带伤口且戴神武解 ×1.2 等——只有护盾、伤口、神武解
 ##   这几项不靠战斗机制，照写；其余战斗内状态第一期恒为初值。
 ## - 伤害钩子 sukuna（XActorDamageHooks）：10229～10238 定物理（神灶 10232／10233 为魔法）；空间斩／次元斩（10234／10235）为真伤、
 ##   属性 13；其余物防率 ×0.5（捌非冲击段 ×0.15）、魔防率 ×0.5；stage 3 结算 ×1.5。
+##   原版 stage 3 另包 makeDamageValue（结果 ×1.99 取整）：照 MiraRavenNumberBoost 先例在 CodexDamage 结算下并进钩子，结算再 ×1.99
+##   （只差取整次序；参照伤害行是 1 级 0 进阶，不涉及）。
 ## - 招募（公共事件 9007 的 try { if (!CodexSukuna.recruit()) 还号角 }）：已在队返回 false；没戴神武解 4581 时背包有就拿、没有就生成，
 ##   装进装备类型 13 的槽；入队、同步；右上角提示「宿傩加入队伍，已装备神武解。」。
 ## 未移植（第二期起）：领域展开与神灶准备、看破层数、追斩、伤口（受治疗减半）、魔虚罗适应、黑闪（CodexBlackFlash，与甚尔共用）、
-## 真伤段免护盾、技能使用条件与战斗中技能列表过滤、领域减耗、普攻换 10238、stage 3 的 makeDamageValue ×1.99（另见下）、
+## 真伤段免护盾与免受伤减免（harmRe）、applyCriticalRate 改写（暴击时十指／二十指暴伤从缓存挪出、按基础值×加成另加）、技能使用条件与战斗中技能列表过滤、领域减耗、普攻换 10238、
 ## 开战 TP 至少 60、技能分类与界面、外观、Map132 商店补号角 2938、旧档迁移。
 
 const ACTOR := 172
@@ -96,6 +98,8 @@ static func formula(a, b, item: Dictionary) -> float:
 	var m := float(a.skillMasteryLevel(MASTERY_SOURCE.get(id, id)))
 	var fire := id == 10232 or id == 10233
 	var weight: float = WEIGHTS[id]
+	if id == 10233:
+		weight *= 0.0  # × (action._sukunaPreparation || 神灶准备层数)：领域与准备层数第一期恒 0，直接施放的神灶：开为 0
 	var value := maxf(0.0, (a.mat if fire else a.atk) * weight) * coefficient(a) * (1 + 0.15 * m)
 	if SLASH.has(id):
 		if id == 10230 and float(b.shield) > 0.0:
@@ -147,6 +151,7 @@ static func damage_ops(item: Dictionary, a) -> Array:
 			ops.append({"op": "mul", "field": "magicalDefenseRate", "value": 0.5})
 	if stage(a) == 3:
 		ops.append({"op": "mul", "field": "settlementMultiplier", "value": 1.5})
+		ops.append({"op": "mul", "field": "settlementMultiplier", "value": 1.99})  # makeDamageValue 包装
 	return ops
 
 

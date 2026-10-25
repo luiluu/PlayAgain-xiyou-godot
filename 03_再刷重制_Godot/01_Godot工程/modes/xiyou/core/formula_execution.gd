@@ -31,6 +31,8 @@ static func run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swit
 		return {"available": true, "value": XGarou.formula(a, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "mira":  # CodexMira.damage(a,b,id)（168 米拉，XMira.formula）
 		return {"available": true, "value": XMira.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
+	if status == "module" and program.get("module") == "sukuna":  # CodexSukuna.damage(a,b,id,this)（172 宿傩，XSukuna.formula）
+		return {"available": true, "value": XSukuna.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "raven":  # 渡鸦 5 个伤害技能的整条公式（167，XRaven.formula）
 		return {"available": true, "value": XRaven.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if int(program.get("version", 0)) != 1 or not status in ["pure", "effectful"]:

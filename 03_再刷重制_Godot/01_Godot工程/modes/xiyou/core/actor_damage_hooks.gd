@@ -1,17 +1,17 @@
 class_name XActorDamageHooks
 extends RefCounted
-## 专属角色模块的伤害钩子（原版 CodexDamageHooks 里的 raven、native-number-pools、mira）：宿主侧 capture 按当时的
+## 专属角色模块的伤害钩子（原版 CodexDamageHooks 里的 raven、native-number-pools、mira、sukuna）：宿主侧 capture 按当时的
 ## 行动者／目标算好帧操作（只含数值），处理函数只把它们原样交回注册表。各操作都是加或乘（mode 为设定），彼此次序无关。
 
 static func descriptor() -> Dictionary:
 	return {"id": "actor-modules", "version": "1", "capabilities": ["damage.actor_modules"],
 		"contexts": ["facts"], "hooks": [{"point": "damage.before", "order": 41, "reads": ["facts.actorModules"],
-			"writes": ["mode", "magicalDefenseRate", "elementAdd", "normalAdd", "finalAdd", "finalMultiplier", "skillMultiplier",
+			"writes": ["mode", "kind", "elements", "physicalDefenseRate", "magicalDefenseRate", "elementAdd", "normalAdd", "finalAdd", "finalMultiplier", "skillMultiplier",
 				"settlementMultiplier", "criticalAdd", "incomingMultiplier"], "handler": build}]}
 
 
 static func capture(item: Dictionary, a: XBattler, b: XBattler) -> Dictionary:
-	var ops: Array = XRaven.damage_ops(item, a) + XNumberBoost.damage_ops(item, a, b) + mira_ops(item, a, b)
+	var ops: Array = XRaven.damage_ops(item, a) + XNumberBoost.damage_ops(item, a, b) + mira_ops(item, a, b) + XSukuna.damage_ops(item, a)
 	return {"ops": ops}
 
 
