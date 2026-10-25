@@ -71,4 +71,4 @@ for(const {id,spec} of specs.filter(row=>!filter||filter.test(row.id)))cases.pus
  const pre=snap(b);b.gainHp(-1);rows.push({op:{op:'outside',who:'b',kind:'hp',value:-1},before:pre,after:snap(b)});
  return {rate:D.outputRate(a),icon:a.isStateAffected(2651),before,rows,after:Object.fromEntries(Object.entries(bs).map(([k,x])=>[k,snap(x)])),caught:errors.slice()};
 }));
-process.exit(finish(host,process.argv.includes('--smoke')?'boss_output_context_smoke.json':'boss_output_context.json',{scope:'Explicit ordinary action scopes; synthetic resource script inputs, native engine wrappers unchanged',cases})?0:1);
+process.exit(finish(host,process.argv.includes('--smoke')?'boss_output_context_smoke.json':filter?'boss_output_context_selected.json':'boss_output_context.json',{scope:'Explicit ordinary action scopes; synthetic resource script inputs, native engine wrappers unchanged',cases})?0:1);

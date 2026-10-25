@@ -41,3 +41,24 @@
 
 - 用户明确继续；实查五小时0%、周45%，HEAD dc81efb9、工作区干净、无在途任务。沿用当前树／分支，先做原版入口冒烟样本，再扩参照。
 - 本小期先交明确资源域框架与action.apply已有公式gain链；新增set资源接口按原版直接入口单独验。Godot尚无customPostDamageEval专门宿主、formula set编译能力亦未交接，不把原版入口采样等同于完整迁移这些宿主。
+
+
+## 可优化补充（本车道外，交总装安排）
+
+- 本次上下文原版3例冒烟在共用4槽外排队数分钟，其他车道两组整轮测试持续占满；需关注短专项在长批测续接时的等待公平性。当前只记录现象，不调大上限、不绕过共用槽、不终止他人任务。若确认后续批测长期抢先占槽，可由工具车道评估FIFO／等待者优先，保持内存并发上限与可回退。
+
+
+## 沙僧66→67（同树自动接力，恢复后上下文接力）
+
+- 用户已明确继续；五小时额度已重置，恢复开工0%、周45%，交接前实查7%、周46%。这次不是额度停手；上下文按既定40%接力。66创建67后停止，67唯一后续执行者。以本节最新提交HEAD为准，分支codex/passive-content-boss-context。
+- 第一条及所有文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b；只用此树，不在main写、不创建／清理worktree、不reset／cherry-pick、不建automation、不向唐僧或其他已有会话发消息。共用交接板／变更记录／步骤清单／当前状态只读，只登记本车道交付单。保留所有.sandbox、旧证据、generated和整树。
+- 本次恢复新增原版入口boss_output_context_probe.cjs（3476b2b4、785bd1fe及本节最后筛选修正），**尚无有效新参照、尚无运行时代码改动**。入口--smoke仅3例，默认121例；--only REGEX只采所选例并写_selected，避免覆盖完整数据。每例CASE_START，YEP脚本意外诊断会判失败，预期测试throw仅允许boss-context-probe。
+- **在途长任务只有boss66c-smoke.log**：路径03_再刷重制_Godot/04_验证/本地结果/任务/boss66c-smoke.log，runId898b9d6fcc0f4d78b56553b6b2a30df1。最后仍在等共用4槽（已等300秒），占槽包装器6671，尚未运行node；不要重复启动，先等待其状态／日志。用等待任务.sh --timeout 45，每次不超过60秒。其他车道两组整轮rules持续占满槽，不绕槽、不终止别人任务；公平性待观察项已写可优化，不碰工具车道文件。
+- 当前新增未验证专项骨架tests/xiyou_boss_output_context.gd／.tscn已随本节WIP保存；**尚不能跑或导入**：它引用待实现的resources.boss_output.with_action／is_empty与set_resource，夹具boss_output_context_oracle.json尚不存在。只搭好回放骨架，不算通过。没有新uid；不要误把未导入说成已导入。
+- 原版小样通过后先看caught／rows实际行为，必要时仅--only补宿主；再跑默认121例并保留失败原件。native setup是真实敌人6×3（a为Boss霸体、b目标、c域外或嵌套来源）、actorTarget用演员1；HP500／MP300受真实上限夹值，不替换参数。使用真实apply／executeDamage／applyPostDamageEval，只把测试脚本资源步骤放window.__bossStep；有无上下文、0／3人数、霸体开关、gain／set、损失／治疗／零／小数、域外／自身、护盾、嵌套／YEP捕获异常、普通伤害settled均有输入。目标b同时是Boss身份但不开霸体；c不开霸体，嵌套来源不应借a倍率。BattleManager._subject故意设c，不能作为来源。
+- 测试骨架：HookBattle仅把给定资源步骤插入_calculate_damage的公式位置，数值伤害固定0；用于逐步核资源API及真实battle.apply作用域。post／execute只回放等价作用域，**不能因此宣称Godot customPre/PostDamageEval宿主已迁移**。还须另加至少两个真实XFormulaExecution effectful公式接入测试（compile_formula已确认b.gainHp(-7.9);0和b.gainMp(-7.9);0可编译）；不改formula_execution.gd。
+- 建议实现：独立XBossOutputContext（或resource_context内小类）保存行动frames与settled/direct（按目标＋hp/mp）；XResourceContext持有此对象，嵌套battle.apply的新resources共享同一域对象，正常／诊断退出恢复上层。scope不做静态全局。gain负值在护盾前eligible时放大一次，set下降同理；gain进入set时direct防重复。普通executeHp／MpDamage用已交_boss_output_value，再用settled保护内层gain与set；nested同目标同kind不重缩放，不同资源不互相遮盖。只对HP／MP生效，TP不动。
+- XResourceContext当前gain内部直接b.set+refresh，silent_gain只有TP调用；新增set_resource要保留set不写伤害结果槽、不标gain尾部dirty、YEP输入不变不refresh、护盾setter语义。别给旧gain日志额外插一层set行，否则旧formula_effects逐行回放会变。原版快照结果数组需深复制。
+- 重要限制：GDScript没有JS try/finally；当前翻译VM用诊断返回，先验证正常／诊断路径恢复，不虚称能捕获任意GDScript致命错误。测试throw在native由YEP eval捕获，Godot骨架用返回false模拟受控诊断，不设resources.error阻断外层后续操作。完整任意异常生命周期若未保证，要明确保留。
+- 已交普通输出ec75a3b1、实现00524617，78组＋六场8588项全过待Claude，不重做。上期Boss生命周期04e54453、29组＋八场42602项亦不重做。只跑新增专项＋直接依赖，先占槽导入无错误；长任务.py start、python3 -u、XIYOU_TEST_HEARTBEAT=30，交付后精简证据再清自己临时输出。先交小期再接序列／stateOrigin／1341／2550尾巴，各入口另采参照。
+- 前期未完成、依赖、文件禁区见本单前文和普通输出交付，不重读大范围审查。五本权能／容量满返书与1317／PREE-ASUP／WPNM-SkEType→race-battle接口→全部完成且额度足再核他人。自己的提交全待Claude，不自销核、不自评完成度。95%才WIP保存停，周98%收尾。
