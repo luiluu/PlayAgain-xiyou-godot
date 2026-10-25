@@ -1,7 +1,7 @@
 # 交付：claude/wukong-reach5
 
 - 车道／工作者：A 内容·楼层／悟空（Claude，重制_悟空_56）
-- 状态：进行中
+- 状态：进行中（期一待同步结果与验证）
 
 ## 变更记录草稿
 
@@ -22,7 +22,11 @@
 
 ## 验证
 
-- 待同步结束后补。
+- `xiyou_floor_reach139`：75/75（同步前，用转换器单跑的产物）。
+- **接续要点（悟空_56 因额度收尾，2026-10-25）**：
+  - sync10 被判 stuck（包装器失联，机器休眠）；sync11 已启动（`--accept-additions`，日志在悟空_56 的 scratchpad `sync11.log`，让它自己跑完）。**同步失败已 1 次，再失败先报总装。**
+  - 同步结束后要做：看 sync11 结果（`TASK_RESULT`、报告）→ 跑 `xiyou_event_compare`、`xiyou_rules.tscn xiyou_rules_d1b xiyou_rules_d1c xiyou_rules_d1d`、`内容覆盖检查.py`（看过报告再 `--update-baseline`）→ 把结果写在这里 → 状态改「可合并」。期一的切片提交是 dbe1fb34。
+  - 期二（桂树小屋）未开始接切片：专项草稿 `tests/xiyou_floor_reach173.gd/.tscn` 已 WIP 提交但没跑过。切片要做：Map147 的 keepEvents 加 2；maps 加 173、175；troops 加 528～537、559～568；Map173／175 keepEvents "*"。起点表、首领事件表见草稿常量（STARTS／BOSS173／BOSS175）。Map175 EV 战后「前往未知存在」传 Map177（已在切片）。
 
 ## 可优化（流程／工具／效率）
 
