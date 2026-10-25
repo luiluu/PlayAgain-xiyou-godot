@@ -1274,6 +1274,9 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	XZhenqi.pojia_actor = u if XZhenqi.has_daofa(u, "pojia") else null
 	var previous_resources := _action_resources
 	_action_resources = _new_lifecycle_resources()
+	if previous_resources != null:
+		_action_resources.boss_output = previous_resources.boss_output
+	_action_resources.boss_output.enter_action(u, t)
 	_action_resources.labels = {u: "a"}
 	if u != t:
 		_action_resources.labels[t] = "b"
@@ -1303,6 +1306,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	r.added = result.addedStates.duplicate()
 	r.removed = result.removedStates.duplicate()
 	_action_resources.publish()
+	_action_resources.boss_output.leave_action()
 	_action_resources = previous_resources
 	XZhenqi.pojia_actor = before
 	return r
@@ -1366,7 +1370,15 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 ## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：Boss输出→导入平衡→真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
 ## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
-	value = _boss_output_value(u, t, value)
+	if not _action_resources.boss_output.is_settled(t, "hp"):
+		value = _boss_output_value(u, t, value)
+	_action_resources.boss_output.enter_settled(t, "hp")
+	var out := _execute_hp_damage(u, t, value, drain)
+	_action_resources.boss_output.leave_settled()
+	return out
+
+
+func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
 	# Boss输出后按行动者的导入倍率缩放正伤害，之后走真气减伤与护盾
 	if value > 0.0 and XImportedBalance.scales(u, t, _reflecting):
 		value = XImportedBalance.reduced(value, u)
@@ -1386,7 +1398,15 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> f
 ## Game_Action.executeMpDamage（类型 2／4／6）：Boss输出→导入角色平衡缩放正伤害；MP 伤害（非回复）以目标现有 MP 为上限；
 ## 吸取再给行动者回 MP。返回结果槽的 MP 伤害。
 func execute_mp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
-	value = _boss_output_value(u, t, value)
+	if not _action_resources.boss_output.is_settled(t, "mp"):
+		value = _boss_output_value(u, t, value)
+	_action_resources.boss_output.enter_settled(t, "mp")
+	var out := _execute_mp_damage(u, t, value, drain)
+	_action_resources.boss_output.leave_settled()
+	return out
+
+
+func _execute_mp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
 	if value > 0.0 and XImportedBalance.scales(u, t, _reflecting):
 		value = XImportedBalance.reduced(value, u)
 	if value >= 0.0:

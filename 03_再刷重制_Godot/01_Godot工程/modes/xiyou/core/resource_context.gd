@@ -8,6 +8,7 @@ var slots := {}
 var labels := {}
 var error := ""
 var preview := false
+var boss_output := XBossOutputContext.new()
 ## Host inputs without this context itself (avoid a reference cycle).
 var lifecycle_inputs := {}
 
@@ -93,6 +94,9 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		return {}
 	var before := snapshot(b)
 	var requested := amount
+	if amount < 0.0:
+		amount = -boss_output.loss_value(b, resource, -amount)
+	boss_output.enter_direct(b, resource)
 	var shown := amount
 	# 扣血先吸收护盾，击穿后剩余减半。敌人走 ShieldSystem 的 gainHp 钩子，结果槽记减免后；角色的 gainHp 是
 	# krz_state_re 在 Game_Actor 上的自有方法（盖过后装的 gainHp 钩子），结果槽记原值，由 setHp 钩子减免实际扣量。
@@ -106,9 +110,8 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		r.hpAffected = true
 	var old: float = b.get(resource)
 	# YEP Core setters skip refresh for an exactly unchanged input, after gain writes slots.
-	if old + amount != old:
-		b.set(resource, old + amount)
-		refresh(b)
+	_set_resource(b, resource, old + amount)
+	boss_output.leave_direct()
 	# krz_state_re 的 gainHp／gainMp／gainTp：按请求值非零在调用结束后才标 dirty（本次内部 refresh 仍用旧缓存）
 	if requested != 0.0:
 		b.param_mark_dirty()
@@ -117,6 +120,38 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		"actualDelta": float(b.get(resource)) - old, "before": before, "after": after}
 	journal.append(entry)
 	return entry
+
+## 原版 setHp／setMp：护盾在 setter 内处理；不写伤害槽、不做 gain 末尾 dirty。
+func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
+	if not error.is_empty():
+		return {}
+	if not resource in ["hp", "mp", "tp"] or is_nan(value) or is_inf(value):
+		error = "invalid_resource_request"
+		return {}
+	var unsupported := supported(b)
+	if not unsupported.is_empty():
+		error = unsupported
+		return {}
+	var before := snapshot(b)
+	var old: float = b.get(resource)
+	_set_resource(b, resource, value)
+	var entry := {"receiver": labels.get(b, "b"), "resource": resource, "requestedValue": value,
+		"actualDelta": float(b.get(resource)) - old, "before": before, "after": snapshot(b)}
+	journal.append(entry)
+	return entry
+
+func _set_resource(b: XBattler, resource: String, value: float) -> void:
+	var old: float = b.get(resource)
+	if value < old:
+		value = old - boss_output.loss_value(b, resource, old - value)
+	boss_output.enter_direct(b, resource)
+	if resource == "hp" and value < old:
+		value = old - b.absorb_shield(old - value)
+	# YEP compares the requested input before refresh/clamp; an equal input does no refresh.
+	if value != old:
+		b.set(resource, value)
+		refresh(b)
+	boss_output.leave_direct()
 
 ## 公式 a.addShield(x)／b.addShield(x)：不写结果槽；逐句记录里 resource 记 shield，前后快照照常（快照不含护盾，另记 shieldBefore／shieldAfter）。
 func add_shield(b: XBattler, amount: float) -> Dictionary:
