@@ -1,0 +1,428 @@
+{
+ "source": "js/plugins/YEP_BattleEngineCore.js",
+ "sha256": "8b97a26f85ecde7baf23f553a571fe37216d5dbbc5734ff9524d2f3689f56a2f",
+ "cases": [
+  {
+   "id": "net_after_action",
+   "setup": {
+    "party": [
+     1,
+     8,
+     9,
+     10
+    ],
+    "troop": 2,
+    "item": 317,
+    "user": 8,
+    "use": [
+     317,
+     true,
+     0
+    ],
+    "capture": true
+   },
+   "errors": [],
+   "observed": {
+    "actions": [
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "item",
+       317
+      ],
+      "target": 0,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a9",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       0,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e1",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       0,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e2",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       0,
+       100000009900,
+       100000009900
+      ]
+     }
+    ],
+    "events": [
+     {
+      "commonEvent": 1320,
+      "afterActions": 0
+     },
+     {
+      "commonEvent": 173,
+      "afterActions": 2
+     }
+    ],
+    "petGetAfterActions": 2,
+    "toasts": [
+     "捕捉成功"
+    ],
+    "phase": "input",
+    "enemies": [
+     {
+      "index": 0,
+      "alive": false,
+      "hidden": true
+     },
+     {
+      "index": 1,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 2,
+      "alive": true,
+      "hidden": false
+     }
+    ],
+    "pets": 1,
+    "items317": 0
+   }
+  },
+  {
+   "id": "thunder_learned",
+   "setup": {
+    "party": [
+     23,
+     8,
+     9,
+     10
+    ],
+    "troop": 2,
+    "learn": [
+     217,
+     5083
+    ],
+    "use": [
+     217,
+     false,
+     1
+    ]
+   },
+   "errors": [],
+   "observed": {
+    "actions": [
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a23",
+      "item": [
+       "skill",
+       217
+      ],
+      "target": 1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a23",
+      "item": [
+       "skill",
+       533
+      ],
+      "target": 1,
+      "forcing": true,
+      "enemyHp": [
+       100000009900,
+       100000006436,
+       100000009900
+      ]
+     }
+    ],
+    "events": [
+     {
+      "commonEvent": 1320,
+      "afterActions": 0
+     },
+     {
+      "commonEvent": 84,
+      "afterActions": 2
+     }
+    ],
+    "toasts": [],
+    "phase": "input",
+    "enemies": [
+     {
+      "index": 0,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 1,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 2,
+      "alive": true,
+      "hidden": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "thunder_not_learned",
+   "setup": {
+    "party": [
+     23,
+     8,
+     9,
+     10
+    ],
+    "troop": 2,
+    "learn": [
+     217
+    ],
+    "use": [
+     217,
+     false,
+     1
+    ]
+   },
+   "errors": [],
+   "observed": {
+    "actions": [
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a23",
+      "item": [
+       "skill",
+       217
+      ],
+      "target": 1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000007511,
+       100000009900
+      ]
+     }
+    ],
+    "events": [
+     {
+      "commonEvent": 1320,
+      "afterActions": 0
+     },
+     {
+      "commonEvent": 84,
+      "afterActions": 2
+     }
+    ],
+    "toasts": [],
+    "phase": "input",
+    "enemies": [
+     {
+      "index": 0,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 1,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 2,
+      "alive": true,
+      "hidden": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "thunder_battle_end",
+   "setup": {
+    "party": [
+     23,
+     8,
+     9,
+     10
+    ],
+    "troop": 2,
+    "learn": [
+     217,
+     5083
+    ],
+    "use": [
+     217,
+     false,
+     0
+    ],
+    "enemiesHp": 1,
+    "othersHidden": true
+   },
+   "errors": [],
+   "observed": {
+    "actions": [
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       1,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a23",
+      "item": [
+       "skill",
+       217
+      ],
+      "target": 0,
+      "forcing": false,
+      "enemyHp": [
+       1,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a23",
+      "item": [
+       "skill",
+       533
+      ],
+      "target": 0,
+      "forcing": true,
+      "enemyHp": [
+       0,
+       100000009900,
+       100000009900
+      ]
+     }
+    ],
+    "events": [
+     {
+      "commonEvent": 1320,
+      "afterActions": 0
+     },
+     {
+      "commonEvent": 84,
+      "afterActions": 2
+     }
+    ],
+    "victory": 3,
+    "toasts": [],
+    "phase": null,
+    "enemies": [
+     {
+      "index": 0,
+      "alive": false,
+      "hidden": false
+     },
+     {
+      "index": 1,
+      "alive": false,
+      "hidden": true
+     },
+     {
+      "index": 2,
+      "alive": false,
+      "hidden": true
+     }
+    ]
+   }
+  }
+ ]
+}
