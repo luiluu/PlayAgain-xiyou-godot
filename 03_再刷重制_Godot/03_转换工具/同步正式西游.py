@@ -313,6 +313,77 @@ _runner_lock = threading.Lock()
 # XIYOU_PROBE_WEIGHTS='{"x_probe.cjs": 2}' 可临时覆盖（超过共用上限按上限算）。
 PROBE_WEIGHTS = {'event_probe.cjs': 3}
 
+# event_probe 按地图分几个进程并行（唐僧 2026-10-25）：整轮 4318 例单进程是同步的长杆。按用例数把单元（m<地图>、ce<公共事件>）
+# 切成连续几段，各段一个进程、各占 1 槽、各用自己的存档目录，跑完按原顺序拼回 .sandbox/events.json（与单进程逐字相同）。
+# EVENT_PROBE_SHARDS=1 退回单进程。各段的存档目录不带头顶／云裳成长记录：每例新开局都要整份复制重写这两份记录，
+# 种子里已累积到 7 MB／4 MB，空记录的输出相同（117 例实测）。
+EVENT_LEDGERS = ('crown_progress_v1.json', 'yunshang_orders_v1.json')
+EVENT_MERGE_JS = r'''
+const fs = require('fs'), [out, ...parts] = process.argv.slice(1);
+const docs = parts.map(p => JSON.parse(fs.readFileSync(p, 'utf8')));
+for (const d of docs) if (JSON.stringify([d.sourceIdentity, d.setup]) !== JSON.stringify([docs[0].sourceIdentity, docs[0].setup])) throw new Error('分段的来源或设置不一致');
+const cases = [].concat(...docs.map(d => d.cases));
+fs.writeFileSync(out, JSON.stringify({sourceIdentity: docs[0].sourceIdentity, setup: docs[0].setup, cases}));
+console.log(JSON.stringify({version: docs[0].sourceIdentity.releaseVersion, cases: cases.length, shards: parts.length,
+  unfinished: cases.filter(x => !x.finished).map(x => x.id), errors: cases.filter(x => x.errors).map(x => x.id)}));
+'''
+
+
+def event_units(env):
+    """与 event_probe.cjs 的用例顺序相同：切片地图依次，再切片公共事件；附各单元用例数（公共事件按 1 算）。"""
+    gen = Path(env['XIYOU_GENERATED'])
+    slice_ = json.loads((HERE / 'xiyou_slice.json').read_text(encoding='utf-8'))
+    manifest = json.loads((gen / 'manifest.json').read_text(encoding='utf-8'))
+    out = []
+    for mid in slice_['maps']:
+        data = json.loads((gen / 'maps' / ('Map%03d.json' % mid)).read_text(encoding='utf-8'))
+        n = sum(1 for ev in data.get('events') or [] if ev for pg in ev['pages']
+                if any(c.get('code') != 0 for c in pg.get('list') or []))
+        out.append(('m%d' % mid, n))
+    return out + [('ce%d' % ce, 1) for ce in manifest['slice']['commonEvents']]
+
+
+def split_contiguous(weighted, n):
+    """按权重把有序单元切成至多 n 段连续段（保持顺序，拼回即原顺序）。"""
+    total = sum(w for _, w in weighted) or 1
+    groups, acc = [[]], 0
+    for unit, w in weighted:
+        if groups[-1] and acc >= total * len(groups) / n and len(groups) < n:
+            groups.append([])
+        groups[-1].append(unit)
+        acc += w
+    return [g for g in groups if g]
+
+
+def run_event_sharded(cmd, env, box, only=None):
+    """event_probe 分段并行；结果写 .sandbox/events.json，返回与 run_node 同形的结果。"""
+    import concurrent.futures
+    shards = max(1, int(os.environ.get('EVENT_PROBE_SHARDS', '4')))
+    weighted = [u for u in event_units(env) if only is None or u[0] in set(only)]
+    groups = split_contiguous(weighted, shards)
+    if len(groups) < 2:
+        return run_node(cmd, env)
+
+    def part(i):
+        sub = box / ('shard-%d' % i)
+        sub.mkdir()
+        for name in ['save', 'macport']:
+            if (box / name).is_dir():
+                shutil.copytree(box / name, sub / name)
+        e = dict(env, XIYOU_ORACLE_SANDBOX=str(sub), XIYOU_PROBE_UNITS=json.dumps(groups[i]),
+                 XIYOU_EVENT_OUT=str(sub / 'events.json'))
+        return run_node(cmd, e, weight=1)
+    with concurrent.futures.ThreadPoolExecutor(len(groups)) as pool:
+        done = list(pool.map(part, range(len(groups))))
+    text = ''.join('（第 %d 段 %d 个单元）\n%s%s' % (i + 1, len(groups[i]), p.stdout, p.stderr) for i, p in enumerate(done))
+    bad = [p for p in done if p.returncode]
+    if bad:
+        return subprocess.CompletedProcess(cmd, bad[0].returncode, text, '')
+    m = subprocess.run(['node', '-e', EVENT_MERGE_JS, str(SANDBOX / 'events.json')] +
+                       [str(box / ('shard-%d' % i) / 'events.json') for i in range(len(groups))],
+                       cwd=ORACLE_DIR, capture_output=True, text=True)
+    return subprocess.CompletedProcess(cmd, m.returncode, text + m.stdout, m.stderr)
+
 
 def runner():
     global _runner
@@ -348,11 +419,11 @@ def heavy_slot(label, weight=1):
         yield
 
 
-def run_node(cmd, env):
+def run_node(cmd, env, weight=None):
     """跑一个 node 探针：先在 并行测试.py 的跨工作树共用槽（CHECK_GLOBAL_JOBS，状态目录同测试）占位再跑，
     几条车道同时同步、跑测试时合起来不超上限（唐僧 2026-10-21：两条车道同步加测试曾把 8 核负载冲到 21）。
     吃内存的探针按 PROBE_WEIGHTS 多占几槽。SYNC_JOBS 只决定本次同步最多同时排几个探针。"""
-    with heavy_slot(' '.join(cmd), probe_weight(cmd[0])):
+    with heavy_slot(' '.join(cmd), probe_weight(cmd[0]) if weight is None else weight):
         # event_probe 在一个进程里连跑全部事件页，内存随事件数涨；切片事件过千页后撞 node 默认 4GB 堆上限（悟空_55 簇 8／13 同步 OOM），放宽到 10GB
         env = dict(env)
         env.setdefault('NODE_OPTIONS', '--max-old-space-size=10240')
@@ -427,19 +498,21 @@ def run_probes(log, cache=None):
         # 同一个切片探针的不同难度各有独立种子副本，不共享写入目录。
         box = runs / (Path(cmd[0]).stem + ('-d' + cmd[1] if cmd[0] == 'slice_probe.cjs' and len(cmd) == 2 else ''))
         box.mkdir(parents=True)
+        event = cmd[0] == 'event_probe.cjs'
         for name in ['save', 'macport']:
             if (SANDBOX / name).is_dir():
-                shutil.copytree(SANDBOX / name, box / name)
+                shutil.copytree(SANDBOX / name, box / name, ignore=shutil.ignore_patterns(*EVENT_LEDGERS) if event else None)
         env = dict(os.environ, XIYOU_ORACLE_SANDBOX=str(box))
+        node = (lambda c, e, only=None: run_event_sharded(c, e, box, only)) if event else (lambda c, e, only=None: run_node(c, e))
         t = time.time()
         part = partial.get(logical)
         if part is None:
-            p = run_node(cmd, env)
+            p = node(cmd, env)
             return cmd, p.returncode, p.stdout + p.stderr, time.time() - t
         text = ''
         if part:
             env['XIYOU_PROBE_UNITS'] = json.dumps(part)
-            p = run_node(cmd, env)
+            p = node(cmd, env, part)
             text = p.stdout + p.stderr
             if p.returncode:
                 return cmd, p.returncode, text, time.time() - t
