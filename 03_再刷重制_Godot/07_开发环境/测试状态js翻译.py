@@ -70,5 +70,75 @@ class PoisonTranslationTests(unittest.TestCase):
             self.assertEqual(one('Turn End', body)['op'], 'js')
 
 
+class Batch2TranslationTests(unittest.TestCase):
+    """第二批：开战／回合开始加状态、暴击后加状态、开战／胜利／附加时回复、开战设变量、原版语法错误块。"""
+    rows = json.loads(FIXTURES.read_text())['batch2']
+
+    def ops(self):
+        out = {}
+        for row in self.rows:
+            for e in parse_state_effects(row['note']):
+                if e['op'] in ('add_state', 'gain_steps', 'set_variable', 'syntax_error'):
+                    out.setdefault(e['op'], []).append((row['state'], e))
+        return out
+
+    def test_inventory(self):
+        ops = self.ops()
+        self.assertEqual({k: len(v) for k, v in ops.items()},
+                         {'add_state': 23, 'gain_steps': 11, 'set_variable': 4, 'syntax_error': 9})
+        self.assertEqual(sorted(s for s, _ in ops['gain_steps']), [79, 607, 609, 630, 734, 735, 736, 857, 917, 1334, 1336])
+        self.assertEqual(sorted((s, e['id']) for s, e in ops['set_variable']), [(1351, 1176), (1683, 1683), (1733, 966), (2560, 1597)])
+        self.assertEqual(sorted(s for s, _ in ops['syntax_error']), [1070, 1351, 1352, 1635, 1636, 1669, 1671, 1747, 2045])
+        for s, e in ops['add_state']:
+            self.assertEqual(e.get('criticalOnly', False), e['phase'] == 'establish', s)
+        for s, e in ops['gain_steps']:
+            for step in e['steps']:
+                self.assertEqual(step['program']['status'], 'pure')
+                self.assertLessEqual(set(step['program']['capabilities']), {'read.battler'})
+
+    def test_add_state_boundaries(self):
+        self.assertEqual(one('Battle', 'user.addState(12);'), {'phase': 'battle', 'op': 'add_state', 'who': 'user', 'id': 12})
+        self.assertEqual(one('Turn Start', 'user.addState(12)')['op'], 'add_state')
+        for tag, code in [('Turn End', 'user.addState(12);'), ('Battle', 'target.addState(12);'), ('Battle', 'user.addState(12, 3);'),
+                          ('Battle', 'user.addState(12); user.addState(13);'), ('Battle', 'user.removeState(12);'),
+                          ('Battle', 'user.addState(v[12]);'), ('Victory', 'user.addState(12);')]:
+            with self.subTest(code=code):
+                self.assertEqual(one(tag, code)['op'], 'js')
+
+    def test_critical_boundaries(self):
+        ok = 'if (target.result().critical) { var param = 500; var turns = 3; user.addState(param, turns); }'
+        self.assertEqual(one('Establish', ok), {'phase': 'establish', 'op': 'add_state', 'who': 'user', 'id': 500, 'criticalOnly': True})
+        self.assertEqual(one('Establish', ok.replace('user.', 'target.'))['who'], 'target')
+        for code in [ok.replace('critical', 'missed'), ok.replace('target.result', 'user.result'), ok.replace('param, turns', 'param'),
+                     ok.replace('var turns = 3; ', ''), ok + ' user.gainHp(1);', ok.replace('if (', 'if (!')]:
+            with self.subTest(code=code):
+                self.assertEqual(one('Establish', code)['op'], 'js')
+        self.assertEqual(one('Respond', ok)['op'], 'js')
+
+    def test_set_variable_and_gain_boundaries(self):
+        self.assertEqual(one('Battle', '$gameVariables.setValue(5, 2);'), {'phase': 'battle', 'op': 'set_variable', 'id': 5, 'value': 2})
+        for tag, code in [('Turn Start', '$gameVariables.setValue(5, 2);'), ('Battle', '$gameVariables.setValue(5, user.atk);'),
+                          ('Battle', '$gameVariables.setValue(5, -2);'), ('Battle', '$gameSwitches.setValue(5, true);')]:
+            with self.subTest(code=code):
+                self.assertEqual(one(tag, code)['op'], 'js')
+        self.assertEqual(one('Battle', 'user.gainTp(200);')['steps'][0]['resource'], 'tp')
+        self.assertEqual(len(one('Victory', 'var rate = 0.2; var value = Math.ceil(user.mhp * rate); user.gainHp(value);')['steps']), 1)
+        for tag, code in [('Turn End', 'user.gainTp(200);'), ('Battle', 'target.gainHp(5);'), ('Battle', 'user.gainHp(user.atk);'),
+                          ('Battle', 'user.gainHp(Math.random());'), ('Battle', 'user.gainHp(v[3]);'), ('Battle', 'user.gainTp(200); evil();'),
+                          ('Battle', 'user.setHp(5);'), ('Battle', 'var x = user.mhp; target.gainHp(x);')]:
+            with self.subTest(code=code):
+                self.assertEqual(one(tag, code)['op'], 'js')
+
+    def test_syntax_error_exact(self):
+        for row in self.rows:
+            for m in EFFECT_RE.finditer(row['note']):
+                if parse_state_effects(m.group(0))[0]['op'] != 'syntax_error':
+                    continue
+                with self.subTest(state=row['state']):
+                    tag = m.group(1)
+                    # 任何改动（哪怕补一个空格以外的字符）都不再按测过的报错块认
+                    self.assertEqual(one(tag, m.group(2) + ';')['op'], 'js')
+
+
 if __name__ == '__main__':
     unittest.main()

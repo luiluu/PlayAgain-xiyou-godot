@@ -61,6 +61,13 @@ func _run() -> void:
 	_poison_tick(cases["poison.tick"].observed, cases["poison.tick"].setup)
 	_poison_turn_end(cases["poison.turn_end"])
 	_save_round_trip()
+	_batch2_translated(cases)
+	_add_state_self(cases["add_state.self"].observed)
+	_add_state_critical(cases["add_state.critical"].observed)
+	_gain_self(cases["gain.self"].observed)
+	_set_variable(cases["set_variable.battle"].observed)
+	_battle_start_order(cases["battle.start_order"])
+	_syntax_errors(cases["syntax_error.blocks"].observed)
 	finish()
 
 
@@ -210,6 +217,132 @@ func _save_round_trip() -> void:
 	check("save.state_data", float(back.actors[a.actor_id].state_data.get("_stackingPoison", 0)) == 4.0, row.get("stateData"))
 	var other: XActor = s.members()[1]
 	check("save.state_data_absent_when_empty", not d.actors[str(other.actor_id)].has("stateData"), d.actors[str(other.actor_id)].keys())
+
+
+# ---- 第二批 ----
+const SLOT_PHASE := {"battle": "battle", "turnStartState": "turn_start", "victory": "victory", "addState": "apply", "establishState": "establish"}
+const BATCH2 := {"add_state.self": "add_state", "add_state.critical": "add_state", "gain.self": "gain_steps", "set_variable.battle": "set_variable"}
+
+
+func _ops(sid: int, phase: String) -> Array:
+	return XDB.rec("States", sid).get("effects", []).filter(func(e): return str(e.phase) == phase).map(func(e): return str(e.op))
+
+
+## 原版探针按代码形状扫出的每一块都已翻译（扫描与转换各自独立，数目对不上就说明某一边漏了）
+func _batch2_translated(cases: Dictionary) -> void:
+	for id in BATCH2:
+		var blocks: Array = cases[id].setup.blocks
+		var bad := blocks.filter(func(b): return _ops(int(b[0]), SLOT_PHASE[str(b[1])]) != [BATCH2[id]])
+		check("batch2.translated.%s" % id, not blocks.is_empty() and bad.is_empty(), bad)
+
+
+func _state_view(b: XBattler) -> Array:
+	var ids := b.state_ids.duplicate()
+	ids.sort()
+	return ids
+
+
+## 开战／回合开始 user.addState(N)：持有者活着才加；倒下的（isStateAddable）不加
+func _add_state_self(o: Dictionary) -> void:
+	for row in o.rows:
+		var a := _holder("actor")
+		var sid := int(row.state)
+		a.add_state(sid)
+		if row.dead:
+			a.hp = 0.0
+			XResourceContext.new().refresh(a)  # setHp(0)＋refresh：倒下
+		XStateEffects.run_one(str(row.phase), a, XDB.rec("States", sid), {"random": XRandomStream.create(XRandomStream.hex64(5), "battle")})
+		var want: Array = row.after.states.map(func(x): return int(x))
+		want.sort()
+		var turns_ok := true
+		for k in row.after.turns:
+			var st := XDB.rec("States", int(k))
+			if int(st.minTurns) == int(st.maxTurns) and int(a.state_turns.get(int(k), -1)) != int(row.after.turns[k]):
+				turns_ok = false
+		check("add_state.self.%d.%s" % [sid, row.dead], _state_view(a) == want and turns_ok and a.is_dead() == row.dead,
+			{"godot": [_state_view(a), a.state_turns], "mv": row.after})
+
+
+## Establish：目标这次 critical 才给行动者／目标加状态；返回值原样
+func _add_state_critical(o: Dictionary) -> void:
+	for row in o.rows:
+		var a := _holder("actor")
+		var e := _holder("enemy")
+		var sid := int(row.state)
+		var rc := XResourceContext.new()
+		var ctx := {"attacker": a, "defender": e, "item": XDB.rec("Skills", 1), "critical": row.critical, "resources": rc, "value": 7.0,
+			"random": XRandomStream.create(XRandomStream.hex64(5), "battle")}
+		var value := XStateEffects.run_one("establish", a, XDB.rec("States", sid), ctx)
+		var wu: Array = row.user.states.map(func(x): return int(x))
+		var wt: Array = row.target.states.map(func(x): return int(x))
+		var added: Array = rc.result(a).addedStates + rc.result(e).addedStates
+		check("add_state.critical.%d.%s" % [sid, row.critical], value == float(row.value) and _state_view(a) == wu and _state_view(e) == wt
+			and added == (row.user.added + row.target.added).map(func(x): return int(x)),
+			{"godot": [value, _state_view(a), _state_view(e), added], "mv": row})
+
+
+## 开战／胜利／附加时 user.gainHp/Mp/Tp：HP 1000、MP 300 固定，三种起点；结果槽同原版
+func _gain_self(o: Dictionary) -> void:
+	var starts := [[500, 100, 10], [1, 0, 95], [1000, 300, 0]]
+	for row in o.rows:
+		var a := _holder("actor")
+		a.fixed = {"mhp": 1000.0, "mmp": 300.0}
+		var start: Array = starts[int(row.start)]
+		a.hp = float(start[0])
+		a.mp = float(start[1])
+		a.tp = float(start[2])
+		var rc := XResourceContext.new()
+		XStateEffects.run_one(str(row.phase), a, XDB.rec("States", int(row.state)), {"resources": rc})
+		var r := rc.result(a)
+		var got := [a.hp, a.mp, a.tp, r.hpDamage, r.mpDamage, r.tpDamage, r.hpAffected]
+		var want: Array = [row.hp, row.mp, row.tp] + row.slot
+		check("gain.self.%d.%d" % [row.state, row.start], _same(got, want), {"godot": got, "mv": want})
+
+
+## 开战 $gameVariables.setValue：编号超出 System.variables 的写入被原版忽略
+func _set_variable(o: Dictionary) -> void:
+	var s := XState.new_game(3, 1, [8])
+	for row in o.rows:
+		# 原版探针先 setValue(编号, 7)：超出范围的那次同样被忽略
+		if int(row.variable) < XDB.system().variables.size():
+			s.set_variable(int(row.variable), 7.0)
+		XStateEffects.run_one("battle", s.members()[0], XDB.rec("States", int(row.state)), {})
+		check("set_variable.%d" % row.state, s.variable(int(row.variable)) == float(row.value), [s.variable(int(row.variable)), row])
+
+
+## 接线：真实开战，607（开战 TP+200）在初始随机 TP 之后跑，TP 为 200
+func _battle_start_order(c: Dictionary) -> void:
+	var sid := int(c.setup.state)
+	var st := XDB.rec("States", sid)
+	# 607 是战斗结束解除的状态，Godot 开战前会先清掉上一场遗留的这类状态；原版探针直接给开战前的角色加上，这里临时关掉该旗标
+	var keep = st.removeAtBattleEnd
+	st.removeAtBattleEnd = false
+	XEnemy.force_roll = 100.0
+	var s := XState.new_game(3, 1, [8])
+	var a: XActor = s.members()[0]
+	a.add_state(sid)
+	var logic := XBattleLogic.new()
+	logic.elite_roll = 100.0
+	logic.setup(int(c.setup.troop), s)
+	st.removeAtBattleEnd = keep
+	check("battle.start_order", logic.actors[0].tp == float(c.observed.tp) and logic.actors[0].max_tp() == float(c.observed.maxTp),
+		[logic.actors[0].tp, c.observed])
+
+
+## 原版解析失败的块：译成 syntax_error，执行时什么都不改、返回值原样
+func _syntax_errors(o: Dictionary) -> void:
+	for row in o.rows:
+		var sid := int(row.state)
+		var st := XDB.rec("States", sid)
+		var effects: Array = st.get("effects", []).filter(func(e): return str(e.op) == "syntax_error")
+		var ok: bool = effects.size() >= 1 and row.unchanged and float(row.value) == 7.0
+		for e in effects:
+			var a := _holder("actor")
+			var t := _holder("enemy")
+			var before := [_state_view(a), a.hp, a.mp, a.tp, _state_view(t), t.hp]
+			var value := XStateEffects.run_one(str(e.phase), a, st, {"attacker": a, "defender": t, "item": XDB.rec("Skills", 1), "value": 7.0})
+			ok = ok and value == 7.0 and before == [_state_view(a), a.hp, a.mp, a.tp, _state_view(t), t.hp]
+		check("syntax_error.%d.%s" % [sid, row.slot], ok, [effects, row])
 
 
 func finish() -> void:

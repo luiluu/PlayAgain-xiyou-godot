@@ -136,13 +136,15 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 				continue
 			a.remove_state(sid)
 	# YEP_BuffsStatesCore Custom Battle Effect：startBattle 里我方（含后备）再敌方逐成员，在 dsPassiveSkill 开战标签加状态之前
-	XStateEffects.run_unit("battle", s.members())
-	XStateEffects.run_unit("battle", enemies)
+	# Game_Unit.onBattleStart：先各成员 onBattleStart（没有「保留 TP」即特殊旗标 3 时 TP 随机 0～24），再 processStateEval('battle')；
+	# 我方整队做完再敌方（state_js_probe battle.start_order：开战 TP+200 的 607 不被初始 TP 盖掉）
+	var start_ctx := {"random": _rule(), "variables": vars()}
+	for unit in [[actors, s.members()], [enemies, enemies]]:
+		for b in unit[0]:
+			if not b.is_preserve_tp():
+				b.tp = float(_mod(25, "initial_tp"))
+		XStateEffects.run_unit("battle", unit[1], start_ctx)
 	_battle_start_states()
-	# MV Game_Battler.onBattleStart：没有「保留 TP」（特殊旗标 3）时 TP 随机 0～24
-	for b in actors + enemies:
-		if not b.is_preserve_tp():
-			b.tp = float(_mod(25, "initial_tp"))
 	for b in actors + enemies:
 		b.start_warmups()
 	_escape_ratio = 0.5 * _avg_agi(actors) / maxf(_avg_agi(enemies), 1.0)
@@ -462,7 +464,7 @@ func start_turn() -> void:
 	# YEP_X_SkillCooldowns：Game_Troop.increaseTurn 时双方冷却/预热各减 1
 	for b in actors + enemies:
 		b.update_cooldowns()
-		XStateEffects.run("turn_start", b)  # Custom Turn Start Effect：onTurnStart 内，Unit.refresh 之前
+		XStateEffects.run("turn_start", b, {"random": _rule(), "variables": vars()})  # Custom Turn Start Effect：onTurnStart 内，Unit.refresh 之前
 		# krz onTurnStart 标 dirty，Game_Unit.onTurnStart 紧接 refresh：本回合起能力值重新读取
 		b.param_mark_dirty()
 		b.param_refresh()
@@ -1679,7 +1681,7 @@ func end_battle(result := -1) -> void:
 				if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):
 					b.remove_state(id)
 	if result >= 0 and result <= 2:
-		XStateEffects.run_unit(["victory", "escape", "defeat"][result], state.members())
+		XStateEffects.run_unit(["victory", "escape", "defeat"][result], state.members(), {"random": _rule(), "variables": vars()})
 	_clear_event_cursor()
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。

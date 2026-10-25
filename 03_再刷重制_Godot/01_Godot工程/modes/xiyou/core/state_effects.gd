@@ -7,7 +7,8 @@ extends RefCounted
 const BATTLER_PHASES := ["battle", "turn_start", "turn_end", "regenerate", "action_start", "victory", "escape", "defeat"]
 const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm", "react", "respond", "establish"]
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
-const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "poison_stack", "poison_tick"]
+const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "poison_stack", "poison_tick",
+	"add_state", "gain_steps", "set_variable", "syntax_error"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -132,6 +133,19 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 			holder.state_data["_stackingPoison"] = (_truthy_number(holder.state_data.get("_stackingPoison")) + float(e.n)) if e.mode == "add" else 0.0
 		elif op == "poison_tick" and execute:
 			_poison_tick(e, holder, c, ctx)
+		elif op == "add_state" and execute:
+			# 暴击后加状态（Establish）：只看这个目标的结果槽 critical；addState 的回合参数原版不认
+			if not e.get("criticalOnly", false) or c.get("critical", false):
+				_add_state(c.get(str(e.who)), int(e.id), ctx)
+		elif op == "gain_steps" and execute:
+			_gain_steps(e, holder, c, ctx)
+		elif op == "set_variable" and execute:
+			# Game_Variables.setValue：编号不在 1..System.variables 长度-1 内的写入原版直接忽略（如 1683 号脚本）
+			var vid := int(e.id)
+			if XState.current != null and vid > 0 and vid < XDB.system().get("variables", []).size():
+				XState.current.set_variable(vid, float(e.value))
+		elif op == "syntax_error":
+			pass  # 原版这块解析失败（SyntaxError），customEffectEval 只报错，什么都不改
 		elif op == "user_param_damage" and execute and ctx.get("resources") != null:
 			var r: Dictionary = ctx.record
 			for p in e.params:
@@ -170,6 +184,33 @@ static func _poison_tick(e: Dictionary, holder: XBattler, c: Dictionary, ctx: Di
 	var r := rc.result(holder)
 	if ctx.get("emit") is Callable and ctx.emit.is_valid():
 		ctx.emit.call({"type": "regen", "target": holder, "hp": r.hpDamage, "animation": int(e.animation), "state": int(c.state_id)})
+
+
+## Game_Battler.addState：isStateAddable（活着、未抵抗、本结果槽没刚去掉它）才加；已有的只续回合，都记入 addedStates
+static func _add_state(b: XBattler, id: int, ctx: Dictionary) -> void:
+	if b == null or not b.is_alive() or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
+		return
+	var rc = ctx.get("resources")
+	if rc != null and rc.result(b).removedStates.has(id):
+		return
+	b.add_state(id, ctx.get("random"))
+	if rc != null and not rc.result(b).addedStates.has(id):
+		rc.result(b).addedStates.append(id)
+
+
+## user.gainHp/Mp/Tp(式) 逐句：式子按持有者（a）算，经原生 gain（护盾、结果槽、refresh）。
+## 战斗外层没有行动结果槽时每块用新的（Battle／Victory 脚本前原版结果槽为空）。
+static func _gain_steps(e: Dictionary, holder: XBattler, c: Dictionary, ctx: Dictionary) -> void:
+	var rc = ctx.get("resources")
+	if rc == null:
+		rc = XResourceContext.new()
+		rc.random = ctx.get("random")
+	for step in e.steps:
+		var out := PhaseValueProgram.new().run_phase(step.program, c, 0.0, true)
+		if not out.available:
+			_diagnose(str(c.phase), int(c.state_id), holder, "gain_steps_unavailable")
+			return
+		rc.gain(holder, str(step.resource), float(out.value))
 
 
 ## JS「x || 默认」里 undefined／0／NaN 都算假
@@ -269,9 +310,9 @@ static func current() -> Dictionary:
 
 
 ## 一个单位（我方含后备或敌群）逐成员分发 Battler 版 phase
-static func run_unit(phase: String, members: Array) -> void:
+static func run_unit(phase: String, members: Array, ctx := {}) -> void:
 	for b in members:
-		run(phase, b)
+		run(phase, b, ctx)
 
 
 static func _diagnose(phase: String, state_id: int, holder: XBattler, op: String) -> void:

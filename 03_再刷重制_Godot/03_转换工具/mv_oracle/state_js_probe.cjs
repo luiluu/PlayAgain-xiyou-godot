@@ -138,6 +138,108 @@ cases.push(makeCase('poison.turn_end', {troop: 2, state: 460}, () => {
   });
 }));
 
+// ---- 第二批：开战／回合开始加状态、暴击后加状态、开战与胜利回复、开战设变量、原版语法错误块 ----
+const squash = code => code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '').replace(/\s+/g, '');
+const SLOT_PHASE = {battle: 'battle', turnStartState: 'turn_start', victory: 'victory', addState: 'apply', establishState: 'establish'};
+function blocks(slots, test) {
+  const out = [];
+  for (const st of w.$dataStates) if (st) for (const slot of slots) {
+    const code = st.customEffectEval[slot];
+    if (code && test(squash(code))) out.push([st.id, slot]);
+  }
+  return out;
+}
+const ADD = blocks(['battle', 'turnStartState'], c => /^user\.addState\(\d+\);?$/.test(c));
+const CRIT = blocks(['establishState'], c => /^if\(target\.result\(\)\.critical\)\{varparam=\d+;(varturns=\d+;)?(user|target)\.addState\(param(,turns)?\);\}$/.test(c));
+const GAIN = blocks(['battle', 'victory', 'addState'], c => /^(?:varrate=[\d.]+;varvalue=Math\.ceil\(user\.m[hm]p\*rate\);user\.gain(?:Hp|Mp)\(value\);|user\.gain(?:Hp|Mp|Tp)\([^;]+\);)+$/.test(c));
+const SETV = blocks(['battle'], c => /^\$gameVariables\.setValue\(\d+,\d+\);?$/.test(c));
+const snapshot = b => ({states: b._states.slice(), turns: Object.assign({}, b._stateTurns), hp: b.hp, mp: b.mp, tp: b.tp,
+  added: b.result().addedStates.slice(), dead: b.isDead()});
+// 持有者（角色）自己的开战／回合开始脚本；第二例持有者已倒下（isStateAddable 要求活着）
+cases.push(makeCase('add_state.self', {blocks: ADD}, () => {
+  const rows = [];
+  for (const [sid, slot] of ADD) for (const dead of [false, true]) {
+    const {a} = battle(2);
+    a.addState(sid); a.clearResult();
+    if (dead) { a.setHp(0); a.refresh(); a.clearResult(); }
+    a.customEffectEval(sid, slot);
+    rows.push({state: sid, phase: SLOT_PHASE[slot], dead, after: snapshot(a)});
+  }
+  return {rows};
+}));
+// 暴击后：行动者 a 的 Establish，目标 e 的结果槽 critical 真／假；addState 第二个参数（回合）原版不认
+cases.push(makeCase('add_state.critical', {blocks: CRIT}, () => {
+  const rows = [];
+  for (const [sid] of CRIT) for (const critical of [false, true]) {
+    const {a, e} = battle(2);
+    const action = new w.Game_Action(a); action.setSkill(1);
+    a.clearResult(); e.clearResult(); e.result().critical = critical;
+    const value = action.customEffectEval(e, sid, 'establishState', a, 7);
+    rows.push({state: sid, critical, value, user: snapshot(a), target: snapshot(e)});
+  }
+  return {rows};
+}));
+// 回复：固定 HP/MP 上限，起点 [hp, mp, tp]
+cases.push(makeCase('gain.self', {blocks: GAIN, mhp: 1000, mmp: 300, start: [[500, 100, 10], [1, 0, 95], [1000, 300, 0]]}, () => {
+  const rows = [];
+  for (const [sid, slot] of GAIN) for (let k = 0; k < 3; k++) {
+    const {a} = battle(2);
+    Object.defineProperty(a, 'mhp', {configurable: true, get: () => 1000});
+    Object.defineProperty(a, 'mmp', {configurable: true, get: () => 300});
+    const start = [[500, 100, 10], [1, 0, 95], [1000, 300, 0]][k];
+    a._hp = start[0]; a._mp = start[1]; a._tp = start[2]; a.clearResult();
+    try { a.customEffectEval(sid, slot); } finally { delete a.mhp; delete a.mmp; }
+    const r = a.result();
+    rows.push({state: sid, phase: SLOT_PHASE[slot], start: k, hp: a._hp, mp: a._mp, tp: a._tp,
+      slot: [r.hpDamage, r.mpDamage, r.tpDamage, r.hpAffected]});
+  }
+  return {rows};
+}));
+cases.push(makeCase('set_variable.battle', {blocks: SETV}, () => {
+  const rows = [];
+  for (const [sid, slot] of SETV) {
+    const {a} = battle(2);
+    const m = squash(w.$dataStates[sid].customEffectEval[slot]).match(/setValue\((\d+),/);
+    w.$gameVariables.setValue(+m[1], 7);
+    a.customEffectEval(sid, slot);
+    rows.push({state: sid, variable: +m[1], value: w.$gameVariables.value(+m[1])});
+  }
+  return {rows};
+}));
+// 接线：真实开战（BattleManager.startBattle），a1 带 607（开战 TP+200）；原版 onBattleStart 先随机初始 TP 再跑 Battle 脚本
+cases.push(makeCase('battle.start_order', {troop: 2, state: 607}, () => {
+  const {bm, a} = battle(2);
+  a.addState(607);
+  w.$gameParty._inBattle = false;
+  bm.startBattle();
+  return {tp: a.tp, maxTp: a.maxTp()};
+}));
+// 原版解析不了的块（SyntaxError）：customEffectEval 只报错，什么都不改
+const vm = require('vm');
+const SYNTAX = [];
+for (const st of w.$dataStates) if (st) for (const slot of Object.keys(st.customEffectEval)) {
+  const code = st.customEffectEval[slot];
+  if (!code) continue;
+  try { new vm.Script(code); } catch (e) { if (e instanceof SyntaxError || e.name === 'SyntaxError') SYNTAX.push([st.id, slot]); }
+}
+cases.push(makeCase('syntax_error.blocks', {blocks: SYNTAX}, () => {
+  const rows = [];
+  for (const [sid, slot] of SYNTAX) {
+    const {a, e} = battle(2);
+    const before = [snapshot(a), snapshot(e), w.JsonEx.stringify(w.$gameVariables._data)];
+    const n = errors.length;
+    let value = 7;
+    if (['confirmState', 'reactState', 'establishState', 'respondState', 'initiateState', 'selectState', 'deselectState', 'concludeState'].includes(slot)) {
+      const action = new w.Game_Action(a); action.setSkill(1);
+      value = action.customEffectEval(e, sid, slot, a, 7);
+    } else a.customEffectEval(sid, slot);
+    const reported = errors.slice(n).map(x => x.error);
+    errors.length = n;  // 预期的报错不进 nativeErrors
+    rows.push({state: sid, slot, value, reported, unchanged: w.JsonEx.stringify([snapshot(a), snapshot(e), w.JsonEx.stringify(w.$gameVariables._data)]) === w.JsonEx.stringify(before)});
+  }
+  return {rows};
+}));
+
 const ok = finish(host, 'state_js.json', {cases, nativeErrors: errors});
 w.Yanfly.Util.displayError = oldError;
 process.exit(ok ? 0 : 1);

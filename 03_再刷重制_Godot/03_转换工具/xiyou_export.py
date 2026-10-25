@@ -386,6 +386,88 @@ def poison_stack_effect(body, code, phase):
     return {'op': 'poison_tick', 'animation': int(anim), 'program': program}
 
 
+# ---- 第二批（state_js_probe add_state.*／gain.self／set_variable.battle／syntax_error.blocks）----
+# 原版解析不了（SyntaxError）的整块：customEffectEval 只报错、什么都不改。按整块 SHA256 认，翻成不执行的 syntax_error
+MEASURED_SYNTAX_ERRORS = frozenset([
+    ('crit', '05626128e01df36035196f0d8f48bbb3ac6b5e6877aeb8477f51be0dc22600fa'),
+    ('deselect', 'f1a324c47d470cf748c92bc314bad420a2d136d7fa135b3c8a33465edc6ff98f'),
+    ('confirm', '6f553de44ca2abf345b7b018dabc153ac268e61412976a2bad0a7a9c7a34cc2a'),
+    ('deselect', 'ea5cc004ddbe020f1796e366623b3073394c8ae91591643d08b1490dc1035949'),
+    ('deselect', 'ea4cdeb95230a457fe3e6cbe8c084baa00eddc839ef16249004f08dbd4ef1875'),
+    ('battle', '856ebb3b3461e3c4f0ad8d86fbe736b2dfde3c47ea3de661a13c16242728cd33'),
+    ('confirm', '9cba660d66e4afbeec60e64ed83a60b57905d507e2ddccc6e0a1369b8f3c2af0'),
+    ('react', 'b0e77f11e1e0bae6192212d38dc790cb2dadc2998aae6c8d41dfc69cbb3c73d0'),
+])
+GAIN_PHASES = ('battle', 'victory', 'apply')
+INT = r'[1-9][0-9]*'
+
+
+def _gain_steps(tokens):
+    """`user.gainHp|Mp|Tp(式);` 与 `var 名 = 式;` 的语句串（只读持有者 mhp／mmp 与数字、Math.floor／ceil）。
+    每次 gain 的式子连同之前的局部量一起编成一个纯公式程序（持有者是 a）。"""
+    steps, decls, i = [], [], 0
+    allowed = {'user', '.', 'mhp', 'mmp', 'Math', 'floor', 'ceil', '(', ')', '*', '+', '-'}
+
+    def expr_ok(expr, names):
+        for j, t in enumerate(expr):
+            if t == 'user' and expr[j + 1:j + 3] not in (['.', 'mhp'], ['.', 'mmp']):
+                return False
+            if t == 'Math' and expr[j + 1:j + 3] not in (['.', 'floor'], ['.', 'ceil']):
+                return False
+            if not (t in allowed or t in names or re.fullmatch(r'(?:0|[1-9][0-9]*)(?:\.[0-9]+)?', t)):
+                return False
+        return bool(expr)
+    names = set()
+    while i < len(tokens):
+        end = tokens.index(';', i) if ';' in tokens[i:] else -1
+        if end < 0:
+            return None
+        stmt, i = tokens[i:end], end + 1
+        if stmt[:1] == ['var'] and len(stmt) >= 4 and stmt[2] == '=' and re.fullmatch(r'[a-z]\w*', stmt[1]):
+            if not expr_ok(stmt[3:], names):
+                return None
+            decls.append('var l_%s = %s;' % (stmt[1], ' '.join(('l_' + t) if t in names else t for t in stmt[3:]).replace('user .', 'a .')))
+            names.add(stmt[1])
+            continue
+        m = re.fullmatch(r'user \. gain(Hp|Mp|Tp) \( (.+) \)', ' '.join(stmt))
+        if not m or not expr_ok(m.group(2).split(), names):
+            return None
+        expr = ' '.join(('l_' + t) if t in names else t for t in m.group(2).split()).replace('user .', 'a .')
+        program = compile_formula(' '.join(decls + ['value = %s;' % expr]), custom=True, table='States')
+        if program['status'] != 'pure' or set(program['capabilities']) - {'read.battler'}:
+            return None
+        steps.append({'resource': m.group(1).lower(), 'program': program})
+    return steps or None
+
+
+def simple_script_effect(body, code, phase):
+    if (phase, hashlib.sha256(body.strip().encode()).hexdigest()) in MEASURED_SYNTAX_ERRORS:
+        return {'op': 'syntax_error'}
+    tokens = _tokens(code)
+    if tokens is None:
+        return None
+    sig = ' '.join(tokens)
+    if phase in ('battle', 'turn_start'):
+        m = re.fullmatch(r'user \. addState \( (%s) \)(?: ;)?' % INT, sig)
+        if m:
+            return {'op': 'add_state', 'who': 'user', 'id': int(m.group(1))}
+    if phase == 'establish':
+        m = re.fullmatch(r'if \( target \. result \( \) \. critical \) \{ var param = (%s) ;(?: var turns = %s ;)? '
+                         r'(user|target) \. addState \( param(?: , turns)? \) ; \}' % (INT, INT), sig)
+        # addState 只认一个参数：turns 原版不生效，回合照状态自身的 min/maxTurns
+        if m and ('var turns' in sig) == (', turns' in sig):  # 只写 , turns 不声明是 ReferenceError
+            return {'op': 'add_state', 'who': m.group(2), 'id': int(m.group(1)), 'criticalOnly': True}
+    if phase == 'battle':
+        m = re.fullmatch(r'\$gameVariables \. setValue \( (%s) , (0|%s) \)(?: ;)?' % (INT, INT), sig)
+        if m:
+            return {'op': 'set_variable', 'id': int(m.group(1)), 'value': int(m.group(2))}
+    if phase in GAIN_PHASES and tokens[:1] in (['user'], ['var']):
+        steps = _gain_steps(tokens)
+        if steps:
+            return {'op': 'gain_steps', 'steps': steps}
+    return None
+
+
 def parse_state_effects(note):
     """返回 [{phase, op, cond, k, round} 或 {phase, op:'js', source}]；op=js 表示尚未翻译。"""
     out = []
@@ -411,7 +493,7 @@ def parse_state_effects(note):
         if bonus:
             out.append({'phase': phase, **bonus})
             continue
-        poison = poison_stack_effect(body, code, phase)
+        poison = poison_stack_effect(body, code, phase) or simple_script_effect(body, code, phase)
         if poison:
             out.append({'phase': phase, **poison})
             continue
