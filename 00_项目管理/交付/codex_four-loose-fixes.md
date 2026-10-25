@@ -140,3 +140,8 @@
 - 同步成功后只补`xiyou_rules.tscn`基础段及cat／enemy_book／loose_fixes三场（受参照输出更新影响）；此前另外11场依赖及power全部通过，不重跑整批／全量／旧50%审查。947/5557参照应已从0修正。完成后精简报告入JSON、交付单写可合并（自己的实现待Claude），只清本期four-loose-fixes临时输出。**apply_production.py已执行，不可再执行**；没完成前不清目录。
 - 本轮只读定位2g，无任何修改／切支。以后2g仍bf585fdc现场：13场12过、formula_effects906/908，两capState_buffs MP夹值失败；按原最终链把resource_context add锁guard由仅XActor改成除XEnemy的基类分支，先跑formula_effects与state_effects_tp再定。生产文件在`01_Godot工程/modes/xiyou/core/`。formula_execution空结果槽预览问题与两个Apply宿主接口仍按2g原交付的停手范围，不混进本期。
 - 机械收尾61创建时实际设medium，不虚称本轮已切；疑难2g按实际难度再提高。60创建61后停止，61唯一执行者。额度五小时17%、周18%，不是停手线。后续仍四项→2g→rng-compare-review→actor-bonus→passive-content→race-battle；自己的实现待Claude。50%审查二期分支0b00c374交总装另合。只用此已有树、所有文件命令显式workdir，共用登记只读，不新开automation。
+
+## 沙僧61接手（2026-10-25）
+
+- 本树HEAD2270aec7、工作区干净，继续唯一排队任务ebfcb32ee7d64a4fa4620b8e541fb27f；status仍running，未重复启动。其他白龙／悟空同步仍在途。
+- 实际额度五小时20%、周18%，继续授权工作；共用登记只读，生产补丁不重复应用。同步成功且检查差异后才跑基础rules与三场受影响专项。
