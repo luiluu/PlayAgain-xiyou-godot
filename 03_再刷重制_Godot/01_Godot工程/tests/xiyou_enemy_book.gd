@@ -201,6 +201,7 @@ func _run() -> void:
 	await _flow(ref)
 	_registration()
 	_death_counting()
+	_death_hook()
 	await _interpreter()
 	await _battle_book()
 	await _menu_entry()
@@ -335,6 +336,57 @@ func _death_counting() -> void:
 	check("defeat.no_double_at_end", XEnemyBook.defeat_number(s, id) == int(o.inBattleAfterDeath))
 
 
+## 死亡钩子接在战斗规则里（XBattler 加阵亡、资源刷新补阵亡）：真实伤害、状态 1、复活再死都即时计；
+## 公式预演的影子克隆、本场名单外的敌人、战斗结束后不计；结束时不再按「倒着」补记
+func _death_hook() -> void:
+	var s := XState.new_game_blank()
+	for id in [1, 8, 9, 10]:
+		s.add_actor(id)
+	var keep := XState.current
+	XState.current = s
+	var logic := XBattleLogic.new()
+	logic.setup(2, s)
+	var appeared := XEnemyBook.on_battle_start(s, 2, {"displayName": ""}, logic.enemies)
+	var e: XEnemy = logic.enemies[0]
+	var id := e.enemy_id
+	var n := func() -> int: return XEnemyBook.defeat_number(s, id)
+	# 预演：影子克隆打死不计
+	var shadow := XFormulaContext.clone_battler(e)
+	shadow.hp = 0.0
+	shadow.refresh_resources()
+	check("hook.shadow_not_counted", shadow.is_dead() and n.call() == 0, [shadow.is_dead(), n.call()])
+	# 真实伤害打死
+	logic._action_resources = XResourceContext.new()  # 行动结算里的资源槽（Game_Action.apply 期间）
+	logic.execute_hp_damage(logic.actors[0], e, e.hp + 1.0, false)
+	logic._action_resources = null
+	check("hook.damage_kill", e.is_dead() and n.call() == 1, [e.is_dead(), n.call()])
+	# 已死再刷新、再加状态 1 不重复计
+	e.refresh_resources()
+	e.add_state(1)
+	check("hook.no_double_on_corpse", n.call() == 1, n.call())
+	# 复活后由状态 1 再死（技能／事件附加阵亡）
+	e.hp = 1.0
+	e.refresh_resources()
+	var revived := not e.is_dead()
+	e.add_state(1)
+	check("hook.revive_state_kill", revived and e.is_dead() and n.call() == 2, [revived, e.is_dead(), n.call()])
+	# 结束时不补记
+	XEnemyBook.on_battle_end(s, appeared, logic.enemies)
+	check("hook.no_count_at_end", n.call() == 2, n.call())
+	# 战斗结束后（不在本场名单）死亡不计
+	e.hp = 1.0
+	e.refresh_resources()
+	e.hp = 0.0
+	e.refresh_resources()
+	check("hook.after_battle_not_counted", e.is_dead() and n.call() == 2, n.call())
+	# 没经开战登记的敌人（战力预演、地图临时敌人）不计
+	var other := XEnemy.new().setup(id, 2, 100.0)
+	other.hp = 0.0
+	other.refresh_resources()
+	check("hook.stray_enemy_not_counted", n.call() == 2, n.call())
+	XState.current = keep
+
+
 func _registration() -> void:
 	var s := XState.new_game_blank()
 	for id in [1, 8, 9, 10]:
@@ -355,10 +407,12 @@ func _registration() -> void:
 		and not hidden_ids.is_empty() and appeared.size() == shown.size(), [troop, appeared, hidden_ids])
 	check("not_registered_before_end", logic.enemies.all(func(e): return not XEnemyBook.registered(s, e.enemy_id)))
 	shown[0].hp = 0.0
+	shown[0].refresh_resources()  # 资源刷新补阵亡 → 死亡钩子即时计击败数
+	var at_death := XEnemyBook.defeat_number(s, shown[0].enemy_id)
 	XEnemyBook.on_battle_end(s, appeared, logic.enemies)
 	check("battle_end_registers", shown.all(func(e): return XEnemyBook.registered(s, e.enemy_id))
 		and hidden_ids.all(func(id): return not XEnemyBook.registered(s, id) or shown.any(func(e): return e.enemy_id == id)), hidden_ids)
-	check("defeat_counted", XEnemyBook.defeat_number(s, shown[0].enemy_id) == 1 + shown.filter(func(e): return e != shown[0] and e.enemy_id == shown[0].enemy_id and e.is_dead()).size())
+	check("defeat_counted", at_death == 1 and XEnemyBook.defeat_number(s, shown[0].enemy_id) == 1, [at_death, XEnemyBook.defeat_number(s, shown[0].enemy_id)])
 	# 再进同图：地图名不重复
 	XEnemyBook.on_battle_start(s, troop, {"displayName": "测试图"}, logic.enemies)
 	check("maps_no_dup", XEnemyBook.record_maps(s, shown[0].enemy_id) == ["测试图"])
