@@ -1,11 +1,11 @@
 'use strict';
 // 书籍与科技静态能力链；冻结插件，全内存。条件低血/低蓝与learn/relearn/forget，写入仅.sandbox。
 const {start,makeCase,finish}=require('./shared/host.cjs');
-const host=start(),{w,newGame}=host;newGame();
-const a=w.$gameActors.actor(1);a._level=37;a._equips.forEach(e=>e.setObject(null));a._states=new w.Array();a._paramPlus=w.Array.from([0,0,0,0,0,0,0,0]);
+const host=start(),{w,newGame}=host;newGame();w.$gameParty._targetActorId=1;w.$gameVariables.setValue(9,999);
+const a=w.$gameActors.actor(1);a._level=37;a._equips.forEach((_,i)=>a.changeEquip(i,null));a._states=new w.Array();a._paramPlus=w.Array.from([0,0,0,0,0,0,0,0]);
 const damageSkills=[1,125,275];
 function refresh(){a.refreshPassiveSkillCache();a.initPassiveCache();a.refreshPassiveCache();a.refresh();}
-function reset(){a._skills=new w.Array();a._states=new w.Array();a._hp=1e9;a._mp=1e9;refresh();a.recoverAll();a.clearResult();}
+function reset(){Array.from(a._skills).forEach(id=>a.forgetSkill(id));a._states=new w.Array();a._hp=1e9;a._mp=1e9;refresh();a.recoverAll();a.clearResult();}
 function snap(){
   const damage=[];const e=new w.Game_Enemy(1,0,0);e.refresh();
   for(const sid of damageSkills)for(const critical of [false,true]){
@@ -36,4 +36,5 @@ for(const setup of books.concat(tech))cases.push(makeCase((setup.item?'book.':'t
   a.forgetSkill(setup.skill);refresh();a.recoverAll();const forgot=snap();
   return {learned,full,repeat,low,forgot};
 }));
-process.exit(finish(host,'passive_content.json',{scope:'actor1 level37,empty equips,253 passive book effect43 plus90 technologies; static facade and3 damage skills; no dynamic boss armor',damageSkills,baseline,cases})?0:1);
+const target=new w.Game_Enemy(1,0,0);
+process.exit(finish(host,'passive_content.json',{scope:'actor1 level37,empty equips,253 passive book effect43 plus90 technologies; static facade and3 damage skills; no dynamic boss armor',difficulty:w.$gameSystem.difficultyId(),target:{enemy:1,level:target.level,param:Array.from({length:8},(_,i)=>target.param(i))},damageSkills,baseline,cases})?0:1);
