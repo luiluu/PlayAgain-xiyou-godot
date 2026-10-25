@@ -24,7 +24,7 @@ if(!process.argv.includes('--smoke')){
   add(`matrix.${hostName}.${count}.${+armor}.${kind}.${op}`,{host:hostName,count,armor,ops:[{op,who:'b',kind,value:op==='gain'?-7.9:292.1}]});
  for(const kind of ['hp','mp'])for(const op of ['gain','set'])for(const who of ['a','b','c'])for(const value of [-0.4,0,9.5])
   add(`domain.${kind}.${op}.${who}.${value}`,{ops:[{op,who,kind,value:op==='gain'?value:300+value}],hp:300});
- for(const actorTarget of [false,true])for(const op of ['gain','set','damage'])for(const shield of [3,50])
+ for(const actorTarget of [false,true])for(const op of ['gain','set','damage'])for(const shield of [3,50,1000])
   add(`shield.${+actorTarget}.${op}.${shield}`,{actorTarget,shield,ops:[{op,who:'b',kind:'hp',value:op==='set'?399:op==='gain'?-101:101}]});
  for(const kind of ['hp','mp']){
   add(`formula.${kind}`,{host:'apply',formula:`b.gain${kind==='hp'?'Hp':'Mp'}(-7.9);0`});
