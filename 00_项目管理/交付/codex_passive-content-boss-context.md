@@ -133,3 +133,5 @@
 - 69护盾补采终态：boss68-shield-full exit0，6例errors全空，sourceIdentity与原123完全相等；保留两原件并合成.sandbox/boss_output_context_combined129.json（129唯一ID），尚未替换在途专项读取的123夹具。敌人gain／set／damage完全吸收均dirty=false；角色gainHp护盾前结果161且dirty=true，set／damage不额外置dirty，待Godot最终129专项核对。精简证据已保存原件与并集SHA。
 
 - 69中间专项：boss68-context终态exit0，完整123例与边界通过，详细断言／timings见精简证据。终态后才将夹具替换为两份原版并集129例，逐对象相等且sourceIdentity一致；完整性断言改129并逐一要求六个shield1000 ID。最终129专项及四依赖下一步启动。
+
+- 69最终验收已启动：boss69-final，runId 0351059389764aa5959bb3ccdb85108c；新增129专项＋boss_output／formula_effects／state_effects／state_effects_tp四依赖同批，XIYOU_TEST_HEARTBEAT=30，长任务包装。包装器状态与日志在04_验证/本地结果/任务/boss69-final.log，细结果在boss69-final。夹具并集序列化曾改成两空格，终态后恢复原一空格格式以压缩无关差异；只改格式，不在途改文件。
