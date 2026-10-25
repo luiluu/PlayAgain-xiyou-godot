@@ -446,7 +446,6 @@ func param_base(i: int) -> float:
 		if parts.size() >= 3 and _condition(parts[1].strip_edges(), float(parts[2])):
 			v += _param_boost(base, parts[0])
 	v += XTraining.param_bonus(self, i)
-	v += XParamPlus.bonus(self, i)
 	return v
 
 ## 装备属性；被动 passiveWPNMxx / passiveARMMxx 按武器/防具类型放大该装备的正值属性。
@@ -461,7 +460,9 @@ func param_plus(i: int) -> float:
 	return full + (full - bare)
 
 func _param_plus(i: int) -> float:
-	var v := XEquipSuits.value(self,"param",i,false)
+	var v := XParamPlus.bonus(self, i) + XEquipSuits.value(self,"param",i,false)
+	if XState.current != null:
+		v += XPets.actor_param_plus(XState.current, self, i)
 	for e in equip_list():
 		var p := float(e.params[i])
 		v += p
@@ -509,6 +510,20 @@ static func magic_param(e: Dictionary, i: int) -> float:
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
 	return XCat.param(self, i, super(i))
+
+## 永久 addParam 复用事件 317 的同一存档字段；状态脚本翻译接线另期。
+func add_param(i: int, value: float) -> void:
+	if XState.current != null:
+		XParamPlus.add(XState.current, actor_id, i, value)
+
+
+## Star_PetSystem 在 traitsSum 层相加，先于被动／套装倍率与命中保底。
+func traits_sum(code: int, id: int) -> float:
+	var v := super.traits_sum(code, id)
+	if code == TRAIT_XPARAM and XState.current != null:
+		v += XPets.war_xparam_plus(XState.current, id)
+	return v
+
 
 ## 正式版运行时对角色命中率保底 0.9（命中 = xparam 0）。
 func xparam(i: int) -> float:

@@ -61,6 +61,8 @@ cases.push(makeCase('pet.mapping',{},()=>{
   fresh();const a=w.$gameActors.actor(1), enemy=new w.Game_Enemy(1,0,0);
   const before=snap()[0], e0=Array.from({length:10},(_,i)=>enemy.traitsSum(22,i));
   w.$gameParty.GTWar=pet(pushes[0]);
+  // GTWar 直接赋值不标脏，不能读上一帧的 xparam 缓存当新加成。用原生学/忘/refresh 完成同出战的刷新。
+  a.learnSkill(1365); a.forgetSkill(1365); a.refresh();
   return {before,after:snap()[0],enemyDelta:e0.map((v,i)=>enemy.traitsSum(22,i)-v)};
 }));
 process.exit(finish(host,'actor_bonus.json',{scope:'Frozen addParam / Star_PetSystem runtime; no real saves',cases})?0:1);

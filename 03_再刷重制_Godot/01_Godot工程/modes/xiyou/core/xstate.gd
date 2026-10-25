@@ -168,6 +168,8 @@ var enemy_book := {"flags": {}, "defeat": {}, "maps": {}}
 var crafting := {"known": {}, "level": [1, 1, 1, 1], "exp": [0, 0, 0, 0]}
 ## 宠物（Star_PetSystem）：list 宠物、war 出战序号、team_a 共享角色序号（$gameParty.Pets／GTWar／TeamATo），见 XPets
 var pets := {"list": [], "war": -1, "team_a": 0}
+## TeamA 上次接收者，仅运行时；存档技能已保存，读档按当前槽位重建。
+var pet_team_actor := 0
 ## 修炼（Star_ActorAttributePlusPoints）：{"角色ID": {"修炼表编号": 等级}}（actor.pushattribute 的等级一栏），见 XTraining
 var training := {}
 var shop_pending := ""
@@ -319,6 +321,7 @@ func init_battle_slots() -> void:
 	for i in MAX_BATTLE_MEMBERS:
 		battle_slots.append(party[i] if i < party.size() else 0)
 	XItemMarks.enforce_party(self)
+	XPets.sync_team_a(self)
 
 
 func _ensure_slots() -> void:
@@ -332,6 +335,7 @@ func rearrange_actors() -> void:
 	XItemMarks.enforce_party(self)
 	_rearrange_actors()
 	XItemMarks.enforce_party(self)
+	XPets.sync_team_a(self)
 
 
 func _rearrange_actors() -> void:
@@ -626,6 +630,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.crafting = cr.duplicate(true) if cr is Dictionary else {}
 	var pt = d.get("pets", {})
 	s.pets = pt.duplicate(true) if pt is Dictionary else {}
+	var pet_target := XPets.team_a_actor(s) if not XPets.war_pet(s).is_empty() else null
+	s.pet_team_actor = pet_target.actor_id if pet_target != null else 0
 	var pp = d.get("mvParamPlus", {})
 	s.mv_param_plus = pp.duplicate(true) if pp is Dictionary else {}
 	var tr = d.get("training", {})

@@ -10,8 +10,8 @@ extends RefCounted
 ##   indexOf("变异")（−1 为真），所以几乎总是补学到 2 个技能。学习次数上限 1～3。
 ## - 等级：经验表照职业 1 的 expParams（与角色同式）再 /10 取整，满级 50（GetLevel）。
 ## - 出战（onGotowarOk）：先撤掉原出战宠物，再给全队（$gameParty.members）学会宠物技能——带 <TeamA> 的只给出战栏位第 team_a 位；
-##   前 8 项加成加进各队员的 _paramPlus。重制的 XActor 没有可存档的 _paramPlus：加成由 war_param_plus 提供，接进角色能力要在
-##   actor.gd 读一处（期三起归沙僧，未接）。命中等后 6 项原版在 traitsSum 里加给全体角色（战斗规则，未接）。
+##   前 8 项加成加进各队员的 _paramPlus。重制通过 actor_param_plus 动态读，不把可撤回加成写进永久字段。
+##   后 6 项由 war_xparam_plus 接进角色 traits_sum；整队槽位变化时 sync_team_a 即时迁移共享技能。
 ## - 捕获（地图神秘生物、战斗捕捉道具）、宠物参战与战后经验不在这里（见交付单）。
 
 const RARITY_TAGS := ["【罕见】", "【十分罕见】", "【精英】", "【亘古未见】", "【首领】", "【稀有】", "【前所未见】", "【亘古未有】"]
@@ -153,7 +153,7 @@ static func team_a_skill(id: int) -> bool:
 static func team_a_actor(s: XState) -> XActor:
 	var slots: Array = s.battle_slots if not s.battle_slots.is_empty() else s.party
 	var i := int(_data(s).team_a)
-	if i < slots.size() and int(slots[i]) > 0:
+	if i >= 0 and i < slots.size() and int(slots[i]) > 0:
 		return s.actor(int(slots[i]))
 	return null
 
@@ -167,6 +167,8 @@ static func _apply_skills(s: XState, pet: Dictionary, on: bool) -> void:
 			elif not team_a_skill(int(id)):
 				a.learn_skill(int(id))
 		a.refresh_passive()
+		a.param_mark_dirty()
+		a.refresh_resources()
 	if on:
 		var t := team_a_actor(s)
 		if t != null:
@@ -174,15 +176,55 @@ static func _apply_skills(s: XState, pet: Dictionary, on: bool) -> void:
 				if team_a_skill(int(id)):
 					t.learn_skill(int(id))
 			t.refresh_passive()
+			t.param_mark_dirty()
+			t.refresh_resources()
+		s.pet_team_actor = t.actor_id if t != null else 0
+	else:
+		s.pet_team_actor = 0
+
+
+## TeamALearn → 槽位修改 → TeamAForget。只撤旧接收者，不误忘其他角色原本会的同名技能。
+static func sync_team_a(s: XState) -> void:
+	var pet := war_pet(s)
+	if pet.is_empty():
+		return
+	var target := team_a_actor(s)
+	var next_id := target.actor_id if target != null else 0
+	if s.pet_team_actor == next_id:
+		return
+	var old: XActor = s.actors.get(s.pet_team_actor)
+	for id in pet.skills:
+		if team_a_skill(int(id)):
+			if old != null:
+				old.forget_skill(int(id))
+			if target != null:
+				target.learn_skill(int(id))
+	if old != null:
+		old.refresh_passive()
+	if target != null:
+		target.refresh_passive()
+	s.pet_team_actor = next_id
+
+
+## refreshGTWar：先撤回技能及属性、截资源，再重学；加成不写永久字段，不会重复累加。
+static func refresh_war(s: XState) -> void:
+	var i := war_index(s)
+	var pet := war_pet(s)
+	if pet.is_empty():
+		return
+	_data(s).war = -1
+	_apply_skills(s, pet, false)
+	_data(s).war = i
+	_apply_skills(s, pet, true)
 
 
 ## onGotowarOk：已出战返回 false（「已出战」）；否则撤掉原出战宠物、换上这只
 static func go_to_war(s: XState, i: int) -> bool:
-	if i == war_index(s):
+	if i < 0 or i >= list(s).size() or i == war_index(s):
 		return false
 	var old := war_pet(s)
 	if not old.is_empty():
-		_apply_skills(s, old, false)
+		rest(s, war_index(s))
 	_data(s).war = i
 	_apply_skills(s, list(s)[i], true)
 	return true
@@ -192,8 +234,9 @@ static func go_to_war(s: XState, i: int) -> bool:
 static func rest(s: XState, i: int) -> bool:
 	if i != war_index(s) or i < 0:
 		return false
-	_apply_skills(s, war_pet(s), false)
+	var pet := war_pet(s)
 	_data(s).war = -1
+	_apply_skills(s, pet, false)
 	return true
 
 
@@ -208,12 +251,8 @@ static func release(s: XState, i: int) -> void:
 
 ## onConfirmOk：换共享角色后 refreshGTWar（撤掉再学会）
 static func set_team_a(s: XState, i: int) -> void:
-	var pet := war_pet(s)
-	if not pet.is_empty():
-		_apply_skills(s, pet, false)
 	_data(s).team_a = i
-	if not pet.is_empty():
-		_apply_skills(s, pet, true)
+	refresh_war(s)
 
 
 ## O-098：物品 372「魔兽要诀:高级灵根」原版指向公共事件 218，教的是 1673 高级灵甲术（与 373 相同），217「高级林根」(1672)
@@ -232,10 +271,9 @@ static func learn_book(s: XState, skill_id: int) -> String:
 		pet.ls_max = maxi(int(pet.get("ls_max", 1)), 0)
 		pet.ls = clampi(int(pet.get("ls", 0)), 0, int(pet.ls_max))  # ensurePetLearningSlots
 	if not pet.is_empty() and int(pet.ls) < int(pet.ls_max) and not pet.skills.has(skill_id):
-		_apply_skills(s, pet, false)
 		pet.skills.append(skill_id)
 		pet.ls = int(pet.ls) + 1
-		_apply_skills(s, pet, true)
+		refresh_war(s)
 		return str(XDB.rec("Skills", skill_id).get("name", "")) + " 学习成功"
 	if not XDB.rec("Items", s.last_item).is_empty():
 		s.gain_item(s.last_item, 1)
@@ -246,10 +284,26 @@ static func learn_book(s: XState, skill_id: int) -> String:
 	return "当前无出战宠物"
 
 
-## 出战宠物前 8 项加成（原版加进各队员 _paramPlus；角色能力里还没读，见文件头）
+## 出战宠物前 8 项加成（原版加进队伍及角色仓库的 _paramPlus）
 static func war_param_plus(s: XState, i: int) -> float:
 	var pet := war_pet(s)
-	return float(pet.push[i]) if not pet.is_empty() and i < 8 and i < pet.push.size() else 0.0
+	return float(pet.push[i]) if not pet.is_empty() and i >= 0 and i < 8 and i < pet.push.size() else 0.0
+
+
+static func actor_param_plus(s: XState, a: XActor, i: int) -> float:
+	return war_param_plus(s, i) if s.party.has(a.actor_id) or s.saved_actors.has(a.actor_id) else 0.0
+
+
+## 原版 traitsSum：push8..12 → XP0..4；XP5 不加，XP6 优先 push14、不存在时回退 push13。
+## 特性是所有角色都能读，敌人不读；原版注释中的 sparam 分支未启用。
+static func war_xparam_plus(s: XState, i: int) -> float:
+	var pet := war_pet(s)
+	if pet.is_empty() or i < 0 or i == 5:
+		return 0.0
+	var push: Array = pet.push
+	if i + 8 < push.size() and float(push[i + 8]) != 0.0:
+		return float(push[i + 8])
+	return float(push[13]) if i == 6 and push.size() > 13 else 0.0
 
 
 # ---- 喂养（Star_PetUpLevel）----
