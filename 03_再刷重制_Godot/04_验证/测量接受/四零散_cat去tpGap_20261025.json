@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "cat.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"chain.atkk1817\"]]",
+      "fields": [
+        "setup"
+      ],
+      "oldDigest": "6dd559bc445b42f1",
+      "newDigest": "511862cf8879383d",
+      "reason": "哈基米1817被动减耗已接入；仅删除setup.tpGap旧豁免元数据，全部原版测量数值保持不变。"
+    }
+  ]
+}

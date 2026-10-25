@@ -1,7 +1,7 @@
 {
   "base": "926f914f",
   "branch": "codex/four-loose-fixes",
-  "scope": "四个零散项，独立于50%审查和2g；尚未应用生产补丁",
+  "scope": "四个零散项，独立于50%审查和2g；生产补丁已应用，首轮3专项通过，直接依赖与最终同步待完成",
   "nativeFinal": {
     "status": {
       "runId": "c007f95c1c134f6ca50e269b0c88c432",
@@ -60,18 +60,18 @@
   "productionPatchPrepared": {
     "path": "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/apply_production.py",
     "sha256": "9c56469f17c32896a19f1aa738242d8fec5db3fb24795d094b82e5e85b8ce6ea",
-    "applied": false
+    "applied": true
   },
   "F31": {
     "alreadyImplementedBy": "308927f8",
     "productionChangeNeeded": false,
-    "verification": "新专项压入1047/1048各100次，期望各64、共128；尚待实跑"
+    "verification": "实跑两阶段各100次，最终各64、共128；修前及修后均通过"
   },
   "b3ab53e6Review": {
     "nativeActual932FireBonus": 0.15999999999999992,
     "syntheticDuplicateFireBonus": 0.45999999999999996,
     "syntheticCaseAndPaddingFireBonus": 0.3599999999999999,
-    "finding": "元数据末条读取漏掉原版正则扫描支持的重复和大小写／无前导零标签；待专项确认及补修，不冒称已核通过"
+    "finding": "普通932火增伤正确；重复／大小写／无前导零标签漏算已由修前专项证实。Codex补修后126/126通过，补修待Claude交叉核查。"
   },
   "usageAtHandoff": {
     "fiveHourUsedPercent": 30,
@@ -97,5 +97,30 @@
     "scriptErrors": false,
     "semanticFailures": 33,
     "F31Passed": true
+  },
+  "greenFirst": {
+    "runId": "d83d3e639a6042dd9c3889e2650f5f63",
+    "exitCode": 0,
+    "tests": {
+      "xiyou_loose_fixes": {
+        "passed": 126,
+        "total": 126
+      },
+      "xiyou_cat": {
+        "passed": 994,
+        "total": 994
+      },
+      "xiyou_enemy_book": {
+        "passed": 52,
+        "total": 52
+      }
+    },
+    "extraDeathBoundaries": [
+      "nonpreview resource clone",
+      "explicit state clone",
+      "same-roster registration",
+      "resource death after battle end",
+      "explicit death after battle end"
+    ]
   }
 }
