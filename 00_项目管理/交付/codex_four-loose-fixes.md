@@ -88,3 +88,14 @@
 - b3ab53e6普通932火增伤正确；重复／大小写／无前导零边界确有漏算，本期已修。自己的实现仍待Claude，不自行销核。
 - 交付前合main显示Already up to date，仍`926f914f`；12场直接依赖选测runId `c4f75cc514c24740b6e04ea2ea3949b1`在途。
 - cat测量接受单仅删除chain.atkk1817的setup.tpGap；旧／新摘要已固定，未接受任何数值变化。最终必要同步等其他同步结束后再启动。
+
+## 沙僧59额度收尾（2026-10-25，五小时96%、周15%）
+
+- 严格按95%规则WIP保存后停止，不开新接力或自动执行。四零散仍进行中，**不可写可合并／完成**。
+- 本轮实际生产提交`10da1d87`；修前121项88过／33语义失败，无脚本错误；修后新专项126/126、cat994/994、enemy_book52/52（runId `d83d3e639a6042dd9c3889e2650f5f63`）。5个新增死亡隔离边界全过。登记与精确cat接受单在`4251bb9d`。
+- 12场直接依赖runId `c4f75cc514c24740b6e04ea2ea3949b1`已结束exit1，11/12通过；formula_effects908/908、formula_equipment1804/1804、formula_rest1352/1352、battle8/8、battle_options92/92、floor_run_c560/560、settlement11/11、state_effects19949/19949、rules_d1b105778/105778、d1c105608/105608、d1d105670/105670。rules基础段105855/105856，唯一`d1.dmg.enemy947.0.skill5557`，Godot467.775、旧原版参照0，首次与自动重跑一致，不是偶发。此问题开工交接板已明确归哪吒期六的目标资源污染；本期代码没有使数值变化。
+- **上游现场已前进**：最后只读看到main `946df0b7`已合哪吒期六（slice_probe量完还原双方hp/mp/tp）；本树仍基于`926f914f`，未合这次新main。先前对926f的git merge main为Already up to date。需在本树power完成后合一次最新main（不修改哪吒工具），按新探针跑本期必要一轮同步／导入，然后重跑失败rules基础段。其他已通过测试不因无关main前进重复跑。
+- **唯一仍在途的本期测试**：power runId `e17287b26ec844429fcd3449f7d9782e`，日志`03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/power.log`。启动后已接前台等待；停止时尚未取得结果。接手先查status再等，不重复启动。旧red已退出1、green-first已退出0、related已退出1，均无在途重复。
+- **最终同步未启动**。最后只读看到main另一同步PID44378在跑，需等其退出，不能并行同步，也不要在本树power仍运行时改generated。本树同步仍用原有`sync_preserve_evidence.py`包装器，仅停用旧证据清理，遵守所有守卫／来源与槽位，不改工具源。cat接受单`04_验证/测量接受/四零散_cat去tpGap_20261025.json`只接受chain.atkk1817 setup.tpGap删除，oldDigest6dd559bc445b42f1/newDigest511862cf8879383d，数值不接受变化。合入哪吒修复后slice参照会有新变化，须复用总装已核精确接受单或逐条核实后单独接受，不能静默放过；不能重做50%审查那轮同步。
+- 所有本期临时日志仍保留（尚未完成必要验证），旧原版证据、mv_oracle/.sandbox、generated及整树完全保留。不要清apply_production.py或sync包装器所在目录；生产脚本已执行，**不得再次执行**。完成后只精简／清本期four-loose-fixes输出，入Git证据见`核查范围/四零散_专项结果_20261025.json`。
+- 下一步顺序不变：本四项真正交付→2g→rng-compare-review→actor-bonus→passive-content→race-battle。本轮仅只读复核2g刷新锁定位，没有修改2g或切换分支。自己的补修待Claude，未自行销核。

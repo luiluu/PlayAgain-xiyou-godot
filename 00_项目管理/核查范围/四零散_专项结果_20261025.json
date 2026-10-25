@@ -1,7 +1,7 @@
 {
   "base": "926f914f",
   "branch": "codex/four-loose-fixes",
-  "scope": "四个零散项，独立于50%审查和2g；生产补丁已应用，首轮3专项通过，直接依赖与最终同步待完成",
+  "scope": "生产补丁与3专项已通过；直接依赖11/12，旧947参照污染待同步上游修复；power在途，最终同步未开；95%额度规则停手，四项未完成",
   "nativeFinal": {
     "status": {
       "runId": "c007f95c1c134f6ca50e269b0c88c432",
@@ -74,8 +74,8 @@
     "finding": "普通932火增伤正确；重复／大小写／无前导零标签漏算已由修前专项证实。Codex补修后126/126通过，补修待Claude交叉核查。"
   },
   "usageAtHandoff": {
-    "fiveHourUsedPercent": 30,
-    "weeklyUsedPercent": 5
+    "fiveHourUsedPercent": 96,
+    "weeklyUsedPercent": 15
   },
   "handoffDocs": {
     "exitCode": 0,
@@ -122,5 +122,74 @@
       "resource death after battle end",
       "explicit death after battle end"
     ]
+  },
+  "relatedFinal": {
+    "status": {
+      "runId": "c4f75cc514c24740b6e04ea2ea3949b1",
+      "status": "failed",
+      "exitCode": 1,
+      "pid": 43704,
+      "startedAt": "2026-10-25T08:00:30.511603+00:00",
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/07_开发环境/并行测试.py",
+        "03_再刷重制_Godot/07_开发环境/godot",
+        "03_再刷重制_Godot/01_Godot工程",
+        "--log-dir",
+        "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/related",
+        "xiyou_state_effects.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_formula_equipment.tscn",
+        "xiyou_formula_rest.tscn",
+        "xiyou_battle.tscn",
+        "xiyou_settlement.tscn",
+        "xiyou_battle_options.tscn",
+        "xiyou_floor_run_c.tscn",
+        "xiyou_rules.tscn",
+        "xiyou_rules_d1b.tscn",
+        "xiyou_rules_d1c.tscn",
+        "xiyou_rules_d1d.tscn"
+      ],
+      "childPGID": 43705,
+      "childIdentity": {
+        "pid": 43705,
+        "pgid": 43705,
+        "startedAt": "Sun Oct 25 09:00:30 2026    "
+      },
+      "finishedAt": "2026-10-25T08:10:16.385663+00:00"
+    },
+    "passedScenes": 11,
+    "totalScenes": 12,
+    "failure": "d1.dmg.enemy947.0.skill5557",
+    "actual": 467.775,
+    "oldOracle": 0,
+    "alreadyKnownUpstreamFixtureProblem": true,
+    "fixMergedIntoMain": "946df0b7",
+    "retestAfterSyncRequired": true
+  },
+  "powerPending": {
+    "status": {
+      "runId": "e17287b26ec844429fcd3449f7d9782e",
+      "status": "running",
+      "exitCode": null,
+      "pid": 44580,
+      "startedAt": "2026-10-25T08:09:39.140661+00:00",
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/07_开发环境/并行测试.py",
+        "03_再刷重制_Godot/07_开发环境/godot",
+        "03_再刷重制_Godot/01_Godot工程",
+        "--log-dir",
+        "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/power",
+        "xiyou_power.tscn"
+      ],
+      "childPGID": 44581,
+      "childIdentity": {
+        "pid": 44581,
+        "pgid": 44581,
+        "startedAt": "Sun Oct 25 09:09:39 2026    "
+      }
+    },
+    "log": "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/power.log"
   }
 }
