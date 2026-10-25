@@ -46,5 +46,5 @@ func loss_value(target: XBattler, kind: String, loss: float) -> float:
 	var source: XBattler = ctx.source
 	if target == source or target != ctx.target or not source is XEnemy:
 		return loss
-	var rate := source.boss_output_rate()
+	var rate: float = (source as XEnemy).boss_output_rate()
 	return floorf(loss * rate) if rate > 1.0 else loss
