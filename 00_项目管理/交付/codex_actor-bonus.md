@@ -14,3 +14,8 @@
 ## 可优化
 
 - 原版参照用独立定向探针＋测试夹具，不触发整轮同步；保留源身份和生成脚本，可单独复测。现有 generated／旧证据／.sandbox／整树均保留。
+
+## 原版证据
+
+- 独立 actor_bonus_probe.cjs 三组原版取样 errors 空：永久 addParam 小数／减生命上限／recoverAll／JsonEx 往返、宠物完整切换／重学／TeamA 换位／休息与仓库、traitsSum 后六项和敌人不加成。夹具含冻结来源身份；原始脚本输出在 .sandbox/actor_bonus.json 保留。探针首跑因跨 VM 数组缺 contains 失败，改为原版 realm Array 后全过，未改冻结代码。
+- 确认 refreshGTWar 临时撤回前八项会夹 HP/MP；接线需保留。原版属性层 paramBase 不含永久加算，paramPlus 保留 12.5−1.25=11.25；不能用 int 丢小数。
