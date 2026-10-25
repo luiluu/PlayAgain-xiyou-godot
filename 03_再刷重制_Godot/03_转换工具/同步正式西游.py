@@ -486,7 +486,7 @@ def _main() -> int:
     ap.add_argument('--accept-changes', type=Path, action='append', default=[], metavar='接受单.json',
                     help='显式接受接受单逐条列出的既有用例改变（须写理由、摘要逐项对上，每条都要用上）')
     ap.add_argument('--from-worktree', type=Path, help='合并时用车道已同步的产物（按指纹核对），不满足条件退出码 3')
-    ap.add_argument('--full', action='store_true', help='忽略探针缓存，强制全量转换与全部探针')
+    ap.add_argument('--full', '--full-probes', dest='full', action='store_true', help='忽略探针缓存，强制全量转换与全部探针（--full-probes 同义）')
     ap.add_argument('--no-import', action='store_true', help='结束时不跑 godot --import')
     a = ap.parse_args()
     if a.full and a.from_worktree:
