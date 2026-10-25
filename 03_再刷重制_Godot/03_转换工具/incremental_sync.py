@@ -134,7 +134,29 @@ def carry_cache(source, target):
                 shutil.copytree(src, stage) if src.is_dir() else shutil.copy2(src, stage)
             stage.rename(dst)
             copied.append(name)
+    # 车道已有缓存时也带上主工作区的单元摘要账（carried）：只在逐单元核对 generated 里的记录与账上相同、
+    # 且输入键相同时才复用，不会让旧结果冒充新结果（木吒 2026-10-26）
+    src_cache, dst_cache = source / 'incremental-cache.json', target / 'incremental-cache.json'
+    if 'incremental-cache.json' not in copied and src_cache.is_file() and dst_cache.is_file():
+        try:
+            src, dst = json.loads(src_cache.read_text()), json.loads(dst_cache.read_text())
+        except (OSError, ValueError):
+            return copied
+        if isinstance(src, dict) and isinstance(dst, dict) and src.get('version') == VERSION == dst.get('version'):
+            dst['carried'] = unit_ledger(src)
+            atomic_json(dst_cache, dst)
+            copied.append('carried-ledger')
     return copied
+
+
+def unit_ledger(cache):
+    """缓存文件里带单元摘要的条目（已发布的 probes 与随产物写入的 ledger，后者更新）。"""
+    out = {}
+    for part in ('probes', 'ledger'):
+        for name, entry in (cache.get(part) or {}).items():
+            if isinstance(entry, dict) and isinstance(entry.get('unitOutputs'), dict):
+                out[name] = entry
+    return out
 
 
 class ProbeCache:
@@ -144,9 +166,15 @@ class ProbeCache:
         self.path = self.oracle / '.sandbox/incremental-cache.json'
         self.force = force
         self.cache_issue = None
+        # ledger：每次产物复制进 generated 就记下那份产物的单元摘要（失败、作废都不删，因为它描述的正是 generated 里现有的内容）；
+        # carried：新建工作树.sh 从主工作区带来的同类账。两者只在 plan 里经逐单元核对后使用。
+        self.ledger, self.carried = {}, {}
         try:
             old = json.loads(self.path.read_text())
             self.entries = old['probes'] if old['version'] == VERSION else {}
+            if old['version'] == VERSION:
+                self.ledger = {k: v for k, v in (old.get('ledger') or {}).items() if isinstance(v, dict)}
+                self.carried = {k: v for k, v in (old.get('carried') or {}).items() if isinstance(v, dict)}
             if old['version'] != VERSION:
                 self.cache_issue = {'kind': 'cache-version', 'previous': old['version'], 'current': VERSION}
             if not isinstance(self.entries, dict):
@@ -159,7 +187,7 @@ class ProbeCache:
             self.entries = {}
             self.cache_issue = {'kind': 'cache-invalid'}
         self.pending = {}
-        self.details, self.misses = {}, {}
+        self.details, self.misses, self.reuse = {}, {}, {}
         self.source_sha = digest_files(files(self.app), self.app)
         helpers = [p for p in files(self.oracle) if not any(x in p.relative_to(self.oracle).parts for x in ('.sandbox', 'node_modules'))
                    and p.suffix in ('.cjs', '.js', '.json') and not p.name.endswith('_probe.cjs')]
@@ -334,33 +362,111 @@ class ProbeCache:
     def plan(self, command, output_names, key, units=None):
         """None＝整体重跑；[]＝整体复用；单元列表＝只跑这些单元再合并。
         分片探针只删了或换了顺序时返回 ['']：不跑探针，只按新顺序合并。"""
-        self.misses[command[0]] = self.explain(command, output_names, key, units)
-        if self.force or any(reason['kind'] != 'units' for reason in self.misses[command[0]]):
+        name = command[0]
+        self.misses[name] = self.explain(command, output_names, key, units)
+        self.reuse.pop(name, None)
+        if self.force:
+            return None
+        if all(reason['kind'] == 'units' for reason in self.misses[name]):
+            try:
+                old = self.entries[name]
+                if units is None:
+                    return [] if old.get('units') is None else None
+                previous = old.get('units')
+                if isinstance(previous, dict):
+                    changed = [u for u, v in units.items() if previous.get(u) != v]
+                    if not changed and list(previous) == list(units):
+                        return []
+                    return changed or ['']
+            except (KeyError, TypeError, OSError):
+                pass
+        return self._verified_units(command, output_names, key, units)
+
+    def _verified_units(self, command, output_names, key, units):
+        """产物 SHA 对不上（generated 被主工作区的产物刷新、上次失败后缓存作废、车道还没有自己的条目）时，逐单元核对：
+        某个单元可复用，当且仅当某条账（本条目、ledger、carried）的输入键与本次完全相同、该单元的单元键相同，
+        且 generated 现有产物里该单元的全部记录与账上记下的摘要逐份相同——也就是现有记录正是这组输入测出来的那份。
+        其余单元重跑，再由 oracle_shard_merge.cjs 按全量顺序合并；什么都对不上就整轮（None）。"""
+        name = command[0]
+        spec = self.shard(command)
+        if spec is None or not isinstance(units, dict) or not units:
+            return None
+        names = [Path(p).name for p in output_names]
+        sources = []
+        for label, book in (('entry', self.entries), ('ledger', self.ledger), ('carried', self.carried)):
+            c = book.get(name)
+            if (isinstance(c, dict) and c.get('key') == key and c.get('names') == output_names and isinstance(c.get('units'), dict)
+                    and isinstance(c.get('unitOutputs'), dict) and all(isinstance(c['unitOutputs'].get(n), dict) for n in names)):
+                sources.append((label, c))
+        if not sources:
+            return None
+        current = self._unit_digests(spec['kind'], output_names)
+        if current is None:
+            return None
+
+        def unit_ok(c, u):
+            return c['units'].get(u) == units[u] and all(
+                current[n]['units'].get(u) == (c['unitOutputs'][n].get('units') or {}).get(u) for n in names)
+
+        todo = [u for u in units if not any(unit_ok(c, u) for _, c in sources)]
+        rest_ok = any(all(current[n]['rest'] == c['unitOutputs'][n].get('rest') for n in names) for _, c in sources)
+        if len(todo) == len(units):
+            return None
+        # 一个单元都不用跑时，非分片部分（来源身份、开局设定等）取自现有产物，必须也对得上；对不上就重跑一个单元，让它取自新产物
+        if not todo and not rest_ok:
+            todo = [next(iter(units))]
+        self.reuse[name] = {'kind': 'unit-verified', 'reused': len(units) - len(todo), 'run': len(todo),
+                            'sources': [label for label, _ in sources]}
+        self.misses[name].append(self.reuse[name])
+        return todo or ['']
+
+    def _unit_digests(self, kind, output_names):
+        """generated/oracle 里各产物的单元摘要（oracle_shard_merge.cjs --digest，与合并同一套分组）；读不了返回 None。"""
+        paths = [self.gen / 'oracle' / Path(p).name for p in output_names]
+        if not all(p.is_file() for p in paths):
+            return None
+        # 与同步合并时一样用本模块旁边的 oracle_shard_merge.cjs
+        p = subprocess.run(['node', str(Path(__file__).resolve().parent / 'oracle_shard_merge.cjs'), '--digest', kind, *map(str, paths)],
+                           capture_output=True, text=True)
+        lines = p.stdout.splitlines()
+        if p.returncode or len(lines) != len(paths):
             return None
         try:
-            old = self.entries[command[0]]
-            if units is None:
-                return [] if old.get('units') is None else None
-            previous = old.get('units')
-            if not isinstance(previous, dict):
-                return None
-            changed = [u for u, v in units.items() if previous.get(u) != v]
-            if not changed and list(previous) == list(units):
-                return []
-            return changed or ['']
-        except (KeyError, TypeError, OSError):
+            out = {path.name: json.loads(line) for path, line in zip(paths, lines)}
+        except ValueError:
             return None
+        if not all(isinstance(v, dict) and isinstance(v.get('units'), dict) and isinstance(v.get('rest'), str) for v in out.values()):
+            return None
+        return out
+
+    def _save(self):
+        atomic_json(self.path, {'version': VERSION, 'probes': self.entries, 'ledger': self.ledger, 'carried': self.carried})
 
     def invalidate(self, commands):
         # A forced or invalidated probe must not fall back to an older successful cache
         # after this attempt fails, even if its input key happens to be unchanged.
+        # （ledger 不删：它只描述 generated 里现有的产物，复用前还要逐单元核对内容。）
         for command in commands:
             self.entries.pop(command[0], None)
-        atomic_json(self.path, {'version': VERSION, 'probes': self.entries})
+        self._save()
 
     def record(self, command, output_names, key, units=None):
-        self.pending[command[0]] = {'key': key, 'command': command, 'names': output_names, 'outputs': self.outputs(output_names),
-                                    'units': units, 'inputs': self.details.get(command[0], {})}
+        """产物复制进 generated 之后调用（命中的探针也调）。分片探针另记单元摘要，并立刻写进 ledger。"""
+        entry = {'key': key, 'command': command, 'names': output_names, 'outputs': self.outputs(output_names),
+                 'units': units, 'inputs': self.details.get(command[0], {})}
+        spec = self.shard(command)
+        if spec is not None and isinstance(units, dict):
+            old = self.entries.get(command[0]) or {}
+            if old.get('outputs') == entry['outputs'] and isinstance(old.get('unitOutputs'), dict):
+                entry['unitOutputs'] = old['unitOutputs']
+            else:
+                entry['unitOutputs'] = self._unit_digests(spec['kind'], output_names)
+            if entry['unitOutputs'] is None:
+                del entry['unitOutputs']
+            else:
+                self.ledger[command[0]] = entry
+                self._save()
+        self.pending[command[0]] = entry
 
     def commit(self):
         if digest_files(files(self.app), self.app) != self.source_sha:
@@ -373,7 +479,7 @@ class ProbeCache:
             if (current.key(entry['command']) != entry['key'] or current.outputs(entry['names']) != entry['outputs']
                     or current.units(entry['command']) != entry.get('units')):
                 raise RuntimeError('同步期间探针输入或产物改变，不发布缓存：' + name)
-        atomic_json(self.path, {'version': VERSION, 'probes': self.pending})
+        atomic_json(self.path, {'version': VERSION, 'probes': self.pending, 'ledger': self.ledger, 'carried': self.carried})
 
 
 if __name__ == '__main__':
