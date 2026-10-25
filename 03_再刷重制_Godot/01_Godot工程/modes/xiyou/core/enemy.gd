@@ -22,9 +22,72 @@ var elite_hue := 0.0              # 0~1，画面偏色用
 ## 测试用：>= 0 时所有敌人按此值判定神话（0 必为神话，100 必不是）
 static var force_roll := -1.0
 
+## installBossDifficultyRuntime：本场出战人数快照；倍率在原生缓存外结算。
+var boss_strong_count := 0
+var boss_difficulty_boss := false
+var boss_hyper_armor := false
+var _updating_boss_armor := false
+static var _boss_ids := {}
+const BOSS_ARMOR_STATE := 2651
+
+static func deployed_strong_count(members: Array) -> int:
+	return members.filter(func(a): return a is XActor and XItemMarks.SUPER_STRONG_IDS.has(a.actor_id)).size()
+
+static func boss_id(id: int) -> bool:
+	var rec := XDB.rec("Enemies", id)
+	if rec.is_empty():
+		return false
+	if _boss_ids.is_empty():
+		var p := XDB.plugin("MOG_BossHP")
+		for i in range(1, 570):
+			_boss_ids[int(p.get("boss-%d" % i, "0"))] = true
+	return _boss_ids.has(id) or RegEx.create_from_string("(?i)<boss(?:\\s*:[^>]*)?\\s*>|BOSS级怪物").search(str(rec.get("note", ""))) != null
+
+func boss_attribute_rate() -> float:
+	return 1.0 + 0.2 * boss_strong_count if boss_difficulty_boss else 1.0
+
+static func boss_control_state(id: int) -> bool:
+	var st := XDB.rec("States", id)
+	if st.is_empty() or id in [1, BOSS_ARMOR_STATE]:
+		return false
+	return int(st.get("restriction", 0)) > 0 or RegEx.create_from_string("(?i)<BuffType:\\s*(?:沉默|封印|眩晕|睡眠|麻痹|混乱|魅惑|恐惧|冰冻)\\s*>").search(str(st.get("note", ""))) != null or st.get("traits", []).any(func(t): return int(t.code) in [42, 44])
+
+func sync_boss_armor(active: bool, random: XRandomStream = null) -> void:
+	boss_hyper_armor = boss_difficulty_boss and active
+	_updating_boss_armor = true
+	if boss_hyper_armor:
+		for id in state_ids.duplicate():
+			if boss_control_state(id):
+				remove_state(id)
+		if not is_dead() and not is_state_affected(BOSS_ARMOR_STATE):
+			add_state(BOSS_ARMOR_STATE, random)
+		if is_state_affected(BOSS_ARMOR_STATE):
+			state_turns[BOSS_ARMOR_STATE] = 1
+	else:
+		remove_state(BOSS_ARMOR_STATE)
+	_updating_boss_armor = false
+
+func add_state(id: int, random: XRandomStream = null) -> void:
+	if boss_hyper_armor and boss_difficulty_boss and boss_control_state(id):
+		return
+	super(id, random)
+
+func remove_state(id: int) -> void:
+	if id == BOSS_ARMOR_STATE and boss_hyper_armor and boss_difficulty_boss and not _updating_boss_armor and not is_dead():
+		return
+	super(id)
+
+func recover_all() -> void:
+	super()
+	if boss_hyper_armor and not _updating_boss_armor:
+		sync_boss_armor(true)
+
 
 ## roll < 0 时按几率随机决定神话；测试可传 0（必为神话，除非 NoElite）或 100（必不是）。
-func setup(id: int, difficulty: int, roll := -1.0, random: XRandomStream = null) -> XEnemy:
+func setup(id: int, difficulty: int, roll := -1.0, random: XRandomStream = null, strong_count := -1) -> XEnemy:
+	boss_strong_count = strong_count if strong_count >= 0 else (deployed_strong_count(XState.current.battle_members()) if XState.current != null else 0)
+	boss_difficulty_boss = boss_id(id)
+	boss_hyper_armor = false
 	enemy_id = id
 	difficulty_id = difficulty
 	_rates = difficulty_rates(difficulty)
@@ -140,7 +203,8 @@ func param_base(i: int) -> float:
 ## 乘法次序照 JS，倍率不预乘进基础值：预乘时 10250×1.4 得 14349.999999999998，再×1.25＋1500 为 19437.499999999996，
 ## 四舍五入少 1（二十七层多宝 463 攻击 19438，敌群事件参照）。战斗中经 krz 能力值缓存（见 XBattler.param_cells）。
 func param(i: int) -> float:
-	return cached_param(i, param_now) if param_cache_on else param_now(i)
+	var native := cached_param(i, param_now) if param_cache_on else param_now(i)
+	return roundf(native * boss_attribute_rate())
 
 func param_now(i: int) -> float:
 	var v := param_base_unscaled(i) + param_plus(i)

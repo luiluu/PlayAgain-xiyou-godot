@@ -124,8 +124,9 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	enemies.clear()
 	var t := XDB.rec("Troops", troop)
 	# Game_Troop.setup：所有成员 slot 都建出（隐藏成员也是，序号与敌群成员一致，335 出现时只改隐藏标记）
+	var strong_count := XEnemy.deployed_strong_count(actors)
 	for m in t.get("members", []):
-		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty, elite_roll, _rule())
+		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty, elite_roll, _rule(), strong_count)
 		e.setup_level(actors.reduce(func(acc, x): return maxi(acc, int(x.level)), 1), level_roll, _rule())
 		e.set_meta("x", float(m.x))
 		e.set_meta("y", float(m.y))
@@ -535,6 +536,10 @@ func start_turn() -> void:
 	# YEP_X_SkillCooldowns：Game_Troop.increaseTurn 时双方冷却/预热各减 1
 	for b in actors + enemies:
 		b.update_cooldowns()
+	# installBossDifficultyRuntime 包在 increaseTurn 外；在单位 onTurnStart／refresh 之前同步。
+	for e in enemies:
+		e.sync_boss_armor(turn % 2 == 0, _rule())
+	for b in actors + enemies:
 		XStateEffects.run("turn_start", b)  # Custom Turn Start Effect：onTurnStart 内，Unit.refresh 之前
 		# krz onTurnStart 标 dirty，Game_Unit.onTurnStart 紧接 refresh：本回合起能力值重新读取
 		b.param_mark_dirty()
@@ -791,7 +796,7 @@ func enemy_appear(index: int) -> Array:
 ## 336 敌人变身（Game_Enemy.transform）：原地换数据身份，HP/MP 按绝对值保留后截到新上限，TP、状态、buff 不变，
 ## 不重新抽神话、等级，不走开战流程；原名变了就清字母，再 makeUniqueNames。
 ## 本工程敌人在轮到时才决定行动（decide），变身后轮到时自然按新形态选招，不另生成待行动。
-## 未实现：CodexBossDifficulty 霸体（2651）的形态同步——重制版尚无 Boss 霸体系统。
+## CodexBossDifficulty 在原变身前重判Boss，原流程后按当前回合同步2651；人数保留开战快照。
 ## krz 能力值缓存不随变身清空（变身不标 dirty，内部 refresh 只截资源）：读过的格子留旧形态的值，截 HP 也按缓存上限。
 func enemy_transform(index: int, enemy_id: int) -> Array:
 	var out := []
@@ -800,12 +805,14 @@ func enemy_transform(index: int, enemy_id: int) -> Array:
 		return out
 	var before := _enemy_reading(e)
 	var old_name := e.original_name()
+	e.boss_difficulty_boss = XEnemy.boss_id(enemy_id)
 	e.enemy_id = enemy_id
 	if e.original_name() != old_name:
 		e.letter = ""
 		_letters.erase(e)
 	e.refresh_passive()
 	_refresh_battler(e)
+	e.sync_boss_armor(turn > 0 and turn % 2 == 0, _rule())
 	make_unique_names()
 	out.append(_enemy_change("transform", index, before))
 	return out
@@ -1742,6 +1749,8 @@ func grant(r: Dictionary) -> Array:
 ## result：0 胜、1 逃、2 败，-1 不跑胜逃败效果（测试夹具等）。
 ## Custom Victory／Escape／Defeat Effect 只对我方（含后备），在原 endBattle 之前；胜利时 processVictory 已先 removeBattleStates。
 func end_battle(result := -1) -> void:
+	for e in enemies:
+		e.sync_boss_armor(false, _rule())
 	if result == 0:
 		for b in state.members():
 			for id in b.state_ids.duplicate():
