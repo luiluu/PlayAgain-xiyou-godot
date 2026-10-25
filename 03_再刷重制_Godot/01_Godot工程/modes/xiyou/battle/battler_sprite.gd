@@ -13,6 +13,7 @@ var battler: XBattler
 ## 演出中的读数（XBattleScene.show_views 设、clear_views 清）；空时读实时状态
 var view := {}
 var look: XAppearance
+var _look_key := ""   # 角色外观键（XAppearance.battler_key）：换装卡换图时变
 ## 身体：格子/逐帧/单图时是 Sprite2D，场景外观时是场景根节点
 var sprite: Node2D
 var shadow: Sprite2D
@@ -67,6 +68,7 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	battler = b
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	look = XAppearance.for_battler(b)
+	_look_key = XAppearance.battler_key(b)
 	sv = look.animated()
 	if b is XEnemy and look.sideview:
 		facing_left = false
@@ -206,6 +208,10 @@ func motion_tick() -> void:
 
 
 func _process(delta: float) -> void:
+	if battler is XActor:
+		var k := str(view.get("look", _look_key)) if not view.is_empty() else XAppearance.battler_key(battler)
+		if k != _look_key:
+			swap_look(k)
 	if cursor:
 		cursor.visible = selected
 	if selected:
@@ -217,6 +223,27 @@ func _process(delta: float) -> void:
 		_breath_t += delta * TAU / 2.4
 		sprite.scale.y = body_scale * (1.0 + sin(_breath_t) * 0.02)
 		sprite.position.y = -_lift_px
+
+
+## 换装卡（卡状态 Custom Apply／Remove Effect 的 setBattlerImage）：按外观键换图，动作与帧接着播。
+## 只换 Sprite2D 身体；场景外观（appearances.json 的 scene）不换（目前没有角色登记场景外观）。
+func swap_look(key: String) -> void:
+	_look_key = key
+	if look.kind == "scene" or not sprite is Sprite2D:
+		return
+	var next := XAppearance.for_look(battler as XActor, key)
+	if next.kind == "scene":
+		return
+	body_scale = body_scale / maxf(look.scale, 0.0001) * next.scale
+	look = next
+	sv = look.animated()
+	(sprite as Sprite2D).region_enabled = look.sideview
+	_apply_scale()
+	_frame = mini(_frame, maxi(look.frame_count(motion) - 1, 0))
+	if sv:
+		_apply()
+	else:
+		_show_frame(look.frame("walk", 0))
 
 
 func _idle_motion() -> String:

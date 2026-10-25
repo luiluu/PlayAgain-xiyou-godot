@@ -5,7 +5,7 @@ extends RefCounted
 ## - 换装卡：技能 6801～6858 备注 <StartPushStateN:…>，状态 N 备注里有 var battlerName = '…' 的才登记（58 张），名字去掉「变身——」。
 ## - 开关：默认启用；关掉的角色记在 XState.costume_off（原版是 Game_Actor._codexCostumeEnabled，随局内存档；重制不迁移旧档，存成角色 ID 列表）。
 ## - 外观：battler_name——战斗中角色身上有卡状态时，启用＝卡图，关闭＝自身形态（数据库 battlerName）。
-##   重制战斗还没有卡状态的换图（状态 Custom Apply Effect 里的 setBattlerImage），战斗精灵接这里见交付单 claude_bajie-superstrong 提案。
+##   卡状态的 Custom Apply／Remove Effect 只做 setBattlerImage，重制不翻脚本：战斗精灵经 XAppearance.for_battler 取这里（八戒_71）。
 ## - 入口：设置「角色换装」，进游戏后（不在战斗）可开，状态「打开」，否则灰、「进入游戏」、确定蜂鸣。主菜单里的同名指令被
 ##   installDisplayPreferencesRuntime 去掉了，只留设置这一处。
 
@@ -73,6 +73,25 @@ static func battler_name(s: XState, a: XActor, in_battle := true) -> String:
 	if card == null or not in_battle:
 		return own
 	return str(card.image) if enabled(s, a.actor_id) else own
+
+
+## C.active：启用、在战斗中、有卡状态
+static func active(s: XState, a: XActor, in_battle := true) -> bool:
+	return a != null and in_battle and enabled(s, a.actor_id) and current(a) != null
+
+
+## Mx.SuperSVMetaProvider 包装：卡图生效时去掉角色自身的 sv／SVspeed／SVzs*／Cfdz*／YCyy 标签（卡图没有逐帧图）
+static func sv_meta(s: XState, a: XActor, meta: Dictionary, in_battle := true) -> Dictionary:
+	return strip_sv(meta) if active(s, a, in_battle) else meta
+
+
+static func strip_sv(meta: Dictionary) -> Dictionary:
+	var out := {}
+	var re := RegEx.create_from_string("(?i)^(sv|SVspeed|SVzs\\d+|Cfdz\\d+|YCyy)$")
+	for k in meta:
+		if re.search(str(k)) == null:
+			out[k] = meta[k]
+	return out
 
 
 ## C.ownedActors：队伍＋角色仓库，去重、按出现顺序
