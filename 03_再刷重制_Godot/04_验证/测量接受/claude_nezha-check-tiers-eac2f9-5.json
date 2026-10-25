@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "slice_d1.json",
+      "collection": "damage",
+      "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+      "fields": [
+        "breakdown",
+        "final",
+        "value"
+      ],
+      "oldDigest": "431a17c4b5d62714",
+      "newDigest": "169fcb99ff46deca",
+      "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变"
+    },
+    {
+      "file": "slice_d2.json",
+      "collection": "damage",
+      "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+      "fields": [
+        "breakdown",
+        "final",
+        "value"
+      ],
+      "oldDigest": "431a17c4b5d62714",
+      "newDigest": "169fcb99ff46deca",
+      "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变"
+    },
+    {
+      "file": "slice_d3.json",
+      "collection": "damage",
+      "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+      "fields": [
+        "breakdown",
+        "final",
+        "value"
+      ],
+      "oldDigest": "431a17c4b5d62714",
+      "newDigest": "169fcb99ff46deca",
+      "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变"
+    },
+    {
+      "file": "slice_d4.json",
+      "collection": "damage",
+      "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+      "fields": [
+        "breakdown",
+        "final",
+        "value"
+      ],
+      "oldDigest": "431a17c4b5d62714",
+      "newDigest": "169fcb99ff46deca",
+      "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变"
+    },
+    {
+      "file": "slice_d5.json",
+      "collection": "damage",
+      "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+      "fields": [
+        "breakdown",
+        "final",
+        "value"
+      ],
+      "oldDigest": "431a17c4b5d62714",
+      "newDigest": "169fcb99ff46deca",
+      "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变"
+    },
+    {
+      "file": "slice_d6.json",
+      "collection": "damage",
+      "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+      "fields": [
+        "breakdown",
+        "final",
+        "value"
+      ],
+      "oldDigest": "431a17c4b5d62714",
+      "newDigest": "169fcb99ff46deca",
+      "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变"
+    }
+  ]
+}
