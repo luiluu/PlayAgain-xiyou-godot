@@ -4,6 +4,7 @@
 - 状态：**暂停（WIP）**——2026-10-25 16:02 用户要先把额度给小小鱼审查，全量检查跑到 Godot 测试开头时停掉，没有结果。
 - **接续要点**：功能已做完（期三＋期五，专项 `xiyou_battle_start_event` 50/50、`xiyou_party` 58/58）。剩下只有：① 跑全量 `检查.sh --full`（重点看 `xiyou_event_compare` 期三必跑、`xiyou_rules`／`xiyou_battle_common_events`／`xiyou_troop_events` 有没有因开战多跑 1320 变化）；② 有失败就修；③ 状态改「可合并」、开 PR（不合并）。云端还原素材见 `/mnt/project-files/云端素材还原说明.md`。
 - 2026-10-25 本机额度用完，唐僧以 `WIP:` 保存现场（2f5c440a，期五参照探针与夹具）；云端线程接手，推到 `claude/project-thread-nxijc4`（内容即本分支＋期五），PR 不合并。
+- **2026-10-26 接续（八戒_72）**：已在本工作树切到 `claude/project-thread-nxijc4` 并合入 main 89027e47（无冲突，合并提交即本条之前一条）。`新建工作树.sh --补齐` 已启动，卡在 Godot `--import` 等机器槽位（其他车道占满），收工时仍在跑，没有日志文件（会话后台任务输出）。**下一步**：确认补齐完成（`.godot` 导入产物在），再用 `长任务.py start --idle-timeout 0 <日志> -- caffeinate -i 03_再刷重制_Godot/07_开发环境/检查.sh --full` 跑全量，`等待任务.sh --timeout 540 <日志>` 等；重点看 xiyou_event_compare、xiyou_rules、xiyou_battle_common_events、xiyou_troop_events；之后按原任务开 PR（不合并）。
 - 本分支从 claude/bajie-pets-source-97efd5-3（期四，已合 main 545ebd37 之后的 d6d1f99a）切出；合并顺序：期二 → 期一 → 期四 → 本张。
 
 ## 期三 领袖旗标对位置
