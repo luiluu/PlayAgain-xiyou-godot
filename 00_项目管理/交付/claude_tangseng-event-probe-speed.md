@@ -14,6 +14,13 @@
 - incremental_sync.py 的 event_probe 读取面审核值改为 `reads:b8ffbf2d6b5a3c38`（只多了 XIYOU_EVENT_OUT 写路径），待 Codex 核。
 - 还没跑 检查.sh，没写测试（建议给 split_contiguous／拼回补单测）。
 
+### 进展（2026-10-25 傍晚，按用户要求暂停前）
+
+- 开局快照补独立装备后全量 4318 例与 main 的 generated/oracle/events.json **逐字相同**，单进程 11 分钟（本机负载高时）。
+- 分段改为按用例数均分（split_balanced，m187 独占一段），拼回按单元原顺序稳定排序；全量四段 **逐字相同**，墙钟 203 秒（m187 一段 198 秒是下限）。
+- 新增 07_开发环境/测试事件探针分段.py 并接入检查.sh；测试增量同步、测试角色同步提速通过。
+- 未完成：`检查.sh --affected main` 里「测试选测.py」两例失败（test_default_runs_everything、test_unknown_change_is_full，夹具里整轮检查 rc=1），还没查是否本分支引起（可能是新加的检查行在夹具里跑不了）；查清后跑收工检查、写变更记录草稿、标可合并。
+
 ## 变更记录草稿
 
 待写
