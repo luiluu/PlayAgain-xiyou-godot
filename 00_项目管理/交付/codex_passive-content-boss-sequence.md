@@ -26,3 +26,5 @@
 - 69运行时接线草稿：Boss域新增targets列表帧；XActionSequence持有独立resources，每条_modify按解析后的列表推域／退出，sequence_gain有resources时clearResult→复用gain→publish，返回结果槽的显示值。原无resources调用路径保留，敌群事件不借来源。Boss>1只来自敌人、导入倍率<1只来自角色，两者不同时生效；现有导入减伤顺序保留。尚待完整原版与Godot验收，不报可合并。
 
 - 原版完整boss69-sequence-full（2a09c4d4c2054d06bcc97a25e1c341f4）87／87 errors空，含实际三位出战对象；独立原件.sandbox/boss_sequence.json已复制为fixture且逐对象一致。新增专项比较解析目标、所有已观察单位的前后资源／护盾／dirty／结果槽、退出后的域外gain，并检查列表域嵌套／空域遮蔽与敌群事件无来源；Godot验收待跑。
+
+- 首轮Godot boss69-sequence-godot exit1，8213项中42项失败，全部定位到原规则make_targets缺ENEMY 1／ACTOR 0／FIRST（对应三组HP／MP）；非倍率或护盾差异，未归偶发、未盲重跑。按新增87例原版补这三种已采选择器，保留首败日志，不把画面选择器全部扩到规则侧。

@@ -253,7 +253,7 @@ static func js_parse_int(v: float) -> float:
 	return floorf(absf(v)) * (-1.0 if v < 0 else 1.0)
 
 
-## BattleManager.makeActionTargets（序列里实际用到的写法；其余写法照原版得到空表）
+## BattleManager.makeActionTargets（已移植并有规则参照的写法；其余暂为空表）
 func make_targets(spec: String) -> Array:
 	var s := spec.to_upper()
 	var friends := logic.actors if user is XActor else logic.enemies
@@ -277,6 +277,15 @@ func make_targets(spec: String) -> Array:
 			return logic.alive(foes)
 		"ALL ALIVE":
 			return logic.alive(logic.actors) + logic.alive(logic.enemies)
+		"FIRST":
+			return [targets[0]] if not targets.is_empty() and targets[0] != null else []
+	for kind in ["ACTOR", "ENEMY"]:
+		var m := RegEx.create_from_string(kind + "[ ](\\d+)").search(s)
+		if m:
+			var members: Array = logic.actors if kind == "ACTOR" else logic.enemies
+			var at := int(m.get_string(1))
+			if at < members.size() and not members[at].hidden:
+				return [members[at]]
 	return []
 
 
