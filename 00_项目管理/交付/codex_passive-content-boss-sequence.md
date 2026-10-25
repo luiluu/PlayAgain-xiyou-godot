@@ -34,3 +34,5 @@
 - boss69-sequence-final2终态exit0，10场50569／50569（新增8213、action_sequence115、事件108／22、导入273、既有Boss／公式／状态链），均单次且无SCRIPT ERROR；确定性隔离基线boss69-determinism-baseline同为374／382，8个early_inventory_rule与本期一致，证明继承失败，保留原件与快照不夹带无关修复。另发现同一序列resources跨命令保留slots可能在数值→普通MP伤害→另一目标数值时publish旧目标槽，追加单个interleaved原版样本，不重采87例。
 
 - 追加interleaved原版1例通过（4f6e98727f6e49ceb0b9a02fb1f54dcb），与87原件来源一致、合成88唯一ID并保留两原件。Godot旧实现实测8312／8315，三处结果槽确实把普通MP伤害8回写成0；已在每次数值gain开始清理该序列resources的旧slots后seed目标，publish仅本次操作所触及对象。TP继续原路径，不扩本期未采的TP资源语义。相关10场需按最终版本再跑。
+
+- boss69-sequence-import exit0且无SCRIPT ERROR／ERROR／Parse／Compile Error；新增xiyou_boss_sequence UID已生成，顺带非车道xiyou_battle_common_events.gd.uid移存.sandbox/boss69_unrelated_import_uid.txt，未夹带。下一步最终88例＋九依赖，不重复已确认的确定性基线失败。
