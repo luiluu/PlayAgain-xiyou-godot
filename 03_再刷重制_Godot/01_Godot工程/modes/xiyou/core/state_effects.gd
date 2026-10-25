@@ -162,8 +162,14 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 ## in the enclosing operation's resource domain (including nested death hooks).
 static func _add_params(effect: Dictionary, ctx: Dictionary) -> void:
 	var target: XBattler = ctx.target
-	if effect.get("when") == "target_dead" and (target == null or not (target.hp <= 0.0 or target.state_ids.has(1))):
-		return
+	if effect.get("when") == "target_dead":
+		if target == null:
+			return
+		# Native isDead also requires isAppeared. HP<=0 is an independent
+		# short-circuit, so hidden HP0 still grants the permanent bonus.
+		var death_state := target.state_ids.has(1) and (not target is XEnemy or not target.hidden)
+		if not (target.hp <= 0.0 or death_state):
+			return
 	if not ctx.user is XActor:
 		_diagnose(ctx.phase, int(ctx.state_id), ctx.holder, "param_add_actor_required")
 		return

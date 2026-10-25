@@ -22,17 +22,18 @@ for(const mode of ['dispel','forced_expire']) cases.push(makeCase('1612.'+mode,{
   const saved=host.encode();host.restore(saved);a=w.$gameActors.actor(1);rows.push(snap(a,'save'));
   a.removeState(1612);rows.push(snap(a,'after_save_remove'));a.recoverAll();rows.push(snap(a,'recover'));return {rows};
 }));
-for(const mode of ['alive','hp0','dead_state','both','self']) cases.push(makeCase('1768.'+mode,{},()=>{
+for(const mode of ['alive','hp0','dead_state','both','self','hidden_dead','hidden_hp0']) cases.push(makeCase('1768.'+mode,{},()=>{
   let a=fresh();a.addState(1768);a.refresh();const b=mode==='self'?a:new w.Game_Enemy(1,0,0);
-  if(['hp0','both','self'].includes(mode)) b._hp=0;
-  if(['dead_state','both'].includes(mode)) b._states.push(1);
+  if(['hp0','both','self','hidden_hp0'].includes(mode)) b._hp=0;
+  if(['dead_state','both','hidden_dead'].includes(mode)) b._states.push(1);
+  if(mode.startsWith('hidden_')) b._hidden=true;
   const action=new w.Game_Action(a);action.setSkill(1);const rows=[snap(a,'before')];
   action.offApplyStateEffects(b);rows.push(snap(a,'conclude'));
   action.offApplyStateEffects(b);rows.push(snap(a,'repeat'));
   const saved=host.encode();host.restore(saved);a=w.$gameActors.actor(1);rows.push(snap(a,'save'));return {rows};
 }));
-for(const zero of [false,true]) cases.push(makeCase('1768.apply_miss_'+(zero?'hp0':'alive'),{},()=>{
-  const a=fresh();a.addState(1768);a.refresh();const b=new w.Game_Enemy(1,0,0);if(zero)b._hp=0;
+for(const zero of [false,true]) cases.push(makeCase('1768.apply_miss_'+(zero?'hp0':'alive'),{immortal:zero},()=>{
+  const a=fresh();a.addState(1768);a.refresh();const b=new w.Game_Enemy(1,0,0);if(zero){b._immortal=true;b._hp=0;}
   const action=new w.Game_Action(a);action.setSkill(1);action.itemHit=()=>0;
   const rows=[snap(a,'before')];action.apply(b);rows.push(snap(a,'apply'));
   return {rows,missed:b.result().missed,evaded:b.result().evaded};

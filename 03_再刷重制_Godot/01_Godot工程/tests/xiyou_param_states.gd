@@ -22,7 +22,7 @@ func check(tag: String, ok: bool, detail = null) -> void:
 			print("FAIL ", tag, " ", JSON.stringify(detail).left(1200))
 
 func same(a, b) -> bool:
-	return JSON.stringify(a) == JSON.stringify(b)
+	return JSON.parse_string(JSON.stringify(a)) == JSON.parse_string(JSON.stringify(b))
 
 func fresh() -> XState:
 	var s := XState.new_game_blank()
@@ -50,7 +50,7 @@ func compare(tag: String, a: XActor, row: Dictionary) -> void:
 	if a is TracedActor:
 		a.trace.clear()
 
-func lifecycle(c: Dictionary) -> void:
+func lifecycle(c: Dictionary, bound := false) -> void:
 	var s := fresh()
 	var a: XActor = s.actor(1)
 	a.add_param(0, 100000)
@@ -58,6 +58,9 @@ func lifecycle(c: Dictionary) -> void:
 	a.recover_all()
 	a.trace.clear()
 	var rows: Array = c.observed.rows
+	var resources := XResourceContext.new()
+	if bound:
+		a.lifecycle_context = {"resources": resources}
 	compare(c.id + ".before", a, rows[0])
 	a.add_state(1612)
 	compare(c.id + ".apply", a, rows[1])
@@ -77,22 +80,29 @@ func lifecycle(c: Dictionary) -> void:
 	a.remove_state(1612)
 	compare(c.id + ".absent", a, rows[5])
 	a.runtime_result = XResourceContext.empty_result()
+	resources.seed_result(a, XResourceContext.empty_result())
 	a.add_state(1612)
 	compare(c.id + ".apply5", a, rows[6])
+	a.lifecycle_context = {}
 	s = XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
 	a = s.actor(1)
 	compare(c.id + ".save", a, rows[7])
 	# Restore tracing on the same live instance after the normal save roundtrip.
 	var traced := TracedActor.new()
+	traced.setup(1)
 	for field in ["actor_id", "_lv", "exp_total", "equips", "skill_ids", "state_ids", "state_turns", "hp", "mp", "tp"]:
 		traced.set(field, a.get(field))
 	s.actors[1] = traced
 	a = traced
+	if bound:
+		a.lifecycle_context = {"resources": resources}
 	a.refresh_passive()
 	a.remove_state(1612)
 	compare(c.id + ".after_save_remove", a, rows[8])
 	a.recover_all()
 	compare(c.id + ".recover", a, rows[9])
+	check(c.id + ".domain", resources.error.is_empty() and (not bound or a.lifecycle_context.resources == resources))
+	a.lifecycle_context = {}
 
 func conclude(c: Dictionary) -> void:
 	var s := fresh()
@@ -102,10 +112,12 @@ func conclude(c: Dictionary) -> void:
 	var b: XBattler = a if c.id == "1768.self" else XEnemy.new()
 	if b != a:
 		b.setup(1, 3, 100.0)
-	if c.id in ["1768.hp0", "1768.both", "1768.self"]:
+	if c.id in ["1768.hp0", "1768.both", "1768.self", "1768.hidden_hp0"]:
 		b.hp = 0
-	if c.id in ["1768.dead_state", "1768.both"]:
+	if c.id in ["1768.dead_state", "1768.both", "1768.hidden_dead"]:
 		b.state_ids.append(1)
+	if c.id.begins_with("1768.hidden"):
+		b.hidden = true
 	var rows: Array = c.observed.rows
 	compare(c.id + ".before", a, rows[0])
 	var r := XResourceContext.new()
@@ -127,6 +139,7 @@ func miss_case(c: Dictionary) -> void:
 	var b := XEnemy.new()
 	b.setup(1, 3, 100.0)
 	if c.id.ends_with("hp0"):
+		b.immortal = true
 		b.hp = 0
 	compare(c.id + ".before", a, c.observed.rows[0])
 	var battle := MissBattle.new()
@@ -180,6 +193,9 @@ func isolation() -> void:
 		var before := fingerprint(s, a, r)
 		XStateEffects.run("conclude", clone if mode == "shadow" else a, ctx)
 		check(mode + ".isolated", before == fingerprint(s, a, r))
+		for phase in ["apply", "remove", "leave"]:
+			XStateEffects.run_one(phase, clone if mode == "shadow" else a, XDB.rec("States", 1612), ctx)
+			check(mode + "." + phase, before == fingerprint(s, a, r))
 		check(mode + ".stack", XStateEffects.current().is_empty())
 		r.preview = false
 		a.lifecycle_context = {"resources": r}
@@ -205,12 +221,13 @@ func _ready() -> void:
 
 func _run() -> void:
 	var fixture = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/param_states_oracle.json"))
-	check("fixture", fixture is Dictionary and fixture.cases.size() == 9)
+	check("fixture", fixture is Dictionary and fixture.cases.size() == 11)
 	check("source", fixture.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	for c in fixture.cases:
 		check(c.id + ".oracle", c.errors.is_empty())
 		if c.id.begins_with("1612"):
 			lifecycle(c)
+			lifecycle(c, true)
 		elif c.id.contains("apply_miss"):
 			miss_case(c)
 		else:
