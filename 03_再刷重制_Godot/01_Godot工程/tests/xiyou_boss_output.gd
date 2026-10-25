@@ -63,11 +63,11 @@ func run_case(c: Dictionary) -> void:
 	compare(c.id + ".before.target", target, resources, c.observed.before.target)
 	check(c.id + ".rate", same(e.boss_output_rate() if source == e else 1.0, c.observed.rate))
 	check(c.id + ".armor", e.boss_hyper_armor == c.observed.armor)
-	check(c.id + ".icon", e.is_state_affected(2651) == c.observed.icon)
 	if spec.kind == "hp":
 		battle.execute_hp_damage(source, target, float(spec.value), spec.get("drain", false))
 	else:
 		battle.execute_mp_damage(source, target, float(spec.value), spec.get("drain", false))
+	check(c.id + ".icon", e.is_state_affected(2651) == c.observed.icon)
 	check(c.id + ".diagnostic", resources.error.is_empty(), resources.error)
 	compare(c.id + ".after.source", source, resources, c.observed.after.source)
 	compare(c.id + ".after.target", target, resources, c.observed.after.target)

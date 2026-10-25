@@ -18,7 +18,7 @@ for(const [name,type] of [['hp',1],['mp',2],['hpDrain',5],['mpDrain',6]]){
   w.$dataSkills.push(rec);skills[name]=rec.id;
 }
 function snap(b){const r=b.result();return {hp:b.hp,mp:b.mp,tp:b.tp,shield:b.shield,states:Array.from(b._states),
-  result:Object.fromEntries(['hpAffected','hpDamage','mpDamage','tpDamage','success','missed','evaded','critical','addedStates','removedStates'].map(k=>[k,r[k]]))};}
+  result:Object.fromEntries(['hpAffected','hpDamage','mpDamage','tpDamage','success','missed','evaded','critical','addedStates','removedStates'].map(k=>[k,Array.isArray(r[k])?Array.from(r[k]):r[k]]))};}
 const cases=[];
 function add(id,spec){cases.push(makeCase(id,spec,()=>{
   newGame();w.$gameSwitches.setValue(2494,true);w.$gameSystem.setDifficultyId(3);
