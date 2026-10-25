@@ -46,6 +46,10 @@ static func boss_id(id: int) -> bool:
 func boss_attribute_rate() -> float:
 	return 1.0 + 0.2 * boss_strong_count if boss_difficulty_boss else 1.0
 
+## 原版只读Boss身份与霸体标志；死亡复活后暂缺2651图标时仍保留输出倍率。
+func boss_output_rate() -> float:
+	return boss_attribute_rate() if boss_difficulty_boss and boss_hyper_armor else 1.0
+
 static func boss_control_state(id: int) -> bool:
 	var st := XDB.rec("States", id)
 	if st.is_empty() or id in [1, BOSS_ARMOR_STATE]:

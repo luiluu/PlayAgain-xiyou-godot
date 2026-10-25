@@ -1356,10 +1356,18 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	return r
 
 
-## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
+## installBossDifficultyRuntime的最外层普通伤害包装。倍率为1时也floor，非正值及自身代价原样传入。
+static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
+	if value > 0.0 and t != u:
+		return floorf(value * (u.boss_output_rate() if u is XEnemy else 1.0))
+	return value
+
+
+## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：Boss输出→导入平衡→真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
 ## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
-	# 导入角色平衡在最外层：先按行动者的导入倍率缩放正伤害，之后才走真气减伤与护盾
+	value = _boss_output_value(u, t, value)
+	# Boss输出后按行动者的导入倍率缩放正伤害，之后走真气减伤与护盾
 	if value > 0.0 and XImportedBalance.scales(u, t, _reflecting):
 		value = XImportedBalance.reduced(value, u)
 	if troop_id > 0:
@@ -1375,9 +1383,10 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> f
 	return value
 
 
-## Game_Action.executeMpDamage（类型 2／4／6）：导入角色平衡先缩放正伤害；MP 伤害（非回复）以目标现有 MP 为上限；
+## Game_Action.executeMpDamage（类型 2／4／6）：Boss输出→导入角色平衡缩放正伤害；MP 伤害（非回复）以目标现有 MP 为上限；
 ## 吸取再给行动者回 MP。返回结果槽的 MP 伤害。
 func execute_mp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
+	value = _boss_output_value(u, t, value)
 	if value > 0.0 and XImportedBalance.scales(u, t, _reflecting):
 		value = XImportedBalance.reduced(value, u)
 	if value >= 0.0:
