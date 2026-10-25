@@ -7,10 +7,14 @@ w.Game_Battler.prototype.battler=function(){
   if(!sprites.has(this))sprites.set(this,new Proxy({}, {get:(t,k)=>k in t?t[k]:(()=>false),set:(t,k,v)=>{t[k]=v;return true;}}));
   return sprites.get(this);
 };
-const skills={hp:w.$dataSkills.find(s=>s&&s.damage.type===1).id,
-  mp:w.$dataSkills.find(s=>s&&s.damage.type===2).id,
-  hpDrain:w.$dataSkills.find(s=>s&&s.damage.type===5).id,
-  mpDrain:w.$dataSkills.find(s=>s&&s.damage.type===6).id};
+// 冻结库没有MP伤害技能；克隆普通技能，仅把damage.type设成入口边界输入，不替换引擎方法。
+const skills={};
+for(const [name,type] of [['hp',1],['mp',2],['hpDrain',5],['mpDrain',6]]){
+  const original=w.$dataSkills.find(s=>s&&s.damage.type===type);
+  if(original){skills[name]=original.id;continue;}
+  const rec=JSON.parse(JSON.stringify(w.$dataSkills[1]));rec.id=w.$dataSkills.length;rec.damage.type=type;
+  w.$dataSkills.push(rec);skills[name]=rec.id;
+}
 function snap(b){const r=b.result();return {hp:b.hp,mp:b.mp,tp:b.tp,shield:b.shield,states:Array.from(b._states),
   result:Object.fromEntries(['hpAffected','hpDamage','mpDamage','tpDamage','success','missed','evaded','critical','addedStates','removedStates'].map(k=>[k,r[k]]))};}
 const cases=[];
