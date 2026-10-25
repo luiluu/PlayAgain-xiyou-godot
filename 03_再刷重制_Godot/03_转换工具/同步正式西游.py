@@ -314,15 +314,17 @@ _runner_lock = threading.Lock()
 PROBE_WEIGHTS = {'event_probe.cjs': 3}
 
 # event_probe 按地图分几个进程并行（唐僧 2026-10-25）：整轮 4318 例单进程是同步的长杆。按用例数把单元（m<地图>、ce<公共事件>）
-# 切成连续几段，各段一个进程、各占 1 槽、各用自己的存档目录，跑完按原顺序拼回 .sandbox/events.json（与单进程逐字相同）。
+# 均分成几组（单元不拆开），各组一个进程、各占 1 槽、各用自己的存档目录，跑完按原顺序拼回 .sandbox/events.json（与单进程逐字相同）。
 # EVENT_PROBE_SHARDS=1 退回单进程。各段的存档目录不带头顶／云裳成长记录：每例新开局都要整份复制重写这两份记录，
 # 种子里已累积到 7 MB／4 MB，空记录的输出相同（117 例实测）。
 EVENT_LEDGERS = ('crown_progress_v1.json', 'yunshang_orders_v1.json')
 EVENT_MERGE_JS = r'''
-const fs = require('fs'), [out, ...parts] = process.argv.slice(1);
+const fs = require('fs'), [out, order, ...parts] = process.argv.slice(1);
 const docs = parts.map(p => JSON.parse(fs.readFileSync(p, 'utf8')));
 for (const d of docs) if (JSON.stringify([d.sourceIdentity, d.setup]) !== JSON.stringify([docs[0].sourceIdentity, docs[0].setup])) throw new Error('分段的来源或设置不一致');
-const cases = [].concat(...docs.map(d => d.cases));
+// 每个单元整段落在一个分段里：按单元原顺序稳定排序即还原单进程顺序
+const rank = new Map(JSON.parse(order).map((u, i) => [u, i])), unit = c => c.kind === 'common' ? 'ce' + c.common : 'm' + c.map;
+const cases = [].concat(...docs.map(d => d.cases)).map((c, i) => [c, i]).sort((a, b) => rank.get(unit(a[0])) - rank.get(unit(b[0])) || a[1] - b[1]).map(x => x[0]);
 fs.writeFileSync(out, JSON.stringify({sourceIdentity: docs[0].sourceIdentity, setup: docs[0].setup, cases}));
 console.log(JSON.stringify({version: docs[0].sourceIdentity.releaseVersion, cases: cases.length, shards: parts.length,
   unfinished: cases.filter(x => !x.finished).map(x => x.id), errors: cases.filter(x => x.errors).map(x => x.id)}));
@@ -343,24 +345,26 @@ def event_units(env):
     return out + [('ce%d' % ce, 1) for ce in manifest['slice']['commonEvents']]
 
 
-def split_contiguous(weighted, n):
-    """按权重把有序单元切成至多 n 段连续段（保持顺序，拼回即原顺序）。"""
-    total = sum(w for _, w in weighted) or 1
-    groups, acc = [[]], 0
-    for unit, w in weighted:
-        if groups[-1] and acc >= total * len(groups) / n and len(groups) < n:
-            groups.append([])
-        groups[-1].append(unit)
-        acc += w
-    return [g for g in groups if g]
+def split_balanced(weighted, n):
+    """按用例数把单元分成至多 n 组（大单元先放进当前最轻的组）；组内保持原顺序，拼回时按单元原顺序排。"""
+    groups = [[0, []] for _ in range(n)]
+    for unit, w in sorted(weighted, key=lambda x: -x[1]):
+        g = min(groups, key=lambda g: g[0])
+        g[0] += w
+        g[1].append(unit)
+    pos = {u: i for i, (u, _) in enumerate(weighted)}
+    return [sorted(g[1], key=pos.get) for g in groups if g[1]]
 
 
 def run_event_sharded(cmd, env, box, only=None):
     """event_probe 分段并行；结果写 .sandbox/events.json，返回与 run_node 同形的结果。"""
     import concurrent.futures
     shards = max(1, int(os.environ.get('EVENT_PROBE_SHARDS', '4')))
-    weighted = [u for u in event_units(env) if only is None or u[0] in set(only)]
-    groups = split_contiguous(weighted, shards)
+    try:
+        weighted = [u for u in event_units(env) if only is None or u[0] in set(only)]
+    except (OSError, KeyError, ValueError):   # 读不到切片／产物（如测试夹具）：照旧单进程，由探针自己报错
+        return run_node(cmd, env)
+    groups = split_balanced(weighted, shards) if shards > 1 else []
     if len(groups) < 2:
         return run_node(cmd, env)
 
@@ -379,7 +383,7 @@ def run_event_sharded(cmd, env, box, only=None):
     bad = [p for p in done if p.returncode]
     if bad:
         return subprocess.CompletedProcess(cmd, bad[0].returncode, text, '')
-    m = subprocess.run(['node', '-e', EVENT_MERGE_JS, str(SANDBOX / 'events.json')] +
+    m = subprocess.run(['node', '-e', EVENT_MERGE_JS, str(SANDBOX / 'events.json'), json.dumps([u for u, _ in weighted])] +
                        [str(box / ('shard-%d' % i) / 'events.json') for i in range(len(groups))],
                        cwd=ORACLE_DIR, capture_output=True, text=True)
     return subprocess.CompletedProcess(cmd, m.returncode, text + m.stdout, m.stderr)
