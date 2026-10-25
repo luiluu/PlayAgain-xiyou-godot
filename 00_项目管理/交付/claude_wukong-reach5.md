@@ -28,6 +28,12 @@
   - 同步结束后要做：看 sync11 结果（`TASK_RESULT`、报告）→ 跑 `xiyou_event_compare`、`xiyou_rules.tscn xiyou_rules_d1b xiyou_rules_d1c xiyou_rules_d1d`、`内容覆盖检查.py`（看过报告再 `--update-baseline`）→ 把结果写在这里 → 状态改「可合并」。期一的切片提交是 dbe1fb34。
   - 期二（桂树小屋）未开始接切片：专项草稿 `tests/xiyou_floor_reach173.gd/.tscn` 已 WIP 提交但没跑过。切片要做：Map147 的 keepEvents 加 2；maps 加 173、175；troops 加 528～537、559～568；Map173／175 keepEvents "*"。起点表、首领事件表见草稿常量（STARTS／BOSS173／BOSS175）。Map175 EV 战后「前往未知存在」传 Map177（已在切片）。
 
+- **云端接续（悟空·云端，2026-10-25 16:05 UTC，用户要求先做小小鱼，暂停）**：
+  - 分支已改到 `claude/project-thread-anvfwb`（从 wukong-reach5 a27bb466 接续）。
+  - 期二切片已改（ad6293f）：Map147 keepEvents 加 2；maps 加 173、175；troops 加 528～537、559～568；Map173／175 "*"；keepEvents说明补剑气长城与桂树小屋两段。reach173 草稿已按原版改正：每个房间各有开关（Map173 254～263、Map175 264～273），不是一律 255。
+  - 转换器修正：云端没有 sips 时沿用上次产物里对得上的 PNG，否则用 Pillow（xiyou_export.py）。单跑转换器对照 Mac 产物：只多出 5 张新图与新地图，既有图逐字节不变。
+  - 全量同步（`--no-register --full --accept-additions`）跑到切片探针时按用户要求停掉，**未完成**；重启照原命令，约 45 分钟。之后：reach139、reach173 → event_compare、rules d1b～d1d、内容覆盖检查 → 变更记录 → 开 PR。
+
 ## 可优化（流程／工具／效率）
 
 - 已记录（悟空_56）：`pgrep -f 同步正式西游.py` 会匹配到执行该 pgrep 的 shell 自己（命令行里含同样字样），写成 `until ! pgrep ...` 的等待循环永远不退出；应写成 `pgrep -f '同步正式西游[.]py'`。建议规则「同步排队」一句里直接给出这个写法（归哪吒／总装）。
