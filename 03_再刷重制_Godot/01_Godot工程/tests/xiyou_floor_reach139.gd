@@ -1,10 +1,9 @@
 extends Node
-## 盘点里「入口事件在已接地图、原版可达」的三簇（悟空_53，用户破例范围）流程（地图场景里真走一遍）：
-## - Map004 EV27（接触，页条件：玩家朝下）→ Map132 兑换大厅 (8,3)；Map132 EV7 → Map204 8号当铺 (2,8)，Map204 EV2 → Map132 (14,8)，Map132 EV2（页条件：朝上）→ Map004 (14,29)；
-## - 物品 1269「指路灯:剑气长城」→ 公共事件 514：乘坐载具时提示、副本中（变量 21≠0）提示，否则传 Map139 剑气长城 (13,30)；
-##   Map139 EV1 崔城（开关 1694）接受传承置开关 1700 与独立开关 A，再进商店页；军需官 EV10 离开；
-## - Map064 EV5 → Map192 信徒藏身 (6,27)，EV1 回 Map064 (38,27)；变量 20≥16 且变量 14＝1 时 EV4 超级嘤雄（敌群 768）与 EV5 狗逍遥·心魔。
-## 队伍生命攻击都很大（只查流程）。
+## 剑气长城战场（盘点簇 剑气长城，悟空_56）流程（地图场景里真走一遍）：
+## - Map139 EV7 三选一：外围→Map140 (15,4)、中心→Map179 (16,16)、否；EV12（接触）→ Map189 城隍庙 (20,38)，Map189 EV20 回 Map139 (13,5)；
+## - Map140 遇敌表 447～450、EV14 圣人投影（敌群 451）；Map179 遇敌表 595～598、EV1 蛮荒圣人（敌群 599）；
+## - Map189：碰瓷老人 EV1（扶起扣金币＝变量 449、变量 206＋20；不理则敌群 661 并中状态 699）、黄昏的信徒 EV7（公共事件 819）、城隍 EV21 授武运。
+## 原版随机分支一律固定（变量 449 的随机值、公共事件 819 的 12 选 1）；队伍生命攻击都很大（只查流程）。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 
@@ -121,6 +120,29 @@ func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
 	return _check("map%d_event%d_finished" % [map.map_id, id], st.done)
 
 
+## 跑一段异步调用到结束，模式同 _run_event
+func _run_call(map: XMapScene, call: Callable, mode := "win") -> bool:
+	if not map.has_meta("watched"):
+		map.set_meta("watched", true)
+		map.ui.child_entered_tree.connect(func(n):
+			if n is XBattleScene:
+				n.finished.connect(func(r): battles.append({"troop": n.logic.troop_id, "result": r}), CONNECT_ONE_SHOT))
+	var st := {"done": false}
+	(func():
+		await call.call()
+		st.done = true).call()
+	var t0 := Time.get_ticks_msec()
+	while not st.done and Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+		var b := _battle_of(map)
+		if b != null and not b.logic.enemies.is_empty() and mode == "win":
+			for en in b.logic.enemies:
+				if en.is_alive():
+					en.hp = 0.0
+					en.add_state(1)
+		await get_tree().process_frame
+	return _check("call_finished", st.done)
+
+
 func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = s
@@ -133,6 +155,8 @@ func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 	return s
 
 
+
+
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_floor_reach139"
 	XConfig.path_override = XSave.dir().path_join("options.json")
@@ -140,102 +164,113 @@ func _run() -> void:
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0
 	XGuide.MILESTONE_ENABLED = false
-	seed(20261024)
-	await _hall()
-	await _sword()
-	await _hideout()
-	await _finish()
+	seed(20261025)
+	await _battlefields()
+	await _temple()
+	_finish()
 
 
-## 兑换大厅簇：EV27 只在玩家朝下时传送
-func _hall() -> void:
-	var s := _start(4, 14, 29, 8)
-	if not _check("hall_door_loaded", await _wait_map(4)):
+## 剑气长城 → 外围／中心：落点、事件、遇敌表、圣人战、真实遇敌
+func _battlefields() -> void:
+	var s := _start(139, 13, 35, 8)
+	if not _check("wall_loaded", await _wait_map(139)):
+		return
+	_check("wall_door_present", _event(_scene(), 7) != null and _event(_scene(), 12) != null)
+	await _run_event(_scene(), 7, [2], "")
+	_check("wall_no_choice_stays", _scene().map_id == 139 and _scene().player.grid == Vector2i(13, 35), [_scene().map_id])
+	await _run_event(_scene(), 7, [0], "")
+	if not _check("outer_entered", await _wait_map(140) and _scene().player.grid == Vector2i(15, 4), [_scene().map_id]):
 		return
 	var map: XMapScene = _scene()
-	_check("hall_door_present", _event(map, 27) != null)
-	await _run_event(map, 27, [], "")
-	_check("hall_door_facing_up_stays", _scene().map_id == 4, [_scene().map_id])
-	s = _start(4, 14, 29, 2)
-	if not _check("hall_door2_loaded", await _wait_map(4)):
-		return
-	await _run_event(_scene(), 27, [], "")
-	_check("hall_entered", await _wait_map(132) and _scene().player.grid == Vector2i(8, 3), [_scene().map_id])
-	map = _scene()
-	_check("hall_events", [2, 3, 7, 12, 13].all(func(i): return _event(map, i) != null))
-	await _run_event(map, 7, [], "")
-	_check("pawn_entered", await _wait_map(204) and _scene().player.grid == Vector2i(2, 8), [_scene().map_id])
-	await _run_event(_scene(), 2, [], "")
-	_check("pawn_back", await _wait_map(132) and _scene().player.grid == Vector2i(14, 8), [_scene().map_id])
-	# 方桌大厅的门（EV2）也只在朝上时传送：朝下不动，朝上才回 Map004
-	await _run_event(_scene(), 2, [], "")
-	_check("hall_exit_facing_down_stays", _scene().map_id == 132)
-	_scene().player.set_direction(8)
-	await _run_event(_scene(), 2, [], "")
-	_check("hall_exit", await _wait_map(4) and _scene().player.grid == Vector2i(14, 29), [_scene().map_id])
-
-
-## 剑气长城：物品 1269 预约的公共事件 514
-func _use_sword(s: XState, map: XMapScene) -> void:
-	s.reserve_common_event(514)
-	map.run_reserved_common_event(s)
-	var t0 := Time.get_ticks_msec()
-	while map.busy and Time.get_ticks_msec() - t0 < TIMEOUT_MS:
-		await get_tree().process_frame
-	await _frames(2)
-
-
-func _sword() -> void:
-	var s := _start(31, 8, 6)
-	if not _check("sword_start_loaded", await _wait_map(31)):
-		return
-	# 副本中（变量 21≠0）不可用：留在原地
-	s.set_variable(21, 1)
-	await _use_sword(s, _scene())
-	_check("sword_blocked_in_dungeon", _scene().map_id == 31, [_scene().map_id])
-	s.set_variable(21, 0)
-	await _use_sword(s, _scene())
-	if not _check("sword_entered", await _wait_map(139) and _scene().player.grid == Vector2i(13, 30), [_scene().map_id]):
-		return
-	var map: XMapScene = _scene()
-	_check("wall_events", [1, 2, 3, 4, 5, 7, 10, 12].all(func(i): return _event(map, i) != null))
-	# 崔城：开关 1694 的页接受传承，置开关 1700 与独立开关 A，再进商店页选「离开」
-	s.set_switch(1694, true)
-	map.refresh_events()
-	await _run_event(map, 1, [0], "")
-	_check("wall_inherit", s.switch(1700) and s.self_switch(139, 1, "A"), [s.switch(1700), s.self_switch(139, 1, "A")])
-	await _run_event(map, 10, [1], "")
-	_check("wall_quartermaster_leave", _scene().map_id == 139)
-
-
-## 信徒藏身：Map064 EV5 进、EV1 出
-func _hideout() -> void:
-	var s := _start(64, 39, 27, 8)
-	if not _check("hide_door_loaded", await _wait_map(64)):
-		return
-	await _run_event(_scene(), 5, [], "")
-	if not _check("hide_entered", await _wait_map(192) and _scene().player.grid == Vector2i(6, 27), [_scene().map_id]):
-		return
-	var map: XMapScene = _scene()
-	_check("hide_events", [1, 2, 3, 4, 5, 6].all(func(i): return _event(map, i) != null))
-	s.set_variable(20, 16)
-	s.set_variable(14, 1)
-	map.refresh_events()
+	_check("outer_events", [1, 2, 13, 14, 15, 20].all(func(i): return _event(map, i) != null) and _event(map, 19) == null)
+	_check("outer_encounters", map.map_data.encounterList.map(func(r): return int(r.troopId)) == [447, 448, 449, 450], map.map_data.encounterList)
+	for r in [0, 5, 10, 15, 19]:
+		_check("outer_roll%d" % r, XMapScene.encounter_troop(map.map_data.encounterList, r) == 447 + int(r / 5), r)
 	var n0 := battles.size()
-	await _run_event(map, 4, [0], "win")
+	await _run_event(map, 14, [], "win")
+	_check("sage_projection", battles.size() == n0 + 1 and battles[-1].troop == 451 and battles[-1].result == 0, battles.slice(n0))
+	# 真实遇敌：把遇敌表收成一项再让 _encounter 抽
 	map = _scene()
-	_check("hide_yingxiong_fight", battles.size() == n0 + 1 and battles[-1].troop == 768 and battles[-1].result == 0 and s.self_switch(192, 4, "A"), [battles.slice(n0), s.self_switch(192, 4, "A")])
-	await _run_event(map, 5, [], "")
-	_check("hide_heart_demon", s.self_switch(192, 5, "A") and int(s.variable(851)) == 1, [s.self_switch(192, 5, "A"), s.variable(851)])
-	await _run_event(_scene(), 1, [], "")
-	_check("hide_exit", await _wait_map(64) and _scene().player.grid == Vector2i(38, 27), [_scene().map_id])
+	for tid in [447, 448, 449, 450]:
+		map.map_data.encounterList = [{"troopId": tid, "weight": 5, "regionSet": []}]
+		n0 = battles.size()
+		await _run_call(map, func(): await map._encounter(), "win")
+		_check("outer_encounter%d" % tid, battles.size() == n0 + 1 and battles[-1].troop == tid and battles[-1].result == 0, battles.slice(n0))
+	# 中心
+	s = _start(139, 13, 35, 8)
+	if not _check("wall_loaded2", await _wait_map(139)):
+		return
+	await _run_event(_scene(), 7, [1], "")
+	if not _check("center_entered", await _wait_map(179) and _scene().player.grid == Vector2i(16, 16), [_scene().map_id]):
+		return
+	map = _scene()
+	_check("center_events", range(1, 6).all(func(i): return _event(map, i) != null))
+	_check("center_encounters", map.map_data.encounterList.map(func(r): return int(r.troopId)) == [595, 596, 597, 598], map.map_data.encounterList)
+	n0 = battles.size()
+	await _run_event(map, 1, [], "win")
+	_check("sage_absolute", battles.size() == n0 + 1 and battles[-1].troop == 599 and battles[-1].result == 0, battles.slice(n0))
+	map = _scene()
+	for tid in [595, 596, 597, 598]:
+		map.map_data.encounterList = [{"troopId": tid, "weight": 5, "regionSet": []}]
+		n0 = battles.size()
+		await _run_call(map, func(): await map._encounter(), "win")
+		_check("center_encounter%d" % tid, battles.size() == n0 + 1 and battles[-1].troop == tid and battles[-1].result == 0, battles.slice(n0))
+
+
+## 城隍庙：进出、碰瓷老人（两条路）、黄昏的信徒、城隍授武运
+func _temple() -> void:
+	var s := _start(139, 13, 5, 2)
+	if not _check("wall2_loaded", await _wait_map(139)):
+		return
+	await _run_event(_scene(), 12, [], "")
+	if not _check("temple_entered", await _wait_map(189) and _scene().player.grid == Vector2i(20, 38), [_scene().map_id]):
+		return
+	var map: XMapScene = _scene()
+	_check("temple_events", [1, 2, 7, 9, 17, 20, 21, 22].all(func(i): return _event(map, i) != null))
+	# 老人：扶起扣钱
+	s.gold = 1000000000
+	s.set_variable(206, 0)
+	await _run_event(map, 1, [0], "")
+	var paid := 1000000000 - s.gold
+	_check("oldman_pay", paid == int(s.variable(449)) and paid >= 0 and paid <= 99999999 and int(s.variable(206)) == 20 and s.self_switch(189, 1, "A"), [paid, s.variable(449), s.variable(206)])
+	var n0 := battles.size()
+	await _run_event(map, 1, [], "")
+	_check("oldman_page2_no_battle", battles.size() == n0 and s.gold == 1000000000 - paid)
+	# 老人：不理→主席；打赢无事，战败（可败）全队中重伤 699
+	s.set_self_switch(189, 1, "A", false)
+	map.refresh_events()
+	await _run_event(map, 1, [1], "win")
+	_check("oldman_refuse_win", battles.size() == n0 + 1 and battles[-1].troop == 661 and battles[-1].result == 0 and s.members().all(func(a): return not a.is_state_affected(699)), battles.slice(n0))
+	s.set_self_switch(189, 1, "A", false)
+	map.refresh_events()
+	n0 = battles.size()
+	await _run_event(map, 1, [1], "lose")
+	_check("oldman_refuse_lose", battles.size() == n0 + 1 and battles[-1].troop == 661 and battles[-1].result != 0 and s.members().all(func(a): return a.is_state_affected(699)), [battles.slice(n0), s.members().map(func(a): return [a.actor_id, a.is_state_affected(699)])])
+	map = _scene()
+	for a in s.members():
+		a.hp = a.mhp
+	# 信徒：队里没有艾鲲（3）→ 台词；有则走公共事件 819
+	map = _scene()
+	await _run_event(map, 7, [], "")
+	_check("believer_no_ai", int(s.variable(346)) == 0 and not s.self_switch(189, 7, "A"), [s.variable(346)])
+	s.add_actor(3)
+	await _run_event(map, 7, [], "")
+	_check("believer_found", int(s.variable(346)) == 1 and s.self_switch(189, 7, "A"), [s.variable(346)])
+	# 城隍授武运
+	map.refresh_events()
+	await _run_event(map, 21, [0, 0], "")
+	var ok := true
+	for id in [8, 9, 10]:
+		var a: XActor = s.actor(id)
+		ok = ok and a.skill_ids.has(3920) and not a.skill_ids.has(3921)
+	_check("chenghuang_blessing", ok and s.actor(1).skill_ids.has(3921) and not s.actor(1).skill_ids.has(3920) and s.self_switch(189, 21, "A"))
+	await _run_event(map, 22, [], "")
+	# 出口
+	await _run_event(map, 20, [], "")
+	_check("temple_exit", await _wait_map(139) and _scene().player.grid == Vector2i(13, 5), [_scene().map_id])
 
 
 func _finish() -> void:
-	for player in get_tree().root.find_children("*", "AudioStreamPlayer", true, false):
-		player.stop()
-		player.stream = null
-	await get_tree().create_timer(0.5, true, false, true).timeout
 	for i in range(1, XSave.SLOTS + 1):
 		if XSave.exists(i):
 			DirAccess.remove_absolute(XSave.path(i))
