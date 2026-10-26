@@ -144,7 +144,7 @@ func _run() -> void:
 			var box := slot.get_child(0) as PanelContainer
 			var label := box.get_child(0) as Label
 			var style := box.get_theme_stylebox("panel") as StyleBoxFlat
-			var entry := {"boxRect":[box.global_position.x,box.global_position.y,box.size.x,box.size.y],"textRect":[label.global_position.x,label.global_position.y,label.size.x,label.size.y],"fontSize":label.get_theme_font_size("font_size"),"color":"#"+label.get_theme_color("font_color").to_html(false),"background":style.bg_color.to_html(),"padding":style.content_margin_left,"text":label.text,"opacity":slot.modulate.a}
+			var entry := {"boxRect":[box.global_position.x,box.global_position.y,box.size.x,box.size.y],"textRect":[label.global_position.x,label.global_position.y,label.size.x,label.size.y],"fontSize":label.get_theme_font_size("font_size"),"color":"#"+label.get_theme_color("font_color").to_html(false),"background":style.bg_color.to_html(),"padding":style.content_margin_left,"text":label.text,"opacity":slot.modulate.a,"fontHeight":label.get_theme_font("font").get_height(18),"lineSpacing":label.get_theme_constant("line_spacing"),"lineCount":label.get_line_count(),"expectedTextSize":XUI.font().get_multiline_string_size(label.text,HORIZONTAL_ALIGNMENT_LEFT,240,18)}
 			result.notices.append(entry)
 			var want: Dictionary = native.pages.capacity_1_limit.notices[index]
 			compare("toast.%d.boxRect" % index,entry.boxRect,want.box.rect)
@@ -157,6 +157,8 @@ func _run() -> void:
 		await shot("capacity_1_limit",result)
 	if returned != null:
 		# Restored list is interactive; cancel must return to the ordinary main menu.
+		returned._cancel()
+		check("bag.cancel-to-category",returned._mode == "category")
 		returned._cancel()
 		await frames(2)
 		check("bag.cancel-to-main-menu",menus[0]._mode == "command" and map._menu_open)

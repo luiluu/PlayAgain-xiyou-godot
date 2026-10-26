@@ -1025,7 +1025,7 @@ func open_menu(resume_items: Dictionary = {}) -> void:
 	menu.player_tile = player_screen_tile()
 	ui.add_child(menu)
 	if not resume_items.is_empty():
-		XPassiveBooks.restore_items(menu,resume_items)
+		XItemScene.restore_capacity_return(menu,resume_items)
 	await menu.closed
 	var zhenqi := menu.zhenqi_requested
 	menu.queue_free()

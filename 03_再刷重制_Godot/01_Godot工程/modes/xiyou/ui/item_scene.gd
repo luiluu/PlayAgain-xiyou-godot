@@ -867,3 +867,20 @@ func _click(p: Vector2, pad: Vector2) -> void:
 					_ok()
 				else:
 					_aug_index = i
+
+
+## Restore the selected list after this period’s full-capacity CE1317.
+static func restore_capacity_return(menu: XMenu, saved: Dictionary) -> void:
+	menu._show_items()
+	var pages := menu.get_children().filter(func(n): return n is XItemScene)
+	if pages.is_empty():
+		return
+	var page: XItemScene = pages[0]
+	page._cat = int(saved.category)
+	page._mode = "list"
+	var entries := page.entries()
+	var index := entries.find_custom(func(e): return int(e.rec.id) == int(saved.item))
+	page._index = index if index >= 0 else clampi(int(saved.index),0,maxi(0,entries.size()-1))
+	page._top = XMenu._scroll_to(page._index,0,page._rows())
+	page._refresh()
+	XToast.show_text(str(saved.message),true)
