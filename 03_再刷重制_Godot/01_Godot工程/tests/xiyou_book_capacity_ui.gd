@@ -9,6 +9,16 @@ class PaintCapture extends XMVCanvas:
 		texts.append([value,x,y,max_w,align,size,"#"+color.to_html(false)])
 		super.text(value,x,y,max_w,align,color,size,lh,alpha,zoom,pivot,outline)
 
+class MapCapture extends XMapScene:
+	var event_trace: Array = []
+	func run_reserved_common_event(owner: XState) -> void:
+		event_trace.append({"phase":"before","event":owner.peek_common_event(),"busy":busy,"menuOpen":_menu_open,"saved":owner.get_meta("capacity_bag_return",{}).duplicate(true)})
+		await super.run_reserved_common_event(owner)
+		event_trace.append({"phase":"after","event":owner.peek_common_event(),"busy":busy,"menuOpen":_menu_open,"saved":owner.get_meta("capacity_bag_return",{}).duplicate(true)})
+	func open_menu(resume_items: Dictionary = {}) -> void:
+		event_trace.append({"phase":"open","resume":resume_items.duplicate(true),"busy":busy,"menuOpen":_menu_open})
+		await super.open_menu(resume_items)
+
 var out_dir := ""
 var native: Dictionary
 var map: XMapScene
@@ -70,7 +80,7 @@ func _run() -> void:
 	if not segment.is_empty():
 		XGuide.seen(s,"seg:"+str(segment.key),true)
 	XToast.shown.clear()
-	map = XMapScene.new()
+	map = MapCapture.new()
 	add_child(map)
 	for i in 600:
 		if map.player != null and map.map_id == 5 and not map.busy:
@@ -144,7 +154,10 @@ func _run() -> void:
 				returned = children[0]
 				break
 		await frames(1)
-	check("map.menu-restored",map._menu_open and returned != null)
+	var transition := {"trace":map.event_trace,"menuOpen":map._menu_open,"busy":map.busy,"reserved":s.peek_common_event(),"stateCurrent":s == XState.current,"map":s.map_id,"saved":s.get_meta("capacity_bag_return",{}),"menus":menus.map(func(m): return {"mode":m._mode,"children":m.get_children().map(func(c): return c.get_class())})}
+	check("map.menu-restored",map._menu_open and returned != null,transition)
+	if returned == null:
+		await shot("capacity_1_incomplete",transition)
 	check("map.event-consumed",s.peek_common_event() == 0 and not map.busy and map.skipped_log.is_empty(),map.skipped_log)
 	check("map.real-toast",map.toasts == [native.pages.capacity_1_limit.notices[0].message.text],map.toasts)
 	compare("bag.notices",XToast.shown,native.pages.capacity_1_limit.notices.map(func(n): return n.message.text))
