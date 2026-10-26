@@ -37,6 +37,7 @@ func setup(id: int) -> XActor:
 	init_equips(d.get("equips", []))
 	_fix_strong_classification()
 	recover_all()
+	XActorModules.setup(self)  # 专属角色模块的 Game_Actor.setup 包装（饿狼同步形态等）
 	return self
 
 
@@ -313,6 +314,7 @@ func _level_up() -> void:
 	if var_id.is_valid_int() and int(var_id) > 0 and XState.current:
 		var points := str(XDB.plugin("PKD_SimpleSkillsTree").get("skillPointsPerLevelUpGain:i", "1"))
 		XState.current.set_variable(int(var_id), XState.current.variable(int(var_id)) + (int(points) if points.is_valid_int() else 1))
+	XActorModules.level_up(self)  # 专属角色模块的 levelUp 包装
 
 ## Game_Actor.changeLevel（事件「增减等级」316）：夹在 1～上限，按 changeExp 逐级升降（降级不忘技能、不扣技能点），
 ## 返回新学会的技能 ID（displayLevelUp 用）
@@ -324,17 +326,20 @@ func change_level_mv(lv: int) -> Array:
 		_level_up()
 	while _lv > lv:
 		_lv -= 1
+		XActorModules.level_down(self)  # 专属角色模块的 levelDown 包装
 	refresh_passive()
 	refresh_resources()  # Game_Actor.changeExp 最后 refresh，降级后夹回新 HP/MP 上限。
 	return skill_ids.filter(func(id): return not before.has(id))
 
 ## 直接设定等级（读档、测试夹具用）：只按数据库上限夹，不看队伍上限，不加技能点
 func change_level(lv: int) -> void:
+	var before := _lv
 	_lv = clampi(lv, 1, int(data().get("maxLevel", 99)))
 	exp_total = exp_for_level(_lv)
 	for l in class_data().get("learnings", []):
 		if int(l.level) <= _lv:
 			learn_skill(int(l.skillId))
+	XActorModules.level_changed(self, before)  # 直接改等级：按升／降调专属角色模块的 levelUp／levelDown 包装
 	refresh_passive()
 
 ## 获得经验，返回升了几级。
@@ -354,6 +359,8 @@ func gain_exp(amount: int, rate := 1.0, random: XRandomStream = null) -> int:
 
 # ---- 技能 ----
 func learn_skill(id: int) -> void:
+	if not XActorModules.can_learn(self, id):  # 专属角色模块的 learnSkill 包装（饿狼被动按形态准入等）
+		return
 	if not skill_ids.has(id) and not XDB.rec("Skills", id).is_empty():
 		skill_ids.append(id)
 		skill_ids.sort()
@@ -548,7 +555,7 @@ static func magic_param(e: Dictionary, i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XRaceBattle.param(self, i, XCat.param(self, i, super(i)))  # 种族祝福的 param 包装在小猫剑圣外层
+	return XRaceBattle.param(self, i, XCat.param(self, i, XActorModules.param(self, i, super(i))))  # 按原版安装先后由内到外：专属角色模块（米拉 98、宿傩 113）→小猫剑圣（115）→种族祝福（148）
 
 ## 正式版运行时对角色命中率保底 0.9（命中 = xparam 0）。
 func xparam(i: int) -> float:
@@ -556,6 +563,7 @@ func xparam(i: int) -> float:
 	for m in passive_values(_tag("passiveXPBST", i)):
 		v += _num(m) * 0.01
 	v = (v + XEquipSuits.value(self,"xparam",i,false)/100) * XEquipSuits.value(self,"xparam",i,true)
+	v = XActorModules.xparam(self, i, v)  # 专属角色模块的 Game_Actor.xparam 包装（米拉／渡鸦面板暴击）
 	return maxf(0.9, v) if i == 0 else v
 
 func sparam(i: int) -> float:
@@ -613,6 +621,7 @@ func refresh_passive() -> void:
 			c.damageElement = int(str(meta.DamageElements).strip_edges())
 		if meta.has("passiveIRUP"):
 			c.itemRateUp += _num(meta.passiveIRUP)
+	XActorModules.passive_cache(self, c)  # 专属角色模块的 initPassiveCache 包装（渡鸦魂海刻度的暴伤／终伤池）
 	_passive_cache = c
 
 func passive_cache() -> Dictionary:

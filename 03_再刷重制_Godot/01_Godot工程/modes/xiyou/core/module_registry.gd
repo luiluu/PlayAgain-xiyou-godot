@@ -28,7 +28,7 @@ static var _standard: XModuleRegistry
 
 static func standard() -> XModuleRegistry:
 	if _standard == null:
-		_standard = compile([orb_descriptor(), XCatDamageHooks.descriptor(), XRaceBattle.descriptor()])
+		_standard = compile([orb_descriptor(), XActorDamageHooks.descriptor(), XCatDamageHooks.descriptor(), XRaceBattle.descriptor()])
 	return _standard
 
 static func orb_descriptor() -> Dictionary:
@@ -278,6 +278,8 @@ func capture_facts(item: Dictionary, a: XBattler, b: XBattler, options: Dictiona
 	var out := {}
 	if not existing.has("cat") and _entries.any(func(entry): return entry.id == "cat-sword"):
 		out.cat = XCatDamageHooks.capture(item, a, b, options)
+	if not existing.has("actorModules") and _entries.any(func(entry): return entry.id == "actor-modules"):
+		out.actorModules = XActorDamageHooks.capture(item, a, b)
 	if not existing.has("race") and _entries.any(func(entry): return entry.id == "race-blessings"):
 		out.race = XRaceBattle.capture(item, a, b, options)
 	return out

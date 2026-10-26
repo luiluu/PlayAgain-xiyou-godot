@@ -38,6 +38,24 @@ static func _re(pattern: String) -> RegEx:
 	return r
 
 
+## 专属角色模块的 recruit()：返回 func(s, interp) -> bool（入队了为 true）；认不得的模块返回空 Callable
+static func _module_recruit(module: String) -> Callable:
+	match module:
+		"CodexGarou":
+			return func(s: XState, interp) -> bool:
+				if not XGarou.recruit(s):
+					return false
+				await interp.host.show_text("", 0, [XGarou.RECRUIT_TEXT])  # $gameMessage.add
+				return true
+		"CodexSukuna":
+			return func(s: XState, interp) -> bool:
+				if not XSukuna.recruit(s):
+					return false
+				interp.host.toast(XSukuna.RECRUIT_TEXT)  # $.toaster
+				return true
+	return Callable()
+
+
 ## 执行一段脚本；返回认不出的语句（空数组表示全部认得）。
 static func run(code: String, interp) -> Array:
 	var js := _strip_comments(code).strip_edges()
@@ -81,6 +99,15 @@ static func run(code: String, interp) -> Array:
 	var lite := _re("^if\\s*\\(\\s*ConfigManager\\.ChangeClothesLite\\.indexOf\\((-?\\d+)\\)\\s*==\\s*-1\\s*\\)\\s*\\{\\s*ConfigManager\\.ChangeClothesLite\\.push\\((-?\\d+)\\);?\\s*\\}$").search(js)
 	if lite and lite.get_string(1) == lite.get_string(2):
 		XChangeClothes.unlock(int(lite.get_string(1)))
+		return []
+	# 专属角色号角（公共事件 9009 等）：try { if (!CodexX.recruit()) $gameParty.gainItem($dataItems[号角],1); } catch(error) {…}
+	# 招募没成功（已在队）就还号角；catch 分支是脚本出错时的返还，重制不会走到
+	var horn := _re("^try\\s*\\{\\s*if\\s*\\(\\s*!\\s*(Codex\\w+)\\.recruit\\(\\)\\s*\\)\\s*\\$gameParty\\.gainItem\\(\\$dataItems\\[(\\d+)\\]\\s*,\\s*1\\);?\\s*\\}\\s*catch\\s*\\(\\s*error\\s*\\)\\s*\\{.*\\}$").search(js)
+	var recruit := _module_recruit(horn.get_string(1)) if horn else Callable()
+	if recruit.is_valid():
+		var joined: bool = await recruit.call(s, interp)
+		if not joined:
+			s.gain_item(int(horn.get_string(2)), 1)
 		return []
 	var unknown := []
 	# 存档分支：if (DataManager.saveGame($gamePlayer.SaveGameId)) { …成功… } else { …失败… }
@@ -174,6 +201,13 @@ static func _statements(js: String, interp) -> Array:
 			continue
 		if st == "CodexCat.recruit()":  # 公共事件 9017：178 哈基米入队（见 XCat.recruit）
 			XCat.recruit(s)
+			continue
+		if st == "CodexMira.recruit()":  # 公共事件 9003：168 米拉入队（见 XMira.recruit）
+			XMira.recruit(s)
+			continue
+		if st == "CodexRaven.recruit()":  # 公共事件 9002：167 渡鸦入队（见 XRaven.recruit；$.toaster 提示）
+			if XRaven.recruit(s):
+				interp.host.toast(XRaven.RECRUIT_TEXT)
 			continue
 		if st == "CodexGuide.advise(this)":
 			await _guide_advise(interp)  # 方桌大厅「商店向导」→「下一步建议」
