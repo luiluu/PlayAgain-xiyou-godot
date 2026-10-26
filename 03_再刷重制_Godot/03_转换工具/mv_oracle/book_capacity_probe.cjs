@@ -16,7 +16,8 @@ const extra=[
  {id:'ordinary.unlimited',item:15,limit:0,pre:[6301]},
  {id:'power.unlimited',item:1654,limit:0,pre:[6301]},
  {id:'passive.with-powers',item:1461,limit:1,pre:[6301,7238,7240,7245]},
- {id:'power.class-full',item:1683,limit:99,pre:[7238,7240,7245,7246]},
+ {id:'power.repeat',item:1683,limit:99,pre:[7238,7240,7245,7246]},
+ {id:'power.class-full',actor:1,item:1718,limit:99,pre:[7238,7240,7245,7246]},
  {id:'direct.learn',item:1461,limit:0,pre:[],direct:true},
  {id:'selected.other-full',item:1461,limit:1,pre:[],selected:1,selectedPre:[6301]},
  {id:'selected.other-empty',item:1461,limit:1,pre:[6301],selected:1,selectedPre:[]},
@@ -28,7 +29,7 @@ if(w.$)w.$.toaster=arg=>messages.push(String(arg.message));
 w.SceneManager.goto=scene=>{if(scene===w.Scene_Map)wentMap=true;else throw Error('unexpected scene');};
 function snap(a,item){return {skills:Array.from(a._skills),passives:Array.from(a.skills().filter(k=>k.stypeId===5).map(k=>k.id)),book:w.$gameParty.numItems(w.$dataItems[item]),reserved:w.$gameTemp._commonEventId||0,wentMap,messages:messages.slice()};}
 const cases=(process.argv.includes('--smoke')?smoke:smoke.concat(extra)).map(spec=>makeCase(spec.id,spec,()=>{
- console.log('CASE_START '+spec.id);newGame();const a=w.$gameActors.actor(2),selected=w.$gameActors.actor(spec.selected||2);
+ console.log('CASE_START '+spec.id);newGame();const a=w.$gameActors.actor(spec.actor||2),selected=w.$gameActors.actor(spec.selected||spec.actor||2);
  w.$gameVariables.setValue(9,spec.limit);spec.pre.forEach(id=>a.learnSkill(id));
  if(spec.selected)spec.selectedPre.forEach(id=>selected.learnSkill(id));w.$gameParty.setTargetActor(selected);
  const sequence=spec.sequence||Array(spec.times||1).fill(spec.item);sequence.forEach(id=>{if(!spec.missing)w.$gameParty.gainItem(w.$dataItems[id],3);});
