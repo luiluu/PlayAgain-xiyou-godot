@@ -22,7 +22,7 @@
  };
  P.pick=async function(){
   var s=SceneManager._scene;s._actorWindow.select(0);s._actorWindow.processOk();
-  await wait(function(){return SceneManager._scene instanceof Scene_Map&&SceneManager._sceneStarted&&document.querySelector('#toastMessage .message');});
+  try { await wait(function(){return SceneManager._scene instanceof Scene_Map&&SceneManager._sceneStarted&&document.querySelector('#toastMessage .message');}); } catch(e) { throw Error('capacity return: '+JSON.stringify({state:P.read(),busy:SceneManager._scene.isBusy(),messages:$gameMessage._texts,interp:$gameMap._interpreter&&{index:$gameMap._interpreter._index,running:$gameMap._interpreter.isRunning(),event:$gameMap._interpreter._eventId,list:$gameMap._interpreter._list},update:String(Game_Map.prototype.updateInterpreter).slice(0,300)})); }
   await wait(function(){var t=document.querySelector('#toastMessage');return t&&Number(getComputedStyle(t).opacity)>=.999;});
   await settle();return true;
  };
