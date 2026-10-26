@@ -13,7 +13,7 @@
 - 同步：`NODE_OPTIONS` 已存在时也给 node 加 10GB 堆上限（Mac 上无影响）。
 - 同步（本机，合 main 3100604b 后）：`同步正式西游.py --no-register --accept-additions` 通过，只增新用例（events 107、maps 13、shop_buy 171、alien_battle 19、race_battle 31），既有测量逐条不变，包括 `Input.clear()` 之后的所有既有事件用例，无需接受单。
 - event_compare：`FakePlayer` 补 `force_move_route`／`is_route_forcing` 空实现（门事件的玩家移动路线；参照只比指令序列与状态变化）。
-- 验证：xiyou_floor_reach068 73／73、xiyou_actor_change 48／48、xiyou_event_compare 5／5、xiyou_rules 难度 1～6 全部 24 段全过；内容覆盖检查 hard 0／new 0，基线已更新（5518 页，未对照 983、出切片 12）；`检查.sh --affected main` 末次复跑结果见合并时的报告。
+- 验证：xiyou_floor_reach068 73／73、xiyou_actor_change 48／48、xiyou_event_compare 5／5、xiyou_rules 难度 1～6 全部 24 段全过；内容覆盖检查 hard 0／new 0，基线已更新（5518 页，未对照 983、出切片 12）；`检查.sh --affected main` 全过（exit 0）。
 
 ## 交接板
 
@@ -36,3 +36,5 @@
 - 5d8e3298 WIP: 切片再接恰兰吉尔 71 与店铺、挑战者协会
 - 1326e16b 同步：环境已有 NODE_OPTIONS 时也给 node 加 10GB 堆上限
 - 53a412c4 WIP: event_probe 启动后 Input.clear()
+- 解决合并 main 的 xiyou_slice.json 冲突、内容覆盖基线更新
+- 测试：event_compare 的 FakePlayer 补移动路线空实现；reach068 去掉南出口；交付单标可合并
