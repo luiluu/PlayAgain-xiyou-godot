@@ -566,6 +566,9 @@ func _plugin_command(line: String) -> void:
 			if args[0] == "Autosave" and XSave.current_slot > 0:
 				XSave.save(XSave.current_slot)
 			return
+		"MagicWeaponAllGainExp", "MagicWeaponLevelUp":
+			XMagicWeapon.plugin_command(state(), args)  # CP_MagicWeapon：法宝经验丹、强制升级
+			return
 		"StarEIBook":
 			# Star_EquipInlayBook：GetAll／RomGet 解锁图鉴条目。正式版只在打开图鉴前 GetAll，图鉴总是全部列出（见 XInlayBook），不记解锁
 			if args.size() >= 2 and ["getall", "romget"].has(args[1].to_lower()):
