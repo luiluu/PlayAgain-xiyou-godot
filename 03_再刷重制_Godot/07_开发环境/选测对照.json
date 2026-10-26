@@ -25,6 +25,13 @@
     "说明": "切片按顶层键细分（用户 2026-10-26）：选测.py 比较基准与新版 xiyou_slice.json 哪些顶层键变了，每个键归到下面的组，另跑引用了该键名（如 \"keepEvents\"）的测试。键不在表里、JSON 解析失败、文件新增或删除：退回 rules 里的整组 converter。enabled 设 false 即完全回到整组 converter。依据见 00_项目管理/交付/claude_nezha-slice-affected.md。",
     "enabled": true,
     "file": "03_再刷重制_Godot/03_转换工具/xiyou_slice.json",
+    "narrowFloorsByMap": {
+      "说明": "楼层专项按图号收窄（哪吒_3，2026-10-26）：切片 maps／keepEvents 改动时，算出 maps 列表增删的图号与 keepEvents 内容有增删改的图号，groups 里的组选到的 scenes 范围内的场景只留引用了这些图号的（引用写法见 选测.py MAP_REF_PATTERNS：MapNNN、MAP 常量、_start／_wait_map／map_id ==／_goto 的图号）；always 里的场景（按内容数据遍历全部楼层或全部地图）与认不出任何图号的场景照旧选上。事件对照、xiyou_flow 不在 scenes 里，不收窄。enabled 设 false 即回到上一期行为（楼层专项全选）。依据见 00_项目管理/交付/claude_nezha-floor-narrow.md。",
+      "enabled": true,
+      "groups": ["slice_map"],
+      "scenes": ["xiyou_floor*.tscn", "xiyou_map*.tscn"],
+      "always": ["xiyou_floor_run*.tscn", "xiyou_map.tscn"]
+    },
     "keys": {
       "说明": "docs", "keepEvents说明": "docs",
       "maps": "slice_map", "keepEvents": "slice_map",

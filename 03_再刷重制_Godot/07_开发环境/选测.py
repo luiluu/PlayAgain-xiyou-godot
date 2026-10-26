@@ -9,6 +9,8 @@
 - 切片细分（sliceSections，用户 2026-10-26）：xiyou_slice.json 不按整组 converter，而是比较基准与新版两份 JSON 哪些顶层键变了，
   每个键按对照表 sliceSections.keys 归组（地图／事件、战斗数值、图像音频），另加引用了该键名（"maps" 等）的测试；
   键不认识、JSON 解析失败、文件新增或删除时退回整组 converter。对照表 sliceSections.enabled 设 false 即完全回到整组。
+  其中 maps／keepEvents（slice_map）再按图号收窄楼层专项（sliceSections.narrowFloorsByMap，哪吒_3）：只留引用了增删改图号的
+  xiyou_floor*／xiyou_map* 场景，遍历全部楼层的与认不出图号的照旧选；子开关 enabled 设 false 回到楼层专项全选。
 - 分叉点（mergeBase，2026-10-26）：基准不是 HEAD 的祖先时（车道跑 --affected main 而 main 已前进），改用 merge-base(基准, HEAD)，
   只算本分支自己的改动；基准是祖先时（总装批首）两者相同。对照表 mergeBase 设 false 即按基准本身比。
 - 工具引用（toolRefs，测试夹具用）：没有 Godot 测试引用、但 07_开发环境／03_转换工具 的脚本按文件名读它时，跑工具回归、不整轮
@@ -32,6 +34,16 @@ MODES = Path('03_再刷重制_Godot/01_Godot工程/modes')
 TOOL_DIRS = ['03_再刷重制_Godot/07_开发环境', '03_再刷重制_Godot/03_转换工具']
 TOOL_SUFFIXES = ('.py', '.cjs', '.js', '.mjs', '.sh')
 CHECKS = {'guards', 'tools', 'content', 'same_source'}
+# 楼层／地图专项里「引用地图编号」的写法（2026-10-26 哪吒_3 查 tests/ 实际写法）：注释与说明里的 Map033、
+# MAP := 33／FLOOR_MAP 之类常量、_start(33, …)、_wait_map(33)、map_id == 33、_goto(从, x, y, 事件, 到, …) 的起止图
+MAP_REF_PATTERNS = [
+    r'\bMap(\d{3})\b',
+    r'\b[A-Z_]*MAP[A-Z_]*\s*:?=\s*(\d+)\b',
+    r'\b_start\(\s*(\d+)\s*,',
+    r'\b_wait_map\(\s*(\d+)\s*\)',
+    r'\bmap_id\s*==\s*(\d+)\b',
+    r'\b_goto\(\s*(\d+)\s*,\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(\d+)\s*,',
+]
 
 
 def git(root, *args):
@@ -82,7 +94,7 @@ def effective_base(root, base, head=None):
 
 
 def slice_keys(root, base, path, head=None):
-    """基准与新版切片 JSON 顶层键的差异：返回变了的键表，或 (None, 原因) 表示要退回整组。"""
+    """基准与新版切片 JSON 顶层键的差异：返回 (变了的键表, 改动图号或 None)，或 (None, 原因) 表示要退回整组。"""
     if not exists(root, path, head):
         return None, '切片文件被删除'
     try:
@@ -98,7 +110,21 @@ def slice_keys(root, base, path, head=None):
     if not isinstance(old, dict) or not isinstance(new, dict):
         return None, '切片顶层不是对象'
     missing = object()
-    return sorted(k for k in set(old) | set(new) if old.get(k, missing) != new.get(k, missing)), ''
+    keys = sorted(k for k in set(old) | set(new) if old.get(k, missing) != new.get(k, missing))
+    return keys, changed_maps(old, new)
+
+
+def changed_maps(old, new):
+    """maps 列表增删的图号，加 keepEvents 里内容有增删改的图号；结构认不出时返回 None（不收窄）。"""
+    try:
+        before, after = set(map(int, old.get('maps') or [])), set(map(int, new.get('maps') or []))
+        ka, kb = old.get('keepEvents') or {}, new.get('keepEvents') or {}
+        if not isinstance(ka, dict) or not isinstance(kb, dict):
+            return None
+        kept = {int(k) for k in set(ka) | set(kb) if not k.endswith('说明') and ka.get(k) != kb.get(k)}
+    except (TypeError, ValueError, AttributeError):
+        return None
+    return (before ^ after) | kept
 
 
 def classify(path, rules):
@@ -174,6 +200,17 @@ class Tests:
             return [name] if name in self.scenes else []
         return [s for s in self.scenes if re.search(r'res://tests/' + re.escape(name) + r'"', self.text.get(s, ''))]
 
+    def map_ids(self, scene):
+        """场景（连同它挂的 tests/ 脚本）引用的地图编号；一个也认不出时返回 None（按判不出处理）。"""
+        texts = [self.text.get(scene, '')]
+        texts += [self.text.get(n, '') for n in re.findall(r'res://tests/([\w.]+\.gd)"', texts[0])]
+        ids = set()
+        for text in texts:
+            for pattern in MAP_REF_PATTERNS:
+                for m in re.finditer(pattern, text):
+                    ids.update(int(g) for g in m.groups() if g)
+        return ids or None
+
     def refs(self, terms, exclude=()):
         hits = set()
         for name, text in self.text.items():
@@ -198,7 +235,9 @@ def select(root, base, table=TABLE, head=None):
     tests = Tests(root, head)
     full, scenes, checks, reasons = False, set(), set(), []
 
-    def take(path, group, why, terms_extra=()):
+    narrow = sections.get('narrowFloorsByMap') or {}
+
+    def take(path, group, why, terms_extra=(), map_ids=None):
         nonlocal full
         g = groups[group]
         if 'onlyLines' in g and not only_lines(root, base, path, g['onlyLines'], head):
@@ -206,6 +245,15 @@ def select(root, base, table=TABLE, head=None):
         picked = set()
         for pattern in g.get('scenes', []):
             picked.update(tests.glob(pattern))
+        if map_ids is not None and narrow.get('enabled') and group in narrow.get('groups', []):
+            floors = {s for p in narrow.get('scenes', []) for s in tests.glob(p)}
+            always = {s for p in narrow.get('always', []) for s in tests.glob(p)}
+            keep = {s for s in floors & picked
+                    if s in always or tests.map_ids(s) is None or tests.map_ids(s) & map_ids}
+            dropped = (floors & picked) - keep
+            picked -= dropped
+            why += '，楼层专项按图号 %s 收窄（留 %d、省 %d）' % ('、'.join(map(str, sorted(map_ids))) or '无',
+                                                         len(keep), len(dropped))
         if terms_extra:
             picked |= tests.refs(list(terms_extra))
         if g.get('refs'):
@@ -243,7 +291,8 @@ def select(root, base, table=TABLE, head=None):
             continue  # 和源文件同组，不重复列
         group = classify(path, rules)
         if sections.get('enabled') and path == sections.get('file'):
-            keys, problem = slice_keys(root, base, path, head)
+            keys, extra = slice_keys(root, base, path, head)
+            problem = extra if keys is None else ''
             unknown = [k for k in keys or [] if sections['keys'].get(k) not in groups]
             if keys is None or unknown:
                 take(path, group, group + '（切片细分退回整组：%s）' % (problem or '未知键 ' + '、'.join(unknown)))
@@ -254,7 +303,7 @@ def select(root, base, table=TABLE, head=None):
             if not by_group:
                 reasons.append((path, '切片只改了格式，顶层键都没变', '', [], False))
             for sub, ks in sorted(by_group.items()):
-                take(path, sub, '%s（切片键 %s）' % (sub, '、'.join(ks)), [] if sub == 'docs' else ['"%s"' % k for k in ks])
+                take(path, sub, '%s（切片键 %s）' % (sub, '、'.join(ks)), [] if sub == 'docs' else ['"%s"' % k for k in ks], extra)
             continue
         take(path, group, group)
     if not full and tests.scenes and scenes >= set(tests.scenes):
