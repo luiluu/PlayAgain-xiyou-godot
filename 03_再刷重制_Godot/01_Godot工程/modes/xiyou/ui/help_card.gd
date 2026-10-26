@@ -671,6 +671,13 @@ func _init() -> void:
 	visible = false
 
 
+## HelpExtend setItem：备注 <HelpWidth: N> 把卡宽改成 N（专属角色技能多为 520）；没有时用 fallback。
+## 原版改的是同一个 Sprite 的宽，之后没有标签的卡也沿用 N；重制每张卡按自己的备注取，不沿用。
+static func note_width(obj: Dictionary, fallback := WIDTH) -> float:
+	var m := RegEx.create_from_string("(?i)<HelpWidth:\\s*(\\d+)>").search(str(obj.get("note", "")))
+	return float(m.get_string(1)) if m != null else fallback
+
+
 ## 显示 obj 的说明卡（obj 为空时隐藏）；with_extras：技能书同时显示所学技能的附卡
 func show_for(obj, kind := "", with_extras := true) -> void:
 	if not (obj is Dictionary) or obj.is_empty():
@@ -679,9 +686,10 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 		return
 	rows = content(obj, kind, skill_copy)
 	quality = _quality(obj)
-	var lay := layout(rows, min_font, card_width)
+	var w := note_width(obj, card_width)
+	var lay := layout(rows, min_font, w)
 	_lines = lay.lines
-	size = Vector2(card_width, lay.height)
+	size = Vector2(w, lay.height)
 	frame.position = Vector2(-10, -10)
 	frame.size = size + Vector2(20, 20)
 	frame.visible = show_frame
