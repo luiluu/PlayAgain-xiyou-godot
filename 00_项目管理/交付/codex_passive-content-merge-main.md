@@ -106,3 +106,5 @@
 
 - 用户在接口决定报告后明确“继续吧”，本轮按上轮建议先补地图／菜单显式操作域，再恢复集成验收；前述停手现场保留为历史，不重复询问。实查五小时50%、周39%。
 - 实际直接入口为MVEventCore事件313及菜单共享XBattleLogic._effect；地图／菜单页面无直接add_state／remove_state调用，战斗事件已另覆写313。计划复用现有XResourceContext、保留旧runtime_result、嵌套同域并publish／保存journal与快照，不改共享登记，不自行销核。先跑独立原版state_operation与state_merge_context两份探针；不注册同步PROBES、不覆盖旧原件。
+
+- 测试契约先统一为精确并集：Python两套8＋10项已过；318盘点与两Apply为gain_steps、三Battle为gain_resource的清单断言已更新。没有放宽未知／畸形块边界；新Godot state_operation／state_merge_context骨架已写，原版仍排槽、fixture尚缺，引用待补接口，未导入／未运行，不能算通过。生产运行时尚未改。

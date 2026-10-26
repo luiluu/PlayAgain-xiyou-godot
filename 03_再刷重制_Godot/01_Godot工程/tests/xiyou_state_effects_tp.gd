@@ -106,14 +106,14 @@ func _ready() -> void:
 		if st is Dictionary:
 			for effect in st.get("effects", []):
 				untranslated += int(effect.op == "js")
-	check("inventory.444_to_437", untranslated == 437, untranslated)
+	check("inventory.merged_318", untranslated == 318, untranslated)
 	for id in [607, 609, 857]:
 		check("production.battle.%d" % id, XDB.rec("States", id).effects.any(func(e): return e.phase == "battle" and e.op == "gain_resource"))
 	var saved := {}
 	for id in [1334, 1336]:
 		var st := XDB.rec("States", id)
 		saved[id] = st.effects
-		check("pending.apply.%d" % id, st.effects.any(func(e): return e.phase == "apply" and e.op == "js"))
+		check("production.apply.%d" % id, st.effects.any(func(e): return e.phase == "apply" and e.op == "gain_steps"))
 		st.effects = [{"phase": "apply", "op": "gain_resource", "recipient": "user", "resource": "tp", "amount": 25 if id == 1334 else 75}]
 	matrix(cases)
 	for id in saved:
