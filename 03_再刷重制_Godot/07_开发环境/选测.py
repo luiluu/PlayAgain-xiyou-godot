@@ -6,6 +6,9 @@
 - 引用查找（refs）：在 tests/*.gd、*.tscn 里找改动文件的文件名（如 orbs.gd、orb_probe.cjs）与它声明的 class_name；
   找到的是辅助脚本时换成用它的场景（如 xiyou_rules.gd → xiyou_rules*.tscn 全部段）。删除的文件从基准里读 class_name。
 - 加载者（loaders，手写数据 json 用）：另把 modes/ 下按文件名加载它的 .gd 的 class_name 也当引用词（如 alienation.json → XAlienation）。
+- 工具引用（toolRefs，测试夹具用）：没有 Godot 测试引用、但 07_开发环境／03_转换工具 的脚本按文件名读它时，跑工具回归、不整轮
+  （如 state_js_translation.json 只被 测试状态js翻译.py 读；2026-10-26 哪吒）。
+- --head 回放时测试场景与脚本也从 head 读（head 里新增的测试要找得到）。
 - 默认打印人读的选择理由；--shell 另在标准输出给 检查.sh 用的 SEL_FULL／SEL_SCENES／SEL_CHECKS（理由改到标准错误）。
 - 基准不存在、对照表无效时退出 2。
 """
@@ -21,6 +24,8 @@ HERE = Path(__file__).resolve().parent
 TABLE = HERE / '选测对照.json'
 TESTS = Path('03_再刷重制_Godot/01_Godot工程/tests')
 MODES = Path('03_再刷重制_Godot/01_Godot工程/modes')
+TOOL_DIRS = ['03_再刷重制_Godot/07_开发环境', '03_再刷重制_Godot/03_转换工具']
+TOOL_SUFFIXES = ('.py', '.cjs', '.js', '.mjs', '.sh')
 CHECKS = {'guards', 'tools', 'content', 'same_source'}
 
 
@@ -96,9 +101,24 @@ def loaders(root, name, head=None):
     return names
 
 
+def tool_users(root, name, head=None):
+    """07_开发环境／03_转换工具 下按文件名提到 name 的脚本（不含 tests/ 自身）。"""
+    p = subprocess.run(['git', '-C', str(root), '-c', 'core.quotepath=false', 'grep', '-l',
+                        *([] if head else ['--untracked']), '-F', name, *([head] if head else []), '--', *TOOL_DIRS],
+                       capture_output=True, text=True)
+    paths = [l.split(':', 1)[1] if head else l for l in p.stdout.splitlines()]
+    return [x for x in paths if x.endswith(TOOL_SUFFIXES)]
+
+
 class Tests:
-    """tests/ 下的场景与脚本文本，以及脚本 → 用它的场景。"""
-    def __init__(self, root):
+    """tests/ 下的场景与脚本文本，以及脚本 → 用它的场景。head 给了就从该提交读。"""
+    def __init__(self, root, head=None):
+        if head:
+            names = git(root, 'ls-tree', '-z', '--name-only', head, str(TESTS) + '/').split('\0')
+            names = sorted(Path(n).name for n in names if n.endswith(('.gd', '.tscn')))
+            self.text = {n: git(root, 'show', '%s:%s/%s' % (head, TESTS, n)) for n in names}
+            self.scenes = [n for n in names if n.endswith('.tscn')]
+            return
         d = root / TESTS
         self.scenes = sorted(p.name for p in d.glob('*.tscn'))
         self.text = {p.name: p.read_text(errors='ignore') for p in sorted(d.glob('*.gd')) + sorted(d.glob('*.tscn'))}
@@ -127,7 +147,7 @@ def select(root, base, table=TABLE, head=None):
     git(root, 'rev-parse', '--verify', '-q', base + '^{commit}')
     groups, rules = load_table(table)
     files = changed_files(root, base, head)
-    tests = Tests(root)
+    tests = Tests(root, head)
     full, scenes, checks, reasons = False, set(), set(), []
     for path in files:
         if path.endswith('.uid') and path[:-4] in files:
@@ -151,8 +171,12 @@ def select(root, base, table=TABLE, head=None):
             own = tests.users(name) if g.get('self') else []
             refs = tests.refs(terms, exclude={name}) | set(own)
             gone = not exists(root, key, head)
+            tools = [] if refs or gone or not g.get('toolRefs') else tool_users(root, name, head)
             if not refs and gone:
                 why += '，已删除且没有测试再引用它'
+            elif tools:
+                checks |= {'guards', 'tools'}
+                why += '，只有工具脚本用它（%s），跑工具回归' % '、'.join(Path(t).name for t in tools[:3])
             elif not refs and g.get('fallback'):
                 if 'FULL' in g['fallback']:
                     full, why = True, why + '，找不到用它的测试，整轮'

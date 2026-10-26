@@ -140,6 +140,19 @@ class SelectTests(Fixture):
         self.put(TESTS / 'fixtures/orphan.json', '{}\n')
         self.assertTrue(self.pick()['full'])
 
+    def test_fixture_only_used_by_tool_runs_tools_not_full(self):
+        # 2026-10-26 本批：tests/fixtures/state_js_translation.json 只被 07_开发环境/测试状态js翻译.py 读，原来整轮
+        self.put(ENV / '测试工具夹具.py', "F = 'tests/fixtures/tool_only.json'\n")
+        self.put(TESTS / 'fixtures/tool_only.json', '{}\n')
+        self.commit('tool fixture')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.put(TESTS / 'fixtures/tool_only.json', '{"a": 1}\n')
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertEqual((s['scenes'], s['checks']), ([], ['guards', 'tools']))
+        self.put(TESTS / 'fixtures/orphan.json', '{}\n')  # 谁也不用：仍整轮
+        self.assertTrue(self.pick()['full'])
+
     def test_deleted_test_and_fixture_need_nothing(self):
         for rel in ['xiyou_orbs.gd', 'xiyou_orbs.tscn']:
             (self.root / TESTS / rel).unlink()
@@ -213,6 +226,16 @@ class SelectTests(Fixture):
         self.put(CORE / 'battler.gd', 'class_name XBattler\n# uncommitted\n')
         s = self.pick(head=head)
         self.assertEqual(s['files'], [str(CORE / 'orbs.gd')])
+
+    def test_head_option_reads_tests_at_head(self):
+        # 回放：head 里新增的测试场景要能找到（工作区还没有它），不能因为找不到用它的测试判整轮
+        self.scene('xiyou_new', 'XLonely.new()')
+        self.commit('new test')
+        head = self.g('rev-parse', 'HEAD')
+        self.g('checkout', '-q', self.base)
+        s = self.pick(head=head)
+        self.assertFalse(s['full'])
+        self.assertEqual(s['scenes'], ['xiyou_new.tscn'])
 
     def test_bad_base_and_bad_table(self):
         with self.assertRaises(RuntimeError):
