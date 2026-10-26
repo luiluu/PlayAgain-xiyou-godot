@@ -949,5 +949,12 @@
     "isGameplayAcceptanceRate": false,
     "newEstimatesNeedClaudeReview": true
   },
-  "boundary": "固定Git切片事实；引用既有验证记录，未运行玩法专项，不销代码待核，不修改共享账。"
+  "boundary": "固定Git切片事实；引用既有验证记录，未运行玩法专项，不销代码待核，不修改共享账。",
+  "stateJsCensusReadOnlyRerun": {
+    "remaining": 322,
+    "reachableWide": 93,
+    "normalizedShapes": 146,
+    "oldRecordedReachableWide": 92,
+    "scope": "本轮读取主工作区已生成产物；可达口径包含所有装备物品，偏宽，不是完整玩法可达证明。"
+  }
 }
