@@ -869,7 +869,6 @@
     "boss72-capacity-test: EventHost type parse failure; own child stopped; all logs retained"
   ],
   "pending": [
-    "direct dependencies running boss72-capacity-deps.log",
     "paired native/Godot UI screenshots and actual layout readings",
     "final delivery, not merge-ready"
   ],
@@ -877,5 +876,68 @@
     "fiveHourUsedPercent": 95,
     "weeklyUsedPercent": 15,
     "reason": "User threshold; WIP, no new task or automatic continuation"
-  }
+  },
+  "directDependencies": [
+    {
+      "name": "xiyou_actor_p0.log",
+      "result": {
+        "passed": 3212,
+        "total": 3212
+      },
+      "logSHA256": "e03827a34a99c1f516f2f0b86cca1ab5e7bd803b8f83d2e7d78c915c42d92823"
+    },
+    {
+      "name": "xiyou_event_compare.log",
+      "result": {
+        "passed": 5,
+        "total": 5
+      },
+      "logSHA256": "50bd82226ffdd15ce3675865ee00458d43ddf08a05b2b67cc66aaec77e23830b"
+    },
+    {
+      "name": "xiyou_item_use.log",
+      "result": {
+        "passed": 11,
+        "total": 11
+      },
+      "logSHA256": "3a83c2fa5cfd05a909e0fab6c88a8b9cf7f33289426cb0cce9640e0f97ce8c7c"
+    },
+    {
+      "name": "xiyou_passive_content.log",
+      "result": {
+        "failures": [],
+        "passed": 113142,
+        "samples": [],
+        "total": 113142
+      },
+      "logSHA256": "ffc8aa47be2538e3fe2cf3973a62f5f28cca10fe1b0b213ee4d86e2c923021d3"
+    },
+    {
+      "name": "xiyou_power_books.log",
+      "result": {
+        "failures": [],
+        "passed": 6136,
+        "total": 6136
+      },
+      "logSHA256": "573bc0109b4ce1fd0242db7349117037ed8caf0ad9ce676b8ab245a0b706b29f"
+    },
+    {
+      "name": "xiyou_power_books_boundary.log",
+      "result": {
+        "failures": [],
+        "passed": 55682,
+        "total": 55682
+      },
+      "logSHA256": "4bc473090a0b4f0cd7cb84e2726ce00f2ba87a507cacb2e3e596f726ed7e44b0"
+    },
+    {
+      "name": "xiyou_power_books_menu.log",
+      "result": {
+        "failures": [],
+        "passed": 1068,
+        "total": 1068
+      },
+      "logSHA256": "bb63f624e12a2f10ec17a4ad0747ecf4a3aaa706d9ad98e8f8cc3146cf97e377"
+    }
+  ]
 }
