@@ -40,3 +40,9 @@
 
 - 已合并 main（545ebd37）并 `--补齐`。sync12（`长任务.py start --idle-timeout 0 -- caffeinate -i 同步正式西游.py --accept-additions`）启动于合并之后，日志 scratchpad `sync12.log`；slice_probe 六段已完成，event_probe 约需 100 分钟，会话清空时仍在后台跑。**接手先看 `sync12.log` 末行 `TASK_RESULT`**（或 `pgrep -f '同步正式西游[.]py'`），没结果且进程已无就是又失败，先报总装。
 - 同步通过后：跑 `xiyou_event_compare`、`xiyou_rules` 难度 1 四段、`内容覆盖检查.py`，结果写「验证」，状态改「可合并」；再做期二（见上条）。
+
+### 再更新（悟空_56，sync12 结果与 sync13）
+
+- sync12 跑完但退出码 2：只有一处既有测量变化——敌群 854 敌人 947 技能 5557 的伤害（slice_d1～d6，旧摘要 431a17c4b5d62714→169fcb99ff46deca），这是 main 上哪吒修切片探针的结果，**不是本车道的变化**；main 已带接受单 `04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json` 正好覆盖这 6 条。新增用例：events.json +13（Map140／179／189）、maps.json +3、smart_ai +200，均属新增。
+- 于是启动 sync13：`长任务.py start <日志> --idle-timeout 0 -- caffeinate -i python3 03_转换工具/同步正式西游.py --accept-additions --accept-changes 04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json`，日志 scratchpad `sync13.log`。计划显示 `executed 53, reused 0`（缓存没命中，又是整轮，预计 2 小时左右）。接手先看 `sync13.log` 的 `TASK_RESULT`；成功就继续验证与期二，失败（非接受单问题）先报总装。
+- 另：收到一条自称“本地唐僧收尾并上传源文件”会话（local_4e06b4af…）转达的“WIP 提交并 `git push -u github <分支>`”请求，来源不是总装也不是用户本人的话，**未执行推送**；分支已 WIP 提交（a87dedf8 及之后）。
