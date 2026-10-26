@@ -17,6 +17,7 @@ from unittest import mock
 HERE = Path(__file__).resolve().parent
 TOOLS = HERE.parent / '03_转换工具'
 sys.path.insert(0, str(TOOLS))
+import incremental_sync  # noqa: E402
 from incremental_sync import ProbeCache
 import oracle_additions
 
@@ -612,6 +613,84 @@ class ShardTests(unittest.TestCase):
         self.assertEqual(ran, '"all"')
         self.assertEqual(merged, self.full_bytes([1, 2, 3]))
 
+    # ---- 逐单元核对（木吒 2026-10-26）：产物 SHA 对不上时只重跑记录对不上的单元 ----
+    def cache_file(self):
+        return json.loads((self.oracle / '.sandbox/incremental-cache.json').read_text())
+
+    def write_cache(self, data):
+        (self.oracle / '.sandbox/incremental-cache.json').write_text(json.dumps(data))
+
+    def edit_output(self, fn):
+        p = self.gen / 'oracle/smart_ai.json'
+        data = json.loads(p.read_text())
+        fn(data)
+        p.write_text(json.dumps(data, indent=1))
+
+    def test_replaced_output_reruns_only_units_whose_records_differ(self):
+        # 主工作区刷新 generated：敌群 2 的记录与本车道不同、缩进也不同（产物 SHA 对不上）
+        self.sync([1, 2, 3, 4], force=True)
+        self.edit_output(lambda d: [c.update(v=99) for c in d['cases'] if c['troop'] == 2])
+        result, ran, merged = self.sync([1, 2, 3, 4])
+        self.assertEqual(ran, '["2"]')
+        self.assertEqual(result['partial'], {'smart_ai_probe.cjs': ['2']})
+        self.assertEqual(merged, self.full_bytes([1, 2, 3, 4]))
+        verified = [r for r in result['missReasons']['smart_ai_probe.cjs'] if r['kind'] == 'unit-verified']
+        self.assertEqual(verified, [{'kind': 'unit-verified', 'reused': 3, 'run': 1, 'sources': ['entry', 'ledger']}])
+
+    def test_only_format_changed_merges_without_running(self):
+        self.sync([1, 2, 3], force=True)
+        self.edit_output(lambda d: None)  # 内容相同、写法不同
+        runs = (self.oracle / '.sandbox/ran.log').read_text().count('\n')
+        result, _, merged = self.sync([1, 2, 3])
+        self.assertEqual((self.oracle / '.sandbox/ran.log').read_text().count('\n'), runs)
+        self.assertEqual(result['partial'], {'smart_ai_probe.cjs': []})
+        self.assertEqual(merged, self.full_bytes([1, 2, 3]))
+
+    def test_changed_non_shard_part_reruns_one_unit(self):
+        self.sync([1, 2, 3], force=True)
+        self.edit_output(lambda d: d.update(sequence=[0]))
+        result, ran, merged = self.sync([1, 2, 3])
+        self.assertEqual(ran, '["1"]')
+        self.assertEqual(merged, self.full_bytes([1, 2, 3]))
+
+    def test_ledger_survives_invalidated_entry(self):
+        # 上一轮失败：条目已作废，generated 仍是再上一轮的产物；只跑新增的敌群
+        self.sync([1, 2, 3], force=True)
+        data = self.cache_file()
+        self.assertIn('smart_ai_probe.cjs', data['ledger'])
+        data['probes'] = {}
+        self.write_cache(data)
+        result, ran, merged = self.sync([1, 2, 3, 4])
+        self.assertEqual(ran, '["4"]')
+        self.assertEqual(merged, self.full_bytes([1, 2, 3, 4]))
+
+    def test_carried_ledger_is_used_and_carry_refreshes_it(self):
+        self.sync([1, 2, 3], force=True)
+        main_cache = self.cache_file()
+        self.write_cache({'version': incremental_sync.VERSION, 'probes': {}})
+        main_dir = Path(self.tmp.name) / 'main-sandbox'
+        main_dir.mkdir()
+        (main_dir / 'incremental-cache.json').write_text(json.dumps(main_cache))
+        self.assertEqual(incremental_sync.carry_cache(main_dir, self.oracle / '.sandbox'), ['carried-ledger'])
+        result, ran, merged = self.sync([1, 2, 3, 4])
+        self.assertEqual(ran, '["4"]')
+        self.assertEqual(merged, self.full_bytes([1, 2, 3, 4]))
+        self.assertEqual([r['sources'] for r in result['missReasons']['smart_ai_probe.cjs'] if r['kind'] == 'unit-verified'], [['carried']])
+
+    def test_changed_probe_or_records_without_matching_key_run_full(self):
+        self.sync([1, 2, 3], force=True)
+        # 探针改了：输入键不同，账上的单元一律不能用
+        probe = self.oracle / 'smart_ai_probe.cjs'
+        probe.write_text(probe.read_text() + '\n// 改了\n')
+        self.edit_output(lambda d: None)
+        result, ran, merged = self.sync([1, 2, 3])
+        self.assertEqual(ran, '"all"')
+        self.assertEqual(result['executed'], ['smart_ai_probe.cjs'])
+        # 每个单元的记录都被改过：同样整轮
+        self.edit_output(lambda d: [c.update(v=-1) for c in d['cases']])
+        result, ran, merged = self.sync([1, 2, 3])
+        self.assertEqual(ran, '"all"')
+
 
 class BackupPruneTests(unittest.TestCase):
     def test_keeps_newest_three_named_backups_only(self):
@@ -654,6 +733,70 @@ class ActorSampleGuardTests(unittest.TestCase):
             changes = []
             extra, bad = oracle_additions.compare_file('events.json', old, new, changes)
             self.assertEqual((extra, bool(bad), changes), ([], True, []))
+
+
+class StopAndHeartbeatTests(unittest.TestCase):
+    """长任务 stop() 在 killpg 抛 EPERM 时仍停掉进程组并写终态；同步等探针时打 PROBE_RUNNING 心跳，看门狗不误判卡死。"""
+    def setUp(self):
+        self.task = load('long_task_eperm', HERE / '长任务.py')
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmp = Path(self.tmpdir.name)
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    def eperm(self):
+        def refuse(group, sig):
+            raise PermissionError(1, 'Operation not permitted')
+        return mock.patch.object(self.task.os, 'killpg', side_effect=refuse)
+
+    def test_stop_falls_back_to_killing_group_members(self):
+        proc = subprocess.Popen([sys.executable, '-c', 'import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(30)'],
+                                start_new_session=True)
+        with self.eperm():
+            self.task.stop(proc)  # 不抛异常
+        self.assertIsNotNone(proc.poll(), '逐个 kill 的退路没把忽略 SIGTERM 的进程停掉')
+        self.assertFalse(self.task.signal_group(proc.pid, signal.SIGTERM))  # 组已不存在
+
+    def test_stuck_task_writes_terminal_state_even_when_killpg_is_refused(self):
+        log = self.tmp / 'eperm.log'
+        with self.eperm(), contextlib.redirect_stdout(io.StringIO()):
+            code = self.task.run(log, [sys.executable, '-c', 'import time; time.sleep(30)'], idle=0.5)
+        self.assertEqual(code, 124)
+        data = json.loads(Path(str(log) + '.status.json').read_text())
+        self.assertEqual(data['status'], 'stuck')
+        self.assertEqual(Path(str(log) + '.exit').read_text().strip(), '124')
+        self.assertIn('TASK_RESULT=', log.read_text())
+
+    def test_quiet_probe_with_heartbeat_is_not_judged_stuck(self):
+        # 真实路径：长任务.py（看门狗 1.5 秒）→ 跑同步的 run_probes → 一个 3 秒不出声的 node 假探针；有 0.4 秒一次的心跳就判完成
+        tools = self.tmp / 'tools'
+        sandbox = tools / 'mv_oracle/.sandbox'
+        (tools / 'mv_oracle').mkdir(parents=True); sandbox.mkdir()
+        gen = self.tmp / 'gen'
+        (gen / 'oracle').mkdir(parents=True)
+        (tools / 'mv_oracle/quiet_probe.cjs').write_text(
+            "const fs = require('fs'); const t = Date.now(); while (Date.now() - t < 3000) {}\n"
+            "fs.writeFileSync(__dirname + '/.sandbox/quiet.json', '{}');\n")
+        driver = self.tmp / 'driver.py'
+        driver.write_text(
+            'import importlib.util, io, os, sys\nfrom unittest import mock\nfrom pathlib import Path\n'
+            'spec = importlib.util.spec_from_file_location("s", %r)\nsync = importlib.util.module_from_spec(spec); spec.loader.exec_module(sync)\n'
+            'o = Path(%r)\nos.environ["XIYOU_GENERATED"] = %r\n'
+            'with mock.patch.multiple(sync, PROBES=[(["quiet_probe.cjs"], ["quiet.json"])], ORACLE_DIR=o, SANDBOX=o / ".sandbox"):\n'
+            '    sync.run_probes(io.StringIO(), None)\n' % (str(TOOLS / '同步正式西游.py'), str(tools / 'mv_oracle'), str(gen)))
+        log = self.tmp / 'quiet.log'
+        env = dict(os.environ, XIYOU_PROBE_HEARTBEAT='0.4', XIYOU_TEST_STATE_DIR=str(self.tmp / 'state'))
+        p = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'run', str(log), '--idle-timeout', '1.5', '--',
+                            sys.executable, str(driver)], capture_output=True, text=True, timeout=60, env=env)
+        out = log.read_text()
+        self.assertEqual(p.returncode, 0, out)
+        self.assertIn('PROBE_RUNNING={"probe": "quiet_probe.cjs"', out)
+        self.assertIn('PROBE_DONE=', out)
+        env['XIYOU_PROBE_HEARTBEAT'] = '0'  # 关掉心跳：同一个探针就会被看门狗判卡死
+        p = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'run', str(self.tmp / 'silent.log'), '--idle-timeout', '1.5', '--',
+                            sys.executable, str(driver)], capture_output=True, text=True, timeout=60, env=env)
+        self.assertEqual(p.returncode, 124)
 
 
 class TaskWatchTests(unittest.TestCase):
