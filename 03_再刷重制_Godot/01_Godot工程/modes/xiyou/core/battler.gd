@@ -298,6 +298,9 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 				state_turns.erase(sid)
 		buffs.fill(0)
 		buff_turns.fill(0)
+		if self is XEnemy:
+			XEnemyBook.note_death(self)  # AB_EnemyBook Game_Enemy.die：击败数即时 +1
+		XRaceBattle.on_death(self)  # 种族 die 包装：清反攻
 	if not state_ids.has(id):
 		state_ids.append(id)
 		_sort_states()
@@ -305,6 +308,8 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 	var lo := int(s.get("minTurns", 1))
 	var hi := maxi(lo, int(s.get("maxTurns", lo)))
 	state_turns[id] = roll_state_duration(lo, hi, random, str(id))
+	if id == XAlienBattle.corrosion_id():
+		XAlienBattle.sync_corrosion(self)  # 异化 resetStateCounts 包装：腐蚀按回合定到期
 	var source := XImportedBalance.acting_battler()
 	if source != null:
 		state_origins[id] = weakref(source)
@@ -334,6 +339,8 @@ func remove_state(id: int) -> void:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
 	state_ids.erase(id)
 	state_turns.erase(id)
+	if had:
+		XRaceBattle.on_state_removed(self, id)  # 种族：去掉毒鸡汤时清待结算记录
 	if id == XZhenqi.POJIA_STATE:
 		zq_pojia_rate = 0.5
 	# Game_Battler.removeState：有该状态才 refresh；krz 的 Game_Enemy.removeState 之后总标 dirty
@@ -630,6 +637,7 @@ func clear_states() -> void:
 		if not XResourceContext.permanent(sid):
 			state_ids.erase(sid)
 			state_turns.erase(sid)
+			XRaceBattle.on_state_removed(self, sid)
 
 
 ## Game_BattlerBase.recoverAll：清状态后按（可能是旧缓存的）上限回满，YEP_BattleEngineCore 再 refresh（只消费 dirty，不截资源）

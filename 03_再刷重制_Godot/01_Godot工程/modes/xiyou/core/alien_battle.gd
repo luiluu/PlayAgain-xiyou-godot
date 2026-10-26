@@ -1,0 +1,433 @@
+class_name XAlienBattle
+extends RefCounted
+## 异化的战斗侧（冻结 v0.28 installAlienationRuntime，CodexAlienation）：遭遇、敌人变体、锁队、腐蚀、镜骸反噬、胜利发放。
+## 工坊侧（标记、账本、合成、重抽、分解）在 alienation.gd（XAlienation）；词条效果（installAlienationAffixes／Advanced）未移植。
+## 参照 mv_oracle/alien_battle_probe.cjs（generated/oracle/alien_battle.json），专项 tests/xiyou_alien_battle。
+## - 遭遇（Game_Troop.setup 包装 setupEncounter）：本场敌人按 bossSources 匹配（敌人、地图、敌群，未知存在另看来源地图），
+##   几率 min(1%, Σ掉率×0.2)、按掉率加权选本体、随机变体；没有 Boss 来源时按 mobSources（地图＋敌群）随机选一个非 Boss 敌人，
+##   几率 1%，按 transition 等权选本体，变体「异化」。命中后立刻 XAlienation.create 出奖励装备（不进背包，账本序号照样加一）。
+## - 敌人：XEnemy.alien {variant, boss, shieldGranted, mirrorRound, mirrorCharged, plagueRound, drainRound}；
+##   最大生命 ×1.5（小怪 ×1.25，Math.round）、名字前加【异化·X】／【异化】，遭遇时回满生命。
+## - 开战（startBattle 包装）：出战角色冻结身上的异化装备（_alienBattle）；蜕壳加 10% 最大生命护盾（直接加，不吃护盾效果加成）；提示。
+## - 行动根（startAction／endAction 包装）：烈变与小怪的主动生命伤害 +15%／+10%（反击、反射、派生行动不加）；
+##   灾疫每回合第一个生命伤害技能对命中的活目标附加腐蚀；镜骸每回合第一次被角色主动打中时，行动结束反噬
+##   min(⌊扣血×5%⌋, ⌊行动者最大生命×8%⌋)。
+## - 回合：开始时镜骸重新充能；结束时蚀能（偶数回合，吸 MP 比例最高的活角色 10% 最大法力，按实际比例回 2% 最大生命）、
+##   腐蚀（每回合末扣 2% 最大生命、经护盾，到期自然消失）。
+## - 胜利（gainDropItems／endBattle(0) 包装）：异化敌人倒下才发，放进背包，账本 recent 头插、留 30 条，提示「获得 …」；每场一次。
+## 原版行动外的 gainHp／setHp（公式副作用等）也按帧加成与记镜骸；这里只接 executeHpDamage，其余未移植。
+## 未知存在的来源地图（Leviathan 的 Game_Map.setup 包装）记在 XState.unknown_origin（进 Map152／176 时记上一张图）。
+
+static var _logic_ref: WeakRef
+## 测试用：非空时下一次 setup 遭遇照 A.setupEncounter(force)（{enemy: 序号, kind, baseId, origin, variant, affix}），用后清空
+static var force := {}
+
+
+static func config() -> Dictionary:
+	return XAlienation.config()
+
+
+static func corrosion_id() -> int:
+	return int(config().ids.corrosion)
+
+
+static func _store(logic) -> Dictionary:
+	if not logic.has_meta("xalien"):
+		logic.set_meta("xalien", {"encounter": null, "root": null, "party": {}, "lastEnd": -1, "toasts": [], "serial": 0})
+	return logic.get_meta("xalien")
+
+
+static func active_logic():
+	return _logic_ref.get_ref() if _logic_ref != null else null
+
+
+## A.round：max(1, 回合数)
+static func round_of(logic) -> int:
+	return maxi(1, int(logic.turn)) if logic != null else 1
+
+
+static func _live(b) -> bool:
+	return b != null and b.is_alive()
+
+
+static func _toast(logic, text: String) -> void:
+	_store(logic).toasts.append(text)
+	XToast.show_text(text)
+
+
+static func encounter(logic):
+	return _store(logic).encounter if logic != null and logic.has_meta("xalien") else null
+
+
+## Leviathan Game_Map.setup 包装：进未知存在（152／176）时记上一张图（同图重进保留），去别处清掉
+static func on_map_setup(s: XState, previous: int, id: int) -> void:
+	if id == 152 or id == 176:
+		if previous != id:
+			s.unknown_origin = previous
+	else:
+		s.unknown_origin = null
+
+
+# ---- 遭遇 ----
+
+## JSON 读进来的数是浮点，按整数比
+static func _has(list: Array, n: int) -> bool:
+	return list.any(func(v): return int(v) == n)
+
+
+static func _route_matches(src: Dictionary, e: XEnemy, s: XState, troop: int) -> bool:
+	if int(src.enemyId) != e.enemy_id or not _has(src.mapIds, s.map_id) or not _has(src.troopIds, troop):
+		return false
+	if (src.origins as Array).is_empty():
+		return true
+	return s.unknown_origin != null and _has(src.origins, int(s.unknown_origin))
+
+
+## Game_Enemy.dropItemRate（EliteEnemy 最终式 × Codex 全队掉率，同怪物图鉴）
+static func drop_item_rate(s: XState, e: XEnemy) -> float:
+	return (1.0 if XMapTransfer.has_drop_item_double(s) else 0.2) * e.drop_rate_bonus() * XMapTransfer.team_drop_factor(s)
+
+
+static func _choose(xs: Array, rng: XRandomStream, reason: String):
+	var r := rng.next_float(reason, "alien")
+	return xs[mini(floori(r * xs.size()), xs.size() - 1)]
+
+
+static func _weighted(xs: Array, rng: XRandomStream) -> Dictionary:
+	var total := 0.0
+	for x in xs:
+		total += float(x.weight)
+	var r := rng.next_float("alien_weighted", "alien") * total
+	for x in xs:
+		r -= float(x.weight)
+		if r < 0.0:
+			return x
+	return xs[xs.size() - 1]
+
+
+static func variant_info(key: String) -> Dictionary:
+	for v in config().variants:
+		if str(v.key) == key:
+			return v
+	return config().mobVariant if key == "mob" else {}
+
+
+## A.setupEncounter：返回遭遇记录或 null。rng 取本场规则随机数（同 Math.random 的取用顺序：选小怪、判几率、加权、变体）；
+## 奖励的词条随机走 XAlienation.choose
+static func setup_encounter(logic, rng: XRandomStream, forced := {}):
+	var st := _store(logic)
+	st.encounter = null
+	var s: XState = logic.state
+	var enemies: Array = logic.enemies
+	var candidates := []
+	for e in enemies:
+		for src in config().get("bossSources", []):
+			if _route_matches(src, e, s, int(logic.troop_id)):
+				var rate := maxf(0.0, drop_item_rate(s, e))
+				for d in src.drops:
+					candidates.append({"enemy": e, "kind": str(d.kind), "baseId": int(d.baseId), "weight": minf(1.0, float(d.chance) * rate)})
+	var total := 0.0
+	for x in candidates:
+		total += float(x.weight)
+	var boss := total > 0.0
+	var prob := minf(0.01, total * 0.2) if boss else 0.01
+	if not boss:
+		var mob = null
+		for m in config().get("mobSources", []):
+			if int(m.mapId) == s.map_id and _has(m.troopIds, int(logic.troop_id)):
+				mob = m
+				break
+		if mob == null and forced.is_empty():
+			return null
+		var es := enemies.filter(func(x): return not XZhenqi.is_boss_enemy(x))
+		if es.is_empty() and forced.is_empty():
+			return null
+		var chosen_enemy = enemies[int(forced.enemy)] if forced.has("enemy") else _choose(es, rng, "alien_enemy")
+		candidates = (config().get("transition", []) as Array).map(func(t): return {"enemy": chosen_enemy, "kind": str(t.kind), "baseId": int(t.baseId), "weight": 1.0})
+	if forced.has("enemy"):
+		candidates = [{"enemy": enemies[int(forced.enemy)], "kind": str(forced.kind), "baseId": int(forced.baseId), "weight": 1.0}]
+		boss = str(forced.get("origin", "boss")) != "mob"
+	if forced.is_empty() and rng.next_float("alien_encounter", "alien") >= prob:
+		return null
+	var chosen := _weighted(candidates, rng)
+	var variant: Dictionary = _choose(config().variants, rng, "alien_variant") if boss else config().mobVariant
+	if forced.get("variant") != null and not variant_info(str(forced.variant)).is_empty():
+		variant = variant_info(str(forced.variant))
+	var made := XAlienation.create(s, str(chosen.kind), int(chosen.baseId), "boss" if boss else "mob", str(forced.get("affix", "")))
+	if made.has("error"):
+		push_warning("异化奖励创建失败：" + str(made.error))
+		return null
+	var e: XEnemy = chosen.enemy
+	e.alien = {"variant": str(variant.key), "boss": boss, "shieldGranted": false, "mirrorRound": -1, "mirrorCharged": true,
+		"plagueRound": -1, "drainRound": -1}
+	e.param_mark_dirty()
+	e.param_refresh()
+	e.hp = e.mhp
+	st.serial = int(st.serial) + 1
+	st.encounter = {"id": st.serial, "enemy": e, "variant": variant, "reward": made.ok, "granted": false, "settled": false, "probability": prob}
+	return st.encounter
+
+
+## Game_Enemy.param 包装：异化敌人最大生命 ×1.5（小怪 ×1.25）
+static func hp_param(e: XEnemy, i: int, v: float) -> float:
+	if i != 0 or e.alien.is_empty():
+		return v
+	return XRaceBattle.js_round(v * (1.5 if bool(e.alien.boss) else 1.25))
+
+
+## Game_Enemy.name 包装
+static func name_prefix(e: XEnemy) -> String:
+	if e.alien.is_empty():
+		return ""
+	var v := variant_info(str(e.alien.variant))
+	return "【异化" + ("·" + str(v.name) if str(e.alien.variant) != "mob" and not v.is_empty() else "") + "】"
+
+
+# ---- 开战、结束 ----
+
+## Game_Troop.setup 包装＋startBattle 包装（BattleManager.setup 之后）：遭遇、锁队、蜕壳护盾、提示
+static func start(logic) -> void:
+	logic.set_meta("xalien", {"encounter": null, "root": null, "party": {}, "lastEnd": -1, "toasts": [], "serial": 0})
+	_logic_ref = weakref(logic)
+	var forced := force
+	force = {}
+	setup_encounter(logic, logic._rule(), forced)
+	open(logic)
+
+
+## startBattle 包装：锁队（原 startBattle 之前）、蜕壳护盾与提示（之后）
+static func open(logic) -> void:
+	lock_party(logic)
+	var x = encounter(logic)
+	if x != null:
+		var e: XEnemy = x.enemy
+		if str(e.alien.variant) == "shell" and not bool(e.alien.shieldGranted):
+			e.alien.shieldGranted = true
+			e.shield = e.shield + floorf(e.mhp * 0.1)
+		_toast(logic, e.display_name() + "：" + str(x.variant.description) + " 胜利保证异化装备。")
+
+
+## A.lockParty：出战角色各冻结身上第一件异化装备（原版多于一件时抛错）
+static func lock_party(logic) -> void:
+	var st := _store(logic)
+	st.party = {}
+	for a in logic.actors:
+		var d := XAlienation.for_actor(a)
+		st.party[a] = null if d.is_empty() else {"item": d.item, "affix": d.affix, "config": (d.config as Dictionary).duplicate(true), "observed": [], "selected": 0}
+
+
+## 战斗中的 A.forActor：开战时冻结的那份；不在战斗中返回 null
+static func locked(a):
+	var logic = active_logic()
+	if logic == null or not logic.has_meta("xalien") or not _store(logic).party.has(a):
+		return null
+	return _store(logic).party[a]
+
+
+## A.grant：异化敌人倒下才发
+static func grant(logic) -> bool:
+	var x = encounter(logic)
+	if x == null or bool(x.granted) or not x.enemy.is_dead():
+		return false
+	var s: XState = logic.state
+	var i: Dictionary = x.reward
+	if not s.gear.any(func(g): return is_same(g, i)):
+		s.gear.append(i)
+	x.granted = true
+	var l := XAlienation.ledger(s)
+	var m := XAlienation.mark(i)
+	(l.recent as Array).push_front({"name": str(i.name), "origin": str(m.origin), "uid": str(m.uid), "kind": XAlienation.kind(i), "id": str(i.get("instanceId", ""))})
+	l.recent = (l.recent as Array).slice(0, 30)
+	_toast(logic, "获得 " + str(i.name))
+	return true
+
+
+## endBattle 包装：胜利时补发；结算一次；未发的奖励原版删掉独立装备（这里没放进背包，不用删）；清锁队
+static func end(logic, result: int) -> void:
+	if not logic.has_meta("xalien"):
+		return
+	var x = encounter(logic)
+	if x != null and not bool(x.settled):
+		if result == 0:
+			grant(logic)
+		x.settled = true
+	_store(logic).party = {}
+	_store(logic).root = null
+
+
+# ---- 回合 ----
+
+## startTurn 包装（回合数加一之后）：镜骸在新回合重新充能
+static func start_turn(logic) -> void:
+	var r := round_of(logic)
+	for e in logic.enemies:
+		var d: Dictionary = e.alien
+		if not d.is_empty() and str(d.variant) == "mirror" and int(d.mirrorRound) != r:
+			d.mirrorRound = r
+			d.mirrorCharged = true
+
+
+## endTurn 包装（每回合一次）：蚀能、腐蚀结算
+static func round_end(logic) -> Array:
+	var logs := []
+	var st := _store(logic)
+	var r := round_of(logic)
+	if int(st.lastEnd) == r:
+		return logs
+	st.lastEnd = r
+	for e in logic.enemies:
+		drain(logic, e)
+	for t in logic.actors + logic.enemies:
+		tick_corrosion(logic, t, r, logs)
+	return logs
+
+
+## A.drain：偶数回合，吸 MP 比例最高的活角色（同比例取先到的）10% 最大法力，按实际吸取比例回 2% 最大生命
+static func drain(logic, e: XEnemy) -> float:
+	var d: Dictionary = e.alien
+	var r := round_of(logic)
+	if not _live(e) or d.is_empty() or str(d.variant) != "drain" or r % 2 != 0 or int(d.drainRound) == r:
+		return 0.0
+	d.drainRound = r
+	var t = null
+	for a in logic.actors:
+		if _live(a) and a.mmp > 0.0 and a.mp > 0.0 and (t == null or a.mp / a.mmp > t.mp / t.mmp):
+			t = a
+	if t == null:
+		return 0.0
+	var planned := floorf(t.mmp * 0.1)
+	if planned < 1.0:
+		return 0.0
+	var before: float = t.mp
+	t.mp = maxf(0.0, t.mp - minf(before, planned))
+	var actual := maxf(0.0, before - t.mp)
+	if actual > 0.0:
+		e.hp = minf(e.mhp, e.hp + floorf(e.mhp * 0.02 * minf(1.0, actual / planned)))
+	return actual
+
+
+## resetStateCounts 包装：腐蚀（新加或续上）按状态回合定到期回合
+static func sync_corrosion(t) -> void:
+	var id := corrosion_id()
+	if not t.state_ids.has(id):
+		return
+	var remaining := maxi(1, int(t.state_turns.get(id, 2)))
+	t.set_meta("xalien_corrosion", {"until": round_of(active_logic()) + remaining - 1, "tick": -1})
+	t.state_turns[id] = remaining
+
+
+static func corrosion_until(t):
+	return t.get_meta("xalien_corrosion").until if t.has_meta("xalien_corrosion") else null
+
+
+## A.tickCorrosion：扣 2% 最大生命（经护盾），回合数改为剩余，到期自然去掉
+static func tick_corrosion(logic, t, r: int, logs: Array) -> void:
+	var id := corrosion_id()
+	if not t.state_ids.has(id) or not _live(t):
+		return
+	var c: Dictionary = t.get_meta("xalien_corrosion") if t.has_meta("xalien_corrosion") else {"until": r, "tick": -1}
+	if int(c.tick) == r:
+		return
+	c.tick = r
+	t.set_meta("xalien_corrosion", c)
+	_lose_hp(logic, t, floorf(t.mhp * 0.02), logs)
+	var until := int(c.until)
+	t.state_turns[id] = maxi(0, until - r)
+	if r >= until:
+		t.remove_state(id)
+
+
+## gainHp(-n) 的伤害（ShieldSystem 护盾先吸收），弹字、倒下
+static func _lose_hp(logic, t, n: float, logs: Array) -> void:
+	var before: float = t.hp
+	var v: float = t.absorb_shield(n)
+	t.hp = maxf(0.0, t.hp - v)
+	t.refresh_resources()
+	logs.append({"type": "regen", "target": t, "hp": before - t.hp, "views": logic.views([t])})
+	if t.is_dead():
+		logs.append({"type": "collapse", "target": t, "views": logic.views([t])})
+
+
+# ---- 行动根 ----
+
+## A.beginAction（startAction 包装）：灾疫敌人本回合第一个生命伤害技能
+static func begin(logic, u, item: Dictionary) -> void:
+	var st := _store(logic)
+	var root := {"subject": u, "item": item, "mirror": [], "plagueTargets": [], "plague": false, "ended": false}
+	st.root = root
+	if u is XEnemy and not u.alien.is_empty():
+		var d: Dictionary = u.alien
+		if str(d.variant) == "plague" and _live(u) and not XBattleLogic.is_item(item) and int(item.get("damage", {}).get("type", 0)) == 1 \
+				and int(d.plagueRound) != round_of(logic):
+			d.plagueRound = round_of(logic)
+			root.plague = true
+
+
+static func _derived(logic) -> bool:
+	return logic.has_meta("xrace") and int(logic.get_meta("xrace").derived) > 0
+
+
+## 本次结算算不算「主动」（帧 active，且就是行动根本身的行动）：反击、反射、别的行动派生的结算不算
+static func _active(logic, u, item: Dictionary) -> bool:
+	if _derived(logic):
+		return false
+	var root = _store(logic).root
+	return root == null or (is_same(root.subject, u) and root.item == item)
+
+
+## executeHpDamage 包装（outgoing）：烈变 ×1.15、小怪异化 ×1.1，只算异化敌人的主动正伤害
+static func outgoing(logic, u, item: Dictionary, value: float) -> float:
+	if value <= 0.0 or not u is XEnemy or u.alien.is_empty() or not logic.has_meta("xalien") or not _active(logic, u, item):
+		return value
+	var d: Dictionary = u.alien
+	if str(d.variant) == "flare" or not bool(d.boss):
+		return floorf(value * (1.15 if bool(d.boss) else 1.1))
+	return value
+
+
+## recordDamage：镜骸被行动根的角色打掉生命（不含反击、反射）
+static func record(logic, u, t, loss: float) -> void:
+	if not logic.has_meta("xalien") or loss <= 0.0 or not t is XEnemy or t.alien.is_empty() or str(t.alien.variant) != "mirror":
+		return
+	var root = _store(logic).root
+	if root == null or not root.subject is XActor or not is_same(u, root.subject) or _derived(logic):
+		return
+	var d: Dictionary = t.alien
+	if bool(d.mirrorCharged):
+		d.mirrorCharged = false
+		root.mirror.append({"target": t, "loss": 0.0})
+	for x in root.mirror:
+		if is_same(x.target, t):
+			x.loss = float(x.loss) + loss
+			return
+
+
+## Game_Action.apply 包装（原 apply 之后）：灾疫的行动根命中活目标时附加腐蚀（每个目标一次）
+static func after_apply(logic, u, item: Dictionary, t, r: Dictionary) -> void:
+	if not logic.has_meta("xalien"):
+		return
+	var root = _store(logic).root
+	if root == null or not bool(root.plague) or not is_same(root.subject, u) or root.item != item or _derived(logic):
+		return
+	if not _live(t) or bool(r.get("missed", false)) or bool(r.get("evaded", false)) or (root.plagueTargets as Array).any(func(x): return is_same(x, t)):
+		return
+	root.plagueTargets.append(t)
+	logic._effect(u, t, {"code": 21, "dataId": corrosion_id(), "value1": 1.0, "value2": 0.0}, {"skill": item, "added": [], "removed": []})
+
+
+## A.finishAction（endAction 包装，原 endAction 之后）：镜骸反噬
+static func finish(logic, logs: Array) -> void:
+	if not logic.has_meta("xalien"):
+		return
+	var st := _store(logic)
+	var root = st.root
+	st.root = null
+	if root == null or bool(root.ended):
+		return
+	root.ended = true
+	for x in root.mirror:
+		if not _live(x.target) or not _live(root.subject):
+			continue
+		var n := minf(floorf(float(x.loss) * 0.05), floorf(root.subject.mhp * 0.08))
+		if n > 0.0:
+			_lose_hp(logic, root.subject, n, logs)

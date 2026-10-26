@@ -1,5 +1,5 @@
 {
- "_source": "冻结 v0.28 installAlienationRuntime／installAlienationAdvanced 的 CodexAlienation.config 与词条说明（mv_oracle/alien_workshop_probe.cjs 导出配置与词条、alien_config_probe.cjs 导出 templates 与云裳 transferDebuffs／shareBuffs；tests/xiyou_alien_workshop 核对与参照一致）",
+ "_source": "冻结 v0.28 installAlienationRuntime／installAlienationAdvanced 的 CodexAlienation.config 与词条说明（mv_oracle/alien_workshop_probe.cjs 导出配置与词条、alien_config_probe.cjs 导出 templates 与云裳 transferDebuffs／shareBuffs；bossSources／mobSources／transition 与 variants 照 installAlienationRuntime 抄、alien_battle_probe.cjs 核对；tests/xiyou_alien_workshop 核对与参照一致）",
  "ids": {
   "energy": 2872,
   "stone": 2873,
@@ -2215,5 +2215,297 @@
   2517,
   2628,
   2629
- ]
+ ],
+ "bossSources": [
+  {
+   "mapIds": [
+    37,
+    38
+   ],
+   "enemyId": 150,
+   "troopIds": [
+    145
+   ],
+   "origins": [],
+   "drops": [
+    {
+     "kind": "a",
+     "baseId": 1013,
+     "chance": 0.009000000000000001
+    },
+    {
+     "kind": "a",
+     "baseId": 935,
+     "chance": 0.009000000000000001
+    },
+    {
+     "kind": "a",
+     "baseId": 1020,
+     "chance": 0.009000000000000001
+    },
+    {
+     "kind": "a",
+     "baseId": 2605,
+     "chance": 0.009000000000000001
+    },
+    {
+     "kind": "w",
+     "baseId": 1042,
+     "chance": 0.009000000000000001
+    }
+   ]
+  },
+  {
+   "mapIds": [
+    37,
+    38
+   ],
+   "enemyId": 153,
+   "troopIds": [
+    150
+   ],
+   "origins": [],
+   "drops": [
+    {
+     "kind": "a",
+     "baseId": 1022,
+     "chance": 0.02
+    },
+    {
+     "kind": "a",
+     "baseId": 2606,
+     "chance": 0.02
+    },
+    {
+     "kind": "a",
+     "baseId": 1019,
+     "chance": 0.02
+    },
+    {
+     "kind": "w",
+     "baseId": 1044,
+     "chance": 0.02
+    },
+    {
+     "kind": "w",
+     "baseId": 1047,
+     "chance": 0.02
+    }
+   ]
+  },
+  {
+   "mapIds": [
+    50,
+    51
+   ],
+   "enemyId": 220,
+   "troopIds": [
+    204
+   ],
+   "origins": [],
+   "drops": [
+    {
+     "kind": "a",
+     "baseId": 2577,
+     "chance": 0.009000000000000001
+    },
+    {
+     "kind": "a",
+     "baseId": 1580,
+     "chance": 0.009000000000000001
+    },
+    {
+     "kind": "a",
+     "baseId": 1582,
+     "chance": 0.009000000000000001
+    },
+    {
+     "kind": "w",
+     "baseId": 1107,
+     "chance": 0.009000000000000001
+    },
+    {
+     "kind": "w",
+     "baseId": 1400,
+     "chance": 0.009000000000000001
+    }
+   ]
+  },
+  {
+   "mapIds": [
+    50,
+    51
+   ],
+   "enemyId": 223,
+   "troopIds": [
+    207
+   ],
+   "origins": [],
+   "drops": [
+    {
+     "kind": "a",
+     "baseId": 2577,
+     "chance": 0.015
+    },
+    {
+     "kind": "a",
+     "baseId": 1580,
+     "chance": 0.015
+    },
+    {
+     "kind": "a",
+     "baseId": 1582,
+     "chance": 0.015
+    },
+    {
+     "kind": "w",
+     "baseId": 1107,
+     "chance": 0.015
+    },
+    {
+     "kind": "w",
+     "baseId": 1400,
+     "chance": 0.015
+    }
+   ]
+  },
+  {
+   "mapIds": [
+    152
+   ],
+   "enemyId": 539,
+   "troopIds": [
+    454
+   ],
+   "origins": [
+    37,
+    38
+   ],
+   "drops": [
+    {
+     "kind": "w",
+     "baseId": 1523,
+     "chance": 0.01
+    }
+   ]
+  },
+  {
+   "mapIds": [
+    152
+   ],
+   "enemyId": 540,
+   "troopIds": [
+    455
+   ],
+   "origins": [
+    37,
+    38
+   ],
+   "drops": [
+    {
+     "kind": "w",
+     "baseId": 1521,
+     "chance": 0.01
+    },
+    {
+     "kind": "w",
+     "baseId": 1522,
+     "chance": 0.01
+    }
+   ]
+  }
+ ],
+ "mobSources": [
+  {
+   "mapId": 29,
+   "troopIds": [
+    104,
+    105,
+    106,
+    107,
+    108
+   ]
+  },
+  {
+   "mapId": 30,
+   "troopIds": [
+    112,
+    113,
+    114,
+    115,
+    116,
+    117
+   ]
+  },
+  {
+   "mapId": 32,
+   "troopIds": [
+    119,
+    120,
+    121,
+    122,
+    123
+   ]
+  },
+  {
+   "mapId": 33,
+   "troopIds": [
+    133,
+    134,
+    135,
+    136,
+    137
+   ]
+  }
+ ],
+ "transition": [
+  {
+   "kind": "w",
+   "baseId": 3980
+  },
+  {
+   "kind": "w",
+   "baseId": 3981
+  },
+  {
+   "kind": "a",
+   "baseId": 7980
+  },
+  {
+   "kind": "a",
+   "baseId": 7981
+  }
+ ],
+ "variants": [
+  {
+   "key": "flare",
+   "name": "烈变",
+   "description": "生命×1.5；主动攻击生命伤害+15%。"
+  },
+  {
+   "key": "shell",
+   "name": "蜕壳",
+   "description": "生命×1.5；开场10%生命护盾，仅一次。"
+  },
+  {
+   "key": "drain",
+   "name": "蚀能",
+   "description": "生命×1.5；偶数自然回合结束吸取MP并恢复生命。"
+  },
+  {
+   "key": "plague",
+   "name": "灾疫",
+   "description": "生命×1.5；每自然回合首次伤害技能附加两回合腐蚀。"
+  },
+  {
+   "key": "mirror",
+   "name": "镜骸",
+   "description": "生命×1.5；每自然回合首次主动生命伤害触发有限反噬。"
+  }
+ ],
+ "mobVariant": {
+  "key": "mob",
+  "name": "异化",
+  "description": "生命×1.25；主动攻击生命伤害+10%。"
+ }
 }

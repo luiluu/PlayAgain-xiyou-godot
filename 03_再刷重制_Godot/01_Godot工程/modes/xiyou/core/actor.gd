@@ -494,11 +494,11 @@ func param_base(i: int) -> float:
 func param_plus(i: int) -> float:
 	var full := _param_plus(i)
 	if not XCat.enabled_sword(self):
-		return full
+		return full + XRaceBattle.param_plus(self, i)
 	_cat_bare = true
 	var bare := _param_plus(i)
 	_cat_bare = false
-	return full + (full - bare)
+	return full + (full - bare) + XRaceBattle.param_plus(self, i)  # 种族灵族：武器本体 ×q/2（包在小猫剑圣外层）
 
 func _param_plus(i: int) -> float:
 	var v := XEquipSuits.value(self,"param",i,false)
@@ -548,7 +548,7 @@ static func magic_param(e: Dictionary, i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XCat.param(self, i, super(i))
+	return XRaceBattle.param(self, i, XCat.param(self, i, super(i)))  # 种族祝福的 param 包装在小猫剑圣外层
 
 ## 正式版运行时对角色命中率保底 0.9（命中 = xparam 0）。
 func xparam(i: int) -> float:

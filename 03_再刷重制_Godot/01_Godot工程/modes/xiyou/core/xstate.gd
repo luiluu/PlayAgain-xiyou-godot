@@ -152,6 +152,8 @@ var race_supply := {}
 var race := {}
 ## 异化账本（XAlienation：$gameSystem._alienLedger 的 sequence／pending／recent／metrics），随存档；异化标记在装备实例的 alien 字段
 var alien_ledger := {}
+## 未知存在（Map152／176）的来源地图（Leviathan 的 $gameMap._codexLeviathanUnknownOrigin，随存档）：异化 Boss 来源按它限定；null 为没有
+var unknown_origin = null
 var eco_frac := {}
 ## KMS_ShopInventory 商店库存（见 XShopStock；随存档）与下一次商店用的库存组（$gameTemp.nextInventoryId，不存档）
 var shop_stock := {"inv": {}, "schedules": []}
@@ -242,6 +244,7 @@ func actor(id: int) -> XActor:
 			_apply_actor_op(actors[id], op)
 		actors[id].refresh_passive()
 		for e in actors[id].equip_list():register_gear(e)
+		XRace.on_actor_created(self, actors[id])  # installNativeRaceRuntime：Game_Actor.setup 包装建种族数据
 	return actors[id]
 
 
@@ -533,7 +536,7 @@ func to_dict() -> Dictionary:
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
-		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "ecoFrac": eco_frac,
+		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "unknownOrigin": unknown_origin, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "costumeOff": costume_off, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills)}
 
 static func from_dict(d: Dictionary) -> XState:
@@ -631,6 +634,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.race = rc.duplicate(true) if rc is Dictionary else {}
 	var al = d.get("alienLedger", {})
 	s.alien_ledger = al.duplicate(true) if al is Dictionary else {}
+	var uo = d.get("unknownOrigin")
+	s.unknown_origin = int(uo) if uo != null else null
 	var gs = d.get("guideSeen", {})
 	s.guide_seen = gs.duplicate() if gs is Dictionary else {}
 	s.eco_frac = d.get("ecoFrac", {})
