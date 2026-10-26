@@ -8,6 +8,8 @@
  P.ready=function(){return window.__ilr&&DataManager.isDatabaseLoaded()&&SceneManager._scene instanceof Scene_Title&&SceneManager._sceneStarted;};
  P.setup=async function(){
   var nativeUpdate=Game_Map.prototype.updateInterpreter;
+  P.trace=[];var go=SceneManager.goto;SceneManager.goto=function(cls){P.trace.push({goto:cls&&cls.name,from:this._scene&&this._scene.constructor.name,frame:Graphics.frameCount,time:Date.now()});return go.apply(this,arguments);};
+  var notify=$.toaster;$.toaster=function(arg){P.trace.push({toast:arg.message,scene:SceneManager._scene.constructor.name,frame:Graphics.frameCount,time:Date.now()});return notify.apply(this,arguments);};
   Math.random=function(){return .5;};__ilr.newGame();Game_Map.prototype.updateInterpreter=nativeUpdate;
   if(window.CodexGuide)CodexGuide.MILESTONE_ENABLED=false;
   $gameParty._actors=[2];$gameParty._battleMembers=[2,0,0,0,0];$gameVariables.setValue(9,1);
@@ -22,7 +24,7 @@
  };
  P.pick=async function(){
   var s=SceneManager._scene;s._actorWindow.select(0);P.prePick={item:s.item().id,actorIndex:s._actorWindow.index(),target:s.itemTargetActors().map(function(a){return a&&a.actorId();}),allowed:s.canUse(),user:s.user().actorId(),handler:String(s._actorWindow._handlers.ok),skills:$gameActors.actor(2)._skills.slice(),effects:s.item().effects};s._actorWindow.processOk();if(!$gameTemp._commonEventId&&!SceneManager.isNextScene(Scene_Map))throw Error("native no reservation: "+JSON.stringify({pre:P.prePick,state:P.read()}));
-  try { await wait(function(){return SceneManager._scene instanceof Scene_Map&&SceneManager._sceneStarted&&document.querySelector('#toastMessage .message');}); } catch(e) { throw Error('capacity return: '+JSON.stringify({pre:P.prePick,state:P.read(),busy:SceneManager._scene.isBusy(),messages:$gameMessage._texts,interp:$gameMap._interpreter&&{index:$gameMap._interpreter._index,running:$gameMap._interpreter.isRunning(),event:$gameMap._interpreter._eventId,list:$gameMap._interpreter._list},update:String(Game_Map.prototype.updateInterpreter).slice(0,300)})); }
+  try { await wait(function(){return SceneManager._scene instanceof Scene_Map&&SceneManager._sceneStarted&&document.querySelector('#toastMessage .message');}); } catch(e) { throw Error('capacity return: '+JSON.stringify({trace:P.trace,pre:P.prePick,state:P.read(),busy:SceneManager._scene.isBusy(),messages:$gameMessage._texts,interp:$gameMap._interpreter&&{index:$gameMap._interpreter._index,running:$gameMap._interpreter.isRunning(),event:$gameMap._interpreter._eventId,list:$gameMap._interpreter._list},update:String(Game_Map.prototype.updateInterpreter).slice(0,300)})); }
   await wait(function(){var t=document.querySelector('#toastMessage');return t&&Number(getComputedStyle(t).opacity)>=.999;});
   await settle();return true;
  };
