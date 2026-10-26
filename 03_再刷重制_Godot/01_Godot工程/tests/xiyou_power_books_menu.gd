@@ -137,7 +137,6 @@ func _run() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="): out_dir = arg.substr(6)
 	if out_dir != "":
-		XConfig.screenshot_mode = true
 		DirAccess.make_dir_recursive_absolute(out_dir)
 	var d: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/power_books_menu_oracle.json"))
 	ui_fixture = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/power_books_ui_oracle.json"))
