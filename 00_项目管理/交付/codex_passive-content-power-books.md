@@ -1,6 +1,6 @@
 # 交付：codex/passive-content-power-books
 
-- 车道／工作者：规则／沙僧（Codex，重制_沙僧_70）
+- 车道／工作者：规则／沙僧（Codex，重制_沙僧_71）
 - 状态：进行中（核心草稿与专项已提交，尚未验收）
 - 基线：1132e919；前期stateOrigin最终b91b1a14、特殊react最终1132e919均独立可合并待Claude，不重跑旧验收。
 
@@ -63,3 +63,7 @@
 - UI设计尚未落代码：新增独立XChoiceWindow子页（不改共用choice_window），按角色→技能→确认→结果，原item_scene暂停输入，关闭回列表；3044本身scope0/occasion2/consumablefalse，拦截_use_direct入口；原版itemUse入口installNativeHonghuangRuntime.js 138～148。权能使用前_effective与_use统一调用learn_reason，避免拒收仍扣书，并显示原版理由。先读menu原件真实行文，再接UI；改界面必跑event_compare且取原版／Godot成对截图及运行时读数。复用XChoiceWindow、XOrbShop.wrap_info，几何与原版同源；新截图脚本可复用ui_reference既有只读服务与原版截图流程，不动工具车道文件。
 - 收尾跑新专项、普通被动338例、Actor/导入/技能/属性／Boss等直接依赖；无切片则不强加难度1必跑，但总装合并影响面选测仍由总装做。原检查.sh文档／JSON／链接／编号块、node --check、MV守卫16／16、git diff --check；精简证据入Git后清自己成功临时输出。当前只是WIP，未跑本轮验收，别将前期全绿套到新核心。
 - 后续顺序不变：权能五本完整交付→容量满变量9返书／预约1317→PREE／ASUP→WPNM／SkEType与race-battle等八戒接口→都完且额度足才核他人；formula_execution／mv_event_core不在交接改动范围，set仍unsupported。更早限制与依赖链见本单前节及69→70全文。
+
+## 沙僧71接手（2026-10-26）
+
+- 同树上下文接力；HEAD 5a895af1、工作区干净。实查五小时52%、周8%，继续当前权能小期。三项原任务仍在运行，边界已推进到弱者组；不重复启动、不绕共用槽。共用登记只读，提交全部待Claude。
