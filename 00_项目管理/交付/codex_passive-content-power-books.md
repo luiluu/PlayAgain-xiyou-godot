@@ -33,3 +33,10 @@
 ## 本轮恢复（2026-10-26）
 
 - 用户要求继续；实查五小时39%、周6%，工作区干净，HEAD c66e12eb。续做修正后的[106,1,2]原版矩阵，旧重复名单原件保留，不重跑已交两期。
+
+### 接线设计草稿（本轮，尚未改运行时）
+
+- 新核心XPowerBooks（独立文件）从物品CodexPower标签＋效果43建立稳定技能表，按冻结角色ID分档，提供learn_reason／can_learn／learned／forget_paid；actor.learn_skill负责所有学习入口的上限，actor.forget_skill只保护XState.current里的正式角色实例，克隆仍可普通遗忘（与原版canonical identity判定一致）。专用付费接口原子地删技能、扣3044、刷新被动与资源，不留跨调用permit旗标。
+- 物品效果43复用actor.learn_skill守卫；物品页_effective及_use前的权能原因提示复用同一核心，防被拒后仍消耗本道具。3044在物品页使用入口打开独立XChoiceWindow子页，复用已移植的CodexYunshang.choose布局；原页暂停输入，结束后回物品列表。按原版走角色→技能→确认→结果，取消不扣符，不返权能书。先取原版各页实际行文与流程参照再接UI；不改共用choice_window。
+- 追加独立power_books_boundary_probe.cjs入口（尚未运行），45例＝三个角色类别×三个学习宿主（apply／直接learn／直接itemEffect）×五本循环顺序；覆盖不同书在容量边界被拒、普通遗忘保护与克隆例外、缺符、成功／重复付费遗忘、腾位后学习。不覆盖MV旧存档整理，不合成第六本权能。
+- 当前共用槽满，修正后的8例native2仍在排队，未绕槽或启动第二个重任务；先保存设计与后续探针。
