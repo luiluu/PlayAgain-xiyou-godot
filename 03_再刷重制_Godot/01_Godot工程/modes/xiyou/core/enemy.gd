@@ -77,7 +77,7 @@ func data() -> Dictionary:
 	return XDB.rec("Enemies", enemy_id)
 
 func display_name() -> String:
-	return original_name() + letter + ("宝宝" if capture else "")
+	return XAlienBattle.name_prefix(self) + original_name() + letter + ("宝宝" if capture else "")
 
 ## Game_Enemy.originalName：EliteEnemy 改写为神话敌人带「【神话】」前缀（不含同名字母）；makeUniqueNames 按它计数，
 ## 所以同一敌人一只神话一只普通时两边都只有一个，都不加字母
@@ -116,6 +116,8 @@ func setup_level(highest: int, r := -1.0, random: XRandomStream = null) -> void:
 var zq_ref := {}
 ## 幻化的敌人不掉落（makeDropItems／makeRewards 的物品清空）
 var zq_trial_loot := false
+## 异化敌人（XAlienBattle，原版 _alienEnemy）：{variant, boss, shieldGranted, mirrorRound, mirrorCharged, plagueRound, drainRound}
+var alien := {}
 
 ## EliteEnemy 的 paramBase（不含难度倍率 Vitsuno paramRate）
 func param_base_raw(i: int) -> float:
@@ -140,7 +142,8 @@ func param_base(i: int) -> float:
 ## 乘法次序照 JS，倍率不预乘进基础值：预乘时 10250×1.4 得 14349.999999999998，再×1.25＋1500 为 19437.499999999996，
 ## 四舍五入少 1（二十七层多宝 463 攻击 19438，敌群事件参照）。战斗中经 krz 能力值缓存（见 XBattler.param_cells）。
 func param(i: int) -> float:
-	return cached_param(i, param_now) if param_cache_on else param_now(i)
+	# 异化敌人最大生命倍率包在能力值缓存外层（Game_Enemy.param 包装）
+	return XAlienBattle.hp_param(self, i, cached_param(i, param_now) if param_cache_on else param_now(i))
 
 func param_now(i: int) -> float:
 	var v := param_base_unscaled(i) + param_plus(i)

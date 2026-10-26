@@ -85,6 +85,12 @@ func _run() -> void:
 		and page.slot_win.size == Vector2(1040, 172) and page.list_win.position == Vector2(0, 172) and page.list_win.size == Vector2(1280, 548))
 	check("initial_state", page.mode == "command" and page.slot_index == -1 and page.list_index == 1 and page.list_data() == [0, 1, 8, 9, 10, 2, 3, 4, 0])
 	await shot("整队_打开.png")
+	# 领袖旗标（首位狗逍遥是领袖 5 号）：画布要留着 LeaderFlag 纹理到下次重画，否则画成白块（八戒_71 期三，原版位置 (417.4, 14)）
+	page.slot_win.canvas.queue_redraw()
+	await frames(2)
+	var kept := page.slot_win.canvas._keep.filter(func(t): return t is Texture2D and str(t.resource_path).ends_with("LeaderFlag.png"))
+	check("leader_flag_kept", kept.size() == 1 and page.slot_win.position + Vector2(14, 14) + Vector2(1012.0 / 5 - 6 - kept[0].get_width(), 0) == Vector2(417.4, 14),
+		kept.map(func(t): return t.resource_path))
 	XSound.system_log.clear()
 	await press("ui_accept")
 	check("change_to_slot", page.mode == "slot" and page.slot_index == 0 and XSound.system_log == [1], XSound.system_log)

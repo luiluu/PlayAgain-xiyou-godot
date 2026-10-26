@@ -17,6 +17,7 @@ import ast
 import equipment_rules
 from formula_program import compile_formula
 import hashlib
+import io
 import json
 import os
 import re
@@ -893,11 +894,25 @@ class Exporter:
         self.transfer_enemies = sorted(enemies)
 
     def copy_assets(self):
-        def as_png(src, data):
+        try:
+            prev = json.loads((self.out / 'manifest.json').read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            prev = {}
+
+        def as_png(src, data, rel):
             # 原版有扩展名是 .png、内容是 JPEG／WebP 的图（如 162 诛仙的 小诛仙、guanxi7_1），NW.js 按内容解码，
             # Godot 按扩展名导入会报 Not a PNG file；这类图用 sips 转成真 PNG 再 normalize_png（输出逐字节稳定），其余原样
             if not (data.startswith(b'\xff\xd8\xff') or (data[:4] == b'RIFF' and data[8:12] == b'WEBP')):
                 return data
+            if not shutil.which('sips'):
+                # 云端（Linux）没有 sips：源图与上次产物都对得上就沿用 Mac 转出的那份，保持与 Mac 逐字节一致；否则用 Pillow 转
+                old = self.out / rel
+                if old.exists() and prev.get('inputs', {}).get(rel) == sha(data) and prev.get('outputs', {}).get(rel) == sha(old.read_bytes()):
+                    return old.read_bytes()
+                from PIL import Image
+                buf = io.BytesIO()
+                Image.open(src).save(buf, format='PNG')
+                return normalize_png(buf.getvalue())
             with tempfile.TemporaryDirectory(prefix='xiyou-png-') as tmp:
                 out = Path(tmp) / 'out.png'
                 subprocess.run(['sips', '-s', 'format', 'png', str(src), '--out', str(out)], check=True, capture_output=True)
@@ -916,7 +931,7 @@ class Exporter:
                     self.issues.append({'missingAsset': f'{kind}/{rel}'})
                     continue
                 data = src.read_bytes()
-                out = as_png(src, data) if kind == 'img' and ext == '.png' else data
+                out = as_png(src, data, f'{kind}/{rel}{ext}') if kind == 'img' and ext == '.png' else data
                 self.write_changed(f'{kind}/{rel}{ext}', out, source=src)
                 self.inputs[f'{kind}/{rel}{ext}'] = sha(data)
                 self.outputs[f'{kind}/{rel}{ext}'] = sha(out)

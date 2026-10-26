@@ -109,10 +109,12 @@ func _paint_slots(c: XMVCanvas) -> void:
 		c.face(str(a.data().faceName), int(a.data().faceIndex), inner.position.x, inner.position.y, inner.size.x, inner.size.y)
 		c.character(str(a.data().characterName), int(a.data().characterIndex), inner.position.x + inner.size.x / 2.0, inner.size.y * 19.0 / 20.0)
 		c.text(a.display_name(), inner.position.x, inner.position.y, inner.size.x, "left", XMenu._hp_color(a))
-		# Star_LeadActor：首位是领袖角色时画 img/system/LeaderFlag，x＝格宽（内缩后）−图宽、y＝0（照原版不加格子的 x）
+		# Star_LeadActor：首位是领袖角色时画 img/system/LeaderFlag，x＝格宽（内缩后）−图宽、y＝0（照原版不加格子的 x）；
+		# 原版窗口读数：左上角 (417.4, 14)、图 33×30（ui_reference review_system_pages.js 的 party_leader）
 		if XLeadActor.is_leader(XState.current, id):
 			var tex := _leader_flag()
 			if tex != null:
+				c._keep.append(tex)  # XMVCanvas：本帧画的纹理要引用到下次重画，局部变量一释放就画成白块（八戒_71 期三对图时发现）
 				c.draw_texture(tex, Vector2(inner.size.x - tex.get_width(), 0))
 
 

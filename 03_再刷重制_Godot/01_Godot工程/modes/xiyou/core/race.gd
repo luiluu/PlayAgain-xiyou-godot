@@ -4,8 +4,8 @@ extends RefCounted
 ## 存档 XState.race：default 开局默认（$gameSystem._codexRaceDefault，-1＝未选）、guideChosen（_codexRaceGuideChosen）、
 ## actors 每名角色 {race, rank, free, blood, legacy}（Game_Actor._codexRace；race -1＝未选，rank 1～7，free 下次换族免费，
 ## blood 魔族血契开关，legacy 旧技能推出的 [{race, rank}]）。种族技能 CodexRaces.skills[race][rank-1] 写在角色技能里（sync）。
-## 原版角色建出、入队、学会种族技能时就补上数据（migrateActor）；这里在第一次读到时补，结果相同（默认祝福后补也按 setDefault 规则）。
-## 战斗与能力值效果（七族增伤、猎物、血契扣血、回响、反攻、能力值倍率、鬼族耗蓝）不在这里，接口见交付单「规则接口」。
+## 原版角色建出、入队、学会种族技能时就补上数据（migrateActor）；这里在 XState.actor 建出角色时补（on_actor_created），读到旧档里没有的也补。
+## 战斗与能力值效果（七族增伤、猎物、血契扣血、回响、反攻、能力值倍率、鬼族耗蓝）在 race_battle.gd（XRaceBattle）。
 
 const SWITCHES := [285, 282, 283, 284, 286, 287, 281]   # 神妖人魔鬼灵蛮 → 开关
 const RANKS := ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ"]
@@ -53,6 +53,12 @@ static func data(s: XState, a: XActor) -> Dictionary:
 	if not all.has(key):
 		_migrate_actor(s, a)
 	return all[key]
+
+
+## Game_Actor.setup 包装（migrateActor）：角色一建出就补种族数据（种族数据表在才做）
+static func on_actor_created(s: XState, a: XActor) -> void:
+	if not config().is_empty() and not state(s).actors.has(str(a.actor_id)):
+		_migrate_actor(s, a)
 
 
 static func rate(s: XState, a: XActor) -> float:
