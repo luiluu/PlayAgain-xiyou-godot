@@ -6,8 +6,8 @@
 // - 随机数固定 0.5（Math.random）；每例游戏时间从 0 起（Graphics.frameCount），Godot 侧用 MVInterpreter.fixed_random 对应。
 // - 应答：选项取默认项（无默认取 0；同一组选项第 4 次出现起取最后一项，避免「更早的更新」之类的循环），数值输入 0，prompt 输入「测试」，战斗记为胜利（不进战斗），商店/菜单/名字等场景只记录不打开。
 // - 只跑该页指令：不看出现条件；地图自己的自动/并行事件、并行公共事件都不运行；动画/气泡/集合等等待直接结束。
-// - 不加载配置或任何存档；存档调用只记录（不写文件）。输出只写 .sandbox/events.json；验收后复制到 generated/oracle/。
-// 用法：node event_probe.cjs [用例 ID 前缀…]
+// - 不加载配置或任何存档；存档调用只记录（不写文件）。输出只写 .sandbox/events.json（或 XIYOU_EVENT_OUT 指定的沙盒内路径）；验收后复制到 generated/oracle/。
+// 用法：node event_probe.cjs [用例 ID 前缀…]（XIYOU_PROBE_UNITS 只跑部分单元；XIYOU_EVENT_OUT 改输出路径，默认 .sandbox/events.json）
 const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs'), {sourceIdentity} = require('./source_identity.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
@@ -146,9 +146,31 @@ function delta(a, b) {
 }
 
 // ---- 运行一个用例 ----
+const NEW_GAME_SNAPSHOT = true;
+let newGameSave = null;
+const SNAPSHOT_GLOBALS = ['$gameSystem', '$gameScreen', '$gameTimer', '$gameSwitches', '$gameVariables', '$gameSelfSwitches', '$gameActors', '$gameParty', '$gameMap', '$gamePlayer'];
 function runCase(c) {
   // 随机数先固定再开新局：宝珠随机流的种子（setupNewGame 时取 Math.random）每例都是 0.5×2³²
-  w.eval('Math.random = function() { return 0.5; }; ConfigManager.applyData({}); DataManager.setupNewGame(); $gamePlayer.clearTransferInfo(); Graphics.frameCount = 0;');
+  // 提速（唐僧 2026-10-25）：新开局每次约 0.6 秒（全部角色的独立装备、头顶／云裳成长记录落盘），占整轮九成以上；
+  // 只在第一例真开一局，把开局后的各游戏对象序列化存下，之后每例重建游戏对象、再把这些对象换回开局时的副本。
+  // 不走读档（extractSaveContents 的插件钩子与开局一样慢）。回退：把 NEW_GAME_SNAPSHOT 改为 false。
+  w.eval('Math.random = function() { return 0.5; }; ConfigManager.applyData({});');
+  if (NEW_GAME_SNAPSHOT && newGameSave) {
+    w.eval('DataManager.createGameObjects();');
+    const saved = w.JsonEx.parse(newGameSave);
+    for (const k of SNAPSHOT_GLOBALS) w[k] = saved[k];
+    // 独立装备实例（YEP_ItemCore）：createGameObjects 清空了实例表并截回基础长度，照它读档的做法放回开局时的实例再接上
+    [w.DataManager._independentItems, w.DataManager._independentWeapons, w.DataManager._independentArmors] = saved.independent;
+    w.DataManager.loadIndependentItems();
+  } else {
+    w.eval('DataManager.setupNewGame();');
+    if (NEW_GAME_SNAPSHOT) {
+      const o = {independent: [w.DataManager._independentItems, w.DataManager._independentWeapons, w.DataManager._independentArmors]};
+      for (const k of SNAPSHOT_GLOBALS) o[k] = w[k];
+      newGameSave = w.JsonEx.stringify(o);
+    }
+  }
+  w.eval('$gamePlayer.clearTransferInfo(); Graphics.frameCount = 0;');
   w.$gameSystem._difficultyId = DIFFICULTY;
   for (const id of PARTY) w.$gameParty.addActor(id);
   w.DataManager.loadMapData(c.map);
@@ -225,8 +247,10 @@ const t0 = Date.now();
 const results = chosen.map(runCase);
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 const setup = {party: PARTY, difficulty: DIFFICULTY, commonMap: COMMON_MAP, prompt: PROMPT_TEXT, maxFrames: MAX_FRAMES};
-fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
-fs.writeFileSync(path.join(__dirname, '.sandbox/events.json'), JSON.stringify({sourceIdentity: identity, setup, cases: results}));
+// 同步按地图分几个进程并行时，各进程由 XIYOU_EVENT_OUT 写到自己的存档目录下，再按原顺序拼回 .sandbox/events.json
+const OUT = process.env.XIYOU_EVENT_OUT || path.join(__dirname, '.sandbox/events.json');
+fs.mkdirSync(path.dirname(OUT), {recursive: true});
+fs.writeFileSync(OUT, JSON.stringify({sourceIdentity: identity, setup, cases: results}));
 console.log(JSON.stringify({version: identity.releaseVersion, cases: results.length, unfinished: results.filter(x => !x.finished).map(x => x.id),
   errors: results.filter(x => x.errors).map(x => x.id), ms: Date.now() - t0}));
 process.exit(0);

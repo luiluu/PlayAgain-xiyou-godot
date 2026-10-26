@@ -20,7 +20,6 @@ extends RefCounted
 ## O-098：提示开关 $gameParty.PetShowTextT 原版没有任何地方打开，刷新的「天生异象……」提示永远不弹，玩家不知道神秘生物出现了。
 ##   重制默认弹（SHOW_REFRESH_TEXT），设 false 恢复原版（只在存档 pets.show_text 为真时弹）。
 
-const ITEM_EVENT := 173
 const FLEE_TURN := 5
 ## O-098（见文件头）
 static var SHOW_REFRESH_TEXT := true
@@ -100,10 +99,17 @@ static func end_turn(logic) -> Array:
 	return out
 
 
-## 物品的公共事件效果（code 44）：只认 173 PetGet，返回记录；其余公共事件不处理（重制战斗还没有物品公共事件）
-static func item_event(logic, item: Dictionary, event_id: int, target) -> Array:
-	if event_id != ITEM_EVENT or not target is XEnemy:
+## 公共事件 173 的脚本 Star.PetSystem.PetGet()（XBattleEventRunner 的 355 分支调）：道具与目标取「最后一个用道具的行动」
+## （Star.PetSystem.Game_Action，见 XBattleCommonEvent.last_item_action）。返回记录
+static func pet_get(logic) -> Array:
+	var act := XBattleCommonEvent.last_item_action(logic)
+	if act.is_empty() or not act.get("target") is XEnemy:
 		return []
+	return capture(logic, act.item, act.target)
+
+
+## PetGet 的判定：先掷「随机×100 ≤ 道具成功率」，中了且目标可捕捉＝捕到；不可捕捉退还一件；否则失败
+static func capture(logic, item: Dictionary, target: XEnemy) -> Array:
 	var rnd := random(logic)
 	var hit := rnd.next_float("capture_item", str(item.get("id", 0))) * 100.0 <= float(item.get("successRate", 100))
 	var out := []
