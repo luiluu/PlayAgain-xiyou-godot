@@ -1,5 +1,14 @@
 extends "res://tests/xiyou_power_books.gd"
 ## Six native menu routes plus the real item-scene learning entry, inventory and modal input.
+class PaintCapture extends XMVCanvas:
+	var texts: Array = []
+	func _draw() -> void:
+		texts.clear()
+		super._draw()
+	func text(value: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, lh := XUI.LINE_HEIGHT, alpha := 1.0, zoom := 1.0, pivot := Vector2.ZERO, outline := OUTLINE) -> void:
+		texts.append([value,x,y,max_w,align,size,"#"+color.to_html(false)])
+		super.text(value,x,y,max_w,align,color,size,lh,alpha,zoom,pivot,outline)
+
 var out_dir := ""
 var ui_fixture: Dictionary
 
@@ -25,11 +34,11 @@ func menu_snapshot(state: XState) -> Dictionary:
 func open_item(state: XState, id: int) -> XItemScene:
 	var page := XItemScene.new()
 	add_child(page)
-	page._item = XDB.rec("Items",id)
 	page._index = maxi(0,page.entries().find_custom(func(r): return int(r.rec.id) == id))
-	page._mode = "action"
-	page._make_actions()
-	page._act = 0
+	page._mode = "list"
+	page._refresh()
+	page._ok()  # Real list entry commits the seen marker before opening the item action.
+
 	return page
 
 func menu_case(c: Dictionary) -> void:
@@ -112,9 +121,26 @@ func readout(page: XItemScene) -> Dictionary:
 		"tokens":XState.current.item_count(3044),"powers":XState.current.members().map(func(a): return {"actor":a.actor_id,"powers":XPowerBooks.learned(a)})}
 
 func geometry() -> void:
+	# Earlier rejection cases intentionally emit toasts; a fresh screenshot fixture has none.
+	var old_toast := get_tree().root.get_node_or_null("XToast")
+	if old_toast != null:
+		old_toast.queue_free()
+		await frames()
 	var state := menu_state()
 	var page := open_item(state,3044)
 	page._ok()
+	var capture: PaintCapture
+	if DisplayServer.get_name() != "headless":
+		var window := page.power_page.choice.win
+		var old_canvas := window.canvas
+		capture = PaintCapture.new()
+		capture.painter = old_canvas.painter
+		capture.blink = old_canvas.blink
+		window.remove_child(old_canvas)
+		old_canvas.queue_free()
+		window.canvas = capture
+		window.add_child(capture)
+		window._layout()
 	for name in ["power_0_actors","power_1_skills","power_2_confirm","power_3_result"]:
 		if name != "power_0_actors":
 			page.power_page.choice.index = 0
@@ -125,11 +151,17 @@ func geometry() -> void:
 		want.erase("errors")
 		compare(name,data,want)
 		if out_dir != "":
-			FileAccess.open(out_dir.path_join(name+".json"),FileAccess.WRITE).store_string(JSON.stringify(data," "))
 			if DisplayServer.get_name() != "headless":
 				await frames(3)
 				await RenderingServer.frame_post_draw
+				data.texts = capture.texts.duplicate(true)
+				var actual_texts := {}
+				var expected_texts := {}
+				for entry in data.texts: actual_texts[entry[0]] = entry.slice(1)
+				for entry in ui_fixture.pages[name].texts: expected_texts[entry[0]] = entry.slice(1)
+				compare(name+".paintedTexts",actual_texts,expected_texts)
 				get_viewport().get_texture().get_image().save_png(out_dir.path_join(name+".png"))
+			FileAccess.open(out_dir.path_join(name+".json"),FileAccess.WRITE).store_string(JSON.stringify(data," "))
 	page.queue_free()
 	await frames()
 
