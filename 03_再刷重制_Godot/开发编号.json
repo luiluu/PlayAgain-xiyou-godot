@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.178",
-  "sequence": 178,
-  "next": "dev.179",
-  "nextSequence": 179,
+  "current": "dev.179",
+  "sequence": 179,
+  "next": "dev.180",
+  "nextSequence": 180,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-pets-source-97efd5-4",
+  "currentChange": "project-thread-z5fkq9",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
