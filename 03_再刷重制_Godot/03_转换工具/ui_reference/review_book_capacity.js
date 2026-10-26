@@ -16,6 +16,8 @@
   $gameActors.actor(2).learnSkill(6301);$gameParty.gainItem($dataItems[1461],3);
   $gamePlayer.clearTransferInfo();$gameScreen.clear();$gamePlayer.reserveTransfer(5,10,10,2,0);SceneManager.goto(Scene_Map);
   await wait(function(){return SceneManager._scene instanceof Scene_Map&&SceneManager._sceneStarted&&$gameMap.mapId()===5&&!$gameMap.isEventRunning();});await settle();
+  // 隔离新局直接换队伍后，先走原生头像加载；否则首次drawFace时未就绪且原窗口不重画。
+  $gameParty.members().forEach(function(a){ImageManager.loadFace(a.faceName());});await settle();
   SceneManager.push(Scene_Item);
   await wait(function(){return SceneManager._scene instanceof Scene_Item&&SceneManager._sceneStarted;});await settle();
   var s=SceneManager._scene;s._categoryWindow.selectSymbol('item');s._categoryWindow.deactivate();s._itemWindow.setCategory('item');s._itemWindow.refresh();

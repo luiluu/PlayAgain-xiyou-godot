@@ -164,6 +164,7 @@ func _run() -> void:
 	if returned != null:
 		check("bag.selection",returned._cat == 0 and int(returned._current().id) == 1461)
 	var result := state_read("Scene_Item")
+	result.transition = transition
 	var expected: Dictionary = native.pages.capacity_1_limit.duplicate(true)
 	for key in ["errors","actor","toast","notices","trace","help"]:
 		expected.erase(key)
