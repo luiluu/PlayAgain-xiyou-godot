@@ -1,7 +1,7 @@
 # 交付：claude/project-thread-47bcr5-actor-cmds
 
 - 车道／工作者：云端项目线程「地图事件与脚本翻译」第一批（Claude，云端）：角色指令与几条地图指令
-- 状态：进行中
+- 状态：可合并（八戒本机收尾：合 main 两次无冲突，选测全过）
 
 ## 变更记录草稿
 
@@ -19,7 +19,7 @@
 - 原版里看得到的差别：v0.28 共 173 条 322 与数据库相同，不同的有波加尼脸图（CE153）、劲夫（CE228）、绿司机戴帽／脱帽（CE689／690）、钟离→云无迹（CE1209）、甘雨（CE1575），以及 CE463 把 93 号炭治郎的图像设成天虎令的（原版错写，见下「可优化」，已改成写给 104 号）；改名 4 处、改称号 18 处、改职业 1 处（玛莎 16→21，招募后能力值按 21 号职业）。
 - 参照：新探针 `mv_oracle/actor_change_probe.cjs`（冻结 v0.28，新游戏，只写 `.sandbox/actor_change.json`，复制成 `tests/fixtures/actor_change_oracle.json`，不登记进同步）。四组：招募 29／125／153／1209／1575 前后的名字、称号、职业、等级、经验、五项图像、mhp 与队伍；绿司机 689／690；1～4 号改乱后跑 460～463，1～93 号的图像；狗逍遥 10 级换职业 2 不保留→换回 1→换 3 保留→3 不保留→1 保留。
 - 测试：新专项 `tests/xiyou_actor_change` 48 项全过（含闪烁衰减、宿主指令登记两项不靠参照的）。分别去掉 320／324、321、322 的分支时各有 5～7 项失败。
-- 验证：（待写）
+- 验证：（本机八戒收尾，2026-10-26）单跑 `node mv_oracle/actor_change_probe.cjs`（约 8 秒，5 组无错），产物与 `tests/fixtures/actor_change_oracle.json` 除时间外完全一致。专项 xiyou_actor_change 48/48、actor_advanced 33/33、party 57/57、party_skills 214/214、save_page 40/40、battleback_save 5/5、status_page 43/43、status_power 36/36、status_power_panel 11/11。`xiyou_actor_p0` 原有断言「招募后职业等于数据库职业」与本分支照原版的 321 冲突（玛莎 CE29 16→21，参照 recruit 组已确认），改成按 `RECRUIT_CLASS_CHANGE = {21: 21}` 取期望值后 3212/3212。`检查.sh --affected main`（基准合 main 后，186 个场景＋content、guards、same_source、tools）全部通过。之后 main 又进 19 个提交，再合一次无冲突、两边改动文件不重叠，补齐后复跑 actor_change、actor_p0、actor_advanced、party、party_skills、save_page、status_page、event_compare 与 main 新加的 json_cache、variants_b，全过（合并提交 0ec3a057）。
 - 没做：战斗中的 224 画面闪烁（战斗事件仍记进 skipped；v0.28 用到的四处都在地图上用的物品里）；323 更改载具图像（重制没有载具，14 处都在 CE487～498 坐骑事件里，另批）；325 更改简介（v0.28 没用到）；MOG_CharPoses 在 setCharacterImage 后记的「原行走图名」（姿势图用，Godot 没接姿势图）。
 - 可用范围：招募后的职业与名字、称号与原版一致；戴帽子等换形象生效。**battleReady** 不变。
 
@@ -39,4 +39,8 @@
 
 ## 本分支提交
 
-- 见 `git log main..claude/project-thread-47bcr5-actor-cmds`
+- 8782f140 WIP: 事件指令更改名字／职业／角色图像／称号（320～324）与原版参照、专项测试
+- 1c0ac6f3 WIP: 事件指令增减 HP／MP／TP（311／312／326）、画面闪烁 224、打开存档画面 352；参照加 resources 组，专项 48 项
+- 02962bde 同步：环境已有 NODE_OPTIONS 时也给 node 加 10GB 堆上限（Mac 上无影响，保留）
+- 47baa009 测试：xiyou_actor_p0 招募职业断言照原版改职业（玛莎 CE29 16→21）
+- 另有两次合 main 的合并提交
