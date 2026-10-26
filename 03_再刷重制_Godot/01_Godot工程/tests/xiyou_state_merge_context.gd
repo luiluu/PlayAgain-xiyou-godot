@@ -55,6 +55,8 @@ func run_case(c: Dictionary, mode: String) -> void:
 	var program := {"version":1, "status":"pure", "locals":["value"], "steps":[{"op":"set", "pos":0, "name":"value", "value":{"op":"literal", "pos":0, "value":-7.9}}]}
 	var gain := {"phase":"battle", "op":"gain_steps", "steps":[{"resource":"hp", "program":program}]}
 	var states: Array = XDB.table("States")
+	var original_size := states.size()
+	states.resize(maxi(original_size, 2998))
 	var previous = states[2997]
 	var inner: Dictionary = XDB.rec("States", 2).duplicate(true)
 	inner.id = 2997
@@ -85,6 +87,7 @@ func run_case(c: Dictionary, mode: String) -> void:
 	b.lifecycle_context = {}
 	XImportedBalance.set_acting(null)
 	states[2997] = previous
+	states.resize(original_size)
 
 func _ready() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/state_merge_context_oracle.json"))
