@@ -347,6 +347,10 @@ func _paint_list(c: XMVCanvas) -> void:
 				if _mode == "list" and i == _index:
 					c.cursor(Rect2(0, y, c.size.x, LH))
 				XItemRow.paint(c, d[i].rec, y, XItemRow.right_text(d[i]), 1.0, _is_new_drawn(d[i].rec))
+			# Native refresh retains the inactive cursor until the forget flow returns,
+			# including the empty row left by consuming the last selected token.
+			if power_page != null and _index >= d.size() and _index >= _top and _index < _top + _rows():
+				c.cursor(Rect2(0,(_index-_top)*LH,c.size.x,LH),false)
 		"action":
 			for i in range(_actions.size()):
 				var y := i * LH
