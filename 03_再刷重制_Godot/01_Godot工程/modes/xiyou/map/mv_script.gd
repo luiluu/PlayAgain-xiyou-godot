@@ -205,6 +205,10 @@ static func _statements(js: String, interp) -> Array:
 		if st == "CodexMira.recruit()":  # 公共事件 9003：168 米拉入队（见 XMira.recruit）
 			XMira.recruit(s)
 			continue
+		if st == "CodexYomi.recruit()":  # 公共事件 9004：169 黄泉入队并装上赤雨双缨（见 XYomiJingliu.recruit；两条 $.toaster 提示）
+			for line in XYomiJingliu.recruit(s, XYomiJingliu.YOMI):
+				interp.host.toast(line)
+			continue
 		if st == "CodexRaven.recruit()":  # 公共事件 9002：167 渡鸦入队（见 XRaven.recruit；$.toaster 提示）
 			if XRaven.recruit(s):
 				interp.host.toast(XRaven.RECRUIT_TEXT)

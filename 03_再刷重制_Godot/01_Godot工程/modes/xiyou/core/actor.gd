@@ -434,6 +434,7 @@ func action_plus_set() -> Array:
 			out.append(float(found.get_string(1)) * 0.01)
 	if XZhenqi.has_daofa(self, "fenshen"):
 		out.append(1.0)
+	XActorModules.action_plus_set(self, out)  # 专属角色模块的 actionPlusSet 包装（黄泉 10175）
 	return out
 
 ## dsPassiveSkill：passiveSUBS 掩护、passivePRETP 保留 TP（灵台、护法等技能）
@@ -518,7 +519,7 @@ func _param_plus(i: int) -> float:
 				v += _param_boost(p, m)
 		v += magic_param(e, i)
 		v += custom_param(e, i)
-	return v
+	return XActorModules.param_plus(self, i, v)  # 专属角色模块的 paramPlus 包装（黄泉 10176／10177／10182）
 
 ## YEP_EquipCore evalParamPlus：<Custom Parameters> 由转换器解析成每项能力的 常数 + 等级系数 × 等级 + Σ 变量系数 × v[编号]，
 ## 每次按当前等级与变量求值；不受 passiveWPNM／ARMM 放大（那只看 item.params）。原件按数据库基础编号取（实例复制原件的 parameterEval）。
