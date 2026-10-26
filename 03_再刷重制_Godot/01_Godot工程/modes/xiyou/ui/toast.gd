@@ -13,7 +13,6 @@ const MARGIN := 10.0
 const PADDING := 10.0
 const FONT_SIZE := 18
 # 冻结源同字体 CSS normal 的实际行高为21；Label默认字高27并另加3像素。
-const LINE_HEIGHT := 21
 const FONT_TRIM := -3
 const BACK := Color(0, 0, 0, 0.7)
 const SHADOW := Color(0, 0, 0, 0.5)
@@ -104,9 +103,14 @@ func _add(message: String) -> void:
 	slot.add_child(box)
 	slot.modulate.a = 0.0
 	stack.add_child(slot)
+	# 入树后的Container排序与回退字形塑形会再修正最小高度；栈同步实际框高。
+	var fit := func(): slot.custom_minimum_size.y = box.get_combined_minimum_size().y
+	box.minimum_size_changed.connect(fit)
+	fit.call_deferred()
 	var tw := slot.create_tween()
 	tw.tween_property(slot, "modulate:a", 1.0, FADE)
 	tw.tween_interval(TIMEOUT - FADE)
+	tw.tween_callback(func(): box.minimum_size_changed.disconnect(fit))
 	tw.tween_property(slot, "modulate:a", 0.0, FADE)
-	tw.parallel().tween_method(func(v: float): slot.custom_minimum_size.y = v, h, 0.0, FADE)
+	tw.parallel().tween_property(slot, "custom_minimum_size:y", 0.0, FADE)
 	tw.tween_callback(slot.queue_free)
