@@ -174,7 +174,7 @@ func _run() -> void:
 		if is_instance_valid(pl):
 			pl.stop()
 			pl.stream = null
-	await get_tree().create_timer(0.3, true, false, true).timeout
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	await frames(3)
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
@@ -311,6 +311,17 @@ func _save() -> void:
 		and w.items.keyItem == [4] and int(w.items.weapon[0].base) == 2 and not ids.has(fresh), [w.get("items"), fresh, ids])
 	d.erase("phwarehouse")
 	check("old_save_empty", XState.from_dict(d).warehouses.is_empty())
+	d.selfSwitches["4,8,A"] = true
+	var migrated := XState.from_dict(d)
+	var old: Dictionary = migrated.warehouses.get("仓库", {})
+	check("old_unlocked_save_migrates", int(old.get("maxCapacity", 0)) == 999 and int(old.get("currentCapacity", -1)) == 0)
+	var saved := s.to_dict().duplicate(true)
+	saved.selfSwitches["4,8,A"] = true
+	var existing := XState.from_dict(saved)
+	check("unlocked_save_keeps_contents", int(existing.warehouses["仓库"].currentCapacity) == 5
+		and int(existing.warehouses["仓库"].qtty.item["1"]) == 2)
+	saved.phwarehouse = {}
+	check("explicit_empty_not_migrated", XState.from_dict(saved).warehouses.is_empty())
 
 
 ## 仓库管理员 Map4 EV8 第 1 页「装备道具仓库」：PHWarehouse create <仓库:999>、show <仓库> → 打开一次
@@ -332,5 +343,19 @@ func _interpreter() -> void:
 	await it.run()
 	check("ev8_opens", cmds.size() == 3 and h.opened == 1 and it.skipped.is_empty() and s.warehouses.has("仓库")
 		and int(s.warehouses["仓库"].maxCapacity) == 999, [cmds.size(), h.opened, it.skipped])
+	# dev.165 前的 Godot 档已经执行过自开关 A；第二页不再 create，只 show。
+	var legacy := _new_state().to_dict().duplicate(true)
+	legacy.erase("phwarehouse")
+	legacy.selfSwitches["4,8,A"] = true
+	s = XState.from_dict(legacy)
+	cmds = ev.pages[1].list.filter(func(c): return int(c.code) == 356 and str(c.parameters[0]).begins_with("PHWarehouse show")).slice(0, 1)
+	cmds = cmds.map(func(c): return {"code": 356, "indent": 0, "parameters": c.parameters})
+	cmds.append({"code": 0, "indent": 0, "parameters": []})
+	h.opened = 0
+	it = MVInterpreter.new(h, 4, 8, cmds)
+	await it.run()
+	check("legacy_ev8_p1_opens", cmds.size() == 2 and h.opened == 1 and it.skipped.is_empty(), [h.opened, it.skipped])
+	s = _new_state()
+	check("show_missing_does_not_create", not XWarehouse.open(s, "<仓库>") and s.warehouses.is_empty())
 	h.queue_free()
 	await frames()

@@ -1,0 +1,77 @@
+{
+  "status": "phase1-complete",
+  "range": {
+    "startExclusive": "d287ea37",
+    "endInclusive": "7fc0c310",
+    "asOf": "dev.165",
+    "commits": 927,
+    "firstParent": 289
+  },
+  "baselineRaw": "34.570",
+  "rows": [
+    {
+      "name": "工程与工具",
+      "weight": 5,
+      "percent": "93",
+      "contribution": "4.65"
+    },
+    {
+      "name": "战斗规则与战斗画面",
+      "weight": 8,
+      "percent": "66.5",
+      "contribution": "5.32"
+    },
+    {
+      "name": "地图事件解释器与脚本翻译",
+      "weight": 6,
+      "percent": "38",
+      "contribution": "2.28"
+    },
+    {
+      "name": "界面页面",
+      "weight": 6,
+      "percent": "72",
+      "contribution": "4.32"
+    },
+    {
+      "name": "装备系统",
+      "weight": 4,
+      "percent": "75",
+      "contribution": "3"
+    },
+    {
+      "name": "养成与周边系统",
+      "weight": 18,
+      "percent": "25.8",
+      "contribution": "4.644"
+    },
+    {
+      "name": "角色与专属机制",
+      "weight": 13,
+      "percent": "44.8",
+      "contribution": "5.824"
+    },
+    {
+      "name": "楼层、副本与剧情内容",
+      "weight": 37,
+      "percent": "51.8",
+      "contribution": "19.166"
+    },
+    {
+      "name": "Mac导出与验收",
+      "weight": 3,
+      "percent": "20",
+      "contribution": "0.6"
+    }
+  ],
+  "lastReview": {
+    "date": "2026-10-24",
+    "milestone": 50,
+    "scope": "一期①⑤；②③④待续"
+  },
+  "nextReview": 75,
+  "note": "固定截点复核值，不能覆盖main后来合并的未核增量；合并只应用界面68→72的分类差额。",
+  "rawTotal": "49.804",
+  "displayTotal": "49.8",
+  "newSinceBaseline": "15.234"
+}

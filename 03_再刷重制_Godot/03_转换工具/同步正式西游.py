@@ -104,6 +104,7 @@ PROBES = [
     (['state_effects_probe.cjs'], ['state_effects.json']),
     (['state_js_probe.cjs'], ['state_js.json']),
     (['review135_probe.cjs'], ['review135.json']),
+    (['stage50_review_probe.cjs'], ['stage50_review.json']),
     (['attack_element_probe.cjs'], ['attack_elements.json']),
     (['qiyu_probe.cjs'], ['qiyu.json']),
     (['cat_probe.cjs'], ['cat.json']),

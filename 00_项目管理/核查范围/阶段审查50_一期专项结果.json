@@ -1,0 +1,48 @@
+{
+  "range": "d287ea37..7fc0c310",
+  "gameSource": "7fc0c310",
+  "runId": "ae5aab44073745968c443c03f7e06be9",
+  "scenes": [
+    {
+      "scene": "xiyou_event_compare",
+      "passed": 5,
+      "total": 5
+    },
+    {
+      "scene": "xiyou_floor_fortress029",
+      "passed": 71,
+      "total": 71
+    },
+    {
+      "scene": "xiyou_formula_effects",
+      "passed": 908,
+      "total": 908
+    },
+    {
+      "scene": "xiyou_inlay_book",
+      "passed": 19,
+      "total": 19
+    },
+    {
+      "scene": "xiyou_state_effects",
+      "passed": 19949,
+      "total": 19949
+    },
+    {
+      "scene": "xiyou_training",
+      "passed": 188,
+      "total": 188
+    },
+    {
+      "scene": "xiyou_warehouse",
+      "passed": 27,
+      "total": 27
+    }
+  ],
+  "passed": 21167,
+  "total": 21167,
+  "wallSeconds": 964.014,
+  "reused": [],
+  "flakyRerunPassed": [],
+  "note": "本轮只跑7场相关专项；全量工具守卫不在本期认证范围。"
+}
