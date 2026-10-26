@@ -27,6 +27,11 @@ class FakePlayer:
 	var grid := Vector2i.ZERO
 	func queue_redraw() -> void:
 		pass
+	## 门事件里「设置移动路线（玩家）」：参照只记指令序列与状态变化，不对比走位，这里不走
+	func force_move_route(_route: Dictionary) -> void:
+		pass
+	func is_route_forcing() -> bool:
+		return false
 
 
 ## 记录用宿主：接口同 XMapScene（MVInterpreter / MVScript 用到的部分）
@@ -167,6 +172,7 @@ func check(name: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
+	GameApp.fast_headless_frames()  # 替身按帧计（游戏时间每帧 1/60 秒、淡入淡出 24 帧），不看真实时间：headless 不睡（82→15 秒，见 07_开发环境/测试提速.md）
 	XSave.dir_override = "user://test_xiyou_event_compare"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
@@ -236,7 +242,7 @@ func _run() -> void:
 		_write_report(report, oracle_errors)
 	check("no_regressions", regressions.is_empty() or update_baseline, regressions)
 	check("no_new_oracle_errors", oracle_errors.all(func(id): return KNOWN_ORACLE_ERRORS.has(id)), oracle_errors)
-	check("cases_ran", report.size() > 0 or not only.is_empty())
+	check("cases_ran", report.size() > 0)
 	_finish()
 
 

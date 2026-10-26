@@ -50,6 +50,11 @@ def png_ok(path):
     return data[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", data[16:24]) == (1280, 720)
 
 
+def run_error_checks(run):
+    return {"formal_no_engine_errors": not run.get("errors") and all(not p["errors"] for p in run["pages"].values()),
+            "formal_no_browser_errors": isinstance(run.get("logs"), list) and not run["logs"]}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("formal", type=Path)
@@ -59,7 +64,7 @@ def main():
     a = ap.parse_args()
     checks, diffs = {}, {}
     run = read(a.formal / "run.json")
-    checks["formal_no_engine_errors"] = not run.get("errors") and all(not p["errors"] for p in run["pages"].values())
+    checks.update(run_error_checks(run))
     before, after = a.formal / "source_before.json", a.formal / "source_after.json"
     checks["source_identity_unchanged"] = after.exists() and read(before) == read(after)
     for shot, pairs in PAIRS.items():

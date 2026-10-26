@@ -70,6 +70,61 @@ func _member_states_script(code: String) -> bool:
 	return true
 
 
+## 去注释、去空白后的脚本（下面两段只认这种紧凑写法，脚本里没有字符串）
+static func _compact_js(code: String) -> String:
+	return RegEx.create_from_string("\\s+").sub(RegEx.create_from_string("//[^\\n]*").sub(code, "", true), "", true)
+
+
+## 公共事件 1373「血脉数量统计」：var actor = $gameActors.actor(N); 之后若干段
+##   for(var i=A;i<B;i++){ if(actor.hasSkill(i)){ var j = $gameVariables.value(V); $gameVariables.setValue(V, j+1); } }
+## 角色 N 每会（hasSkill：含特性附加）一个 [A, B) 里的技能，变量 V 加一。整段都认得才执行。
+func _count_skills_script(code: String) -> bool:
+	var js := _compact_js(code)
+	var head := RegEx.create_from_string("^var(\\w+)=\\$gameActors\\.actor\\((\\d+)\\);").search(js)
+	if head == null:
+		return false
+	var who := head.get_string(1)
+	var aid := int(head.get_string(2))
+	js = js.substr(head.get_end())
+	var re := RegEx.create_from_string("^for\\(var(\\w+)=(\\d+);\\1<(\\d+);\\1\\+\\+\\)\\{if\\(" + who
+		+ "\\.hasSkill\\(\\1\\)\\)\\{var(\\w+)=\\$gameVariables\\.value\\((\\d+)\\);\\$gameVariables\\.setValue\\(\\5,\\4\\+1\\);\\}\\}")
+	var loops := []
+	while js != "":
+		var m := re.search(js)
+		if m == null:
+			return false
+		loops.append([int(m.get_string(2)), int(m.get_string(3)), int(m.get_string(5))])
+		js = js.substr(m.get_end())
+	if loops.is_empty():
+		return false
+	if XDB.rec("Actors", aid).is_empty():
+		return true
+	var learned := {}
+	for k in state().actor(aid).skills():
+		learned[int(k.id)] = true
+	for lp in loops:
+		for id in range(lp[0], lp[1]):
+			if learned.has(id):
+				state().set_variable(lp[2], state().variable(lp[2]) + 1)
+	return true
+
+
+## 公共事件 1375「半人马上阵统计」：出战成员里角色 ID 在数组中的个数加到变量 V，再减一（「减去自身」）。
+##   var ids = [41, 42, 43, 44]; var actors = $gameParty.battleMembers();
+##   actors.forEach(function(actor) { if (ids.includes(actor.actorId())) { var j = …value(V); …setValue(V, j+1); } });
+##   var j = $gameVariables.value(V); $gameVariables.setValue(V, j-1);
+func _count_members_script(code: String) -> bool:
+	var re := RegEx.create_from_string("^var(\\w+)=\\[([\\d,]+)\\];var(\\w+)=\\$gameParty\\.battleMembers\\(\\);\\3\\.forEach\\(function\\((\\w+)\\)\\{if\\(\\1\\.includes\\(\\4\\.actorId\\(\\)\\)\\)\\{var(\\w+)=\\$gameVariables\\.value\\((\\d+)\\);\\$gameVariables\\.setValue\\(\\6,\\5\\+1\\);\\}\\}\\);var(\\w+)=\\$gameVariables\\.value\\(\\6\\);\\$gameVariables\\.setValue\\(\\6,\\7-1\\);$")
+	var m := re.search(_compact_js(code))
+	if m == null:
+		return false
+	var ids := Array(m.get_string(2).split(",")).map(func(x): return int(x))
+	var v := int(m.get_string(6))
+	var n := logic.actors.filter(func(a): return a != null and ids.has(int(a.actor_id))).size()
+	state().set_variable(v, state().variable(v) + n - 1)
+	return true
+
+
 ## 331 改敌人 HP [敌人序号（<0 全体）, 0 增／1 减, 0 常数／1 变量, 数值, 允许倒下]（command331 → changeHp）：
 ## 只改活着的；不允许倒下时减到 1；gainHp 走护盾与夹值（XBattleLogic.sequence_gain，HP 归零即倒下），不弹伤害数字
 func _change_enemy_hp(p: Array) -> void:
@@ -153,7 +208,7 @@ func _execute_env(c: Dictionary):
 			while at + 1 < list.size() and int(list[at + 1].code) == 655:
 				at += 1
 				code += "\n" + str(list[at].parameters[0])
-			if _member_states_script(code):
+			if _member_states_script(code) or _count_skills_script(code) or _count_members_script(code):
 				index = at
 				return null
 			if code.strip_edges() == "Star.PetSystem.PetGet()":  # 公共事件 173：捕获网（XPetCapture）

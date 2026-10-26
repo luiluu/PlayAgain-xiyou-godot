@@ -31,6 +31,7 @@ KEYS = {
     'imported_balance.json': {'cases': ('id',)},
     'attack_elements.json': {'cases': ('id',)},
     'state_effects.json': {'cases': ('id',)},
+    'state_js.json': {'cases': ('id',)},
     'qiyu.json': {'cases': ('id',)},
     'cat.json': {'cases': ('id',)},
     'enemy_book_defeat.json': {'cases': ('id',)},

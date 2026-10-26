@@ -5,6 +5,7 @@
 - 改动 = 基准到工作区（已提交＋未提交）的差异，加上未跟踪文件；每个文件按对照表第一条匹配的规则归组，各组取并集。
 - 引用查找（refs）：在 tests/*.gd、*.tscn 里找改动文件的文件名（如 orbs.gd、orb_probe.cjs）与它声明的 class_name；
   找到的是辅助脚本时换成用它的场景（如 xiyou_rules.gd → xiyou_rules*.tscn 全部段）。删除的文件从基准里读 class_name。
+- 加载者（loaders，手写数据 json 用）：另把 modes/ 下按文件名加载它的 .gd 的 class_name 也当引用词（如 alienation.json → XAlienation）。
 - 默认打印人读的选择理由；--shell 另在标准输出给 检查.sh 用的 SEL_FULL／SEL_SCENES／SEL_CHECKS（理由改到标准错误）。
 - 基准不存在、对照表无效时退出 2。
 """
@@ -19,6 +20,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 TABLE = HERE / '选测对照.json'
 TESTS = Path('03_再刷重制_Godot/01_Godot工程/tests')
+MODES = Path('03_再刷重制_Godot/01_Godot工程/modes')
 CHECKS = {'guards', 'tools', 'content', 'same_source'}
 
 
@@ -82,6 +84,18 @@ def exists(root, path, head=None):
     return subprocess.run(['git', '-C', str(root), 'cat-file', '-e', head + ':' + path], capture_output=True).returncode == 0
 
 
+def loaders(root, name, head=None):
+    """modes/ 下（generated 除外）以 "name" 字样加载该文件的 .gd 声明的 class_name。"""
+    p = subprocess.run(['git', '-C', str(root), '-c', 'core.quotepath=false', 'grep', '-l', '-F', '"%s"' % name,
+                        *([head] if head else []), '--', str(MODES / '*.gd'), ':!' + str(MODES / '*/generated/*')],
+                       capture_output=True, text=True)
+    names = []
+    for line in p.stdout.splitlines():
+        path = line.split(':', 1)[1] if head else line
+        names += re.findall(r'^class_name\s+(\w+)', read_any(root, head or 'HEAD', path, head), re.M)
+    return names
+
+
 class Tests:
     """tests/ 下的场景与脚本文本，以及脚本 → 用它的场景。"""
     def __init__(self, root):
@@ -132,6 +146,8 @@ def select(root, base, table=TABLE, head=None):
             terms = [name]
             if key.endswith('.gd'):
                 terms += re.findall(r'^class_name\s+(\w+)', read_any(root, base, key, head), re.M)
+            if g.get('loaders'):
+                terms += loaders(root, name, head)
             own = tests.users(name) if g.get('self') else []
             refs = tests.refs(terms, exclude={name}) | set(own)
             gone = not exists(root, key, head)
@@ -186,7 +202,8 @@ def main(argv=None):
         safe = re.compile(r'^[A-Za-z0-9_.-]+$')
         assert all(safe.match(x) for x in sel['scenes'] + sel['checks'])
         print('SEL_FULL=%d' % sel['full'])
-        print('SEL_SCENES=(%s)' % ' '.join(sel['scenes']))
+        # 整轮时不给场景表：检查.sh 把场景表原样传给 并行测试.py，给了就只跑这些（2026-10-26 木吒：整轮漏跑 6 个场景）
+        print('SEL_SCENES=(%s)' % ' '.join([] if sel['full'] else sel['scenes']))
         print('SEL_CHECKS=(%s)' % ' '.join(sel['checks']))
     return 0
 

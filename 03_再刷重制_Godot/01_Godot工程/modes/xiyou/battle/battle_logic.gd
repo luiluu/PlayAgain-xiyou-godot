@@ -152,6 +152,10 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	# BattleManager.startBattle：inBattle 起敌人走 krz 能力值缓存；逃跑率等开战前的读取不留在格子里
 	for e in enemies:
 		e.param_cache_begin()
+	XRaceBattle.start(self)  # 种族祝福：BattleManager.startBattle 包装清本场数据，出战成员建数据（记开战最大生命）
+	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
+	# 本版改过的 BattleManager.startBattle：每场开战预约公共事件 1320「战斗开始时调整变量」，开战第一次事件检查先跑它
+	XBattleCommonEvent.reserve(self, XBattleCommonEvent.START_EVENT)
 
 func _new_lifecycle_resources() -> XResourceContext:
 	var resources := XResourceContext.new()
@@ -318,7 +322,7 @@ func skill_cost(a: XBattler, skill: Dictionary) -> Dictionary:
 		reduce = minf(reduce, 100.0)
 		cost.mp = floori(cost.mp * (1.0 - reduce / 100.0))
 		cost.tp = floori(cost.tp * (1.0 - reduce / 100.0))
-	return cost
+	return {"mp": XRaceBattle.cost(a, int(cost.mp)), "tp": XRaceBattle.cost(a, int(cost.tp))}
 
 func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if skill.is_empty():
@@ -540,11 +544,12 @@ func start_turn() -> void:
 	for e in enemies:
 		e.sync_boss_armor(turn % 2 == 0, _rule())
 	for b in actors + enemies:
-		XStateEffects.run("turn_start", b)  # Custom Turn Start Effect：onTurnStart 内，Unit.refresh 之前
+		XStateEffects.run("turn_start", b, {"random": _rule(), "variables": vars()})  # Custom Turn Start Effect：onTurnStart 内，Unit.refresh 之前
 		# krz onTurnStart 标 dirty，Game_Unit.onTurnStart 紧接 refresh：本回合起能力值重新读取
 		b.param_mark_dirty()
 		b.param_refresh()
 	_make_action_orders()
+	XAlienBattle.start_turn(self)  # 异化 startTurn 包装：镜骸重新充能
 
 
 ## 取出下一位行动者；本回合结束时返回 null。
@@ -588,7 +593,9 @@ func act(u: XBattler, skill, target) -> Array:
 	else:
 		logs.append_array(execute(u, skill, target))
 		XImportedBalance.set_acting(null)
+	XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
 	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
+	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
 	_acted[u] = int(_acted.get(u, 0)) + 1
 	_tick_states(u, 1)
 	_sync_orders(before, true)
@@ -608,6 +615,8 @@ func end_turn() -> Array:
 	# BattleManager.refreshAllMembers
 	for b in actors + enemies:
 		b.param_refresh()
+	logs.append_array(XAlienBattle.round_end(self))  # endTurn 的异化包装（在种族包装之内）：蚀能、腐蚀
+	logs.append_array(XRaceBattle.round_end(self))  # endTurn 的种族包装：毒鸡汤结算、残响交接
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs
@@ -622,7 +631,11 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 		_regenerate(b, logs)
 		_tick_states(b, 2)
 	# Custom Regenerate → Custom Turn End（regenerateAll 外层与 onTurnEnd 不看存活，倒下的也跑）
-	XStateEffects.run("regenerate", b)
+	# 叠毒等 Regenerate 脚本的扣血按状态各弹一次字（regenerateStateEffects 每个状态 clearResult → eval → startDamagePopup）
+	var emit := func(entry: Dictionary) -> void:
+		entry.views = views([entry.target])
+		logs.append(entry)
+	XStateEffects.run("regenerate", b, {"random": _rule(), "variables": vars(), "emit": emit})
 	XStateEffects.run("turn_end", b)
 	b.decay_shield()  # ShieldSystem 包在 regenerateAll 最外层，倒下的也衰减
 	b.param_mark_dirty()
@@ -898,7 +911,9 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 			_cleared[u] = true
 		var before := _movable_snapshot()
 		logs.append_array(execute(u, skill, _forced_target(u, skill, int(p[3])), true))
+		XRaceBattle.finish(self, logs)
 		XCat.end_action(self, u, skill)
+		XAlienBattle.finish(self, logs)
 		_tick_states(u, 1)
 		_sync_orders(before, true)
 	return logs
@@ -965,6 +980,7 @@ func _make_action_orders() -> void:
 	_clear_unable()
 	_action_times_modification(next_order)
 	_orders_made = true
+	XRaceBattle.insert_human(self, current_order)  # 人族九九六（makeActionOrders 的 OTB 分支）
 
 
 func _sorted_by_speed(list: Array) -> Array:
@@ -1145,12 +1161,16 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		for t in targets_for(u, skill, chosen):
 			for i in range(maxi(1, times)):
 				list.append(t)
+		XRaceBattle.begin(self, u, skill, list, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
+		XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		return logs
 	var repeats := int(skill.get("repeats", 1))
 	if not is_item(skill) and int(skill.id) == ATTACK_SKILL:
 		repeats = floori(repeats + u.attack_times_add())
 	var targets := targets_for(u, skill, chosen)
+	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
+	XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
 	for t in targets:
 		for i in range(maxi(1, repeats)):
 			if t.is_dead() and not [9, 10].has(int(skill.scope)):
@@ -1174,13 +1194,17 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	var mrf := t.mrf if XDamage.is_magical(skill) and not sure else 0.0
 	if _float("reflection") < mrf:
 		_reflecting = true  # 导入角色平衡：反射回行动者自己的结算照样缩放
+		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反射是独立数值来源，不是原行动
 		var r := apply(u, skill, u)
+		XRaceBattle.derived_end(self, race_prev)
 		_reflecting = false
 		r.reflected = true
 		return [{"type": "reflect", "user": u, "target": t}, r]
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure else 0.0
 	if _float("counter") < cnt:
+		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反击是独立数值来源，不是原行动
 		var r := apply(t, XDB.rec("Skills", ATTACK_SKILL), u)
+		XRaceBattle.derived_end(self, race_prev)
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
 	return [apply(u, skill, substitute_for(skill, t))]
@@ -1258,7 +1282,7 @@ func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) 
 func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
 	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
 	return XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule(),
-		"battleRound": maxi(1, turn)})  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
+		"battleRound": maxi(1, turn), "raceAction": true})  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
 
 
 func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -> Dictionary:
@@ -1289,6 +1313,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		XStateEffects.run("initiate", u, ctx)
 		XStateEffects.run("select", t, ctx)
 	var r := _apply(u, skill, t)
+	XAlienBattle.after_apply(self, u, skill, t, r)  # 异化 apply 包装：灾疫附加腐蚀
 	if not blocked:
 		XStateEffects.run("deselect", t, ctx)
 		XStateEffects.run("conclude", u, ctx)
@@ -1345,9 +1370,13 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_action_resources.result(t).success = true
 		match type:
 			1, 3, 5:
-				r.hp = execute_hp_damage(u, t, value, type == 5)
+				var race_mark := XRaceBattle.before_hp(self, u, skill, t)
+				r.hp = execute_hp_damage(u, t, value, type == 5, skill)
+				XRaceBattle.after_hp(self, u, skill, t, race_mark)
 			2, 4, 6:
+				var mp_before := t.mp
 				r.mp = execute_mp_damage(u, t, value, type == 6)
+				XRaceBattle.after_mp(self, skill, t, mp_before)
 		r.record_hp += floorf(maxf(0.0, float(r.hp)))
 		_establish(u, t, r)
 	for eff in skill.get("effects", []):
@@ -1369,12 +1398,16 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 
 ## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：Boss输出→导入平衡→真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
 ## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
-func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
+func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
+	# 后安装的异化包装在 Boss 输出外层；settled 栈仍只对内层资源结算生效。
+	value = XAlienBattle.outgoing(self, u, item, value)
+	var alien_before := t.hp
 	if not _action_resources.boss_output.is_settled(t, "hp"):
 		value = _boss_output_value(u, t, value)
 	_action_resources.boss_output.enter_settled(t, "hp")
 	var out := _execute_hp_damage(u, t, value, drain)
 	_action_resources.boss_output.leave_settled()
+	XAlienBattle.record(self, u, t, maxf(0.0, alien_before - t.hp))
 	return out
 
 
@@ -1387,7 +1420,8 @@ func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> 
 	value = t.absorb_shield(value)
 	if drain:
 		value = minf(value, t.hp)
-	_action_resources.gain(t, "hp", -value)
+	# 种族蛮骨（YEP setHp 里的 CodexRaces.limitHp）只限扣血量；受伤充 TP 仍按原值（onDamage(value)）
+	_action_resources.gain(t, "hp", -XRaceBattle.limit_loss(self, t, value))
 	if value > 0.0:
 		_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
 	if drain:
@@ -1777,6 +1811,7 @@ func grant(r: Dictionary) -> Array:
 	state.gain_gold(r.gold)
 	if not drop_lock:
 		gain_drops(r.drops)
+	XAlienBattle.grant(self)  # 异化 gainDropItems 包装：异化敌人倒下就发奖励装备
 	# MV BattleManager.gainExp：全队（含阵亡与后备）都得经验；后备按 System「后备成员获得经验」（optExtraExp）
 	var ups := []
 	var bench_rate := 1.0 if bool(XDB.system().get("optExtraExp", false)) else 0.0
@@ -1784,6 +1819,8 @@ func grant(r: Dictionary) -> Array:
 		var n: int = a.gain_exp(r.exp, 1.0 if actors.has(a) else bench_rate, _rule())
 		if n > 0:
 			ups.append({"actor": a, "levels": n})
+	# CP_MagicWeapon 包在 gainRewards 之后：法宝经验（$gameTroop.members()：enemies 已含没出场的隐藏成员）
+	XMagicWeapon.gain_victory_exp(state.members(), actors, enemies)
 	return ups
 
 
@@ -1798,8 +1835,9 @@ func end_battle(result := -1) -> void:
 				if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):
 					_state_remove(b, id)
 	if result >= 0 and result <= 2:
-		XStateEffects.run_unit(["victory", "escape", "defeat"][result], state.members())
+		XStateEffects.run_unit(["victory", "escape", "defeat"][result], state.members(), {"random": _rule(), "variables": vars()})
 	_clear_event_cursor()
+	XAlienBattle.end(self, result)  # 异化 endBattle 包装：胜利补发、结算、清锁队
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	# ShieldSystem Scene_Battle.terminate：全队与敌群护盾清零

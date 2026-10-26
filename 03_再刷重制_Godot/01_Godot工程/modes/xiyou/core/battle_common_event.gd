@@ -11,9 +11,12 @@ extends RefCounted
 ## 重制：预约记在 XBattleLogic 的 meta "battle_ce"；XBattleLogic._drive_events 选页之前调 take 取成 XBattleEventRunner 执行，
 ## 指令与敌群页同一套（MVEventCore＋战斗环境），没翻译的记进 XBattleLogic.common_event_skipped（敌群页的另记 troop_event_skipped）。
 ## 一次事件检查里接连预约（强制行动再预约）最多 CHAIN_LIMIT 次，防止条件写错时死循环（原版会一直跑）。
+## 开战：本版改过的 BattleManager.startBattle 先 reserveCommonEvent(1320)，XBattleLogic.setup 末尾同样预约（START_EVENT）。
 ## Star_PetSystem 的 PetGet 读「最后一个 setItem 的行动」：用道具时记在 meta "last_item_action"（XPetCapture.pet_get 读）。
 
 const CHAIN_LIMIT := 64
+## 本版 BattleManager.startBattle 每场开战预约的公共事件「战斗开始时调整变量」（调 1315／1372／1373／1375，变量 13＝1 时截上限）
+const START_EVENT := 1320
 
 
 static func reserve(logic, id: int) -> void:

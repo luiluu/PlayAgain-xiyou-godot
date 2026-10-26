@@ -122,7 +122,7 @@ func _run() -> void:
 		if is_instance_valid(pl):
 			pl.stop()
 			pl.stream = null
-	await get_tree().create_timer(0.3, true, false, true).timeout
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	await frames(3)
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

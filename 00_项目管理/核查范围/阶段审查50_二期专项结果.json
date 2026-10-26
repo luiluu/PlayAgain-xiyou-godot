@@ -1,0 +1,914 @@
+{
+  "time": "2026-10-24T19:06:18.641498+02:00",
+  "rows": [
+    {
+      "command": [
+        "node",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/guard_check.cjs"
+      ],
+      "exitCode": 0,
+      "output": "TEST_RESULT={\"passed\":16,\"total\":16}\n"
+    },
+    {
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/03_转换工具/ui_reference/guard_check.py"
+      ],
+      "exitCode": 0,
+      "output": "TEST_RESULT={\"passed\": 12, \"total\": 12, \"failures\": []}\n"
+    },
+    {
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/07_开发环境/测试公式程序.py"
+      ],
+      "exitCode": 0,
+      "output": "............\n----------------------------------------------------------------------\nRan 12 tests in 0.240s\n\nOK\n"
+    },
+    {
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/07_开发环境/测试状态效果翻译.py"
+      ],
+      "exitCode": 0,
+      "output": ".......\n----------------------------------------------------------------------\nRan 7 tests in 0.062s\n\nOK\n"
+    },
+    {
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/07_开发环境/测试增量同步.py"
+      ],
+      "exitCode": 0,
+      "output": "PROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"a_probe.cjs\", \"seconds\": 0.0, \"command\": [\"a_probe.cjs\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"a_probe.cjs\", \"seconds\": 0.0, \"command\": [\"a_probe.cjs\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"a_probe.cjs\", \"seconds\": 0.0, \"command\": [\"a_probe.cjs\"], \"exitCode\": 7}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"a_probe.cjs\", \"seconds\": 0.0, \"command\": [\"a_probe.cjs\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"a_probe.cjs\", \"seconds\": 0.001, \"command\": [\"a_probe.cjs\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"event_probe.cjs\", \"seconds\": 0.0, \"command\": [\"event_probe.cjs\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 0, \"partial\": {}, \"reused\": 3}\n..............................................\n----------------------------------------------------------------------\nRan 46 tests in 34.492s\n\nOK\n"
+    },
+    {
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/07_开发环境/测试转换器写入.py"
+      ],
+      "exitCode": 0,
+      "output": "......................\n----------------------------------------------------------------------\nRan 22 tests in 2.535s\n\nOK\n"
+    },
+    {
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/07_开发环境/测试角色同步提速.py"
+      ],
+      "exitCode": 0,
+      "output": "PROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"plain_probe.cjs\", \"seconds\": 0.162, \"command\": [\"plain_probe.cjs\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 0, \"partial\": {}, \"reused\": 1}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.14, \"command\": [\"slice_probe.cjs\", \"1\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.139, \"command\": [\"slice_probe.cjs\", \"2\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.138, \"command\": [\"slice_probe.cjs\", \"3\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.141, \"command\": [\"slice_probe.cjs\", \"4\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.145, \"command\": [\"slice_probe.cjs\", \"5\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.144, \"command\": [\"slice_probe.cjs\", \"6\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 0, \"partial\": {\"slice_probe.cjs\": 1}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.256, \"command\": [\"slice_probe.cjs\", \"2\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.258, \"command\": [\"slice_probe.cjs\", \"1\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.248, \"command\": [\"slice_probe.cjs\", \"3\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.25, \"command\": [\"slice_probe.cjs\", \"4\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.261, \"command\": [\"slice_probe.cjs\", \"5\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.263, \"command\": [\"slice_probe.cjs\", \"6\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.132, \"command\": [\"slice_probe.cjs\", \"1\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.132, \"command\": [\"slice_probe.cjs\", \"2\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.127, \"command\": [\"slice_probe.cjs\", \"4\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.129, \"command\": [\"slice_probe.cjs\", \"3\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.139, \"command\": [\"slice_probe.cjs\", \"5\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.137, \"command\": [\"slice_probe.cjs\", \"6\"], \"exitCode\": 0}\nPROBE_PLAN={\"executed\": 1, \"partial\": {}, \"reused\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.129, \"command\": [\"slice_probe.cjs\", \"1\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.128, \"command\": [\"slice_probe.cjs\", \"2\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 0.133, \"command\": [\"slice_probe.cjs\", \"3\"], \"exitCode\": 1}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.132, \"command\": [\"slice_probe.cjs\", \"4\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.125, \"command\": [\"slice_probe.cjs\", \"5\"], \"exitCode\": 0}\nPROBE_DONE={\"probe\": \"slice_probe.cjs\", \"seconds\": 1.132, \"command\": [\"slice_probe.cjs\", \"6\"], \"exitCode\": 0}\n.........................\n----------------------------------------------------------------------\nRan 25 tests in 24.214s\n\nOK\n"
+    }
+  ],
+  "mergeTools": {
+    "command": [
+      "python3",
+      "03_再刷重制_Godot/07_开发环境/测试合并工具.py"
+    ],
+    "exitCode": 0,
+    "passed": 120,
+    "total": 120,
+    "seconds": 84.115
+  },
+  "recipes": {
+    "check": true,
+    "exitCode": 0,
+    "result": "配方产物一致"
+  },
+  "warehouseRed": {
+    "exitCode": 1,
+    "passed": 30,
+    "total": 32,
+    "wallSeconds": 288,
+    "failed": [
+      "old_unlocked_save_migrates",
+      "legacy_ev8_p1_opens"
+    ],
+    "detail": "第二页show宿主打开次数0；其余30项通过"
+  },
+  "nativeFirstFailure": {
+    "runId": "3582cc52e82c4a5fa938d2ad086ef6f9",
+    "exitCode": 1,
+    "reason": "Node数组不带MV.contains，MOG_CharPoses.addActor抛错；不是原版测量结论"
+  },
+  "warehouseGreen": {
+    "exitCode": 0,
+    "passed": 32,
+    "total": 32,
+    "seconds": 3.507,
+    "flaky": false
+  },
+  "inlayGreen": {
+    "exitCode": 0,
+    "passed": 19,
+    "total": 19,
+    "seconds": 7.748,
+    "flaky": false
+  },
+  "nativeFinal": {
+    "runId": "2a59b90e60474298ac0594c9d67fbeec",
+    "exitCode": 0,
+    "cases": [
+      {
+        "id": "save.state_effects",
+        "observed": {
+          "before": {
+            "confirm": 140,
+            "value": 126,
+            "aStates": [
+              1712
+            ],
+            "bStates": [
+              1779
+            ],
+            "confirmStates": [
+              1712
+            ],
+            "reactStates": [
+              1779
+            ]
+          },
+          "after": {
+            "confirm": 140,
+            "value": 126,
+            "aStates": [
+              1712
+            ],
+            "bStates": [
+              1779
+            ],
+            "confirmStates": [
+              1712
+            ],
+            "reactStates": [
+              1779
+            ]
+          }
+        },
+        "errors": []
+      },
+      {
+        "id": "counter.state_origin",
+        "observed": {
+          "actor": 154,
+          "state": 522,
+          "battleMembers": [
+            154,
+            1
+          ],
+          "counterRate": 1,
+          "attackSkill": 1,
+          "initialSkill": 12,
+          "initialHitType": 1,
+          "counterCalls": 1,
+          "beforeStates": [],
+          "originIsSelf": true,
+          "rawOrigin": [
+            1,
+            0
+          ],
+          "originActor": null,
+          "hasState": true,
+          "maxHp": 75000007500,
+          "hpBeforeRegen": 75000007500,
+          "hpAfterRegen": 69000006900,
+          "hpDelta": -6000000600,
+          "sourceRate": 0.01
+        },
+        "errors": []
+      }
+    ],
+    "scope": "冻结v0.28，内存JsonEx往返、154实际出战，技能12物理入射触发invokeAction反击；来源前后身份一致，无eval错误",
+    "sha256": "9a1b4cf8b6bb9d22b270fe1c873422f34db51e78727a02d6a7dd7a6c0580604f"
+  },
+  "crossRed": {
+    "passed": 6,
+    "total": 12,
+    "exitCode": 1,
+    "validSaveFailures": [
+      "save.after",
+      "save.state_lists"
+    ],
+    "invalidCounterFixture": "把魔法技能1误作物理入射，Godot实际走反射；反击与嵌套断言不是确认缺陷"
+  },
+  "crossAfterSaveFix": {
+    "passed": 8,
+    "total": 12,
+    "exitCode": 1,
+    "saveChecksPassed": true,
+    "counterStillInvalid": true
+  },
+  "crossGreen": {
+    "wallSeconds": 61.409,
+    "scenes": [
+      {
+        "name": "xiyou_event_compare.tscn",
+        "seconds": 61.404,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 61.404,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_state_effects.tscn",
+        "seconds": 3.694,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.694,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_imported_balance.tscn",
+        "seconds": 2.59,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 2.59,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_stage50_review.tscn",
+        "seconds": 2.579,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 2.579,
+            "passed": true
+          }
+        ]
+      }
+    ],
+    "passed": 20237,
+    "total": 20237,
+    "exitCode": 0,
+    "flakyRerunPassed": [],
+    "counts": {
+      "xiyou_event_compare": 5,
+      "xiyou_imported_balance": 273,
+      "xiyou_stage50_review": 10,
+      "xiyou_state_effects": 19949
+    },
+    "unmatchedPrefix": "xiyou_battle_runtime没有匹配场景，不算验证"
+  },
+  "cleanup": {
+    "removed": "本车道stage-review-50-phase2临时日志／失败草稿输出目录；已保存精简结果",
+    "preserved": "该树其他历史原版证据、mv_oracle/.sandbox与generated产物"
+  },
+  "pageEvidenceGuard": {
+    "before": {
+      "passed": 22,
+      "total": 25,
+      "exitCode": 1,
+      "failures": "浏览器异常／console.error／缺logs负控被错误接受"
+    },
+    "after": {
+      "passed": 25,
+      "total": 25,
+      "exitCode": 0
+    },
+    "savedWarehouse": {
+      "formal_no_engine_errors": true,
+      "formal_no_browser_errors": true
+    },
+    "commit": "8650bac4"
+  },
+  "finalDocs": {
+    "exitCode": 0,
+    "developmentVersion": "dev.165",
+    "scope": "最终报告及交付单更新、final临时目录清理后，仅执行检查.sh文档与登记Python正文；非全量",
+    "checkedAt": "2026-10-25T01:15:41+02:00",
+    "stdout": "  待Codex核查 3 批，另有只改文档、登记的 1 批（只看结论与编号）：\n    2026-10-24 合并 claude/bajie-warehouse 期一（装备镶嵌图鉴）｜b503c77 ef051ee 7aba3d2 38eaddf｜Claude（八戒）、Claude（唐僧）\n    2026-10-24 合并 codex/review-pending-20261024（全部待审核查）｜21 个提交 1bd0430…2fba4b5｜Codex（沙僧）、Codex、Claude（唐僧）\n    2026-10-24 合并 claude/bajie-warehouse 期二（装备道具仓库）｜040606a 0ae13bf bf0aa77 7fc0c31｜Claude（八戒）、Claude（唐僧）\n    文档：58d9281\n  待Claude核查 20 批，另有只改文档、登记的 23 批（只看结论与编号）：\n    2026-10-23 合并 codex/state-effects-2e｜24 个提交 4bf9996…c572e51｜Codex（沙僧）\n    2026-10-24 修复进度核算收工检查：临时接收库自动维护与清理竞争｜117ba14｜Codex（沙僧）\n    2026-10-24 合并 codex/review-pending-20261024（全部待审核查）｜21 个提交 1bd0430…2fba4b5｜Codex（沙僧）、Codex、Claude（唐僧）\n    2026-10-24 WIP: 补50%原版读档、仓库边界与反击来源参照入口｜2aa2c6d｜Codex（沙僧）\n    2026-10-24 交付50%审查一期：7专项通过，dev165正式进度49.8%｜62a508e｜Codex（沙僧）\n    2026-10-24 开工50%审查二期，调整原版私有窗口补证入口｜5ad1d14｜Codex（沙僧）\n    2026-10-24 WIP: 保存50%二期已读发现与原版两例运行现场，接力沙僧54｜eaca3e1｜Codex（沙僧）\n    2026-10-24 50%二期补仓库旧档回归与界面现状登记｜13795a2｜Codex（沙僧）\n    2026-10-24 修复旧Godot档已解锁仓库入口并记录两项红灯｜b8fb97d｜Codex（沙僧）\n    2026-10-24 WIP: 保存50%二期工具验证与跨批回归草稿，接力沙僧55｜2fa5ceb｜Codex（沙僧）\n    2026-10-24 修正阶段审查回归草稿的条件返回并登记接手｜c87a3f8｜Codex（沙僧）\n    2026-10-24 补原版跨批探针真实出战夹具与显式退出｜7bfb05e｜Codex（沙僧）\n    2026-10-24 记录真实反击的攻击替换与来源调用，核对补证夹具｜8d7ccfb｜Codex（沙僧）\n    2026-10-24 隔离跨批原版用例运行时并追踪状态来源链｜f844d12｜Codex（沙僧）\n    2026-10-24 修复读档后状态效果快照仍沿用setup空状态｜60c4f7b｜Codex（沙僧）\n    2026-10-24 按原版实测修正反击候选与物理入射夹具｜9e95848｜Codex（沙僧）\n    2026-10-24 修复系统页面取证漏检浏览器错误日志的假通过入口｜8650bac｜Codex（沙僧）\n    2026-10-24 补大厅商店参照完成与状态不变的拒收检查，登记补审边界｜33dd82b｜Codex（沙僧）\n    2026-10-25 拒绝事件对照空过滤零用例的假通过，保存最终同步通过凭证｜3242ddd｜Codex（沙僧）\n    2026-10-25 登记最终同步通过、空过滤红灯与修后排队现场｜09140c9｜Codex（沙僧）\n    文档：bb5d965 fc73ed6 5e371a2 cb86443 b4706af 62f6596 00ffe8c 281df98 bec8a16 9d8b320 fe5229c db57e57 8273b80 674d5c0 342cdc6 fb60540 e8926db 4ad62e2 98147f2 d9f7f5f d57b77e d2f470c 525c500\n  待交叉核查共 46 批，计入上限 22 批（只改文档、登记的不计；按提交尾注减去变更记录核查条目）\n  ⚠ 待交叉核查 22 批，超过 10 批上限：停派新车道、停新功能，先启动 Codex（沙僧）核查\n  ✓ JSON、链接、开发编号（dev.165）\n",
+    "stderr": ""
+  },
+  "initialDepsStopped": {
+    "pid": 9808,
+    "reason": "同步会更新参照，主动终止自己的deps进程组，等同步导入完成再运行",
+    "passed": false,
+    "flaky": false
+  },
+  "finalSync": {
+    "status": {
+      "runId": "126c6d6c96a746c3ab4b2566a60369ca",
+      "status": "done",
+      "exitCode": 0,
+      "pid": 9805,
+      "startedAt": "2026-10-24T21:52:45.203566+00:00",
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/03_转换工具/同步正式西游.py",
+        "--accept-additions"
+      ],
+      "childPGID": 9806,
+      "childIdentity": {
+        "pid": 9806,
+        "pgid": 9806,
+        "startedAt": "Sat Oct 24 23:52:45 2026    "
+      },
+      "finishedAt": "2026-10-24T22:54:15.890573+00:00"
+    },
+    "wallSeconds": 3690.687,
+    "result": "测量不变",
+    "measurementChanges": {},
+    "verify": "{\"releaseVersion\": \"v0.28\", \"inputs\": 1785, \"runtimeInputs\": 382, \"outputs\": 1779, \"issues\": []}",
+    "verifyOk": true,
+    "sameExistingSource": true,
+    "acceptedAdditions": false,
+    "acceptedChanges": [],
+    "probeGroups": {
+      "executed": [
+        "slice_probe.cjs",
+        "map_probe.cjs",
+        "smart_ai_probe.cjs",
+        "troop_event_probe.cjs",
+        "custom_params_probe.cjs",
+        "shop_buy_probe.cjs",
+        "race_menu_probe.cjs",
+        "training_probe.cjs",
+        "gold_probe.cjs",
+        "alien_workshop_probe.cjs",
+        "alien_config_probe.cjs",
+        "formula_program_probe.cjs",
+        "formula_equipment_probe.cjs",
+        "stage50_review_probe.cjs",
+        "cat_probe.cjs",
+        "enemy_book_defeat_probe.cjs",
+        "lobby_shop_probe.cjs",
+        "event_probe.cjs"
+      ],
+      "reused": [
+        "equipment_probe.cjs",
+        "help_probe.cjs",
+        "hang_up_probe.cjs",
+        "options_probe.cjs",
+        "sequence_probe.cjs",
+        "party_probe.cjs",
+        "battle_event_probe.cjs",
+        "drop_record_probe.cjs",
+        "sell_reward_probe.cjs",
+        "power_probe.cjs",
+        "wtype_probe.cjs",
+        "dual_wield_probe.cjs",
+        "magic_weapon_probe.cjs",
+        "settlement_probe.cjs",
+        "item_marks_probe.cjs",
+        "orb_probe.cjs",
+        "module_hooks_probe.cjs",
+        "orb_shop_probe.cjs",
+        "dungeon_probe.cjs",
+        "shared_system_probe.cjs",
+        "zhenqi_probe.cjs",
+        "guide_probe.cjs",
+        "custom_damage_probe.cjs",
+        "formula_effect_probe.cjs",
+        "formula_action_probe.cjs",
+        "review_fix_probe.cjs",
+        "global_vars_probe.cjs",
+        "actor_passive_probe.cjs",
+        "achievement_probe.cjs",
+        "achievement_badge_probe.cjs",
+        "shield_probe.cjs",
+        "imported_balance_probe.cjs",
+        "state_effects_probe.cjs",
+        "review135_probe.cjs",
+        "attack_element_probe.cjs",
+        "qiyu_probe.cjs"
+      ],
+      "partial": {}
+    },
+    "commands": [
+      {
+        "probe": "slice_probe.cjs",
+        "seconds": 256.721,
+        "command": [
+          "slice_probe.cjs",
+          "4"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "slice_probe.cjs",
+        "seconds": 279.614,
+        "command": [
+          "slice_probe.cjs",
+          "1"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "slice_probe.cjs",
+        "seconds": 300.313,
+        "command": [
+          "slice_probe.cjs",
+          "2"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "slice_probe.cjs",
+        "seconds": 325.207,
+        "command": [
+          "slice_probe.cjs",
+          "5"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "slice_probe.cjs",
+        "seconds": 327.683,
+        "command": [
+          "slice_probe.cjs",
+          "6"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "map_probe.cjs",
+        "seconds": 9.164,
+        "command": [
+          "map_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "troop_event_probe.cjs",
+        "seconds": 458.189,
+        "command": [
+          "troop_event_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "custom_params_probe.cjs",
+        "seconds": 8.553,
+        "command": [
+          "custom_params_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "slice_probe.cjs",
+        "seconds": 1087.16,
+        "command": [
+          "slice_probe.cjs",
+          "3"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "shop_buy_probe.cjs",
+        "seconds": 14.514,
+        "command": [
+          "shop_buy_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "race_menu_probe.cjs",
+        "seconds": 571.034,
+        "command": [
+          "race_menu_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "gold_probe.cjs",
+        "seconds": 11.246,
+        "command": [
+          "gold_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "alien_workshop_probe.cjs",
+        "seconds": 16.603,
+        "command": [
+          "alien_workshop_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "alien_config_probe.cjs",
+        "seconds": 16.03,
+        "command": [
+          "alien_config_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "formula_program_probe.cjs",
+        "seconds": 9.144,
+        "command": [
+          "formula_program_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "smart_ai_probe.cjs",
+        "seconds": 2839.883,
+        "command": [
+          "smart_ai_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "formula_equipment_probe.cjs",
+        "seconds": 1439.208,
+        "command": [
+          "formula_equipment_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "cat_probe.cjs",
+        "seconds": 32.698,
+        "command": [
+          "cat_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "event_probe.cjs",
+        "seconds": 2716.617,
+        "command": [
+          "event_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "stage50_review_probe.cjs",
+        "seconds": 250.318,
+        "command": [
+          "stage50_review_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "lobby_shop_probe.cjs",
+        "seconds": 144.653,
+        "command": [
+          "lobby_shop_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "training_probe.cjs",
+        "seconds": 2362.314,
+        "command": [
+          "training_probe.cjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "probe": "enemy_book_defeat_probe.cjs",
+        "seconds": 391.079,
+        "command": [
+          "enemy_book_defeat_probe.cjs"
+        ],
+        "exitCode": 0
+      }
+    ],
+    "stamp": {
+      "toolsDigest": "2343ebe300c158ca65077f95381c869a37a4c68e89ceb9a88c38955960edf79c",
+      "outputsDigest": "a4fd5b25375f4c6e0b1ed1a91022970691798f16dfd91356d33d90c299c0e341",
+      "releaseVersion": "v0.28",
+      "result": "测量不变",
+      "time": "2026-10-25T00:54:15",
+      "backup": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261024_235245_880021_v0.28-v0.28"
+    },
+    "importPassed": true,
+    "retainedEvents": {
+      "unfinished": [
+        "m221e3p0",
+        "m4e8p1",
+        "ce1344"
+      ],
+      "errors": [
+        "m4e8p1"
+      ],
+      "scope": "原基线中相同未完成／错误保留，不作本轮新成功用例"
+    }
+  },
+  "eventFilterGuard": {
+    "before": {
+      "rc": 0,
+      "testResult": [
+        "TEST_RESULT={\"passed\":5,\"total\":5}"
+      ],
+      "zeroCases": true,
+      "guardRejected": false,
+      "runnerAccepts": true
+    },
+    "status": "红绿负控完成；修后Godot预期非零退出并拒收，负控自身成功，不计常规全过",
+    "after": {
+      "rc": 1,
+      "testResult": [
+        "TEST_RESULT={\"passed\":4,\"total\":5}"
+      ],
+      "zeroCases": true,
+      "guardRejected": true,
+      "runnerAccepts": false
+    },
+    "helperExitCode": 0
+  },
+  "finalDeps": {
+    "jobs": 2,
+    "globalJobs": 4,
+    "wallSeconds": 604.032,
+    "flakyRerunPassed": [],
+    "fingerprint": "",
+    "reused": [],
+    "scenes": [
+      {
+        "name": "xiyou_rules_d1b.tscn",
+        "seconds": 216.127,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 216.127,
+            "passed": true,
+            "testResult": {
+              "failedSample": [],
+              "passed": 99443,
+              "total": 99443
+            },
+            "testResultLine": "TEST_RESULT={\"failedSample\":[],\"passed\":99443,\"total\":99443}",
+            "logSha256": "72b781a472e589bde777d988f25611386825d30ed71bb2e0adf45e33a79fb2ff",
+            "errorCount": 0
+          }
+        ]
+      },
+      {
+        "name": "xiyou_rules_d1d.tscn",
+        "seconds": 209.997,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 209.997,
+            "passed": true,
+            "testResult": {
+              "failedSample": [],
+              "passed": 99306,
+              "total": 99306
+            },
+            "testResultLine": "TEST_RESULT={\"failedSample\":[],\"passed\":99306,\"total\":99306}",
+            "logSha256": "ce184bbe664787edbaae30f6adce40a1a8ca23244bbb243aaef4b32b7b90b6db",
+            "errorCount": 0
+          }
+        ]
+      },
+      {
+        "name": "xiyou_rules.tscn",
+        "seconds": 203.943,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 203.943,
+            "passed": true,
+            "testResult": {
+              "failedSample": [],
+              "passed": 99501,
+              "total": 99501
+            },
+            "testResultLine": "TEST_RESULT={\"failedSample\":[],\"passed\":99501,\"total\":99501}",
+            "logSha256": "c2816a878ef8e29ea42b274a78c5387d4f356029efbe3c3ad199690fa2d1aecf",
+            "errorCount": 0
+          }
+        ]
+      },
+      {
+        "name": "xiyou_rules_d1c.tscn",
+        "seconds": 190.083,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 190.083,
+            "passed": true,
+            "testResult": {
+              "failedSample": [],
+              "passed": 99276,
+              "total": 99276
+            },
+            "testResultLine": "TEST_RESULT={\"failedSample\":[],\"passed\":99276,\"total\":99276}",
+            "logSha256": "32f55db2d323664c06876273e1a6fcff4f867f1dee829a31c0e4a08339f6226c",
+            "errorCount": 0
+          }
+        ]
+      },
+      {
+        "name": "xiyou_event_compare.tscn",
+        "seconds": 65.295,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 65.295,
+            "passed": true,
+            "testResult": {
+              "passed": 5,
+              "total": 5
+            },
+            "testResultLine": "TEST_RESULT={\"passed\":5,\"total\":5}",
+            "logSha256": "fa6f3941eb26d85726009b6af1ca62ffbfb8d16425e96cba3828431d9362dee6",
+            "errorCount": 0
+          }
+        ]
+      },
+      {
+        "name": "xiyou_battle_events.tscn",
+        "seconds": 7.198,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 7.198,
+            "passed": true,
+            "testResult": {
+              "passed": 108,
+              "total": 108
+            },
+            "testResultLine": "TEST_RESULT={\"passed\":108,\"total\":108}",
+            "logSha256": "ce4ef850280024c345031f5ad943773a9b6bbea775b7a34d45d7502fc1238956",
+            "errorCount": 0
+          }
+        ]
+      },
+      {
+        "name": "xiyou_battleback_save.tscn",
+        "seconds": 6.135,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 6.135,
+            "passed": true,
+            "testResult": {
+              "failed": [],
+              "name": "xiyou_battleback_save",
+              "passed": 5,
+              "total": 5
+            },
+            "testResultLine": "TEST_RESULT={\"failed\":[],\"name\":\"xiyou_battleback_save\",\"passed\":5,\"total\":5}",
+            "logSha256": "9d535521da12a74528326b6112f73c13544cf3da3eca0c15478233171e9579f7",
+            "errorCount": 0
+          }
+        ]
+      },
+      {
+        "name": "xiyou_warehouse.tscn",
+        "seconds": 5.801,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 5.801,
+            "passed": true,
+            "testResult": {
+              "passed": 32,
+              "total": 32
+            },
+            "testResultLine": "TEST_RESULT={\"passed\":32,\"total\":32}",
+            "logSha256": "80268a19423120a32a0cb178edd9927798f0e0196d56dca7c281b5cd98deddfc",
+            "errorCount": 0
+          }
+        ]
+      },
+      {
+        "name": "xiyou_lobby_shops.tscn",
+        "seconds": 5.104,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 5.104,
+            "passed": true,
+            "testResult": {
+              "passed": 94,
+              "total": 94
+            },
+            "testResultLine": "TEST_RESULT={\"passed\":94,\"total\":94}",
+            "logSha256": "e2378f4a955fdee20849174ea1f506d96545d3a622fa39862227703c15416af3",
+            "errorCount": 0
+          }
+        ]
+      },
+      {
+        "name": "xiyou_stage50_review.tscn",
+        "seconds": 4.747,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.747,
+            "passed": true,
+            "testResult": {
+              "passed": 10,
+              "total": 10
+            },
+            "testResultLine": "TEST_RESULT={\"passed\":10,\"total\":10}",
+            "logSha256": "ce644ef5118cf5144fa210aad75d2152e293bbdfeb95f82a28e26a45de955951",
+            "errorCount": 0
+          }
+        ]
+      },
+      {
+        "name": "xiyou_save_page.tscn",
+        "seconds": 4.59,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.59,
+            "passed": true,
+            "testResult": {
+              "passed": 40,
+              "total": 40
+            },
+            "testResultLine": "TEST_RESULT={\"passed\":40,\"total\":40}",
+            "logSha256": "fb087d8c7e4ef2dd8941840594816513f7901c2c43bab196141ee4024719f472",
+            "errorCount": 0
+          }
+        ]
+      },
+      {
+        "name": "xiyou_gear_query_cache.tscn",
+        "seconds": 2.121,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 2.121,
+            "passed": true,
+            "testResult": {
+              "passed": 5,
+              "total": 5
+            },
+            "testResultLine": "TEST_RESULT={\"passed\":5,\"total\":5}",
+            "logSha256": "abcb77f557c421646d08dcc4c0255afb304f514ba8dea09762eb549f2087992a",
+            "errorCount": 0
+          }
+        ]
+      }
+    ],
+    "status": {
+      "runId": "8b5c19c54a284f3a9451c6ae4e9aafcc",
+      "status": "done",
+      "exitCode": 0,
+      "pid": 51809,
+      "startedAt": "2026-10-24T23:04:22.193614+00:00",
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/07_开发环境/并行测试.py",
+        "03_再刷重制_Godot/07_开发环境/godot",
+        "03_再刷重制_Godot/01_Godot工程",
+        "--log-dir",
+        "03_再刷重制_Godot/04_验证/本地结果/stage-review-50-phase2-final/deps",
+        "xiyou_rules.tscn",
+        "xiyou_rules_d1b.tscn",
+        "xiyou_rules_d1c.tscn",
+        "xiyou_rules_d1d.tscn",
+        "xiyou_save_page.tscn",
+        "xiyou_battleback_save.tscn",
+        "xiyou_gear_query_cache.tscn",
+        "xiyou_battle_events.tscn",
+        "xiyou_warehouse.tscn",
+        "xiyou_event_compare.tscn",
+        "xiyou_lobby_shops.tscn",
+        "xiyou_stage50_review.tscn"
+      ],
+      "childPGID": 51812,
+      "childIdentity": {
+        "pid": 51812,
+        "pgid": 51812,
+        "startedAt": "Sun Oct 25 01:04:22 2026    "
+      },
+      "finishedAt": "2026-10-24T23:14:26.511160+00:00"
+    },
+    "passed": 397825,
+    "total": 397825,
+    "exitCode": 0,
+    "scope": "同步及导入后精确12场专项，全部首次通过；不含全量、不销交叉核查；原deps主动中止不计通过／偶发"
+  },
+  "updatedAt": "2026-10-25T01:15:11+02:00",
+  "finalCleanup": {
+    "status": "done",
+    "directory": "03_再刷重制_Godot/04_验证/本地结果/stage-review-50-phase2-final",
+    "scope": "精简入Git后仅删除此final临时目录，保留旧原版证据、mv_oracle/.sandbox、generated和整个工作树",
+    "evidenceCommit": "525c500b",
+    "removedFiles": 30,
+    "finishedAt": "2026-10-25T01:15:35+02:00"
+  }
+}

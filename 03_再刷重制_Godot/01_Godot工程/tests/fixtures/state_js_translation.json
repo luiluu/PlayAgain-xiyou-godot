@@ -1,0 +1,361 @@
+{
+ "说明": "冻结 v0.28 States.json 的 <Custom … Effect> 原文（只取效果块）：poison 为含 _stackingPoison 的状态，batch2 为第二批（加状态、回复、设变量、原版语法错误块），counter 为第三批（状态计数）",
+ "poison": [
+  {
+   "state": 106,
+   "note": "<Custom Apply Effect>\ntarget._stackingPoison = target._stackingPoison || 0;\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\nvar baseEquipId = 3640;\nlet currentEquip = null;\nvar equips = origin.equips().filter((equip) => !!equip &&DataManager.isArmor(equip) && equip.baseItemId === baseEquipId);\nif(equips.length > 0)\n   currentEquip = equips[0];\nvar mw = !!currentEquip ?  origin.getEquipItemObject(currentEquip) : null;\nvar level = !!mw ? mw.level() : 0;\n\n\ntarget._stackingPoison = target._stackingPoison || 1;\nvar stacks = target._stackingPoison\nvar damage1 = origin.atk;\nvar damage2 = origin.mat;\nvar damage3 = origin.level;\nvar damage = stacks * (damage1 + damage2) * damage3 *(1+level);\ntarget.startAnimation(130);\ntarget.gainHp(-damage);\ntarget.startDamagePopup();\ntarget.clearResult();\nif (target.isDead()) {\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 460,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.atk;\nvar damage2 = origin.mat;\nvar damage = stacks * (damage1+damage2) * 1;\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 484,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.agi;\nvar damage2 = origin.tp;\nvar damage = stacks * (damage1  + damage2) * 2;\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 488,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.agi;\nvar damage = stacks * damage1 * 5;\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 498,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.agi;\nvar damage2 = origin.luk;\nvar damage = stacks * (damage1 * 8 + damage2 * 8);\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 502,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.agi;\nvar damage2 = origin.luk;\nvar damage3 = origin.mhp;\nvar damage = stacks * (damage1 * 8 + damage2 * 8 + damage3);\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 504,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 3;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.agi;\nvar damage2 = origin.luk;\nvar damage3 = origin.mhp;\nvar damage = stacks * (damage1 * 8 + damage2 * 8 + damage3);\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 505,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.agi;\nvar damage = stacks * damage1 * 10;\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 506,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.agi;\nvar damage = stacks * damage1 * 20;\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 547,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.agi;\nvar damage2 = origin.tp;\nvar damage = stacks * (damage1  + damage2) * 4;\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 548,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.luk;\nvar damage2 = origin.atk;\nvar damage = stacks * (damage1 * 64  + damage2 * 16) * 1;\n// Play poison animation on the target.\ntarget.startAnimation(633);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 550,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.agi;\nvar damage2 = origin.atk;\nvar damage = stacks * (damage1 * 45  + damage2 * 45) * 0.5;\n// Play poison animation on the target.\ntarget.startAnimation(633);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 551,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.atk;\nvar damage2 = origin.mat;\nvar damag = stacks * (damage1 + damage2) * 0.01;\n// Play poison animation on the target.\ntarget.startAnimation(633);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 687,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.mat;\nvar damage2 = origin.atk;\nvar damage3 = origin.level;\nvar damage = stacks * (damage1 * 35  + damage2 * 35) * damage3;\n// Play poison animation on the target.\ntarget.startAnimation(633);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 703,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.mat;\nvar damage2 = origin.atk;\nvar damage3 = origin.level;\nvar damage = stacks * (damage1 * 3 + damage2 * 3) * damage3;\n// Play poison animation on the target.\ntarget.startAnimation(633);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 732,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\nvar baseEquipId = 3590;\nlet currentEquip = null;\nvar equips = origin.equips().filter((equip) => !!equip &&DataManager.isArmor(equip) && equip.baseItemId === baseEquipId);\nif(equips.length > 0)\n   currentEquip = equips[0];\nvar mw = !!currentEquip ?  origin.getEquipItemObject(currentEquip) : null;\nvar level = !!mw ? mw.level() : 0;\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.mmp;\nvar damage2 = v[320];\nvar damage3 = origin.mat;\nvar damage = Math.round(stacks*0.5*(damage1 * 8 + damage2 * 1 + damage3 * 1)*(1+level)*(1+damage2/3000)*(1+damage2/3000));\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 831,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.agi;\nvar damage = stacks * damage1 * 20;\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 894,
+   "note": "<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect><Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect><Custom Regenerate Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.atk;\nvar damage2 = origin.mat;\nvar damage = stacks * (damage1 * 0.1+ damage2 * 0.1);\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  }
+ ],
+ "batch2": [
+  {
+   "state": 79,
+   "note": "<Custom Victory Effect>\n// Set the HP recovery rate to 8%.\nvar rate = 0.2;\n// Determine the HP value to recover.\nvar value = Math.ceil(user.mhp * rate);\n// Gain HP.\nuser.gainHp(value);\n// Set the MP recovery rate to 8%.\nvar rate = 0.2;\n// Determine the MP value to recover.\nvar value = Math.ceil(user.mmp * rate);\n// Gain MP\nuser.gainMp(value);\n</Custom Victory Effect>"
+  },
+  {
+   "state": 292,
+   "note": "<Custom Establish Effect>\nif (target.result().critical) {\n  var param=500;\n  var turns=3;\n  user.addState(param,turns);\n}\n</Custom Establish Effect>"
+  },
+  {
+   "state": 299,
+   "note": "<Custom Establish Effect>\nif (target.result().critical) {\n  var param=298;\n  var turns=3;\n  user.addState(param,turns);\n}\n</Custom Establish Effect>"
+  },
+  {
+   "state": 301,
+   "note": "<Custom Establish Effect>\nif (target.result().critical) {\n  var param=302;\n  var turns=3;\n  user.addState(param,turns);\n}\n</Custom Establish Effect>"
+  },
+  {
+   "state": 305,
+   "note": "<Custom Establish Effect>\nif (target.result().critical) {\n  var param=304;\n  var turns=3;\n  user.addState(param,turns);\n}\n</Custom Establish Effect>"
+  },
+  {
+   "state": 307,
+   "note": "<Custom Establish Effect>\nif (target.result().critical) {\n  var param=306;\n  var turns=3;\n  user.addState(param,turns);\n}\n</Custom Establish Effect>"
+  },
+  {
+   "state": 309,
+   "note": "<Custom Establish Effect>\nif (target.result().critical) {\n  var param=308;\n  var turns=3;\n  user.addState(param,turns);\n}\n</Custom Establish Effect>"
+  },
+  {
+   "state": 311,
+   "note": "<Custom Establish Effect>\nif (target.result().critical) {\n  var param=310;\n  var turns=3;\n  user.addState(param,turns);\n}\n</Custom Establish Effect>"
+  },
+  {
+   "state": 313,
+   "note": "<Custom Establish Effect>\nif (target.result().critical) {\n  var param=312;\n  var turns=1;\n  user.addState(param,turns);\n}\n</Custom Establish Effect>"
+  },
+  {
+   "state": 315,
+   "note": "<Custom Establish Effect>\nif (target.result().critical) {\n  var param=314;\n  var turns=1;\n  user.addState(param,turns);\n}\n</Custom Establish Effect>"
+  },
+  {
+   "state": 317,
+   "note": "<Custom Establish Effect>\nif (target.result().critical) {\n  var param=316;\n  var turns=1;\n  user.addState(param,turns);\n}\n</Custom Establish Effect>"
+  },
+  {
+   "state": 319,
+   "note": "<Custom Establish Effect>\nif (target.result().critical) {\n  var param=318;\n  target.addState(param);\n}\n</Custom Establish Effect>"
+  },
+  {
+   "state": 607,
+   "note": "<Custom Battle Effect>\nuser.gainTp(200);\n</Custom Battle Effect>"
+  },
+  {
+   "state": 609,
+   "note": "<Custom Battle Effect>\nuser.gainTp(200);\n</Custom Battle Effect>"
+  },
+  {
+   "state": 630,
+   "note": "<Custom Battle Effect>\nuser.gainTp(100);\nuser.gainMp(user.mmp*1.0);\n</Custom Battle Effect>"
+  },
+  {
+   "state": 734,
+   "note": "<Custom Battle Effect>\nuser.gainHp(Math.floor(user.mhp*1.0));\nuser.gainMp(Math.floor(user.mmp*1.0));\nuser.gainTp(30);\n</Custom Battle Effect>"
+  },
+  {
+   "state": 735,
+   "note": "<Custom Battle Effect>\nuser.gainHp(Math.floor(user.mhp*0.3));\nuser.gainMp(Math.floor(user.mmp*0.3));\nuser.gainTp(200);\n</Custom Battle Effect>"
+  },
+  {
+   "state": 736,
+   "note": "<Custom Battle Effect>\nuser.gainHp(Math.floor(user.mhp*(-0.1)));\nuser.gainMp(Math.floor(user.mmp*(-0.1)));\n</Custom Battle Effect>"
+  },
+  {
+   "state": 857,
+   "note": "<Custom Battle Effect>\nuser.gainTp(50);\n</Custom Battle Effect>"
+  },
+  {
+   "state": 917,
+   "note": "<Custom Battle Effect>\nuser.gainTp(5);\nuser.gainMp(Math.floor(user.mmp*0.05));\n</Custom Battle Effect>"
+  },
+  {
+   "state": 1070,
+   "note": "<Custom Crit Effect>\nif (value) { // 当暴击时\n  // 行动条前进20%\n  if (BattleManager.isATB()) { // 如果使用ATB系统\n    user._atbGauge += 0.2;\n    user._atbGauge = Math.min(user._atbGauge, 1.0);\n  } else { // 回合制系统中减少行动间隔\n    user._actionTimes += 0.2;\n  }\n  \n  // 刷新暴击增益状态\n  user.addState(1069);\n  user.setStateCounter(1069, 2); // 强制重置持续回合为2\n}\n</Custom Crit Effect>"
+  },
+  {
+   "state": 1298,
+   "note": "<Custom Turn Start Effect>\nuser.addState(1299)\n</Custom Turn Start Effect>"
+  },
+  {
+   "state": 1334,
+   "note": "<Custom Apply Effect>\nuser.gainTp(25);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1336,
+   "note": "<Custom Apply Effect>\nuser.gainTp(75);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1351,
+   "note": "<Custom Battle Effect>\n$gameVariables.setValue(1176, 1);\n</Custom Battle Effect>\n<Custom Deselect Effect>\nif (target.hp <= 0 && $gameVariables.value(1176) > 0) {\n  target.gainHp(target.mhp);\n  target.startDamagePopup();\n  target.clearResult();\n  $gameVariables.setValue(1176, $gameVariables.value(1176)-1);\n  if user.hasArmor($dataArmors[4991]) {\n    target.addState(1404);\n  }\n}\n</Custom Deselect Effect>"
+  },
+  {
+   "state": 1352,
+   "note": "<Custom Confirm Effect>\n//自定义确认效果\n// 检查该动作是否造成了生命值伤害\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * 2 ));\n}\n</Custom Confirm Effect>"
+  },
+  {
+   "state": 1556,
+   "note": "<Custom Battle Effect>\nuser.addState(1557)\n</Custom Battle Effect>"
+  },
+  {
+   "state": 1635,
+   "note": "<Custom Deselect Effect>\nif （target.hp <= 0 || target.isDead（）） {\ntarget.startAnimation（598）;\ntarget.removeState（1635）;\ntarget.addState（1633）;\ntarget.gainHp(target.mhp*0.2);\ntarget.startDamagePopup（）;\ntarget.clearResult（）;\n}\n</Custom Deselect Effect>"
+  },
+  {
+   "state": 1636,
+   "note": "<Custom Deselect Effect>\nif （target.hp <= 0 || target.isDead（）） {\ntarget.startAnimation（598）;\ntarget.removeState（1636）;\ntarget.addState（1634）;\ntarget.gainHp(target.mhp*0.35);\ntarget.startDamagePopup（）;\ntarget.clearResult（）;\n}\n</Custom Deselect Effect>"
+  },
+  {
+   "state": 1665,
+   "note": "<Custom Turn Start Effect>\nuser.addState(1666)\n</Custom Turn Start Effect>"
+  },
+  {
+   "state": 1667,
+   "note": "<Custom Battle Effect>\nuser.addState(1668)\n</Custom Battle Effect>"
+  },
+  {
+   "state": 1669,
+   "note": "<Custom Battle Effect>\nif(Math.random() > 0)\n</Custom Battle Effect>\n<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 2.0;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
+  },
+  {
+   "state": 1671,
+   "note": "<Custom Battle Effect>\nif(Math.random() > 0)\n</Custom Battle Effect>\n<Custom Confirm Effect>\n// If current action deals HP damage... 如果技能是造成伤害\nif (this.isHpEffect() && value > 0) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 1;\n  var bonusRate = 0;\n  // Add the bonus damage to the current damage. 这里是最终伤害\n  value += Math.ceil(value * finalRate);\n  // Check if a critical hit happened. 检查是否发生了暴击\n  if (target.result().critical) {\n    // Add a flat +200 damage bonus. 这里是暴击伤害\n    value += Math.ceil(value * bonusRate);\n  }\n}\n</Custom Confirm Effect>"
+  },
+  {
+   "state": 1683,
+   "note": "<Custom Battle Effect>\n$gameVariables.setValue(1683, 10);\n</Custom Battle Effect>\n<Custom Deselect Effect>\nif (target.hp <= 0 && $gameVariables.value(1683) > 0) {\n  target.gainHp(1);\n  target.startDamagePopup();\n  target.clearResult();\n$gameVariables.setValue(1683, $gameVariables.value(1683)-1);\n}\n</Custom Deselect Effect>"
+  },
+  {
+   "state": 1733,
+   "note": "<Custom Battle Effect>\n//战斗开始时触发\n$gameVariables.setValue(966,1);\n</Custom Battle Effect>\n<Custom Turn Start Effect>\n//回合开始时触发\n$gameVariables.setValue(966,$gameVariables.value(966)+1);\n</Custom Turn Start Effect>\n<Custom Confirm Effect>\n//确认命中但未造成伤害时触发\nif (this.isHpEffect() && value > 0) {\n  value = Math.floor(value * (1 + $gameVariables.value(966) * 0.1));\n}\n</Custom Confirm Effect>\n<Custom Deselect Effect>\n//被选中并一切结算之后时触发\nif (target.hp <= 0 && $gameVariables.value(966) > 1) {\n  target.gainHp(target.mhp * 0.01);\n  target.startDamagePopup();\n  target.clearResult();\n  $gameVariables.setValue(966,$gameVariables.value(966)-1);\n}\n</Custom Deselect Effect>"
+  },
+  {
+   "state": 1747,
+   "note": "<Custom Confirm Effect>\n// 确认命中但未造成伤害时触发\nvar attackCount = user.attackCount;\nif (value > 0 && attackCount > 1 && !this.isAttack()) {\n  for(var i = 0;i <= attackCount;i++){\n  target.gainHp(-value); \n  target.startDamagePopup();\n  target.clearResult();\n}\n</Custom Confirm Effect>"
+  },
+  {
+   "state": 1764,
+   "note": "<Custom Battle Effect>//每次战斗开始时执行.\n\nuser.addState(1770);\n\n</Custom Battle Effect>"
+  },
+  {
+   "state": 1773,
+   "note": "<Custom Battle Effect>//每次战斗开始时执行.\n\nuser.addState(1776);\n\n</Custom Battle Effect>"
+  },
+  {
+   "state": 1777,
+   "note": "<Custom Battle Effect>//每次战斗开始时执行.\n\nuser.addState(1771);\n\n</Custom Battle Effect>"
+  },
+  {
+   "state": 1787,
+   "note": "<Custom Battle Effect>//每次战斗开始时执行.\n\nuser.addState(1788);\n\n</Custom Battle Effect>"
+  },
+  {
+   "state": 2045,
+   "note": "<Custom React Effect>\nif (value >= 0) { \n//判断角色受到物理伤害\nif user.hasSkill(7496){\nif (origin !== target && origin.isAlive()) {\nvar damage = (origin.agi+origin.luk)*10\nvar el=origin.elementRate(6)\ndamage = Math.ceil(damage*el);\norigin.startAnimation();//运行施法者恢复动画\norigin.gainHp();//恢复HP\norigin.startDamagePopup();\norigin.clearResult();\ntarget.startAnimation();\ntarget.gainHp(-damage);//目标减少HP\nif (target.isDead()) {\ntarget.performCollapse();\n}\n}\n}\n</Custom React Effect>"
+  },
+  {
+   "state": 2528,
+   "note": "<Custom Turn Start Effect>\nuser.addState(1527)\n</Custom Turn Start Effect>"
+  },
+  {
+   "state": 2546,
+   "note": "<Custom Battle Effect>\nuser.addState(1557)\n</Custom Battle Effect>"
+  },
+  {
+   "state": 2555,
+   "note": "<Custom Turn Start Effect>\nuser.addState(1621)\n</Custom Turn Start Effect>"
+  },
+  {
+   "state": 2560,
+   "note": "<Custom Battle Effect>\n$gameVariables.setValue(1597, 3);\n</Custom Battle Effect>\n<Custom Deselect Effect>\nif (target.hp <= 0 && $gameVariables.value(1597) > 0) {\n  target.gainHp(1);\n  target.startDamagePopup();\n  target.clearResult();\n$gameVariables.setValue(1597, $gameVariables.value(1597)-1);\n}\n</Custom Deselect Effect>"
+  },
+  {
+   "state": 2566,
+   "note": "<Custom Battle Effect>\n  user.addState(1666);\n</Custom Battle Effect>"
+  }
+ ],
+ "counter": [
+  {
+   "state": 1763,
+   "note": "<Custom Battle Effect>\n//战斗开始时触发\nuser._stateCounter[1763] = user._stateCounter[1763] || 0;\nuser._stateCounter[1763] = Math.floor(user.mp * 0.3);\n\n</Custom Battle Effect>"
+  },
+  {
+   "state": 1775,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1775] = user._stateCounter[1775] || $gameVariables.value(1139);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1781,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1781] = user._stateCounter[1781] || $gameVariables.value(1133); // \n</Custom Apply Effect>"
+  },
+  {
+   "state": 1782,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1782] = user._stateCounter[1782] || $gameVariables.value(1131); // \n</Custom Apply Effect>"
+  },
+  {
+   "state": 1783,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1783] = user._stateCounter[1783] || $gameVariables.value(1134); // \n</Custom Apply Effect>"
+  },
+  {
+   "state": 1784,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1784] = user._stateCounter[1784] || $gameVariables.value(1132); // \n</Custom Apply Effect>"
+  },
+  {
+   "state": 1785,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1785] = user._stateCounter[1785] || $gameVariables.value(1135); // \n</Custom Apply Effect>"
+  },
+  {
+   "state": 1786,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\nuser._stateCounter[1786] = user._stateCounter[1786] || $gameVariables.value(1135); //\n \n</Custom Apply Effect>"
+  },
+  {
+   "state": 1792,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1792] = user._stateCounter[1792] || $gameVariables.value(1121);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1793,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1793] = user._stateCounter[1793] || $gameVariables.value(1122);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1794,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1794] = user._stateCounter[1794] || $gameVariables.value(1123);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1795,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1795] = user._stateCounter[1795] || $gameVariables.value(1124);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1796,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1796] = user._stateCounter[1796] || $gameVariables.value(1125);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1797,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1797] = user._stateCounter[1797] || $gameVariables.value(1126);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1798,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1798] = user._stateCounter[1798] || $gameVariables.value(1127);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1799,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1799] = user._stateCounter[1799] || $gameVariables.value(1128);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1800,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1800] = user._stateCounter[1800] || $gameVariables.value(1121);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1801,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1801] = user._stateCounter[1801] || $gameVariables.value(1122);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1802,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1802] = user._stateCounter[1802] || $gameVariables.value(1123);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1803,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1803] = user._stateCounter[1803] || $gameVariables.value(1124);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1804,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1804] = user._stateCounter[1804] || $gameVariables.value(1125);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1805,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1805] = user._stateCounter[1805] || $gameVariables.value(1126);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1806,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1806] = user._stateCounter[1806] || $gameVariables.value(1127);\n</Custom Apply Effect>"
+  },
+  {
+   "state": 1807,
+   "note": "<Custom Apply Effect>//状态被添加时执行.\n\nuser._stateCounter[1807] = user._stateCounter[1807] || $gameVariables.value(1128);\n</Custom Apply Effect>"
+  }
+ ]
+}

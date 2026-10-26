@@ -1,11 +1,14 @@
 {
-	"cases": 1874,
-	"match": 1873,
+	"cases": 4429,
+	"match": 4427,
 	"mismatch": {
+		"m189e1p0": [
+			"gold"
+		],
 		"m4e73p0": [
 			"trace"
 		]
 	},
-	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 1 例：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。",
+	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 2 例：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）；m189e1p0 剑气长城村民碰瓷事件原版扣钱到 -99999999，重制精魂不低于 0（O-085，GOLD_FLOOR_ZERO）。",
 	"source": "v0.28"
 }

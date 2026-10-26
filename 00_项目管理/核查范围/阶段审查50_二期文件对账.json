@@ -1,0 +1,2233 @@
+{
+ "startExclusive": "d287ea37",
+ "endInclusive": "7fc0c310",
+ "commitCount": 927,
+ "netFileCount": 516,
+ "inventoryOnly": true,
+ "note": "这是固定范围文件与新增测试索引，不是516文件逐行全审或927提交全部验收通过的凭证；审阅方法、历史结论与本期跨批发现见二期报告。",
+ "counts": {
+  "设计登记与审查证据": 86,
+  "Godot游戏与数据": 99,
+  "Godot测试与夹具": 253,
+  "转换与同步工具": 11,
+  "原版探针": 30,
+  "原版页面取证": 16,
+  "验收与合并工具": 21
+ },
+ "netFiles": [
+  {
+   "path": "00_项目管理/交接板.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/交接板归档.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/协助预检_专属模块167-178_20261022.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/变更记录.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/当前状态.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/提案_状态效果阶段钩子_20261021.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/来源登记.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查历史/20261019_交付记录.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查历史/20261020_交付记录.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261016.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261019_新增五批.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261019_积压.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261020_云端工具.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261021.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261021_54批对账.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261021_晚间批.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261021_状态效果提案.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261022_dev121.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261022_dev122-123.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261022_dev122-129.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261022_dev122.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261022_dev135_状态效果.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261023_未合并交付重查.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261023_沙僧50_内容批.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261023_沙僧50_早期批.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261023_沙僧50_登记批.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261023_沙僧50_系统批.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261023_沙僧51_ICC重叠.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261023_沙僧52_上限.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261023_沙僧52_人物图鉴.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261024_全部待审.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查报告_20261024_续批.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261023_沙僧50_开工.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261023_沙僧50_登记试算.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261023_沙僧50_续核试算.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261023_沙僧51_ICC试算.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261023_沙僧52_上限开工.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261023_沙僧52_专项汇总.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261023_沙僧52_人物图鉴试算.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261023_沙僧52_双端对照.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261023_沙僧52_带核查合并试算.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261023_沙僧52_怪物原版参照.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261023_沙僧52_战斗图鉴原版参照.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261023_沙僧52_收尾试算.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_专项结果.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_事件参照范围校正.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_修后专项.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_原版探针复放.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_天气原版复放.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_并发新增待审.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_异化普攻反例.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_待审快照.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_截点后待审.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_招募原版复放.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_最终核查清单.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_末批原版复放.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_末批验证结果.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_清理记录.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_画面对照记录.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_盘点复算.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_续批原版探针.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_续批原版画面.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_续批验证结果.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查范围/20261024_销账预演.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/核查补证_20261024_系统批成对截图.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/盘点_未接地图_20261023.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/盘点脚本/census.py",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/盘点脚本/reach.py",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/规则/会话接力与省额度.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/规则/多会话并行.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/规则/文件职责与记录.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/规则/进度审查与验证.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/规则/项目边界与操作规则.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/返工分析_20261022_三十一层.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "00_项目管理/重制步骤清单.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "03_再刷重制_Godot/00_设计/优化登记.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "03_再刷重制_Godot/00_设计/框架维护约定.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "03_再刷重制_Godot/00_设计/界面风格.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "03_再刷重制_Godot/00_设计/首期可玩版规格.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/content/build_info.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/alienation.json",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/action_sequence.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_camera.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_scene.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battler_sprite.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/damage_popup.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/drop_popup.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/mv_animation.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/sequence_player.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/side_status.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/smart_ai.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/achievement.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/achievement.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/alienation.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/alienation.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/battler.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/cat.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/cat.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/cat_damage_hooks.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/cat_damage_hooks.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/crafting.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/crafting.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/damage.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/dungeon.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/enemy.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/enemy_book.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/enemy_book.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/equipment.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/equipment_view.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/formula_context.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/formula_execution.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/formula_program.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/gear.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/imported_balance.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/imported_balance.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/item_marks.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/map_transfer.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/module_registry.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/module_registry.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/mv_event_core.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/pets.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/pets.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/power.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/qiyu.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/qiyu.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/race.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/race.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/resource_context.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/screen_fx.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/screen_fx.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/state_effects.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/state_effects.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/training.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/training.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/warehouse.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/warehouse.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/xconfig.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/xstate.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/zhenqi.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/map_scene.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/mv_interpreter.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/mv_script.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/screen_fx_view.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/screen_fx_view.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/recipes.json",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/achievement_badge.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/achievement_badge.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/achievement_popup.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/achievement_popup.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/achievement_scene.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/achievement_scene.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/actor_book.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/actor_book.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/alien_workshop.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/alien_workshop.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/crafting.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/crafting.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/enemy_book.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/enemy_book.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/equip_scene.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/help_card.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/inlay_book.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/inlay_book.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/item_row.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/item_scene.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/menu.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/mv_canvas.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/pets.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/pets.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/race_menu.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/race_menu.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/shop.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/training_scene.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/training_scene.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/warehouse.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/warehouse.gd.uid",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/xui.gd",
+   "category": "Godot游戏与数据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/project.godot",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/content_coverage_baseline.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/event_compare_baseline.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/action_sequence_float_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/actor_book_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/battle_enemy_book_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/crafting_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/enemy_book_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/formula_rest_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/inlay_book_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/magic_level_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/module_equipment_view.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/pet_identity_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/pet_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/pet_synth_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/popup_anchor_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/state_effects_translation.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/training_ui_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/warehouse_oracle.json",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_achievement.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_achievement.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_achievement.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_achievement_badge.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_achievement_badge.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_achievement_badge.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_action_sequence.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_book.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_book.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_book.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_book_review.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_book_review.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_book_review.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_p0.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_config.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_config.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_config.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_workshop.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_workshop.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_workshop.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_attack_element.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_attack_element.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_attack_element.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battle_events.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battle_ui.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battleback_save.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battleback_save.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battleback_save.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_cat.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_cat.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_cat.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_census1.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_census1.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_census1.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_combat.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_crafting.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_crafting.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_crafting.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_custom_params.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_custom_params.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_custom_params.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_dual_wield.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_dual_wield.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_dual_wield.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_empress_draw.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_empress_draw.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_empress_draw.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_enemy_book.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_enemy_book.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_enemy_book.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_error_data.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_error_data.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_error_data.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_event_compare.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor16_dungeon.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor31_bosses.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor31_bosses.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor31_bosses.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss037.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss037.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss037.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss174.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss174.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss174.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss211.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss211.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss211.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_brave081.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_brave081.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_brave081.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_brave083.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_brave083.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_brave083.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_fortress029.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_fortress029.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_fortress029.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_goblin024.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_goblin024.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_goblin024.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_guild197.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_guild197.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_guild197.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_guild198.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_guild198.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_guild198.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_lab111.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_lab111.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_lab111.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_reach139.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_reach139.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_reach139.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_run.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown160.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown160.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown160.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown210.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown210.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown210.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown223.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown223.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown223.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_formula_program.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_formula_rest.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_formula_rest.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_formula_rest.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_gold_cap.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_gold_cap.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_gold_cap.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_heir116.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_heir116.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_heir116.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_help_card.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_hud.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_imported_balance.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_imported_balance.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_imported_balance.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_inlay_book.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_inlay_book.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_inlay_book.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_interp_review.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_interp_review.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_interp_review.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_item_list.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_item_marks.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_item_use.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_item_use.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_item_use.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_legion_tech.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_legion_tech.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_legion_tech.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_lobby_shops.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_lobby_shops.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_lobby_shops.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_level.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_level.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_level.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_weapon.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_weapon.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_weapon.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_map186.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_map186.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_map186.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_map186_legions.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_map186_legions.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_map186_legions.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_module_hooks.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_module_hooks.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_module_hooks.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_notice_options.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_orb_ui.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_panels.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pet_synth.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pet_synth.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pet_synth.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pets.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pets.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pets.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_popup_overlap.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_popup_overlap.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_popup_overlap.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_qiyu.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_qiyu.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_qiyu.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_race_menu.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_race_menu.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_race_menu.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_review135.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_review135.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_review135.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_review_fix.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d1b.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d1c.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d1d.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d2.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d2b.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d2c.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d2d.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d3.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d3b.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d3c.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d3d.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d4.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d4b.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d4c.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d4d.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d5.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d5b.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d5c.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d5d.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d6.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d6b.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d6c.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d6d.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_save_page.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_screen_fx.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_screen_fx.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_screen_fx.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_script.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_sequence_visual.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_settlement.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_shield.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_shield.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_shield.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_shop_buy.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_shop_stock.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_smart_ai.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_smart_ai_b.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_smart_ai_c.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_smart_ai_d.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_state_effects.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_state_effects.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_state_effects.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_super_acquire.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_super_acquire.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_super_acquire.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_system_evidence.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_system_evidence.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_system_evidence.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_training.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_training.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_training.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_transform_params.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_transform_params.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_transform_params.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_troop_events.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_troop_events_b.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_variants.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_variants.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_variants.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_warehouse.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_warehouse.gd.uid",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_warehouse.tscn",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_wtype.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/01_Godot工程/tests/xiyou_zhenqi_daofa.gd",
+   "category": "Godot测试与夹具"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/README.md",
+   "category": "转换与同步工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/battle_event_contract.py",
+   "category": "转换与同步工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/equipment_rules.py",
+   "category": "转换与同步工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/formula_program.py",
+   "category": "转换与同步工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/incremental_sync.py",
+   "category": "转换与同步工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/achievement_badge_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/achievement_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/alien_config_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/alien_workshop_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/attack_element_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/battle_event_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/cat_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/custom_params_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/dual_wield_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/enemy_book_defeat_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/event_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/formula_rest_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/gold_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/hboot.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/imported_balance_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/lobby_shop_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/magic_weapon_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/manual_sandbox.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/module_hooks_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/power_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/qiyu_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/race_menu_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/review135_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/review_fix_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/shield_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/slice_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/state_effects_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/state_effects_tp_context_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/training_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/troop_event_probe.cjs",
+   "category": "原版探针"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/oracle_additions.py",
+   "category": "转换与同步工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/oracle_shard_merge.cjs",
+   "category": "转换与同步工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/README.md",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/mac-preload-shim.js",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/popup_anchor_ref.js",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/popup_anchor_ref.py",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/review_actor_book.js",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/review_actor_book.py",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/review_actor_book_compare.py",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/review_pending_menus.js",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/review_pending_menus.py",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/review_popup_overlap.js",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/review_popup_overlap.py",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/review_system_pages.cjs",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/review_system_pages.js",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/review_system_pages.py",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/review_system_pages_compare.py",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/ui_reference/压缩序列参照.py",
+   "category": "原版页面取证"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/xiyou_export.py",
+   "category": "转换与同步工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/xiyou_slice.json",
+   "category": "转换与同步工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/同步正式西游.py",
+   "category": "转换与同步工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/03_转换工具/配方转换.py",
+   "category": "转换与同步工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/04_验证/测量接受/README.md",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "03_再刷重制_Godot/04_验证/测量接受/claude_bajie-p2fix.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "03_再刷重制_Godot/04_验证/测量接受/claude_wukong-fortress.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/README.md",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/云端测试.md",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/合并提速工具.md",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/合并车道.py",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/并行测试.py",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/待核查.py",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/新建工作树.sh",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/检查.sh",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/测试公式程序.py",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/测试共性验收.py",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/测试合并工具.py",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/测试增量同步.py",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/测试夹具/1x1.webp",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/测试夹具/红色_2x2.jpg",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/测试工作树清理.py",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/测试状态效果翻译.py",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/测试角色同步提速.py",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/测试记录工具.py",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/测试转换器写入.py",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/清理工作树.sh",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/07_开发环境/长任务与增量同步.md",
+   "category": "验收与合并工具"
+  },
+  {
+   "path": "03_再刷重制_Godot/开发编号.json",
+   "category": "设计登记与审查证据"
+  },
+  {
+   "path": "AGENTS.md",
+   "category": "设计登记与审查证据"
+  }
+ ],
+ "addedTestScripts": [
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_achievement.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_achievement_badge.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_book.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_book_review.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_config.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_workshop.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_attack_element.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battleback_save.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_cat.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_census1.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_crafting.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_custom_params.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_dual_wield.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_empress_draw.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_enemy_book.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_error_data.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor31_bosses.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss037.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss174.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss211.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_brave081.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_brave083.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_fortress029.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_goblin024.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_guild197.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_guild198.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_lab111.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_reach139.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown160.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown210.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown223.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_formula_rest.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_gold_cap.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_heir116.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_imported_balance.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_inlay_book.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_interp_review.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_item_use.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_legion_tech.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_lobby_shops.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_level.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_weapon.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_map186.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_map186_legions.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_module_hooks.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pet_synth.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pets.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_popup_overlap.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_qiyu.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_race_menu.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_review135.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_screen_fx.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_shield.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_state_effects.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_super_acquire.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_system_evidence.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_training.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_transform_params.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_variants.gd",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_warehouse.gd"
+ ],
+ "addedTestScenes": [
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_achievement.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_achievement_badge.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_book.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_book_review.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_config.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_workshop.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_attack_element.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battleback_save.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_cat.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_census1.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_crafting.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_custom_params.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_dual_wield.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_empress_draw.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_enemy_book.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_error_data.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor31_bosses.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss037.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss174.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_abyss211.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_brave081.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_brave083.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_fortress029.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_goblin024.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_guild197.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_guild198.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_lab111.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_reach139.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown160.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown210.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_floor_unknown223.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_formula_rest.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_gold_cap.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_heir116.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_imported_balance.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_inlay_book.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_interp_review.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_item_use.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_legion_tech.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_lobby_shops.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_level.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_weapon.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_map186.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_map186_legions.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_module_hooks.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pet_synth.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pets.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_popup_overlap.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_qiyu.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_race_menu.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_review135.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d1b.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d1c.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d1d.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d2.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d2b.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d2c.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d2d.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d3.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d3b.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d3c.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d3d.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d4b.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d4c.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d4d.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d5.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d5b.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d5c.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d5d.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d6.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d6b.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d6c.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_rules_d6d.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_screen_fx.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_shield.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_smart_ai_b.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_smart_ai_c.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_smart_ai_d.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_state_effects.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_super_acquire.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_system_evidence.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_training.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_transform_params.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_troop_events_b.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_variants.tscn",
+  "03_再刷重制_Godot/01_Godot工程/tests/xiyou_warehouse.tscn"
+ ]
+}

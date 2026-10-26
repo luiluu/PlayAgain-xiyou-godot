@@ -1,0 +1,27 @@
+{
+ "pages": {
+  "wh_0": {
+   "errors": []
+  },
+  "wh_1_withdraw_category": {
+   "errors": []
+  },
+  "wh_2_withdraw_items": {
+   "errors": []
+  },
+  "wh_3_withdraw_weapon": {
+   "errors": []
+  },
+  "wh_4_deposit_items": {
+   "errors": []
+  },
+  "wh_5_deposit_weapon": {
+   "errors": []
+  },
+  "wh_6_withdraw_one": {
+   "errors": []
+  }
+ },
+ "logs": [],
+ "errors": []
+}

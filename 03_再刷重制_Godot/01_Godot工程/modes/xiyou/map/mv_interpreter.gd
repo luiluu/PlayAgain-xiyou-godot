@@ -13,7 +13,7 @@ var host: Node
 var map_id := 0
 var event_id := 0
 ## 只有地图宿主才处理的指令（场所移动、画面、声音、战斗、商店、脚本…）：核心发 command 请求，由 _host_command 执行
-const HOST_CODES := [201, 205, 211, 212, 213, 214, 216, 217, 221, 222, 223, 225, 230, 236, 241, 245, 249, 250, 283, 301, 302, 354, 355]
+const HOST_CODES := [201, 205, 211, 212, 213, 214, 216, 217, 221, 222, 223, 224, 225, 230, 236, 241, 245, 249, 250, 283, 301, 302, 352, 354, 355]
 ## O-027：原版事件把玩家传到四个方向都不能通行的格子（正式引擎 isMapPassable 实测）时，改传到同图的正常落点。
 ## 键「来源地图:事件:目的地图:x:y」。七层、十二层辛德瑞（Map061 事件 9、Map065 事件 3）原版传回大厅 (12,18)，那里是钓鱼池水面，
 ## 传过去就走不动；其余各层的辛德瑞都传到 (14,23)。设为空字典 {} 恢复原版。
@@ -169,6 +169,17 @@ func _host_command(c: Dictionary):
 			if bool(p[3]):
 				for i in range(int(p[2])):
 					await host.get_tree().physics_frame
+		224:
+			# 画面闪烁 [颜色 r,g,b,强度, 帧数, 等待]（Game_Screen.startFlash）
+			if host.has_method("flash_screen"):
+				host.flash_screen(p[0], int(p[1]))
+			if bool(p[2]):
+				for i in range(int(p[1])):
+					await host.get_tree().physics_frame
+		352:
+			# 打开存档画面（SceneManager.push(Scene_Save)；公共事件 9「炉石」），关闭后回到地图接着执行
+			if host.has_method("open_save"):
+				await host.open_save()
 		225:
 			# 画面震动 [强度, 速度, 时间, 等待]
 			if host.has_method("shake_screen"):

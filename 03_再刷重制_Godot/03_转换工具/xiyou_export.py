@@ -17,6 +17,7 @@ import ast
 import equipment_rules
 from formula_program import compile_formula
 import hashlib
+import io
 import json
 import os
 import re
@@ -343,6 +344,163 @@ def permanent_state_effect(tokens, phase):
     return None
 
 
+# ---- 叠毒 _stackingPoison（state_js_probe poison.*）：持有者上一个共用层数 ----
+POISON_PREFIX = 'target . _stackingPoison = target . _stackingPoison || 1 ; var stacks = target . _stackingPoison'.split()
+POISON_SUFFIX = ('target . startAnimation ( N ) ; target . gainHp ( - damage ) ; target . startDamagePopup ( ) ; '
+                 'target . clearResult ( ) ; if ( target . isDead ( ) ) { target . performCollapse ( ) ; }').split()
+POISON_ORIGIN = {'atk', 'mat', 'agi', 'luk', 'mhp', 'mmp', 'tp', 'level', '_level'}
+
+
+def _tokens(code):
+    from formula_program import Parser, Unsupported
+    try:
+        return [row[0] for row in Parser(code).tokens[:-1]]
+    except Unsupported:
+        return None
+
+
+def poison_stack_effect(body, code, phase):
+    """Apply 加层、Remove 清零、Regenerate 扣血三种整块。Regenerate 的伤害式只许层数、
+    `var damageK = origin.能力` 局部量、数字与 + - * 括号；来源 _level 与 level 同值（YEP_EnemyLevels 的 getter）。"""
+    tokens = _tokens(code)
+    if tokens is None:
+        return None
+    sig = ' '.join(tokens)
+    if phase == 'apply':
+        m = re.fullmatch(r'target \. _stackingPoison = target \. _stackingPoison \|\| 0 ; '
+                         r'target \. _stackingPoison \+ = ([1-9][0-9]*) ;', sig)
+        return {'op': 'poison_stack', 'mode': 'add', 'n': int(m.group(1))} if m else None
+    if phase == 'remove':
+        return {'op': 'poison_stack', 'mode': 'reset'} if sig == 'target . _stackingPoison = 0 ;' else None
+    if phase != 'regenerate' or tokens[:len(POISON_PREFIX)] != POISON_PREFIX:
+        return None
+    # 原文「var stacks = target._stackingPoison」后没有分号，靠换行自动补；同一行接 var 就是语法错误
+    if not re.search(r'var\s+stacks\s*=\s*target\._stackingPoison[ \t]*(?://[^\n]*)?\n', strip_js_comments(body).replace('\r', '')):
+        return None
+    rest = tokens[len(POISON_PREFIX):]
+    tail = len(POISON_SUFFIX)
+    if len(rest) <= tail:
+        return None
+    suffix = rest[-tail:]
+    anim = suffix[4]
+    if [('N' if i == 4 else t) for i, t in enumerate(suffix)] != POISON_SUFFIX or not re.fullmatch(r'[1-9][0-9]*', anim):
+        return None
+    rest, names, source = rest[:-tail], {'stacks'}, ['var stacks;']
+    while rest[:1] == ['var'] and len(rest) >= 7 and rest[1] != 'damage':
+        name, eq, origin, dot, prop, semi = rest[1:7]
+        if not re.fullmatch(r'damage[1-9]', name) or name in names or (eq, origin, dot, semi) != ('=', 'origin', '.', ';') \
+                or prop not in POISON_ORIGIN:
+            return None
+        names.add(name)
+        source.append('var %s = a.%s;' % (name, 'level' if prop == '_level' else prop))
+        rest = rest[7:]
+    if rest[:3] != ['var', 'damage', '='] or rest[-1:] != [';'] or ';' in rest[3:-1]:
+        return None
+    expr = rest[3:-1]
+    if not expr or any(not (t in names or t in ('+', '-', '*', '(', ')') or re.fullmatch(r'(?:0|[1-9][0-9]*)(?:\.[0-9]+)?', t))
+                       for t in expr):
+        return None
+    source.append('value = %s;' % ' '.join(expr))
+    program = compile_formula(' '.join(source), custom=True, table='States')
+    if program['status'] != 'pure' or set(program['capabilities']) - {'read.battler'}:
+        return None
+    return {'op': 'poison_tick', 'animation': int(anim), 'program': program}
+
+
+# ---- 第二批（state_js_probe add_state.*／gain.self／set_variable.battle／syntax_error.blocks）----
+# 原版解析不了（SyntaxError）的整块：customEffectEval 只报错、什么都不改。按整块 SHA256 认，翻成不执行的 syntax_error
+MEASURED_SYNTAX_ERRORS = frozenset([
+    ('crit', '05626128e01df36035196f0d8f48bbb3ac6b5e6877aeb8477f51be0dc22600fa'),
+    ('deselect', 'f1a324c47d470cf748c92bc314bad420a2d136d7fa135b3c8a33465edc6ff98f'),
+    ('confirm', '6f553de44ca2abf345b7b018dabc153ac268e61412976a2bad0a7a9c7a34cc2a'),
+    ('deselect', 'ea5cc004ddbe020f1796e366623b3073394c8ae91591643d08b1490dc1035949'),
+    ('deselect', 'ea4cdeb95230a457fe3e6cbe8c084baa00eddc839ef16249004f08dbd4ef1875'),
+    ('battle', '856ebb3b3461e3c4f0ad8d86fbe736b2dfde3c47ea3de661a13c16242728cd33'),
+    ('confirm', '9cba660d66e4afbeec60e64ed83a60b57905d507e2ddccc6e0a1369b8f3c2af0'),
+    ('react', 'b0e77f11e1e0bae6192212d38dc790cb2dadc2998aae6c8d41dfc69cbb3c73d0'),
+])
+GAIN_PHASES = ('battle', 'victory', 'apply')
+INT = r'[1-9][0-9]*'
+
+
+def _gain_steps(tokens):
+    """`user.gainHp|Mp|Tp(式);` 与 `var 名 = 式;` 的语句串（只读持有者 mhp／mmp 与数字、Math.floor／ceil）。
+    每次 gain 的式子连同之前的局部量一起编成一个纯公式程序（持有者是 a）。"""
+    steps, decls, i = [], [], 0
+    allowed = {'user', '.', 'mhp', 'mmp', 'Math', 'floor', 'ceil', '(', ')', '*', '+', '-'}
+
+    def expr_ok(expr, names):
+        for j, t in enumerate(expr):
+            if t == 'user' and expr[j + 1:j + 3] not in (['.', 'mhp'], ['.', 'mmp']):
+                return False
+            if t == 'Math' and expr[j + 1:j + 3] not in (['.', 'floor'], ['.', 'ceil']):
+                return False
+            if not (t in allowed or t in names or re.fullmatch(r'(?:0|[1-9][0-9]*)(?:\.[0-9]+)?', t)):
+                return False
+        return bool(expr)
+    names = set()
+    while i < len(tokens):
+        end = tokens.index(';', i) if ';' in tokens[i:] else -1
+        if end < 0:
+            return None
+        stmt, i = tokens[i:end], end + 1
+        if stmt[:1] == ['var'] and len(stmt) >= 4 and stmt[2] == '=' and re.fullmatch(r'[a-z]\w*', stmt[1]):
+            if not expr_ok(stmt[3:], names):
+                return None
+            decls.append('var l_%s = %s;' % (stmt[1], ' '.join(('l_' + t) if t in names else t for t in stmt[3:]).replace('user .', 'a .')))
+            names.add(stmt[1])
+            continue
+        m = re.fullmatch(r'user \. gain(Hp|Mp|Tp) \( (.+) \)', ' '.join(stmt))
+        if not m or not expr_ok(m.group(2).split(), names):
+            return None
+        expr = ' '.join(('l_' + t) if t in names else t for t in m.group(2).split()).replace('user .', 'a .')
+        program = compile_formula(' '.join(decls + ['value = %s;' % expr]), custom=True, table='States')
+        if program['status'] != 'pure' or set(program['capabilities']) - {'read.battler'}:
+            return None
+        steps.append({'resource': m.group(1).lower(), 'program': program})
+    return steps or None
+
+
+def simple_script_effect(body, code, phase):
+    if (phase, hashlib.sha256(body.strip().encode()).hexdigest()) in MEASURED_SYNTAX_ERRORS:
+        return {'op': 'syntax_error'}
+    tokens = _tokens(code)
+    if tokens is None:
+        return None
+    sig = ' '.join(tokens)
+    if phase in ('battle', 'turn_start'):
+        m = re.fullmatch(r'user \. addState \( (%s) \)(?: ;)?' % INT, sig)
+        if m:
+            return {'op': 'add_state', 'who': 'user', 'id': int(m.group(1))}
+    if phase == 'establish':
+        m = re.fullmatch(r'if \( target \. result \( \) \. critical \) \{ var param = (%s) ;(?: var turns = %s ;)? '
+                         r'(user|target) \. addState \( param(?: , turns)? \) ; \}' % (INT, INT), sig)
+        # addState 只认一个参数：turns 原版不生效，回合照状态自身的 min/maxTurns
+        if m and ('var turns' in sig) == (', turns' in sig):  # 只写 , turns 不声明是 ReferenceError
+            return {'op': 'add_state', 'who': m.group(2), 'id': int(m.group(1)), 'criticalOnly': True}
+    if phase == 'battle':
+        m = re.fullmatch(r'\$gameVariables \. setValue \( (%s) , (0|%s) \)(?: ;)?' % (INT, INT), sig)
+        if m:
+            return {'op': 'set_variable', 'id': int(m.group(1)), 'value': int(m.group(2))}
+    # YEP 状态计数（G_StateParam 按计数乘 <G_ShuXing>）：附加时 计数 = 计数 || 变量；开战时 计数 = 计数 || 0 再改写为式子
+    if phase == 'apply':
+        m = re.fullmatch(r'user \. _stateCounter \[ (%s) \] = user \. _stateCounter \[ \1 \] \|\| \$gameVariables \. value \( (%s) \)(?: ;)?' % (INT, INT), sig)
+        if m:
+            return {'op': 'counter_init', 'state': int(m.group(1)), 'variable': int(m.group(2))}
+    if phase == 'battle':
+        m = re.fullmatch(r'user \. _stateCounter \[ (%s) \] = user \. _stateCounter \[ \1 \] \|\| 0 ; '
+                         r'user \. _stateCounter \[ \1 \] = (Math \. floor \( user \. m[hm]?p \* (?:0|[1-9][0-9]*)(?:\.[0-9]+)? \)) ;' % INT, sig)
+        if m:
+            program = compile_formula('value = %s;' % m.group(2).replace('user .', 'a .'), custom=True, table='States')
+            if program['status'] == 'pure' and set(program['capabilities']) <= {'read.battler'}:
+                return {'op': 'counter_set', 'state': int(m.group(1)), 'program': program}
+    if phase in GAIN_PHASES and tokens[:1] in (['user'], ['var']):
+        steps = _gain_steps(tokens)
+        if steps:
+            return {'op': 'gain_steps', 'steps': steps}
+    return None
+
+
 def parse_state_effects(note):
     """返回 [{phase, op, cond, k, round} 或 {phase, op:'js', source}]；op=js 表示尚未翻译。"""
     out = []
@@ -381,6 +539,10 @@ def parse_state_effects(note):
         bonus = constant_bonus_effect(code) if phase in ('confirm', 'react') else None
         if bonus:
             out.append({'phase': phase, **bonus})
+            continue
+        poison = poison_stack_effect(body, code, phase) or simple_script_effect(body, code, phase)
+        if poison:
+            out.append({'phase': phase, **poison})
             continue
         query = query_state_value_effect(code, phase)
         if query:
@@ -558,6 +720,32 @@ def yep_action_copy(group, skills, items):
                 obj['yepSeq'] = {k: [list(x) for x in target['yepSeq'][k]] for k in YEP_PHASES}
 
 
+def boot_database_records(plugins):
+    """专属角色模块在 DataManager.isDatabaseLoaded 里对开机数据库的改动（参照取开机后的数据库，这里照做）。
+    167 渡鸦（installNativeRavenRuntime finishRavenDatabaseCompatibility）：原版角色进阶表里没有渡鸦第 rank 次的行时，
+    在表尾补一行（id＝当时表长；表由插件参数「Advanced 1～1000」建成，表长＝最大编号＋1），写法同插件参数（字符串）。"""
+    adv = plugins.get('Star_ActorAdvanced')
+    if adv is None:
+        return
+    rows = {}
+    for key, raw in adv.items():
+        if key.startswith('Advanced ') and str(raw).strip():
+            try:
+                rows[int(key[9:])] = json.loads(raw)
+            except ValueError:
+                continue
+    levels = [15, 25, 35, 45, 45]
+    skills = [[10131], [10132], [10133], [10134], [10127, 10170]]
+    for rank in range(5):
+        if any(str(r.get('AdvancedActId')) == '167' and str(r.get('AdvancedActNum')) == str(rank) for r in rows.values()):
+            continue
+        nid = max(rows, default=0) + 1
+        rows[nid] = row = {'AdvancedName': '渡鸦·冥羽进阶', 'AdvancedActNum': str(rank), 'AdvancedActNumMaX': '5',
+                           'AdvancedActId': '167', 'AdvancedActLevel': str(levels[rank]), 'AdvancedGold': '0',
+                           'AdvancedItem': '[[2901, 1]]', 'AdvancedSkiId': json.dumps(skills[rank]), 'AdvancedForId': '[]'}
+        adv['Advanced %d' % nid] = json.dumps(row, ensure_ascii=False)
+
+
 class Exporter:
     def __init__(self, app, out, slice_cfg):
         self.app, self.out, self.cfg = app.resolve(), out.resolve(), slice_cfg
@@ -705,6 +893,7 @@ class Exporter:
                 'gearTags': dict(re.findall(r"(\d+):\s*'([^']*)'", tags[1])),
                 'starMarks': dict(re.findall(r"(\d+):\s*'([^']*)'", stars[1])) if stars else {},
             })
+        boot_database_records(enabled)
         self.plugins = enabled
         self.write_json('db/Plugins.json', enabled)
         self.write_json('db/EquipSuits.json', equipment_rules.suits(enabled))
@@ -927,11 +1116,25 @@ class Exporter:
         self.transfer_enemies = sorted(enemies)
 
     def copy_assets(self):
-        def as_png(src, data):
+        try:
+            prev = json.loads((self.out / 'manifest.json').read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            prev = {}
+
+        def as_png(src, data, rel):
             # 原版有扩展名是 .png、内容是 JPEG／WebP 的图（如 162 诛仙的 小诛仙、guanxi7_1），NW.js 按内容解码，
             # Godot 按扩展名导入会报 Not a PNG file；这类图用 sips 转成真 PNG 再 normalize_png（输出逐字节稳定），其余原样
             if not (data.startswith(b'\xff\xd8\xff') or (data[:4] == b'RIFF' and data[8:12] == b'WEBP')):
                 return data
+            if not shutil.which('sips'):
+                # 云端（Linux）没有 sips：源图与上次产物都对得上就沿用 Mac 转出的那份，保持与 Mac 逐字节一致；否则用 Pillow 转
+                old = self.out / rel
+                if old.exists() and prev.get('inputs', {}).get(rel) == sha(data) and prev.get('outputs', {}).get(rel) == sha(old.read_bytes()):
+                    return old.read_bytes()
+                from PIL import Image
+                buf = io.BytesIO()
+                Image.open(src).save(buf, format='PNG')
+                return normalize_png(buf.getvalue())
             with tempfile.TemporaryDirectory(prefix='xiyou-png-') as tmp:
                 out = Path(tmp) / 'out.png'
                 subprocess.run(['sips', '-s', 'format', 'png', str(src), '--out', str(out)], check=True, capture_output=True)
@@ -950,7 +1153,7 @@ class Exporter:
                     self.issues.append({'missingAsset': f'{kind}/{rel}'})
                     continue
                 data = src.read_bytes()
-                out = as_png(src, data) if kind == 'img' and ext == '.png' else data
+                out = as_png(src, data, f'{kind}/{rel}{ext}') if kind == 'img' and ext == '.png' else data
                 self.write_changed(f'{kind}/{rel}{ext}', out, source=src)
                 self.inputs[f'{kind}/{rel}{ext}'] = sha(data)
                 self.outputs[f'{kind}/{rel}{ext}'] = sha(out)

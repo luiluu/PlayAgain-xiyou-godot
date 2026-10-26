@@ -20,7 +20,9 @@ const RECRUIT_6 := {1651: 101, 1649: 102, 1538: 103, 1405: 104, 1534: 105, 1575:
 ## XImportedBalance 在结算处缩放（xiyou_imported_balance 对照；163 琦玉为 ×0.001，其技能必中／免反击反射由 XQiyu 管，xiyou_qiyu 对照）；参照伤害行是 makeDamageValue，原版模块不缩放这一层，与 Godot 的 XDamage.calculate 一致
 const RECRUIT_7 := {2501: 141, 2502: 142, 2506: 146, 2507: 147, 2508: 148, 2509: 149, 2510: 150, 2511: 151, 2512: 152, 2513: 153, 2514: 154, 2515: 155, 2516: 156, 2518: 158, 2519: 159, 2521: 161, 2522: 162, 2523: 163, 2524: 164, 2525: 165, 2526: 166}
 ## 第八批：专属模块角色。178 哈基米的公共事件 9017 不是 129 指令，是脚本 CodexCat.recruit()（XCat.recruit：入队并装上法宝 7999 与练习剑 2，xiyou_cat 对照）
-const RECRUIT_8 := {9017: 178}
+## 173 饿狼的公共事件 9009 是 try { if (!CodexGarou.recruit()) 还号角 } 脚本（XGarou.recruit：入队并装上法宝 7904）
+## 167 渡鸦 9002（CodexRaven.recruit()：入队、给冥河断罪镰 4001 进背包）、168 米拉 9003（CodexMira.recruit()：入队并装上黑龙心鳞 4577）
+const RECRUIT_8 := {9017: 178, 9009: 173, 9002: 167, 9003: 168, 9007: 172}
 ## 猫猫 110～114 不走公共事件：Map004 事件 57 一次给齐五只（129 指令），参照行／装备／技能照验，招募路径另在地图事件里
 const CATS := [110, 111, 112, 113, 114]
 const REGRESSION := [1, 8, 9, 10]
@@ -95,10 +97,15 @@ func _run() -> void:
 		for i in 3:
 			await get_tree().process_frame
 		_check("recruit_%d" % id, s.party.has(id), [ce, s.party])
-		_check("recruit_actor_%d" % id, s.actor(id).actor_id == id and s.actor(id).class_id == int(XDB.rec("Actors", id).classId), id)
+		var want_class: int = RECRUIT_CLASS_CHANGE.get(id, int(XDB.rec("Actors", id).classId))
+		_check("recruit_actor_%d" % id, s.actor(id).actor_id == id and s.actor(id).class_id == want_class, [id, s.actor(id).class_id, want_class])
 	_check("regression_party_kept", [1, 8, 9, 10].all(func(i): return s.party.has(i)), s.party)
 	_check("battle_slots_five", s.battle_slots.size() == 5, s.battle_slots)
 	_finish()
+
+
+## 招募事件里用 321 改了职业的角色（原版参照见 fixtures/actor_change_oracle.json 的 recruit 组）：玛莎 CE29 16→21
+const RECRUIT_CLASS_CHANGE := {21: 21}
 
 
 ## oracle 技能列表含开局被动（passives／starterPassives）；它们由 xiyou_rules 的 _make_actor 灌入，这里不重复

@@ -172,8 +172,35 @@ class SelectTests(Fixture):
         self.assertTrue(self.pick()['full'])
 
     def test_unknown_path_is_full(self):
-        self.put(PROJECT / 'modes/xiyou/recipes.json', '{}\n')
+        self.put(PROJECT / 'icon.svg', '<svg/>\n')
         self.assertTrue(self.pick()['full'])
+
+    def test_mode_data_runs_tests_and_loader_users(self):
+        self.put(PROJECT / 'modes/xiyou/alienation.json', '{}\n')
+        self.put(PROJECT / 'modes/xiyou/recipes.json', '{}\n')
+        self.put(PROJECT / 'modes/xiyou/lonely.json', '{}\n')
+        self.put(CORE / 'crafting.gd', 'class_name XCrafting\nvar d = XDB.load_json("recipes.json")\n')
+        self.put(PROJECT / 'modes/xiyou/generated/stale.gd', 'class_name XStale\nvar d = "lonely.json"\n')
+        self.scene('xiyou_alien_config', 'const F := "alienation.json"')
+        self.scene('xiyou_craft', 'XCrafting.new()')
+        self.scene('xiyou_stale', 'XStale.new()')
+        self.commit('mode data')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.put(PROJECT / 'modes/xiyou/alienation.json', '{"a": 1}\n')
+        s = self.pick()
+        self.assertEqual((s['full'], s['scenes'], s['checks']),
+                         (False, ['xiyou_alien_config.tscn', 'xiyou_event_compare.tscn'], ['guards']))
+        self.g('checkout', '--', '.')
+        self.put(PROJECT / 'modes/xiyou/recipes.json', '{"a": 1}\n')  # 测试只引用加载它的 XCrafting
+        self.assertEqual(self.pick()['scenes'], ['xiyou_craft.tscn', 'xiyou_event_compare.tscn'])
+        self.g('checkout', '--', '.')
+        self.put(PROJECT / 'modes/xiyou/lonely.json', '{"a": 1}\n')  # 只有 generated 下的脚本提到它：不算，整轮
+        self.assertTrue(self.pick()['full'])
+        self.g('checkout', '--', '.')
+        self.commit('noop') if self.g('status', '--porcelain') else None
+        self.put(PROJECT / 'modes/xiyou/recipes.json', '{"b": 1}\n')
+        self.commit('recipes')
+        self.assertEqual(self.pick(head=self.g('rev-parse', 'HEAD'))['scenes'], ['xiyou_craft.tscn', 'xiyou_event_compare.tscn'])
 
     def test_deleted_module_reads_class_name_from_base(self):
         (self.root / CORE / 'orbs.gd').unlink()
@@ -207,7 +234,7 @@ class SelectTests(Fixture):
 
 
 STUB_CHECKS = ['测试工作树清理.py', '测试导出过滤.py', '测试共性验收.py', '测试合并工具.py', '测试公式程序.py', '测试转换器写入.py',
-               '测试记录工具.py', '测试云端准备.py', '测试内容覆盖.py', '测试角色同步提速.py', '测试选测.py', '变更记录分卷.py', '待核查.py']
+               '测试记录工具.py', '测试云端准备.py', '测试内容覆盖.py', '测试角色同步提速.py', '测试事件探针分段.py', '测试状态js翻译.py', '测试选测.py', '变更记录分卷.py', '待核查.py']
 
 
 class CheckerTests(Fixture):
@@ -286,6 +313,7 @@ class CheckerTests(Fixture):
         self.assertIn('验证西游来源.py', self.names(ran))
 
     def test_unknown_change_is_full(self):
+        # 没有测试与加载者的手写数据：整轮，且它带出的事件对照不能把整轮缩成只跑选中的场景
         self.put(PROJECT / 'modes/xiyou/recipes.json', '{}\n')
         rc, out, ran = self.check('--affected', self.base)
         self.assertEqual(rc, 0, out)

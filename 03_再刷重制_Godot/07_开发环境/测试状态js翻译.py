@@ -1,0 +1,172 @@
+#!/usr/bin/env python3
+"""状态效果 js 再翻译（云端车道）的整块边界：只认原版测过的完整形状，改一个记号就退回 js。"""
+import json
+import re
+from pathlib import Path
+import sys
+import unittest
+
+TOOLS = Path(__file__).resolve().parents[1] / '03_转换工具'
+sys.path.insert(0, str(TOOLS))
+from xiyou_export import parse_state_effects, EFFECT_RE
+
+FIXTURES = TOOLS.parent / '01_Godot工程/tests/fixtures/state_js_translation.json'
+# 原文本身报错（读装备等级的 106／732、变量名拼成 damag 的 551）：不翻译
+POISON_JS = {106, 551, 732}
+
+
+def block(note, phase):
+    return next(m.group(2) for m in EFFECT_RE.finditer(note) if m.group(1).lower() == phase)
+
+
+def one(tag, code):
+    return parse_state_effects('<Custom %s Effect>%s</Custom %s Effect>' % (tag, code, tag))[0]
+
+
+class PoisonTranslationTests(unittest.TestCase):
+    rows = json.loads(FIXTURES.read_text())['poison']
+
+    def test_inventory(self):
+        self.assertEqual(len(self.rows), 18)
+        for row in self.rows:
+            with self.subTest(state=row['state']):
+                ops = {e['phase']: e for e in parse_state_effects(row['note'])}
+                self.assertEqual(ops['apply']['op'], 'poison_stack')
+                self.assertEqual(ops['apply']['mode'], 'add')
+                self.assertEqual(ops['remove'], {'phase': 'remove', 'op': 'poison_stack', 'mode': 'reset'})
+                want = 'js' if row['state'] in POISON_JS else 'poison_tick'
+                self.assertEqual(ops['regenerate']['op'], want)
+                if want == 'poison_tick':
+                    program = ops['regenerate']['program']
+                    self.assertEqual(program['status'], 'pure')
+                    self.assertEqual(program['capabilities'], ['read.battler'])
+
+    def test_apply_remove_boundaries(self):
+        body = block(self.rows[0]['note'], 'apply')
+        for code in [body + ' user.gainMp(-1);', body.replace('|| 0', '|| 1'), body.replace('+= 1', '+= user.atk'),
+                     body.replace('target._stackingPoison +=', 'user._stackingPoison +='), body.replace('+= 1', '-= 1')]:
+            with self.subTest(code=code[-80:]):
+                self.assertEqual(one('Apply', code)['op'], 'js')
+        self.assertEqual(one('Remove', 'target._stackingPoison = 1;')['op'], 'js')
+        self.assertEqual(one('Remove', 'user._stackingPoison = 0;')['op'], 'js')
+        self.assertEqual(one('Turn End', 'target._stackingPoison = 0;')['op'], 'js')
+        self.assertEqual(one('Apply', block(self.rows[0]['note'], 'remove'))['op'], 'js')
+
+    def test_regenerate_boundaries(self):
+        for row in self.rows:
+            if row['state'] in POISON_JS:
+                continue
+            body = block(row['note'], 'regenerate')
+            for code in [body + ' user.gainMp(-1);', 'evil();' + body,
+                         body.replace('target.gainHp(-damage)', 'target.gainHp(damage)'),
+                         body.replace('origin.', 'target.', 1),
+                         body.replace('var damage =', 'var damage = Math.random() +'),
+                         body.replace('target.isDead()', 'target.isAlive()'),
+                         body.replace('|| 1', '|| 2'),
+                         # 同一行接 var：原版是语法错误（靠换行补分号）
+                         re.sub(r'(var stacks = target\._stackingPoison)[ \t]*\r?\n(?:[ \t]*//[^\n]*\n)*', r'\1 ', body)]:
+                with self.subTest(state=row['state'], code=code[-90:]):
+                    self.assertEqual(one('Regenerate', code)['op'], 'js')
+            self.assertEqual(one('Turn End', body)['op'], 'js')
+
+
+class Batch2TranslationTests(unittest.TestCase):
+    """第二批：开战／回合开始加状态、暴击后加状态、开战／胜利／附加时回复、开战设变量、原版语法错误块。"""
+    rows = json.loads(FIXTURES.read_text())['batch2']
+
+    def ops(self):
+        out = {}
+        for row in self.rows:
+            for e in parse_state_effects(row['note']):
+                if e['op'] in ('add_state', 'gain_steps', 'set_variable', 'syntax_error'):
+                    out.setdefault(e['op'], []).append((row['state'], e))
+        return out
+
+    def test_inventory(self):
+        ops = self.ops()
+        self.assertEqual({k: len(v) for k, v in ops.items()},
+                         {'add_state': 23, 'gain_steps': 11, 'set_variable': 4, 'syntax_error': 9})
+        self.assertEqual(sorted(s for s, _ in ops['gain_steps']), [79, 607, 609, 630, 734, 735, 736, 857, 917, 1334, 1336])
+        self.assertEqual(sorted((s, e['id']) for s, e in ops['set_variable']), [(1351, 1176), (1683, 1683), (1733, 966), (2560, 1597)])
+        self.assertEqual(sorted(s for s, _ in ops['syntax_error']), [1070, 1351, 1352, 1635, 1636, 1669, 1671, 1747, 2045])
+        for s, e in ops['add_state']:
+            self.assertEqual(e.get('criticalOnly', False), e['phase'] == 'establish', s)
+        for s, e in ops['gain_steps']:
+            for step in e['steps']:
+                self.assertEqual(step['program']['status'], 'pure')
+                self.assertLessEqual(set(step['program']['capabilities']), {'read.battler'})
+
+    def test_add_state_boundaries(self):
+        self.assertEqual(one('Battle', 'user.addState(12);'), {'phase': 'battle', 'op': 'add_state', 'who': 'user', 'id': 12})
+        self.assertEqual(one('Turn Start', 'user.addState(12)')['op'], 'add_state')
+        for tag, code in [('Turn End', 'user.addState(12);'), ('Battle', 'target.addState(12);'), ('Battle', 'user.addState(12, 3);'),
+                          ('Battle', 'user.addState(12); user.addState(13);'), ('Battle', 'user.removeState(12);'),
+                          ('Battle', 'user.addState(v[12]);'), ('Victory', 'user.addState(12);')]:
+            with self.subTest(code=code):
+                self.assertEqual(one(tag, code)['op'], 'js')
+
+    def test_critical_boundaries(self):
+        ok = 'if (target.result().critical) { var param = 500; var turns = 3; user.addState(param, turns); }'
+        self.assertEqual(one('Establish', ok), {'phase': 'establish', 'op': 'add_state', 'who': 'user', 'id': 500, 'criticalOnly': True})
+        self.assertEqual(one('Establish', ok.replace('user.', 'target.'))['who'], 'target')
+        for code in [ok.replace('critical', 'missed'), ok.replace('target.result', 'user.result'), ok.replace('param, turns', 'param'),
+                     ok.replace('var turns = 3; ', ''), ok + ' user.gainHp(1);', ok.replace('if (', 'if (!')]:
+            with self.subTest(code=code):
+                self.assertEqual(one('Establish', code)['op'], 'js')
+        self.assertEqual(one('Respond', ok)['op'], 'js')
+
+    def test_set_variable_and_gain_boundaries(self):
+        self.assertEqual(one('Battle', '$gameVariables.setValue(5, 2);'), {'phase': 'battle', 'op': 'set_variable', 'id': 5, 'value': 2})
+        for tag, code in [('Turn Start', '$gameVariables.setValue(5, 2);'), ('Battle', '$gameVariables.setValue(5, user.atk);'),
+                          ('Battle', '$gameVariables.setValue(5, -2);'), ('Battle', '$gameSwitches.setValue(5, true);')]:
+            with self.subTest(code=code):
+                self.assertEqual(one(tag, code)['op'], 'js')
+        self.assertEqual(one('Battle', 'user.gainTp(200);')['steps'][0]['resource'], 'tp')
+        self.assertEqual(len(one('Victory', 'var rate = 0.2; var value = Math.ceil(user.mhp * rate); user.gainHp(value);')['steps']), 1)
+        for tag, code in [('Turn End', 'user.gainTp(200);'), ('Battle', 'target.gainHp(5);'), ('Battle', 'user.gainHp(user.atk);'),
+                          ('Battle', 'user.gainHp(Math.random());'), ('Battle', 'user.gainHp(v[3]);'), ('Battle', 'user.gainTp(200); evil();'),
+                          ('Battle', 'user.setHp(5);'), ('Battle', 'var x = user.mhp; target.gainHp(x);')]:
+            with self.subTest(code=code):
+                self.assertEqual(one(tag, code)['op'], 'js')
+
+    def test_syntax_error_exact(self):
+        for row in self.rows:
+            for m in EFFECT_RE.finditer(row['note']):
+                if parse_state_effects(m.group(0))[0]['op'] != 'syntax_error':
+                    continue
+                with self.subTest(state=row['state']):
+                    tag = m.group(1)
+                    # 任何改动（哪怕补一个空格以外的字符）都不再按测过的报错块认
+                    self.assertEqual(one(tag, m.group(2) + ';')['op'], 'js')
+
+
+class CounterTranslationTests(unittest.TestCase):
+    """第三批：YEP 状态计数 _stateCounter（附加时取变量、1763 开战取 MP）。"""
+    rows = json.loads(FIXTURES.read_text())['counter']
+
+    def test_inventory(self):
+        ops = [(row['state'], e) for row in self.rows for e in parse_state_effects(row['note']) if e['op'].startswith('counter')]
+        init = sorted(s for s, e in ops if e['op'] == 'counter_init')
+        self.assertEqual(init, [1775, 1781, 1782, 1783, 1784, 1785, 1786] + list(range(1792, 1808)))
+        for s, e in ops:
+            self.assertEqual(e['state'], s)  # 每块都只写自己的计数
+        self.assertEqual([s for s, e in ops if e['op'] == 'counter_set'], [1763])
+
+    def test_boundaries(self):
+        ok = 'user._stateCounter[5] = user._stateCounter[5] || $gameVariables.value(9);'
+        self.assertEqual(one('Apply', ok), {'phase': 'apply', 'op': 'counter_init', 'state': 5, 'variable': 9})
+        for tag, code in [('Remove', ok), ('Apply', ok.replace('[5] ||', '[6] ||')), ('Apply', ok.replace('||', '&&')),
+                          ('Apply', ok.replace('user.', 'target.')), ('Apply', ok + ' user.refresh();'),
+                          ('Apply', ok.replace('$gameVariables.value(9)', '9'))]:
+            with self.subTest(code=code):
+                self.assertEqual(one(tag, code)['op'], 'js')
+        battle = 'user._stateCounter[7] = user._stateCounter[7] || 0; user._stateCounter[7] = Math.floor(user.mp * 0.3);'
+        self.assertEqual(one('Battle', battle)['op'], 'counter_set')
+        for tag, code in [('Apply', battle), ('Battle', battle.replace('user.mp', 'user.atk')), ('Battle', battle.replace('Math.floor', 'Math.round')),
+                          ('Battle', battle.replace('[7] = Math', '[8] = Math'))]:
+            with self.subTest(code=code):
+                self.assertEqual(one(tag, code)['op'], 'js')
+
+
+if __name__ == '__main__':
+    unittest.main()

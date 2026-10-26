@@ -9,6 +9,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / '03_转换工具'))
 from common_oracle_contract import compare_reports, case_map, verify_reports, identity_issues
+from ui_reference.review_system_pages_compare import run_error_checks
 from battle_event_contract import CASE_IDS, validate_battle_events, verify_battle_events
 
 
@@ -160,6 +161,34 @@ class BattleEventContractTests(unittest.TestCase):
                 self.assertTrue(verify_battle_events(directory, self.manifest))
             file.write_text(json.dumps(self.ref))
             self.assertFalse(verify_battle_events(directory, self.manifest))
+
+
+class PageEvidenceErrorTests(unittest.TestCase):
+    def clean(self):
+        return {"errors": [], "logs": [], "pages": {"shot": {"errors": []}}}
+
+    def test_clean_capture(self):
+        self.assertTrue(all(run_error_checks(self.clean()).values()))
+
+    def test_browser_errors_fail(self):
+        for message in ["exception uncaught", "console resource failed"]:
+            with self.subTest(message=message):
+                run = self.clean()
+                run["logs"] = [message]
+                self.assertFalse(all(run_error_checks(run).values()))
+
+    def test_missing_browser_log_fails(self):
+        run = self.clean()
+        del run["logs"]
+        self.assertFalse(all(run_error_checks(run).values()))
+
+    def test_engine_and_page_errors_fail(self):
+        run = self.clean()
+        run["errors"] = ["engine failure"]
+        self.assertFalse(all(run_error_checks(run).values()))
+        run = self.clean()
+        run["pages"]["shot"]["errors"] = ["page failure"]
+        self.assertFalse(all(run_error_checks(run).values()))
 
 
 if __name__ == '__main__':

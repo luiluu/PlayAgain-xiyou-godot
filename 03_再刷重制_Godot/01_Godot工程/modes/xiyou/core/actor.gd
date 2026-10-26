@@ -15,6 +15,13 @@ var last_battle_skill := 0
 var _passive_cache := {}    # 由 refresh_passive() 生成；能力值/技能变化后需刷新
 ## 真气（CodexZhenqi，actor._codexZhenqi；见 XZhenqi.data）：{qi, firsts, realm, pending, daofa, spec}，随存档
 var zhenqi := {}
+## 事件「更改名字」320、「更改角色图像」322 改过的字段（name／characterName／characterIndex／faceName／faceIndex／battlerName），
+## 空＝数据库原样；data() 把它盖在数据库记录上（MV Game_Actor._name、_characterName 等），随存档（looks）
+var looks := {}
+## MV Game_Actor._exp 里别的职业的经验（「更改职业」321 不保留经验时，换回原职业取回原经验）；当前职业的经验在 exp_total
+var class_exp := {}
+var _looks_src = null
+var _looks_out := {}
 
 
 func setup(id: int) -> XActor:
@@ -30,6 +37,7 @@ func setup(id: int) -> XActor:
 	init_equips(d.get("equips", []))
 	_fix_strong_classification()
 	recover_all()
+	XActorModules.setup(self)  # 专属角色模块的 Game_Actor.setup 包装（饿狼同步形态等）
 	return self
 
 
@@ -49,7 +57,36 @@ func _fix_strong_classification() -> void:
 
 
 func data() -> Dictionary:
-	return XDB.rec("Actors", actor_id)
+	var rec := XDB.rec("Actors", actor_id)
+	if looks.is_empty():
+		return rec
+	if not is_same(_looks_src, rec) or _looks_out.is_empty():
+		_looks_out = rec.duplicate()
+		_looks_out.merge(looks, true)
+		_looks_src = rec
+	return _looks_out
+
+## 320／322：改名字或图像（Game_Actor.setName／setCharacterImage／setFaceImage／setBattlerImage）
+func set_looks(fields: Dictionary) -> void:
+	looks.merge(fields, true)
+	_looks_out = {}
+
+## Game_Actor.changeClass（321）：保留经验时新职业取当前经验，否则取新职业记下的经验（没有为 0），再按 changeExp 升降级；
+## 降级不忘技能（MV levelDown 只减等级）
+func change_class(id: int, keep_exp: bool) -> void:
+	if XDB.rec("Classes", id).is_empty():
+		return
+	class_exp[class_id] = exp_total
+	if keep_exp:
+		class_exp[id] = exp_total
+	class_id = id
+	exp_total = maxi(int(class_exp.get(id, 0)), 0)
+	while _lv < max_level() and exp_total >= exp_for_level(_lv + 1):
+		_level_up()
+	while _lv > 1 and exp_total < exp_for_level(_lv):
+		_lv -= 1
+	refresh_passive()
+	refresh_resources()
 
 func class_data() -> Dictionary:
 	return XDB.rec("Classes", class_id)
@@ -276,6 +313,7 @@ func _level_up() -> void:
 	if var_id.is_valid_int() and int(var_id) > 0 and XState.current:
 		var points := str(XDB.plugin("PKD_SimpleSkillsTree").get("skillPointsPerLevelUpGain:i", "1"))
 		XState.current.set_variable(int(var_id), XState.current.variable(int(var_id)) + (int(points) if points.is_valid_int() else 1))
+	XActorModules.level_up(self)  # 专属角色模块的 levelUp 包装
 
 ## Game_Actor.changeLevel（事件「增减等级」316）：夹在 1～上限，按 changeExp 逐级升降（降级不忘技能、不扣技能点），
 ## 返回新学会的技能 ID（displayLevelUp 用）
@@ -287,17 +325,20 @@ func change_level_mv(lv: int) -> Array:
 		_level_up()
 	while _lv > lv:
 		_lv -= 1
+		XActorModules.level_down(self)  # 专属角色模块的 levelDown 包装
 	refresh_passive()
 	refresh_resources()  # Game_Actor.changeExp 最后 refresh，降级后夹回新 HP/MP 上限。
 	return skill_ids.filter(func(id): return not before.has(id))
 
 ## 直接设定等级（读档、测试夹具用）：只按数据库上限夹，不看队伍上限，不加技能点
 func change_level(lv: int) -> void:
+	var before := _lv
 	_lv = clampi(lv, 1, int(data().get("maxLevel", 99)))
 	exp_total = exp_for_level(_lv)
 	for l in class_data().get("learnings", []):
 		if int(l.level) <= _lv:
 			learn_skill(int(l.skillId))
+	XActorModules.level_changed(self, before)  # 直接改等级：按升／降调专属角色模块的 levelUp／levelDown 包装
 	refresh_passive()
 
 ## 获得经验，返回升了几级。
@@ -317,7 +358,7 @@ func gain_exp(amount: int, rate := 1.0, random: XRandomStream = null) -> int:
 
 # ---- 技能 ----
 func learn_skill(id: int) -> void:
-	if XPowerBooks.is_power(id) and not XPowerBooks.learn_reason(self, id).is_empty():
+	if not XActorModules.can_learn(self, id) or (XPowerBooks.is_power(id) and not XPowerBooks.learn_reason(self, id).is_empty()):
 		return
 	if not skill_ids.has(id) and not XDB.rec("Skills", id).is_empty():
 		skill_ids.append(id)
@@ -334,6 +375,8 @@ func skills() -> Array:
 		if int(t.code) == TRAIT_SKILL_ADD and not ids.has(int(t.dataId)):
 			ids.append(int(t.dataId))
 	for id in XEquipSuits.ids(self,"skills"):
+		if not ids.has(id):ids.append(id)
+	for id in XMagicWeapon.skills(equips):  # CP_X_MagicWeaponLearnSkill：法宝按等级学的技能
 		if not ids.has(id):ids.append(id)
 	var out := []
 	for id in ids:
@@ -352,6 +395,7 @@ func trait_objects() -> Array:
 	var out := [data(), class_data()]
 	out.append_array(stat_equips())
 	out.append_array(states())
+	out.append_array(XMagicWeapon.trait_objects(equips))  # CP_MagicWeapon：升级特性对象按法宝等级重复
 	var resistance := []
 	for id in XEquipSuits.ids(self,"statesResist"):
 		resistance.append({"code":TRAIT_STATE_RESIST,"dataId":id,"value":1})
@@ -457,11 +501,11 @@ func param_base(i: int) -> float:
 func param_plus(i: int) -> float:
 	var full := _param_plus(i)
 	if not XCat.enabled_sword(self):
-		return full
+		return full + XRaceBattle.param_plus(self, i)
 	_cat_bare = true
 	var bare := _param_plus(i)
 	_cat_bare = false
-	return full + (full - bare)
+	return full + (full - bare) + XRaceBattle.param_plus(self, i)  # 种族灵族：武器本体 ×q/2（包在小猫剑圣外层）
 
 func _param_plus(i: int) -> float:
 	var v := XParamPlus.bonus(self, i) + XEquipSuits.value(self,"param",i,false)
@@ -511,7 +555,7 @@ static func magic_param(e: Dictionary, i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XCat.param(self, i, super(i))
+	return XRaceBattle.param(self, i, XCat.param(self, i, XActorModules.param(self, i, super(i))))  # 按原版安装先后由内到外：专属角色模块（米拉 98、宿傩 113）→小猫剑圣（115）→种族祝福（148）
 
 ## 永久写能力属于当前真实实例；影子克隆虽保留actor_id，也不能借它写真实账本。
 func can_add_param() -> bool:
@@ -540,6 +584,7 @@ func xparam(i: int) -> float:
 	for m in passive_values(_tag("passiveXPBST", i)):
 		v += _num(m) * 0.01
 	v = (v + XEquipSuits.value(self,"xparam",i,false)/100) * XEquipSuits.value(self,"xparam",i,true)
+	v = XActorModules.xparam(self, i, v)  # 专属角色模块的 Game_Actor.xparam 包装（米拉／渡鸦面板暴击）
 	return maxf(0.9, v) if i == 0 else v
 
 func sparam(i: int) -> float:
@@ -616,6 +661,7 @@ func refresh_passive() -> void:
 			elif suffix.is_valid_int():
 				var id := int(suffix)
 				c.consumeReduce.bySkill[id] = c.consumeReduce.bySkill.get(id, 0) + value
+	XActorModules.passive_cache(self, c)  # 专属角色模块的 initPassiveCache 包装（渡鸦魂海刻度的暴伤／终伤池）
 	_passive_cache = c
 
 func passive_cache() -> Dictionary:

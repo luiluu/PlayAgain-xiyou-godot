@@ -287,10 +287,10 @@ func _optimized() -> void:
 	await frames()
 
 
-## 进阶表：462 行；经济合并后不再有 184～187；角色 1 各阶需求
+## 进阶表：462 行＋渡鸦开机补的 5 行（finishRavenDatabaseCompatibility，表尾 473～477）＝467；经济合并后不再有 184～187；角色 1 各阶需求
 func _rows() -> void:
 	var rs := XAdvance.rows()
-	check("rows_count", rs.size() == 462, rs.size())
+	check("rows_count", rs.size() == 467, rs.size())
 	check("rows_no_old_currency", not rs.any(func(r): return r.items.any(func(p): return p[0] >= 184 and p[0] <= 187)))
 	var a1 := rs.filter(func(r): return int(r.actor) == 1)
 	check("actor1_rows", a1.size() == 4 and a1.slice(0, 3).map(func(r): return [r.num, r.max, r.gold, r.items, r.learn]) == [

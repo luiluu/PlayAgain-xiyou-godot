@@ -214,6 +214,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 		s.erased_events.clear()
 	map_id = id
 	map_data = XDB.map(id)
+	XAlienBattle.on_map_setup(s, s.map_id, id)  # Leviathan Game_Map.setup 包装：未知存在记来源地图（异化 Boss 来源用）
 	s.map_id = id
 	XEnemyBook.on_map_setup(s, map_data)  # AB_EnemyBook Game_Map.setup：记遇敌表敌人的出没地图
 	XMapTransfer.on_arrive(s, id)
@@ -446,6 +447,7 @@ func _on_action() -> void:
 func _physics_process(_delta: float) -> void:
 	_hang_up_physics()
 	_update_shake()
+	_update_flash()
 	if XState.current and not _menu_open:
 		XState.current.screen.update()
 	# 玩家朝同层事件走却被挡住：MV 的 checkEventTriggerTouch（触发 1/2）；挂机中不能手动移动
@@ -586,6 +588,32 @@ func show_message(msg: Dictionary) -> int:
 	return await message.run(msg)
 
 ## 指令 225 画面震动（Game_Screen.startShake／updateShake，每帧一次；Spriteset_Base 只横向偏移）
+## Game_Screen.startFlash／updateFlash：颜色 [r, g, b, 强度]，每帧强度 ×(d−1)/d 直到 d 为 0；盖在地图上、窗口下
+var _flash := {"color": Color(0, 0, 0, 0), "duration": 0}
+var _flash_rect: ColorRect
+
+func flash_screen(color: Array, duration: int) -> void:
+	if _flash_rect == null:
+		var layer := CanvasLayer.new()
+		layer.layer = 5
+		add_child(layer)
+		_flash_rect = ColorRect.new()
+		_flash_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_flash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		layer.add_child(_flash_rect)
+	_flash.color = Color(float(color[0]) / 255.0, float(color[1]) / 255.0, float(color[2]) / 255.0, float(color[3]) / 255.0)
+	_flash.duration = duration
+	_flash_rect.color = _flash.color
+
+func _update_flash() -> void:
+	if _flash.duration <= 0:
+		return
+	var d: int = _flash.duration
+	_flash.color.a *= float(d - 1) / float(d)
+	_flash.duration = d - 1
+	if _flash_rect != null:
+		_flash_rect.color = _flash.color
+
 var _shake := {"power": 0.0, "speed": 0.0, "duration": 0, "dir": 1, "value": 0.0}
 
 func shake_screen(power: int, speed: int, duration: int) -> void:
@@ -893,6 +921,17 @@ func game_over() -> void:
 	for a in XState.current.members():
 		a.recover_all()
 	await transfer(4, 14, 23, 8)
+
+## 事件「打开存档画面」352：SceneManager.push(Scene_Save)（YEP 存档页，存档模式），关闭后回到地图
+func open_save() -> void:
+	hud.visible = false
+	var page := XSaveScene.new()
+	page.mode = "save"
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
 
 ## 公共事件 431「成就」：SceneManager.push(Scene_AchievementBook)，关闭后回到地图（事件接着往下执行）
 func open_achievements() -> void:

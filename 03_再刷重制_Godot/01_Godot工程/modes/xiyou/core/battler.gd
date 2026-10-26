@@ -51,6 +51,8 @@ var state_turns := {}
 ## YEP stateOrigin：状态 ID → 附加时行动者的 WeakRef（XImportedBalance.acting_battler）；导入角色平衡的持续伤害按来源判断。
 ## 用弱引用：自己给自己加状态、双方互相记来源都会成环，RefCounted 环在退出时泄漏
 var state_origins := {}
+## 状态脚本写在战斗者身上的私有字段，按原名存（如叠毒 `_stackingPoison`），所有状态共用；角色的随存档（stateData）
+var state_data := {}
 var buffs: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var buff_turns: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var guarding := false
@@ -329,7 +331,9 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 				state_turns.erase(sid)
 		buffs.fill(0)
 		buff_turns.fill(0)
-		XEnemyBook.note_death(self)
+		if self is XEnemy:
+			XEnemyBook.note_death(self)  # AB_EnemyBook Game_Enemy.die：击败数即时 +1
+		XRaceBattle.on_death(self)  # 种族 die 包装：清反攻
 	if not state_ids.has(id):
 		state_ids.append(id)
 		_sort_states()
@@ -337,6 +341,8 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 	var lo := int(s.get("minTurns", 1))
 	var hi := maxi(lo, int(s.get("maxTurns", lo)))
 	state_turns[id] = roll_state_duration(lo, hi, random, str(lifecycle_context.get("duration_key", str(id))))
+	if id == XAlienBattle.corrosion_id():
+		XAlienBattle.sync_corrosion(self)  # 异化 resetStateCounts：沿生命周期时长结算之后同步
 	var source := XImportedBalance.acting_battler()
 	if source != null:
 		state_origins[id] = weakref(source)
@@ -373,8 +379,13 @@ func remove_state(id: int) -> void:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
 	state_ids.erase(id)
 	state_turns.erase(id)
+	if had:
+		XRaceBattle.on_state_removed(self, id)  # 种族：去掉毒鸡汤时清待结算记录
 	if id == XZhenqi.POJIA_STATE:
 		zq_pojia_rate = 0.5
+	# YEP_BuffsStatesCore removeState：不论有没有该状态都清掉它的状态计数（死亡、抵抗等直接去状态的路径不清）
+	if state_data.has("_stateCounter"):
+		state_data._stateCounter.erase(str(id))
 	# Game_Battler.removeState：有该状态才 refresh；krz 的 Game_Enemy.removeState 之后总标 dirty
 	if had:
 		if lifecycle_context.get("resources") != null:
@@ -500,15 +511,20 @@ func param(i: int) -> float:
 	v += param_state(i)
 	return roundf(clampf(v, param_min(i), param_max(i)))
 
-## G_StateParam paramState：各状态 <G_ShuXing> 的固定值之和。原版乘以 YEP 状态计数（_stateCounter，层数）；
-## Godot 没有状态计数，按 1 层（正式版没设计数时同样是 1）。
+## G_StateParam paramState：各状态 <G_ShuXing> 的固定值 × 层数之和。层数取 YEP 状态计数（state_data._stateCounter，
+## 状态脚本写入）；原版层数变量在循环外，某状态计数为真后排在后面的状态都沿用它（state_js_probe counter.carry）。
 static var _state_param_cache := {}
 func param_state(i: int) -> float:
 	var v := 0.0
+	var ceng := 1.0
+	var counters: Dictionary = state_data.get("_stateCounter", {})
 	for id in state_ids:
 		if not _state_param_cache.has(id):
 			_state_param_cache[id] = XPower.state_params(XDB.rec("States", id))
-		v += float(_state_param_cache[id][i])
+		var c := XStateEffects._truthy_number(counters.get(str(id)))
+		if c != 0.0:
+			ceng = c
+		v += float(_state_param_cache[id][i]) * ceng
 	return v
 
 func xparam(i: int) -> float:
@@ -679,6 +695,7 @@ func clear_states() -> void:
 		if not XResourceContext.permanent(sid):
 			state_ids.erase(sid)
 			state_turns.erase(sid)
+			XRaceBattle.on_state_removed(self, sid)
 
 
 ## Game_BattlerBase.recoverAll：清状态后按（可能是旧缓存的）上限回满，YEP_BattleEngineCore 再 refresh（只消费 dirty，不截资源）

@@ -269,8 +269,11 @@ static func _member(s: XState, id) -> XActor:
 	return s.actor(int(id)) if id != null and s.party.has(int(id)) else null
 
 
-## A.forActor（战斗外）：身上第一件异化装备
+## A.forActor：战斗中是开战时冻结的那份（XAlienBattle.locked），战斗外是身上第一件异化装备
 static func for_actor(a: XActor) -> Dictionary:
+	var frozen = XAlienBattle.locked(a)
+	if frozen != null:
+		return frozen
 	for e in a.equip_list():
 		if not mark(e).is_empty():
 			return {"item": e, "affix": str(mark(e).affix), "config": mark(e).get("config", {})}
