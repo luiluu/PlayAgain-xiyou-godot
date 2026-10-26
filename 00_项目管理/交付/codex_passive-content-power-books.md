@@ -40,3 +40,6 @@
 - 物品效果43复用actor.learn_skill守卫；物品页_effective及_use前的权能原因提示复用同一核心，防被拒后仍消耗本道具。3044在物品页使用入口打开独立XChoiceWindow子页，复用已移植的CodexYunshang.choose布局；原页暂停输入，结束后回物品列表。按原版走角色→技能→确认→结果，取消不扣符，不返权能书。先取原版各页实际行文与流程参照再接UI；不改共用choice_window。
 - 追加独立power_books_boundary_probe.cjs入口（尚未运行），45例＝三个角色类别×三个学习宿主（apply／直接learn／直接itemEffect）×五本循环顺序；覆盖不同书在容量边界被拒、普通遗忘保护与克隆例外、缺符、成功／重复付费遗忘、腾位后学习。不覆盖MV旧存档整理，不合成第六本权能。
 - 当前共用槽满，修正后的8例native2仍在排队，未绕槽或启动第二个重任务；先保存设计与后续探针。
+
+- 又发现静态效果尚缺一条通用接线：原版installNativeEconomyRuntime.js 55～69把已学技能的CodexParamRate按参数求和，再乘进Game_Actor.paramRate（不是最终param之后再乘）。五本中7245／7246／7247分别加魔攻魔防／物攻物防／敏捷幸运50%。现有Godot actor.param_rate只乘装备套装，无该标签。应在param_rate按原顺序复用新核心的已学技能百分比解析，实际对照后再改；不去改XCat最终param包装顺序。
+- 追加power_books_menu_probe.cjs独立菜单流程入口（尚未运行）：按原版openPowerForget捕获行文与回调，六例含角色页取消、两种确认取消、成功、确认前符被移走与全员无权能；不替换真实学习／遗忘规则，choice只在数据边界观察，不能冒充成对截图。
