@@ -10,7 +10,7 @@ from pathlib import Path
 import signal
 import serve
 
-INPUTS = ["index.html", "js/plugins.js", "js/rpg_scenes.js", "js/rpg_windows.js", "js/rpg_οbjects.js",
+INPUTS = ["js/codex/runtime/installItemBagContinuationRuntime.js", "index.html", "js/plugins.js", "js/rpg_scenes.js", "js/rpg_windows.js", "js/rpg_οbjects.js",
           "js/plugins/hc.js", "js/plugins/CP_MagicWeapon.js", "js/plugins/Star_PetSystem.js",
           "js/plugins/Star_PetUpLevel.js", "js/plugins/Star_PetSynthesis.js",
           "js/codex/runtime/installNativeHonghuangRuntime.js", "js/codex/runtime/installNativeRaceRuntime.js", "js/codex/runtime/installNativeYunshangRuntime.js",
