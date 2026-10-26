@@ -254,6 +254,110 @@ class SelectTests(Fixture):
         self.assertEqual(sel.classify('03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/damage.gd', rules), 'battle')
         self.assertEqual(sel.classify('03_再刷重制_Godot/04_验证/测量接受/x.json', rules), 'converter')
         self.assertEqual(sel.classify('02_内容与素材/x.png', rules), 'full')
+        sections, merge_base = sel.load_options()
+        self.assertTrue(sections['enabled'] and merge_base)
+        self.assertEqual(sections['file'], str(TOOLS / 'xiyou_slice.json'))
+
+
+SLICE = TOOLS / 'xiyou_slice.json'
+RULES = ['xiyou_rules.tscn', 'xiyou_rules_d1b.tscn', 'xiyou_rules_d2.tscn']
+
+
+class SliceSectionTests(Fixture):
+    """xiyou_slice.json 按顶层键细分（用户 2026-10-26）。"""
+    def setUp(self):
+        super().setUp()
+        self.slice = {'说明': 'x', 'maps': [1, 2], 'keepEvents': {'1': '*'}, 'troops': [5], 'actors': [1], 'extraImages': ['system/a']}
+        self.put(SLICE, json.dumps(self.slice, indent=2) + '\n')
+        self.scene('xiyou_lobby_shops', 'var k = XMapScene.slice().get("keepEvents", {})')
+        self.scene('xiyou_panels', 'panels')
+        self.commit('slice')
+        self.base = self.g('rev-parse', 'HEAD')
+
+    def edit(self, **changes):
+        self.put(SLICE, json.dumps({**self.slice, **changes}, indent=2) + '\n')
+
+    def test_maps_only_runs_event_compare_and_floors(self):
+        self.edit(maps=[1, 2, 69], keepEvents={'1': '*', '69': '*'})
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn', 'xiyou_lobby_shops.tscn'])
+        self.assertEqual(s['checks'], ['content', 'guards', 'tools'])
+        self.assertIn('keepEvents、maps', s['reasons'][0][1])
+
+    def test_troops_only_runs_rules(self):
+        self.edit(troops=[5, 6])
+        s = self.pick()
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn'] + RULES)
+        self.assertEqual(s['checks'], ['content', 'guards', 'same_source', 'tools'])
+
+    def test_maps_and_troops_take_the_union(self):
+        self.edit(maps=[1, 2, 69], troops=[5, 6])
+        s = self.pick()
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn'] + RULES)
+        self.assertEqual(s['checks'], ['content', 'guards', 'same_source', 'tools'])
+        self.assertEqual(len(s['reasons']), 2)
+
+    def test_images_only_runs_ui(self):
+        self.edit(extraImages=['system/a', 'system/b'])
+        s = self.pick()
+        self.assertEqual(s['scenes'], ['ui_smoke.tscn', 'xiyou_event_compare.tscn', 'xiyou_panels.tscn'])
+        self.assertEqual(s['checks'], ['guards', 'tools'])
+
+    def test_bad_json_and_unknown_key_fall_back_to_converter(self):
+        self.put(SLICE, '{"maps": [1, 2, 69],\n')
+        s = self.pick()
+        self.assertTrue(set(RULES) <= set(s['scenes']))
+        self.assertIn('新版 JSON 解析失败', s['reasons'][0][1])
+        self.edit(newKey=1)
+        s = self.pick()
+        self.assertTrue(set(RULES) <= set(s['scenes']))
+        self.assertIn('未知键 newKey', s['reasons'][0][1])
+        (self.root / SLICE).unlink()
+        self.assertIn('切片文件被删除', self.pick()['reasons'][0][1])
+
+    def test_format_only_selects_nothing(self):
+        self.put(SLICE, json.dumps(self.slice) + '\n')
+        s = self.pick()
+        self.assertEqual((s['full'], s['scenes'], s['checks']), (False, [], []))
+
+    def test_switch_off_restores_whole_converter(self):
+        table = json.loads((HERE / '选测对照.json').read_text())
+        table['sliceSections']['enabled'] = False
+        off = self.root / 'off.json'
+        off.write_text(json.dumps(table))
+        self.edit(maps=[1, 2, 69])
+        s = sel.select(self.root, self.base, table=off)
+        self.assertTrue(set(RULES) <= set(s['scenes']))
+        self.assertEqual(s['reasons'][0][1], 'converter')
+
+    def test_head_replay(self):
+        self.edit(maps=[1, 2, 69])
+        self.commit('maps')
+        s = self.pick(head=self.g('rev-parse', 'HEAD'))
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn'])
+
+
+class MergeBaseTests(Fixture):
+    """车道 --affected main 而 main 已前进：只算本分支自己的改动。"""
+    def test_lane_ignores_main_progress_unless_switched_off(self):
+        self.g('switch', '-q', '-c', 'lane')
+        self.put(Path('00_项目管理/交接板.md'), '# lane\n')
+        self.commit('lane docs')
+        self.g('switch', '-q', 'main')
+        self.put(CORE / 'battler.gd', 'class_name XBattler\n# main moved\n')
+        self.commit('main battle')
+        self.g('switch', '-q', 'lane')
+        s = sel.select(self.root, 'main')
+        self.assertEqual(s['files'], ['00_项目管理/交接板.md'])
+        self.assertIn('分叉点', s['base'])
+        table = json.loads((HERE / '选测对照.json').read_text())
+        table['mergeBase'] = False
+        off = self.root / 'off.json'
+        off.write_text(json.dumps(table))
+        s = sel.select(self.root, 'main', table=off)
+        self.assertIn(str(CORE / 'battler.gd'), s['files'])
+        self.assertEqual(sel.select(self.root, self.base)['base'], self.base)  # 基准是祖先：照旧
 
 
 STUB_CHECKS = ['测试工作树清理.py', '测试导出过滤.py', '测试共性验收.py', '测试合并工具.py', '测试公式程序.py', '测试转换器写入.py',

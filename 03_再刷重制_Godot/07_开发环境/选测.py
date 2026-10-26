@@ -6,6 +6,11 @@
 - 引用查找（refs）：在 tests/*.gd、*.tscn 里找改动文件的文件名（如 orbs.gd、orb_probe.cjs）与它声明的 class_name；
   找到的是辅助脚本时换成用它的场景（如 xiyou_rules.gd → xiyou_rules*.tscn 全部段）。删除的文件从基准里读 class_name。
 - 加载者（loaders，手写数据 json 用）：另把 modes/ 下按文件名加载它的 .gd 的 class_name 也当引用词（如 alienation.json → XAlienation）。
+- 切片细分（sliceSections，用户 2026-10-26）：xiyou_slice.json 不按整组 converter，而是比较基准与新版两份 JSON 哪些顶层键变了，
+  每个键按对照表 sliceSections.keys 归组（地图／事件、战斗数值、图像音频），另加引用了该键名（"maps" 等）的测试；
+  键不认识、JSON 解析失败、文件新增或删除时退回整组 converter。对照表 sliceSections.enabled 设 false 即完全回到整组。
+- 分叉点（mergeBase，2026-10-26）：基准不是 HEAD 的祖先时（车道跑 --affected main 而 main 已前进），改用 merge-base(基准, HEAD)，
+  只算本分支自己的改动；基准是祖先时（总装批首）两者相同。对照表 mergeBase 设 false 即按基准本身比。
 - 工具引用（toolRefs，测试夹具用）：没有 Godot 测试引用、但 07_开发环境／03_转换工具 的脚本按文件名读它时，跑工具回归、不整轮
   （如 state_js_translation.json 只被 测试状态js翻译.py 读；2026-10-26 哪吒）。
 - --head 回放时测试场景与脚本也从 head 读（head 里新增的测试要找得到）。
@@ -54,9 +59,46 @@ def load_table(path=TABLE):
         bad = set(g.get('checks', [])) - CHECKS
         if bad:
             raise ValueError('组 %s 有未知检查：%s' % (name, '、'.join(sorted(bad))))
+    sections = table.get('sliceSections') or {}
+    bad = {g for g in (sections.get('keys') or {}).values() if g not in groups}
+    if bad:
+        raise ValueError('切片细分指向不存在的组：' + '、'.join(sorted(bad)))
     if not rules or rules[-1]['match'] != '*':
         raise ValueError('对照表最后一条须是 * （拿不准的路径归全量）')
     return groups, rules
+
+
+def load_options(path=TABLE):
+    table = json.loads(Path(path).read_text())
+    return table.get('sliceSections') or {}, table.get('mergeBase', False)
+
+
+def effective_base(root, base, head=None):
+    """merge-base(基准, HEAD 或 --head)；没有共同祖先时用基准本身。"""
+    try:
+        return git(root, 'merge-base', base, head or 'HEAD').strip() or base
+    except RuntimeError:
+        return base
+
+
+def slice_keys(root, base, path, head=None):
+    """基准与新版切片 JSON 顶层键的差异：返回变了的键表，或 (None, 原因) 表示要退回整组。"""
+    if not exists(root, path, head):
+        return None, '切片文件被删除'
+    try:
+        old = json.loads(git(root, 'show', base + ':' + path))
+    except RuntimeError:
+        return None, '基准里没有切片文件'
+    except ValueError:
+        return None, '基准版 JSON 解析失败'
+    try:
+        new = json.loads(read_any(root, base, path, head) if head else (root / path).read_text())
+    except ValueError:
+        return None, '新版 JSON 解析失败'
+    if not isinstance(old, dict) or not isinstance(new, dict):
+        return None, '切片顶层不是对象'
+    missing = object()
+    return sorted(k for k in set(old) | set(new) if old.get(k, missing) != new.get(k, missing)), ''
 
 
 def classify(path, rules):
@@ -146,20 +188,26 @@ def select(root, base, table=TABLE, head=None):
     root = Path(root)
     git(root, 'rev-parse', '--verify', '-q', base + '^{commit}')
     groups, rules = load_table(table)
+    sections, merge_base = load_options(table)
+    shown_base = base
+    if merge_base:
+        base = effective_base(root, base, head)
+        if git(root, 'rev-parse', shown_base + '^{commit}').strip() != base:
+            shown_base = '%s（分叉点 %s）' % (shown_base, base[:10])
     files = changed_files(root, base, head)
     tests = Tests(root, head)
     full, scenes, checks, reasons = False, set(), set(), []
-    for path in files:
-        if path.endswith('.uid') and path[:-4] in files:
-            continue  # 和源文件同组，不重复列
-        group = classify(path, rules)
+
+    def take(path, group, why, terms_extra=()):
+        nonlocal full
         g = groups[group]
-        why = group
         if 'onlyLines' in g and not only_lines(root, base, path, g['onlyLines'], head):
             group, g, why = 'full', groups['full'], group + ' 但改了版本行以外的内容'
         picked = set()
         for pattern in g.get('scenes', []):
             picked.update(tests.glob(pattern))
+        if terms_extra:
+            picked |= tests.refs(list(terms_extra))
         if g.get('refs'):
             key = path[:-4] if path.endswith('.uid') else path
             name = Path(key).name
@@ -175,7 +223,7 @@ def select(root, base, table=TABLE, head=None):
             if not refs and gone:
                 why += '，已删除且没有测试再引用它'
             elif tools:
-                checks |= {'guards', 'tools'}
+                checks.update({'guards', 'tools'})
                 why += '，只有工具脚本用它（%s），跑工具回归' % '、'.join(Path(t).name for t in tools[:3])
             elif not refs and g.get('fallback'):
                 if 'FULL' in g['fallback']:
@@ -186,13 +234,33 @@ def select(root, base, table=TABLE, head=None):
             picked |= refs
         if g.get('full'):
             full = True
-        scenes |= picked
-        checks |= set(g.get('checks', []))
+        scenes.update(picked)
+        checks.update(g.get('checks', []))
         reasons.append((path, why, g.get('说明', ''), sorted(picked), g.get('full', False)))
+
+    for path in files:
+        if path.endswith('.uid') and path[:-4] in files:
+            continue  # 和源文件同组，不重复列
+        group = classify(path, rules)
+        if sections.get('enabled') and path == sections.get('file'):
+            keys, problem = slice_keys(root, base, path, head)
+            unknown = [k for k in keys or [] if sections['keys'].get(k) not in groups]
+            if keys is None or unknown:
+                take(path, group, group + '（切片细分退回整组：%s）' % (problem or '未知键 ' + '、'.join(unknown)))
+                continue
+            by_group = {}
+            for k in keys:
+                by_group.setdefault(sections['keys'][k], []).append(k)
+            if not by_group:
+                reasons.append((path, '切片只改了格式，顶层键都没变', '', [], False))
+            for sub, ks in sorted(by_group.items()):
+                take(path, sub, '%s（切片键 %s）' % (sub, '、'.join(ks)), [] if sub == 'docs' else ['"%s"' % k for k in ks])
+            continue
+        take(path, group, group)
     if not full and tests.scenes and scenes >= set(tests.scenes):
         full = True  # 选中了全部场景：按整轮跑，才能沿用上轮通过结果
         reasons.append(('（全部场景）', '选中了全部 %d 个场景，按整轮跑' % len(tests.scenes), '', [], True))
-    return dict(base=base, files=files, full=full, scenes=sorted(scenes), checks=sorted(checks), reasons=reasons)
+    return dict(base=shown_base, files=files, full=full, scenes=sorted(scenes), checks=sorted(checks), reasons=reasons)
 
 
 def report(sel, out):
