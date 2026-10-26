@@ -104,8 +104,10 @@ func _run() -> void:
 		ids[c.id] = true
 		check(c.id+".native",c.errors.is_empty())
 		await run_case(c)
-	XSound.stop_music()
-	XSound.stop_sound()
+	for player in XSound._players:
+		if is_instance_valid(player):
+			player.stop()
+			player.stream = null
 	await get_tree().create_timer(0.5,true,false,true).timeout
 	print("TEST_RESULT="+JSON.stringify({"passed":checks-failures.size(),"total":checks,"failures":failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)
