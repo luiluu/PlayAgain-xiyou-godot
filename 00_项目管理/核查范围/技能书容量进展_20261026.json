@@ -823,6 +823,41 @@
         "finishedAt": "2026-10-26T11:01:36.015339+00:00"
       },
       "logSHA256": "e4067974818e54600938bf25e42af5ad75ce452ef81a8e4e79748fa97c77da1d"
+    },
+    "boss72-capacity-deps": {
+      "status": {
+        "runId": "b9827362d8e945628b1918ec63849d21",
+        "status": "done",
+        "exitCode": 0,
+        "pid": 33159,
+        "startedAt": "2026-10-26T11:01:55.069082+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/并行测试.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "--log-dir",
+          "03_再刷重制_Godot/04_验证/本地结果/boss72-capacity-deps",
+          "xiyou_item_use.tscn",
+          "xiyou_event_compare.tscn",
+          "xiyou_passive_content.tscn",
+          "xiyou_power_books.tscn",
+          "xiyou_power_books_boundary.tscn",
+          "xiyou_power_books_menu.tscn",
+          "xiyou_actor_p0.tscn"
+        ],
+        "childPGID": 33160,
+        "childIdentity": {
+          "pid": 33160,
+          "pgid": 33160,
+          "startedAt": "Mon Oct 26 12:01:55 2026    "
+        },
+        "finishedAt": "2026-10-26T11:03:48.620457+00:00"
+      },
+      "logSHA256AtPause": "426a568e22f27c310952746f70c87432a144483e64fe95fb0ec6607f9d654574"
     }
   },
   "acceptedTest": {
@@ -837,5 +872,10 @@
     "direct dependencies running boss72-capacity-deps.log",
     "paired native/Godot UI screenshots and actual layout readings",
     "final delivery, not merge-ready"
-  ]
+  ],
+  "pause": {
+    "fiveHourUsedPercent": 95,
+    "weeklyUsedPercent": 15,
+    "reason": "User threshold; WIP, no new task or automatic continuation"
+  }
 }

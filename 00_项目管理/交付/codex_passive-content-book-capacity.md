@@ -37,3 +37,15 @@
 - 18例修正参照唯一ID且errors空，新增真实角色1四本后第五本权能拒绝；fixture保留源runtimeInputs。Godot专项898/898通过（task7bf2744c22b94bb6936e940d0ef28010），导入taskb4988aa0643c41ebb050f111dba5b58b无Script／Parse／Compile错误。
 - 首轮专项EventHost误用RefCounted而解释器要求Node，留下Parse Error，已保存godot原日志并只停本车道已知无效子进程32604；改成Node后专项通过，失败日志全保留。
 - 当前仍进行中：直接依赖回归与界面成对图／实际读数尚未完成，不称可合并。item_target_actor_id为会话内物品选人上下文，每次物品使用重设，未增加存档迁移。
+
+## 沙僧72：95%额度停手现场（2026-10-26）
+
+- 五小时95%、周15%，按用户规则WIP保存并停；不自动新建会话／automation继续消耗。当前分支codex/passive-content-book-capacity，基线34184d36，全部提交待Claude；权能上一期交付不变。
+- 已验：原版5冒烟＋修正18例；Godot容量898/898；导入无Script／Parse／Compile错误；原检查.sh文档块（JSON／链接／编号）通过、node语法通过、MV守卫16/16、UI服务守卫12/12、git diff --check通过。
+- 在途：boss72-capacity-deps.log，直接依赖7场（actor_p0、event_compare、passive_content、power_books、power_books_boundary、power_books_menu、item_use）。用等待任务.sh每次--timeout45查看终态，不重复启动、不绕共用四槽、不杀别人的进程。当前状态及日志暂停时指纹在[结构化进展](../核查范围/技能书容量进展_20261026.json)；running不能当通过。
+- 下一步先实查额度，再读本节与交付单顶部、git status/log；全部文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。只用原树，不写main／共用登记，不reset／cherry-pick／合main，不建或清worktree，不向别的已有会话发消息。
+- 核完依赖终态及每场Script错误后，仍需真实物品满额→回地图提示的原版／Godot成对截图与实际布局读数。当前尚无本期成对图，不能借上一期权能图称本期验完；未标可合并。无切片变化，不扩同步或难度四段。后续PREE／ASUP等不混本期。
+- 原版冻结宿主：rpg_οbjects.js 1954～1987，CE1317完整脚本已存在generated；18例fixture在tests/fixtures/book_capacity_oracle.json，原件全部留.sandbox。首轮17误把重复权能命名class-full，已另存book_capacity_initial17.json并修正后重采18，不能用首轮冒称满权能。actor2初始2771保留。
+- 本期运行时5c5d3a70（XPassiveBooks＋battle效果＋xstate选人上下文＋item消费／回图＋MVScript的CE1317）；专项宿主修正3f085eee。直接actor.learn_skill不受普通容量限制；选定角色计数与效果目标的反例两条已实采且对照。
+- 首次专项Parse Error已保存boss72-capacity-first-parse.log与失败长任务日志，已只停止本车道已知无效子进程32604；第二次898通过，不把首次算通过。所有.sandbox／失败日志／generated／整树保留；本轮成功临时输出暂保留，待后续最终精简验收后再清自己的成功输出。
+- 可优化建议（工具车道）：并行测试遇到首屏脚本Parse Error会一直等600秒；本期通过临时HOME的godot.log确认后仅停已知子进程，未改共用工具。若能在明确Script加载失败时提早退出，可减少占槽；保留原日志并可回退。
