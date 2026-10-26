@@ -125,3 +125,16 @@
 - 最后UI选测task4869cea0cff74eaab9703127cd4a6c16：菜单1068/1068、物品11/11、事件5/5；最终渲染task75dc5c95b9464259a1596f639b9643f6：1194/1194，实际文字读数126项与原版一致，四页成对截图已逐页查看。最后运行时提交edf3d526。
 - 收尾轻检查通过：检查.sh原文档/JSON/链接/编号块exit0（dev.173），MV守卫16/16、UI服务守卫12/12、node语法5入口、Python语法2入口、1132e919至HEAD全分支git diff --check。核查积压提示保留，未自销核；按用户既定顺序继续后续小期，未自评完成度。
 - 功能、参照、专项、成对图与精简证据均已入Git；在下一次同树接力前只清自己的成功临时输出，所有失败/不完整采样、全部.sandbox、generated与整树继续保留。
+
+## 沙僧71→72（同树上下文接力，权能已交、续做容量）
+
+- 按用户既定自动同树上下文接力，非额度停手。71末次实查五小时82%、周13%；72先实查，五小时95%才WIP保存停、周98%收尾。设计／疑难high，机械步骤有真实接口才称切medium。71创建72后停止，72是唯一后续执行者。
+- 第一条及全部文件命令必须显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。只用此已有树；不在main写，不创建／清理worktree，不reset／cherry-pick，不建automation，不向唐僧或其他已有会话发消息。主项目路径只是聊天归属。共用交接板／变更记录／步骤清单／当前状态只读，只写本车道交付单。所有提交待Claude，不自销核、不自评进度。
+- 开工只读交接板顶部和自己车道行、git status/log、get_usage_limits，以及本交付单顶部最终结论和本节，勿重读全部过程。当前codex/passive-content-power-books，工作区干净，HEAD以本节提交为准；**本权能小期已可合并，别再修改它**。下期在同树先确认新分支名未占用，再从当前HEAD切codex/passive-content-book-capacity，写独立交付单；不并main、不夹带其他车道。
+- 权能本期最终：原版8＋45＋6例有效、Godot6136／6136与55682／55682、菜单1068／1068；14场直接依赖首轮全过（普通被动338例113142／113142），最后UI小修后三场菜单/物品/event再次全过；最终渲染1194／1194含126项真实文字绘制比较，四页成对图完整。运行时1cb3dfd3＋846984d1＋edf3d526。精简证据权能书验收_20261026.json，交付整理09983cc7／dac27032，全部待Claude，不重做、不重复验本期。
+- 新核心XPowerBooks已有真实权能注册／class限额／learn_reason／canonical普通遗忘保护／原子forget_paid；actor只三个挂点learn_skill／forget_skill／param_rate。CodexParamRate按技能不可变标签缓存、按当前skill_ids求和并乘param_rate，别挪最终param或按actor_id缓存。UI新XPowerForget子页＋item_scene拒收/3044入口，未改共用choice_window。后续普通容量别误改成权能上限；原版的具体相互关系先实采。
+- 下一小期：容量满变量9返书／预约1317。尚未定位或采样，不假称已掌握具体宿主；先定位冻结源真实书籍入口、效果／公共事件脚本，实采满额拒收/返书与预约1317、未满成功、重复、取消/失败不消耗等可观察链；先冒烟再小矩阵，确认实际宿主和变量9语义后再设计。优先交可独立合并的小期，别一口扩后续PREE／ASUP。
+- 后续顺序仍是容量→PREE／ASUP→WPNM／SkEType与race-battle等八戒接口，全部做完且额度足才核别人。两块TP Apply／完整预览空槽、敌人永久账本未做。formula_execution／mv_event_core不在本期修改范围，set公式仍unsupported。前期stateOrigin最终b91b1a14、react最终1132e919以及69的e1925bea／f8046576均独立已交，不重做。确定性8个early_inventory_rule继承失败证据在序列交付单，别夹带修复或称整轮全绿。
+- 71所有长任务均已结束，无在途任务。共用四槽仍满时可能久等，本期八例曾等18分钟；不绕槽、不加上限、不杀别人、不动工具车道文件。长批python3 -u、XIYOU_TEST_HEARTBEAT=30、长任务.py start脱离会话；等待任务.sh每次--timeout45，不超过60秒。排队公平性已在可优化节留工具车道建议。
+- 成功临时输出已按固化的runId/日志指纹清理74路径；失败/不完整全部留，包括boss71-power-menu首败、render首败/无autoload错误/Toast污染/早期光标图；这些不能当最终通过。最终成对图与读数在核查范围/权能书界面_20261026；全部.sandbox、generated与整树都保留，不能清。正常新局actor2初始有2771，不要先清空它再比。
+- 收尾按三级检查：相关专项＋直接依赖；UI必跑event_compare并做成对图/运行时读数，切片变动才加难度1四段；轻检查用原检查.sh文档块、node语法、MV16／16与UI守卫12／12、git diff --check。本期最后轻检查全通过。用户已明确继续，无需再次确认。
