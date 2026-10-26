@@ -19,6 +19,7 @@ const MAX_FRAMES = 6000, PROMPT_TEXT = '测试', COMMON_MAP = 4, PARTY = [1, 8, 
 const identity = sourceIdentity(APP);
 const r = boot(APP, {tolerant: true, log: false}), w = r.window;
 if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败');
+w.Input.clear();   // 参照启动不走 Scene_Boot 的 Input.initialize；玩家移动路线（门事件）的 isDebugThrough 要读 Input._currentState
 
 // ---- 用例：Godot 实际导出的事件（generated/maps）的每一页 ＋ 切片公共事件 ----
 const cases = [];

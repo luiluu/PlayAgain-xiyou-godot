@@ -27,6 +27,11 @@ class FakePlayer:
 	var grid := Vector2i.ZERO
 	func queue_redraw() -> void:
 		pass
+	## 门事件里「设置移动路线（玩家）」：参照只记指令序列与状态变化，不对比走位，这里不走
+	func force_move_route(_route: Dictionary) -> void:
+		pass
+	func is_route_forcing() -> bool:
+		return false
 
 
 ## 记录用宿主：接口同 XMapScene（MVInterpreter / MVScript 用到的部分）
