@@ -102,6 +102,8 @@ func _run() -> void:
 	var actor_expected: Dictionary = native.pages.capacity_0_actor.duplicate(true)
 	actor_expected.erase("errors")
 	actor_expected.erase("toast")
+	actor_expected.erase("notices")
+	actor_expected.erase("trace")
 	actor_expected.actor.erase("texts")
 	compare("actor",actor_read,actor_expected)
 	if capture != null:
@@ -110,36 +112,54 @@ func _run() -> void:
 	await shot("capacity_0_actor",actor_read)
 	page._actor = 0
 	page._ok()
+	var returned: XItemScene
 	for i in 600:
-		if not map._menu_open and not map.busy and not map.toasts.is_empty(): break
+		menus = map.ui.get_children().filter(func(n): return n is XMenu and not n.is_queued_for_deletion())
+		if menus.size() == 1:
+			var children: Array = menus[0].get_children().filter(func(n): return n is XItemScene and not n.is_queued_for_deletion())
+			if children.size() == 1 and children[0]._mode == "list":
+				returned = children[0]
+				break
 		await frames(1)
-	check("map.menu-closed",not map._menu_open)
+	check("map.menu-restored",map._menu_open and returned != null)
 	check("map.event-consumed",s.peek_common_event() == 0 and not map.busy and map.skipped_log.is_empty(),map.skipped_log)
-	check("map.real-toast",map.toasts == [native.pages.capacity_1_limit.toast.message.text],map.toasts)
-	var result := state_read("Scene_Map")
+	check("map.real-toast",map.toasts == [native.pages.capacity_1_limit.notices[0].message.text],map.toasts)
+	compare("bag.notices",XToast.shown,native.pages.capacity_1_limit.notices.map(func(n): return n.message.text))
+	if returned != null:
+		check("bag.selection",returned._cat == 0 and int(returned._current().id) == 1461)
+	var result := state_read("Scene_Item")
 	var expected: Dictionary = native.pages.capacity_1_limit.duplicate(true)
-	expected.erase("errors")
-	expected.erase("actor")
-	expected.erase("toast")
+	for key in ["errors","actor","toast","notices","trace"]:
+		expected.erase(key)
 	compare("result",result,expected)
 	var layer := get_tree().root.get_node_or_null("XToast") as XToast
-	check("toast.exists",layer != null and layer.stack.get_child_count() == 1)
-	if layer != null and layer.stack.get_child_count() == 1:
-		var slot := layer.stack.get_child(0) as Control
+	check("toast.exists",layer != null and layer.stack.get_child_count() == 2)
+	if layer != null and layer.stack.get_child_count() == 2:
 		for i in 120:
-			if slot.modulate.a >= 0.999: break
+			if layer.stack.get_children().all(func(n): return n.modulate.a >= 0.999): break
 			await get_tree().create_timer(0.02,true,false,true).timeout
-		var box := slot.get_child(0) as PanelContainer
-		var label := box.get_child(0) as Label
-		var style := box.get_theme_stylebox("panel") as StyleBoxFlat
-		result.toast = {"containerPosition":[layer.stack.position.x,layer.stack.position.y],"boxRect":[box.global_position.x,box.global_position.y,box.size.x,box.size.y],"textRect":[label.global_position.x,label.global_position.y,label.size.x,label.size.y],"fontSize":label.get_theme_font_size("font_size"),"color":"#"+label.get_theme_color("font_color").to_html(false),"background":style.bg_color.to_html(),"padding":style.content_margin_left,"text":label.text,"opacity":slot.modulate.a}
-		var want: Dictionary = native.pages.capacity_1_limit.toast
-		compare("toast.boxRect",result.toast.boxRect,want.box.rect)
-		compare("toast.fontSize",result.toast.fontSize,float(str(want.box.fontSize).trim_suffix("px")))
-		compare("toast.text",result.toast.text,want.message.text)
-		compare("toast.padding",result.toast.padding,float(str(want.box.padding).trim_suffix("px")))
-		check("toast.color",label.get_theme_color("font_color") == Color.WHITE and style.bg_color == Color(0,0,0,0.7))
+		result.notices = []
+		for index in 2:
+			var slot := layer.stack.get_child(index) as Control
+			var box := slot.get_child(0) as PanelContainer
+			var label := box.get_child(0) as Label
+			var style := box.get_theme_stylebox("panel") as StyleBoxFlat
+			var entry := {"boxRect":[box.global_position.x,box.global_position.y,box.size.x,box.size.y],"textRect":[label.global_position.x,label.global_position.y,label.size.x,label.size.y],"fontSize":label.get_theme_font_size("font_size"),"color":"#"+label.get_theme_color("font_color").to_html(false),"background":style.bg_color.to_html(),"padding":style.content_margin_left,"text":label.text,"opacity":slot.modulate.a}
+			result.notices.append(entry)
+			var want: Dictionary = native.pages.capacity_1_limit.notices[index]
+			compare("toast.%d.boxRect" % index,entry.boxRect,want.box.rect)
+			compare("toast.%d.textPosition" % index,entry.textRect.slice(0,2),want.message.rect.slice(0,2))
+			compare("toast.%d.textHeight" % index,entry.textRect[3],want.message.rect[3])
+			compare("toast.%d.fontSize" % index,entry.fontSize,float(str(want.box.fontSize).trim_suffix("px")))
+			compare("toast.%d.text" % index,entry.text,want.message.text)
+			compare("toast.%d.padding" % index,entry.padding,float(str(want.box.padding).trim_suffix("px")))
+			check("toast.%d.color" % index,label.get_theme_color("font_color") == Color.WHITE and style.bg_color == Color(0,0,0,0.7))
 		await shot("capacity_1_limit",result)
+	if returned != null:
+		# Restored list is interactive; cancel must return to the ordinary main menu.
+		returned._cancel()
+		await frames(2)
+		check("bag.cancel-to-main-menu",menus[0]._mode == "command" and map._menu_open)
 	for player in [map.bgm,map.bgs,map.me,map.se]:
 		player.stop()
 		player.stream = null
