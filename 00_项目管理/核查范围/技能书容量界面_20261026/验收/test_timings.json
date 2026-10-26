@@ -1,0 +1,94 @@
+{
+  "jobs": 2,
+  "globalJobs": 4,
+  "wallSeconds": 106.202,
+  "flakyRerunPassed": [],
+  "fingerprint": "",
+  "reused": [],
+  "scenes": [
+    {
+      "name": "xiyou_event_compare.tscn",
+      "seconds": 101.015,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 101.015,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_help_card.tscn",
+      "seconds": 75.162,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 75.162,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_flow.tscn",
+      "seconds": 12.254,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 12.254,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_notice_options.tscn",
+      "seconds": 7.752,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 7.752,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_book_capacity_ui.tscn",
+      "seconds": 5.872,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 5.872,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_book_capacity.tscn",
+      "seconds": 5.147,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 5.147,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_item_use.tscn",
+      "seconds": 4.55,
+      "passed": true,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.55,
+          "passed": true
+        }
+      ]
+    }
+  ]
+}
