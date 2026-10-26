@@ -104,7 +104,8 @@ function measure(w, user, target, sid, tag) {
   const stateBefore = [user, target].map(b => b._states.slice());
   // 有的公式带副作用会改目标生命（敌人 160 的技能 857「净化之雷」custom 公式把角色 9 打到 0），之后拿同一个目标量的行就在 0 血下算
   // （reach4 敌人 947 技能 5557「b.hp*0.99」量出 0，哪吒 2026-10-25）：量完还原双方 hp／mp／tp，取样口径始终是满血目标，与 Godot xiyou_rules 一致
-  const vitals = [user, target].map(b => [b._hp, b._mp, b._tp]);
+  // 护盾同理（白龙 2026-10-26）：b.addShield 公式（5648 轰鸣鼓墙等）把盾留在目标上，宿傩捌 10230「b._shield>0 时 ×1.5」就在别人留下的盾上算；一并还原
+  const vitals = [user, target].map(b => [b._hp, b._mp, b._tp, b._shield]);
   const act = new w.Game_Action(user); act.setSkill(sid);
   act.itemCri = () => 0;
   const row = {...tag, skill: sid, skillName: item.name, type: item.damage.type, element: item.damage.elementId, physical: act.isPhysical(), magical: act.isMagical()};
@@ -115,7 +116,7 @@ function measure(w, user, target, sid, tag) {
   } catch (e) { row.error = String(e.message || e); }
   item.damage.variance = saved;
   [user, target].forEach((b, i) => b._states.filter(id => !stateBefore[i].includes(id)).forEach(id => b.removeState(id)));
-  [user, target].forEach((b, i) => { [b._hp, b._mp, b._tp] = vitals[i]; });
+  [user, target].forEach((b, i) => { [b._hp, b._mp, b._tp, b._shield] = vitals[i]; });
   return row;
 }
 
