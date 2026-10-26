@@ -73,6 +73,8 @@ var _event_flags := {}
 var _cleared := {}
 ## 敌群事件里尚未翻译、本次跳过的指令（"代码 内容 页"）
 var troop_event_skipped: Array = []
+## 技能／物品公共事件（XBattleCommonEvent）里尚未翻译、本次跳过的指令（"代码 内容 公共事件N"）
+var common_event_skipped: Array = []
 ## 战斗内事件的游标（XBattleEventRunner）：当前页没执行完时非空；本次检查的条件 {first, turn_end, moment, guard}
 var _runner: XBattleEventRunner = null
 var _check := {}
@@ -626,6 +628,7 @@ func _drive_events() -> Array:
 	var logs := []
 	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
 	while not _check.is_empty():
+		if _runner == null: _runner = XBattleCommonEvent.take(self)  # setupBattleEvent：预约的公共事件（技能／物品效果 44）先于敌群页
 		if _runner == null:
 			if is_won() or is_lost() or int(_check.guard) > pages.size():
 				break
@@ -655,7 +658,8 @@ func _drive_events() -> Array:
 				pass
 			_:
 				for sk in _runner.skipped:
-					troop_event_skipped.append("%d %s 第%d页" % [int(sk.code), str(sk.text), int(_runner.get_meta("page")) + 1])
+					if _runner.has_meta("common_event"): common_event_skipped.append("%d %s 公共事件%d" % [int(sk.code), str(sk.text), int(_runner.get_meta("common_event"))])
+					else: troop_event_skipped.append("%d %s 第%d页" % [int(sk.code), str(sk.text), int(_runner.get_meta("page")) + 1])
 				_runner = null
 	_runner = null
 	_check = {}
@@ -1423,8 +1427,6 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 			if t is XActor:
 				t.learn_skill(int(eff.dataId))
 				t.refresh_passive()
-		44:
-			r.events = r.get("events", []) + XPetCapture.item_event(self, r.skill, int(eff.dataId), t)  # 只认捕捉的公共事件 173
 
 
 ## 行动序列 ADD STATE（Game_Battler.addState → isStateAddable：活着、未抵抗（IMMORTAL 期间阵亡视为抵抗）；阵亡状态直接倒下）
