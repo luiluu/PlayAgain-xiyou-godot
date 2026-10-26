@@ -1,0 +1,61 @@
+沙僧：核查积压分期清理。排在「连续分支合 main」交付之后做，不插在它中间。
+
+唐僧（常驻总装，Claude 会话 local_303a239d）2026-10-27 00:05 交代。用户已同意，原文由 Kyo 转贴。用户另定：清积压期间车道照常派，不因超限停派。
+
+## 为什么做
+
+`待核查.py` 现在报：待 Codex 核查 34 批（计入上限），另有只改文档或登记的 31 批，共 68 批；上限是 10 批。积压的都是 Claude 车道 10-24～10-26 合进 main 的提交。核查只能由你做：同一执行者的不同会话不能互核。
+
+## 共同做法（每期都一样）
+
+- **分支**：每期在你的工作树开一条，`codex/review-backlog-20261027-1`、`-2`……，从当时的本地 main 切。证据目录 `.claude/worktrees/state-effects-2b` 照旧不删。
+- **每批怎么核**：
+  - 读合并提交的差异（`git diff <合并提交>^1 <合并提交>`），对照该批交付单（已删的去合并提交的父提交里读）和变更记录条目。
+  - 跑与它相关的专项：`检查.sh --affected <合并提交>^1 --oracle` 选出的范围，或从中挑最相关的几场单跑。用 `python3 07_开发环境/并行测试.py ./godot ../01_Godot工程 --full <场景>`，不要裸跑 godot。
+  - 重点看三件事：是不是原版行为（以 mv_oracle 和冻结 v0.28 为准）、有没有动你的独占文件超出「单行挂点」、测试是不是真的在测（有没有放宽断言、跳过）。
+- **写结论**：在变更记录写「核查 <合并提交号>：通过」或「核查 <合并提交号>：问题 …」。写合并提交号或分支名，`待核查.py` 会自动销账。只改文档和登记的批次只看结论与编号，一批一行即可。
+- **发现问题时**：小问题（明显错字、断言漏一项）可以在本分支直接修，并写明。玩法或规则问题不要自己大改，写进交付单「需要总装决定」，由总装派回原车道修；交接板上那一行先留着，标「问题待修」。
+- **每期单独交付**：交付单写 `00_项目管理/交付/codex_review-backlog-20261027-N.md`，列出本期核了哪些批、结论、发现的问题、跑了哪些场景。尾注写「执行者: Codex（沙僧）」「核查: 待Claude」。推送后告诉 Kyo「第 N 期已交付」。车道不改交接板。
+
+## 分期（风险高的先核）
+
+**第一期：战斗、存档、玩法规则（11 批，最要紧）**
+1. claude/bailong-actors-f2575c（#14，dev.180）：专属角色 167／168／173 等的 XActorModules，actor／battler／damage 挂点
+2. claude/bailong-fix0（#19，dev.183）：专属技能说明卡 XCharacterHelp、人物图鉴立绘、O-096
+3. claude/project-thread-6np8me（dev.181）：宠物与 battle_logic，xstate.gd 存档字段
+4. claude/project-thread-z5fkq9：种族祝福战斗效果 XRaceBattle、异化战斗侧 XAlienBattle
+5. claude/project-thread-47bcr5：法宝完整升级 XMagicWeapon，怪物图鉴死亡钩子接进 XBattler（你原本的 P2）
+6. claude/project-thread-47bcr5-actor-cmds：事件指令 320～324（改名字／职业／图像／称号）
+7. claude/bajie-pets-source-97efd5-2
+8. claude/bajie-pets-source-97efd5-3
+9. claude/bajie-pets-source-97efd5-4（宠物来源：捕捉、神秘生物刷新、魔兽要诀；战斗中技能／物品公共事件通用化）
+10. b3ab53e（唐僧）：敌人元素增伤补算行动表技能的 passiveELUP，改了你的 damage.gd
+11. 4cd0128（唐僧）：seal1691 测试前提，挑战开关开到战斗结束
+
+这期和你刚合 main 解的那 8 处冲突是同一片代码，趁熟一起核最省事。
+
+**第二期：界面与系统（8 批）**
+claude/bajie-warehouse（角色仓库）、bajie-warehouse 期一（装备镶嵌图鉴）、bajie-warehouse 期二（装备道具仓库）、claude/bajie-clothes-d34623（更衣）、claude/bajie-advanced（角色进阶）、claude/bajie-skillshare（技能共享／羁绊／领袖，O-095）、claude/bajie-superstrong（超强者出战限制），以及 codex/review-pending-20261024 里唐僧那部分。
+
+**第三期：楼层内容（5 批）**
+claude/wukong-reach3、claude/wukong-reach4-b8321e、claude/wukong-reach5、claude/project-thread-47bcr5-reach-lamps、claude/wukong-tongtian。
+重点看切片收图、传送和事件对照是否与冻结源一致，新楼层专项是否真的走到。
+
+**第四期：工具（9 批）**
+claude/nezha-check-tiers-eac2f9 及其 -2、-4、-5、-6、-7、-7b，claude/muzha-sync-incremental-4bd025-3，claude/tangseng-event-probe-speed。
+重点看选测、合并、同步工具有没有让检查漏跑（假绿）。各自的工具回归要跑。
+
+**文档与登记（31 批）**：随哪期顺手都可以，只看结论与编号，一批一行。
+
+四期都核完，计入上限的应降到 10 批以内。
+
+## 不在本任务里的
+
+- 待 Claude 核查的 4 批（state-effects-2e、117ba14、review-pending-20261024 你那部分、stage-review-50-phase2）是你自己的提交，由 Claude 核，你不碰。
+- 不顺带做新功能，不推进 PREE。
+
+## 强度与停手
+
+- 第一期涉及战斗规则和存档，用 high；第二、三期用 medium；第四期工具假绿判断用 high。文档批次用 medium。
+- 5 小时额度到 80%，或上下文吃紧：收尾当前这一批，已核的照常写结论提交并推送，交付单写明核到哪一批，然后停手。
+- 一期内某批问题大到要重写，先停下写进交付单，不要硬改。

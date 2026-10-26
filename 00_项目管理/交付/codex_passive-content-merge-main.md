@@ -1,7 +1,7 @@
 # 交付：codex/passive-content-merge-main
 
-- 车道／工作者：集成／沙僧（Codex，重制_沙僧_77，接76）
-- 状态：WIP。新20例原版参照已落库并按实测修313清槽；五小时79%开始按80%线收尾，未同步／未完成引擎语义验证，不可按可合并收取
+- 车道／工作者：集成／沙僧（Codex，重制_沙僧_78，接77）
+- 状态：WIP。已修地图TP上限路径，五项直接专项共19,465项通过；普通增量同步sync3在途，最终218场集成选测未跑，仍不可合并
 - 交付范围截至5761f01f；新分支从该点建立。PREE已独立保存至c5953948，未带入本分支。
 - 本次合并本地main：9b140f365f93c2cfa4b19d85b6ddd72576830c16；不以远端覆盖本地。两父合并保留提交链。
 - 用户明确要求先评判并执行Claude交代，原文留[只读交代证据](../核查范围/连续分支合main_Claude交代_20261026.txt)。方向合理，集成优先，PREE暂停；不自行销核或登记完成度。
@@ -159,3 +159,19 @@
 
 - 接续专项实跑：事件／菜单操作1431/1431；嵌套12例×3域模式866/866（合成状态表先按原版JS索引扩容、结束恢复原大小）；战斗TP537/537、公式效果908/908、Boss来源15723/15723。导入exit0且无脚本／解析／编译错误。状态脚本专项因旧generated缺oracle/state_js.json失败，需同步后验，未伪称全绿。精简证据见[接续专项](../核查范围/连续分支合main_接续专项_20261027.json)。
 - 新同步等待任务sync3：runId 5a0865fbf36a4897808812d013b7333d，包装器21018、childPGID21023。先检查context3为done，再每30秒确认全局同步空闲；当前仍等白龙83937／83940，不重复启动或取消。真实同步以本地同名包装入口运行，保留全部.sandbox并让各车道常规pgrep可见；无接受开关，完成后先审报告。
+
+## 沙僧78→79：同树自动接力（2026-10-27，非额度停手）
+
+- 人类用户在78明确要求「先继续你手上没做完的活然后再开始核查」。已从77恢复连续14期集成；本期交付后转清核查积压，不按更早交代立即回PREE。积压原交代已原样归档到核查范围/清核查积压_Claude交代_20261027.txt；依第一至四期顺序，每期独立分支交付，不核自己的批次，不顺带新功能。PREE仍封存c5953948。
+- 78按项目上下文自动接力约定交79，创建后78停止，79唯一后续执行者；非额度收尾。末次实查五小时17%、周49%，本集成沿用80%收尾线，核查同80%线。不可虚称切模型／强度。
+- 所有文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。已有树／分支codex/passive-content-merge-main，HEAD为本节提交；已push github本分支。只用此树，不建／清树，不reset/cherry-pick，不改main及共享登记、不发消息到其他已有会话、不建automation／PR。当前主工作区有总装在途改动，不能当作无人WIP接管。全部未跟踪旧证据、.sandbox、generated和失败／不完整原件保留。
+- 固定集成main9b140f365f93c2cfa4b19d85b6ddd72576830c16；原合并d13da37e、14期截点5761f01f，不追新main。原交代核查范围/连续分支合main_Claude交代_20261026.txt仍有效，地图／菜单显式域已获用户授权续做，不重复请求许可。
+- 78定位并修了真实差异（1f63aa68、a69cf654）：冻结YEP Core战斗外Refresh Update TP=false走保存的base.refresh，绕开全局加状态锁而夹TP；HP/MP=true仍旧。XResourceContext加in_battle默认true，313／菜单临时设置并恢复借域，地图TP setter仅走基础refresh；战斗不改变。新context测试修typed party.assign和合成2997状态索引先resize、最后恢复。原版20例fixture未改，断言未放宽。
+- 已验证五场共19,465项：state_operation1431、state_merge_context866、state_effects_tp537、formula_effects908、boss_state_origin15723。targeted2导入exit0无脚本/解析/编译错误；原失败与重跑原件在本地结果/merge-main-next。state_js因旧generated缺oracle/state_js.json失败，必须同步后验，不能报整轮通过。精简证据核查范围/连续分支合main_接续专项_20261027.json。
+- **唯一在途本车道任务sync3，不能重启／重复启动／取消**：日志03_再刷重制_Godot/04_验证/本地结果/merge-main-next/sync3.log；runId 5a0865fbf36a4897808812d013b7333d，包装器21018、childPGID21023（原等待器已exec，命令改成同目录的同步正式西游.py包装入口，启动身份同一）。先等白龙83937／83940完全退出、context3成功，才通过真实条件检查开始本树同步（日志SYNC_IDLE_CHECK=passed）。当前已开始，普通增量、无--full及无接受开关，但缓存未命中，PROBE_PLAN=57执行/0复用；末查切片四段在跑／等槽。只能等待任务.sh每次--timeout45（最多60秒），看自己日志；不加上限、不绕槽、不杀别人。
+- 同步入口是本地结果/merge-main-next/同步正式西游.py，用runpy调用merge-main76/sync_preserve.py；后者仅将.sandbox待删除项归档并禁manual淘汰，不改同步工具／缓存／并发。入口同名让各车道常规pgrep能看见。preserved-merge76-20261027-001303内保留原件。sync2只是78自己的等候器，在实际同步前核PPID和lstart后SIGTERM，failed143，暂停审计sync2-pause.json；不是运行中同步失败，不要混淆。
+- **下一步**：等sync3完成→读末尾backup路径的同步报告（先outline，按measurementChanges/changeCandidates/additionCheck读小段）→新增才accept-additions，既有测量变化逐条接受单并说明来源，禁无条件接受。新两探针未接PROBES，不重采已有效20例。同步完成自动导入，核解析／编译错误，再按固定基准运行检查.sh --affected9b140f36 --oracle（参数分开）；以CHECK_LOG_DIR保留各场日志，XIYOU_TEST_HEARTBEAT=30。当前选测计划本地结果/merge-main-next/selection-final.sh/json，SEL_FULL=0、218场、32核心全覆盖，仅计划未执行。14交付专项与选测取并集去重，不能用78诊断代替同步后最终验收；缺谁补谁，不跑全量。
+- 继承问题记录：文档main9b的两条链接a；旧eight early_inventory_rule失败（xiyou_determinism）在更早交代中称继承，不能放宽断言。78确认该测试相对main9b未改，且e1925bea实际只是Boss专项证据提交，尚未重新实证八败归因；如最后仍失败，读真实日志再准确区分，不把早期口述当新基线证据。
+- 最终真正验证可交付后，更新本交付单（14原交付单名单保留）并push github本分支，向Kyo交付由其转唐僧；不自行合main、不标自己核查通过或完成度。然后按最新用户顺序开codex/review-backlog-20261027-1从当时本地main开始积压第一期11批，交付单单独写；全部Codex原提交仍由Claude核查。
+
+- 78接力前文档原块复查exit1，仅继承两条链接a，无新增JSON／编号／链接问题；MV守卫16/16、diff检查通过。待核查.py在本集成分支输出217批/计入140，此输出不是当时main统计，核查期须在其实际main基准重新统计，不能把附件68批或本分支217批当成实时main值。sync3末查切片四段运行／等槽420秒，仍在途，未重启。
