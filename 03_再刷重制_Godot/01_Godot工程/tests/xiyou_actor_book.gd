@@ -8,8 +8,9 @@ extends Node
 const FIXTURE := "res://tests/fixtures/actor_book_oracle.json"
 ## 坐标与宽的容差（XActorBook.js_width 与浏览器 measureText 一致到 0.01）
 const POS_TOL := 0.05
-## 切片外的 17 个角色：没导出 SV 图（167～177 的侧视图还由运行模块换成专属图），状态页不画立绘
-const NO_SPRITE := [108, 143, 144, 145, 157, 160, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+## 不画立绘的角色：切片外的没导出 SV 图；168、173～177 在原版由运行模块换成多帧图（未移植，XActorBook.sprite_path）。
+## 160（mzzd3 已随别处导出）、167 渡鸦、172 宿傩原版画的就是数据库 battlerName，照常对照。
+const NO_SPRITE := [108, 143, 144, 145, 157, 168, 169, 170, 171, 173, 174, 175, 176, 177]
 
 var results := []
 var out_dir := ""
@@ -115,9 +116,9 @@ func _run() -> void:
 		var d := diff(no_icons(got), no_icons(drawn_ref(a.status))) if id >= 167 else diff(got, drawn_ref(a.status))
 		if d != "":
 			bad.status.append("%d %s" % [id, d])
-		var p := XDB.img_path("sv_actors", str(XDB.rec("Actors", id).get("battlerName", ""))) if XActorBook.named(id) else ""
+		var p := XActorBook.sprite_path(id)
 		if id in NO_SPRITE:
-			if p != "" and str(a.get("sprite", "")) != str(XDB.rec("Actors", id).battlerName):
+			if p != "":
 				bad.sprite.append("%d 切片外角色不该画 %s" % [id, p])
 		elif str(a.get("sprite", "")) != (str(XDB.rec("Actors", id).get("battlerName", "")) if p != "" else ""):
 			bad.sprite.append("%d %s 图 %s" % [id, a.get("sprite", ""), p])
