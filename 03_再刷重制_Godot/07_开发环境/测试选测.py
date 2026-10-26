@@ -140,6 +140,19 @@ class SelectTests(Fixture):
         self.put(TESTS / 'fixtures/orphan.json', '{}\n')
         self.assertTrue(self.pick()['full'])
 
+    def test_fixture_only_used_by_tool_runs_tools_not_full(self):
+        # 2026-10-26 本批：tests/fixtures/state_js_translation.json 只被 07_开发环境/测试状态js翻译.py 读，原来整轮
+        self.put(ENV / '测试工具夹具.py', "F = 'tests/fixtures/tool_only.json'\n")
+        self.put(TESTS / 'fixtures/tool_only.json', '{}\n')
+        self.commit('tool fixture')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.put(TESTS / 'fixtures/tool_only.json', '{"a": 1}\n')
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertEqual((s['scenes'], s['checks']), ([], ['guards', 'tools']))
+        self.put(TESTS / 'fixtures/orphan.json', '{}\n')  # 谁也不用：仍整轮
+        self.assertTrue(self.pick()['full'])
+
     def test_deleted_test_and_fixture_need_nothing(self):
         for rel in ['xiyou_orbs.gd', 'xiyou_orbs.tscn']:
             (self.root / TESTS / rel).unlink()
@@ -213,6 +226,16 @@ class SelectTests(Fixture):
         self.put(CORE / 'battler.gd', 'class_name XBattler\n# uncommitted\n')
         s = self.pick(head=head)
         self.assertEqual(s['files'], [str(CORE / 'orbs.gd')])
+
+    def test_head_option_reads_tests_at_head(self):
+        # 回放：head 里新增的测试场景要能找到（工作区还没有它），不能因为找不到用它的测试判整轮
+        self.scene('xiyou_new', 'XLonely.new()')
+        self.commit('new test')
+        head = self.g('rev-parse', 'HEAD')
+        self.g('checkout', '-q', self.base)
+        s = self.pick(head=head)
+        self.assertFalse(s['full'])
+        self.assertEqual(s['scenes'], ['xiyou_new.tscn'])
 
     def test_bad_base_and_bad_table(self):
         with self.assertRaises(RuntimeError):
@@ -298,9 +321,34 @@ class CheckerTests(Fixture):
         rc, out, ran = self.check('--affected', self.base)
         self.assertEqual(rc, 0, out)
         runner = next(l for l in ran if l.startswith('并行测试.py')).split()
-        self.assertEqual(runner[3:], ['xiyou_event_compare.tscn', 'xiyou_shop.tscn'])
+        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_shop.tscn'])  # 选测按指纹沿用
         self.assertIn('guard_check.cjs', self.names(ran))
         self.assertNotIn('测试合并工具.py', self.names(ran))
+
+    def test_static_failure_stops_before_godot(self):
+        # 文档与登记检查失败：默认在 Godot 测试前就退出；--keep-going 照旧全跑
+        self.put(Path('00_项目管理/坏链接.md'), '[x](不存在.md)\n')
+        rc, out, ran = self.check()
+        self.assertEqual(rc, 1, out)
+        self.assertIn('失效链接', out)
+        self.assertIn('未运行 Godot 测试', out)
+        self.assertNotIn('并行测试.py', self.names(ran))
+        self.assertNotIn('godot', self.names(ran))
+        rc, out, ran = self.check('--keep-going')
+        self.assertEqual(rc, 1, out)
+        self.assertIn('并行测试.py', self.names(ran))
+        self.assertIn('有失败项', out)
+
+    def test_prose_brackets_are_not_links_but_real_breaks_are(self):
+        # 唐僧_13 2026-10-26：表格正文「变身[萧萧](a)」被当成失效链接卡住合并；只放过 1～2 个字符、不含 / 与 . 的目标
+        self.put(Path('00_项目管理/表格.md'), '| 变身[萧萧](a) | [甲](Ab) |\n')
+        rc, out, _ = self.check('--affected', self.base)
+        self.assertEqual(rc, 0, out)
+        for bad in ['不存在', 'abc', 'a.md', './a', 'x/y']:
+            self.put(Path('00_项目管理/表格.md'), '[甲](%s)\n' % bad)
+            rc, out, _ = self.check('--affected', self.base)
+            self.assertEqual(rc, 1, bad)
+            self.assertIn('失效链接 00_项目管理/表格.md -> ' + bad, out)
 
     def test_battle_without_oracle_warns_same_source(self):
         self.put(CORE / 'battler.gd', 'class_name XBattler\n# 2\n')

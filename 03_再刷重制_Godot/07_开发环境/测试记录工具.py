@@ -99,6 +99,17 @@ class VolumeTests(unittest.TestCase):
         vol.unlink()
         self.assertTrue(volumes.check(self.repo.root))
 
+    def test_split_everything_leaves_no_blank_line_at_eof(self):
+        # 唐僧_13 2026-10-26：当前卷整卷移空时末尾多一空行，git diff --check 报错
+        name = self.quiet(volumes.split, self.repo.root, '2026-10-20')
+        for path in [self.repo.root / LOG, self.repo.root / volumes.VOLUMES / name]:
+            text = path.read_text()
+            self.assertTrue(text.endswith('\n') and not text.endswith('\n\n'), (path.name, text[-40:]))
+        self.repo.git('add', '-A')
+        self.assertEqual(subprocess.run(['git', '-C', str(self.repo.root), 'diff', '--cached', '--check'],
+                                        capture_output=True, text=True).stdout, '')
+        self.assertEqual(volumes.check(self.repo.root), [])
+
     def test_nothing_to_split(self):
         self.assertIsNone(self.quiet(volumes.split, self.repo.root, '2026-10-01'))
 

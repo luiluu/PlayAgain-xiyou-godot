@@ -293,6 +293,23 @@ class ParallelTestRunnerTests(unittest.TestCase):
         _, runs = self.run_tests(jobs=1)
         self.assertEqual(len(runs), 4)
 
+    def test_selected_scenes_reuse_with_flag_and_merge_into_whole(self):
+        # 选测（检查.sh --affected 传 --reuse）：同指纹下沿用上次通过的；选测结果并进同一指纹的记录，之后整轮只补跑没跑过的
+        p, runs = self.run_tests('--reuse', 'a', 'c', jobs=1, FAIL_C='1')
+        self.assertEqual((p.returncode, sorted(runs)), (1, ['a.tscn', 'c.tscn']), p.stdout)
+        p, runs = self.run_tests('--reuse', 'a', 'c', jobs=1)
+        self.assertEqual((p.returncode, runs), (0, ['c.tscn']), p.stdout)
+        self.assertIn('✓ a.tscn {"passed":1,"total":1}（沿用）', p.stdout)
+        p, runs = self.run_tests(jobs=1)  # 整轮：a、c 沿用，只补跑 b
+        self.assertEqual((p.returncode, runs), (0, ['b.tscn']), p.stdout)
+        p, runs = self.run_tests('--reuse', 'b', jobs=1)
+        self.assertEqual(runs, [])
+        _, runs = self.run_tests('--reuse', '--full', 'b', jobs=1)
+        self.assertEqual(runs, ['b.tscn'])
+        (self.tmp / 'proj/data.json').write_text('{}')  # 指纹变了：选测也全跑
+        _, runs = self.run_tests('--reuse', 'a', 'b', jobs=1)
+        self.assertEqual(sorted(runs), ['a.tscn', 'b.tscn'])
+
     def test_corrupt_or_contradictory_cache_is_not_reused(self):
         # 沙僧 2026-10-21 P2 复现（review_phase2_cache_corruption.json）：passed=true 但 line 是失败计数仍被沿用、退出 0；
         # 合法 JSON 但结构是数组时 AttributeError。两种都应当作没有记录、整轮重跑并正常通过。
@@ -983,6 +1000,26 @@ for name in filter(None, files):
         self.assertEqual(self.call('--finish'), 1)
         self.assertTrue(self.wt.exists())
         self.assertFalse(self.g('diff', '--cached', '--name-only'))
+
+    def test_accept_doc_edits_only_management_markdown(self):
+        # 总装收尾前手修 00_项目管理/ 下的文档：默认拒；--accept-doc-edits 一并暂存；别处文件、交付单、非 .md 仍拒
+        self.put('00_项目管理/阶段审查.md', 'old\n')
+        self.g('add', '.'); self.g('commit', '-m', 'review doc')
+        self.g('merge', 'main', cwd=self.wt)
+        self.assertEqual(self.call(), 0)
+        self.register(); self.put('00_项目管理/阶段审查.md', 'fixed link\n')
+        self.assertEqual(self.call('--finish'), 1)
+        self.assertIn('阶段审查.md', self.last_output)
+        self.assertIn('--accept-doc-edits', self.last_output)
+        for path in ['00_项目管理/x.json', '00_项目管理/交付/claude_other.md', 'README.md']:
+            self.put(path, 'x\n')
+            self.assertEqual(self.call('--finish', '--accept-doc-edits'), 1, path)
+            self.assertIn(path, self.last_output)
+            (self.root / path).unlink()
+        self.assertFalse(self.g('diff', '--cached', '--name-only'))
+        self.assertEqual(self.call('--finish', '--accept-doc-edits'), 0, self.last_output)
+        self.assertIn('00_项目管理/阶段审查.md', self.g('-c', 'core.quotePath=false', 'show', '--name-only', '--format=', 'HEAD'))
+        self.assertFalse(self.g('status', '--porcelain'))
 
     def test_lock_is_not_removed_by_second_runner(self):
         lock = self.root / '.git/lane-merge/running.lock'
