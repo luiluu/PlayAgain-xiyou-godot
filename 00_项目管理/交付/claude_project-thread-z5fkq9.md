@@ -29,6 +29,7 @@
   - 两个新探针单跑：`race_battle_probe` 31 例、`alien_battle_probe` 19 例，均无错误，产物放进 generated/oracle。
   - 交付单 37 个场景（含 main 新增 battle_common_events 共 38 个）`并行测试.py --jobs 4`：38/38 通过（xiyou_race_battle 436/436、xiyou_alien_battle 330/330、xiyou_enemy_book 59/59、xiyou_rules 难度 1 四段全过）。
   - `检查.sh --affected main`：选测判成整轮（`alienation.json`、`._` 文件拿不准，`xstate.gd` 本身就选 157 个），187 个场景 186 过，唯一失败 `xiyou_module_hooks`（cat.default_host_handlers，见上「本机收尾」），改期望后单跑 1310/1310；文档、登记、Python 工具回归全过。
+  - 补跑：查出那次「整轮」其实只跑了 187/193（选测判整轮时仍把选中的场景传给 并行测试.py，见「可优化」已做的第 3 条），漏的 6 个（ui_smoke、xiyou_achievement_badge、xiyou_choice_window、xiyou_formulas、xiyou_gear_query_cache、xiyou_review_fixes）补跑全过，本分支整轮 193/193。
   - 合并 main（91a2283f，-3 测试提速）后：选测（同上 38 个＋module_hooks＋json_cache）40/40 通过（共用槽排队后实跑约 14 分钟）。
 
 ## 交接板
@@ -43,8 +44,10 @@
 
 ## 可优化（流程／工具／效率）
 
-- `.gitignore` 只有 `.DS_Store`，没忽略 macOS `._*` 资源分叉文件；云端（或 exFAT／网络盘）提交会把它们带进来，还让 `选测.py` 判成「拿不准：整轮」。建议总装在 `.gitignore` 加 `._*`（共用文件，车道未改）。
-- `选测.py` 把 `modes/xiyou/alienation.json` 这类手写数据判成「拿不准：整轮」；可按引用它的专项选（本例只有 alien_battle／alien_config／alien_workshop／event_compare）。
+用户 2026-10-26 接受，已在本分支做（4db349f，`测试选测.py` 25/25，`检查.sh --affected b7ee1c9b` 通过）：
+- `.gitignore` 加 `._*`（macOS AppleDouble 资源分叉文件，云端、exFAT 或网络盘提交会带进来）；`.gitignore` 改动在选测里归开发工具组。
+- 选测对照新组 mode_data：`modes/xiyou/*.json` 手写数据（`generated/` 除外）跑直接引用它的测试，加上测试引用了「按文件名加载它的模块」class_name 的专项＋事件对照，找不到才整轮。`alienation.json` 由整轮降为 4 个场景。
+- **顺带修的缺陷**：`选测.py --shell` 判成整轮时仍输出选中的场景表，`检查.sh` 把它原样传给 `并行测试.py`，「整轮」就只跑选中的那些。现在整轮时场景表置空。2026-10-26 前用 `--affected` 判成整轮的检查可能漏跑零星场景（本分支漏 6 个，已补跑）。
 
 ## 本分支提交
 
@@ -52,3 +55,5 @@
 - 58b3279 种族祝福能力值与战斗效果、参照探针与专项
 - 5de2318 异化战斗侧、参照探针与专项
 - a520f46 module_hooks 默认宿主期望补 race-blessings；删误提交的 ._ 文件（木吒）
+- b7ee1c9 交付单验证结果（木吒）
+- 4db349f 选测：手写数据按引用与加载模块选专项、整轮不给场景表；.gitignore 忽略 ._*（木吒）
