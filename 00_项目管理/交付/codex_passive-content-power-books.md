@@ -73,3 +73,5 @@
 - 71确认三项70任务均done exit0：45例边界（45唯一ID）、6例menu（6唯一ID）errors空；Godot导入无Script／Parse／Compile错误。边界逐例核过真实class/limit、五本allowed、canonical保护/clone例外、缺符/付费/重复付费与腾位再学；弱者真实五本都可学，未冒称触顶6本。两份fixture保存原始数值但紧凑序列化；原始原件留.sandbox。八例Godot专项正在等共用槽；独立原版截图任务亦已排队。
 
 - 原版真实物品入口四页截图成功（boss71-power-native-ui task39f491becd004dfa89d37bfe6e304267，exit0）：来源前后指纹相等、页面errors与Chrome错误均空。窗口前三页260/232/760/256、结果页260/250/760/220；padding14、lineHeight36。读数在power_books_ui_oracle.json，原图在[权能界面原版](../核查范围/权能书界面_20261026/原版/power_2_confirm.png)。此刻没有Godot成对截图，八例专项仍在等槽。
+
+- 八例Godot专项task491e67cdc06748abbece91f0136adfc6已done exit0，原日志保留；先查看结构化断言结果与错误文本，再接菜单并扩45例。
