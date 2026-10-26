@@ -9,7 +9,7 @@
 - 容量满变量9返书／预约1317：先实采真实物品入口、未满／满额／重复／取消／缺书，以及普通容量与权能类别限额的关系，再设计接线。
 - 已定位冻结源 rpg_οbjects.js 的 itemEffectLearnSkill：仅技能类型5受变量9约束，按队伍选定角色的 skills() 数量判断；满额 gainItem(this.item(),1) 与预约1317，否则学习。权能实际为类型4，另有先行类别守卫。公共事件1317仅提示。
 - 开工工作区干净，HEAD34184d36；新分支名未占用，已从该点切出。额度五小时84%、周13%。共用登记只读；所有提交待Claude，不自销核、不自评完成度。
-- 正在准备独立冒烟与小矩阵，尚未运行，不称已掌握实际结果或可合并。长任务只占共用四槽；保留全部.sandbox／失败／generated／工作树。
+- 当前：基础5冒烟＋18例与898项已验；完整Scene_Item界面发现自动回背包续用层，已补运行时草稿。原版两页完整样本有效，重制UI首轮66/73，尚待修提示框行高／核帮助卡／最终回归；仍不可合并。长任务共用四槽，保留全部.sandbox／失败／generated／工作树。
 
 ## 交接板
 
@@ -71,3 +71,22 @@
 - 首轮完整重制UI专项66/73，发现现有XToast的长提示行高比原版高、第二条叠放位置偏移；另有测试取消步数写错（原版列表先回分类再回主菜单），已仅修测试为两次取消。容量898、物品11、事件5均通过，首败日志保留。续用核心只保留上下文与规则，恢复列表绘制移到XItemScene，避免规则核心依赖UI类型；接下来取窗口图与实际字行读数再定样式修正。
 
 - 完整续用还会把主帮助卡换成结果消息，技能书的技能附卡保留。已按冻结Sprite_ItemHelp.setText实现主卡替换，沿用现有O-007（最小字号16）／O-008（贴行摆放），不把原版12号小字与旧摆位冒称逐项一致；实际正文、品质框与附卡保持关系会在成对图验。当前Godot诊断渲染和原版帮助卡补读都在等共用槽，不绕槽。
+
+## 沙僧72→73（同树上下文接力，非额度停手）
+
+- 用户已明确“继续”，五小时已重置；72末次实查五小时32%、周20%。到上下文接力线，72创建73后停止，73唯一后续执行者；先实查额度，五小时95%才WIP停手、周98%收尾。设计／疑难high，机械步骤只有真实接口才称切medium。
+- 第一条及全部文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。只用该树，当前codex/passive-content-book-capacity，HEAD以本节提交为准；不写main或共用交接板／变更记录／步骤／当前状态，不合main、不reset／cherry-pick、不建或清worktree、不建automation、不向唐僧或其他已有会话发消息。全部自己提交待Claude，不自销核／不自评进度。保留全部.sandbox／失败与不完整采样／generated／整树。
+- 开工只读共用交接板顶部／自己车道行、git status/log、get_usage_limits，以及本单顶部和本完整节，不重读整段过程。上一期权能五本已可合并，最终34184d36之前，不重做。
+- **重要修正**：原版5＋18例probe用Scene_ItemBase；规则层返书／1317／重复／取消／缺书／选人反例等均有效，Godot898/898和此前7场依赖通过。但完整Scene_Item额外包了installItemBagContinuationRuntime.js：Item→Map执行1317原提示→立即返回原物品列表→第二条“事件已执行：书名（未检测到可确认的变化）”。前述回地图不是完整终态，不能再说本期只缺截图。
+- 已定位并补续用草稿：18e90c17核心上下文与map菜单挂点；622b9810将恢复列表绘制从XPassiveBooks移到XItemScene；9df4ceea补主帮助卡替换。XPassiveBooks仅真实类型5拒收设capacity_refund和capacity_bag_return会话meta；item_scene先消费再返、_after_use记原分类／物品；XMapScene.open_menu默认参数不变，CE消费后take_return验证当前state／地图／空预约槽，再延迟重开菜单与该物品列表。只做本期满额书，不扩全部公共事件道具的续用。actor.learn_skill不限制普通容量；formula_execution／mv_event_core没动。
+- 基础原版18例和Godot898已全过，七场老依赖也全过（见前节和结构化进展）。完整UI首轮task347f17bda65946cab2b6b879d54687f2：容量898、物品11、事件5通过；UI66/73，首轮无Parse错误。失败：toast0盒高77 vs62、文字高57 vs42；toast1盒y104 vs102／高107 vs83，文字高87 vs63；另取消到主菜单测试少按一次，已修两次（列表→分类→主菜单）。失败日志全留，不能称全绿。
+- **在途2项不重复启动**（均在等共用四槽，render已等约12分钟，native-ui6约10分钟，别绕槽／改上限／杀别人／动工具车道）：boss72-capacity-render.log（task387393f8563f426699354efe50dd6776，Godot窗口诊断截图，输出核查范围/技能书容量界面_20261026/Godot_首轮诊断）；boss72-capacity-native-ui6.log（原版补读主帮助卡，输出同目录/原版）。用等待任务.sh每次--timeout45，最多60秒；长批python3 -u＋XIYOU_TEST_HEARTBEAT=30＋长任务.py start。render排队期间又补了9df4ceea帮助卡，故仅诊断；之后必须在固定最终版本取干净验收。
+- **有效原版完整样本**：task5d37893c8c3b4722a8101caa7f4749f6 done exit0，source_before==after、Chrome/page errors空。现在保存在“原版_有效无帮助读数”目录（已入Git），包括选人／最终回物品两页png+json、run和来源指纹。fixture tests/fixtures/book_capacity_ui_oracle.json仍是此有效版本。native-ui6只加help字段，成功后核对完整性／来源／errors，再用它更新fixture与最终原版目录。
+- 原版最终两条Toast盒(460,30,260,62)、(460,102,260,83)，字号18、padding10，文字分别容量原提示与续用结果；原版消息span的内联包围宽约239，不等于Godot Label容器240，不强行比宽，但x/y／行高／盒高要比。首轮Godot的字高57／87很像字体本身27高＋默认line_spacing3，与CSS两行42／三行63不同；这是**待运行时读数证实的假说**，不能当结论。
+- renderer已在tests/xiyou_book_capacity_ui.gd输出fontHeight／lineSpacing／lineCount／expectedTextSize。先看实际Godot_首轮诊断的json与图片，再改XToast行高；目前**尚未改toast.gd**。GameFont.current和原版CodexUserUI都用同一FZLanTYJW_ZhongCu.TTF，别擅换字体。可考虑局部FontVariation.spacing_top/bottom或LabelSettings按CSS21行高，但必须以真实引擎读数、两端图为据，不盲试；公共XToast要改时补notice_options等直接依赖。已有XWebPanel._fixed演示LabelSettings，但其line_spacing只影响行间，不能假设直接解决首行高。
+- 新主帮助卡：原版Sprite_ItemHelp.setText做fakeItem.descParams单行消息，字号RJO.HE.ItemDescOtherSize（源码默认12），gray quality0，技能附卡保留；native-ui6会给实际help.rect／padding／rows／texts。Godot的XItemScene.restore_capacity_return已替换主卡rows、quality0并保留extras，复用XHelpCard.layout、沿用既有O-007最小16和O-008贴行，不冒称和原版12小字/旧摆位逐项一致。新UI测试需加原版help字段处理：actor_expected删help（通常null），result expected删help后另比正文rows，记录实际优化后矩形与字体并看图。不要为了新小期修改现有O项。
+- 两页取图：review_book_capacity.py/.js/.cjs，只读服务沿用serve守卫；setup真实map5(10,10,2)、party[2]、6301、book1461×3、变量9=1；__ilr.newGame临时禁用的原生Game_Map.updateInterpreter已恢复，真实CE自动消费。P.trace仅包goto／$.toaster观察并调用原函数，不替换规则。最初4轮因错误等待Map最终停住而失败，目录原版_首轮未完成～第四轮未完成全部保留且不入Git，logs全留。第五轮正确终点通过，第六轮补help在途。
+- Godot真实UI专项XMapScene→open_menu→物品分类／列表／操作／选人→返书1317→回该列表／双Toast→取消分类／主菜单；不是手工弹Toast。基础专项与完整UI专项各独立，渲染脚本render_book_capacity.py用临时HOME，不读玩家存档，按result_ok查真实退出码和Script错误，不用--script --check-only缺autoload预检。
+- 收尾：修Toast／补help比对后，固定版本跑UI＋容量＋物品＋event_compare（必跑）与直接依赖；map open_menu有改可选flow专项看实际风险，不扩全量或切片同步。窗口render取图，逐页看两端图及读数；无切片变化不加难度1四段。原检查.sh文档块、node语法、MV守卫16/16与UI守卫12/12、git diff --check；本轮最新node／两守卫／diff已通过。成功临时输出等最终精简证据后再仅清自己的成功日志，失败／.sandbox／generated／整树保留。
+- 结构化进展“技能书容量进展_20261026.json”仍是WIP，会记录原版5／18和898及老7场，不得用它冒称新续用9df4ceea已最终验收。最终整理本单顶部与变更记录草稿／交接板／可优化节后才写可合并，全部待Claude。可优化已记排队公平性与Parse失败早停，工具车道不在本期动。
+- 后续顺序：容量小期完整交付→PREE／ASUP→WPNM／SkEType与race-battle等八戒接口→全部做完且额度足才核别人；旧确定性8个early_inventory_rule失败不夹带修复、不称整轮全绿。两块TP／敌人永久账本仍留后续。

@@ -869,8 +869,10 @@
     "boss72-capacity-test: EventHost type parse failure; own child stopped; all logs retained"
   ],
   "pending": [
-    "paired native/Godot UI screenshots and actual layout readings",
-    "final delivery, not merge-ready"
+    "wait existing renderer and native-help jobs",
+    "resolve toast CSS line-height mismatch with actual layout readings",
+    "check native help notice contents and inherited O-007/O-008 differences",
+    "fixed-version UI/related regressions, paired images and final delivery"
   ],
   "pause": {
     "fiveHourUsedPercent": 95,
@@ -939,5 +941,83 @@
       },
       "logSHA256": "bb63f624e12a2f10ec17a4ad0747ecf4a3aaa706d9ad98e8f8cc3146cf97e377"
     }
-  ]
+  ],
+  "resume72": {
+    "fiveHourUsedPercent": 32,
+    "weeklyUsedPercent": 20,
+    "state": "context-relay; in-progress; new full Scene_Item continuation discovered",
+    "newRuntime": [
+      "18e90c17",
+      "622b9810",
+      "9df4ceea"
+    ],
+    "acceptedNativeUI": {
+      "task": "5d37893c8c3b4722a8101caa7f4749f6",
+      "path": "技能书容量界面_20261026/原版_有效无帮助读数",
+      "sourceUnchanged": true
+    },
+    "failedFullUI": {
+      "task": "347f17bda65946cab2b6b879d54687f2",
+      "passed": 66,
+      "total": 73
+    },
+    "pendingRuns": {
+      "boss72-capacity-render": {
+        "runId": "387393f8563f426699354efe50dd6776",
+        "status": "running",
+        "exitCode": null,
+        "pid": 71294,
+        "startedAt": "2026-10-26T12:51:09.174705+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/占槽.py",
+          "--label",
+          "capacity-render",
+          "--",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/03_转换工具/ui_reference/render_book_capacity.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "00_项目管理/核查范围/技能书容量界面_20261026/Godot_首轮诊断"
+        ],
+        "childPGID": 71295,
+        "childIdentity": {
+          "pid": 71295,
+          "pgid": 71295,
+          "startedAt": "Mon Oct 26 13:51:09 2026    "
+        }
+      },
+      "boss72-capacity-native-ui6": {
+        "runId": "2905c0dcf7494269a6d2cacceaa4c518",
+        "status": "running",
+        "exitCode": null,
+        "pid": 71590,
+        "startedAt": "2026-10-26T12:53:14.612684+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/占槽.py",
+          "--label",
+          "capacity-native-ui6",
+          "--",
+          "node",
+          "03_再刷重制_Godot/03_转换工具/ui_reference/review_book_capacity.cjs",
+          "00_项目管理/核查范围/技能书容量界面_20261026/原版",
+          "--port=8778"
+        ],
+        "childPGID": 71591,
+        "childIdentity": {
+          "pid": 71591,
+          "pgid": 71591,
+          "startedAt": "Mon Oct 26 13:53:14 2026    "
+        }
+      }
+    }
+  }
 }
