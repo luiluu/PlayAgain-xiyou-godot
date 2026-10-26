@@ -110,3 +110,22 @@
 - 完整物品页按冻结续用层执行1317后回原分类／原物品列表，显示容量与续用两条提示，以结果正文替换主帮助卡并保留技能附卡。主卡沿用O-007／O-008字号和位置优化，未将优化后版面当作原版逐项一致。
 - 已有验证：原版5冒烟与18例、基础Godot898／旧7场依赖；文档块、node语法与MV16／UI12守卫通过。上述旧运行结果不覆盖最新续用接线；最终容量、完整UI、相关依赖与两端逐页图仍待本轮固定版本验收，详情见本单接手记录。
 - 本期无切片变化，无同步／全量记录；不混修旧8个early_inventory_rule确定性失败。所有提交仍待Claude，进度由总装与核查者登记。
+
+## 沙僧73→74（同树上下文接力，非额度停手）
+
+- 用户既定自动上下文接力继续，73创建74后停止，74唯一后续执行者。末次实查五小时52%、周23%，不是95%额度停手；先实查，五小时95%才WIP停、周98%收尾。
+- 第一条及全部文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。只用该树，分支codex/passive-content-book-capacity；本节提交为最新HEAD。开工只读共用交接板顶部／自己车道行、status／log、额度、本单顶部与本完整节；不要重读全部过程。禁改main／共用交接板／变更记录／当前状态／开发编号，不合main、不reset／cherry-pick、不建或清worktree、不建automation、不向其他已有会话发消息。保留全部.sandbox／失败与不完整目录／generated／整树；所有自己提交待Claude，不自销核、不自评完成度。
+- 本期仍验收中；上一期权能五本已独立可合并，不重做。基础原版5＋18、Godot898和旧七场依赖有效，但不能拿它们给最新续用接线冒称最终验收。当前结构化进展JSON仍WIP。
+- **两个在途任务完全没重启**：73末尾仍在等共用四槽，render已等约49分钟、native-ui6约47分钟。都是正常心跳，不绕槽、不加上限、不杀别人、不改工具。boss72-capacity-render.log，task387393f8563f426699354efe50dd6776，输出核查范围/技能书容量界面_20261026/Godot_首轮诊断；boss72-capacity-native-ui6.log（任务ID按日志对应状态文件查，不猜造），输出同目录/原版。日志都在03_再刷重制_Godot/04_验证/本地结果。用等待任务.sh每次--timeout45，最多60秒。render排队期间测试／运行时有补丁，只作诊断，必须在最终固定版本后干净验收。
+- 原版native-ui6真实task仍是task记录可由该日志对应的长任务状态查；72交代未给完整taskID，不猜造。它的已启动命令是占槽.py --label capacity-native-ui6 -- node 03_再刷重制_Godot/03_转换工具/ui_reference/review_book_capacity.cjs 00_项目管理/核查范围/技能书容量界面_20261026/原版 --port=8778。当前两个队列任务进程是71294/71295与71590/71591（不要因此杀它们）。
+- 运行时仍为72的18e90c17／622b9810／9df4ceea：完整Scene_Item满额后Item→Map执行1317→立即回原物品列表，双Toast＋结果主帮助卡，技能附卡保留。不是基础Scene_ItemBase的回Map终态。XPassiveBooks仅本期类型5拒收的会话meta；XMapScene.open_menu默认空参数保留原调用，不扩全部事件道具；formula_execution／mv_event_core未动。
+- **73新增运行时6b45e436**：旧take_return仅看事件结束后空槽，无法拦住已被其他预约覆盖并执行的情形。现XMapScene在run_reserved_common_event之前取预约ID，传take_return(s,consumed_event)，只1317可恢复。基础tests/xiyou_book_capacity.gd补五组正常／覆盖／待执行／换图／换局的一次性上下文守卫，共20条，尚未跑引擎，不能算通过；预计旧898＋20但以真实结果为准。
+- **73新增UI测试1eea509b／276fde57**：help_read读取卡实际rect／padding／rows／quality／fontSizes／visible／extras。actor_expected删help，result_expected删help后单比原版结果正文；断言主卡可见quality0、所有实际字至少16、技能附卡内容等于使用前。注意附卡基线必须在列表_refresh之后、进选人前取，actor模式会隐藏并清附卡；已修为此顺序。Toast额外输出fontAscent／fontDescent，原有fontHeight／lineSpacing／lineCount／expectedTextSize仍在。当前旧fixture没有help，诊断会因此多一项预期失败；等native-ui6成功后更新fixture再验。
+- **73新增来源指纹5e535fe1**：review_book_capacity.py INPUTS增加HelpExtend.js／AXY_Toast.js／fonts/FZLanTYJW_ZhongCu.TTF；任务仍排队时改的，成功后source_before==after应含33项。未改冻结源。有效旧原版目录“原版_有效无帮助读数”30项指纹已复核当前完全相同；两端字体原件SHA相等db0fe73bff1d05a1ddb4eac5bd31b9fc971a30285cb9c14b81464ab697195f79。
+- **仍未改toast.gd**。首轮完整UI66/73：两条Toast字高57/87 vs42/63，盒高77/107 vs62/83；第二条y104 vs102；取消少一步已改两次（列表→分类→主菜单）。先看诊断真实json和两张图：fontHeight／ascent／descent／lineSpacing／lineCount，再决定字体行高度量。相同字体不许换。可局部FontVariation.spacing_top/bottom＋line_spacing0试出CSS21行高，但必须引擎实测；仅改line_spacing可能无法修首行高，别当结论。Godot官方FontVariation／LabelSettings文档已查：spacing_top/bottom可调整额外像素，LabelSettings.line_spacing可负且仅加行间；本地XWebPanel._fixed可参考。改公共Toast后补notice_options等直接依赖。
+- 原版有效旧两页已入Git，73已逐页看：选人只有actor卡，结果页确实回列表、双提示、结果主帮助卡／保留技能附卡。原版最终Toast盒(460,30,260,62)与(460,102,260,83)，字号18／padding10；span内联宽约239不等于Godot Label240，不强比容器宽，但x/y／高度要比。帮助卡原生12字，Godot沿既有O-007最小16／O-008贴行，不冒称逐项一致。native-ui6成功后核来源／errors／run两页完整性，更新tests/fixtures/book_capacity_ui_oracle.json的pages和sourceFingerprints；sourceIdentity沿原fixture保留。
+- 修Toast并补原版help后，固定版本跑容量UI／容量规则／物品／event_compare与直接依赖（notice_options，map open_menu可加flow；帮助卡也可加help_card）。用长任务.py start，python3 -u＋XIYOU_TEST_HEARTBEAT=30；不绕共用槽。独立窗口render_book_capacity.py取两页最终Godot图，两端逐页看；诊断失败图不作最终成功证据。无切片变化，不跑同步／难度1四段／全量。
+- 73机械项：MV守卫16/16、UI服务守卫12/12、review_book_capacity.js/.cjs的node语法、diff检查通过。原检查.sh文档Python块已提取原文执行通过（dev.173），日志boss73-capacity-docs.log；后来只补本单草稿及来源指纹，收尾再核最新JSON／链接。全量待核表123批并未自销，按用户顺序全部小期后才核别人。
+- 99300117整理顶部交接板下一步／试玩说明、可优化与变更记录草稿，仍标验收中不可合并；最终用真实证据更新这些段和结构化进展后才能标可合并。只写本单，不写共用登记。可优化建议：单槽公平性（短任务已排近一小时）与明确Parse加载失败早退，工具车道不在本期动。
+- 所有代码／文档已提交；仅原版_首轮未完成、第二轮未完成、第三轮未完成、第四轮未完成四目录未跟踪，全保留。不清成功日志直到最终精简证据入Git后，失败／.sandbox／generated／整树永不清。73没新增引擎测试结果，不要误算通过。
+- 后续仍按容量完整交付→PREE／ASUP→WPNM／SkEType与race-battle等接口→全部完成且额度足才核别人；旧8个early_inventory_rule确定性失败不夹带修复。只读预研PREE：dsPassiveSkill.js2240附近PREE按出战成员逐技能加百分点、ASUP逐项乘剩余率后clamp；原版敏捷基率0.05/0.03，先制队伍能力×4、防偷袭能力先设0。真实开战要再采样，不能据静态读数实现；Olivia OTB有混淆不能凭grep无结果推断无效。此预研未实现、未取新参照，不当下期完成。两块TP／敌人永久账本留后续。
