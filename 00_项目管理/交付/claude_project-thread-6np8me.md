@@ -34,7 +34,7 @@
 - 整轮同步 `同步正式西游.py --no-register --accept-additions` 通过：测量变化只有 `state_js.json` 新增参照，既有测量无变化，无需接受单；verify issues 为空。
 - `xiyou_state_js` 1733/1733；相关 12 个场景（state_effects 19949、battle 8、battle_events 108、random_streams 484、party 57、party_skills 214、zhenqi 181、zhenqi_break 83、zhenqi_daofa 68、costumes 27、costume_battle 4、shield 565）全过；xiyou_rules 难度 1 四段（105856／105778／105608／105670）全过。
 - `测试状态js翻译.py` 10 项 OK。
-- `检查.sh --affected main`：见下（收尾时补）。
+- `检查.sh --affected main`：全部通过（选中 187 个 Godot 场景，含 xiyou_rules 全部段与事件对照）。第一次只有选测回归失败：新检查 `测试状态js翻译.py` 没登记进 `测试选测.py` 的替身清单，已补。
 
 ## 进度账
 
@@ -52,3 +52,4 @@
 - fac06a8 第二批：加状态、暴击后加状态、回复、设变量、原版语法错误块
 - e2b1e1e WIP 第三批：状态计数 _stateCounter（云端）
 - 2a45ab7 第三批：修计数键名；探针原版报错改记 thrown 键（本机）
+- 70f9a62 选测回归替身清单登记测试状态js翻译.py；交付单
