@@ -5,7 +5,7 @@ var failures: Array = []
 var s: XState
 var page: XItemScene
 class EventHost:
-	extends RefCounted
+	extends Node
 	func toast(text: String) -> void:
 		XToast.show_text(text)
 
@@ -81,11 +81,14 @@ func run_case(c: Dictionary) -> void:
 		if row.event != null:
 			check(c.id+".event-reserved",s.peek_common_event() == 1317)
 			var ce := XDB.rec("CommonEvents",s.peek_common_event())
-			var interp := MVInterpreter.new(EventHost.new(),4,0,ce.list)
+			var host := EventHost.new()
+			add_child(host)
+			var interp := MVInterpreter.new(host,4,0,ce.list)
 			s.clear_common_event()
 			await interp.run()
 			check(c.id+".event-translated",interp.skipped.is_empty(),interp.skipped)
 			compare(c.id+".event",snapshot(a,item),row.event.after)
+			host.queue_free()
 	compare(c.id+".after",snapshot(a,int(sequence[-1])),c.observed.after)
 	compare(c.id+".selected",XPassiveBooks.learned(selected),c.observed.selectedPassives)
 	page.queue_free()
