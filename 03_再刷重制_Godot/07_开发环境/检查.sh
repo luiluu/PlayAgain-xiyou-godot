@@ -6,6 +6,8 @@
 #   --full    Godot 测试整轮重跑，不沿用上轮通过结果（也可 CHECK_FULL=1；沿用条件见 并行测试.py 文件头）
 #   --affected <基准>  选测（三级检查②）：按 选测对照.json 只跑与「基准到工作区」改动相关的 Godot 场景和非 Godot 检查，
 #             先打印选了什么、为什么；文档与登记检查照常；有拿不准的改动就整轮。不加时行为不变（全量）
+#             选中的场景按工程指纹沿用上次通过结果（并行测试.py --reuse；--full 不沿用）
+#   --keep-going  文档与登记检查（JSON／链接／开发编号）失败后仍跑 Godot 测试与其余检查（默认此时立即失败退出，免得白跑几十分钟）
 set -u
 ENV_DIR=${0:A:h}
 ROOT=${ENV_DIR:h:h}
@@ -16,13 +18,14 @@ fi
 PROJECT=$ROOT/03_再刷重制_Godot/01_Godot工程
 GODOT=${GODOT:-$ENV_DIR/godot}   # 云端等没有本机 Godot.app 时用环境变量指定（见 云端测试.md）
 FAIL=0
-ORACLE=0; TEST_ARGS=(); AFFECTED=
+ORACLE=0; TEST_ARGS=(); AFFECTED=; KEEP_GOING=0
 while (( $# )); do
   case $1 in
     --oracle) ORACLE=1 ;;
     --full) TEST_ARGS+=(--full) ;;
+    --keep-going) KEEP_GOING=1 ;;
     --affected) (( $# >= 2 )) || { print -r -- "--affected 要跟基准提交"; exit 2; }; AFFECTED=$2; shift ;;
-    *) print -r -- "未知参数：$1（只认 --oracle、--full、--affected <基准>）"; exit 2 ;;
+    *) print -r -- "未知参数：$1（只认 --oracle、--full、--keep-going、--affected <基准>）"; exit 2 ;;
   esac
   shift
 done
@@ -67,6 +70,8 @@ for rel in files:
             ref = m.group(1).strip('<>').split('#', 1)[0]
             if not ref or '://' in ref or ref.startswith('~'):
                 continue
+            if len(ref) <= 2 and not re.search(r'[/.]', ref):
+                continue  # 正文方括号后跟 (a) 之类不是路径（如表格里「变身[萧萧](a)」，唐僧_13 2026-10-26）
             target = Path(ref) if ref.startswith('/') else p.parent / ref
             if not target.exists() and in_worktree and not ref.startswith('/'):
                 try: target = main_root / (p.parent / ref).resolve().relative_to(root.resolve())
@@ -99,7 +104,13 @@ print(f'  ✓ JSON、链接、开发编号（{dev}）' if not bad else f'  共 {
 sys.exit(1 if bad else 0)
 PY
 
+if (( FAIL && ! KEEP_GOING )); then
+  print "文档与登记检查失败：先修好再跑（未运行 Godot 测试与其余检查；要照旧全跑加 --keep-going）"
+  exit 1
+fi
+
 print "== Godot 测试"
+(( SEL_FULL )) || TEST_ARGS+=(--reuse)
 if (( ! SEL_FULL && ${#SEL_SCENES} == 0 )); then
   print "  （选测：没有要跑的 Godot 场景，跳过导入与测试）"
 else

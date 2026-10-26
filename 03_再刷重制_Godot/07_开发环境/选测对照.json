@@ -1,10 +1,10 @@
 {
-  "说明": "选测对照表（三级检查②，用户 2026-10-24）：选测.py 把 git diff <基准> 的每个改动文件按 rules 自上而下第一条匹配归到一组，各组选中的场景与检查取并集。match 用 fnmatch（* 跨目录），路径相对资料库根；.uid 文件按去掉 .uid 后的路径归组。groups：scenes＝固定要跑的场景（tests/ 下的 glob）；refs＝再加引用了改动文件（文件名、class_name）的测试；loaders＝另把 modes/ 下按文件名加载它的 .gd 的 class_name 当引用词；fallback＝refs 一个也没找到时改跑这些（写 FULL 即整轮）；checks＝非 Godot 检查（guards 守卫、tools 工具回归、content 共性参照与内容覆盖、same_source 同源，见 检查.sh）；full＝整轮；onlyLines＝该文件的改动行都匹配这个正则才归本组，否则整轮。文档与登记检查（JSON、链接、开发编号、占位）任何时候都跑，不用列。拿不准的路径落到最后一条，整轮。",
+  "说明": "选测对照表（三级检查②，用户 2026-10-24）：选测.py 把 git diff <基准> 的每个改动文件按 rules 自上而下第一条匹配归到一组，各组选中的场景与检查取并集。match 用 fnmatch（* 跨目录），路径相对资料库根；.uid 文件按去掉 .uid 后的路径归组。groups：scenes＝固定要跑的场景（tests/ 下的 glob）；refs＝再加引用了改动文件（文件名、class_name）的测试；loaders＝另把 modes/ 下按文件名加载它的 .gd 的 class_name 当引用词；toolRefs＝refs 没找到时，07_开发环境／03_转换工具 的脚本按文件名用它就跑工具回归、不走 fallback；fallback＝refs 一个也没找到时改跑这些（写 FULL 即整轮）；checks＝非 Godot 检查（guards 守卫、tools 工具回归、content 共性参照与内容覆盖、same_source 同源，见 检查.sh）；full＝整轮；onlyLines＝该文件的改动行都匹配这个正则才归本组，否则整轮。文档与登记检查（JSON、链接、开发编号、占位）任何时候都跑，不用列。拿不准的路径落到最后一条，整轮。",
   "groups": {
     "docs": {"说明": "只改文档／登记：只跑文档与登记检查"},
     "registry": {"说明": "合并递增的开发编号（只改版本行）", "onlyLines": "^\\s*(config/version=|\"developmentVersion\")"},
     "test": {"说明": "改了测试本身：跑那个测试（辅助脚本就跑引用它的测试）", "refs": true, "self": true, "fallback": ["FULL"], "checks": ["guards"]},
-    "test_data": {"说明": "测试夹具与基线：跑引用它的测试", "refs": true, "fallback": ["FULL"], "checks": ["guards"]},
+    "test_data": {"说明": "测试夹具与基线：跑引用它的测试；只有工具脚本用它时跑工具回归", "refs": true, "toolRefs": true, "fallback": ["FULL"], "checks": ["guards"]},
     "coverage_baseline": {"说明": "内容覆盖基线", "checks": ["content"]},
     "event_baseline": {"说明": "事件对照基线", "scenes": ["xiyou_event_compare.tscn"]},
     "ui": {"说明": "界面：界面专项＋事件对照", "scenes": ["xiyou_event_compare.tscn"], "refs": true, "fallback": ["ui_smoke.tscn"], "checks": ["guards"]},

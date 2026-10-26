@@ -137,12 +137,14 @@ def split(root, before, dry_run=False):
         name, n = f'变更记录_{first}至{last}_{n}.md', n + 1
     vol_text = (f'# 变更记录分卷 {first} 至 {last}\n\n只读分卷，由 `变更记录分卷.py split` 从[当前卷](../变更记录.md)移来；'
                 '条目原文不改，只调整相对链接。\n\n'
-                + '\n'.join(relink(e, str(LOG.parent), str(VOLUMES)) for _, e in moved))
+                + '\n'.join(relink(e, str(LOG.parent), str(VOLUMES)) for _, e in moved)).rstrip('\n') + '\n'
     head_lines = [l for l in head.rstrip('\n').split('\n') if not l.startswith(INDEX)]
     while head_lines and not head_lines[-1].strip():
         head_lines.pop()
     new_head = '\n'.join(head_lines) + '\n\n' + index_line(names + [name]) + '\n\n'
     new_text = new_head + '\n'.join(e for _, e in kept)
+    if not kept:
+        new_text = new_text.rstrip('\n') + '\n'  # 整卷移空：末尾不留空行（git diff --check）
     size = lambda s: f'{len(s.encode()) / 1024:.0f} KB'
     print(f'移出 {k} 条（{first}～{last}，{size(vol_text)}）到 {VOLUMES / name}；当前卷留 {len(kept)} 条，{size(text)} → {size(new_text)}')
     if dry_run:
