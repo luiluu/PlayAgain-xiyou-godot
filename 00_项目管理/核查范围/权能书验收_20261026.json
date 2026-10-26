@@ -2447,5 +2447,98 @@
     "ok": true
    }
   ]
- }
+ },
+ "successfulTemporaryTasks": [
+  {
+   "name": "boss70-power-native2",
+   "runId": "230ad4b5e5b342ef86d4f70a7b6f3157",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:09:56.715312+00:00",
+   "logSha256": "e773cd2464b9923ffc6a9e5d9db808124428aba958b8cfbfe2f23dfc200129da"
+  },
+  {
+   "name": "boss70-power-boundary",
+   "runId": "85f1ef9b01194b888a915eb1478baed2",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:17:38.940413+00:00",
+   "logSha256": "3422c570cf6d627c82595a1c98c7a527255c32383dcfdefc87bcf1532c0c8b87"
+  },
+  {
+   "name": "boss70-power-menu",
+   "runId": "d0c767629de34de09a43bd81827db659",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:17:48.366450+00:00",
+   "logSha256": "42baba426740065c48d88f9ace4793125a8a3b8270d152f7b2af15c6f8d466b6"
+  },
+  {
+   "name": "boss70-power-import",
+   "runId": "44ef1d9d21af413384ebc8799aeb9f87",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:17:52.354562+00:00",
+   "logSha256": "5cc0c0a576a4bf798227af2a750c0a3ffa972fc91bde613b5ccb236e05871792"
+  },
+  {
+   "name": "boss71-power8",
+   "runId": "491e67cdc06748abbece91f0136adfc6",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:36:36.044005+00:00",
+   "logSha256": "c04bbb96caed551457e061397a3c8c67d9b17ae7134d4a5c384b9acf4903a248"
+  },
+  {
+   "name": "boss71-power45",
+   "runId": "c537e12fe7804560a7c492dfe1b3fb8c",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:37:11.955223+00:00",
+   "logSha256": "6f4d8a07a6a54598bd73c5fd5701a757a4d65bdf59e0dfe3c3aad53c3d4f0edb"
+  },
+  {
+   "name": "boss71-power-native-ui",
+   "runId": "39f491becd004dfa89d37bfe6e304267",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:30:14.609844+00:00",
+   "logSha256": "8011879ca872b3db670d38cb7f2db7a37fc466e6f56ac6fb0370e72762f6a473"
+  },
+  {
+   "name": "boss71-power-ui-import",
+   "runId": "356648facc6040fda9f69b67526b4814",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:38:25.448423+00:00",
+   "logSha256": "b27abf38be4ad1b17f64cdac6da07ceab62f83b3ddf99daf322cd2e61e41048d"
+  },
+  {
+   "name": "boss71-power-regression",
+   "runId": "68a494285de742bbbb52a49208dc557a",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:41:57.312234+00:00",
+   "logSha256": "8df9a83248b162017fd3b9d9934bfd2c48109739385bd5416b3333c4401f69cf"
+  },
+  {
+   "name": "boss71-power-menu2",
+   "runId": "5207259d497542919859c84b69fc9459",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:43:07.959619+00:00",
+   "logSha256": "e54e9283afc8759edde1ac214de689c1cbd1132e565566ca8e25e48b08cb6c4a"
+  },
+  {
+   "name": "boss71-power-menu3",
+   "runId": "508cd126dd364deca1ea60054eaf31d4",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:45:33.721808+00:00",
+   "logSha256": "b50cb4a4404c178cd0b4fa21a7102a06030b8b5b4b9bff48a98c42e0c3ec778e"
+  },
+  {
+   "name": "boss71-power-ui-final",
+   "runId": "4869cea0cff74eaab9703127cd4a6c16",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:48:33.115946+00:00",
+   "logSha256": "f757276beafd7dc5a0488f4861aaff6f4f2124c9211e021e81afdc4d681f546a"
+  },
+  {
+   "name": "boss71-power-render5",
+   "runId": "75dc5c95b9464259a1596f639b9643f6",
+   "exitCode": 0,
+   "finishedAt": "2026-10-26T10:48:41.493552+00:00",
+   "logSha256": "cb74577675d88c2237c9fa85d36be07843d2456d88df8ecd64a9a5393f2b051b"
+  }
+ ]
 }
