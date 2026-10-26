@@ -1,0 +1,518 @@
+{
+ "scene": "Scene_Item",
+ "map": 5,
+ "position": [
+  10,
+  10,
+  2
+ ],
+ "book": 3,
+ "skills": [
+  2771,
+  6301
+ ],
+ "selected": 2,
+ "reserved": 0,
+ "help": {
+  "rect": [
+   712,
+   236,
+   400,
+   48
+  ],
+  "padding": 4,
+  "rows": [
+   [
+    "事件已执行：被动书:秘境抽奖·物品爆率·Lv2（未检测到可确认的变化）",
+    12,
+    "#ffffff",
+    false,
+    0
+   ]
+  ],
+  "texts": [
+   [
+    "事",
+    4,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "件",
+    16,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "已",
+    28,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "执",
+    40,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "行",
+    52,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "：",
+    64,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "被",
+    76,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "动",
+    88,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "书",
+    100,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    ":",
+    112,
+    4,
+    7.125,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "秘",
+    115.5625,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "境",
+    127.5625,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "抽",
+    139.5625,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "奖",
+    151.5625,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "·",
+    163.5625,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "物",
+    175.5625,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "品",
+    187.5625,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "爆",
+    199.5625,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "率",
+    211.5625,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "·",
+    223.5625,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "L",
+    235.5625,
+    4,
+    13.875,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "v",
+    242.5,
+    4,
+    13.5,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "2",
+    249.25,
+    4,
+    14.34375,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "（",
+    256.421875,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "未",
+    268.421875,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "检",
+    280.421875,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "测",
+    292.421875,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "到",
+    304.421875,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "可",
+    316.421875,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "确",
+    328.421875,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "认",
+    340.421875,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "的",
+    352.421875,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "变",
+    364.421875,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "化",
+    376.421875,
+    4,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ],
+   [
+    "）",
+    4,
+    24,
+    24,
+    "left",
+    12,
+    "#ffffff"
+   ]
+  ]
+ },
+ "actor": null,
+ "toast": {
+  "container": {
+   "rect": [
+    450,
+    20,
+    280,
+    175
+   ],
+   "padding": "0px",
+   "margin": "0px",
+   "color": "rgb(0, 0, 0)",
+   "background": "rgba(0, 0, 0, 0)",
+   "font": "CodexUserUI, \"PingFang SC\", \"Microsoft YaHei UI\", sans-serif",
+   "fontSize": "16px",
+   "lineHeight": "normal",
+   "opacity": "1",
+   "text": "绿司机 能学习的抽奖被动技能已经达到1上限！事件已执行：被动书:秘境抽奖·物品爆率·Lv2（未检测到可确认的变化）"
+  },
+  "box": {
+   "rect": [
+    460,
+    30,
+    260,
+    62
+   ],
+   "padding": "10px",
+   "margin": "10px",
+   "color": "rgb(255, 255, 255)",
+   "background": "rgba(0, 0, 0, 0.7)",
+   "font": "CodexUserUI, \"PingFang SC\", \"Microsoft YaHei UI\", sans-serif",
+   "fontSize": "18px",
+   "lineHeight": "normal",
+   "opacity": "1",
+   "text": "绿司机 能学习的抽奖被动技能已经达到1上限！"
+  },
+  "message": {
+   "rect": [
+    470,
+    40,
+    239,
+    42
+   ],
+   "padding": "0px",
+   "margin": "0px",
+   "color": "rgb(255, 255, 255)",
+   "background": "rgba(0, 0, 0, 0)",
+   "font": "CodexUserUI, \"PingFang SC\", \"Microsoft YaHei UI\", sans-serif",
+   "fontSize": "18px",
+   "lineHeight": "normal",
+   "opacity": "1",
+   "text": "绿司机 能学习的抽奖被动技能已经达到1上限！"
+  }
+ },
+ "notices": [
+  {
+   "box": {
+    "rect": [
+     460,
+     30,
+     260,
+     62
+    ],
+    "padding": "10px",
+    "margin": "10px",
+    "color": "rgb(255, 255, 255)",
+    "background": "rgba(0, 0, 0, 0.7)",
+    "font": "CodexUserUI, \"PingFang SC\", \"Microsoft YaHei UI\", sans-serif",
+    "fontSize": "18px",
+    "lineHeight": "normal",
+    "opacity": "1",
+    "text": "绿司机 能学习的抽奖被动技能已经达到1上限！"
+   },
+   "message": {
+    "rect": [
+     470,
+     40,
+     239,
+     42
+    ],
+    "padding": "0px",
+    "margin": "0px",
+    "color": "rgb(255, 255, 255)",
+    "background": "rgba(0, 0, 0, 0)",
+    "font": "CodexUserUI, \"PingFang SC\", \"Microsoft YaHei UI\", sans-serif",
+    "fontSize": "18px",
+    "lineHeight": "normal",
+    "opacity": "1",
+    "text": "绿司机 能学习的抽奖被动技能已经达到1上限！"
+   }
+  },
+  {
+   "box": {
+    "rect": [
+     460,
+     102,
+     260,
+     83
+    ],
+    "padding": "10px",
+    "margin": "10px",
+    "color": "rgb(255, 255, 255)",
+    "background": "rgba(0, 0, 0, 0.7)",
+    "font": "CodexUserUI, \"PingFang SC\", \"Microsoft YaHei UI\", sans-serif",
+    "fontSize": "18px",
+    "lineHeight": "normal",
+    "opacity": "1",
+    "text": "事件已执行：被动书:秘境抽奖·物品爆率·Lv2（未检测到可确认的变化）"
+   },
+   "message": {
+    "rect": [
+     470,
+     112,
+     239.34375,
+     63
+    ],
+    "padding": "0px",
+    "margin": "0px",
+    "color": "rgb(255, 255, 255)",
+    "background": "rgba(0, 0, 0, 0)",
+    "font": "CodexUserUI, \"PingFang SC\", \"Microsoft YaHei UI\", sans-serif",
+    "fontSize": "18px",
+    "lineHeight": "normal",
+    "opacity": "1",
+    "text": "事件已执行：被动书:秘境抽奖·物品爆率·Lv2（未检测到可确认的变化）"
+   }
+  }
+ ],
+ "trace": [
+  {
+   "goto": "Scene_Map",
+   "from": "Scene_Title",
+   "frame": 0,
+   "time": 1793022723170
+  },
+  {
+   "goto": "Scene_Item",
+   "from": "Scene_Map",
+   "frame": 26,
+   "time": 1793022726245
+  },
+  {
+   "goto": "Scene_Map",
+   "from": "Scene_Item",
+   "frame": 112,
+   "time": 1793022735607
+  },
+  {
+   "toast": "绿司机 能学习的抽奖被动技能已经达到1上限！",
+   "scene": "Scene_Map",
+   "frame": 112,
+   "time": 1793022736011
+  },
+  {
+   "goto": "Scene_Item",
+   "from": "Scene_Map",
+   "frame": 112,
+   "time": 1793022736016
+  },
+  {
+   "toast": "事件已执行：被动书:秘境抽奖·物品爆率·Lv2（未检测到可确认的变化）",
+   "scene": "Scene_Item",
+   "frame": 112,
+   "time": 1793022736537
+  }
+ ],
+ "errors": []
+}
