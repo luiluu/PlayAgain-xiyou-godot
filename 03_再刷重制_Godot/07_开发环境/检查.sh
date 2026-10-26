@@ -70,6 +70,8 @@ for rel in files:
             ref = m.group(1).strip('<>').split('#', 1)[0]
             if not ref or '://' in ref or ref.startswith('~'):
                 continue
+            if len(ref) <= 2 and not re.search(r'[/.]', ref):
+                continue  # 正文方括号后跟 (a) 之类不是路径（如表格里「变身[萧萧](a)」，唐僧_13 2026-10-26）
             target = Path(ref) if ref.startswith('/') else p.parent / ref
             if not target.exists() and in_worktree and not ref.startswith('/'):
                 try: target = main_root / (p.parent / ref).resolve().relative_to(root.resolve())

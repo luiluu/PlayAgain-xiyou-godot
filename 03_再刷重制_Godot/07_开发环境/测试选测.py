@@ -339,6 +339,17 @@ class CheckerTests(Fixture):
         self.assertIn('并行测试.py', self.names(ran))
         self.assertIn('有失败项', out)
 
+    def test_prose_brackets_are_not_links_but_real_breaks_are(self):
+        # 唐僧_13 2026-10-26：表格正文「变身[萧萧](a)」被当成失效链接卡住合并；只放过 1～2 个字符、不含 / 与 . 的目标
+        self.put(Path('00_项目管理/表格.md'), '| 变身[萧萧](a) | [甲](Ab) |\n')
+        rc, out, _ = self.check('--affected', self.base)
+        self.assertEqual(rc, 0, out)
+        for bad in ['不存在', 'abc', 'a.md', './a', 'x/y']:
+            self.put(Path('00_项目管理/表格.md'), '[甲](%s)\n' % bad)
+            rc, out, _ = self.check('--affected', self.base)
+            self.assertEqual(rc, 1, bad)
+            self.assertIn('失效链接 00_项目管理/表格.md -> ' + bad, out)
+
     def test_battle_without_oracle_warns_same_source(self):
         self.put(CORE / 'battler.gd', 'class_name XBattler\n# 2\n')
         rc, out, ran = self.check('--affected', self.base)
