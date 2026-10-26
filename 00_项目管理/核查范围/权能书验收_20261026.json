@@ -2350,5 +2350,13 @@
   "无MV旧存档迁移",
   "背景粒子为既有公共背景定帧差异，未声明逐像素一致",
   "此前确定性8项early_inventory_rule继承失败未在本期修复或复跑"
- ]
+ ],
+ "uiNative": {
+  "runId": "39f491becd004dfa89d37bfe6e304267",
+  "exitCode": 0,
+  "sourceBeforeSha256": "5670b5894a4bcec903dc40f485e21fc96276a9f3c1dd7b661fc2e624c5ed20a3",
+  "sourceAfterSha256": "5670b5894a4bcec903dc40f485e21fc96276a9f3c1dd7b661fc2e624c5ed20a3",
+  "sourceIdentityUnchanged": true,
+  "browserErrors": []
+ }
 }

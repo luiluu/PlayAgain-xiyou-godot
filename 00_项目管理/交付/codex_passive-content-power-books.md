@@ -1,7 +1,7 @@
 # 交付：codex/passive-content-power-books
 
 - 车道／工作者：规则／沙僧（Codex，重制_沙僧_71）
-- 状态：进行中（核心草稿与专项已提交，尚未验收）
+- 状态：进行中（功能与专项已验，整理交付及轻检查）
 - 基线：1132e919；前期stateOrigin最终b91b1a14、特殊react最终1132e919均独立可合并待Claude，不重跑旧验收。
 
 ## 本小期范围
@@ -9,10 +9,44 @@
 - 权能五本1654／1656／1674／1683／1718：学习上限、普通遗忘保护、专用付费遗忘入口、静态效果。先原版宿主冒烟与矩阵，不能只读代码改规则。
 - 已定位冻结源installNativeHonghuangRuntime.js 80～123：CodexHonghuang.powerClass优先CodexZones，超强3／强4／弱6；Game_Actor.learnSkill、forgetSkill与Game_Action.testItemEffect／itemEffectLearnSkill共同守卫。专用forgetLearnedPower消费3044遗忘符，不返书。新局free迁移名单为空；不移植MV旧档整理。
 - 普通被动248效果与90科技静态链已交，不重做。旧首轮343参照因权能无法普通遗忘而污染，本期每例newGame，独立文件不覆盖旧证据。
-- 已设计并接核心actor.gd草稿，尚未接道具页拒收提示与3044遗忘UI。容量满变量9返书／预约1317、PREE／ASUP、WPNM／SkEType、race-battle仍按后续顺序。
+- 已接XPowerBooks、actor三个挂点、物品页学习拒收理由与3044独立遗忘子页；复用XChoiceWindow与XOrbShop.wrap_info，不改共用选择窗。容量满变量9返书／预约1317、PREE／ASUP、WPNM／SkEType、race-battle仍按后续顺序。
 - 共享登记只读，保留所有.sandbox／generated和工作树；全部提交待Claude，不自销核、不自评完成度。
 
+## 变更记录草稿
+
+## 2026-10-26 【Codex·沙僧·未经Claude检验】权能五本与付费遗忘（dev.待定）
+
+- 五本权能书1654／1656／1674／1683／1718按原版限制学习：超强3、强4、弱6；重复或满额时显示原理由且不扣书。普通遗忘保护正式角色，预览克隆可独立遗忘。物品3044打开角色→权能→确认→结果页，每次成功只扣1枚遗忘符、不返书；取消和缺符均不改权能。
+- XPowerBooks从真实物品标签及效果43注册权能；actor.gd仅learn_skill／forget_skill／param_rate三个挂点。付费接口原子擦技能、扣符、刷新，不留全局permit。CodexParamRate按已学技能求和后乘入param_rate，保留原版舍入及XCat包装位置，缓存不按actor_id共享克隆的实际加成。
+- 验证：原版修正8例、独立边界45例、菜单6例均完整且errors空；Godot核心6136/6136、边界55682/55682、菜单1068/1068，14场直接依赖首轮全过；最终UI小修后菜单1068/1068、物品11/11、事件5/5再次通过。窗口渲染1194/1194，含126项实际文字位置/宽度/字号/颜色比较，四页成对原图已看。车道按三级检查跑专项＋必跑项，未跑全量，不声明整轮全绿。
+- 提交：核心1cb3dfd3；菜单/拒收846984d1；空行光标edf3d526；精简证据d1ff4a3f。全分支从1132e919之后合并，全部待Claude交叉核查。
+- 未完成／已知范围：本期只做新局与Godot原生角色，不移植MV旧档整理；真实仅五本，弱者上限6没有真实第六本触顶实采。旧8项early_inventory_rule确定性失败继承且不在本期修改。公共背景粒子的定帧差异保留，未声明逐像素相同。
+
+## 验证与证据
+
+- [结构化验收](../核查范围/权能书验收_20261026.json)：来源指纹、唯一ID／errors、各场断言与单次运行记录、最终图片SHA256；所有接受的运行均exit0且无Script／Parse／Compile错误，无偶发重跑。
+- 14场直接依赖：xiyou_passive_content（338例，113142/113142）、actor_p0、actor_bonus、param_states、custom_params、skill_page、item_use、event_compare、boss_lifecycle、boss_output、boss_output_context、boss_sequence、boss_state_origin、boss_react。最后UI光标小修追加菜单／物品／事件三场。
+- 成对截图：[原版确认页](../核查范围/权能书界面_20261026/原版/power_2_confirm.png)／[Godot确认页](../核查范围/权能书界面_20261026/Godot/power_2_confirm.png)，同目录各四页。前三页260/232/760/256，结果页260/250/760/220；padding14、lineHeight36。Godot目录含实际绘制读数，原版完整读数在tests/fixtures/power_books_ui_oracle.json。
+- 原始参照全留mv_oracle/.sandbox；错误重复名单、首轮测试语法错误、无autoload的预检错误、被提示污染或未完成的截图全部保留。未改切片／generated，不新增难度1四段必跑；原检查.sh文档块、node语法、MV守卫16/16、UI服务守卫12/12及git diff --check在收尾核对。
+
+## 交接板
+
+- 下一步：本期可合并后由Claude交叉核查；后续按既定顺序容量满变量9返书／预约1317→PREE／ASUP→WPNM／SkEType与race-battle接口，全部做完且额度足再核别人。
+- 用户试玩说明：学习权能达到上限或重复时给出明确理由且不扣书；在物品里使用权能遗忘符，选择角色和权能，确认后花1枚符遗忘，不返书。
+- 需要用户决定：无。本期不动formula_execution／mv_event_core，不扩set公式。
+
+## 进度账
+
+- 不自行填写或复核完成度；由Claude合并及交叉核查时按实际范围登记。
+
+## 本分支提交与合并边界
+
+- 基线1132e919；运行时主改动1cb3dfd3、846984d1、edf3d526，其余为原版探针、专项、截图与交付证据。前期stateOrigin b91b1a14、react 1132e919及69两期沿依赖链独立交付，不重做、不cherry-pick。
+- 三项70在途任务均已验终态；本期所有任务现已结束。保留已有工作树、全部.sandbox、generated与旧证据，共用交接板／变更记录／进度表／当前状态只读。以下为过程记录，不覆盖本节最终结论。
+
 ## 可优化
+
+- 已做：独立原版四页截图入口与Godot渲染入口，实际场景输出复用并行测试.result_ok，拒绝exit0但有Script错误的结果；可独立撤回这些新ui_reference入口，不改共用工具。
 
 - 待总装派工具车道评估：本轮八例专项等槽超过8分钟，期间其他批测持续取得新槽；记录这一可观察的长排队现象。可考虑跨批次排队公平性，保持四槽上限及重任务权重，不在本车道修改占槽工具。
 
