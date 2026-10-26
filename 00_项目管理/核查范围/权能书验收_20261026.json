@@ -2358,5 +2358,94 @@
   "sourceAfterSha256": "5670b5894a4bcec903dc40f485e21fc96276a9f3c1dd7b661fc2e624c5ed20a3",
   "sourceIdentityUnchanged": true,
   "browserErrors": []
+ },
+ "lightChecks": {
+  "documentCheck": {
+   "exitCode": 0,
+   "developmentVersion": "dev.173",
+   "logSha256": "444ce38f8d6e263cc51f755e448e6d8233617594440c38193a52e7770761c159"
+  },
+  "checks": [
+   {
+    "command": [
+     "node",
+     "03_再刷重制_Godot/03_转换工具/mv_oracle/guard_check.cjs"
+    ],
+    "exitCode": 0,
+    "output": "TEST_RESULT={\"passed\":16,\"total\":16}\n"
+   },
+   {
+    "command": [
+     "/opt/homebrew/opt/python@3.15/bin/python3.15",
+     "03_再刷重制_Godot/03_转换工具/ui_reference/guard_check.py"
+    ],
+    "exitCode": 0,
+    "output": "TEST_RESULT={\"passed\": 12, \"total\": 12, \"failures\": []}\n"
+   },
+   {
+    "command": [
+     "node",
+     "--check",
+     "03_再刷重制_Godot/03_转换工具/mv_oracle/power_books_probe.cjs"
+    ],
+    "exitCode": 0,
+    "output": ""
+   },
+   {
+    "command": [
+     "node",
+     "--check",
+     "03_再刷重制_Godot/03_转换工具/mv_oracle/power_books_boundary_probe.cjs"
+    ],
+    "exitCode": 0,
+    "output": ""
+   },
+   {
+    "command": [
+     "node",
+     "--check",
+     "03_再刷重制_Godot/03_转换工具/mv_oracle/power_books_menu_probe.cjs"
+    ],
+    "exitCode": 0,
+    "output": ""
+   },
+   {
+    "command": [
+     "node",
+     "--check",
+     "03_再刷重制_Godot/03_转换工具/ui_reference/review_power_books.cjs"
+    ],
+    "exitCode": 0,
+    "output": ""
+   },
+   {
+    "command": [
+     "node",
+     "--check",
+     "03_再刷重制_Godot/03_转换工具/ui_reference/review_power_books.js"
+    ],
+    "exitCode": 0,
+    "output": ""
+   },
+   {
+    "command": [
+     "git",
+     "diff",
+     "--check",
+     "1132e919",
+     "HEAD"
+    ],
+    "exitCode": 0,
+    "output": ""
+   },
+   {
+    "pythonSyntax": "ui_reference/review_power_books.py",
+    "ok": true
+   },
+   {
+    "pythonSyntax": "ui_reference/render_power_books.py",
+    "ok": true
+   }
+  ]
  }
 }
