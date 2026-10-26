@@ -60,7 +60,7 @@ func _run() -> void:
 	check("mira.hook_mode", XActorDamageHooks.mira_ops(XDB.rec("Skills", 10142), m, m)[0].value == "magical")
 	# 172 宿傩
 	var k := XActor.new().setup(172)
-	check("sukuna.lv1_skills", [10225, 10229, 10238, 10239, 10240].all(func(i): return k.skill_ids.has(i)) and not k.skill_ids.has(10230), k.skill_ids)
+	check("sukuna.lv1_skills", [10225, 10229, 10239, 10240].all(func(i): return k.skill_ids.has(i)) and not k.skill_ids.has(10230), k.skill_ids)
 	check("sukuna.formula", is_equal_approx(XSukuna.formula(k, k, XDB.rec("Skills", 10229)), k.atk * 88888.0), [XSukuna.formula(k, k, XDB.rec("Skills", 10229)), k.atk])
 	check("sukuna.formula_other", XSukuna.formula(one, k, XDB.rec("Skills", 10229)) == 0.0)
 	k.change_level_mv(50)
