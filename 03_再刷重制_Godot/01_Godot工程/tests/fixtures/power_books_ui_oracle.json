@@ -1,0 +1,386 @@
+{
+ "sourceInputs": {
+  "index.html": "8d1045eb2246b26f35b672be38cc0f2f20883ced92ecc1bf619fbdde8404c2a3",
+  "js/plugins.js": "b1adbb72a2680cadea24962336d213c076f3e9bb6a771bc02403c18c04bdd0ba",
+  "js/rpg_scenes.js": "d7a1cc37a681cfc0be9c0777e3970d1040ac6e801c6425ccf1cf4b3f1120f298",
+  "js/rpg_windows.js": "4c5c65c5c80170bd9898f1f94ad5e7e5f31282e81c898f5201473f80b940f15f",
+  "js/rpg_οbjects.js": "455b1890ff891795df24653e3b8c15ab6ef5050661656c2dd1840339b34d5b7d",
+  "js/plugins/hc.js": "ce540810fdaacfad82b0a245b881916728e92f450b7481235a96e5eb5b4da317",
+  "js/plugins/CP_MagicWeapon.js": "2696d69c18999f4e136aa1d764805ae37fbac09081b493f2d4ae1c0cf51af230",
+  "js/plugins/Star_PetSystem.js": "3563d8a390c20ccbce2a17e42a7844fa710bafd33eeb48400ef64eaeffbfd5a0",
+  "js/plugins/Star_PetUpLevel.js": "75f83b50a72365f0d369cdc56d8469b9e666fc2bacdfc0490f2cd00fce556a56",
+  "js/plugins/Star_PetSynthesis.js": "b9b935a8ad341874435feaea1dc7be243e70e487f45769bc8eedfed723c082d3",
+  "js/codex/runtime/installNativeHonghuangRuntime.js": "6379a9f2fe92509dc8b6fba3a83cf742926d2b835010411a10a27d32c71c3b67",
+  "js/codex/runtime/installNativeRaceRuntime.js": "34ec02fc74ff696d7b6b608fd6b273d90f45c5d7523b472f3c2d6acaf090b65a",
+  "js/codex/runtime/installNativeYunshangRuntime.js": "4cbbcd3559156f99ae5dd60ce830fe81c7e3753da20c81e908f89276b39411f8",
+  "js/codex/runtime/installNativeBindingChargeRuntime.js": "c2b00e64b41fe9876cdc16e4cfb62da0882e41d2bced2fca0db2353569540d57",
+  "js/codex/runtime/installAlienationWorkshop.js": "984f22edb0a976dc563c6d8943c2cb22828efc9bf86111090e1970e92b3370a3",
+  "js/codex/runtime/installAlienationAffixes.js": "2bdad47dd6739a2a628d8f74c955e4f17062ff920bf9ac8279d98946a82d738e",
+  "js/codex/runtime/installGamePanelTheme.js": "3e1f9b88bc3b7ac066b151feef5bc397d44b00d7e6b6b2008e83484307820f55",
+  "js/codex/runtime/installCombatPowerRuntime.js": "def2ec0ee30478c54a9f016b8a7c6f6b6c51360432235120059ebc6dc3fccacc",
+  "js/plugins/AB_EnemyBook.js": "4b451e6f83b786206436dbb79bf4255bb96591924730bb79190f26eed4601e94",
+  "js/plugins/Star_EquipInlayBook.js": "dbe0b043dec07542816fae5e589027993533cc76c18d26e90be26632ca4f2fb3",
+  "js/plugins/Star_EquipmentMosaic.js": "5e31cee1ad423adf066bb4797cbd4d8bb005b0ff49497c2745599bbb8b98ccba",
+  "js/plugins/PH_Warehouse.js": "bd89947f96efee122ddd09825a68d97119e710161e04f8312eae995248bdf377",
+  "js/plugins/Star_ActorWarehouse.js": "beebaf7f89511ec9d3274e6740d425a7fcecd99368d97c31d6b2ede6581a3012",
+  "js/plugins/Star_ChangeClothes.js": "5bf5bae754a7ad02bbd8bf6c9786e3478c306b8be5069333638fd6395d970671",
+  "js/plugins/Star_ActorAdvanced.js": "92b2708c9ec60ed5bd99b36d904a5b482902590a395a230fb6d245d2c85e3546",
+  "js/codex/runtime/installNativeEconomyRuntime.js": "55e38d874fa573deb33d157b63f9532522af240a926b223064cf0ab1b47c0ffe",
+  "js/codex/runtime/installUnifiedQualityRuntime.js": "cd2ea7a7058e1cd5dcbd45c2719ada7cae346d10fbdad6cc1d34f8a5ade267b6",
+  "js/plugins/EliteEnemy.js": "3a383fe8663d2ddb9a6d548eec6407c6123522e7c63ce36402059b3639d7b26a",
+  "js/plugins/EnemyNameColorByDifficulty.js": "6851a85f26b9bb5b84b9b1b74a9d27f863921b020c263ddfbc896a6031777945"
+ },
+ "pages": {
+  "power_0_actors": {
+   "rect": [
+    260,
+    232,
+    760,
+    256
+   ],
+   "padding": 14,
+   "lineHeight": 36,
+   "infoHeight": 120,
+   "pageRows": 3,
+   "info": [
+    "权能遗忘符",
+    "选择角色；每遗忘一本消耗1枚，不返还书",
+    "剩余道具：1"
+   ],
+   "rows": [
+    {
+     "label": "狗逍遥  1 / 4",
+     "enabled": true
+    },
+    {
+     "label": "甘雨  0 / 3",
+     "enabled": false
+    },
+    {
+     "label": "绿司机  1 / 6",
+     "enabled": true
+    }
+   ],
+   "texts": [
+    [
+     "狗逍遥  1 / 4",
+     6,
+     120,
+     720,
+     "left",
+     26,
+     "#ffffff"
+    ],
+    [
+     "甘雨  0 / 3",
+     6,
+     156,
+     720,
+     "left",
+     26,
+     "#ffffff"
+    ],
+    [
+     "绿司机  1 / 6",
+     6,
+     192,
+     720,
+     "left",
+     26,
+     "#ffffff"
+    ],
+    [
+     "权能遗忘符",
+     0,
+     0,
+     732,
+     "left",
+     26,
+     "#84aaff"
+    ],
+    [
+     "选择角色；每遗忘一本消耗1枚，不返还书",
+     0,
+     36,
+     732,
+     "left",
+     26,
+     "#ffffff"
+    ],
+    [
+     "剩余道具：1",
+     0,
+     72,
+     732,
+     "left",
+     26,
+     "#ffffff"
+    ]
+   ],
+   "tokens": 1,
+   "powers": [
+    {
+     "actor": 1,
+     "powers": [
+      7238
+     ]
+    },
+    {
+     "actor": 106,
+     "powers": []
+    },
+    {
+     "actor": 2,
+     "powers": [
+      7240
+     ]
+    }
+   ],
+   "errors": []
+  },
+  "power_1_skills": {
+   "rect": [
+    260,
+    232,
+    760,
+    256
+   ],
+   "padding": 14,
+   "lineHeight": 36,
+   "infoHeight": 120,
+   "pageRows": 3,
+   "info": [
+    "狗逍遥 · 强者",
+    "已学权能 1 / 4",
+    "选择想要遗忘的一项权能"
+   ],
+   "rows": [
+    {
+     "label": "权能·时之主宰",
+     "enabled": true
+    }
+   ],
+   "texts": [
+    [
+     "权能·时之主宰",
+     6,
+     120,
+     720,
+     "left",
+     26,
+     "#ffffff"
+    ],
+    [
+     "狗逍遥 · 强者",
+     0,
+     0,
+     732,
+     "left",
+     26,
+     "#84aaff"
+    ],
+    [
+     "已学权能 1 / 4",
+     0,
+     36,
+     732,
+     "left",
+     26,
+     "#ffffff"
+    ],
+    [
+     "选择想要遗忘的一项权能",
+     0,
+     72,
+     732,
+     "left",
+     26,
+     "#ffffff"
+    ]
+   ],
+   "tokens": 1,
+   "powers": [
+    {
+     "actor": 1,
+     "powers": [
+      7238
+     ]
+    },
+    {
+     "actor": 106,
+     "powers": []
+    },
+    {
+     "actor": 2,
+     "powers": [
+      7240
+     ]
+    }
+   ],
+   "errors": []
+  },
+  "power_2_confirm": {
+   "rect": [
+    260,
+    232,
+    760,
+    256
+   ],
+   "padding": 14,
+   "lineHeight": 36,
+   "infoHeight": 120,
+   "pageRows": 3,
+   "info": [
+    "确认遗忘 · 狗逍遥",
+    "权能·时之主宰",
+    "消耗1枚权能遗忘符，不返还权能书"
+   ],
+   "rows": [
+    {
+     "label": "消耗1枚，遗忘这项权能",
+     "enabled": true
+    },
+    {
+     "label": "取消",
+     "enabled": true
+    }
+   ],
+   "texts": [
+    [
+     "消耗1枚，遗忘这项权能",
+     6,
+     120,
+     720,
+     "left",
+     26,
+     "#ffffff"
+    ],
+    [
+     "取消",
+     6,
+     156,
+     720,
+     "left",
+     26,
+     "#ffffff"
+    ],
+    [
+     "确认遗忘 · 狗逍遥",
+     0,
+     0,
+     732,
+     "left",
+     26,
+     "#84aaff"
+    ],
+    [
+     "权能·时之主宰",
+     0,
+     36,
+     732,
+     "left",
+     26,
+     "#ffffff"
+    ],
+    [
+     "消耗1枚权能遗忘符，不返还权能书",
+     0,
+     72,
+     732,
+     "left",
+     26,
+     "#ffffff"
+    ]
+   ],
+   "tokens": 1,
+   "powers": [
+    {
+     "actor": 1,
+     "powers": [
+      7238
+     ]
+    },
+    {
+     "actor": 106,
+     "powers": []
+    },
+    {
+     "actor": 2,
+     "powers": [
+      7240
+     ]
+    }
+   ],
+   "errors": []
+  },
+  "power_3_result": {
+   "rect": [
+    260,
+    250,
+    760,
+    220
+   ],
+   "padding": 14,
+   "lineHeight": 36,
+   "infoHeight": 84,
+   "pageRows": 3,
+   "info": [
+    "遗忘完成：狗逍遥 · 权能·时之主宰",
+    "剩余权能：0 / 4"
+   ],
+   "rows": [
+    {
+     "label": "返回物品",
+     "enabled": true
+    }
+   ],
+   "texts": [
+    [
+     "返回物品",
+     6,
+     84,
+     720,
+     "left",
+     26,
+     "#ffffff"
+    ],
+    [
+     "遗忘完成：狗逍遥 · 权能·时之主宰",
+     0,
+     0,
+     732,
+     "left",
+     26,
+     "#84aaff"
+    ],
+    [
+     "剩余权能：0 / 4",
+     0,
+     36,
+     732,
+     "left",
+     26,
+     "#ffffff"
+    ]
+   ],
+   "tokens": 0,
+   "powers": [
+    {
+     "actor": 1,
+     "powers": []
+    },
+    {
+     "actor": 106,
+     "powers": []
+    },
+    {
+     "actor": 2,
+     "powers": [
+      7240
+     ]
+    }
+   ],
+   "errors": []
+  }
+ }
+}
