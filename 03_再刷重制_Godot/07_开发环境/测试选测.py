@@ -263,8 +263,7 @@ SLICE = TOOLS / 'xiyou_slice.json'
 RULES = ['xiyou_rules.tscn', 'xiyou_rules_d1b.tscn', 'xiyou_rules_d2.tscn']
 
 
-class SliceSectionTests(Fixture):
-    """xiyou_slice.json 按顶层键细分（用户 2026-10-26）。"""
+class SliceFixture(Fixture):
     def setUp(self):
         super().setUp()
         self.slice = {'说明': 'x', 'maps': [1, 2], 'keepEvents': {'1': '*'}, 'troops': [5], 'actors': [1], 'extraImages': ['system/a']}
@@ -276,6 +275,10 @@ class SliceSectionTests(Fixture):
 
     def edit(self, **changes):
         self.put(SLICE, json.dumps({**self.slice, **changes}, indent=2) + '\n')
+
+
+class SliceSectionTests(SliceFixture):
+    """xiyou_slice.json 按顶层键细分（用户 2026-10-26）。"""
 
     def test_maps_only_runs_event_compare_and_floors(self):
         self.edit(maps=[1, 2, 69], keepEvents={'1': '*', '69': '*'})
@@ -336,6 +339,65 @@ class SliceSectionTests(Fixture):
         self.commit('maps')
         s = self.pick(head=self.g('rev-parse', 'HEAD'))
         self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn'])
+
+
+class FloorNarrowTests(SliceFixture):
+    """切片 maps／keepEvents 改动时楼层专项按图号收窄（哪吒_3，2026-10-26）。"""
+    def setUp(self):
+        super().setUp()
+        self.scene('xiyou_floor_reach069', '## 通天之上（Map069）\nconst MAP := 69\n')
+        self.scene('xiyou_floor_gate', 'func t():\n\tvar s := _start(4, 1, 1)\n\tawait _wait_map(88)\n')
+        self.scene('xiyou_floor_goto', '_goto(31, 9, 9, 2, 18, Vector2i(9, 12))')
+        self.scene('xiyou_floor_run', '## 楼层表从内容数据推出（Map004 大厅）')
+        self.scene('xiyou_map186', '## Map186\n')
+        self.scene('xiyou_flow', 'flow')
+        self.commit('floors')
+        self.base = self.g('rev-parse', 'HEAD')
+
+    def test_added_map_picks_only_its_floor(self):
+        self.edit(maps=[1, 2, 69])
+        self.assertEqual(self.pick()['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn', 'xiyou_floor_reach069.tscn',
+                                                 'xiyou_floor_run.tscn', 'xiyou_flow.tscn'])
+
+    def test_code_refs_and_keep_events_edit(self):
+        self.edit(keepEvents={'1': '*', '88': [3]})
+        self.assertIn('xiyou_floor_gate.tscn', self.pick()['scenes'])
+        self.edit(maps=[1, 2, 18])
+        s = self.pick()['scenes']
+        self.assertIn('xiyou_floor_goto.tscn', s)
+        self.assertNotIn('xiyou_floor_gate.tscn', s)
+
+    def test_map_without_floor_test_picks_no_specific_floor(self):
+        self.edit(maps=[1, 2, 300])
+        s = self.pick()
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn', 'xiyou_floor_run.tscn', 'xiyou_flow.tscn'])
+        self.assertIn('按图号 300 收窄', s['reasons'][0][1])
+
+    def test_removed_map_counts(self):
+        self.put(SLICE, json.dumps({**self.slice, 'maps': [1, 2, 186]}, indent=2) + '\n')
+        self.commit('add 186')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.edit(maps=[1, 2])
+        self.assertIn('xiyou_map186.tscn', self.pick()['scenes'])
+
+    def test_unparsed_structure_does_not_narrow(self):
+        self.edit(maps=[1, 2, 'x'])
+        self.assertIn('xiyou_map186.tscn', self.pick()['scenes'])
+
+    def test_switch_off_restores_all_floors(self):
+        table = json.loads((HERE / '选测对照.json').read_text())
+        table['sliceSections']['narrowFloorsByMap']['enabled'] = False
+        off = self.root / 'off.json'
+        off.write_text(json.dumps(table))
+        self.edit(maps=[1, 2, 69])
+        s = sel.select(self.root, self.base, table=off)
+        self.assertTrue({'xiyou_floor_gate.tscn', 'xiyou_floor_goto.tscn', 'xiyou_map186.tscn'} <= set(s['scenes']))
+        self.assertNotIn('收窄', s['reasons'][0][1])
+
+    def test_real_tests_reference_their_maps(self):
+        tests = sel.Tests(HERE.parent.parent)
+        self.assertEqual(tests.map_ids('xiyou_floor_reach069.tscn') >= {69, 71, 88, 89, 91, 112}, True)
+        self.assertEqual(tests.map_ids('xiyou_map186_b.tscn') >= {186}, True)
 
 
 class MergeBaseTests(Fixture):
