@@ -13,11 +13,12 @@
 - 派发顺序：按上次实测耗时从慢到快（没有记录的排最前，当作最慢），免得最慢的场景压到队尾。
 - 所有工作树共用一个并发上限（CHECK_GLOBAL_JOBS，默认 CPU 核数一半、最多 6）：每个测试先在共用状态目录里占一个槽位
   （flock，进程退出即释放），几条车道同时跑检查也不会把机器压到超时。同步正式西游.py 的 node 探针占同一组槽位。等槽位的时间不计入 600 秒。
-- 沿用上轮结果（只在不指定场景的整轮运行时生效）：工程指纹与上次整轮相同时，上次通过的场景沿用、只重跑上次失败的。
+- 沿用上轮结果（不指定场景的整轮运行，或指定场景时加 --reuse，检查.sh 选测用）：工程指纹与上次记录相同时，
+  上次通过的场景沿用、只重跑上次失败的和没跑过的。同一指纹的记录跨整轮与选测合并（选测后再整轮只补跑没跑过的）。
   指纹 = 工程目录下除 .godot/ 外每个文件的路径与内容 SHA-256（跟随软链接，含未入 Git 的 generated/ 转换与参照数据）
   ＋ Godot 可执行文件的真实路径、大小、修改时间与 --version ＋ 本脚本内容 ＋ 超时上限。任何一项变了就整轮重跑；
   读不到、解析不了上次记录也整轮重跑。--full 或 CHECK_FULL=1 强制整轮。
-  沿用前逐条严格校验（reusable_results）：记录须是对象、场景集合相同、每条只含布尔 passed 与字符串 line；
+  沿用前逐条严格校验（reusable_results）：记录须是对象、场景都在当前场景表里、每条只含布尔 passed 与字符串 line；
   passed 为真的那条 line 还要用 result_ok 复核（passed＝total＞0）。任一条结构不对或自相矛盾，整份当作没有记录、整轮重跑。
 - 心跳：批测与排槽期间每 XIYOU_TEST_HEARTBEAT 秒（默认 300，0 关闭）打印一行进度（完成数、等槽数、在跑的场景），
   免得长任务.py 的无输出看门狗（默认 3600 秒）把仍在推进的批测判成卡住；不放宽看门狗、不改并发。
@@ -59,21 +60,29 @@ def result_ok(rc: int, out: str) -> bool:
             and type(result.get('passed')) is int and result['passed'] == result['total'])
 
 
-def reusable_results(prev, fingerprint: str, scenes: list) -> dict:
-    """上轮整轮记录里可沿用的场景 → TEST_RESULT 行。记录结构不对或任一条自相矛盾时整份作废（返回空，整轮重跑）。"""
+def valid_rows(prev, fingerprint: str, scenes: list) -> dict:
+    """同一指纹的上轮记录（场景 → {passed, line}）。记录结构不对或任一条自相矛盾时整份作废（返回空，全部重跑）。
+    指纹含 tests/ 下全部文件，场景表相同；记录可以只有部分场景（选测留下的），但不许有当前没有的场景。"""
     if not isinstance(prev, dict) or prev.get('fingerprint') != fingerprint:
         return {}
     rows = prev.get('scenes')
-    if not isinstance(rows, dict) or sorted(rows) != scenes:
+    if not isinstance(rows, dict) or not rows or not set(rows) <= set(scenes):
         return {}
-    out = {}
-    for name, row in rows.items():
+    for row in rows.values():
         if not isinstance(row, dict) or set(row) != {'passed', 'line'} or type(row['passed']) is not bool \
                 or not isinstance(row['line'], str):
             return {}
+        if row['passed'] and not result_ok(0, 'TEST_RESULT=' + row['line']):
+            return {}
+    return rows
+
+
+def reusable_results(prev, fingerprint: str, scenes: list) -> dict:
+    """上轮记录里可沿用（通过）的场景 → TEST_RESULT 行；只看本次要跑的 scenes。"""
+    rows = valid_rows(prev, fingerprint, scenes)
+    out = {}
+    for name, row in rows.items():
         if row['passed']:
-            if not result_ok(0, 'TEST_RESULT=' + row['line']):
-                return {}
             out[name] = row['line']
     return out
 
@@ -314,6 +323,7 @@ def main() -> int:
     ap.add_argument('project')
     ap.add_argument('--jobs', type=int, default=None)
     ap.add_argument('--full', action='store_true', help='不沿用上轮结果，整轮重跑（也可 CHECK_FULL=1）')
+    ap.add_argument('--reuse', action='store_true', help='指定场景时也按工程指纹沿用上轮通过结果（检查.sh 选测用）')
     ap.add_argument('--log-dir', type=Path, default=Path(os.environ['CHECK_LOG_DIR']) if os.environ.get('CHECK_LOG_DIR') else None)
     ap.add_argument('names', nargs='*')
     a = ap.parse_intermixed_args()
@@ -332,10 +342,13 @@ def main() -> int:
         return 1
     sdir = state_dir(a.project)
     whole = not a.names
-    fingerprint = project_fingerprint(a.godot, a.project, sdir) if whole else ''
+    keyed = whole or a.reuse  # 按指纹读写记录
+    all_scenes = sorted(p.name for p in (Path(a.project) / 'tests').glob('*.tscn'))
+    fingerprint = project_fingerprint(a.godot, a.project, sdir) if keyed else ''
     reused = {}  # 场景 → 上轮通过时的 TEST_RESULT 行
-    if whole and not a.full:
-        reused = reusable_results(read_json(sdir / 'results' / (fingerprint + '.json'), {}), fingerprint, scenes)
+    if keyed and not a.full:
+        prev = reusable_results(read_json(sdir / 'results' / (fingerprint + '.json'), {}), fingerprint, all_scenes)
+        reused = {n: prev[n] for n in scenes if n in prev}
     timings = read_json(sdir / 'timings.json', {})
     todo = sorted((n for n in scenes if n not in reused), key=lambda n: (-float(timings.get(n, 1e9)), n))
     attempts = {}  # 场景 → [(rc, out, secs), …]：首次在前，重跑依次追加，不覆盖
@@ -396,10 +409,12 @@ def main() -> int:
                     f.write(json.dumps({'time': now, 'project': str(Path(a.project).resolve()), 'head': git_head(a.project), 'scene': n,
                                         'attempts': [{'rc': t[0], 'seconds': round(t[2], 3), 'passed': result_ok(t[0], t[1])} for t in attempts[n]]},
                                        ensure_ascii=False) + '\n')
-        if whole:
+        if keyed:
             rdir = sdir / 'results'
             rdir.mkdir(exist_ok=True)
-            rows = {n: {'passed': True, 'line': reused[n]} for n in reused}
+            # 同一指纹的旧记录合并进来（选测与整轮互补）；--full 也只是不沿用，本次结果照样覆盖旧行
+            rows = dict(valid_rows(read_json(rdir / (fingerprint + '.json'), {}), fingerprint, all_scenes))
+            rows.update({n: {'passed': True, 'line': reused[n]} for n in reused})
             for n in todo:
                 last = attempts[n][-1]
                 rows[n] = {'passed': final[n], 'line': next((l[len('TEST_RESULT='):] for l in last[1].splitlines() if l.startswith('TEST_RESULT=')), '')}

@@ -293,6 +293,23 @@ class ParallelTestRunnerTests(unittest.TestCase):
         _, runs = self.run_tests(jobs=1)
         self.assertEqual(len(runs), 4)
 
+    def test_selected_scenes_reuse_with_flag_and_merge_into_whole(self):
+        # 选测（检查.sh --affected 传 --reuse）：同指纹下沿用上次通过的；选测结果并进同一指纹的记录，之后整轮只补跑没跑过的
+        p, runs = self.run_tests('--reuse', 'a', 'c', jobs=1, FAIL_C='1')
+        self.assertEqual((p.returncode, sorted(runs)), (1, ['a.tscn', 'c.tscn']), p.stdout)
+        p, runs = self.run_tests('--reuse', 'a', 'c', jobs=1)
+        self.assertEqual((p.returncode, runs), (0, ['c.tscn']), p.stdout)
+        self.assertIn('✓ a.tscn {"passed":1,"total":1}（沿用）', p.stdout)
+        p, runs = self.run_tests(jobs=1)  # 整轮：a、c 沿用，只补跑 b
+        self.assertEqual((p.returncode, runs), (0, ['b.tscn']), p.stdout)
+        p, runs = self.run_tests('--reuse', 'b', jobs=1)
+        self.assertEqual(runs, [])
+        _, runs = self.run_tests('--reuse', '--full', 'b', jobs=1)
+        self.assertEqual(runs, ['b.tscn'])
+        (self.tmp / 'proj/data.json').write_text('{}')  # 指纹变了：选测也全跑
+        _, runs = self.run_tests('--reuse', 'a', 'b', jobs=1)
+        self.assertEqual(sorted(runs), ['a.tscn', 'b.tscn'])
+
     def test_corrupt_or_contradictory_cache_is_not_reused(self):
         # 沙僧 2026-10-21 P2 复现（review_phase2_cache_corruption.json）：passed=true 但 line 是失败计数仍被沿用、退出 0；
         # 合法 JSON 但结构是数组时 AttributeError。两种都应当作没有记录、整轮重跑并正常通过。

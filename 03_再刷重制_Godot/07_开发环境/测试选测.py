@@ -298,9 +298,23 @@ class CheckerTests(Fixture):
         rc, out, ran = self.check('--affected', self.base)
         self.assertEqual(rc, 0, out)
         runner = next(l for l in ran if l.startswith('并行测试.py')).split()
-        self.assertEqual(runner[3:], ['xiyou_event_compare.tscn', 'xiyou_shop.tscn'])
+        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_shop.tscn'])  # 选测按指纹沿用
         self.assertIn('guard_check.cjs', self.names(ran))
         self.assertNotIn('测试合并工具.py', self.names(ran))
+
+    def test_static_failure_stops_before_godot(self):
+        # 文档与登记检查失败：默认在 Godot 测试前就退出；--keep-going 照旧全跑
+        self.put(Path('00_项目管理/坏链接.md'), '[x](不存在.md)\n')
+        rc, out, ran = self.check()
+        self.assertEqual(rc, 1, out)
+        self.assertIn('失效链接', out)
+        self.assertIn('未运行 Godot 测试', out)
+        self.assertNotIn('并行测试.py', self.names(ran))
+        self.assertNotIn('godot', self.names(ran))
+        rc, out, ran = self.check('--keep-going')
+        self.assertEqual(rc, 1, out)
+        self.assertIn('并行测试.py', self.names(ran))
+        self.assertIn('有失败项', out)
 
     def test_battle_without_oracle_warns_same_source(self):
         self.put(CORE / 'battler.gd', 'class_name XBattler\n# 2\n')
