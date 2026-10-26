@@ -91,6 +91,7 @@ func _run() -> void:
 	page._index = page.entries().find_custom(func(e): return int(e.rec.id) == 1461)
 	check("item.found",page._index >= 0)
 	page._refresh()
+	var initial_extras: Array = help_read(page.help_card).extras.map(func(c): return c.rows)
 	page._ok()  # Real list entry marks item seen.
 	page._ok()  # Real action entry opens actor selector.
 	check("item.actor",page._mode == "actor" and page.actor_win.visible)
@@ -109,7 +110,6 @@ func _run() -> void:
 	var actor_read := state_read("Scene_Item")
 	actor_read.actor = {"rect":[page.actor_win.position.x,page.actor_win.position.y,page.actor_win.size.x,page.actor_win.size.y],"padding":XMVWindow.PADDING,"lineHeight":XItemScene.LH,"itemHeight":XItemScene.ACTOR_ROW_H}
 	actor_read.help = help_read(page.help_card)
-	var initial_extras: Array = actor_read.help.extras.map(func(c): return c.rows)
 	var actor_expected: Dictionary = native.pages.capacity_0_actor.duplicate(true)
 	actor_expected.erase("errors")
 	actor_expected.erase("toast")
@@ -164,7 +164,7 @@ func _run() -> void:
 			var box := slot.get_child(0) as PanelContainer
 			var label := box.get_child(0) as Label
 			var style := box.get_theme_stylebox("panel") as StyleBoxFlat
-			var entry := {"boxRect":[box.global_position.x,box.global_position.y,box.size.x,box.size.y],"textRect":[label.global_position.x,label.global_position.y,label.size.x,label.size.y],"fontSize":label.get_theme_font_size("font_size"),"color":"#"+label.get_theme_color("font_color").to_html(false),"background":style.bg_color.to_html(),"padding":style.content_margin_left,"text":label.text,"opacity":slot.modulate.a,"fontHeight":label.get_theme_font("font").get_height(18),"lineSpacing":label.get_theme_constant("line_spacing"),"lineCount":label.get_line_count(),"expectedTextSize":XUI.font().get_multiline_string_size(label.text,HORIZONTAL_ALIGNMENT_LEFT,240,18)}
+			var entry := {"boxRect":[box.global_position.x,box.global_position.y,box.size.x,box.size.y],"textRect":[label.global_position.x,label.global_position.y,label.size.x,label.size.y],"fontSize":label.get_theme_font_size("font_size"),"color":"#"+label.get_theme_color("font_color").to_html(false),"background":style.bg_color.to_html(),"padding":style.content_margin_left,"text":label.text,"opacity":slot.modulate.a,"fontHeight":label.get_theme_font("font").get_height(18),"fontAscent":label.get_theme_font("font").get_ascent(18),"fontDescent":label.get_theme_font("font").get_descent(18),"lineSpacing":label.get_theme_constant("line_spacing"),"lineCount":label.get_line_count(),"expectedTextSize":XUI.font().get_multiline_string_size(label.text,HORIZONTAL_ALIGNMENT_LEFT,240,18)}
 			result.notices.append(entry)
 			var want: Dictionary = native.pages.capacity_1_limit.notices[index]
 			compare("toast.%d.boxRect" % index,entry.boxRect,want.box.rect)
