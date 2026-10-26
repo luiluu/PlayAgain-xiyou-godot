@@ -728,6 +728,7 @@ func _use() -> void:
 			user = a
 	if targets.size() == 1:
 		s.item_target_actor_id = targets[0].actor_id
+	XPassiveBooks.begin_item(s)
 	# Native useItem consumes first; a full-capacity effect refunds afterward (also at max stack).
 	if bool(_item.get("consumable", true)):
 		s.gain_item(int(_item.id), -1)
@@ -782,6 +783,7 @@ func _after_use() -> void:
 		if int(e.code) == 44:
 			s.reserve_common_event(int(e.dataId))
 			reserved = true
+	XPassiveBooks.remember_return(s,_item,_cat,_index)
 	if reserved:
 		to_map = true
 		closed.emit()
