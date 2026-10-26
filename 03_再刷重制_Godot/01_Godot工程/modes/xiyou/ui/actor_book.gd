@@ -16,7 +16,8 @@ extends Control
 ## - 技能来源（CodexActorBookSkills）：角色与职业特性 43、职业学习表；排除 stypeId 3、系统技能（5968～5973、5980、6216、6235、
 ##   公共事件 1442 里 learnSkill 的）、<CodexRetired> 与难度／轮回类名字；详情页另补特殊角色 167～174 的专属技能段。
 ## 与原版不同（O-084）：原版进过技能详情再返回，说明卡的品质边框（4 层 Window_ItemHelp）留在状态页上；这里返回时整张卡隐藏。
-## 切片外 17 个角色（108、143～145、157、160、167～177）没导出 SV 图，状态页不画立绘（补图要扩切片）。
+## 切片外角色（108、143～145、157、169～171）没导出 SV 图，状态页不画立绘（补图要扩切片）；
+## 168、173～177 的多帧图未移植，也不画（sprite_path）。
 
 signal closed
 
@@ -455,10 +456,21 @@ func _paint_list(c: XMVCanvas) -> void:
 func _select_actor() -> void:
 	_status_ops = status_ops(index, _measure)
 	_sprite_tex = null
-	if index > 0 and named(index):
-		var p := XDB.img_path("sv_actors", str(XDB.rec("Actors", index).get("battlerName", "")))
-		_sprite_tex = load(p) if p != "" else null
+	var p := sprite_path(index)
+	_sprite_tex = load(p) if p != "" else null
 	_refresh()
+
+
+## 状态页立绘：数据库 battlerName 的 9×6 侧视图；没导出、没登记的不画。
+## 米拉 168、饿狼 173、云裳 174、谷雨 175、屠苏 176、璇 177 在原版由运行模块（Codex_MiraRavenMultiFrame、installNativeGarouRuntime 等）
+## 换成多帧图（参照画 UserSV_MiraHuman1_0、Codex_Garou_QHuman1_0、yunshang1_0…），重制还没移植多帧图，先不画（画数据库那张会与原版不同）。
+const MULTI_FRAME_SV := [168, 173, 174, 175, 176, 177]
+
+
+static func sprite_path(id: int) -> String:
+	if id <= 0 or not named(id) or id in MULTI_FRAME_SV:
+		return ""
+	return XDB.img_path("sv_actors", str(XDB.rec("Actors", id).get("battlerName", "")))
 
 
 func _refresh() -> void:
