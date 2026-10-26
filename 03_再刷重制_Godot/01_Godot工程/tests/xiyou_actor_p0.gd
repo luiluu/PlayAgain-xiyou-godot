@@ -95,10 +95,15 @@ func _run() -> void:
 		for i in 3:
 			await get_tree().process_frame
 		_check("recruit_%d" % id, s.party.has(id), [ce, s.party])
-		_check("recruit_actor_%d" % id, s.actor(id).actor_id == id and s.actor(id).class_id == int(XDB.rec("Actors", id).classId), id)
+		var want_class: int = RECRUIT_CLASS_CHANGE.get(id, int(XDB.rec("Actors", id).classId))
+		_check("recruit_actor_%d" % id, s.actor(id).actor_id == id and s.actor(id).class_id == want_class, [id, s.actor(id).class_id, want_class])
 	_check("regression_party_kept", [1, 8, 9, 10].all(func(i): return s.party.has(i)), s.party)
 	_check("battle_slots_five", s.battle_slots.size() == 5, s.battle_slots)
 	_finish()
+
+
+## 招募事件里用 321 改了职业的角色（原版参照见 fixtures/actor_change_oracle.json 的 recruit 组）：玛莎 CE29 16→21
+const RECRUIT_CLASS_CHANGE := {21: 21}
 
 
 ## oracle 技能列表含开局被动（passives／starterPassives）；它们由 xiyou_rules 的 _make_actor 灌入，这里不重复

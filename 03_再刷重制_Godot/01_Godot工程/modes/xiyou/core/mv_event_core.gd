@@ -18,6 +18,9 @@ const FLUSH_BEFORE := [101, 102, 103, 104, 201, 205, 212, 213, 217, 221, 222, 23
 const FLUSH_IF_WAIT := {225: 3}
 ## 只是续行、注释或分支结尾，执行时什么也不做
 const PASS_CODES := [401, 405, 408, 655, 404, 412, 604, 0, 108, 505]
+## O-待定：大厅「更改形象80」（CE463）最后一条 322 写的是 93 号（炭治郎），图像却是天虎令的（与招募天虎令 CE1405 给 104 号的相同），
+## 原版用过后炭治郎变成天虎令的样子、天虎令不变。改成写给 104 号。键「公共事件:角色」；设为空字典 {} 恢复原版。
+const ACTOR_IMAGE_FIX := {"463:93": 104}
 static var skip_common_events := [1386]   # 战斗背景：首期无对应系统（1435 轮回模式·困难的脚本循环 MVScript 已认得，开关 2282 时才有动作）
 ## 对照工具用：全部解释器（含公共事件子游标、战斗事件）合计最多执行的指令数，0 为不限；超过就停止并置 aborted
 static var max_steps := 0
@@ -317,6 +320,13 @@ func _execute(c: Dictionary):
 		136:
 			# 更改禁止遇敌 [0 禁止 1 允许]
 			state().encounter_enabled = int(p[0]) != 0
+		311, 312, 326:
+			# 增减 HP／MP／TP [指定方式, 角色/变量, 0 增 1 减, 操作数类型, 操作数(, 允许死亡)]（Game_Interpreter.command311／312／326）
+			var value := float(_operand(int(p[3]), int(p[4])))
+			if int(p[2]) == 1:
+				value = -value
+			for a in _actors_ex(int(p[0]), int(p[1])):
+				_change_resource(a, code, value, bool(p[5]) if code == 311 and p.size() > 5 else false)
 		313:
 			_change_actor_state(p)
 		314:
@@ -351,6 +361,26 @@ func _execute(c: Dictionary):
 				else:
 					a.forget_skill(int(p[3]))
 				a.refresh_passive()
+		320, 324:
+			# 更改名字／称号 [角色, 文字]（Game_Interpreter.command320／324）
+			var a := _event_actor(int(p[0]))
+			if a != null:
+				if code == 320:
+					a.set_looks({"name": str(p[1])})
+				else:
+					a.nickname = str(p[1])
+		321:
+			# 更改职业 [角色, 职业, 保留经验]
+			var a := _event_actor(int(p[0]))
+			if a != null and not XDB.rec("Classes", int(p[1])).is_empty():
+				a.change_class(int(p[1]), bool(p[2]))
+		322:
+			# 更改角色图像 [角色, 行走图, 序号, 脸图, 序号, 战斗图]；之后 $gamePlayer.refresh（地图上刷新队首与跟随的行走图）
+			var a := _event_actor(int(ACTOR_IMAGE_FIX.get("%d:%d" % [common_id, int(p[0])], int(p[0]))))
+			if a != null:
+				a.set_looks({"characterName": str(p[1]), "characterIndex": int(p[2]), "faceName": str(p[3]),
+					"faceIndex": int(p[4]), "battlerName": str(p[5])})
+			_data_changed()
 		356:
 			# 要宿主画面的插件指令（怪物图鉴 EnemyBook open）交给宿主，其余在这里执行
 			if _host_plugin(str(p[0])):
@@ -410,6 +440,30 @@ func _treasure_popup(_rec: Dictionary, _amount: int) -> void:
 ## $gameParty.members()：地图是全队，战斗是出战成员
 func _party_members() -> Array:
 	return state().members()
+
+
+## Game_Interpreter.changeHp（活着才改；不允许死亡时最多扣到 1）、Game_Battler.gainMp／gainTp；之后 refresh（HP 归零即倒下）
+func _change_resource(a: XActor, code: int, value: float, allow_death: bool) -> void:
+	match code:
+		311:
+			if a.is_dead():
+				return
+			if not allow_death and a.hp <= -value:
+				value = 1.0 - a.hp
+			var applied := -a.absorb_shield(-value) if value < 0.0 else value
+			a.hp = clampf(a.hp + applied, 0.0, a.mhp)
+		312:
+			a.mp = clampf(a.mp + value, 0.0, a.mmp)
+		326:
+			a.tp = clampf(a.tp + value, 0.0, a.max_tp())
+	a.refresh_resources(rule_random())
+	if value != 0.0:
+		a.param_mark_dirty()
+
+
+## $gameActors.actor(id)：数据库有这个角色才有（没建过的现建）
+func _event_actor(id: int) -> XActor:
+	return state().actor(id) if id > 0 and not XDB.rec("Actors", id).is_empty() else null
 
 
 ## 313 [指定方式, 角色/变量, 0 附加 1 解除, 状态]

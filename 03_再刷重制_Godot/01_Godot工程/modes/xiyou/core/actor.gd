@@ -15,6 +15,13 @@ var last_battle_skill := 0
 var _passive_cache := {}    # 由 refresh_passive() 生成；能力值/技能变化后需刷新
 ## 真气（CodexZhenqi，actor._codexZhenqi；见 XZhenqi.data）：{qi, firsts, realm, pending, daofa, spec}，随存档
 var zhenqi := {}
+## 事件「更改名字」320、「更改角色图像」322 改过的字段（name／characterName／characterIndex／faceName／faceIndex／battlerName），
+## 空＝数据库原样；data() 把它盖在数据库记录上（MV Game_Actor._name、_characterName 等），随存档（looks）
+var looks := {}
+## MV Game_Actor._exp 里别的职业的经验（「更改职业」321 不保留经验时，换回原职业取回原经验）；当前职业的经验在 exp_total
+var class_exp := {}
+var _looks_src = null
+var _looks_out := {}
 
 
 func setup(id: int) -> XActor:
@@ -49,7 +56,36 @@ func _fix_strong_classification() -> void:
 
 
 func data() -> Dictionary:
-	return XDB.rec("Actors", actor_id)
+	var rec := XDB.rec("Actors", actor_id)
+	if looks.is_empty():
+		return rec
+	if not is_same(_looks_src, rec) or _looks_out.is_empty():
+		_looks_out = rec.duplicate()
+		_looks_out.merge(looks, true)
+		_looks_src = rec
+	return _looks_out
+
+## 320／322：改名字或图像（Game_Actor.setName／setCharacterImage／setFaceImage／setBattlerImage）
+func set_looks(fields: Dictionary) -> void:
+	looks.merge(fields, true)
+	_looks_out = {}
+
+## Game_Actor.changeClass（321）：保留经验时新职业取当前经验，否则取新职业记下的经验（没有为 0），再按 changeExp 升降级；
+## 降级不忘技能（MV levelDown 只减等级）
+func change_class(id: int, keep_exp: bool) -> void:
+	if XDB.rec("Classes", id).is_empty():
+		return
+	class_exp[class_id] = exp_total
+	if keep_exp:
+		class_exp[id] = exp_total
+	class_id = id
+	exp_total = maxi(int(class_exp.get(id, 0)), 0)
+	while _lv < max_level() and exp_total >= exp_for_level(_lv + 1):
+		_level_up()
+	while _lv > 1 and exp_total < exp_for_level(_lv):
+		_lv -= 1
+	refresh_passive()
+	refresh_resources()
 
 func class_data() -> Dictionary:
 	return XDB.rec("Classes", class_id)
