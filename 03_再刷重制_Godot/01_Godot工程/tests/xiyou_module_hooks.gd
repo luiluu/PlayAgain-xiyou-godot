@@ -254,7 +254,7 @@ func production_cat() -> void:
 		var explicit:=options.duplicate();explicit.moduleFacts={"cat":live}
 		check("cat.default_host_available",automatic.get("available",true),automatic)
 		check("cat.default_host_snapshot",same(automatic,XDamage.calculate(item,a,b,explicit)))
-		check("cat.default_host_handlers",automatic.moduleTrace.map(func(t):return [t.module,t.order])==[["cat-sword",18],["cat-sword",19],["orb-sets",39]] and not automatic.moduleTrace[0].ops.is_empty() and not automatic.moduleTrace[1].ops.is_empty(),automatic.moduleTrace)
+		check("cat.default_host_handlers",automatic.moduleTrace.map(func(t):return [t.module,t.order])==[["cat-sword",18],["cat-sword",19],["orb-sets",39],["race-blessings",41]] and not automatic.moduleTrace[0].ops.is_empty() and not automatic.moduleTrace[1].ops.is_empty(),automatic.moduleTrace)
 		check("cat.default_host_repeat",same(automatic,XDamage.calculate(item,a,b,options)))
 		check("cat.default_host_isolated",before==JSON.stringify([a.equips,a.skill_ids,b.equips,b.skill_ids,a.hp,a.mp,a.tp,b.hp,b.mp,b.tp]))
 
