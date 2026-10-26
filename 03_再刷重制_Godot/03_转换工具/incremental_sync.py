@@ -33,8 +33,9 @@ GENERATED_MARKERS = ('XIYOU_GENERATED', 'modes/xiyou/generated')
 READ_SURFACE = re.compile(r'\bfs\b|\bGEN\b|XIYOU_GENERATED|modes/xiyou/generated|\brequire\s*\(|\bMANIFEST\b|\bSLICE\b'
                           r'|process\.env|readFile|readdir')
 GENERATED_SHARD_AUDITS = {
-    # a558a0ed（沙僧审过的整份 17f82a28…）与 c26755e8 的读取面相同
-    'mv_oracle/event_probe.cjs': 'reads:46f0696a9f62e039',
+    # a558a0ed（沙僧审过的整份 17f82a28…）与 c26755e8 的读取面相同（reads:46f0696a9f62e039）；
+    # 唐僧 2026-10-25 只加了 XIYOU_EVENT_OUT 输出路径（写，不读产物），读取面改为下值，待 Codex 核
+    'mv_oracle/event_probe.cjs': 'reads:b8ffbf2d6b5a3c38',
 }
 
 
