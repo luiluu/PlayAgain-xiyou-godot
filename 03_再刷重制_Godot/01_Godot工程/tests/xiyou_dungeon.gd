@@ -131,6 +131,7 @@ func check(name: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
+	GameApp.fast_headless_frames()  # 只按解释器步数推进、不拿帧数当时间：headless 不睡（204→18 秒，见 07_开发环境/测试提速.md）
 	XSave.dir_override = "user://test_xiyou_dungeon"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
