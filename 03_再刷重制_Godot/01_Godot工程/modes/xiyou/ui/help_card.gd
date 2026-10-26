@@ -15,8 +15,8 @@ extends Control
 ##    成长（\c[3]）／价格 六组，组间分隔；正文统一为最常见字号。
 ## 5. installCombatPowerRuntime（setItem 最外层）：装备在名字后插「装备战力：N」（18 号、rgba(255,211,115,1)、align 0），
 ##    N 是与穿戴者无关的装备评分 XPower.equipment；设置页关掉「战力显示与估算」时不插。
-## 未做：特殊角色（ID 10122～10299）
-##    与心钢、狂妄等专属装备的动态说明（切片里没有）。
+##    专属角色技能（ID 10122～10299）改走 characterHelpView（XCharacterHelp，ui/character_help.gd）。
+## 未做：心钢、狂妄等专属装备的动态说明（切片里没有）。
 ##
 ## 版面（layout()）：宽 400、内边距 4；每行按 RJO.SW 逐字排版：可用宽 392−x，放不下换行；行高 = 该行最大字号 + 8；
 ## 居中/靠右的行只算第一行；有分隔的行之后加 3；卡高 = 8 + Σ行高 + 3×分隔数。\i[n] 占 36、画在 (x+2, y−3)；
@@ -89,10 +89,9 @@ static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	rows = _element_wrapper(obj, 0 if skill_copy else type, rows)
 	if (type == 1 or type == 2) and XPower.enabled():
 		rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
-	if type == 3 and not _special_target(obj):
-		if _generic_character_skill(obj):  # characterHelpView：技能去掉与描述相同的行
-			rows = rows.filter(func(r): return str(r[0]) != str(obj.get("description", "")))
-		rows = _generic_view(obj, rows)
+	if type == 3:
+		# 专属角色技能（10122～10299）走 characterHelpView（XCharacterHelp），其余技能走 genericHelpView
+		rows = XCharacterHelp.view(obj, rows) if XCharacterHelp.target(obj) else _generic_view(obj, rows)
 	for r in rows:
 		r[0] = _terms(str(r[0]))
 	# v0.18 starredHead：名字行（第一行、名字字号）前加星级，只给武器/防具
@@ -215,19 +214,6 @@ static func _extra_row(rows: Array, pos: Array, line: String, normal: String) ->
 ## CodexDisplay.text
 static func _terms(text: String) -> String:
 	return RegEx.create_from_string("全伤(?:害)?").sub(text, "全属性伤害", true)
-
-
-## installDisplayPreferencesRuntime.characterHelpTarget 的技能段（10122～10299）走角色专用说明（未做，原样显示）。
-## 例外（_generic_character_skill）：导入角色被动 10264「异界制约」（<CodexImportedBalance>）与琦玉 10169「欢迎来到异次元」在原版没有专用副本与动态行，
-## characterHelpView 的分组与普通视图同形，按普通视图显示，只是技能另把与描述相同的行去掉（10169 的描述「被动／效果…」不显示）；help_card 参照已对照。
-static func _special_target(obj: Dictionary) -> bool:
-	var id := int(obj.get("id", 0))
-	return id >= 10122 and id <= 10299 and not _generic_character_skill(obj)
-
-
-static func _generic_character_skill(obj: Dictionary) -> bool:
-	var id := int(obj.get("id", 0))
-	return id >= 10122 and id <= 10299 and (str(obj.get("note", "")).contains("<CodexImportedBalance>") or id == 10169)
 
 
 # ---- installDamageElementRuntime ----
