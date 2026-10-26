@@ -30,7 +30,8 @@ func compare(tag: String, a: XActor, row: Dictionary) -> void:
 
 func fresh(tp: float) -> FixedActor:
 	var s := XState.new_game_blank()
-	var a := FixedActor.new().setup(1)
+	var a := FixedActor.new()
+	a.setup(1)
 	s.actors[1] = a
 	s.party = [1]
 	a.equips.clear()

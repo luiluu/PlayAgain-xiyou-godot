@@ -22,6 +22,22 @@ func state_context(b: XBattler) -> Dictionary:
 	ctx.preview = preview
 	return ctx
 
+## One explicit operation domain for state changes, including nested Apply/Remove effects.
+func add_state(b: XBattler, id: int, inputs := {}) -> void:
+	if preview or bool(inputs.get("preview", false)) or b == null or not b.is_alive() or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
+		return
+	if result(b).removedStates.has(id):
+		return
+	var context := state_context(b)
+	context.merge(inputs, true)
+	context.resources = self
+	b.add_state_with_context(id, context.get("random"), context)
+
+func remove_state(b: XBattler, id: int) -> void:
+	if not preview and b != null:
+		b.remove_state_with_context(id, state_context(b))
+
+
 func publish() -> void:
 	for b in slots:
 		b.runtime_result = result(b).duplicate(true)

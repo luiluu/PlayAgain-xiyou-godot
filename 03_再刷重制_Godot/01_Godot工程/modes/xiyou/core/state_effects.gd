@@ -111,6 +111,15 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	# Game_Battler.customEffectEval always shadows the enclosing action domain,
 	# including non-Boss/missing origins. Only native react1341/2550 override Action.
 	var resources: XResourceContext = c.get("resources")
+	var owns_resources := execute and resources == null and effects.any(func(e): return e.get("op") in ["poison_tick", "gain_steps", "add_state"])
+	if owns_resources:
+		resources = XResourceContext.new()
+		resources.random = c.get("random")
+		for key in ["variables", "switches", "party_members", "emit"]:
+			if c.has(key):
+				resources.lifecycle_inputs[key] = c[key]
+		resources.seed_result(holder, holder.runtime_result)
+		c.resources = resources
 	var special_react := phase == "react" and int(st.id) in [1341, 2550]
 	var origin_domain := execute and resources != null and (not phase in ACTION_PHASES or special_react)
 	if origin_domain:
@@ -155,13 +164,13 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 			# Apply：x = x || 0; x += n。Remove：x = 0。层数挂在持有者身上，所有叠毒状态共用
 			holder.state_data["_stackingPoison"] = (_truthy_number(holder.state_data.get("_stackingPoison")) + float(e.n)) if e.mode == "add" else 0.0
 		elif op == "poison_tick" and execute:
-			_poison_tick(e, holder, c, ctx)
+			_poison_tick(e, holder, c, c)
 		elif op == "add_state" and execute:
 			# 暴击后加状态（Establish）：只看这个目标的结果槽 critical；addState 的回合参数原版不认
 			if not e.get("criticalOnly", false) or c.get("critical", false):
-				_add_state(c.get(str(e.who)), int(e.id), ctx)
+				_add_state(c.get(str(e.who)), int(e.id), c)
 		elif op == "gain_steps" and execute:
-			_gain_steps(e, holder, c, ctx)
+			_gain_steps(e, holder, c, c)
 		elif op == "set_variable" and execute:
 			# Game_Variables.setValue：编号不在 1..System.variables 长度-1 内的写入原版直接忽略（如 1683 号脚本）
 			var vid := int(e.id)
@@ -199,6 +208,8 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	_stack.pop_back()
 	if origin_domain:
 		resources.boss_output.leave_action()
+	if owns_resources:
+		resources.publish()
 	return c.value
 
 
@@ -255,33 +266,27 @@ static func _poison_tick(e: Dictionary, holder: XBattler, c: Dictionary, ctx: Di
 	if not out.available:
 		_diagnose("regenerate", int(c.state_id), holder, "poison_tick_unavailable")
 		return
-	var rc := XResourceContext.new()
-	rc.random = ctx.get("random")
+	var rc: XResourceContext = ctx.resources
+	# regenerateStateEffects clears this holder's result, while retaining the source domain.
+	rc.seed_result(holder, XResourceContext.empty_result())
 	rc.gain(holder, "hp", -float(out.value))
 	var r := rc.result(holder)
 	if ctx.get("emit") is Callable and ctx.emit.is_valid():
 		ctx.emit.call({"type": "regen", "target": holder, "hp": r.hpDamage, "animation": int(e.animation), "state": int(c.state_id)})
+	# The translated original460-style block calls clearResult after its popup.
+	rc.seed_result(holder, XResourceContext.empty_result())
 
 
 ## Game_Battler.addState：isStateAddable（活着、未抵抗、本结果槽没刚去掉它）才加；已有的只续回合，都记入 addedStates
 static func _add_state(b: XBattler, id: int, ctx: Dictionary) -> void:
-	if b == null or not b.is_alive() or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
-		return
-	var rc = ctx.get("resources")
-	if rc != null and rc.result(b).removedStates.has(id):
-		return
-	b.add_state(id, ctx.get("random"))
-	if rc != null and not rc.result(b).addedStates.has(id):
-		rc.result(b).addedStates.append(id)
+	var rc: XResourceContext = ctx.resources
+	rc.add_state(b, id, ctx)
 
 
 ## user.gainHp/Mp/Tp(式) 逐句：式子按持有者（a）算，经原生 gain（护盾、结果槽、refresh）。
 ## 战斗外层没有行动结果槽时每块用新的（Battle／Victory 脚本前原版结果槽为空）。
 static func _gain_steps(e: Dictionary, holder: XBattler, c: Dictionary, ctx: Dictionary) -> void:
-	var rc = ctx.get("resources")
-	if rc == null:
-		rc = XResourceContext.new()
-		rc.random = ctx.get("random")
+	var rc: XResourceContext = ctx.resources
 	for step in e.steps:
 		var out := PhaseValueProgram.new().run_phase(step.program, c, 0.0, true)
 		if not out.available:

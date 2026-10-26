@@ -507,8 +507,8 @@ def parse_state_effects(note):
     for m in EFFECT_RE.finditer(note or ''):
         phase, body = m.group(1).lower().replace(' ', '_'), m.group(2)
         code = re.sub(r'\s+', ' ', strip_js_comments(body)).strip()
-        # Three complete Battle blocks only. Apply 1334/1336 awaits the
-        # map/menu operation host; do not declare global support from battle.
+        # Retain the three explicit Battle TP contracts. Other measured gain blocks
+        # use gain_steps; event313/menu operations now provide their own resource host.
         from formula_program import Parser, Unsupported
         try:
             tokens = tuple(row[0] for row in Parser(code).tokens[:-1])

@@ -204,7 +204,7 @@ func _finish_lifecycle_operation(resources: XResourceContext, b: XBattler) -> vo
 
 func _state_add(b: XBattler, id: int) -> void:
 	var resources := _operation_resources(b)
-	b.add_state_with_context(id, _rule(), resources.state_context(b))
+	resources.add_state(b, id)
 	_finish_lifecycle_operation(resources, b)
 
 func _state_remove(b: XBattler, id: int, automatic := false) -> void:
@@ -1463,15 +1463,22 @@ func _establish(u: XBattler, t: XBattler, r: Dictionary) -> void:
 
 
 func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
-	# Menus and post-battle recovery share the same effect API without a live hit.
-	# Their refresh/state draws belong to the world stream, never a new battle serial.
-	var owns_context := _action_resources == null
-	if owns_context:
-		_action_resources = XResourceContext.new()
-		_action_resources.random = _rule()
+	# Menu effects reuse a nested host domain, or own and publish one operation.
+	var previous := _action_resources
+	var inherited: XResourceContext = t.lifecycle_context.get("resources")
+	if bool(t.lifecycle_context.get("preview", false)) or (inherited != null and inherited.preview):
+		return
+	var owns_context := previous == null and inherited == null
+	if previous == null:
+		_action_resources = inherited if inherited != null else _new_lifecycle_resources()
+		if owns_context:
+			for b in [u, t]:
+				_action_resources.seed_result(b, b.runtime_result)
+	var resources := _action_resources
 	_apply_effect(u, t, eff, r)
+	_action_resources = previous
 	if owns_context:
-		_action_resources = null
+		_finish_lifecycle_operation(resources, t)
 
 
 func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
