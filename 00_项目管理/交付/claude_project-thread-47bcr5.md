@@ -1,7 +1,7 @@
 # 交付：claude/project-thread-47bcr5
 
 - 车道／工作者：云端项目线程「完成法宝完整升级」（Claude，云端）
-- 状态：进行中
+- 状态：可合并（截至本交付单提交；已合 main 88f3c3fe 前的 faee6277）
 
 ## 变更记录草稿
 
@@ -16,7 +16,7 @@
   - 战力说明行改为「等级取实例等级」（`XPower.equipment` 缓存键早已含 `level`）。
 - 参照：新探针 `mv_oracle/magic_weapon_level_probe.cjs`（冻结 v0.28，新游戏，只写 `.sandbox/magic_weapon_level.json`，复制成 `tests/fixtures/magic_weapon_level_oracle.json`，不登记进同步）。七组：全部 221 件法宝的初始等级／经验／上限／所需／升级特性／学技能表／标记；四件法宝 1～888 级所需；大罗剑胎逐次得经验到满级；公共事件 1190 与两条插件指令；敌群 824（1 个出场＋5 个隐藏）胜利结算、6 人队第 6 人后备；麒麟对剑 1／3／10 级特性与 xparam；烽舞各等级技能及经 gainExp 升级后的技能。
 - 测试：新专项 `tests/xiyou_magic_weapon_level` 51 项全过（冻结 v0.28 转换产物）。分别去掉升级特性、学技能、胜利结算、插件指令接线时各有 3～11 项失败（确认测得到）。
-- 验证：（待写：检查.sh 结果）
+- 验证：Mac 本机合 main（faee6277）、`--补齐` 后 `检查.sh --oracle` 全量全部通过（Godot 场景 191 项、测试合并工具 146/146 等）。本分支没改转换器，探针只多固定件，Mac 上未另跑整轮同步。
 - 没做：`<Magic Weapon LevelUp Effect>`（任意 JS；v0.28 没有装备用到，遇到时记进 `XMagicWeapon.unsupported_effects`，专项检查为空）；原版战斗中法宝特性的整场缓存（战斗中法宝等级不变，结果相同）；主动法宝「使用经验」在原版本来就注释掉了。渡鸦冥河断罪镰 4001 的成长：Codex_Raven 写进 `paramPlusPerLevel` 的值与它自己备注里的 `<… Param … per Level>` 相同，dev.111 的解析已经对上，不另做。
 - 可用范围：法宝能升级，能力值、特性、技能随等级变化；**battleReady** 不变。
 
@@ -40,7 +40,7 @@
 
 - 见 `git log main..claude/project-thread-47bcr5`
 
-## 暂停现场（2026-10-25 16:05 UTC，用户要求先把额度留给其他审查）
+## 暂停现场（2026-10-25 16:05 UTC，已由本机收尾：同步不需要，全量已过，见「验证」）
 
 - 整轮同步（`--full --no-register --no-import --accept-additions`）跑了约 10 分钟后按要求停掉，没写缓存、没改 `generated/`。前一次整轮同步因 event_probe 内存不足失败，堆上限已修（本分支最后一条提交）。
 - 接着做：① 重跑整轮同步（`CHECK_GLOBAL_JOBS=3`，约 2～3 小时）；② `检查.sh` 全量，修失败项，填上面的「验证」行并把状态改成可合并；③ 更新 PR #9 说明并推送（不合并）。
