@@ -1,0 +1,209 @@
+{
+ "book": 3,
+ "help": {
+  "extras": [
+   {
+    "extras": [],
+    "fontSizes": [
+     20,
+     16,
+     18
+    ],
+    "padding": 4.0,
+    "quality": 8,
+    "rect": [
+     230.0,
+     236.0,
+     400.0,
+     145.0
+    ],
+    "rows": [
+     [
+      "秘境抽奖·物品爆率·Lv2",
+      20,
+      "rgba(255,214,90,1)",
+      true,
+      1
+     ],
+     [
+      "抽奖被动\n处于副本的特殊被动",
+      10,
+      "rgba(255,214,90,1)",
+      true,
+      null
+     ],
+     [
+      "品质：不朽",
+      18,
+      "rgba(255,214,90,1)",
+      true,
+      0
+     ],
+     [
+      "\\c[1]效果：物品爆率+30%",
+      18,
+      "rgba(235,240,247,1)",
+      false,
+      0
+     ]
+    ],
+    "visible": true
+   }
+  ],
+  "fontSizes": [
+   16
+  ],
+  "padding": 4.0,
+  "quality": 0,
+  "rect": [
+   654.0,
+   186.0,
+   400.0,
+   56.0
+  ],
+  "rows": [
+   [
+    "事件已执行：被动书:秘境抽奖·物品爆率·Lv2（未检测到可确认的变化）",
+    12,
+    "#ffffff",
+    false,
+    0
+   ]
+  ],
+  "visible": true
+ },
+ "map": 5,
+ "notices": [
+  {
+   "background": "000000b3",
+   "boxRect": [
+    460.0,
+    30.0,
+    260.0,
+    62.0
+   ],
+   "color": "#ffffff",
+   "expectedTextSize": "(239.0, 44.0)",
+   "fontAscent": 17.0,
+   "fontDescent": 4.0,
+   "fontHeight": 21.0,
+   "fontSize": 18,
+   "lineCount": 2,
+   "lineSpacing": 0,
+   "opacity": 1.0,
+   "padding": 10.0,
+   "text": "绿司机 能学习的抽奖被动技能已经达到1上限！",
+   "textRect": [
+    470.0,
+    40.0,
+    240.0,
+    42.0
+   ]
+  },
+  {
+   "background": "000000b3",
+   "boxRect": [
+    460.0,
+    102.0,
+    260.0,
+    83.0
+   ],
+   "color": "#ffffff",
+   "expectedTextSize": "(239.0, 66.0)",
+   "fontAscent": 17.0,
+   "fontDescent": 4.0,
+   "fontHeight": 21.0,
+   "fontSize": 18,
+   "lineCount": 3,
+   "lineSpacing": 0,
+   "opacity": 1.0,
+   "padding": 10.0,
+   "text": "事件已执行：被动书:秘境抽奖·物品爆率·Lv2（未检测到可确认的变化）",
+   "textRect": [
+    470.0,
+    112.0,
+    240.0,
+    63.0
+   ]
+  }
+ ],
+ "position": [
+  10,
+  10,
+  2
+ ],
+ "reserved": 0,
+ "scene": "Scene_Item",
+ "selected": 2,
+ "skills": [
+  2771,
+  6301
+ ],
+ "transition": {
+  "busy": false,
+  "map": 5,
+  "menuOpen": true,
+  "menus": [
+   {
+    "children": [
+     "TextureRect",
+     "CPUParticles2D",
+     "Control",
+     "Control",
+     "Control",
+     "Control"
+    ],
+    "mode": "page"
+   }
+  ],
+  "reserved": 0,
+  "saved": {},
+  "stateCurrent": true,
+  "trace": [
+   {
+    "busy": false,
+    "menuOpen": false,
+    "phase": "open",
+    "resume": {}
+   },
+   {
+    "busy": false,
+    "event": 1317,
+    "menuOpen": false,
+    "phase": "before",
+    "saved": {
+     "category": 0,
+     "index": 0,
+     "item": 1461,
+     "map": 5,
+     "message": "事件已执行：被动书:秘境抽奖·物品爆率·Lv2（未检测到可确认的变化）"
+    }
+   },
+   {
+    "busy": false,
+    "event": 0,
+    "menuOpen": false,
+    "phase": "after",
+    "saved": {
+     "category": 0,
+     "index": 0,
+     "item": 1461,
+     "map": 5,
+     "message": "事件已执行：被动书:秘境抽奖·物品爆率·Lv2（未检测到可确认的变化）"
+    }
+   },
+   {
+    "busy": false,
+    "menuOpen": false,
+    "phase": "open",
+    "resume": {
+     "category": 0,
+     "index": 0,
+     "item": 1461,
+     "map": 5,
+     "message": "事件已执行：被动书:秘境抽奖·物品爆率·Lv2（未检测到可确认的变化）"
+    }
+   }
+  ]
+ }
+}

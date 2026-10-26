@@ -160,13 +160,13 @@
    "goto": "Scene_Map",
    "from": "Scene_Title",
    "frame": 0,
-   "time": 1793022723170
+   "time": 1793024523948
   },
   {
    "goto": "Scene_Item",
    "from": "Scene_Map",
-   "frame": 26,
-   "time": 1793022726245
+   "frame": 50,
+   "time": 1793024529641
   }
  ],
  "errors": []

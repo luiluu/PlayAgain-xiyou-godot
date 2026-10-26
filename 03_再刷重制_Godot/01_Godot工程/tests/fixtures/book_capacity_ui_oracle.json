@@ -838,13 +838,13 @@
      "goto": "Scene_Map",
      "from": "Scene_Title",
      "frame": 0,
-     "time": 1793022723170
+     "time": 1793024523948
     },
     {
      "goto": "Scene_Item",
      "from": "Scene_Map",
-     "frame": 26,
-     "time": 1793022726245
+     "frame": 50,
+     "time": 1793024529641
     }
    ],
    "errors": []
@@ -1305,7 +1305,7 @@
       "font": "CodexUserUI, \"PingFang SC\", \"Microsoft YaHei UI\", sans-serif",
       "fontSize": "18px",
       "lineHeight": "normal",
-      "opacity": "1",
+      "opacity": "0.476447",
       "text": "事件已执行：被动书:秘境抽奖·物品爆率·Lv2（未检测到可确认的变化）"
      },
      "message": {
@@ -1332,37 +1332,37 @@
      "goto": "Scene_Map",
      "from": "Scene_Title",
      "frame": 0,
-     "time": 1793022723170
+     "time": 1793024523948
     },
     {
      "goto": "Scene_Item",
      "from": "Scene_Map",
-     "frame": 26,
-     "time": 1793022726245
+     "frame": 50,
+     "time": 1793024529641
     },
     {
      "goto": "Scene_Map",
      "from": "Scene_Item",
-     "frame": 112,
-     "time": 1793022735607
+     "frame": 136,
+     "time": 1793024537666
     },
     {
      "toast": "绿司机 能学习的抽奖被动技能已经达到1上限！",
      "scene": "Scene_Map",
-     "frame": 112,
-     "time": 1793022736011
+     "frame": 136,
+     "time": 1793024537909
     },
     {
      "goto": "Scene_Item",
      "from": "Scene_Map",
-     "frame": 112,
-     "time": 1793022736016
+     "frame": 136,
+     "time": 1793024537916
     },
     {
      "toast": "事件已执行：被动书:秘境抽奖·物品爆率·Lv2（未检测到可确认的变化）",
      "scene": "Scene_Item",
-     "frame": 112,
-     "time": 1793022736537
+     "frame": 136,
+     "time": 1793024538508
     }
    ],
    "errors": []

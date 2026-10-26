@@ -217,6 +217,10 @@ func _run() -> void:
 	await press("ui_cancel")
 	check("menu_cancel_close", closed[0] and XSound.system_log == [2], XSound.system_log)
 	menu.queue_free()
+	# 公共Toast的高度同步必须在收起前解绑，动画结束后全部释放。
+	await get_tree().create_timer(XToast.TIMEOUT + XToast.FADE + 0.1,true,false,true).timeout
+	var toast := get_tree().root.get_node_or_null("XToast") as XToast
+	check("toast_all_collapsed",toast == null or toast.stack.get_child_count() == 0)
 	finish()
 
 
