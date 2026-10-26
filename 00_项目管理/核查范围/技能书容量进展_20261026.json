@@ -869,10 +869,9 @@
     "boss72-capacity-test: EventHost type parse failure; own child stopped; all logs retained"
   ],
   "pending": [
-    "wait existing renderer and native-help jobs",
-    "resolve toast CSS line-height mismatch with actual layout readings",
-    "check native help notice contents and inherited O-007/O-008 differences",
-    "fixed-version UI/related regressions, paired images and final delivery"
+    "wait corrected Toast renderer and seven related engine regressions",
+    "inspect fixed-version paired images and layout readings",
+    "finish evidence and delivery only after final engine acceptance"
   ],
   "pause": {
     "fiveHourUsedPercent": 95,
@@ -1019,5 +1018,179 @@
         }
       }
     }
+  },
+  "resume74": {
+    "state": "WIP: native-help accepted; corrected Toast waiting engine validation",
+    "usage": {
+      "fiveHourUsedPercent": 60,
+      "weeklyUsedPercent": 24
+    },
+    "nativeUI": {
+      "status": {
+        "runId": "2905c0dcf7494269a6d2cacceaa4c518",
+        "status": "done",
+        "exitCode": 0,
+        "pid": 71590,
+        "startedAt": "2026-10-26T12:53:14.612684+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/占槽.py",
+          "--label",
+          "capacity-native-ui6",
+          "--",
+          "node",
+          "03_再刷重制_Godot/03_转换工具/ui_reference/review_book_capacity.cjs",
+          "00_项目管理/核查范围/技能书容量界面_20261026/原版",
+          "--port=8778"
+        ],
+        "childPGID": 71591,
+        "childIdentity": {
+          "pid": 71591,
+          "pgid": 71591,
+          "startedAt": "Mon Oct 26 13:53:14 2026    "
+        },
+        "finishedAt": "2026-10-26T13:52:19.004248+00:00"
+      },
+      "logSHA256": "0b0f73f7f1e1344ecc7f77a075c53c73e77bdf1d591501a14d5d31ce4cdf6537"
+    },
+    "sourceFingerprintsCount": 33,
+    "sourceUnchanged": true,
+    "nativeHelp": {
+      "rect": [
+        712,
+        236,
+        400,
+        48
+      ],
+      "fontSize": 12,
+      "rowCount": 1
+    },
+    "nativeFiles": {
+      "原版/capacity_0_actor.json": "bf2f163d5345aa597b7edccd7052635b539301c5595b15b2e578f8e7b4443a63",
+      "原版/capacity_0_actor.png": "adceaafe4906212b23fb4ac1013557a3916d652474a0a67750e9d28f2c999a34",
+      "原版/capacity_1_limit.json": "cf7f667e39223d2abaa66c3c61b8204a3041689bf675db727841cfabe0970374",
+      "原版/capacity_1_limit.png": "4c7e5bec407ed8476317f2c437d0977dad502055f026f771137cc45bd6174d91",
+      "原版/run.json": "e8c150a810d7fb65710c3271cd6e6711cf333d8338333a89650c296106cb5956",
+      "原版/source_after.json": "dad62ad7ee298720be6ad06602e1604b4f491aab25be36674fac1f373e06ab53",
+      "原版/source_before.json": "dad62ad7ee298720be6ad06602e1604b4f491aab25be36674fac1f373e06ab53"
+    },
+    "diagnosticUI": {
+      "status": {
+        "runId": "387393f8563f426699354efe50dd6776",
+        "status": "failed",
+        "exitCode": 1,
+        "pid": 71294,
+        "startedAt": "2026-10-26T12:51:09.174705+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/占槽.py",
+          "--label",
+          "capacity-render",
+          "--",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/03_转换工具/ui_reference/render_book_capacity.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "00_项目管理/核查范围/技能书容量界面_20261026/Godot_首轮诊断"
+        ],
+        "childPGID": 71295,
+        "childIdentity": {
+          "pid": 71295,
+          "pgid": 71295,
+          "startedAt": "Mon Oct 26 13:51:09 2026    "
+        },
+        "finishedAt": "2026-10-26T13:52:28.030595+00:00"
+      },
+      "logSHA256": "f1797eede3b5adcdaf542d426fb0607dc2797a00036de24307bc17258e5ccd3e"
+    },
+    "diagnosticResult": {
+      "passed": 163,
+      "total": 183,
+      "accepted": false
+    },
+    "runtimeCommit": "c4616ef7",
+    "pendingRuns": {
+      "boss74-capacity-render1": {
+        "runId": "e7ef11c219124731bfb87ebfb2409540",
+        "status": "running",
+        "exitCode": null,
+        "pid": 89478,
+        "startedAt": "2026-10-26T14:01:57.994761+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/占槽.py",
+          "--label",
+          "capacity-render74",
+          "--",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/03_转换工具/ui_reference/render_book_capacity.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "00_项目管理/核查范围/技能书容量界面_20261026/Godot_修正首轮"
+        ],
+        "childPGID": 89480,
+        "childIdentity": {
+          "pid": 89480,
+          "pgid": 89480,
+          "startedAt": "Mon Oct 26 15:01:57 2026    "
+        }
+      },
+      "boss74-capacity-final-deps": {
+        "runId": "33000ef2e2b64de18d8093fdd492afc4",
+        "status": "running",
+        "exitCode": null,
+        "pid": 89563,
+        "startedAt": "2026-10-26T14:02:33.905935+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/并行测试.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "--log-dir",
+          "03_再刷重制_Godot/04_验证/本地结果/boss74-capacity-final-deps",
+          "xiyou_book_capacity.tscn",
+          "xiyou_book_capacity_ui.tscn",
+          "xiyou_item_use.tscn",
+          "xiyou_event_compare.tscn",
+          "xiyou_notice_options.tscn",
+          "xiyou_flow.tscn",
+          "xiyou_help_card.tscn"
+        ],
+        "childPGID": 89564,
+        "childIdentity": {
+          "pid": 89564,
+          "pgid": 89564,
+          "startedAt": "Mon Oct 26 15:02:33 2026    "
+        }
+      }
+    },
+    "mechanicalChecks": {
+      "documentation": true,
+      "MVGuard": {
+        "passed": 16,
+        "total": 16
+      },
+      "UIGuard": {
+        "passed": 12,
+        "total": 12
+      },
+      "nodeSyntax": true,
+      "diffCheck": true
+    },
+    "actorTextTolerance": "Only draw x/y/width allow abs diff < 1px; content/size/color/alignment exact; rule fixture comparison unchanged"
   }
 }

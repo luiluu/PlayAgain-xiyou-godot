@@ -134,3 +134,7 @@
 
 - 同树接续bd09fd1a，五小时55%、周24%。两项在途已结束：原版补help成功，33项来源指纹前后一致、与当前只读源一致，两页及Chrome errors空；更新fixture的pages和sourceFingerprints，保留sourceIdentity。
 - Godot窗口诊断163/183；20项失败含13项选人字宽不足1像素的CoreText/Godot取整差、1项旧fixture缺help及6项Toast度量。实际Toast字体高27、上下20/7、line_spacing3，容器初算却按22高，第二框按初算高度排在104。失败图全部保留；继续修正，不算最终验收。
+
+- 原版新两页已逐页看：选人页原生主卡隐藏，结果回列表有双提示、结果主卡与技能附卡。重制诊断页已看，主卡按既有O-007/O-008仍为最小16与贴行优化；结果正文与原版一致。选人绘字仅x/y/宽允许小于1px的CoreText与Godot取整差，其余字段仍严格；规则专项不放宽。
+- c4616ef7尝试局部FontVariation上下各-3、行间0，外层改按Label实际最小高度排栈；引擎待验，未记通过。窗口boss74-capacity-render1（e7ef11c219124731bfb87ebfb2409540）与七场boss74-capacity-final-deps已脱离会话运行，不重复启动、不绕共用槽。
+- 最新文档原文块（dev.173）、node语法、MV16/16、UI12/12与diff检查已通过；日志boss74-capacity-docs.log。待核积压未改，所有提交仍待Claude。
