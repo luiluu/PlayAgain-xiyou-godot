@@ -6,7 +6,8 @@ extends RefCounted
 ## - IF/ELSE IF/ELSE/END 照 actionConditionsMet：假分支里的 IF 不入栈（YEP 原样）；条件由 eval_condition 按白名单求值，
 ##   正式版 eval 出错（如敌人没有 _skills）时为假。不认识的写法记入 unknown 并当作假。
 ## - 规则指令：ACTION EFFECT（可指定目标）、ADD/REMOVE STATE、HP/MP/TP ±（数值、百分比、变量）、ADD/REMOVE 能力 BUFF/DEBUFF。
-##   其余（动画、移动、等待、镜头、音效、公共事件、变量、EVAL）不影响本函数的结算，跳过。
+##   ACTION COMMON EVENT／COMMON EVENT: X 预约公共事件（XBattleCommonEvent，行动结束后由敌群事件检查执行）。
+##   其余（动画、移动、等待、镜头、音效、变量、EVAL）不影响本函数的结算，跳过。
 ## - 画面：照执行顺序在记录里插入 seq_phase（段开始）、seq_target（target 段换下一个目标）、seq（每条执行的指令，
 ##   带当时的目标与画面要用的对象组）与 seq_end，由 XSequencePlayer 逐帧演出；这些条目不影响结算。
 ## - IMMORTAL 期间 HP 为 0 也不倒下，解除时同步阵亡；资源增减与能力增减后按 MV refresh 同步夹值与阵亡状态。
@@ -140,6 +141,12 @@ func _command(name: String, args: Array) -> void:
 			if t.is_dead() and not [9, 10].has(int(skill.get("scope", 0))):
 				continue
 			logs.append_array(logic.mark_views(logic._invoke(user, skill, t)))
+		return
+	if name == "ACTION COMMON EVENT":
+		XBattleCommonEvent.reserve_action(logic, user, skill, all_targets)  # actionActionCommonEvent：44 效果依次预约（单槽）
+		return
+	if name == "COMMON EVENT":
+		XBattleCommonEvent.reserve(logic, int(str(args[0]).to_int()) if not args.is_empty() else 0)  # ActSeqPack1 actionCommonEvent
 		return
 	if name == "CAT BEGIN" or name == "CAT STRIKE":
 		# 小猫剑圣包装 processActionSequence：178 的四个剑技在这里打完全部剑段（XCat.cast）；其余情况原版也什么都不做
