@@ -517,6 +517,55 @@ class SlotWeightTests(unittest.TestCase):
         self.assertIn('等槽：godot --import', err)
 
 
+
+class AcceptanceDraftTests(unittest.TestCase):
+    """生成接受单.py：按同步报告 changeCandidates 生成草稿、追加不重复、理由来源与空理由提示。"""
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmp = Path(self.tmpdir.name)
+        self.gen = load('acceptance_draft', TOOLS / '生成接受单.py')
+        row = {'collection': 'damage', 'key': '[["troop",854]]', 'fields': ['value'], 'oldDigest': 'a' * 16, 'newDigest': 'b' * 16}
+        self.report = self.tmp / 'r/同步报告.json'
+        self.report.parent.mkdir()
+        self.report.write_text(json.dumps({'changeCandidates': [dict(row, file='slice_d1.json'), dict(row, file='slice_d2.json')]}))
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    def test_draft_matches_loader_once_reason_filled(self):
+        out = self.tmp / 'accept.json'
+        r = self.gen.build(self.report, out, '')
+        self.assertEqual((r['added'], r['total'], r['needReason']), (2, 2, 2))
+        with self.assertRaises(ValueError):
+            additions.load_acceptances([out])  # 空理由的草稿不能直接用
+        r = self.gen.build(self.report, self.tmp / 'ok.json', '探针修正后取满血目标')
+        entries, _ = additions.load_acceptances([self.tmp / 'ok.json'])
+        self.assertEqual([e['file'] for e in entries], ['slice_d1.json', 'slice_d2.json'])
+        self.assertEqual(r['needReason'], 0)
+
+    def test_append_skips_existing_and_only_filters(self):
+        out = self.tmp / 'accept.json'
+        self.gen.build(self.report, out, '第一轮理由', {'slice_d1.json'})
+        r = self.gen.build(self.report, out, '第二轮理由')
+        data = json.loads(out.read_text())
+        self.assertEqual((r['added'], r['total']), (1, 2))
+        self.assertEqual([e['reason'] for e in data['accept']], ['第一轮理由', '第二轮理由'])
+        with self.assertRaises(ValueError):
+            self.gen.build(self.report, self.tmp / 'x.json', 'r', {'events.json'})
+
+    def test_reason_from_delivery_sheet_and_latest_report(self):
+        sheet = self.tmp / 'sheet.md'
+        sheet.write_text('# 交付\n- 状态：可合并\n\n## 变更记录草稿\n\n## 2026 【Claude】标题\n\n- 修正探针取样口径\n\n## 交接板\n- x\n')
+        self.assertEqual(self.gen.reason_from_sheet(sheet), '修正探针取样口径')
+        sheet.write_text('# 交付\n## 预期测量变化\n\n- 854/947/5557 由 0 变 468\n\n## 交接板\n')
+        self.assertEqual(self.gen.reason_from_sheet(sheet), '854/947/5557 由 0 变 468')
+        old = self.tmp / 'b/20261001_000000/同步报告.json'
+        old.parent.mkdir(parents=True); old.write_text(json.dumps({'changeCandidates': [{'file': 'x'}]}))
+        new = self.tmp / 'b/20261002_000000/同步报告.json'
+        new.parent.mkdir(parents=True); new.write_text(json.dumps({'changeCandidates': []}))
+        self.assertEqual(self.gen.latest_report(self.tmp / 'b'), old)  # 最新一份没有变化就往前找
+
+
 def ledger():
     return '''## 进度账
 
@@ -1202,20 +1251,21 @@ for name in filter(None, files):
         slice_.parent.mkdir(parents=True, exist_ok=True); slice_.write_text('{}\n')
         self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'slice', cwd=self.wt)
         self.g('switch', '-c', 'claude/task-2', cwd=self.wt)
-        calls = []
-        orig = merge.run
-        merge.run = lambda root, args: calls.append(list(map(str, args)))
-        try:
-            state = merge.plan(self.root, 'task')
-            self.assertEqual(state['worktree'], '')
-            self.assertTrue(state['refresh'])
-            state_file = Path(self.tmp.name) / 'state.json'
-            state['phase'] = 'merged'
-            merge.prepare(self.root, dict(state, phase='merged', head=self.g('rev-parse', 'HEAD')), state_file, 'Claude')
-        except RuntimeError:
-            pass
-        finally:
-            merge.run = orig
+        calls, real = [], subprocess.run
+
+        def fake(cmd, **kw):
+            if cmd[0] == 'git':
+                return real(cmd, **kw)
+            calls.append(list(map(str, cmd)))
+            return subprocess.CompletedProcess(cmd, 0)
+        state = merge.plan(self.root, 'task')
+        self.assertEqual(state['worktree'], '')
+        self.assertTrue(state['refresh'])
+        state_file = Path(self.tmp.name) / 'state.json'
+        with mock.patch.object(merge.subprocess, 'run', side_effect=fake), \
+                mock.patch.object(merge, 'replace_versions', side_effect=RuntimeError('stop')):
+            with self.assertRaises(RuntimeError):
+                merge.prepare(self.root, dict(state, phase='merged', head=self.g('rev-parse', 'HEAD')), state_file, 'Claude')
         self.assertTrue(calls and calls[0][-1] == '--accept-additions', calls)
         self.assertFalse(any('--from-worktree' in c for c in calls))
 
@@ -1304,6 +1354,103 @@ for name in filter(None, files):
         self.assertEqual(self.call('--finish'), 0, self.last_output)
         self.assertEqual(log.read_text().split(), ['--oracle'])
         self.assertNotIn('验证:', self.g('log', '-1', '--format=%B'))
+
+    def close(self, *args, **env):
+        result = subprocess.run([sys.executable, str(HERE / '合并车道.py'), '--root', str(self.root), '--close-batch', *args],
+                                capture_output=True, text=True, env=dict(os.environ, **env))
+        self.last_output = result.stdout + result.stderr
+        return result.returncode
+
+    def batch_two(self):
+        wt2, checks = self.batch_fixture()
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--batch'), 0, self.last_output)
+        self.assertEqual(self.call_task('task2'), 0, self.last_output)
+        self.register_both()
+        self.assertEqual(self.call_task('task2', '--finish', '--batch'), 0, self.last_output)
+        return wt2, checks
+
+    def test_close_batch_checks_once_cleans_and_pushes(self):
+        bare = self.github()
+        self.assertEqual(self.close(), 1)  # 没有攒着的批
+        base = self.g('rev-parse', 'main')
+        wt2, checks = self.batch_two()
+        self.assertFalse(checks.exists())
+        self.assertEqual(self.close('--batch'), 1)
+        self.assertEqual(self.close(), 0, self.last_output)
+        self.assertEqual(checks.read_text().split(), ['run'])
+        self.assertFalse(self.wt.exists()); self.assertFalse(wt2.exists())
+        self.assertFalse((self.root / '.git/lane-merge/batch.json').exists())
+        self.assertIn('本批 2 条收口', self.last_output)
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
+        self.assertEqual(self.close(), 1)  # 已收口
+        self.assertTrue(base)
+
+    def test_close_batch_failure_keeps_everything_and_reports(self):
+        bare = self.github()
+        wt2, checks = self.batch_two()
+        self.assertEqual(self.close(CHECK_RC='1'), 1)
+        self.assertIn('各条车道带进来的改动', self.last_output)
+        self.assertTrue(self.wt.exists()); self.assertTrue(wt2.exists())
+        self.assertTrue((self.root / '.git/lane-merge/batch.json').exists())
+        self.assertNotEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
+        self.assertEqual(self.close(), 0, self.last_output)  # 修好后重跑同一命令
+        self.assertFalse(wt2.exists())
+
+    def test_close_batch_affected_uses_first_base_and_refuses_dirty_or_open_merge(self):
+        log = Path(self.tmp.name) / 'check_args'
+        wt2, _ = self.batch_fixture()
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\necho "$*" >> %s\n' % log); checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'args checker')
+        base = self.g('rev-parse', 'main')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--batch'), 0, self.last_output)
+        self.assertEqual(self.call_task('task2'), 0, self.last_output)  # 第二条还在合并中
+        self.assertEqual(self.close(), 1)
+        self.assertIn('还有一条车道在合并中', self.last_output)
+        self.register_both()
+        self.assertEqual(self.call_task('task2', '--finish', '--batch'), 0, self.last_output)
+        self.put('stray', 'x')
+        self.assertEqual(self.close(), 1)
+        (self.root / 'stray').unlink()
+        self.assertEqual(self.close('--affected'), 0, self.last_output)
+        self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base])
+
+    def fake_sync(self):
+        """main 上放一个假同步：记下参数；没带 --accept-changes 时按「测量有改变」退出 2。"""
+        record = Path(self.tmp.name) / 'sync_args'
+        self.put(str(merge.TOOLS / '同步正式西游.py'),
+                 'import sys\nopen(%r, "a").write(" ".join(sys.argv[1:]) + "\\n")\n'
+                 'sys.exit(0 if "--accept-changes" in sys.argv else 2)\n' % str(record))
+        self.g('add', '.'); self.g('commit', '-m', 'fake sync')
+        self.g('merge', 'main', cwd=self.wt)
+        slice_ = self.wt / merge.TOOLS / 'xiyou_slice.json'
+        slice_.write_text('{"troops": [1]}\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'slice', cwd=self.wt)
+        return record
+
+    def test_sync_rejection_prints_draft_command_then_accept_changes_resumes(self):
+        record = self.fake_sync()
+        self.assertEqual(self.call(), 1)
+        self.assertIn('生成接受单.py --out ' + str(merge.ACCEPT / 'claude_task.json'), self.last_output)
+        self.assertIn('--accept-changes', self.last_output)
+        sheet = self.root / merge.ACCEPT / 'claude_task.json'
+        self.assertEqual(self.call('--accept-changes', str(sheet)), 1)  # 还没写接受单
+        self.put(str(merge.ACCEPT / 'claude_task.json'), '{"schema": 1, "accept": []}\n')
+        self.assertEqual(self.call('--finish', '--accept-changes', str(sheet)), 1)
+        self.assertEqual(self.call('--accept-changes', str(self.root / 'elsewhere.json')), 1)
+        self.assertEqual(self.call('--accept-changes', str(sheet)), 0, self.last_output)
+        last = record.read_text().splitlines()[-1].split()
+        self.assertEqual(last[last.index('--accept-changes') + 1], str(merge.ACCEPT / 'claude_task.json'))
+        state = json.loads((self.root / '.git/lane-merge/state.json').read_text())
+        self.assertEqual(state['phase'], 'prepared')
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertIn(str(merge.ACCEPT / 'claude_task.json'), self.g('-c', 'core.quotepath=false', 'show', '--name-only', '--format=', 'HEAD'))
+        self.assertEqual(self.call('--accept-changes', str(sheet)), 1)  # 已收尾：没有准备中的合并也不新开
 
     def test_also_allows_extra_change_at_finish(self):
         self.assertEqual(self.call(), 0)
