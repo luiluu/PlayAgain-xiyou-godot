@@ -18,6 +18,15 @@ static func skills() -> Array:
 					_skills.append(int(e.dataId))
 	return _skills.duplicate()
 
+## Scene_ItemBase.onActorOk recognizes tagged power books before target validity.
+static func book_skill(item: Dictionary) -> int:
+	if RegEx.create_from_string("<CodexPower:\\s*\\d+>").search(str(item.get("note",""))) == null:
+		return 0
+	for effect in item.get("effects",[]):
+		if int(effect.code) == 43 and is_power(int(effect.dataId)):
+			return int(effect.dataId)
+	return 0
+
 static func is_power(id: int) -> bool:
 	return skills().has(id)
 

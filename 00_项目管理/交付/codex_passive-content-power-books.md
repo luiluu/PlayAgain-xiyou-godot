@@ -75,3 +75,5 @@
 - 原版真实物品入口四页截图成功（boss71-power-native-ui task39f491becd004dfa89d37bfe6e304267，exit0）：来源前后指纹相等、页面errors与Chrome错误均空。窗口前三页260/232/760/256、结果页260/250/760/220；padding14、lineHeight36。读数在power_books_ui_oracle.json，原图在[权能界面原版](../核查范围/权能书界面_20261026/原版/power_2_confirm.png)。此刻没有Godot成对截图，八例专项仍在等槽。
 
 - 八例Godot专项task491e67cdc06748abbece91f0136adfc6已done exit0，原日志保留；先查看结构化断言结果与错误文本，再接菜单并扩45例。
+
+- 八例6136/6136通过后，45例专项55682/55682通过（taskc537e12fe7804560a7c492dfe1b3fb8c，15秒，首轮无Script错误）。已接物品页拒收理由与3044独立子页草稿，新增菜单/真实消耗/模态输入/四页几何专项；接下来导入及验收UI，不提前称可合并。

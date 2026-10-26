@@ -59,6 +59,7 @@ var help_card: XHelpCard
 var gear_filter := {}
 var toolbar: HBoxContainer
 var search_panel: XGearSearch
+var power_page: XPowerForget
 
 
 func _ready() -> void:
@@ -83,7 +84,7 @@ func _ready() -> void:
 
 # ---- 装备检索（Codex 网页覆盖层）----
 func open_search() -> void:
-	if search_panel != null:
+	if search_panel != null or power_page != null:
 		return
 	toolbar.visible = false
 	help_card.visible = false
@@ -280,6 +281,9 @@ func _refresh() -> void:
 
 ## updateHelp：列表/材料列表的选中行；新物品停上去即记为看过（光标离开后不再画 NEW）
 func _update_help() -> void:
+	if power_page != null:
+		help_card.visible = false
+		return
 	var rec := {}
 	var row := -1
 	match _mode:
@@ -462,7 +466,7 @@ static func _current_max(c: XMVCanvas, label: String, cur: float, mx: float, x: 
 
 # ---- 操作 ----
 func _unhandled_input(event: InputEvent) -> void:
-	if search_panel != null:
+	if search_panel != null or power_page != null:
 		return
 	var handled := true
 	if event.is_action_pressed("ui_cancel"):
@@ -677,7 +681,10 @@ func _effective(t: XActor) -> bool:
 				if t.state_ids.has(int(e.dataId)):
 					return true
 			43:
-				if not t.skill_ids.has(int(e.dataId)):
+				if XPowerBooks.is_power(int(e.dataId)):
+					if XPowerBooks.can_learn(t,int(e.dataId)):
+						return true
+				elif not t.skill_ids.has(int(e.dataId)):
 					return true
 			31, 32:
 				if t.buffs[int(e.dataId)] != t.buff_limit(int(e.dataId), int(e.code) == 31):
@@ -693,6 +700,13 @@ func _effective(t: XActor) -> bool:
 func _use() -> void:
 	var s := XState.current
 	var targets := _targets()
+	var power := XPowerBooks.book_skill(_item)
+	if power > 0 and targets.size() == 1:
+		var reason := XPowerBooks.learn_reason(targets[0],power)
+		if not reason.is_empty():
+			XSound.system(3)
+			XToast.show_text(reason,true)
+			return
 	if s.item_count(int(_item.get("id", 0))) <= 0 or not targets.any(func(t): return _effective(t)):
 		XSound.system(3)
 		return
@@ -724,11 +738,32 @@ func _use_direct() -> void:
 	if s.item_count(int(_item.get("id", 0))) <= 0:
 		XSound.system(3)
 		return
+	if int(_item.get("id",0)) == XPowerBooks.FORGET_ITEM:
+		_open_power_forget()
+		return
 	XSound.system(22)   # SoundManager.playUseItem
 	if bool(_item.get("consumable", true)):
 		s.gain_item(int(_item.id), -1)
 	_after_use()
 
+
+## The native item action opens a child chooser without using/consuming the item.
+func _open_power_forget() -> void:
+	if power_page != null:
+		return
+	_mode = "list"
+	power_page = XPowerForget.new()
+	power_page.closed.connect(_close_power_forget)
+	add_child(power_page)
+	_refresh()
+
+func _close_power_forget() -> void:
+	power_page.queue_free()
+	power_page = null
+	_mode = "list"
+	_index = clampi(_index,0,maxi(0,entries().size()-1))
+	_top = XMenu._scroll_to(_index,_top,_rows())
+	_refresh()
 
 ## Game_Action.applyGlobal：效果里的公共事件（44）逐条 reserveCommonEvent（单槽，后一条盖前一条）；
 ## Scene_ItemBase.checkCommonEvent：有预约就回地图执行——物品页与菜单一起关掉（to_map 由菜单接着关）
@@ -747,7 +782,7 @@ func _after_use() -> void:
 
 # ---- 鼠标：先选中再点确定；右键取消；滚轮滚动 ----
 func _gui_input(event: InputEvent) -> void:
-	if search_panel != null or not (event is InputEventMouseButton and event.pressed):
+	if search_panel != null or power_page != null or not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
 	var pad := Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
