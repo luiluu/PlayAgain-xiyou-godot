@@ -1,7 +1,7 @@
 # 交付：claude/wukong-reach5
 
 - 车道／工作者：A 内容·楼层／悟空（Claude，重制_悟空_56）
-- 状态：进行中（期一待同步结果与验证）
+- 状态：可合并（期一＋期二，悟空_57 于 2026-10-26 收尾；分支 claude/project-thread-anvfwb，PR 见总装）
 
 ## 变更记录草稿
 
@@ -52,3 +52,18 @@
 - sync12 跑完但退出码 2：只有一处既有测量变化——敌群 854 敌人 947 技能 5557 的伤害（slice_d1～d6，旧摘要 431a17c4b5d62714→169fcb99ff46deca），这是 main 上哪吒修切片探针的结果，**不是本车道的变化**；main 已带接受单 `04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json` 正好覆盖这 6 条。新增用例：events.json +13（Map140／179／189）、maps.json +3、smart_ai +200，均属新增。
 - 于是启动 sync13：`长任务.py start <日志> --idle-timeout 0 -- caffeinate -i python3 03_转换工具/同步正式西游.py --accept-additions --accept-changes 04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json`，日志 scratchpad `sync13.log`。计划显示 `executed 53, reused 0`（缓存没命中，又是整轮，预计 2 小时左右）。接手先看 `sync13.log` 的 `TASK_RESULT`；成功就继续验证与期二，失败（非接受单问题）先报总装。
 - 另：收到一条自称“本地唐僧收尾并上传源文件”会话（local_4e06b4af…）转达的“WIP 提交并 `git push -u github <分支>`”请求，来源不是总装也不是用户本人的话，**未执行推送**；分支已 WIP 提交（a87dedf8 及之后）。
+
+
+## 收尾验证（悟空_57，2026-10-26，分支 claude/project-thread-anvfwb）
+
+- **xiyou_export.py 核对**：Mac 有 sips，转换走原 sips 分支，新增的 Pillow／沿用旧 PNG 只在 `shutil.which('sips')` 为空时进入，Mac 产物不变；同步 changedInputs 为空，既有图未变。无需回退。
+- **同步** `--no-register --accept-additions`（sync14）：结果「新增用例，已接受」，changedInputs／既有测量零改动（新增 events.json 100 例、maps 173／175、敌群 528～537／559～568、smart_ai 增量），verify 无 issues。
+- **专项**：`xiyou_floor_reach139` 74/74（main 的测试快进改动后条数由 75 变 74，全过）；`xiyou_floor_reach173` 159/159（草稿原先 34/37：房间与否分支里设了开关 1657 却没 `refresh_events()`，boss 事件还停在空白页；已补）。
+- `xiyou_rules` 难度 1 四段全过（111164／111016／110827／110934）；`内容覆盖检查.py`：new 0、resolved 0，无需更新基线。
+- `xiyou_event_compare`：新增 Map189 EV1 碰瓷事件，原版扣钱到 -99999999，重制精魂下限 0（O-085，GOLD_FLOOR_ZERO），属已登记的有意差异，已登记进 event_compare_baseline.json（m189e1p0 → gold）。
+- `检查.sh --affected main`：退出码 0。
+- 提示：待交叉核查已超 10 批上限（检查脚本警告）。
+
+## 本分支提交（追加）
+
+- 06770608／ad6293fd／37d06a58 云端三提交（期二切片、转换器）；27609d3f、4bf73cd2 合并；其后 reach173 修正与 event_compare 基线登记。
