@@ -46,7 +46,7 @@
 
 ## 验证
 
-- **与 main 种族异化（#12）冲突的解决（2026-10-26）**：① `actor.gd` param 按原版安装先后由内到外套：XActorModules（米拉 main.js 98、宿傩 113）→ XCat（115）→ XRaceBattle（148），即 `XRaceBattle.param(XCat.param(XActorModules.param(super)))`；② `module_registry.gd` 标准列表两个描述符都放，actor-modules 顺序号由 41 改 3（原版 raven 1 等在 cat-sword 9 前），race-blessings 保持 41；伤害捕获 actorModules 与 race 两段都保留；③ `xiyou_module_hooks` 默认宿主序列为 actor-modules 3、cat-sword 18／19、orb-sets 39、race-blessings 41。
+- **与 main 种族异化（#12）冲突的解决（2026-10-26）**：① `actor.gd` param 按原版安装先后由内到外套：XActorModules（米拉 main.js 98、宿傩 113）→ XCat（115）→ XRaceBattle（148），即 `XRaceBattle.param(XCat.param(XActorModules.param(super)))`；② `module_registry.gd` 标准列表两个描述符都放，actor-modules 顺序号由 41 改 3（原版 raven 1 等在 cat-sword 9 前），race-blessings 保持 41；伤害捕获 actorModules 与 race 两段都保留；③ `xiyou_module_hooks` 默认宿主序列为 actor-modules 3、cat-sword 18／19、orb-sets 39、race-blessings 41。合并后重跑：`--补齐`＋同步（只增，退出码 0）；xiyou_module_hooks 1310、xiyou_race_battle 436、xiyou_alien_battle 330、xiyou_actor_modules 37、xiyou_actor_p0 3300、xiyou_rules 难度 1 四段全过；`检查.sh --affected main` 通过（Godot 125 项）。
 
 - 同步 `同步正式西游.py --no-register --accept-additions`（合 main 8de0204b 后、含 slice_probe 护盾修正）：退出码 0，对 main 基线只有新增用例（actor_passive、help_cards、slice_d1～d6、wtype 等），核对 0 问题。
 - 专项（`并行测试.py --full`）全过：xiyou_actor_modules 37/37、xiyou_actor_p0 3300/3300、xiyou_rules 难度 1 四段（109704／109619／109508／109673 全过）、xiyou_party_skills 214、xiyou_module_hooks 1310、xiyou_actor_advanced 33、xiyou_cat 992、xiyou_qiyu 231。
@@ -57,4 +57,5 @@
 
 - 白龙一期：4fa9c108、1dcd25f9、9546ea2e、30eff20f、3399f1f0、7ba84da2、2627e98c、a799a65f、7c81d5d2、290098a1
 - 云端 172 宿傩接线：fd4a9539、d035caf5
-- 本机收尾：1a5d0576（XSkillProgression、同级同步、专项期望）、a45391c0（slice_probe 还原护盾）、本次交付单提交
+- 本机收尾：1a5d0576（XSkillProgression、同级同步、专项期望）、a45391c0（slice_probe 还原护盾）、a84191d1／12547d20（交付单）
+- 合 main 解冲突：33400fb9（param 套序、actor-modules 顺序号 3）、本次交付单提交
