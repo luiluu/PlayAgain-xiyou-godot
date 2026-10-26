@@ -132,3 +132,5 @@
 - 已读当前交代及运行时／两新专项草稿；先将当前工程占槽导入，仅查解析与编译，不以旧generated作集成语义验收。原版样本有效后再补fixture并校准；14期专项与选测取并集去重。
 - 更新选测计划：SEL_FULL=0，218场，32项新增／核心专项清单均被选中；仅是计划、尚未执行。77文档块复查exit1，仍仅main继承两条链接a。
 - 静态发现待新采样确认：冻结index.html实际加载js/rpg_οbjects.js（希腊ο）；其command313每名目标操作后clearResult，菜单itemEffectAddNormalState／RemoveState则保留槽并makeSuccess。当前313草稿未清槽，需样本确认后校准；不修改仍在排队的探针。1334／1336时长均固定1，无随机时长豁免。
+- 两原版任务已done exit0：context12例、operation8例均唯一ID／errors空，来源runtimeInputs与现manifest相等；两fixture已逐字节复制并保留.sandbox原件。实测确认313每步清槽且解除后的下一条可重加，菜单同结果槽解除后禁重加；据此仅给313补每目标clearResult。TP按实际max200比较，95＋25=120、95＋75=170，第二次新增可达200，不能假设上限100。
+- draft-import1（f45957f312dc4a79810ecf4fd46050f8）exit0且无SCRIPT／Parse／Compile／ERROR，验证的是f4dff07e草稿解析；尚未按新增fixture跑场景、未同步，不充作合并语义验收。

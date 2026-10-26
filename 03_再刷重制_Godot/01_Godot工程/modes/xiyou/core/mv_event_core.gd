@@ -497,6 +497,8 @@ func _change_actor_state(p: Array) -> void:
 			resources.add_state(a, int(p[3]))
 		else:
 			resources.remove_state(a, int(p[3]))
+		# Native command313 clears each target after the operation, including inherited domains.
+		resources.seed_result(a, XResourceContext.empty_result())
 	if owns:
 		resources.publish()
 	var after := {}
