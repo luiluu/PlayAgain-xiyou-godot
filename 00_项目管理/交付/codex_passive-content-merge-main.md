@@ -1,7 +1,7 @@
 # 交付：codex/passive-content-merge-main
 
 - 车道／工作者：集成／沙僧（Codex，重制_沙僧_77，接76）
-- 状态：用户2026-10-26“继续吧”授权按建议补地图／菜单显式操作域，已恢复；仍未完成同步／引擎验证，不可按可合并收取
+- 状态：WIP。新20例原版参照已落库并按实测修313清槽；五小时79%开始按80%线收尾，未同步／未完成引擎语义验证，不可按可合并收取
 - 交付范围截至5761f01f；新分支从该点建立。PREE已独立保存至c5953948，未带入本分支。
 - 本次合并本地main：9b140f365f93c2cfa4b19d85b6ddd72576830c16；不以远端覆盖本地。两父合并保留提交链。
 - 用户明确要求先评判并执行Claude交代，原文留[只读交代证据](../核查范围/连续分支合main_Claude交代_20261026.txt)。方向合理，集成优先，PREE暂停；不自行销核或登记完成度。
@@ -134,3 +134,12 @@
 - 静态发现待新采样确认：冻结index.html实际加载js/rpg_οbjects.js（希腊ο）；其command313每名目标操作后clearResult，菜单itemEffectAddNormalState／RemoveState则保留槽并makeSuccess。当前313草稿未清槽，需样本确认后校准；不修改仍在排队的探针。1334／1336时长均固定1，无随机时长豁免。
 - 两原版任务已done exit0：context12例、operation8例均唯一ID／errors空，来源runtimeInputs与现manifest相等；两fixture已逐字节复制并保留.sandbox原件。实测确认313每步清槽且解除后的下一条可重加，菜单同结果槽解除后禁重加；据此仅给313补每目标clearResult。TP按实际max200比较，95＋25=120、95＋75=170，第二次新增可达200，不能假设上限100。
 - draft-import1（f45957f312dc4a79810ecf4fd46050f8）exit0且无SCRIPT／Parse／Compile／ERROR，验证的是f4dff07e草稿解析；尚未按新增fixture跑场景、未同步，不充作合并语义验收。
+
+## 沙僧77额度收尾现场（2026-10-26）
+
+- 采样／草稿导入三个自有长任务现均done exit0，无本车道在途任务；不是样本失败。精简原版样本身份与SHA见[新原版样本](../核查范围/连续分支合main_新原版样本_20261026.json)，12＋8例原件与fixture逐字节一致；导入生成两新专项UID一并提交。
+- 当前小步：354c8af7补313每名目标操作后清槽，保留借域时只外层publish；菜单保留旧槽。此修正发生在草稿导入后，尚未重新导入／跑Godot，不把先前导入当最终版本通过。两新专项不得放宽断言。
+- 下一步先实查额度与全局同步；悟空80414／80415末查仍运行，本车道没启动sync2。无其他同步后才经merge-main76/sync_preserve.py另名启动普通增量同步，无接受开关先审报告，保留全部.sandbox与失败／不完整证据；既有变化逐条接受单，新项才accept-additions。不要重采已有效20例，不重启旧日志。
+- 同步完成／generated更新后占槽导入并查所有Script／Parse／Compile错误，再跑state_operation、state_merge_context与state_js／state_effects_tp／Boss来源直接依赖；随后检查.sh --affected 9b140f36 --oracle。77重生成SEL_FULL=0、218场计划（本地结果/merge-main77/selection.sh），32项新增／核心清单已全覆盖，但尚未执行；14期全部最终专项仍与实际覆盖并集去重。
+- 集成仍不可合并，PREE仍封存c5953948；不能先回PREE或向Kyo说已交付。main继承两条链接a、early_inventory_rule旧8败照实保留，均不夹带修改。所有提交待Claude，不自核／自评完成度。全部.sandbox／generated／失败与不完整样本／整树照旧保留。
+- 最末实查五小时80%、周43%，依本期约定额度停手，不自动新开接力。收尾MV守卫16／16、diff检查通过；原检查.sh文档块exit1仅原main继承两条链接a，无本期新增失效链接。已提交并将推送本分支，未改main或共享登记。
