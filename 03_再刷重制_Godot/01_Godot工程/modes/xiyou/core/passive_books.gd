@@ -43,4 +43,3 @@ static func take_return(s: XState) -> Dictionary:
 	if s != XState.current or saved.is_empty() or int(saved.map) != s.map_id or s.peek_common_event() > 0:
 		return {}
 	return saved
-

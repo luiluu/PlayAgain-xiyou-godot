@@ -883,4 +883,19 @@ static func restore_capacity_return(menu: XMenu, saved: Dictionary) -> void:
 	page._index = index if index >= 0 else clampi(int(saved.index),0,maxi(0,entries.size()-1))
 	page._top = XMenu._scroll_to(page._index,0,page._rows())
 	page._refresh()
+	# Native notifyBag replaces only the main HelpExtend card; learned-skill extras remain.
+	# Keep the project's existing O-007/O-008 minimum type size and near-row placement.
+	var card := page.help_card
+	card.rows = [[str(saved.message),XHelpCard.OTHER_SIZE,"#ffffff",false,0]]
+	card.quality = 0
+	var layout := XHelpCard.layout(card.rows,card.min_font,card.card_width)
+	card._lines = layout.lines
+	card.size = Vector2(card.card_width,layout.height)
+	card.frame.position = Vector2(-10,-10)
+	card.frame.size = card.size+Vector2(20,20)
+	card.canvas.size = card.size
+	card.visible = true
+	card.frame.queue_redraw()
+	card.canvas.queue_redraw()
+	card.place_for_row(Rect2(LIST_RECT.position+Vector2(0,XMVWindow.PADDING+(page._index-page._top)*LH),Vector2(LIST_RECT.size.x,LH)))
 	XToast.show_text(str(saved.message),true)
