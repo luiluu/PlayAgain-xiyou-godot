@@ -1,5 +1,5 @@
 {
-  "说明": "选测对照表（三级检查②，用户 2026-10-24）：选测.py 把 git diff <基准> 的每个改动文件按 rules 自上而下第一条匹配归到一组，各组选中的场景与检查取并集。match 用 fnmatch（* 跨目录），路径相对资料库根；.uid 文件按去掉 .uid 后的路径归组。groups：scenes＝固定要跑的场景（tests/ 下的 glob）；refs＝再加引用了改动文件（文件名、class_name）的测试；fallback＝refs 一个也没找到时改跑这些（写 FULL 即整轮）；checks＝非 Godot 检查（guards 守卫、tools 工具回归、content 共性参照与内容覆盖、same_source 同源，见 检查.sh）；full＝整轮；onlyLines＝该文件的改动行都匹配这个正则才归本组，否则整轮。文档与登记检查（JSON、链接、开发编号、占位）任何时候都跑，不用列。拿不准的路径落到最后一条，整轮。",
+  "说明": "选测对照表（三级检查②，用户 2026-10-24）：选测.py 把 git diff <基准> 的每个改动文件按 rules 自上而下第一条匹配归到一组，各组选中的场景与检查取并集。match 用 fnmatch（* 跨目录），路径相对资料库根；.uid 文件按去掉 .uid 后的路径归组。groups：scenes＝固定要跑的场景（tests/ 下的 glob）；refs＝再加引用了改动文件（文件名、class_name）的测试；loaders＝另把 modes/ 下按文件名加载它的 .gd 的 class_name 当引用词；fallback＝refs 一个也没找到时改跑这些（写 FULL 即整轮）；checks＝非 Godot 检查（guards 守卫、tools 工具回归、content 共性参照与内容覆盖、same_source 同源，见 检查.sh）；full＝整轮；onlyLines＝该文件的改动行都匹配这个正则才归本组，否则整轮。文档与登记检查（JSON、链接、开发编号、占位）任何时候都跑，不用列。拿不准的路径落到最后一条，整轮。",
   "groups": {
     "docs": {"说明": "只改文档／登记：只跑文档与登记检查"},
     "registry": {"说明": "合并递增的开发编号（只改版本行）", "onlyLines": "^\\s*(config/version=|\"developmentVersion\")"},
@@ -12,6 +12,7 @@
     "converter": {"说明": "切片、转换器、oracle 探针、测量接受单：同战斗核心，另加工具回归", "scenes": ["xiyou_rules*.tscn", "xiyou_event_compare.tscn"], "refs": true, "checks": ["guards", "tools", "content", "same_source"]},
     "map": {"说明": "地图解释器：事件对照＋楼层专项", "scenes": ["xiyou_event_compare.tscn", "xiyou_floor*.tscn", "xiyou_map*.tscn", "xiyou_flow.tscn"], "refs": true, "checks": ["guards"]},
     "game": {"说明": "其它游戏模块：引用它的专项＋事件对照", "scenes": ["xiyou_event_compare.tscn"], "refs": true, "checks": ["guards"]},
+    "mode_data": {"说明": "模式手写数据（modes/xiyou/*.json）：引用它或加载它的模块的专项＋事件对照", "scenes": ["xiyou_event_compare.tscn"], "refs": true, "loaders": true, "fallback": ["FULL"], "checks": ["guards"]},
     "export": {"说明": "导出设置", "scenes": ["xiyou_mac_export.tscn"], "checks": ["guards"]},
     "tools": {"说明": "开发工具：工具回归（含守卫）", "checks": ["guards", "tools"]},
     "full": {"说明": "拿不准：整轮", "full": true}
@@ -25,6 +26,7 @@
     {"match": "03_再刷重制_Godot/01_Godot工程/tests/*.tscn", "group": "test"},
     {"match": "03_再刷重制_Godot/01_Godot工程/tests/*", "group": "test_data"},
     {"match": "03_再刷重制_Godot/04_验证/测量接受/*", "group": "converter"},
+    {"match": ".gitignore", "group": "tools"},
     {"match": "AGENTS.md", "group": "docs"},
     {"match": "CLAUDE.md", "group": "docs"},
     {"match": "00_项目管理/*", "group": "docs"},
@@ -45,6 +47,8 @@
     {"match": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/*", "group": "map"},
     {"match": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/*", "group": "game"},
     {"match": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/*", "group": "game"},
+    {"match": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/generated/*", "group": "full"},
+    {"match": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/*.json", "group": "mode_data"},
     {"match": "03_再刷重制_Godot/03_转换工具/*", "group": "converter"},
     {"match": "03_再刷重制_Godot/01_Godot工程/export_presets.cfg", "group": "export"},
     {"match": "03_再刷重制_Godot/07_开发环境/*", "group": "tools"},

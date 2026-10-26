@@ -1,4 +1,6 @@
 .DS_Store
+# macOS 资源分叉（AppleDouble）文件：云端、exFAT 或网络盘上会生成，误提交后选测退成整轮
+._*
 **/.godot/
 **/.import/
 **/node_modules/
