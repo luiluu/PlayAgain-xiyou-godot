@@ -1,7 +1,7 @@
 # 交付：codex/passive-content-power-books
 
 - 车道／工作者：规则／沙僧（Codex，重制_沙僧_70）
-- 状态：进行中（已恢复；参照阶段，尚未修改Godot运行时）
+- 状态：进行中（核心草稿与专项已提交，尚未验收）
 - 基线：1132e919；前期stateOrigin最终b91b1a14、特殊react最终1132e919均独立可合并待Claude，不重跑旧验收。
 
 ## 本小期范围
@@ -9,7 +9,7 @@
 - 权能五本1654／1656／1674／1683／1718：学习上限、普通遗忘保护、专用付费遗忘入口、静态效果。先原版宿主冒烟与矩阵，不能只读代码改规则。
 - 已定位冻结源installNativeHonghuangRuntime.js 80～123：CodexHonghuang.powerClass优先CodexZones，超强3／强4／弱6；Game_Actor.learnSkill、forgetSkill与Game_Action.testItemEffect／itemEffectLearnSkill共同守卫。专用forgetLearnedPower消费3044遗忘符，不返书。新局free迁移名单为空；不移植MV旧档整理。
 - 普通被动248效果与90科技静态链已交，不重做。旧首轮343参照因权能无法普通遗忘而污染，本期每例newGame，独立文件不覆盖旧证据。
-- 尚未设计／修改actor.gd、道具使用或UI入口。容量满变量9返书／预约1317、PREE／ASUP、WPNM／SkEType、race-battle仍按后续顺序。
+- 已设计并接核心actor.gd草稿，尚未接道具页拒收提示与3044遗忘UI。容量满变量9返书／预约1317、PREE／ASUP、WPNM／SkEType、race-battle仍按后续顺序。
 - 共享登记只读，保留所有.sandbox／generated和工作树；全部提交待Claude，不自销核、不自评完成度。
 
 ## 可优化
@@ -49,3 +49,17 @@
 - 修正后native2已done exit0（230ad4b5e5b342ef86d4f70a7b6f3157），8唯一ID、errors空；真实class／limit为106超强3、1强4、2弱6，各次书籍是否可学逐项吻合。已独立保存power_books_corrected8.json并复制fixture，旧重复原件保留。接着跑45例边界与六例菜单流程，仍未宣称Godot已验。
 
 - 新增xiyou_power_books八例专项，按原版每步比较类／上限／技能表／注册表、能力值、附加与特殊参数、元素、TP、追加行动、遗忘符和各接口原因。使用真实battle.apply效果43、actor.learn／forget与独立付费接口，未用观测器代替规则执行。开始导入后先跑本专项，未通过前不加UI范围。
+
+## 沙僧70→71（同树上下文接力，本轮继续）
+
+- 用户已说“继续”，额度已恢复：本轮开工五小时39%、周6%，非额度停手。按既定同工作树自动上下文接力创建71后70停止，71唯一后续执行者。先实查额度，五小时95%才WIP保存并停、周98%收尾；设计／疑难high，有真实接口才称机械步骤切medium。
+- 所有文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。只用此树，当前分支codex/passive-content-power-books，HEAD以本节提交为准；不在main写、不创建／清理worktree、不reset／cherry-pick、不建automation、不向唐僧或其他已有会话发消息；共用登记只读，只写自己交付单。保留全部.sandbox、失败／不完整采样、generated与整树。
+- 本轮已做：b69077e4恢复；fd7a24db设计与45例边界probe；ed8000d7六例菜单probe与CodexParamRate位置；1cb3dfd3核心草稿；9bd227a9有效修正8例fixture；afd8ed85八例Godot专项。全部待Claude，不自销核、不自评进度。前期stateOrigin／react与69两期均独立可合并，不重做；旧确定性8个early_inventory_rule继承失败仍保留不夹带修复。
+- 原版修正后8例task230ad4b5e5b342ef86d4f70a7b6f3157已done exit0；唯一ID／errors空／实际类与上限逐项已核：106超强3、1强4、2弱6。原件.sandbox/power_books_corrected8.json与tests/fixtures/power_books_oracle.json字节相等。原始重复8例另存power_books_initial_duplicate.json及源码，不复用为完整参照。共享源generated五本道具和3044均已存在，无切片变化。
+- **在途三任务勿重复启动**（交接写入时等共用四槽）：boss70-power-boundary.log（45例独立probe）、boss70-power-menu.log（6例原版openPowerForget菜单回调流）、boss70-power-import.log（Godot导入）。日志／status都在03_再刷重制_Godot/04_验证/本地结果/，用等待任务.sh --timeout45逐个看终态；期间不绕槽、不加上限、不杀别人。native2成功临时日志尚未清，证据已固化后可清自己的成功临时输出；所有失败与.sandbox不删。
+- 核心文件modes/xiyou/core/power_books.gd新增XPowerBooks，actor.gd只改learn_skill／forget_skill／param_rate三个挂点。普通forget只保护XState.current.actors里的正式实例，clone仍能遗忘；付费forget_paid(s,a,id)直接擦该技能并扣3044、刷新，不用全局permit；没有旧MV迁移。CodexParamRate按已学技能标签求和，乘进param_rate；原版位置installNativeEconomyRuntime.js 55～70，别改成最终param再乘。**尚未导入或验收，不称实现完成**。
+- tests/xiyou_power_books.gd／tscn是八例专项，使用真实battle.apply、actor.learn／forget、付费接口，逐步比较静态属性和原因；导入若exit0仍查Script／Parse／Compile错误。先跑八例再扩45例与菜单。导入会生自己的core与专项UID，只收本车道UID；若又生xiyou_battle_common_events.gd.uid移存.sandbox独立名，勿夹带。
+- 45例probe：三角色×三个学习宿主apply／直接learn／直接itemEffect×五本循环顺序，普通forget保护与clone例外、缺符、付费与重复付费、腾位再学。clone用JsonEx.makeDeepCopy，若宿主失败按报错定位，不随意stub结算。6例menu probe观察CodexYunshang.choose数据边界，执行真实H.openPowerForget回调与paid规则，覆盖两种确认取消、成功、符被移走、无权能；不声称它等于截图。
+- UI设计尚未落代码：新增独立XChoiceWindow子页（不改共用choice_window），按角色→技能→确认→结果，原item_scene暂停输入，关闭回列表；3044本身scope0/occasion2/consumablefalse，拦截_use_direct入口；原版itemUse入口installNativeHonghuangRuntime.js 138～148。权能使用前_effective与_use统一调用learn_reason，避免拒收仍扣书，并显示原版理由。先读menu原件真实行文，再接UI；改界面必跑event_compare且取原版／Godot成对截图及运行时读数。复用XChoiceWindow、XOrbShop.wrap_info，几何与原版同源；新截图脚本可复用ui_reference既有只读服务与原版截图流程，不动工具车道文件。
+- 收尾跑新专项、普通被动338例、Actor/导入/技能/属性／Boss等直接依赖；无切片则不强加难度1必跑，但总装合并影响面选测仍由总装做。原检查.sh文档／JSON／链接／编号块、node --check、MV守卫16／16、git diff --check；精简证据入Git后清自己成功临时输出。当前只是WIP，未跑本轮验收，别将前期全绿套到新核心。
+- 后续顺序不变：权能五本完整交付→容量满变量9返书／预约1317→PREE／ASUP→WPNM／SkEType与race-battle等八戒接口→都完且额度足才核他人；formula_execution／mv_event_core不在交接改动范围，set仍unsupported。更早限制与依赖链见本单前节及69→70全文。
