@@ -1,0 +1,157 @@
+extends "res://tests/xiyou_book_capacity.gd"
+## Real map -> main menu -> item list -> actor -> shared reservation -> real map interpreter.
+class PaintCapture extends XMVCanvas:
+	var texts: Array = []
+	func _draw() -> void:
+		texts.clear()
+		super._draw()
+	func text(value: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, lh := XUI.LINE_HEIGHT, alpha := 1.0, zoom := 1.0, pivot := Vector2.ZERO, outline := OUTLINE) -> void:
+		texts.append([value,x,y,max_w,align,size,"#"+color.to_html(false)])
+		super.text(value,x,y,max_w,align,color,size,lh,alpha,zoom,pivot,outline)
+
+var out_dir := ""
+var native: Dictionary
+var map: XMapScene
+
+func frames(n := 2) -> void:
+	for i in n:
+		await get_tree().process_frame
+
+func shot(name: String, data: Dictionary) -> void:
+	if out_dir.is_empty():
+		return
+	if DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(out_dir.path_join(name+".png"))
+	FileAccess.open(out_dir.path_join(name+".json"),FileAccess.WRITE).store_string(JSON.stringify(data," "))
+
+func state_read(scene: String) -> Dictionary:
+	return {"scene":scene,"map":s.map_id,"position":[s.x,s.y,s.direction],"book":s.item_count(1461),"skills":s.actor(2).skill_ids.duplicate(),"selected":s.item_target_actor_id,"reserved":s.peek_common_event()}
+
+func _run() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="): out_dir = arg.substr(6)
+	if not out_dir.is_empty():
+		DirAccess.make_dir_recursive_absolute(out_dir)
+	native = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/book_capacity_ui_oracle.json"))
+	check("source",native.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
+	s = XState.new_game_blank()
+	s.party.assign([2])
+	s.battle_slots = [2,0,0,0,0]
+	s.map_id = 5
+	s.x = 10
+	s.y = 10
+	s.direction = 2
+	s.set_variable(9,1)
+	s.actor(2).learn_skill(6301)
+	s.gain_item(1461,3)
+	# Both sides suppress unrelated guide milestones; no rule, reservation or CE handler is replaced.
+	var segment := XGuide.segment_of(XZhenqi.progress_floor(s))
+	if not segment.is_empty():
+		XGuide.seen(s,"seg:"+str(segment.key),true)
+	XToast.shown.clear()
+	map = XMapScene.new()
+	add_child(map)
+	for i in 600:
+		if map.player != null and map.map_id == 5 and not map.busy:
+			break
+		await frames(1)
+	check("map.ready",map.player != null and map.map_id == 5 and not map.busy)
+	await frames(4)
+	map.open_menu()
+	var menus: Array = []
+	for i in 600:
+		menus = map.ui.get_children().filter(func(n): return n is XMenu)
+		if not menus.is_empty(): break
+		await frames(1)
+	check("menu.open",menus.size() == 1)
+	if menus.is_empty():
+		return finish()
+	var menu: XMenu = menus[0]
+	menu._cmd_index = 0
+	menu._ok()
+	await frames(3)
+	var pages := menu.get_children().filter(func(n): return n is XItemScene)
+	check("item.open",pages.size() == 1)
+	if pages.is_empty():
+		return finish()
+	page = pages[0]
+	page._cat = 0
+	page._mode = "category"
+	page._ok()
+	page._index = page.entries().find_custom(func(e): return int(e.rec.id) == 1461)
+	check("item.found",page._index >= 0)
+	page._refresh()
+	page._ok()  # Real list entry marks item seen.
+	page._ok()  # Real action entry opens actor selector.
+	check("item.actor",page._mode == "actor" and page.actor_win.visible)
+	var capture: PaintCapture
+	if DisplayServer.get_name() != "headless":
+		var old := page.actor_win.canvas
+		capture = PaintCapture.new()
+		capture.painter = old.painter
+		capture.blink = old.blink
+		page.actor_win.remove_child(old)
+		old.queue_free()
+		page.actor_win.canvas = capture
+		page.actor_win.add_child(capture)
+		page.actor_win._layout()
+	await frames(4)
+	var actor_read := state_read("Scene_Item")
+	actor_read.actor = {"rect":[page.actor_win.position.x,page.actor_win.position.y,page.actor_win.size.x,page.actor_win.size.y],"padding":XMVWindow.PADDING,"lineHeight":XItemScene.LH,"itemHeight":XItemScene.ACTOR_ROW_H}
+	var actor_expected: Dictionary = native.pages.capacity_0_actor.duplicate(true)
+	actor_expected.erase("errors")
+	actor_expected.erase("toast")
+	actor_expected.actor.erase("texts")
+	compare("actor",actor_read,actor_expected)
+	if capture != null:
+		actor_read.actor.texts = capture.texts.duplicate(true)
+		compare("actor.texts",actor_read.actor.texts,native.pages.capacity_0_actor.actor.texts)
+	await shot("capacity_0_actor",actor_read)
+	page._actor = 0
+	page._ok()
+	for i in 600:
+		if not map._menu_open and not map.busy and not map.toasts.is_empty(): break
+		await frames(1)
+	check("map.menu-closed",not map._menu_open)
+	check("map.event-consumed",s.peek_common_event() == 0 and not map.busy and map.skipped_log.is_empty(),map.skipped_log)
+	check("map.real-toast",map.toasts == [native.pages.capacity_1_limit.toast.message.text],map.toasts)
+	var result := state_read("Scene_Map")
+	var expected: Dictionary = native.pages.capacity_1_limit.duplicate(true)
+	expected.erase("errors")
+	expected.erase("actor")
+	expected.erase("toast")
+	compare("result",result,expected)
+	var layer := get_tree().root.get_node_or_null("XToast") as XToast
+	check("toast.exists",layer != null and layer.stack.get_child_count() == 1)
+	if layer != null and layer.stack.get_child_count() == 1:
+		var slot := layer.stack.get_child(0) as Control
+		for i in 120:
+			if slot.modulate.a >= 0.999: break
+			await get_tree().create_timer(0.02,true,false,true).timeout
+		var box := slot.get_child(0) as PanelContainer
+		var label := box.get_child(0) as Label
+		var style := box.get_theme_stylebox("panel") as StyleBoxFlat
+		result.toast = {"containerPosition":[layer.stack.position.x,layer.stack.position.y],"boxRect":[box.global_position.x,box.global_position.y,box.size.x,box.size.y],"textRect":[label.global_position.x,label.global_position.y,label.size.x,label.size.y],"fontSize":label.get_theme_font_size("font_size"),"color":"#"+label.get_theme_color("font_color").to_html(false),"background":style.bg_color.to_html(),"padding":style.content_margin_left,"text":label.text,"opacity":slot.modulate.a}
+		var want: Dictionary = native.pages.capacity_1_limit.toast
+		compare("toast.boxRect",result.toast.boxRect,want.box.rect)
+		compare("toast.fontSize",result.toast.fontSize,float(str(want.box.fontSize).trim_suffix("px")))
+		compare("toast.text",result.toast.text,want.message.text)
+		compare("toast.padding",result.toast.padding,float(str(want.box.padding).trim_suffix("px")))
+		check("toast.color",label.get_theme_color("font_color") == Color.WHITE and style.bg_color == Color(0,0,0,0.7))
+		await shot("capacity_1_limit",result)
+	for player in [map.bgm,map.bgs,map.me,map.se]:
+		player.stop()
+		player.stream = null
+	map.queue_free()
+	await frames(2)
+	finish()
+
+func finish() -> void:
+	for player in XSound._players:
+		if is_instance_valid(player):
+			player.stop()
+			player.stream = null
+	await get_tree().create_timer(0.5,true,false,true).timeout
+	print("TEST_RESULT="+JSON.stringify({"passed":checks-failures.size(),"total":checks,"failures":failures}))
+	get_tree().quit(0 if failures.is_empty() else 1)
