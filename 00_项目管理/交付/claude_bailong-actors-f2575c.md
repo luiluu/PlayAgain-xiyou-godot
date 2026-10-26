@@ -49,7 +49,7 @@
 - 同步 `同步正式西游.py --no-register --accept-additions`（合 main 8de0204b 后、含 slice_probe 护盾修正）：退出码 0，对 main 基线只有新增用例（actor_passive、help_cards、slice_d1～d6、wtype 等），核对 0 问题。
 - 专项（`并行测试.py --full`）全过：xiyou_actor_modules 37/37、xiyou_actor_p0 3300/3300、xiyou_rules 难度 1 四段（109704／109619／109508／109673 全过）、xiyou_party_skills 214、xiyou_module_hooks 1310、xiyou_actor_advanced 33、xiyou_cat 992、xiyou_qiyu 231。
 - 内容覆盖检查：new 0、resolved 0（基线不用更新）。
-- `检查.sh --affected main`：见下（结果补在此）。
+- `检查.sh --affected main`：通过（选测 Godot 120 项全过、工具自测与内容覆盖全过）。选测选中了同源检查但未加 `--oracle`，未跑；合并时 `合并车道.sh --affected` 会带 `--oracle`。
 
 ## 本分支提交
 
