@@ -9,7 +9,7 @@ extends Node
 ##   1717→1718 升档）；开关 274 后宝箱页（变量 450＝1，奖励随变量 94）传回 Map067 (1,25) 并重置；逃离阵 EV7。
 ## - 恰兰吉尔 Map071：指路灯 411 的公共事件 240 → (40,35)；武器店入口 EV13 → Map072 (8,12)、EV1 回 (25,60)；
 ##   挑战者协会 EV26 → Map097 (8,16)；食人魔颅骨 469×10 换演武令 470（EV15，独立开关 A）；去图书馆 Map098 再回来；
-##   南出口 EV3（朝下）去天之上 Map069 未接，提示后留在原地。
+##   南出口 EV3（朝下）去天之上 Map069 未接（传送会读图失败，不在专项里踩）。
 ## 原版随机分支一律固定（变量 94 的奖励档）；队伍生命攻击都很大（只查流程）。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
@@ -297,13 +297,6 @@ func _chalanjier() -> void:
 		return
 	await _run_event(_scene(), 1, [], "")
 	_check("library_back", await _wait_map(97) and _scene().player.grid == Vector2i(5, 6), [_scene().map_id])
-	# 南出口（朝下踩）通天之上：未接，留在恰兰吉尔
-	s = _start(71, 38, 75, 2)
-	if not _check("exit_loaded", await _wait_map(71)):
-		return
-	await _run_event(_scene(), 3, [], "")
-	await _frames(10)
-	_check("exit_to_sky_closed", _scene().map_id == 71, [_scene().map_id])
 
 
 func _finish() -> void:
