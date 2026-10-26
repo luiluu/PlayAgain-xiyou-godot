@@ -1,11 +1,11 @@
 # 交付：claude/bailong-actors-f2575c
 
 - 车道／工作者：C 角色·机制／白龙（Claude，重制_白龙_1）
-- 状态：进行中
+- 状态：可合并（分支 `claude/project-thread-gwws80`＝原 claude/bailong-actors-f2575c ＋ 云端 172 宿傩接线 ＋ 本机收尾；只开 PR，不合并）
 
 ## 变更记录草稿
 
-## 2026-10-25 【Claude·白龙·未经Codex检验】专属角色第一期：173 饿狼、167 渡鸦、168 米拉加回切片（dev.待定）
+## 2026-10-26 【Claude·白龙·未经Codex检验】专属角色第一期：173 饿狼、167 渡鸦、168 米拉、172 宿傩加回切片（dev.待定）
 
 - 依据 [协助预检_专属模块167-178](../协助预检_专属模块167-178_20261022.md)：每人第一期只做招募＋开机数据＋能力值／被动＋公式，伤害行对上即加回切片，战斗机制放第二期。三人的伤害公式都是整条调模块（`CodexGarou.base`、`CodexMira.damage`、渡鸦 `CodexRaven.legionStrikeRate×skillCoefficient`），但都是只读能力值／技能／阶位的纯计算，照 178 哈基米先例（`MODULE_FORMULAS`＋`XFormulaExecution.run_item` 按 module 分派）做成模块公式，不算停手判据里的「要战斗机制才能对上」。
 - 新模块（`modes/xiyou/core/`）：
@@ -20,45 +20,39 @@
 - **改沙僧独占 actor.gd：10 行挂点（9 行调用＋change_level 记旧等级 1 行），均调用 XActorModules**（setup 末尾、learn_skill 开头、_level_up 末尾、change_level_mv 降级循环里、change_level 末尾、param、xparam、refresh_passive 写回前）。总装 2026-10-25 批准。沙僧以后改 actor.gd 时请保留这些挂点。
   - 挡技能放在 learn_skill 开头：只有饿狼原版包了 `Game_Actor.learnSkill`（10265～10269 未准入不学），所以事件学技能、技能共享／羁绊／领袖、进阶学技能对饿狼也一样被挡，与原版同层。渡鸦原版不包 learnSkill，只在 setup／levelUp 后重排，所以放在 setup／level_up 挂点。
   - 升降级：原版 changeLevel／changeExp 都逐级走 levelUp／levelDown；饿狼两个都包（G.sync），渡鸦只包 levelUp。重制 `_level_up`（gain_exp、change_level_mv 升级都走它）、change_level_mv 的降级循环、直接设等级的 change_level（读档与测试夹具）三处都挂上。
+- 172 宿傩（`core/sukuna.gd` XSukuna）：技能同步 S.sync（setup／levelUp／changeLevel）、能力值与被动（二十指 param ×3、xparam 命中／暴击、十指／二十指终伤与暴伤）、公式 `CodexSukuna.damage`（MODULE_FORMULAS 8 条）、伤害钩子 sukuna（物理／魔法、空间斩次元斩真伤属性 13、物防魔防率、stage 3 结算 ×1.5 与 makeDamageValue ×1.99）、号角 CE9007 招募（装神武解 4581）。切片 actors 加 172，actor_p0 RECRUIT_8 加 9007。
+- 渡鸦／米拉技能解锁同步 `core/skill_progression.gd` XSkillProgression（原版 installNativeSkillProgressionRuntime）：本人专属技能按 CodexUnlockLevel／CodexUnlockRank／CodexUnlockMaxRank／CodexRetired 学忘，挂在 XActorModules 的 setup／level_up／level_down。米拉 10162／10163（要进阶 3 次）原先会按职业习得表学到，现与参照一致不学。
+- XActorModules.level_changed 同级也同步：XActor.change_level 会补学职业习得表，同级时原先跳过同步，渡鸦 1 级会多出 10127／10170。
+- **slice_probe 修正**：measure 量完原只还原 hp／mp／tp 与新增状态，`b.addShield` 公式（5648 轰鸣鼓墙等）留下的护盾会带到后面的行；宿傩捌 10230「目标有盾 ×1.5」因此全部量成 2.4 倍。现一并还原双方 `_shield`（`测试切片探针还原.py` 通过）。同步对 main 基线只有新增（172 行按无盾 1.6 倍），其余行不变。
+- 专项期望更新：xiyou_actor_advanced 进阶表 462→467 行（渡鸦开机补的 5 行）；xiyou_module_hooks 默认宿主钩子序列加 actor-modules（order 41）；xiyou_actor_modules 宿傩 1 级不含 10238（参照如此，10238 是普攻替换，同步里本就排除）。
 - 切片 `xiyou_slice.json` actors 加 167、168、173；`xiyou_actor_p0` RECRUIT_8 加 9002／9003／9009。
 - 专项 `tests/xiyou_actor_modules`（25 项）。
 - 各模块文件头列了未移植项（第二期起）：饿狼形态倍率／行动次数／进阶／法宝进化／进化解析反击追击；渡鸦灵魂积累与铸印、神话形态、追加伤害、法宝运行时字段与固定加成；米拉解放黑龙与黑龙形态、禁忌减耗扣血；NumberBoost 的必中不闪避；三人的 Map132 商店补号角、技能分类与界面、旧档迁移（不迁移）。
 
 ## 交接板
 
-- 下一步：白龙接着做 172 宿傩 → 169 黄泉／170 镜流 → 171 伏黑甚尔 …（新分支 claude/bailong-actors-f2575c-2）。
-- 用户试玩说明：伙伴号角「饿狼／渡鸦／黑龙米拉」可用，三人可入队；第一期没有进阶形态、灵魂、黑龙变身等战斗机制。
+- 下一步：白龙接着做 169 黄泉／170 镜流 → 171 伏黑甚尔 …（新分支；169／170 草稿在共享笔记 `白龙_草稿_yomi_jingliu.gd`，还要 actor.gd 加 param_base／param_plus／action_plus_set 三个单行挂点）。
+- 用户试玩说明：伙伴号角「饿狼／渡鸦／黑龙米拉／宿傩」可用，四人可入队；第一期没有进阶形态、灵魂、黑龙变身、领域展开等战斗机制。
 - 需要用户决定：无
 
 ## 进度账
 
-- 角色：切片具名角色 150 → 153（加 167、168、173）。
+- 角色：切片具名角色 150 → 154（加 167、168、172、173）。
 
 ## 可优化
 
 - 扩角色每期都要跑一整轮同步（6 个难度的 slice_probe 各约 7 分钟，全是旧角色×全部敌群）。可以让增量同步对「只加角色」只量新角色的行（slice_probe 按角色分片，旧角色行从上次产物取回），一期能省掉大半同步时间。属转换工具／增量同步，建议派给管同步的车道。
 - 同步槽位抢不到：几条车道都在「看没人跑就开」，常常前后脚撞上。建议 `同步正式西游.py` 加 `--queue`（自己等到没有别的同步再开始，等待时每 30 秒打心跳，免被长任务空闲超时停掉），白龙用过一个临时脚本版本可行。注意 pgrep 用 `'Python.*同步正[式]西游'` 这类写法，免得匹配到等待脚本自身的命令行。
 
-## 接续要点（2026-10-25 16:05 云端接手后暂停：用户要先做完小小鱼审查）
-
-- 云端分支 `claude/project-thread-gwws80`＝本分支 9c288311 ＋ fd4a953（172 宿傩第一期接线，**未跑测试**）。宿傩已接进 XActorModules（setup／levelUp／levelDown 同步、param／xparam／passive_cache）、XActorDamageHooks（descriptor writes 加 kind／elements／physicalDefenseRate）、formula_program MODULE_FORMULAS（8 个 CodexSukuna.damage）、formula_execution、mv_script 号角 CodexSukuna（toast）；切片 actors 加 172，actor_p0 RECRUIT_8 加 9007；xiyou_actor_modules 加 13 项宿傩检查。草稿修正：神灶：开权重×准备层数（第一期 0）、stage 3 makeDamageValue ×1.99 并进钩子 settlementMultiplier。
-- **同步仍未跑完**：云端同步跑到 slice_probe 时被停（PROBE_PLAN 53 个全跑、0 复用，共用槽 2）。云端跑同步要先放 sips 替身（见团队记忆 cloud-sync-sips-shim）。
-- 接着做：① 还原素材（/mnt/project-files/云端素材还原说明.md）→ `云端准备.sh` → sips 替身 → `同步正式西游.py --app <冻结 app.nw> --no-register --accept-additions`（现已含 172，一轮同步覆盖两期）；② 跑原「接续要点」②的专项（含 xiyou_actor_modules）与内容覆盖；③ 宿傩伤害行对不上就看 slice_probe 的 172 行（1 级 0 进阶、无施放帧）；④ 全过开 PR（不合并）。
-- 车道还没做：169 黄泉／170 镜流（共享笔记草稿 `白龙_草稿_yomi_jingliu.gd`，云端读不到）、171 伏黑甚尔。
-
-## 接续要点（2026-10-25 08:15 额度 80% 收尾时）
-
-- 代码三人（173／167／168）都已写完并提交；已合入 main 到 6a28e127（无冲突）。`core/sukuna.gd`（172 宿傩）是下一期草稿，已提交但**未接线、未测**，留到新分支 `-2` 再接（XActorModules、XActorDamageHooks、formula_program、mv_script 的 CodexSukuna 分派）。
-- 169 黄泉／170 镜流模块草稿在共享笔记目录 `白龙_草稿_yomi_jingliu.gd`（未进仓库、未测）；还要 actor.gd 加 param_base／param_plus／action_plus_set 三个单行挂点。
-- **还差同步**：本分支尚未跑 `同步正式西游.py --accept-additions`（槽位一直被悟空／主工作区的同步占着；排队任务已撤，没开始过）。接着做：① 没有别的同步时跑 `新建工作树.sh --补齐` ＋ 同步；② 跑 `xiyou_actor_p0`、`xiyou_rules.tscn xiyou_rules_d1b xiyou_rules_d1c xiyou_rules_d1d`、`xiyou_actor_modules`、`xiyou_party_skills`、`xiyou_module_hooks`、`xiyou_actor_advanced`、`xiyou_cat`、`xiyou_qiyu`；③ 内容覆盖检查 ＋ `--update-baseline`；④ 标可合并。
-- 同步前的手动预跑（只难度 1，合 main 之前）：`xiyou_rules` 难度 1 四段全过（含 173 的伤害行）；`xiyou_actor_p0` 因读难度 2 参照（还没 173）失败，属预期。
-
 ## 验证
 
-- `xiyou_actor_modules` 25/25（单跑通过）。
-- 难度 1 手动参照下 `xiyou_rules.tscn`／`d1b`／`d1c`／`d1d` 全过（只含 173，渡鸦／米拉加入前）。
-- 其余见「接续要点」，同步后补齐。
+- 同步 `同步正式西游.py --no-register --accept-additions`（合 main 8de0204b 后、含 slice_probe 护盾修正）：退出码 0，对 main 基线只有新增用例（actor_passive、help_cards、slice_d1～d6、wtype 等），核对 0 问题。
+- 专项（`并行测试.py --full`）全过：xiyou_actor_modules 37/37、xiyou_actor_p0 3300/3300、xiyou_rules 难度 1 四段（109704／109619／109508／109673 全过）、xiyou_party_skills 214、xiyou_module_hooks 1310、xiyou_actor_advanced 33、xiyou_cat 992、xiyou_qiyu 231。
+- 内容覆盖检查：new 0、resolved 0（基线不用更新）。
+- `检查.sh --affected main`：见下（结果补在此）。
 
 ## 本分支提交
 
-（待写）
+- 白龙一期：4fa9c108、1dcd25f9、9546ea2e、30eff20f、3399f1f0、7ba84da2、2627e98c、a799a65f、7c81d5d2、290098a1
+- 云端 172 宿傩接线：fd4a9539、d035caf5
+- 本机收尾：1a5d0576（XSkillProgression、同级同步、专项期望）、a45391c0（slice_probe 还原护盾）、本次交付单提交
