@@ -45,3 +45,5 @@
 - 追加power_books_menu_probe.cjs独立菜单流程入口（尚未运行）：按原版openPowerForget捕获行文与回调，六例含角色页取消、两种确认取消、成功、确认前符被移走与全员无权能；不替换真实学习／遗忘规则，choice只在数据边界观察，不能冒充成对截图。
 
 - 核心草稿已落盘：XPowerBooks新增注册表／类别限制／普通遗忘canonical保护／原子付费遗忘／CodexParamRate；actor.gd只加三个挂点（learn、forget、param_rate）。依据为五本有效冒烟与首轮有效的超强3／强4子样本及冻结原宿主；修正后三类完整参照仍等槽。尚未Godot导入／验收，不报可合并。尚未修改物品页，UI与效果入口的拒收提示待后续接线。
+
+- 修正后native2已done exit0（230ad4b5e5b342ef86d4f70a7b6f3157），8唯一ID、errors空；真实class／limit为106超强3、1强4、2弱6，各次书籍是否可学逐项吻合。已独立保存power_books_corrected8.json并复制fixture，旧重复原件保留。接着跑45例边界与六例菜单流程，仍未宣称Godot已验。
