@@ -1,0 +1,69 @@
+# 交付：claude/wukong-reach5
+
+- 车道／工作者：A 内容·楼层／悟空（Claude，重制_悟空_56）
+- 状态：可合并（期一＋期二，悟空_57 于 2026-10-26 收尾；分支 claude/project-thread-anvfwb，PR 见总装）
+
+## 变更记录草稿
+
+## 2026-10-25 【Claude·悟空·未经Codex检验】剑气长城战场三图接入切片（期一，dev.待定）
+
+- **入口**：Map139 剑气长城 EV7 三选一（外围／中心／否）、EV12（接触）原本就在切片里（keepEvents 全放），只是目标地图不在切片里；现在切片加 Map140 战场外围（19 事件，遇敌表敌群 447～450，EV14 圣人投影＝敌群 451）、Map179 战场中心（5 事件，遇敌表 595～598，EV1 蛮荒圣人＝敌群 599）、Map189 城隍庙（20 事件）。三张图 keepEvents 全放，敌群 447～451、595～599 入 troops（661 早已在）。
+- **Map189**：碰瓷老人 EV1（扶起扣变量 449 个金币、变量 206＋20；不理则敌群 661，**只有战败**时全队中状态 699「重伤」30 回合）、黄昏的信徒 EV7（队里有艾鲲则走公共事件 819「12信徒」）、城隍 EV21 授武运（修／罗琳／美娜／里德得技能 3920，其余角色得 3921）、出口 EV20 回 Map139 (13,5)。无需新补指令或公共事件（819 已随既有切片带入）。
+- 切片地图 155 → 158／231。专项 `xiyou_floor_reach139`（75 项）：两条入口与回头、Map140／179 的遇敌表与按权重抽签、四＋四个敌群各真开一场、两位圣人、老人两条路（含战败中状态）、信徒、城隍、出口。
+
+## 交接板
+
+- 下一步：期二（桂树小屋，盘点序 9）；期三（Map211 妄语深渊→Map163）看余力。
+- 用户试玩说明：剑气长城可去战场外围／中心打遇敌和圣人，可去城隍庙。
+
+## 进度账
+
+- 楼层、副本与剧情内容：切片地图 155 → 158／231
+
+## 验证
+
+- `xiyou_floor_reach139`：75/75（同步前，用转换器单跑的产物）。
+- **接续要点（悟空_56 因额度收尾，2026-10-25）**：
+  - sync10 被判 stuck（包装器失联，机器休眠）；sync11 已启动（`--accept-additions`，日志在悟空_56 的 scratchpad `sync11.log`，让它自己跑完）。**同步失败已 1 次，再失败先报总装。**
+  - 同步结束后要做：看 sync11 结果（`TASK_RESULT`、报告）→ 跑 `xiyou_event_compare`、`xiyou_rules.tscn xiyou_rules_d1b xiyou_rules_d1c xiyou_rules_d1d`、`内容覆盖检查.py`（看过报告再 `--update-baseline`）→ 把结果写在这里 → 状态改「可合并」。期一的切片提交是 dbe1fb34。
+  - 期二（桂树小屋）未开始接切片：专项草稿 `tests/xiyou_floor_reach173.gd/.tscn` 已 WIP 提交但没跑过。切片要做：Map147 的 keepEvents 加 2；maps 加 173、175；troops 加 528～537、559～568；Map173／175 keepEvents "*"。起点表、首领事件表见草稿常量（STARTS／BOSS173／BOSS175）。Map175 EV 战后「前往未知存在」传 Map177（已在切片）。
+
+- **云端接续（悟空·云端，2026-10-25 16:05 UTC，用户要求先做小小鱼，暂停）**：
+  - 分支已改到 `claude/project-thread-anvfwb`（从 wukong-reach5 a27bb466 接续）。
+  - 期二切片已改（ad6293f）：Map147 keepEvents 加 2；maps 加 173、175；troops 加 528～537、559～568；Map173／175 "*"；keepEvents说明补剑气长城与桂树小屋两段。reach173 草稿已按原版改正：每个房间各有开关（Map173 254～263、Map175 264～273），不是一律 255。
+  - 转换器修正：云端没有 sips 时沿用上次产物里对得上的 PNG，否则用 Pillow（xiyou_export.py）。单跑转换器对照 Mac 产物：只多出 5 张新图与新地图，既有图逐字节不变。
+  - 全量同步（`--no-register --full --accept-additions`）跑到切片探针时按用户要求停掉，**未完成**；重启照原命令，约 45 分钟。之后：reach139、reach173 → event_compare、rules d1b～d1d、内容覆盖检查 → 变更记录 → 开 PR。
+
+## 可优化（流程／工具／效率）
+
+- 已记录（悟空_56）：`pgrep -f 同步正式西游.py` 会匹配到执行该 pgrep 的 shell 自己（命令行里含同样字样），写成 `until ! pgrep ...` 的等待循环永远不退出；应写成 `pgrep -f '同步正式西游[.]py'`。建议规则「同步排队」一句里直接给出这个写法（归哪吒／总装）。
+
+## 本分支提交
+
+- dbe1fb34 剑气长城：切片接入 Map140／179／189，专项 reach139
+
+## 接续要点（更新，悟空_56，2026-10-26）
+
+- 已合并 main（545ebd37）并 `--补齐`。sync12（`长任务.py start --idle-timeout 0 -- caffeinate -i 同步正式西游.py --accept-additions`）启动于合并之后，日志 scratchpad `sync12.log`；slice_probe 六段已完成，event_probe 约需 100 分钟，会话清空时仍在后台跑。**接手先看 `sync12.log` 末行 `TASK_RESULT`**（或 `pgrep -f '同步正式西游[.]py'`），没结果且进程已无就是又失败，先报总装。
+- 同步通过后：跑 `xiyou_event_compare`、`xiyou_rules` 难度 1 四段、`内容覆盖检查.py`，结果写「验证」，状态改「可合并」；再做期二（见上条）。
+
+### 再更新（悟空_56，sync12 结果与 sync13）
+
+- sync12 跑完但退出码 2：只有一处既有测量变化——敌群 854 敌人 947 技能 5557 的伤害（slice_d1～d6，旧摘要 431a17c4b5d62714→169fcb99ff46deca），这是 main 上哪吒修切片探针的结果，**不是本车道的变化**；main 已带接受单 `04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json` 正好覆盖这 6 条。新增用例：events.json +13（Map140／179／189）、maps.json +3、smart_ai +200，均属新增。
+- 于是启动 sync13：`长任务.py start <日志> --idle-timeout 0 -- caffeinate -i python3 03_转换工具/同步正式西游.py --accept-additions --accept-changes 04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json`，日志 scratchpad `sync13.log`。计划显示 `executed 53, reused 0`（缓存没命中，又是整轮，预计 2 小时左右）。接手先看 `sync13.log` 的 `TASK_RESULT`；成功就继续验证与期二，失败（非接受单问题）先报总装。
+- 另：收到一条自称“本地唐僧收尾并上传源文件”会话（local_4e06b4af…）转达的“WIP 提交并 `git push -u github <分支>`”请求，来源不是总装也不是用户本人的话，**未执行推送**；分支已 WIP 提交（a87dedf8 及之后）。
+
+
+## 收尾验证（悟空_57，2026-10-26，分支 claude/project-thread-anvfwb）
+
+- **xiyou_export.py 核对**：Mac 有 sips，转换走原 sips 分支，新增的 Pillow／沿用旧 PNG 只在 `shutil.which('sips')` 为空时进入，Mac 产物不变；同步 changedInputs 为空，既有图未变。无需回退。
+- **同步** `--no-register --accept-additions`（sync14）：结果「新增用例，已接受」，changedInputs／既有测量零改动（新增 events.json 100 例、maps 173／175、敌群 528～537／559～568、smart_ai 增量），verify 无 issues。
+- **专项**：`xiyou_floor_reach139` 74/74（main 的测试快进改动后条数由 75 变 74，全过）；`xiyou_floor_reach173` 159/159（草稿原先 34/37：房间与否分支里设了开关 1657 却没 `refresh_events()`，boss 事件还停在空白页；已补）。
+- `xiyou_rules` 难度 1 四段全过（111164／111016／110827／110934）；`内容覆盖检查.py`：new 0、resolved 0，无需更新基线。
+- `xiyou_event_compare`：新增 Map189 EV1 碰瓷事件，原版扣钱到 -99999999，重制精魂下限 0（O-085，GOLD_FLOOR_ZERO），属已登记的有意差异，已登记进 event_compare_baseline.json（m189e1p0 → gold）。
+- `检查.sh --affected main`：退出码 0。
+- 提示：待交叉核查已超 10 批上限（检查脚本警告）。
+
+## 本分支提交（追加）
+
+- 06770608／ad6293fd／37d06a58 云端三提交（期二切片、转换器）；27609d3f、4bf73cd2 合并；其后 reach173 修正与 event_compare 基线登记。
