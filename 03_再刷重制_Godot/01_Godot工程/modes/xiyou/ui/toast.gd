@@ -12,6 +12,9 @@ const WIDTH := 280.0
 const MARGIN := 10.0
 const PADDING := 10.0
 const FONT_SIZE := 18
+# 冻结源同字体 CSS normal 的实际行高为21；Label默认字高27并另加3像素。
+const LINE_HEIGHT := 21
+const FONT_TRIM := -3
 const BACK := Color(0, 0, 0, 0.7)
 const SHADOW := Color(0, 0, 0, 0.5)
 const FADE := 0.6
@@ -67,15 +70,18 @@ func _add(message: String) -> void:
 	var text := plain(message)
 	shown.append(text)
 	var inner := WIDTH - MARGIN * 2 - PADDING * 2
-	var h := XUI.font().get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, inner, FONT_SIZE).y + PADDING * 2
+	var font := FontVariation.new()
+	font.base_font = XUI.font()
+	font.spacing_top = FONT_TRIM
+	font.spacing_bottom = FONT_TRIM
 	# 外层只占高度、裁掉内容：收起时把高度缩到 0，后面的提示跟着上移（jQuery animate height → 0）
 	var slot := Control.new()
 	slot.clip_contents = true
 	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	slot.custom_minimum_size = Vector2(WIDTH - MARGIN * 2, h)
+	slot.custom_minimum_size.x = WIDTH - MARGIN * 2
 	var box := PanelContainer.new()
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.size = Vector2(WIDTH - MARGIN * 2, h)
+	box.size.x = WIDTH - MARGIN * 2
 	var style := StyleBoxFlat.new()
 	style.bg_color = BACK
 	style.set_content_margin_all(PADDING)
@@ -83,12 +89,18 @@ func _add(message: String) -> void:
 	var label := Label.new()
 	label.text = text
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 与浏览器一样：句末标点不单独起行
-	label.add_theme_font_override("font", XUI.font())
+	label.add_theme_font_override("font", font)
+	label.add_theme_constant_override("line_spacing", 0)
 	label.add_theme_font_size_override("font_size", FONT_SIZE)
 	label.add_theme_color_override("font_color", Color.WHITE)
 	label.add_theme_color_override("font_outline_color", SHADOW)
 	label.add_theme_constant_override("outline_size", 2)
+	label.size.x = inner
 	box.add_child(label)
+	# 用Label实际塑形后的高度排栈，避免预估字体尚未加载回退度量。
+	var h := label.get_minimum_size().y + PADDING * 2
+	box.size.y = h
+	slot.custom_minimum_size.y = h
 	slot.add_child(box)
 	slot.modulate.a = 0.0
 	stack.add_child(slot)

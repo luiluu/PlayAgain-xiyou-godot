@@ -37,6 +37,17 @@ func help_read(card: XHelpCard) -> Dictionary:
 		"padding":XHelpCard.PAD,"rows":card.rows.duplicate(true),"quality":card.quality,
 		"fontSizes":fonts,"visible":card.visible,"extras":card.extras.map(func(c): return help_read(c))}
 
+# CoreText保留分数字宽，Godot同字体取整；仅绘字x/y/宽允许不足1px差。
+func compare_actor_texts(got: Array, want: Array) -> void:
+	check("actor.texts.size",got.size() == want.size())
+	for i in mini(got.size(),want.size()):
+		check("actor.texts.%d.size" % i,got[i].size() == want[i].size())
+		for j in mini(got[i].size(),want[i].size()):
+			if j in [1,2,3]:
+				check("actor.texts.%d.%d" % [i,j],absf(float(got[i][j])-float(want[i][j])) < 1.0,[got[i][j],want[i][j]])
+			else:
+				compare("actor.texts.%d.%d" % [i,j],got[i][j],want[i][j])
+
 func _run() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="): out_dir = arg.substr(6)
@@ -120,7 +131,7 @@ func _run() -> void:
 	compare("actor",actor_read,actor_expected)
 	if capture != null:
 		actor_read.actor.texts = capture.texts.duplicate(true)
-		compare("actor.texts",actor_read.actor.texts.filter(func(t): return t[0] != ""),native.pages.capacity_0_actor.actor.texts.filter(func(t): return t[0] != ""))
+		compare_actor_texts(actor_read.actor.texts.filter(func(t): return t[0] != ""),native.pages.capacity_0_actor.actor.texts.filter(func(t): return t[0] != ""))
 	await shot("capacity_0_actor",actor_read)
 	page._actor = 0
 	page._ok()
