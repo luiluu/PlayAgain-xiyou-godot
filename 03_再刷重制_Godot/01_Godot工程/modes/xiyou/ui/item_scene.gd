@@ -726,13 +726,16 @@ func _use() -> void:
 	for a in movable:
 		if a.pha > user.pha:
 			user = a
+	if targets.size() == 1:
+		s.item_target_actor_id = targets[0].actor_id
+	# Native useItem consumes first; a full-capacity effect refunds afterward (also at max stack).
+	if bool(_item.get("consumable", true)):
+		s.gain_item(int(_item.id), -1)
 	for t in targets:
 		if t.is_dead() != (_scope() in [9, 10]):
 			continue
 		for e in _item.get("effects", []):
 			logic._effect(user, t, e, {"skill": _item, "hp": 0.0, "mp": 0.0, "added": [], "removed": []})
-	if bool(_item.get("consumable", true)):
-		s.gain_item(int(_item.id), -1)
 	_after_use()
 
 
@@ -774,7 +777,7 @@ func _close_power_forget() -> void:
 func _after_use() -> void:
 	var s := XState.current
 	s.last_item = int(_item.get("id", 0))  # Scene_Item.useItem：$gameParty.setLastItem（魔兽要诀失败时按它退还）
-	var reserved := false
+	var reserved := s.peek_common_event() > 0
 	for e in _item.get("effects", []):
 		if int(e.code) == 44:
 			s.reserve_common_event(int(e.dataId))

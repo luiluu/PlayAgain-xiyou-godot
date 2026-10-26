@@ -1,0 +1,111 @@
+extends Node
+## Native menu fixture; mismatch-selected cases also exercise the effect API explicitly.
+var checks := 0
+var failures: Array = []
+var s: XState
+var page: XItemScene
+class EventHost:
+	extends RefCounted
+	func toast(text: String) -> void:
+		XToast.show_text(text)
+
+func check(tag: String, ok: bool, detail = null) -> void:
+	checks += 1
+	if not ok:
+		failures.append(tag)
+		if failures.size() <= 15:
+			print("FAIL ",tag," ",JSON.stringify(detail).left(1500))
+
+func compare(tag: String, got, want) -> void:
+	if want is Array:
+		check(tag+".size",got is Array and got.size() == want.size(),[got,want])
+		if got is Array:
+			for i in mini(got.size(),want.size()):
+				compare(tag+".%d" % i,got[i],want[i])
+	elif want is Dictionary:
+		for key in want:
+			compare(tag+"."+key,got.get(key),want[key])
+	else:
+		check(tag,got == want,[got,want])
+
+func snapshot(a: XActor, item: int) -> Dictionary:
+	return {"skills":a.skill_ids.duplicate(),"passives":XPassiveBooks.learned(a),"book":s.item_count(item),"reserved":s.peek_common_event(),"wentMap":page.to_map,"messages":XToast.shown.duplicate()}
+
+func run_case(c: Dictionary) -> void:
+	var spec: Dictionary = c.setup
+	s = XState.new_game_blank()
+	var aid := int(spec.get("actor",2))
+	s.party.assign([aid])
+	s.battle_slots = [aid,0,0,0,0]
+	var a := s.actor(aid)
+	s.set_variable(9,spec.limit)
+	for id in spec.pre:
+		a.learn_skill(int(id))
+	var selected := s.actor(int(spec.get("selected",aid)))
+	for id in spec.get("selectedPre",[]):
+		selected.learn_skill(int(id))
+	s.item_target_actor_id = selected.actor_id
+	var sequence: Array = spec.get("sequence",[]).duplicate()
+	if sequence.is_empty():
+		for i in int(spec.get("times",1)):
+			sequence.append(spec.item)
+	for id in sequence:
+		if not spec.get("missing",false):
+			s.gain_item(int(id),3)
+	if spec.has("reserved"):
+		s.reserve_common_event(int(spec.reserved))
+	XToast.shown.clear()
+	page = XItemScene.new()
+	add_child(page)
+	compare(c.id+".before",snapshot(a,int(spec.item)),c.observed.before)
+	for index in sequence.size():
+		var item := int(sequence[index])
+		var row: Dictionary = c.observed.rows[index]
+		page._item = XDB.rec("Items",item)
+		page._actor = 0
+		var allowed := s.item_count(item) > 0 and page._effective(a)
+		compare(c.id+".allowed",allowed,row.allowed)
+		compare(c.id+".pre",snapshot(a,item),row.pre)
+		if spec.get("direct",false):
+			a.learn_skill(int(page._item.effects[0].dataId))
+		elif spec.has("selected") and allowed:
+			# Explicitly sample stale selection separately from ordinary UI, as in native fixture.
+			s.gain_item(item,-1)
+			var logic := XBattleLogic.new()
+			logic.state = s
+			logic._effect(a,a,page._item.effects[0],{"skill":page._item})
+			page._after_use()
+		elif not spec.get("cancel",false):
+			page._use()
+		compare(c.id+".after-effect",snapshot(a,item),row.after)
+		if row.event != null:
+			check(c.id+".event-reserved",s.peek_common_event() == 1317)
+			var ce := XDB.rec("CommonEvents",s.peek_common_event())
+			var interp := MVInterpreter.new(EventHost.new(),4,0,ce.list)
+			s.clear_common_event()
+			await interp.run()
+			check(c.id+".event-translated",interp.skipped.is_empty(),interp.skipped)
+			compare(c.id+".event",snapshot(a,item),row.event.after)
+	compare(c.id+".after",snapshot(a,int(sequence[-1])),c.observed.after)
+	compare(c.id+".selected",XPassiveBooks.learned(selected),c.observed.selectedPassives)
+	page.queue_free()
+	await get_tree().process_frame
+
+func _ready() -> void:
+	_run.call_deferred()
+
+func _run() -> void:
+	var f: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/book_capacity_oracle.json"))
+	check("source",f.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
+	check("complete",f.cases.size() == 18)
+	var ids := {}
+	for c in f.cases:
+		check(c.id+".unique",not ids.has(c.id))
+		ids[c.id] = true
+		check(c.id+".native",c.errors.is_empty())
+		await run_case(c)
+	XSound.stop_music()
+	XSound.stop_sound()
+	await get_tree().create_timer(0.5,true,false,true).timeout
+	print("TEST_RESULT="+JSON.stringify({"passed":checks-failures.size(),"total":checks,"failures":failures}))
+	get_tree().quit(0 if failures.is_empty() else 1)

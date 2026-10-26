@@ -26,6 +26,7 @@ var battle_slots: Array = []
 var actors := {}                    # actor_id -> XActor
 var gold := 0
 var items := {}                     # item_id -> 数量
+var item_target_actor_id := 0  # 当前物品选定角色（容量判断与 CE1317）；每次菜单使用先设置
 var last_item := 0
 var next_gear_id := 1
 ## 保存次数（$gameSystem._saveCount：每次存档写盘前加 1；存读档页显示；旧档缺省 0）

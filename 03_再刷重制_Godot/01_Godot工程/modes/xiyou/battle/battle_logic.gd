@@ -1445,6 +1445,10 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 	# Native effect43 only reads dataId; don't read unrelated numeric fields.
 	if int(eff.code) == 43:
 		if t is XActor:
+			if XPowerBooks.is_power(int(eff.dataId)) and not XPowerBooks.can_learn(t,int(eff.dataId)):
+				return
+			if XPassiveBooks.refund_if_full(state,int(eff.dataId),r.get("skill",{})):
+				return
 			t.learn_skill(int(eff.dataId))
 			t.refresh_passive()
 		return
