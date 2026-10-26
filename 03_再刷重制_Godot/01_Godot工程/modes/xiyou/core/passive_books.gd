@@ -36,10 +36,10 @@ static func remember_return(s: XState, item: Dictionary, category: int, index: i
 	s.set_meta("capacity_bag_return",{"map":s.map_id,"item":rejected,"category":category,"index":index,
 		"message":"事件已执行："+str(item.get("name",""))+"（未检测到可确认的变化）"})
 
-static func take_return(s: XState) -> Dictionary:
+static func take_return(s: XState, consumed_event: int) -> Dictionary:
 	var saved: Dictionary = s.get_meta("capacity_bag_return",{})
 	if s.has_meta("capacity_bag_return"):
 		s.remove_meta("capacity_bag_return")
-	if s != XState.current or saved.is_empty() or int(saved.map) != s.map_id or s.peek_common_event() > 0:
+	if consumed_event != LIMIT_EVENT or s != XState.current or saved.is_empty() or int(saved.map) != s.map_id or s.peek_common_event() > 0:
 		return {}
 	return saved

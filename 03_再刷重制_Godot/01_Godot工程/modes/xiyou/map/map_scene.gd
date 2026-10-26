@@ -1033,8 +1033,9 @@ func open_menu(resume_items: Dictionary = {}) -> void:
 	XItemMarks.deploy_start(XState.current)  # 回地图＝Scene_Map.start
 	hud.visible = true
 	_reset_transfer_button()
+	var reserved := owner.peek_common_event()
 	await run_reserved_common_event(owner)
-	var resume := XPassiveBooks.take_return(owner)
+	var resume := XPassiveBooks.take_return(owner,reserved)
 	if not resume.is_empty():
 		open_menu.call_deferred(resume)
 	if zhenqi:

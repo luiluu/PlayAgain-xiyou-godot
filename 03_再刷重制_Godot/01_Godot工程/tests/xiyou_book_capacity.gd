@@ -94,6 +94,28 @@ func run_case(c: Dictionary) -> void:
 	page.queue_free()
 	await get_tree().process_frame
 
+# Continuation is runtime context, never permission to reopen after another reservation/state.
+func return_context_guards() -> void:
+	var item := XDB.rec("Items",1461)
+	for mode in ["ok","overwritten","pending","map","state"]:
+		s = XState.new_game_blank()
+		s.map_id = 5
+		s.item_target_actor_id = 2
+		s.set_variable(9,0)
+		check("return."+mode+".rejected",XPassiveBooks.refund_if_full(s,6301,item))
+		XPassiveBooks.remember_return(s,item,0,2)
+		check("return."+mode+".captured",s.has_meta("capacity_bag_return"))
+		s.clear_common_event()
+		var consumed := 1317
+		match mode:
+			"overwritten": consumed = 1316
+			"pending": s.reserve_common_event(1316)
+			"map": s.map_id = 6
+			"state": XState.new_game_blank()
+		var saved := XPassiveBooks.take_return(s,consumed)
+		check("return."+mode+".scope",not saved.is_empty() if mode == "ok" else saved.is_empty(),saved)
+		check("return."+mode+".one-shot",XPassiveBooks.take_return(s,consumed).is_empty())
+
 func _ready() -> void:
 	_run.call_deferred()
 
@@ -107,6 +129,7 @@ func _run() -> void:
 		ids[c.id] = true
 		check(c.id+".native",c.errors.is_empty())
 		await run_case(c)
+	return_context_guards()
 	for player in XSound._players:
 		if is_instance_valid(player):
 			player.stop()
