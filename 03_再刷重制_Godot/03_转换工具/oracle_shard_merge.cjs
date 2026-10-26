@@ -7,8 +7,13 @@
 //           files: [{old: 上次产物, fresh: 本次产物或 null, out: 写到哪, indent: 1|null}]}
 // slice-actors 的 order：先 a<角色>，再每个敌群依次 t<敌群>、t<敌群>:a<角色>、t<敌群>:enemy。
 // 调用者必须先校验共同输入与出状态；本工具只恢复原列表顺序，不据此假定角色测量互相独立。
-const fs = require('fs');
-const spec = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+// 摘要：node oracle_shard_merge.cjs --digest <troops|events> <产物…> → 每份产物一行 JSON
+//   {rest: 非分片部分（分片字段位置留占位）的 SHA-256, units: {单元: 该单元全部记录的 SHA-256}}；
+//   与合并同一套分组，增量同步据此核对 generated 里每个单元的记录是否仍是缓存记下的那份（木吒 2026-10-26）。
+const fs = require('fs'), crypto = require('crypto');
+const DIGEST = process.argv[2] === '--digest';
+const spec = DIGEST ? {kind: process.argv[3], order: [], ran: [], files: []} : JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+if (DIGEST && !['troops', 'events'].includes(spec.kind)) throw new Error('摘要只支持 troops／events：' + spec.kind);
 const ran = new Set(spec.ran), order = spec.order;
 const unitOf = {
   troops: r => String(r.troop),
@@ -50,6 +55,28 @@ function group(list) {
     out.get(u).push(r);
   }
   return out;
+}
+
+const sha = text => crypto.createHash('sha256').update(text).digest('hex');
+if (DIGEST) {
+  for (const file of process.argv.slice(4)) {
+    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const rest = {}, parts = new Map();
+    const part = u => { if (!parts.has(u)) parts.set(u, {l: {}, d: {}}); return parts.get(u); };
+    for (const [k, v] of Object.entries(data)) rest[k] = LISTS.includes(k) || DICTS.includes(k) ? (v === undefined ? v : '<分片>') : v;
+    for (const name of LISTS) {
+      if (!Array.isArray(data[name])) continue;
+      for (const [u, rows] of group(data[name])) part(u).l[name] = rows;
+    }
+    for (const name of DICTS) {
+      if (!data[name]) continue;
+      for (const [u, v] of Object.entries(data[name])) part(u).d[name] = v;
+    }
+    const units = {};
+    for (const [u, p] of parts) units[u] = sha(JSON.stringify(p));
+    process.stdout.write(JSON.stringify({rest: sha(JSON.stringify(rest)), units}) + '\n');
+  }
+  process.exit(0);
 }
 
 for (const f of spec.files) {
