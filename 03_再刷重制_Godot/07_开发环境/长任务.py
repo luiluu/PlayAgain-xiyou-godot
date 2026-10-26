@@ -213,6 +213,7 @@ def run(log, command, idle=3600, poll=0.2):
                 output.write((str(error) + '\n').encode())
             finally:
                 signal.signal(signal.SIGTERM, old_term)
+                orphaned = False
                 if reader and reader.is_alive():
                     reader.join(timeout=3)
                 # A command may exit after spawning descendants which closed stdout.
@@ -228,15 +229,18 @@ def run(log, command, idle=3600, poll=0.2):
                         job.update(status='orphaned', exitCode=None, reason='旧任务进程组未退出，不能确认任务已结束')
                         atomic(status_path(log), json.dumps(job, ensure_ascii=False) + '\n')
                         print(job['reason'], file=sys.stderr)
-                        return 2
-                job.update(status=state, exitCode=code, finishedAt=dt.datetime.now(dt.timezone.utc).isoformat())
-                marker = 'TASK_RESULT=' + json.dumps(job, ensure_ascii=False) + '\n'
-                output.write(b'\n' + marker.encode())
-                output.flush()
-                # The terminal status is published last, after the marker and exit code.
-                atomic(Path(str(log) + '.exit'), str(code) + '\n')
-                atomic(status_path(log), json.dumps(job, ensure_ascii=False) + '\n')
-                print(marker, end='', flush=True)
+                        orphaned = True
+                if not orphaned:  # 不在 finally 里 return（SyntaxWarning）；失联时跳过收尾，出 finally 后返回 2
+                    job.update(status=state, exitCode=code, finishedAt=dt.datetime.now(dt.timezone.utc).isoformat())
+                    marker = 'TASK_RESULT=' + json.dumps(job, ensure_ascii=False) + '\n'
+                    output.write(b'\n' + marker.encode())
+                    output.flush()
+                    # The terminal status is published last, after the marker and exit code.
+                    atomic(Path(str(log) + '.exit'), str(code) + '\n')
+                    atomic(status_path(log), json.dumps(job, ensure_ascii=False) + '\n')
+                    print(marker, end='', flush=True)
+            if orphaned:
+                return 2
         return code
 
 

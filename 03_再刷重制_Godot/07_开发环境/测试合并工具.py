@@ -1001,6 +1001,26 @@ for name in filter(None, files):
         self.assertTrue(self.wt.exists())
         self.assertFalse(self.g('diff', '--cached', '--name-only'))
 
+    def test_accept_doc_edits_only_management_markdown(self):
+        # 总装收尾前手修 00_项目管理/ 下的文档：默认拒；--accept-doc-edits 一并暂存；别处文件、交付单、非 .md 仍拒
+        self.put('00_项目管理/阶段审查.md', 'old\n')
+        self.g('add', '.'); self.g('commit', '-m', 'review doc')
+        self.g('merge', 'main', cwd=self.wt)
+        self.assertEqual(self.call(), 0)
+        self.register(); self.put('00_项目管理/阶段审查.md', 'fixed link\n')
+        self.assertEqual(self.call('--finish'), 1)
+        self.assertIn('阶段审查.md', self.last_output)
+        self.assertIn('--accept-doc-edits', self.last_output)
+        for path in ['00_项目管理/x.json', '00_项目管理/交付/claude_other.md', 'README.md']:
+            self.put(path, 'x\n')
+            self.assertEqual(self.call('--finish', '--accept-doc-edits'), 1, path)
+            self.assertIn(path, self.last_output)
+            (self.root / path).unlink()
+        self.assertFalse(self.g('diff', '--cached', '--name-only'))
+        self.assertEqual(self.call('--finish', '--accept-doc-edits'), 0, self.last_output)
+        self.assertIn('00_项目管理/阶段审查.md', self.g('-c', 'core.quotePath=false', 'show', '--name-only', '--format=', 'HEAD'))
+        self.assertFalse(self.g('status', '--porcelain'))
+
     def test_lock_is_not_removed_by_second_runner(self):
         lock = self.root / '.git/lane-merge/running.lock'
         lock.parent.mkdir(); lock.write_text('first runner')
