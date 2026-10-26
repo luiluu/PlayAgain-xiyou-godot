@@ -35,3 +35,8 @@
 ## 本分支提交
 
 - dbe1fb34 剑气长城：切片接入 Map140／179／189，专项 reach139
+
+## 接续要点（更新，悟空_56，2026-10-26）
+
+- 已合并 main（545ebd37）并 `--补齐`。sync12（`长任务.py start --idle-timeout 0 -- caffeinate -i 同步正式西游.py --accept-additions`）启动于合并之后，日志 scratchpad `sync12.log`；slice_probe 六段已完成，event_probe 约需 100 分钟，会话清空时仍在后台跑。**接手先看 `sync12.log` 末行 `TASK_RESULT`**（或 `pgrep -f '同步正式西游[.]py'`），没结果且进程已无就是又失败，先报总装。
+- 同步通过后：跑 `xiyou_event_compare`、`xiyou_rules` 难度 1 四段、`内容覆盖检查.py`，结果写「验证」，状态改「可合并」；再做期二（见上条）。
