@@ -1,7 +1,7 @@
 # 交付：claude/project-thread-z5fkq9
 
-- 车道／工作者：养成·种族与异化战斗接线／云端（Claude，云端项目线程）
-- 状态：进行中
+- 车道／工作者：养成·种族与异化战斗接线／云端（Claude，云端项目线程）；本机收尾 木吒（Claude）
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -23,9 +23,13 @@
   - 新存档字段 `XState.unknown_origin`（键 `unknownOrigin`，未知存在 Map152／176 的来源地图，`map_scene` 进图时记）。
   - 参照探针 `mv_oracle/alien_battle_probe.cjs`（19 例：遭遇 10 例、变体战斗 8 例、锁队），同步脚本已登记；专项 `xiyou_alien_battle` 330/330。
   - 未移植：异化词条效果（installAlienationAffixes／Advanced，下一批）、行动外的 gainHp／setHp（公式副作用）的增伤与镜骸记账、敌人偏色与特效画面、战斗中换装限制（工坊侧已有）。奖励词条随机走 `XAlienation.choose`（不是本场规则随机数）。
+- **本机收尾（木吒）**：种族钩子进了标准注册表后，`xiyou_module_hooks` 默认宿主的 trace 多出 `race-blessings`（order 41，无祝福时 ops 为空）；原版对每次伤害都跑它的 build（参照 trace 有这一项），改了测试期望，1310/1310。删掉云端提交误带的 macOS 资源分叉文件 `modes/xiyou/._generated`、`冻结正式源/._app.nw`（它们让选测退成整轮）。
 - **已知差异（不在本车道）**：宠物捕获时原版先 `die()` 再 `refresh()`，图鉴记 2 次；Godot `pet_capture.gd` 的 `_vanish` 只记 1 次。`pet_capture.gd` 属八戒宠物来源车道，未改，交给该车道对照。
-- 验证：专项 `xiyou_enemy_book` 59/59、`xiyou_race_battle` 436/436、`xiyou_alien_battle` 330/330。相关专项＋必跑项（战斗、存档、宠物、真气、`xiyou_rules` 难度 1 四段、事件对照，共 37 个场景）跑到 20/37 时按用户要求停下（额度先留给其他审查），**未跑完，尚不能标可合并**。
-- **停手现场（2026-10-25 16:03 UTC）**：代码已全部提交；接手时先跑上面那组选测（`并行测试.py --jobs 4 <godot> 01_Godot工程 xiyou_alien xiyou_battle xiyou_cat xiyou_costume_battle xiyou_custom_damage xiyou_drop xiyou_enemy_book xiyou_imported_balance xiyou_pet xiyou_race xiyou_save xiyou_settlement xiyou_shield xiyou_smart_ai xiyou_state_effects xiyou_zhenqi xiyou_rules.tscn xiyou_rules_d1b xiyou_rules_d1c xiyou_rules_d1d xiyou_event_compare xiyou_panels`），修掉回归后再开 PR；新建类后要先 `godot --headless --import` 刷新类表。
+- 验证（本机，2026-10-26，木吒；合并 main 至 91a2283f）：
+  - 两个新探针单跑：`race_battle_probe` 31 例、`alien_battle_probe` 19 例，均无错误，产物放进 generated/oracle。
+  - 交付单 37 个场景（含 main 新增 battle_common_events 共 38 个）`并行测试.py --jobs 4`：38/38 通过（xiyou_race_battle 436/436、xiyou_alien_battle 330/330、xiyou_enemy_book 59/59、xiyou_rules 难度 1 四段全过）。
+  - `检查.sh --affected main`：选测判成整轮（`alienation.json`、`._` 文件拿不准，`xstate.gd` 本身就选 157 个），187 个场景 186 过，唯一失败 `xiyou_module_hooks`（cat.default_host_handlers，见上「本机收尾」），改期望后单跑 1310/1310；文档、登记、Python 工具回归全过。
+  - 合并 main（91a2283f，-3 测试提速）后：选测（同上 38 个＋module_hooks＋json_cache）40/40 通过（共用槽排队后实跑约 14 分钟）。
 
 ## 交接板
 
@@ -39,10 +43,12 @@
 
 ## 可优化（流程／工具／效率）
 
-- 无
+- `.gitignore` 只有 `.DS_Store`，没忽略 macOS `._*` 资源分叉文件；云端（或 exFAT／网络盘）提交会把它们带进来，还让 `选测.py` 判成「拿不准：整轮」。建议总装在 `.gitignore` 加 `._*`（共用文件，车道未改）。
+- `选测.py` 把 `modes/xiyou/alienation.json` 这类手写数据判成「拿不准：整轮」；可按引用它的专项选（本例只有 alien_battle／alien_config／alien_workshop／event_compare）。
 
 ## 本分支提交
 
 - f6ee0c6 怪物图鉴死亡钩子
 - 58b3279 种族祝福能力值与战斗效果、参照探针与专项
 - 5de2318 异化战斗侧、参照探针与专项
+- a520f46 module_hooks 默认宿主期望补 race-blessings；删误提交的 ._ 文件（木吒）
