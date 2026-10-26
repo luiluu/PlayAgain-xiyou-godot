@@ -28,6 +28,15 @@ func shot(name: String, data: Dictionary) -> void:
 func state_read(scene: String) -> Dictionary:
 	return {"scene":scene,"map":s.map_id,"position":[s.x,s.y,s.direction],"book":s.item_count(1461),"skills":s.actor(2).skill_ids.duplicate(),"selected":s.item_target_actor_id,"reserved":s.peek_common_event()}
 
+func help_read(card: XHelpCard) -> Dictionary:
+	var fonts: Array = []
+	for line in card._lines:
+		for glyph in line.glyphs:
+			if not fonts.has(glyph.size): fonts.append(glyph.size)
+	return {"rect":[card.global_position.x,card.global_position.y,card.size.x,card.size.y],
+		"padding":XHelpCard.PAD,"rows":card.rows.duplicate(true),"quality":card.quality,
+		"fontSizes":fonts,"visible":card.visible,"extras":card.extras.map(func(c): return help_read(c))}
+
 func _run() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="): out_dir = arg.substr(6)
@@ -99,11 +108,14 @@ func _run() -> void:
 	await frames(4)
 	var actor_read := state_read("Scene_Item")
 	actor_read.actor = {"rect":[page.actor_win.position.x,page.actor_win.position.y,page.actor_win.size.x,page.actor_win.size.y],"padding":XMVWindow.PADDING,"lineHeight":XItemScene.LH,"itemHeight":XItemScene.ACTOR_ROW_H}
+	actor_read.help = help_read(page.help_card)
+	var initial_extras: Array = actor_read.help.extras.map(func(c): return c.rows)
 	var actor_expected: Dictionary = native.pages.capacity_0_actor.duplicate(true)
 	actor_expected.erase("errors")
 	actor_expected.erase("toast")
 	actor_expected.erase("notices")
 	actor_expected.erase("trace")
+	actor_expected.erase("help")
 	actor_expected.actor.erase("texts")
 	compare("actor",actor_read,actor_expected)
 	if capture != null:
@@ -129,9 +141,17 @@ func _run() -> void:
 		check("bag.selection",returned._cat == 0 and int(returned._current().id) == 1461)
 	var result := state_read("Scene_Item")
 	var expected: Dictionary = native.pages.capacity_1_limit.duplicate(true)
-	for key in ["errors","actor","toast","notices","trace"]:
+	for key in ["errors","actor","toast","notices","trace","help"]:
 		expected.erase(key)
 	compare("result",result,expected)
+	if returned != null:
+		result.help = help_read(returned.help_card)
+		check("help.native-present",native.pages.capacity_1_limit.get("help") is Dictionary)
+		if native.pages.capacity_1_limit.get("help") is Dictionary:
+			compare("help.rows",result.help.rows,native.pages.capacity_1_limit.help.rows)
+		check("help.result-visible",result.help.visible and result.help.quality == 0)
+		check("help.extras-retained",not initial_extras.is_empty() and result.help.extras.map(func(c): return c.rows) == initial_extras)
+		check("help.minimum-readable",result.help.fontSizes.all(func(n): return n >= 16))
 	var layer := get_tree().root.get_node_or_null("XToast") as XToast
 	check("toast.exists",layer != null and layer.stack.get_child_count() == 2)
 	if layer != null and layer.stack.get_child_count() == 2:
