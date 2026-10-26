@@ -21,7 +21,7 @@ class MapCapture extends XMapScene:
 
 var out_dir := ""
 var native: Dictionary
-var map: XMapScene
+var map: MapCapture
 
 func frames(n := 2) -> void:
 	for i in n:
