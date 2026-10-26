@@ -531,6 +531,9 @@ func to_dict() -> Dictionary:
 			a[str(id)]["nickname"] = x2.nickname
 		if not x2.looks.is_empty():
 			a[str(id)]["looks"] = x2.looks
+		# 状态脚本的私有字段（Game_Actor 上的 _stackingPoison 等随局内存档）；没有就不写
+		if not x2.state_data.is_empty():
+			a[str(id)]["stateData"] = x2.state_data.duplicate(true)
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "battleSlots": battle_slots, "actors": a, "gold": gold,
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
@@ -569,6 +572,7 @@ static func from_dict(d: Dictionary) -> XState:
 		x2.mp = float(row.mp)
 		x2.tp = float(row.get("tp", 0.0))
 		x2.resource_death_blocked = bool(row.get("resourceDeathBlocked", false))
+		x2.state_data = row.get("stateData", {}).duplicate(true) if row.get("stateData") is Dictionary else {}
 		x2.last_command = str(row.get("lastCommand", ""))
 		x2.last_battle_skill = int(row.get("lastBattleSkill", 0))
 		# 真气：旧档没有这一项时为空，第一次用到时给初值（XZhenqi.data）
