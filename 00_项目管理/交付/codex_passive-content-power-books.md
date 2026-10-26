@@ -43,3 +43,5 @@
 
 - 又发现静态效果尚缺一条通用接线：原版installNativeEconomyRuntime.js 55～69把已学技能的CodexParamRate按参数求和，再乘进Game_Actor.paramRate（不是最终param之后再乘）。五本中7245／7246／7247分别加魔攻魔防／物攻物防／敏捷幸运50%。现有Godot actor.param_rate只乘装备套装，无该标签。应在param_rate按原顺序复用新核心的已学技能百分比解析，实际对照后再改；不去改XCat最终param包装顺序。
 - 追加power_books_menu_probe.cjs独立菜单流程入口（尚未运行）：按原版openPowerForget捕获行文与回调，六例含角色页取消、两种确认取消、成功、确认前符被移走与全员无权能；不替换真实学习／遗忘规则，choice只在数据边界观察，不能冒充成对截图。
+
+- 核心草稿已落盘：XPowerBooks新增注册表／类别限制／普通遗忘canonical保护／原子付费遗忘／CodexParamRate；actor.gd只加三个挂点（learn、forget、param_rate）。依据为五本有效冒烟与首轮有效的超强3／强4子样本及冻结原宿主；修正后三类完整参照仍等槽。尚未Godot导入／验收，不报可合并。尚未修改物品页，UI与效果入口的拒收提示待后续接线。

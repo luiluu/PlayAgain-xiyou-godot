@@ -317,11 +317,15 @@ func gain_exp(amount: int, rate := 1.0, random: XRandomStream = null) -> int:
 
 # ---- 技能 ----
 func learn_skill(id: int) -> void:
+	if XPowerBooks.is_power(id) and not XPowerBooks.learn_reason(self, id).is_empty():
+		return
 	if not skill_ids.has(id) and not XDB.rec("Skills", id).is_empty():
 		skill_ids.append(id)
 		skill_ids.sort()
 
 func forget_skill(id: int) -> void:
+	if XPowerBooks.protected_forget(self, id):
+		return
 	skill_ids.erase(id)
 
 func skills() -> Array:
@@ -363,7 +367,7 @@ func states() -> Array:
 	return result
 
 func param_rate(i: int) -> float:
-	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true)
+	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0)
 
 # ---- dsPassiveSkill：被动标签只从已有技能读取 ----
 func passive_values(tag: String) -> Array:
