@@ -147,14 +147,14 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		elif op == "counter_init" and execute:
 			# 计数 = 计数 || $gameVariables.value(V)：已有的（移除后也留着）不改
 			var counters: Dictionary = c.user.state_data.get("_stateCounter", {})
-			if _truthy_number(counters.get(str(e.state))) == 0.0:
-				counters[str(e.state)] = XState.current.variable(int(e.variable)) if XState.current != null else 0.0
+			if _truthy_number(counters.get(str(int(e.state)))) == 0.0:
+				counters[str(int(e.state))] = XState.current.variable(int(e.variable)) if XState.current != null else 0.0
 			c.user.state_data["_stateCounter"] = counters
 		elif op == "counter_set" and execute:
 			var out := PhaseValueProgram.new().run_phase(e.program, c, 0.0, true)
 			if out.available:
 				var counters: Dictionary = c.user.state_data.get("_stateCounter", {})
-				counters[str(e.state)] = out.value
+				counters[str(int(e.state))] = out.value
 				c.user.state_data["_stateCounter"] = counters
 			else:
 				_diagnose(phase, int(st.id), holder, "counter_set_unavailable")

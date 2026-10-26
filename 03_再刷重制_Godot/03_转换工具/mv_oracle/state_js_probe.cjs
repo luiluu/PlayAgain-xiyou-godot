@@ -25,7 +25,8 @@ w.Game_Battler.prototype.battler = function () {
 w.BattleManager.actionBattleHud = () => true;
 w.BattleManager.otbDisplayWindow = () => stub;
 const errors = [], oldError = w.Yanfly.Util.displayError;
-w.Yanfly.Util.displayError = (error, code, message) => errors.push({error: String(error), message});
+// 原版报错记成 thrown，不用 error 键：同步的 has_error 把 error 键当探针失败（这里是测到的原版行为）
+w.Yanfly.Util.displayError = (error, code, message) => errors.push({thrown: String(error), message});
 
 function battle(troop) {
   if (w.$gameParty) w.$gameParty._inBattle = false;
@@ -233,7 +234,7 @@ cases.push(makeCase('syntax_error.blocks', {blocks: SYNTAX}, () => {
       const action = new w.Game_Action(a); action.setSkill(1);
       value = action.customEffectEval(e, sid, slot, a, 7);
     } else a.customEffectEval(sid, slot);
-    const reported = errors.slice(n).map(x => x.error);
+    const reported = errors.slice(n).map(x => x.thrown);
     errors.length = n;  // 预期的报错不进 nativeErrors
     rows.push({state: sid, slot, value, reported, unchanged: w.JsonEx.stringify([snapshot(a), snapshot(e), w.JsonEx.stringify(w.$gameVariables._data)]) === w.JsonEx.stringify(before)});
   }
