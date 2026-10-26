@@ -56,7 +56,7 @@
 
 - 下一步：先完成本集成验证与交付，再恢复PREE；本单目前非可合并。
 - 用户试玩说明：待集成验证通过后按原14张交付单汇总；本期不新增玩法。
-- 需要总装决定：已定位1334／1336的全局gain_steps翻译跨过2g明确保留的地图／菜单操作域边界；313仍直接增删状态。依原交代第55行停手，不静默撤回main翻译、不自行扩改宿主。具体证据与建议见[接口边界决定](../核查范围/连续分支合main_接口边界决定_20261026.md)。尚未断言必须大规模重构。
+- 需要总装决定：前述接口范围已由用户“继续吧”授权按建议补齐，不再等待该决定。原停手证据见[接口边界决定](../核查范围/连续分支合main_接口边界决定_20261026.md)；当前仍需新原版入口、同步与引擎验收，不可合并。
 
 ## 可优化
 
@@ -110,3 +110,18 @@
 - 测试契约先统一为精确并集：Python两套8＋10项已过；318盘点与两Apply为gain_steps、三Battle为gain_resource的清单断言已更新。没有放宽未知／畸形块边界；新Godot state_operation／state_merge_context骨架已写，原版仍排槽、fixture尚缺，引用待补接口，未导入／未运行，不能算通过。生产运行时尚未改。
 
 - 已按既有状态／Boss原版参照写最小运行时草稿（尚未引擎验证）：XResourceContext统一加／去状态，313显式保存before／after／journal，菜单_effect新域种旧槽并publish，借用嵌套域时留给外层发布；新状态helper读取合成上下文，叠毒复用来源域但按原块弹字后清自身结果。原版新入口两探针仍排槽，草稿不代表新对照已通过，未导入／未同步。
+
+## 沙僧76→77：用户继续授权后的同树自动接力（非额度停手）
+
+- 用户最新“继续吧”是在76给出接口停手报告后发的，已明确按上一回复建议执行：先补地图／菜单显式操作域，再继续本集成。已恢复工作，不要再次要求用户／唐僧确认同一范围。旧接口决定报告已加后续授权说明，历史停手段落不要当成当前阻塞。
+- 用户既定同工作树自动上下文接力；76创建77后停止，77唯一后续执行者。末次额度实查五小时59%、周40%，不是80%额度停手；仍按本插队期80%线及上下文吃紧WIP推送收尾。
+- 第一条及全部文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。只用已有树，当前codex/passive-content-merge-main；本节提交为HEAD。main固定9b140f365f93c2cfa4b19d85b6ddd72576830c16，不无限追逐新main。原九文件文本合并d13da37e，PREE仍c5953948独立封存，本期验证交付后才回PREE。不得建／清树、reset／cherry-pick、改共享登记、建automation或向唐僧／其他已有会话发消息；不创建PR，直接push github本分支已获授权。所有.sandbox／失败／不完整样本／generated／整树保留。
+- 新增两个**仍在运行／等共用槽的自有长任务**（不要重复启动、不要停掉）：本地结果/merge-main76/native-context2.log，runId a1fac1d487bb4684bf768284c0aff455，包装器87866、childPGID87867；执行state_merge_context_probe.cjs，预期.sandbox/state_merge_context.json共12例，实际460叠毒＋合成gain／addState内层Apply，0／3超强者与护盾0／20。另native-operation1.log，runId ceed918a02544b9b9b5dc002cbe67977，包装器87880、childPGID87881；执行state_operation_probe.cjs，预期.sandbox/state_operation.json共8例，真实事件313与菜单itemEffectAddNormalState／RemoveState，两Apply状态1334／1336、起始TP10／95，逐步保留旧结果／重复加／去／同结果禁重加／clear后加。两探针未入同步PROBES，尚无有效fixture。末段两项都等槽约9分钟；不得把等待当通过或采样错误。status文件有childIdentity，只有确需停止自有任务才核对身份与PPID后操作。
+- 全局另一同步pgrep有悟空80414／80415，约31分钟，不是本车道，别杀别重启、别读私有临时日志。先等它结束，才启动本车道同步。不要把pgrep和启动放同一条未条件拦截的命令里；76曾误起sync1并及时停自己的包装器，failed143原件保留。首次暂停native-context也failed143，是旧任务；本轮context2／operation1仍在途，勿混淆。
+- 代码草稿f4dff07e（**未导入、未Godot验证**）：XResourceContext增加add_state／remove_state公共入口，保留removedStates准入并经with_context跑Apply／Remove。MVEventCore._change_actor_state拥有一次资源域，种旧runtime_result、记录last_state_operation before／after／journal／error，嵌套借域只外层publish，预览提前返回。XBattleLogic._effect菜单共享入口种旧槽、发布／保存操作结果，借嵌套域时恢复previous；_state_add改经资源add_state。state_effects helper改用合成c，缺上下文的原main helper拥有小域；poison_tick复用Boss来源／清本成员结果，弹字后照原块clearResult。_add_state依资源准入，不再对被拒绝状态伪添addedStates。未顺手重构formula_execution／其他内容钩子。地图／菜单页面无直接add_state/remove_state，实际入口仅313＋菜单共享_effect，战斗事件有自己的313覆写。
+- 测试契约5d909854已按精确并集更新：原三Battle607／609／857仍gain_resource，其余main gain_steps8块；两Apply1334／1336保留gain_steps并补宿主。两套Python翻译边界8＋10项已全过；未知／畸形块拒绝仍保留，不用任意op兜底。state_effects_tp盘点437→318（源静态实际值：原437、main322、合并318），两Apply为gain_steps；state_js只对3个明确ID期待gain_resource，其他仍gain_steps。exporter只改说明注释，未改变两边整块翻译逻辑。
+- 新Godot骨架xiyou_state_operation／xiyou_state_merge_context两场在Git，引用fixtures/state_operation_oracle.json和state_merge_context_oracle.json，**fixture尚缺、资源API草稿未验，因此还不能当通过场景**。拿到原件先确认唯一ID、errors全空、sourceIdentity同冻结，再逐字节复制fixture（保留原件）并运行。operation比较两入口每步hp/mp/tp、状态／回合和旧结果槽；额外测借外域与预览不建槽。context比较12组原版before/after的资源、shield、dirty、状态与结果槽，显式／继承／无父域三模式，验证Boss域恢复。注意真实1334/1336 min/maxTurns1，Apply内全局add锁可能让TP夹值与普通gain不同，以原版实测为准，不预设上限；460原文popup后clearResult，故最终结果应空，不能把popup结果当最终槽。
+- 接下来：等两原版任务（等待任务.sh --timeout45，每次≤60秒）→保留任何失败并按实测修探针／草稿；有效后补fixtures与先导入、只验两新场景及state_js／TP／Boss来源直接依赖。新源码可能有GDScript类型／语法问题，尚未导入，首次exit0也查Script／Parse／Compile错误；不使用无autoload的--check-only --script旧错误路径。导入占共用4槽；不要绕槽／改上限／杀别人。
+- 本集成仍必须实际普通增量同步，generated是旧版不能作为合并验收。无其他同步后用本地结果/merge-main76/sync_preserve.py启动（本地适配器只把本树.sandbox待清理项重命名留档、禁manual淘汰；不改同步源码、缓存键或槽）。python3 -u＋XIYOU_TEST_HEARTBEAT=30经长任务.py start，另名sync2.log，不加--full，先无accept开关看差异；接受既有变化须逐条接受单，新增才--accept-additions，禁止无条件接受。自动导入后按固定9b140f36跑检查.sh --affected 9b140f36 --oracle；14原交付最终专项与实际选测覆盖取并集去重。旧selection.sh/selection.txt只是76原计划，新增两测试后要重生成。选测通常218左右场，范围大正常；仍不跑全量，最终总装跑。
+- 原文档检查此前仅main变更记录两条链接a（本交付单抄录链接已改普通文字）；八个early_inventory_rule确定性继承失败有e1925bea独立基线，不夹带修复，不称全绿。75复制引述导致过第3条链接，76已修；源变更记录不动。新接力／源码后尚未重跑文档块，收尾再跑。原版守卫16/16、两新探针node语法、diff检查已过；JSON／编号目前一致，所有提交待Claude，不自核、不登记完成度。
+- 当前新代码与原版未完成，都不标可合并。所有暂停失败、在途与全部证据都保留；本轮没有新同步／引擎成功结论。待真正完成集成才向Kyo“已交付”，再回PREE合本集成继续。不要重做容量／权能已交期，也不要用旧成功代替此次合并回归。
