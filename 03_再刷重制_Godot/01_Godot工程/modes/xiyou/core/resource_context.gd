@@ -8,6 +8,8 @@ var slots := {}
 var labels := {}
 var error := ""
 var preview := false
+## Frozen YEP Core uses its saved base refresh for map/menu TP setters.
+var in_battle := true
 var boss_output := XBossOutputContext.new()
 ## Host inputs without this context itself (avoid a reference cycle).
 var lifecycle_inputs := {}
@@ -167,7 +169,10 @@ func _set_resource(b: XBattler, resource: String, value: float) -> void:
 	# YEP compares the requested input before refresh/clamp; an equal input does no refresh.
 	if value != old:
 		b.set(resource, value)
-		refresh(b)
+		if resource == "tp" and not in_battle:
+			_refresh_base(b)
+		else:
+			refresh(b)
 	boss_output.leave_direct()
 
 ## 公式 a.addShield(x)／b.addShield(x)：不写结果槽；逐句记录里 resource 记 shield，前后快照照常（快照不含护盾，另记 shieldBefore／shieldAfter）。

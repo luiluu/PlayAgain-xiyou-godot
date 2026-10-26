@@ -492,6 +492,8 @@ func _change_actor_state(p: Array) -> void:
 			resources.labels[a] = "actor:%d" % a.actor_id
 		before[str(a.actor_id)] = resources.snapshot(a).duplicate(true)
 	var journal_start := resources.journal.size()
+	var previous_in_battle := resources.in_battle
+	resources.in_battle = false
 	for a in members:
 		if int(p[2]) == 0:
 			resources.add_state(a, int(p[3]))
@@ -499,6 +501,7 @@ func _change_actor_state(p: Array) -> void:
 			resources.remove_state(a, int(p[3]))
 		# Native command313 clears each target after the operation, including inherited domains.
 		resources.seed_result(a, XResourceContext.empty_result())
+	resources.in_battle = previous_in_battle
 	if owns:
 		resources.publish()
 	var after := {}

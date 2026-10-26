@@ -36,7 +36,7 @@ func run_case(c: Dictionary, mode: String) -> void:
 	var s := XState.new_game_blank()
 	s.difficulty = 3
 	s.set_switch(2494, true)
-	s.party = [106, 101, 100] if int(spec.count) else [1]
+	s.party.assign([106, 101, 100] if int(spec.count) else [1])
 	s.battle_slots = s.party.duplicate()
 	while s.battle_slots.size() < 5:
 		s.battle_slots.append(0)

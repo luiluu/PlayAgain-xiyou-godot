@@ -159,6 +159,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 
 func _new_lifecycle_resources() -> XResourceContext:
 	var resources := XResourceContext.new()
+	resources.in_battle = random != null
 	resources.random = _rule()
 	resources.lifecycle_inputs = {"variables": vars(), "switches": state.switches if state != null else {}, "party_members": actors}
 	return resources
@@ -1475,7 +1476,10 @@ func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
 			for b in [u, t]:
 				_action_resources.seed_result(b, b.runtime_result)
 	var resources := _action_resources
+	var previous_in_battle := resources.in_battle
+	resources.in_battle = random != null
 	_apply_effect(u, t, eff, r)
+	resources.in_battle = previous_in_battle
 	_action_resources = previous
 	if owns_context:
 		_finish_lifecycle_operation(resources, t)

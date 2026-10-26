@@ -149,3 +149,10 @@
 - 用户最新要求：先续完手上未完工作，再开始核查积压。故本集成验证交付后转核查，PREE继续封存，覆盖旧的立即恢复PREE顺序。
 - 接续 2026-10-27 00:02 CET；HEAD 0cf17060，tracked干净，全部未跟踪旧证据保留；五小时额度2%、周47%。主工作区有总装在途改动，不接管或修改。
 - 已有20例有效样本不重采。当前白龙同步83940运行，先执行两新专项定位草稿；这一步仍基于旧generated，只作针对性诊断，不冒充最终集成验收。同步空闲后另名启动普通增量同步、逐项审报告，再跑固定9b140f36选测与缺失专项。
+
+### 接续诊断与最小修正（待引擎验证）
+
+- diagnostic1两场均失败：state_merge_context给typed party赋条件Array产生脚本错误（尽管自报38/38，runner正确拒收）；state_operation重复附加1336在TP95起步后得到245，原版200。原件与失败日志保留。
+- 根因证据：冻结YEP_CoreEngine.mapRegenUpdateCheck在战斗外按配置选择刷新路径；冻结Refresh Update HP/MP=true、TP=false。TP setter在地图／菜单直接调用保存的Game_BattlerBase.refresh，绕过加状态锁，故立即夹值；草稿统一走战斗refresh而漏夹。
+- 最小修正：资源域显式区分in_battle（既有域默认true），313和菜单操作临时切换并恢复借用域，战斗仍保留原路径；地图TP setter仅执行原版基础refresh。专项party改assign，未改参照与断言。待重新导入并跑两新场景＋TP／状态脚本／Boss来源依赖。
+- 同步等待器sync2在实际同步前核实自身PPID／启动身份后暂停（failed143）；保留暂停审计。后续用含同步脚本原名的本地包装入口，确保各车道pgrep能看到；不修改同步工具、缓存键或并发。
