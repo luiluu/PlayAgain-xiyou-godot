@@ -62,3 +62,20 @@
 
 - 已做：以选测实际覆盖表去重原14期专项，保持覆盖不减少；回退方式为逐场重复运行。尚未运行所以不宣称节省实测时长。
 - 共用槽等待改进仍留工具车道；本分支不修改并发上限或抢占他人任务。
+
+## 沙僧75→76（同树上下文接力，非额度停手）
+
+- 用户既定自动同工作树上下文接力；75创建76后停止，76唯一后续执行者。最新用户要求读取Claude交代、评判合理后执行，故当前任务已改为本集成期，PREE暂停，不要按早期“不合main”的旧任务范围撤回已授权合并。
+- 当前分支codex/passive-content-merge-main，工作树仍/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b；本节提交为HEAD。WIP合并d13da37e的父提交为5761f01f与本地main 9b140f365f93c2cfa4b19d85b6ddd72576830c16，已经git push github本分支成功。没有新PR，不要创建PR；没有改main工作区。
+- 末次实查五小时25%、周35%，非额度停手。**本插队期**依Claude交代采用80%或上下文紧张时WIP推送收尾；原PREE的95%线先不套到本期。设计／疑难high，机械步骤只有真实接口才称切medium。所有提交仍待Claude，不自核／不自评完成度。
+- 第一条及全部文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。只用已有树，不建／清worktree，不reset／cherry-pick，不改共用登记，不向其他已有会话发消息，不建automation。此次用户已授权在本分支merge本地main与push github，勿再询问该许可。
+- 开工只读共用交接板顶部／自己车道行、git status/log、额度、本单完整内容（当前较短）、归档Claude交代txt；原14张交付单后续按专项清单读“最终／交付／验证”节，不重读全部接力历史。原文档路径为核查范围/连续分支合main_Claude交代_20261026.txt，不依赖/private/tmp。
+- **九冲突已初步去标记并WIP提交，不代表完成**。各处具体合并方法见本单上方。除八个原交代文件，新增xstate.gd读档冲突已保留XPets.loaded＋main缓存刷新。重点审视自动合并与新op资源域：state_effects中新叠毒／gain_steps／add_state目前仍沿main helper实现，和旧生命周期资源域、Boss输出／结果槽的交互尚未验证；如必须大改别人接口，写具体参照与需要总装决定，按原交代停，不静默重构。
+- **现有验证**：无冲突标记、git diff --check、xiyou_export.py py_compile过；尚未同步／导入／Godot专项，原分支generated仍旧，不能拿来验合并后工程。检查.sh原文文档块已实跑，exit1，仅两处失效链接：变更记录.md 3855／3856行的文字“破阵——变身[萧萧](a)”被识别为Markdown链接a。已逐字验证整份变更记录等于main 9b140f36，属于main继承文档问题，不是集成新增；共用变更记录只总装改，本期先如实报告，不迁就测试或静默修改。
+- 两张阶段审查旧交付单不在14张实现名单中；main 9b140f36已经是“合并codex/stage-review-50-phase2”，总装收取时应避免重复登记，保留历史原文不自销核。
+- **下一步顺序**：先审视九处合并上下文及自动合并部分，尤其actor的XTraining／XParamPlus／XActorModules、种族→小猫→角色模块；death hook只一次；新增状态op资源域。再检查pgrep同步正式西游.py，没有别的同步才长任务启动同步（普通增量，不加--full；遇测量变化先审report，按接受单逐条说明）。必须保留全部.sandbox／generated／失败和未完成原件／整树。工具默认备份只留近三份，此树证据不得人为清理。
+- 同步用长任务.py start，python3 -u＋XIYOU_TEST_HEARTBEAT=30，共用四槽、等待任务.sh每次--timeout45（最多60秒）；不改工具／上限，不杀其他人。源冻结只读、不读真实玩家存档。注意同步正式西游.py --help也会经长任务包装；75的help任务5946c797a2b1458ca63b5aa819ed6e3e已done0，不是实际同步。
+- 同步接受与导入后按用户交代跑检查.sh --affected main --oracle（固定目标main在本单记录，若main继续前进不得无限追逐合并；记录选测实际基准）。从14张原交付单收集专项，与选测实际已覆盖取并集去重；另含rules/cat、race/alien/magic_weapon、enemy_book、state_effects、actor_modules/help_card。没有全量授权要求，不重复全量；最终总装负责全量。旧8项early_inventory_rule确定性失败不夹带修复，不称整轮全绿。
+- 当前**没有本车道在途任务**。PREE两项matrix2／entry2在用户改派后，已用childIdentity＋PPID验证后仅SIGTERM自有包装器，均failed143（有意暂停，不是采样规则失败）。原日志及暂停审计在本地结果保留，回PREE后另名采样，不重启旧日志。不要杀任何其他进程或启动旧日志。
+- PREE封存分支codex/passive-content-preemptive停c5953948，新公式encounter.gd／xiyou_preemptive专项草稿及三原版探针不在本集成期，也没有有效fixture／实际游戏入口接线。完成本集成交付后再回PREE并merge本集成分支。PREE之前的discovery1例有效，matrix26中reserve与ability三例无效已留initial原件，entry首败渲染／初始化，matrix2／entry2被用户暂停没有运行出新样本；不要把旧matrix错误条件当最终参照。
+- 容量期已可合并的验证记录与一次未定位偶发，仍见其交付单最终节，别重跑容量全过程。容量一次render2未回列表、根因未证实，保留Claude关注，第二次再现必须修；前期成功不能替代本次合并回归。
