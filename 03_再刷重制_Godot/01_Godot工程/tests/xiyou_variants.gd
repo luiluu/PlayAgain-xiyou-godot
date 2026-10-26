@@ -1,6 +1,10 @@
 extends Node
 ## 轮回／求道者变体：各层守层者事件在开关 2302／2303（求道者单挑，敌群 748～765）与 2307（「我们联合」联合战，敌群 798～814）下
 ## 走对应页、开对应敌群、跑完不跳过任何指令（原版 Map030 第 8 号起共 18 张图 19 个事件）。敌群本身的战斗事件由 xiyou_troop_events 对照参照。
+## 用例按序号轮流分 parts 份，一个场景管一份（xiyou_variants 第 0 份、xiyou_variants_b 第 1 份；困难模式在最后一份），
+## 免得单场景满载时逼近 600 秒超时线（木吒 2026-10-25，单跑约 280 秒）；各份断言数相加与拆分前相同。
+@export var part := 0
+@export var parts := 1
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 90000
 
@@ -16,6 +20,8 @@ func _ready() -> void:
 	var runner := Node.new()
 	runner.set_script(get_script())
 	runner.set_meta("runner", true)
+	runner.set("part", part)
+	runner.set("parts", parts)
 	get_tree().root.add_child.call_deferred(runner)
 
 
@@ -143,6 +149,7 @@ const SWITCHES := [2302, 2303, 2307]
 
 
 func _run() -> void:
+	GameApp.fast_forward()  # 真走地图打战斗、等的是物理帧与计时器：headless 快进 4 倍（见 07_开发环境/测试提速.md）
 	XSave.dir_override = "user://test_xiyou_variants"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
@@ -150,7 +157,10 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0
 	XGuide.MILESTONE_ENABLED = false
 	seed(20261023)
-	for c in CASES:
+	for i in CASES.size():
+		if i % parts != part:
+			continue
+		var c: Array = CASES[i]
 		for k in range(3):
 			var tag := "map%d_ev%d_sw%d" % [c[0], c[1], SWITCHES[k]]
 			var s := _start(c[0], 1, 1)
@@ -166,7 +176,8 @@ func _run() -> void:
 			_check(tag + "_battle", fought == [c[2 + k]], fought)
 			var sk: Array = _scene().skipped_log if _scene() is XMapScene else []
 			_check(tag + "_no_skipped", sk.is_empty(), sk)
-	await _hard_mode()
+	if part == parts - 1:
+		await _hard_mode()
 	_finish()
 
 

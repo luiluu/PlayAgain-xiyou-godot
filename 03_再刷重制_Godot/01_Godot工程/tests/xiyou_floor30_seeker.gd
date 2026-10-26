@@ -93,6 +93,7 @@ func _run_event(map: XMapScene, id: int, answers: Array, kill := false) -> bool:
 
 
 func _run() -> void:
+	GameApp.fast_forward()  # 真走地图打战斗、等的是物理帧与计时器：headless 快进 4 倍（见 07_开发环境/测试提速.md）
 	XSave.dir_override = "user://test_xiyou_floor30_seeker"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
