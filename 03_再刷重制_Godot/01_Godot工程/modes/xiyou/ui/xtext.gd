@@ -29,7 +29,7 @@ static func to_bb(raw: String) -> Dictionary:
 		s = s.replace(m.get_string(0), "")
 	var st := XState.current
 	s = _sub(s, "(?i)\\\\V\\[(\\d+)\\]", func(g): return str(int(st.variable(int(g)))) if st else "0")
-	s = _sub(s, "(?i)\\\\N\\[(\\d+)\\]", func(g): return str(XDB.rec("Actors", int(g)).get("name", "")))
+	s = _sub(s, "(?i)\\\\N\\[(\\d+)\\]", func(g): return XMVText._actor_name(int(g)))  # $gameActors.actor(n).name()：事件改过的名字
 	s = _sub(s, "(?i)\\\\P\\[(\\d+)\\]", func(g):
 		if st and int(g) >= 1 and int(g) <= st.party.size():
 			return st.actor(st.party[int(g) - 1]).display_name()

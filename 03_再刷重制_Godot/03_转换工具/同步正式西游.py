@@ -106,6 +106,8 @@ PROBES = [
     (['attack_element_probe.cjs'], ['attack_elements.json']),
     (['qiyu_probe.cjs'], ['qiyu.json']),
     (['cat_probe.cjs'], ['cat.json']),
+    (['race_battle_probe.cjs'], ['race_battle.json']),
+    (['alien_battle_probe.cjs'], ['alien_battle.json']),
     (['enemy_book_defeat_probe.cjs'], ['enemy_book_defeat.json']),
     (['lobby_shop_probe.cjs'], ['lobby_shops.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
@@ -429,8 +431,10 @@ def run_node(cmd, env, weight=None):
     吃内存的探针按 PROBE_WEIGHTS 多占几槽。SYNC_JOBS 只决定本次同步最多同时排几个探针。"""
     with heavy_slot(' '.join(cmd), probe_weight(cmd[0]) if weight is None else weight):
         # event_probe 在一个进程里连跑全部事件页，内存随事件数涨；切片事件过千页后撞 node 默认 4GB 堆上限（悟空_55 簇 8／13 同步 OOM），放宽到 10GB
+        # 环境里已有 NODE_OPTIONS（如云端容器的 --use-openssl-ca）时 setdefault 不生效、仍是默认堆，event_probe 会 OOM：没写堆上限就追加
         env = dict(env)
-        env.setdefault('NODE_OPTIONS', '--max-old-space-size=10240')
+        if '--max-old-space-size' not in env.get('NODE_OPTIONS', ''):
+            env['NODE_OPTIONS'] = (env.get('NODE_OPTIONS', '') + ' --max-old-space-size=10240').strip()
         return subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=env, capture_output=True, text=True)
 
 

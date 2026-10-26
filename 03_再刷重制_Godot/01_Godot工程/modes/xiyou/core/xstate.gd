@@ -152,6 +152,8 @@ var race_supply := {}
 var race := {}
 ## 异化账本（XAlienation：$gameSystem._alienLedger 的 sequence／pending／recent／metrics），随存档；异化标记在装备实例的 alien 字段
 var alien_ledger := {}
+## 未知存在（Map152／176）的来源地图（Leviathan 的 $gameMap._codexLeviathanUnknownOrigin，随存档）：异化 Boss 来源按它限定；null 为没有
+var unknown_origin = null
 var eco_frac := {}
 ## KMS_ShopInventory 商店库存（见 XShopStock；随存档）与下一次商店用的库存组（$gameTemp.nextInventoryId，不存档）
 var shop_stock := {"inv": {}, "schedules": []}
@@ -242,6 +244,7 @@ func actor(id: int) -> XActor:
 			_apply_actor_op(actors[id], op)
 		actors[id].refresh_passive()
 		for e in actors[id].equip_list():register_gear(e)
+		XRace.on_actor_created(self, actors[id])  # installNativeRaceRuntime：Game_Actor.setup 包装建种族数据
 	return actors[id]
 
 
@@ -520,12 +523,20 @@ func to_dict() -> Dictionary:
 		# Persist only this exceptional state; legacy saves retain their HP fallback.
 		if x2.resource_death_blocked:
 			a[str(id)]["resourceDeathBlocked"] = true
+		# 事件改过的职业、称号、名字与图像（321／324／320／322）；没改过的不写，旧档读回照数据库
+		if x2.class_id != int(x2.data().get("classId", 0)) or not x2.class_exp.is_empty():
+			a[str(id)]["classId"] = x2.class_id
+			a[str(id)]["classExp"] = x2.class_exp
+		if x2.nickname != str(x2.data().get("nickname", "")):
+			a[str(id)]["nickname"] = x2.nickname
+		if not x2.looks.is_empty():
+			a[str(id)]["looks"] = x2.looks
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "battleSlots": battle_slots, "actors": a, "gold": gold,
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
-		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "ecoFrac": eco_frac,
+		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "unknownOrigin": unknown_origin, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "costumeOff": costume_off, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills)}
 
 static func from_dict(d: Dictionary) -> XState:
@@ -536,6 +547,14 @@ static func from_dict(d: Dictionary) -> XState:
 	for id_s in d.actors:
 		var row: Dictionary = d.actors[id_s]
 		var x2 := XActor.new().setup(int(id_s))
+		if row.has("classId") and not XDB.rec("Classes", int(row.classId)).is_empty():
+			x2.class_id = int(row.classId)
+		for k in row.get("classExp", {}):
+			x2.class_exp[int(k)] = int(row.classExp[k])
+		if row.has("nickname"):
+			x2.nickname = str(row.nickname)
+		if row.get("looks") is Dictionary:
+			x2.set_looks(row.looks)
 		x2.change_level(int(row.level))
 		x2.exp_total = int(row.exp)
 		x2.skill_ids.assign(row.skills.map(func(v): return int(v)))
@@ -615,6 +634,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.race = rc.duplicate(true) if rc is Dictionary else {}
 	var al = d.get("alienLedger", {})
 	s.alien_ledger = al.duplicate(true) if al is Dictionary else {}
+	var uo = d.get("unknownOrigin")
+	s.unknown_origin = int(uo) if uo != null else null
 	var gs = d.get("guideSeen", {})
 	s.guide_seen = gs.duplicate() if gs is Dictionary else {}
 	s.eco_frac = d.get("ecoFrac", {})

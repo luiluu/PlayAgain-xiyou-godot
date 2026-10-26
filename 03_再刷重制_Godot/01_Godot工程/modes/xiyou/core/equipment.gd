@@ -19,6 +19,8 @@ static func clone(a: XActor) -> XActor:
 	b._lv = a.level
 	b.exp_total = a.exp_total
 	b.nickname = a.nickname
+	b.class_exp = a.class_exp.duplicate()
+	b.set_looks(a.looks)
 	b.skill_ids = a.skill_ids.duplicate()
 	b.equips = a.equips.duplicate(true)
 	b.state_ids = a.state_ids.duplicate()

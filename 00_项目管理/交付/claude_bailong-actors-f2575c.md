@@ -14,7 +14,7 @@
   - `raven.gd` XRaven（167）：阶位＝进阶次数；setupRaven（开机与升级后按 SKILL_GATE 重排技能）；整条公式；魂海刻度暴伤／终伤池（initPassiveCache）；伤害钩子 raven（魔法、冥河穿刺减魔防、黑羽淬魂、冥河冠冕、成长倍率 GROWTH）；号角 CE9002 招募（入队、无则给冥河断罪镰 4001、右上角提示）。
   - `mira.gd` XMira（168）：能力值包装（10144／10145／10166）、公式 `CodexMira.damage`、号角 CE9003 招募（生成并装上黑龙心鳞 4577）。
   - `number_boost.gd` XNumberBoost：MiraRavenNumberBoost 的面板暴击（xparam 2）与伤害钩子 native-number-pools。
-  - `actor_damage_hooks.gd` XActorDamageHooks：raven／native-number-pools／mira 三个原版伤害钩子在 XModuleRegistry 的 damage.before（order 41）；宿主侧 capture 算好帧操作。
+  - `actor_damage_hooks.gd` XActorDamageHooks：raven／mira／native-number-pools／sukuna 四个原版伤害钩子合成一条，在 XModuleRegistry 的 damage.before（order 3：原版这四个排在 cat-sword 之前，重制序号＝2×序＋1）；宿主侧 capture 算好帧操作。
 - 开机数据复现（转换器 `xiyou_export.py` 新函数 `boot_database_records`）：渡鸦 finishRavenDatabaseCompatibility 给原版角色进阶表补的 5 行（渡鸦 0～4 次，表尾 Advanced 473～477），写进 db/Plugins.json，XAdvance 照常读。饿狼、米拉的 isDatabaseLoaded 只做校验，无数据改动。
 - 改动别处（各一两行）：`formula_program.py` 的 MODULE_FORMULAS 加 garou／mira／raven 条目；`formula_execution.gd` 加三条分派；`module_registry.gd` standard() 加 XActorDamageHooks、capture_facts 改成可同时给 cat 与 actorModules；`mv_script.gd` 认 `CodexMira.recruit()`、`CodexRaven.recruit()` 语句与 `try { if (!CodexX.recruit()) 还号角 } catch…` 整段写法（目前分派到 CodexGarou，以后的甚尔／宿傩同写法直接加分派）。
 - **改沙僧独占 actor.gd：10 行挂点（9 行调用＋change_level 记旧等级 1 行），均调用 XActorModules**（setup 末尾、learn_skill 开头、_level_up 末尾、change_level_mv 降级循环里、change_level 末尾、param、xparam、refresh_passive 写回前）。总装 2026-10-25 批准。沙僧以后改 actor.gd 时请保留这些挂点。
@@ -24,7 +24,7 @@
 - 渡鸦／米拉技能解锁同步 `core/skill_progression.gd` XSkillProgression（原版 installNativeSkillProgressionRuntime）：本人专属技能按 CodexUnlockLevel／CodexUnlockRank／CodexUnlockMaxRank／CodexRetired 学忘，挂在 XActorModules 的 setup／level_up／level_down。米拉 10162／10163（要进阶 3 次）原先会按职业习得表学到，现与参照一致不学。
 - XActorModules.level_changed 同级也同步：XActor.change_level 会补学职业习得表，同级时原先跳过同步，渡鸦 1 级会多出 10127／10170。
 - **slice_probe 修正**：measure 量完原只还原 hp／mp／tp 与新增状态，`b.addShield` 公式（5648 轰鸣鼓墙等）留下的护盾会带到后面的行；宿傩捌 10230「目标有盾 ×1.5」因此全部量成 2.4 倍。现一并还原双方 `_shield`（`测试切片探针还原.py` 通过）。同步对 main 基线只有新增（172 行按无盾 1.6 倍），其余行不变。
-- 专项期望更新：xiyou_actor_advanced 进阶表 462→467 行（渡鸦开机补的 5 行）；xiyou_module_hooks 默认宿主钩子序列加 actor-modules（order 41）；xiyou_actor_modules 宿傩 1 级不含 10238（参照如此，10238 是普攻替换，同步里本就排除）。
+- 专项期望更新：xiyou_actor_advanced 进阶表 462→467 行（渡鸦开机补的 5 行）；xiyou_module_hooks 默认宿主钩子序列加 actor-modules（order 3，在 cat-sword 前）；xiyou_actor_modules 宿傩 1 级不含 10238（参照如此，10238 是普攻替换，同步里本就排除）。
 - 切片 `xiyou_slice.json` actors 加 167、168、173；`xiyou_actor_p0` RECRUIT_8 加 9002／9003／9009。
 - 专项 `tests/xiyou_actor_modules`（25 项）。
 - 各模块文件头列了未移植项（第二期起）：饿狼形态倍率／行动次数／进阶／法宝进化／进化解析反击追击；渡鸦灵魂积累与铸印、神话形态、追加伤害、法宝运行时字段与固定加成；米拉解放黑龙与黑龙形态、禁忌减耗扣血；NumberBoost 的必中不闪避；三人的 Map132 商店补号角、技能分类与界面、旧档迁移（不迁移）。
@@ -45,6 +45,8 @@
 - 同步槽位抢不到：几条车道都在「看没人跑就开」，常常前后脚撞上。建议 `同步正式西游.py` 加 `--queue`（自己等到没有别的同步再开始，等待时每 30 秒打心跳，免被长任务空闲超时停掉），白龙用过一个临时脚本版本可行。注意 pgrep 用 `'Python.*同步正[式]西游'` 这类写法，免得匹配到等待脚本自身的命令行。
 
 ## 验证
+
+- **与 main 种族异化（#12）冲突的解决（2026-10-26）**：① `actor.gd` param 按原版安装先后由内到外套：XActorModules（米拉 main.js 98、宿傩 113）→ XCat（115）→ XRaceBattle（148），即 `XRaceBattle.param(XCat.param(XActorModules.param(super)))`；② `module_registry.gd` 标准列表两个描述符都放，actor-modules 顺序号由 41 改 3（原版 raven 1 等在 cat-sword 9 前），race-blessings 保持 41；伤害捕获 actorModules 与 race 两段都保留；③ `xiyou_module_hooks` 默认宿主序列为 actor-modules 3、cat-sword 18／19、orb-sets 39、race-blessings 41。
 
 - 同步 `同步正式西游.py --no-register --accept-additions`（合 main 8de0204b 后、含 slice_probe 护盾修正）：退出码 0，对 main 基线只有新增用例（actor_passive、help_cards、slice_d1～d6、wtype 等），核对 0 问题。
 - 专项（`并行测试.py --full`）全过：xiyou_actor_modules 37/37、xiyou_actor_p0 3300/3300、xiyou_rules 难度 1 四段（109704／109619／109508／109673 全过）、xiyou_party_skills 214、xiyou_module_hooks 1310、xiyou_actor_advanced 33、xiyou_cat 992、xiyou_qiyu 231。
