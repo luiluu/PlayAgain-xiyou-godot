@@ -197,6 +197,7 @@ func _neighbors() -> void:
 	await _run_event(_scene(), 5, [], "")
 	if not _check("tent_back", await _wait_map(88) and _scene().player.grid == Vector2i(9, 6), [_scene().map_id, _scene().player.grid]):
 		return
+	_scene().player.direction = 2   # EV4 条件：面朝下
 	await _run_event(_scene(), 4, [], "")
 	_check("river_to_sky", await _wait_map(69) and _scene().player.grid == Vector2i(92, 8), [_scene().map_id, _scene().player.grid])
 	# 蓝天飞艇公司
@@ -205,7 +206,6 @@ func _neighbors() -> void:
 		return
 	map = _scene()
 	_check("airship_shops", _has_shop(map, 7, 421) and _has_shop(map, 10, 424) and _has_shop(map, 11, 420))
-	await _run_event(map, 7, [0], "")
 	await _run_event(map, 2, [], "")
 	_check("airship_back", await _wait_map(69) and _scene().player.grid == Vector2i(64, 24), [_scene().map_id, _scene().player.grid])
 	# 飨龙教堂
