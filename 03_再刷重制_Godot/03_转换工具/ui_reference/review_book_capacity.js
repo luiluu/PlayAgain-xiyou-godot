@@ -21,8 +21,8 @@
   if(!s._actorWindow.active)throw Error('native actor window inactive');return true;
  };
  P.pick=async function(){
-  var s=SceneManager._scene;s._actorWindow.select(0);s._actorWindow.processOk();
-  try { await wait(function(){return SceneManager._scene instanceof Scene_Map&&SceneManager._sceneStarted&&document.querySelector('#toastMessage .message');}); } catch(e) { throw Error('capacity return: '+JSON.stringify({state:P.read(),busy:SceneManager._scene.isBusy(),messages:$gameMessage._texts,interp:$gameMap._interpreter&&{index:$gameMap._interpreter._index,running:$gameMap._interpreter.isRunning(),event:$gameMap._interpreter._eventId,list:$gameMap._interpreter._list},update:String(Game_Map.prototype.updateInterpreter).slice(0,300)})); }
+  var s=SceneManager._scene;s._actorWindow.select(0);P.prePick={item:s.item().id,actorIndex:s._actorWindow.index(),target:s.itemTargetActors().map(function(a){return a&&a.actorId();}),allowed:s.canUse(),user:s.user().actorId(),handler:String(s._actorWindow._handlers.ok),skills:$gameActors.actor(2)._skills.slice(),effects:s.item().effects};s._actorWindow.processOk();if(!$gameTemp._commonEventId&&!SceneManager.isNextScene(Scene_Map))throw Error("native no reservation: "+JSON.stringify({pre:P.prePick,state:P.read()}));
+  try { await wait(function(){return SceneManager._scene instanceof Scene_Map&&SceneManager._sceneStarted&&document.querySelector('#toastMessage .message');}); } catch(e) { throw Error('capacity return: '+JSON.stringify({pre:P.prePick,state:P.read(),busy:SceneManager._scene.isBusy(),messages:$gameMessage._texts,interp:$gameMap._interpreter&&{index:$gameMap._interpreter._index,running:$gameMap._interpreter.isRunning(),event:$gameMap._interpreter._eventId,list:$gameMap._interpreter._list},update:String(Game_Map.prototype.updateInterpreter).slice(0,300)})); }
   await wait(function(){var t=document.querySelector('#toastMessage');return t&&Number(getComputedStyle(t).opacity)>=.999;});
   await settle();return true;
  };

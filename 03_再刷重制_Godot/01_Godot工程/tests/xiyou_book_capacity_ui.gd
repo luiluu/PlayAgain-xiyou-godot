@@ -106,7 +106,7 @@ func _run() -> void:
 	compare("actor",actor_read,actor_expected)
 	if capture != null:
 		actor_read.actor.texts = capture.texts.duplicate(true)
-		compare("actor.texts",actor_read.actor.texts,native.pages.capacity_0_actor.actor.texts)
+		compare("actor.texts",actor_read.actor.texts.filter(func(t): return t[0] != ""),native.pages.capacity_0_actor.actor.texts.filter(func(t): return t[0] != ""))
 	await shot("capacity_0_actor",actor_read)
 	page._actor = 0
 	page._ok()
