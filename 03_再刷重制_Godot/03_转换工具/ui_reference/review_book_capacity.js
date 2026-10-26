@@ -31,9 +31,9 @@
  function rect(el){var r=el.getBoundingClientRect();return [r.x,r.y,r.width,r.height];}
  function style(el){var s=getComputedStyle(el);return {rect:rect(el),padding:s.padding,margin:s.margin,color:s.color,background:s.backgroundColor,font:s.fontFamily,fontSize:s.fontSize,lineHeight:s.lineHeight,opacity:s.opacity,text:el.textContent};}
  P.read=function(){
-  var s=SceneManager._scene,w=s._actorWindow,t=document.querySelector('#toastMessage'),m=t&&t.querySelector('.message'),container=document.querySelector('#toaster');
+  var s=SceneManager._scene,w=s._actorWindow,h=s._helpWindow,t=document.querySelector('#toastMessage'),m=t&&t.querySelector('.message'),container=document.querySelector('#toaster');
   return {scene:s.constructor.name,map:$gameMap.mapId(),position:[$gamePlayer.x,$gamePlayer.y,$gamePlayer.direction()],book:$gameParty.numItems($dataItems[1461]),skills:$gameActors.actor(2)._skills.slice(),selected:$gameParty._targetActorId,reserved:$gameTemp._commonEventId||0,
-   actor:w&&w.visible?{rect:[w.x,w.y,w.width,w.height],padding:w.padding,lineHeight:w.lineHeight(),itemHeight:w.itemHeight(),texts:(w.contents.__ilrText||[]).map(function(t){return [t.text,t.x,t.y,t.w,t.align,t.size,t.color];})}:null,
+   help:h&&h.visible?{rect:[h.x,h.y,h.width,h.height],padding:h.standardPadding(),rows:h.item&&h.item.descParams,texts:(h.bitmap.__ilrText||[]).map(function(t){return [t.text,t.x,t.y,t.w,t.align,t.size,t.color];})}:null,actor:w&&w.visible?{rect:[w.x,w.y,w.width,w.height],padding:w.padding,lineHeight:w.lineHeight(),itemHeight:w.itemHeight(),texts:(w.contents.__ilrText||[]).map(function(t){return [t.text,t.x,t.y,t.w,t.align,t.size,t.color];})}:null,
    toast:t?{container:style(container),box:style(t),message:style(m)}:null,notices:Array.from(document.querySelectorAll('#toastMessage')).map(function(t){return {box:style(t),message:style(t.querySelector('.message'))};}),trace:P.trace.slice(),errors:(window.__refErrors||[]).slice()};
  };
 })();
