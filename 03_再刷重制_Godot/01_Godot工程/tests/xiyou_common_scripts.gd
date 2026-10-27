@@ -86,6 +86,11 @@ func _case(spec: Dictionary, host) -> Dictionary:
 		s.gain_gear("armor", int(k), int(spec.gainArmors[k]))
 	for id in spec.get("switches", []):
 		s.set_switch(int(id), true)
+	# 预先入队的角色与等级（参照开关之后 addActor＋changeLevel）；参照的 sync（并入备注超强者）重制总是生效，不用做
+	for pair in spec.get("actors", []):
+		s.add_actor(int(pair[0]))
+		if int(pair[1]) > 0:
+			s.actor(int(pair[0])).change_level_mv(int(pair[1]))
 	if spec.has("at"):
 		s.map_id = int(spec.at[0])
 		s.x = int(spec.at[1])

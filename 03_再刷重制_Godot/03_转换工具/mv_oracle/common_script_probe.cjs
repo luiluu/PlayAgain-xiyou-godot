@@ -4,7 +4,8 @@
 // ① 遗忘技能类 CE637～648、1378～1380（$gameParty._targetActorId 选中角色 + hasSkill/forgetSkill/learnSkill）、CE83（Star.RunForgetSkill 打开遗忘界面）；
 // ② 藏宝图 CE117、174～189、1381～1384（Star.RomGetItems.RunGetFun：不在目标格提示坐标，在目标格按预掷池挖宝，挖完一轮重置）；
 // ③ 超强者招募 CE2501～2526（非地狱难度：提示后不入队，装备照给；已持有不重复给）；
-// ④ CE367 牛头人酋长（indexOf(-33)==-1 才 push(-12)）。
+// ④ CE367 牛头人酋长（indexOf(-33)==-1 才 push(-12)）；
+// ⑤ 专属角色号角 9002～9016 的超强者门槛（期三）；⑥⑦ 9011 天衣铺、9018 小猫试炼条件不够时的提示。
 // 每例：内存新游戏（host.cjs newGame：大厅、队伍 1/8/9/10、Math.random 0.5），难度 3，按 setup 预置后用 Game_Interpreter 跑完该公共事件。
 // 只在内存，不读写存档；ConfigManager 只改内存（不 save）。产物 .sandbox/common_scripts.json。
 const {start, makeCase, finish} = require('./shared/host.cjs');
@@ -81,6 +82,10 @@ function run(spec) {
   Object.entries(spec.gainWeapons || {}).forEach(([k, v]) => w.$gameParty.gainItem(w.$dataWeapons[Number(k)], v));
   Object.entries(spec.gainArmors || {}).forEach(([k, v]) => w.$gameParty.gainItem(w.$dataArmors[Number(k)], v));
   (spec.switches || []).forEach(id => w.$gameSwitches.setValue(id, true));
+  // 预先入队的角色与等级（开关之后加，超强者要先开 2494）
+  (spec.actors || []).forEach(([id, lv]) => { w.$gameParty.addActor(id); if (lv) w.$gameActors.actor(id).changeLevel(lv, false); });
+  // 原版开战／读档时 CodexBinding.syncSuperStrong 把备注 <CodexSuperStrong> 的 174／176／177 并入超强者名单；真实流程里早就并过了
+  if (spec.sync) w.CodexBinding.syncSuperStrong();
   if (spec.at) { w.$gameMap._mapId = spec.at[0]; w.$gamePlayer.setPosition(spec.at[1], spec.at[2]); }
   if (spec.rom) { w.$gameParty.RomGet = spec.rom.slice(); w.$gameParty.RomGetNum = spec.romNum || 0; }
   if (spec.dug) { w.$gameParty.GameMapxy = {}; spec.dug.forEach(id => { w.$gameParty.GameMapxy[id] = true; }); }
@@ -197,6 +202,23 @@ add('clothes.367.none', {common: 367, random: 0, watch: {clothes: [-12, -33]}});
 add('clothes.367.has33', {common: 367, random: 0, clothes: [-33], watch: {clothes: [-12, -33]}});
 add('clothes.367.has12', {common: 367, random: 0, clothes: [-12], watch: {clothes: [-12, -33]}});
 add('clothes.367.miss', {common: 367, watch: {clothes: [-12, -33]}});
+// ⑤ 专属角色号角（installBossDifficultyRuntime 给 D.recruitments 的 recruit() 包了一层超强者门槛）：难度 3 挡下（try 写法还号角）；
+// 模块已移植的再测挑战开关 2494 放行入队、已在队（try 写法还号角）。都先 syncSuperStrong（见 run）
+const HORNS = {9002: [167, 2902, 1], 9003: [168, 2904, 1], 9004: [169, 2931, 1], 9005: [170, 2932, 1], 9006: [171, 2936, 0], 9007: [172, 2938, 1],
+  9009: [173, 2940, 1], 9010: [174, 2941, 0], 9012: [175, 2943, 0], 9013: [176, 2945, 0], 9016: [177, 2946, 0]};
+for (const [ce, [actor, horn, ported]] of Object.entries(HORNS)) {
+  const watch = {items: [horn]};
+  add(`horn.${ce}.d3`, {common: +ce, sync: true, watch});
+  if (ported) {
+    add(`horn.${ce}.open`, {common: +ce, sync: true, switches: [2494], watch});
+    add(`horn.${ce}.member`, {common: +ce, sync: true, switches: [2494], actors: [[actor, 0]], watch});
+  }
+}
+// ⑥ 9011 天衣铺：174 云裳不在队、在队不到 20 级都只提示；⑦ 9018 小猫试炼：178 不在队、在队不到 35 级都只提示
+add('ce.9011.none', {common: 9011, sync: true});
+add('ce.9011.low', {common: 9011, sync: true, switches: [2494], actors: [[174, 19]]});
+add('ce.9018.none', {common: 9018, sync: true});
+add('ce.9018.low', {common: 9018, sync: true, actors: [[178, 34]]});
 
 const cases = specs.map(spec => makeCase(spec.id, spec, () => run(spec)));
-process.exit(finish(host, 'common_scripts.json', {scope: 'Effect common events with script calls: forget/learn on $gameParty._targetActorId, Star.RomGetItems.RunGetFun treasure maps, super-strong recruit horns, CE367 costume unlock. Native Game_Interpreter; toaster/scene recorded.', cases}) ? 0 : 1);
+process.exit(finish(host, 'common_scripts.json', {scope: 'Effect common events with script calls: forget/learn on $gameParty._targetActorId, Star.RomGetItems.RunGetFun treasure maps, super-strong recruit horns, CE367 costume unlock, exclusive-actor horns and their gates (9002-9018). Native Game_Interpreter; toaster/scene recorded.', cases}) ? 0 : 1);

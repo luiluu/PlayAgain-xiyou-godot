@@ -1,61 +1,7 @@
 {
 	"cases": 5753,
-	"match": 5735,
+	"match": 5752,
 	"mismatch": {
-		"ce765": [
-			"variables"
-		],
-		"ce823": [
-			"gold"
-		],
-		"ce824": [
-			"gold"
-		],
-		"ce9002": [
-			"trace",
-			"armors"
-		],
-		"ce9003": [
-			"trace"
-		],
-		"ce9004": [
-			"trace"
-		],
-		"ce9005": [
-			"trace",
-			"actors",
-			"party"
-		],
-		"ce9006": [
-			"trace"
-		],
-		"ce9007": [
-			"trace"
-		],
-		"ce9009": [
-			"trace"
-		],
-		"ce9010": [
-			"trace"
-		],
-		"ce9011": [
-			"trace"
-		],
-		"ce9012": [
-			"trace"
-		],
-		"ce9013": [
-			"trace"
-		],
-		"ce9016": [
-			"trace"
-		],
-		"ce9018": [
-			"trace"
-		],
-		"m189e1p0": [
-			"gold"
-		],
 		"m4e73p0": [
 			"trace"
 		]
