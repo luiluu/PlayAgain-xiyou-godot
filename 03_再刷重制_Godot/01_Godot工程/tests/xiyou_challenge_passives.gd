@@ -7,12 +7,9 @@ var failures: Array = []
 ## 与参照 PARTY、SWITCH 同值
 const PARTY := [1, 8, 9, 10, 11, 12]
 const SWITCH := {3: 0, 4: 2500, 5: 2494, 6: 2489}
-## 已知差异（本期只登记、不改规则，见交付单「挑战被动核对表」），逐项跳过对应比对：
-## 1) 伤害：参照含五乘区预算软上限／分档系数（随层数降低伤害），重制按数值平衡不移植（damage.gd 文件头）
-## 2) 困难（4）：参照里非主角队员已被 installNativeDifficultyInheritanceRuntime.syncActor 同步成「困难难度 5549＋难度适应 5980」，带状态 1691，重制没有这条同步
-## （原差异 3 已解决：层门里的公共事件 714 置 $gameParty.DCultyL4／L5，Star_Warehouse 把敌人能力乘 2.5／3，见 XEnemy.warehouse_rate 与 xiyou_enemy_warehouse）
-## （原差异 4 已查清：参照开战读数是上状态前的缓存，刷新后与重制一致，见下）
-const KNOWN_STATE_DIFF := [4]
+## 唯一跳过的比对是伤害：参照含五乘区预算软上限／分档系数（随层数降低伤害），重制按数值平衡不移植（damage.gd 文件头）。
+## 原差异已解决：敌人 2.5／3 倍＝层门里公共事件 714 置 DCultyL4／L5（XEnemy.warehouse_rate）；队员状态 1691＝入队同步难度被动（XState.inherit_difficulty）；
+## 天灾敌人读数＝参照开战读数是上状态前的缓存，下面按「刷新后」值比对。
 
 func check(tag: String, ok: bool, detail = null) -> void:
 	checks += 1
@@ -53,13 +50,12 @@ func actor_row(a: XActor, logic: XBattleLogic, ids: Array) -> Dictionary:
 		"sparams": range(10).map(func(i): return a.sparam(i)),
 		"states": a.state_ids.duplicate(), "mp": cost.mp, "tp": cost.tp}
 
-func compare_actor(tag: String, got: Dictionary, want: Dictionary, skip_states := false) -> void:
+func compare_actor(tag: String, got: Dictionary, want: Dictionary) -> void:
 	check(tag + ".skills", same(got.skills, want.skills), [got.skills, want.skills])
 	check(tag + ".params", near_list(got.params, want.params), [got.params, want.params])
 	check(tag + ".xparams", near_list(got.xparams, want.xparams), [got.xparams, want.xparams])
 	check(tag + ".sparams", near_list(got.sparams, want.sparams), [got.sparams, want.sparams])
-	if not skip_states:
-		check(tag + ".states", same(got.states, want.states), [got.states, want.states])
+	check(tag + ".states", same(got.states, want.states), [got.states, want.states])
 	check(tag + ".mp1065", int(got.mp) == int(want.mpCost1065), [got.mp, want.mpCost1065])
 	check(tag + ".tp1065", int(got.tp) == int(want.tpCost1065), [got.tp, want.tpCost1065])
 
@@ -70,10 +66,12 @@ func run_case(c: Dictionary) -> void:
 	var o: Dictionary = c.observed
 	var ids := challenge_ids()
 	var d := int(spec.difficulty)
-	var s := XState.new_game(d, int(PARTY[0]), PARTY.slice(1))
+	var s := XState.new_game(d, int(PARTY[0]), [])  # 参照：先开难度开关，再给六名队员入队（入队时同步难度被动）
 	s.random_master = XRandomStream.hex64(12345)
 	for sid in [2500, 2494, 2489, 2487]:
 		s.set_switch(sid, sid == int(SWITCH[d]))
+	for id in PARTY.slice(1):
+		s.add_actor(int(id))
 	s.set_variable(8, float(o.skillCap))
 	# 层门里公共事件 714 按难度开关置的 Star_Warehouse 标志（普通难度参照没开开关，不置）
 	for i in range(1, 9):
@@ -91,7 +89,7 @@ func run_case(c: Dictionary) -> void:
 	logic.setup(4, s)
 	var tag: String = c.id
 	for row in o.battleActors:
-		compare_actor(tag + ".actor" + str(row.id), actor_row(s.actor(int(row.id)), logic, ids), row, KNOWN_STATE_DIFF.has(d) and int(row.id) != 1)
+		compare_actor(tag + ".actor" + str(row.id), actor_row(s.actor(int(row.id)), logic, ids), row)
 	check(tag + ".members", same(logic.actors.map(func(a): return a.actor_id), o.battleMembers), [logic.actors.map(func(a): return a.actor_id), o.battleMembers])
 	var e: XEnemy = logic.enemies[0]
 	check(tag + ".enemy.id", e.enemy_id == int(o.enemy.id), [e.enemy_id, o.enemy.id])
