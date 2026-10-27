@@ -416,8 +416,16 @@ func gather_followers() -> void:
 
 
 # ---- 触发 ----
+## Game_Party.onPlayerWalk（YEP_CoreEngine 包装同）：全队含后备各自 Game_Actor.onPlayerWalk，开头 clearResult。
+## 上场结束时去掉的 removeAtBattleEnd 状态留在 removedStates 里，走一步才清，下一场开战标签才能再挂上。
+static func on_player_walk(s: XState) -> void:
+	for a in s.members():
+		if a != null:
+			a.runtime_result = XResourceContext.empty_result()
+
 func _on_player_step() -> void:
 	XState.current.steps += 1
+	on_player_walk(XState.current)
 	# 玩家接触：踩上「角色下方/上方」事件，或撞上同层事件时在 _on_bump 处理
 	for e in events:
 		if e.grid == player.grid and [1, 2].has(e.trigger()) and not e.is_normal_priority():
