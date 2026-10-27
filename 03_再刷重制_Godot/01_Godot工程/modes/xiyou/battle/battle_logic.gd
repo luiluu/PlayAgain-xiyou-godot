@@ -633,10 +633,18 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 		_tick_states(b, 2)
 	# Custom Regenerate → Custom Turn End（regenerateAll 外层与 onTurnEnd 不看存活，倒下的也跑）
 	# 叠毒等 Regenerate 脚本的扣血按状态各弹一次字（regenerateStateEffects 每个状态 clearResult → eval → startDamagePopup）
+	# regenerateStateEffects：进去时活着、脚本后倒下就 performCollapse（叠毒脚本弹字后自己也调一次），紧跟这次弹字；同一次倒下只记一条
+	var alive := [b.is_alive()]
+	var collapse := func() -> void:
+		if alive[0] and b.is_dead():
+			alive[0] = false
+			logs.append({"type": "collapse", "target": b, "views": views([b])})
 	var emit := func(entry: Dictionary) -> void:
 		entry.views = views([entry.target])
 		logs.append(entry)
+		collapse.call()
 	XStateEffects.run("regenerate", b, {"random": _rule(), "variables": vars(), "emit": emit})
+	collapse.call()
 	XStateEffects.run("turn_end", b)
 	b.decay_shield()  # ShieldSystem 包在 regenerateAll 最外层，倒下的也衰减
 	b.param_mark_dirty()
