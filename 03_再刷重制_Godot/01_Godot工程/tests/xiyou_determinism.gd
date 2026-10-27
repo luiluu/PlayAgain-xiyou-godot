@@ -68,6 +68,8 @@ func replay(trial_seed: int, visual: bool, icons: bool, camera: bool, sound: boo
  s.hang_up_origin = Vector2i.ZERO
  XHangUp.settings(s).fastFt = s.hang_up_active
  var actor := s.actor(1)
+ # Native req_level: weapon56 is released below level3; keep the three-round fixture equipped.
+ actor.change_level_mv(3)
  var gear := XGear.template("weapon",56)
  gear.params[0] = 1000000
  gear.traits.append_array([{"code":22,"dataId":6,"value":0.18},{"code":22,"dataId":5,"value":0.16},{"code":61,"dataId":0,"value":0.25}])

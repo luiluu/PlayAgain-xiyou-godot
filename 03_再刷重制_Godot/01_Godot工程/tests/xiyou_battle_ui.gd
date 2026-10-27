@@ -99,6 +99,7 @@ func _run() -> void:
 	s.flags.TopItem = [5]
 	s.flags.ItemSpLock = [1]
 	# 先手美娜的唯一战技「寒锋」要求武器类型 1，默认水果刀（类型 0）在正式版也放不了（wtype_probe）；换成类型 1 的剃须刀
+	s.actor(10).change_level_mv(10)  # 原版 req_level:10；一级会在 refresh 卸回背包。
 	s.actor(10).equips[0] = XGear.create("weapon", 14)
 	s.actor(10).refresh_passive()
 	s.map_id = 5

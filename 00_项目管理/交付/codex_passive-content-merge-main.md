@@ -267,3 +267,10 @@
 - enemy_book唯一失败hook.after_battle_not_counted的detail计数仍2，实际是e.is_dead为false，不是重复计数。原版新4例已实证：复活refresh在result.removedStates留1，同result再加阵亡或HP0refresh会被挡，clearResult后refresh才加阵亡；本测试可能缺新一次死亡前的clearResult前提，尚未改，先对照其完整调用链。原版新例保留了同result阻止再加的反例，不可去掉保护来迁就旧夹具。
 - 其余技能准入wtype／battle_ui和说明卡actor_book／help_card还未处理；battle_ui补足TP9但技能仍不能用，须查技能类型／封印／武器等真实条件；不得只去断言。预审80三批证据preaudit80.json仍只是旧只读预审，不重派、不算正式核查。
 - 继续：完成八败逐项原版归因和必要最小修正；只补失败与直接影响专项（规则改动按三级要求补规则段，不重跑整批218或同步）；更新实跑证据与本单、push github本分支向Kyo交付给唐僧，不自行合main。真正交付后才从当时实际本地main开codex/review-backlog-20261027-1重算积压、第一期11批，只核Claude。PREE仍封存c5953948。建议high，机械medium仅实际切换后才称切换；82显式high，不指定新模型。
+
+## 沙僧82：夹具准入根因与首个检查点（2026-10-27）
+
+- 沿用同树／固定截点，五小时开工15%、周64%；不动共享登记。已按原版最小4例确认：角色1一级穿需求3级武器56会卸回包，三级保留；角色10一级穿需求10级武器14会卸，十级保留且寒锋可用。探针v1～v5与全部原件保留，装备4例有效产物取v2。
+- 确定性夹具补角色3级、界面补美娜10级；图鉴战后新死亡前clearResult。保留原库存／重复计数断言与death_admission同result禁止重加反例；没有运行时放宽。新增equipment_admission7条保留不够级／足级两边。
+- 专项fixtures82-green1：determinism372/372、battle_ui70/70、enemy_book93/93、equipment_admission7/7，无Script/Parse/Compile/行首ERROR。确定性断言未删，角色足级后实际行动次数改变使总数382→372，三回合与命令数下限仍保留。证据[夹具前提修正](../核查范围/连续分支合main_夹具前提修正_20261027.json)。其余未销账。
+- 新Boss恢复反例已合法RED：boss82-red为485/487，缺本场规则流一次取数且另一state的world被污染；原版最小boss_transform_recover_duration实测变身1次、recover累计2次。正在按资源域修正，未完成整批交付。

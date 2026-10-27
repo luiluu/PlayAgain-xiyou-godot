@@ -376,6 +376,8 @@ func _death_hook() -> void:
 	# 战斗结束后（不在本场名单）死亡不计
 	e.hp = 1.0
 	e.refresh_resources()
+	# 原版复活 refresh 在 removedStates 留1；新一次伤害先 clearResult（同 result 阻止重加的反例另存 death_admission）。
+	e.runtime_result = XResourceContext.empty_result()
 	e.hp = 0.0
 	e.refresh_resources()
 	check("hook.after_battle_not_counted", e.is_dead() and n.call() == 2, n.call())
