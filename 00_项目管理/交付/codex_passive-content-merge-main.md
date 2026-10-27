@@ -1,7 +1,7 @@
 # 交付：codex/passive-content-merge-main
 
-- 车道／工作者：集成／沙僧（Codex，重制_沙僧_81，接80）
-- 状态：WIP。同步及新增接受已完成；final79已结束，218场210过8败，选择窗口补测3/3过；失败待归因修复，仍不可合并
+- 车道／工作者：集成／沙僧（Codex，重制_沙僧_82，接81）
+- 状态：收口补测中。首轮八败均已有通过结果；24规则段尚在执行，暂不可合并。正式交叉核查仍待Claude
 - 交付范围截至5761f01f；新分支从该点建立。PREE已独立保存至c5953948，未带入本分支。
 - 本次合并本地main：9b140f365f93c2cfa4b19d85b6ddd72576830c16；不以远端覆盖本地。两父合并保留提交链。
 - 用户明确要求先评判并执行Claude交代，原文留[只读交代证据](../核查范围/连续分支合main_Claude交代_20261026.txt)。方向合理，集成优先，PREE暂停；不自行销核或登记完成度。
@@ -280,3 +280,6 @@
 
 - 82第三检查点在途：两项界面合法RED已保存help82-red（actor_book21/22、help_card970/988，各首次与自动重跑均保留、无脚本错误）。按固定截点之外已有白龙修正2449e4e1／4a1e4250／9c584f38，只移入character_help、说明卡接线／备注宽、garou.form显示查询、图鉴sprite_path及对应夹具；未merge新main、未cherry-pick、未扩切片或同步。保留原提交出处，新增集成提交仍待Claude。原版图鉴确画动态多帧名而非数据库静图；多帧素材未移植时仍按既有白龙方案不画，限制保留。
 - 正在执行help82-green（help_card、actor_book、actor_modules、必跑event_compare）；之后须补本次战斗规则改动要求的24规则段与覆盖／同源检查。若中断，勿重启原final79或同步，也勿重跑已绿专项。
+
+- 82界面专项help82-green已结束exit0：help_card988/988、actor_book22/22、actor_modules37/37、event_compare5/5，全部无Script/Parse/Compile/行首ERROR。沿用既有白龙代码的已声明限制：未移植动态多帧素材时不画错误静图，listCosts／进阶新增行与未接角色后续状态仍留对应角色期处理；不扩本期承诺。证据[说明卡与图鉴](../核查范围/连续分支合main_说明卡与图鉴修正_20261027.json)。
+- 82最终必跑：长任务rules82.log已经启动，日志runId见旁侧.status.json；只跑24规则段，不重跑218。覆盖检查exit0（hard0/new0）、同源检查exit0（inputs2021/runtimeInputs382/outputs2023/issues空），旧覆盖报告已复制tools82/prior-coverage保留。文档原块exit1仅固定main9b继承的两条链接a，共享文件仍不改；tools82各原始输出保留。
