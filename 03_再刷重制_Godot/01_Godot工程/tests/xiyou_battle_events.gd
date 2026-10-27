@@ -5,7 +5,7 @@ extends Node
 ## 334 完全回复（含死亡、隐藏成员与状态 77 的上限缓存）；336 变身（有/无待行动）；
 ## 824 神劫使：变量 1178＝5 只有 0 号可见，＝6 时 335 依次出现 1～5、333 加状态只对可见成员、出现者首次行动在 T3；
 ##   受伤／死亡的隐藏成员出现后资源与状态不变。
-## 不比：TP（Godot 开战 TP 随机）、伤害；CodexBossDifficulty 霸体 2651（重制版尚无 Boss 霸体系统，比较状态时去掉）。
+## 不比：TP（Godot 开战 TP 随机）、伤害；CodexBossDifficulty 霸体 2651（重制版已有 Boss 霸体，见 enemy.gd／battle_logic.gd 与 xiyou_boss_* 对照；本测试比较状态时仍去掉 2651）。
 ## 另按冻结源代码（无参照数据）：makeUniqueNames 按 originalName（神话带前缀）计数；强制行动的 smoothTarget 不选隐藏成员；
 ##   画面上隐藏成员 335 出现、倒下的成员 334 复活都 16 帧淡入（Sprite_Enemy.startAppear）。
 var results := []
