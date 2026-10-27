@@ -14,7 +14,9 @@
         "xiyou_state_effects.tscn",
         "xiyou_state_effects_tp.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": []
     },
     {
       "delivery": "codex_actor-bonus.md",
@@ -40,7 +42,11 @@
         "xiyou_state_effects_tp.tscn",
         "xiyou_training.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": [
+        "xiyou_pet_capture.tscn"
+      ]
     },
     {
       "delivery": "codex_four-loose-fixes.md",
@@ -64,7 +70,11 @@
         "xiyou_state_effects.tscn",
         "xiyou_state_effects_tp.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": [
+        "xiyou_enemy_book.tscn"
+      ]
     },
     {
       "delivery": "codex_passive-content-book-capacity.md",
@@ -87,7 +97,11 @@
         "xiyou_power_books_menu.tscn",
         "xiyou_script.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": [
+        "xiyou_help_card.tscn"
+      ]
     },
     {
       "delivery": "codex_passive-content-boss-context.md",
@@ -104,7 +118,9 @@
         "xiyou_state_effects.tscn",
         "xiyou_state_effects_tp.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": []
     },
     {
       "delivery": "codex_passive-content-boss-output.md",
@@ -120,7 +136,9 @@
         "xiyou_troop_events_half.tscn",
         "xiyou_zhenqi_daofa.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": []
     },
     {
       "delivery": "codex_passive-content-boss-react.md",
@@ -138,7 +156,11 @@
         "xiyou_state_effects.tscn",
         "xiyou_state_effects_tp.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": [
+        "xiyou_determinism.tscn"
+      ]
     },
     {
       "delivery": "codex_passive-content-boss-sequence.md",
@@ -157,7 +179,11 @@
         "xiyou_state_effects.tscn",
         "xiyou_state_effects_tp.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": [
+        "xiyou_determinism.tscn"
+      ]
     },
     {
       "delivery": "codex_passive-content-boss-state-origin.md",
@@ -173,7 +199,11 @@
         "xiyou_state_effects.tscn",
         "xiyou_state_effects_tp.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": [
+        "xiyou_determinism.tscn"
+      ]
     },
     {
       "delivery": "codex_passive-content-boss.md",
@@ -190,7 +220,9 @@
         "xiyou_troop_events_b.tscn",
         "xiyou_troop_events_half.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": []
     },
     {
       "delivery": "codex_passive-content-power-books.md",
@@ -220,7 +252,9 @@
       ],
       "missingFromSelection": [
         "xiyou_choice_window.tscn"
-      ]
+      ],
+      "notExecuted": [],
+      "failedScenes": []
     },
     {
       "delivery": "codex_passive-content.md",
@@ -234,7 +268,9 @@
         "xiyou_power.tscn",
         "xiyou_rules.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": []
     },
     {
       "delivery": "codex_rng-compare-review.md",
@@ -248,7 +284,9 @@
         "xiyou_troop_events_b.tscn",
         "xiyou_troop_events_half.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": []
     },
     {
       "delivery": "codex_state-effects-2g.md",
@@ -272,12 +310,26 @@
         "xiyou_troop_events.tscn",
         "xiyou_troop_events_b.tscn"
       ],
-      "missingFromSelection": []
+      "missingFromSelection": [],
+      "notExecuted": [],
+      "failedScenes": [
+        "xiyou_enemy_book.tscn"
+      ]
     }
   ],
   "missingFromSelection": [
     "xiyou_choice_window.tscn"
   ],
-  "executed": false,
-  "note": "仅验收覆盖计划，未运行；关联历史证据中的开发期场景也保守纳入，不把它们称为最终实跑。最终218场后补选择窗口一次。"
+  "executed": true,
+  "note": "final79已终止：218场选测210过8败；计划外选择窗口补测3/3通过。66个相关场景均有实际运行记录。executed仅指已实跑，不代表通过；仍不可合并，失败待逐项归因修复。",
+  "allPassed": false,
+  "actualSceneCount": 219,
+  "notExecuted": [],
+  "failedRequiredScenes": [
+    "xiyou_determinism.tscn",
+    "xiyou_enemy_book.tscn",
+    "xiyou_help_card.tscn",
+    "xiyou_pet_capture.tscn"
+  ],
+  "resultEvidence": "连续分支合main_最终验收首轮_20261027.json"
 }

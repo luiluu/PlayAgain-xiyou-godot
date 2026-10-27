@@ -1,0 +1,471 @@
+{
+  "runId": "8ad01dcbeb7f46d1ace42ed042f7a147",
+  "base": "9b140f365f93c2cfa4b19d85b6ddd72576830c16",
+  "status": "failed",
+  "selectedExit": 1,
+  "choiceExit": 0,
+  "runtimeOrTestChangesBy81": false,
+  "groups": {
+    "final-selected79": {
+      "timings": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/test_timings.json",
+      "timingsSha256": "f891d29dbadbaa04a61ba8df24eec11bbf3b1dde33088dc0dd91f3c0098d42c1",
+      "sceneCount": 218,
+      "passedCount": 210,
+      "failedCount": 8,
+      "reused": [],
+      "flakyRerunPassed": [],
+      "wallSeconds": 5948.288,
+      "passedScenes": [
+        "xiyou_rules_d4b.tscn",
+        "xiyou_rules_d2.tscn",
+        "xiyou_rules_d3b.tscn",
+        "xiyou_rules_d1d.tscn",
+        "xiyou_rules_d5d.tscn",
+        "xiyou_rules_d2c.tscn",
+        "xiyou_rules_d6d.tscn",
+        "xiyou_rules_d3.tscn",
+        "xiyou_rules_d5b.tscn",
+        "xiyou_rules_d4d.tscn",
+        "xiyou_rules_d3c.tscn",
+        "xiyou_rules_d4c.tscn",
+        "xiyou_rules_d1b.tscn",
+        "xiyou_rules_d4.tscn",
+        "xiyou_rules_d2b.tscn",
+        "xiyou_rules_d1c.tscn",
+        "xiyou_map186_b.tscn",
+        "xiyou_rules_d2d.tscn",
+        "xiyou_rules_d3d.tscn",
+        "xiyou_rules_d5.tscn",
+        "xiyou_smart_ai.tscn",
+        "xiyou_rules_d6c.tscn",
+        "xiyou_rules_d6b.tscn",
+        "xiyou_rules.tscn",
+        "xiyou_rules_d6.tscn",
+        "xiyou_rules_d5c.tscn",
+        "xiyou_smart_ai_b.tscn",
+        "xiyou_smart_ai_d.tscn",
+        "xiyou_smart_ai_c.tscn",
+        "xiyou_map186_legions.tscn",
+        "xiyou_map186_legions_b.tscn",
+        "xiyou_formula_program.tscn",
+        "xiyou_floor_reach173.tscn",
+        "xiyou_troop_events.tscn",
+        "xiyou_troop_events_b.tscn",
+        "xiyou_map186.tscn",
+        "xiyou_floor_run_c.tscn",
+        "xiyou_floor_run_b.tscn",
+        "xiyou_floor_reach068.tscn",
+        "xiyou_floor_unknown223.tscn",
+        "xiyou_floor_run.tscn",
+        "xiyou_troop_events_half.tscn",
+        "xiyou_event_compare.tscn",
+        "xiyou_variants_b.tscn",
+        "xiyou_variants.tscn",
+        "xiyou_actor_p0.tscn",
+        "xiyou_floor_unknown160.tscn",
+        "xiyou_floor_abyss174.tscn",
+        "xiyou_passive_content.tscn",
+        "xiyou_drop_record.tscn",
+        "xiyou_sequence_visual.tscn",
+        "xiyou_floor_goblin024.tscn",
+        "xiyou_floor_abyss037.tscn",
+        "xiyou_floor_reach207.tscn",
+        "xiyou_map.tscn",
+        "xiyou_floor_brave083.tscn",
+        "xiyou_floor_lab111.tscn",
+        "xiyou_opening_branches.tscn",
+        "xiyou_status_power_panel.tscn",
+        "xiyou_floor_fortress029.tscn",
+        "xiyou_floor_reach139.tscn",
+        "xiyou_dungeon.tscn",
+        "xiyou_floor_guild198.tscn",
+        "xiyou_floor16_dungeon.tscn",
+        "xiyou_floor28_dungeon.tscn",
+        "xiyou_floor_reach224.tscn",
+        "xiyou_heir116.tscn",
+        "xiyou_floor_unknown210.tscn",
+        "xiyou_floor_reach128.tscn",
+        "xiyou_power.tscn",
+        "xiyou_floor31_bosses.tscn",
+        "xiyou_floor_reach125.tscn",
+        "xiyou_floor_brave081.tscn",
+        "xiyou_change_clothes.tscn",
+        "xiyou_empress_draw.tscn",
+        "xiyou_power_books_boundary.tscn",
+        "xiyou_flow.tscn",
+        "xiyou_hud.tscn",
+        "xiyou_actor_advanced.tscn",
+        "xiyou_action_sequence.tscn",
+        "xiyou_system_evidence.tscn",
+        "xiyou_panels.tscn",
+        "xiyou_map186_c.tscn",
+        "xiyou_floor_guild197.tscn",
+        "xiyou_status_power.tscn",
+        "xiyou_inlay_book.tscn",
+        "xiyou_screen_fx.tscn",
+        "xiyou_legion_tech.tscn",
+        "xiyou_message.tscn",
+        "xiyou_battle_common_events.tscn",
+        "xiyou_battle_options.tscn",
+        "xiyou_floor_reach187.tscn",
+        "xiyou_interp_review.tscn",
+        "xiyou_census1.tscn",
+        "xiyou_gear_ui.tscn",
+        "xiyou_floor_reach225.tscn",
+        "xiyou_hangup.tscn",
+        "xiyou_floor_reach222.tscn",
+        "xiyou_floor_abyss211.tscn",
+        "xiyou_state_js.tscn",
+        "xiyou_notice_options.tscn",
+        "xiyou_floor30_seeker.tscn",
+        "xiyou_gear_search.tscn",
+        "xiyou_guide.tscn",
+        "xiyou_review_fix.tscn",
+        "xiyou_options_misc.tscn",
+        "xiyou_battleback_save.tscn",
+        "xiyou_battle_events.tscn",
+        "xiyou_status_page.tscn",
+        "xiyou_cat.tscn",
+        "xiyou_zhenqi.tscn",
+        "xiyou_item_list.tscn",
+        "xiyou_dual_wield.tscn",
+        "xiyou_zhenqi_break.tscn",
+        "xiyou_options_basic.tscn",
+        "xiyou_book_capacity_ui.tscn",
+        "xiyou_achievement.tscn",
+        "xiyou_party.tscn",
+        "xiyou_item_marks.tscn",
+        "xiyou_book_capacity.tscn",
+        "xiyou_floor_reach040.tscn",
+        "xiyou_save_page.tscn",
+        "xiyou_zhenqi_daofa.tscn",
+        "xiyou_alien_config.tscn",
+        "xiyou_state_effects.tscn",
+        "xiyou_power_books_menu.tscn",
+        "xiyou_equipment.tscn",
+        "xiyou_hangup_auto.tscn",
+        "xiyou_popup_overlap.tscn",
+        "xiyou_shop_buy.tscn",
+        "xiyou_crafting.tscn",
+        "xiyou_transfer.tscn",
+        "xiyou_warehouse.tscn",
+        "xiyou_skill_page.tscn",
+        "xiyou_orb_ui.tscn",
+        "xiyou_window_rects.tscn",
+        "xiyou_alien_workshop.tscn",
+        "xiyou_orb_shop.tscn",
+        "xiyou_race_battle.tscn",
+        "xiyou_boss_sequence.tscn",
+        "xiyou_pet_synth.tscn",
+        "xiyou_costume_battle.tscn",
+        "xiyou_race_menu.tscn",
+        "xiyou_lobby_shops.tscn",
+        "xiyou_combat.tscn",
+        "xiyou_hangup_options.tscn",
+        "xiyou_pets.tscn",
+        "xiyou_training.tscn",
+        "xiyou_power_books.tscn",
+        "xiyou_alien_battle.tscn",
+        "xiyou_imported_balance.tscn",
+        "xiyou_actor_book_review.tscn",
+        "xiyou_battle.tscn",
+        "xiyou_magic_weapon_level.tscn",
+        "xiyou_actor_bonus.tscn",
+        "xiyou_difficulty_notice.tscn",
+        "xiyou_boss_output.tscn",
+        "xiyou_magic_level.tscn",
+        "xiyou_review_regressions.tscn",
+        "xiyou_party_skills.tscn",
+        "xiyou_item_use.tscn",
+        "xiyou_floor30_gifts.tscn",
+        "xiyou_actor_warehouse.tscn",
+        "xiyou_boss_state_origin.tscn",
+        "xiyou_boss_output_context.tscn",
+        "xiyou_shop_stock.tscn",
+        "xiyou_review135.tscn",
+        "xiyou_loose_fixes.tscn",
+        "xiyou_costumes.tscn",
+        "xiyou_qiyu.tscn",
+        "xiyou_orbs.tscn",
+        "xiyou_actor_change.tscn",
+        "xiyou_boss_lifecycle.tscn",
+        "xiyou_error_data.tscn",
+        "xiyou_super_deploy.tscn",
+        "xiyou_state_effects_tp.tscn",
+        "xiyou_orb_shop_ui.tscn",
+        "xiyou_transform_params.tscn",
+        "xiyou_mv_animation.tscn",
+        "xiyou_shield.tscn",
+        "xiyou_state_merge_context.tscn",
+        "xiyou_global_vars.tscn",
+        "xiyou_mac_export.tscn",
+        "xiyou_formula_rest.tscn",
+        "xiyou_otb.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_super_acquire.tscn",
+        "xiyou_formula_equipment.tscn",
+        "xiyou_attack_element.tscn",
+        "xiyou_stage50_review.tscn",
+        "xiyou_recover_permanent.tscn",
+        "xiyou_param_states.tscn",
+        "xiyou_script.tscn",
+        "xiyou_custom_params.tscn",
+        "xiyou_magic_weapon.tscn",
+        "xiyou_element_ternary.tscn",
+        "xiyou_boss_react.tscn",
+        "xiyou_battle_start_event.tscn",
+        "xiyou_settlement.tscn",
+        "xiyou_advance_reads.tscn",
+        "xiyou_custom_damage.tscn",
+        "xiyou_drop_dh.tscn",
+        "xiyou_state_operation.tscn",
+        "xiyou_actor_modules.tscn",
+        "xiyou_formulas.tscn",
+        "xiyou_module_hooks.tscn",
+        "xiyou_appearance.tscn",
+        "xiyou_gold_cap.tscn",
+        "ui_smoke.tscn",
+        "xiyou_trait_stack.tscn"
+      ],
+      "failedScenes": [
+        {
+          "name": "xiyou_actor_book.tscn",
+          "seconds": 54.799,
+          "passed": false,
+          "attempts": [
+            {
+              "rc": 1,
+              "seconds": 54.799,
+              "passed": false
+            }
+          ],
+          "testResult": {
+            "passed": 21,
+            "total": 22
+          },
+          "failLabels": [
+            "oracle_sprite"
+          ],
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_actor_book.log",
+          "sha256": "6e0a84bab26a61ea8a59bd98fa141610be23273ea1fcee4522dad3a3b8b7be06"
+        },
+        {
+          "name": "xiyou_help_card.tscn",
+          "seconds": 31.702,
+          "passed": false,
+          "attempts": [
+            {
+              "rc": 1,
+              "seconds": 31.702,
+              "passed": false
+            }
+          ],
+          "testResult": {
+            "passed": 970,
+            "total": 988
+          },
+          "failLabels": [
+            "skills_10122_渡魂鸦啄",
+            "skills_10129_亡魂汲取",
+            "skills_10130_冥河穿刺",
+            "skills_10137_魂海刻度",
+            "skills_10138_魄",
+            "skills_10140_赤鳞断",
+            "skills_10142_余烬术式",
+            "skills_10155_黑龙血统",
+            "skills_10156_赤鳞共鸣",
+            "skills_10225_黑闪",
+            "skills_10229_解",
+            "skills_10230_捌"
+          ],
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_help_card.log",
+          "sha256": "bda6394a8c1486561b8c0904a1440744a34afb1a5aae83c32cb7202b5078d08a"
+        },
+        {
+          "name": "xiyou_wtype.tscn",
+          "seconds": 26.726,
+          "passed": false,
+          "attempts": [
+            {
+              "rc": 1,
+              "seconds": 26.726,
+              "passed": false
+            }
+          ],
+          "testResult": {
+            "passed": 16176,
+            "total": 16190
+          },
+          "failLabels": [
+            "148|default_5600",
+            "148|naked_5600",
+            "148|wtype1_5600",
+            "148|wtype2_5600",
+            "148|wtype3_5600",
+            "148|wtype4_5600",
+            "148|wtype5_5600",
+            "148|wtype6_5600",
+            "148|wtype7_5600",
+            "148|wtype8_5600",
+            "148|wtype9_5600",
+            "148|wtype10_5600"
+          ],
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_wtype.log",
+          "sha256": "910e90fff481229c3159433ea1d9ac441fe927e95e3533564b3908c7ce5c3887"
+        },
+        {
+          "name": "xiyou_battle_ui.tscn",
+          "seconds": 23.669,
+          "passed": false,
+          "attempts": [
+            {
+              "rc": 1,
+              "seconds": 23.669,
+              "passed": false
+            }
+          ],
+          "testResult": {
+            "passed": 67,
+            "total": 70
+          },
+          "failLabels": [
+            "skill_fixture_usable",
+            "skill_opens_target",
+            "skill_target_cancel_to_list"
+          ],
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_battle_ui.log",
+          "sha256": "a0eddcc428849a8c2cde0a0ee484f8d5efcda74fb0d9725cfc4b74db79c275e3"
+        },
+        {
+          "name": "xiyou_determinism.tscn",
+          "seconds": 20.934,
+          "passed": false,
+          "attempts": [
+            {
+              "rc": 1,
+              "seconds": 20.934,
+              "passed": false
+            }
+          ],
+          "testResult": {
+            "passed": 374,
+            "total": 382
+          },
+          "failLabels": [
+            "early_inventory_rule",
+            "early_inventory_rule",
+            "early_inventory_rule",
+            "early_inventory_rule",
+            "early_inventory_rule",
+            "early_inventory_rule",
+            "early_inventory_rule",
+            "early_inventory_rule"
+          ],
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_determinism.log",
+          "sha256": "f6c428c837a709dc3c3f7f75281c578f88aaef94d05bbbff82be2b0f9d2edeee"
+        },
+        {
+          "name": "xiyou_enemy_book.tscn",
+          "seconds": 4.499,
+          "passed": false,
+          "attempts": [
+            {
+              "rc": 1,
+              "seconds": 4.499,
+              "passed": false
+            }
+          ],
+          "testResult": {
+            "passed": 92,
+            "total": 93
+          },
+          "failLabels": [
+            "hook.after_battle_not_counted"
+          ],
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_enemy_book.log",
+          "sha256": "ef141b5b7c6c60f4c50318b517502c985288ec5a31b291b4fb8fdaa2b088c0d7"
+        },
+        {
+          "name": "xiyou_random_streams.tscn",
+          "seconds": 3.94,
+          "passed": false,
+          "attempts": [
+            {
+              "rc": 1,
+              "seconds": 3.94,
+              "passed": false
+            }
+          ],
+          "testResult": {
+            "passed": 480,
+            "total": 484
+          },
+          "failLabels": [
+            "hidden.appear_transform_no_draw",
+            "event.recover_no_extra_draw",
+            "event.transform_death_duration",
+            "event.recover_death_preserves_stream"
+          ],
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_random_streams.log",
+          "sha256": "d15091809fc74a92b6bb6aaca3a49d6bf133b4c5b0ec7d077f40842ad7f62b88"
+        },
+        {
+          "name": "xiyou_pet_capture.tscn",
+          "seconds": 3.919,
+          "passed": false,
+          "attempts": [
+            {
+              "rc": 1,
+              "seconds": 3.919,
+              "passed": false
+            }
+          ],
+          "testResult": {
+            "passed": 39,
+            "total": 43
+          },
+          "failLabels": [
+            "turn_4",
+            "turn_5",
+            "turn_6",
+            "turn_5_before_regen"
+          ],
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_pet_capture.log",
+          "sha256": "90b6edeb47b22e91edee74b0e68ef26356b70c359180babd5d62324f4cc37f9f"
+        }
+      ]
+    },
+    "final-choice79": {
+      "timings": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-choice79/test_timings.json",
+      "timingsSha256": "58dd7daa2deb7ddaf3d30a3dc241d21ad1894b3301fd0a4cfe3f3e7152683438",
+      "sceneCount": 1,
+      "passedCount": 1,
+      "failedCount": 0,
+      "reused": [],
+      "flakyRerunPassed": [],
+      "wallSeconds": 2.693,
+      "passedScenes": [
+        "xiyou_choice_window.tscn"
+      ],
+      "failedScenes": []
+    }
+  },
+  "runtimeLogErrors": [],
+  "requiredSceneCount": 66,
+  "requiredNotExecuted": [],
+  "failedRequiredScenes": [
+    "xiyou_determinism.tscn",
+    "xiyou_enemy_book.tscn",
+    "xiyou_help_card.tscn",
+    "xiyou_pet_capture.tscn"
+  ],
+  "documentFailures": [
+    "固定main9b继承变更记录.md的两条链接a，未修改共享记录"
+  ],
+  "limitations": [
+    "8场失败尚未逐项判明继承或集成回归；本期不可合并。",
+    "旧e1925bea隔离原日志实证374/382，不可替代固定main9b根因归属。",
+    "8场失败均只有首次attempt；本工具仅失败数量不超过FLAKY_RERUN_MAX时自动重跑，本次未重跑。",
+    "两位旧只读预审不作为正式核查核销，本次未开始积压核查。"
+  ]
+}
