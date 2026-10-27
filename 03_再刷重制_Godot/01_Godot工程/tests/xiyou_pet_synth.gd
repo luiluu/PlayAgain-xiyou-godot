@@ -26,17 +26,6 @@ func frames(n := 2) -> void:
 		await get_tree().process_frame
 
 
-## 窗口开合在 physics 更新，遮挡在 XPetScene._process 更新；固定等 10 个 physics tick
-## 不能保证随后已跑过一次 process（重负载补帧时尤其如此）。先等真实开合终点，再让遮挡刷新。
-## 有界等待；超时仍交给原遮挡断言失败，不调用 _clip_status，不改变判定或容差。
-func settled_window(w: XMVWindow, target: int) -> void:
-	for _frame in 90:
-		if w.openness == target:
-			await get_tree().process_frame
-			return
-		await get_tree().process_frame
-
-
 static func _col(t: String) -> String:
 	return (XQuality.parse_rgba(t) if t.begins_with("rgba") else Color(t)).to_html(false)
 
@@ -170,7 +159,7 @@ func _flow(ref: Dictionary) -> void:
 	page.cmd = 5
 	page.ok()
 	check("syn_open", page.mode == "syn" and page.syn == 0)
-	await settled_window(page.syn_win, 255)
+	for _frame in 10: await get_tree().physics_frame
 	check("syn_occludes_status", is_equal_approx(page.status_cover, float(ref.geo.syn[1])))
 	page.ok()
 	check("syn_a", page.mode == "bottom" and is_same(page.syn_a, s.pets.list[0]) and page.display_name(s.pets.list[0]) == str(ref.afterA.index[0][1])
@@ -205,7 +194,7 @@ func _flow(ref: Dictionary) -> void:
 	page.cmd = 6
 	page.ok()
 	check("feed_open", page.mode == "feed" and page.feed_index == 0 and (page.feed_win.openness < 255 or page.feed_win._opening))
-	await settled_window(page.feed_win, 255)
+	for _frame in 10: await get_tree().physics_frame
 	check("feed_occludes_status", is_equal_approx(page.status_cover, float(ref.geo.feed[1])))
 	page.ok()
 	check("feed_done", XPets.level(s.pets.list[0]) == 6 and s.item_count(426) == 2 and page.mode == "feed")
@@ -214,7 +203,7 @@ func _flow(ref: Dictionary) -> void:
 	check("feed_none_buzz", s.item_count(427) == 0 and XPets.level(s.pets.list[0]) == 6)
 	page.cancel()
 	check("feed_cancel", page.mode == "bottom")
-	await settled_window(page.feed_win, 0)
+	for _frame in 10: await get_tree().physics_frame
 	check("status_restored_after_feed", is_equal_approx(page.status_cover, XPetScene.STATUS_RECT.end.y))
 	page.queue_free()
 	await frames()
