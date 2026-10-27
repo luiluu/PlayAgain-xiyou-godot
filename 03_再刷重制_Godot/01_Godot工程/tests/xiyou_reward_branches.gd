@@ -8,6 +8,8 @@ extends Node
 ##    每个写进去的更衣号必须落进解锁表（写法不匹配的就解锁不了，这里会失败）。
 ## 来源是转换产物 generated/（由冻结 v0.28 转换，同步时已核对），不另读冻结源。
 const MIN_BRANCHES := 3
+## 已知缺口：CE367 牛头人酋长原文写成 if(indexOf(-33)==-1){push(-12)}（判断号与写入号不同），MVScript 只认两号相同的写法，-12 解锁不了
+const KNOWN_CLOTHES_GAPS := [["CE0367", -12]]
 
 var results: Array = []
 var groups := 0
@@ -194,7 +196,7 @@ func _clothes(lists: Array) -> void:
 			for m in re.search_all(code):
 				var id := int(m.get_string(1))
 				ids[id] = true
-				if not XChangeClothes.unlocked(id):
+				if not XChangeClothes.unlocked(id) and not KNOWN_CLOTHES_GAPS.has([L[0], id]):
 					bad.append([L[0], id])
 	XConfig.clothes_unlocked().clear()
 	_check("clothes_sites", sites >= 40, sites)

@@ -197,6 +197,12 @@ class Checker:
                     self.route((page.get('moveRoute') or {}).get('list'), w, out)
                     self.walk(page.get('list'), w, out, calls)
                     self.finish_page(w, out, calls, compared, 'm%de%dp%d' % (mid, e['id'], i), ce_seen, ce_queue, page.get('list'))
+        # 只经物品／技能效果（code 44）调用的公共事件（slice.extraCommonEvents）也当起点，否则它们的素材与指令永远查不到
+        mf = self.gen / 'manifest.json'
+        for ce in (json.loads(mf.read_text()).get('slice', {}).get('commonEvents', []) if mf.exists() else []):
+            if ce not in ce_seen:
+                ce_seen.add(ce)
+                ce_queue.append(ce)
         while ce_queue:
             ce = ce_queue.pop()
             w = 'CE%04d' % ce
