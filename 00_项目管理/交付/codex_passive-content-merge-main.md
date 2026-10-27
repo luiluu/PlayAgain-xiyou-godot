@@ -201,3 +201,5 @@
 - 本轮实查sync3包装器21018、childPGID21023仍在；采样子进程持续占用CPU，已见hang_up、options、party退出0，尚不把在途或排槽认定失败。保留全部证据，不改共享登记、并发或工具。
 
 - 80同步审阅：原sync3已退出2，原因仅为新增未接受；57组／62条采样命令全部exit0，来源verifyOk=true／issues=[]，sameExistingSource=true；16份参照仅增用例，稳定键比较changes={}、problems={}、changeCandidates=[]。原始报告及全部证据保留；详见[同步审阅摘要](../核查范围/连续分支合main_同步审阅_20261027.json)。下一步仅accept-additions，复用本轮缓存，不接受既有变化；随后最终选测。导入原日志未检出Script／Parse／Compile错误。
+
+- 80新增接受完成：accept80 runId fb4e86e0c8cf4997b4693667a5ba77f3，exit0；57组全部缓存复用、0重采。只接受新增，无既有用例变化或接受；来源核验和导入错误扫描通过、sync_stamp已发布。最终final79已启动一次，按固定基准218场＋选择窗口，不跑全量。摘要脚本曾误把probes.executed列表与0比较而中止；未改同步／测试，现按列表长度更正记录。
