@@ -6,6 +6,16 @@
 - 引用查找（refs）：在 tests/*.gd、*.tscn 里找改动文件的文件名（如 orbs.gd、orb_probe.cjs）与它声明的 class_name；
   找到的是辅助脚本时换成用它的场景（如 xiyou_rules.gd → xiyou_rules*.tscn 全部段）。删除的文件从基准里读 class_name。
 - 加载者（loaders，手写数据 json 用）：另把 modes/ 下按文件名加载它的 .gd 的 class_name 也当引用词（如 alienation.json → XAlienation）。
+- 切片细分（sliceSections，用户 2026-10-26）：xiyou_slice.json 不按整组 converter，而是比较基准与新版两份 JSON 哪些顶层键变了，
+  每个键按对照表 sliceSections.keys 归组（地图／事件、战斗数值、图像音频），另加引用了该键名（"maps" 等）的测试；
+  键不认识、JSON 解析失败、文件新增或删除时退回整组 converter。对照表 sliceSections.enabled 设 false 即完全回到整组。
+  其中 maps／keepEvents（slice_map）再按图号收窄楼层专项（sliceSections.narrowFloorsByMap，哪吒_3）：只留引用了增删改图号的
+  xiyou_floor*／xiyou_map* 场景，遍历全部楼层的与认不出图号的照旧选；子开关 enabled 设 false 回到楼层专项全选。
+- 分叉点（mergeBase，2026-10-26）：基准不是 HEAD 的祖先时（车道跑 --affected main 而 main 已前进），改用 merge-base(基准, HEAD)，
+  只算本分支自己的改动；基准是祖先时（总装批首）两者相同。对照表 mergeBase 设 false 即按基准本身比。
+- 工具引用（toolRefs，测试夹具用）：没有 Godot 测试引用、但 07_开发环境／03_转换工具 的脚本按文件名读它时，跑工具回归、不整轮
+  （如 state_js_translation.json 只被 测试状态js翻译.py 读；2026-10-26 哪吒）。
+- --head 回放时测试场景与脚本也从 head 读（head 里新增的测试要找得到）。
 - 默认打印人读的选择理由；--shell 另在标准输出给 检查.sh 用的 SEL_FULL／SEL_SCENES／SEL_CHECKS（理由改到标准错误）。
 - 基准不存在、对照表无效时退出 2。
 """
@@ -21,7 +31,19 @@ HERE = Path(__file__).resolve().parent
 TABLE = HERE / '选测对照.json'
 TESTS = Path('03_再刷重制_Godot/01_Godot工程/tests')
 MODES = Path('03_再刷重制_Godot/01_Godot工程/modes')
+TOOL_DIRS = ['03_再刷重制_Godot/07_开发环境', '03_再刷重制_Godot/03_转换工具']
+TOOL_SUFFIXES = ('.py', '.cjs', '.js', '.mjs', '.sh')
 CHECKS = {'guards', 'tools', 'content', 'same_source'}
+# 楼层／地图专项里「引用地图编号」的写法（2026-10-26 哪吒_3 查 tests/ 实际写法）：注释与说明里的 Map033、
+# MAP := 33／FLOOR_MAP 之类常量、_start(33, …)、_wait_map(33)、map_id == 33、_goto(从, x, y, 事件, 到, …) 的起止图
+MAP_REF_PATTERNS = [
+    r'\bMap(\d{3})\b',
+    r'\b[A-Z_]*MAP[A-Z_]*\s*:?=\s*(\d+)\b',
+    r'\b_start\(\s*(\d+)\s*,',
+    r'\b_wait_map\(\s*(\d+)\s*\)',
+    r'\bmap_id\s*==\s*(\d+)\b',
+    r'\b_goto\(\s*(\d+)\s*,\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(\d+)\s*,',
+]
 
 
 def git(root, *args):
@@ -49,9 +71,60 @@ def load_table(path=TABLE):
         bad = set(g.get('checks', [])) - CHECKS
         if bad:
             raise ValueError('组 %s 有未知检查：%s' % (name, '、'.join(sorted(bad))))
+    sections = table.get('sliceSections') or {}
+    bad = {g for g in (sections.get('keys') or {}).values() if g not in groups}
+    if bad:
+        raise ValueError('切片细分指向不存在的组：' + '、'.join(sorted(bad)))
     if not rules or rules[-1]['match'] != '*':
         raise ValueError('对照表最后一条须是 * （拿不准的路径归全量）')
     return groups, rules
+
+
+def load_options(path=TABLE):
+    table = json.loads(Path(path).read_text())
+    return table.get('sliceSections') or {}, table.get('mergeBase', False)
+
+
+def effective_base(root, base, head=None):
+    """merge-base(基准, HEAD 或 --head)；没有共同祖先时用基准本身。"""
+    try:
+        return git(root, 'merge-base', base, head or 'HEAD').strip() or base
+    except RuntimeError:
+        return base
+
+
+def slice_keys(root, base, path, head=None):
+    """基准与新版切片 JSON 顶层键的差异：返回 (变了的键表, 改动图号或 None)，或 (None, 原因) 表示要退回整组。"""
+    if not exists(root, path, head):
+        return None, '切片文件被删除'
+    try:
+        old = json.loads(git(root, 'show', base + ':' + path))
+    except RuntimeError:
+        return None, '基准里没有切片文件'
+    except ValueError:
+        return None, '基准版 JSON 解析失败'
+    try:
+        new = json.loads(read_any(root, base, path, head) if head else (root / path).read_text())
+    except ValueError:
+        return None, '新版 JSON 解析失败'
+    if not isinstance(old, dict) or not isinstance(new, dict):
+        return None, '切片顶层不是对象'
+    missing = object()
+    keys = sorted(k for k in set(old) | set(new) if old.get(k, missing) != new.get(k, missing))
+    return keys, changed_maps(old, new)
+
+
+def changed_maps(old, new):
+    """maps 列表增删的图号，加 keepEvents 里内容有增删改的图号；结构认不出时返回 None（不收窄）。"""
+    try:
+        before, after = set(map(int, old.get('maps') or [])), set(map(int, new.get('maps') or []))
+        ka, kb = old.get('keepEvents') or {}, new.get('keepEvents') or {}
+        if not isinstance(ka, dict) or not isinstance(kb, dict):
+            return None
+        kept = {int(k) for k in set(ka) | set(kb) if not k.endswith('说明') and ka.get(k) != kb.get(k)}
+    except (TypeError, ValueError, AttributeError):
+        return None
+    return (before ^ after) | kept
 
 
 def classify(path, rules):
@@ -96,9 +169,24 @@ def loaders(root, name, head=None):
     return names
 
 
+def tool_users(root, name, head=None):
+    """07_开发环境／03_转换工具 下按文件名提到 name 的脚本（不含 tests/ 自身）。"""
+    p = subprocess.run(['git', '-C', str(root), '-c', 'core.quotepath=false', 'grep', '-l',
+                        *([] if head else ['--untracked']), '-F', name, *([head] if head else []), '--', *TOOL_DIRS],
+                       capture_output=True, text=True)
+    paths = [l.split(':', 1)[1] if head else l for l in p.stdout.splitlines()]
+    return [x for x in paths if x.endswith(TOOL_SUFFIXES)]
+
+
 class Tests:
-    """tests/ 下的场景与脚本文本，以及脚本 → 用它的场景。"""
-    def __init__(self, root):
+    """tests/ 下的场景与脚本文本，以及脚本 → 用它的场景。head 给了就从该提交读。"""
+    def __init__(self, root, head=None):
+        if head:
+            names = git(root, 'ls-tree', '-z', '--name-only', head, str(TESTS) + '/').split('\0')
+            names = sorted(Path(n).name for n in names if n.endswith(('.gd', '.tscn')))
+            self.text = {n: git(root, 'show', '%s:%s/%s' % (head, TESTS, n)) for n in names}
+            self.scenes = [n for n in names if n.endswith('.tscn')]
+            return
         d = root / TESTS
         self.scenes = sorted(p.name for p in d.glob('*.tscn'))
         self.text = {p.name: p.read_text(errors='ignore') for p in sorted(d.glob('*.gd')) + sorted(d.glob('*.tscn'))}
@@ -111,6 +199,17 @@ class Tests:
         if name.endswith('.tscn'):
             return [name] if name in self.scenes else []
         return [s for s in self.scenes if re.search(r'res://tests/' + re.escape(name) + r'"', self.text.get(s, ''))]
+
+    def map_ids(self, scene):
+        """场景（连同它挂的 tests/ 脚本）引用的地图编号；一个也认不出时返回 None（按判不出处理）。"""
+        texts = [self.text.get(scene, '')]
+        texts += [self.text.get(n, '') for n in re.findall(r'res://tests/([\w.]+\.gd)"', texts[0])]
+        ids = set()
+        for text in texts:
+            for pattern in MAP_REF_PATTERNS:
+                for m in re.finditer(pattern, text):
+                    ids.update(int(g) for g in m.groups() if g)
+        return ids or None
 
     def refs(self, terms, exclude=()):
         hits = set()
@@ -126,20 +225,37 @@ def select(root, base, table=TABLE, head=None):
     root = Path(root)
     git(root, 'rev-parse', '--verify', '-q', base + '^{commit}')
     groups, rules = load_table(table)
+    sections, merge_base = load_options(table)
+    shown_base = base
+    if merge_base:
+        base = effective_base(root, base, head)
+        if git(root, 'rev-parse', shown_base + '^{commit}').strip() != base:
+            shown_base = '%s（分叉点 %s）' % (shown_base, base[:10])
     files = changed_files(root, base, head)
-    tests = Tests(root)
+    tests = Tests(root, head)
     full, scenes, checks, reasons = False, set(), set(), []
-    for path in files:
-        if path.endswith('.uid') and path[:-4] in files:
-            continue  # 和源文件同组，不重复列
-        group = classify(path, rules)
+
+    narrow = sections.get('narrowFloorsByMap') or {}
+
+    def take(path, group, why, terms_extra=(), map_ids=None):
+        nonlocal full
         g = groups[group]
-        why = group
         if 'onlyLines' in g and not only_lines(root, base, path, g['onlyLines'], head):
             group, g, why = 'full', groups['full'], group + ' 但改了版本行以外的内容'
         picked = set()
         for pattern in g.get('scenes', []):
             picked.update(tests.glob(pattern))
+        if map_ids is not None and narrow.get('enabled') and group in narrow.get('groups', []):
+            floors = {s for p in narrow.get('scenes', []) for s in tests.glob(p)}
+            always = {s for p in narrow.get('always', []) for s in tests.glob(p)}
+            keep = {s for s in floors & picked
+                    if s in always or tests.map_ids(s) is None or tests.map_ids(s) & map_ids}
+            dropped = (floors & picked) - keep
+            picked -= dropped
+            why += '，楼层专项按图号 %s 收窄（留 %d、省 %d）' % ('、'.join(map(str, sorted(map_ids))) or '无',
+                                                         len(keep), len(dropped))
+        if terms_extra:
+            picked |= tests.refs(list(terms_extra))
         if g.get('refs'):
             key = path[:-4] if path.endswith('.uid') else path
             name = Path(key).name
@@ -151,8 +267,12 @@ def select(root, base, table=TABLE, head=None):
             own = tests.users(name) if g.get('self') else []
             refs = tests.refs(terms, exclude={name}) | set(own)
             gone = not exists(root, key, head)
+            tools = [] if refs or gone or not g.get('toolRefs') else tool_users(root, name, head)
             if not refs and gone:
                 why += '，已删除且没有测试再引用它'
+            elif tools:
+                checks.update({'guards', 'tools'})
+                why += '，只有工具脚本用它（%s），跑工具回归' % '、'.join(Path(t).name for t in tools[:3])
             elif not refs and g.get('fallback'):
                 if 'FULL' in g['fallback']:
                     full, why = True, why + '，找不到用它的测试，整轮'
@@ -162,13 +282,34 @@ def select(root, base, table=TABLE, head=None):
             picked |= refs
         if g.get('full'):
             full = True
-        scenes |= picked
-        checks |= set(g.get('checks', []))
+        scenes.update(picked)
+        checks.update(g.get('checks', []))
         reasons.append((path, why, g.get('说明', ''), sorted(picked), g.get('full', False)))
+
+    for path in files:
+        if path.endswith('.uid') and path[:-4] in files:
+            continue  # 和源文件同组，不重复列
+        group = classify(path, rules)
+        if sections.get('enabled') and path == sections.get('file'):
+            keys, extra = slice_keys(root, base, path, head)
+            problem = extra if keys is None else ''
+            unknown = [k for k in keys or [] if sections['keys'].get(k) not in groups]
+            if keys is None or unknown:
+                take(path, group, group + '（切片细分退回整组：%s）' % (problem or '未知键 ' + '、'.join(unknown)))
+                continue
+            by_group = {}
+            for k in keys:
+                by_group.setdefault(sections['keys'][k], []).append(k)
+            if not by_group:
+                reasons.append((path, '切片只改了格式，顶层键都没变', '', [], False))
+            for sub, ks in sorted(by_group.items()):
+                take(path, sub, '%s（切片键 %s）' % (sub, '、'.join(ks)), [] if sub == 'docs' else ['"%s"' % k for k in ks], extra)
+            continue
+        take(path, group, group)
     if not full and tests.scenes and scenes >= set(tests.scenes):
         full = True  # 选中了全部场景：按整轮跑，才能沿用上轮通过结果
         reasons.append(('（全部场景）', '选中了全部 %d 个场景，按整轮跑' % len(tests.scenes), '', [], True))
-    return dict(base=base, files=files, full=full, scenes=sorted(scenes), checks=sorted(checks), reasons=reasons)
+    return dict(base=shown_base, files=files, full=full, scenes=sorted(scenes), checks=sorted(checks), reasons=reasons)
 
 
 def report(sel, out):

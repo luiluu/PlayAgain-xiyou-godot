@@ -1,14 +1,16 @@
 {
-  "说明": "选测对照表（三级检查②，用户 2026-10-24）：选测.py 把 git diff <基准> 的每个改动文件按 rules 自上而下第一条匹配归到一组，各组选中的场景与检查取并集。match 用 fnmatch（* 跨目录），路径相对资料库根；.uid 文件按去掉 .uid 后的路径归组。groups：scenes＝固定要跑的场景（tests/ 下的 glob）；refs＝再加引用了改动文件（文件名、class_name）的测试；loaders＝另把 modes/ 下按文件名加载它的 .gd 的 class_name 当引用词；fallback＝refs 一个也没找到时改跑这些（写 FULL 即整轮）；checks＝非 Godot 检查（guards 守卫、tools 工具回归、content 共性参照与内容覆盖、same_source 同源，见 检查.sh）；full＝整轮；onlyLines＝该文件的改动行都匹配这个正则才归本组，否则整轮。文档与登记检查（JSON、链接、开发编号、占位）任何时候都跑，不用列。拿不准的路径落到最后一条，整轮。",
+  "说明": "选测对照表（三级检查②，用户 2026-10-24）：选测.py 把 git diff <基准> 的每个改动文件按 rules 自上而下第一条匹配归到一组，各组选中的场景与检查取并集。match 用 fnmatch（* 跨目录），路径相对资料库根；.uid 文件按去掉 .uid 后的路径归组。groups：scenes＝固定要跑的场景（tests/ 下的 glob）；refs＝再加引用了改动文件（文件名、class_name）的测试；loaders＝另把 modes/ 下按文件名加载它的 .gd 的 class_name 当引用词；toolRefs＝refs 没找到时，07_开发环境／03_转换工具 的脚本按文件名用它就跑工具回归、不走 fallback；fallback＝refs 一个也没找到时改跑这些（写 FULL 即整轮）；checks＝非 Godot 检查（guards 守卫、tools 工具回归、content 共性参照与内容覆盖、same_source 同源，见 检查.sh）；full＝整轮；onlyLines＝该文件的改动行都匹配这个正则才归本组，否则整轮。文档与登记检查（JSON、链接、开发编号、占位）任何时候都跑，不用列。拿不准的路径落到最后一条，整轮。",
   "groups": {
     "docs": {"说明": "只改文档／登记：只跑文档与登记检查"},
     "registry": {"说明": "合并递增的开发编号（只改版本行）", "onlyLines": "^\\s*(config/version=|\"developmentVersion\")"},
     "test": {"说明": "改了测试本身：跑那个测试（辅助脚本就跑引用它的测试）", "refs": true, "self": true, "fallback": ["FULL"], "checks": ["guards"]},
-    "test_data": {"说明": "测试夹具与基线：跑引用它的测试", "refs": true, "fallback": ["FULL"], "checks": ["guards"]},
+    "test_data": {"说明": "测试夹具与基线：跑引用它的测试；只有工具脚本用它时跑工具回归", "refs": true, "toolRefs": true, "fallback": ["FULL"], "checks": ["guards"]},
     "coverage_baseline": {"说明": "内容覆盖基线", "checks": ["content"]},
     "event_baseline": {"说明": "事件对照基线", "scenes": ["xiyou_event_compare.tscn"]},
     "ui": {"说明": "界面：界面专项＋事件对照", "scenes": ["xiyou_event_compare.tscn"], "refs": true, "fallback": ["ui_smoke.tscn"], "checks": ["guards"]},
     "battle": {"说明": "战斗核心：xiyou_rules 全部段＋事件对照＋覆盖＋同源", "scenes": ["xiyou_rules*.tscn", "xiyou_event_compare.tscn"], "refs": true, "checks": ["guards", "content", "same_source"]},
+    "slice_map": {"说明": "切片只加地图／保留事件：事件对照＋楼层专项＋引用该键的测试＋内容覆盖与工具回归（新增敌群的规则对照与测量接受单仍走同步那一路）", "scenes": ["xiyou_event_compare.tscn", "xiyou_floor*.tscn", "xiyou_map*.tscn", "xiyou_flow.tscn"], "checks": ["guards", "tools", "content"]},
+    "slice_asset": {"说明": "切片只改图像／音频／字体名单：事件对照＋界面专项＋导出＋引用该键的测试＋工具回归", "scenes": ["xiyou_event_compare.tscn", "ui_smoke.tscn", "xiyou_panels.tscn", "xiyou_*_ui.tscn", "xiyou_mac_export.tscn"], "checks": ["guards", "tools"]},
     "converter": {"说明": "切片、转换器、oracle 探针、测量接受单：同战斗核心，另加工具回归", "scenes": ["xiyou_rules*.tscn", "xiyou_event_compare.tscn"], "refs": true, "checks": ["guards", "tools", "content", "same_source"]},
     "map": {"说明": "地图解释器：事件对照＋楼层专项", "scenes": ["xiyou_event_compare.tscn", "xiyou_floor*.tscn", "xiyou_map*.tscn", "xiyou_flow.tscn"], "refs": true, "checks": ["guards"]},
     "game": {"说明": "其它游戏模块：引用它的专项＋事件对照", "scenes": ["xiyou_event_compare.tscn"], "refs": true, "checks": ["guards"]},
@@ -16,6 +18,27 @@
     "export": {"说明": "导出设置", "scenes": ["xiyou_mac_export.tscn"], "checks": ["guards"]},
     "tools": {"说明": "开发工具：工具回归（含守卫）", "checks": ["guards", "tools"]},
     "full": {"说明": "拿不准：整轮", "full": true}
+  },
+  "mergeBase": true,
+  "mergeBase说明": "true：基准不是 HEAD 的祖先时（车道跑 --affected main 而 main 已前进）改用 merge-base(基准, HEAD)，只算本分支的改动；false：按基准本身比（2026-10-26 前的行为）。总装用批首 base 时两者相同。",
+  "sliceSections": {
+    "说明": "切片按顶层键细分（用户 2026-10-26）：选测.py 比较基准与新版 xiyou_slice.json 哪些顶层键变了，每个键归到下面的组，另跑引用了该键名（如 \"keepEvents\"）的测试。键不在表里、JSON 解析失败、文件新增或删除：退回 rules 里的整组 converter。enabled 设 false 即完全回到整组 converter。依据见 00_项目管理/交付/claude_nezha-slice-affected.md。",
+    "enabled": true,
+    "file": "03_再刷重制_Godot/03_转换工具/xiyou_slice.json",
+    "narrowFloorsByMap": {
+      "说明": "楼层专项按图号收窄（哪吒_3，2026-10-26）：切片 maps／keepEvents 改动时，算出 maps 列表增删的图号与 keepEvents 内容有增删改的图号，groups 里的组选到的 scenes 范围内的场景只留引用了这些图号的（引用写法见 选测.py MAP_REF_PATTERNS：MapNNN、MAP 常量、_start／_wait_map／map_id ==／_goto 的图号）；always 里的场景（按内容数据遍历全部楼层或全部地图）与认不出任何图号的场景照旧选上。事件对照、xiyou_flow 不在 scenes 里，不收窄。enabled 设 false 即回到上一期行为（楼层专项全选）。依据见 00_项目管理/交付/claude_nezha-floor-narrow.md。",
+      "enabled": true,
+      "groups": ["slice_map"],
+      "scenes": ["xiyou_floor*.tscn", "xiyou_map*.tscn"],
+      "always": ["xiyou_floor_run*.tscn", "xiyou_map.tscn"]
+    },
+    "keys": {
+      "说明": "docs", "keepEvents说明": "docs",
+      "maps": "slice_map", "keepEvents": "slice_map",
+      "extraImages": "slice_asset", "systemImages": "slice_asset", "fonts": "slice_asset", "extraAudio": "slice_asset",
+      "actors": "converter", "troops": "converter", "maxLevel": "converter", "extraSkills": "converter", "extraCommonEvents": "converter",
+      "extraAnimations": "converter", "weaponScan": "converter"
+    }
   },
   "rules": [
     {"match": "03_再刷重制_Godot/01_Godot工程/project.godot", "group": "registry"},

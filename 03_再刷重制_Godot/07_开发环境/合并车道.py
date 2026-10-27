@@ -399,6 +399,11 @@ def abort_batch(root, folder):
     print('接着把没问题的车道重新合（可再 --finish --batch 攒一批）；撤出的那条在自己的工作树修好、git merge main 后再交付。', flush=True)
 
 
+def doc_edits(changed):
+    """总装收尾前在 main 手修的文档：只限 00_项目管理/ 下的 .md（交付单除外，别的交付单用 --also）。"""
+    return {p for p in changed if p.startswith('00_项目管理/') and p.endswith('.md') and not p.startswith('00_项目管理/交付/')}
+
+
 def finish(root, state, state_file, executor, batch=False, affected=False):
     if state['phase'] not in ['prepared', 'committed']:
         raise RuntimeError('先运行准备合并，再手工登记，最后 --finish')
@@ -419,8 +424,13 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
             raise RuntimeError('待交叉核查尚未登记本车道分支或提交号')
         changed = dirty(root)
         allowed = COMMON | set(sheets(state)) | set(state.get('versionEdits', {})) | set(state.get('also', []))
+        docs = doc_edits(changed - allowed)
+        if state.get('acceptDocEdits') and docs:
+            print('一并暂存总装手修的文档：' + '、'.join(sorted(docs)), flush=True)
+            allowed |= docs
         if changed - allowed:
-            raise RuntimeError('不自动暂存预期外文件：' + '、'.join(sorted(changed - allowed)))
+            hint = '（只是 00_项目管理/ 下手修的文档可加 --accept-doc-edits 一并暂存）' if doc_edits(changed - allowed) else ''
+            raise RuntimeError('不自动暂存预期外文件：' + '、'.join(sorted(changed - allowed)) + hint)
         validate_version_edits(root, state)
         run(root, [sys.executable, ENV / '进度账.py', '--check'])
         # 检查.sh 按 git ls-files 枚举交付单；仅删除工作区文件仍会被它列出。
@@ -616,6 +626,8 @@ def main(argv=None):
                     help='--finish 时只跑选测（检查.sh --oracle --affected <本次合并前的 main>），通过后照常提交、清理、推送；不和 --batch 同用')
     ap.add_argument('--accept-changes', action='append', default=[], metavar='接受单',
                     help='同步因测量改变被拒后：把接受单记进本次合并状态再接着同步（不用手改 state.json），可重复')
+    ap.add_argument('--accept-doc-edits', action='store_true',
+                    help='--finish 时把总装在 main 手修的文档（只限 00_项目管理/ 下的 .md，交付单除外）一并暂存；默认拒收')
     ap.add_argument('--also', action='append', default=[], metavar='路径',
                     help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则），可重复')
     a = ap.parse_args(argv)
@@ -649,6 +661,8 @@ def main(argv=None):
             raise RuntimeError('--batch 只和 --finish 一起用')
         if a.affected and (not a.finish or a.batch):
             raise RuntimeError('--affected 只和 --finish 或 --close-batch 一起用，不配 --batch（批末那条不加 --batch 时加 --affected，覆盖整批）')
+        if a.accept_doc_edits and not a.finish:
+            raise RuntimeError('--accept-doc-edits 只和 --finish 一起用')
         if a.accept_changes and (a.finish or a.dry_run):
             raise RuntimeError('--accept-changes 只用于准备阶段接着同步（不配 --finish、--dry-run）')
         if a.dry_run:
@@ -682,6 +696,8 @@ def main(argv=None):
             if a.also:
                 state['also'] = sorted(set(state.get('also', [])) | set(a.also))
                 save(state_file, state)
+            state['acceptDocEdits'] = a.accept_doc_edits  # 只管本次运行：上次加过、这次没加仍拒
+            save(state_file, state)
             finish(root, state, state_file, a.executor, a.batch, a.affected)
         else:
             pending = load_batch(folder)

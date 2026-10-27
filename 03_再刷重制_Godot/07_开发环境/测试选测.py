@@ -140,6 +140,19 @@ class SelectTests(Fixture):
         self.put(TESTS / 'fixtures/orphan.json', '{}\n')
         self.assertTrue(self.pick()['full'])
 
+    def test_fixture_only_used_by_tool_runs_tools_not_full(self):
+        # 2026-10-26 本批：tests/fixtures/state_js_translation.json 只被 07_开发环境/测试状态js翻译.py 读，原来整轮
+        self.put(ENV / '测试工具夹具.py', "F = 'tests/fixtures/tool_only.json'\n")
+        self.put(TESTS / 'fixtures/tool_only.json', '{}\n')
+        self.commit('tool fixture')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.put(TESTS / 'fixtures/tool_only.json', '{"a": 1}\n')
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertEqual((s['scenes'], s['checks']), ([], ['guards', 'tools']))
+        self.put(TESTS / 'fixtures/orphan.json', '{}\n')  # 谁也不用：仍整轮
+        self.assertTrue(self.pick()['full'])
+
     def test_deleted_test_and_fixture_need_nothing(self):
         for rel in ['xiyou_orbs.gd', 'xiyou_orbs.tscn']:
             (self.root / TESTS / rel).unlink()
@@ -214,6 +227,16 @@ class SelectTests(Fixture):
         s = self.pick(head=head)
         self.assertEqual(s['files'], [str(CORE / 'orbs.gd')])
 
+    def test_head_option_reads_tests_at_head(self):
+        # 回放：head 里新增的测试场景要能找到（工作区还没有它），不能因为找不到用它的测试判整轮
+        self.scene('xiyou_new', 'XLonely.new()')
+        self.commit('new test')
+        head = self.g('rev-parse', 'HEAD')
+        self.g('checkout', '-q', self.base)
+        s = self.pick(head=head)
+        self.assertFalse(s['full'])
+        self.assertEqual(s['scenes'], ['xiyou_new.tscn'])
+
     def test_bad_base_and_bad_table(self):
         with self.assertRaises(RuntimeError):
             sel.select(self.root, 'no-such-commit')
@@ -231,6 +254,172 @@ class SelectTests(Fixture):
         self.assertEqual(sel.classify('03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/damage.gd', rules), 'battle')
         self.assertEqual(sel.classify('03_再刷重制_Godot/04_验证/测量接受/x.json', rules), 'converter')
         self.assertEqual(sel.classify('02_内容与素材/x.png', rules), 'full')
+        sections, merge_base = sel.load_options()
+        self.assertTrue(sections['enabled'] and merge_base)
+        self.assertEqual(sections['file'], str(TOOLS / 'xiyou_slice.json'))
+
+
+SLICE = TOOLS / 'xiyou_slice.json'
+RULES = ['xiyou_rules.tscn', 'xiyou_rules_d1b.tscn', 'xiyou_rules_d2.tscn']
+
+
+class SliceFixture(Fixture):
+    def setUp(self):
+        super().setUp()
+        self.slice = {'说明': 'x', 'maps': [1, 2], 'keepEvents': {'1': '*'}, 'troops': [5], 'actors': [1], 'extraImages': ['system/a']}
+        self.put(SLICE, json.dumps(self.slice, indent=2) + '\n')
+        self.scene('xiyou_lobby_shops', 'var k = XMapScene.slice().get("keepEvents", {})')
+        self.scene('xiyou_panels', 'panels')
+        self.commit('slice')
+        self.base = self.g('rev-parse', 'HEAD')
+
+    def edit(self, **changes):
+        self.put(SLICE, json.dumps({**self.slice, **changes}, indent=2) + '\n')
+
+
+class SliceSectionTests(SliceFixture):
+    """xiyou_slice.json 按顶层键细分（用户 2026-10-26）。"""
+
+    def test_maps_only_runs_event_compare_and_floors(self):
+        self.edit(maps=[1, 2, 69], keepEvents={'1': '*', '69': '*'})
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn', 'xiyou_lobby_shops.tscn'])
+        self.assertEqual(s['checks'], ['content', 'guards', 'tools'])
+        self.assertIn('keepEvents、maps', s['reasons'][0][1])
+
+    def test_troops_only_runs_rules(self):
+        self.edit(troops=[5, 6])
+        s = self.pick()
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn'] + RULES)
+        self.assertEqual(s['checks'], ['content', 'guards', 'same_source', 'tools'])
+
+    def test_maps_and_troops_take_the_union(self):
+        self.edit(maps=[1, 2, 69], troops=[5, 6])
+        s = self.pick()
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn'] + RULES)
+        self.assertEqual(s['checks'], ['content', 'guards', 'same_source', 'tools'])
+        self.assertEqual(len(s['reasons']), 2)
+
+    def test_images_only_runs_ui(self):
+        self.edit(extraImages=['system/a', 'system/b'])
+        s = self.pick()
+        self.assertEqual(s['scenes'], ['ui_smoke.tscn', 'xiyou_event_compare.tscn', 'xiyou_panels.tscn'])
+        self.assertEqual(s['checks'], ['guards', 'tools'])
+
+    def test_bad_json_and_unknown_key_fall_back_to_converter(self):
+        self.put(SLICE, '{"maps": [1, 2, 69],\n')
+        s = self.pick()
+        self.assertTrue(set(RULES) <= set(s['scenes']))
+        self.assertIn('新版 JSON 解析失败', s['reasons'][0][1])
+        self.edit(newKey=1)
+        s = self.pick()
+        self.assertTrue(set(RULES) <= set(s['scenes']))
+        self.assertIn('未知键 newKey', s['reasons'][0][1])
+        (self.root / SLICE).unlink()
+        self.assertIn('切片文件被删除', self.pick()['reasons'][0][1])
+
+    def test_format_only_selects_nothing(self):
+        self.put(SLICE, json.dumps(self.slice) + '\n')
+        s = self.pick()
+        self.assertEqual((s['full'], s['scenes'], s['checks']), (False, [], []))
+
+    def test_switch_off_restores_whole_converter(self):
+        table = json.loads((HERE / '选测对照.json').read_text())
+        table['sliceSections']['enabled'] = False
+        off = self.root / 'off.json'
+        off.write_text(json.dumps(table))
+        self.edit(maps=[1, 2, 69])
+        s = sel.select(self.root, self.base, table=off)
+        self.assertTrue(set(RULES) <= set(s['scenes']))
+        self.assertEqual(s['reasons'][0][1], 'converter')
+
+    def test_head_replay(self):
+        self.edit(maps=[1, 2, 69])
+        self.commit('maps')
+        s = self.pick(head=self.g('rev-parse', 'HEAD'))
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn'])
+
+
+class FloorNarrowTests(SliceFixture):
+    """切片 maps／keepEvents 改动时楼层专项按图号收窄（哪吒_3，2026-10-26）。"""
+    def setUp(self):
+        super().setUp()
+        self.scene('xiyou_floor_reach069', '## 通天之上（Map069）\nconst MAP := 69\n')
+        self.scene('xiyou_floor_gate', 'func t():\n\tvar s := _start(4, 1, 1)\n\tawait _wait_map(88)\n')
+        self.scene('xiyou_floor_goto', '_goto(31, 9, 9, 2, 18, Vector2i(9, 12))')
+        self.scene('xiyou_floor_run', '## 楼层表从内容数据推出（Map004 大厅）')
+        self.scene('xiyou_map186', '## Map186\n')
+        self.scene('xiyou_flow', 'flow')
+        self.commit('floors')
+        self.base = self.g('rev-parse', 'HEAD')
+
+    def test_added_map_picks_only_its_floor(self):
+        self.edit(maps=[1, 2, 69])
+        self.assertEqual(self.pick()['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn', 'xiyou_floor_reach069.tscn',
+                                                 'xiyou_floor_run.tscn', 'xiyou_flow.tscn'])
+
+    def test_code_refs_and_keep_events_edit(self):
+        self.edit(keepEvents={'1': '*', '88': [3]})
+        self.assertIn('xiyou_floor_gate.tscn', self.pick()['scenes'])
+        self.edit(maps=[1, 2, 18])
+        s = self.pick()['scenes']
+        self.assertIn('xiyou_floor_goto.tscn', s)
+        self.assertNotIn('xiyou_floor_gate.tscn', s)
+
+    def test_map_without_floor_test_picks_no_specific_floor(self):
+        self.edit(maps=[1, 2, 300])
+        s = self.pick()
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn', 'xiyou_floor_run.tscn', 'xiyou_flow.tscn'])
+        self.assertIn('按图号 300 收窄', s['reasons'][0][1])
+
+    def test_removed_map_counts(self):
+        self.put(SLICE, json.dumps({**self.slice, 'maps': [1, 2, 186]}, indent=2) + '\n')
+        self.commit('add 186')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.edit(maps=[1, 2])
+        self.assertIn('xiyou_map186.tscn', self.pick()['scenes'])
+
+    def test_unparsed_structure_does_not_narrow(self):
+        self.edit(maps=[1, 2, 'x'])
+        self.assertIn('xiyou_map186.tscn', self.pick()['scenes'])
+
+    def test_switch_off_restores_all_floors(self):
+        table = json.loads((HERE / '选测对照.json').read_text())
+        table['sliceSections']['narrowFloorsByMap']['enabled'] = False
+        off = self.root / 'off.json'
+        off.write_text(json.dumps(table))
+        self.edit(maps=[1, 2, 69])
+        s = sel.select(self.root, self.base, table=off)
+        self.assertTrue({'xiyou_floor_gate.tscn', 'xiyou_floor_goto.tscn', 'xiyou_map186.tscn'} <= set(s['scenes']))
+        self.assertNotIn('收窄', s['reasons'][0][1])
+
+    def test_real_tests_reference_their_maps(self):
+        tests = sel.Tests(HERE.parent.parent)
+        self.assertEqual(tests.map_ids('xiyou_floor_reach069.tscn') >= {69, 71, 88, 89, 91, 112}, True)
+        self.assertEqual(tests.map_ids('xiyou_map186_b.tscn') >= {186}, True)
+
+
+class MergeBaseTests(Fixture):
+    """车道 --affected main 而 main 已前进：只算本分支自己的改动。"""
+    def test_lane_ignores_main_progress_unless_switched_off(self):
+        self.g('switch', '-q', '-c', 'lane')
+        self.put(Path('00_项目管理/交接板.md'), '# lane\n')
+        self.commit('lane docs')
+        self.g('switch', '-q', 'main')
+        self.put(CORE / 'battler.gd', 'class_name XBattler\n# main moved\n')
+        self.commit('main battle')
+        self.g('switch', '-q', 'lane')
+        s = sel.select(self.root, 'main')
+        self.assertEqual(s['files'], ['00_项目管理/交接板.md'])
+        self.assertIn('分叉点', s['base'])
+        table = json.loads((HERE / '选测对照.json').read_text())
+        table['mergeBase'] = False
+        off = self.root / 'off.json'
+        off.write_text(json.dumps(table))
+        s = sel.select(self.root, 'main', table=off)
+        self.assertIn(str(CORE / 'battler.gd'), s['files'])
+        self.assertEqual(sel.select(self.root, self.base)['base'], self.base)  # 基准是祖先：照旧
 
 
 STUB_CHECKS = ['测试工作树清理.py', '测试导出过滤.py', '测试共性验收.py', '测试合并工具.py', '测试公式程序.py', '测试转换器写入.py',
@@ -298,9 +487,34 @@ class CheckerTests(Fixture):
         rc, out, ran = self.check('--affected', self.base)
         self.assertEqual(rc, 0, out)
         runner = next(l for l in ran if l.startswith('并行测试.py')).split()
-        self.assertEqual(runner[3:], ['xiyou_event_compare.tscn', 'xiyou_shop.tscn'])
+        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_shop.tscn'])  # 选测按指纹沿用
         self.assertIn('guard_check.cjs', self.names(ran))
         self.assertNotIn('测试合并工具.py', self.names(ran))
+
+    def test_static_failure_stops_before_godot(self):
+        # 文档与登记检查失败：默认在 Godot 测试前就退出；--keep-going 照旧全跑
+        self.put(Path('00_项目管理/坏链接.md'), '[x](不存在.md)\n')
+        rc, out, ran = self.check()
+        self.assertEqual(rc, 1, out)
+        self.assertIn('失效链接', out)
+        self.assertIn('未运行 Godot 测试', out)
+        self.assertNotIn('并行测试.py', self.names(ran))
+        self.assertNotIn('godot', self.names(ran))
+        rc, out, ran = self.check('--keep-going')
+        self.assertEqual(rc, 1, out)
+        self.assertIn('并行测试.py', self.names(ran))
+        self.assertIn('有失败项', out)
+
+    def test_prose_brackets_are_not_links_but_real_breaks_are(self):
+        # 唐僧_13 2026-10-26：表格正文「变身[萧萧](a)」被当成失效链接卡住合并；只放过 1～2 个字符、不含 / 与 . 的目标
+        self.put(Path('00_项目管理/表格.md'), '| 变身[萧萧](a) | [甲](Ab) |\n')
+        rc, out, _ = self.check('--affected', self.base)
+        self.assertEqual(rc, 0, out)
+        for bad in ['不存在', 'abc', 'a.md', './a', 'x/y']:
+            self.put(Path('00_项目管理/表格.md'), '[甲](%s)\n' % bad)
+            rc, out, _ = self.check('--affected', self.base)
+            self.assertEqual(rc, 1, bad)
+            self.assertIn('失效链接 00_项目管理/表格.md -> ' + bad, out)
 
     def test_battle_without_oracle_warns_same_source(self):
         self.put(CORE / 'battler.gd', 'class_name XBattler\n# 2\n')
