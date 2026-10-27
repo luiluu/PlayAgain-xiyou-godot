@@ -965,10 +965,26 @@ class Exporter:
             elif code == 283:
                 self.ref_img('battlebacks1', p[0]); self.ref_img('battlebacks2', p[1])
 
+    def effect_common_events(self):
+        """物品、技能效果 code 44（公共事件）引用的、存在且有指令的公共事件编号。"""
+        rows = self.db['CommonEvents']
+        found = set()
+        for table in ('Items', 'Skills'):
+            for rec in self.db[table]:
+                for eff in (rec or {}).get('effects') or []:
+                    ce = eff.get('dataId')
+                    if eff.get('code') == 44 and isinstance(ce, int) and 0 < ce < len(rows) and rows[ce] \
+                            and any(c.get('code', 0) != 0 for c in rows[ce].get('list') or []):
+                        found.add(ce)
+        return found
+
     def collect_slice(self):
         cfg, db = self.cfg, self.db
-        # extraCommonEvents：只经物品／技能效果（code 44）调用、地图事件不会 117 到的公共事件（如物品 1653 洪荒技能书随机抽奖 → CE1441）
+        # 只经物品／技能效果（code 44）调用、地图事件不会 117 到的公共事件（如物品 1653 洪荒技能书随机抽奖 → CE1441）：
+        # 默认自动收集全部非空的效果公共事件，并上切片里手填的 extraCommonEvents；XIYOU_EFFECT_CE=manual 时回退为只用手填列表
         troops, self.common_events = set(cfg.get('troops', [])), set(cfg.get('extraCommonEvents', []))
+        if os.environ.get('XIYOU_EFFECT_CE', 'auto') != 'manual':
+            self.common_events |= self.effect_common_events()
         self.event_actors, self.event_animations = set(), set()
         actors = set(cfg['actors'])
         for mid in cfg['maps']:
