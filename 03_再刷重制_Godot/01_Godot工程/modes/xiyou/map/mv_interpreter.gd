@@ -30,6 +30,10 @@ func _init(h: Node, map: int, event: int, commands: Array, depth := 0) -> void:
 	_depth = depth
 
 
+func _notice(text: String) -> void:
+	host.toast(text)
+
+
 ## 游标逐步推进；文字交给 host.show_message，宿主指令由发出请求的那一层（可能是公共事件子游标）执行
 func run() -> void:
 	index = 0

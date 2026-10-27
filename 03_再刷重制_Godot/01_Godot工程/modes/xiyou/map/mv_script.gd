@@ -67,6 +67,24 @@ static func run(code: String, interp) -> Array:
 		interp.host.toast(XPassiveBooks.limit_message(s))
 		return []
 	# ---- 整段写法 ----
+	# 物品选中的角色（$gameParty._targetActorId）遗忘／学会技能：元素转换 CE637～644、小药丸 645～648、滑稽拳 1378～1380
+	if js.contains("$gameParty._targetActorId"):
+		var picked = await _target_actor_script(js, interp)
+		if picked != null:
+			return picked
+	if js == "Star.RunForgetSkill();":  # 遗忘河之水 CE83：选中角色的遗忘界面（Star_Scene_ForgetSkill）
+		if interp.host.has_method("open_forget_skill"):
+			await interp.host.open_forget_skill(s.item_target_actor_id)
+		return []
+	# 藏宝图（Star.RomGetItems.RunGetFun，CE117、174～189、1381～1384）：见 XTreasureMap
+	var dig := _re("^Star\\.RomGetItems\\.RunGetFun\\((\\d+)\\s*,\\s*(\\d+)\\);?$").search(js)
+	if dig:
+		var r := XTreasureMap.run(s, int(dig.get_string(1)), int(dig.get_string(2)))
+		for t in r.toasts:
+			interp.host.toast(t)
+		if int(r.reserve) > 0:
+			s.reserve_common_event(int(r.reserve))
+		return []
 	# 指定一个角色（变量里存角色 ID）学会/忘记技能：var actor = $gameActors.actor($gameVariables.value(N)); [actor.forgetSkill(A);] actor.learnSkill(B);（传承人的学习公共事件 1348～1368）
 	var one := _actor_by_variable(js)
 	if not one.is_empty():
@@ -99,10 +117,12 @@ static func run(code: String, interp) -> Array:
 	if roster:
 		await _boss_roster(roster.get_string(1), interp)
 		return []
-	# 更衣解锁（Star_ChangeClothes，见 XChangeClothes）：衣橱管理员 Map4 EV17 与各层宝箱、特殊事件，全游戏只这一种写法
+	# 更衣解锁（Star_ChangeClothes，见 XChangeClothes）：衣橱管理员 Map4 EV17 与各层宝箱、特殊事件，全游戏只这一种写法（CE367 两号不同）
 	var lite := _re("^if\\s*\\(\\s*ConfigManager\\.ChangeClothesLite\\.indexOf\\((-?\\d+)\\)\\s*==\\s*-1\\s*\\)\\s*\\{\\s*ConfigManager\\.ChangeClothesLite\\.push\\((-?\\d+)\\);?\\s*\\}$").search(js)
-	if lite and lite.get_string(1) == lite.get_string(2):
-		XChangeClothes.unlock(int(lite.get_string(1)))
+	if lite:
+		# 判断号与写入号一般相同；CE367 牛头人酋长写成 indexOf(-33)==-1 才 push(-12)，照原文：-33 不在表里才加 -12
+		if not XChangeClothes.unlocked(int(lite.get_string(1))):
+			XChangeClothes.unlock(int(lite.get_string(2)))
 		return []
 	# 专属角色号角（公共事件 9009 等）：try { if (!CodexX.recruit()) $gameParty.gainItem($dataItems[号角],1); } catch(error) {…}
 	# 招募没成功（已在队）就还号角；catch 分支是脚本出错时的返还，重制不会走到
@@ -162,6 +182,13 @@ static func _statements(js: String, interp) -> Array:
 		m = _re("^\\$gamePlayer\\.SaveActorName\\s*=\\s*prompt\\(\\s*\"([^\"]*)\"\\s*,\\s*\"([^\"]*)\"\\s*\\)$").search(st)
 		if m:
 			s.actor_name = await interp.host.input_text(m.get_string(1), m.get_string(2))
+			continue
+		# 超强者号角（公共事件 2501～2526）：没持有（含身上装备）才给专属装备
+		m = _re("^if\\s*\\(\\s*!\\$gameParty\\.hasItem\\(\\$data(Weapons|Armors)\\[(\\d+)\\]\\s*,\\s*true\\)\\s*\\)\\s*\\$gameParty\\.gainItem\\(\\$data\\1\\[\\2\\]\\s*,\\s*(\\d+)\\s*,\\s*false\\)$").search(st)
+		if m:
+			var kind := "weapon" if m.get_string(1) == "Weapons" else "armor"
+			if not _has_gear(s, kind, int(m.get_string(2))):
+				s.gain_gear(kind, int(m.get_string(2)), int(m.get_string(3)))
 			continue
 		m = _re("^\\$gameParty\\.gainItem\\(\\$dataItems\\[\\$gameVariables\\.value\\((\\d+)\\)\\]\\s*,\\s*(\\d+)").search(st)
 		if m:
@@ -378,6 +405,18 @@ static func _toaster_text(js: String) -> String:
 		if item:
 			out += str(XDB.rec("Items", int(XState.current.variable(int(item.get_string(1))))).get("name", ""))
 			continue
+		# $gameActors.actor($gameVariables.value(N)).name()：角色不存在时原版读 null 出错，整句不提示
+		var who := _re("^\\$gameActors\\.actor\\(\\$gameVariables\\.value\\((\\d+)\\)\\)\\.name\\(\\)$").search(p)
+		if who:
+			var aid := int(XState.current.variable(int(who.get_string(1))))
+			if aid <= 0 or XDB.rec("Actors", aid).is_empty():
+				return ""
+			out += XState.current.actor(aid).display_name()
+			continue
+		var skill := _re("^\\$dataSkills\\[(\\d+)\\]\\.name$").search(p)
+		if skill:
+			out += str(XDB.rec("Skills", int(skill.get_string(1))).get("name", ""))
+			continue
 		var v := _re("^\\$gameVariables\\.value\\((\\d+)\\)$").search(p)
 		if v:
 			out += js_number(XState.current.variable(int(v.get_string(1))))
@@ -496,6 +535,157 @@ static func _actor_by_variable(js: String) -> Dictionary:
 			return {}
 		calls.append([m.get_string(1), m.get_string(2)])
 	return {} if calls.is_empty() else {"variable": int(head.get_string(1)), "calls": calls}
+
+
+## 物品选中角色（$gameParty._targetActorId，重制为 XState.item_target_actor_id）的技能脚本：只认下列语句，
+## 其余写法返回 null 交给通用翻译。没有选中角色时 $gameActors.actor 得 null，原版读 actor 抛错、YEP command355 吞掉，
+## 本段其余语句不再执行（这里同样就此结束）。
+## var j = $gameParty._targetActorId；var actor = $gameActors.actor(j 或 $gameParty._targetActorId)；var 名 = 数字；
+## var m = $dataSkills[i].description（无操作）；$gameVariables.setValue(N, j 或数字)；for (var i = A; i < B; i++) {…}；
+## if (actor.hasSkill(x)) {…} [else {…}]；actor.forgetSkill(x)／learnSkill(x)；$gameParty.gainItem($dataItems[N], n, true)；$.toaster
+static func _target_actor_script(js: String, interp) -> Variant:
+	var env := {}
+	var r = await _target_block(js, env, interp)
+	if r == null:
+		return null
+	if env.get("actor") is XActor:
+		env.actor.refresh_passive()
+	return []
+
+
+## 返回 null＝有认不出的语句（整段不翻译，原样交给通用翻译）；"throw"＝读了 null 的 actor（原版抛错，停在这里）；"ok"
+static func _target_block(js: String, env: Dictionary, interp) -> Variant:
+	var s := XState.current
+	var pos := 0
+	var flat := js  # 换行也是语句结尾（原文 var m = $dataSkills[i].description 不带分号）
+	while pos < flat.length():
+		var rest := flat.substr(pos).strip_edges(true, false)
+		if rest.strip_edges() == "":
+			break
+		pos = flat.length() - rest.length()
+		var head := _re("^(for|if)\\s*\\((.*?)\\)\\s*\\{").search(rest)
+		if head:
+			var open := pos + head.get_end() - 1
+			var body: Array = _block(flat, open)
+			pos = body[1]
+			if head.get_string(1) == "for":
+				var loop := _re("^var\\s+(\\w+)\\s*=\\s*(\\d+)\\s*;\\s*\\1\\s*<\\s*(\\d+)\\s*;\\s*\\1\\+\\+\\s*$").search(head.get_string(2).strip_edges())
+				if loop == null:
+					return null
+				for i in range(int(loop.get_string(2)), int(loop.get_string(3))):
+					env[loop.get_string(1)] = i
+					var r = await _target_block(body[0], env, interp)
+					if r != "ok":
+						return r
+				continue
+			var cond := _re("^actor\\.hasSkill\\((\\w+)\\)$").search(head.get_string(2).strip_edges())
+			if cond == null:
+				return null
+			var else_body := ""
+			var tail := flat.substr(pos).strip_edges()
+			if tail.begins_with("else"):
+				var after := _block(flat, flat.find("{", pos))
+				else_body = after[0]
+				pos = after[1]
+			if not env.get("actor") is XActor:
+				return "throw"
+			var sid := _target_value(cond.get_string(1), env)
+			var has: bool = env.actor.skills().any(func(sk): return int(sk.id) == sid)
+			var r = await _target_block(body[0] if has else else_body, env, interp)
+			if r != "ok":
+				return r
+			continue
+		if rest.begins_with("$.toaster"):
+			# 提示文字里可能有分号：取到配对的右括号为止整句拼
+			var call_end := _paren_end(flat, pos + rest.find("("))
+			var text := _toaster_text(flat.substr(pos, call_end - pos))
+			if text == "":
+				return null
+			interp.host.toast(text)
+			pos = call_end
+			continue
+		var end := _statement_end(rest)
+		var st := (rest if end < 0 else rest.left(end)).strip_edges()
+		pos += rest.length() if end < 0 else end + 1
+		if st == "" or st == "}":
+			continue
+		var m := _re("^var\\s+(\\w+)\\s*=\\s*\\$gameParty\\._targetActorId$").search(st)
+		if m:
+			env[m.get_string(1)] = s.item_target_actor_id
+			continue
+		m = _re("^var\\s+actor\\s*=\\s*\\$gameActors\\.actor\\((\\w+|\\$gameParty\\._targetActorId)\\)$").search(st)
+		if m:
+			var aid := s.item_target_actor_id if m.get_string(1).begins_with("$") else _target_value(m.get_string(1), env)
+			env.actor = s.actor(aid) if aid > 0 and not XDB.rec("Actors", aid).is_empty() else null
+			continue
+		m = _re("^var\\s+(\\w+)\\s*=\\s*(\\d+)$").search(st)
+		if m:
+			env[m.get_string(1)] = int(m.get_string(2))
+			continue
+		if _re("^var\\s+\\w+\\s*=\\s*\\$dataSkills\\[\\w+\\]\\.description$").search(st):
+			continue
+		m = _re("^\\$gameVariables\\.setValue\\((\\d+)\\s*,\\s*(\\w+)\\)$").search(st)
+		if m:
+			s.set_variable(int(m.get_string(1)), float(_target_value(m.get_string(2), env)))
+			continue
+		m = _re("^actor\\.(forgetSkill|learnSkill)\\((\\w+)\\)$").search(st)
+		if m:
+			if not env.get("actor") is XActor:
+				return "throw"
+			if m.get_string(1) == "forgetSkill":
+				env.actor.forget_skill(_target_value(m.get_string(2), env))
+			else:
+				env.actor.learn_skill(_target_value(m.get_string(2), env))
+			continue
+		m = _re("^\\$gameParty\\.gainItem\\(\\$dataItems\\[(\\d+)\\]\\s*,\\s*(\\d+)(?:\\s*,\\s*(?:true|false))?\\)$").search(st)
+		if m:
+			s.gain_item(int(m.get_string(1)), int(m.get_string(2)))
+			continue
+		return null
+	return "ok"
+
+
+## $gameParty.hasItem($dataXxx[id], true)：背包里或队伍成员身上有这件（独立装备按原装备编号）
+static func _has_gear(s: XState, kind: String, base_id: int) -> bool:
+	if s.gear_count(kind, base_id) > 0:
+		return true
+	for a in s.members():
+		for e in a.equip_list():
+			if e is Dictionary and str(e.get("kind", "")) == kind and int(e.get("base", 0)) == base_id:
+				return true
+	return false
+
+
+## 语句结尾：第一个分号或换行；都没有为 -1
+static func _statement_end(text: String) -> int:
+	var a := text.find(";")
+	var b := text.find("\n")
+	return b if a < 0 else (a if b < 0 else mini(a, b))
+
+
+## env 里的变量或数字字面量（没有的变量是 JS undefined，按 0）
+static func _target_value(token: String, env: Dictionary) -> int:
+	return int(token) if token.is_valid_int() else int(env.get(token, 0))
+
+
+## from 处是「(」：返回配对右括号之后的位置（跳过引号里的括号）
+static func _paren_end(js: String, from: int) -> int:
+	var depth := 0
+	var quote := ""
+	for i in range(from, js.length()):
+		var ch := js[i]
+		if quote != "":
+			if ch == quote:
+				quote = ""
+		elif ch == "'" or ch == "\"":
+			quote = ch
+		elif ch == "(":
+			depth += 1
+		elif ch == ")":
+			depth -= 1
+			if depth == 0:
+				return i + 1
+	return js.length()
 
 
 ## 「所有角色学会/忘记技能」的几种循环写法 → actor_op 列表；认不出返回空

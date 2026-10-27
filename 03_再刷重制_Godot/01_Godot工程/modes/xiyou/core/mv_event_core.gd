@@ -318,10 +318,16 @@ func _execute(c: Dictionary):
 			_record_gain(kind, int(p[0]), 0, str(rec.get("name", "")))
 		129:
 			if int(p[1]) == 0:
-				state().add_actor(int(p[0]))
+				state().add_actor(int(p[0]), _notice)  # 超强者在地狱以下不入队：提示走本解释器（地图为宿主提示）
 			else:
 				state().remove_actor(int(p[0]))
 			_data_changed()
+		261:
+			# 播放电影 [文件名]（CE1514／1516 宇智波鼬的「血轮眼开」「幻术世界」，movies/*.webm）：Godot 不能放 WebM，重制不播放，只少一段画面
+			pass
+		323:
+			# 更改载具图像 [载具, 行走图, 序号]（飞艇改造包 CE487～500）：重制没有载具，空操作（只影响飞艇外观）
+			pass
 		132:
 			state().battle_bgm = (p[0] as Dictionary).duplicate() if p[0] is Dictionary else {}
 		136:
@@ -456,6 +462,11 @@ func _data_changed() -> void:
 
 
 ## MOG_TreasurePopup（地图才有）
+## 解释器里的系统提示（超强者不能入队等，原版 $.toaster）：默认右上角提示，地图交给宿主
+func _notice(text: String) -> void:
+	XToast.show_text(text)
+
+
 func _treasure_popup(_rec: Dictionary, _amount: int) -> void:
 	pass
 

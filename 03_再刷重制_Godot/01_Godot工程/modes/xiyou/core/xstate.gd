@@ -58,7 +58,7 @@ var steps := 0
 var play_seconds := 0.0
 var encounter_count := 0
 ## Star_RomGetItems 的装备预掷随机池（见 XGear），随存档保存
-var rom := {"x": [], "xn": 0, "xs": [], "xsn": 0, "g": [], "gn": 0}
+var rom := {"x": [], "xn": 0, "xs": [], "xsn": 0, "g": [], "gn": 0, "m": []}
 ## Runtime only: ordinary saves keep original rom/orb/gear data, never these streams.
 ## Loading/previews do not initialize or advance them.
 var random_master := ""
@@ -285,18 +285,25 @@ func fixed_save_slot() -> int:
 
 ## Game_Party.addActor（YEP_PartySystem）：加入队尾；出战栏位有空位时填入第一个空位并重排
 ## installBossDifficultyRuntime 在外层前后各清一次出战栏里的超强者（XItemMarks.enforce_party）
-func add_actor(id: int) -> void:
+## notice：不能入队时的提示去处（事件解释器传自己的，默认右上角提示）
+func add_actor(id: int, notice := Callable()) -> void:
 	XItemMarks.enforce_party(self)
-	_add_actor(id)
+	_add_actor(id, notice)
 	XItemMarks.enforce_party(self)
 
 
-func _add_actor(id: int) -> void:
+func _add_actor(id: int, notice := Callable()) -> void:
 	if XDB.rec("Actors", id).is_empty():
 		return
 	# installBossDifficultyRuntime：未持有的超强者在地狱以下不能入队（提示后不加）
 	if not party.has(id) and not XItemMarks.can_acquire_actor(self, id):
-		XItemMarks.acquisition_notice()
+		if notice.is_valid():
+			notice.call(XItemMarks.SUPER_NOTICE)
+		else:
+			XItemMarks.acquisition_notice()
+		return
+	# installImportedBalanceRuntime：停用的导入角色（143～145、157、160）不入队（超强者检查在外层，先提示）
+	if XImportedBalance.is_disabled_actor(id):
 		return
 	if not party.has(id):
 		actor(id)
@@ -631,7 +638,8 @@ static func from_dict(d: Dictionary) -> XState:
 	var rom: Dictionary = d.get("rom", {})
 	s.rom = {"x": rom.get("x", []).map(func(v): return float(v)), "xn": int(rom.get("xn", 0)),
 		"xs": rom.get("xs", []).map(func(v): return int(v)), "xsn": int(rom.get("xsn", 0)),
-		"g": rom.get("g", []).map(func(v): return int(v)), "gn": int(rom.get("gn", 0))}
+		"g": rom.get("g", []).map(func(v): return int(v)), "gn": int(rom.get("gn", 0)),
+		"m": rom.get("m", []).map(func(v): return int(v))}  # 藏宝图本轮挖过的宝点（$gameParty.GameMapxy，见 XTreasureMap）
 	s.flags = d.get("flags", {})
 	s.actor_name = str(d.get("actorName", ""))
 	for op in d.get("actorOps", []):

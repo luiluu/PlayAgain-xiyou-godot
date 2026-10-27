@@ -1020,6 +1020,18 @@ func open_actor_advanced() -> void:
 	hud.visible = true
 
 
+## 技能遗忘（Star.RunForgetSkill，遗忘河之水 → 公共事件 83）：物品选中的角色，关闭后回到地图；没有选中角色时原版读 null 出错，不打开
+func open_forget_skill(actor_id: int) -> void:
+	if actor_id <= 0 or XDB.rec("Actors", actor_id).is_empty():
+		return
+	hud.visible = false
+	var page := XForgetSkillScene.new().setup(XState.current.actor(actor_id))
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 ## 装备镶嵌图鉴（SceneManager.push(Scene_EquipInlayBook)）：魂灯商人「查看图鉴」，关闭后回到地图
 func open_inlay_book() -> void:
 	hud.visible = false
