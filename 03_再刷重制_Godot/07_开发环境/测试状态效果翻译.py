@@ -13,6 +13,32 @@ FIXTURES = TOOLS.parent / '01_Godot工程/tests/fixtures/state_effects_translati
 
 
 class StateEffectTranslationTests(unittest.TestCase):
+    def test_battle_tp_complete_measured_phase_tokens_only(self):
+        wrap = lambda p, code: f'<Custom {p} Effect>{code}</Custom {p} Effect>'
+        for amount in [200, 50]:
+            body = f'user.gainTp({amount});'
+            self.assertEqual(parse_state_effects(wrap('Battle', body)), [{'phase': 'battle', 'op': 'gain_resource', 'recipient': 'user', 'resource': 'tp', 'amount': amount, 'requires': ['resources']}])
+            # Main's later measured gain grammar legitimately covers complete multi-step blocks.
+            for code in [body + ';', body.replace('user', 'target'), body.replace(str(amount), 'user.atk'), body + 'evil();']:
+                self.assertEqual(parse_state_effects(wrap('Battle', code))[0]['op'], 'js')
+            for phase in ['Confirm', 'Turn Start']:
+                self.assertEqual(parse_state_effects(wrap(phase, body))[0]['op'], 'js')
+            for phase, code, resources in [('Battle', body + body, ['tp', 'tp']),
+                                            ('Battle', body + 'user.gainHp(1);', ['tp', 'hp']),
+                                            ('Battle', body.replace(str(amount), str(amount + 1)), ['tp']),
+                                            ('Apply', body, ['tp'])]:
+                effect = parse_state_effects(wrap(phase, code))[0]
+                self.assertEqual(effect['op'], 'gain_steps')
+                self.assertEqual([step['resource'] for step in effect['steps']], resources)
+                self.assertTrue(all(step['program']['status'] == 'pure' for step in effect['steps']))
+        # These two Apply blocks now have explicit event313/menu hosts and native operation fixtures.
+        for amount in [25, 75]:
+            effect = parse_state_effects(wrap('Apply', f'user.gainTp({amount});'))[0]
+            self.assertEqual(effect['op'], 'gain_steps')
+            self.assertEqual(len(effect['steps']), 1)
+            self.assertEqual(effect['steps'][0]['resource'], 'tp')
+            self.assertEqual(effect['steps'][0]['program']['steps'][-1]['value'], {'op': 'literal', 'pos': 8, 'value': amount})
+
     def test_native_bonus_inventory(self):
         rows = json.loads(FIXTURES.read_text())['bonus']
         self.assertEqual(len(rows), 28)

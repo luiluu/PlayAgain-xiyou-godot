@@ -41,6 +41,9 @@ var effect_lists := {}
 static var _adding_state := false
 static var _leaving_state := false
 static var _outside_random: XRandomStream
+## Scoped host capability, never persisted; wrappers restore the previous owner.
+var lifecycle_context := {}
+var runtime_result := XResourceContext.empty_result()
 var mp := 0.0
 var tp := 0.0
 var state_ids: Array[int] = []
@@ -275,6 +278,34 @@ func effect_states(phase: String, execute := true) -> Array:
 func is_state_affected(id: int) -> bool:
 	return state_ids.has(id)
 
+func add_state_with_context(id: int, random: XRandomStream, ctx: Dictionary) -> void:
+	var previous := lifecycle_context
+	lifecycle_context = ctx
+	add_state(id, random)
+	lifecycle_context = previous
+
+func remove_state_with_context(id: int, ctx: Dictionary, automatic := false) -> void:
+	var previous := lifecycle_context
+	lifecycle_context = ctx
+	if automatic:
+		remove_state_auto(id)
+	else:
+		remove_state(id)
+	lifecycle_context = previous
+
+func refresh_with_context(random: XRandomStream, ctx: Dictionary) -> void:
+	var previous := lifecycle_context
+	lifecycle_context = ctx
+	refresh_resources(random)
+	lifecycle_context = previous
+
+func push_state_result(key: String, id: int) -> void:
+	var resources: XResourceContext = lifecycle_context.get("resources")
+	if resources != null:
+		var result := resources.result(self)
+		if not result[key].has(id):
+			result[key].append(id)
+
 func add_state(id: int, random: XRandomStream = null) -> void:
 	# _Fix_StackOverflow: one global lock, including additions to another battler.
 	if _adding_state:
@@ -309,19 +340,26 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 	var s := XDB.rec("States", id)
 	var lo := int(s.get("minTurns", 1))
 	var hi := maxi(lo, int(s.get("maxTurns", lo)))
-	state_turns[id] = roll_state_duration(lo, hi, random, str(id))
+	state_turns[id] = roll_state_duration(lo, hi, random, str(lifecycle_context.get("duration_key", str(id))))
 	if id == XAlienBattle.corrosion_id():
-		XAlienBattle.sync_corrosion(self)  # 异化 resetStateCounts 包装：腐蚀按回合定到期
+		XAlienBattle.sync_corrosion(self)  # 异化 resetStateCounts：沿生命周期时长结算之后同步
 	var source := XImportedBalance.acting_battler()
 	if source != null:
 		state_origins[id] = weakref(source)
 	# Game_Battler.addState：新附加的状态 refresh 后由 krz 标 dirty；已有状态（_Fix_StackOverflow 分支）只续回合
 	if fresh:
-		param_refresh()
+		if lifecycle_context.get("resources") != null:
+			refresh_resources(random)
+		else:
+			param_refresh()
+	push_state_result("addedStates", id)
+	if fresh:
 		XStateEffects.run_one("apply", self, s)
 		param_mark_dirty()
 
 func roll_state_duration(lo: int, hi: int, random: XRandomStream = null, event_key := "") -> int:
+	if lifecycle_context.get("preview", false):
+		return floori(0.5 * (hi - lo + 1)) + lo
 	if random != null:
 		return random.next_int_inclusive(lo, hi, "state_duration", event_key)
 	if XState.current != null:
@@ -350,7 +388,11 @@ func remove_state(id: int) -> void:
 		state_data._stateCounter.erase(str(id))
 	# Game_Battler.removeState：有该状态才 refresh；krz 的 Game_Enemy.removeState 之后总标 dirty
 	if had:
-		param_refresh()
+		if lifecycle_context.get("resources") != null:
+			refresh_resources(lifecycle_context.get("random"))
+		else:
+			param_refresh()
+		push_state_result("removedStates", id)
 		var st := XDB.rec("States", id)
 		XStateEffects.run_one("remove", self, st)
 		if _leaving_state:
@@ -622,9 +664,15 @@ func max_tp() -> float:
 
 ## Game_Battler.refresh：夹资源并同步阵亡状态（序列 HP + 恢复时也必须去除阵亡）。
 func refresh_resources(random: XRandomStream = null) -> void:
-	var context := XResourceContext.new()
-	context.random = random
+	var context: XResourceContext = lifecycle_context.get("resources")
+	var root := context == null
+	if root:
+		context = XResourceContext.new()
+		context.random = random
+		context.seed_result(self, runtime_result)
 	context.refresh(self)
+	if root:
+		runtime_result = context.result(self).duplicate(true)
 
 
 ## YEP_BuffsStatesCore：默认层数 4、绝对上限 8，加上状态／角色／职业／装备／敌人备注的 <Max 能力 Buff/Debuff: ±N>。

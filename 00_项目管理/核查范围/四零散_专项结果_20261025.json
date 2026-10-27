@@ -1,0 +1,638 @@
+{
+  "base": "926f914f",
+  "branch": "codex/four-loose-fixes",
+  "scope": "四项可合并；最终同步与Godot导入通过，7条精确变化＋34新增；规则基础段与三专项首次全部通过；Codex实现待Claude交叉核查",
+  "nativeFinal": {
+    "status": {
+      "runId": "c007f95c1c134f6ca50e269b0c88c432",
+      "status": "done",
+      "exitCode": 0,
+      "pid": 39926,
+      "startedAt": "2026-10-25T06:56:47.755616+00:00",
+      "command": [
+        "node",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/enemy_book_defeat_probe.cjs"
+      ],
+      "childPGID": 39927,
+      "childIdentity": {
+        "pid": 39927,
+        "pgid": 39927,
+        "startedAt": "Sun Oct 25 07:56:47 2026    "
+      },
+      "finishedAt": "2026-10-25T06:56:56.941913+00:00"
+    },
+    "registeredProbe": "enemy_book_defeat_probe.cjs",
+    "totalCases": 38,
+    "existingCases": 4,
+    "looseCases": 34,
+    "allCaseErrorsEmpty": true
+  },
+  "fixture": {
+    "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/loose_fixes_oracle.json",
+    "sha256": "73d97f458b9fa99b4c06f0c5dbc8fdc1e87d49e1dbb5645fe14e6fe71506a81f"
+  },
+  "F31": {
+    "alreadyImplementedBy": "308927f8",
+    "productionChangeNeeded": false,
+    "verification": "实跑两阶段各100次，最终各64、共128；修前及修后均通过"
+  },
+  "b3ab53e6Review": {
+    "nativeActual932FireBonus": 0.15999999999999992,
+    "syntheticDuplicateFireBonus": 0.45999999999999996,
+    "syntheticCaseAndPaddingFireBonus": 0.3599999999999999,
+    "finding": "普通932火增伤正确；重复／大小写／无前导零标签漏算已由修前专项证实。Codex补修后126/126通过，补修待Claude交叉核查。"
+  },
+  "usageAtHandoff": {
+    "fiveHourUsedPercent": 52,
+    "weeklyUsedPercent": 23
+  },
+  "handoffDocs": {
+    "exitCode": 0,
+    "scope": "从检查.sh原样提取文档与登记检查，dev.173；不是全量"
+  },
+  "redFinal": {
+    "runId": "3e597bbc32464e5db8db7f55c89b9eb6",
+    "exitCode": 1,
+    "passed": 88,
+    "total": 121,
+    "scriptErrors": false,
+    "semanticFailures": 33,
+    "F31Passed": true
+  },
+  "greenFirst": {
+    "runId": "d83d3e639a6042dd9c3889e2650f5f63",
+    "exitCode": 0,
+    "tests": {
+      "xiyou_loose_fixes": {
+        "passed": 126,
+        "total": 126
+      },
+      "xiyou_cat": {
+        "passed": 994,
+        "total": 994
+      },
+      "xiyou_enemy_book": {
+        "passed": 52,
+        "total": 52
+      }
+    },
+    "extraDeathBoundaries": [
+      "nonpreview resource clone",
+      "explicit state clone",
+      "same-roster registration",
+      "resource death after battle end",
+      "explicit death after battle end"
+    ]
+  },
+  "relatedFinal": {
+    "status": {
+      "runId": "c4f75cc514c24740b6e04ea2ea3949b1",
+      "status": "failed",
+      "exitCode": 1,
+      "pid": 43704,
+      "startedAt": "2026-10-25T08:00:30.511603+00:00",
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/07_开发环境/并行测试.py",
+        "03_再刷重制_Godot/07_开发环境/godot",
+        "03_再刷重制_Godot/01_Godot工程",
+        "--log-dir",
+        "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/related",
+        "xiyou_state_effects.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_formula_equipment.tscn",
+        "xiyou_formula_rest.tscn",
+        "xiyou_battle.tscn",
+        "xiyou_settlement.tscn",
+        "xiyou_battle_options.tscn",
+        "xiyou_floor_run_c.tscn",
+        "xiyou_rules.tscn",
+        "xiyou_rules_d1b.tscn",
+        "xiyou_rules_d1c.tscn",
+        "xiyou_rules_d1d.tscn"
+      ],
+      "childPGID": 43705,
+      "childIdentity": {
+        "pid": 43705,
+        "pgid": 43705,
+        "startedAt": "Sun Oct 25 09:00:30 2026    "
+      },
+      "finishedAt": "2026-10-25T08:10:16.385663+00:00"
+    },
+    "passedScenes": 11,
+    "totalScenes": 12,
+    "failure": "d1.dmg.enemy947.0.skill5557",
+    "actual": 467.775,
+    "oldOracle": 0,
+    "alreadyKnownUpstreamFixtureProblem": true,
+    "fixMergedIntoMain": "946df0b7",
+    "retestAfterSyncRequired": false,
+    "scenes": [
+      {
+        "scene": "xiyou_rules.tscn",
+        "passed": false,
+        "attemptExitCodes": [
+          1,
+          1
+        ],
+        "result": {
+          "failedSample": [
+            "d1.dmg.enemy947.0.skill5557"
+          ],
+          "passed": 105855,
+          "total": 105856
+        }
+      },
+      {
+        "scene": "xiyou_rules_d1d.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "failedSample": [],
+          "passed": 105670,
+          "total": 105670
+        }
+      },
+      {
+        "scene": "xiyou_rules_d1b.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "failedSample": [],
+          "passed": 105778,
+          "total": 105778
+        }
+      },
+      {
+        "scene": "xiyou_rules_d1c.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "failedSample": [],
+          "passed": 105608,
+          "total": 105608
+        }
+      },
+      {
+        "scene": "xiyou_floor_run_c.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "floors": [
+            21,
+            33
+          ],
+          "passed": 560,
+          "total": 560
+        }
+      },
+      {
+        "scene": "xiyou_battle_options.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 92,
+          "total": 92
+        }
+      },
+      {
+        "scene": "xiyou_state_effects.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 19949,
+          "total": 19949
+        }
+      },
+      {
+        "scene": "xiyou_battle.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 8,
+          "total": 8
+        }
+      },
+      {
+        "scene": "xiyou_formula_effects.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 908,
+          "total": 908
+        }
+      },
+      {
+        "scene": "xiyou_settlement.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 11,
+          "total": 11
+        }
+      },
+      {
+        "scene": "xiyou_formula_equipment.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 1804,
+          "total": 1804
+        }
+      },
+      {
+        "scene": "xiyou_formula_rest.tscn",
+        "passed": true,
+        "attemptExitCodes": [
+          0
+        ],
+        "result": {
+          "passed": 1352,
+          "total": 1352
+        }
+      }
+    ]
+  },
+  "mainMerged": {
+    "main": "545ebd37",
+    "merge": "30b7f97c",
+    "conflicts": false,
+    "sixSliceAcceptancesVerifiedAgainstActualMain": true
+  },
+  "powerFinal": {
+    "status": {
+      "runId": "e17287b26ec844429fcd3449f7d9782e",
+      "status": "done",
+      "exitCode": 0,
+      "pid": 44580,
+      "startedAt": "2026-10-25T08:09:39.140661+00:00",
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/07_开发环境/并行测试.py",
+        "03_再刷重制_Godot/07_开发环境/godot",
+        "03_再刷重制_Godot/01_Godot工程",
+        "--log-dir",
+        "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/power",
+        "xiyou_power.tscn"
+      ],
+      "childPGID": 44581,
+      "childIdentity": {
+        "pid": 44581,
+        "pgid": 44581,
+        "startedAt": "Sun Oct 25 09:09:39 2026    "
+      },
+      "finishedAt": "2026-10-25T08:12:46.220925+00:00"
+    },
+    "log": "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/power.log",
+    "result": {
+      "passed": 137,
+      "total": 137
+    }
+  },
+  "productionPatch": {
+    "commit": "10da1d87",
+    "applied": true,
+    "crossReview": "待Claude"
+  },
+  "finalSync": {
+    "status": {
+      "runId": "c9b79e51415a490cb6e15ae9bc03f25d",
+      "status": "done",
+      "exitCode": 0,
+      "pid": 33406,
+      "startedAt": "2026-10-25T15:36:51.331449+00:00",
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/sync_preserve_evidence.py",
+        "--accept-additions",
+        "--accept-changes",
+        "03_再刷重制_Godot/04_验证/测量接受/四零散_cat去tpGap_20261025.json",
+        "--accept-changes",
+        "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      ],
+      "childPGID": 33407,
+      "childIdentity": {
+        "pid": 33407,
+        "pgid": 33407,
+        "startedAt": "Sun Oct 25 16:36:51 2026    "
+      },
+      "finishedAt": "2026-10-25T15:38:58.515936+00:00"
+    },
+    "report": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261025_163651_399538_v0.28-v0.28/同步报告.json",
+    "result": "新增用例、显式接受 7 条既有用例改变，已接受（不登记）",
+    "verifyOk": true,
+    "sameExistingSource": true,
+    "acceptedChanges": [
+      {
+        "file": "cat.json",
+        "collection": "cases",
+        "key": "[[\"id\",\"chain.atkk1817\"]]",
+        "fields": [
+          "setup"
+        ],
+        "oldDigest": "6dd559bc445b42f1",
+        "newDigest": "511862cf8879383d",
+        "reason": "哈基米1817被动减耗已接入；仅删除setup.tpGap旧豁免元数据，全部原版测量数值保持不变。",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/四零散_cat去tpGap_20261025.json"
+      },
+      {
+        "file": "slice_d1.json",
+        "collection": "damage",
+        "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+        "fields": [
+          "breakdown",
+          "final",
+          "value"
+        ],
+        "oldDigest": "431a17c4b5d62714",
+        "newDigest": "169fcb99ff46deca",
+        "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      },
+      {
+        "file": "slice_d2.json",
+        "collection": "damage",
+        "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+        "fields": [
+          "breakdown",
+          "final",
+          "value"
+        ],
+        "oldDigest": "431a17c4b5d62714",
+        "newDigest": "169fcb99ff46deca",
+        "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      },
+      {
+        "file": "slice_d3.json",
+        "collection": "damage",
+        "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+        "fields": [
+          "breakdown",
+          "final",
+          "value"
+        ],
+        "oldDigest": "431a17c4b5d62714",
+        "newDigest": "169fcb99ff46deca",
+        "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      },
+      {
+        "file": "slice_d4.json",
+        "collection": "damage",
+        "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+        "fields": [
+          "breakdown",
+          "final",
+          "value"
+        ],
+        "oldDigest": "431a17c4b5d62714",
+        "newDigest": "169fcb99ff46deca",
+        "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      },
+      {
+        "file": "slice_d5.json",
+        "collection": "damage",
+        "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+        "fields": [
+          "breakdown",
+          "final",
+          "value"
+        ],
+        "oldDigest": "431a17c4b5d62714",
+        "newDigest": "169fcb99ff46deca",
+        "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      },
+      {
+        "file": "slice_d6.json",
+        "collection": "damage",
+        "key": "[[\"troop\",854],[\"enemy\",947],[\"target\",9],[\"skill\",5557]]",
+        "fields": [
+          "breakdown",
+          "final",
+          "value"
+        ],
+        "oldDigest": "431a17c4b5d62714",
+        "newDigest": "169fcb99ff46deca",
+        "reason": "哪吒_1 期六修 slice_probe：敌群 157 敌人 160 的 857「净化之雷」custom 公式测量时有副作用，把角色 9 从 525 打到 0 且探针不还原，后续 854/947/5557 取样在 0 血上算出 0；现 measure 量完还原双方 hp/mp/tp，此条由 0 变 468，能力值不变",
+        "source": "03_再刷重制_Godot/04_验证/测量接受/claude_nezha-check-tiers-eac2f9-5.json"
+      }
+    ],
+    "additionCount": 34,
+    "enemyBookTotalCases": 38,
+    "remainingProblems": {},
+    "probePlan": {
+      "executed": 0,
+      "reused": 53,
+      "partial": {}
+    },
+    "originalProbeExecutions": 58,
+    "originalExitCode": 2,
+    "originalRejection": "enemy_book_defeat cases stable key missing; fixed with cases/id; old4 unchanged and five negative guards passed",
+    "godotImportSucceeded": true,
+    "rule947Reference": {
+      "troop": 854,
+      "enemy": 947,
+      "target": 9,
+      "skill": 5557,
+      "skillName": "地狱黑洞",
+      "type": 1,
+      "element": 9,
+      "physical": false,
+      "magical": false,
+      "value": 468,
+      "breakdown": {
+        "base": 519.75,
+        "basis": 519.75,
+        "weights": [
+          1,
+          0
+        ],
+        "normal": 1,
+        "terminal": 1,
+        "row": {
+          "element": 9,
+          "name": "黑暗",
+          "share": 1,
+          "bonus": 1,
+          "defense": 1,
+          "matchup": 1,
+          "resistance": 0.9,
+          "incoming": 1,
+          "terminal": 1,
+          "growth": 1,
+          "beforeFixed": 467.775,
+          "fixedMitigation": 0,
+          "afterFixed": 467.775,
+          "critical": 1,
+          "independent": 1,
+          "guard": 1,
+          "value": 467.775
+        }
+      },
+      "final": 468
+    }
+  },
+  "finalFour": {
+    "status": {
+      "runId": "24723637d00c44fe8368f1c0b197bcbf",
+      "status": "done",
+      "exitCode": 0,
+      "pid": 36685,
+      "startedAt": "2026-10-25T15:39:17.761583+00:00",
+      "command": [
+        "python3",
+        "03_再刷重制_Godot/07_开发环境/并行测试.py",
+        "03_再刷重制_Godot/07_开发环境/godot",
+        "03_再刷重制_Godot/01_Godot工程",
+        "--log-dir",
+        "03_再刷重制_Godot/04_验证/本地结果/four-loose-fixes/final-four",
+        "xiyou_rules.tscn",
+        "xiyou_cat.tscn",
+        "xiyou_enemy_book.tscn",
+        "xiyou_loose_fixes.tscn"
+      ],
+      "childPGID": 36686,
+      "childIdentity": {
+        "pid": 36686,
+        "pgid": 36686,
+        "startedAt": "Sun Oct 25 16:39:17 2026    "
+      },
+      "finishedAt": "2026-10-25T15:41:49.788607+00:00"
+    },
+    "tests": {
+      "xiyou_cat.tscn": {
+        "passed": 994,
+        "total": 994
+      },
+      "xiyou_enemy_book.tscn": {
+        "passed": 86,
+        "total": 86
+      },
+      "xiyou_loose_fixes.tscn": {
+        "passed": 126,
+        "total": 126
+      },
+      "xiyou_rules.tscn": {
+        "failedSample": [],
+        "passed": 105856,
+        "total": 105856
+      }
+    },
+    "timings": {
+      "jobs": 2,
+      "globalJobs": 4,
+      "wallSeconds": 151.775,
+      "flakyRerunPassed": [],
+      "fingerprint": "",
+      "reused": [],
+      "scenes": [
+        {
+          "name": "xiyou_rules.tscn",
+          "seconds": 151.771,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 151.771,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_cat.tscn",
+          "seconds": 4.273,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 4.273,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_enemy_book.tscn",
+          "seconds": 4.179,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 4.179,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_loose_fixes.tscn",
+          "seconds": 2.685,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 2.685,
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    "flaky": false
+  },
+  "additionSchemaRegression": {
+    "file": "oracle_additions.py",
+    "key": {
+      "enemy_book_defeat.json": {
+        "cases": [
+          "id"
+        ]
+      }
+    },
+    "oldCasesUnchanged": 4,
+    "newCases": 34,
+    "negativeGuardsPassed": [
+      "changedOldValue",
+      "removedOldCase",
+      "duplicateOldKey",
+      "newError",
+      "missingKey"
+    ],
+    "mergeToolTests": {
+      "passed": 136,
+      "total": 136,
+      "exitCode": 0
+    }
+  },
+  "temporaryOutputCleanup": {
+    "removed": "four-loose-fixes",
+    "preserved": [
+      "旧原版证据",
+      "mv_oracle/.sandbox",
+      "generated",
+      "自动同步报告与备份",
+      "state-effects-2b整树"
+    ]
+  }
+}

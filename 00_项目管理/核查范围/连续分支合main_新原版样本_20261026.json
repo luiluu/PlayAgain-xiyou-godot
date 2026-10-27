@@ -1,0 +1,19 @@
+{
+ "native": [
+  {
+   "name": "state_operation",
+   "cases": 8,
+   "sha256": "bbdf175d12f5ddc3879152539c59529f8722d6114e6729bd0804fb3275951954",
+   "sourceMatchesManifest": true,
+   "errors": []
+  },
+  {
+   "name": "state_merge_context",
+   "cases": 12,
+   "sha256": "eddda96f07c92105cecbb6d701e84ef5fa5c88c99db0823fce4ffb50bfa6bfbb",
+   "sourceMatchesManifest": true,
+   "errors": []
+  }
+ ],
+ "draftImportErrors": []
+}

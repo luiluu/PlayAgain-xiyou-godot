@@ -1,0 +1,50 @@
+{
+  "executor": "Codex（沙僧82）",
+  "review": "待Claude",
+  "native": "03_再刷重制_Godot/03_转换工具/mv_oracle/.sandbox/merge82_admission_v2.json",
+  "cause": {
+    "determinism": "native actor1 level1 releases weapon56(req3) at battle refresh; level3 keeps weapon; gear_trace before_setup empty and after_setup contains exact fixture sword. No inventory/reward assertion removed. Changing level alters actual command count, total382 to372; three_rounds and commands>=9 kept.",
+    "battle_ui": "native actor10 level1 releases weapon14(req10); level10 keeps and canUseCold true atTP9. No runtime canUse relaxation.",
+    "enemy_book": "new independent death after revive must clear prior removedStates1; native same-result counterexample remains in death_admission37."
+  },
+  "runs": [
+    {
+      "scene": "xiyou_determinism",
+      "result": {
+        "passed": 372,
+        "total": 372
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/fixtures82-green1/xiyou_determinism.log",
+      "sha256": "5f41a72c5e4727ff8c57b2f43147fa20eef8fa15a72fa231e27f35a1dec36cf7"
+    },
+    {
+      "scene": "xiyou_battle_ui",
+      "result": {
+        "passed": 70,
+        "total": 70
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/fixtures82-green1/xiyou_battle_ui.log",
+      "sha256": "5ab3f3ee04060e58848fac4bfac90ad93e716ce847078873f70e8b10a4e85762"
+    },
+    {
+      "scene": "xiyou_enemy_book",
+      "result": {
+        "passed": 93,
+        "total": 93
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/fixtures82-green1/xiyou_enemy_book.log",
+      "sha256": "52f01a78843bd071abc556abddeec6f6179a4e124f6d8f651d02de3a45760725"
+    },
+    {
+      "scene": "xiyou_equipment_admission",
+      "result": {
+        "passed": 7,
+        "total": 7
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/fixtures82-green1/xiyou_equipment_admission.log",
+      "sha256": "357fbcb4c7b4527b8854786013db6a0763f52113aa82be46606bb46cc1dfbfbc"
+    }
+  ],
+  "originalFailuresPreserved": true,
+  "allIntegrationPassed": false
+}

@@ -1,0 +1,350 @@
+{
+  "date": "2026-10-25",
+  "branch": "codex/actor-bonus",
+  "scope": "First batch: shared fractional param ledger, pet base/xparam bonuses, TeamA rearrangement, Godot save compatibility; state addParam scripts not yet translated",
+  "oracleCases": [
+    {
+      "id": "permanent",
+      "errors": []
+    },
+    {
+      "id": "pet.lifecycle",
+      "errors": []
+    },
+    {
+      "id": "pet.membership",
+      "errors": []
+    },
+    {
+      "id": "pet.permanent",
+      "errors": []
+    },
+    {
+      "id": "pet.mapping",
+      "errors": []
+    }
+  ],
+  "fixtureSha256": "630d31e488008e1dedca4c2fd1609f28dc1d6d9dedc17a347aa35f0b8c293b19",
+  "godot": [
+    {
+      "scene": "xiyou_actor_bonus.tscn",
+      "result": {
+        "passed": 736,
+        "total": 736
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.517,
+          "passed": true
+        }
+      ],
+      "logSha256": "8d5e9d6c9586605d7c4d4f4345260263607508895726b6e0ef3d44799925949f"
+    },
+    {
+      "scene": "xiyou_rules_d1c.tscn",
+      "result": {
+        "failedSample": [],
+        "passed": 105608,
+        "total": 105608
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 175.844,
+          "passed": true
+        }
+      ],
+      "logSha256": "4165e83d7d64da7e3da379f6ec7c6479ca0015f14925e5a25ecfbe39aa5db5b6"
+    },
+    {
+      "scene": "xiyou_rules_d1d.tscn",
+      "result": {
+        "failedSample": [],
+        "passed": 105670,
+        "total": 105670
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 175.11,
+          "passed": true
+        }
+      ],
+      "logSha256": "cdd1994d1fff40882519bc7c63e3b7fcf6c910c7127f36896d4db38b36321989"
+    },
+    {
+      "scene": "xiyou_rules.tscn",
+      "result": {
+        "failedSample": [],
+        "passed": 105856,
+        "total": 105856
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 166.477,
+          "passed": true
+        }
+      ],
+      "logSha256": "91ee5790cd6c8520336dd5b75dfbbe13059d85c5fcc811f4dba23189f63d56fc"
+    },
+    {
+      "scene": "xiyou_rules_d1b.tscn",
+      "result": {
+        "failedSample": [],
+        "passed": 105778,
+        "total": 105778
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 163.851,
+          "passed": true
+        }
+      ],
+      "logSha256": "71c43f1b4a9d5a4b6a36e06d5c88d69072cbbbfe0ca349e664b4bc687b07334d"
+    },
+    {
+      "scene": "xiyou_floor_reach225.tscn",
+      "result": {
+        "passed": 151,
+        "total": 151
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 6.819,
+          "passed": true
+        }
+      ],
+      "logSha256": "08fc301131f4e1b6821662032ca6c34732833b5de8a49416fa087969e4bb3d66"
+    },
+    {
+      "scene": "xiyou_cat.tscn",
+      "result": {
+        "passed": 994,
+        "total": 994
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.145,
+          "passed": true
+        }
+      ],
+      "logSha256": "c355e4a02e36046300b0c186545f2472408f64090b6039d567f29926ee3a3d97"
+    },
+    {
+      "scene": "xiyou_pet_synth.tscn",
+      "result": {
+        "passed": 26,
+        "total": 26
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.036,
+          "passed": true
+        }
+      ],
+      "logSha256": "65b462ded0d63d68a10df847f1ad6c4736d866e4f6721ae2ae704eead29d8973"
+    },
+    {
+      "scene": "xiyou_party.tscn",
+      "result": {
+        "passed": 57,
+        "total": 57
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.947,
+          "passed": true
+        }
+      ],
+      "logSha256": "21fe13e83961ab9e12e7ba46df1efbab5a9ab971ee03e8f8fabd5bacab7307b7"
+    },
+    {
+      "scene": "xiyou_actor_warehouse.tscn",
+      "result": {
+        "passed": 26,
+        "total": 26
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.859,
+          "passed": true
+        }
+      ],
+      "logSha256": "65b462ded0d63d68a10df847f1ad6c4736d866e4f6721ae2ae704eead29d8973"
+    },
+    {
+      "scene": "xiyou_state_effects.tscn",
+      "result": {
+        "passed": 19949,
+        "total": 19949
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.758,
+          "passed": true
+        }
+      ],
+      "logSha256": "910cf8a440d99aff3476028e5c1be7d9b016091ab58e63095c026dfbc88de3ed"
+    },
+    {
+      "scene": "xiyou_training.tscn",
+      "result": {
+        "passed": 188,
+        "total": 188
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.738,
+          "passed": true
+        }
+      ],
+      "logSha256": "c9dc17632f56d4607a55eebe27aba59a7d3fc9b0767370bf8a08216cfe0671af"
+    },
+    {
+      "scene": "xiyou_pets.tscn",
+      "result": {
+        "passed": 29,
+        "total": 29
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.544,
+          "passed": true
+        }
+      ],
+      "logSha256": "cd4a92a7b27b313d29855f89f5562610e5af2e2863742f2757ccde0c4184e433"
+    },
+    {
+      "scene": "xiyou_pet_capture.tscn",
+      "result": {
+        "passed": 42,
+        "total": 42
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.484,
+          "passed": true
+        }
+      ],
+      "logSha256": "1c6a2d2495aac010d06549e282fadb73afa9dafad0d02a8dbe4fb75d4dc6617a"
+    },
+    {
+      "scene": "xiyou_custom_params.tscn",
+      "result": {
+        "passed": 160,
+        "total": 160
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.398,
+          "passed": true
+        }
+      ],
+      "logSha256": "348548d38ee066bf8b18316661f0b856e4fe6c7621bf67e6072887515d5d04d9"
+    },
+    {
+      "scene": "xiyou_party_skills.tscn",
+      "result": {
+        "passed": 214,
+        "total": 214
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.172,
+          "passed": true
+        }
+      ],
+      "logSha256": "21b2391535419030e69ea7e63390cfbbe66074e874a5eb3d8c87428a122f4b02"
+    },
+    {
+      "scene": "xiyou_formula_effects.tscn",
+      "result": {
+        "passed": 908,
+        "total": 908
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 2.959,
+          "passed": true
+        }
+      ],
+      "logSha256": "5a34e51b03ae3e22a42f333af5a89ac5103908b395a1264ab61d09ccd70da44c"
+    },
+    {
+      "scene": "xiyou_magic_weapon.tscn",
+      "result": {
+        "passed": 43,
+        "total": 43
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 2.495,
+          "passed": true
+        }
+      ],
+      "logSha256": "f37936e593d66b4961be80cf0b796d0dc68ca4e788f69a54377d2026cce74bf0"
+    },
+    {
+      "scene": "xiyou_state_effects_tp.tscn",
+      "result": {
+        "failures": [],
+        "passed": 537,
+        "test": "xiyou_state_effects_tp",
+        "total": 537
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.54,
+          "passed": true
+        }
+      ],
+      "logSha256": "8e19e9dc5cc74e44f976bacf446243908a168e067ad12083c3f3f86f17ac4edf"
+    }
+  ],
+  "allFinalVersionFirstAttempt": true,
+  "flaky": [],
+  "developmentFailures": [
+    "Test XEnemy.setup initially missing difficulty argument; fixed before final validation",
+    "Direct GTWar assignment sampled stale native xparam cache; probe now uses native learn/forget/refresh",
+    "Membership comparison excludes never participating actor10 because its pre-existing xparam cache is out of scope; existing lifecycle compares party actor10 strictly"
+  ],
+  "otherChecks": {
+    "godotImport": 0,
+    "documentRegistryExtractedFromCheckSh": 0,
+    "oracleGuard16": 0,
+    "gitDiffCheck": 0
+  },
+  "syncRun": false,
+  "fullCheckRun": false,
+  "notCompleted": [
+    "state1612/1768 addParam effect translation",
+    "complete actor xparam caching",
+    "passive-content",
+    "race-battle"
+  ],
+  "optimization": {
+    "flag": "XPets.FIX_UNGRANTED_BONUS",
+    "default": true,
+    "original": "newly recruited actor receives no pet params but rest subtracts them",
+    "fixed": "only retract params from actors that received them",
+    "revert": "false restores original subtraction; both modes tested",
+    "registration": "assembler must assign optimization ID and ask user final choice"
+  }
+}

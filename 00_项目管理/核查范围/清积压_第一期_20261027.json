@@ -1,0 +1,953 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-27",
+  "reviewer": "Codex（沙僧83）",
+  "branch": "codex/review-backlog-20261027-1",
+  "fixedBase": "464bd21b26cb26b61ed3e6484fcb7f2f88a5f79e",
+  "pendingAtStart": {
+    "all": 77,
+    "counted": 41,
+    "countedCodex": 41,
+    "docs": 36
+  },
+  "reviewedClaudeBatches": [
+    {
+      "n": 1,
+      "sha": "9bf29c65b924ab5bb2fbd1a50a90e38b126aeb43",
+      "parents": [
+        "c3c979a09ed23d261dc85af7633a415dbd0fbaf0",
+        "215f7902672a6ba3471573529e063af73d923338"
+      ],
+      "title": "合并 claude/bailong-actors-f2575c",
+      "files": [
+        "00_项目管理/交付/claude_bailong-actors-f2575c.md",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor_damage_hooks.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor_damage_hooks.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor_modules.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor_modules.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/formula_execution.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/garou.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/garou.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/mira.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/mira.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/module_registry.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/number_boost.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/number_boost.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/raven.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/raven.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/skill_progression.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/skill_progression.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/sukuna.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/sukuna.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/mv_script.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_advanced.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_modules.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_modules.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_modules.tscn",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_p0.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_module_hooks.gd",
+        "03_再刷重制_Godot/03_转换工具/formula_program.py",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/slice_probe.cjs",
+        "03_再刷重制_Godot/03_转换工具/xiyou_export.py",
+        "03_再刷重制_Godot/03_转换工具/xiyou_slice.json"
+      ],
+      "deliveryDocs": [
+        "00_项目管理/交付/claude_bailong-actors-f2575c.md",
+        "00_项目管理/交付/claude_wukong-reach5.md"
+      ],
+      "reviewStatus": "通过（专属模块一期边界）",
+      "eligibleForClearing": true
+    },
+    {
+      "n": 2,
+      "sha": "a3298b623be508f06109a16e46fe68f6fb0d29f5",
+      "parents": [
+        "7130c9b52729f34376a4509882fa21467aa85f21",
+        "bb847ca18d096f830ea97f4c197c0c5722a406da"
+      ],
+      "title": "合并 claude/bailong-fix0",
+      "files": [
+        "00_项目管理/交付/claude_bailong-fix0.md",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/garou.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/actor_book.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/character_help.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/character_help.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/help_card.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_book.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_help_card.gd"
+      ],
+      "deliveryDocs": [
+        "00_项目管理/交付/claude_bailong-fix0.md",
+        "00_项目管理/交付/claude_project-thread-6np8me.md"
+      ],
+      "reviewStatus": "通过（期零修边界）",
+      "eligibleForClearing": true
+    },
+    {
+      "n": 3,
+      "sha": "378920d6d06d612f251335f568b40f8002e6a179",
+      "parents": [
+        "d6514697140a1470ea2a79fa36659826813dbd57",
+        "65f3ea79d606f8d95fad84dc1da3b324400c9eeb"
+      ],
+      "title": "合并 claude/project-thread-6np8me",
+      "files": [
+        "00_项目管理/交付/claude_project-thread-6np8me.md",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_scene.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/battler.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/state_effects.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/xstate.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/fixtures/state_js_translation.json",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_state_js.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_state_js.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_state_js.tscn",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/state_js_probe.cjs",
+        "03_再刷重制_Godot/03_转换工具/oracle_additions.py",
+        "03_再刷重制_Godot/03_转换工具/xiyou_export.py",
+        "03_再刷重制_Godot/03_转换工具/同步正式西游.py",
+        "03_再刷重制_Godot/07_开发环境/检查.sh",
+        "03_再刷重制_Godot/07_开发环境/测试状态js翻译.py",
+        "03_再刷重制_Godot/07_开发环境/测试选测.py"
+      ],
+      "deliveryDocs": [
+        "00_项目管理/交付/claude_project-thread-6np8me.md"
+      ],
+      "reviewStatus": "问题待修 F1/F2/F3",
+      "eligibleForClearing": false
+    },
+    {
+      "n": 4,
+      "sha": "8fe7f7964daaf60697ea5c1b3b35e77e55b1e712",
+      "parents": [
+        "19df5a88f855541bc469ab38d5a46a1a424e16d3",
+        "8e20cf72c3f79e33d3ebf9e314e524285b313a4a"
+      ],
+      "title": "合并 claude/project-thread-z5fkq9",
+      "files": [
+        ".gitignore",
+        "00_项目管理/交付/claude_project-thread-z5fkq9.md",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/alienation.json",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/alien_battle.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/alien_battle.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/alienation.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/battler.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/enemy.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/enemy_book.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/module_registry.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/race.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/race_battle.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/race_battle.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/resource_context.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/xstate.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/map_scene.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_battle.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_battle.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_alien_battle.tscn",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_enemy_book.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_module_hooks.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_race_battle.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_race_battle.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_race_battle.tscn",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/alien_battle_probe.cjs",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/race_battle_probe.cjs",
+        "03_再刷重制_Godot/03_转换工具/同步正式西游.py",
+        "03_再刷重制_Godot/07_开发环境/合并提速工具.md",
+        "03_再刷重制_Godot/07_开发环境/测试选测.py",
+        "03_再刷重制_Godot/07_开发环境/选测.py",
+        "03_再刷重制_Godot/07_开发环境/选测对照.json"
+      ],
+      "deliveryDocs": [
+        "00_项目管理/交付/claude_muzha-sync-incremental-4bd025-2.md",
+        "00_项目管理/交付/claude_muzha-sync-incremental-4bd025-3.md",
+        "00_项目管理/交付/claude_muzha-sync-incremental-4bd025.md",
+        "00_项目管理/交付/claude_project-thread-z5fkq9.md"
+      ],
+      "reviewStatus": "问题待修 F1/F4",
+      "eligibleForClearing": false
+    },
+    {
+      "n": 5,
+      "sha": "b94f1abc2e5120b27872591720e000266e967cdb",
+      "parents": [
+        "d2389b00be6e5cb8483d0fa232d5b83d5117d4b5",
+        "00dc7eefce515bb5aeb56333c05da8eca87152e5"
+      ],
+      "title": "合并 claude/project-thread-47bcr5",
+      "files": [
+        "00_项目管理/交付/claude_project-thread-47bcr5.md",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/magic_weapon.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/magic_weapon.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/mv_event_core.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/power.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/fixtures/magic_weapon_level_oracle.json",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_weapon_level.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_weapon_level.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_magic_weapon_level.tscn",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/magic_weapon_level_probe.cjs",
+        "03_再刷重制_Godot/03_转换工具/同步正式西游.py"
+      ],
+      "deliveryDocs": [
+        "00_项目管理/交付/claude_bajie-pets-source-97efd5-3.md",
+        "00_项目管理/交付/claude_project-thread-47bcr5.md"
+      ],
+      "reviewStatus": "实现专项通过，登记待补 F6",
+      "eligibleForClearing": false
+    },
+    {
+      "n": 6,
+      "sha": "049b002f2b67316cb9e9c245b9cc83bcc50ebf63",
+      "parents": [
+        "e2e85a39f7694ca5464a8b3ff9d1ca3bf828a5a6",
+        "dcb5b50d24c23c8ddc073543ed43b067c62fd2d0"
+      ],
+      "title": "合并 claude/project-thread-47bcr5-actor-cmds",
+      "files": [
+        "00_项目管理/交付/claude_project-thread-47bcr5-actor-cmds.md",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/equipment.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/mv_event_core.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/xsave.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/xstate.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/map_scene.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/mv_interpreter.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/xtext.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/fixtures/actor_change_oracle.json",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_change.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_change.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_change.tscn",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_actor_p0.gd",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/actor_change_probe.cjs"
+      ],
+      "deliveryDocs": [
+        "00_项目管理/交付/claude_muzha-sync-incremental-4bd025-2.md",
+        "00_项目管理/交付/claude_muzha-sync-incremental-4bd025-3.md",
+        "00_项目管理/交付/claude_muzha-sync-incremental-4bd025.md",
+        "00_项目管理/交付/claude_project-thread-47bcr5-actor-cmds.md"
+      ],
+      "reviewStatus": "实现专项通过，登记待补 F6",
+      "eligibleForClearing": false
+    },
+    {
+      "n": 7,
+      "sha": "926f914fe8483950b3a021ab5df2a00c9be69ccd",
+      "parents": [
+        "34ccbfda4d456533687a9bc416a5943dfa772f51",
+        "e0ca30bd41c1a18d2fa565e772606ed554788ae3"
+      ],
+      "title": "合并 claude/bajie-pets-source-97efd5-2",
+      "files": [
+        "00_项目管理/交付/claude_bajie-pets-source-97efd5-2.md",
+        "00_项目管理/交付/claude_bajie-pets-source-97efd5.md",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_scene.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battler_sprite.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/appearance.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/battle_random.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/costumes.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/enemy.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/pet_capture.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/pet_capture.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/pets.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/map_scene.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/mv_script.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/item_scene.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/fixtures/battle_costume_oracle.json",
+        "03_再刷重制_Godot/01_Godot工程/tests/fixtures/costume_oracle.json",
+        "03_再刷重制_Godot/01_Godot工程/tests/fixtures/pet_capture_oracle.json",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_costume_battle.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_costume_battle.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_costume_battle.tscn",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_costumes.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pet_capture.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pet_capture.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pet_capture.tscn",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/costume_probe.cjs",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/pet_capture_probe.cjs",
+        "03_再刷重制_Godot/03_转换工具/ui_reference/review_system_pages.js"
+      ],
+      "deliveryDocs": [
+        "00_项目管理/交付/claude_bajie-pets-source-97efd5-2.md",
+        "00_项目管理/交付/claude_bajie-pets-source-97efd5.md",
+        "00_项目管理/交付/claude_wukong-reach4-b8321e.md"
+      ],
+      "reviewStatus": "问题待修 F4；登记待补 F6",
+      "eligibleForClearing": false
+    },
+    {
+      "n": 8,
+      "sha": "d6045c3e413a3d4b1ec1093d1fd861326b5949d8",
+      "parents": [
+        "9460efc599db378fba4c80fde75101d27f973673",
+        "1dd597cefada468b5ff5ab41c04a89bfe33545b4"
+      ],
+      "title": "合并 claude/bajie-pets-source-97efd5-3",
+      "files": [
+        "00_项目管理/交付/claude_bajie-pets-source-97efd5-3.md",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/action_sequence.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_event_runner.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_scene.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/battle_common_event.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/battle_common_event.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/pet_capture.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/fixtures/battle_common_event_oracle.json",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battle_common_events.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battle_common_events.tscn",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_pet_capture.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_troop_events.gd",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/battle_common_event_probe.cjs"
+      ],
+      "deliveryDocs": [
+        "00_项目管理/交付/claude_bajie-pets-source-97efd5-3.md",
+        "00_项目管理/交付/claude_nezha-check-tiers-eac2f9-7.md"
+      ],
+      "reviewStatus": "问题待总装决定 F5",
+      "eligibleForClearing": false
+    },
+    {
+      "n": 9,
+      "sha": "d67b92260cfe66217f8194ec15e361a1991bac03",
+      "parents": [
+        "6c71a288eae61f4985390d48081c0721349e79eb",
+        "862bb2046e8b8a6f6d81cf4da449d246573132d7"
+      ],
+      "title": "合并 claude/bajie-pets-source-97efd5-4",
+      "files": [
+        "00_项目管理/交付/claude_bajie-pets-source-97efd5-4.md",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_event_runner.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/battle_common_event.gd",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/party_scene.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/fixtures/battle_start_event_oracle.json",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battle_start_event.gd",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battle_start_event.gd.uid",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battle_start_event.tscn",
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_party.gd",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/battle_start_event_probe.cjs",
+        "03_再刷重制_Godot/03_转换工具/ui_reference/review_system_pages.js"
+      ],
+      "deliveryDocs": [
+        "00_项目管理/交付/claude_bajie-pets-source-97efd5-4.md"
+      ],
+      "reviewStatus": "通过",
+      "eligibleForClearing": true
+    },
+    {
+      "n": 10,
+      "sha": "b3ab53e631640e6af6055caa76609a03983d5b6d",
+      "parents": [
+        "8548e2f6576dd0b9e9a726c0c2561b1ee7789899"
+      ],
+      "title": "修复敌人元素增伤漏算行动表技能的 passiveELUP（932 草中炎，reach3 合并后 xiyou_rules 六难度失败）",
+      "files": [
+        "00_项目管理/交付/claude_bajie-warehouse.md",
+        "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/damage.gd"
+      ],
+      "deliveryDocs": [],
+      "reviewStatus": "通过",
+      "eligibleForClearing": true
+    },
+    {
+      "n": 11,
+      "sha": "4cd01282aa16fad0543c4c52ba5841caa9e2d178",
+      "parents": [
+        "a4a885fcc50a039e64d1ac8f499914eae3bea165"
+      ],
+      "title": "seal1691 测试前提：挑战开关开到战斗结束（dev.170 起 battle_members 先 enforce_party 会把超强者 104 清出出战栏）",
+      "files": [
+        "03_再刷重制_Godot/01_Godot工程/tests/xiyou_battle_events.gd"
+      ],
+      "deliveryDocs": [],
+      "reviewStatus": "通过",
+      "eligibleForClearing": true
+    }
+  ],
+  "eligibleForClearing": [
+    "9bf29c65b924ab5bb2fbd1a50a90e38b126aeb43",
+    "a3298b623be508f06109a16e46fe68f6fb0d29f5",
+    "d67b92260cfe66217f8194ec15e361a1991bac03",
+    "b3ab53e631640e6af6055caa76609a03983d5b6d",
+    "4cd01282aa16fad0543c4c52ba5841caa9e2d178"
+  ],
+  "mustRetain": [
+    "378920d6d06d612f251335f568b40f8002e6a179",
+    "8fe7f7964daaf60697ea5c1b3b35e77e55b1e712",
+    "b94f1abc2e5120b27872591720e000266e967cdb",
+    "049b002f2b67316cb9e9c245b9cc83bcc50ebf63",
+    "926f914fe8483950b3a021ab5df2a00c9be69ccd",
+    "d6045c3e413a3d4b1ec1093d1fd861326b5949d8"
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "priority": 2,
+      "batches": [
+        3,
+        4
+      ],
+      "title": "regen伤害记录被播放器取反，显示为治疗",
+      "code": [
+        "battle/battle_scene.gd:1096",
+        "core/state_effects.gd:200",
+        "core/race_battle.gd:381",
+        "core/alien_battle.gd:347"
+      ],
+      "evidence": "diagnostic83-delivery/review_backlog83_diagnostic.log",
+      "observed": "毒伤hpDamage=67，显示参数=-67，XDamagePopup.kind=hp_heal；种族/异化各实际扣10且hp记录=+10。通用播放器符号错误在本批前已存在，新生产者暴露同一问题。"
+    },
+    {
+      "id": "F2",
+      "priority": 2,
+      "batches": [
+        3
+      ],
+      "title": "叠毒致死缺少collapse表现记录",
+      "code": [
+        "battle/battle_logic.gd:553",
+        "core/state_effects.gd:182"
+      ],
+      "evidence": "diagnostic83-delivery/review_backlog83_diagnostic.log",
+      "observed": "3名敌人HP0/死亡，日志只有3条regen；原版460致死案例均调用performCollapse。奖励计算exp270/gold359/三件掉落，不能误称敌人未死或所有奖励丢失。"
+    },
+    {
+      "id": "F3",
+      "priority": 2,
+      "batches": [
+        3
+      ],
+      "title": "装备预览复制遗漏state_data，状态层数回退1",
+      "code": [
+        "core/equipment.gd:16",
+        "core/battler.gd:477"
+      ],
+      "evidence": "diagnostic83-delivery/review_backlog83_diagnostic.log; native83-final.json/state_counter_clone",
+      "observed": "状态1775五层：原角色MP205，原样clone后201；param_state由5变1。冻结原版JsonEx复制前后计数5/5。仅指XEquipment.clone；XFormulaContext通用属性复制已含state_data。"
+    },
+    {
+      "id": "F4",
+      "priority": 2,
+      "batches": [
+        4,
+        7
+      ],
+      "title": "捕捉与图鉴死亡钩子集成后击败数少记",
+      "code": [
+        "core/pet_capture.gd:80",
+        "core/enemy_book.gd:100"
+      ],
+      "evidence": "diagnostic83-delivery/review_backlog83_diagnostic.log; native83-final.json/capture_book",
+      "observed": "注册真实本场名单后，捕捉成功两边均1宠物/隐藏/HP0；Godot计数+1，冻结原版die→refresh计数+2。z5fkq9原交付已声明，当前main仍未解决；不自行当原版缺陷优化。"
+    },
+    {
+      "id": "F5",
+      "priority": 2,
+      "batches": [
+        8
+      ],
+      "title": "已有战斗事件中COMMON EVENT被延后而非建立子解释器",
+      "code": [
+        "battle/action_sequence.gd:148",
+        "core/battle_common_event.gd:23"
+      ],
+      "evidence": "diagnostic83-delivery/review_backlog83_diagnostic.log; native83-final.json/common_event_running",
+      "observed": "同为事件运行中调375，冻结原版创建8指令子解释器、不预约；Godot不建子解释器、预约375。原单明确列为已知差异，涉及12技能；未见独立批准/优化登记，须总装决定是否补即时子事件。"
+    },
+    {
+      "id": "F6",
+      "priority": 3,
+      "batches": [
+        5,
+        6,
+        7
+      ],
+      "title": "优化登记缺项与O编号冲突",
+      "code": [
+        "core/mv_event_core.gd:21",
+        "core/pet_capture.gd:7",
+        "core/pets.gd:219"
+      ],
+      "evidence": "开工基准优化登记.md及各父提交交付单",
+      "observed": "法宝技能去重、CE463形象93→104均在原单提案但尚未进优化登记；宠物三项仍称O-098，而正式表O-098已给黄泉暴击。由总装分配未占用编号、补登记和回退说明，车道不改共享文件。"
+    }
+  ],
+  "tests": {
+    "specialties83": {
+      "scenes": [
+        {
+          "name": "xiyou_actor_book.tscn",
+          "passed": true,
+          "result": {
+            "passed": 22,
+            "total": 22
+          },
+          "attempts": 1,
+          "logSHA256": "cc45d0d1686542a67b7f865aa974e4e38750a956203ab8d44a6705ba0e052ff6"
+        },
+        {
+          "name": "xiyou_event_compare.tscn",
+          "passed": true,
+          "result": {
+            "passed": 5,
+            "total": 5
+          },
+          "attempts": 1,
+          "logSHA256": "f2589556b251c056ab0e8996e47fe20320ae799e563be2eb822639dd91ef1af9"
+        },
+        {
+          "name": "xiyou_actor_p0.tscn",
+          "passed": true,
+          "result": {
+            "passed": 3322,
+            "total": 3322
+          },
+          "attempts": 1,
+          "logSHA256": "b6d1523541a2f312b88c0da663f26cda6704a5f527540237f9f1318d6a2a57f5"
+        },
+        {
+          "name": "xiyou_help_card.tscn",
+          "passed": true,
+          "result": {
+            "passed": 992,
+            "total": 992
+          },
+          "attempts": 1,
+          "logSHA256": "d3c26a2d25102fb7dc1ec605771cda5ca51edeacbdb6c0f97d1dc2757c6a52ef"
+        },
+        {
+          "name": "xiyou_actor_advanced.tscn",
+          "passed": true,
+          "result": {
+            "passed": 33,
+            "total": 33
+          },
+          "attempts": 1,
+          "logSHA256": "c9d1339db9ad5ad5a418f4f0e698bbaee7450c8abf86aad17b05f81c2eba6626"
+        },
+        {
+          "name": "xiyou_state_js.tscn",
+          "passed": true,
+          "result": {
+            "passed": 1733,
+            "total": 1733
+          },
+          "attempts": 1,
+          "logSHA256": "fb6419be6af7d0465bec7b531649dbb2298ed38f77434e668e4e96d9dba8ef82"
+        },
+        {
+          "name": "xiyou_battle_common_events.tscn",
+          "passed": true,
+          "result": {
+            "passed": 22,
+            "total": 22
+          },
+          "attempts": 1,
+          "logSHA256": "5bcf891b5cd80f89ca43365c024c256f3e54d9b39c6ed00304f4137ece90fe14"
+        },
+        {
+          "name": "xiyou_battle_events.tscn",
+          "passed": true,
+          "result": {
+            "passed": 108,
+            "total": 108
+          },
+          "attempts": 1,
+          "logSHA256": "ce4ef850280024c345031f5ad943773a9b6bbea775b7a34d45d7502fc1238956"
+        },
+        {
+          "name": "xiyou_party.tscn",
+          "passed": true,
+          "result": {
+            "passed": 58,
+            "total": 58
+          },
+          "attempts": 1,
+          "logSHA256": "fafcf771d7e616db1a38a7d1247a3030ca3aea3555e6a50124b237237581fbea"
+        },
+        {
+          "name": "xiyou_enemy_book.tscn",
+          "passed": true,
+          "result": {
+            "passed": 93,
+            "total": 93
+          },
+          "attempts": 1,
+          "logSHA256": "52f01a78843bd071abc556abddeec6f6179a4e124f6d8f651d02de3a45760725"
+        },
+        {
+          "name": "xiyou_costume_battle.tscn",
+          "passed": true,
+          "result": {
+            "passed": 4,
+            "total": 4
+          },
+          "attempts": 1,
+          "logSHA256": "3c5465e47369a77fc496a2045c80c5f72e6a544964b67b5e0cb9510e73c1afbe"
+        },
+        {
+          "name": "xiyou_race_battle.tscn",
+          "passed": true,
+          "result": {
+            "passed": 436,
+            "total": 436
+          },
+          "attempts": 1,
+          "logSHA256": "057b602e43b3323a953b9ae6dbc1c3ff7c9d72b9bbeea4e5349e3046bb0a5ee6"
+        },
+        {
+          "name": "xiyou_pet_capture.tscn",
+          "passed": true,
+          "result": {
+            "passed": 43,
+            "total": 43
+          },
+          "attempts": 1,
+          "logSHA256": "f37936e593d66b4961be80cf0b796d0dc68ca4e788f69a54377d2026cce74bf0"
+        },
+        {
+          "name": "xiyou_alien_battle.tscn",
+          "passed": true,
+          "result": {
+            "passed": 330,
+            "total": 330
+          },
+          "attempts": 1,
+          "logSHA256": "5fc9b151968c2b16ec3cd57a9ff6d49f9fa9766fe0f6079cd828abfe55c913e1"
+        },
+        {
+          "name": "xiyou_actor_change.tscn",
+          "passed": true,
+          "result": {
+            "passed": 48,
+            "total": 48
+          },
+          "attempts": 1,
+          "logSHA256": "5d8aad86de16089640b6042a61962379205472cbd48794da916bd64c2c556eee"
+        },
+        {
+          "name": "xiyou_magic_weapon_level.tscn",
+          "passed": true,
+          "result": {
+            "passed": 51,
+            "total": 51
+          },
+          "attempts": 1,
+          "logSHA256": "f898f887e9120b77c088026ad18f1eb7895d651311030de1a8c07289a06efa69"
+        },
+        {
+          "name": "xiyou_battle_start_event.tscn",
+          "passed": true,
+          "result": {
+            "passed": 50,
+            "total": 50
+          },
+          "attempts": 1,
+          "logSHA256": "47bcfa7a36ea1face8890b3f78171678f588ef3433285b91be2117d46e611e3f"
+        },
+        {
+          "name": "xiyou_actor_modules.tscn",
+          "passed": true,
+          "result": {
+            "passed": 56,
+            "total": 56
+          },
+          "attempts": 1,
+          "logSHA256": "0b19669833f89a4400a693fdcb19fb18ecad49b1f786784d4352734e4a413e8b"
+        },
+        {
+          "name": "xiyou_costumes.tscn",
+          "passed": true,
+          "result": {
+            "passed": 27,
+            "total": 27
+          },
+          "attempts": 1,
+          "logSHA256": "414d2ff8feb5737f7960c11166d21c7a9958b4088e7fc30f3a0cf8f3c57728ef"
+        },
+        {
+          "name": "xiyou_module_hooks.tscn",
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 1310,
+            "total": 1310
+          },
+          "attempts": 1,
+          "logSHA256": "fd3e0c06ddc5ab6a2d42405f5b75f003dbbbb8ab312aace4c26f3a68c6c393b5"
+        }
+      ],
+      "sceneCount": 20,
+      "assertions": 8743,
+      "wallSeconds": 94.873,
+      "flaky": []
+    },
+    "dependencies83": {
+      "scenes": [
+        {
+          "name": "xiyou_troop_events_b.tscn",
+          "passed": true,
+          "result": {
+            "passed": 6450,
+            "total": 6450
+          },
+          "attempts": 1,
+          "logSHA256": "cebb5044d8bea48e2df3a237c3914641e3daa55c2d4047beaebbb197b1e6e62f"
+        },
+        {
+          "name": "xiyou_troop_events.tscn",
+          "passed": true,
+          "result": {
+            "passed": 6574,
+            "total": 6574
+          },
+          "attempts": 1,
+          "logSHA256": "5a65d18b71d7fee90c096af9916468c1de2e843aaf880aadcc79f67dce1cbe60"
+        },
+        {
+          "name": "xiyou_determinism.tscn",
+          "passed": true,
+          "result": {
+            "passed": 372,
+            "total": 372
+          },
+          "attempts": 1,
+          "logSHA256": "5f41a72c5e4727ff8c57b2f43147fa20eef8fa15a72fa231e27f35a1dec36cf7"
+        },
+        {
+          "name": "xiyou_state_effects.tscn",
+          "passed": true,
+          "result": {
+            "passed": 19949,
+            "total": 19949
+          },
+          "attempts": 1,
+          "logSHA256": "910cf8a440d99aff3476028e5c1be7d9b016091ab58e63095c026dfbc88de3ed"
+        },
+        {
+          "name": "xiyou_pets.tscn",
+          "passed": true,
+          "result": {
+            "passed": 29,
+            "total": 29
+          },
+          "attempts": 1,
+          "logSHA256": "cd4a92a7b27b313d29855f89f5562610e5af2e2863742f2757ccde0c4184e433"
+        },
+        {
+          "name": "xiyou_item_use.tscn",
+          "passed": true,
+          "result": {
+            "passed": 11,
+            "total": 11
+          },
+          "attempts": 1,
+          "logSHA256": "3a83c2fa5cfd05a909e0fab6c88a8b9cf7f33289426cb0cce9640e0f97ce8c7c"
+        },
+        {
+          "name": "xiyou_random_streams.tscn",
+          "passed": true,
+          "result": {
+            "passed": 484,
+            "total": 484
+          },
+          "attempts": 1,
+          "logSHA256": "70f1e181f2194fcdfec1ddb0ea83c70fdfa3005e79e364f88d9f60aef207dbc6"
+        },
+        {
+          "name": "xiyou_script.tscn",
+          "passed": true,
+          "result": {
+            "passed": 21,
+            "total": 21
+          },
+          "attempts": 1,
+          "logSHA256": "5572ab52b8e03bf7787f8c9298286cf92c5079f5be74efbf7f54833b838e49ad"
+        },
+        {
+          "name": "xiyou_appearance.tscn",
+          "passed": true,
+          "result": {
+            "passed": 34,
+            "total": 34
+          },
+          "attempts": 1,
+          "logSHA256": "f89dd7e3f7c572acbb807f40bb21e3437fb1b3b9c5f5d8d7d36468007edb20c0"
+        }
+      ],
+      "sceneCount": 9,
+      "assertions": 33924,
+      "wallSeconds": 94.878,
+      "flaky": []
+    },
+    "rules83": {
+      "scenes": [
+        {
+          "name": "xiyou_rules_d4.tscn",
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 17084,
+            "total": 17084
+          },
+          "attempts": 1,
+          "logSHA256": "63bfb25aaa680af849078a8e1b7cda0f82586cb459c0b8d1fc51f75d2c767dfd"
+        },
+        {
+          "name": "xiyou_rules.tscn",
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 17084,
+            "total": 17084
+          },
+          "attempts": 1,
+          "logSHA256": "63bfb25aaa680af849078a8e1b7cda0f82586cb459c0b8d1fc51f75d2c767dfd"
+        },
+        {
+          "name": "xiyou_rules_d2.tscn",
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 17082,
+            "total": 17082
+          },
+          "attempts": 1,
+          "logSHA256": "adee3461df3abe334de88d2d42596bb9ef756eceab28c4f8cd4850c8a801adf4"
+        },
+        {
+          "name": "xiyou_rules_d3.tscn",
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 17082,
+            "total": 17082
+          },
+          "attempts": 1,
+          "logSHA256": "adee3461df3abe334de88d2d42596bb9ef756eceab28c4f8cd4850c8a801adf4"
+        },
+        {
+          "name": "xiyou_rules_d6.tscn",
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 17082,
+            "total": 17082
+          },
+          "attempts": 1,
+          "logSHA256": "adee3461df3abe334de88d2d42596bb9ef756eceab28c4f8cd4850c8a801adf4"
+        },
+        {
+          "name": "xiyou_rules_d5.tscn",
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 17082,
+            "total": 17082
+          },
+          "attempts": 1,
+          "logSHA256": "adee3461df3abe334de88d2d42596bb9ef756eceab28c4f8cd4850c8a801adf4"
+        }
+      ],
+      "sceneCount": 6,
+      "assertions": 102496,
+      "wallSeconds": 73.781,
+      "flaky": []
+    }
+  },
+  "regularSceneCount": 35,
+  "regularAssertions": 145163,
+  "diagnostic": {
+    "checks": 9,
+    "purpose": "复现问题观察，不代表修复验收",
+    "nativeCases": 3,
+    "nativeErrors": [],
+    "priorFailuresPreserved": [
+      "diagnostic83/first_parse_failed.gd",
+      "diagnostic83/review_backlog83_diagnostic.log",
+      "diagnostic83-integration/review_backlog83_diagnostic.log",
+      "diagnostic83-complete/review_backlog83_diagnostic.log",
+      "native83-incomplete.json",
+      "native83-incomplete.cjs"
+    ]
+  },
+  "sameSource": {
+    "exitCode": 0,
+    "releaseVersion": "v0.28",
+    "inputs": 2057,
+    "runtimeInputs": 382,
+    "outputs": 2059,
+    "issues": []
+  },
+  "content": {
+    "pages": 5661,
+    "runnable": 5661,
+    "counts": {
+      "未对照": 1050,
+      "出切片": 14
+    },
+    "hard": 0,
+    "new": 0,
+    "resolved": 0
+  },
+  "notRun": [
+    "未重跑14期集成或全量规则24段",
+    "不修改共享登记、不核自己提交",
+    "请求名称xiyou_actor_state_persist.tscn不存在，dependencies实际9场且未补算"
+  ],
+  "localEvidenceDirectory": "03_再刷重制_Godot/04_验证/本地结果/review-backlog-20261027-1",
+  "clearingSimulation": {
+    "onlyInMemory": true,
+    "before": {
+      "Codex": 41,
+      "Claude": 0
+    },
+    "after": {
+      "Codex": 36,
+      "Claude": 0
+    },
+    "clearedLabels": [
+      "seal1691 测试前提：挑战开关开到战斗结束（dev.170 起 battle_members 先 enforce_party 会把超强者 104 清出出战栏）",
+      "修复敌人元素增伤漏算行动表技能的 passiveELUP（932 草中炎，reach3 合并后 xiyou_rules 六难度失败）",
+      "合并 claude/bailong-actors-f2575c",
+      "合并 claude/bailong-fix0",
+      "合并 claude/bajie-pets-source-97efd5-4"
+    ],
+    "allSixProblemBatchesRetained": true,
+    "ownClaudeReviewUnchanged": true
+  },
+  "tools": {
+    "stateJsTranslation": {
+      "passed": 10,
+      "total": 10
+    },
+    "selectionRegression": {
+      "passed": 45,
+      "total": 45
+    },
+    "sliceRestore": {
+      "passed": 2,
+      "total": 2
+    },
+    "filesystemGuard": {
+      "passed": 16,
+      "total": 16
+    }
+  },
+  "documentCheck": {
+    "runId": "18ae7cb3def040bb937ab35003356cee",
+    "status": "done",
+    "exitCode": 0,
+    "startedAt": "2026-10-27T05:21:40.333411+00:00",
+    "finishedAt": "2026-10-27T05:21:55.328335+00:00"
+  },
+  "mergeDraftExtraction": {
+    "passed": true,
+    "onlyFivePassedBatchesInDraft": true,
+    "sixProblemBatchesNotInDraft": true
+  }
+}

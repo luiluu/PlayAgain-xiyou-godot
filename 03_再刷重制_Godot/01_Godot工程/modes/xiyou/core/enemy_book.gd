@@ -5,7 +5,7 @@ extends RefCounted
 ## maps: {敌人ID: [地图显示名…]}（_recordEnemyMap）}，键为字符串。
 ## - 登记（ResisterTiming 2，战斗结束时）：开战时出现着的成员、战斗中 335 出现、336 变身后的敌人 ID 记进本场名单，
 ##   Game_Troop.onBattleEnd（胜、逃、败都会走）时全部登记。变身照原版也记隐藏成员。
-## - 击败数：Game_Enemy.die 每次 +1（死亡钩子 note_death，接在 XBattler 加阵亡与资源刷新补阵亡两处）。
+## - 击败数：Game_Enemy.die 每次 +1。真实战斗的显式阵亡与资源死亡入口即时计数，复活后再次死亡再记一次。
 ## - 出没于：Game_Map.setup 把该图遇敌表敌群的成员记上地图显示名；BattleManager.setup 把本场敌群成员记上当前地图显示名（不重复）。
 ## - 插件指令 EnemyBook open（公共事件 2）由地图宿主打开图鉴；complete（Map004、Map137 兑换大厅）全登记；另接 add／remove／clear。
 
@@ -84,27 +84,44 @@ static func on_map_setup(s: XState, map: Dictionary) -> void:
 		_record(s, int(en.troopId), str(map.get("displayName", "")))
 
 
-## 本场战斗的敌人（实例，on_battle_start 记、on_battle_end 清）：只有它们死亡时计击败数，
-## 公式预演的影子克隆、战力预演、地图上临时建的敌人不在其中，不会误计
+## 本场已在死亡时计过击败数的敌人（实例）：on_enemy_death 记，结算时不再按「倒着」补记
+static var _death_counted: Array = []
+static var _battle_state: WeakRef
 static var _battle_enemies: Array = []
+
+## 只绑定真实本场成员；预览克隆没有相同实例身份，不得写回图鉴。
+## setup早于开场状态；随后页面登记同一名单时保留已经发生的死亡。
+static func bind_battle(s: XState, enemies: Array) -> void:
+	if _battle_state != null and is_same(_battle_state.get_ref(), s) and _battle_enemies.size() == enemies.size():
+		var same := true
+		for i in range(enemies.size()):
+			same = same and is_same(_battle_enemies[i].get_ref(), enemies[i])
+		if same:
+			return
+	_death_counted = []
+	_battle_state = weakref(s)
+	_battle_enemies = enemies.map(func(e): return weakref(e))
+
+static func note_death(b: XBattler) -> void:
+	if not b is XEnemy or _battle_state == null:
+		return
+	var s = _battle_state.get_ref()
+	if s != null and _battle_enemies.any(func(e): return is_same(e.get_ref(), b)):
+		on_enemy_death(s, b)
 
 
 ## AB_EnemyBook 的 Game_Enemy.die 包装：每次死亡立刻 incrementDefeatNumber(当时的敌人编号)。死亡→复活→再死亡记 2；
 ## 死后被事件变身，原编号已记，变身里再走一次死亡时新编号也记（参照 enemy_book_defeat_probe）。
+## 接口：battler／resource_context在死亡转移处经note_death核对真实本场实例后调用。
 static func on_enemy_death(s: XState, e) -> void:
 	add_defeat(s, int(e.enemy_id))
-
-
-## 死亡钩子：XBattler 加阵亡状态（_add_state 的 1 号分支，原版 addNewState → die）与资源刷新补阵亡（refresh → addState(1)）时调用。
-## 原版只有 Game_Enemy 的 die 计数；本场名单外的敌人不计
-static func note_death(e) -> void:
-	if XState.current != null and _battle_enemies.any(func(x): return is_same(x, e)):
-		on_enemy_death(XState.current, e)
+	if not _death_counted.any(func(x): return is_same(x, e)):
+		_death_counted.append(e)
 
 
 ## 战斗开始（BattleManager.setup＋Game_Troop.setup）：记出没地图，返回本场名单（开战时出现着的成员）
 static func on_battle_start(s: XState, troop_id: int, map: Dictionary, enemies: Array) -> Array:
-	_battle_enemies = enemies.duplicate()
+	bind_battle(s, enemies)
 	_record(s, troop_id, str(map.get("displayName", "")))
 	var appeared := []
 	for e in enemies:
@@ -113,10 +130,16 @@ static func on_battle_start(s: XState, troop_id: int, map: Dictionary, enemies: 
 	return appeared
 
 
-## Game_Troop.onBattleEnd：本场名单全部登记。击败数原版在死亡时就计了（note_death），这里不再补记
-static func on_battle_end(s: XState, appeared: Array, _enemies: Array) -> void:
+## Game_Troop.onBattleEnd：本场名单全部登记。击败数原版在死亡时就计了（on_enemy_death）；
+## 直接改HP而未经过死亡入口的旧调用，仍在这里按「倒着」补记一次；已即时计过的实例不重复。
+static func on_battle_end(s: XState, appeared: Array, enemies: Array) -> void:
 	for id in appeared:
 		add(s, int(id))
+	for e in enemies:
+		if not e.hidden and e.is_dead() and not _death_counted.any(func(x): return is_same(x, e)):
+			add_defeat(s, e.enemy_id)
+	_death_counted = []
+	_battle_state = null
 	_battle_enemies = []
 
 

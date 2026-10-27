@@ -18,7 +18,7 @@ func _ready() -> void:
 
 func check(name: String, ok: bool, detail = null) -> bool:
 	results.append({"name": name, "passed": ok})
-	if not ok and results.filter(func(r): return not r.passed).size() <= 12:
+	if not ok and results.filter(func(r): return not r.passed).size() <= 20:
 		print("FAIL ", name, " ", JSON.stringify(detail))
 	return ok
 
@@ -27,6 +27,8 @@ func _run() -> void:
 	XGear.force_roll = 0.5
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
 	if check("wtype_oracle_loaded", data is Dictionary and data.get("cases", []).size() >= 500, ORACLE):
+		var cache_ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/wtype_cache_oracle.json"))
+		check("native_cache_source", cache_ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 		var groups := {}
 		for c in data.cases:
 			var key := "%d|%s" % [int(c.actor), str(c.variant)]
@@ -59,12 +61,19 @@ func _run() -> void:
 				a.tp = a.max_tp()
 				var got := [XBattleLogic.wtype_ok(a, sk), full, empty, a.mmp]
 				var want := [bool(c.wtypeOk), bool(c.canUse), bool(c.canUseEmpty), float(c.mmp)]
+				# 原探针直接切inBattle、跳过Scene_Battle.start缓存二阶段；9951已学但减耗缓存仍0。
+				# Godot此处显式refresh_passive，改用原版相同缓存刷新后测量，同时保留旧反例及费用比对。
+				if int(c.actor) == int(cache_ref.actor) and int(c.skill) == int(cache_ref.skill):
+					check("cache_fixture_stale:" + key, bool(c.canUse) == bool(cache_ref.stale.canUse) and float(c.mmp) == float(cache_ref.mp) and int(c.level) == int(cache_ref.level))
+					check("cache_fixture_cost:" + key, logic.skill_cost(a,sk).mp == int(cache_ref.warmed.cost))
+					want[1] = bool(cache_ref.warmed.canUse)
+					want[2] = bool(cache_ref.warmed.canUseEmpty)
 				# YEP_SkillCore noHiddenSkillConditionsMet：<Hide in Battle> 的技能战斗中恒不可用；
 				# XBattleLogic.can_use 不判这条（战斗技能列表 battle_skills 在入口过滤），只比武器判断与 MP 上限，并要求参照确为恒不可用
 				if "<Hide in Battle>" in str(sk.get("note", "")):
 					check("%s_%d_hidden" % [key, int(c.skill)], not c.canUse and not c.canUseEmpty, c)
 					got = [got[0], false, false, got[3]]
-				check("%s_%d" % [key, int(c.skill)], got == want, [got, want])
+				check("%s_%d" % [key, int(c.skill)], got == want, {"got":got,"want":want,"mp":a.mp,"mcr":a.mcr,"cost":logic.skill_cost(a,sk),"consume":a.passive_cache().get("consumeReduce",{}),"sources":a.skills().filter(func(o):return str(o.get("note","")).contains("ConsumeReduce")).map(func(o):return [o.id,o.name])})
 		check("wtype_blocked_covered", data.cases.filter(func(c): return not c.wtypeOk).size() >= 50)
 		# MP/TP 清零时有因费用被拦的例子，canUse 比对才不只是武器判断的重复
 		check("cost_blocked_covered", data.cases.filter(func(c): return c.canUse and not c.canUseEmpty).size() >= 20)

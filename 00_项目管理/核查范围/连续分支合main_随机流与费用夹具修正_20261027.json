@@ -1,0 +1,53 @@
+{
+  "executor": "Codex（沙僧82）",
+  "review": "待Claude",
+  "runtimeFix": "enemy_recover_all binds an owned lifecycle resource context; Boss armor fallback uses that context.random, preserving standalone map behavior",
+  "nativeBoss": "mv_oracle/.sandbox/merge82_boss_rng.json: transform1/recover2 draws",
+  "red": "boss82-red:485/487, both missing battle draw and other_state world contamination; no script errors",
+  "wtypeCause": "canonical wtype_probe skips real Scene_Battle.start cache refresh phase; native stale cost750/canUse=false vs refreshed cost600/canUse=true. Narrow fixture overrides only actor148 skill5600 at level10/MP730, preserves canonical generated unchanged and tests stale source and current cost each of14 variants. No can_use runtime relaxation.",
+  "nativeCost": "mv_oracle/.sandbox/merge82_admission_v5.json",
+  "randomFixture": "nonBoss transform at turn2 remains zero draw; Boss transform/recover has separate native count checks; refresh death key is stable_id + :1 as resource lifecycle labels require",
+  "runs": [
+    {
+      "scene": "xiyou_random_streams",
+      "result": {
+        "passed": 488,
+        "total": 488
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/boss82-green/xiyou_random_streams.log",
+      "sha256": "99e512de4e62bd6eb5e70d39b2801bc98196d65240be86bea0eab119f06f49b1"
+    },
+    {
+      "scene": "xiyou_boss_lifecycle",
+      "result": {
+        "failures": [],
+        "passed": 5080,
+        "total": 5080
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/boss82-green/xiyou_boss_lifecycle.log",
+      "sha256": "09636e24fbaf415b8b8d7eeb923d5f4a3f1934a8c9971978148edb7ff42a0bc1"
+    },
+    {
+      "scene": "xiyou_troop_events",
+      "result": {
+        "oracleHalf": false,
+        "passed": 6574,
+        "strictRandomExtraChecks": 0,
+        "strictRandomSetChecks": 0,
+        "total": 6574
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/boss82-green/xiyou_troop_events.log",
+      "sha256": "58c792f09d10a7517daca66903b2fd962c5e2674909f1dd789c93944618c2524"
+    },
+    {
+      "scene": "xiyou_wtype",
+      "result": {
+        "passed": 16219,
+        "total": 16219
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/wtype82-green/xiyou_wtype.log",
+      "sha256": "fb7e445a120ffe4120180093819f3b7f504812e2020cf9d8131493fff73b12aa"
+    }
+  ],
+  "allIntegrationPassed": false
+}

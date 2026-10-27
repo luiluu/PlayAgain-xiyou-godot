@@ -1,0 +1,174 @@
+{
+  "schema": 1,
+  "syncRunId": "5a0865fbf36a4897808812d013b7333d",
+  "report": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261027_001303_227565_v0.28-v0.28/同步报告.json",
+  "reportSha256": "1af49060b0158f89f66139710f42ede948f3235a8ab5e9deeb22e90e9384fc97",
+  "fixedMain": "9b140f365f93c2cfa4b19d85b6ddd72576830c16",
+  "probeGroups": 57,
+  "commands": 62,
+  "nonzeroCommands": [],
+  "sameExistingSource": true,
+  "verifyOk": true,
+  "onlyAdditions": true,
+  "changeCandidates": [],
+  "existingChanges": {},
+  "problems": {},
+  "additions": {
+    "actor_passive.json": {
+      "entries": 20,
+      "count": 20,
+      "collections": {
+        "cases": 20
+      },
+      "reason": "固定main集成新增四名角色的五档等级参照；旧角色按稳定键逐项不变"
+    },
+    "alien_battle.json": {
+      "entries": 1,
+      "count": 19,
+      "collections": {
+        "*": 1
+      },
+      "reason": "固定main的异化战斗新增整份19例参照，无既有文件"
+    },
+    "events.json": {
+      "entries": 220,
+      "count": 220,
+      "collections": {
+        "cases": 220
+      },
+      "reason": "固定main集成新增地图与公共事件参照；旧事件按id逐项不变"
+    },
+    "help_cards.json": {
+      "entries": 18,
+      "count": 18,
+      "collections": {
+        "skills": 18
+      },
+      "reason": "新增角色技能说明卡，旧技能按id逐项不变"
+    },
+    "maps.json": {
+      "entries": 18,
+      "count": 18,
+      "collections": {
+        "maps": 18
+      },
+      "reason": "固定main新增18张切片地图；旧地图按键逐项不变"
+    },
+    "race_battle.json": {
+      "entries": 1,
+      "count": 31,
+      "collections": {
+        "*": 1
+      },
+      "reason": "固定main的种族战斗新增整份31例参照，无既有文件"
+    },
+    "shop_buy.json": {
+      "entries": 171,
+      "count": 171,
+      "collections": {
+        "shops": 6,
+        "goods": 31,
+        "cases": 134
+      },
+      "reason": "新增地图商店与货品组合；旧商店、货品和用例按稳定键逐项不变"
+    },
+    "slice_d1.json": {
+      "entries": 18992,
+      "count": 18992,
+      "collections": {
+        "damage": 18958,
+        "enemies": 30,
+        "actors": 4
+      },
+      "reason": "固定main切片新增四角色、30敌人及其伤害组合；旧条目按稳定键逐项不变"
+    },
+    "slice_d2.json": {
+      "entries": 18992,
+      "count": 18992,
+      "collections": {
+        "damage": 18958,
+        "enemies": 30,
+        "actors": 4
+      },
+      "reason": "固定main切片新增四角色、30敌人及其伤害组合；旧条目按稳定键逐项不变"
+    },
+    "slice_d3.json": {
+      "entries": 18992,
+      "count": 18992,
+      "collections": {
+        "damage": 18958,
+        "enemies": 30,
+        "actors": 4
+      },
+      "reason": "固定main切片新增四角色、30敌人及其伤害组合；旧条目按稳定键逐项不变"
+    },
+    "slice_d4.json": {
+      "entries": 18992,
+      "count": 18992,
+      "collections": {
+        "damage": 18958,
+        "enemies": 30,
+        "actors": 4
+      },
+      "reason": "固定main切片新增四角色、30敌人及其伤害组合；旧条目按稳定键逐项不变"
+    },
+    "slice_d5.json": {
+      "entries": 18992,
+      "count": 18992,
+      "collections": {
+        "damage": 18958,
+        "enemies": 30,
+        "actors": 4
+      },
+      "reason": "固定main切片新增四角色、30敌人及其伤害组合；旧条目按稳定键逐项不变"
+    },
+    "slice_d6.json": {
+      "entries": 18992,
+      "count": 18992,
+      "collections": {
+        "damage": 18958,
+        "enemies": 30,
+        "actors": 4
+      },
+      "reason": "固定main切片新增四角色、30敌人及其伤害组合；旧条目按稳定键逐项不变"
+    },
+    "smart_ai.json": {
+      "entries": 900,
+      "count": 900,
+      "collections": {
+        "cases": 600,
+        "damage": 300
+      },
+      "reason": "新增角色与敌人组合参照；旧AI和伤害用例按稳定键逐项不变"
+    },
+    "state_js.json": {
+      "entries": 1,
+      "count": 214,
+      "collections": {
+        "*": 1
+      },
+      "reason": "固定main状态脚本新增整份214例参照，无既有文件"
+    },
+    "wtype.json": {
+      "entries": 420,
+      "count": 420,
+      "collections": {
+        "cases": 420
+      },
+      "reason": "新增四名角色武器类型组合；旧角色组合按稳定键逐项不变"
+    }
+  },
+  "decision": "已仅接受新增；最终引擎验收在途，交叉核查仍待Claude",
+  "selfReview": false,
+  "acceptance": {
+    "report": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261027_013003_049555_v0.28-v0.28/同步报告.json",
+    "runId": "fb4e86e0c8cf4997b4693667a5ba77f3",
+    "exitCode": 0,
+    "executedProbeGroups": 0,
+    "reusedProbeGroups": 57,
+    "acceptedAdditions": true,
+    "acceptedChanges": [],
+    "importErrors": [],
+    "syncStampExists": true
+  }
+}

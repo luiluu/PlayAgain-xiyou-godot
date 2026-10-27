@@ -62,6 +62,8 @@ var pending_lines: Array = []
 var receipt = null
 ## 本游标最近一条 125～128 的实际所得 {kind, id, amount}（CodexV010Fixes.awardQuantity）
 var last_gain := {}
+## Result of the most recent313 command; owns no battler/context references.
+var last_state_operation := {}
 var _child: MVEventCore = null
 ## 宿主指令回 false（全军覆没、回标题）后置位；父游标见子游标 halted 也跟着结束
 var halted := false
@@ -468,11 +470,44 @@ func _event_actor(id: int) -> XActor:
 
 ## 313 [指定方式, 角色/变量, 0 附加 1 解除, 状态]
 func _change_actor_state(p: Array) -> void:
-	for a in _actors_ex(int(p[0]), int(p[1])):
+	var members := _actors_ex(int(p[0]), int(p[1]))
+	var resources: XResourceContext
+	for a in members:
+		var inherited: XResourceContext = a.lifecycle_context.get("resources")
+		if bool(a.lifecycle_context.get("preview", false)) or (inherited != null and inherited.preview):
+			last_state_operation = {"preview":true}
+			return
+		if inherited != null:
+			resources = inherited
+	var owns := resources == null
+	if owns:
+		resources = XResourceContext.new()
+		resources.random = rule_random()
+		resources.lifecycle_inputs = {"variables":state().variable_array(), "switches":state().switches}
+	var before := {}
+	for a in members:
+		if owns or not resources.slots.has(a):
+			resources.seed_result(a, a.runtime_result)
+		if not resources.labels.has(a):
+			resources.labels[a] = "actor:%d" % a.actor_id
+		before[str(a.actor_id)] = resources.snapshot(a).duplicate(true)
+	var journal_start := resources.journal.size()
+	var previous_in_battle := resources.in_battle
+	resources.in_battle = false
+	for a in members:
 		if int(p[2]) == 0:
-			a.add_state(int(p[3]), rule_random())
+			resources.add_state(a, int(p[3]))
 		else:
-			a.remove_state(int(p[3]))
+			resources.remove_state(a, int(p[3]))
+		# Native command313 clears each target after the operation, including inherited domains.
+		resources.seed_result(a, XResourceContext.empty_result())
+	resources.in_battle = previous_in_battle
+	if owns:
+		resources.publish()
+	var after := {}
+	for a in members:
+		after[str(a.actor_id)] = resources.snapshot(a).duplicate(true)
+	last_state_operation = {"before":before, "after":after, "journal":resources.journal.slice(journal_start).duplicate(true), "error":resources.error}
 
 
 ## 本核心不认的条件类型；返回 null 记进 skipped 并视为不成立

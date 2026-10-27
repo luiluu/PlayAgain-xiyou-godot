@@ -1,0 +1,114 @@
+{
+  "hp": {
+    "version": 1,
+    "source": {
+      "table": "Skills",
+      "id": 1,
+      "custom": false,
+      "sha256": "4201c00495f2fcec9e7b8fbfcc3d49f0f00cf4ec8527a9d3b963b9e8fa79e215"
+    },
+    "status": "effectful",
+    "capabilities": [
+      "write.hp"
+    ],
+    "locals": [],
+    "steps": [
+      {
+        "op": "expr",
+        "pos": 0,
+        "value": {
+          "op": "gain",
+          "pos": 0,
+          "receiver": "b",
+          "resource": "hp",
+          "amount": {
+            "op": "unary",
+            "pos": 9,
+            "operator": "-",
+            "arg": {
+              "op": "literal",
+              "pos": 10,
+              "value": 7.9
+            }
+          }
+        }
+      },
+      {
+        "op": "expr",
+        "pos": 15,
+        "value": {
+          "op": "literal",
+          "pos": 15,
+          "value": 0.0
+        }
+      }
+    ],
+    "result": "completion"
+  },
+  "mp": {
+    "version": 1,
+    "source": {
+      "table": "Skills",
+      "id": 1,
+      "custom": false,
+      "sha256": "e199b32492401fc11f9752525f474e9d3f4d7a4712e39f2ee4fb504adf3143aa"
+    },
+    "status": "effectful",
+    "capabilities": [
+      "write.mp"
+    ],
+    "locals": [],
+    "steps": [
+      {
+        "op": "expr",
+        "pos": 0,
+        "value": {
+          "op": "gain",
+          "pos": 0,
+          "receiver": "b",
+          "resource": "mp",
+          "amount": {
+            "op": "unary",
+            "pos": 9,
+            "operator": "-",
+            "arg": {
+              "op": "literal",
+              "pos": 10,
+              "value": 7.9
+            }
+          }
+        }
+      },
+      {
+        "op": "expr",
+        "pos": 15,
+        "value": {
+          "op": "literal",
+          "pos": 15,
+          "value": 0.0
+        }
+      }
+    ],
+    "result": "completion"
+  },
+  "set_unsupported": {
+    "version": 1,
+    "source": {
+      "table": "Skills",
+      "id": 1,
+      "custom": false,
+      "sha256": "dda4fe297a2b3aff7c72a59a38a945bd0c575050c38983b46013b8a05a71b61f"
+    },
+    "status": "unsupported",
+    "capabilities": [],
+    "locals": [],
+    "steps": [],
+    "result": null,
+    "diagnostic": {
+      "reason": "unsupported_call:b.setHp",
+      "offset": 0,
+      "line": 1,
+      "column": 1
+    }
+  }
+}

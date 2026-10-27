@@ -1,0 +1,263 @@
+{
+  "scope": "Frozen v0.28 Boss attribute snapshot/cache and2651 lifecycle only; outgoing multiplier separate",
+  "implementation": "73077a15",
+  "oracleCases": 29,
+  "oracleErrors": [],
+  "fixtureSha256": "a0d0d06d8be3bc1603edefff37c041f02fb79d47488b69cbffddf5bd37cb1c7c",
+  "nativeEqualsFixture": true,
+  "results": {
+    "xiyou_battle_events": {
+      "passed": 108,
+      "total": 108
+    },
+    "xiyou_boss_lifecycle": {
+      "failures": [],
+      "passed": 5080,
+      "total": 5080
+    },
+    "xiyou_formula_effects": {
+      "passed": 908,
+      "total": 908
+    },
+    "xiyou_param_states": {
+      "failures": [],
+      "passed": 582,
+      "total": 582
+    },
+    "xiyou_state_effects": {
+      "passed": 19949,
+      "total": 19949
+    },
+    "xiyou_troop_events": {
+      "oracleHalf": false,
+      "passed": 6574,
+      "strictRandomExtraChecks": 0,
+      "strictRandomSetChecks": 0,
+      "total": 6574
+    },
+    "xiyou_troop_events_b": {
+      "oracleHalf": false,
+      "passed": 6450,
+      "strictRandomExtraChecks": 0,
+      "strictRandomSetChecks": 0,
+      "total": 6450
+    },
+    "xiyou_troop_events_half": {
+      "oracleHalf": true,
+      "passed": 2951,
+      "strictRandomExtraChecks": 19,
+      "strictRandomSetChecks": 19,
+      "total": 2951
+    }
+  },
+  "total": 42602,
+  "timings": {
+    "jobs": 2,
+    "globalJobs": 4,
+    "wallSeconds": 114.843,
+    "flakyRerunPassed": [],
+    "fingerprint": "",
+    "reused": [],
+    "scenes": [
+      {
+        "name": "xiyou_troop_events_b.tscn",
+        "seconds": 79.219,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 79.219,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_troop_events.tscn",
+        "seconds": 77.055,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 77.055,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_troop_events_half.tscn",
+        "seconds": 37.777,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 37.777,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_battle_events.tscn",
+        "seconds": 5.226,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 5.226,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_state_effects.tscn",
+        "seconds": 4.225,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.225,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_formula_effects.tscn",
+        "seconds": 3.384,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.384,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_param_states.tscn",
+        "seconds": 3.101,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.101,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_boss_lifecycle.tscn",
+        "seconds": 3.09,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.09,
+            "passed": true
+          }
+        ]
+      }
+    ]
+  },
+  "guards": {
+    "passed": 16,
+    "total": 16
+  },
+  "documentation": "检查.sh original documentation/JSON/links/version block passed; shared registry read-only",
+  "iterations": {
+    "initial27": {
+      "xiyou_boss_lifecycle": {
+        "failures": [
+          "transform.0.0.3.param",
+          "transform.0.0.4.param",
+          "transform.0.1.1.param",
+          "transform.0.1.3.param",
+          "transform.0.1.4.param",
+          "transform.0.2.1.param",
+          "transform.0.2.3.param",
+          "transform.0.3.1.param",
+          "transform.0.3.3.param",
+          "transform.0.3.4.param",
+          "transform.3.0.3.param",
+          "transform.3.0.4.param",
+          "transform.3.1.1.param",
+          "transform.3.1.3.param",
+          "transform.3.1.4.param",
+          "transform.3.2.1.param",
+          "transform.3.2.3.param",
+          "transform.3.3.1.param",
+          "transform.3.3.3.param",
+          "transform.3.3.4.param"
+        ],
+        "passed": 4825,
+        "total": 4845
+      }
+    },
+    "afterAbsentGuard": {
+      "xiyou_battle_events": {
+        "passed": 108,
+        "total": 108
+      },
+      "xiyou_boss_lifecycle": {
+        "failures": [
+          "transform.0.2.3.param",
+          "transform.3.2.3.param"
+        ],
+        "passed": 4843,
+        "total": 4845
+      },
+      "xiyou_boss_lifecycle.rerun1": {
+        "failures": [
+          "transform.0.2.3.param",
+          "transform.3.2.3.param"
+        ],
+        "passed": 4843,
+        "total": 4845
+      },
+      "xiyou_formula_effects": {
+        "passed": 908,
+        "total": 908
+      },
+      "xiyou_param_states": {
+        "failures": [],
+        "passed": 582,
+        "total": 582
+      },
+      "xiyou_state_effects": {
+        "passed": 19949,
+        "total": 19949
+      },
+      "xiyou_troop_events": {
+        "oracleHalf": false,
+        "passed": 6574,
+        "strictRandomExtraChecks": 0,
+        "strictRandomSetChecks": 0,
+        "total": 6574
+      },
+      "xiyou_troop_events_b": {
+        "oracleHalf": false,
+        "passed": 6450,
+        "strictRandomExtraChecks": 0,
+        "strictRandomSetChecks": 0,
+        "total": 6450
+      },
+      "xiyou_troop_events_half": {
+        "oracleHalf": true,
+        "passed": 2951,
+        "strictRandomExtraChecks": 19,
+        "strictRandomSetChecks": 19,
+        "total": 2951
+      }
+    }
+  },
+  "nativeHostFailuresPreserved": [
+    "boss_lifecycle_initial_sprite_failure.json",
+    "boss_lifecycle_second_setup_failure.json",
+    "boss_lifecycle_third_otb_failure.json"
+  ],
+  "unimplemented": [
+    "Boss outgoing multiplier action/direct gain/set and sequence/state-origin contexts",
+    "five power books and full-capacity refund/CE1317",
+    "PREE/ASUP and weapon-dependent passive damage",
+    "2g TP Apply hosts and full preview empty slot",
+    "enemy permanent ledger"
+  ]
+}

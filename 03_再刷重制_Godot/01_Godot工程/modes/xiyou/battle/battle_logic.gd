@@ -32,6 +32,9 @@ var replay_runtime_start := {}
 var replay_battle_start := {}
 var _ids := {}
 var _action_resources: XResourceContext
+var _battle_resources: XResourceContext
+var battle_start_effects := {}
+var lifecycle_effects: Array = []
 var _formula_outcome := {}
 var _damage_record := {}
 ## 魔法反射回行动者自己的这次 apply（导入角色平衡照样缩放）
@@ -111,6 +114,9 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	_speed.clear()
 	_orders_made = false
 	state = s
+	_battle_resources = null
+	battle_start_effects.clear()
+	lifecycle_effects.clear()
 	troop_id = troop
 	XImportedBalance.set_acting(null)
 	actors = s.battle_members()
@@ -118,13 +124,15 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	enemies.clear()
 	var t := XDB.rec("Troops", troop)
 	# Game_Troop.setup：所有成员 slot 都建出（隐藏成员也是，序号与敌群成员一致，335 出现时只改隐藏标记）
+	var strong_count := XEnemy.deployed_strong_count(actors)
 	for m in t.get("members", []):
-		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty, elite_roll, _rule())
+		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty, elite_roll, _rule(), strong_count)
 		e.setup_level(actors.reduce(func(acc, x): return maxi(acc, int(x.level)), 1), level_roll, _rule())
 		e.set_meta("x", float(m.x))
 		e.set_meta("y", float(m.y))
 		e.hidden = bool(m.get("hidden", false))
 		enemies.append(e)
+	XEnemyBook.bind_battle(s, enemies)
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
 	for i in range(actors.size()):
 		_ids[actors[i]] = "actor:%d:%d" % [i, actors[i].actor_id]
@@ -136,17 +144,8 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		for sid in a.state_ids.duplicate():
 			if not bool(XDB.rec("States", sid).get("removeAtBattleEnd", false)):
 				continue
-			a.remove_state(sid)
-	# YEP_BuffsStatesCore Custom Battle Effect：startBattle 里我方（含后备）再敌方逐成员，在 dsPassiveSkill 开战标签加状态之前
-	# Game_Unit.onBattleStart：先各成员 onBattleStart（没有「保留 TP」即特殊旗标 3 时 TP 随机 0～24），再 processStateEval('battle')；
-	# 我方整队做完再敌方（state_js_probe battle.start_order：开战 TP+200 的 607 不被初始 TP 盖掉）
-	var start_ctx := {"random": _rule(), "variables": vars()}
-	for unit in [[actors, s.members()], [enemies, enemies]]:
-		for b in unit[0]:
-			if not b.is_preserve_tp():
-				b.tp = float(_mod(25, "initial_tp"))
-		XStateEffects.run_unit("battle", unit[1], start_ctx)
-	_battle_start_states()
+			_state_remove(a, sid)
+	_start_battle_effects()
 	for b in actors + enemies:
 		b.start_warmups()
 	_escape_ratio = 0.5 * _avg_agi(actors) / maxf(_avg_agi(enemies), 1.0)
@@ -157,6 +156,67 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
 	# 本版改过的 BattleManager.startBattle：每场开战预约公共事件 1320「战斗开始时调整变量」，开战第一次事件检查先跑它
 	XBattleCommonEvent.reserve(self, XBattleCommonEvent.START_EVENT)
+
+func _new_lifecycle_resources() -> XResourceContext:
+	var resources := XResourceContext.new()
+	resources.in_battle = random != null
+	resources.random = _rule()
+	resources.lifecycle_inputs = {"variables": vars(), "switches": state.switches if state != null else {}, "party_members": actors}
+	return resources
+
+func _start_battle_effects() -> void:
+	_battle_resources = _new_lifecycle_resources()
+	for b in state.members() + enemies:
+		if not _ids.has(b):
+			_ids[b] = "reserve:%d" % b.actor_id if b is XActor else stable_id(b)
+		_battle_resources.labels[b] = stable_id(b)
+		_battle_resources.seed_result(b, b.runtime_result)
+	# Native Game_Unit: initialize all unit members, then evaluate Battle effects.
+	for members in [actors, enemies]:
+		for b in members:
+			if not b.is_preserve_tp():
+				var initial := float(_mod(25, "initial_tp"))
+				_battle_resources.silent_gain(b, "tp", initial - b.tp)
+			b.param_mark_dirty()
+		var effect_members: Array = state.members() if members == actors else enemies
+		for b in effect_members:
+			_refresh_battler(b)
+			XStateEffects.run("battle", b, _battle_resources.state_context(b))
+	_battle_start_states()
+	var snapshots := {}
+	for b in state.members() + enemies:
+		snapshots[stable_id(b)] = _battle_resources.snapshot(b).duplicate(true)
+	battle_start_effects = {"members": snapshots, "journal": _battle_resources.journal.duplicate(true), "error": _battle_resources.error}
+	_battle_resources.publish()
+	_battle_resources = null
+
+func _operation_resources(b: XBattler) -> XResourceContext:
+	var resources := _action_resources if _action_resources != null else _battle_resources
+	if resources == null:
+		resources = _new_lifecycle_resources()
+		resources.labels[b] = stable_id(b)
+		resources.seed_result(b, b.runtime_result)
+	return resources
+
+func _finish_lifecycle_operation(resources: XResourceContext, b: XBattler) -> void:
+	if resources != _action_resources and resources != _battle_resources:
+		resources.publish()
+		lifecycle_effects.append({"member": stable_id(b), "after": resources.snapshot(b).duplicate(true), "journal": resources.journal.duplicate(true), "error": resources.error})
+
+func _state_add(b: XBattler, id: int) -> void:
+	var resources := _operation_resources(b)
+	resources.add_state(b, id)
+	_finish_lifecycle_operation(resources, b)
+
+func _state_remove(b: XBattler, id: int, automatic := false) -> void:
+	var resources := _operation_resources(b)
+	b.remove_state_with_context(id, resources.state_context(b), automatic)
+	_finish_lifecycle_operation(resources, b)
+
+func _refresh_battler(b: XBattler) -> void:
+	var resources := _operation_resources(b)
+	b.refresh_with_context(_rule(), resources.state_context(b))
+	_finish_lifecycle_operation(resources, b)
 
 
 ## dsPassiveSkill Scene_Battle.start：每个出战角色依次处理开战状态标签——自己、随机队友、随机敌人、随机任一目标、
@@ -169,24 +229,24 @@ func _battle_start_states() -> void:
 			var sid := int(tag[1])
 			match str(tag[0]):
 				"StartPushState":
-					a.add_state(sid, _rule())
+					_state_add(a, sid)
 				"StartRomActPushState":
 					var others := actors.filter(func(x): return x != a)
 					if not others.is_empty():
-						others[_mod(others.size(), "start_ally")].add_state(sid, _rule())
+						_state_add(others[_mod(others.size(), "start_ally")], sid)
 				"StartRomEmePushState":
 					var foes := alive(enemies)
 					if not foes.is_empty():
-						foes[_mod(foes.size(), "start_enemy")].add_state(sid, _rule())
+						_state_add(foes[_mod(foes.size(), "start_enemy")], sid)
 				"StartRomPushState":
 					var all: Array = actors + alive(enemies)
-					all[_mod(all.size(), "start_any")].add_state(sid, _rule())
+					_state_add(all[_mod(all.size(), "start_any")], sid)
 				"StartAEPushState":
 					for e in alive(enemies):
-						e.add_state(sid, _rule())
+						_state_add(e, sid)
 				"StartWTPushState":
 					for x in actors:
-						x.add_state(sid, _rule())
+						_state_add(x, sid)
 	for a in actors:
 		a.refresh_passive()
 	for e in enemies:
@@ -252,8 +312,18 @@ static func is_item(rec: Dictionary) -> bool:
 func skill_cost(a: XBattler, skill: Dictionary) -> Dictionary:
 	if is_item(skill):
 		return {"mp": 0, "tp": 0}
-	# 种族祝福：鬼族 skillMpCost／skillTpCost 打折（XRaceBattle.cost）
-	return {"mp": XRaceBattle.cost(a, floori(float(skill.get("mpCost", 0)) * a.mcr)), "tp": XRaceBattle.cost(a, int(skill.get("tpCost", 0)))}
+	var cost := {"mp": floori(float(skill.get("mpCost", 0)) * a.mcr), "tp": int(skill.get("tpCost", 0))}
+	if a is XActor:
+		var cache: Dictionary = a.passive_cache().get("consumeReduce", {})
+		var reduce := float(cache.get("bySkill", {}).get(int(skill.get("id", 0)), 0))
+		var stype := int(skill.get("stypeId", 0))
+		if stype in [1, 2]:
+			reduce += float(cache.get("byType", {}).get("Zj" if stype == 1 else "Mf", 0))
+		reduce += float(cache.get("all", 0))
+		reduce = minf(reduce, 100.0)
+		cost.mp = floori(cost.mp * (1.0 - reduce / 100.0))
+		cost.tp = floori(cost.tp * (1.0 - reduce / 100.0))
+	return {"mp": XRaceBattle.cost(a, int(cost.mp)), "tp": XRaceBattle.cost(a, int(cost.tp))}
 
 func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if skill.is_empty():
@@ -471,6 +541,10 @@ func start_turn() -> void:
 	# YEP_X_SkillCooldowns：Game_Troop.increaseTurn 时双方冷却/预热各减 1
 	for b in actors + enemies:
 		b.update_cooldowns()
+	# installBossDifficultyRuntime 包在 increaseTurn 外；在单位 onTurnStart／refresh 之前同步。
+	for e in enemies:
+		e.sync_boss_armor(turn % 2 == 0, _rule())
+	for b in actors + enemies:
 		XStateEffects.run("turn_start", b, {"random": _rule(), "variables": vars()})  # Custom Turn Start Effect：onTurnStart 内，Unit.refresh 之前
 		# krz onTurnStart 标 dirty，Game_Unit.onTurnStart 紧接 refresh：本回合起能力值重新读取
 		b.param_mark_dirty()
@@ -713,8 +787,14 @@ func enemy_recover_all(index: int) -> Array:
 	for i in _enemy_slots(index):
 		var e: XEnemy = enemies[i]
 		var before := _enemy_reading(e)
+		# Boss recoverAll can re-add armor: keep that nested duration in this battle's rule stream.
+		var resources := _operation_resources(e)
+		var previous := e.lifecycle_context
+		e.lifecycle_context = resources.state_context(e)
 		e.recover_all()
-		e.refresh_resources(_rule())
+		e.lifecycle_context = previous
+		_finish_lifecycle_operation(resources, e)
+		_refresh_battler(e)
 		e.refresh_passive()
 		out.append(_enemy_change("recover", i, before))
 	return out
@@ -736,7 +816,7 @@ func enemy_appear(index: int) -> Array:
 ## 336 敌人变身（Game_Enemy.transform）：原地换数据身份，HP/MP 按绝对值保留后截到新上限，TP、状态、buff 不变，
 ## 不重新抽神话、等级，不走开战流程；原名变了就清字母，再 makeUniqueNames。
 ## 本工程敌人在轮到时才决定行动（decide），变身后轮到时自然按新形态选招，不另生成待行动。
-## 未实现：CodexBossDifficulty 霸体（2651）的形态同步——重制版尚无 Boss 霸体系统。
+## CodexBossDifficulty 在原变身前重判Boss，原流程后按当前回合同步2651；人数保留开战快照。
 ## krz 能力值缓存不随变身清空（变身不标 dirty，内部 refresh 只截资源）：读过的格子留旧形态的值，截 HP 也按缓存上限。
 func enemy_transform(index: int, enemy_id: int) -> Array:
 	var out := []
@@ -745,12 +825,14 @@ func enemy_transform(index: int, enemy_id: int) -> Array:
 		return out
 	var before := _enemy_reading(e)
 	var old_name := e.original_name()
+	e.boss_difficulty_boss = XEnemy.boss_id(enemy_id)
 	e.enemy_id = enemy_id
 	if e.original_name() != old_name:
 		e.letter = ""
 		_letters.erase(e)
 	e.refresh_passive()
-	e.refresh_resources(_rule())
+	_refresh_battler(e)
+	e.sync_boss_armor(turn > 0 and turn % 2 == 0, _rule())
 	make_unique_names()
 	out.append(_enemy_change("transform", index, before))
 	return out
@@ -783,8 +865,8 @@ func _change_actor_state(p: Array) -> void:
 		if int(p[2]) == 0:
 			sequence_add_state(a, int(p[3]))
 		elif a.is_state_affected(int(p[3])):
-			a.remove_state(int(p[3]))
-		a.refresh_resources(_rule())
+			_state_remove(a, int(p[3]))
+		_refresh_battler(a)
 
 
 func _page_meets(page: Dictionary, turn_end: bool) -> bool:
@@ -852,11 +934,11 @@ func _change_enemy_state(p: Array) -> void:
 		if int(p[1]) == 0:
 			sequence_add_state(e, int(p[2]))
 		elif e.is_state_affected(int(p[2])):
-			e.remove_state(int(p[2]))
+			_state_remove(e, int(p[2]))
 		# 补的截资源对应 addState／removeState 内部的 refresh，原版在 krz 标 dirty 之前：不能当场消费刚标的 dirty
 		var dirty: bool = e.param_dirty
 		e.param_dirty = false
-		e.refresh_resources(_rule())
+		_refresh_battler(e)
 		e.param_dirty = dirty
 
 
@@ -1222,8 +1304,10 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var before = XZhenqi.pojia_actor
 	XZhenqi.pojia_actor = u if XZhenqi.has_daofa(u, "pojia") else null
 	var previous_resources := _action_resources
-	_action_resources = XResourceContext.new()
-	_action_resources.random = _rule()
+	_action_resources = _new_lifecycle_resources()
+	if previous_resources != null:
+		_action_resources.boss_output = previous_resources.boss_output
+	_action_resources.boss_output.enter_action(u, t)
 	_action_resources.labels = {u: "a"}
 	if u != t:
 		_action_resources.labels[t] = "b"
@@ -1253,6 +1337,8 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	r.tp = result.tpDamage
 	r.added = result.addedStates.duplicate()
 	r.removed = result.removedStates.duplicate()
+	_action_resources.publish()
+	_action_resources.boss_output.leave_action()
 	_action_resources = previous_resources
 	XZhenqi.pojia_actor = before
 	return r
@@ -1310,19 +1396,30 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	return r
 
 
-## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
-## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
-func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
-	# 异化（Codex 模块序在导入平衡之后、包在外层）：烈变／小怪异化的主动正伤害加成；结束时记镜骸被打掉的生命
-	value = XAlienBattle.outgoing(self, u, item, value)
-	var alien_before := t.hp
-	value = _execute_hp_damage(u, t, value, drain)
-	XAlienBattle.record(self, u, t, maxf(0.0, alien_before - t.hp))
+## installBossDifficultyRuntime的最外层普通伤害包装。倍率为1时也floor，非正值及自身代价原样传入。
+static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
+	if value > 0.0 and t != u:
+		return floorf(value * (u.boss_output_rate() if u is XEnemy else 1.0))
 	return value
 
 
+## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：Boss输出→导入平衡→真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
+## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
+func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
+	# 后安装的异化包装在 Boss 输出外层；settled 栈仍只对内层资源结算生效。
+	value = XAlienBattle.outgoing(self, u, item, value)
+	var alien_before := t.hp
+	if not _action_resources.boss_output.is_settled(t, "hp"):
+		value = _boss_output_value(u, t, value)
+	_action_resources.boss_output.enter_settled(t, "hp")
+	var out := _execute_hp_damage(u, t, value, drain)
+	_action_resources.boss_output.leave_settled()
+	XAlienBattle.record(self, u, t, maxf(0.0, alien_before - t.hp))
+	return out
+
+
 func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
-	# 导入角色平衡在最外层：先按行动者的导入倍率缩放正伤害，之后才走真气减伤与护盾
+	# Boss输出后按行动者的导入倍率缩放正伤害，之后走真气减伤与护盾
 	if value > 0.0 and XImportedBalance.scales(u, t, _reflecting):
 		value = XImportedBalance.reduced(value, u)
 	if troop_id > 0:
@@ -1339,9 +1436,18 @@ func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> 
 	return value
 
 
-## Game_Action.executeMpDamage（类型 2／4／6）：导入角色平衡先缩放正伤害；MP 伤害（非回复）以目标现有 MP 为上限；
+## Game_Action.executeMpDamage（类型 2／4／6）：Boss输出→导入角色平衡缩放正伤害；MP 伤害（非回复）以目标现有 MP 为上限；
 ## 吸取再给行动者回 MP。返回结果槽的 MP 伤害。
 func execute_mp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
+	if not _action_resources.boss_output.is_settled(t, "mp"):
+		value = _boss_output_value(u, t, value)
+	_action_resources.boss_output.enter_settled(t, "mp")
+	var out := _execute_mp_damage(u, t, value, drain)
+	_action_resources.boss_output.leave_settled()
+	return out
+
+
+func _execute_mp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
 	if value > 0.0 and XImportedBalance.scales(u, t, _reflecting):
 		value = XImportedBalance.reduced(value, u)
 	if value >= 0.0:
@@ -1364,18 +1470,39 @@ func _establish(u: XBattler, t: XBattler, r: Dictionary) -> void:
 
 
 func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
-	# Menus and post-battle recovery share the same effect API without a live hit.
-	# Their refresh/state draws belong to the world stream, never a new battle serial.
-	var owns_context := _action_resources == null
-	if owns_context:
-		_action_resources = XResourceContext.new()
-		_action_resources.random = _rule()
+	# Menu effects reuse a nested host domain, or own and publish one operation.
+	var previous := _action_resources
+	var inherited: XResourceContext = t.lifecycle_context.get("resources")
+	if bool(t.lifecycle_context.get("preview", false)) or (inherited != null and inherited.preview):
+		return
+	var owns_context := previous == null and inherited == null
+	if previous == null:
+		_action_resources = inherited if inherited != null else _new_lifecycle_resources()
+		if owns_context:
+			for b in [u, t]:
+				_action_resources.seed_result(b, b.runtime_result)
+	var resources := _action_resources
+	var previous_in_battle := resources.in_battle
+	resources.in_battle = random != null
 	_apply_effect(u, t, eff, r)
+	resources.in_battle = previous_in_battle
+	_action_resources = previous
 	if owns_context:
-		_action_resources = null
+		_finish_lifecycle_operation(resources, t)
 
 
 func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
+	# Learn-skill payloads can omit value1/value2 (native item1998 does).
+	# Native effect43 only reads dataId; don't read unrelated numeric fields.
+	if int(eff.code) == 43:
+		if t is XActor:
+			if XPowerBooks.is_power(int(eff.dataId)) and not XPowerBooks.can_learn(t,int(eff.dataId)):
+				return
+			if XPassiveBooks.refund_if_full(state,int(eff.dataId),r.get("skill",{})):
+				return
+			t.learn_skill(int(eff.dataId))
+			t.refresh_passive()
+		return
 	var v1 := float(eff.value1)
 	var v2 := float(eff.value2)
 	match int(eff.code):
@@ -1409,17 +1536,14 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 				if _float("add_state") < chance and t.is_alive():
 					if id == DEATH_STATE:
 						t.immortal = false  # itemEffectAddNormalState：附加阵亡前先解除 IMMORTAL
-						t.add_state(DEATH_STATE, _rule())
-						_action_resources.result(t).addedStates.append(DEATH_STATE)
+						_state_add(t, DEATH_STATE)
 					else:
-						t.add_state(id, _rule())
+						_state_add(t, id)
 						r.added.append(id)
-						_action_resources.result(t).addedStates.append(id)
 		22:
 			if _float("remove_state") < v1:
-				t.remove_state(int(eff.dataId))
+				_state_remove(t, int(eff.dataId))
 				r.removed.append(int(eff.dataId))
-				_action_resources.result(t).removedStates.append(int(eff.dataId))
 		31:
 			sequence_buff(t, int(eff.dataId), true, true, int(v1))
 		32:
@@ -1429,12 +1553,8 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 			if (int(eff.code) == 33 and t.buffs[id] > 0) or (int(eff.code) == 34 and t.buffs[id] < 0):
 				t.buffs[id] = 0
 				t.buff_turns[id] = 0
-				t.refresh_resources(_rule())
+				_refresh_battler(t)
 				t.param_mark_dirty()  # krz removeBuff
-		43:
-			if t is XActor:
-				t.learn_skill(int(eff.dataId))
-				t.refresh_passive()
 
 
 ## 行动序列 ADD STATE（Game_Battler.addState → isStateAddable：活着、未抵抗（IMMORTAL 期间阵亡视为抵抗）；阵亡状态直接倒下）
@@ -1446,16 +1566,24 @@ func sequence_add_state(t: XBattler, id: int) -> void:
 	if id == DEATH_STATE:
 		_die(t)
 		return
-	t.add_state(id, _rule())
+	_state_add(t, id)
 
 
 ## 行动序列 HP/MP/TP ±（gainHp/gainMp/gainTp）：HP 归零即倒下
 ## 返回弹字值：负 HP 与伤害同走护盾吸收链（Game_Battler.gainHp：先吸收、击穿后减半，ShieldSystem）；
 ## 弹字角色记原值、敌人记减免后（同 XResourceContext.gain）。
 ## subject：序列的行动者。导入角色平衡：对序列目标的 HP／MP 减少按行动者倍率缩放（actionHpModify／actionMpModify 的 gainHp／gainMp）。
-func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = null) -> float:
+func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = null, resources: XResourceContext = null) -> float:
 	if value < 0.0 and kind in ["HP", "MP"] and XImportedBalance.scales(subject, t):
 		value = -XImportedBalance.reduced(-value, subject)
+	if resources != null:
+		# 数值行动序列每个目标先clearResult，再gain；沿已对照的Boss→护盾→setter／refresh链。
+		# 每次gain只发布本次操作的槽，避免覆盖两条序列指令之间普通行动的新结果。
+		resources.slots.clear()
+		resources.seed_result(t, XResourceContext.empty_result())
+		resources.gain(t, kind.to_lower(), value)
+		resources.publish()
+		return -float(resources.result(t)[kind.to_lower() + "Damage"])
 	var shown := value
 	match kind:
 		"HP":
@@ -1469,7 +1597,7 @@ func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = 
 			t.mp = clampf(t.mp + value, 0.0, t.mmp)
 		"TP":
 			t.tp = clampf(t.tp + value, 0.0, t.max_tp())
-	t.refresh_resources(_rule())
+	_refresh_battler(t)
 	if value != 0.0:
 		t.param_mark_dirty()  # krz gainHp／gainMp／gainTp
 	return shown
@@ -1487,7 +1615,7 @@ func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int) -> 
 	elif (buff and t.buffs[pid] > 0) or (not buff and t.buffs[pid] < 0):
 		t.buffs[pid] = 0
 		t.buff_turns[pid] = 0
-	t.refresh_resources(_rule())
+	_refresh_battler(t)
 	if buff or not add:
 		t.param_mark_dirty()  # krz 包了 addBuff／removeBuff，没包 addDebuff
 
@@ -1505,7 +1633,7 @@ func _die(b: XBattler) -> void:
 	# Resource refresh has already performed death. Never clear permanent states or
 	# redraw the death duration when another gain/action observes the same corpse.
 	if not b.state_ids.has(DEATH_STATE):
-		b.add_state(DEATH_STATE, _rule())
+		_state_add(b, DEATH_STATE)
 
 
 ## timing 1 = 行动结束，2 = 回合结束（MV autoRemovalTiming）
@@ -1516,7 +1644,7 @@ func _tick_states(b: XBattler, timing: int) -> void:
 			continue
 		b.state_turns[id] = int(b.state_turns.get(id, 1)) - 1
 		if b.state_turns[id] <= 0:
-			b.remove_state_auto(id)
+			_state_remove(b, id, true)
 	if timing == 2:
 		for i in range(8):
 			if b.buff_turns[i] > 0:
@@ -1716,11 +1844,13 @@ func grant(r: Dictionary) -> Array:
 ## result：0 胜、1 逃、2 败，-1 不跑胜逃败效果（测试夹具等）。
 ## Custom Victory／Escape／Defeat Effect 只对我方（含后备），在原 endBattle 之前；胜利时 processVictory 已先 removeBattleStates。
 func end_battle(result := -1) -> void:
+	for e in enemies:
+		e.sync_boss_armor(false, _rule())
 	if result == 0:
 		for b in state.members():
 			for id in b.state_ids.duplicate():
 				if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):
-					b.remove_state(id)
+					_state_remove(b, id)
 	if result >= 0 and result <= 2:
 		XStateEffects.run_unit(["victory", "escape", "defeat"][result], state.members(), {"random": _rule(), "variables": vars()})
 	_clear_event_cursor()
@@ -1743,7 +1873,7 @@ func end_battle(result := -1) -> void:
 		b.end_battle_cooldowns()
 		for id in b.state_ids.duplicate():
 			if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):
-				b.remove_state(id)
+				_state_remove(b, id)
 		b.refresh_passive()
 		b.hp = minf(b.hp, b.mhp)
 		b.mp = minf(b.mp, b.mmp)

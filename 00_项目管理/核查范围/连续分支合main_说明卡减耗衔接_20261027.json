@@ -1,0 +1,54 @@
+{
+  "executor": "Codex（沙僧82）",
+  "review": "待Claude",
+  "native": "mv_oracle/.sandbox/merge82_help_cost.json",
+  "nativeCases": 4,
+  "red": {
+    "logDir": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/helpcost82-red",
+    "passed": 17,
+    "total": 21,
+    "runtimeErrors": [],
+    "cause": "borrowed character_help._cost bypasses ConsumeReduce; MP45 expected36, TP20 expected16"
+  },
+  "fix": "Parse authored percentage cost base as before, then reuse XBattleLogic.skill_cost rounding, ConsumeReduce and race chain; no settlement rule change",
+  "runs": [
+    {
+      "scene": "xiyou_character_help_cost",
+      "result": {
+        "passed": 21,
+        "total": 21
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/helpcost82-green/xiyou_character_help_cost.log",
+      "sha256": "5572ab52b8e03bf7787f8c9298286cf92c5079f5be74efbf7f54833b838e49ad"
+    },
+    {
+      "scene": "xiyou_help_card",
+      "result": {
+        "passed": 988,
+        "total": 988
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/helpcost82-green/xiyou_help_card.log",
+      "sha256": "b7c0a5e71fb489f7ee38c23ff0dfeed02bc02c9fd3711c57ff9bdb515f9e8dcf"
+    },
+    {
+      "scene": "xiyou_enemy_book",
+      "result": {
+        "passed": 93,
+        "total": 93
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/helpcost82-green/xiyou_enemy_book.log",
+      "sha256": "52f01a78843bd071abc556abddeec6f6179a4e124f6d8f651d02de3a45760725"
+    },
+    {
+      "scene": "xiyou_event_compare",
+      "result": {
+        "passed": 5,
+        "total": 5
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/helpcost82-green/xiyou_event_compare.log",
+      "sha256": "df9242b989ea2de11e62ef76a244906a2ccbf017b0bd0d1661c2ecf0f8db4f76"
+    }
+  ],
+  "extraFixtureCorrection": "enemy_book state-kill after revive now explicitly clears result for that new skill/event as well as later new damage, retaining same-result blocker in death_admission",
+  "rulesRuntimeChangedAfterRules82Start": false
+}

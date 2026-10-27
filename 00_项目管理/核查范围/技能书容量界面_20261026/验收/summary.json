@@ -1,0 +1,441 @@
+{
+  "testedHead": "17f612c4",
+  "runtimeToastCommit": "6c706863",
+  "nativeUI": {
+    "sourceFingerprints": 33,
+    "sourceUnchanged": true,
+    "errors": [],
+    "path": "技能书容量界面_20261026/原版"
+  },
+  "headlessChecks": [
+    {
+      "name": "xiyou_book_capacity",
+      "result": {
+        "failures": [],
+        "passed": 918,
+        "total": 918
+      },
+      "logSHA256": "b629c3a8ddb3455495f813711c4198fc599a09ecee566cd0298ae01a4f8f1088"
+    },
+    {
+      "name": "xiyou_book_capacity_ui",
+      "result": {
+        "failures": [],
+        "passed": 85,
+        "total": 85
+      },
+      "logSHA256": "a0646ea9145c0a4cd0c81eaae2d6a8a482fc58f769d5342114b489e288be5161"
+    },
+    {
+      "name": "xiyou_event_compare",
+      "result": {
+        "passed": 5,
+        "total": 5
+      },
+      "logSHA256": "50bd82226ffdd15ce3675865ee00458d43ddf08a05b2b67cc66aaec77e23830b"
+    },
+    {
+      "name": "xiyou_flow",
+      "result": {
+        "passed": 48,
+        "total": 48
+      },
+      "logSHA256": "2a60d96e136bd5fe058dc5c62ce4187e0fdaf837fb232dc4df10e7d39fc543d5"
+    },
+    {
+      "name": "xiyou_help_card",
+      "result": {
+        "passed": 970,
+        "total": 970
+      },
+      "logSHA256": "d336b69f260c55f3ac48637859355c8bbaaf2b7288858e8d0db62843a688e1e3"
+    },
+    {
+      "name": "xiyou_item_use",
+      "result": {
+        "passed": 11,
+        "total": 11
+      },
+      "logSHA256": "3a83c2fa5cfd05a909e0fab6c88a8b9cf7f33289426cb0cce9640e0f97ce8c7c"
+    },
+    {
+      "name": "xiyou_notice_options",
+      "result": {
+        "passed": 72,
+        "total": 72
+      },
+      "logSHA256": "2eed8684d5f7e0963c5f754002f593003f00b695b2fcc85520c64e48c8bf0cad"
+    }
+  ],
+  "firstAttemptOnly": true,
+  "window": {
+    "passed": 190,
+    "total": 190,
+    "repetitions": 3,
+    "task": "08df83f6a70e4723a252e947665434f3",
+    "path": "技能书容量界面_20261026/Godot"
+  },
+  "layout": {
+    "toastBoxes": [
+      [
+        460,
+        30,
+        260,
+        62
+      ],
+      [
+        460,
+        102,
+        260,
+        83
+      ]
+    ],
+    "toastTextHeights": [
+      42,
+      63
+    ],
+    "fontSize": 18,
+    "fontHeight": 21,
+    "lineSpacing": 0,
+    "actorDrawTolerance": "x/y/width abs diff < 1px only",
+    "help": "正文逐项一致；Godot字号16及贴行位置沿既有O-007/O-008，原版12，不声称矩形字号逐项相同"
+  },
+  "risk": "render2一次未恢复列表且无Script错误；加真实调用轨迹后一次诊断、一次轨迹取图及连续三窗均未复现。根因未证实，保留为一次偶发供Claude核查；不是已定位修复。",
+  "runs": {
+    "boss72-capacity-native-ui6": {
+      "status": {
+        "runId": "2905c0dcf7494269a6d2cacceaa4c518",
+        "status": "done",
+        "exitCode": 0,
+        "pid": 71590,
+        "startedAt": "2026-10-26T12:53:14.612684+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/占槽.py",
+          "--label",
+          "capacity-native-ui6",
+          "--",
+          "node",
+          "03_再刷重制_Godot/03_转换工具/ui_reference/review_book_capacity.cjs",
+          "00_项目管理/核查范围/技能书容量界面_20261026/原版",
+          "--port=8778"
+        ],
+        "childPGID": 71591,
+        "childIdentity": {
+          "pid": 71591,
+          "pgid": 71591,
+          "startedAt": "Mon Oct 26 13:53:14 2026    "
+        },
+        "finishedAt": "2026-10-26T13:52:19.004248+00:00"
+      },
+      "logSHA256": "0b0f73f7f1e1344ecc7f77a075c53c73e77bdf1d591501a14d5d31ce4cdf6537"
+    },
+    "boss72-capacity-render": {
+      "status": {
+        "runId": "387393f8563f426699354efe50dd6776",
+        "status": "failed",
+        "exitCode": 1,
+        "pid": 71294,
+        "startedAt": "2026-10-26T12:51:09.174705+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/占槽.py",
+          "--label",
+          "capacity-render",
+          "--",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/03_转换工具/ui_reference/render_book_capacity.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "00_项目管理/核查范围/技能书容量界面_20261026/Godot_首轮诊断"
+        ],
+        "childPGID": 71295,
+        "childIdentity": {
+          "pid": 71295,
+          "pgid": 71295,
+          "startedAt": "Mon Oct 26 13:51:09 2026    "
+        },
+        "finishedAt": "2026-10-26T13:52:28.030595+00:00"
+      },
+      "logSHA256": "f1797eede3b5adcdaf542d426fb0607dc2797a00036de24307bc17258e5ccd3e"
+    },
+    "boss74-capacity-render1": {
+      "status": {
+        "runId": "e7ef11c219124731bfb87ebfb2409540",
+        "status": "failed",
+        "exitCode": 1,
+        "pid": 89478,
+        "startedAt": "2026-10-26T14:01:57.994761+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/占槽.py",
+          "--label",
+          "capacity-render74",
+          "--",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/03_转换工具/ui_reference/render_book_capacity.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "00_项目管理/核查范围/技能书容量界面_20261026/Godot_修正首轮"
+        ],
+        "childPGID": 89480,
+        "childIdentity": {
+          "pid": 89480,
+          "pgid": 89480,
+          "startedAt": "Mon Oct 26 15:01:57 2026    "
+        },
+        "finishedAt": "2026-10-26T14:11:53.415695+00:00"
+      },
+      "logSHA256": "b0904e7c8459dec64421ca53cdd90652ed13ea805e8f301029e850726fd15a96"
+    },
+    "boss74-capacity-render2": {
+      "status": {
+        "runId": "65818bb6dd8e4dc88ca7b457afe95072",
+        "status": "failed",
+        "exitCode": 1,
+        "pid": 96258,
+        "startedAt": "2026-10-26T14:13:48.373050+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/占槽.py",
+          "--label",
+          "capacity-render74b",
+          "--",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/03_转换工具/ui_reference/render_book_capacity.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "00_项目管理/核查范围/技能书容量界面_20261026/Godot_最终候选"
+        ],
+        "childPGID": 96259,
+        "childIdentity": {
+          "pid": 96259,
+          "pgid": 96259,
+          "startedAt": "Mon Oct 26 15:13:48 2026    "
+        },
+        "finishedAt": "2026-10-26T14:16:57.115836+00:00"
+      },
+      "logSHA256": "1d347edc68546760aeb3b3cc7cdb9a619af2553c37013c246316c00c0f621e8a"
+    },
+    "boss74-capacity-native7": {
+      "status": {
+        "runId": "ddc1dc6d5aaa49a4937200d5b9575d8c",
+        "status": "done",
+        "exitCode": 0,
+        "pid": 3664,
+        "startedAt": "2026-10-26T14:21:35.525882+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/占槽.py",
+          "--label",
+          "capacity-native7",
+          "--",
+          "node",
+          "03_再刷重制_Godot/03_转换工具/ui_reference/review_book_capacity.cjs",
+          "00_项目管理/核查范围/技能书容量界面_20261026/原版_头像预载",
+          "--port=8778"
+        ],
+        "childPGID": 3665,
+        "childIdentity": {
+          "pid": 3665,
+          "pgid": 3665,
+          "startedAt": "Mon Oct 26 15:21:35 2026    "
+        },
+        "finishedAt": "2026-10-26T14:22:20.583631+00:00"
+      },
+      "logSHA256": "29eb91244e65a3f8f01d15a8ad47601db51f09976e22adb5db6e63936a6f1d95"
+    },
+    "boss74-capacity-render3": {
+      "status": {
+        "runId": "2752ee5c18144517a8617581fabbf579",
+        "status": "done",
+        "exitCode": 0,
+        "pid": 1774,
+        "startedAt": "2026-10-26T14:18:37.526319+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/占槽.py",
+          "--label",
+          "capacity-render74c",
+          "--",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/03_转换工具/ui_reference/render_book_capacity.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "00_项目管理/核查范围/技能书容量界面_20261026/Godot_续用诊断"
+        ],
+        "childPGID": 1780,
+        "childIdentity": {
+          "pid": 1780,
+          "pgid": 1780,
+          "startedAt": "Mon Oct 26 15:18:37 2026    "
+        },
+        "finishedAt": "2026-10-26T14:18:44.079845+00:00"
+      },
+      "logSHA256": "bb7761de97235e8547cfeb4b5af2a94dc8e14dfe8feb90e4e0be0e1da732f498"
+    },
+    "boss74-capacity-render4": {
+      "status": {
+        "runId": "fd994e99d7d34ee88efe582d49a290a1",
+        "status": "done",
+        "exitCode": 0,
+        "pid": 3667,
+        "startedAt": "2026-10-26T14:21:35.666441+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/占槽.py",
+          "--label",
+          "capacity-render74d",
+          "--",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/03_转换工具/ui_reference/render_book_capacity.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "00_项目管理/核查范围/技能书容量界面_20261026/Godot_续用轨迹"
+        ],
+        "childPGID": 3670,
+        "childIdentity": {
+          "pid": 3670,
+          "pgid": 3670,
+          "startedAt": "Mon Oct 26 15:21:35 2026    "
+        },
+        "finishedAt": "2026-10-26T14:21:43.341151+00:00"
+      },
+      "logSHA256": "71ede9b12f241a4b04ab31b2226747ebe2cd9dd5fbcf338b1fcd1219a5f096fc"
+    },
+    "boss74-capacity-repeat": {
+      "status": {
+        "runId": "08df83f6a70e4723a252e947665434f3",
+        "status": "done",
+        "exitCode": 0,
+        "pid": 4134,
+        "startedAt": "2026-10-26T14:23:10.567475+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/04_验证/本地结果/boss74-capacity-repeat.py"
+        ],
+        "childPGID": 4135,
+        "childIdentity": {
+          "pid": 4135,
+          "pgid": 4135,
+          "startedAt": "Mon Oct 26 15:23:10 2026    "
+        },
+        "finishedAt": "2026-10-26T14:23:34.811676+00:00"
+      },
+      "logSHA256": "3e4c66fd9489f176f9f50d489074819b0b70f3908280c9f7b9d51278cff51454"
+    },
+    "boss74-capacity-accepted": {
+      "status": {
+        "runId": "6b66691c3254479d8daf7052ec924096",
+        "status": "done",
+        "exitCode": 0,
+        "pid": 4940,
+        "startedAt": "2026-10-26T14:25:35.056971+00:00",
+        "command": [
+          "env",
+          "XIYOU_TEST_HEARTBEAT=30",
+          "python3",
+          "-u",
+          "03_再刷重制_Godot/07_开发环境/并行测试.py",
+          "03_再刷重制_Godot/07_开发环境/godot",
+          "03_再刷重制_Godot/01_Godot工程",
+          "--log-dir",
+          "03_再刷重制_Godot/04_验证/本地结果/boss74-capacity-accepted",
+          "xiyou_book_capacity.tscn",
+          "xiyou_book_capacity_ui.tscn",
+          "xiyou_item_use.tscn",
+          "xiyou_event_compare.tscn",
+          "xiyou_notice_options.tscn",
+          "xiyou_flow.tscn",
+          "xiyou_help_card.tscn"
+        ],
+        "childPGID": 4941,
+        "childIdentity": {
+          "pid": 4941,
+          "pgid": 4941,
+          "startedAt": "Mon Oct 26 15:25:35 2026    "
+        },
+        "finishedAt": "2026-10-26T14:27:21.598605+00:00"
+      },
+      "logSHA256": "1a79ecf8182c1f26817c1b1962b17b11c245e2f2a851c4681342562869687682"
+    }
+  },
+  "evidenceSHA256": {
+    "原版/capacity_0_actor.json": "c544b42c3bb43b0f68f76cceb72cbdcf771de077057c71f91d2530b1f243ace3",
+    "原版/capacity_0_actor.png": "caf7c661eb6ca7be4625ad6acb51d3d63c1a99c11335c63a451683774af5bf22",
+    "原版/capacity_1_limit.json": "5edc505c59b9739d4f1f8e44447667f4006cb7ad844dae7b5c0fd483f66372db",
+    "原版/capacity_1_limit.png": "2fa68122531618f20e3a258d2a9296203f961dbbb7ed5170b65e24914f960915",
+    "原版/run.json": "e8c150a810d7fb65710c3271cd6e6711cf333d8338333a89650c296106cb5956",
+    "原版/source_after.json": "dad62ad7ee298720be6ad06602e1604b4f491aab25be36674fac1f373e06ab53",
+    "原版/source_before.json": "dad62ad7ee298720be6ad06602e1604b4f491aab25be36674fac1f373e06ab53",
+    "Godot/capacity_0_actor.json": "ebe7532755fe10befd8429e7ba0e54c8cf798886d8b53e5de5a850f7d92a0a2a",
+    "Godot/capacity_0_actor.png": "ae8331d9c04d458976b840b5b7bac06bbf705fc2de4a08ad450082f28f16512a",
+    "Godot/capacity_1_limit.json": "a8eac5a2b601b5c990702a04748077b3039ac65c6511295accdff4fbcb65a4e6",
+    "Godot/capacity_1_limit.png": "6a02692f658b032d0d051fa686ba58e4f93cae64f41ab8c4741d8bf9a8c6cd61",
+    "验收/test_timings.json": "9542399197978e08707459ec351dfaceea63570d2ca2ac33852c6b2f936728e3",
+    "验收/window_stability.log": "3e4c66fd9489f176f9f50d489074819b0b70f3908280c9f7b9d51278cff51454",
+    "验收/xiyou_book_capacity.log": "b629c3a8ddb3455495f813711c4198fc599a09ecee566cd0298ae01a4f8f1088",
+    "验收/xiyou_book_capacity_ui.log": "a0646ea9145c0a4cd0c81eaae2d6a8a482fc58f769d5342114b489e288be5161",
+    "验收/xiyou_event_compare.log": "50bd82226ffdd15ce3675865ee00458d43ddf08a05b2b67cc66aaec77e23830b",
+    "验收/xiyou_flow.log": "2a60d96e136bd5fe058dc5c62ce4187e0fdaf837fb232dc4df10e7d39fc543d5",
+    "验收/xiyou_help_card.log": "d336b69f260c55f3ac48637859355c8bbaaf2b7288858e8d0db62843a688e1e3",
+    "验收/xiyou_item_use.log": "3a83c2fa5cfd05a909e0fab6c88a8b9cf7f33289426cb0cce9640e0f97ce8c7c",
+    "验收/xiyou_notice_options.log": "2eed8684d5f7e0963c5f754002f593003f00b695b2fcc85520c64e48c8bf0cad",
+    "验收/mechanical.log": "b0064e02175ad7e2594ddd6b87249ab93291411838199c7f6a4723b912f5858c"
+  },
+  "mechanicalChecks": [
+    {
+      "name": "docs",
+      "exitCode": 0
+    },
+    {
+      "name": "node-js",
+      "exitCode": 0
+    },
+    {
+      "name": "node-cjs",
+      "exitCode": 0
+    },
+    {
+      "name": "mv-guard",
+      "exitCode": 0
+    },
+    {
+      "name": "ui-guard",
+      "exitCode": 0
+    },
+    {
+      "name": "diff-check",
+      "exitCode": 0
+    }
+  ]
+}

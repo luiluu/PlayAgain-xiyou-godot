@@ -1,0 +1,64 @@
+{
+  "executor": "Codex（沙僧82）",
+  "review": "待Claude",
+  "sourceCommits": [
+    "2449e4e1",
+    "4a1e4250",
+    "9c584f38"
+  ],
+  "importMethod": "Only specific file diffs applied in fixed integration branch; no merge newer main, reset or cherry-pick",
+  "nativeEvidence": [
+    "tests/fixtures/actor_book_oracle.json",
+    "modes/xiyou/generated/oracle/help_cards.json"
+  ],
+  "red": "help82-red (fresh before changes, actor21/22 help970/988; first and auto rerun retained)",
+  "changes": [
+    "native characterHelpView dispatch and current actor fixture at10",
+    "native HelpWidth values for row-layout comparison and actual cards",
+    "native dynamic SV differs from static database sprite: suppress incorrect static image when dynamic frame port absent"
+  ],
+  "limitations": [
+    "Dynamic multi-frame sprites still absent; keep white-dragon suppression and future visual implementation pending",
+    "XCharacterHelp port retains declared limitations: listCosts, advanced rank-change rows, unsliced actors and future battle-only fields",
+    "Formal independent review remains Claude"
+  ],
+  "runs": [
+    {
+      "scene": "xiyou_help_card",
+      "result": {
+        "passed": 988,
+        "total": 988
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/help82-green/xiyou_help_card.log",
+      "sha256": "b7c0a5e71fb489f7ee38c23ff0dfeed02bc02c9fd3711c57ff9bdb515f9e8dcf"
+    },
+    {
+      "scene": "xiyou_actor_book",
+      "result": {
+        "passed": 22,
+        "total": 22
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/help82-green/xiyou_actor_book.log",
+      "sha256": "cc45d0d1686542a67b7f865aa974e4e38750a956203ab8d44a6705ba0e052ff6"
+    },
+    {
+      "scene": "xiyou_actor_modules",
+      "result": {
+        "passed": 37,
+        "total": 37
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/help82-green/xiyou_actor_modules.log",
+      "sha256": "669d508228c1905385cfc23da95795295cb11e9658c9b76c84c2c0d9cd00b652"
+    },
+    {
+      "scene": "xiyou_event_compare",
+      "result": {
+        "passed": 5,
+        "total": 5
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/help82-green/xiyou_event_compare.log",
+      "sha256": "df9242b989ea2de11e62ef76a244906a2ccbf017b0bd0d1661c2ecf0f8db4f76"
+    }
+  ],
+  "allIntegrationPassed": false
+}
