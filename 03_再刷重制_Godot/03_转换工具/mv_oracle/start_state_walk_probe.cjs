@@ -20,6 +20,9 @@ function battleStart(){
     actor._passiveCache.okadd=true;
   });
   members.forEach(a=>a.refreshPassiveCache());
+  // 代表第一回合 onTurnStart 后的 Unit.refresh：krz_state_re 的 states() 缓存在 addState 后不刷新，
+  // 零回合就结束时 removeBattleStates 读旧缓存会漏掉别人挂来的状态（原版缓存时序，不在本例范围）。
+  w.$gameParty.members().forEach(a=>a.refresh());
 }
 function snap(tag,ids){return {tag,members:w.$gameParty.members().map(a=>({id:a.actorId(),has:ids.filter(i=>a.isStateAffected(i)),
   removed:Array.from(a._result.removedStates).filter(i=>ids.includes(i)).sort((x,y)=>x-y)}))};}
