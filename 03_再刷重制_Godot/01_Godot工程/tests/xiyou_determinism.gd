@@ -128,7 +128,7 @@ func replay(trial_seed: int, visual: bool, icons: bool, camera: bool, sound: boo
    if early.is_alive():
     logic.sequence_gain(early,"HP",-early.hp)
     logic.resolve_collapses()
-   check("early_inventory_rule",(s.gear.size()>0)==advance)
+   check("early_inventory_rule",(s.gear.size()>0)==advance,{"advance":advance,"visual":visual,"gear":s.gear.size(),"dead":early.is_dead(),"hp":early.hp,"drop_lock":logic.drop_lock})
   rounds.append([logic.turn,actor.hp,actor.mp,actor.tp,logic.enemies.map(func(e):return [e.hp,e.mp,e.tp,e.state_ids.duplicate(),e.state_turns.duplicate(true)])])
  # At least two actual collapse opportunities and one persistent equipment grant.
  for e in logic.enemies:

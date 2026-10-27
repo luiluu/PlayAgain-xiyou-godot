@@ -225,9 +225,10 @@ func _hidden_event_streams() -> void:
 		var resources := [e.hp, e.mp, e.tp, e.enemy_level, e.elite, e.state_ids.duplicate(), e.state_turns.duplicate()]
 		logic.enemy_appear(i)
 		check("hidden.appear_preserves_setup:" + str(i), not e.hidden and resources == [e.hp, e.mp, e.tp, e.enemy_level, e.elite, e.state_ids, e.state_turns] and logic.stable_id(e) == ids[i])
+	var transform_before := [logic.enemies[1].hp, logic.enemies[1].state_ids.duplicate(), logic.enemies[1].state_turns.duplicate()]
 	logic.enemy_transform(1, 175)
 	check("hidden.transform_preserves_id", logic.enemies[1].enemy_id == 175 and logic.stable_id(logic.enemies[1]) == ids[1])
-	check("hidden.appear_transform_no_draw", logic.random.rule.draws == 4 and logic.random.rule.error.is_empty() and equal(persistent_before, s.runtime_random_snapshot()))
+	check("hidden.appear_transform_no_draw", logic.random.rule.draws == 4 and logic.random.rule.error.is_empty() and equal(persistent_before, s.runtime_random_snapshot()), {"transform_before":transform_before,"transform_after":[logic.enemies[1].hp,logic.enemies[1].state_ids,logic.enemies[1].state_turns],"draws":logic.random.rule.draws,"error":logic.random.rule.error,"journal":logic.random.rule.journal,"persistent_before":persistent_before,"persistent_after":s.runtime_random_snapshot()})
 	logic.enemy_recover_all(-1)
 	check("event.recover_no_extra_draw", logic.random.rule.draws == 4 and logic.random.rule.error.is_empty() and equal(persistent_before, s.runtime_random_snapshot()))
 

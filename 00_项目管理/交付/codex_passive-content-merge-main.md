@@ -253,3 +253,17 @@
 ## 81额度重置后恢复（2026-10-27 04:58）
 
 - 实查五小时0%、周62%；HEAD05a56173 tracked干净，未发现本树其他测试执行者。一次续接81已删除，避免重复触发。唯一final79已结束，按首轮八败继续，不重启／不重同步。按[失败处理计划](../核查范围/连续分支合main_失败处理计划_20261027.md)逐项原版归因、红绿验证与小步修正；尚未进入正式核查积压。
+
+## 沙僧81→82：额度重置后同树上下文接力（2026-10-27）
+
+- 81于04:58自动续接，五小时实际0%、周62%，已删除一次automation81，避免重复触发。后续按用户95%收尾，不能用新会话绕额度。此处接力因为实查token_count最后输入218569／窗口475000约46%，已越40%上下文线；不是因排队或额度停手。82创建成功后81停止，82唯一继续执行。
+- 所有文件命令继续显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b；沿用codex/passive-content-merge-main。主工作区总装在途，不接main、不改共用登记，不新建／清理工作树、不reset／cherry-pick，不发其他已有会话消息、不建PR。全部原件、.sandbox、generated、失败和未完成证据及整树保留。执行者Codex（沙僧），核查待Claude，不自核或自评完成度。
+- **final79已彻底结束，不再等待也绝不重启**：runId8ad01dcbeb7f46d1ace42ed042f7a147，整体exit1，SELECTED_EXIT1／CHOICE_EXIT0。218场210过8败、各仅首次attempt（失败8场超自动重跑上限），选择窗口3/3通过；所有工具检查已结束。sync3和accept80也均已结束不重跑。固定集成基准仍9b140f365f93c2cfa4b19d85b6ddd72576830c16，截至5761f01f的14张原交付单名单保留，不追新main。
+- 首轮证据核查范围/连续分支合main_最终验收首轮_20261027.json；覆盖文件连续分支合main_专项覆盖_20261027.json已executed=true，66相关场景均实跑，但allPassed=false、不是全绿。8败为actor_book21/22、help_card970/988、wtype16176/16190、battle_ui67/70、determinism374/382、enemy_book92/93、random_streams480/484、pet_capture39/43。逐场日志在本地结果/merge-main-next/final-selected79；选择窗口在final-choice79。所有逐场无SCRIPT／Parse／Compile／行首ERROR。两条变更记录链接a继承固定main9b，仍不改共享记录。
+- 本轮已开始按核查范围/连续分支合main_失败处理计划_20261027.md逐项根因、原版、TDD，不先开核查积压。81只有一处运行时修正：XResourceContext.add_state原来用b.is_alive()过早拒绝裸HP0，原版isStateAddable看出现／状态1，允许HP0但未附状态1的敌人进入加阵亡。现改为state_ids.has(1)及XEnemy.hidden／抗性守卫；不改全局is_dead，不放宽removedStates保护。
+- 新最小原版4例有效产物mv_oracle/.sandbox/merge81_death_v4.json；原始脚本merge81_death_probe_v4.cjs，fixture tests/fixtures/death_admission_oracle.json（issues键），新回归xiyou_death_admission.gd／tscn。原版前三次宿主缺OTB队列／显示回调的失败原件全保留，v4只补队列和createReturnedBattlerSprite空显示回调，未改游戏规则。合法RED是本地结果/merge-main-next/death81-red2（33/37，无Script错误）；早red测试有数值类型比较和缺state的脚本错误，已修测试自身但保留原件，不把它当合法RED。
+- 最新death81-green1整批已结束，6场整体exit1：4场2377项通过（death_admission37、pet_capture43、state_operation1431、state_merge_context866），determinism与random_streams仍失败；全部无Script／Parse／Compile／行首ERROR。pet_capture原43条断言完全没改、从39恢复43，不能把其他七场旧失败静默核销。本轮运行时只上述准入5行；另改determinism与random_streams只为失败打印更多详情，未改断言。精简证据核查范围/连续分支合main_死亡准入修正_20261027.json。全部专项已退出，无本树在途测试，勿无意义重跑已绿四场。
+- **最新实际诊断，下一步先读这几条**：determinism8败全部advance=false，visual真／假均gear=1、dead=true、HP0、drop_lock=false；说明测试检查时已有一件装备，来源尚未追，不再盲猜advance=true缺入包。e1925bea旧隔离日志也374/382，但它不是固定main9b归因。random_streams的hidden.appear_transform_no_draw实际turn=2、敌人175变身后新增2651霸体、取state_duration致脚本流exhausted；变身前HP1e11、states空，后HP同、states2651。零取数前提可能过时，必须核原版／Boss既有参照后修夹具前提，不能删断言或改规则迁就。其death transform脚本预期event=b:1，现资源域labels用stable_id导致新事件键，需核稳定键设计，尚未改。
+- enemy_book唯一失败hook.after_battle_not_counted的detail计数仍2，实际是e.is_dead为false，不是重复计数。原版新4例已实证：复活refresh在result.removedStates留1，同result再加阵亡或HP0refresh会被挡，clearResult后refresh才加阵亡；本测试可能缺新一次死亡前的clearResult前提，尚未改，先对照其完整调用链。原版新例保留了同result阻止再加的反例，不可去掉保护来迁就旧夹具。
+- 其余技能准入wtype／battle_ui和说明卡actor_book／help_card还未处理；battle_ui补足TP9但技能仍不能用，须查技能类型／封印／武器等真实条件；不得只去断言。预审80三批证据preaudit80.json仍只是旧只读预审，不重派、不算正式核查。
+- 继续：完成八败逐项原版归因和必要最小修正；只补失败与直接影响专项（规则改动按三级要求补规则段，不重跑整批218或同步）；更新实跑证据与本单、push github本分支向Kyo交付给唐僧，不自行合main。真正交付后才从当时实际本地main开codex/review-backlog-20261027-1重算积压、第一期11批，只核Claude。PREE仍封存c5953948。建议high，机械medium仅实际切换后才称切换；82显式high，不指定新模型。

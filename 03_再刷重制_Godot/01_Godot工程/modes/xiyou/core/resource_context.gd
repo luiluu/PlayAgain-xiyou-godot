@@ -26,7 +26,11 @@ func state_context(b: XBattler) -> Dictionary:
 
 ## One explicit operation domain for state changes, including nested Apply/Remove effects.
 func add_state(b: XBattler, id: int, inputs := {}) -> void:
-	if preview or bool(inputs.get("preview", false)) or b == null or not b.is_alive() or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
+	if preview or bool(inputs.get("preview", false)) or b == null:
+		return
+	# Native isStateAddable checks appearance and the death state. Raw HP may
+	# already be zero while refresh/_die still needs to attach state 1.
+	if b.state_ids.has(1) or (b is XEnemy and b.hidden) or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
 		return
 	if result(b).removedStates.has(id):
 		return
