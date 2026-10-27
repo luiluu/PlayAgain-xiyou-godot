@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.183",
-  "sequence": 183,
-  "next": "dev.184",
-  "nextSequence": 184,
+  "current": "dev.184",
+  "sequence": 184,
+  "next": "dev.185",
+  "nextSequence": 185,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bailong-fix0",
+  "currentChange": "bailong-yomi",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
