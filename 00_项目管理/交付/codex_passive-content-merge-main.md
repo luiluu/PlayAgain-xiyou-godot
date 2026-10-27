@@ -181,3 +181,16 @@
 - 正在做：等待原sync3，随后审测量差异、最终集成选测及缺漏专项；不重启／取消同步，不追新main，不改共享登记。开工tracked干净，HEAD e4cfd5e1；实查五小时21%、周50%。
 - 14张原交付单及关联精简证据的实际场景名与最终218场计划取并集，识别66个相关场景；唯一计划外为xiyou_choice_window.tscn，最终另补一场。覆盖草稿留本地结果/merge-main-next/coverage79.json，尚未执行，不能当验收通过。
 - 顺序按用户在78的最新要求：本集成真正验收交付后转清核查积压第一期；PREE继续封存。前文早期“交付后恢复PREE”只保留为历史，不作为当前下一步。
+
+## 沙僧79→80：同树上下文接力（2026-10-27，非额度停手）
+
+- 79按既定上下文接力约定保存后交80，创建成功后79停止，80唯一后续执行者。不是因排队重开任务；同一树、同一sync3进程继续。末次额度实查五小时34%、周52%，仍按本集成／积压核查80%线收尾；设计／规则核查high，不虚称模型切换。
+- 第一条及全部文件命令显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b。分支codex/passive-content-merge-main；本节提交为HEAD。已push github本分支，tracked干净；全部未跟踪证据、.sandbox、generated、失败／不完整原件、整树保留。禁止建／清树、reset/cherry-pick、改main／共享登记、发其他已有会话消息、建automation／PR。主工作区仍归总装，不按无人WIP接管。
+- 开工只读交接板顶部／自己行、git status/log、额度、本节，旧78→79仅按需。不重读14期全部历史。用户最新顺序始终为：真正完成14期集成验收交付→从当时本地main开codex/review-backlog-20261027-1清积压第一期11批；PREE继续封存c5953948。后续原交代在核查范围/清核查积压_Claude交代_20261027.txt；本集成固定main9b140f365f93c2cfa4b19d85b6ddd72576830c16，不追新main，14期截至5761f01f／原合并d13da37e。
+- 79只做文档与验收准备，未改运行时／测试／探针。9252be8b记录接续与补测，01416a17纠正交付单顶部旧PREE顺序；未重新跑已验证19,465项，不称最终验收。14原交付单名单保留。新增[专项覆盖计划](../核查范围/连续分支合main_专项覆盖_20261027.json)：14交付单＋关联精简证据提取66个场景，与218选测并集，唯一遗漏xiyou_choice_window.tscn；此文件executed=false。
+- **唯一在途sync3绝不能重启／取消／重复启动**：本地结果/merge-main-next/sync3.log；runId5a0865fbf36a4897808812d013b7333d，包装器21018／childPGID21023，仍running。普通增量、无--full／无接受开关，57执行0复用。末查已完成13条命令，退出全0，六难度切片均已成功（[1, 2, 3, 4, 5, 6]）；后续smart_ai、events等运行／排槽。只读检查无父占槽子再等槽的嵌套路径；曾实查本任务两node子进程各持续约100%CPU，未判卡死、未改工具／并发／缓存。
+- 等待仍用等待任务.sh sync3.log --timeout45，每次最多60秒；读自己日志。入口同名同步正式西游.py runpy执行merge-main76/sync_preserve.py，保留全部待删除.sandbox与manual原件，未改缓存／槽位。同步结束先keys再读backup同步报告measurementChanges／changeCandidates／additionCheck：新增才accept-additions；既有变化逐条接受单、理由与摘要精确匹配。不得无条件接受，不重采有效20例，两个手动探针未接PROBES。
+- 78运行时修正1f63aa68/a69cf654、20例原版fixture、五场19,465项与state_js旧generated缺文件仍见78→79；最终必须同步后验。同步自动导入后检查所有Script/Parse/Compile错误，再以长任务start跑检查.sh --affected 9b140f36 --oracle（参数分开），不得全量。
+- 79已在本地结果/merge-main-next/final79.sh准备但**未启动**最终入口，zsh -n通过：先218场选测，再单补xiyou_choice_window.tscn，不因前者失败而漏跑后者。XIYOU_TEST_HEARTBEAT=30；CHECK_LOG_DIR分别final-selected79与final-choice79保存全部场景原件；末尾有SELECTED_EXIT／CHOICE_EXIT。脚本ROOT从自身上行五级，需在启动前只读确认路径；可沿用一次，不重复启动已存在任务。覆盖草稿coverage79.json、selection-final.sh/json仍在同目录。
+- 文档继承两条链接a；旧8项early_inventory_rule若仍失败，必须读真实日志并实际区分归因，不能拿早期口述当新基线。78只证明测试相对main9b未变，e1925bea只是Boss专项证据提交。禁止放宽断言／夹带迁就。
+- 真正验证可交付后更新本单、保留14单名单、push github本分支，告诉Kyo供转唐僧；不自行合main、不销自己的核查／自评完成度。然后才转核查分支，实际main重新算积压，不用本分支217批／计入140当main实时值，全部Codex批次仍交Claude。

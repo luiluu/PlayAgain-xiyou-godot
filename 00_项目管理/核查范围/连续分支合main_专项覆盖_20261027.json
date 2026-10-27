@@ -1,0 +1,283 @@
+{
+  "base": "9b140f365f93c2cfa4b19d85b6ddd72576830c16",
+  "selectedCount": 218,
+  "requiredSceneCount": 66,
+  "deliveries": [
+    {
+      "delivery": "codex_actor-bonus-states.md",
+      "scenes": [
+        "xiyou_actor_bonus.tscn",
+        "xiyou_battle.tscn",
+        "xiyou_battle_common_events.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_param_states.tscn",
+        "xiyou_state_effects.tscn",
+        "xiyou_state_effects_tp.tscn"
+      ],
+      "missingFromSelection": []
+    },
+    {
+      "delivery": "codex_actor-bonus.md",
+      "scenes": [
+        "xiyou_actor_bonus.tscn",
+        "xiyou_actor_warehouse.tscn",
+        "xiyou_battle.tscn",
+        "xiyou_cat.tscn",
+        "xiyou_custom_params.tscn",
+        "xiyou_floor_reach225.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_magic_weapon.tscn",
+        "xiyou_party.tscn",
+        "xiyou_party_skills.tscn",
+        "xiyou_pet_capture.tscn",
+        "xiyou_pet_synth.tscn",
+        "xiyou_pets.tscn",
+        "xiyou_rules.tscn",
+        "xiyou_rules_d1b.tscn",
+        "xiyou_rules_d1c.tscn",
+        "xiyou_rules_d1d.tscn",
+        "xiyou_state_effects.tscn",
+        "xiyou_state_effects_tp.tscn",
+        "xiyou_training.tscn"
+      ],
+      "missingFromSelection": []
+    },
+    {
+      "delivery": "codex_four-loose-fixes.md",
+      "scenes": [
+        "xiyou_battle.tscn",
+        "xiyou_battle_options.tscn",
+        "xiyou_cat.tscn",
+        "xiyou_enemy_book.tscn",
+        "xiyou_floor_run_c.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_formula_equipment.tscn",
+        "xiyou_formula_rest.tscn",
+        "xiyou_loose_fixes.tscn",
+        "xiyou_power.tscn",
+        "xiyou_rules.tscn",
+        "xiyou_rules_d1b.tscn",
+        "xiyou_rules_d1c.tscn",
+        "xiyou_rules_d1d.tscn",
+        "xiyou_settlement.tscn",
+        "xiyou_smart_ai.tscn",
+        "xiyou_state_effects.tscn",
+        "xiyou_state_effects_tp.tscn"
+      ],
+      "missingFromSelection": []
+    },
+    {
+      "delivery": "codex_passive-content-book-capacity.md",
+      "scenes": [
+        "xiyou_actor_p0.tscn",
+        "xiyou_battle.tscn",
+        "xiyou_book_capacity.tscn",
+        "xiyou_book_capacity_ui.tscn",
+        "xiyou_event_compare.tscn",
+        "xiyou_flow.tscn",
+        "xiyou_help_card.tscn",
+        "xiyou_item_use.tscn",
+        "xiyou_map.tscn",
+        "xiyou_notice_options.tscn",
+        "xiyou_party.tscn",
+        "xiyou_passive_content.tscn",
+        "xiyou_power.tscn",
+        "xiyou_power_books.tscn",
+        "xiyou_power_books_boundary.tscn",
+        "xiyou_power_books_menu.tscn",
+        "xiyou_script.tscn"
+      ],
+      "missingFromSelection": []
+    },
+    {
+      "delivery": "codex_passive-content-boss-context.md",
+      "scenes": [
+        "xiyou_action_sequence.tscn",
+        "xiyou_battle.tscn",
+        "xiyou_battle_common_events.tscn",
+        "xiyou_boss_output.tscn",
+        "xiyou_boss_output_context.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_rules.tscn",
+        "xiyou_script.tscn",
+        "xiyou_shield.tscn",
+        "xiyou_state_effects.tscn",
+        "xiyou_state_effects_tp.tscn"
+      ],
+      "missingFromSelection": []
+    },
+    {
+      "delivery": "codex_passive-content-boss-output.md",
+      "scenes": [
+        "xiyou_battle.tscn",
+        "xiyou_boss_output.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_imported_balance.tscn",
+        "xiyou_power.tscn",
+        "xiyou_settlement.tscn",
+        "xiyou_shield.tscn",
+        "xiyou_state_effects.tscn",
+        "xiyou_troop_events_half.tscn",
+        "xiyou_zhenqi_daofa.tscn"
+      ],
+      "missingFromSelection": []
+    },
+    {
+      "delivery": "codex_passive-content-boss-react.md",
+      "scenes": [
+        "xiyou_boss_lifecycle.tscn",
+        "xiyou_boss_output.tscn",
+        "xiyou_boss_output_context.tscn",
+        "xiyou_boss_react.tscn",
+        "xiyou_boss_sequence.tscn",
+        "xiyou_boss_state_origin.tscn",
+        "xiyou_determinism.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_imported_balance.tscn",
+        "xiyou_script.tscn",
+        "xiyou_state_effects.tscn",
+        "xiyou_state_effects_tp.tscn"
+      ],
+      "missingFromSelection": []
+    },
+    {
+      "delivery": "codex_passive-content-boss-sequence.md",
+      "scenes": [
+        "xiyou_action_sequence.tscn",
+        "xiyou_battle.tscn",
+        "xiyou_battle_common_events.tscn",
+        "xiyou_battle_events.tscn",
+        "xiyou_boss_output.tscn",
+        "xiyou_boss_output_context.tscn",
+        "xiyou_boss_sequence.tscn",
+        "xiyou_determinism.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_imported_balance.tscn",
+        "xiyou_script.tscn",
+        "xiyou_state_effects.tscn",
+        "xiyou_state_effects_tp.tscn"
+      ],
+      "missingFromSelection": []
+    },
+    {
+      "delivery": "codex_passive-content-boss-state-origin.md",
+      "scenes": [
+        "xiyou_boss_lifecycle.tscn",
+        "xiyou_boss_output.tscn",
+        "xiyou_boss_output_context.tscn",
+        "xiyou_boss_sequence.tscn",
+        "xiyou_boss_state_origin.tscn",
+        "xiyou_determinism.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_script.tscn",
+        "xiyou_state_effects.tscn",
+        "xiyou_state_effects_tp.tscn"
+      ],
+      "missingFromSelection": []
+    },
+    {
+      "delivery": "codex_passive-content-boss.md",
+      "scenes": [
+        "xiyou_battle.tscn",
+        "xiyou_battle_common_events.tscn",
+        "xiyou_battle_events.tscn",
+        "xiyou_boss_lifecycle.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_param_states.tscn",
+        "xiyou_power.tscn",
+        "xiyou_state_effects.tscn",
+        "xiyou_troop_events.tscn",
+        "xiyou_troop_events_b.tscn",
+        "xiyou_troop_events_half.tscn"
+      ],
+      "missingFromSelection": []
+    },
+    {
+      "delivery": "codex_passive-content-power-books.md",
+      "scenes": [
+        "xiyou_actor_bonus.tscn",
+        "xiyou_actor_p0.tscn",
+        "xiyou_battle.tscn",
+        "xiyou_battle_common_events.tscn",
+        "xiyou_boss_lifecycle.tscn",
+        "xiyou_boss_output.tscn",
+        "xiyou_boss_output_context.tscn",
+        "xiyou_boss_react.tscn",
+        "xiyou_boss_sequence.tscn",
+        "xiyou_boss_state_origin.tscn",
+        "xiyou_choice_window.tscn",
+        "xiyou_custom_params.tscn",
+        "xiyou_event_compare.tscn",
+        "xiyou_item_use.tscn",
+        "xiyou_param_states.tscn",
+        "xiyou_passive_content.tscn",
+        "xiyou_power.tscn",
+        "xiyou_power_books.tscn",
+        "xiyou_power_books_boundary.tscn",
+        "xiyou_power_books_menu.tscn",
+        "xiyou_script.tscn",
+        "xiyou_skill_page.tscn"
+      ],
+      "missingFromSelection": [
+        "xiyou_choice_window.tscn"
+      ]
+    },
+    {
+      "delivery": "codex_passive-content.md",
+      "scenes": [
+        "xiyou_actor_bonus.tscn",
+        "xiyou_battle.tscn",
+        "xiyou_battle_common_events.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_param_states.tscn",
+        "xiyou_passive_content.tscn",
+        "xiyou_power.tscn",
+        "xiyou_rules.tscn"
+      ],
+      "missingFromSelection": []
+    },
+    {
+      "delivery": "codex_rng-compare-review.md",
+      "scenes": [
+        "xiyou_battle.tscn",
+        "xiyou_cat.tscn",
+        "xiyou_pets.tscn",
+        "xiyou_recover_permanent.tscn",
+        "xiyou_rules.tscn",
+        "xiyou_troop_events.tscn",
+        "xiyou_troop_events_b.tscn",
+        "xiyou_troop_events_half.tscn"
+      ],
+      "missingFromSelection": []
+    },
+    {
+      "delivery": "codex_state-effects-2g.md",
+      "scenes": [
+        "xiyou_action_sequence.tscn",
+        "xiyou_battle.tscn",
+        "xiyou_cat.tscn",
+        "xiyou_enemy_book.tscn",
+        "xiyou_floor_run_c.tscn",
+        "xiyou_formula_effects.tscn",
+        "xiyou_formula_equipment.tscn",
+        "xiyou_formula_program.tscn",
+        "xiyou_formula_rest.tscn",
+        "xiyou_formulas.tscn",
+        "xiyou_loose_fixes.tscn",
+        "xiyou_power.tscn",
+        "xiyou_review135.tscn",
+        "xiyou_settlement.tscn",
+        "xiyou_state_effects.tscn",
+        "xiyou_state_effects_tp.tscn",
+        "xiyou_troop_events.tscn",
+        "xiyou_troop_events_b.tscn"
+      ],
+      "missingFromSelection": []
+    }
+  ],
+  "missingFromSelection": [
+    "xiyou_choice_window.tscn"
+  ],
+  "executed": false,
+  "note": "仅验收覆盖计划，未运行；关联历史证据中的开发期场景也保守纳入，不把它们称为最终实跑。最终218场后补选择窗口一次。"
+}
