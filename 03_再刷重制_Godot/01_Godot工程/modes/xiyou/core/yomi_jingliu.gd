@@ -4,7 +4,7 @@ extends RefCounted
 ## 本期（第一期）做共用框架与黄泉：招募、能力值／被动、公式、伤害钩子；镜流整套留下一期（只留共用的招募表与判定）。
 ## - 开机数据：本模块不在运行时改 $data*（只在 isDatabaseLoaded 里核对 169／170 数据在不在、预载图标），转换器无需复现。
 ## - 黄泉能力值：paramPlus 学了 10176 幸运＋888、10177 速度＋777、10182 攻击＋888（XActor._param_plus 挂点）；
-##   param 进阶 2 次且学了 10186 攻击＋floor(幸运×1.88)；xparam 学了 10185 暴击＋9.99；actionPlusSet 学了 10175 多一个 1（必定再动一次）。
+##   param 进阶 2 次且学了 10186 攻击＋floor(幸运×1.88)；xparam 学了 10185 暴击＋9.99（见 CRIT_FIX）；actionPlusSet 学了 10175 多一个 1（必定再动一次）。
 ## - 公式 CodexYomi.damage(a,b,id)：Y_ROWS 按目标身上「负面状态」数 n 线性加：攻击×(r0＋r1n)＋速度×(r2＋r3n)＋幸运×(r4＋r5n)。
 ##   负面状态：2627 集真赤，或备注 <BuffType:破甲|损伤|毒|…> 的状态（不重复计）。
 ## - 伤害钩子 yomi-jingliu（CodexDamageHooks.push，黄泉 10171～10174；并进 XActorDamageHooks）：物理；物理受伤率与属性抗性穿透 penetration
@@ -18,6 +18,10 @@ extends RefCounted
 ##   放时扣 9）、numRepeats 连击次数（repeats(a) 已给说明卡用，战斗里第二期接）、扩散伤害（10172／10173／10174 向其余敌人 33%／50%／66%）、
 ##   技能使用条件与消耗、隐藏呼吸技能分类、图标与品质色、Map132 商店补号角 2931／2932、旧档迁移。镜流（170）全部留下一期。
 
+## 优化登记（O 号待总装分配；原版缺陷）：10185 说明写「暴击率＋999%」，原版包的是 Game_BattlerBase.prototype.xparam，但 dsPassiveSkill
+## 在插件加载时已把 Game_Actor.prototype.xparam 存成别名（_Game_Actor_xparam），角色的 xparam 走不到这层包装，加成实际不生效
+## （slice_probe 65／99 级参照暴击仍是 0.55）。重制默认照说明生效；false 恢复原版（不加）。
+const CRIT_FIX := true
 const YOMI := 169
 const JINGLIU := 170
 const Y_MARK := 2627
@@ -85,7 +89,7 @@ static func param(a, i: int, v: float) -> float:
 
 
 static func xparam(a, i: int, v: float) -> float:
-	return v + 9.99 if i == 2 and yomi(a) and a.skill_ids.has(10185) else v
+	return v + 9.99 if CRIT_FIX and i == 2 and yomi(a) and a.skill_ids.has(10185) else v
 
 
 static func action_plus_set(a, rates: Array) -> void:

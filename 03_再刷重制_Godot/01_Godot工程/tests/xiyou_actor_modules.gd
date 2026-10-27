@@ -96,7 +96,7 @@ func _run() -> void:
 	check("yomi.repeats", XYomiJingliu.repeats(y, 10171) == 2 + mini(6, floori(y.luk / 6666.0)) and XYomiJingliu.repeats(y, 10174) == XYomiJingliu.repeats(y, 10171) + 4)
 	var y_crit := y.xparam(2)
 	y.learn_skill(10185)
-	check("yomi.crit", is_equal_approx(y.xparam(2) - y_crit, 9.99), [y.xparam(2), y_crit])
+	check("yomi.crit", is_equal_approx(y.xparam(2) - y_crit, 9.99 if XYomiJingliu.CRIT_FIX else 0.0), [y.xparam(2), y_crit])
 	var y_atk := y.param(2)
 	y.learn_skill(10186)
 	check("yomi.rank0_atk", y.param(2) == y_atk, [y.param(2), y_atk])

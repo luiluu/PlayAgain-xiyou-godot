@@ -181,7 +181,11 @@ func _run() -> void:
 				a.change_level(lv)
 				a.refresh_resources()
 				a.hp = a.mhp  # 参照取样时满血（HP 低于 60% 才生效的被动不应混进能力采样）；不用 recover_all——它会清掉战斗开始状态
-				_compare_snap("d%d.actor%d.lv%dBattle" % [diff, id, lv], _snap(a), samples[str(lv)])
+				var want: Dictionary = samples[str(lv)]
+				if XYomiJingliu.CRIT_FIX and XYomiJingliu.yomi(a) and a.skill_ids.has(10185):  # 优化登记（O 号待分配，见 XYomiJingliu.CRIT_FIX）：原版 10185 暴击＋9.99 不生效，重制照说明生效
+					want = want.duplicate(true)
+					want.xparam[2] = float(want.xparam[2]) + 9.99
+				_compare_snap("d%d.actor%d.lv%dBattle" % [diff, id, lv], _snap(a), want)
 		# 敌人
 		var troops := {}  # 每份都要建全部敌群（伤害行用），能力值只比本份的
 		var troop_keys: Array = d.enemies.keys()
