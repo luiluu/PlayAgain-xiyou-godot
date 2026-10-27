@@ -1,7 +1,7 @@
 # 交付：claude/bajie-save-events
 
 - 车道／工作者：规则／八戒（Claude，八戒_77）
-- 状态：可合并（待 Codex 核查；没有动独占文件）
+- 状态：第 1、2 项可合并（待 Codex 核查；没有动独占文件）。追加的 F4（O-105）还没开工，见下节；可以先合第 1、2 项，F4 额度重置后接着在本分支做。
 - 基线：9cab4f5b（claude/bajie-tools-sync），开工时合了 main，又重新 `--补齐`
 - 来源：总装 2026-10-27 派单。第 1 项是交接板「下一步」里云端审查留下的「存档不存事件位置／朝向／路线」，第 2 项是 mv_script 正则缓存。
 
@@ -69,6 +69,19 @@
 `mv_script._re` 在 0f58f16d（2026-10-22「mv_script：正则按模式串静态缓存，补回归」）已经改成按模式串静态缓存，`_statements` 里 39 处都走 `_re`。
 
 在 `map/*.gd` 和 `mv_event_core.gd` 里查过，只有 `_re` 内部一处会编译正则，没有别的地方逐条现编译，所以这次不用改。
+
+## 3. F4／O-105：捕捉成功的图鉴击败数（未开工，额度 84% 收尾停下）
+
+用户 10-27 定：保持重制的 +1，原版 die→refresh 会记两次，共 +2。出处 8fe7f796、926f914f。
+
+- 已查到的代码路径：`core/pet_capture.gd` 第 75～82 行，捕捉成功时 `logic._die(e)` 后 `e.hidden = true`。原版是 Game_BattlerBase.die → refresh 加阵亡 → hide。
+- 还没做：
+  - 优化登记加 O-105，状态「用户已定：保持 +1」；
+  - 在计数处加可回退开关，写法照 `XPets.FIX_UNGRANTED_BONUS`，默认保持 +1，设 false 回原版 +2，并加注释；
+  - 专项断言两种取值；
+  - 选测：pet_capture、enemy_book 等；
+  - 交付单与变更记录草稿。
+- 下一步：先确认原版两次计数分别从哪里来（die 一次，refresh 加阵亡又一次），再决定开关挂在 `pet_capture` 还是 `XEnemyBook.note_death`。enemy_book.gd 不是独占文件；battler.gd 属于沙僧，不碰。
 
 ## 验证
 
