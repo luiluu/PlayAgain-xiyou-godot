@@ -1,7 +1,7 @@
 # 交付：claude/bajie-fix-f1f3
 
 - 车道／工作者：修复／八戒（Claude）
-- 状态：进行中（验证在跑）
+- 状态：可合并（待 Codex 核查；没有用独占文件例外）
 - 基线：fbb205d7（claude/bajie-fix-startstate）
 - 来源：沙僧积压核查第一期（`00_项目管理/核查范围/清积压_第一期_20261027.json`）的 F1、F3，以及交接板 O-097。F2（叠毒致死缺 collapse 记录，涉及 battle_logic）按总装安排先不做。
 
@@ -56,7 +56,14 @@
 
 ## 验证
 
-（待结果）
+16 场，并行 2，`--full`，全部单次通过。总用时 1744 秒，大部分时间在排共用槽。
+
+- **新专项**：xiyou_regen_popup 26/26、xiyou_equipment_clone_state 9/9。两场都做过反向验证：退回修复后都会失败。
+- **弹字与战斗界面**：xiyou_battle_ui 70、xiyou_popup_overlap 8、xiyou_battle_options 92。
+- **regen 生产者**：xiyou_state_js 1733、xiyou_shield 565、xiyou_race_battle 436、xiyou_alien_battle 330、xiyou_imported_balance 273。
+- **装备**：xiyou_equipment 1228、xiyou_equipment_admission 7。
+- **xiyou_rules 难度 1 四段**：xiyou_rules 115637、xiyou_rules_d1b 115733、xiyou_rules_d1c 115746、xiyou_rules_d1d 115725。
+- **没跑**：全量和其余 20 段规则。
 
 ## 变更记录草稿
 
