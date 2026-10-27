@@ -69,7 +69,7 @@ function enemyCase(name, spec) {
 actorCase('154-bare', {actor: 154});
 actorCase('154-weapon77', {actor: 154, equips: [['w', 77]]});          // 沙僧 P2-1：攻击 5769，逆骨未就绪
 actorCase('154-weapon83', {actor: 154, equips: [['w', 83]]});
-actorCase('157-weapon12', {actor: 157, equips: [['w', 12]]});          // 替换成 12
+actorCase('102-weapon12', {actor: 102, equips: [['w', 12]]});          // 替换成 12（157 能装但被导入平衡禁用，canMove 为假）
 actorCase('161-weapon79', {actor: 161, equips: [['w', 79]]});
 actorCase('167-armor4541', {actor: 167, equips: [['a', 4541]]});
 actorCase('167-armor4541-skill2071', {actor: 167, equips: [['a', 4541]], skills: [2071]});   // 防具也先于技能（武器＋4541 原版装不上，refresh 卸下）

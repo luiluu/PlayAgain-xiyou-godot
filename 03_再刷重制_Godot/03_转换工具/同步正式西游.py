@@ -115,6 +115,7 @@ PROBES = [
     (['cat_probe.cjs'], ['cat.json']),
     (['race_battle_probe.cjs'], ['race_battle.json']),
     (['alien_battle_probe.cjs'], ['alien_battle.json']),
+    (['attack_query_probe.cjs'], ['attack_query.json']),
     (['enemy_book_defeat_probe.cjs'], ['enemy_book_defeat.json']),
     (['lobby_shop_probe.cjs'], ['lobby_shops.json']),
     (['common_script_probe.cjs'], ['common_scripts.json']),
