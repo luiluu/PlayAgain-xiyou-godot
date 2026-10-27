@@ -49,4 +49,5 @@ cases.push(makeCase('dieThenRead', {troop: TROOP}, () => {
   e.die();
   return {enemyId: id, before, inBattleAfterDeath: count(id)};
 }));
+require('./shared/loose_fixes.cjs')(host, cases);
 process.exit(finish(host, 'enemy_book_defeat.json', {hostScope: '新游戏（Math.random 0.5）；怪物图鉴击败数在死亡时即时计（沙僧50 系统批 P2-1）', cases}) ? 0 : 1);

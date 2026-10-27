@@ -1,0 +1,5637 @@
+{
+  "base": "9b140f365f93c2cfa4b19d85b6ddd72576830c16",
+  "originalDeliveryCutoff": "5761f01f",
+  "validatedCodeCommit": "efceb64a3ea48f7ecb823b7fa19208aa38299706",
+  "executor": "Codex（沙僧82）",
+  "review": "待Claude",
+  "independentReviewPassed": false,
+  "validationMode": "cumulative initial218 + choice3 + failed/direct follow-ups + final24 rule segments; not a new full218 run",
+  "initialEvidence": "00_项目管理/核查范围/连续分支合main_最终验收首轮_20261027.json",
+  "initialEvidenceSha256": "9f6e10395828baf5d8fbcd83563ab3758625fcbd0fec615a4449567357fe91e9",
+  "initialRunStatusUnchanged": "failed 210/218; choice3/3; original attempts preserved",
+  "rulesRun": {
+    "runId": "f62011918f8d49a08df8d8a2b50f2588",
+    "status": "done",
+    "exitCode": 0
+  },
+  "currentSceneCount": 222,
+  "currentGodotAllPassed": true,
+  "requiredSceneCount": 66,
+  "requiredNotExecuted": [],
+  "failedRequiredScenes": [],
+  "firstFailureResolutions": [
+    {
+      "name": "xiyou_actor_book.tscn",
+      "initial": {
+        "result": {
+          "passed": 21,
+          "total": 22
+        },
+        "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_actor_book.log",
+        "sha256": "6e0a84bab26a61ea8a59bd98fa141610be23273ea1fcee4522dad3a3b8b7be06"
+      },
+      "latest": {
+        "name": "xiyou_actor_book.tscn",
+        "batch": "help82-green",
+        "passed": true,
+        "result": {
+          "passed": 22,
+          "total": 22
+        },
+        "attempts": [
+          {
+            "rc": 0,
+            "passed": true,
+            "result": {
+              "passed": 22,
+              "total": 22
+            },
+            "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/help82-green/xiyou_actor_book.log",
+            "sha256": "cc45d0d1686542a67b7f865aa974e4e38750a956203ab8d44a6705ba0e052ff6",
+            "runtimeErrors": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "xiyou_help_card.tscn",
+      "initial": {
+        "result": {
+          "passed": 970,
+          "total": 988
+        },
+        "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_help_card.log",
+        "sha256": "bda6394a8c1486561b8c0904a1440744a34afb1a5aae83c32cb7202b5078d08a"
+      },
+      "latest": {
+        "name": "xiyou_help_card.tscn",
+        "batch": "helpcost82-green",
+        "passed": true,
+        "result": {
+          "passed": 988,
+          "total": 988
+        },
+        "attempts": [
+          {
+            "rc": 0,
+            "passed": true,
+            "result": {
+              "passed": 988,
+              "total": 988
+            },
+            "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/helpcost82-green/xiyou_help_card.log",
+            "sha256": "b7c0a5e71fb489f7ee38c23ff0dfeed02bc02c9fd3711c57ff9bdb515f9e8dcf",
+            "runtimeErrors": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "xiyou_wtype.tscn",
+      "initial": {
+        "result": {
+          "passed": 16176,
+          "total": 16190
+        },
+        "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_wtype.log",
+        "sha256": "910e90fff481229c3159433ea1d9ac441fe927e95e3533564b3908c7ce5c3887"
+      },
+      "latest": {
+        "name": "xiyou_wtype.tscn",
+        "batch": "wtype82-green",
+        "passed": true,
+        "result": {
+          "passed": 16219,
+          "total": 16219
+        },
+        "attempts": [
+          {
+            "rc": 0,
+            "passed": true,
+            "result": {
+              "passed": 16219,
+              "total": 16219
+            },
+            "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/wtype82-green/xiyou_wtype.log",
+            "sha256": "fb7e445a120ffe4120180093819f3b7f504812e2020cf9d8131493fff73b12aa",
+            "runtimeErrors": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "xiyou_battle_ui.tscn",
+      "initial": {
+        "result": {
+          "passed": 67,
+          "total": 70
+        },
+        "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_battle_ui.log",
+        "sha256": "a0eddcc428849a8c2cde0a0ee484f8d5efcda74fb0d9725cfc4b74db79c275e3"
+      },
+      "latest": {
+        "name": "xiyou_battle_ui.tscn",
+        "batch": "fixtures82-green1",
+        "passed": true,
+        "result": {
+          "passed": 70,
+          "total": 70
+        },
+        "attempts": [
+          {
+            "rc": 0,
+            "passed": true,
+            "result": {
+              "passed": 70,
+              "total": 70
+            },
+            "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/fixtures82-green1/xiyou_battle_ui.log",
+            "sha256": "5ab3f3ee04060e58848fac4bfac90ad93e716ce847078873f70e8b10a4e85762",
+            "runtimeErrors": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "xiyou_determinism.tscn",
+      "initial": {
+        "result": {
+          "passed": 374,
+          "total": 382
+        },
+        "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_determinism.log",
+        "sha256": "f6c428c837a709dc3c3f7f75281c578f88aaef94d05bbbff82be2b0f9d2edeee"
+      },
+      "latest": {
+        "name": "xiyou_determinism.tscn",
+        "batch": "fixtures82-green1",
+        "passed": true,
+        "result": {
+          "passed": 372,
+          "total": 372
+        },
+        "attempts": [
+          {
+            "rc": 0,
+            "passed": true,
+            "result": {
+              "passed": 372,
+              "total": 372
+            },
+            "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/fixtures82-green1/xiyou_determinism.log",
+            "sha256": "5f41a72c5e4727ff8c57b2f43147fa20eef8fa15a72fa231e27f35a1dec36cf7",
+            "runtimeErrors": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "xiyou_enemy_book.tscn",
+      "initial": {
+        "result": {
+          "passed": 92,
+          "total": 93
+        },
+        "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_enemy_book.log",
+        "sha256": "ef141b5b7c6c60f4c50318b517502c985288ec5a31b291b4fb8fdaa2b088c0d7"
+      },
+      "latest": {
+        "name": "xiyou_enemy_book.tscn",
+        "batch": "helpcost82-green",
+        "passed": true,
+        "result": {
+          "passed": 93,
+          "total": 93
+        },
+        "attempts": [
+          {
+            "rc": 0,
+            "passed": true,
+            "result": {
+              "passed": 93,
+              "total": 93
+            },
+            "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/helpcost82-green/xiyou_enemy_book.log",
+            "sha256": "52f01a78843bd071abc556abddeec6f6179a4e124f6d8f651d02de3a45760725",
+            "runtimeErrors": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "xiyou_random_streams.tscn",
+      "initial": {
+        "result": {
+          "passed": 480,
+          "total": 484
+        },
+        "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_random_streams.log",
+        "sha256": "d15091809fc74a92b6bb6aaca3a49d6bf133b4c5b0ec7d077f40842ad7f62b88"
+      },
+      "latest": {
+        "name": "xiyou_random_streams.tscn",
+        "batch": "boss82-green",
+        "passed": true,
+        "result": {
+          "passed": 488,
+          "total": 488
+        },
+        "attempts": [
+          {
+            "rc": 0,
+            "passed": true,
+            "result": {
+              "passed": 488,
+              "total": 488
+            },
+            "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/boss82-green/xiyou_random_streams.log",
+            "sha256": "99e512de4e62bd6eb5e70d39b2801bc98196d65240be86bea0eab119f06f49b1",
+            "runtimeErrors": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "xiyou_pet_capture.tscn",
+      "initial": {
+        "result": {
+          "passed": 39,
+          "total": 43
+        },
+        "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_pet_capture.log",
+        "sha256": "90b6edeb47b22e91edee74b0e68ef26356b70c359180babd5d62324f4cc37f9f"
+      },
+      "latest": {
+        "name": "xiyou_pet_capture.tscn",
+        "batch": "death81-green1",
+        "passed": true,
+        "result": {
+          "passed": 43,
+          "total": 43
+        },
+        "attempts": [
+          {
+            "rc": 0,
+            "passed": true,
+            "result": {
+              "passed": 43,
+              "total": 43
+            },
+            "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/death81-green1/xiyou_pet_capture.log",
+            "sha256": "f37936e593d66b4961be80cf0b796d0dc68ca4e788f69a54377d2026cce74bf0",
+            "runtimeErrors": []
+          }
+        ]
+      }
+    }
+  ],
+  "runs": [
+    {
+      "batch": "final-selected79",
+      "timings": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/test_timings.json",
+      "timingsSha256": "f891d29dbadbaa04a61ba8df24eec11bbf3b1dde33088dc0dd91f3c0098d42c1",
+      "sceneCount": 218,
+      "passedCount": 210,
+      "failedNames": [
+        "xiyou_actor_book.tscn",
+        "xiyou_help_card.tscn",
+        "xiyou_wtype.tscn",
+        "xiyou_battle_ui.tscn",
+        "xiyou_determinism.tscn",
+        "xiyou_enemy_book.tscn",
+        "xiyou_random_streams.tscn",
+        "xiyou_pet_capture.tscn"
+      ]
+    },
+    {
+      "batch": "final-choice79",
+      "timings": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-choice79/test_timings.json",
+      "timingsSha256": "58dd7daa2deb7ddaf3d30a3dc241d21ad1894b3301fd0a4cfe3f3e7152683438",
+      "sceneCount": 1,
+      "passedCount": 1,
+      "failedNames": []
+    },
+    {
+      "batch": "death81-green1",
+      "timings": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/death81-green1/test_timings.json",
+      "timingsSha256": "35eaf9579e6857cf23d81ce65e58aa62be830f3f53cae7d204f2127d2f62b091",
+      "sceneCount": 6,
+      "passedCount": 4,
+      "failedNames": [
+        "xiyou_determinism.tscn",
+        "xiyou_random_streams.tscn"
+      ]
+    },
+    {
+      "batch": "fixtures82-green1",
+      "timings": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/fixtures82-green1/test_timings.json",
+      "timingsSha256": "77d7f9b7bc831389b01145f51f386aa77182c23b1bdb3e1f939843a97ec80834",
+      "sceneCount": 5,
+      "passedCount": 4,
+      "failedNames": [
+        "xiyou_random_streams.tscn"
+      ]
+    },
+    {
+      "batch": "boss82-green",
+      "timings": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/boss82-green/test_timings.json",
+      "timingsSha256": "3b6e9a7299a5ee30a5478cfcd21f347989bac932f8e0e33a4b57ac2000df5254",
+      "sceneCount": 3,
+      "passedCount": 3,
+      "failedNames": []
+    },
+    {
+      "batch": "wtype82-green",
+      "timings": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/wtype82-green/test_timings.json",
+      "timingsSha256": "0d1e4121f848b8764628f65c0a9c9b0cdd751abff572b9e745280191154441ae",
+      "sceneCount": 1,
+      "passedCount": 1,
+      "failedNames": []
+    },
+    {
+      "batch": "help82-green",
+      "timings": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/help82-green/test_timings.json",
+      "timingsSha256": "a57e9787fd7ebf80ce39253b6e1dd45069eb28398cdc1852ada01c48f99e83c6",
+      "sceneCount": 4,
+      "passedCount": 4,
+      "failedNames": []
+    },
+    {
+      "batch": "helpcost82-green",
+      "timings": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/helpcost82-green/test_timings.json",
+      "timingsSha256": "ba439f3663c08ae0d1135fbf52c1b5c7d55bfaf686d020830a8d1696594d0bee",
+      "sceneCount": 4,
+      "passedCount": 4,
+      "failedNames": []
+    },
+    {
+      "batch": "rules82",
+      "timings": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/test_timings.json",
+      "timingsSha256": "5cbca67cb509a264b6dcfb82ee2612071750ad186eb2d58775c8dfc1a71659f5",
+      "sceneCount": 24,
+      "passedCount": 24,
+      "failedNames": []
+    }
+  ],
+  "effectiveLatestScenes": [
+    {
+      "name": "ui_smoke.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 22,
+        "results": [
+          {
+            "name": "retina_window_fills_screen",
+            "passed": true
+          },
+          {
+            "name": "window_keeps_ratio",
+            "passed": true
+          },
+          {
+            "name": "secondary_screen_position",
+            "passed": true
+          },
+          {
+            "name": "explicit_window_size_respected",
+            "passed": true
+          },
+          {
+            "name": "menu_loaded",
+            "passed": true
+          },
+          {
+            "name": "two_modes_registered",
+            "passed": true
+          },
+          {
+            "name": "xiyou_button_enabled",
+            "passed": true
+          },
+          {
+            "name": "new_button_disabled",
+            "passed": true
+          },
+          {
+            "name": "new_mode_refused",
+            "passed": true
+          },
+          {
+            "name": "unknown_mode_refused",
+            "passed": true
+          },
+          {
+            "name": "menu_two_columns_wide",
+            "passed": true
+          },
+          {
+            "name": "menu_keyboard_focus",
+            "passed": true
+          },
+          {
+            "name": "fullscreen_shortcut",
+            "passed": true
+          },
+          {
+            "name": "xiyou_entered",
+            "passed": true
+          },
+          {
+            "name": "xiyou_current_mode",
+            "passed": true
+          },
+          {
+            "name": "xiyou_save_namespace",
+            "passed": true
+          },
+          {
+            "name": "return_button_present",
+            "passed": true
+          },
+          {
+            "name": "returned_to_menu",
+            "passed": true
+          },
+          {
+            "name": "menu_focus_after_return",
+            "passed": true
+          },
+          {
+            "name": "mode_cleared",
+            "passed": true
+          },
+          {
+            "name": "wide_window_keeps_original_canvas",
+            "passed": true
+          },
+          {
+            "name": "no_user_saves_written",
+            "passed": true
+          }
+        ],
+        "total": 22
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 22,
+            "results": [
+              {
+                "name": "retina_window_fills_screen",
+                "passed": true
+              },
+              {
+                "name": "window_keeps_ratio",
+                "passed": true
+              },
+              {
+                "name": "secondary_screen_position",
+                "passed": true
+              },
+              {
+                "name": "explicit_window_size_respected",
+                "passed": true
+              },
+              {
+                "name": "menu_loaded",
+                "passed": true
+              },
+              {
+                "name": "two_modes_registered",
+                "passed": true
+              },
+              {
+                "name": "xiyou_button_enabled",
+                "passed": true
+              },
+              {
+                "name": "new_button_disabled",
+                "passed": true
+              },
+              {
+                "name": "new_mode_refused",
+                "passed": true
+              },
+              {
+                "name": "unknown_mode_refused",
+                "passed": true
+              },
+              {
+                "name": "menu_two_columns_wide",
+                "passed": true
+              },
+              {
+                "name": "menu_keyboard_focus",
+                "passed": true
+              },
+              {
+                "name": "fullscreen_shortcut",
+                "passed": true
+              },
+              {
+                "name": "xiyou_entered",
+                "passed": true
+              },
+              {
+                "name": "xiyou_current_mode",
+                "passed": true
+              },
+              {
+                "name": "xiyou_save_namespace",
+                "passed": true
+              },
+              {
+                "name": "return_button_present",
+                "passed": true
+              },
+              {
+                "name": "returned_to_menu",
+                "passed": true
+              },
+              {
+                "name": "menu_focus_after_return",
+                "passed": true
+              },
+              {
+                "name": "mode_cleared",
+                "passed": true
+              },
+              {
+                "name": "wide_window_keeps_original_canvas",
+                "passed": true
+              },
+              {
+                "name": "no_user_saves_written",
+                "passed": true
+              }
+            ],
+            "total": 22
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/ui_smoke.log",
+          "sha256": "4237630e582e41b9c071bf6c53b78edf55f29f3b8e166d91986cfff9e9bf2158",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_achievement.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 50,
+        "total": 50
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 50,
+            "total": 50
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_achievement.log",
+          "sha256": "47bcfa7a36ea1face8890b3f78171678f588ef3433285b91be2117d46e611e3f",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_action_sequence.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 115,
+        "total": 115
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 115,
+            "total": 115
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_action_sequence.log",
+          "sha256": "eb1e2d0d5b91a6d252f5cf50d76a5b179bffa07765ae5b8e16078cc014f1b488",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_actor_advanced.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 33,
+        "total": 33
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 33,
+            "total": 33
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_actor_advanced.log",
+          "sha256": "c9d1339db9ad5ad5a418f4f0e698bbaee7450c8abf86aad17b05f81c2eba6626",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_actor_bonus.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 736,
+        "total": 736
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 736,
+            "total": 736
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_actor_bonus.log",
+          "sha256": "8d5e9d6c9586605d7c4d4f4345260263607508895726b6e0ef3d44799925949f",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_actor_book.tscn",
+      "batch": "help82-green",
+      "passed": true,
+      "result": {
+        "passed": 22,
+        "total": 22
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 22,
+            "total": 22
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/help82-green/xiyou_actor_book.log",
+          "sha256": "cc45d0d1686542a67b7f865aa974e4e38750a956203ab8d44a6705ba0e052ff6",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_actor_book_review.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 6,
+        "total": 6
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 6,
+            "total": 6
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_actor_book_review.log",
+          "sha256": "2f2e4afcc6f66448bdce4ab331f1316c64b6f7805b1bedbaacc624c1fd87f39a",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_actor_change.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 48,
+        "total": 48
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 48,
+            "total": 48
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_actor_change.log",
+          "sha256": "5d8aad86de16089640b6042a61962379205472cbd48794da916bd64c2c556eee",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_actor_modules.tscn",
+      "batch": "help82-green",
+      "passed": true,
+      "result": {
+        "passed": 37,
+        "total": 37
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 37,
+            "total": 37
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/help82-green/xiyou_actor_modules.log",
+          "sha256": "669d508228c1905385cfc23da95795295cb11e9658c9b76c84c2c0d9cd00b652",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_actor_p0.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 3300,
+        "total": 3300
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 3300,
+            "total": 3300
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_actor_p0.log",
+          "sha256": "65cec390e49de6fc7509e79146261fe0579c10de7dba1d7163284a0ee4a924bf",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_actor_warehouse.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 26,
+        "total": 26
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 26,
+            "total": 26
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_actor_warehouse.log",
+          "sha256": "65b462ded0d63d68a10df847f1ad6c4736d866e4f6721ae2ae704eead29d8973",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_advance_reads.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 8,
+        "total": 8
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 8,
+            "total": 8
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_advance_reads.log",
+          "sha256": "78f13645688a1172d221429b3a44494137ed913bf2b7da77c741580c2fdeedb0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_alien_battle.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 330,
+        "total": 330
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 330,
+            "total": 330
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_alien_battle.log",
+          "sha256": "5fc9b151968c2b16ec3cd57a9ff6d49f9fa9766fe0f6079cd828abfe55c913e1",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_alien_config.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 95,
+        "total": 95
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 95,
+            "total": 95
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_alien_config.log",
+          "sha256": "de85b0c5ff63a6e0fcfe7cf70341f36e38f37a16390a5d9ff309904b1c89c30b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_alien_workshop.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 45,
+        "total": 45
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 45,
+            "total": 45
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_alien_workshop.log",
+          "sha256": "42440d99118bf1d60b753aec0ea4285cb8e3a086fd452e731303683c2fd84156",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_appearance.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 34,
+        "total": 34
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 34,
+            "total": 34
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_appearance.log",
+          "sha256": "f89dd7e3f7c572acbb807f40bb21e3437fb1b3b9c5f5d8d7d36468007edb20c0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_attack_element.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 66,
+        "total": 66
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 66,
+            "total": 66
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_attack_element.log",
+          "sha256": "59cd15619a66e02cf7f64ca6878860c4ae04e75bd95fecf709fb93a6fb6acc24",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_battle.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 8,
+        "total": 8
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 8,
+            "total": 8
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_battle.log",
+          "sha256": "dde6ecbced921fafa8a4c76eee104b8fdfac6ed4ef8fc0b108e707796c5d0bac",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_battle_common_events.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 22,
+        "total": 22
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 22,
+            "total": 22
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_battle_common_events.log",
+          "sha256": "a29af9c7c207b3b5434cf523081d642d890f7900114265e9558c354decb19bf8",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_battle_events.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 108,
+        "total": 108
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 108,
+            "total": 108
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_battle_events.log",
+          "sha256": "ce4ef850280024c345031f5ad943773a9b6bbea775b7a34d45d7502fc1238956",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_battle_options.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 92,
+        "total": 92
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 92,
+            "total": 92
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_battle_options.log",
+          "sha256": "30ef3f053dea7aa6b1f0d06a383c3bdaf2d3f83f0dcac9b8ef947a8409dfdc39",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_battle_start_event.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 50,
+        "total": 50
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 50,
+            "total": 50
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_battle_start_event.log",
+          "sha256": "47bcfa7a36ea1face8890b3f78171678f588ef3433285b91be2117d46e611e3f",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_battle_ui.tscn",
+      "batch": "fixtures82-green1",
+      "passed": true,
+      "result": {
+        "passed": 70,
+        "total": 70
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 70,
+            "total": 70
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/fixtures82-green1/xiyou_battle_ui.log",
+          "sha256": "5ab3f3ee04060e58848fac4bfac90ad93e716ce847078873f70e8b10a4e85762",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_battleback_save.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failed": [],
+        "name": "xiyou_battleback_save",
+        "passed": 5,
+        "total": 5
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failed": [],
+            "name": "xiyou_battleback_save",
+            "passed": 5,
+            "total": 5
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_battleback_save.log",
+          "sha256": "9d535521da12a74528326b6112f73c13544cf3da3eca0c15478233171e9579f7",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_book_capacity.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 918,
+        "total": 918
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 918,
+            "total": 918
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_book_capacity.log",
+          "sha256": "b629c3a8ddb3455495f813711c4198fc599a09ecee566cd0298ae01a4f8f1088",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_book_capacity_ui.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 85,
+        "total": 85
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 85,
+            "total": 85
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_book_capacity_ui.log",
+          "sha256": "a0646ea9145c0a4cd0c81eaae2d6a8a482fc58f769d5342114b489e288be5161",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_boss_lifecycle.tscn",
+      "batch": "boss82-green",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 5080,
+        "total": 5080
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 5080,
+            "total": 5080
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/boss82-green/xiyou_boss_lifecycle.log",
+          "sha256": "09636e24fbaf415b8b8d7eeb923d5f4a3f1934a8c9971978148edb7ff42a0bc1",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_boss_output.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 3823,
+        "total": 3823
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 3823,
+            "total": 3823
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_boss_output.log",
+          "sha256": "8c0d3d6c600c83438931ef0f20eb9f4d038d37aeebbf04244f87fd7b6d6f1bbd",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_boss_output_context.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 16621,
+        "total": 16621
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 16621,
+            "total": 16621
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_boss_output_context.log",
+          "sha256": "1412c72885d2989ca6c3b9328441e9a19c0c30687b4f3782abcdf5cac114cff6",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_boss_react.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 9074,
+        "total": 9074
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 9074,
+            "total": 9074
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_boss_react.log",
+          "sha256": "2d937e2018b80fa7818b380b950aa0ada313c64d879d6af5e50144a9a3e0a79d",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_boss_sequence.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 8315,
+        "total": 8315
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 8315,
+            "total": 8315
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_boss_sequence.log",
+          "sha256": "aaa7085b4f92a6cac9220d34dd4e9867b38840007856c20d69491f1d0e6eda5d",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_boss_state_origin.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 15723,
+        "total": 15723
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 15723,
+            "total": 15723
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_boss_state_origin.log",
+          "sha256": "e6dbbef0cd81597375896445791a4666b16bf2af9f9d37780d34e8755875a81a",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_cat.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 994,
+        "total": 994
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 994,
+            "total": 994
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_cat.log",
+          "sha256": "c355e4a02e36046300b0c186545f2472408f64090b6039d567f29926ee3a3d97",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_census1.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 47,
+        "total": 47
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 47,
+            "total": 47
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_census1.log",
+          "sha256": "d05d669384a80f2c41bb15936d697536c06a9402c4a256429800b14db0db968b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_change_clothes.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 32,
+        "total": 32
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 32,
+            "total": 32
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_change_clothes.log",
+          "sha256": "80268a19423120a32a0cb178edd9927798f0e0196d56dca7c281b5cd98deddfc",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_character_help_cost.tscn",
+      "batch": "helpcost82-green",
+      "passed": true,
+      "result": {
+        "passed": 21,
+        "total": 21
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 21,
+            "total": 21
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/helpcost82-green/xiyou_character_help_cost.log",
+          "sha256": "5572ab52b8e03bf7787f8c9298286cf92c5079f5be74efbf7f54833b838e49ad",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_choice_window.tscn",
+      "batch": "final-choice79",
+      "passed": true,
+      "result": {
+        "passed": 3,
+        "total": 3
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 3,
+            "total": 3
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-choice79/xiyou_choice_window.log",
+          "sha256": "14d40d53afee373775c8a5de2fec84661d8e1522aecb389569f7238fa2c8f78b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_combat.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 34,
+        "total": 34
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 34,
+            "total": 34
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_combat.log",
+          "sha256": "f89dd7e3f7c572acbb807f40bb21e3437fb1b3b9c5f5d8d7d36468007edb20c0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_costume_battle.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 4,
+        "total": 4
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 4,
+            "total": 4
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_costume_battle.log",
+          "sha256": "3c5465e47369a77fc496a2045c80c5f72e6a544964b67b5e0cb9510e73c1afbe",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_costumes.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 27,
+        "total": 27
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 27,
+            "total": 27
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_costumes.log",
+          "sha256": "414d2ff8feb5737f7960c11166d21c7a9958b4088e7fc30f3a0cf8f3c57728ef",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_crafting.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 49,
+        "total": 49
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 49,
+            "total": 49
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_crafting.log",
+          "sha256": "2d403fff2bd2c98d8e9a9eb6c6cb5801e7d764bd5cfa452d5e412271318ee8b0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_custom_damage.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 145,
+        "total": 145
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 145,
+            "total": 145
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_custom_damage.log",
+          "sha256": "e41b804130f686009932b9f892676e2a163e45f6f93314fb41b47aad9ca3096f",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_custom_params.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 160,
+        "total": 160
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 160,
+            "total": 160
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_custom_params.log",
+          "sha256": "348548d38ee066bf8b18316661f0b856e4fe6c7621bf67e6072887515d5d04d9",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_death_admission.tscn",
+      "batch": "death81-green1",
+      "passed": true,
+      "result": {
+        "passed": 37,
+        "total": 37
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 37,
+            "total": 37
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/death81-green1/xiyou_death_admission.log",
+          "sha256": "669d508228c1905385cfc23da95795295cb11e9658c9b76c84c2c0d9cd00b652",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_determinism.tscn",
+      "batch": "fixtures82-green1",
+      "passed": true,
+      "result": {
+        "passed": 372,
+        "total": 372
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 372,
+            "total": 372
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/fixtures82-green1/xiyou_determinism.log",
+          "sha256": "5f41a72c5e4727ff8c57b2f43147fa20eef8fa15a72fa231e27f35a1dec36cf7",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_difficulty_notice.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 25,
+        "total": 25
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 25,
+            "total": 25
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_difficulty_notice.log",
+          "sha256": "0d371de679dfd0db84bd49dfd4796af8961d8076ccb1e663f21c0dc6f2830869",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_drop_dh.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 12,
+        "total": 12
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 12,
+            "total": 12
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_drop_dh.log",
+          "sha256": "075684918fd755761572d307b5512646e14b036a658809b0a1c9c5c68d05b031",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_drop_record.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 26,
+        "total": 26
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 26,
+            "total": 26
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_drop_record.log",
+          "sha256": "65b462ded0d63d68a10df847f1ad6c4736d866e4f6721ae2ae704eead29d8973",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_dual_wield.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 301,
+        "total": 301
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 301,
+            "total": 301
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_dual_wield.log",
+          "sha256": "06c8f5ff43152b57ce3d608ad6cf52ab64cd3c9382b9b67126cfd0474f78a54c",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_dungeon.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 6954,
+        "total": 6954
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 6954,
+            "total": 6954
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_dungeon.log",
+          "sha256": "0348ae246d28ea7ab2005d5a13a5fea3919c81c526df363f94aa7de29e8488d6",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_element_ternary.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 33,
+        "total": 33
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 33,
+            "total": 33
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_element_ternary.log",
+          "sha256": "c9d1339db9ad5ad5a418f4f0e698bbaee7450c8abf86aad17b05f81c2eba6626",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_empress_draw.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 91,
+        "total": 91
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 91,
+            "total": 91
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_empress_draw.log",
+          "sha256": "331f372729c0ec2dffab0f282438dd756546a9cf815523198d053ec9071b3bf1",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_enemy_book.tscn",
+      "batch": "helpcost82-green",
+      "passed": true,
+      "result": {
+        "passed": 93,
+        "total": 93
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 93,
+            "total": 93
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/helpcost82-green/xiyou_enemy_book.log",
+          "sha256": "52f01a78843bd071abc556abddeec6f6179a4e124f6d8f651d02de3a45760725",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_equipment.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 1228,
+        "total": 1228
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 1228,
+            "total": 1228
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_equipment.log",
+          "sha256": "541a7765616aa3d26cee45fe33c642236cae593be6af4b48bf2bc2e3da9440da",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_equipment_admission.tscn",
+      "batch": "fixtures82-green1",
+      "passed": true,
+      "result": {
+        "passed": 7,
+        "total": 7
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 7,
+            "total": 7
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/fixtures82-green1/xiyou_equipment_admission.log",
+          "sha256": "357fbcb4c7b4527b8854786013db6a0763f52113aa82be46606bb46cc1dfbfbc",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_error_data.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 25,
+        "total": 25
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 25,
+            "total": 25
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_error_data.log",
+          "sha256": "0d371de679dfd0db84bd49dfd4796af8961d8076ccb1e663f21c0dc6f2830869",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_event_compare.tscn",
+      "batch": "helpcost82-green",
+      "passed": true,
+      "result": {
+        "passed": 5,
+        "total": 5
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 5,
+            "total": 5
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/helpcost82-green/xiyou_event_compare.log",
+          "sha256": "df9242b989ea2de11e62ef76a244906a2ccbf017b0bd0d1661c2ecf0f8db4f76",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor16_dungeon.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 25,
+        "total": 25
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 25,
+            "total": 25
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor16_dungeon.log",
+          "sha256": "43ced388c748f39c0b7c8d2ea5bb374a4dfb491a330ffeb65df6af60944d7cf7",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor28_dungeon.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 93,
+        "total": 93
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 93,
+            "total": 93
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor28_dungeon.log",
+          "sha256": "f26d736d3a174cf583040035e6e6a682633d936fbc1fb5e6621cf9f70ea609c6",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor30_gifts.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 30,
+        "total": 30
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 30,
+            "total": 30
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor30_gifts.log",
+          "sha256": "1970d6123862e3e3ddbf023fa3c40a74560f124b76560f813c1c2a5b6ef45dc3",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor30_seeker.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 27,
+        "total": 27
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 27,
+            "total": 27
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor30_seeker.log",
+          "sha256": "ec9d0480ee864ac7a4043afcefab480a6c7a013f50df8ebc07159fd67e0106ef",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor31_bosses.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 67,
+        "total": 67
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 67,
+            "total": 67
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor31_bosses.log",
+          "sha256": "ecb00b80beaca9c6298cd82ddb3917fa8671e621d251d8add42968c9f055b027",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_abyss037.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 133,
+        "total": 133
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 133,
+            "total": 133
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_abyss037.log",
+          "sha256": "2c1127b05b0b5ea127bcc24ab0570d086ee612d761ef1cd5d50094563ca7c9b4",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_abyss174.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 158,
+        "total": 158
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 158,
+            "total": 158
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_abyss174.log",
+          "sha256": "37ba0719e8027ee50de625e961b536e580ed9b5e839d9fb543a4ecee55114a06",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_abyss211.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 28,
+        "total": 28
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 28,
+            "total": 28
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_abyss211.log",
+          "sha256": "ac1ef9c73824b8a7fe22447ae4aa692e955920a1496c75094a93c347f9ec40df",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_brave081.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 66,
+        "total": 66
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 66,
+            "total": 66
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_brave081.log",
+          "sha256": "659c410f476b35cbf0e6690d10205629cc854da6ac0b8588cc5b57897651d389",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_brave083.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 101,
+        "total": 101
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 101,
+            "total": 101
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_brave083.log",
+          "sha256": "ab93f9893d379516b8a840dedb7d232c8a63a04cd70cb6be8ace365682835a7c",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_fortress029.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 71,
+        "total": 71
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 71,
+            "total": 71
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_fortress029.log",
+          "sha256": "694c5eee347dd98fc6818c7c36964453a2a5dc3243c45eab28b07a46ee145289",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_goblin024.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 96,
+        "total": 96
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 96,
+            "total": 96
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_goblin024.log",
+          "sha256": "e3991d0be794218d5426b2fa04e5ff9877e8113d0efb84df88c74a90771bfd32",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_guild197.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 62,
+        "total": 62
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 62,
+            "total": 62
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_guild197.log",
+          "sha256": "2b6aad148903a5181884e3f30635b7b1b710bdd1c3bb9096b81acc9c4ac27979",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_guild198.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 143,
+        "total": 143
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 143,
+            "total": 143
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_guild198.log",
+          "sha256": "60fc6da79aac80a1b5a31efde5ad64ad6e6cf721140e7b5f3090b20418e62c67",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_lab111.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 62,
+        "total": 62
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 62,
+            "total": 62
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_lab111.log",
+          "sha256": "518e6637a1e6008fbb2b02a0de774967696af355157f95fbcd5900f07000432d",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_reach040.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 54,
+        "total": 54
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 54,
+            "total": 54
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_reach040.log",
+          "sha256": "02fc3fd0f8df3bc55dc26fe688386107023ae66de137bccd1bbb745ff0baa127",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_reach068.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 73,
+        "total": 73
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 73,
+            "total": 73
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_reach068.log",
+          "sha256": "1c4add3782226cf017ac6e13894f60ea9700211846c26fd05c468faaa930369c",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_reach125.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 49,
+        "total": 49
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 49,
+            "total": 49
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_reach125.log",
+          "sha256": "4752ef89639b758089d7eff761070cda58fbc669f7b96091ce068d81daaa66e6",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_reach128.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 49,
+        "total": 49
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 49,
+            "total": 49
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_reach128.log",
+          "sha256": "f93fa7decc399e42ffabee2a112c565163fb254591575e840243ac20ea93a9ac",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_reach139.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 74,
+        "total": 74
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 74,
+            "total": 74
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_reach139.log",
+          "sha256": "0be3ba1bf381f0170450342985f4a7ded4187bef5d8d283cadba1ef978ba0057",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_reach173.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 159,
+        "total": 159
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 159,
+            "total": 159
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_reach173.log",
+          "sha256": "0ad1ed2b0dcc0c1e7eb18892f7d74667f1ac0505ed8b699d45819937d9692398",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_reach187.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 51,
+        "total": 51
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 51,
+            "total": 51
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_reach187.log",
+          "sha256": "665b150fab09737a4fcd64a2dc173dc3c6c267b3a6a57b70a9489c789ed04ad8",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_reach207.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 116,
+        "total": 116
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 116,
+            "total": 116
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_reach207.log",
+          "sha256": "3253d5622833c5f78cc6726e94b09e4894ab0b9a30f4735ba145db97aedbe4cb",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_reach222.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 32,
+        "total": 32
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 32,
+            "total": 32
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_reach222.log",
+          "sha256": "a26b26097b3bdb2d9f59ac77a323e4914a304a1749bdfc273fd9ca916f8a3c1d",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_reach224.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 47,
+        "total": 47
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 47,
+            "total": 47
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_reach224.log",
+          "sha256": "fe26b6cc1194e395fef7cd50c569e9cb4eddff6f0311df2d92bdd5a277ca153d",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_reach225.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 151,
+        "total": 151
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 151,
+            "total": 151
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_reach225.log",
+          "sha256": "08fc301131f4e1b6821662032ca6c34732833b5de8a49416fa087969e4bb3d66",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_run.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "floors": [
+          1,
+          12
+        ],
+        "passed": 273,
+        "total": 273
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "floors": [
+              1,
+              12
+            ],
+            "passed": 273,
+            "total": 273
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_run.log",
+          "sha256": "40a3bf55c91ddbd2d4e4235e75594c0945a628274a248ac366ce58735c7a8026",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_run_b.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "floors": [
+          13,
+          20
+        ],
+        "passed": 332,
+        "total": 332
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "floors": [
+              13,
+              20
+            ],
+            "passed": 332,
+            "total": 332
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_run_b.log",
+          "sha256": "ac64dc3f8e66e64990ae00f6439262995f7e51d48ef8da1e2fa8115236ad4e46",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_run_c.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "floors": [
+          21,
+          33
+        ],
+        "passed": 560,
+        "total": 560
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "floors": [
+              21,
+              33
+            ],
+            "passed": 560,
+            "total": 560
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_run_c.log",
+          "sha256": "fb3c2acb0d154f3c4632e7a0ca05cd366fd883d87b690e9b473581c76b45126d",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_unknown160.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 173,
+        "total": 173
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 173,
+            "total": 173
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_unknown160.log",
+          "sha256": "c1468d475f5bc97fabb1742c92d56d7453ecf1730688a9b868e16505a1fde179",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_unknown210.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 74,
+        "total": 74
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 74,
+            "total": 74
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_unknown210.log",
+          "sha256": "13c2c8ae62eb3d423b96e6c01822953257474abec1075e8fab88685167634add",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_floor_unknown223.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 248,
+        "total": 248
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 248,
+            "total": 248
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_floor_unknown223.log",
+          "sha256": "cf0a7dd41bbcb04d1307f89ec6bbc99b872bd71e9ee6a088488309123e7414e2",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_flow.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 48,
+        "total": 48
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 48,
+            "total": 48
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_flow.log",
+          "sha256": "2a60d96e136bd5fe058dc5c62ce4187e0fdaf837fb232dc4df10e7d39fc543d5",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_formula_effects.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 908,
+        "total": 908
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 908,
+            "total": 908
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_formula_effects.log",
+          "sha256": "5f2552c6c239eb19aa4f60ed8ab8f71352deaa4e9f15695f79295f1d4eabffd0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_formula_equipment.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 1804,
+        "total": 1804
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 1804,
+            "total": 1804
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_formula_equipment.log",
+          "sha256": "7e3a9920cb9166678836261a40a4839b8dca33584a7b7259d284b245cb043f97",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_formula_program.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 43458,
+        "total": 43458
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 43458,
+            "total": 43458
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_formula_program.log",
+          "sha256": "78b04c0ab488b28e951fbdc7f8bf6d9ce71c389db84df2909aadfce40c6bee3d",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_formula_rest.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 1352,
+        "total": 1352
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 1352,
+            "total": 1352
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_formula_rest.log",
+          "sha256": "96e87399be8f70f323d354062005af2e1aece5b189c8d2fed0d8a4e45e385bd7",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_formulas.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 7,
+        "total": 7
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 7,
+            "total": 7
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_formulas.log",
+          "sha256": "e62ce5a50aaed0cc93d6c007e7a6f50794cedc40734d757bd57170a73294a60b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_gear_search.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 58,
+        "total": 58
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 58,
+            "total": 58
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_gear_search.log",
+          "sha256": "fafcf771d7e616db1a38a7d1247a3030ca3aea3555e6a50124b237237581fbea",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_gear_ui.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 47,
+        "total": 47
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 47,
+            "total": 47
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_gear_ui.log",
+          "sha256": "ae33b14bc392004866da85d22ecea7d6f6494ec8a3369dd37765903224d5f698",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_global_vars.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 17,
+        "total": 17
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 17,
+            "total": 17
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_global_vars.log",
+          "sha256": "7dd7b67510fa72d968ad561f5e56c8ef11c2649e67f86d4a0a661744a986bc69",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_gold_cap.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 30,
+        "total": 30
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 30,
+            "total": 30
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_gold_cap.log",
+          "sha256": "1970d6123862e3e3ddbf023fa3c40a74560f124b76560f813c1c2a5b6ef45dc3",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_guide.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failed": [],
+        "name": "xiyou_guide",
+        "passed": 63,
+        "total": 63
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failed": [],
+            "name": "xiyou_guide",
+            "passed": 63,
+            "total": 63
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_guide.log",
+          "sha256": "5494eb2fcd3e5bd98abd999bd93ab7d6cffca84dc3ffa152234e1fa099669bfe",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_hangup.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 25,
+        "total": 25
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 25,
+            "total": 25
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_hangup.log",
+          "sha256": "0d371de679dfd0db84bd49dfd4796af8961d8076ccb1e663f21c0dc6f2830869",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_hangup_auto.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 226,
+        "total": 226
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 226,
+            "total": 226
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_hangup_auto.log",
+          "sha256": "4a65a91ee178a320ca16fa913a1d07b67d5528bf21119d09162f131fb55d1c2b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_hangup_options.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 57,
+        "total": 57
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 57,
+            "total": 57
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_hangup_options.log",
+          "sha256": "21fe13e83961ab9e12e7ba46df1efbab5a9ab971ee03e8f8fabd5bacab7307b7",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_heir116.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 96,
+        "total": 96
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 96,
+            "total": 96
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_heir116.log",
+          "sha256": "b594fceb3532a0e2613846a776a6e2f256eed50d1edbcfeb041032bec7d5618a",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_help_card.tscn",
+      "batch": "helpcost82-green",
+      "passed": true,
+      "result": {
+        "passed": 988,
+        "total": 988
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 988,
+            "total": 988
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/helpcost82-green/xiyou_help_card.log",
+          "sha256": "b7c0a5e71fb489f7ee38c23ff0dfeed02bc02c9fd3711c57ff9bdb515f9e8dcf",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_hud.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 34,
+        "total": 34
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 34,
+            "total": 34
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_hud.log",
+          "sha256": "f89dd7e3f7c572acbb807f40bb21e3437fb1b3b9c5f5d8d7d36468007edb20c0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_imported_balance.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 273,
+        "total": 273
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 273,
+            "total": 273
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_imported_balance.log",
+          "sha256": "a2042496a06e8674e1939eb2979d76fc90fe22f7840fb3fa6cfeb3a60e150167",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_inlay_book.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 19,
+        "total": 19
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 19,
+            "total": 19
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_inlay_book.log",
+          "sha256": "f2c26d231ffe6bde9710dbbb9b27264420b0259a70358b3b9dd8d97279c2f0a7",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_interp_review.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failed": [],
+        "name": "xiyou_interp_review",
+        "passed": 13,
+        "total": 13
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failed": [],
+            "name": "xiyou_interp_review",
+            "passed": 13,
+            "total": 13
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_interp_review.log",
+          "sha256": "8e013b62eb9f678327e957391b75e7acf8bed69e119871fa6b983b68c1a1de69",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_item_list.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failed": [],
+        "passed": 38,
+        "total": 38
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failed": [],
+            "passed": 38,
+            "total": 38
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_item_list.log",
+          "sha256": "c2b6856d494c8c696ee0fc8ca1052cf44d1527a5ff46f0793b0942846ee94a60",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_item_marks.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 108,
+        "total": 108
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 108,
+            "total": 108
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_item_marks.log",
+          "sha256": "ce4ef850280024c345031f5ad943773a9b6bbea775b7a34d45d7502fc1238956",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_item_use.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 11,
+        "total": 11
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 11,
+            "total": 11
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_item_use.log",
+          "sha256": "3a83c2fa5cfd05a909e0fab6c88a8b9cf7f33289426cb0cce9640e0f97ce8c7c",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_legion_tech.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 1178,
+        "total": 1178
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 1178,
+            "total": 1178
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_legion_tech.log",
+          "sha256": "b9698cca92ca001e72ff4c812eb3e9fb27417e0895547691c0cc2ff0eba3898b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_lobby_shops.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 94,
+        "total": 94
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 94,
+            "total": 94
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_lobby_shops.log",
+          "sha256": "e2378f4a955fdee20849174ea1f506d96545d3a622fa39862227703c15416af3",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_loose_fixes.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 126,
+        "total": 126
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 126,
+            "total": 126
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_loose_fixes.log",
+          "sha256": "0b7427523719a9d220e74491eaff2124af6b8799e0dd19ba26b834a4c1708ca1",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_mac_export.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 12,
+        "total": 12
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 12,
+            "total": 12
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_mac_export.log",
+          "sha256": "61ce1a3a7fae737e661ce2a259200c7ecce0b324a98f018d9c70bb5c63056c13",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_magic_level.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 7,
+        "total": 7
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 7,
+            "total": 7
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_magic_level.log",
+          "sha256": "357fbcb4c7b4527b8854786013db6a0763f52113aa82be46606bb46cc1dfbfbc",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_magic_weapon.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 43,
+        "total": 43
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 43,
+            "total": 43
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_magic_weapon.log",
+          "sha256": "f37936e593d66b4961be80cf0b796d0dc68ca4e788f69a54377d2026cce74bf0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_magic_weapon_level.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 51,
+        "total": 51
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 51,
+            "total": 51
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_magic_weapon_level.log",
+          "sha256": "f898f887e9120b77c088026ad18f1eb7895d651311030de1a8c07289a06efa69",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_map.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 347,
+        "total": 347
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 347,
+            "total": 347
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_map.log",
+          "sha256": "07e6f07cdec54c96a1c8867cce60039ec069634fbaa7abddb7fccbcf8a40d5ed",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_map186.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 38,
+        "total": 38
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 38,
+            "total": 38
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_map186.log",
+          "sha256": "664ae2c534a782b1d15ca4bed55c83783b9c5ca281990686c64d956e9ab8e628",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_map186_b.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 54,
+        "total": 54
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 54,
+            "total": 54
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_map186_b.log",
+          "sha256": "9f47602144b47d0ae84f4b0185877d9cdac67f8ecef32ec73fa918bb7ac3e7a8",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_map186_c.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 12,
+        "total": 12
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 12,
+            "total": 12
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_map186_c.log",
+          "sha256": "2aefb44324840a42d420c245230058a553b161bab0924f83aaaa248fc6ab9936",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_map186_legions.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 16,
+        "total": 16
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 16,
+            "total": 16
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_map186_legions.log",
+          "sha256": "30af857012b7a4d144f60b778279aa4d73a95500a39603c300be9fa5ca6272b2",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_map186_legions_b.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 16,
+        "total": 16
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 16,
+            "total": 16
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_map186_legions_b.log",
+          "sha256": "246551fbf7b06c8c39b1c55ece9bf5557649cea129dade53145053ccbcc18a73",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_message.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 38,
+        "total": 38
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 38,
+            "total": 38
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_message.log",
+          "sha256": "6269f606540af8a92f63d1c1ff737777ed7b10d550dba98dd9efbc3118cdb3d1",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_module_hooks.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 1310,
+        "total": 1310
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 1310,
+            "total": 1310
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_module_hooks.log",
+          "sha256": "fd3e0c06ddc5ab6a2d42405f5b75f003dbbbb8ab312aace4c26f3a68c6c393b5",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_mv_animation.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 21,
+        "total": 21
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 21,
+            "total": 21
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_mv_animation.log",
+          "sha256": "5572ab52b8e03bf7787f8c9298286cf92c5079f5be74efbf7f54833b838e49ad",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_notice_options.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 72,
+        "total": 72
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 72,
+            "total": 72
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_notice_options.log",
+          "sha256": "2eed8684d5f7e0963c5f754002f593003f00b695b2fcc85520c64e48c8bf0cad",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_opening_branches.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 16,
+        "total": 16
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 16,
+            "total": 16
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_opening_branches.log",
+          "sha256": "e6d4e4612716096223adedaf6fc9f2d3c770177a217f39cb40d67c057762be1f",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_options_basic.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 139,
+        "total": 139
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 139,
+            "total": 139
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_options_basic.log",
+          "sha256": "72329374027a81adca41fdd3e603f81853c04c3a9c1ed0f27416745d927f0241",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_options_misc.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 86,
+        "total": 86
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 86,
+            "total": 86
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_options_misc.log",
+          "sha256": "3d7bc32ba3f5712e428f8d0f15d4cc958743ed799b4cb33d8b03ca18fe91a6f7",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_orb_shop.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 22,
+        "total": 22
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 22,
+            "total": 22
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_orb_shop.log",
+          "sha256": "cc45d0d1686542a67b7f865aa974e4e38750a956203ab8d44a6705ba0e052ff6",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_orb_shop_ui.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 27,
+        "total": 27
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 27,
+            "total": 27
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_orb_shop_ui.log",
+          "sha256": "414d2ff8feb5737f7960c11166d21c7a9958b4088e7fc30f3a0cf8f3c57728ef",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_orb_ui.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 39,
+        "total": 39
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 39,
+            "total": 39
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_orb_ui.log",
+          "sha256": "8737f2c0db93217c60e8d1bfe659d8fba29b4ce4bdcc9c0dfc1a16606e88fa80",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_orbs.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 63,
+        "total": 63
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 63,
+            "total": 63
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_orbs.log",
+          "sha256": "2208860d51000a995cc636af76c6d9052e21f7aedce0d1e882446d089ba6671a",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_otb.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 22,
+        "total": 22
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 22,
+            "total": 22
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_otb.log",
+          "sha256": "cc45d0d1686542a67b7f865aa974e4e38750a956203ab8d44a6705ba0e052ff6",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_panels.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 35,
+        "total": 35
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 35,
+            "total": 35
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_panels.log",
+          "sha256": "8d8496014c0bfaed5ab9aa5f8fc49d72e1165e5b6f5bd16501ac17794f3fec09",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_param_states.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 582,
+        "total": 582
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 582,
+            "total": 582
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_param_states.log",
+          "sha256": "68f288bf45c895a7923a7c93dfcae4c77336780af27d630e1ca8afc22faf409c",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_party.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 58,
+        "total": 58
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 58,
+            "total": 58
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_party.log",
+          "sha256": "fafcf771d7e616db1a38a7d1247a3030ca3aea3555e6a50124b237237581fbea",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_party_skills.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 214,
+        "total": 214
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 214,
+            "total": 214
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_party_skills.log",
+          "sha256": "21b2391535419030e69ea7e63390cfbbe66074e874a5eb3d8c87428a122f4b02",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_passive_content.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 113142,
+        "samples": [],
+        "total": 113142
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 113142,
+            "samples": [],
+            "total": 113142
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_passive_content.log",
+          "sha256": "ffc8aa47be2538e3fe2cf3973a62f5f28cca10fe1b0b213ee4d86e2c923021d3",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_pet_capture.tscn",
+      "batch": "death81-green1",
+      "passed": true,
+      "result": {
+        "passed": 43,
+        "total": 43
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 43,
+            "total": 43
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/death81-green1/xiyou_pet_capture.log",
+          "sha256": "f37936e593d66b4961be80cf0b796d0dc68ca4e788f69a54377d2026cce74bf0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_pet_synth.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 26,
+        "total": 26
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 26,
+            "total": 26
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_pet_synth.log",
+          "sha256": "65b462ded0d63d68a10df847f1ad6c4736d866e4f6721ae2ae704eead29d8973",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_pets.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 29,
+        "total": 29
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 29,
+            "total": 29
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_pets.log",
+          "sha256": "cd4a92a7b27b313d29855f89f5562610e5af2e2863742f2757ccde0c4184e433",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_popup_overlap.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 8,
+        "total": 8
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 8,
+            "total": 8
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_popup_overlap.log",
+          "sha256": "78f13645688a1172d221429b3a44494137ed913bf2b7da77c741580c2fdeedb0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_power.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 137,
+        "total": 137
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 137,
+            "total": 137
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_power.log",
+          "sha256": "b89aa9d3070726d3cefa5fd324c38978f75cbd5c052c1f073cfabf4080b29878",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_power_books.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 6136,
+        "total": 6136
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 6136,
+            "total": 6136
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_power_books.log",
+          "sha256": "573bc0109b4ce1fd0242db7349117037ed8caf0ad9ce676b8ab245a0b706b29f",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_power_books_boundary.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 55682,
+        "total": 55682
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 55682,
+            "total": 55682
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_power_books_boundary.log",
+          "sha256": "4bc473090a0b4f0cd7cb84e2726ce00f2ba87a507cacb2e3e596f726ed7e44b0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_power_books_menu.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 1068,
+        "total": 1068
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 1068,
+            "total": 1068
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_power_books_menu.log",
+          "sha256": "bb63f624e12a2f10ec17a4ad0747ecf4a3aaa706d9ad98e8f8cc3146cf97e377",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_qiyu.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 231,
+        "total": 231
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 231,
+            "total": 231
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_qiyu.log",
+          "sha256": "c8d4f40a03ccf425b0d56950b9aa6fc518f1fb41d369430d1b80ad8ffde97237",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_race_battle.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 436,
+        "total": 436
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 436,
+            "total": 436
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_race_battle.log",
+          "sha256": "057b602e43b3323a953b9ae6dbc1c3ff7c9d72b9bbeea4e5349e3046bb0a5ee6",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_race_menu.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 66,
+        "total": 66
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 66,
+            "total": 66
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_race_menu.log",
+          "sha256": "59cd15619a66e02cf7f64ca6878860c4ae04e75bd95fecf709fb93a6fb6acc24",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_random_streams.tscn",
+      "batch": "boss82-green",
+      "passed": true,
+      "result": {
+        "passed": 488,
+        "total": 488
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 488,
+            "total": 488
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/boss82-green/xiyou_random_streams.log",
+          "sha256": "99e512de4e62bd6eb5e70d39b2801bc98196d65240be86bea0eab119f06f49b1",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_recover_permanent.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 34,
+        "total": 34
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 34,
+            "total": 34
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_recover_permanent.log",
+          "sha256": "f89dd7e3f7c572acbb807f40bb21e3437fb1b3b9c5f5d8d7d36468007edb20c0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_review135.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 84,
+        "total": 84
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 84,
+            "total": 84
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_review135.log",
+          "sha256": "aa9f75ced3876282c197da35645bf1eff85ae518009fa550113ae3c473044167",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_review_fix.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failed": [],
+        "name": "xiyou_review_fix",
+        "passed": 60,
+        "total": 60
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failed": [],
+            "name": "xiyou_review_fix",
+            "passed": 60,
+            "total": 60
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_review_fix.log",
+          "sha256": "5ad5b463116cd4af31fa18fc146e93b53f5fbb18ef183bf32c4637766b77f71c",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_review_regressions.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 29,
+        "total": 29
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 29,
+            "total": 29
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_review_regressions.log",
+          "sha256": "cd4a92a7b27b313d29855f89f5562610e5af2e2863742f2757ccde0c4184e433",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115207,
+        "total": 115207
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115207,
+            "total": 115207
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules.log",
+          "sha256": "bfb780c978e488c1a57bab33281c6f013cf39cfdd7e29ef2562950e8ba064c50",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d1b.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115087,
+        "total": 115087
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115087,
+            "total": 115087
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d1b.log",
+          "sha256": "8f4a90bced23073075b25346256609c13c8566cc9de874294d833097ee26418b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d1c.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 114924,
+        "total": 114924
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 114924,
+            "total": 114924
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d1c.log",
+          "sha256": "2307b0081edde4e506a5f42c87a98c5f07a2bf5141f5c40d0cd7242e1b885c6a",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d1d.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115095,
+        "total": 115095
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115095,
+            "total": 115095
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d1d.log",
+          "sha256": "2440804cfad1ee8a4d19a675e8fe44f8fbf3ae91127f99b165e0bdbea50ed28b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d2.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115205,
+        "total": 115205
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115205,
+            "total": 115205
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d2.log",
+          "sha256": "48d2e3c6bd9cd140a30948106f63a80c7d1c734d54a98acbdca47feba8e148a7",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d2b.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115087,
+        "total": 115087
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115087,
+            "total": 115087
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d2b.log",
+          "sha256": "8f4a90bced23073075b25346256609c13c8566cc9de874294d833097ee26418b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d2c.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 114924,
+        "total": 114924
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 114924,
+            "total": 114924
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d2c.log",
+          "sha256": "2307b0081edde4e506a5f42c87a98c5f07a2bf5141f5c40d0cd7242e1b885c6a",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d2d.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115095,
+        "total": 115095
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115095,
+            "total": 115095
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d2d.log",
+          "sha256": "2440804cfad1ee8a4d19a675e8fe44f8fbf3ae91127f99b165e0bdbea50ed28b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d3.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115205,
+        "total": 115205
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115205,
+            "total": 115205
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d3.log",
+          "sha256": "48d2e3c6bd9cd140a30948106f63a80c7d1c734d54a98acbdca47feba8e148a7",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d3b.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115087,
+        "total": 115087
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115087,
+            "total": 115087
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d3b.log",
+          "sha256": "8f4a90bced23073075b25346256609c13c8566cc9de874294d833097ee26418b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d3c.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 114924,
+        "total": 114924
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 114924,
+            "total": 114924
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d3c.log",
+          "sha256": "2307b0081edde4e506a5f42c87a98c5f07a2bf5141f5c40d0cd7242e1b885c6a",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d3d.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115095,
+        "total": 115095
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115095,
+            "total": 115095
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d3d.log",
+          "sha256": "2440804cfad1ee8a4d19a675e8fe44f8fbf3ae91127f99b165e0bdbea50ed28b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d4.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115207,
+        "total": 115207
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115207,
+            "total": 115207
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d4.log",
+          "sha256": "bfb780c978e488c1a57bab33281c6f013cf39cfdd7e29ef2562950e8ba064c50",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d4b.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115087,
+        "total": 115087
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115087,
+            "total": 115087
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d4b.log",
+          "sha256": "8f4a90bced23073075b25346256609c13c8566cc9de874294d833097ee26418b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d4c.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 114924,
+        "total": 114924
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 114924,
+            "total": 114924
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d4c.log",
+          "sha256": "2307b0081edde4e506a5f42c87a98c5f07a2bf5141f5c40d0cd7242e1b885c6a",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d4d.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115095,
+        "total": 115095
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115095,
+            "total": 115095
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d4d.log",
+          "sha256": "2440804cfad1ee8a4d19a675e8fe44f8fbf3ae91127f99b165e0bdbea50ed28b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d5.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115205,
+        "total": 115205
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115205,
+            "total": 115205
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d5.log",
+          "sha256": "48d2e3c6bd9cd140a30948106f63a80c7d1c734d54a98acbdca47feba8e148a7",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d5b.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115087,
+        "total": 115087
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115087,
+            "total": 115087
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d5b.log",
+          "sha256": "8f4a90bced23073075b25346256609c13c8566cc9de874294d833097ee26418b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d5c.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 114924,
+        "total": 114924
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 114924,
+            "total": 114924
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d5c.log",
+          "sha256": "2307b0081edde4e506a5f42c87a98c5f07a2bf5141f5c40d0cd7242e1b885c6a",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d5d.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115095,
+        "total": 115095
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115095,
+            "total": 115095
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d5d.log",
+          "sha256": "2440804cfad1ee8a4d19a675e8fe44f8fbf3ae91127f99b165e0bdbea50ed28b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d6.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115205,
+        "total": 115205
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115205,
+            "total": 115205
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d6.log",
+          "sha256": "48d2e3c6bd9cd140a30948106f63a80c7d1c734d54a98acbdca47feba8e148a7",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d6b.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115087,
+        "total": 115087
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115087,
+            "total": 115087
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d6b.log",
+          "sha256": "8f4a90bced23073075b25346256609c13c8566cc9de874294d833097ee26418b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d6c.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 114924,
+        "total": 114924
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 114924,
+            "total": 114924
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d6c.log",
+          "sha256": "2307b0081edde4e506a5f42c87a98c5f07a2bf5141f5c40d0cd7242e1b885c6a",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_rules_d6d.tscn",
+      "batch": "rules82",
+      "passed": true,
+      "result": {
+        "failedSample": [],
+        "passed": 115095,
+        "total": 115095
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failedSample": [],
+            "passed": 115095,
+            "total": 115095
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/rules82/xiyou_rules_d6d.log",
+          "sha256": "2440804cfad1ee8a4d19a675e8fe44f8fbf3ae91127f99b165e0bdbea50ed28b",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_save_page.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 40,
+        "total": 40
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 40,
+            "total": 40
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_save_page.log",
+          "sha256": "fb087d8c7e4ef2dd8941840594816513f7901c2c43bab196141ee4024719f472",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_screen_fx.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failed": [],
+        "name": "xiyou_screen_fx",
+        "passed": 28,
+        "total": 28
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failed": [],
+            "name": "xiyou_screen_fx",
+            "passed": 28,
+            "total": 28
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_screen_fx.log",
+          "sha256": "21cb75cc746635b89cc8250b78193c3293ce38e218d637a4b57b37c3babe48e1",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_script.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 21,
+        "total": 21
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 21,
+            "total": 21
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_script.log",
+          "sha256": "5572ab52b8e03bf7787f8c9298286cf92c5079f5be74efbf7f54833b838e49ad",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_sequence_visual.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 70,
+        "total": 70
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 70,
+            "total": 70
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_sequence_visual.log",
+          "sha256": "5ab3f3ee04060e58848fac4bfac90ad93e716ce847078873f70e8b10a4e85762",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_settlement.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 11,
+        "total": 11
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 11,
+            "total": 11
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_settlement.log",
+          "sha256": "3a83c2fa5cfd05a909e0fab6c88a8b9cf7f33289426cb0cce9640e0f97ce8c7c",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_shield.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 565,
+        "total": 565
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 565,
+            "total": 565
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_shield.log",
+          "sha256": "aa99372ba37865c2ca28facdaeedc20120401ca8854b365536e88aff1f96ddbe",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_shop_buy.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 10325,
+        "total": 10325
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 10325,
+            "total": 10325
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_shop_buy.log",
+          "sha256": "b2440d3208aa2d8fb6a16a509cfc6f4d7dcfa9d7c22054f60d76dad710ed3e44",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_shop_stock.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failed": [],
+        "name": "xiyou_shop_stock",
+        "passed": 46,
+        "total": 46
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failed": [],
+            "name": "xiyou_shop_stock",
+            "passed": 46,
+            "total": 46
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_shop_stock.log",
+          "sha256": "48c3c6cc38f2330226db14b5a92d545845ddaa4e6e43d960b3f7e79070abac6e",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_skill_page.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 21,
+        "total": 21
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 21,
+            "total": 21
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_skill_page.log",
+          "sha256": "5572ab52b8e03bf7787f8c9298286cf92c5079f5be74efbf7f54833b838e49ad",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_smart_ai.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 22127,
+        "total": 22127
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 22127,
+            "total": 22127
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_smart_ai.log",
+          "sha256": "3ede77539fa595f77a596b2fe5d40e1610782b10698ada807551c9d2bf43c605",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_smart_ai_b.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 22038,
+        "total": 22038
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 22038,
+            "total": 22038
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_smart_ai_b.log",
+          "sha256": "89104f621f79b342fc3f9e2699753b8f7ed230364a8adf41f3b2acc5d57c4a0f",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_smart_ai_c.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 19531,
+        "total": 19531
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 19531,
+            "total": 19531
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_smart_ai_c.log",
+          "sha256": "acc2bc190d9fc0db47298957d3c21be2aafb2f3d09ff81a0818613438b0b9387",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_smart_ai_d.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 19531,
+        "total": 19531
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 19531,
+            "total": 19531
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_smart_ai_d.log",
+          "sha256": "acc2bc190d9fc0db47298957d3c21be2aafb2f3d09ff81a0818613438b0b9387",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_stage50_review.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 10,
+        "total": 10
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 10,
+            "total": 10
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_stage50_review.log",
+          "sha256": "ce644ef5118cf5144fa210aad75d2152e293bbdfeb95f82a28e26a45de955951",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_state_effects.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 19949,
+        "total": 19949
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 19949,
+            "total": 19949
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_state_effects.log",
+          "sha256": "910cf8a440d99aff3476028e5c1be7d9b016091ab58e63095c026dfbc88de3ed",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_state_effects_tp.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failures": [],
+        "passed": 537,
+        "test": "xiyou_state_effects_tp",
+        "total": 537
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failures": [],
+            "passed": 537,
+            "test": "xiyou_state_effects_tp",
+            "total": 537
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_state_effects_tp.log",
+          "sha256": "8e19e9dc5cc74e44f976bacf446243908a168e067ad12083c3f3f86f17ac4edf",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_state_js.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 1733,
+        "total": 1733
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 1733,
+            "total": 1733
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_state_js.log",
+          "sha256": "fb6419be6af7d0465bec7b531649dbb2298ed38f77434e668e4e96d9dba8ef82",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_state_merge_context.tscn",
+      "batch": "death81-green1",
+      "passed": true,
+      "result": {
+        "passed": 866,
+        "total": 866
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 866,
+            "total": 866
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/death81-green1/xiyou_state_merge_context.log",
+          "sha256": "f7edf4fcf2c9eac38772cdff835164436f3c376943b9fe5f1d3b92348f60b7f5",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_state_operation.tscn",
+      "batch": "death81-green1",
+      "passed": true,
+      "result": {
+        "passed": 1431,
+        "total": 1431
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 1431,
+            "total": 1431
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/death81-green1/xiyou_state_operation.log",
+          "sha256": "de33cdd04d5489ef730ec14b4d66ce288596dd2e30b30758244a57ce47849cd5",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_status_page.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 43,
+        "total": 43
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 43,
+            "total": 43
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_status_page.log",
+          "sha256": "f37936e593d66b4961be80cf0b796d0dc68ca4e788f69a54377d2026cce74bf0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_status_power.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 36,
+        "total": 36
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 36,
+            "total": 36
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_status_power.log",
+          "sha256": "13c0744b0ce501b817ccb5a208c8922b53490d6fe1774f8854f2fe5010b64bd2",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_status_power_panel.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 11,
+        "total": 11
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 11,
+            "total": 11
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_status_power_panel.log",
+          "sha256": "72a3b71f97fcc63e708a764b0597d156fe0dcfc904d2ece2d90c1ee749b57455",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_super_acquire.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 27,
+        "total": 27
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 27,
+            "total": 27
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_super_acquire.log",
+          "sha256": "414d2ff8feb5737f7960c11166d21c7a9958b4088e7fc30f3a0cf8f3c57728ef",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_super_deploy.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 43,
+        "total": 43
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 43,
+            "total": 43
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_super_deploy.log",
+          "sha256": "f37936e593d66b4961be80cf0b796d0dc68ca4e788f69a54377d2026cce74bf0",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_system_evidence.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 15,
+        "total": 15
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 15,
+            "total": 15
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_system_evidence.log",
+          "sha256": "719c97f27ef5f7e8c8ea470a704c8c81c25d602c5bda1b3dd3561ad9b6960e83",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_training.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 188,
+        "total": 188
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 188,
+            "total": 188
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_training.log",
+          "sha256": "c9dc17632f56d4607a55eebe27aba59a7d3fc9b0767370bf8a08216cfe0671af",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_trait_stack.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 214,
+        "total": 214
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 214,
+            "total": 214
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_trait_stack.log",
+          "sha256": "21b2391535419030e69ea7e63390cfbbe66074e874a5eb3d8c87428a122f4b02",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_transfer.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 38,
+        "total": 38
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 38,
+            "total": 38
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_transfer.log",
+          "sha256": "6269f606540af8a92f63d1c1ff737777ed7b10d550dba98dd9efbc3118cdb3d1",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_transform_params.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 249,
+        "total": 249
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 249,
+            "total": 249
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_transform_params.log",
+          "sha256": "b8189ff77b94cd804c84c230f5cc906e05556d48b146db7bc943368a1b1a3b33",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_troop_events.tscn",
+      "batch": "boss82-green",
+      "passed": true,
+      "result": {
+        "oracleHalf": false,
+        "passed": 6574,
+        "strictRandomExtraChecks": 0,
+        "strictRandomSetChecks": 0,
+        "total": 6574
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "oracleHalf": false,
+            "passed": 6574,
+            "strictRandomExtraChecks": 0,
+            "strictRandomSetChecks": 0,
+            "total": 6574
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/boss82-green/xiyou_troop_events.log",
+          "sha256": "58c792f09d10a7517daca66903b2fd962c5e2674909f1dd789c93944618c2524",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_troop_events_b.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "oracleHalf": false,
+        "passed": 6450,
+        "strictRandomExtraChecks": 0,
+        "strictRandomSetChecks": 0,
+        "total": 6450
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "oracleHalf": false,
+            "passed": 6450,
+            "strictRandomExtraChecks": 0,
+            "strictRandomSetChecks": 0,
+            "total": 6450
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_troop_events_b.log",
+          "sha256": "2ad101b1d57d023f9f9aecfaba6affbda81f715470e98fbb7a340e824e45c114",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_troop_events_half.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "oracleHalf": true,
+        "passed": 2951,
+        "strictRandomExtraChecks": 19,
+        "strictRandomSetChecks": 19,
+        "total": 2951
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "oracleHalf": true,
+            "passed": 2951,
+            "strictRandomExtraChecks": 19,
+            "strictRandomSetChecks": 19,
+            "total": 2951
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_troop_events_half.log",
+          "sha256": "722206e0953e1879e4938d968061c793418858b8bba3798174e80d488ced2083",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_variants.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 135,
+        "total": 135
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 135,
+            "total": 135
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_variants.log",
+          "sha256": "95df41451885c6fbb284096c1119e426e852d683da82d1a3a1ae58a247593c75",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_variants_b.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 140,
+        "total": 140
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 140,
+            "total": 140
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_variants_b.log",
+          "sha256": "46dc75578e70170ee60194ca209a0601ef6f1d3244a8e17ed7c895c9a70b1078",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_warehouse.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 32,
+        "total": 32
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 32,
+            "total": 32
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_warehouse.log",
+          "sha256": "80268a19423120a32a0cb178edd9927798f0e0196d56dca7c281b5cd98deddfc",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_window_rects.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "passed": 9,
+        "test": "xiyou_window_rects",
+        "total": 9
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 9,
+            "test": "xiyou_window_rects",
+            "total": 9
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_window_rects.log",
+          "sha256": "25fb23f8b48bce8bf3a7c276375c59ea4dd994136ff8737048b9c0258840f2fa",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_wtype.tscn",
+      "batch": "wtype82-green",
+      "passed": true,
+      "result": {
+        "passed": 16219,
+        "total": 16219
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "passed": 16219,
+            "total": 16219
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/wtype82-green/xiyou_wtype.log",
+          "sha256": "fb7e445a120ffe4120180093819f3b7f504812e2020cf9d8131493fff73b12aa",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_zhenqi.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failed": [],
+        "name": "xiyou_zhenqi",
+        "passed": 181,
+        "total": 181
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failed": [],
+            "name": "xiyou_zhenqi",
+            "passed": 181,
+            "total": 181
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_zhenqi.log",
+          "sha256": "fa7ad46e715935689430a08c30c1a412c114a384488d10ec281d973fd15b15e7",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_zhenqi_break.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failed": [],
+        "name": "xiyou_zhenqi_break",
+        "passed": 83,
+        "total": 83
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failed": [],
+            "name": "xiyou_zhenqi_break",
+            "passed": 83,
+            "total": 83
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_zhenqi_break.log",
+          "sha256": "56e6d35ba9fbe7a7f6a0238c26ff6a9130ae04c227023c37ee292727799fd091",
+          "runtimeErrors": []
+        }
+      ]
+    },
+    {
+      "name": "xiyou_zhenqi_daofa.tscn",
+      "batch": "final-selected79",
+      "passed": true,
+      "result": {
+        "failed": [],
+        "name": "xiyou_zhenqi_daofa",
+        "passed": 68,
+        "total": 68
+      },
+      "attempts": [
+        {
+          "rc": 0,
+          "passed": true,
+          "result": {
+            "failed": [],
+            "name": "xiyou_zhenqi_daofa",
+            "passed": 68,
+            "total": 68
+          },
+          "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/final-selected79/xiyou_zhenqi_daofa.log",
+          "sha256": "cd28835c94804abe58ec1b761ccbd39168d5dae4d3619ae6a71526ee4d8b5342",
+          "runtimeErrors": []
+        }
+      ]
+    }
+  ],
+  "nonGodot": {
+    "source": {
+      "exit": 0,
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/tools82/source.log"
+    },
+    "coverage": {
+      "exit": 0,
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/tools82/coverage.log"
+    },
+    "docs": {
+      "exit": 1,
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/tools82/docs.log",
+      "issues": [
+        "✗ 失效链接 00_项目管理/变更记录.md -> a",
+        "✗ 失效链接 00_项目管理/变更记录.md -> a"
+      ],
+      "inheritedSharedFileByteIdenticalToFixedMain": true
+    }
+  },
+  "deliveryCanSubmit": true,
+  "mergeConditions": [
+    "唐僧修固定main继承的两条共享变更记录链接后按影响面检查",
+    "本分支提交正式交叉核查仍待Claude，不据测试通过自销核"
+  ],
+  "limitations": [
+    "动态多帧素材仍未移植时按白龙既有修正不画错误静图",
+    "XCharacterHelp文件头声明的后续角色与进阶/战斗字段限制保留",
+    "不代表本机实际main积压数据；正式积压另从当时本地main重算"
+  ]
+}

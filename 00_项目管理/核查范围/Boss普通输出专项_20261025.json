@@ -1,0 +1,171 @@
+{
+  "scope": "Frozen v0.28 ordinary executeHpDamage/executeMpDamage only; direct gain/set and sequence/state-origin contexts remain unported",
+  "implementation": "00524617",
+  "oracleCases": 78,
+  "oracleErrors": [],
+  "nativeEqualsFixture": true,
+  "fixtureSha256": "fba8df9dea233f5bc172f6d561e874dee709ced4db4e27281af173c53e7fcbbc",
+  "results": {
+    "xiyou_formula_effects": {
+      "passed": 908,
+      "total": 908
+    },
+    "xiyou_imported_balance": {
+      "passed": 273,
+      "total": 273
+    },
+    "xiyou_shield": {
+      "passed": 565,
+      "total": 565
+    },
+    "xiyou_troop_events_half": {
+      "oracleHalf": true,
+      "passed": 2951,
+      "strictRandomExtraChecks": 19,
+      "strictRandomSetChecks": 19,
+      "total": 2951
+    },
+    "xiyou_zhenqi_daofa": {
+      "failed": [],
+      "name": "xiyou_zhenqi_daofa",
+      "passed": 68,
+      "total": 68
+    },
+    "xiyou_boss_output": {
+      "failures": [],
+      "passed": 3823,
+      "total": 3823
+    }
+  },
+  "total": 8588,
+  "timings": {
+    "boss66-deps": {
+      "jobs": 2,
+      "globalJobs": 4,
+      "wallSeconds": 37.095,
+      "flakyRerunPassed": [],
+      "fingerprint": "",
+      "reused": [],
+      "scenes": [
+        {
+          "name": "xiyou_troop_events_half.tscn",
+          "seconds": 37.087,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 37.087,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_zhenqi_daofa.tscn",
+          "seconds": 3.939,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 3.939,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_formula_effects.tscn",
+          "seconds": 3.756,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 3.756,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_imported_balance.tscn",
+          "seconds": 3.204,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 3.204,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_shield.tscn",
+          "seconds": 3.001,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 3.001,
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    "boss66-final": {
+      "jobs": 1,
+      "globalJobs": 4,
+      "wallSeconds": 3.307,
+      "flakyRerunPassed": [],
+      "fingerprint": "",
+      "reused": [],
+      "scenes": [
+        {
+          "name": "xiyou_boss_output.tscn",
+          "seconds": 3.3,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 3.3,
+              "passed": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "guards": {
+    "passed": 16,
+    "total": 16
+  },
+  "import": "Exit 0; no SCRIPT ERROR or ERROR",
+  "documentation": "检查.sh original documentation/JSON/link/version block passed; final rerun below",
+  "iterations": {
+    "missingMPType": "No type2 native skill; use skill1 data clone with type2; native HP1/HPDrain865/MPDrain500 unchanged",
+    "hostFailures": [
+      "boss_output_initial_host_failure.json: 26/78 missing lifesteal cache; fixed with real onBattleStart/refresh",
+      "boss_output_second_host_failure.json: 3/78 OTB cross-realm arrays; fixed with window.Array",
+      "boss_output_third_host_failure.json: 3/78 OTB rendering; only display stub from existing otb_probe"
+    ],
+    "abortedGodot": "First dedicated runner used nonexistent XDB.load_db; own wrapper terminated and corrected, not flaky",
+    "firstQuickRun": {
+      "passed": 3817,
+      "total": 3823,
+      "failures": [
+        "drain.hp.1000.0.before.target.result.addedStates",
+        "drain.hp.1000.1.before.source.result.addedStates",
+        "drain.hp.1000.1.before.source.result.removedStates",
+        "drain.hp.1000.1.before.target.result.addedStates",
+        "drain.hp.1000.1.before.target.result.removedStates",
+        "drain.hp.1000.1.icon"
+      ],
+      "reason": "before result arrays were shared with live native result, and icon checked before action against native after value; corrected snapshot and test timing, no numeric behavior change",
+      "nativePreserved": "boss_output_shallow_snapshot_failure.json"
+    }
+  },
+  "unimplemented": [
+    "ordinary apply/executeDamage/applyPostDamageEval direct negative gain/set contexts",
+    "settled/direct stack for duplicate settlement in those future hosts",
+    "sequence targets contexts",
+    "stateOrigin and reactState1341/2550 sources",
+    "previous power books/capacity/PREE-ASUP/weapon-dependent/race-battle backlog"
+  ]
+}

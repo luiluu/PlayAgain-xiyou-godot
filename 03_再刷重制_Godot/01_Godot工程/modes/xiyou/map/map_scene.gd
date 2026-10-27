@@ -1053,7 +1053,7 @@ func open_race_menu(rank := 0) -> void:
 	hud.visible = true
 
 
-func open_menu() -> void:
+func open_menu(resume_items: Dictionary = {}) -> void:
 	# 挂机中不能呼叫菜单（Scene_Map.isMenuCalled）
 	if busy or _menu_open or XHangUp.is_active(XState.current):
 		return
@@ -1068,6 +1068,8 @@ func open_menu() -> void:
 	menu.map_shot = shot
 	menu.player_tile = player_screen_tile()
 	ui.add_child(menu)
+	if not resume_items.is_empty():
+		XItemScene.restore_capacity_return(menu,resume_items)
 	await menu.closed
 	var zhenqi := menu.zhenqi_requested
 	menu.queue_free()
@@ -1075,7 +1077,11 @@ func open_menu() -> void:
 	XItemMarks.deploy_start(XState.current)  # 回地图＝Scene_Map.start
 	hud.visible = true
 	_reset_transfer_button()
+	var reserved := owner.peek_common_event()
 	await run_reserved_common_event(owner)
+	var resume := XPassiveBooks.take_return(owner,reserved)
+	if not resume.is_empty():
+		open_menu.call_deferred(resume)
 	if zhenqi:
 		await run_zhenqi_retreat()
 	# 整队/换人后队首与跟随的行走图

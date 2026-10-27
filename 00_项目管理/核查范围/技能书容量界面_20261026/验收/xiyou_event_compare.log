@@ -1,0 +1,4 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+EVENT_COMPARE {"cases":4316,"match":4315,"mismatch":1,"nowMatching":[],"oracleErrors":["m221e3p0","ce1344"],"regressions":[]}
+TEST_RESULT={"passed":5,"total":5}

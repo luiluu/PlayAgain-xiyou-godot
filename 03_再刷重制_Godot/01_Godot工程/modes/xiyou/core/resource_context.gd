@@ -8,6 +8,45 @@ var slots := {}
 var labels := {}
 var error := ""
 var preview := false
+## Frozen YEP Core uses its saved base refresh for map/menu TP setters.
+var in_battle := true
+var boss_output := XBossOutputContext.new()
+## Host inputs without this context itself (avoid a reference cycle).
+var lifecycle_inputs := {}
+
+func state_context(b: XBattler) -> Dictionary:
+	var ctx := lifecycle_inputs.duplicate()
+	if b.lifecycle_context.get("resources") == self:
+		ctx.merge(b.lifecycle_context, true)
+	ctx.resources = self
+	ctx.random = random
+	ctx.execute = not preview
+	ctx.preview = preview
+	return ctx
+
+## One explicit operation domain for state changes, including nested Apply/Remove effects.
+func add_state(b: XBattler, id: int, inputs := {}) -> void:
+	if preview or bool(inputs.get("preview", false)) or b == null:
+		return
+	# Native isStateAddable checks appearance and the death state. Raw HP may
+	# already be zero while refresh/_die still needs to attach state 1.
+	if b.state_ids.has(1) or (b is XEnemy and b.hidden) or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
+		return
+	if result(b).removedStates.has(id):
+		return
+	var context := state_context(b)
+	context.merge(inputs, true)
+	context.resources = self
+	b.add_state_with_context(id, context.get("random"), context)
+
+func remove_state(b: XBattler, id: int) -> void:
+	if not preview and b != null:
+		b.remove_state_with_context(id, state_context(b))
+
+
+func publish() -> void:
+	for b in slots:
+		b.runtime_result = result(b).duplicate(true)
 
 static func empty_result() -> Dictionary:
 	return {"hpAffected": false, "hpDamage": 0.0, "mpDamage": 0.0, "tpDamage": 0.0,
@@ -77,6 +116,9 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		return {}
 	var before := snapshot(b)
 	var requested := amount
+	if amount < 0.0:
+		amount = -boss_output.loss_value(b, resource, -amount)
+	boss_output.enter_direct(b, resource)
 	var shown := amount
 	# 扣血先吸收护盾，击穿后剩余减半。敌人走 ShieldSystem 的 gainHp 钩子，结果槽记减免后；角色的 gainHp 是
 	# krz_state_re 在 Game_Actor 上的自有方法（盖过后装的 gainHp 钩子），结果槽记原值，由 setHp 钩子减免实际扣量。
@@ -90,17 +132,52 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		r.hpAffected = true
 	var old: float = b.get(resource)
 	# YEP Core setters skip refresh for an exactly unchanged input, after gain writes slots.
-	if old + amount != old:
-		b.set(resource, old + amount)
-		refresh(b)
-	# krz_state_re 的 gainHp／gainMp／gainTp：按请求值非零在调用结束后才标 dirty（本次内部 refresh 仍用旧缓存）
-	if requested != 0.0:
+	_set_resource(b, resource, old + amount)
+	boss_output.leave_direct()
+	# KRZ 收到 Boss 缩放后的值；敌人 gainHp 另在 ShieldSystem 吸收之后才进入 KRZ。
+	# 角色 gainHp 自有包装收到护盾前值。取整／敌人护盾归零均不额外置 dirty。
+	if shown != 0.0:
 		b.param_mark_dirty()
 	var after := snapshot(b)
 	var entry := {"receiver": labels.get(b, "b"), "resource": resource, "requestedDelta": requested,
 		"actualDelta": float(b.get(resource)) - old, "before": before, "after": after}
 	journal.append(entry)
 	return entry
+
+## 原版 setHp／setMp：护盾在 setter 内处理；不写伤害槽、不做 gain 末尾 dirty。
+func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
+	if not error.is_empty():
+		return {}
+	if not resource in ["hp", "mp", "tp"] or is_nan(value) or is_inf(value):
+		error = "invalid_resource_request"
+		return {}
+	var unsupported := supported(b)
+	if not unsupported.is_empty():
+		error = unsupported
+		return {}
+	var before := snapshot(b)
+	var old: float = b.get(resource)
+	_set_resource(b, resource, value)
+	var entry := {"receiver": labels.get(b, "b"), "resource": resource, "requestedValue": value,
+		"actualDelta": float(b.get(resource)) - old, "before": before, "after": snapshot(b)}
+	journal.append(entry)
+	return entry
+
+func _set_resource(b: XBattler, resource: String, value: float) -> void:
+	var old: float = b.get(resource)
+	if value < old:
+		value = old - boss_output.loss_value(b, resource, old - value)
+	boss_output.enter_direct(b, resource)
+	if resource == "hp" and value < old:
+		value = old - b.absorb_shield(old - value)
+	# YEP compares the requested input before refresh/clamp; an equal input does no refresh.
+	if value != old:
+		b.set(resource, value)
+		if resource == "tp" and not in_battle:
+			_refresh_base(b)
+		else:
+			refresh(b)
+	boss_output.leave_direct()
 
 ## 公式 a.addShield(x)／b.addShield(x)：不写结果槽；逐句记录里 resource 记 shield，前后快照照常（快照不含护盾，另记 shieldBefore／shieldAfter）。
 func add_shield(b: XBattler, amount: float) -> Dictionary:
@@ -122,7 +199,23 @@ func silent_gain(b: XBattler, resource: String, amount: float) -> void:
 		refresh(b)
 
 func refresh(b: XBattler) -> void:
+	var previous := b.lifecycle_context
+	b.lifecycle_context = state_context(b)
+	_refresh_type_before(b)
+	# The base/actor refresh reaches the global add lock; enemy's saved alias
+	# still reaches the base clamp. Both retain their outer KRZ refresh work.
+	if not (not b is XEnemy and XBattler._adding_state):
+		_refresh_base(b)
+		_refresh_death(b)
+	_refresh_type_after(b)
+	b.lifecycle_context = previous
+
+func _refresh_type_before(b: XBattler) -> void:
 	b.param_refresh()
+	if b is XActor:
+		b.release_to_party()
+
+func _refresh_base(b: XBattler) -> void:
 	var resisted := b.traits_set(XBattler.TRAIT_STATE_RESIST)
 	for id in b.state_ids.duplicate():
 		if resisted.has(id):
@@ -131,37 +224,21 @@ func refresh(b: XBattler) -> void:
 	b.hp = clampf(b.hp, 0.0, b.mhp)
 	b.mp = clampf(b.mp, 0.0, b.mmp)
 	b.tp = clampf(b.tp, 0.0, b.max_tp())
+
+func _refresh_death(b: XBattler) -> void:
 	var r := result(b)
-	if b.hp == 0.0 and not b.state_ids.has(1) and not b.immortal and not resisted.has(1) and not r.removedStates.has(1):
-		b.hp = 0.0
-		for id in b.state_ids.duplicate():
-			if not permanent(id):
-				b.state_ids.erase(id)
-				b.state_turns.erase(id)
-		b.buffs.fill(0)
-		b.buff_turns.fill(0)
-		b.zq_pojia_rate = 0.5
-		b.state_ids.append(1)
-		b._sort_states()
-		var state := XDB.rec("States", 1)
-		var lo := int(state.get("minTurns", 1))
-		var hi := int(state.get("maxTurns", lo))
-		var duration := floori(0.5 * (hi - lo + 1)) + lo if preview else b.roll_state_duration(lo, hi, random, str(labels.get(b, "b")) + ":1")
-		b.state_turns[1] = duration
-		if not r.addedStates.has(1):
-			r.addedStates.append(1)
-		if b is XEnemy and not preview:
-			XEnemyBook.note_death(b)  # AB_EnemyBook Game_Enemy.die：击败数即时 +1
-		if not preview:
-			XRaceBattle.on_death(b)  # 种族 die 包装：清反攻
+	if b.hp == 0.0 and not b.state_ids.has(1) and not b.immortal and not b.traits_set(XBattler.TRAIT_STATE_RESIST).has(1) and not r.removedStates.has(1):
+		var ctx := state_context(b)
+		ctx.duration_key = str(labels.get(b, "b")) + ":1"
+		b.add_state_with_context(1, random, ctx)
 	elif b.hp > 0.0 and b.state_ids.has(1):
-		b.state_ids.erase(1)
-		b.state_turns.erase(1)
-		if not r.removedStates.has(1):
-			r.removedStates.append(1)
+		b.remove_state_with_context(1, state_context(b))
 	b.resource_death_blocked = b.hp == 0.0 and not b.state_ids.has(1)
-	# The add-state recursion guard suppresses another resource clamp inside death.
-	# Recompute portable passive data, but leave the newly changed resource caps for
-	# the next setter, matching the measured state-dependent-cap sequence.
+
+func _refresh_type_after(b: XBattler) -> void:
 	if b is XActor or b is XEnemy:
 		b.refresh_passive()
+	# KRZ's outer type refresh clears need_refresh even when death's nested
+	# addState marked it again. gain() marks dirty only after this returns.
+	b.effect_dirty = false
+	b.param_dirty = false

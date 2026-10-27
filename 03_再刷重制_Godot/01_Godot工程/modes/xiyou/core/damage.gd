@@ -109,9 +109,9 @@ static func own_bonus(a: XBattler, e: int) -> float:
 			if seen.has(o):
 				continue
 			seen[o] = true
-			var m = o.get("meta", {}).get("passiveELUP%02d" % e)
-			if m != null:
-				value += XActor._num(m) / 100.0
+			for m in RegEx.create_from_string("(?i)<passiveELUP(\\d+)\\s*:\\s*([+-]?[\\d.]+)%?\\s*>").search_all(str(o.get("note", ""))):
+				if int(m.get_string(1)) == e:
+					value += float(m.get_string(2)) / 100.0
 	return value + (1.0 + _sum_yep(a, "elementMagnify", e, objs)) - 1.0
 
 ## 虚空～风（11–15）：取 max(自身, 火～暗中最低的一项)

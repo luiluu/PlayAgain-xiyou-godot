@@ -1,0 +1,421 @@
+{
+  "status": "dedicated and nine direct dependencies passed; inherited determinism failure; awaiting Claude cross-review",
+  "scope": "Numeric HP/MP YEP sequence commands with explicit actual target list; no generic EVAL host migration",
+  "baseline": "e1925bea",
+  "oracleCases": 88,
+  "oracleErrors": [],
+  "sourceIdentityEqual": true,
+  "nativeUnionEqualsFixture": true,
+  "fixtureSha256": "8af9688a6f526019446002f73247c3403382f9048b4ffc5154c4520c94bc40eb",
+  "nativeArtifactsSha256": {
+    "boss_sequence.json": "cd4d5587e30a3013f3f96d6653fc19297bb1d828743b8669b1c42af7be8987c5",
+    "boss_sequence_selected.json": "812954dfb5162349ac696b56c6784b447a5cadcfbb1de09048dabc7b93fe3ac4",
+    "boss_sequence_combined88.json": "8af9688a6f526019446002f73247c3403382f9048b4ffc5154c4520c94bc40eb"
+  },
+  "finalResults": {
+    "xiyou_imported_balance": {
+      "passed": 273,
+      "total": 273
+    },
+    "xiyou_boss_sequence": {
+      "failures": [],
+      "passed": 8315,
+      "total": 8315
+    },
+    "xiyou_action_sequence": {
+      "passed": 115,
+      "total": 115
+    },
+    "xiyou_state_effects_tp": {
+      "failures": [],
+      "passed": 537,
+      "test": "xiyou_state_effects_tp",
+      "total": 537
+    },
+    "xiyou_battle_common_events": {
+      "passed": 22,
+      "total": 22
+    },
+    "xiyou_formula_effects": {
+      "passed": 908,
+      "total": 908
+    },
+    "xiyou_battle_events": {
+      "passed": 108,
+      "total": 108
+    },
+    "xiyou_state_effects": {
+      "passed": 19949,
+      "total": 19949
+    },
+    "xiyou_boss_output": {
+      "failures": [],
+      "passed": 3823,
+      "total": 3823
+    },
+    "xiyou_boss_output_context": {
+      "failures": [],
+      "passed": 16621,
+      "total": 16621
+    }
+  },
+  "finalTimings": {
+    "jobs": 2,
+    "globalJobs": 4,
+    "wallSeconds": 30.163,
+    "flakyRerunPassed": [],
+    "fingerprint": "",
+    "reused": [],
+    "scenes": [
+      {
+        "name": "xiyou_action_sequence.tscn",
+        "seconds": 11.719,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 11.719,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_battle_common_events.tscn",
+        "seconds": 10.188,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 10.188,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_battle_events.tscn",
+        "seconds": 6.2,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 6.2,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_state_effects.tscn",
+        "seconds": 5.507,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 5.507,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_boss_sequence.tscn",
+        "seconds": 5.099,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 5.099,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_boss_output.tscn",
+        "seconds": 4.688,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.688,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_state_effects_tp.tscn",
+        "seconds": 4.187,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.187,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_boss_output_context.tscn",
+        "seconds": 4.151,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.151,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_formula_effects.tscn",
+        "seconds": 4.101,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 4.101,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_imported_balance.tscn",
+        "seconds": 3.964,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.964,
+            "passed": true
+          }
+        ]
+      }
+    ]
+  },
+  "finalAssertions": 50671,
+  "inheritedDeterminism": {
+    "currentBeforeLastSlotsFix": {
+      "passed": 374,
+      "total": 382
+    },
+    "baseline": {
+      "passed": 374,
+      "total": 382
+    },
+    "identicalFailures": [
+      "FAIL early_inventory_rule <null>",
+      "FAIL early_inventory_rule <null>",
+      "FAIL early_inventory_rule <null>",
+      "FAIL early_inventory_rule <null>",
+      "FAIL early_inventory_rule <null>",
+      "FAIL early_inventory_rule <null>",
+      "FAIL early_inventory_rule <null>",
+      "FAIL early_inventory_rule <null>"
+    ],
+    "baselineTrackedFileBytesVerified": 929,
+    "baselineSnapshot": "03_再刷重制_Godot/03_转换工具/mv_oracle/.sandbox/boss69_determinism_baseline_project",
+    "baselineTimings": {
+      "jobs": 2,
+      "globalJobs": 4,
+      "wallSeconds": 23.728,
+      "flakyRerunPassed": [],
+      "fingerprint": "",
+      "reused": [],
+      "scenes": [
+        {
+          "name": "xiyou_determinism.tscn",
+          "seconds": 23.717,
+          "passed": false,
+          "attempts": [
+            {
+              "rc": 1,
+              "seconds": 23.717,
+              "passed": false
+            }
+          ]
+        }
+      ]
+    },
+    "currentTimings": {
+      "jobs": 2,
+      "globalJobs": 4,
+      "wallSeconds": 67.094,
+      "flakyRerunPassed": [],
+      "fingerprint": "",
+      "reused": [],
+      "scenes": [
+        {
+          "name": "xiyou_determinism.tscn",
+          "seconds": 28.552,
+          "passed": false,
+          "attempts": [
+            {
+              "rc": 1,
+              "seconds": 28.552,
+              "passed": false
+            },
+            {
+              "rc": 1,
+              "seconds": 21.88,
+              "passed": false
+            }
+          ]
+        },
+        {
+          "name": "xiyou_battle_common_events.tscn",
+          "seconds": 12.792,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 12.792,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_action_sequence.tscn",
+          "seconds": 11.98,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 11.98,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_battle_events.tscn",
+          "seconds": 4.858,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 4.858,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_state_effects.tscn",
+          "seconds": 4.228,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 4.228,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_boss_sequence.tscn",
+          "seconds": 3.756,
+          "passed": false,
+          "attempts": [
+            {
+              "rc": 1,
+              "seconds": 3.756,
+              "passed": false
+            },
+            {
+              "rc": 1,
+              "seconds": 3.651,
+              "passed": false
+            }
+          ]
+        },
+        {
+          "name": "xiyou_state_effects_tp.tscn",
+          "seconds": 3.381,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 3.381,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_boss_output.tscn",
+          "seconds": 3.362,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 3.362,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_boss_output_context.tscn",
+          "seconds": 3.179,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 3.179,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_formula_effects.tscn",
+          "seconds": 3.168,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 3.168,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "xiyou_imported_balance.tscn",
+          "seconds": 3.089,
+          "passed": true,
+          "attempts": [
+            {
+              "rc": 0,
+              "seconds": 3.089,
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    "sharedGeneratedManifestSha256": "27d9b36a25e39c42eddc74a6d279949bd314a4fee5cbe27c428449041d8bc544",
+    "classification": "Inherited stable failure, not flaky; not repaired in this scope; exact base source files frozen after byte equality proof"
+  },
+  "iterations": [
+    "First 87 dedicated: 42 failures traced to ENEMY/ACTOR index and FIRST selectors absent; fixed only sampled selectors",
+    "First ten-dependency run: actor hidden property access generated SCRIPT ERROR; fixed actor/enemy type guard",
+    "Interleaved native case confirmed stale publish reset mpDamage 8 to 0; pre-fix dedicated 8312/8315; clear prior operation slots before gain",
+    "TP left on existing sequence path; no TP migration claim"
+  ],
+  "limitations": [
+    "Generic EVAL script host not ported",
+    "Remaining makeActionTargets forms not expanded; FIRST empty-target native exception behavior not claimed",
+    "stateOrigin and react1341/2550 not started",
+    "Inherited early_inventory_rule determinism 8 failures remain; no all-checks-pass claim"
+  ],
+  "checks": "original 检查.sh JSON/link/version block passed dev.173; node --check, MV guard 16/16 and git diff --check passed",
+  "runtimeFilesSha256": {
+    "modes/xiyou/core/boss_output_context.gd": "a36e3bd14f3159f7dcec7b87547350744eacef8f0fcb849ee87aef58d63d29a6",
+    "modes/xiyou/battle/action_sequence.gd": "a59cc93f774d04d21c21b5264112d35dc844e5c379c8ca1b54f3b7ceaf3817bd",
+    "modes/xiyou/battle/battle_logic.gd": "58363c492d876a65b17743fc7a77e0d9297b0ebc1d475aa45aaa032301a6621f"
+  },
+  "cleanup": {
+    "successfulTaskNames": [
+      "boss69-sequence-smoke",
+      "boss69-sequence-full",
+      "boss69-sequence-final2",
+      "boss69-sequence-interleaved",
+      "boss69-sequence-import",
+      "boss69-sequence-final3"
+    ],
+    "removedTemporaryPaths": 32,
+    "preserved": "All failed logs, determinism baseline snapshot and logs, all native .sandbox artifacts, generated and worktree"
+  }
+}

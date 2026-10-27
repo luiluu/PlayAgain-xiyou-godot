@@ -78,15 +78,17 @@ class Batch2TranslationTests(unittest.TestCase):
         out = {}
         for row in self.rows:
             for e in parse_state_effects(row['note']):
-                if e['op'] in ('add_state', 'gain_steps', 'set_variable', 'syntax_error'):
+                if e['op'] in ('add_state', 'gain_steps', 'gain_resource', 'set_variable', 'syntax_error'):
                     out.setdefault(e['op'], []).append((row['state'], e))
         return out
 
     def test_inventory(self):
         ops = self.ops()
         self.assertEqual({k: len(v) for k, v in ops.items()},
-                         {'add_state': 23, 'gain_steps': 11, 'set_variable': 4, 'syntax_error': 9})
-        self.assertEqual(sorted(s for s, _ in ops['gain_steps']), [79, 607, 609, 630, 734, 735, 736, 857, 917, 1334, 1336])
+                         {'add_state': 23, 'gain_steps': 8, 'gain_resource': 3, 'set_variable': 4, 'syntax_error': 9})
+        self.assertEqual(sorted(s for s, _ in ops['gain_steps']), [79, 630, 734, 735, 736, 917, 1334, 1336])
+        self.assertEqual(sorted((s, e['resource'], e['amount'], e['requires']) for s, e in ops['gain_resource']),
+                         [(607, 'tp', 200, ['resources']), (609, 'tp', 200, ['resources']), (857, 'tp', 50, ['resources'])])
         self.assertEqual(sorted((s, e['id']) for s, e in ops['set_variable']), [(1351, 1176), (1683, 1683), (1733, 966), (2560, 1597)])
         self.assertEqual(sorted(s for s, _ in ops['syntax_error']), [1070, 1351, 1352, 1635, 1636, 1669, 1671, 1747, 2045])
         for s, e in ops['add_state']:
@@ -121,7 +123,8 @@ class Batch2TranslationTests(unittest.TestCase):
                           ('Battle', '$gameVariables.setValue(5, -2);'), ('Battle', '$gameSwitches.setValue(5, true);')]:
             with self.subTest(code=code):
                 self.assertEqual(one(tag, code)['op'], 'js')
-        self.assertEqual(one('Battle', 'user.gainTp(200);')['steps'][0]['resource'], 'tp')
+        self.assertEqual(one('Battle', 'user.gainTp(200);'), {'phase': 'battle', 'op': 'gain_resource', 'recipient': 'user', 'resource': 'tp', 'amount': 200, 'requires': ['resources']})
+        self.assertEqual(one('Battle', 'user.gainTp(201);')['steps'][0]['resource'], 'tp')
         self.assertEqual(len(one('Victory', 'var rate = 0.2; var value = Math.ceil(user.mhp * rate); user.gainHp(value);')['steps']), 1)
         for tag, code in [('Turn End', 'user.gainTp(200);'), ('Battle', 'target.gainHp(5);'), ('Battle', 'user.gainHp(user.atk);'),
                           ('Battle', 'user.gainHp(Math.random());'), ('Battle', 'user.gainHp(v[3]);'), ('Battle', 'user.gainTp(200); evil();'),

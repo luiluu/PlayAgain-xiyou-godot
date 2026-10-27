@@ -7,8 +7,8 @@ extends RefCounted
 const BATTLER_PHASES := ["battle", "turn_start", "turn_end", "regenerate", "action_start", "victory", "escape", "defeat"]
 const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm", "react", "respond", "establish"]
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
-const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "poison_stack", "poison_tick",
-	"add_state", "gain_steps", "set_variable", "syntax_error", "counter_init", "counter_set"]
+const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "gain_resource", "param_add",
+	"poison_stack", "poison_tick", "add_state", "gain_steps", "set_variable", "syntax_error", "counter_init", "counter_set"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -86,11 +86,12 @@ static func run(phase: String, holder: XBattler, ctx := {}) -> float:
 	var value := float(ctx.get("value", 0.0))
 	if holder == null:
 		return value
-	var execute := bool(ctx.get("execute", true))
+	var execute := _execution_requested(holder, ctx)
 	# processStateEval uses states directly; typestates owns all action/turn lists.
 	var rows: Array = holder.states().duplicate() if phase in ["battle", "victory", "escape", "defeat"] else holder.effect_states(phase, execute).duplicate()
 	for st in rows:
 		var next := ctx.duplicate()
+		next.execute = execute
 		next.value = value
 		value = run_one(phase, holder, st, next)
 	return value
@@ -99,10 +100,32 @@ static func run(phase: String, holder: XBattler, ctx := {}) -> float:
 static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) -> float:
 	var c := context_for(phase, holder, int(st.id), ctx)
 	c.value = float(ctx.get("value", 0.0))
-	var execute := bool(ctx.get("execute", true))
 	var effects: Array = st.get("effects", []).filter(func(e): return str(e.get("phase", "")) == phase)
 	if effects.is_empty():
 		return c.value
+	# A cloned actor has no persistent capability. Keep this invocation silent,
+	# including observer/diagnostics, even when its caller forgot execute=false.
+	if effects.any(func(e): return e.get("op") == "param_add") and c.user is XActor and not c.user.can_add_param():
+		c.execute = false
+	var execute := bool(c.execute)
+	# Game_Battler.customEffectEval always shadows the enclosing action domain,
+	# including non-Boss/missing origins. Only native react1341/2550 override Action.
+	var resources: XResourceContext = c.get("resources")
+	var owns_resources := execute and resources == null and effects.any(func(e): return e.get("op") in ["poison_tick", "gain_steps", "add_state"])
+	if owns_resources:
+		resources = XResourceContext.new()
+		resources.random = c.get("random")
+		for key in ["variables", "switches", "party_members", "emit"]:
+			if c.has(key):
+				resources.lifecycle_inputs[key] = c[key]
+		resources.seed_result(holder, holder.runtime_result)
+		c.resources = resources
+	var special_react := phase == "react" and int(st.id) in [1341, 2550]
+	var origin_domain := execute and resources != null and (not phase in ACTION_PHASES or special_react)
+	if origin_domain:
+		var source: XBattler = holder if special_react and int(st.id) == 2550 else c.origin
+		var victim: XBattler = (c.user if int(st.id) == 2550 else c.target) if special_react else holder
+		resources.boss_output.enter_action(source, victim)
 	_stack.push_back(c)
 	if execute and observer.is_valid():
 		observer.call(phase, int(st.id), holder, c)
@@ -128,17 +151,26 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				_diagnose(phase, int(st.id), holder, "value_program_unavailable")
 		elif op == "value_query":
 			c.value = _query_value(e, c, execute)
-		elif op == "poison_stack":
+		elif op == "param_add" and execute:
+			_add_params(e, c)
+		elif op == "gain_resource" and execute:
+			if resources == null:
+				_diagnose(phase, int(st.id), holder, "resource_context_missing")
+			else:
+				resources.gain(c.user, str(e.resource), float(e.amount))
+				if not resources.error.is_empty():
+					_diagnose(phase, int(st.id), holder, resources.error)
+		elif op == "poison_stack" and execute:
 			# Apply：x = x || 0; x += n。Remove：x = 0。层数挂在持有者身上，所有叠毒状态共用
 			holder.state_data["_stackingPoison"] = (_truthy_number(holder.state_data.get("_stackingPoison")) + float(e.n)) if e.mode == "add" else 0.0
 		elif op == "poison_tick" and execute:
-			_poison_tick(e, holder, c, ctx)
+			_poison_tick(e, holder, c, c)
 		elif op == "add_state" and execute:
 			# 暴击后加状态（Establish）：只看这个目标的结果槽 critical；addState 的回合参数原版不认
 			if not e.get("criticalOnly", false) or c.get("critical", false):
-				_add_state(c.get(str(e.who)), int(e.id), ctx)
+				_add_state(c.get(str(e.who)), int(e.id), c)
 		elif op == "gain_steps" and execute:
-			_gain_steps(e, holder, c, ctx)
+			_gain_steps(e, holder, c, c)
 		elif op == "set_variable" and execute:
 			# Game_Variables.setValue：编号不在 1..System.variables 长度-1 内的写入原版直接忽略（如 1683 号脚本）
 			var vid := int(e.id)
@@ -174,7 +206,49 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 			if execute:
 				_diagnose(phase, int(st.id), holder, op)
 	_stack.pop_back()
+	if origin_domain:
+		resources.boss_output.leave_action()
+	if owns_resources:
+		resources.publish()
 	return c.value
+
+
+## Execute-only permanent writes. Native refresh runs after EVERY addParam,
+## in the enclosing operation's resource domain (including nested death hooks).
+static func _add_params(effect: Dictionary, ctx: Dictionary) -> void:
+	var target: XBattler = ctx.target
+	if effect.get("when") == "target_dead":
+		if target == null:
+			return
+		# Native isDead also requires isAppeared. HP<=0 is an independent
+		# short-circuit, so hidden HP0 still grants the permanent bonus.
+		var death_state: bool = target.state_ids.has(1) and (not target is XEnemy or not (target as XEnemy).hidden)
+		if not (target.hp <= 0.0 or death_state):
+			return
+	if not ctx.user is XActor:
+		_diagnose(ctx.phase, int(ctx.state_id), ctx.holder, "param_add_actor_required")
+		return
+	var user: XActor = ctx.user
+	if not user.can_add_param():
+		return
+	var previous := user.lifecycle_context
+	user.lifecycle_context = ctx
+	for step in effect.steps:
+		var amount := float(step.amount)
+		if effect.scale == "level":
+			amount *= user.level
+		user.add_param(int(step.param), amount)
+	user.lifecycle_context = previous
+
+
+## Explicit preview markers cannot be overridden by execute=true. Resolve this
+## before typestates, observer and diagnostics, as well as before mutation.
+static func _execution_requested(holder: XBattler, ctx: Dictionary) -> bool:
+	for inputs in [holder.lifecycle_context, ctx]:
+		var resources: XResourceContext = inputs.get("resources")
+		if bool(inputs.get("preview", false)) or (resources != null and resources.preview):
+			return false
+	return bool(ctx.get("execute", holder.lifecycle_context.get("execute", true)))
 
 
 ## 叠毒 Regenerate 整块：层数 = 层数 || 1（写回）；伤害式按来源能力算；target.gainHp(-伤害) 走护盾吸收与死亡结算。
@@ -192,33 +266,27 @@ static func _poison_tick(e: Dictionary, holder: XBattler, c: Dictionary, ctx: Di
 	if not out.available:
 		_diagnose("regenerate", int(c.state_id), holder, "poison_tick_unavailable")
 		return
-	var rc := XResourceContext.new()
-	rc.random = ctx.get("random")
+	var rc: XResourceContext = ctx.resources
+	# regenerateStateEffects clears this holder's result, while retaining the source domain.
+	rc.seed_result(holder, XResourceContext.empty_result())
 	rc.gain(holder, "hp", -float(out.value))
 	var r := rc.result(holder)
 	if ctx.get("emit") is Callable and ctx.emit.is_valid():
 		ctx.emit.call({"type": "regen", "target": holder, "hp": r.hpDamage, "animation": int(e.animation), "state": int(c.state_id)})
+	# The translated original460-style block calls clearResult after its popup.
+	rc.seed_result(holder, XResourceContext.empty_result())
 
 
 ## Game_Battler.addState：isStateAddable（活着、未抵抗、本结果槽没刚去掉它）才加；已有的只续回合，都记入 addedStates
 static func _add_state(b: XBattler, id: int, ctx: Dictionary) -> void:
-	if b == null or not b.is_alive() or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
-		return
-	var rc = ctx.get("resources")
-	if rc != null and rc.result(b).removedStates.has(id):
-		return
-	b.add_state(id, ctx.get("random"))
-	if rc != null and not rc.result(b).addedStates.has(id):
-		rc.result(b).addedStates.append(id)
+	var rc: XResourceContext = ctx.resources
+	rc.add_state(b, id, ctx)
 
 
 ## user.gainHp/Mp/Tp(式) 逐句：式子按持有者（a）算，经原生 gain（护盾、结果槽、refresh）。
 ## 战斗外层没有行动结果槽时每块用新的（Battle／Victory 脚本前原版结果槽为空）。
 static func _gain_steps(e: Dictionary, holder: XBattler, c: Dictionary, ctx: Dictionary) -> void:
-	var rc = ctx.get("resources")
-	if rc == null:
-		rc = XResourceContext.new()
-		rc.random = ctx.get("random")
+	var rc: XResourceContext = ctx.resources
 	for step in e.steps:
 		var out := PhaseValueProgram.new().run_phase(step.program, c, 0.0, true)
 		if not out.available:
@@ -302,19 +370,22 @@ static func _rounded(value: float, kind: String) -> float:
 ## Action 版（Game_Action.customEffectEval）：user＝attacker、target＝defender，item 为当前行动。
 ## origin：持有者身上该状态的来源，没有或已失效时回退为持有者（BSC stateOrigin 的无来源回退）。
 static func context_for(phase: String, holder: XBattler, state_id: int, ctx := {}) -> Dictionary:
+	# Preview cannot borrow real mutation capabilities, even inside a live callback.
+	var inputs: Dictionary = holder.lifecycle_context.duplicate() if bool(ctx.get("execute", true)) else {}
+	inputs.merge(ctx, true)
 	var origin: XBattler = holder
 	var ref = holder.state_origins.get(state_id)
 	if ref is WeakRef and ref.get_ref() != null:
 		origin = ref.get_ref()
-	var c := {"phase": phase, "state_id": state_id, "holder": holder, "origin": origin}
+	var c := {"phase": phase, "state_id": state_id, "holder": holder, "origin": origin, "execute": _execution_requested(holder, ctx)}
 	if phase in ACTION_PHASES:
-		c.merge({"attacker": ctx.get("attacker"), "defender": ctx.get("defender"), "item": ctx.get("item"),
-			"user": ctx.get("attacker"), "target": ctx.get("defender")})
+		c.merge({"attacker": inputs.get("attacker"), "defender": inputs.get("defender"), "item": inputs.get("item"),
+			"user": inputs.get("attacker"), "target": inputs.get("defender")})
 	else:
 		c.merge({"user": holder, "target": holder})
 	for key in ["item", "critical", "resources", "record", "random", "variables", "switches", "party_members", "forced_elements", "added_elements", "emit"]:
-		if ctx.has(key):
-			c[key] = ctx[key]
+		if inputs.has(key):
+			c[key] = inputs[key]
 	return c
 
 

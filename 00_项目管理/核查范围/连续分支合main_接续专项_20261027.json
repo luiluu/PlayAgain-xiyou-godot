@@ -1,0 +1,63 @@
+{
+  "status": "targeted diagnostics verified; sync and final integration pending",
+  "base": "9b140f365f93c2cfa4b19d85b6ddd72576830c16",
+  "source": "frozen v0.28; state_operation 8 cases and state_merge_context 12 cases already retained",
+  "verified": [
+    {
+      "scene": "xiyou_state_operation.tscn",
+      "result": {
+        "passed": 1431,
+        "total": 1431
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/targeted2/xiyou_state_operation.log"
+    },
+    {
+      "scene": "xiyou_boss_state_origin.tscn",
+      "result": {
+        "failures": [],
+        "passed": 15723,
+        "total": 15723
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/targeted2/xiyou_boss_state_origin.log"
+    },
+    {
+      "scene": "xiyou_state_effects_tp.tscn",
+      "result": {
+        "failures": [],
+        "passed": 537,
+        "test": "xiyou_state_effects_tp",
+        "total": 537
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/targeted2/xiyou_state_effects_tp.log"
+    },
+    {
+      "scene": "xiyou_formula_effects.tscn",
+      "result": {
+        "passed": 908,
+        "total": 908
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/targeted2/xiyou_formula_effects.log"
+    },
+    {
+      "scene": "xiyou_state_merge_context.tscn",
+      "result": {
+        "passed": 866,
+        "total": 866
+      },
+      "log": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/context3/xiyou_state_merge_context.log"
+    }
+  ],
+  "remaining": [
+    "sync ordinary incremental after other sync exits",
+    "xiyou_state_js oracle missing until sync",
+    "218-scene integration selection and non-Godot checks"
+  ],
+  "failedEvidence": [
+    "diagnostic1.log",
+    "targeted2/xiyou_state_merge_context.log",
+    "targeted2/xiyou_state_merge_context.rerun1.log",
+    "targeted2/xiyou_state_js.log",
+    "targeted2/xiyou_state_js.rerun1.log"
+  ],
+  "syncWaitingRunId": "5a0865fbf36a4897808812d013b7333d"
+}

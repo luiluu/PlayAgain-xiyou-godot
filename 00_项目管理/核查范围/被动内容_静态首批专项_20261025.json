@@ -1,0 +1,452 @@
+{
+ "date": "2026-10-25",
+ "executor": "Codex（沙僧）",
+ "crossReview": "待Claude",
+ "baseline": "7bfb4807",
+ "implementation": "fcec2676",
+ "fixtureSha256": "e0cbeffe51c76be2c2c05092e6300c49b3ffe11dc429178bc8435836b392b468",
+ "nativeCases": 338,
+ "nativeErrors": [],
+ "ordinaryItems": 247,
+ "ordinaryLearningEffects": 248,
+ "technologies": 90,
+ "excludedPowerBooks": [
+  {
+   "item": 1654,
+   "skill": 7238
+  },
+  {
+   "item": 1656,
+   "skill": 7240
+  },
+  {
+   "item": 1674,
+   "skill": 7245
+  },
+  {
+   "item": 1683,
+   "skill": 7246
+  },
+  {
+   "item": 1718,
+   "skill": 7247
+  }
+ ],
+ "conditions": {
+  "actor": 1,
+  "level": 37,
+  "emptyEquipment": true,
+  "bondCapacityVariable9": 999,
+  "enemy": {
+   "enemy": 1,
+   "level": 37,
+   "param": [
+    7500,
+    6,
+    12,
+    13,
+    12,
+    13,
+    15,
+    30
+   ]
+  },
+  "difficulty": 2,
+  "damageSkills": [
+   1,
+   125,
+   275
+  ],
+  "growth": "retain each native raw rounded value, settled and growth; compare Godot settled with native settled/growth, same existing xiyou_rules scope; O-050 remains excluded"
+ },
+ "timings": {
+  "jobs": 2,
+  "globalJobs": 4,
+  "wallSeconds": 23.086,
+  "flakyRerunPassed": [],
+  "fingerprint": "",
+  "reused": [],
+  "scenes": [
+   {
+    "name": "xiyou_passive_content.tscn",
+    "seconds": 23.08,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 23.08,
+      "passed": true
+     }
+    ]
+   },
+   {
+    "name": "xiyou_battle_common_events.tscn",
+    "seconds": 6.24,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 6.24,
+      "passed": true
+     }
+    ]
+   },
+   {
+    "name": "xiyou_formula_effects.tscn",
+    "seconds": 3.689,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 3.689,
+      "passed": true
+     }
+    ]
+   },
+   {
+    "name": "xiyou_actor_bonus.tscn",
+    "seconds": 3.264,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 3.264,
+      "passed": true
+     }
+    ]
+   },
+   {
+    "name": "xiyou_param_states.tscn",
+    "seconds": 3.01,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 3.01,
+      "passed": true
+     }
+    ]
+   }
+  ]
+ },
+ "scenes": [
+  {
+   "scene": "xiyou_passive_content.tscn",
+   "result": {
+    "failures": [],
+    "passed": 113142,
+    "samples": [],
+    "total": 113142
+   },
+   "attempts": [
+    {
+     "rc": 0,
+     "seconds": 23.08,
+     "passed": true
+    }
+   ]
+  },
+  {
+   "scene": "xiyou_battle_common_events.tscn",
+   "result": {
+    "passed": 22,
+    "total": 22
+   },
+   "attempts": [
+    {
+     "rc": 0,
+     "seconds": 6.24,
+     "passed": true
+    }
+   ]
+  },
+  {
+   "scene": "xiyou_formula_effects.tscn",
+   "result": {
+    "passed": 908,
+    "total": 908
+   },
+   "attempts": [
+    {
+     "rc": 0,
+     "seconds": 3.689,
+     "passed": true
+    }
+   ]
+  },
+  {
+   "scene": "xiyou_actor_bonus.tscn",
+   "result": {
+    "passed": 736,
+    "total": 736
+   },
+   "attempts": [
+    {
+     "rc": 0,
+     "seconds": 3.264,
+     "passed": true
+    }
+   ]
+  },
+  {
+   "scene": "xiyou_param_states.tscn",
+   "result": {
+    "failures": [],
+    "passed": 582,
+    "total": 582
+   },
+   "attempts": [
+    {
+     "rc": 0,
+     "seconds": 3.01,
+     "passed": true
+    }
+   ]
+  }
+ ],
+ "total": 115390,
+ "task": {
+  "runId": "b1af10c7caaf4cf4ab54f0120c8742db",
+  "status": "done",
+  "exitCode": 0,
+  "pid": 59852,
+  "startedAt": "2026-10-25T17:23:05.472310+00:00",
+  "command": [
+   "python3",
+   "-u",
+   "03_再刷重制_Godot/04_验证/本地结果/passive-content/final.py"
+  ],
+  "childPGID": 59853,
+  "childIdentity": {
+   "pid": 59853,
+   "pgid": 59853,
+   "startedAt": "Sun Oct 25 18:23:05 2026    "
+  },
+  "finishedAt": "2026-10-25T17:23:31.742710+00:00"
+ },
+ "developmentFindings": [
+  {
+   "stage": "focus",
+   "total": 114812,
+   "passed": 84535,
+   "samples": [
+    {
+     "detail": [
+      961.0,
+      619.0
+     ],
+     "tag": "baseline.damage.0"
+    },
+    {
+     "detail": [
+      1634.0,
+      1052.0
+     ],
+     "tag": "baseline.damage.1"
+    },
+    {
+     "detail": [
+      769.0,
+      495.0
+     ],
+     "tag": "baseline.damage.2"
+    },
+    {
+     "detail": [
+      1307.0,
+      841.0
+     ],
+     "tag": "baseline.damage.3"
+    },
+    {
+     "detail": [
+      2472.0,
+      1592.0
+     ],
+     "tag": "baseline.damage.4"
+    },
+    {
+     "detail": [
+      4203.0,
+      2706.0
+     ],
+     "tag": "baseline.damage.5"
+    },
+    {
+     "detail": [
+      961.0,
+      619.0
+     ],
+     "tag": "book.106.full.damage.0"
+    },
+    {
+     "detail": [
+      1634.0,
+      1052.0
+     ],
+     "tag": "book.106.full.damage.1"
+    },
+    {
+     "detail": [
+      769.0,
+      495.0
+     ],
+     "tag": "book.106.full.damage.2"
+    },
+    {
+     "detail": [
+      1307.0,
+      841.0
+     ],
+     "tag": "book.106.full.damage.3"
+    },
+    {
+     "detail": [
+      2472.0,
+      1592.0
+     ],
+     "tag": "book.106.full.damage.4"
+    },
+    {
+     "detail": [
+      4203.0,
+      2706.0
+     ],
+     "tag": "book.106.full.damage.5"
+    }
+   ],
+   "nonDamageFindings": [
+    "book.1654.forgot.maxTp",
+    "book.1654.forgot.preserveTp",
+    "book.1656.full.maxTp",
+    "book.1656.full.preserveTp",
+    "book.1656.repeat.maxTp",
+    "book.1656.repeat.preserveTp",
+    "book.1656.low.maxTp",
+    "book.1656.low.preserveTp",
+    "book.1656.forgot.xparam.0",
+    "book.1656.forgot.xparam.2",
+    "book.1656.forgot.maxTp",
+    "book.1656.forgot.preserveTp"
+   ],
+   "scriptErrors": [
+    "SCRIPT ERROR: Invalid access to property or key 'value1' on a base object of type 'Dictionary'.",
+    "SCRIPT ERROR: Invalid access to property or key 'value1' on a base object of type 'Dictionary'.",
+    "SCRIPT ERROR: Invalid access to property or key 'value1' on a base object of type 'Dictionary'."
+   ]
+  },
+  {
+   "stage": "focus2",
+   "total": 113142,
+   "passed": 105022,
+   "samples": [
+    {
+     "detail": [
+      961.0,
+      619.0
+     ],
+     "tag": "baseline.damage.0"
+    },
+    {
+     "detail": [
+      1634.0,
+      1052.0
+     ],
+     "tag": "baseline.damage.1"
+    },
+    {
+     "detail": [
+      769.0,
+      495.0
+     ],
+     "tag": "baseline.damage.2"
+    },
+    {
+     "detail": [
+      1307.0,
+      841.0
+     ],
+     "tag": "baseline.damage.3"
+    },
+    {
+     "detail": [
+      2472.0,
+      1592.0
+     ],
+     "tag": "baseline.damage.4"
+    },
+    {
+     "detail": [
+      4203.0,
+      2706.0
+     ],
+     "tag": "baseline.damage.5"
+    },
+    {
+     "detail": [
+      961.0,
+      619.0
+     ],
+     "tag": "book.106.full.damage.0"
+    },
+    {
+     "detail": [
+      1634.0,
+      1052.0
+     ],
+     "tag": "book.106.full.damage.1"
+    },
+    {
+     "detail": [
+      769.0,
+      495.0
+     ],
+     "tag": "book.106.full.damage.2"
+    },
+    {
+     "detail": [
+      1307.0,
+      841.0
+     ],
+     "tag": "book.106.full.damage.3"
+    },
+    {
+     "detail": [
+      2472.0,
+      1592.0
+     ],
+     "tag": "book.106.full.damage.4"
+    },
+    {
+     "detail": [
+      4203.0,
+      2706.0
+     ],
+     "tag": "book.106.full.damage.5"
+    }
+   ],
+   "nonDamageFindings": [
+    "book.1998.learned",
+    "book.1998.learned"
+   ],
+   "scriptErrors": [
+    "SCRIPT ERROR: Invalid access to property or key 'value1' on a base object of type 'Dictionary'.",
+    "SCRIPT ERROR: Invalid access to property or key 'value1' on a base object of type 'Dictionary'.",
+    "SCRIPT ERROR: Invalid access to property or key 'value1' on a base object of type 'Dictionary'."
+   ]
+  }
+ ],
+ "documentsExit": 0,
+ "guards": {
+  "passed": 16,
+  "total": 16
+ },
+ "mainAncestorAtValidation": "d6045c3e413a3d4b1ec1093d1fd861326b5949d8",
+ "pending": [
+  "five power books and their learn/forget rules",
+  "bond capacity full refund/common event",
+  "preemptive/surprise probabilities",
+  "equipped WPNM/SkEType damage",
+  "boss2651 dynamic lifecycle/output context"
+ ]
+}

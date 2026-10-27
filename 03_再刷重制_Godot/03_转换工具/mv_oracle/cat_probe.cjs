@@ -212,8 +212,8 @@ chainCase('slow20', 20, [S.slash, S.cross, S.flurry, S.sword], false, [{skill: S
 // 剑 92「天外天·轩辕剑」<AgainUseAll: 100%>；技能 1817「海军王」atkk +1（沙僧50 早期批 P2-1）
 // 剑 92 攻击很高，敌人生命加到 1e16，免得第一段就打倒、看不出每段的重复
 chainCase('sword92', 30, [S.slash, S.cross, S.sword], false, [{skill: S.slash, round: 1}, {skill: S.cross, round: 1}], {sword: 92, bigHp: 1e16});
-// 1817 另带 ConsumeReduceZj 50%（战技消耗减半），Godot 尚未接这个被动，tpGap 标出（交沙僧）
-chainCase('atkk1817', 30, [S.slash, S.cross, S.sword, 1817], false, [{skill: S.slash, round: 1}, {skill: S.cross, round: 1}], {tpGap: 'ConsumeReduceZj'});
+// 1817 另带 ConsumeReduceZj 50%（战技消耗减半），完整核对技能扣TP。
+chainCase('atkk1817', 30, [S.slash, S.cross, S.sword, 1817], false, [{skill: S.slash, round: 1}, {skill: S.cross, round: 1}]);
 // 连斩速度段：敌人速度加到与哈基米相近（+0 段）、略慢（+1 段）
 chainCase('agiEven', 30, [S.slash, S.cross, S.flurry, S.sword], false, [{skill: S.flurry, round: 1}, {skill: S.slash, round: 1}, {skill: S.cross, round: 1}], {enemyAgiPlus: 600});
 chainCase('agiNear', 30, [S.slash, S.cross, S.flurry, S.sword], false, [{skill: S.flurry, round: 1}], {enemyAgiPlus: 150});
