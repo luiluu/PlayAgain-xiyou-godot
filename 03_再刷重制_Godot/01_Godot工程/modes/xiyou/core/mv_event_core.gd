@@ -318,10 +318,16 @@ func _execute(c: Dictionary):
 			_record_gain(kind, int(p[0]), 0, str(rec.get("name", "")))
 		129:
 			if int(p[1]) == 0:
-				state().add_actor(int(p[0]))
+				state().add_actor(int(p[0]), _notice)  # 超强者在地狱以下不入队：提示走本解释器（地图为宿主提示）
 			else:
 				state().remove_actor(int(p[0]))
 			_data_changed()
+		261:
+			# 播放电影 [文件名]（CE1514／1516 宇智波鼬的「血轮眼开」「幻术世界」，movies/*.webm）：Godot 不能放 WebM，重制不播放，只少一段画面
+			pass
+		323:
+			# 更改载具图像 [载具, 行走图, 序号]（飞艇改造包 CE487～500）：重制没有载具，空操作（只影响飞艇外观）
+			pass
 		132:
 			state().battle_bgm = (p[0] as Dictionary).duplicate() if p[0] is Dictionary else {}
 		136:
@@ -456,6 +462,11 @@ func _data_changed() -> void:
 
 
 ## MOG_TreasurePopup（地图才有）
+## 解释器里的系统提示（超强者不能入队等，原版 $.toaster）：默认右上角提示，地图交给宿主
+func _notice(text: String) -> void:
+	XToast.show_text(text)
+
+
 func _treasure_popup(_rec: Dictionary, _amount: int) -> void:
 	pass
 
@@ -671,9 +682,13 @@ func _plugin_command(line: String) -> void:
 			if XWarehouse.plugin_command(state(), args):  # PH_Warehouse create／remove（show 交给宿主）
 				return
 		"Autosave", "EnableAutosave", "DisableAutosave":
-			# YEP_X_Autosave：「Autosave」存到最近用过的存档位（没手动存过就不存）；Enable／Disable 只开关该插件的选项，
-			# 重制版没有这个选项，所以只保留存档动作（原版弹的「存档成功！」小字不做）
-			if args[0] == "Autosave" and XSave.current_slot > 0:
+			# YEP_X_Autosave：Enable／DisableAutosave 开关 $gameSystem.setAutosave（随存档）；「Autosave」在允许时存到最近用过的
+			# 存档位（没手动存过就不存）。公共事件 5 是 Enable→Autosave→Disable，之后的 Autosave 不再写档（原版弹的「存档成功！」小字不做）
+			if args[0] == "EnableAutosave":
+				state().allow_autosave = true
+			elif args[0] == "DisableAutosave":
+				state().allow_autosave = false
+			elif state().allow_autosave and XSave.current_slot > 0:
 				XSave.save(XSave.current_slot)
 			return
 		"MagicWeaponAllGainExp", "MagicWeaponLevelUp":

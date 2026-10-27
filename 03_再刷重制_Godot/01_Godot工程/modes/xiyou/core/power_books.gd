@@ -34,7 +34,7 @@ static func learned(a: XActor) -> Array:
 	return skills().filter(func(id): return a.skill_ids.has(id)) if a != null else []
 
 static func actor_class(a: XActor) -> String:
-	if XItemMarks.SUPER_STRONG_IDS.has(a.actor_id):
+	if XItemMarks.is_super_strong(a.actor_id):
 		return "超强者"
 	return "强者" if STRONG_IDS.has(a.actor_id) else "弱者"
 

@@ -117,6 +117,7 @@ PROBES = [
     (['alien_battle_probe.cjs'], ['alien_battle.json']),
     (['enemy_book_defeat_probe.cjs'], ['enemy_book_defeat.json']),
     (['lobby_shop_probe.cjs'], ['lobby_shops.json']),
+    (['common_script_probe.cjs'], ['common_scripts.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
 

@@ -330,6 +330,23 @@ const SUPER_SWITCHES := [2494, 2489, 2487, 2483, 2461, 2462, 2463]
 const RECRUIT_HORNS := {2902: 167, 2904: 168, 2931: 169, 2932: 170, 2936: 171, 2938: 172, 2940: 173, 2941: 174, 2943: 175, 2945: 176, 2946: 177}
 const SUPER_NOTICE := "超强者仅限地狱及以上难度获取。"
 static var _recruit_cache := {}
+static var _super_ids: Array = []
+
+
+## 超强者名单：SUPER_STRONG_IDS ＋ 备注带 <CodexSuperStrong> 的角色（174／176／177）。原版 installNativeBindingChargeRuntime
+## B.syncSuperStrong 在开战（BattleManager.setup）和读档时把后者并进 D.superStrongIds，之后出战、获取、招募、Boss 加成都按它算；
+## 重制总是算进去（原版只有新局后还没打过仗、也没读过档的那一段不算）。
+static func super_strong_ids() -> Array:
+	if _super_ids.is_empty():
+		_super_ids = SUPER_STRONG_IDS.duplicate()
+		for a in XDB.table("Actors"):
+			if a is Dictionary and str(a.get("note", "")).to_lower().contains("<codexsuperstrong>") and not _super_ids.has(int(a.id)):
+				_super_ids.append(int(a.id))
+	return _super_ids
+
+
+static func is_super_strong(actor_id: int) -> bool:
+	return super_strong_ids().has(actor_id)
 
 
 static func super_enabled(s: XState) -> bool:
@@ -337,7 +354,7 @@ static func super_enabled(s: XState) -> bool:
 
 
 static func can_acquire_actor(s: XState, actor_id: int) -> bool:
-	return not SUPER_STRONG_IDS.has(actor_id) or super_enabled(s)
+	return not is_super_strong(actor_id) or super_enabled(s)
 
 
 ## D.recruitActorId：号角表 → 备注 <CodexRecruitActor: n> → 效果公共事件里唯一的一条「加入队伍」(129)；其余物品为 0
@@ -395,7 +412,7 @@ static func enforce_party(s: XState) -> bool:
 	var slots := s.battle_slots
 	var vacancies := []
 	for i in slots.size():
-		if SUPER_STRONG_IDS.has(int(slots[i])):
+		if is_super_strong(int(slots[i])):
 			vacancies.append(i)
 			slots[i] = 0
 	if vacancies.is_empty():
@@ -403,7 +420,7 @@ static func enforce_party(s: XState) -> bool:
 	# 原版另要求 isAppeared（隐藏角色不补）；重制没有隐藏角色
 	var reserves := []
 	for id in s.party:
-		if not SUPER_STRONG_IDS.has(id) and not slots.has(id):
+		if not is_super_strong(id) and not slots.has(id):
 			reserves.append(id)
 	for i in vacancies:
 		slots[i] = reserves.pop_front() if not reserves.is_empty() else 0

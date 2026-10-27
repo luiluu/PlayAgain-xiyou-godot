@@ -57,12 +57,14 @@ func _ready() -> void:
 	legacy.erase("random")
 	legacy.rom = {"x": range(20).map(func(i): return i * 0.01), "xn": 3, "xs": range(20).map(func(i): return i % 2), "xsn": 2, "g": range(35).map(func(i): return i * 71 + 1), "gn": 9}
 	var loaded := XState.from_dict(legacy)
-	check("legacy_zero_consumption", loaded.random_master.is_empty() and loaded._equipment_random == null and equal(loaded.rom, legacy.rom) and equal(loaded.gear, legacy.gear))
+	# 旧档没有藏宝图挖过的宝点 rom.m，读入补成空表；其余预掷池原样
+	var legacy_rom: Dictionary = legacy.rom.merged({"m": []})
+	check("legacy_zero_consumption", loaded.random_master.is_empty() and loaded._equipment_random == null and equal(loaded.rom, legacy_rom) and equal(loaded.gear, legacy.gear))
 	var before := JSON.stringify(loaded.runtime_random_snapshot())
 	var gear := XGear.template("weapon", 56)
 	XGearUpgrade.preview(gear, XDB.rec("Items", 258))
 	XPower.actor(loaded.actor(1))
-	check("previews_no_initialize", before == JSON.stringify(loaded.runtime_random_snapshot()) and equal(loaded.rom, legacy.rom))
+	check("previews_no_initialize", before == JSON.stringify(loaded.runtime_random_snapshot()) and equal(loaded.rom, legacy_rom))
 	loaded.gain_gear("weapon", 56, 1)
 	var encoded: Dictionary = JSON.parse_string(JSON.stringify(loaded.to_dict()))
 	var second := XState.from_dict(encoded)

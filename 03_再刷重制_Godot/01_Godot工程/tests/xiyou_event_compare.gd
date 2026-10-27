@@ -89,6 +89,9 @@ class EventHost:
 	func open_change_clothes() -> void:
 		trace.append({"t": "scene", "name": "Scene_ChangeClothes"})
 
+	func open_forget_skill(_actor_id: int) -> void:
+		trace.append({"t": "scene", "name": "Star_Scene_ForgetSkill"})
+
 	func open_actor_advanced() -> void:
 		trace.append({"t": "scene", "name": "Scene_ActorAdvanced"})
 
@@ -140,10 +143,24 @@ class EventHost:
 		for i in range(24):
 			await get_tree().process_frame
 
-	## 游戏时间按帧走（同参照引擎每帧 Graphics.frameCount +1，playtime = 帧数/60 取整）
-	func _process(_delta: float) -> void:
+	## 游戏时间按帧走（同参照引擎每帧先 Graphics.frameCount +1 再跑解释器，playtime = 帧数/60 取整）：
+	## 每例开始记第 1 帧（参照第一条指令在 frameCount 1）；之后在 process_frame 信号里先计帧——本节点比解释器的 await 先连上，
+	## 等待指令恢复时已计入这一帧，第 k 段等待后是 1＋20k 帧，同参照。按整数帧数换算，不逐帧累加 1/60（120 帧会累加成 1.999…）
+	var _frames := 0
+	var _base_seconds := 0.0
+
+	func _ready() -> void:
+		get_tree().process_frame.connect(_tick)
+
+	func start_frames(s: XState) -> void:
+		_base_seconds = s.play_seconds
+		_frames = 1
+		s.play_seconds = _base_seconds + _frames / 60.0
+
+	func _tick() -> void:
 		if XState.current:
-			XState.current.play_seconds += 1.0 / 60.0
+			_frames += 1
+			XState.current.play_seconds = _base_seconds + _frames / 60.0
 
 	func play_bgm(_a) -> void:
 		pass
@@ -270,6 +287,9 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	for id in PARTY:
 		s.add_actor(id)
 	s.map_id = int(c.map)
+	# 参照把玩家放在事件所在格（公共事件在大厅 0,0）：藏宝图等脚本读玩家坐标
+	s.x = 0
+	s.y = 0
 	XState.current = s
 	host.trace = []
 	host.seen = {}
@@ -282,6 +302,9 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 			if e is Dictionary and int(e.id) == int(c.event):
 				ev = e
 		list = ev.pages[int(c.page)].list.duplicate(true) if ev != null else []
+		if ev != null:
+			s.x = int(ev.x)
+			s.y = int(ev.y)
 	# 第一条仓库指令就是 show 的页（如青霞第 2 页，正常流程里仓库已由第 1 页建好）：参照探针先建好默认仓库，这边同样
 	for cmd in list:
 		if int(cmd.code) == 356 and str(cmd.parameters[0]).begins_with("PHWarehouse "):
@@ -296,6 +319,7 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	MVInterpreter.steps = 0
 	MVInterpreter.aborted = false
 	var interp := MVInterpreter.new(host, int(c.map), int(c.event), list)
+	host.start_frames(s)
 	await interp.run()
 	var skipped := {}
 	for k in interp.skipped:
@@ -432,6 +456,10 @@ func _compare(c: Dictionary, got: Dictionary) -> Array:
 			diffs.append("trace:%d 原版 %s ｜ Godot %s" % [i, JSON.stringify(w).left(160), JSON.stringify(g).left(160)])
 			break
 	var want_delta: Dictionary = _norm(c.delta)
+	# O-085：精魂下限是 0（原版可扣成负数）。两边每例都从新局 0 精魂起，原版净扣成负数的，重制夹在 0、差量为空
+	# （ce823／ce824 裴钱扣 500、m189e1p0 扣 99999999）。先扣成负数再加回来的写法会照旧报不一致，到时再看
+	if XState.GOLD_FLOOR_ZERO and float(want_delta.get("gold", 0.0)) < 0.0:
+		want_delta.erase("gold")
 	var got_delta: Dictionary = _norm(got.delta)
 	var keys := want_delta.keys()
 	for k in got_delta.keys():

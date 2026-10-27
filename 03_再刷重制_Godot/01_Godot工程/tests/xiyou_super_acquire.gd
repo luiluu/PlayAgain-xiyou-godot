@@ -4,7 +4,8 @@ extends Node
 ## 包装点：canAcquireItem＝canAcquireId(recruitActorId(item))（号角表、备注 <CodexRecruitActor: n>、效果公共事件里唯一的一条加入队伍）；
 ## Game_Party.gainItem（得到数量大于 0 时不给）、addActor（未持有时拦下并提示）、meetsItemConditions（物品页「使用」灰）、Window_ShopBuy.isEnabled（商店灰）。
 ## 商店灰的原版数值由 xiyou_shop_buy 的参照用例对（伙伴号角 245／254／274／277 在原版 exact／rich 状态下都不可买）。
-## 未移植：各 Codex*.recruit() 入口（渡鸦等新原生接入）的拦截提示、物品／商店帮助窗的「仅限地狱及以上难度获取与招募」文字、战斗中的物品条件。
+## 各 Codex*.recruit() 入口的拦截提示在 MVScript._recruit_blocked（原版例见 xiyou_common_scripts 的 horn.*）。
+## 未移植：物品／商店帮助窗的「仅限地狱及以上难度获取与招募」文字、战斗中的物品条件。
 
 const HORNS_SUPER := 45   # 冻结数据里招募角色在超强者名单内的物品数（脚本按同一规则离线数出）
 
@@ -77,6 +78,22 @@ func _run() -> void:
 	c.difficulty = 9
 	c.gain_item(245, 1)
 	check("difficulty9_allows", c.item_count(245) == 1 and XItemMarks.super_enabled(c))
+	# 备注 <CodexSuperStrong> 的 174／176／177：原版开战／读档时 syncSuperStrong 并入名单，获取、出战、Boss 加成都按超强者算
+	check("noted_super", [174, 176, 177].all(func(id): return XItemMarks.is_super_strong(id) and not XItemMarks.SUPER_STRONG_IDS.has(id))
+		and not XItemMarks.is_super_strong(170) and not XItemMarks.is_super_strong(178), XItemMarks.super_strong_ids().size())
+	var n2 := _state()
+	n2.gain_item(2941, 1)
+	n2.add_actor(176)
+	check("noted_super_blocked", n2.item_count(2941) == 0 and not n2.party.has(176), [n2.item_count(2941), n2.party])
+	var h := _state()
+	h.set_switch(2494, true)
+	h.add_actor(174)
+	h.add_actor(170)
+	check("noted_super_boss_count", XEnemy.deployed_strong_count([h.actor(174), h.actor(170), h.actor(1)]) == 1)
+	var deployed_before := h.battle_slots.has(174)
+	h.set_switch(2494, false)
+	XItemMarks.enforce_party(h)
+	check("noted_super_deploy", deployed_before and not h.battle_slots.has(174) and h.party.has(174), [deployed_before, h.battle_slots, h.party])
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)

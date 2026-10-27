@@ -8,8 +8,8 @@ extends Node
 ##    每个写进去的更衣号必须落进解锁表（写法不匹配的就解锁不了，这里会失败）。
 ## 来源是转换产物 generated/（由冻结 v0.28 转换，同步时已核对），不另读冻结源。
 const MIN_BRANCHES := 3
-## 已知缺口：CE367 牛头人酋长原文写成 if(indexOf(-33)==-1){push(-12)}（判断号与写入号不同），MVScript 只认两号相同的写法，-12 解锁不了
-const KNOWN_CLOTHES_GAPS := [["CE0367", -12]]
+## 已知缺口（[来源, 更衣号]）：现无。CE367 牛头人酋长 if(indexOf(-33)==-1){push(-12)} 已由 MVScript 照原文翻译（八戒 2026-10-27）
+const KNOWN_CLOTHES_GAPS := []
 
 var results: Array = []
 var groups := 0
