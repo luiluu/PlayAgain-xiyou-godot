@@ -17,6 +17,11 @@
 key、fields、oldDigest、newDigest、reason，须与本轮实际变化逐项相同且每条都用上，否则整轮拒收；可接受的变化列在
 同步报告 changeCandidates。接受单放 04_验证/测量接受/ 入 Git，成功后在 本地结果/测量接受记录.jsonl 追加审计行。
 
+--accept-withdrawal <地图号>（可多次，如 41 或 Map041）：切片撤出地图后显式接受。须恰好等于本轮切片少掉的地图；
+旧参照里新参照已没有的条目（按稳定键整组、地图键、敌人／角色键）从比较基线去掉，其余照常比较（既有用例改变仍拒收、
+新增仍须 --accept-additions）；来源指纹只放过撤出地图的 data/MapNNN.json 与不再用到的素材。撤掉的条目逐份列在
+同步报告 withdrawal。不加它时工作树的同步基线一直含撤出地图的用例，同步永远退出码 2。
+
 --from-worktree <车道工作树>（总装合并时用，提速提案 P3）：车道在自己的工作树跑过同步、且合并后 main 的转换工具文件与车道
 同步时完全相同，则不再重跑转换器与探针，直接克隆车道的产物，核对产物摘要后照常比较测量、核对来源、登记。
 任一条件不满足退出码 3（未改动 main 的产物），调用方改跑完整同步。
@@ -44,7 +49,7 @@ sys.path.insert(0, str(HERE))
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT  # noqa: E402
 from incremental_sync import SHARDS, ProbeCache
 from oracle_additions import (compare_directories, payload, source_preserved, has_error, retained_errors_unchanged,  # noqa: E402
-                              load_acceptances, apply_acceptances, change_candidates)
+                              load_acceptances, apply_acceptances, change_candidates, KEYS, groups)
 
 ORACLE_DIR = HERE / 'mv_oracle'
 SANDBOX = ORACLE_DIR / '.sandbox'
@@ -267,6 +272,53 @@ def comparison_baseline(gen: Path) -> Path:
     if not valid:
         raise RuntimeError('已接受测量基线损坏，保留现场且停止同步：' + str(baseline))
     return baseline
+
+
+def withdraw_baseline(old_dir: Path, new_dir: Path, out_dir: Path) -> dict:
+    """撤出切片：把旧参照里新参照已没有的条目去掉后写到 out_dir，返回 {文件: 撤掉的键}。
+    还在的条目原样保留，交给 compare_directories 照常比较；整份参照被删、未知结构不动（仍是问题）。"""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    removed = {}
+    for old in sorted(old_dir.glob('*.json')):
+        data = json.loads(old.read_text())
+        new = new_dir / old.name
+        a, b = payload(data), (payload(json.loads(new.read_text())) if new.exists() else None)
+        gone = []
+        if isinstance(a, dict) and isinstance(b, dict):
+            if old.name == 'maps.json':
+                gone = sorted(k for k in a if k not in b)
+                for k in gone:
+                    del data[k]
+            keys = dict(KEYS.get(old.name, {}))
+            if old.name.startswith('slice_d'):
+                keys['damage'] = lambda row: (('troop', 'actor', 'skill') if 'actor' in row else ('troop', 'enemy', 'target', 'skill'))
+            for field in (a.keys() & b.keys()) if old.name != 'maps.json' else ():
+                x, y = a[field], b[field]
+                if isinstance(x, dict) and isinstance(y, dict) and (old.name.startswith('slice_d') and field in ('enemies', 'actors')
+                                                                    or old.name == 'formula_programs.json' and field == 'contexts'):
+                    drop = sorted(k for k in x if k not in y)
+                    data[field] = {k: v for k, v in x.items() if k in y}
+                    gone += ['%s:%s' % (field, k) for k in drop]
+                elif field in keys and isinstance(x, list) and isinstance(y, list):
+                    try:
+                        have = set(groups(y, keys[field]))
+                        rows = [(next(iter(groups([row], keys[field]))), row) for row in x]
+                    except ValueError:
+                        continue   # 缺稳定键：不动，交给照常比较报问题
+                    gone += sorted({'%s:%s' % (field, k) for k, _ in rows if k not in have})
+                    data[field] = [row for k, row in rows if k in have]
+        if gone:
+            removed[old.name] = gone
+        (out_dir / old.name).write_text(json.dumps(data, ensure_ascii=False))
+    return removed
+
+
+def withdrawn_source_preserved(old: dict, new: dict, maps: set) -> bool:
+    """同 source_preserved，但撤出地图的 data/MapNNN.json 与不再用到的素材（非 data/、非 js/）可以从输入里消失。"""
+    allowed = {'data/Map%03d.json' % m for m in maps}
+    inputs = {k: v for k, v in old.get('inputs', {}).items()
+              if not (k not in new.get('inputs', {}) and (k in allowed or not k.startswith(('data/', 'js/', 'package.json'))))}
+    return source_preserved(dict(old, inputs=inputs), new)
 
 
 def finish_comparison(baseline: Path) -> None:
@@ -632,10 +684,16 @@ def _main() -> int:
                     help='同源且旧用例逐条相同、只增已知结构新用例时自动接受；不接受规则变化/删除/新用例错误')
     ap.add_argument('--accept-changes', type=Path, action='append', default=[], metavar='接受单.json',
                     help='显式接受接受单逐条列出的既有用例改变（须写理由、摘要逐项对上，每条都要用上）')
+    ap.add_argument('--accept-withdrawal', action='append', default=[], metavar='地图号',
+                    help='切片撤出地图后显式接受（可多次，如 41 或 Map041）：须恰好等于本轮少掉的地图，去掉旧基线里已没有的条目再比较')
     ap.add_argument('--from-worktree', type=Path, help='合并时用车道已同步的产物（按指纹核对），不满足条件退出码 3')
     ap.add_argument('--full', '--full-probes', dest='full', action='store_true', help='忽略探针缓存，强制全量转换与全部探针（--full-probes 同义）')
     ap.add_argument('--no-import', action='store_true', help='结束时不跑 godot --import')
     a = ap.parse_args()
+    try:
+        withdraw = {int(re.sub(r'^(?i:map)', '', str(m))) for m in a.accept_withdrawal}
+    except ValueError:
+        ap.error('--accept-withdrawal 写地图号，如 41 或 Map041')
     if a.full and a.from_worktree:
         ap.error('--full 与 --from-worktree 不能一起使用')
     # 多会话并行（AGENTS.md）：来源登记／当前状态只由总装在主工作区改，worktree 里自动不登记
@@ -709,11 +767,24 @@ def _main() -> int:
     report['changedMaps'] = sorted(f.name for f in (gen / 'maps').glob('*.json')
                                    if not (backup / 'maps' / f.name).exists() or (backup / 'maps' / f.name).read_bytes() != f.read_bytes())
     report['sliceChanged'] = (backup / 'slice.json').read_bytes() != (gen / 'slice.json').read_bytes() if (backup / 'slice.json').exists() else True
+    # 撤出切片（--accept-withdrawal）：参数须恰好等于本轮少掉的地图，旧基线去掉新参照已没有的条目后再比较
+    old_oracle, withdrawn_ok = baseline / 'oracle', True
+    if withdraw:
+        gone_maps = set(old_manifest.get('slice', {}).get('maps', [])) - set(new_manifest.get('slice', {}).get('maps', []))
+        trimmed = Path(tempfile.mkdtemp(prefix='withdrawal-', dir=backup))
+        report['withdrawal'] = {'maps': sorted(withdraw), 'sliceRemovedMaps': sorted(gone_maps)}
+        if withdraw != gone_maps:
+            withdrawn_ok = False
+            report['withdrawal']['problem'] = '--accept-withdrawal 与本轮切片少掉的地图不符'
+        else:
+            report['withdrawal']['removed'] = {k: {'count': len(v), 'keys': v[:50]}
+                                               for k, v in withdraw_baseline(old_oracle, gen / 'oracle', trimmed).items()}
+            old_oracle = trimmed
     # 测量比较
     measure = {}
-    for name in sorted({f.name for d in [gen / 'oracle', baseline / 'oracle'] for f in d.glob('*.json')}):
+    for name in sorted({f.name for d in [gen / 'oracle', old_oracle] for f in d.glob('*.json')}):
         f = gen / 'oracle' / name
-        old = baseline / 'oracle' / f.name
+        old = old_oracle / f.name
         if not f.exists():
             measure[name] = ['参照已删除']
             continue
@@ -724,8 +795,9 @@ def _main() -> int:
         if d:
             measure[f.name] = d
     report['measurementChanges'] = measure
-    report['additionCheck'] = compare_directories(baseline / 'oracle', gen / 'oracle', probe_outputs())
-    report['sameExistingSource'] = source_preserved(old_manifest, new_manifest)
+    report['additionCheck'] = compare_directories(old_oracle, gen / 'oracle', probe_outputs())
+    report['sameExistingSource'] = withdrawn_ok and (withdrawn_source_preserved(old_manifest, new_manifest, withdraw) if withdraw
+                                                     else source_preserved(old_manifest, new_manifest))
     v = subprocess.run([sys.executable, str(HERE / '验证西游来源.py'), '--app', str(app), '--generated', str(gen)], capture_output=True, text=True)
     report['verify'] = (v.stdout.strip().splitlines() or [''])[-1]
     report['verifyOk'] = v.returncode == 0
@@ -740,7 +812,7 @@ def _main() -> int:
     clean = (not resolved['problems'] and not resolved['unused'] and (additions or bool(resolved['accepted'])))
     accepted = bool(clean and (a.accept_additions or not additions)
                     and report['sameExistingSource'] and report['verifyOk'])
-    ok = report['verifyOk'] and not resolved['unused'] and (not measure or accepted)
+    ok = report['verifyOk'] and not resolved['unused'] and (not measure or accepted) and withdrawn_ok
     report['acceptedAdditions'] = accepted and additions
     report['acceptedChanges'] = resolved['accepted'] if accepted else []
     if accepted:
@@ -753,6 +825,8 @@ def _main() -> int:
         report['result'] = '只增新用例；加 --accept-additions 可自动接受'
     else:
         report['result'] = '测量不变，已登记' if ok and not a.no_register else ('测量不变' if ok else '有变化，请人工查看')
+    if withdraw and withdrawn_ok and ok:
+        report['result'] = '撤出 %s 已接受；%s' % ('、'.join('Map%03d' % m for m in sorted(withdraw)), report['result'])
     fingerprint = backup / '当前西游来源清单.json'
     fingerprint.write_text(json.dumps({'releaseVersion': new_version, 'inputs': new_manifest['inputs'],
                                        'runtimeInputs': new_manifest.get('runtimeInputs', {})}, ensure_ascii=False, indent=2))

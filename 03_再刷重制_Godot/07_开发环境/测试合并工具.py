@@ -310,6 +310,23 @@ class ParallelTestRunnerTests(unittest.TestCase):
         _, runs = self.run_tests('--reuse', 'a', 'b', jobs=1)
         self.assertEqual(sorted(runs), ['a.tscn', 'b.tscn'])
 
+    def test_rules_only_filter_bypasses_reuse_ledger(self):
+        # 沙僧第四期 T1：RULES_ONLY_* 过滤时 xiyou_rules 非 part0 只记 1 项成功，指纹又不含过滤值；
+        # 过滤运行既不能沿用普通记录，也不能把结果写进去，清掉环境后的普通沿用要整轮重跑
+        p, runs = self.run_tests(jobs=1, RULES_ONLY_TROOPS='833')
+        self.assertEqual((p.returncode, len(runs)), (0, 3), p.stdout)
+        self.assertIn('不读写沿用记录', p.stdout)
+        self.assertFalse(list((self.state / 'results').glob('*.json')) if (self.state / 'results').exists() else [])
+        p, runs = self.run_tests('--reuse', 'a', jobs=1, RULES_ONLY_ACTORS='5')
+        self.assertEqual(runs, ['a.tscn'])
+        p, runs = self.run_tests(jobs=1)  # 清环境：没有可沿用的过滤结果，整轮
+        self.assertEqual((p.returncode, len(runs)), (0, 3), p.stdout)
+        self.assertNotIn('沿用', p.stdout)
+        p, runs = self.run_tests(jobs=1, RULES_ONLY_TROOPS='833')  # 有普通记录时过滤运行也不沿用
+        self.assertEqual(len(runs), 3)
+        p, runs = self.run_tests(jobs=1)  # 普通记录未被过滤运行改写，照常沿用
+        self.assertEqual(runs, [])
+
     def test_corrupt_or_contradictory_cache_is_not_reused(self):
         # 沙僧 2026-10-21 P2 复现（review_phase2_cache_corruption.json）：passed=true 但 line 是失败计数仍被沿用、退出 0；
         # 合法 JSON 但结构是数组时 AttributeError。两种都应当作没有记录、整轮重跑并正常通过。
@@ -818,7 +835,8 @@ class MergeTests(unittest.TestCase):
         return result.returncode
 
     def register(self):
-        self.put(str(merge.BOARD), '# board\n## 正在进行\n\n## 待交叉核查\n| claude/task | Codex |\n## end\n')
+        # 本批另一条还没合的车道（batch_fixture 的 lane2）仍留在「正在进行」：清理时据此认出它是登记过的车道工作树
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n%s\n## 待交叉核查\n| claude/task | Codex |\n## end\n' % getattr(self, 'keep_rows', ''))
 
     def realistic_checker(self):
         # 模拟检查.sh 的真实入口：从 Git 索引取文件清单，再看工作区内容。
@@ -1074,6 +1092,7 @@ for name in filter(None, files):
         receipt.write_text('# delivery\n- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】第二条（' + merge.VERSION_MARKER + '）\n\n- second change\n\n## 交接板\n- fixture\n')
         (wt2 / 'docs2.md').write_text('second lane\n')
         self.g('add', '.', cwd=wt2); self.g('commit', '-m', 'feature 2', cwd=wt2)
+        self.keep_rows = '| D | `lane2` |'
         return wt2, checks
 
     def call_task(self, task, *args):
@@ -1319,6 +1338,59 @@ for name in filter(None, files):
                 self.assertTrue((self.wt / 'later.md').exists())
                 self.assertIn('claude/task', self.branches())
                 self.assertIn('仍是该工作树的当前分支', self.last_output)
+
+    def test_active_session_or_lock_keeps_clean_delivery_worktree(self):
+        # 哪吒 T2：另一账号会话停在干净的交付工作树里（悟空_62 的 wukong-reach109 曾被误清）：有进程以它为当前目录、
+        # 或 git worktree lock 锁住时只提示不删
+        for case in ['process', 'lock']:
+            with self.subTest(case=case):
+                self.tearDown(); self.setUp()
+                self.assertEqual(self.call(), 0, self.last_output)
+                proc = subprocess.Popen(['sleep', '60'], cwd=self.wt) if case == 'process' else None
+                if case == 'lock':
+                    self.g('worktree', 'lock', '--reason', 'fixture', str(self.wt))
+                try:
+                    self.register()
+                    self.assertEqual(self.call('--finish'), 0, self.last_output)
+                finally:
+                    if proc:
+                        proc.kill(); proc.wait()
+                self.assertTrue(self.wt.exists())
+                self.assertIn('claude/task', self.branches())
+                self.assertIn('活动会话' if case == 'process' else 'worktree lock', self.last_output)
+                self.assertIn('只提示不删', self.last_output)
+
+    def test_worktree_missing_from_board_or_marked_keep_is_not_removed(self):
+        # 合并前交接板「正在进行」没有提到该工作树／分支，或那行写了「不要删」：不删
+        for row in ['', '| 核查 | claude/task（清理时不要删此目录） |']:
+            with self.subTest(row=row):
+                self.tearDown(); self.setUp()
+                self.put(str(merge.BOARD), '# board\n## 正在进行\n' + row + '\n## 待交叉核查\n\n## end\n')
+                self.g('add', '.'); self.g('commit', '-m', 'board without lane row')
+                self.assertEqual(self.call(), 0, self.last_output)
+                self.register()
+                self.assertEqual(self.call('--finish'), 0, self.last_output)
+                self.assertTrue(self.wt.exists())
+                self.assertIn('不要删' if row else '没有提到它', self.last_output)
+
+    def test_untracked_evidence_merges_by_ref_and_keeps_worktree(self):
+        # 沙僧 state-effects-2b：只有核查范围／本地结果下的未跟踪证据时按分支引用合并，工作树与证据都留着
+        evidence = [self.wt / '00_项目管理/核查范围/原版/证据.json', self.wt / merge.SUB / '04_验证/本地结果/x.log']
+        for f in evidence:
+            f.parent.mkdir(parents=True, exist_ok=True); f.write_text('keep')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertIn('未跟踪证据', self.last_output)
+        self.assertFalse((self.root / self.receipt).exists())
+        self.assertIn('fixture change', (self.root / merge.LOG).read_text())
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertTrue(all(f.read_text() == 'keep' for f in evidence))
+        self.assertIn('claude/task', self.branches())
+        self.tearDown(); self.setUp()
+        for f in evidence + [self.wt / '00_项目管理/别处.md']:   # 证据目录外还有未跟踪文件：照旧拒收
+            f.parent.mkdir(parents=True, exist_ok=True); f.write_text('keep')
+        self.assertEqual(self.call(), 1)
+        self.assertIn('不干净', self.last_output)
 
     def test_lane_on_new_branch_without_commits_is_not_removed(self):
         # 新分支还没提交（HEAD 仍是交付提交、干净）：也不能删工作树和新分支。

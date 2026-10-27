@@ -140,6 +140,32 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.set_payload(added)
         self.assertEqual(self.run_sync('--accept-additions')[0], 2)
 
+    def test_slice_withdrawal_needs_explicit_matching_maps(self):
+        # 切片撤出 Map041（期九）：基线里该图的用例永远对不上，不加 --accept-withdrawal 一直退出码 2；
+        # 地图号要恰好对上本轮少掉的图；撤出后其余用例的改变仍拒收；接受后基线换新，普通同步通过
+        m41 = {'id': 'm41e1p0', 'value': 9}
+        self.manifest = {'releaseVersion': 'v0.28', 'slice': {'maps': [1, 41]},
+                         'inputs': {'data/A.json': 'a', 'data/Map041.json': 'm41', 'img/x.png': 'x'}, 'runtimeInputs': {'js/a.js': 'r'}}
+        (self.gen / 'manifest.json').write_text(json.dumps(self.manifest))
+        (self.gen / 'oracle/events.json').write_text(json.dumps({'cases': self.original['cases'] + [m41]}))
+        self.manifest = {'releaseVersion': 'v0.28', 'slice': {'maps': [1]}, 'inputs': {'data/A.json': 'a'}, 'runtimeInputs': {'js/a.js': 'r'}}
+        self.set_payload({'cases': [{'id': 'stable', 'value': 2}]})
+        self.assertEqual(self.run_sync('--accept-withdrawal', '41')[0], 2)   # 撤出之外 stable 也变了
+        self.set_payload(self.original)
+        for extra in ((), ('--accept-additions',), ('--accept-withdrawal', '42'), ('--accept-withdrawal', '41', '--accept-withdrawal', '1')):
+            result, report = self.run_sync(*extra)
+            self.assertEqual(result, 2, (extra, report['result']))
+        self.assertIn('不符', report['withdrawal']['problem'])
+        result, report = self.run_sync('--accept-withdrawal', 'Map041')
+        self.assertEqual(result, 0, report)
+        self.assertEqual(report['withdrawal']['removed'], {'events.json': {'count': 1, 'keys': ['cases:[["id","m41e1p0"]]']}})
+        self.assertIn('撤出 Map041 已接受', report['result'])
+        self.assertEqual(self.run_sync()[0], 0)
+        self.manifest['inputs']['data/A.json'] = 'changed'   # 撤出不放过其他数据文件的来源改变
+        self.manifest['slice']['maps'] = []
+        self.set_payload({'cases': []})
+        self.assertEqual(self.run_sync('--accept-withdrawal', '1', '--accept-additions')[1]['sameExistingSource'], False)
+
     def test_withdrawn_change_is_successful_but_later_change_is_still_rejected(self):
         self.assertEqual(self.run_sync()[0], 2)
         self.set_payload(self.original)

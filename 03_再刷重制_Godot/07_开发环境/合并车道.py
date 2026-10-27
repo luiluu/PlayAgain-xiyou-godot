@@ -11,7 +11,11 @@
 白天合并可用 --finish --affected 只跑选测（三级检查②，基准为本次（或本批第一条）合并前的 main），通过后照常提交、清理、推送；
 收尾提交带「验证: 选测」尾注，当天全量前算选测已验；全量仍是不加 --affected 的 --finish。
 
-车道交付后在同一工作树接着做（换新分支、新提交或未提交改动）不拦合并：只跳过该工作树的清理，交付分支不再是当前分支就照删。"""
+车道交付后在同一工作树接着做（换新分支、新提交或未提交改动）不拦合并：只跳过该工作树的清理，交付分支不再是当前分支就照删。
+清理前还要过两道（哪吒 2026-10-27，曾误清另一账号会话的干净工作树）：有进程的当前目录在该工作树里（活动会话）或工作树被
+git worktree lock 锁住，或合并前 main 的交接板「正在进行」表里没有提到该工作树／交付分支的行、或那行写了「不要删」，都只提示不删。
+车道工作树只有未跟踪文件且都在 00_项目管理/核查范围/ 或 04_验证/本地结果/ 下（沙僧的原版证据、本地输出）时也收：
+按分支引用合并，不清理该工作树。"""
 import argparse
 import hashlib
 import json
@@ -34,6 +38,8 @@ COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/交接板归档.md'
           SUB / '开发编号.json', PROJECT / 'project.godot', PROJECT / 'content/build_info.json']}
 VERSION_MARKER = 'dev.' + '待定'
 VERSION_EXEMPT = {'AGENTS.md', '00_项目管理/交付/README.md'}
+# 车道工作树里只有这些目录下的未跟踪文件时仍可合并（按分支引用，不清理工作树）
+EVIDENCE_DIRS = ('00_项目管理/核查范围/', str(SUB / '04_验证/本地结果') + '/')
 PLACEHOLDER = re.compile(r'^\s*(?:[-*]\s*)?[（(<]?待写[）)>]?[。.]?\s*$', re.M)
 
 
@@ -61,6 +67,57 @@ def dirty(root):
 def porcelain(root):
     raw = subprocess.check_output(['git', '-C', str(root), 'status', '--porcelain', '-z']).decode()
     return raw.rstrip('\0').split('\0') if raw else []
+
+
+def untracked_evidence(root):
+    """工作树只有未跟踪文件、且都在 EVIDENCE_DIRS 下时返回这些路径；否则返回空列表（干净或有别的改动）。"""
+    raw = subprocess.check_output(['git', '-C', str(root), 'status', '--porcelain', '-z', '-uall']).decode()
+    records = raw.rstrip('\0').split('\0') if raw else []
+    if records and all(x.startswith('?? ') and x[3:].startswith(EVIDENCE_DIRS) for x in records):
+        return sorted(x[3:] for x in records)
+    return []
+
+
+def active_cwds(path):
+    """当前目录在 path 里的进程（lsof 列各进程 cwd），返回 [(pid, 命令)]；本进程除外。lsof 不可用时返回空。"""
+    try:
+        out = subprocess.run(['lsof', '-a', '-d', 'cwd', '-F', 'pcn'], capture_output=True, text=True, timeout=60).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    base, found, pid, cmd = os.path.realpath(path), [], None, ''
+    for line in out.splitlines():
+        if line.startswith('p'):
+            pid, cmd = line[1:], ''
+        elif line.startswith('c'):
+            cmd = line[1:]
+        elif line.startswith('n') and pid and pid != str(os.getpid()):
+            cwd = os.path.realpath(line[1:])
+            if cwd == base or cwd.startswith(base + os.sep):
+                found.append((pid, cmd))
+    return found
+
+
+def lane_protected(root, lane):
+    """清理车道工作树前的保护：返回不删的原因，没有就返回空串。"""
+    wt = Path(lane['worktree'])
+    procs = active_cwds(wt)
+    if procs:
+        return '有活动会话（进程 %s 的当前目录在其中）' % '、'.join('%s %s' % p for p in procs[:3])
+    meta = Path(git(wt, 'rev-parse', '--path-format=absolute', '--git-dir'))
+    if (meta / 'locked').exists():
+        return '被 git worktree lock 锁住'
+    try:
+        board = git(root, 'show', lane['base'] + ':' + str(BOARD))
+    except RuntimeError:
+        return '读不到合并前 main 的交接板'
+    active = board.split('## 正在进行', 1)[1].split('\n## ', 1)[0] if '## 正在进行' in board else ''
+    named = re.compile(r'(?<![\w-])(?:%s|%s)(?![\w-])' % (re.escape(wt.name), re.escape(lane['branch'])))
+    rows = [l for l in active.splitlines() if l.startswith('|') and named.search(l)]
+    if not rows:
+        return '合并前交接板「正在进行」表里没有提到它（%s／%s）' % (wt.name, lane['branch'])
+    if any('不要删' in l for l in rows):
+        return '交接板写明清理时不要删'
+    return ''
 
 
 def merge_head(root):
@@ -130,10 +187,18 @@ def plan(root, task):
     lanes = [w for w in worktrees(root) if w.get('branch') in ['claude/' + task, 'codex/' + task]]
     if len(lanes) > 1:
         raise RuntimeError('须有且只有一个对应任务的已登记车道工作树')
+    evidence = []
     if lanes:
         branch, wt = lanes[0]['branch'], Path(lanes[0]['path'])
-        if dirty(wt):
+        evidence = untracked_evidence(wt)
+        if evidence:
+            # 沙僧工作树常驻未入 Git 的原版证据：按分支引用合并（只读提交里的文件），收尾不清理这个工作树
+            print('提示：车道工作树只有 %d 个未跟踪证据／本地输出（%s 等），按分支引用合并，不清理该工作树'
+                  % (len(evidence), evidence[0]), file=sys.stderr, flush=True)
+            lanes = []
+        elif dirty(wt):
             raise RuntimeError('车道工作树不干净，先由车道提交')
+    if lanes:
         target = git(wt, 'rev-parse', 'HEAD')
 
         def read(rel):
@@ -148,7 +213,8 @@ def plan(root, task):
             raise RuntimeError('须有且只有一个对应任务的车道工作树或车道分支')
         branch, wt = refs[0], None
         target = git(root, 'rev-parse', 'refs/heads/' + branch)
-        print('提示：没有工作树停在 %s 上（车道已换分支继续），按分支引用 %s 合并' % (branch, target[:9]), file=sys.stderr, flush=True)
+        if not evidence:
+            print('提示：没有工作树停在 %s 上（车道已换分支继续），按分支引用 %s 合并' % (branch, target[:9]), file=sys.stderr, flush=True)
 
         def read(rel):
             entry = git(root, 'ls-tree', target, '--', str(rel))
@@ -187,7 +253,7 @@ def plan(root, task):
                      and VERSION_MARKER in (read(p) or '')]
     return dict(task=task, branch=branch, worktree=str(wt) if wt else '', base=base, target=target,
                 delivery=str(delivery), extraDeliveries=extra, refresh=refresh, acceptChanges=accept, gameplay=game, phase='planned', head=base,
-                versionPaths=version_paths,
+                versionPaths=version_paths, evidenceFiles=evidence,
                 mainAdvancedAfterDelivery=fork != base)
 
 
@@ -564,8 +630,15 @@ def cleanup_lane(root, lane):
     车道已在同一工作树继续工作（换了分支、有新提交或未提交改动）时只跳过工作树，交付分支不再是当前分支就照删。"""
     if subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', lane['target'], 'HEAD']).returncode:
         raise RuntimeError('交付提交不在 main 历史里，不清理：' + lane['worktree'])
+    if lane.get('evidenceFiles'):
+        print('提示：%s 的工作树有未跟踪证据，按分支引用合并，不清理工作树与交付分支' % lane['task'], flush=True)
+        return
     moved = lane_moved(lane)
     if not moved:
+        moved = lane_protected(root, lane)
+        if moved:
+            print('提示：%s 的工作树%s，只提示不删：%s' % (lane['task'], moved, lane['worktree']), flush=True)
+            return
         run(root, [ENV / '清理工作树.sh', lane['worktree']])
         return
     print('提示：%s 的工作树%s，跳过清理：%s' % (lane['task'], moved, lane['worktree']), flush=True)
