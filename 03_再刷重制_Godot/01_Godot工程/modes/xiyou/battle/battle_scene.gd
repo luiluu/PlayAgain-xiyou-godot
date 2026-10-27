@@ -1096,7 +1096,7 @@ func _play(logs: Array) -> void:
 				if l.has("animation"):  # 状态 Regenerate 脚本（叠毒）的 target.startAnimation
 					_start_animation(int(l.animation), l.target)
 				if float(l.hp) != 0.0:
-					_popup(l.target, -float(l.hp), false)
+					_popup(l.target, float(l.hp), false)  # regen 记录与 hpDamage 同号：正伤害、负回复
 			"collapse":
 				# 行动序列 IMMORTAL 解除时 HP 为 0 的倒下
 				var cs: XBattlerSprite = sprites[l.target]
