@@ -163,10 +163,14 @@ function runCase(c) {
     // 独立装备实例（YEP_ItemCore）：createGameObjects 清空了实例表并截回基础长度，照它读档的做法放回开局时的实例再接上
     [w.DataManager._independentItems, w.DataManager._independentWeapons, w.DataManager._independentArmors] = saved.independent;
     w.DataManager.loadIndependentItems();
+    // 数据库里被事件改过的字段也换回开局值：YEP_CoreEngine「maxlevel equal N」直接改 $dataActors[i].maxLevel，
+    // 不随游戏对象复位，前一例的等级上限会带到下一例（CE231 升级药单跑 10、整轮跟在 Map011 后得 25，哪吒 2026-10-27）
+    saved.dataActorMaxLevel.forEach((v, i) => { if (w.$dataActors[i]) w.$dataActors[i].maxLevel = v; });
   } else {
     w.eval('DataManager.setupNewGame();');
     if (NEW_GAME_SNAPSHOT) {
-      const o = {independent: [w.DataManager._independentItems, w.DataManager._independentWeapons, w.DataManager._independentArmors]};
+      const o = {independent: [w.DataManager._independentItems, w.DataManager._independentWeapons, w.DataManager._independentArmors],
+        dataActorMaxLevel: w.$dataActors.map(a => a ? a.maxLevel : null)};
       for (const k of SNAPSHOT_GLOBALS) o[k] = w[k];
       newGameSave = w.JsonEx.stringify(o);
     }
