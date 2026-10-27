@@ -101,3 +101,47 @@ func update_character() -> void:
 		if _move_wait <= 0:
 			_move_wait = (5 - move_frequency) * 30 + _wander_roll(0, 60)
 			move_straight([2, 4, 6, 8][_wander_roll(0, 3)])
+
+
+## 存档：原版 $gameMap 整个进存档、同版本读档不重设地图（参照 tests/fixtures/save_events_oracle.json）。
+## 这里只存玩家看得到的运行时状态：位置（含走到一半的小数位置）、朝向、移动路线改过的图像／不透明度／穿透等，以及强制路线与索引。
+## 临时消除另存在 XState.erased_events，自开关在 XState.self_switches。
+func save_state() -> Dictionary:
+	var out := {"page": page_index, "x": grid.x, "y": grid.y, "real": [real.x, real.y], "direction": direction, "pattern": pattern,
+		"characterName": character_name, "characterIndex": character_index, "tileId": tile_id, "opacity": opacity,
+		"through": through, "transparent": transparent, "directionFix": direction_fix, "walkAnime": walk_anime,
+		"stepAnime": step_anime, "moveSpeed": move_speed, "moveFrequency": move_frequency, "priorityType": priority_type}
+	if _route_forcing:
+		out.forcedRoute = {"route": _route, "index": _route_index, "wait": _route_wait}
+	return out
+
+
+## 读档后套回 save_state 的结果；页与存档时不同（地图数据改过）就不套，留在初始状态
+func restore_state(d: Dictionary) -> void:
+	if int(d.get("page", -99)) != page_index:
+		return
+	if int(d.get("tileId", 0)) > 0:
+		set_tile_image(int(d.tileId))
+	else:
+		set_image(str(d.get("characterName", "")), int(d.get("characterIndex", 0)))
+	grid = Vector2i(int(d.x), int(d.y))
+	var r: Array = d.get("real", [d.x, d.y])
+	real = Vector2(float(r[0]), float(r[1]))
+	direction = int(d.direction)
+	pattern = int(d.get("pattern", pattern))
+	opacity = int(d.get("opacity", opacity))
+	through = bool(d.get("through", through))
+	transparent = bool(d.get("transparent", transparent))
+	direction_fix = bool(d.get("directionFix", direction_fix))
+	walk_anime = bool(d.get("walkAnime", walk_anime))
+	step_anime = bool(d.get("stepAnime", step_anime))
+	move_speed = int(d.get("moveSpeed", move_speed))
+	move_frequency = int(d.get("moveFrequency", move_frequency))
+	priority_type = int(d.get("priorityType", priority_type))
+	var forced = d.get("forcedRoute")
+	if forced is Dictionary and forced.get("route") is Dictionary:
+		force_move_route(forced.route)
+		_route_index = int(forced.get("index", 0))
+		_route_wait = int(forced.get("wait", 0))
+	_sync_position()
+	queue_redraw()
