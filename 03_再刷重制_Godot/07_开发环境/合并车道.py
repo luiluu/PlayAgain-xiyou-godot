@@ -84,13 +84,13 @@ def worktrees(root):
 
 
 def draft(text):
-    """取所有「…变更记录草稿」节。变更记录条目标题都带【执行者】；节止于下一个不带【的二级标题
+    """取所有「…变更记录草稿」节（沙僧写作「待总装并入变更记录的核查条目」也认）。变更记录条目标题都带【执行者】；节止于下一个不带【的二级标题
     （如「## 交接板（由唐僧并入）」），不把交接板／进度账等节当成变更记录贴进去。"""
     if not re.search(r'^(?:[-*]\s*)?状态[：:]\s*\**可合并\**(?:\s|[（(。，；：—]|$)', text, re.M):
         raise RuntimeError('交付单尚未标为可合并')
     heads = list(re.finditer(r'^## (?!.*【).*$', text, re.M))
     parts = [text[h.end():heads[i + 1].start() if i + 1 < len(heads) else len(text)].strip()
-             for i, h in enumerate(heads) if '变更记录草稿' in h[0]]
+             for i, h in enumerate(heads) if '变更记录草稿' in h[0] or '并入变更记录' in h[0]]
     # 只认整行占位（「待写」「（待写）」「- 待写」），正文里提到这两个字不算未完成。
     if not parts or not all(parts) or any(PLACEHOLDER.search(p) for p in parts):
         raise RuntimeError('交付单缺少完整变更记录草稿')
