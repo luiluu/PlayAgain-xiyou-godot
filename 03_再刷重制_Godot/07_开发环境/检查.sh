@@ -110,12 +110,12 @@ if (( FAIL && ! KEEP_GOING )); then
 fi
 
 print "== Godot 测试"
-# 车道 worktree：补齐带进来的主工作区参照与本分支切片不同批时提示（不判失败，见 参照批次.py）
-python3 "$ENV_DIR/参照批次.py" check "$PROJECT/modes/xiyou/generated" || true
 (( SEL_FULL )) || TEST_ARGS+=(--reuse)
 if (( ! SEL_FULL && ${#SEL_SCENES} == 0 )); then
   print "  （选测：没有要跑的 Godot 场景，跳过导入与测试）"
 else
+# 车道 worktree：补齐带进来的主工作区参照与本分支切片不同批时提示（不判失败，见 参照批次.py）
+python3 "$ENV_DIR/参照批次.py" check "$PROJECT/modes/xiyou/generated" || true
 # 导入是重进程：先占共用槽（占槽.py），排队心跳经 fd 3 送回本日志
 import_out=$(python3 "$ENV_DIR/占槽.py" --label "godot --import" --notice-fd 3 -- perl -e 'alarm 300; exec @ARGV' "$GODOT" --headless --path "$PROJECT" --import 3>&2 2>&1); import_rc=$?
 if (( import_rc != 0 )) || print -r -- "$import_out" | grep -qE 'SCRIPT ERROR|^ERROR:'; then
