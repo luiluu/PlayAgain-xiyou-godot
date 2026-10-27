@@ -336,8 +336,13 @@ static func super_enabled(s: XState) -> bool:
 	return SUPER_SWITCHES.any(func(id): return s.switch(id)) or s.difficulty == 9
 
 
+## installNativeBindingChargeRuntime：备注带 <CodexSuperStrong> 的角色（174 云裳、176 屠苏、177 玄）运行时并入超强者名单
+static func is_super_strong(actor_id: int) -> bool:
+	return SUPER_STRONG_IDS.has(actor_id) or str(XDB.rec("Actors", actor_id).get("note", "")).contains("<CodexSuperStrong>")
+
+
 static func can_acquire_actor(s: XState, actor_id: int) -> bool:
-	return not SUPER_STRONG_IDS.has(actor_id) or super_enabled(s)
+	return not is_super_strong(actor_id) or super_enabled(s)
 
 
 ## D.recruitActorId：号角表 → 备注 <CodexRecruitActor: n> → 效果公共事件里唯一的一条「加入队伍」(129)；其余物品为 0
@@ -395,7 +400,7 @@ static func enforce_party(s: XState) -> bool:
 	var slots := s.battle_slots
 	var vacancies := []
 	for i in slots.size():
-		if SUPER_STRONG_IDS.has(int(slots[i])):
+		if is_super_strong(int(slots[i])):
 			vacancies.append(i)
 			slots[i] = 0
 	if vacancies.is_empty():
@@ -403,7 +408,7 @@ static func enforce_party(s: XState) -> bool:
 	# 原版另要求 isAppeared（隐藏角色不补）；重制没有隐藏角色
 	var reserves := []
 	for id in s.party:
-		if not SUPER_STRONG_IDS.has(id) and not slots.has(id):
+		if not is_super_strong(id) and not slots.has(id):
 			reserves.append(id)
 	for i in vacancies:
 		slots[i] = reserves.pop_front() if not reserves.is_empty() else 0

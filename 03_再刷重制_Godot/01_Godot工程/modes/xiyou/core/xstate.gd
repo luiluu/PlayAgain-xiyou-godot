@@ -296,6 +296,7 @@ func _add_actor(id: int) -> void:
 		return
 	# installBossDifficultyRuntime：未持有的超强者在地狱以下不能入队（提示后不加）
 	if not party.has(id) and not XItemMarks.can_acquire_actor(self, id):
+		actor(id)  # 原版 addActor 链先 $gameActors.actor(id) 建出对象（读档时同步到它），再被超强者拦截
 		XItemMarks.acquisition_notice()
 		return
 	if not party.has(id):
@@ -307,15 +308,21 @@ func _add_actor(id: int) -> void:
 	battle_slots[battle_slots.find(0)] = id
 	rearrange_actors()
 
-## installNativeDifficultyInheritanceRuntime.syncActor（Game_Party.addActor 时）：非主角队员入队时，难度相关技能照主角（角色 1）已学的同步，
-## 主角一个也没有时按全局难度开关取（开关 2496／2492／2491／2500／2494／2489／2487／2483 → 难度被动 5561／5547／5548／5549／5562／5564×3，
-## 第 2～4 档再带「难度适应」5980）；不在名单里的难度技能忘掉，没被保留的开局状态（这些技能的 StartPushState）去掉。
-## 本期只做纯难度技能这条：主角带强／弱者分档技能（6216／6235）、补强档开关 2461～2463 开着、或角色号 ≥167 时不动
-## （这些要读公共事件 1345／1443～1445 的名单，另需参照，见交付单遗留）。
+## installNativeDifficultyInheritanceRuntime（冻结 v0.28）：CodexDifficulty.syncActor 在入队（Game_Party.addActor 前）、读档（extractSaveContents，角色号 ≥167）、
+## 开战（BattleManager.startBattle，仅 ≥167 的队员）把队员的难度类技能同步成主角（角色 1）的；读档时 <167 的队员只补补强档（syncNativeTier）。
+## 档位（profile）：主角已学的难度技能（名单 difficulty_managed_skills），一个也没有按全局难度开关取基础被动（开关 2496／2492／2491／2500／2494／2489／2487／2483 →
+## 5561／5547／5548／5549／5562／5564×3，第 2～4 档再带「难度适应」5980）；强弱者分档＝主角带 6216／6235；补强档＝主角带 5968～5973 任一对或开关 2461～2463 开着。
+## 都没有就不动。队员按档位算 desired：分档时强者 6216 否则弱者 6235（强者＝公共事件 1345 名单、新增超强者 167～173／175、或 ≥167 且已带 6216）；
+## 补强档按公共事件 1443～1445 的 skillNNNNIds 名单取强（5969／5971／5973）或弱（5968／5970／5972）。不在 desired 里的名单内技能忘掉，没被保留的开局状态去掉。
 const DIFFICULTY_SWITCHES := [2496, 2492, 2491, 2500, 2494, 2489, 2487, 2483]
 const DIFFICULTY_BASE_SKILLS := [5561, 5547, 5548, 5549, 5562, 5564, 5564, 5564]
 const DIFFICULTY_ROLE_SKILLS := [6216, 6235, 5968, 5969, 5970, 5971, 5972, 5973]
+const DIFFICULTY_NEW_STRONG := [167, 168, 169, 170, 171, 172, 173, 175]
+const DIFFICULTY_TIER_PAIRS := [[5968, 5969], [5970, 5971], [5972, 5973]]
+const DIFFICULTY_TIER_EVENTS := [1443, 1444, 1445]
+const DIFFICULTY_TIER_SWITCHES := [2461, 2462, 2463]
 static var _difficulty_managed: Array = []
+static var _native_ids_cache := {}
 
 static func difficulty_managed_skills() -> Array:
 	if _difficulty_managed.is_empty():
@@ -335,15 +342,38 @@ static func difficulty_managed_skills() -> Array:
 		_difficulty_managed.sort()
 	return _difficulty_managed
 
-func inherit_difficulty(a: XActor) -> void:
+## nativeIds：公共事件脚本里「var NAME = [..]」的数组
+static func difficulty_native_ids(event_id: int, list_name: String) -> Array:
+	var key := "%d.%s" % [event_id, list_name]
+	if not _native_ids_cache.has(key):
+		var text := ""
+		for c in XDB.rec("CommonEvents", event_id).get("list", []):
+			if int(c.code) in [355, 655]:
+				text += str(c.parameters[0]) + "\n"
+		var m := RegEx.create_from_string("var\\s+" + list_name + "\\s*=\\s*(\\[[\\d,\\s]*\\])").search(text)
+		_native_ids_cache[key] = (JSON.parse_string(m.get_string(1)) if m != null else []).map(func(v): return int(v))
+	return _native_ids_cache[key]
+
+func _difficulty_strong(a: XActor, event_id: int, list_name: String) -> bool:
 	var id := a.actor_id
-	if id == 1 or id >= 167 or str(a.data().get("name", "")) == "":
-		return
+	if DIFFICULTY_NEW_STRONG.has(id):
+		return true
+	if id >= 167 and a.skill_ids.has(6216):
+		return true
+	return difficulty_native_ids(event_id, list_name).has(id)
+
+## profile()：主角（没有就找一名 <167 带难度技能的队员）的档位；没有任何档位返回空字典
+func _difficulty_profile() -> Dictionary:
 	var managed := difficulty_managed_skills()
-	var lead: XActor = actors.get(1)
-	var skills: Array = managed.filter(func(sid): return lead != null and lead.skill_ids.has(sid)) if lead != null else []
-	var classified := lead != null and (lead.skill_ids.has(6216) or lead.skill_ids.has(6235))
-	var tiers := [2461, 2462, 2463].any(func(sw): return switch(sw))
+	var source: XActor = actors.get(1)
+	if source == null:
+		for aid in actors:
+			if int(aid) < 167 and managed.any(func(sid): return actors[aid].skill_ids.has(sid)):
+				source = actors[aid]
+				break
+	var skills: Array = managed.filter(func(sid): return source != null and source.skill_ids.has(sid))
+	var tiers := DIFFICULTY_TIER_PAIRS.map(func(pair): return source != null and pair.any(func(sid): return source.skill_ids.has(sid)))
+	var classification: bool = source != null and (source.skill_ids.has(6216) or source.skill_ids.has(6235))
 	if skills.is_empty():
 		for i in range(DIFFICULTY_SWITCHES.size() - 1, -1, -1):
 			if not switch(DIFFICULTY_SWITCHES[i]):
@@ -352,22 +382,45 @@ func inherit_difficulty(a: XActor) -> void:
 			if i >= 1 and i <= 3:
 				skills.append(5980)
 			break
-	if (skills.is_empty() and not classified and not tiers) or classified or tiers:
+	for i in 3:
+		if switch(DIFFICULTY_TIER_SWITCHES[i]):
+			tiers[i] = true
+	if skills.is_empty() and not classification and not tiers.any(func(t): return t):
+		return {}
+	return {"skills": skills, "tiers": tiers, "classification": classification}
+
+func inherit_difficulty(a: XActor) -> void:
+	var id := a.actor_id
+	if id == 1 or str(a.data().get("name", "")) == "":
 		return
+	var current := _difficulty_profile()
+	if current.is_empty():
+		return
+	var managed := difficulty_managed_skills()
+	var desired: Array = current.skills.duplicate()
+	if current.classification or DIFFICULTY_NEW_STRONG.has(id):
+		desired.append(6216 if _difficulty_strong(a, 1345, "actorIds") else 6235)
+	for i in 3:
+		var pair: Array = DIFFICULTY_TIER_PAIRS[i]
+		if not current.tiers[i] or difficulty_native_ids(DIFFICULTY_TIER_EVENTS[i], "noSkillIds").has(id):
+			continue
+		desired.append(pair[1] if _difficulty_strong(a, DIFFICULTY_TIER_EVENTS[i], "skill%dIds" % pair[1]) else pair[0])
 	var start_re := RegEx.create_from_string("<Start(?:WT)?PushState(\\d+):\\s*100%>")
+	var tracked: Array = managed + DIFFICULTY_ROLE_SKILLS
 	var system_states := {}
-	for sid in managed + DIFFICULTY_ROLE_SKILLS:
+	for sid in tracked:
 		for m in start_re.search_all(str(XDB.rec("Skills", int(sid)).get("note", ""))):
 			system_states[int(m.get_string(1))] = true
-	for sid in managed + DIFFICULTY_ROLE_SKILLS:
-		if sid in [6216, 6235]:
+	for sid in tracked:
+		# 分档技能：没有分档档位、也不是新增超强者时不碰（未跑强弱者事件前不给无关角色加）
+		if (sid == 6216 or sid == 6235) and not current.classification and not DIFFICULTY_NEW_STRONG.has(id):
 			continue
-		if skills.has(sid):
+		if desired.has(sid):
 			a.learn_skill(int(sid))
 		elif a.skill_ids.has(sid):
 			a.forget_skill(int(sid))
 	var kept := {}
-	for sid in managed + DIFFICULTY_ROLE_SKILLS:
+	for sid in tracked:
 		if a.skill_ids.has(sid):
 			for m in start_re.search_all(str(XDB.rec("Skills", int(sid)).get("note", ""))):
 				kept[int(m.get_string(1))] = true
@@ -375,6 +428,43 @@ func inherit_difficulty(a: XActor) -> void:
 		if not kept.has(st) and a.is_state_affected(int(st)):
 			a.remove_state(int(st))
 	a.refresh_passive()
+
+## syncNativeTier（读档时 <167 的队员）：洪荒档补洪荒压制被动；补强档开着时按 1443～1445 的强者名单换成强／弱一档
+func sync_native_tier(a: XActor) -> void:
+	var id := a.actor_id
+	if id >= 167 or str(a.data().get("name", "")) == "":
+		return
+	if switch(2463):
+		for rec in XDB.table("Skills"):
+			if rec != null and str(rec.get("note", "")).contains("<CodexHonghuangSuppress>"):
+				a.learn_skill(int(rec.id))
+				break
+	for i in 3:
+		if not switch(DIFFICULTY_TIER_SWITCHES[i]) or difficulty_native_ids(DIFFICULTY_TIER_EVENTS[i], "noSkillIds").has(id):
+			continue
+		var pair: Array = DIFFICULTY_TIER_PAIRS[i]
+		var want: int = pair[1] if difficulty_native_ids(DIFFICULTY_TIER_EVENTS[i], "skill%dIds" % pair[1]).has(id) else pair[0]
+		var other: int = pair[0] if want == pair[1] else pair[1]
+		if a.skill_ids.has(other):
+			a.forget_skill(other)
+		a.learn_skill(want)
+	a.refresh_passive()
+
+## DataManager.extractSaveContents 钩子：读档后 ≥167 的角色走完整同步，其余补补强档
+func sync_difficulty_after_load() -> void:
+	for aid in actors.keys():
+		actors[aid].repair_strong_classified()
+	for aid in actors.keys():
+		if int(aid) >= 167:
+			inherit_difficulty(actors[aid])
+		else:
+			sync_native_tier(actors[aid])
+
+## BattleManager.startBattle 钩子：队伍里 ≥167 的队员重新同步（入队后难度档位可能变了）
+func sync_difficulty_on_battle() -> void:
+	for aid in party:
+		if int(aid) >= 167 and actors.has(int(aid)):
+			inherit_difficulty(actors[int(aid)])
 
 ## Game_Party.removeActor：出战栏位里的变成空位并重排
 func remove_actor(id: int) -> void:
@@ -758,6 +848,7 @@ static func from_dict(d: Dictionary) -> XState:
 		# dev.016 及以前的 Godot 档没有解锁记录：已到过大厅的补大厅（所在地图由 load_map 照常解锁）
 		s.unlocked_maps[4] = true
 	XGlobalVars.apply(s)  # extractSaveContents 之后：跨存档变量盖掉档里的值
+	s.sync_difficulty_after_load()
 	_become_current(s)
 	XPets.loaded(s)
 	# setup时曾缓存空状态；恢复完当前存档后重建效果快照，不额外夹HP／MP。
