@@ -1,7 +1,7 @@
 # 交付：claude/bajie-ce-fix2
 
 - 车道／工作者：C 规则·解释器／八戒（Claude，八戒_77）
-- 状态：验证中（见「验证」）
+- 状态：**可合并**（待 Codex 核查；没有改原沙僧核心文件）
 - 基线：main 6ece5c08（已含 ce-fix1 合并），开工 `--补齐`
 - 来源：总装 2026-10-27 派单「效果型公共事件期三」：ce-fix1 之后事件对照登记剩 18 项（专属角色号角 CE9002～9018、CE765、823、824，另有 m4e73p0、m189e1p0 两项老的）。
 
@@ -41,7 +41,8 @@
 - 选测 31 场，并行 2，`--full`，480 秒，全部单次通过：xiyou_actor_modules 56、autosave 10、boss_lifecycle 5080、boss_output 3823、boss_output_context 16621、boss_react 9074、boss_sequence 8315、boss_state_origin 15723、cat 994、common_scripts 457、event_compare 5、floor31_bosses 67、imported_balance 273、item_marks 108、party 58、party_skills 214、power 137、power_books 6136、power_books_boundary 55682、power_books_menu 1068、reward_branches 4、xiyou_rules 难度 1 四段 115637／115733／115746／115725、script 21、shop_buy 10781、status_power 36、status_power_panel 11、super_acquire 31、super_deploy 43。
 - `内容覆盖检查.py --check`：新增 0、消掉 0（hard 2 都在基线）。
 - 原版探针 `common_script_probe.cjs` 单跑约 1 分钟，errors 为空。
-- 同步 `同步正式西游.py --accept-additions`：（待补）
+- 同步 `同步正式西游.py --accept-additions`（工作树，不登记）：退出码 0，「测量不变」，18 分钟，留了产物指纹。同步后复跑 `xiyou_event_compare` 5/5（5752/5753）、`xiyou_common_scripts` 457/457。
+  - 第一次同步失败：slice_probe 六个难度的增量合并（`oracle_shard_merge.cjs`，每份约 170MB）同时退出 1，当时主工作区在跑全量。单独重放同一份合并成功，第二次同步六段都通过，判为偶发（日志 `同步_第1次.log`）。
 - 没跑全量。日志在 `04_验证/本地结果/20261027_八戒_cefix2/`，不入 Git。
 
 ## 待交叉核查
@@ -59,6 +60,7 @@
 
 - 事件对照替身的计时现在和参照引擎逐帧对齐（第 1 帧起、整数帧数换算）；之后再有「差一个等待」的不一致，先看计时，不是解释器。
 - 补齐的导入等共用槽约 34 分钟（主工作区在跑全量）。
+- 同步的 slice_probe 增量合并：六个难度并行各读写约 170MB 的 JSON，机器满载时会一起失败，而且同步日志里只有「探针失败」，看不到合并的报错输出。建议给工具车道：合并失败时把 `oracle_shard_merge.cjs` 的输出写进日志，六段合并改为串行或限 2 个并发。
 
 ## 本分支提交
 
