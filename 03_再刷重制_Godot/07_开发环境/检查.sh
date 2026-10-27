@@ -110,6 +110,8 @@ if (( FAIL && ! KEEP_GOING )); then
 fi
 
 print "== Godot 测试"
+# 车道 worktree：补齐带进来的主工作区参照与本分支切片不同批时提示（不判失败，见 参照批次.py）
+python3 "$ENV_DIR/参照批次.py" check "$PROJECT/modes/xiyou/generated" || true
 (( SEL_FULL )) || TEST_ARGS+=(--reuse)
 if (( ! SEL_FULL && ${#SEL_SCENES} == 0 )); then
   print "  （选测：没有要跑的 Godot 场景，跳过导入与测试）"
@@ -128,6 +130,7 @@ print "== 参照工具访问守卫"
 want guards && { if node "$ROOT/03_再刷重制_Godot/03_转换工具/mv_oracle/guard_check.cjs"; then ok "MV 文件守卫"; else bad "MV 文件守卫"; fi; }
 want guards && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/ui_reference/guard_check.py"; then ok "界面参照服务守卫"; else bad "界面参照服务守卫"; fi; }
 want tools && { if python3 "$ENV_DIR/测试工作树清理.py" >/dev/null; then ok "工作树清理保护"; else bad "工作树清理保护"; fi; }
+want tools && { if python3 "$ENV_DIR/测试参照批次.py" >/dev/null 2>&1; then ok "车道参照与切片同批提示"; else bad "参照批次工具回归失败，单跑 07_开发环境/测试参照批次.py 看详情"; fi; }
 want guards && { if python3 "$ENV_DIR/测试导出过滤.py"; then ok "导出包排除测试与参照数据"; else bad "导出过滤没挡住测试或参照数据"; fi; }
 want tools && { if python3 "$ENV_DIR/测试共性验收.py"; then ok "共性参照对照工具保护"; else bad "共性验收工具回归失败"; fi; }
 want content && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/共性参照验收.py"; then ok "共性参照完整性（尚非Godot实现验收）"; else bad "共性参照缺失或异常"; fi; }
