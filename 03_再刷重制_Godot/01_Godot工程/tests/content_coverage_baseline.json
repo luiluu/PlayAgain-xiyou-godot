@@ -1,6 +1,4 @@
 {
  "说明": "内容覆盖检查的已知问题（缺素材／无效引用／未翻译）。修好一项就 --update-baseline；新问题不进基线就会让检查失败。",
- "issues": [
-  "未翻译|Map041/EV001/p1|插件指令 SceneManager.push(Scene_StarSaveWarehouse)"
- ]
+ "issues": []
 }

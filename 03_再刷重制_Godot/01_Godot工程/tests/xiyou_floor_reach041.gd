@@ -1,7 +1,6 @@
 extends Node
-## 可达图收尾：黄金大厅 Map041、空图 Map102，以及期七遗留的 Map062 正式入口（地图场景里真走一遍）：
-## - 40 EV4：开关 170 开才进 41 (10,18)，没开留在原地；41 EV2 回 40 (19,6)；41 EV1 通用仓库管理员的「离开」走通。
-##   「存放」「取出」要打开星级仓库画面（插件 Scene_StarSaveWarehouse／Scene_StarWarehouse），重制还没有这两个画面，脚本照现状被跳过，只核不崩、留在 41。
+## 可达图收尾：空图 Map102，以及期七遗留的 Map062 正式入口（地图场景里真走一遍）。
+## 黄金大厅 Map041 暂不收（星级仓库画面未做，见交付单）。
 ## - 69 EV47 第二页（开关 21 开）→ 空图 102 (29,22)。
 ## - 指路灯物品 247 → 公共事件 164 → 传送到 62 (23,19)（不经 Map127）：普通情形传送；在副本中（变量 21≠0）只提示不传送。
 ## 队伍生命攻击都很大（只查流程）。
@@ -172,35 +171,10 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0
 	XGuide.MILESTONE_ENABLED = false
 	seed(20261027)
-	await _hall()
 	await _empty()
 	await _lamp()
 	MVEventCore.fixed_random = -1.0
 	_finish()
-
-
-## 黄金大厅 41
-func _hall() -> void:
-	var s := _start(40, 19, 7, 8)
-	if not _check("hall_start", await _wait_map(40)):
-		return
-	# 没开关 170 进不去
-	s.set_switch(170, false)
-	await _run_event(_scene(), 4, [], "")
-	_check("hall_locked", _scene().map_id == 40, _scene().map_id)
-	s.set_switch(170, true)
-	await _run_event(_scene(), 4, [], "")
-	if not _check("hall_entered", await _wait_map(41) and _scene().player.grid == Vector2i(10, 18), [_scene().map_id, _scene().player.grid]):
-		return
-	var map: XMapScene = _scene()
-	_check("hall_events", _event(map, 1) != null and _event(map, 2) != null)
-	_check("hall_no_table", map.map_data.encounterList.is_empty())
-	# EV1 通用仓库管理员：离开；存放／取出（星级仓库画面未做，脚本被跳过，不崩、留在 41）
-	for a in [2, 0, 1]:
-		await _run_event(map, 1, [a], "")
-		_check("hall_keeper_%d" % a, _scene().map_id == 41 and not _scene().busy, [_scene().map_id])
-	await _run_event(map, 2, [], "")
-	_check("hall_back", await _wait_map(40) and _scene().player.grid == Vector2i(19, 6), [_scene().map_id, _scene().player.grid])
 
 
 ## 空图 102：Map69 EV47 第二页（开关 21 开）进入
