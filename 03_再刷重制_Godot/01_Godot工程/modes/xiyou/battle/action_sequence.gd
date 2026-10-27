@@ -151,7 +151,7 @@ func _command(name: String, args: Array) -> void:
 		XBattleCommonEvent.reserve_action(logic, user, skill, all_targets)  # actionActionCommonEvent：44 效果依次预约（单槽）
 		return
 	if name == "COMMON EVENT":
-		XBattleCommonEvent.reserve(logic, int(str(args[0]).to_int()) if not args.is_empty() else 0)  # ActSeqPack1 actionCommonEvent
+		XBattleCommonEvent.run_or_reserve(logic, int(str(args[0]).to_int()) if not args.is_empty() else 0)  # ActSeqPack1 actionCommonEvent
 		return
 	if name == "CAT BEGIN" or name == "CAT STRIKE":
 		# 小猫剑圣包装 processActionSequence：178 的四个剑技在这里打完全部剑段（XCat.cast）；其余情况原版也什么都不做

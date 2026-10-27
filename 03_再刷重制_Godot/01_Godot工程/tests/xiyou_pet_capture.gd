@@ -176,7 +176,7 @@ func _run() -> void:
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
 
 
-## 魔兽要诀（XPets.learn_book）对照参照；再查 O-098 的 372 改学 1672
+## 魔兽要诀（XPets.learn_book）对照参照；再查 O-103 的 372 改学 1672
 func _books() -> void:
 	for b in ref.books:
 		var s := XState.new_game(3, 1, [8, 9, 10])
@@ -217,5 +217,5 @@ func _battle_flow() -> void:
 	check("battle_capture_not_in_orders", not l.current_order.has(l.enemies[0]) and not l.next_order.has(l.enemies[0]))
 	l.turn = 5
 	var end := l.end_turn()
-	# O-098：已被捕走的不再「逃跑」，只有另外两只提示
+	# O-102：已被捕走的不再「逃跑」，只有另外两只提示
 	check("battle_flee_turn5", l.enemies.all(func(e): return e.hidden) and toasts(end).size() == 2 and l.alive(l.enemies).is_empty(), toasts(end))

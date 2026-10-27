@@ -376,7 +376,7 @@ func skills() -> Array:
 			ids.append(int(t.dataId))
 	for id in XEquipSuits.ids(self,"skills"):
 		if not ids.has(id):ids.append(id)
-	for id in XMagicWeapon.skills(equips):  # CP_X_MagicWeaponLearnSkill：法宝按等级学的技能
+	for id in XMagicWeapon.skills(equips):  # CP_X_MagicWeaponLearnSkill：法宝按等级学的技能；O-099 去重（原版 concat 不去重）
 		if not ids.has(id):ids.append(id)
 	var out := []
 	for id in ids:

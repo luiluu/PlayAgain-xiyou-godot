@@ -2,7 +2,7 @@ extends Node
 ## 异化工坊期二（配置异化与穿戴限制）：按正式 alien_config_probe.cjs 的记录逐项比对——alienation.json 的模板与云裳名单；
 ## 队员的原生主动技能、可借技能、生命兼容；吞器供体的借出效果；20 种词条 × 4 名队员的就绪判定；可绑定队友；
 ## configure／clearConfiguration 20 例（返回、存下的配置、之后的就绪、详情行）；工坊配置页 6 条路线每一步的节点树（含下拉框选项与当前值）；
-## 换装备（未就绪、就绪、第二件、同槽替换、待选中）与商店出售可否选。另查挂机自动卖出／一键出售跳过异化装备（O-待定）。
+## 换装备（未就绪、就绪、第二件、同槽替换、待选中）与商店出售可否选。另查挂机自动卖出／一键出售跳过异化装备（O-081）。
 ## 吞器供体的装备 ID：原版是独立装备编号，这里是实例 ID，比对时按供体顺序换算。
 
 var results := []
@@ -277,7 +277,7 @@ func _equip() -> void:
 	check("sell_enabled", XItemMarks.can_sell(inv) == bool(rows.sell.alien) and XItemMarks.can_sell(plain) == bool(rows.sell.plain), [XItemMarks.can_sell(inv), XItemMarks.can_sell(plain)])
 
 
-## 挂机自动卖出（原版挡了）与一键出售（原版没挡，O-待定）都跳过异化装备
+## 挂机自动卖出（原版挡了）与一键出售（原版没挡，O-081）都跳过异化装备
 func _sell_filters() -> void:
 	var s := _state()
 	var alien := _make(s, "w", 1044, "boss", "void")
