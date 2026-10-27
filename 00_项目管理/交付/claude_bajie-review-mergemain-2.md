@@ -1,7 +1,7 @@
 # 交付：claude/bajie-review-mergemain-2
 
 - 车道／工作者：核查／八戒（Claude）
-- 状态：核查完成，发现 P1，停手待总装决定（Boss 六张单本身可销，见报告）
+- 状态：可合并（Boss 六张单可销；P1 另由修复批 claude/bajie-fix-startstate 跟踪，销账不含 f4dff07e）
 
 ## 结果（八戒，2026-10-27）
 
