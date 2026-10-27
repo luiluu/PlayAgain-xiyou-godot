@@ -31,6 +31,7 @@ static func clone(a: XActor) -> XActor:
 	b.mp = a.mp
 	b.tp = a.tp
 	b.zhenqi = a.zhenqi.duplicate(true)   # 道法技能按境界缩放（XZhenqi.daofa_scale），漏了预览与战力都按 1/4 算
+	b.state_data = a.state_data.duplicate(true)  # _stateCounter 等状态私有字段（原版 JsonEx 深拷贝整个对象）；漏了 1775 层数归 1
 	b.refresh_passive()
 	return b
 
