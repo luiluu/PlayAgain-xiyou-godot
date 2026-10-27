@@ -19,11 +19,15 @@ extends RefCounted
 ## 存档：XState.pets 的 ref_capture、ref_day、ref_hour、ref_minute（$gameParty.PetRef_Capture／PetRefDay…）。
 ## O-101：提示开关 $gameParty.PetShowTextT 原版没有任何地方打开，刷新的「天生异象……」提示永远不弹，玩家不知道神秘生物出现了。
 ##   重制默认弹（SHOW_REFRESH_TEXT），设 false 恢复原版（只在存档 pets.show_text 为真时弹）。
+## O-105：die＋hide 时原版先 die()（AB_EnemyBook 包装记一次击败），refresh 见 HP 0 补阵亡状态又走一次 die()，捕捉成功和第 5 回合
+##   逃跑都给图鉴击败数 +2（已隐藏的不算出现，refresh 补不上阵亡，只 +1）。重制只记一次（用户 2026-10-27 定保持 +1；
+##   出处 8fe7f796、926f914f）。SINGLE_DEFEAT_COUNT 设 false 恢复原版重复计数。
 
 const FLEE_TURN := 5
-## O-101 提示照弹、O-102 只让活着的逃跑（见文件头）
+## O-101 提示照弹、O-102 只让活着的逃跑、O-105 击败数只记一次（见文件头）
 static var SHOW_REFRESH_TEXT := true
 static var FLEE_ALIVE_ONLY := true
+static var SINGLE_DEFEAT_COUNT := true
 
 ## 测试用：返回 {day, hour, minute} 的时钟（缺省读系统时间）
 static var clock := Callable()
@@ -76,9 +80,12 @@ static func roll_battle(logic, rnd: XRandomStream = null) -> void:
 static func _vanish(logic, e: XEnemy) -> Array:
 	var slot: int = logic.enemies.find(e)
 	var before: Dictionary = logic._enemy_reading(e)
+	var appeared := not e.hidden
 	e.hp = 0.0
 	e.clear_states()
 	logic._die(e)
+	if not SINGLE_DEFEAT_COUNT and appeared:
+		XEnemyBook.note_death(e)  # O-105 原版：die() 与 refresh 补阵亡各记一次
 	e.hidden = true
 	return [logic._enemy_change("vanish", slot, before)]
 

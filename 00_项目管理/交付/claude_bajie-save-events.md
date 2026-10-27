@@ -1,7 +1,7 @@
 # 交付：claude/bajie-save-events
 
 - 车道／工作者：规则／八戒（Claude，八戒_77）
-- 状态：第 1、2 项可合并（待 Codex 核查；没有动独占文件）。追加的 F4（O-105）还没开工，见下节；可以先合第 1、2 项，F4 额度重置后接着在本分支做。
+- 状态：**全部可合并**（第 1、2、3 项；待 Codex 核查；没有改原沙僧核心文件）。
 - 基线：9cab4f5b（claude/bajie-tools-sync），开工时合了 main，又重新 `--补齐`
 - 来源：总装 2026-10-27 派单。第 1 项是交接板「下一步」里云端审查留下的「存档不存事件位置／朝向／路线」，第 2 项是 mv_script 正则缓存。
 
@@ -70,18 +70,28 @@
 
 在 `map/*.gd` 和 `mv_event_core.gd` 里查过，只有 `_re` 内部一处会编译正则，没有别的地方逐条现编译，所以这次不用改。
 
-## 3. F4／O-105：捕捉成功的图鉴击败数（未开工，额度 84% 收尾停下）
+## 3. F4／O-105：捕捉成功的图鉴击败数只记一次（用户 10-27 定保持 +1）
 
-用户 10-27 定：保持重制的 +1，原版 die→refresh 会记两次，共 +2。出处 8fe7f796、926f914f。
+### 原版两次计数从哪里来（读码＋探针实测）
 
-- 已查到的代码路径：`core/pet_capture.gd` 第 75～82 行，捕捉成功时 `logic._die(e)` 后 `e.hidden = true`。原版是 Game_BattlerBase.die → refresh 加阵亡 → hide。
-- 还没做：
-  - 优化登记加 O-105，状态「用户已定：保持 +1」；
-  - 在计数处加可回退开关，写法照 `XPets.FIX_UNGRANTED_BONUS`，默认保持 +1，设 false 回原版 +2，并加注释；
-  - 专项断言两种取值；
-  - 选测：pet_capture、enemy_book 等；
-  - 交付单与变更记录草稿。
-- 下一步：先确认原版两次计数分别从哪里来（die 一次，refresh 加阵亡又一次），再决定开关挂在 `pet_capture` 还是 `XEnemyBook.note_death`。enemy_book.gd 不是独占文件；battler.gd 属于沙僧，不碰。
+- `Star_PetSystem.js` 捕捉成功（PetGet，1187～1189 行）和第 5 回合逃跑（BattleManager.endTurn 包装）都是 `die(); refresh(); hide();`。
+- 第一次：`die()` 被 AB_EnemyBook 包装（4169～4173 行），`incrementDefeatNumber` +1。
+- 第二次：`die()` 把 HP 清 0、清掉全部状态（含阵亡）；接着 `refresh()` 见 HP 0 → `addState(阵亡)`，敌人此时还没隐藏、算活着，可以加上 → `addNewState` 又调 `die()`，再 +1。
+- 普通击败只走 `addState(阵亡)` 这一条，只记一次；所以重复只出在 die＋hide 这两条路径。已经隐藏的敌人（O-102 设 false 时被捕走的又「逃跑」）不算出现，refresh 加不上阵亡，只 +1。
+- 探针 `pet_capture_probe.cjs` 补读数 `defeats`（AB_EnemyBook `_defeatNumbers` 合计）：`gets` 成功三例都是 2，失败、不可捕捉是 0；`turns` 第 5 回合（一只逃跑）是 2。夹具 `pet_capture_oracle.json` 只多了这 8 行，其余字段与旧夹具逐项相同。
+
+### 改法
+
+- 开关挂在 `core/pet_capture.gd` 的 `_vanish`（捕捉和逃跑共用），没碰 `battler.gd` 和 `enemy_book.gd`。
+- `XPetCapture.SINGLE_DEFEAT_COUNT := true`（默认，保持 +1）。设 false：die＋hide 前敌人是出现着的，就再调一次 `XEnemyBook.note_death`，回到原版 +2。注释写了原版出处和 8fe7f796、926f914f。
+- 优化登记加 O-105，状态「保留（用户 2026-10-27 定：保持 +1）」。
+
+### 专项 `xiyou_pet_capture` 48/48（原 43 项，新增 5 项）
+
+- `defeat_oracle`：参照里捕捉成功、第 5 回合逃跑都是每只 2。
+- `defeat_capture_single`／`defeat_flee_single`：默认开关，真实战斗用大师级捕获器捕到一只 +1，再到第 5 回合另两只逃跑，合计 3。
+- `defeat_capture_mv`／`defeat_flee_mv`：开关 false，取参照的每只 2，合计 2、6。
+- 反向验证：去掉 false 分支那次额外计数，`defeat_capture_mv`、`defeat_flee_mv` 失败。
 
 ## 验证
 
@@ -104,9 +114,14 @@
 - 没跑全量。
 - 日志在 `03_再刷重制_Godot/04_验证/本地结果/20261027_八戒_存档/`，不入 Git。
 
+### 第 3 项（F4／O-105）
+
+8 场，并行 2，`--full`，用时 472 秒，全部单次通过：xiyou_pet_capture 48、xiyou_enemy_book 93、xiyou_pets 29、xiyou_actor_bonus 736，xiyou_rules 难度 1 四段 115637／115733／115746／115725。原版探针 `pet_capture_probe.cjs` 重跑约 6 秒。日志在 `04_验证/本地结果/20261027_八戒_F4/`，不入 Git。
+
 ## 待交叉核查
 
 - 本分支提交（执行者: Claude（八戒），核查: 待Codex）。
+- 第 3 项没有改原沙僧核心文件（battle_logic／actor／battler／damage／xstate 都没动）；改了原版探针 `pet_capture_probe.cjs` 和它的夹具，请核读数是否照原版。
 
 ## 可优化
 
@@ -119,3 +134,8 @@
 
 - 照原版同版本读档不重设地图：当前地图事件的位置（含走到一半）、朝向、强制路线及其索引、路线改过的图像、不透明度和穿透等，存进新存档键 `mapEvents`，读档后套回。旧档没有这个键就回到初始；页号对不上不套；换到别的地图会清掉。
 - 新原版探针（Map004 五个事件）和新专项 25 项；mv_script 正则缓存早在 0f58f16d 已完成，这次没改。
+
+## 2026-10-27 【Claude·八戒·未经Codex检验】捕捉成功／第 5 回合逃跑的图鉴击败数只记一次，登记 O-105（dev.待定）
+
+- 原版对被捕和逃跑的敌人先 die() 再 refresh：两次都经过 AB_EnemyBook 的 die 包装，每只记 2 次击败；重制只记 1 次，用户 10-27 定保持。可回退开关 `XPetCapture.SINGLE_DEFEAT_COUNT`，设 false 回原版 +2。
+- 原版探针 pet_capture_probe 补击败数读数；xiyou_pet_capture 新增 5 项，两种取值都验。
