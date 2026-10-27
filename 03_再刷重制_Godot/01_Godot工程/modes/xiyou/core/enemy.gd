@@ -31,7 +31,7 @@ static var _boss_ids := {}
 const BOSS_ARMOR_STATE := 2651
 
 static func deployed_strong_count(members: Array) -> int:
-	return members.filter(func(a): return a is XActor and XItemMarks.SUPER_STRONG_IDS.has(a.actor_id)).size()
+	return members.filter(func(a): return a is XActor and XItemMarks.is_super_strong(a.actor_id)).size()
 
 static func boss_id(id: int) -> bool:
 	var rec := XDB.rec("Enemies", id)

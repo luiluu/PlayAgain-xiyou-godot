@@ -38,6 +38,27 @@ static func _re(pattern: String) -> RegEx:
 	return r
 
 
+## installBossDifficultyRuntime 的 D.recruitments（角色, 号角物品, 模块）：这些模块的 recruit() 外面包了一层——角色是超强者且没开
+## 挑战（XItemMarks.can_acquire_actor 为假）就提示「超强者仅限地狱及以上难度获取。」并返回 false，模块本身不跑。
+## 谷雨／屠苏／璇的号角脚本写 X.ids().horn（模块按物品名现找），这里取同一张表里的号角号。
+const _RECRUITMENTS := {"CodexRaven": [167, 2902], "CodexMira": [168, 2904], "CodexYomi": [169, 2931], "CodexJingliu": [170, 2932],
+	"CodexToji": [171, 2936], "CodexSukuna": [172, 2938], "CodexGarou": [173, 2940], "CodexYunshang": [174, 2941], "Guyu": [175, 2943],
+	"CodexTusu": [176, 2945], "CodexXuan": [177, 2946]}
+
+
+## 包装那一层：挡下时提示并返回 true（recruit() 视为返回 false）
+static func _recruit_blocked(module: String, interp) -> bool:
+	if not _RECRUITMENTS.has(module) or XItemMarks.can_acquire_actor(XState.current, int(_RECRUITMENTS[module][0])):
+		return false
+	interp.host.toast(XItemMarks.SUPER_NOTICE)
+	return true
+
+
+## 角色在队且达到等级（openCrafting／startTrial 的前置）
+static func _actor_ready(s: XState, actor_id: int, level: int) -> bool:
+	return s.party.has(actor_id) and s.actor(actor_id).level >= level
+
+
 ## 专属角色模块的 recruit()：返回 func(s, interp) -> bool（入队了为 true）；认不得的模块返回空 Callable
 static func _module_recruit(module: String) -> Callable:
 	match module:
@@ -126,15 +147,23 @@ static func run(code: String, interp) -> Array:
 		if not XChangeClothes.unlocked(int(lite.get_string(1))):
 			XChangeClothes.unlock(int(lite.get_string(2)))
 		return []
-	# 专属角色号角（公共事件 9009 等）：try { if (!CodexX.recruit()) $gameParty.gainItem($dataItems[号角],1); } catch(error) {…}
-	# 招募没成功（已在队）就还号角；catch 分支是脚本出错时的返还，重制不会走到
-	var horn := _re("^try\\s*\\{\\s*if\\s*\\(\\s*!\\s*(Codex\\w+)\\.recruit\\(\\)\\s*\\)\\s*\\$gameParty\\.gainItem\\(\\$dataItems\\[(\\d+)\\]\\s*,\\s*1\\);?\\s*\\}\\s*catch\\s*\\(\\s*error\\s*\\)\\s*\\{.*\\}$").search(js)
-	var recruit := _module_recruit(horn.get_string(1)) if horn else Callable()
-	if recruit.is_valid():
-		var joined: bool = await recruit.call(s, interp)
-		if not joined:
-			s.gain_item(int(horn.get_string(2)), 1)
-		return []
+	# 专属角色号角（公共事件 9006～9016）：try { if (!X.recruit()) $gameParty.gainItem($dataItems[号角或 X.ids().horn],1); } catch(error) {…}
+	# 招募没成功（已在队、超强者门槛挡下）就还号角；catch 分支是脚本出错时的返还，重制不会走到。
+	# 模块没移植的（甚尔、谷雨、屠苏、璇）只有门槛挡下这一支能照做，放行时照旧算没认出
+	var horn := _re("^try\\s*\\{\\s*if\\s*\\(\\s*!\\s*(\\w+)\\.recruit\\(\\)\\s*\\)\\s*\\$gameParty\\.gainItem\\(\\$dataItems\\[(\\d+|\\1\\.ids\\(\\)\\.horn)\\]\\s*,\\s*1\\);?\\s*\\}\\s*catch\\s*\\(\\s*error\\s*\\)\\s*\\{.*\\}$").search(js)
+	if horn:
+		var module := horn.get_string(1)
+		var horn_id := int(horn.get_string(2)) if horn.get_string(2).is_valid_int() else int(_RECRUITMENTS.get(module, [0, 0])[1])
+		var recruit := _module_recruit(module)
+		if horn_id > 0 and (recruit.is_valid() or _RECRUITMENTS.has(module)):
+			if _recruit_blocked(module, interp):
+				s.gain_item(horn_id, 1)
+				return []
+			if recruit.is_valid():
+				var joined: bool = await recruit.call(s, interp)
+				if not joined:
+					s.gain_item(horn_id, 1)
+				return []
 	var unknown := []
 	# 存档分支：if (DataManager.saveGame($gamePlayer.SaveGameId)) { …成功… } else { …失败… }
 	var at := js.find("DataManager.saveGame(")
@@ -232,14 +261,26 @@ static func _statements(js: String, interp) -> Array:
 			if got != "":
 				interp.host.toast(got)
 			continue
+		# 公共事件 9011 天衣铺、9018 小猫试炼：只移植了条件不够时的提示（installNativeYunshangRuntime openCrafting：174 云裳在队且
+		# 20 级；installImportedBalanceRuntime startTrial：178 在队、35 级且武器槽是剑）。条件够时的天衣铺页面与试炼战斗没移植，照旧算没认出。
+		# 两处原版还判 $gameParty.inBattle()，重制的脚本翻译只在地图上跑，不用判
+		if st == "CodexYunshang.openCrafting()" and not _actor_ready(s, 174, 20):
+			interp.host.toast("云裳达到20级后，可在战斗外使用天衣铺")
+			continue
+		if st == "CodexCat.startTrial(this)" and not (_actor_ready(s, XCat.ACTOR, 35) and XCat.has_sword(s.actor(XCat.ACTOR))):
+			interp.host.toast("小猫剑圣达到35级并装备剑后，才能挑战。")
+			continue
 		if st == "CodexCat.recruit()":  # 公共事件 9017：178 哈基米入队（见 XCat.recruit）
 			XCat.recruit(s)
 			continue
+		if st in ["CodexMira.recruit()", "CodexYomi.recruit()", "CodexJingliu.recruit()", "CodexRaven.recruit()", "CodexYunshang.recruit()"] \
+				and _recruit_blocked(st.get_slice(".", 0), interp):
+			continue  # 超强者门槛（见 _RECRUITMENTS）
 		if st == "CodexMira.recruit()":  # 公共事件 9003：168 米拉入队（见 XMira.recruit）
 			XMira.recruit(s)
 			continue
-		if st == "CodexYomi.recruit()":  # 公共事件 9004：169 黄泉入队并装上赤雨双缨（见 XYomiJingliu.recruit；两条 $.toaster 提示）
-			for line in XYomiJingliu.recruit(s, XYomiJingliu.YOMI):
+		if st == "CodexYomi.recruit()" or st == "CodexJingliu.recruit()":  # 公共事件 9004／9005：169 黄泉、170 镜流入队并装上专属法宝（见 XYomiJingliu.recruit；两条 $.toaster 提示）
+			for line in XYomiJingliu.recruit(s, XYomiJingliu.YOMI if st.begins_with("CodexYomi") else XYomiJingliu.JINGLIU):
 				interp.host.toast(line)
 			continue
 		if st == "CodexRaven.recruit()":  # 公共事件 9002：167 渡鸦入队（见 XRaven.recruit；$.toaster 提示）
@@ -333,17 +374,12 @@ static func _guide_advise(interp) -> void:
 ## CodexBossDifficulty.showRoster（破阵·投影的强者／超强者名单）：名单 ＋ 导入角色哈基米（强者）＋ 备注带 <CodexSuperStrong> 的角色（超强者），
 ## 停用角色（XImportedBalance.DISABLED_ACTORS）名字后加「（停用）」，每行不超过 24 字，之后接固定说明
 const _STRONG_IDS := [1, 8, 9, 10, 11, 13, 17, 38, 45, 47, 50, 59, 70, 71, 82, 84, 85, 92, 93, 95, 99, 109, 110, 111, 112, 113, 114, 115, 117, 118, 119, 128, 129, 130, 131, 170]
-const _SUPER_IDS := [106, 101, 100, 102, 104, 127, 124, 96, 120, 107, 108, 122, 123, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 171, 172, 173, 175]
 
 
 static func _boss_roster(kind: String, interp) -> void:
 	var is_super := kind == "super"
-	var ids: Array = (_SUPER_IDS if is_super else _STRONG_IDS).duplicate()
-	if is_super:
-		for a in XDB.table("Actors"):
-			if a is Dictionary and str(a.get("note", "")).to_lower().contains("<codexsuperstrong>") and not ids.has(int(a.id)):
-				ids.append(int(a.id))
-	else:
+	var ids: Array = (XItemMarks.super_strong_ids() if is_super else _STRONG_IDS).duplicate()
+	if not is_super:
 		ids.append(XCat.ACTOR)
 	var lines := ["\\n<破阵·投影>%s（%d人）" % ["超强者名单" if is_super else "强者名单", ids.size()]]
 	var line := ""
