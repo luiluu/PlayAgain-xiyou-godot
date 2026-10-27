@@ -1,7 +1,7 @@
 # 交付：claude/bajie-ce-fix1
 
 - 车道／工作者：C 规则·解释器／八戒（Claude，八戒_78）
-- 状态：进行中
+- 状态：可合并（期一＋期二；同步退出码 2 只因已知的 ce231 探针状态泄漏，见验证）
 
 ## 变更记录草稿
 
@@ -18,6 +18,12 @@
 - **指令 261 播放电影、323 更改载具图像**：MVEventCore 空实现（WebM 影片 Godot 不能放；重制没有载具，只影响飞艇外观）。内容覆盖基线删 14 项（`未翻译|CE0487～0498、0500|指令 323`、`未翻译|CE1516|指令 261`）。
 - 事件对照替身：玩家位置照参照放在事件所在格（公共事件在 0,0），补 `open_forget_skill` 记录。
 
+## 2026-10-27 【Claude·八戒·未经Codex检验】期二：自动存档的允许开关照原版（沙僧第三期 G1／P2）（dev.待定）
+
+- 出处：Claude 166c399b（经 6a28e127 合入）把 YEP_X_Autosave 的 Enable／DisableAutosave 当空操作，只要有最近存档位就 `Autosave` 存档。原版 `Game_System.setAutosave` 管是否允许：公共事件 5 是 Enable→Autosave→Disable，之后 Map178 EV5 回 Map061 发的 Autosave 不再写档，重制会多覆盖一次最近存档位。
+- 改：`XState.allow_autosave`（Game_System._allowAutosave，随存档 `allowAutosave`；新局与缺键旧档都为 true，同原版 initAutosave）；MVEventCore 插件指令 Enable／Disable 改开关，`Autosave` 只在允许且有最近存档位时存。
+- 新隔离专项 `tests/xiyou_autosave`（10 项，只写测试目录）：没存档位不存；Enable→Autosave→Disable→Autosave 只存 1 次、之后仍不存；再 Enable 才存第 2 次；真公共事件 5 后出民宅的 Autosave 不存；开关随存档往返、缺键默认允许。
+
 ## 交接板
 
 - 下一步：事件对照登记剩 18 项——专属角色号角 CE9002～9018（接 `_module_recruit`，下一期）；CE765、823、824 逐个看；m4e73p0、m189e1p0 照旧。
@@ -31,11 +37,17 @@
 ## 验证
 
 - `xiyou_common_scripts` 430/430（新专项，428 例原版对照；改前 61 例不一致，见本分支 WIP 提交说明）。
-- `xiyou_event_compare` 5/5，5753 例一致 5735，不一致 18 全在登记（`--update-baseline` 删 95 项，无退步）。
+- `xiyou_event_compare` 合 main 前 5/5，5753 例一致 5735，不一致 18 全在登记（`--update-baseline` 删 95 项，无退步）。
+- 合 main 后跑 `同步正式西游.py --accept-additions`（工作树，不登记）：**退出码 2**，唯一测量变化是 `events.json` 的 ce231（等级／技能），就是哪吒交付单遗留①的 event_probe 用例间状态泄漏（整轮分段跑才出现，单跑与基线相同），与本分支无关；新探针 `common_scripts.json` 与我单跑的逐字节相同。因为这份 events.json 带了泄漏的 ce231，合 main 后本工作树的 `xiyou_event_compare` 4/5（只有 ce231 一项「退步」）；总装在 main 同步遇到同一条时照哪吒遗留①处理即可。
+- 合 main 后 `xiyou_common_scripts` 430/430、`xiyou_autosave` 10/10、`内容覆盖检查.py --check` 新增 0（hard 2 都在基线）、`测试内容覆盖.py` 3/3。
 - `内容覆盖检查.py --check` 新增 0、删 14（`--update-baseline`）。
-- 其余专项：见下一节补写。
+- 合 main 后：`xiyou_save_page`、`xiyou_determinism`、`xiyou_reward_branches`、`xiyou_super_acquire`、`xiyou_super_deploy`、`xiyou_imported_balance`、`xiyou_party`、`xiyou_party_skills`、`xiyou_hud`、`xiyou_script`、`xiyou_actor_warehouse` 全过；`xiyou_autosave` 10/10。
+- 合 main 前跑的 `xiyou_rules*`：完成的 18 段无失败（收工时间到，其余 6 段与 xiyou_item* 停掉未跑完）。
+- 期二反向验证（改回旧写法看专项变红）没做，时间不够。
 
 ## 遗留
+
+- 本工作树 `04_验证/本地结果/` 的同步日志与临时输出未清（收工时间到），工作树清理时一并删除。
 
 - 遗忘界面外观未做界面对照（原版 Window_Command 400 宽居中、右侧「未遗忘／已遗忘」），归界面车道。
 - 播放电影两段（CE1514「血轮眼开」、CE1516「幻术世界」）不播放，要播得先把 WebM 转 Theora（.ogv），只影响画面。
