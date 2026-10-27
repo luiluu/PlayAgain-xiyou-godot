@@ -37,6 +37,22 @@ func other():
 '''
 
 
+# 战斗事件解释器（共用核心＋battle_event_runner）：认 333，不认地图宿主指令 201
+BATTLE = '''
+func _execute(c):
+	match c.code:
+		101:
+			pass
+		117:
+			pass
+
+func _execute_env(c):
+	match int(c.code):
+		333:
+			pass
+'''
+
+
 def cmd(code, *params):
     return {'code': code, 'parameters': list(params)}
 
@@ -70,8 +86,10 @@ class CoverageTests(unittest.TestCase):
         out = io.StringIO()
         interp = Path(self.tmp.name) / 'mv_interpreter.gd'
         interp.write_text(INTERP)
+        battle = Path(self.tmp.name) / 'battle_event_runner.gd'
+        battle.write_text(BATTLE)
         with mock.patch.object(cov, 'BASELINE', self.baseline), mock.patch.object(cov, 'REPORT', Path(self.tmp.name) / 'report.json'), \
-             mock.patch.object(cov, 'INTERP_FILES', [interp]), contextlib.redirect_stdout(out):
+             mock.patch.object(cov, 'INTERP_FILES', [interp]), mock.patch.object(cov, 'BATTLE_FILES', [battle]), contextlib.redirect_stdout(out):
             rc = cov.main(['--generated', str(self.gen), *args])
         return rc, out.getvalue()
 
@@ -91,6 +109,28 @@ class CoverageTests(unittest.TestCase):
         self.assertIn('出切片：传送到 Map099', pages['Map001/EV001/p1']['notes'])
         self.assertIn('未对照：事件对照里没有这一页', pages['CE0001']['notes'])
         self.assertIn('空页：页里没有指令，无需对照', pages['Map001/EV002/p1']['notes'])   # 空页不算未对照
+
+    def test_battle_commands_only_in_battle_context(self):
+        # 内容覆盖误报（悟空 pending1）：只经战斗技能 code44 调到的公共事件按战斗事件解释器的指令表查；
+        # 地图可达（地图页 117、菜单也能用的技能）的仍按地图解释器查，战斗里也不认地图宿主指令
+        ce = self.gen / 'db/CommonEvents.json'
+        rows = json.loads(ce.read_text())
+        rows += [{'id': 2, 'list': [cmd(333, 0, 0, 1), cmd(117, 6), cmd(0)]}, {'id': 3, 'list': [cmd(333, 0, 0, 1), cmd(0)]},
+                 {'id': 4, 'list': [cmd(333, 0, 0, 1), cmd(0)]}, {'id': 5, 'list': [cmd(201, 0, 1, 1, 1, 2, 0), cmd(0)]},
+                 {'id': 6, 'list': [cmd(333, 0, 0, 1), cmd(0)]}]
+        ce.write_text(json.dumps(rows))
+        skill = lambda i, occ, c: {'id': i, 'occasion': occ, 'effects': [{'code': 44, 'dataId': c}]}
+        (self.gen / 'db/Skills.json').write_text(json.dumps([None, skill(1, 1, 2), skill(2, 0, 3), skill(3, 1, 5)]))
+        (self.gen / 'manifest.json').write_text(json.dumps({'slice': {'commonEvents': [2, 3, 5]}}))
+        m = json.loads((self.gen / 'maps/Map001.json').read_text())
+        m['events'][1]['pages'][0]['list'].insert(0, cmd(117, 4))
+        (self.gen / 'maps/Map001.json').write_text(json.dumps(m))
+        self.run_tool()
+        issues = self.report()['issues']
+        self.assertFalse(any(i.startswith('未翻译|CE0002|') or i.startswith('未翻译|CE0006|') for i in issues), issues)  # 战斗专用，含其 117 子事件
+        self.assertIn('未翻译|CE0003|指令 333', issues)   # 场合「随时」：菜单里用时在地图上跑
+        self.assertIn('未翻译|CE0004|指令 333', issues)   # 地图页调用
+        self.assertIn('未翻译|CE0005|指令 201', issues)   # 战斗里不认地图宿主指令
 
     def test_baseline_gates_new_issues(self):
         self.assertEqual(self.run_tool('--check')[0], 1)
