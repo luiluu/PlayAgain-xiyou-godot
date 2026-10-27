@@ -7,13 +7,9 @@ var failures: Array = []
 ## 与参照 PARTY、SWITCH 同值
 const PARTY := [1, 8, 9, 10, 11, 12]
 const SWITCH := {3: 0, 4: 2500, 5: 2494, 6: 2489}
-## 已知差异（本期只登记、不改规则，见交付单「挑战被动核对表」），逐项跳过对应比对：
-## 1) 伤害：参照含五乘区预算软上限／分档系数（随层数降低伤害），重制按数值平衡不移植（damage.gd 文件头）
-## 2) 困难（4）：参照里非主角队员已被 installNativeDifficultyInheritanceRuntime.syncActor 同步成「困难难度 5549＋难度适应 5980」，带状态 1691，重制没有这条同步
-## 3) 困难（4）、地狱（5）：参照开战敌人能力为难度表倍率的 2.5／3 倍（天灾、普通一致），来源待查（需新参照探针）
-## 4) 敌人带状态 1657／1658 时的命中／暴击／闪避读数（见下）
-const KNOWN_ENEMY_DIFF := [4, 5]
-const KNOWN_STATE_DIFF := [4]
+## 唯一跳过的比对是伤害：参照含五乘区预算软上限／分档系数（随层数降低伤害），重制按数值平衡不移植（damage.gd 文件头）。
+## 原差异已解决：敌人 2.5／3 倍＝层门里公共事件 714 置 DCultyL4／L5（XEnemy.warehouse_rate）；队员状态 1691＝入队同步难度被动（XState.inherit_difficulty）；
+## 天灾敌人读数＝参照开战读数是上状态前的缓存，下面按「刷新后」值比对。
 
 func check(tag: String, ok: bool, detail = null) -> void:
 	checks += 1
@@ -54,13 +50,12 @@ func actor_row(a: XActor, logic: XBattleLogic, ids: Array) -> Dictionary:
 		"sparams": range(10).map(func(i): return a.sparam(i)),
 		"states": a.state_ids.duplicate(), "mp": cost.mp, "tp": cost.tp}
 
-func compare_actor(tag: String, got: Dictionary, want: Dictionary, skip_states := false) -> void:
+func compare_actor(tag: String, got: Dictionary, want: Dictionary) -> void:
 	check(tag + ".skills", same(got.skills, want.skills), [got.skills, want.skills])
 	check(tag + ".params", near_list(got.params, want.params), [got.params, want.params])
 	check(tag + ".xparams", near_list(got.xparams, want.xparams), [got.xparams, want.xparams])
 	check(tag + ".sparams", near_list(got.sparams, want.sparams), [got.sparams, want.sparams])
-	if not skip_states:
-		check(tag + ".states", same(got.states, want.states), [got.states, want.states])
+	check(tag + ".states", same(got.states, want.states), [got.states, want.states])
 	check(tag + ".mp1065", int(got.mp) == int(want.mpCost1065), [got.mp, want.mpCost1065])
 	check(tag + ".tp1065", int(got.tp) == int(want.tpCost1065), [got.tp, want.tpCost1065])
 
@@ -71,11 +66,16 @@ func run_case(c: Dictionary) -> void:
 	var o: Dictionary = c.observed
 	var ids := challenge_ids()
 	var d := int(spec.difficulty)
-	var s := XState.new_game(d, int(PARTY[0]), PARTY.slice(1))
+	var s := XState.new_game(d, int(PARTY[0]), [])  # 参照：先开难度开关，再给六名队员入队（入队时同步难度被动）
 	s.random_master = XRandomStream.hex64(12345)
 	for sid in [2500, 2494, 2489, 2487]:
 		s.set_switch(sid, sid == int(SWITCH[d]))
+	for id in PARTY.slice(1):
+		s.add_actor(int(id))
 	s.set_variable(8, float(o.skillCap))
+	# 层门里公共事件 714 按难度开关置的 Star_Warehouse 标志（普通难度参照没开开关，不置）
+	for i in range(1, 9):
+		s.flags["DCultyL%d" % i] = d >= 4 and i == d
 	s.set_variable(20, float(spec.floor))  # 层门读的层数变量，开战敌人的楼层相关数值也读它
 	s.actor(1).change_level_mv(10)
 	for row in o.after:
@@ -89,18 +89,23 @@ func run_case(c: Dictionary) -> void:
 	logic.setup(4, s)
 	var tag: String = c.id
 	for row in o.battleActors:
-		compare_actor(tag + ".actor" + str(row.id), actor_row(s.actor(int(row.id)), logic, ids), row, KNOWN_STATE_DIFF.has(d) and int(row.id) != 1)
+		compare_actor(tag + ".actor" + str(row.id), actor_row(s.actor(int(row.id)), logic, ids), row)
 	check(tag + ".members", same(logic.actors.map(func(a): return a.actor_id), o.battleMembers), [logic.actors.map(func(a): return a.actor_id), o.battleMembers])
 	var e: XEnemy = logic.enemies[0]
 	check(tag + ".enemy.id", e.enemy_id == int(o.enemy.id), [e.enemy_id, o.enemy.id])
 	check(tag + ".enemy.states", same(e.state_ids, o.enemy.states), [e.state_ids, o.enemy.states])
-	if not KNOWN_ENEMY_DIFF.has(d):
-		check(tag + ".enemy.params", near_list(range(8).map(func(i): return e.param(i)), o.enemy.params), [range(8).map(func(i): return e.param(i)), o.enemy.params])
-		# 4) 敌人带 1657／1658（天灾·加爆闪）时参照读到的命中／暴击／闪避没算上状态的 22 号特性（开战读数可能是未刷新的缓存），重制算上了：只在无状态时比对
-		if o.enemy.states.is_empty():
-			check(tag + ".enemy.hit", near(e.xparam(0), o.enemy.hit), [e.xparam(0), o.enemy.hit])
-			check(tag + ".enemy.cri", near(e.xparam(2), o.enemy.cri), [e.xparam(2), o.enemy.cri])
-			check(tag + ".enemy.cev", near(e.xparam(3), o.enemy.cev), [e.xparam(3), o.enemy.cev])
+	check(tag + ".enemy.params", near_list(range(8).map(func(i): return e.param(i)), o.enemy.params), [range(8).map(func(i): return e.param(i)), o.enemy.params])
+	# 4) 敌人带 1657／1658（天灾·加爆闪）时，参照开战读数还是上状态前的缓存值（探针实测：原版 e.hit／xparam 在 Scene_Battle.start 之后是 0.95，
+	#    e.refresh() 之后 1.45／0.75／0.5，即状态的 22 号特性加上去）；之后任何一次刷新（回合开始等）都会读到加后的值，重制按加后值算。
+	#    所以有状态时的期望值＝参照读数＋各状态 22 号特性（hit＝dataId 0、cri＝2、cev＝3）
+	var add := {0: 0.0, 2: 0.0, 3: 0.0}
+	for sid in o.enemy.states:
+		for tr in XDB.rec("States", int(sid)).get("traits", []):
+			if int(tr.code) == 22 and add.has(int(tr.dataId)):
+				add[int(tr.dataId)] += float(tr.value) * e.warehouse_rate()  # Star_Warehouse 倍率乘在特性之和外面
+	check(tag + ".enemy.hit", near(e.xparam(0), float(o.enemy.hit) + add[0]), [e.xparam(0), o.enemy.hit, add[0]])
+	check(tag + ".enemy.cri", near(e.xparam(2), float(o.enemy.cri) + add[2]), [e.xparam(2), o.enemy.cri, add[2]])
+	check(tag + ".enemy.cev", near(e.xparam(3), float(o.enemy.cev) + add[3]), [e.xparam(3), o.enemy.cev, add[3]])
 
 func _ready() -> void:
 	_run.call_deferred()

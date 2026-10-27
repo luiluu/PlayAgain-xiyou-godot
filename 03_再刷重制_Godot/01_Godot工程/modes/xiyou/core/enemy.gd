@@ -219,7 +219,26 @@ func param_base(i: int) -> float:
 ## 四舍五入少 1（二十七层多宝 463 攻击 19438，敌群事件参照）。战斗中经 krz 能力值缓存（见 XBattler.param_cells）。
 func param(i: int) -> float:
 	var native := cached_param(i, param_now) if param_cache_on else param_now(i)
+	native = roundf(native * warehouse_rate())
 	return XAlienBattle.hp_param(self, i, roundf(native * boss_attribute_rate()))
+
+## Star_Warehouse 的难度怪物属性：$gameParty.DCultyL1～5（公共事件 714 按难度开关置位，标志存在 XState.flags）从小到大取第一个为真的，
+## 按插件参数 DCL1～5（1／1.5／2／2.5／3）乘到 Game_Enemy 的 param（取整）、xparam、sparam 上；L6～8 与全假＝不乘。
+## 包装次序：它比 installBossDifficultyRuntime 内层，所以先乘它再乘首领倍率（参照 enemy_warehouse.json）。
+func warehouse_rate() -> float:
+	var s := XState.current
+	if s == null:
+		return 1.0
+	for k in range(1, 6):
+		if bool(s.flags.get("DCultyL%d" % k, false)):
+			return float(str(XDB.plugin("Star_Warehouse").get("DCL%d" % k, "1")))
+	return 1.0
+
+func xparam(i: int) -> float:
+	return super.xparam(i) * warehouse_rate()
+
+func sparam(i: int) -> float:
+	return super.sparam(i) * warehouse_rate()
 
 func param_now(i: int) -> float:
 	var v := param_base_unscaled(i) + param_plus(i)
