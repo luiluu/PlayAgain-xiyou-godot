@@ -25,8 +25,10 @@
 
 ## 验证
 
-- `同步正式西游.py --accept-additions` 通过（新增用例已接受，不登记；不带 cat 接受单）。
-- 专项 `xiyou_floor_reach041` 33/33；`xiyou_rules`＋d1b/d1c/d1d 全过；`xiyou_event_compare` **失败**：`no_regressions ["m41e1p0"]`（Map41 EV1 第一页，原版会打开星级仓库画面，重制无此画面，与 oracle 不一致）。内容覆盖检查 1 个硬缺口（同一条插件指令）。
+- `同步正式西游.py --accept-additions` 通过（102 为纯新增，不登记；不带 cat 接受单）。
+- `内容覆盖检查.py` 通过（硬缺口 0，新增 0，基线不变）。
+- 专项 `xiyou_floor_reach041` 12/12；`xiyou_rules`＋d1b/d1c/d1d 全过；`xiyou_event_compare` 5/5。未跑全量 `检查.sh`。
+- 本工作树里 41 曾收入又撤出并重跑同步（撤出属测量变化，退出码 2、未登记，产物已是无 41 状态）；总装在 main 上合并时 102 对 main 是纯新增。
 
 ## 遗留
 
