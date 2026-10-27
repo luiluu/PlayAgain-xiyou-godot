@@ -1,0 +1,125 @@
+{
+  "status": "partial_fix_not_deliverable",
+  "scope": "HP0 before death state admission; remaining initial failures not cleared",
+  "oracle": {
+    "path": "03_再刷重制_Godot/03_转换工具/mv_oracle/.sandbox/merge81_death_v4.json",
+    "cases": 4,
+    "issues": [],
+    "harnessFailedOriginalsPreserved": [
+      "merge81_death.json",
+      "merge81_death_v2.json",
+      "merge81_death_v3.json"
+    ],
+    "displayOnlyStub": "OTB createReturnedBattlerSprite; battle state and state rules remain original"
+  },
+  "validRed": "death81-red2/xiyou_death_admission.log (33/37, no script error)",
+  "invalidRedPreserved": "death81-red had JSON int/float comparison and fixture missing state; not used as red proof",
+  "greenLogDir": "03_再刷重制_Godot/04_验证/本地结果/merge-main-next/death81-green1",
+  "greenTimings": {
+    "jobs": 2,
+    "globalJobs": 4,
+    "wallSeconds": 43.063,
+    "flakyRerunPassed": [],
+    "fingerprint": "",
+    "reused": [],
+    "scenes": [
+      {
+        "name": "xiyou_determinism.tscn",
+        "seconds": 20.285,
+        "passed": false,
+        "attempts": [
+          {
+            "rc": 1,
+            "seconds": 20.285,
+            "passed": false
+          },
+          {
+            "rc": 1,
+            "seconds": 19.894,
+            "passed": false
+          }
+        ]
+      },
+      {
+        "name": "xiyou_pet_capture.tscn",
+        "seconds": 3.186,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 3.186,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_random_streams.tscn",
+        "seconds": 2.995,
+        "passed": false,
+        "attempts": [
+          {
+            "rc": 1,
+            "seconds": 2.995,
+            "passed": false
+          },
+          {
+            "rc": 1,
+            "seconds": 2.879,
+            "passed": false
+          }
+        ]
+      },
+      {
+        "name": "xiyou_state_merge_context.tscn",
+        "seconds": 2.366,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 2.366,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_state_operation.tscn",
+        "seconds": 2.293,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 2.293,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_death_admission.tscn",
+        "seconds": 2.273,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 2.273,
+            "passed": true
+          }
+        ]
+      }
+    ]
+  },
+  "passedSceneCount": 4,
+  "passedAssertions": 2377,
+  "pendingScenes": [
+    "xiyou_determinism.tscn",
+    "xiyou_random_streams.tscn"
+  ],
+  "runtimeLogErrors": [],
+  "runtimeChange": "XResourceContext.add_state uses appearance and death state membership rather than raw HP for native admission",
+  "notes": [
+    "Pet capture original 43 assertions unchanged and now all pass.",
+    "No global is_dead or death result guard relaxed.",
+    "Enemy-book fixture may require native clearResult before a new death (native probe retained removedStates blocks re-add); not yet edited.",
+    "random_streams transform at turn2 adds Boss armor2651 and consumes duration; original assertion of zero draws may have outdated fixture assumptions, not yet changed.",
+    "determinism eight failures all advance=false with gear1 already present; origin of gear not yet located."
+  ]
+}

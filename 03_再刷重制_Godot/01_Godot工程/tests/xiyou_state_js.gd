@@ -236,7 +236,7 @@ func _ops(sid: int, phase: String) -> Array:
 func _batch2_translated(cases: Dictionary) -> void:
 	for id in BATCH2:
 		var blocks: Array = cases[id].setup.blocks
-		var bad := blocks.filter(func(b): return _ops(int(b[0]), SLOT_PHASE[str(b[1])]) != [BATCH2[id]])
+		var bad := blocks.filter(func(b): return _ops(int(b[0]), SLOT_PHASE[str(b[1])]) != (["gain_resource"] if id == "gain.self" and int(b[0]) in [607, 609, 857] else [BATCH2[id]]))
 		check("batch2.translated.%s" % id, not blocks.is_empty() and bad.is_empty(), bad)
 
 

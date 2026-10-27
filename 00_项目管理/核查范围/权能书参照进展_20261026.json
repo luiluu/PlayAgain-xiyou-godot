@@ -1,0 +1,283 @@
+{
+  "status": "WIP core implementation and eight-case Godot test drafted; corrected eight native cases valid; boundary/menu/import tasks pending; awaiting continuation",
+  "baseline": "1132e919",
+  "validSmokeCases": 5,
+  "smokeTask": "2b43a6bb9e78467889c6959d43f8861c",
+  "smokeSha256": "1dcb1d25f57a46600d3e71acdc266f578706943a511e9469e9aa72406c7fef66",
+  "smokeSemanticChecks": "Each of five books learned; repeat test refused; ordinary forget refused; missing token refused; paid forget succeeded and consumed one3044; power removed",
+  "initialFullTask": "47176071312442e5853e16624530bd84",
+  "initialFullArtifactSha256": "e57280e0a139a0a98785dfcfb14071932ad3099f5b0ead02d2f9d705add9332f",
+  "initialFullSourceSha256": "7a547349d5fa2cde409a98d91b0482504fc5cbaa7a5a0ca07f454674b42b118d",
+  "initialFullCases": 8,
+  "initialFullUniqueIds": 7,
+  "initialFullLimitations": "actor1 is strong; initial list [106,1,1] repeats strong actor, lacks weak; not valid complete matrix",
+  "initialFullSummary": [
+    {
+      "id": "book.1654",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true
+      ],
+      "learnedPowers": []
+    },
+    {
+      "id": "book.1656",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true
+      ],
+      "learnedPowers": []
+    },
+    {
+      "id": "book.1674",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true
+      ],
+      "learnedPowers": []
+    },
+    {
+      "id": "book.1683",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true
+      ],
+      "learnedPowers": []
+    },
+    {
+      "id": "book.1718",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true
+      ],
+      "learnedPowers": []
+    },
+    {
+      "id": "limit.106",
+      "actor": 106,
+      "class": "超强者",
+      "limit": 3,
+      "accepted": [
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "learnedPowers": [
+        7238,
+        7240,
+        7245
+      ]
+    },
+    {
+      "id": "limit.1",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true,
+        true,
+        true,
+        true,
+        false
+      ],
+      "learnedPowers": [
+        7238,
+        7240,
+        7245,
+        7246
+      ]
+    },
+    {
+      "id": "limit.1",
+      "actor": 1,
+      "class": "强者",
+      "limit": 4,
+      "accepted": [
+        true,
+        true,
+        true,
+        true,
+        false
+      ],
+      "learnedPowers": [
+        7238,
+        7240,
+        7245,
+        7246
+      ]
+    }
+  ],
+  "nextProbeSourceSha256": "cf9869208b94a95c2f107855acd49758c7b8b77af9e9db19d46aba3f990fc2a4",
+  "nextProbeInputs": [
+    106,
+    1,
+    2
+  ],
+  "nextProbeNotRun": false,
+  "frozenClassEvidence": "CodexZones.classOf in installNativePowerZonesRuntime.js:19 uses Boss superStrongIds/strongIds; actor2 absent from both => weak",
+  "pending": "Finish queued boundary/menu/import tasks; do not duplicate. Then run eight-case Godot test, fix genuine differences, port full boundary/menu fixture tests and UI, collect native/Godot paired UI evidence and required event_compare; no new full acceptance claim.",
+  "usageAtStop": {
+    "fiveHourUsedPercent": 95,
+    "weeklyUsedPercent": 60
+  },
+  "preserved": "All .sandbox evidence, initial incomplete full logs, earlier failed tasks, generated and worktree",
+  "cleanup": {
+    "validSmokeTemporaryPathsRemoved": 5,
+    "incompleteFullAndAllSandboxPreserved": true
+  },
+  "continuedCorrected8": {
+    "task": {
+      "runId": "230ad4b5e5b342ef86d4f70a7b6f3157",
+      "status": "done",
+      "exitCode": 0,
+      "pid": 6808,
+      "startedAt": "2026-10-26T10:03:15.616778+00:00",
+      "command": [
+        "python3",
+        "-u",
+        "03_再刷重制_Godot/07_开发环境/占槽.py",
+        "--label",
+        "boss70-power-native2",
+        "--",
+        "node",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/power_books_probe.cjs"
+      ],
+      "childPGID": 6809,
+      "childIdentity": {
+        "pid": 6809,
+        "pgid": 6809,
+        "startedAt": "Mon Oct 26 11:03:15 2026    "
+      },
+      "finishedAt": "2026-10-26T10:09:56.715312+00:00"
+    },
+    "cases": 8,
+    "uniqueIds": 8,
+    "errors": [],
+    "nativeEqualsFixture": true,
+    "sha256": "aa845e9e1666cadce2b06e55b08fb090c63d6a9d88582889fb2071f9abde1bfb",
+    "classes": {
+      "106": [
+        "超强者",
+        3
+      ],
+      "1": [
+        "强者",
+        4
+      ],
+      "2": [
+        "弱者",
+        6
+      ]
+    }
+  },
+  "continuationTasks": {
+    "boss70-power-native2": {
+      "runId": "230ad4b5e5b342ef86d4f70a7b6f3157",
+      "status": "done",
+      "exitCode": 0,
+      "pid": 6808,
+      "startedAt": "2026-10-26T10:03:15.616778+00:00",
+      "command": [
+        "python3",
+        "-u",
+        "03_再刷重制_Godot/07_开发环境/占槽.py",
+        "--label",
+        "boss70-power-native2",
+        "--",
+        "node",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/power_books_probe.cjs"
+      ],
+      "childPGID": 6809,
+      "childIdentity": {
+        "pid": 6809,
+        "pgid": 6809,
+        "startedAt": "Mon Oct 26 11:03:15 2026    "
+      },
+      "finishedAt": "2026-10-26T10:09:56.715312+00:00"
+    },
+    "boss70-power-boundary": {
+      "runId": "85f1ef9b01194b888a915eb1478baed2",
+      "status": "running",
+      "exitCode": null,
+      "pid": 8168,
+      "startedAt": "2026-10-26T10:12:28.496617+00:00",
+      "command": [
+        "python3",
+        "-u",
+        "03_再刷重制_Godot/07_开发环境/占槽.py",
+        "--label",
+        "boss70-power-boundary",
+        "--",
+        "node",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/power_books_boundary_probe.cjs"
+      ],
+      "childPGID": 8169,
+      "childIdentity": {
+        "pid": 8169,
+        "pgid": 8169,
+        "startedAt": "Mon Oct 26 11:12:28 2026    "
+      }
+    },
+    "boss70-power-menu": {
+      "runId": "d0c767629de34de09a43bd81827db659",
+      "status": "running",
+      "exitCode": null,
+      "pid": 8172,
+      "startedAt": "2026-10-26T10:12:28.763191+00:00",
+      "command": [
+        "python3",
+        "-u",
+        "03_再刷重制_Godot/07_开发环境/占槽.py",
+        "--label",
+        "boss70-power-menu",
+        "--",
+        "node",
+        "03_再刷重制_Godot/03_转换工具/mv_oracle/power_books_menu_probe.cjs"
+      ],
+      "childPGID": 8173,
+      "childIdentity": {
+        "pid": 8173,
+        "pgid": 8173,
+        "startedAt": "Mon Oct 26 11:12:28 2026    "
+      }
+    },
+    "boss70-power-import": {
+      "runId": "44ef1d9d21af413384ebc8799aeb9f87",
+      "status": "running",
+      "exitCode": null,
+      "pid": 8466,
+      "startedAt": "2026-10-26T10:13:31.938136+00:00",
+      "command": [
+        "python3",
+        "-u",
+        "03_再刷重制_Godot/07_开发环境/占槽.py",
+        "--label",
+        "boss70-power-import",
+        "--",
+        "03_再刷重制_Godot/07_开发环境/godot",
+        "--headless",
+        "--path",
+        "03_再刷重制_Godot/01_Godot工程",
+        "--import"
+      ],
+      "childPGID": 8467,
+      "childIdentity": {
+        "pid": 8467,
+        "pgid": 8467,
+        "startedAt": "Mon Oct 26 11:13:31 2026    "
+      }
+    }
+  }
+}

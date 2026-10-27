@@ -59,6 +59,7 @@ var help_card: XHelpCard
 var gear_filter := {}
 var toolbar: HBoxContainer
 var search_panel: XGearSearch
+var power_page: XPowerForget
 
 
 func _ready() -> void:
@@ -83,7 +84,7 @@ func _ready() -> void:
 
 # ---- 装备检索（Codex 网页覆盖层）----
 func open_search() -> void:
-	if search_panel != null:
+	if search_panel != null or power_page != null:
 		return
 	toolbar.visible = false
 	help_card.visible = false
@@ -280,6 +281,9 @@ func _refresh() -> void:
 
 ## updateHelp：列表/材料列表的选中行；新物品停上去即记为看过（光标离开后不再画 NEW）
 func _update_help() -> void:
+	if power_page != null:
+		help_card.visible = false
+		return
 	var rec := {}
 	var row := -1
 	match _mode:
@@ -343,6 +347,10 @@ func _paint_list(c: XMVCanvas) -> void:
 				if _mode == "list" and i == _index:
 					c.cursor(Rect2(0, y, c.size.x, LH))
 				XItemRow.paint(c, d[i].rec, y, XItemRow.right_text(d[i]), 1.0, _is_new_drawn(d[i].rec))
+			# Native refresh retains the inactive cursor until the forget flow returns,
+			# including the empty row left by consuming the last selected token.
+			if power_page != null and _index >= d.size() and _index >= _top and _index < _top + _rows():
+				c.cursor(Rect2(0,(_index-_top)*LH,c.size.x,LH),false)
 		"action":
 			for i in range(_actions.size()):
 				var y := i * LH
@@ -462,7 +470,7 @@ static func _current_max(c: XMVCanvas, label: String, cur: float, mx: float, x: 
 
 # ---- 操作 ----
 func _unhandled_input(event: InputEvent) -> void:
-	if search_panel != null:
+	if search_panel != null or power_page != null:
 		return
 	var handled := true
 	if event.is_action_pressed("ui_cancel"):
@@ -677,7 +685,10 @@ func _effective(t: XActor) -> bool:
 				if t.state_ids.has(int(e.dataId)):
 					return true
 			43:
-				if not t.skill_ids.has(int(e.dataId)):
+				if XPowerBooks.is_power(int(e.dataId)):
+					if XPowerBooks.can_learn(t,int(e.dataId)):
+						return true
+				elif not t.skill_ids.has(int(e.dataId)):
 					return true
 			31, 32:
 				if t.buffs[int(e.dataId)] != t.buff_limit(int(e.dataId), int(e.code) == 31):
@@ -693,6 +704,13 @@ func _effective(t: XActor) -> bool:
 func _use() -> void:
 	var s := XState.current
 	var targets := _targets()
+	var power := XPowerBooks.book_skill(_item)
+	if power > 0 and targets.size() == 1:
+		var reason := XPowerBooks.learn_reason(targets[0],power)
+		if not reason.is_empty():
+			XSound.system(3)
+			XToast.show_text(reason,true)
+			return
 	if s.item_count(int(_item.get("id", 0))) <= 0 or not targets.any(func(t): return _effective(t)):
 		XSound.system(3)
 		return
@@ -708,13 +726,17 @@ func _use() -> void:
 	for a in movable:
 		if a.pha > user.pha:
 			user = a
+	if targets.size() == 1:
+		s.item_target_actor_id = targets[0].actor_id
+	XPassiveBooks.begin_item(s)
+	# Native useItem consumes first; a full-capacity effect refunds afterward (also at max stack).
+	if bool(_item.get("consumable", true)):
+		s.gain_item(int(_item.id), -1)
 	for t in targets:
 		if t.is_dead() != (_scope() in [9, 10]):
 			continue
 		for e in _item.get("effects", []):
 			logic._effect(user, t, e, {"skill": _item, "hp": 0.0, "mp": 0.0, "added": [], "removed": []})
-	if bool(_item.get("consumable", true)):
-		s.gain_item(int(_item.id), -1)
 	_after_use()
 
 
@@ -724,22 +746,44 @@ func _use_direct() -> void:
 	if s.item_count(int(_item.get("id", 0))) <= 0:
 		XSound.system(3)
 		return
+	if int(_item.get("id",0)) == XPowerBooks.FORGET_ITEM:
+		_open_power_forget()
+		return
 	XSound.system(22)   # SoundManager.playUseItem
 	if bool(_item.get("consumable", true)):
 		s.gain_item(int(_item.id), -1)
 	_after_use()
 
 
+## The native item action opens a child chooser without using/consuming the item.
+func _open_power_forget() -> void:
+	if power_page != null:
+		return
+	_mode = "list"
+	power_page = XPowerForget.new()
+	power_page.closed.connect(_close_power_forget)
+	add_child(power_page)
+	_refresh()
+
+func _close_power_forget() -> void:
+	power_page.queue_free()
+	power_page = null
+	_mode = "list"
+	_index = clampi(_index,0,maxi(0,entries().size()-1))
+	_top = XMenu._scroll_to(_index,_top,_rows())
+	_refresh()
+
 ## Game_Action.applyGlobal：效果里的公共事件（44）逐条 reserveCommonEvent（单槽，后一条盖前一条）；
 ## Scene_ItemBase.checkCommonEvent：有预约就回地图执行——物品页与菜单一起关掉（to_map 由菜单接着关）
 func _after_use() -> void:
 	var s := XState.current
 	s.last_item = int(_item.get("id", 0))  # Scene_Item.useItem：$gameParty.setLastItem（魔兽要诀失败时按它退还）
-	var reserved := false
+	var reserved := s.peek_common_event() > 0
 	for e in _item.get("effects", []):
 		if int(e.code) == 44:
 			s.reserve_common_event(int(e.dataId))
 			reserved = true
+	XPassiveBooks.remember_return(s,_item,_cat,_index)
 	if reserved:
 		to_map = true
 		closed.emit()
@@ -747,7 +791,7 @@ func _after_use() -> void:
 
 # ---- 鼠标：先选中再点确定；右键取消；滚轮滚动 ----
 func _gui_input(event: InputEvent) -> void:
-	if search_panel != null or not (event is InputEventMouseButton and event.pressed):
+	if search_panel != null or power_page != null or not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
 	var pad := Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
@@ -823,3 +867,35 @@ func _click(p: Vector2, pad: Vector2) -> void:
 					_ok()
 				else:
 					_aug_index = i
+
+
+## Restore the selected list after this period’s full-capacity CE1317.
+static func restore_capacity_return(menu: XMenu, saved: Dictionary) -> void:
+	menu._show_items()
+	var pages := menu.get_children().filter(func(n): return n is XItemScene)
+	if pages.is_empty():
+		return
+	var page: XItemScene = pages[0]
+	page._cat = int(saved.category)
+	page._mode = "list"
+	var entries := page.entries()
+	var index := entries.find_custom(func(e): return int(e.rec.id) == int(saved.item))
+	page._index = index if index >= 0 else clampi(int(saved.index),0,maxi(0,entries.size()-1))
+	page._top = XMenu._scroll_to(page._index,0,page._rows())
+	page._refresh()
+	# Native notifyBag replaces only the main HelpExtend card; learned-skill extras remain.
+	# Keep the project's existing O-007/O-008 minimum type size and near-row placement.
+	var card := page.help_card
+	card.rows = [[str(saved.message),XHelpCard.OTHER_SIZE,"#ffffff",false,0]]
+	card.quality = 0
+	var layout := XHelpCard.layout(card.rows,card.min_font,card.card_width)
+	card._lines = layout.lines
+	card.size = Vector2(card.card_width,layout.height)
+	card.frame.position = Vector2(-10,-10)
+	card.frame.size = card.size+Vector2(20,20)
+	card.canvas.size = card.size
+	card.visible = true
+	card.frame.queue_redraw()
+	card.canvas.queue_redraw()
+	card.place_for_row(Rect2(LIST_RECT.position+Vector2(0,XMVWindow.PADDING+(page._index-page._top)*LH),Vector2(LIST_RECT.size.x,LH)))
+	XToast.show_text(str(saved.message),true)

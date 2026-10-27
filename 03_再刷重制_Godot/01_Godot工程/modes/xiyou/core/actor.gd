@@ -212,7 +212,7 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 		return
 	var fresh := not state_ids.has(id)
 	super(id, random)
-	if fresh and state_ids.has(id):
+	if fresh and state_ids.has(id) and lifecycle_context.get("resources") == null:
 		release_to_party()
 
 func remove_state(id: int) -> void:
@@ -222,7 +222,6 @@ func remove_state(id: int) -> void:
 		release_to_party()
 
 func refresh_resources(random: XRandomStream = null) -> void:
-	release_to_party()
 	super(random)
 
 func equip_list() -> Array:
@@ -359,13 +358,15 @@ func gain_exp(amount: int, rate := 1.0, random: XRandomStream = null) -> int:
 
 # ---- 技能 ----
 func learn_skill(id: int) -> void:
-	if not XActorModules.can_learn(self, id):  # 专属角色模块的 learnSkill 包装（饿狼被动按形态准入等）
+	if not XActorModules.can_learn(self, id) or (XPowerBooks.is_power(id) and not XPowerBooks.learn_reason(self, id).is_empty()):
 		return
 	if not skill_ids.has(id) and not XDB.rec("Skills", id).is_empty():
 		skill_ids.append(id)
 		skill_ids.sort()
 
 func forget_skill(id: int) -> void:
+	if XPowerBooks.protected_forget(self, id):
+		return
 	skill_ids.erase(id)
 
 func skills() -> Array:
@@ -410,7 +411,7 @@ func states() -> Array:
 	return result
 
 func param_rate(i: int) -> float:
-	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true)
+	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0)
 
 # ---- dsPassiveSkill：被动标签只从已有技能读取 ----
 func passive_values(tag: String) -> Array:
@@ -494,7 +495,6 @@ func param_base(i: int) -> float:
 		if parts.size() >= 3 and _condition(parts[1].strip_edges(), float(parts[2])):
 			v += _param_boost(base, parts[0])
 	v += XTraining.param_bonus(self, i)
-	v += XParamPlus.bonus(self, i)
 	return v
 
 ## 装备属性；被动 passiveWPNMxx / passiveARMMxx 按武器/防具类型放大该装备的正值属性。
@@ -509,7 +509,7 @@ func param_plus(i: int) -> float:
 	return full + (full - bare) + XRaceBattle.param_plus(self, i)  # 种族灵族：武器本体 ×q/2（包在小猫剑圣外层）
 
 func _param_plus(i: int) -> float:
-	var v := XEquipSuits.value(self,"param",i,false)
+	var v := XParamPlus.bonus(self, i) + XEquipSuits.value(self,"param",i,false)
 	for e in equip_list():
 		var p := float(e.params[i])
 		v += p
@@ -558,6 +558,27 @@ static func magic_param(e: Dictionary, i: int) -> float:
 func param(i: int) -> float:
 	return XRaceBattle.param(self, i, XCat.param(self, i, XActorModules.param(self, i, super(i))))  # 按原版安装先后由内到外：专属角色模块（米拉 98、宿傩 113）→小猫剑圣（115）→种族祝福（148）
 
+## 永久写能力属于当前真实实例；影子克隆虽保留actor_id，也不能借它写真实账本。
+func can_add_param() -> bool:
+	if XState.current == null or XState.current.actors.get(actor_id) != self:
+		return false
+	var resources: XResourceContext = lifecycle_context.get("resources")
+	return bool(lifecycle_context.get("execute", true)) and not bool(lifecycle_context.get("preview", false)) and (resources == null or not resources.preview)
+
+## 永久 addParam 复用事件 317 的同一存档字段，每次调用按原版单独刷新。
+func add_param(i: int, value: float) -> void:
+	if can_add_param():
+		XParamPlus.add(XState.current, actor_id, i, value)
+
+
+## Star_PetSystem 在 traitsSum 层相加，先于被动／套装倍率与命中保底。
+func traits_sum(code: int, id: int) -> float:
+	var v := super.traits_sum(code, id)
+	if code == TRAIT_XPARAM and XState.current != null:
+		v += XPets.war_xparam_plus(XState.current, id)
+	return v
+
+
 ## 正式版运行时对角色命中率保底 0.9（命中 = xparam 0）。
 func xparam(i: int) -> float:
 	var v := super.xparam(i)
@@ -584,7 +605,8 @@ func passive_element_values(e: int) -> Array:
 func refresh_passive() -> void:
 	var c := {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "skillPass": {}, "skillTypeDvup": {},
 		"SkETypeHarmRi": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0, "itemRateUp": 0.0,
-		"certainHit": {"global": false, "bySkill": {}}, "damageElement": 0}
+		"certainHit": {"global": false, "bySkill": {}}, "damageElement": 0,
+		"consumeReduce": {"bySkill": {}, "byType": {"Zj": 0, "Mf": 0}, "all": 0}}
 	var objs := stat_equips() + skills() + states()
 	for o in objs:
 		var note := str(o.get("note", ""))
@@ -622,6 +644,24 @@ func refresh_passive() -> void:
 			c.damageElement = int(str(meta.DamageElements).strip_edges())
 		if meta.has("passiveIRUP"):
 			c.itemRateUp += _num(meta.passiveIRUP)
+		# dsPassiveSkill读取meta（重复同名标签取最后一条），parseInt按首个有符号整数解析。
+		for key in meta:
+			var tag := str(key)
+			if not tag.begins_with("ConsumeReduce"):
+				continue
+			var number := RegEx.create_from_string("^\\s*([+-]?\\d+)").search(str(meta[key]))
+			if number == null:
+				push_error("ConsumeReduce标签不是整数：" + tag + ":" + str(meta[key]))
+				continue
+			var value := int(number.get_string(1))
+			var suffix := tag.substr(13)
+			if suffix == "All":
+				c.consumeReduce.all += value
+			elif suffix in ["Zj", "Mf"]:
+				c.consumeReduce.byType[suffix] += value
+			elif suffix.is_valid_int():
+				var id := int(suffix)
+				c.consumeReduce.bySkill[id] = c.consumeReduce.bySkill.get(id, 0) + value
 	XActorModules.passive_cache(self, c)  # 专属角色模块的 initPassiveCache 包装（渡鸦魂海刻度的暴伤／终伤池）
 	_passive_cache = c
 

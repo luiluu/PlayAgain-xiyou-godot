@@ -26,6 +26,7 @@ var battle_slots: Array = []
 var actors := {}                    # actor_id -> XActor
 var gold := 0
 var items := {}                     # item_id -> 数量
+var item_target_actor_id := 0  # 当前物品选定角色（容量判断与 CE1317）；每次菜单使用先设置
 var last_item := 0
 var next_gear_id := 1
 ## 保存次数（$gameSystem._saveCount：每次存档写盘前加 1；存读档页显示；旧档缺省 0）
@@ -170,6 +171,8 @@ var enemy_book := {"flags": {}, "defeat": {}, "maps": {}}
 var crafting := {"known": {}, "level": [1, 1, 1, 1], "exp": [0, 0, 0, 0]}
 ## 宠物（Star_PetSystem）：list 宠物、war 出战序号、team_a 共享角色序号（$gameParty.Pets／GTWar／TeamATo），见 XPets
 var pets := {"list": [], "war": -1, "team_a": 0}
+## TeamA 上次接收者，仅运行时；存档技能已保存，读档按当前槽位重建。
+var pet_team_actor := 0
 ## 修炼（Star_ActorAttributePlusPoints）：{"角色ID": {"修炼表编号": 等级}}（actor.pushattribute 的等级一栏），见 XTraining
 var training := {}
 var shop_pending := ""
@@ -322,6 +325,7 @@ func init_battle_slots() -> void:
 	for i in MAX_BATTLE_MEMBERS:
 		battle_slots.append(party[i] if i < party.size() else 0)
 	XItemMarks.enforce_party(self)
+	XPets.sync_team_a(self)
 
 
 func _ensure_slots() -> void:
@@ -335,6 +339,7 @@ func rearrange_actors() -> void:
 	XItemMarks.enforce_party(self)
 	_rearrange_actors()
 	XItemMarks.enforce_party(self)
+	XPets.sync_team_a(self)
 
 
 func _rearrange_actors() -> void:
@@ -655,6 +660,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.crafting = cr.duplicate(true) if cr is Dictionary else {}
 	var pt = d.get("pets", {})
 	s.pets = pt.duplicate(true) if pt is Dictionary else {}
+	var pet_target := XPets.team_a_actor(s) if not XPets.war_pet(s).is_empty() else null
+	s.pet_team_actor = pet_target.actor_id if pet_target != null else 0
 	var pp = d.get("mvParamPlus", {})
 	s.mv_param_plus = pp.duplicate(true) if pp is Dictionary else {}
 	var tr = d.get("training", {})
@@ -683,6 +690,7 @@ static func from_dict(d: Dictionary) -> XState:
 		s.unlocked_maps[4] = true
 	XGlobalVars.apply(s)  # extractSaveContents 之后：跨存档变量盖掉档里的值
 	_become_current(s)
+	XPets.loaded(s)
 	# setup时曾缓存空状态；恢复完当前存档后重建效果快照，不额外夹HP／MP。
 	for a in s.actors.values():
 		a.param_mark_dirty()

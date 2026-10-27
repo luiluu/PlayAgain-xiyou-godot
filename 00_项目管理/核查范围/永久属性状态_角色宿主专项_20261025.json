@@ -1,0 +1,718 @@
+{
+ "date": "2026-10-25",
+ "executor": "Codex（沙僧）",
+ "crossReview": "待Claude",
+ "scope": "actor host only; four param_add blocks; enemy persistent params unavailable",
+ "baseline": "7ef7584a",
+ "code": "e85afc96",
+ "fixtureSha256": "ee3823eaafd7060d7260bd5768711bfca16b5d7df8f23cc7824e1913453b60a2",
+ "nativeCases": 11,
+ "nativeErrors": [],
+ "untranslatedStateBlocks": 437,
+ "finalTask": {
+  "runId": "0594aae738c84f528ed9ded468051226",
+  "status": "done",
+  "exitCode": 0,
+  "pid": 54500,
+  "startedAt": "2026-10-25T17:06:45.092467+00:00",
+  "command": [
+   "python3",
+   "-u",
+   "03_再刷重制_Godot/04_验证/本地结果/actor-bonus-states/verify.py"
+  ],
+  "childPGID": 54501,
+  "childIdentity": {
+   "pid": 54501,
+   "pgid": 54501,
+   "startedAt": "Sun Oct 25 18:06:45 2026    "
+  },
+  "finishedAt": "2026-10-25T17:06:58.781624+00:00"
+ },
+ "timings": {
+  "jobs": 2,
+  "globalJobs": 4,
+  "wallSeconds": 10.42,
+  "flakyRerunPassed": [],
+  "fingerprint": "",
+  "reused": [],
+  "scenes": [
+   {
+    "name": "xiyou_state_effects.tscn",
+    "seconds": 4.535,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 4.535,
+      "passed": true
+     }
+    ]
+   },
+   {
+    "name": "xiyou_state_effects_tp.tscn",
+    "seconds": 3.66,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 3.66,
+      "passed": true
+     }
+    ]
+   },
+   {
+    "name": "xiyou_actor_bonus.tscn",
+    "seconds": 3.658,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 3.658,
+      "passed": true
+     }
+    ]
+   },
+   {
+    "name": "xiyou_formula_effects.tscn",
+    "seconds": 3.47,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 3.47,
+      "passed": true
+     }
+    ]
+   },
+   {
+    "name": "xiyou_param_states.tscn",
+    "seconds": 3.095,
+    "passed": true,
+    "attempts": [
+     {
+      "rc": 0,
+      "seconds": 3.095,
+      "passed": true
+     }
+    ]
+   }
+  ]
+ },
+ "scenes": [
+  {
+   "scene": "xiyou_state_effects.tscn",
+   "result": {
+    "passed": 19949,
+    "total": 19949
+   },
+   "attempts": [
+    {
+     "rc": 0,
+     "seconds": 4.535,
+     "passed": true
+    }
+   ]
+  },
+  {
+   "scene": "xiyou_state_effects_tp.tscn",
+   "result": {
+    "failures": [],
+    "passed": 537,
+    "test": "xiyou_state_effects_tp",
+    "total": 537
+   },
+   "attempts": [
+    {
+     "rc": 0,
+     "seconds": 3.66,
+     "passed": true
+    }
+   ]
+  },
+  {
+   "scene": "xiyou_actor_bonus.tscn",
+   "result": {
+    "passed": 736,
+    "total": 736
+   },
+   "attempts": [
+    {
+     "rc": 0,
+     "seconds": 3.658,
+     "passed": true
+    }
+   ]
+  },
+  {
+   "scene": "xiyou_formula_effects.tscn",
+   "result": {
+    "passed": 908,
+    "total": 908
+   },
+   "attempts": [
+    {
+     "rc": 0,
+     "seconds": 3.47,
+     "passed": true
+    }
+   ]
+  },
+  {
+   "scene": "xiyou_param_states.tscn",
+   "result": {
+    "failures": [],
+    "passed": 582,
+    "total": 582
+   },
+   "attempts": [
+    {
+     "rc": 0,
+     "seconds": 3.095,
+     "passed": true
+    }
+   ]
+  }
+ ],
+ "total": 22712,
+ "guards": {
+  "passed": 16,
+  "total": 16
+ },
+ "documentsExit": 0,
+ "signatureBoundary": "exactly1612 Apply/Remove/Leave and1768 Conclude; reject mutations;1334/1336 Apply remain js",
+ "developmentFindings": [
+  {
+   "stage": "focus",
+   "firstFindings": [
+    "FAIL 1612.dispel.before.level [3,3.0]",
+    "FAIL 1612.dispel.apply.level [3,3.0]",
+    "FAIL 1612.dispel.apply.states [[1612],[1612.0]]",
+    "FAIL 1612.dispel.apply.trace [[{\"hp\":100646.0,\"i\":0,\"mp\":100263.0,\"n\":750.0},{\"hp\":100646.0,\"i\":1,\"mp\":100263.0,\"n\":750.0},{\"hp\":100646.0,\"i\":2,\"mp\":100263.0,\"n\":150.0},{\"hp\":100646.0,\"i\":4,\"mp\":100263.0,\"n\":150.0}],[{\"hp\":100646.0,\"i\":0.0,\"mp\":100263.0,\"n\":750.0},{\"hp\":100646.0,\"i\":1.0,\"mp\":100263.0,\"n\":750.0},{\"hp\":100646.0,\"i\":2.0,\"mp\":100263.0,\"n\":150.0},{\"hp\":100646.0,\"i\":4.0,\"mp\":100263.0,\"n\":150.0}]]",
+    "FAIL 1612.dispel.reapply.level [3,3.0]"
+   ],
+   "result": [
+    {
+     "failures": [
+      "1612.dispel.before.level",
+      "1612.dispel.apply.level",
+      "1612.dispel.apply.states",
+      "1612.dispel.apply.trace",
+      "1612.dispel.reapply.level",
+      "1612.dispel.reapply.states",
+      "1612.dispel.level5.level",
+      "1612.dispel.level5.states",
+      "1612.dispel.remove.level",
+      "1612.dispel.remove.trace",
+      "1612.dispel.absent.level",
+      "1612.dispel.apply5.level",
+      "1612.dispel.apply5.states",
+      "1612.dispel.apply5.trace",
+      "1612.dispel.save.level",
+      "1612.dispel.save.states",
+      "1612.dispel.after_save_remove.level",
+      "1612.dispel.after_save_remove.param",
+      "1612.dispel.after_save_remove.hp",
+      "1612.dispel.after_save_remove.mp",
+      "1612.dispel.after_save_remove.trace",
+      "1612.dispel.recover.level",
+      "1612.dispel.recover.param",
+      "1612.dispel.recover.hp",
+      "1612.dispel.recover.mp",
+      "1612.forced_expire.before.level",
+      "1612.forced_expire.apply.level",
+      "1612.forced_expire.apply.states",
+      "1612.forced_expire.apply.trace",
+      "1612.forced_expire.reapply.level",
+      "1612.forced_expire.reapply.states",
+      "1612.forced_expire.level5.level",
+      "1612.forced_expire.level5.states",
+      "1612.forced_expire.remove.level",
+      "1612.forced_expire.remove.trace",
+      "1612.forced_expire.absent.level",
+      "1612.forced_expire.apply5.level",
+      "1612.forced_expire.apply5.states",
+      "1612.forced_expire.apply5.trace",
+      "1612.forced_expire.save.level",
+      "1612.forced_expire.save.states",
+      "1612.forced_expire.after_save_remove.level",
+      "1612.forced_expire.after_save_remove.param",
+      "1612.forced_expire.after_save_remove.hp",
+      "1612.forced_expire.after_save_remove.mp",
+      "1612.forced_expire.after_save_remove.trace",
+      "1612.forced_expire.recover.level",
+      "1612.forced_expire.recover.param",
+      "1612.forced_expire.recover.hp",
+      "1612.forced_expire.recover.mp",
+      "1768.alive.before.level",
+      "1768.alive.before.states",
+      "1768.alive.conclude.level",
+      "1768.alive.conclude.states",
+      "1768.alive.repeat.level",
+      "1768.alive.repeat.states",
+      "1768.alive.save.level",
+      "1768.alive.save.states",
+      "1768.hp0.before.level",
+      "1768.hp0.before.states",
+      "1768.hp0.conclude.level",
+      "1768.hp0.conclude.states",
+      "1768.hp0.conclude.trace",
+      "1768.hp0.repeat.level",
+      "1768.hp0.repeat.states",
+      "1768.hp0.repeat.trace",
+      "1768.hp0.save.level",
+      "1768.hp0.save.states",
+      "1768.dead_state.before.level",
+      "1768.dead_state.before.states",
+      "1768.dead_state.conclude.level",
+      "1768.dead_state.conclude.states",
+      "1768.dead_state.conclude.trace",
+      "1768.dead_state.repeat.level",
+      "1768.dead_state.repeat.states",
+      "1768.dead_state.repeat.trace",
+      "1768.dead_state.save.level",
+      "1768.dead_state.save.states",
+      "1768.both.before.level",
+      "1768.both.before.states",
+      "1768.both.conclude.level",
+      "1768.both.conclude.states",
+      "1768.both.conclude.trace",
+      "1768.both.repeat.level",
+      "1768.both.repeat.states",
+      "1768.both.repeat.trace",
+      "1768.both.save.level",
+      "1768.both.save.states",
+      "1768.self.before.level",
+      "1768.self.before.states",
+      "1768.self.conclude.level",
+      "1768.self.conclude.states",
+      "1768.self.conclude.trace",
+      "1768.self.repeat.level",
+      "1768.self.repeat.states",
+      "1768.self.repeat.trace",
+      "1768.self.save.level",
+      "1768.self.save.states",
+      "1768.apply_miss_alive.before.level",
+      "1768.apply_miss_alive.before.states",
+      "1768.apply_miss_alive.apply.level",
+      "1768.apply_miss_alive.apply.states",
+      "1768.apply_miss_hp0.before.level",
+      "1768.apply_miss_hp0.before.states",
+      "1768.apply_miss_hp0.apply.level",
+      "1768.apply_miss_hp0.apply.states",
+      "1768.apply_miss_hp0.apply.trace",
+      "1768.apply_miss_hp0.missed"
+     ],
+     "passed": 250,
+     "total": 358
+    }
+   ]
+  },
+  {
+   "stage": "focus2",
+   "firstFindings": [
+    "FAIL 1612.dispel.after_save_remove.param [[99500.0,99500.0,0.0,0.0,0.0,0.0,0.0,0.0],[100306.0,99825.0,0.0,36.0,0.0,28.0,0.0,32.0]]",
+    "FAIL 1612.dispel.after_save_remove.hp [99500.0,100306.0]",
+    "FAIL 1612.dispel.after_save_remove.mp [99500.0,99825.0]",
+    "FAIL 1612.dispel.after_save_remove.trace [[{\"hp\":99500.0,\"i\":0,\"mp\":99825.0,\"n\":-1250.0},{\"hp\":99500.0,\"i\":1,\"mp\":99500.0,\"n\":-1250.0},{\"hp\":99500.0,\"i\":2,\"mp\":99500.0,\"n\":-250.0},{\"hp\":99500.0,\"i\":4,\"mp\":99500.0,\"n\":-250.0}],[{\"hp\":100306.0,\"i\":0.0,\"mp\":99825.0,\"n\":-1250.0},{\"hp\":100306.0,\"i\":1.0,\"mp\":99825.0,\"n\":-1250.0},{\"hp\":100306.0,\"i\":2.0,\"mp\":99825.0,\"n\":-250.0},{\"hp\":100306.0,\"i\":4.0,\"mp\":99825.0,\"n\":-250.0}]]",
+    "FAIL 1612.dispel.recover.param [[99500.0,99500.0,0.0,0.0,0.0,0.0,0.0,0.0],[100306.0,99825.0,0.0,36.0,0.0,28.0,0.0,32.0]]"
+   ],
+   "result": [
+    {
+     "failures": [
+      "1612.dispel.after_save_remove.param",
+      "1612.dispel.after_save_remove.hp",
+      "1612.dispel.after_save_remove.mp",
+      "1612.dispel.after_save_remove.trace",
+      "1612.dispel.recover.param",
+      "1612.dispel.recover.hp",
+      "1612.dispel.recover.mp",
+      "1612.forced_expire.after_save_remove.param",
+      "1612.forced_expire.after_save_remove.hp",
+      "1612.forced_expire.after_save_remove.mp",
+      "1612.forced_expire.after_save_remove.trace",
+      "1612.forced_expire.recover.param",
+      "1612.forced_expire.recover.hp",
+      "1612.forced_expire.recover.mp",
+      "1768.apply_miss_hp0.missed"
+     ],
+     "passed": 343,
+     "total": 358
+    }
+   ]
+  },
+  {
+   "stage": "focus3",
+   "firstFindings": [
+    "FAIL 1768.apply_miss_hp0.missed {\"added\":[],\"critical\":false,\"died\":false,\"effectJournal\":[],\"evaded\":false,\"formulaDiagnostic\":\"\",\"hp\":0.0,\"missed\":false,\"mp\":0.0,\"popupQueue\":[],\"record_hp\":0.0,\"removed\":[],\"result\":{\"addedStates\":[],\"critical\":false,\"evaded\":false,\"hpAffected\":false,\"hpDamage\":0.0,\"missed\":false,\"mpDamage\":0.0,\"removedStates\":[],\"success\":false,\"tpDamage\":0.0},\"skill\":{\"animationId\":1.0,\"damage\":{\"critical\":true,\"custom\":false,\"elementId\":-1.0,\"formula\":\"a.atk * 4 - (0 * 2)\",\"formulaGd\":\"a.atk * 4 - (0 * 2)\",\"formulaProgram\":{\"capabilities\":[\"read.battler\"],\"locals\":[],\"result\":\"completion\",\"source\":{\"custom\":false,\"id\":1.0,\"sha256\":\"2e6060e48afae57079b913522d9fb9a9c7a98ef8e2496a555f6db1e740a4bf6a\",\"table\":\"Skills\"},\"status\":\"pure\",\"steps\":[{\"op\":\"expr\",\"pos\":0.0,\"value\":{\"left\":{\"left\":{\"name\":\"atk\",\"op\":\"property\",\"pos\":0.0,\"receiver\":\"a\"},\"op\":\"binary\",\"operator\":\"*\",\"pos\":0.0,\"right\":{\"op\":\"literal\",\"pos\":8.0,\"value\":4.0}},\"op\":\"binary\",\"operator\":\"-\",\"pos\":0.0,\"right\":{\"left\":{\"op\":\"literal\",\"pos\":13.0,\"value\":0.0},\"op\":\"binary\",\"operator\":\"*\",\"pos\":13.0,\"right\":{\"op\":\"literal\",\"pos\":17.0,\"value\":2.0}}}}],\"version\":1.0},\"type\":1.0,\"variance\":0.0},\"description\":\"\",\"effects\":[{\"code\":21.0,\""
+   ],
+   "result": [
+    {
+     "failures": [
+      "1768.apply_miss_hp0.missed"
+     ],
+     "passed": 357,
+     "total": 358
+    }
+   ]
+  },
+  {
+   "stage": "focus5",
+   "firstFindings": [
+    "ERROR: 3 resources still in use at exit (run with --verbose for details)."
+   ],
+   "result": [
+    {
+     "failures": [],
+     "passed": 502,
+     "total": 502
+    }
+   ]
+  },
+  {
+   "stage": "focus6",
+   "firstFindings": [
+    "FAIL 1612.dispel.apply.plus [[100000.0,100000.0,0.0,0.0,0.0,0.0,0.0,0.0],[100750.0,100750.0,150.0,0.0,150.0,0.0,0.0,0.0]]",
+    "FAIL 1612.dispel.apply.param [[100646.0,100263.0,36.0,28.0,28.0,24.0,0.0,26.0],[101396.0,101013.0,186.0,28.0,178.0,24.0,0.0,26.0]]",
+    "FAIL 1612.dispel.apply.trace [[],[{\"hp\":100646.0,\"i\":0.0,\"mp\":100263.0,\"n\":750.0},{\"hp\":100646.0,\"i\":1.0,\"mp\":100263.0,\"n\":750.0},{\"hp\":100646.0,\"i\":2.0,\"mp\":100263.0,\"n\":150.0},{\"hp\":100646.0,\"i\":4.0,\"mp\":100263.0,\"n\":150.0}]]",
+    "FAIL 1612.dispel.reapply.plus [[100000.0,100000.0,0.0,0.0,0.0,0.0,0.0,0.0],[100750.0,100750.0,150.0,0.0,150.0,0.0,0.0,0.0]]",
+    "FAIL 1612.dispel.reapply.param [[100646.0,100263.0,36.0,28.0,28.0,24.0,0.0,26.0],[101396.0,101013.0,186.0,28.0,178.0,24.0,0.0,26.0]]"
+   ],
+   "result": [
+    {
+     "failures": [
+      "1612.dispel.apply.plus",
+      "1612.dispel.apply.param",
+      "1612.dispel.apply.trace",
+      "1612.dispel.reapply.plus",
+      "1612.dispel.reapply.param",
+      "1612.dispel.level5.plus",
+      "1612.dispel.level5.param",
+      "1612.dispel.level5.hp",
+      "1612.dispel.level5.mp",
+      "1612.dispel.remove.plus",
+      "1612.dispel.remove.param",
+      "1612.dispel.remove.hp",
+      "1612.dispel.remove.mp",
+      "1612.dispel.remove.trace",
+      "1612.dispel.absent.plus",
+      "1612.dispel.absent.param",
+      "1612.dispel.absent.hp",
+      "1612.dispel.absent.mp",
+      "1612.dispel.apply5.plus",
+      "1612.dispel.apply5.param",
+      "1612.dispel.apply5.hp",
+      "1612.dispel.apply5.mp",
+      "1612.dispel.apply5.trace",
+      "1612.dispel.save.plus",
+      "1612.dispel.save.param",
+      "1612.dispel.save.hp",
+      "1612.dispel.save.mp",
+      "1612.dispel.after_save_remove.plus",
+      "1612.dispel.after_save_remove.param",
+      "1612.dispel.after_save_remove.hp",
+      "1612.dispel.after_save_remove.mp",
+      "1612.dispel.after_save_remove.trace",
+      "1612.dispel.recover.plus",
+      "1612.dispel.recover.param",
+      "1612.dispel.recover.hp",
+      "1612.dispel.recover.mp",
+      "1612.dispel.apply.plus",
+      "1612.dispel.apply.param",
+      "1612.dispel.apply.trace",
+      "1612.dispel.reapply.plus",
+      "1612.dispel.reapply.param",
+      "1612.dispel.level5.plus",
+      "1612.dispel.level5.param",
+      "1612.dispel.level5.hp",
+      "1612.dispel.level5.mp",
+      "1612.dispel.remove.plus",
+      "1612.dispel.remove.param",
+      "1612.dispel.remove.hp",
+      "1612.dispel.remove.mp",
+      "1612.dispel.remove.trace",
+      "1612.dispel.absent.plus",
+      "1612.dispel.absent.param",
+      "1612.dispel.absent.hp",
+      "1612.dispel.absent.mp",
+      "1612.dispel.apply5.plus",
+      "1612.dispel.apply5.param",
+      "1612.dispel.apply5.hp",
+      "1612.dispel.apply5.mp",
+      "1612.dispel.apply5.trace",
+      "1612.dispel.save.plus",
+      "1612.dispel.save.param",
+      "1612.dispel.save.hp",
+      "1612.dispel.save.mp",
+      "1612.dispel.after_save_remove.plus",
+      "1612.dispel.after_save_remove.param",
+      "1612.dispel.after_save_remove.hp",
+      "1612.dispel.after_save_remove.mp",
+      "1612.dispel.after_save_remove.trace",
+      "1612.dispel.recover.plus",
+      "1612.dispel.recover.param",
+      "1612.dispel.recover.hp",
+      "1612.dispel.recover.mp",
+      "1612.forced_expire.apply.plus",
+      "1612.forced_expire.apply.param",
+      "1612.forced_expire.apply.trace",
+      "1612.forced_expire.reapply.plus",
+      "1612.forced_expire.reapply.param",
+      "1612.forced_expire.level5.plus",
+      "1612.forced_expire.level5.param",
+      "1612.forced_expire.level5.hp",
+      "1612.forced_expire.level5.mp",
+      "1612.forced_expire.remove.plus",
+      "1612.forced_expire.remove.param",
+      "1612.forced_expire.remove.hp",
+      "1612.forced_expire.remove.mp",
+      "1612.forced_expire.remove.trace",
+      "1612.forced_expire.absent.plus",
+      "1612.forced_expire.absent.param",
+      "1612.forced_expire.absent.hp",
+      "1612.forced_expire.absent.mp",
+      "1612.forced_expire.apply5.plus",
+      "1612.forced_expire.apply5.param",
+      "1612.forced_expire.apply5.hp",
+      "1612.forced_expire.apply5.mp",
+      "1612.forced_expire.apply5.trace",
+      "1612.forced_expire.save.plus",
+      "1612.forced_expire.save.param",
+      "1612.forced_expire.save.hp",
+      "1612.forced_expire.save.mp",
+      "1612.forced_expire.after_save_remove.plus",
+      "1612.forced_expire.after_save_remove.param",
+      "1612.forced_expire.after_save_remove.hp",
+      "1612.forced_expire.after_save_remove.mp",
+      "1612.forced_expire.after_save_remove.trace",
+      "1612.forced_expire.recover.plus",
+      "1612.forced_expire.recover.param",
+      "1612.forced_expire.recover.hp",
+      "1612.forced_expire.recover.mp",
+      "1612.forced_expire.apply.plus",
+      "1612.forced_expire.apply.param",
+      "1612.forced_expire.apply.trace",
+      "1612.forced_expire.reapply.plus",
+      "1612.forced_expire.reapply.param",
+      "1612.forced_expire.level5.plus",
+      "1612.forced_expire.level5.param",
+      "1612.forced_expire.level5.hp",
+      "1612.forced_expire.level5.mp",
+      "1612.forced_expire.remove.plus",
+      "1612.forced_expire.remove.param",
+      "1612.forced_expire.remove.hp",
+      "1612.forced_expire.remove.mp",
+      "1612.forced_expire.remove.trace",
+      "1612.forced_expire.absent.plus",
+      "1612.forced_expire.absent.param",
+      "1612.forced_expire.absent.hp",
+      "1612.forced_expire.absent.mp",
+      "1612.forced_expire.apply5.plus",
+      "1612.forced_expire.apply5.param",
+      "1612.forced_expire.apply5.hp",
+      "1612.forced_expire.apply5.mp",
+      "1612.forced_expire.apply5.trace",
+      "1612.forced_expire.save.plus",
+      "1612.forced_expire.save.param",
+      "1612.forced_expire.save.hp",
+      "1612.forced_expire.save.mp",
+      "1612.forced_expire.after_save_remove.plus",
+      "1612.forced_expire.after_save_remove.param",
+      "1612.forced_expire.after_save_remove.hp",
+      "1612.forced_expire.after_save_remove.mp",
+      "1612.forced_expire.after_save_remove.trace",
+      "1612.forced_expire.recover.plus",
+      "1612.forced_expire.recover.param",
+      "1612.forced_expire.recover.hp",
+      "1612.forced_expire.recover.mp",
+      "1768.apply_miss_hp0.apply.plus",
+      "1768.apply_miss_hp0.apply.param",
+      "1768.apply_miss_hp0.apply.trace"
+     ],
+     "passed": 227,
+     "total": 374
+    }
+   ]
+  }
+ ],
+ "abortedRelatedTask": {
+  "runId": "de935b685c834e44ba98f7c95b2d4022",
+  "status": "stuck",
+  "exitCode": 124,
+  "pid": 54407,
+  "startedAt": "2026-10-25T17:06:01.292256+00:00",
+  "command": [
+   "python3",
+   "-u",
+   "03_再刷重制_Godot/07_开发环境/并行测试.py",
+   "03_再刷重制_Godot/07_开发环境/godot",
+   "03_再刷重制_Godot/01_Godot工程",
+   "--log-dir",
+   "03_再刷重制_Godot/04_验证/本地结果/actor-bonus-states/related",
+   "xiyou_state_effects.tscn",
+   "xiyou_state_effects_tp.tscn",
+   "xiyou_formula_effects.tscn",
+   "xiyou_actor_bonus.tscn"
+  ],
+  "childPGID": 54408,
+  "childIdentity": {
+   "pid": 54408,
+   "pgid": 54408,
+   "startedAt": "Sun Oct 25 18:06:01 2026    "
+  },
+  "reason": "任务包装器失联；已确认旧任务进程组退出",
+  "finishedAt": "2026-10-25T17:06:27.329990+00:00"
+ },
+ "postMerge": {
+  "commit": "d370a7fb",
+  "task": {
+   "runId": "8c02fe25462b4e1289e0140bb52728dc",
+   "status": "done",
+   "exitCode": 0,
+   "pid": 55417,
+   "startedAt": "2026-10-25T17:09:04.660274+00:00",
+   "command": [
+    "python3",
+    "-u",
+    "03_再刷重制_Godot/04_验证/本地结果/actor-bonus-states/postmerge.py"
+   ],
+   "childPGID": 55420,
+   "childIdentity": {
+    "pid": 55420,
+    "pgid": 55420,
+    "startedAt": "Sun Oct 25 18:09:04 2026    "
+   },
+   "finishedAt": "2026-10-25T17:09:21.583869+00:00"
+  },
+  "timings": {
+   "jobs": 2,
+   "globalJobs": 4,
+   "wallSeconds": 13.512,
+   "flakyRerunPassed": [],
+   "fingerprint": "",
+   "reused": [],
+   "scenes": [
+    {
+     "name": "xiyou_battle_common_events.tscn",
+     "seconds": 6.449,
+     "passed": true,
+     "attempts": [
+      {
+       "rc": 0,
+       "seconds": 6.449,
+       "passed": true
+      }
+     ]
+    },
+    {
+     "name": "xiyou_state_effects.tscn",
+     "seconds": 4.053,
+     "passed": true,
+     "attempts": [
+      {
+       "rc": 0,
+       "seconds": 4.053,
+       "passed": true
+      }
+     ]
+    },
+    {
+     "name": "xiyou_actor_bonus.tscn",
+     "seconds": 3.679,
+     "passed": true,
+     "attempts": [
+      {
+       "rc": 0,
+       "seconds": 3.679,
+       "passed": true
+      }
+     ]
+    },
+    {
+     "name": "xiyou_formula_effects.tscn",
+     "seconds": 3.653,
+     "passed": true,
+     "attempts": [
+      {
+       "rc": 0,
+       "seconds": 3.653,
+       "passed": true
+      }
+     ]
+    },
+    {
+     "name": "xiyou_param_states.tscn",
+     "seconds": 3.376,
+     "passed": true,
+     "attempts": [
+      {
+       "rc": 0,
+       "seconds": 3.376,
+       "passed": true
+      }
+     ]
+    },
+    {
+     "name": "xiyou_state_effects_tp.tscn",
+     "seconds": 3.187,
+     "passed": true,
+     "attempts": [
+      {
+       "rc": 0,
+       "seconds": 3.187,
+       "passed": true
+      }
+     ]
+    }
+   ]
+  },
+  "scenes": [
+   {
+    "scene": "xiyou_battle_common_events.tscn",
+    "result": {
+     "passed": 22,
+     "total": 22
+    }
+   },
+   {
+    "scene": "xiyou_state_effects.tscn",
+    "result": {
+     "passed": 19949,
+     "total": 19949
+    }
+   },
+   {
+    "scene": "xiyou_actor_bonus.tscn",
+    "result": {
+     "passed": 736,
+     "total": 736
+    }
+   },
+   {
+    "scene": "xiyou_formula_effects.tscn",
+    "result": {
+     "passed": 908,
+     "total": 908
+    }
+   },
+   {
+    "scene": "xiyou_param_states.tscn",
+    "result": {
+     "failures": [],
+     "passed": 582,
+     "total": 582
+    }
+   },
+   {
+    "scene": "xiyou_state_effects_tp.tscn",
+    "result": {
+     "failures": [],
+     "passed": 537,
+     "test": "xiyou_state_effects_tp",
+     "total": 537
+    }
+   }
+  ],
+  "total": 22734,
+  "documentsExit": 0
+ }
+}

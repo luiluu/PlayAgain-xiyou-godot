@@ -1,0 +1,91 @@
+沙僧：插队一期「连续分支合 main」，交付到 5761f01f 为止的 14 期，PREE 先停。
+
+唐僧（常驻总装，Claude 会话 local_303a239d）2026-10-26 19:00 交代。用户已同意，原文由 Kyo 转贴。
+
+## 为什么插队
+
+你从 codex/state-effects-2g 起叠到 codex/passive-content-book-capacity 的 14 期都已交付，但一期都还没进 main。它们的交付单都在分支上：
+- 2g 首批
+- 随机对照三期（rng-compare-review）
+- 四个零散项
+- 角色加成首批（actor-bonus）、永久状态（actor-bonus-states）
+- 被动静态首批（passive-content）
+- Boss 六期：boss、boss-output、boss-context、boss-sequence、boss-state-origin、boss-react
+- 权能书（power-books）、技能书容量（book-capacity）
+
+你上次合 main 是 10-25 14:15（d6045c3e）。之后 main 进了很多 Claude 车道的改动，所以试合 5761f01f 有 8 个文件冲突：
+
+- `modes/xiyou/battle/battle_logic.gd`
+- `modes/xiyou/core/actor.gd`
+- `modes/xiyou/core/battler.gd`
+- `modes/xiyou/core/enemy.gd`
+- `modes/xiyou/core/enemy_book.gd`
+- `modes/xiyou/core/resource_context.gd`
+- `modes/xiyou/core/state_effects.gd`
+- `03_转换工具/xiyou_export.py`
+
+这几个大多是你的独占文件，冲突由你来解最稳。分支再往后拖，冲突只会更多，后面各期也越难合。
+
+## 先收住手上的 PREE
+
+1. 把 PREE 现场收到一个能停的小步，以 `WIP:` 提交到 codex/passive-content-preemptive。工作树 `.claude/worktrees/state-effects-2b` 里未入 Git 的原版证据照旧不删。
+2. 在同一工作树新开交付分支：`git switch -c codex/passive-content-merge-main 5761f01f`。只从 5761f01f 起，PREE 那 9+ 个提交不带进来。
+
+## 合 main 并解冲突
+
+3. `git merge main`，合当时本地 main 的最新提交，交付单写明合的是哪个提交。本地 main 比 GitHub 新，以本地为准。
+4. 解 8 处冲突的原则是**两边语义都保留**。哪边该让，看它是不是原版行为，以 mv_oracle 参照为准；不确定的写进交付单，别静默删掉任一侧。冲突里 main 那一侧来自下面这些合并：
+   - **actor.gd**：总装批准过的单行挂点例外都要保留：
+     - dev.155 `XTraining.param_bonus`
+     - 悟空_55 `XParamPlus`（param_base）
+     - 白龙 `XActorModules`（setup／learn_skill／升级入口、参数／xparam／被动缓存包装，30eff20f）
+     - 种族异化 #12 合并时定的 param 套用次序：按原版安装先后，种族 → 小猫 → 角色模块（33400fb9）
+
+     你的永久加算／角色加成接这些挂点，不要把挂点改回去。
+   - **battler.gd／enemy_book.gd**：
+     - 八戒把怪物图鉴死亡钩子接进了 XBattler（f6ee0c67，原本是留给你的 P2「战斗死亡处调 XEnemyBook.on_enemy_death」）。你分支里若也接了，**只留一处**，不要重复计数。
+     - 白龙 #14 在 battler／damage 加了角色模块钩子；伤害钩子 actor-modules 改为顺序号 3，与 race-blessings 41 并存。
+   - **battle_logic.gd／state_effects.gd／resource_context.gd**：八戒的状态效果 js 再翻译三批，计有：
+     - 叠毒 `_stackingPoison`、开战／回合开始加状态、暴击后
+     - 状态计数 `_stateCounter`，修了计数键名：JSON 状态号是浮点，str 后成「1xx.0」（2a45ab75）
+     - 战斗中技能／物品的公共事件通用化（dev.174）
+     - 开战公共事件 1320 的 setup 末尾预约（0482b1ed）
+   - **enemy.gd**：异化战斗侧 XAlienBattle（遭遇、敌人变体、锁队、腐蚀）、种族祝福战斗效果 XRaceBattle、法宝完整升级 XMagicWeapon 的胜利结算。
+   - **xiyou_export.py**：以上各车道加的导出字段。
+   - 你在 2g 和后续各期定下的接口边界（formula_context 影子克隆、生命周期内预览等）照旧。main 侧若有违反的，写进交付单「需要总装决定」，不在本期顺手重构。
+5. 解完先跑同步（`同步正式西游.py`，接受变化须有接受单），再按下面验证。
+
+## 验证（选测＋专项，不跑全量）
+
+6. 跑 `检查.sh --affected main --oracle`。基准是 main，等于你这 14 期的全部改动，选中范围会很大，属正常。全量由总装合并时跑，兼当天全量。
+7. 把 14 期各自交付单里列的专项场景，以及 main 侧受冲突影响的场景，各单跑一遍：
+   - xiyou_rules、xiyou_cat
+   - 种族、异化、法宝
+   - 怪物图鉴
+   - 状态效果相关
+   - actor_modules／help_card
+
+   失败先判断是哪边的语义丢了。是 main 侧 Claude 车道本身的错，就写进交付单，别改别人的测试迁就。
+8. 同源对照（mv_oracle）有改变要走接受单，理由写清。
+
+## 交付
+
+9. 交付单写 `00_项目管理/交付/codex_passive-content-merge-main.md`，内容包括：
+   - 合的 main 提交号
+   - 8 处冲突各怎么解、两侧各保留了什么
+   - 选测与专项结果
+   - 列出 14 期原交付单作为本次一并交付的范围（合并工具会一起读）
+   - 变更记录草稿
+   - 可优化节
+   - 需要总装决定的项
+
+   开发编号照例写 `dev.待定`。
+10. 提交尾注写「执行者: Codex（沙僧）」「核查: 待Claude」。推送分支 `git push github codex/passive-content-merge-main`，然后在交接板以外告诉 Kyo「已交付」，由 Kyo 转给唐僧。车道不改交接板。
+11. 交付后回到 codex/passive-content-preemptive，`git merge codex/passive-content-merge-main` 接上冲突解法，再继续 PREE。
+
+## 强度与停手
+
+- 解冲突涉及跨生命周期、状态来源的语义，用 high；确有疑难才上 xhigh，解完调回。登记、交付单用 medium。
+- 5 小时额度到 80%，或上下文吃紧：收尾当前小步，`WIP:` 提交并推送，交付单写明解到哪几处、还剩哪几处，然后停手。
+- 冲突里若发现要大改别人接口（不只是两侧并存）才能过：先停，写进交付单「需要总装决定」，不自行重构。
+- 本期不加新功能、不顺带推进 PREE。

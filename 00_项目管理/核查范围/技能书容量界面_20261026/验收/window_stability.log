@@ -1,0 +1,26 @@
+WINDOW_RUN 1
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M1 Pro
+
+TEST_RESULT={"failures":[],"passed":190,"total":190}
+sandbox_extension_issue_file_to_process failed for /Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b/03_再刷重制_Godot/07_开发环境/当前Godot.app: 1 (Operation not permitted)
+
+WINDOW_EXIT 1 0
+WINDOW_RUN 2
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M1 Pro
+
+TEST_RESULT={"failures":[],"passed":190,"total":190}
+sandbox_extension_issue_file_to_process failed for /Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b/03_再刷重制_Godot/07_开发环境/当前Godot.app: 1 (Operation not permitted)
+
+WINDOW_EXIT 2 0
+WINDOW_RUN 3
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M1 Pro
+
+TEST_RESULT={"failures":[],"passed":190,"total":190}
+sandbox_extension_issue_file_to_process failed for /Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b/03_再刷重制_Godot/07_开发环境/当前Godot.app: 1 (Operation not permitted)
+
+WINDOW_EXIT 3 0
+
+TASK_RESULT={"runId": "08df83f6a70e4723a252e947665434f3", "status": "done", "exitCode": 0, "pid": 4134, "startedAt": "2026-10-26T14:23:10.567475+00:00", "command": ["env", "XIYOU_TEST_HEARTBEAT=30", "python3", "-u", "03_再刷重制_Godot/04_验证/本地结果/boss74-capacity-repeat.py"], "childPGID": 4135, "childIdentity": {"pid": 4135, "pgid": 4135, "startedAt": "Mon Oct 26 15:23:10 2026    "}, "finishedAt": "2026-10-26T14:23:34.811676+00:00"}

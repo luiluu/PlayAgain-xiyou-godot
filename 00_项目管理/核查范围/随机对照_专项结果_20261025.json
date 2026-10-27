@@ -1,0 +1,131 @@
+{
+  "branch": "codex/rng-compare-review",
+  "dependency": "2g026f6ee3，先合四零散→2g→本期",
+  "scope": "复核状态44豁免边界，补军团同抽样严格对照及Permanent实际原版四例；无生产改动",
+  "nativeFixture": {
+    "path": "03_再刷重制_Godot/01_Godot工程/tests/fixtures/recover_permanent_review.json",
+    "sha256": "51b18a9ded8d8bcf0769ff2e501d0ef9a806f1afbe38e783264507121342b1ae",
+    "cases": 4,
+    "allErrorsEmpty": true,
+    "regenerationEvidence": "mv_oracle/.sandbox/recover_permanent_review.cjs（已有树保留）",
+    "firstAttempt": "stdin没有主脚本filename导致原版插件初始化失败，改实体脚本后原版4例全部通过；不计为游戏失败"
+  },
+  "status": {
+    "runId": "bb4bbd24dfd54663b282d91c26655f16",
+    "status": "done",
+    "exitCode": 0,
+    "pid": 39513,
+    "startedAt": "2026-10-25T15:54:24.465921+00:00",
+    "command": [
+      "python3",
+      "03_再刷重制_Godot/07_开发环境/并行测试.py",
+      "03_再刷重制_Godot/07_开发环境/godot",
+      "03_再刷重制_Godot/01_Godot工程",
+      "--log-dir",
+      "03_再刷重制_Godot/04_验证/本地结果/rng-compare-review/final",
+      "xiyou_troop_events.tscn",
+      "xiyou_troop_events_b.tscn",
+      "xiyou_troop_events_half.tscn",
+      "xiyou_recover_permanent.tscn"
+    ],
+    "childPGID": 39514,
+    "childIdentity": {
+      "pid": 39514,
+      "pgid": 39514,
+      "startedAt": "Sun Oct 25 16:54:24 2026    "
+    },
+    "finishedAt": "2026-10-25T15:56:05.372285+00:00"
+  },
+  "tests": {
+    "xiyou_troop_events_half": {
+      "oracleHalf": true,
+      "passed": 2951,
+      "strictRandomExtraChecks": 19,
+      "strictRandomSetChecks": 19,
+      "total": 2951
+    },
+    "xiyou_recover_permanent": {
+      "passed": 34,
+      "total": 34
+    },
+    "xiyou_troop_events_b": {
+      "oracleHalf": false,
+      "passed": 6450,
+      "strictRandomExtraChecks": 0,
+      "strictRandomSetChecks": 0,
+      "total": 6450
+    },
+    "xiyou_troop_events": {
+      "oracleHalf": false,
+      "passed": 6574,
+      "strictRandomExtraChecks": 0,
+      "strictRandomSetChecks": 0,
+      "total": 6574
+    }
+  },
+  "timings": {
+    "jobs": 2,
+    "globalJobs": 4,
+    "wallSeconds": 100.779,
+    "flakyRerunPassed": [],
+    "fingerprint": "",
+    "reused": [],
+    "scenes": [
+      {
+        "name": "xiyou_troop_events_b.tscn",
+        "seconds": 68.752,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 68.752,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_troop_events.tscn",
+        "seconds": 67.168,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 67.168,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_troop_events_half.tscn",
+        "seconds": 32.02,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 32.02,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "name": "xiyou_recover_permanent.tscn",
+        "seconds": 2.91,
+        "passed": true,
+        "attempts": [
+          {
+            "rc": 0,
+            "seconds": 2.91,
+            "passed": true
+          }
+        ]
+      }
+    ]
+  },
+  "conclusions": {
+    "state44": "第1回合末有无与回合数仍严格；末态仅在Godot走完第2回合时允许44到期。是不同采样时点，不能给生产固定随机数。",
+    "randomAI": "原五种种子场景保留；独立0.5场景使用等价floor(n*0.5)测试流，恢复19次行动者集合＋19次命中附伤比较，全部通过；不改游戏流。",
+    "permanent": "现有clear_states/recover_all与原版一致；角色/敌人四例保留686和5回合、清普通状态2、TP37/buff/buffTurns不变，recover_all回满HP/MP，不需生产补丁。"
+  },
+  "crossReview": "待Claude",
+  "cleanup": "本期rng-compare-review临时输出已清理；.sandbox/旧证据/generated/整树保留"
+}

@@ -1,0 +1,453 @@
+{
+  "kind": "static-contract-comparison",
+  "nativeMeasured": false,
+  "frozenStatesSha256": "20cae50e918b71ec3a8517099ea72537c0492b1df79d3c1b5475b0f304ed52da",
+  "fixedMain": "9b140f365f93c2cfa4b19d85b6ddd72576830c16",
+  "revisions": {
+    "preMerge": {
+      "exporterSha256": "a7e4f3d4b504d510e39e8e3bfc59664fd0c65b31d31eef31af310a0bbd857eb8",
+      "inventory": {
+        "value_steps": 28,
+        "js": 437,
+        "mul": 125,
+        "value_program": 35,
+        "gain_resource": 3,
+        "value_query": 4,
+        "user_param_damage": 2,
+        "param_add": 4
+      },
+      "states": {
+        "607": [
+          {
+            "phase": "battle",
+            "op": "gain_resource",
+            "recipient": "user",
+            "resource": "tp",
+            "amount": 200,
+            "requires": [
+              "resources"
+            ]
+          }
+        ],
+        "609": [
+          {
+            "phase": "battle",
+            "op": "gain_resource",
+            "recipient": "user",
+            "resource": "tp",
+            "amount": 200,
+            "requires": [
+              "resources"
+            ]
+          }
+        ],
+        "857": [
+          {
+            "phase": "battle",
+            "op": "gain_resource",
+            "recipient": "user",
+            "resource": "tp",
+            "amount": 50,
+            "requires": [
+              "resources"
+            ]
+          }
+        ],
+        "1334": [
+          {
+            "phase": "apply",
+            "op": "js",
+            "source": "user.gainTp(25);"
+          }
+        ],
+        "1336": [
+          {
+            "phase": "apply",
+            "op": "js",
+            "source": "user.gainTp(75);"
+          }
+        ]
+      }
+    },
+    "main": {
+      "exporterSha256": "be5e49f89ba176e141e1743d274fefca04637bfec47d47a716b7b8af7045e86c",
+      "inventory": {
+        "value_steps": 28,
+        "js": 322,
+        "gain_steps": 11,
+        "poison_stack": 36,
+        "add_state": 23,
+        "mul": 125,
+        "poison_tick": 15,
+        "value_program": 35,
+        "value_query": 4,
+        "syntax_error": 9,
+        "set_variable": 4,
+        "user_param_damage": 2,
+        "counter_set": 1,
+        "counter_init": 23
+      },
+      "states": {
+        "607": [
+          {
+            "phase": "battle",
+            "op": "gain_steps",
+            "steps": [
+              {
+                "resource": "tp",
+                "program": {
+                  "version": 1,
+                  "source": {
+                    "table": "States",
+                    "id": 0,
+                    "custom": true,
+                    "sha256": "86be7516cc8efad6e616de1abc76e41dd7cf94baf1914ca61772c192af2555bc"
+                  },
+                  "status": "pure",
+                  "capabilities": [],
+                  "locals": [
+                    "value"
+                  ],
+                  "steps": [
+                    {
+                      "op": "set",
+                      "pos": 0,
+                      "name": "value",
+                      "value": {
+                        "op": "literal",
+                        "pos": 8,
+                        "value": 200.0
+                      }
+                    }
+                  ],
+                  "result": "value"
+                }
+              }
+            ]
+          }
+        ],
+        "609": [
+          {
+            "phase": "battle",
+            "op": "gain_steps",
+            "steps": [
+              {
+                "resource": "tp",
+                "program": {
+                  "version": 1,
+                  "source": {
+                    "table": "States",
+                    "id": 0,
+                    "custom": true,
+                    "sha256": "86be7516cc8efad6e616de1abc76e41dd7cf94baf1914ca61772c192af2555bc"
+                  },
+                  "status": "pure",
+                  "capabilities": [],
+                  "locals": [
+                    "value"
+                  ],
+                  "steps": [
+                    {
+                      "op": "set",
+                      "pos": 0,
+                      "name": "value",
+                      "value": {
+                        "op": "literal",
+                        "pos": 8,
+                        "value": 200.0
+                      }
+                    }
+                  ],
+                  "result": "value"
+                }
+              }
+            ]
+          }
+        ],
+        "857": [
+          {
+            "phase": "battle",
+            "op": "gain_steps",
+            "steps": [
+              {
+                "resource": "tp",
+                "program": {
+                  "version": 1,
+                  "source": {
+                    "table": "States",
+                    "id": 0,
+                    "custom": true,
+                    "sha256": "ba8688af0c3dca7762696ef5ccc3ce09c22bc57cc66e0efc892fbe4263e3c5ef"
+                  },
+                  "status": "pure",
+                  "capabilities": [],
+                  "locals": [
+                    "value"
+                  ],
+                  "steps": [
+                    {
+                      "op": "set",
+                      "pos": 0,
+                      "name": "value",
+                      "value": {
+                        "op": "literal",
+                        "pos": 8,
+                        "value": 50.0
+                      }
+                    }
+                  ],
+                  "result": "value"
+                }
+              }
+            ]
+          }
+        ],
+        "1334": [
+          {
+            "phase": "apply",
+            "op": "gain_steps",
+            "steps": [
+              {
+                "resource": "tp",
+                "program": {
+                  "version": 1,
+                  "source": {
+                    "table": "States",
+                    "id": 0,
+                    "custom": true,
+                    "sha256": "0c9a5a33ba41a3fe613c48288f27b11e074c8164c5dc0793aeedabf6e9a6045d"
+                  },
+                  "status": "pure",
+                  "capabilities": [],
+                  "locals": [
+                    "value"
+                  ],
+                  "steps": [
+                    {
+                      "op": "set",
+                      "pos": 0,
+                      "name": "value",
+                      "value": {
+                        "op": "literal",
+                        "pos": 8,
+                        "value": 25.0
+                      }
+                    }
+                  ],
+                  "result": "value"
+                }
+              }
+            ]
+          }
+        ],
+        "1336": [
+          {
+            "phase": "apply",
+            "op": "gain_steps",
+            "steps": [
+              {
+                "resource": "tp",
+                "program": {
+                  "version": 1,
+                  "source": {
+                    "table": "States",
+                    "id": 0,
+                    "custom": true,
+                    "sha256": "2225944f1c50310111fd900144aa0286ae0eb3d56356ab4e709c4a0b68d3a597"
+                  },
+                  "status": "pure",
+                  "capabilities": [],
+                  "locals": [
+                    "value"
+                  ],
+                  "steps": [
+                    {
+                      "op": "set",
+                      "pos": 0,
+                      "name": "value",
+                      "value": {
+                        "op": "literal",
+                        "pos": 8,
+                        "value": 75.0
+                      }
+                    }
+                  ],
+                  "result": "value"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "merged": {
+      "exporterSha256": "6e91027c9cbf913e31e1554f675ffcb1e58891b4ffea255571299a17a37f7976",
+      "inventory": {
+        "value_steps": 28,
+        "js": 318,
+        "gain_steps": 8,
+        "poison_stack": 36,
+        "add_state": 23,
+        "mul": 125,
+        "poison_tick": 15,
+        "value_program": 35,
+        "gain_resource": 3,
+        "value_query": 4,
+        "syntax_error": 9,
+        "set_variable": 4,
+        "user_param_damage": 2,
+        "param_add": 4,
+        "counter_set": 1,
+        "counter_init": 23
+      },
+      "states": {
+        "607": [
+          {
+            "phase": "battle",
+            "op": "gain_resource",
+            "recipient": "user",
+            "resource": "tp",
+            "amount": 200,
+            "requires": [
+              "resources"
+            ]
+          }
+        ],
+        "609": [
+          {
+            "phase": "battle",
+            "op": "gain_resource",
+            "recipient": "user",
+            "resource": "tp",
+            "amount": 200,
+            "requires": [
+              "resources"
+            ]
+          }
+        ],
+        "857": [
+          {
+            "phase": "battle",
+            "op": "gain_resource",
+            "recipient": "user",
+            "resource": "tp",
+            "amount": 50,
+            "requires": [
+              "resources"
+            ]
+          }
+        ],
+        "1334": [
+          {
+            "phase": "apply",
+            "op": "gain_steps",
+            "steps": [
+              {
+                "resource": "tp",
+                "program": {
+                  "version": 1,
+                  "source": {
+                    "table": "States",
+                    "id": 0,
+                    "custom": true,
+                    "sha256": "0c9a5a33ba41a3fe613c48288f27b11e074c8164c5dc0793aeedabf6e9a6045d"
+                  },
+                  "status": "pure",
+                  "capabilities": [],
+                  "locals": [
+                    "value"
+                  ],
+                  "steps": [
+                    {
+                      "op": "set",
+                      "pos": 0,
+                      "name": "value",
+                      "value": {
+                        "op": "literal",
+                        "pos": 8,
+                        "value": 25.0
+                      }
+                    }
+                  ],
+                  "result": "value"
+                }
+              }
+            ]
+          }
+        ],
+        "1336": [
+          {
+            "phase": "apply",
+            "op": "gain_steps",
+            "steps": [
+              {
+                "resource": "tp",
+                "program": {
+                  "version": 1,
+                  "source": {
+                    "table": "States",
+                    "id": 0,
+                    "custom": true,
+                    "sha256": "2225944f1c50310111fd900144aa0286ae0eb3d56356ab4e709c4a0b68d3a597"
+                  },
+                  "status": "pure",
+                  "capabilities": [],
+                  "locals": [
+                    "value"
+                  ],
+                  "steps": [
+                    {
+                      "op": "set",
+                      "pos": 0,
+                      "name": "value",
+                      "value": {
+                        "op": "literal",
+                        "pos": 8,
+                        "value": 75.0
+                      }
+                    }
+                  ],
+                  "result": "value"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "initialPythonTests": {
+    "测试状态效果翻译.py": {
+      "tests": 8,
+      "failures": 1,
+      "reason": "2g rejects broader gain shapes which main deliberately supports"
+    },
+    "测试状态js翻译.py": {
+      "tests": 10,
+      "failures": 1,
+      "errors": 1,
+      "reason": "main expects 11 gain_steps; merge gives 8 gain_steps + 3 gain_resource"
+    }
+  },
+  "closeChecks": {
+    "documentExit": 1,
+    "nativeSyntaxExit": 0,
+    "mvGuard": {
+      "passed": 16,
+      "total": 16
+    },
+    "diffCheckExit": 0,
+    "godotSelectionExecuted": false,
+    "initialDocumentFailures": [
+      "✗ 失效链接 00_项目管理/交付/codex_passive-content-merge-main.md -> a",
+      "✗ 失效链接 00_项目管理/变更记录.md -> a",
+      "✗ 失效链接 00_项目管理/变更记录.md -> a"
+    ],
+    "fixedDeliveryQuotation": true,
+    "finalDocumentExit": 1,
+    "finalDocumentFailures": [
+      "✗ 失效链接 00_项目管理/变更记录.md -> a",
+      "✗ 失效链接 00_项目管理/变更记录.md -> a"
+    ]
+  }
+}

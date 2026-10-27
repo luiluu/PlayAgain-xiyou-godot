@@ -62,6 +62,10 @@ static func run(code: String, interp) -> Array:
 	if js == "":
 		return []
 	var s := XState.current
+	# CE1317: selected actor is shared with the item-effect capacity check.
+	if js == "var actor = $gameActors.actor($gameParty._targetActorId);\n$.toaster({ message : ''+actor.name()+' 能学习的抽奖被动技能已经达到'+$gameVariables.value(9)+'上限！'});":
+		interp.host.toast(XPassiveBooks.limit_message(s))
+		return []
 	# ---- 整段写法 ----
 	# 指定一个角色（变量里存角色 ID）学会/忘记技能：var actor = $gameActors.actor($gameVariables.value(N)); [actor.forgetSkill(A);] actor.learnSkill(B);（传承人的学习公共事件 1348～1368）
 	var one := _actor_by_variable(js)

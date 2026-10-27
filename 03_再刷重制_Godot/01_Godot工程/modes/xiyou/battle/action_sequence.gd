@@ -30,6 +30,8 @@ var _gains: Array = []
 var _flags: Array = []
 var _true_flags: Array = []
 var _break := false
+## 数值序列持有独立结果槽；嵌套时只共享当前战斗的Boss域。
+var _resources: XResourceContext
 
 
 static func create(l: XBattleLogic, u: XBattler, rec: Dictionary, list: Array) -> XActionSequence:
@@ -47,6 +49,9 @@ static func has_sequence(rec: Dictionary) -> bool:
 
 
 func run() -> Array:
+	_resources = logic._new_lifecycle_resources()
+	if logic._action_resources != null:
+		_resources.boss_output = logic._action_resources.boss_output
 	var seq: Dictionary = skill.yepSeq
 	for phase in PHASES:
 		targets = all_targets.duplicate()
@@ -226,10 +231,13 @@ func _modify(kind: String, name: String, list: Array) -> void:
 			if not m:
 				return
 			change = m.get_string(1).to_float()  # parseInt(很长的数字串) 是大浮点数
+	# actionHp/MpModify 的最内层覆盖 processActionSequence 的 _targets 域。
+	_resources.boss_output.enter_targets(user, list)
 	for t in list:
 		var base: float = t.mhp if kind == "HP" else (t.mmp if kind == "MP" else t.max_tp())
 		var v := js_parse_int(base * change * 0.01 if percent else change)
-		_gains.append([t, kind, logic.sequence_gain(t, kind, v, user)])
+		_gains.append([t, kind, logic.sequence_gain(t, kind, v, user, _resources if kind in ["HP", "MP"] else null)])
+	_resources.boss_output.leave_action()
 
 
 ## JS parseInt(数字)：先转成字符串，绝对值 ≥ 1e21 时是指数写法，只取到小数点/e 之前（-1e+33 → -1）
@@ -245,7 +253,7 @@ static func js_parse_int(v: float) -> float:
 	return floorf(absf(v)) * (-1.0 if v < 0 else 1.0)
 
 
-## BattleManager.makeActionTargets（序列里实际用到的写法；其余写法照原版得到空表）
+## BattleManager.makeActionTargets（已移植并有规则参照的写法；其余暂为空表）
 func make_targets(spec: String) -> Array:
 	var s := spec.to_upper()
 	var friends := logic.actors if user is XActor else logic.enemies
@@ -269,6 +277,15 @@ func make_targets(spec: String) -> Array:
 			return logic.alive(foes)
 		"ALL ALIVE":
 			return logic.alive(logic.actors) + logic.alive(logic.enemies)
+		"FIRST":
+			return [targets[0]] if not targets.is_empty() and targets[0] != null else []
+	for kind in ["ACTOR", "ENEMY"]:
+		var m := RegEx.create_from_string(kind + "[ ](\\d+)").search(s)
+		if m:
+			var members: Array = logic.actors if kind == "ACTOR" else logic.enemies
+			var at := int(m.get_string(1))
+			if at < members.size() and (not members[at] is XEnemy or not members[at].hidden):
+				return [members[at]]
 	return []
 
 
