@@ -5,7 +5,7 @@ extends RefCounted
 ##   掷不中保持原值（敌群 1 在 Game_Troop.setup 已强制可捕捉）。可捕捉的敌人名字加「宝宝」（XEnemy.display_name）。
 ## - 逃跑（BattleManager.endTurn 包装）：第 5 回合结束，可捕捉且活着的敌人提示「敌人逃跑」，die＋hide。原版判的是「不算阵亡」，
 ##   隐藏成员也算：已被捕走（die＋hide）的敌人会再提示一次「敌人逃跑」，还没出现的隐藏成员也被「逃跑」掉、之后 335 出现的是
-##   一具 0 血尸体。O-098：只让活着的逃跑（FLEE_ALIVE_ONLY），设 false 恢复原版。
+##   一具 0 血尸体。O-102：只让活着的逃跑（FLEE_ALIVE_ONLY），设 false 恢复原版。
 ## - 捕捉（物品 200／315／316／317 的公共事件 173 Star.PetSystem.PetGet）：先掷「随机×100 ≤ 物品成功率」，中了且目标可捕捉 →
 ##   造宠物入列、目标 die＋hide、「捕捉成功」；目标不可捕捉 →「不可捕捉」并退还一件；否则「捕捉失败」。
 ##   宠物的学习次数上限（extraLSMax）原版在建敌人时（initMembers）就掷了，这里捕到时才掷（XPets.create 最后一次抽取），分布相同。
@@ -17,11 +17,11 @@ extends RefCounted
 ##   PetShowTextT 时提示 PetShowText（空时「在<地图名>出现了神秘生物」）。候选：PetRef_Capture 关时取 PetRefNum 以外的
 ##   （PetMap 1～4），开时只取 PetRefNum 里的（12～15 奇兽）。敌群 1 开战时记下日／时／分（PetRefDay/Hour/Minute）。
 ## 存档：XState.pets 的 ref_capture、ref_day、ref_hour、ref_minute（$gameParty.PetRef_Capture／PetRefDay…）。
-## O-098：提示开关 $gameParty.PetShowTextT 原版没有任何地方打开，刷新的「天生异象……」提示永远不弹，玩家不知道神秘生物出现了。
+## O-101：提示开关 $gameParty.PetShowTextT 原版没有任何地方打开，刷新的「天生异象……」提示永远不弹，玩家不知道神秘生物出现了。
 ##   重制默认弹（SHOW_REFRESH_TEXT），设 false 恢复原版（只在存档 pets.show_text 为真时弹）。
 
 const FLEE_TURN := 5
-## O-098（见文件头）
+## O-101 提示照弹、O-102 只让活着的逃跑（见文件头）
 static var SHOW_REFRESH_TEXT := true
 static var FLEE_ALIVE_ONLY := true
 

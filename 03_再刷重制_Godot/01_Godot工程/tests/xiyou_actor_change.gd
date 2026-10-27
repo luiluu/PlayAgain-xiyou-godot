@@ -119,7 +119,7 @@ func _reset(o: Dictionary) -> void:
 		if got != _want(r):
 			bad.append([got, r])
 	check("reset_rows", bad.is_empty() and o.rows.size() >= 80, [o.rows.size(), bad.slice(0, 3)])
-	# 原版 93 号被写成天虎令的图像；O-待定 改写给 104 号：93 号保持数据库，104 号是天虎令自己的图像
+	# 原版 93 号被写成天虎令的图像；O-100 改写给 104 号：93 号保持数据库，104 号是天虎令自己的图像
 	var r93: Dictionary = o.rows.filter(func(r): return int(r.actor) == 93)[0]
 	var db93 := XDB.rec("Actors", 93)
 	var t := _look(s.actor(104))
