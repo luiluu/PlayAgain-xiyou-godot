@@ -87,6 +87,15 @@ func _measure(c: Dictionary) -> Dictionary:
 	out.states = a.states().map(func(x): return int(x.id))
 	out.equips = a.equips.map(func(e): return 0 if e == null or e.is_empty() else int(e.base))
 	out.command = {"name": a.attack_command_text(), "symbol": "attack", "enabled": logic.can_use(a, a.attack_skill())}
+	# 挂机 makeAction（关智能AI）：没排表退回 attackSkillId；排表写 1 也换成 attackSkillId
+	XConfig.ensure_loaded()
+	var smart = XConfig._values.get("codexSmartAI")
+	XConfig._values["codexSmartAI"] = false
+	logic.turn = 0
+	out.hangUpAction = int(logic.auto_battle_action(a)[0].id)
+	XHangUpAuto.data(s, "ActSkill")[a.display_name() + XHangUpAuto.three(logic.turn)] = 1
+	out.hangUpScheduled = int(logic.auto_battle_action(a)[0].id)
+	XConfig._values["codexSmartAI"] = smart
 	out.ready = {}
 	for k in ["prayer", "inversebone"]:
 		out.ready[k] = XAlienation.ready(s, a, XAlienation.create(s, "w", 1044, "boss", k).ok)
@@ -99,7 +108,9 @@ func _common(logic: XBattleLogic, b: XBattler) -> Dictionary:
 	for sid in ([id] if id == 1 else [id, 1]):
 		var sk := XDB.rec("Skills", sid)
 		actions.append({"skill": sid, "isAttack": b.is_attack(sk), "mvRepeats": XBattleLogic.attack_repeats(b, sk, int(sk.repeats))})
-	return {"attackSkillId": id, "canAttack": logic.can_use(b, b.attack_skill()), "attackTimesAdd": b.attack_times_add(), "actions": actions}
+	# setAttack（反击 invokeCounterAttack、手动「攻击」、不能用时退回）：角色走 decide 的非自动分支，敌人是反击者的 attack_skill
+	var set_attack := int(logic.decide(b)[0].id) if b is XActor else int(b.attack_skill().id)
+	return {"attackSkillId": id, "setAttack": set_attack, "canAttack": logic.can_use(b, b.attack_skill()), "attackTimesAdd": b.attack_times_add(), "actions": actions}
 
 
 func _finish() -> void:

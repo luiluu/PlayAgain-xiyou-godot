@@ -557,7 +557,7 @@ func _action_animation(targets: Array) -> void:
 
 ## castAnimation：备注 <Cast Animation: n>，否则按命中类型（必中 0、物理 52、魔法 51）；普通攻击、防御、物品不放
 func _cast_animation() -> void:
-	if XBattleLogic.is_item(skill) or int(skill.id) in [XBattleLogic.ATTACK_SKILL, XBattleLogic.GUARD_SKILL]:
+	if XBattleLogic.is_item(skill) or user.is_attack(skill) or int(skill.id) == XBattleLogic.GUARD_SKILL:  # YEP !isAttack()&&!isGuard()
 		return
 	var id := 0
 	var meta: Dictionary = skill.get("meta", {})

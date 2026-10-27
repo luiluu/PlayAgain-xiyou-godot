@@ -52,7 +52,7 @@ static func actors(s: XState) -> Array:
 	return s.battle_members()
 
 
-## Game_Actor.usaBetSkills：攻击、防御，再加能行动时场合为「总是/战斗」、武器类型符合、未封印的技能（TP 视为 100，不影响结果）
+## Game_Actor.usaBetSkills：攻击、防御（原版写死技能 1、2，不看替换），再加能行动时场合为「总是/战斗」、武器类型符合、未封印的技能（TP 视为 100，不影响结果）
 static func bet_skills(logic: XBattleLogic, a: XActor) -> Array:
 	var out := [XDB.rec("Skills", XBattleLogic.ATTACK_SKILL), XDB.rec("Skills", XBattleLogic.GUARD_SKILL)]
 	if not logic.can_move(a):
@@ -177,7 +177,7 @@ static func scheduled_skill(s: XState, logic: XBattleLogic, a: XActor, turn: int
 		return {}
 	if id > XBattleLogic.GUARD_SKILL and not a.skills().any(func(x): return int(x.id) == id):
 		return {}
-	var attack := XDB.rec("Skills", XBattleLogic.ATTACK_SKILL)
+	var attack := a.attack_skill()  # makeAction：表里是 1 或退回时都 setSkill(attackSkillId)
 	var usable := logic.usable_skills(a)
 	var listed := usable.any(func(x): return int(x.id) == id or id == 1 or id == 2)
 	if listed and float(sk.get("mpCost", 0)) <= a.mp and float(sk.get("tpCost", 0)) <= a.tp:

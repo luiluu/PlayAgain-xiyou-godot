@@ -32,7 +32,17 @@ function measure(b, actor) {
   const id = b.attackSkillId();
   const out = {attackSkillId: id, canAttack: b.canAttack(), attackTimesAdd: round(b.attackTimesAdd()),
     actions: [action(b, id)].concat(id === 1 ? [] : [action(b, 1)])};
+  const atk = new w.Game_Action(b); atk.setAttack();   // 反击 invokeCounterAttack、混乱、退回都走 setAttack
+  out.setAttack = atk.item() ? atk.item().id : 0;
   if (actor) {
+    w.$gameParty._XdRsData_hangUp_ActSkill = {};          // 挂机 makeAction 没排表：setSkill(attackSkillId)（关智能AI，只看 XdRs 本体）
+    const smart = w.ConfigManager.codexSmartAI; w.ConfigManager.codexSmartAI = false;
+    const made = b.makeAction();
+    w.$gameParty._XdRsData_hangUp_ActSkill[b.name() + w.Star.NumToThreeNum(w.$gameTroop._turnCount)] = 1;   // 排表写攻击（1）：IsRepSkill = attackSkillId
+    const sched = b.makeAction();
+    w.ConfigManager.codexSmartAI = smart;
+    out.hangUpScheduled = sched.item() ? sched.item().id : 0;
+    out.hangUpAction = made.item() ? made.item().id : 0;
     out.command = command(b);
     out.ready = {};
     ['prayer', 'inversebone'].forEach(k => { out.ready[k] = A.ready(b, A.create('w', 1044, 'boss', k)); });
@@ -70,6 +80,7 @@ actorCase('154-bare', {actor: 154});
 actorCase('154-weapon77', {actor: 154, equips: [['w', 77]]});          // 沙僧 P2-1：攻击 5769，逆骨未就绪
 actorCase('154-weapon83', {actor: 154, equips: [['w', 83]]});
 actorCase('102-weapon12', {actor: 102, equips: [['w', 12]]});          // 替换成 12（157 能装但被导入平衡禁用，canMove 为假）
+actorCase('157-weapon12-disabled', {actor: 157, equips: [['w', 12]]});   // 导入平衡禁用：canUse 全否（canAttack、指令窗不可用）
 actorCase('161-weapon79', {actor: 161, equips: [['w', 79]]});
 actorCase('167-armor4541', {actor: 167, equips: [['a', 4541]]});
 actorCase('167-armor4541-skill2071', {actor: 167, equips: [['a', 4541]], skills: [2071]});   // 防具也先于技能（武器＋4541 原版装不上，refresh 卸下）

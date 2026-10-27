@@ -535,7 +535,7 @@ static func _isolated(actor: XActor, naked: bool) -> XActor:
 
 
 static func _attack_skill(a: XActor) -> Dictionary:
-	return XDB.rec("Skills", XBattleLogic.ATTACK_SKILL)
+	return a.attack_skill()  # $dataSkills[a.attackSkillId()]
 
 
 static func _vars() -> Array:
@@ -549,8 +549,8 @@ static func _vars() -> Array:
 ## repeatCount：(重复次数＋普攻追加次数＋再次使用概率) × 行动序列里 ACTION EFFECT 段数
 static func _repeat_count(a: XActor, item: Dictionary) -> float:
 	var base := float(item.get("repeats", 1))
-	if int(item.id) == XBattleLogic.ATTACK_SKILL:
-		base += a.traits_sum_all(XBattler.TRAIT_ATTACK_TIMES)
+	if int(item.id) == a.attack_skill_id():
+		base += a.attack_times_add()
 	var chance := 0.0
 	var by := "Zj" if int(item.get("stypeId", 0)) == 1 else "Mf" if int(item.get("stypeId", 0)) == 2 else ""
 	for o in a.equip_list() + a.skills() + a.states():
@@ -668,7 +668,7 @@ static func _cycle(logic: XBattleLogic, a: XActor, t: XBattler, skills: Array) -
 		scored.append([skills[i], damage_for.call(skills[i], cost_for.call(skills[i])), i])
 	scored.sort_custom(func(x, y): return x[1] > y[1] or (x[1] == y[1] and x[2] < y[2]))
 	var candidates: Array = scored.slice(0, 8).map(func(r): return r[0])
-	var fallback = skills.filter(func(s): return int(s.id) == XBattleLogic.ATTACK_SKILL)
+	var fallback = skills.filter(func(s): return int(s.id) == a.attack_skill_id())
 	if not fallback.is_empty() and not candidates.has(fallback[0]):
 		candidates.append(fallback[0])
 	var plus := 0.0
