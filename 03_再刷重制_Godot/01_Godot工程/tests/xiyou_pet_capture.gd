@@ -171,6 +171,8 @@ func _run() -> void:
 	XPetCapture.clock = Callable()
 	_books()
 	_battle_flow()
+	_defeat_count(true)
+	_defeat_count(false)
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
@@ -219,3 +221,38 @@ func _battle_flow() -> void:
 	var end := l.end_turn()
 	# O-102：已被捕走的不再「逃跑」，只有另外两只提示
 	check("battle_flee_turn5", l.enemies.all(func(e): return e.hidden) and toasts(end).size() == 2 and l.alive(l.enemies).is_empty(), toasts(end))
+
+
+## O-105：捕捉成功与第 5 回合逃跑的图鉴击败数。原版 die() 记一次、refresh 补阵亡再 die() 一次，每只 +2（参照 gets.success、
+## turns 第 5 回合的 defeats，逃跑那场只有一只逃）；重制默认只记 1
+func _defeat_count(single: bool) -> void:
+	XPetCapture.SINGLE_DEFEAT_COUNT = single
+	var mv_flee: Array = ref.turns.filter(func(t): return int(t.turn) == 5)
+	var mv_per := int(ref.gets[0].defeats)
+	if not single:
+		check("defeat_oracle", ref.gets[0].name == "success" and mv_per == 2 and int(mv_flee[0].defeats) == mv_per, [mv_per, mv_flee[0].defeats])
+	var per := 1 if single else mv_per
+	var tag := "single" if single else "mv"
+	var l := battle(2)
+	var s := l.state
+	XEnemyBook.bind_battle(s, l.enemies)
+	var total := func() -> int:
+		var n := 0
+		for v in s.enemy_book.get("defeat", {}).values():
+			n += int(v)
+		return n
+	s.gain_item(317, 1)
+	for e in l.enemies:
+		e.capture = true
+	l.set_meta("pet_random", tape([0.0] + range(40).map(func(_i): return 0.5)))
+	var id0 := int(l.enemies[0].enemy_id)
+	var before0 := XEnemyBook.defeat_number(s, id0)
+	l.execute(l.actors[0], XDB.rec("Items", 317), l.enemies[0])
+	l.run_events()
+	check("defeat_capture_%s" % tag, l.enemies[0].hidden and XEnemyBook.defeat_number(s, id0) - before0 == per and total.call() == per,
+		[XEnemyBook.defeat_number(s, id0) - before0, total.call()])
+	l.turn = 5
+	l.end_turn()
+	# 另外两只逃跑，也是 die＋hide
+	check("defeat_flee_%s" % tag, l.enemies.all(func(e): return e.hidden) and total.call() == per * 3, total.call())
+	XPetCapture.SINGLE_DEFEAT_COUNT = true
