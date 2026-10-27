@@ -818,7 +818,8 @@ class MergeTests(unittest.TestCase):
         return result.returncode
 
     def register(self):
-        self.put(str(merge.BOARD), '# board\n## 正在进行\n\n## 待交叉核查\n| claude/task | Codex |\n## end\n')
+        # 本批另一条还没合的车道（batch_fixture 的 lane2）仍留在「正在进行」：清理时据此认出它是登记过的车道工作树
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n%s\n## 待交叉核查\n| claude/task | Codex |\n## end\n' % getattr(self, 'keep_rows', ''))
 
     def realistic_checker(self):
         # 模拟检查.sh 的真实入口：从 Git 索引取文件清单，再看工作区内容。
@@ -1074,6 +1075,7 @@ for name in filter(None, files):
         receipt.write_text('# delivery\n- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】第二条（' + merge.VERSION_MARKER + '）\n\n- second change\n\n## 交接板\n- fixture\n')
         (wt2 / 'docs2.md').write_text('second lane\n')
         self.g('add', '.', cwd=wt2); self.g('commit', '-m', 'feature 2', cwd=wt2)
+        self.keep_rows = '| D | `lane2` |'
         return wt2, checks
 
     def call_task(self, task, *args):
@@ -1319,6 +1321,40 @@ for name in filter(None, files):
                 self.assertTrue((self.wt / 'later.md').exists())
                 self.assertIn('claude/task', self.branches())
                 self.assertIn('仍是该工作树的当前分支', self.last_output)
+
+    def test_active_session_or_lock_keeps_clean_delivery_worktree(self):
+        # 哪吒 T2：另一账号会话停在干净的交付工作树里（悟空_62 的 wukong-reach109 曾被误清）：有进程以它为当前目录、
+        # 或 git worktree lock 锁住时只提示不删
+        for case in ['process', 'lock']:
+            with self.subTest(case=case):
+                self.tearDown(); self.setUp()
+                self.assertEqual(self.call(), 0, self.last_output)
+                proc = subprocess.Popen(['sleep', '60'], cwd=self.wt) if case == 'process' else None
+                if case == 'lock':
+                    self.g('worktree', 'lock', '--reason', 'fixture', str(self.wt))
+                try:
+                    self.register()
+                    self.assertEqual(self.call('--finish'), 0, self.last_output)
+                finally:
+                    if proc:
+                        proc.kill(); proc.wait()
+                self.assertTrue(self.wt.exists())
+                self.assertIn('claude/task', self.branches())
+                self.assertIn('活动会话' if case == 'process' else 'worktree lock', self.last_output)
+                self.assertIn('只提示不删', self.last_output)
+
+    def test_worktree_missing_from_board_or_marked_keep_is_not_removed(self):
+        # 合并前交接板「正在进行」没有提到该工作树／分支，或那行写了「不要删」：不删
+        for row in ['', '| 核查 | claude/task（清理时不要删此目录） |']:
+            with self.subTest(row=row):
+                self.tearDown(); self.setUp()
+                self.put(str(merge.BOARD), '# board\n## 正在进行\n' + row + '\n## 待交叉核查\n\n## end\n')
+                self.g('add', '.'); self.g('commit', '-m', 'board without lane row')
+                self.assertEqual(self.call(), 0, self.last_output)
+                self.register()
+                self.assertEqual(self.call('--finish'), 0, self.last_output)
+                self.assertTrue(self.wt.exists())
+                self.assertIn('不要删' if row else '没有提到它', self.last_output)
 
     def test_lane_on_new_branch_without_commits_is_not_removed(self):
         # 新分支还没提交（HEAD 仍是交付提交、干净）：也不能删工作树和新分支。
