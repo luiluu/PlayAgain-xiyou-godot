@@ -2,7 +2,7 @@
 
 - 车道／工作者：C 规则·解释器／八戒（Claude，八戒_77）
 - 状态：可合并（待 Codex 核查；没有改原沙僧核心文件）
-- 基线：main 6ece5c08（已含 ce-fix1 合并），开工 `--补齐`
+- 基线：从 6ece5c08（ce-fix1 的合并提交）开的分支，开工 `--补齐`。之后 main 去掉了这次合并、改合 save-events（1b980186）；交付前合了 main，**所以本分支连同 ce-fix1 的提交一起带进来**（ce-fix1 交付单 `claude_bajie-ce-fix1.md` 也在本分支里）。
 - 来源：总装 2026-10-27 派单「效果型公共事件期三」：ce-fix1 之后事件对照登记剩 18 项（专属角色号角 CE9002～9018、CE765、823、824，另有 m4e73p0、m189e1p0 两项老的）。
 
 ## 变更记录草稿
@@ -43,6 +43,7 @@
 - 原版探针 `common_script_probe.cjs` 单跑约 1 分钟，errors 为空。
 - 同步 `同步正式西游.py --accept-additions`（工作树，不登记）：退出码 0，「测量不变」，18 分钟，留了产物指纹。同步后复跑 `xiyou_event_compare` 5/5（5752/5753）、`xiyou_common_scripts` 457/457。
   - 第一次同步失败：slice_probe 六个难度的增量合并（`oracle_shard_merge.cjs`，每份约 170MB）同时退出 1，当时主工作区在跑全量。单独重放同一份合并成功，第二次同步六段都通过，判为偶发（日志 `同步_第1次.log`）。
+- 合 main（1b980186，save-events）后：xstate.gd 存档键一处冲突（`mapEvents` 与 ce-fix1 的 `allowAutosave` 两边都留）。复跑 xiyou_autosave 10、save_events 25、save_page 40、battleback_save 5、flow 48、pet_capture 48、common_scripts 457、event_compare 5、super_acquire 31，全过。合进来的 save-events 改了探针（save_events_probe、pet_capture_probe），但两者的夹具都在 tests/fixtures 里，所以没有重新同步。
 - 没跑全量。日志在 `04_验证/本地结果/20261027_八戒_cefix2/`，不入 Git。
 
 ## 待交叉核查
