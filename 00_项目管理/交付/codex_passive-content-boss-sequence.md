@@ -60,3 +60,9 @@
 - 不改未交接formula_execution.gd／mv_event_core；公式set仍unsupported，post／execute脚本等价域回放不代表customPre／PostDamageEval宿主移植。数值序列探针独立文件、未加入同步PROBES，不覆盖旧参照。导入若又生xiyou_battle_common_events.gd.uid，移存.sandbox独立名，勿夹带；此次存boss69_unrelated_import_uid.txt。
 - 长期顺序：Boss剩余来源尾巴→权能五本1654／1656／1674／1683／1718→容量满变量9返书／预约1317→PREE／ASUP→WPNM／SkEType与race-battle等八戒接口→全部完成且额度足才核他人。旧04e54453 Boss属性／2651生命周期、ec75a3b1普通输出不重做。两块TP Apply／完整预览空槽、敌人永久账本未做。依赖链b135ee33→026f6ee3→b495833a→7ef7584a→7bfb4807→eb6fff3f→04e54453→ec75a3b1→e1925bea→当前分支；50%审查二期0b00c374另合。不夹带无关main或大范围重审；确需合main用--no-commit，执行者Codex（沙僧）／待Claude尾注。
 - 共用4槽排队仍遵守，不绕槽、不加上限、不杀别人、不动工具车道文件。长批python3 -u、XIYOU_TEST_HEARTBEAT=30、长任务.py start脱离会话＋等待任务.sh --timeout45，每次不超过60秒。先commit再长操作，收尾专项＋直接依赖、原检查.sh文档块、node --check、MV守卫16项、git diff --check；精简证据入Git后清自己成功临时输出，失败与所有.sandbox不删。
+
+## 变更记录草稿
+
+## 2026-10-26 【Codex·沙僧·未经Claude检验】Boss 数值行动序列（dev.待定）
+
+- 行动序列 HP／MP 数值命令按实际 make_targets 列表放大非自身损失一次，复用资源 gain 的护盾、setter、刷新与结果槽；补 ENEMY／ACTOR 索引与 FIRST 选择器。原版 88 例，10 场 50671 项通过。继承：xiyou_determinism 8 个 early_inventory_rule 稳定失败（基线同样，非本期引入）。（总装 2026-10-27 按本单「最终交付」节补写草稿。）

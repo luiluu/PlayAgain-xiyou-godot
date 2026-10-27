@@ -1,7 +1,7 @@
 # 交付：codex/actor-bonus-states
 
 - 车道／工作者：规则／沙僧（Codex，重制_沙僧_64）
-- 状态：角色宿主小期可合并，合main后6场也全过（2026-10-25）；全部实现待Claude，敌人宿主未交
+- 状态：可合并（总装 2026-10-27 按交付内容改标；原文：角色宿主小期可合并，合main后6场也全过（2026-10-25）；全部实现待Claude，敌人宿主未交）
 - 基线：actor-bonus 7ef7584a；同一 state-effects-2b 工作树续做，首批分支保留可合并。
 - 范围：先取冻结原版1612 Apply／Remove／Leave和1768 Conclude的生命周期参照，再接完整签名的param_add；当前角色持久账本与预览隔离为本期验收重点。敌人无永久账本的边界单独说明，不扩未交接的formula_execution／mv_event_core、两个TP Apply宿主或完整预览空槽。
 - 开工实查额度五小时89%、周29%，95%保存停；共用登记只读，不自销核。旧原版证据、.sandbox、generated及整树保留。

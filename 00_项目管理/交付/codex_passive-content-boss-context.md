@@ -145,3 +145,9 @@
 - 69中间专项：boss68-context终态exit0，完整123例与边界通过，详细断言／timings见精简证据。终态后才将夹具替换为两份原版并集129例，逐对象相等且sourceIdentity一致；完整性断言改129并逐一要求六个shield1000 ID。最终129专项及四依赖下一步启动。
 
 - 69最终验收已启动：boss69-final，runId 0351059389764aa5959bb3ccdb85108c；新增129专项＋boss_output／formula_effects／state_effects／state_effects_tp四依赖同批，XIYOU_TEST_HEARTBEAT=30，长任务包装。包装器状态与日志在04_验证/本地结果/任务/boss69-final.log，细结果在boss69-final。夹具并集序列化曾改成两空格，终态后恢复原一空格格式以压缩无关差异；只改格式，不在途改文件。
+
+## 变更记录草稿
+
+## 2026-10-26 【Codex·沙僧·未经Claude检验】Boss 行动资源域（dev.待定）
+
+- 显式行动 apply 的 Boss 来源域跟随本次 resources；负 HP／MP gain 与资源 set 下降只对域内非自身目标放大一次、先于护盾；普通伤害沿原输出链用 settled／direct 防二次缩放。原版参照 129 例，专项五场 41838／41838。限制：customPre／PostDamageEval 宿主未移植，公式 set 仍 unsupported_program。（总装 2026-10-27 按本单「最终交付」节补写草稿。）
