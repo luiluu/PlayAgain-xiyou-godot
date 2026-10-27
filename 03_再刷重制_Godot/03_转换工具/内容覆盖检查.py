@@ -8,7 +8,8 @@
 - 无效引用：公共事件、敌群、动画、物品/武器/防具、角色在数据库里不存在（或动画是 MZ 格式，Godot 不播）；
 - 未翻译：Godot 解释器（MVInterpreter._execute）没有分支的指令、_plugin_command 不认的插件指令；
 - 出切片：场所移动到切片外的地图（提示，不算失败）；
-- 未对照：事件对照参照（oracle/events.json）里没有这一页（提示，不算失败）。
+- 空页：页里没有任何指令（事件对照探针不为它出用例），无需对照（提示）；
+- 未对照：页里有指令，但事件对照参照（oracle/events.json）里没有这一页（提示，不算失败）。
 前三类按「类别|位置|细节」登进基线 tests/content_coverage_baseline.json：--check 时出现基线外的新问题即失败（退出码 1），
 基线里已经消失的会提示可以 --update-baseline。报告写到 04_验证/本地结果/内容覆盖/报告.json。只读。
 """
@@ -195,17 +196,21 @@ class Checker:
                     self.asset('img/characters', (page.get('image') or {}).get('characterName'), w, out)
                     self.route((page.get('moveRoute') or {}).get('list'), w, out)
                     self.walk(page.get('list'), w, out, calls)
-                    self.finish_page(w, out, calls, compared, 'm%de%dp%d' % (mid, e['id'], i), ce_seen, ce_queue)
+                    self.finish_page(w, out, calls, compared, 'm%de%dp%d' % (mid, e['id'], i), ce_seen, ce_queue, page.get('list'))
         while ce_queue:
             ce = ce_queue.pop()
             w = 'CE%04d' % ce
             out, calls = [], set()
             self.walk(self.rec('CommonEvents', ce).get('list'), w, out, calls)
-            self.finish_page(w, out, calls, compared, 'ce%d' % ce, ce_seen, ce_queue)
+            self.finish_page(w, out, calls, compared, 'ce%d' % ce, ce_seen, ce_queue, self.rec('CommonEvents', ce).get('list'))
 
-    def finish_page(self, where, out, calls, compared, case_id, ce_seen, ce_queue):
+    def finish_page(self, where, out, calls, compared, case_id, ce_seen, ce_queue, cmds=None):
         if case_id not in compared:
-            out.append(('未对照', where, '事件对照里没有这一页'))
+            # 没有任何指令的空页，事件对照探针本来就不出用例，算「空页」而不是未对照
+            if all(int(c.get('code', 0)) == 0 for c in (cmds or [])):
+                out.append(('空页', where, '页里没有指令，无需对照'))
+            else:
+                out.append(('未对照', where, '事件对照里没有这一页'))
         for ce in sorted(calls - ce_seen):
             ce_seen.add(ce); ce_queue.append(ce)
         self.issues += out
