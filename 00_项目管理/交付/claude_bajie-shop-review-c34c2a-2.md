@@ -1,8 +1,8 @@
 # 交付：claude/bajie-shop-review-c34c2a-2
 
 - 车道／工作者：B 界面／八戒（Claude），接手八戒_76；期二＝交叉核查沙僧待 Claude 核查的 4 批
-- 状态：进行中
-- 分支从期一头 f1bfb256 拉出（期一交付单 `claude_bajie-shop-review-c34c2a.md` 本分支不动，期一合并时由总装删）。
+- 状态：可合并（期二：4 批核查＋1 处修复）
+- 分支从期一头 f1bfb256 拉出；期一已并入 main，本分支已合 main。
 
 ## 变更记录草稿
 
@@ -52,7 +52,8 @@
 - 第一轮专项（修复在内）：`并行测试.py … xiyou_review135 xiyou_state_effects xiyou_power xiyou_hud xiyou_item_use xiyou_map xiyou_pets xiyou_crafting xiyou_screen_fx xiyou_floor_lab111 xiyou_floor_fortress029 xiyou_floor_brave083 xiyou_floor_reach139 xiyou_warehouse xiyou_stage50_review xiyou_lobby_shops xiyou_inlay_book xiyou_training xiyou_status_power`：20 个场景全过（state_effects 19949、map 357、power 137、review135 85、hud 34、item_use 11、status_power 36、status_power_panel 11 等），116 秒。
 - 修复先红：撤掉 `map_scene.gd` 修复单跑 review135，`reservation.missing_event_clears_slot` 失败 `[999999, false]`；还原后通过。
 - 工具：`测试合并工具.py` 154/154，`测试共性验收.py` 25/25。
-- `检查.sh --affected main`：（见下）
+- 合 main 后 `检查.sh --affected main`（长任务.py 启动）：选测 75 个场景全过（map_scene.gd 改动带出的地图、楼层、挂机、选项等），文档登记、访问守卫、导出排除通过，测试 917 秒。
+- 临时输出只在会话草稿目录，未写进工作树；已清理。
 
 ## 遗留
 
