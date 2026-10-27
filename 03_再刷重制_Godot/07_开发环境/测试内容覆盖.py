@@ -59,7 +59,7 @@ class CoverageTests(unittest.TestCase):
         page = {'image': {'characterName': 'hero'}, 'moveRoute': {'list': []},
                 'list': [cmd(101, 'hero', 0, 0, 2), cmd(117, 1), cmd(117, 9), cmd(301, 0, 1), cmd(223, [0, 0, 0, 0], 60, True),
                          cmd(201, 0, 99, 1, 1, 2, 0), cmd(356, 'Difficulty SetID 2'), cmd(356, 'ShopInventory Group A'), cmd(108, '注释'), cmd(0)]}
-        (g / 'maps/Map001.json').write_text(json.dumps({'tilesetId': 1, 'encounterList': [], 'events': [None, {'id': 1, 'pages': [page]}]}))
+        (g / 'maps/Map001.json').write_text(json.dumps({'tilesetId': 1, 'encounterList': [], 'events': [None, {'id': 1, 'pages': [page]}, {'id': 2, 'pages': [{'image': {'characterName': ''}, 'moveRoute': {'list': []}, 'list': [cmd(0)]}]}]}))
         (g / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'm1e1p0'}]}))
         self.baseline = Path(self.tmp.name) / 'baseline.json'
 
@@ -90,6 +90,7 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(pages['Map001/EV001/p1']['status'], '缺依赖')
         self.assertIn('出切片：传送到 Map099', pages['Map001/EV001/p1']['notes'])
         self.assertIn('未对照：事件对照里没有这一页', pages['CE0001']['notes'])
+        self.assertIn('空页：页里没有指令，无需对照', pages['Map001/EV002/p1']['notes'])   # 空页不算未对照
 
     def test_baseline_gates_new_issues(self):
         self.assertEqual(self.run_tool('--check')[0], 1)
