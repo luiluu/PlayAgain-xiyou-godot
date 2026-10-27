@@ -422,6 +422,45 @@ func passive_values(tag: String) -> Array:
 			out.append(m[tag])
 	return out
 
+## Game_Actor.replaceAttackSkillId：状态 → 装备（按槽序）→ 技能 → 职业 → 角色
+func replace_attack_objects() -> Array:
+	var out := super.replace_attack_objects()
+	out.append_array(equip_list())
+	out.append_array(skills())
+	out.append(class_data())
+	out.append(data())
+	return out
+
+const TOJI := 171
+const TOJI_MAIN := [10216, 10217, 10218, 10219]
+const TOJI_SHAPES := [2630, 2631, 2632, 2633]
+
+## 甚尔（installNativeTojiRuntime）：普攻是当前形态的主技能（没有形态状态算第一形态）；宿傩（installNativeSukunaRuntime）恒为 10238
+func attack_skill_id() -> int:
+	if actor_id == TOJI:
+		for i in TOJI_SHAPES.size():
+			if is_state_affected(TOJI_SHAPES[i]):
+				return TOJI_MAIN[i]
+		return TOJI_MAIN[0]
+	if actor_id == XSukuna.ACTOR:
+		return 10238
+	return super.attack_skill_id()
+
+## 指令窗「攻击」那一项的名字：YEP_WeaponUnleash addAttackCommand 取技能的 commandAttackText（备注 <Command Text: x>／<Attack Text: x>，
+## 同义 Name，后写的盖前面；没有就技能名）；甚尔（installNativeTojiRuntime）直接用技能名
+func attack_command_text() -> String:
+	var skill := attack_skill()
+	if actor_id == TOJI:
+		return str(skill.get("name", ""))
+	var text := str(skill.get("name", ""))
+	for line in str(skill.get("note", "")).split("\n"):
+		var m := _command_text_line.search(line)
+		if m:
+			text = m.get_string(2)
+	return text
+
+static var _command_text_line := RegEx.create_from_string("(?i)<(COMMAND NAME|COMMAND TEXT|ATTACK NAME|ATTACK TEXT):[ ](.*)>")
+
 ## 道法（XZhenqi）：连击普攻次数＋1、分神必定再动＋1
 func attack_times_add() -> float:
 	return super.attack_times_add() + (1.0 if XZhenqi.has_daofa(self, "lianji") else 0.0)

@@ -376,7 +376,7 @@ static func ready(s: XState, a: XActor, i: Dictionary) -> bool:
 	var k := str(m.affix)
 	var c: Dictionary = m.get("config", {})
 	var natives := native_skills(a)
-	var attack_id := XBattleLogic.ATTACK_SKILL
+	var attack_id := a.attack_skill_id()  # 原版 actor.attackSkillId()（武器／状态等的 <Replace Attack> 与甚尔、宿傩）
 	if FIRST_SIX.has(k):
 		var owned_ids := original_active(a).map(func(sk): return int(sk.id))
 		match k:

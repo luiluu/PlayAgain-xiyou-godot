@@ -707,13 +707,13 @@ func _preview(a: XBattler, skill, targets: Array = []) -> void:
 	otb.set_preview(entries)
 
 
-## 指令（Window_ActorCommand＋OTB）：攻击、加入的技能类型（按编号；CP_MagicWeapon 不列 3～6，没有该类技能也列出）、
+## 指令（Window_ActorCommand＋OTB）：攻击（YEP_WeaponUnleash：替换后的技能与名字）、加入的技能类型（按编号；CP_MagicWeapon 不列 3～6，没有该类技能也列出）、
 ## 防御、物品、逃跑（OTB Escape Actor Window：总是列出，不能逃时灰显）。
 func _command_entries(a: XActor) -> Array:
 	var terms: Array = XDB.system().terms.commands
-	var atk := XDB.rec("Skills", XBattleLogic.ATTACK_SKILL)
+	var atk := a.attack_skill()
 	var grd := XDB.rec("Skills", XBattleLogic.GUARD_SKILL)
-	var opts := [{"text": str(terms[2]), "key": "attack", "enabled": logic.can_use(a, atk), "preview": atk}]
+	var opts := [{"text": a.attack_command_text(), "key": "attack", "enabled": logic.can_use(a, atk), "preview": atk}]
 	var stypes: Array = XDB.system().skillTypes
 	var added := a.traits_set(XBattler.TRAIT_STYPE_ADD)
 	added.sort()
@@ -761,7 +761,7 @@ func _command_for(a: XActor):
 			continue
 		match pick:
 			"attack":
-				var atk := XDB.rec("Skills", XBattleLogic.ATTACK_SKILL)
+				var atk := a.attack_skill()  # YEP_WeaponUnleash commandAttack：attackSkillId
 				var t = await _pick_target(atk, a)
 				if logic.auto:
 					return "auto"

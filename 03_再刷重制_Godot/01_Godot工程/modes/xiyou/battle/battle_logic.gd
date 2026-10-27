@@ -1145,6 +1145,11 @@ static func _note_int(rec: Dictionary, tag: String) -> int:
 	return int(m.get_string(1)) if m else 0
 
 
+## Game_Action.numRepeats 的 MV 本体：次数＋普通攻击（isAttack，看此刻的 attackSkillId）时的追加次数，取整
+static func attack_repeats(u: XBattler, skill: Dictionary, base: int) -> int:
+	return floori(base + u.attack_times_add()) if u.is_attack(skill) else base
+
+
 ## 执行一次行动：消耗、目标、连击、命中、伤害、效果。
 func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false) -> Array:
 	var logs := []
@@ -1166,12 +1171,10 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	if XImportedBalance.blocks(u, skill):
 		return logs
 	XImportedBalance.set_acting(u)  # YEP 附加状态记 BattleManager._subject 为来源
-	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击的追加次数，
+	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击（isAttack：此刻的 attackSkillId）的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
-		var times := 1
-		if not is_item(skill) and int(skill.id) == ATTACK_SKILL:
-			times = floori(times + u.attack_times_add())
+		var times := attack_repeats(u, skill, 1)
 		var list := []
 		for t in targets_for(u, skill, chosen):
 			for i in range(maxi(1, times)):
@@ -1180,9 +1183,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		return logs
-	var repeats := int(skill.get("repeats", 1))
-	if not is_item(skill) and int(skill.id) == ATTACK_SKILL:
-		repeats = floori(repeats + u.attack_times_add())
+	var repeats := attack_repeats(u, skill, int(skill.get("repeats", 1)))
 	var targets := targets_for(u, skill, chosen)
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 	XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）

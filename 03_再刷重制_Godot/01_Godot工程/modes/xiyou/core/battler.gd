@@ -636,6 +636,52 @@ func attack_states_rate(id: int) -> float:
 func attack_times_add() -> float:
 	return maxf(traits_sum_all(TRAIT_ATTACK_TIMES), 0.0)
 
+## YEP_WeaponUnleash attackSkillId：按 replace_attack_objects() 的顺序找第一个 <Replace Attack: x>，都没有是技能 1。
+## 原版把找到的号缓存到下次 refresh（只在忘记技能而没 refresh 时与即时查不同，正式流程碰不到），这里每次即时查。
+func attack_skill_id() -> int:
+	for o in replace_attack_objects():
+		var id := replace_attack_of(o)
+		if id > 0:
+			return id
+	return ATTACK_SKILL_ID
+
+## Game_Battler.replaceAttackSkillId：状态；敌人再看敌人本身（XEnemy），角色另见 XActor
+func replace_attack_objects() -> Array:
+	return states()
+
+## Game_Action.isAttack：这一招是不是此刻的「攻击」（item === $dataSkills[attackSkillId()]，物品恒否）
+func is_attack(item: Dictionary) -> bool:
+	return not item.is_empty() and not XBattleLogic.is_item(item) and int(item.get("id", 0)) == attack_skill_id()
+
+## 普通攻击技能记录（指令窗、自动战斗与不能用时的退回用它）
+func attack_skill() -> Dictionary:
+	return XDB.rec("Skills", attack_skill_id())
+
+const ATTACK_SKILL_ID := 1
+static var _replace_attack_cache := {}
+static var _replace_attack_line := RegEx.create_from_string("(?i)<(?:ATTACK REPLACE|REPLACE ATTACK):[ ](.*)>")
+static var _first_number := RegEx.create_from_string("(\\d+)")
+
+## DataManager.processWULNotetags1：逐行认 <Replace Attack: x>／<Attack Replace: x>，取里面第一串数字（技能名写法正式数据没用到，不认）；
+## 多行时后写的盖前面的
+static func replace_attack_of(o) -> int:
+	if not o is Dictionary:
+		return 0
+	var note := str(o.get("note", ""))
+	if note == "":
+		return 0
+	if _replace_attack_cache.has(note):
+		return _replace_attack_cache[note]
+	var id := 0
+	for line in note.split("\n"):
+		var m := _replace_attack_line.search(line)
+		if m:
+			var n := _first_number.search(m.get_string(1))
+			if n:
+				id = int(n.get_string(1))
+	_replace_attack_cache[note] = id
+	return id
+
 ## Game_BattlerBase.actionPlusSet：各「追加行动」特性（61 号 0）的几率；角色另加道法「分神」[1]
 func action_plus_set() -> Array:
 	var out := []
