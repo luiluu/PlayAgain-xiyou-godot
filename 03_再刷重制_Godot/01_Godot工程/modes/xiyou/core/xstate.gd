@@ -311,13 +311,82 @@ func _add_actor(id: int, notice := Callable()) -> void:
 	if XImportedBalance.is_disabled_actor(id):
 		return
 	if not party.has(id):
-		actor(id)
+		inherit_difficulty(actor(id))
 		party.append(id)
 	_ensure_slots()
 	if battle_slots.has(id) or not battle_slots.has(0):
 		return
 	battle_slots[battle_slots.find(0)] = id
 	rearrange_actors()
+
+## installNativeDifficultyInheritanceRuntime.syncActor（Game_Party.addActor 时）：非主角队员入队时，难度相关技能照主角（角色 1）已学的同步，
+## 主角一个也没有时按全局难度开关取（开关 2496／2492／2491／2500／2494／2489／2487／2483 → 难度被动 5561／5547／5548／5549／5562／5564×3，
+## 第 2～4 档再带「难度适应」5980）；不在名单里的难度技能忘掉，没被保留的开局状态（这些技能的 StartPushState）去掉。
+## 本期只做纯难度技能这条：主角带强／弱者分档技能（6216／6235）、补强档开关 2461～2463 开着、或角色号 ≥167 时不动
+## （这些要读公共事件 1345／1443～1445 的名单，另需参照，见交付单遗留）。
+const DIFFICULTY_SWITCHES := [2496, 2492, 2491, 2500, 2494, 2489, 2487, 2483]
+const DIFFICULTY_BASE_SKILLS := [5561, 5547, 5548, 5549, 5562, 5564, 5564, 5564]
+const DIFFICULTY_ROLE_SKILLS := [6216, 6235, 5968, 5969, 5970, 5971, 5972, 5973]
+static var _difficulty_managed: Array = []
+
+static func difficulty_managed_skills() -> Array:
+	if _difficulty_managed.is_empty():
+		var re := RegEx.create_from_string("^(?:轮回模式·|灭世挑战|(?:宝宝|简单|普通|困难|地狱|天灾)难度$|难度适应$|天道诅咒$)")
+		for rec in XDB.table("Skills"):
+			if rec != null and re.search(str(rec.get("name", ""))) != null:
+				_difficulty_managed.append(int(rec.id))
+		# 洪荒五个选定诅咒由公共事件 1442 教：脚本里的 learnSkill(N)
+		var ce := XDB.rec("CommonEvents", 1442)
+		var lre := RegEx.create_from_string("\\.learnSkill\\((\\d+)\\)")
+		for c in ce.get("list", []):
+			if int(c.code) in [355, 655]:
+				for m in lre.search_all(str(c.parameters[0])):
+					var sid := int(m.get_string(1))
+					if not XDB.rec("Skills", sid).is_empty() and not _difficulty_managed.has(sid):
+						_difficulty_managed.append(sid)
+		_difficulty_managed.sort()
+	return _difficulty_managed
+
+func inherit_difficulty(a: XActor) -> void:
+	var id := a.actor_id
+	if id == 1 or id >= 167 or str(a.data().get("name", "")) == "":
+		return
+	var managed := difficulty_managed_skills()
+	var lead: XActor = actors.get(1)
+	var skills: Array = managed.filter(func(sid): return lead != null and lead.skill_ids.has(sid)) if lead != null else []
+	var classified := lead != null and (lead.skill_ids.has(6216) or lead.skill_ids.has(6235))
+	var tiers := [2461, 2462, 2463].any(func(sw): return switch(sw))
+	if skills.is_empty():
+		for i in range(DIFFICULTY_SWITCHES.size() - 1, -1, -1):
+			if not switch(DIFFICULTY_SWITCHES[i]):
+				continue
+			skills.append(DIFFICULTY_BASE_SKILLS[i])
+			if i >= 1 and i <= 3:
+				skills.append(5980)
+			break
+	if (skills.is_empty() and not classified and not tiers) or classified or tiers:
+		return
+	var start_re := RegEx.create_from_string("<Start(?:WT)?PushState(\\d+):\\s*100%>")
+	var system_states := {}
+	for sid in managed + DIFFICULTY_ROLE_SKILLS:
+		for m in start_re.search_all(str(XDB.rec("Skills", int(sid)).get("note", ""))):
+			system_states[int(m.get_string(1))] = true
+	for sid in managed + DIFFICULTY_ROLE_SKILLS:
+		if sid in [6216, 6235]:
+			continue
+		if skills.has(sid):
+			a.learn_skill(int(sid))
+		elif a.skill_ids.has(sid):
+			a.forget_skill(int(sid))
+	var kept := {}
+	for sid in managed + DIFFICULTY_ROLE_SKILLS:
+		if a.skill_ids.has(sid):
+			for m in start_re.search_all(str(XDB.rec("Skills", int(sid)).get("note", ""))):
+				kept[int(m.get_string(1))] = true
+	for st in system_states:
+		if not kept.has(st) and a.is_state_affected(int(st)):
+			a.remove_state(int(st))
+	a.refresh_passive()
 
 ## Game_Party.removeActor：出战栏位里的变成空位并重排
 func remove_actor(id: int) -> void:
