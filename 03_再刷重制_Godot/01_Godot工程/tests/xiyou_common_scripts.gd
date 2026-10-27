@@ -106,7 +106,7 @@ func _case(spec: Dictionary, host) -> Dictionary:
 	var watch: Dictionary = spec.get("watch", {})
 	var a: XActor = s.actor(int(spec.target)) if spec.has("target") else null
 	return {
-		"trace": host.trace.duplicate(true),
+		"trace": host.trace.map(_trace_row),
 		"variables": watch.get("vars", []).map(func(id): return s.variable(int(id))),
 		"items": watch.get("items", []).map(func(id): return s.item_count(int(id))),
 		"weapons": watch.get("weapons", []).map(func(id): return s.gear_count("weapon", int(id))),
@@ -118,6 +118,17 @@ func _case(spec: Dictionary, host) -> Dictionary:
 		"dug": _sorted(s.rom.get("m", [])),
 		"clothes": watch.get("clothes", []).filter(func(id): return XChangeClothes.unlocked(int(id))),
 	}
+
+
+## 文字只比行与选项（探针不记脸图）
+static func _trace_row(e: Dictionary) -> Dictionary:
+	if str(e.t) != "msg":
+		return e.duplicate(true)
+	var out := {"t": "msg", "lines": e.lines.duplicate()}
+	if e.has("choices"):
+		out.choices = e.choices.duplicate()
+		out.pick = e.pick
+	return out
 
 
 static func _sorted(a: Array) -> Array:

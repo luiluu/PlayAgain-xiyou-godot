@@ -48,8 +48,26 @@ function observe(spec) {
     clothes: (watch.clothes || []).filter(id => w.ConfigManager.ChangeClothesLite.indexOf(id) >= 0)
   };
 }
+// 提速：只真开一局，把开局后的游戏对象序列化存下，之后每例重建游戏对象再换回开局副本（同 event_probe 的 NEW_GAME_SNAPSHOT）
+const SNAPSHOT_GLOBALS = ['$gameSystem', '$gameScreen', '$gameTimer', '$gameSwitches', '$gameVariables', '$gameSelfSwitches', '$gameActors', '$gameParty', '$gameMap', '$gamePlayer'];
+let newGameSave = null;
+function freshGame() {
+  if (!newGameSave) {
+    newGame();
+    const o = {independent: [w.DataManager._independentItems, w.DataManager._independentWeapons, w.DataManager._independentArmors]};
+    for (const k of SNAPSHOT_GLOBALS) o[k] = w[k];
+    newGameSave = w.JsonEx.stringify(o);
+    return;
+  }
+  w.eval('Math.random = function() { return 0.5; }; ConfigManager.applyData({}); DataManager.createGameObjects(); Graphics.frameCount = 0;');
+  const saved = w.JsonEx.parse(newGameSave);
+  for (const k of SNAPSHOT_GLOBALS) w[k] = saved[k];
+  [w.DataManager._independentItems, w.DataManager._independentWeapons, w.DataManager._independentArmors] = saved.independent;
+  w.DataManager.loadIndependentItems();
+  w.Input.clear();
+}
 function run(spec) {
-  newGame();
+  freshGame();
   w.$gameSystem._difficultyId = spec.difficulty || 3;
   w.Math.random = () => spec.random === undefined ? 0.5 : spec.random;
   w.ConfigManager.ChangeClothesLite = (spec.clothes || []).slice();
@@ -74,7 +92,13 @@ function run(spec) {
   for (let f = 0; f < 600 && it.isRunning(); f++) {
     w.Graphics.frameCount++;
     it.update();
-    if (w.$gameMessage.isBusy()) { trace.push({t: 'msg', lines: w.$gameMessage._texts.slice()}); w.$gameMessage.clear(); }
+    const m = w.$gameMessage;
+    if (m.isBusy()) {
+      // 选项取默认项（无默认取 0），同 event_probe 与 Godot 的记录替身
+      if (m.isChoice()) { const pick = m.choiceDefaultType() >= 0 ? m.choiceDefaultType() : 0; trace.push({t: 'msg', lines: m._texts.slice(), choices: m.choices().slice(), pick}); m.onChoice(pick); }
+      else if (m.hasText()) trace.push({t: 'msg', lines: m._texts.slice()});
+      m.clear();
+    }
   }
   if (it.isRunning()) throw new Error('公共事件没跑完');
   return observe(spec);
@@ -110,6 +134,29 @@ for (const [ce, [from, to, book]] of Object.entries(FIST)) {
   add(`fist.${ce}.none`, {common: +ce, target: 8, watch});
 }
 add('forget.83', {common: 83, target: 8, watch: {}});
+// 其余读 $gameParty._targetActorId 的效果公共事件（技能书、心法、鲲拳、换装卡等）：按脚本里出现的技能编号预置，
+// 「none」什么都不会、「all」全会、「first」只会第一个；战斗中才用的（Game_Action／BattleManager）不在这里
+// 1561 迎天劫（全体角色学技能后接画面演出，帧上限内跑不完）不在这里
+const covered = new Set([...Array(12)].map((_, i) => 637 + i).concat([1378, 1379, 1380, 1561]));
+const scriptOf = list => list.filter(c => c.code === 355 || c.code === 655).map(c => String(c.parameters[0])).join('\n');
+for (let ce = 1; ce < w.$dataCommonEvents.length; ce++) {
+  const rec = w.$dataCommonEvents[ce];
+  if (!rec || covered.has(ce)) continue;
+  const code = scriptOf(rec.list);
+  if (!code.includes('_targetActorId') || /Game_Action|BattleManager/.test(code)) continue;
+  const skills = new Set();
+  for (const m of code.matchAll(/(?:hasSkill|forgetSkill|learnSkill)\((\d+)\)|var\s+\w+\s*=\s*(\d+)\s*;/g)) skills.add(Number(m[1] || m[2]));
+  for (const m of code.matchAll(/for\s*\(\s*var\s+\w+\s*=\s*(\d+)\s*;\s*\w+\s*<\s*(\d+)/g)) {
+    if (Number(m[2]) - Number(m[1]) <= 80 && Number(m[1]) > 200) for (let i = Number(m[1]); i < Number(m[2]); i++) skills.add(i);
+  }
+  const ids = [...skills].filter(id => w.$dataSkills[id]).sort((a, b) => a - b);
+  const vars = [...new Set([...code.matchAll(/setValue\((\d+)/g)].map(m => Number(m[1])).concat(rec.list.filter(c => c.code === 111 && c.parameters[0] === 1).map(c => c.parameters[1])))];
+  const items = [...new Set([...code.matchAll(/\$dataItems\[(\d+)\]/g)].map(m => Number(m[1])).concat(rec.list.filter(c => c.code === 126).map(c => c.parameters[0])))];
+  const watch = {vars, items, skills: ids};
+  add(`gen.${ce}.none`, {common: ce, target: 8, watch});
+  if (ids.length) add(`gen.${ce}.all`, {common: ce, target: 8, learn: ids, watch});
+  if (ids.length > 1) add(`gen.${ce}.first`, {common: ce, target: 8, learn: [ids[0]], watch});
+}
 // ② 藏宝图：不在目标格（大厅 0,0）；在目标格按预掷值走四类（物品／防具／武器／公共事件）；已挖过的跳到下一个；一轮挖完重置
 const MAPS = {117: [1, 10], 174: [11, 14], 175: [15, 18], 176: [19, 22], 177: [23, 25], 178: [26, 28], 179: [29, 32], 180: [33, 36],
   181: [37, 40], 182: [41, 44], 183: [45, 48], 184: [49, 53], 185: [54, 57], 186: [58, 61], 187: [62, 65], 188: [66, 69], 189: [1, 10],
