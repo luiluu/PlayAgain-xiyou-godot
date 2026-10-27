@@ -152,12 +152,13 @@ func _f31_limits() -> void:
 	var runner = load("res://tests/xiyou_floor_run.gd").new()
 	var fixture: Dictionary = runner._f31_fixture(s)
 	var holder := XEnemy.new().setup(1, 2, 100)
-	for i in range(100):
+	# 记录上限随 xiyou_floor_run._f31_fixture（challenge2 起 256）
+	for i in range(300):
 		XStateEffects.observer.call("react", 1047, holder, {"item": {"id": 12}, "value": i})
-	for i in range(100):
+	for i in range(300):
 		XStateEffects.observer.call("react", 1048, holder, {"item": {"id": 12}, "value": i})
-	check("F31.first_phase_capped", fixture.stage_counts[1047] == 64)
-	check("F31.second_phase_not_starved", fixture.stage_counts[1048] == 64 and fixture.stages.size() == 128)
+	check("F31.first_phase_capped", fixture.stage_counts[1047] == 256)
+	check("F31.second_phase_not_starved", fixture.stage_counts[1048] == 256 and fixture.stages.size() == 512)
 	runner._restore_f31_fixture(s, fixture)
 	runner.free()
 
