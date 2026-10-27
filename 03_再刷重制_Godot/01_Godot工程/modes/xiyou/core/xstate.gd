@@ -58,7 +58,7 @@ var steps := 0
 var play_seconds := 0.0
 var encounter_count := 0
 ## Star_RomGetItems 的装备预掷随机池（见 XGear），随存档保存
-var rom := {"x": [], "xn": 0, "xs": [], "xsn": 0, "g": [], "gn": 0}
+var rom := {"x": [], "xn": 0, "xs": [], "xsn": 0, "g": [], "gn": 0, "m": []}
 ## Runtime only: ordinary saves keep original rom/orb/gear data, never these streams.
 ## Loading/previews do not initialize or advance them.
 var random_master := ""
@@ -130,6 +130,7 @@ var unlocked_maps := {}
 var hang_up := {}
 var hang_up_total := 0
 var encounter_enabled := true      # Game_System._encounterEnabled（指令 136）
+var allow_autosave := true         # Game_System._allowAutosave（YEP_X_Autosave，Enable／DisableAutosave；新局与旧档缺键都为 true）
 ## YEP_CoreEngine 的 $gameParty.ActorMaxLevel：全体角色的等级上限（每次换场景写回 $dataActors[i].maxLevel，
 ## 所以角色数据库与备注里的上限都被它取代）。初值为插件参数 Max Level（西游 10），插件指令 maxlevel add/equal 改它。
 var actor_max_level := 0
@@ -285,18 +286,25 @@ func fixed_save_slot() -> int:
 
 ## Game_Party.addActor（YEP_PartySystem）：加入队尾；出战栏位有空位时填入第一个空位并重排
 ## installBossDifficultyRuntime 在外层前后各清一次出战栏里的超强者（XItemMarks.enforce_party）
-func add_actor(id: int) -> void:
+## notice：不能入队时的提示去处（事件解释器传自己的，默认右上角提示）
+func add_actor(id: int, notice := Callable()) -> void:
 	XItemMarks.enforce_party(self)
-	_add_actor(id)
+	_add_actor(id, notice)
 	XItemMarks.enforce_party(self)
 
 
-func _add_actor(id: int) -> void:
+func _add_actor(id: int, notice := Callable()) -> void:
 	if XDB.rec("Actors", id).is_empty():
 		return
 	# installBossDifficultyRuntime：未持有的超强者在地狱以下不能入队（提示后不加）
 	if not party.has(id) and not XItemMarks.can_acquire_actor(self, id):
-		XItemMarks.acquisition_notice()
+		if notice.is_valid():
+			notice.call(XItemMarks.SUPER_NOTICE)
+		else:
+			XItemMarks.acquisition_notice()
+		return
+	# installImportedBalanceRuntime：停用的导入角色（143～145、157、160）不入队（超强者检查在外层，先提示）
+	if XImportedBalance.is_disabled_actor(id):
 		return
 	if not party.has(id):
 		actor(id)
@@ -543,7 +551,7 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "allowAutosave": allow_autosave, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "unknownOrigin": unknown_origin, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "costumeOff": costume_off, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills)}
 
@@ -631,7 +639,8 @@ static func from_dict(d: Dictionary) -> XState:
 	var rom: Dictionary = d.get("rom", {})
 	s.rom = {"x": rom.get("x", []).map(func(v): return float(v)), "xn": int(rom.get("xn", 0)),
 		"xs": rom.get("xs", []).map(func(v): return int(v)), "xsn": int(rom.get("xsn", 0)),
-		"g": rom.get("g", []).map(func(v): return int(v)), "gn": int(rom.get("gn", 0))}
+		"g": rom.get("g", []).map(func(v): return int(v)), "gn": int(rom.get("gn", 0)),
+		"m": rom.get("m", []).map(func(v): return int(v))}  # 藏宝图本轮挖过的宝点（$gameParty.GameMapxy，见 XTreasureMap）
 	s.flags = d.get("flags", {})
 	s.actor_name = str(d.get("actorName", ""))
 	for op in d.get("actorOps", []):
@@ -679,6 +688,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.battleback = [str(bb[0]), str(bb[1])] if bb is Array and bb.size() == 2 else []
 	s.erased_events.assign(Array(d.get("erasedEvents", [])).map(func(v): return int(v)))
 	s.encounter_enabled = bool(d.get("encounterEnabled", true))
+	s.allow_autosave = bool(d.get("allowAutosave", true))  # 原版 canAutosave：_allowAutosave 未定义时 initAutosave 为 true
 	s.screen = XScreenFx.from_dict(d.get("screen"))
 	# dev.032 以前的存档没有这一项：按初值（原版开局就是插件参数）
 	s.actor_max_level = int(d.get("actorMaxLevel", default_max_level()))

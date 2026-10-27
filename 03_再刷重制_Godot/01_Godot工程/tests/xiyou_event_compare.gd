@@ -89,6 +89,9 @@ class EventHost:
 	func open_change_clothes() -> void:
 		trace.append({"t": "scene", "name": "Scene_ChangeClothes"})
 
+	func open_forget_skill(_actor_id: int) -> void:
+		trace.append({"t": "scene", "name": "Star_Scene_ForgetSkill"})
+
 	func open_actor_advanced() -> void:
 		trace.append({"t": "scene", "name": "Scene_ActorAdvanced"})
 
@@ -270,6 +273,9 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	for id in PARTY:
 		s.add_actor(id)
 	s.map_id = int(c.map)
+	# 参照把玩家放在事件所在格（公共事件在大厅 0,0）：藏宝图等脚本读玩家坐标
+	s.x = 0
+	s.y = 0
 	XState.current = s
 	host.trace = []
 	host.seen = {}
@@ -282,6 +288,9 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 			if e is Dictionary and int(e.id) == int(c.event):
 				ev = e
 		list = ev.pages[int(c.page)].list.duplicate(true) if ev != null else []
+		if ev != null:
+			s.x = int(ev.x)
+			s.y = int(ev.y)
 	# 第一条仓库指令就是 show 的页（如青霞第 2 页，正常流程里仓库已由第 1 页建好）：参照探针先建好默认仓库，这边同样
 	for cmd in list:
 		if int(cmd.code) == 356 and str(cmd.parameters[0]).begins_with("PHWarehouse "):
