@@ -154,6 +154,10 @@ func _reservations(o: Dictionary, reset: Dictionary) -> void:
 	menu._ok()
 	await map.run_reserved_common_event(s)
 	check("reservation.stale_menu_keeps_owner", s.peek_common_event() == 431 and other.peek_common_event() == 0)
+	XState.current = s
+	s.reserve_common_event(999999)
+	await map.run_reserved_common_event(s)
+	check("reservation.missing_event_clears_slot", s.peek_common_event() == 0 and not map.busy, [s.peek_common_event(), map.busy])
 	menu.free()
 	map.queue_free()
 	await get_tree().process_frame

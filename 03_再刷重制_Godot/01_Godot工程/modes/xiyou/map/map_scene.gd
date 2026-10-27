@@ -788,7 +788,12 @@ func run_reserved_common_event(owner: XState) -> void:
 ## 公共事件（事件 ID 为 0）。预约消费按原版先 setup 游标，再 clear，再执行。
 func run_common_event(id: int, reservation: XState = null) -> void:
 	var ce := XDB.rec("CommonEvents", id)
-	if ce.is_empty() or busy:
+	if busy:
+		return
+	if ce.is_empty():
+		# 预约了不存在的公共事件：清槽，免得 _process 每帧看到预约而永远不查自动执行事件（原版此处直接报错）
+		if reservation != null:
+			reservation.clear_common_event()
 		return
 	_set_busy(true)
 	var interp := MVInterpreter.new(self, map_id, 0, ce.list)

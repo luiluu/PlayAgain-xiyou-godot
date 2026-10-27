@@ -37,6 +37,10 @@ const STOCK_CAPTION := "库存"       # Caption for stock
 const SOLD_OUT_W := 96.0
 ## O-043：装备商品的库存行画在能力表下方（第 11 行、26 号字）；false 为原版（第 2 行、沿用能力表的 20 号字，与队员名重叠）
 static var STOCK_GEAR_BELOW := true
+## 自动测试用（只在测试里设）：XMessageBox.auto 不管商店，事件走到商店会一直等输入。为真时商店一打开就把
+## {goods, purchase_only, stock_group} 记进 auto_log 并关闭（closed 延到下一帧发，等 open_shop 接上 await）
+static var auto_close := false
+static var auto_log: Array = []
 
 var goods: Array = []
 var purchase_only := false
@@ -88,6 +92,9 @@ func _ready() -> void:
 	help_card = XHelpCard.new()
 	add_child(help_card)
 	_refresh()
+	if auto_close:
+		auto_log.append({"goods": goods.duplicate(true), "purchase_only": purchase_only, "stock_group": stock_group})
+		closed.emit.call_deferred()
 
 
 func _refresh() -> void:
