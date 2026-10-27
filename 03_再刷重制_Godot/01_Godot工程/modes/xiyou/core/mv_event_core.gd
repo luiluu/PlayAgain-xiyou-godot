@@ -682,9 +682,13 @@ func _plugin_command(line: String) -> void:
 			if XWarehouse.plugin_command(state(), args):  # PH_Warehouse create／remove（show 交给宿主）
 				return
 		"Autosave", "EnableAutosave", "DisableAutosave":
-			# YEP_X_Autosave：「Autosave」存到最近用过的存档位（没手动存过就不存）；Enable／Disable 只开关该插件的选项，
-			# 重制版没有这个选项，所以只保留存档动作（原版弹的「存档成功！」小字不做）
-			if args[0] == "Autosave" and XSave.current_slot > 0:
+			# YEP_X_Autosave：Enable／DisableAutosave 开关 $gameSystem.setAutosave（随存档）；「Autosave」在允许时存到最近用过的
+			# 存档位（没手动存过就不存）。公共事件 5 是 Enable→Autosave→Disable，之后的 Autosave 不再写档（原版弹的「存档成功！」小字不做）
+			if args[0] == "EnableAutosave":
+				state().allow_autosave = true
+			elif args[0] == "DisableAutosave":
+				state().allow_autosave = false
+			elif state().allow_autosave and XSave.current_slot > 0:
 				XSave.save(XSave.current_slot)
 			return
 		"MagicWeaponAllGainExp", "MagicWeaponLevelUp":

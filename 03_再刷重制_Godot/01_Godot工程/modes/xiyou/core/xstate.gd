@@ -130,6 +130,7 @@ var unlocked_maps := {}
 var hang_up := {}
 var hang_up_total := 0
 var encounter_enabled := true      # Game_System._encounterEnabled（指令 136）
+var allow_autosave := true         # Game_System._allowAutosave（YEP_X_Autosave，Enable／DisableAutosave；新局与旧档缺键都为 true）
 ## YEP_CoreEngine 的 $gameParty.ActorMaxLevel：全体角色的等级上限（每次换场景写回 $dataActors[i].maxLevel，
 ## 所以角色数据库与备注里的上限都被它取代）。初值为插件参数 Max Level（西游 10），插件指令 maxlevel add/equal 改它。
 var actor_max_level := 0
@@ -550,7 +551,7 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "allowAutosave": allow_autosave, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "unknownOrigin": unknown_origin, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "costumeOff": costume_off, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills)}
 
@@ -687,6 +688,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.battleback = [str(bb[0]), str(bb[1])] if bb is Array and bb.size() == 2 else []
 	s.erased_events.assign(Array(d.get("erasedEvents", [])).map(func(v): return int(v)))
 	s.encounter_enabled = bool(d.get("encounterEnabled", true))
+	s.allow_autosave = bool(d.get("allowAutosave", true))  # 原版 canAutosave：_allowAutosave 未定义时 initAutosave 为 true
 	s.screen = XScreenFx.from_dict(d.get("screen"))
 	# dev.032 以前的存档没有这一项：按初值（原版开局就是插件参数）
 	s.actor_max_level = int(d.get("actorMaxLevel", default_max_level()))
