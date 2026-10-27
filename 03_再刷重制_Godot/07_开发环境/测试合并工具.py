@@ -1356,6 +1356,25 @@ for name in filter(None, files):
                 self.assertTrue(self.wt.exists())
                 self.assertIn('不要删' if row else '没有提到它', self.last_output)
 
+    def test_untracked_evidence_merges_by_ref_and_keeps_worktree(self):
+        # 沙僧 state-effects-2b：只有核查范围／本地结果下的未跟踪证据时按分支引用合并，工作树与证据都留着
+        evidence = [self.wt / '00_项目管理/核查范围/原版/证据.json', self.wt / merge.SUB / '04_验证/本地结果/x.log']
+        for f in evidence:
+            f.parent.mkdir(parents=True, exist_ok=True); f.write_text('keep')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertIn('未跟踪证据', self.last_output)
+        self.assertFalse((self.root / self.receipt).exists())
+        self.assertIn('fixture change', (self.root / merge.LOG).read_text())
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertTrue(all(f.read_text() == 'keep' for f in evidence))
+        self.assertIn('claude/task', self.branches())
+        self.tearDown(); self.setUp()
+        for f in evidence + [self.wt / '00_项目管理/别处.md']:   # 证据目录外还有未跟踪文件：照旧拒收
+            f.parent.mkdir(parents=True, exist_ok=True); f.write_text('keep')
+        self.assertEqual(self.call(), 1)
+        self.assertIn('不干净', self.last_output)
+
     def test_lane_on_new_branch_without_commits_is_not_removed(self):
         # 新分支还没提交（HEAD 仍是交付提交、干净）：也不能删工作树和新分支。
         self.assertEqual(self.call(), 0, self.last_output)

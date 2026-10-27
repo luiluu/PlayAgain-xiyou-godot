@@ -13,7 +13,9 @@
 
 车道交付后在同一工作树接着做（换新分支、新提交或未提交改动）不拦合并：只跳过该工作树的清理，交付分支不再是当前分支就照删。
 清理前还要过两道（哪吒 2026-10-27，曾误清另一账号会话的干净工作树）：有进程的当前目录在该工作树里（活动会话）或工作树被
-git worktree lock 锁住，或合并前 main 的交接板「正在进行」表里没有提到该工作树／交付分支的行、或那行写了「不要删」，都只提示不删。"""
+git worktree lock 锁住，或合并前 main 的交接板「正在进行」表里没有提到该工作树／交付分支的行、或那行写了「不要删」，都只提示不删。
+车道工作树只有未跟踪文件且都在 00_项目管理/核查范围/ 或 04_验证/本地结果/ 下（沙僧的原版证据、本地输出）时也收：
+按分支引用合并，不清理该工作树。"""
 import argparse
 import hashlib
 import json
@@ -36,6 +38,8 @@ COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/交接板归档.md'
           SUB / '开发编号.json', PROJECT / 'project.godot', PROJECT / 'content/build_info.json']}
 VERSION_MARKER = 'dev.' + '待定'
 VERSION_EXEMPT = {'AGENTS.md', '00_项目管理/交付/README.md'}
+# 车道工作树里只有这些目录下的未跟踪文件时仍可合并（按分支引用，不清理工作树）
+EVIDENCE_DIRS = ('00_项目管理/核查范围/', str(SUB / '04_验证/本地结果') + '/')
 PLACEHOLDER = re.compile(r'^\s*(?:[-*]\s*)?[（(<]?待写[）)>]?[。.]?\s*$', re.M)
 
 
@@ -63,6 +67,15 @@ def dirty(root):
 def porcelain(root):
     raw = subprocess.check_output(['git', '-C', str(root), 'status', '--porcelain', '-z']).decode()
     return raw.rstrip('\0').split('\0') if raw else []
+
+
+def untracked_evidence(root):
+    """工作树只有未跟踪文件、且都在 EVIDENCE_DIRS 下时返回这些路径；否则返回空列表（干净或有别的改动）。"""
+    raw = subprocess.check_output(['git', '-C', str(root), 'status', '--porcelain', '-z', '-uall']).decode()
+    records = raw.rstrip('\0').split('\0') if raw else []
+    if records and all(x.startswith('?? ') and x[3:].startswith(EVIDENCE_DIRS) for x in records):
+        return sorted(x[3:] for x in records)
+    return []
 
 
 def active_cwds(path):
@@ -174,10 +187,18 @@ def plan(root, task):
     lanes = [w for w in worktrees(root) if w.get('branch') in ['claude/' + task, 'codex/' + task]]
     if len(lanes) > 1:
         raise RuntimeError('须有且只有一个对应任务的已登记车道工作树')
+    evidence = []
     if lanes:
         branch, wt = lanes[0]['branch'], Path(lanes[0]['path'])
-        if dirty(wt):
+        evidence = untracked_evidence(wt)
+        if evidence:
+            # 沙僧工作树常驻未入 Git 的原版证据：按分支引用合并（只读提交里的文件），收尾不清理这个工作树
+            print('提示：车道工作树只有 %d 个未跟踪证据／本地输出（%s 等），按分支引用合并，不清理该工作树'
+                  % (len(evidence), evidence[0]), file=sys.stderr, flush=True)
+            lanes = []
+        elif dirty(wt):
             raise RuntimeError('车道工作树不干净，先由车道提交')
+    if lanes:
         target = git(wt, 'rev-parse', 'HEAD')
 
         def read(rel):
@@ -192,7 +213,8 @@ def plan(root, task):
             raise RuntimeError('须有且只有一个对应任务的车道工作树或车道分支')
         branch, wt = refs[0], None
         target = git(root, 'rev-parse', 'refs/heads/' + branch)
-        print('提示：没有工作树停在 %s 上（车道已换分支继续），按分支引用 %s 合并' % (branch, target[:9]), file=sys.stderr, flush=True)
+        if not evidence:
+            print('提示：没有工作树停在 %s 上（车道已换分支继续），按分支引用 %s 合并' % (branch, target[:9]), file=sys.stderr, flush=True)
 
         def read(rel):
             entry = git(root, 'ls-tree', target, '--', str(rel))
@@ -231,7 +253,7 @@ def plan(root, task):
                      and VERSION_MARKER in (read(p) or '')]
     return dict(task=task, branch=branch, worktree=str(wt) if wt else '', base=base, target=target,
                 delivery=str(delivery), extraDeliveries=extra, refresh=refresh, acceptChanges=accept, gameplay=game, phase='planned', head=base,
-                versionPaths=version_paths,
+                versionPaths=version_paths, evidenceFiles=evidence,
                 mainAdvancedAfterDelivery=fork != base)
 
 
@@ -608,6 +630,9 @@ def cleanup_lane(root, lane):
     车道已在同一工作树继续工作（换了分支、有新提交或未提交改动）时只跳过工作树，交付分支不再是当前分支就照删。"""
     if subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', lane['target'], 'HEAD']).returncode:
         raise RuntimeError('交付提交不在 main 历史里，不清理：' + lane['worktree'])
+    if lane.get('evidenceFiles'):
+        print('提示：%s 的工作树有未跟踪证据，按分支引用合并，不清理工作树与交付分支' % lane['task'], flush=True)
+        return
     moved = lane_moved(lane)
     if not moved:
         moved = lane_protected(root, lane)
