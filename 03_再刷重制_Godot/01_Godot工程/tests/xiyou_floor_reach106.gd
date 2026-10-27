@@ -1,0 +1,272 @@
+extends Node
+## 演武遗迹 106 与毒蛇沼泽 87（地图场景里真走一遍）：
+## - 演武遗迹：天之上 EV46 进 (11,46)、EV57 进 (38,0)；出口 EV1～3（面朝上）回 (104,42)、EV4／5／8 回 (104,46)；
+##   EV18 演武导师两个选项、EV20 演武商人商店 709（XShop.auto_close 自动关）；遇敌表 334～337 真遇敌打完一场。
+## - 毒蛇沼泽：天之上 EV47 面朝上进 (13,28)（开关 21 关）；出口 EV5～7（面朝下）回 (38,78)；EV8 对话；
+##   遇敌表 298～302 加 577～582 彩蛋首领，每个敌群都抽得到，真遇敌打完一场。
+## 队伍生命攻击都很大（只查流程）。
+const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
+const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
+
+var results: Array = []
+var battles: Array = []   # 每场：{troop, result}
+var trainings := 0
+
+
+func _ready() -> void:
+	if has_meta("runner"):
+		_run.call_deferred()
+		return
+	# 换场景（传送）时测试节点不能挂在当前场景下，挂到根节点
+	var runner := Node.new()
+	runner.set_script(get_script())
+	runner.set_meta("runner", true)
+	get_tree().root.add_child.call_deferred(runner)
+
+
+func _check(name: String, ok: bool, detail = null) -> bool:
+	results.append({"name": name, "passed": ok})
+	if not ok:
+		print("FAIL ", name, " ", JSON.stringify(detail))
+	return ok
+
+
+func _frames(n: int) -> void:
+	for i in range(n):
+		await get_tree().process_frame
+
+
+func _scene() -> Node:
+	return get_tree().current_scene
+
+
+func _wait_map(map_id: int) -> bool:
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+		var s = _scene()
+		if s is XMapScene and s.map_id == map_id and s.player != null and not s.busy:
+			return true
+		await get_tree().process_frame
+	return false
+
+
+func _event(map: XMapScene, id: int) -> MVEvent:
+	for e in map.events:
+		if e.event_id == id:
+			return e
+	return null
+
+
+## 队伍参数：生命极大、攻击魔攻 5e13（一回合打完）
+func _party() -> void:
+	for a in XState.current.members():
+		var eq: Array = a.equip_list()
+		var item: Dictionary
+		if not eq.is_empty():
+			item = eq[0]
+		else:
+			for id in range(1, 200):
+				if XDB.rec("Weapons", id).is_empty():
+					continue
+				var inst := XGear.create("weapon", id)
+				if not inst.is_empty() and a.can_equip(inst):
+					XState.current.register_gear(inst)
+					a.equips[0] = inst
+					item = inst
+					break
+		if item.is_empty():
+			continue
+		item.params = [1.0e14, 1.0e6, 5.0e13, 5.0e6, 5.0e13, 5.0e6, 1.0e5, 1.0e3]
+		a.refresh_passive()
+		a.hp = a.mhp
+		a.mp = a.mmp
+
+
+func _battle_of(map: XMapScene) -> XBattleScene:
+	for n in map.ui.get_children():
+		if n is XBattleScene:
+			return n
+	return null
+
+
+## 跑一个事件到结束；mode：""＝不干预，"win"＝战斗一开始击倒全部敌人，"lose"＝击倒全部队员
+func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
+	var e := _event(map, id)
+	if not _check("map%d_event%d_present" % [map.map_id, id], e != null):
+		return false
+	if not map.has_meta("watched"):
+		map.set_meta("watched", true)
+		map.ui.child_entered_tree.connect(_on_ui_child)
+	XMessageBox.auto_answers = answers.duplicate()
+	var st := {"done": false}
+	(func():
+		await map.run_event(e)
+		st.done = true).call()
+	var t0 := Time.get_ticks_msec()
+	while not st.done and Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+		var b := _battle_of(map)
+		if b != null and not b.logic.enemies.is_empty():
+			if mode == "win":
+				for en in b.logic.enemies:
+					if en.is_alive():
+						en.hp = 0.0
+						en.add_state(1)
+			elif mode == "lose":
+				for a in b.logic.actors:
+					if a.is_alive():
+						a.hp = 0.0
+						a.add_state(1)
+		await get_tree().process_frame
+	return _check("map%d_event%d_finished" % [map.map_id, id], st.done)
+
+
+func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = s
+	s.map_id = map_id
+	s.x = x
+	s.y = y
+	s.direction = dir
+	_party()
+	get_tree().change_scene_to_file(MAP_SCENE)
+	return s
+
+
+
+func _on_ui_child(n: Node) -> void:
+	if n is XBattleScene:
+		n.finished.connect(func(r): battles.append({"troop": n.logic.troop_id, "result": r}), CONNECT_ONE_SHOT)
+	elif n is XTrainingScene:
+		trainings += 1
+		n.closed.emit.call_deferred()
+
+
+func _run_call(map: XMapScene, call: Callable, mode := "win") -> bool:
+	if not map.has_meta("watched"):
+		map.set_meta("watched", true)
+		map.ui.child_entered_tree.connect(_on_ui_child)
+	var st := {"done": false}
+	(func():
+		await call.call()
+		st.done = true).call()
+	var t0 := Time.get_ticks_msec()
+	while not st.done and Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+		var b := _battle_of(map)
+		if b != null and not b.logic.enemies.is_empty() and mode == "win":
+			for en in b.logic.enemies:
+				if en.is_alive():
+					en.hp = 0.0
+					en.add_state(1)
+		await get_tree().process_frame
+	return _check("call_finished", st.done)
+
+
+func _run() -> void:
+	XSave.dir_override = "user://test_xiyou_floor_reach106"
+	XConfig.path_override = XSave.dir().path_join("options.json")
+	XMessageBox.auto = true
+	XShop.auto_close = true
+	XBattleScene.force_auto = true
+	XEnemy.force_roll = 100.0
+	XGuide.MILESTONE_ENABLED = false
+	seed(20261027)
+	await _wuyan()
+	await _snake()
+	_finish()
+
+
+## 进入天之上，跑入口事件，等到目标图
+func _enter(tag: String, enter_ev: int, dir: int, map_id: int, arrive: Vector2i, sky_at: Vector2i) -> bool:
+	_start(69, sky_at.x, sky_at.y, dir)
+	if not _check(tag + "_sky", await _wait_map(69)):
+		return false
+	await _run_event(_scene(), enter_ev, [], "")
+	return _check(tag + "_entered", await _wait_map(map_id) and _scene().player.grid == arrive, [_scene().map_id, _scene().player.grid])
+
+
+func _table(tag: String, map: XMapScene, troops: Array) -> void:
+	_check(tag + "_table", map.map_data.encounterList.map(func(r): return int(r.troopId)) == troops, map.map_data.encounterList)
+	var total := 0
+	for r in map.map_data.encounterList:
+		total += int(r.weight)
+	var seen := {}
+	for r in range(total):
+		seen[XMapScene.encounter_troop(map.map_data.encounterList, r)] = true
+	_check(tag + "_rolls", seen.keys().size() == troops.size() and troops.all(func(t): return seen.has(t)), seen.keys())
+
+
+func _fight(tag: String, map: XMapScene, troops: Array) -> void:
+	var n0 := battles.size()
+	await _run_call(map, func(): await map._encounter(), "win")
+	_check(tag + "_encounter", battles.size() == n0 + 1 and troops.has(int(battles[-1].troop)) and battles[-1].result == 0, battles.slice(n0))
+
+
+func _wuyan() -> void:
+	# 入口 EV46（天之上 (104,45)）→ (11,46)；出口 EV5 面朝上回 (104,46)
+	if not await _enter("wy46", 46, 8, 106, Vector2i(11, 46), Vector2i(104, 45)):
+		return
+	var map: XMapScene = _scene()
+	_check("wy_events", range(1, 21).all(func(i): return _event(map, i) != null))
+	_table("wy", map, [336, 335, 334, 337])
+	var shop0 := XShop.auto_log.size()
+	for id in [9, 10, 11, 12, 13, 19]:
+		await _run_event(map, id, [], "")
+	await _run_event(map, 18, [0], "")
+	await _run_event(map, 18, [1], "")
+	await _run_event(map, 20, [0], "")
+	_check("wy_shop709", XShop.auto_log.size() == shop0 + 1 and _has_shop(map, 20, 709), XShop.auto_log.size() - shop0)
+	await _run_event(map, 20, [1], "")
+	await _fight("wy", map, [334, 335, 336, 337])
+	map = _scene()
+	map.player.direction = 8
+	await _run_event(map, 5, [], "")
+	_check("wy46_back", await _wait_map(69) and _scene().player.grid == Vector2i(104, 46), [_scene().map_id, _scene().player.grid])
+	# 入口 EV57（天之上 (104,43)）→ (38,0)；出口 EV1 面朝上回 (104,42)
+	if not await _enter("wy57", 57, 8, 106, Vector2i(38, 0), Vector2i(104, 43)):
+		return
+	map = _scene()
+	map.player.direction = 8
+	await _run_event(map, 1, [], "")
+	_check("wy57_back", await _wait_map(69) and _scene().player.grid == Vector2i(104, 42), [_scene().map_id, _scene().player.grid])
+
+
+func _has_shop(map: XMapScene, id: int, goods: int) -> bool:
+	var e := _event(map, id)
+	return e != null and e.command_list().any(func(c): return int(c.code) == 302 and int(c.parameters[1]) == goods)
+
+
+func _snake() -> void:
+	var troops := [298, 299, 300, 301, 302, 577, 578, 579, 580, 581, 582]
+	# 天之上 EV47（(38,77)）面朝上进 (13,28)
+	if not await _enter("snake", 47, 8, 87, Vector2i(13, 28), Vector2i(38, 77)):
+		return
+	var map: XMapScene = _scene()
+	_check("snake_events", range(5, 9).all(func(i): return _event(map, i) != null))
+	_table("snake", map, troops)
+	await _run_event(map, 8, [], "")
+	await _fight("snake", map, troops)
+	# 彩蛋首领 577～582 各打一场（直接用敌群号开战）
+	for t in [577, 578, 579, 580, 581, 582]:
+		var n0 := battles.size()
+		await _run_call(_scene(), func(): await _boss(t), "win")
+		_check("snake_boss_%d" % t, battles.size() == n0 + 1 and int(battles[-1].troop) == t and battles[-1].result == 0, battles.slice(n0))
+	map = _scene()
+	map.player.direction = 2
+	await _run_event(map, 5, [], "")
+	_check("snake_back", await _wait_map(69) and _scene().player.grid == Vector2i(38, 78), [_scene().map_id, _scene().player.grid])
+
+
+func _boss(t: int) -> void:
+	await _scene().start_battle(t, false, false)
+
+
+func _finish() -> void:
+	for i in range(1, XSave.SLOTS + 1):
+		if XSave.exists(i):
+			DirAccess.remove_absolute(XSave.path(i))
+	DirAccess.remove_absolute(XSave.dir().path_join("options.json"))
+	DirAccess.remove_absolute(XSave.dir())
+	print("战斗：", JSON.stringify(battles))
+	var passed := results.filter(func(r): return r.passed).size()
+	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
+	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
