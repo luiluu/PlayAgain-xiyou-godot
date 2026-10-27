@@ -1,47 +1,25 @@
 # 交付：claude/bajie-review-mergemain-2
 
 - 车道／工作者：核查／八戒（Claude）
-- 状态：进行中
+- 状态：核查完成，发现 P1，停手待总装决定（Boss 六张单本身可销，见报告）
 
-## 接续（八戒，2026-10-27，上下文接近 40%，只开了工）
+## 结果（八戒，2026-10-27）
 
-刚开工就到了上下文线，下面的事一件都还没做。接手的人从头按派单做：
+- 报告：[核查报告_20261027_沙僧82_集成期二](../核查报告_20261027_沙僧82_集成期二.md)。
+- Boss 六张单通过，没有 P0、P1、P2。15 场专项（6 场新增加 9 场直接依赖）在临时检出 23519cff 全部单次通过；临时检出已删。
+- **P1（f4dff07e，已在 main）**：开战标签状态从第二场起挂不上。f4dff07e 让 `_state_add` 走 `XResourceContext.add_state` 的 removedStates 准入；结束战斗时发布的 removedStates 留在 `runtime_result` 里，而重制没有原版 `onPlayerWalk` 每步的 `clearResult`。冻结数据里有 491 组受影响。原版探针和重制复现见报告第一节，修法建议也在那里。代码没改。
+- 期一 P3-3 已用原版探针确认：1337～1340 原版本来就不靠开战标签挂（键解析成状态 0），两边一致。
+- 新增 P3-4（霸体正则每次编译）、P3-5（实战 regenerate 的 gain_resource 没有资源域，需状态效果车道确认）。
+- 销账：只销报告第一张表里逐个列出的 Boss 单提交号；f4dff07e 等 P1 修好后再销。c635a38d、39721928 属于说明卡单，不在期二内。
 
-- **派单原文要点**：总装 2026-10-27 派的期二，核查集成分支 `codex/passive-content-merge-main`（23519cff）里 Boss 系列六张原交付单的实现：
-  - `00_项目管理/交付/codex_passive-content-boss.md`
-  - `codex_passive-content-boss-context.md`
-  - `codex_passive-content-boss-output.md`
-  - `codex_passive-content-boss-react.md`
-  - `codex_passive-content-boss-sequence.md`
-  - `codex_passive-content-boss-state-origin.md`
-- **一并核**：期一只核了一部分的 f4dff07e、1f63aa68、c635a38d、39721928、5d909854，属于哪张单就并进哪张一起核。
-- **原版探针确认**：期一报告的 P3-3「开战标签状态和上场结果槽残留」。状态 1337～1340 既是开战标签状态，又是 removeAtBattleEnd；要确认连打两场时，第二场开战还能不能把它们挂上，以及重制在地图上 onTurnEnd 时是否清结果槽。
-- **重点**：
-  - Boss 来源域的推入和恢复是否成对；
-  - 低倍率遮蔽；
-  - 护盾前后的次序；
-  - settled／direct 两层防止二次缩放；
-  - 与 battle_logic、resource_context 的边界。
-  - 各单声明的「限制」（例如 JS 宿主未移植）不算缺陷，只核声明范围内的。
-- **怎么找提交**：用 `git show codex/passive-content-merge-main:<单的路径>` 读，提交号在各单的「本分支提交」「最终交付」两节。boss 单在第 41 行有「本分支提交」，其余几张的「最终交付」分别在：
-  - boss-context 第 9 行
-  - boss-react 第 21 行
-  - boss-sequence 第 8 行
-  - boss-state-origin 第 33 行
-- **验证**：
-  - 照期一的做法：`git worktree add --detach <scratchpad>/mm 23519cff`，再 `长任务.py start` 跑 `新建工作树.sh --补齐`。godot import 可能要排 20 多分钟的共用槽。
-  - 跑每张单列的新增专项和最相关的直接依赖，不跑全量，不跑 24 段规则。
-  - 跑完删掉临时检出（`git worktree remove --force`）。
-  - 注意：补齐时参照数据是从主工作区克隆的，条数可能和沙僧报的不一样，见期一报告第四节。
-- **交付**：
-  - 报告写到 `00_项目管理/核查报告_20261027_沙僧82_集成期二.md`，格式照期一报告。
-  - 销账范围只写逐个核过的提交号，不写分支名。
-  - 提交尾注：`执行者: Claude（八戒）`、`核查: 待Codex`。
-- **停手条件**：
-  - 发现 P0 或 P1，马上告诉总装（local_102f2c6b-6a6f-45de-a0c6-8d8732d0c04c）；
-  - 5 小时额度到 80% 时收尾，WIP 提交；
-  - 上下文到 40% 时写接续，WIP 提交。
+## 可优化
+
+- 原版探针挂住时不输出也不退出：`shared/host.cjs` 启动后，如果脚本末尾没有 `process.exit`，node 不会退出。新写探针要照现有探针用 `finish(...)` 或显式 `process.exit`。建议在 mv_oracle 的 README 里写一句。
 
 ## 变更记录草稿
 
-（待写）
+## 2026-10-27 【Claude·八戒·未经Codex检验】核查沙僧14期集成期二：Boss 六张单通过，发现 f4dff07e 带出 P1（dev.待定）
+
+- 核了 Boss 属性与霸体、普通输出、行动资源域、数值序列、状态来源、1341／2550 react 六张单的产品代码和专项，以及合并后 f4dff07e、1f63aa68 的资源域改动。来源域推入恢复成对，低倍率遮蔽、护盾次序、settled／direct 防二次缩放都对，15 场专项全过。
+- P1：f4dff07e 之后开战标签状态从第二场起挂不上（重制不在地图走路时清结果槽）。已报总装，代码没改。期一 P3-3 用原版探针确认，1337～1340 两边一致。
+- 报告：00_项目管理/核查报告_20261027_沙僧82_集成期二.md。
