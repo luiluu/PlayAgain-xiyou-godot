@@ -36,6 +36,9 @@
 
 ## 遗留
 
+- **唐僧补充项「xparam 乘到 1.4～2.85 后命中／闪避／暴击判定」尚未核（额度到 90%，停在这里）**。已知：重制判定在 `battle_logic.gd` 的 `item_hit`（1256）／`item_eva`（1263）／1365～1366 行；还没读。下一步：在原版量 `Game_Action.itemHit／itemEva／itemCri`（敌人为攻击方打角色、角色打敌人为目标，标志 无／L2／L4／L5，Math.random 取 0.01／0.5／0.99，看有没有钳到 1、闪避超 1 是否必闪），补一个探针和夹具，再对重制 `item_hit／item_eva`。确认 `xiyou_rules` 参照不置 DCL 标志（`xiyou_rules` 全 28 段已通过，间接说明不受影响）。
+- floor_run 因敌人变强失败的，按原版为准调预期、不削倍率：本期只有 f31_immunity_stages 一项，已调（见验证）。
+
 - 差异 1 五乘区；难度继承的分档／补强档／≥167 路径、读档补同步；灭世（6250～6253）、洪荒（10300）没有参照例；`CodexHonghuangSuppress` 标志。
 - 夹具 `enemy_warehouse_oracle.json` 与 `boss_output_oracle.json` 一样是手工拷自 `.sandbox` 的静态夹具，没挂进 `同步正式西游.py` 的探针表（要挂得补契约校验）。
 
