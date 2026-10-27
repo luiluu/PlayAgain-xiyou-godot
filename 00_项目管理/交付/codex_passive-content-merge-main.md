@@ -1,6 +1,6 @@
 # 交付：codex/passive-content-merge-main
 
-- 车道／工作者：集成／沙僧（Codex，重制_沙僧_79，接78）
+- 车道／工作者：集成／沙僧（Codex，重制_沙僧_80，接79）
 - 状态：WIP。已修地图TP上限路径，五项直接专项共19,465项通过；普通增量同步sync3在途，最终218场集成选测未跑，仍不可合并
 - 交付范围截至5761f01f；新分支从该点建立。PREE已独立保存至c5953948，未带入本分支。
 - 本次合并本地main：9b140f365f93c2cfa4b19d85b6ddd72576830c16；不以远端覆盖本地。两父合并保留提交链。
@@ -194,3 +194,8 @@
 - 79已在本地结果/merge-main-next/final79.sh准备但**未启动**最终入口，zsh -n通过：先218场选测，再单补xiyou_choice_window.tscn，不因前者失败而漏跑后者。XIYOU_TEST_HEARTBEAT=30；CHECK_LOG_DIR分别final-selected79与final-choice79保存全部场景原件；末尾有SELECTED_EXIT／CHOICE_EXIT。脚本ROOT从自身上行五级，需在启动前只读确认路径；可沿用一次，不重复启动已存在任务。覆盖草稿coverage79.json、selection-final.sh/json仍在同目录。
 - 文档继承两条链接a；旧8项early_inventory_rule若仍失败，必须读真实日志并实际区分归因，不能拿早期口述当新基线。78只证明测试相对main9b未变，e1925bea只是Boss专项证据提交。禁止放宽断言／夹带迁就。
 - 真正验证可交付后更新本单、保留14单名单、push github本分支，告诉Kyo供转唐僧；不自行合main、不销自己的核查／自评完成度。然后才转核查分支，实际main重新算积压，不用本分支217批／计入140当main实时值，全部Codex批次仍交Claude。
+
+## 沙僧80接续（2026-10-27）
+
+- 正在做：沿用原sync3进程等待完成，然后审测量报告、导入日志并运行最终选测与选择窗口补测；未重启或取消任务。开工HEAD77b67f30，tracked干净，五小时38%、周52%。先交14期集成，再转核查积压，PREE继续封存。
+- 本轮实查sync3包装器21018、childPGID21023仍在；采样子进程持续占用CPU，已见hang_up、options、party退出0，尚不把在途或排槽认定失败。保留全部证据，不改共享登记、并发或工具。
