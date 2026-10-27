@@ -195,6 +195,7 @@ func _hidden_event_streams() -> void:
 		{"kind": "uint32", "value": 0, "reason": "state_duration", "event": "4"},
 		{"kind": "uint32", "value": 0, "reason": "event_variable", "event": "2"},
 	])
+	var other_persistent := other_state.runtime_random_snapshot()
 	var reward_before := logic.random.reward.snapshot()
 	var persistent_before := s.runtime_random_snapshot()
 	var old_fixed := MVEventCore.fixed_random
@@ -226,11 +227,24 @@ func _hidden_event_streams() -> void:
 		logic.enemy_appear(i)
 		check("hidden.appear_preserves_setup:" + str(i), not e.hidden and resources == [e.hp, e.mp, e.tp, e.enemy_level, e.elite, e.state_ids, e.state_turns] and logic.stable_id(e) == ids[i])
 	var transform_before := [logic.enemies[1].hp, logic.enemies[1].state_ids.duplicate(), logic.enemies[1].state_turns.duplicate()]
-	logic.enemy_transform(1, 175)
-	check("hidden.transform_preserves_id", logic.enemies[1].enemy_id == 175 and logic.stable_id(logic.enemies[1]) == ids[1])
+	logic.enemy_transform(1, 1)  # 非Boss变身隔离零取数；偶数回合Boss同步2651另测。
+	check("hidden.transform_preserves_id", logic.enemies[1].enemy_id == 1 and logic.stable_id(logic.enemies[1]) == ids[1] and equal(other_persistent, other_state.runtime_random_snapshot()))
 	check("hidden.appear_transform_no_draw", logic.random.rule.draws == 4 and logic.random.rule.error.is_empty() and equal(persistent_before, s.runtime_random_snapshot()), {"transform_before":transform_before,"transform_after":[logic.enemies[1].hp,logic.enemies[1].state_ids,logic.enemies[1].state_turns],"draws":logic.random.rule.draws,"error":logic.random.rule.error,"journal":logic.random.rule.journal,"persistent_before":persistent_before,"persistent_after":s.runtime_random_snapshot()})
 	logic.enemy_recover_all(-1)
 	check("event.recover_no_extra_draw", logic.random.rule.draws == 4 and logic.random.rule.error.is_empty() and equal(persistent_before, s.runtime_random_snapshot()))
+
+	var boss_ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/boss_rng_oracle.json"))
+	check("event.boss_native_source", boss_ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs and boss_ref.cases[0].errors.is_empty())
+	# 原版 boss_lifecycle transform.0.2：偶数回合变Boss会加2651，不能算作零取数变身。
+	logic.random.rule = XRandomStream.scripted([
+		{"kind":"uint32", "value":0, "reason":"state_duration", "event":"2651"},
+		{"kind":"uint32", "value":0, "reason":"state_duration", "event":"2651"},
+	])
+	logic.enemy_transform(1, 6)
+	check("event.boss_transform_duration", logic.enemies[1].is_state_affected(2651) and logic.random.rule.draws == int(boss_ref.cases[0].observed.rows[0].draws) and logic.random.rule.error.is_empty(), logic.random.rule.snapshot())
+	logic.enemy_recover_all(1)
+	check("event.boss_recover_duration", logic.enemies[1].is_state_affected(2651) and logic.random.rule.draws == int(boss_ref.cases[0].observed.rows[1].draws) and logic.random.rule.error.is_empty(), logic.random.rule.snapshot())
+	check("event.boss_duration_no_world", equal(persistent_before, s.runtime_random_snapshot()) and equal(reward_before, logic.random.reward.snapshot()) and logic.stable_id(logic.enemies[1]) == ids[1] and equal(other_persistent, other_state.runtime_random_snapshot()))
 
 	# 336 的资源刷新若新建死亡状态，也只能抽本场 rule（而不是落到 current.world）。
 	var death_state := XState.new_game(3, 1, [])
@@ -238,7 +252,7 @@ func _hidden_event_streams() -> void:
 	var death_logic := XBattleLogic.new()
 	death_logic.setup(2, death_state)
 	death_logic.random.rule = XRandomStream.scripted([
-		{"kind": "uint32", "value": 0, "reason": "state_duration", "event": "b:1"},
+		{"kind": "uint32", "value": 0, "reason": "state_duration", "event": death_logic.stable_id(death_logic.enemies[0]) + ":1"},
 	])
 	var death_persistent := death_state.runtime_random_snapshot()
 	death_logic.enemies[0].hp = 0.0

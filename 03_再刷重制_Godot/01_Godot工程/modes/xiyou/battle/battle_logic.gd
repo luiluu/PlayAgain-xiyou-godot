@@ -787,7 +787,13 @@ func enemy_recover_all(index: int) -> Array:
 	for i in _enemy_slots(index):
 		var e: XEnemy = enemies[i]
 		var before := _enemy_reading(e)
+		# Boss recoverAll can re-add armor: keep that nested duration in this battle's rule stream.
+		var resources := _operation_resources(e)
+		var previous := e.lifecycle_context
+		e.lifecycle_context = resources.state_context(e)
 		e.recover_all()
+		e.lifecycle_context = previous
+		_finish_lifecycle_operation(resources, e)
 		_refresh_battler(e)
 		e.refresh_passive()
 		out.append(_enemy_change("recover", i, before))

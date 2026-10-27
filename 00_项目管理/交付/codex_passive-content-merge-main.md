@@ -274,3 +274,6 @@
 - 确定性夹具补角色3级、界面补美娜10级；图鉴战后新死亡前clearResult。保留原库存／重复计数断言与death_admission同result禁止重加反例；没有运行时放宽。新增equipment_admission7条保留不够级／足级两边。
 - 专项fixtures82-green1：determinism372/372、battle_ui70/70、enemy_book93/93、equipment_admission7/7，无Script/Parse/Compile/行首ERROR。确定性断言未删，角色足级后实际行动次数改变使总数382→372，三回合与命令数下限仍保留。证据[夹具前提修正](../核查范围/连续分支合main_夹具前提修正_20261027.json)。其余未销账。
 - 新Boss恢复反例已合法RED：boss82-red为485/487，缺本场规则流一次取数且另一state的world被污染；原版最小boss_transform_recover_duration实测变身1次、recover累计2次。正在按资源域修正，未完成整批交付。
+
+- 82第二检查点：原版Boss变身／recover累计取数1／2次；修enemy_recover_all给嵌套霸体生命周期绑定本场资源域，sync_boss_armor无显式流时用该域random，地图独立入口仍照旧。boss82-red合法485/487（规则流少一次、错污染other_state.world），green为random_streams488/488、boss_lifecycle5080/5080、troop_events6574/6574，全无脚本错误。随机流原非Boss零取数断言保留，新增Boss分支；死亡时长事件键按已定stable_id标签。
+- wtype14败是旧原探针省略Scene_Battle.start缓存二阶段、a已学9951但减耗缓存仍0；新原版v5同实例显式refreshPassiveCache前750／不可用，后600／可用，空资源仍不可用。原generated参照不改，仅为148／5600、10级730MP的14变体添加窄夹具前后与费用断言；wtype82-green16219/16219。运行时can_use与消耗规则未迁就。证据[随机流与费用](../核查范围/连续分支合main_随机流与费用夹具修正_20261027.json)。

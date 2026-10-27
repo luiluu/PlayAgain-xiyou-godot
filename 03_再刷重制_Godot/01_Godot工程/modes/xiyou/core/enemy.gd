@@ -64,7 +64,7 @@ func sync_boss_armor(active: bool, random: XRandomStream = null) -> void:
 			if boss_control_state(id):
 				_boss_drop_state(id)
 		if not hidden and not state_ids.has(1) and not is_state_affected(BOSS_ARMOR_STATE):
-			add_state(BOSS_ARMOR_STATE, random)
+			add_state(BOSS_ARMOR_STATE, random if random != null else lifecycle_context.get("random"))
 		if is_state_affected(BOSS_ARMOR_STATE):
 			state_turns[BOSS_ARMOR_STATE] = 1
 	elif is_state_affected(BOSS_ARMOR_STATE):
