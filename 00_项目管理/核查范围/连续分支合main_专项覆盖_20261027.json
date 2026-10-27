@@ -44,9 +44,7 @@
       ],
       "missingFromSelection": [],
       "notExecuted": [],
-      "failedScenes": [
-        "xiyou_pet_capture.tscn"
-      ]
+      "failedScenes": []
     },
     {
       "delivery": "codex_four-loose-fixes.md",
@@ -72,9 +70,7 @@
       ],
       "missingFromSelection": [],
       "notExecuted": [],
-      "failedScenes": [
-        "xiyou_enemy_book.tscn"
-      ]
+      "failedScenes": []
     },
     {
       "delivery": "codex_passive-content-book-capacity.md",
@@ -99,9 +95,7 @@
       ],
       "missingFromSelection": [],
       "notExecuted": [],
-      "failedScenes": [
-        "xiyou_help_card.tscn"
-      ]
+      "failedScenes": []
     },
     {
       "delivery": "codex_passive-content-boss-context.md",
@@ -158,9 +152,7 @@
       ],
       "missingFromSelection": [],
       "notExecuted": [],
-      "failedScenes": [
-        "xiyou_determinism.tscn"
-      ]
+      "failedScenes": []
     },
     {
       "delivery": "codex_passive-content-boss-sequence.md",
@@ -181,9 +173,7 @@
       ],
       "missingFromSelection": [],
       "notExecuted": [],
-      "failedScenes": [
-        "xiyou_determinism.tscn"
-      ]
+      "failedScenes": []
     },
     {
       "delivery": "codex_passive-content-boss-state-origin.md",
@@ -201,9 +191,7 @@
       ],
       "missingFromSelection": [],
       "notExecuted": [],
-      "failedScenes": [
-        "xiyou_determinism.tscn"
-      ]
+      "failedScenes": []
     },
     {
       "delivery": "codex_passive-content-boss.md",
@@ -312,24 +300,25 @@
       ],
       "missingFromSelection": [],
       "notExecuted": [],
-      "failedScenes": [
-        "xiyou_enemy_book.tscn"
-      ]
+      "failedScenes": []
     }
   ],
-  "missingFromSelection": [
-    "xiyou_choice_window.tscn"
-  ],
+  "missingFromSelection": [],
   "executed": true,
-  "note": "final79已终止：218场选测210过8败；计划外选择窗口补测3/3通过。66个相关场景均有实际运行记录。executed仅指已实跑，不代表通过；仍不可合并，失败待逐项归因修复。",
-  "allPassed": false,
-  "actualSceneCount": 219,
+  "note": "累计验证：首轮218及选择窗口3场保留，八败逐项补测通过；本次规则24段通过。66关联场景均有实跑且最新记录通过。并非重新跑218全量。正式交叉核查待Claude；共享记录两条继承链接仍待总装修。",
+  "allPassed": true,
+  "actualSceneCount": 222,
   "notExecuted": [],
-  "failedRequiredScenes": [
-    "xiyou_determinism.tscn",
-    "xiyou_enemy_book.tscn",
-    "xiyou_help_card.tscn",
-    "xiyou_pet_capture.tscn"
+  "failedRequiredScenes": [],
+  "resultEvidence": "连续分支合main_最终验收补测_20261027.json",
+  "firstRunOriginal": "连续分支合main_专项覆盖_首轮原件_20261027.json",
+  "initialSelectedCount": 218,
+  "supplementalNewScenes": [
+    "xiyou_death_admission.tscn",
+    "xiyou_equipment_admission.tscn",
+    "xiyou_character_help_cost.tscn"
   ],
-  "resultEvidence": "连续分支合main_最终验收首轮_20261027.json"
+  "initialMissingFromSelection": [
+    "xiyou_choice_window.tscn"
+  ]
 }
