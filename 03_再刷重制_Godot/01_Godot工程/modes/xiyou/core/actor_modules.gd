@@ -15,10 +15,12 @@ extends RefCounted
 ##   （同级按升级调：change_level 会补学职业习得表，要再同步一次）。
 ## - 渡鸦／米拉另有 CodexSkillProgression（XSkillProgression）：setup、levelUp、changeLevel 后按解锁等级／阶位学忘专属技能。
 ## - param／xparam：Game_Actor.param／xparam 包装（v 是包装前的值）——米拉 param、MiraRavenNumberBoost xparam(2)、
-##   宿傩二十指 param ×3 与 xparam(0／2)。
+##   宿傩二十指 param ×3 与 xparam(0／2)、黄泉 param(2)＋幸运×1.88 与 xparam(2)＋9.99。
+## - param_plus：Game_Actor.paramPlus 包装（XActor._param_plus 末尾）——黄泉 10176／10177／10182。
+## - action_plus_set：Game_Actor.actionPlusSet 包装（XActor.action_plus_set 末尾，往数组里追加）——黄泉 10175 追加 1。
 ## - passive_cache：initPassiveCache 包装（XActor.refresh_passive 写回缓存前）——渡鸦魂海刻度、宿傩十指／二十指终伤与暴伤。
 
-const IDS := [167, 168, 172, 173]
+const IDS := [167, 168, 169, 172, 173]
 
 
 static func _module(a) -> bool:
@@ -65,11 +67,20 @@ static func level_changed(a, before: int) -> void:
 
 
 static func param(a, i: int, v: float) -> float:
-	return XSukuna.param(a, i, XMira.param(a, i, v)) if _module(a) else v
+	return XYomiJingliu.param(a, i, XSukuna.param(a, i, XMira.param(a, i, v))) if _module(a) else v
 
 
 static func xparam(a, i: int, v: float) -> float:
-	return XSukuna.xparam(a, i, XNumberBoost.xparam(a, i, v)) if _module(a) else v
+	return XYomiJingliu.xparam(a, i, XSukuna.xparam(a, i, XNumberBoost.xparam(a, i, v))) if _module(a) else v
+
+
+static func param_plus(a, i: int, v: float) -> float:
+	return XYomiJingliu.param_plus(a, i, v) if _module(a) else v
+
+
+static func action_plus_set(a, rates: Array) -> void:
+	if _module(a):
+		XYomiJingliu.action_plus_set(a, rates)
 
 
 static func passive_cache(a, c: Dictionary) -> void:

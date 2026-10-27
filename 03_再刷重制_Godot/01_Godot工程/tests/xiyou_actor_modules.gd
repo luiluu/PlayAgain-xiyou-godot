@@ -1,5 +1,5 @@
 extends Node
-## 专属角色模块第一期（XActorModules：XGarou 173、XRaven 167、XMira 168、XSukuna 172、XNumberBoost、XActorDamageHooks）的行为专项。
+## 专属角色模块第一期（XActorModules：XGarou 173、XRaven 167、XMira 168、XSukuna 172、XYomiJingliu 169、XNumberBoost、XActorDamageHooks）的行为专项。
 ## 能力值、技能表、伤害行由 xiyou_actor_p0／xiyou_rules 对 slice_probe、actor_passive_probe 参照；这里验参照覆盖不到的：
 ## 非模块角色走快速路径、被动准入挡 learn_skill、降级同步、开机进阶表、伤害钩子帧操作、号角招募给的法宝。
 var results := []
@@ -79,6 +79,38 @@ func _run() -> void:
 	check("sukuna.hook_true", k_ops.any(func(o): return o.field == "kind" and o.value == "true") and k_ops.any(func(o): return o.field == "elements" and o.value == [13]), k_ops)
 	k_ops = XActorDamageHooks.capture(XDB.rec("Skills", 10230), k, XEnemy.new().setup(1, 1)).ops
 	check("sukuna.hook_pierce", k_ops.any(func(o): return o.field == "physicalDefenseRate" and is_equal_approx(float(o.value), 0.15)), k_ops)
+	# 169 黄泉
+	var y := XActor.new().setup(169)
+	var foe := XEnemy.new().setup(1, 1)
+	check("yomi.lv1_skills", y.skill_ids.has(10171) and y.skill_ids.has(10175) and not y.skill_ids.has(10176), y.skill_ids)
+	check("yomi.action_plus", y.action_plus_set().count(1.0) >= 1, y.action_plus_set())
+	check("yomi.formula", is_equal_approx(XYomiJingliu.formula(y, foe, XDB.rec("Skills", 10171)), y.atk * 50000 + y.agi * 5000 + y.luk * 7000))
+	foe.state_ids.append(XYomiJingliu.Y_MARK)
+	check("yomi.formula_marked", XYomiJingliu.debuff_count(foe) == 1 and is_equal_approx(XYomiJingliu.formula(y, foe, XDB.rec("Skills", 10171)), y.atk * 55000 + y.agi * 5500 + y.luk * 7700))
+	check("yomi.formula_other", XYomiJingliu.formula(one, foe, XDB.rec("Skills", 10171)) == 0.0)
+	var y_luk := y.luk
+	y.change_level_mv(45)
+	check("yomi.lv45_skills", [10172, 10176, 10177, 10178, 10179, 10180, 10181, 10182, 10183].all(func(i): return y.skill_ids.has(i)), y.skill_ids)
+	check("yomi.param_plus", XYomiJingliu.param_plus(y, 7, 0.0) == 888.0 and XYomiJingliu.param_plus(y, 6, 0.0) == 777.0 and XYomiJingliu.param_plus(y, 2, 0.0) == 888.0 and XYomiJingliu.param_plus(one, 7, 0.0) == 0.0)
+	check("yomi.luk", y.luk > y_luk + 888.0 - 1.0, [y.luk, y_luk])
+	check("yomi.repeats", XYomiJingliu.repeats(y, 10171) == 2 + mini(6, floori(y.luk / 6666.0)) and XYomiJingliu.repeats(y, 10174) == XYomiJingliu.repeats(y, 10171) + 4)
+	var y_crit := y.xparam(2)
+	y.learn_skill(10185)
+	check("yomi.crit", is_equal_approx(y.xparam(2) - y_crit, 9.99 if XYomiJingliu.CRIT_FIX else 0.0), [y.xparam(2), y_crit])
+	var y_atk := y.param(2)
+	y.learn_skill(10186)
+	check("yomi.rank0_atk", y.param(2) == y_atk, [y.param(2), y_atk])
+	s.actor_advance[169] = 2
+	check("yomi.rank2_atk", y.param(2) >= y_atk + floorf(y.luk * 1.88) - 1.0 and is_equal_approx(XYomiJingliu.penetration(y), 0.66), [y.param(2), y_atk, y.luk, XYomiJingliu.penetration(y)])
+	s.actor_advance.erase(169)
+	check("yomi.pen_rank0", is_equal_approx(XYomiJingliu.penetration(y), 0.44), XYomiJingliu.penetration(y))
+	var y_ops: Array = XActorDamageHooks.capture(XDB.rec("Skills", 10171), y, foe).ops
+	var y_mul := func(ops: Array) -> float: return ops.filter(func(o): return o.field == "skillMultiplier").reduce(func(acc, o): return acc * float(o.value), 1.0)
+	check("yomi.hook", y_ops.any(func(o): return o.field == "mode" and o.value == "physical") and y_ops.any(func(o): return o.field == "physicalIncomingPierce" and is_equal_approx(float(o.value), 0.44))
+		and y_ops.any(func(o): return o.field == "elementAdd" and int(o.element) == 5 and is_equal_approx(float(o.value), 0.77)) and y_ops.any(func(o): return o.field == "criticalAdd" and is_equal_approx(float(o.value), 6.66))
+		and is_equal_approx(y_mul.call(y_ops), 16.55), y_ops)
+	check("yomi.hook_ult", is_equal_approx(y_mul.call(XActorDamageHooks.capture(XDB.rec("Skills", 10174), y, foe).ops), 1.33))
+	check("yomi.hook_other_skill", XYomiJingliu.damage_ops(XDB.rec("Skills", 10229), y, foe).is_empty())
 	# 号角招募
 	s.set_switch(2494, true)  # 超强者挑战（XItemMarks.SUPER_SWITCHES）
 	check("recruit.garou", XGarou.recruit(s) and s.party.has(173) and s.actor(173).has_base_equip("armor", 7904))
@@ -89,6 +121,10 @@ func _run() -> void:
 	check("recruit.raven_once", s.gear.filter(func(e): return int(e.base) == 4001).size() == 1)
 	check("recruit.sukuna", XSukuna.recruit(s) and s.party.has(172) and s.actor(172).has_base_equip("armor", 4581))
 	check("recruit.sukuna_again", not XSukuna.recruit(s))
+	check("recruit.yomi", XYomiJingliu.recruit(s, 169).size() == 2 and s.party.has(169) and s.actor(169).has_base_equip("armor", 4578))
+	check("recruit.yomi_again", XYomiJingliu.recruit(s, 169).is_empty())
+	var yr := s.actor(169)
+	check("yomi.armor_hook", is_equal_approx(y_mul.call(XActorDamageHooks.capture(XDB.rec("Skills", 10171), yr, foe).ops), 1.77) or yr.skill_ids.has(10185), yr.skill_ids)
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)

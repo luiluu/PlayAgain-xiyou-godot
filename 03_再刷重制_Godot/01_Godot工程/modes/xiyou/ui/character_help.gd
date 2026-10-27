@@ -412,7 +412,7 @@ static func _dyn2(obj: Dictionary, a) -> Dictionary:
 			var cr := 0.0 if lv < 5 else (0.15 + 0.08 * (lv - 5) if lv <= 15 else 0.95 + 7.93 * minf(1, (lv - 15) / 55.0))
 			out["成长：共鸣倍率"] = "成长：共鸣倍率×" + n2.call(dmg if on and not dragon and lv >= 5 else 1.0) + "；暴击率＋" + pc.call(cr * 100 if on else 0.0)
 	if who == 169 and id >= 10171 and id <= 10174:
-		var seg := (6 if id == 10174 else 2) + mini(6, floori((a.luk if a != null else 0.0) / 6666.0))
+		var seg := XYomiJingliu.repeats(a, id)
 		out["段数："] = "段数：" + str(seg) + "（幸运每6666点＋1段，最多＋6）"
 	if who == 172:
 		if [10239, 10247, 10248, 10249].has(id):

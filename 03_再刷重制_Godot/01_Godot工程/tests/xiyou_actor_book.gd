@@ -10,7 +10,7 @@ const FIXTURE := "res://tests/fixtures/actor_book_oracle.json"
 const POS_TOL := 0.05
 ## 不画立绘的角色：切片外的没导出 SV 图；168、173～177 在原版由运行模块换成多帧图（未移植，XActorBook.sprite_path）。
 ## 160（mzzd3 已随别处导出）、167 渡鸦、172 宿傩原版画的就是数据库 battlerName，照常对照。
-const NO_SPRITE := [108, 143, 144, 145, 157, 168, 169, 170, 171, 173, 174, 175, 176, 177]
+const NO_SPRITE := [108, 143, 144, 145, 157, 168, 170, 171, 173, 174, 175, 176, 177]
 
 var results := []
 var out_dir := ""
