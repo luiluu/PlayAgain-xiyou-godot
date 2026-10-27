@@ -57,6 +57,10 @@ class EventHost:
 			trace.append(e)
 		return pick
 
+	## 脚本里直接加消息（$gameMessage.add，如专属角色招募）：同 101 文字
+	func show_text(face: String, idx: int, lines: Array, _background := 0, _position := 2) -> void:
+		show_message({"face": face, "index": idx, "lines": lines})
+
 	func transfer(id: int, x: int, y: int, d: int) -> void:
 		trace.append({"t": "transfer", "map": id, "x": x, "y": y, "d": d})
 		var s := XState.current
