@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.186",
-  "sequence": 186,
-  "next": "dev.187",
-  "nextSequence": 187,
+  "current": "dev.187",
+  "sequence": 187,
+  "next": "dev.188",
+  "nextSequence": 188,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-shop-review-c34c2a-2",
+  "currentChange": "passive-content-merge-main-in",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
