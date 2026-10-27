@@ -6,6 +6,7 @@
 # 补齐内容：Godot 引擎链接、西游资料库链接、冻结正式源链接、mv_oracle/node_modules、转换产物 generated/、导入缓存 .godot/。
 # node_modules、generated、.godot 用 APFS 克隆（cp -c）复制主工作区的，不另占空间；随后按本分支重跑转换器与 godot --import。
 # 已有 generated 时，generated/oracle 里主工作区较新的文件会覆盖进来（本分支自己生成、主工作区没有或比主工作区新的保留）。
+# 复制了主工作区的参照就记批次（generated/oracle_batch.json，参照批次.py）；转换器跑完、以及 检查.sh 都比对本分支切片，不同批时提示。
 if [ -z "${ZSH_VERSION:-}" ]; then
   echo "✗ 本脚本是 zsh 脚本：请直接运行 $0，或用 zsh $0 …（不要用 bash/sh 调用）" >&2
   exit 64
@@ -20,6 +21,7 @@ usage() { print -u2 "用法：${0:t} <任务名> [claude|codex]   或   ${0:t} -
 
 # 参照副本按时间戳刷新：主工作区有、本分支没有或比主工作区旧的文件，克隆主工作区的；其余不动。
 # 合并 main 后若不刷新，worktree 会拿旧参照对新切片而误报。
+ORACLE_COPIED=0
 refresh_oracle() {
   local src=$1 dst=$2 f n=0 kept=()
   [[ -d $src ]] || return 0
@@ -30,6 +32,7 @@ refresh_oracle() {
     fi
   done
   for f in "$dst"/*(N.); do [[ -e $src/${f:t} ]] || kept+=(${f:t}); done
+  ORACLE_COPIED=$n
   print "== generated/oracle：从主工作区刷新 $n 个较新的文件${kept:+；保留本分支独有 ${(j:、:)kept}}"
 }
 
@@ -55,11 +58,13 @@ prepare() {
   if [[ -e $gen ]]; then
     refresh_oracle "$mgen/oracle" "$gen/oracle"
   else
-    cp -cR "$mgen" "$gen"
+    cp -cR "$mgen" "$gen"; ORACLE_COPIED=1
   fi
+  (( ORACLE_COPIED == 0 )) || python3 "$ENV_DIR/参照批次.py" record "$gen" "$mgen"
   [[ -e $proj/.godot ]] || cp -cR "$mproj/.godot" "$proj/.godot"
   print "== 按本分支重跑转换器"
   python3 "$tools/xiyou_export.py" --out "$gen" | tail -1 | cut -c1-160
+  python3 "$ENV_DIR/参照批次.py" check "$gen" || true
   print "== godot --import"
   local out rc=0
   out=$(python3 "$ENV_DIR/占槽.py" --label "godot --import" --notice-fd 3 -- perl -e 'alarm 300; exec @ARGV' "$env/godot" --headless --path "$proj" --import 3>&2 2>&1) || rc=$?
