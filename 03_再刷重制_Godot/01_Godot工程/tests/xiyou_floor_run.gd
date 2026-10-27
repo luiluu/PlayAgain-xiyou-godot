@@ -466,7 +466,7 @@ func _f31_fixture(s: XState) -> Dictionary:
 	XStateEffects.observer = func(phase, sid, holder, ctx):
 		if fixture.observer.is_valid():
 			fixture.observer.call(phase, sid, holder, ctx)
-		if phase == "react" and sid in [1047, 1048] and holder is XEnemy and fixture.stage_counts[sid] < 64:
+		if phase == "react" and sid in [1047, 1048] and holder is XEnemy and fixture.stage_counts[sid] < 256:  # 敌人带 Star_Warehouse 难度倍率后战斗更长，记录上限从 64 提到 256
 			fixture.stage_counts[sid] += 1
 			fixture.stages.append([sid, int(ctx.item.id), ctx.value, holder.state_ids.duplicate()])
 	return fixture
@@ -673,7 +673,8 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	_restore_f31_fixture(s, f31)
 	if not f31.is_empty():
 		var first: int = f31.stages.find_custom(func(row): return row[0] == 1047 and row[1] == 533 and row[2] > 0 and row[3].has(1050) and row[3].has(1053))
-		var second: int = f31.stages.find_custom(func(row): return row[0] == 1048 and row[1] == XBattleLogic.ATTACK_SKILL and row[2] > 0 and row[3].has(1051) and not row[3].has(1047))
+		# 第二阶段只要求到达（有伤害、带 1051、已脱离 1047）：敌人带 Star_Warehouse ×2 后第二阶段由分身技能 533 打完，普通攻击不一定再落到
+		var second: int = f31.stages.find_custom(func(row): return row[0] == 1048 and row[2] > 0 and row[3].has(1051) and not row[3].has(1047))
 		_check(tag + "_immunity_stages", first >= 0 and second > first, f31.stages)
 	if not _check(tag + "_boss_won", idle and won and map.map_id == f.map, [idle, s.variable(20), map.map_id, boss, _boss_debug(map, s)]):
 		return false
