@@ -319,3 +319,17 @@
 - 覆盖hard0/new0，同源issues空。文档检查仍只有固定main9b继承的共享变更记录两条链接a；文件逐字未动，须唐僧合入时修共享链接并按影响面检查。既有动态多帧素材／后续角色说明限制仍见上方，不冒充补完未授权内容。
 - 14张原单、全部.sandbox／generated／失败与未完成证据／整树保留；PREE继续封存c5953948。不建PR，不合main，不改共用登记。
 - 最新额度实查五小时56%、周70%，没有触及95%收尾线。推送并核远端同SHA后，按既有授权从当时实际本地main建立codex/review-backlog-20261027-1，重新计算积压，正式做第一期11批，仅核Claude；不拿本集成分支的积压数字充main实时值。
+
+## 沙僧82→83：14期已交付，同树上下文接力（2026-10-27）
+
+- 实查本会话token_count.last_token_usage.input_tokens=287429、窗口475000，约60.5%，已越用户40%上下文线，故保存并接力；不是额度停手。末查五小时56%、周70%，最新95%收尾线优先于清积压原文旧80%。83创建成功后82停止，83唯一后续执行者。
+- 全部文件命令继续显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b；现仍codex/passive-content-merge-main。**14期已经可交付并推送c322f6700fe349d79ef37c1ffe810b83d1cd9a96，远端github实核同SHA**；本接力只追加文档，不改已验代码。无需再跑14期、原218、sync3、accept80、final79或重采有效20例。
+- 14期固定main9b、截至5761f01f、原文本合并d13da37e、PREE封存c5953948均不变。八败逐项补测全过；rules82终态done0，24/24、2761870/2761870，runId=f62011918f8d49a08df8d8a2b50f2588，2177秒。累计222个不同场景有效通过、14原单关联66场无遗漏；这是累计按影响面补测，不是新一轮全量222。所有首轮／失败／重跑／.sandbox／generated／整树保留，无Script/Parse/Compile/行首ERROR。
+- 最终证据：核查范围/连续分支合main_最终验收补测_20261027.json，专项覆盖已更新且另存首轮原件。摘要在本单顶部；另有**切分支后仍可查看的完整本地存档**：03_再刷重制_Godot/04_验证/本地结果/merge-main-next/delivery82/交付摘要.md，内含原14单、当前交付单、全部连续分支合main证据副本和GitHub不可变提交链接；不要删。最终文档原块exit1仅固定main9b继承的共享变更记录两条链接a，逐字未动，已明确由唐僧合入时修。本分支仍待Claude正式交叉核查，不自行销核／自评进度；没建PR、没合main、没改共享登记、没发其他已有会话消息。
+- 82关键修正：①81 HP0准入保留；②determinism角色1补3级、battle_ui美娜补10级，防需求等级武器卸包污染夹具；③enemy_book新技能／新伤害先清结果，保留同result阻止再加反例；④random_streams非Boss零取数与偶数回合Boss分开，死亡键读stable_id；enemy_recover_all给嵌套霸体绑定本场资源域，sync_boss_armor缺显式流时取lifecycle_context.random，修错用other_state.world；⑤wtype仅148/5600十四变体用原版缓存刷新前750/不可用、刷新后600/可用的窄夹具，原generated不改；⑥按既有Claude白龙2449e4e1/4a1e4250/9c584f38定点文件差异接入character_help与图鉴多帧边界，未merge新main／未cherry-pick；⑦原版新4例补说明卡减耗显示与skill_cost结算链，合法RED17/21→GREEN21/21，help988不变。
+- 82提交：995d42d6（装备／死亡前提）、02a9db00（Boss恢复规则流／wtype缓存）、c635a38d（白龙定点UI接入）、ba7d5784（证据）、39721928（说明卡减耗）、efceb64a（摘要等待点）、c322f670（最终集成交付）。本接力文档提交另在其后。核心专项数：pet43、death37、equipment7、determinism372、battle_ui70、enemy_book93、random488、wtype16219、help988、actor_book22、cost21、boss_lifecycle5080、troop_events6574、state_operation1431、state_merge_context866、actor_modules37、event_compare5，全部有通过记录，勿无意义重复。
+- **下一目标才是正式清积压第一期11批，尚未开始**。原文00_项目管理/核查范围/清核查积压_Claude交代_20261027.txt，82已读。每期从当时实际本地main开codex/review-backlog-20261027-1，重新算待核查；刚才仅只读见main=464bd21b26cb26b61ed3e6484fcb7f2f88a5f79e，尚未切分支，83开工时重取当时main，不用该旧读数当永恒截点。不要拿集成分支239/144等数字当main实时值。
+- 第一阶段原文11项：bailong-actors-f2575c(dev180)、bailong-fix0(dev183)、project-thread-6np8me(dev181)、project-thread-z5fkq9、project-thread-47bcr5、project-thread-47bcr5-actor-cmds、bajie-pets-source-97efd5-2/-3/-4、唐僧b3ab53e、唐僧4cd0128。只核Claude，不核Codex本期或历史自己的提交；high继续，不指定新模型。原文规定核差异／原单／变更条目、跑最相关专项，不需每批重跑全量；玩法问题写需总装决定，不大改。用户已允许清积压时车道照常派，不因超限停派。
+- 旧80两位只读预审三批preaudit80.json已结束，不重派、不当正式销账。dev181毒伤弹字符号与倒下日志P2原观察留到该批正式核查；不能误报敌人没死或所有奖励漏发。81一次automation已删除，不重建旧安排。无在途测试任务，rules82已彻底结束。
+- 换核查分支前确认tracked干净，保留全部未跟踪和ignore证据。当前generated是已验集成产物；若实际main已变更切片／转换器，先识别差异并完整保留现产物，再按主线有效缓存补齐核查所需，不盲目重同步或让工具淘汰旧.sandbox。主工作区总装在途，不接main工作区、不改共用交接板／开发编号，不建或清工作树，不reset／cherry-pick。
+- 可优化已在本单登记给D工具车道：并行测试逐场日志现在整批结束才落盘，建议每场／attempt结束即原子保存以便早诊断；82没动工具、并发或在途测试。继续自主做第一期，勿重复确认。
