@@ -454,10 +454,11 @@ func _random_target(list: Array) -> XBattler:
 
 
 # ---- 敌人 AI（MV Game_Enemy.selectAllActions）----
+## 没有可用行动（行动列表空，如木桩；或条件、canUse 全不满足）返回 {}：Game_Enemy.makeActions 不设行动，这一轮不行动（参照 attack_query_probe skip 组）。
 func enemy_action(e: XEnemy) -> Dictionary:
 	var list: Array = e.data().get("actions", []).filter(func(act): return _meets(e, act) and can_use(e, XDB.rec("Skills", int(act.skillId))))
 	if list.is_empty():
-		return e.attack_skill()
+		return {}
 	var rmax := 0
 	for act in list:
 		rmax = maxi(rmax, int(act.rating))
@@ -567,11 +568,12 @@ func next_subject() -> XBattler:
 ## 行动者当场决定的行动：敌人按 AI，角色在自动战斗时按自动规则，否则普通攻击。返回 [技能, 目标]。
 func decide(b: XBattler) -> Array:
 	if b is XEnemy:
-		return [enemy_action(b), null]
+		var sk := enemy_action(b)
+		return [null if sk.is_empty() else sk, null]  # 没有行动：同逃跑失败的放弃（processTurn 没有 currentAction 就 endAction）
 	return auto_battle_action(b) if auto else [b.attack_skill(), null]
 
 
-## 执行一位行动者的一次行动，返回记录。skill 为 null 表示放弃本次行动（逃跑失败）。
+## 执行一位行动者的一次行动，返回记录。skill 为 null（或 {}）表示放弃本次行动（逃跑失败、敌人没有可用行动）。
 func act(u: XBattler, skill, target) -> Array:
 	var logs := []
 	var before := _movable_snapshot()
@@ -579,7 +581,7 @@ func act(u: XBattler, skill, target) -> Array:
 		return logs
 	if not can_move(u):
 		logs.append({"type": "skip", "user": u})
-	elif skill == null:
+	elif skill == null or (skill is Dictionary and skill.is_empty()):
 		pass
 	elif int(skill.id) == GUARD_SKILL and not is_item(skill):
 		XStateEffects.run("action_start", u)  # 防御也走 startAction
@@ -1155,13 +1157,17 @@ static func attack_repeats(u: XBattler, skill: Dictionary, base: int) -> int:
 ## 执行一次行动：消耗、目标、连击、命中、伤害、效果。
 func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false) -> Array:
 	var logs := []
+	# 行动无效（原版没有退回攻击）：敌人走核心 processTurn，isValid 为假整次跳过（不 startAction、不付费）；
+	# 角色在 OTB 下输入完（或不能输入时 makeActions 后）直接 startAction，不看 isValid，照原样执行。参照 attack_query_probe skip 组。
+	if not forcing and not u.is_actor() and not can_use(u, skill):
+		return logs
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
-	if not forcing and not can_use(u, skill):
-		skill = u.attack_skill()  # setAttack：attackSkillId
-	if is_item(skill):
+	# 导入角色平衡：禁用角色／禁用号角的 useItem 直接返回（不扣物品、不付费、不进冷却、不前移），行动（含行动序列）对目标无效
+	var blocked := XImportedBalance.blocks(u, skill)
+	if not blocked and is_item(skill):
 		if bool(skill.get("consumable", true)):
 			state.gain_item(int(skill.id), -1)
-	else:
+	elif not blocked:
 		var c := skill_cost(u, skill)
 		u.mp -= c.mp
 		u.tp -= c.tp
@@ -1169,8 +1175,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		_otb_user_shift(u, skill)
 	u.param_refresh()  # YEP_BattleEngineCore useItem：付费后 refresh，消费行动者此前的 dirty
 	logs.append({"type": "action", "user": u, "skill": skill, "views": views()})
-	# 导入角色平衡：禁用角色／禁用号角的行动（含行动序列）对目标无效，付费照常
-	if XImportedBalance.blocks(u, skill):
+	if blocked:
 		return logs
 	XImportedBalance.set_acting(u)  # YEP 附加状态记 BattleManager._subject 为来源
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击（isAttack：此刻的 attackSkillId）的追加次数，

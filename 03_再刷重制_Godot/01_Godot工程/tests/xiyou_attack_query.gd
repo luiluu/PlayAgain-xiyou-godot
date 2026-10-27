@@ -43,6 +43,9 @@ func _run() -> void:
 	for c in ref.cases:
 		if c.observed == null:
 			continue
+		if str(c.id).begins_with("skip."):
+			_skip(c)
+			continue
 		var got := _measure(c)
 		var want: Dictionary = norm(c.observed)
 		# numRepeats 含 dsPassiveSkill 等改写（被动 atkk／再动几率），本专项只比 MV 本体 mvRepeats
@@ -100,6 +103,98 @@ func _measure(c: Dictionary) -> Dictionary:
 	for k in ["prayer", "inversebone"]:
 		out.ready[k] = XAlienation.ready(s, a, XAlienation.create(s, "w", 1044, "boss", k).ok)
 	return out
+
+
+## skip 组：敌人行动无效（列表空、行动时不能用）整次跳过；角色（OTB）不看 isValid 照原样执行；禁用号角的 useItem 被挡（不扣），
+## 菜单动作窗「使用」灰、战斗物品窗不列。比：行动记录里的技能（enemy started／actor used）、MP、物品数、canUse 与两个窗。
+func _skip(c: Dictionary) -> void:
+	var spec: Dictionary = c.setup
+	var want: Dictionary = norm(c.observed)
+	var got := {}
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	if str(c.id) == "skip.item1-menu-control":
+		s.gain_item(1, 1)
+		got.menuEnabled = _menu_usable(s, XDB.rec("Items", 1))
+		got.partyCanUse = got.menuEnabled
+	else:
+		var logic := XBattleLogic.new()
+		logic.setup(int(spec.troop), s)
+		var a: XActor = logic.actors[0]
+		var e: XEnemy = logic.enemies[0]
+		var cid := str(c.id)
+		if cid.begins_with("skip.enemy"):
+			var cmd := []
+			if cid.begins_with("skip.enemy73"):
+				XConfig.ensure_loaded()
+				var smart = XConfig._values.get("codexSmartAI")
+				XConfig._values["codexSmartAI"] = bool(spec.smartAI)
+				cmd = logic.decide(e)
+				XConfig._values["codexSmartAI"] = smart
+				got.enemyId = int(e.enemy_id)
+				got.made = [0 if cmd[0] == null else int(cmd[0].id)]
+			elif cid == "skip.enemy1-mp-short":
+				var sk := XDB.rec("Skills", int(spec.skill))
+				e.mp = float(want.mpCost) - 1.0
+				cmd = [sk, a]
+			else:
+				cmd = [e.attack_skill(), a]
+			var mp := e.mp
+			var tp := e.tp
+			got.started = _acted(logic.act(e, cmd[0], cmd[1]))
+			got.mp = [mp, e.mp]
+			got.tp = [tp, e.tp]
+		else:
+			var item := {}
+			var skill := a.attack_skill()
+			if cid == "skip.actor1-item-gone":
+				s.items.erase(1)
+				item = XDB.rec("Items", 1)
+				skill = item
+			elif cid == "skip.actor1-mp-short":
+				skill = XDB.rec("Skills", int(spec.skill))
+				a.mp = float(want.mpCost) - 1.0
+				got.canUse = logic.can_use(a, skill)
+			elif cid.begins_with("skip.horn"):
+				item = XDB.rec("Items", int(spec.item))
+				s.items[int(spec.item)] = 1
+				skill = item
+				got.actorCanUse = logic.can_use(a, item)
+				got.battleListed = logic.battle_items().any(func(x): return int(x.id) == int(spec.item))
+				got.menuEnabled = _menu_usable(s, item)
+				got.partyCanUse = got.menuEnabled
+			var mp := a.mp
+			var count := s.item_count(int(item.id)) if not item.is_empty() else 0
+			got.used = _acted(logic.act(a, skill, e))
+			got.mp = [mp, a.mp]
+			got.count = [count, s.item_count(int(item.id))] if not item.is_empty() else null
+	for k in ["otb", "phase", "left", "valid", "forcedValid", "occasion", "actionList", "mpCost"]:
+		want.erase(k)
+	# MP／TP 只比这次行动的付费（前减后）：开战初值两边摆法不同；对照例原版只记 startAction 没往下打，只比 started
+	for k in ["mp", "tp"]:
+		if want.has(k):
+			if str(c.id) == "skip.enemy1-attack-control":
+				want.erase(k)
+				continue
+			want[k] = want[k][0] - want[k][1]
+			got[k] = got[k][0] - got[k][1]
+	for k in want:
+		check(str(c.id) + "." + str(k), norm(got.get(k)) == want[k], {"got": got.get(k), "want": want[k]})
+
+
+## act 记录里真正开始的行动（startAction／useItem）：type action 的技能编号
+static func _acted(logs: Array) -> Array:
+	return logs.filter(func(r): return r.get("type") == "action").map(func(r): return int(r.skill.id))
+
+
+## 菜单物品动作窗「使用」（Window_ItemActionCommand.isEnabled＝$gameParty.canUse）
+static func _menu_usable(s: XState, item: Dictionary) -> bool:
+	var before := XState.current
+	XState.current = s
+	var scene := XItemScene.new()
+	var ok: bool = scene._usable(item)
+	scene.free()
+	XState.current = before
+	return ok
 
 
 func _common(logic: XBattleLogic, b: XBattler) -> Dictionary:

@@ -70,7 +70,7 @@ static func replay(data: Dictionary) -> Dictionary:
 		var skill := XDB.rec("Items" if cmd.get("kind", "skill") == "item" else "Skills", int(cmd.skill))
 		if bool(cmd.automatic):
 			var decision := logic.decide(user)
-			if decision[0] == null or int(decision[0].id) != int(cmd.skill):
+			if (0 if decision[0] == null else int(decision[0].id)) != int(cmd.skill):  # 0：敌人没有可用行动
 				diagnostic = "replay_ai_mismatch"
 				break
 			chosen = decision[1]
