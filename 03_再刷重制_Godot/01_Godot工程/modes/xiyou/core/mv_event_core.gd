@@ -65,6 +65,8 @@ var last_gain := {}
 ## Result of the most recent313 command; owns no battler/context references.
 var last_state_operation := {}
 var _child: MVEventCore = null
+## 子游标是 setup_child 从外面装上的、本层游标已在下一条：子游标跑完不再前进
+var _child_resumes_here := false
 ## 宿主指令回 false（全军覆没、回标题）后置位；父游标见子游标 halted 也跟着结束
 var halted := false
 ## 正在等待的应答："" 不在等待、"message" 文字、"choice" 选项（_wait_arg＝缩进）、"number" 数值（_wait_arg＝变量）、
@@ -104,8 +106,11 @@ func advance() -> Dictionary:
 				# 参照引擎 SceneManager.goto 离开地图场景，父解释器不会再往下走
 				halted = true
 				index = list.size() - 1
+				_child_resumes_here = false
 			_child = null
-			index += 1
+			if not _child_resumes_here:
+				index += 1
+			_child_resumes_here = false
 			continue
 		if _wait != "":
 			return {"kind": "waiting"}
@@ -412,6 +417,22 @@ func _execute_env(c: Dictionary):
 	var text := str(p[0]) if p.size() > 0 else ""
 	skipped.append({"code": int(c.code), "text": text.left(80)})
 	return null
+
+
+## Game_Interpreter.setupChild 从外面调（ActSeqPack1 COMMON EVENT 在事件运行中，见 XBattleCommonEvent.run_or_reserve）：
+## 换掉本层已有的子游标（被换掉的 117 公共事件剩下的指令不再执行，与原版同），子游标跑完接着本层游标处往下。
+## 本层没有子游标时游标已停在下一条指令上（339 返回前已前进），跑完不再前进；换掉的是 117 子游标时 117 还没前进，照常前进；
+## 换掉的是先前装上的子游标时沿用它的标记。
+func setup_child(commands: Array, ce_id := 0) -> void:
+	if _child != null:
+		skipped.append_array(_child.skipped)
+	else:
+		_child_resumes_here = true
+	_child = _make_child(commands)
+	_child._depth = _depth + 1
+	_child.common_id = ce_id
+	_child.pending_lines = pending_lines
+	_child.receipt = receipt
 
 
 ## 公共事件子游标（同类、同环境）；_depth、common_id、pending_lines、receipt 由调用方设置

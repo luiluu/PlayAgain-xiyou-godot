@@ -1,0 +1,428 @@
+{
+ "source": "js/plugins/YEP_X_ActSeqPack1.js",
+ "sha256": "b29229a1953b76fadf69474c70be15d90b95f1616b4a485b2fa04a4826f9ddf7",
+ "variable": 1600,
+ "party": [
+  8,
+  83,
+  9,
+  10
+ ],
+ "cases": [
+  {
+   "id": "top_level",
+   "setup": {
+    "event": "top",
+    "list": [
+     {
+      "code": 122,
+      "indent": 0,
+      "parameters": [
+       1600,
+       1600,
+       0,
+       0,
+       1
+      ]
+     },
+     {
+      "code": 339,
+      "indent": 0,
+      "parameters": [
+       1,
+       8,
+       292,
+       0
+      ]
+     },
+     {
+      "code": 122,
+      "indent": 0,
+      "parameters": [
+       1600,
+       1600,
+       3,
+       0,
+       10
+      ]
+     },
+     {
+      "code": 122,
+      "indent": 0,
+      "parameters": [
+       1600,
+       1600,
+       1,
+       0,
+       2
+      ]
+     },
+     {
+      "code": 0,
+      "indent": 0,
+      "parameters": []
+     }
+    ]
+   },
+   "errors": [],
+   "observed": {
+    "actions": [
+     {
+      "subject": "a8",
+      "skill": 292,
+      "forcing": true,
+      "v": 1
+     },
+     {
+      "subject": "a83",
+      "skill": 5989,
+      "forcing": true,
+      "v": 1
+     },
+     {
+      "subject": "e0",
+      "skill": 1,
+      "forcing": false,
+      "v": 12
+     },
+     {
+      "subject": "e1",
+      "skill": 1,
+      "forcing": false,
+      "v": 12
+     },
+     {
+      "subject": "e2",
+      "skill": 1,
+      "forcing": false,
+      "v": 12
+     }
+    ],
+    "children": [
+     {
+      "depth": 0,
+      "top": true,
+      "length": 41,
+      "v": 0,
+      "replaced": false
+     },
+     {
+      "depth": 0,
+      "top": true,
+      "length": 33,
+      "v": 0,
+      "replaced": false
+     },
+     {
+      "depth": 0,
+      "top": true,
+      "length": 21,
+      "v": 0,
+      "replaced": false
+     },
+     {
+      "depth": 0,
+      "top": true,
+      "length": 25,
+      "v": 0,
+      "replaced": false
+     },
+     {
+      "depth": 0,
+      "top": true,
+      "length": 8,
+      "v": 1,
+      "replaced": false
+     }
+    ],
+    "reserved": [
+     {
+      "id": 9020,
+      "v": 0,
+      "running": false
+     }
+    ],
+    "ran": [
+     {
+      "id": 9020,
+      "v": 0
+     }
+    ],
+    "finalV": 12,
+    "phase": "input"
+   }
+  },
+  {
+   "id": "inside_call",
+   "setup": {
+    "event": "call",
+    "list": [
+     {
+      "code": 122,
+      "indent": 0,
+      "parameters": [
+       1600,
+       1600,
+       0,
+       0,
+       1
+      ]
+     },
+     {
+      "code": 117,
+      "indent": 0,
+      "parameters": [
+       9019
+      ]
+     },
+     {
+      "code": 122,
+      "indent": 0,
+      "parameters": [
+       1600,
+       1600,
+       3,
+       0,
+       10
+      ]
+     },
+     {
+      "code": 122,
+      "indent": 0,
+      "parameters": [
+       1600,
+       1600,
+       1,
+       0,
+       9
+      ]
+     },
+     {
+      "code": 0,
+      "indent": 0,
+      "parameters": []
+     }
+    ],
+    "called": [
+     {
+      "code": 339,
+      "indent": 0,
+      "parameters": [
+       1,
+       8,
+       292,
+       0
+      ]
+     },
+     {
+      "code": 122,
+      "indent": 0,
+      "parameters": [
+       1600,
+       1600,
+       3,
+       0,
+       10
+      ]
+     },
+     {
+      "code": 122,
+      "indent": 0,
+      "parameters": [
+       1600,
+       1600,
+       1,
+       0,
+       5
+      ]
+     },
+     {
+      "code": 0,
+      "indent": 0,
+      "parameters": []
+     }
+    ]
+   },
+   "errors": [],
+   "observed": {
+    "actions": [
+     {
+      "subject": "a8",
+      "skill": 292,
+      "forcing": true,
+      "v": 1
+     },
+     {
+      "subject": "a83",
+      "skill": 5989,
+      "forcing": true,
+      "v": 1
+     },
+     {
+      "subject": "e0",
+      "skill": 1,
+      "forcing": false,
+      "v": 19
+     },
+     {
+      "subject": "e1",
+      "skill": 1,
+      "forcing": false,
+      "v": 19
+     },
+     {
+      "subject": "e2",
+      "skill": 1,
+      "forcing": false,
+      "v": 19
+     }
+    ],
+    "children": [
+     {
+      "depth": 0,
+      "top": true,
+      "length": 41,
+      "v": 0,
+      "replaced": false
+     },
+     {
+      "depth": 0,
+      "top": true,
+      "length": 33,
+      "v": 0,
+      "replaced": false
+     },
+     {
+      "depth": 0,
+      "top": true,
+      "length": 21,
+      "v": 0,
+      "replaced": false
+     },
+     {
+      "depth": 0,
+      "top": true,
+      "length": 25,
+      "v": 0,
+      "replaced": false
+     },
+     {
+      "depth": 0,
+      "top": true,
+      "length": 4,
+      "v": 1,
+      "replaced": false
+     },
+     {
+      "depth": 0,
+      "top": true,
+      "length": 8,
+      "v": 1,
+      "replaced": true
+     }
+    ],
+    "reserved": [
+     {
+      "id": 9021,
+      "v": 0,
+      "running": false
+     }
+    ],
+    "ran": [
+     {
+      "id": 9021,
+      "v": 0
+     }
+    ],
+    "finalV": 19,
+    "phase": "input"
+   }
+  },
+  {
+   "id": "no_event",
+   "setup": {
+    "use": 292
+   },
+   "errors": [],
+   "observed": {
+    "actions": [
+     {
+      "subject": "a8",
+      "skill": 292,
+      "forcing": false,
+      "v": 0
+     },
+     {
+      "subject": "a83",
+      "skill": 5989,
+      "forcing": true,
+      "v": 0
+     },
+     {
+      "subject": "e0",
+      "skill": 1,
+      "forcing": false,
+      "v": 0
+     },
+     {
+      "subject": "e1",
+      "skill": 1,
+      "forcing": false,
+      "v": 0
+     },
+     {
+      "subject": "e2",
+      "skill": 1,
+      "forcing": false,
+      "v": 0
+     }
+    ],
+    "children": [
+     {
+      "depth": 0,
+      "top": true,
+      "length": 41,
+      "v": 0,
+      "replaced": false
+     },
+     {
+      "depth": 0,
+      "top": true,
+      "length": 33,
+      "v": 0,
+      "replaced": false
+     },
+     {
+      "depth": 0,
+      "top": true,
+      "length": 21,
+      "v": 0,
+      "replaced": false
+     },
+     {
+      "depth": 0,
+      "top": true,
+      "length": 25,
+      "v": 0,
+      "replaced": false
+     }
+    ],
+    "reserved": [
+     {
+      "id": "375",
+      "v": 0,
+      "running": false
+     }
+    ],
+    "ran": [
+     {
+      "id": "375",
+      "v": 0
+     }
+    ],
+    "finalV": 0,
+    "phase": "input"
+   }
+  }
+ ]
+}

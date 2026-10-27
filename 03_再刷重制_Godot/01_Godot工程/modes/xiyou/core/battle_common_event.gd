@@ -3,7 +3,8 @@ extends RefCounted
 ## 战斗中技能／物品带的公共事件（使用效果 44）。冻结 v0.28 的流程：
 ## - YEP_BattleEngineCore 把 Game_Action.applyGlobal 在战斗中关掉，改由行动序列预约：默认收尾段的 ACTION COMMON EVENT
 ##   （actionActionCommonEvent）把这次行动道具的每个 44 效果依次 $gameTemp.reserveCommonEvent——单槽，后一个盖前一个；
-##   ActSeqPack1 的 COMMON EVENT: X 没有事件在跑时同样预约（有事件在跑时插成子事件立即执行，重制排到当前事件之后，见交付单）。
+##   ActSeqPack1 的 COMMON EVENT: X 没有事件在跑时同样预约；有事件在跑时（事件里强制行动）直接给敌群解释器装子解释器
+##   （setupChild，换掉已有的子解释器），强制行动结束后先跑完它再接着父事件（run_or_reserve）。
 ## - 行动结束后 BattleManager.updateEventMain → Game_Troop.setupBattleEvent：解释器空闲时预约的公共事件优先于敌群页
 ##   （setupReservedCommonEvent），跑完下一次检查再看敌群页或新的预约。YEP 的 checkBattleEnd 在行动刚结束的 actionList 阶段
 ##   与事件进行中都不判定，所以**打倒最后一只敌人后预约的公共事件照样跑完**（参照 thunder_battle_end：84 仍强制 533），之后才胜利；
@@ -22,6 +23,17 @@ const START_EVENT := 1320
 static func reserve(logic, id: int) -> void:
 	if id > 0:
 		logic.set_meta("battle_ce", id)
+
+
+## ActSeqPack1 actionCommonEvent：$gameTroop 事件运行中 → $gameTroop._interpreter.setupChild(list, 0)，否则预约。
+## 参照 tests/fixtures/battle_common_event_child_oracle.json（mv_oracle/battle_common_event_child_probe.cjs）。
+static func run_or_reserve(logic, id: int) -> void:
+	if logic._runner == null:
+		reserve(logic, id)
+		return
+	var ce := XDB.rec("CommonEvents", id)
+	if not ce.is_empty():
+		logic._runner.setup_child(ce.get("list", []), id)
 
 
 ## ACTION COMMON EVENT：这次行动的道具里每个 44 效果依次预约（单槽，最后一个生效）
