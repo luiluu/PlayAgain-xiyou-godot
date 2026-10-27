@@ -18,6 +18,8 @@
   指纹 = 工程目录下除 .godot/ 外每个文件的路径与内容 SHA-256（跟随软链接，含未入 Git 的 generated/ 转换与参照数据）
   ＋ Godot 可执行文件的真实路径、大小、修改时间与 --version ＋ 本脚本内容 ＋ 超时上限。任何一项变了就整轮重跑；
   读不到、解析不了上次记录也整轮重跑。--full 或 CHECK_FULL=1 强制整轮。
+  环境里设了 RULES_ONLY_TROOPS／RULES_ONLY_ACTORS（xiyou_rules 编号过滤，非 part0 只记 1 项）时不读也不写沿用记录，
+  免得过滤结果在清环境后被普通沿用当作整份通过。
   沿用前逐条严格校验（reusable_results）：记录须是对象、场景都在当前场景表里、每条只含布尔 passed 与字符串 line；
   passed 为真的那条 line 还要用 result_ok 复核（passed＝total＞0）。任一条结构不对或自相矛盾，整份当作没有记录、整轮重跑。
 - 心跳：批测与排槽期间每 XIYOU_TEST_HEARTBEAT 秒（默认 300，0 关闭）打印一行进度（完成数、等槽数、在跑的场景），
@@ -44,6 +46,7 @@ TIMEOUT = 600  # xiyou_rules 角色 P0 后单跑约 200 秒，满负载并行时
 SLOW = TIMEOUT // 2  # 超过就提示按场景拆分（xiyou_rules、smart_ai 已拆成约 100 秒一份）
 FLAKY_RERUN_MAX = 3  # 并行负载下偶发失败（floor16、floor_run_c 等）最多单独重跑这么多个
 RESULTS_KEEP = 20  # 共用状态目录里最多保留这么多份整轮结果（按指纹）
+RULES_FILTER_ENV = ('RULES_ONLY_TROOPS', 'RULES_ONLY_ACTORS')  # xiyou_rules 的编号过滤，结果不完整
 HEARTBEAT = 300  # 默认心跳间隔（秒），远小于长任务.py 的 3600 秒无输出上限
 
 
@@ -342,7 +345,11 @@ def main() -> int:
         return 1
     sdir = state_dir(a.project)
     whole = not a.names
-    keyed = whole or a.reuse  # 按指纹读写记录
+    # RULES_ONLY_* 过滤时 xiyou_rules 非 part0 只记 1 项成功，指纹又不含过滤值：过滤运行不读写沿用记录（沙僧第四期 T1）
+    filtered = [k for k in RULES_FILTER_ENV if os.environ.get(k, '').strip()]
+    keyed = (whole or a.reuse) and not filtered  # 按指纹读写记录
+    if filtered and (whole or a.reuse):
+        print('  · 设了 %s（编号过滤）：选中的场景全部实跑，不读写沿用记录' % '／'.join(filtered))
     all_scenes = sorted(p.name for p in (Path(a.project) / 'tests').glob('*.tscn'))
     fingerprint = project_fingerprint(a.godot, a.project, sdir) if keyed else ''
     reused = {}  # 场景 → 上轮通过时的 TEST_RESULT 行

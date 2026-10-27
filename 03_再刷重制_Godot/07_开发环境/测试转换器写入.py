@@ -282,5 +282,21 @@ class FakePngTranscodeTests(ExportWriteTests):
         self.assertEqual(kinds, [b'IHDR', b'iCCP', b'IDAT', b'IEND'])
 
 
+
+class EffectCommonEventTests(unittest.TestCase):
+    """切片自动收集物品／技能效果 code 44 的公共事件（取代手填 extraCommonEvents，XIYOU_EFFECT_CE=manual 回退）。"""
+    def exporter(self):
+        e = exporter.Exporter.__new__(exporter.Exporter)
+        ce = lambda i, codes: {'id': i, 'list': [{'code': c, 'parameters': []} for c in codes]}
+        e.db = {'CommonEvents': [None, ce(1, [101, 0]), ce(2, [0]), None, ce(4, [355, 0]), ce(5, [117, 0])],
+                'Items': [None, {'effects': [{'code': 44, 'dataId': 1}, {'code': 11, 'dataId': 4}]}, None],
+                'Skills': [None, {'effects': [{'code': 44, 'dataId': 2}, {'code': 44, 'dataId': 3}, {'code': 44, 'dataId': 4}, {'code': 44, 'dataId': 99}]}]}
+        return e
+
+    def test_collects_nonempty_existing_effect_events_only(self):
+        # 2 空、3 不存在、99 越界、5 没有效果引用、4 只经 code 11 引用的那条不算但技能里 code 44 引用了
+        self.assertEqual(self.exporter().effect_common_events(), {1, 4})
+
+
 if __name__ == '__main__':
     unittest.main()

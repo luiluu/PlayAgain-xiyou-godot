@@ -310,6 +310,23 @@ class ParallelTestRunnerTests(unittest.TestCase):
         _, runs = self.run_tests('--reuse', 'a', 'b', jobs=1)
         self.assertEqual(sorted(runs), ['a.tscn', 'b.tscn'])
 
+    def test_rules_only_filter_bypasses_reuse_ledger(self):
+        # 沙僧第四期 T1：RULES_ONLY_* 过滤时 xiyou_rules 非 part0 只记 1 项成功，指纹又不含过滤值；
+        # 过滤运行既不能沿用普通记录，也不能把结果写进去，清掉环境后的普通沿用要整轮重跑
+        p, runs = self.run_tests(jobs=1, RULES_ONLY_TROOPS='833')
+        self.assertEqual((p.returncode, len(runs)), (0, 3), p.stdout)
+        self.assertIn('不读写沿用记录', p.stdout)
+        self.assertFalse(list((self.state / 'results').glob('*.json')) if (self.state / 'results').exists() else [])
+        p, runs = self.run_tests('--reuse', 'a', jobs=1, RULES_ONLY_ACTORS='5')
+        self.assertEqual(runs, ['a.tscn'])
+        p, runs = self.run_tests(jobs=1)  # 清环境：没有可沿用的过滤结果，整轮
+        self.assertEqual((p.returncode, len(runs)), (0, 3), p.stdout)
+        self.assertNotIn('沿用', p.stdout)
+        p, runs = self.run_tests(jobs=1, RULES_ONLY_TROOPS='833')  # 有普通记录时过滤运行也不沿用
+        self.assertEqual(len(runs), 3)
+        p, runs = self.run_tests(jobs=1)  # 普通记录未被过滤运行改写，照常沿用
+        self.assertEqual(runs, [])
+
     def test_corrupt_or_contradictory_cache_is_not_reused(self):
         # 沙僧 2026-10-21 P2 复现（review_phase2_cache_corruption.json）：passed=true 但 line 是失败计数仍被沿用、退出 0；
         # 合法 JSON 但结构是数组时 AttributeError。两种都应当作没有记录、整轮重跑并正常通过。
