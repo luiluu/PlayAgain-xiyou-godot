@@ -199,3 +199,5 @@
 
 - 正在做：沿用原sync3进程等待完成，然后审测量报告、导入日志并运行最终选测与选择窗口补测；未重启或取消任务。开工HEAD77b67f30，tracked干净，五小时38%、周52%。先交14期集成，再转核查积压，PREE继续封存。
 - 本轮实查sync3包装器21018、childPGID21023仍在；采样子进程持续占用CPU，已见hang_up、options、party退出0，尚不把在途或排槽认定失败。保留全部证据，不改共享登记、并发或工具。
+
+- 80同步审阅：原sync3已退出2，原因仅为新增未接受；57组／62条采样命令全部exit0，来源verifyOk=true／issues=[]，sameExistingSource=true；16份参照仅增用例，稳定键比较changes={}、problems={}、changeCandidates=[]。原始报告及全部证据保留；详见[同步审阅摘要](../核查范围/连续分支合main_同步审阅_20261027.json)。下一步仅accept-additions，复用本轮缓存，不接受既有变化；随后最终选测。导入原日志未检出Script／Parse／Compile错误。
