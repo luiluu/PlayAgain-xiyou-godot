@@ -368,6 +368,8 @@ func _death_hook() -> void:
 	e.hp = 1.0
 	e.refresh_resources()
 	var revived := not e.is_dead()
+	# 代表新一次技能／事件附加：和后面的新伤害一样，开始前先清结果。
+	e.runtime_result = XResourceContext.empty_result()
 	e.add_state(1)
 	check("hook.revive_state_kill", revived and e.is_dead() and n.call() == 2, [revived, e.is_dead(), n.call()])
 	# 结束时不补记

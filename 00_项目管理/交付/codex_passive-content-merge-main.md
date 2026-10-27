@@ -283,3 +283,6 @@
 
 - 82界面专项help82-green已结束exit0：help_card988/988、actor_book22/22、actor_modules37/37、event_compare5/5，全部无Script/Parse/Compile/行首ERROR。沿用既有白龙代码的已声明限制：未移植动态多帧素材时不画错误静图，listCosts／进阶新增行与未接角色后续状态仍留对应角色期处理；不扩本期承诺。证据[说明卡与图鉴](../核查范围/连续分支合main_说明卡与图鉴修正_20261027.json)。
 - 82最终必跑：长任务rules82.log已经启动，日志runId见旁侧.status.json；只跑24规则段，不重跑218。覆盖检查exit0（hard0/new0）、同源检查exit0（inputs2021/runtimeInputs382/outputs2023/issues空），旧覆盖报告已复制tools82/prior-coverage保留。文档原块exit1仅固定main9b继承的两条链接a，共享文件仍不改；tools82各原始输出保留。
+
+- 82移入白龙说明卡后补上与本批减耗的衔接：原版新4例证明渡鸦45→36MP、米拉20→16TP（学9951后减20%）；新最小回归helpcost82-red合法17/21、4条失败，无脚本错误。XCharacterHelp._cost保留百分比基础费用解析，转用XBattleLogic.skill_cost的取整／减耗／种族链，不改实际结算规则。helpcost82-green：cost21/21、help_card988/988、enemy_book93/93、event_compare5/5，均无脚本错误。图鉴复活后状态技能的新动作也明确clearResult，不靠raw add_state绕结果槽；同result阻止再加反例仍在death_admission。证据[说明卡减耗衔接](../核查范围/连续分支合main_说明卡减耗衔接_20261027.json)。
+- rules82启动后只追加了说明卡显示费用与图鉴测试前提；战斗运行时及规则测试源码未再改，不使在途24段失效。当前等最终结果，不启动正式积压核查。

@@ -111,9 +111,13 @@ static func _cost(a, item: Dictionary, kind: String) -> int:
 	var m := RegEx.create_from_string("(?i)<%s Cost:\\s*([\\d.]+)%%>" % kind).search(str(item.get("note", "")))
 	if m != null:
 		per = float(m.get_string(1)) * 0.01
-	if kind == "MP":
-		return XRaceBattle.cost(a, floori((float(item.get("mpCost", 0)) + a.mmp * per) * a.mcr))
-	return XRaceBattle.cost(a, floori(float(item.get("tpCost", 0)) + a.max_tp() * per))
+	# currentHelpText calls native skillMpCost/skillTpCost, including dsPassive reductions.
+	# Keep percentage-base parsing here, then use the same rounding/reduction/race chain as settlement.
+	var priced := item.duplicate()
+	var field := "mpCost" if kind == "MP" else "tpCost"
+	priced[field] = float(item.get(field, 0)) + (a.mmp if kind == "MP" else a.max_tp()) * per
+	var logic := XBattleLogic.new()
+	return int(logic.skill_cost(a, priced)["mp" if kind == "MP" else "tp"])
 
 
 ## currentHelpText；返回 null 表示这一行不显示
