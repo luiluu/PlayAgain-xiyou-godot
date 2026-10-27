@@ -1883,6 +1883,7 @@
  "turns": [
   {
    "turn": 4,
+   "defeats": 0,
    "enemies": [
     {
      "capture": true,
@@ -1912,6 +1913,7 @@
   },
   {
    "turn": 5,
+   "defeats": 2,
    "enemies": [
     {
      "capture": true,
@@ -1945,6 +1947,7 @@
   },
   {
    "turn": 6,
+   "defeats": 0,
    "enemies": [
     {
      "capture": true,
@@ -1983,6 +1986,7 @@
    "toasts": [
     "捕捉成功"
    ],
+   "defeats": 2,
    "count": 2,
    "pets": 1,
    "targets": [
@@ -2098,6 +2102,7 @@
    "toasts": [
     "捕捉成功"
    ],
+   "defeats": 2,
    "count": 2,
    "pets": 1,
    "targets": [
@@ -2213,6 +2218,7 @@
    "toasts": [
     "捕捉失败"
    ],
+   "defeats": 0,
    "count": 2,
    "pets": 0,
    "targets": [
@@ -2247,6 +2253,7 @@
    "toasts": [
     "不可捕捉"
    ],
+   "defeats": 0,
    "count": 3,
    "pets": 0,
    "targets": [
@@ -2281,6 +2288,7 @@
    "toasts": [
     "捕捉成功"
    ],
+   "defeats": 2,
    "count": 2,
    "pets": 1,
    "targets": [

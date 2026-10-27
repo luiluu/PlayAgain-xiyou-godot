@@ -212,6 +212,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	if id != s.map_id:
 		s.battleback = []
 		s.erased_events.clear()
+		s.map_events = {}
 	map_id = id
 	map_data = XDB.map(id)
 	XAlienBattle.on_map_setup(s, s.map_id, id)  # Leviathan Game_Map.setup 包装：未知存在记来源地图（异化 Boss 来源用）
@@ -243,9 +244,26 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 			e.page_index = -2   # refresh 照空页设置（透明、可穿过）
 		e.setup_event(id, ev)
 		events.append(e)
+	# 读档：套回存档时的事件状态（只此一次；之后存档由 _snapshot_events 现取）
+	if int(s.map_events.get("mapId", 0)) == id:
+		var saved: Dictionary = s.map_events.get("events", {})
+		for e in events:
+			if saved.get(str(e.event_id)) is Dictionary:
+				e.restore_state(saved[str(e.event_id)])
+	s.map_events = {}
+	s.map_event_snapshot = _snapshot_events
 	lower.tile_events = _tile_events_at
 	_clear_treasure_popups()
 	_place_party(x, y, d)
+
+
+## 存档时的当前地图事件状态（XState.to_dict 调用）
+func _snapshot_events() -> Dictionary:
+	var out := {}
+	for e in events:
+		if is_instance_valid(e):
+			out[str(e.event_id)] = e.save_state()
+	return {"mapId": map_id, "events": out}
 
 
 ## MOG_TreasurePopup：换地图时上一张图的获得提示不带过来（场所移动之后才执行的获得指令照常出现在新地图）

@@ -17,6 +17,8 @@ let queue = [];
 const draws = [];
 w.Math.random = () => { const v = queue.length ? queue.shift() : 0.5; draws.push(v); return v; };
 const take = () => toasts.splice(0);
+// AB_EnemyBook 击败数合计（O-105：die＋refresh 每只记 2 次）
+const defeats = () => (w.$gameSystem._defeatNumbers || []).reduce((a, n) => a + (n || 0), 0);
 
 // 1. 全部敌人的 <Capture> 门槛（/(\d+)/ 取第一个整数）与 RareCapture
 const capture = [];
@@ -47,8 +49,9 @@ function endTurn(turn) {
   if (es[2]) { es[2].die(); es[2].refresh(); } // 已倒下的可捕捉敌人不逃跑
   w.$gameTroop._turnCount = turn;
   w.BattleManager._actionBattlers = []; w.BattleManager._nextTurnActionBattlers = [];
+  w.$gameSystem.clearDefeatNumber();
   w.BattleManager.endTurn();
-  return {turn, enemies: es.map(e => ({capture: !!e.Capture, dead: e.isDead(), hidden: e.isHidden(), hp: e.hp, states: e._states.slice()})), toasts: take()};
+  return {turn, defeats: defeats(), enemies: es.map(e => ({capture: !!e.Capture, dead: e.isDead(), hidden: e.isHidden(), hp: e.hp, states: e._states.slice()})), toasts: take()};
 }
 const turns = [4, 5, 6].map(endTurn);
 
@@ -81,11 +84,12 @@ function petGet(name, itemId, roll, capturable, extra) {
   act.setItem(itemId); act.setTarget(1);
   w.$gameParty.loseItem(w.$dataItems[itemId], 1); // 使用时已扣
   if (extra) extra();
+  w.$gameSystem.clearDefeatNumber();
   queue = [roll, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]; draws.length = 0;
   w.Star.PetSystem.PetGet();
   const p = w.$gameParty.Pets[0];
   return {name, item: itemId, successRate: w.$dataItems[itemId].successRate, roll, capturable,
-    toasts: take(), count: w.$gameParty.numItems(w.$dataItems[itemId]), pets: w.$gameParty.Pets.length,
+    toasts: take(), defeats: defeats(), count: w.$gameParty.numItems(w.$dataItems[itemId]), pets: w.$gameParty.Pets.length,
     targets: es.map(e => ({id: e.enemyId(), dead: e.isDead(), hidden: e.isHidden(), hp: e.hp})),
     pet: p ? {enemy: p.enemyId(), push: p._paramPush.map(Number), skills: p._skills.map(s => s && s.id), lv: p._Levelskills, ls: [p.extraLS, p.extraLSMax]} : null,
     draws: draws.length};

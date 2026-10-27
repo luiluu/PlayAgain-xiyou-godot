@@ -143,6 +143,10 @@ var battleback: Array = []
 ## 当前地图上被指令 214 暂时消除的事件 ID（Game_Event._erased）：同上随 $gameMap 进存档，同图移动也保留；换到别的地图时清掉。
 ## 副本里只靠 214 消失的明雷怪（冻结数据 131 页）读档后不再出现。
 var erased_events: Array[int] = []
+## 当前地图事件的运行时状态（位置、朝向、强制路线、路线改过的图像等，MVEvent.save_state）：同上随 $gameMap 进存档。
+## 存档时由地图场景现取（map_event_snapshot）；读档后地图场景整图重建时套回一次（XMapScene.load_map）。旧档没有＝事件回初始。
+var map_events: Dictionary = {}
+var map_event_snapshot: Callable
 var followers_visible := true      # Game_Followers._visible（初值 System optFollowers；指令 216、设置「队列跟随」）
 var pingbi_quality: Array = []      # 屏蔽掉落：旧档 0～7 是否屏蔽（$gameSystem._pingbiQuality）
 ## 副本上下文（XDungeon：进门时的 pending、进入后的 context）、副本 Boss 熟练度（$gameSystem._codexBossMastery：敌群 → 次数）、
@@ -551,7 +555,7 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "encounterEnabled": encounter_enabled, "allowAutosave": allow_autosave, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "mapEvents": map_event_snapshot.call() if map_event_snapshot.is_valid() else map_events, "encounterEnabled": encounter_enabled, "allowAutosave": allow_autosave, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "unknownOrigin": unknown_origin, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "costumeOff": costume_off, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills)}
 
@@ -687,6 +691,7 @@ static func from_dict(d: Dictionary) -> XState:
 	var bb = d.get("battleback", [])
 	s.battleback = [str(bb[0]), str(bb[1])] if bb is Array and bb.size() == 2 else []
 	s.erased_events.assign(Array(d.get("erasedEvents", [])).map(func(v): return int(v)))
+	s.map_events = d.get("mapEvents", {}) if d.get("mapEvents", {}) is Dictionary else {}
 	s.encounter_enabled = bool(d.get("encounterEnabled", true))
 	s.allow_autosave = bool(d.get("allowAutosave", true))  # 原版 canAutosave：_allowAutosave 未定义时 initAutosave 为 true
 	s.screen = XScreenFx.from_dict(d.get("screen"))
