@@ -1,7 +1,7 @@
 'use strict';
 // 存读档后的地图事件状态（八戒_77）：冻结 v0.28 的 DataManager.makeSaveContents → JsonEx → extractSaveContents，
 // 再照 Scene_File.reloadMapIfUpdated（YEP_SaveCore）：版本号相同不重设地图，事件对象原样还原；版本号不同就同图重载、事件回初始。
-// Map004 大厅：事件 6 改位置＋朝向、事件 7 强制路线走到一半、事件 14 临时消除、事件 10 路线改透明度／穿透／图像、事件 1 开自开关 A。
+// Map004 大厅（只用切片保留的事件）：72 改位置＋朝向、7 强制路线走到一半、65 临时消除、73 路线改不透明度／穿透／图像、36 开自开关 A。
 // 新局、不读玩家存档；唯一产物 .sandbox/save_events.json，抄进 tests/fixtures/save_events_oracle.json。
 const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs');
@@ -10,7 +10,7 @@ const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库
 const identity = sourceIdentity(APP);
 const r = boot(APP, {tolerant: true, log: false}), w = r.window;
 if (!w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败');
-const MAP = 4, IDS = [1, 6, 7, 10, 14];
+const MAP = 4, IDS = [7, 36, 65, 72, 73];
 const FIELDS = ['_x', '_y', '_realX', '_realY', '_direction', '_pageIndex', '_erased', '_moveRouteForcing', '_moveRouteIndex',
   '_opacity', '_through', '_characterName', '_characterIndex', '_moveSpeed', '_moveFrequency', '_directionFix', '_transparent',
   '_priorityType', '_stopCount', '_waitCount', '_starting', '_locked'];
@@ -27,15 +27,15 @@ w.eval('$gameMap.setup(' + MAP + ');');
 w.$gamePlayer.locate(14, 14);
 const initial = snap();
 const m = w.$gameMap;
-m.event(6).locate(7, 9); m.event(6).setDirection(4);
+m.event(72).locate(22, 15); m.event(72).setDirection(8);
 m.event(7).forceMoveRoute({list: [C(1), C(1), C(1), C(1), C(0)], repeat: false, skippable: false, wait: false});
 for (let i = 0; i < 20; i++) m.event(7).update();          // 走到中途：路线索引 > 0、仍在强制
-m.event(10).forceMoveRoute({list: [C(42, [128]), C(37), C(41, ['People1', 3]), C(0)], repeat: false, skippable: true, wait: false});
-for (let i = 0; i < 4; i++) m.event(10).update();
-m.event(14).erase();
-w.$gameSelfSwitches.setValue([MAP, 1, 'A'], true); m.event(1).refresh();
+m.event(73).forceMoveRoute({list: [C(42, [128]), C(37), C(41, ['People1', 3]), C(0)], repeat: false, skippable: true, wait: false});
+for (let i = 0; i < 4; i++) m.event(73).update();
+m.event(65).erase();
+w.$gameSelfSwitches.setValue([MAP, 36, 'A'], true); m.event(36).refresh();
 const before = snap();
-const mapKeys = Object.keys(m).sort(), eventKeys = Object.keys(m.event(6)).sort();
+const mapKeys = Object.keys(m).sort(), eventKeys = Object.keys(m.event(72)).sort();
 
 w.$gameSystem.onBeforeSave();   // DataManager.saveGameWithoutRescue：先记版本号再 makeSaveContents
 const json = w.JsonEx.stringify(w.DataManager.makeSaveContents());

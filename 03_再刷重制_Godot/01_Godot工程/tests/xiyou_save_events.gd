@@ -1,12 +1,12 @@
 extends Node
 ## 地图事件状态随存档（XState.map_events／MVEvent.save_state）：对照 tests/fixtures/save_events_oracle.json（mv_oracle/save_events_probe.cjs）。
-## 原版同版本读档不重设地图，Map004 里改过的事件读档后原样：事件 6 位置＋朝向、事件 7 强制路线走到一半（索引、仍在强制）、
-## 事件 10 路线改的不透明度与图像、事件 14 临时消除、事件 1 自开关 A 的页。重制照同样操作，真实 XSave 存读档后重开地图场景逐项比。
+## 原版同版本读档不重设地图，Map004（切片保留的事件）里改过的事件读档后原样：72 位置＋朝向、7 强制路线走到一半（索引、仍在强制）、
+## 73 路线改的不透明度／穿透／图像、65 临时消除、36 自开关 A 换页。重制照同样操作，真实 XSave 存读档后重开地图场景逐项比。
 ## 另查：旧档没有 mapEvents 时事件回初始；换到别的地图再回来回初始（原版 Game_Map.setup）；读档后路线接着走完。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const ORACLE := "res://tests/fixtures/save_events_oracle.json"
 const TIMEOUT_MS := 60000
-const IDS := [1, 6, 7, 10, 14]
+const IDS := [7, 36, 65, 72, 73]
 
 var results: Array = []
 
@@ -65,7 +65,7 @@ static func _snap(map: XMapScene) -> Dictionary:
 	for id in IDS:
 		var e := _event(map, id)
 		out[str(id)] = {} if e == null else {"x": e.grid.x, "y": e.grid.y, "direction": e.direction, "page": e.page_index,
-			"erased": e.erased, "forcing": e.is_route_forcing(), "routeIndex": e._route_index, "opacity": e.opacity,
+			"erased": e.erased, "forcing": e.is_route_forcing(), "routeIndex": e._route_index if e.is_route_forcing() else -1, "opacity": e.opacity,
 			"characterName": e.character_name, "characterIndex": e.character_index, "through": e.through,
 			"selfA": XState.current.self_switch(4, id, "A")}
 	return out
@@ -80,14 +80,14 @@ func _setup() -> XMapScene:
 	var map := await _open(4)
 	if map == null:
 		return null
-	_event(map, 6).locate(7, 9)
-	_event(map, 6).set_direction(4)
+	_event(map, 72).locate(22, 15)
+	_event(map, 72).set_direction(8)
 	_event(map, 7).force_move_route({"list": [_cmd(1), _cmd(1), _cmd(1), _cmd(1), _cmd(0)], "repeat": false, "skippable": false, "wait": false})
-	_event(map, 10).force_move_route({"list": [_cmd(42, [128]), _cmd(37), _cmd(41, ["People1", 3]), _cmd(0)], "repeat": false, "skippable": false, "wait": false})
+	_event(map, 73).force_move_route({"list": [_cmd(42, [128]), _cmd(37), _cmd(41, ["People1", 3]), _cmd(0)], "repeat": false, "skippable": false, "wait": false})
 	await _frames(40)
-	map.erase_event(14)
-	s.set_self_switch(4, 1, "A", true)
-	_event(map, 1).refresh()
+	map.erase_event(65)
+	s.set_self_switch(4, 36, "A", true)
+	_event(map, 36).refresh()
 	return map
 
 
@@ -110,8 +110,9 @@ func _run() -> void:
 		return _finish()
 	var initial_7 := Vector2i(int(map.map_data.events[7].x), int(map.map_data.events[7].y)) if map.map_data.events.size() > 7 and map.map_data.events[7] != null else Vector2i.ZERO
 	var before := _snap(map)
-	_check("setup.changed", before["6"].x == 7 and before["6"].direction == 4 and before["7"].forcing and before["7"].routeIndex > 0
-		and before["10"].opacity == 128 and before["10"].characterName == "People1" and before["14"].erased and before["1"].selfA, before)
+	_check("setup.changed", before["72"].x == 22 and before["72"].direction == 8 and before["7"].forcing and before["7"].routeIndex > 0
+		and before["73"].opacity == 128 and before["73"].characterName == "People1" and before["73"].through and before["65"].erased and before["36"].selfA
+		and before["36"].page == int(ref.before["36"]._pageIndex) and before["36"].page != int(ref.initial["36"]._pageIndex), before)
 	# 真存读档，重开地图场景（Scene_Load → Scene_Map，不重设地图）
 	_check("save_load", XSave.save(1) and XSave.load_slot(1))
 	map = await _open(4)
@@ -132,9 +133,9 @@ func _run() -> void:
 	_check("legacy_load", XSave.load_slot(1))
 	map = await _open(4)
 	var legacy := _snap(map) if map != null else {}
-	_check("legacy.initial_position", legacy.get("6", {}).get("x") == int(map.map_data.events[6].x) and not legacy.get("7", {}).get("forcing", true)
-		and legacy.get("10", {}).get("opacity") == 255, legacy)
-	_check("legacy.erased_and_self_switch_kept", legacy.get("14", {}).get("erased") == true and legacy.get("1", {}).get("selfA") == true, legacy)
+	_check("legacy.initial_position", legacy.get("72", {}).get("x") == int(map.map_data.events[72].x) and not legacy.get("7", {}).get("forcing", true)
+		and legacy.get("73", {}).get("opacity") == 255, legacy)
+	_check("legacy.erased_and_self_switch_kept", legacy.get("65", {}).get("erased") == true and legacy.get("36", {}).get("selfA") == true, legacy)
 
 	# 换到别的地图再回来：Game_Map.setup 重建，改过的事件回初始
 	map = await _setup()
@@ -143,8 +144,8 @@ func _run() -> void:
 	await map.transfer(4, 14, 14, 2)
 	map = await _wait_map(4)
 	var back := _snap(map) if map != null else {}
-	_check("other_map.reset", back.get("6", {}).get("x") == int(map.map_data.events[6].x) and back.get("10", {}).get("opacity") == 255
-		and not back.get("14", {}).get("erased", true), back)
+	_check("other_map.reset", back.get("72", {}).get("x") == int(map.map_data.events[72].x) and back.get("73", {}).get("opacity") == 255
+		and not back.get("65", {}).get("erased", true), back)
 	_finish()
 
 
