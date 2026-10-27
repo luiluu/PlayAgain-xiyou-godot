@@ -38,6 +38,10 @@ const COEFF := {10250: [1.88, 0.0], 10251: [1.88, 0.0], 10252: [3.33, 0.0], 1025
 	10255: [3.33, 0.0], 10256: [22.22, 0.0], 10257: [33.33, 0.0], 10258: [3.33, 0.0], 10259: [6.66, 9.99],
 	10260: [9.99, 6.66], 10261: [3.33, 6.66], 10262: [0.0, 0.0], 10263: [99.99, 66.66]}
 const RECRUIT_TEXT := "饿狼加入队伍，获得并装备破限之心。"
+## 说明卡用（G.config.stages 的 name 与 passives：进化每层增伤、解析每层无视物防／魔防，均为百分数）
+const FORM_NAMES := ["人类", "赤发", "半怪人", "螺旋", "翼化", "四臂", "星空"]
+const FORM_PASSIVES := [[false, 0, false, 0, 0], [true, 16, false, 0, 0], [true, 22, true, 11, 0], [true, 33, true, 16, 0],
+	[true, 50, true, 22, 0], [true, 66, true, 33, 0], [true, 99, true, 33, 33]]
 
 
 static func own(a) -> bool:
@@ -46,6 +50,17 @@ static func own(a) -> bool:
 
 static func stage(_a = null) -> int:
 	return clampi(XAdvance.rank(XState.current, ACTOR), 0, 6)
+
+
+## G.form(a)（说明卡用）：当前形态；进化／解析要学了 10266／10267 才算开，没学 10269 每回合只行动 1 次。a 为 null（预览）时按什么都没学
+static func form(a) -> Dictionary:
+	var i := stage(a)
+	var p: Array = FORM_PASSIVES[i]
+	var learned := func(id): return a != null and a.skill_ids.has(id)
+	var analysis: bool = p[2] and learned.call(10267)
+	return {"name": FORM_NAMES[i], "scale": STAGES[i].scale, "actions": STAGES[i].actions if learned.call(10269) else 1,
+		"passives": {"evolution_enabled": p[0] and learned.call(10266), "evolution_base_per_stack_percent": p[1],
+			"analysis_defense_ignore_percent_per_stack": p[3] if analysis else 0, "analysis_magic_defense_ignore_percent_per_stack": p[4] if analysis else 0}}
 
 
 ## learnSkill 包装：被动按形态与等级准入

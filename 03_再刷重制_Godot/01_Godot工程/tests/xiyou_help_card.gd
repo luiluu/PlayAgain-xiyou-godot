@@ -64,7 +64,7 @@ func _compare(cat: String, card: Dictionary) -> void:
 	var got := XHelpCard.content(obj, "" if cat != "gear" else str(card.kind))
 	if not exp.power:
 		got = got.filter(func(r): return not str(r[0]).begins_with(POWER_PREFIX))
-	var lay := XHelpCard.layout(got, 0, XHelpCard.WIDTH, oracle_measure)
+	var lay := XHelpCard.layout(got, 0, XHelpCard.note_width(obj), oracle_measure)
 	var want: Array = exp.rows
 	if got.size() != want.size():
 		_check(name, false, {"rows": [got.size(), want.size()], "got": got.map(func(r): return r[0]), "want": want.map(func(r): return r[0])})
@@ -99,6 +99,9 @@ func _run() -> void:
 	var prior := XState.current
 	var cat_state := XState.new()
 	cat_state.actor(XCat.ACTOR).change_level(10)
+	# 同原探针按顺序已创建切片所属角色到10级，先对齐前提，再验证说明卡。
+	for id in [166,167,168,172,173]:
+		cat_state.actor(id).change_level(10)
 	if data is Dictionary:
 		for cat in ["skills", "items", "weapons", "armors", "gear"]:
 			XState.current = cat_state if cat == "skills" else prior  # 只给技能卡用（XPower 等读 XState.current，物品／装备卡照旧）

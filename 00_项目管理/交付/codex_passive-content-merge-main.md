@@ -277,3 +277,6 @@
 
 - 82第二检查点：原版Boss变身／recover累计取数1／2次；修enemy_recover_all给嵌套霸体生命周期绑定本场资源域，sync_boss_armor无显式流时用该域random，地图独立入口仍照旧。boss82-red合法485/487（规则流少一次、错污染other_state.world），green为random_streams488/488、boss_lifecycle5080/5080、troop_events6574/6574，全无脚本错误。随机流原非Boss零取数断言保留，新增Boss分支；死亡时长事件键按已定stable_id标签。
 - wtype14败是旧原探针省略Scene_Battle.start缓存二阶段、a已学9951但减耗缓存仍0；新原版v5同实例显式refreshPassiveCache前750／不可用，后600／可用，空资源仍不可用。原generated参照不改，仅为148／5600、10级730MP的14变体添加窄夹具前后与费用断言；wtype82-green16219/16219。运行时can_use与消耗规则未迁就。证据[随机流与费用](../核查范围/连续分支合main_随机流与费用夹具修正_20261027.json)。
+
+- 82第三检查点在途：两项界面合法RED已保存help82-red（actor_book21/22、help_card970/988，各首次与自动重跑均保留、无脚本错误）。按固定截点之外已有白龙修正2449e4e1／4a1e4250／9c584f38，只移入character_help、说明卡接线／备注宽、garou.form显示查询、图鉴sprite_path及对应夹具；未merge新main、未cherry-pick、未扩切片或同步。保留原提交出处，新增集成提交仍待Claude。原版图鉴确画动态多帧名而非数据库静图；多帧素材未移植时仍按既有白龙方案不画，限制保留。
+- 正在执行help82-green（help_card、actor_book、actor_modules、必跑event_compare）；之后须补本次战斗规则改动要求的24规则段与覆盖／同源检查。若中断，勿重启原final79或同步，也勿重跑已绿专项。
