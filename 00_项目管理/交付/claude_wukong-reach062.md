@@ -1,7 +1,7 @@
 # 交付：claude/wukong-reach062
 
 - 车道／工作者：A 内容·楼层／悟空（Claude，接手悟空_61）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -27,7 +27,8 @@
 ## 验证
 
 - `同步正式西游.py --accept-additions` 通过（新增用例已接受，不登记；不带 cat 接受单）。
-- `内容覆盖检查.py`、必跑项见下方「验证补记」。
+- `内容覆盖检查.py` 通过（硬缺口 0，新增 0）并已 `--update-baseline`。
+- 专项 `xiyou_floor_reach062` 108/108；`xiyou_rules`＋d1b／d1c／d1d 全过（各约 11.5 万项，无失败）；`xiyou_event_compare` 5/5。未跑全量 `检查.sh`（按派单）。
 
 ## 遗留
 
