@@ -96,9 +96,7 @@ func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
 		return false
 	if not map.has_meta("watched"):
 		map.set_meta("watched", true)
-		map.ui.child_entered_tree.connect(func(n):
-			if n is XBattleScene:
-				n.finished.connect(func(r): battles.append({"troop": n.logic.troop_id, "result": r}), CONNECT_ONE_SHOT))
+		map.ui.child_entered_tree.connect(_on_ui_child)
 	XMessageBox.auto_answers = answers.duplicate()
 	var st := {"done": false}
 	(func():
@@ -135,17 +133,18 @@ func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 
 
 
+func _on_ui_child(n: Node) -> void:
+	if n is XBattleScene:
+		n.finished.connect(func(r): battles.append({"troop": n.logic.troop_id, "result": r}), CONNECT_ONE_SHOT)
+	elif n is XTrainingScene:
+		trainings += 1
+		n.closed.emit.call_deferred()
+
+
 func _run_call(map: XMapScene, call: Callable, mode := "win") -> bool:
 	if not map.has_meta("watched"):
 		map.set_meta("watched", true)
-		map.ui.child_entered_tree.connect(func(n):
-			print("DBG child ", n.get_class(), " ", n.name)
-			if n is XBattleScene:
-				n.finished.connect(func(r): battles.append({"troop": n.logic.troop_id, "result": r}), CONNECT_ONE_SHOT)
-			elif n is XTrainingScene:
-				print("DBG training child")
-				trainings += 1
-				(func(): n.closed.emit()).call_deferred())
+		map.ui.child_entered_tree.connect(_on_ui_child)
 	var st := {"done": false}
 	(func():
 		await call.call()
@@ -171,6 +170,7 @@ func _run() -> void:
 	XGuide.MILESTONE_ENABLED = false
 	seed(20261026)
 	if OS.get_environment("ONLY_BC") == "1":
+		await _cthulhu()
 		await _beichou()
 		_finish()
 		return
@@ -179,8 +179,26 @@ func _run() -> void:
 	await _field("luo", 53, 2, 92, Vector2i(34, 0), [1, 2, 3, 4], 8, Vector2i(13, 85), [307, 308, 309, 310, 570, 571, 572, 573, 574, 575])
 	await _field("monkey", 55, 2, 93, Vector2i(30, 0), [1, 2, 3, 4, 5, 6], 8, Vector2i(86, 76), [328, 329, 330, 331, 470, 471, 472, 473, 474])
 	await _field("deer", 56, 8, 105, Vector2i(30, 29), [1, 2, 3], 2, Vector2i(39, 73), [339, 340, 341, 342, 539, 540, 541, 542])
+	await _cthulhu()
 	await _beichou()
 	_finish()
+
+
+## 鹿吴山 EV3 克苏鲁使徒认证：四件换装卡（物品 744～747）缺一件不认证，齐了发成就 141
+## （称号 ConfigManager.DesignationN[29] 重制还没有称号系统，该句照现状跳过，见交付单遗留）
+func _cthulhu() -> void:
+	var s := _start(105, 30, 29, 8)
+	if not _check("cth_map", await _wait_map(105)):
+		return
+	var map: XMapScene = _scene()
+	for id in [744, 745, 746]:
+		s.gain_item(id, 1)
+	await _run_event(map, 3, [0], "")
+	_check("cth_missing", not s.achievements.has("141"))
+	s.gain_item(747, 1)
+	await _run_event(map, 3, [0], "")
+	_check("cth_done", s.achievements.has("141"))
+	await _run_event(map, 3, [1], "")
 
 
 ## 一张野外图：进、事件在、遇敌表、真遇敌打完一场、出
@@ -224,10 +242,8 @@ func _beichou() -> void:
 	var map: XMapScene = _scene()
 	_check("bc_events", _event(map, 4) != null and _event(map, 8) != null)
 	var t0 := trainings
-	print("DBG run1")
 	await _run_call(map, func(): await _run_event(map, 4, [0], ""), "")
-	print("DBG codes ", _event(map, 4).command_list().map(func(c): return [c.code, c.parameters]))
-	print("DBG run1 done ", XState.current.self_switch(90, 4, "A") if XState.current.has_method("self_switch") else "?")   # 第一页：闲话，开独立开关 A
+	# 第一页：闲话，开独立开关 A
 	await _run_call(map, func(): await _run_event(map, 4, [0], ""), "")   # 第二页：进行修炼
 	_check("bc_training", trainings == t0 + 1, [t0, trainings])
 	await _run_event(map, 8, [], "")

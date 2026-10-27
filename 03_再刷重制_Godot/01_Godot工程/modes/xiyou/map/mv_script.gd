@@ -262,7 +262,6 @@ static func _statements(js: String, interp) -> Array:
 			await interp.host.open_pets()
 			continue
 		# 修炼（Star_ActorAttributePlusPoints，见 XTraining）：魔塔教师、二十六层小萝莉等先设列出的表项再打开
-		print("DBG st ", st)
 		m = _re("^Star\\.ActorAttributePlusPoints\\.XiuLian\\s*=\\s*\\[([\\d,\\s]*)\\]$").search(st)
 		if m:
 			XTraining.xiulian = Array(m.get_string(1).split(",", false)).map(func(v): return int(v))
