@@ -1862,6 +1862,7 @@ func end_battle(result := -1) -> void:
 		e.shield = 0.0
 		e.param_cache_end()
 	for b in state.members():
+		b.runtime_result = XResourceContext.empty_result()  # Game_Battler.onBattleEnd 首句 clearResult，再 removeBattleStates
 		b.shield = 0.0
 		b.immortal = false
 		b.guarding = false
