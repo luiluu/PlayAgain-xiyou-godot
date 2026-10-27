@@ -1,7 +1,7 @@
 # 交付：claude/bajie-petsynth-flake
 
 - 车道／工作者：B 界面·测试／八戒（Claude，八戒_77）
-- 状态：进行中
+- 状态：可合并
 - 基线：按派单从 6a41f47f（claude/bajie-ce-fix2 末尾，未合）开的分支，所以本分支带着 ce-fix2／ce-fix1 的提交与交付单；先合 ce-fix2 再合本分支，或只摘 8f80e4ae 一个提交都行（只改了 `tests/xiyou_pet_synth.gd`）。
 - 来源：沙僧 10-27 第二期交回的 P2：`xiyou_pet_synth` 并行首轮 24/26（syn_occludes_status、feed_occludes_status 失败），单跑 26/26，累计第二次偶发。
 
@@ -28,7 +28,7 @@
 - **RED（负载下复现）**：自写压测脚本，每轮同时起 6 个 `xiyou_pet_synth`（机器上另有车道在跑，loadavg 约 9～18），10 轮 60 次里失败 15 次（25%）：syn_occludes_status 7、status_restored_after_feed 5、feed_occludes_status 4。
 - **GREEN**：同样负载 20 轮 × 6 并发，120 次全部 26/26。
 - **反向验证**：`git stash push`（带标签）撤掉修复，再跑 10 轮 × 6，失败 2/60（feed_occludes_status、syn_occludes_status 各 1）；`git stash apply` 恢复后删掉该条 stash。两次复现率差别大，是因为当时机器负载不同。
-- `并行测试.py --full xiyou_pet_synth xiyou_system_evidence`：（待填）
+- `并行测试.py --full xiyou_pet_synth xiyou_system_evidence`：两项单次通过，26/26、15/15（大部分时间在排共用槽，前后 1575 秒）。
 - 没改界面代码，所以不用跑必跑项 `xiyou_event_compare`；没跑全量。
 
 ## 同类写法排查（固定 N 个 physics tick 后断言界面）
@@ -51,6 +51,7 @@
 
 ## 本分支提交
 
+- a483e32d 交付单（WIP）；最后一个提交填正式测试结果、改可合并
 - 8f80e4ae pet_synth 偶发：遮挡断言前等窗口开合真到终点再等一个 process
 
 ## 待交叉核查
