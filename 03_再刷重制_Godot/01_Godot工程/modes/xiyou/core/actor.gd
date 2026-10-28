@@ -208,7 +208,7 @@ func release_to_party() -> void:
 		s.gear.append_array(removed)
 
 func add_state(id: int, random: XRandomStream = null) -> void:
-	if XQiyu.blocks_state(actor_id, id):
+	if XQiyu.blocks_state(actor_id, id) or (STRONG_WEAK_STATES.has(id) and is_strong_classified()):
 		return
 	var fresh := not state_ids.has(id)
 	super(id, random)
@@ -357,7 +357,31 @@ func gain_exp(amount: int, rate := 1.0, random: XRandomStream = null) -> int:
 
 
 # ---- 技能 ----
+## installStrongActorClassificationRuntime：167～174、<GuyuActor>、<CodexSuperStrong> 的角色学弱者分档技能时改学强者那档，且不挂弱者状态
+const STRONG_SKILL_REPLACE := {5968: 5969, 5970: 5971, 5972: 5973, 6235: 6216}
+const STRONG_WEAK_STATES := [1035, 1273, 1274, 1276, 1277, 1279, 1280]
+
+func is_strong_classified() -> bool:
+	var note := str(data().get("note", ""))
+	return (actor_id >= 167 and actor_id <= 174) or note.contains("<GuyuActor>") or note.contains("<CodexSuperStrong>")
+
+## 读档修复（extractSaveContents 里 repair）：弱者分档技能换成强者那档，去掉弱者状态
+func repair_strong_classified() -> void:
+	if not is_strong_classified():
+		return
+	for weak in STRONG_SKILL_REPLACE:
+		if skill_ids.has(weak):
+			forget_skill(weak)
+			learn_skill(weak)
+	for st in STRONG_WEAK_STATES:
+		if state_ids.has(st):
+			state_ids.erase(st)
+			state_turns.erase(st)
+	refresh_passive()
+
 func learn_skill(id: int) -> void:
+	if STRONG_SKILL_REPLACE.has(id) and is_strong_classified():
+		id = STRONG_SKILL_REPLACE[id]
 	if not XActorModules.can_learn(self, id) or (XPowerBooks.is_power(id) and not XPowerBooks.learn_reason(self, id).is_empty()):
 		return
 	if not skill_ids.has(id) and not XDB.rec("Skills", id).is_empty():

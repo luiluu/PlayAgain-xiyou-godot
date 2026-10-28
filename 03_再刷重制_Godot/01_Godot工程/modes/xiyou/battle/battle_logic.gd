@@ -91,6 +91,7 @@ var _letters := {}
 var _names_count := {}
 
 func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
+	s.sync_difficulty_on_battle()
 	random = random_context if random_context != null else s.reserve_battle_random()
 	replay_runtime_start = s.runtime_random_snapshot()
 	replay_battle_start = random.snapshot()
