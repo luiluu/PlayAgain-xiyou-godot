@@ -25,6 +25,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 
 SUB = Path('03_再刷重制_Godot')
@@ -134,6 +135,95 @@ def conflict_markers(root, *spec):
         elif current and current not in found and CONFLICT_MARK.match(line):
             found.append(current)
     return found
+
+
+FUNC_DEF = re.compile(r'^(\s*)(?:static\s+)?func\s+(\w+)')
+CLASS_DEF = re.compile(r'^(\s*)class\s+(\w+)')
+
+
+def duplicate_funcs(text):
+    """GDScript 里同一作用域（脚本顶层或同一内部类）重复定义的 func 名：[(名, 行号…)]。
+    10-28：wukong-challenge4 与 main 各加了一个 is_super_strong，git 自动合并不报冲突，工程整个 Parse Error。"""
+    seen, stack = {}, []  # stack：[(缩进, 内部类名)]
+    for no, line in enumerate(text.splitlines(), 1):
+        body = line.strip()
+        if not body or body.startswith('#'):
+            continue
+        indent = len(line) - len(line.lstrip())
+        while stack and indent <= stack[-1][0]:
+            stack.pop()
+        m = CLASS_DEF.match(line)
+        if m:
+            stack.append((indent, m.group(2)))
+            continue
+        m = FUNC_DEF.match(line)
+        if m:
+            seen.setdefault((tuple(c for _, c in stack), m.group(2)), []).append(no)
+    return [('.'.join(scope + (name,)), lines) for (scope, name), lines in seen.items() if len(lines) > 1]
+
+
+PARSE_CHECK_GD = """extends SceneTree
+func _init() -> void:
+	for p in OS.get_environment("XIYOU_PARSE_CHECK_FILES").split("\\n", false):
+		load(p)
+	print("PARSE_CHECK_DONE")
+	quit(0)
+"""
+PARSE_TIMEOUT = 180
+
+
+def parse_errors(log, autoloads):
+    """godot 日志里算数的脚本错误 [(错误, 文件)]。连带的「Failed to compile depended scripts」不算（根因另有一行）；
+    --script 方式不加载 autoload，「Identifier not found: <autoload 名>」也不算。"""
+    lines, found = log.splitlines(), []
+    for i, line in enumerate(lines):
+        if 'SCRIPT ERROR:' not in line or 'Failed to compile depended scripts' in line:
+            continue
+        if any(line.rstrip().endswith('Identifier not found: ' + a) for a in autoloads):
+            continue
+        at = re.search(r'\((res://[^:)]+)', lines[i + 1]) if i + 1 < len(lines) else None
+        found.append((line.split('SCRIPT ERROR:', 1)[1].strip(), at.group(1) if at else '?'))
+    return found
+
+
+def parse_check(root, base):
+    """合并后、同步与检查前的快速解析检查（1 分钟内）：①本次合并改动的 .gd 有没有同名 func；②godot --import 刷新类缓存后
+    用外置脚本逐个 load 工程里全部 .gd，日志里有算数的 SCRIPT ERROR 就列出。没有 godot 或工程时只做①。返回问题列表。"""
+    problems = []
+    for rel in git(root, 'diff', '--name-only', '--diff-filter=AM', base, 'HEAD', '--', '*.gd').splitlines():
+        f = root / rel
+        if f.is_file():
+            for name, lines in duplicate_funcs(f.read_text(errors='replace')):
+                problems.append('%s：func %s 重复定义（第 %s 行）' % (rel, name, '、'.join(map(str, lines))))
+    godot, project = root / ENV / 'godot', root / PROJECT
+    if not (os.access(godot, os.X_OK) and (project / 'project.godot').is_file()):
+        print('提示：没有 godot 或工程，解析检查只扫了同名 func', flush=True)
+        return problems
+    text = (project / 'project.godot').read_text(errors='replace')
+    section = text.split('[autoload]', 1)[1].split('\n[', 1)[0] if '[autoload]' in text else ''
+    autoloads = re.findall(r'^(\w+)=', section, re.M)
+    files = sorted('res://' + p.relative_to(project).as_posix() for p in project.rglob('*.gd')
+                   if '.godot' not in p.relative_to(project).parts)
+    with tempfile.TemporaryDirectory(prefix='xiyou_parse_check_') as tmp:
+        script = Path(tmp) / 'parse_check.gd'
+        script.write_text(PARSE_CHECK_GD)
+        env = dict(os.environ, XIYOU_PARSE_CHECK_FILES='\n'.join(files), HOME=tmp)
+        t0 = time.monotonic()
+        try:
+            for args in (['--import'], ['--script', str(script)]):
+                p = subprocess.run([str(godot), '--headless', '--path', str(project), *args], capture_output=True, text=True,
+                                   env=env, timeout=max(10, PARSE_TIMEOUT - (time.monotonic() - t0)))
+                log = p.stdout + p.stderr
+                if args[0] == '--script' and 'PARSE_CHECK_DONE' not in log:
+                    problems.append('解析检查脚本没跑完（退出码 %d）：%s' % (p.returncode, ' '.join(log.split()[-30:])))
+                problems += ['%s：%s' % (f, e) for e, f in parse_errors(log, autoloads)]
+        except subprocess.TimeoutExpired:
+            problems.append('解析检查超过 %d 秒没结束（机器太忙可重跑；确认无误可加 --no-parse-check 跳过本次）' % PARSE_TIMEOUT)
+    problems = list(dict.fromkeys(problems))
+    print('== 解析检查：%d 个 .gd，%d 个问题（%d 秒）' % (len(files), len(problems), time.monotonic() - t0), flush=True)
+    # 连带错误（依赖的类解析失败、因此推不出类型）排后面，根因（如重复定义）排前面
+    knock_on = ('because of a parser error', 'Cannot infer the type', 'Failed to load script')
+    return sorted(problems, key=lambda p: any(k in p for k in knock_on))
 
 
 def merge_head(root):
@@ -374,6 +464,13 @@ def prepare(root, state, state_file, executor):
             marked = conflict_markers(root, state['base'] + '..HEAD')
             if marked:
                 raise RuntimeError('合并提交里有冲突标记：' + '、'.join(marked) + '；先修好（git commit --amend）再运行同一命令')
+        if not state.get('noParseCheck'):
+            problems = parse_check(root, state['base'])
+            if problems:
+                shown = problems[:12] + (['……另 %d 条（多是连带错误）' % (len(problems) - 12)] if len(problems) > 12 else [])
+                raise RuntimeError('合并后解析检查不通过（还没同步、没跑检查）：\n  ' + '\n  '.join(shown)
+                                   + '\n在 main 改好后 git commit --amend（或另提交），再运行同一命令接续；放弃就 合并车道.sh %s --abort'
+                                   % state['task'])
         head = git(root, 'rev-parse', 'HEAD')
         state.update(phase='merged', head=head, mergeCommit=head)
         save(state_file, state)
@@ -834,6 +931,8 @@ def main(argv=None):
                     help='同步因测量改变被拒后：把接受单记进本次合并状态再接着同步（不用手改 state.json），可重复')
     ap.add_argument('--accept-doc-edits', action='store_true',
                     help='--finish 时把总装在 main 手修的文档（只限 00_项目管理/ 下的 .md，交付单除外）一并暂存；默认拒收')
+    ap.add_argument('--no-parse-check', action='store_true',
+                    help='准备阶段跳过合并后的快速解析检查（只管本次运行；检查卡住或误报、确认无误时用）')
     ap.add_argument('--also', action='append', default=[], metavar='路径',
                     help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则），可重复')
     a = ap.parse_args(argv)
@@ -905,6 +1004,8 @@ def main(argv=None):
         if a.accept_changes:
             add_acceptances(root, state, a.accept_changes)
             save(state_file, state)
+        state['noParseCheck'] = a.no_parse_check  # 只管本次运行
+        save(state_file, state)
         if a.finish:
             if a.also:
                 state['also'] = sorted(set(state.get('also', [])) | set(a.also))

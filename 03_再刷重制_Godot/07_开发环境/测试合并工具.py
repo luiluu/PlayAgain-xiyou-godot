@@ -1291,6 +1291,49 @@ for name in filter(None, files):
         self.g('commit', '-a', '--amend', '--no-edit')
         self.assertEqual(self.call(), 0, self.last_output)
 
+    def test_auto_merged_duplicate_func_stops_before_sync(self):
+        """10-28：lane 与 main 各在 item_marks.gd 不挨着的位置加同名 func，git 自动合并不报冲突，工程整个 Parse Error。"""
+        rel = merge.PROJECT / 'modes/marks.gd'
+        body = 'extends RefCounted\n\nstatic func a() -> int:\n\treturn 1\n' + ''.join('\n# 段 %d\n' % i for i in range(12)) + '\nstatic func z() -> int:\n\treturn 2\n'
+        self.put(str(rel), body); self.g('add', '.'); self.g('commit', '-m', 'marks')
+        self.g('merge', 'main', cwd=self.wt)
+        dup = '\nstatic func is_super_strong(id: int) -> bool:\n\treturn id > 0\n'
+        (self.wt / rel).write_text(body.replace('\n# 段 2\n', '\n# 段 2\n' + dup))
+        self.g('commit', '-am', 'lane adds is_super_strong', cwd=self.wt)
+        self.put(str(rel), body + dup); self.g('commit', '-am', 'main adds is_super_strong')
+        self.assertEqual(self.call(), 1, self.last_output)
+        self.assertIn('解析检查不通过', self.last_output)
+        self.assertIn(str(rel) + '：func is_super_strong 重复定义', self.last_output)
+        self.assertFalse((self.root / '.git/MERGE_HEAD').exists())  # 自动合并已提交，没报冲突
+        state = json.loads((self.root / '.git/lane-merge/state.json').read_text())
+        self.assertEqual(state['phase'], 'planned')  # 还没同步、没编号
+        self.put(str(rel), body.replace('\n# 段 2\n', '\n# 段 2\n' + dup))
+        self.g('commit', '-a', '--amend', '--no-edit')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+
+    def test_parse_check_reads_godot_log_and_skip_flag(self):
+        # 假 godot：--import 不出声；--script 时打一条 autoload 的假错误（不算）和一条真错误
+        self.put(str(merge.PROJECT / 'project.godot'), 'config/version="dev.001"\n[autoload]\nGameApp="*res://core/app.gd"\n\n[display]\n')
+        godot = self.root / merge.ENV / 'godot'
+        godot.write_text('#!/bin/zsh\n[[ "$*" == *--import* ]] && exit 0\n'
+                         'print "SCRIPT ERROR: Compile Error: Identifier not found: GameApp"\nprint "          at: GDScript::reload (res://entry.gd:3)"\n'
+                         'print "SCRIPT ERROR: Compile Error: Failed to compile depended scripts."\nprint "          at: GDScript::reload (res://x.gd:0)"\n'
+                         '[[ -n $BAD ]] && { print "SCRIPT ERROR: Parse Error: Expected end of statement."; print "          at: GDScript::reload (res://modes/broken.gd:7)"; }\n'
+                         'print PARSE_CHECK_DONE\n')
+        godot.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'godot fixture'); self.g('merge', 'main', cwd=self.wt)
+        os.environ['BAD'] = '1'
+        try:
+            self.assertEqual(self.call(), 1, self.last_output)
+            self.assertIn('res://modes/broken.gd：Parse Error: Expected end of statement.', self.last_output)
+            self.assertNotIn('GameApp', self.last_output)
+            self.assertNotIn('depended', self.last_output)
+            self.assertEqual(self.call('--no-parse-check'), 0, self.last_output)
+        finally:
+            os.environ.pop('BAD')
+
     def test_abort_and_lane_redelivery_replans(self):
         self.put(str(merge.PROJECT / 'modes/测试.gd'), '# main version\n')
         self.g('add', '.'); self.g('commit', '-m', 'conflicting main update')
