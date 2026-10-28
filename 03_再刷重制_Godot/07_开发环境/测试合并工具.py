@@ -495,9 +495,13 @@ state, limit, seconds = __import__('pathlib').Path(sys.argv[2]), int(sys.argv[3]
 mode = sys.argv[5]
 if mode == 'hog':  # 批测：limit 个线程，放掉马上重抢
     end = time.monotonic() + seconds
+    held = threading.Barrier(limit, action=lambda: (state / 'hog_ready').touch())  # 全部槽都占上才放来者
     def worker():
+        first = True
         while time.monotonic() < end:
             with p.global_slot(state, limit):
+                if first:
+                    held.wait(); first = False
                 time.sleep(0.2)
     ts = [threading.Thread(target=worker) for _ in range(limit)]
     [t.start() for t in ts]; [t.join() for t in ts]
@@ -514,9 +518,10 @@ else:  # 别的工作树来要一个槽
         script.write_text(self.HOG)
         env = dict(os.environ, XIYOU_SLOT_QUEUE='1' if queue else '0')
         args = [sys.executable, str(script), str(HERE / '并行测试.py'), str(self.state), '2']
+        (self.state / 'hog_ready').unlink(missing_ok=True)
         hog = subprocess.Popen(args + ['4', 'hog'], env=env, stdout=subprocess.DEVNULL)
         try:
-            time.sleep(0.5)
+            self.assertTrue(self.wait_for(lambda: (self.state / 'hog_ready').exists(), 30))  # 负载高时 hog 起得慢：等它真占满
             got = subprocess.run(args + ['0', 'one'], env=env, capture_output=True, text=True, timeout=30).stdout
         finally:
             hog.wait(30)
@@ -524,9 +529,11 @@ else:  # 别的工作树来要一个槽
 
     def test_queue_lets_other_process_in_while_batch_hogs_slots(self):
         """10-28 哪吒、八戒实测：批测把共用上限占满时别的工作树排 1～1.5 小时。旧行为下来者要等批测整个跑完，排队后一轮就拿到。"""
+        # 旧行为（不排队）只打印作对照、不断言：放槽与重抢之间谁先到是竞速，负载约 23 时来者 1.5 秒就抢到过（哪吒_7 t4 第 4 项，
+        # 哪吒_6 交付时负载约 16 下 171/172 就是这一项）。排队后的上限是确定的：前面没有别的等候者，下一轮放槽就归它
         old = self.contend(queue=False)
-        self.assertGreater(old, 3.0)  # 批测还剩约 3.5 秒，旧行为一直抢不到
         new = self.contend(queue=True)
+        print('  不排队 %.2f 秒，排队 %.2f 秒' % (old, new), file=sys.stderr)
         self.assertLess(new, 1.5)
         self.assertFalse(list((self.state / 'slots/queue').iterdir()))  # 排队文件都收走了
 
@@ -666,11 +673,19 @@ else:  # 别的工作树来要一个槽
             p = subprocess.Popen(['zsh', '-c', 'out=$("$@" 3>&2 2>&1); print -r -- "OUT:$out"', '_', *cli,
                                   '--label', 'godot --import', '--notice-fd', '3', '--', 'echo', 'done'],
                                  env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            self.assertTrue(self.wait_for(lambda: False, 0.8) or True)
+            # 等到真打出等槽心跳再放槽（原来固定等 0.8 秒，负载约 27 时子进程还没起来就放了，6 轮错 2 轮，哪吒_7 t4）
+            lines, beat = [], threading.Event()
+            def drain():
+                for line in p.stderr:
+                    lines.append(line)
+                    if '等槽' in line:
+                        beat.set()
+            reader = threading.Thread(target=drain, daemon=True); reader.start()
+            beat.wait(30)
             release.set(); a.join(5)
-            out, err = p.communicate(timeout=10)
+            out = p.stdout.read(); p.wait(10); reader.join(10)
         self.assertEqual(out.strip(), 'OUT:done')  # 心跳不混进捕获的命令输出
-        self.assertIn('等槽：godot --import', err)
+        self.assertIn('等槽：godot --import', ''.join(lines))
 
 
 
