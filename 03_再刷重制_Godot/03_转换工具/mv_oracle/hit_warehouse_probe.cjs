@@ -1,7 +1,7 @@
 'use strict';
 // Star_Warehouse 难度倍率下的命中／闪避／暴击判定：DCultyL 标志把 Game_Enemy 的 xparam 乘到 1.4～2.85 后，
 // 冻结 v0.28 的 Game_Action.itemHit／itemEva／itemCri 与 apply 的 missed／evaded／critical 是否钳到 1、超 1 时是否必然。
-// 内存新局，不写存档；Math.random 固定取 0.01／0.5／0.99。
+// 内存新局，不写存档；Math.random 依次固定取 0.01／0.2／0.4／0.6／0.8／0.99。
 const {start, makeCase, finish, round} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
 const cases = [];
