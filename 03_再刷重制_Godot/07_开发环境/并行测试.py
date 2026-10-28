@@ -429,7 +429,9 @@ def main() -> int:
     sdir = state_dir(a.project)
     whole = not a.names
     # RULES_ONLY_* 过滤时 xiyou_rules 非 part0 只记 1 项成功，指纹又不含过滤值：过滤运行不读写沿用记录（沙僧第四期 T1）
-    filtered = [k for k in RULES_FILTER_ENV if os.environ.get(k, '').strip()]
+    # 原始值非空就算过滤（沙僧第五期 C2：原来 .strip() 把纯制表符当没设，xiyou_rules 却把它解析成编号 0、非 part0 只报 1 项，
+    # 写进普通沿用账后清环境仍沿用）
+    filtered = [k for k in RULES_FILTER_ENV if os.environ.get(k, '') != '']
     keyed = (whole or a.reuse) and not filtered  # 按指纹读写记录
     if filtered and (whole or a.reuse):
         print('  · 设了 %s（编号过滤）：选中的场景全部实跑，不读写沿用记录' % '／'.join(filtered))

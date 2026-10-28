@@ -364,6 +364,21 @@ class ParallelTestRunnerTests(unittest.TestCase):
         p, runs = self.run_tests(jobs=1)  # 普通记录未被过滤运行改写，照常沿用
         self.assertEqual(runs, [])
 
+    def test_whitespace_only_rules_filter_never_writes_reuse_ledger(self):
+        # 沙僧第五期 C2：只给空白（制表符等）时原来被 .strip() 当作没过滤，xiyou_rules 却解析成编号 0、非 part0 只报 1 项，
+        # 结果写进普通沿用账，清环境后仍沿用。原始值非空一律当过滤：不读不写沿用账
+        for key in ('RULES_ONLY_TROOPS', 'RULES_ONLY_ACTORS'):
+            for blank in ('\t', ' ', '\n', ' \t\n'):
+                shutil.rmtree(self.state, ignore_errors=True)
+                p, runs = self.run_tests(jobs=1, **{key: blank})
+                self.assertEqual((p.returncode, len(runs)), (0, 3), p.stdout)
+                self.assertIn('不读写沿用记录', p.stdout)
+                self.assertFalse(list((self.state / 'results').glob('*.json')) if (self.state / 'results').exists() else [], repr(blank))
+                p, runs = self.run_tests(jobs=1)  # 清环境：整轮实跑
+                self.assertEqual(len(runs), 3, repr(blank))
+        p, runs = self.run_tests(jobs=1, RULES_ONLY_TROOPS='')  # 空串＝没设，照常沿用
+        self.assertEqual(runs, [])
+
     def test_corrupt_or_contradictory_cache_is_not_reused(self):
         # 沙僧 2026-10-21 P2 复现（review_phase2_cache_corruption.json）：passed=true 但 line 是失败计数仍被沿用、退出 0；
         # 合法 JSON 但结构是数组时 AttributeError。两种都应当作没有记录、整轮重跑并正常通过。
