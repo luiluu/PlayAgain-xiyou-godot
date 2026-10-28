@@ -265,9 +265,16 @@ func _case(c: Dictionary, round: int) -> void:
 	var first_cleared := false
 	var t1_others := {}   # 第 1 回合末各非首敌：{有无 44, 44 剩余回合}
 	var t2_finished := false
+	var t2_usable := true   # 第 2 回合开始时守层者有没有无条件可用的行动
+	var t2_tp := -1.0
 	for t in range(2):
 		if logic.is_won() or logic.is_lost():
 			break
+		if t == 1:
+			# 没有可用行动时原版不行动（Game_Enemy.makeActions 列表空，attack_query_probe skip 组）：开战 TP 是随机的 0～24，
+			# 抽到不够 TP 技能（如 204／207 的 4161 要 10）且条件技能未到回合时第 2 回合本就不出手（参照固定 0.5 开战 TP 12，出手）
+			t2_tp = e0.tp
+			t2_usable = (e0 as XEnemy).data().get("actions", []).any(func(act): return int(act.conditionType) == 0 and logic.can_use(e0, XDB.rec("Skills", int(act.skillId))))
 		var cmds := {}
 		for a in logic.actors:
 			cmds[a] = [XDB.rec("Skills", 1), logic.enemies[target]]
@@ -361,8 +368,8 @@ func _case(c: Dictionary, round: int) -> void:
 	if not got[2].is_empty():
 		var times: int = got[2].filter(func(x): return x[0] == "e0").size()
 		# Another enemy can kill the party before e0 acts; e0 can also die first.
-		var must_act := e0.is_alive() and not logic.is_lost()
-		check(name + ".t2_enemy_once", times >= (1 if must_act else 0) and times <= 1 + plus, [got[2], e0.is_alive(), logic.is_lost()])
+		var must_act := e0.is_alive() and not logic.is_lost() and t2_usable
+		check(name + ".t2_enemy_once", times >= (1 if must_act else 0) and times <= 1 + plus, [got[2], e0.is_alive(), logic.is_lost(), t2_usable, t2_tp])
 	# 附加伤害：守层者用过 8111（加上 1460）之后，每次命中活着的目标都按 [攻击, 魔攻] 附加
 	# （十层守层者第 1 回合先强制 500，那时还没有 1460，不附加）
 	var extras := []
@@ -376,7 +383,11 @@ func _case(c: Dictionary, round: int) -> void:
 	for inv in c.invokes:
 		if inv.subject == "e0" and inv.target != "e0" and float(inv.hpBefore) > 0.0 and inv.userStates.has(1460.0):
 			want_extra = [float(inv.userAtk), float(inv.userMat)]
-	if oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop)):
+	var e0_idle2: bool = not t2_usable and not got[2].any(func(x): return x[0] == "e0")
+	if e0_idle2 and (oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop))):
+		# 第 2 回合没有可用行动、没出手：这一局没有命中，也就没有附加伤害（参照那局出手了，不比参照值）
+		check(name + ".extra_idle", extras.is_empty(), [extras, t2_tp])
+	elif oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop)):
 		if oracle_half and RANDOM_AI_TROOPS.has(int(c.troop)):
 			_strict_random_extra_checks += 1
 		check(name + ".extra", extras.is_empty() if want_extra.is_empty() else (not extras.is_empty() and extras.all(func(x): return x == want_extra)), [extras, want_extra])

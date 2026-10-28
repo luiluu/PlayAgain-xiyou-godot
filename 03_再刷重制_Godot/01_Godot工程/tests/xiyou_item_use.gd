@@ -60,12 +60,15 @@ func _run() -> void:
 	add_child(page)
 	await frames()
 	var bad := []
+	var horns := []
 	for it in items:
 		# 直接记持有数：旧版祝福进阶石等得到时会被换成别的物品（XState.gain_item 的改记），这里只看「持有时能不能用」
 		s._gain_raw(int(it.id), 1)
 		if not page._usable(it):
-			bad.append(int(it.id))
+			# 导入角色平衡的禁用号角 canUse 全否，「使用」灰（attack_query_probe skip.horn*：menuEnabled 假）
+			(horns if XImportedBalance.is_disabled_horn(it) else bad).append(int(it.id))
 	check("all_usable", bad.is_empty(), {"count": bad.size(), "first": bad.slice(0, 10)})
+	check("disabled_horns_gray", horns == XImportedBalance.DISABLED_HORNS, horns)
 	page.queue_free()
 	await frames()
 	for o in ORACLE:

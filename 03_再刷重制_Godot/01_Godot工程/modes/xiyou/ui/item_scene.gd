@@ -219,9 +219,10 @@ func _augment_row() -> Dictionary:
 	return d[_aug_index] if _aug_index >= 0 and _aug_index < d.size() else {}
 
 
-## $gameParty.canUse：菜单里能用（occasion 0／2）且持有；不看效果范围——没有目标的（范围 0 等）在 determineItem 里直接用
+## $gameParty.canUse：菜单里能用（occasion 0／2）且持有；不看效果范围——没有目标的（范围 0 等）在 determineItem 里直接用。
+## 导入角色平衡包了 canUse：禁用号角全否（「使用」灰）。
 func _usable(item: Dictionary) -> bool:
-	return not item.has("instanceId") and [0, 2].has(int(item.get("occasion", 0))) \
+	return not item.has("instanceId") and [0, 2].has(int(item.get("occasion", 0))) and not XImportedBalance.is_disabled_horn(item) \
 		and XState.current.item_count(int(item.get("id", 0))) > 0 and XItemMarks.can_acquire_item(XState.current, item)
 
 
