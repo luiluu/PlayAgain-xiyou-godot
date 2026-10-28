@@ -1,7 +1,7 @@
 # 交付：codex/review-backlog-20261028-7
 
 - 车道／工作者：核查／重制_沙僧_85（Codex）
-- 状态：进行中
+- 状态：WIP，同树自动接力沙僧85→86；第七期未最终交付，勿整条合并
 - 正在做什么：审Claude武器解放、工具补漏及剩余文档登记；第六期已提交推送，四批待总装登记，不重核。
 - 基准：dc8057c186702569d93f0213d702dd52e4442b71；固定基准，不追新合并。
 - 范围：武器解放28a6c7ab／16f67bd6、工具补漏dc8057c1；文档登记以pending-start.json逐批排除Codex提交后限定。
@@ -15,3 +15,16 @@
 ## 验证
 
 - 工具组合套件168/168；导入与原版重采正在共用队列等资源；11批文档／Claude登记操作限定结论已保存，尚非最终交付。
+
+## 沙僧85→86接续（2026-10-28）
+
+- 触发：实际会话输入194384／窗口475000＝40.9%，达到40%同工作树接续线。末查五小时59%、周19%，未到95%／90%停手线；没有使用额度重置。新会话重制_沙僧_86，实际文件命令必须显式workdir为原state-effects-2b，UI关联项目根目录不代表文件工作区。
+- 当前分支codex/review-backlog-20261028-7，固定代码基准dc8057c186702569d93f0213d702dd52e4442b71；不切新树、不reset/cherry-pick、不接管main、不改共用文件、不建PR。第六期f17c2bba已补推且远端一致，四批尚待总装登记；第五期六批已实际登记。
+- 第七期已保存WIP报告：工具168/168、rc0（含增量，勿重复全套）；T1/T2两个P2隔离真复现，T3两条P3边界。仓库提案Q1/Q2 P2与Q3 P3、盘点D1 P2及周额度文档D2 P3已记录。武器W1源码链已确认，真实强制行动对照尚未运行，不能写实测通过。
+- 11批文档／Claude登记操作限定结论已整理，覆盖13个Claude提交：ce61e84、4c385c3、7881bd3、464bd21、e73a4d5、552059c、5a343fb、9182dcb、9b18739、a5ae028、8021263、e615419、90f7c87。两个Claude复核Codex产品的原报告不在本期覆盖；仓库提案、错误地图盘点和两个代码问题批保留。尚未做最终限定销账模拟，不称已登记。
+- 在途任务（长任务包装器已脱离会话，不杀不重启）：review-backlog-20261028-7/prepare.log（补齐，转换完成，Godot导入在共用槽排队）；native-weapon.log（正式weapon_unleash_probe参照重采，在共用槽排队）。读.status.json和tail即可；不是卡死，不动其他车道进程。原转换前后9项issues逐项相同，不能写空。generated-before7保留原整份生成数据，旧62文件原件仍在。
+- 接下来：等prepare退出0后按影响面一次跑weapon_unleash、attack_query、action_sequence、item_use、determinism、random_streams、troop_events、battle_events、combat等相关专项（不跑全量）；等native-weapon结束后保存.sandbox/weapon_unleash.json到本期证据，与generated/oracle/weapon_unleash.json逐字比sourceIdentity和cases。
+- W1诊断现成：mv_oracle/.sandbox/review7_weapon_forced.cjs（通过真实forceAction/processForcedAction/startAction，只写自己的.sandbox/review7_weapon_forced.json）；Godot .godot/review7_weapon_forced.tscn正常场景启动，结果写.godot/review7_weapon_forced.json。只运行ignored诊断，别改实现/正式测试。都用占槽.py和长任务.py；预期无状态两端技能127／1次，眩晕29原版技能1／0次、Godot可能127／1次，以实测为准。
+- 收口第七期：把运行结果补报告，正式生产解析拟登记条目、模拟只销上述Claude13提交并查unsafeRemoved；跑本分支文档选测--affected dc8057c1 --oracle，保留全部失败，再提交推送核远端SHA。第七期没有最终交付前勿合。
+- 已并行准备第八期源码（全部只读，不切分支）：content-agent三批reach106／115／109；ce-agent审ce-fix2和G1；tools-agent审nezha-merge-speed／slice-affected／floor-narrow。其检查点位于review-backlog-20261028-8/{content-agent,ce-agent,tools-agent}/checkpoint.md。先读检查点提纲继续未完验证，不重读已审大差异或重复168工具套件。子代理已通知收尾保存，不再派新活；新会话读文件即可，不依赖旧代理上下文。
+- 原授权继续清积压，不要每期结束停下来等Kyo再说继续；遇问题只记交Claude，总装登记后再核修复。到40%自动接下个序号，同树保存证据；到额度线真实收尾停手。
