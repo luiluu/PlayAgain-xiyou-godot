@@ -56,6 +56,9 @@ KEYS = {
 }
 
 
+TOP_LEVEL = '顶层'  # 接受单 collection：参照文件顶层的非用例字段
+
+
 def canonical(x):
     return json.dumps(x, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
 
@@ -265,6 +268,10 @@ def compare_file(name, old, new, changes=None):
                     additions.append({'collection': field, 'key': key, 'count': sum(gb[key].values())})
         else:
             problems.append('非新增用例字段改变：' + field)
+            # 探针顶层说明字段（如 scope）：不是列表的可凭接受单显式放行（collection 写「顶层」、key 写字段名）；
+            # 列表仍不放行，整组用例的改变要按稳定键登记进 KEYS 再逐条接受
+            if not isinstance(a, list) and not isinstance(b, list):
+                change(TOP_LEVEL, field, a, b, problems[-1])
     return additions, problems
 
 
