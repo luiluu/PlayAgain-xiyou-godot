@@ -293,6 +293,21 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stdout)
         self.assertIn('3 个场景，全部通过', p.stdout)
 
+    def test_failure_summary_is_last_and_written_for_checker(self):
+        """哪吒_7 t4 第 1 项：长任务日志里失败明细夹在几百行进度中间，收尾单列失败场景与日志路径，并交给 检查.sh 汇总。"""
+        summary = self.tmp / 'failed.tsv'
+        p, _ = self.run_tests('--full', FAIL_C='1', CHECK_FAILED_FILE=str(summary))
+        self.assertEqual(p.returncode, 1, p.stdout)
+        log = sorted((self.tmp.resolve() / '04_验证/本地结果/并行测试').iterdir())[-1] / 'c.rerun1.log'
+        tail = p.stdout.rstrip('\n').splitlines()[-2:]
+        self.assertEqual(tail, ['  ✗ 失败场景 1 个：', '      c.tscn → ' + str(log)], p.stdout)
+        self.assertEqual(summary.read_text(), 'c.tscn\t%s\n' % log)
+        self.assertEqual(json.loads((log.parent / 'test_timings.json').read_text())['failed'], ['c.tscn'])
+        p, _ = self.run_tests('--full', CHECK_FAILED_FILE=str(summary))
+        self.assertEqual(p.returncode, 0, p.stdout)
+        self.assertEqual(summary.read_text(), '')  # 通过时清空，免得 检查.sh 读到上一轮的
+        self.assertNotIn('失败场景', p.stdout)
+
     def test_slowest_first(self):
         self.state.mkdir()
         (self.state / 'timings.json').write_text(json.dumps({'a.tscn': 1, 'c.tscn': 100}))
@@ -1840,7 +1855,15 @@ if __name__ == '__main__':
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     extra = load('incremental_workflow_tests', HERE / '测试增量同步.py')
     suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(extra))
+    if sys.argv[1:]:  # 只跑名字含任一参数的用例（类名或方法名片段），调试单项用；TEST_RESULT 只算选中的
+        def flat(s):
+            for t in s:
+                yield from (flat(t) if isinstance(t, unittest.TestSuite) else [t])
+        suite = unittest.TestSuite(t for t in flat(suite) if any(a in t.id() for a in sys.argv[1:]))
     result = unittest.TextTestRunner().run(suite)
     passed = result.testsRun - len(result.failures) - len(result.errors)
+    # 收尾单列失败用例（哪吒_7 t4 第 4 项：负载下 171/172 那一项没抓到名字）：每项一行，不被进度点覆盖
+    for case, _ in result.failures + result.errors:
+        print('FAILED_CASE=' + case.id())
     print('TEST_RESULT=' + json.dumps({'passed': passed, 'total': result.testsRun}))
     raise SystemExit(0 if result.wasSuccessful() else 1)
