@@ -682,6 +682,39 @@ static func replace_attack_of(o) -> int:
 	_replace_attack_cache[note] = id
 	return id
 
+## Game_Battler.weaponUnleashes：状态；角色另见 XActor（装备 → 职业 → 角色，不看技能），敌人另见 XEnemy
+func weapon_unleash_objects() -> Array:
+	return states()
+
+## 按来源顺序逐条列出 <Weapon Unleash x%: 技能>：[技能号, 几率]（加成 <Weapon Unleash: ±x%> 与自定义写法正式数据没用到，不认）
+func weapon_unleashes() -> Array:
+	var out := []
+	for o in weapon_unleash_objects():
+		out.append_array(weapon_unleash_of(o))
+	return out
+
+static var _weapon_unleash_cache := {}
+static var _weapon_unleash_line := RegEx.create_from_string("(?i)<WEAPON UNLEASH[ ](\\d+)([%％]):[ ](.*)>")
+
+## DataManager.processWULNotetags1：逐行认 <Weapon Unleash x%: 技能>，几率 x×0.01，技能取名字里第一串数字（技能名写法正式数据没用到，不认）
+static func weapon_unleash_of(o) -> Array:
+	if not o is Dictionary:
+		return []
+	var note := str(o.get("note", ""))
+	if note == "":
+		return []
+	if _weapon_unleash_cache.has(note):
+		return _weapon_unleash_cache[note]
+	var out := []
+	for line in note.split("\n"):
+		var m := _weapon_unleash_line.search(line)
+		if m:
+			var n := _first_number.search(m.get_string(3))
+			if n:
+				out.append([int(n.get_string(1)), float(m.get_string(1)) * 0.01])
+	_weapon_unleash_cache[note] = out
+	return out
+
 ## Game_BattlerBase.actionPlusSet：各「追加行动」特性（61 号 0）的几率；角色另加道法「分神」[1]
 func action_plus_set() -> Array:
 	var out := []
