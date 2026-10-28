@@ -1183,6 +1183,48 @@ for name in filter(None, files):
         self.assertEqual(self.call(), 1)
         self.assertEqual(lock.read_text(), 'first runner')
 
+    def test_stale_lock_from_dead_runner_is_discarded(self):
+        # 哪吒_7 t4 第 2 项：重启打断 --finish（143）留下锁，下一次 [Errno 17] 退出，只能人工删
+        lock = self.root / '.git/lane-merge/running.lock'
+        lock.parent.mkdir()
+        dead = subprocess.Popen(['true']); dead.wait()
+        lock.write_text(json.dumps({'pid': dead.pid, 'startedAt': 'Mon Jan  1 00:00:00 2001'}))
+        self.assertEqual(self.call('--dry-run'), 0, self.last_output)  # dry-run 不拿锁：先确认夹具
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertIn('作废', self.last_output)
+        self.assertFalse(lock.exists())
+        # pid 还在但启动时间对不上（pid 被复用）：同样作废
+        self.assertEqual(self.call('--abort'), 0, self.last_output)
+        lock.write_text(json.dumps({'pid': os.getpid(), 'startedAt': 'Mon Jan  1 00:00:00 2001'}))
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertIn('作废', self.last_output)
+
+    def test_live_lock_still_refuses(self):
+        lock = self.root / '.git/lane-merge/running.lock'
+        lock.parent.mkdir()
+        lock.write_text(json.dumps({'pid': os.getpid(), 'startedAt': merge.process_start(os.getpid())}))
+        before = lock.read_text()
+        self.assertEqual(self.call(), 1)
+        self.assertIn('另一个合并正在运行', self.last_output)
+        self.assertIn('pid %d' % os.getpid(), self.last_output)
+        self.assertEqual(lock.read_text(), before)
+
+    def test_empty_lock_older_than_boot_is_discarded(self):
+        # 10-28 现场是空锁（写 pid 前的旧版）：早于本次开机的作废；开机后留下的认不出持有者，照旧拒绝
+        lock = self.root / '.git/lane-merge/running.lock'
+        lock.parent.mkdir(); lock.write_text('')
+        os.utime(lock, (time.time() - 10 * 86400,) * 2)
+        with mock.patch.object(merge, 'boot_time', return_value=time.time() - 3600):
+            with contextlib.redirect_stdout(io.StringIO()) as out, contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(merge.main(['task', '--root', str(self.root)]), 0)
+        self.assertIn('作废', out.getvalue())
+        lock.write_text('')
+        with mock.patch.object(merge, 'boot_time', return_value=time.time() - 3600):
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as err:
+                self.assertEqual(merge.main(['task', '--root', str(self.root)]), 1)
+        self.assertIn('认不出持有者', err.getvalue())
+        self.assertTrue(lock.exists())
+
     def test_other_lane_merge_does_not_require_redelivery(self):
         self.put('other_lane.md', 'independent main update')
         self.g('add', '.'); self.g('commit', '-m', 'other lane')
@@ -1466,6 +1508,34 @@ for name in filter(None, files):
 
     def branches(self):
         return self.g('branch', '--format=%(refname:short)').split()
+
+    def test_old_sheet_already_merged_is_not_extra_delivery(self):
+        # 哪吒_7 t4 第 3 项（八戒 attack-query2）：期二从期一交付点切出、又合过 main，与 main 有两个合并基点（交叉合并），
+        # merge-base 取到旧的那个，diff 带出期一交付单；期一已随上一批并入并删除，不该再算附带交付单
+        lane2 = Path(self.tmp.name) / 'lane2'
+        self.g('worktree', 'add', '-b', 'claude/task2', str(lane2), 'claude/task')
+        self.put('other.md', 'main moves\n'); self.g('add', '.'); self.g('commit', '-m', 'main moves')
+        self.g('merge', '-m', 'merge main', 'main', cwd=lane2)
+        sheet2 = lane2 / '00_项目管理/交付/claude_task2.md'
+        sheet2.write_text('# 期二\n- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】期二\n\n- phase 2\n')
+        self.g('add', '.', cwd=lane2); self.g('commit', '-m', 'phase 2 sheet', cwd=lane2)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertFalse((self.root / self.receipt).exists())
+        bases = self.g('merge-base', '--all', 'main', 'claude/task2').split()
+        self.assertEqual(len(bases), 2)  # 夹具确实是交叉合并
+        state = merge.plan(self.root, 'task2')
+        self.assertEqual(state['delivery'], '00_项目管理/交付/claude_task2.md')
+        self.assertEqual(state['extraDeliveries'], [])
+        # 车道改过的旧交付单（内容与 main 删前不同）照样不算附带交付单，但要提示
+        (lane2 / self.receipt).write_text((lane2 / self.receipt).read_text() + '- 期二补记\n')
+        self.g('add', '.', cwd=lane2); self.g('commit', '-m', 'touch old sheet', cwd=lane2)
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            state = merge.plan(self.root, 'task2')
+        self.assertEqual(state['extraDeliveries'], [])
+        self.assertIn(str(self.receipt), err.getvalue())
+        self.assertIn('已在 main 删除', err.getvalue())
 
     def test_lane_on_new_branch_skips_worktree_but_deletes_delivery_branch(self):
         # 车道交付后在同一工作树换新分支接着做（会话绑在路径上）：工作树保留，交付分支照删。
