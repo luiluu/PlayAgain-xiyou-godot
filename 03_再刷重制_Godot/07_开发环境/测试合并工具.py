@@ -256,6 +256,24 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.assertIn('b.tscn 累计偶发 2 次', p.stdout)
         self.assertEqual(len((self.state / 'flaky.jsonl').read_text().splitlines()), 2)
 
+    def test_default_log_dir_keeps_failure_detail_and_quiet(self):
+        """八戒期二、期三：没给 --log-dir 时失败明细只在屏幕上 8 行，管道给 tail 看不全。"""
+        p, _ = self.run_tests('--full', FAIL_C='1')
+        self.assertEqual(p.returncode, 1, p.stdout)
+        logs = sorted((self.tmp.resolve() / '04_验证/本地结果/并行测试').iterdir())
+        self.assertEqual(len(logs), 1)
+        self.assertIn('  · 日志：' + str(logs[0]), p.stdout)
+        self.assertIn('完整输出：' + str(logs[0] / 'c.rerun1.log'), p.stdout)  # 单独重跑仍失败：指向最后一次
+        self.assertIn(self.BAD, (logs[0] / 'c.log').read_text())
+        self.assertNotIn('\r', p.stdout)
+        p, _ = self.run_tests('--full', '--quiet', FAIL_C='1')
+        self.assertNotIn('✓', p.stdout)
+        self.assertIn('✗ c.tscn', p.stdout)
+        self.assertIn('有失败', p.stdout)
+        p, _ = self.run_tests('--full', '--quiet')
+        self.assertEqual(p.returncode, 0, p.stdout)
+        self.assertIn('3 个场景，全部通过', p.stdout)
+
     def test_slowest_first(self):
         self.state.mkdir()
         (self.state / 'timings.json').write_text(json.dumps({'a.tscn': 1, 'c.tscn': 100}))
@@ -1236,6 +1254,25 @@ for name in filter(None, files):
         self.assertEqual(self.call('--finish'), 0, self.last_output)
         self.assertEqual((self.root / merge.PROJECT / 'modes/测试.gd').read_text(), '# resolved\n')
 
+    def test_staged_conflict_markers_block_merge_commit(self):
+        gd = merge.PROJECT / 'modes/测试.gd'
+        self.put(str(gd), '# main version\n')
+        self.g('add', '.'); self.g('commit', '-m', 'conflicting main update')
+        self.assertEqual(self.call(), 1)
+        self.g('add', str(gd))  # 带着 <<<<<<< 直接暂存（10-28 唐僧踩到的现场）
+        base = self.g('rev-parse', 'HEAD')
+        self.assertEqual(self.call(), 1)
+        self.assertIn('冲突标记', self.last_output)
+        self.assertIn(str(gd), self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), base)  # 没有提交合并
+        # 自己 git commit 了带标记的合并：同样拒绝往下走
+        self.g('commit', '--no-edit')
+        self.assertEqual(self.call(), 1)
+        self.assertIn('合并提交里有冲突标记', self.last_output)
+        self.put(str(gd), '# resolved\n')
+        self.g('commit', '-a', '--amend', '--no-edit')
+        self.assertEqual(self.call(), 0, self.last_output)
+
     def test_abort_and_lane_redelivery_replans(self):
         self.put(str(merge.PROJECT / 'modes/测试.gd'), '# main version\n')
         self.g('add', '.'); self.g('commit', '-m', 'conflicting main update')
@@ -1560,6 +1597,88 @@ for name in filter(None, files):
         self.assertEqual(self.call('--finish'), 0, self.last_output)
         self.assertIn(str(merge.ACCEPT / 'claude_task.json'), self.g('-c', 'core.quotepath=false', 'show', '--name-only', '--format=', 'HEAD'))
         self.assertEqual(self.call('--accept-changes', str(sheet)), 1)  # 已收尾：没有准备中的合并也不新开
+
+    def test_single_abort_restores_main_generated_and_baseline(self):
+        """10-27 ce-fix2：单条合并手动 reset 撤出后，同步写出的 common_scripts.json 留在产物里，下一次同步拿它当基线被拒。"""
+        gen, results = merge.GENERATED, merge.SUB / '04_验证/本地结果'
+        self.put('.gitignore', str(gen) + '/\n' + str(results) + '/\n')
+        self.put(str(gen / 'manifest.json'), '{"v": "before"}\n')
+        self.put(str(gen / 'oracle/a.json'), '{"a": 1}\n')
+        # 假同步按真同步的顺序：建基线（不存在时取当前产物）→ 备份产物 → 写新产物；第二个参数让它拒收（退出码 2）
+        self.put(str(merge.TOOLS / '同步正式西游.py'), '''import hashlib, shutil, sys, time
+from pathlib import Path
+root = Path.cwd(); gen = root / %r; res = root / %r
+base = res / '同步基线' / hashlib.sha256(str(gen.resolve()).encode()).hexdigest()
+if not base.exists():
+    shutil.copytree(gen / 'oracle', base / 'oracle'); shutil.copy2(gen / 'manifest.json', base / 'manifest.json')
+bk = res / '自动同步' / (time.strftime('%%Y%%m%%d_%%H%%M%%S_%%f') + '_v-v')
+shutil.copytree(gen / 'oracle', bk / 'oracle'); shutil.copy2(gen / 'manifest.json', bk / 'manifest.json')
+(gen / 'oracle/common_scripts.json').write_text('{}'); (gen / 'manifest.json').write_text('{"v": "lane"}')
+(gen / 'sync_stamp.json').write_text('{}')
+sys.exit(0)
+''' % (str(gen), str(results)))
+        self.g('add', '.'); self.g('commit', '-m', 'fake sync')
+        self.g('merge', 'main', cwd=self.wt)
+        (self.wt / merge.TOOLS / 'xiyou_slice.json').write_text('{"troops": [1]}\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'slice', cwd=self.wt)
+        before = self.g('rev-parse', 'HEAD')
+        self.assertEqual(self.call('--abort'), 1)  # 没有准备中的合并
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertTrue((self.root / gen / 'oracle/common_scripts.json').exists())
+        self.assertNotEqual(self.g('rev-parse', 'HEAD'), before)
+        self.assertTrue(list((self.root / results / '同步基线').iterdir()))
+        self.assertEqual(self.call('--abort'), 0, self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), before)
+        self.assertFalse(merge.dirty(self.root))
+        self.assertFalse((self.root / '.git/lane-merge/state.json').exists())
+        self.assertFalse((self.root / gen / 'oracle/common_scripts.json').exists())
+        self.assertFalse((self.root / gen / 'sync_stamp.json').exists())
+        self.assertEqual((self.root / gen / 'manifest.json').read_text(), '{"v": "before"}\n')
+        self.assertFalse(list((self.root / results / '同步基线').iterdir()))
+        self.assertTrue(self.wt.exists())
+        self.assertTrue(self.g('for-each-ref', 'refs/lane-merge/'))
+        # 车道修好后重新交付：照常合并，基线按还原后的产物重建
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+
+    def test_single_abort_during_conflict(self):
+        self.put(str(merge.PROJECT / 'modes/测试.gd'), '# main version\n')
+        self.g('add', '.'); self.g('commit', '-m', 'conflicting main update')
+        before = self.g('rev-parse', 'HEAD')
+        self.assertEqual(self.call(), 1)
+        self.assertEqual(self.call('--abort'), 0, self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), before)
+        self.assertFalse((self.root / '.git/MERGE_HEAD').exists())
+        self.assertFalse(merge.dirty(self.root))
+        self.assertIn('本次合并还没同步过', self.last_output)
+
+    def test_finish_accepts_amended_merge_and_explains_extra_commit(self):
+        self.assertEqual(self.call(), 0, self.last_output)
+        merged = self.g('rev-parse', 'HEAD')
+        gd = self.root / merge.PROJECT / 'modes/测试.gd'
+        gd.write_text('# fixed by tangseng\n')
+        self.g('add', str(gd)); self.g('commit', '--amend', '--no-edit')
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertIn('合并提交已修正', self.last_output)
+        self.assertEqual(gd.read_text(), '# fixed by tangseng\n')
+        self.assertNotEqual(self.g('rev-parse', 'HEAD^'), merged)
+
+    def test_finish_extra_commit_hint_and_untracked_exclude_hint(self):
+        (self.root / 'notice.tmp').write_text('x')
+        self.assertEqual(self.call(), 1)
+        self.assertIn('.git/info/exclude', self.last_output)
+        self.assertIn('notice.tmp', self.last_output)
+        (self.root / '.git/info').mkdir(exist_ok=True)
+        with open(self.root / '.git/info/exclude', 'a') as f:
+            f.write('notice.tmp\n')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.put('extra.md', 'x\n'); self.g('add', 'extra.md'); self.g('commit', '-m', 'separate fix')
+        self.register()
+        self.assertEqual(self.call('--finish'), 1)
+        self.assertIn('--also', self.last_output)
+        self.assertIn('git reset --soft', self.last_output)
 
     def test_also_allows_extra_change_at_finish(self):
         self.assertEqual(self.call(), 0)

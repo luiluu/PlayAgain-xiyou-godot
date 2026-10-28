@@ -22,6 +22,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -120,6 +121,21 @@ def lane_protected(root, lane):
     return ''
 
 
+CONFLICT_MARK = re.compile(r'^\+(?:<{7}|>{7}|\|{7})(?: |$)', re.M)
+
+
+def conflict_markers(root, *spec):
+    """spec（如 --cached 或 base..HEAD）里新增行带冲突标记（<<<<<<<、>>>>>>>、|||||||）的文件。不认单独的 =======，
+    Markdown 的标题下划线也是它。10-28 唐僧：解冲突后 git add 接续，带标记的文件被直接提交进合并。"""
+    found, current = [], None
+    for line in git(root, 'diff', '--no-color', '--no-ext-diff', '-U0', *spec).splitlines():
+        if line.startswith('+++ '):
+            current = line[6:] if line.startswith('+++ b/') else None
+        elif current and current not in found and CONFLICT_MARK.match(line):
+            found.append(current)
+    return found
+
+
 def merge_head(root):
     head = Path(git(root, 'rev-parse', '--path-format=absolute', '--git-dir')) / 'MERGE_HEAD'
     return head.read_text().strip() if head.exists() else None
@@ -182,8 +198,14 @@ def sheets(state):
 def plan(root, task):
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', task):
         raise RuntimeError('任务名只允许字母、数字、点、下划线和短横线')
-    if git(root, 'branch', '--show-current') != 'main' or dirty(root):
-        raise RuntimeError('main 必须干净，包含未跟踪文件；本工具不自动保存或覆盖现场')
+    if git(root, 'branch', '--show-current') != 'main':
+        raise RuntimeError('只能在 main 上合并')
+    changed = dirty(root)
+    if changed:
+        untracked = sorted(x[3:] for x in porcelain(root) if x.startswith('??'))
+        hint = ('；其中未跟踪的（%s）若是本机临时文件（如通知、草稿），可把路径写进本地 .git/info/exclude（不入 Git），'
+                '不必删' % '、'.join(untracked[:5])) if untracked else ''
+        raise RuntimeError('main 必须干净，包含未跟踪文件；本工具不自动保存或覆盖现场：' + '、'.join(sorted(changed)[:8]) + hint)
     lanes = [w for w in worktrees(root) if w.get('branch') in ['claude/' + task, 'codex/' + task]]
     if len(lanes) > 1:
         raise RuntimeError('须有且只有一个对应任务的已登记车道工作树')
@@ -332,6 +354,10 @@ def prepare(root, state, state_file, executor):
                 raise RuntimeError('冲突尚未解决：' + '、'.join(unmerged.splitlines()))
             if git(root, 'diff', '--name-only') or any(x.startswith('?') for x in porcelain(root)):
                 raise RuntimeError('冲突已解决但还有未暂存或未跟踪的改动，先 git add 或移走')
+            marked = conflict_markers(root, '--cached')
+            if marked:
+                raise RuntimeError('已暂存的文件里还有冲突标记（<<<<<<< / >>>>>>>），未提交合并：' + '、'.join(marked)
+                                   + '；删掉标记后重新 git add，再运行同一命令')
             run(root, ['git', 'commit', *message])
         if dirty(root):
             raise RuntimeError('尚有冲突或未提交现场，须先人工处理；未自动回退')
@@ -343,11 +369,20 @@ def prepare(root, state, state_file, executor):
                                    '放弃就 git merge --abort，让车道 git merge main 后重新交付，再运行即按新提交重排')
         elif subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode:
             raise RuntimeError('main 已改变且尚未包含目标车道；请人工核对状态文件')
+        else:
+            # 唐僧解冲突后自己 git commit 了合并：同样不放行带标记的合并提交
+            marked = conflict_markers(root, state['base'] + '..HEAD')
+            if marked:
+                raise RuntimeError('合并提交里有冲突标记：' + '、'.join(marked) + '；先修好（git commit --amend）再运行同一命令')
         head = git(root, 'rev-parse', 'HEAD')
         state.update(phase='merged', head=head, mergeCommit=head)
         save(state_file, state)
     if state['phase'] == 'merged':
         if state['refresh']:
+            if 'syncSince' not in state:
+                # --abort 凭它找本次合并第一轮同步前的产物备份（同步脚本备份目录名同样以时间戳开头）
+                state['syncSince'] = time.strftime('%Y%m%d_%H%M%S')
+                save(state_file, state)
             # 提速提案 P3：车道已在同一套转换工具上同步过时直接用其产物（按指纹核对）；退出码 3＝条件不满足，改跑完整同步。
             # 同步脚本结束时自己跑 godot --import。
             sync = [sys.executable, TOOLS / '同步正式西游.py', '--accept-additions']
@@ -465,16 +500,112 @@ def abort_batch(root, folder):
     print('接着把没问题的车道重新合（可再 --finish --batch 攒一批）；撤出的那条在自己的工作树修好、git merge main 后再交付。', flush=True)
 
 
+GENERATED = PROJECT / 'modes/xiyou/generated'
+SYNC_BACKUPS = SUB / '04_验证/本地结果/自动同步'
+SYNC_BASELINES = SUB / '04_验证/本地结果/同步基线'
+SYNC_BACKED_UP = ['oracle', 'db', 'maps', 'manifest.json', 'slice.json']  # 同步脚本开头备份的产物（同步正式西游.py）
+
+
+def undo_sync(root, state):
+    """撤掉本次合并的同步：产物从第一轮同步开头的备份还原，删产物指纹与本产物目录的同步基线
+    （基线目录名＝产物目录绝对路径的 sha256，见同步正式西游.py comparison_baseline），下一次同步按还原后的产物重建基线。"""
+    if 'syncSince' not in state:
+        return '本次合并还没同步过，产物不用退'
+    gen = root / GENERATED
+    backups = sorted(p for p in (root / SYNC_BACKUPS).glob('*') if p.is_dir() and p.name[:15] >= state['syncSince'])
+    notes = []
+    if backups and (backups[0] / 'manifest.json').is_file():
+        for name in SYNC_BACKED_UP:
+            src, dst = backups[0] / name, gen / name
+            if not src.exists():
+                continue
+            if dst.is_dir() and not dst.is_symlink():
+                shutil.rmtree(dst)
+            elif dst.exists() or dst.is_symlink():
+                dst.unlink()
+            (shutil.copytree if src.is_dir() else shutil.copy2)(src, dst)
+        (gen / 'sync_stamp.json').unlink(missing_ok=True)
+        notes.append('产物（%s）按同步前备份 %s 还原' % ('、'.join(SYNC_BACKED_UP), backups[0].name))
+    else:
+        notes.append('没找到本次同步开头的产物备份（同步没走到备份就停了），产物未动')
+    key = hashlib.sha256(str(gen.resolve()).encode()).hexdigest()
+    for p in (root / SYNC_BASELINES).glob(key + '*'):
+        shutil.rmtree(p) if p.is_dir() else p.unlink()
+        notes.append('删同步基线 ' + p.name[:12] + '…')
+    return '；'.join(notes)
+
+
+def abort_one(root, folder, task):
+    """单条合并要撤出 main：退回本条合并前的 main（先存备份引用），撤掉本次同步写出的产物与同步基线，删 state.json。
+    本批已攒着的前几条（batch.json）不动；已推送到 GitHub 的不能退。"""
+    state_file = folder / 'state.json'
+    if not state_file.exists():
+        raise RuntimeError('没有准备中的合并（state.json），不需要撤')
+    state = json.loads(state_file.read_text())
+    if state['task'] != task:
+        raise RuntimeError('准备中的是另一条车道：' + state['task'])
+    base = state['base']
+    if subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', base, 'HEAD']).returncode:
+        raise RuntimeError('本条合并前的 main（%s）不在当前 main 历史里，先人工核对' % base[:9])
+    if any(x.startswith('??') for x in porcelain(root)):
+        raise RuntimeError('有未跟踪文件，先移走或提交，免得退回时丢失')
+    tracking = 'refs/remotes/github/main'
+    mc = state.get('mergeCommit')
+    if (mc and subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', tracking], capture_output=True).returncode == 0
+            and subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', mc, tracking]).returncode == 0):
+        raise RuntimeError('本条已推送到 GitHub，不能退回；改用新提交修复')
+    stamp = time.strftime('%Y%m%d_%H%M%S')
+    backup = 'refs/lane-merge/aborted-' + stamp
+    git(root, 'update-ref', backup, 'HEAD')
+    wip = None
+    if merge_head(root):
+        run(root, ['git', 'merge', '--abort'])  # 冲突现场没有可留的提交；stash create 遇未合并路径会失败
+    else:
+        wip = git(root, 'stash', 'create')  # 只生成提交对象，不动共用的 stash 栈
+        if wip:
+            git(root, 'update-ref', backup + '-wip', wip)
+    git(root, 'reset', '--hard', base)
+    note = undo_sync(root, state)
+    state_file.unlink()
+    print('已退回本条合并前的 main（%s）。备份：%s%s。%s。' % (
+        base[:9], backup, '（未提交改动在 ' + backup + '-wip）' if wip else '', note), flush=True)
+    if state.get('worktree'):
+        print('- %s：工作树保留在 %s；修好、git merge main 后再交付' % (state['task'], state['worktree']), flush=True)
+    if load_batch(folder):
+        print('本批已攒着的 %d 条不动（batch.json 保留）' % len(load_batch(folder)), flush=True)
+
+
 def doc_edits(changed):
     """总装收尾前在 main 手修的文档：只限 00_项目管理/ 下的 .md（交付单除外，别的交付单用 --also）。"""
     return {p for p in changed if p.startswith('00_项目管理/') and p.endswith('.md') and not p.startswith('00_项目管理/交付/')}
 
 
+def amended_merge(root, state, head):
+    """准备阶段停着的合并提交被 --amend 修过：还在 prepared 阶段、原 HEAD 就是合并提交，新 HEAD 父提交与它完全相同。"""
+    if state['phase'] != 'prepared' or state.get('mergeCommit') != state['head']:
+        return False
+    parents = lambda c: git(root, 'rev-list', '--parents', '-n', '1', c).split()[1:]
+    try:
+        return len(parents(head)) == 2 and parents(head) == parents(state['head'])
+    except RuntimeError:
+        return False
+
+
 def finish(root, state, state_file, executor, batch=False, affected=False):
     if state['phase'] not in ['prepared', 'committed']:
         raise RuntimeError('先运行准备合并，再手工登记，最后 --finish')
-    if git(root, 'rev-parse', 'HEAD') != state['head']:
-        raise RuntimeError('准备后 main HEAD 已改变；保留现场，先人工核对')
+    head = git(root, 'rev-parse', 'HEAD')
+    if head != state['head']:
+        if amended_merge(root, state, head):
+            # 总装 git commit --amend 修了合并提交（父提交相同）：认它，状态跟着改
+            print('提示：合并提交已修正（%s → %s，父提交相同），按修正后的提交接续' % (state['head'][:9], head[:9]), flush=True)
+            state.update(head=head, mergeCommit=head)
+            save(state_file, state)
+        else:
+            raise RuntimeError('准备后 main HEAD 已改变（%s → %s）；保留现场。准备之后不要另起提交：总装修测试或别的文件留成未提交改动，'
+                               '--finish 时用 --also <路径> 一并带入（00_项目管理/ 下的 .md 用 --accept-doc-edits）；'
+                               '要修合并提交本身就 git commit --amend（父提交不变，工具会自动认）。已另起提交的，'
+                               'git reset --soft %s 退回成未提交改动再 --finish' % (state['head'][:9], head[:9], state['head'][:9]))
     if subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode:
         raise RuntimeError('交付提交不在 main 历史里，先人工核对')
     moved = lane_moved(state)
@@ -691,6 +822,8 @@ def main(argv=None):
     ap.add_argument('--executor', choices=['Claude', 'Codex'], default='Claude')
     modes.add_argument('--close-batch', action='store_true',
                        help='本批都 --finish --batch 收尾后、没有新车道要合时：统一跑 检查.sh --oracle（可加 --affected），通过后清理本批工作树、推送')
+    modes.add_argument('--abort', action='store_true',
+                       help='单条合并要撤出 main 时：存备份后退回本条合并前的 main，撤掉本次同步写出的产物与同步基线，删 state.json；车道工作树保留')
     modes.add_argument('--abort-batch', action='store_true',
                        help='本批最后的检查失败、要撤出某条车道时：存备份后退回本批开始前的 main，车道工作树都保留')
     ap.add_argument('--batch', action='store_true',
@@ -730,6 +863,13 @@ def main(argv=None):
             return 0
         if not a.task:
             raise RuntimeError('要给任务名（只有 --abort-batch、--close-batch 不用）')
+        if a.abort:
+            folder.mkdir(exist_ok=True)
+            lock = folder / 'running.lock'
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            os.close(fd)
+            abort_one(root, folder, a.task)
+            return 0
         if a.batch and not a.finish:
             raise RuntimeError('--batch 只和 --finish 一起用')
         if a.affected and (not a.finish or a.batch):
