@@ -1,7 +1,7 @@
 # 交付：claude/bajie-attack-query3
 
 - 车道／工作者：C 规则·战斗／八戒（Claude，八戒_77）
-- 状态：（见文末）
+- 状态：可合并
 - 基线：按派单从期二交付点 d5d34931 开（含期一、期二全部提交）。
 - 本期：期二交付单「遗留」1（敌人没有可用行动）、2（禁用号角、execute「不能用」分支），先补原版探针再改。
 
@@ -27,17 +27,18 @@
 2. `item_scene.gd` `_usable`：禁用号角「使用」灰（导入平衡包的 canUse）。
 3. `battle_replay.gd`：自动指令比对允许「没有行动」＝技能 0。
 4. `imported_balance.gd`：头注释改正（useItem 不付费、号角不扣、「使用」灰）。
-5. 原版探针 `attack_query_probe.cjs` 补 skip 组（13 例）：敌人走真实 processTurn（只把最外层 startAction 换成记录）、角色走真实 selectNextCommand→startAction（实例上记 useItem），含对照例；专项 `xiyou_attack_query` 对应比行动记录、付费差、物品数、canUse、两个物品窗。
+5. 专项断言按原版改：`xiyou_item_use` 全部公共事件物品可用的扫描把 5 个禁用号角单列为「灰」；`xiyou_troop_events` 第 2 回合「守层者必出手」改为开战时它有无条件可用的行动才要求（开战 TP 随机 0～24，204／207 的 4161 要 TP 10、233 的 4194 要 10，条件技能第 3 回合起：r1、r4 两个种子抽到 TP 不足，原版这时也不出手；参照是 Math.random 0.5 → TP 12，出手），这时附加伤害改比「没有命中」。
+6. 原版探针 `attack_query_probe.cjs` 补 skip 组（13 例）：敌人走真实 processTurn（只把最外层 startAction 换成记录）、角色走真实 selectNextCommand→startAction（实例上记 useItem），含对照例；专项 `xiyou_attack_query` 对应比行动记录、付费差、物品数、canUse、两个物品窗。
 
 ## 遗留（本期不改）
 
 1. **禁用角色的强制行动**：原版 `isValid` 包装对禁用角色恒假，但强制行动（processForcedAction→startAction）不看 isValid；useItem 被挡。重制现在同样不付费、对目标无效，但仍记一条 action（动画层面可能多一次空挥）。敌群事件强制禁用角色在正式数据里应不出现，没补探针。
-2. **角色行动时 MP 不够**：原版照扣到 0（`_mp -= cost` 后 refresh 夹到 0），重制 `u.mp -= c.mp` 后 `param_refresh`——专项 `skip.actor1-mp-short` 比的是付费差，若 refresh 不夹 0 会差 1；本期结果见「验证」。
+2. 重制菜单「使用」对号角在非地狱难度本来就灰（超强者号角 can_acquire 链）；本期加的 `is_disabled_horn` 让各难度都按导入平衡灰，与原版一致（RED 时这一项没失败，xiyou_item_use 在开了超强者开关时才露出）。
 
 ## 待交叉核查（点名原沙僧核心文件）
 
 - `battle_logic.gd`：enemy_action 空返回、decide、execute「不能用」分支按敌人／角色分开、blocks 不付费、act 空技能。
-- 另改：`item_scene.gd`、`battle_replay.gd`、`imported_balance.gd`（注释）；探针 `attack_query_probe.cjs`；专项 `xiyou_attack_query.gd`。
+- 另改：`item_scene.gd`、`battle_replay.gd`、`imported_balance.gd`（注释）；探针 `attack_query_probe.cjs`；专项 `xiyou_attack_query.gd`、`xiyou_item_use.gd`、`xiyou_troop_events.gd`（A 车道的敌群事件专项，只改第 2 回合出手与附加伤害两条断言，请沙僧看是否放得过宽）。
 
 ## 交接板
 
@@ -55,8 +56,19 @@
 
 ## 验证
 
-（待填）
+- RED：撤回实现、保留新专项跑 `xiyou_attack_query`，13 项失败（木桩 made／started 出手、敌人 MP 不够仍出手且付 TP、角色 MP 不够退回成攻击、5 个号角退回成攻击）；GREEN 全过。
+- 合 main：78e63123 起的 main（无冲突，没带进切片／转换器／探针改动）。
+- 专项＋选测（`并行测试.py --log-dir`，50 场景）：`xiyou_attack_query`、`xiyou_event_compare`、`xiyou_smart_ai`＋`_b`／`_c`／`_d`、`xiyou_hangup`／`_auto`／`_options`、`xiyou_battle.tscn`、`xiyou_imported_balance`、`xiyou_troop_events.tscn`／`_b`／`_half`、`xiyou_battle_events`、`xiyou_determinism`、`xiyou_random_streams`（回放）、`xiyou_item_use`／`_list`／`_marks`（物品窗）、`xiyou_combat`、`xiyou_review_regressions`、`xiyou_otb`、`xiyou_state_effects`（＋`_tp`）、`xiyou_sequence_visual`（execute 调用方）、`xiyou_rules` 全 24 段。第一轮 47 过、3 个失败（item_use、troop_events、troop_events_b，原因与改法见变更记录草稿第 5 条）；改断言后这 3 个＋`_half` 重跑全过。无偶发。
+- **战斗参照**：xiyou_rules 24 段与 troop_events_half（同参照 0.5）结果都不变，参照不需要重测；变的只是两个专项里依赖「退回攻击」的断言。
+- 负载提示：xiyou_rules 各段在负载 15～20 时 300～540 秒，并行测试提示按场景拆分（d4、d5 已近 600 秒上限）。
+- 同步 `同步正式西游.py --accept-additions`：只跑改过的 attack_query_probe（executed 1、reused 58），测量不变，产物指纹已留。
 
 ## 本分支提交
 
-（待填）
+- 607dd6b3 探针 skip 组
+- cf392189 行动无效按原版、号角、专项 skip 组
+- 合 main
+- 断言按原版（item_use、troop_events）
+- （本提交）交付单
+
+可合并
