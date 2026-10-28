@@ -310,6 +310,8 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	# _Fix_StackOverflow: one global lock, including additions to another battler.
 	if _adding_state:
 		return
+	if XAlienBattle.blocks_state(self):
+		return  # 异化归墟 addState 包装：归墟者攻击期间不给别人附加状态
 	_adding_state = true
 	_add_state(id, random)
 	_adding_state = false

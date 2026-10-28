@@ -627,7 +627,11 @@ static func magic_param(e: Dictionary, i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XRaceBattle.param(self, i, XCat.param(self, i, XActorModules.param(self, i, super(i))))  # 按原版安装先后由内到外：专属角色模块（米拉 98、宿傩 113）→小猫剑圣（115）→种族祝福（148）
+	return XRaceBattle.param(self, i, XAlienBattle.param(self, i, param_before_alien(i)))  # 按原版安装先后由内到外：专属角色模块（米拉 98、宿傩 113）→小猫剑圣（115）→异化逆骨（129）→种族祝福（148）
+
+## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
+func param_before_alien(i: int) -> float:
+	return XCat.param(self, i, XActorModules.param(self, i, super.param(i)))
 
 ## 永久写能力属于当前真实实例；影子克隆虽保留actor_id，也不能借它写真实账本。
 func can_add_param() -> bool:
