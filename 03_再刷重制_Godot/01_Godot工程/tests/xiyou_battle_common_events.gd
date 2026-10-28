@@ -38,6 +38,14 @@ func battle(party: Array, troop := 2) -> XBattleLogic:
 	return l
 
 
+## 技能替换（rule 流 changeto）的取数固定 0.5，同探针的 Math.random；别的取数照常
+class ChangeToHalf:
+	extends XRandomStream
+
+	func next_float(reason: String, event_key := "") -> float:
+		return 0.5 if reason == "changeto" else super(reason, event_key)
+
+
 ## 记录里的行动（act／强制行动的 execute）：[行动者, 技能或物品 ID]
 static func actions(logs: Array) -> Array:
 	return logs.filter(func(x): return x.type == "action").map(func(x): return [x.user, int(x.skill.id)])
@@ -59,13 +67,16 @@ func _thunder(id: String, learn_5083: bool, kill: bool) -> void:
 			if i > 0:
 				l.enemies[i].hidden = true
 		t.hp = 1.0
+	l.random.rule = ChangeToHalf.new()
 	l.act(a, XDB.rec("Skills", 217), t)
 	check(id + ".reserved", XBattleCommonEvent.reserved(l) == 84, XBattleCommonEvent.reserved(l))
 	var ev := l.run_events()
 	var forced: Array = actions(ev)
 	var want: Array = c.observed.actions.filter(func(x): return bool(x.forcing))
 	var got := forced.map(func(x): return {"subject": ("a%d" % x[0].actor_id) if x[0] is XActor else "?", "skill": x[1]})
-	var want_g := want.map(func(x): return {"subject": x.subject, "skill": int(x.item[1])})
+	# 探针在最外层 startAction 记技能，SkillChangeTo 在它里面：参照记的是换前的（533 雷动九天，ChangeTo 几率 0.6…）。
+	# 探针 Math.random 恒 0.5，原版同样会换；期望按同样的 0.5 再过一次 change_to（换法本身由 xiyou_skill_change_to 对照）。
+	var want_g := want.map(func(x): return {"subject": x.subject, "skill": int(l.change_to(a, XDB.rec("Skills", int(x.item[1]))).id)})
 	check(id + ".forced", JSON.stringify(got) == JSON.stringify(want_g), [got, want_g])
 	if not forced.is_empty() and not kill:
 		var hits := ev.filter(func(x): return x.type == "hit")

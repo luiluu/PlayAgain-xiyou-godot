@@ -1,6 +1,6 @@
 # 交付：claude/bajie-skill-changeto
 
-- 车道／工作者：C 规则·战斗／八戒（Claude，八戒_80）
+- 车道／工作者：C 规则·战斗／八戒（Claude，八戒_80 起头；14:36 重启丢会话后八戒_81 接手收尾）
 - 状态：进行中
 - 基线：claude/bajie-weapon-unleash-4656d6 末端 965f8b91（上一期武器解放，未进 main 时接着做）。
 - 本期：武器解放交付单遗留 2——TorigoyaMZ_SkillChangeTo 的 `<ChangeTo[id]: 条件>` 技能替换，先补原版探针再改。
@@ -29,11 +29,12 @@
 1. `battle_logic.gd`：新增 `change_to(u, skill)`、静态 `change_to_conditions(rec)`（照 MV extractMetadata 认 `<…ChangeTo[id]…: 条件>`，键序、同键覆盖同原版，按备注缓存）、`_change_to_test`（条件换成 Godot Expression：`Math.random()` 换成调 `change_to_roll()`，只认 `a.hp`／`a.mhp` 两个标识符，别的写法算假；不另写 JS 求值器）、`change_to_roll()`（rule 流 `"changeto"`）。`execute` 在敌人 can_use 判定之后、`XStateEffects.run("action_start")` 之前调用，所以先于武器解放。换出来的技能照常付费、选目标、记 action。
 2. 原版探针 `skill_change_to_probe.cjs`（202 例）：走真实 `BattleManager.startAction` 链（只把最后的 BEC startAction 换成记录），只给 doEval 里的取数喂磁带；65 个纯几率技能各「全中换第一条／全不中／只有最后一条中」，`<` 与 `<=` 等于几率的边界，第二／三条中，TP／MP 为 0 仍换，4938 按血量比例与 mhp 485 的 25／50／75% 两侧整数，敌人（敌群 1）也换，普攻与物品不掷。登记 `同步正式西游.py` 探针表与 `oracle_additions.py` KEYS。
 3. 专项 `xiyou_skill_change_to`：带 ChangeTo 的技能全集、每例解析出的条件（id＋原文）、真正开始的行动技能、ChangeTo 取数次数都与参照一致。
+4. `xiyou_battle_common_events` 雷动两例：天师真传公共事件强制行动 533 雷动九天（带 ChangeTo，几率 0.6／0.5…）。该探针在最外层 startAction 记技能（SkillChangeTo 在里面），参照记的是换前的 533，原版在探针的 Math.random 0.5 下同样会换成 5156。测试改为 changeto 取数固定 0.5（同探针），期望按同样掷数过一次 change_to 再比；参照不重录。
 
 ## 改了的原沙僧核心文件（待交叉核查点名）
 
 - `battle_logic.gd`：新函数 `change_to`、`change_to_conditions`、`_change_to_test`、`change_to_roll`；`execute` 在 `XStateEffects.run("action_start", u)` 之前加一行 `skill = change_to(u, skill)`。
-- 另改：探针 `skill_change_to_probe.cjs`；`同步正式西游.py`、`oracle_additions.py` 各加一行登记；专项 `xiyou_skill_change_to.gd`／`.tscn`。
+- 另改：探针 `skill_change_to_probe.cjs`；`同步正式西游.py`、`oracle_additions.py` 各加一行登记；专项 `xiyou_skill_change_to.gd`／`.tscn`；`tests/xiyou_battle_common_events.gd`（雷动两例的期望，见变更记录草稿 4）。
 
 ## 没做（原版能做、正式数据没用到）
 
@@ -44,6 +45,7 @@
 
 1. **外层 startAction 包装看到的是换之前的技能**（同武器解放遗留 1）：原版 Codex 运行时包装、MOG 连击在 ChangeTo 之外；重制 `XRaceBattle.begin`／`XAlienBattle.begin` 在 execute 里更晚，拿的是换后的技能，与原版读取时机（只存行动引用、之后才读）一致；`act()` 末尾的 `XCat.end_action` 拿的是换前的技能，但它只看是不是防御（技能 2），ChangeTo 不涉及。没为此单独补探针。
 2. 探针里 startAction 链另有 2 次 Math.random（不是 ChangeTo 的；探针回 0.5 并记 `otherRolls`，专项不比）。
+3. 「ChangeTo 在行动开始状态效果之前」的先后，正式数据里只有 4938（看 a.hp）会受影响（行动开始效果若改血）；没单独补「行动开始扣血＋4938」的组合探针，靠代码顺序与原版链一致。
 
 ## 交接板
 
@@ -57,7 +59,7 @@
 
 ## 可优化（流程／工具／效率）
 
-- 待写
+- 建议：`并行测试.py` 的名字是前缀匹配（给 `xiyou_battle` 会连带 `xiyou_battle_*` 9 个场景）。派单写场景名时注明「前缀」或给 `--exact`，免得选测范围比预想的大或小（本轮正因前缀匹配多跑了 `xiyou_battle_common_events` 才查出雷动两例）。归工具车道，收益小，不急。
 
 ## 验证
 
