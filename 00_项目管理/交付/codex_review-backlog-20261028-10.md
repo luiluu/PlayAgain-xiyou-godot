@@ -22,3 +22,10 @@
 - 原版 probe 重采 attack-native87.log done／0，43 例 sourceIdentity 与 cases 均与 generated 相同，无错误；原输出和脚本已存本期本地结果。无新产品问题已确认。
 - 两项长任务在途：attack-specialties.log（多个场景，6 个名称前缀会展开，最后见 troop_events_half 运行）与 simulation87.log（生产 draft／pending 限定六 hash，尚运行）；先读对应 .status.json，再用 等待任务.sh --timeout 45 等；不要重启／取消。模拟以六 hash 写 draft87.md，实际登记正文须相同范围；查 unsafeRemoved 与 notRemoved。专项按最终逐场结果和错误通道判定。
 - 下一步：等两任务，继续对照原版无效行动后的 onAllActionsEnd 与 Godot act 收尾和敌群测试收窄边界；若发现问题先复现并记录交 Claude，不修。按实际核查限定范围写报告、生产草稿模拟、文档选测 --affected dc8057c1 --oracle；完成后标可合并、提交推 github 核远端，同树续清其余未核批。五小时 95%、周 90% 停手；上下文实际 input_tokens 达 40% 同树下一序号。
+
+## 沙僧88 核查检查点（WIP，勿合并）
+
+- 两项接续长任务均 done／0：专项 8 场 16764／16764；`xiyou_troop_events_half` 有 3 条已知公式不可用警告，非测试失败。登记模拟 55→54，移除仅目标 6 提交，unsafeRemoved／notRemoved 均为空；尚未实际登记。
+- **P2：敌人无有效行动时行动结束状态提前消失。** 出处：`battle_logic.gd` 的 `act` 无条件 `_tick_states(u, 1)`；原版核心 `processTurn` 无效行动先移除当前行动，下次进入无行动分支调用 `onAllActionsEnd`，YEP 在 `_processTurn` 内不运行 `updateStateActionEnd`。复现：敌群 70 首敌无行动，给行动结束移除的状态 5 设置剩余 1；原版真实 `processTurn` 连续两次后状态仍在、剩余 1，`endAction` 调用 0 次；重制 `decide` 返回空、`act` 后状态消失。独立脚本 `idle-native88.cjs`／`idle-godot88.gd` 留在本期本地结果；前者只将下一行动者查询替为 null，避免无 UI 环境访问显示窗。建议 Claude 补原版对照及正式回归，区分跳过行动与实际行动的状态计时，并核其他收尾包装；不在核查轨修复。
+- 防御另走 `act` 分支：人工设置敌人防御冷却时 `can_use=false` 但直接 `act` 仍执行防御；独立 `guard-probe88.gd` 留本地结果。正常敌人决策会先过滤可用行动，目前未证明正常战斗可达，暂不列产品问题，须限定结论。
+- 后续：进一步核实敌群断言收窄、无效收尾及 P2 的适用范围；登记正文不得写完整通过，应记问题并依项目流程处理，重新模拟登记草稿；完成文档选测后交付。保留旧证据和现场。
