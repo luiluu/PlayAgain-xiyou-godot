@@ -1,7 +1,7 @@
 # 交付：claude/bajie-skill-changeto
 
 - 车道／工作者：C 规则·战斗／八戒（Claude，八戒_80 起头；14:36 重启丢会话后八戒_81 接手收尾）
-- 状态：进行中
+- 状态：可合并
 - 基线：claude/bajie-weapon-unleash-4656d6 末端 965f8b91（上一期武器解放，未进 main 时接着做）。
 - 本期：武器解放交付单遗留 2——TorigoyaMZ_SkillChangeTo 的 `<ChangeTo[id]: 条件>` 技能替换，先补原版探针再改。
 
@@ -63,8 +63,18 @@
 
 ## 验证
 
-- 待写
+- 选测＋专项（不跑全量），`并行测试.py --log-dir` 写本会话临时目录：
+  - 合 main（02b70ddd）前，44 个场景（`xiyou_battle` 按前缀连带 `xiyou_battle_*` 9 个）：`xiyou_skill_change_to` 2025/2025、`xiyou_weapon_unleash` 950/950、`xiyou_rules` 全 24 段全过（每段 115635～115746）、`xiyou_event_compare` 5/5、`xiyou_smart_ai` 四段 22127／22038／19531／19531、`xiyou_hangup` 25/25、`xiyou_hangup_auto` 226/226、`xiyou_hangup_options` 57/57、`xiyou_battle` 8/8、`xiyou_attack_query` 374/374、`xiyou_action_sequence` 115/115、其余 `xiyou_battle_*` 8 个全过；`xiyou_battle_common_events` 20/22（雷动两例，见变更记录草稿 4），改测试后 22/22。
+  - 合 main 后：`新建工作树.sh --补齐` 一次（合进来的提交改了 hit_warehouse 探针注释），复测 `xiyou_skill_change_to` 2025/2025、`xiyou_battle_common_events` 22/22、`xiyou_rules_d1b` 115733/115733。
+  - 无偶发。`xiyou_rules_d6c/d6d`、`xiyou_smart_ai`／`_b` 单场景超 300 秒（本机同时有主工作区检查在跑），并行测试照例提示拆分，不是本期造成。
+- 本期没碰切片、转换器；只新增探针（八戒_80 已在本工作树跑过同步、产物 `skill_change_to.json` 在），没重跑同步。
+- 战斗参照要重测的场景：只有 `xiyou_battle_common_events` 一个（测试期望调整，参照不重录），未触发停手条件。
+- 临时输出（补齐与测试日志）都在会话临时目录，已清理；工作树没有残留。
 
 ## 本分支提交
 
 - da10cbbd WIP：探针、专项、battle_logic.change_to
+- f3826414 专项固定神话掷数、交付单草稿
+- 58a32d81 合 main
+- 66ad6fc0 `xiyou_battle_common_events` 雷动两例对齐；交付单补遗留与可优化
+- 下一条：专项 `.gd.uid` 入库；合 main（02b70ddd）；交付单验证、可合并
