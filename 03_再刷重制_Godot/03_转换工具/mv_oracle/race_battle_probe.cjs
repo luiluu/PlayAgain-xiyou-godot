@@ -152,4 +152,71 @@ battleCase('brute', {race: 6, rank: 7, troop: 2, enemyAtkPlus: 4000}, [{round: 1
   {round: 1, skill: 3, target: 1}, {round: 1, skill: 3, target: 0}, {round: 2, skill: 3, target: 0},
   {roundEnd: 2}, {round: 3, user: 'e1', skill: 1, target: 0}, {round: 4, skill: 3, target: 1}, {round: 4, skill: 3, target: 0}]);
 battleCase('brute4', {race: 6, rank: 4, troop: 2, enemyAtkPlus: 4000}, [{round: 1, user: 'e0', skill: 1, target: 0}, {round: 1, skill: 3, target: 0}]);
+
+// ③ power.*（期二 2026-10-29）：战力预览的种族修正（P.expected 末尾 powerAdjust、cycle 里 resetPowerCycle／powerCost／startPowerTurn／
+//    人族行动数 1+q/2／commitPowerRoot、神族治疗 ×(1+q)、蛮族未计入）。角色 1／8 30 级新开局装备，CodexCombatPower.actor(a, true)。
+const PW = w.CodexCombatPower;
+for (const [actorId, race, rank, blood] of [[1, -1, 1], [1, 0, 7], [1, 1, 7], [1, 2, 7], [1, 2, 4], [1, 3, 7], [1, 3, 7, true], [1, 4, 7], [1, 5, 7], [1, 6, 7],
+  [8, -1, 1], [8, 0, 7], [8, 1, 7], [8, 3, 7, true], [8, 4, 7]]) {
+  cases.push(makeCase('power.' + actorId + '.' + race + '.' + rank + (blood ? '.blood' : ''), {actor: actorId, level: 30, race, rank, blood: !!blood}, () => {
+    newGame(); uncap();
+    const a = w.$gameActors.actor(actorId);
+    a.changeLevel(30, false);
+    setRace(a, race, rank, blood);
+    a.refresh(); a.recoverAll();
+    const p = PW.actor(a, true), e = p.evaluation, o = p.ownEvaluation;
+    const ev = x => ({burst: r(x.burst), sustained: r(x.sustained), effectiveHp: r(x.effectiveHp), auxiliary: r(x.auxiliary),
+      schedule: x.schedule.map(v => [v.turn, v.id, r(v.damage)]), unmodeled: x.coverage.unmodeled.map(u => [u.id, u.name, u.reason])});
+    return {total: p.total, self: p.self, parts: p.parts, selfParts: p.selfParts, full: ev(e), own: ev(o)};
+  }));
+}
+
+// ④ supply：种族补给（BattleManager.setup 记 CodexHonghuang.bossFloor，endBattle 记胜负，CodexEconomy.bossReward 后 claimSupply）。
+//    依次打各层；背包已满时暂存 inbox。setup 用敌群 2，endBattle 原函数在探针里会因画面缺失抛错，但包装先写了胜负（try 吞掉）。
+cases.push(makeCase('supply', {floors: [[7, 0], [7, 0], [7, 0], [7, 0], [7, 0], [12, 0], [6, 0], [13, 1], [13, 0], [33, 0], [34, 0], [16, 0, 'full']]}, () => {
+  newGame();
+  const bm = w.BattleManager, H = w.CodexHonghuang, oldFloor = H.bossFloor, rows = [];
+  w.$gameSystem._codexRaceSupply = {counts: {}, first: {}};
+  try {
+    for (const [floor, result, full] of [[7, 0], [7, 0], [7, 0], [7, 0], [7, 0], [12, 0], [6, 0], [13, 1], [13, 0], [33, 0], [34, 0], [16, 0, 'full']]) {
+      toasts.length = 0;
+      if (full) w.$gameParty.gainItem(w.$dataItems[C.stones[2]], 9999);
+      H.bossFloor = () => floor;
+      bm.setup(2, false, false);
+      try { bm.endBattle(result); } catch (e) {}
+      const got = R.claimSupply();
+      rows.push({floor, result, got, toasts: toasts.slice(), supply: JSON.parse(JSON.stringify(w.$gameSystem._codexRaceSupply)),
+        stones: C.stones.map(id => w.$gameParty.numItems(w.$dataItems[id]))});
+    }
+  } finally { H.bossFloor = oldFloor; }
+  return {maxItems: w.$gameParty.maxItems(w.$dataItems[C.stones[0]]), rows};
+}));
+
+// ⑤ learn：Game_Actor.learnSkill 包装（学会种族技能＝改数据再 sync，不走原 learnSkill）
+cases.push(makeCase('learn', {actor: 1}, () => {
+  newGame();
+  const a = w.$gameActors.actor(1), rows = [];
+  const snap = tag => rows.push({tag, race: JSON.parse(JSON.stringify(a._codexRace || null)), raceSkills: a._skills.filter(id => R.skillInfo(id))});
+  snap('start');
+  a._codexRace = {race: 2, rank: 3, free: false, blood: false, legacy: []}; a.learnSkill(C.skills[2][2]); snap('set-human-3');
+  a.learnSkill(C.skills[2][5]); snap('same-up-6');
+  a.learnSkill(C.skills[2][1]); snap('same-down-2');
+  a.learnSkill(C.skills[4][6]); snap('other-ghost-7');
+  delete a._codexRace; a.learnSkill(C.skills[5][3]); snap('nodata-spirit-4');
+  a.learnSkill(8); snap('plain-8');
+  return {rows, plain: a._skills.indexOf(8) >= 0};
+}));
+
+// ⑥ poisonInfo：人族毒鸡汤的选敌说明（Window_BattleEnemy.updateHelp 包装的文字），本回合／换回合／无毒
+cases.push(makeCase('poisonInfo', {race: 2, rank: 7, troop: 2}, () => {
+  const ctx = battle({race: 2, rank: 7, troop: 2}), rows = [];
+  const info = () => ctx.enemies.map(e => R.poisonInfo(e));
+  w.$gameTroop._turnCount = 1; rows.push(info());
+  act(ctx.bm, ctx.a, 3, 0); rows.push(info());
+  ctx.b._codexRace = {race: 2, rank: 4, free: false, blood: false, legacy: []}; ctx.b.learnSkill(C.skills[2][3]); w.$gameParty.battleMembers().forEach(x => R.battleState(x));
+  act(ctx.bm, ctx.b, 3, 0); rows.push(info());
+  act(ctx.bm, ctx.a, 3, 1); rows.push(info());
+  w.$gameTroop._turnCount = 2; rows.push(info());
+  return {rows, names: [ctx.a.name(), ctx.b.name()]};
+}));
 process.exit(finish(host, 'race_battle.json', {hostScope: '新游戏（Math.random 0.5）；种族祝福能力值与战斗效果', cases}) ? 0 : 1);

@@ -13,8 +13,9 @@ extends RefCounted
 ## - 回合末（BattleManager.endTurn）：人族毒鸡汤按记下的有效伤害 ×q/2 结算并去掉毒鸡汤状态；鬼族把本回合的技能组交给下回合。
 ## - 蛮族：敌人行动对本人的直接伤害每回合首个行动最多扣开战最大生命 ×(0.75−2q)（0.45 记 0.5）；受伤≥10% 后下回合内反攻来源。
 ## - 人族九九六：每回合 q/2 概率在 OTB 行动顺序里该角色最后一次之后再插一次（规则随机数，Math.random）。
-## 未移植：战力预演（powerAdjust 等，XPower 尚无种族项）、妖族群攻手选猎物（needsSelection＋onEnemyOk）、战斗指令「血契：开／关」、
-## 状态说明 R.status、敌人选择窗的毒鸡汤说明、种族补给（bossReward）、学会种族技能改种族（learnSkill 包装）、旧道具合并与商店。
+## - 战力预演（power_*，XPower 调）、选敌帮助的毒鸡汤说明（poison_info）；种族补给在 XDungeon.race_supply，learnSkill 包装在 XRace.learn。
+## 未移植：妖族群攻手选猎物（needsSelection＋onEnemyOk）、战斗指令「血契：开／关」、旧道具合并与商店。
+## 不移植：状态说明 R.status（冻结源里没有调用处）。
 
 static func config() -> Dictionary:
 	return XRace.config()
@@ -107,7 +108,7 @@ static var _logic_ref: WeakRef
 
 static func _store(logic) -> Dictionary:
 	if not logic.has_meta("xrace"):
-		logic.set_meta("xrace", {"actors": {}, "current": null, "hit": null, "derived": 0, "lastEnd": -1, "serial": 0})
+		logic.set_meta("xrace", {"actors": {}, "current": null, "hit": null, "derived": 0, "lastEnd": -1, "serial": 0, "pending": []})
 	return logic.get_meta("xrace")
 
 
@@ -131,7 +132,7 @@ static func state(logic, a) -> Dictionary:
 
 ## BattleManager.startBattle 包装：清本场数据，出战成员建数据
 static func start(logic) -> void:
-	logic.set_meta("xrace", {"actors": {}, "current": null, "hit": null, "derived": 0, "lastEnd": -1, "serial": 0})
+	logic.set_meta("xrace", {"actors": {}, "current": null, "hit": null, "derived": 0, "lastEnd": -1, "serial": 0, "pending": []})
 	_logic_ref = weakref(logic)
 	for a in logic.actors:
 		state(logic, a)
@@ -222,6 +223,10 @@ static func prey(logic, u, item: Dictionary, targets: Array):
 # ---- 行动根 ----
 ## R.begin（startAction 包装＋makeTargets 包装的合并）：建根，妖族定猎物，蛮族取未过期的反攻目标
 static func begin(logic, u, item: Dictionary, targets: Array, logs: Array = []) -> Dictionary:
+	var pending: Array = _store(logic).pending
+	if not pending.is_empty():
+		logs.append_array(pending)
+		pending.clear()
 	var a_state = state(logic, u) if u is XActor else null
 	var r := {"subject": u, "item": item, "targets": targets.duplicate(), "records": [], "incoming": [], "ended": false,
 		"prey": null, "low": false, "divine": a_state != null and int(a_state.godTurn) != turn(logic), "blood": false, "echo": false,
@@ -551,7 +556,9 @@ static func human_extra(logic, a) -> bool:
 	return bool(s.humanExtra)
 
 
-static func insert_human(logic, order: Array, logs: Array = []) -> void:
+## logs 不给时（battle_logic 排行动顺序处没有提示列表）提示先暂存，下一个行动根开始时（begin）补出
+static func insert_human(logic, order: Array, logs = null) -> void:
+	var out: Array = logs if logs is Array else _store(logic).pending
 	for a in logic.actors:
 		var s := state(logic, a)
 		var r := turn(logic)
@@ -561,7 +568,23 @@ static func insert_human(logic, order: Array, logs: Array = []) -> void:
 		if human_extra(logic, a) and order.has(a):
 			var last := order.rfind(a)
 			order.insert(last + 1, a)
-			_toast(logs, a.display_name() + "九九六：额外行动")
+			_toast(out, a.display_name() + "九九六：额外行动")
+
+
+## R.poisonInfo（Window_BattleEnemy.updateHelp 包装）：选敌时帮助窗第二行——本回合各人记在该敌人身上、还挂着毒鸡汤的待结算量
+static func poison_info(logic, t) -> String:
+	if logic == null or not logic.has_meta("xrace"):
+		return ""
+	var rows := []
+	var r := turn(logic)
+	var st := _store(logic)
+	var owners: Array = st.actors.keys().filter(func(x): return x is XActor)
+	owners.sort_custom(func(x, y): return x.actor_id < y.actor_id)  # allActors：按角色编号
+	for a in owners:
+		for p in st.actors[a].poison:
+			if is_same(p.target, t) and int(p.turn) == r and t.state_ids.has(int(p.id)):
+				rows.append(a.display_name() + "：" + str(int(floorf(float(p.amount)))))
+	return "毒鸡汤（回合末） " + "；".join(rows) if not rows.is_empty() else ""
 
 
 # ---- 伤害钩子 ----
@@ -578,6 +601,11 @@ static func capture(item: Dictionary, a: XBattler, b: XBattler, options: Diction
 	var d := data_of(a)
 	if d.is_empty() or int(d.race) < 0 or bool(options.get("raceProbe", false)):
 		return out
+	if bool(options.get("raceSuppress", false)):
+		return out
+	var power = options.get("racePower", null)
+	if power is Dictionary:
+		return _capture_power(item, a, b, options, power, d)
 	var logic = active_logic()
 	var r = current(logic) if logic != null and logic.has_meta("xrace") else null
 	if logic != null and logic.has_meta("xrace"):
@@ -600,6 +628,85 @@ static func capture(item: Dictionary, a: XBattler, b: XBattler, options: Diction
 	out.low = bool(r.low) if r != null else b.hp / maxf(b.mhp, 1.0) <= 0.3
 	out.counter = r != null and r.counter != null and is_same(r.counter, b)
 	return out
+
+
+## 战力预演（action._codexPowerPreview＋a._codexRacePower）：不在战斗、没有行动根；神族首魔看本回合 godUsed，
+## 魔族血契看费用里的 raceBlood 或当下 powerBlood，妖族猎物就是预演目标
+static func _capture_power(item: Dictionary, a, b, options: Dictionary, p: Dictionary, d: Dictionary) -> Dictionary:
+	if not _is_skill(item):
+		return {"race": -1}
+	return {"race": int(d.race), "q": rate_of(a), "divine": not bool(p.godUsed),
+		"blood": bool(options.get("racePowerBlood", false)) or power_blood(a, item, p), "weapon": weapon_matches(a, item),
+		"hunter": b != null, "low": b != null and b.hp / maxf(b.mhp, 1.0) <= 0.3, "counter": false}
+
+
+# ---- 战力预演（installCombatPowerRuntime 调的 R.resetPowerCycle／startPowerTurn／powerBlood／powerCost／powerAdjust／commitPowerRoot） ----
+## resetPowerCycle：每条 10 回合路线一份
+static func power_cycle() -> Dictionary:
+	return {"turn": 0, "godUsed": false, "bloodUsed": false, "echoUsed": false, "previous": null, "last": null}
+
+
+## startPowerTurn：上回合最后一次鬼族技能组交给本回合，各「本回合一次」清掉
+static func power_turn(p: Dictionary, t: int) -> void:
+	p.previous = p.last if p.last != null and int(p.last.turn) == t - 1 else null
+	p.last = null
+	p.turn = t
+	p.godUsed = false
+	p.bloodUsed = false
+	p.echoUsed = false
+
+
+## powerBlood：魔族开着血契、本回合还没付、物理（或混合）伤害技能、生命≥最大生命一半
+static func power_blood(a, item: Dictionary, p: Dictionary) -> bool:
+	var d := data_of(a)
+	return not d.is_empty() and int(d.race) == 3 and bool(d.blood) and not bool(p.bloodUsed) \
+		and int(item.get("damage", {}).get("type", 0)) == 1 and (int(item.get("hitType", 0)) == 1 or _mixed(item)) and a.hp >= a.mhp * 0.5
+
+
+## powerCost：血契时费用另加 3% 最大生命（至少 1），并标 raceBlood
+static func power_cost(a, item: Dictionary, cost: Dictionary, p: Dictionary) -> Dictionary:
+	if power_blood(a, item, p):
+		cost = cost.duplicate()
+		cost.hp = float(cost.hp) + maxf(1.0, ceilf(a.mhp * 0.03))
+		cost.raceBlood = true
+	return cost
+
+
+## powerAdjust：人族 ×(1+q/2)；鬼族上回合同组技能 ×(1+q)（每回合一次，普攻不算）；
+## 妖族群攻（scope 2）：参照把一体按 60%、三体按 40% 计（×1.8），猎物加成只给一体——value/1.8×(1+0.8×无种族/有种族)
+## calc.call(suppress) 返回不含期望处理的预演伤害（suppress 时不算种族钩子）
+static func power_adjust(a, item: Dictionary, value: float, p: Dictionary, calc: Callable) -> float:
+	var d := data_of(a)
+	if d.is_empty() or value <= 0.0:
+		return value
+	var q := rate_of(a)
+	var race := int(d.race)
+	if race == 2:
+		value *= 1.0 + q / 2.0
+	if race == 4 and not a.is_attack(item) and not bool(p.echoUsed) and p.previous != null and int(p.previous.group) == group(item):
+		value *= 1.0 + q
+	if race == 1 and int(item.get("scope", 0)) == 2:
+		var normal: float = calc.call(false)
+		var base: float = calc.call(true)
+		if normal > 0.0:
+			value = value / 1.8 * (1.0 + 0.8 * base / normal)
+	return value
+
+
+## commitPowerRoot：选定这次行动后记神族本回合已魔法、血契已付、鬼族残响已用与本回合技能组
+static func power_commit(a, item: Dictionary, value: float, p: Dictionary) -> void:
+	var d := data_of(a)
+	if d.is_empty() or value <= 0.0:
+		return
+	var key := group(item)
+	if int(d.race) == 0 and (int(item.get("hitType", 0)) == 2 or _mixed(item)):
+		p.godUsed = true
+	if power_blood(a, item, p):
+		p.bloodUsed = true
+	if int(d.race) == 4 and int(item.get("id", 0)) != a.attack_skill_id():
+		if p.previous != null and int(p.previous.group) == key:
+			p.echoUsed = true
+		p.last = {"group": key, "turn": int(p.turn)}
 
 
 static func _op(field: String, value: float, operation := "mul") -> Dictionary:

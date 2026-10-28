@@ -98,6 +98,24 @@ static func sync(s: XState, a: XActor) -> void:
 	a.refresh_passive()
 
 
+## Game_Actor.learnSkill 包装：学会种族技能不走原 learnSkill——没数据就按该技能建（换族免费），同族阶位取较大，
+## 别族不变；再 sync（角色身上只留当前种族该阶的一个）。返回 true＝已接管。原版入口：兑换大厅「修复种族技能」等事件 318。
+static func learn(s: XState, a: XActor, id: int) -> bool:
+	if s == null or config().is_empty():
+		return false
+	var info := skill_info(id)
+	if info.is_empty():
+		return false
+	var all: Dictionary = state(s).actors
+	var key := str(a.actor_id)
+	if not all.has(key):
+		all[key] = {"race": int(info.race), "rank": int(info.rank), "free": true, "blood": false, "legacy": []}
+	elif int(all[key].race) == int(info.race):
+		all[key].rank = maxi(int(all[key].rank), int(info.rank))
+	sync(s, a)
+	return true
+
+
 ## R.migrate：开关 281～287 恰好开了一个时把它当开局默认，再给全队补数据
 static func migrate(s: XState) -> void:
 	if default_race(s) < 0:
