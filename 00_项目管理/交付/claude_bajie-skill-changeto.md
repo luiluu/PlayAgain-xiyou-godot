@@ -30,11 +30,12 @@
 2. 原版探针 `skill_change_to_probe.cjs`（202 例）：走真实 `BattleManager.startAction` 链（只把最后的 BEC startAction 换成记录），只给 doEval 里的取数喂磁带；65 个纯几率技能各「全中换第一条／全不中／只有最后一条中」，`<` 与 `<=` 等于几率的边界，第二／三条中，TP／MP 为 0 仍换，4938 按血量比例与 mhp 485 的 25／50／75% 两侧整数，敌人（敌群 1）也换，普攻与物品不掷。登记 `同步正式西游.py` 探针表与 `oracle_additions.py` KEYS。
 3. 专项 `xiyou_skill_change_to`：带 ChangeTo 的技能全集、每例解析出的条件（id＋原文）、真正开始的行动技能、ChangeTo 取数次数都与参照一致。
 4. `xiyou_battle_common_events` 雷动两例：天师真传公共事件强制行动 533 雷动九天（带 ChangeTo，几率 0.6／0.5…）。该探针在最外层 startAction 记技能（SkillChangeTo 在里面），参照记的是换前的 533，原版在探针的 Math.random 0.5 下同样会换成 5156。测试改为 changeto 取数固定 0.5（同探针），期望按同样掷数过一次 change_to 再比；参照不重录。
+5. 合并选测返工（唐僧交回，`xiyou_floor_run_c` 506/509）：`xiyou_floor_run` 三十一、三十二层夹具。两层守层者女娲／伏羲都是「1047 物理免疫 → 打到 0 换 1048 只放元素 1」两阶段，且女娲反击、闪避各 0.85（普攻每下约 2% 落到身上），伏羲各 1（普攻打不中）。原先第二阶段靠队友普攻碰运气（F31 第 24 回合狗逍遥才中）或狗逍遥自动战斗随机选到 311（F32），首领第 2 回合选 3798 会秒人。技能替换的取数（原版也掷 Math.random）让 rule 流错位后，F31 51 回合没中、队伍先倒；F32 修、美娜、罗琳被秒。change_to 本身没错：533→5156～5160 原版同样换（伤害 ×25～×50，1.8e19 是夹具把 mat 抬到 2e19 的正常结果），5156 与 533 同为元素 9、必中，第二阶段两者都被 1048 免成 0。改法：F31 修奇数回合 533、偶数回合 1038 龙吼（元素 1、必中、零耗）；F32 修照正式排表、其余三人全回合 1038，同回合打完第二阶段；F31 判据认 533 及其 ChangeTo 目标；`f32_reload_boss_beaten` 补失败详情。关掉 change_to 再跑也是 560/560、F31 两回合、F32 一回合，夹具与随机流无关。
 
 ## 改了的原沙僧核心文件（待交叉核查点名）
 
 - `battle_logic.gd`：新函数 `change_to`、`change_to_conditions`、`_change_to_test`、`change_to_roll`；`execute` 在 `XStateEffects.run("action_start", u)` 之前加一行 `skill = change_to(u, skill)`。
-- 另改：探针 `skill_change_to_probe.cjs`；`同步正式西游.py`、`oracle_additions.py` 各加一行登记；专项 `xiyou_skill_change_to.gd`／`.tscn`；`tests/xiyou_battle_common_events.gd`（雷动两例的期望，见变更记录草稿 4）。
+- 另改：探针 `skill_change_to_probe.cjs`；`同步正式西游.py`、`oracle_additions.py` 各加一行登记；专项 `xiyou_skill_change_to.gd`／`.tscn`；`tests/xiyou_battle_common_events.gd`（雷动两例的期望，见变更记录草稿 4）；`tests/xiyou_floor_run.gd`（F31／F32 夹具与判据，见变更记录草稿 5）。
 
 ## 没做（原版能做、正式数据没用到）
 
@@ -66,6 +67,7 @@
 - 选测＋专项（不跑全量），`并行测试.py --log-dir` 写本会话临时目录：
   - 合 main（02b70ddd）前，44 个场景（`xiyou_battle` 按前缀连带 `xiyou_battle_*` 9 个）：`xiyou_skill_change_to` 2025/2025、`xiyou_weapon_unleash` 950/950、`xiyou_rules` 全 24 段全过（每段 115635～115746）、`xiyou_event_compare` 5/5、`xiyou_smart_ai` 四段 22127／22038／19531／19531、`xiyou_hangup` 25/25、`xiyou_hangup_auto` 226/226、`xiyou_hangup_options` 57/57、`xiyou_battle` 8/8、`xiyou_attack_query` 374/374、`xiyou_action_sequence` 115/115、其余 `xiyou_battle_*` 8 个全过；`xiyou_battle_common_events` 20/22（雷动两例，见变更记录草稿 4），改测试后 22/22。
   - 合 main 后：`新建工作树.sh --补齐` 一次（合进来的提交改了 hit_warehouse 探针注释），复测 `xiyou_skill_change_to` 2025/2025、`xiyou_battle_common_events` 22/22、`xiyou_rules_d1b` 115733/115733。
+  - 合并选测返工（唐僧合 dev.201 后 `xiyou_floor_run_c` 506/509）：本工作树复现同样 3 项失败；改夹具后 `xiyou_floor_run` 273/273、`_b` 332/332、`_c` 560/560，`xiyou_skill_change_to` 2025/2025、`xiyou_battle_common_events` 22/22、`xiyou_weapon_unleash` 950/950；另临时关掉 change_to 跑 `_c` 也是 560/560（调试改动已撤回）。
   - 无偶发。`xiyou_rules_d6c/d6d`、`xiyou_smart_ai`／`_b` 单场景超 300 秒（本机同时有主工作区检查在跑），并行测试照例提示拆分，不是本期造成。
 - 本期没碰切片、转换器；只新增探针（八戒_80 已在本工作树跑过同步、产物 `skill_change_to.json` 在），没重跑同步。
 - 战斗参照要重测的场景：只有 `xiyou_battle_common_events` 一个（测试期望调整，参照不重录），未触发停手条件。
@@ -77,4 +79,6 @@
 - f3826414 专项固定神话掷数、交付单草稿
 - 58a32d81 合 main
 - 66ad6fc0 `xiyou_battle_common_events` 雷动两例对齐；交付单补遗留与可优化
-- 下一条：专项 `.gd.uid` 入库；合 main（02b70ddd）；交付单验证、可合并
+- 2903e9db 专项 `.gd.uid` 入库；94930424 合 main（02b70ddd）；0b7ed031 交付单验证、可合并
+- c511e069 返工：`xiyou_floor_run` F31／F32 夹具（第二阶段改由必中元素 1 技能结束）
+- 下一条：交付单补返工
