@@ -1,7 +1,7 @@
 # 交付：codex/review-backlog-20261028-7
 
-- 车道／工作者：核查／重制_沙僧_85（Codex）
-- 状态：WIP，同树自动接力沙僧85→86；第七期未最终交付，勿整条合并
+- 车道／工作者：核查／重制_沙僧_86（Codex）
+- 状态：WIP，沙僧86已同树接手；第七期运行取证中，勿整条合并
 - 正在做什么：审Claude武器解放、工具补漏及剩余文档登记；第六期已提交推送，四批待总装登记，不重核。
 - 基准：dc8057c186702569d93f0213d702dd52e4442b71；固定基准，不追新合并。
 - 范围：武器解放28a6c7ab／16f67bd6、工具补漏dc8057c1；文档登记以pending-start.json逐批排除Codex提交后限定。
@@ -28,3 +28,11 @@
 - 收口第七期：把运行结果补报告，正式生产解析拟登记条目、模拟只销上述Claude13提交并查unsafeRemoved；跑本分支文档选测--affected dc8057c1 --oracle，保留全部失败，再提交推送核远端SHA。第七期没有最终交付前勿合。
 - 已并行准备第八期源码（全部只读，不切分支）：content-agent三批reach106／115／109；ce-agent审ce-fix2和G1；tools-agent审nezha-merge-speed／slice-affected／floor-narrow。其检查点位于review-backlog-20261028-8/{content-agent,ce-agent,tools-agent}/checkpoint.md。先读检查点提纲继续未完验证，不重读已审大差异或重复168工具套件。子代理已通知收尾保存，不再派新活；新会话读文件即可，不依赖旧代理上下文。
 - 原授权继续清积压，不要每期结束停下来等Kyo再说继续；遇问题只记交Claude，总装登记后再核修复。到40%自动接下个序号，同树保存证据；到额度线真实收尾停手。
+
+## 沙僧86进行中
+
+- 已同树接手；tracked开工干净，旧证据全部保留。开工额度五小时68%、周21%，未使用重置。
+- prepare已done/0；正式原版武器重采86例，stdout errors=[]；重采sourceIdentity与cases分别完全等于当前generated，保存native-weapon-unleash.json与native-weapon-comparison.json。
+- 相关11场专项和两个独立强制行动诊断在运行／共用槽排队。Godot诊断首次排队时为补隔离HOME主动停止，仅重启自己的诊断到forced-godot-isolated.log；保留原日志与终态。
+- 生产待核查解析器的内存限定登记模拟已结束：只移除预定13个Claude提交，unsafeRemoved=[]、notRemoved=[]；全部角色待审批63→54，混合批的Codex提交仍保留。尚未实际登记。
+- 第八期floor-narrow候选已用生产select与未改动的两份真实测试完整隔离复现：只改keepEvents图32／4时，分别漏选unknown160／floor30_seeker；full=false。证据在第八期tools-agent/floor-selection-counterexample.json；本车道只记不修。
