@@ -1,0 +1,324 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-bare\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "565295bbad7e1234",
+      "newDigest": "ac920237f6abb387",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-weapon77\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "732e267bd2dd93e8",
+      "newDigest": "aef921cfd886b76c",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-weapon83\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "4e437ef3130cdff9",
+      "newDigest": "063bbc518f2a821c",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.102-weapon12\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "25e95342fe739c90",
+      "newDigest": "5896aa3a2b2262a2",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.161-weapon79\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "aced625e22a23309",
+      "newDigest": "0f62600b90f7e451",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.167-armor4541\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "2a4f35d5e29b12c8",
+      "newDigest": "616a191b73a65d34",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.167-armor4541-skill2071\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "d0b03f985fd00991",
+      "newDigest": "4fd7480e433d0099",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-weapon78-unequippable\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "623670c7f80d6cb6",
+      "newDigest": "af67d2eaf70fbda0",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-state66\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "1413fc96c20d9807",
+      "newDigest": "aff1bc29c9c7e5b5",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-state125\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "71fa8f1ca8ecc363",
+      "newDigest": "449efe169c119ed4",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-state120\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "d3b047e2211b615d",
+      "newDigest": "2696d4c3401f9a06",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-state66-weapon77\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "34d24d0ac7f4e877",
+      "newDigest": "a58ed269c7d4d7e8",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-state41\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "3e29c757ca99e3fe",
+      "newDigest": "50fb4aa5d6dab531",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-state41-weapon77\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "0d25e081e21d8ade",
+      "newDigest": "5485ff2c2acff255",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-states66-120\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "fd058ff2d8eeb4f6",
+      "newDigest": "085e3e91cd581dd0",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-states120-66\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "201ec79d6d8f3527",
+      "newDigest": "da58c117c9a16382",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-skill2071\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "ac98135aef041826",
+      "newDigest": "43b7d7c90e9c2edd",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-skill2071-weapon77\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "b1e72d3885f2347a",
+      "newDigest": "f2cce99afa305a71",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.154-skills2071-2419\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "3e69f7cfa568d826",
+      "newDigest": "ae795e92762cb51f",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.1-bare\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "56d33a93eac11898",
+      "newDigest": "0c046d9bd65a271e",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.171-bare\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "125050b3ad921570",
+      "newDigest": "fa05a6a835c8239e",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.171-shape2631\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "1427ed6be4540faa",
+      "newDigest": "bc13957e236f6ee3",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.171-shape2633-weapon77\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "6aaa0f099380324a",
+      "newDigest": "3193e34228684ad2",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.172-bare\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "f1d62d4193c91d10",
+      "newDigest": "a38ff46f1eca589e",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"actor.172-state66-weapon77\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "6739749cae81941b",
+      "newDigest": "fd8a447b37fe2c1c",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"enemy.1-bare\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "4014b8344a4cb125",
+      "newDigest": "83776abef7dad6bd",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"enemy.1-state120\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "50d6246ececc14d6",
+      "newDigest": "0097c6b0f3a8114a",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"enemy.1-state125\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "b7d02ccbf22cebc6",
+      "newDigest": "11cc757df4b1e2e5",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"enemy.1-state41\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "6861057bbf05853c",
+      "newDigest": "4a6d81e616e9b21a",
+      "reason": "attack-query 期二探针补测量：29 个旧例的 observed 只新增 setAttack／hangUpAction／hangUpScheduled 三字段，旧字段值逐项不变（唐僧合并时逐例核对）；新增例 157 禁用角色"
+    }
+  ]
+}
