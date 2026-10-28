@@ -1753,13 +1753,13 @@ for name in filter(None, files):
         self.put(str(gen / 'manifest.json'), '{"v": "before"}\n')
         self.put(str(gen / 'oracle/a.json'), '{"a": 1}\n')
         # 假同步按真同步的顺序：建基线（不存在时取当前产物）→ 备份产物 → 写新产物；第二个参数让它拒收（退出码 2）
-        self.put(str(merge.TOOLS / '同步正式西游.py'), '''import hashlib, shutil, sys, time
+        self.put(str(merge.TOOLS / '同步正式西游.py'), '''import datetime, hashlib, shutil, sys
 from pathlib import Path
 root = Path.cwd(); gen = root / %r; res = root / %r
 base = res / '同步基线' / hashlib.sha256(str(gen.resolve()).encode()).hexdigest()
 if not base.exists():
     shutil.copytree(gen / 'oracle', base / 'oracle'); shutil.copy2(gen / 'manifest.json', base / 'manifest.json')
-bk = res / '自动同步' / (time.strftime('%%Y%%m%%d_%%H%%M%%S_%%f') + '_v-v')
+bk = res / '自动同步' / (datetime.datetime.now().strftime('%%Y%%m%%d_%%H%%M%%S_%%f') + '_v-v')  # 同真同步：time.strftime 不认 %%f，同一秒两次会撞名
 shutil.copytree(gen / 'oracle', bk / 'oracle'); shutil.copy2(gen / 'manifest.json', bk / 'manifest.json')
 (gen / 'oracle/common_scripts.json').write_text('{}'); (gen / 'manifest.json').write_text('{"v": "lane"}')
 (gen / 'sync_stamp.json').write_text('{}')

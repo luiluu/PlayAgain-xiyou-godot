@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.200",
-  "sequence": 200,
-  "next": "dev.201",
-  "nextSequence": 201,
+  "current": "dev.201",
+  "sequence": 201,
+  "next": "dev.202",
+  "nextSequence": 202,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-weapon-unleash-4656d6",
+  "currentChange": "bajie-skill-changeto",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
