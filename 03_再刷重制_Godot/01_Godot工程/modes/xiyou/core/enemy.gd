@@ -257,6 +257,12 @@ func replace_attack_objects() -> Array:
 	out.append(data())
 	return out
 
+## Game_Enemy.weaponUnleashes：状态 → 敌人
+func weapon_unleash_objects() -> Array:
+	var out := super.weapon_unleash_objects()
+	out.append(data())
+	return out
+
 ## 敌人可用的技能对象（来自行动列表），伤害结算按 objects() 扫描标签时会用到。
 func skills() -> Array:
 	var out := []

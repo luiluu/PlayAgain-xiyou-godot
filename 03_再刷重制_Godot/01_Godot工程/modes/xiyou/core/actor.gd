@@ -455,6 +455,14 @@ func replace_attack_objects() -> Array:
 	out.append(data())
 	return out
 
+## Game_Actor.weaponUnleashes：状态 → 装备（按槽序）→ 职业 → 角色
+func weapon_unleash_objects() -> Array:
+	var out := super.weapon_unleash_objects()
+	out.append_array(equip_list())
+	out.append(class_data())
+	out.append(data())
+	return out
+
 const TOJI := 171
 const TOJI_MAIN := [10216, 10217, 10218, 10219]
 const TOJI_SHAPES := [2630, 2631, 2632, 2633]
