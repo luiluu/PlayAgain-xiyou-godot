@@ -399,7 +399,7 @@ static func _set_heart(logic, a, n: int) -> void:
 ## 被动来源同 dsPassiveSkill：装备＋技能＋状态的备注元数据。每一剑段按这个次数重复（_strike 的 segmentRepeat），不重复整个连携。
 static func native_repeats(logic, a, item: Dictionary) -> int:
 	var n := float(item.get("repeats", 1))
-	if int(item.get("id", 0)) == XBattleLogic.ATTACK_SKILL:
+	if a.is_attack(item):  # isAttack：看此刻的 attackSkillId
 		n += a.attack_times_add()
 	var atkk := 0
 	var again := 0.0

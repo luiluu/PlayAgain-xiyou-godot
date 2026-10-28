@@ -183,7 +183,7 @@ static func weapon_matches(a, item: Dictionary) -> bool:
 	if weapons.is_empty():
 		return false
 	var id := int(item.id)
-	if id == XBattleLogic.ATTACK_SKILL:
+	if a.is_attack(item):  # x.isAttack()||id===attackSkillId
 		return true
 	for e in weapons:
 		var base := int(e.get("base", e.get("id", 0)))
@@ -263,7 +263,7 @@ static func _activate(logic, r: Dictionary, logs: Array) -> void:
 			_toast(logs, a.display_name() + "发动血契")
 	var prev = s.ghostPrevious
 	r.echo = int(d.race) == 4 and int(s.echoTurn) != turn(logic) and prev != null and int(prev.turn) == turn(logic) - 1 \
-		and int(prev.group) == group(item) and int(item.id) != XBattleLogic.ATTACK_SKILL and dmg_type in [1, 3, 4, 5]
+		and int(prev.group) == group(item) and not a.is_attack(item) and dmg_type in [1, 3, 4, 5]
 
 
 static func current(logic):
@@ -452,7 +452,7 @@ static func finish(logic, logs: Array = []) -> void:
 					if not found:
 						s.poison.append({"target": v.target, "id": id, "amount": float(v.damage) * q / 2.0, "turn": turn(logic)})
 		var dmg_type := int(item.damage.type)
-		if int(d.race) == 4 and total > 0.0 and int(item.id) != XBattleLogic.ATTACK_SKILL and dmg_type in [1, 3, 4, 5]:
+		if int(d.race) == 4 and total > 0.0 and not a.is_attack(item) and dmg_type in [1, 3, 4, 5]:
 			s.ghostCurrent = {"group": group(item), "turn": turn(logic)}
 			if bool(r.echo):
 				s.echoTurn = turn(logic)

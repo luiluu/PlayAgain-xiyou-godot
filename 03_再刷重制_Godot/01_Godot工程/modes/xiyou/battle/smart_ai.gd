@@ -157,7 +157,7 @@ func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var defense := 1.0
 	if not type in [3, 4]:
 		defense = t.pdr if int(rec.get("hitType", 0)) == 1 else t.mdr if int(rec.get("hitType", 0)) == 2 else 1.0
-	var repeats := 1 + (int(a.traits_sum_all(XBattler.TRAIT_ATTACK_TIMES)) if not is_item(rec) and int(rec.id) == XBattleLogic.ATTACK_SKILL else 0)
+	var repeats := XBattleLogic.attack_repeats(a, rec, 1)  # action.numRepeats：普攻（isAttack，看 attackSkillId）时加追加次数
 	repeats *= int(rec.get("yepEffects", 1))
 	var level := maxf(0.0, float(a.skillMasteryLevel(int(rec.id)))) if not is_item(rec) else 0.0
 	var m := RegEx.create_from_string("(?i)" + MASTERY_NOTE).search(str(rec.get("note", "")))
@@ -371,7 +371,7 @@ func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary) -> Dictionary
 func _choose() -> Dictionary:
 	var friends: Array = logic.actors
 	var foes: Array = logic.alive(logic.enemies)
-	var attack := XDB.rec("Skills", XBattleLogic.ATTACK_SKILL)
+	var attack := actor.attack_skill()  # $dataSkills[actor.attackSkillId()]
 	var candidates := []
 	for s in actor.skills():
 		if legal(s, false) and int(s.id) != 5692:

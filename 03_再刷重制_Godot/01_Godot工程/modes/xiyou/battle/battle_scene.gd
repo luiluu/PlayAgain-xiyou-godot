@@ -1131,7 +1131,7 @@ func _perform_action(a: XActor, skill: Dictionary) -> void:
 	var s: XBattlerSprite = sprites[a]
 	if XBattleLogic.is_item(skill):
 		s.set_motion("item")
-	elif int(skill.id) == XBattleLogic.ATTACK_SKILL:
+	elif a.is_attack(skill):  # action.isAttack()：替换后的技能也按武器动作
 		var v := a.attack_visual()
 		s.set_motion(v.motion)
 		if int(v.image) > 0:

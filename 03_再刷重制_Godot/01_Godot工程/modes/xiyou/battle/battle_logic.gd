@@ -331,6 +331,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 	var occ := int(skill.get("occasion", 0))
 	if occ != 0 and occ != 1:
 		return false
+	if XImportedBalance.is_disabled_actor(a):  # installImportedBalanceRuntime：禁用的导入角色 canUse 全否
+		return false
 	if is_item(skill):
 		return a.is_actor() and state.items.get(int(skill.id), 0) > 0
 	if a.cooldown_left(int(skill.id)) > 0:
@@ -455,7 +457,7 @@ func _random_target(list: Array) -> XBattler:
 func enemy_action(e: XEnemy) -> Dictionary:
 	var list: Array = e.data().get("actions", []).filter(func(act): return _meets(e, act) and can_use(e, XDB.rec("Skills", int(act.skillId))))
 	if list.is_empty():
-		return XDB.rec("Skills", ATTACK_SKILL)
+		return e.attack_skill()
 	var rmax := 0
 	for act in list:
 		rmax = maxi(rmax, int(act.rating))
@@ -502,7 +504,7 @@ func auto_battle_action(a: XActor) -> Array:
 		var r := XSmartAI.choose(self, a)
 		if r.has("skill"):
 			return [r.skill, r.target]
-	return [XDB.rec("Skills", ATTACK_SKILL), null]
+	return [a.attack_skill(), null]  # makeAction：setSkill(attackSkillId)
 
 
 
@@ -566,7 +568,7 @@ func next_subject() -> XBattler:
 func decide(b: XBattler) -> Array:
 	if b is XEnemy:
 		return [enemy_action(b), null]
-	return auto_battle_action(b) if auto else [XDB.rec("Skills", ATTACK_SKILL), null]
+	return auto_battle_action(b) if auto else [b.attack_skill(), null]
 
 
 ## 执行一位行动者的一次行动，返回记录。skill 为 null 表示放弃本次行动（逃跑失败）。
@@ -1155,7 +1157,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	var logs := []
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
 	if not forcing and not can_use(u, skill):
-		skill = XDB.rec("Skills", ATTACK_SKILL)
+		skill = u.attack_skill()  # setAttack：attackSkillId
 	if is_item(skill):
 		if bool(skill.get("consumable", true)):
 			state.gain_item(int(skill.id), -1)
@@ -1219,7 +1221,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure else 0.0
 	if _float("counter") < cnt:
 		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反击是独立数值来源，不是原行动
-		var r := apply(t, XDB.rec("Skills", ATTACK_SKILL), u)
+		var r := apply(t, t.attack_skill(), u)  # invokeCounterAttack：反击者 setAttack
 		XRaceBattle.derived_end(self, race_prev)
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
