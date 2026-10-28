@@ -14,3 +14,5 @@
 ## 核查发现（待收口）
 
 - **P3：重复入队指令漏做难度同步，实际触发范围待确认。** `xstate.gd` 的 `_add_actor` 仅在 `not party.has(id)` 内调用 `inherit_difficulty`；原版 addActor 包装每次都会先 `syncActor`。双端内存复现：队员 8 已在队、主角持有难度技能 5547、队员没有；再次调用 addActor／add_actor(8) 后，原版队员获得该技能，重制仍没有。复现脚本 `readd-native88.cjs`／`readd-godot88.gd` 存本期本地结果；正式数据存在该角色的入队事件，但其常规路径有已拥有判断，尚不能据此宣称正常游玩必现。`inherit_difficulty` 的调用点由 Claude 的 39c023798 引入；本期改写了同步机制但现有夹具只测初次入队。建议 Claude 检查事件可达性、补重复入队参照并修正调用时机；核查轨不修实现。
+
+- 原版抽样 `native88.log` 已 done／0，81 例唯一、无错误；对比正式夹具 sourceIdentity、track 与各例完整内容均一致。诊断脚本和副本留本期本地结果，新的 sandbox 产物保留。专项仍 running，起初等待其他工作占用测试资源，不要重启。
