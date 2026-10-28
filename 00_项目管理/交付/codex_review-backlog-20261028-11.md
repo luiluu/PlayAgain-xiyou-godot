@@ -10,3 +10,7 @@
 - 固定参照夹具 1080 例、三时机各 360、无 errors，runtimeInputs 与 generated manifest 相同；尚未确认夹具全部结果真实性。
 - 两项长任务运行：`specialties88.log` 为难度继承及直接依赖专项；`native88.log` 从正式探针缩到 81 例独立重采，使用新脚本和新 sandbox 文件，不覆盖已有产物。先查状态并等待，结束后对比对应 cases 与 sourceIdentity。
 - 原版 `syncActor`／`syncNativeTier`、强弱分类代码已定位，继续按调用时机、存档恢复、缓存与名单逐项核查；主角不存在的兜底及原单遗留须单列边界。
+
+## 核查发现（待收口）
+
+- **P3：重复入队指令漏做难度同步，实际触发范围待确认。** `xstate.gd` 的 `_add_actor` 仅在 `not party.has(id)` 内调用 `inherit_difficulty`；原版 addActor 包装每次都会先 `syncActor`。双端内存复现：队员 8 已在队、主角持有难度技能 5547、队员没有；再次调用 addActor／add_actor(8) 后，原版队员获得该技能，重制仍没有。复现脚本 `readd-native88.cjs`／`readd-godot88.gd` 存本期本地结果；正式数据存在该角色的入队事件，但其常规路径有已拥有判断，尚不能据此宣称正常游玩必现。`inherit_difficulty` 的调用点由 Claude 的 39c023798 引入；本期改写了同步机制但现有夹具只测初次入队。建议 Claude 检查事件可达性、补重复入队参照并修正调用时机；核查轨不修实现。
