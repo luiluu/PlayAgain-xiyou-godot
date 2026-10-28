@@ -24,6 +24,9 @@
   passed 为真的那条 line 还要用 result_ok 复核（passed＝total＞0）。任一条结构不对或自相矛盾，整份当作没有记录、整轮重跑。
 - 心跳：批测与排槽期间每 XIYOU_TEST_HEARTBEAT 秒（默认 300，0 关闭）打印一行进度（完成数、等槽数、在跑的场景），
   免得长任务.py 的无输出看门狗（默认 3600 秒）把仍在推进的批测判成卡住；不放宽看门狗、不改并发。
+- 日志：--log-dir（或 CHECK_LOG_DIR）没给时写到 <工程上一级>/04_验证/本地结果/并行测试/<时间戳>/（只留最近 LOGS_KEEP 份），
+  每个场景一份 <场景>.log，结尾打印目录；失败的场景另打印它的完整日志路径（八戒期二、期三：明细只在屏幕上 8 行，
+  管道给 tail 时看不全，曾多花一轮 50 分钟重跑）。--quiet：不打心跳与通过行，只打失败、偶发、提示与汇总。
 - 共用状态目录：XIYOU_TEST_STATE_DIR，否则 <git-common-dir>/xiyou_test_state（主工作区与各 worktree 共用），不在 Git 里时用系统临时目录。
 """
 import argparse
@@ -35,6 +38,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -48,6 +52,7 @@ FLAKY_RERUN_MAX = 3  # 并行负载下偶发失败（floor16、floor_run_c 等�
 RESULTS_KEEP = 20  # 共用状态目录里最多保留这么多份整轮结果（按指纹）
 RULES_FILTER_ENV = ('RULES_ONLY_TROOPS', 'RULES_ONLY_ACTORS')  # xiyou_rules 的编号过滤，结果不完整
 HEARTBEAT = 300  # 默认心跳间隔（秒），远小于长任务.py 的 3600 秒无输出上限
+LOGS_KEEP = 10  # 默认日志目录（本地结果/并行测试/）最多保留这么多份
 
 
 def result_ok(rc: int, out: str) -> bool:
@@ -313,6 +318,17 @@ def project_fingerprint(godot: str, project: str, sdir: Path) -> str:
     return h.hexdigest()
 
 
+def default_log_dir(project: str) -> Path:
+    """<工程上一级>/04_验证/本地结果/并行测试/<时间戳>；旧的只留最近 LOGS_KEEP 份（只删本工具起名的目录）。"""
+    parent = Path(project).resolve().parent / '04_验证/本地结果/并行测试'
+    parent.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    d = Path(tempfile.mkdtemp(prefix=stamp + '_', dir=parent))
+    for old in sorted(p for p in parent.iterdir() if p.is_dir() and not p.is_symlink() and re.match(r'\d{8}_\d{6}_', p.name))[:-LOGS_KEEP]:
+        shutil.rmtree(old, ignore_errors=True)
+    return d
+
+
 def git_head(project: str) -> str:
     try:
         return subprocess.run(['git', '-C', project, 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True, check=True).stdout.strip()
@@ -327,9 +343,13 @@ def main() -> int:
     ap.add_argument('--jobs', type=int, default=None)
     ap.add_argument('--full', action='store_true', help='不沿用上轮结果，整轮重跑（也可 CHECK_FULL=1）')
     ap.add_argument('--reuse', action='store_true', help='指定场景时也按工程指纹沿用上轮通过结果（检查.sh 选测用）')
-    ap.add_argument('--log-dir', type=Path, default=Path(os.environ['CHECK_LOG_DIR']) if os.environ.get('CHECK_LOG_DIR') else None)
+    ap.add_argument('--log-dir', type=Path, default=Path(os.environ['CHECK_LOG_DIR']) if os.environ.get('CHECK_LOG_DIR') else None,
+                    help='每个场景的完整输出写到这里；不给时用 04_验证/本地结果/并行测试/<时间戳>/')
+    ap.add_argument('--quiet', action='store_true', help='不打心跳与通过行，只打失败、偶发、提示与汇总')
     ap.add_argument('names', nargs='*')
     a = ap.parse_intermixed_args()
+    if a.log_dir is None:
+        a.log_dir = default_log_dir(a.project)
     a.full = a.full or os.environ.get('CHECK_FULL', '') not in ('', '0')
     cpu_half = max(1, min(6, (os.cpu_count() or 2) // 2))
     if a.jobs is None:
@@ -362,7 +382,7 @@ def main() -> int:
     started = time.monotonic()
     progress = Progress(len(todo))
     flaky = []
-    with heartbeat(progress, float(os.environ.get('XIYOU_TEST_HEARTBEAT', HEARTBEAT))):
+    with heartbeat(progress, 0 if a.quiet else float(os.environ.get('XIYOU_TEST_HEARTBEAT', HEARTBEAT))):
         with cf.ThreadPoolExecutor(max_workers=a.jobs) as pool:
             for name, rc, out, secs in pool.map(lambda n: run_one(a.godot, a.project, n, sdir, limit, progress), todo):
                 attempts[name] = [(rc, out, secs)]
@@ -381,7 +401,8 @@ def main() -> int:
             if a.log_dir:
                 a.log_dir.mkdir(parents=True, exist_ok=True)
                 (a.log_dir / (Path(name).stem + '.log')).write_text('沿用上轮通过结果（工程指纹 %s 未变）\nTEST_RESULT=%s\n' % (fingerprint[:12], reused[name]))
-            print(('  ✓ %s %s（沿用）' % (name, reused[name]))[:120])
+            if not a.quiet:
+                print(('  ✓ %s %s（沿用）' % (name, reused[name]))[:120])
             continue
         tries = attempts[name]
         if a.log_dir:
@@ -391,7 +412,8 @@ def main() -> int:
         rc, out, secs = tries[-1]
         line = next((l for l in out.splitlines() if l.startswith('TEST_RESULT=')), '')
         if final[name]:
-            print(('  ✓ %s %s' % (name, line[len('TEST_RESULT='):]))[:120])
+            if not a.quiet:
+                print(('  ✓ %s %s' % (name, line[len('TEST_RESULT='):]))[:120])
             if name in flaky:
                 print('  ⚠ %s 并行时失败（rc=%d，%d 秒）、单独重跑通过（%d 秒）（偶发，写进交付单）' % (name, tries[0][0], tries[0][2], secs))
             if max(t[2] for t in tries) > SLOW:
@@ -401,10 +423,12 @@ def main() -> int:
             print('  ✗ %s (rc=%d)' % (name, rc))
             for l in [l for l in out.splitlines() if re.search(r'ERROR|FAIL |passed|TEST_RESULT', l)][:8]:
                 print('      ' + l)
+            print('      完整输出：' + str(a.log_dir / (Path(name).stem + ('.rerun%d' % (len(tries) - 1) if len(tries) > 1 else '') + '.log')))
     wall = time.monotonic() - started
     if reused:
         print('  · 工程未变：沿用上轮通过 %d 个，实际运行 %d 个（--full 或 CHECK_FULL=1 强制整轮）' % (len(reused), len(todo)))
-    print('  · 测试用时 %d 秒（并行 %d，共用上限 %d）' % (wall, a.jobs, limit))
+    print('  · 测试用时 %d 秒（并行 %d，共用上限 %d）%s' % (wall, a.jobs, limit, '' if not a.quiet else '；%d 个场景，%s' % (
+        len(scenes), '全部通过' if not fail else '有失败')))
     now = datetime.datetime.now().isoformat(timespec='seconds')
     with file_lock(sdir / 'state.lock'):
         timings = read_json(sdir / 'timings.json', {})
@@ -440,6 +464,7 @@ def main() -> int:
                         'attempts': [{'rc': t[0], 'seconds': round(t[2], 3), 'passed': result_ok(t[0], t[1])} for t in attempts[n]]}
                        for n in sorted(todo, key=lambda n: attempts[n][0][2], reverse=True)]
         }, ensure_ascii=False, indent=2) + '\n')
+        print('  · 日志：' + str(a.log_dir))
     return fail
 
 
