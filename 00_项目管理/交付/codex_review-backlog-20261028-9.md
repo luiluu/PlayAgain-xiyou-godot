@@ -22,3 +22,8 @@
 - 招募第二轮两任务均done/0，但逐项比较脚本assert失败，输出原件yomi-recruit-{native,godot}-first.json保留；尚无comparison通过文件。诊断源review9_yomi_recruit.cjs／.godot/review9_yomi_recruit.gd，同名tscn，源归档diagnostic-sources。新取证用新日志／新输出名，原件不覆盖，统一占槽＋长任务，Godot隔离HOME，原版host fs守卫不去掉。
 - 下一步：先等related专项；优先解释enabled招募入口读数差异，再给本期四批最终边界。核四个收尾patch的机械登记与编号（尚未逐行看完），对问题按P级／出处／复现／建议交Claude；写本期报告及限定登记范围、用生产draft/pending模拟查unsafeRemoved，文档选测--affected dc8057c1 --oracle，提交推github核远端。九期未最终交付，千万别当可合并。
 - 不向其他chat发消息，不派Claude活；由总装读交付单派修。只核Claude，不修实现／正式测试，不自核自己的提交／本期报告／完成度。继续到可核积压清完或额度线；上下文实际40%即保存同树下一序号，及时读本聊天token_count（最后用input_tokens，不把累计total当窗口）。
+
+## 沙僧87续核检查点
+
+- 招募差异已定位为诊断夹具跨 JS realm 错误：首轮用宿主 `[]` 覆盖原版 `_actors`，缺原版 `Array.contains`，`addActor` 抛异常被事件解释器吞掉；并非产品差异。原版引擎内创建数组并初始化战斗队列后，事件 9004 阻止／允许各首次与重复四组的入队、法宝库存和装备读数，与 Godot 一致。原始、异常堆栈和修正证据保存在本期本地结果 `yomi-recruit-{detail87,consistent87,trace87,error87,realm87}.json`，逐项比较 `yomi-recruit-comparison87.json`；不能把首轮失败当缺陷或通过依据。
+- 四份收尾 patch 的变更记录正文已读取；dev.184／185 登记与原单对应，field 用 dev.186；shop-review 的 Claude 核 Codex 结论仍不复核，仅审其 ade369af 修复与机械登记。进度初值不自复核。14 场专项仍运行，最新 4/14；需等实际退出后才可给本期结论。
