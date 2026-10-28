@@ -353,11 +353,6 @@ static func super_enabled(s: XState) -> bool:
 	return SUPER_SWITCHES.any(func(id): return s.switch(id)) or s.difficulty == 9
 
 
-## installNativeBindingChargeRuntime：备注带 <CodexSuperStrong> 的角色（174 云裳、176 屠苏、177 玄）运行时并入超强者名单
-static func is_super_strong(actor_id: int) -> bool:
-	return SUPER_STRONG_IDS.has(actor_id) or str(XDB.rec("Actors", actor_id).get("note", "")).contains("<CodexSuperStrong>")
-
-
 static func can_acquire_actor(s: XState, actor_id: int) -> bool:
 	return not is_super_strong(actor_id) or super_enabled(s)
 
