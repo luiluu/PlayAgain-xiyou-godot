@@ -46,7 +46,7 @@ func _run() -> void:
 		var want: Dictionary = norm(c.observed)
 		want.erase("otherRolls")  # 别的 startAction 包装的取数，不归本功能
 		var got := _measure(c.setup, c.observed)
-		if int(got.get("started", [0])[0]) != int(want.before):
+		if want.started != [want.before]:
 			triggered += 1
 		for k in want:
 			check(str(c.id) + "." + str(k), norm(got.get(k)) == want[k], {"got": got.get(k), "want": want[k]})
@@ -57,6 +57,7 @@ func _run() -> void:
 func _measure(spec: Dictionary, observed: Dictionary) -> Dictionary:
 	var s := XState.new_game_blank()
 	s.actor_max_level = 99  # 参照把等级上限提到 99，再按武器的需求等级 changeLevel
+	s.set_switch(XItemMarks.SUPER_SWITCHES[0], true)  # 超强者（154、166 专属武器）出战要开超强；参照直接 addActor 进队
 	var aid := int(observed.actor)
 	s.add_actor(aid)
 	var a := s.actor(aid)
