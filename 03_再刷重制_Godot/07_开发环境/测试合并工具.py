@@ -124,6 +124,24 @@ class AdditionTests(unittest.TestCase):
         self.assertTrue(additions.compare_file('maps.json', {'1': {'passable': [1]}}, {'1': {'passable': [0]}, '2': new})[1])
         self.assertTrue(additions.compare_file('maps.json', {}, {'2': {}})[1])
 
+    def test_top_level_note_field_can_be_explicitly_accepted(self):
+        """交接板工具坑：探针顶层说明字段（如 scope）改了，接受单原来放不行（没有可接受的变化候选）。"""
+        old = {'schemaVersion': 1, 'scope': '十个号角', 'cases': [{'id': 'a', 'v': 1}]}
+        new = dict(old, scope='十个号角＋木桩')
+        with tempfile.TemporaryDirectory() as folder:
+            a, b = Path(folder) / 'old', Path(folder) / 'new'
+            a.mkdir(); b.mkdir()
+            (a / 'attack_query.json').write_text(json.dumps(old)); (b / 'attack_query.json').write_text(json.dumps(new))
+            check = additions.compare_directories(a, b)
+            cand = additions.change_candidates(check)
+            self.assertEqual([(c['collection'], c['key'], c['fields']) for c in cand], [('顶层', 'scope', ['*'])])
+            entry = dict(cand[0], reason='号角说明补木桩', source='x')
+            self.assertFalse(additions.apply_acceptances(check, [entry])['problems'])
+            # 列表字段（未登记稳定键的整组用例）仍不出候选
+            (b / 'attack_query.json').write_text(json.dumps(dict(old, extra=[1])))
+            (a / 'attack_query.json').write_text(json.dumps(dict(old, extra=[2])))
+            self.assertFalse(additions.change_candidates(additions.compare_directories(a, b)))
+
     def test_source_guard(self):
         old = {'releaseVersion': 'v0.28', 'runtimeInputs': {'x': '1'}, 'inputs': {'a': '1'}}
         new = dict(old, inputs={'a': '1', 'b': '2'})
