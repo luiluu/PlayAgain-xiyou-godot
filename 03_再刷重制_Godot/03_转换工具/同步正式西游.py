@@ -55,8 +55,9 @@ ORACLE_DIR = HERE / 'mv_oracle'
 SANDBOX = ORACLE_DIR / '.sandbox'
 STAMP = 'sync_stamp.json'
 TOOLS_REL = HERE.relative_to(ROOT).as_posix()   # 03_再刷重制_Godot/03_转换工具
-# 只读的检查工具不影响产物，不算进转换工具指纹
-READ_ONLY_TOOLS = {'内容覆盖检查.py', '事件指令统计.py', '共性参照验收.py', '验证西游来源.py', '角色模板预检.py'}
+# 只读的检查工具不影响产物，不算进转换工具指纹。oracle_additions.py 只决定测量变化接不接受（产物原样发布或整轮拒收），
+# 不改产物内容；列进来免得改比较规则让各车道的同步指纹失效（2026-10-28 哪吒_5，唐僧同意）。
+READ_ONLY_TOOLS = {'内容覆盖检查.py', '事件指令统计.py', '共性参照验收.py', '验证西游来源.py', '角色模板预检.py', 'oracle_additions.py'}
 GODOT = ROOT / '03_再刷重制_Godot/07_开发环境/godot'
 PROJECT = ROOT / '03_再刷重制_Godot/01_Godot工程'
 # 探针 → 产物（相对 .sandbox）；切片在调度时拆成六条命令，共用同一并发上限

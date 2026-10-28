@@ -22,6 +22,9 @@
   免得过滤结果在清环境后被普通沿用当作整份通过。
   沿用前逐条严格校验（reusable_results）：记录须是对象、场景都在当前场景表里、每条只含布尔 passed 与字符串 line；
   passed 为真的那条 line 还要用 result_ok 复核（passed＝total＞0）。任一条结构不对或自相矛盾，整份当作没有记录、整轮重跑。
+- 单槽排队（2026-10-28 哪吒_5）：单槽申请前先看 slots/queue/ 里有没有别的进程更早登记、还活着的等候者，有就让一轮；
+  自己第一次没占到才登记（文件名＝开始纳秒_pid_线程，等待中每轮刷新，超过 QUEUE_STALE 秒没刷新或 pid 已不在的作废）。
+  同一进程的线程之间不排队；多槽进程照 heavy.lock 规则不参加。XIYOU_SLOT_QUEUE=0 回到旧行为。
 - 心跳：批测与排槽期间每 XIYOU_TEST_HEARTBEAT 秒（默认 300，0 关闭）打印一行进度（完成数、等槽数、在跑的场景），
   免得长任务.py 的无输出看门狗（默认 3600 秒）把仍在推进的批测判成卡住；不放宽看门狗、不改并发。
 - 日志：--log-dir（或 CHECK_LOG_DIR）没给时写到 <工程上一级>/04_验证/本地结果/并行测试/<时间戳>/（只留最近 LOGS_KEEP 份），
@@ -170,6 +173,42 @@ def global_limit() -> int:
     return int(os.environ.get('CHECK_GLOBAL_JOBS', '0')) or max(1, min(6, (os.cpu_count() or 2) // 2))
 
 
+QUEUE_STALE = 30.0  # 排队文件超过这么多秒没刷新就当作死进程留下的，删掉
+
+
+def queue_enabled() -> bool:
+    """单槽先来先得排队（2026-10-28 哪吒_5）；XIYOU_SLOT_QUEUE=0 回到旧行为（谁轮询先谁拿）。"""
+    return os.environ.get('XIYOU_SLOT_QUEUE', '1') != '0'
+
+
+def earlier_waiter(qdir: Path, me: str) -> bool:
+    """别的进程有没有比 me（排队文件名「开始纳秒_pid_线程」；None＝还没登记，按现在算）更早登记、还活着的单槽等候者。
+    同一进程的线程之间不排队（各自的批测里照旧）；超时没刷新或 pid 已不在的排队文件顺手删掉。"""
+    mine = int(me.split('_')[0]) if me else time.time_ns()
+    now = time.time()
+    for f in qdir.glob('*_*_*'):
+        try:
+            start, pid, _ = f.name.split('_', 2)
+            start, pid = int(start), int(pid)
+        except ValueError:
+            continue
+        if pid == os.getpid():
+            continue
+        try:
+            stale = now - f.stat().st_mtime > QUEUE_STALE
+            if not stale:
+                os.kill(pid, 0)
+        except ProcessLookupError:
+            stale = True
+        except (FileNotFoundError, PermissionError):
+            continue
+        if stale:
+            f.unlink(missing_ok=True)
+        elif start < mine:
+            return True
+    return False
+
+
 @contextlib.contextmanager
 def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_interval: float = 60.0):
     """所有工作树共用的并发槽位：slots/<i>.lock 上的非阻塞 flock，占到哪个用哪个；进程退出时系统自动释放。
@@ -183,6 +222,12 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
     weight = max(1, min(int(weight), limit))
     held, heavy, gate = [], None, None
     t0 = last = time.monotonic()
+    # 单槽先来先得（多槽照 heavy.lock 规则，不参加排队，免得与闸门互等）：主工作区批测占满上限时，它的线程放槽后同一瞬间
+    # 就重抢，别的工作树每 0.5 秒轮询一次几乎抢不到（10-28 哪吒排 1 小时、八戒排 1.5 小时）。
+    qdir = slots / 'queue' if weight == 1 and queue_enabled() else None
+    ticket = None  # 自己的排队文件；第一次没占到才登记
+    if qdir:
+        qdir.mkdir(exist_ok=True)
 
     def tick():
         nonlocal last
@@ -203,6 +248,16 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
                     time.sleep(0.5)
         gate = open(slots / 'heavy.lock', 'a') if weight == 1 else None
         while len(held) < weight:
+            if ticket:
+                with contextlib.suppress(OSError):
+                    os.utime(ticket)  # 刷新：别人据此认我还活着
+            if qdir and earlier_waiter(qdir, ticket.name if ticket else None):
+                if ticket is None:
+                    ticket = qdir / ('%d_%d_%d' % (time.time_ns(), os.getpid(), threading.get_ident()))
+                    ticket.touch()
+                tick()
+                time.sleep(0.5)
+                continue
             if gate is not None:
                 try:
                     fcntl.flock(gate, fcntl.LOCK_SH | fcntl.LOCK_NB)  # 有多槽进程在攒槽：让路
@@ -223,8 +278,14 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
             if gate is not None:
                 fcntl.flock(gate, fcntl.LOCK_UN)
             if len(held) < weight:
+                if qdir and ticket is None:
+                    ticket = qdir / ('%d_%d_%d' % (time.time_ns(), os.getpid(), threading.get_ident()))
+                    ticket.touch()
                 tick()
                 time.sleep(0.5)
+        if ticket:
+            ticket.unlink(missing_ok=True)
+            ticket = None
         if gate is not None:
             gate.close()
             gate = None
@@ -234,6 +295,8 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
             heavy = None
         yield held[0][0] if weight == 1 else [n for n, _ in held]
     finally:
+        if ticket:
+            ticket.unlink(missing_ok=True)
         for _, f in held:
             fcntl.flock(f, fcntl.LOCK_UN)
             f.close()
@@ -366,7 +429,9 @@ def main() -> int:
     sdir = state_dir(a.project)
     whole = not a.names
     # RULES_ONLY_* 过滤时 xiyou_rules 非 part0 只记 1 项成功，指纹又不含过滤值：过滤运行不读写沿用记录（沙僧第四期 T1）
-    filtered = [k for k in RULES_FILTER_ENV if os.environ.get(k, '').strip()]
+    # 原始值非空就算过滤（沙僧第五期 C2：原来 .strip() 把纯制表符当没设，xiyou_rules 却把它解析成编号 0、非 part0 只报 1 项，
+    # 写进普通沿用账后清环境仍沿用）
+    filtered = [k for k in RULES_FILTER_ENV if os.environ.get(k, '') != '']
     keyed = (whole or a.reuse) and not filtered  # 按指纹读写记录
     if filtered and (whole or a.reuse):
         print('  · 设了 %s（编号过滤）：选中的场景全部实跑，不读写沿用记录' % '／'.join(filtered))

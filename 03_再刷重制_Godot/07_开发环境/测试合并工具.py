@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -363,6 +364,21 @@ class ParallelTestRunnerTests(unittest.TestCase):
         p, runs = self.run_tests(jobs=1)  # 普通记录未被过滤运行改写，照常沿用
         self.assertEqual(runs, [])
 
+    def test_whitespace_only_rules_filter_never_writes_reuse_ledger(self):
+        # 沙僧第五期 C2：只给空白（制表符等）时原来被 .strip() 当作没过滤，xiyou_rules 却解析成编号 0、非 part0 只报 1 项，
+        # 结果写进普通沿用账，清环境后仍沿用。原始值非空一律当过滤：不读不写沿用账
+        for key in ('RULES_ONLY_TROOPS', 'RULES_ONLY_ACTORS'):
+            for blank in ('\t', ' ', '\n', ' \t\n'):
+                shutil.rmtree(self.state, ignore_errors=True)
+                p, runs = self.run_tests(jobs=1, **{key: blank})
+                self.assertEqual((p.returncode, len(runs)), (0, 3), p.stdout)
+                self.assertIn('不读写沿用记录', p.stdout)
+                self.assertFalse(list((self.state / 'results').glob('*.json')) if (self.state / 'results').exists() else [], repr(blank))
+                p, runs = self.run_tests(jobs=1)  # 清环境：整轮实跑
+                self.assertEqual(len(runs), 3, repr(blank))
+        p, runs = self.run_tests(jobs=1, RULES_ONLY_TROOPS='')  # 空串＝没设，照常沿用
+        self.assertEqual(runs, [])
+
     def test_corrupt_or_contradictory_cache_is_not_reused(self):
         # 沙僧 2026-10-21 P2 复现（review_phase2_cache_corruption.json）：passed=true 但 line 是失败计数仍被沿用、退出 0；
         # 合法 JSON 但结构是数组时 AttributeError。两种都应当作没有记录、整轮重跑并正常通过。
@@ -457,6 +473,61 @@ class SlotWeightTests(unittest.TestCase):
         while not cond() and time.monotonic() - t0 < seconds:
             time.sleep(0.05)
         return cond()
+
+    HOG = """import importlib.util, sys, threading, time
+spec = importlib.util.spec_from_file_location('p', sys.argv[1]); p = importlib.util.module_from_spec(spec); spec.loader.exec_module(p)
+state, limit, seconds = __import__('pathlib').Path(sys.argv[2]), int(sys.argv[3]), float(sys.argv[4])
+mode = sys.argv[5]
+if mode == 'hog':  # 批测：limit 个线程，放掉马上重抢
+    end = time.monotonic() + seconds
+    def worker():
+        while time.monotonic() < end:
+            with p.global_slot(state, limit):
+                time.sleep(0.2)
+    ts = [threading.Thread(target=worker) for _ in range(limit)]
+    [t.start() for t in ts]; [t.join() for t in ts]
+    print('HOG_DONE', flush=True)
+else:  # 别的工作树来要一个槽
+    t0 = time.monotonic()
+    with p.global_slot(state, limit):
+        print('GOT %.2f' % (time.monotonic() - t0), flush=True)
+"""
+
+    def contend(self, queue):
+        """主工作区批测占满上限时，另一个进程要一个槽要等多久（秒）。"""
+        script = self.state / 'hog.py'
+        script.write_text(self.HOG)
+        env = dict(os.environ, XIYOU_SLOT_QUEUE='1' if queue else '0')
+        args = [sys.executable, str(script), str(HERE / '并行测试.py'), str(self.state), '2']
+        hog = subprocess.Popen(args + ['4', 'hog'], env=env, stdout=subprocess.DEVNULL)
+        try:
+            time.sleep(0.5)
+            got = subprocess.run(args + ['0', 'one'], env=env, capture_output=True, text=True, timeout=30).stdout
+        finally:
+            hog.wait(30)
+        return float(got.split()[1])
+
+    def test_queue_lets_other_process_in_while_batch_hogs_slots(self):
+        """10-28 哪吒、八戒实测：批测把共用上限占满时别的工作树排 1～1.5 小时。旧行为下来者要等批测整个跑完，排队后一轮就拿到。"""
+        old = self.contend(queue=False)
+        self.assertGreater(old, 3.0)  # 批测还剩约 3.5 秒，旧行为一直抢不到
+        new = self.contend(queue=True)
+        self.assertLess(new, 1.5)
+        self.assertFalse(list((self.state / 'slots/queue').iterdir()))  # 排队文件都收走了
+
+    def test_stale_queue_ticket_is_ignored_and_removed(self):
+        import time as _t
+        q = self.state / 'slots/queue'
+        q.mkdir(parents=True)
+        dead = q / ('%d_%d_1' % (_t.time_ns() - 10**9, 999999))  # 不存在的 pid
+        dead.touch()
+        old = q / ('%d_%d_1' % (_t.time_ns() - 10**9, os.getppid()))  # 活着的 pid，但很久没刷新
+        old.touch(); os.utime(old, (_t.time() - 120, _t.time() - 120))
+        t0 = _t.monotonic()
+        with self.par.global_slot(self.state, 2):
+            pass
+        self.assertLess(_t.monotonic() - t0, 0.4)
+        self.assertFalse(dead.exists() or old.exists())
 
     def test_weight_takes_several_slots_and_others_queue(self):
         import threading
@@ -782,6 +853,22 @@ class SyncStampTests(unittest.TestCase):
     def lane_stamp(self, tools='same'):
         stamp = {'toolsDigest': tools, 'outputsDigest': sync.outputs_digest(self.lane_gen)}
         (self.lane_gen / sync.STAMP).write_text(json.dumps(stamp))
+
+    def test_comparison_rules_do_not_change_tools_digest(self):
+        """oracle_additions.py 只管接不接受测量变化：改它不让车道同步指纹失效；改转换器照旧失效。"""
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            tools = root / sync.TOOLS_REL
+            tools.mkdir(parents=True)
+            for name in ['oracle_additions.py', 'xiyou_export.py']:
+                (tools / name).write_text('# v1\n')
+            subprocess.run(['git', 'init', '-q', str(root)], check=True)
+            subprocess.run(['git', '-C', str(root), 'add', '.'], check=True)
+            before = sync.tools_digest(root)
+            (tools / 'oracle_additions.py').write_text('# v2 比较规则改了\n')
+            self.assertEqual(sync.tools_digest(root), before)
+            (tools / 'xiyou_export.py').write_text('# v2\n')
+            self.assertNotEqual(sync.tools_digest(root), before)
 
     def test_full_sync_writes_stamp(self):
         self.assertEqual(self.sync_main(), 0)

@@ -32,9 +32,11 @@ static func _row_actor(r: Dictionary) -> int:
 
 
 static func _id_set(text: String) -> Dictionary:
+	# 逗号与任意空白（空格、制表符、换行）都当分隔；不是整数的片段不算编号（沙僧第五期 C2：制表符曾被转成编号 0）
 	var out := {}
-	for t in text.replace(",", " ").split(" ", false):
-		out[int(t)] = true
+	for t in text.replace(",", " ").replace("\t", " ").replace("\n", " ").replace("\r", " ").split(" ", false):
+		if t.is_valid_int():
+			out[int(t)] = true
 	return out
 
 
