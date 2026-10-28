@@ -1162,6 +1162,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# 角色在 OTB 下输入完（或不能输入时 makeActions 后）直接 startAction，不看 isValid，照原样执行。参照 attack_query_probe skip 组。
 	if not forcing and not u.is_actor() and not can_use(u, skill):
 		return logs
+	skill = change_to(u, skill)  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
 	skill = weapon_unleash(u, skill)  # YEP_WeaponUnleash：行动开始状态效果之后、付费之前
 	# 导入角色平衡：禁用角色／禁用号角的 useItem 直接返回（不扣物品、不付费、不进冷却、不前移），行动（含行动序列）对目标无效
@@ -1207,6 +1208,61 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	for t in targets:
 		t.param_refresh()
 	return logs
+
+
+## TorigoyaMZ_SkillChangeTo（BattleManager.startAction 链，在行动开始状态效果与武器解放之前）：技能／物品备注的
+## <ChangeTo[id]: 条件> 按备注顺序逐条求值（a＝行动者），第一条为真就换成 id（技能换技能、物品换物品）。
+## 不看换出来的能不能用、不递归。条件里的 Math.random() 每求值一次掷一次（rule 流 "changeto"）；
+## 求值失败或写法不认识算假（原版 eval 抛错也算假）。参照 skill_change_to_probe。
+func change_to(u: XBattler, skill: Dictionary) -> Dictionary:
+	for e in change_to_conditions(skill):
+		if _change_to_test(u, str(e[1])):
+			return XDB.rec("Items" if is_item(skill) else "Skills", int(e[0]))
+	return skill
+
+
+static var _change_to_cache := {}
+static var _change_to_exprs := {}
+## MV extractMetadata 的 <键:值>：键含 ChangeTo[数字] 的逐条 [id, 条件]，同键后者覆盖、位置不变（对象键序）。
+static func change_to_conditions(rec: Dictionary) -> Array:
+	var note := str(rec.get("note", ""))
+	if not note.contains("ChangeTo["):
+		return []
+	if _change_to_cache.has(note):
+		return _change_to_cache[note]
+	var meta := {}
+	var key_re := RegEx.create_from_string("ChangeTo\\[(\\d+)]")
+	for m in RegEx.create_from_string("<([^<>:]+)(:?)([^>]*)>").search_all(note):
+		if key_re.search(m.get_string(1)):
+			meta[m.get_string(1)] = m.get_string(3) if m.get_string(2) == ":" else ""
+	var out := []
+	for k in meta:
+		out.append([int(key_re.search(k).get_string(1)), meta[k]])
+	_change_to_cache[note] = out
+	return out
+
+
+## 条件求值：只认正式数据用到的写法（Math.random() 比较、a.hp／a.mhp 算式），换成 Godot Expression；别的标识符一律算假。
+func _change_to_test(u: XBattler, code: String) -> bool:
+	if not _change_to_exprs.has(code):
+		var e := code.strip_edges().replace("小于", "<").replace("大于", ">").replace("&lt;", "<").replace("&gt;", ">")
+		e = e.replace("Math.random()", "change_to_roll()")
+		var ok := true
+		for w in RegEx.create_from_string("[A-Za-z_$][A-Za-z_0-9$.]*").search_all(e):
+			if not ["change_to_roll", "a.hp", "a.mhp"].has(w.get_string()):
+				ok = false
+		var ex := Expression.new()
+		_change_to_exprs[code] = ex if ok and ex.parse(e, ["a"]) == OK else null
+	var expr: Expression = _change_to_exprs[code]
+	if expr == null:
+		return false
+	var v = expr.execute([u], self, false)
+	return not expr.has_execute_failed() and bool(v)
+
+
+## 条件里的 Math.random()：Expression 以本对象为 base 调用
+func change_to_roll() -> float:
+	return _float("changeto")
 
 
 ## YEP_WeaponUnleash processUnleash（BattleManager.startAction 链）：这一招是此刻的普攻（物品、别的技能不换）时，
