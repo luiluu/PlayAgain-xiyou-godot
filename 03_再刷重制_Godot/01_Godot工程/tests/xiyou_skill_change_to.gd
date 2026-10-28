@@ -64,6 +64,7 @@ func _measure(spec: Dictionary, observed: Dictionary) -> Dictionary:
 	var s := XState.new_game_blank()
 	s.add_actor(1)
 	var logic := XBattleLogic.new()
+	logic.elite_roll = 50.0  # 参照新局 Math.random 恒 0.5：神话掷 50，不小于 50，不变神话
 	logic.setup(1, s)
 	var a: XBattler = logic.enemies[0] if bool(spec.get("enemy", false)) else s.actor(1)
 	a.recover_all()
