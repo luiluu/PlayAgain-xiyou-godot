@@ -1,29 +1,29 @@
 # 交付：codex/review-backlog-20261028-9
 
-- 车道／工作者：核查／重制_沙僧_86（Codex）。
-- 状态：WIP，同树接续沙僧86→87；本期未最终交付，勿合并
-- 正在做什么：固定dc8057c1，核Claude黄泉一期、商店自动关闭、缺失公共事件预约清槽、通天野外五图四批；不审原单中Claude对Codex历史产品的核查结论。
-- 前两期已分别交付df5e4c88／c84bf27d，待总装实际登记；仍沿用原state-effects-2b，所有原件保留，不修实现或正式测试，不改共享登记。
-- 本期本地证据review-backlog-20261028-9，原单与净diff已保存。后续只按实际审查范围交付，未完成前不可合并。
+- 车道／工作者：核查／重制_沙僧_87（Codex）。
+- 状态：收口验证中，勿合并。
+- 基准：固定 dc8057c186702569d93f0213d702dd52e4442b71。四批 21 个 Claude 提交按报告范围限定通过；不复核 Codex 历史产品、Claude 的历史核查结论或进度初值。[第九期报告](../核查报告_20261028_清积压第九期.md)。
+- 本分支包含第七、八期交付祖先；总装按实际合并顺序处理，已并过的交付单删除不可重复导入。第六期仍按原单登记，不重复覆盖。
+- O-098 已登记待用户决定；黄泉未移植的战斗机制和五图称号系统按原单保留。原版调试战斗未实战，流程验证不等于全部战斗覆盖。
 
-## 沙僧86→87同树接续（2026-10-28）
+## 验证
 
-- 实际上下文输入275071／窗口475000＝57.9%，已超过40%线，立即接续；不能只总结停工。当前额度五小时22%、周28%，均未到95%／90%停手线；未使用额度重置。用户刚明确“额度reset，加油开工”，继续清可核积压，不每期结束停等。
-- 必须显式workdir=/Users/kyo/Documents/再刷项目资料库/.claude/worktrees/state-effects-2b；UI项目关联根目录不代表文件工作区。当前codex/review-backlog-20261028-9，固定代码dc8057c186702569d93f0213d702dd52e4442b71；不建／清树，不reset／cherry-pick，不接管main，不追新main，不改共享交接板／编号／记录，不建PR。
-- 第七期df5e4c88已交付推github，远端同SHA：11批13个Claude提交限定通过；W1武器P2双端实测（原版无法行动时仍强制技能1／解放0次，Godot技能127／1次）、工具撤出T1/T2 P2、仓库Q1/Q2 P2、地图盘点D1 P2保留。正式11场18428/18428、原版86例重采sourceIdentity/cases全同generated；限定实际生产draft模拟55→44、unsafeRemoved=[]。仍未实际登记。
-- 第八期c84bf27d已交付推github，远端同SHA：六批45个Claude提交限定通过（merge-speed、slice-affected、reach106/115/109、ce-fix2）；floor-narrow F1 P2保留，完整真实198图切片只改keepEvents32/4分别漏真实unknown160/floor30_seeker，full=false。15场1434/1434，独立自动存档落盘8/8；限定生产draft模拟单独55→49，与第七期联合55→38，无误销；三项P3文案／地图数订正保留。仍未实际登记。
-- 第六期f17c2bba四批仍待总装登记，不重复核。第五期六批已登记；旧三期G1/G2、四期旧T1、五期TAB C2及六期跳跃存档S1等问题保持待修。八期分支保留七期交付单祖先：总装按实际合并顺序处理，已并后删除不可重复导入。
-- 本期九正在核四批共21个Claude提交，scope.json全有Claude执行者／待Codex：yomi6、shop6、reservationFix4、field5。原单、净diff、四份收尾patch已保存。shop-review二原单包含Claude核Codex旧产品的结论，明确不复核这些，只审ade369a新修复与机械搬运／登记；不把原报告结论批准一遍。
-- 已读：黄泉模块157行及挂点／公式分派diff、冻结Yomi runtime相关函数（39～78／128～158／492～516／729～741）、main安装顺序101早于127、dsPassiveSkill xparam别名链。O-098已登记待用户决定，CRIT_FIX可回退。商店7行自动关闭hook＋114行专项全文、map open_shop真实await/queue_free；缺失预约7行修复及对应4行新回归；五图专项262行业务段和原单。
-- 数据证据field-data-check.json：94/92/93/105/90剔转换meta后原版所有字段完全相同；直接37敌群／37敌人／81技能无缺项（含原版未踩调试战斗，不代表全实战）。field-source-events.json保留全部相关命令与69入口原页。四个野外入口也有switch21转102旁路，当前切片已有102；当专项边界，勿报漏图。称号系统原单明确未移植，别当新回归。
-- 本期唯一在途长任务related-specialties.log：14场专项（shop_auto_close/flow/shop_buy/shop_stock/review135/reach094/actor_p0/help_card/六难度rules_c），最后仍running，读.status.json后用等待任务.sh --timeout45等，别重启／取消。此前168/45/10工具套件、7期11场、8期15场和actor_modules56等没有实现变动，不重跑。
-- 黄泉独立rank双端诊断均done/0，yomi-rank-comparison.json：45级无装备，手学10185/10186，rank0/1/2八项params、四条formula、debuff_count与penetration完全相同；crit原版0.05、Godot10.04，差9.99正好O-098。原件yomi-{native,godot}-first.json及diagnostic-sources均保留。
-- **未收口候选，不能定P2或声称招募通过**：首轮raw recruit在Godot底层模块直接调用，缺native外层门，不是等价入口；已确认生产唯一调用mv_script.gd:276～284先_recruit_blocked，再调XYomiJingliu.recruit，不能把raw差异报产品缺陷。第二轮改走真实公共事件9004：native真实Game_Interpreter，Godot真实MVInterpreter＋正式EventHost；blocked两端都无入队／法宝。enabled(2494=true)时两端法宝装备都true，但native输出inParty=false、Godot=true。当前inParty用native $gameParty._actors.includes(169)，尚未查看实际_actors／类型、enforce清理或难度初始化，可能夹具／读数错误，需先查真实原版数组和实际角色列表。不要为了对上而改实现或放宽。
-- 招募第二轮两任务均done/0，但逐项比较脚本assert失败，输出原件yomi-recruit-{native,godot}-first.json保留；尚无comparison通过文件。诊断源review9_yomi_recruit.cjs／.godot/review9_yomi_recruit.gd，同名tscn，源归档diagnostic-sources。新取证用新日志／新输出名，原件不覆盖，统一占槽＋长任务，Godot隔离HOME，原版host fs守卫不去掉。
-- 下一步：先等related专项；优先解释enabled招募入口读数差异，再给本期四批最终边界。核四个收尾patch的机械登记与编号（尚未逐行看完），对问题按P级／出处／复现／建议交Claude；写本期报告及限定登记范围、用生产draft/pending模拟查unsafeRemoved，文档选测--affected dc8057c1 --oracle，提交推github核远端。九期未最终交付，千万别当可合并。
-- 不向其他chat发消息，不派Claude活；由总装读交付单派修。只核Claude，不修实现／正式测试，不自核自己的提交／本期报告／完成度。继续到可核积压清完或额度线；上下文实际40%即保存同树下一序号，及时读本聊天token_count（最后用input_tokens，不把累计total当窗口）。
+- 14 场专项 709832／709832，done／0，逐场日志无错误通道；包括六难度规则、角色、商店、预约和五图流程。
+- 45 级 rank 0／1／2 双端能力、公式、负面计数和穿透一致；暴击差值对应 O-098。招募阻止／允许、首次／重复四组入队和法宝读数相同；先前诊断跨环境数组引发异常，原件与修正证据均保留。
+- 五图原版字段一致（排除转换元数据），直接引用 37 敌群／37 敌人／81 技能无缺项；四份收尾记录与草稿逐行对照，仅编号和 O-098 调整。
+- 生产登记草稿解析模拟：待 Codex 55→51，21 项全移除，unsafeRemoved=[]、notRemoved=[]；未实际改共享登记。文档选测待完成。
+- 本地证据 `review-backlog-20261028-9` 保存原单、净 diff、收尾 patch、原始失败、修正诊断与逐场日志。
 
-## 沙僧87续核检查点
+## 待总装并入变更记录的核查条目
 
-- 招募差异已定位为诊断夹具跨 JS realm 错误：首轮用宿主 `[]` 覆盖原版 `_actors`，缺原版 `Array.contains`，`addActor` 抛异常被事件解释器吞掉；并非产品差异。原版引擎内创建数组并初始化战斗队列后，事件 9004 阻止／允许各首次与重复四组的入队、法宝库存和装备读数，与 Godot 一致。原始、异常堆栈和修正证据保存在本期本地结果 `yomi-recruit-{detail87,consistent87,trace87,error87,realm87}.json`，逐项比较 `yomi-recruit-comparison87.json`；不能把首轮失败当缺陷或通过依据。
-- 四份收尾 patch 的变更记录正文已读取；dev.184／185 登记与原单对应，field 用 dev.186；shop-review 的 Claude 核 Codex 结论仍不复核，仅审其 ade369af 修复与机械登记。进度初值不自复核。14 场专项仍运行，最新 4/14；需等实际退出后才可给本期结论。
+## 2026-10-28 【Codex·沙僧87】核查 清积压第九期（四批限定通过）
+
+- 核查覆盖：2d18e47、33eafe7、845cdbf、338c704、99ac357、757a314、f2f97d0、51abd1e、1e5fc5f、f1bfb25、4a62b23、80f0b7f、ade369a、da39f6c、e04bbf5、b47606b、c04cb0e、48a3341、7e339e9、97c53c2、cd7c484。
+- 结论：限定 Claude 本次代码、五图数据和机械登记；不复核 Codex 历史产品及进度初值。
+
+- 验证：14 场专项 709832／709832；双端 rank 与招募对照、五图数据核对及范围模拟详见报告。
+- 边界：O-098 待用户决定；未移植机制、称号和未实战分支保留，不复核历史结论及进度。
+
+## 下一步
+
+- 按授权继续固定基准内其他可核积压；此前各期保留的问题仍交总装安排 Claude 处理。
