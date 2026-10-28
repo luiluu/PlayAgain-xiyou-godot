@@ -449,19 +449,25 @@ func _boost_party(s: XState, atk := 2.0e16) -> void:
 
 
 ## 女娲完整开场带1047物理免疫，30%页换1048元素免疫；原版完整宿主首击已确认1047热缓存生效。
-## 仅本场临时排修的533（元素9、必中、零耗），第二阶段由原有物理属性攻击结束。
-## 走正式自动战斗排表，不改敌人状态／842；战后恢复排表、临时技能和原观察者。
-func _f31_fixture(s: XState) -> Dictionary:
+## 仅本场临时排修：奇数回合 533（元素9、必中、零耗；带 ChangeTo，行动开始可能换成 5156～5160，同元素同必中），
+## 偶数回合 1038 龙吼（元素1、必中、零耗）打穿 1048。女娲反击 0.85、闪避 0.85，普攻每下约 2% 落到身上；原先第二阶段
+## 靠队友普攻碰运气（第 24 回合才中），技能替换多掷 rule 流后 51 回合没中、队伍先倒（八戒_81 查明），所以第二阶段改由必中技能结束。
+## 三十二层伏羲同一套两阶段（反击、闪避都是 1，普攻打不中）：原先第二阶段等狗逍遥自动战斗随机选到 311，首领第 2 回合
+## 选 3798 时会秒人（技能替换让 rule 流错位后修、美娜、罗琳倒下，f32_reload_boss_beaten）。修照正式排表放 3635 一族
+## （元素10）打完第一阶段，其余三人全回合排 1038，同回合后出手的打完第二阶段。
+## 走正式自动战斗排表，不改敌人状态／842；战后恢复排表、临时技能和原观察者。plan：[角色, 奇数回合技能, 偶数回合技能]。
+func _f31_fixture(s: XState, plan := [[8, 533, 1038]]) -> Dictionary:
 	var fixture := {"had_table": s.hang_up.has("ActSkill"), "table": s.hang_up.get("ActSkill", {}).duplicate(true),
 		"observer": XStateEffects.observer, "learned": [], "stages": [], "stage_counts": {1047: 0, 1048: 0}}
 	var table: Dictionary = fixture.table.duplicate(true)
-	for entry in [[8, 533]]:
+	for entry in plan:
 		var a := s.actor(entry[0])
-		if not a.skill_ids.has(entry[1]):
-			a.learn_skill(entry[1])
-			fixture.learned.append([a, entry[1]])
+		for sid in entry.slice(1):
+			if not a.skill_ids.has(sid):
+				a.learn_skill(sid)
+				fixture.learned.append([a, sid])
 		for round in range(1, 17):
-			table[a.display_name() + XHangUpAuto.three(round)] = entry[1]
+			table[a.display_name() + XHangUpAuto.three(round)] = entry[1 + (round + 1) % 2]
 	s.hang_up["ActSkill"] = table
 	XStateEffects.observer = func(phase, sid, holder, ctx):
 		if fixture.observer.is_valid():
@@ -663,6 +669,8 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	if f.map == 148:
 		_check(tag + "_opening_kept", s.variable(842) == 0 and s.switch(682), [s.variable(842), s.switch(682)])
 		f31 = _f31_fixture(s)
+	elif f.map == 156:
+		f31 = _f31_fixture(s, s.members().filter(func(a): return a.actor_id != 8).map(func(a): return [a.actor_id, 1038, 1038]))
 	if not await _talk(map, boss.id, boss_answers, tag + "_boss", full):
 		_restore_f31_fixture(s, f31)
 		return false
@@ -671,9 +679,11 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	var idle := await _wait_idle(map, WAIT_EVENT * 3)
 	var won := s.variable(20) == n + 1 and s.self_switch(f.map, boss.id, "A")
 	_restore_f31_fixture(s, f31)
-	if not f31.is_empty():
-		var first: int = f31.stages.find_custom(func(row): return row[0] == 1047 and row[1] == 533 and row[2] > 0 and row[3].has(1050) and row[3].has(1053))
-		# 第二阶段只要求到达（有伤害、带 1051、已脱离 1047）：敌人带 Star_Warehouse ×2 后第二阶段由分身技能 533 打完，普通攻击不一定再落到
+	if f.map == 148:
+		# 533 行动开始按 ChangeTo 可能换成 5156～5160（原版 startAction 同样换），都算
+		var thunder: Array = [533] + XBattleLogic.change_to_conditions(XDB.rec("Skills", 533)).map(func(e): return int(e[0]))
+		var first: int = f31.stages.find_custom(func(row): return row[0] == 1047 and thunder.has(row[1]) and row[2] > 0 and row[3].has(1050) and row[3].has(1053))
+		# 第二阶段只要求到达（有伤害、带 1051、已脱离 1047）
 		var second: int = f31.stages.find_custom(func(row): return row[0] == 1048 and row[2] > 0 and row[3].has(1051) and not row[3].has(1047))
 		_check(tag + "_immunity_stages", first >= 0 and second > first, f31.stages)
 	if not _check(tag + "_boss_won", idle and won and map.map_id == f.map, [idle, s.variable(20), map.map_id, boss, _boss_debug(map, s)]):
@@ -710,7 +720,8 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	_watch(map)
 	s = XState.current
 	_check(tag + "_reload_pos", map.player.grid == pos and map.player.direction == dir, [pos, dir, map.player.grid, map.player.direction])
-	_check(tag + "_reload_boss_beaten", s.self_switch(f.map, boss.id, "A") and s.variable(20) == n + 1 and s.members().all(func(a): return a.hp > 0))
+	_check(tag + "_reload_boss_beaten", s.self_switch(f.map, boss.id, "A") and s.variable(20) == n + 1 and s.members().all(func(a): return a.hp > 0),
+		[s.self_switch(f.map, boss.id, "A"), s.variable(20), s.members().map(func(a): return [a.display_name(), a.hp, a.state_ids])])
 	# 5. 在读回的地图上走到辛德瑞「传送」回大厅（能接着打）
 	return await _return_hub(map, f, tag, true)
 
