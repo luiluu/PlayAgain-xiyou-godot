@@ -1,0 +1,214 @@
+{
+  "codeHead": "fd00ec47c02c6be4890f4376da9bf1df097d1eb4",
+  "runId": "320b86f659a14180a793e728fca3c96d",
+  "startedAt": "2026-10-28T23:25:07.433272+00:00",
+  "finishedAt": "2026-10-28T23:33:41.460386+00:00",
+  "exitCode": 0,
+  "sceneCount": 14,
+  "passed": 4439,
+  "total": 4439,
+  "wallSeconds": 513.7,
+  "jobs": 2,
+  "globalJobs": 4,
+  "reused": [],
+  "flakyRerunPassed": [],
+  "scenes": [
+    {
+      "name": "xiyou_floor_reach173.tscn",
+      "passed": 159,
+      "total": 159,
+      "seconds": 123.169,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 123.169,
+          "passed": true
+        }
+      ],
+      "logSHA256": "0930be727da123aeb1f58f6647dca55a954bb3c97ba02c199bbf92d1d5a2e697"
+    },
+    {
+      "name": "xiyou_event_compare.tscn",
+      "passed": 5,
+      "total": 5,
+      "seconds": 48.614,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 48.614,
+          "passed": true
+        }
+      ],
+      "logSHA256": "2b2ed98792abb59e00a95dbbed60205a8bb6ad09ef7daf4522732b8e8747ed87"
+    },
+    {
+      "name": "xiyou_floor_reach139.tscn",
+      "passed": 74,
+      "total": 74,
+      "seconds": 18.844,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 18.844,
+          "passed": true
+        }
+      ],
+      "logSHA256": "0be3ba1bf381f0170450342985f4a7ded4187bef5d8d283cadba1ef978ba0057"
+    },
+    {
+      "name": "xiyou_change_clothes.tscn",
+      "passed": 32,
+      "total": 32,
+      "seconds": 12.048,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 12.048,
+          "passed": true
+        }
+      ],
+      "logSHA256": "80268a19423120a32a0cb178edd9927798f0e0196d56dca7c281b5cd98deddfc"
+    },
+    {
+      "name": "xiyou_actor_advanced.tscn",
+      "passed": 33,
+      "total": 33,
+      "seconds": 11.101,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 11.101,
+          "passed": true
+        }
+      ],
+      "logSHA256": "c9d1339db9ad5ad5a418f4f0e698bbaee7450c8abf86aad17b05f81c2eba6626"
+    },
+    {
+      "name": "xiyou_skill_change_to.tscn",
+      "passed": 2025,
+      "total": 2025,
+      "seconds": 8.772,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 8.772,
+          "passed": true
+        }
+      ],
+      "logSHA256": "1c8a44ef5167084ac766ee1b49283f95d34ced9ec829d80fe3370ec4948fa36c"
+    },
+    {
+      "name": "xiyou_weapon_unleash.tscn",
+      "passed": 950,
+      "total": 950,
+      "seconds": 5.884,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 5.884,
+          "passed": true
+        }
+      ],
+      "logSHA256": "aa85c581aae6176a882938be31ddccf26ebb94f1aa9ca12bc7271f7828f6642b"
+    },
+    {
+      "name": "xiyou_magic_weapon_level.tscn",
+      "passed": 51,
+      "total": 51,
+      "seconds": 4.677,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.677,
+          "passed": true
+        }
+      ],
+      "logSHA256": "f898f887e9120b77c088026ad18f1eb7895d651311030de1a8c07289a06efa69"
+    },
+    {
+      "name": "xiyou_race_battle.tscn",
+      "passed": 436,
+      "total": 436,
+      "seconds": 4.545,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.545,
+          "passed": true
+        }
+      ],
+      "logSHA256": "057b602e43b3323a953b9ae6dbc1c3ff7c9d72b9bbeea4e5349e3046bb0a5ee6"
+    },
+    {
+      "name": "xiyou_party_skills.tscn",
+      "passed": 214,
+      "total": 214,
+      "seconds": 4.39,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.39,
+          "passed": true
+        }
+      ],
+      "logSHA256": "21b2391535419030e69ea7e63390cfbbe66074e874a5eb3d8c87428a122f4b02"
+    },
+    {
+      "name": "xiyou_alien_battle.tscn",
+      "passed": 330,
+      "total": 330,
+      "seconds": 4.351,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.351,
+          "passed": true
+        }
+      ],
+      "logSHA256": "5fc9b151968c2b16ec3cd57a9ff6d49f9fa9766fe0f6079cd828abfe55c913e1"
+    },
+    {
+      "name": "xiyou_pet_capture.tscn",
+      "passed": 48,
+      "total": 48,
+      "seconds": 4.062,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 4.062,
+          "passed": true
+        }
+      ],
+      "logSHA256": "5d8aad86de16089640b6042a61962379205472cbd48794da916bd64c2c556eee"
+    },
+    {
+      "name": "xiyou_actor_warehouse.tscn",
+      "passed": 26,
+      "total": 26,
+      "seconds": 3.987,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.987,
+          "passed": true
+        }
+      ],
+      "logSHA256": "65b462ded0d63d68a10df847f1ad6c4736d866e4f6721ae2ae704eead29d8973"
+    },
+    {
+      "name": "xiyou_actor_modules.tscn",
+      "passed": 56,
+      "total": 56,
+      "seconds": 3.813,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 3.813,
+          "passed": true
+        }
+      ],
+      "logSHA256": "0b19669833f89a4400a693fdcb19fb18ecad49b1f786784d4352734e4a413e8b"
+    }
+  ],
+  "scope": "Focused regression only. Does not close existing P2 findings, certify all gameplay, or replace full-suite acceptance."
+}

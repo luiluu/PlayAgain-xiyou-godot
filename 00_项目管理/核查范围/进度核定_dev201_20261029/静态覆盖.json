@@ -1,0 +1,18 @@
+{
+  "pages": 6912,
+  "runnable": 6910,
+  "counts": {
+    "空页": 1157,
+    "出切片": 2,
+    "未翻译": 2
+  },
+  "hard": 2,
+  "new": [],
+  "resolved": [],
+  "issues": [
+    "未翻译|CE0046|指令 250",
+    "未翻译|CE1401|指令 331"
+  ],
+  "oracleCases": 5755,
+  "meaning": "Static dependency reachability only; not semantic completion or gameplay acceptance."
+}
