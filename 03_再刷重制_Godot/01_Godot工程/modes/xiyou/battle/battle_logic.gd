@@ -351,6 +351,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 			return false
 	if a.traits_set(XBattler.TRAIT_SKILL_SEAL).has(int(skill.id)):
 		return false
+	if XAlienBattle.sealed(self, a, skill):  # 异化蚀术 isSkillSealed 包装：被封印的技能
+		return false
 	if not wtype_ok(a, skill):
 		return false
 	if XAlienBattle.blocks_skill(a, skill):  # 异化逆祷 meetsSkillConditions：模板外的伤害技能不能用
@@ -616,6 +618,7 @@ func act(u: XBattler, skill, target) -> Array:
 	elif skill == null or (skill is Dictionary and skill.is_empty()):
 		pass
 	elif int(skill.id) == GUARD_SKILL and not is_item(skill):
+		XAlienBattle.start_action(self, u, skill)  # 异化蚀术 startAction 包装：防御也算原有合法行动窗口
 		XStateEffects.run("action_start", u)  # 防御也走 startAction
 		# 防御技能在原版也对自己 Game_Action.apply 一次：initiate／select／deselect／conclude 四段都跑（无伤害段）
 		u.param_refresh()  # native useItem refresh precedes guard apply
@@ -630,6 +633,7 @@ func act(u: XBattler, skill, target) -> Array:
 	else:
 		logs.append_array(execute(u, skill, target))
 		XImportedBalance.set_acting(null)
+	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
 	XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
 	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
 	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
@@ -1194,6 +1198,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# 角色在 OTB 下输入完（或不能输入时 makeActions 后）直接 startAction，不看 isValid，照原样执行。参照 attack_query_probe skip 组。
 	if not forcing and not u.is_actor() and not can_use(u, skill):
 		return logs
+	XAlienBattle.start_action(self, u, skill)  # 异化蚀术 startAction 包装（最外层）：记上次用的技能、列出要解的封印
 	skill = change_to(u, skill)  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
 	skill = weapon_unleash(u, skill)  # YEP_WeaponUnleash：行动开始状态效果之后、付费之前
@@ -1469,8 +1474,10 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if not blocked:
 		XStateEffects.run("initiate", u, ctx)
 		XStateEffects.run("select", t, ctx)
+	var used := not blocked and (not t.is_dead() or int(skill.get("scope", 0)) in [9, 10])  # result.used（testApply）
 	var r := _apply(u, skill, t)
 	XAlienBattle.after_apply(self, u, skill, t, r)  # 异化 apply 包装：灾疫附加腐蚀
+	XAlienBattle.seal_last(self, u, skill, t, used and not r.missed and not r.evaded)  # 异化蚀术 apply 包装：命中后封印
 	if not blocked:
 		XStateEffects.run("deselect", t, ctx)
 		XStateEffects.run("conclude", u, ctx)
@@ -1561,6 +1568,12 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 ## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：Boss输出→导入平衡→真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
 ## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
+	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
+	if XAlienBattle.erosion_shield(self, u, t, value, item):
+		var er := _action_resources.result(t)
+		er.hpDamage = 0.0
+		er.hpAffected = true
+		return 0.0
 	# 后安装的异化包装在 Boss 输出外层；settled 栈仍只对内层资源结算生效。
 	if value > 0.0 and XAlienBattle.blocks_damage(u, t):
 		value = 0.0  # 异化逆祷 A.blocksDamage：对敌人的生命伤害全阻断
