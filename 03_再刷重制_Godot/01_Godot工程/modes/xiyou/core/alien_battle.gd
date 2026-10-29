@@ -212,6 +212,7 @@ static func open(logic) -> void:
 ## A.lockParty：出战角色各冻结身上第一件异化装备（原版多于一件时抛错）
 static func lock_party(logic) -> void:
 	var st := _store(logic)
+	eject_invalid(logic)
 	st.party = {}
 	st.battling = true
 	for a in logic.actors:
@@ -221,6 +222,40 @@ static func lock_party(logic) -> void:
 	st.life = false
 	if st.status:
 		setup_life(logic)
+
+
+## lockParty 包装（Adv:62）：配置失效的异化装备（A.ready 不过；绑定词条的队友不在场、已倒下或已被前面的人绑定）
+## 卸下放回背包并提示，本场不生效
+static func eject_invalid(logic) -> void:
+	var s: XState = logic.state
+	var claimed := []
+	for a in logic.actors:
+		var slot := -1
+		for i in a.equips.size():
+			var e = a.equips[i]
+			if e is Dictionary and not XAlienation.mark(e).is_empty():
+				slot = i
+				break
+		if slot < 0:
+			continue
+		var item: Dictionary = a.equips[slot]
+		var m := XAlienation.mark(item)
+		var bad := not XAlienation.ready(s, a, item)
+		if Array(XAlienation.config().get("boundKeys", [])).has(str(m.affix)):
+			var p = null
+			for x in logic.actors:
+				if x.actor_id == int(m.get("config", {}).get("partnerId", 0)):
+					p = x
+			bad = bad or p == null or not _live(p) or claimed.any(func(c): return is_same(c, p))
+			if not bad:
+				claimed.append(p)
+		if bad:
+			a.equips[slot] = null
+			s.gear.append(item)
+			a.refresh_passive()
+			a.param_mark_dirty()
+			a.refresh_resources()
+			_toast(logic, a.display_name() + "的异化配置失效，" + str(item.name) + "已放回背包，请在工坊重新配置。")
 
 
 ## 战斗中的 A.forActor：开战时冻结的那份；不在战斗中返回 null

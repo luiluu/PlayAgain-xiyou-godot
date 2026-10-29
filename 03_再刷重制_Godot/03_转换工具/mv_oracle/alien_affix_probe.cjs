@@ -163,4 +163,6 @@ const CORRODE = {user: 'e0', def: S(1, 1, [21, C.ids.corrosion, 1])};
 battleCase('lifelink.corrosion', {affix: 'lifelink', config: {actorId: 1, partnerId: 8}}, [CORRODE, {tick: 1}, {tick: 2}]);
 battleCase('scapegoat.corrosion', {affix: 'scapegoat', config: {actorId: 1, partnerId: 8}}, [CORRODE, {tick: 1}, {tick: 2}]);
 battleCase('hollow.corrosion', {affix: 'hollow'}, [CORRODE, {tick: 1}]);
+// 锁队检查（Adv:62）：绑定的队友（角色 2）不在场，异化装备卸下放回背包，本场不生效
+battleCase('lifelink.invalid', {affix: 'lifelink', config: {actorId: 1, partnerId: 2}}, [{user: 'e0', skill: 1}]);
 process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血）', config, cases}) ? 0 : 1);
