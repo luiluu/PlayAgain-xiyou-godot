@@ -140,6 +140,7 @@ func _run() -> void:
 	await _message_101(b)
 	await _race_ui(b, s)
 	await _select_confirm(b, s)
+	await _alien_pick(b, s)
 	# 指令窗（原版：851,462,220,196；6 条居中）
 	var cw: XBattleList = b.cmd_win
 	_check("command_rect", [cw.position, cw.size] == [Vector2(851, 462), Vector2(220, 196)], [cw.position, cw.size])
@@ -559,6 +560,35 @@ func _select_confirm(b: XBattleScene, s: XState) -> void:
 	a.last_battle_skill = last[1]
 	b._picked.emit("back")
 	await _frames(5)
+
+
+## 异化行动道具投影的选目标（_pick_target 读投影后的技能）：祸祝把自身技能（7100，scope 11）改成选敌人，默认最右；
+## 逆祷普攻（scope 1）改成选友方；逆祷原 scope 3～6（炸裂火球 274）不选目标。临时把锁队词条写进异化存储，做完撤掉。
+func _alien_pick(b: XBattleScene, s: XState) -> void:
+	var a := s.actor(10)
+	var party: Dictionary = XAlienBattle._store(b.logic).party
+	var had := party.has(a)
+	var old = party.get(a)
+	for c in [["blessing", 7100, "enemy"], ["prayer", 1, "ally"]]:
+		party[a] = {"affix": c[0], "config": {}}
+		var seen := []
+		get_tree().create_timer(0.3).timeout.connect(func():
+			seen.append([b._target_mode, b._hover])
+			b._picked.emit(null), CONNECT_ONE_SHOT)
+		var r = await b._pick_target(XDB.rec("Skills", int(c[1])), a)
+		var mode = seen[0][0] if not seen.is_empty() else ""
+		_check("alien_pick_%s_mode" % c[0], mode == c[2] and r == null, [mode, r])
+		if c[0] == "blessing":
+			var h = seen[0][1] if not seen.is_empty() else null
+			_check("alien_pick_blessing_rightmost", h is XEnemy and b.sprites[h].home.x == b.logic.alive(b.logic.enemies).map(func(e): return b.sprites[e].home.x).max())
+	party[a] = {"affix": "prayer", "config": {}}
+	var r2 = await b._pick_target(XDB.rec("Skills", 274), a)
+	_check("alien_pick_prayer_random_no_select", r2 == a and b._target_mode == "", [r2, b._target_mode])
+	if had:
+		party[a] = old
+	else:
+		party.erase(a)
+	await _frames(3)
 
 
 ## 妖族群攻手选猎物（种族 R:258／259）：妖族放全体伤害技能（闪电）时进选敌，默认最右；换一只确定后，行动打全体、猎物就是选中的那只。
