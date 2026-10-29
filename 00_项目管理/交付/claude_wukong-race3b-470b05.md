@@ -1,14 +1,12 @@
-# 交付：claude/wukong-race3
+# 交付：claude/wukong-race3b-470b05
 
-- 车道／工作者：C 规则·机制（含战斗画面指令窗、选敌说明卡）／悟空_63（Claude）
-- 状态：进行中
+- 车道／工作者：C 规则·机制（含战斗画面指令窗、选敌说明卡）／悟空_63（Claude，写代码与参照）→ 悟空_64（Claude，收尾验证；10-29 从 `claude/wukong-race3` 903cd237 切出 `claude/wukong-race3b-470b05` 续上，原分支不再用）
+- 状态：可合并
 
-## 现状（2026-10-29 暂停，唐僧叫停留额度）
+## 现状（2026-10-29 悟空_64 收尾）
 
-- 做到哪：第 2、3、5（画面）三项代码、参照、专项都写完了。已验证：`xiyou_race_battle` 653/653、`xiyou_battle_ui` 99/99（合 main 前）；合 main（dd478d08，带进八戒的异化词条）后 `--补齐` 与 `同步正式西游.py --accept-additions` 通过（race_battle、alien_affix 两个探针重跑，测量不变）。
-- 还没验证：合 main 之后的选测没跑完（启动后排队等槽，暂停时停掉了）。要补跑：`并行测试.py … xiyou_race_ xiyou_power xiyou_status_power xiyou_battle xiyou_help_card xiyou_event_compare xiyou_dual_wield xiyou_item_list xiyou_flow xiyou_floor_run xiyou_determinism xiyou_poison_collapse xiyou_actor_p0`（改了界面，必跑 `xiyou_event_compare`）。`help_card.gd` 的 show_for 抽出 `_apply`，要靠 `xiyou_help_card` 确认没变。妖族手选猎物的画面流程只有规则测试，`xiyou_battle_ui` 里还没加点选全体技能的一段。
-- 下一步：补跑上面选测；过了把「验证」节填上、状态改「可合并」；可选给 `xiyou_battle_ui` 加妖族全体技能选敌一段。
-- 改函数签名先 rg 调用处（唐僧期一合并时补了 `power.gd` `_expected` 的缺省参数）：本期没改签名；`prey()`、`insert_human()` 加的都是带缺省值的参数。
+- 第 2、3、5（画面）三项代码、参照、专项都已完成并验证（见「验证」）。main（3d6cf87d，含期一 dev.202、八戒异化词条）已在 dd478d08 合进，悟空_64 开工时 main 没有新提交，没再合。
+- 改函数签名：本期没改签名；`prey()`、`insert_human()` 加的都是带缺省值的参数。
 
 接期一（`claude/wukong-race2-aa701e`，交付单 `claude_wukong-race2-aa701e.md`，由唐僧另行合并），同一工作树从 c043ad6b 切出。
 
@@ -50,7 +48,17 @@
 
 ## 验证
 
-（待写）
+悟空_64，2026-10-29，工作树 `.claude/worktrees/wukong-race3b-470b05`：
+
+- `新建工作树.sh --补齐` 通过。
+- `同步正式西游.py --accept-additions` 通过：只重跑 `race_battle_probe.cjs`（61 个复用），`race_battle.json` cases 49→51（新增 demon_manual、needsSelection，原有用例测量不变），verify issues 为空；产物指纹留在本工作树。
+- 选测（`并行测试.py … xiyou_race_ xiyou_power xiyou_status_power xiyou_battle xiyou_help_card xiyou_event_compare xiyou_dual_wield xiyou_item_list xiyou_flow xiyou_floor_run xiyou_determinism xiyou_poison_collapse xiyou_actor_p0`）27 个场景全过，无偶发，523 秒：`xiyou_race_battle` 653/653、`xiyou_race_menu` 66/66、`xiyou_battle_ui` 76/76（无头；截图检查不计）、`xiyou_help_card` 992/992（`_apply` 抽出后行为不变）、`xiyou_event_compare` 5/5、`xiyou_actor_p0` 3322/3322、`xiyou_determinism` 372/372、`xiyou_floor_run` a/b/c 273/332/560、`xiyou_poison_collapse` 191/191、`xiyou_dual_wield` 301/301、`xiyou_power*` 137/6136/55682/1068、`xiyou_status_power*` 36/11、`xiyou_battle*` 其余 8/13/22/108/92/50/5、`xiyou_flow` 48/48、`xiyou_item_list` 38/38。
+- `xiyou_battle_ui` 窗口模式带 `--out` 单跑：99/99（含 20 张截图，与悟空_63 合 main 前一致）。
+- 没跑全量 `检查.sh`（车道规矩）。
+
+## 遗留
+
+- 妖族手选猎物的画面流程只有规则测试（`xiyou_race_battle`），`xiyou_battle_ui` 还没有「妖族点全体技能→选敌→猎物」一段（派单里是可选项，为省额度没做）；可以下期补。
 
 ## 待交叉核查
 
@@ -64,4 +72,8 @@
 
 ## 本分支提交
 
-（待写）
+- f243c7aa 妖族群攻手选猎物、战斗指令血契开关、选敌毒鸡汤说明卡（O-107）
+- 750555c4 战斗画面验收加种族段
+- dd478d08 合并 main
+- 903cd237 暂停现状
+- （本提交）收尾验证、交付单改名、可合并
