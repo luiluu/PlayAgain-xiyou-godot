@@ -6,6 +6,7 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 import signal
 from pathlib import Path
 import subprocess
@@ -642,6 +643,20 @@ class ShardTests(unittest.TestCase):
         self.assertEqual(ran, '"all"')
         self.assertEqual(result['executed'], ['smart_ai_probe.cjs'])
         self.assertEqual(merged, self.full_bytes([9, 1, 5, 3, 2]))
+
+    def test_merge_only_run_creates_missing_sandbox_subdir(self):
+        # 新工作树首次同步（哪吒_8，10-29 八戒）：缓存与 generated 来自主工作区，.sandbox/slice/ 还不存在；
+        # 只删单元时不跑探针、直接合并，合并写 .sandbox/slice/... 原来 ENOENT，6 段全败白跑约 30 分钟
+        probe = self.oracle / 'smart_ai_probe.cjs'
+        probe.write_text(FAKE_SMART_AI.replace("fs.writeFileSync(path.join(__dirname, '.sandbox/smart_ai.json')",
+                                               "fs.mkdirSync(path.join(__dirname, '.sandbox/slice'), {recursive: true});\n"
+                                               "fs.writeFileSync(path.join(__dirname, '.sandbox/slice/smart_ai.json')"))
+        self.probes = [(['smart_ai_probe.cjs'], ['slice/smart_ai.json'])]
+        self.sync([1, 2, 3], force=True)
+        shutil.rmtree(self.oracle / '.sandbox/slice')
+        result, _, merged = self.sync([1, 3])
+        self.assertEqual(result['partial'], {'smart_ai_probe.cjs': []})
+        self.assertEqual(json.loads(merged)['cases'], [{'troop': t, 'v': t / 3, 'name': '敌群%d' % t} for t in (1, 3)])
 
     def test_tampered_previous_output_forces_full_run(self):
         self.sync([1, 2], force=True)

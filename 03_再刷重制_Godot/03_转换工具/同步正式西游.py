@@ -605,6 +605,8 @@ def run_probes(log, cache=None):
                 if not (SANDBOX / rel).is_file():
                     return cmd, 1, text + '探针产物缺失：' + rel + '\n', time.time() - t
                 shutil.move(SANDBOX / rel, fresh)
+            # 只合并不跑探针时（新工作树首次同步）.sandbox/slice/ 等子目录可能还没有，合并脚本写入会 ENOENT（哪吒_8）
+            (SANDBOX / rel).parent.mkdir(parents=True, exist_ok=True)
             spec['files'].append({'old': str(previous / rel), 'fresh': str(fresh) if part else None, 'out': str(SANDBOX / rel),
                                   'indent': None if cmd[0] == 'event_probe.cjs' else 1})
         (box / 'merge.json').write_text(json.dumps(spec, ensure_ascii=False))
