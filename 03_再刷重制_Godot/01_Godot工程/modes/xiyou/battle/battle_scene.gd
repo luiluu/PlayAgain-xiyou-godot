@@ -835,7 +835,7 @@ func _pick_mimic(a: XActor):
 	var d = XAlienBattle.locked(a)
 	if d == null:
 		return null
-	mimic_win = XAlienMimicWindow.open(ui, d.get("observed", []), int(d.get("selected", 0)))
+	mimic_win = XAlienMimicWindow.for_records(ui, d.get("observed", []), int(d.get("selected", 0)))
 	mimic_win.position += _origin
 	var w := mimic_win
 	w.chosen.connect(func(i): _picked.emit(int(w.ids[i])))

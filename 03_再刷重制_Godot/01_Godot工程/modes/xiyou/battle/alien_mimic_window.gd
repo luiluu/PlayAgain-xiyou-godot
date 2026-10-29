@@ -13,7 +13,7 @@ const MTPAD := 6.0
 var ids: Array = []
 
 
-static func open(parent: Control, observed: Array, selected: int) -> XAlienMimicWindow:
+static func for_records(parent: Control, observed: Array, selected: int) -> XAlienMimicWindow:
 	var w := XAlienMimicWindow.new()
 	w.ids = observed.map(func(id): return int(id))
 	w.entries = w.ids.map(func(id): return {"text": str(XDB.rec("Skills", id).get("name", "")), "enabled": id != selected})
