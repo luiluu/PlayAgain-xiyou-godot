@@ -614,6 +614,7 @@ func end_turn() -> Array:
 	var logs := []
 	var before := _movable_snapshot()
 	_acted.clear()
+	XAlienBattle.spread_pest(self)  # 异化疫囊 endTurn 包装（原 endTurn 之前）：传播异常与减益
 	XCat.end_turn(self)  # BattleManager.endTurn 的小猫剑圣包装：删过期的识破／剑痕
 	logs.append_array(XPetCapture.end_turn(self))  # Star_PetSystem 的 endTurn 包装：第 5 回合可捕捉的敌人逃跑
 	for b in actors + enemies:
@@ -1624,7 +1625,7 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 					chance *= state_rate(t, id) * u.attack_states_rate(id) * _luk_rate(u, t)
 				elif int(r.skill.get("hitType", 0)) != 0:
 					chance *= state_rate(t, id) * _luk_rate(u, t)
-				if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
+				if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not XAlienBattle.forced_state(t, id):
 					chance = 0.0
 				# MV addState → isStateAddable 要求活着：本次伤害已致死时照常掷随机数，但不再附加（不进 r.added）
 				if _float("add_state") < chance and t.is_alive():
@@ -1644,6 +1645,8 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 			sequence_buff(t, int(eff.dataId), true, false, int(v1))
 		33, 34:
 			var id := int(eff.dataId)
+			if XAlienBattle.blocks_buff_removal(t, id):
+				return  # 异化 removeBuff 包装：疫囊、囚厄的减益不可驱散，绝缘拒绝外来驱散
 			if (int(eff.code) == 33 and t.buffs[id] > 0) or (int(eff.code) == 34 and t.buffs[id] < 0):
 				t.buffs[id] = 0
 				t.buff_turns[id] = 0
@@ -1655,7 +1658,7 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 func sequence_add_state(t: XBattler, id: int) -> void:
 	if XDB.rec("States", id).is_empty() or not t.is_alive():
 		return
-	if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) or (id == DEATH_STATE and t.immortal):
+	if (t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not XAlienBattle.forced_state(t, id)) or (id == DEATH_STATE and t.immortal):
 		return
 	if id == DEATH_STATE:
 		_die(t)
@@ -1698,14 +1701,18 @@ func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = 
 
 
 ## 行动序列 ADD/REMOVE BUFF/DEBUFF（Game_Battler.addBuff/addDebuff：活着才加，等级 ±2 封顶，回合取较大者；remove 只去同方向）
-func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int) -> void:
+func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int, alien_routed := false) -> void:
 	if add:
 		if t.is_dead():
 			return
+		if not alien_routed and XAlienBattle.route_buff(self, t, pid, buff, turns):
+			return  # 异化 addBuff／addDebuff 包装：绝缘拒收外来、舍身增益转给队友、囚厄接收队友减益
 		if t.buffs[pid] != t.buff_limit(pid, buff):
 			t.buffs[pid] += 1 if buff else -1
 		if t.buffs[pid] != 0 and t.buff_turns[pid] < turns:
 			t.buff_turns[pid] = turns
+	elif XAlienBattle.blocks_buff_removal(t, pid):
+		return  # 异化 removeBuff 包装
 	elif (buff and t.buffs[pid] > 0) or (not buff and t.buffs[pid] < 0):
 		t.buffs[pid] = 0
 		t.buff_turns[pid] = 0
@@ -1720,6 +1727,8 @@ static func _luk_rate(u: XBattler, t: XBattler) -> float:
 
 
 func state_rate(b: XBattler, id: int) -> float:
+	if XAlienBattle.forced_state(b, id):
+		return 1.0  # 异化疫囊、囚厄 stateRate 包装
 	return b.traits_pi(XBattler.TRAIT_STATE_RATE, id)
 
 

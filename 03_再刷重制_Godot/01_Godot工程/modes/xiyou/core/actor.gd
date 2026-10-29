@@ -208,7 +208,8 @@ func release_to_party() -> void:
 		s.gear.append_array(removed)
 
 func add_state(id: int, random: XRandomStream = null) -> void:
-	if XQiyu.blocks_state(actor_id, id) or (STRONG_WEAK_STATES.has(id) and is_strong_classified()):
+	# 异化疫囊 addProtected：受保护状态直接走 Game_Battler.addState，绕过角色侧的拦截
+	if not XAlienBattle.pest_state(self, id) and (XQiyu.blocks_state(actor_id, id) or (STRONG_WEAK_STATES.has(id) and is_strong_classified())):
 		return
 	var fresh := not state_ids.has(id)
 	super(id, random)

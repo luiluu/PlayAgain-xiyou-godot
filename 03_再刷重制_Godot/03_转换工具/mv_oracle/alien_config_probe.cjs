@@ -1,5 +1,5 @@
 'use strict';
-// 异化工坊期二严格级参照：配置异化与穿戴限制。导出 CodexAlienation.config.templates 与云裳的可转移减益／可共享增益名单（Affixes 载入时补过）；
+// 异化工坊期二严格级参照：配置异化与穿戴限制。导出 CodexAlienation.config.templates（含词条效果期二用的 statePairs、jailStates）与云裳的可转移减益／可共享增益名单（Affixes 载入时补过）；
 // 记录就绪判定 A.ready（20 种词条 × 队员）、可绑定队友、原生主动技能、可借技能、吞器供体；configure／clearConfiguration 的返回；
 // 工坊「配置异化」各种页（jsdom 叠加层，含下拉框的选项与当前值）；换装备、能否装备、商店出售可否选、挂机卖出。只写 .sandbox。
 const fs=require('fs'),path=require('path');
@@ -35,7 +35,7 @@ const cfgOf=i=>J(A.mark(i).config||{});
 const err=fn=>{try{const v=fn();return {ok:true};}catch(e){return {thrown:e.message};}};
 
 // 1. 导出
-const exportData={templates:{attack:T.attack,inversebone:T.inversebone,blessing:T.blessing,pestStates:T.pestStates,possessionSkills:T.possessionSkills,wish:T.wish,silence:T.silence,gearTraitCodes:T.gearTraitCodes},
+const exportData={templates:{attack:T.attack,inversebone:T.inversebone,blessing:T.blessing,pestStates:T.pestStates,possessionSkills:T.possessionSkills,wish:T.wish,silence:T.silence,gearTraitCodes:T.gearTraitCodes,statePairs:T.statePairs,jailStates:T.jailStates},
   transferDebuffs:Y.config.transferDebuffs,shareBuffs:Y.config.shareBuffs,learn:LEARN};
 
 // 2. 判定

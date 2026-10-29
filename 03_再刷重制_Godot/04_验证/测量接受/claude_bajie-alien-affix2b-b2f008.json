@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "alien_affix.json",
+      "collection": "顶层",
+      "key": "hostScope",
+      "fields": ["*"],
+      "oldDigest": "78d8130d4286bce2",
+      "newDigest": "3eded5adde1eb24e",
+      "reason": "八戒_83 异化期二①：alien_affix_probe 的说明文字从「期一（逆骨、归墟）」加上「期二①（疫囊、囚厄、绝缘、舍身）」，只改描述；cases 3→7 是只增，旧 3 例逐项不变"
+    },
+    {
+      "file": "alien_config.json",
+      "collection": "顶层",
+      "key": "export",
+      "fields": ["templates"],
+      "oldDigest": "2f769ff69b3872fb",
+      "newDigest": "2dfc7dd287995e3b",
+      "reason": "八戒_82／83 异化期二前置：alien_config_probe 一并导出 installAlienationRuntime config 的 templates.statePairs（19 对）与 jailStates（172 个）；核对过 templates 只多这两个键，原有键、export 其余字段与顶层都不变"
+    }
+  ]
+}
