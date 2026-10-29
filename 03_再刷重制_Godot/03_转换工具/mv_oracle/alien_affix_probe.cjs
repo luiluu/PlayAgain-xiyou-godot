@@ -70,7 +70,8 @@ function act(bm, user, skillId, targetIndex) {
   const action = new w.Game_Action(user);
   action.setSkill(skillId);
   action.setTarget(targetIndex);
-  const item = action.item(), view = {name: item.name, scope: item.scope, effects: item.effects.map(e => [e.code, e.dataId, e.value1])};
+  const item = action.item(), view = {name: item.name, scope: item.scope, effects: item.effects.map(e => [e.code, e.dataId, e.value1]),
+    usable: user.isActor() ? user.canUse(w.$dataSkills[skillId]) : true};
   terminated = 0;
   user._actions = [action]; bm._subject = user; bm._action = null;
   bm.startAction();
@@ -189,4 +190,13 @@ battleCase('lifelink.invalid', {affix: 'lifelink', config: {actorId: 1, partnerI
 battleCase('blessing', {affix: 'blessing', armor: 1020, learn: [7100]}, [{user: 'a', skill: 7100, view: true}, {user: 'a', skill: 7100, target: 1, view: true},
   {user: 'a', skill: 1, view: true}]);
 battleCase('blessing.none', {learn: [7100]}, [{user: 'a', skill: 7100, view: true}]);
-process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝）', config, cases}) ? 0 : 1);
+// 恶愿：templates.wish（7100）改为除自己外的全体友方；自己先挂上 statePairs 的诅咒（2668，回合照 2421 的最少回合），不可驱散、自然到期才去掉。
+// 到期后先普攻一次：原版自然到期记进行动结果（isStateRemoved），结果清掉之前再付代价挂不上诅咒（O-110），这里让对照避开它
+battleCase('wish', {affix: 'wish', learn: [7100]}, [{user: 'a', skill: 7100, view: true}, {user: 'b', def: S(7, 0, [22, 2668, 1])},
+  {expire: {who: 'a', id: 2668}}, {user: 'a', skill: 1}, {user: 'a', skill: 7100, view: true}]);
+// 逆祷：templates.attack 的攻击照治愈（8）改为治疗友方（原 scope 1→7，其余→8，3～6 改随机友方 n 个），治疗预算按原技能 MP 费用
+// 选治疗技能（≥125 治疗术 166、≥75 次级治疗术 135、否则 8），平分给目标；模板外的伤害技能不能用（usable），硬用对敌人也没有伤害
+battleCase('prayer', {affix: 'prayer'}, [{set: {aHp: 0.5, bHp: 0.5}}, {user: 'a', skill: 1, target: 1, view: true},
+  {user: 'a', skill: 114, view: true}, {user: 'a', skill: 148, view: true}, {set: {aHp: 0.3, bHp: 0.3}}, {user: 'a', skill: 274, view: true},
+  {user: 'a', skill: 109, view: true}, {user: 'e0', skill: 1}]);
+process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）', config, cases}) ? 0 : 1);

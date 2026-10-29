@@ -10,6 +10,7 @@ extends Node
 ## - 期二② battle.hollow／lifelink／scapegoat：步骤另有 regen（turn_end_battler，照 onTurnEnd）、revive（去阵亡状态）；对照时 O-108 关。
 ## - 生命池补漏 battle.*.corrosion：tick 照 endTurn 包装结算腐蚀（行动外 gainHp）；*.event 照事件「增减生命」（MVEventCore 311）。
 ## - o108.*：O-108 开时连命复活把池回到 10%（两人都起来），嫁祸的保护者倒下时不能复活。
+## - 第③批 battle.blessing／wish／prayer：行动道具投影；步骤带 view 的另比投影后的名字、scope、效果与原技能能不能用（不比 terminated，O-109）。
 const ORACLE := "oracle/alien_affix.json"
 var results := []
 
@@ -218,11 +219,15 @@ func _battle(c: Dictionary, compare := true) -> Array:
 			var view := XAlienBattle.project(user, skill)
 			var friends := int(view.scope) in [7, 8, 9, 10, 11]
 			var side: Array = logic.actors if (user is XActor) == friends else enemies
+			var usable := logic.can_use(user, skill) if user is XActor else true
 			logic.act(user, skill, side[int(sp.get("target", 0))])
 			if compare and row.has("view"):
-				var got_view := {"name": view.name, "scope": int(view.scope), "effects": (view.effects as Array).map(func(e): return [int(e.code), int(e.dataId), float(e.value1)])}
+				var got_view := {"name": view.name, "scope": int(view.scope), "effects": (view.effects as Array).map(func(e): return [int(e.code), int(e.dataId), float(e.value1)]), "usable": usable}
 				var want: Dictionary = (row.view as Dictionary).duplicate()
 				want.erase("terminated")  # O-109：原版投影丢了熟练度费用函数，付费时 terminate；重制不崩
+				if not tag.begins_with("battle.prayer"):
+					want.erase("usable")  # 重制 can_use 另查技能类型已添加（界面用），原版 canUse 不查；只在逆祷用例里比
+					got_view.erase("usable")
 				check(step + ".view", _norm(got_view) == _norm(want), [got_view, want])
 		var reading := _reading(enemies, a, b)
 		got.append(reading)
