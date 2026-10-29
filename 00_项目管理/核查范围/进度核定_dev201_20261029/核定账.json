@@ -1,0 +1,86 @@
+{
+  "asOf": "dev.201",
+  "codeHead": "fd00ec47c02c6be4890f4376da9bf1df097d1eb4",
+  "kind": "reviewer engineering workload estimate under inherited weights; not gameplay acceptance rate",
+  "rows": [
+    {
+      "name": "工程与工具",
+      "weight": "5",
+      "previousCompletion": "95",
+      "completion": "95",
+      "contribution": "4.75",
+      "deltaContribution": "0.00"
+    },
+    {
+      "name": "战斗规则与画面",
+      "weight": "8",
+      "previousCompletion": "72",
+      "completion": "73.5",
+      "contribution": "5.88",
+      "deltaContribution": "0.12"
+    },
+    {
+      "name": "地图事件解释器与脚本翻译",
+      "weight": "6",
+      "previousCompletion": "50",
+      "completion": "50",
+      "contribution": "3",
+      "deltaContribution": "0"
+    },
+    {
+      "name": "界面页面",
+      "weight": "6",
+      "previousCompletion": "72",
+      "completion": "76",
+      "contribution": "4.56",
+      "deltaContribution": "0.24"
+    },
+    {
+      "name": "装备系统",
+      "weight": "4",
+      "previousCompletion": "75",
+      "completion": "80",
+      "contribution": "3.2",
+      "deltaContribution": "0.2"
+    },
+    {
+      "name": "养成与周边系统",
+      "weight": "18",
+      "previousCompletion": "28",
+      "completion": "36",
+      "contribution": "6.48",
+      "deltaContribution": "1.44"
+    },
+    {
+      "name": "角色与专属机制",
+      "weight": "13",
+      "previousCompletion": "47",
+      "completion": "48.5",
+      "contribution": "6.305",
+      "deltaContribution": "0.195"
+    },
+    {
+      "name": "楼层、副本与剧情内容",
+      "weight": "37",
+      "previousCompletion": "76.9",
+      "completion": "79.1",
+      "contribution": "29.267",
+      "deltaContribution": "0.814"
+    },
+    {
+      "name": "Mac导出与验收",
+      "weight": "3",
+      "previousCompletion": "20",
+      "completion": "20",
+      "contribution": "0.6",
+      "deltaContribution": "0.0"
+    }
+  ],
+  "rawPercent": "64.042",
+  "percent": 64.0,
+  "previousRawPercent": "61.033",
+  "deltaRawPercent": "3.009",
+  "nextReviewAtPercent": 75,
+  "lastReviewAtPercent": 50,
+  "doesNotClearPendingCodeReviews": true
+}

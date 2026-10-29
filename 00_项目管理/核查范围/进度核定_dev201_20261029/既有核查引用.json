@@ -1,0 +1,30 @@
+[
+  {
+    "commit": "df5e4c88ae8c18f6501dddc5b8b049f6b4430346",
+    "path": "00_项目管理/核查报告_20261028_清积压第七期.md",
+    "sha256": "4ab26bb3d279a9e82f3efa577ae9f675c42cd9e6df92e8beb8fb96b9ecc4d62b",
+    "usedFor": "武器解放强制攻击P2与其他保留问题",
+    "scope": "Existing independent evidence only; no new clearance or repair"
+  },
+  {
+    "commit": "c84bf27d5f2e9bd9dfc14f15cdd9afbc9951ac7d",
+    "path": "00_项目管理/核查报告_20261028_清积压第八期.md",
+    "sha256": "5bfe961b95a614ef3e69025106a57c0c22bbb0c3cb27edbb758e89899f0d425c",
+    "usedFor": "图号收窄漏选P2；五图数量漏记",
+    "scope": "Existing independent evidence only; no new clearance or repair"
+  },
+  {
+    "commit": "ffc5638baa40cf3532ca96a53421346ab2b3f05b",
+    "path": "00_项目管理/核查报告_20261028_清积压第九期.md",
+    "sha256": "b428b4f677473e908553fe176fbc74a9b3c0373168f8788b8a56208a0d098128",
+    "usedFor": "黄泉一期限定通过及未移植机制",
+    "scope": "Existing independent evidence only; no new clearance or repair"
+  },
+  {
+    "commit": "bada333940c61a6b8f88787666d3919131ed0a7c",
+    "path": "00_项目管理/核查报告_20261028_清积压第十期.md",
+    "sha256": "c6b1e6b39b90e4483bdeae8ebba4132bf9c849fd84075a8a9711284a4e23668e",
+    "usedFor": "无效行动收尾P2",
+    "scope": "Existing independent evidence only; no new clearance or repair"
+  }
+]
