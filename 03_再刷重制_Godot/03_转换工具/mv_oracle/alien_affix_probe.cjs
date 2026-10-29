@@ -95,7 +95,7 @@ function battleCase(name, spec, steps) {
       } else if (st.roundEnd) {
         w.$gameTroop._turnCount = st.roundEnd; A.spreadPest(A.round());
       } else if (st.regen) {
-        who(st.regen).onTurnEnd();
+        ctx.bm._subject = null; who(st.regen).onTurnEnd();  // 回合末没有行动者（BattleManager.endTurn 时 _subject 已空）
       } else if (st.revive) {
         who(st.revive).removeState(who(st.revive).deathStateId());
       } else if (st.expire) {
@@ -150,4 +150,9 @@ battleCase('lifelink', {affix: 'lifelink', config: {actorId: 1, partnerId: 8}}, 
 battleCase('scapegoat', {affix: 'scapegoat', config: {actorId: 1, partnerId: 8}}, [
   {user: 'e0', skill: 1}, {user: 'e0', def: S(1, 0, [11, 0, -0.1])}, {user: 'b', skill: 8}, {user: 'b', target: 1, skill: 8},
   {user: 'e1', skill: 1, target: 1}, {regen: 'a'}, {set: {bHp: 0.01}}, {user: 'e0', skill: 1}, {revive: 'a'}]);
+// 期一顺带：舍身的回合末再生转给队友，绝缘自己的再生照常（再生生命 0.35 的普度众生 1366）
+battleCase('sacrifice.regen', {affix: 'sacrifice', config: {actorId: 1, partnerId: 8}}, [
+  {set: {aHp: 0.5, bHp: 0.5}}, {user: 'a', def: S(7, 0, [21, 1366, 1])}, {regen: 'a'}]);
+battleCase('insulation.regen', {affix: 'insulation'}, [
+  {set: {aHp: 0.5}}, {user: 'a', def: S(7, 0, [21, 1366, 1])}, {regen: 'a'}, {user: 'b', def: S(7, 0, [21, 1366, 1])}, {regen: 'a'}]);
 process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）', config, cases}) ? 0 : 1);
