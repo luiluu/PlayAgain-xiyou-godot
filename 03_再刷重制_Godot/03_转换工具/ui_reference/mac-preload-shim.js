@@ -212,6 +212,7 @@ window.__refJson = function (name, obj) {
                     clearInterval(ready);
                     // 避开随机神话并稳定 OTB 同速顺序；不影响正式应用。
                     Math.random = function(){return dropRecord ? 0.01 : 0.5;};
+                    applyRace();
                     BattleManager.setup(2,true,false);
                     if(dropRecord)$gameTroop.members()[0].setHp(1);
                     SceneManager.push(Scene_Battle);
@@ -219,6 +220,51 @@ window.__refJson = function (name, obj) {
             }, 20);
         }
         button('战斗夹具 4 人', function(){fixture(4);});
+        // 种族：照 race_battle_probe setRace（_codexRace＋learnSkill 种族技能）。记下选择，下次开夹具在开战前套用（战斗数据在 startBattle 建）。
+        // 两个按钮的结果写在工具栏末尾这一行（运行时读数每 500ms 会被覆盖）
+        var note=document.createElement('pre'); note.style.cssText='margin:0;white-space:pre-wrap';
+        var raceSel={};
+        function select(label, opts) { var l=document.createElement('label'); l.textContent=label; var x=document.createElement('select');
+            opts.forEach(function(o){var op=document.createElement('option');op.value=o[0];op.textContent=o[1];x.appendChild(op);}); l.appendChild(x); panel.appendChild(l); return x; }
+        raceSel.actor=select(' 角色',[[0,'1号位'],[1,'2号位'],[2,'3号位'],[3,'4号位']]);
+        raceSel.race=select(' 种族',[[-1,'无']].concat(['神','妖','人','魔','鬼','灵','蛮'].map(function(n,i){return [i,n];})));
+        raceSel.rank=select(' 阶',[1,2,3,4,5,6,7].map(function(r){return [r,r];}));
+        var raceWant=null;
+        function applyRace() {
+            if(!raceWant||!window.CodexRaces||!window.$dataCodexRaces) return;
+            var a=$gameParty.members()[raceWant.actor]; if(!a) return;
+            var C=$dataCodexRaces;
+            if(raceWant.race<0){ a._codexRace={race:-1,rank:1,free:true,blood:false,legacy:[]}; a.learnSkill(C.skills[0][0]); a._codexRace.race=-1;
+                a._skills=a._skills.filter(function(id){return !CodexRaces.skillInfo(id);}); a.refresh(); return; }
+            a._codexRace={race:raceWant.race,rank:1,free:false,blood:false,legacy:[]};
+            a.learnSkill(C.skills[raceWant.race][raceWant.rank-1]);
+        }
+        button('给角色设种族（下次开夹具生效）', function(){
+            raceWant={actor:+raceSel.actor.value,race:+raceSel.race.value,rank:+raceSel.rank.value};
+            note.textContent='种族设置：'+JSON.stringify(raceWant)+'，点「战斗夹具」重开后生效';
+        });
+        // 选目标确认（YEP Select Help Window）：当前行动者学会该技能、回满 MP，走 指令窗→技能窗→onSkillOk，等 20 帧读各窗口状态，
+        // 结果写进运行时读数与 window.__selhelpLast。窗格在后台时先用 __dhRef.pump 推帧。
+        var skillInput=document.createElement('input'); skillInput.size=5; skillInput.placeholder='技能号'; panel.appendChild(skillInput);
+        button('选目标确认', function(){
+            var s=SceneManager._scene, a=BattleManager.actor(), id=+skillInput.value, sk=$dataSkills[id];
+            if(!(s instanceof Scene_Battle)||!a||!s._actorCommandWindow.active||!sk){ note.textContent='选目标确认：要在角色指令窗激活时用，并填有效技能号'; return; }
+            a.learnSkill(id); a._mp=a.mmp;
+            var cw=s._actorCommandWindow, ci=cw._list.findIndex(function(c){return c.symbol==='skill'&&c.ext===sk.stypeId;});
+            if(ci<0){ note.textContent='选目标确认：指令窗没有技能类型 '+sk.stypeId; return; }
+            cw.select(ci); cw.processOk();
+            var sw=s._skillWindow; sw.refresh(); var k=(sw._data||[]).indexOf(sk);
+            if(k<0||!sw.isEnabled(sk)){ note.textContent='选目标确认：技能窗里没有可用的 '+id; return; }
+            sw.select(k); sw.processOk();
+            var n=0, t=setInterval(function(){
+                if(++n<20) return; clearInterval(t);
+                function w(x){return x&&{active:x.active,visible:x.visible,opacity:x.opacity,index:x.index(),cursorAll:!!x._cursorAll,inputLock:!!x._inputLock};}
+                var out={skill:id,scope:sk.scope,command:w(cw),skillWin:w(sw),enemyWin:w(s._enemyWindow),actorWin:w(s._actorWindow),
+                    help:s._helpWindow&&{type:s._helpWindow.constructor.name,visible:s._helpWindow.visible},
+                    selected:$gameTroop.members().concat($gameParty.battleMembers()).filter(function(b){return b.isSelected();}).map(function(b){return b.name();})};
+                window.__selhelpLast=out; note.textContent='选目标确认：'+JSON.stringify(out);
+            },16);
+        });
         button('战斗夹具 5 人', function(){fixture(5);});
         button('掉落与记录对照截图', function(){
             fixture(4,true);
@@ -529,7 +575,7 @@ window.__refJson = function (name, obj) {
             __refShot('v008_battle_'+$gameParty.battleMembers().length+'_'+state);
         });
         button('隐藏工具栏', function(){panel.style.display='none';});
-        var details=document.createElement('details'); var summary=document.createElement('summary'); summary.textContent='运行时读数'; details.appendChild(summary); details.appendChild(readout); panel.appendChild(details); document.body.appendChild(panel);
+        var details=document.createElement('details'); var summary=document.createElement('summary'); summary.textContent='运行时读数'; details.appendChild(summary); details.appendChild(readout); panel.appendChild(details); panel.appendChild(note); document.body.appendChild(panel);
         setInterval(function(){
             var s=window.SceneManager && SceneManager._scene;
             if (!s) return;
