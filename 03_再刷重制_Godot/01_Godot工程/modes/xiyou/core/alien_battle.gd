@@ -217,6 +217,7 @@ static func lock_party(logic) -> void:
 	for a in logic.actors:
 		var d := XAlienation.for_actor(a)
 		st.party[a] = null if d.is_empty() else {"item": d.item, "affix": d.affix, "config": (d.config as Dictionary).duplicate(true), "observed": [], "selected": 0}
+	st.status = st.party.values().any(func(d): return d != null and STATUS_AFFIXES.has(str(d.affix)))
 
 
 ## 战斗中的 A.forActor：开战时冻结的那份；不在战斗中返回 null
@@ -261,6 +262,7 @@ static func end(logic, result: int) -> void:
 	_store(logic).party = {}
 	_store(logic).root = null
 	_store(logic).battling = false
+	_store(logic).status = false
 
 
 # ---- 回合 ----
@@ -543,6 +545,7 @@ static var natural_removal := false
 ## 后包的 Game_Battler.addDebuff 对角色走不到，囚厄「接收队友减益」、绝缘「免疫外来减益」对角色失效（只有疫囊者经
 ## Game_Battler.prototype.addDebuff 走得到）。true＝照词条说明对所有角色生效；false＝照原版
 static var o106_actor_debuffs := true
+const STATUS_AFFIXES := ["pest", "jail", "insulation", "sacrifice"]
 static var _state_routing := 0
 static var _support_routing := 0
 
@@ -551,6 +554,12 @@ static var _support_routing := 0
 static func battling() -> bool:
 	var logic = active_logic()
 	return logic != null and logic.has_meta("xalien") and bool(_store(logic).get("battling", false))
+
+
+## 战斗中且有出战角色带期二①的状态类词条（开战锁队时定）：下面的钩子都先看它，普通战斗一步早退
+static func status_battle() -> bool:
+	var logic = active_logic()
+	return logic != null and logic.has_meta("xalien") and bool(_store(logic).get("status", false))
 
 
 static func _pairs() -> Dictionary:
@@ -574,7 +583,7 @@ static func source_of(t):
 
 ## A.external：战斗中来源不是自己
 static func external(t) -> bool:
-	return battling() and not is_same(source_of(t), t)
+	return status_battle() and not is_same(source_of(t), t)
 
 
 static func _insulated(t) -> bool:
@@ -583,12 +592,12 @@ static func _insulated(t) -> bool:
 
 ## 疫囊 protectedState：疫囊者活着时，pestStates 必中、不可抵抗、不可驱散
 static func pest_state(b, id: int) -> bool:
-	return battling() and has(b, "pest") and _live(b) and _in_template("pestStates", id)
+	return status_battle() and has(b, "pest") and _live(b) and _in_template("pestStates", id)
 
 
 ## 囚厄 receiving：转移给囚厄者的状态
 static func receiving(b, id: int) -> bool:
-	return battling() and b.has_meta("xalien_jail") and bool(b.get_meta("xalien_jail").get(id, false))
+	return status_battle() and b.has_meta("xalien_jail") and bool(b.get_meta("xalien_jail").get(id, false))
 
 
 ## stateRate 1、isStateResist 否（疫囊、囚厄接收）
@@ -598,7 +607,7 @@ static func forced_state(b, id: int) -> bool:
 
 ## A.supportTarget：舍身者的收益改给绑定队友（队友倒下作废，返回 null）；其他人返回自己
 static func support_target(t):
-	if not battling() or not t is XActor:
+	if not status_battle() or not t is XActor:
 		return t
 	var d = locked(t)
 	if d == null or str(d.affix) != "sacrifice":
@@ -636,7 +645,7 @@ static func _support(t, src, fn: Callable) -> void:
 ## addState 包装（installAlienationAdvanced 159-167，原版之前那段）：绝缘拒收外来登记增益与囚厄状态；舍身把登记增益转给队友。
 ## 返回真＝本次不在 b 身上附加
 static func route_state(b, id: int) -> bool:
-	if not battling():
+	if not status_battle():
 		return false
 	var positive := positive_state(id)
 	if _insulated(b) and (positive or _in_template("jailStates", id)):
@@ -659,6 +668,8 @@ static func revision(b, id: int) -> int:
 
 ## resetStateCounts 包装：记附加次数（A.tryState 据此判成功）；疫囊重复附加时回合取较长
 static func on_reset_state(b, id: int, before) -> void:
+	if not status_battle():
+		return  # 附加次数只给囚厄转移、疫囊传播比较用
 	var rev: Dictionary = b.get_meta("xalien_rev", {})
 	rev[id] = int(rev.get(id, 0)) + 1
 	b.set_meta("xalien_rev", rev)
@@ -668,7 +679,7 @@ static func on_reset_state(b, id: int, before) -> void:
 
 ## addState 包装（原版之后那段）：其他角色实际获得 jailStates 时转给囚厄者（回合取较长），自己身上按自然移除去掉
 static func after_add_state(b, id: int, before_rev: int) -> void:
-	if not battling() or _state_routing > 0 or revision(b, id) <= before_rev or not _in_template("jailStates", id):
+	if not status_battle() or _state_routing > 0 or revision(b, id) <= before_rev or not _in_template("jailStates", id):
 		return
 	var r = _jail_receiver(b)
 	if r == null:
@@ -692,7 +703,7 @@ static func after_add_state(b, id: int, before_rev: int) -> void:
 
 ## removeState／eraseState 包装：疫囊、囚厄接收的状态只能自然到期；绝缘拒绝外来驱散登记增益与复活
 static func blocks_removal(b, id: int, natural: bool) -> bool:
-	if not battling() or natural or natural_removal:
+	if not status_battle() or natural or natural_removal:
 		return false
 	return pest_state(b, id) or receiving(b, id) or (_insulated(b) and (positive_state(id) or id == 1))
 
@@ -705,12 +716,12 @@ static func after_removal(b, id: int, natural: bool) -> void:
 
 ## clearStates 包装：受保护的状态保留
 static func keeps_state(b, id: int) -> bool:
-	return battling() and (pest_state(b, id) or receiving(b, id) or (_insulated(b) and (positive_state(id) or id == 1)))
+	return status_battle() and (pest_state(b, id) or receiving(b, id) or (_insulated(b) and (positive_state(id) or id == 1)))
 
 
 ## addBuff／addDebuff 包装：返回真＝已处理（拒收或转给别人）
 static func route_buff(logic, t, pid: int, buff: bool, turns: int) -> bool:
-	if not battling() or pid < 2 or pid > 7:
+	if not status_battle() or pid < 2 or pid > 7:
 		return false
 	if not buff and not o106_actor_debuffs and t is XActor and not has(t, "pest"):
 		return false
@@ -744,7 +755,7 @@ static func route_buff(logic, t, pid: int, buff: bool, turns: int) -> bool:
 
 ## removeBuff 包装：疫囊者的减益（回合未尽）、囚厄接收的减益不可驱散；绝缘拒绝外来驱散增益
 static func blocks_buff_removal(t, pid: int) -> bool:
-	if not battling() or natural_removal:
+	if not status_battle() or natural_removal:
 		return false
 	if has(t, "pest") and _live(t) and t.buffs[pid] < 0 and t.buff_turns[pid] > 0:
 		return true
@@ -755,7 +766,7 @@ static func blocks_buff_removal(t, pid: int) -> bool:
 
 ## gainHp／gainMp 包装：绝缘拒收外来恢复；舍身的生命恢复改给队友。返回真＝不在 b 身上结算
 static func route_gain(ctx, b, resource: String, amount: float) -> bool:
-	if amount <= 0.0 or resource == "tp" or not battling():
+	if amount <= 0.0 or resource == "tp" or not status_battle():
 		return false
 	if _insulated(b):
 		return true
@@ -771,7 +782,7 @@ static func route_gain(ctx, b, resource: String, amount: float) -> bool:
 
 ## addShield 包装：绝缘拒收外来护盾；舍身的护盾按给予者的护盾效果加成转给队友。返回真＝已处理
 static func route_shield(b, value: float) -> bool:
-	if not battling() or not b is XActor:
+	if not status_battle() or not b is XActor:
 		return false
 	if _insulated(b):
 		return true
@@ -791,7 +802,7 @@ static func route_shield(b, value: float) -> bool:
 
 ## A.spreadPest（endTurn 包装，原 endTurn 之前）：疫囊者把身上的 pestStates 与减益传给全体活着的敌人
 static func spread_pest(logic) -> void:
-	if not battling():
+	if not status_battle():
 		return
 	var r := round_of(logic)
 	var attack := XDB.rec("Skills", 1)

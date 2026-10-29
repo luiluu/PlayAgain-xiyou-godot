@@ -256,8 +256,17 @@ static func templates() -> Dictionary:
 	return config().get("templates", {})
 
 
+## templates 各表首次查时转成集合（jailStates 172 项，每次 addState 都查，线性扫太慢）
+static var _template_sets := {}
+
+
 static func _in(list_key: String, id: int) -> bool:
-	return templates().get(list_key, []).any(func(x): return int(x) == id)
+	if not _template_sets.has(list_key):
+		var d := {}
+		for x in templates().get(list_key, []):
+			d[int(x)] = true
+		_template_sets[list_key] = d
+	return (_template_sets[list_key] as Dictionary).has(id)
 
 
 ## A.actors：队伍全员（$gameParty._actors 顺序）
