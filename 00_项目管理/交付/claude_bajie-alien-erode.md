@@ -1,7 +1,7 @@
 # 交付：claude/bajie-alien-erode
 
 - 车道／工作者：C 规则·战斗／八戒（Claude，八戒_87）
-- 状态：进行中
+- 状态：可合并
 - 本期：异化词条③剩余之**期 C**——蚀术 erosion；百相切换仿形的选择窗（期 B「界面待做」）。④吞器、献器、夺舍不在本期。
 
 ## 变更记录草稿
@@ -37,7 +37,11 @@
 
 ## 验证
 
-（待写）
+- 合过 main（334e64c3，碰的是共用文件与合并工具，没碰切片、转换器、探针与本车道文件）后，工作树跑 `同步正式西游.py --accept-additions` 通过（测量不变、无 issues，留了产物指纹）；之后只改了选仿形窗的函数名（不涉探针），指纹仍有效。
+- 选测（`并行测试.py`，并行 2，58 个场景全部首轮通过，4181 秒，日志 `04_验证/本地结果/并行测试/20261029_221908_c7z4qc7e`）：`xiyou_alien_affix` 1325/1325、`xiyou_alien_battle` 330/330、`xiyou_alien_config` 95/95、`xiyou_alien_workshop` 45/45、`xiyou_attack_query` 375/375、`xiyou_battle_ui` 152/152；另 `xiyou_rules` 全部 24 段与 `xiyou_smart_ai` 四段（`can_use`、`execute_hp_damage`、`act` 是热路径）、`xiyou_battle*`、`xiyou_shield`、`xiyou_otb`、`xiyou_hangup*`、`xiyou_module_hooks`、`xiyou_actor_p0`、`xiyou_combat`、`xiyou_cat`、`xiyou_wtype`、`xiyou_boss_output*`、`xiyou_zhenqi*`、`xiyou_imported_balance`、`xiyou_loose_fixes`。
+- 反向验证：临时去掉封印与只扣护盾，`xiyou_alien_affix` 失败（已还原）。
+- 偶发：无。
+- 没覆盖：选仿形窗的截图（测试在无头模式下不截图；位置、尺寸、行与可选状态有断言）；原版选仿形窗没有参照截图。
 
 ## 改了的原沙僧核心文件（待交叉核查点名）
 
