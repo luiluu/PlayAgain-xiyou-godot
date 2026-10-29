@@ -15,12 +15,16 @@ extends Node
 ##   饕餮开战前身上的状态与增益照参照 pre 写定。对照时 O-113 关；o113.* 开时缄默技能沉默中可用；glutton.hang_up 挂机选技读储备。
 ## - 第③批 battle.mimic／faceless：借技能；角色 1 另比仿形记录、当前仿形、WATCH 里哪些在技能表、哪些能用（只看已添加技能类型的，
 ##   重制 can_use 另查技能类型），步骤另有 forget（来源队友忘掉技能）、choice（切换窗口选的仿形）。对照时 O-115 关；o115.* 开时按顺序轮换。
+## - 第③批 battle.erosion：蚀术；角色 1 另比自己与各敌人身上的异化封印、ERODE_WATCH 里各自能用哪些；步骤另有 shield（直接写护盾）。
+##   对照时 O-116 关；o116.* 开时敌人没有有效行动的回合也解封。
 const ORACLE := "oracle/alien_affix.json"
 var results := []
 ## 本次 _battle 每个行动步骤的 can_use（o113 用）
 var _usable_log := []
 ## 同参照 WATCH（百相、无面另记的技能）
 const WATCH := [160, 311, 502, 1924, 1926, 1928, 1930, 10197]
+## 同参照 ERODE_WATCH（蚀术另记）
+const ERODE_WATCH := [1, 1924, 1926, 1928]
 
 
 func check(name: String, ok: bool, detail = null) -> bool:
@@ -61,6 +65,7 @@ func _run() -> void:
 	XAlienBattle.o108_life_revive = false
 	XAlienBattle.o113_silence_bypass = false
 	XAlienBattle.o115_mimic_cycle = false
+	XAlienBattle.o116_idle_release = false
 	var by_id := {}
 	for c in ref.cases:
 		by_id[str(c.id)] = c
@@ -70,6 +75,9 @@ func _run() -> void:
 	XAlienBattle.o108_life_revive = true
 	XAlienBattle.o113_silence_bypass = true
 	XAlienBattle.o115_mimic_cycle = true
+	XAlienBattle.o116_idle_release = true
+	if by_id.has("battle.erosion"):
+		_battle(by_id["battle.erosion"], false, _erosion_idle)
 	if by_id.has("battle.mimic"):
 		var rows := _battle(by_id["battle.mimic"], false)
 		check("o115.mimic_cycle_third", int(rows[11].a.selected) == 1928 and int(rows[6].a.selected) == 1926, [rows[6].a, rows[11].a])
@@ -136,7 +144,20 @@ func _reading(enemies: Array, a, b) -> Dictionary:
 			var ids: Array = a.skills().map(func(sk): return int(sk.id))
 			ra.has = WATCH.filter(func(id): return ids.has(id))
 			ra.usable = WATCH.filter(func(id): return _typed(a, id) and XAlienBattle.active_logic().can_use(a, XDB.rec("Skills", id)))
+		elif str(d.affix) == "erosion":
+			var logic = XAlienBattle.active_logic()
+			ra.seals = _sealed(logic, a)
+			ra.usable = ERODE_WATCH.filter(func(id): return _typed(a, id) and logic.can_use(a, XDB.rec("Skills", id)))
+			ra.eseals = enemies.map(func(e): return _sealed(logic, e))
+			ra.eusable = enemies.map(func(e): return ERODE_WATCH.filter(func(id): return logic.can_use(e, XDB.rec("Skills", id))))
 	return {"enemies": enemies.map(func(e): return _unit(e)), "a": ra, "b": _unit(b)}
+
+
+static func _sealed(logic, b) -> Array:
+	var st := XAlienBattle._store(logic)
+	var ids: Array = (st.get("seals", {}).get(b, {}) as Dictionary).keys().map(func(id): return int(id))
+	ids.sort()
+	return ids
 
 
 ## 重制 can_use 另查技能类型已添加（原版 canUse 不查）：能不能用只比已添加类型的技能
@@ -177,6 +198,18 @@ static func _synth(def: Dictionary) -> Dictionary:
 	sk.hitType = int(def.hitType)
 	sk.effects = (def.effects as Array).map(func(e): return {"code": int(e[0]), "dataId": int(e[1]), "value1": float(e[2]), "value2": 0.0})
 	return sk
+
+
+## O-116：敌人 0 身上封着 1928（参照最后一次封印），没有有效行动的一回合（act 不带技能）——关时封印还在，开时解掉
+func _erosion_idle(logic: XBattleLogic, _a: XActor) -> void:
+	var e0: XBattler = logic.enemies[0]
+	check("o116.sealed_before", _sealed(logic, e0) == [1928], _sealed(logic, e0))
+	XAlienBattle.o116_idle_release = false
+	logic.act(e0, null, null)
+	check("o116.off_keeps_seal", _sealed(logic, e0) == [1928], _sealed(logic, e0))
+	XAlienBattle.o116_idle_release = true
+	logic.act(e0, null, null)
+	check("o116.idle_releases", _sealed(logic, e0).is_empty(), _sealed(logic, e0))
 
 
 ## 饕餮挂机（Adv:138-142）：表里排了火球术（50 MP），实际 MP 0 也按储备够不够选；储备不够退回原生选技（普攻）
@@ -285,6 +318,8 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 			MVEventCore.new()._change_resource(who.call(str(sp.event.who)), 311, float(sp.event.value), bool(sp.event.get("death", false)))
 		elif sp.has("revive"):
 			logic._state_remove(who.call(str(sp.revive)), 1)
+		elif sp.has("shield"):
+			who.call(str(sp.shield.who)).shield = float(sp.shield.value)
 		elif sp.has("forget"):
 			who.call(str(sp.forget.who)).skill_ids.erase(int(sp.forget.id))
 		elif sp.has("expire"):
@@ -307,7 +342,7 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 				var got_view := {"name": view.name, "scope": int(view.scope), "effects": (view.effects as Array).map(func(e): return [int(e.code), int(e.dataId), float(e.value1)]), "usable": usable}
 				var want: Dictionary = (row.view as Dictionary).duplicate()
 				want.erase("terminated")  # O-109：原版投影丢了熟练度费用函数，付费时 terminate；重制不崩
-				if tag.begins_with("battle.mimic") or tag.begins_with("battle.faceless"):
+				if tag.begins_with("battle.mimic") or tag.begins_with("battle.faceless") or tag.begins_with("battle.erosion"):
 					if not _typed(a, int(sp.skill)):
 						want.erase("usable")
 						got_view.erase("usable")

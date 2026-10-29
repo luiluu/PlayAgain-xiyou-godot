@@ -141,6 +141,7 @@ func _run() -> void:
 	await _race_ui(b, s)
 	await _select_confirm(b, s)
 	await _alien_pick(b, s)
+	await _alien_mimic(b, s)
 	# 指令窗（原版：851,462,220,196；6 条居中）
 	var cw: XBattleList = b.cmd_win
 	_check("command_rect", [cw.position, cw.size] == [Vector2(851, 462), Vector2(220, 196)], [cw.position, cw.size])
@@ -600,6 +601,55 @@ func _alien_pick(b: XBattleScene, s: XState) -> void:
 	else:
 		party.erase(a)
 	await _frames(3)
+
+
+## 异化百相切换仿形的选择窗（Workshop:30-34 Window_AlienMimic）：战技列表里确定切换仿形（10197）先开选仿形窗——
+## 宽 380、居中、y 100，三条记录各一行（行高 36＋内边距 14×2），当前仿形不可选、光标在第一项；确定不可选的那项不动，
+## 取消回技能列表原位、不记选择；选定第二项后进选目标（自身），记下选择；取消选目标回列表时选择作废。临时写锁队数据，做完撤掉。
+func _alien_mimic(b: XBattleScene, s: XState) -> void:
+	var a := s.actor(10)
+	var party: Dictionary = XAlienBattle._store(b.logic).party
+	var had := party.has(a)
+	var old = party.get(a)
+	var last := [a.last_command, a.last_battle_skill]
+	party[a] = {"affix": "mimic", "config": {"replace": 0}, "observed": [1924, 1926, 1928], "selected": 1924}
+	b._picked.emit("back")
+	await _frames(5)
+	var idx := await _choose_skill(b, a, XAlienBattle.switch_id())
+	var w: XAlienMimicWindow = b.mimic_win
+	_check("alien_mimic_open", idx >= 0 and w != null and b.list_win == null, [idx, w != null])
+	if w != null:
+		_check("alien_mimic_rect", [w.position - b._origin, w.size] == [Vector2(450, 100), Vector2(380, 136)], [w.position, w.size])
+		_check("alien_mimic_rows", w.entries.map(func(e): return [e.text, e.enabled]) == [["测试物理100不暴击", false], ["测试火焰100不暴击", true], ["测试寒冰100不暴击", true]] and w.index == 0,
+			[w.entries, w.index])
+		await _shot("battle_54_alien_mimic")
+		await _press("ui_accept")
+		_check("alien_mimic_current_disabled", b.mimic_win == w and is_instance_valid(w))
+		await _press("ui_cancel")
+		await _frames(3)
+		_check("alien_mimic_cancel_to_list", b.mimic_win == null and b.list_win != null and b.list_win.active and b.list_win.index == idx
+			and int(party[a].get("choice", 0)) == 0, [b.mimic_win != null, null if b.list_win == null else b.list_win.index])
+	await _press("ui_accept")
+	await _frames(3)
+	_check("alien_mimic_reopen", b.mimic_win != null)
+	await _press("ui_down")
+	await _press("ui_accept")
+	await _frames(5)
+	_check("alien_mimic_chosen_then_target", b.mimic_win == null and int(party[a].get("choice", 0)) == 1926 and b._target_mode == "ally" and b._hover == a,
+		[party[a].get("choice"), b._target_mode])
+	await _press("ui_cancel")
+	await _frames(3)
+	_check("alien_mimic_target_cancel_clears", b.list_win != null and b.list_win.active and int(party[a].get("choice", 0)) == 0, party[a].get("choice"))
+	await _press("ui_cancel")
+	await _frames(3)
+	if had:
+		party[a] = old
+	else:
+		party.erase(a)
+	a.last_command = last[0]
+	a.last_battle_skill = last[1]
+	b._picked.emit("back")
+	await _frames(5)
 
 
 ## 妖族群攻手选猎物（种族 R:258／259）：妖族放全体伤害技能（闪电）时进选敌，默认最右；换一只确定后，行动打全体、猎物就是选中的那只。
