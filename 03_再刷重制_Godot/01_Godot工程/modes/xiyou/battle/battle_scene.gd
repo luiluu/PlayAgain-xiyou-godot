@@ -1007,9 +1007,10 @@ func _poison_help(e: XEnemy) -> void:
 	ui.move_child(help_card, -1)
 	var p := help_card.position - _origin  # 画布坐标（1280×720）
 	if POISON_HELP_NEAR:
-		# 敌人图（脚底居中）右侧，放不下就放左侧
+		# 敌人图（脚底居中）连同脚下的名字与血条（约 176 宽）的右侧，放不下就放左侧
 		var sp: XBattlerSprite = sprites[e]
-		help_card.place_near(Rect2(sp.position - Vector2(sp.width() / 2.0, sp.height()), Vector2(sp.width(), sp.height())), "right")
+		var w := maxf(sp.width(), 180.0)
+		help_card.place_near(Rect2(sp.position - Vector2(w / 2.0, sp.height()), Vector2(w, sp.height() + 40.0)), "right")
 	else:
 		# Sprite_ItemHelp.setItem：在上一张卡的位置上再修正一次
 		var sz := help_card.size
