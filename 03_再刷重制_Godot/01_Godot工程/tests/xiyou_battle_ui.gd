@@ -138,6 +138,7 @@ func _run() -> void:
 	await _shot("battle_40_input")
 	await _shield_side(b, s)
 	await _message_101(b)
+	await _race_ui(b, s)
 	# 指令窗（原版：851,462,220,196；6 条居中）
 	var cw: XBattleList = b.cmd_win
 	_check("command_rect", [cw.position, cw.size] == [Vector2(851, 462), Vector2(220, 196)], [cw.position, cw.size])
@@ -416,3 +417,60 @@ func _shield_side(b: XBattleScene, s) -> void:
 		k[0].shield = k[2]
 	for row in b.status_rows.values():
 		row.refresh()
+
+
+## 种族祝福（installNativeRaceRuntime；原版参照 race_blood_cmd_off／on、race_select_poison，ui_reference 战斗夹具同一场面，美娜设为魔族）：
+## 魔族指令窗在「逃跑」后加「血契：关」，窗高 196→225（7 行）；确定后变「血契：开」、光标停在该行（记忆指令开）。
+## 选敌时该敌人本回合记有毒鸡汤：说明卡两行「敌人名」「毒鸡汤（回合末） 名字：量」（12 号白字、品质 0 外框）；没有就不显示。
+## 卡片位置照 O-107 贴在敌人旁（原版从上一张卡位置漂移）。做完把种族、毒鸡汤与指令记忆恢复，后面的流程不受影响。
+func _race_ui(b: XBattleScene, s: XState) -> void:
+	var a := s.actor(10)
+	var before: Dictionary = XRace.data(s, a).duplicate()
+	s.race.actors["10"] = {"race": 3, "rank": 7, "free": false, "blood": false, "legacy": []}
+	XRace.sync(s, a)
+	b._picked.emit("back")  # 重新进指令（_command 重画指令窗）
+	await _frames(5)
+	var cw: XBattleList = b.cmd_win
+	_check("race_blood_entries", cw != null and cw.entries.map(func(e): return e.text) == ["攻击", "战技", "魔法", "防御", "物品", "逃跑", "血契：关"],
+		null if cw == null else cw.entries.map(func(e): return e.text))
+	_check("race_blood_rect", cw != null and [cw.position, cw.size] == [Vector2(851, 462), Vector2(220, 225)], null if cw == null else [cw.position, cw.size])
+	await _shot("battle_51_race_blood_off")
+	for i in range(6):
+		await _press("ui_down")
+	await _press("ui_accept")
+	await _frames(5)
+	cw = b.cmd_win
+	_check("race_blood_on", cw != null and str(cw.entries[6].text) == "血契：开" and cw.index == 6 and bool(XRace.data(s, a).blood),
+		null if cw == null else [cw.entries[6].text, cw.index])
+	await _shot("battle_51b_race_blood_on")
+	# 毒鸡汤说明卡：在最右的敌人身上记一笔本回合的毒鸡汤（狗逍遥 115）
+	var e: XEnemy = b.logic.enemies.filter(func(x): return b.sprites[x].home.x == 353)[0]
+	var pid := int(XRace.config().poisons[0])
+	e.state_ids.append(pid)
+	var owner := s.actor(1)
+	XRaceBattle.state(b.logic, owner).poison.append({"target": e, "id": pid, "amount": 115.0, "turn": XRaceBattle.turn(b.logic)})
+	a.last_command = "attack"  # 光标回到「攻击」
+	b._picked.emit("back")
+	await _frames(5)
+	await _press("ui_accept")  # 攻击 → 选敌（默认最右）
+	await _frames(10)
+	var hc: XHelpCard = b.help_card
+	var want := e.display_name() + "\n毒鸡汤（回合末） " + owner.display_name() + "：115"
+	_check("race_poison_card", hc != null and hc.visible and hc.rows.size() == 1 and str(hc.rows[0][0]) == want and int(hc.rows[0][1]) == 12,
+		null if hc == null else [hc.visible, hc.rows])
+	if hc:
+		_check("race_poison_card_beside_enemy", not Rect2(hc.position, hc.size).intersects(Rect2(b._origin + b.sprites[e].position - Vector2(88, 40), Vector2(176, 60))),
+			[hc.position, hc.size, b.sprites[e].position])
+	await _shot("battle_51c_race_poison_card")
+	await _press("ui_left")
+	_check("race_poison_card_hides", b._hover != e and not b.help_card.visible)
+	await _press("ui_cancel")
+	await _frames(5)
+	# 恢复
+	XRaceBattle.state(b.logic, owner).poison.clear()
+	e.state_ids.erase(pid)
+	s.race.actors["10"] = before
+	XRace.sync(s, a)
+	a.last_command = ""
+	b._picked.emit("back")
+	await _frames(5)

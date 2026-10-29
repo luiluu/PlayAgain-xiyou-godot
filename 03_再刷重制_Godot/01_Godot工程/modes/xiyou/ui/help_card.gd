@@ -686,7 +686,20 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 		return
 	rows = content(obj, kind, skill_copy)
 	quality = _quality(obj)
-	var w := note_width(obj, card_width)
+	_apply(note_width(obj, card_width))
+	_set_extras(obj if with_extras and visible else {})
+
+
+## Sprite_ItemHelp.setText：假物品，内容只一行 [文字, ItemDescOtherSize 12, 白, 不分隔, 靠左]，品质 0、没有附卡
+## （选敌时种族毒鸡汤说明用：「敌人名\n毒鸡汤（回合末） …」）
+func show_text(text: String) -> void:
+	rows = [[text, OTHER_SIZE, "#ffffff", false, 0]]
+	quality = 0
+	_apply(card_width)
+	_set_extras({})
+
+
+func _apply(w: float) -> void:
 	var lay := layout(rows, min_font, w)
 	_lines = lay.lines
 	size = Vector2(w, lay.height)
@@ -699,7 +712,6 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 	visible = lay.height > PAD * 2
 	frame.queue_redraw()
 	canvas.queue_redraw()
-	_set_extras(obj if with_extras and visible else {})
 
 
 func _set_extras(obj: Dictionary) -> void:
