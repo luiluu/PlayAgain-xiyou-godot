@@ -1,8 +1,10 @@
 class_name XAlienBattle
 extends RefCounted
 ## 异化的战斗侧（冻结 v0.28 installAlienationRuntime，CodexAlienation）：遭遇、敌人变体、锁队、腐蚀、镜骸反噬、胜利发放。
-## 工坊侧（标记、账本、合成、重抽、分解）在 alienation.gd（XAlienation）；词条效果（installAlienationAffixes／Advanced）未移植。
-## 参照 mv_oracle/alien_battle_probe.cjs（generated/oracle/alien_battle.json），专项 tests/xiyou_alien_battle。
+## 工坊侧（标记、账本、合成、重抽、分解）在 alienation.gd（XAlienation）；词条效果（installAlienationAffixes／Advanced）
+## 期一只接逆骨、归墟（见文末「词条效果」），其余词条未移植。
+## 参照 mv_oracle/alien_battle_probe.cjs（generated/oracle/alien_battle.json），专项 tests/xiyou_alien_battle；
+## 词条效果参照 mv_oracle/alien_affix_probe.cjs（generated/oracle/alien_affix.json），专项 tests/xiyou_alien_affix。
 ## - 遭遇（Game_Troop.setup 包装 setupEncounter）：本场敌人按 bossSources 匹配（敌人、地图、敌群，未知存在另看来源地图），
 ##   几率 min(1%, Σ掉率×0.2)、按掉率加权选本体、随机变体；没有 Boss 来源时按 mobSources（地图＋敌群）随机选一个非 Boss 敌人，
 ##   几率 1%，按 transition 等权选本体，变体「异化」。命中后立刻 XAlienation.create 出奖励装备（不进背包，账本序号照样加一）。
@@ -431,3 +433,95 @@ static func finish(logic, logs: Array) -> void:
 		var n := minf(floorf(float(x.loss) * 0.05), floorf(root.subject.mhp * 0.08))
 		if n > 0.0:
 			_lose_hp(logic, root.subject, n, logs)
+
+
+# ---- 词条效果（installAlienationAffixes／Advanced，期一：逆骨、归墟） ----
+
+## 公式帧（A.formulaFrames）：evalDamageFormula 压 {physical: 物理技能或逆骨技能}，伤害钩子 enter 压 {physical: false}（整次伤害计算）
+static var _formula_frames: Array = []
+## 行动帧（A.frames 里 Game_Action.apply 压的那层）：{source, item}；归墟据此拦截攻击期间对他人附加的状态
+static var _action_frames: Array = []
+
+
+## A.has：战斗中按开战冻结的词条，战斗外按身上的异化装备（敌人恒为否）
+static func has(b, key: String) -> bool:
+	return b is XActor and str(XAlienation.for_actor(b).get("affix", "")) == key
+
+
+static func _in_template(key: String, id: int) -> bool:
+	return XAlienation._in(key, id)
+
+
+## 影子克隆（预演公式）与本体同一角色
+static func _same(x, y) -> bool:
+	return is_same(x, y) or (x is XActor and y is XActor and x.actor_id == y.actor_id)
+
+
+static func push_formula(item: Dictionary, a, b, formula: bool) -> void:
+	_formula_frames.append({"item": item, "subject": a, "target": b,
+		"physical": formula and (XDamage.is_physical(item) or _in_template("inversebone", int(item.get("id", 0))))})
+
+
+static func pop_formula() -> void:
+	_formula_frames.pop_back()
+
+
+## Game_Actor.param 包装（逆骨）：帧内的目标是物理（或逆骨技能）时物防读 0；行动者用逆骨技能时物攻改读物防。
+## inner 是包装之内的取值（原版 old.call(this, 3)）
+static func param(a: XActor, i: int, v: float) -> float:
+	if _formula_frames.is_empty() or (i != 2 and i != 3):
+		return v
+	var f: Dictionary = _formula_frames[_formula_frames.size() - 1]
+	if i == 3 and bool(f.physical) and _same(a, f.target) and has(a, "inversebone"):
+		return 0.0
+	if i == 2 and _same(a, f.subject) and has(a, "inversebone") and _in_template("inversebone", int(f.item.get("id", 0))):
+		return a.param_before_alien(3)
+	return v
+
+
+## 攻击类伤害（A.isAttackDamage：伤害类型 1／2／5／6）
+static func attack_damage(item: Dictionary) -> bool:
+	return int(item.get("damage", {}).get("type", 0)) in [1, 2, 5, 6]
+
+
+## 伤害钩子的事实：目标逆骨、行动者归墟的攻击
+static func capture(item: Dictionary, a: XBattler, b: XBattler) -> Dictionary:
+	return {"inversebone": has(b, "inversebone"), "void": has(a, "void") and attack_damage(item)}
+
+
+static func descriptor() -> Dictionary:
+	# 原版 alienation 钩子 unshift 到最前（order 1）；alienation-void 在 installAlienationAdvanced 时 push（小猫 19 之后、宝珠 39 之前）
+	return {"id": "alienation", "version": "1", "capabilities": ["damage.alienation"], "contexts": ["facts"], "hooks": [
+		{"point": "damage.before", "order": 1, "reads": ["facts.alienation"], "writes": ["physicalDefenseRate"], "handler": _build},
+		{"point": "damage.before", "order": 21, "reads": ["facts.alienation"], "writes": ["noElement", "elements"], "handler": _build_void}]}
+
+
+static func _build(context: Dictionary, _frame: Dictionary) -> Dictionary:
+	return {"ops": [{"op": "set", "field": "physicalDefenseRate", "value": 0.0}] if bool(context.facts.alienation.inversebone) else []}
+
+
+static func _build_void(context: Dictionary, _frame: Dictionary) -> Dictionary:
+	if not bool(context.facts.alienation.void):
+		return {"ops": []}
+	return {"ops": [{"op": "set", "field": "noElement", "value": true}, {"op": "set", "field": "elements", "value": [0]}]}
+
+
+static func push_action(u, item: Dictionary) -> void:
+	_action_frames.append({"source": u, "item": item})
+
+
+static func pop_action() -> void:
+	_action_frames.pop_back()
+
+
+## applyItemEffect 包装（归墟）：攻击类伤害技能不附加状态、增益、减益（效果 21／31／32）
+static func skips_effect(u, item: Dictionary, eff: Dictionary) -> bool:
+	return int(eff.get("code", 0)) in [21, 31, 32] and attack_damage(item) and has(u, "void")
+
+
+## addState 包装（归墟）：归墟者的攻击行动期间，别人身上不能被附加状态（自定义命中效果等）
+static func blocks_state(b) -> bool:
+	if _action_frames.is_empty():
+		return false
+	var f: Dictionary = _action_frames[_action_frames.size() - 1]
+	return not is_same(f.source, b) and attack_damage(f.item) and has(f.source, "void")

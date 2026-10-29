@@ -1406,6 +1406,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	# 未命中也四段齐全；导入平衡禁用的行动在更外层直接返回，不跑
 	var blocked := XImportedBalance.blocks(u, skill)
 	var ctx := _state_context(u, skill, t)
+	XAlienBattle.push_action(u, skill)  # 异化 apply 包装的行动帧（在 YEP 包装之外）：归墟拦截附加状态
 	if not blocked:
 		XStateEffects.run("initiate", u, ctx)
 		XStateEffects.run("select", t, ctx)
@@ -1414,6 +1415,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if not blocked:
 		XStateEffects.run("deselect", t, ctx)
 		XStateEffects.run("conclude", u, ctx)
+	XAlienBattle.pop_action()
 	var result := _action_resources.result(t)
 	result.missed = r.missed
 	result.evaded = r.evaded
@@ -1560,6 +1562,8 @@ func _establish(u: XBattler, t: XBattler, r: Dictionary) -> void:
 
 
 func _effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> void:
+	if XAlienBattle.skips_effect(u, r.get("skill", {}), eff):
+		return  # 异化归墟 applyItemEffect 包装：攻击类伤害不附加状态与增减益
 	# Menu effects reuse a nested host domain, or own and publish one operation.
 	var previous := _action_resources
 	var inherited: XResourceContext = t.lifecycle_context.get("resources")

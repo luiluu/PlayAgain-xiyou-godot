@@ -20,7 +20,10 @@ static func elements_data() -> Dictionary:
 static func eval_formula(item: Dictionary, a: XBattler, b: XBattler, vars: Array) -> float:
 	var program: Dictionary = item.damage.get("formulaProgram", {})
 	if program.get("status") == "pure":
-		return XImportedBalance.formula_value(XFormulaProgram.evaluate(program, XFormulaContext.capture(a, b, vars, {}, int(item.id), program), int(item.damage.type)).value, a, item)
+		XAlienBattle.push_formula(item, a, b, true)  # evalDamageFormula 包装（逆骨）
+		var context := XFormulaContext.capture(a, b, vars, {}, int(item.id), program)
+		XAlienBattle.pop_formula()
+		return XImportedBalance.formula_value(XFormulaProgram.evaluate(program, context, int(item.damage.type)).value, a, item)
 	var out := XFormulaExecution.run_item(item, a, b, vars)  # run_item 里已按导入效果平衡缩放
 	return float(out.value)
 
@@ -147,7 +150,15 @@ static func critical_multiplier_bonus(b: XBattler) -> float:
 
 # ---- 主流程 ----
 ## 返回 {value, critical, breakdown}。options: critical(bool)、variance(bool，默认 true)、vars(Array)
+## 异化逆骨：伤害钩子 enter 压的公式帧（physical 为否）覆盖整次计算
 static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}) -> Dictionary:
+	XAlienBattle.push_formula(item, a, b, false)
+	var out := _calculate(item, a, b, options)
+	XAlienBattle.pop_formula()
+	return out
+
+
+static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}) -> Dictionary:
 	var vars: Array = options.get("vars", [])
 	var spec: Dictionary = elements_data().skills.get(str(int(item.id)), {})
 	var cache: Dictionary = a.passive_cache()
