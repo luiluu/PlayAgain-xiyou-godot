@@ -9,6 +9,7 @@
 // ③ 期二① battle.<词条>.*：同样的队伍与敌群，按步骤跑：行动可用合成技能（空白技能 13 填入 def 的 scope／hitType／效果，
 //    两边按同一份定义合成）；set 设生命／法力比例；roundEnd 照 Affixes endTurn 包装调 A.spreadPest；expire 照自然移除
 //    （A.naturalRemoval）去掉一个状态。疫囊穿本体 1013 尼伯龙根指环（饰品栏）；舍身的绑定队友直接写进标记的 config。
+// ④ 第④批 battle.swallow／offer：装备类；另记双方装备栏、能力值、命中／回避／暴击与背包件数，步骤 end 照 endBattle（还原装备栏）。
 // 新游戏（Math.random 0.5），只在内存；产物 .sandbox/alien_affix.json。
 const {start, makeCase, finish, round} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
@@ -43,6 +44,10 @@ function synth(def) { Object.assign(w.$dataSkills[13], {scope: def.scope, hitTyp
 let terminated = 0;
 w.SceneManager.terminate = () => { terminated++; };
 w.alert = () => {};
+// 普通独立装备（YEP gainItem 新建的实例），放进背包
+function independent(kind, id) { const bag = kind === 'w' ? '_weapons' : '_armors', data = kind === 'w' ? w.$dataWeapons : w.$dataArmors;
+  const before = Object.keys(w.$gameParty[bag]).map(Number); w.$gameParty.gainItem(data[id], 1);
+  return data[Object.keys(w.$gameParty[bag]).map(Number).filter(x => before.indexOf(x) < 0)[0]]; }
 function battle(spec) {
   newGame(); uncap();
   const a = w.$gameActors.actor(1), b = w.$gameActors.actor(8);
@@ -53,7 +58,13 @@ function battle(spec) {
   // 直接放进武器栏（穿戴限制属工坊侧）；none 为不带标记的同一本体
   const kind = spec.armor ? 'a' : 'w', base = spec.armor || 1044;
   const item = spec.affix ? A.create(kind, base, 'boss', spec.affix) : w.$dataWeapons[1044];
-  if (spec.config) A.mark(item).config = JSON.parse(JSON.stringify(spec.config));
+  // 吞器供体：背包里的普通独立武器；config.donorId 写 'd序号'，换成供体的编号。lockDonor 给第一件供体名字加【锁定】
+  const donors = (spec.donors || []).map(id => independent('w', id));
+  if (spec.lockDonor) donors[0].name += '【锁定】';
+  if (spec.config) { A.mark(item).config = JSON.parse(JSON.stringify(spec.config));
+    const c = A.mark(item).config; if (typeof c.donorId === 'string') c.donorId = donors[Number(c.donorId.slice(1))].id; }
+  // 衣服栏（装备类型 4）穿一件普通独立防具（从背包拿出来）
+  if (spec.body) { const body = independent('a', spec.body); w.$gameParty.loseItem(body, 1); a._equips[a.equipSlots().indexOf(4)].setObject(body); }
   if (spec.armor) { a._equips[0].setObject(w.$dataWeapons[1044]); a._equips[a.equipSlots().indexOf(item.etypeId)].setObject(item); }
   else a._equips[0].setObject(item);
   w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
@@ -68,7 +79,7 @@ function battle(spec) {
   A.lockParty();
   w.$gameParty._inBattle = true;
   w.CodexYunshang._acted = [];
-  return {bm, a, b, enemies};
+  return {bm, a, b, enemies, item, donors};
 }
 function act(bm, user, skillId, targetIndex, choice) {
   const action = new w.Game_Action(user);
@@ -105,13 +116,23 @@ const extra = x => { const d = x._alienBattle; if (!d) return {};
   if (d.affix === 'erosion') return {seals: seals(x), usable: ERODE_WATCH.filter(id => x.canUse(w.$dataSkills[id])),
     eseals: w.$gameTroop.members().map(seals), eusable: w.$gameTroop.members().map(e => ERODE_WATCH.filter(id => e.canUse(w.$dataSkills[id])))};
   return {}; };
-const reading = (ctx, atk) => ({enemies: ctx.enemies.map(unit), a: Object.assign(unit(ctx.a), atk ? {atk: ctx.a.atk, def: ctx.a.def} : {}, extra(ctx.a)), b: unit(ctx.b)});
+// 吞器、献器另记双方装备栏（本体编号，空栏 0）、八项能力值、命中／回避／暴击，以及背包里供体与异化装备各几件
+// 独立装备的 baseItemId 可能还指向一件独立装备（YEP 再登记），一直追到数据库本体
+const rootId = o => { const data = w.DataManager.isWeapon(o) ? w.$dataWeapons : w.$dataArmors;
+  while (o.baseItemId && o.baseItemId !== o.id && data[o.baseItemId]) o = data[o.baseItemId]; return o.id; };
+const gearOf = x => ({equips: x.equips().map(e => e ? rootId(e) : 0), params: [0, 1, 2, 3, 4, 5, 6, 7].map(i => r(x.param(i))),
+  xp: [0, 1, 2].map(i => r(x.xparam(i)))});
+const bagOf = ctx => ({item: w.$gameParty.numItems(ctx.item), donors: ctx.donors.map(d => w.$gameParty.numItems(d))});
+const reading = (ctx, atk) => Object.assign({enemies: ctx.enemies.map(unit),
+  a: Object.assign(unit(ctx.a), atk ? {atk: ctx.a.atk, def: ctx.a.def} : {}, extra(ctx.a), ctx.gear ? {gear: gearOf(ctx.a)} : {}),
+  b: Object.assign(unit(ctx.b), ctx.gear ? {gear: gearOf(ctx.b)} : {})}, ctx.gear ? {bag: bagOf(ctx)} : {});
 const STEPS = [{skill: 1}, {skill: 3}, {skill: 109}, {skill: 114}, {user: 'e0', skill: 1, target: 0}, {user: 'e1', skill: 1, target: 1},
   {user: 'b', skill: 1}];
 function battleCase(name, spec, steps) {
   steps = steps || STEPS;
   cases.push(makeCase('battle.' + name, Object.assign({actor: 1, ally: 8, troop: 2, weapon: 1044}, spec, {steps}), () => {
     const ctx = battle(spec), rows = [];
+    ctx.gear = !!spec.gear;
     const locked = [ctx.a, ctx.b].map(x => x._alienBattle ? {affix: x._alienBattle.affix} : null);
     const atk = steps === STEPS, start = reading(ctx, atk);
     const who = k => k === 'b' ? ctx.b : k && k[0] === 'e' ? ctx.enemies[Number(k.slice(1))] : ctx.a;
@@ -133,6 +154,9 @@ function battleCase(name, spec, steps) {
         const x = who(st.event.who); w.Game_Interpreter.prototype.changeHp.call(new w.Game_Interpreter(), x, st.event.value, !!st.event.death);  // 事件「增减生命」
       } else if (st.revive) {
         who(st.revive).removeState(who(st.revive).deathStateId());
+      } else if (st.end != null) {
+        // 战斗结束（0 胜、1 逃、2 败）：endBattle 包装还原装备栏；之后退出战斗（Scene_Battle.terminate 的 onBattleEnd）
+        ctx.bm._escaped = st.end === 1; ctx.bm.endBattle(st.end); w.$gameParty._inBattle = false;
       } else if (st.shield) {
         who(st.shield.who)._shield = st.shield.value;
       } else if (st.forget) {
@@ -256,4 +280,14 @@ battleCase('erosion', {affix: 'erosion', learn: [1924], config: {actorId: 1, ski
   {user: 'a', skill: 1924, target: 1, view: true}, {user: 'e1', def: S(11, 0)}, {user: 'a', skill: 1924, target: 1},
   {user: 'e0', skill: 1926}, {shield: {who: 'e0', value: 1000}}, {user: 'a', skill: 1924, view: true}, {user: 'a', skill: 1924, view: true},
   {user: 'e0', skill: 1928}, {user: 'a', skill: 1924, view: true}, {user: 'a', skill: 1}, {user: 'b', skill: 1}]);
-process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）、MP 费用（缄默、饕餮）、借技能（百相、无相）、蚀术', config, cases}) ? 0 : 1);
+// 第④批·装备类：吞器（本体 1044 武器，供体背包里的普通独立武器 6 指虎）：衣服栏（装备类型 4，穿皮甲 3）整场空出，
+// 借来供体的登记效果（命中、暴击各 +1%）；不继承供体的能力值；供体留在背包。逃跑结束后装备栏还原，供体、异化武器都不多不少
+battleCase('swallow', {affix: 'swallow', gear: true, donors: [6], body: 3, config: {actorId: 1, donorId: 'd0'}}, [
+  {user: 'e0', skill: 1}, {user: 'a', skill: 1}, {end: 1}]);
+// 供体加了【锁定】：锁队时 A.ready 不过，异化武器卸下放回背包，本场不生效
+battleCase('swallow.invalid', {affix: 'swallow', gear: true, donors: [6], body: 3, lockDonor: true, config: {actorId: 1, donorId: 'd0'}}, [
+  {user: 'a', skill: 1}, {end: 1}]);
+// 献器（绑定角色 8）：自己的装备栏整场全空（属性、效果、套装都没了），每件装备的登记效果（异化武器本身不借）交给角色 8；全灭结束后还原
+battleCase('offer', {affix: 'offer', gear: true, body: 3, config: {actorId: 1, partnerId: 8}}, [
+  {user: 'e0', skill: 1}, {user: 'e0', skill: 1, target: 1}, {user: 'b', skill: 1}, {end: 2}]);
+process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）、MP 费用（缄默、饕餮）、借技能（百相、无相）、蚀术、第④批装备类（吞器、献器）', config, cases}) ? 0 : 1);
