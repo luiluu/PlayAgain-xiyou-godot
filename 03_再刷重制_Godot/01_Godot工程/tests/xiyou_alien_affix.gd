@@ -7,6 +7,8 @@ extends Node
 ## - 期二① battle.pest／jail／insulation／sacrifice：合成技能（空白技能 13 照参照的 def 填 scope／hitType／效果）、set、
 ##   roundEnd（XAlienBattle.spread_pest）、expire（自然移除）逐步对照；对照时 O-106 关（照原版）。
 ## - o106.*：O-106 开时角色身上的减益也走囚厄接收、绝缘拒收（原版对角色失效）。
+## - 期二② battle.hollow／lifelink／scapegoat：步骤另有 regen（turn_end_battler，照 onTurnEnd）、revive（去阵亡状态）；对照时 O-108 关。
+## - o108.*：O-108 开时连命复活把池回到 10%（两人都起来），嫁祸的保护者倒下时不能复活。
 const ORACLE := "oracle/alien_affix.json"
 var results := []
 
@@ -46,12 +48,21 @@ func _run() -> void:
 		var got := {"size": list.size(), "head": list.slice(0, 5), "tail": list.slice(-5)}
 		check("config." + k, _norm(got) == _norm(ref.config[k]), [got, ref.config[k]])
 	XAlienBattle.o106_actor_debuffs = false
+	XAlienBattle.o108_life_revive = false
 	var by_id := {}
 	for c in ref.cases:
 		by_id[str(c.id)] = c
 		if check(str(c.id) + ".oracle_clean", (c.errors as Array).is_empty(), c.errors):
 			_battle(c)
 	XAlienBattle.o106_actor_debuffs = true
+	XAlienBattle.o108_life_revive = true
+	if by_id.has("battle.lifelink"):
+		var rows := _battle(by_id["battle.lifelink"], false)
+		var last: Dictionary = rows[rows.size() - 1]
+		check("o108.lifelink_revive_pool", last.a.hp > 1.0 and last.b.hp > 0.0 and not (last.b.states as Array).has(1), [last.a, last.b])
+	if by_id.has("battle.scapegoat"):
+		var rows := _battle(by_id["battle.scapegoat"], false)
+		check("o108.scapegoat_no_revive", (rows[rows.size() - 1].a.states as Array).has(1), rows[rows.size() - 1].a)
 	if by_id.has("battle.jail"):
 		var rows := _battle(by_id["battle.jail"], false)
 		check("o106.jail_debuff_moved", rows[1].a.buffs[1] == -1 and rows[1].b.buffs[1] == 0, [rows[1].a.buffs, rows[1].b.buffs])
@@ -150,6 +161,9 @@ func _battle(c: Dictionary, compare := true) -> Array:
 		p[0] += 1e12
 		p[2] += 300.0
 		e.zq_ref = {"p": p, "k": 1.0}
+	# setup 已锁过一次队；参照是回满后才 lockParty，先解锁（不然空壳的生命上限 1 会让回满只回到 1）
+	XAlienBattle._store(logic).party = {}
+	XAlienBattle._store(logic).status = false
 	for x in [a, b] + enemies:
 		x.param_mark_dirty()
 		x.param_refresh()
@@ -180,6 +194,10 @@ func _battle(c: Dictionary, compare := true) -> Array:
 		elif sp.has("roundEnd"):
 			logic.turn = int(sp.roundEnd)
 			XAlienBattle.spread_pest(logic)
+		elif sp.has("regen"):
+			logic.turn_end_battler(who.call(str(sp.regen)), [])
+		elif sp.has("revive"):
+			logic._state_remove(who.call(str(sp.revive)), 1)
 		elif sp.has("expire"):
 			logic._state_remove(who.call(str(sp.expire.who)), int(sp.expire.id), true)
 		else:

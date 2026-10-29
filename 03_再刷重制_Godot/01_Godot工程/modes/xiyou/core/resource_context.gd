@@ -117,6 +117,10 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		return {}
 	if XAlienBattle.route_gain(self, b, resource, amount):
 		return {}  # 异化绝缘拒收外来恢复、舍身的生命恢复转给队友（gainHp／gainMp 包装）
+	if resource == "hp" and XAlienBattle.route_life_gain(self, b, amount):
+		return {}  # 异化空壳、嫁祸不吃治疗，嫁祸扣血由保护者付，连命结算到池（hpChange）
+	if resource == "mp" and XAlienBattle.route_hollow_mp(b, amount):
+		return {}  # 异化空壳回蓝变护盾（gainMp 包装）
 	var before := snapshot(b)
 	var requested := amount
 	if amount < 0.0:
@@ -145,6 +149,7 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	var entry := {"receiver": labels.get(b, "b"), "resource": resource, "requestedDelta": requested,
 		"actualDelta": float(b.get(resource)) - old, "before": before, "after": after}
 	journal.append(entry)
+	XAlienBattle.after_gain(b, resource)  # 异化 hpChange 末尾：同步生命池与嫁祸者
 	return entry
 
 ## 原版 setHp／setMp：护盾在 setter 内处理；不写伤害槽、不做 gain 末尾 dirty。
@@ -158,6 +163,8 @@ func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
 	if not unsupported.is_empty():
 		error = unsupported
 		return {}
+	if resource == "hp" and XAlienBattle.routes_set_hp(b):
+		return gain(b, "hp", value - b.hp)  # 异化 setHp 包装：生命池、嫁祸、空壳、舍身、绝缘按 gainHp(差值) 走
 	var before := snapshot(b)
 	var old: float = b.get(resource)
 	_set_resource(b, resource, value)

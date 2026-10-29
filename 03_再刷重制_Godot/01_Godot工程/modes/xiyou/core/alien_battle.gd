@@ -218,6 +218,9 @@ static func lock_party(logic) -> void:
 		var d := XAlienation.for_actor(a)
 		st.party[a] = null if d.is_empty() else {"item": d.item, "affix": d.affix, "config": (d.config as Dictionary).duplicate(true), "observed": [], "selected": 0}
 	st.status = st.party.values().any(func(d): return d != null and STATUS_AFFIXES.has(str(d.affix)))
+	st.life = false
+	if st.status:
+		setup_life(logic)
 
 
 ## 战斗中的 A.forActor：开战时冻结的那份；不在战斗中返回 null
@@ -255,6 +258,8 @@ static func end(logic, result: int) -> void:
 		if result == 0:
 			grant(logic)
 		x.settled = true
+	if bool(_store(logic).get("status", false)):
+		end_life(logic)
 	for a in logic.actors:  # endBattle 包装：清囚厄接收标记
 		for k in ["xalien_jail", "xalien_jail_buff"]:
 			if a.has_meta(k):
@@ -432,6 +437,7 @@ static func finish(logic, logs: Array) -> void:
 	if not logic.has_meta("xalien"):
 		return
 	var st := _store(logic)
+	sync_relations(logic)  # endAction 包装（Adv:185）：同步生命池与嫁祸者
 	var root = st.root
 	st.root = null
 	if root == null or bool(root.ended):
@@ -479,6 +485,8 @@ static func pop_formula() -> void:
 ## Game_Actor.param 包装（逆骨）：帧内的目标是物理（或逆骨技能）时物防读 0；行动者用逆骨技能时物攻改读物防。
 ## inner 是包装之内的取值（原版 old.call(this, 3)）
 static func param(a: XActor, i: int, v: float) -> float:
+	if i == 0:
+		return hollow_param(a, v)
 	if _formula_frames.is_empty() or (i != 2 and i != 3):
 		return v
 	var f: Dictionary = _formula_frames[_formula_frames.size() - 1]
@@ -545,7 +553,7 @@ static var natural_removal := false
 ## 后包的 Game_Battler.addDebuff 对角色走不到，囚厄「接收队友减益」、绝缘「免疫外来减益」对角色失效（只有疫囊者经
 ## Game_Battler.prototype.addDebuff 走得到）。true＝照词条说明对所有角色生效；false＝照原版
 static var o106_actor_debuffs := true
-const STATUS_AFFIXES := ["pest", "jail", "insulation", "sacrifice"]
+const STATUS_AFFIXES := ["pest", "jail", "insulation", "sacrifice", "hollow", "lifelink", "scapegoat"]
 static var _state_routing := 0
 static var _support_routing := 0
 
@@ -843,3 +851,230 @@ static func spread_pest(logic) -> void:
 				if e.buffs[p] < 0:
 					e.buffs[p] = mini(e.buffs[p], a.buffs[p])
 					e.buff_turns[p] = maxi(e.buff_turns[p], a.buff_turns[p])
+
+
+# ---- 词条效果期二②：空壳、连命、嫁祸（生命池类，installAlienationAdvanced 50-75、94-109、114-129、195-196） ----
+
+## O-108（优化登记）：原版复活包装挂在 Game_BattlerBase.revive（Adv:195），Olivia_BattleSysOTB.js:2164 另定义了
+## Game_Battler.prototype.revive 盖过它，对角色从不生效：连命者复活后生命池仍是 0、人却 1 血活着；嫁祸者的保护者倒下也照样复活。
+## true＝照词条说明（连命复活把池回到 10%，嫁祸的保护者倒下时不能复活）；false＝照原版
+static var o108_life_revive := true
+static var _hp_resolving := 0
+static var _death_sync := 0
+
+
+static func _affix_of(b) -> String:
+	if not b is XActor:
+		return ""
+	var d = locked(b)
+	return "" if d == null else str(d.affix)
+
+
+## lockParty 包装（Adv:62-75）：记开场参照生命／法力，空壳换护盾，连命合池，嫁祸绑保护者
+static func setup_life(logic) -> void:
+	var st := _store(logic)
+	for a in logic.actors:
+		var d = st.party.get(a)
+		if d == null:
+			continue
+		d.referenceHp = a.param_before_alien(0)
+		d.referenceMp = a.param_before_alien(1)
+		d.originalHp = a.hp
+		d.originalMp = a.mp
+		if str(d.affix) in ["lifelink", "scapegoat", "sacrifice"]:
+			d.partner = partner_of(d)
+	for a in logic.actors:
+		var d = st.party.get(a)
+		if d == null:
+			continue
+		var p = d.get("partner")
+		match str(d.affix):
+			"lifelink":
+				if p != null:
+					var pool := {"members": [a, p], "max": a.mhp + p.mhp,
+						"current": minf(float(d.originalHp), float(d.referenceHp)) + minf(p.hp, p.mhp)}
+					a.set_meta("xalien_life", pool)
+					p.set_meta("xalien_life", pool)
+					sync_pools(logic)
+			"scapegoat":
+				if p != null:
+					a.set_meta("xalien_protector", p)
+					a.shield = 0.0
+					a.hp = maxf(1.0, floorf(a.mhp * p.hp / p.mhp)) if p.hp > 0.0 else 0.0
+			"hollow":
+				a.param_mark_dirty()
+				a.shield = minf(float(d.referenceHp), maxf(0.0, float(d.originalHp)))
+				a.hp = 1.0 if float(d.originalHp) > 0.0 else 0.0
+	st.life = logic.actors.any(func(x): return x.has_meta("xalien_life") or x.has_meta("xalien_protector"))
+
+
+## endBattle 包装（Adv:196）：空壳按剩余护盾还原生命，解除生命池与保护者
+static func end_life(logic) -> void:
+	for a in logic.actors:
+		var d = locked(a)
+		if d != null and str(d.affix) == "hollow":
+			a.hp = 0.0 if a.is_dead() else maxf(1.0, minf(float(d.get("referenceHp", a.hp)), maxf(0.0, a.shield)))
+			a.shield = 0.0
+		for k in ["xalien_life", "xalien_protector"]:
+			if a.has_meta(k):
+				a.remove_meta(k)
+		a.param_mark_dirty()
+
+
+## Game_Actor.param 包装（Adv:56-59）：空壳的生命上限读 1；公式帧内（evalDamageFormula 包装）读开场参照
+static func hollow_param(a: XActor, v: float) -> float:
+	if _affix_of(a) != "hollow" or not status_battle():
+		return v
+	if not _formula_frames.is_empty():
+		var f: Dictionary = _formula_frames[_formula_frames.size() - 1]
+		if _same(a, f.subject) or _same(a, f.target):
+			return v
+	return 1.0
+
+
+## A.syncPools：池上限＝成员上限之和，各成员按自己的上限比例显示（池未空时至少 1）
+static func sync_pools(logic) -> void:
+	var seen := []
+	for a in logic.actors:
+		if not a.has_meta("xalien_life"):
+			continue
+		var p: Dictionary = a.get_meta("xalien_life")
+		if seen.any(func(x): return is_same(x, p)):
+			continue
+		seen.append(p)
+		var mx := 0.0
+		for b in p.members:
+			mx += b.mhp
+		p.current = minf(float(p.current), mx)
+		p.max = mx
+		for b in p.members:
+			b.hp = maxf(1.0, floorf(b.mhp * float(p.current) / maxf(1.0, mx))) if float(p.current) > 0.0 else 0.0
+
+
+## A.setLife：池归零两人倒下，否则去掉阵亡
+static func set_life(logic, p: Dictionary, value: float) -> void:
+	p.current = maxf(0.0, minf(float(p.max), value))
+	sync_pools(logic)
+	_death_sync += 1
+	for b in p.members:
+		if float(p.current) == 0.0:
+			b.add_state(1)
+			b.hp = 0.0
+		elif b.state_ids.has(1):
+			b.remove_state(1)
+	_death_sync -= 1
+
+
+## A.syncRelations：池同步；嫁祸者的生命按保护者比例，保护者倒下自己也倒下
+static func sync_relations(logic = null) -> void:
+	if logic == null:
+		logic = active_logic()
+	if logic == null or not status_battle() or not bool(_store(logic).get("life", false)):
+		return
+	sync_pools(logic)
+	for a in logic.actors:
+		if not a.has_meta("xalien_protector"):
+			continue
+		var p = a.get_meta("xalien_protector")
+		a.shield = 0.0
+		a.hp = maxf(1.0, floorf(a.mhp * p.hp / maxf(1.0, p.mhp))) if p.hp > 0.0 else 0.0
+		if not _live(p) and not a.is_dead():
+			_death_sync += 1
+			a.add_state(1)
+			_death_sync -= 1
+
+
+## shieldLoss（Adv:94）：扣血先吃护盾，剩余减半
+static func _shield_loss(b, value: float) -> float:
+	if value < 0.0 and b.shield > 0.0:
+		var take := minf(b.shield, -value)
+		b.shield -= take
+		var rest := -value - take
+		return -floorf(rest * 0.5) if rest > 0.0 else 0.0
+	return value
+
+
+## gainHp 包装（hpChange，Adv:95-101）的生命池部分：空壳、嫁祸不吃治疗；嫁祸的扣血由保护者付；连命结算到池。返回真＝已处理
+static func route_life_gain(ctx, b, amount: float) -> bool:
+	if _hp_resolving > 0 or not status_battle():
+		return false
+	var k := _affix_of(b)
+	if amount > 0.0 and k in ["hollow", "scapegoat"]:
+		return true
+	if amount < 0.0 and b.has_meta("xalien_protector"):
+		var p = b.get_meta("xalien_protector")
+		if _live(p):
+			_hp_resolving += 1
+			ctx.gain(p, "hp", amount)
+			_hp_resolving -= 1
+			sync_relations()
+		return true
+	if b.has_meta("xalien_life"):
+		var p: Dictionary = b.get_meta("xalien_life")
+		var delta := _shield_loss(b, amount)
+		var r: Dictionary = ctx.result(b)
+		r.hpDamage = -delta
+		r.hpAffected = true
+		set_life(active_logic(), p, float(p.current) + delta)
+		b.param_mark_dirty()
+		return true
+	return false
+
+
+## 一般 gainHp 之后（hpChange 末尾 finally）：同步生命池与嫁祸者
+static func after_gain(b, resource: String) -> void:
+	if resource == "hp" and _hp_resolving == 0:
+		sync_relations()
+
+
+## setHp 包装（Adv:107）：生命池、嫁祸、空壳、舍身、绝缘按 gainHp(差值) 走。返回真＝改走 gain
+static func routes_set_hp(b) -> bool:
+	if _hp_resolving > 0 or _death_sync > 0 or not status_battle():
+		return false
+	return b.has_meta("xalien_life") or b.has_meta("xalien_protector") or _affix_of(b) in ["hollow", "sacrifice", "insulation"]
+
+
+## regenerateHp 包装（Adv:108-109）：再生量改走 gainHp（空壳、嫁祸不回、舍身转队友、连命进池）。返回真＝已处理
+static func routes_regen(b) -> bool:
+	return routes_set_hp(b)
+
+
+## gainMp 包装（Adv:111-112）：空壳的回蓝按开场生命／法力比例变护盾。返回真＝已处理
+static func route_hollow_mp(b, amount: float) -> bool:
+	if amount <= 0.0 or _affix_of(b) != "hollow" or not status_battle():
+		return false
+	var d = locked(b)
+	b.add_shield(floorf(amount * float(d.referenceHp) / maxf(1.0, float(d.referenceMp))))
+	return true
+
+
+## addShield 包装（Adv:114-115）：嫁祸拒收；空壳的护盾不超过开场参照生命上限。返回真＝拒收
+static func blocks_life_shield(b) -> bool:
+	return status_battle() and _affix_of(b) == "scapegoat"
+
+
+static func clamp_hollow_shield(b) -> void:
+	if _affix_of(b) == "hollow" and status_battle():
+		b.shield = minf(b.shield, float(locked(b).referenceHp))
+
+
+## A.damageTarget（Adv:117）：敌人对嫁祸者的生命伤害（类型 1／5）改由活着的保护者承受（命中、闪避、暴击、伤害都按保护者）
+static func damage_target(u, skill: Dictionary, t):
+	if not status_battle() or t == null or not t.has_meta("xalien_protector") or not u is XEnemy:
+		return t
+	var p = t.get_meta("xalien_protector")
+	if not _live(p) or not int(skill.get("damage", {}).get("type", 0)) in [1, 5]:
+		return t
+	return p
+
+
+## revive 包装（Adv:195，O-108）：嫁祸的保护者倒下时不能复活；连命复活把池回到复活者上限的 10%。返回真＝已处理（不走原复活）
+static func route_revive(b) -> bool:
+	if not o108_life_revive or not status_battle() or _death_sync > 0 or _hp_resolving > 0:
+		return false
+	if b.has_meta("xalien_protector") and not _live(b.get_meta("xalien_protector")):
+		return true
+	if b.has_meta("xalien_life"):
+		set_life(active_logic(), b.get_meta("xalien_life"), maxf(1.0, b.mhp * 0.1))
+		return true
+	return false

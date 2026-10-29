@@ -231,11 +231,12 @@ func shield_effect_bonus() -> float:
 func add_shield(value: float) -> void:
 	if is_nan(value) or is_inf(value):
 		value = 0.0
-	if XAlienBattle.route_shield(self, value):
-		return  # 异化绝缘拒收外来护盾、舍身转给队友（addShield 包装）
+	if XAlienBattle.blocks_life_shield(self) or XAlienBattle.route_shield(self, value):
+		return  # 异化嫁祸、绝缘拒收外来护盾，舍身转给队友（addShield 包装）
 	if value > 0.0:
 		value *= 1.0 + shield_effect_bonus()
 	shield = maxf(0.0, shield + value)
+	XAlienBattle.clamp_hollow_shield(self)  # 异化空壳：护盾不超过开场生命上限
 
 ## executeHpDamage／gainHp／setHp 三处钩子的共同部分：正伤害先扣护盾，扣完还有剩余就按 damageReduction 减免后取整。
 func absorb_shield(damage: float) -> float:
@@ -386,6 +387,8 @@ func remove_state_auto(id: int) -> void:
 func remove_state(id: int) -> void:
 	if XAlienBattle.blocks_removal(self, id, _leaving_state):
 		return  # 异化疫囊、囚厄、绝缘 removeState 包装：只能自然到期
+	if id == 1 and state_ids.has(id) and hp <= 0.0 and XAlienBattle.route_revive(self):
+		return  # 异化 revive 包装（O-108）：连命复活回池，嫁祸的保护者倒下不能复活
 	var had := state_ids.has(id)
 	if id == 1 and state_ids.has(id) and hp <= 0.0:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
