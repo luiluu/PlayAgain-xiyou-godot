@@ -296,6 +296,16 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.assertEqual(p.returncode, 1, p.stdout)
         self.assertIn('✗ c.tscn', p.stdout)
 
+    def test_names_file_and_wide_prefix_hint(self):
+        names = self.tmp / 'names.txt'
+        names.write_text('# 选测清单\na.tscn\n\nc  # 尾注释\n')
+        p, runs = self.run_tests('--names-file', str(names))
+        self.assertEqual(p.returncode, 0, p.stdout)
+        self.assertEqual(sorted(runs), ['a.tscn', 'c.tscn'])
+        self.assertNotIn('前缀', p.stdout)
+        p, runs = self.run_tests('', XIYOU_PREFIX_HINT='2')  # 空前缀匹配全部 3 个
+        self.assertIn('前缀  匹配 3 个场景', p.stdout)
+
     def test_rerun_keeps_first_attempt_and_ledger(self):
         logs = self.tmp / 'logs'
         p, _ = self.run_tests('--log-dir', str(logs), FLAKY_B='1')

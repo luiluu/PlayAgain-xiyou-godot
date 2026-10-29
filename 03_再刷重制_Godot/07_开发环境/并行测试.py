@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """并行运行 Godot 测试场景（检查.sh 调用；也可单独用来跑几个专项）。
 
-用法：并行测试.py <godot> <工程目录> [--jobs N] [--full] [场景名或前缀 ...]
+用法：并行测试.py <godot> <工程目录> [--jobs N] [--full] [--names-file 文件] [场景名或前缀 ...]
 - 每个测试一个独立的临时 HOME，因此 user://（存档、配置）互不干扰，也不会读写本机真实的用户数据目录。
 - 导入（--import）由调用方先单独做一次；这里只读工程缓存。
 - 每个测试最多 600 秒；脚本语法错误时场景不会自行退出，超时即判失败。用时超过一半（300 秒）时提示拆场景。
@@ -400,6 +400,9 @@ def git_head(project: str) -> str:
         return ''
 
 
+PREFIX_HINT = int(os.environ.get('XIYOU_PREFIX_HINT', '20'))  # 一个名字前缀匹配超过这么多场景时提示
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('godot')
@@ -410,8 +413,12 @@ def main() -> int:
     ap.add_argument('--log-dir', type=Path, default=Path(os.environ['CHECK_LOG_DIR']) if os.environ.get('CHECK_LOG_DIR') else None,
                     help='每个场景的完整输出写到这里；不给时用 04_验证/本地结果/并行测试/<时间戳>/')
     ap.add_argument('--quiet', action='store_true', help='不打心跳与通过行，只打失败、偶发、提示与汇总')
+    ap.add_argument('--names-file', type=Path, action='append', default=[], metavar='文件',
+                    help='场景名或前缀每行一个（# 起为注释），与命令行名字合并；选测清单、复跑失败项用（哪吒_8）')
     ap.add_argument('names', nargs='*')
     a = ap.parse_intermixed_args()
+    for f in a.names_file:
+        a.names += [l.split('#', 1)[0].strip() for l in f.read_text().splitlines() if l.split('#', 1)[0].strip()]
     if a.log_dir is None:
         a.log_dir = default_log_dir(a.project)
     a.full = a.full or os.environ.get('CHECK_FULL', '') not in ('', '0')
@@ -423,6 +430,11 @@ def main() -> int:
     limit = global_limit()
     scenes = sorted(p.name for p in (Path(a.project) / 'tests').glob('*.tscn'))
     if a.names:
+        # 前缀一次带出很多场景时提示一行（如误写 xiyou_ 选中两百多个），免得以为只跑了几个（哪吒_8）
+        for n in a.names:
+            hit = [s for s in scenes if s.startswith(n) and s not in (n, n + '.tscn')]
+            if len(hit) > PREFIX_HINT:
+                print('  · 前缀 %s 匹配 %d 个场景（%s 等）；要精确选就写全名' % (n, len(hit), '、'.join(hit[:3])))
         scenes = [s for s in scenes if any(s == n or s == n + '.tscn' or s.startswith(n) for n in a.names)]
     if not scenes:
         print('  ✗ tests/ 下没有匹配的测试场景')
