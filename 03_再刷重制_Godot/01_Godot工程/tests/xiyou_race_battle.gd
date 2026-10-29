@@ -7,6 +7,8 @@ extends Node
 ## - power.*：角色 1／8 30 级各族战力（XPower.actor 强制重算）：总分、三项、爆发／持续／有效生命／辅助、行动表、未计入。
 ## - supply：依次打各层 Boss 的种族补给（XDungeon.race_supply）；learn：学会种族技能改种族（XRace.learn）；
 ##   poisonInfo：选敌帮助的毒鸡汤说明（XRaceBattle.poison_info）。
+## - needsSelection：妖族全体伤害技能也要选敌（XRaceBattle.needs_prey_selection＋原本的单体 1／7／9）；battle.demon_manual：手选猎物。
+## - blood_command（只在重制）：魔族指令「血契：关／开」与切换。
 ## - human_toast（只在重制）：九九六插队提示在排行动顺序时暂存、下一个行动补出。
 const ORACLE := "oracle/race_battle.json"
 var results := []
@@ -54,9 +56,12 @@ func _run() -> void:
 			_learn(c)
 		elif str(c.id) == "poisonInfo":
 			_poison_info(c)
+		elif str(c.id) == "needsSelection":
+			_needs_selection(c)
 		else:
 			_battle(c)
 	_human_toast()
+	_blood_command()
 	DirAccess.remove_absolute(XSave.dir().path_join("options.json"))
 	DirAccess.remove_absolute(XSave.dir())
 	var passed := results.filter(func(r): return r.passed).size()
@@ -208,6 +213,10 @@ func _battle(c: Dictionary) -> void:
 				e.hp = floorf(e.mhp * float(set.enemyHpRate))
 			if set.has("allyHpRate"):
 				b.hp = floorf(b.mhp * float(set.allyHpRate))
+			if set.has("kill"):
+				var k: XEnemy = enemies[int(set.kill)]
+				k.hp = 0.0
+				k.refresh_resources()
 			continue
 		else:
 			var sp: Dictionary = row.step
@@ -227,6 +236,8 @@ func _battle(c: Dictionary) -> void:
 				target = (logic.actors if user is XActor else enemies)[ti]
 			else:
 				target = (enemies if user is XActor else logic.actors)[ti]
+			if sp.has("prey"):
+				XRaceBattle.set_manual_prey(logic, user, skill, enemies[int(sp.prey)])  # 选敌窗手选的猎物（onEnemyOk 包装）
 			for l in logic.act(user, skill, target):
 				if l.type == "toast":
 					toasts.append(l.text)
@@ -397,4 +408,31 @@ func _human_toast() -> void:
 	var second := logic.act(ctx.a, XDB.rec("Skills", 3), ctx.enemies[0]).filter(func(l): return l.type == "toast").map(func(l): return l.text)
 	var want := str(ctx.a.display_name()) + "九九六：额外行动"
 	check("human_toast.flush", first.count(want) == 1 and not second.has(want), [first, second])
+	XState.current = null
+
+
+func _needs_selection(c: Dictionary) -> void:
+	var s := XState.new_game_blank()
+	XState.current = s
+	var a := s.actor(1)
+	for race in c.observed.keys():
+		_set_race(s, a, int(race), 7)
+		for row in c.observed[race]:
+			var sk := XDB.rec("Skills", int(row[0]))
+			var got := int(sk.scope) in [1, 7, 9] or XRaceBattle.needs_prey_selection(a, sk)
+			check("needsSelection.%s.%d" % [race, int(row[0])], got == bool(row[3]), [got, row])
+	XState.current = null
+
+
+## 魔族战斗指令（原版截图 race_blood_cmd_off／on：逃跑之后一行「血契：关」，确定后变「血契：开」）
+func _blood_command() -> void:
+	var s := XState.new_game_blank()
+	XState.current = s
+	var a := s.actor(1)
+	_set_race(s, a, 3, 7)
+	check("blood_command.off", XRaceBattle.blood_command_text(a) == "血契：关", XRaceBattle.blood_command_text(a))
+	XRace.toggle_blood(s, a)
+	check("blood_command.on", XRaceBattle.blood_command_text(a) == "血契：开" and bool(XRace.data(s, a).blood), XRaceBattle.blood_command_text(a))
+	_set_race(s, a, 1, 7)
+	check("blood_command.other_race", XRaceBattle.blood_command_text(a) == "")
 	XState.current = null

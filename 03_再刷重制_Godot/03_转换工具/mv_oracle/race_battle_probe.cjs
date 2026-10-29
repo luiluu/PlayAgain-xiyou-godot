@@ -71,10 +71,11 @@ function battle(spec) {
   w.$gameParty.battleMembers().forEach(x => R.battleState(x));
   return {bm, a, b, enemies};
 }
-function act(bm, user, skillId, targetIndex) {
+function act(bm, user, skillId, targetIndex, preyIndex) {
   const action = new w.Game_Action(user);
   if (skillId === 2) action.setGuard(); else action.setSkill(skillId);
   action.setTarget(targetIndex);
+  if (preyIndex != null) action._codexRacePreyIndex = preyIndex;  // Scene_Battle.onEnemyOk 包装记下的手选猎物
   user._actions = [action]; bm._subject = user; bm._action = null;
   bm.startAction();
   for (let i = 0; i < 20000; i++) {
@@ -115,6 +116,7 @@ function battleCase(name, spec, steps) {
         if (st.set.blood != null) ctx.a._codexRace.blood = st.set.blood;
         if (st.set.enemyHpRate != null) { const e = ctx.enemies[st.set.enemy || 0]; e._hp = Math.floor(e.mhp * st.set.enemyHpRate); }
         if (st.set.allyHpRate != null) ctx.b._hp = Math.floor(ctx.b.mhp * st.set.allyHpRate);
+        if (st.set.kill != null) ctx.enemies[st.set.kill].setHp(0);  // 真正打倒（refresh 挂死亡状态）
         rows.push(Object.assign({set: st.set}, reading(ctx)));
         continue;
       }
@@ -122,7 +124,7 @@ function battleCase(name, spec, steps) {
       const user = st.user === 'b' ? ctx.b : st.user && st.user[0] === 'e' ? ctx.enemies[Number(st.user.slice(1))] : ctx.a;
       user.setTp(100); user._mp = user.mmp;
       const before = reading(ctx);
-      const action = act(ctx.bm, user, st.skill, st.target || 0);
+      const action = act(ctx.bm, user, st.skill, st.target || 0, st.prey);
       rows.push(Object.assign({step: st, before}, reading(ctx), {toasts: toasts.slice(), preyIndex: action._codexRacePreyIndex == null ? null : action._codexRacePreyIndex}));
     }
     return {skills: ctx.a._skills.filter(id => R.skillInfo(id)), rate: R.rate(ctx.a), atk: ctx.a.atk, mat: ctx.a.mat, mhp: ctx.a.mhp, enemies: ctx.enemies.map(e => ({id: e.enemyId(), params: P.map(i => e.param(i))})), rows};
@@ -152,6 +154,19 @@ battleCase('brute', {race: 6, rank: 7, troop: 2, enemyAtkPlus: 4000}, [{round: 1
   {round: 1, skill: 3, target: 1}, {round: 1, skill: 3, target: 0}, {round: 2, skill: 3, target: 0},
   {roundEnd: 2}, {round: 3, user: 'e1', skill: 1, target: 0}, {round: 4, skill: 3, target: 1}, {round: 4, skill: 3, target: 0}]);
 battleCase('brute4', {race: 6, rank: 4, troop: 2, enemyAtkPlus: 4000}, [{round: 1, user: 'e0', skill: 1, target: 0}, {round: 1, skill: 3, target: 0}]);
+
+// 妖（期二）：群攻手选猎物——选第三只（预演并非最高）、选第一只；选中的已倒下（生命 0）时回到自动选
+battleCase('demon_manual', {race: 1, rank: 7, troop: 6}, [{round: 1, skill: 10, prey: 2}, {round: 1, skill: 10, prey: 0},
+  {set: {kill: 1}}, {round: 2, skill: 10, prey: 1}, {round: 2, skill: 3, target: 2, prey: 0}]);
+cases.push(makeCase('needsSelection', {skills: [1, 3, 9, 10]}, () => {
+  newGame();
+  const a = w.$gameActors.actor(1), out = {};
+  for (const race of [-1, 1, 3]) {
+    setRace(a, race, 7);
+    out[race] = [1, 3, 9, 10].map(id => { const x = new w.Game_Action(a); x.setSkill(id); return [id, w.$dataSkills[id].scope, w.$dataSkills[id].damage.type, x.needsSelection()]; });
+  }
+  return out;
+}));
 
 // ③ power.*（期二 2026-10-29）：战力预览的种族修正（P.expected 末尾 powerAdjust、cycle 里 resetPowerCycle／powerCost／startPowerTurn／
 //    人族行动数 1+q/2／commitPowerRoot、神族治疗 ×(1+q)、蛮族未计入）。角色 1／8 30 级新开局装备，CodexCombatPower.actor(a, true)。

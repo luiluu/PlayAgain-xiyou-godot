@@ -116,6 +116,12 @@ static func learn(s: XState, a: XActor, id: int) -> bool:
 	return true
 
 
+## 战斗指令「血契」：data(a).blood 取反（原版 raceBlood 处理器，指令窗随后 setup 重画）
+static func toggle_blood(s: XState, a: XActor) -> void:
+	var d := data(s, a)
+	d.blood = not bool(d.blood)
+
+
 ## R.migrate：开关 281～287 恰好开了一个时把它当开局默认，再给全队补数据
 static func migrate(s: XState) -> void:
 	if default_race(s) < 0:

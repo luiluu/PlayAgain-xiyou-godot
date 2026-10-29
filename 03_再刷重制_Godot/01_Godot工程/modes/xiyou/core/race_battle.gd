@@ -14,7 +14,8 @@ extends RefCounted
 ## - 蛮族：敌人行动对本人的直接伤害每回合首个行动最多扣开战最大生命 ×(0.75−2q)（0.45 记 0.5）；受伤≥10% 后下回合内反攻来源。
 ## - 人族九九六：每回合 q/2 概率在 OTB 行动顺序里该角色最后一次之后再插一次（规则随机数，Math.random）。
 ## - 战力预演（power_*，XPower 调）、选敌帮助的毒鸡汤说明（poison_info）；种族补给在 XDungeon.race_supply，learnSkill 包装在 XRace.learn。
-## 未移植：妖族群攻手选猎物（needsSelection＋onEnemyOk）、战斗指令「血契：开／关」、旧道具合并与商店。
+## - 妖族群攻手选猎物（needs_prey_selection／set_manual_prey）、战斗指令「血契：开／关」（blood_command_text，切换在 XRace.toggle_blood）：
+##   画面在 battle_scene.gd。旧道具合并与商店在 XItemMarks／XState.gain_item。
 ## 不移植：状态说明 R.status（冻结源里没有调用处）。
 
 static func config() -> Dictionary:
@@ -108,7 +109,7 @@ static var _logic_ref: WeakRef
 
 static func _store(logic) -> Dictionary:
 	if not logic.has_meta("xrace"):
-		logic.set_meta("xrace", {"actors": {}, "current": null, "hit": null, "derived": 0, "lastEnd": -1, "serial": 0, "pending": []})
+		logic.set_meta("xrace", {"actors": {}, "current": null, "hit": null, "derived": 0, "lastEnd": -1, "serial": 0, "pending": [], "manual": {}})
 	return logic.get_meta("xrace")
 
 
@@ -132,7 +133,7 @@ static func state(logic, a) -> Dictionary:
 
 ## BattleManager.startBattle 包装：清本场数据，出战成员建数据
 static func start(logic) -> void:
-	logic.set_meta("xrace", {"actors": {}, "current": null, "hit": null, "derived": 0, "lastEnd": -1, "serial": 0, "pending": []})
+	logic.set_meta("xrace", {"actors": {}, "current": null, "hit": null, "derived": 0, "lastEnd": -1, "serial": 0, "pending": [], "manual": {}})
 	_logic_ref = weakref(logic)
 	for a in logic.actors:
 		state(logic, a)
@@ -198,13 +199,15 @@ static func weapon_matches(a, item: Dictionary) -> bool:
 
 # ---- 妖族猎物 ----
 ## prey：活着的敌方目标；只有一个就是它；有 Boss 时只在 Boss 里挑；否则逐个预演（不含种族加成），取最高、并列取靠前
-static func prey(logic, u, item: Dictionary, targets: Array):
+static func prey(logic, u, item: Dictionary, targets: Array, manual = null):
 	var list := []
 	for t in targets:
 		if _live(t) and t is XEnemy and not list.has(t):
 			list.append(t)
 	if list.is_empty():
 		return null
+	if manual != null and list.has(manual):  # 群攻时玩家在选敌窗指定的（_codexRacePreyIndex），还活着且在目标里才算
+		return manual
 	var boss := list.filter(func(t): return XZhenqi.is_boss_enemy(t))
 	if not boss.is_empty():
 		list = boss
@@ -220,6 +223,32 @@ static func prey(logic, u, item: Dictionary, targets: Array):
 	return best
 
 
+## Game_Action.needsSelection 包装：妖族用对全体敌人（scope 2）的伤害（类型 1／5）技能或物品时也要选一名敌人当猎物
+static func needs_prey_selection(a, item: Dictionary) -> bool:
+	return race_of(a) == 1 and int(item.get("scope", 0)) == 2 and int(item.get("damage", {}).get("type", 0)) in [1, 5]
+
+
+## Scene_Battle.onEnemyOk 包装：记下这次行动手选的猎物（原版记在行动上；重制按角色＋技能暂存，下一个行动根取走）
+static func set_manual_prey(logic, a, item: Dictionary, t) -> void:
+	_store(logic).manual[a] = {"item": int(item.get("id", 0)), "target": t}
+
+
+static func _take_manual(logic, u, item: Dictionary):
+	var manual: Dictionary = _store(logic).get("manual", {})
+	if not manual.has(u):
+		return null
+	var m: Dictionary = manual[u]
+	manual.erase(u)
+	return m.target if int(m.item) == int(item.get("id", 0)) else null
+
+
+## 战斗指令「血契：开／关」（Window_ActorCommand.makeCommandList 包装，魔族才有）；没有返回空
+static func blood_command_text(a) -> String:
+	if race_of(a) != 3:
+		return ""
+	return "血契：" + ("开" if bool(data_of(a).blood) else "关")
+
+
 # ---- 行动根 ----
 ## R.begin（startAction 包装＋makeTargets 包装的合并）：建根，妖族定猎物，蛮族取未过期的反攻目标
 static func begin(logic, u, item: Dictionary, targets: Array, logs: Array = []) -> Dictionary:
@@ -231,8 +260,9 @@ static func begin(logic, u, item: Dictionary, targets: Array, logs: Array = []) 
 	var r := {"subject": u, "item": item, "targets": targets.duplicate(), "records": [], "incoming": [], "ended": false,
 		"prey": null, "low": false, "divine": a_state != null and int(a_state.godTurn) != turn(logic), "blood": false, "echo": false,
 		"counter": null, "counterUsed": false}
+	var manual = _take_manual(logic, u, item)
 	if race_of(u) == 1:
-		r.prey = prey(logic, u, item, targets)
+		r.prey = prey(logic, u, item, targets, manual)
 		r.low = r.prey != null and r.prey.hp / maxf(r.prey.mhp, 1.0) <= 0.3
 	if a_state != null and a_state.counter != null:
 		if not _live(a_state.counter.target) or int(a_state.counter.until) < turn(logic):

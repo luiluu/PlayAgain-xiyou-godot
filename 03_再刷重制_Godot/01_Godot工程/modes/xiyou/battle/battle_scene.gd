@@ -708,7 +708,7 @@ func _preview(a: XBattler, skill, targets: Array = []) -> void:
 
 
 ## 指令（Window_ActorCommand＋OTB）：攻击（YEP_WeaponUnleash：替换后的技能与名字）、加入的技能类型（按编号；CP_MagicWeapon 不列 3～6，没有该类技能也列出）、
-## 防御、物品、逃跑（OTB Escape Actor Window：总是列出，不能逃时灰显）。
+## 防御、物品、逃跑（OTB Escape Actor Window：总是列出，不能逃时灰显）；魔族再加「血契：开／关」。
 func _command_entries(a: XActor) -> Array:
 	var terms: Array = XDB.system().terms.commands
 	var atk := a.attack_skill()
@@ -723,6 +723,10 @@ func _command_entries(a: XActor) -> Array:
 	opts.append({"text": str(terms[3]), "key": "guard", "enabled": logic.can_use(a, grd), "preview": grd})
 	opts.append({"text": str(terms[4]), "key": "item"})
 	opts.append({"text": str(terms[1]), "key": "escape", "enabled": logic.can_escape})
+	# installNativeRaceRuntime makeCommandList 包装：魔族在最后加「血契：开／关」
+	var blood := XRaceBattle.blood_command_text(a)
+	if blood != "":
+		opts.append({"text": blood, "key": "raceBlood"})
 	return opts
 
 
@@ -769,6 +773,11 @@ func _command_for(a: XActor):
 					return [atk, t]
 			"guard":
 				return [XDB.rec("Skills", XBattleLogic.GUARD_SKILL), null]
+			"raceBlood":
+				# 原版处理器：切换后 setup(actor) 重画指令窗再激活（光标照 selectLast：记忆指令开时停在血契，否则回第一项）
+				XRace.toggle_blood(logic.state, a)
+				opts = _command_entries(a)
+				last_index = initial_command_index(a, opts)
 			"escape":
 				return "escape"
 			"item":
@@ -892,12 +901,14 @@ func _close_list() -> void:
 ## 单体技能：点敌人（或我方）选目标；全体/自身直接返回占位目标。
 func _pick_target(skill: Dictionary, a: XActor):
 	var scope := int(skill.get("scope", 1))
-	if not [1, 7, 9].has(scope):
+	# 种族 needsSelection 包装：妖族的全体伤害也选一名敌人，选中的记作猎物（onEnemyOk 包装），行动对象仍是全体
+	var prey_pick := XRaceBattle.needs_prey_selection(a, skill)
+	if not [1, 7, 9].has(scope) and not prey_pick:
 		return a
-	var pool := logic.alive(logic.enemies) if scope == 1 else (logic.alive(logic.actors) if scope == 7 else logic.actors.filter(func(x): return x.is_dead()))
+	var pool := logic.alive(logic.enemies) if scope == 1 or prey_pick else (logic.alive(logic.actors) if scope == 7 else logic.actors.filter(func(x): return x.is_dead()))
 	if pool.is_empty():
 		return null
-	_target_mode = "enemy" if scope == 1 else "ally"
+	_target_mode = "enemy" if scope == 1 or prey_pick else "ally"
 	_target_pool = pool
 	if cmd_win and is_instance_valid(cmd_win):
 		cmd_win.visible = false
@@ -920,6 +931,9 @@ func _pick_target(skill: Dictionary, a: XActor):
 	if cmd_win and is_instance_valid(cmd_win):
 		cmd_win.visible = true
 	if r is XBattler and pool.has(r):
+		if prey_pick:
+			XRaceBattle.set_manual_prey(logic, a, skill, r)
+			return a
 		return r
 	return null
 
@@ -971,6 +985,47 @@ func _select_target(b) -> void:
 	otb.set_selected([b] if b != null else [])
 	if b != null:
 		_preview(_active, _target_skill, [b])
+	if b is XEnemy and _target_mode == "enemy":
+		_poison_help(b)
+
+
+## 优化 O-107：选敌时的毒鸡汤说明卡贴在该敌人旁边，选到没有毒鸡汤的敌人就收起。
+## false 照原版：卡片位置从上一张卡的位置再按 setItem 修正（每次都会再挪一次），选到没有毒鸡汤的敌人时上一段文字留着。
+const POISON_HELP_NEAR := true
+
+## Window_BattleEnemy.updateHelp 的种族包装：本回合有人在该敌人身上记了毒鸡汤时，说明卡（Sprite_ItemHelp.setText）写「敌人名＋说明」；
+## YEP 的 setBattler 说明卡上没有（异常被吞），所以没有毒鸡汤时原版什么也不画。
+func _poison_help(e: XEnemy) -> void:
+	var info := XRaceBattle.poison_info(logic, e)
+	if info == "":
+		if POISON_HELP_NEAR and help_card != null:
+			help_card.visible = false
+		return
+	if help_card == null:
+		_help()
+	help_card.show_text(e.display_name() + "\n" + info)
+	ui.move_child(help_card, -1)
+	var p := help_card.position - _origin  # 画布坐标（1280×720）
+	if POISON_HELP_NEAR:
+		# 敌人图（脚底居中）右侧，放不下就放左侧
+		var sp: XBattlerSprite = sprites[e]
+		help_card.place_near(Rect2(sp.position - Vector2(sp.width() / 2.0, sp.height()), Vector2(sp.width(), sp.height())), "right")
+	else:
+		# Sprite_ItemHelp.setItem：在上一张卡的位置上再修正一次
+		var sz := help_card.size
+		p.x += 52 if p.x < 900 else -10
+		if p.y < 220:
+			p.y += 32
+		if p.y > 400:
+			p.y -= 100
+		if p.y > 500:
+			p.y -= 250
+		if p.x + sz.x > 1280:
+			p.x = 1280 - sz.x - 30
+		if p.y + sz.y > 720:
+			p.y = 720 - sz.y - 30
+		help_card.position = p
+	help_card.position += _origin
 
 
 func _unhandled_input(event: InputEvent) -> void:
