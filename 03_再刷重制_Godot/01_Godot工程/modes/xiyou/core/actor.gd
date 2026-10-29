@@ -405,6 +405,8 @@ func skills() -> Array:
 		if not ids.has(id):ids.append(id)
 	for id in XMagicWeapon.skills(equips):  # CP_X_MagicWeaponLearnSkill：法宝按等级学的技能；O-099 去重（原版 concat 不去重）
 		if not ids.has(id):ids.append(id)
+	if XAlienBattle.devours(self):  # 异化饕餮 skills 包装（Adv:86）：战斗中多吞噬技能（原版 push 不去重）
+		ids.append(XAlienBattle.devour_id())
 	var out := []
 	for id in ids:
 		var s := XDB.rec("Skills", id)

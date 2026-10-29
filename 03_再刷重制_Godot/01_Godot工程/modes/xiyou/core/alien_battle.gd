@@ -510,7 +510,7 @@ static func _same(x, y) -> bool:
 
 
 static func push_formula(item: Dictionary, a, b, formula: bool) -> void:
-	_formula_frames.append({"item": item, "subject": a, "target": b,
+	_formula_frames.append({"item": item, "subject": a, "target": b, "formula": formula,
 		"physical": formula and (XDamage.is_physical(item) or _in_template("inversebone", int(item.get("id", 0))))})
 
 
@@ -522,7 +522,9 @@ static func pop_formula() -> void:
 ## inner 是包装之内的取值（原版 old.call(this, 3)）
 static func param(a: XActor, i: int, v: float) -> float:
 	if i == 0:
-		return hollow_param(a, v)
+		return silence_param(a, hollow_param(a, v))
+	if i == 1:
+		return glutton_param(a, v)
 	if _formula_frames.is_empty() or (i != 2 and i != 3):
 		return v
 	var f: Dictionary = _formula_frames[_formula_frames.size() - 1]
@@ -747,7 +749,7 @@ static var natural_removal := false
 ## 后包的 Game_Battler.addDebuff 对角色走不到，囚厄「接收队友减益」、绝缘「免疫外来减益」对角色失效（只有疫囊者经
 ## Game_Battler.prototype.addDebuff 走得到）。true＝照词条说明对所有角色生效；false＝照原版
 static var o106_actor_debuffs := true
-const STATUS_AFFIXES := ["pest", "jail", "insulation", "sacrifice", "hollow", "lifelink", "scapegoat", "wish", "prayer"]
+const STATUS_AFFIXES := ["pest", "jail", "insulation", "sacrifice", "hollow", "lifelink", "scapegoat", "wish", "prayer", "silence", "glutton"]
 static var _state_routing := 0
 static var _support_routing := 0
 
@@ -853,6 +855,9 @@ static func route_state(b, id: int) -> bool:
 	var positive := positive_state(id)
 	if _insulated(b) and (positive or _in_template("jailStates", id)):
 		return true
+	if positive and _affix_of(b) == "glutton":  # 饕餮（Adv:160）：登记增益不挂上，吞成饥饿储备
+		feed(b, id, int(XDB.rec("States", id).get("minTurns", 0)))
+		return true
 	if _state_routing > 0 or not positive:
 		return false
 	var t = support_target(b)
@@ -932,6 +937,9 @@ static func route_buff(logic, t, pid: int, buff: bool, turns: int) -> bool:
 		return false
 	if _insulated(t):
 		return true
+	if buff and _affix_of(t) == "glutton":  # 饕餮（Adv:172）：增益不留在身上，按 1 层吞掉
+		feed_buff(t, turns, 1)
+		return true
 	if buff:
 		var p = support_target(t)
 		if is_same(p, t):
@@ -973,6 +981,8 @@ static func blocks_buff_removal(t, pid: int) -> bool:
 
 ## gainHp／gainMp 包装：绝缘拒收外来恢复；舍身的生命恢复改给队友。返回真＝不在 b 身上结算
 static func route_gain(ctx, b, resource: String, amount: float) -> bool:
+	if resource == "mp" and amount != 0.0 and _affix_of(b) == "glutton" and status_battle():
+		return true  # 饕餮（Adv:111）：gainMp 一律无效（回蓝、扣蓝都不结算）
 	if amount <= 0.0 or resource == "tp" or not status_battle():
 		return false
 	if _insulated(b):
@@ -1080,6 +1090,8 @@ static func setup_life(logic) -> void:
 		d.referenceMp = a.param_before_alien(1)
 		d.originalHp = a.hp
 		d.originalMp = a.mp
+		d.capLock = 0.0
+		d.hunger = 0.0
 		if str(d.affix) in ["lifelink", "scapegoat", "sacrifice"]:
 			d.partner = partner_of(d)
 	for a in logic.actors:
@@ -1104,6 +1116,20 @@ static func setup_life(logic) -> void:
 				a.param_mark_dirty()
 				a.shield = minf(float(d.referenceHp), maxf(0.0, float(d.originalHp)))
 				a.hp = 1.0 if float(d.originalHp) > 0.0 else 0.0
+			"glutton":
+				# 饕餮（Adv:76）：MP 清零；身上的登记增益状态与增益按剩余回合吞掉
+				a.mp = 0.0
+				for id in a.state_ids.duplicate():
+					if positive_state(id):
+						feed(a, id, int(a.state_turns.get(id, 0)))
+						a.remove_state(id)
+				for j in range(2, 8):
+					if a.buffs[j] > 0:
+						feed_buff(a, a.buff_turns[j], a.buffs[j])
+						a.buffs[j] = 0
+						a.buff_turns[j] = 0
+				a.param_mark_dirty()
+				a.refresh_resources()
 	st.life = logic.actors.any(func(x): return x.has_meta("xalien_life") or x.has_meta("xalien_protector"))
 
 
@@ -1114,6 +1140,8 @@ static func end_life(logic) -> void:
 		if d != null and str(d.affix) == "hollow":
 			a.hp = 0.0 if a.is_dead() else maxf(1.0, minf(float(d.get("referenceHp", a.hp)), maxf(0.0, a.shield)))
 			a.shield = 0.0
+		if d != null and str(d.affix) == "glutton":
+			a.mp = minf(float(d.originalMp), float(d.referenceMp))  # Adv:196：饕餮的 MP 还原（不超过开场上限）
 		for k in ["xalien_life", "xalien_protector"]:
 			if a.has_meta(k):
 				a.remove_meta(k)
@@ -1289,3 +1317,174 @@ static func route_revive(b) -> bool:
 		set_life(active_logic(), b.get_meta("xalien_life"), maxf(1.0, b.mhp * 0.1))
 		return true
 	return false
+
+
+# ---- 词条效果③：缄默、饕餮（MP 费用类，installAlienationAdvanced 56-59、76、86、130-153、161、171-172、196） ----
+
+static func _locked_affix(a, key: String):
+	if not a is XActor or not battling():
+		return null
+	var d = locked(a)
+	return d if d != null and str(d.affix) == key else null
+
+
+## Game_Actor.param 包装（Adv:58）：缄默的生命上限按已锁定的比例缩小，至少 1
+static func silence_param(a: XActor, v: float) -> float:
+	var d = _locked_affix(a, "silence")
+	return v if d == null else maxf(1.0, floorf(v * (1.0 - float(d.get("capLock", 0.0)))))
+
+
+## Game_Actor.param 包装（Adv:59）：饕餮的实际 MP 上限为 0；evalDamageFormula 包装（Adv:129）里行动者、目标读开场 MP 上限
+static func glutton_param(a: XActor, v: float) -> float:
+	var d = _locked_affix(a, "glutton")
+	if d == null:
+		return v
+	if not _formula_frames.is_empty():
+		var f: Dictionary = _formula_frames[_formula_frames.size() - 1]
+		if bool(f.get("formula", false)) and (_same(a, f.subject) or _same(a, f.target)):
+			return float(d.referenceMp)
+	return 0.0
+
+
+## skillMpCost 包装（Adv:132）：缄默选定的技能 MP 费用为 0（面板费用 A.panelMpCost 照算）
+static func silence_skill(a, skill: Dictionary) -> bool:
+	var d = _locked_affix(a, "silence")
+	return d != null and not XBattleLogic.is_item(skill) and int(d.config.get("skillId", 0)) == int(skill.get("id", 0))
+
+
+## A.lockFee（Adv:133）：未减耗面板 MP 费用（mcr 记 1）／开场 MP 上限 × 20%
+static func lock_fee(logic, a, skill: Dictionary) -> float:
+	if not silence_skill(a, skill):
+		return 0.0
+	var d = locked(a)
+	return float(logic.skill_cost(a, skill, true).mp) / maxf(1.0, float(d.referenceMp)) * 0.2
+
+
+## canPaySkillCost 包装（Adv:134）：缄默锁满（累计 ≥100%）或锁后生命上限不到 1 时付不起
+static func silence_blocks(logic, a, skill: Dictionary) -> bool:
+	var fee := lock_fee(logic, a, skill)
+	if fee <= 0.0:
+		return false
+	var lock := float(locked(a).get("capLock", 0.0))
+	return lock + fee >= 1.0 or floorf(a.param_before_alien(0) * (1.0 - lock - fee)) < 1.0
+
+
+## paySkillCost 包装（Adv:143-144）缄默段：锁定生命上限，生命截到新上限。返回假＝付不起，整次不付费
+static func pay_silence(logic, a, skill: Dictionary) -> bool:
+	var fee := lock_fee(logic, a, skill)
+	if fee <= 0.0:
+		return true
+	if silence_blocks(logic, a, skill):
+		return false
+	var d = locked(a)
+	d.capLock = float(d.get("capLock", 0.0)) + fee
+	a.param_mark_dirty()
+	a.hp = minf(a.hp, a.mhp)
+	return true
+
+
+## 饕餮的 MP 费用读、扣饥饿储备（canPaySkillCost／paySkillCost 包装把 _mp 临时换成储备，Adv:135、144）。不是饕餮返回 null
+static func glutton_mp(a):
+	var d = _locked_affix(a, "glutton")
+	return null if d == null else float(d.get("hunger", 0.0))
+
+
+static func pay_glutton(a, mp: float) -> void:
+	var d = locked(a)
+	d.hunger = maxf(0.0, float(d.hunger) - mp)
+	a.mp = 0.0
+
+
+## O-113（优化登记）：原版 installNativeTojiRuntime.js:362-366（模块 9）自己定义了 Game_Actor.prototype.isSkillTypeSealed，
+## installAlienationAdvanced 后包的 Game_BattlerBase.isSkillTypeSealed 对角色走不到，缄默「绕过魔法沉默」永远不生效
+## （alien_affix_probe silence 例第 3 步沉默中不能用）。true＝照词条说明绕过；false＝照原版
+static var o113_silence_bypass := true
+
+
+## meetsSkillConditions／isSkillTypeSealed 包装（Adv:145-149）：缄默选定的技能不受魔法沉默状态封印技能类型；
+## 其他来源（别的状态、装备、职业）封的照样封
+static func silence_bypass(a, skill: Dictionary) -> bool:
+	if not o113_silence_bypass or not silence_skill(a, skill):
+		return false
+	var stype := int(skill.get("stypeId", 0))
+	for o in a.trait_objects():
+		if o.has("restriction") and magic_silence(o, stype):
+			continue
+		for t in o.get("traits", []):
+			if int(t.code) == XBattler.TRAIT_STYPE_SEAL and int(t.dataId) == stype:
+				return false
+	return true
+
+
+## A.magicSilence：名字或备注带「沉默／silence」、不限制行动、不是自定义／阶段／变身，且特性全是封这个技能类型
+static func magic_silence(st: Dictionary, stype: int) -> bool:
+	var text := str(st.get("name", "")) + " " + str(st.get("note", ""))
+	var traits: Array = st.get("traits", [])
+	return RegEx.create_from_string("(?i)沉默|silence").search(text) != null and int(st.get("restriction", 0)) == 0 \
+		and RegEx.create_from_string("Custom|阶段|变身").search(str(st.get("note", ""))) == null and not traits.is_empty() \
+		and traits.all(func(t): return int(t.code) == XBattler.TRAIT_STYPE_SEAL and int(t.dataId) == stype)
+
+
+## A.feed（Adv:150）：吞一个登记增益状态，储备 +max(1, ⌊开场MP×min(15%, 强度×10%)×回合/2⌋)，回合夹在 1～5，储备不超过开场 MP 两倍。
+## 强度＝各特性 |值−(参数／特殊参数倍率时 1)| 之和
+static func feed(a, id: int, turns: int) -> float:
+	var d = _locked_affix(a, "glutton")
+	var st := XDB.rec("States", id)
+	if d == null or st.is_empty():
+		return 0.0
+	var strength := 0.0
+	for t in st.get("traits", []):
+		strength += absf(float(t.value) - (1.0 if int(t.code) in [21, 23] else 0.0))
+	var duration := clampi(turns if turns != 0 else (int(st.get("minTurns", 0)) if int(st.get("minTurns", 0)) != 0 else 1), 1, 5)
+	var n := maxf(1.0, floorf(float(d.referenceMp) * minf(0.15, strength * 0.1) * duration / 2.0))
+	d.hunger = minf(float(d.referenceMp) * 2.0, float(d.get("hunger", 0.0)) + n)
+	return n
+
+
+## A.feedBuff（Adv:151）：吞增益，储备 +max(1, ⌊开场MP×2.5%×回合(1～5)×层数⌋)
+static func feed_buff(a, turns: int, level: int) -> float:
+	var d = _locked_affix(a, "glutton")
+	if d == null:
+		return 0.0
+	var n := maxf(1.0, floorf(float(d.referenceMp) * 0.025 * clampi(turns, 1, 5) * maxi(1, level)))
+	d.hunger = minf(float(d.referenceMp) * 2.0, float(d.get("hunger", 0.0)) + n)
+	return n
+
+
+static func devour_id() -> int:
+	return int(config().ids.devour)
+
+
+## Game_Actor.skills 包装（Adv:86）：饕餮在战斗中多一个吞噬技能
+static func devours(a) -> bool:
+	return _locked_affix(a, "glutton") != null
+
+
+## Game_Action.apply 包装（Adv:152）：吞噬先吞目标第一个登记增益状态，没有就吞第一个增益（2～7）；结果只记已使用、成功。
+## 返回 null＝不是吞噬，照原 apply
+static func devour(u, skill: Dictionary, t):
+	if int(skill.get("id", 0)) != devour_id() or skill.has("_alienMode"):
+		return null
+	if not devours(u):
+		return {}
+	var id := -1
+	for x in t.state_ids:
+		if positive_state(x):
+			id = x
+			break
+	if id >= 0:
+		var turns := int(t.state_turns.get(id, 0))
+		t.remove_state(id)
+		if not t.state_ids.has(id):
+			feed(u, id, turns)
+	else:
+		for i in range(2, 8):
+			if t.buffs[i] > 0:
+				var n: int = t.buffs[i]
+				var r: int = t.buff_turns[i]
+				t.buffs[i] = 0
+				t.buff_turns[i] = 0
+				t.param_mark_dirty()
+				feed_buff(u, r, n)
+				break
+	return {"success": true}

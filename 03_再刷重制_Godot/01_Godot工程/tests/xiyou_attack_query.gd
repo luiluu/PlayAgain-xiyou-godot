@@ -164,8 +164,14 @@ func _skip(c: Dictionary) -> void:
 				got.partyCanUse = got.menuEnabled
 			var mp := a.mp
 			var count := s.item_count(int(item.id)) if not item.is_empty() else 0
-			got.used = _acted(logic.act(a, skill, e))
+			var logs := logic.act(a, skill, e)
+			got.used = _acted(logs)
 			got.mp = [mp, a.mp]
+			if cid == "skip.actor1-mp-short":
+				# 付费后立即 refresh（YEP useItem）：行动记录的快照里 MP 已截到 0（沙僧第六期 P1：原先记 -1）
+				var act: Array = logs.filter(func(r): return r.get("type") == "action")
+				var snap = act[0].views.get(a, {}).get("mp") if not act.is_empty() else null
+				check(cid + ".actionSnapshotMp", snap != null and float(snap) == float(want.mp[1]), {"got": snap, "want": want.mp[1]})
 			got.count = [count, s.item_count(int(item.id))] if not item.is_empty() else null
 	for k in ["otb", "phase", "left", "valid", "forcedValid", "occasion", "actionList", "mpCost"]:
 		want.erase(k)
