@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "alien_affix.json",
+      "collection": "顶层",
+      "key": "hostScope",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "711978fdc0a602d1",
+      "newDigest": "37b55f94be42584c",
+      "reason": "八戒 异化第③批：alien_affix_probe 的说明文字加上「第③批行动道具投影（祸祝、恶愿、逆祷）」，只改描述；cases 19→23 是只增（blessing／blessing.none／wish／prayer），旧 19 例逐项不变"
+    }
+  ]
+}
