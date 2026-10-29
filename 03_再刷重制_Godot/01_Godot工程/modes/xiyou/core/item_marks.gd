@@ -168,9 +168,10 @@ static func draws_gold(rec: Dictionary) -> bool:
 
 ## Window_ShopSell.isEnabled（YEP_ShopMenuCore）：有价格，或有卖出报酬备注（MoreCurrencies 设 canSell）。
 ## 正式数据没有 <Can Sell>／<Cannot Sell>／<Price>／<Sell Price> 备注。
-## installAlienationRuntime：异化装备不能在商店出售（Window_ShopSell.isEnabled）
+## installAlienationRuntime：异化装备不能在商店出售（Window_ShopSell.isEnabled）；installAlienationAdvanced 90：吞器占用的供体也不能
 static func can_sell(rec: Dictionary) -> bool:
-	return not rec.is_empty() and (int(rec.get("price", 0)) > 0 or has_sell_rewards(rec)) and XAlienation.mark(rec).is_empty()
+	return not rec.is_empty() and (int(rec.get("price", 0)) > 0 or has_sell_rewards(rec)) and XAlienation.mark(rec).is_empty() \
+		and not (XState.current != null and XAlienation.reserved(XState.current, rec))
 
 
 ## Scene_Shop.doSell(number)／XdRsData.hangUp.doSell：金币 sellingPrice×数量，报酬变量与物品各加 值×数量，再失去物品。
@@ -183,7 +184,8 @@ static func sell(s: XState, rec: Dictionary, number := 1) -> void:
 	for id in r.items:
 		s.gain_item(int(id), int(r.items[id]) * number)
 	if is_gear(rec):
-		s.gear.erase(rec)
+		if not XAlienation.reserved(s, rec):  # Adv:88 loseItem 包装：吞器占用的供体不失去（钱照给，见 sellable_gear）
+			s.gear.erase(rec)
 	else:
 		s.gain_item(int(rec.get("id", 0)), -number)
 
@@ -525,12 +527,14 @@ static func onekey_members(g: int) -> Array:
 ## 出售筛选（一键出售 sellUnifiedQuality 与挂机自动卖出 OnekeyWPSell 共用）：背包（不含身上）里备注品质在 legacy（旧档 0～14／15 的列表）里、
 ## 没有锁定（is_locked，装备按名字带「[锁定]」）的装备，按背包顺序。没有品质备注的跳过。
 ## 两处原版只差旧档范围：一键出售只含 0～14（onekey_members），自动卖出含 SellWA 全部开着的档（sell_legacy，含 15）。
-static func sellable_gear(s: XState, legacy: Array) -> Array:
+## 吞器占用的供体：挂机卖出原版挡了（Adv:89）；一键出售原版照卖、loseItem 被挡（Adv:88）只给钱不扣件，onekey 时按 O-待定 决定
+static func sellable_gear(s: XState, legacy: Array, onekey := false) -> Array:
 	var out := []
 	for e in s.gear:
 		var q := str(e.get("meta", {}).get("quality", "")).strip_edges()
 		# 异化装备跳过：原版挂机卖出（XdRsData.hangUp.doSell）挡了；一键出售原版没挡，这里一并跳过（O-081）
-		if q.is_valid_int() and legacy.has(int(q)) and not is_locked(s, e) and XAlienation.mark(e).is_empty():
+		if q.is_valid_int() and legacy.has(int(q)) and not is_locked(s, e) and XAlienation.mark(e).is_empty() \
+				and (onekey and not XAlienation.o_reserved_onekey or not XAlienation.reserved(s, e)):
 			out.append(e)
 	return out
 
@@ -539,7 +543,7 @@ static func sellable_gear(s: XState, legacy: Array) -> Array:
 ## 卖价为 0 的也卖掉（原版现行代码不查价格）。返回 [件数, 金额]。
 static func onekey_sell(s: XState, g: int) -> Array:
 	var gold := 0
-	var list := sellable_gear(s, onekey_members(g))
+	var list := sellable_gear(s, onekey_members(g), true)
 	for e in list:
 		gold += selling_price(e)
 		sell(s, e, 1)

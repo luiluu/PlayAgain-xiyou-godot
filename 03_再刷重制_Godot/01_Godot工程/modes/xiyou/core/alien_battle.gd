@@ -2,7 +2,7 @@ class_name XAlienBattle
 extends RefCounted
 ## 异化的战斗侧（冻结 v0.28 installAlienationRuntime，CodexAlienation）：遭遇、敌人变体、锁队、腐蚀、镜骸反噬、胜利发放。
 ## 工坊侧（标记、账本、合成、重抽、分解）在 alienation.gd（XAlienation）；词条效果（installAlienationAffixes／Advanced）
-## 期一接逆骨、归墟，期二①接疫囊、囚厄、绝缘、舍身，期二②接空壳、连命、嫁祸，③接祸祝、恶愿、逆祷、缄默、饕餮、百相、无面、蚀术
+## 期一接逆骨、归墟，期二①接疫囊、囚厄、绝缘、舍身，期二②接空壳、连命、嫁祸，③接祸祝、恶愿、逆祷、缄默、饕餮、百相、无面、蚀术，④接吞器、献器
 ## （见文末「词条效果」），其余词条未移植。
 ## 参照 mv_oracle/alien_battle_probe.cjs（generated/oracle/alien_battle.json），专项 tests/xiyou_alien_battle；
 ## 词条效果参照 mv_oracle/alien_affix_probe.cjs（generated/oracle/alien_affix.json），专项 tests/xiyou_alien_affix。
@@ -213,6 +213,7 @@ static func open(logic) -> void:
 ## A.lockParty：出战角色各冻结身上第一件异化装备（原版多于一件时抛错）
 static func lock_party(logic) -> void:
 	var st := _store(logic)
+	restore_gear(logic)  # 重新锁队（测试夹具）前先还原上次空出的装备栏，免得把空栏当成原装备存下
 	eject_invalid(logic)
 	st.party = {}
 	st.battling = true
@@ -223,6 +224,9 @@ static func lock_party(logic) -> void:
 	st.life = false
 	if st.status:
 		setup_life(logic)
+	else:
+		for a in logic.actors:
+			setup_gear(logic, a, st.party[a])
 
 
 ## lockParty 包装（Adv:62）：配置失效的异化装备（A.ready 不过；绑定词条的队友不在场、已倒下或已被前面的人绑定）
@@ -294,6 +298,7 @@ static func end(logic, result: int) -> void:
 		if result == 0:
 			grant(logic)
 		x.settled = true
+	restore_gear(logic)
 	if bool(_store(logic).get("status", false)):
 		end_life(logic)
 	for a in logic.actors:  # endBattle 包装：清囚厄接收、恶愿代价标记
@@ -1099,6 +1104,7 @@ static func setup_life(logic) -> void:
 			d.partner = partner_of(d)
 	for a in logic.actors:
 		var d = st.party.get(a)
+		setup_gear(logic, a, d)  # Adv:68-71 在同一轮里、各人的生命类处理之前
 		if d == null:
 			continue
 		var p = d.get("partner")
@@ -1729,3 +1735,86 @@ static func seal_last(logic, u, skill: Dictionary, t, hit: bool) -> bool:
 	_seals(logic, t)[id] = true
 	_seals(logic, u)[sid] = true
 	return true
+
+
+# ---- 词条效果④：吞器、献器（installAlienationAdvanced 28-31、43-44、62、68-71、81-90、196） ----
+# 开战锁队时把要空出的装备栏原样记在本场 logic 的存储里（gear，按角色），装备栏直接置空（原版换成空 Game_Item），
+# 原生插件读装备栏的部分（能力值、特性、套装、法宝、宝珠、被动缓存、武器类型条件）自然都看不到；借来的登记效果
+# 作为额外特性对象接在 traitObjects 末尾（角色 meta：xalien_ghosts 自己吞的、xalien_received 献器队友给的）。
+# 战斗结束（胜、逃、败，end_battle 开头，同原版 endBattle 包装在原 endBattle 之前）原样放回；重锁前也先放回。
+# 装备实例不复制、不进出背包，存档只在战斗外发生，所以存读档看到的总是原装备栏。
+
+## lockParty（Adv:68-71）：吞器空出衣服栏（装备类型 4），借供体的登记效果；献器空出全部装备栏，
+## 每件装备的登记效果（异化装备本身不借）交给绑定队友。最后刷新（A.refreshGear＋refresh：被动缓存、能力值、生命／法力截到上限）
+static func setup_gear(logic, a, d) -> void:
+	if d == null or not str(d.affix) in ["swallow", "offer"]:
+		return
+	var st := _store(logic)
+	if not st.has("gear"):
+		st.gear = {}
+	st.gear[a] = a.equips.duplicate()  # 浅拷贝：同一批装备实例
+	var ghosts := []
+	if str(d.affix) == "swallow":
+		var g := XAlienation.effect_ghost(XAlienation._gear_by_id(logic.state, d.config.get("donorId", "")))
+		if not g.is_empty():
+			ghosts.append(g)
+		for i in a.equips.size():
+			if a.equips[i] is Dictionary and int(a.equips[i].get("etypeId", 0)) == 4:
+				a.equips[i] = null
+		a.set_meta("xalien_ghosts", ghosts)
+	else:
+		for i in a.equips.size():
+			var g := XAlienation.effect_ghost(a.equips[i])
+			if not g.is_empty():
+				ghosts.append(g)
+			a.equips[i] = null
+		var p = partner_of(d)
+		d.partner = p
+		if p != null:
+			p.set_meta("xalien_received", ghosts)
+			p.refresh_passive()
+			p.param_mark_dirty()
+	a.refresh_passive()
+	a.param_mark_dirty()
+	a.refresh_resources()
+
+
+## traitObjects 包装（Adv:81-85）：战斗中吞器者多供体的借用效果，献器的队友多收到的效果
+static func gear_effects(a) -> Array:
+	if not a.has_meta("xalien_ghosts") and not a.has_meta("xalien_received"):
+		return []
+	return Array(a.get_meta("xalien_ghosts", [])) + Array(a.get_meta("xalien_received", []))
+
+
+## changeEquip／forceChangeEquip 包装（Adv:87 的战斗部分）：战斗中吞器、献器者与献器的队友不能换装备
+static func gear_locked(a) -> bool:
+	var logic = active_logic()
+	return battling() and (a.has_meta("xalien_received") or logic.has_meta("xalien") and (_store(logic).get("gear", {}) as Dictionary).has(a))
+
+
+## endBattle 包装（Adv:196）：装备栏原样放回，去掉借用与收到的效果，刷新。空栏里战斗中若被放进了别的装备（原版没有这种途径，
+## 直接覆盖），这里退回背包，不丢件
+static func restore_gear(logic) -> void:
+	if not logic.has_meta("xalien"):
+		return
+	var st := _store(logic)
+	var touched := []
+	for a in st.get("gear", {}):
+		var saved: Array = st.gear[a]
+		for i in mini(saved.size(), a.equips.size()):
+			var now = a.equips[i]
+			if now is Dictionary and not now.is_empty() and not is_same(now, saved[i]):
+				logic.state.gear.append(now)
+			a.equips[i] = saved[i]
+		touched.append(a)
+	st.gear = {}
+	for a in logic.actors:
+		for k in ["xalien_ghosts", "xalien_received"]:
+			if a.has_meta(k):
+				a.remove_meta(k)
+				if not touched.has(a):
+					touched.append(a)
+	for a in touched:
+		a.refresh_passive()
+		a.param_mark_dirty()
+		a.refresh_resources()

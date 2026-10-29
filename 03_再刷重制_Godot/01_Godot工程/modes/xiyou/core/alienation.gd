@@ -89,6 +89,11 @@ static func locked(i: Dictionary) -> bool:
 	return n.contains("[锁定]") or n.contains("【锁定】")
 
 
+## O-待定（优化登记）：原版一键出售（Scene_Shop.sellUnifiedQuality→doSell）不查吞器占用，供体照给钱，loseItem 包装（Adv:88）
+## 又不让它失去——每卖一次白拿一次钱。true＝一键出售跳过占用的供体；false＝照原版（XItemMarks.sellable_gear）
+static var o_reserved_onekey := true
+
+
 ## A.reserved：被某件吞器异化装备选作供体的武器
 static func reserved(s: XState, i: Dictionary, except = null) -> bool:
 	if kind(i) != "w":
@@ -470,6 +475,9 @@ static func can_wear(s: XState, a: XActor, i) -> bool:
 static func can_change(s: XState, a: XActor, slot: int, next) -> bool:
 	var current = a.equips[slot] if slot >= 0 and slot < a.equips.size() else null
 	if is_pending(s, next) or is_pending(s, current):
+		return false
+	# installAlienationAdvanced 87：吞器占用的供体不能穿；战斗中吞器、献器者与献器的队友不能换装
+	if next is Dictionary and reserved(s, next) or XAlienBattle.gear_locked(a):
 		return false
 	if next is Dictionary and not mark(next).is_empty():
 		for n in a.equips.size():

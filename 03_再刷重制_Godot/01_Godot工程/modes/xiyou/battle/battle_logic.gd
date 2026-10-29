@@ -2039,6 +2039,7 @@ func grant(r: Dictionary) -> Array:
 ## result：0 胜、1 逃、2 败，-1 不跑胜逃败效果（测试夹具等）。
 ## Custom Victory／Escape／Defeat Effect 只对我方（含后备），在原 endBattle 之前；胜利时 processVictory 已先 removeBattleStates。
 func end_battle(result := -1) -> void:
+	XAlienBattle.restore_gear(self)  # 异化 endBattle 包装（Adv:196，最外层，原 endBattle 之前）：吞器、献器空出的装备栏放回
 	for e in enemies:
 		e.sync_boss_armor(false, _rule())
 	if result == 0:
