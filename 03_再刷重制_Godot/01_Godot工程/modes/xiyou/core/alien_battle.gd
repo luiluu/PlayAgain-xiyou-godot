@@ -295,8 +295,8 @@ static func end(logic, result: int) -> void:
 		x.settled = true
 	if bool(_store(logic).get("status", false)):
 		end_life(logic)
-	for a in logic.actors:  # endBattle 包装：清囚厄接收标记
-		for k in ["xalien_jail", "xalien_jail_buff"]:
+	for a in logic.actors:  # endBattle 包装：清囚厄接收、恶愿代价标记
+		for k in ["xalien_jail", "xalien_jail_buff", "xalien_wish", "xalien_wish_buff"]:
 			if a.has_meta(k):
 				a.remove_meta(k)
 	_store(logic).party = {}
@@ -581,6 +581,164 @@ static func blocks_state(b) -> bool:
 	return not is_same(f.source, b) and attack_damage(f.item) and has(f.source, "void")
 
 
+# ---- 词条效果第③批：行动道具投影（祸祝、恶愿、逆祷） ----
+
+## A.project（Aff:41-47，原版换掉 Game_Action.item）：角色的行动技能换成投影。重制在 execute 里武器解放之后、付费之前换一次，
+## 之后费用、目标、命中、伤害、效果、战斗记录的名字都读投影；投影保留原 id，_alienOriginal／_alienMode 记原技能与词条。
+## 选目标界面与自动战斗要先投影再看 scope（battle_scene._pick_target、XBattleLogic.decide）。
+static func project(u, skill: Dictionary) -> Dictionary:
+	if skill.is_empty() or skill.has("_alienMode") or not (u is XActor) or XBattleLogic.is_item(skill):
+		return skill
+	var affix := str(XAlienation.for_actor(u).get("affix", ""))
+	if affix == "blessing" and _in_template("blessing", int(skill.id)):
+		return _project_blessing(skill)
+	if affix == "prayer" and _in_template("attack", int(skill.id)):
+		return _project_prayer(skill)
+	if affix == "wish" and _in_template("wish", int(skill.id)):
+		# 恶愿（Adv:176）：除自己外的全体友方（makeTargets 再去掉自己，Adv:177）
+		var v := skill.duplicate(true)
+		v.scope = 8
+		v._alienOriginal = int(skill.id)
+		v._alienMode = "wish"
+		return v
+	return skill
+
+
+## 逆祷（Aff:42-43）：照治愈（技能 8）的副本，保留原技能的 id、名字、图标、说明、费用、技能类型、武器要求与连击次数；
+## 伤害改为 0 的生命恢复（元素 10、不暴击），没有效果，必中；原 scope 1→7（友方单体），其余→8（3～6 另按随机友方，见 targets）
+static func _project_prayer(s: Dictionary) -> Dictionary:
+	var v: Dictionary = XDB.rec("Skills", 8).duplicate(true)
+	for k in ["id", "name", "iconIndex", "description", "mpCost", "tpCost", "stypeId", "requiredWtypeId1", "requiredWtypeId2", "repeats"]:
+		if s.has(k):
+			v[k] = s[k]
+	v.damage = {"critical": false, "elementId": 10, "formula": "0", "type": 3, "variance": 0}
+	v.effects = []
+	v.scope = 7 if int(s.get("scope", 0)) == 1 else 8
+	v.hitType = 0
+	v.name = "逆祷·" + str(s.get("name", ""))
+	v._alienOriginal = int(s.id)
+	v._alienMode = "prayer"
+	v._alienOriginalScope = int(s.get("scope", 0))
+	return v
+
+
+static func _mode(skill: Dictionary) -> String:
+	return str(skill.get("_alienMode", ""))
+
+
+## makeTargets 包装：逆祷原 scope 3～6 改为随机友方 n 个（Aff:49，random 由 logic 掷）；恶愿去掉自己（Adv:177）。返回 null＝照原目标
+static func prayer_random_count(skill: Dictionary) -> int:
+	var o := int(skill.get("_alienOriginalScope", 0))
+	return o - 2 if _mode(skill) == "prayer" and o >= 3 and o <= 6 else 0
+
+
+static func filter_targets(u, skill: Dictionary, list: Array) -> Array:
+	return list.filter(func(t): return not is_same(t, u)) if _mode(skill) == "wish" else list
+
+
+## 逆祷治疗分摊的目标数（Aff:49 _alienHealTargets：makeTargets 之后、含连击重复）
+static func set_heal_targets(skill: Dictionary, n: int) -> void:
+	if _mode(skill) == "prayer":
+		skill._alienHealTargets = maxi(1, n)
+
+
+## makeDamageValue 包装（Aff:50）：按原技能面板 MP 费用选治疗技能（≥125 治疗术 166，≥75 次级治疗术 135，否则治愈 8），
+## 对这名目标算一次不暴击的治疗值当预算，平分给本次行动的目标数。原版另把治疗技能的熟练度借成原技能的，重制熟练度统一为 0，不涉及
+static func prayer_heal(logic, u, skill: Dictionary, t) -> float:
+	var original := XDB.rec("Skills", int(skill._alienOriginal))
+	var cost := float(logic.skill_cost(u, original).mp)
+	var healer := XDB.rec("Skills", 166 if cost >= 125.0 else 135 if cost >= 75.0 else 8)
+	var budget := absf(logic._damage_value(u, healer, t, false))
+	var count := int(skill.get("_alienHealTargets", 1))
+	return -floorf(budget / maxf(1.0, float(count)))
+
+
+## meetsSkillConditions 包装（Aff:22）：逆祷者不能用 templates.attack 以外的伤害技能（伤害类型 1／2／5／6）
+static func blocks_skill(a, skill: Dictionary) -> bool:
+	return has(a, "prayer") and not skill.has("_alienMode") and int(skill.get("damage", {}).get("type", 0)) in [1, 2, 5, 6] \
+		and not _in_template("attack", int(skill.get("id", 0)))
+
+
+## A.blocksDamage（Aff:51）：逆祷者对敌人的生命伤害全部阻断（executeHpDamage 正值归零）
+static func blocks_damage(u, t) -> bool:
+	return u is XActor and t is XEnemy and has(u, "prayer")
+
+
+## regenerateHp 包装（Aff:55-62）：敌人身上来源是逆祷者的状态，其负生命再生（特性 22-7）不算；返回要从 hrg 里扣掉的量（≤0）
+static func prayer_regen_block(b) -> float:
+	if not b is XEnemy:
+		return 0.0
+	var blocked := 0.0
+	for st in b.states():
+		var src = XImportedBalance.origin(b, int(st.id))
+		if src == null or not has(src, "prayer"):
+			continue
+		for tr in st.get("traits", []):
+			if int(tr.code) == XBattler.TRAIT_XPARAM and int(tr.dataId) == 7 and float(tr.value) < 0.0:
+				blocked += float(tr.value)
+	return blocked
+
+
+## A.payWish（Adv:178-179）：恶愿第一次 apply 时先付代价，同一行动只判一次；付不起整次行动对谁都不生效。
+## 代价：技能的增益（效果 31）变成自己的减益（直接 −1 级，回合取较长）；状态（效果 21 等）换成 statePairs 的诅咒挂到自己身上，
+## 回合照原状态的最少回合。付得起的条件：减益不到 −2 级；诅咒存在，且它的每条参数倍率特性对应的参数现在 >1。
+## 自己身上的这些减益与诅咒照囚厄接收的规矩（不能抵抗、驱散，清状态时保留，自然到期才去掉，Adv:155-175）
+static func pay_wish(u, skill: Dictionary) -> bool:
+	if skill.has("_alienWishPaid"):
+		return bool(skill._alienWishPaid)
+	var pairs := _pairs()
+	var okay := true
+	for e in skill.get("effects", []):
+		if int(e.code) == 31:
+			okay = okay and u.buffs[int(e.dataId)] > -2
+		else:
+			var st := XDB.rec("States", int(pairs.get(str(int(e.dataId)), -1)))
+			okay = okay and not st.is_empty() and (st.get("traits", []) as Array).all(func(tr): return int(tr.code) != XBattler.TRAIT_PARAM or u.param(int(tr.dataId)) > 1.0)
+	skill._alienWishPaid = okay
+	if not okay:
+		return false
+	for e in skill.get("effects", []):
+		var pid := int(e.dataId)
+		if int(e.code) == 31:
+			u.buffs[pid] -= 1
+			u.buff_turns[pid] = maxi(int(u.buff_turns[pid]), int(e.value1))
+			var wb: Dictionary = u.get_meta("xalien_wish_buff", {})
+			wb[pid] = true
+			u.set_meta("xalien_wish_buff", wb)
+		else:
+			var id := int(pairs.get(str(pid), -1))
+			var w: Dictionary = u.get_meta("xalien_wish", {})
+			w[id] = true
+			u.set_meta("xalien_wish", w)
+			_state_routing += 1
+			u.add_state(id)
+			_state_routing -= 1
+			u.state_turns[id] = int(XDB.rec("States", pid).get("minTurns", 0))
+		u.param_mark_dirty()
+	u.param_refresh()
+	return true
+
+
+## 祸祝（Aff:44）：敌方（原 scope 8→2，其余→1）；增益（效果 31）改减益，其余效果的 dataId 换成 statePairs 的诅咒。
+## 没有配对的 dataId 原版是 NaN（什么也不附加），重制记 -1；templates.blessing 只有 7100（附加 2421 幻日虹）
+static func _project_blessing(s: Dictionary) -> Dictionary:
+	var v := s.duplicate(true)
+	var pairs := _pairs()
+	v.scope = 2 if int(s.get("scope", 0)) == 8 else 1
+	v.effects = (s.get("effects", []) as Array).map(func(e):
+		var n: Dictionary = e.duplicate(true)
+		if int(n.code) == 31:
+			n.code = 32
+		else:
+			n.dataId = int(pairs.get(str(int(n.dataId)), -1))
+		return n)
+	v.name = "祸祝·" + str(s.get("name", ""))
+	v._alienOriginal = int(s.id)
+	v._alienMode = "blessing"
+	v._alienOriginalScope = int(s.get("scope", 0))
+	return v
+
+
 # ---- 词条效果期二①：疫囊、囚厄、绝缘、舍身（状态类） ----
 
 ## A.naturalRemoval：自然到期（removeStatesAuto、腐蚀到期、囚厄转移后原主身上去掉）时放行受保护状态的移除
@@ -589,7 +747,7 @@ static var natural_removal := false
 ## 后包的 Game_Battler.addDebuff 对角色走不到，囚厄「接收队友减益」、绝缘「免疫外来减益」对角色失效（只有疫囊者经
 ## Game_Battler.prototype.addDebuff 走得到）。true＝照词条说明对所有角色生效；false＝照原版
 static var o106_actor_debuffs := true
-const STATUS_AFFIXES := ["pest", "jail", "insulation", "sacrifice", "hollow", "lifelink", "scapegoat"]
+const STATUS_AFFIXES := ["pest", "jail", "insulation", "sacrifice", "hollow", "lifelink", "scapegoat", "wish", "prayer"]
 static var _state_routing := 0
 static var _support_routing := 0
 
@@ -639,9 +797,10 @@ static func pest_state(b, id: int) -> bool:
 	return status_battle() and has(b, "pest") and _live(b) and _in_template("pestStates", id)
 
 
-## 囚厄 receiving：转移给囚厄者的状态
+## 囚厄 receiving：转移给囚厄者的状态；恶愿者为代价挂上的诅咒（_alienWish）同样保护（Adv:155-170 两者并列）
 static func receiving(b, id: int) -> bool:
-	return status_battle() and b.has_meta("xalien_jail") and bool(b.get_meta("xalien_jail").get(id, false))
+	return status_battle() and ((b.has_meta("xalien_jail") and bool(b.get_meta("xalien_jail").get(id, false)))
+		or (b.has_meta("xalien_wish") and bool(b.get_meta("xalien_wish").get(id, false))))
 
 
 ## stateRate 1、isStateResist 否（疫囊、囚厄接收）
@@ -754,8 +913,10 @@ static func blocks_removal(b, id: int, natural: bool) -> bool:
 
 ## 自然移除后清囚厄接收标记
 static func after_removal(b, id: int, natural: bool) -> void:
-	if (natural or natural_removal) and not b.state_ids.has(id) and b.has_meta("xalien_jail"):
-		b.get_meta("xalien_jail").erase(id)
+	if (natural or natural_removal) and not b.state_ids.has(id):
+		for k in ["xalien_jail", "xalien_wish"]:
+			if b.has_meta(k):
+				b.get_meta(k).erase(id)
 
 
 ## clearStates 包装：受保护的状态保留
@@ -805,6 +966,8 @@ static func blocks_buff_removal(t, pid: int) -> bool:
 		return true
 	if t.buffs[pid] < 0 and bool(t.get_meta("xalien_jail_buff", {}).get(pid, 0)):
 		return true
+	if bool(t.get_meta("xalien_wish_buff", {}).get(pid, false)):
+		return true  # 恶愿代价的减益（Adv:181：不看是不是还在减益）
 	return t.buffs[pid] > 0 and _insulated(t)
 
 

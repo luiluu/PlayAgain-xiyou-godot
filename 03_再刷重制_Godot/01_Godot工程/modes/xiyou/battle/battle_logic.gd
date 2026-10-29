@@ -347,6 +347,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if not wtype_ok(a, skill):
 		return false
+	if XAlienBattle.blocks_skill(a, skill):  # 异化逆祷 meetsSkillConditions：模板外的伤害技能不能用
+		return false
 	var c := skill_cost(a, skill)
 	return a.mp >= c.mp and a.tp >= c.tp
 
@@ -407,6 +409,19 @@ func battle_items() -> Array:
 
 # ---- 目标 ----
 func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Array:
+	# 异化 makeTargets 包装：逆祷原 scope 3～6 改随机友方 n 个，恶愿去掉自己
+	var n := XAlienBattle.prayer_random_count(skill)
+	if n > 0:
+		var friends := actors if a.is_actor() else enemies
+		var out := []
+		for i in range(n):
+			if not alive(friends).is_empty():
+				out.append(_random_target(alive(friends)))
+		return out
+	return XAlienBattle.filter_targets(a, skill, _targets_for(a, skill, chosen))
+
+
+func _targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Array:
 	var foes := enemies if a.is_actor() else actors
 	var friends := actors if a.is_actor() else enemies
 	var scope := int(skill.get("scope", 1))
@@ -1166,6 +1181,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	skill = change_to(u, skill)  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
 	skill = weapon_unleash(u, skill)  # YEP_WeaponUnleash：行动开始状态效果之后、付费之前
+	skill = XAlienBattle.project(u, skill)  # 异化行动道具投影（A.project 换掉 Game_Action.item）：祸祝等，之后各处都读投影
 	# 导入角色平衡：禁用角色／禁用号角的 useItem 直接返回（不扣物品、不付费、不进冷却、不前移），行动（含行动序列）对目标无效
 	var blocked := XImportedBalance.blocks(u, skill)
 	if not blocked and is_item(skill):
@@ -1190,12 +1206,14 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		for t in targets_for(u, skill, chosen):
 			for i in range(maxi(1, times)):
 				list.append(t)
+		XAlienBattle.set_heal_targets(skill, list.size())  # 逆祷治疗按目标数（含重复）分摊
 		XRaceBattle.begin(self, u, skill, list, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 		XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		return logs
 	var repeats := attack_repeats(u, skill, int(skill.get("repeats", 1)))
 	var targets := targets_for(u, skill, chosen)
+	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 	XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
 	for t in targets:
@@ -1374,6 +1392,8 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 ## 兼容现有扩展：_damage_value 覆写的是已结算终值，不能在其返回后再乘一轮状态倍率。
 ## 新的基础数值夹具／扩展覆写 _calculate_damage，默认路径会统一执行 Confirm→固定减伤→React。
 func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
+	if skill.get("_alienMode", "") == "prayer":
+		return XAlienBattle.prayer_heal(self, u, skill, t)  # 异化逆祷 makeDamageValue 包装：按治疗技能算预算再分摊
 	return XDamage.finish(_calculate_damage(u, skill, t, critical), skill, u, t, true, _state_context(u, skill, t, _damage_record))
 
 
@@ -1392,6 +1412,10 @@ func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -
 
 ## Game_Action.apply：行动者有道法「破甲」时，期间附加的破甲·真气（2705）用它的倍率（XZhenqi.pojia_actor）
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
+	# 异化恶愿 apply 包装（最外层，Adv:180）：第一次先付代价，付不起整次行动对谁都不生效
+	if skill.get("_alienMode", "") == "wish" and not XAlienBattle.pay_wish(u, skill):
+		return {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
+			"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
 	var before = XZhenqi.pojia_actor
 	XZhenqi.pojia_actor = u if XZhenqi.has_daofa(u, "pojia") else null
 	var previous_resources := _action_resources
@@ -1504,6 +1528,8 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 ## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
 	# 后安装的异化包装在 Boss 输出外层；settled 栈仍只对内层资源结算生效。
+	if value > 0.0 and XAlienBattle.blocks_damage(u, t):
+		value = 0.0  # 异化逆祷 A.blocksDamage：对敌人的生命伤害全阻断
 	value = XAlienBattle.outgoing(self, u, item, value)
 	var alien_before := t.hp
 	if not _action_resources.boss_output.is_settled(t, "hp"):
@@ -1763,6 +1789,10 @@ func _tick_states(b: XBattler, timing: int) -> void:
 func _regenerate(b: XBattler, logs: Array) -> void:
 	# krz regenerateHp：floor(mhp × hrg × rec)，含目标的恢复效果率（MP 再生不含）
 	var dh := floorf(b.mhp * b.hrg * b.rec)
+	# 异化逆祷 regenerateHp 包装：敌人身上来源是逆祷者的负再生不算（hrg 扣掉它们再算）
+	var prayer_block := XAlienBattle.prayer_regen_block(b)
+	if prayer_block != 0.0:
+		dh = floorf(b.mhp * (b.hrg - prayer_block) * b.rec)
 	# 导入角色平衡：导入角色附加的状态里负的 HP 再生率（持续伤害）那部分 ×0.01（向下取整），其余照常；
 	# 两个值都按原顺序先乘 rec 再 floor，之后才拆出导入部分缩放（installImportedBalanceRuntime.js:496／506）
 	var imported := []  # 导入角色附加的状态（来源倍率不为 1）
