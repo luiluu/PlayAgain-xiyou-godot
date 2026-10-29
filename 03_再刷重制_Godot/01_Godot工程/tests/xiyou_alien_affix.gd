@@ -8,7 +8,7 @@ extends Node
 ##   roundEnd（XAlienBattle.spread_pest）、expire（自然移除）逐步对照；对照时 O-106 关（照原版）。
 ## - o106.*：O-106 开时角色身上的减益也走囚厄接收、绝缘拒收（原版对角色失效）。
 ## - 期二② battle.hollow／lifelink／scapegoat：步骤另有 regen（turn_end_battler，照 onTurnEnd）、revive（去阵亡状态）；对照时 O-108 关。
-## - 生命池补漏 battle.*.corrosion：tick 照 endTurn 包装结算腐蚀（行动外 gainHp）。
+## - 生命池补漏 battle.*.corrosion：tick 照 endTurn 包装结算腐蚀（行动外 gainHp）；*.event 照事件「增减生命」（MVEventCore 311）。
 ## - o108.*：O-108 开时连命复活把池回到 10%（两人都起来），嫁祸的保护者倒下时不能复活。
 const ORACLE := "oracle/alien_affix.json"
 var results := []
@@ -201,6 +201,8 @@ func _battle(c: Dictionary, compare := true) -> Array:
 			logic.turn = int(sp.tick)
 			for x in logic.actors + logic.enemies:
 				XAlienBattle.tick_corrosion(logic, x, int(sp.tick), [])
+		elif sp.has("event"):
+			MVEventCore.new()._change_resource(who.call(str(sp.event.who)), 311, float(sp.event.value), bool(sp.event.get("death", false)))
 		elif sp.has("revive"):
 			logic._state_remove(who.call(str(sp.revive)), 1)
 		elif sp.has("expire"):
