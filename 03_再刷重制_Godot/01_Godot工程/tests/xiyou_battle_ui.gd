@@ -519,38 +519,49 @@ func _select_confirm(b: XBattleScene, s: XState) -> void:
 	a.mp = a.mmp
 	b._picked.emit("back")
 	await _frames(5)
-	for c in [[10, "enemy", "all_enemies"], [306, "ally", "user"], [108, "ally", "all_allies"]]:
-		var tag: String = c[2]
-		var idx := await _choose_skill(b, a, c[0])
-		var ok := idx >= 0
-		_check("selhelp_%s_mode" % tag, ok and b._target_mode == c[1], [ok, b._target_mode])
-		_check("selhelp_%s_no_help_text" % tag, b.help_card == null or not b.help_card.visible)
-		_check("selhelp_%s_one_cursor" % tag, b.sprites.values().filter(func(v): return v.selected).size() == 1)
-		# 技能窗 onSelectAction 时 hide；指令窗留着、停用、淡出（Olivia updateFadeOut）
-		_check("selhelp_%s_cmd_kept_fading" % tag, b.list_win == null and b.cmd_win != null and b.cmd_win.visible and not b.cmd_win.active and b.cmd_win.modulate.a < 1.0)
-		var first = b._hover
-		match tag:
-			"all_enemies":
-				_check("selhelp_all_enemies_rightmost", first is XEnemy and b.sprites[first].home.x == 353)
-				await _shot("battle_52_selhelp_all_enemies")
-				await _press("ui_left")
-				_check("selhelp_all_enemies_cursor_moves", b._hover is XEnemy and b._hover != first)
-			"user":
-				_check("selhelp_user_self", first == a)
-				await _shot("battle_52b_selhelp_user")
-			"all_allies":
-				_check("selhelp_all_allies_first", first == b.logic.actors[0])
-				await _shot("battle_52c_selhelp_all_allies")
-		if tag != "all_enemies":
-			await _press("ui_down")
-			_check("selhelp_%s_locked" % tag, b._hover == first)
-		await _press("ui_cancel")
-		await _frames(3)
-		_check("selhelp_%s_cancel_cmd_shown" % tag, b.cmd_win != null and b.cmd_win.modulate.a == 1.0 and not b.cmd_win.active)
-		_check("selhelp_%s_cancel_to_list" % tag, b._target_mode == "" and b.list_win != null and b.list_win.active and b.list_win.index == idx,
-			[b._target_mode, null if b.list_win == null else b.list_win.index, idx])
-		await _press("ui_cancel")
-		await _frames(3)
+	for on in [true, false]:
+		XBattleScene.SELECT_ALL_HIGHLIGHT = on
+		for c in [[10, "enemy", "all_enemies"], [306, "ally", "user"], [108, "ally", "all_allies"]]:
+			var tag: String = c[2] + ("" if on else "_off")
+			var idx := await _choose_skill(b, a, c[0])
+			var ok := idx >= 0
+			_check("selhelp_%s_mode" % tag, ok and b._target_mode == c[1], [ok, b._target_mode])
+			_check("selhelp_%s_no_help_text" % tag, b.help_card == null or not b.help_card.visible)
+			# O-112 开：全体／随机那一组一起亮，箭头只在光标那只；关（原版）：只亮光标那只
+			var group: Array = []
+			if on and c[2] == "all_enemies":
+				group = b.logic.alive(b.logic.enemies)
+			elif on and c[2] == "all_allies":
+				group = b.logic.alive(b.logic.actors)
+			var lit: Array = b.sprites.keys().filter(func(k): return b.sprites[k].selected)
+			_check("selhelp_%s_lit" % tag, lit.size() == maxi(1, group.size()) and group.all(func(x): return lit.has(x)), [lit.size(), group.size()])
+			_check("selhelp_%s_one_arrow" % tag, b.sprites.values().filter(func(v): return v.selected and v.show_cursor).size() == 1 and b.sprites[b._hover].show_cursor)
+			# 技能窗 onSelectAction 时 hide；指令窗留着、停用、淡出（Olivia updateFadeOut）
+			_check("selhelp_%s_cmd_kept_fading" % tag, b.list_win == null and b.cmd_win != null and b.cmd_win.visible and not b.cmd_win.active and b.cmd_win.modulate.a < 1.0)
+			var first = b._hover
+			match tag:
+				"all_enemies", "all_enemies_off":
+					_check("selhelp_all_enemies_rightmost" + ("" if on else "_off"), first is XEnemy and b.sprites[first].home.x == 353)
+					await _shot("battle_52_selhelp_all_enemies" + ("" if on else "_off"))
+					await _press("ui_left")
+					_check("selhelp_all_enemies_cursor_moves" + ("" if on else "_off"), b._hover is XEnemy and b._hover != first)
+				"user", "user_off":
+					_check("selhelp_user_self" + ("" if on else "_off"), first == a)
+					await _shot("battle_52b_selhelp_user" + ("" if on else "_off"))
+				"all_allies", "all_allies_off":
+					_check("selhelp_all_allies_first" + ("" if on else "_off"), first == b.logic.actors[0])
+					await _shot("battle_52c_selhelp_all_allies" + ("" if on else "_off"))
+			if c[2] != "all_enemies":
+				await _press("ui_down")
+				_check("selhelp_%s_locked" % tag, b._hover == first)
+			await _press("ui_cancel")
+			await _frames(3)
+			_check("selhelp_%s_cancel_cmd_shown" % tag, b.cmd_win != null and b.cmd_win.modulate.a == 1.0 and not b.cmd_win.active)
+			_check("selhelp_%s_cancel_to_list" % tag, b._target_mode == "" and b.list_win != null and b.list_win.active and b.list_win.index == idx,
+				[b._target_mode, null if b.list_win == null else b.list_win.index, idx])
+			await _press("ui_cancel")
+			await _frames(3)
+	XBattleScene.SELECT_ALL_HIGHLIGHT = true
 	# 攻击指令：全体范围的攻击技能也不进选目标
 	var r = await b._pick_target({"id": 0, "scope": 2, "damage": {"type": 1}}, a, false)
 	_check("selhelp_attack_not_forced", r == a and b._target_mode == "")
@@ -615,6 +626,11 @@ func _prey_pick(b: XBattleScene, s: XState) -> void:
 	await _press("ui_left")
 	var chosen = b._hover
 	_check("prey_pick_moves", chosen is XEnemy and chosen != first)
+	# O-112：群攻选猎物时活着的敌人全亮，箭头和闪红（猎物）只在光标那只
+	var foes: Array = b.logic.alive(b.logic.enemies)
+	_check("prey_pick_all_lit", foes.all(func(e): return b.sprites[e].selected), foes.map(func(e): return b.sprites[e].selected))
+	_check("prey_pick_marked", chosen is XEnemy and b.sprites[chosen].prey and b.sprites[chosen].show_cursor
+		and foes.filter(func(e): return e != chosen).all(func(e): return not b.sprites[e].prey and not b.sprites[e].show_cursor))
 	await _shot("battle_53_prey_pick")
 	await _press("ui_accept")
 	ok = await _until(func(): return XRaceBattle.state(b.logic, a).lastPrey != null)

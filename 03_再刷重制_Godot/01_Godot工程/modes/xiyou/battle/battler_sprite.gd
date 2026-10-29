@@ -24,6 +24,10 @@ var _weapon_id := 0
 var _weapon_pattern := 0
 var _weapon_count := 0
 var selected := false
+## 优化 O-112（全体技能选目标全亮）：同组一起闪的是 selected＋show_cursor=false（不画箭头，箭头只在光标那只）；
+## prey＝妖族群攻手选的猎物，闪红。
+var show_cursor := true
+var prey := false
 var _selection_frame := 0
 ## 图像缩放只作用于身体（MV 缩放 _mainSprite），影子与位置不缩放
 var body_scale := 1.0
@@ -213,10 +217,11 @@ func _process(delta: float) -> void:
 		if k != _look_key:
 			swap_look(k)
 	if cursor:
-		cursor.visible = selected
+		cursor.visible = selected and show_cursor
 	if selected:
 		_selection_frame += 1
-		sprite.modulate = Color(1.5, 1.5, 1.5) if _selection_frame % 30 < 15 else Color.WHITE
+		var lit := Color(1.7, 0.7, 0.7) if prey else Color(1.5, 1.5, 1.5)
+		sprite.modulate = lit if _selection_frame % 30 < 15 else (Color(1.3, 0.85, 0.85) if prey else Color.WHITE)
 	else:
 		_selection_frame = 0
 	if breathing and not (view.dead if not view.is_empty() else battler.is_dead()):
