@@ -1193,7 +1193,12 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		u.tp -= c.tp
 		u.pay_cooldown(skill)
 		_otb_user_shift(u, skill)
-	u.param_refresh()  # YEP_BattleEngineCore useItem：付费后 refresh，消费行动者此前的 dirty
+	# YEP_BattleEngineCore useItem：付费后 refresh，消费行动者此前的 dirty，并照 Game_BattlerBase.refresh 把 MP／TP 截回 [0, 上限]
+	# （付不起时 MP 4 用 5 的技能记 0，不是 -1；沙僧第六期 P1）。被挡的 useItem 原版直接返回、不 refresh，只刷缓存
+	if blocked:
+		u.param_refresh()
+	else:
+		u.refresh_resources()
 	logs.append({"type": "action", "user": u, "skill": skill, "views": views()})
 	if blocked:
 		return logs
