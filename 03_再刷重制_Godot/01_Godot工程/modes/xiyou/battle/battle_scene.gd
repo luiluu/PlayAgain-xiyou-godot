@@ -766,7 +766,7 @@ func _command_for(a: XActor):
 		match pick:
 			"attack":
 				var atk := a.attack_skill()  # YEP_WeaponUnleash commandAttack：attackSkillId
-				var t = await _pick_target(atk, a)
+				var t = await _pick_target(atk, a, false)
 				if logic.auto:
 					return "auto"
 				if t != null:
@@ -898,25 +898,42 @@ func _close_list() -> void:
 	_help()
 
 
-## 单体技能：点敌人（或我方）选目标；全体/自身直接返回占位目标。
-func _pick_target(skill: Dictionary, a: XActor):
+## 选目标：单体点敌人（或我方）；全体／随机／自身也先进一步确认（YEP Select Help Window），确认后返回占位目标。
+## forced：YEP onSelectAction 的 forceSelection（技能、物品列表确定后）；攻击指令（YEP_WeaponUnleash commandAttack）先判 needsSelection，不强制。
+func _pick_target(skill: Dictionary, a: XActor, forced := true):
 	var scope := int(skill.get("scope", 1))
 	# 种族 needsSelection 包装：妖族的全体伤害也选一名敌人，选中的记作猎物（onEnemyOk 包装），行动对象仍是全体
 	var prey_pick := XRaceBattle.needs_prey_selection(a, skill)
-	if not [1, 7, 9].has(scope) and not prey_pick:
+	# 原版 Game_Action.needsSelection 包装：scope 0 永不选；forceSelection 时其余都选。帮助窗是 HelpExtend 的说明卡，
+	# 没有 setBattler（YEP 在 updateHelp 里调用时抛错被吞），所以「All Enemies」之类的范围文字和全体高亮（startAllSelection）原版都不出现。
+	var confirm := forced and scope != 0
+	if not [1, 7, 9].has(scope) and not prey_pick and not confirm:
 		return a
-	var pool := logic.alive(logic.enemies) if scope == 1 or prey_pick else (logic.alive(logic.actors) if scope == 7 else logic.actors.filter(func(x): return x.is_dead()))
+	var foe := (scope >= 1 and scope <= 6) or prey_pick
+	var pool: Array
+	if foe:
+		pool = logic.alive(logic.enemies)
+	elif scope == 7:
+		pool = logic.alive(logic.actors)
+	elif scope == 9:
+		pool = logic.actors.filter(func(x): return x.is_dead())
+	elif scope == 11:
+		# Window_BattleActor.autoSelect：自身锁定在行动者
+		pool = [a]
+	else:
+		# 全体我方（8／10）：cursorAll＋锁定，但 startAllSelection 没跑到，只有第 1 位亮光标
+		pool = [logic.actors[0]] if not logic.actors.is_empty() else []
 	if pool.is_empty():
 		return null
-	_target_mode = "enemy" if scope == 1 or prey_pick else "ally"
+	_target_mode = "enemy" if foe else "ally"
 	_target_pool = pool
 	if cmd_win and is_instance_valid(cmd_win):
 		cmd_win.visible = false
 	_help()
 	_target_skill = skill
-	# YEP Enemy Auto Select = furthestRight；我方默认第一人。
+	# YEP Enemy Auto Select = furthestRight（敌方范围都一样，含全体与随机）；我方默认第一人。
 	var initial = pool[0]
-	if scope == 1:
+	if foe:
 		for b in pool:
 			if sprites[b].home.x > sprites[initial].home.x:
 				initial = b
@@ -934,7 +951,8 @@ func _pick_target(skill: Dictionary, a: XActor):
 		if prey_pick:
 			XRaceBattle.set_manual_prey(logic, a, skill, r)
 			return a
-		return r
+		# 全体／随机／自身：选的那一位只是确认（makeTargets 不看序号），行动对象照旧
+		return r if [1, 7, 9].has(scope) else a
 	return null
 
 
