@@ -787,6 +787,13 @@ def amended_merge(root, state, head):
         return False
 
 
+def lane_uids(root, state):
+    """交付分支新增的 .gd 对应、分支和 main 都没跟踪的 .gd.uid：Godot 导入时生成，车道常漏交（10-29 飞艇甲一要手加 --also），
+    收尾时自动带入。只认分支新加的脚本，别的 .uid 仍按预期外文件拦下。"""
+    added = git(root, 'diff', '--name-only', '--diff-filter=A', state['base'], state['target'], '--', '*.gd').splitlines()
+    return {p + '.uid' for p in added if not git(root, 'ls-files', '--', p + '.uid')}
+
+
 def finish(root, state, state_file, executor, batch=False, affected=False):
     if state['phase'] not in ['prepared', 'committed']:
         raise RuntimeError('先运行准备合并，再手工登记，最后 --finish')
@@ -816,7 +823,8 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
         if state['branch'] not in pending and state['target'][:7] not in pending and state['head'][:7] not in pending:
             raise RuntimeError('待交叉核查尚未登记本车道分支或提交号')
         changed = dirty(root)
-        allowed = COMMON | set(sheets(state)) | set(state.get('versionEdits', {})) | set(state.get('also', []))
+        uids = lane_uids(root, state)
+        allowed = COMMON | set(sheets(state)) | set(state.get('versionEdits', {})) | set(state.get('also', [])) | uids
         docs = doc_edits(changed - allowed)
         if state.get('acceptDocEdits') and docs:
             print('一并暂存总装手修的文档：' + '、'.join(sorted(docs)), flush=True)
@@ -853,6 +861,8 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
         validate_version_edits(root, state)
         if any((root / s).exists() for s in sheets(state)):
             raise RuntimeError('检查后交付单重新出现，先人工核对')
+        if changed & uids:
+            print('一并提交车道新加脚本的 Godot .uid（车道漏交）：' + '、'.join(sorted(changed & uids)), flush=True)
         run(root, ['git', 'diff', '--check'])
         # 已暂存删除的路径已不在索引里，重复 git add 会报 pathspec 不存在。
         remaining = changed - set(sheets(state))

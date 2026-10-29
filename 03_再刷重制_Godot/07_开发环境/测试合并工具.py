@@ -1974,6 +1974,19 @@ sys.exit(0)
         self.assertIn('--also', self.last_output)
         self.assertIn('git reset --soft', self.last_output)
 
+    def test_uid_of_lane_new_script_is_committed(self):
+        # 车道新加 modes/测试.gd 但漏交 .uid：main 上导入生成后收尾自动带入；别的未跟踪 .uid 仍拦
+        self.assertEqual(self.call(), 0)
+        self.register()
+        uid = merge.PROJECT / 'modes/测试.gd.uid'
+        self.put(str(uid), 'uid://fixture\n')
+        self.put(str(merge.PROJECT / 'modes/别的.gd.uid'), 'uid://other\n')
+        self.assertEqual(self.call('--finish'), 1)
+        self.assertIn('别的.gd.uid', self.last_output)
+        (self.root / merge.PROJECT / 'modes/别的.gd.uid').unlink()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertIn(str(uid), self.g('-c', 'core.quotepath=false', 'show', '--name-only', '--format=', 'HEAD'))
+
     def test_also_allows_extra_change_at_finish(self):
         self.assertEqual(self.call(), 0)
         self.register(); self.put('AGENTS.md', 'rule tweak during merge\n')
