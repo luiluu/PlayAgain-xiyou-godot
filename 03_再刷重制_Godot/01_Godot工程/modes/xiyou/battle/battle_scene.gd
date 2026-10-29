@@ -902,6 +902,11 @@ func _close_list() -> void:
 ## 选目标：单体点敌人（或我方）；全体／随机／自身也先进一步确认（YEP Select Help Window），确认后返回占位目标。
 ## forced：YEP onSelectAction 的 forceSelection（技能、物品列表确定后）；攻击指令（YEP_WeaponUnleash commandAttack）先判 needsSelection，不强制。
 func _pick_target(skill: Dictionary, a: XActor, forced := true):
+	# 异化行动道具投影（原版换掉 Game_Action.item）：选目标读投影后的技能（祸祝选敌人、逆祷攻击选友方），
+	# 下面的 scope、forceSelection、妖族猎物、行动顺序预览都用它；说明卡读技能窗的原技能，选目标时不显示，不受影响
+	skill = XAlienBattle.project(a, skill)
+	if XAlienBattle.prayer_random_count(skill) > 0:
+		return a  # 逆祷 needsSelection 包装（Aff:48）：原 scope 3～6 改随机友方，不选（在 forceSelection 之外）
 	var scope := int(skill.get("scope", 1))
 	# 种族 needsSelection 包装：妖族的全体伤害也选一名敌人，选中的记作猎物（onEnemyOk 包装），行动对象仍是全体
 	var prey_pick := XRaceBattle.needs_prey_selection(a, skill)
