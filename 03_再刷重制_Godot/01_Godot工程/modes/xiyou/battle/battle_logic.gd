@@ -1447,8 +1447,10 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		return r
 	var physical := XDamage.is_physical(skill)
 	var magical := XDamage.is_magical(skill)
-	var hit_rate := item_hit(u, skill, t)
-	var eva_rate := item_eva(u, skill, t)
+	# 异化嫁祸 itemHit／itemEva／itemCri／makeDamageValue／executeDamage 包装：敌人的生命伤害改按保护者结算，效果仍给 t
+	var dt: XBattler = XAlienBattle.damage_target(u, skill, t)
+	var hit_rate := item_hit(u, skill, dt)
+	var eva_rate := item_eva(u, skill, dt)
 	if _float("hit") >= clampf(hit_rate, 0.0, 1.0):
 		r.missed = true
 		return r
@@ -1457,22 +1459,24 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		return r
 	var type := int(dmg.type)
 	if type > 0:
-		var cri := u.cri * (1.0 - t.cev) if bool(dmg.critical) else 0.0
+		var cri := u.cri * (1.0 - dt.cev) if bool(dmg.critical) else 0.0
 		if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
 			cri = 1.0
 		r.critical = _float("critical") < clampf(cri, 0.0, 1.0)
-		_action_resources.result(t).critical = r.critical
+		_action_resources.result(dt).critical = r.critical
 		var previous_record := _damage_record
 		_damage_record = r
-		var value := _damage_value(u, skill, t, r.critical)
+		var value := _damage_value(u, skill, dt, r.critical)
 		_damage_record = previous_record
 		r.state_value = value
-		_action_resources.result(t).success = true
+		_action_resources.result(dt).success = true
 		match type:
 			1, 3, 5:
-				var race_mark := XRaceBattle.before_hp(self, u, skill, t)
-				r.hp = execute_hp_damage(u, t, value, type == 5, skill)
-				XRaceBattle.after_hp(self, u, skill, t, race_mark)
+				var race_mark := XRaceBattle.before_hp(self, u, skill, dt)
+				r.hp = execute_hp_damage(u, dt, value, type == 5, skill)
+				XRaceBattle.after_hp(self, u, skill, dt, race_mark)
+				if dt != t:
+					XAlienBattle.sync_relations(self)
 			2, 4, 6:
 				var mp_before := t.mp
 				r.mp = execute_mp_damage(u, t, value, type == 6)
@@ -1784,6 +1788,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 			var other := floorf(b.mhp * hrg * b.rec)
 			dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
 	var dm := floorf(b.mmp * b.mrg)
+	var alien_hp := b.hp
 	if dh != 0.0:
 		var shown := dh
 		if dh < 0.0:
@@ -1795,8 +1800,18 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		b.hp = clampf(b.hp + dh, 1.0, b.mhp) if dh < 0.0 else minf(b.mhp, b.hp + dh)
 		if shown != 0.0:  # 生命 1 时夹成 0，原版不调 gainHp、不弹字
 			logs.append({"type": "regen", "target": b, "hp": -shown, "views": views([b])})
+	if b.hp != alien_hp and XAlienBattle.routes_regen(b):
+		# 异化 regenerateHp 包装（Adv:108-109）：先照原样再生，再退回、按实际差值走 gainHp（空壳、嫁祸不回，舍身转队友，连命进池）
+		var delta := b.hp - alien_hp
+		b.hp = alien_hp
+		var resources := _operation_resources(b)
+		resources.gain(b, "hp", delta)
+		_finish_lifecycle_operation(resources, b)
 	if dm != 0.0:
+		var alien_mp := b.mp
 		b.mp = clampf(b.mp + dm, 0.0, b.mmp)
+		if b.mp > alien_mp and XAlienBattle.route_hollow_mp(b, b.mp - alien_mp):
+			b.mp = alien_mp  # 异化 regenerateMp 包装：空壳的回蓝变护盾
 	b.tp = minf(b.max_tp(), b.tp + 100.0 * b.trg)
 
 

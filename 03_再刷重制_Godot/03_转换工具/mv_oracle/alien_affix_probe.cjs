@@ -1,5 +1,5 @@
 'use strict';
-// 异化词条效果参照（installAlienationAffixes／Advanced 的战斗侧）。期一：逆骨、归墟；期二①：疫囊、囚厄、绝缘、舍身（状态类）。
+// 异化词条效果参照（installAlienationAffixes／Advanced 的战斗侧）。期一：逆骨、归墟；期二①：疫囊、囚厄、绝缘、舍身（状态类）；期二②：空壳、连命、嫁祸（生命池类）。
 // ① config：templates.inversebone（逆骨适用技能）与 templates.attack 的长度、头尾，Godot alienation.json 照抄，专项核对。
 // ② battle.<词条>：角色 1（99 级，石中剑要 99 级才穿得上）穿本体 1044 的异化武器（none 为不带标记的本体），角色 8 同队，敌群 2（敌人生命加 1e12、攻击加 300）；
 //    A.lockParty 冻结词条后，真实 BattleManager 跑行动（同 alien_battle_probe 的 act），每步记双方生命、敌人状态，
@@ -94,6 +94,10 @@ function battleCase(name, spec, steps) {
         }
       } else if (st.roundEnd) {
         w.$gameTroop._turnCount = st.roundEnd; A.spreadPest(A.round());
+      } else if (st.regen) {
+        ctx.bm._subject = null; who(st.regen).onTurnEnd();  // 回合末没有行动者（BattleManager.endTurn 时 _subject 已空）
+      } else if (st.revive) {
+        who(st.revive).removeState(who(st.revive).deathStateId());
       } else if (st.expire) {
         const x = who(st.expire.who); A.naturalRemoval = true; try { x.removeState(st.expire.id); } finally { A.naturalRemoval = false; }
       } else {
@@ -132,4 +136,23 @@ battleCase('sacrifice', {affix: 'sacrifice', config: {actorId: 1, partnerId: 8}}
   {set: {aHp: 0.5, bHp: 0.5}}, {user: 'b', skill: 8}, {user: 'a', skill: 8}, {user: 'b', def: S(7, 0, [31, 2, 3])},
   {user: 'a', def: S(7, 0, [21, 116, 1])}, {user: 'e0', def: S(1, 1, [32, 2, 3])}, {user: 'b', def: S(7, 0, [11, 0, 0.1])},
   {user: 'e0', def: S(1, 1, [21, 17, 1])}, {user: 'b', target: 1, skill: 8}]);
-process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）', config, cases}) ? 0 : 1);
+// 期二②（生命池类）：空壳、连命、嫁祸都绑定角色 8（空壳不绑定）；regen 照回合末 onTurnEnd（再生、护盾衰减）；revive 照 removeState(阵亡)
+// 空壳：生命上限 1，开场剩余生命变护盾；治疗无效，回蓝变护盾（按开场生命／法力比例，护盾不超过原生命上限）；护盾打穿后倒下
+battleCase('hollow', {affix: 'hollow'}, [
+  {user: 'e0', skill: 1}, {user: 'b', skill: 8}, {set: {aMp: 0.5}}, {user: 'b', def: S(7, 0, [12, 0, 0.1])},
+  {user: 'a', def: S(7, 0, [12, 0, 0.2])}, {regen: 'a'}, {user: 'e0', def: S(1, 0, [11, 0, -0.5])}, {user: 'e0', skill: 1}]);
+// 连命：两人合并生命池（开场按剩余生命相加），各自按自己的上限比例显示；伤害与治疗都结算到池；池归零两人倒下；复活回池 10%
+battleCase('lifelink', {affix: 'lifelink', config: {actorId: 1, partnerId: 8}}, [
+  {user: 'e0', skill: 1}, {user: 'e1', skill: 1, target: 1}, {user: 'b', skill: 8}, {user: 'e0', def: S(1, 0, [11, 0, -0.1])},
+  {user: 'b', target: 1, skill: 8}, {regen: 'a'}, {user: 'e0', def: S(1, 0, [11, 0, -1])}, {user: 'e0', def: S(1, 0, [11, 0, -1])},
+  {revive: 'a'}]);
+// 嫁祸：敌人对自己的生命伤害改由保护者（角色 8）按保护者的防御、护盾承受；自己的生命按保护者比例显示，治疗无效；保护者倒下自己也倒下
+battleCase('scapegoat', {affix: 'scapegoat', config: {actorId: 1, partnerId: 8}}, [
+  {user: 'e0', skill: 1}, {user: 'e0', def: S(1, 0, [11, 0, -0.1])}, {user: 'b', skill: 8}, {user: 'b', target: 1, skill: 8},
+  {user: 'e1', skill: 1, target: 1}, {regen: 'a'}, {set: {bHp: 0.01}}, {user: 'e0', skill: 1}, {revive: 'a'}]);
+// 期一顺带：舍身的回合末再生转给队友，绝缘自己的再生照常（再生生命 0.35 的普度众生 1366）
+battleCase('sacrifice.regen', {affix: 'sacrifice', config: {actorId: 1, partnerId: 8}}, [
+  {set: {aHp: 0.5, bHp: 0.5}}, {user: 'a', def: S(7, 0, [21, 1366, 1])}, {regen: 'a'}]);
+battleCase('insulation.regen', {affix: 'insulation'}, [
+  {set: {aHp: 0.5}}, {user: 'a', def: S(7, 0, [21, 1366, 1])}, {regen: 'a'}, {user: 'b', def: S(7, 0, [21, 1366, 1])}, {regen: 'a'}]);
+process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）', config, cases}) ? 0 : 1);
