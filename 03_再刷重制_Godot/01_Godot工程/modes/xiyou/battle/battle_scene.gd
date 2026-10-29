@@ -61,6 +61,10 @@ var _target_mode := ""            # "enemy" / "ally" / ""
 var _target_pool: Array = []
 var _target_skill: Dictionary = {}
 var _hover = null
+## O-112：这次选目标要一起亮的整组（全体／随机范围）；空＝只亮光标那只（原版）
+var _target_group: Array = []
+## 妖族群攻手选猎物：光标那只标成猎物
+var _target_prey := false
 var _active: XActor = null
 var _origin := Vector2.ZERO       # 原版坐标 → 画面坐标的偏移
 var _camera := {}                 # 胜利镜头（见 _victory）
@@ -933,6 +937,8 @@ func _pick_target(skill: Dictionary, a: XActor, forced := true):
 		return null
 	_target_mode = "enemy" if foe else "ally"
 	_target_pool = pool
+	_target_group = _select_all_group(scope, prey_pick)
+	_target_prey = prey_pick and SELECT_ALL_HIGHLIGHT
 	# Olivia_SideBattleUI 选敌／选我方窗激活时每帧 updateFadeOut：指令窗不透明度每帧 −16，16 帧淡到 0（不先 hide）；
 	# 技能／物品窗 onSelectAction 时已 hide。取消回来 updatePosition→updateFadeIn 立刻 255。
 	var cmd_was_active := false
@@ -954,6 +960,8 @@ func _pick_target(skill: Dictionary, a: XActor, forced := true):
 	var r = await _picked
 	_target_mode = ""
 	_target_pool = []
+	_target_group = []
+	_target_prey = false
 	_target_skill = {}
 	_select_target(null)
 	otb.clear_preview()
@@ -1007,16 +1015,39 @@ func _nearest_target(pos: Vector2):
 	return best
 
 
+## 优化 O-112（用户 2026-10-29 定）：全体／随机范围的技能选目标时，这次会打到的整组一起亮（YEP 本意 startAllSelection，
+## 原版因 HelpExtend 说明卡缺 setBattler 没跑到）；箭头光标仍只在光标那只、可移动、默认最右。妖族群攻手选猎物时整组亮、
+## 光标那只闪红当猎物。false 照原版：只亮光标那只（全体我方只亮第 1 位）。
+static var SELECT_ALL_HIGHLIGHT := true
+
+
+## 要一起亮的整组：敌方全体（2）／随机（3～6）＝活着的敌人；我方全体（8）＝活着的队友，（10）＝倒下的队友；
+## 妖族手选猎物（全体伤害）＝活着的敌人。单体、自身、开关关掉时为空。
+func _select_all_group(scope: int, prey_pick: bool) -> Array:
+	if not SELECT_ALL_HIGHLIGHT:
+		return []
+	if prey_pick or (scope >= 2 and scope <= 6):
+		return logic.alive(logic.enemies)
+	if scope == 8:
+		return logic.alive(logic.actors)
+	if scope == 10:
+		return logic.actors.filter(func(x): return x.is_dead())
+	return []
+
+
 func _select_target(b) -> void:
 	_hover = b
+	var group: Array = _target_group if b != null else []
 	for actor in status_rows:
-		status_rows[actor].selected = actor == b
+		status_rows[actor].selected = actor == b or group.has(actor)
 	for who in sprites:
 		var s: XBattlerSprite = sprites[who]
 		if s.selected and who.is_alive():
 			s.sprite.modulate = Color.WHITE
-		s.selected = who == b
-	otb.set_selected([b] if b != null else [])
+		s.selected = who == b or group.has(who)
+		s.show_cursor = who == b
+		s.prey = _target_prey and who == b
+	otb.set_selected(group if not group.is_empty() else ([b] if b != null else []))
 	if b != null:
 		_preview(_active, _target_skill, [b])
 	if b is XEnemy and _target_mode == "enemy":
