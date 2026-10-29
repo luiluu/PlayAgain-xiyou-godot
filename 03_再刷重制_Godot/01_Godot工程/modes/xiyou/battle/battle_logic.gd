@@ -310,10 +310,11 @@ func vars() -> Array:
 static func is_item(rec: Dictionary) -> bool:
 	return rec.has("itypeId")
 
-func skill_cost(a: XBattler, skill: Dictionary) -> Dictionary:
+## panel：异化缄默的面板费用（A.panelMpCost：mcr 记 1、不按缄默归零）
+func skill_cost(a: XBattler, skill: Dictionary, panel := false) -> Dictionary:
 	if is_item(skill):
 		return {"mp": 0, "tp": 0}
-	var cost := {"mp": floori(float(skill.get("mpCost", 0)) * a.mcr), "tp": int(skill.get("tpCost", 0))}
+	var cost := {"mp": floori(float(skill.get("mpCost", 0)) * (1.0 if panel else a.mcr)), "tp": int(skill.get("tpCost", 0))}
 	if a is XActor:
 		var cache: Dictionary = a.passive_cache().get("consumeReduce", {})
 		var reduce := float(cache.get("bySkill", {}).get(int(skill.get("id", 0)), 0))
@@ -324,6 +325,8 @@ func skill_cost(a: XBattler, skill: Dictionary) -> Dictionary:
 		reduce = minf(reduce, 100.0)
 		cost.mp = floori(cost.mp * (1.0 - reduce / 100.0))
 		cost.tp = floori(cost.tp * (1.0 - reduce / 100.0))
+	if not panel and XAlienBattle.silence_skill(a, skill):
+		cost.mp = 0  # 异化缄默 skillMpCost 包装（Adv:132）：选定技能不花 MP，改锁生命上限
 	return {"mp": XRaceBattle.cost(a, int(cost.mp)), "tp": XRaceBattle.cost(a, int(cost.tp))}
 
 func can_use(a: XBattler, skill: Dictionary) -> bool:
@@ -341,7 +344,10 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if not XCat.legal(self, a, skill):  # 小猫剑圣的剑技／试炼条件、178 没持剑不能用物理技能
 		return false
 	if a.is_actor() and int(skill.stypeId) > 0:
-		if not a.traits_set(XBattler.TRAIT_STYPE_ADD).has(int(skill.stypeId)) or a.traits_set(XBattler.TRAIT_STYPE_SEAL).has(int(skill.stypeId)):
+		if not a.traits_set(XBattler.TRAIT_STYPE_ADD).has(int(skill.stypeId)):
+			return false
+		# 异化缄默 isSkillTypeSealed 包装：选定技能不受魔法沉默封印
+		if a.traits_set(XBattler.TRAIT_STYPE_SEAL).has(int(skill.stypeId)) and not XAlienBattle.silence_bypass(a, skill):
 			return false
 	if a.traits_set(XBattler.TRAIT_SKILL_SEAL).has(int(skill.id)):
 		return false
@@ -349,8 +355,13 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if XAlienBattle.blocks_skill(a, skill):  # 异化逆祷 meetsSkillConditions：模板外的伤害技能不能用
 		return false
+	if XAlienBattle.blocks_borrowed(state, a, skill):  # 异化百相、无面 meetsSkillConditions：被替换的、没选中的仿形、来源不会了的借来技能
+		return false
+	if XAlienBattle.silence_blocks(self, a, skill):  # 异化缄默 canPaySkillCost：生命上限锁不下了
+		return false
 	var c := skill_cost(a, skill)
-	return a.mp >= c.mp and a.tp >= c.tp
+	var mp = XAlienBattle.glutton_mp(a)  # 异化饕餮 canPaySkillCost：MP 费用看饥饿储备
+	return (a.mp if mp == null else float(mp)) >= c.mp and a.tp >= c.tp
 
 ## Game_Actor.isSkillWtypeOk：技能没有武器类型要求，或装着其中一种（敌人恒真）。
 ## isWtypeEquipped 经 dsPassiveSkill 改写：被动 <SkETypeAll: t> 装着任一列出类型的武器时全部类型都算装着；
@@ -514,6 +525,11 @@ func _meets(e: XEnemy, act: Dictionary) -> bool:
 ## 智能AI开着（默认）——技能顺序表排了且能用就照表（XdRs_HangUp makeAction），否则 XSmartAI 选；没有可选的退回普通攻击。
 ## 智能AI关着——照表，否则普通攻击（XdRs_HangUp 的 makeAction 不再走 MV 原生评估）。
 func auto_battle_action(a: XActor) -> Array:
+	# 异化饕餮 makeAction 包装（Adv:138-142）：原生挂机选技比的是实际 MP（恒 0），饕餮改按手动输入的合法性（canUse 读饥饿储备）
+	if XAlienBattle.devours(a):
+		var id := int(XHangUpAuto.data(state, "ActSkill").get(a.display_name() + XHangUpAuto.three(turn), 0))
+		if id > 2 and a.skills().any(func(x): return int(x.id) == id) and can_use(a, XDB.rec("Skills", id)):
+			return [XDB.rec("Skills", id), null]
 	var planned := XHangUpAuto.scheduled_skill(state, self, a, turn)
 	if not planned.is_empty():
 		return [planned, null]
@@ -1189,11 +1205,21 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 			state.gain_item(int(skill.id), -1)
 	elif not blocked:
 		var c := skill_cost(u, skill)
-		u.mp -= c.mp
-		u.tp -= c.tp
+		# 异化 paySkillCost 包装：缄默先锁生命上限（付不起整次不付 MP／TP），饕餮的 MP 费用从饥饿储备扣
+		if XAlienBattle.pay_silence(self, u, skill):
+			if XAlienBattle.glutton_mp(u) != null:
+				XAlienBattle.pay_glutton(u, c.mp)
+			else:
+				u.mp -= c.mp
+			u.tp -= c.tp
 		u.pay_cooldown(skill)
 		_otb_user_shift(u, skill)
-	u.param_refresh()  # YEP_BattleEngineCore useItem：付费后 refresh，消费行动者此前的 dirty
+	# YEP_BattleEngineCore useItem：付费后 refresh，消费行动者此前的 dirty，并照 Game_BattlerBase.refresh 把 MP／TP 截回 [0, 上限]
+	# （付不起时 MP 4 用 5 的技能记 0，不是 -1；沙僧第六期 P1）。被挡的 useItem 原版直接返回、不 refresh，只刷缓存
+	if blocked:
+		u.param_refresh()
+	else:
+		u.refresh_resources()
 	logs.append({"type": "action", "user": u, "skill": skill, "views": views()})
 	if blocked:
 		return logs
@@ -1414,6 +1440,14 @@ func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	# 异化恶愿 apply 包装（最外层，Adv:180）：第一次先付代价，付不起整次行动对谁都不生效
 	if skill.get("_alienMode", "") == "wish" and not XAlienBattle.pay_wish(u, skill):
+		return {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
+			"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
+	# 异化饕餮吞噬 apply 包装（Adv:152，在 YEP 包装之外）：吞目标的登记增益状态或增益，结果清空只记成功
+	if XAlienBattle.devour(u, skill, t) != null:
+		return {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
+			"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
+	# 异化百相切换仿形 apply 包装（Affixes:26）：换仿形，不走原 apply
+	if XAlienBattle.apply_switch(self, u, skill):
 		return {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
 			"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
 	var before = XZhenqi.pojia_actor

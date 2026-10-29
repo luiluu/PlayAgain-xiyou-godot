@@ -396,7 +396,8 @@ func forget_skill(id: int) -> void:
 		return
 	skill_ids.erase(id)
 
-func skills() -> Array:
+## 不含异化改动的技能 id（A.nativeSkills 截的是异化各包装之前的 skills）
+func native_skill_ids() -> Array[int]:
 	var ids: Array[int] = skill_ids.duplicate()
 	for t in all_traits():
 		if int(t.code) == TRAIT_SKILL_ADD and not ids.has(int(t.dataId)):
@@ -405,6 +406,19 @@ func skills() -> Array:
 		if not ids.has(id):ids.append(id)
 	for id in XMagicWeapon.skills(equips):  # CP_X_MagicWeaponLearnSkill：法宝按等级学的技能；O-099 去重（原版 concat 不去重）
 		if not ids.has(id):ids.append(id)
+	return ids
+
+func native_skills() -> Array:
+	return _skill_records(native_skill_ids())
+
+func skills() -> Array:
+	var ids: Array[int] = native_skill_ids()
+	ids.assign(XAlienBattle.skill_ids(self, ids))  # 异化百相、无面 skills 包装（Affixes:21）：拿掉被替换的，加借来的、仿形与切换
+	if XAlienBattle.devours(self):  # 异化饕餮 skills 包装（Adv:86）：战斗中多吞噬技能（原版 push 不去重）
+		ids.append(XAlienBattle.devour_id())
+	return _skill_records(ids)
+
+func _skill_records(ids: Array[int]) -> Array:
 	var out := []
 	for id in ids:
 		var s := XDB.rec("Skills", id)

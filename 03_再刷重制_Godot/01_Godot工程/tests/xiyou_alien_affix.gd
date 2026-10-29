@@ -11,8 +11,16 @@ extends Node
 ## - 生命池补漏 battle.*.corrosion：tick 照 endTurn 包装结算腐蚀（行动外 gainHp）；*.event 照事件「增减生命」（MVEventCore 311）。
 ## - o108.*：O-108 开时连命复活把池回到 10%（两人都起来），嫁祸的保护者倒下时不能复活。
 ## - 第③批 battle.blessing／wish／prayer：行动道具投影；步骤带 view 的另比投影后的名字、scope、效果与原技能能不能用（不比 terminated，O-109）。
+## - 第③批 battle.silence／glutton：MP 费用类；角色 1 另比生命／法力上限、缄默已锁比例、饕餮饥饿储备，view 比能不能用；
+##   饕餮开战前身上的状态与增益照参照 pre 写定。对照时 O-113 关；o113.* 开时缄默技能沉默中可用；glutton.hang_up 挂机选技读储备。
+## - 第③批 battle.mimic／faceless：借技能；角色 1 另比仿形记录、当前仿形、WATCH 里哪些在技能表、哪些能用（只看已添加技能类型的，
+##   重制 can_use 另查技能类型），步骤另有 forget（来源队友忘掉技能）、choice（切换窗口选的仿形）。对照时 O-115 关；o115.* 开时按顺序轮换。
 const ORACLE := "oracle/alien_affix.json"
 var results := []
+## 本次 _battle 每个行动步骤的 can_use（o113 用）
+var _usable_log := []
+## 同参照 WATCH（百相、无面另记的技能）
+const WATCH := [160, 311, 502, 1924, 1926, 1928, 1930, 10197]
 
 
 func check(name: String, ok: bool, detail = null) -> bool:
@@ -51,6 +59,8 @@ func _run() -> void:
 		check("config." + k, _norm(got) == _norm(ref.config[k]), [got, ref.config[k]])
 	XAlienBattle.o106_actor_debuffs = false
 	XAlienBattle.o108_life_revive = false
+	XAlienBattle.o113_silence_bypass = false
+	XAlienBattle.o115_mimic_cycle = false
 	var by_id := {}
 	for c in ref.cases:
 		by_id[str(c.id)] = c
@@ -58,6 +68,17 @@ func _run() -> void:
 			_battle(c)
 	XAlienBattle.o106_actor_debuffs = true
 	XAlienBattle.o108_life_revive = true
+	XAlienBattle.o113_silence_bypass = true
+	XAlienBattle.o115_mimic_cycle = true
+	if by_id.has("battle.mimic"):
+		var rows := _battle(by_id["battle.mimic"], false)
+		check("o115.mimic_cycle_third", int(rows[11].a.selected) == 1928 and int(rows[6].a.selected) == 1926, [rows[6].a, rows[11].a])
+	if by_id.has("battle.silence"):
+		var rows := _battle(by_id["battle.silence"], false)
+		check("o113.silence_bypass", _usable_log[2] == true and _usable_log[3] == false, _usable_log)
+		check("o113.silence_lock_same", is_equal_approx(float(rows[6].a.capLock), float(by_id["battle.silence"].observed.rows[6].a.capLock)), rows[6].a)
+	if by_id.has("battle.glutton"):
+		_battle(by_id["battle.glutton"], false, _glutton_hang_up)
 	if by_id.has("battle.lifelink"):
 		var rows := _battle(by_id["battle.lifelink"], false)
 		var last: Dictionary = rows[rows.size() - 1]
@@ -103,18 +124,50 @@ func _reading(enemies: Array, a, b) -> Dictionary:
 	var ra := _unit(a)
 	ra.atk = a.atk
 	ra.def = a.def
+	var d = XAlienBattle.locked(a)
+	if d != null:
+		ra.mhp = a.mhp
+		ra.mmp = a.mmp
+		ra.capLock = float(d.get("capLock", 0.0))
+		ra.hunger = float(d.get("hunger", 0.0))
+		if str(d.affix) in ["mimic", "faceless"]:
+			ra.observed = (d.observed as Array).duplicate()
+			ra.selected = int(d.selected)
+			var ids: Array = a.skills().map(func(sk): return int(sk.id))
+			ra.has = WATCH.filter(func(id): return ids.has(id))
+			ra.usable = WATCH.filter(func(id): return _typed(a, id) and XAlienBattle.active_logic().can_use(a, XDB.rec("Skills", id)))
 	return {"enemies": enemies.map(func(e): return _unit(e)), "a": ra, "b": _unit(b)}
 
 
+## 重制 can_use 另查技能类型已添加（原版 canUse 不查）：能不能用只比已添加类型的技能
+static func _typed(a: XActor, id: int) -> bool:
+	return a.traits_set(XBattler.TRAIT_STYPE_ADD).has(int(XDB.rec("Skills", id).get("stypeId", 0))) or int(XDB.rec("Skills", id).get("stypeId", 0)) == 0
+
+
 ## 只比参照有的键（帧外物攻／物防只在期一的用例里记）
-func _same_reading(step: String, got: Dictionary, row: Dictionary) -> void:
+func _same_reading(step: String, got: Dictionary, row: Dictionary, a: XActor = null) -> void:
 	for k in ["a", "b"]:
 		var mine := {}
+		var want: Dictionary = (row[k] as Dictionary).duplicate()
 		for key in row[k]:
 			mine[key] = got[k].get(key)
-		check(step + "." + k, _norm(mine) == _norm(row[k]), [mine, row[k]])
+		if want.has("usable") and a != null:
+			want.usable = (want.usable as Array).filter(func(id): return _typed(a, int(id)))
+		check(step + "." + k, _norm(mine) == _norm(want), [mine, want])
 	for i in got.enemies.size():
 		check(step + ".e%d" % i, _norm(got.enemies[i]) == _norm(row.enemies[i]), [got.enemies[i], row.enemies[i]])
+
+
+## 参照 JSON 的数字是浮点：配置里的编号（含无面 pairs 里的）转成整数
+static func _ints(v):
+	if v is Dictionary:
+		var o := {}
+		for k in v:
+			o[k] = _ints(v[k])
+		return o
+	if v is Array:
+		return v.map(func(x): return _ints(x))
+	return int(v) if v is float else v
 
 
 ## 合成技能：空白技能 13 填 def（同参照 synth）
@@ -126,7 +179,20 @@ static func _synth(def: Dictionary) -> Dictionary:
 	return sk
 
 
-func _battle(c: Dictionary, compare := true) -> Array:
+## 饕餮挂机（Adv:138-142）：表里排了火球术（50 MP），实际 MP 0 也按储备够不够选；储备不够退回原生选技（普攻）
+func _glutton_hang_up(logic: XBattleLogic, a: XActor) -> void:
+	a.learn_skill(114)
+	var orders := XHangUpAuto.data(logic.state, "ActSkill")
+	orders[a.display_name() + XHangUpAuto.three(logic.turn)] = 114
+	var d = XAlienBattle.locked(a)
+	d.hunger = 60.0
+	check("glutton.hang_up_hunger", int(logic.auto_battle_action(a)[0].id) == 114, logic.auto_battle_action(a))
+	d.hunger = 10.0
+	check("glutton.hang_up_short", int(logic.auto_battle_action(a)[0].id) != 114, logic.auto_battle_action(a))
+	orders.erase(a.display_name() + XHangUpAuto.three(logic.turn))
+
+
+func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 	var o: Dictionary = c.observed
 	var st: Dictionary = c.setup
 	var s := XState.new_game_blank()
@@ -134,10 +200,12 @@ func _battle(c: Dictionary, compare := true) -> Array:
 	XState.current = s
 	var a := s.actor(1)
 	var b := s.actor(8)
-	a.change_level_mv(99)
+	a.change_level_mv(int(st.get("level", 99)))
 	b.change_level_mv(30)
 	for id in st.get("learn", []):
 		a.learn_skill(int(id))
+	for id in st.get("teach", []):
+		b.learn_skill(int(id))
 	s.party.clear()
 	s.battle_slots.clear()
 	s.add_actor(1)
@@ -149,8 +217,7 @@ func _battle(c: Dictionary, compare := true) -> Array:
 		XGear.force_roll = -1.0
 		if st.has("config"):
 			XAlienation.mark(item).config = (st.config as Dictionary).duplicate(true)
-			for k in item.alien.config:
-				item.alien.config[k] = int(item.alien.config[k])
+			item.alien.config = _ints(item.alien.config)
 		if st.has("armor"):
 			a.equips[0] = XGear.template("weapon", int(st.weapon))
 			a.equips[a.equip_slots().find(int(item.etypeId))] = item
@@ -172,6 +239,15 @@ func _battle(c: Dictionary, compare := true) -> Array:
 		x.param_mark_dirty()
 		x.param_refresh()
 		x.recover_all()
+	if st.has("pre"):  # 开战前身上的状态与增益（饕餮锁队时吞掉），回合直接写定
+		for v in st.pre.get("states", []):
+			a.add_state(int(v[0]))
+			a.state_turns[int(v[0])] = int(v[1])
+		for v in st.pre.get("buffs", []):
+			a.buffs[int(v[0])] = int(v[1])
+			a.buff_turns[int(v[0])] = int(v[2])
+		a.param_mark_dirty()
+		a.refresh_resources()
 	XAlienBattle.open(logic)
 	var tag := str(c.id)
 	var locked := [a, b].map(func(x):
@@ -179,10 +255,11 @@ func _battle(c: Dictionary, compare := true) -> Array:
 		return {"affix": l.affix} if l != null else null)
 	if compare:
 		check(tag + ".locked", _norm(locked) == _norm(o.locked), [locked, o.locked])
-		_same_reading(tag + ".start", _reading(enemies, a, b), o.start)
+		_same_reading(tag + ".start", _reading(enemies, a, b), o.start, a)
 	var who := func(k: String) -> XBattler:
 		return b if k == "b" else enemies[int(k.substr(1))] if k.begins_with("e") else a
 	var got := []
+	_usable_log = []
 	for i in o.rows.size():
 		var row: Dictionary = o.rows[i]
 		var sp: Dictionary = row.step
@@ -208,6 +285,8 @@ func _battle(c: Dictionary, compare := true) -> Array:
 			MVEventCore.new()._change_resource(who.call(str(sp.event.who)), 311, float(sp.event.value), bool(sp.event.get("death", false)))
 		elif sp.has("revive"):
 			logic._state_remove(who.call(str(sp.revive)), 1)
+		elif sp.has("forget"):
+			who.call(str(sp.forget.who)).skill_ids.erase(int(sp.forget.id))
 		elif sp.has("expire"):
 			logic._state_remove(who.call(str(sp.expire.who)), int(sp.expire.id), true)
 		else:
@@ -220,21 +299,30 @@ func _battle(c: Dictionary, compare := true) -> Array:
 			var friends := int(view.scope) in [7, 8, 9, 10, 11]
 			var side: Array = logic.actors if (user is XActor) == friends else enemies
 			var usable := logic.can_use(user, skill) if user is XActor else true
+			_usable_log.append(usable)
+			if sp.has("choice"):
+				XAlienBattle.choose_mimic(user, int(sp.choice))
 			logic.act(user, skill, side[int(sp.get("target", 0))])
 			if compare and row.has("view"):
 				var got_view := {"name": view.name, "scope": int(view.scope), "effects": (view.effects as Array).map(func(e): return [int(e.code), int(e.dataId), float(e.value1)]), "usable": usable}
 				var want: Dictionary = (row.view as Dictionary).duplicate()
 				want.erase("terminated")  # O-109：原版投影丢了熟练度费用函数，付费时 terminate；重制不崩
-				if not tag.begins_with("battle.prayer"):
+				if tag.begins_with("battle.mimic") or tag.begins_with("battle.faceless"):
+					if not _typed(a, int(sp.skill)):
+						want.erase("usable")
+						got_view.erase("usable")
+				elif not (tag.begins_with("battle.prayer") or tag.begins_with("battle.silence") or tag.begins_with("battle.glutton")):
 					want.erase("usable")  # 重制 can_use 另查技能类型已添加（界面用），原版 canUse 不查；只在逆祷用例里比
 					got_view.erase("usable")
 				check(step + ".view", _norm(got_view) == _norm(want), [got_view, want])
 		var reading := _reading(enemies, a, b)
 		got.append(reading)
 		if compare:
-			_same_reading(step, reading, row)
+			_same_reading(step, reading, row, a)
 			check(step + ".frames", XAlienBattle._formula_frames.is_empty() and XAlienBattle._action_frames.is_empty(),
 				[XAlienBattle._formula_frames.size(), XAlienBattle._action_frames.size()])
+	if hook.is_valid():
+		hook.call(logic, a)
 	XAlienBattle.end(logic, -1)
 	XState.current = null
 	return got

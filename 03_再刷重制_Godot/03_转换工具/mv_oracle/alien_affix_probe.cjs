@@ -46,8 +46,9 @@ w.alert = () => {};
 function battle(spec) {
   newGame(); uncap();
   const a = w.$gameActors.actor(1), b = w.$gameActors.actor(8);
-  a.changeLevel(99, false); b.changeLevel(30, false);
+  a.changeLevel(spec.level || 99, false); b.changeLevel(30, false);
   if (spec.learn) spec.learn.forEach(id => a.learnSkill(id));  // 祸祝等要先学会模板技能才穿得上（canEquip 看 A.ready）
+  if (spec.teach) spec.teach.forEach(id => b.learnSkill(id));  // 无面借入的技能要来源队友（角色 8）已学会
   party([1, 8]);
   // 直接放进武器栏（穿戴限制属工坊侧）；none 为不带标记的同一本体
   const kind = spec.armor ? 'a' : 'w', base = spec.armor || 1044;
@@ -61,15 +62,19 @@ function battle(spec) {
   const enemies = w.$gameTroop.members();
   enemies.forEach(e => { e._paramPlus[0] = BIG_HP; e._paramPlus[2] = 300; });
   for (const x of [...w.$gameParty.members(), ...enemies]) { x.need_refresh = true; x.refresh(); x.recoverAll(); }
+  // 开战前身上的状态与增益（饕餮锁队时吞掉）：回合直接写定，不经随机
+  if (spec.pre) { (spec.pre.states || []).forEach(([id, turns]) => { a.addState(id); a._stateTurns[id] = turns; });
+    (spec.pre.buffs || []).forEach(([pid, n, turns]) => { a._buffs[pid] = n; a._buffTurns[pid] = turns; }); a.refresh(); }
   A.lockParty();
   w.$gameParty._inBattle = true;
   w.CodexYunshang._acted = [];
   return {bm, a, b, enemies};
 }
-function act(bm, user, skillId, targetIndex) {
+function act(bm, user, skillId, targetIndex, choice) {
   const action = new w.Game_Action(user);
   action.setSkill(skillId);
   action.setTarget(targetIndex);
+  if (choice) action._alienChoice = choice;  // 百相切换窗口选的仿形（Scene_Battle onSkillOk 包装写进输入中的行动）
   const item = action.item(), view = {name: item.name, scope: item.scope, effects: item.effects.map(e => [e.code, e.dataId, e.value1]),
     usable: user.isActor() ? user.canUse(w.$dataSkills[skillId]) : true};
   terminated = 0;
@@ -87,7 +92,15 @@ function act(bm, user, skillId, targetIndex) {
 const unit = x => ({hp: r(x.hp), mp: r(x.mp), shield: r(x._shield || 0), states: x._states.slice().sort((p, q) => p - q),
   buffs: x._buffs.slice(2, 8)});
 // 帧外物攻／物防只在期一（逆骨）读：角色身上有状态时挨减益，原版参数缓存不刷新（无词条也一样），重制另有差异，不归异化
-const reading = (ctx, atk) => ({enemies: ctx.enemies.map(unit), a: Object.assign(unit(ctx.a), atk ? {atk: ctx.a.atk, def: ctx.a.def} : {}), b: unit(ctx.b)});
+// 缄默、饕餮另记角色 1 的生命／法力上限、已锁比例与饥饿储备
+// 百相、无相另记仿形记录、当前仿形，以及 WATCH 里哪些技能在技能表、哪些能用
+const WATCH = [160, 311, 502, 1924, 1926, 1928, 1930, C.ids.switch];
+const extra = x => { const d = x._alienBattle; if (!d) return {};
+  if (['silence', 'glutton'].indexOf(d.affix) >= 0) return {mhp: r(x.mhp), mmp: r(x.mmp), capLock: r(d.capLock), hunger: r(d.hunger)};
+  if (['mimic', 'faceless'].indexOf(d.affix) >= 0) return {observed: d.observed.slice(), selected: d.selected,
+    has: WATCH.filter(id => x.skills().some(s => s.id === id)), usable: WATCH.filter(id => x.canUse(w.$dataSkills[id]))};
+  return {}; };
+const reading = (ctx, atk) => ({enemies: ctx.enemies.map(unit), a: Object.assign(unit(ctx.a), atk ? {atk: ctx.a.atk, def: ctx.a.def} : {}, extra(ctx.a)), b: unit(ctx.b)});
 const STEPS = [{skill: 1}, {skill: 3}, {skill: 109}, {skill: 114}, {user: 'e0', skill: 1, target: 0}, {user: 'e1', skill: 1, target: 1},
   {user: 'b', skill: 1}];
 function battleCase(name, spec, steps) {
@@ -115,12 +128,14 @@ function battleCase(name, spec, steps) {
         const x = who(st.event.who); w.Game_Interpreter.prototype.changeHp.call(new w.Game_Interpreter(), x, st.event.value, !!st.event.death);  // 事件「增减生命」
       } else if (st.revive) {
         who(st.revive).removeState(who(st.revive).deathStateId());
+      } else if (st.forget) {
+        who(st.forget.who).forgetSkill(st.forget.id);
       } else if (st.expire) {
         const x = who(st.expire.who); A.naturalRemoval = true; try { x.removeState(st.expire.id); } finally { A.naturalRemoval = false; }
       } else {
         const user = who(st.user);
         user.setTp(100); user._mp = user.mmp;
-        const view = act(ctx.bm, user, st.def ? synth(st.def) : st.skill, st.target || 0);
+        const view = act(ctx.bm, user, st.def ? synth(st.def) : st.skill, st.target || 0, st.choice);
         if (st.view) { rows.push(Object.assign({step: st, view}, reading(ctx, atk))); continue; }
       }
       rows.push(Object.assign({step: st}, reading(ctx, atk)));
@@ -199,4 +214,32 @@ battleCase('wish', {affix: 'wish', learn: [7100]}, [{user: 'a', skill: 7100, vie
 battleCase('prayer', {affix: 'prayer'}, [{set: {aHp: 0.5, bHp: 0.5}}, {user: 'a', skill: 1, target: 1, view: true},
   {user: 'a', skill: 114, view: true}, {user: 'a', skill: 148, view: true}, {set: {aHp: 0.3, bHp: 0.3}}, {user: 'a', skill: 274, view: true},
   {user: 'a', skill: 109, view: true}, {user: 'e0', skill: 1}]);
-process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）', config, cases}) ? 0 : 1);
+// 第③批·MP 费用：缄默（选定 templates.silence 的盗梦 3648，MP 5000，先学会）：MP 费用 0，每次锁 面板费用／开场MP×20% 的生命上限
+// （约 30.9%），生命截到新上限；锁满（累计 ≥100% 或锁后上限不到 1）就用不了、硬用整次不付费；不受魔法沉默（沉默 6）封印，别的魔法照封。
+// 沉默的随机回合两边取法不同，锁满那步之前先按自然到期去掉
+battleCase('silence', {affix: 'silence', learn: [3648], config: {actorId: 1, skillId: 3648}}, [
+  {user: 'a', skill: 3648, view: true}, {user: 'e0', def: S(1, 0, [21, 6, 1])}, {user: 'a', skill: 3648, view: true},
+  {user: 'a', skill: 114, view: true}, {user: 'a', skill: 3648, view: true}, {expire: {who: 'a', id: 6}}, {user: 'a', skill: 3648, view: true}]);
+// 饕餮：实际 MP 上限 0、回蓝无效；开场身上的登记增益（野性印记 116）与增益吞成饥饿储备；队友给的登记增益、增益也吞掉；
+// 吞噬（10198）吞敌人第一个登记增益状态，没有就吞增益；MP 费用从储备扣（付不起照付、储备归 0）
+battleCase('glutton', {affix: 'glutton', pre: {states: [[116, 3]], buffs: [[2, 1, 3]]}}, [
+  {user: 'b', def: S(7, 0, [21, 116, 1])}, {user: 'b', def: S(7, 0, [31, 3, 3])}, {user: 'b', def: S(7, 0, [12, 0, 0.5])},
+  {user: 'e0', def: S(7, 0, [21, 116, 1])}, {user: 'e0', def: S(7, 0, [31, 6, 3])},
+  {user: 'a', skill: C.ids.devour, view: true}, {user: 'a', skill: C.ids.devour, view: true}, {user: 'a', skill: C.ids.devour, view: true},
+  {user: 'a', skill: 114, view: true}, {user: 'a', skill: 148, view: true}, {user: 'a', skill: 114, view: true}]);
+// 第③批·借技能：百相（替换万剑诀 160）：敌人行动根用的可借技能（登记攻击、效果只有可传播减益或可共享增益）记进仿形，最多 3 项，
+// 第一项自动成为仿形；仿形技能进技能表、替换的技能拿掉且不能用；记了两项以上多一个切换仿形（10197，作用自己、无效果），
+// 没选就换成第一个不是当前仿形的记录；记录了但不是当前仿形（又不是自己本来会的）不能用。技能都挑 0 MP（重制敌人付不起不行动）、
+// 方差 0、不暴击的测试技能 1924／1926／1928／1930（物理、火焰、寒冰、大地 100），伤害不受随机取整差异影响
+battleCase('mimic', {affix: 'mimic', config: {actorId: 1, replace: 160}}, [
+  {user: 'a', skill: 160, view: true}, {user: 'e0', skill: 1}, {user: 'e0', skill: 1924}, {user: 'a', skill: 1924, view: true},
+  {user: 'e1', skill: 1926, target: 1}, {user: 'a', skill: 1926, view: true}, {user: 'a', skill: C.ids.switch, view: true},
+  {user: 'a', skill: 1926, view: true}, {user: 'a', skill: 1924, view: true}, {user: 'e0', skill: 1928}, {user: 'e0', skill: 1930},
+  {user: 'a', skill: C.ids.switch, view: true}, {user: 'a', skill: C.ids.switch, choice: 1928, view: true}, {user: 'a', skill: 1928, view: true}]);
+// 无面：借角色 8 已学会的 1924（替换万剑诀 160）、1926（替换天剑 311）；被替换的拿掉且不能用，没被替换的剑神诀 502 照常；
+// 来源队友忘掉后借来的不能用（仍在技能表）。忘掉放最后：之后角色 1 再行动，useItem 的 refresh 经 canEquip 包装（A.ready 不过）
+// 把异化武器卸回背包，重制没移植这一处（见 alien_battle.gd 词条效果③百相、无面）
+battleCase('faceless', {affix: 'faceless', teach: [1924, 1926], config: {actorId: 1, pairs: [{ownerId: 8, skillId: 1924, replaceId: 160}, {ownerId: 8, skillId: 1926, replaceId: 311}]}}, [
+  {user: 'a', skill: 1924, view: true}, {user: 'a', skill: 160, view: true}, {user: 'a', skill: 1926, view: true}, {user: 'a', skill: 502, view: true},
+  {forget: {who: 'b', id: 1924}}]);
+process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）、MP 费用（缄默、饕餮）、借技能（百相、无相）', config, cases}) ? 0 : 1);
