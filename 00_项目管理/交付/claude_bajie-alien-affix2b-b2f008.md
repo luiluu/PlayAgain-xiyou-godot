@@ -1,7 +1,7 @@
 # 交付：claude/bajie-alien-affix2b-b2f008
 
 - 车道／工作者：C 规则·战斗／八戒（Claude，八戒_82 做实现，八戒_83 收尾）
-- 状态：进行中
+- 状态：可合并
 - 本期：异化词条效果期二·第①批「状态类」：疫囊、囚厄、绝缘、舍身。八戒_82 在 `claude/bajie-alien-affix2`（b780ea4f）做完实现后，10-29 为留额度以 WIP 暂停；八戒_83 从 b780ea4f 切出本分支收尾（查慢、合 main、同步、选测、登记 O-106）。
 
 ## 变更记录草稿
@@ -17,7 +17,10 @@
 
 ## 验证
 
-（选测跑完后填）
+- 合 main 之后、同步之后跑选测（不跑全量）：`并行测试.py --reuse --log-dir <scratchpad>/sel2 … xiyou_alien_ xiyou_module_hooks xiyou_actor_p0 xiyou_formula xiyou_smart xiyou_rules xiyou_param_states xiyou_battle xiyou_boss xiyou_state_ xiyou_shield xiyou_regen_popup xiyou_combat xiyou_determinism xiyou_random_streams xiyou_troop_events xiyou_review_regressions`，**68 个场景全部通过**，退出码 0（`xiyou_rules` 全 24 段都在内）。其中 `xiyou_alien_affix` 433/433，`xiyou_alien_config` 95/95。改到的四个核心文件每场战斗都会经过，它们的直接调用方就是上面这些战斗、状态、资源专项。
+- 偶发 2 个：`xiyou_rules_d2b`、`xiyou_rules_d3d` 并行时 600 秒超时（rc=142），单独重跑都通过（189 秒），两个都是累计第 1 次。当时机器负载 15～30（别的车道也在跑），另有 5 段用时超过 300 秒，应该是负载造成的，不是本期改动。
+- 第一次选测加了 `--quiet`，一小时没有输出，被长任务的空闲看门狗杀掉了，没有结果；去掉 `--quiet` 重跑的才是上面这轮（见「可优化」）。
+- 墙钟共 5068 秒（并行 2，共用上限 4）。
 
 ## 查慢（xiyou_alien_affix 3→50～65 秒）
 
@@ -84,6 +87,7 @@
 - 已做：templates 表的集合缓存与期二①早退（见「查慢」；回退就是 revert 查慢那个提交）。
 - 建议：`并行测试.py` 的名字参数是前缀匹配，`xiyou_rules` 会匹配全部 24 段（本会话误跑了 12 分钟才发现）。规则里已提醒「名字写全」，可以让工具在一个名字匹配超过 N 个场景时打一行提示（收益：少误跑；归维护工具的车道）。
 - 建议：判断「专项变慢」时，并行测试只记墙钟，负载高时（本机常在 10～30）会差好几倍。可以让 `test_timings.json` 同时记子进程的 user CPU（`resource.getrusage(RUSAGE_CHILDREN)` 差值），比较时看 CPU（收益：查慢不用另外手动计时；归维护工具的车道）。
+- 建议：长任务跑 `并行测试.py --quiet` 会一直没有输出，超过空闲时限（约一小时）就被看门狗当成卡死杀掉，白跑一小时（本会话踩过）。可以让 `--quiet` 模式也每几分钟打一行心跳，或者在车道须知里写明「长任务里别加 --quiet」（收益：省一小时；归维护工具的车道）。
 - O-106：见「变更记录草稿」与优化登记。
 
 ## 本分支提交
@@ -93,4 +97,5 @@
 - ded4ce77 WIP：查慢，templates 集合缓存与期二①早退（八戒_83）
 - ebff519f 合并 main（无冲突）
 - a608531f 同步测量接受单（八戒_83）
-- （本提交）O-106 登记优化登记，交付单补全，可合并
+- bde3891a WIP：O-106 登记优化登记，交付单改名补全（八戒_83）
+- （本提交）交付单补验证，可合并
