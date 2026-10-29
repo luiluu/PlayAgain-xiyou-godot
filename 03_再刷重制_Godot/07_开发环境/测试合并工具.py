@@ -184,6 +184,21 @@ class DraftTests(unittest.TestCase):
                 merge.draft(head + body)
 
 
+    def test_problem_only_sheet_gets_minimal_entry(self):
+        sheet = ('# 交付：codex/review-x\n\n- 核查／沙僧（Codex）；状态：可合并（仅问题交付）。\n\n## 接续前现场记录\n\n- 现场\n\n'
+                 '## 本期问题交总装\n\n- P2 撤图误接受，见[报告](../核查报告_x.md)\n\n## 文档选测\n\n- 退出 0\n')
+        with contextlib.redirect_stderr(io.StringIO()):
+            body = merge.draft(sheet)
+        self.assertRegex(body.splitlines()[0], r'^## \d{4}-\d\d-\d\d 【Codex·沙僧】codex/review-x（仅交问题，不销账）$')
+        self.assertIn('P2 撤图误接受', body)
+        self.assertNotIn('现场', body)
+        self.assertNotIn('退出 0', body)
+        # 既无草稿也无问题节：报错说清要补哪一节；草稿节在但为空仍拒（不退回问题节）
+        with self.assertRaisesRegex(RuntimeError, '变更记录草稿.*问题'):
+            merge.draft('# 交付：codex/y\n- 状态：可合并\n\n## 文档选测\n\n- z\n')
+        with self.assertRaisesRegex(RuntimeError, '为空'):
+            merge.draft('- 状态：可合并\n\n## 变更记录草稿\n\n## 本期问题\n\n- p\n')
+
     def test_mentions_whole_branch_name_only(self):
         self.assertTrue(merge.mentions('| A | 分支 claude/wukong-x（从 main 切） |', 'claude/wukong-x'))
         self.assertTrue(merge.mentions('停在 `claude/wukong-x`', 'claude/wukong-x'))
@@ -1108,6 +1123,26 @@ for name in filter(None, files):
                 merge.prepare(self.root, state, self.root / 'state.json', 'Claude')
         self.assertIn('--accept-changes', calls[0])
         self.assertEqual(calls[0][calls[0].index('--accept-changes') + 1], str(spec))
+
+    def test_stale_fork_does_not_count_main_files(self):
+        # 车道只改文档，期间合过 main；main 早先自己加了接受单和游戏代码。交叉合并时 merge-base 取到旧基点也不能算进本期
+        old = self.g('rev-parse', 'HEAD')
+        self.g('reset', '--hard', old, cwd=self.wt)
+        (self.wt / self.receipt).parent.mkdir(parents=True, exist_ok=True)
+        (self.wt / self.receipt).write_text('# delivery\n- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】文档\n\n- doc only\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'doc', cwd=self.wt)
+        spec = merge.ACCEPT / 'claude_other.json'
+        self.put(str(spec), '{"schema": 1, "accept": []}')
+        self.put(str(merge.PROJECT / 'modes/main.gd'), '# main\n')
+        self.g('add', '.'); self.g('commit', '-m', 'main moves on')
+        self.g('merge', 'main', cwd=self.wt)
+        real = merge.git
+
+        def stale(root, *args):
+            return old if args[0] == 'merge-base' and len(args) == 3 else real(root, *args)
+        with mock.patch.object(merge, 'git', side_effect=stale):
+            state = merge.plan(self.root, 'task')
+        self.assertEqual((state['gameplay'], state['acceptChanges'], state['refresh']), (False, [], False))
 
     def test_dry_run_is_read_only(self):
         head = self.g('rev-parse', 'HEAD')
