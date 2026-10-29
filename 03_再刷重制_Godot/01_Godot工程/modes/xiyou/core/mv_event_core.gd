@@ -326,8 +326,25 @@ func _execute(c: Dictionary):
 			# 播放电影 [文件名]（CE1514／1516 宇智波鼬的「血轮眼开」「幻术世界」，movies/*.webm）：Godot 不能放 WebM，重制不播放，只少一段画面
 			pass
 		323:
-			# 更改载具图像 [载具, 行走图, 序号]（飞艇改造包 CE487～500）：重制没有载具，空操作（只影响飞艇外观）
-			pass
+			# 更改载具图像 [载具, 行走图, 序号]（飞艇改造包 CE487～500）：记进飞艇状态随档；飞艇画面还没做（甲三）
+			var v := state().vehicle(int(p[0]))
+			if not v.is_empty():
+				v.characterName = str(p[1])
+				v.characterIndex = int(p[2])
+		140:
+			# 更改载具 BGM [载具, BGM]（Game_Vehicle.setBgm）：记下随档；上飞艇时才放（甲二）
+			var v := state().vehicle(int(p[0]))
+			if not v.is_empty():
+				v.bgm = (p[1] as Dictionary).duplicate() if p[1] is Dictionary else null
+		202:
+			# 设置载具位置 [载具, 0 直接／1 变量, 图, x, y]（Game_Vehicle.setLocation）：楼层回大厅、CE10／240／1002、
+			# 神魔战场门把飞艇停到 Map069／186。只改位置，朝向不动；上下与飞行还没做（甲二）
+			var v := state().vehicle(int(p[0]))
+			if not v.is_empty():
+				var direct := int(p[1]) == 0
+				v.mapId = int(p[2]) if direct else int(state().variable(int(p[2])))
+				v.x = int(p[3]) if direct else int(state().variable(int(p[3])))
+				v.y = int(p[4]) if direct else int(state().variable(int(p[4])))
 		132:
 			state().battle_bgm = (p[0] as Dictionary).duplicate() if p[0] is Dictionary else {}
 		136:
@@ -825,8 +842,9 @@ func _condition(p: Array) -> bool:
 			skipped.append({"code": 111, "text": "脚本条件 " + code.left(60)})
 			return false
 		13:
-			# 首期没有车辆；Game_Player.isInVehicle 在这些地图始终为 false。
-			return false
+			# 载具 [13, 0/1/2]：$gamePlayer.vehicle() === $gameMap.vehicle(p1)，走路时为 false（重制还不能上载具，甲二）
+			var i := int(p[1])
+			return i >= 0 and i < XState.VEHICLE_TYPES.size() and s.vehicle_type == XState.VEHICLE_TYPES[i]
 	var env = _condition_env(p)
 	if env != null:
 		return bool(env)

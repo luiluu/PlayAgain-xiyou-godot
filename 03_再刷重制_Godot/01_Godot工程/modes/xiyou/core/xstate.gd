@@ -137,6 +137,11 @@ var actor_max_level := 0
 ## $gameScreen 的色调与天气（指令 223／236；换地图不清，读档保留）
 var screen := XScreenFx.new()
 var battle_bgm: Dictionary = {}     # $gameSystem._battleBgm（指令 132 更改战斗 BGM；空＝用 System 里的）
+## $gameMap._vehicles（小船、大船、飞艇，下标同 Game_Map.vehicle(0/1/2)）：图号、坐标、朝向、行走图、BGM（null＝用 System 的）、
+## 高度与驾驶中。原版整个 $gameMap 进存档；开局按 System 的起始位置（Game_Vehicle.loadSystemSettings），旧档没有也按它。
+## 空数组＝还没初始化，由 vehicle() 补；重制目前只有 202／323／140 写、条件 13 读，上下与飞行还没做。
+var vehicles: Array = []
+var vehicle_type := "walk"           # Game_Player._vehicleType：walk／boat／ship／airship
 ## $gameMap._battleback1Name／_battleback2Name 被指令 283 改过时的 [背景1, 背景2]；空＝用地图指定的（Game_Map.setupBattleback）。
 ## 原版 $gameMap 整个进存档，读档同版本不重设地图，所以随档保存；换到别的地图时由 XMapScene.load_map 清掉。
 var battleback: Array = []
@@ -233,6 +238,27 @@ static func new_game_blank() -> XState:
 	XGlobalVars.apply(s)  # Game_Map.initialize：跨存档变量盖到新局
 	_become_current(s)
 	return s
+
+
+const VEHICLE_TYPES := ["boat", "ship", "airship"]
+
+
+## Game_Vehicle.initialize：朝向 4（resetDirection），位置与图像取 System 的 boat／ship／airship
+static func default_vehicle(index: int) -> Dictionary:
+	var sys: Dictionary = XDB.system().get(VEHICLE_TYPES[index], {})
+	return {"mapId": int(sys.get("startMapId", 0)), "x": int(sys.get("startX", 0)), "y": int(sys.get("startY", 0)), "direction": 4,
+		"characterName": str(sys.get("characterName", "")), "characterIndex": int(sys.get("characterIndex", 0)),
+		"bgm": null, "altitude": 0, "driving": false}
+
+
+## Game_Map.vehicle(type)：0／1／2 或 "boat"／"ship"／"airship"，别的（含 "walk"）为空字典
+func vehicle(type) -> Dictionary:
+	var i: int = VEHICLE_TYPES.find(type) if type is String else int(type)
+	if i < 0 or i >= VEHICLE_TYPES.size():
+		return {}
+	while vehicles.size() < VEHICLE_TYPES.size():
+		vehicles.append(default_vehicle(vehicles.size()))
+	return vehicles[i]
 
 
 static func default_max_level() -> int:
@@ -714,7 +740,7 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "battleback": battleback, "erasedEvents": erased_events, "mapEvents": map_event_snapshot.call() if map_event_snapshot.is_valid() else map_events, "encounterEnabled": encounter_enabled, "allowAutosave": allow_autosave, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "vehicles": [vehicle(0), vehicle(1), vehicle(2)], "vehicleType": vehicle_type, "battleback": battleback, "erasedEvents": erased_events, "mapEvents": map_event_snapshot.call() if map_event_snapshot.is_valid() else map_events, "encounterEnabled": encounter_enabled, "allowAutosave": allow_autosave, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "unknownOrigin": unknown_origin, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "costumeOff": costume_off, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills)}
 
@@ -847,6 +873,23 @@ static func from_dict(d: Dictionary) -> XState:
 	s.pingbi_quality = Array(d.get("pingbiQuality", [])).map(func(v): return bool(v))
 	s.followers_visible = bool(d.get("followersVisible", XDB.system().get("optFollowers", false)))
 	s.battle_bgm = d.get("battleBgm", {}) if d.get("battleBgm", {}) is Dictionary else {}
+	# 载具：旧档没有＝System 起始位置、走路；缺的键按缺省补
+	var vs = d.get("vehicles", [])
+	for i in VEHICLE_TYPES.size():
+		var v := default_vehicle(i)
+		if vs is Array and i < vs.size() and vs[i] is Dictionary:
+			for k in v:
+				if vs[i].has(k):
+					v[k] = vs[i][k]
+			for k in ["mapId", "x", "y", "direction", "characterIndex", "altitude"]:
+				v[k] = int(v[k])
+			v.driving = bool(v.driving)
+			if not (v.bgm is Dictionary):
+				v.bgm = null
+		s.vehicles.append(v)
+	s.vehicle_type = str(d.get("vehicleType", "walk"))
+	if s.vehicle_type != "walk" and not VEHICLE_TYPES.has(s.vehicle_type):
+		s.vehicle_type = "walk"
 	var bb = d.get("battleback", [])
 	s.battleback = [str(bb[0]), str(bb[1])] if bb is Array and bb.size() == 2 else []
 	s.erased_events.assign(Array(d.get("erasedEvents", [])).map(func(v): return int(v)))
