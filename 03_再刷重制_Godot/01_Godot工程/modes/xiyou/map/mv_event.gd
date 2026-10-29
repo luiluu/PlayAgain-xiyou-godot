@@ -105,7 +105,7 @@ func update_character() -> void:
 
 ## 存档：原版 $gameMap 整个进存档、同版本读档不重设地图（参照 tests/fixtures/save_events_oracle.json）。
 ## 这里只存玩家看得到的运行时状态：位置（含走到一半的小数位置）、朝向、移动路线改过的图像／不透明度／穿透等，以及强制路线与索引；
-## 还有移动生命周期计数：跳跃峰高／剩余帧（_jumpPeak／_jumpCount，跳到一半存档读档后接着在空中走完）、停步与动画计数、随机移动等待（O-114）。
+## 还有移动生命周期计数：跳跃峰高／剩余帧（_jumpPeak／_jumpCount，跳到一半存档读档后接着在空中走完）、停步与动画计数、随机移动等待（沙僧第六期 S1／P2）。
 ## 临时消除另存在 XState.erased_events，自开关在 XState.self_switches。
 func save_state() -> Dictionary:
 	var out := {"page": page_index, "x": grid.x, "y": grid.y, "real": [real.x, real.y], "direction": direction, "pattern": pattern,

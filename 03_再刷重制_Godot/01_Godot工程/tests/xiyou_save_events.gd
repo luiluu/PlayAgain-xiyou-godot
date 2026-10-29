@@ -3,7 +3,7 @@ extends Node
 ## 原版同版本读档不重设地图，Map004（切片保留的事件）里改过的事件读档后原样：72 位置＋朝向、7 强制路线走到一半（索引、仍在强制）、
 ## 73 路线改的不透明度／穿透／图像、65 临时消除、36 自开关 A 换页。重制照同样操作，真实 XSave 存读档后重开地图场景逐项比。
 ## 另查：旧档没有 mapEvents 时事件回初始；换到别的地图再回来回初始（原版 Game_Map.setup）；读档后路线接着走完。
-## 强制路线跳跃到一半存读档（沙僧第六期 S1／P2，O-114）：原版 _jumpCount／_jumpPeak 随 JsonEx 进存档（参照 eventKeys），读档后仍在空中。
+## 强制路线跳跃到一半存读档（沙僧第六期 S1／P2）：原版 _jumpCount／_jumpPeak 随 JsonEx 进存档（参照 eventKeys），读档后仍在空中。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const ORACLE := "res://tests/fixtures/save_events_oracle.json"
 const TIMEOUT_MS := 60000
