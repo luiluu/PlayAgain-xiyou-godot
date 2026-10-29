@@ -166,6 +166,10 @@ func _run() -> void:
 	await _press("ui_accept")
 	await _frames(10)
 	_check("target_mode", b._target_mode == "enemy")
+	# Olivia_SideBattleUI updateFadeOut：选目标时指令窗不 hide，停用并 16 帧淡到 0（原版参照 selhelp2_attack／selhelp2_skill_target）
+	_check("target_cmd_fading", b.cmd_win != null and b.cmd_win.visible and not b.cmd_win.active and b.cmd_win.modulate.a < 1.0, null if b.cmd_win == null else b.cmd_win.modulate.a)
+	await get_tree().create_timer(0.35).timeout
+	_check("target_cmd_faded_out", b.cmd_win != null and b.cmd_win.visible and b.cmd_win.modulate.a == 0.0, null if b.cmd_win == null else b.cmd_win.modulate.a)
 	var target: XEnemy = b._hover
 	_check("target_defaults_to_rightmost", target != null and b.sprites[target].home.x == 353)
 	_check("only_selected_cursor", b.sprites.values().filter(func(v): return v.selected).size() == 1 and b.sprites[target].cursor != null)
@@ -176,6 +180,7 @@ func _run() -> void:
 	_check("keyboard_target_changes", b._hover != target and b.sprites[b._hover].selected and not b.sprites[target].selected)
 	await _press("ui_cancel")
 	_check("target_cancel_returns", b._target_mode == "" and b.cmd_win != null and b.cmd_win.visible and b.sprites.values().all(func(v): return not v.selected))
+	_check("target_cancel_cmd_back", b.cmd_win != null and b.cmd_win.active and b.cmd_win.modulate.a == 1.0)
 	await _press("ui_down")
 	await _press("ui_accept")
 	await _press("ui_accept")
@@ -520,6 +525,8 @@ func _select_confirm(b: XBattleScene, s: XState) -> void:
 		_check("selhelp_%s_mode" % tag, ok and b._target_mode == c[1], [ok, b._target_mode])
 		_check("selhelp_%s_no_help_text" % tag, b.help_card == null or not b.help_card.visible)
 		_check("selhelp_%s_one_cursor" % tag, b.sprites.values().filter(func(v): return v.selected).size() == 1)
+		# 技能窗 onSelectAction 时 hide；指令窗留着、停用、淡出（Olivia updateFadeOut）
+		_check("selhelp_%s_cmd_kept_fading" % tag, b.list_win == null and b.cmd_win != null and b.cmd_win.visible and not b.cmd_win.active and b.cmd_win.modulate.a < 1.0)
 		var first = b._hover
 		match tag:
 			"all_enemies":
@@ -538,6 +545,7 @@ func _select_confirm(b: XBattleScene, s: XState) -> void:
 			_check("selhelp_%s_locked" % tag, b._hover == first)
 		await _press("ui_cancel")
 		await _frames(3)
+		_check("selhelp_%s_cancel_cmd_shown" % tag, b.cmd_win != null and b.cmd_win.modulate.a == 1.0 and not b.cmd_win.active)
 		_check("selhelp_%s_cancel_to_list" % tag, b._target_mode == "" and b.list_win != null and b.list_win.active and b.list_win.index == idx,
 			[b._target_mode, null if b.list_win == null else b.list_win.index, idx])
 		await _press("ui_cancel")
