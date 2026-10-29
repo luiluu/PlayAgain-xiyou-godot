@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "alien_affix.json",
+      "collection": "顶层",
+      "key": "hostScope",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "7d84c372e52ae5df",
+      "newDigest": "89d8ad74f45b30fa",
+      "reason": "异化③期 B 新增百相、无面两例参照（cases 25→27，按 id 追加，旧例不变），hostScope 说明文字末尾补本期词条；唐僧核对无其它测量变化"
+    }
+  ]
+}
