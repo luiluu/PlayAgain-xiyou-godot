@@ -21,6 +21,7 @@ const STATUS_W := 200.0
 const STATUS_MOVE := 48.0
 const CMD_W := 220.0
 const CMD_SCALE := 0.8
+const CMD_FADE_FRAMES := 16.0       # Olivia_SideBattleUI updateFadeOut：每帧 −16，255 → 0
 const LIST_W := 450.0
 const LIST_MAX := 16
 const ENEMY_GAUGE_W := 180.0
@@ -927,8 +928,15 @@ func _pick_target(skill: Dictionary, a: XActor, forced := true):
 		return null
 	_target_mode = "enemy" if foe else "ally"
 	_target_pool = pool
+	# Olivia_SideBattleUI 选敌／选我方窗激活时每帧 updateFadeOut：指令窗不透明度每帧 −16，16 帧淡到 0（不先 hide）；
+	# 技能／物品窗 onSelectAction 时已 hide。取消回来 updatePosition→updateFadeIn 立刻 255。
+	var cmd_was_active := false
+	var cmd_fade: Tween = null
 	if cmd_win and is_instance_valid(cmd_win):
-		cmd_win.visible = false
+		cmd_was_active = cmd_win.active
+		cmd_win.active = false
+		cmd_fade = cmd_win.create_tween()
+		cmd_fade.tween_property(cmd_win, "modulate:a", 0.0, CMD_FADE_FRAMES / 60.0)
 	_help()
 	_target_skill = skill
 	# YEP Enemy Auto Select = furthestRight（敌方范围都一样，含全体与随机）；我方默认第一人。
@@ -945,8 +953,11 @@ func _pick_target(skill: Dictionary, a: XActor, forced := true):
 	_select_target(null)
 	otb.clear_preview()
 	_help()
+	if cmd_fade:
+		cmd_fade.kill()
 	if cmd_win and is_instance_valid(cmd_win):
-		cmd_win.visible = true
+		cmd_win.modulate.a = 1.0
+		cmd_win.active = cmd_was_active
 	if r is XBattler and pool.has(r):
 		if prey_pick:
 			XRaceBattle.set_manual_prey(logic, a, skill, r)
