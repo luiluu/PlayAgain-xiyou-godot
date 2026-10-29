@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "alien_affix.json",
+      "collection": "顶层",
+      "key": "hostScope",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "37b55f94be42584c",
+      "newDigest": "7d84c372e52ae5df",
+      "reason": "异化③期 A 新增缄默、饕餮两例参照（cases 23→25，按 id 追加），hostScope 说明文字补「MP 费用（缄默、饕餮）」；唐僧核对无其它测量变化"
+    }
+  ]
+}
