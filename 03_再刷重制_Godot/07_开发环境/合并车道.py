@@ -17,6 +17,7 @@ git worktree lock 锁住，或合并前 main 的交接板「正在进行」表�
 车道工作树只有未跟踪文件且都在 00_项目管理/核查范围/ 或 04_验证/本地结果/ 下（沙僧的原版证据、本地输出）时也收：
 按分支引用合并，不清理该工作树。"""
 import argparse
+import fcntl
 import hashlib
 import json
 import os
@@ -342,10 +343,20 @@ def plan(root, task):
     draft(text)
     changed = git(root, 'diff', '--name-only', fork, target).splitlines()
     # 同一分支带来的其它交付单（如接手者另写的一张）：标了可合并的一并归并删除；没标的提示唐僧处理。
+    # 已随前几批并入、在 main 删掉的旧交付单不算：车道从上一期交付点切出又合过 main 时与 main 有两个合并基点（交叉合并），
+    # merge-base 可能取到旧的那个，diff 会带出期一等交付单，到归并时报「交付单已不存在」停下（哪吒_7 t4，八戒 attack-query2）
     extra = []
     for p in sorted(changed):
         if (p.startswith('00_项目管理/交付/') and p.endswith('.md') and p not in (str(delivery), '00_项目管理/交付/README.md')
                 and read(p) is not None):
+            removed = git(root, 'log', '--diff-filter=D', '--format=%H', '-1', base, '--', p)
+            if removed and not (root / p).exists():
+                before = subprocess.run(['git', '-C', str(root), 'rev-parse', '-q', '--verify', removed + '^:' + p],
+                                        capture_output=True, text=True).stdout.strip()
+                if git(root, 'rev-parse', target + ':' + p) != before:
+                    print('提示：%s 已在 main 删除（%s 归并过），车道上的版本与删前不同；不再并入，车道补写的内容请写进本期交付单'
+                          % (p, removed[:9]), file=sys.stderr, flush=True)
+                continue
             try:
                 draft(read(p))
                 extra.append(p)
@@ -630,6 +641,66 @@ def undo_sync(root, state):
         shutil.rmtree(p) if p.is_dir() else p.unlink()
         notes.append('删同步基线 ' + p.name[:12] + '…')
     return '；'.join(notes)
+
+
+def process_start(pid):
+    """进程启动时间（ps lstart，C 区域格式）；进程不在时 None。只读身份，不读命令行。"""
+    out = subprocess.run(['ps', '-o', 'lstart=', '-p', str(pid)], capture_output=True, text=True,
+                         env=dict(os.environ, LC_ALL='C')).stdout.strip()
+    return out or None
+
+
+def boot_time():
+    """本次开机时刻（epoch 秒）；读不到时 None。"""
+    out = subprocess.run(['sysctl', '-n', 'kern.boottime'], capture_output=True, text=True).stdout
+    m = re.search(r'sec = (\d+)', out)
+    return int(m.group(1)) if m else None
+
+
+def take_lock(folder):
+    """running.lock：写入持锁进程的 pid 与启动时间。已有锁时：持有者还在（pid 在且启动时间对得上）照旧拒绝；
+    已不在、或 pid 被别的进程复用（启动时间对不上）就作废重拿并提示；旧版留下的空锁或认不出的内容，
+    早于本次开机的作废（重启打断 --finish 的现场，哪吒_7 t4），否则认不出持有者，照旧拒绝。
+    判定与替换在 lock.guard 的 flock 里做，两个进程不会同时作废同一把锁。"""
+    folder.mkdir(exist_ok=True)
+    lock = folder / 'running.lock'
+    me = json.dumps({'pid': os.getpid(), 'startedAt': process_start(os.getpid())})
+    with open(folder / 'lock.guard', 'a') as guard:
+        fcntl.flock(guard, fcntl.LOCK_EX)
+        try:
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        except FileExistsError:
+            try:
+                text, mtime = lock.read_text(), lock.stat().st_mtime
+            except FileNotFoundError:
+                text, mtime = None, 0
+            stale = None
+            try:
+                owner = json.loads(text) if text else None
+            except ValueError:
+                owner = None
+            if text is None:
+                stale = '锁已被别人删掉'
+            elif isinstance(owner, dict) and type(owner.get('pid')) is int:
+                started = process_start(owner['pid'])
+                if started is None:
+                    stale = '持锁进程 pid %d 已不在' % owner['pid']
+                elif started != owner.get('startedAt'):
+                    stale = 'pid %d 已被别的进程复用（启动时间 %s，锁里记的是 %s）' % (owner['pid'], started, owner.get('startedAt'))
+                else:
+                    raise RuntimeError('另一个合并正在运行（pid %d，%s 启动），等它结束再来' % (owner['pid'], started))
+            else:
+                booted = boot_time()
+                if booted is None or mtime >= booted:
+                    raise RuntimeError('%s 已存在但认不出持有者（旧版空锁，且在本次开机之后留下）：确认没有合并进程'
+                                       '（pgrep -fl 合并车道）后删掉它再来' % lock)
+                stale = '旧版空锁早于本次开机（%s）' % time.strftime('%m-%d %H:%M', time.localtime(mtime))
+            print('提示：上次合并留下的 running.lock 作废（%s），重新拿锁；state.json 等现场照旧接续' % stale, flush=True)
+            lock.unlink(missing_ok=True)
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        with os.fdopen(fd, 'w') as f:
+            f.write(me)
+    return lock
 
 
 def abort_one(root, folder, task):
@@ -947,26 +1018,17 @@ def main(argv=None):
         if a.close_batch:
             if a.task or a.batch:
                 raise RuntimeError('--close-batch 不带任务名、不配 --batch')
-            folder.mkdir(exist_ok=True)
-            lock = folder / 'running.lock'
-            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            os.close(fd)
+            lock = take_lock(folder)
             close_batch(root, folder, a.affected)
             return 0
         if a.abort_batch:
-            folder.mkdir(exist_ok=True)
-            lock = folder / 'running.lock'
-            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            os.close(fd)
+            lock = take_lock(folder)
             abort_batch(root, folder)
             return 0
         if not a.task:
             raise RuntimeError('要给任务名（只有 --abort-batch、--close-batch 不用）')
         if a.abort:
-            folder.mkdir(exist_ok=True)
-            lock = folder / 'running.lock'
-            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            os.close(fd)
+            lock = take_lock(folder)
             abort_one(root, folder, a.task)
             return 0
         if a.batch and not a.finish:
@@ -979,10 +1041,7 @@ def main(argv=None):
             raise RuntimeError('--accept-changes 只用于准备阶段接着同步（不配 --finish、--dry-run）')
         if a.dry_run:
             print(json.dumps(plan(root, a.task), ensure_ascii=False, indent=2)); return 0
-        folder.mkdir(exist_ok=True)
-        lock = folder / 'running.lock'
-        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-        os.close(fd)
+        lock = take_lock(folder)
         state = json.loads(state_file.read_text()) if state_file.exists() else None
         if state and state['task'] != a.task:
             raise RuntimeError('另一条车道尚未收尾：' + state['task'])
@@ -1024,7 +1083,7 @@ def main(argv=None):
         print('合并已停止，现场保留：' + str(error), file=sys.stderr)
         return 1
     finally:
-        if lock is not None and 'fd' in locals():
+        if lock is not None:  # 只删自己拿到的锁（拿锁失败时 lock 仍是 None）
             lock.unlink(missing_ok=True)
 
 

@@ -4,6 +4,10 @@ extends Node
 ##   技能 8／9／10／72／101 的 MP／TP 消耗、武器本体值。
 ## - battle.*：角色 1＋8 出战，敌群 2／6（敌人生命加 1e12），随机数全取 0.5（同参照 Math.random）；每步按回合号行动（行动前 TP 100、
 ##   法力回满），回合末直接调 XRaceBattle.round_end；比各敌人生命与毒鸡汤状态、角色生命／法力／TP、队友生命、角色的本场种族数据、提示。
+## - power.*：角色 1／8 30 级各族战力（XPower.actor 强制重算）：总分、三项、爆发／持续／有效生命／辅助、行动表、未计入。
+## - supply：依次打各层 Boss 的种族补给（XDungeon.race_supply）；learn：学会种族技能改种族（XRace.learn）；
+##   poisonInfo：选敌帮助的毒鸡汤说明（XRaceBattle.poison_info）。
+## - human_toast（只在重制）：九九六插队提示在排行动顺序时暂存、下一个行动补出。
 const ORACLE := "oracle/race_battle.json"
 var results := []
 
@@ -29,6 +33,10 @@ func _close(a: Array, b: Array) -> bool:
 
 
 func _run() -> void:
+	# 战力开关读设置：用测试自己的设置文件（同 xiyou_power），不读本机玩家设置
+	XSave.dir_override = "user://test_xiyou_race_battle"
+	XConfig.path_override = XSave.dir().path_join("options.json")
+	XConfig.set_flag("codexPowerEnabled", true)
 	var ref = XDB.load_json(ORACLE)
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
 		get_tree().quit.call_deferred(1)
@@ -38,8 +46,19 @@ func _run() -> void:
 			continue
 		if str(c.id).begins_with("params."):
 			_params(c)
+		elif str(c.id).begins_with("power."):
+			_power(c)
+		elif str(c.id) == "supply":
+			_supply(c)
+		elif str(c.id) == "learn":
+			_learn(c)
+		elif str(c.id) == "poisonInfo":
+			_poison_info(c)
 		else:
 			_battle(c)
+	_human_toast()
+	DirAccess.remove_absolute(XSave.dir().path_join("options.json"))
+	DirAccess.remove_absolute(XSave.dir())
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
@@ -223,4 +242,159 @@ func _battle(c: Dictionary) -> void:
 		var want_rs = _norm(row.race)
 		check(step + ".race_state", rs == want_rs, [rs, want_rs])
 		check(step + ".toasts", toasts == row.toasts, [toasts, row.toasts])
+	XState.current = null
+
+
+func _power(c: Dictionary) -> void:
+	var o: Dictionary = c.observed
+	var st: Dictionary = c.setup
+	XGear.force_roll = 0.5
+	var s := XState.new_game_blank()
+	s.actor_max_level = 99
+	XState.current = s
+	var a := s.actor(int(st.actor))
+	a.change_level_mv(int(st.level))
+	_set_race(s, a, int(st.race), int(st.rank), bool(st.blood))
+	a.param_mark_dirty()
+	a.refresh_passive()
+	a.recover_all()
+	var p := XPower.actor(a, true)
+	var tag := str(c.id)
+	check(tag + ".total", int(p.total) == int(o.total) and int(p.self) == int(o.self) and _close(p.parts, o.parts) and _close(p.selfParts, o.selfParts),
+		[p.total, p.self, p.parts, p.selfParts, o.total, o.self, o.parts, o.selfParts])
+	for k in ["full", "own"]:
+		var e: Dictionary = p.evaluation if k == "full" else p.ownEvaluation
+		var w: Dictionary = o[k]
+		check(tag + "." + k, _close([e.burst, e.sustained, e.effectiveHp, e.auxiliary], [w.burst, w.sustained, w.effectiveHp, w.auxiliary]),
+			[[e.burst, e.sustained, e.effectiveHp, e.auxiliary], [w.burst, w.sustained, w.effectiveHp, w.auxiliary]])
+		var got: Array = e.schedule.map(func(x): return [int(x.turn), int(x.id), snappedf(float(x.damage), 1e-6)])
+		var want: Array = (w.schedule as Array).map(func(x): return [int(x[0]), int(x[1]), snappedf(float(x[2]), 1e-6)])
+		check(tag + "." + k + ".schedule", _norm(got) == _norm(want), [got.slice(0, 6), want.slice(0, 6)])
+		var um: Array = e.coverage.unmodeled.map(func(u): return [int(u.id), str(u.name), str(u.reason)])
+		var wm: Array = (w.unmodeled as Array).map(func(u): return [int(u[0]), str(u[1]), str(u[2])])
+		check(tag + "." + k + ".unmodeled", um == wm, [um, wm])
+	XState.current = null
+
+
+func _supply(c: Dictionary) -> void:
+	var s := XState.new_game_blank()
+	XState.current = s
+	s.race_supply = {"counts": {}, "first": {}}
+	var stones: Array = XRace.config().stones
+	for i in c.observed.rows.size():
+		var row: Dictionary = c.observed.rows[i]
+		if (c.setup.floors[i] as Array).size() > 2:  # 背包已满
+			s.gain_item(int(stones[2]), 9999)
+		XDungeon.battle = {"troop": 2, "floor": int(row.floor), "won": int(row.result) == 0, "orb": false, "supply": false}
+		var text := XDungeon.race_supply(s)
+		var tag := "supply.%d" % i
+		check(tag + ".toast", ([text] if text != "" else []) == row.toasts, [text, row.toasts])
+		# 重制建档时就补空 inbox（原版背包满才建），内容相同
+		var sup: Dictionary = s.race_supply.duplicate(true)
+		if sup.get("inbox", {}).is_empty():
+			sup.erase("inbox")
+		check(tag + ".supply", _norm(sup) == _norm(row.supply), [s.race_supply, row.supply])
+		var got := stones.map(func(id): return s.item_count(int(id)))
+		check(tag + ".stones", _close(got, row.stones), [got, row.stones])
+	XDungeon.battle = {}
+	XState.current = null
+
+
+func _learn(c: Dictionary) -> void:
+	var s := XState.new_game_blank()
+	XState.current = s
+	var a := s.actor(1)
+	var sk: Array = XRace.config().skills
+	var steps := {
+		"set-human-3": func():
+			s.race.actors["1"] = {"race": 2, "rank": 3, "free": false, "blood": false, "legacy": []}
+			a.learn_skill(int(sk[2][2])),
+		"same-up-6": func(): a.learn_skill(int(sk[2][5])),
+		"same-down-2": func(): a.learn_skill(int(sk[2][1])),
+		"other-ghost-7": func(): a.learn_skill(int(sk[4][6])),
+		"nodata-spirit-4": func():
+			s.race.actors.erase("1")
+			a.learn_skill(int(sk[5][3])),
+		"plain-8": func(): a.learn_skill(8),
+	}
+	for row in c.observed.rows:
+		var tag := "learn." + str(row.tag)
+		if steps.has(str(row.tag)):
+			steps[str(row.tag)].call()
+		var d = s.race.actors.get("1", null)
+		check(tag, _norm(d) == _norm(row.race) and _race_skills(a) == (row.raceSkills as Array).map(func(v): return int(v)),
+			[d, _race_skills(a), row.race, row.raceSkills])
+	check("learn.plain", a.skill_ids.has(8) == bool(c.observed.plain))
+	XState.current = null
+
+
+func _setup_battle(st: Dictionary) -> Dictionary:
+	var s := XState.new_game_blank()
+	s.actor_max_level = 99
+	XState.current = s
+	var a := s.actor(1)
+	var b := s.actor(8)
+	a.change_level_mv(30)
+	b.change_level_mv(30)
+	_set_race(s, a, int(st.race), int(st.rank), bool(st.get("blood", false)))
+	s.party.clear()
+	s.battle_slots.clear()
+	s.add_actor(1)
+	s.add_actor(8)
+	var rand := XBattleRandom.create("0000000000000176")
+	rand.rule = HalfStream.new()
+	rand.rule.domain = "rule"
+	var logic := XBattleLogic.new()
+	logic.setup(int(st.troop), s, rand)
+	for e in logic.enemies:
+		var p: Array = (e.data().params as Array).map(func(v): return float(v))
+		p[0] += 1e12
+		p[2] += float(st.get("enemyAtkPlus", 0))
+		e.zq_ref = {"p": p, "k": 1.0}
+	for x in [a, b] + logic.enemies:
+		x.param_mark_dirty()
+		x.param_refresh()
+		x.recover_all()
+	XRaceBattle.start(logic)
+	return {"s": s, "a": a, "b": b, "logic": logic, "enemies": logic.enemies}
+
+
+func _poison_info(c: Dictionary) -> void:
+	var ctx := _setup_battle(c.setup)
+	var logic: XBattleLogic = ctx.logic
+	var enemies: Array = ctx.enemies
+	var info := func(): return enemies.map(func(e): return XRaceBattle.poison_info(logic, e))
+	var rows := []
+	logic.turn = 1
+	rows.append(info.call())
+	logic.act(ctx.a, XDB.rec("Skills", 3), enemies[0])
+	rows.append(info.call())
+	ctx.s.race.actors["8"] = {"race": 2, "rank": 4, "free": false, "blood": false, "legacy": []}
+	XRace.sync(ctx.s, ctx.b)
+	logic.act(ctx.b, XDB.rec("Skills", 3), enemies[0])
+	rows.append(info.call())
+	logic.act(ctx.a, XDB.rec("Skills", 3), enemies[1])
+	rows.append(info.call())
+	logic.turn = 2
+	rows.append(info.call())
+	for i in rows.size():
+		check("poisonInfo.%d" % i, rows[i] == c.observed.rows[i], [rows[i], c.observed.rows[i]])
+	XState.current = null
+
+
+## 九九六：排行动顺序（_make_action_orders 不带提示列表）时中了就暂存，下一个行动根开始时补出，只补一次
+func _human_toast() -> void:
+	var ctx := _setup_battle({"race": 2, "rank": 7, "troop": 2})
+	var logic: XBattleLogic = ctx.logic
+	logic.turn = 1
+	var s: Dictionary = XRaceBattle.state(logic, ctx.a)
+	s.humanTurn = 1
+	s.humanExtra = true
+	var order := [ctx.a, ctx.b]
+	XRaceBattle.insert_human(logic, order)
+	check("human_toast.order", order == [ctx.a, ctx.a, ctx.b], order)
+	var first := logic.act(ctx.a, XDB.rec("Skills", 3), ctx.enemies[0]).filter(func(l): return l.type == "toast").map(func(l): return l.text)
+	var second := logic.act(ctx.a, XDB.rec("Skills", 3), ctx.enemies[0]).filter(func(l): return l.type == "toast").map(func(l): return l.text)
+	var want := str(ctx.a.display_name()) + "九九六：额外行动"
+	check("human_toast.flush", first.count(want) == 1 and not second.has(want), [first, second])
 	XState.current = null

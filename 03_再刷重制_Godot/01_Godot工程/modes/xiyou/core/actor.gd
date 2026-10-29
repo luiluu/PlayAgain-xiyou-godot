@@ -381,6 +381,8 @@ func repair_strong_classified() -> void:
 	refresh_passive()
 
 func learn_skill(id: int) -> void:
+	if XRace.learn(XState.current, self, id):  # installNativeRaceRuntime learnSkill 包装：种族技能改种族数据再 sync
+		return
 	if STRONG_SKILL_REPLACE.has(id) and is_strong_classified():
 		id = STRONG_SKILL_REPLACE[id]
 	if not XActorModules.can_learn(self, id) or (XPowerBooks.is_power(id) and not XPowerBooks.learn_reason(self, id).is_empty()):

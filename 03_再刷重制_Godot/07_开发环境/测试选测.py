@@ -505,6 +505,25 @@ class CheckerTests(Fixture):
         self.assertIn('并行测试.py', self.names(ran))
         self.assertIn('有失败项', out)
 
+    def test_failure_summary_lists_scenes_with_logs(self):
+        # 哪吒_7 t4 第 1 项：长任务日志里失败项夹在几百行中间，收尾单列每个失败项，Godot 场景带日志路径
+        self.put(ENV / '并行测试.py', 'import os, pathlib, sys\npathlib.Path(os.environ["CHECK_FAILED_FILE"]).write_text('
+                 '"a.tscn\\t/logs/a.rerun1.log\\nb.tscn\\t/logs/b.log\\n")\nsys.exit(1)\n')
+        self.put(ENV / '测试公式程序.py', 'import sys\nsys.exit(1)\n')
+        rc, out, _ = self.check()
+        self.assertEqual(rc, 1, out)
+        summary = out[out.index('== 失败项汇总'):out.index('== Git')].splitlines()
+        self.assertEqual(summary, ['== 失败项汇总（3 项）', '  ✗ Godot 场景 a.tscn  日志 /logs/a.rerun1.log',
+                                   '  ✗ Godot 场景 b.tscn  日志 /logs/b.log', '  ✗ 公式编译边界失败'])
+        self.put(ENV / '并行测试.py', 'import sys\nsys.exit(1)\n')  # 没写出场景（如导入就崩）：仍列一项
+        rc, out, _ = self.check()
+        self.assertIn('✗ Godot 测试（未写出失败场景', out)
+        self.put(ENV / '并行测试.py', 'pass\n')
+        self.put(ENV / '测试公式程序.py', 'pass\n')
+        rc, out, _ = self.check()
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn('失败项汇总', out)
+
     def test_prose_brackets_are_not_links_but_real_breaks_are(self):
         # 唐僧_13 2026-10-26：表格正文「变身[萧萧](a)」被当成失效链接卡住合并；只放过 1～2 个字符、不含 / 与 . 的目标
         self.put(Path('00_项目管理/表格.md'), '| 变身[萧萧](a) | [甲](Ab) |\n')

@@ -293,6 +293,21 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stdout)
         self.assertIn('3 个场景，全部通过', p.stdout)
 
+    def test_failure_summary_is_last_and_written_for_checker(self):
+        """哪吒_7 t4 第 1 项：长任务日志里失败明细夹在几百行进度中间，收尾单列失败场景与日志路径，并交给 检查.sh 汇总。"""
+        summary = self.tmp / 'failed.tsv'
+        p, _ = self.run_tests('--full', FAIL_C='1', CHECK_FAILED_FILE=str(summary))
+        self.assertEqual(p.returncode, 1, p.stdout)
+        log = sorted((self.tmp.resolve() / '04_验证/本地结果/并行测试').iterdir())[-1] / 'c.rerun1.log'
+        tail = p.stdout.rstrip('\n').splitlines()[-2:]
+        self.assertEqual(tail, ['  ✗ 失败场景 1 个：', '      c.tscn → ' + str(log)], p.stdout)
+        self.assertEqual(summary.read_text(), 'c.tscn\t%s\n' % log)
+        self.assertEqual(json.loads((log.parent / 'test_timings.json').read_text())['failed'], ['c.tscn'])
+        p, _ = self.run_tests('--full', CHECK_FAILED_FILE=str(summary))
+        self.assertEqual(p.returncode, 0, p.stdout)
+        self.assertEqual(summary.read_text(), '')  # 通过时清空，免得 检查.sh 读到上一轮的
+        self.assertNotIn('失败场景', p.stdout)
+
     def test_slowest_first(self):
         self.state.mkdir()
         (self.state / 'timings.json').write_text(json.dumps({'a.tscn': 1, 'c.tscn': 100}))
@@ -480,9 +495,13 @@ state, limit, seconds = __import__('pathlib').Path(sys.argv[2]), int(sys.argv[3]
 mode = sys.argv[5]
 if mode == 'hog':  # 批测：limit 个线程，放掉马上重抢
     end = time.monotonic() + seconds
+    held = threading.Barrier(limit, action=lambda: (state / 'hog_ready').touch())  # 全部槽都占上才放来者
     def worker():
+        first = True
         while time.monotonic() < end:
             with p.global_slot(state, limit):
+                if first:
+                    held.wait(); first = False
                 time.sleep(0.2)
     ts = [threading.Thread(target=worker) for _ in range(limit)]
     [t.start() for t in ts]; [t.join() for t in ts]
@@ -499,9 +518,10 @@ else:  # 别的工作树来要一个槽
         script.write_text(self.HOG)
         env = dict(os.environ, XIYOU_SLOT_QUEUE='1' if queue else '0')
         args = [sys.executable, str(script), str(HERE / '并行测试.py'), str(self.state), '2']
+        (self.state / 'hog_ready').unlink(missing_ok=True)
         hog = subprocess.Popen(args + ['4', 'hog'], env=env, stdout=subprocess.DEVNULL)
         try:
-            time.sleep(0.5)
+            self.assertTrue(self.wait_for(lambda: (self.state / 'hog_ready').exists(), 30))  # 负载高时 hog 起得慢：等它真占满
             got = subprocess.run(args + ['0', 'one'], env=env, capture_output=True, text=True, timeout=30).stdout
         finally:
             hog.wait(30)
@@ -509,9 +529,11 @@ else:  # 别的工作树来要一个槽
 
     def test_queue_lets_other_process_in_while_batch_hogs_slots(self):
         """10-28 哪吒、八戒实测：批测把共用上限占满时别的工作树排 1～1.5 小时。旧行为下来者要等批测整个跑完，排队后一轮就拿到。"""
+        # 旧行为（不排队）只打印作对照、不断言：放槽与重抢之间谁先到是竞速，负载约 23 时来者 1.5 秒就抢到过（哪吒_7 t4 第 4 项，
+        # 哪吒_6 交付时负载约 16 下 171/172 就是这一项）。排队后的上限是确定的：前面没有别的等候者，下一轮放槽就归它
         old = self.contend(queue=False)
-        self.assertGreater(old, 3.0)  # 批测还剩约 3.5 秒，旧行为一直抢不到
         new = self.contend(queue=True)
+        print('  不排队 %.2f 秒，排队 %.2f 秒' % (old, new), file=sys.stderr)
         self.assertLess(new, 1.5)
         self.assertFalse(list((self.state / 'slots/queue').iterdir()))  # 排队文件都收走了
 
@@ -651,11 +673,19 @@ else:  # 别的工作树来要一个槽
             p = subprocess.Popen(['zsh', '-c', 'out=$("$@" 3>&2 2>&1); print -r -- "OUT:$out"', '_', *cli,
                                   '--label', 'godot --import', '--notice-fd', '3', '--', 'echo', 'done'],
                                  env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            self.assertTrue(self.wait_for(lambda: False, 0.8) or True)
+            # 等到真打出等槽心跳再放槽（原来固定等 0.8 秒，负载约 27 时子进程还没起来就放了，6 轮错 2 轮，哪吒_7 t4）
+            lines, beat = [], threading.Event()
+            def drain():
+                for line in p.stderr:
+                    lines.append(line)
+                    if '等槽' in line:
+                        beat.set()
+            reader = threading.Thread(target=drain, daemon=True); reader.start()
+            beat.wait(30)
             release.set(); a.join(5)
-            out, err = p.communicate(timeout=10)
+            out = p.stdout.read(); p.wait(10); reader.join(10)
         self.assertEqual(out.strip(), 'OUT:done')  # 心跳不混进捕获的命令输出
-        self.assertIn('等槽：godot --import', err)
+        self.assertIn('等槽：godot --import', ''.join(lines))
 
 
 
@@ -1168,6 +1198,48 @@ for name in filter(None, files):
         self.assertEqual(self.call(), 1)
         self.assertEqual(lock.read_text(), 'first runner')
 
+    def test_stale_lock_from_dead_runner_is_discarded(self):
+        # 哪吒_7 t4 第 2 项：重启打断 --finish（143）留下锁，下一次 [Errno 17] 退出，只能人工删
+        lock = self.root / '.git/lane-merge/running.lock'
+        lock.parent.mkdir()
+        dead = subprocess.Popen(['true']); dead.wait()
+        lock.write_text(json.dumps({'pid': dead.pid, 'startedAt': 'Mon Jan  1 00:00:00 2001'}))
+        self.assertEqual(self.call('--dry-run'), 0, self.last_output)  # dry-run 不拿锁：先确认夹具
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertIn('作废', self.last_output)
+        self.assertFalse(lock.exists())
+        # pid 还在但启动时间对不上（pid 被复用）：同样作废
+        self.assertEqual(self.call('--abort'), 0, self.last_output)
+        lock.write_text(json.dumps({'pid': os.getpid(), 'startedAt': 'Mon Jan  1 00:00:00 2001'}))
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertIn('作废', self.last_output)
+
+    def test_live_lock_still_refuses(self):
+        lock = self.root / '.git/lane-merge/running.lock'
+        lock.parent.mkdir()
+        lock.write_text(json.dumps({'pid': os.getpid(), 'startedAt': merge.process_start(os.getpid())}))
+        before = lock.read_text()
+        self.assertEqual(self.call(), 1)
+        self.assertIn('另一个合并正在运行', self.last_output)
+        self.assertIn('pid %d' % os.getpid(), self.last_output)
+        self.assertEqual(lock.read_text(), before)
+
+    def test_empty_lock_older_than_boot_is_discarded(self):
+        # 10-28 现场是空锁（写 pid 前的旧版）：早于本次开机的作废；开机后留下的认不出持有者，照旧拒绝
+        lock = self.root / '.git/lane-merge/running.lock'
+        lock.parent.mkdir(); lock.write_text('')
+        os.utime(lock, (time.time() - 10 * 86400,) * 2)
+        with mock.patch.object(merge, 'boot_time', return_value=time.time() - 3600):
+            with contextlib.redirect_stdout(io.StringIO()) as out, contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(merge.main(['task', '--root', str(self.root)]), 0)
+        self.assertIn('作废', out.getvalue())
+        lock.write_text('')
+        with mock.patch.object(merge, 'boot_time', return_value=time.time() - 3600):
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as err:
+                self.assertEqual(merge.main(['task', '--root', str(self.root)]), 1)
+        self.assertIn('认不出持有者', err.getvalue())
+        self.assertTrue(lock.exists())
+
     def test_other_lane_merge_does_not_require_redelivery(self):
         self.put('other_lane.md', 'independent main update')
         self.g('add', '.'); self.g('commit', '-m', 'other lane')
@@ -1451,6 +1523,34 @@ for name in filter(None, files):
 
     def branches(self):
         return self.g('branch', '--format=%(refname:short)').split()
+
+    def test_old_sheet_already_merged_is_not_extra_delivery(self):
+        # 哪吒_7 t4 第 3 项（八戒 attack-query2）：期二从期一交付点切出、又合过 main，与 main 有两个合并基点（交叉合并），
+        # merge-base 取到旧的那个，diff 带出期一交付单；期一已随上一批并入并删除，不该再算附带交付单
+        lane2 = Path(self.tmp.name) / 'lane2'
+        self.g('worktree', 'add', '-b', 'claude/task2', str(lane2), 'claude/task')
+        self.put('other.md', 'main moves\n'); self.g('add', '.'); self.g('commit', '-m', 'main moves')
+        self.g('merge', '-m', 'merge main', 'main', cwd=lane2)
+        sheet2 = lane2 / '00_项目管理/交付/claude_task2.md'
+        sheet2.write_text('# 期二\n- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】期二\n\n- phase 2\n')
+        self.g('add', '.', cwd=lane2); self.g('commit', '-m', 'phase 2 sheet', cwd=lane2)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertFalse((self.root / self.receipt).exists())
+        bases = self.g('merge-base', '--all', 'main', 'claude/task2').split()
+        self.assertEqual(len(bases), 2)  # 夹具确实是交叉合并
+        state = merge.plan(self.root, 'task2')
+        self.assertEqual(state['delivery'], '00_项目管理/交付/claude_task2.md')
+        self.assertEqual(state['extraDeliveries'], [])
+        # 车道改过的旧交付单（内容与 main 删前不同）照样不算附带交付单，但要提示
+        (lane2 / self.receipt).write_text((lane2 / self.receipt).read_text() + '- 期二补记\n')
+        self.g('add', '.', cwd=lane2); self.g('commit', '-m', 'touch old sheet', cwd=lane2)
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            state = merge.plan(self.root, 'task2')
+        self.assertEqual(state['extraDeliveries'], [])
+        self.assertIn(str(self.receipt), err.getvalue())
+        self.assertIn('已在 main 删除', err.getvalue())
 
     def test_lane_on_new_branch_skips_worktree_but_deletes_delivery_branch(self):
         # 车道交付后在同一工作树换新分支接着做（会话绑在路径上）：工作树保留，交付分支照删。
@@ -1753,13 +1853,13 @@ for name in filter(None, files):
         self.put(str(gen / 'manifest.json'), '{"v": "before"}\n')
         self.put(str(gen / 'oracle/a.json'), '{"a": 1}\n')
         # 假同步按真同步的顺序：建基线（不存在时取当前产物）→ 备份产物 → 写新产物；第二个参数让它拒收（退出码 2）
-        self.put(str(merge.TOOLS / '同步正式西游.py'), '''import hashlib, shutil, sys, time
+        self.put(str(merge.TOOLS / '同步正式西游.py'), '''import datetime, hashlib, shutil, sys
 from pathlib import Path
 root = Path.cwd(); gen = root / %r; res = root / %r
 base = res / '同步基线' / hashlib.sha256(str(gen.resolve()).encode()).hexdigest()
 if not base.exists():
     shutil.copytree(gen / 'oracle', base / 'oracle'); shutil.copy2(gen / 'manifest.json', base / 'manifest.json')
-bk = res / '自动同步' / (time.strftime('%%Y%%m%%d_%%H%%M%%S_%%f') + '_v-v')
+bk = res / '自动同步' / (datetime.datetime.now().strftime('%%Y%%m%%d_%%H%%M%%S_%%f') + '_v-v')  # 同真同步：time.strftime 不认 %%f，同一秒两次会撞名
 shutil.copytree(gen / 'oracle', bk / 'oracle'); shutil.copy2(gen / 'manifest.json', bk / 'manifest.json')
 (gen / 'oracle/common_scripts.json').write_text('{}'); (gen / 'manifest.json').write_text('{"v": "lane"}')
 (gen / 'sync_stamp.json').write_text('{}')
@@ -1840,7 +1940,15 @@ if __name__ == '__main__':
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     extra = load('incremental_workflow_tests', HERE / '测试增量同步.py')
     suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(extra))
+    if sys.argv[1:]:  # 只跑名字含任一参数的用例（类名或方法名片段），调试单项用；TEST_RESULT 只算选中的
+        def flat(s):
+            for t in s:
+                yield from (flat(t) if isinstance(t, unittest.TestSuite) else [t])
+        suite = unittest.TestSuite(t for t in flat(suite) if any(a in t.id() for a in sys.argv[1:]))
     result = unittest.TextTestRunner().run(suite)
     passed = result.testsRun - len(result.failures) - len(result.errors)
+    # 收尾单列失败用例（哪吒_7 t4 第 4 项：负载下 171/172 那一项没抓到名字）：每项一行，不被进度点覆盖
+    for case, _ in result.failures + result.errors:
+        print('FAILED_CASE=' + case.id())
     print('TEST_RESULT=' + json.dumps({'passed': passed, 'total': result.testsRun}))
     raise SystemExit(0 if result.wasSuccessful() else 1)

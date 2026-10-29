@@ -30,7 +30,8 @@ while (( $# )); do
   shift
 done
 ok()   { print -r -- "  ✓ $1"; }
-bad()  { print -r -- "  ✗ $1"; FAIL=1; }
+bad()  { print -r -- "  ✗ $1"; FAIL=1; FAIL_ITEMS+=("$1"); }
+FAIL_ITEMS=()  # 收尾汇总用（哪吒_7 t4：失败项夹在长日志中间难找，Godot 场景带日志路径）
 # xiyou_rules 按编号过滤只给车道专项用：检查（尤其整轮会被记作通过、下轮沿用）里不许带着它跑
 if [[ -n ${RULES_ONLY_TROOPS:-}${RULES_ONLY_ACTORS:-} ]]; then
   print -r -- "环境里设了 RULES_ONLY_TROOPS／RULES_ONLY_ACTORS（只给车道专项用），先 unset 再跑检查"; exit 2
@@ -103,6 +104,7 @@ for b in bad: print('  ✗ ' + b)
 print(f'  ✓ JSON、链接、开发编号（{dev}）' if not bad else f'  共 {len(bad)} 项问题')
 sys.exit(1 if bad else 0)
 PY
+(( FAIL )) && FAIL_ITEMS+=("文档与登记（见上方 == 文档与登记 段）")
 
 if (( FAIL && ! KEEP_GOING )); then
   print "文档与登记检查失败：先修好再跑（未运行 Godot 测试与其余检查；要照旧全跑加 --keep-going）"
@@ -123,7 +125,14 @@ if (( import_rc != 0 )) || print -r -- "$import_out" | grep -qE 'SCRIPT ERROR|^E
 fi
 # 测试并行运行（每个测试独立临时 HOME，互不干扰、不碰真实用户数据）；CHECK_JOBS=1 时逐个运行
 # 慢的先跑、各工作树共用并发上限、工程未变时沿用上轮通过结果（--full 强制整轮），见 并行测试.py 文件头
-if ! python3 "$ENV_DIR/并行测试.py" "$GODOT" "$PROJECT" "${TEST_ARGS[@]}" "${SEL_SCENES[@]}"; then FAIL=1; fi
+failed_file=$(mktemp -t xiyou_check_failed)
+if ! CHECK_FAILED_FILE=$failed_file python3 "$ENV_DIR/并行测试.py" "$GODOT" "$PROJECT" "${TEST_ARGS[@]}" "${SEL_SCENES[@]}"; then
+  FAIL=1
+  scene_rows=("${(@f)$(<$failed_file)}")
+  for row in ${scene_rows:#}; do FAIL_ITEMS+=("Godot 场景 ${row%%$'\t'*}  日志 ${row#*$'\t'}"); done
+  (( ${#${scene_rows:#}} )) || FAIL_ITEMS+=("Godot 测试（未写出失败场景，见上方 == Godot 测试 段）")
+fi
+rm -f "$failed_file"
 fi
 
 print "== 参照工具访问守卫"
@@ -165,6 +174,10 @@ if (( ! ORACLE && ! SEL_FULL && ${SEL_CHECKS[(Ie)same_source]} )); then
   print -r -- "  ⚠ 选测选中了同源检查，但没加 --oracle，未跑（合并车道.sh --affected 会带 --oracle）"
 fi
 
+if (( ${#FAIL_ITEMS} )); then
+  print -r -- "== 失败项汇总（${#FAIL_ITEMS} 项）"
+  for item in "${FAIL_ITEMS[@]}"; do print -r -- "  ✗ $item"; done
+fi
 print "== Git"
 git -C "$ROOT" -c core.quotePath=false status --short | sed 's/^/  /'
 if [[ -n $AFFECTED ]] && (( ! SEL_FULL )); then
