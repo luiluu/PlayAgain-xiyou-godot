@@ -104,13 +104,15 @@ func update_character() -> void:
 
 
 ## 存档：原版 $gameMap 整个进存档、同版本读档不重设地图（参照 tests/fixtures/save_events_oracle.json）。
-## 这里只存玩家看得到的运行时状态：位置（含走到一半的小数位置）、朝向、移动路线改过的图像／不透明度／穿透等，以及强制路线与索引。
+## 这里只存玩家看得到的运行时状态：位置（含走到一半的小数位置）、朝向、移动路线改过的图像／不透明度／穿透等，以及强制路线与索引；
+## 还有移动生命周期计数：跳跃峰高／剩余帧（_jumpPeak／_jumpCount，跳到一半存档读档后接着在空中走完）、停步与动画计数、随机移动等待（沙僧第六期 S1／P2）。
 ## 临时消除另存在 XState.erased_events，自开关在 XState.self_switches。
 func save_state() -> Dictionary:
 	var out := {"page": page_index, "x": grid.x, "y": grid.y, "real": [real.x, real.y], "direction": direction, "pattern": pattern,
 		"characterName": character_name, "characterIndex": character_index, "tileId": tile_id, "opacity": opacity,
 		"through": through, "transparent": transparent, "directionFix": direction_fix, "walkAnime": walk_anime,
-		"stepAnime": step_anime, "moveSpeed": move_speed, "moveFrequency": move_frequency, "priorityType": priority_type}
+		"stepAnime": step_anime, "moveSpeed": move_speed, "moveFrequency": move_frequency, "priorityType": priority_type,
+		"jumpPeak": _jump_peak, "jumpCount": _jump_count, "stopCount": _stop_count, "animeCount": _anime_count, "moveWait": _move_wait}
 	if _route_forcing:
 		out.forcedRoute = {"route": _route, "index": _route_index, "wait": _route_wait}
 	return out
@@ -143,5 +145,11 @@ func restore_state(d: Dictionary) -> void:
 		force_move_route(forced.route)
 		_route_index = int(forced.get("index", 0))
 		_route_wait = int(forced.get("wait", 0))
+	# 旧档没有这些字段：不在跳跃、计数从 0 起
+	_jump_peak = int(d.get("jumpPeak", 0))
+	_jump_count = int(d.get("jumpCount", 0))
+	_stop_count = int(d.get("stopCount", 0))
+	_anime_count = float(d.get("animeCount", 0.0))
+	_move_wait = int(d.get("moveWait", _move_wait))
 	_sync_position()
 	queue_redraw()
