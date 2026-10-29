@@ -139,6 +139,7 @@ func _run() -> void:
 	await _shield_side(b, s)
 	await _message_101(b)
 	await _race_ui(b, s)
+	await _select_confirm(b, s)
 	# 指令窗（原版：851,462,220,196；6 条居中）
 	var cw: XBattleList = b.cmd_win
 	_check("command_rect", [cw.position, cw.size] == [Vector2(851, 462), Vector2(220, 196)], [cw.position, cw.size])
@@ -216,6 +217,7 @@ func _run() -> void:
 	ok = await _until(func(): return b.combo.hits >= 1 and b.combo.layout_alpha == 255 and b.combo.digits.size() == 1)
 	_check("combo_counts_in_battle", ok and b.combo.position == b._origin and b.combo.digits[0].dx == -30.0, [b.combo.hits, b.combo.digits])
 	_combo_rules()
+	await _prey_pick(b, s)
 	# 真实打完这一战（同原版参照 45～47：敌人 HP 设为 1 后普通攻击），截取胜利镜头与结算
 	# 循环上限只是防死循环；美娜装上武器后约需 62 轮，留足余量
 	for i in range(200):
@@ -474,3 +476,110 @@ func _race_ui(b: XBattleScene, s: XState) -> void:
 	a.last_command = ""
 	b._picked.emit("back")
 	await _frames(5)
+
+
+## 指令窗光标移到某技能类型，打开列表并确定该技能（列表顺序同 battle_skills 按类型筛）。
+func _choose_skill(b: XBattleScene, a: XActor, id: int) -> bool:
+	var sk := XDB.rec("Skills", id)
+	var keys: Array = b._command_entries(a).map(func(e): return str(e.key))
+	var ci := keys.find("stype:%d" % int(sk.stypeId))
+	if ci < 0 or b.cmd_win == null:
+		return false
+	b.cmd_win.select(ci)
+	await _press("ui_accept")
+	await _frames(3)
+	var list := b.logic.battle_skills(a).filter(func(x): return int(x.stypeId) == int(sk.stypeId))
+	var idx := list.find_custom(func(x): return int(x.id) == id)
+	if b.list_win == null or idx < 0:
+		return false
+	b.list_win.select(idx)
+	await _press("ui_accept")
+	await _frames(5)
+	return true
+
+
+## YEP Select Help Window（原版参照 selhelp_all_enemies／random_enemy／user／all_allies，ui_reference 战斗夹具同一场面）：技能／物品确定后，
+## 除 scope 0 外都先进选目标（onSelectAction 的 forceSelection）。全体／随机敌人：选敌、光标可移动、默认最右、只亮光标那只；
+## 自身：锁在行动者；全体我方：锁在第 1 位。帮助窗不出字（说明卡没有 setBattler，YEP 抛错被吞），取消回技能列表原位。
+## 攻击指令（YEP_WeaponUnleash commandAttack）先判 needsSelection，不受强制。做完恢复技能与 MP。
+func _select_confirm(b: XBattleScene, s: XState) -> void:
+	var a := s.actor(10)
+	var ids := a.skill_ids.duplicate()
+	var mp := a.mp
+	for id in [10, 306, 108]:
+		a.learn_skill(id)
+	a.mp = a.mmp
+	b._picked.emit("back")
+	await _frames(5)
+	for c in [[10, "enemy", "all_enemies"], [306, "ally", "user"], [108, "ally", "all_allies"]]:
+		var tag: String = c[2]
+		var ok := await _choose_skill(b, a, c[0])
+		var idx := b.list_win.index if b.list_win != null else -1
+		_check("selhelp_%s_mode" % tag, ok and b._target_mode == c[1], [ok, b._target_mode])
+		_check("selhelp_%s_no_help_text" % tag, b.help_card == null or not b.help_card.visible)
+		_check("selhelp_%s_one_cursor" % tag, b.sprites.values().filter(func(v): return v.selected).size() == 1)
+		var first = b._hover
+		match tag:
+			"all_enemies":
+				_check("selhelp_all_enemies_rightmost", first is XEnemy and b.sprites[first].home.x == 353)
+				await _shot("battle_52_selhelp_all_enemies")
+				await _press("ui_left")
+				_check("selhelp_all_enemies_cursor_moves", b._hover is XEnemy and b._hover != first)
+			"user":
+				_check("selhelp_user_self", first == a)
+				await _shot("battle_52b_selhelp_user")
+			"all_allies":
+				_check("selhelp_all_allies_first", first == b.logic.actors[0])
+				await _shot("battle_52c_selhelp_all_allies")
+		if tag != "all_enemies":
+			await _press("ui_down")
+			_check("selhelp_%s_locked" % tag, b._hover == first)
+		await _press("ui_cancel")
+		await _frames(3)
+		_check("selhelp_%s_cancel_to_list" % tag, b._target_mode == "" and b.list_win != null and b.list_win.active and b.list_win.index == idx,
+			[b._target_mode, null if b.list_win == null else b.list_win.index, idx])
+		await _press("ui_cancel")
+		await _frames(3)
+	# 攻击指令：全体范围的攻击技能也不进选目标
+	var r = await b._pick_target({"id": 0, "scope": 2, "damage": {"type": 1}}, a, false)
+	_check("selhelp_attack_not_forced", r == a and b._target_mode == "")
+	a.skill_ids = ids
+	a.mp = mp
+	b._picked.emit("back")
+	await _frames(5)
+
+
+## 妖族群攻手选猎物（种族 R:258／259）：妖族放全体伤害技能（闪电）时进选敌，默认最右；换一只确定后，行动打全体、猎物就是选中的那只。
+## 用此刻轮到的角色，做完把种族改回。
+func _prey_pick(b: XBattleScene, s: XState) -> void:
+	var ok := await _until(func(): return b.cmd_win != null and b.cmd_win.active and b._target_mode == "" and b._active is XActor)
+	_check("prey_pick_ready", ok)
+	if not ok:
+		return
+	var a: XActor = b._active
+	var key := str(a.actor_id)
+	var before = s.race.actors.get(key)
+	s.race.actors[key] = {"race": 1, "rank": 7, "free": false, "blood": false, "legacy": []}
+	XRace.sync(s, a)
+	a.learn_skill(10)
+	a.mp = a.mmp
+	b._picked.emit("back")
+	await _frames(5)
+	ok = await _choose_skill(b, a, 10)
+	var first = b._hover
+	_check("prey_pick_enemy_mode", ok and b._target_mode == "enemy" and first is XEnemy and b.sprites[first].home.x == b.logic.alive(b.logic.enemies).map(func(e): return b.sprites[e].home.x).max(),
+		[ok, b._target_mode])
+	await _press("ui_left")
+	var chosen = b._hover
+	_check("prey_pick_moves", chosen is XEnemy and chosen != first)
+	await _shot("battle_53_prey_pick")
+	await _press("ui_accept")
+	ok = await _until(func(): return XRaceBattle.state(b.logic, a).lastPrey != null)
+	_check("prey_pick_is_chosen", ok and XRaceBattle.state(b.logic, a).lastPrey == chosen,
+		[ok, null if chosen == null else chosen.display_name()])
+	await _until(func(): return b.logic.is_won() or (b.cmd_win != null and b.cmd_win.active))
+	if before == null:
+		s.race.actors.erase(key)
+	else:
+		s.race.actors[key] = before
+	XRace.sync(s, a)
