@@ -87,6 +87,33 @@ cases.push(makeCase('xparam_state', {state:xState&&xState.id, traits:xState&&xSt
   const rows=[{tag:'before',x:xs()}]; a.addState(xState.id); rows.push({tag:'after_addState',x:xs(),need:!!a.need_refresh});
   a.refresh(); rows.push({tag:'after_refresh',x:xs()}); return {rows};
 }));
+// 7. 角色侧 xparam／sparam／状态缓存的时序（battleHost 战斗现场）。每步记 xparam 0～9、sparam 0～9、参数 0～7 与 krz 标记。
+// 状态只取自动解除时机为 0、无备注、无行动限制的；装备取角色 1 能穿的第一件带非零 22 号特性的防具。
+const pick=code=>w.$dataStates.find(s=>s&&s.id>10&&!s.note&&!s.restriction&&s.autoRemovalTiming===0&&s.traits.length>0&&s.traits.every(t=>t.code===code));
+const xState7=pick(22), sState7=pick(23);
+const xArmor=(()=>{ newGame(); const a=w.$gameActors.actor(1); return w.$dataArmors.find(r=>r&&r.traits.some(t=>t.code===22&&t.value!==0)&&a.canEquip(r)); })();
+function cr(a, tag) {
+  return {tag, x:Array.from({length:10},(_,i)=>a.xparam(i)), s:Array.from({length:10},(_,i)=>a.sparam(i)),
+    p:Array.from({length:8},(_,i)=>a.param(i)), states:Array.from(a._states), need:!!a.need_refresh};
+}
+const steps={
+  add_x:(a,rows)=>{ a.addState(xState7.id); rows.push(cr(a,'now')); },
+  remove_x:(a,rows)=>{ a.removeState(xState7.id); rows.push(cr(a,'now')); },
+  add_s:(a,rows)=>{ a.addState(sState7.id); rows.push(cr(a,'now')); },
+  add_x_turnStart:(a,rows)=>{ a.addState(xState7.id); rows.push(cr(a,'now')); a.onTurnStart(); rows.push(cr(a,'onTurnStart')); },
+  add_x_turnEnd:(a,rows)=>{ a.addState(xState7.id); rows.push(cr(a,'now')); a.onTurnEnd(); rows.push(cr(a,'onTurnEnd')); },
+  add_x_gainHp:(a,rows)=>{ a.addState(xState7.id); rows.push(cr(a,'now')); a.gainHp(-1); rows.push(cr(a,'gainHp')); },
+  equip_x:(a,rows)=>{ a.changeEquip(a.equipSlots().indexOf(xArmor.etypeId), xArmor); rows.push(Object.assign(cr(a,'now'),{equips:a.equips().map(e=>e&&e.id)})); },
+  add_x_cold:(a,rows)=>{ a.addState(xState7.id); rows.push(cr(a,'now_cold')); },
+};
+for(const [k,f] of Object.entries(steps)) cases.push(makeCase('actor_cache.'+k, {xState:xState7&&xState7.id, sState:sState7&&sState7.id, armor:xArmor&&xArmor.id}, ()=>{
+  const bh=battleHost(host), a=bh.actor(0);
+  if(k==='remove_x') { a.addState(xState7.id); a.refresh(); }
+  if(k==='equip_x') { w.$gameParty.gainItem(xArmor,1); }
+  const rows=[];
+  if(k!=='add_x_cold') rows.push(cr(a,'warm')); else a.refresh();
+  f(a,rows); a.refresh(); rows.push(cr(a,'after_refresh')); return {rows};
+}));
 // 5. 敌人侧（重制已缓存敌人）：同 1
 cases.push(makeCase('enemy_debuff_warm', {}, ()=>{
   const {a,e}=battle(); e.addState(plainState.id); e.refresh();
