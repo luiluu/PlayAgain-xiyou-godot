@@ -581,6 +581,40 @@ static func blocks_state(b) -> bool:
 	return not is_same(f.source, b) and attack_damage(f.item) and has(f.source, "void")
 
 
+# ---- 词条效果第③批：行动道具投影（祸祝、恶愿、逆祷） ----
+
+## A.project（Aff:41-47，原版换掉 Game_Action.item）：角色的行动技能换成投影。重制在 execute 里武器解放之后、付费之前换一次，
+## 之后费用、目标、命中、伤害、效果、战斗记录的名字都读投影；投影保留原 id，_alienOriginal／_alienMode 记原技能与词条。
+## 选目标界面与自动战斗要先投影再看 scope（battle_scene._pick_target、XBattleLogic.decide）。
+static func project(u, skill: Dictionary) -> Dictionary:
+	if skill.is_empty() or skill.has("_alienMode") or not (u is XActor) or XBattleLogic.is_item(skill):
+		return skill
+	var affix := str(XAlienation.for_actor(u).get("affix", ""))
+	if affix == "blessing" and _in_template("blessing", int(skill.id)):
+		return _project_blessing(skill)
+	return skill
+
+
+## 祸祝（Aff:44）：敌方（原 scope 8→2，其余→1）；增益（效果 31）改减益，其余效果的 dataId 换成 statePairs 的诅咒。
+## 没有配对的 dataId 原版是 NaN（什么也不附加），重制记 -1；templates.blessing 只有 7100（附加 2421 幻日虹）
+static func _project_blessing(s: Dictionary) -> Dictionary:
+	var v := s.duplicate(true)
+	var pairs := _pairs()
+	v.scope = 2 if int(s.get("scope", 0)) == 8 else 1
+	v.effects = (s.get("effects", []) as Array).map(func(e):
+		var n: Dictionary = e.duplicate(true)
+		if int(n.code) == 31:
+			n.code = 32
+		else:
+			n.dataId = int(pairs.get(str(int(n.dataId)), -1))
+		return n)
+	v.name = "祸祝·" + str(s.get("name", ""))
+	v._alienOriginal = int(s.id)
+	v._alienMode = "blessing"
+	v._alienOriginalScope = int(s.get("scope", 0))
+	return v
+
+
 # ---- 词条效果期二①：疫囊、囚厄、绝缘、舍身（状态类） ----
 
 ## A.naturalRemoval：自然到期（removeStatesAuto、腐蚀到期、囚厄转移后原主身上去掉）时放行受保护状态的移除

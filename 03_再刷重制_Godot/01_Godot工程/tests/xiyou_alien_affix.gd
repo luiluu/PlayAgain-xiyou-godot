@@ -135,6 +135,8 @@ func _battle(c: Dictionary, compare := true) -> Array:
 	var b := s.actor(8)
 	a.change_level_mv(99)
 	b.change_level_mv(30)
+	for id in st.get("learn", []):
+		a.learn_skill(int(id))
 	s.party.clear()
 	s.battle_slots.clear()
 	s.add_actor(1)
@@ -212,9 +214,16 @@ func _battle(c: Dictionary, compare := true) -> Array:
 			user.tp = 100.0
 			user.mp = user.mmp
 			var skill := _synth(sp.def) if sp.has("def") else XDB.rec("Skills", int(sp.skill))
-			var friends := int(skill.scope) in [7, 8, 9, 10, 11]
+			# 选目标按投影后的 scope（原版 setTarget 之后 makeTargets 读 item()）
+			var view := XAlienBattle.project(user, skill)
+			var friends := int(view.scope) in [7, 8, 9, 10, 11]
 			var side: Array = logic.actors if (user is XActor) == friends else enemies
 			logic.act(user, skill, side[int(sp.get("target", 0))])
+			if compare and row.has("view"):
+				var got_view := {"name": view.name, "scope": int(view.scope), "effects": (view.effects as Array).map(func(e): return [int(e.code), int(e.dataId), float(e.value1)])}
+				var want: Dictionary = (row.view as Dictionary).duplicate()
+				want.erase("terminated")  # O-109：原版投影丢了熟练度费用函数，付费时 terminate；重制不崩
+				check(step + ".view", _norm(got_view) == _norm(want), [got_view, want])
 		var reading := _reading(enemies, a, b)
 		got.append(reading)
 		if compare:

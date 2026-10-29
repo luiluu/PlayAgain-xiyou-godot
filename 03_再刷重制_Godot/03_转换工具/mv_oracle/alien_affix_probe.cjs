@@ -37,10 +37,17 @@ const BIG_HP = 1e12;
 // 在原对象上改（YEP 技能熟练度等插件载入时给技能对象挂了字段，整个替换会让行动结束时报错并 SceneManager.terminate）
 function synth(def) { Object.assign(w.$dataSkills[13], {scope: def.scope, hitType: def.hitType,
   effects: def.effects.map(e => ({code: e[0], dataId: e[1], value1: e[2], value2: 0}))}); return 13; }
+// 投影用 A.clone（JSON 克隆）复制技能，丢了 YEP_SkillMasteryLevels 挂在技能对象上的 masteryMpCost／TpCost 函数：付费算 skillMpCost 时
+// 报错，SkillMasteryLevelsError 先 alert 再 SceneManager.terminate（正式游戏里直接退出，O-109）。这里把两者换成计数，记进 view.terminated，
+// 让行动照「报错被吞、费用取熟练度公式之前的值」走完（默认公式就是 cost，数值上没有差别）
+let terminated = 0;
+w.SceneManager.terminate = () => { terminated++; };
+w.alert = () => {};
 function battle(spec) {
   newGame(); uncap();
   const a = w.$gameActors.actor(1), b = w.$gameActors.actor(8);
   a.changeLevel(99, false); b.changeLevel(30, false);
+  if (spec.learn) spec.learn.forEach(id => a.learnSkill(id));  // 祸祝等要先学会模板技能才穿得上（canEquip 看 A.ready）
   party([1, 8]);
   // 直接放进武器栏（穿戴限制属工坊侧）；none 为不带标记的同一本体
   const kind = spec.armor ? 'a' : 'w', base = spec.armor || 1044;
@@ -63,6 +70,8 @@ function act(bm, user, skillId, targetIndex) {
   const action = new w.Game_Action(user);
   action.setSkill(skillId);
   action.setTarget(targetIndex);
+  const item = action.item(), view = {name: item.name, scope: item.scope, effects: item.effects.map(e => [e.code, e.dataId, e.value1])};
+  terminated = 0;
   user._actions = [action]; bm._subject = user; bm._action = null;
   bm.startAction();
   for (let i = 0; i < 20000; i++) {
@@ -71,6 +80,8 @@ function act(bm, user, skillId, targetIndex) {
     else if (ph === 'actionTargetList') bm.updateActionTargetList(); else break;
   }
   if (bm._phase === 'action' || bm._phase === 'actionList' || bm._phase === 'actionTargetList') bm.endAction();
+  view.terminated = terminated;
+  return view;
 }
 const unit = x => ({hp: r(x.hp), mp: r(x.mp), shield: r(x._shield || 0), states: x._states.slice().sort((p, q) => p - q),
   buffs: x._buffs.slice(2, 8)});
@@ -108,7 +119,8 @@ function battleCase(name, spec, steps) {
       } else {
         const user = who(st.user);
         user.setTp(100); user._mp = user.mmp;
-        act(ctx.bm, user, st.def ? synth(st.def) : st.skill, st.target || 0);
+        const view = act(ctx.bm, user, st.def ? synth(st.def) : st.skill, st.target || 0);
+        if (st.view) { rows.push(Object.assign({step: st, view}, reading(ctx, atk))); continue; }
       }
       rows.push(Object.assign({step: st}, reading(ctx, atk)));
     }
@@ -172,4 +184,9 @@ battleCase('scapegoat.event', {affix: 'scapegoat', config: {actorId: 1, partnerI
 battleCase('hollow.event', {affix: 'hollow'}, [{event: {who: 'a', value: 500}}, {event: {who: 'a', value: -500, death: true}}]);
 // 锁队检查（Adv:62）：绑定的队友（角色 2）不在场，异化装备卸下放回背包，本场不生效
 battleCase('lifelink.invalid', {affix: 'lifelink', config: {actorId: 1, partnerId: 2}}, [{user: 'e0', skill: 1}]);
-process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）', config, cases}) ? 0 : 1);
+// 第③批·行动道具投影：祸祝把 templates.blessing（7100 幻日虹，自身加速 2421）改为敌方单体、状态换成 statePairs 的诅咒（2668 减速）；
+// 名字「祸祝·」。普攻不在模板里，不投影。view 记行动开始前 Game_Action.item() 的名字、scope、效果
+battleCase('blessing', {affix: 'blessing', armor: 1020, learn: [7100]}, [{user: 'a', skill: 7100, view: true}, {user: 'a', skill: 7100, target: 1, view: true},
+  {user: 'a', skill: 1, view: true}]);
+battleCase('blessing.none', {learn: [7100]}, [{user: 'a', skill: 7100, view: true}]);
+process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝）', config, cases}) ? 0 : 1);

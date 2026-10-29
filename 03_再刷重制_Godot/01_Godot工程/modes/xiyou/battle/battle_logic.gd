@@ -1166,6 +1166,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	skill = change_to(u, skill)  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
 	skill = weapon_unleash(u, skill)  # YEP_WeaponUnleash：行动开始状态效果之后、付费之前
+	skill = XAlienBattle.project(u, skill)  # 异化行动道具投影（A.project 换掉 Game_Action.item）：祸祝等，之后各处都读投影
 	# 导入角色平衡：禁用角色／禁用号角的 useItem 直接返回（不扣物品、不付费、不进冷却、不前移），行动（含行动序列）对目标无效
 	var blocked := XImportedBalance.blocks(u, skill)
 	if not blocked and is_item(skill):
