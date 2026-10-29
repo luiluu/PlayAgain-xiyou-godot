@@ -1395,10 +1395,16 @@ static func pay_glutton(a, mp: float) -> void:
 	a.mp = 0.0
 
 
+## O-113（优化登记）：原版 installNativeTojiRuntime.js:362-366（模块 9）自己定义了 Game_Actor.prototype.isSkillTypeSealed，
+## installAlienationAdvanced 后包的 Game_BattlerBase.isSkillTypeSealed 对角色走不到，缄默「绕过魔法沉默」永远不生效
+## （alien_affix_probe silence 例第 3 步沉默中不能用）。true＝照词条说明绕过；false＝照原版
+static var o113_silence_bypass := true
+
+
 ## meetsSkillConditions／isSkillTypeSealed 包装（Adv:145-149）：缄默选定的技能不受魔法沉默状态封印技能类型；
 ## 其他来源（别的状态、装备、职业）封的照样封
 static func silence_bypass(a, skill: Dictionary) -> bool:
-	if not silence_skill(a, skill):
+	if not o113_silence_bypass or not silence_skill(a, skill):
 		return false
 	var stype := int(skill.get("stypeId", 0))
 	for o in a.trait_objects():
