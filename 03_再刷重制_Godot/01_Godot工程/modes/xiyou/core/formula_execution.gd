@@ -22,7 +22,15 @@ var _skill_id := 0
 var resources: XResourceContext
 var _random: XRandomStream
 
+## evalDamageFormula 的异化包装（逆骨）：公式求值期间压公式帧
 static func run_item(item: Dictionary, a: XBattler, b: XBattler, variables, switches := {}, execute := false, random: XRandomStream = null, resource_context: XResourceContext = null) -> Dictionary:
+	XAlienBattle.push_formula(item, a, b, true)
+	var out := _run_item(item, a, b, variables, switches, execute, random, resource_context)
+	XAlienBattle.pop_formula()
+	return out
+
+
+static func _run_item(item: Dictionary, a: XBattler, b: XBattler, variables, switches := {}, execute := false, random: XRandomStream = null, resource_context: XResourceContext = null) -> Dictionary:
 	var program: Dictionary = item.get("damage", {}).get("formulaProgram", {})
 	var status := str(program.get("status", "unsupported"))
 	if status == "module" and program.get("module") == "cat":  # 整条公式是 CodexCat.formula(user,item,b)（转换器 MODULE_FORMULAS）

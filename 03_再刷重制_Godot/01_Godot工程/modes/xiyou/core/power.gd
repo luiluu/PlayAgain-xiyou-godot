@@ -570,7 +570,9 @@ static func _repeat_count(a: XActor, item: Dictionary) -> float:
 
 ## expected：先扣费用再预演普通与暴击伤害（含状态 Confirm/React），× 命中 ×(1−闪避) × 段数，群体按 60% 单体／40% 三体
 ## power：种族的本路线状态（XRaceBattle.power_cycle），血契与神族首魔、残响据此判
-static func _expected(logic: XBattleLogic, a: XActor, t: XBattler, skill: Dictionary, cost: Dictionary, power: Dictionary) -> float:
+static func _expected(logic: XBattleLogic, a: XActor, t: XBattler, skill: Dictionary, cost: Dictionary, power: Dictionary = {}) -> float:
+	if power.is_empty():
+		power = XRaceBattle.power_cycle()  # 不在 _cycle 里调（测试直接预演）时自开一轮
 	var item := _preview_skill(skill)
 	var saved := [a.mp, a.hp, a.tp]
 	a.mp = maxf(0.0, a.mp - float(cost.mp))

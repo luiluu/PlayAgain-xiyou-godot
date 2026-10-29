@@ -29,7 +29,8 @@
   免得长任务.py 的无输出看门狗（默认 3600 秒）把仍在推进的批测判成卡住；不放宽看门狗、不改并发。
 - 日志：--log-dir（或 CHECK_LOG_DIR）没给时写到 <工程上一级>/04_验证/本地结果/并行测试/<时间戳>/（只留最近 LOGS_KEEP 份），
   每个场景一份 <场景>.log，结尾打印目录；失败的场景另打印它的完整日志路径（八戒期二、期三：明细只在屏幕上 8 行，
-  管道给 tail 时看不全，曾多花一轮 50 分钟重跑）。--quiet：不打心跳与通过行，只打失败、偶发、提示与汇总。
+  管道给 tail 时看不全，曾多花一轮 50 分钟重跑）；最后两类行是「✗ 失败场景 N 个」与逐个「场景 → 日志」，
+  设了 CHECK_FAILED_FILE 时同样写进该文件（每行「场景<Tab>日志」，全过时清空），检查.sh 据此在收尾汇总里带上日志路径。--quiet：不打心跳与通过行，只打失败、偶发、提示与汇总。
 - 共用状态目录：XIYOU_TEST_STATE_DIR，否则 <git-common-dir>/xiyou_test_state（主工作区与各 worktree 共用），不在 Git 里时用系统临时目录。
 """
 import argparse
@@ -461,6 +462,7 @@ def main() -> int:
                     flaky.append(name)
     final = {n: result_ok(*attempts[n][-1][:2]) for n in todo}
     fail = 0
+    failed_logs = {}  # 失败场景 → 最后一次的日志，收尾单列
     for name in scenes:
         if name in reused:
             if a.log_dir:
@@ -488,7 +490,8 @@ def main() -> int:
             print('  ✗ %s (rc=%d)' % (name, rc))
             for l in [l for l in out.splitlines() if re.search(r'ERROR|FAIL |passed|TEST_RESULT', l)][:8]:
                 print('      ' + l)
-            print('      完整输出：' + str(a.log_dir / (Path(name).stem + ('.rerun%d' % (len(tries) - 1) if len(tries) > 1 else '') + '.log')))
+            failed_logs[name] = a.log_dir / (Path(name).stem + ('.rerun%d' % (len(tries) - 1) if len(tries) > 1 else '') + '.log')
+            print('      完整输出：' + str(failed_logs[name]))
     wall = time.monotonic() - started
     if reused:
         print('  · 工程未变：沿用上轮通过 %d 个，实际运行 %d 个（--full 或 CHECK_FULL=1 强制整轮）' % (len(reused), len(todo)))
@@ -524,12 +527,20 @@ def main() -> int:
     if a.log_dir:
         (a.log_dir / 'test_timings.json').write_text(json.dumps({
             'jobs': a.jobs, 'globalJobs': limit, 'wallSeconds': round(wall, 3), 'flakyRerunPassed': flaky,
-            'fingerprint': fingerprint, 'reused': sorted(reused),
+            'fingerprint': fingerprint, 'reused': sorted(reused), 'failed': sorted(failed_logs),
             'scenes': [{'name': n, 'seconds': round(attempts[n][0][2], 3), 'passed': final[n],
                         'attempts': [{'rc': t[0], 'seconds': round(t[2], 3), 'passed': result_ok(t[0], t[1])} for t in attempts[n]]}
                        for n in sorted(todo, key=lambda n: attempts[n][0][2], reverse=True)]
         }, ensure_ascii=False, indent=2) + '\n')
         print('  · 日志：' + str(a.log_dir))
+    # 收尾单列失败场景与日志（哪吒_7 t4）：长任务日志里逐场景明细夹在几百行进度中间，曾因找不到失败项整轮重跑；
+    # CHECK_FAILED_FILE 给 检查.sh 收尾汇总用（每行「场景\t日志」，通过时清空）
+    if failed_logs:
+        print('  ✗ 失败场景 %d 个：' % len(failed_logs))
+        for n, path in failed_logs.items():
+            print('      %s → %s' % (n, path))
+    if os.environ.get('CHECK_FAILED_FILE'):
+        Path(os.environ['CHECK_FAILED_FILE']).write_text(''.join('%s\t%s\n' % kv for kv in failed_logs.items()))
     return fail
 
 
