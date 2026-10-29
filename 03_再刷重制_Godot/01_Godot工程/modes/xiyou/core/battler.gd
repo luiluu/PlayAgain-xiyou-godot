@@ -231,6 +231,8 @@ func shield_effect_bonus() -> float:
 func add_shield(value: float) -> void:
 	if is_nan(value) or is_inf(value):
 		value = 0.0
+	if XAlienBattle.route_shield(self, value):
+		return  # 异化绝缘拒收外来护盾、舍身转给队友（addShield 包装）
 	if value > 0.0:
 		value *= 1.0 + shield_effect_bonus()
 	shield = maxf(0.0, shield + value)
@@ -312,14 +314,19 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 		return
 	if XAlienBattle.blocks_state(self):
 		return  # 异化归墟 addState 包装：归墟者攻击期间不给别人附加状态
+	if XAlienBattle.route_state(self, id):
+		return  # 异化绝缘拒收、舍身转给队友（addState 包装）
+	var alien_rev := XAlienBattle.revision(self, id)
 	_adding_state = true
 	_add_state(id, random)
 	_adding_state = false
+	XAlienBattle.after_add_state(self, id, alien_rev)  # 异化囚厄：其他角色得到的 jailStates 转给囚厄者
 
 func _add_state(id: int, random: XRandomStream = null) -> void:
 	if XDB.rec("States", id).is_empty():
 		return
 	var fresh := not state_ids.has(id)
+	var alien_before = state_turns.get(id) if not fresh else null
 	if id == XZhenqi.POJIA_STATE:
 		zq_pojia_rate = XZhenqi.pojia_rate()  # 本次行动者有破甲道法时 1−0.5×scale，否则 0.5
 	if id == 1:
@@ -345,6 +352,7 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 	state_turns[id] = roll_state_duration(lo, hi, random, str(lifecycle_context.get("duration_key", str(id))))
 	if id == XAlienBattle.corrosion_id():
 		XAlienBattle.sync_corrosion(self)  # 异化 resetStateCounts：沿生命周期时长结算之后同步
+	XAlienBattle.on_reset_state(self, id, alien_before)  # 异化 resetStateCounts：附加次数、疫囊回合取较长
 	var source := XImportedBalance.acting_battler()
 	if source != null:
 		state_origins[id] = weakref(source)
@@ -376,6 +384,8 @@ func remove_state_auto(id: int) -> void:
 	_leaving_state = false
 
 func remove_state(id: int) -> void:
+	if XAlienBattle.blocks_removal(self, id, _leaving_state):
+		return  # 异化疫囊、囚厄、绝缘 removeState 包装：只能自然到期
 	var had := state_ids.has(id)
 	if id == 1 and state_ids.has(id) and hp <= 0.0:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
@@ -401,6 +411,7 @@ func remove_state(id: int) -> void:
 			XStateEffects.run_one("leave", self, st)
 		state_origins.erase(id)  # remove AND leave still see the original source
 	param_mark_dirty()
+	XAlienBattle.after_removal(self, id, _leaving_state)
 
 func _sort_states() -> void:
 	# MV：按优先级降序，同优先级按 ID 升序
@@ -773,7 +784,7 @@ func buff_limit(pid: int, positive: bool) -> int:
 ## Game_BattlerBase.clearStates（PermanentState 保留 <Permanent>）：不 refresh、不标 dirty
 func clear_states() -> void:
 	for sid in state_ids.duplicate():
-		if not XResourceContext.permanent(sid):
+		if not XResourceContext.permanent(sid) and not XAlienBattle.keeps_state(self, sid):
 			state_ids.erase(sid)
 			state_turns.erase(sid)
 			XRaceBattle.on_state_removed(self, sid)

@@ -30,9 +30,10 @@ func add_state(b: XBattler, id: int, inputs := {}) -> void:
 		return
 	# Native isStateAddable checks appearance and the death state. Raw HP may
 	# already be zero while refresh/_die still needs to attach state 1.
-	if b.state_ids.has(1) or (b is XEnemy and b.hidden) or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
+	var forced := XAlienBattle.forced_state(b, id)  # 异化疫囊、囚厄：不可抵抗、本次移除过也照加
+	if b.state_ids.has(1) or (b is XEnemy and b.hidden) or (b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not forced):
 		return
-	if result(b).removedStates.has(id):
+	if result(b).removedStates.has(id) and not forced:
 		return
 	var context := state_context(b)
 	context.merge(inputs, true)
@@ -114,6 +115,8 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	if not unsupported.is_empty():
 		error = unsupported
 		return {}
+	if XAlienBattle.route_gain(self, b, resource, amount):
+		return {}  # 异化绝缘拒收外来恢复、舍身的生命恢复转给队友（gainHp／gainMp 包装）
 	var before := snapshot(b)
 	var requested := amount
 	if amount < 0.0:

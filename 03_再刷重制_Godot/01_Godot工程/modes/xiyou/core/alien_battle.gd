@@ -2,7 +2,7 @@ class_name XAlienBattle
 extends RefCounted
 ## 异化的战斗侧（冻结 v0.28 installAlienationRuntime，CodexAlienation）：遭遇、敌人变体、锁队、腐蚀、镜骸反噬、胜利发放。
 ## 工坊侧（标记、账本、合成、重抽、分解）在 alienation.gd（XAlienation）；词条效果（installAlienationAffixes／Advanced）
-## 期一只接逆骨、归墟（见文末「词条效果」），其余词条未移植。
+## 期一接逆骨、归墟，期二①接疫囊、囚厄、绝缘、舍身（见文末「词条效果」），其余词条未移植。
 ## 参照 mv_oracle/alien_battle_probe.cjs（generated/oracle/alien_battle.json），专项 tests/xiyou_alien_battle；
 ## 词条效果参照 mv_oracle/alien_affix_probe.cjs（generated/oracle/alien_affix.json），专项 tests/xiyou_alien_affix。
 ## - 遭遇（Game_Troop.setup 包装 setupEncounter）：本场敌人按 bossSources 匹配（敌人、地图、敌群，未知存在另看来源地图），
@@ -213,6 +213,7 @@ static func open(logic) -> void:
 static func lock_party(logic) -> void:
 	var st := _store(logic)
 	st.party = {}
+	st.battling = true
 	for a in logic.actors:
 		var d := XAlienation.for_actor(a)
 		st.party[a] = null if d.is_empty() else {"item": d.item, "affix": d.affix, "config": (d.config as Dictionary).duplicate(true), "observed": [], "selected": 0}
@@ -253,8 +254,13 @@ static func end(logic, result: int) -> void:
 		if result == 0:
 			grant(logic)
 		x.settled = true
+	for a in logic.actors:  # endBattle 包装：清囚厄接收标记
+		for k in ["xalien_jail", "xalien_jail_buff"]:
+			if a.has_meta(k):
+				a.remove_meta(k)
 	_store(logic).party = {}
 	_store(logic).root = null
+	_store(logic).battling = false
 
 
 # ---- 回合 ----
@@ -336,7 +342,9 @@ static func tick_corrosion(logic, t, r: int, logs: Array) -> void:
 	var until := int(c.until)
 	t.state_turns[id] = maxi(0, until - r)
 	if r >= until:
+		natural_removal = true
 		t.remove_state(id)
+		natural_removal = false
 
 
 ## gainHp(-n) 的伤害（ShieldSystem 护盾先吸收），弹字、倒下
@@ -525,3 +533,302 @@ static func blocks_state(b) -> bool:
 		return false
 	var f: Dictionary = _action_frames[_action_frames.size() - 1]
 	return not is_same(f.source, b) and attack_damage(f.item) and has(f.source, "void")
+
+
+# ---- 词条效果期二①：疫囊、囚厄、绝缘、舍身（状态类） ----
+
+## A.naturalRemoval：自然到期（removeStatesAuto、腐蚀到期、囚厄转移后原主身上去掉）时放行受保护状态的移除
+static var natural_removal := false
+## O-106（优化登记）：原版 installNativeTojiRuntime.js:150-154（模块 9）先截下了 Game_Actor.addDebuff，installAlienationAdvanced
+## 后包的 Game_Battler.addDebuff 对角色走不到，囚厄「接收队友减益」、绝缘「免疫外来减益」对角色失效（只有疫囊者经
+## Game_Battler.prototype.addDebuff 走得到）。true＝照词条说明对所有角色生效；false＝照原版
+static var o106_actor_debuffs := true
+static var _state_routing := 0
+static var _support_routing := 0
+
+
+## $gameParty.inBattle()：开战锁队后到结束之间
+static func battling() -> bool:
+	var logic = active_logic()
+	return logic != null and logic.has_meta("xalien") and bool(_store(logic).get("battling", false))
+
+
+static func _pairs() -> Dictionary:
+	return XAlienation.templates().get("statePairs", {})
+
+
+## statePairs 的键是登记的数值增益状态（祸祝把它换成对应诅咒）
+static func positive_state(id: int) -> bool:
+	return _pairs().has(str(id))
+
+
+## A.source：当前帧的来源，没有帧时取行动根的行动者（原版 BattleManager._subject），都没有就是目标自己
+static func source_of(t):
+	if not _action_frames.is_empty():
+		return _action_frames[_action_frames.size() - 1].source
+	var logic = active_logic()
+	if logic != null and logic.has_meta("xalien") and _store(logic).root != null:
+		return _store(logic).root.subject
+	return t
+
+
+## A.external：战斗中来源不是自己
+static func external(t) -> bool:
+	return battling() and not is_same(source_of(t), t)
+
+
+static func _insulated(t) -> bool:
+	return has(t, "insulation") and external(t)
+
+
+## 疫囊 protectedState：疫囊者活着时，pestStates 必中、不可抵抗、不可驱散
+static func pest_state(b, id: int) -> bool:
+	return battling() and has(b, "pest") and _live(b) and _in_template("pestStates", id)
+
+
+## 囚厄 receiving：转移给囚厄者的状态
+static func receiving(b, id: int) -> bool:
+	return battling() and b.has_meta("xalien_jail") and bool(b.get_meta("xalien_jail").get(id, false))
+
+
+## stateRate 1、isStateResist 否（疫囊、囚厄接收）
+static func forced_state(b, id: int) -> bool:
+	return pest_state(b, id) or receiving(b, id)
+
+
+## A.supportTarget：舍身者的收益改给绑定队友（队友倒下作废，返回 null）；其他人返回自己
+static func support_target(t):
+	if not battling() or not t is XActor:
+		return t
+	var d = locked(t)
+	if d == null or str(d.affix) != "sacrifice":
+		return t
+	var p = partner_of(d)
+	return p if _live(p) else null
+
+
+static func partner_of(d):
+	var logic = active_logic()
+	var id := int(d.get("config", {}).get("partnerId", 0))
+	for a in logic.actors:
+		if a.actor_id == id:
+			return a
+	return null
+
+
+static func _jail_receiver(b):
+	if not b is XActor or has(b, "jail"):
+		return null
+	for a in active_logic().actors:
+		if not is_same(a, b) and has(a, "jail") and _live(a):
+			return a
+	return null
+
+
+static func _support(t, src, fn: Callable) -> void:
+	_support_routing += 1
+	push_action(src, {})  # A.withFrame(null, target, 'support', fn, A.source(this))：来源不变
+	fn.call()
+	pop_action()
+	_support_routing -= 1
+
+
+## addState 包装（installAlienationAdvanced 159-167，原版之前那段）：绝缘拒收外来登记增益与囚厄状态；舍身把登记增益转给队友。
+## 返回真＝本次不在 b 身上附加
+static func route_state(b, id: int) -> bool:
+	if not battling():
+		return false
+	var positive := positive_state(id)
+	if _insulated(b) and (positive or _in_template("jailStates", id)):
+		return true
+	if _state_routing > 0 or not positive:
+		return false
+	var t = support_target(b)
+	if is_same(t, b):
+		return false
+	if t != null:
+		_state_routing += 1
+		_support(t, source_of(b), func(): t.add_state(id))
+		_state_routing -= 1
+	return true
+
+
+static func revision(b, id: int) -> int:
+	return int(b.get_meta("xalien_rev", {}).get(id, 0))
+
+
+## resetStateCounts 包装：记附加次数（A.tryState 据此判成功）；疫囊重复附加时回合取较长
+static func on_reset_state(b, id: int, before) -> void:
+	var rev: Dictionary = b.get_meta("xalien_rev", {})
+	rev[id] = int(rev.get(id, 0)) + 1
+	b.set_meta("xalien_rev", rev)
+	if before != null and pest_state(b, id):
+		b.state_turns[id] = maxi(int(before), int(b.state_turns[id]))
+
+
+## addState 包装（原版之后那段）：其他角色实际获得 jailStates 时转给囚厄者（回合取较长），自己身上按自然移除去掉
+static func after_add_state(b, id: int, before_rev: int) -> void:
+	if not battling() or _state_routing > 0 or revision(b, id) <= before_rev or not _in_template("jailStates", id):
+		return
+	var r = _jail_receiver(b)
+	if r == null:
+		return
+	var turns := int(b.state_turns.get(id, 0))
+	var jail: Dictionary = r.get_meta("xalien_jail", {})
+	jail[id] = true
+	r.set_meta("xalien_jail", jail)
+	_state_routing += 1
+	r.add_state(id)
+	if r.state_ids.has(id):
+		r.state_turns[id] = maxi(int(r.state_turns.get(id, 0)), turns)
+		if id == corrosion_id():
+			sync_corrosion(r)
+		r.param_refresh()
+		natural_removal = true
+		b.remove_state(id)
+		natural_removal = false
+	_state_routing -= 1
+
+
+## removeState／eraseState 包装：疫囊、囚厄接收的状态只能自然到期；绝缘拒绝外来驱散登记增益与复活
+static func blocks_removal(b, id: int, natural: bool) -> bool:
+	if not battling() or natural or natural_removal:
+		return false
+	return pest_state(b, id) or receiving(b, id) or (_insulated(b) and (positive_state(id) or id == 1))
+
+
+## 自然移除后清囚厄接收标记
+static func after_removal(b, id: int, natural: bool) -> void:
+	if (natural or natural_removal) and not b.state_ids.has(id) and b.has_meta("xalien_jail"):
+		b.get_meta("xalien_jail").erase(id)
+
+
+## clearStates 包装：受保护的状态保留
+static func keeps_state(b, id: int) -> bool:
+	return battling() and (pest_state(b, id) or receiving(b, id) or (_insulated(b) and (positive_state(id) or id == 1)))
+
+
+## addBuff／addDebuff 包装：返回真＝已处理（拒收或转给别人）
+static func route_buff(logic, t, pid: int, buff: bool, turns: int) -> bool:
+	if not battling() or pid < 2 or pid > 7:
+		return false
+	if not buff and not o106_actor_debuffs and t is XActor and not has(t, "pest"):
+		return false
+	if _insulated(t):
+		return true
+	if buff:
+		var p = support_target(t)
+		if is_same(p, t):
+			return false
+		if p != null and _support_routing == 0:
+			_support(p, source_of(t), func(): logic.sequence_buff(p, pid, true, true, turns))
+		return true
+	var r = _jail_receiver(t)
+	if r == null:
+		return false
+	var before: int = t.buffs[pid]
+	logic.sequence_buff(t, pid, true, false, turns, true)
+	if t.buffs[pid] < before:
+		var jb: Dictionary = r.get_meta("xalien_jail_buff", {})
+		jb[pid] = maxi(int(jb.get(pid, 0)), turns)
+		r.set_meta("xalien_jail_buff", jb)
+		r.buffs[pid] = mini(r.buffs[pid], t.buffs[pid])
+		r.buff_turns[pid] = maxi(r.buff_turns[pid], turns)
+		t.buffs[pid] = before
+		if before == 0:
+			t.buff_turns[pid] = 0
+		r.param_mark_dirty()
+		t.param_mark_dirty()
+	return true
+
+
+## removeBuff 包装：疫囊者的减益（回合未尽）、囚厄接收的减益不可驱散；绝缘拒绝外来驱散增益
+static func blocks_buff_removal(t, pid: int) -> bool:
+	if not battling() or natural_removal:
+		return false
+	if has(t, "pest") and _live(t) and t.buffs[pid] < 0 and t.buff_turns[pid] > 0:
+		return true
+	if t.buffs[pid] < 0 and bool(t.get_meta("xalien_jail_buff", {}).get(pid, 0)):
+		return true
+	return t.buffs[pid] > 0 and _insulated(t)
+
+
+## gainHp／gainMp 包装：绝缘拒收外来恢复；舍身的生命恢复改给队友。返回真＝不在 b 身上结算
+static func route_gain(ctx, b, resource: String, amount: float) -> bool:
+	if amount <= 0.0 or resource == "tp" or not battling():
+		return false
+	if _insulated(b):
+		return true
+	if resource != "hp":
+		return false
+	var t = support_target(b)
+	if is_same(t, b):
+		return false
+	if t != null and _support_routing == 0:
+		_support(t, source_of(b), func(): ctx.gain(t, "hp", amount))
+	return true
+
+
+## addShield 包装：绝缘拒收外来护盾；舍身的护盾按给予者的护盾效果加成转给队友。返回真＝已处理
+static func route_shield(b, value: float) -> bool:
+	if not battling() or not b is XActor:
+		return false
+	if _insulated(b):
+		return true
+	var t = support_target(b)
+	if is_same(t, b):
+		return false
+	if t != null and _support_routing == 0:
+		var v: float = value * (1.0 + b.shield_effect_bonus()) if value > 0.0 else value
+		_support_routing += 1
+		push_action(source_of(b), {})
+		if not _insulated(t):
+			t.shield = maxf(0.0, t.shield + v)
+		pop_action()
+		_support_routing -= 1
+	return true
+
+
+## A.spreadPest（endTurn 包装，原 endTurn 之前）：疫囊者把身上的 pestStates 与减益传给全体活着的敌人
+static func spread_pest(logic) -> void:
+	if not battling():
+		return
+	var r := round_of(logic)
+	var attack := XDB.rec("Skills", 1)
+	for a in logic.actors:
+		if not _live(a) or not has(a, "pest"):
+			continue
+		var d = locked(a)
+		if int(d.get("spreadRound", -1)) == r:
+			continue
+		d.spreadRound = r
+		var states: Array = a.state_ids.filter(func(id): return _in_template("pestStates", id))
+		for e in logic.enemies:
+			if not _live(e):
+				continue
+			for id in states:
+				var before: bool = e.state_ids.has(id)
+				var turn = e.state_turns.get(id, 0)
+				var expiry = corrosion_until(e)
+				var rev := revision(e, id)
+				push_action(a, attack)
+				logic._effect(a, e, {"code": 21, "dataId": id, "value1": 1.0, "value2": 0.0}, {"skill": attack, "added": [], "removed": []})
+				pop_action()
+				if revision(e, id) <= rev or not e.state_ids.has(id):
+					continue
+				var mine := int(a.state_turns.get(id, 0))
+				e.state_turns[id] = maxi(int(turn), mine) if before else mine
+				if a.state_origins.has(id):
+					e.state_origins[id] = a.state_origins[id]
+				if id == corrosion_id():
+					var own = corrosion_until(a)
+					var until: int = maxi(int(expiry if expiry != null else 0), int(own if own != null else r)) if before else int(own if own != null else r)
+					e.state_turns[id] = maxi(1, until - r + 1)
+					sync_corrosion(e)
+			for p in range(2, 8):
+				if a.buffs[p] >= 0:
+					continue
+				logic.sequence_buff(e, p, true, false, a.buff_turns[p])
+				if e.buffs[p] < 0:
+					e.buffs[p] = mini(e.buffs[p], a.buffs[p])
+					e.buff_turns[p] = maxi(e.buff_turns[p], a.buff_turns[p])

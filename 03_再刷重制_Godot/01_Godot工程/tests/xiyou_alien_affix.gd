@@ -4,6 +4,9 @@ extends Node
 ## - battle.*：角色 1（99 级）穿本体 1044 的异化武器（none 为不带标记的本体）＋角色 8，敌群 2（敌人生命加 1e12、攻击加 300），开战锁队；
 ##   每步比双方生命、法力、护盾、状态、增减益，以及战斗帧外角色 1 的物攻／物防。
 ## - frames：每步之后公式帧与行动帧都已弹空。
+## - 期二① battle.pest／jail／insulation／sacrifice：合成技能（空白技能 13 照参照的 def 填 scope／hitType／效果）、set、
+##   roundEnd（XAlienBattle.spread_pest）、expire（自然移除）逐步对照；对照时 O-106 关（照原版）。
+## - o106.*：O-106 开时角色身上的减益也走囚厄接收、绝缘拒收（原版对角色失效）。
 const ORACLE := "oracle/alien_affix.json"
 var results := []
 
@@ -42,9 +45,20 @@ func _run() -> void:
 		var list: Array = t.get(k, [])
 		var got := {"size": list.size(), "head": list.slice(0, 5), "tail": list.slice(-5)}
 		check("config." + k, _norm(got) == _norm(ref.config[k]), [got, ref.config[k]])
+	XAlienBattle.o106_actor_debuffs = false
+	var by_id := {}
 	for c in ref.cases:
+		by_id[str(c.id)] = c
 		if check(str(c.id) + ".oracle_clean", (c.errors as Array).is_empty(), c.errors):
 			_battle(c)
+	XAlienBattle.o106_actor_debuffs = true
+	if by_id.has("battle.jail"):
+		var rows := _battle(by_id["battle.jail"], false)
+		check("o106.jail_debuff_moved", rows[1].a.buffs[1] == -1 and rows[1].b.buffs[1] == 0, [rows[1].a.buffs, rows[1].b.buffs])
+		check("o106.jail_debuff_kept", rows[3].a.buffs[1] == -1, rows[3].a.buffs)
+	if by_id.has("battle.insulation"):
+		var rows := _battle(by_id["battle.insulation"], false)
+		check("o106.insulation_debuff_blocked", rows[7].a.buffs[0] == 0, rows[7].a.buffs)
 	XAlienation.force_roll = -1.0
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
@@ -79,14 +93,27 @@ func _reading(enemies: Array, a, b) -> Dictionary:
 	return {"enemies": enemies.map(func(e): return _unit(e)), "a": ra, "b": _unit(b)}
 
 
+## 只比参照有的键（帧外物攻／物防只在期一的用例里记）
 func _same_reading(step: String, got: Dictionary, row: Dictionary) -> void:
 	for k in ["a", "b"]:
-		check(step + "." + k, _norm(got[k]) == _norm(row[k]), [got[k], row[k]])
+		var mine := {}
+		for key in row[k]:
+			mine[key] = got[k].get(key)
+		check(step + "." + k, _norm(mine) == _norm(row[k]), [mine, row[k]])
 	for i in got.enemies.size():
 		check(step + ".e%d" % i, _norm(got.enemies[i]) == _norm(row.enemies[i]), [got.enemies[i], row.enemies[i]])
 
 
-func _battle(c: Dictionary) -> void:
+## 合成技能：空白技能 13 填 def（同参照 synth）
+static func _synth(def: Dictionary) -> Dictionary:
+	var sk := XDB.rec("Skills", 13).duplicate(true)
+	sk.scope = int(def.scope)
+	sk.hitType = int(def.hitType)
+	sk.effects = (def.effects as Array).map(func(e): return {"code": int(e[0]), "dataId": int(e[1]), "value1": float(e[2]), "value2": 0.0})
+	return sk
+
+
+func _battle(c: Dictionary, compare := true) -> Array:
 	var o: Dictionary = c.observed
 	var st: Dictionary = c.setup
 	var s := XState.new_game_blank()
@@ -103,8 +130,17 @@ func _battle(c: Dictionary) -> void:
 	XAlienation.force_roll = 0.5
 	if st.has("affix"):
 		XGear.force_roll = 0.5  # 同参照 Math.random 0.5：属性浮动与词缀随机
-		a.equips[0] = XAlienation.create(s, "w", int(st.weapon), "boss", str(st.affix)).ok
+		var item: Dictionary = XAlienation.create(s, "a" if st.has("armor") else "w", int(st.get("armor", st.weapon)), "boss", str(st.affix)).ok
 		XGear.force_roll = -1.0
+		if st.has("config"):
+			XAlienation.mark(item).config = (st.config as Dictionary).duplicate(true)
+			for k in item.alien.config:
+				item.alien.config[k] = int(item.alien.config[k])
+		if st.has("armor"):
+			a.equips[0] = XGear.template("weapon", int(st.weapon))
+			a.equips[a.equip_slots().find(int(item.etypeId))] = item
+		else:
+			a.equips[0] = item
 	else:
 		a.equips[0] = XGear.template("weapon", int(st.weapon))
 	var logic := _logic(s, int(st.troop))
@@ -123,26 +159,43 @@ func _battle(c: Dictionary) -> void:
 	var locked := [a, b].map(func(x):
 		var l = XAlienBattle.locked(x)
 		return {"affix": l.affix} if l != null else null)
-	check(tag + ".locked", _norm(locked) == _norm(o.locked), [locked, o.locked])
-	_same_reading(tag + ".start", _reading(enemies, a, b), o.start)
+	if compare:
+		check(tag + ".locked", _norm(locked) == _norm(o.locked), [locked, o.locked])
+		_same_reading(tag + ".start", _reading(enemies, a, b), o.start)
+	var who := func(k: String) -> XBattler:
+		return b if k == "b" else enemies[int(k.substr(1))] if k.begins_with("e") else a
+	var got := []
 	for i in o.rows.size():
 		var row: Dictionary = o.rows[i]
 		var sp: Dictionary = row.step
 		var step := "%s.%d" % [tag, i]
-		logic.turn = 1
-		var user: XBattler = a
-		var who := str(sp.get("user", "a"))
-		if who == "b":
-			user = b
-		elif who.begins_with("e"):
-			user = enemies[int(who.substr(1))]
-		user.tp = 100.0
-		user.mp = user.mmp
-		var skill := XDB.rec("Skills", int(sp.skill))
-		var target: XBattler = (enemies if user is XActor else logic.actors)[int(sp.get("target", 0))]
-		logic.act(user, skill, target)
-		_same_reading(step, _reading(enemies, a, b), row)
-		check(step + ".frames", XAlienBattle._formula_frames.is_empty() and XAlienBattle._action_frames.is_empty(),
-			[XAlienBattle._formula_frames.size(), XAlienBattle._action_frames.size()])
+		logic.turn = int(sp.get("round", 1))
+		if sp.has("set"):
+			for k in ["a", "b"]:
+				var x: XBattler = who.call(k)
+				if sp.set.has(k + "Hp"):
+					x.hp = floorf(x.mhp * float(sp.set[k + "Hp"]))
+				if sp.set.has(k + "Mp"):
+					x.mp = floorf(x.mmp * float(sp.set[k + "Mp"]))
+		elif sp.has("roundEnd"):
+			logic.turn = int(sp.roundEnd)
+			XAlienBattle.spread_pest(logic)
+		elif sp.has("expire"):
+			logic._state_remove(who.call(str(sp.expire.who)), int(sp.expire.id), true)
+		else:
+			var user: XBattler = who.call(str(sp.get("user", "a")))
+			user.tp = 100.0
+			user.mp = user.mmp
+			var skill := _synth(sp.def) if sp.has("def") else XDB.rec("Skills", int(sp.skill))
+			var friends := int(skill.scope) in [7, 8, 9, 10, 11]
+			var side: Array = logic.actors if (user is XActor) == friends else enemies
+			logic.act(user, skill, side[int(sp.get("target", 0))])
+		var reading := _reading(enemies, a, b)
+		got.append(reading)
+		if compare:
+			_same_reading(step, reading, row)
+			check(step + ".frames", XAlienBattle._formula_frames.is_empty() and XAlienBattle._action_frames.is_empty(),
+				[XAlienBattle._formula_frames.size(), XAlienBattle._action_frames.size()])
 	XAlienBattle.end(logic, -1)
 	XState.current = null
+	return got
