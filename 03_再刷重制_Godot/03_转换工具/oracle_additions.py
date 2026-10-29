@@ -60,6 +60,10 @@ KEYS = {
 
 
 TOP_LEVEL = '顶层'  # 接受单 collection：参照文件顶层的非用例字段
+# 探针顶层纯说明文字（哪吒_8 10-29 盘点 generated/oracle：hostScope 二十多个探针、scope 两个，都是写给人看的取值范围说明，
+# 每期加词条都改写）。新旧都是字符串时不算测量改变；别的类型、新增或删掉仍照常报。机器标签式的 hostScope
+#（如 headless-rule-timing）另由各探针契约（battle_event_contract 等）核对，不靠这里。
+NOTE_FIELDS = frozenset({'hostScope', 'scope'})
 
 
 def canonical(x):
@@ -269,6 +273,8 @@ def compare_file(name, old, new, changes=None):
                     problems.append(field + ' 新用例有错误：' + key[:160])
                 else:
                     additions.append({'collection': field, 'key': key, 'count': sum(gb[key].values())})
+        elif field in NOTE_FIELDS and isinstance(a, str) and isinstance(b, str):
+            continue
         else:
             problems.append('非新增用例字段改变：' + field)
             # 探针顶层说明字段（如 scope）：不是列表的可凭接受单显式放行（collection 写「顶层」、key 写字段名）；

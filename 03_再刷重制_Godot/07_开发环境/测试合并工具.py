@@ -126,22 +126,33 @@ class AdditionTests(unittest.TestCase):
         self.assertTrue(additions.compare_file('maps.json', {}, {'2': {}})[1])
 
     def test_top_level_note_field_can_be_explicitly_accepted(self):
-        """交接板工具坑：探针顶层说明字段（如 scope）改了，接受单原来放不行（没有可接受的变化候选）。"""
-        old = {'schemaVersion': 1, 'scope': '十个号角', 'cases': [{'id': 'a', 'v': 1}]}
-        new = dict(old, scope='十个号角＋木桩')
+        """交接板工具坑：探针顶层非用例字段改了，接受单原来放不行（没有可接受的变化候选）。
+        纯说明文字（hostScope／scope）已不算改变（见 test_top_level_note_text_is_not_a_measurement），这里用别的标量。"""
+        old = {'schemaVersion': 1, 'plainState': 3, 'cases': [{'id': 'a', 'v': 1}]}
+        new = dict(old, plainState=4)
         with tempfile.TemporaryDirectory() as folder:
             a, b = Path(folder) / 'old', Path(folder) / 'new'
             a.mkdir(); b.mkdir()
             (a / 'attack_query.json').write_text(json.dumps(old)); (b / 'attack_query.json').write_text(json.dumps(new))
             check = additions.compare_directories(a, b)
             cand = additions.change_candidates(check)
-            self.assertEqual([(c['collection'], c['key'], c['fields']) for c in cand], [('顶层', 'scope', ['*'])])
-            entry = dict(cand[0], reason='号角说明补木桩', source='x')
+            self.assertEqual([(c['collection'], c['key'], c['fields']) for c in cand], [('顶层', 'plainState', ['*'])])
+            entry = dict(cand[0], reason='状态号改了', source='x')
             self.assertFalse(additions.apply_acceptances(check, [entry])['problems'])
             # 列表字段（未登记稳定键的整组用例）仍不出候选
             (b / 'attack_query.json').write_text(json.dumps(dict(old, extra=[1])))
             (a / 'attack_query.json').write_text(json.dumps(dict(old, extra=[2])))
             self.assertFalse(additions.change_candidates(additions.compare_directories(a, b)))
+
+    def test_top_level_note_text_is_not_a_measurement(self):
+        """10-29 两次：每期加词条 hostScope 说明都改写，同步按既有用例改变拒收、要手写接受单。"""
+        old = {'schemaVersion': 1, 'hostScope': '异化词条期一', 'scope': '十个号角', 'cases': [{'id': 'a', 'v': 1}]}
+        new = dict(old, hostScope='异化词条期一、期二', scope='十个号角＋木桩')
+        self.assertEqual(additions.compare_file('alien_affix.json', old, new), ([], []))
+        # 说明字段换了类型、被删掉，或旁边的真实测量变了，仍照常报
+        for bad in [dict(new, hostScope={'x': 1}), {k: v for k, v in new.items() if k != 'hostScope'},
+                    dict(new, cases=[{'id': 'a', 'v': 2}]), dict(new, schemaVersion=2)]:
+            self.assertTrue(additions.compare_file('alien_affix.json', old, bad)[1], bad)
 
     def test_source_guard(self):
         old = {'releaseVersion': 'v0.28', 'runtimeInputs': {'x': '1'}, 'inputs': {'a': '1'}}

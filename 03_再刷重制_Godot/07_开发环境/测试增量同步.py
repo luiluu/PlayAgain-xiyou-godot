@@ -243,6 +243,17 @@ class AcceptedBaselineTests(unittest.TestCase):
         path.write_text(json.dumps({'schema': 1, 'accept': rows}, ensure_ascii=False))
         return path
 
+    def test_note_text_change_alone_is_not_rejected(self):
+        # 10-29 两次：探针顶层 hostScope 说明随每期词条改写，同步按既有用例改变拒收，要手写接受单
+        old = dict(self.original, hostScope='期一')
+        (self.gen / 'oracle/events.json').write_text(json.dumps(old))
+        self.set_payload(dict(old, hostScope='期一、期二', cases=old['cases'] + [{'id': 'new', 'value': 3}]))
+        result, report = self.run_sync('--accept-additions')
+        self.assertEqual(result, 0, report)
+        # 说明改写的同时真实测量变了：仍拒收
+        self.set_payload(dict(old, hostScope='期三', cases=[{'id': 'stable', 'value': 9}, {'id': 'new', 'value': 3}]))
+        self.assertEqual(self.run_sync('--accept-additions')[0], 2)
+
     def test_existing_case_with_new_fields_is_an_addition(self):
         self.set_payload({'cases': [{'id': 'stable', 'value': 1, 'extra': [1, 2]}]})
         result, report = self.run_sync()
