@@ -95,10 +95,15 @@ const unit = x => ({hp: r(x.hp), mp: r(x.mp), shield: r(x._shield || 0), states:
 // 缄默、饕餮另记角色 1 的生命／法力上限、已锁比例与饥饿储备
 // 百相、无相另记仿形记录、当前仿形，以及 WATCH 里哪些技能在技能表、哪些能用
 const WATCH = [160, 311, 502, 1924, 1926, 1928, 1930, C.ids.switch];
+// 蚀术另记角色 1 与各敌人身上的异化封印（_alienSeals 的技能号），以及 ERODE_WATCH 里各自能用哪些
+const ERODE_WATCH = [1, 1924, 1926, 1928];
+const seals = x => Object.keys(x._alienSeals || {}).map(Number).sort((p, q) => p - q);
 const extra = x => { const d = x._alienBattle; if (!d) return {};
   if (['silence', 'glutton'].indexOf(d.affix) >= 0) return {mhp: r(x.mhp), mmp: r(x.mmp), capLock: r(d.capLock), hunger: r(d.hunger)};
   if (['mimic', 'faceless'].indexOf(d.affix) >= 0) return {observed: d.observed.slice(), selected: d.selected,
     has: WATCH.filter(id => x.skills().some(s => s.id === id)), usable: WATCH.filter(id => x.canUse(w.$dataSkills[id]))};
+  if (d.affix === 'erosion') return {seals: seals(x), usable: ERODE_WATCH.filter(id => x.canUse(w.$dataSkills[id])),
+    eseals: w.$gameTroop.members().map(seals), eusable: w.$gameTroop.members().map(e => ERODE_WATCH.filter(id => e.canUse(w.$dataSkills[id])))};
   return {}; };
 const reading = (ctx, atk) => ({enemies: ctx.enemies.map(unit), a: Object.assign(unit(ctx.a), atk ? {atk: ctx.a.atk, def: ctx.a.def} : {}, extra(ctx.a)), b: unit(ctx.b)});
 const STEPS = [{skill: 1}, {skill: 3}, {skill: 109}, {skill: 114}, {user: 'e0', skill: 1, target: 0}, {user: 'e1', skill: 1, target: 1},
@@ -128,6 +133,8 @@ function battleCase(name, spec, steps) {
         const x = who(st.event.who); w.Game_Interpreter.prototype.changeHp.call(new w.Game_Interpreter(), x, st.event.value, !!st.event.death);  // 事件「增减生命」
       } else if (st.revive) {
         who(st.revive).removeState(who(st.revive).deathStateId());
+      } else if (st.shield) {
+        who(st.shield.who)._shield = st.shield.value;
       } else if (st.forget) {
         who(st.forget.who).forgetSkill(st.forget.id);
       } else if (st.expire) {
@@ -242,4 +249,11 @@ battleCase('mimic', {affix: 'mimic', config: {actorId: 1, replace: 160}}, [
 battleCase('faceless', {affix: 'faceless', teach: [1924, 1926], config: {actorId: 1, pairs: [{ownerId: 8, skillId: 1924, replaceId: 160}, {ownerId: 8, skillId: 1926, replaceId: 311}]}}, [
   {user: 'a', skill: 1924, view: true}, {user: 'a', skill: 160, view: true}, {user: 'a', skill: 1926, view: true}, {user: 'a', skill: 502, view: true},
   {forget: {who: 'b', id: 1924}}]);
-process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）、MP 费用（缄默、饕餮）、借技能（百相、无相）', config, cases}) ? 0 : 1);
+// 第③批·蚀术（选定 templates.attack 的 1924，先学会）：这招与同一行动根里的生命伤害只扣目标护盾（护盾不够扣到 0 为止），生命不变；
+// 命中后封印目标上次用的技能（startAction 记的、>2 且在 templates.attack 里；目标已有封印不再封），封印成功也封自己的 1924；
+// 各自下一次技能行动（原有合法行动窗口：startAction 时能动且不看封印也合条件）结束时解封。e1 先用合成技能 13（不在模板里）不封
+battleCase('erosion', {affix: 'erosion', learn: [1924], config: {actorId: 1, skillId: 1924}}, [
+  {user: 'a', skill: 1924, target: 1, view: true}, {user: 'e1', def: S(11, 0)}, {user: 'a', skill: 1924, target: 1},
+  {user: 'e0', skill: 1926}, {shield: {who: 'e0', value: 1000}}, {user: 'a', skill: 1924, view: true}, {user: 'a', skill: 1924, view: true},
+  {user: 'e0', skill: 1928}, {user: 'a', skill: 1924, view: true}, {user: 'a', skill: 1}, {user: 'b', skill: 1}]);
+process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）、MP 费用（缄默、饕餮）、借技能（百相、无相）、蚀术', config, cases}) ? 0 : 1);

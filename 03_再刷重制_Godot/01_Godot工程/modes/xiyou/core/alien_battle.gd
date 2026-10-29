@@ -2,7 +2,8 @@ class_name XAlienBattle
 extends RefCounted
 ## 异化的战斗侧（冻结 v0.28 installAlienationRuntime，CodexAlienation）：遭遇、敌人变体、锁队、腐蚀、镜骸反噬、胜利发放。
 ## 工坊侧（标记、账本、合成、重抽、分解）在 alienation.gd（XAlienation）；词条效果（installAlienationAffixes／Advanced）
-## 期一接逆骨、归墟，期二①接疫囊、囚厄、绝缘、舍身，期二②接空壳、连命、嫁祸（见文末「词条效果」），其余词条未移植。
+## 期一接逆骨、归墟，期二①接疫囊、囚厄、绝缘、舍身，期二②接空壳、连命、嫁祸，③接祸祝、恶愿、逆祷、缄默、饕餮、百相、无面、蚀术
+## （见文末「词条效果」），其余词条未移植。
 ## 参照 mv_oracle/alien_battle_probe.cjs（generated/oracle/alien_battle.json），专项 tests/xiyou_alien_battle；
 ## 词条效果参照 mv_oracle/alien_affix_probe.cjs（generated/oracle/alien_affix.json），专项 tests/xiyou_alien_affix。
 ## - 遭遇（Game_Troop.setup 包装 setupEncounter）：本场敌人按 bossSources 匹配（敌人、地图、敌群，未知存在另看来源地图），
@@ -474,6 +475,7 @@ static func finish(logic, logs: Array) -> void:
 		return
 	var st := _store(logic)
 	sync_relations(logic)  # endAction 包装（Adv:185）：同步生命池与嫁祸者
+	release_seals(logic)  # endAction 包装（Adv:185）：蚀术解封本次原有合法行动窗口列出的封印
 	var root = st.root
 	st.root = null
 	if root == null or bool(root.ended):
@@ -1621,4 +1623,109 @@ static func apply_switch(logic, u, skill: Dictionary) -> bool:
 		else:
 			id = int(others[0]) if not others.is_empty() else 0
 	switch_mimic(u, id)
+	return true
+
+
+# ---- 词条效果③：蚀术（installAlienationAdvanced 123-124、145、182-185、190） ----
+# 封印、上次用的技能记在本场 logic 的存储里（seals／last，按战斗者），战斗结束随 logic 一起丢掉（原版 endBattle 清 _alienSeals）。
+# A.blocksDamage 的蚀术段（Adv:190）与 executeHpDamage 包装（Adv:124）条件相同、只在正伤害时生效，后者在外层先拦下，前者走不到，不另接。
+
+## 蚀术选定的技能（config.skillId）；不是蚀术返回 0
+static func erosion_skill(u) -> int:
+	var d = _locked_affix(u, "erosion")
+	return int(d.config.get("skillId", 0)) if d != null else 0
+
+
+## executeHpDamage 包装（Adv:124，最外层）：蚀术者用选定技能、或在选定技能的行动根里造成的正生命伤害只扣目标护盾
+## （扣到 0 为止），生命不变。返回真＝已处理（结果槽记生命伤害 0、生命受影响）
+static func erosion_shield(logic, u, t, value: float, item: Dictionary) -> bool:
+	var sid := erosion_skill(u)
+	if sid == 0 or value <= 0.0:
+		return false
+	var root = _store(logic).get("root")
+	var own := not item.is_empty() and not XBattleLogic.is_item(item) and int(item.get("id", 0)) == sid
+	if not own and not (root != null and not XBattleLogic.is_item(root.item) and int(root.item.get("id", 0)) == sid):
+		return false
+	t.shield = maxf(0.0, t.shield - value)
+	return true
+
+
+static func _seals(logic, b) -> Dictionary:
+	var st := _store(logic)
+	if not st.has("seals"):
+		st.seals = {}
+	if not st.seals.has(b):
+		st.seals[b] = {}
+	return st.seals[b]
+
+
+## 判 startAction 的「原有合法行动窗口」时不看异化封印（原版 _alienSealCheck）
+static var _seal_check := false
+
+## O-116（优化登记）：原版只在 startAction 判解封，敌人能用的行动全被封（如只会一招模板攻击）时 processTurn 没有有效行动、
+## 不 startAction，封印永远解不掉，整场再也不行动。true＝敌人能动却没有有效行动的回合也算一次原有合法行动窗口；false＝照原版
+static var o116_idle_release := true
+
+
+## isSkillSealed／meetsSkillConditions 包装（Adv:145、183）：战斗中被蚀术封印的技能不能用（敌我都算）
+static func sealed(logic, b, skill: Dictionary) -> bool:
+	if _seal_check or not logic.has_meta("xalien") or not _store(logic).has("seals") or not _store(logic).seals.has(b):
+		return false
+	return (_store(logic).seals[b] as Dictionary).has(int(skill.get("id", 0)))
+
+
+## startAction 包装（Adv:184，最外层）：技能行动记行动者上次用的技能（>2）；带封印的这次就是原有合法行动窗口，
+## 列出行动结束要解的封印（能动、且不看异化封印也合技能条件的）。原版另排除云裳赠行／储行的行动，重制没有这两种来源
+static func start_action(logic, u, skill: Dictionary) -> void:
+	if not logic.has_meta("xalien") or skill.is_empty() or XBattleLogic.is_item(skill):
+		return
+	var st := _store(logic)
+	if int(skill.get("id", 0)) > 2:
+		if not st.has("last"):
+			st.last = {}
+		st.last[u] = int(skill.id)
+	st.started = u
+	_list_release(logic, u)
+
+
+static func _list_release(logic, u) -> void:
+	var st := _store(logic)
+	if not st.has("seals") or (st.seals.get(u, {}) as Dictionary).is_empty():
+		return
+	_seal_check = true
+	var ids: Array = (st.seals[u] as Dictionary).keys().filter(func(id): return logic.can_move(u) and logic.can_use(u, XDB.rec("Skills", int(id))))
+	_seal_check = false
+	st.release = {"subject": u, "ids": ids}
+
+
+## O-116：敌人这次没有走到 startAction（没有有效行动）而能动时，照 startAction 列出要解的封印（行动结束时解）
+static func idle_window(logic, u) -> void:
+	if not o116_idle_release or not u is XEnemy or not logic.has_meta("xalien") or is_same(_store(logic).get("started"), u) \
+			or not logic.can_move(u):
+		return
+	_list_release(logic, u)
+
+
+## endAction 包装（Adv:185，原 endAction 之后）：解掉本次行动开始时列出的封印
+static func release_seals(logic) -> void:
+	var st := _store(logic)
+	st.erase("started")
+	var rel = st.get("release")
+	st.erase("release")
+	if rel != null and st.has("seals") and st.seals.has(rel.subject):
+		for id in rel.ids:
+			(st.seals[rel.subject] as Dictionary).erase(id)
+
+
+## Game_Action.apply 包装（Adv:123，原 apply 之后）＋A.sealLast（Adv:182）：蚀术者用选定技能命中目标后，封印目标上次用的技能
+## （>2 且在 templates.attack 里；目标已有异化封印就不封），封印成功也封印自己的选定技能
+static func seal_last(logic, u, skill: Dictionary, t, hit: bool) -> bool:
+	var sid := erosion_skill(u)
+	if sid == 0 or not hit or XBattleLogic.is_item(skill) or int(skill.get("id", 0)) != sid or not logic.has_meta("xalien"):
+		return false
+	var id := int(_store(logic).get("last", {}).get(t, 0))
+	if id <= 2 or not _in_template("attack", id) or not _seals(logic, t).is_empty():
+		return false
+	_seals(logic, t)[id] = true
+	_seals(logic, u)[sid] = true
 	return true
