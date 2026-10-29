@@ -3,6 +3,7 @@ extends Node
 ## 原版同版本读档不重设地图，Map004（切片保留的事件）里改过的事件读档后原样：72 位置＋朝向、7 强制路线走到一半（索引、仍在强制）、
 ## 73 路线改的不透明度／穿透／图像、65 临时消除、36 自开关 A 换页。重制照同样操作，真实 XSave 存读档后重开地图场景逐项比。
 ## 另查：旧档没有 mapEvents 时事件回初始；换到别的地图再回来回初始（原版 Game_Map.setup）；读档后路线接着走完。
+## 强制路线跳跃到一半存读档（沙僧第六期 S1／P2，O-114）：原版 _jumpCount／_jumpPeak 随 JsonEx 进存档（参照 eventKeys），读档后仍在空中。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const ORACLE := "res://tests/fixtures/save_events_oracle.json"
 const TIMEOUT_MS := 60000
@@ -146,7 +147,71 @@ func _run() -> void:
 	var back := _snap(map) if map != null else {}
 	_check("other_map.reset", back.get("72", {}).get("x") == int(map.map_data.events[72].x) and back.get("73", {}).get("opacity") == 255
 		and not back.get("65", {}).get("erased", true), back)
+	await _check_jump_save()
 	_finish()
+
+
+static func _jump_snap(e: MVEvent) -> Dictionary:
+	return {"count": e._jump_count, "peak": e._jump_peak, "height": e.jump_height(), "jumping": e.is_jumping(),
+		"forcing": e.is_route_forcing(), "routeIndex": e._route_index, "grid": [e.grid.x, e.grid.y], "real": [e.real.x, e.real.y]}
+
+
+## 读档重开地图时先停住事件的帧更新（地图场景开好要过几帧），好逐项比存档那一刻的跳跃状态
+func _freeze_event(node: Node) -> void:
+	if node is MVEvent:
+		node.process_mode = Node.PROCESS_MODE_DISABLED
+
+
+func _load_frozen(slot: int) -> XMapScene:
+	get_tree().node_added.connect(_freeze_event)
+	var ok := XSave.load_slot(slot)
+	var map: XMapScene = await _open(4) if ok else null
+	get_tree().node_added.disconnect(_freeze_event)
+	return map
+
+
+## Map004 事件 7 强制路线跳 (0,2)，推进 4 帧：count 12、peak 8（10＋2－速度 4）、高 24、在空中、路线索引 1
+func _check_jump_save() -> void:
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	s.map_id = 4
+	s.x = 14
+	s.y = 14
+	var map := await _open(4)
+	var e7 := _event(map, 7) if map != null else null
+	if not _check("jump.setup", e7 != null):
+		return
+	e7.process_mode = Node.PROCESS_MODE_DISABLED
+	var start := e7.grid
+	e7.force_move_route({"list": [_cmd(14, [0, 2]), _cmd(0)], "repeat": false, "skippable": false, "wait": false})
+	for i in 4:
+		e7.update_character()
+	var before := _jump_snap(e7)
+	_check("jump.before", before.count == 12 and before.peak == 8 and is_equal_approx(before.height, 24.0) and before.jumping
+		and before.forcing and before.routeIndex == 1, before)
+	_check("jump.save", XSave.save(1))
+	map = await _load_frozen(1)
+	e7 = _event(map, 7) if map != null else null
+	var after := _jump_snap(e7) if e7 != null else {}
+	_check("jump.load", JSON.stringify(after) == JSON.stringify(before), [after, before])
+	# 放开后接着在空中走完：再 12 帧落地，路线结束
+	if e7 != null:
+		e7.process_mode = Node.PROCESS_MODE_INHERIT
+		await _frames(20)
+		_check("jump.lands", not e7.is_jumping() and not e7.is_route_forcing() and e7.grid == start + Vector2i(0, 2)
+			and e7.real == Vector2(e7.grid), _jump_snap(e7))
+	# 旧档的事件状态没有跳跃字段：读档后不在跳跃（位置、路线照旧）
+	var d: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(1)))
+	var saved7: Dictionary = d.mapEvents.events["7"]
+	for k in ["jumpPeak", "jumpCount", "stopCount", "animeCount", "moveWait"]:
+		saved7.erase(k)
+	var f := FileAccess.open(XSave.path(1), FileAccess.WRITE)
+	f.store_string(JSON.stringify(d))
+	f.close()
+	map = await _load_frozen(1)
+	e7 = _event(map, 7) if map != null else null
+	var legacy := _jump_snap(e7) if e7 != null else {}
+	_check("jump.legacy_not_jumping", legacy.get("jumping") == false and legacy.get("count") == 0 and legacy.get("peak") == 0
+		and legacy.get("forcing") == true and legacy.get("routeIndex") == 1, legacy)
 
 
 func _finish() -> void:
