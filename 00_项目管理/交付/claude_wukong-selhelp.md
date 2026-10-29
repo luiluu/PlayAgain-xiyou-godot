@@ -1,7 +1,7 @@
 # 交付：claude/wukong-selhelp
 
 - 车道／工作者：C 规则·机制（战斗选目标）／悟空_64（Claude）
-- 状态：进行中
+- 状态：可合并
 
 接种族期二（`claude/wukong-race3b-470b05`，14a21ad8）在同一工作树切出。期一做完；期二（物品、反击、二刀流等别的入口）查过，见「期二」节。
 
@@ -57,7 +57,13 @@
 
 ## 验证
 
-（待写）
+悟空_64，2026-10-29，已合 main（ba376900，只带进合并与开发编号、来源登记改动；没碰切片／转换器／探针，不用补齐、不重跑同步）：
+
+- 选测（`并行测试.py … xiyou_battle_ui xiyou_battle xiyou_race_battle xiyou_help_card xiyou_item_list xiyou_dual_wield`）12 个场景全过，无偶发，1307 秒（main 上在跑收尾全量，负载高）：`xiyou_battle_ui` 99/99（无头，原 76＋新增 23）、`xiyou_race_battle` 653/653、`xiyou_help_card` 992/992、`xiyou_item_list` 38/38、`xiyou_dual_wield` 301/301、`xiyou_battle` 8/8、`xiyou_battle_events` 108/108、`xiyou_battle_options` 92/92、`xiyou_battle_start_event` 50/50、`xiyou_battle_common_events` 22/22、`xiyou_battle_common_event_child` 13/13、`xiyou_battleback_save` 5/5。
+- `xiyou_battle_ui` 窗口模式带 `--out` 单跑：126/126（24 张截图，新增 `battle_52_selhelp_all_enemies`、`battle_52b_selhelp_user`、`battle_52c_selhelp_all_allies`、`battle_53_prey_pick`），目视与原版 `selhelp_*` 对过：全体我方光标在狗逍遥、自身在美娜、全体敌人在最右。
+- 过程中一次失败（测试自己的错，已修）：新段选过技能类型后美娜的指令记忆停在「魔法」，后面原有检查从错的光标位置走；两段收尾都恢复 `last_command`／`last_battle_skill`。
+- 没改参照探针，不跑同步；没跑全量 `检查.sh`（车道规矩）。
+- 临时输出已清理：原版参照截图、本地 Godot 截图与测试日志都在会话 scratchpad，已删；参照服务（serve.py）已停。
 
 ## 遗留
 
@@ -73,4 +79,7 @@
 
 ## 本分支提交
 
-（待写）
+- 0d630a40 选目标确认：技能／物品除 scope 0 外都进选目标，攻击不强制；battle_ui 加确认段与妖族选猎物段
+- 5c704dcd battle_ui 新段恢复指令记忆、列表序号确定前记下
+- ba376900 合并 main
+- （本提交）验证、可合并
