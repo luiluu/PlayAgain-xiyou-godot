@@ -6,6 +6,7 @@ extends RefCounted
 ## 装备评分 equipment(装备)：与穿戴者无关，按公共参照属性（生命 1000、魔法 300、其余 100）把基础属性、特性、
 ## 战力相关备注与被动状态折成「输出／生存／辅助」三项分数，再加「命中 / 暴击与伤害乘区」（三档参照的伤害预演增益）。
 ## 法宝（<Magic Weapon>）按等级×每级属性另加「法宝成长」；等级取实例等级（XMagicWeapon 升级后写在实例上，缺省 CP_MagicWeapon 的初始等级）。
+## 种族祝福（CodexRaces.powerAdjust 等，见 XRaceBattle.power_*）：参照 race_battle_probe.cjs 的 power.*，测试 xiyou_race_battle。
 ## 未移植：渡鸦／米拉／甚尔／狂妄／心钢的专属装备加成（对应角色未接入）。
 
 const NAMES := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "敏捷", "幸运"]
@@ -568,17 +569,25 @@ static func _repeat_count(a: XActor, item: Dictionary) -> float:
 
 
 ## expected：先扣费用再预演普通与暴击伤害（含状态 Confirm/React），× 命中 ×(1−闪避) × 段数，群体按 60% 单体／40% 三体
-static func _expected(logic: XBattleLogic, a: XActor, t: XBattler, skill: Dictionary, cost: Dictionary) -> float:
+## power：种族的本路线状态（XRaceBattle.power_cycle），血契与神族首魔、残响据此判
+static func _expected(logic: XBattleLogic, a: XActor, t: XBattler, skill: Dictionary, cost: Dictionary, power: Dictionary = {}) -> float:
+	if power.is_empty():
+		power = XRaceBattle.power_cycle()  # 不在 _cycle 里调（测试直接预演）时自开一轮
 	var item := _preview_skill(skill)
 	var saved := [a.mp, a.hp, a.tp]
 	a.mp = maxf(0.0, a.mp - float(cost.mp))
+	a.hp = maxf(1.0, a.hp - float(cost.get("hp", 0.0)))
 	a.tp = maxf(0.0, a.tp - float(cost.tp))
 	var vars := _vars()
 	# battleRound：同实战传自然回合（哈基米巨龙减伤钩子缺它会返回 unavailable）
-	var normal := XDamage.finish(XDamage.calculate(item, a, t, {"critical": false, "variance": false, "vars": vars, "battleRound": maxi(1, logic.turn)}), item, a, t, false, {"variables": vars})
+	var opts := {"critical": false, "variance": false, "vars": vars, "battleRound": maxi(1, logic.turn), "racePower": power,
+		"racePowerBlood": bool(cost.get("raceBlood", false))}
+	var normal := XDamage.finish(XDamage.calculate(item, a, t, opts), item, a, t, false, {"variables": vars})
 	var critical := normal
 	if bool(item.damage.get("critical", false)):
-		critical = XDamage.finish(XDamage.calculate(item, a, t, {"critical": true, "variance": false, "vars": vars, "battleRound": maxi(1, logic.turn)}), item, a, t, false, {"variables": vars})
+		var crit_opts := opts.duplicate()
+		crit_opts.critical = true
+		critical = XDamage.finish(XDamage.calculate(item, a, t, crit_opts), item, a, t, false, {"variables": vars})
 	var p := _clamp01(a.cri * (1.0 - t.cev)) if bool(item.damage.get("critical", false)) else 0.0
 	var hit := _clamp01(logic.item_hit(a, item, t)) * (1.0 - _clamp01(logic.item_eva(a, item, t)))
 	a.mp = saved[0]
@@ -590,6 +599,13 @@ static func _expected(logic: XBattleLogic, a: XActor, t: XBattler, skill: Dictio
 		value *= 1.8
 	elif scope >= 3 and scope <= 6:
 		value *= scope - 2
+	# CodexRaces.powerAdjust：妖族群攻要拿有／无种族的单次预演之比
+	value = XRaceBattle.power_adjust(a, skill, value, power, func(suppress: bool) -> float:
+		var o := opts.duplicate()
+		o.preview = true
+		if suppress:
+			o.raceSuppress = true
+		return float(XDamage.calculate(item, a, t, o).get("value", 0.0)))
 	return maxf(0.0, value)
 
 
@@ -650,15 +666,20 @@ static func _cycle(logic: XBattleLogic, a: XActor, t: XBattler, skills: Array) -
 	var cooldowns := {}
 	var warmups := {}
 	var cache := {}
+	var power := XRaceBattle.power_cycle()  # CodexRaces.resetPowerCycle
+	var raced := XRaceBattle.race_of(a) >= 0
 	var cost_for := func(s: Dictionary) -> Dictionary:
 		var c := logic.skill_cost(a, s)
-		return {"mp": float(c.mp), "tp": float(c.tp), "hp": 0.0}
+		return XRaceBattle.power_cost(a, s, {"mp": float(c.mp), "tp": float(c.tp), "hp": 0.0}, power)
 	var damage_for := func(s: Dictionary, c: Dictionary) -> float:
 		var f := str(s.damage.get("formula", ""))
-		var key := "%d|%s|%s|%s" % [int(s.id), str(a.mp) if RegEx.create_from_string("\\.(?:mp|mpRate)").search(f) else "0",
-			str(a.hp) if RegEx.create_from_string("\\.(?:hp|hpRate)").search(f) else "0", str(a.tp) if RegEx.create_from_string("\\.(?:tp|tpRate)").search(f) else "0"]
+		# 同正式版：有种族时键带本路线种族状态（含回合号，每回合重算），不带生命（血契的生命门槛随缓存沿用）；
+		# 没选种族时预演与种族状态无关，键不带它（省得每回合重算）
+		var key := "%d|%s|%s|%s|%s" % [int(s.id), str(a.mp) if RegEx.create_from_string("\\.(?:mp|mpRate)").search(f) else "0",
+			str(a.hp) if RegEx.create_from_string("\\.(?:hp|hpRate)").search(f) else "0", str(a.tp) if RegEx.create_from_string("\\.(?:tp|tpRate)").search(f) else "0",
+			JSON.stringify(power) if raced else ""]
 		if not cache.has(key):
-			cache[key] = _expected(logic, a, t, s, c)
+			cache[key] = _expected(logic, a, t, s, c, power)
 		return cache[key]
 	for s in skills:
 		warmups[int(s.id)] = maxi(0, _meta_int(s, "Warmup"))
@@ -671,12 +692,14 @@ static func _cycle(logic: XBattleLogic, a: XActor, t: XBattler, skills: Array) -
 	var fallback = skills.filter(func(s): return int(s.id) == a.attack_skill_id())
 	if not fallback.is_empty() and not candidates.has(fallback[0]):
 		candidates.append(fallback[0])
-	var plus := 0.0
+	var actions := 1.0
+	if XRaceBattle.race_of(a) == 2:
+		actions += XRaceBattle.rate_of(a) / 2.0  # 人族九九六：期望多 q/2 次行动
 	for tr in a.all_traits():
 		if int(tr.code) == 61:
-			plus += _clamp01(float(tr.value))
-	var actions := 1.0 + plus
+			actions += _clamp01(float(tr.value))
 	for turn in range(1, 11):
+		XRaceBattle.power_turn(power, turn)  # CodexRaces.startPowerTurn
 		for index in range(ceili(actions)):
 			var weight := minf(1.0, actions - index)
 			var best := {}
@@ -692,6 +715,7 @@ static func _cycle(logic: XBattleLogic, a: XActor, t: XBattler, skills: Array) -
 					best = {"skill": s, "cost": c, "value": v}
 			if not best.is_empty():
 				used[int(best.skill.id)] = true
+				XRaceBattle.power_commit(a, best.skill, best.value, power)  # CodexRaces.commitPowerRoot
 				damage += best.value * weight
 				a.mp = maxf(0.0, a.mp - best.cost.mp * weight)
 				a.tp = maxf(0.0, a.tp - best.cost.tp * weight)
@@ -748,9 +772,13 @@ static func evaluate(actor: XActor, naked: bool) -> Dictionary:
 					continue
 				var amount := maxf(0.0, -XDamage.eval_formula(_preview_skill(s), a, a, _vars()))
 				heal = maxf(heal, amount * (3.0 if int(s.scope) == 8 else 1.0) * maxf(0.0, a.rec))
+			if XRaceBattle.race_of(a) == 0:
+				heal *= 1.0 + XRaceBattle.rate_of(a)  # 神族祝福治疗 ×(1+q)
 			aux = heal
 	# 已在中档路线里实际可用或施放过的技能不再列为未计入
 	coverage.unmodeled = coverage.unmodeled.filter(func(r): return not results[1].used.has(int(r.id)))
+	if XRaceBattle.race_of(actor) == 6:
+		coverage.unmodeled.append({"id": 0, "name": "蛮骨与反攻", "reason": "需敌方实际攻击，固定参照场景未计入"})
 	var burst := 0.0
 	var sustained := 0.0
 	for r in results:
@@ -763,7 +791,7 @@ static func evaluate(actor: XActor, naked: bool) -> Dictionary:
 
 static func _signature(a: XActor) -> String:
 	return JSON.stringify([a.actor_id, a.class_id, a.level, a.skill_ids, a.state_ids, a.equips, XState.current.variable(8) if XState.current else 0,
-		int(a.zhenqi.get("realm", 0))])   # 突破改道法缩放而技能表可能不变
+		int(a.zhenqi.get("realm", 0)), XRaceBattle.data_of(a)])   # 突破改道法缩放而技能表可能不变；种族（含血契开关）
 
 
 ## 角色战力 {total, self, gear, gearScore, parts, selfParts, gearParts, equipment[{item, slot, score}], rows, evaluation, ownEvaluation}；关掉时全 0
