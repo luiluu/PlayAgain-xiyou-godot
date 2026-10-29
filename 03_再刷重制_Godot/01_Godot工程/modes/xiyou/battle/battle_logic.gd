@@ -355,6 +355,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if XAlienBattle.blocks_skill(a, skill):  # 异化逆祷 meetsSkillConditions：模板外的伤害技能不能用
 		return false
+	if XAlienBattle.blocks_borrowed(state, a, skill):  # 异化百相、无面 meetsSkillConditions：被替换的、没选中的仿形、来源不会了的借来技能
+		return false
 	if XAlienBattle.silence_blocks(self, a, skill):  # 异化缄默 canPaySkillCost：生命上限锁不下了
 		return false
 	var c := skill_cost(a, skill)
@@ -1442,6 +1444,10 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 			"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
 	# 异化饕餮吞噬 apply 包装（Adv:152，在 YEP 包装之外）：吞目标的登记增益状态或增益，结果清空只记成功
 	if XAlienBattle.devour(u, skill, t) != null:
+		return {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
+			"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
+	# 异化百相切换仿形 apply 包装（Affixes:26）：换仿形，不走原 apply
+	if XAlienBattle.apply_switch(self, u, skill):
 		return {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
 			"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
 	var before = XZhenqi.pojia_actor
