@@ -357,9 +357,10 @@ static func tick_corrosion(logic, t, r: int, logs: Array) -> void:
 ## gainHp(-n) 的伤害（ShieldSystem 护盾先吸收），弹字、倒下
 static func _lose_hp(logic, t, n: float, logs: Array) -> void:
 	var before: float = t.hp
-	var v: float = t.absorb_shield(n)
-	t.hp = maxf(0.0, t.hp - v)
-	t.refresh_resources()
+	if not gain_hp_outside(t, -n):  # 期二②：生命池、嫁祸的角色照 gainHp 包装结算
+		var v: float = t.absorb_shield(n)
+		t.hp = maxf(0.0, t.hp - v)
+		t.refresh_resources()
 	logs.append({"type": "regen", "target": t, "hp": before - t.hp, "views": logic.views([t])})
 	if t.is_dead():
 		logs.append({"type": "collapse", "target": t, "views": logic.views([t])})
@@ -1032,6 +1033,18 @@ static func routes_set_hp(b) -> bool:
 	if _hp_resolving > 0 or _death_sync > 0 or not status_battle():
 		return false
 	return b.has_meta("xalien_life") or b.has_meta("xalien_protector") or _affix_of(b) in ["hollow", "sacrifice", "insulation"]
+
+
+## 行动外的 gainHp（腐蚀、镜骸反噬、事件「增减生命」）：生命池、嫁祸、空壳、舍身、绝缘的角色改走资源上下文的 gain，
+## 照 hpChange 结算（连命扣池、嫁祸由保护者付、空壳不吃治疗）。返回真＝已结算
+static func gain_hp_outside(b, value: float) -> bool:
+	if value == 0.0 or not routes_set_hp(b):
+		return false
+	var logic = active_logic()
+	var res: XResourceContext = logic._operation_resources(b)
+	res.gain(b, "hp", value)
+	logic._finish_lifecycle_operation(res, b)
+	return true
 
 
 ## regenerateHp 包装（Adv:108-109）：再生量改走 gainHp（空壳、嫁祸不回、舍身转队友、连命进池）。返回真＝已处理

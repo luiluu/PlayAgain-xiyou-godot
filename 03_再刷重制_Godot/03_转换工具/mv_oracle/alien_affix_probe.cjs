@@ -96,6 +96,9 @@ function battleCase(name, spec, steps) {
         w.$gameTroop._turnCount = st.roundEnd; A.spreadPest(A.round());
       } else if (st.regen) {
         ctx.bm._subject = null; who(st.regen).onTurnEnd();  // 回合末没有行动者（BattleManager.endTurn 时 _subject 已空）
+      } else if (st.tick) {
+        w.$gameTroop._turnCount = st.tick;
+        w.$gameParty.battleMembers().concat(w.$gameTroop.members()).forEach(t => A.tickCorrosion(t, st.tick));  // endTurn 包装里的腐蚀结算
       } else if (st.revive) {
         who(st.revive).removeState(who(st.revive).deathStateId());
       } else if (st.expire) {
@@ -155,4 +158,9 @@ battleCase('sacrifice.regen', {affix: 'sacrifice', config: {actorId: 1, partnerI
   {set: {aHp: 0.5, bHp: 0.5}}, {user: 'a', def: S(7, 0, [21, 1366, 1])}, {regen: 'a'}]);
 battleCase('insulation.regen', {affix: 'insulation'}, [
   {set: {aHp: 0.5}}, {user: 'a', def: S(7, 0, [21, 1366, 1])}, {regen: 'a'}, {user: 'b', def: S(7, 0, [21, 1366, 1])}, {regen: 'a'}]);
-process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）', config, cases}) ? 0 : 1);
+// 生命池补漏：行动外的 gainHp（腐蚀每回合末扣 2% 生命）照 hpChange：连命扣池、嫁祸由保护者付、空壳先吃护盾
+const CORRODE = {user: 'e0', def: S(1, 1, [21, C.ids.corrosion, 1])};
+battleCase('lifelink.corrosion', {affix: 'lifelink', config: {actorId: 1, partnerId: 8}}, [CORRODE, {tick: 1}, {tick: 2}]);
+battleCase('scapegoat.corrosion', {affix: 'scapegoat', config: {actorId: 1, partnerId: 8}}, [CORRODE, {tick: 1}, {tick: 2}]);
+battleCase('hollow.corrosion', {affix: 'hollow'}, [CORRODE, {tick: 1}]);
+process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血）', config, cases}) ? 0 : 1);
