@@ -479,23 +479,24 @@ func _race_ui(b: XBattleScene, s: XState) -> void:
 
 
 ## 指令窗光标移到某技能类型，打开列表并确定该技能（列表顺序同 battle_skills 按类型筛）。
-func _choose_skill(b: XBattleScene, a: XActor, id: int) -> bool:
+## 返回列表里的序号（确定后列表就关了，要先记下）；没找到返回 -1。
+func _choose_skill(b: XBattleScene, a: XActor, id: int) -> int:
 	var sk := XDB.rec("Skills", id)
 	var keys: Array = b._command_entries(a).map(func(e): return str(e.key))
 	var ci := keys.find("stype:%d" % int(sk.stypeId))
 	if ci < 0 or b.cmd_win == null:
-		return false
+		return -1
 	b.cmd_win.select(ci)
 	await _press("ui_accept")
 	await _frames(3)
 	var list := b.logic.battle_skills(a).filter(func(x): return int(x.stypeId) == int(sk.stypeId))
 	var idx := list.find_custom(func(x): return int(x.id) == id)
 	if b.list_win == null or idx < 0:
-		return false
+		return -1
 	b.list_win.select(idx)
 	await _press("ui_accept")
 	await _frames(5)
-	return true
+	return idx
 
 
 ## YEP Select Help Window（原版参照 selhelp_all_enemies／random_enemy／user／all_allies，ui_reference 战斗夹具同一场面）：技能／物品确定后，
@@ -506,6 +507,7 @@ func _select_confirm(b: XBattleScene, s: XState) -> void:
 	var a := s.actor(10)
 	var ids := a.skill_ids.duplicate()
 	var mp := a.mp
+	var last := [a.last_command, a.last_battle_skill]
 	for id in [10, 306, 108]:
 		a.learn_skill(id)
 	a.mp = a.mmp
@@ -513,8 +515,8 @@ func _select_confirm(b: XBattleScene, s: XState) -> void:
 	await _frames(5)
 	for c in [[10, "enemy", "all_enemies"], [306, "ally", "user"], [108, "ally", "all_allies"]]:
 		var tag: String = c[2]
-		var ok := await _choose_skill(b, a, c[0])
-		var idx := b.list_win.index if b.list_win != null else -1
+		var idx := await _choose_skill(b, a, c[0])
+		var ok := idx >= 0
 		_check("selhelp_%s_mode" % tag, ok and b._target_mode == c[1], [ok, b._target_mode])
 		_check("selhelp_%s_no_help_text" % tag, b.help_card == null or not b.help_card.visible)
 		_check("selhelp_%s_one_cursor" % tag, b.sprites.values().filter(func(v): return v.selected).size() == 1)
@@ -545,6 +547,8 @@ func _select_confirm(b: XBattleScene, s: XState) -> void:
 	_check("selhelp_attack_not_forced", r == a and b._target_mode == "")
 	a.skill_ids = ids
 	a.mp = mp
+	a.last_command = last[0]  # 选过技能类型会记进指令记忆，不恢复的话后面的指令窗光标会停在「魔法」
+	a.last_battle_skill = last[1]
 	b._picked.emit("back")
 	await _frames(5)
 
@@ -559,13 +563,14 @@ func _prey_pick(b: XBattleScene, s: XState) -> void:
 	var a: XActor = b._active
 	var key := str(a.actor_id)
 	var before = s.race.actors.get(key)
+	var last := [a.last_command, a.last_battle_skill]
 	s.race.actors[key] = {"race": 1, "rank": 7, "free": false, "blood": false, "legacy": []}
 	XRace.sync(s, a)
 	a.learn_skill(10)
 	a.mp = a.mmp
 	b._picked.emit("back")
 	await _frames(5)
-	ok = await _choose_skill(b, a, 10)
+	ok = (await _choose_skill(b, a, 10)) >= 0
 	var first = b._hover
 	_check("prey_pick_enemy_mode", ok and b._target_mode == "enemy" and first is XEnemy and b.sprites[first].home.x == b.logic.alive(b.logic.enemies).map(func(e): return b.sprites[e].home.x).max(),
 		[ok, b._target_mode])
@@ -583,3 +588,5 @@ func _prey_pick(b: XBattleScene, s: XState) -> void:
 	else:
 		s.race.actors[key] = before
 	XRace.sync(s, a)
+	a.last_command = last[0]  # 后面的胜利循环按「攻击」确定
+	a.last_battle_skill = last[1]
