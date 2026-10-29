@@ -300,7 +300,7 @@ static func yunshang_key(a: XActor) -> int:
 
 ## A.nativeSkills：角色的技能（不含异化改动）
 static func native_skills(a: XActor) -> Array:
-	return a.skills()
+	return a.native_skills()
 
 
 ## A.originalActive：已学会的主动技能（不含被动、仅菜单／不能用的、普攻防御与百相切换）

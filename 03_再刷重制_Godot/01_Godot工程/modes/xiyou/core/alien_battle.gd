@@ -468,7 +468,7 @@ static func after_apply(logic, u, item: Dictionary, t, r: Dictionary) -> void:
 	logic._effect(u, t, {"code": 21, "dataId": corrosion_id(), "value1": 1.0, "value2": 0.0}, {"skill": item, "added": [], "removed": []})
 
 
-## A.finishAction（endAction 包装，原 endAction 之后）：镜骸反噬
+## A.finishAction（endAction 包装，原 endAction 之后）：镜骸反噬、百相记录
 static func finish(logic, logs: Array) -> void:
 	if not logic.has_meta("xalien"):
 		return
@@ -485,6 +485,7 @@ static func finish(logic, logs: Array) -> void:
 		var n := minf(floorf(float(x.loss) * 0.05), floorf(root.subject.mhp * 0.08))
 		if n > 0.0:
 			_lose_hp(logic, root.subject, n, logs)
+	observe(logic, root)  # 百相记录敌人展示的技能（finishAction 末尾）
 
 
 # ---- 词条效果（installAlienationAffixes／Advanced，期一：逆骨、归墟） ----
@@ -1488,3 +1489,136 @@ static func devour(u, skill: Dictionary, t):
 				feed_buff(u, r, n)
 				break
 	return {"success": true}
+
+
+# ---- 词条效果③：百相、无面（借技能，installAlienationAffixes 8-26、Runtime 74、91） ----
+# 技能熟练度的包装（Affixes:23：借来的、仿形的取 min(自己、等级、来源)）没移植：重制熟练度恒 0（XBattler.skillMasteryLevel），取 min 不变。
+# 百相切换窗口（Workshop:32-34，Window_AlienMimic）归界面：选了的仿形用 choose_mimic 写进去，没选时照 Affixes:26 的缺省。
+# 没移植：原版 canEquip 包装（Runtime）带 A.ready，战斗中配置失效（无面来源忘掉技能、百相替换的技能被忘）后下一次 useItem 的 refresh
+# 就把异化装备卸回背包（锁队数据仍在）；重制 can_equip 不带异化就绪、refresh 也不卸装，装备留着，下一场开战 eject_invalid 再卸。
+
+## O-115（优化登记）：原版切换仿形没在窗口里选时换成「第一个不是当前仿形的记录」，记满 3 项时第三项永远轮不到
+## （挂机、自动战斗只会在前两项之间来回）。true＝按记录顺序换到当前仿形的下一项（末项回到第一项）；false＝照原版
+static var o115_mimic_cycle := true
+
+
+static func switch_id() -> int:
+	return int(config().ids.switch)
+
+
+## A.blockedSkills：百相替换的技能、无面各对被替换的技能
+static func blocked_skills(d: Dictionary) -> Array:
+	match str(d.get("affix", "")):
+		"mimic":
+			return [int(d.get("config", {}).get("replace", 0))]
+		"faceless":
+			return (d.get("config", {}).get("pairs", []) as Array).map(func(p): return int(p.get("replaceId", 0)))
+	return []
+
+
+## Game_Actor.skills 包装（Affixes:21，战斗内外都生效）：拿掉被替换的技能；无面加借来的（可借才加、不重复）；
+## 百相在战斗中加当前仿形（可借才加、不重复），记录两项以上再加切换仿形
+static func skill_ids(a: XActor, ids: Array) -> Array:
+	var d := XAlienation.for_actor(a)
+	if d.is_empty() or not str(d.affix) in ["mimic", "faceless"]:
+		return ids
+	var blocked := blocked_skills(d)
+	var out := ids.filter(func(id): return not blocked.has(int(id)))
+	if str(d.affix) == "faceless":
+		for p in d.config.get("pairs", []):
+			var id := int(p.get("skillId", 0))
+			if XAlienation.borrowable(XDB.rec("Skills", id)) and not out.has(id):
+				out.append(id)
+	elif battling():
+		var sel := int(d.get("selected", 0))
+		if sel != 0 and XAlienation.borrowable(XDB.rec("Skills", sel)) and not out.has(sel):
+			out.append(sel)
+		if (d.get("observed", []) as Array).size() > 1:
+			out.append(switch_id())
+	return out
+
+
+## meetsSkillConditions 包装（Affixes:22）：被替换的技能不能用（当前仿形除外）；切换仿形要记录两项以上
+## （原版另要求不是云裳赠行／储行的行动，重制没有这两种行动来源）；记录了但不是当前仿形、又不是自己本来会的不能用；
+## 借来的技能要来源队友还在队伍里且仍会
+static func blocks_borrowed(s: XState, a, skill: Dictionary) -> bool:
+	if not a is XActor or XBattleLogic.is_item(skill):
+		return false
+	var d := XAlienation.for_actor(a)
+	if d.is_empty() or not str(d.affix) in ["mimic", "faceless"]:
+		return false
+	var id := int(skill.get("id", 0))
+	var blocked := blocked_skills(d)
+	var mimic := str(d.affix) == "mimic"
+	if blocked.has(id) and not (mimic and battling() and int(d.get("selected", 0)) == id):
+		return true
+	if mimic:
+		var observed: Array = d.get("observed", [])
+		if id == switch_id():
+			return observed.size() <= 1
+		if observed.has(id) and id != int(d.get("selected", 0)) and not (a.native_skill_ids().has(id) and not blocked.has(id)):
+			return true
+		return false
+	for p in d.config.get("pairs", []):
+		if int(p.get("skillId", 0)) == id:
+			var owner := XAlienation._member(s, p.get("ownerId"))
+			return owner == null or not owner.skill_ids.has(id)
+	return false
+
+
+## A.observe（finishAction 末尾，Affixes:24）：敌人行动根用的可借技能，记进每个活着的百相出战者（不重复、最多 3 项），第一项自动成为仿形
+static func observe(logic, root: Dictionary) -> void:
+	var u = root.subject
+	var item: Dictionary = root.item
+	if not u is XEnemy or XBattleLogic.is_item(item) or not XAlienation.borrowable(XDB.rec("Skills", int(item.get("id", 0)))):
+		return
+	var id := int(item.id)
+	for a in logic.actors:
+		var d = _locked_affix(a, "mimic")
+		if d == null or not _live(a) or (d.observed as Array).has(id) or (d.observed as Array).size() >= 3:
+			continue
+		d.observed.append(id)
+		if int(d.selected) == 0:
+			d.selected = id
+		_toast(logic, a.display_name() + "的百相记录了 " + str(item.get("name", "")))
+
+
+## 百相切换窗口选的仿形（Scene_Battle onSkillOk 包装写的 action._alienChoice）：下一次切换仿形用它
+static func choose_mimic(a, id: int) -> void:
+	var d = _locked_affix(a, "mimic")
+	if d != null:
+		d.choice = id
+
+
+## A.switchMimic：换成记录里的另一项
+static func switch_mimic(a, id: int) -> bool:
+	var d = _locked_affix(a, "mimic")
+	if d == null or not (d.observed as Array).has(id) or id == int(d.selected):
+		return false
+	d.selected = id
+	return true
+
+
+## Game_Action.apply 包装（Affixes:26）：切换仿形不走原 apply，每次行动只换一次。返回假＝不是切换仿形
+static func apply_switch(logic, u, skill: Dictionary) -> bool:
+	if XBattleLogic.is_item(skill) or int(skill.get("id", 0)) != switch_id():
+		return false
+	var root = _store(logic).get("root") if logic.has_meta("xalien") else null
+	if root != null and bool(root.get("switched", false)):
+		return true
+	if root != null:
+		root.switched = true
+	var d = _locked_affix(u, "mimic")
+	if d == null:
+		return true
+	var id := int(d.get("choice", 0))
+	d.erase("choice")
+	if id == 0:
+		var others := (d.observed as Array).filter(func(v): return int(v) != int(d.selected))
+		if o115_mimic_cycle and not others.is_empty():
+			var at := (d.observed as Array).find(int(d.selected))
+			id = int(d.observed[(at + 1) % d.observed.size()]) if at >= 0 else int(others[0])
+		else:
+			id = int(others[0]) if not others.is_empty() else 0
+	switch_mimic(u, id)
+	return true
