@@ -250,7 +250,8 @@ def worktrees(root):
 def draft(text):
     """取所有「…变更记录草稿」节（沙僧写作「待总装并入变更记录的核查条目」也认）。变更记录条目标题都带【执行者】；节止于下一个不带【的二级标题
     （如「## 交接板（由唐僧并入）」），不把交接板／进度账等节当成变更记录贴进去。"""
-    if not re.search(r'^(?:[-*]\s*)?状态[：:]\s*\**可合并\**(?:\s|[（(。，；：—]|$)', text, re.M):
+    # 状态可在行首，也可跟在同一列表项「…；」之后（沙僧写作「- 核查／沙僧（Codex）；状态：可合并」，唐僧 10-29）。
+    if not re.search(r'^(?:[-*]\s*)?(?:[^\n；;]*[；;]\s*)?状态[：:]\s*\**可合并\**(?:\s|[（(。，；：—]|$)', text, re.M):
         raise RuntimeError('交付单尚未标为可合并')
     heads = list(re.finditer(r'^## (?!.*【).*$', text, re.M))
     parts = [text[h.end():heads[i + 1].start() if i + 1 < len(heads) else len(text)].strip()

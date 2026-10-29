@@ -177,6 +177,11 @@ class DraftTests(unittest.TestCase):
             merge.draft('- 状态：进行中\n\n## 变更记录草稿\n\n## 日期 【Claude】x\n')
         with self.assertRaises(RuntimeError):
             merge.draft('- 状态：可合并\n\n## 变更记录草稿\n\n## 交接板\n- y\n')
+        body = '\n\n## 待总装并入变更记录的核查条目\n\n## 日期 【Codex·沙僧】x\n\n- y\n'
+        self.assertTrue(merge.draft('- 核查／沙僧（Codex）；状态：可合并（问题批保留待核）。' + body))
+        for head in ['- 核查／沙僧（Codex）；状态：WIP，勿合并。', '- 上期写过状态：可合并']:
+            with self.assertRaises(RuntimeError):
+                merge.draft(head + body)
 
 
     def test_placeholder_only_as_whole_line(self):
