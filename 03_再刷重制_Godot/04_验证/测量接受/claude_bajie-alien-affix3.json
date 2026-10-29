@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "alien_affix.json",
+      "collection": "顶层",
+      "key": "hostScope",
+      "fields": ["*"],
+      "oldDigest": "3eded5adde1eb24e",
+      "newDigest": "5ca3ba182cd68838",
+      "reason": "八戒 异化期二②：alien_affix_probe 的说明文字加上「期二②（空壳、连命、嫁祸）」，只改描述；cases 7→12 是只增（hollow、lifelink、scapegoat、sacrifice.regen、insulation.regen），旧 7 例逐项不变"
+    }
+  ]
+}
