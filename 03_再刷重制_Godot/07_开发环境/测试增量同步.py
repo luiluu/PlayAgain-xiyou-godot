@@ -255,6 +255,22 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.set_payload(dict(old, hostScope='期三', cases=[{'id': 'stable', 'value': 9}, {'id': 'new', 'value': 3}]))
         self.assertEqual(self.run_sync('--accept-additions')[0], 2)
 
+    def test_lane_baseline_hints_files_differing_from_main(self):
+        # dev.208 八戒：车道手动把探针输出拷进 generated/oracle，同步拿它当基线、测量改变看不出来；新取基线时逐个提示
+        main_gen = self.root / 'main_gen'
+        (main_gen / 'oracle').mkdir(parents=True)
+        (main_gen / 'oracle/events.json').write_text(json.dumps({'cases': []}))
+        (main_gen / 'oracle/same.json').write_text('{}')
+        (self.gen / 'oracle/same.json').write_text('{}')
+        self.assertEqual(sync.lane_drift(self.gen, main_gen), ['events.json'])
+        out = io.StringIO()
+        with mock.patch.object(sync, 'ROOT', self.root), contextlib.redirect_stdout(out):
+            sync.comparison_baseline(self.gen, main_gen)
+            self.assertIn('events.json', out.getvalue())
+            out.truncate(0)
+            sync.comparison_baseline(self.gen, main_gen)  # 基线已在（拒收后重跑）：不再提示
+        self.assertNotIn('提示', out.getvalue())
+
     def test_existing_case_with_new_fields_is_an_addition(self):
         self.set_payload({'cases': [{'id': 'stable', 'value': 1, 'extra': [1, 2]}]})
         result, report = self.run_sync()
