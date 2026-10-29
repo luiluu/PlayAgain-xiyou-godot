@@ -1,7 +1,7 @@
 # 交付：claude/bajie-alien-mp
 
 - 车道／工作者：C 规则·战斗／八戒（Claude，八戒_85）
-- 状态：进行中
+- 状态：可合并
 - 本期：异化词条③剩余之**期 A**——缄默、饕餮（MP 费用类），连同沙僧第六期 P1／P3（付费后行动快照负 MP）。期 B（百相、无相）、期 C（蚀术）另起分支交。
 
 ## 变更记录草稿
@@ -39,8 +39,10 @@
 
 ## 验证
 
-- 专项（工作树，并行 2）：`xiyou_alien_affix` 1103/1103；`xiyou_alien_` 其余与 `xiyou_attack_query`（待填最终一轮）。
-- 偶发：（待填）
+- 合过 main（5a08fa4d，只是文档提交）后，工作树跑 `同步正式西游.py --accept-additions` 通过（测量不变、无 issues，留了产物指纹）。
+- 选测（`并行测试.py`，并行 2，47 个场景全部首轮通过，3283 秒，日志 `04_验证/本地结果/并行测试/20261029_145105_us8y7ojq`）：`xiyou_alien_affix` 1103/1103、`xiyou_alien_battle` 330/330、`xiyou_alien_config` 95/95、`xiyou_alien_workshop` 45/45、`xiyou_attack_query` 375/375；另 `xiyou_rules` 全部 24 段（P1 改了每次付费后的刷新）、`xiyou_smart_ai` 四段、`xiyou_battle`、`xiyou_battle_ui`、`xiyou_hangup*`、`xiyou_loose_fixes`、`xiyou_race_battle`、`xiyou_wtype`、`xiyou_challenge_passives`、`xiyou_character_help_cost`（`skill_cost` 调用处）、`xiyou_action_sequence`、`xiyou_imported_balance`、`xiyou_cat`、`xiyou_combat`。
+- 偶发：无。
+- 没覆盖：缄默锁满时硬用（整次不付费）跟 YEP 冷却的先后——原版 paySkillCost 包装直接 return，冷却插件若挂在 paySkillCost 里也会被跳过；重制冷却照扣。只在角色硬用锁满的缄默技能时出现，未做参照。
 
 ## 改了的原沙僧核心文件（待交叉核查点名）
 
@@ -54,6 +56,8 @@
 - 用户试玩说明：异化装备的缄默、饕餮词条在战斗里生效；缄默技能沉默中也能放（O-113）。
 
 ## 可优化（流程／工具／效率）
+
+- 建议：新工作树第一次跑 `同步正式西游.py` 时，slice_probe 增量模式（「只跑 0 个单元，其余取上次产物合并」）往不存在的 `mv_oracle/.sandbox/slice/` 写 `slice_d*.json`，6 段全部 ENOENT 失败、白跑约 30 分钟；本车道手动 `mkdir -p` 后重跑通过。探针写文件前建目录（或增量计划在缺上次产物时退回全量）即可，归工具车道。
 
 - 建议：`xiyou_alien_affix` 的 HalfStream 整数取法（返回 2147483648）和原版 Math.random 0.5 不同（状态随机回合 3～5 原版取 4、重制取 5），涉及状态回合的用例只能用自然移除绕开；把 `_take("int")` 改成按 0.5 比例取整可让回合也对得上（预计省一类绕路，归规则车道，改前要跑全部异化专项）。
 
