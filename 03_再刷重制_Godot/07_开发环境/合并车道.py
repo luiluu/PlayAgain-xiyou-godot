@@ -658,6 +658,11 @@ def boot_time():
     return int(m.group(1)) if m else None
 
 
+def mentions(text, name):
+    """text 里提到 name 本身（后面不紧跟分支名字符）；车道接着做的 claude/x-1 不算提到 claude/x（唐僧 10-29）。"""
+    return re.search(re.escape(name) + r'(?![\w./-])', text) is not None
+
+
 def take_lock(folder):
     """running.lock：写入持锁进程的 pid 与启动时间。已有锁时：持有者还在（pid 在且启动时间对得上）照旧拒绝；
     已不在、或 pid 被别的进程复用（启动时间对不上）就作废重拿并提示；旧版留下的空锁或认不出的内容，
@@ -784,7 +789,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
         board = (root / BOARD).read_text()
         active = board.split('## 正在进行', 1)[1].split('\n## ', 1)[0]
         pending = board.split('## 待交叉核查', 1)[1].split('\n## ', 1)[0]
-        if state['branch'] in active or (state['worktree'] and state['worktree'] in active):
+        if mentions(active, state['branch']) or (state['worktree'] and mentions(active, state['worktree'])):
             raise RuntimeError('交接板仍将该车道列为正在进行，请唐僧更新')
         if state['branch'] not in pending and state['target'][:7] not in pending and state['head'][:7] not in pending:
             raise RuntimeError('待交叉核查尚未登记本车道分支或提交号')

@@ -184,6 +184,12 @@ class DraftTests(unittest.TestCase):
                 merge.draft(head + body)
 
 
+    def test_mentions_whole_branch_name_only(self):
+        self.assertTrue(merge.mentions('| A | 分支 claude/wukong-x（从 main 切） |', 'claude/wukong-x'))
+        self.assertTrue(merge.mentions('停在 `claude/wukong-x`', 'claude/wukong-x'))
+        for text in ['分支 claude/wukong-x1（从 x 末端切）', 'claude/wukong-x-2b', 'claude/wukong-x/sub', 'claude/wukong-x.bak']:
+            self.assertFalse(merge.mentions(text, 'claude/wukong-x'), text)
+
     def test_placeholder_only_as_whole_line(self):
         ok = '- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】x\n\n- 修了草稿里出现「待写」二字被拒的问题\n'
         self.assertIn('待写', merge.draft(ok))
