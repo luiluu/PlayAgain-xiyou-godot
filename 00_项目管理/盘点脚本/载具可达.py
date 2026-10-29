@@ -1,4 +1,4 @@
-"""载具盘点（悟空_67，2026-10-29）：只读冻结 v0.28。用法：python3 -I 载具可达.py <载具与宽口径.md> <不动点.md> [<岛块.md>]
+"""载具盘点（悟空_67，2026-10-29）：只读冻结 v0.28。用法：python3 -I 载具可达.py <载具与宽口径.md> <不动点.md> [<岛块.md> [<专项对照.json>]]
 1) 全数据里的载具指令（202/206/323、条件 111 类型 13、脚本里的 vehicle/airship）。
 2) 切片内每张图：按图块通行（MV checkPassage，四向、双向都查）从所有进入落点做 BFS，
    列出切片里有内容的事件中，哪些格子（本格或相邻格）都不在可达块里。
@@ -245,6 +245,24 @@ for m in (69, 186):
         I.append(f"块{i}: {len(cl)} 格, 可降落 {len(lk)} 格{(' 例'+str(sorted(lk)[len(lk)//2])) if lk else ''} {'【走得到】' if inreach else ''}")
         for s in evs[i]: I.append('    ' + s)
 if len(sys.argv) > 3: open(sys.argv[3], 'w').write('\n'.join(I))
+# 第 4 个输出（悟空_69，甲二）：专项 xiyou_airship_fly 的静态对照表（JSON）：69／186 全图可降落格（isAirshipLandOk 且原位置没有事件）、
+# 各格所在块、各事件所在块（本格或相邻、隔一格算，同上）、走得到的块
+if len(sys.argv) > 4:
+    J = {}
+    for m in (69, 186):
+        mp = maps[m]; fl = flags_of(m); comp, n = components(m)
+        evpos = {(e['x'], e['y']) for e in mp['events'] if e}
+        land = sorted([x, y] for y in range(mp['height']) for x in range(mp['width']) if landok(mp, fl, x, y) and (x, y) not in evpos)
+        evb = {}
+        for e in mp['events']:
+            if not e: continue
+            x, y = e['x'], e['y']
+            near = [(x, y)] + [(x+dx, y+dy) for dx, dy in DIRS.values()] + [(x+2*dx, y+2*dy) for dx, dy in DIRS.values()]
+            cs = sorted({comp[c] for c in near if c in comp})
+            if cs: evb[str(e['id'])] = cs[0]
+        J[str(m)] = {'block': {f"{x},{y}": comp[(x, y)] for x, y in land if (x, y) in comp},
+                     'eventBlock': evb, 'reach': sorted({comp[c] for c in REACH[m] if c in comp})}
+    json.dump(J, open(sys.argv[4], 'w'), ensure_ascii=False, separators=(',', ':'))
 
 # ---------- 5. 软锁检查：只在走不到处写入、却在走得到处读取的开关／变量／物品（结果追加到不动点文件末尾）----------
 SYSN = SYS['switches']; VN = SYS['variables']
