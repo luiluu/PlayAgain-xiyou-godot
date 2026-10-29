@@ -5,10 +5,12 @@
       "file": "alien_affix.json",
       "collection": "顶层",
       "key": "hostScope",
-      "fields": ["*"],
+      "fields": [
+        "*"
+      ],
       "oldDigest": "5ca3ba182cd68838",
-      "newDigest": "2b3831ff06b49317",
-      "reason": "八戒 异化生命池补漏：alien_affix_probe 的说明文字加上「生命池补漏（行动外扣血）」，只改描述；cases 12→16 是只增（lifelink／scapegoat／hollow.corrosion、lifelink.invalid），旧 12 例逐项不变"
+      "newDigest": "711978fdc0a602d1",
+      "reason": "八戒 异化生命池补漏：alien_affix_probe 的说明文字加上「生命池补漏（行动外扣血、事件增减生命）」，只改描述；cases 12→19 是只增（lifelink／scapegoat／hollow.corrosion、lifelink／scapegoat／hollow.event、lifelink.invalid），旧 12 例逐项不变"
     }
   ]
 }
