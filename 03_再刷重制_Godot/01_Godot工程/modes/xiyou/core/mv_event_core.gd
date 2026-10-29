@@ -484,6 +484,8 @@ func _change_resource(a: XActor, code: int, value: float, allow_death: bool) -> 
 				return
 			if not allow_death and a.hp <= -value:
 				value = 1.0 - a.hp
+			if XAlienBattle.gain_hp_outside(a, value):
+				return  # 异化 gainHp 包装（生命池、嫁祸、空壳、舍身、绝缘；在原版的不致死夹值之后）
 			var applied := -a.absorb_shield(-value) if value < 0.0 else value
 			a.hp = clampf(a.hp + applied, 0.0, a.mhp)
 		312:

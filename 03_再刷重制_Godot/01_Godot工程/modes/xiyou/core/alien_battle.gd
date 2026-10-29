@@ -212,6 +212,7 @@ static func open(logic) -> void:
 ## A.lockParty：出战角色各冻结身上第一件异化装备（原版多于一件时抛错）
 static func lock_party(logic) -> void:
 	var st := _store(logic)
+	eject_invalid(logic)
 	st.party = {}
 	st.battling = true
 	for a in logic.actors:
@@ -221,6 +222,40 @@ static func lock_party(logic) -> void:
 	st.life = false
 	if st.status:
 		setup_life(logic)
+
+
+## lockParty 包装（Adv:62）：配置失效的异化装备（A.ready 不过；绑定词条的队友不在场、已倒下或已被前面的人绑定）
+## 卸下放回背包并提示，本场不生效
+static func eject_invalid(logic) -> void:
+	var s: XState = logic.state
+	var claimed := []
+	for a in logic.actors:
+		var slot := -1
+		for i in a.equips.size():
+			var e = a.equips[i]
+			if e is Dictionary and not XAlienation.mark(e).is_empty():
+				slot = i
+				break
+		if slot < 0:
+			continue
+		var item: Dictionary = a.equips[slot]
+		var m := XAlienation.mark(item)
+		var bad := not XAlienation.ready(s, a, item)
+		if Array(XAlienation.config().get("boundKeys", [])).has(str(m.affix)):
+			var p = null
+			for x in logic.actors:
+				if x.actor_id == int(m.get("config", {}).get("partnerId", 0)):
+					p = x
+			bad = bad or p == null or not _live(p) or claimed.any(func(c): return is_same(c, p))
+			if not bad:
+				claimed.append(p)
+		if bad:
+			a.equips[slot] = null
+			s.gear.append(item)
+			a.refresh_passive()
+			a.param_mark_dirty()
+			a.refresh_resources()
+			_toast(logic, a.display_name() + "的异化配置失效，" + str(item.name) + "已放回背包，请在工坊重新配置。")
 
 
 ## 战斗中的 A.forActor：开战时冻结的那份；不在战斗中返回 null
@@ -357,9 +392,10 @@ static func tick_corrosion(logic, t, r: int, logs: Array) -> void:
 ## gainHp(-n) 的伤害（ShieldSystem 护盾先吸收），弹字、倒下
 static func _lose_hp(logic, t, n: float, logs: Array) -> void:
 	var before: float = t.hp
-	var v: float = t.absorb_shield(n)
-	t.hp = maxf(0.0, t.hp - v)
-	t.refresh_resources()
+	if not gain_hp_outside(t, -n):  # 期二②：生命池、嫁祸的角色照 gainHp 包装结算
+		var v: float = t.absorb_shield(n)
+		t.hp = maxf(0.0, t.hp - v)
+		t.refresh_resources()
 	logs.append({"type": "regen", "target": t, "hp": before - t.hp, "views": logic.views([t])})
 	if t.is_dead():
 		logs.append({"type": "collapse", "target": t, "views": logic.views([t])})
@@ -1032,6 +1068,18 @@ static func routes_set_hp(b) -> bool:
 	if _hp_resolving > 0 or _death_sync > 0 or not status_battle():
 		return false
 	return b.has_meta("xalien_life") or b.has_meta("xalien_protector") or _affix_of(b) in ["hollow", "sacrifice", "insulation"]
+
+
+## 行动外的 gainHp（腐蚀、镜骸反噬、事件「增减生命」）：生命池、嫁祸、空壳、舍身、绝缘的角色改走资源上下文的 gain，
+## 照 hpChange 结算（连命扣池、嫁祸由保护者付、空壳不吃治疗）。返回真＝已结算
+static func gain_hp_outside(b, value: float) -> bool:
+	if value == 0.0 or not routes_set_hp(b):
+		return false
+	var logic = active_logic()
+	var res: XResourceContext = logic._operation_resources(b)
+	res.gain(b, "hp", value)
+	logic._finish_lifecycle_operation(res, b)
+	return true
 
 
 ## regenerateHp 包装（Adv:108-109）：再生量改走 gainHp（空壳、嫁祸不回、舍身转队友、连命进池）。返回真＝已处理
