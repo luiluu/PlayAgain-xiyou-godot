@@ -122,6 +122,7 @@ PROBES = [
     (['skill_change_to_probe.cjs'], ['skill_change_to.json']),
     (['enemy_book_defeat_probe.cjs'], ['enemy_book_defeat.json']),
     (['lobby_shop_probe.cjs'], ['lobby_shops.json']),
+    (['param_cache_probe.cjs'], ['param_cache.json']),
     (['common_script_probe.cjs'], ['common_scripts.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
 ]
