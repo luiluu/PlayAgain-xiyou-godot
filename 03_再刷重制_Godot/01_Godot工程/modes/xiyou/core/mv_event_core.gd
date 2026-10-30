@@ -326,7 +326,7 @@ func _execute(c: Dictionary):
 			# 播放电影 [文件名]（CE1514／1516 宇智波鼬的「血轮眼开」「幻术世界」，movies/*.webm）：Godot 不能放 WebM，重制不播放，只少一段画面
 			pass
 		323:
-			# 更改载具图像 [载具, 行走图, 序号]（飞艇改造包 CE487～500）：记进飞艇状态随档；飞艇画面还没做（甲三）
+			# 更改载具图像 [载具, 行走图, 序号]（飞艇改造包 CE487～500）：记进飞艇状态随档，地图上的飞艇精灵照它画（XMapScene._refresh_airship_sprite）
 			var v := state().vehicle(int(p[0]))
 			if not v.is_empty():
 				v.characterName = str(p[1])

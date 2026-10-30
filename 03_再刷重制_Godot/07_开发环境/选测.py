@@ -68,6 +68,8 @@ def load_table(path=TABLE):
         if rule['group'] not in groups:
             raise ValueError('对照表规则指向不存在的组：' + rule['group'])
     for name, g in groups.items():
+        if g.get('onlyLinesElse', 'full') not in groups or 'onlyLines' in groups[g.get('onlyLinesElse', 'full')]:
+            raise ValueError('组 %s 的 onlyLinesElse 须指向没有 onlyLines 的已有组' % name)
         bad = set(g.get('checks', [])) - CHECKS
         if bad:
             raise ValueError('组 %s 有未知检查：%s' % (name, '、'.join(sorted(bad))))
@@ -241,7 +243,9 @@ def select(root, base, table=TABLE, head=None):
         nonlocal full
         g = groups[group]
         if 'onlyLines' in g and not only_lines(root, base, path, g['onlyLines'], head):
-            group, g, why = 'full', groups['full'], group + ' 但改了版本行以外的内容'
+            # onlyLinesElse：改动行不全匹配时退回的组（缺省整轮）；xstate.gd 只加字段与存读档键时只跑存档类专项（哪吒_8）
+            other = g.get('onlyLinesElse', 'full')
+            group, g, why = other, groups[other], group + ' 但改了 onlyLines 以外的内容，按 ' + other
         picked = set()
         for pattern in g.get('scenes', []):
             picked.update(tests.glob(pattern))

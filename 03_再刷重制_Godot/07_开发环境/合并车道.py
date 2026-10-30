@@ -256,10 +256,29 @@ def draft(text):
     heads = list(re.finditer(r'^## (?!.*【).*$', text, re.M))
     parts = [text[h.end():heads[i + 1].start() if i + 1 < len(heads) else len(text)].strip()
              for i, h in enumerate(heads) if '变更记录草稿' in h[0] or '并入变更记录' in h[0]]
+    if not parts:
+        return problem_entry(text, heads)
     # 只认整行占位（「待写」「（待写）」「- 待写」），正文里提到这两个字不算未完成。
-    if not parts or not all(parts) or any(PLACEHOLDER.search(p) for p in parts):
-        raise RuntimeError('交付单缺少完整变更记录草稿')
+    if not all(parts) or any(PLACEHOLDER.search(p) for p in parts):
+        raise RuntimeError('交付单的变更记录草稿节为空或仍是「待写」，补完「## 变更记录草稿」节')
     return '\n\n'.join(parts)
+
+
+def problem_entry(text, heads):
+    """沙僧只交问题清单的期次没有草稿节：用标题带「问题」的节生成一条最简变更记录（哪吒_8，10-29 两次因此手补草稿）。
+    条目正文就是该节原文，总装 --finish 前可在变更记录里改写；连「问题」节也没有才拒合，并说清要补哪一节。"""
+    parts = [text[h.end():heads[i + 1].start() if i + 1 < len(heads) else len(text)].strip()
+             for i, h in enumerate(heads) if '问题' in h[0]]
+    parts = [p for p in parts if p and not PLACEHOLDER.search(p)]
+    if not parts:
+        raise RuntimeError('交付单缺少「## 变更记录草稿」节（沙僧写作「## 待总装并入变更记录的核查条目」也认）；'
+                           '只交问题的期次至少要有标题带「问题」的节（如「## 本期问题交总装」），据此生成最简条目')
+    name = re.search(r'^# 交付[：:]\s*(\S+)', text, re.M)
+    branch = name.group(1) if name else '（未写分支）'
+    who = 'Codex·沙僧' if branch.startswith('codex/') else 'Claude·未经Codex检验'
+    print('提示：交付单 %s 没有变更记录草稿，按「问题」节生成最简条目；--finish 前可在变更记录里改写' % branch,
+          file=sys.stderr, flush=True)
+    return '## %s 【%s】%s（仅交问题，不销账）\n\n%s' % (time.strftime('%Y-%m-%d'), who, branch, '\n\n'.join(parts))
 
 
 def relink(body, root):
@@ -342,7 +361,23 @@ def plan(root, task):
     if text is None:
         raise RuntimeError('车道分支缺少交付单：' + str(delivery))
     draft(text)
-    changed = git(root, 'diff', '--name-only', fork, target).splitlines()
+    # 只认相对本次合并前 main 真有改动的文件：交叉合并时 merge-base 可能取到旧基点，基点 diff 会把 main 早就有的
+    # 文件（如别期的测量接受单）当成本期带来，gameplay 误判为真、文档期白递增开发编号（哪吒_8，10-29 八戒 attack-query2）
+    real = set(git(root, 'diff', '--name-only', base, target).splitlines())
+    changed = [p for p in git(root, 'diff', '--name-only', fork, target).splitlines() if p in real]
+
+    def main_deleted(p):
+        # main 已删、车道上仍是删前原样的文件（10-30 八戒 alien-equip：已归并删除的 claude_wukong-airship1.md 被记进
+        # versionPaths，报「编号占位文件已改变类型」）：合并时 main 的删除生效，不算车道带来的改动
+        if (root / p).exists():
+            return False
+        removed = git(root, 'log', '--diff-filter=D', '--format=%H', '-1', base, '--', p)
+        if not removed:
+            return False
+        before = subprocess.run(['git', '-C', str(root), 'rev-parse', '-q', '--verify', removed + '^:' + p],
+                                capture_output=True, text=True).stdout.strip()
+        return bool(before) and git(root, 'rev-parse', target + ':' + p) == before
+    changed = [p for p in changed if not main_deleted(p)]
     # 同一分支带来的其它交付单（如接手者另写的一张）：标了可合并的一并归并删除；没标的提示唐僧处理。
     # 已随前几批并入、在 main 删掉的旧交付单不算：车道从上一期交付点切出又合过 main 时与 main 有两个合并基点（交叉合并），
     # merge-base 可能取到旧的那个，diff 会带出期一等交付单，到归并时报「交付单已不存在」停下（哪吒_7 t4，八戒 attack-query2）
@@ -765,6 +800,13 @@ def amended_merge(root, state, head):
         return False
 
 
+def lane_uids(root, state):
+    """交付分支新增的 .gd 对应、分支和 main 都没跟踪的 .gd.uid：Godot 导入时生成，车道常漏交（10-29 飞艇甲一要手加 --also），
+    收尾时自动带入。只认分支新加的脚本，别的 .uid 仍按预期外文件拦下。"""
+    added = git(root, 'diff', '--name-only', '--diff-filter=A', state['base'], state['target'], '--', '*.gd').splitlines()
+    return {p + '.uid' for p in added if not git(root, 'ls-files', '--', p + '.uid')}
+
+
 def finish(root, state, state_file, executor, batch=False, affected=False):
     if state['phase'] not in ['prepared', 'committed']:
         raise RuntimeError('先运行准备合并，再手工登记，最后 --finish')
@@ -794,7 +836,8 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
         if state['branch'] not in pending and state['target'][:7] not in pending and state['head'][:7] not in pending:
             raise RuntimeError('待交叉核查尚未登记本车道分支或提交号')
         changed = dirty(root)
-        allowed = COMMON | set(sheets(state)) | set(state.get('versionEdits', {})) | set(state.get('also', []))
+        uids = lane_uids(root, state)
+        allowed = COMMON | set(sheets(state)) | set(state.get('versionEdits', {})) | set(state.get('also', [])) | uids
         docs = doc_edits(changed - allowed)
         if state.get('acceptDocEdits') and docs:
             print('一并暂存总装手修的文档：' + '、'.join(sorted(docs)), flush=True)
@@ -831,6 +874,8 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
         validate_version_edits(root, state)
         if any((root / s).exists() for s in sheets(state)):
             raise RuntimeError('检查后交付单重新出现，先人工核对')
+        if changed & uids:
+            print('一并提交车道新加脚本的 Godot .uid（车道漏交）：' + '、'.join(sorted(changed & uids)), flush=True)
         run(root, ['git', 'diff', '--check'])
         # 已暂存删除的路径已不在索引里，重复 git add 会报 pathspec 不存在。
         remaining = changed - set(sheets(state))
