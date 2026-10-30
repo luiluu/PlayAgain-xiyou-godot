@@ -227,6 +227,17 @@ func _win(call: Callable) -> bool:
 	return st.done
 
 
+## 接触触发的出口事件：从走得到的四邻之一踩上去（朝向就是走的方向）
+func _enter_ev(ev: int, dest: int) -> bool:
+	var e := _event(ev)
+	var cells := REACH.reachable(map, map.player.grid)
+	for d in [8, 2, 4, 6]:
+		var n: Vector2i = e.grid + DIRS[d]
+		if cells.has(n):
+			return await _step_onto(n, e.grid, dest)
+	return false
+
+
 func _bosses() -> Array:
 	return [127, 128, 129, 130, 131].map(func(sw): return s.switch(sw))
 
@@ -293,7 +304,7 @@ func _west() -> bool:
 
 func _east() -> bool:
 	map.map_data.encounterList = []
-	if not _check("76_to_80e", await _step_onto(Vector2i(25, 7), Vector2i(25, 6), 80) and _here(80, Vector2i(33, 5)), _where()):
+	if not _check("76_to_80e", await _enter_ev(13, 80) and _here(80, Vector2i(33, 5)), _where()):
 		return false
 	_check("80e_reach", REACH.unreachable(map, map.player.grid, [3, 4]).is_empty(), REACH.unreachable(map, map.player.grid, [3, 4]))
 	await _boss("boss_286", 4, 286, [], 129)
@@ -301,7 +312,7 @@ func _east() -> bool:
 	if not _check("80e_to_76", await _step_onto(Vector2i(33, 5), Vector2i(33, 4), 76) and _here(76, Vector2i(25, 5)), _where()):
 		return false
 	map.map_data.encounterList = []
-	return _check("76_to_80hall", await _step_onto(Vector2i(17, 18), Vector2i(17, 19), 80) and _here(80, Vector2i(21, 29)), _where())
+	return _check("76_to_80hall", await _enter_ev(11, 80) and _here(80, Vector2i(21, 29)), _where())
 
 
 func _throne() -> void:
