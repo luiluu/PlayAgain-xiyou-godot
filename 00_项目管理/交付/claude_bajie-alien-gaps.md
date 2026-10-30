@@ -1,17 +1,14 @@
 # 交付：claude/bajie-alien-gaps
 
 - 车道／工作者：C 规则·战斗／八戒（Claude，八戒_89）
-- 状态：WIP 勿合并
+- 状态：可合并
 - 本期：异化补漏——前几期交付登记过「没做」的边角集中补（每项先补参照用例，再实现，专项逐步对照）。夺舍本期不做。
 
-## 现状（5 小时额度 84%，按规停下；WIP，勿合并）
+## 现状：已完成
 
-- 代码、参照、专项都已完成：7 项里 1（setHp 参照）、2、3（参照）、4、6、7 已做，1 的云裳三处做不了（见下），5 只出方案。另加 O-待定（逆祷者反击不治疗敌人）。
-- 已验证：合过 main（468b4b39，有切片改动，已跑 `新建工作树.sh --补齐`）；`xiyou_alien_affix` 本期例全部对照通过（1797/1797，O-待定 检查前一轮；加 O-待定 检查后未重跑）；反向验证（见「验证」）。
-- **没做完**：
-  1. 同步 `同步正式西游.py --accept-additions` 第二轮正在跑（长任务，日志 `03_再刷重制_Godot/04_验证/本地结果/同步_gaps2.log`）。第一轮因 host.cjs 改成抛错让 state_effects_probe 的 action.counter 失败而停，已改成「记一笔、照调原 terminate」，该探针产物与基线逐字节相同。接手者先 `07_开发环境/等待任务.sh <该日志> --timeout 540` 看结果；hostScope 预期只有 alien_affix.json 变（加 13 例＋末尾「补漏」文字），请总装生成接受单。
-  2. 同步后：`xiyou_alien_affix` 再跑一次（含 O-待定 检查），再跑选测：`xiyou_alien_battle`、`xiyou_alien_config`、`xiyou_alien_workshop`、`xiyou_battle*`、`xiyou_state_*`、`xiyou_formula_effects`、`xiyou_shield`、`xiyou_actor_p0`、`xiyou_combat`、`xiyou_race_battle`、`xiyou_smart_ai`（四段）、`xiyou_rules` 难度 1 首段、事件类（`xiyou_battle_events`、`xiyou_troop_events`、`xiyou_event_compare`、`xiyou_interp_review`）及必跑项；阵亡分支、`is_attack`、`state_effects.run_one`、`resource_context.gain` 都是热路径。
-  3. 「验证」节补结果，状态改「可合并」。
+- 7 项里 1（setHp 补参照）、2、3（补参照）、4、6、7 已做；1 的云裳三处做不了（重制没有云裳战斗运行时），5 只出方案。另加 O-待定（逆祷者反击不治疗敌人，可回退）。
+- 额度重置后接上 WIP 87160945：合 main（a2fbe42e，含哪吒工具批、切片与 mv_event_core 飞艇注释改动，无冲突）→ `--补齐` → 同步 → 选测，全部通过。
+- 还没验证的：云裳三处（没有运行时）；自动战斗按投影估值（只出方案）；全量 `检查.sh` 按规则没跑。
 
 ## 逐项结果
 
@@ -26,7 +23,7 @@
 | 4 | 投影后 `is_attack` | 已做：`XBattler.is_attack` 遇到投影（带 `_alienMode`）恒否（原版比的是 item() 对象，投影是副本）。参照例 `prayer.repeat`（勇士 41 攻击次数 +1，逆祷普攻 numRepeats 仍是 1；石中剑把攻击换成 849，这例用未知的刀片 1521） |
 | 5 | 自动战斗／智能 AI／挂机选技估值 | **只写方案**（见文末「自动战斗与投影方案」）：原版智能 AI 一半读投影一半读原技能，改动面大 |
 | 6 | 事件增减 MP（312） | 已做：`mv_event_core.gd` 只改 312 分支（加 2 行，调新函数 `XAlienBattle.gain_mp_outside`），空壳回蓝变护盾、饕餮无效、绝缘拒收外来回蓝。参照例 `hollow.mp`、`glutton.mp`、`insulation.mp`（事件来源取 `_subject`，重制取行动根，事件里为空即自己） |
-| 7 | 探针 host.cjs | 已做：`shared/host.cjs` 的 start 把 `SceneManager.terminate` 换成「记一笔（host.terminated）并抛错」，用例 errors 直接写出原因；alien_affix_probe 照旧自己覆盖成计数 |
+| 7 | 探针 host.cjs | 已做：`shared/host.cjs` 的 start 把 `SceneManager.terminate` 包一层「记一笔（host.terminated）」，finish 时在 stderr 打出用例与调用栈，再照调原 terminate（抛错会改掉 state_effects 现有产物，没用）；alien_affix_probe 照旧自己覆盖成计数 |
 | — | 技能生命消耗 | 重制没有这个机制，本期不做 |
 | — | 逆祷借熟练度算治疗 | 熟练度统一 0，不做 |
 
@@ -39,7 +36,7 @@
 3. **事件增减 MP**（312，`mv_event_core.gd` 只改这一分支）：空壳回蓝变护盾、饕餮无效、绝缘拒收外来回蓝（新 `XAlienBattle.gain_mp_outside`）。
 4. **O-待定**（可回退）：逆祷者的反击照原版变成治疗打在敌人身上，重制默认这份治疗为 0；`XAlienBattle.o_prayer_counter = false` 恢复原版。
 5. 顺带：`XAlienBattle.end` 也清生命池与保护者标记（测试夹具重锁时卸下生命类配置后，旧池两人互相引用、Godot 退出报资源未释放）。
-6. 参照：`alien_affix_probe.cjs` 加 13 例（共 44 例）：`insulation.sethp`、`sacrifice.sethp`、`pest.death`、`jail.death`、`insulation.death`、`lifelink.dead`、`sacrifice.twice`、`prayer.counter`、`prayer.repeat`、`prayer.dot`、`hollow.mp`、`glutton.mp`、`insulation.mp`；新步骤 `sethp`（行动外 setHp，来源 src）、event 的 `mp`／`src`，开战前 `dead`、第三名队员 `extra`、view 的 `repeats`。探针公用 `shared/host.cjs`：SceneManager.terminate 记一笔并抛错。
+6. 参照：`alien_affix_probe.cjs` 加 13 例（共 44 例）：`insulation.sethp`、`sacrifice.sethp`、`pest.death`、`jail.death`、`insulation.death`、`lifelink.dead`、`sacrifice.twice`、`prayer.counter`、`prayer.repeat`、`prayer.dot`、`hollow.mp`、`glutton.mp`、`insulation.mp`；新步骤 `sethp`（行动外 setHp，来源 src）、event 的 `mp`／`src`，开战前 `dead`、第三名队员 `extra`、view 的 `repeats`。探针公用 `shared/host.cjs`：SceneManager.terminate 先记一笔（finish 时在 stderr 打出用例与调用栈）再照调原 terminate。
 7. 没做：绝缘对云裳唤醒／赠行／免费赠礼（重制没有云裳战斗运行时）；自动战斗／智能 AI 按投影估值只出方案；原版 withFrame 收尾的「被逆祷帧扣掉的生命补回」兜底与帧内 gainHp／setHp 的烈变加成仍未移植（重制伤害走 executeHpDamage 已在外层拦下）。
 
 ## 原版依据
@@ -55,16 +52,17 @@
 
 ## 验证
 
-- 专项 `xiyou_alien_affix`（新参照拷进 generated/oracle 跑，跑完已把基线拷回）：1797/1797（原 1456）。中途一次 Godot 退出报「2 resources still in use」：lifelink.dead 夹具重锁后旧生命池互相引用，已在 `XAlienBattle.end` 补清（见变更草稿 5）。
+- 同步：合 main 后 `同步正式西游.py --accept-additions` 通过（「新增用例，已接受（不登记）」，alien_affix.json 44 例；main 的新同步工具不再把 hostScope 说明当测量，**不用另生成接受单**），留了产物指纹。第一次同步曾因 host.cjs 改成抛错让 state_effects_probe action.counter 失败，已改成「记一笔、照调原 terminate」，该探针产物与基线逐字节相同。
+- 选测（`并行测试.py`，并行 2，34 个场景全部首轮通过，1126 秒，日志 `04_验证/本地结果/选测_gaps.log`）：`xiyou_alien_affix` 1798/1798（原 1456，含 13 新例逐步对照与 o106／O-待定 检查）、`xiyou_alien_battle` 330、`xiyou_alien_config` 95、`xiyou_alien_workshop` 45；阵亡分支、`is_attack`、`resource_context.gain`、`state_effects.run_one` 是热路径，另跑 `xiyou_actor_p0`、`xiyou_battle`、`xiyou_battle_common_event_child`、`xiyou_battle_common_events`、`xiyou_battle_events`、`xiyou_battle_start_event`、`xiyou_battle_ui`、`xiyou_combat`、`xiyou_formula_effects`、`xiyou_race_battle`、`xiyou_regen_popup`、`xiyou_shield`、`xiyou_state_effects`、`xiyou_state_effects_tp`、`xiyou_state_js`、`xiyou_state_merge_context`、`xiyou_state_operation`、`xiyou_smart_ai`／`_b`／`_c`／`_d`；事件 312 改动跑 `xiyou_event_compare`、`xiyou_interp_review`、`xiyou_troop_events`／`_b`／`_half`；必跑 `xiyou_rules` 难度 1 四段（`xiyou_rules.tscn xiyou_rules_d1b xiyou_rules_d1c xiyou_rules_d1d`）。本车道没改切片。
 - 反向验证：①六个实现文件换回 354f5a8d 版、测试不变：14 项失败（hollow.mp 2、insulation.mp 3、insulation.death 1、jail.death 2、pest.death 2、prayer.counter 1、prayer.dot 2、o106.jail_death_buff_kept 1）；sethp、锁队检查两例、glutton.mp 本来就对（实现前几期已有／饕餮 MP 上限 0），属只补参照。②只撤 `is_attack` 的投影判断：prayer.repeat 2 项失败（次数 2、治疗 2066 对 2067）。都已还原。
-- 同步、选测：未完成（见「现状」）。
+- 中途一次 Godot 退出报「2 resources still in use」：lifelink.dead 夹具重锁后旧生命池互相引用，已在 `XAlienBattle.end` 补清。
 - 偶发：无。
 
 ## 改了的原沙僧核心文件与独占表外的文件（待交叉核查点名）
 
 - `battler.gd`：阵亡分支（keeps_state／keeps_buff、dying）；`is_attack` 投影恒否（热路径：多一次 has）。
 - `battle_logic.gd`：`_invoke` 反击读投影（非异化战斗 project 第一步就按装备返回原技能）。
-- 独占表外：`resource_context.gd`（gain／set_resource 各一处逆祷帧判断，4 行）、`state_effects.gd`（run_one 压／弹异化帧，只在 status_battle 时，5 行）、`mv_event_core.gd`（312 分支 2 行，派活交代准改）、探针公用 `mv_oracle/shared/host.cjs`（terminate 抛错，56 个探针共用）。请总装留意这几处有没有别的车道同时在改。
+- 独占表外：`resource_context.gd`（gain／set_resource 各一处逆祷帧判断，4 行）、`state_effects.gd`（run_one 压／弹异化帧，只在 status_battle 时，5 行）、`mv_event_core.gd`（312 分支 2 行，派活交代准改）、探针公用 `mv_oracle/shared/host.cjs`（terminate 记录，56 个探针共用，产物不变）。请总装留意这几处有没有别的车道同时在改。
 - 另：`alien_battle.gd`、`alien_affix_probe.cjs`、`tests/xiyou_alien_affix.gd`、`00_设计/优化登记.md`（O-待定 一行）。
 
 ## 交接板
@@ -75,7 +73,7 @@
 
 ## 可优化（流程／工具／效率）
 
-- 已做：探针 terminate 抛错（派活第 7 项）。
+- 已做：探针 terminate 记一笔（派活第 7 项；原定抛错会改掉现有探针产物，改成记录后照调原 terminate，finish 时在 stderr 打出用例与调用栈）。
 - 发现：探针 terminate 记录在现有 state_effects_probe 的 `action.counter` 例里报出调用（YEP_SkillMasteryLevels updateSkillMasteryUsageMax 报错→terminate），即原版这一步会退出游戏；参照产物照旧（host 照调原 terminate），是否要查重制这条路径归总装另派。
 - 建议：异化专项的读数（`_unit`）里 `states` 用 `Array(x.state_ids)`，与战斗者共用同一个数组，后面的步骤会改到前面行的读数（逐步对照时当场比不受影响，事后看 rows 会看到被改过的；本期 o106 检查踩到）。改成 `x.state_ids.duplicate()` 更稳，但会动到全部旧例的读法，本期没改，归下次碰这个专项时顺手。
 
