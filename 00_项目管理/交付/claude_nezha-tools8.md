@@ -15,7 +15,7 @@
 
 ## 2026-10-30 【Claude·哪吒·未经Codex检验】工具：合并 plan 误判、只交问题交付单、漏交 .uid、hostScope 拒收、首次同步 ENOENT、census 来源全列、xstate 选测细分、新类名先导入、接受单基线已接受只提示（dev.待定）
 
-- **合并 plan 误判**（`合并车道.py`）：plan 原来用合并基点 diff 判断车道带来了什么；交叉合并时 merge-base 取到旧基点，main 早就有的文件（如别期测量接受单、别人的游戏代码）被算成本期带来，`gameplay` 误判为真，文档期白递增开发编号、还白跑同步。现在只认「合并基点 diff」与「本次合并前 main 到车道 diff」的交集。新用例模拟旧基点：文档期 gameplay、acceptChanges、refresh 都为假（旧代码下这个用例失败）。
+- **合并 plan 误判**（`合并车道.py`）：plan 原来用合并基点 diff 判断车道带来了什么；交叉合并时 merge-base 取到旧基点，main 早就有的文件（如别期测量接受单、别人的游戏代码）被算成本期带来，`gameplay` 误判为真，文档期白递增开发编号、还白跑同步。现在只认「合并基点 diff」与「本次合并前 main 到车道 diff」的交集。另外去掉「main 已删、车道上仍是删前原样」的文件（合并时 main 的删除生效）。唐僧 10-30 合八戒 alien-equip 时报的两例都已覆盖：①main 早有的 `测量接受/claude_bajie-alien-mask.json` 记进 acceptChanges（main 与车道内容相同，交集排除）；②已被 main 归并删除的 `交付/claude_wukong-airship1.md` 记进 versionPaths（删前原样，排除）。新用例模拟旧基点：文档期 gameplay、acceptChanges、refresh 都为假，versionPaths、extraDeliveries 都为空；两种情形在旧代码下都会失败。
 - **只交问题的交付单**（`合并车道.py` `draft`）：没有「变更记录草稿」也没有「待总装并入变更记录的核查条目」时，不再拒合：用标题带「问题」的节（如沙僧的「本期问题交总装」）生成一条最简条目 `## 日期 【Codex·沙僧】<分支>（仅交问题，不销账）`，正文照抄该节，打一行提示；总装 --finish 前可在变更记录里改写。连「问题」节也没有才拒合，报错写明要补哪一节。草稿节在但为空或「待写」照旧拒（不退回问题节）。选这种做法是因为少一轮返工：沙僧不用为只交问题的期次再补草稿，总装在 main 上本来就要读这条。
 - **收尾漏交 .uid**（`合并车道.py` `finish`）：交付分支新增的 `.gd` 对应、分支和 main 都没跟踪的 `.gd.uid`（Godot 导入时生成，车道常漏交，10-29 飞艇甲一要手加 `--also`）收尾时自动带入并提示一行；别的未跟踪 `.uid` 仍按「预期外文件」拦下。
 - **hostScope 说明拒收**（`oracle_additions.py`）：盘点了 generated/oracle 全部参照的顶层非列表字段：纯说明文字只有 `hostScope`（20 多个探针）和 `scope`（common_scripts、param_cache；attack_query 以前也有过）。比对时这两个字段新旧都是字符串就不算测量改变；类型变了、被删、旁边真实测量变了都照常报。`goldOverlap`、`currencyUnit`、`difficultyName` 这类字符串是游戏数据，不排除。机器标签式的 hostScope（如 headless-rule-timing）仍由各探针契约（battle_event_contract 等）核对。`oracle_additions.py` 在 READ_ONLY_TOOLS 里，不改 tools_digest。
@@ -50,7 +50,7 @@
 
 ## 验证
 
-- 工具专项：`测试合并工具.py`（含增量同步）188/188、`测试选测.py` 47/47（10-30 合 main 1812e15e 后重跑）、`测试选测.py` 47/47；各项新用例都先在旧代码下确认失败（plan 误判、hostScope、ENOENT）。
+- 工具专项：`测试合并工具.py`（含增量同步）188/188（补「main 已删」回归后再跑一次仍 188/188）、`测试选测.py` 47/47（10-30 合 main 1812e15e 后重跑）、`测试选测.py` 47/47；各项新用例都先在旧代码下确认失败（plan 误判、hostScope、ENOENT）。
 - 10-30 接续：合 main 1812e15e 后 `检查.sh --affected main` 再跑一次，退出 0（26 个场景、工具回归全过；日志 `nezha8_affected2.log`）。
 - `检查.sh --affected main`（合 main 后，基准 main 557ad566）退出 0：选中 26 个场景（xiyou_rules 全部段、事件对照等，因为同步脚本归 converter 组）全过，工具回归、守卫、内容覆盖全过；同源检查需 `--oracle`，没跑（总装合并时 `--affected` 会带）。日志 `03_再刷重制_Godot/04_验证/本地结果/nezha8_affected.log`（本地，不入 Git）。没跑全量、没跑同步（没改探针与切片）。
 - 合并时注意：`同步正式西游.py` 改了，tools_digest 变，车道同步戳对不上，main 的同步按增量自跑（探针缓存不按这个脚本作废，只合并、不重跑探针）。

@@ -365,6 +365,19 @@ def plan(root, task):
     # 文件（如别期的测量接受单）当成本期带来，gameplay 误判为真、文档期白递增开发编号（哪吒_8，10-29 八戒 attack-query2）
     real = set(git(root, 'diff', '--name-only', base, target).splitlines())
     changed = [p for p in git(root, 'diff', '--name-only', fork, target).splitlines() if p in real]
+
+    def main_deleted(p):
+        # main 已删、车道上仍是删前原样的文件（10-30 八戒 alien-equip：已归并删除的 claude_wukong-airship1.md 被记进
+        # versionPaths，报「编号占位文件已改变类型」）：合并时 main 的删除生效，不算车道带来的改动
+        if (root / p).exists():
+            return False
+        removed = git(root, 'log', '--diff-filter=D', '--format=%H', '-1', base, '--', p)
+        if not removed:
+            return False
+        before = subprocess.run(['git', '-C', str(root), 'rev-parse', '-q', '--verify', removed + '^:' + p],
+                                capture_output=True, text=True).stdout.strip()
+        return bool(before) and git(root, 'rev-parse', target + ':' + p) == before
+    changed = [p for p in changed if not main_deleted(p)]
     # 同一分支带来的其它交付单（如接手者另写的一张）：标了可合并的一并归并删除；没标的提示唐僧处理。
     # 已随前几批并入、在 main 删掉的旧交付单不算：车道从上一期交付点切出又合过 main 时与 main 有两个合并基点（交叉合并），
     # merge-base 可能取到旧的那个，diff 会带出期一等交付单，到归并时报「交付单已不存在」停下（哪吒_7 t4，八戒 attack-query2）

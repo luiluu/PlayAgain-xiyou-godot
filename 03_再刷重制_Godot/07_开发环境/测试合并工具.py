@@ -1186,8 +1186,12 @@ for name in filter(None, files):
         spec = merge.ACCEPT / 'claude_other.json'
         self.put(str(spec), '{"schema": 1, "accept": []}')
         self.put(str(merge.PROJECT / 'modes/main.gd'), '# main\n')
+        # 10-30 八戒 alien-equip：别的车道的交付单（带编号占位）车道合 main 时带进来，之后 main 归并删掉了
+        other = '00_项目管理/交付/claude_other.md'
+        self.put(other, '# 交付\n- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】x（' + merge.VERSION_MARKER + '）\n\n- y\n')
         self.g('add', '.'); self.g('commit', '-m', 'main moves on')
         self.g('merge', 'main', cwd=self.wt)
+        self.g('rm', '-q', other); self.g('commit', '-m', 'other merged')
         real = merge.git
 
         def stale(root, *args):
@@ -1195,6 +1199,7 @@ for name in filter(None, files):
         with mock.patch.object(merge, 'git', side_effect=stale):
             state = merge.plan(self.root, 'task')
         self.assertEqual((state['gameplay'], state['acceptChanges'], state['refresh']), (False, [], False))
+        self.assertEqual((state['versionPaths'], state['extraDeliveries']), ([], []))
 
     def test_dry_run_is_read_only(self):
         head = self.g('rev-parse', 'HEAD')
