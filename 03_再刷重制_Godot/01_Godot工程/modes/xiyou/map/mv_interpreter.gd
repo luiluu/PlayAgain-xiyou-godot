@@ -23,8 +23,8 @@ const TRANSFER_FIX := {"61:9:4:12:18": Vector2i(14, 23), "65:3:4:12:18": Vector2
 ## O-待定：副本门「请重置副本！」的判定。全工程 363 处副本门都写「变量 5（副本未重置）＝1」；厄运城堡两扇门（Map078 事件 2 厄运王座、
 ## 事件 5 厄运监狱）写成「变量 5＝副本号」（17／16），正常玩不会成立，拦截失效：有副本没重置时照样扣符文进门，变量 5 叠成 2，
 ## 门口「重置副本」（要变量 5＝1）从此不认，出副本后变量 5 停在 1，别的副本门全部「请重置副本！」又重置不了（正式引擎实跑确认）。
-## 键「地图:事件」→ 原版比较的值；命中时改按变量 5＝1 判定。设为空字典 {} 恢复原版。
-const SEAL_CHECK_FIX := {"78:2": 17, "78:5": 16}
+## 键「地图:事件」→ 原版比较的值；命中时改按变量 5＝1 判定。设为空字典 {} 恢复原版（专项要两边都跑，所以是 static var）。
+static var seal_check_fix := {"78:2": 17, "78:5": 16}
 
 
 func _init(h: Node, map: int, event: int, commands: Array, depth := 0) -> void:
@@ -115,10 +115,10 @@ func _host_plugin(line: String) -> bool:
 	return args.size() >= 2 and args[0] == "EnemyBook" and args[1] == "open" and host.has_method("open_enemy_book")
 
 
-## SEAL_CHECK_FIX：[1, 5, 0, 副本号, 0] 改成 [1, 5, 0, 1, 0]
+## seal_check_fix：[1, 5, 0, 副本号, 0] 改成 [1, 5, 0, 1, 0]
 func _condition(p: Array) -> bool:
 	if int(p[0]) == 1 and int(p[1]) == XDungeon.VAR_SEALED and int(p[2]) == 0 and int(p[4]) == 0 \
-			and SEAL_CHECK_FIX.get("%d:%d" % [map_id, event_id], -1) == int(p[3]):
+			and seal_check_fix.get("%d:%d" % [map_id, event_id], -1) == int(p[3]):
 		return super([1, XDungeon.VAR_SEALED, 0, 1, 0])
 	return super(p)
 
