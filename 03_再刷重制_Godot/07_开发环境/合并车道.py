@@ -10,6 +10,7 @@
 
 白天合并可用 --finish --affected 只跑选测（三级检查②，基准为本次（或本批第一条）合并前的 main），通过后照常提交、清理、推送；
 收尾提交带「验证: 选测」尾注，当天全量前算选测已验；全量仍是不加 --affected 的 --finish。
+加 --cloud（与 --affected 同用，--close-batch 同理）则选中的 Godot 场景交给 云端选测.py 在 GitHub Actions 上跑，非 Godot 检查仍在本机；云端不可用时明确失败，不静默改本机。
 
 车道交付后在同一工作树接着做（换新分支、新提交或未提交改动）不拦合并：只跳过该工作树的清理，交付分支不再是当前分支就照删。
 清理前还要过两道（哪吒 2026-10-27，曾误清另一账号会话的干净工作树）：有进程的当前目录在该工作树里（活动会话）或工作树被
@@ -60,9 +61,17 @@ def git(root, *args):
     return p.stdout.strip()
 
 
-def run(root, args):
+def run(root, args, env=None):
     print('== ' + ' '.join(map(str, args)), flush=True)
-    subprocess.run(list(map(str, args)), cwd=root, check=True)
+    subprocess.run(list(map(str, args)), cwd=root, check=True, env=env)
+
+
+def cloud_env(*lanes):
+    """--cloud 时给 检查.sh 的环境：本批各条都没带切片／参照刷新（refresh）时，转换产物与 GitHub 上 main 的快照一致，云端不必重传。"""
+    env = dict(os.environ)
+    if not any(lane.get('refresh') for lane in lanes):
+        env['CHECK_CLOUD_NO_UPLOAD'] = '1'
+    return env
 
 
 def dirty(root):
@@ -929,7 +938,7 @@ def lane_uids(root, state):
     return {p + '.uid' for p in added if not git(root, 'ls-files', '--', p + '.uid')}
 
 
-def finish(root, state, state_file, executor, batch=False, affected=False):
+def finish(root, state, state_file, executor, batch=False, affected=False, cloud=False):
     if state['phase'] not in ['prepared', 'committed']:
         raise RuntimeError('先运行准备合并，再手工登记，最后 --finish')
     head = git(root, 'rev-parse', 'HEAD')
@@ -984,8 +993,12 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
                 # 选测（三级检查②）：基准取本批第一条合并前的 main，攒着的几条一并覆盖
                 pending_batch = load_batch(state_file.parent)
                 check += ['--affected', (pending_batch[0] if pending_batch else state)['base']]
+            env = None
+            if cloud:
+                check.append('--cloud')
+                env = cloud_env(state, *load_batch(state_file.parent))
             try:
-                run(root, check)
+                run(root, check, env=env)
             except subprocess.CalledProcessError:
                 report_batch(root, load_batch(state_file.parent), state)
                 raise
@@ -1015,7 +1028,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
     if state.get('batch'):
         # 只登记，工作树与推送等本批最后一条通过检查后再做；中断后重跑同一命令不会重复登记。
         if all(x['task'] != state['task'] for x in pending):
-            pending.append({k: state.get(k) for k in ['task', 'branch', 'worktree', 'target', 'head', 'base', 'mergeCommit']})
+            pending.append({k: state.get(k) for k in ['task', 'branch', 'worktree', 'target', 'head', 'base', 'mergeCommit', 'refresh']})
             save(folder / 'batch.json', pending)
         drop_pin(state)
         state_file.unlink()
@@ -1053,7 +1066,7 @@ def add_acceptances(root, state, paths):
         print('已记入接受单 ' + rel + '，接着同步', flush=True)
 
 
-def close_batch(root, folder, affected=False):
+def close_batch(root, folder, affected=False, cloud=False):
     """本批都 --finish --batch 收尾、没有新车道要合时统一收口：跑一次 检查.sh --oracle（--affected 时以本批第一条合并前的 main 为基准），
     通过后清理本批工作树、删 batch.json、推送；失败照 report_batch 列出各条车道带进来的改动，什么都不清理、不推送。"""
     pending = load_batch(folder)
@@ -1066,9 +1079,9 @@ def close_batch(root, folder, affected=False):
               flush=True)
     if dirty(root):
         raise RuntimeError('main 有未提交改动，先提交或移走再收口')
-    check = [ENV / '检查.sh', '--oracle'] + (['--affected', pending[0]['base']] if affected else [])
+    check = [ENV / '检查.sh', '--oracle'] + (['--affected', pending[0]['base']] if affected else []) + (['--cloud'] if cloud else [])
     try:
-        run(root, check)
+        run(root, check, env=cloud_env(*pending) if cloud else None)
     except subprocess.CalledProcessError:
         report_batch(root, pending[:-1], pending[-1])
         raise
@@ -1170,6 +1183,9 @@ def main(argv=None):
                        help='本批最后的检查失败、要撤出某条车道时：存备份后退回本批开始前的 main，车道工作树都保留')
     ap.add_argument('--batch', action='store_true',
                     help='--finish 时本条先不跑检查、不清理、不推送，记入本批；最后一条不加它统一检查')
+    ap.add_argument('--cloud', action='store_true',
+                    help='和 --affected 一起用（--finish 或 --close-batch）：选中的 Godot 场景交给 GitHub Actions 云端跑（云端选测.py run＋wait），'
+                         '非 Godot 检查仍在本机；云端不可用时明确失败，不静默改本机')
     ap.add_argument('--affected', action='store_true',
                     help='--finish 时只跑选测（检查.sh --oracle --affected <本次合并前的 main>），通过后照常提交、清理、推送；不和 --batch 同用')
     ap.add_argument('--accept-changes', action='append', default=[], metavar='接受单',
@@ -1192,8 +1208,10 @@ def main(argv=None):
         if a.close_batch:
             if a.task or a.batch:
                 raise RuntimeError('--close-batch 不带任务名、不配 --batch')
+            if a.cloud and not a.affected:
+                raise RuntimeError('--cloud 只和 --affected 一起用（云端只做选测）')
             lock = take_lock(folder)
-            close_batch(root, folder, a.affected)
+            close_batch(root, folder, a.affected, a.cloud)
             return 0
         if a.abort_batch:
             lock = take_lock(folder)
@@ -1209,6 +1227,8 @@ def main(argv=None):
             raise RuntimeError('--batch 只和 --finish 一起用')
         if a.affected and (not a.finish or a.batch):
             raise RuntimeError('--affected 只和 --finish 或 --close-batch 一起用，不配 --batch（批末那条不加 --batch 时加 --affected，覆盖整批）')
+        if a.cloud and not a.affected:
+            raise RuntimeError('--cloud 只和 --affected 一起用（云端只做选测）')
         if a.accept_doc_edits and not a.finish:
             raise RuntimeError('--accept-doc-edits 只和 --finish 一起用')
         if a.accept_changes and (a.finish or a.dry_run):
@@ -1245,7 +1265,7 @@ def main(argv=None):
                 save(state_file, state)
             state['acceptDocEdits'] = a.accept_doc_edits  # 只管本次运行：上次加过、这次没加仍拒
             save(state_file, state)
-            finish(root, state, state_file, a.executor, a.batch, a.affected)
+            finish(root, state, state_file, a.executor, a.batch, a.affected, a.cloud)
         else:
             pending = load_batch(folder)
             if pending and not any(x['task'] == a.task for x in pending):
