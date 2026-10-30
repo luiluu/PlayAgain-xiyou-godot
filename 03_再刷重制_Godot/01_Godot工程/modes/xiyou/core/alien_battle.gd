@@ -657,12 +657,19 @@ static func set_heal_targets(skill: Dictionary, n: int) -> void:
 ## makeDamageValue 包装（Aff:50）：按原技能面板 MP 费用选治疗技能（≥125 治疗术 166，≥75 次级治疗术 135，否则治愈 8），
 ## 对这名目标算一次不暴击的治疗值当预算，平分给本次行动的目标数。原版另把治疗技能的熟练度借成原技能的，重制熟练度统一为 0，不涉及
 static func prayer_heal(logic, u, skill: Dictionary, t) -> float:
+	if o_prayer_counter and t is XEnemy:
+		return 0.0  # O-待定：反击打到敌人身上的逆祷治疗不生效
 	var original := XDB.rec("Skills", int(skill._alienOriginal))
 	var cost := float(logic.skill_cost(u, original).mp)
 	var healer := XDB.rec("Skills", 166 if cost >= 125.0 else 135 if cost >= 75.0 else 8)
 	var budget := absf(logic._damage_value(u, healer, t, false))
 	var count := int(skill.get("_alienHealTargets", 1))
 	return -floorf(budget / maxf(1.0, float(count)))
+
+
+## O-待定（优化登记）：逆祷者的反击照原版也读投影（invokeCounterAttack 的 setAttack 走 item()），变成「治愈」打在出手的敌人身上，
+## 把它刚打掉的生命补回去。true＝打在敌人身上的逆祷治疗为 0（反击仍挡下敌人这次行动，同普通反击）；false＝照原版治疗敌人
+static var o_prayer_counter := true
 
 
 ## meetsSkillConditions 包装（Aff:22）：逆祷者不能用 templates.attack 以外的伤害技能（伤害类型 1／2／5／6）
