@@ -441,6 +441,7 @@ func trait_objects() -> Array:
 	for id in XEquipSuits.ids(self,"statesResist"):
 		resistance.append({"code":TRAIT_STATE_RESIST,"dataId":id,"value":1})
 	if not resistance.is_empty():out.append({"traits":resistance})
+	out.append_array(XAlienBattle.gear_effects(self))  # 异化吞器、献器 traitObjects 包装（Adv:81-85）：借用／收到的登记效果
 	return out
 
 

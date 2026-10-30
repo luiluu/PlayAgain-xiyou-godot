@@ -17,6 +17,9 @@ extends Node
 ##   重制 can_use 另查技能类型），步骤另有 forget（来源队友忘掉技能）、choice（切换窗口选的仿形）。对照时 O-115 关；o115.* 开时按顺序轮换。
 ## - 第③批 battle.erosion：蚀术；角色 1 另比自己与各敌人身上的异化封印、ERODE_WATCH 里各自能用哪些；步骤另有 shield（直接写护盾）。
 ##   对照时 O-116 关；o116.* 开时敌人没有有效行动的回合也解封。
+## - 第④批 battle.swallow／offer：装备类；双方另比装备栏（本体编号）、八项能力值、命中／回避／暴击，背包里异化装备与供体件数；
+##   步骤 end 照 end_battle（胜／逃／败）。gear.*：胜、逃、败结束后装备栏原样（同一实例）、背包不多不少、存读档往返不变；
+##   战斗中供体不能穿、吞器者不能换装；供体不能在商店卖、挂机卖出跳过；一键出售按 O-118（关时照原版给钱不扣件）。
 const ORACLE := "oracle/alien_affix.json"
 var results := []
 ## 本次 _battle 每个行动步骤的 can_use（o113 用）
@@ -25,6 +28,8 @@ var _usable_log := []
 const WATCH := [160, 311, 502, 1924, 1926, 1928, 1930, 10197]
 ## 同参照 ERODE_WATCH（蚀术另记）
 const ERODE_WATCH := [1, 1924, 1926, 1928]
+## 本次 _battle 的异化装备、供体与开战前的装备栏、背包（gear.* 用）
+var _gear_ctx := {}
 
 
 func check(name: String, ok: bool, detail = null) -> bool:
@@ -101,6 +106,18 @@ func _run() -> void:
 	if by_id.has("battle.insulation"):
 		var rows := _battle(by_id["battle.insulation"], false)
 		check("o106.insulation_debuff_blocked", rows[7].a.buffs[0] == 0, rows[7].a.buffs)
+	for id in ["battle.swallow", "battle.offer"]:
+		if by_id.has(id):
+			for result in [0, 1, 2]:
+				var c: Dictionary = by_id[id].duplicate(true)
+				var rows: Array = c.observed.rows
+				rows[rows.size() - 1].step.end = result
+				_battle(c, false, _gear_after.bind("gear.%s.%d" % [id.substr(7), result]))
+	if by_id.has("battle.swallow"):
+		var c: Dictionary = by_id["battle.swallow"].duplicate(true)
+		c.observed.rows = []
+		_battle(c, false, _gear_swallow_guards)
+	_gear_ctx = {}
 	XAlienation.force_roll = -1.0
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
@@ -150,7 +167,19 @@ func _reading(enemies: Array, a, b) -> Dictionary:
 			ra.usable = ERODE_WATCH.filter(func(id): return _typed(a, id) and logic.can_use(a, XDB.rec("Skills", id)))
 			ra.eseals = enemies.map(func(e): return _sealed(logic, e))
 			ra.eusable = enemies.map(func(e): return ERODE_WATCH.filter(func(id): return logic.can_use(e, XDB.rec("Skills", id))))
-	return {"enemies": enemies.map(func(e): return _unit(e)), "a": ra, "b": _unit(b)}
+	var out := {"enemies": enemies.map(func(e): return _unit(e)), "a": ra, "b": _unit(b)}
+	if bool(_gear_ctx.get("on", false)):
+		ra.gear = _gear_of(a)
+		out.b.gear = _gear_of(b)
+		var s: XState = XState.current
+		out.bag = {"item": s.gear.filter(func(e): return is_same(e, _gear_ctx.item)).size(),
+			"donors": (_gear_ctx.donors as Array).map(func(d): return s.gear.filter(func(e): return is_same(e, d)).size())}
+	return out
+
+
+static func _gear_of(x: XActor) -> Dictionary:
+	return {"equips": Array(x.equips).map(func(e): return int(e.base) if e is Dictionary and not e.is_empty() else 0),
+		"params": range(8).map(func(i): return x.param(i)), "xp": range(3).map(func(i): return x.xparam(i))}
 
 
 static func _sealed(logic, b) -> Array:
@@ -177,6 +206,8 @@ func _same_reading(step: String, got: Dictionary, row: Dictionary, a: XActor = n
 		check(step + "." + k, _norm(mine) == _norm(want), [mine, want])
 	for i in got.enemies.size():
 		check(step + ".e%d" % i, _norm(got.enemies[i]) == _norm(row.enemies[i]), [got.enemies[i], row.enemies[i]])
+	if row.has("bag"):
+		check(step + ".bag", _norm(got.get("bag")) == _norm(row.bag), [got.get("bag"), row.bag])
 
 
 ## 参照 JSON 的数字是浮点：配置里的编号（含无面 pairs 里的）转成整数
@@ -210,6 +241,52 @@ func _erosion_idle(logic: XBattleLogic, _a: XActor) -> void:
 	XAlienBattle.o116_idle_release = true
 	logic.act(e0, null, null)
 	check("o116.idle_releases", _sealed(logic, e0).is_empty(), _sealed(logic, e0))
+
+
+## 吞器、献器结束后（end 步骤已走 end_battle）：装备栏同一实例原样、背包不多不少、没有重复实例，存读档往返不变
+func _gear_after(logic: XBattleLogic, a: XActor, tag: String) -> void:
+	var s: XState = logic.state
+	for x in _gear_ctx.equips:
+		var before: Array = _gear_ctx.equips[x]
+		check(tag + ".equips_%d" % x.actor_id, range(before.size()).all(func(i): return is_same(x.equips[i], before[i])), [x.actor_id])
+	var bag: Array = _gear_ctx.bag
+	check(tag + ".bag", s.gear.size() == bag.size() and bag.all(func(e): return s.gear.any(func(g): return is_same(g, e))), [s.gear.size(), bag.size()])
+	var ids := []
+	for e in s.gear + a.equip_list() + s.actor(8).equip_list():
+		ids.append(str(e.get("instanceId", "")))
+	var uniq := {}
+	for id in ids:
+		uniq[id] = true
+	check(tag + ".no_duplicate", uniq.size() == ids.size(), ids)
+	check(tag + ".no_meta", not a.has_meta("xalien_ghosts") and not s.actor(8).has_meta("xalien_received"))
+	var back := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
+	var ids_of := func(st: XState, id: int) -> Array:
+		return Array(st.actor(id).equips).map(func(e): return str(e.instanceId) if e is Dictionary and not e.is_empty() else "")
+	check(tag + ".save_roundtrip", ids_of.call(back, 1) == ids_of.call(s, 1) and ids_of.call(back, 8) == ids_of.call(s, 8)
+		and back.gear.map(func(e): return str(e.instanceId)) == s.gear.map(func(e): return str(e.instanceId))
+		and _norm(XAlienation.mark(back.actor(1).equips[0]).get("config", {})) == _norm(XAlienation.mark(a.equips[0]).get("config", {})),
+		[ids_of.call(back, 1), ids_of.call(s, 1)])
+
+
+## 吞器战斗中：供体不能穿（Adv:87）、吞器者不能换装；结束后能换；供体不能在商店卖、挂机卖出跳过，一键出售按 O-118
+func _gear_swallow_guards(logic: XBattleLogic, a: XActor) -> void:
+	var s: XState = logic.state
+	var donor: Dictionary = _gear_ctx.donors[0]
+	var b := s.actor(8)
+	check("gear.donor_unwearable", not XAlienation.can_change(s, b, 0, donor))
+	check("gear.locked_in_battle", XAlienBattle.gear_locked(a) and not XAlienation.can_change(s, a, 0, null) and not XAlienBattle.gear_locked(b))
+	logic.end_battle(1)
+	check("gear.unlocked_after", not XAlienBattle.gear_locked(a) and XAlienation.can_change(s, a, 1, null))
+	check("gear.donor_unsellable", not XItemMarks.can_sell(donor))
+	var q := int(str(donor.get("meta", {}).get("quality", "0")).strip_edges())
+	check("gear.hang_up_skips_donor", not XItemMarks.sellable_gear(s, [q]).has(donor))
+	check("gear.onekey_skips_donor", not XItemMarks.sellable_gear(s, [q], true).has(donor))
+	XAlienation.o_reserved_onekey = false
+	var gold := s.gold
+	check("gear.onekey_off_lists_donor", XItemMarks.sellable_gear(s, [q], true).has(donor))
+	XItemMarks.sell(s, donor, 1)
+	check("gear.onekey_off_keeps_donor", s.gear.has(donor) and s.gold == gold + XItemMarks.selling_price(donor), [s.gold - gold])
+	XAlienation.o_reserved_onekey = true
 
 
 ## 饕餮挂机（Adv:138-142）：表里排了火球术（50 MP），实际 MP 0 也按储备够不够选；储备不够退回原生选技（普攻）
@@ -247,10 +324,27 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 	if st.has("affix"):
 		XGear.force_roll = 0.5  # 同参照 Math.random 0.5：属性浮动与词缀随机
 		var item: Dictionary = XAlienation.create(s, "a" if st.has("armor") else "w", int(st.get("armor", st.weapon)), "boss", str(st.affix)).ok
+		# 吞器供体（背包里的普通独立武器）、衣服栏的普通防具，同参照的建立顺序
+		var donors: Array = st.get("donors", []).map(func(id):
+			var d := XGear.create("weapon", int(id), s)
+			s.register_gear(d)
+			s.gear.append(d)
+			return d)
+		if bool(st.get("lockDonor", false)):
+			donors[0].name = str(donors[0].name) + "【锁定】"
+		var body := {}
+		if st.has("body"):
+			body = XGear.create("armor", int(st.body), s)
+			s.register_gear(body)
 		XGear.force_roll = -1.0
+		_gear_ctx = {"on": bool(st.get("gear", false)), "item": item, "donors": donors}
 		if st.has("config"):
 			XAlienation.mark(item).config = (st.config as Dictionary).duplicate(true)
 			item.alien.config = _ints(item.alien.config)
+			if str(item.alien.config.get("donorId", "")).begins_with("d"):
+				item.alien.config.donorId = str(donors[int(str(item.alien.config.donorId).substr(1))].instanceId)
+		if not body.is_empty():
+			a.equips[a.equip_slots().find(4)] = body
 		if st.has("armor"):
 			a.equips[0] = XGear.template("weapon", int(st.weapon))
 			a.equips[a.equip_slots().find(int(item.etypeId))] = item
@@ -258,6 +352,9 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 			a.equips[0] = item
 	else:
 		a.equips[0] = XGear.template("weapon", int(st.weapon))
+		_gear_ctx = {}
+	_gear_ctx.equips = {a: a.equips.duplicate(), b: b.equips.duplicate()}
+	_gear_ctx.bag = s.gear.duplicate()
 	var logic := _logic(s, int(st.troop))
 	var enemies: Array = logic.enemies
 	for e in enemies:
@@ -318,6 +415,8 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 			MVEventCore.new()._change_resource(who.call(str(sp.event.who)), 311, float(sp.event.value), bool(sp.event.get("death", false)))
 		elif sp.has("revive"):
 			logic._state_remove(who.call(str(sp.revive)), 1)
+		elif sp.has("end"):
+			logic.end_battle(int(sp.end))
 		elif sp.has("shield"):
 			who.call(str(sp.shield.who)).shield = float(sp.shield.value)
 		elif sp.has("forget"):
