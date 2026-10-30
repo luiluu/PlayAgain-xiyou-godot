@@ -25,6 +25,9 @@
 - 单槽排队（2026-10-28 哪吒_5）：单槽申请前先看 slots/queue/ 里有没有别的进程更早登记、还活着的等候者，有就让一轮；
   自己第一次没占到才登记（文件名＝开始纳秒_pid_线程，等待中每轮刷新，超过 QUEUE_STALE 秒没刷新或 pid 已不在的作废）。
   同一进程的线程之间不排队；多槽进程照 heavy.lock 规则不参加。XIYOU_SLOT_QUEUE=0 回到旧行为。
+- 总装优先（2026-10-30 哪吒_9）：主工作区（或 XIYOU_SLOT_PRIORITY=1）的占槽请求排进 slots/priority/，
+  别的工作树的单槽申请只要看到还活着的优先等候者就让（不论谁先来）；车道的多槽进程在拿 heavy.lock 前也先等优先等候者走完。
+  已占到槽在跑的不打断。XIYOU_SLOT_PRIORITY=0 让主工作区也按普通排队。
 - 心跳：批测与排槽期间每 XIYOU_TEST_HEARTBEAT 秒（默认 300，0 关闭）打印一行进度（完成数、等槽数、在跑的场景），
   免得长任务.py 的无输出看门狗（默认 3600 秒）把仍在推进的批测判成卡住；不放宽看门狗、不改并发。
 - 日志：--log-dir（或 CHECK_LOG_DIR）没给时写到 <工程上一级>/04_验证/本地结果/并行测试/<时间戳>/（只留最近 LOGS_KEEP 份），
@@ -38,6 +41,7 @@ import concurrent.futures as cf
 import contextlib
 import datetime
 import fcntl
+import functools
 import hashlib
 import json
 import os
@@ -182,10 +186,24 @@ def queue_enabled() -> bool:
     return os.environ.get('XIYOU_SLOT_QUEUE', '1') != '0'
 
 
-def earlier_waiter(qdir: Path, me: str) -> bool:
+def slot_priority(path: str) -> bool:
+    """占槽优先：XIYOU_SLOT_PRIORITY 设了 1/0 就照它，否则主工作区（总装合并检查、同步）优先、worktree（车道）不优先。"""
+    env = os.environ.get('XIYOU_SLOT_PRIORITY', '')
+    if env != '':
+        return env != '0'
+    return not _linked_cached(str(Path(path).resolve()))
+
+
+@functools.lru_cache(maxsize=None)
+def _linked_cached(path: str) -> bool:
+    return in_linked_worktree(path)
+
+
+def earlier_waiter(qdir: Path, me: str, anytime: bool = False) -> bool:
     """别的进程有没有比 me（排队文件名「开始纳秒_pid_线程」；None＝还没登记，按现在算）更早登记、还活着的单槽等候者。
+    anytime：不比先后，有活着的就算（普通申请看优先队列用）。
     同一进程的线程之间不排队（各自的批测里照旧）；超时没刷新或 pid 已不在的排队文件顺手删掉。"""
-    mine = int(me.split('_')[0]) if me else time.time_ns()
+    mine = float('inf') if anytime else int(me.split('_')[0]) if me else time.time_ns()
     now = time.time()
     for f in qdir.glob('*_*_*'):
         try:
@@ -211,13 +229,14 @@ def earlier_waiter(qdir: Path, me: str) -> bool:
 
 
 @contextlib.contextmanager
-def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_interval: float = 60.0):
+def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_interval: float = 60.0, priority: bool = False):
     """所有工作树共用的并发槽位：slots/<i>.lock 上的非阻塞 flock，占到哪个用哪个；进程退出时系统自动释放。
     weight：一个进程占几槽（特别吃内存的探针如 event_probe 单进程约 4.5GB，按实际占用多占几槽），超过上限按上限算。
     多槽的先独占 heavy.lock（同一时间只有一个多槽进程在攒槽，免得两个各攒一半互相等死），再一槽一槽攒齐，攒到的不放；
     单槽的每次占槽前先对 heavy.lock 取共享锁，有多槽进程正在攒槽（独占锁在）就让路等着，所以空出来的槽一定归多槽进程，
     它不会被源源不断的单槽测试永远插队（2026-10-26 哪吒：原来单槽照旧抢，空槽归谁看轮询先后，回归偶发失败）。
-    on_wait(已等秒数)：排队期间每 wait_interval 秒调一次（同步用它打印「等槽」心跳，长任务看门狗据此算作有进展）。"""
+    on_wait(已等秒数)：排队期间每 wait_interval 秒调一次（同步用它打印「等槽」心跳，长任务看门狗据此算作有进展）。
+    priority：总装优先（见文件头），由调用方用 slot_priority(工程目录) 算好传进来。"""
     slots = sdir / 'slots'
     slots.mkdir(exist_ok=True)
     weight = max(1, min(int(weight), limit))
@@ -225,10 +244,26 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
     t0 = last = time.monotonic()
     # 单槽先来先得（多槽照 heavy.lock 规则，不参加排队，免得与闸门互等）：主工作区批测占满上限时，它的线程放槽后同一瞬间
     # 就重抢，别的工作树每 0.5 秒轮询一次几乎抢不到（10-28 哪吒排 1 小时、八戒排 1.5 小时）。
-    qdir = slots / 'queue' if weight == 1 and queue_enabled() else None
+    queued = queue_enabled()
+    pdir = slots / 'priority' if queued else None  # 总装优先的等候者（单槽、多槽都在这里登记）
+    if pdir:
+        pdir.mkdir(exist_ok=True)
+    qdir = (pdir if priority else slots / 'queue') if weight == 1 and queued else None
     ticket = None  # 自己的排队文件；第一次没占到才登记
     if qdir:
         qdir.mkdir(exist_ok=True)
+
+    def ahead() -> bool:
+        """有没有该让的：普通申请让任何活着的优先等候者，再按先来先得；优先申请只在优先队列里比先后。"""
+        if pdir and not priority and earlier_waiter(pdir, None, anytime=True):
+            return True
+        return bool(qdir) and earlier_waiter(qdir, ticket.name if ticket else None)
+
+    def enqueue():
+        nonlocal ticket
+        if ticket is None and (qdir or (pdir and priority)):
+            ticket = (qdir or pdir) / ('%d_%d_%d' % (time.time_ns(), os.getpid(), threading.get_ident()))
+            ticket.touch()
 
     def tick():
         nonlocal last
@@ -239,8 +274,17 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
 
     try:
         if weight > 1:
+            # 车道的多槽进程先等总装的优先等候者走完再攒槽（攒槽时会挡住所有单槽，含总装）；优先的多槽进程登记进优先队列
+            if priority:
+                enqueue()
+            while pdir and not priority and earlier_waiter(pdir, None, anytime=True):
+                tick()
+                time.sleep(0.5)
             heavy = open(slots / 'heavy.lock', 'a')
             while True:
+                if ticket:
+                    with contextlib.suppress(OSError):
+                        os.utime(ticket)
                 try:
                     fcntl.flock(heavy, fcntl.LOCK_EX | fcntl.LOCK_NB)
                     break
@@ -252,10 +296,8 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
             if ticket:
                 with contextlib.suppress(OSError):
                     os.utime(ticket)  # 刷新：别人据此认我还活着
-            if qdir and earlier_waiter(qdir, ticket.name if ticket else None):
-                if ticket is None:
-                    ticket = qdir / ('%d_%d_%d' % (time.time_ns(), os.getpid(), threading.get_ident()))
-                    ticket.touch()
+            if weight == 1 and ahead():
+                enqueue()
                 tick()
                 time.sleep(0.5)
                 continue
@@ -279,9 +321,7 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
             if gate is not None:
                 fcntl.flock(gate, fcntl.LOCK_UN)
             if len(held) < weight:
-                if qdir and ticket is None:
-                    ticket = qdir / ('%d_%d_%d' % (time.time_ns(), os.getpid(), threading.get_ident()))
-                    ticket.touch()
+                enqueue()
                 tick()
                 time.sleep(0.5)
         if ticket:
@@ -311,7 +351,7 @@ def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progres
     if progress:
         with progress.lock:
             progress.waiting.add(name)
-    with global_slot(sdir, limit):
+    with global_slot(sdir, limit, priority=slot_priority(project)):
         if progress:
             with progress.lock:
                 progress.waiting.discard(name)
@@ -460,7 +500,7 @@ def main() -> int:
     if missing:
         # 只在缓存缺类名时导入一次（占一个共用槽，与 检查.sh 的导入相同，最多 300 秒）；导入失败照常往下跑，由测试报错
         print('  · 导入缓存缺 %d 个类名（%s 等），先 godot --import 一次' % (len(missing), '、'.join(missing[:3])), flush=True)
-        with global_slot(sdir, limit):
+        with global_slot(sdir, limit, priority=slot_priority(a.project)):
             try:
                 p = subprocess.run([a.godot, '--headless', '--path', a.project, '--import'], capture_output=True, text=True, timeout=300)
                 if p.returncode:

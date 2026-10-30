@@ -615,6 +615,86 @@ else:  # 别的工作树来要一个槽
         self.assertLess(new, 1.5)
         self.assertFalse(list((self.state / 'slots/queue').iterdir()))  # 排队文件都收走了
 
+    PRIO = """import importlib.util, sys, time
+spec = importlib.util.spec_from_file_location('p', sys.argv[1]); p = importlib.util.module_from_spec(spec); spec.loader.exec_module(p)
+state, limit, weight, hold = __import__('pathlib').Path(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]), float(sys.argv[5])
+(state / ('start_' + sys.argv[6])).touch()
+with p.global_slot(state, limit, weight, priority=p.slot_priority('.')):
+    print('GOT %f' % time.time(), flush=True)
+    time.sleep(hold)
+"""
+
+    def test_main_worktree_waiter_goes_before_earlier_lane_waiters(self):
+        """10-29～30：总装合并选测「等槽 4，在跑 无」排 40 分钟～1 小时多。车道批测占满上限、另一车道先排着时，
+        后来的总装请求（XIYOU_SLOT_PRIORITY=1）先拿到槽；车道批测已在跑的不打断，放槽后不再重抢。"""
+        script = self.state / 'hog.py'
+        script.write_text(self.HOG)
+        prio = self.state / 'prio.py'
+        prio.write_text(self.PRIO)
+        lane = dict(os.environ, XIYOU_SLOT_PRIORITY='0')
+        main = dict(os.environ, XIYOU_SLOT_PRIORITY='1')
+        par = str(HERE / '并行测试.py')
+        hog = subprocess.Popen([sys.executable, str(script), par, str(self.state), '2', '6', 'hog'], env=lane, stdout=subprocess.DEVNULL)
+        try:
+            self.assertTrue(self.wait_for(lambda: (self.state / 'hog_ready').exists(), 30))
+            other = subprocess.Popen([sys.executable, str(prio), par, str(self.state), '2', '1', '0.5', 'lane'], env=lane,
+                                     stdout=subprocess.PIPE, text=True)
+            # 等车道等候者真登记进排队目录，再让总装来（不靠固定时间）
+            self.assertTrue(self.wait_for(lambda: any((self.state / 'slots/queue').glob('*_%d_*' % other.pid)), 30))
+            t0 = __import__('time').time()
+            boss = subprocess.run([sys.executable, str(prio), par, str(self.state), '2', '1', '0', 'main'], env=main,
+                                  capture_output=True, text=True, timeout=30)
+            got_main = float(boss.stdout.split()[1])
+            got_lane = float(other.communicate(timeout=30)[0].split()[1])
+        finally:
+            hog.wait(30)
+        self.assertLess(got_main, got_lane, '总装请求应排在先来的车道等候者前面')
+        self.assertLess(got_main - t0, 1.5)  # 车道批测放槽后让路，下一轮就归总装
+        self.assertFalse(list((self.state / 'slots/priority').iterdir()))
+
+    def test_lane_single_yields_to_live_priority_waiter_even_with_free_slots(self):
+        # 不靠竞速：有活着的总装等候者时，车道单槽即使有空槽也让；等候者走了马上能占
+        import threading, time as _t
+        pdir = self.state / 'slots/priority'
+        pdir.mkdir(parents=True)
+        boss = pdir / ('%d_%d_1' % (_t.time_ns(), os.getppid()))
+        boss.touch()
+        got, release = {}, threading.Event()
+        t = self.hold(1, 2, release, got, 'lane')
+        self.assertFalse(self.wait_for(lambda: 'lane' in got, 1))
+        self.assertFalse(self.locked('0.lock') or self.locked('1.lock'))
+        boss.unlink()
+        self.assertTrue(self.wait_for(lambda: 'lane' in got, 30))
+        release.set(); t.join(30)
+
+    def test_lane_heavy_waits_for_priority_waiter_before_gathering(self):
+        # 车道多槽进程攒槽时会挡住全部单槽（含总装），所以有总装在排就先不拿 heavy.lock
+        import threading, time as _t
+        pdir = self.state / 'slots/priority'
+        pdir.mkdir(parents=True)
+        boss = pdir / ('%d_%d_1' % (_t.time_ns(), os.getppid()))  # 活着的进程登记的优先等候者
+        boss.touch()
+        got, release = {}, threading.Event()
+        h = self.hold(2, 2, release, got, 'heavy')
+        self.assertFalse(self.wait_for(lambda: 'heavy' in got, 1))
+        self.assertFalse(self.locked('heavy.lock'))
+        boss.unlink()
+        self.assertTrue(self.wait_for(lambda: 'heavy' in got, 30))
+        release.set(); h.join(30)
+
+    def test_slot_priority_main_worktree_and_env(self):
+        repo = self.state / 'repo'
+        subprocess.run(['git', 'init', '-q', str(repo)], check=True)
+        subprocess.run(['git', '-C', str(repo), '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'x'], check=True)
+        subprocess.run(['git', '-C', str(repo), 'worktree', 'add', '-q', str(self.state / 'wt')], check=True)
+        with mock.patch.dict(os.environ, {'XIYOU_SLOT_PRIORITY': ''}):
+            self.assertTrue(self.par.slot_priority(str(repo)))
+            self.assertFalse(self.par.slot_priority(str(self.state / 'wt')))
+        with mock.patch.dict(os.environ, {'XIYOU_SLOT_PRIORITY': '0'}):
+            self.assertFalse(self.par.slot_priority(str(repo)))
+        with mock.patch.dict(os.environ, {'XIYOU_SLOT_PRIORITY': '1'}):
+            self.assertTrue(self.par.slot_priority(str(self.state / 'wt')))
+
     def test_stale_queue_ticket_is_ignored_and_removed(self):
         import time as _t
         q = self.state / 'slots/queue'
@@ -710,7 +790,7 @@ else:  # 别的工作树来要一个槽
         seen = []
         real = sync.runner().global_slot
 
-        def spy(sdir, limit, weight=1, on_wait=None, interval=60.0):
+        def spy(sdir, limit, weight=1, on_wait=None, interval=60.0, priority=False):
             seen.append(weight)
             if on_wait:
                 on_wait(61.0)
