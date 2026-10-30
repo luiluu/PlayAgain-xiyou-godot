@@ -201,6 +201,14 @@ class ReviewListTests(unittest.TestCase):
         r.put(LOG, '# 变更记录\n\n## 2099-01-01 【Claude·哪吒】核查 claude/lane\n')
         self.assertIn('合并 claude/lane', self.labels())
 
+    def test_no_review_trailer_is_not_counted(self):
+        # 审查线程自己的分支合并写 `核查: 无`，不进待核查清单
+        r = self.repo
+        r.put('03_再刷重制_Godot/f.py', 'x')
+        r.git('add', '-A')
+        r.git('commit', '-q', '-m', '审查线程自己的合并\n\n执行者: Claude（唐僧）\n核查: 无\n')
+        self.assertNotIn('审查线程自己的合并', self.labels())
+
     def test_dev_numbers(self):
         self.assertEqual(review.dev_numbers('dev.081／083／085、dev.086～088'), {81, 83, 85, 86, 87, 88})
 
