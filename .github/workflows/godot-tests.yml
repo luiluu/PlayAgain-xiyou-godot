@@ -1,0 +1,212 @@
+# 云端选测：Godot 测试场景分片并行跑（用户 2026-10-30 同意把选测移出 Mac）。
+# 说明见 03_再刷重制_Godot/07_开发环境/云端测试.md「GitHub Actions 分片并行」，脚本是 同目录 云端选测.py。
+# 省分钟（私有仓库每月 2000 免费分钟）：只在明确要测时跑，推 main、推普通分支都不触发。
+# - 推 ci/<分支>（Mac 上 云端选测.py run）：按 选测.py 对 GitHub main 的分叉点选场景（选测）
+# - 推 ci-full/<分支>（云端选测.py run --full）：整轮
+# - 手动（Actions 页 Run workflow，或云端线程用 GitHub 工具）：可选整轮、改基准、强制重跑
+# 同一提交已测过并通过就不再跑（整轮的结果也算选测通过）。
+# 转换产物不入 Git：取自 refs/ci/generated/<分支>（没有就用 main 的），由 Mac 上 云端选测.py upload 推上来。
+name: 云端选测
+
+on:
+  push:
+    branches: ['ci/**', 'ci-full/**']
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: affected＝选测（按改动选场景），full＝整轮
+        type: choice
+        options: [affected, full]
+        default: affected
+      base:
+        description: 选测基准（取它与本提交的分叉点）
+        type: string
+        default: origin/main
+      force:
+        description: 这个提交测过并通过了也重跑
+        type: boolean
+        default: false
+      max_shards:
+        description: 最多分几片（每片一台 2 核机器）
+        type: string
+        default: '16'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TOOL: 03_再刷重制_Godot/07_开发环境/云端选测.py
+  PROJECT: 03_再刷重制_Godot/01_Godot工程
+  GENERATED: 03_再刷重制_Godot/01_Godot工程/modes/xiyou/generated
+  JOBS: '2'
+  TARGET_SECONDS: '600'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      skip: ${{ steps.plan.outputs.skip }}
+      count: ${{ steps.plan.outputs.count }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      generated_ref: ${{ steps.plan.outputs.generated_ref }}
+      generated_commit: ${{ steps.plan.outputs.generated_commit }}
+      ws_key: ${{ steps.key.outputs.ws_key }}
+      godot_key: ${{ steps.key.outputs.godot_key }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/cache/restore@v4
+        with:
+          path: .ci-timings
+          key: ci-timings-${{ github.run_id }}
+          restore-keys: ci-timings-
+      - id: plan
+        env:
+          BRANCH: ${{ github.ref_name }}
+          MODE: ${{ inputs.mode }}
+          BASE: ${{ inputs.base || 'origin/main' }}
+          FORCE: ${{ inputs.force && '--force' || '' }}
+          MAX_SHARDS: ${{ inputs.max_shards || '16' }}
+        run: |
+          python3 "$TOOL" plan --branch "$BRANCH" --mode "$MODE" --base "$BASE" $FORCE \
+            --timings .ci-timings/timings.json --jobs "$JOBS" --target "$TARGET_SECONDS" --max-shards "$MAX_SHARDS" --out plan.json
+      - id: key
+        env:
+          GEN: ${{ steps.plan.outputs.generated_commit }}
+        run: |
+          echo "godot_key=godot-${{ hashFiles('03_再刷重制_Godot/07_开发环境/环境登记.json') }}" >> "$GITHUB_OUTPUT"
+          echo "ws_key=ws-v1-${GEN}-${{ hashFiles('03_再刷重制_Godot/01_Godot工程/**', '03_再刷重制_Godot/07_开发环境/环境登记.json') }}" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plan
+          path: plan.json
+          retention-days: 7
+
+  # 解开产物、godot --import 一次，连同导入缓存存进 Actions 缓存，各片直接取用（不用各自导入）
+  prepare:
+    needs: plan
+    if: needs.plan.outputs.count != '0' && needs.plan.outputs.count != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/xiyou-godot
+          key: ${{ needs.plan.outputs.godot_key }}
+      - id: godot
+        run: python3 "$TOOL" godot
+      - id: ws
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ env.PROJECT }}/.godot
+            ${{ env.GENERATED }}
+          key: ${{ needs.plan.outputs.ws_key }}
+          restore-keys: |
+            ws-v1-${{ needs.plan.outputs.generated_commit }}-
+            ws-v1-
+      - if: steps.ws.outputs.cache-hit != 'true'
+        run: python3 "$TOOL" fetch --ref "${{ needs.plan.outputs.generated_ref }}"
+      - if: steps.ws.outputs.cache-hit != 'true'
+        env:
+          GODOT: ${{ steps.godot.outputs.godot }}
+        run: |
+          start=$(date +%s)
+          rc=0; timeout 1500 "$GODOT" --headless --path "$PROJECT" --import > import.log 2>&1 || rc=$?
+          echo "godot --import 退出码 $rc，用时 $(( $(date +%s) - start )) 秒"
+          if [ "$rc" -ne 0 ] || grep -qE 'SCRIPT ERROR|^ERROR:' import.log; then
+            grep -E 'ERROR|FAIL' import.log | head -40; exit 1
+          fi
+      - if: steps.ws.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ env.PROJECT }}/.godot
+            ${{ env.GENERATED }}
+          key: ${{ needs.plan.outputs.ws_key }}
+
+  test:
+    needs: [plan, prepare]
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    name: test (片 ${{ matrix.shard }})
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/xiyou-godot
+          key: ${{ needs.plan.outputs.godot_key }}
+      - id: godot
+        run: python3 "$TOOL" godot
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ env.PROJECT }}/.godot
+            ${{ env.GENERATED }}
+          key: ${{ needs.plan.outputs.ws_key }}
+          fail-on-cache-miss: true
+      - env:
+          GODOT: ${{ steps.godot.outputs.godot }}
+          SCENES: ${{ matrix.scenes }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          python3 "$TOOL" shard --godot "$GODOT" --scenes "$SCENES" --shard "$SHARD" --jobs "$JOBS" \
+            --log-dir "$RUNNER_TEMP/logs/shard-$SHARD" --out "shard-$SHARD.json"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: result-shard-${{ matrix.shard }}
+          path: shard-${{ matrix.shard }}.json
+          retention-days: 7
+          if-no-files-found: ignore
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/logs/shard-${{ matrix.shard }}
+          retention-days: 7
+
+  # 汇总各片，写进运行页摘要，并把结果推到 refs/ci/results/<提交>/<affected|full>（Mac 上 云端选测.py wait 读它）
+  report:
+    needs: [plan, prepare, test]
+    if: always() && needs.plan.result == 'success' && needs.plan.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: '{plan,result-shard-*}'
+      - uses: actions/cache/restore@v4
+        with:
+          path: .ci-timings
+          key: ci-timings-${{ github.run_id }}
+          restore-keys: ci-timings-
+      - env:
+          PREPARE: ${{ needs.prepare.result }}
+          TEST: ${{ needs.test.result }}
+        run: |
+          status=success
+          for r in "$PREPARE" "$TEST"; do
+            case "$r" in cancelled) status=cancelled; break ;; success|skipped) ;; *) status=failure ;; esac
+          done
+          python3 "$TOOL" report --plan artifacts/plan/plan.json --results artifacts --timings .ci-timings/timings.json \
+            --job-status "$status" --publish
+      - if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .ci-timings
+          key: ci-timings-${{ github.run_id }}
