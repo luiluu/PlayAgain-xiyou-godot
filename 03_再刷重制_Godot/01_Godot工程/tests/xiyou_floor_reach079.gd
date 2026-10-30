@@ -122,7 +122,7 @@ func _press() -> void:
 func _path(from: Vector2i, goal: Vector2i) -> Array:
 	var occupied := {}
 	for e in map.events:
-		if not e.page.is_empty():
+		if not e.page.is_empty() and e.is_normal_priority() and not e.through:
 			occupied[e.grid] = true
 	var prev := {from: from}
 	var q := [from]
@@ -229,7 +229,7 @@ func _win(call: Callable) -> bool:
 func _enter_ev(ev: int, dest: int) -> bool:
 	var e := _event(ev)
 	var cells := REACH.reachable(map, map.player.grid)
-	for d in [8, 2, 4, 6]:
+	for d in [2, 8, 4, 6]:   # 出口 EV1 在走廊口，先试南面（北面要穿过它才到）
 		var n: Vector2i = e.grid + DIRS[d]
 		if cells.has(n):
 			return await _step_onto(n, e.grid, dest)
@@ -305,7 +305,7 @@ func _leave() -> void:
 	XMessageBox.auto_answers = [0]
 	if not _check("exit_reach", REACH.unreachable(map, map.player.grid, [1]).is_empty(), REACH.unreachable(map, map.player.grid, [1])):
 		return
-	if not _check("exit_back", await _enter_ev(1, 78) and _here(78, Vector2i(34, 19)), _where()):
+	if not _check("exit_back", await _enter_ev(1, 78) and _here(78, Vector2i(34, 19)), [_where(), XMessageBox.transcript, s.switch(111)]):
 		return
 	_check("exit_reset", int(s.variable(5)) == 0 and int(s.variable(6)) == 0 and int(s.variable(21)) == 0
 		and not [111, 112, 113, 114, 115, 116, 117, 118].any(func(sw): return s.switch(sw)), [_vars(), s.switch(111)])
