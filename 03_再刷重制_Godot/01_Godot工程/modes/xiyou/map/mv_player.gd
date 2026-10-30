@@ -22,16 +22,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not input_enabled:
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		var p := get_global_mouse_position()
-		touch_target = _touch_cell(p)
-		# Game_Player.triggerTouchAction：点自己脚下（D1，飞艇在这里就上下飞艇）或前方一格（D2）。乘飞艇时 D2 只查事件
-		# （canStartLocalEvents 为假，什么都不做），前方一格照常当目的地飞过去
-		if touch_target == grid or (touch_target == front_cell(direction) and vehicle_speed <= 0):
-			touch_target = Vector2i(-1, -1)
-			action_pressed.emit()
+		click_cell(_touch_cell(get_global_mouse_position()))
 	elif event is InputEventScreenTouch and event.pressed:
 		var p2: Vector2 = get_canvas_transform().affine_inverse() * (event as InputEventScreenTouch).position
 		touch_target = _touch_cell(p2)
+
+
+## 鼠标点到某格（$gameTemp.setDestination）。Game_Player.triggerTouchAction：点自己脚下（D1，飞艇在这里就上下飞艇）或前方一格（D2）
+## 当作确认；乘飞艇时 D2 只查事件（canStartLocalEvents 为假，什么都不做），前方一格照常当目的地飞过去
+func click_cell(c: Vector2i) -> void:
+	touch_target = c
+	if touch_target == grid or (touch_target == front_cell(direction) and vehicle_speed <= 0):
+		touch_target = Vector2i(-1, -1)
+		action_pressed.emit()
 
 
 func update_character() -> void:
