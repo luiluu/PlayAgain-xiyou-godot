@@ -1,0 +1,24 @@
+{
+ "sha": "367a1e76b2eb92d68eec45eb4c141c0290d5d082",
+ "branch": "claude/project-thread-cr90wk",
+ "mode": "full",
+ "base": "",
+ "passed": false,
+ "scenes": 258,
+ "failed": [
+  "xiyou_alien_affix.tscn",
+  "xiyou_book_capacity_ui.tscn",
+  "xiyou_inlay_book.tscn",
+  "xiyou_status_power.tscn"
+ ],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 13,
+ "longestShardSeconds": 814.0,
+ "testSeconds": 15338,
+ "generatedRef": "b7dc7df4b3647a7594dc0f2df7e5ca6d6d6ee697",
+ "generatedCommit": "b7dc7df4b3647a7594dc0f2df7e5ca6d6d6ee697",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41081736847",
+ "time": "2026-10-30T15:50:20+00:00"
+}
