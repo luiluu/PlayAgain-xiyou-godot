@@ -63,8 +63,11 @@ const RERUN_AFTER_PAGE := {"4:36:2": true}
 const SAFE_AIRSHIP_MENU := true
 ## Game_Vehicle.maxAltitude：飞艇升到 48 才能飞（canMove 要 isHighest），降到 0 才算下完
 const AIRSHIP_MAX_ALTITUDE := 48
-## 飞艇（Game_Map.airship）的地图精灵；图像高度偏移、影子、升空动画在甲三，现在画在格子上
+## 飞艇影子（Spriteset_Map.createShadow：system/Shadow1，锚点底边中点，z 6 在飞艇 z 5 之上）
+const AIRSHIP_SHADOW_Z := MVCharacter.ABOVE_UPPER_Z + 1
+## 飞艇（Game_Map.airship）的地图精灵：画面上移 altitude（Game_Vehicle.screenY），驾驶或升降中在上层图块之上
 var airship: MVCharacter
+var airship_shadow: Sprite2D
 ## Game_Player._vehicleGettingOn／_vehicleGettingOff 与上下载具时的 gatherFollowers（不随档，读档时按飞艇状态补，见 _place_vehicle）
 var _vehicle_getting_on := false
 var _vehicle_getting_off := false
@@ -796,11 +799,22 @@ func _place_vehicle() -> void:
 			player.transparent = true
 	if airship != null and is_instance_valid(airship):
 		airship.queue_free()
+	if airship_shadow != null and is_instance_valid(airship_shadow):
+		airship_shadow.queue_free()
 	airship = MVCharacter.new()
 	airship.name = "Airship"
 	airship.tilemap = lower
 	chars.add_child(airship)
 	airship.locate(int(v.x), int(v.y))
+	airship_shadow = Sprite2D.new()
+	airship_shadow.name = "AirshipShadow"
+	var shadow_path := XDB.img_path("system", "Shadow1")
+	airship_shadow.texture = load(shadow_path) if shadow_path != "" else null
+	airship_shadow.centered = false
+	if airship_shadow.texture != null:
+		airship_shadow.offset = -Vector2(airship_shadow.texture.get_width() / 2.0, airship_shadow.texture.get_height())
+	airship_shadow.z_index = AIRSHIP_SHADOW_Z
+	chars.add_child(airship_shadow)
 	_refresh_airship_sprite(v)
 
 
@@ -820,7 +834,17 @@ func _refresh_airship_sprite(v: Dictionary) -> void:
 	airship.walk_anime = bool(v.driving)
 	airship.step_anime = int(v.altitude) >= AIRSHIP_MAX_ALTITUDE
 	airship.priority_type = 0 if int(v.altitude) <= 0 else 2
+	airship.altitude = int(v.altitude)
 	airship._sync_position()
+	_update_airship_shadow()
+
+
+## Spriteset_Map.updateShadow：shadowX／Y＝飞艇不算高度的 screenX／Y（含行走图上移 6），透明度 255×高度÷48（不看飞艇是否透明）
+func _update_airship_shadow() -> void:
+	if airship_shadow == null or not is_instance_valid(airship_shadow):
+		return
+	airship_shadow.position = airship.position + Vector2(0, airship.altitude - (0.0 if airship.is_object() else 6.0))
+	airship_shadow.modulate.a = float(airship.altitude) / AIRSHIP_MAX_ALTITUDE
 
 
 # ---- 解释器服务 ----

@@ -24,7 +24,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var p := get_global_mouse_position()
 		touch_target = _touch_cell(p)
-		if touch_target == front_cell(direction) or touch_target == grid:
+		# Game_Player.triggerTouchAction：点自己脚下（D1，飞艇在这里就上下飞艇）或前方一格（D2）。乘飞艇时 D2 只查事件
+		# （canStartLocalEvents 为假，什么都不做），前方一格照常当目的地飞过去
+		if touch_target == grid or (touch_target == front_cell(direction) and vehicle_speed <= 0):
 			touch_target = Vector2i(-1, -1)
 			action_pressed.emit()
 	elif event is InputEventScreenTouch and event.pressed:
@@ -52,8 +54,8 @@ func update_character() -> void:
 		if move_straight(d):
 			stepped.emit()
 		elif touch_target.x >= 0:
-			# 走不过去：面向目标，若目标就是相邻格则视为调查
-			if front_cell(d) == touch_target:
+			# 走不过去：面向目标，若目标就是相邻格则视为调查（乘飞艇时只在图边飞不过去，D2 不触发事件）
+			if front_cell(d) == touch_target and vehicle_speed <= 0:
 				action_pressed.emit()
 			touch_target = Vector2i(-1, -1)
 	elif Input.is_action_just_pressed("ui_accept") and not Input.is_key_pressed(KEY_META):
