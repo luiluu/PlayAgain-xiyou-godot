@@ -78,7 +78,7 @@ jobs:
           BASE: ${{ inputs.base || 'origin/main' }}
           FORCE: ${{ inputs.force && '--force' || '' }}
           MAX_SHARDS: ${{ inputs.max_shards || '16' }}
-          SCENES: ${{ inputs.scenes }}
+          SCENES: ${{ inputs.scenes || 'xiyou_inlay_book.tscn xiyou_status_power.tscn' }}  # 试跑，合并前撤掉
         run: |
           python3 "$TOOL" plan --branch "$BRANCH" --mode "$MODE" --base "$BASE" --scenes "$SCENES" $FORCE \
             --timings .ci-timings/timings.json --jobs "$JOBS" --target "$TARGET_SECONDS" --max-shards "$MAX_SHARDS" --out plan.json
