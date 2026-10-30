@@ -18,7 +18,7 @@ extends RefCounted
 ## - 回合：开始时镜骸重新充能；结束时蚀能（偶数回合，吸 MP 比例最高的活角色 10% 最大法力，按实际比例回 2% 最大生命）、
 ##   腐蚀（每回合末扣 2% 最大生命、经护盾，到期自然消失）。
 ## - 胜利（gainDropItems／endBattle(0) 包装）：异化敌人倒下才发，放进背包，账本 recent 头插、留 30 条，提示「获得 …」；每场一次。
-## 原版行动外的 gainHp／setHp（公式副作用等）也按帧加成与记镜骸；这里只接 executeHpDamage，其余未移植。
+## 原版行动外的 gainHp／setHp（公式副作用等）也按帧加成与记镜骸；这里只接 executeHpDamage，其余未移植（帧里逆祷的阻断另接，见 frame_blocks_hp）。
 ## 未知存在的来源地图（Leviathan 的 Game_Map.setup 包装）记在 XState.unknown_origin（进 Map152／176 时记上一张图）。
 
 static var _logic_ref: WeakRef
@@ -301,8 +301,10 @@ static func end(logic, result: int) -> void:
 	restore_gear(logic)
 	if bool(_store(logic).get("status", false)):
 		end_life(logic)
-	for a in logic.actors:  # endBattle 包装：清囚厄接收、恶愿代价标记
-		for k in ["xalien_jail", "xalien_jail_buff", "xalien_wish", "xalien_wish_buff"]:
+	# endBattle 包装：清囚厄接收、恶愿代价标记；生命池与保护者也再清一次（重锁时卸下了生命类配置、本场不算状态类时，
+	# 上一次锁队留下的池仍互相引用）
+	for a in logic.actors:
+		for k in ["xalien_jail", "xalien_jail_buff", "xalien_wish", "xalien_wish_buff", "xalien_life", "xalien_protector"]:
 			if a.has_meta(k):
 				a.remove_meta(k)
 	_store(logic).party = {}
@@ -655,12 +657,19 @@ static func set_heal_targets(skill: Dictionary, n: int) -> void:
 ## makeDamageValue 包装（Aff:50）：按原技能面板 MP 费用选治疗技能（≥125 治疗术 166，≥75 次级治疗术 135，否则治愈 8），
 ## 对这名目标算一次不暴击的治疗值当预算，平分给本次行动的目标数。原版另把治疗技能的熟练度借成原技能的，重制熟练度统一为 0，不涉及
 static func prayer_heal(logic, u, skill: Dictionary, t) -> float:
+	if o_prayer_counter and t is XEnemy:
+		return 0.0  # O-119：反击打到敌人身上的逆祷治疗不生效
 	var original := XDB.rec("Skills", int(skill._alienOriginal))
 	var cost := float(logic.skill_cost(u, original).mp)
 	var healer := XDB.rec("Skills", 166 if cost >= 125.0 else 135 if cost >= 75.0 else 8)
 	var budget := absf(logic._damage_value(u, healer, t, false))
 	var count := int(skill.get("_alienHealTargets", 1))
 	return -floorf(budget / maxf(1.0, float(count)))
+
+
+## O-119（优化登记）：逆祷者的反击照原版也读投影（invokeCounterAttack 的 setAttack 走 item()），变成「治愈」打在出手的敌人身上，
+## 把它刚打掉的生命补回去。true＝打在敌人身上的逆祷治疗为 0（反击仍挡下敌人这次行动，同普通反击）；false＝照原版治疗敌人
+static var o_prayer_counter := true
 
 
 ## meetsSkillConditions 包装（Aff:22）：逆祷者不能用 templates.attack 以外的伤害技能（伤害类型 1／2／5／6）
@@ -672,6 +681,12 @@ static func blocks_skill(a, skill: Dictionary) -> bool:
 ## A.blocksDamage（Aff:51）：逆祷者对敌人的生命伤害全部阻断（executeHpDamage 正值归零）
 static func blocks_damage(u, t) -> bool:
 	return u is XActor and t is XEnemy and has(u, "prayer")
+
+
+## Runtime gainHp／setHp 包装（A.blocksDamage 在帧里）：当前帧的来源是逆祷者、目标是敌人时，扣血无效。
+## 帧：行动 apply、舍身等转移、自定义状态效果（customEffectEval，来源是状态来源）
+static func frame_blocks_hp(b) -> bool:
+	return not _action_frames.is_empty() and blocks_damage(_action_frames[_action_frames.size() - 1].source, b)
 
 
 ## regenerateHp 包装（Aff:55-62）：敌人身上来源是逆祷者的状态，其负生命再生（特性 22-7）不算；返回要从 hrg 里扣掉的量（≤0）
@@ -760,6 +775,8 @@ static var o106_actor_debuffs := true
 const STATUS_AFFIXES := ["pest", "jail", "insulation", "sacrifice", "hollow", "lifelink", "scapegoat", "wish", "prayer", "silence", "glutton"]
 static var _state_routing := 0
 static var _support_routing := 0
+## 正在 die（阵亡状态还没加上）的战斗者：原版 isAlive 只看阵亡状态，这时疫囊者仍算活着，清状态时保留 pestStates
+static var dying = null
 
 
 ## $gameParty.inBattle()：开战锁队后到结束之间
@@ -804,7 +821,7 @@ static func _insulated(t) -> bool:
 
 ## 疫囊 protectedState：疫囊者活着时，pestStates 必中、不可抵抗、不可驱散
 static func pest_state(b, id: int) -> bool:
-	return status_battle() and has(b, "pest") and _live(b) and _in_template("pestStates", id)
+	return status_battle() and has(b, "pest") and (_live(b) or is_same(b, dying)) and _in_template("pestStates", id)
 
 
 ## 囚厄 receiving：转移给囚厄者的状态；恶愿者为代价挂上的诅咒（_alienWish）同样保护（Adv:155-170 两者并列）
@@ -935,6 +952,15 @@ static func after_removal(b, id: int, natural: bool) -> void:
 ## clearStates 包装：受保护的状态保留
 static func keeps_state(b, id: int) -> bool:
 	return status_battle() and (pest_state(b, id) or receiving(b, id) or (_insulated(b) and (positive_state(id) or id == 1)))
+
+
+## clearBuffs 包装（Adv:175，阵亡时）：囚厄接收、恶愿代价的减益保留；绝缘者被外来清掉的增益保留
+static func keeps_buff(b, pid: int) -> bool:
+	if pid < 2 or pid > 7 or not status_battle():
+		return false
+	if b.buffs[pid] < 0:
+		return bool(b.get_meta("xalien_jail_buff", {}).get(pid, 0)) or bool(b.get_meta("xalien_wish_buff", {}).get(pid, false))
+	return b.buffs[pid] > 0 and _insulated(b)
 
 
 ## addBuff／addDebuff 包装：返回真＝已处理（拒收或转给别人）
@@ -1278,6 +1304,18 @@ static func gain_hp_outside(b, value: float) -> bool:
 	var logic = active_logic()
 	var res: XResourceContext = logic._operation_resources(b)
 	res.gain(b, "hp", value)
+	logic._finish_lifecycle_operation(res, b)
+	return true
+
+
+## 事件「增减 MP」（command312：actor.gainMp）：空壳、饕餮、绝缘的角色改走资源上下文的 gain，照 gainMp 包装结算
+## （空壳回蓝变护盾、饕餮无效、绝缘拒收外来回蓝；事件里没有行动根，来源是自己）。返回真＝已结算
+static func gain_mp_outside(b, value: float) -> bool:
+	if value == 0.0 or not status_battle() or not _affix_of(b) in ["hollow", "glutton", "insulation"]:
+		return false
+	var logic = active_logic()
+	var res: XResourceContext = logic._operation_resources(b)
+	res.gain(b, "mp", value)
 	logic._finish_lifecycle_operation(res, b)
 	return true
 

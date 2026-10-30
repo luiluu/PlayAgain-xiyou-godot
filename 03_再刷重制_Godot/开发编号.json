@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.220",
-  "sequence": 220,
-  "next": "dev.221",
-  "nextSequence": 221,
+  "current": "dev.221",
+  "sequence": 221,
+  "next": "dev.222",
+  "nextSequence": 222,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "wukong-airship3",
+  "currentChange": "bajie-alien-gaps",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
