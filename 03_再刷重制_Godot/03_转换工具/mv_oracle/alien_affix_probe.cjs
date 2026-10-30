@@ -82,6 +82,9 @@ function battle(spec) {
     (spec.pre.buffs || []).forEach(([pid, n, turns]) => { a._buffs[pid] = n; a._buffTurns[pid] = turns; }); a.refresh(); }
   // 开战前已倒下的队员（dead：'b'），锁队检查「已倒下」用
   (spec.dead || []).forEach(k => { const x = k === 'b' ? b : a; x.addState(x.deathStateId()); });
+  // 镜骸（mirror）：敌人 0 直接写成镜骸变体（不经 setupEncounter 的抽签与奖励），每回合第一次被角色主动打中，行动结束反噬
+  if (spec.mirror) enemies[0]._alienEnemy = {variant: 'mirror', boss: true, shieldGranted: false, mirrorRound: -1, mirrorCharged: true,
+    plagueRound: -1, drainRound: -1, visualPulse: 0};
   A.lockParty();
   w.$gameParty._inBattle = true;
   w.CodexYunshang._acted = [];
@@ -243,6 +246,13 @@ battleCase('hollow.corrosion', {affix: 'hollow'}, [CORRODE, {tick: 1}]);
 battleCase('lifelink.event', {affix: 'lifelink', config: {actorId: 1, partnerId: 8}}, [
   {event: {who: 'a', value: -3000}}, {event: {who: 'b', value: 1000}}, {event: {who: 'a', value: -99999}}, {event: {who: 'a', value: -99999, death: true}}]);
 battleCase('scapegoat.event', {affix: 'scapegoat', config: {actorId: 1, partnerId: 8}}, [{event: {who: 'a', value: -1000}}, {event: {who: 'a', value: 500}}]);
+// 嫁祸保护者（角色 8）行动外扣血：gainHp 包装末尾 A.syncRelations，嫁祸者按保护者比例跟着掉、保护者倒下嫁祸者跟着倒下
+// （镜骸反噬、腐蚀、事件「增减生命」，含致死）
+const SCAPEGOAT = {affix: 'scapegoat', config: {actorId: 1, partnerId: 8}};
+battleCase('scapegoat.mirror_protector', Object.assign({mirror: true}, SCAPEGOAT), [{user: 'b', skill: 1}, {user: 'b', skill: 1}]);
+battleCase('scapegoat.corrosion_protector', SCAPEGOAT, [Object.assign({target: 1}, CORRODE), {tick: 1}]);
+battleCase('scapegoat.event_protector', SCAPEGOAT, [{event: {who: 'b', value: -1000}}]);
+battleCase('scapegoat.event_protector_death', SCAPEGOAT, [{event: {who: 'b', value: -99999, death: true}}]);
 battleCase('hollow.event', {affix: 'hollow'}, [{event: {who: 'a', value: 500}}, {event: {who: 'a', value: -500, death: true}}]);
 // 锁队检查（Adv:62）：绑定的队友（角色 2）不在场，异化装备卸下放回背包，本场不生效
 battleCase('lifelink.invalid', {affix: 'lifelink', config: {actorId: 1, partnerId: 2}}, [{user: 'e0', skill: 1}]);

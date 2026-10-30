@@ -400,6 +400,9 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 		a.refresh_resources()
 	for k in st.get("dead", []):  # 开战前已倒下的队员（锁队检查「已倒下」）
 		(b if str(k) == "b" else a).add_state(1)
+	if bool(st.get("mirror", false)):  # 敌人 0 直接写成镜骸变体（同参照，不经遭遇抽签）
+		enemies[0].alien = {"variant": "mirror", "boss": true, "shieldGranted": false, "mirrorRound": -1, "mirrorCharged": true,
+			"plagueRound": -1, "drainRound": -1}
 	XAlienBattle.open(logic)
 	var tag := str(c.id)
 	var locked := [a, b].map(func(x):
