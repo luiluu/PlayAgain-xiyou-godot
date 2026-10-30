@@ -1,4 +1,4 @@
-- 状态：可合并（选测结果见「验证」；若该节写「待补」则尚未跑完）
+- 状态：可合并
 
 # 交付：claude/wukong-c75b
 
@@ -35,4 +35,4 @@
 - 同步：`同步正式西游.py --accept-additions`（worktree）退出码 0，「新增用例，已接受」，changedMaps Map080／086。之后又合了一次 main（改了同步脚本的备份／归因逻辑，不改产物），**没有重跑同步**，指纹是否仍有效请总装合并时看。
 - 内容覆盖：基线外新问题 0、消失 9（main 新登入的条件类型 9／10 共 9 处，本分支共用核心已认），已 `--update-baseline`。
 - 专项：`xiyou_floor_reach080` 27/27 连跑 3 次、`xiyou_seal_doors` 34/34 连跑 3 次通过。
-- 选测：`检查.sh --affected main`（88 个场景＋必跑 xiyou_rules 难度 1 四段）：待补。
+- 选测：`检查.sh --affected main`（88 个 Godot 场景＋内容覆盖／守卫／工具回归）全部通过，1231 秒，无偶发；必跑 `xiyou_rules` 难度 1 四段（xiyou_rules、_d1b、_d1c、_d1d）4/4 通过，444 秒。没跑全量。
