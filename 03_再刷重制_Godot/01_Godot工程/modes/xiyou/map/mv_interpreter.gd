@@ -20,6 +20,11 @@ const HOST_CODES := [201, 205, 211, 212, 213, 214, 216, 217, 221, 222, 223, 224,
 ## O-062：大厅门（Map004 事件 36）在变量 20＝33 时传到三十三层 Map157 (24,12)，那一格上层是四面不通的图块（flags 0x60f，
 ## 正式引擎 isPassable 四个方向都为 false），进层就走不动、碰不到守层者；改落到下面一格 (24,13)。删掉这一条恢复原版。
 const TRANSFER_FIX := {"61:9:4:12:18": Vector2i(14, 23), "65:3:4:12:18": Vector2i(14, 23), "4:36:157:24:12": Vector2i(24, 13)}
+## O-待定：副本门「请重置副本！」的判定。全工程 363 处副本门都写「变量 5（副本未重置）＝1」；厄运城堡两扇门（Map078 事件 2 厄运王座、
+## 事件 5 厄运监狱）写成「变量 5＝副本号」（17／16），正常玩不会成立，拦截失效：有副本没重置时照样扣符文进门，变量 5 叠成 2，
+## 门口「重置副本」（要变量 5＝1）从此不认，出副本后变量 5 停在 1，别的副本门全部「请重置副本！」又重置不了（正式引擎实跑确认）。
+## 键「地图:事件」→ 原版比较的值；命中时改按变量 5＝1 判定。设为空字典 {} 恢复原版。
+const SEAL_CHECK_FIX := {"78:2": 17, "78:5": 16}
 
 
 func _init(h: Node, map: int, event: int, commands: Array, depth := 0) -> void:
@@ -108,6 +113,14 @@ func _host_plugin(line: String) -> bool:
 	if args.size() >= 3 and args[0] == "PHWarehouse" and args[1] == "show":
 		return host.has_method("open_warehouse")
 	return args.size() >= 2 and args[0] == "EnemyBook" and args[1] == "open" and host.has_method("open_enemy_book")
+
+
+## SEAL_CHECK_FIX：[1, 5, 0, 副本号, 0] 改成 [1, 5, 0, 1, 0]
+func _condition(p: Array) -> bool:
+	if int(p[0]) == 1 and int(p[1]) == XDungeon.VAR_SEALED and int(p[2]) == 0 and int(p[4]) == 0 \
+			and SEAL_CHECK_FIX.get("%d:%d" % [map_id, event_id], -1) == int(p[3]):
+		return super([1, XDungeon.VAR_SEALED, 0, 1, 0])
+	return super(p)
 
 
 ## 角色朝向 [6, 角色, 方向]
