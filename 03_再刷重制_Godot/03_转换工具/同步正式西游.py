@@ -713,7 +713,7 @@ def run_probes(log, cache=None):
             'commands': [{'command': cmd, 'seconds': round(sec, 3), 'exitCode': code} for cmd, code, _, sec in results]}
 
 
-def _main() -> int:
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--app', type=Path, default=DEFAULT_APP)
     ap.add_argument('--generated', type=Path, default=DEFAULT_OUT)
@@ -727,7 +727,11 @@ def _main() -> int:
     ap.add_argument('--from-worktree', type=Path, help='合并时用车道已同步的产物（按指纹核对），不满足条件退出码 3')
     ap.add_argument('--full', '--full-probes', dest='full', action='store_true', help='忽略探针缓存，强制全量转换与全部探针（--full-probes 同义）')
     ap.add_argument('--no-import', action='store_true', help='结束时不跑 godot --import')
-    a = ap.parse_args()
+    return ap
+
+
+def _main() -> int:
+    a = build_parser().parse_args()
     try:
         withdraw = {int(re.sub(r'^(?i:map)', '', str(m))) for m in a.accept_withdrawal}
     except ValueError:
@@ -959,6 +963,8 @@ def main() -> int:
 
 
 if __name__ == '__main__':
+    # 先解析参数：--help 和参数写错直接在这里退出，不经长任务包装、不先打印 TASK_LOG 路径（哪吒_10）
+    build_parser().parse_args()
     if os.environ.get('XIYOU_LONG_TASK_MANAGED') != '1':
         wrapper = ROOT / '03_再刷重制_Godot/07_开发环境/长任务.py'
         task_log = os.environ.get('XIYOU_TASK_LOG') or str(ROOT / '03_再刷重制_Godot/04_验证/本地结果/任务' /
