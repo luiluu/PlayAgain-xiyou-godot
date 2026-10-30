@@ -39,6 +39,7 @@ func _run() -> void:
 	for d in DOORS:
 		await _door(d)
 	await _chest()
+	await _abyss_entry()
 	_finish()
 
 
@@ -185,3 +186,15 @@ func _chest() -> void:
 	var gold := s.gold
 	r = await _event(13, [])
 	check("b2_page2_gold", r.page == 1 and s.gold - gold == 100000 and s.map_id == 78 and not s.switch(127), [r, s.gold - gold])
+
+
+## 王座宝箱的深渊之门随机到变量 107＝1：选「进入此门」传 Map107 (19,24)，副本变量不动（6＝17）；107 的出口再回 78 重置
+func _abyss_entry() -> void:
+	var s := await _throne(true)
+	MVInterpreter.fixed_random = 0.0
+	var r := await _event(13, [0])
+	check("b2_to_abyss107", r.page == 2 and _moved(r) and s.map_id == 107 and Vector2i(s.x, s.y) == Vector2i(19, 24) and int(s.variable(107)) == 1
+		and int(s.variable(5)) == 1 and int(s.variable(6)) == 17 and s.switch(127) and s.item_count(INVITE) == 0, [r, s.map_id, s.variable(107), s.variable(6)])
+	r = await _event(8, [0])
+	check("abyss107_exit", r.page == 0 and s.map_id == 78 and Vector2i(s.x, s.y) == Vector2i(21, 26) and int(s.variable(5)) == 0 and int(s.variable(6)) == 0
+		and int(s.variable(21)) == 0 and not s.switch(127), [r, s.map_id, s.variable(5)])
