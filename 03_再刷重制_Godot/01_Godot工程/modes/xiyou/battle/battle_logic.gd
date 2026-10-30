@@ -1719,7 +1719,7 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 		31:
 			sequence_buff(t, int(eff.dataId), true, true, int(v1))
 		32:
-			sequence_buff(t, int(eff.dataId), true, false, int(v1))
+			add_debuff_effect(u, t, int(eff.dataId), int(v1))
 		33, 34:
 			var id := int(eff.dataId)
 			if XAlienBattle.blocks_buff_removal(t, id):
@@ -1796,6 +1796,14 @@ func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int, ali
 	_refresh_battler(t)
 	if buff or not add:
 		t.param_mark_dirty()  # krz 包了 addBuff／removeBuff，没包 addDebuff
+
+
+## Game_Action.itemEffectAddDebuff：减益有效度 × 幸运差掷一次，中了才加减益
+func add_debuff_effect(u: XBattler, t: XBattler, pid: int, turns: int) -> bool:
+	if _float("add_debuff") >= t.debuff_rate(pid) * _luk_rate(u, t):
+		return false
+	sequence_buff(t, pid, true, false, turns)
+	return true
 
 
 ## Game_Action.lukEffectRate：1 + (行动者幸运 − 目标幸运) × 0.001，不低于 0

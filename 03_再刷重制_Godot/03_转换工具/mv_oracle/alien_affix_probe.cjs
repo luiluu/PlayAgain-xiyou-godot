@@ -83,6 +83,9 @@ function battle(spec) {
   // 开战前已倒下的队员（dead：'b'），锁队检查「已倒下」用
   (spec.dead || []).forEach(k => { const x = k === 'b' ? b : a; x.addState(x.deathStateId()); });
   // 镜骸（mirror）：敌人 0 直接写成镜骸变体（不经 setupEncounter 的抽签与奖励），每回合第一次被角色主动打中，行动结束反噬
+  // 敌人额外特性（enemyTraits：[[代码, 编号, 值], …]）：包一层 traitObjects，只对这一局的敌人
+  if (spec.enemyTraits) enemies.forEach(e => { const more = {traits: spec.enemyTraits.map(([code, dataId, value]) => ({code, dataId, value}))};
+    const old = e.traitObjects; e.traitObjects = function () { return old.call(this).concat([more]); }; });
   if (spec.mirror) enemies[0]._alienEnemy = {variant: 'mirror', boss: true, shieldGranted: false, mirrorRound: -1, mirrorCharged: true,
     plagueRound: -1, drainRound: -1, visualPulse: 0};
   A.lockParty();
@@ -202,6 +205,10 @@ battleCase('pest', {affix: 'pest', armor: 1013}, [
   {user: 'e0', def: S(1, 1, [21, 17, 1])}, {user: 'e0', def: S(1, 1, [21, 37, 1])}, {user: 'e0', def: S(1, 1, [32, 2, 3])},
   {user: 'b', def: S(7, 0, [22, 17, 1])}, {user: 'b', def: S(7, 0, [34, 2, 0])}, {roundEnd: 1},
   {expire: {who: 'a', id: 17}}, {user: 'b', def: S(7, 0, [22, 37, 1])}, {user: 'e1', def: S(1, 1, [32, 3, 2])}, {roundEnd: 2}, {roundEnd: 2}]);
+// 疫囊传播减益照 itemEffectAddDebuff 掷骰（减益有效度 × 幸运差）：敌人物攻减益有效度 0，传不过去；物防照常传；
+// 队友 b 直接对敌人放物攻减益（一般技能的效果 32）同样不中
+battleCase('pest.resist', {affix: 'pest', armor: 1013, enemyTraits: [[12, 2, 0]]}, [
+  {user: 'e0', def: S(1, 1, [32, 2, 3])}, {user: 'e0', def: S(1, 1, [32, 3, 3])}, {user: 'b', def: S(1, 1, [32, 2, 3])}, {roundEnd: 1}]);
 // 囚厄：队友实际获得的 jailStates（沉默 6）与减益转给囚厄者，回合取较长；接收的不可驱散，自然到期后照常
 battleCase('jail', {affix: 'jail'}, [
   {user: 'e0', target: 1, def: S(1, 1, [21, 6, 1])}, {user: 'e0', target: 1, def: S(1, 1, [32, 3, 3])},

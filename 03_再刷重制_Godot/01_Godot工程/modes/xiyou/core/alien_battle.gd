@@ -1102,7 +1102,7 @@ static func spread_pest(logic) -> void:
 			for p in range(2, 8):
 				if a.buffs[p] >= 0:
 					continue
-				logic.sequence_buff(e, p, true, false, a.buff_turns[p])
+				logic.add_debuff_effect(a, e, p, a.buff_turns[p])  # action.itemEffectAddDebuff：照减益有效度与幸运差掷骰
 				if e.buffs[p] < 0:
 					e.buffs[p] = mini(e.buffs[p], a.buffs[p])
 					e.buff_turns[p] = maxi(e.buff_turns[p], a.buff_turns[p])
