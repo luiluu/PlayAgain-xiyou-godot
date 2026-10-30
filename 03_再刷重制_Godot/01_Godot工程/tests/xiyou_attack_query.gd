@@ -122,7 +122,18 @@ func _skip(c: Dictionary) -> void:
 		var a: XActor = logic.actors[0]
 		var e: XEnemy = logic.enemies[0]
 		var cid := str(c.id)
-		if cid.begins_with("skip.enemy"):
+		if spec.has("endState"):  # 行动无效时行动结束状态不减（原版 processTurn 内不 updateStateActionEnd，endAction 0 次）
+			var id := int(spec.endState)
+			e.add_state(id)
+			e.state_turns[id] = 1
+			var cmd := [XDB.rec("Skills", int(spec.skill)), a] if spec.has("skill") else logic.decide(e)
+			if spec.has("skill"):
+				e.mp = float(cmd[0].mpCost) - 1.0
+			got.started = _acted(logic.act(e, cmd[0], cmd[1])).size()
+			got.state = e.state_ids.has(id)
+			got.turns = int(e.state_turns.get(id, 0))
+			want.erase("endAction")  # 重制没有 endAction 这一层，状态计时的结果比 state／turns
+		elif cid.begins_with("skip.enemy"):
 			var cmd := []
 			if cid.begins_with("skip.enemy73"):
 				XConfig.ensure_loaded()
