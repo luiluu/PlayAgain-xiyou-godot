@@ -42,6 +42,8 @@ COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/交接板归档.md'
 VERSION_MARKER = 'dev.' + '待定'
 # 优化登记号占位：车道文档里写 O-待定（同一份里要区分几项就写 O-待定-1、O-待定-2），合并时按已登记的最大 O-NNN 顺延换号
 # （总装手换漏过一处注释，唐僧 10-30）。占位字面量拆开写，免得本文件自己被换号。
+# 工具源码（开发环境、转换工具）里提到占位的注释与文档串不是车道登记的优化项，不换号（唐僧 10-30 合 tools13 时被误换）。
+OPT_SKIP = (str(ENV) + '/', str(TOOLS) + '/')
 OPT_TOKEN = re.compile('O-' + '待定' + r'(?:-\d+)?')
 OPT_NUMBERED = re.compile(r'O-(\d{3})(?!\d)')
 OPT_REGISTERS = ['00_项目管理/交接板.md', '00_项目管理/交接板归档.md', '00_项目管理/变更记录.md']
@@ -428,7 +430,7 @@ def plan(root, task):
     # 只替换目标车道带来的编号占位，不扫描、暂存主工作区的其它文件。
     version_paths = [p for p in changed if p != str(delivery) and p not in extra and p not in VERSION_EXEMPT
                      and Path(p).suffix in {'.md', '.json', '.gd', '.py', '.sh'}
-                     and (VERSION_MARKER in (read(p) or '') or OPT_TOKEN.search(read(p) or ''))]
+                     and (VERSION_MARKER in (read(p) or '') or (not p.startswith(OPT_SKIP) and OPT_TOKEN.search(read(p) or '')))]
     return dict(task=task, branch=branch, worktree=str(wt) if wt else '', base=base, target=target,
                 delivery=str(delivery), extraDeliveries=extra, refresh=refresh, acceptChanges=accept, gameplay=game, phase='planned', head=base,
                 versionPaths=version_paths, evidenceFiles=evidence,
@@ -464,7 +466,7 @@ def assign_opt_numbers(root, state):
     texts, tokens = [], []
     for rel in list(state.get('versionPaths', [])) + sheets(state):
         f = root / rel
-        if f.is_file() and not f.is_symlink():
+        if f.is_file() and not f.is_symlink() and not rel.startswith(OPT_SKIP):
             texts.append(f.read_text(errors='replace'))
     for t in texts:
         for m in OPT_TOKEN.finditer(t):
@@ -482,8 +484,10 @@ def assign_opt_numbers(root, state):
     return {tok: 'O-%03d' % (top + i + 1) for i, tok in enumerate(tokens)}
 
 
-def substitute(text, state):
+def substitute(text, state, rel=''):
     text = text.replace(VERSION_MARKER, state['version'])
+    if rel.startswith(OPT_SKIP):
+        return text
     for tok, num in sorted(state.get('optNumbers', {}).items(), key=lambda kv: -len(kv[0])):
         text = text.replace(tok, num)
     return text
@@ -498,7 +502,7 @@ def replace_versions(root, state, state_file):
             if path.is_symlink() or not path.is_file():
                 raise RuntimeError('编号占位文件已改变类型：' + rel)
             before = path.read_bytes()
-            after = substitute(before.decode(), state).encode()
+            after = substitute(before.decode(), state, rel).encode()
             if before != after:
                 edits[rel] = {'before': digest(before), 'after': digest(after)}
         # 先保存计划再写文件；中断时只接受原内容或已经替换完的内容。
@@ -513,7 +517,7 @@ def replace_versions(root, state, state_file):
             continue
         if digest(current) != hashes['before']:
             raise RuntimeError('编号替换过程中出现额外改动，保留现场：' + rel)
-        after = substitute(current.decode(), state).encode()
+        after = substitute(current.decode(), state, rel).encode()
         if digest(after) != hashes['after']:
             raise RuntimeError('编号替换结果与计划不一致：' + rel)
         path.write_bytes(after)
@@ -536,7 +540,9 @@ def review_status(root, state):
         sheet = git(root, 'show', state['target'] + ':' + state['delivery'])
     except RuntimeError:
         sheet = ''
-    if re.search(r'执行者[:：]\s*Claude[（(]审查[）)]', sheet):
+    # 只认交付单头部（第一个二级标题之前）的执行者行，正文里引用这句话不算
+    head = re.split(r'^## ', sheet, maxsplit=1, flags=re.M)[0]
+    if re.search(r'^\W*执行者[:：]\s*Claude[（(]审查[）)]', head, re.M):
         return '无'
     return '待审查'
 

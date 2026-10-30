@@ -1236,6 +1236,30 @@ for name in filter(None, files):
         self.assertEqual(self.call('--finish'), 0, self.last_output)
         self.assertIn('核查: 待审查', self.g('log', '-1', '--format=%B', 'HEAD'))
 
+    def test_review_status_ignores_body_mention_of_reviewer(self):
+        """唐僧 10-30：交付单正文里引用「执行者：Claude（审查）」不能让本条变成 核查: 无，只认头部执行者行。"""
+        sheet = self.wt / self.receipt
+        sheet.write_text(sheet.read_text().replace('# delivery\n', '# delivery\n- 执行者：Claude（哪吒）\n') + '\n- 正文引用：执行者：Claude（审查）\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'body mention', cwd=self.wt)
+        state = {'branch': 'claude/task', 'target': 'claude/task', 'delivery': str(self.receipt)}
+        self.assertEqual(merge.review_status(self.root, state), '待审查')
+
+    def test_optimization_placeholder_in_tool_source_is_not_numbered(self):
+        """唐僧 10-30：合并车道.py 自己注释里的占位被换成 O-122；工具源码（07_开发环境、03_转换工具）里的不换号，文档照换。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        tool = merge.ENV / '说明.py'
+        doc = merge.SUB / '00_设计/界面风格.md'
+        for r, text in [(tool, '# 占位写法 %s-1\n' % tok), (doc, '# 风格\n%s\n' % tok)]:
+            (self.wt / r).parent.mkdir(parents=True, exist_ok=True)
+            (self.wt / r).write_text(text)
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'placeholders', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertEqual((self.root / tool).read_text(), '# 占位写法 %s-1\n' % tok)
+        self.assertEqual((self.root / doc).read_text(), '# 风格\nO-001\n')
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+
     def test_review_status_for_review_thread(self):
         state = {'branch': 'claude/review-9', 'target': 'claude/task', 'delivery': str(self.receipt)}
         self.assertEqual(merge.review_status(self.root, state), '无')
