@@ -1317,13 +1317,14 @@ func change_to_roll() -> float:
 
 ## YEP_WeaponUnleash processUnleash（BattleManager.startAction 链）：这一招是此刻的普攻（物品、别的技能不换）时，
 ## 按 weapon_unleashes() 的顺序逐条试：技能此刻不能用就跳过（不掷），能用才掷一次（rule 流 "unleash"），掷数不大于几率就换成它。
+## 「能用」照原版 canUse 含 meetsUsableItemConditions 的 canMove：不能行动（强制行动）时全跳过，原技能照常执行。
 ## 走 execute 的都算（手动、自动、挂机、智能 AI、强制行动）；反击不走 startAction，不换。参照 weapon_unleash_probe。
 func weapon_unleash(u: XBattler, skill: Dictionary) -> Dictionary:
 	if is_item(skill) or int(skill.get("id", 0)) != u.attack_skill_id():
 		return skill
 	for e in u.weapon_unleashes():
 		var sk := XDB.rec("Skills", int(e[0]))
-		if sk.is_empty() or not can_use(u, sk):
+		if sk.is_empty() or not can_move(u) or not can_use(u, sk):
 			continue
 		if _float("unleash") > float(e[1]):
 			continue
