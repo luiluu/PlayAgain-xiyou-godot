@@ -17,7 +17,7 @@ extends Node
 ##   重制 can_use 另查技能类型），步骤另有 forget（来源队友忘掉技能）、choice（切换窗口选的仿形）。对照时 O-115 关；o115.* 开时按顺序轮换。
 ## - 第③批 battle.erosion：蚀术；角色 1 另比自己与各敌人身上的异化封印、ERODE_WATCH 里各自能用哪些；步骤另有 shield（直接写护盾）。
 ##   对照时 O-116 关；o116.* 开时敌人没有有效行动的回合也解封。
-## - O-待定（o_prayer_counter）：对照时关（照原版：逆祷者的反击投影成治愈打在敌人身上）；开时打在敌人身上的治疗为 0。
+## - O-119（o_prayer_counter）：对照时关（照原版：逆祷者的反击投影成治愈打在敌人身上）；开时打在敌人身上的治疗为 0。
 ## - 补漏：sethp（XResourceContext.set_resource，来源 src）；event 带 mp 照 312（增减 MP）、src 为来源；开战前 dead（已倒下）与 extra
 ##   （第三名队员也穿异化武器）比锁队检查卸下的 eject；view 带 repeats 另比 numRepeats。o106.jail_death_buff_kept：O-106 开时阵亡保留接收的减益。
 ## - 第④批 battle.swallow／offer：装备类；双方另比装备栏（本体编号）、八项能力值、命中／回避／暴击，背包里异化装备与供体件数；
@@ -86,7 +86,7 @@ func _run() -> void:
 	XAlienBattle.o115_mimic_cycle = true
 	XAlienBattle.o116_idle_release = true
 	XAlienBattle.o_prayer_counter = true
-	if by_id.has("battle.prayer.counter"):  # O-待定 开时逆祷者的反击不治疗敌人（敌人生命停在反击前）
+	if by_id.has("battle.prayer.counter"):  # O-119 开时逆祷者的反击不治疗敌人（敌人生命停在反击前）
 		var rows := _battle(by_id["battle.prayer.counter"], false)
 		check("o_prayer_counter.no_enemy_heal", rows[2].enemies[0].hp == rows[1].enemies[0].hp and rows[2].a.hp == rows[1].a.hp, [rows[1].enemies[0].hp, rows[2].enemies[0].hp])
 	if by_id.has("battle.erosion"):
