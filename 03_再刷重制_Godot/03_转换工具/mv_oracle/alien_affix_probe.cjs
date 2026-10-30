@@ -325,11 +325,11 @@ battleCase('lifelink.dead', {affix: 'lifelink', dead: ['b'], config: {actorId: 1
 battleCase('sacrifice.twice', {affix: 'sacrifice', config: {actorId: 1, partnerId: 8}, extra: {actor: 2, affix: 'sacrifice', config: {actorId: 2, partnerId: 8}}},
   [{set: {aHp: 0.5, bHp: 0.5}}, {user: 'b', skill: 8}]);
 // 补漏④：逆祷者的反击（反击率 100% 的避苍 327；敌人用物理的合成技能，普攻 1 不是物理、不会被反击）也读投影；石中剑 1044 把攻击换成
-// 别的技能（不在 templates.attack），这例异化武器的本体换成同为剑类的未知的刀片 1521（没有换攻击）：反击变成治愈打在敌人身上；攻击次数 +1（勇士 41）时逆祷普攻不加次数；
+// 别的技能（不在 templates.attack），这例异化武器的本体换成同为剑类的未知的刀片 1521（没有换攻击）：反击变成治愈打在敌人身上；攻击次数 +1（勇士 41）时逆祷普攻（同样用 1521）不加次数；
 // 逆祷者挂给敌人的毒鸡汤（460，自定义再生效果扣生命，来源是逆祷者）在回合末的行动帧里被阻断
 battleCase('prayer.counter', {affix: 'prayer', weapon: 1521}, [
   {user: 'a', def: S(11, 0, [21, 327, 1])}, {user: 'b', skill: 1}, {user: 'e0', def: S(1, 1), target: 0}]);
-battleCase('prayer.repeat', {affix: 'prayer'}, [
+battleCase('prayer.repeat', {affix: 'prayer', weapon: 1521}, [
   {user: 'a', def: S(11, 0, [21, 41, 1])}, {set: {bHp: 0.5}}, {user: 'a', skill: 1, target: 1, view: true, repeats: true}]);
 battleCase('prayer.dot', {affix: 'prayer'}, [{user: 'a', def: S(1, 0, [21, 460, 1])}, {regen: 'e0'}, {regen: 'e0'}]);
 // 补漏⑥：事件「增减 MP」（command312：actor.gainMp）——空壳回蓝变护盾、扣蓝照扣；饕餮一律无效；绝缘拒收外来（src 为 _subject）回蓝，自己照收
