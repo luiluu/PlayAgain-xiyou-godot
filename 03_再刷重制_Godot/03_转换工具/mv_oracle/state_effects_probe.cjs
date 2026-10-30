@@ -416,7 +416,10 @@ cases.push(makeCase('action.counter', {troop: 2, user: 'a1', skill: 'physical cl
   const {bm, a, e} = battle(2);
   a.addState(T); e.addState(T); e.addState(CNT);
   for (const x of [a, e]) { x.need_refresh = true; x.refresh(); }
-  const id = w.$dataSkills.length; w.$dataSkills.push(Object.assign(w.JsonEx.makeDeepCopy(w.$dataSkills[1]), {id, hitType: 1}));
+  // 深拷贝丢掉 YEP 读备注时挂的函数（YEP_SkillMasteryLevels 的 masteryFormula 等），照原技能补回引用，不然熟练度结算报错 → terminate
+  const src = w.$dataSkills[1], clone = Object.assign(w.JsonEx.makeDeepCopy(src), {id: w.$dataSkills.length, hitType: 1});
+  for (const k of Object.keys(src)) if (typeof src[k] === 'function') clone[k] = src[k];
+  const id = clone.id; w.$dataSkills.push(clone);
   const log = capture(() => runAction(bm, a, id, 0));
   return {log};
 }));
