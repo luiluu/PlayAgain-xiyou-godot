@@ -68,12 +68,12 @@ func _new_state(map_id: int, x: int, y: int) -> XState:
 
 
 ## 跑当前地图事件的当前页；picks 依次回答选项。返回 {page, trace}
-func _event(id: int, picks: Array, battle := "win") -> Dictionary:
+func _event(id: int, picks: Array, battle := "win", force_page := -1) -> Dictionary:
 	var s := XState.current
 	host.trace = []
 	host.picks = picks.duplicate()
 	host.battle_result = battle
-	var page := DH.page_of(s.map_id, id, host.erased)
+	var page := force_page if force_page >= 0 else DH.page_of(s.map_id, id, host.erased)
 	if page >= 0:
 		MVInterpreter.max_steps = 20000
 		MVInterpreter.steps = 0
@@ -98,6 +98,11 @@ func _door(d: Array) -> void:
 	var rune: int = d[3]
 	var need: int = d[4]
 	var tag := "m%d_ev%d" % [map_id, ev]
+	# Map156／157 事件 2 第 2 页（搭建中）没有任何出现条件、永远压过门页：正式版里这两扇门走不到（死代码）；
+	# 这里直接跑第 1 页的指令列表核条件，并单独核实第 2 页压过去
+	if map_id in [156, 157]:
+		var dead := DH.page_of(map_id, ev, {})
+		check(tag + "_door_page_shadowed", dead == 1, dead)
 	var rec := DH.event_rec(map_id, ev)
 	var s := _new_state(map_id, int(rec.x), int(rec.y) + 1)
 	var c: Dictionary = rec.pages[0].conditions
@@ -109,15 +114,15 @@ func _door(d: Array) -> void:
 	s.set_variable(5, 1)
 	s.set_variable(6, id)
 	s.set_variable(21, 1)
-	var r := await _event(ev, [0])
+	var r := await _event(ev, [0], "win", 0)
 	check(tag + "_b1_blocked", r.page == 0 and _said(r, "请重置副本") and not _moved(r) and vars.call() == [1, id, 1, need], [r, vars.call()])
 	# 别的副本（厄运王座 17）没重置也拦
 	s.set_variable(6, 17)
-	r = await _event(ev, [0])
+	r = await _event(ev, [0], "win", 0)
 	check(tag + "_b1_other", _said(r, "请重置副本") and not _moved(r) and vars.call() == [1, 17, 1, need], [r, vars.call()])
 	# 重置能认：变量 5、6 归零，变量 21 减一
 	s.set_variable(6, id)
-	r = await _event(ev, [1])
+	r = await _event(ev, [1], "win", 0)
 	check(tag + "_reset", _said(r, "重置完毕") and vars.call() == [0, 0, 0, need], [r, vars.call()])
 	# 回退：seal_check_fix 设 {} 时照原版，变量 5＝1 照样扣符文进门、变量 5 叠成 2
 	s.set_variable(5, 1)
@@ -125,7 +130,7 @@ func _door(d: Array) -> void:
 	s.set_variable(21, 1)
 	var saved := MVInterpreter.seal_check_fix
 	MVInterpreter.seal_check_fix = {}
-	r = await _event(ev, [0])
+	r = await _event(ev, [0], "win", 0)
 	MVInterpreter.seal_check_fix = saved
 	check(tag + "_fix_off_original", _moved(r) and s.map_id == int(d[5]) and vars.call() == [2, id, 2, 0], [r.trace.filter(func(t): return t.t == "transfer"), vars.call()])
 

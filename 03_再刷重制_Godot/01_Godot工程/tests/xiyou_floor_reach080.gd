@@ -227,9 +227,6 @@ func _win(call: Callable) -> bool:
 	return st.done
 
 
-func _fight(tag: String, troops: Array) -> void:
-
-
 func _bosses() -> Array:
 	return [127, 128, 129, 130, 131].map(func(sw): return s.switch(sw))
 
