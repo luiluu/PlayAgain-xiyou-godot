@@ -51,6 +51,7 @@
     {"match": "03_再刷重制_Godot/01_Godot工程/tests/*", "group": "test_data"},
     {"match": "03_再刷重制_Godot/04_验证/测量接受/*", "group": "converter"},
     {"match": ".gitignore", "group": "tools"},
+    {"match": ".github/*", "group": "docs"},
     {"match": "AGENTS.md", "group": "docs"},
     {"match": "CLAUDE.md", "group": "docs"},
     {"match": "00_项目管理/*", "group": "docs"},
