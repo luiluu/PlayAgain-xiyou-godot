@@ -2108,6 +2108,41 @@ sys.exit(0)
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
 
+    def test_undo_sync_uses_pinned_snapshot_not_rotated_backups(self):
+        """沙僧第七期 T1：同一合并多轮同步后滚动备份只剩三份，首轮前的备份被轮换；撤回须还原到首轮同步前（固定快照），
+        同步前没有的项（如 maps）同步新建了也要删；快照丢了就拒绝声称还原、保留现场。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gen = root / merge.GENERATED
+            (gen / 'oracle').mkdir(parents=True)
+            (gen / 'oracle/a.json').write_text('state0')
+            (gen / 'manifest.json').write_text('state0')
+            state = {'syncSince': '20260101_000000', 'task': 'x'}
+            state['preSync'] = merge.pin_generated(root, root / 'lane/pre-sync/x')
+            self.assertEqual(state['preSync']['absent'], ['db', 'maps', 'slice.json'])
+            # 四轮同步：每轮改产物、新建 maps，滚动备份只剩后三份（内容都不是 state0）
+            bk = root / merge.SYNC_BACKUPS
+            for i in range(1, 5):
+                (gen / 'oracle/a.json').write_text('state%d' % i)
+                (gen / 'manifest.json').write_text('state%d' % i)
+                (gen / 'maps').mkdir(exist_ok=True)
+                (gen / 'maps/m.json').write_text('new')
+                if i > 1:
+                    (bk / ('20260101_00000%d_v' % i)).mkdir(parents=True, exist_ok=True)
+                    (bk / ('20260101_00000%d_v' % i) / 'manifest.json').write_text('state%d' % (i - 1))
+                    (bk / ('20260101_00000%d_v' % i) / 'oracle').mkdir()
+            note = merge.undo_sync(root, state)
+            self.assertEqual((gen / 'oracle/a.json').read_text(), 'state0', note)
+            self.assertEqual((gen / 'manifest.json').read_text(), 'state0')
+            self.assertFalse((gen / 'maps').exists(), note)
+            # 快照丢了：不动现场，也不声称已还原
+            state['preSync'] = merge.pin_generated(root, root / 'lane/pre-sync/x')
+            (gen / 'oracle/a.json').write_text('later')
+            merge.drop_pin(state)
+            note = merge.undo_sync(root, state)
+            self.assertEqual((gen / 'oracle/a.json').read_text(), 'later')
+            self.assertIn('无法确定原状态', note)
+
     def test_single_abort_during_conflict(self):
         self.put(str(merge.PROJECT / 'modes/测试.gd'), '# main version\n')
         self.g('add', '.'); self.g('commit', '-m', 'conflicting main update')

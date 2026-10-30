@@ -526,6 +526,8 @@ def prepare(root, state, state_file, executor):
             if 'syncSince' not in state:
                 # --abort 凭它找本次合并第一轮同步前的产物备份（同步脚本备份目录名同样以时间戳开头）
                 state['syncSince'] = time.strftime('%Y%m%d_%H%M%S')
+                # 固定本条合并同步前的产物：同步脚本的滚动备份只留三份，同一合并多轮同步会把首轮前的备份轮换掉（沙僧第七期 T1）
+                state['preSync'] = pin_generated(root, state_file.parent / 'pre-sync' / state['task'])
                 save(state_file, state)
             # 提速提案 P3：车道已在同一套转换工具上同步过时直接用其产物（按指纹核对）；退出码 3＝条件不满足，改跑完整同步。
             # 同步脚本结束时自己跑 godot --import。
@@ -650,12 +652,62 @@ SYNC_BASELINES = SUB / '04_验证/本地结果/同步基线'
 SYNC_BACKED_UP = ['oracle', 'db', 'maps', 'manifest.json', 'slice.json']  # 同步脚本开头备份的产物（同步正式西游.py）
 
 
+def clone_tree(src, dst):
+    """APFS 克隆（cp -c，同卷不另占空间）；克隆不成退回普通复制。"""
+    if sys.platform == 'darwin' and subprocess.run(['cp', '-cRp', str(src), str(dst)], capture_output=True).returncode == 0:
+        return
+    if dst.exists():
+        shutil.rmtree(dst) if dst.is_dir() else dst.unlink()
+    (shutil.copytree if src.is_dir() else shutil.copy2)(src, dst)
+
+
+def pin_generated(root, dest):
+    """首轮同步前把产物（SYNC_BACKED_UP 各项）固定到 dest，并记下哪些项原本不存在；失败返回 None（撤回时就拒绝声称还原）。"""
+    gen = root / GENERATED
+    try:
+        if dest.exists():
+            shutil.rmtree(dest)
+        dest.mkdir(parents=True)
+        present = [n for n in SYNC_BACKED_UP if (gen / n).exists()]
+        for n in present:
+            clone_tree(gen / n, dest / n)
+        return {'dir': str(dest), 'present': present, 'absent': [n for n in SYNC_BACKED_UP if n not in present]}
+    except OSError as error:
+        print('提示：没能固定同步前的产物（%s）；之后撤回同步时无法保证还原' % error, flush=True)
+        return None
+
+
+def drop_pin(state):
+    pin = state.get('preSync')
+    if pin and pin.get('dir'):
+        shutil.rmtree(pin['dir'], ignore_errors=True)
+
+
 def undo_sync(root, state):
     """撤掉本次合并的同步：产物从第一轮同步开头的备份还原，删产物指纹与本产物目录的同步基线
     （基线目录名＝产物目录绝对路径的 sha256，见同步正式西游.py comparison_baseline），下一次同步按还原后的产物重建基线。"""
     if 'syncSince' not in state:
         return '本次合并还没同步过，产物不用退'
     gen = root / GENERATED
+    if 'preSync' in state:
+        pin = state['preSync']
+        if not pin or not Path(pin['dir']).is_dir() or any(not (Path(pin['dir']) / n).exists() for n in pin['present']):
+            return '没有本条合并同步前固定的产物（或已损坏），无法确定原状态，产物与同步基线保留现场、没有还原；请人工核对 generated/'
+        for name in SYNC_BACKED_UP:
+            dst = gen / name
+            if dst.is_dir() and not dst.is_symlink():
+                shutil.rmtree(dst)
+            elif dst.exists() or dst.is_symlink():
+                dst.unlink()
+            if name in pin['present']:
+                clone_tree(Path(pin['dir']) / name, dst)
+        (gen / 'sync_stamp.json').unlink(missing_ok=True)
+        notes = ['产物（%s）按本条合并同步前固定的快照还原；原本没有的（%s）已删' % ('、'.join(pin['present']), '、'.join(pin['absent']) or '无')]
+        key = hashlib.sha256(str(gen.resolve()).encode()).hexdigest()
+        for p in (root / SYNC_BASELINES).glob(key + '*'):
+            shutil.rmtree(p) if p.is_dir() else p.unlink()
+            notes.append('删同步基线 ' + p.name[:12] + '…')
+        return '；'.join(notes)
     backups = sorted(p for p in (root / SYNC_BACKUPS).glob('*') if p.is_dir() and p.name[:15] >= state['syncSince'])
     notes = []
     if backups and (backups[0] / 'manifest.json').is_file():
@@ -775,6 +827,7 @@ def abort_one(root, folder, task):
             git(root, 'update-ref', backup + '-wip', wip)
     git(root, 'reset', '--hard', base)
     note = undo_sync(root, state)
+    drop_pin(state)
     state_file.unlink()
     print('已退回本条合并前的 main（%s）。备份：%s%s。%s。' % (
         base[:9], backup, '（未提交改动在 ' + backup + '-wip）' if wip else '', note), flush=True)
@@ -896,12 +949,14 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
         if all(x['task'] != state['task'] for x in pending):
             pending.append({k: state.get(k) for k in ['task', 'branch', 'worktree', 'target', 'head', 'base', 'mergeCommit']})
             save(folder / 'batch.json', pending)
+        drop_pin(state)
         state_file.unlink()
         print('已收尾并记入本批（共 %d 条，未检查、未推送）；接着合下一条，最后一条不加 --batch 运行 --finish。' % len(pending), flush=True)
         return
     for lane in pending + [state]:
         cleanup_lane(root, lane)
     (folder / 'batch.json').unlink(missing_ok=True)
+    drop_pin(state)
     state_file.unlink()
     print('合并、检查、提交与工作树清理全部完成%s。' % ('（本批共 %d 条）' % (len(pending) + 1) if pending else ''), flush=True)
     push_github(root)
