@@ -443,6 +443,8 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 					x.hp = floorf(x.mhp * float(sp.set[k + "Hp"]))
 				if sp.set.has(k + "Mp"):
 					x.mp = floorf(x.mmp * float(sp.set[k + "Mp"]))
+				if sp.set.has(k + "Shield"):
+					x.shield = float(sp.set[k + "Shield"])
 		elif sp.has("roundEnd"):
 			logic.turn = int(sp.roundEnd)
 			XAlienBattle.spread_pest(logic)

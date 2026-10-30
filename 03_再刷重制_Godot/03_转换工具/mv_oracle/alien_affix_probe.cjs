@@ -158,6 +158,7 @@ function battleCase(name, spec, steps) {
         for (const k of ['a', 'b']) {
           if (st.set[k + 'Hp'] != null) who(k)._hp = Math.floor(who(k).mhp * st.set[k + 'Hp']);
           if (st.set[k + 'Mp'] != null) who(k)._mp = Math.floor(who(k).mmp * st.set[k + 'Mp']);
+          if (st.set[k + 'Shield'] != null) who(k)._shield = st.set[k + 'Shield'];
         }
       } else if (st.roundEnd) {
         w.$gameTroop._turnCount = st.roundEnd; A.spreadPest(A.round());
@@ -261,6 +262,9 @@ battleCase('scapegoat.corrosion_protector', SCAPEGOAT, [Object.assign({target: 1
 battleCase('scapegoat.event_protector', SCAPEGOAT, [{event: {who: 'b', value: -1000}}]);
 battleCase('scapegoat.event_protector_death', SCAPEGOAT, [{event: {who: 'b', value: -99999, death: true}}]);
 battleCase('hollow.event', {affix: 'hollow'}, [{event: {who: 'a', value: 500}}, {event: {who: 'a', value: -500, death: true}}]);
+// 连命者的负再生（中毒 4）先吃护盾：护盾够吸收时只扣护盾；不够时击穿，余下的进生命池（沙僧第三十六期补核的现场）
+battleCase('lifelink.regen_shield', {affix: 'lifelink', config: {actorId: 1, partnerId: 8}}, [{set: {aShield: 1000}}, {user: 'e0', def: S(1, 0, [21, 4, 1])}, {regen: 'a'}]);
+battleCase('lifelink.regen_shield_break', {affix: 'lifelink', config: {actorId: 1, partnerId: 8}}, [{set: {aShield: 100}}, {user: 'e0', def: S(1, 0, [21, 4, 1])}, {regen: 'a'}]);
 // 锁队检查（Adv:62）：绑定的队友（角色 2）不在场，异化装备卸下放回背包，本场不生效
 battleCase('lifelink.invalid', {affix: 'lifelink', config: {actorId: 1, partnerId: 2}}, [{user: 'e0', skill: 1}]);
 // 第③批·行动道具投影：祸祝把 templates.blessing（7100 幻日虹，自身加速 2421）改为敌方单体、状态换成 statePairs 的诅咒（2668 减速）；
