@@ -1860,8 +1860,8 @@ for name in filter(None, files):
                 self.assertIn('活动会话' if case == 'process' else 'worktree lock', self.last_output)
                 self.assertIn('只提示不删', self.last_output)
 
-    def test_worktree_missing_from_board_or_marked_keep_is_not_removed(self):
-        # 合并前交接板「正在进行」没有提到该工作树／分支，或那行写了「不要删」：不删
+    def test_board_row_marked_keep_is_not_removed_but_missing_row_is(self):
+        # 交接板「正在进行」那行写了「不要删」才留；没提到该工作树／分支不再是保留理由（哪吒_10，磁盘告急，合并后随手删）
         for row in ['', '| 核查 | claude/task（清理时不要删此目录） |']:
             with self.subTest(row=row):
                 self.tearDown(); self.setUp()
@@ -1870,8 +1870,11 @@ for name in filter(None, files):
                 self.assertEqual(self.call(), 0, self.last_output)
                 self.register()
                 self.assertEqual(self.call('--finish'), 0, self.last_output)
-                self.assertTrue(self.wt.exists())
-                self.assertIn('不要删' if row else '没有提到它', self.last_output)
+                self.assertEqual(self.wt.exists(), bool(row), self.last_output)
+                if row:
+                    self.assertIn('不要删', self.last_output)
+                else:
+                    self.assertNotIn('claude/task', self.branches())
 
     def test_untracked_evidence_merges_by_ref_and_keeps_worktree(self):
         # 沙僧 state-effects-2b：只有核查范围／本地结果下的未跟踪证据时按分支引用合并，工作树与证据都留着
