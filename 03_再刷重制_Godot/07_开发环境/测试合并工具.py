@@ -306,6 +306,17 @@ class ParallelTestRunnerTests(unittest.TestCase):
         p, runs = self.run_tests('', XIYOU_PREFIX_HINT='2')  # 空前缀匹配全部 3 个
         self.assertIn('前缀  匹配 3 个场景', p.stdout)
 
+    def test_new_class_name_triggers_one_import(self):
+        # 八戒 10-29：车道新加带 class_name 的脚本后直接跑并行测试，新类名不在导入缓存里、解析不到
+        (self.tmp / 'proj/new_thing.gd').write_text('extends Node\nclass_name NewThing\n')
+        p, runs = self.run_tests('a')
+        self.assertEqual(runs, ['--import', 'a.tscn'], p.stdout)
+        self.assertIn('NewThing', p.stdout)
+        (self.tmp / 'proj/.godot').mkdir()
+        (self.tmp / 'proj/.godot/global_script_class_cache.cfg').write_text('list=[{\n"class": &"NewThing",\n}]\n')
+        p, runs = self.run_tests('a')
+        self.assertEqual(runs, ['a.tscn'], p.stdout)
+
     def test_rerun_keeps_first_attempt_and_ledger(self):
         logs = self.tmp / 'logs'
         p, _ = self.run_tests('--log-dir', str(logs), FLAKY_B='1')

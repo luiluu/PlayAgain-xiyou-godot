@@ -3,7 +3,7 @@
 
 用法：并行测试.py <godot> <工程目录> [--jobs N] [--full] [--names-file 文件] [场景名或前缀 ...]
 - 每个测试一个独立的临时 HOME，因此 user://（存档、配置）互不干扰，也不会读写本机真实的用户数据目录。
-- 导入（--import）由调用方先单独做一次；这里只读工程缓存。
+- 导入（--import）由调用方先单独做一次；这里只读工程缓存。例外：工程里有 class_name 不在导入缓存里（车道新加脚本后直接跑）时先导入一次。
 - 每个测试最多 600 秒；脚本语法错误时场景不会自行退出，超时即判失败。用时超过一半（300 秒）时提示拆场景。
 - 并行时只有少数（≤3）测试失败的，逐个单独重跑一次：单跑通过记为「偶发」，仍算通过但打印 ⚠，写进交付单；单跑仍失败才判失败。
   首次与重跑的输出、退出码、耗时分别保留（日志 <场景>.log 与 <场景>.rerun1.log、test_timings.json 的 attempts），
@@ -334,6 +334,22 @@ def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progres
         return name, rc, out, time.time() - start
 
 
+def missing_classes(project: str) -> list:
+    """工程里声明了 class_name、导入缓存（.godot/global_script_class_cache.cfg）里却没有的类名。
+    车道新加带 class_name 的脚本后直接跑并行测试（不经 检查.sh 的导入），新类名解析不到、整批报错（八戒 10-29 期 C）。"""
+    root = Path(project)
+    cache = root / '.godot/global_script_class_cache.cfg'
+    known = set(re.findall(r'"class":\s*&"(\w+)"', cache.read_text(errors='replace'))) if cache.is_file() else set()
+    declared = set()
+    for f in root.rglob('*.gd'):
+        if '.godot' in f.relative_to(root).parts:
+            continue
+        m = re.search(r'^class_name\s+(\w+)', f.read_text(errors='replace'), re.M)
+        if m:
+            declared.add(m.group(1))
+    return sorted(declared - known)
+
+
 def in_linked_worktree(path: str) -> bool:
     """是否在 git worktree（而不是主工作区）里：git-dir 与 git-common-dir 不同。"""
     try:
@@ -440,6 +456,17 @@ def main() -> int:
         print('  ✗ tests/ 下没有匹配的测试场景')
         return 1
     sdir = state_dir(a.project)
+    missing = missing_classes(a.project)
+    if missing:
+        # 只在缓存缺类名时导入一次（占一个共用槽，与 检查.sh 的导入相同，最多 300 秒）；导入失败照常往下跑，由测试报错
+        print('  · 导入缓存缺 %d 个类名（%s 等），先 godot --import 一次' % (len(missing), '、'.join(missing[:3])), flush=True)
+        with global_slot(sdir, limit):
+            try:
+                p = subprocess.run([a.godot, '--headless', '--path', a.project, '--import'], capture_output=True, text=True, timeout=300)
+                if p.returncode:
+                    print('  ⚠ godot --import 退出码 %d' % p.returncode, flush=True)
+            except subprocess.TimeoutExpired:
+                print('  ⚠ godot --import 超过 300 秒，未完成', flush=True)
     whole = not a.names
     # RULES_ONLY_* 过滤时 xiyou_rules 非 part0 只记 1 项成功，指纹又不含过滤值：过滤运行不读写沿用记录（沙僧第四期 T1）
     # 原始值非空就算过滤（沙僧第五期 C2：原来 .strip() 把纯制表符当没设，xiyou_rules 却把它解析成编号 0、非 part0 只报 1 项，
