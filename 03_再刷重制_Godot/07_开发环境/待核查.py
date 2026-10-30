@@ -178,7 +178,7 @@ def main(argv=None):
             print('    文档：' + ' '.join(c for i in docs for c in i['commits']))
     print(f'  待交叉核查共 {len(items)} 批，计入上限 {len(counted)} 批（只改文档、登记的不计；按提交尾注减去变更记录核查条目）')
     if len(counted) > a.limit:
-        print(f'  ⚠ 待交叉核查 {len(counted)} 批，超过 {a.limit} 批上限：停派新车道、停新功能，先启动 Codex（沙僧）核查')
+        print(f'  ⚠ 待交叉核查 {len(counted)} 批，超过 {a.limit} 批上限：停派新车道、停新功能，先派审查线程核查')
     return 0
 
 

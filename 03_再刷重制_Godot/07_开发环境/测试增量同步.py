@@ -287,6 +287,31 @@ class AcceptedBaselineTests(unittest.TestCase):
             sync.comparison_baseline(self.gen, main_gen)  # 基线已在（拒收后重跑）：不再提示
         self.assertNotIn('提示', out.getvalue())
 
+    def test_lane_baseline_uses_main_version_for_files_edited_after_copy(self):
+        # 沙僧/八戒 dev.208：补齐后手拷的探针输出不能当基线。补齐记了主工作区摘要（参照批次.py record），主工作区没变而本树改过的，
+        # 基线改用主工作区版本；主工作区已前进的拿不准，仍取车道自己的
+        sys.path.insert(0, str(HERE))
+        batch = importlib.util.module_from_spec(importlib.util.spec_from_file_location('batch_tool', HERE / '参照批次.py'))
+        batch.__spec__.loader.exec_module(batch)
+        main_gen = self.root / 'main_gen'
+        (main_gen / 'oracle').mkdir(parents=True)
+        for name in ['events.json', 'moved.json']:
+            (main_gen / 'oracle' / name).write_text(json.dumps({'cases': [{'id': 'a'}]}))
+            (self.gen / 'oracle' / name).write_text(json.dumps({'cases': [{'id': 'a'}]}))
+        (main_gen / 'manifest.json').write_text(json.dumps({'sliceConfigSHA256': 'x'}))
+        batch.record(self.gen, main_gen)
+        # 补齐之后：本树手拷了新的 events.json；主工作区又前进了 moved.json，本树也有不同的版本
+        (self.gen / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'a'}, {'id': 'hand-copied'}]}))
+        (self.gen / 'oracle/moved.json').write_text(json.dumps({'cases': [{'id': 'lane'}]}))
+        (main_gen / 'oracle/moved.json').write_text(json.dumps({'cases': [{'id': 'a'}, {'id': 'main-new'}]}))
+        out = io.StringIO()
+        with mock.patch.object(sync, 'ROOT', self.root), contextlib.redirect_stdout(out):
+            baseline = sync.comparison_baseline(self.gen, main_gen)
+        self.assertEqual(json.loads((baseline / 'oracle/events.json').read_text()), {'cases': [{'id': 'a'}]})   # 主工作区版本
+        self.assertEqual(json.loads((baseline / 'oracle/moved.json').read_text()), {'cases': [{'id': 'lane'}]})  # 拿不准：车道自己的
+        self.assertIn('改用主工作区的版本', out.getvalue())
+        self.assertIn('moved.json', out.getvalue())
+
     def test_existing_case_with_new_fields_is_an_addition(self):
         self.set_payload({'cases': [{'id': 'stable', 'value': 1, 'extra': [1, 2]}]})
         result, report = self.run_sync()

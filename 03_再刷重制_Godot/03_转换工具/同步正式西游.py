@@ -273,17 +273,38 @@ def lane_drift(gen: Path, main_gen: Path) -> list:
                   if (main_gen / 'oracle' / p.name).is_file() and file_digest(p) != file_digest(main_gen / 'oracle' / p.name))
 
 
+def main_baseline_files(gen: Path, main_gen: Path, drift: list) -> list:
+    """drift 里能放心改用主工作区版本当基线的参照：补齐记批次时（参照批次.py）记下了主工作区该文件的摘要，而主工作区现在还是那一版
+    （main 没前进），本树的版本却不同＝补齐之后被改过（手动拷的探针输出）。main 已前进的拿不准（车道缺 main 的新用例会被误判成删除），不动。"""
+    try:
+        recorded = json.loads((gen / 'oracle_batch.json').read_text()).get('mainOracle')
+    except (OSError, ValueError):
+        return []
+    if not isinstance(recorded, dict):
+        return []
+    return [n for n in drift if recorded.get(n) and recorded[n] == hashlib.sha256((main_gen / 'oracle' / n).read_bytes()).hexdigest()
+            and recorded[n] != hashlib.sha256((gen / 'oracle' / n).read_bytes()).hexdigest()]
+
+
 def comparison_baseline(gen: Path, main_gen: Path = None) -> Path:
     """首次写产物前原子保存接受边界；拒绝或中断后仍比较同一份数据。
     车道工作树新取基线时（main_gen 给出主工作区 generated），与主工作区不同的参照逐个提示：基线取的是车道自己的，
     手动拷进 generated/oracle 的探针输出会被当成基线、测量改变看不出来（八戒 dev.208 hostScope）。不改用主工作区当基线：
-    main 前进后车道没合 main 时，车道产物缺 main 的新用例，会被误判成删除。"""
+    main 前进后车道没合 main 时，车道产物缺 main 的新用例，会被误判成删除。
+    折中（哪吒_10）：补齐记批次时记了主工作区各参照的摘要，其中主工作区至今没变、本树却改过的（补齐后手拷的探针输出），
+    基线改用主工作区的版本，手拷的改动才会显示成测量改变；main 已前进的拿不准，仍取车道自己的并提示。"""
     key = hashlib.sha256(str(gen.resolve()).encode()).hexdigest()
     parent = ROOT / '03_再刷重制_Godot/04_验证/本地结果/同步基线'
     parent.mkdir(parents=True, exist_ok=True)
     baseline = parent / key
+    use_main = []
     if not baseline.exists() and main_gen is not None:
         drift = lane_drift(gen, main_gen)
+        use_main = main_baseline_files(gen, main_gen, drift)
+        if use_main:
+            print('提示：%d 个参照在补齐之后被改过、而主工作区没变（%s），本次比较基线改用主工作区的版本，这些改动会显示成测量改变'
+                  % (len(use_main), '、'.join(use_main[:8]) + ('等' if len(use_main) > 8 else '')), flush=True)
+        drift = [n for n in drift if n not in use_main]
         if drift:
             print('提示：本次比较基线取车道自己的 generated/oracle，其中 %d 个与主工作区不同（%s）；'
                   '若是手动拷进去的探针输出，先从主工作区拷回再同步，否则这些改动看不出来'
@@ -293,6 +314,8 @@ def comparison_baseline(gen: Path, main_gen: Path = None) -> Path:
         try:
             shutil.copy2(gen / 'manifest.json', staging / 'manifest.json')
             shutil.copytree(gen / 'oracle', staging / 'oracle')
+            for n in use_main:
+                shutil.copy2(main_gen / 'oracle' / n, staging / 'oracle' / n)
             (staging / 'identity.json').write_text(json.dumps({'schema': 1, 'generated': str(gen.resolve())}))
             staging.rename(baseline)
         finally:
