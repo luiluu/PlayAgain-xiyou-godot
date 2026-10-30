@@ -355,6 +355,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if not wtype_ok(a, skill):
 		return false
+	if not XYomiJingliu.meets(a, skill):  # 黄泉 meetsSkillConditions：残梦不满 9 不能用 10174
+		return false
 	if XAlienBattle.blocks_skill(a, skill):  # 异化逆祷 meetsSkillConditions：模板外的伤害技能不能用
 		return false
 	if XAlienBattle.blocks_borrowed(state, a, skill):  # 异化百相、无面 meetsSkillConditions：被替换的、没选中的仿形、来源不会了的借来技能
@@ -1217,6 +1219,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		var c := skill_cost(u, skill)
 		# 异化 paySkillCost 包装：缄默先锁生命上限（付不起整次不付 MP／TP），饕餮的 MP 费用从饥饿储备扣
 		if XAlienBattle.pay_silence(self, u, skill):
+			XYomiJingliu.pay(u, skill)  # 黄泉 paySkillCost 包装：10174 扣 9 层残梦
 			if XAlienBattle.glutton_mp(u) != null:
 				XAlienBattle.pay_glutton(u, c.mp)
 			else:
@@ -1237,7 +1240,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击（isAttack：此刻的 attackSkillId）的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
-		var times := attack_repeats(u, skill, 1)
+		var times := XYomiJingliu.begin_action(u, skill, attack_repeats(u, skill, 1))  # 黄泉 numRepeats 包装（也开始新行动）
 		var list := []
 		for t in targets_for(u, skill, chosen):
 			for i in range(maxi(1, times)):
@@ -1247,7 +1250,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		return logs
-	var repeats := attack_repeats(u, skill, int(skill.get("repeats", 1)))
+	var repeats := XYomiJingliu.begin_action(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1))))  # 黄泉 numRepeats 包装
 	var targets := targets_for(u, skill, chosen)
 	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
@@ -1360,7 +1363,13 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		XRaceBattle.derived_end(self, race_prev)
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
-	return [apply(u, skill, substitute_for(skill, t))]
+	var tt := substitute_for(skill, t)
+	# 黄泉 Game_Action.apply 包装：施集真赤、充残梦、扩散到其余敌人（扩散各次接在主目标之后）
+	if XYomiJingliu.wraps(u, skill, tt):
+		XYomiJingliu.before_apply(self, u, skill, tt)
+		var r := apply(u, skill, tt)
+		return [r] + XYomiJingliu.after_apply(self, u, skill, tt, r)
+	return [apply(u, skill, tt)]
 
 
 ## BattleManager.applySubstitute：目标濒死（活着且 hp < mhp/4）、技能不是必中时，同队出战成员里第一个能掩护的替它挨打
@@ -1392,13 +1401,15 @@ static func certain_hit(u: XBattler, skill: Dictionary) -> bool:
 ## userHitRate 物理 user.hit、魔法 user.hit*1.1、必中 10000000；targetEvadeRate 物理 target.eva、魔法 target.mev、必中 0）；
 ## 最后 installDamageElementRuntime 夹到 0～1。Olivia_AntiPlayerStress 的命中修正在西游关闭（Hit Rate Stacking=false）。
 func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
-	if certain_hit(u, skill):
+	if certain_hit(u, skill) or XYomiJingliu.sure(u, skill):  # 黄泉技能 itemHit 包装：必中
 		return 1.0
 	return clampf(_hit_formula("Accuracy Formula", "skillHitRate * (userHitRate - targetEvadeRate)", u, skill, t), 0.0, 1.0)
 
 
 ## itemEva：YEP「Evade Formula」（西游为 0）夹到 0～1。原版闪避已并入命中公式。
 func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
+	if XYomiJingliu.sure(u, skill):  # 黄泉技能 itemEva 包装：不闪避
+		return 0.0
 	return clampf(_hit_formula("Evade Formula", "0", u, skill, t), 0.0, 1.0)
 
 
@@ -2066,6 +2077,7 @@ func end_battle(result := -1) -> void:
 	_clear_event_cursor()
 	XAlienBattle.end(self, result)  # 异化 endBattle 包装：胜利补发、结算、清锁队
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
+	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	# ShieldSystem Scene_Battle.terminate：全队与敌群护盾清零
 	for e in enemies:

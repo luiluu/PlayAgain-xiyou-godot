@@ -37,6 +37,7 @@ KEYS = {
     'enemy_book_defeat.json': {'cases': ('id',)},
     'lobby_shops.json': {'cases': ('id',)},
     'map132_shops.json': {'cases': ('id',)},
+    'yomi_battle.json': {'cases': ('id',)},
     'common_scripts.json': {'cases': ('id',)},
     'attack_query.json': {'cases': ('id',)},
     'weapon_unleash.json': {'cases': ('id',)},
