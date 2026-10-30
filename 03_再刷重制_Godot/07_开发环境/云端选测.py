@@ -256,8 +256,28 @@ def cmd_godot(a):
         (gdir / z).unlink()
         exe.chmod(0o755)
     print(subprocess.run([str(exe), '--headless', '--version'], capture_output=True, text=True).stdout.strip(), file=sys.stderr)
+    if os.environ.get('GITHUB_ACTIONS') == 'true':
+        cjk_font(gdir.parent / 'fonts')
     gh_output(godot=str(exe))
     return 0
+
+
+def cjk_font(cache):
+    """GitHub 的 Ubuntu 机器没有中文字体：core/game_font.gd 的回退字体是 PingFang SC／Microsoft YaHei UI／sans-serif，
+    Linux 上落到无中文的字体，生僻字（如「燚」）宽度和换行就变了（xiyou_inlay_book、xiyou_status_power 因此失败）。
+    装文泉驿正黑后这两项与 Mac 一样通过（2026-10-30 云端容器实测）。字体文件随 Godot 一起进 Actions 缓存，各片不用再装。"""
+    if subprocess.run(['fc-list', ':lang=zh'], capture_output=True, text=True).stdout.strip():
+        return
+    ttc = cache / 'wqy-zenhei.ttc'
+    if not ttc.is_file():
+        subprocess.run('sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends fonts-wqy-zenhei',
+                       shell=True, check=True, stdout=subprocess.DEVNULL)
+        cache.mkdir(parents=True, exist_ok=True)
+        shutil.copy('/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc', ttc)
+    else:
+        subprocess.run(['sudo', 'install', '-D', '-m', '644', str(ttc), '/usr/local/share/fonts/wqy-zenhei.ttc'], check=True)
+        subprocess.run(['fc-cache', '-f'], check=True, stdout=subprocess.DEVNULL)
+    log('中文字体：' + subprocess.run(['fc-match', 'sans-serif:lang=zh-cn'], capture_output=True, text=True).stdout.strip())
 
 
 def generated_ref(branch):
@@ -357,7 +377,13 @@ def cmd_plan(a):
             gh_output(skip='true', count=0, matrix='{"include":[]}')
             return 0
     reasons = []
-    if mode == 'full':
+    if a.scenes:  # 只跑指定的场景（重跑失败项）
+        scenes, base = sorted(set(a.scenes.split()) & set(all_scenes)), ''
+        reasons = ['手动指定 %d 个场景' % len(scenes)]
+        missing = set(a.scenes.split()) - set(all_scenes)
+        if missing:
+            reasons.append('不存在、已略过：' + '、'.join(sorted(missing)))
+    elif mode == 'full':
         scenes, base = all_scenes, ''
     else:
         base = a.base
@@ -488,6 +514,7 @@ def main(argv=None):
     p = sub.add_parser('fetch'); p.add_argument('--ref', required=True)
     p = sub.add_parser('plan'); p.add_argument('--branch', required=True); p.add_argument('--mode', choices=['affected', 'full', ''])
     p.add_argument('--base', default='origin/main'); p.add_argument('--force', action='store_true')
+    p.add_argument('--scenes', default='', help='只跑这些场景（空格分隔），不按选测')
     p.add_argument('--timings'); p.add_argument('--jobs', type=int, default=2); p.add_argument('--target', type=int, default=600)
     p.add_argument('--max-shards', type=int, default=16); p.add_argument('--out', default='plan.json')
     p = sub.add_parser('shard'); p.add_argument('--godot', required=True); p.add_argument('--scenes', required=True)

@@ -26,6 +26,10 @@ on:
         description: 这个提交测过并通过了也重跑
         type: boolean
         default: false
+      scenes:
+        description: 只跑这些场景（空格分隔，如重跑失败项；填了就不按选测）
+        type: string
+        default: ''
       max_shards:
         description: 最多分几片（每片一台 2 核机器）
         type: string
@@ -74,14 +78,15 @@ jobs:
           BASE: ${{ inputs.base || 'origin/main' }}
           FORCE: ${{ inputs.force && '--force' || '' }}
           MAX_SHARDS: ${{ inputs.max_shards || '16' }}
+          SCENES: ${{ inputs.scenes }}
         run: |
-          python3 "$TOOL" plan --branch "$BRANCH" --mode "$MODE" --base "$BASE" $FORCE \
+          python3 "$TOOL" plan --branch "$BRANCH" --mode "$MODE" --base "$BASE" --scenes "$SCENES" $FORCE \
             --timings .ci-timings/timings.json --jobs "$JOBS" --target "$TARGET_SECONDS" --max-shards "$MAX_SHARDS" --out plan.json
       - id: key
         env:
           GEN: ${{ steps.plan.outputs.generated_commit }}
         run: |
-          echo "godot_key=godot-${{ hashFiles('03_再刷重制_Godot/07_开发环境/环境登记.json') }}" >> "$GITHUB_OUTPUT"
+          echo "godot_key=godot-v2-${{ hashFiles('03_再刷重制_Godot/07_开发环境/环境登记.json') }}" >> "$GITHUB_OUTPUT"
           echo "ws_key=ws-v1-${GEN}-${{ hashFiles('03_再刷重制_Godot/01_Godot工程/**', '03_再刷重制_Godot/07_开发环境/环境登记.json') }}" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
