@@ -20,6 +20,12 @@ class Ch:
 	func is_balloon_playing() -> bool:
 		return false
 
+	func force_move_route(_route) -> void:    # 指令 205（宝箱开箱动画）：参照不画移动路线
+		pass
+
+	func is_route_forcing() -> bool:
+		return false
+
 
 ## 记录用宿主：在地图事件对照的替身上，按剧本回答选项、给战斗结果，并替事件提供当前页的图像与暂时消除
 class DungeonHost:
