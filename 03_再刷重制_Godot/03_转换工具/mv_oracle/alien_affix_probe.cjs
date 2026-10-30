@@ -82,6 +82,12 @@ function battle(spec) {
     (spec.pre.buffs || []).forEach(([pid, n, turns]) => { a._buffs[pid] = n; a._buffTurns[pid] = turns; }); a.refresh(); }
   // 开战前已倒下的队员（dead：'b'），锁队检查「已倒下」用
   (spec.dead || []).forEach(k => { const x = k === 'b' ? b : a; x.addState(x.deathStateId()); });
+  // 镜骸（mirror）：敌人 0 直接写成镜骸变体（不经 setupEncounter 的抽签与奖励），每回合第一次被角色主动打中，行动结束反噬
+  // 敌人额外特性（enemyTraits：[[代码, 编号, 值], …]）：包一层 traitObjects，只对这一局的敌人
+  if (spec.enemyTraits) enemies.forEach(e => { const more = {traits: spec.enemyTraits.map(([code, dataId, value]) => ({code, dataId, value}))};
+    const old = e.traitObjects; e.traitObjects = function () { return old.call(this).concat([more]); }; });
+  if (spec.mirror) enemies[0]._alienEnemy = {variant: 'mirror', boss: true, shieldGranted: false, mirrorRound: -1, mirrorCharged: true,
+    plagueRound: -1, drainRound: -1, visualPulse: 0};
   A.lockParty();
   w.$gameParty._inBattle = true;
   w.CodexYunshang._acted = [];
@@ -152,6 +158,7 @@ function battleCase(name, spec, steps) {
         for (const k of ['a', 'b']) {
           if (st.set[k + 'Hp'] != null) who(k)._hp = Math.floor(who(k).mhp * st.set[k + 'Hp']);
           if (st.set[k + 'Mp'] != null) who(k)._mp = Math.floor(who(k).mmp * st.set[k + 'Mp']);
+          if (st.set[k + 'Shield'] != null) who(k)._shield = st.set[k + 'Shield'];
         }
       } else if (st.roundEnd) {
         w.$gameTroop._turnCount = st.roundEnd; A.spreadPest(A.round());
@@ -199,6 +206,10 @@ battleCase('pest', {affix: 'pest', armor: 1013}, [
   {user: 'e0', def: S(1, 1, [21, 17, 1])}, {user: 'e0', def: S(1, 1, [21, 37, 1])}, {user: 'e0', def: S(1, 1, [32, 2, 3])},
   {user: 'b', def: S(7, 0, [22, 17, 1])}, {user: 'b', def: S(7, 0, [34, 2, 0])}, {roundEnd: 1},
   {expire: {who: 'a', id: 17}}, {user: 'b', def: S(7, 0, [22, 37, 1])}, {user: 'e1', def: S(1, 1, [32, 3, 2])}, {roundEnd: 2}, {roundEnd: 2}]);
+// 疫囊传播减益照 itemEffectAddDebuff 掷骰（减益有效度 × 幸运差）：敌人物攻减益有效度 0，传不过去；物防照常传；
+// 队友 b 直接对敌人放物攻减益（一般技能的效果 32）同样不中
+battleCase('pest.resist', {affix: 'pest', armor: 1013, enemyTraits: [[12, 2, 0]]}, [
+  {user: 'e0', def: S(1, 1, [32, 2, 3])}, {user: 'e0', def: S(1, 1, [32, 3, 3])}, {user: 'b', def: S(1, 1, [32, 2, 3])}, {roundEnd: 1}]);
 // 囚厄：队友实际获得的 jailStates（沉默 6）与减益转给囚厄者，回合取较长；接收的不可驱散，自然到期后照常
 battleCase('jail', {affix: 'jail'}, [
   {user: 'e0', target: 1, def: S(1, 1, [21, 6, 1])}, {user: 'e0', target: 1, def: S(1, 1, [32, 3, 3])},
@@ -243,7 +254,17 @@ battleCase('hollow.corrosion', {affix: 'hollow'}, [CORRODE, {tick: 1}]);
 battleCase('lifelink.event', {affix: 'lifelink', config: {actorId: 1, partnerId: 8}}, [
   {event: {who: 'a', value: -3000}}, {event: {who: 'b', value: 1000}}, {event: {who: 'a', value: -99999}}, {event: {who: 'a', value: -99999, death: true}}]);
 battleCase('scapegoat.event', {affix: 'scapegoat', config: {actorId: 1, partnerId: 8}}, [{event: {who: 'a', value: -1000}}, {event: {who: 'a', value: 500}}]);
+// 嫁祸保护者（角色 8）行动外扣血：gainHp 包装末尾 A.syncRelations，嫁祸者按保护者比例跟着掉、保护者倒下嫁祸者跟着倒下
+// （镜骸反噬、腐蚀、事件「增减生命」，含致死）
+const SCAPEGOAT = {affix: 'scapegoat', config: {actorId: 1, partnerId: 8}};
+battleCase('scapegoat.mirror_protector', Object.assign({mirror: true}, SCAPEGOAT), [{user: 'b', skill: 1}, {user: 'b', skill: 1}]);
+battleCase('scapegoat.corrosion_protector', SCAPEGOAT, [Object.assign({target: 1}, CORRODE), {tick: 1}]);
+battleCase('scapegoat.event_protector', SCAPEGOAT, [{event: {who: 'b', value: -1000}}]);
+battleCase('scapegoat.event_protector_death', SCAPEGOAT, [{event: {who: 'b', value: -99999, death: true}}]);
 battleCase('hollow.event', {affix: 'hollow'}, [{event: {who: 'a', value: 500}}, {event: {who: 'a', value: -500, death: true}}]);
+// 连命者的负再生（中毒 4）先吃护盾：护盾够吸收时只扣护盾；不够时击穿，余下的进生命池（沙僧第三十六期补核的现场）
+battleCase('lifelink.regen_shield', {affix: 'lifelink', config: {actorId: 1, partnerId: 8}}, [{set: {aShield: 1000}}, {user: 'e0', def: S(1, 0, [21, 4, 1])}, {regen: 'a'}]);
+battleCase('lifelink.regen_shield_break', {affix: 'lifelink', config: {actorId: 1, partnerId: 8}}, [{set: {aShield: 100}}, {user: 'e0', def: S(1, 0, [21, 4, 1])}, {regen: 'a'}]);
 // 锁队检查（Adv:62）：绑定的队友（角色 2）不在场，异化装备卸下放回背包，本场不生效
 battleCase('lifelink.invalid', {affix: 'lifelink', config: {actorId: 1, partnerId: 2}}, [{user: 'e0', skill: 1}]);
 // 第③批·行动道具投影：祸祝把 templates.blessing（7100 幻日虹，自身加速 2421）改为敌方单体、状态换成 statePairs 的诅咒（2668 减速）；

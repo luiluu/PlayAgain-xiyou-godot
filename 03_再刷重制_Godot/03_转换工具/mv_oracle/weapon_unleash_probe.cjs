@@ -63,6 +63,7 @@ function unleashCase(name, spec) {
     if (spec.weapon) a.forceChangeEquip(0, w.$dataWeapons[spec.weapon]);
     a.refresh();
     a.setTp(spec.tp || 0);
+    if (spec.state) { a.addState(spec.state); a.need_refresh = true; a.refresh(); }  // 开战后挂上的状态（眩晕 29：行动限制 4）；参数缓存刷新后 canMove 才为假
     const act = new w.Game_Action(a);
     if (spec.act === 'item1') act.setItem(1);
     else if (spec.act === 'skill1') act.setSkill(1);
@@ -79,8 +80,9 @@ function unleashCase(name, spec) {
     bm._subject = a; bm._action = null;
     const t = tape(spec.rolls || []);
     try { bm.startAction(); } finally { w.Yanfly.WUL.BattleManager_startAction = real; w.Math.random = function() { return 0.5; }; }
-    return {actor: actorId, level: a.level, equips: a.equips().map(e => e ? e.id : 0), tp: a.tp, attackSkillId, canAttack: a.canAttack(), unleashes,
-      before, isItem: act.isItem(), started, rolls: t.used.length, otherRolls: t.other.length};
+    const moved = spec.state ? {state: a.isStateAffected(spec.state), canMove: a.canMove()} : {};
+    return Object.assign(moved, {actor: actorId, level: a.level, equips: a.equips().map(e => e ? e.id : 0), tp: a.tp, attackSkillId, canAttack: a.canAttack(), unleashes,
+      before, isItem: act.isItem(), started, rolls: t.used.length, otherRolls: t.other.length});
   }));
 }
 
@@ -110,5 +112,7 @@ unleashCase('w429.skill1', {weapon: 429, tp: 100, rolls: [0, 0], act: 'skill1'})
 unleashCase('w207.skill127', {weapon: 207, tp: 100, rolls: [0], act: 127});
 unleashCase('w207.item1', {weapon: 207, tp: 100, rolls: [0], act: 'item1'});
 unleashCase('bare.attack', {actor: 1, weapon: 0, tp: 100, rolls: [0]});
+// 不能行动（眩晕 29）时 canUse 走 meetsUsableItemConditions 的 canMove，解放候选全跳过、不掷；行动本身照常（强制行动）
+unleashCase('w207.stunned', {weapon: 207, tp: 100, rolls: [], state: 29});
 
 process.exit(finish(host, 'weapon_unleash.json', {cases}) ? 0 : 1);

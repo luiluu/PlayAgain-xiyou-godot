@@ -613,10 +613,13 @@ func act(u: XBattler, skill, target) -> Array:
 	var before := _movable_snapshot()
 	if is_won() or is_lost() or u.is_dead():
 		return logs
+	# 行动无效（敌人没有行动、或 isValid 假整次跳过）：原版 processTurn 不 startAction／endAction，onAllActionsEnd 在
+	# _processTurn 里不 updateStateActionEnd（YEP_BattleEngineCore:4166），行动结束的状态不减回合
+	var started := true
 	if not can_move(u):
 		logs.append({"type": "skip", "user": u})
 	elif skill == null or (skill is Dictionary and skill.is_empty()):
-		pass
+		started = false
 	elif int(skill.id) == GUARD_SKILL and not is_item(skill):
 		XAlienBattle.start_action(self, u, skill)  # 异化蚀术 startAction 包装：防御也算原有合法行动窗口
 		XStateEffects.run("action_start", u)  # 防御也走 startAction
@@ -631,6 +634,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XStateEffects.run("conclude", u, gctx)
 		logs.append({"type": "guard", "user": u})
 	else:
+		started = u.is_actor() or can_use(u, skill)  # 同 execute 开头的行动无效判断（非强制）
 		logs.append_array(execute(u, skill, target))
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
@@ -638,7 +642,8 @@ func act(u: XBattler, skill, target) -> Array:
 	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
 	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
 	_acted[u] = int(_acted.get(u, 0)) + 1
-	_tick_states(u, 1)
+	if started:
+		_tick_states(u, 1)
 	_sync_orders(before, true)
 	resolve_collapses()
 	return logs
@@ -1317,13 +1322,14 @@ func change_to_roll() -> float:
 
 ## YEP_WeaponUnleash processUnleash（BattleManager.startAction 链）：这一招是此刻的普攻（物品、别的技能不换）时，
 ## 按 weapon_unleashes() 的顺序逐条试：技能此刻不能用就跳过（不掷），能用才掷一次（rule 流 "unleash"），掷数不大于几率就换成它。
+## 「能用」照原版 canUse 含 meetsUsableItemConditions 的 canMove：不能行动（强制行动）时全跳过，原技能照常执行。
 ## 走 execute 的都算（手动、自动、挂机、智能 AI、强制行动）；反击不走 startAction，不换。参照 weapon_unleash_probe。
 func weapon_unleash(u: XBattler, skill: Dictionary) -> Dictionary:
 	if is_item(skill) or int(skill.get("id", 0)) != u.attack_skill_id():
 		return skill
 	for e in u.weapon_unleashes():
 		var sk := XDB.rec("Skills", int(e[0]))
-		if sk.is_empty() or not can_use(u, sk):
+		if sk.is_empty() or not can_move(u) or not can_use(u, sk):
 			continue
 		if _float("unleash") > float(e[1]):
 			continue
@@ -1719,7 +1725,7 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 		31:
 			sequence_buff(t, int(eff.dataId), true, true, int(v1))
 		32:
-			sequence_buff(t, int(eff.dataId), true, false, int(v1))
+			add_debuff_effect(u, t, int(eff.dataId), int(v1))
 		33, 34:
 			var id := int(eff.dataId)
 			if XAlienBattle.blocks_buff_removal(t, id):
@@ -1796,6 +1802,14 @@ func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int, ali
 	_refresh_battler(t)
 	if buff or not add:
 		t.param_mark_dirty()  # krz 包了 addBuff／removeBuff，没包 addDebuff
+
+
+## Game_Action.itemEffectAddDebuff：减益有效度 × 幸运差掷一次，中了才加减益
+func add_debuff_effect(u: XBattler, t: XBattler, pid: int, turns: int) -> bool:
+	if _float("add_debuff") >= t.debuff_rate(pid) * _luk_rate(u, t):
+		return false
+	sequence_buff(t, pid, true, false, turns)
+	return true
 
 
 ## Game_Action.lukEffectRate：1 + (行动者幸运 − 目标幸运) × 0.001，不低于 0

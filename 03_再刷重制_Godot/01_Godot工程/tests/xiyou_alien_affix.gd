@@ -400,6 +400,17 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 		a.refresh_resources()
 	for k in st.get("dead", []):  # 开战前已倒下的队员（锁队检查「已倒下」）
 		(b if str(k) == "b" else a).add_state(1)
+	var trait_obj := {"traits": (st.get("enemyTraits", []) as Array).map(func(v): return {"code": int(v[0]), "dataId": int(v[1]), "value": float(v[2])})}
+	var trait_recs := []  # 敌人额外特性（同参照的 traitObjects 包装）：临时接到敌人数据的特性表上，本例结束摘掉
+	if not trait_obj.traits.is_empty():
+		for e in enemies:
+			var traits: Array = e.data().traits
+			if not trait_recs.any(func(x): return is_same(x, traits)):
+				trait_recs.append(traits)
+				traits.append_array(trait_obj.traits)
+	if bool(st.get("mirror", false)):  # 敌人 0 直接写成镜骸变体（同参照，不经遭遇抽签）
+		enemies[0].alien = {"variant": "mirror", "boss": true, "shieldGranted": false, "mirrorRound": -1, "mirrorCharged": true,
+			"plagueRound": -1, "drainRound": -1}
 	XAlienBattle.open(logic)
 	var tag := str(c.id)
 	var locked := [a, b].map(func(x):
@@ -432,6 +443,8 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 					x.hp = floorf(x.mhp * float(sp.set[k + "Hp"]))
 				if sp.set.has(k + "Mp"):
 					x.mp = floorf(x.mmp * float(sp.set[k + "Mp"]))
+				if sp.set.has(k + "Shield"):
+					x.shield = float(sp.set[k + "Shield"])
 		elif sp.has("roundEnd"):
 			logic.turn = int(sp.roundEnd)
 			XAlienBattle.spread_pest(logic)
@@ -504,6 +517,9 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 				[XAlienBattle._formula_frames.size(), XAlienBattle._action_frames.size()])
 	if hook.is_valid():
 		hook.call(logic, a)
+	for traits in trait_recs:
+		for t in trait_obj.traits:
+			traits.erase(t)
 	XAlienBattle.end(logic, -1)
 	XState.current = null
 	return got

@@ -154,6 +154,29 @@ skipCase('enemy1-mp-short', {troop: 1, skill: MP_SKILL}, () => {
   const act = new w.Game_Action(e); act.setSkill(sk.id); act.setTarget(0); e._actions = [act]; e._mp = sk.mpCost - 1;
   return Object.assign({mpCost: sk.mpCost, valid: act.isValid()}, enemyTurn(bm, e));
 });
+// 行动无效时的行动结束状态：敌人身上挂行动结束移除的黑暗 5、剩 1 回合，真实 processTurn 连调两次（第一次跳过行动、第二次没有行动
+// 走 onAllActionsEnd；YEP 在 _processTurn 内不 updateStateActionEnd），状态仍在、剩 1，endAction 0 次。下一行动者换成 null（无显示窗）
+function skipTwice(bm, e) {
+  e.addState(5); e._stateTurns[5] = 1;
+  const ends = [], realEnd = bm.endAction, realStart = bm.startAction, realNext = bm.getNextSubject;
+  bm.endAction = function() { ends.push(1); return realEnd.apply(this, arguments); };
+  bm.startAction = function() { ends.push('start'); };
+  bm.getNextSubject = function() { return null; };
+  try { for (let i = 0; i < 2; i++) { bm._subject = e; bm._action = null; bm.processTurn(); } }
+  finally { bm.endAction = realEnd; bm.startAction = realStart; bm.getNextSubject = realNext; }
+  return {state: e.isStateAffected(5), turns: e._stateTurns[5] || 0, endAction: ends.filter(x => x === 1).length, started: ends.filter(x => x === 'start').length};
+}
+skipCase('enemy73-state', {troop: 70, smartAI: false, endState: 5}, () => {
+  const bm = battleOf(70), e = w.$gameTroop.members()[0];
+  w.ConfigManager.codexSmartAI = false;
+  e.makeActions();
+  return skipTwice(bm, e);
+});
+skipCase('enemy1-mp-short-state', {troop: 1, skill: MP_SKILL, endState: 5}, () => {
+  const bm = battleOf(1), e = w.$gameTroop.members()[0], sk = w.$dataSkills[MP_SKILL];
+  const act = new w.Game_Action(e); act.setSkill(sk.id); act.setTarget(0); e._actions = [act]; e._mp = sk.mpCost - 1;
+  return skipTwice(bm, e);
+});
 skipCase('enemy1-attack-control', {troop: 1}, () => {
   const bm = battleOf(1), e = w.$gameTroop.members()[0];
   const act = new w.Game_Action(e); act.setAttack(); act.setTarget(0); e._actions = [act];

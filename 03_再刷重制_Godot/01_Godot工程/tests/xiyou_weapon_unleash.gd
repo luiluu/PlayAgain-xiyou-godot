@@ -74,9 +74,14 @@ func _measure(spec: Dictionary, observed: Dictionary) -> Dictionary:
 	var logic := XBattleLogic.new()
 	logic.setup(1, s)
 	a.tp = float(spec.get("tp", 0))
-	var out := {"actor": aid, "level": a.level, "tp": a.tp, "attackSkillId": a.attack_skill_id(), "canAttack": logic.can_use(a, a.attack_skill())}
+	if spec.has("state"):  # 开战后挂上的状态（眩晕：不能行动，强制行动仍执行）
+		a.add_state(int(spec.state))
+	var out := {"actor": aid, "level": a.level, "tp": a.tp, "attackSkillId": a.attack_skill_id(), "canAttack": logic.can_move(a) and logic.can_use(a, a.attack_skill())}
+	if spec.has("state"):
+		out.state = a.state_ids.has(int(spec.state))
+		out.canMove = logic.can_move(a)
 	out.equips = a.equips.map(func(e): return 0 if e == null or e.is_empty() else int(e.base))
-	out.unleashes = a.weapon_unleashes().map(func(u): return {"skill": u[0], "rate": u[1], "canUse": logic.can_use(a, XDB.rec("Skills", int(u[0])))})
+	out.unleashes = a.weapon_unleashes().map(func(u): return {"skill": u[0], "rate": u[1], "canUse": logic.can_move(a) and logic.can_use(a, XDB.rec("Skills", int(u[0])))})
 	var skill := a.attack_skill()
 	var act = spec.get("act", "attack")
 	if str(act) == "item1":
@@ -94,7 +99,8 @@ func _measure(spec: Dictionary, observed: Dictionary) -> Dictionary:
 	for i in 400:
 		tape.append({"kind": "float", "value": 0.5})
 	logic.random.rule = XRandomStream.scripted(tape)
-	var logs := logic.act(a, skill, logic.enemies[0])
+	# 不能行动的例照强制行动执行（参照直接 startAction，不看 canMove）
+	var logs := logic.execute(a, skill, logic.enemies[0], true) if spec.has("state") else logic.act(a, skill, logic.enemies[0])
 	out.started = logs.filter(func(r): return r.get("type") == "action").map(func(r): return int(r.skill.id))
 	out.rolls = logic.random.rule.journal.filter(func(j): return j.reason == "unleash").size()
 	return out
