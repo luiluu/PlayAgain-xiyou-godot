@@ -511,7 +511,7 @@ def heavy_slot(label, weight=1):
         print('等槽：%s 已等 %d 秒（占 %d 槽，共用上限 %d）' % (label, seconds, min(weight, r.global_limit()), r.global_limit()),
               flush=True)
     with r.global_slot(r.state_dir(str(ROOT)), r.global_limit(), weight, waiting,
-                       float(os.environ.get('XIYOU_SLOT_HEARTBEAT', '60'))):
+                       float(os.environ.get('XIYOU_SLOT_HEARTBEAT', '60')), priority=r.slot_priority(str(ROOT))):
         yield
 
 

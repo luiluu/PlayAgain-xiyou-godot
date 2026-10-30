@@ -59,6 +59,9 @@ func compare_actor_texts(got: Array, want: Array) -> void:
 				compare("actor.texts.%d.%d" % [i,j],got[i][j],want[i][j])
 
 func _run() -> void:
+	# 地图首帧会按真实时钟查神秘生物刷新（XPetCapture.tick）：每小时 0～4、30～34 分会多弹一条「天生异象……」，
+	# 打乱下面对 XToast.shown 与提示框个数的对照（10-30 07:30 合并选测首跑、重跑都失败）。固定在窗口外。
+	XPetCapture.clock = func(): return {"day": 1, "hour": 12, "minute": 15}
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="): out_dir = arg.substr(6)
 	if not out_dir.is_empty():
@@ -215,6 +218,7 @@ func _run() -> void:
 	finish()
 
 func finish() -> void:
+	XPetCapture.clock = Callable()
 	for player in XSound._players:
 		if is_instance_valid(player):
 			player.stop()
