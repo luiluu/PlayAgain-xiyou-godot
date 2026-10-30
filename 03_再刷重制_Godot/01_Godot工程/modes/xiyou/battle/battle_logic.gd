@@ -141,6 +141,12 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	for i in range(enemies.size()):
 		_ids[enemies[i]] = "enemy:%d:%d" % [i, enemies[i].enemy_id]
 	make_unique_names()
+	# 异化夺舍：原版锁队在 startBattle 最外层，之前的（敌人等级、强敌计数、逃跑率、成员身份）算上要被夺舍的队友，
+	# 原 startBattle 里的（开战移除状态、初始 TP、开战状态效果、预热）与种族包装（锁队之后）不算；锁队本身用全员
+	var everyone: Array = actors
+	var leaving := XAlienBattle.possession_partners(self)
+	if not leaving.is_empty():
+		actors = everyone.filter(func(a): return not leaving.has(a))
 	for a in actors:
 		for sid in a.state_ids.duplicate():
 			if not bool(XDB.rec("States", sid).get("removeAtBattleEnd", false)):
@@ -149,11 +155,12 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	_start_battle_effects()
 	for b in actors + enemies:
 		b.start_warmups()
-	_escape_ratio = 0.5 * _avg_agi(actors) / maxf(_avg_agi(enemies), 1.0)
+	_escape_ratio = 0.5 * _avg_agi(everyone) / maxf(_avg_agi(enemies), 1.0)
 	# BattleManager.startBattle：inBattle 起敌人走 krz 能力值缓存；逃跑率等开战前的读取不留在格子里
 	for e in enemies:
 		e.param_cache_begin()
 	XRaceBattle.start(self)  # 种族祝福：BattleManager.startBattle 包装清本场数据，出战成员建数据（记开战最大生命）
+	actors = everyone
 	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
 	# 本版改过的 BattleManager.startBattle：每场开战预约公共事件 1320「战斗开始时调整变量」，开战第一次事件检查先跑它
 	XBattleCommonEvent.reserve(self, XBattleCommonEvent.START_EVENT)

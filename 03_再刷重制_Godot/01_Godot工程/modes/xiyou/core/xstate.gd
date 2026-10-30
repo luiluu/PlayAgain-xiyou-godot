@@ -570,7 +570,7 @@ func battle_members() -> Array:
 	XItemMarks.enforce_party(self)
 	var out := []
 	for id in battle_slots:
-		if int(id) > 0 and party.has(int(id)):
+		if int(id) > 0 and party.has(int(id)) and not XAlienBattle.possessed(actor(int(id))):  # 异化夺舍 battleMembers 包装（Adv:80）：战斗中被夺舍的队友不算
 			out.append(actor(int(id)))
 	return out
 
