@@ -765,6 +765,24 @@ class ShardTests(unittest.TestCase):
 
 
 class BackupPruneTests(unittest.TestCase):
+    def test_backup_copy_clones_or_copies_and_stays_independent(self):
+        # 同步备份用 APFS 克隆（不另占空间）；克隆不成退回复制。两种都要内容相同，且之后改原文件不影响备份（哪吒_10）
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'src/sub').mkdir(parents=True)
+            (root / 'src/sub/a.json').write_text('{"a":1}')
+            (root / 'f.json').write_text('{}')
+            for fail in [False, True]:
+                dst = root / ('d%d' % fail)
+                dst.mkdir()
+                with mock.patch.object(sync.subprocess, 'run', return_value=mock.Mock(returncode=1)) if fail else contextlib.nullcontext():
+                    sync.clone_or_copy(root / 'src', dst / 'src')
+                    sync.clone_or_copy(root / 'f.json', dst / 'f.json')
+                self.assertEqual((dst / 'src/sub/a.json').read_text(), '{"a":1}')
+                self.assertEqual((dst / 'f.json').read_text(), '{}')
+            (root / 'src/sub/a.json').write_text('changed')
+            self.assertEqual((root / 'd0/src/sub/a.json').read_text(), '{"a":1}')
+
     def test_keeps_newest_three_named_backups_only(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
