@@ -171,6 +171,28 @@ class SelectTests(Fixture):
         self.put(PROJECT / 'project.godot', 'config/name="y"\nconfig/version="dev.002"\n')
         self.assertTrue(self.pick()['full'])
 
+    def test_xstate_field_and_save_key_only_runs_save_tests(self):
+        # 人人引用 XState：只加字段＋存读档键时只跑存档类专项＋事件对照，改别的行照旧按引用（game 组）
+        body = ('class_name XState\nvar gold := 0\n\nfunc to_dict() -> Dictionary:\n\treturn {"gold": gold,\n'
+                '\t\t"items": 1}\n\nstatic func from_dict(d: Dictionary) -> XState:\n\tvar s := XState.new()\n'
+                '\ts.gold = int(d.gold)\n\treturn s\n')
+        self.put(CORE / 'xstate.gd', body)
+        self.scene('xiyou_save_page', 'XState.new()')
+        self.scene('xiyou_difficulty_inherit_load', 'load')
+        self.scene('xiyou_flow', 'XState.new()')
+        self.commit('xstate')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.put(CORE / 'xstate.gd', body.replace('var gold := 0\n', 'var gold := 0\n## 新字段\nvar pets := {}\n')
+                 .replace('\t\t"items": 1}', '\t\t"items": 1, "pets": pets}')
+                 .replace('\ts.gold = int(d.gold)\n', '\ts.gold = int(d.gold)\n\ts.pets = d.get("pets", {})\n'))
+        s = self.pick()
+        self.assertEqual(s['scenes'], ['xiyou_difficulty_inherit_load.tscn', 'xiyou_event_compare.tscn', 'xiyou_save_page.tscn'])
+        self.assertFalse(s['full'])
+        self.put(CORE / 'xstate.gd', body.replace('\treturn s\n', '\ts.gold += 1\n\treturn s\n'))
+        s = self.pick()
+        self.assertIn('xiyou_flow.tscn', s['scenes'])
+        self.assertIn('按 game', s['reasons'][0][1])
+
     def test_selecting_every_scene_becomes_full(self):
         self.put(PROJECT / 'modes/xiyou/core/xstate.gd', 'class_name XState\n')
         self.commit('xstate')
@@ -181,7 +203,8 @@ class SelectTests(Fixture):
                 p.write_text(p.read_text() + 'XState\n')
         self.commit('everyone uses XState')
         self.base = self.g('rev-parse', 'HEAD')
-        self.put(PROJECT / 'modes/xiyou/core/xstate.gd', 'class_name XState\n# 2\n')
+        # 改函数体（不是只加字段／注释，否则走 xstate_fields 细分）
+        self.put(PROJECT / 'modes/xiyou/core/xstate.gd', 'class_name XState\nfunc f():\n\tpass\n')
         self.assertTrue(self.pick()['full'])
 
     def test_unknown_path_is_full(self):

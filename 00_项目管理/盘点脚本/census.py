@@ -179,22 +179,26 @@ P('- 进度账「楼层、副本与剧情内容」的分母若按全部地图数
 P(f'- 对进度账：「楼层、副本与剧情内容」行写的 68/231 是 dev.0xx 时的数，实际切片现为 **{len(slice_maps)}/{len(maps)}**（MapInfos 登记 {len([i for i in info if i])} 张，Map*.json 共 {len(maps)} 张，二者差的是没登记的数据文件）。\n')
 P('## 接入顺序（按层展开，层内按规模小、依赖少排）\n')
 P('排序键：解释器缺指令数＋缺插件数（越少越靠前），其次事件数、敌群数。「缺指令」指事件里出现解释器没有分支的指令码（含出现次数）；敌群列出的是尚未进切片的敌群数。\n')
+def src_label(x):
+    return 'Map%d EV%d'%(x[1],x[2]) if x[0]=='map' else ('CE%d'%x[1] if x[0]=='ce' else '新游戏起点')
+def src_cell(xs):
+    # 按地图号／事件号排，不按字符串（Map10 排在 Map9 后）
+    order={'system':0,'map':1,'ce':2}
+    return '、'.join(src_label(x) for x in sorted(set(tuple(x[:3]) for x in xs),key=lambda x:(order.get(x[0],3),x[1:]))) or '—'
 def key(m):
     r=by[m];miss,pm=unsupported(r)
     return (len(miss)+len(pm),r['nev'],len([t for t in r['troops'] if t not in slice_troops]))
 for li,l in enumerate(layers):
     P(f'### 第 {li+1} 层（{len(l)} 张）\n')
-    P('| 图 | 名称 | 尺寸 | 事件／页 | 未入切片敌群 | 来源（谁传到这里） | 缺指令／插件 | 分类 |')
-    P('|---|---|---|---|---|---|---|---|')
+    # 来源全列（哪吒_8 10-29：原来只取前 3 条，扩切片后看不出还有哪些入口），分切片内（已放事件／切片公共事件／新游戏起点）与切片外
+    P('| 图 | 名称 | 尺寸 | 事件／页 | 未入切片敌群 | 来源·切片内 | 来源·切片外 | 缺指令／插件 | 分类 |')
+    P('|---|---|---|---|---|---|---|---|---|')
     for m in sorted(l,key=key):
         r=by[m];miss,pm=unsupported(r)
-        src=[]
-        for x in (r['live']+r['dead'])[:3]:
-            src.append('Map%d EV%d'%(x[1],x[2]) if x[0]=='map' else ('CE%d'%x[1] if x[0]=='ce' else '新游戏起点'))
-        src=sorted(set(src))
+        inside,outside=src_cell(r['live']),src_cell(r['dead'])
         nt=len([t for t in r['troops'] if t not in slice_troops])
         mi='、'.join(f'{k}×{v}' for k,v in sorted(miss.items()))+(' 插件:'+','.join(pm) if pm else '')
-        P(f'| {m} | {r["name"] or r["disp"]} | {r["w"]}×{r["h"]} | {r["nev"]}／{r["npages"]} | {nt} | {"、".join(src)} | {mi or "—"} | {classify(r)} |')
+        P(f'| {m} | {r["name"] or r["disp"]} | {r["w"]}×{r["h"]} | {r["nev"]}／{r["npages"]} | {nt} | {inside} | {outside} | {mi or "—"} | {classify(r)} |')
     P('')
 P('## 静态扫描没找到可达来源的地图\n')
 P('| 图 | 名称 | 尺寸 | 事件／页 | 指向它的来源（均不可达） | 传送菜单 | 分类 |')
@@ -202,7 +206,7 @@ P('|---|---|---|---|---|---|---|')
 for m in orphans:
     r=by[m]
     src=sorted(set(('Map%d EV%d'%(x[1],x[2]) if x[0]=='map' else 'CE%d'%x[1]) for x in r['dead']+scr_inc.get(m,[]) if x[0] in('map','ce') ) | set('脚本 Map%d EV%d'%(x[1],x[2]) for x in scr_inc.get(m,[])))
-    P(f'| {m} | {r["name"] or r["disp"]} | {r["w"]}×{r["h"]} | {r["nev"]}／{r["npages"]} | {"、".join(src[:4]) or "无"} | {("需解锁" if plugin_menu[m] else "有条目") if m in plugin_menu else "—"} | {classify(r)} |')
+    P(f'| {m} | {r["name"] or r["disp"]} | {r["w"]}×{r["h"]} | {r["nev"]}／{r["npages"]} | {"、".join(src) or "无"} | {("需解锁" if plugin_menu[m] else "有条目") if m in plugin_menu else "—"} | {classify(r)} |')
 open(OUT,'w',encoding='utf-8').write('\n'.join(out)+'\n')
 print('layers',[len(l) for l in layers],'orphans',len(orphans))
 
@@ -221,12 +225,12 @@ for m in sorted(cand,key=key):
     r=by[m];miss,pm=unsupported(r)
     srcs=sorted(set((x[1],x[2]) for x in cand[m]))
     names_=[]
-    for sm,se in srcs[:3]:
+    for sm,se in srcs:
         ev=[e for e in maps[sm]['events'] if e and e['id']==se][0]
         names_.append(ev['name'])
     nt=len([t for t in r['troops'] if t not in slice_troops])
     mi='、'.join(f'{k}×{v}' for k,v in sorted(miss.items()))+(' 插件:'+','.join(pm) if pm else '')
-    P2.append(f'| {m} | {r["name"] or r["disp"]} | {"、".join("Map%d EV%d"%x for x in srcs[:4])} | {"、".join(names_)} | {r["nev"]}／{r["npages"]} | {nt} | {mi or "—"} |')
+    P2.append(f'| {m} | {r["name"] or r["disp"]} | {"、".join("Map%d EV%d"%x for x in srcs)} | {"、".join(names_)} | {r["nev"]}／{r["npages"]} | {nt} | {mi or "—"} |')
 open(OUT,'a',encoding='utf-8').write('\n'.join(P2)+'\n')
 print('cand maps',len(cand))
 

@@ -48,7 +48,7 @@ ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE))
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT  # noqa: E402
 from incremental_sync import SHARDS, ProbeCache
-from oracle_additions import (compare_directories, payload, source_preserved, has_error, retained_errors_unchanged,  # noqa: E402
+from oracle_additions import (compare_directories, current_digest, payload, source_preserved, has_error, retained_errors_unchanged,  # noqa: E402
                               load_acceptances, apply_acceptances, change_candidates, KEYS, groups)
 
 ORACLE_DIR = HERE / 'mv_oracle'
@@ -253,12 +253,41 @@ def record_changes(old_file: Path, new_file: Path):
 KEEP_BACKUPS = 3
 
 
-def comparison_baseline(gen: Path) -> Path:
-    """首次写产物前原子保存接受边界；拒绝或中断后仍比较同一份数据。"""
+def main_generated(gen: Path):
+    """车道工作树里返回主工作区对应的 generated 目录（同一相对路径）；主工作区或不在工作树里时返回 None。"""
+    out = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'],
+                         capture_output=True, text=True).stdout.split('\n')
+    if len(out) < 2 or not out[1] or out[0] == out[1]:
+        return None
+    try:
+        rel = gen.resolve().relative_to(ROOT.resolve())
+    except ValueError:
+        return None
+    other = Path(out[1]).parent / rel
+    return other if (other / 'oracle').is_dir() else None
+
+
+def lane_drift(gen: Path, main_gen: Path) -> list:
+    """车道 generated/oracle 里与主工作区内容不同的参照文件名（本车道先前同步接受的新增，或手动拷进来的探针输出）。"""
+    return sorted(p.name for p in (gen / 'oracle').glob('*.json')
+                  if (main_gen / 'oracle' / p.name).is_file() and file_digest(p) != file_digest(main_gen / 'oracle' / p.name))
+
+
+def comparison_baseline(gen: Path, main_gen: Path = None) -> Path:
+    """首次写产物前原子保存接受边界；拒绝或中断后仍比较同一份数据。
+    车道工作树新取基线时（main_gen 给出主工作区 generated），与主工作区不同的参照逐个提示：基线取的是车道自己的，
+    手动拷进 generated/oracle 的探针输出会被当成基线、测量改变看不出来（八戒 dev.208 hostScope）。不改用主工作区当基线：
+    main 前进后车道没合 main 时，车道产物缺 main 的新用例，会被误判成删除。"""
     key = hashlib.sha256(str(gen.resolve()).encode()).hexdigest()
     parent = ROOT / '03_再刷重制_Godot/04_验证/本地结果/同步基线'
     parent.mkdir(parents=True, exist_ok=True)
     baseline = parent / key
+    if not baseline.exists() and main_gen is not None:
+        drift = lane_drift(gen, main_gen)
+        if drift:
+            print('提示：本次比较基线取车道自己的 generated/oracle，其中 %d 个与主工作区不同（%s）；'
+                  '若是手动拷进去的探针输出，先从主工作区拷回再同步，否则这些改动看不出来'
+                  % (len(drift), '、'.join(drift[:8]) + ('等' if len(drift) > 8 else '')), flush=True)
     if not baseline.exists():
         staging = Path(tempfile.mkdtemp(prefix=key + '.pending-', dir=parent))
         try:
@@ -605,6 +634,8 @@ def run_probes(log, cache=None):
                 if not (SANDBOX / rel).is_file():
                     return cmd, 1, text + '探针产物缺失：' + rel + '\n', time.time() - t
                 shutil.move(SANDBOX / rel, fresh)
+            # 只合并不跑探针时（新工作树首次同步）.sandbox/slice/ 等子目录可能还没有，合并脚本写入会 ENOENT（哪吒_8）
+            (SANDBOX / rel).parent.mkdir(parents=True, exist_ok=True)
             spec['files'].append({'old': str(previous / rel), 'fresh': str(fresh) if part else None, 'out': str(SANDBOX / rel),
                                   'indent': None if cmd[0] == 'event_probe.cjs' else 1})
         (box / 'merge.json').write_text(json.dumps(spec, ensure_ascii=False))
@@ -719,7 +750,7 @@ def _main() -> int:
             print('不用车道产物：' + why + '；请改跑完整同步')
             return 3
     # clone预检失败不写任何产物；此处必须在滚动备份淘汰、转换或clone覆盖gen之前。
-    baseline = comparison_baseline(gen)
+    baseline = comparison_baseline(gen, main_generated(gen) if a.no_register else None)
     old_manifest = json.loads((baseline / 'manifest.json').read_text())
     old_version = old_manifest.get('releaseVersion')
     new_version = json.loads((app / 'package.json').read_text()).get('releaseVersion')
@@ -810,10 +841,19 @@ def _main() -> int:
     report['verifyOk'] = v.returncode == 0
     check = report['additionCheck']
     report['changeCandidates'] = change_candidates(check)
-    resolved = apply_acceptances(check, acceptances)
+    def current(entry):
+        f = gen / 'oracle' / entry['file']
+        try:
+            return current_digest(entry['file'], json.loads(f.read_text()), entry['collection'], entry['key'])
+        except (OSError, ValueError):
+            return None
+    resolved = apply_acceptances(check, acceptances, current)
     if acceptances:
         report['acceptChanges'] = {'sources': acceptance_sources, 'accepted': resolved['accepted'], 'unused': resolved['unused'],
-                                   'remainingProblems': resolved['problems']}
+                                   'alreadyInBaseline': resolved['alreadyInBaseline'], 'remainingProblems': resolved['problems']}
+        for row in resolved['alreadyInBaseline']:
+            print('提示：接受单条目 %s %s %s 本轮没有对应变化，现值已是它要接受的值（基线早已接受），跳过不拒收'
+                  % (row['file'], row['collection'], row['key'][:80]), flush=True)
     additions = bool(check['additions'])
     # 新增与显式接受都处理完后不能剩任何问题；接受单每条都要用上；新增仍须 --accept-additions
     clean = (not resolved['problems'] and not resolved['unused'] and (additions or bool(resolved['accepted'])))

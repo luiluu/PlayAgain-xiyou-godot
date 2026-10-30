@@ -60,6 +60,10 @@ KEYS = {
 
 
 TOP_LEVEL = '顶层'  # 接受单 collection：参照文件顶层的非用例字段
+# 探针顶层纯说明文字（哪吒_8 10-29 盘点 generated/oracle：hostScope 二十多个探针、scope 两个，都是写给人看的取值范围说明，
+# 每期加词条都改写）。新旧都是字符串时不算测量改变；别的类型、新增或删掉仍照常报。机器标签式的 hostScope
+#（如 headless-rule-timing）另由各探针契约（battle_event_contract 等）核对，不靠这里。
+NOTE_FIELDS = frozenset({'hostScope', 'scope'})
 
 
 def canonical(x):
@@ -171,6 +175,35 @@ def valid_level_samples(samples):
     return True
 
 
+def keys_for(name):
+    keys = dict(KEYS.get(name, {}))
+    if name.startswith('slice_d') and name.endswith('.json'):
+        keys['damage'] = lambda row: (('troop', 'actor', 'skill') if 'actor' in row
+                                     else ('troop', 'enemy', 'target', 'skill'))
+    return keys
+
+
+def current_digest(name, data, collection, key):
+    """参照 data 里接受单条目所指那一条（顶层字段、角色／敌人键、按稳定键的单条用例）现在的摘要；找不到或不唯一返回 None。
+    与 compare_file 里 change() 记录 newDigest 的取法一致。"""
+    data = payload(data)
+    if not isinstance(data, dict):
+        return None
+    if collection == TOP_LEVEL:
+        return digest(data[key]) if key in data else None
+    value = data.get(collection)
+    if isinstance(value, dict):
+        return digest(value[key]) if key in value else None
+    if isinstance(value, list) and collection in keys_for(name):
+        try:
+            rows = groups(value, keys_for(name)[collection]).get(key)
+        except ValueError:
+            return None
+        if rows and sum(rows.values()) == 1:
+            return digest(json.loads(next(iter(rows))))
+    return None
+
+
 def compare_file(name, old, new, changes=None):
     """返回新增集合与问题。数组按稳定键分组，重复键的组内按多重集逐条精确比较。
     changes：传入列表时，把可经 --accept-changes 显式接受的单条既有用例改变追加进去（各带对应的问题文字）。"""
@@ -202,10 +235,7 @@ def compare_file(name, old, new, changes=None):
             else:
                 additions.append({'collection': 'maps', 'key': key, 'count': 1})
         return additions, problems
-    keys = dict(KEYS.get(name, {}))
-    if name.startswith('slice_d') and name.endswith('.json'):
-        keys['damage'] = lambda row: (('troop', 'actor', 'skill') if 'actor' in row
-                                     else ('troop', 'enemy', 'target', 'skill'))
+    keys = keys_for(name)
     if set(old) != set(new):
         problems.append('顶层字段集合变化')
     for field in old.keys() & new.keys():
@@ -269,6 +299,8 @@ def compare_file(name, old, new, changes=None):
                     problems.append(field + ' 新用例有错误：' + key[:160])
                 else:
                     additions.append({'collection': field, 'key': key, 'count': sum(gb[key].values())})
+        elif field in NOTE_FIELDS and isinstance(a, str) and isinstance(b, str):
+            continue
         else:
             problems.append('非新增用例字段改变：' + field)
             # 探针顶层说明字段（如 scope）：不是列表的可凭接受单显式放行（collection 写「顶层」、key 写字段名）；
@@ -349,23 +381,30 @@ def load_acceptances(paths):
     return entries, sources
 
 
-def apply_acceptances(check, entries):
-    """逐条对上 changes 里的单条既有用例改变，被接受的从问题里去掉；对不上的条目留在 unused。"""
+def apply_acceptances(check, entries, current=None):
+    """逐条对上 changes 里的单条既有用例改变，被接受的从问题里去掉；对不上的条目留在 unused。
+    current(条目)：本轮参照里该条现在的摘要。对不上本轮变化、但现值已等于条目 newDigest 的（基线早已接受过，如车道基线旧、
+    把 main 已接受的 hostScope 变化又写了一张接受单，飞艇甲二 10-30），记进 alreadyInBaseline 只提示、不算 unused；
+    它不去掉任何问题，真实对不上的照旧拒收（哪吒_8）。"""
     problems = {k: list(v) for k, v in check['problems'].items()}
-    accepted, unused = [], []
+    accepted, unused, already = [], [], []
     for e in entries:
         hit = next((c for c in check.get('changes', {}).get(e['file'], [])
                     if c['collection'] == e['collection'] and c['key'] == e['key'] and c['fields'] == e['fields']
                     and c['oldDigest'] == e['oldDigest'] and c['newDigest'] == e['newDigest']
                     and c['problem'] in problems.get(e['file'], [])), None)
         if hit is None:
-            unused.append({k: e[k] for k in ACCEPT_FIELDS[:6]})
+            row = {k: e[k] for k in ACCEPT_FIELDS[:6]}
+            # 本轮同一条有变化（字段或摘要写错）不算早已接受，照旧 unused
+            moved = any(c['collection'] == e['collection'] and c['key'] == e['key']
+                        for c in check.get('changes', {}).get(e['file'], []))
+            (already if current is not None and not moved and current(e) == e['newDigest'] else unused).append(row)
             continue
         problems[e['file']].remove(hit['problem'])
         if not problems[e['file']]:
             del problems[e['file']]
         accepted.append({k: e[k] for k in ACCEPT_FIELDS + ('source',)})
-    return {'problems': problems, 'accepted': accepted, 'unused': unused}
+    return {'problems': problems, 'accepted': accepted, 'unused': unused, 'alreadyInBaseline': already}
 
 
 def change_candidates(check):

@@ -126,22 +126,53 @@ class AdditionTests(unittest.TestCase):
         self.assertTrue(additions.compare_file('maps.json', {}, {'2': {}})[1])
 
     def test_top_level_note_field_can_be_explicitly_accepted(self):
-        """交接板工具坑：探针顶层说明字段（如 scope）改了，接受单原来放不行（没有可接受的变化候选）。"""
-        old = {'schemaVersion': 1, 'scope': '十个号角', 'cases': [{'id': 'a', 'v': 1}]}
-        new = dict(old, scope='十个号角＋木桩')
+        """交接板工具坑：探针顶层非用例字段改了，接受单原来放不行（没有可接受的变化候选）。
+        纯说明文字（hostScope／scope）已不算改变（见 test_top_level_note_text_is_not_a_measurement），这里用别的标量。"""
+        old = {'schemaVersion': 1, 'plainState': 3, 'cases': [{'id': 'a', 'v': 1}]}
+        new = dict(old, plainState=4)
         with tempfile.TemporaryDirectory() as folder:
             a, b = Path(folder) / 'old', Path(folder) / 'new'
             a.mkdir(); b.mkdir()
             (a / 'attack_query.json').write_text(json.dumps(old)); (b / 'attack_query.json').write_text(json.dumps(new))
             check = additions.compare_directories(a, b)
             cand = additions.change_candidates(check)
-            self.assertEqual([(c['collection'], c['key'], c['fields']) for c in cand], [('顶层', 'scope', ['*'])])
-            entry = dict(cand[0], reason='号角说明补木桩', source='x')
+            self.assertEqual([(c['collection'], c['key'], c['fields']) for c in cand], [('顶层', 'plainState', ['*'])])
+            entry = dict(cand[0], reason='状态号改了', source='x')
             self.assertFalse(additions.apply_acceptances(check, [entry])['problems'])
             # 列表字段（未登记稳定键的整组用例）仍不出候选
             (b / 'attack_query.json').write_text(json.dumps(dict(old, extra=[1])))
             (a / 'attack_query.json').write_text(json.dumps(dict(old, extra=[2])))
             self.assertFalse(additions.change_candidates(additions.compare_directories(a, b)))
+
+    def test_top_level_note_text_is_not_a_measurement(self):
+        """10-29 两次：每期加词条 hostScope 说明都改写，同步按既有用例改变拒收、要手写接受单。"""
+        old = {'schemaVersion': 1, 'hostScope': '异化词条期一', 'scope': '十个号角', 'cases': [{'id': 'a', 'v': 1}]}
+        new = dict(old, hostScope='异化词条期一、期二', scope='十个号角＋木桩')
+        self.assertEqual(additions.compare_file('alien_affix.json', old, new), ([], []))
+        # 说明字段换了类型、被删掉，或旁边的真实测量变了，仍照常报
+        for bad in [dict(new, hostScope={'x': 1}), {k: v for k, v in new.items() if k != 'hostScope'},
+                    dict(new, cases=[{'id': 'a', 'v': 2}]), dict(new, schemaVersion=2)]:
+            self.assertTrue(additions.compare_file('alien_affix.json', old, bad)[1], bad)
+
+    def test_acceptance_already_in_baseline_is_only_noted(self):
+        old = {'schemaVersion': 1, 'cases': [{'id': 'a', 'v': 1}, {'id': 'b', 'v': 1}]}
+        new = {'schemaVersion': 1, 'cases': [{'id': 'a', 'v': 2}, {'id': 'b', 'v': 1}]}
+        check = {'problems': {}, 'changes': {}}
+        entry = {'file': 'events.json', 'collection': 'cases', 'key': '[["id","a"]]', 'fields': ['v'],
+                 'oldDigest': additions.digest(old['cases'][0]), 'newDigest': additions.digest(new['cases'][0]), 'reason': '口径修正'}
+        key = next(iter(additions.groups(new['cases'], ('id',))))
+        entry['key'] = [k for k in additions.groups(new['cases'], ('id',)) if '"a"' in k][0]
+        self.assertEqual(additions.current_digest('events.json', new, 'cases', entry['key']), entry['newDigest'])
+        cur = lambda e: additions.current_digest('events.json', new, e['collection'], e['key'])
+        r = additions.apply_acceptances(check, [entry], cur)
+        self.assertEqual((len(r['alreadyInBaseline']), r['unused']), (1, []))
+        # 现值对不上（真实不同）、不给 current：仍是 unused
+        self.assertEqual(len(additions.apply_acceptances(check, [dict(entry, newDigest='0' * 16)], cur)['unused']), 1)
+        self.assertEqual(len(additions.apply_acceptances(check, [entry])['unused']), 1)
+        # 顶层与角色键也能取到现值
+        self.assertEqual(additions.current_digest('x.json', {'note': 3}, additions.TOP_LEVEL, 'note'), additions.digest(3))
+        self.assertEqual(additions.current_digest('slice_d1.json', {'actors': {'1': {'hp': 2}}}, 'actors', '1'),
+                         additions.digest({'hp': 2}))
 
     def test_source_guard(self):
         old = {'releaseVersion': 'v0.28', 'runtimeInputs': {'x': '1'}, 'inputs': {'a': '1'}}
@@ -183,6 +214,21 @@ class DraftTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 merge.draft(head + body)
 
+
+    def test_problem_only_sheet_gets_minimal_entry(self):
+        sheet = ('# 交付：codex/review-x\n\n- 核查／沙僧（Codex）；状态：可合并（仅问题交付）。\n\n## 接续前现场记录\n\n- 现场\n\n'
+                 '## 本期问题交总装\n\n- P2 撤图误接受，见[报告](../核查报告_x.md)\n\n## 文档选测\n\n- 退出 0\n')
+        with contextlib.redirect_stderr(io.StringIO()):
+            body = merge.draft(sheet)
+        self.assertRegex(body.splitlines()[0], r'^## \d{4}-\d\d-\d\d 【Codex·沙僧】codex/review-x（仅交问题，不销账）$')
+        self.assertIn('P2 撤图误接受', body)
+        self.assertNotIn('现场', body)
+        self.assertNotIn('退出 0', body)
+        # 既无草稿也无问题节：报错说清要补哪一节；草稿节在但为空仍拒（不退回问题节）
+        with self.assertRaisesRegex(RuntimeError, '变更记录草稿.*问题'):
+            merge.draft('# 交付：codex/y\n- 状态：可合并\n\n## 文档选测\n\n- z\n')
+        with self.assertRaisesRegex(RuntimeError, '为空'):
+            merge.draft('- 状态：可合并\n\n## 变更记录草稿\n\n## 本期问题\n\n- p\n')
 
     def test_mentions_whole_branch_name_only(self):
         self.assertTrue(merge.mentions('| A | 分支 claude/wukong-x（从 main 切） |', 'claude/wukong-x'))
@@ -269,6 +315,27 @@ class ParallelTestRunnerTests(unittest.TestCase):
         p, _ = self.run_tests('--full', FAIL_C='1')
         self.assertEqual(p.returncode, 1, p.stdout)
         self.assertIn('✗ c.tscn', p.stdout)
+
+    def test_names_file_and_wide_prefix_hint(self):
+        names = self.tmp / 'names.txt'
+        names.write_text('# 选测清单\na.tscn\n\nc  # 尾注释\n')
+        p, runs = self.run_tests('--names-file', str(names))
+        self.assertEqual(p.returncode, 0, p.stdout)
+        self.assertEqual(sorted(runs), ['a.tscn', 'c.tscn'])
+        self.assertNotIn('前缀', p.stdout)
+        p, runs = self.run_tests('', XIYOU_PREFIX_HINT='2')  # 空前缀匹配全部 3 个
+        self.assertIn('前缀  匹配 3 个场景', p.stdout)
+
+    def test_new_class_name_triggers_one_import(self):
+        # 八戒 10-29：车道新加带 class_name 的脚本后直接跑并行测试，新类名不在导入缓存里、解析不到
+        (self.tmp / 'proj/new_thing.gd').write_text('extends Node\nclass_name NewThing\n')
+        p, runs = self.run_tests('a')
+        self.assertEqual(runs, ['--import', 'a.tscn'], p.stdout)
+        self.assertIn('NewThing', p.stdout)
+        (self.tmp / 'proj/.godot').mkdir()
+        (self.tmp / 'proj/.godot/global_script_class_cache.cfg').write_text('list=[{\n"class": &"NewThing",\n}]\n')
+        p, runs = self.run_tests('a')
+        self.assertEqual(runs, ['a.tscn'], p.stdout)
 
     def test_rerun_keeps_first_attempt_and_ledger(self):
         logs = self.tmp / 'logs'
@@ -1109,6 +1176,31 @@ for name in filter(None, files):
         self.assertIn('--accept-changes', calls[0])
         self.assertEqual(calls[0][calls[0].index('--accept-changes') + 1], str(spec))
 
+    def test_stale_fork_does_not_count_main_files(self):
+        # 车道只改文档，期间合过 main；main 早先自己加了接受单和游戏代码。交叉合并时 merge-base 取到旧基点也不能算进本期
+        old = self.g('rev-parse', 'HEAD')
+        self.g('reset', '--hard', old, cwd=self.wt)
+        (self.wt / self.receipt).parent.mkdir(parents=True, exist_ok=True)
+        (self.wt / self.receipt).write_text('# delivery\n- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】文档\n\n- doc only\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'doc', cwd=self.wt)
+        spec = merge.ACCEPT / 'claude_other.json'
+        self.put(str(spec), '{"schema": 1, "accept": []}')
+        self.put(str(merge.PROJECT / 'modes/main.gd'), '# main\n')
+        # 10-30 八戒 alien-equip：别的车道的交付单（带编号占位）车道合 main 时带进来，之后 main 归并删掉了
+        other = '00_项目管理/交付/claude_other.md'
+        self.put(other, '# 交付\n- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】x（' + merge.VERSION_MARKER + '）\n\n- y\n')
+        self.g('add', '.'); self.g('commit', '-m', 'main moves on')
+        self.g('merge', 'main', cwd=self.wt)
+        self.g('rm', '-q', other); self.g('commit', '-m', 'other merged')
+        real = merge.git
+
+        def stale(root, *args):
+            return old if args[0] == 'merge-base' and len(args) == 3 else real(root, *args)
+        with mock.patch.object(merge, 'git', side_effect=stale):
+            state = merge.plan(self.root, 'task')
+        self.assertEqual((state['gameplay'], state['acceptChanges'], state['refresh']), (False, [], False))
+        self.assertEqual((state['versionPaths'], state['extraDeliveries']), ([], []))
+
     def test_dry_run_is_read_only(self):
         head = self.g('rev-parse', 'HEAD')
         self.assertEqual(self.call('--dry-run'), 0)
@@ -1938,6 +2030,19 @@ sys.exit(0)
         self.assertEqual(self.call('--finish'), 1)
         self.assertIn('--also', self.last_output)
         self.assertIn('git reset --soft', self.last_output)
+
+    def test_uid_of_lane_new_script_is_committed(self):
+        # 车道新加 modes/测试.gd 但漏交 .uid：main 上导入生成后收尾自动带入；别的未跟踪 .uid 仍拦
+        self.assertEqual(self.call(), 0)
+        self.register()
+        uid = merge.PROJECT / 'modes/测试.gd.uid'
+        self.put(str(uid), 'uid://fixture\n')
+        self.put(str(merge.PROJECT / 'modes/别的.gd.uid'), 'uid://other\n')
+        self.assertEqual(self.call('--finish'), 1)
+        self.assertIn('别的.gd.uid', self.last_output)
+        (self.root / merge.PROJECT / 'modes/别的.gd.uid').unlink()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertIn(str(uid), self.g('-c', 'core.quotepath=false', 'show', '--name-only', '--format=', 'HEAD'))
 
     def test_also_allows_extra_change_at_finish(self):
         self.assertEqual(self.call(), 0)

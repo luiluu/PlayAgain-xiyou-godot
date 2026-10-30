@@ -6,6 +6,7 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 import signal
 from pathlib import Path
 import subprocess
@@ -243,6 +244,33 @@ class AcceptedBaselineTests(unittest.TestCase):
         path.write_text(json.dumps({'schema': 1, 'accept': rows}, ensure_ascii=False))
         return path
 
+    def test_note_text_change_alone_is_not_rejected(self):
+        # 10-29 两次：探针顶层 hostScope 说明随每期词条改写，同步按既有用例改变拒收，要手写接受单
+        old = dict(self.original, hostScope='期一')
+        (self.gen / 'oracle/events.json').write_text(json.dumps(old))
+        self.set_payload(dict(old, hostScope='期一、期二', cases=old['cases'] + [{'id': 'new', 'value': 3}]))
+        result, report = self.run_sync('--accept-additions')
+        self.assertEqual(result, 0, report)
+        # 说明改写的同时真实测量变了：仍拒收
+        self.set_payload(dict(old, hostScope='期三', cases=[{'id': 'stable', 'value': 9}, {'id': 'new', 'value': 3}]))
+        self.assertEqual(self.run_sync('--accept-additions')[0], 2)
+
+    def test_lane_baseline_hints_files_differing_from_main(self):
+        # dev.208 八戒：车道手动把探针输出拷进 generated/oracle，同步拿它当基线、测量改变看不出来；新取基线时逐个提示
+        main_gen = self.root / 'main_gen'
+        (main_gen / 'oracle').mkdir(parents=True)
+        (main_gen / 'oracle/events.json').write_text(json.dumps({'cases': []}))
+        (main_gen / 'oracle/same.json').write_text('{}')
+        (self.gen / 'oracle/same.json').write_text('{}')
+        self.assertEqual(sync.lane_drift(self.gen, main_gen), ['events.json'])
+        out = io.StringIO()
+        with mock.patch.object(sync, 'ROOT', self.root), contextlib.redirect_stdout(out):
+            sync.comparison_baseline(self.gen, main_gen)
+            self.assertIn('events.json', out.getvalue())
+            out.truncate(0)
+            sync.comparison_baseline(self.gen, main_gen)  # 基线已在（拒收后重跑）：不再提示
+        self.assertNotIn('提示', out.getvalue())
+
     def test_existing_case_with_new_fields_is_an_addition(self):
         self.set_payload({'cases': [{'id': 'stable', 'value': 1, 'extra': [1, 2]}]})
         result, report = self.run_sync()
@@ -280,8 +308,12 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.assertEqual(len(audit), 1)
         self.assertEqual(json.loads(audit[0])['accepted'][0]['newDigest'], candidate['newDigest'])
         self.assertEqual(self.run_sync()[0], 0)
-        # 同一接受单不能放行之后的变化，也不能在没有变化时空用
-        self.assertEqual(self.run_sync('--accept-changes', str(spec))[0], 2)
+        # 已接受后再带同一接受单（车道基线旧、main 早已接受过，飞艇甲二 10-30）：现值已是它要的值，只提示不拒收
+        result, report = self.run_sync('--accept-changes', str(spec))
+        self.assertEqual(result, 0, report['result'])
+        self.assertEqual(len(report['acceptChanges']['alreadyInBaseline']), 1)
+        self.assertFalse(report['acceptChanges']['unused'])
+        # 同一接受单不能放行之后的变化（现值不等于它的 newDigest）
         self.set_payload({'cases': [{'id': 'stable', 'value': 3}]})
         self.assertEqual(self.run_sync('--accept-changes', str(spec))[0], 2)
         self.assertEqual(self.run_sync('--accept-additions')[0], 2)
@@ -631,6 +663,20 @@ class ShardTests(unittest.TestCase):
         self.assertEqual(ran, '"all"')
         self.assertEqual(result['executed'], ['smart_ai_probe.cjs'])
         self.assertEqual(merged, self.full_bytes([9, 1, 5, 3, 2]))
+
+    def test_merge_only_run_creates_missing_sandbox_subdir(self):
+        # 新工作树首次同步（哪吒_8，10-29 八戒）：缓存与 generated 来自主工作区，.sandbox/slice/ 还不存在；
+        # 只删单元时不跑探针、直接合并，合并写 .sandbox/slice/... 原来 ENOENT，6 段全败白跑约 30 分钟
+        probe = self.oracle / 'smart_ai_probe.cjs'
+        probe.write_text(FAKE_SMART_AI.replace("fs.writeFileSync(path.join(__dirname, '.sandbox/smart_ai.json')",
+                                               "fs.mkdirSync(path.join(__dirname, '.sandbox/slice'), {recursive: true});\n"
+                                               "fs.writeFileSync(path.join(__dirname, '.sandbox/slice/smart_ai.json')"))
+        self.probes = [(['smart_ai_probe.cjs'], ['slice/smart_ai.json'])]
+        self.sync([1, 2, 3], force=True)
+        shutil.rmtree(self.oracle / '.sandbox/slice')
+        result, _, merged = self.sync([1, 3])
+        self.assertEqual(result['partial'], {'smart_ai_probe.cjs': []})
+        self.assertEqual(json.loads(merged)['cases'], [{'troop': t, 'v': t / 3, 'name': '敌群%d' % t} for t in (1, 3)])
 
     def test_tampered_previous_output_forces_full_run(self):
         self.sync([1, 2], force=True)
