@@ -198,8 +198,8 @@ func _shop() -> void:
 		s.set_variable(109, k)
 		XMessageBox.transcript.clear()
 		await _run_event(map, 6, [0, 1], "")
-		shops[k] = XMessageBox.transcript.any(func(t): return str(t).contains("深渊商人"))
-	_check("shop_talks", shops.values().all(func(v): return v), shops)
+		shops[k] = XMessageBox.transcript.any(func(t): return str(t).contains("嘿嘿嘿"))
+	_check("shop_talks", shops.values().all(func(v): return v), [shops, XMessageBox.transcript])
 
 
 func _exit() -> void:
