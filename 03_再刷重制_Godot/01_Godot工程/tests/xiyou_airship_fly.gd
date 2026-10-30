@@ -3,7 +3,7 @@ extends Node
 ## - 静态对照：69／186 全图每格 XMapScene.airship_land_ok（isAirshipLandOk 且没有事件）与盘点脚本的表逐格相同
 ##   （tests/fixtures/airship_land.json＝00_项目管理/盘点脚本/载具可达.py 的第 4 个输出，冻结 v0.28 只读算出；格→块号）；
 ## - 上艇：Map069 (65,56) 站在飞艇上按确认，收拢跟随、升到 48 之前不能动；之后玩家透明穿透、速度 6、放飞艇 BGM、存下地图 BGM；
-## - 飞行：站到事件上不触发、对着事件按确认不触发、步数不计、不减遇敌步数（塞一张假遇敌表）；传送按钮与挂机锁住（O-待定）；
+## - 飞行：站到事件上不触发、对着事件按确认不触发、步数不计、不减遇敌步数（塞一张假遇敌表）；传送按钮与挂机锁住（O-117）；
 ##   有事件的格、isAirshipLandOk 不过的格按确认不下；
 ## - 逐块（交付单 claude_wukong-airship 1.2／1.3 表）：飞到该块离出口最近的可降落格降落（朝下、跟随叠到脚下、放回地图 BGM、
 ##   降到 0 才走路），落点块号与表一致；再按通行 BFS 走到出口事件跑一次：传送门进目标图、用目标图回 69 的事件回来（落回同一块），
@@ -246,7 +246,7 @@ func _first_flight() -> void:
 	var steps := s.steps
 	map.map_data.encounterList = [{"troopId": 1, "weight": 1, "regionSet": []}]
 	map.encounter_count = 1
-	# O-待定：传送按钮、挂机（有遇敌表时没锁会开始挂机）
+	# O-117：传送按钮、挂机（有遇敌表时没锁会开始挂机）
 	await get_tree().process_frame
 	_check("transfer_locked", map.map_hud.transfer_button.disabled)
 	map.toggle_hang_up()

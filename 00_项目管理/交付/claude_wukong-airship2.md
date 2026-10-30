@@ -2,7 +2,7 @@
 
 - 状态：可合并
 - 车道／工作者：A 内容·地图／悟空_69（Claude）
-- 本期：天之上飞艇方案甲二（上下飞艇、飞行、降落、飞行中屏蔽事件与遇敌、BGM、跟随）；O-待定 飞行中锁传送与挂机
+- 本期：天之上飞艇方案甲二（上下飞艇、飞行、降落、飞行中屏蔽事件与遇敌、BGM、跟随）；O-117 飞行中锁传送与挂机
 - 基线：从甲一交付末 187e271f 切出，交付前已合 main（654be040，只多了甲一合并与交接板，没碰本车道文件）。
 
 ## 变更记录草稿
@@ -17,14 +17,14 @@
   - 换图：飞行中被传送时飞艇跟到新图（Game_Vehicle.refresh），自动播放只记下新图 BGM（saveWalkingBgm2）不换曲；`XState.walking_bgm` 随档（新字段，旧档缺省 null）。
   - 读档在空中：照飞艇的驾驶与高度恢复飞行状态；存档时正在上下的按高度接着上下。
   - 画面：飞艇用 System 的默认图（`characters/Vehicle` 第 3 格，切片 `extraImages` 新增，`extraAudio` 加 `bgm/Theme_Amara`），停着时在角色下方，驾驶中在角色上方跟着玩家；升空高度偏移、影子、改造包换图显示留给甲三。
-- 可回退优化 O-待定（用户 10-29 定）：乘飞艇时（含升降中）地图传送按钮不可用、不能开始挂机（原版两者都不看载具，飞艇会被带进楼层图越墙降落）。`XMapScene.SAFE_AIRSHIP_MENU = false` 回原版，已登记优化登记。
+- 可回退优化 O-117（用户 10-29 定）：乘飞艇时（含升降中）地图传送按钮不可用、不能开始挂机（原版两者都不看载具，飞艇会被带进楼层图越墙降落）。`XMapScene.SAFE_AIRSHIP_MENU = false` 回原版，已登记优化登记。
 - 验证：新专项 `xiyou_airship_fly`（242 项）：69／186 全图每格降落判定与盘点脚本逐格相同；69 (65,56) 上艇，按交付单 1.2 表 17 块、1.3 表 8 块逐块飞到可降落格降落，传送门进目标图再用目标图出口回来、对话事件按「离开」跑一次、Map075（不在切片）只验走得到，再走回飞艇上艇；有事件的格、0x0800 格按确认不下；飞行中站到事件上不触发、不计步、不遇敌；传送按钮与挂机锁住；飞行中换图带着飞艇；空中存读档。原 `xiyou_airship_state` 全过。
 
 ## 交接板
 
 - 下一步：「天之上岛间移动」改为：甲二已交（能飞），待派甲三（飞艇高度偏移与影子、升空动画、改造包 14 张图进切片并显示、截图对照原版）。
-- 用户试玩说明：天之上恰兰吉尔那块（用恰兰吉尔物品进去，从恰兰吉尔出口出来）右下 (65,56) 停着飞艇：站上去按确认起飞，方向键飞，到岛上空地按确认降落。楼层回大厅后飞艇停在天之上 (30,25)；神魔战场入口旁 (50,49) 也有一艘（同一艘，跟着 202 挪）。飞行中地图传送按钮变灰、G 键挂机不响应（O-待定）。飞艇现在贴地画、没有升空动画（甲三）。
-- 需要用户决定：无（O-待定 已按用户 10-29 拍板做成可回退）。
+- 用户试玩说明：天之上恰兰吉尔那块（用恰兰吉尔物品进去，从恰兰吉尔出口出来）右下 (65,56) 停着飞艇：站上去按确认起飞，方向键飞，到岛上空地按确认降落。楼层回大厅后飞艇停在天之上 (30,25)；神魔战场入口旁 (50,49) 也有一艘（同一艘，跟着 202 挪）。飞行中地图传送按钮变灰、G 键挂机不响应（O-117）。飞艇现在贴地画、没有升空动画（甲三）。
+- 需要用户决定：无（O-117 已按用户 10-29 拍板做成可回退）。
 
 ## 进度账
 
@@ -45,7 +45,7 @@
 - 选测＋专项＋必跑项，没跑全量。`选测.py 187e271f` 因动了 `xstate.gd` 选出 220 个场景，按影响面自己挑了 40 个（`并行测试.py --full`，日志 `04_验证/本地结果/并行测试/20261030_003319_zs70tatm/`，全部通过）：
   - 本期专项：`xiyou_airship_fly`（242）、`xiyou_airship_state`（28）；
   - 地图／事件／接触：`xiyou_event_compare`（必跑）、`xiyou_map`、`xiyou_map186`／`_b`／`_c`、`xiyou_map186_legions`／`_b`、`xiyou_floor_reach069`／`094`／`106`／`109`／`115`（天之上各岛图）、`xiyou_floor16_dungeon`、`xiyou_start_state_walk`、`xiyou_options_basic`（触控点按）、`xiyou_floor_run`／`_b`／`_c`（走路、遇敌、跟随全程）、`xiyou_determinism`、`xiyou_random_streams`；
-  - 传送、挂机、HUD（O-待定）：`xiyou_transfer`、`xiyou_hud`、`xiyou_hangup`、`xiyou_hangup_auto`、`xiyou_hangup_options`；
+  - 传送、挂机、HUD（O-117）：`xiyou_transfer`、`xiyou_hud`、`xiyou_hangup`、`xiyou_hangup_auto`、`xiyou_hangup_options`；
   - 存档（`xstate.gd` 新字段）：`xiyou_save_events`、`xiyou_save_page`、`xiyou_autosave`、`xiyou_battleback_save`、`xiyou_flow`、`xiyou_opening_branches`、`xiyou_review_regressions`、`xiyou_loose_fixes`；
   - 其它：`xiyou_screen_fx`、`xiyou_message`；切片素材名单：`ui_smoke`、`xiyou_mac_export`、`xiyou_battle_ui`。
 - 偶发：`xiyou_airship_fly` 并行时 1 次失败（飞到 EV5 格上那一刻地图恰有别的提示在跑，busy 为真，判据误伤），单跑通过。已改测试：先等地图空闲、以「没被 EV5 传到 Map071」为判据，确认键前也先等空闲；改后单跑 242/242。累计偶发记录 1 次。
@@ -56,6 +56,6 @@
 
 ## 本分支提交
 
-- c56ec5d2 WIP：飞艇上下与飞行、O-待定、新专项 xiyou_airship_fly、切片加飞艇图与 BGM、载具可达.py 第 4 个输出
-- （登记）优化登记加 O-待定 行；87bb0001 合 main
+- c56ec5d2 WIP：飞艇上下与飞行、O-117、新专项 xiyou_airship_fly、切片加飞艇图与 BGM、载具可达.py 第 4 个输出
+- （登记）优化登记加 O-117 行；87bb0001 合 main
 - （本提交）专项去偶发、测量接受单、交付单

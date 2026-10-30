@@ -53,6 +53,8 @@ var _log_lines: Array = []        # [{text, simple}]
 var otb: XOTBBar
 var cmd_win: XBattleList
 var list_win: XBattleList
+## 异化百相切换仿形的选择窗（开着时）
+var mimic_win: XAlienMimicWindow
 var auto_btn: Button
 var speed_btn: Button
 var bgm: AudioStreamPlayer
@@ -677,11 +679,12 @@ func _command(u: XBattler):
 
 
 func _close_windows() -> void:
-	for w in [cmd_win, list_win]:
+	for w in [cmd_win, list_win, mimic_win]:
 		if w and is_instance_valid(w):
 			w.queue_free()
 	cmd_win = null
 	list_win = null
+	mimic_win = null
 	_help()
 	otb.clear_preview()
 
@@ -805,6 +808,15 @@ func _pick_action_list(a: XActor, entries: Array, items: bool):
 		if not entry is Dictionary or logic.auto:
 			return null
 		index = entries.find(entry)
+		# 异化百相 onSkillOk 包装（Workshop:34）：切换仿形先开选仿形窗，取消回技能列表（不记选择）；选定后照原 onSkillOk 继续
+		var mimic := not items and int(entry.id) == XAlienBattle.switch_id()
+		if mimic:
+			var pick = await _pick_mimic(a)
+			if logic.auto:
+				return null
+			if pick == null:
+				continue
+			XAlienBattle.choose_mimic(a, pick)
 		# Scene_Battle.onSkillOk/onItemOk：先记选择，再选目标；取消目标也保留。
 		if items:
 			logic.state.last_item = int(entry.id)
@@ -813,7 +825,26 @@ func _pick_action_list(a: XActor, entries: Array, items: bool):
 		var target = await _pick_target(entry, a)
 		if target != null:
 			return [entry, target]
+		if mimic:
+			XAlienBattle.choose_mimic(a, 0)  # 原版选择记在这次输入的行动上，取消后不会带到别的回合
 	return null
+
+
+## 异化百相的选仿形窗（Window_AlienMimic）：列出仿形记录，当前仿形不可选。返回选中的技能号，取消返回 null
+func _pick_mimic(a: XActor):
+	var d = XAlienBattle.locked(a)
+	if d == null:
+		return null
+	mimic_win = XAlienMimicWindow.for_records(ui, d.get("observed", []), int(d.get("selected", 0)))
+	mimic_win.position += _origin
+	var w := mimic_win
+	w.chosen.connect(func(i): _picked.emit(int(w.ids[i])))
+	w.cancelled.connect(func(): _picked.emit("cancel"))
+	var r = await _picked
+	if is_instance_valid(w):
+		w.queue_free()
+	mimic_win = null
+	return r if r is int else null
 
 
 func initial_command_index(a: XActor, entries: Array) -> int:

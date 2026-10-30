@@ -58,7 +58,7 @@ const SAFE_HUD_ACTIONS := true
 ## 大厅传送门（Map004 事件 36）第 3 页（开关 686「前往20层」）在变量 20＝21 时只关掉 686、什么都不显示，
 ## 二十层通关后第一次按门没有反应，要再按一次才出楼层菜单；这里关掉后直接出楼层菜单。设 {} 恢复原版。
 const RERUN_AFTER_PAGE := {"4:36:2": true}
-## O-待定：乘飞艇时（含升降中）地图传送按钮不可用、不能开始挂机。原版 MapTransferPlugin 与 XdRs_HangUp 都不看载具，
+## O-117：乘飞艇时（含升降中）地图传送按钮不可用、不能开始挂机。原版 MapTransferPlugin 与 XdRs_HangUp 都不看载具，
 ## 飞行中能把飞艇带进楼层地图、越墙降落，挂机还会带着飞艇乱飞。设 false 恢复原版。
 const SAFE_AIRSHIP_MENU := true
 ## Game_Vehicle.maxAltitude：飞艇升到 48 才能飞（canMove 要 isHighest），降到 0 才算下完
@@ -652,7 +652,7 @@ func vehicle_can_move() -> bool:
 	return not in_airship() or int(XState.current.vehicle("airship").altitude) >= AIRSHIP_MAX_ALTITUDE
 
 
-## O-待定：乘飞艇时（vehicle_type 不是走路，含升降中）锁地图传送与挂机
+## O-117：乘飞艇时（vehicle_type 不是走路，含升降中）锁地图传送与挂机
 func _vehicle_menu_locked() -> bool:
 	return SAFE_AIRSHIP_MENU and in_vehicle()
 
