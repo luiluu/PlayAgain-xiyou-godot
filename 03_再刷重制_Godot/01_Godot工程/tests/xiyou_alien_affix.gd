@@ -21,7 +21,7 @@ extends Node
 ##   （第三名队员也穿异化武器）比锁队检查卸下的 eject；view 带 repeats 另比 numRepeats。o106.jail_death_buff_kept：O-106 开时阵亡保留接收的减益。
 ## - 第④批 battle.swallow／offer：装备类；双方另比装备栏（本体编号）、八项能力值、命中／回避／暴击，背包里异化装备与供体件数；
 ##   步骤 end 照 end_battle（胜／逃／败）。gear.*：胜、逃、败结束后装备栏原样（同一实例）、背包不多不少、存读档往返不变；
-##   战斗中供体不能穿、吞器者不能换装；供体不能在商店卖、挂机卖出跳过；一键出售按 O-待定（关时照原版给钱不扣件）。
+##   战斗中供体不能穿、吞器者不能换装；供体不能在商店卖、挂机卖出跳过；一键出售按 O-118（关时照原版给钱不扣件）。
 const ORACLE := "oracle/alien_affix.json"
 var results := []
 ## 本次 _battle 每个行动步骤的 can_use（o113 用）
@@ -273,7 +273,7 @@ func _gear_after(logic: XBattleLogic, a: XActor, tag: String) -> void:
 		[ids_of.call(back, 1), ids_of.call(s, 1)])
 
 
-## 吞器战斗中：供体不能穿（Adv:87）、吞器者不能换装；结束后能换；供体不能在商店卖、挂机卖出跳过，一键出售按 O-待定
+## 吞器战斗中：供体不能穿（Adv:87）、吞器者不能换装；结束后能换；供体不能在商店卖、挂机卖出跳过，一键出售按 O-118
 func _gear_swallow_guards(logic: XBattleLogic, a: XActor) -> void:
 	var s: XState = logic.state
 	var donor: Dictionary = _gear_ctx.donors[0]

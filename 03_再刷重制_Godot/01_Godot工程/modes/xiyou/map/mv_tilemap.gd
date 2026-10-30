@@ -265,7 +265,16 @@ func is_passable(x: int, y: int, d: int) -> bool:
 		return false
 	if XConfig.flag("cq"):
 		return true
-	var bit := (1 << (d / 2 - 1)) & 0x0f
+	return check_passage(x, y, (1 << (d / 2 - 1)) & 0x0f)
+
+## MV Game_Map.isAirshipLandOk：飞艇降落标志 0x0800 不挡，且四向不全挡（不看穿墙开关）
+func is_airship_land_ok(x: int, y: int) -> bool:
+	if x < 0 or y < 0 or x >= width or y >= height:
+		return false
+	return check_passage(x, y, 0x0800) and check_passage(x, y, 0x0f)
+
+## MV Game_Map.checkPassage：从上往下看图块，0x10（☆）跳过，该位全空可过、全满不可过，部分的看下一层
+func check_passage(x: int, y: int, bit: int) -> bool:
 	# Game_Map.checkPassage 查 allTiles：图块事件的图块排在第 4～1 层之前
 	var ids: Array = tile_events.call(x, y) if tile_events.is_valid() else []
 	ids.append_array([tile(x, y, 3), tile(x, y, 2), tile(x, y, 1), tile(x, y, 0)])

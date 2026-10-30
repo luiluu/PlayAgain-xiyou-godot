@@ -527,7 +527,7 @@ static func onekey_members(g: int) -> Array:
 ## 出售筛选（一键出售 sellUnifiedQuality 与挂机自动卖出 OnekeyWPSell 共用）：背包（不含身上）里备注品质在 legacy（旧档 0～14／15 的列表）里、
 ## 没有锁定（is_locked，装备按名字带「[锁定]」）的装备，按背包顺序。没有品质备注的跳过。
 ## 两处原版只差旧档范围：一键出售只含 0～14（onekey_members），自动卖出含 SellWA 全部开着的档（sell_legacy，含 15）。
-## 吞器占用的供体：挂机卖出原版挡了（Adv:89）；一键出售原版照卖、loseItem 被挡（Adv:88）只给钱不扣件，onekey 时按 O-待定 决定
+## 吞器占用的供体：挂机卖出原版挡了（Adv:89）；一键出售原版照卖、loseItem 被挡（Adv:88）只给钱不扣件，onekey 时按 O-118 决定
 static func sellable_gear(s: XState, legacy: Array, onekey := false) -> Array:
 	var out := []
 	for e in s.gear:

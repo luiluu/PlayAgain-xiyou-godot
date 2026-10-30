@@ -6,7 +6,7 @@
 
 ## 现状：已完成
 
-- 吞器、献器：实现、探针 3 例、专项、同步、选测（37 场景全过）、反向验证都已完成，可合并（O-待定 换号、hostScope 变动生成接受单）。
+- 吞器、献器：实现、探针 3 例、专项、同步、选测（37 场景全过）、反向验证都已完成，可合并（O-118 换号、hostScope 变动生成接受单）。
 - 夺舍：方案已写完（文末「夺舍方案」），没写代码，等沙僧审、总装派。
 - 还没验证的：
   - 仓库存放供体（未拦，见「没移植／差异」）。
@@ -22,19 +22,19 @@
    - 借用效果（Adv:31-35 A.effectGhost，81-85 traitObjects 包装，`gear_effects`）：吞器者借供体的登记效果（角色 meta `xalien_ghosts`），献器把自己每件装备的登记效果（异化装备本身不借）交给绑定队友（`xalien_received`）；作为额外特性对象接在 `XActor.trait_objects` 末尾，护盾效果、自身物理／元素倍率备注同样读得到。
    - 结束（Adv:196，`restore_gear`）：`end_battle` 开头（同原版 endBattle 包装在原 endBattle 之前，胜／逃／败都走）原样放回装备栏、去掉借用效果、刷新；重新锁队前也先放回。空栏里若被放进别的装备（原版没有这种途径，直接覆盖），退回背包不丢件。
    - 换装（Adv:87，`XAlienation.can_change`）：吞器占用的供体不能穿；战斗中吞器、献器者与献器的队友不能换装。
-   - 背包（Adv:88-90）：供体不能在商店单件出售（`XItemMarks.can_sell`）、挂机卖出跳过（`sellable_gear`），`XItemMarks.sell` 不让供体失去（loseItem 包装）；一键出售见 O-待定。
+   - 背包（Adv:88-90）：供体不能在商店单件出售（`XItemMarks.can_sell`）、挂机卖出跳过（`sellable_gear`），`XItemMarks.sell` 不让供体失去（loseItem 包装）；一键出售见 O-118。
    - 锁队检查（Adv:62）：吞器供体失效（加了锁定、被装备、被别的吞器占用等，A.ready 不过）、献器绑定队友不在场／已倒下／已被前面的人绑定时，异化装备卸下放回背包并提示——沿用已有的 `eject_invalid`，本期补参照例。
 2. 接点：`actor.gd` `trait_objects` 末尾 `gear_effects`；`battle_logic.gd` `end_battle` 开头 `restore_gear`；`alienation.gd` `can_change`（供体、战斗中换装）与 `o_reserved_onekey`；`item_marks.gd` `can_sell`、`sellable_gear`（加可选参数 `onekey`，缺省假，原调用不变）、`sell`、`onekey_sell`。
 3. 参照探针 `mv_oracle/alien_affix_probe.cjs` 加 3 例（共 31 例）：`battle.swallow`（本体 1044，供体背包里的指虎 6，衣服栏穿皮甲 3；敌人打、自己普攻、逃跑结束）、`battle.swallow.invalid`（供体加【锁定】，锁队卸下放回背包）、`battle.offer`（绑定角色 8；敌人打两人、队友普攻、全灭结束）；这几例另记双方装备栏（本体编号）、八项能力值、命中／回避／暴击与背包里异化装备、供体件数；新步骤 `end`（endBattle）。独立装备的 baseItemId 可能指向另一件独立装备，探针一路追到数据库本体。
-4. 专项 `xiyou_alien_affix`：逐步对照三例；另 `gear.<swallow|offer>.<0|1|2>.*`（胜、逃、败结束后装备栏是同一批实例、背包不多不少、无重复实例、meta 清掉、存读档往返装备栏与背包实例号和异化配置不变），`gear.*` 守卫（战斗中供体不能穿、吞器者不能换装、结束后能换；供体不能商店卖、挂机卖出与一键出售跳过；O-待定 关时一键出售照原版给钱不扣件）。
+4. 专项 `xiyou_alien_affix`：逐步对照三例；另 `gear.<swallow|offer>.<0|1|2>.*`（胜、逃、败结束后装备栏是同一批实例、背包不多不少、无重复实例、meta 清掉、存读档往返装备栏与背包实例号和异化配置不变），`gear.*` 守卫（战斗中供体不能穿、吞器者不能换装、结束后能换；供体不能商店卖、挂机卖出与一键出售跳过；O-118 关时一键出售照原版给钱不扣件）。
 
 ## 原版依据
 
 - `js/codex/runtime/installAlienationAdvanced.js`（Adv）：10、17（词条说明）、28-31（A.reserved、bound、canOperate）、31-35（effectGhost）、43-44（ready：献器要有可借效果、吞器供体条件）、62（锁队检查卸下）、65（绑定队友）、68-71（空栏与借用）、77（refreshGear＋refresh）、81-85（traitObjects）、87（changeEquip／forceChangeEquip）、88（loseItem）、89（hangUp.doSell）、90（Window_ShopSell.isEnabled）、196（endBattle 还原）。
 
-## 优化（O-待定，已加登记表行）
+## 优化（O-118，已加登记表行）
 
-- O-待定：一键出售跳过吞器占用的供体（`XAlienation.o_reserved_onekey`）。原版一键出售（sellUnifiedQuality→doSell）没挡供体，照样给钱，loseItem 包装又不让它失去——每次都白拿一份卖价。回退：`o_reserved_onekey = false`（照原版给钱不扣件）。登记表行写的是 `O-待定`，合并时请换号。
+- O-118：一键出售跳过吞器占用的供体（`XAlienation.o_reserved_onekey`）。原版一键出售（sellUnifiedQuality→doSell）没挡供体，照样给钱，loseItem 包装又不让它失去——每次都白拿一份卖价。回退：`o_reserved_onekey = false`（照原版给钱不扣件）。登记表行写的是 `O-118`，合并时请换号。
 
 ## 没移植／差异（写明）
 
@@ -54,13 +54,13 @@
 
 - `battle_logic.gd`：`end_battle` 开头加 `restore_gear`。
 - `actor.gd`：`trait_objects` 末尾加 `gear_effects`（热路径：没有吞器、献器时两次 has_meta 就返回）。
-- 另：`alienation.gd`、`alien_battle.gd`、`item_marks.gd`（不在本车道独占表里，改动是出售守卫三处，请总装留意有没有别的车道同时在改）；探针 `alien_affix_probe.cjs`；测试 `tests/xiyou_alien_affix.gd`；`00_设计/优化登记.md` 加 O-待定 一行。
+- 另：`alienation.gd`、`alien_battle.gd`、`item_marks.gd`（不在本车道独占表里，改动是出售守卫三处，请总装留意有没有别的车道同时在改）；探针 `alien_affix_probe.cjs`；测试 `tests/xiyou_alien_affix.gd`；`00_设计/优化登记.md` 加 O-118 一行。
 
 ## 交接板
 
 - 下一步：④夺舍按本单「夺舍方案」等沙僧审、总装派；④吞器、献器已交。
 - 用户试玩说明：工坊配置好的吞器（借背包一把武器的登记效果，整场没有衣服栏）、献器（自己整场没有装备，登记效果给绑定队友）在战斗里生效，战斗结束（胜、逃、败）装备原样回来；被吞器占用的武器不能卖、不能穿。
-- 需要用户决定：O-待定（一键出售跳过吞器供体）去留，默认保留，可回退。
+- 需要用户决定：O-118（一键出售跳过吞器供体）去留，默认保留，可回退。
 
 ## 可优化（流程／工具／效率）
 

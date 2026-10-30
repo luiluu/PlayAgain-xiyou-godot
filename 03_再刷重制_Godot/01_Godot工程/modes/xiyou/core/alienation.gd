@@ -89,7 +89,7 @@ static func locked(i: Dictionary) -> bool:
 	return n.contains("[锁定]") or n.contains("【锁定】")
 
 
-## O-待定（优化登记）：原版一键出售（Scene_Shop.sellUnifiedQuality→doSell）不查吞器占用，供体照给钱，loseItem 包装（Adv:88）
+## O-118（优化登记）：原版一键出售（Scene_Shop.sellUnifiedQuality→doSell）不查吞器占用，供体照给钱，loseItem 包装（Adv:88）
 ## 又不让它失去——每卖一次白拿一次钱。true＝一键出售跳过占用的供体；false＝照原版（XItemMarks.sellable_gear）
 static var o_reserved_onekey := true
 
