@@ -37,4 +37,4 @@
 - 同步：`同步正式西游.py --accept-additions` 退出码 0，「新增用例，已接受」（5 分钟）。
 - 内容覆盖：基线外新问题 0、消失 0。
 - 专项：`xiyou_floor_reach079` 23/23 连跑 2 次。
-- 选测：`检查.sh --affected main`（基准 main）93 个场景全部通过（1298 秒，P3 之前），P3 改完后重跑：待补；必跑 `xiyou_rules` 难度 1 四段 4/4（424 秒）。没跑全量。
+- 选测：`检查.sh --affected main`（基准 main）93 个场景全部通过（1298 秒，P3 之前）；P3 只改 `_difficulty_profile` 的无主角兜底，`--affected` 因 xstate.gd 扩成 226 个场景、本机槽位被占排了近一小时只完成 7 个，我停掉了它（总装可对本分支走 `云端选测.py`）。改为本机跑 P3 的直接相关：`xiyou_difficulty*`（inherit 三段、notice、source，5 个）＋必跑 `xiyou_rules` 难度 1 四段，共 9 个场景全部通过（619 秒）。没跑全量。
