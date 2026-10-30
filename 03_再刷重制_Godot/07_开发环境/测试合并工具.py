@@ -1708,6 +1708,48 @@ for name in filter(None, files):
         finally:
             os.environ.pop('BAD')
 
+    def test_parse_check_flags_import_and_load_process_failures(self):
+        # 沙僧第十七期 P3：导入阶段退出码非零并打印 ERROR:、加载阶段正常打印完成标志，原来返回零问题
+        self.put(str(merge.PROJECT / 'project.godot'), 'config/version="dev.001"\n[autoload]\nGameApp="*res://core/app.gd"\n\n[display]\n')
+        godot = self.root / merge.ENV / 'godot'
+        godot.write_text('#!/bin/zsh\n[[ "$*" == *--import* ]] && { [[ -n $IMPORT_FAIL ]] && { print "ERROR: Failed to import res://x.png"; exit 1; }; exit 0; }\n'
+                         'print PARSE_CHECK_DONE\n[[ -n $LOAD_RC ]] && exit $LOAD_RC\nexit 0\n')
+        godot.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'godot fixture'); self.g('merge', 'main', cwd=self.wt)
+        for env, expect in [({'IMPORT_FAIL': '1'}, 'godot --import 报错'), ({'LOAD_RC': '3'}, '退出码 3')]:
+            with self.subTest(env=env):
+                os.environ.update(env)
+                try:
+                    self.assertEqual(self.call(), 1, self.last_output)
+                    self.assertIn(expect, self.last_output)
+                finally:
+                    for k in env:
+                        os.environ.pop(k)
+        self.assertEqual(self.call(), 0, self.last_output)  # 健康的假 godot 照常通过
+
+    def test_active_cwds_unknown_when_lsof_unavailable_keeps_worktree(self):
+        # 沙僧第十六期 P2：lsof 缺失／超时／失败时原来返回空、清理放行；现在无法确认就保守不删
+        wt = self.wt
+        for how in ['missing', 'timeout', 'failed']:
+            with self.subTest(how=how):
+                if how == 'missing':
+                    side = FileNotFoundError('lsof')
+                elif how == 'timeout':
+                    side = subprocess.TimeoutExpired('lsof', 60)
+                else:
+                    side = None
+                real = subprocess.run
+                def fake(cmd, *a, **k):
+                    if cmd[0] == 'lsof':
+                        if side is not None:
+                            raise side
+                        return subprocess.CompletedProcess(cmd, 1, '', 'boom')
+                    return real(cmd, *a, **k)
+                with mock.patch.object(merge.subprocess, 'run', fake):
+                    self.assertIsNone(merge.active_cwds(wt))
+                    reason = merge.lane_protected(self.root, {'worktree': str(wt), 'branch': 'claude/task', 'base': 'HEAD'})
+                self.assertIn('无法确认有无活动会话', reason)
+
     def test_abort_and_lane_redelivery_replans(self):
         self.put(str(merge.PROJECT / 'modes/测试.gd'), '# main version\n')
         self.g('add', '.'); self.g('commit', '-m', 'conflicting main update')

@@ -82,11 +82,16 @@ def untracked_evidence(root):
 
 
 def active_cwds(path):
-    """当前目录在 path 里的进程（lsof 列各进程 cwd），返回 [(pid, 命令)]；本进程除外。lsof 不可用时返回空。"""
+    """当前目录在 path 里的进程（lsof 列各进程 cwd），返回 [(pid, 命令)]；本进程除外。
+    lsof 不可用、超时、或失败且没有输出（正常机器上总有进程有 cwd）时返回 None＝无法确认，调用方要保守按「可能有活动会话」处理
+    （沙僧第十六期 P2：原来这些情形返回空，清理会放行）。"""
     try:
-        out = subprocess.run(['lsof', '-a', '-d', 'cwd', '-F', 'pcn'], capture_output=True, text=True, timeout=60).stdout
+        r = subprocess.run(['lsof', '-a', '-d', 'cwd', '-F', 'pcn'], capture_output=True, text=True, timeout=60)
     except (OSError, subprocess.TimeoutExpired):
-        return []
+        return None
+    out = r.stdout
+    if r.returncode != 0 and not out.strip():
+        return None
     base, found, pid, cmd = os.path.realpath(path), [], None, ''
     for line in out.splitlines():
         if line.startswith('p'):
@@ -104,6 +109,8 @@ def lane_protected(root, lane):
     """清理车道工作树前的保护：返回不删的原因，没有就返回空串。"""
     wt = Path(lane['worktree'])
     procs = active_cwds(wt)
+    if procs is None:
+        return '无法确认有无活动会话（lsof 不可用、超时或失败），保守不删'
     if procs:
         return '有活动会话（进程 %s 的当前目录在其中）' % '、'.join('%s %s' % p for p in procs[:3])
     meta = Path(git(wt, 'rev-parse', '--path-format=absolute', '--git-dir'))
@@ -217,6 +224,13 @@ def parse_check(root, base):
                 log = p.stdout + p.stderr
                 if args[0] == '--script' and 'PARSE_CHECK_DONE' not in log:
                     problems.append('解析检查脚本没跑完（退出码 %d）：%s' % (p.returncode, ' '.join(log.split()[-30:])))
+                elif p.returncode != 0:
+                    problems.append('godot %s 退出码 %d：%s' % (args[0], p.returncode, ' '.join(log.split()[-30:])))
+                if args[0] == '--import':
+                    # 导入报错（健康工程的导入日志没有 ERROR: 行；新建工作树.sh 同口径）：导入或缓存没准备好，后面的加载检查不可信
+                    bad = [l.strip() for l in log.splitlines() if l.startswith('ERROR:')]
+                    if bad:
+                        problems.append('godot --import 报错 %d 条：%s' % (len(bad), '；'.join(bad[:3])))
                 problems += ['%s：%s' % (f, e) for e, f in parse_errors(log, autoloads)]
         except subprocess.TimeoutExpired:
             problems.append('解析检查超过 %d 秒没结束（机器太忙可重跑；确认无误可加 --no-parse-check 跳过本次）' % PARSE_TIMEOUT)
