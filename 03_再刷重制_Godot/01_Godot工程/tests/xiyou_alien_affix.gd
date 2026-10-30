@@ -151,7 +151,7 @@ func _logic(s: XState, troop: int) -> XBattleLogic:
 
 
 func _unit(x) -> Dictionary:
-	var states := Array(x.state_ids)
+	var states: Array = x.state_ids.duplicate()  # Array(Array[int]) 可能与 state_ids 同一份，排序会改到战斗者
 	states.sort()
 	return {"hp": x.hp, "mp": x.mp, "shield": x.shield, "states": states, "buffs": Array(x.buffs).slice(2, 8)}
 

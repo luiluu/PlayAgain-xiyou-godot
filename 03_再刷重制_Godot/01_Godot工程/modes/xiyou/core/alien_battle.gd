@@ -659,12 +659,15 @@ static func set_heal_targets(skill: Dictionary, n: int) -> void:
 static func prayer_heal(logic, u, skill: Dictionary, t) -> float:
 	if o_prayer_counter and t is XEnemy:
 		return 0.0  # O-待定：反击打到敌人身上的逆祷治疗不生效
-	var original := XDB.rec("Skills", int(skill._alienOriginal))
-	var cost := float(logic.skill_cost(u, original).mp)
-	var healer := XDB.rec("Skills", 166 if cost >= 125.0 else 135 if cost >= 75.0 else 8)
-	var budget := absf(logic._damage_value(u, healer, t, false))
+	var budget := absf(logic._damage_value(u, prayer_healer(logic, u, skill), t, false))
 	var count := int(skill.get("_alienHealTargets", 1))
 	return -floorf(budget / maxf(1.0, float(count)))
+
+
+## 逆祷借用的治疗技能：按原技能面板 MP 费用，≥125 治疗术 166，≥75 次级治疗术 135，否则治愈 8
+static func prayer_healer(logic, u, skill: Dictionary) -> Dictionary:
+	var cost := float(logic.skill_cost(u, XDB.rec("Skills", int(skill._alienOriginal))).mp)
+	return XDB.rec("Skills", 166 if cost >= 125.0 else 135 if cost >= 75.0 else 8)
 
 
 ## O-待定（优化登记）：逆祷者的反击照原版也读投影（invokeCounterAttack 的 setAttack 走 item()），变成「治愈」打在出手的敌人身上，
@@ -712,13 +715,7 @@ static func pay_wish(u, skill: Dictionary) -> bool:
 	if skill.has("_alienWishPaid"):
 		return bool(skill._alienWishPaid)
 	var pairs := _pairs()
-	var okay := true
-	for e in skill.get("effects", []):
-		if int(e.code) == 31:
-			okay = okay and u.buffs[int(e.dataId)] > -2
-		else:
-			var st := XDB.rec("States", int(pairs.get(str(int(e.dataId)), -1)))
-			okay = okay and not st.is_empty() and (st.get("traits", []) as Array).all(func(tr): return int(tr.code) != XBattler.TRAIT_PARAM or u.param(int(tr.dataId)) > 1.0)
+	var okay := wish_affordable(u, skill)
 	skill._alienWishPaid = okay
 	if not okay:
 		return false
@@ -741,6 +738,20 @@ static func pay_wish(u, skill: Dictionary) -> bool:
 			u.state_turns[id] = int(XDB.rec("States", pid).get("minTurns", 0))
 		u.param_mark_dirty()
 	u.param_refresh()
+	return true
+
+
+## pay_wish 的「付得起」判断（不付）：智能 AI 估值用（O-待定 o_smart_ai_projection）
+static func wish_affordable(u, skill: Dictionary) -> bool:
+	var pairs := _pairs()
+	for e in skill.get("effects", []):
+		if int(e.code) == 31:
+			if u.buffs[int(e.dataId)] <= -2:
+				return false
+		else:
+			var st := XDB.rec("States", int(pairs.get(str(int(e.dataId)), -1)))
+			if st.is_empty() or not (st.get("traits", []) as Array).all(func(tr): return int(tr.code) != XBattler.TRAIT_PARAM or u.param(int(tr.dataId)) > 1.0):
+				return false
 	return true
 
 
