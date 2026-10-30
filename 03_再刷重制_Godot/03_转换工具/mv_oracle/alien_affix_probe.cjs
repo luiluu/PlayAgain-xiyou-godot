@@ -54,9 +54,9 @@ function battle(spec) {
   a.changeLevel(spec.level || 99, false); b.changeLevel(30, false);
   if (spec.learn) spec.learn.forEach(id => a.learnSkill(id));  // 祸祝等要先学会模板技能才穿得上（canEquip 看 A.ready）
   if (spec.teach) spec.teach.forEach(id => b.learnSkill(id));  // 无面借入的技能要来源队友（角色 8）已学会
-  party([1, 8]);
+  party(spec.extra ? [1, 8, spec.extra.actor] : [1, 8]);
   // 直接放进武器栏（穿戴限制属工坊侧）；none 为不带标记的同一本体
-  const kind = spec.armor ? 'a' : 'w', base = spec.armor || 1044;
+  const kind = spec.armor ? 'a' : 'w', base = spec.armor || spec.weapon || 1044;
   const item = spec.affix ? A.create(kind, base, 'boss', spec.affix) : w.$dataWeapons[1044];
   // 吞器供体：背包里的普通独立武器；config.donorId 写 'd序号'，换成供体的编号。lockDonor 给第一件供体名字加【锁定】
   const donors = (spec.donors || []).map(id => independent('w', id));
@@ -65,8 +65,12 @@ function battle(spec) {
     const c = A.mark(item).config; if (typeof c.donorId === 'string') c.donorId = donors[Number(c.donorId.slice(1))].id; }
   // 衣服栏（装备类型 4）穿一件普通独立防具（从背包拿出来）
   if (spec.body) { const body = independent('a', spec.body); w.$gameParty.loseItem(body, 1); a._equips[a.equipSlots().indexOf(4)].setObject(body); }
-  if (spec.armor) { a._equips[0].setObject(w.$dataWeapons[1044]); a._equips[a.equipSlots().indexOf(item.etypeId)].setObject(item); }
+  if (spec.armor) { a._equips[0].setObject(w.$dataWeapons[spec.weapon || 1044]); a._equips[a.equipSlots().indexOf(item.etypeId)].setObject(item); }
   else a._equips[0].setObject(item);
+  // 第三名队员（extra：角色、词条、配置）也穿一件本体 1044 的异化武器（锁队检查「重复绑定」用）
+  let extra = null;
+  if (spec.extra) { extra = A.create('w', 1044, 'boss', spec.extra.affix); A.mark(extra).config = JSON.parse(JSON.stringify(spec.extra.config));
+    w.$gameActors.actor(spec.extra.actor)._equips[0].setObject(extra); }
   w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
   const bm = w.BattleManager; bm.setup(spec.troop || 2, false, false);
   bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
@@ -76,18 +80,21 @@ function battle(spec) {
   // 开战前身上的状态与增益（饕餮锁队时吞掉）：回合直接写定，不经随机
   if (spec.pre) { (spec.pre.states || []).forEach(([id, turns]) => { a.addState(id); a._stateTurns[id] = turns; });
     (spec.pre.buffs || []).forEach(([pid, n, turns]) => { a._buffs[pid] = n; a._buffTurns[pid] = turns; }); a.refresh(); }
+  // 开战前已倒下的队员（dead：'b'），锁队检查「已倒下」用
+  (spec.dead || []).forEach(k => { const x = k === 'b' ? b : a; x.addState(x.deathStateId()); });
   A.lockParty();
   w.$gameParty._inBattle = true;
   w.CodexYunshang._acted = [];
-  return {bm, a, b, enemies, item, donors};
+  return {bm, a, b, enemies, item, donors, extra};
 }
-function act(bm, user, skillId, targetIndex, choice) {
+function act(bm, user, skillId, targetIndex, choice, repeats) {
   const action = new w.Game_Action(user);
   action.setSkill(skillId);
   action.setTarget(targetIndex);
   if (choice) action._alienChoice = choice;  // 百相切换窗口选的仿形（Scene_Battle onSkillOk 包装写进输入中的行动）
   const item = action.item(), view = {name: item.name, scope: item.scope, effects: item.effects.map(e => [e.code, e.dataId, e.value1]),
     usable: user.isActor() ? user.canUse(w.$dataSkills[skillId]) : true};
+  if (repeats) view.repeats = action.numRepeats();  // 逆祷投影后不算普通攻击（isAttack 比的是 item() 对象），攻击次数追加不加
   terminated = 0;
   user._actions = [action]; bm._subject = user; bm._action = null;
   bm.startAction();
@@ -134,6 +141,9 @@ function battleCase(name, spec, steps) {
     const ctx = battle(spec), rows = [];
     ctx.gear = !!spec.gear;
     const locked = [ctx.a, ctx.b].map(x => x._alienBattle ? {affix: x._alienBattle.affix} : null);
+    // 锁队检查卸下的：异化武器在背包几件、还穿着没有；第三名队员的同样记下
+    const eject = spec.dead || spec.extra ? {item: w.$gameParty.numItems(ctx.item), worn: ctx.a.equips().indexOf(ctx.item) >= 0,
+      extra: ctx.extra ? w.$gameParty.numItems(ctx.extra) : null, extraLocked: spec.extra ? !!w.$gameActors.actor(spec.extra.actor)._alienBattle : null} : null;
     const atk = steps === STEPS, start = reading(ctx, atk);
     const who = k => k === 'b' ? ctx.b : k && k[0] === 'e' ? ctx.enemies[Number(k.slice(1))] : ctx.a;
     for (const st of steps) {
@@ -151,7 +161,12 @@ function battleCase(name, spec, steps) {
         w.$gameTroop._turnCount = st.tick;
         w.$gameParty.battleMembers().concat(w.$gameTroop.members()).forEach(t => A.tickCorrosion(t, st.tick));  // endTurn 包装里的腐蚀结算
       } else if (st.event) {
-        const x = who(st.event.who); w.Game_Interpreter.prototype.changeHp.call(new w.Game_Interpreter(), x, st.event.value, !!st.event.death);  // 事件「增减生命」
+        const x = who(st.event.who);
+        if (st.event.mp) { ctx.bm._subject = st.event.src ? who(st.event.src) : null; x.gainMp(st.event.value); }  // 事件「增减 MP」（command312：actor.gainMp）；src 为 BattleManager._subject
+        else w.Game_Interpreter.prototype.changeHp.call(new w.Game_Interpreter(), x, st.event.value, !!st.event.death);  // 事件「增减生命」
+      } else if (st.sethp) {
+        // 行动外的 setHp（插件、自定义效果直接设生命）：来源取 BattleManager._subject（src，没有就是自己）
+        const x = who(st.sethp.who); ctx.bm._subject = st.sethp.src ? who(st.sethp.src) : null; x.setHp(Math.floor(x.mhp * st.sethp.value));
       } else if (st.revive) {
         who(st.revive).removeState(who(st.revive).deathStateId());
       } else if (st.end != null) {
@@ -166,12 +181,12 @@ function battleCase(name, spec, steps) {
       } else {
         const user = who(st.user);
         user.setTp(100); user._mp = user.mmp;
-        const view = act(ctx.bm, user, st.def ? synth(st.def) : st.skill, st.target || 0, st.choice);
+        const view = act(ctx.bm, user, st.def ? synth(st.def) : st.skill, st.target || 0, st.choice, st.repeats);
         if (st.view) { rows.push(Object.assign({step: st, view}, reading(ctx, atk))); continue; }
       }
       rows.push(Object.assign({step: st}, reading(ctx, atk)));
     }
-    return {locked, start, rows};
+    return eject ? {locked, start, rows, eject} : {locked, start, rows};
   }));
 }
 battleCase('none', {});
@@ -290,4 +305,36 @@ battleCase('swallow.invalid', {affix: 'swallow', gear: true, donors: [6], body: 
 // 献器（绑定角色 8）：自己的装备栏整场全空（属性、效果、套装都没了），每件装备的登记效果（异化武器本身不借）交给角色 8；全灭结束后还原
 battleCase('offer', {affix: 'offer', gear: true, body: 3, config: {actorId: 1, partnerId: 8}}, [
   {user: 'e0', skill: 1}, {user: 'e0', skill: 1, target: 1}, {user: 'b', skill: 1}, {end: 2}]);
-process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）、MP 费用（缄默、饕餮）、借技能（百相、无相）、蚀术、第④批装备类（吞器、献器）', config, cases}) ? 0 : 1);
+// 补漏①：绝缘的 setHp（行动外直接设生命，改走 gainHp(差值)）：外来抬高拒收、外来压低照扣、自己设照常；舍身的外来抬高转给队友
+battleCase('insulation.sethp', {affix: 'insulation'}, [
+  {set: {aHp: 0.5}}, {sethp: {who: 'a', value: 0.8, src: 'b'}}, {sethp: {who: 'a', value: 0.3, src: 'b'}}, {sethp: {who: 'a', value: 0.6, src: 'a'}},
+  {sethp: {who: 'a', value: 0.9}}]);
+battleCase('sacrifice.sethp', {affix: 'sacrifice', config: {actorId: 1, partnerId: 8}}, [
+  {set: {aHp: 0.5, bHp: 0.5}}, {sethp: {who: 'a', value: 0.9, src: 'b'}}, {sethp: {who: 'a', value: 0.2, src: 'b'}}]);
+// 补漏②：阵亡（die：清状态、清增减益）时，疫囊者身上的 pestStates（此刻还算活着）、囚厄接收的状态与减益、
+// 绝缘者被外来行动打倒时身上的登记增益与增益都保留；之后复活（去阵亡）仍在。疫囊的减益不保留（Affixes 没包 clearBuffs）
+const KILL = {user: 'e0', def: S(1, 0, [11, 0, -1])};
+battleCase('pest.death', {affix: 'pest', armor: 1013}, [
+  {user: 'e0', def: S(1, 1, [21, 17, 1])}, {user: 'e0', def: S(1, 1, [32, 2, 3])}, KILL, {revive: 'a'}]);
+battleCase('jail.death', {affix: 'jail'}, [
+  {user: 'e0', target: 1, def: S(1, 1, [21, 6, 1])}, {user: 'e0', target: 1, def: S(1, 1, [32, 3, 3])}, KILL, {revive: 'a'}]);
+battleCase('insulation.death', {affix: 'insulation'}, [
+  {user: 'a', def: S(7, 0, [21, 116, 1])}, {user: 'a', def: S(7, 0, [31, 2, 3])}, {user: 'a', def: S(7, 0, [21, 17, 1])}, KILL]);
+// 补漏③：锁队检查（Adv:62）——绑定的队友（角色 8）开战前已倒下；两人（角色 1、2）都舍身绑定角色 8，后面的人被卸下
+battleCase('lifelink.dead', {affix: 'lifelink', dead: ['b'], config: {actorId: 1, partnerId: 8}}, [{user: 'e0', skill: 1}]);
+battleCase('sacrifice.twice', {affix: 'sacrifice', config: {actorId: 1, partnerId: 8}, extra: {actor: 2, affix: 'sacrifice', config: {actorId: 2, partnerId: 8}}},
+  [{set: {aHp: 0.5, bHp: 0.5}}, {user: 'b', skill: 8}]);
+// 补漏④：逆祷者的反击（反击率 100% 的避苍 327；敌人用物理的合成技能，普攻 1 不是物理、不会被反击）也读投影；石中剑 1044 把攻击换成
+// 别的技能（不在 templates.attack），这例异化武器的本体换成同为剑类的未知的刀片 1521（没有换攻击）：反击变成治愈打在敌人身上；攻击次数 +1（勇士 41）时逆祷普攻（同样用 1521）不加次数；
+// 逆祷者挂给敌人的毒鸡汤（460，自定义再生效果扣生命，来源是逆祷者）在回合末的行动帧里被阻断
+battleCase('prayer.counter', {affix: 'prayer', weapon: 1521}, [
+  {user: 'a', def: S(11, 0, [21, 327, 1])}, {user: 'b', skill: 1}, {user: 'e0', def: S(1, 1), target: 0}]);
+battleCase('prayer.repeat', {affix: 'prayer', weapon: 1521}, [
+  {user: 'a', def: S(11, 0, [21, 41, 1])}, {set: {bHp: 0.5}}, {user: 'a', skill: 1, target: 1, view: true, repeats: true}]);
+battleCase('prayer.dot', {affix: 'prayer'}, [{user: 'a', def: S(1, 0, [21, 460, 1])}, {regen: 'e0'}, {regen: 'e0'}]);
+// 补漏⑥：事件「增减 MP」（command312：actor.gainMp）——空壳回蓝变护盾、扣蓝照扣；饕餮一律无效；绝缘拒收外来（src 为 _subject）回蓝，自己照收
+battleCase('hollow.mp', {affix: 'hollow'}, [{set: {aMp: 0.5}}, {event: {who: 'a', value: 300, mp: true}}, {event: {who: 'a', value: -100, mp: true}}]);
+battleCase('glutton.mp', {affix: 'glutton'}, [{event: {who: 'a', value: 300, mp: true}}, {event: {who: 'a', value: -100, mp: true}}]);
+battleCase('insulation.mp', {affix: 'insulation'}, [{set: {aMp: 0.5}}, {event: {who: 'a', value: 300, mp: true, src: 'b'}},
+  {event: {who: 'a', value: 300, mp: true}}, {event: {who: 'a', value: -100, mp: true, src: 'b'}}]);
+process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）、MP 费用（缄默、饕餮）、借技能（百相、无相）、蚀术、第④批装备类（吞器、献器）、补漏（setHp、阵亡保留、锁队检查已倒下与重复绑定、逆祷反击与连击与持续伤害帧、事件增减 MP）', config, cases}) ? 0 : 1);

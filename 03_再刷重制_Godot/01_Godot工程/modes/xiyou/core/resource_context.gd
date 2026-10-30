@@ -121,6 +121,8 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		return {}  # 异化空壳、嫁祸不吃治疗，嫁祸扣血由保护者付，连命结算到池（hpChange）
 	if resource == "mp" and XAlienBattle.route_hollow_mp(b, amount):
 		return {}  # 异化空壳回蓝变护盾（gainMp 包装）
+	if resource == "hp" and amount < 0.0 and XAlienBattle.frame_blocks_hp(b):
+		amount = 0.0  # 异化 gainHp 包装（Runtime wrapHp）：逆祷者的帧里对敌人扣血归零
 	var before := snapshot(b)
 	var requested := amount
 	if amount < 0.0:
@@ -165,6 +167,8 @@ func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
 		return {}
 	if resource == "hp" and XAlienBattle.routes_set_hp(b):
 		return gain(b, "hp", value - b.hp)  # 异化 setHp 包装：生命池、嫁祸、空壳、舍身、绝缘按 gainHp(差值) 走
+	if resource == "hp" and value < b.hp and XAlienBattle.frame_blocks_hp(b):
+		value = b.hp  # 异化 setHp 包装（Runtime）：逆祷者的帧里对敌人压低生命无效
 	var before := snapshot(b)
 	var old: float = b.get(resource)
 	_set_resource(b, resource, value)

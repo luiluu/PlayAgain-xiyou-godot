@@ -1350,7 +1350,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure else 0.0
 	if _float("counter") < cnt:
 		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反击是独立数值来源，不是原行动
-		var r := apply(t, t.attack_skill(), u)  # invokeCounterAttack：反击者 setAttack
+		var r := apply(t, XAlienBattle.project(t, t.attack_skill()), u)  # invokeCounterAttack：反击者 setAttack（异化逆祷：反击也读投影）
 		XRaceBattle.derived_end(self, race_prev)
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
