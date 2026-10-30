@@ -512,6 +512,8 @@ func _change_resource(a: XActor, code: int, value: float, allow_death: bool) -> 
 		326:
 			a.tp = clampf(a.tp + value, 0.0, a.max_tp())
 	a.refresh_resources(rule_random())
+	if code == 311:
+		XAlienBattle.after_outside_hp(a)  # gainHp 包装末尾 A.syncRelations：嫁祸保护者的生命与倒下同步给嫁祸者
 	if value != 0.0:
 		a.param_mark_dirty()
 

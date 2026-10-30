@@ -404,6 +404,7 @@ static func _lose_hp(logic, t, n: float, logs: Array) -> void:
 		var v: float = t.absorb_shield(n)
 		t.hp = maxf(0.0, t.hp - v)
 		t.refresh_resources()
+		after_outside_hp(t)
 	logs.append({"type": "regen", "target": t, "hp": before - t.hp, "views": logic.views([t])})
 	if t.is_dead():
 		logs.append({"type": "collapse", "target": t, "views": logic.views([t])})
@@ -1101,7 +1102,7 @@ static func spread_pest(logic) -> void:
 			for p in range(2, 8):
 				if a.buffs[p] >= 0:
 					continue
-				logic.sequence_buff(e, p, true, false, a.buff_turns[p])
+				logic.add_debuff_effect(a, e, p, a.buff_turns[p])  # action.itemEffectAddDebuff：照减益有效度与幸运差掷骰
 				if e.buffs[p] < 0:
 					e.buffs[p] = mini(e.buffs[p], a.buffs[p])
 					e.buff_turns[p] = maxi(e.buff_turns[p], a.buff_turns[p])
@@ -1251,7 +1252,7 @@ static func sync_relations(logic = null) -> void:
 		var p = a.get_meta("xalien_protector")
 		a.shield = 0.0
 		a.hp = maxf(1.0, floorf(a.mhp * p.hp / maxf(1.0, p.mhp))) if p.hp > 0.0 else 0.0
-		if not _live(p) and not a.is_dead():
+		if not _live(p) and not a.state_ids.has(1):  # 原版 isDead 只看阵亡状态；重制 is_dead 另把生命 0 算倒下，这里刚写成 0
 			_death_sync += 1
 			a.add_state(1)
 			_death_sync -= 1
@@ -1297,6 +1298,13 @@ static func route_life_gain(ctx, b, amount: float) -> bool:
 ## 一般 gainHp 之后（hpChange 末尾 finally）：同步生命池与嫁祸者
 static func after_gain(b, resource: String) -> void:
 	if resource == "hp" and _hp_resolving == 0:
+		sync_relations()
+
+
+## 行动外直接改生命（没走 gain_hp_outside）之后：gainHp 包装末尾的 A.syncRelations（Adv:101）。
+## 只有嫁祸保护者需要——嫁祸者的生命按保护者的比例、保护者倒下嫁祸者跟着倒下（镜骸反噬、腐蚀、事件「增减生命」）
+static func after_outside_hp(b) -> void:
+	if _hp_resolving == 0 and status_battle() and b is XActor and active_logic().actors.any(func(a): return a.has_meta("xalien_protector") and is_same(a.get_meta("xalien_protector"), b)):
 		sync_relations()
 
 

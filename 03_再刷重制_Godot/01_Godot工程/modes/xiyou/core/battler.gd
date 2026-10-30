@@ -5,6 +5,7 @@ extends RefCounted
 ## 公式里用到的 a.atk、b.def 等由下面的属性提供，Expression 通过 get() 读取。
 
 const TRAIT_ELEMENT_RATE := 11
+const TRAIT_DEBUFF_RATE := 12
 const TRAIT_STATE_RATE := 13
 const TRAIT_STATE_RESIST := 14
 const TRAIT_PARAM := 21
@@ -438,6 +439,11 @@ func all_traits() -> Array:
 
 func traits_with_id(code: int, id: int) -> Array:
 	return all_traits().filter(func(t): return int(t.code) == code and int(t.dataId) == id)
+
+## Game_BattlerBase.debuffRate：特性 12（减益有效度）
+func debuff_rate(pid: int) -> float:
+	return traits_pi(TRAIT_DEBUFF_RATE, pid)
+
 
 ## MV traitsPi 经 CP_StateFloor（State Added Type: true，正式版启用）改为加算：1＋Σ(值−1)，小于 0 取 0。
 ## 能力值比率、特殊能力、元素有效度、状态有效度都走这里（正式 traitsPiToSum）。
