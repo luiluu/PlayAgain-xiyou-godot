@@ -15,9 +15,14 @@ const TS := MVTiles.TILE_SIZE
 var results: Array = []
 var s: XState
 var map: XMapScene
+## --out=<目录>：在上艇、飞行、降落三处截图（对照原版，见交付单 claude_wukong-airship3；无头运行时不截）
+var out_dir := ""
 
 
 func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out_dir = arg.substr(6)
 	if has_meta("runner"):
 		_run.call_deferred()
 		return
@@ -73,6 +78,13 @@ func _airship() -> Dictionary:
 	return XState.current.vehicle("airship")
 
 
+func _shot(name: String) -> void:
+	if out_dir == "" or DisplayServer.get_name() == "headless":
+		return
+	RenderingServer.force_draw(false)
+	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
+
+
 func _press() -> void:
 	await _until(func(): return not map.busy)
 	await map._on_action()
@@ -95,7 +107,7 @@ func _view(tag: String) -> bool:
 
 
 ## 逐帧采样直到 cond：每帧高度变化不超过 step 的方向、每帧画面一致；返回采样到的高度序列
-func _sample(tag: String, step: int, cond: Callable) -> Array:
+func _sample(tag: String, step: int, cond: Callable, shot_at := -1, shot_name := "") -> Array:
 	var seen: Array = [int(_airship().altitude)]
 	var ok := true
 	for i in WAIT:
@@ -105,6 +117,8 @@ func _sample(tag: String, step: int, cond: Callable) -> Array:
 			ok = false
 		if alt != int(seen[-1]):
 			seen.append(alt)
+			if alt == shot_at:
+				_shot(shot_name)
 		if not _view(tag + "_frame") :
 			ok = false
 			break
@@ -119,7 +133,7 @@ func _sample(tag: String, step: int, cond: Callable) -> Array:
 func _get_on(tag: String) -> void:
 	await _press()
 	_check(tag + "_getting_on", s.vehicle_type == "airship" and not map.vehicle_can_move(), _airship())
-	var seen := await _sample(tag + "_rise", 1, func(): return map.vehicle_can_move())
+	var seen := await _sample(tag + "_rise", 1, func(): return map.vehicle_can_move(), 24, tag + "_rise_24")
 	_check(tag + "_rise_0_to_48", seen.front() == 0 and seen.back() == 48 and seen.size() == 49, seen)
 	_check(tag + "_flying", map.vehicle_can_move() and map.airship.step_anime and map.airship.priority_type == 2, _airship())
 	await _view(tag + "_high")
@@ -174,6 +188,7 @@ func _run() -> void:
 	map.player.touch_target = Vector2i(65, 52)
 	await _until(func(): return map.player.grid == Vector2i(65, 52) and not map.player.is_moving())
 	await _view("flown")
+	_shot("flying_65_52")
 	# 触控：点前方一格是飞过去，不降落；点脚下才降落
 	map.player.set_direction(8)
 	map.player.click_cell(Vector2i(65, 51))
@@ -196,7 +211,7 @@ func _run() -> void:
 	await _until(func(): return map.player.grid == Vector2i(65, 56) and not map.player.is_moving())
 	map.player.click_cell(map.player.grid)
 	_check("click_self_lands", map._vehicle_getting_off)
-	var seen := await _sample("land", -1, func(): return s.vehicle_type == "walk")
+	var seen := await _sample("land", -1, func(): return s.vehicle_type == "walk", 24, "land_24")
 	_check("land_to_0", seen.front() >= 47 and seen.back() == 0 and seen.size() == seen.front() + 1, seen)
 	await _view("landed")
 	# 降落中存读档：存在一半，读回接着降
