@@ -289,7 +289,7 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.godot = self.tmp / 'godot'
         self.godot.write_text('#!/bin/zsh\nzmodload zsh/datetime\nn=${@[-1]:t}\n[[ $n == --version ]] && { echo 4.x; exit 0; }\n'
                               'print -r -- $n >> %(t)s/runs\n'
-                              'if [[ -n ${SPIN:-} ]]; then t=$EPOCHREALTIME; while (( EPOCHREALTIME - t < 0.3 )); do :; done; fi\n'
+                              'if [[ -n ${SPIN:-} ]]; then i=0; while (( i++ < 400000 )); do :; done; fi\n'
                               'if [[ -n ${BUSY:-} ]]; then mkdir %(t)s/busy 2>/dev/null || touch %(t)s/overlap; sleep 0.3; rmdir %(t)s/busy 2>/dev/null; fi\n'
                               'if [[ $n == b.tscn && -n ${FLAKY_B:-} && ! -e %(t)s/seen ]]; then touch %(t)s/seen; echo \'%(bad)s\'; exit 1; fi\n'
                               'if [[ $n == c.tscn && -n ${FAIL_C:-} ]]; then echo \'%(bad)s\'; exit 1; fi\necho \'%(ok)s\'\n'
@@ -388,7 +388,8 @@ class ParallelTestRunnerTests(unittest.TestCase):
         for r in rows.values():
             self.assertEqual(r['userCpuSeconds'], r['attempts'][0]['userCpuSeconds'])
             for t in r['attempts']:
-                self.assertGreater(t['userCpuSeconds'], 0.1, r)  # 假 Godot 空转约 0.3 秒 CPU
+                # 假 Godot 固定空转 40 万次（约 0.35 秒 CPU）；原按墙钟转 0.3 秒，机器满时分不到 0.1 秒 CPU 而偶发（哪吒_10）
+                self.assertGreater(t['userCpuSeconds'], 0.1, r)
                 self.assertGreaterEqual(t['sysCpuSeconds'], 0)
         self.assertEqual(len(rows['b.tscn']['attempts']), 2)
 
