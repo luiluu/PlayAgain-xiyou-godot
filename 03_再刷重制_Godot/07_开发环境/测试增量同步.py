@@ -308,8 +308,12 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.assertEqual(len(audit), 1)
         self.assertEqual(json.loads(audit[0])['accepted'][0]['newDigest'], candidate['newDigest'])
         self.assertEqual(self.run_sync()[0], 0)
-        # 同一接受单不能放行之后的变化，也不能在没有变化时空用
-        self.assertEqual(self.run_sync('--accept-changes', str(spec))[0], 2)
+        # 已接受后再带同一接受单（车道基线旧、main 早已接受过，飞艇甲二 10-30）：现值已是它要的值，只提示不拒收
+        result, report = self.run_sync('--accept-changes', str(spec))
+        self.assertEqual(result, 0, report['result'])
+        self.assertEqual(len(report['acceptChanges']['alreadyInBaseline']), 1)
+        self.assertFalse(report['acceptChanges']['unused'])
+        # 同一接受单不能放行之后的变化（现值不等于它的 newDigest）
         self.set_payload({'cases': [{'id': 'stable', 'value': 3}]})
         self.assertEqual(self.run_sync('--accept-changes', str(spec))[0], 2)
         self.assertEqual(self.run_sync('--accept-additions')[0], 2)

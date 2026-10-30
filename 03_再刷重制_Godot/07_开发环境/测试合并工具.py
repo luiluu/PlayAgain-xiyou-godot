@@ -154,6 +154,26 @@ class AdditionTests(unittest.TestCase):
                     dict(new, cases=[{'id': 'a', 'v': 2}]), dict(new, schemaVersion=2)]:
             self.assertTrue(additions.compare_file('alien_affix.json', old, bad)[1], bad)
 
+    def test_acceptance_already_in_baseline_is_only_noted(self):
+        old = {'schemaVersion': 1, 'cases': [{'id': 'a', 'v': 1}, {'id': 'b', 'v': 1}]}
+        new = {'schemaVersion': 1, 'cases': [{'id': 'a', 'v': 2}, {'id': 'b', 'v': 1}]}
+        check = {'problems': {}, 'changes': {}}
+        entry = {'file': 'events.json', 'collection': 'cases', 'key': '[["id","a"]]', 'fields': ['v'],
+                 'oldDigest': additions.digest(old['cases'][0]), 'newDigest': additions.digest(new['cases'][0]), 'reason': '口径修正'}
+        key = next(iter(additions.groups(new['cases'], ('id',))))
+        entry['key'] = [k for k in additions.groups(new['cases'], ('id',)) if '"a"' in k][0]
+        self.assertEqual(additions.current_digest('events.json', new, 'cases', entry['key']), entry['newDigest'])
+        cur = lambda e: additions.current_digest('events.json', new, e['collection'], e['key'])
+        r = additions.apply_acceptances(check, [entry], cur)
+        self.assertEqual((len(r['alreadyInBaseline']), r['unused']), (1, []))
+        # 现值对不上（真实不同）、不给 current：仍是 unused
+        self.assertEqual(len(additions.apply_acceptances(check, [dict(entry, newDigest='0' * 16)], cur)['unused']), 1)
+        self.assertEqual(len(additions.apply_acceptances(check, [entry])['unused']), 1)
+        # 顶层与角色键也能取到现值
+        self.assertEqual(additions.current_digest('x.json', {'note': 3}, additions.TOP_LEVEL, 'note'), additions.digest(3))
+        self.assertEqual(additions.current_digest('slice_d1.json', {'actors': {'1': {'hp': 2}}}, 'actors', '1'),
+                         additions.digest({'hp': 2}))
+
     def test_source_guard(self):
         old = {'releaseVersion': 'v0.28', 'runtimeInputs': {'x': '1'}, 'inputs': {'a': '1'}}
         new = dict(old, inputs={'a': '1', 'b': '2'})

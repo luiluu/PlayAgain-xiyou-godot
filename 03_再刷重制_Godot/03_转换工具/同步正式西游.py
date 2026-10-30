@@ -48,7 +48,7 @@ ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE))
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT  # noqa: E402
 from incremental_sync import SHARDS, ProbeCache
-from oracle_additions import (compare_directories, payload, source_preserved, has_error, retained_errors_unchanged,  # noqa: E402
+from oracle_additions import (compare_directories, current_digest, payload, source_preserved, has_error, retained_errors_unchanged,  # noqa: E402
                               load_acceptances, apply_acceptances, change_candidates, KEYS, groups)
 
 ORACLE_DIR = HERE / 'mv_oracle'
@@ -841,10 +841,19 @@ def _main() -> int:
     report['verifyOk'] = v.returncode == 0
     check = report['additionCheck']
     report['changeCandidates'] = change_candidates(check)
-    resolved = apply_acceptances(check, acceptances)
+    def current(entry):
+        f = gen / 'oracle' / entry['file']
+        try:
+            return current_digest(entry['file'], json.loads(f.read_text()), entry['collection'], entry['key'])
+        except (OSError, ValueError):
+            return None
+    resolved = apply_acceptances(check, acceptances, current)
     if acceptances:
         report['acceptChanges'] = {'sources': acceptance_sources, 'accepted': resolved['accepted'], 'unused': resolved['unused'],
-                                   'remainingProblems': resolved['problems']}
+                                   'alreadyInBaseline': resolved['alreadyInBaseline'], 'remainingProblems': resolved['problems']}
+        for row in resolved['alreadyInBaseline']:
+            print('提示：接受单条目 %s %s %s 本轮没有对应变化，现值已是它要接受的值（基线早已接受），跳过不拒收'
+                  % (row['file'], row['collection'], row['key'][:80]), flush=True)
     additions = bool(check['additions'])
     # 新增与显式接受都处理完后不能剩任何问题；接受单每条都要用上；新增仍须 --accept-additions
     clean = (not resolved['problems'] and not resolved['unused'] and (additions or bool(resolved['accepted'])))
