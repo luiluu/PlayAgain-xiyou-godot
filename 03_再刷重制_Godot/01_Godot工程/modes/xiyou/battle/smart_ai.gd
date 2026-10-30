@@ -18,7 +18,7 @@ extends RefCounted
 
 const MASTERY_NOTE := "<Custom Damage Mastery Formula:\\s*value\\s*\\*\\s*\\(1\\s*\\+\\s*level\\s*\\*\\s*([\\d.]+)\\)\\s*>"
 static var _boss_ids := {}
-## O-待定（优化登记）：异化投影一律读投影估值——目标方向、范围、伤害／治疗／增益全按投影后的技能（逆祷的攻击按治疗友方，
+## O-121（优化登记）：异化投影一律读投影估值——目标方向、范围、伤害／治疗／增益全按投影后的技能（逆祷的攻击按治疗友方，
 ## 治疗量照 XAlienBattle.prayer_heal 借治疗技能平分；祸祝按对敌减益与诅咒；恶愿按除自己外的友方，付不起代价记 0 分）。
 ## 原版 Codex_SmartBattleAI 目标方向与范围读投影（action.item()）、估值读原技能（candidate.item），逆祷的攻击近乎 0 分。
 ## true＝读投影；false＝回到此前的重制做法（全程读原技能，执行时才投影），两者都不同于原版

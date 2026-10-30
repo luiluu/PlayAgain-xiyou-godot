@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.222",
-  "sequence": 222,
-  "next": "dev.223",
-  "nextSequence": 223,
+  "current": "dev.223",
+  "sequence": 223,
+  "next": "dev.224",
+  "nextSequence": 224,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "wukong-c75a",
+  "currentChange": "bajie-alien-ai",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

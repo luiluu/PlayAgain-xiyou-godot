@@ -273,17 +273,38 @@ def lane_drift(gen: Path, main_gen: Path) -> list:
                   if (main_gen / 'oracle' / p.name).is_file() and file_digest(p) != file_digest(main_gen / 'oracle' / p.name))
 
 
+def main_baseline_files(gen: Path, main_gen: Path, drift: list) -> list:
+    """drift 里能放心改用主工作区版本当基线的参照：补齐记批次时（参照批次.py）记下了主工作区该文件的摘要，而主工作区现在还是那一版
+    （main 没前进），本树的版本却不同＝补齐之后被改过（手动拷的探针输出）。main 已前进的拿不准（车道缺 main 的新用例会被误判成删除），不动。"""
+    try:
+        recorded = json.loads((gen / 'oracle_batch.json').read_text()).get('mainOracle')
+    except (OSError, ValueError):
+        return []
+    if not isinstance(recorded, dict):
+        return []
+    return [n for n in drift if recorded.get(n) and recorded[n] == hashlib.sha256((main_gen / 'oracle' / n).read_bytes()).hexdigest()
+            and recorded[n] != hashlib.sha256((gen / 'oracle' / n).read_bytes()).hexdigest()]
+
+
 def comparison_baseline(gen: Path, main_gen: Path = None) -> Path:
     """首次写产物前原子保存接受边界；拒绝或中断后仍比较同一份数据。
     车道工作树新取基线时（main_gen 给出主工作区 generated），与主工作区不同的参照逐个提示：基线取的是车道自己的，
     手动拷进 generated/oracle 的探针输出会被当成基线、测量改变看不出来（八戒 dev.208 hostScope）。不改用主工作区当基线：
-    main 前进后车道没合 main 时，车道产物缺 main 的新用例，会被误判成删除。"""
+    main 前进后车道没合 main 时，车道产物缺 main 的新用例，会被误判成删除。
+    折中（哪吒_10）：补齐记批次时记了主工作区各参照的摘要，其中主工作区至今没变、本树却改过的（补齐后手拷的探针输出），
+    基线改用主工作区的版本，手拷的改动才会显示成测量改变；main 已前进的拿不准，仍取车道自己的并提示。"""
     key = hashlib.sha256(str(gen.resolve()).encode()).hexdigest()
     parent = ROOT / '03_再刷重制_Godot/04_验证/本地结果/同步基线'
     parent.mkdir(parents=True, exist_ok=True)
     baseline = parent / key
+    use_main = []
     if not baseline.exists() and main_gen is not None:
         drift = lane_drift(gen, main_gen)
+        use_main = main_baseline_files(gen, main_gen, drift)
+        if use_main:
+            print('提示：%d 个参照在补齐之后被改过、而主工作区没变（%s），本次比较基线改用主工作区的版本，这些改动会显示成测量改变'
+                  % (len(use_main), '、'.join(use_main[:8]) + ('等' if len(use_main) > 8 else '')), flush=True)
+        drift = [n for n in drift if n not in use_main]
         if drift:
             print('提示：本次比较基线取车道自己的 generated/oracle，其中 %d 个与主工作区不同（%s）；'
                   '若是手动拷进去的探针输出，先从主工作区拷回再同步，否则这些改动看不出来'
@@ -293,6 +314,8 @@ def comparison_baseline(gen: Path, main_gen: Path = None) -> Path:
         try:
             shutil.copy2(gen / 'manifest.json', staging / 'manifest.json')
             shutil.copytree(gen / 'oracle', staging / 'oracle')
+            for n in use_main:
+                shutil.copy2(main_gen / 'oracle' / n, staging / 'oracle' / n)
             (staging / 'identity.json').write_text(json.dumps({'schema': 1, 'generated': str(gen.resolve())}))
             staging.rename(baseline)
         finally:
@@ -310,11 +333,52 @@ def comparison_baseline(gen: Path, main_gen: Path = None) -> Path:
     return baseline
 
 
-def withdraw_baseline(old_dir: Path, new_dir: Path, out_dir: Path) -> dict:
+SLICE_LISTS = ('maps', 'troops', 'enemies', 'actors', 'commonEvents', 'skills', 'animations')
+# 参照条目里指向切片各类编号的字段名（小写比较）；撤图归因时用：条目指向「本轮从切片里少掉的」编号才算撤图带走的
+REF_FIELDS = {'maps': ('map', 'mapid', 'map_id'), 'troops': ('troop', 'troopid', 'troop_id'), 'enemies': ('enemy', 'enemyid', 'enemy_id'),
+              'actors': ('actor', 'actorid', 'actor_id'), 'commonEvents': ('commonevent', 'commoneventid', 'ce', 'ceid'),
+              'skills': ('skill', 'skillid', 'skill_id'), 'animations': ('animation', 'animationid')}
+
+
+def dropped_slice(old_manifest: dict, new_manifest: dict) -> dict:
+    """本轮从切片里少掉的各类编号 {类: 集合}（只含非空的类）。"""
+    out = {}
+    for name in SLICE_LISTS:
+        gone = set(old_manifest.get('slice', {}).get(name, [])) - set(new_manifest.get('slice', {}).get(name, []))
+        if gone:
+            out[name] = gone
+    return out
+
+
+def attributable(row, dropped: dict) -> bool:
+    """被基线裁掉的条目能否归因到撤出的切片内容（沙僧第十六期 P2：原来只核对撤的地图集合，新参照多缺了别的无关条目也一并接受）。
+    条目（或字典键）里出现被撤编号才算：事件用例号 m<地图>e…、MapNNN、字段 map/troop/enemy/… 的值落在 dropped 里。认不出的不归因。"""
+    maps = dropped.get('maps', set())
+    if isinstance(row, str):
+        m = re.fullmatch(r'(?:Map)?0*(\d+)|m(\d+)(?:e\d+.*)?', row)
+        num = int(next(g for g in m.groups() if g)) if m else None
+        return num is not None and any(num in v for v in dropped.values())
+    if isinstance(row, dict):
+        text = json.dumps(row, ensure_ascii=False)
+        if any(re.search(r'(?<![A-Za-z0-9])m%d(?:e\d+|[^0-9]|$)' % n, text) or re.search(r'Map0*%d(?!\d)' % n, text) for n in maps):
+            return True
+        for kind, fields in REF_FIELDS.items():
+            ids = dropped.get(kind, set())
+            for key, value in row.items():
+                if key.lower() in fields and isinstance(value, int) and value in ids:
+                    return True
+    return False
+
+
+def withdraw_baseline(old_dir: Path, new_dir: Path, out_dir: Path, dropped: dict = None, unattributed: list = None) -> dict:
     """撤出切片：把旧参照里新参照已没有的条目去掉后写到 out_dir，返回 {文件: 撤掉的键}。
-    还在的条目原样保留，交给 compare_directories 照常比较；整份参照被删、未知结构不动（仍是问题）。"""
+    还在的条目原样保留，交给 compare_directories 照常比较；整份参照被删、未知结构不动（仍是问题）。
+    给了 dropped（本轮少掉的切片编号，dropped_slice）时，每个被裁掉的条目要能归因到它们；归不了因的追加到 unattributed。"""
     out_dir.mkdir(parents=True, exist_ok=True)
     removed = {}
+    def blame(file, what, subject):
+        if dropped is not None and unattributed is not None and not attributable(subject, dropped):
+            unattributed.append('%s %s' % (file, what))
     for old in sorted(old_dir.glob('*.json')):
         data = json.loads(old.read_text())
         new = new_dir / old.name
@@ -324,6 +388,7 @@ def withdraw_baseline(old_dir: Path, new_dir: Path, out_dir: Path) -> dict:
             if old.name == 'maps.json':
                 gone = sorted(k for k in a if k not in b)
                 for k in gone:
+                    blame(old.name, k, k)
                     del data[k]
             keys = dict(KEYS.get(old.name, {}))
             if old.name.startswith('slice_d'):
@@ -333,6 +398,12 @@ def withdraw_baseline(old_dir: Path, new_dir: Path, out_dir: Path) -> dict:
                 if isinstance(x, dict) and isinstance(y, dict) and (old.name.startswith('slice_d') and field in ('enemies', 'actors')
                                                                     or old.name == 'formula_programs.json' and field == 'contexts'):
                     drop = sorted(k for k in x if k not in y)
+                    for k in drop:
+                        # 字典键是敌人／角色／上下文编号：属于被撤的敌人／角色集合才算（上下文键认不出就看条目内容）
+                        ok = dropped is None or (str(k).isdigit() and int(k) in dropped.get('enemies' if field == 'enemies' else 'actors', set())) \
+                            or attributable(x[k], dropped)
+                        if not ok and unattributed is not None:
+                            unattributed.append('%s %s:%s' % (old.name, field, k))
                     data[field] = {k: v for k, v in x.items() if k in y}
                     gone += ['%s:%s' % (field, k) for k in drop]
                 elif field in keys and isinstance(x, list) and isinstance(y, list):
@@ -341,6 +412,9 @@ def withdraw_baseline(old_dir: Path, new_dir: Path, out_dir: Path) -> dict:
                         rows = [(next(iter(groups([row], keys[field]))), row) for row in x]
                     except ValueError:
                         continue   # 缺稳定键：不动，交给照常比较报问题
+                    for k, row in rows:
+                        if k not in have:
+                            blame(old.name, '%s:%s' % (field, k), row)
                     gone += sorted({'%s:%s' % (field, k) for k, _ in rows if k not in have})
                     data[field] = [row for k, row in rows if k in have]
         if gone:
@@ -830,8 +904,15 @@ def _main() -> int:
             withdrawn_ok = False
             report['withdrawal']['problem'] = '--accept-withdrawal 与本轮切片少掉的地图不符'
         else:
+            unattributed = []
             report['withdrawal']['removed'] = {k: {'count': len(v), 'keys': v[:50]}
-                                               for k, v in withdraw_baseline(old_oracle, gen / 'oracle', trimmed).items()}
+                                               for k, v in withdraw_baseline(old_oracle, gen / 'oracle', trimmed,
+                                                                             dropped_slice(old_manifest, new_manifest), unattributed).items()}
+            if unattributed:
+                withdrawn_ok = False
+                report['withdrawal']['problem'] = ('新参照还缺了 %d 条与撤出的切片内容无关（或认不出归属）的条目，不一并接受：%s'
+                                                   % (len(unattributed), '；'.join(unattributed[:10])))
+                report['withdrawal']['unattributed'] = unattributed[:50]
             old_oracle = trimmed
     # 测量比较
     measure = {}

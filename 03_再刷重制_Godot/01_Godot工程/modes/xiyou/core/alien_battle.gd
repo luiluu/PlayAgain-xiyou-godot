@@ -742,7 +742,7 @@ static func pay_wish(u, skill: Dictionary) -> bool:
 	return true
 
 
-## pay_wish 的「付得起」判断（不付）：智能 AI 估值用（O-待定 o_smart_ai_projection）
+## pay_wish 的「付得起」判断（不付）：智能 AI 估值用（O-121 o_smart_ai_projection）
 static func wish_affordable(u, skill: Dictionary) -> bool:
 	var pairs := _pairs()
 	for e in skill.get("effects", []):
