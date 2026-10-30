@@ -289,7 +289,7 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.godot = self.tmp / 'godot'
         self.godot.write_text('#!/bin/zsh\nzmodload zsh/datetime\nn=${@[-1]:t}\n[[ $n == --version ]] && { echo 4.x; exit 0; }\n'
                               'print -r -- $n >> %(t)s/runs\n'
-                              'if [[ -n ${SPIN:-} ]]; then t=$EPOCHREALTIME; while (( EPOCHREALTIME - t < 0.3 )); do :; done; fi\n'
+                              'if [[ -n ${SPIN:-} ]]; then i=0; while (( i++ < 400000 )); do :; done; fi\n'
                               'if [[ -n ${BUSY:-} ]]; then mkdir %(t)s/busy 2>/dev/null || touch %(t)s/overlap; sleep 0.3; rmdir %(t)s/busy 2>/dev/null; fi\n'
                               'if [[ $n == b.tscn && -n ${FLAKY_B:-} && ! -e %(t)s/seen ]]; then touch %(t)s/seen; echo \'%(bad)s\'; exit 1; fi\n'
                               'if [[ $n == c.tscn && -n ${FAIL_C:-} ]]; then echo \'%(bad)s\'; exit 1; fi\necho \'%(ok)s\'\n'
@@ -388,7 +388,8 @@ class ParallelTestRunnerTests(unittest.TestCase):
         for r in rows.values():
             self.assertEqual(r['userCpuSeconds'], r['attempts'][0]['userCpuSeconds'])
             for t in r['attempts']:
-                self.assertGreater(t['userCpuSeconds'], 0.1, r)  # 假 Godot 空转约 0.3 秒 CPU
+                # 假 Godot 固定空转 40 万次（约 0.35 秒 CPU）；原按墙钟转 0.3 秒，机器满时分不到 0.1 秒 CPU 而偶发（哪吒_10）
+                self.assertGreater(t['userCpuSeconds'], 0.1, r)
                 self.assertGreaterEqual(t['sysCpuSeconds'], 0)
         self.assertEqual(len(rows['b.tscn']['attempts']), 2)
 
@@ -1225,6 +1226,33 @@ for name in filter(None, files):
         self.assertEqual(self.call('--finish'), 0, self.last_output)
         self.assertFalse(merge.dirty(self.root))
 
+    def test_optimization_placeholder_gets_next_numbers(self):
+        """唐僧 10-30：总装手换 O-119／O-120 漏了一处注释；合并工具按已登记最大 O-NNN 顺延换号，同一占位换同一号，
+        代码注释、文档、交付单草稿都换，带 -1／-2 的是不同的号。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n\n- **O-118 旧项**\n## 待交叉核查\n\n## end\n')
+        self.g('add', '.'); self.g('commit', '-m', 'register has O-118')
+        self.g('merge', 'main', cwd=self.wt)
+        rel = merge.SUB / '00_设计/界面风格.md'
+        gd = merge.PROJECT / 'modes/注释.gd'
+        for r, text in [(rel, '# 风格\n%s-1 与 %s-2；再提 %s-1。\n' % (tok, tok, tok)), (gd, '# %s-2：说明\n# 也见 %s\n' % (tok, tok))]:
+            (self.wt / r).parent.mkdir(parents=True, exist_ok=True)
+            (self.wt / r).write_text(text)
+        sheet = self.wt / self.receipt
+        sheet.write_text(sheet.read_text().replace('- fixture change', '- fixture change %s-1' % tok))
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'lane docs with placeholders', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        doc = (self.root / rel).read_text()
+        self.assertEqual(doc, '# 风格\nO-119 与 O-120；再提 O-119。\n')
+        code = (self.root / gd).read_text()
+        self.assertIn('# O-120：说明', code)
+        self.assertIn('# 也见 O-121', code)       # 不带序号的是第三个不同占位
+        self.assertNotIn(tok, doc + code)
+        log = (self.root / merge.LOG).read_text()
+        self.assertIn('fixture change O-119', log)
+        self.assertNotIn(tok, log)
+
     def test_version_document_extra_edit_is_preserved_and_rejected(self):
         rel = self.lane_document()
         self.assertEqual(self.call(), 0, self.last_output)
@@ -1707,6 +1735,48 @@ for name in filter(None, files):
         finally:
             os.environ.pop('BAD')
 
+    def test_parse_check_flags_import_and_load_process_failures(self):
+        # 沙僧第十七期 P3：导入阶段退出码非零并打印 ERROR:、加载阶段正常打印完成标志，原来返回零问题
+        self.put(str(merge.PROJECT / 'project.godot'), 'config/version="dev.001"\n[autoload]\nGameApp="*res://core/app.gd"\n\n[display]\n')
+        godot = self.root / merge.ENV / 'godot'
+        godot.write_text('#!/bin/zsh\n[[ "$*" == *--import* ]] && { [[ -n $IMPORT_FAIL ]] && { print "ERROR: Failed to import res://x.png"; exit 1; }; exit 0; }\n'
+                         'print PARSE_CHECK_DONE\n[[ -n $LOAD_RC ]] && exit $LOAD_RC\nexit 0\n')
+        godot.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'godot fixture'); self.g('merge', 'main', cwd=self.wt)
+        for env, expect in [({'IMPORT_FAIL': '1'}, 'godot --import 报错'), ({'LOAD_RC': '3'}, '退出码 3')]:
+            with self.subTest(env=env):
+                os.environ.update(env)
+                try:
+                    self.assertEqual(self.call(), 1, self.last_output)
+                    self.assertIn(expect, self.last_output)
+                finally:
+                    for k in env:
+                        os.environ.pop(k)
+        self.assertEqual(self.call(), 0, self.last_output)  # 健康的假 godot 照常通过
+
+    def test_active_cwds_unknown_when_lsof_unavailable_keeps_worktree(self):
+        # 沙僧第十六期 P2：lsof 缺失／超时／失败时原来返回空、清理放行；现在无法确认就保守不删
+        wt = self.wt
+        for how in ['missing', 'timeout', 'failed']:
+            with self.subTest(how=how):
+                if how == 'missing':
+                    side = FileNotFoundError('lsof')
+                elif how == 'timeout':
+                    side = subprocess.TimeoutExpired('lsof', 60)
+                else:
+                    side = None
+                real = subprocess.run
+                def fake(cmd, *a, **k):
+                    if cmd[0] == 'lsof':
+                        if side is not None:
+                            raise side
+                        return subprocess.CompletedProcess(cmd, 1, '', 'boom')
+                    return real(cmd, *a, **k)
+                with mock.patch.object(merge.subprocess, 'run', fake):
+                    self.assertIsNone(merge.active_cwds(wt))
+                    reason = merge.lane_protected(self.root, {'worktree': str(wt), 'branch': 'claude/task', 'base': 'HEAD'})
+                self.assertIn('无法确认有无活动会话', reason)
+
     def test_abort_and_lane_redelivery_replans(self):
         self.put(str(merge.PROJECT / 'modes/测试.gd'), '# main version\n')
         self.g('add', '.'); self.g('commit', '-m', 'conflicting main update')
@@ -1859,8 +1929,8 @@ for name in filter(None, files):
                 self.assertIn('活动会话' if case == 'process' else 'worktree lock', self.last_output)
                 self.assertIn('只提示不删', self.last_output)
 
-    def test_worktree_missing_from_board_or_marked_keep_is_not_removed(self):
-        # 合并前交接板「正在进行」没有提到该工作树／分支，或那行写了「不要删」：不删
+    def test_board_row_marked_keep_is_not_removed_but_missing_row_is(self):
+        # 交接板「正在进行」那行写了「不要删」才留；没提到该工作树／分支不再是保留理由（哪吒_10，磁盘告急，合并后随手删）
         for row in ['', '| 核查 | claude/task（清理时不要删此目录） |']:
             with self.subTest(row=row):
                 self.tearDown(); self.setUp()
@@ -1869,8 +1939,11 @@ for name in filter(None, files):
                 self.assertEqual(self.call(), 0, self.last_output)
                 self.register()
                 self.assertEqual(self.call('--finish'), 0, self.last_output)
-                self.assertTrue(self.wt.exists())
-                self.assertIn('不要删' if row else '没有提到它', self.last_output)
+                self.assertEqual(self.wt.exists(), bool(row), self.last_output)
+                if row:
+                    self.assertIn('不要删', self.last_output)
+                else:
+                    self.assertNotIn('claude/task', self.branches())
 
     def test_untracked_evidence_merges_by_ref_and_keeps_worktree(self):
         # 沙僧 state-effects-2b：只有核查范围／本地结果下的未跟踪证据时按分支引用合并，工作树与证据都留着
@@ -2103,6 +2176,41 @@ sys.exit(0)
         self.assertEqual(self.call(), 0, self.last_output)
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
+
+    def test_undo_sync_uses_pinned_snapshot_not_rotated_backups(self):
+        """沙僧第七期 T1：同一合并多轮同步后滚动备份只剩三份，首轮前的备份被轮换；撤回须还原到首轮同步前（固定快照），
+        同步前没有的项（如 maps）同步新建了也要删；快照丢了就拒绝声称还原、保留现场。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gen = root / merge.GENERATED
+            (gen / 'oracle').mkdir(parents=True)
+            (gen / 'oracle/a.json').write_text('state0')
+            (gen / 'manifest.json').write_text('state0')
+            state = {'syncSince': '20260101_000000', 'task': 'x'}
+            state['preSync'] = merge.pin_generated(root, root / 'lane/pre-sync/x')
+            self.assertEqual(state['preSync']['absent'], ['db', 'maps', 'slice.json'])
+            # 四轮同步：每轮改产物、新建 maps，滚动备份只剩后三份（内容都不是 state0）
+            bk = root / merge.SYNC_BACKUPS
+            for i in range(1, 5):
+                (gen / 'oracle/a.json').write_text('state%d' % i)
+                (gen / 'manifest.json').write_text('state%d' % i)
+                (gen / 'maps').mkdir(exist_ok=True)
+                (gen / 'maps/m.json').write_text('new')
+                if i > 1:
+                    (bk / ('20260101_00000%d_v' % i)).mkdir(parents=True, exist_ok=True)
+                    (bk / ('20260101_00000%d_v' % i) / 'manifest.json').write_text('state%d' % (i - 1))
+                    (bk / ('20260101_00000%d_v' % i) / 'oracle').mkdir()
+            note = merge.undo_sync(root, state)
+            self.assertEqual((gen / 'oracle/a.json').read_text(), 'state0', note)
+            self.assertEqual((gen / 'manifest.json').read_text(), 'state0')
+            self.assertFalse((gen / 'maps').exists(), note)
+            # 快照丢了：不动现场，也不声称已还原
+            state['preSync'] = merge.pin_generated(root, root / 'lane/pre-sync/x')
+            (gen / 'oracle/a.json').write_text('later')
+            merge.drop_pin(state)
+            note = merge.undo_sync(root, state)
+            self.assertEqual((gen / 'oracle/a.json').read_text(), 'later')
+            self.assertIn('无法确定原状态', note)
 
     def test_single_abort_during_conflict(self):
         self.put(str(merge.PROJECT / 'modes/测试.gd'), '# main version\n')

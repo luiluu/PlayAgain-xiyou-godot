@@ -2,6 +2,7 @@ extends Node
 ## 智能战斗AI（XSmartAI）对照正式版 Codex_SmartBattleAI：generated/oracle/smart_ai.json 由 mv_oracle/smart_ai_probe.cjs 生成
 ## （普通难度、出战 1/8/9/10、10 级、开局被动与开战状态、药 1/2/137；切片敌群 × 满状态/队友低血/队友阵亡/没蓝/敌人残血）。
 ## 比较：每个角色选中的技能/药与目标、前 6 名候选的分数，以及 safeDamage 估算；另比 YEP 行动序列段数（转换器 yepEffects）。
+## 异化投影估值（O-121 XSmartAI.o_projection）只写 Godot 侧断言（alien_projection）：开关两支都不同于原版，探针不带异化。
 ## 单场景约 400 秒：伤害行与选择用例按序号轮流分成 parts 份（xiyou_smart_ai 管第 0 份，_b／_c／_d 各管一份），
 ## 来源指纹、行动序列、自动战斗分派与边界伤害只在第 0 份比，断言总数与拆分前相同
 @export var part := 0
@@ -111,6 +112,7 @@ func _run() -> void:
 	if not lead:
 		return finish()
 	routing(ref)
+	alien_projection(ref)
 	var edge_logic := setup(ref, int(ref.cases[0].troop), "full")
 	var edge_actor := edge_logic.state.actor(1)
 	var edge_ai := XSmartAI.new(edge_logic, edge_actor)
@@ -155,6 +157,52 @@ func routing(ref: Dictionary) -> void:
 	opt._side(true)
 	check("option_right_on", XConfig.smart_ai())
 	opt.queue_free()
+
+
+## O-121 o_projection：逆祷者的攻击按治疗友方估值、祸祝 7100（对自己附加幻日虹）按对敌诅咒估值；关时回到读原技能
+func alien_projection(ref: Dictionary) -> void:
+	var blessing := XDB.rec("Skills", 7100)
+	var saved := [blessing.stypeId, blessing.mpCost, blessing.tpCost]
+	blessing.stypeId = 0  # 让 1 号角色用得上（技能类型、费用与估值无关）
+	blessing.mpCost = 0
+	blessing.tpCost = 0
+	for on in [true, false]:
+		XSmartAI.o_projection = on
+		var tag := "alien.%s." % ("on" if on else "off")
+		for affix in ["prayer", "blessing"]:
+			var logic := setup(ref, 2, "ally_low")
+			logic.state.items = {}
+			var a: XActor = logic.state.actor(1)
+			if affix == "blessing":
+				a.learn_skill(7100)
+			XAlienBattle._logic_ref = weakref(logic)
+			XAlienBattle._store(logic).party = {a: {"affix": affix, "item": {}, "config": {}, "observed": [], "selected": 0}}
+			var r := XSmartAI.choose(logic, a)
+			var rank: Array = r.candidates.map(func(x): return [x.id, x.score, x.target.display_name() if x.target else null])
+			if affix == "prayer":
+				var att: Array = r.candidates.filter(func(x): return x.id == XBattleLogic.ATTACK_SKILL and not x.item)
+				if on:  # 攻击投影成治愈：给生命 20% 的 9 号治疗，分数够高就选它
+					check(tag + "prayer.choice", int(r.skill.id) == XBattleLogic.ATTACK_SKILL and r.target == logic.state.actor(9), rank)
+					var t: XActor = logic.state.actor(9)
+					var proj := XAlienBattle.project(a, a.attack_skill())
+					var ai := XSmartAI.new(logic, a)  # 估算与借来的治疗技能（攻击无 MP 费用→治愈 8）同口径：safeDamage 不含实战的被动治疗加成
+					var est := ai.healing_amount(t, proj, false, false)
+					var healer := ai.healing_amount(t, XAlienBattle.prayer_healer(logic, a, proj), false, false)
+					check(tag + "prayer.heal_estimate", est > 0.0 and est == healer and int(XAlienBattle.prayer_healer(logic, a, proj).id) == 8, [est, healer])
+				else:  # 读原技能：攻击按对敌伤害估值，目标是敌人
+					check(tag + "prayer.attack_foe", not att.is_empty() and att[0].target is XEnemy and att[0].score > 0.0, rank)
+					check(tag + "prayer.choice_foe", r.target is XEnemy, rank)
+			else:
+				var bl: Array = r.candidates.filter(func(x): return x.id == 7100 and not x.item)
+				if on:  # 祸祝：对敌单体，附加诅咒
+					check(tag + "blessing.foe", not bl.is_empty() and bl[0].target is XEnemy and bl[0].score > 0.0, rank)
+				else:  # 读原技能：对自己附加增益
+					check(tag + "blessing.self", not bl.is_empty() and bl[0].target == a and bl[0].score > 0.0, rank)
+			XAlienBattle._logic_ref = null
+	XSmartAI.o_projection = true
+	blessing.stypeId = saved[0]
+	blessing.mpCost = saved[1]
+	blessing.tpCost = saved[2]
 
 
 func finish() -> void:

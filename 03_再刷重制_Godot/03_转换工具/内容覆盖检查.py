@@ -6,7 +6,8 @@
 - 缺素材：页面行走图、显示文字的脸图、BGM/BGS/ME/SE、图片、动画图、战斗背景、远景、角色图像、移动路线换图与音效、
   地图本身的图块/远景/音乐、敌群成员的战斗图在 generated 里找不到；
 - 无效引用：公共事件、敌群、动画、物品/武器/防具、角色在数据库里不存在（或动画是 MZ 格式，Godot 不播）；
-- 未翻译：Godot 解释器（MVInterpreter._execute）没有分支的指令、_plugin_command 不认的插件指令；
+- 未翻译：Godot 解释器（MVInterpreter._execute）没有分支的指令、_plugin_command 不认的插件指令、
+  条件分支（111）里 _condition 与宿主 _condition_env 都不认的条件类型（运行时记 skipped、按假走；悟空期一的 9／10 就这样漏过）；
   只经战斗场合技能／物品效果（code 44，场合＝战斗）调到的公共事件（含它们 117 调到的）在战斗里由 XBattleEventRunner 跑，
   按共用核心＋battle_event_runner 的指令表查；地图也可达的（地图页 117、场合随时／菜单）仍按地图解释器查；
 - 出切片：场所移动到切片外的地图（提示，不算失败）；
@@ -56,6 +57,20 @@ def handled_plugins(text: str) -> set:
     return names
 
 
+def handled_conditions(text: str) -> set:
+    """条件分支 111 认得的条件类型：共用核心 _condition 顶层 match 的分支，加宿主 _condition_env 里 int(p[0]) == N 的判断。"""
+    kinds = set()
+    if 'func _condition(p' in text:
+        body = text.split('func _condition(p', 1)[1].split('\nfunc ', 1)[0]
+        for line in body.splitlines():
+            m = re.match(r'^\t\t(\d+(?:, \d+)*):', line)
+            if m:
+                kinds.update(int(x) for x in m.group(1).split(', '))
+    for part in text.split('func _condition_env(')[1:]:
+        kinds.update(int(x) for x in re.findall(r'int\(p\[0\]\) == (\d+)', part.split('\nfunc ', 1)[0]))
+    return kinds
+
+
 def skipped_common_events(text: str) -> set:
     m = re.search(r'static var skip_common_events := \[([^\]]*)\]', text)
     return {int(x) for x in re.findall(r'\d+', m.group(1))} if m else set()
@@ -67,6 +82,8 @@ class Checker:
         self.db = {}
         self.codes = handled_codes(interp_text)
         self.battle_codes = handled_codes(battle_text)
+        self.conds = handled_conditions(interp_text)
+        self.battle_conds = handled_conditions(battle_text)
         self.battle_only = set()    # 只在战斗里跑的公共事件（run 里算）
         self.plugins = handled_plugins(interp_text)
         self.skip_ce = skipped_common_events(interp_text)
@@ -127,12 +144,14 @@ class Checker:
             elif c.get('code') == 44 and p and isinstance(p[0], dict):
                 self.asset('audio/se', p[0].get('name'), where, out)
 
-    def walk(self, cmds, where, out, calls, codes=None):
-        codes = self.codes if codes is None else codes
+    def walk(self, cmds, where, out, calls, battle=False):
+        codes, conds = (self.battle_codes, self.battle_conds) if battle else (self.codes, self.conds)
         for c in cmds or []:
             code, p = c.get('code', 0), c.get('parameters') or []
             if code not in STRUCT and code not in codes:
                 out.append(('未翻译', where, '指令 %d' % code))
+            elif code == 111 and p and isinstance(p[0], int) and p[0] not in conds:
+                out.append(('未翻译', where, '条件类型 %d' % p[0]))
             if code == 101 and p:
                 self.asset('img/faces', p[0], where, out)
             elif code in AUDIO and p and isinstance(p[0], dict):
@@ -244,7 +263,7 @@ class Checker:
             ce = ce_queue.pop()
             w = 'CE%04d' % ce
             out, calls = [], set()
-            self.walk(self.rec('CommonEvents', ce).get('list'), w, out, calls, self.battle_codes if ce in self.battle_only else None)
+            self.walk(self.rec('CommonEvents', ce).get('list'), w, out, calls, ce in self.battle_only)
             self.finish_page(w, out, calls, compared, 'ce%d' % ce, ce_seen, ce_queue, self.rec('CommonEvents', ce).get('list'))
 
     def finish_page(self, where, out, calls, compared, case_id, ce_seen, ce_queue, cmds=None):

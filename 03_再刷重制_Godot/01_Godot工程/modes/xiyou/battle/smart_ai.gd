@@ -14,9 +14,15 @@ extends RefCounted
 ##   重制版没有 YEP 吸收屏障与来源护盾账本，shieldPoints 只算原生护盾。
 ## - 没移植（重制版尚无这些角色/系统）：奈叶小魔炮、米拉/渡鸦/宿傩等角色专属估算与 profile、Boss 霸体（CodexBossDifficulty）。
 ##   这些在正式版里也只对对应角色/敌人生效；随相关内容接入时补上。
+## - 异化行动道具投影（祸祝、恶愿、逆祷，XAlienBattle.project）：见 o_projection。
 
 const MASTERY_NOTE := "<Custom Damage Mastery Formula:\\s*value\\s*\\*\\s*\\(1\\s*\\+\\s*level\\s*\\*\\s*([\\d.]+)\\)\\s*>"
 static var _boss_ids := {}
+## O-121（优化登记）：异化投影一律读投影估值——目标方向、范围、伤害／治疗／增益全按投影后的技能（逆祷的攻击按治疗友方，
+## 治疗量照 XAlienBattle.prayer_heal 借治疗技能平分；祸祝按对敌减益与诅咒；恶愿按除自己外的友方，付不起代价记 0 分）。
+## 原版 Codex_SmartBattleAI 目标方向与范围读投影（action.item()）、估值读原技能（candidate.item），逆祷的攻击近乎 0 分。
+## true＝读投影；false＝回到此前的重制做法（全程读原技能，执行时才投影），两者都不同于原版
+static var o_projection := true
 
 var logic: XBattleLogic
 var actor: XActor
@@ -237,6 +243,8 @@ func healing_amount(t: XBattler, rec: Dictionary, item: bool, mp: bool) -> float
 	var type := 4 if mp else 3
 	var mx := t.mmp if mp else t.mhp
 	var amount := safe_damage(actor, t, rec) * maxf(0.0, t.rec) if int(rec.get("damage", {}).get("type", 0)) == type else 0.0
+	if not mp and XAlienBattle._mode(rec) == "prayer":
+		amount = safe_damage(actor, t, XAlienBattle.prayer_healer(logic, actor, rec)) * maxf(0.0, t.rec) / float(prayer_targets(rec))
 	for e in rec.get("effects", []):
 		if int(e.code) == (12 if mp else 11):
 			amount += (mx * float(e.value1) + float(e.value2)) * maxf(0.0, t.rec) * (maxf(0.0, actor.pha) if item else 1.0)
@@ -312,15 +320,31 @@ func cost_multiplier(rec: Dictionary, item: bool) -> float:
 
 
 static func has_cooldown(rec: Dictionary) -> bool:
+	if rec.has("_alienOriginal"):  # 逆祷投影照抄治愈的备注，冷却看原技能
+		rec = XDB.rec("Skills", int(rec._alienOriginal))
 	var m := RegEx.create_from_string("(?i)<Cooldown:\\s*(\\d+)>").search(str(rec.get("note", "")))
 	return m != null and int(m.get_string(1)) > 0
 
 
-## scoreCandidate：返回 {score, target}
+## 逆祷投影治疗平分的目标数（_alienHealTargets，不含连击）：友方单体 1，原 scope 3～6 随机 n 个，其余全体存活友方
+func prayer_targets(rec: Dictionary) -> int:
+	var n := XAlienBattle.prayer_random_count(rec)
+	if n > 0:
+		return n
+	return 1 if scope_of(rec) == 7 else maxi(1, logic.alive(context.friends).size())
+
+
+## 估值读的技能：o_projection 开时为异化投影（候选与返回的仍是原技能，execute 再投影）
+func valued(rec: Dictionary, item: bool) -> Dictionary:
+	return XAlienBattle.project(actor, rec) if o_projection and not item else rec
+
+
+## scoreCandidate：返回 {score, target}。rec 是估值读的技能（valued）
 func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary) -> Dictionary:
 	var targets: Array = ctx.foes if for_opponent(rec) else [actor] if for_user(rec) else \
 		ctx.friends.filter(func(t): return t.is_dead() if for_dead_friend(rec) else t.is_alive())
-	if targets.is_empty():
+	targets = XAlienBattle.filter_targets(actor, rec, targets)  # 恶愿：除自己外
+	if targets.is_empty() or (XAlienBattle._mode(rec) == "wish" and not XAlienBattle.wish_affordable(actor, rec)):
 		return {"score": 0.0, "target": null}
 	var dmg_type := int(rec.get("damage", {}).get("type", 0))
 	var rows := []
@@ -345,15 +369,16 @@ func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary) -> Dictionary
 		if r.score > best.score:
 			best = r
 		total += r.score
-	var random := for_random(rec)
-	var score := total if for_all(rec) else 0.0 if random else float(best.score)
+	var prayer_n := XAlienBattle.prayer_random_count(rec)  # 逆祷原 scope 3～6：投影 scope 8，实际随机友方 n 个
+	var random := for_random(rec) or prayer_n > 0
+	var score := 0.0 if random else total if for_all(rec) else float(best.score)
 	if random:
 		var weight_sum := 0.0
 		for t in targets:
 			weight_sum += maxf(0.0, t.tgr)
 		if weight_sum <= 0.0:
 			weight_sum = targets.size()
-		var n := maxf(1.0, num_targets(rec))
+		var n := maxf(1.0, prayer_n if prayer_n > 0 else num_targets(rec))
 		var weighted := 0.0
 		for i in targets.size():
 			var w := maxf(0.0, targets[i].tgr) / weight_sum
@@ -375,14 +400,14 @@ func _choose() -> Dictionary:
 	var candidates := []
 	for s in actor.skills():
 		if legal(s, false) and int(s.id) != 5692:
-			candidates.append({"rec": s, "item": false})
+			candidates.append({"rec": s, "item": false, "eval": valued(s, false)})
 	if legal(attack, false) and not candidates.any(func(c): return int(c.rec.id) == int(attack.id)):
-		candidates.append({"rec": attack, "item": false})
+		candidates.append({"rec": attack, "item": false, "eval": valued(attack, false)})
 	var urgent := friends.any(func(t): return t.is_dead() or (t.hp + shield_points(t)) / maxf(1.0, t.mhp) < 0.25)
 	context = {"friends": friends, "foes": foes, "urgent": urgent, "longFight": false, "damageScale": 0.0}
 	var scale := 0.0
 	for c in candidates:
-		var rec: Dictionary = c.rec
+		var rec: Dictionary = c.eval
 		if not int(rec.get("damage", {}).get("type", 0)) in [1, 5] or not for_opponent(rec):
 			continue
 		var reps := maxf(1.0, num_targets(rec) / maxf(1.0, foes.size())) if for_random(rec) else 1.0
@@ -391,8 +416,8 @@ func _choose() -> Dictionary:
 	context.damageScale = scale
 	var best_attack := 0.0
 	for c in candidates:
-		if int(c.rec.get("damage", {}).get("type", 0)) in [1, 5]:
-			best_attack = maxf(best_attack, float(score_candidate(c.rec, false, context).score))
+		if int(c.eval.get("damage", {}).get("type", 0)) in [1, 5]:
+			best_attack = maxf(best_attack, float(score_candidate(c.eval, false, context).score))
 	var whole := 0.0
 	for t in foes:
 		whole += damage_utility(t, t.hp + shield_points(t), foes)
@@ -402,12 +427,12 @@ func _choose() -> Dictionary:
 	for id in ids:
 		var it := XDB.rec("Items", id)
 		if bool(it.get("consumable", false)) and legal(it, true) and it.get("effects", []).any(func(e): return int(e.code) in [11, 12, 22, 34]):
-			candidates.append({"rec": it, "item": true})
+			candidates.append({"rec": it, "item": true, "eval": it})
 	var best := {}
 	var best_score := 0.0
 	var ranking := []
 	for c in candidates:
-		var r := score_candidate(c.rec, c.item, context)
+		var r := score_candidate(c.eval, c.item, context)
 		ranking.append({"id": int(c.rec.id), "item": c.item, "score": roundf(r.score), "target": r.target})
 		if r.score > best_score:
 			best_score = r.score
