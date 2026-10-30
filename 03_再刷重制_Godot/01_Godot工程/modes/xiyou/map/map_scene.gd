@@ -58,6 +58,19 @@ const SAFE_HUD_ACTIONS := true
 ## 大厅传送门（Map004 事件 36）第 3 页（开关 686「前往20层」）在变量 20＝21 时只关掉 686、什么都不显示，
 ## 二十层通关后第一次按门没有反应，要再按一次才出楼层菜单；这里关掉后直接出楼层菜单。设 {} 恢复原版。
 const RERUN_AFTER_PAGE := {"4:36:2": true}
+## O-117：乘飞艇时（含升降中）地图传送按钮不可用、不能开始挂机。原版 MapTransferPlugin 与 XdRs_HangUp 都不看载具，
+## 飞行中能把飞艇带进楼层地图、越墙降落，挂机还会带着飞艇乱飞。设 false 恢复原版。
+const SAFE_AIRSHIP_MENU := true
+## Game_Vehicle.maxAltitude：飞艇升到 48 才能飞（canMove 要 isHighest），降到 0 才算下完
+const AIRSHIP_MAX_ALTITUDE := 48
+## 飞艇（Game_Map.airship）的地图精灵；图像高度偏移、影子、升空动画在甲三，现在画在格子上
+var airship: MVCharacter
+## Game_Player._vehicleGettingOn／_vehicleGettingOff 与上下载具时的 gatherFollowers（不随档，读档时按飞艇状态补，见 _place_vehicle）
+var _vehicle_getting_on := false
+var _vehicle_getting_off := false
+var _vehicle_gathering := false
+## 正在放的地图 BGM（AudioManager.saveBgm：上飞艇时存成 walking_bgm）
+var _bgm_audio = null
 
 
 static func slice() -> Dictionary:
@@ -307,8 +320,13 @@ func _place_party(x: int, y: int, d: int) -> void:
 	camera.position = Vector2(0, -TS / 2.0)
 	camera.reset_smoothing()
 	_show_map_name(str(map_data.get("displayName", "")))
+	_place_vehicle()
+	# Game_Map.autoplay：乘载具时只记下地图 BGM（saveWalkingBgm2），继续放载具的
 	if bool(map_data.get("autoplayBgm", false)):
-		play_bgm(map_data.get("bgm", {}))
+		if in_vehicle():
+			XState.current.walking_bgm = (map_data.bgm as Dictionary).duplicate() if map_data.get("bgm") is Dictionary else null
+		else:
+			play_bgm(map_data.get("bgm", {}))
 	if bool(map_data.get("autoplayBgs", false)):
 		play_bgs(map_data.get("bgs", {}))
 	_make_encounter_count()
@@ -325,7 +343,7 @@ func _process(delta: float) -> void:
 				XToast.show_text(str(t))
 	if player:
 		var hanging := XHangUp.is_active(XState.current)
-		player.input_enabled = not busy and not _menu_open and not hanging
+		player.input_enabled = not busy and not _menu_open and not hanging and vehicle_can_move()
 		player.auto_step = _hang_up_step if hanging else Callable()
 		hang_overlay.visible = not _menu_open and transfer_page == null
 		hang_overlay.refresh()
@@ -350,7 +368,7 @@ func _process(delta: float) -> void:
 			_transfer_shown = true
 		map_hud.transfer_button.visible = _transfer_shown
 		map_hud.set_actions_enabled(not busy and not _menu_open and not player.is_moving(), not _menu_open,
-			not _menu_open and not (SAFE_TRANSFER_BUTTON and busy))
+			not _menu_open and not (SAFE_TRANSFER_BUTTON and busy) and not _vehicle_menu_locked())
 	if not _pending_popups.is_empty():
 		_flush_popups()
 	if not busy and not _menu_open and player:
@@ -370,7 +388,8 @@ func is_blocked(cell: Vector2i, who: MVCharacter) -> bool:
 	for e in events:
 		if e != who and e.grid == cell and e.is_normal_priority() and not e.through and not e.page.is_empty():
 			return true
-	if who != player and player and player.grid == cell:
+	# Game_Event.isCollidedWithPlayerCharacters → Game_Player.isCollided：玩家穿透（乘飞艇）时不挡事件
+	if who != player and player and player.grid == cell and not player.through:
 		return true
 	return false
 
@@ -442,11 +461,13 @@ static func on_player_walk(s: XState) -> void:
 			a.runtime_result = XResourceContext.empty_result()
 
 func _on_player_step() -> void:
-	XState.current.steps += 1
+	# Game_Player.increaseSteps：乘载具时不计队伍步数（isNormal）
+	if not in_vehicle():
+		XState.current.steps += 1
 	on_player_walk(XState.current)
-	# 玩家接触：踩上「角色下方/上方」事件，或撞上同层事件时在 _on_bump 处理
+	# 玩家接触：踩上「角色下方/上方」事件，或撞上同层事件时在 _on_bump 处理；乘飞艇时不触发（canStartLocalEvents）
 	for e in events:
-		if e.grid == player.grid and [1, 2].has(e.trigger()) and not e.is_normal_priority():
+		if can_start_local_events() and e.grid == player.grid and [1, 2].has(e.trigger()) and not e.is_normal_priority():
 			await run_event(e)
 			return
 	if not map_data.encounterList.is_empty():
@@ -458,6 +479,9 @@ func _on_player_step() -> void:
 
 func _on_action() -> void:
 	if busy:
+		return
+	# Game_Player.triggerButtonAction：先上下载具；乘飞艇时不触发确认键事件（canStartLocalEvents）
+	if get_on_off_vehicle() or not can_start_local_events():
 		return
 	var front := player.front_cell(player.direction)
 	for e in events:
@@ -476,8 +500,10 @@ func _physics_process(_delta: float) -> void:
 	_update_flash()
 	if XState.current and not _menu_open:
 		XState.current.screen.update()
-	# 玩家朝同层事件走却被挡住：MV 的 checkEventTriggerTouch（触发 1/2）；挂机中不能手动移动
-	if busy or player == null or player.is_moving() or XHangUp.is_active(XState.current):
+		if not _in_battle:
+			_update_vehicle()
+	# 玩家朝同层事件走却被挡住：MV 的 checkEventTriggerTouch（触发 1/2）；挂机中不能手动移动；乘飞艇时不触发
+	if busy or player == null or player.is_moving() or XHangUp.is_active(XState.current) or not can_start_local_events():
 		return
 	var d := player._input_dir()
 	if d == 0:
@@ -573,10 +599,10 @@ func _encounter() -> void:
 	_set_busy(false)
 
 
-## Game_Player.canEncounter：没有「无遇敌」队伍能力、遇敌未被指令 136 禁止、不在强制移动路线中
+## Game_Player.canEncounter：没有「无遇敌」队伍能力、遇敌未被指令 136 禁止、不乘飞艇、不在强制移动路线中
 func can_encounter() -> bool:
 	var s := XState.current
-	return not s.party_ability(1) and s.encounter_enabled and not player.is_route_forcing()
+	return not s.party_ability(1) and s.encounter_enabled and not in_airship() and not player.is_route_forcing()
 
 
 ## Game_Player.encounterProgressValue：草丛 2、否则 1，「遇敌减半」队伍能力 ×0.5；设置「步步遇敌」时 100（每步必遇）。
@@ -600,6 +626,201 @@ static func encounter_troop(list: Array, r: int) -> int:
 		if value < 0:
 			return int(en.troopId)
 	return 0
+
+
+# ---- 飞艇（Game_Player／Game_Vehicle 的载具部分；全工程只有飞艇在用，小船、大船原版没放出来）----
+func in_vehicle() -> bool:
+	return XState.current != null and XState.current.vehicle_type != "walk"
+
+
+func in_airship() -> bool:
+	return XState.current != null and XState.current.vehicle_type == "airship"
+
+
+## Game_Player.canStartLocalEvents：乘飞艇时确认键、接触都不触发地图事件（自动执行、并行照常）
+func can_start_local_events() -> bool:
+	return not in_airship()
+
+
+## Game_Player.canMove 的载具部分：收拢跟随、上下过程中不能动；飞艇升到最高才能飞（Game_Vehicle.canMove）
+func vehicle_can_move() -> bool:
+	if _vehicle_gathering or _vehicle_getting_on or _vehicle_getting_off:
+		return false
+	return not in_airship() or int(XState.current.vehicle("airship").altitude) >= AIRSHIP_MAX_ALTITUDE
+
+
+## O-117：乘飞艇时（vehicle_type 不是走路，含升降中）锁地图传送与挂机
+func _vehicle_menu_locked() -> bool:
+	return SAFE_AIRSHIP_MENU and in_vehicle()
+
+
+## Game_Player.getOnOffVehicle
+func get_on_off_vehicle() -> bool:
+	return get_off_vehicle() if in_vehicle() else get_on_vehicle()
+
+
+## Game_Player.getOnVehicle：飞艇要站在同一格（Game_Vehicle.pos 只认停在本图的）；收拢跟随后在 _update_vehicle 里上
+func get_on_vehicle() -> bool:
+	var s := XState.current
+	var v := s.vehicle("airship")
+	if int(v.mapId) == map_id and int(v.x) == player.grid.x and int(v.y) == player.grid.y:
+		s.vehicle_type = "airship"
+		_vehicle_getting_on = true
+		_vehicle_gathering = true
+	return _vehicle_getting_on
+
+
+## Game_Player.getOffVehicle：能降落时朝下、跟随叠到脚下、熄火放回地图 BGM、速度 4、取消穿透、重算遇敌步数；降到最低才变回走路
+func get_off_vehicle() -> bool:
+	if not airship_land_ok(player.grid):
+		return false
+	var s := XState.current
+	var v := s.vehicle(s.vehicle_type)
+	player.set_direction(2)
+	for f in followers:
+		f.synchronize(player.grid, player.direction)
+	# Game_Vehicle.getOff：resetDirection、replayWalkingBgm
+	v.driving = false
+	v.direction = 4
+	if s.walking_bgm is Dictionary:
+		play_bgm(s.walking_bgm)
+	_vehicle_getting_off = true
+	player.vehicle_speed = 0
+	player.move_speed = 4
+	player.through = false
+	_make_encounter_count()
+	_vehicle_gathering = true
+	return true
+
+
+## Game_Vehicle.isLandOk（飞艇）：Game_Map.isAirshipLandOk 且该格没有事件。Game_Map.eventsXy 含暂时消除的事件；
+## 切片没放的事件按原位置算（原版它们都在图上）
+func airship_land_ok(c: Vector2i) -> bool:
+	if not lower.is_airship_land_ok(c.x, c.y):
+		return false
+	var placed := {}
+	for e in events:
+		placed[e.event_id] = true
+		if e.grid == c:
+			return false
+	for ev in map_data.get("events", []):
+		if ev != null and not placed.has(int(ev.id)) and int(ev.x) == c.x and int(ev.y) == c.y:
+			return false
+	return true
+
+
+## 每帧（地图 update，战斗与菜单中不跑）：Game_Vehicle.updateAirshipAltitude、Game_Followers 收拢、Game_Player.updateVehicle
+func _update_vehicle() -> void:
+	var s := XState.current
+	if player == null or not is_instance_valid(player):
+		return
+	var v := s.vehicle("airship")
+	if bool(v.driving) and int(v.altitude) < AIRSHIP_MAX_ALTITUDE:
+		v.altitude = int(v.altitude) + 1
+	elif not bool(v.driving) and int(v.altitude) > 0:
+		v.altitude = int(v.altitude) - 1
+	if _vehicle_gathering:
+		if not followers.any(func(f): return f.is_moving()):
+			_followers_step()
+		if _followers_gathered():
+			_vehicle_gathering = false
+	if in_vehicle() and not _vehicle_gathering:
+		if _vehicle_getting_on:
+			if not player.is_moving():
+				_finish_get_on(v)
+		elif _vehicle_getting_off:
+			if int(v.altitude) <= 0:
+				# Game_Player.updateVehicleGetOff
+				_vehicle_getting_off = false
+				s.vehicle_type = "walk"
+				player.transparent = false
+				player.queue_redraw()
+		elif bool(v.driving):
+			# 原版不在上下过程中就是驾驶中；这里多判一次 driving，测试直接改 vehicle_type 时不把停着的飞艇拖走
+			_sync_vehicle(v)
+	_refresh_airship_sprite(v)
+
+
+## Game_Followers.areGathered：显示中的跟随都停下、站在玩家格上
+func _followers_gathered() -> bool:
+	return not followers.any(func(f): return f.visible and f.character_name != "" and (f.is_moving() or f.grid != player.grid))
+
+
+## Game_Player.updateVehicleGetOn＋Game_Vehicle.getOn：朝向取飞艇的、速度 6、透明、穿透；存下地图 BGM 放飞艇的
+func _finish_get_on(v: Dictionary) -> void:
+	player.set_direction(int(v.direction))
+	player.vehicle_speed = 6
+	_vehicle_getting_on = false
+	player.transparent = true
+	player.through = true
+	player.queue_redraw()
+	v.driving = true
+	XState.current.walking_bgm = _bgm_audio.duplicate() if _bgm_audio is Dictionary else null
+	_play_vehicle_bgm(v)
+
+
+## Game_Vehicle.playBgm：140 改过的，否则 System 的飞艇 BGM
+func _play_vehicle_bgm(v: Dictionary) -> void:
+	play_bgm(v.bgm if v.bgm is Dictionary else XDB.system().get("airship", {}).get("bgm", {}))
+
+
+## Game_Vehicle.syncWithPlayer
+func _sync_vehicle(v: Dictionary) -> void:
+	v.mapId = map_id
+	v.x = player.grid.x
+	v.y = player.grid.y
+	v.direction = player.direction
+
+
+## 进图与同图移动（Game_Player.locate → Game_Vehicle.refresh）：驾驶中的飞艇跟到当前图玩家处，玩家照飞行状态；建飞艇精灵。
+## 读档时不在存档里的上下过程按高度补：在载具上但没驾驶、高度为 0＝正在上，高度大于 0＝正在下
+func _place_vehicle() -> void:
+	var s := XState.current
+	var v := s.vehicle("airship")
+	if in_airship():
+		if bool(v.driving):
+			_vehicle_getting_on = false
+			_vehicle_getting_off = false
+			player.transparent = true
+			player.through = true
+			player.vehicle_speed = 6
+			_sync_vehicle(v)
+			_play_vehicle_bgm(v)
+		elif not _vehicle_getting_on and not _vehicle_getting_off:
+			if int(v.altitude) > 0:
+				_vehicle_getting_off = true
+				player.transparent = true
+			else:
+				_vehicle_getting_on = true
+		elif _vehicle_getting_off:
+			player.transparent = true
+	if airship != null and is_instance_valid(airship):
+		airship.queue_free()
+	airship = MVCharacter.new()
+	airship.name = "Airship"
+	airship.tilemap = lower
+	chars.add_child(airship)
+	airship.locate(int(v.x), int(v.y))
+	_refresh_airship_sprite(v)
+
+
+## Game_Vehicle.refresh／updateAirship：只在停在本图时显示；驾驶中跟着玩家、在角色上方并播放行走动画，停着时在角色下方
+func _refresh_airship_sprite(v: Dictionary) -> void:
+	if airship == null or not is_instance_valid(airship):
+		return
+	if airship.character_name != str(v.characterName) or airship.character_index != int(v.characterIndex):
+		airship.set_image(str(v.characterName), int(v.characterIndex))
+	airship.transparent = int(v.mapId) != map_id
+	if bool(v.driving):
+		airship.grid = player.grid
+		airship.real = player.real
+	elif airship.grid != Vector2i(int(v.x), int(v.y)):
+		airship.locate(int(v.x), int(v.y))
+	airship.direction = int(v.direction)
+	airship.walk_anime = bool(v.driving)
+	airship.step_anime = int(v.altitude) >= AIRSHIP_MAX_ALTITUDE
+	airship.priority_type = 0 if int(v.altitude) <= 0 else 2
+	airship._sync_position()
 
 
 # ---- 解释器服务 ----
@@ -681,6 +902,7 @@ func play_bgm(audio) -> void:
 	if name == _bgm_name:
 		return
 	_bgm_name = name
+	_bgm_audio = (audio as Dictionary).duplicate() if audio is Dictionary and name != "" else null
 	var p := XDB.audio_path("bgm", name) if name != "" else ""
 	bgm.stop()
 	if p != "":
@@ -1158,6 +1380,9 @@ func toggle_hang_up() -> void:
 	if XHangUp.is_active(s):
 		XHangUp.stop(s)
 		return
+	if _vehicle_menu_locked():
+		XSound.system(3)
+		return
 	var tip := XHangUp.ready_start(s, not map_data.get("encounterList", []).is_empty(), player.grid)
 	if tip != "" and not busy:
 		_set_busy(true)
@@ -1210,7 +1435,7 @@ func _reset_transfer_button() -> void:
 
 ## Sprite_MapTransferButton → Scene_MapTransfer：截图（不含地图名）作背景；确认传送后从黑场淡入新地图（Laser1 已在页内播放）。
 func open_transfer() -> void:
-	if _menu_open or (SAFE_TRANSFER_BUTTON and busy):
+	if _menu_open or (SAFE_TRANSFER_BUTTON and busy) or _vehicle_menu_locked():
 		return
 	XSound.system(1)
 	_set_busy(true)

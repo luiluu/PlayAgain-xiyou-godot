@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "alien_affix.json",
+      "collection": "顶层",
+      "key": "hostScope",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "89d8ad74f45b30fa",
+      "newDigest": "1ac23dbff043a82b",
+      "reason": "八戒期 C 新增蚀术参照用例 1 条（27→28），hostScope 只是说明文字随词条列表更新；无既有用例数值改变（唐僧核对）"
+    }
+  ]
+}
