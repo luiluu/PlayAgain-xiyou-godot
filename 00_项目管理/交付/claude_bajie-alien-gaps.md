@@ -4,9 +4,14 @@
 - 状态：WIP 勿合并
 - 本期：异化补漏——前几期交付登记过「没做」的边角集中补（每项先补参照用例，再实现，专项逐步对照）。夺舍本期不做。
 
-## 现状
+## 现状（5 小时额度 84%，按规停下；WIP，勿合并）
 
-（收工时填）
+- 代码、参照、专项都已完成：7 项里 1（setHp 参照）、2、3（参照）、4、6、7 已做，1 的云裳三处做不了（见下），5 只出方案。另加 O-待定（逆祷者反击不治疗敌人）。
+- 已验证：合过 main（468b4b39，有切片改动，已跑 `新建工作树.sh --补齐`）；`xiyou_alien_affix` 本期例全部对照通过（1797/1797，O-待定 检查前一轮；加 O-待定 检查后未重跑）；反向验证（见「验证」）。
+- **没做完**：
+  1. 同步 `同步正式西游.py --accept-additions` 第二轮正在跑（长任务，日志 `03_再刷重制_Godot/04_验证/本地结果/同步_gaps2.log`）。第一轮因 host.cjs 改成抛错让 state_effects_probe 的 action.counter 失败而停，已改成「记一笔、照调原 terminate」，该探针产物与基线逐字节相同。接手者先 `07_开发环境/等待任务.sh <该日志> --timeout 540` 看结果；hostScope 预期只有 alien_affix.json 变（加 13 例＋末尾「补漏」文字），请总装生成接受单。
+  2. 同步后：`xiyou_alien_affix` 再跑一次（含 O-待定 检查），再跑选测：`xiyou_alien_battle`、`xiyou_alien_config`、`xiyou_alien_workshop`、`xiyou_battle*`、`xiyou_state_*`、`xiyou_formula_effects`、`xiyou_shield`、`xiyou_actor_p0`、`xiyou_combat`、`xiyou_race_battle`、`xiyou_smart_ai`（四段）、`xiyou_rules` 难度 1 首段、事件类（`xiyou_battle_events`、`xiyou_troop_events`、`xiyou_event_compare`、`xiyou_interp_review`）及必跑项；阵亡分支、`is_attack`、`state_effects.run_one`、`resource_context.gain` 都是热路径。
+  3. 「验证」节补结果，状态改「可合并」。
 
 ## 逐项结果
 
@@ -50,7 +55,10 @@
 
 ## 验证
 
-（收工时填）
+- 专项 `xiyou_alien_affix`（新参照拷进 generated/oracle 跑，跑完已把基线拷回）：1797/1797（原 1456）。中途一次 Godot 退出报「2 resources still in use」：lifelink.dead 夹具重锁后旧生命池互相引用，已在 `XAlienBattle.end` 补清（见变更草稿 5）。
+- 反向验证：①六个实现文件换回 354f5a8d 版、测试不变：14 项失败（hollow.mp 2、insulation.mp 3、insulation.death 1、jail.death 2、pest.death 2、prayer.counter 1、prayer.dot 2、o106.jail_death_buff_kept 1）；sethp、锁队检查两例、glutton.mp 本来就对（实现前几期已有／饕餮 MP 上限 0），属只补参照。②只撤 `is_attack` 的投影判断：prayer.repeat 2 项失败（次数 2、治疗 2066 对 2067）。都已还原。
+- 同步、选测：未完成（见「现状」）。
+- 偶发：无。
 
 ## 改了的原沙僧核心文件与独占表外的文件（待交叉核查点名）
 
@@ -68,6 +76,7 @@
 ## 可优化（流程／工具／效率）
 
 - 已做：探针 terminate 抛错（派活第 7 项）。
+- 发现：探针 terminate 记录在现有 state_effects_probe 的 `action.counter` 例里报出调用（YEP_SkillMasteryLevels updateSkillMasteryUsageMax 报错→terminate），即原版这一步会退出游戏；参照产物照旧（host 照调原 terminate），是否要查重制这条路径归总装另派。
 - 建议：异化专项的读数（`_unit`）里 `states` 用 `Array(x.state_ids)`，与战斗者共用同一个数组，后面的步骤会改到前面行的读数（逐步对照时当场比不受影响，事后看 rows 会看到被改过的；本期 o106 检查踩到）。改成 `x.state_ids.duplicate()` 更稳，但会动到全部旧例的读法，本期没改，归下次碰这个专项时顺手。
 
 ## 自动战斗与投影方案（只出方案，未写代码）
