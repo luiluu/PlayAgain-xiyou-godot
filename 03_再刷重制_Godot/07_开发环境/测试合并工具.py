@@ -287,8 +287,9 @@ class ParallelTestRunnerTests(unittest.TestCase):
         # 假 Godot：--version 照常回答；每次运行把场景名记进 runs；b 在 seen 不存在时失败一次；FAIL_C 时 c 失败；
         # BUSY 时用 mkdir 当互斥标记，检测同一时刻是否有两个测试在跑
         self.godot = self.tmp / 'godot'
-        self.godot.write_text('#!/bin/zsh\nn=${@[-1]:t}\n[[ $n == --version ]] && { echo 4.x; exit 0; }\n'
+        self.godot.write_text('#!/bin/zsh\nzmodload zsh/datetime\nn=${@[-1]:t}\n[[ $n == --version ]] && { echo 4.x; exit 0; }\n'
                               'print -r -- $n >> %(t)s/runs\n'
+                              'if [[ -n ${SPIN:-} ]]; then t=$EPOCHREALTIME; while (( EPOCHREALTIME - t < 0.3 )); do :; done; fi\n'
                               'if [[ -n ${BUSY:-} ]]; then mkdir %(t)s/busy 2>/dev/null || touch %(t)s/overlap; sleep 0.3; rmdir %(t)s/busy 2>/dev/null; fi\n'
                               'if [[ $n == b.tscn && -n ${FLAKY_B:-} && ! -e %(t)s/seen ]]; then touch %(t)s/seen; echo \'%(bad)s\'; exit 1; fi\n'
                               'if [[ $n == c.tscn && -n ${FAIL_C:-} ]]; then echo \'%(bad)s\'; exit 1; fi\necho \'%(ok)s\'\n'
@@ -370,6 +371,36 @@ class ParallelTestRunnerTests(unittest.TestCase):
         p, _ = self.run_tests('--full', '--quiet')
         self.assertEqual(p.returncode, 0, p.stdout)
         self.assertIn('3 个场景，全部通过', p.stdout)
+
+    def test_quiet_still_heartbeats_for_long_task_watchdog(self):
+        # 八戒 dev.206：长任务里加 --quiet 整段没输出，被一小时无输出看门狗杀掉；--quiet 只省通过行，心跳照打
+        p, _ = self.run_tests('--full', '--quiet', jobs=3, BUSY='1', XIYOU_TEST_HEARTBEAT='0.1', CHECK_GLOBAL_JOBS='1')
+        self.assertEqual(p.returncode, 0, p.stdout)
+        self.assertIn('进行中：完成', p.stdout)
+        self.assertNotIn('✓', p.stdout)
+
+    def test_timings_record_child_user_cpu(self):
+        # 八戒 dev.206：test_timings.json 只有墙钟，负载高时分不清场景慢还是机器满；每次尝试另记子进程 user／sys CPU
+        logs = self.tmp / 'logs'
+        p, _ = self.run_tests('--full', '--log-dir', str(logs), FLAKY_B='1', SPIN='1')
+        self.assertEqual(p.returncode, 0, p.stdout)
+        rows = {r['name']: r for r in json.loads((logs / 'test_timings.json').read_text())['scenes']}
+        for r in rows.values():
+            self.assertEqual(r['userCpuSeconds'], r['attempts'][0]['userCpuSeconds'])
+            for t in r['attempts']:
+                self.assertGreater(t['userCpuSeconds'], 0.1, r)  # 假 Godot 空转约 0.3 秒 CPU
+                self.assertGreaterEqual(t['sysCpuSeconds'], 0)
+        self.assertEqual(len(rows['b.tscn']['attempts']), 2)
+
+    def test_run_with_rusage_timeout_keeps_partial_output(self):
+        par = load('par_rusage', HERE / '并行测试.py')
+        rc, out, cpu = par.run_with_rusage(['sh', '-c', 'echo early; echo err >&2; sleep 30'], dict(os.environ), 0.5)
+        self.assertEqual(rc, 142)
+        self.assertIn('early', out)
+        self.assertIn('err', out)
+        self.assertGreaterEqual(cpu['user'], 0)
+        rc, out, _ = par.run_with_rusage(['sh', '-c', 'echo hi; exit 3'], dict(os.environ), 10)
+        self.assertEqual((rc, out), (3, 'hi\n'))
 
     def test_failure_summary_is_last_and_written_for_checker(self):
         """哪吒_7 t4 第 1 项：长任务日志里失败明细夹在几百行进度中间，收尾单列失败场景与日志路径，并交给 检查.sh 汇总。"""
@@ -615,6 +646,86 @@ else:  # 别的工作树来要一个槽
         self.assertLess(new, 1.5)
         self.assertFalse(list((self.state / 'slots/queue').iterdir()))  # 排队文件都收走了
 
+    PRIO = """import importlib.util, sys, time
+spec = importlib.util.spec_from_file_location('p', sys.argv[1]); p = importlib.util.module_from_spec(spec); spec.loader.exec_module(p)
+state, limit, weight, hold = __import__('pathlib').Path(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]), float(sys.argv[5])
+(state / ('start_' + sys.argv[6])).touch()
+with p.global_slot(state, limit, weight, priority=p.slot_priority('.')):
+    print('GOT %f' % time.time(), flush=True)
+    time.sleep(hold)
+"""
+
+    def test_main_worktree_waiter_goes_before_earlier_lane_waiters(self):
+        """10-29～30：总装合并选测「等槽 4，在跑 无」排 40 分钟～1 小时多。车道批测占满上限、另一车道先排着时，
+        后来的总装请求（XIYOU_SLOT_PRIORITY=1）先拿到槽；车道批测已在跑的不打断，放槽后不再重抢。"""
+        script = self.state / 'hog.py'
+        script.write_text(self.HOG)
+        prio = self.state / 'prio.py'
+        prio.write_text(self.PRIO)
+        lane = dict(os.environ, XIYOU_SLOT_PRIORITY='0')
+        main = dict(os.environ, XIYOU_SLOT_PRIORITY='1')
+        par = str(HERE / '并行测试.py')
+        hog = subprocess.Popen([sys.executable, str(script), par, str(self.state), '2', '6', 'hog'], env=lane, stdout=subprocess.DEVNULL)
+        try:
+            self.assertTrue(self.wait_for(lambda: (self.state / 'hog_ready').exists(), 30))
+            other = subprocess.Popen([sys.executable, str(prio), par, str(self.state), '2', '1', '0.5', 'lane'], env=lane,
+                                     stdout=subprocess.PIPE, text=True)
+            # 等车道等候者真登记进排队目录，再让总装来（不靠固定时间）
+            self.assertTrue(self.wait_for(lambda: any((self.state / 'slots/queue').glob('*_%d_*' % other.pid)), 30))
+            t0 = __import__('time').time()
+            boss = subprocess.run([sys.executable, str(prio), par, str(self.state), '2', '1', '0', 'main'], env=main,
+                                  capture_output=True, text=True, timeout=30)
+            got_main = float(boss.stdout.split()[1])
+            got_lane = float(other.communicate(timeout=30)[0].split()[1])
+        finally:
+            hog.wait(30)
+        self.assertLess(got_main, got_lane, '总装请求应排在先来的车道等候者前面')
+        self.assertLess(got_main - t0, 1.5)  # 车道批测放槽后让路，下一轮就归总装
+        self.assertFalse(list((self.state / 'slots/priority').iterdir()))
+
+    def test_lane_single_yields_to_live_priority_waiter_even_with_free_slots(self):
+        # 不靠竞速：有活着的总装等候者时，车道单槽即使有空槽也让；等候者走了马上能占
+        import threading, time as _t
+        pdir = self.state / 'slots/priority'
+        pdir.mkdir(parents=True)
+        boss = pdir / ('%d_%d_1' % (_t.time_ns(), os.getppid()))
+        boss.touch()
+        got, release = {}, threading.Event()
+        t = self.hold(1, 2, release, got, 'lane')
+        self.assertFalse(self.wait_for(lambda: 'lane' in got, 1))
+        self.assertFalse(self.locked('0.lock') or self.locked('1.lock'))
+        boss.unlink()
+        self.assertTrue(self.wait_for(lambda: 'lane' in got, 30))
+        release.set(); t.join(30)
+
+    def test_lane_heavy_waits_for_priority_waiter_before_gathering(self):
+        # 车道多槽进程攒槽时会挡住全部单槽（含总装），所以有总装在排就先不拿 heavy.lock
+        import threading, time as _t
+        pdir = self.state / 'slots/priority'
+        pdir.mkdir(parents=True)
+        boss = pdir / ('%d_%d_1' % (_t.time_ns(), os.getppid()))  # 活着的进程登记的优先等候者
+        boss.touch()
+        got, release = {}, threading.Event()
+        h = self.hold(2, 2, release, got, 'heavy')
+        self.assertFalse(self.wait_for(lambda: 'heavy' in got, 1))
+        self.assertFalse(self.locked('heavy.lock'))
+        boss.unlink()
+        self.assertTrue(self.wait_for(lambda: 'heavy' in got, 30))
+        release.set(); h.join(30)
+
+    def test_slot_priority_main_worktree_and_env(self):
+        repo = self.state / 'repo'
+        subprocess.run(['git', 'init', '-q', str(repo)], check=True)
+        subprocess.run(['git', '-C', str(repo), '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'x'], check=True)
+        subprocess.run(['git', '-C', str(repo), 'worktree', 'add', '-q', str(self.state / 'wt')], check=True)
+        with mock.patch.dict(os.environ, {'XIYOU_SLOT_PRIORITY': ''}):
+            self.assertTrue(self.par.slot_priority(str(repo)))
+            self.assertFalse(self.par.slot_priority(str(self.state / 'wt')))
+        with mock.patch.dict(os.environ, {'XIYOU_SLOT_PRIORITY': '0'}):
+            self.assertFalse(self.par.slot_priority(str(repo)))
+        with mock.patch.dict(os.environ, {'XIYOU_SLOT_PRIORITY': '1'}):
+            self.assertTrue(self.par.slot_priority(str(self.state / 'wt')))
+
     def test_stale_queue_ticket_is_ignored_and_removed(self):
         import time as _t
         q = self.state / 'slots/queue'
@@ -710,7 +821,7 @@ else:  # 别的工作树来要一个槽
         seen = []
         real = sync.runner().global_slot
 
-        def spy(sdir, limit, weight=1, on_wait=None, interval=60.0):
+        def spy(sdir, limit, weight=1, on_wait=None, interval=60.0, priority=False):
             seen.append(weight)
             if on_wait:
                 on_wait(61.0)

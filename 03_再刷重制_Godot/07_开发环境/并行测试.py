@@ -9,6 +9,7 @@
   首次与重跑的输出、退出码、耗时分别保留（日志 <场景>.log 与 <场景>.rerun1.log、test_timings.json 的 attempts），
   每次偶发另追加到共用状态目录的 flaky.jsonl，多次偶发可对账。
 - 输出与原来逐个运行时相同（按场景名排序），失败时返回 1。
+- test_timings.json 每个场景记墙钟秒数与子进程 user／sys CPU 秒（os.wait4 的 rusage，哪吒_9）：墙钟高、CPU 低是在等机器，CPU 也高才是场景本身慢。
 - 并行数：CHECK_JOBS 或 --jobs；都没给时主工作区用 CPU 核数一半（最多 6），worktree 里只用 2（多会话并行时给其他车道留余量）。
 - 派发顺序：按上次实测耗时从慢到快（没有记录的排最前，当作最慢），免得最慢的场景压到队尾。
 - 所有工作树共用一个并发上限（CHECK_GLOBAL_JOBS，默认 CPU 核数一半、最多 6）：每个测试先在共用状态目录里占一个槽位
@@ -25,12 +26,15 @@
 - 单槽排队（2026-10-28 哪吒_5）：单槽申请前先看 slots/queue/ 里有没有别的进程更早登记、还活着的等候者，有就让一轮；
   自己第一次没占到才登记（文件名＝开始纳秒_pid_线程，等待中每轮刷新，超过 QUEUE_STALE 秒没刷新或 pid 已不在的作废）。
   同一进程的线程之间不排队；多槽进程照 heavy.lock 规则不参加。XIYOU_SLOT_QUEUE=0 回到旧行为。
+- 总装优先（2026-10-30 哪吒_9）：主工作区（或 XIYOU_SLOT_PRIORITY=1）的占槽请求排进 slots/priority/，
+  别的工作树的单槽申请只要看到还活着的优先等候者就让（不论谁先来）；车道的多槽进程在拿 heavy.lock 前也先等优先等候者走完。
+  已占到槽在跑的不打断。XIYOU_SLOT_PRIORITY=0 让主工作区也按普通排队。
 - 心跳：批测与排槽期间每 XIYOU_TEST_HEARTBEAT 秒（默认 300，0 关闭）打印一行进度（完成数、等槽数、在跑的场景），
   免得长任务.py 的无输出看门狗（默认 3600 秒）把仍在推进的批测判成卡住；不放宽看门狗、不改并发。
 - 日志：--log-dir（或 CHECK_LOG_DIR）没给时写到 <工程上一级>/04_验证/本地结果/并行测试/<时间戳>/（只留最近 LOGS_KEEP 份），
   每个场景一份 <场景>.log，结尾打印目录；失败的场景另打印它的完整日志路径（八戒期二、期三：明细只在屏幕上 8 行，
   管道给 tail 时看不全，曾多花一轮 50 分钟重跑）；最后两类行是「✗ 失败场景 N 个」与逐个「场景 → 日志」，
-  设了 CHECK_FAILED_FILE 时同样写进该文件（每行「场景<Tab>日志」，全过时清空），检查.sh 据此在收尾汇总里带上日志路径。--quiet：不打心跳与通过行，只打失败、偶发、提示与汇总。
+  设了 CHECK_FAILED_FILE 时同样写进该文件（每行「场景<Tab>日志」，全过时清空），检查.sh 据此在收尾汇总里带上日志路径。--quiet：不打通过行，只打失败、偶发、提示、心跳与汇总（心跳照打，长任务里加 --quiet 也不会被无输出看门狗杀掉，八戒 dev.206）。
 - 共用状态目录：XIYOU_TEST_STATE_DIR，否则 <git-common-dir>/xiyou_test_state（主工作区与各 worktree 共用），不在 Git 里时用系统临时目录。
 """
 import argparse
@@ -38,6 +42,7 @@ import concurrent.futures as cf
 import contextlib
 import datetime
 import fcntl
+import functools
 import hashlib
 import json
 import os
@@ -182,10 +187,24 @@ def queue_enabled() -> bool:
     return os.environ.get('XIYOU_SLOT_QUEUE', '1') != '0'
 
 
-def earlier_waiter(qdir: Path, me: str) -> bool:
+def slot_priority(path: str) -> bool:
+    """占槽优先：XIYOU_SLOT_PRIORITY 设了 1/0 就照它，否则主工作区（总装合并检查、同步）优先、worktree（车道）不优先。"""
+    env = os.environ.get('XIYOU_SLOT_PRIORITY', '')
+    if env != '':
+        return env != '0'
+    return not _linked_cached(str(Path(path).resolve()))
+
+
+@functools.lru_cache(maxsize=None)
+def _linked_cached(path: str) -> bool:
+    return in_linked_worktree(path)
+
+
+def earlier_waiter(qdir: Path, me: str, anytime: bool = False) -> bool:
     """别的进程有没有比 me（排队文件名「开始纳秒_pid_线程」；None＝还没登记，按现在算）更早登记、还活着的单槽等候者。
+    anytime：不比先后，有活着的就算（普通申请看优先队列用）。
     同一进程的线程之间不排队（各自的批测里照旧）；超时没刷新或 pid 已不在的排队文件顺手删掉。"""
-    mine = int(me.split('_')[0]) if me else time.time_ns()
+    mine = float('inf') if anytime else int(me.split('_')[0]) if me else time.time_ns()
     now = time.time()
     for f in qdir.glob('*_*_*'):
         try:
@@ -211,13 +230,14 @@ def earlier_waiter(qdir: Path, me: str) -> bool:
 
 
 @contextlib.contextmanager
-def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_interval: float = 60.0):
+def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_interval: float = 60.0, priority: bool = False):
     """所有工作树共用的并发槽位：slots/<i>.lock 上的非阻塞 flock，占到哪个用哪个；进程退出时系统自动释放。
     weight：一个进程占几槽（特别吃内存的探针如 event_probe 单进程约 4.5GB，按实际占用多占几槽），超过上限按上限算。
     多槽的先独占 heavy.lock（同一时间只有一个多槽进程在攒槽，免得两个各攒一半互相等死），再一槽一槽攒齐，攒到的不放；
     单槽的每次占槽前先对 heavy.lock 取共享锁，有多槽进程正在攒槽（独占锁在）就让路等着，所以空出来的槽一定归多槽进程，
     它不会被源源不断的单槽测试永远插队（2026-10-26 哪吒：原来单槽照旧抢，空槽归谁看轮询先后，回归偶发失败）。
-    on_wait(已等秒数)：排队期间每 wait_interval 秒调一次（同步用它打印「等槽」心跳，长任务看门狗据此算作有进展）。"""
+    on_wait(已等秒数)：排队期间每 wait_interval 秒调一次（同步用它打印「等槽」心跳，长任务看门狗据此算作有进展）。
+    priority：总装优先（见文件头），由调用方用 slot_priority(工程目录) 算好传进来。"""
     slots = sdir / 'slots'
     slots.mkdir(exist_ok=True)
     weight = max(1, min(int(weight), limit))
@@ -225,10 +245,26 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
     t0 = last = time.monotonic()
     # 单槽先来先得（多槽照 heavy.lock 规则，不参加排队，免得与闸门互等）：主工作区批测占满上限时，它的线程放槽后同一瞬间
     # 就重抢，别的工作树每 0.5 秒轮询一次几乎抢不到（10-28 哪吒排 1 小时、八戒排 1.5 小时）。
-    qdir = slots / 'queue' if weight == 1 and queue_enabled() else None
+    queued = queue_enabled()
+    pdir = slots / 'priority' if queued else None  # 总装优先的等候者（单槽、多槽都在这里登记）
+    if pdir:
+        pdir.mkdir(exist_ok=True)
+    qdir = (pdir if priority else slots / 'queue') if weight == 1 and queued else None
     ticket = None  # 自己的排队文件；第一次没占到才登记
     if qdir:
         qdir.mkdir(exist_ok=True)
+
+    def ahead() -> bool:
+        """有没有该让的：普通申请让任何活着的优先等候者，再按先来先得；优先申请只在优先队列里比先后。"""
+        if pdir and not priority and earlier_waiter(pdir, None, anytime=True):
+            return True
+        return bool(qdir) and earlier_waiter(qdir, ticket.name if ticket else None)
+
+    def enqueue():
+        nonlocal ticket
+        if ticket is None and (qdir or (pdir and priority)):
+            ticket = (qdir or pdir) / ('%d_%d_%d' % (time.time_ns(), os.getpid(), threading.get_ident()))
+            ticket.touch()
 
     def tick():
         nonlocal last
@@ -239,8 +275,17 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
 
     try:
         if weight > 1:
+            # 车道的多槽进程先等总装的优先等候者走完再攒槽（攒槽时会挡住所有单槽，含总装）；优先的多槽进程登记进优先队列
+            if priority:
+                enqueue()
+            while pdir and not priority and earlier_waiter(pdir, None, anytime=True):
+                tick()
+                time.sleep(0.5)
             heavy = open(slots / 'heavy.lock', 'a')
             while True:
+                if ticket:
+                    with contextlib.suppress(OSError):
+                        os.utime(ticket)
                 try:
                     fcntl.flock(heavy, fcntl.LOCK_EX | fcntl.LOCK_NB)
                     break
@@ -252,10 +297,8 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
             if ticket:
                 with contextlib.suppress(OSError):
                     os.utime(ticket)  # 刷新：别人据此认我还活着
-            if qdir and earlier_waiter(qdir, ticket.name if ticket else None):
-                if ticket is None:
-                    ticket = qdir / ('%d_%d_%d' % (time.time_ns(), os.getpid(), threading.get_ident()))
-                    ticket.touch()
+            if weight == 1 and ahead():
+                enqueue()
                 tick()
                 time.sleep(0.5)
                 continue
@@ -279,9 +322,7 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
             if gate is not None:
                 fcntl.flock(gate, fcntl.LOCK_UN)
             if len(held) < weight:
-                if qdir and ticket is None:
-                    ticket = qdir / ('%d_%d_%d' % (time.time_ns(), os.getpid(), threading.get_ident()))
-                    ticket.touch()
+                enqueue()
                 tick()
                 time.sleep(0.5)
         if ticket:
@@ -311,7 +352,7 @@ def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progres
     if progress:
         with progress.lock:
             progress.waiting.add(name)
-    with global_slot(sdir, limit):
+    with global_slot(sdir, limit, priority=slot_priority(project)):
         if progress:
             with progress.lock:
                 progress.waiting.discard(name)
@@ -319,19 +360,42 @@ def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progres
         start = time.time()
         with tempfile.TemporaryDirectory(prefix='xiyou_test_home_') as home:
             env = dict(os.environ, HOME=home)
-            try:
-                p = subprocess.run([godot, '--headless', '--path', project, 'res://tests/' + name],
-                                   capture_output=True, text=True, timeout=TIMEOUT, env=env)
-                out, rc = p.stdout + p.stderr, p.returncode
-            except subprocess.TimeoutExpired as e:
-                out = ''.join(x.decode(errors='replace') if isinstance(x, bytes) else (x or '')
-                              for x in (e.stdout, e.stderr))
-                rc = 142
+            rc, out, cpu = run_with_rusage([godot, '--headless', '--path', project, 'res://tests/' + name], env, TIMEOUT)
         if progress:
             with progress.lock:
                 progress.running.discard(name)
                 progress.done += 1
-        return name, rc, out, time.time() - start
+        return name, rc, out, time.time() - start, cpu
+
+
+def run_with_rusage(cmd: list, env: dict, timeout: float) -> tuple:
+    """跑一个子进程，返回 (退出码, 标准输出＋标准错误, {user, sys} CPU 秒)。超时杀掉、退出码记 142、输出保留已有部分。
+    CPU 用 os.wait4 取本子进程（含它等过的孙进程）的 rusage：批测各线程并行，RUSAGE_CHILDREN 的差值会混进别的场景
+    （八戒 dev.206：墙钟受负载影响大，单看秒数分不清是场景慢还是机器满）。"""
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+    bufs = [[], []]
+    readers = [threading.Thread(target=lambda f=f, b=b: b.append(f.read()), daemon=True) for f, b in zip((p.stdout, p.stderr), bufs)]
+    for t in readers:
+        t.start()
+    deadline = time.monotonic() + timeout
+    timed_out = False
+    while True:
+        pid, status, usage = os.wait4(p.pid, os.WNOHANG)
+        if pid:
+            break
+        if time.monotonic() > deadline:
+            timed_out = True
+            p.kill()
+            pid, status, usage = os.wait4(p.pid, 0)
+            break
+        time.sleep(0.05)
+    p.returncode = os.waitstatus_to_exitcode(status)  # 已由 wait4 收尸，告诉 Popen 别再等
+    for t in readers:
+        t.join()
+    p.stdout.close()
+    p.stderr.close()
+    out = ''.join(b''.join(b).decode(errors='replace') for b in bufs)
+    return 142 if timed_out else p.returncode, out, {'user': round(usage.ru_utime, 3), 'sys': round(usage.ru_stime, 3)}
 
 
 def missing_classes(project: str) -> list:
@@ -428,7 +492,7 @@ def main() -> int:
     ap.add_argument('--reuse', action='store_true', help='指定场景时也按工程指纹沿用上轮通过结果（检查.sh 选测用）')
     ap.add_argument('--log-dir', type=Path, default=Path(os.environ['CHECK_LOG_DIR']) if os.environ.get('CHECK_LOG_DIR') else None,
                     help='每个场景的完整输出写到这里；不给时用 04_验证/本地结果/并行测试/<时间戳>/')
-    ap.add_argument('--quiet', action='store_true', help='不打心跳与通过行，只打失败、偶发、提示与汇总')
+    ap.add_argument('--quiet', action='store_true', help='不打通过行，只打失败、偶发、提示、心跳与汇总')
     ap.add_argument('--names-file', type=Path, action='append', default=[], metavar='文件',
                     help='场景名或前缀每行一个（# 起为注释），与命令行名字合并；选测清单、复跑失败项用（哪吒_8）')
     ap.add_argument('names', nargs='*')
@@ -460,7 +524,7 @@ def main() -> int:
     if missing:
         # 只在缓存缺类名时导入一次（占一个共用槽，与 检查.sh 的导入相同，最多 300 秒）；导入失败照常往下跑，由测试报错
         print('  · 导入缓存缺 %d 个类名（%s 等），先 godot --import 一次' % (len(missing), '、'.join(missing[:3])), flush=True)
-        with global_slot(sdir, limit):
+        with global_slot(sdir, limit, priority=slot_priority(a.project)):
             try:
                 p = subprocess.run([a.godot, '--headless', '--path', a.project, '--import'], capture_output=True, text=True, timeout=300)
                 if p.returncode:
@@ -483,14 +547,15 @@ def main() -> int:
         reused = {n: prev[n] for n in scenes if n in prev}
     timings = read_json(sdir / 'timings.json', {})
     todo = sorted((n for n in scenes if n not in reused), key=lambda n: (-float(timings.get(n, 1e9)), n))
-    attempts = {}  # 场景 → [(rc, out, secs), …]：首次在前，重跑依次追加，不覆盖
+    attempts = {}  # 场景 → [(rc, out, secs, cpu), …]：首次在前，重跑依次追加，不覆盖
     started = time.monotonic()
     progress = Progress(len(todo))
     flaky = []
-    with heartbeat(progress, 0 if a.quiet else float(os.environ.get('XIYOU_TEST_HEARTBEAT', HEARTBEAT))):
+    # --quiet 也打心跳：长任务里加 --quiet 时整段没输出，被一小时无输出看门狗杀掉（八戒 dev.206）；心跳 5 分钟一行，管道给 tail 时看不到
+    with heartbeat(progress, float(os.environ.get('XIYOU_TEST_HEARTBEAT', HEARTBEAT))):
         with cf.ThreadPoolExecutor(max_workers=a.jobs) as pool:
-            for name, rc, out, secs in pool.map(lambda n: run_one(a.godot, a.project, n, sdir, limit, progress), todo):
-                attempts[name] = [(rc, out, secs)]
+            for name, rc, out, secs, cpu in pool.map(lambda n: run_one(a.godot, a.project, n, sdir, limit, progress), todo):
+                attempts[name] = [(rc, out, secs, cpu)]
         failed = [n for n in todo if not result_ok(*attempts[n][0][:2])]
         if a.jobs > 1 and len(todo) > 1 and 0 < len(failed) <= FLAKY_RERUN_MAX:
             progress.total += len(failed)
@@ -513,9 +578,9 @@ def main() -> int:
         tries = attempts[name]
         if a.log_dir:
             a.log_dir.mkdir(parents=True, exist_ok=True)
-            for i, (_, out, _) in enumerate(tries):
+            for i, (_, out, _, _) in enumerate(tries):
                 (a.log_dir / (Path(name).stem + ('.rerun%d' % i if i else '') + '.log')).write_text(out)
-        rc, out, secs = tries[-1]
+        rc, out, secs, _ = tries[-1]
         line = next((l for l in out.splitlines() if l.startswith('TEST_RESULT=')), '')
         if final[name]:
             if not a.quiet:
@@ -568,7 +633,9 @@ def main() -> int:
             'jobs': a.jobs, 'globalJobs': limit, 'wallSeconds': round(wall, 3), 'flakyRerunPassed': flaky,
             'fingerprint': fingerprint, 'reused': sorted(reused), 'failed': sorted(failed_logs),
             'scenes': [{'name': n, 'seconds': round(attempts[n][0][2], 3), 'passed': final[n],
-                        'attempts': [{'rc': t[0], 'seconds': round(t[2], 3), 'passed': result_ok(t[0], t[1])} for t in attempts[n]]}
+                        'userCpuSeconds': attempts[n][0][3]['user'],
+                        'attempts': [{'rc': t[0], 'seconds': round(t[2], 3), 'userCpuSeconds': t[3]['user'], 'sysCpuSeconds': t[3]['sys'],
+                                      'passed': result_ok(t[0], t[1])} for t in attempts[n]]}
                        for n in sorted(todo, key=lambda n: attempts[n][0][2], reverse=True)]
         }, ensure_ascii=False, indent=2) + '\n')
         print('  · 日志：' + str(a.log_dir))
