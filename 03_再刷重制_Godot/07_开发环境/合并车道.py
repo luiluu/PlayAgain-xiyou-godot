@@ -40,6 +40,11 @@ COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/交接板归档.md'
           Path('00_项目管理/当前状态.json'), Path('00_项目管理/来源登记.json'),
           SUB / '开发编号.json', PROJECT / 'project.godot', PROJECT / 'content/build_info.json']}
 VERSION_MARKER = 'dev.' + '待定'
+# 优化登记号占位：车道文档里写 O-待定（同一份里要区分几项就写 O-待定-1、O-待定-2），合并时按已登记的最大 O-NNN 顺延换号
+# （总装手换漏过一处注释，唐僧 10-30）。占位字面量拆开写，免得本文件自己被换号。
+OPT_TOKEN = re.compile('O-' + '待定' + r'(?:-\d+)?')
+OPT_NUMBERED = re.compile(r'O-(\d{3})(?!\d)')
+OPT_REGISTERS = ['00_项目管理/交接板.md', '00_项目管理/交接板归档.md', '00_项目管理/变更记录.md']
 VERSION_EXEMPT = {'AGENTS.md', '00_项目管理/交付/README.md'}
 # 车道工作树里只有这些目录下的未跟踪文件时仍可合并（按分支引用，不清理工作树）
 EVIDENCE_DIRS = ('00_项目管理/核查范围/', str(SUB / '04_验证/本地结果') + '/')
@@ -82,11 +87,16 @@ def untracked_evidence(root):
 
 
 def active_cwds(path):
-    """当前目录在 path 里的进程（lsof 列各进程 cwd），返回 [(pid, 命令)]；本进程除外。lsof 不可用时返回空。"""
+    """当前目录在 path 里的进程（lsof 列各进程 cwd），返回 [(pid, 命令)]；本进程除外。
+    lsof 不可用、超时、或失败且没有输出（正常机器上总有进程有 cwd）时返回 None＝无法确认，调用方要保守按「可能有活动会话」处理
+    （沙僧第十六期 P2：原来这些情形返回空，清理会放行）。"""
     try:
-        out = subprocess.run(['lsof', '-a', '-d', 'cwd', '-F', 'pcn'], capture_output=True, text=True, timeout=60).stdout
+        r = subprocess.run(['lsof', '-a', '-d', 'cwd', '-F', 'pcn'], capture_output=True, text=True, timeout=60)
     except (OSError, subprocess.TimeoutExpired):
-        return []
+        return None
+    out = r.stdout
+    if r.returncode != 0 and not out.strip():
+        return None
     base, found, pid, cmd = os.path.realpath(path), [], None, ''
     for line in out.splitlines():
         if line.startswith('p'):
@@ -104,6 +114,8 @@ def lane_protected(root, lane):
     """清理车道工作树前的保护：返回不删的原因，没有就返回空串。"""
     wt = Path(lane['worktree'])
     procs = active_cwds(wt)
+    if procs is None:
+        return '无法确认有无活动会话（lsof 不可用、超时或失败），保守不删'
     if procs:
         return '有活动会话（进程 %s 的当前目录在其中）' % '、'.join('%s %s' % p for p in procs[:3])
     meta = Path(git(wt, 'rev-parse', '--path-format=absolute', '--git-dir'))
@@ -217,6 +229,13 @@ def parse_check(root, base):
                 log = p.stdout + p.stderr
                 if args[0] == '--script' and 'PARSE_CHECK_DONE' not in log:
                     problems.append('解析检查脚本没跑完（退出码 %d）：%s' % (p.returncode, ' '.join(log.split()[-30:])))
+                elif p.returncode != 0:
+                    problems.append('godot %s 退出码 %d：%s' % (args[0], p.returncode, ' '.join(log.split()[-30:])))
+                if args[0] == '--import':
+                    # 导入报错（健康工程的导入日志没有 ERROR: 行；新建工作树.sh 同口径）：导入或缓存没准备好，后面的加载检查不可信
+                    bad = [l.strip() for l in log.splitlines() if l.startswith('ERROR:')]
+                    if bad:
+                        problems.append('godot --import 报错 %d 条：%s' % (len(bad), '；'.join(bad[:3])))
                 problems += ['%s：%s' % (f, e) for e, f in parse_errors(log, autoloads)]
         except subprocess.TimeoutExpired:
             problems.append('解析检查超过 %d 秒没结束（机器太忙可重跑；确认无误可加 --no-parse-check 跳过本次）' % PARSE_TIMEOUT)
@@ -409,7 +428,7 @@ def plan(root, task):
     # 只替换目标车道带来的编号占位，不扫描、暂存主工作区的其它文件。
     version_paths = [p for p in changed if p != str(delivery) and p not in extra and p not in VERSION_EXEMPT
                      and Path(p).suffix in {'.md', '.json', '.gd', '.py', '.sh'}
-                     and VERSION_MARKER in (read(p) or '')]
+                     and (VERSION_MARKER in (read(p) or '') or OPT_TOKEN.search(read(p) or ''))]
     return dict(task=task, branch=branch, worktree=str(wt) if wt else '', base=base, target=target,
                 delivery=str(delivery), extraDeliveries=extra, refresh=refresh, acceptChanges=accept, gameplay=game, phase='planned', head=base,
                 versionPaths=version_paths, evidenceFiles=evidence,
@@ -439,15 +458,47 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def assign_opt_numbers(root, state):
+    """本条合并带来的 O-待定[-n] 各换成顺延的 O-NNN：起点＝登记文件（交接板、归档、变更记录及其分卷）与本条文件里已有的最大号 +1，
+    同一个占位全合并里换成同一个号，按第一次出现的顺序编号。无占位时返回空表。"""
+    texts, tokens = [], []
+    for rel in list(state.get('versionPaths', [])) + sheets(state):
+        f = root / rel
+        if f.is_file() and not f.is_symlink():
+            texts.append(f.read_text(errors='replace'))
+    for t in texts:
+        for m in OPT_TOKEN.finditer(t):
+            if m.group(0) not in tokens:
+                tokens.append(m.group(0))
+    if not tokens:
+        return {}
+    regs = [root / r for r in OPT_REGISTERS] + sorted((root / '00_项目管理').glob('变更记录*.md'))
+    top = 0
+    for f in regs:
+        if f.is_file():
+            top = max([top] + [int(n) for n in OPT_NUMBERED.findall(f.read_text(errors='replace'))])
+    for t in texts:
+        top = max([top] + [int(n) for n in OPT_NUMBERED.findall(t)])
+    return {tok: 'O-%03d' % (top + i + 1) for i, tok in enumerate(tokens)}
+
+
+def substitute(text, state):
+    text = text.replace(VERSION_MARKER, state['version'])
+    for tok, num in sorted(state.get('optNumbers', {}).items(), key=lambda kv: -len(kv[0])):
+        text = text.replace(tok, num)
+    return text
+
+
 def replace_versions(root, state, state_file):
     if 'versionEdits' not in state:
+        state['optNumbers'] = assign_opt_numbers(root, state)
         edits = {}
         for rel in state.get('versionPaths', []):
             path = root / rel
             if path.is_symlink() or not path.is_file():
                 raise RuntimeError('编号占位文件已改变类型：' + rel)
             before = path.read_bytes()
-            after = before.decode().replace(VERSION_MARKER, state['version']).encode()
+            after = substitute(before.decode(), state).encode()
             if before != after:
                 edits[rel] = {'before': digest(before), 'after': digest(after)}
         # 先保存计划再写文件；中断时只接受原内容或已经替换完的内容。
@@ -462,7 +513,7 @@ def replace_versions(root, state, state_file):
             continue
         if digest(current) != hashes['before']:
             raise RuntimeError('编号替换过程中出现额外改动，保留现场：' + rel)
-        after = current.decode().replace(VERSION_MARKER, state['version']).encode()
+        after = substitute(current.decode(), state).encode()
         if digest(after) != hashes['after']:
             raise RuntimeError('编号替换结果与计划不一致：' + rel)
         path.write_bytes(after)
@@ -526,6 +577,8 @@ def prepare(root, state, state_file, executor):
             if 'syncSince' not in state:
                 # --abort 凭它找本次合并第一轮同步前的产物备份（同步脚本备份目录名同样以时间戳开头）
                 state['syncSince'] = time.strftime('%Y%m%d_%H%M%S')
+                # 固定本条合并同步前的产物：同步脚本的滚动备份只留三份，同一合并多轮同步会把首轮前的备份轮换掉（沙僧第七期 T1）
+                state['preSync'] = pin_generated(root, state_file.parent / 'pre-sync' / state['task'])
                 save(state_file, state)
             # 提速提案 P3：车道已在同一套转换工具上同步过时直接用其产物（按指纹核对）；退出码 3＝条件不满足，改跑完整同步。
             # 同步脚本结束时自己跑 godot --import。
@@ -578,7 +631,7 @@ def prepare(root, state, state_file, executor):
             if any(not (root / s).exists() for s in sheets(state)):
                 raise RuntimeError('交付单已不存在且变更记录无本批标记，先人工核对')
             body = '\n\n'.join(relink(draft((root / s).read_text()), root) for s in sheets(state))
-            body = body.replace(VERSION_MARKER, state['version'])
+            body = substitute(body, state)
             (root / LOG).write_text(log.rstrip() + '\n\n' + body + '\n\n' + marker + '\n')
         for s in sheets(state):
             (root / s).unlink(missing_ok=True)
@@ -650,12 +703,62 @@ SYNC_BASELINES = SUB / '04_验证/本地结果/同步基线'
 SYNC_BACKED_UP = ['oracle', 'db', 'maps', 'manifest.json', 'slice.json']  # 同步脚本开头备份的产物（同步正式西游.py）
 
 
+def clone_tree(src, dst):
+    """APFS 克隆（cp -c，同卷不另占空间）；克隆不成退回普通复制。"""
+    if sys.platform == 'darwin' and subprocess.run(['cp', '-cRp', str(src), str(dst)], capture_output=True).returncode == 0:
+        return
+    if dst.exists():
+        shutil.rmtree(dst) if dst.is_dir() else dst.unlink()
+    (shutil.copytree if src.is_dir() else shutil.copy2)(src, dst)
+
+
+def pin_generated(root, dest):
+    """首轮同步前把产物（SYNC_BACKED_UP 各项）固定到 dest，并记下哪些项原本不存在；失败返回 None（撤回时就拒绝声称还原）。"""
+    gen = root / GENERATED
+    try:
+        if dest.exists():
+            shutil.rmtree(dest)
+        dest.mkdir(parents=True)
+        present = [n for n in SYNC_BACKED_UP if (gen / n).exists()]
+        for n in present:
+            clone_tree(gen / n, dest / n)
+        return {'dir': str(dest), 'present': present, 'absent': [n for n in SYNC_BACKED_UP if n not in present]}
+    except OSError as error:
+        print('提示：没能固定同步前的产物（%s）；之后撤回同步时无法保证还原' % error, flush=True)
+        return None
+
+
+def drop_pin(state):
+    pin = state.get('preSync')
+    if pin and pin.get('dir'):
+        shutil.rmtree(pin['dir'], ignore_errors=True)
+
+
 def undo_sync(root, state):
     """撤掉本次合并的同步：产物从第一轮同步开头的备份还原，删产物指纹与本产物目录的同步基线
     （基线目录名＝产物目录绝对路径的 sha256，见同步正式西游.py comparison_baseline），下一次同步按还原后的产物重建基线。"""
     if 'syncSince' not in state:
         return '本次合并还没同步过，产物不用退'
     gen = root / GENERATED
+    if 'preSync' in state:
+        pin = state['preSync']
+        if not pin or not Path(pin['dir']).is_dir() or any(not (Path(pin['dir']) / n).exists() for n in pin['present']):
+            return '没有本条合并同步前固定的产物（或已损坏），无法确定原状态，产物与同步基线保留现场、没有还原；请人工核对 generated/'
+        for name in SYNC_BACKED_UP:
+            dst = gen / name
+            if dst.is_dir() and not dst.is_symlink():
+                shutil.rmtree(dst)
+            elif dst.exists() or dst.is_symlink():
+                dst.unlink()
+            if name in pin['present']:
+                clone_tree(Path(pin['dir']) / name, dst)
+        (gen / 'sync_stamp.json').unlink(missing_ok=True)
+        notes = ['产物（%s）按本条合并同步前固定的快照还原；原本没有的（%s）已删' % ('、'.join(pin['present']), '、'.join(pin['absent']) or '无')]
+        key = hashlib.sha256(str(gen.resolve()).encode()).hexdigest()
+        for p in (root / SYNC_BASELINES).glob(key + '*'):
+            shutil.rmtree(p) if p.is_dir() else p.unlink()
+            notes.append('删同步基线 ' + p.name[:12] + '…')
+        return '；'.join(notes)
     backups = sorted(p for p in (root / SYNC_BACKUPS).glob('*') if p.is_dir() and p.name[:15] >= state['syncSince'])
     notes = []
     if backups and (backups[0] / 'manifest.json').is_file():
@@ -775,6 +878,7 @@ def abort_one(root, folder, task):
             git(root, 'update-ref', backup + '-wip', wip)
     git(root, 'reset', '--hard', base)
     note = undo_sync(root, state)
+    drop_pin(state)
     state_file.unlink()
     print('已退回本条合并前的 main（%s）。备份：%s%s。%s。' % (
         base[:9], backup, '（未提交改动在 ' + backup + '-wip）' if wip else '', note), flush=True)
@@ -896,12 +1000,14 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
         if all(x['task'] != state['task'] for x in pending):
             pending.append({k: state.get(k) for k in ['task', 'branch', 'worktree', 'target', 'head', 'base', 'mergeCommit']})
             save(folder / 'batch.json', pending)
+        drop_pin(state)
         state_file.unlink()
         print('已收尾并记入本批（共 %d 条，未检查、未推送）；接着合下一条，最后一条不加 --batch 运行 --finish。' % len(pending), flush=True)
         return
     for lane in pending + [state]:
         cleanup_lane(root, lane)
     (folder / 'batch.json').unlink(missing_ok=True)
+    drop_pin(state)
     state_file.unlink()
     print('合并、检查、提交与工作树清理全部完成%s。' % ('（本批共 %d 条）' % (len(pending) + 1) if pending else ''), flush=True)
     push_github(root)

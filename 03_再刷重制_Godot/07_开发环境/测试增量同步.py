@@ -167,6 +167,22 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.set_payload({'cases': []})
         self.assertEqual(self.run_sync('--accept-withdrawal', '1', '--accept-additions')[1]['sameExistingSource'], False)
 
+    def test_withdrawal_rejects_unrelated_removals(self):
+        # 沙僧第十六期 P2：切片只撤 41，Map042 仍在切片里，但新参照同时缺了 41 与 42 的用例——42 的删除与撤图无关，
+        # 原来 --accept-withdrawal 41 照单全收；现在要归因，归不了因的拒收并列出
+        m41, m42 = {'id': 'm41e1p0', 'value': 9}, {'id': 'm42e1p0', 'value': 8}
+        self.manifest = {'releaseVersion': 'v0.28', 'slice': {'maps': [1, 41, 42]},
+                         'inputs': {'data/A.json': 'a', 'data/Map041.json': 'm41', 'img/x.png': 'x'}, 'runtimeInputs': {'js/a.js': 'r'}}
+        (self.gen / 'manifest.json').write_text(json.dumps(self.manifest))
+        (self.gen / 'oracle/events.json').write_text(json.dumps({'cases': self.original['cases'] + [m41, m42]}))
+        self.manifest = {'releaseVersion': 'v0.28', 'slice': {'maps': [1, 42]}, 'inputs': {'data/A.json': 'a'}, 'runtimeInputs': {'js/a.js': 'r'}}
+        self.set_payload(self.original)   # 新参照没有 m41、m42
+        result, report = self.run_sync('--accept-withdrawal', '41')
+        self.assertEqual(result, 2, report)
+        self.assertIn('无关', report['withdrawal']['problem'])
+        self.assertTrue(any('m42e1p0' in x for x in report['withdrawal']['unattributed']), report['withdrawal'])
+        self.assertFalse(any('m41e1p0' in x for x in report['withdrawal']['unattributed']))
+
     def test_withdrawn_change_is_successful_but_later_change_is_still_rejected(self):
         self.assertEqual(self.run_sync()[0], 2)
         self.set_payload(self.original)

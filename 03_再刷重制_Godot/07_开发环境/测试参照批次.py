@@ -23,8 +23,8 @@ class BatchTests(unittest.TestCase):
         root = Path(self.temp.name)
         self.main, self.lane = root / 'main_gen', root / 'lane_gen'
         write(self.main / 'manifest.json', {'sliceConfigSHA256': 'new-slice'})
-        write(self.main / 'sync_stamp.json', {'outputsDigest': 'main-out'})
-        write(self.lane / 'sync_stamp.json', {'outputsDigest': 'old-out'})  # 首次补齐克隆来的旧戳；再补齐不刷新它
+        write(self.main / 'sync_stamp.json', {'outputsDigest': 'a' * 64})
+        write(self.lane / 'sync_stamp.json', {'outputsDigest': 'b' * 64})  # 首次补齐克隆来的旧戳；再补齐不刷新它
 
     def run_tool(self, *args):
         return subprocess.run([sys.executable, str(TOOL), *map(str, args)], capture_output=True, text=True)
@@ -39,7 +39,7 @@ class BatchTests(unittest.TestCase):
         write(self.lane / 'manifest.json', {'sliceConfigSHA256': 'old-slice'})
         self.run_tool('record', self.lane, self.main)
         batch = json.loads((self.lane / 'oracle_batch.json').read_text(encoding='utf-8'))
-        self.assertEqual((batch['sliceConfigSHA256'], batch['laneOutputsDigest']), ('new-slice', 'old-out'))
+        self.assertEqual((batch['sliceConfigSHA256'], batch['laneOutputsDigest']), ('new-slice', 'b' * 64))
         r = self.run_tool('check', self.lane)
         self.assertEqual(r.returncode, 3)
         self.assertIn('不同批', r.stdout)
@@ -48,7 +48,7 @@ class BatchTests(unittest.TestCase):
     def test_self_synced_lane_is_silent(self):
         write(self.lane / 'manifest.json', {'sliceConfigSHA256': 'lane-slice'})
         self.run_tool('record', self.lane, self.main)
-        write(self.lane / 'sync_stamp.json', {'outputsDigest': 'lane-out'})  # 本树跑过 同步正式西游.py
+        write(self.lane / 'sync_stamp.json', {'outputsDigest': 'c' * 64})  # 本树跑过 同步正式西游.py
         self.assertEqual(self.run_tool('check', self.lane).returncode, 0)
 
     def test_stale_lane_stamp_still_warns(self):
@@ -56,6 +56,57 @@ class BatchTests(unittest.TestCase):
         write(self.lane / 'manifest.json', {'sliceConfigSHA256': 'old-slice'})
         self.run_tool('record', self.lane, self.main)
         self.assertEqual(self.run_tool('check', self.lane).returncode, 3)
+
+    def test_missing_or_broken_stamp_is_not_a_sync_proof(self):
+        # 沙僧第十五期 P2：记批次后车道戳文件丢了／损坏／缺字段，不能当「自己同步过」而静默
+        for how in ['missing', 'garbage', 'no_field', 'not_hex']:
+            with self.subTest(how=how):
+                write(self.lane / 'manifest.json', {'sliceConfigSHA256': 'old-slice'})
+                write(self.lane / 'sync_stamp.json', {'outputsDigest': 'b' * 64})
+                self.run_tool('record', self.lane, self.main)
+                stamp = self.lane / 'sync_stamp.json'
+                if how == 'missing':
+                    stamp.unlink()
+                elif how == 'garbage':
+                    stamp.write_text('{not json')
+                elif how == 'no_field':
+                    write(stamp, {'other': 1})
+                else:
+                    write(stamp, {'outputsDigest': 'changed'})
+                r = self.run_tool('check', self.lane)
+                self.assertEqual(r.returncode, 3, (how, r.stdout))
+                self.assertIn('同步戳丢失或损坏', r.stdout)
+        # 切片指纹相同时只提示、不失败
+        write(self.lane / 'manifest.json', {'sliceConfigSHA256': 'new-slice'})
+        write(self.lane / 'sync_stamp.json', {'outputsDigest': 'b' * 64})
+        self.run_tool('record', self.lane, self.main)
+        (self.lane / 'sync_stamp.json').unlink()
+        r = self.run_tool('check', self.lane)
+        self.assertEqual(r.returncode, 0)
+        self.assertIn('同步戳丢失或损坏', r.stdout)
+
+    def test_lane_never_stamped_is_silent_when_same_batch(self):
+        (self.lane / 'sync_stamp.json').unlink()
+        write(self.lane / 'manifest.json', {'sliceConfigSHA256': 'new-slice'})
+        self.run_tool('record', self.lane, self.main)
+        r = self.run_tool('check', self.lane)
+        self.assertEqual((r.returncode, r.stdout), (0, ''))
+
+    def test_partial_refresh_is_flagged_as_mixed(self):
+        # 沙僧第十五期 P2：车道的事件参照较新（B）没被复制，主工作区另一份被复制：切片指纹相同也要提示混批
+        write(self.lane / 'manifest.json', {'sliceConfigSHA256': 'new-slice'})
+        write(self.main / 'oracle/events.json', {'v': 'A'})
+        write(self.main / 'oracle/other.json', {'v': 'new'})
+        write(self.lane / 'oracle/events.json', {'v': 'B'})       # 留着本分支较新的版本，没被复制
+        write(self.lane / 'oracle/other.json', {'v': 'new'})       # 这份复制过来了
+        self.run_tool('record', self.lane, self.main)
+        r = self.run_tool('check', self.lane)
+        self.assertEqual(r.returncode, 3, r.stdout)
+        self.assertIn('events.json', r.stdout)
+        self.assertNotIn('other.json', r.stdout)
+        # 本树自己同步（有效新戳）后不再提示
+        write(self.lane / 'sync_stamp.json', {'outputsDigest': 'c' * 64})
+        self.assertEqual(self.run_tool('check', self.lane).returncode, 0)
 
     def test_no_record_is_silent(self):
         write(self.lane / 'manifest.json', {'sliceConfigSHA256': 'anything'})

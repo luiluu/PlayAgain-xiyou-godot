@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""由提交尾注生成「待交叉核查」清单：带 `核查: 待Codex|待Claude` 的提交，减去变更记录（当前卷与分卷）里核查条目已覆盖的。
+"""由提交尾注生成「待交叉核查」清单：带 `核查: 待Codex|待Claude|待审查` 的提交，减去变更记录（当前卷与分卷）里核查条目已覆盖的。
+
+新写法（Kyo 2026-10-30：Codex 不再核查，改由 Claude 审查线程核）：尾注 `核查: 待审查`；核查条目标题 `【Claude·审查…】核查 …`，
+或条目里有一行 `核查者: Claude（审查）`，都算「审查」条目，可销任何待核查尾注（含旧的 `待Codex`／`待Claude`）；旧写法照样计入、照旧销账。
 
 用法：待核查.py [--root 路径] [--json] [--limit N]
   默认打印分批清单；检查.sh 调用它，批数（不计只改文档、登记的批）超过 N（默认 10）时提示停派新车道。
@@ -22,9 +25,10 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 LOG = '00_项目管理/变更记录.md'
 VOLUMES = '00_项目管理/变更记录卷'
-TRAILER = re.compile(r'^核查[:：]\s*待(Codex|Claude)\s*$', re.M)
+TRAILER = re.compile(r'^核查[:：]\s*待(Codex|Claude|审查)\s*$', re.M)
 EXECUTOR = re.compile(r'^执行者[:：]\s*(.+?)\s*$', re.M)
-REVIEW = re.compile(r'^## (\d{4}-\d{2}-\d{2}) 【(Claude|Codex)[^】]*】\s*核查', re.M)
+REVIEW = re.compile(r'^## (\d{4}-\d{2}-\d{2}) 【(Claude|Codex)([^】]*)】\s*核查', re.M)
+REVIEWER_LINE = re.compile(r'^\s*[-*]?\s*(?:\*\*)?核查者(?:\*\*)?[:：]\s*(?:Claude|Codex)[（(]审查[）)]', re.M)
 ENTRY = re.compile(r'^## \d{4}-\d{2}-\d{2}\b', re.M)
 HASH = re.compile(r'(?<![0-9A-Za-z])[0-9a-f]{7,40}(?![0-9A-Za-z])')  # 纯数字的提交号（如 7432182）也算
 BRANCH = re.compile(r'(?:claude|codex)/[A-Za-z0-9_\-.]*[A-Za-z0-9_\-]')
@@ -70,7 +74,9 @@ def reviews(root):
         for s, e in zip(starts, starts[1:]):
             m = REVIEW.match(text, s)
             if m:
-                out.append((m.group(1), m.group(2), text[s:e]))
+                body = text[s:e]
+                audit = '审查' in m.group(3) or REVIEWER_LINE.search(body) is not None
+                out.append((m.group(1), '审查' if audit else m.group(2), body))
     return out
 
 
@@ -133,7 +139,7 @@ def pending(root):
             whole = b['merge'] and any(b['merge'].startswith(h) for h in hashes) or b['date'] <= date and (
                 b['branch'] and b['branch'] in branches or b['dev'] & devs)
             for c in b['commits']:
-                if c['need'] == who and (whole or any(c['sha'].startswith(h) for h in hashes)):
+                if (c['need'] == who or who == '审查') and (whole or any(c['sha'].startswith(h) for h in hashes)):
                     c['reviewed'] = True
     out = []
     for b in batches:
@@ -159,7 +165,7 @@ def main(argv=None):
         print(json.dumps(items, ensure_ascii=False, indent=1))
         return 0
     counted = [i for i in items if not i['docOnly']]
-    for need in ['Codex', 'Claude']:
+    for need in ['Codex', 'Claude', '审查']:
         group = [i for i in counted if need in i['need']]
         docs = [i for i in items if i['docOnly'] and need in i['need']]
         if not group and not docs:

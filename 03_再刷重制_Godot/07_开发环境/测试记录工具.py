@@ -180,6 +180,27 @@ class ReviewListTests(unittest.TestCase):
                            '## 2000-01-01 【Codex·沙僧】核查 claude/lane\n')
         self.assertIn('合并 claude/lane', self.labels())
 
+    def test_audit_trailer_and_reviewer_line(self):
+        # Kyo 10-30：Codex 不再核查，尾注 `核查: 待审查`；审查条目（标题带审查，或有「核查者: Claude（审查）」行）销一切待核查尾注，旧写法照计
+        r = self.repo
+        r.put('03_再刷重制_Godot/d.py', 'x')
+        audit = r.commit('审查线程的新提交', '审查', 'Claude（哪吒）')
+        r.put('03_再刷重制_Godot/e.py', 'x')
+        r.commit('另一条新提交', '审查', 'Claude（哪吒）')
+        items = self.labels()
+        self.assertEqual(items['审查线程的新提交']['need'], ['审查'])
+        self.assertIn('合并 claude/lane', items)        # 旧的 待Codex 照样计入
+        r.put(LOG, f'# 变更记录\n\n## 2099-01-01 【Claude·审查】核查 {audit}：通过\n')
+        items = self.labels()
+        self.assertNotIn('审查线程的新提交', items)
+        self.assertIn('另一条新提交', items)             # 只销范围里写到的
+        # 标题不带审查，靠「核查者」行
+        r.put(LOG, '# 变更记录\n\n## 2099-01-01 【Claude·哪吒】核查 claude/lane\n\n- 核查者: Claude（审查）\n')
+        self.assertNotIn('合并 claude/lane', self.labels())   # 审查条目也销旧的 待Codex
+        # 普通 Claude 核查条目不能销待审查之外的 待Codex
+        r.put(LOG, '# 变更记录\n\n## 2099-01-01 【Claude·哪吒】核查 claude/lane\n')
+        self.assertIn('合并 claude/lane', self.labels())
+
     def test_dev_numbers(self):
         self.assertEqual(review.dev_numbers('dev.081／083／085、dev.086～088'), {81, 83, 85, 86, 87, 88})
 
