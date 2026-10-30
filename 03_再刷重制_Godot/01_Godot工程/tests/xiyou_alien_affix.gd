@@ -17,6 +17,8 @@ extends Node
 ##   重制 can_use 另查技能类型），步骤另有 forget（来源队友忘掉技能）、choice（切换窗口选的仿形）。对照时 O-115 关；o115.* 开时按顺序轮换。
 ## - 第③批 battle.erosion：蚀术；角色 1 另比自己与各敌人身上的异化封印、ERODE_WATCH 里各自能用哪些；步骤另有 shield（直接写护盾）。
 ##   对照时 O-116 关；o116.* 开时敌人没有有效行动的回合也解封。
+## - 补漏：sethp（XResourceContext.set_resource，来源 src）；event 带 mp 照 312（增减 MP）、src 为来源；开战前 dead（已倒下）与 extra
+##   （第三名队员也穿异化武器）比锁队检查卸下的 eject；view 带 repeats 另比 numRepeats。o106.jail_death_buff_kept：O-106 开时阵亡保留接收的减益。
 ## - 第④批 battle.swallow／offer：装备类；双方另比装备栏（本体编号）、八项能力值、命中／回避／暴击，背包里异化装备与供体件数；
 ##   步骤 end 照 end_battle（胜／逃／败）。gear.*：胜、逃、败结束后装备栏原样（同一实例）、背包不多不少、存读档往返不变；
 ##   战斗中供体不能穿、吞器者不能换装；供体不能在商店卖、挂机卖出跳过；一键出售按 O-待定（关时照原版给钱不扣件）。
@@ -103,6 +105,9 @@ func _run() -> void:
 		var rows := _battle(by_id["battle.jail"], false)
 		check("o106.jail_debuff_moved", rows[1].a.buffs[1] == -1 and rows[1].b.buffs[1] == 0, [rows[1].a.buffs, rows[1].b.buffs])
 		check("o106.jail_debuff_kept", rows[3].a.buffs[1] == -1, rows[3].a.buffs)
+	if by_id.has("battle.jail.death"):  # O-106 开时囚厄接收到角色的减益，阵亡（clearBuffs）也保留
+		var rows := _battle(by_id["battle.jail.death"], false)
+		check("o106.jail_death_buff_kept", rows[1].a.buffs[1] == -1 and rows[2].a.hp == 0.0 and rows[2].a.buffs[1] == -1 and rows[3].a.buffs[1] == -1, [rows[1].a, rows[2].a])
 	if by_id.has("battle.insulation"):
 		var rows := _battle(by_id["battle.insulation"], false)
 		check("o106.insulation_debuff_blocked", rows[7].a.buffs[0] == 0, rows[7].a.buffs)
@@ -320,6 +325,8 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 	s.battle_slots.clear()
 	s.add_actor(1)
 	s.add_actor(8)
+	if st.has("extra"):
+		s.add_actor(int(st.extra.actor))
 	XAlienation.force_roll = 0.5
 	if st.has("affix"):
 		XGear.force_roll = 0.5  # 同参照 Math.random 0.5：属性浮动与词缀随机
@@ -350,6 +357,13 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 			a.equips[a.equip_slots().find(int(item.etypeId))] = item
 		else:
 			a.equips[0] = item
+		if st.has("extra"):  # 第三名队员也穿一件本体 1044 的异化武器（同参照，在 a 的之后建）
+			XGear.force_roll = 0.5
+			var more: Dictionary = XAlienation.create(s, "w", 1044, "boss", str(st.extra.affix)).ok
+			XGear.force_roll = -1.0
+			more.alien.config = _ints((st.extra.config as Dictionary).duplicate(true))
+			s.actor(int(st.extra.actor)).equips[0] = more
+			_gear_ctx.extra = more
 	else:
 		a.equips[0] = XGear.template("weapon", int(st.weapon))
 		_gear_ctx = {}
@@ -378,6 +392,8 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 			a.buff_turns[int(v[0])] = int(v[2])
 		a.param_mark_dirty()
 		a.refresh_resources()
+	for k in st.get("dead", []):  # 开战前已倒下的队员（锁队检查「已倒下」）
+		(b if str(k) == "b" else a).add_state(1)
 	XAlienBattle.open(logic)
 	var tag := str(c.id)
 	var locked := [a, b].map(func(x):
@@ -386,6 +402,14 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 	if compare:
 		check(tag + ".locked", _norm(locked) == _norm(o.locked), [locked, o.locked])
 		_same_reading(tag + ".start", _reading(enemies, a, b), o.start, a)
+		if o.has("eject"):  # 锁队检查卸下的：异化武器在背包几件、还穿着没有；第三名队员的同样
+			var item: Dictionary = _gear_ctx.item
+			var got_eject := {"item": s.gear.filter(func(e): return is_same(e, item)).size(), "worn": a.equips.any(func(e): return is_same(e, item)),
+				"extra": null, "extraLocked": null}
+			if _gear_ctx.has("extra"):
+				got_eject.extra = s.gear.filter(func(e): return is_same(e, _gear_ctx.extra)).size()
+				got_eject.extraLocked = XAlienBattle.locked(s.actor(int(st.extra.actor))) != null
+			check(tag + ".eject", _norm(got_eject) == _norm(o.eject), [got_eject, o.eject])
 	var who := func(k: String) -> XBattler:
 		return b if k == "b" else enemies[int(k.substr(1))] if k.begins_with("e") else a
 	var got := []
@@ -412,7 +436,22 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 			for x in logic.actors + logic.enemies:
 				XAlienBattle.tick_corrosion(logic, x, int(sp.tick), [])
 		elif sp.has("event"):
-			MVEventCore.new()._change_resource(who.call(str(sp.event.who)), 311, float(sp.event.value), bool(sp.event.get("death", false)))
+			var src = who.call(str(sp.event.src)) if sp.event.has("src") else null
+			if src != null:
+				XAlienBattle.push_action(src, {})  # 参照的 BattleManager._subject
+			MVEventCore.new()._change_resource(who.call(str(sp.event.who)), 312 if bool(sp.event.get("mp", false)) else 311, float(sp.event.value), bool(sp.event.get("death", false)))
+			if src != null:
+				XAlienBattle.pop_action()
+		elif sp.has("sethp"):  # 行动外直接设生命（XResourceContext.set_resource，即 setHp）；来源 src（参照的 _subject），没有就是自己
+			var x: XBattler = who.call(str(sp.sethp.who))
+			var src = who.call(str(sp.sethp.src)) if sp.sethp.has("src") else null
+			if src != null:
+				XAlienBattle.push_action(src, {})
+			var res := logic._operation_resources(x)
+			res.set_resource(x, "hp", floorf(x.mhp * float(sp.sethp.value)))
+			logic._finish_lifecycle_operation(res, x)
+			if src != null:
+				XAlienBattle.pop_action()
 		elif sp.has("revive"):
 			logic._state_remove(who.call(str(sp.revive)), 1)
 		elif sp.has("end"):
@@ -439,6 +478,8 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 			logic.act(user, skill, side[int(sp.get("target", 0))])
 			if compare and row.has("view"):
 				var got_view := {"name": view.name, "scope": int(view.scope), "effects": (view.effects as Array).map(func(e): return [int(e.code), int(e.dataId), float(e.value1)]), "usable": usable}
+				if row.view.has("repeats"):  # numRepeats：投影后不算普通攻击，攻击次数追加不加
+					got_view.repeats = XBattleLogic.attack_repeats(user, view, int(view.get("repeats", 1)))
 				var want: Dictionary = (row.view as Dictionary).duplicate()
 				want.erase("terminated")  # O-109：原版投影丢了熟练度费用函数，付费时 terminate；重制不崩
 				if tag.begins_with("battle.mimic") or tag.begins_with("battle.faceless") or tag.begins_with("battle.erosion"):

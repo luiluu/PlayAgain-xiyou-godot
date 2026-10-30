@@ -127,6 +127,9 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		var victim: XBattler = (c.user if int(st.id) == 2550 else c.target) if special_react else holder
 		resources.boss_output.enter_action(source, victim)
 	_stack.push_back(c)
+	var alien_frame := execute and XAlienBattle.status_battle()
+	if alien_frame:
+		XAlienBattle.push_action(c.origin, {})  # 异化 customEffectEval 包装：来源是状态来源的帧（逆祷阻断其中对敌人的扣血）
 	if execute and observer.is_valid():
 		observer.call(phase, int(st.id), holder, c)
 	for e in effects:
@@ -205,6 +208,8 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				ctx.untranslated.append({"state": int(st.id), "phase": phase})
 			if execute:
 				_diagnose(phase, int(st.id), holder, op)
+	if alien_frame:
+		XAlienBattle.pop_action()
 	_stack.pop_back()
 	if origin_domain:
 		resources.boss_output.leave_action()

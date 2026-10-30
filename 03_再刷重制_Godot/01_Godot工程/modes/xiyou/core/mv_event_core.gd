@@ -506,6 +506,8 @@ func _change_resource(a: XActor, code: int, value: float, allow_death: bool) -> 
 			var applied := -a.absorb_shield(-value) if value < 0.0 else value
 			a.hp = clampf(a.hp + applied, 0.0, a.mhp)
 		312:
+			if XAlienBattle.gain_mp_outside(a, value):
+				return  # 异化 gainMp 包装（空壳回蓝变护盾、饕餮无效、绝缘拒收外来回蓝）
 			a.mp = clampf(a.mp + value, 0.0, a.mmp)
 		326:
 			a.tp = clampf(a.tp + value, 0.0, a.max_tp())
