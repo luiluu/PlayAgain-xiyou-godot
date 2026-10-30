@@ -355,12 +355,6 @@ func _process(delta: float) -> void:
 		s.x = player.grid.x
 		s.y = player.grid.y
 		s.direction = player.direction
-		# Game_Follower.update：透明、不透明度跟着玩家
-		for f in followers:
-			if f.transparent != player.transparent or f.opacity != player.opacity:
-				f.transparent = player.transparent
-				f.opacity = player.opacity
-				f.queue_redraw()
 		# 循环地图：角色画在离玩家最近的那一份上（玩家越过边缘后其他角色跟着换份）
 		if lower.loop_x or lower.loop_y:
 			lower.view_anchor = player.real
@@ -506,6 +500,7 @@ func _physics_process(_delta: float) -> void:
 		XState.current.screen.update()
 		if not _in_battle:
 			_update_vehicle()
+	_sync_followers_look()
 	# 玩家朝同层事件走却被挡住：MV 的 checkEventTriggerTouch（触发 1/2）；挂机中不能手动移动；乘飞艇时不触发
 	if busy or player == null or player.is_moving() or XHangUp.is_active(XState.current) or not can_start_local_events():
 		return
@@ -776,6 +771,17 @@ func _sync_vehicle(v: Dictionary) -> void:
 	v.direction = player.direction
 
 
+## Game_Follower.update（每个逻辑帧；进图放好飞艇后也跑一次）：透明、不透明度跟着玩家（上下飞艇时与玩家同帧变透明）
+func _sync_followers_look() -> void:
+	if player == null or not is_instance_valid(player):
+		return
+	for f in followers:
+		if f.transparent != player.transparent or f.opacity != player.opacity:
+			f.transparent = player.transparent
+			f.opacity = player.opacity
+			f.queue_redraw()
+
+
 ## 进图与同图移动（Game_Player.locate → Game_Vehicle.refresh）：驾驶中的飞艇跟到当前图玩家处，玩家照飞行状态；建飞艇精灵。
 ## 读档时不在存档里的上下过程按高度补：在载具上但没驾驶、高度为 0＝正在上，高度大于 0＝正在下
 func _place_vehicle() -> void:
@@ -818,6 +824,7 @@ func _place_vehicle() -> void:
 	airship_shadow.z_as_relative = false
 	airship.add_child(airship_shadow)
 	_refresh_airship_sprite(v)
+	_sync_followers_look()
 
 
 ## Game_Vehicle.refresh／updateAirship：只在停在本图时显示；驾驶中跟着玩家、在角色上方并播放行走动画，停着时在角色下方

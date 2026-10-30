@@ -101,7 +101,7 @@ func _view(tag: String) -> bool:
 	var shift := 0.0 if a.is_object() else 6.0
 	var z_ok := a.z_index == -1 if alt <= 0 else (a.z_index == MVCharacter.ABOVE_UPPER_Z and a.z_index > map.upper.z_index and sh.z_index > a.z_index)
 	return _check(tag, a.altitude == alt and a.position.is_equal_approx(ground - Vector2(0, alt))
-		and (a.position + sh.position).is_equal_approx(ground - Vector2(0, shift)) and a.real.is_equal_approx(map.player.real) and is_equal_approx(sh.modulate.a, alt / 48.0)
+		and (a.position + sh.position).is_equal_approx(ground - Vector2(0, shift)) and a.real.is_equal_approx(map.player.real) and map.followers.all(func(f): return f.transparent == map.player.transparent) and is_equal_approx(sh.modulate.a, alt / 48.0)
 		and sh.texture != null and z_ok and a.character_name == str(v.characterName) and a.character_index == int(v.characterIndex),
 		[alt, a.altitude, a.position, ground, sh.position, sh.modulate.a, a.z_index, sh.z_index, a.character_name, a.character_index, v.characterName])
 
