@@ -301,8 +301,10 @@ static func end(logic, result: int) -> void:
 	restore_gear(logic)
 	if bool(_store(logic).get("status", false)):
 		end_life(logic)
-	for a in logic.actors:  # endBattle 包装：清囚厄接收、恶愿代价标记
-		for k in ["xalien_jail", "xalien_jail_buff", "xalien_wish", "xalien_wish_buff"]:
+	# endBattle 包装：清囚厄接收、恶愿代价标记；生命池与保护者也再清一次（重锁时卸下了生命类配置、本场不算状态类时，
+	# 上一次锁队留下的池仍互相引用）
+	for a in logic.actors:
+		for k in ["xalien_jail", "xalien_jail_buff", "xalien_wish", "xalien_wish_buff", "xalien_life", "xalien_protector"]:
 			if a.has_meta(k):
 				a.remove_meta(k)
 	_store(logic).party = {}
