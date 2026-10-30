@@ -14,14 +14,19 @@ extends RefCounted
 ##   装在本模块第 101 行之后）整个换掉 makeDamageValue 且不回调旧链，那几层包装实际不生效，伤害只走这条钩子，重制也只移植钩子。
 ## - 招募（公共事件 9004 的 CodexYomi.recruit()）：已在队返回 false；没戴专属法宝时背包有就拿、没有就生成，装进它装备类型的槽；入队；
 ##   右上角提示两条（$.toaster）。
-## 未移植（第二期起）：必中不闪避（itemHit／itemEva）、集真赤与随机负面（apply 包装）、残梦（命中带负面的目标＋1，满 9 层才能放 10174，
-##   放时扣 9）、numRepeats 连击次数（repeats(a) 已给说明卡用，战斗里第二期接）、扩散伤害（10172／10173／10174 向其余敌人 33%／50%／66%）、
-##   技能使用条件与消耗、隐藏呼吸技能分类、图标与品质色、Map132 商店补号角 2931／2932、旧档迁移。镜流（170）全部留下一期。
+## 第二期（战斗包装，参照 mv_oracle/yomi_battle_probe → tests/xiyou_yomi_battle）：
+## - 必中 sure()：10171～10174 itemHit 1、itemEva 0（只这两项；反击、反射照常）。XBattleLogic.item_hit／item_eva 调。
+## - 连击 begin_action()：numRepeats＝repeats(a)，取代原次数（含行动序列的重复目标）；XBattleLogic.execute 每次行动调一次，同时清本行动的「已施印」。
+## - 残梦 dream()：meets()（meetsSkillConditions）10174 要≥9；pay()（paySkillCost，异化缄默付得起之后）10174 扣 9；战斗结束清零（end_battle）。
+## - apply 包装（XBattleLogic._invoke，掩护之后、目标是活着的敌人）：before_apply 本行动第一次（10174 除外）给目标施集真赤 2627 与
+##   Y_RANDOM_DEBUFFS 随机一个（Math.randomInt(6)，rule 流 "yomi_debuff"；10173 学了 10185 再施一次）；after_apply 命中且目标有负面状态
+##   残梦＋1（10174 不加），10172／10173／10174 再对其余活着的敌人各结算一次，伤害钩子 skillMultiplier × SPREAD（spread_rate）。
+## 未移植：隐藏呼吸技能分类、图标与品质色、Map132 商店补号角 2931／2932、旧档迁移。镜流（170）全部留下一期。
 
 ## 优化登记（O 号待总装分配；原版缺陷）：10185 说明写「暴击率＋999%」，原版包的是 Game_BattlerBase.prototype.xparam，但 dsPassiveSkill
 ## 在插件加载时已把 Game_Actor.prototype.xparam 存成别名（_Game_Actor_xparam），角色的 xparam 走不到这层包装，加成实际不生效
 ## （slice_probe 65／99 级参照暴击仍是 0.55）。重制默认照说明生效；false 恢复原版（不加）。
-const CRIT_FIX := true
+static var CRIT_FIX := true
 const YOMI := 169
 const JINGLIU := 170
 const Y_MARK := 2627
@@ -31,6 +36,15 @@ const Y_ROWS := {10171: [50000, 5000, 5000, 500, 7000, 700], 10172: [70000, 7000
 	10173: [80000, 8000, 8000, 800, 10000, 1000], 10174: [230000, 23000, 23000, 2300, 35000, 3500]}
 ## recruit(actorId, armorId, name, artifactName)
 const RECRUIT := {YOMI: [Y_ARMOR, "黄泉", "赤雨双缨"], JINGLIU: [J_ARMOR, "镜流", "月魄剑匣"]}
+const Y_RANDOM_DEBUFFS := [22, 32, 37, 67, 75, 88]
+const SPREAD := {10172: 0.33, 10173: 0.50, 10174: 0.66}
+const DREAM_SKILL := 10174
+## 残梦层数（原版 actor._codexYomiDream，战斗结束清零；重制只在战斗内用，不存档）：实例 ID → 层数
+static var _dream := {}
+## 本行动已施过集真赤（原版 action._codexYomiMarked）
+static var _marked := false
+## 扩散结算中的倍率（原版 action._codexYomiSpreadRate）；0 为不在扩散
+static var spread_rate := 0.0
 static var _negative_re := RegEx.create_from_string("<BuffType:(?:破甲|损伤|毒|灼伤|黑暗|诅咒|封印|沉默|冰冷|眩晕|减益|流血)>")
 
 
@@ -127,7 +141,97 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 		ops.append({"op": "mul", "field": "skillMultiplier", "value": 1.33 if id == 10174 else 16.55})
 	if id != 10174 and a.has_base_equip("armor", Y_ARMOR) and b.state_ids.has(Y_MARK):
 		ops.append({"op": "mul", "field": "skillMultiplier", "value": 1.77})
+	if spread_rate > 0.0:
+		ops.append({"op": "mul", "field": "skillMultiplier", "value": spread_rate})
 	return ops
+
+
+# ---- 第二期：战斗包装 ----
+
+static func _yomi_action(u, skill: Dictionary) -> bool:
+	return yomi(u) and yomi_skill(int(skill.get("id", 0))) and not XBattleLogic.is_item(skill)
+
+
+## itemHit 1／itemEva 0
+static func sure(u, skill: Dictionary) -> bool:
+	return _yomi_action(u, skill)
+
+
+## numRepeats 包装：黄泉技能换成 repeats()，否则原次数；同时开始新行动（清已施印）
+static func begin_action(u, skill: Dictionary, base: int) -> int:
+	_marked = false
+	spread_rate = 0.0
+	return repeats(u, int(skill.id)) if _yomi_action(u, skill) else base
+
+
+static func dream(a) -> int:
+	return clampi(int(_dream.get(a.get_instance_id(), 0)), 0, 9) if a != null else 0
+
+
+static func set_dream(a, n: int) -> void:
+	_dream[a.get_instance_id()] = n
+
+
+## meetsSkillConditions：10174 残梦不满 9 不能用
+static func meets(a, skill: Dictionary) -> bool:
+	return not (yomi(a) and int(skill.get("id", 0)) == DREAM_SKILL and not XBattleLogic.is_item(skill) and dream(a) < 9)
+
+
+## paySkillCost：10174 扣 9 层
+static func pay(a, skill: Dictionary) -> void:
+	if yomi(a) and int(skill.get("id", 0)) == DREAM_SKILL and not XBattleLogic.is_item(skill):
+		set_dream(a, maxi(0, dream(a) - 9))
+
+
+## BattleManager.endBattle：清残梦
+static func end_battle() -> void:
+	_dream.clear()
+	_marked = false
+	spread_rate = 0.0
+
+
+## Game_Action.apply 包装是否接管（扩散的补充结算不再进来）
+static func wraps(u, skill: Dictionary, t) -> bool:
+	return spread_rate == 0.0 and _yomi_action(u, skill) and t is XEnemy and t.is_alive()
+
+
+static func _mark(logic, t) -> void:
+	logic._state_add(t, Y_MARK)
+	logic._state_add(t, Y_RANDOM_DEBUFFS[floori(logic._float("yomi_debuff") * Y_RANDOM_DEBUFFS.size())])
+
+
+static func before_apply(logic, u, skill: Dictionary, t) -> void:
+	var id := int(skill.id)
+	if id != DREAM_SKILL and not _marked:
+		_mark(logic, t)
+		if id == 10173 and u.skill_ids.has(10185):
+			_mark(logic, t)
+		_marked = true
+
+
+static func _charge(u, t, r: Dictionary) -> void:
+	if not bool(r.get("missed", false)) and not bool(r.get("evaded", false)) and debuff_count(t) > 0:
+		set_dream(u, mini(9, dream(u) + 1))
+
+
+## 主目标结算之后：充残梦、扩散；返回扩散各次的结算记录（追加进行动日志）
+static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> Array:
+	var id := int(skill.id)
+	if id != DREAM_SKILL:
+		_charge(u, t, r)
+	var out := []
+	if not SPREAD.has(id):
+		return out
+	spread_rate = float(SPREAD[id])
+	for other in logic.enemies.filter(func(e): return e.is_alive()):
+		if other == t:
+			continue
+		var r2: Dictionary = logic.apply(u, skill, other)
+		if id != DREAM_SKILL:
+			_charge(u, other, r2)
+		out.append(r2)
+	spread_rate = 0.0
+	return out
 
 
 ## recruit(actorId, armorId, name, artifactName)：已在队返回空数组；否则入队，返回要提示的两条文字
