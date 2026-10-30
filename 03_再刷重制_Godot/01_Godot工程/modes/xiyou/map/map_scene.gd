@@ -241,6 +241,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	lower.z_index = -10
 	add_child(lower)
 	lower.setup(map_data, false)
+	lower.open_cells = MVTilemap.open_cells_fix.get(id, [])
 	chars = Node2D.new()
 	chars.y_sort_enabled = true
 	add_child(chars)
