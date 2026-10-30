@@ -10,7 +10,7 @@ name: 云端选测
 
 on:
   push:
-    branches: ['ci/**', 'ci-full/**']
+    branches: ['ci/**', 'ci-full/**', 'claude/project-thread-cr90wk']  # 试跑，合并前撤掉
   workflow_dispatch:
     inputs:
       mode:
@@ -44,6 +44,7 @@ env:
   GENERATED: 03_再刷重制_Godot/01_Godot工程/modes/xiyou/generated
   JOBS: '2'
   TARGET_SECONDS: '600'
+  XIYOU_CI_GENERATED: b7dc7df4b3647a7594dc0f2df7e5ca6d6d6ee697  # 试跑，合并前撤掉
 
 jobs:
   plan:
@@ -69,7 +70,7 @@ jobs:
       - id: plan
         env:
           BRANCH: ${{ github.ref_name }}
-          MODE: ${{ inputs.mode }}
+          MODE: ${{ inputs.mode || 'full' }}  # 试跑，合并前撤掉
           BASE: ${{ inputs.base || 'origin/main' }}
           FORCE: ${{ inputs.force && '--force' || '' }}
           MAX_SHARDS: ${{ inputs.max_shards || '16' }}
