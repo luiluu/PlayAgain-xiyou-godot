@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "alien_affix.json",
+      "collection": "顶层",
+      "key": "hostScope",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "1ac23dbff043a82b",
+      "newDigest": "f21728e044044f12",
+      "reason": "八戒④期新增吞器、献器参照用例 3 条（28→31），hostScope 只是说明文字随词条列表更新；无既有用例数值改变（唐僧按 main 基线重新生成，覆盖车道按旧基线生成的单）"
+    }
+  ]
+}
