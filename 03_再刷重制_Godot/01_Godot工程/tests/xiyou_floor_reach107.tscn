@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/xiyou_floor_reach107.gd" id="1"]
+
+[node name="XiyouFloorReach107" type="Node"]
+script = ExtResource("1")
