@@ -1,7 +1,7 @@
 # 交付：claude/bajie-alien-fix
 
 - 车道／工作者：C 规则／八戒_90（Claude，Opus／medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -49,7 +49,10 @@
 
 ## 验证
 
-（待写）
+- 合 main（54dd8439，含 alien-ai／O-121，带来的 alien_battle.gd 只改一行注释，无冲突）后，工作树跑 `同步正式西游.py --accept-additions` 通过（「新增用例，已接受（不登记）」：alien_affix 51 例、attack_query 45 例、weapon_unleash 87 例；state_effects 产物不变），留了产物指纹。
+- 选测：`选测.py main` 选出 131 个场景（改了 battler.gd／battle_logic.gd，含 xiyou_rules 六个难度 24 段、smart_ai 四段、楼层与事件专项）全部首轮通过、无偶发，日志 `04_验证/本地结果/并行测试/20261030_211603_m6pwa4oy`。重点：`xiyou_alien_affix` 1943（原 1798，新 7 例）、`xiyou_attack_query` 381（新 2 例）、`xiyou_weapon_unleash` 963（新 1 例）、`xiyou_state_effects` 19949、`xiyou_rules` 难度 1 四段 115637／115733／115746／115725。效果 32 多掷一次 rule 流，没有一个对照因此变化。选测附带的非 Godot 检查（content、guards、same_source、tools）没单独跑，留给总装合并后的检查。
+- 反向验证：见各项（1：4 项；2：3＋2 项；3：2 项；4：改前 4 项；6：改前 stderr 报 terminate、改后不报且产物逐字节相同）。都已还原。
+- 没跑全量 `检查.sh`（车道规则）。
 
 ## 本分支提交
 
