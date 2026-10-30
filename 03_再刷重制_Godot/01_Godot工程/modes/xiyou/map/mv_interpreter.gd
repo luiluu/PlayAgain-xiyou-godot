@@ -23,8 +23,14 @@ const TRANSFER_FIX := {"61:9:4:12:18": Vector2i(14, 23), "65:3:4:12:18": Vector2
 ## O-待定：副本门「请重置副本！」的判定。全工程 363 处副本门都写「变量 5（副本未重置）＝1」；厄运城堡两扇门（Map078 事件 2 厄运王座、
 ## 事件 5 厄运监狱）写成「变量 5＝副本号」（17／16），正常玩不会成立，拦截失效：有副本没重置时照样扣符文进门，变量 5 叠成 2，
 ## 门口「重置副本」（要变量 5＝1）从此不认，出副本后变量 5 停在 1，别的副本门全部「请重置副本！」又重置不了（正式引擎实跑确认）。
+## 同样写法的还有 6 扇（一并修）：Map023 事件 2（7）、Map029 事件 2（8）、Map069 事件 65 贪婪宫殿（20）、Map156 事件 2、157 事件 2、158 事件 1（14）。
 ## 键「地图:事件」→ 原版比较的值；命中时改按变量 5＝1 判定。设为空字典 {} 恢复原版（专项要两边都跑，所以是 static var）。
-static var seal_check_fix := {"78:2": 17, "78:5": 16}
+static var seal_check_fix := {"78:2": 17, "78:5": 16, "23:2": 7, "29:2": 8, "69:65": 20, "156:2": 14, "157:2": 14, "158:1": 14}
+## O-待定（B2）：厄运王座宝箱（Map080 事件 13 第 3、4 页）出「深渊之门」时选「进入此门」，随机变量 107 不是 1 的那支在正式版
+## 只有一句 CodexMapRemoval.notice(108)（Map108 已移除），不传送也不重置：人留在王座里、开关 127 仍开，宝箱还能再开、再领一次
+## 奖励（变量 94／140 不重掷，同一件），持邀请函进的还被吞掉不退（正式引擎实跑确认）。重制在这句提示之后改走同一选项的
+## 「离开这是非之地」分支（回厄运城堡、重置副本、退邀请函）。键「地图:事件」→ 改走的选项序号；设为空字典 {} 恢复原版。
+static var removed_gate_fix := {"80:13": 1}
 
 
 func _init(h: Node, map: int, event: int, commands: Array, depth := 0) -> void:
@@ -121,6 +127,16 @@ func _condition(p: Array) -> bool:
 			and seal_check_fix.get("%d:%d" % [map_id, event_id], -1) == int(p[3]):
 		return super([1, XDungeon.VAR_SEALED, 0, 1, 0])
 	return super(p)
+
+
+## removed_gate_fix：跳到本指令外层选项的第 choice 个分支（402）；之后 resume 前进一格，从分支里第一条指令接着跑
+func _jump_to_choice(choice: int, indent: int) -> void:
+	for j in range(index + 1, list.size()):
+		var c: Dictionary = list[j]
+		if int(c.indent) < indent and int(c.code) == 402 and int(c.parameters[0]) == choice:
+			_branch[int(c.indent)] = choice
+			index = j
+			return
 
 
 ## 角色朝向 [6, 角色, 方向]
@@ -273,6 +289,9 @@ func _host_command(c: Dictionary):
 				code += "\n" + str(list[index].parameters[0])
 			for st in await MVScript.run(code, self):
 				skipped.append({"code": 355, "text": str(st).left(80)})
+			var leave := int(removed_gate_fix.get("%d:%d" % [map_id, event_id], -1))
+			if leave >= 0 and code.begins_with("CodexMapRemoval.notice("):
+				_jump_to_choice(leave, indent)
 		356:
 			var line := str(p[0])
 			if line.begins_with("PHWarehouse"):

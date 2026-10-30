@@ -22,8 +22,11 @@ extends RefCounted
 ##   SceneManager.push(Scene_ChangeClothes) → host.open_change_clothes（XChangeClothes）。
 ## - 角色进阶：SceneManager.push(Scene_ActorAdvanced) → host.open_actor_advanced（XAdvance）。
 ## - 魔兽要诀：Star.PetSystem.ComEveLearnSkill(N) → XPets.learn_book（出战宠物学技能，提示走 host.toast）。
+## - 已移除地图提示：CodexMapRemoval.notice(N) → 文字「【区域已移除】…」（Map080 王座宝箱，见 MVInterpreter.removed_gate_fix）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
+## 正式版移除的地图（Codex_StabilityPerformancePatch 1.1）：地图 ID → 名字
+const REMOVED_MAPS := {103: "巨人山脉", 108: "深渊:魔神之渊"}
 ## CodexReincarnationRandom.entry：open 之后的选择结果 {accepted, hard}
 static var reincarnation_entry := {}
 ## 编译好的正则（按模式串缓存）：脚本每条语句都要试一遍全部写法，不再逐条现编译
@@ -255,6 +258,11 @@ static func _statements(js: String, interp) -> Array:
 		m = _re("^\\$gameVariables\\.setValue\\((\\d+)\\s*,\\s*(-?\\d+(?:\\.\\d+)?)\\)$").search(st)
 		if m:
 			s.set_variable(int(m.get_string(1)), float(m.get_string(2)))
+			continue
+		# Codex_StabilityPerformancePatch 已移除地图（Map103、108）的提示：$gameMessage.add，下一条要等待的指令前显示（Map080 王座宝箱的深渊之门）
+		m = _re("^CodexMapRemoval\\.notice\\((\\d+)\\)$").search(st)
+		if m and REMOVED_MAPS.has(int(m.get_string(1))):
+			interp.pending_lines.append("【区域已移除】%s因地图文件损坏，已从当前版本移除。" % REMOVED_MAPS[int(m.get_string(1))])
 			continue
 		if st == "CodexToji.rollAdvanceStone()" or st == "CodexSukuna.rollAdvanceStone()":
 			var got := XDungeon.roll_advance_stone(s, XDungeon.TOJI if st.begins_with("CodexToji") else XDungeon.SUKUNA)
