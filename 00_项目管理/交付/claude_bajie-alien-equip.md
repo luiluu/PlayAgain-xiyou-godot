@@ -1,7 +1,7 @@
 # 交付：claude/bajie-alien-equip
 
 - 车道／工作者：C 规则·战斗／八戒（Claude，八戒_88）
-- 状态：进行中
+- 状态：可合并
 - 本期：异化词条④——**吞器 swallow、献器 offer** 的战斗侧与背包保护；**夺舍 possession 只出方案**（见文末「夺舍方案」，待沙僧审、总装再派）。
 
 ## 变更记录草稿
@@ -35,7 +35,11 @@
 
 ## 验证
 
-- （待写）
+- 合过 main（654be040，碰的是飞艇、交接板与优化登记，没碰切片、转换器、探针与本车道文件；优化登记 O-115 状态列冲突取 main 的「保留」，O-116 行保留）后，工作树跑 `同步正式西游.py --accept-additions` 通过（测量不变、无 issues，留了产物指纹）。**hostScope 文字有变**：`alien_affix.json` 末尾加了「、第④批装备类（吞器、献器）」，请总装生成接受单。
+- 选测（`并行测试.py`，并行 2，37 个场景全部首轮通过，2596 秒，日志 `04_验证/本地结果/并行测试/20261030_005319_cd70a87l`）：`xiyou_alien_affix` 1456/1456（原 1325，加三例逐步对照与 gear.* 检查）、`xiyou_alien_battle` 330/330、`xiyou_alien_config` 95/95、`xiyou_alien_workshop` 45/45、`xiyou_item_marks` 108/108、`xiyou_equipment` 1228/1228、`xiyou_equipment_admission`、`xiyou_equipment_clone_state`、`xiyou_formula_equipment` 1804/1804、`xiyou_hangup`／`_auto`／`_options`；另因 `trait_objects`、`end_battle` 是热路径跑了 `xiyou_rules` 难度 1 四段、`xiyou_smart_ai` 四段、`xiyou_battle*`、`xiyou_shield`、`xiyou_actor_p0`、`xiyou_magic_weapon*`、`xiyou_orbs`、`xiyou_shop_*`、`xiyou_costume_battle`。
+- 反向验证：①临时让 `gear_effects` 返回空、不清 meta：`xiyou_alien_affix` 13 项失败（swallow 的 a、offer 的 b 读数，gear.*.no_meta）；②临时不放回装备栏：13 项失败（swallow／offer 结束后读数与 locked、gear.*.equips_1）。都已还原。
+- 偶发：无。
+- 没覆盖：仓库存放供体（见「没移植／差异」）；战斗中换装没有界面入口，守卫只用函数级检查。
 
 ## 改了的原沙僧核心文件（待交叉核查点名）
 
@@ -51,7 +55,7 @@
 
 ## 可优化（流程／工具／效率）
 
-- 无
+- 建议：`长任务.py start … -- 并行测试.py … --quiet` 在共用槽满、排队很久时，`--quiet` 不打「等槽」心跳，日志一直空，看门狗按空闲把它判成 stuck 停掉（本次排队 47 分钟后被停、白等）。可让 `并行测试.py --quiet` 照样打等槽心跳（或长任务对并行测试默认放宽空闲上限），并在车道须知里提醒长任务里别加 `--quiet`。预计收益：省一次重排队；归工具车道（哪吒）。
 
 ## 夺舍方案（只出方案，未写代码）
 
