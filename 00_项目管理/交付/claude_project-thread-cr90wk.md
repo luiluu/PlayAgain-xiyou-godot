@@ -17,7 +17,7 @@
 
 - 下一步：总装合并后第一次在 Mac main 上跑 `云端选测.py run`（会推约 400 MB 产物快照），之后合并时大的选测改用 `run`＋`wait`。
 - 下一步：GitHub 上留了一个试推的空分支 `claude/project-thread-cr90wk-probe`（云端删不掉），Mac 上 `git push github --delete claude/project-thread-cr90wk-probe` 删掉。
-- 需要用户决定：每月 2000 免费分钟怎么用（全部选测上云端约一周用完；建议只把大的选测放上去，用完自动停、不扣费）。
+- 用户 2026-10-30 定：云端选测只放大批（Mac 要排队的选测）；小的留在 Mac 跑。每月 2000 免费分钟，用完自动停、不扣费。
 
 ## 进度账
 
