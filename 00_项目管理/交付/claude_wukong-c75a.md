@@ -1,4 +1,4 @@
-- 状态：进行中
+- 状态：可合并
 
 # 交付：claude/wukong-c75a
 
@@ -74,10 +74,14 @@
 - 同步：`同步正式西游.py --accept-additions`（worktree，3 分钟）退出码 0，结果「新增用例，已接受」：maps 75／76／78、事件用例 5755→5778；`alien_affix.json` 那条是本工作树旧基线（main 已接受过的 hostScope），提示里已说明。产物指纹已留。
 - 内容覆盖：`内容覆盖检查.py`：基线外新问题 0、消失 0（新三图全部可运行，只有 76 EV11～13、78 门的「出切片」提示），`--check` 退出码 0，基线不用更新。
 - 专项：`xiyou_floor_reach075` 70／70。
-- 选测（`选测.py main`）91 个场景＋必跑 `xiyou_rules` 难度 1 四段：待写
+- 选测（`选测.py main`，分叉点 a2fbe42e）91 个场景＋必跑 `xiyou_rules` 难度 1 四段（`xiyou_rules.tscn xiyou_rules_d1b xiyou_rules_d1c xiyou_rules_d1d`），并行测试展开共 99 个场景，长任务跑 1710 秒：98 个通过、没有偶发；失败 1 个是本期新专项 `xiyou_floor_reach075`（首跑与重跑都在 door5：走去门 5 的路上遇敌必掉了符文，测试自己的问题）。改为门口这段清空本图遇敌表后单跑连续 3 次 70／70。没跑全量（车道规则）。
+- 受条件类型 9／10 影响的 6 张旧图：选测按 `mv_event_core.gd`／`mv_interpreter.gd` 选进了全部楼层与事件对照专项（含 `xiyou_event_compare`、`xiyou_floor_goblin024`、`xiyou_floor_reach139`、`xiyou_floor_reach125` 等），都通过；但我没逐个查这几张旧图的专项有没有走到「持有装备」成立分支，能确定有断言的只有 78 EV6（reach075 的 soul_* 6 项）与 `_gear_conditions` 2 项。
+- 合 main：交付前合了 main f758f45b（只改交接板），没有冲突，不用重跑。
 
 ## 本分支提交
 
 - ff1840a1 WIP：切片收 75／76／78；B1 修正
 - 27c8afb0 WIP：条件类型 9／10；专项 reach075 与可达性公共检查
-- （本提交）交付单、优化登记 O-待定
+- 06f23666 WIP：交付单草稿、优化登记 O-待定
+- （合并）main f758f45b
+- （本提交）专项门口段清遇敌表；交付单定稿

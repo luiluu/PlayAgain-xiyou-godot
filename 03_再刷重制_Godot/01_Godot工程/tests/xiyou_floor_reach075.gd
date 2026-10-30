@@ -341,6 +341,8 @@ func _map78() -> void:
 		_check(tag + "_dead_end", REACH.reachable(map, map.player.grid).size() <= 8, REACH.reachable(map, map.player.grid).size())
 		if not _check(tag + "_back", await _step_onto(row[2], row[3], 78) and map.player.grid == row[4], [map.map_id if map else -1, map.player.grid if map else null]):
 			return
+	# 认证与门口：本图遇敌表清空（走过去的路上遇敌会必掉符文，测试固定 XEnemy.force_roll），只影响这个场景实例
+	map.map_data.encounterList = []
 	await _soul()
 	await _doors()
 
