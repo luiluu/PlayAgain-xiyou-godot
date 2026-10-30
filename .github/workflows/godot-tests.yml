@@ -10,7 +10,7 @@ name: 云端选测
 
 on:
   push:
-    branches: ['ci/**', 'ci-full/**', 'claude/project-thread-cr90wk']  # 试跑，合并前撤掉
+    branches: ['ci/**', 'ci-full/**']
   workflow_dispatch:
     inputs:
       mode:
@@ -48,7 +48,6 @@ env:
   GENERATED: 03_再刷重制_Godot/01_Godot工程/modes/xiyou/generated
   JOBS: '2'
   TARGET_SECONDS: '600'
-  XIYOU_CI_GENERATED: b7dc7df4b3647a7594dc0f2df7e5ca6d6d6ee697  # 试跑，合并前撤掉
 
 jobs:
   plan:
@@ -74,11 +73,11 @@ jobs:
       - id: plan
         env:
           BRANCH: ${{ github.ref_name }}
-          MODE: ${{ inputs.mode || 'full' }}  # 试跑，合并前撤掉
+          MODE: ${{ inputs.mode }}
           BASE: ${{ inputs.base || 'origin/main' }}
           FORCE: ${{ inputs.force && '--force' || '' }}
           MAX_SHARDS: ${{ inputs.max_shards || '16' }}
-          SCENES: ${{ inputs.scenes || 'xiyou_inlay_book.tscn xiyou_status_power.tscn' }}  # 试跑，合并前撤掉
+          SCENES: ${{ inputs.scenes }}
         run: |
           python3 "$TOOL" plan --branch "$BRANCH" --mode "$MODE" --base "$BASE" --scenes "$SCENES" $FORCE \
             --timings .ci-timings/timings.json --jobs "$JOBS" --target "$TARGET_SECONDS" --max-shards "$MAX_SHARDS" --out plan.json

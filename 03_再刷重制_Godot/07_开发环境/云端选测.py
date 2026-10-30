@@ -8,6 +8,7 @@ Mac 端（总装、车道）
                                 推到 GitHub 的 refs/ci/generated/<分支>；内容与上次相同就不推。
   run [--full] [--branch 名]    先 upload，再把 HEAD 推到 ci/<分支>（--full 时 ci-full/<分支>），触发云端选测；
                                 基准是 GitHub 上的 main（取分叉点）。打印要等的提交号。
+  estimate [--base 基准] [--full]  只估算：会选哪些场景、分几片、约用多少分钟额度（不推送）
   wait [提交] [--timeout 秒]    等云端结果 refs/ci/results/<提交>/<affected|full>，打印汇总。
                                 通过返回 0，失败 1，超时 124。
 CI 端（工作流调用，本机一般不用）
@@ -367,7 +368,7 @@ def cmd_plan(a):
     project = ROOT / PROJECT_REL
     all_scenes = sorted(p.name for p in (project / 'tests').glob('*.tscn'))
     done = ls_remote('origin', RESULT_PREFIX + sha + '/full', RESULT_PREFIX + sha + '/affected')
-    covered = [r for r in done if mode == 'affected' or r.endswith('/full')]
+    covered = [] if a.scenes else [r for r in done if mode == 'affected' or r.endswith('/full')]
     if covered and not a.force:
         # 只在结果是通过时跳过：总装先推 ci/main 测过、通过后再推 main，main 不用再测一遍
         git('fetch', '-q', '--no-tags', 'origin', '+%s:refs/xiyou-ci/result' % covered[0], check=False)
@@ -379,6 +380,7 @@ def cmd_plan(a):
     reasons = []
     if a.scenes:  # 只跑指定的场景（重跑失败项）
         scenes, base = sorted(set(a.scenes.split()) & set(all_scenes)), ''
+        mode = 'scenes'  # 结果写到 refs/ci/results/<提交>/scenes，不冒充选测或整轮通过
         reasons = ['手动指定 %d 个场景' % len(scenes)]
         missing = set(a.scenes.split()) - set(all_scenes)
         if missing:
@@ -407,14 +409,38 @@ def cmd_plan(a):
             'generatedRef': ref, 'generatedCommit': gen, 'estimatedSeconds': round(sum(est.values())),
             'shards': [{'shard': i + 1, 'scenes': s, 'estimatedSeconds': round(sum(est[x] for x in s) / a.jobs)} for i, s in enumerate(shards)]}
     Path(a.out).write_text(json.dumps(plan, ensure_ascii=False, indent=1) + '\n')
-    lines = ['## 云端选测计划', '', '- 提交 `%s`（%s），%s' % (sha[:10], branch, '整轮' if mode == 'full' else '选测，基准 ' + base),
-             '- 场景 %d 个，分 %d 片，预计单机串行 %d 分钟' % (len(scenes), len(shards), sum(est.values()) / 60),
+    lines = ['## 云端选测计划', '', '- 提交 `%s`（%s），%s' % (sha[:10], branch, {'full': '整轮', 'scenes': '指定场景'}.get(mode, '选测，基准 ' + base)),
+             '- 场景 %d 个，分 %d 片，预计用 %d 分钟额度' % (len(scenes), len(shards), billable_minutes(shards, est, a.jobs)),
              '- 产物快照 `%s` %s' % (ref or '（不用）', gen[:10])]
     if reasons:
         lines += ['', '<details><summary>选测理由</summary>', '', *['- ' + r.replace('|', '｜') for r in reasons], '', '</details>']
     summary('\n'.join(lines))
     matrix = {'include': [{'shard': i + 1, 'scenes': ' '.join(s)} for i, s in enumerate(shards)]}
     gh_output(skip='false', count=len(shards), matrix=json.dumps(matrix), generated_ref=ref, generated_commit=gen, mode=mode)
+    return 0
+
+
+def billable_minutes(shards, est, jobs):
+    """Actions 按每个任务向上取整到分钟计费：计划、准备、汇总各约 1 分钟（准备要导入时约 3 分钟），每片＝测试时间＋约 1 分钟取缓存。"""
+    if not shards:
+        return 1
+    return 4 + sum(math.ceil(sum(est[x] for x in s) / jobs / 60 + 0.8) for s in shards)
+
+
+def cmd_estimate(a):
+    """不推送，只在本机算一次：按 选测.py 会选哪些场景、分几片、大约用多少分钟额度和多久跑完。"""
+    project = ROOT / PROJECT_REL
+    all_scenes = sorted(p.name for p in (project / 'tests').glob('*.tscn'))
+    if a.full:
+        scenes, why = all_scenes, '整轮'
+    else:
+        sel = load_module('selector', HERE / '选测.py').select(ROOT, a.base or remote_name() + '/main')
+        scenes, why = (all_scenes, '选测结论是整轮') if sel['full'] else (sel['scenes'], '选测，基准 ' + sel['base'])
+    est = estimates(scenes, None)
+    shards = partition(scenes, est, a.jobs, a.target, a.max_shards)
+    longest = max([sum(est[x] for x in s) / a.jobs for s in shards] or [0])
+    print('%s：%d 个场景，分 %d 片；约用 %d 分钟额度（每月免费 2000），约 %d 分钟跑完（含准备）' % (
+        why, len(scenes), len(shards), billable_minutes(shards, est, a.jobs), longest / 60 + 4 if shards else 1))
     return 0
 
 
@@ -477,8 +503,9 @@ def cmd_report(a):
            'generatedRef': plan.get('generatedRef', ''), 'generatedCommit': plan.get('generatedCommit', ''), 'runUrl': run_url,
            'time': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')}
     head = '✓ 云端选测通过' if passed else '✗ 云端选测有失败'
-    lines = ['## %s' % head, '', '- 提交 %s（%s），%s，%d 个场景、%d 片，最长一片 %d 分钟' % (
-        sha[:10], res['branch'], '整轮' if res['mode'] == 'full' else '选测（基准 %s）' % res['base'], res['scenes'], res['shards'], res['longestShardSeconds'] / 60)]
+    how = {'full': '整轮', 'scenes': '指定场景'}.get(res['mode'], '选测（基准 %s）' % res['base'])
+    lines = ['## %s' % head, '', '- 提交 %s（%s），%s，%d 个场景、%d 片，最长一片 %.1f 分钟' % (
+        sha[:10], res['branch'], how, res['scenes'], res['shards'], res['longestShardSeconds'] / 60)]
     if failed:
         lines.append('- 失败场景 %d 个：%s（日志在运行页的 logs-shard-* 附件）' % (len(failed), '、'.join(failed)))
     if lost:
@@ -508,6 +535,8 @@ def main(argv=None):
     p = sub.add_parser('upload'); p.add_argument('--branch')
     p = sub.add_parser('run'); p.add_argument('--branch'); p.add_argument('--full', action='store_true')
     p.add_argument('--no-upload', action='store_true', help='不传产物（用 GitHub 上已有的本分支或 main 的快照）')
+    p = sub.add_parser('estimate'); p.add_argument('--base', help='默认 <GitHub 远端>/main'); p.add_argument('--full', action='store_true')
+    p.add_argument('--jobs', type=int, default=2); p.add_argument('--target', type=int, default=600); p.add_argument('--max-shards', type=int, default=16)
     p = sub.add_parser('wait'); p.add_argument('commit', nargs='?'); p.add_argument('--mode', choices=['affected', 'full'])
     p.add_argument('--timeout', type=int, default=3600); p.add_argument('--interval', type=int, default=30)
     sub.add_parser('godot')
