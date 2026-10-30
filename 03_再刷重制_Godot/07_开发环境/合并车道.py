@@ -47,6 +47,8 @@ VERSION_MARKER = 'dev.' + '待定'
 OPT_SKIP = (str(ENV) + '/', str(TOOLS) + '/')
 OPT_TOKEN = re.compile('O-' + '待定' + r'(?:-\d+)?')
 OPT_NUMBERED = re.compile(r'O-(\d{3})(?!\d)')
+# 换号只认本条交付单里的占位，和别的文件里车道自己新增的行（按 diff 新增行判）；登记文件（交接板、归档、变更记录）永远不扫：
+# 它们的车道表、说明里常原样写着占位字样（唐僧 10-30 合白龙期一时被整片换成 O-122）。
 OPT_REGISTERS = ['00_项目管理/交接板.md', '00_项目管理/交接板归档.md', '00_项目管理/变更记录.md']
 VERSION_EXEMPT = {'AGENTS.md', '00_项目管理/交付/README.md'}
 # 车道工作树里只有这些目录下的未跟踪文件时仍可合并（按分支引用，不清理工作树）
@@ -59,6 +61,10 @@ def git(root, *args):
     if p.returncode:
         raise RuntimeError(p.stderr.strip() or p.stdout.strip())
     return p.stdout.strip()
+
+
+# 主工作区 main 有提交守卫（装提交守卫.sh）：本工具自己的提交与合并带这个变量放行
+MAIN_COMMIT_ENV = dict(os.environ, XIYOU_MAIN_COMMIT='1')
 
 
 def run(root, args, env=None):
@@ -437,12 +443,23 @@ def plan(root, task):
     game = any(p.startswith(str(PROJECT) + '/') and not p.startswith(str(PROJECT / 'tests') + '/')
                and p != str(PROJECT / 'content/build_info.json') for p in changed)
     # 只替换目标车道带来的编号占位，不扫描、暂存主工作区的其它文件。
-    version_paths = [p for p in changed if p != str(delivery) and p not in extra and p not in VERSION_EXEMPT
-                     and Path(p).suffix in {'.md', '.json', '.gd', '.py', '.sh'}
-                     and (VERSION_MARKER in (read(p) or '') or (not p.startswith(OPT_SKIP) and OPT_TOKEN.search(read(p) or '')))]
+    def opt_lines(p):
+        if p.startswith(OPT_SKIP) or is_register(p):
+            return []
+        added = git(root, 'diff', '-U0', '--no-color', fork, target, '--', p).splitlines()
+        return [x[1:] for x in added if x.startswith('+') and not x.startswith('+++') and OPT_TOKEN.search(x)]
+    version_paths, opt_added = [], {}
+    for p in changed:
+        if p == str(delivery) or p in extra or p in VERSION_EXEMPT or Path(p).suffix not in {'.md', '.json', '.gd', '.py', '.sh'}:
+            continue
+        lines = opt_lines(p) if OPT_TOKEN.search(read(p) or '') else []
+        if VERSION_MARKER in (read(p) or '') or lines:
+            version_paths.append(p)
+            if lines:
+                opt_added[p] = lines
     return dict(task=task, branch=branch, worktree=str(wt) if wt else '', base=base, target=target,
                 delivery=str(delivery), extraDeliveries=extra, refresh=refresh, acceptChanges=accept, gameplay=game, phase='planned', head=base,
-                versionPaths=version_paths, evidenceFiles=evidence,
+                versionPaths=version_paths, optAdded=opt_added, evidenceFiles=evidence,
                 mainAdvancedAfterDelivery=fork != base)
 
 
@@ -469,14 +486,19 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def is_register(rel):
+    return rel in OPT_REGISTERS or bool(re.fullmatch(r'00_项目管理/变更记录[^/]*\.md', rel))
+
+
 def assign_opt_numbers(root, state):
     """本条合并带来的 O-待定[-n] 各换成顺延的 O-NNN：起点＝登记文件（交接板、归档、变更记录及其分卷）与本条文件里已有的最大号 +1，
     同一个占位全合并里换成同一个号，按第一次出现的顺序编号。无占位时返回空表。"""
     texts, tokens = [], []
-    for rel in list(state.get('versionPaths', [])) + sheets(state):
+    for rel in sheets(state):
         f = root / rel
-        if f.is_file() and not f.is_symlink() and not rel.startswith(OPT_SKIP):
+        if f.is_file() and not f.is_symlink():
             texts.append(f.read_text(errors='replace'))
+    texts += ['\n'.join(lines) for lines in state.get('optAdded', {}).values()]
     for t in texts:
         for m in OPT_TOKEN.finditer(t):
             if m.group(0) not in tokens:
@@ -495,8 +517,15 @@ def assign_opt_numbers(root, state):
 
 def substitute(text, state, rel=''):
     text = text.replace(VERSION_MARKER, state['version'])
-    if rel.startswith(OPT_SKIP):
-        return text
+    if rel:
+        added = set(state.get('optAdded', {}).get(rel, []))
+        if not added:
+            return text
+        return '\n'.join(substitute_opt(line, state) if line in added else line for line in text.split('\n'))
+    return substitute_opt(text, state)
+
+
+def substitute_opt(text, state):
     for tok, num in sorted(state.get('optNumbers', {}).items(), key=lambda kv: -len(kv[0])):
         text = text.replace(tok, num)
     return text
@@ -573,12 +602,12 @@ def prepare(root, state, state_file, executor):
             if marked:
                 raise RuntimeError('已暂存的文件里还有冲突标记（<<<<<<< / >>>>>>>），未提交合并：' + '、'.join(marked)
                                    + '；删掉标记后重新 git add，再运行同一命令')
-            run(root, ['git', 'commit', *message])
+            run(root, ['git', 'commit', *message], env=MAIN_COMMIT_ENV)
         if dirty(root):
             raise RuntimeError('尚有冲突或未提交现场，须先人工处理；未自动回退')
         if git(root, 'rev-parse', 'HEAD') == state['base']:
             try:
-                run(root, ['git', 'merge', '--no-ff', state['target'], *message])
+                run(root, ['git', 'merge', '--no-ff', state['target'], *message], env=MAIN_COMMIT_ENV)
             except subprocess.CalledProcessError:
                 raise RuntimeError('合并有冲突，现场保留：解决后 git add，再运行同一命令接续（工具会提交合并）；'
                                    '放弃就 git merge --abort，让车道 git merge main 后重新交付，再运行即按新提交重排')
@@ -949,10 +978,11 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
             state.update(head=head, mergeCommit=head)
             save(state_file, state)
         else:
-            raise RuntimeError('准备后 main HEAD 已改变（%s → %s）；保留现场。准备之后不要另起提交：总装修测试或别的文件留成未提交改动，'
+            extra = git(root, 'log', '--format=%h %s（%an，%ad）', '--date=format:%H:%M', state['head'] + '..' + head)
+            raise RuntimeError('准备后 main HEAD 已改变（%s → %s）；多出的提交（不是本工具做的）：\n%s\n保留现场。准备之后不要另起提交：总装修测试或别的文件留成未提交改动，'
                                '--finish 时用 --also <路径> 一并带入（00_项目管理/ 下的 .md 用 --accept-doc-edits）；'
                                '要修合并提交本身就 git commit --amend（父提交不变，工具会自动认）。已另起提交的，'
-                               'git reset --soft %s 退回成未提交改动再 --finish' % (state['head'][:9], head[:9], state['head'][:9]))
+                               'git reset --soft %s 退回成未提交改动再 --finish' % (state['head'][:9], head[:9], extra, state['head'][:9]))
     if subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode:
         raise RuntimeError('交付提交不在 main 历史里，先人工核对')
     moved = lane_moved(state)
@@ -1020,7 +1050,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         trailer = '执行者: ' + actor + '\n核查: ' + review_status(root, state)
         if affected and not batch:
             trailer += '\n验证: 选测（基准 %s，当天全量前算选测已验）' % check[-1][:9]
-        run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾', '-m', trailer])
+        run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾', '-m', trailer], env=MAIN_COMMIT_ENV)
         state.update(phase='committed', head=git(root, 'rev-parse', 'HEAD'), batch=batch)
         save(state_file, state)
     folder = state_file.parent
