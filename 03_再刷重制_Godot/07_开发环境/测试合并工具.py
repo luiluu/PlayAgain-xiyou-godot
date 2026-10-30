@@ -2040,6 +2040,42 @@ for name in filter(None, files):
         self.g('merge', 'main', cwd=self.wt)
         return log
 
+    def test_finish_cloud_passes_flag_and_no_upload_when_no_refresh(self):
+        """--finish --affected --cloud：检查.sh 多收 --cloud；本批没带切片／参照刷新时 CHECK_CLOUD_NO_UPLOAD=1。--cloud 不配 --affected。"""
+        bare = self.github()
+        log = Path(self.tmp.name) / 'check_args'
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\necho "$* upload_skip=${CHECK_CLOUD_NO_UPLOAD:-0}" >> %s\n' % log); checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'args checker')
+        self.g('merge', 'main', cwd=self.wt)
+        base = self.g('rev-parse', 'main')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--cloud'), 1)
+        self.assertIn('--cloud 只和 --affected', self.last_output)
+        self.assertEqual(self.call('--finish', '--affected', '--cloud'), 0, self.last_output)
+        self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base, '--cloud', 'upload_skip=1'])
+        self.assertFalse(self.wt.exists())
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
+
+    def test_finish_cloud_failure_keeps_lane_and_does_not_push(self):
+        """云端判失败（检查.sh 非零，覆盖通过以外的失败、超时、不可用）：保留现场，不提交收尾、不清理、不推送。"""
+        bare = self.github()
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\nexit 1\n'); checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'failing checker')
+        self.g('merge', 'main', cwd=self.wt)
+        pushed = self.g('rev-parse', 'main', cwd=bare)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertNotEqual(self.call('--finish', '--affected', '--cloud'), 0)
+        self.assertTrue(self.wt.exists())
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), pushed)
+
+    def test_cloud_env_uploads_only_when_a_lane_refreshed_reference_or_slice(self):
+        self.assertEqual(merge.cloud_env({'refresh': False}, {})['CHECK_CLOUD_NO_UPLOAD'], '1')
+        self.assertNotEqual(merge.cloud_env({'refresh': False}, {'refresh': True}).get('CHECK_CLOUD_NO_UPLOAD'), '1')
+
     def test_finish_affected_uses_premerge_main_and_marks_commit(self):
         bare = self.github()
         log = self.args_checker()
