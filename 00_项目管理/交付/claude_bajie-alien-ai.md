@@ -1,7 +1,7 @@
 # 交付：claude/bajie-alien-ai
 
 - 车道／工作者：B／C 界面·规则／八戒_90（Claude，Opus／medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -51,7 +51,7 @@
 
 - 选测（`选测.py main` 选出 9 个场景）＋ `xiyou_state_effects`（terminate 路径的 action.counter）＋必跑 `xiyou_rules` 难度 1 四段，并行测试 14 个场景全部首轮通过（日志 `04_验证/本地结果/选测_ai.log`）：`xiyou_alien_affix` 1798/1798（与上期相同，`_unit` 改 duplicate 后旧例不变）、`xiyou_alien_battle` 330、`xiyou_battle_ui` 152、`xiyou_event_compare` 5、`xiyou_regen_popup` 26、`xiyou_smart_ai` 22133（含新 6 项）／`_b` 22038／`_c` 19531／`_d` 19531、`xiyou_state_effects` 19949、`xiyou_rules` d1 四段 115637／115733／115746／115725。没改战斗对照与切片，不加 `--oracle`、不重同步。
 - 反向验证：smart_ai.gd 换回改动前（只补一个 `o_projection` 变量）、测试不变：`alien.on.*` 三项失败（prayer.choice、prayer.heal_estimate、blessing.foe），关的三项照过；已还原。
-- 合 main（bajie-alien-gaps dev.221、wukong-c75a）：`alien_battle.gd` 的 prayer_heal 与优化登记表冲突，保留 main 的 O-119 注释与 O-119／O-120 两行，本分支的 prayer_healer 拆分与 O-待定 一行接在后面。合并后重跑 `xiyou_alien_affix`、`xiyou_smart_ai`、`xiyou_alien_battle`：（待写）
+- 合 main（bajie-alien-gaps dev.221、wukong-c75a）：`alien_battle.gd` 的 prayer_heal 与优化登记表冲突，保留 main 的 O-119 注释与 O-119／O-120 两行，本分支的 prayer_healer 拆分与 O-待定 一行接在后面。合并后重跑 `xiyou_alien_affix`、`xiyou_smart_ai`、`xiyou_alien_battle`：全部首轮通过（1798／22133／330，日志 `04_验证/本地结果/选测_ai2.log`；排队等槽约 70 分钟，主工作区批测占满）。
 
 ## 本分支提交
 
