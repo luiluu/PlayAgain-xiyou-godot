@@ -150,7 +150,7 @@ func _price(g: Array) -> int:
 ## item 是买入各函数用的商品记录（装备带 kind/base），price 是金币价（指定价格优先）。
 func _buy_data() -> Array:
 	var out := []
-	for g in XItemMarks.shop_goods(goods):
+	for g in XItemMarks.shop_goods(goods, XState.current.map_id if XState.current != null else 0):
 		var item := XItemMarks.shop_rec(int(g[0]), int(g[1]))
 		if not item.is_empty():
 			out.append({"rec": XItemMarks.shop_display(item), "item": item, "kind": int(g[0]), "gid": int(g[1]), "price": _price(g)})

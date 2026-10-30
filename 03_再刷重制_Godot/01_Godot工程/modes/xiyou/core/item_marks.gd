@@ -213,25 +213,112 @@ const PILL_KEYS := ["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"]
 ## - Codex_PercentPills：商品里有 1693 时，把所有 <CodexPill: mhp…luk> 的物品追加到末尾（已有的不重复）；
 ## - installNativeRaceRuntime：旧版祝福进阶石按 CodexRaces.legacyItems 换成正规 ID，再去掉完全相同的行；
 ## - installImportedBalanceRuntime：滤掉停用的伙伴号角。
-## 未移植：Map132 号角商店追加新伙伴号角（多个 installNative…Runtime）、installNativeOrbRuntime 撤下宝珠——切片商店不受影响（shop_buy_probe）。
-static func shop_goods(goods: Array) -> Array:
+## - 兑换大厅 Map132（map_id＝132）追加伙伴号角与专属法宝（_lobby_additions）。
+## installNativeOrbRuntime 撤下宝珠见下。参照：shop_buy_probe（不设地图）、map132_shop_probe（Map132 各店，tests/xiyou_map132_shop）。
+## 原版各链在 prepare 之前改商品表、Codex_PercentPills 是插件（最里层），所以丹药最后追加。
+static func shop_goods(goods: Array, map_id := 0) -> Array:
 	var rows: Array = goods.map(func(g): return [int(g[0]), int(g[1]), int(g[2]), int(g[3])])
 	rows = rows.filter(func(g): return not _orb_filtered(g))
-	if rows.any(func(g): return g[0] == 0 and g[1] == PILL_ANCHOR):
-		var db: Array = XDB.table("Items")
-		for i in range(1, db.size()):
-			var key := str(db[i].get("meta", {}).get("CodexPill", "")).strip_edges() if db[i] is Dictionary else ""
-			if PILL_KEYS.has(key) and not rows.any(func(g): return g[0] == 0 and g[1] == i):
-				rows.append([0, i, 0, 0])
 	var races = XDB.table("CodexRaces")
 	var legacy: Dictionary = races.get("legacyItems", {}) if races is Dictionary else {}
-	var out := []
+	var mapped := []
 	for g in rows:
 		if g[0] == 0 and legacy.has(str(g[1])):
 			g[1] = int(legacy[str(g[1])])
-		if not out.has(g) and not (g[0] == 0 and DISABLED_HORNS.has(g[1])):
-			out.append(g)
+		if not mapped.has(g):
+			mapped.append(g)
+	var horn_before := mapped.any(_is_horn_row)
+	var out: Array = mapped.filter(func(g): return not (g[0] == 0 and DISABLED_HORNS.has(g[1])))
+	if map_id == LOBBY_MAP:
+		_lobby_additions(out, horn_before)
+	if out.any(func(g): return g[0] == 0 and g[1] == PILL_ANCHOR):
+		var db: Array = XDB.table("Items")
+		for i in range(1, db.size()):
+			var key := str(db[i].get("meta", {}).get("CodexPill", "")).strip_edges() if db[i] is Dictionary else ""
+			if PILL_KEYS.has(key) and not out.any(func(g): return g[0] == 0 and g[1] == i):
+				out.append([0, i, 0, 0])
 	return out
+
+
+## 兑换大厅 Map132 的商品追加（各运行时包 Scene_Shop.prepare，后装的先跑；都在调用旧 prepare 之前改商品表，已有的不重复）：
+## 1. installNativeBindingChargeRuntime：伙伴号角店追加备注 <CodexTusu: horn>／<CodexXuan: horn> 的号角（按物品 ID 顺序）；
+## 2. installNativeGuyuRuntime：伙伴号角店追加谷雨号角（第一个带 <GuyuHorn> 的物品）；3. installNativeYunshangRuntime：云裳号角 2941；
+##    这三层在滤停用号角之前，所以「是不是号角店」按滤前算（horn_before）。
+## 4. installImportedBalanceRuntime：先滤停用号角，再给伙伴号角店追加小猫号角 2899；
+## 5～7. 饿狼 2940、宿傩 2938、伏黑甚尔 2936：商品里有波风水门号角 2788 才追加；
+## 8. 黄泉／镜流：有 2788 追加 2931、2932；有《暴爽秘籍》783／792 时改追加 2933、2934（后一条覆盖前一条）；
+## 9. 米拉：伙伴号角店追加 2904；并删掉 Map132 任何店里的黑龙心鳞 4577（清旧版加进去的法宝）；
+## 10. 渡鸦：伙伴号角店追加 2902；有 <Magic Weapon> 防具的店（不朽法宝店）追加冥河断罪镰 4001。
+## 限购不在这里：这些号角与 4001 都带 shopStockCountMax 1（XShopStock）；原版米拉／甚尔／渡鸦在 prepare 之后给旧档把没记过的库存补成 1，
+## 重制没记过的库存本来就按上限算，新局结果相同，不移植（不迁移 MV 旧存档）。
+const LOBBY_MAP := 132
+const LOBBY_LINK_HORN := 2788
+const LOBBY_BOOKS := [783, 792]
+const LOBBY_YUNSHANG_HORN := 2941
+const LOBBY_CAT_HORN := 2899
+const LOBBY_LINK_HORNS := [2940, 2938, 2936]   # 饿狼、宿傩、伏黑甚尔（装入顺序）
+const LOBBY_MIRA_HORN := 2904
+const LOBBY_MIRA_HEART := 4577
+const LOBBY_RAVEN_HORN := 2902
+const LOBBY_RAVEN_ARTIFACT := 4001
+static var _binding_horns: Array = []
+static var _guyu_horn := -1
+
+
+static func _is_horn_row(g: Array) -> bool:
+	return g[0] == 0 and str(XDB.rec("Items", g[1]).get("name", "")).begins_with("伙伴号角：")
+
+
+static func _push(out: Array, kind: int, id: int) -> void:
+	if id > 0 and not out.any(func(g): return g[0] == kind and g[1] == id):
+		out.append([kind, id, 0, 0])
+
+
+static func _lobby_horn_ids() -> void:
+	if _guyu_horn >= 0:
+		return
+	_guyu_horn = 0
+	var re := RegEx.create_from_string("(?i)<Codex(?:Tusu|Xuan):\\s*horn\\s*>")
+	var db: Array = XDB.table("Items")
+	for i in range(1, db.size()):
+		if not db[i] is Dictionary:
+			continue
+		if re.search(str(db[i].get("note", ""))) != null:
+			_binding_horns.append(i)
+		if _guyu_horn == 0 and (db[i].get("meta", {}).has("GuyuHorn") or str(db[i].get("note", "")).to_lower().contains("<guyuhorn")):
+			_guyu_horn = i
+
+
+static func _lobby_additions(out: Array, horn_before: bool) -> void:
+	_lobby_horn_ids()
+	if horn_before:
+		for id in _binding_horns:
+			_push(out, 0, id)
+		_push(out, 0, _guyu_horn)
+		_push(out, 0, LOBBY_YUNSHANG_HORN)
+	var horn := out.any(_is_horn_row)
+	if horn:
+		_push(out, 0, LOBBY_CAT_HORN)
+	var has := func(id): return out.any(func(g): return g[0] == 0 and g[1] == id)
+	if has.call(LOBBY_LINK_HORN):
+		for id in LOBBY_LINK_HORNS:
+			_push(out, 0, id)
+	var yomi := []
+	if has.call(LOBBY_LINK_HORN):
+		yomi = [2931, 2932]
+	if out.any(func(g): return g[0] == 0 and LOBBY_BOOKS.has(g[1])):
+		yomi = [2933, 2934]
+	for id in yomi:
+		_push(out, 0, id)
+	if out.any(_is_horn_row):
+		_push(out, 0, LOBBY_MIRA_HORN)
+	for i in range(out.size() - 1, -1, -1):
+		if out[i][0] == 2 and out[i][1] == LOBBY_MIRA_HEART:
+			out.remove_at(i)
+	if out.any(_is_horn_row):
+		_push(out, 0, LOBBY_RAVEN_HORN)
+	if out.any(func(g): return g[0] == 2 and str(XDB.rec("Armors", g[1]).get("note", "")).to_lower().contains("<magic weapon>")):
+		_push(out, 2, LOBBY_RAVEN_ARTIFACT)
 
 
 ## 宝珠运行时（installNativeOrbRuntime）：宝珠改为副本掉落，Scene_Shop.prepare 先从商品表滤掉宝珠物品（CodexOrbs 的新宝珠
