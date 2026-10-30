@@ -2,7 +2,7 @@ extends Node
 ## 智能战斗AI（XSmartAI）对照正式版 Codex_SmartBattleAI：generated/oracle/smart_ai.json 由 mv_oracle/smart_ai_probe.cjs 生成
 ## （普通难度、出战 1/8/9/10、10 级、开局被动与开战状态、药 1/2/137；切片敌群 × 满状态/队友低血/队友阵亡/没蓝/敌人残血）。
 ## 比较：每个角色选中的技能/药与目标、前 6 名候选的分数，以及 safeDamage 估算；另比 YEP 行动序列段数（转换器 yepEffects）。
-## 异化投影估值（O-待定 XSmartAI.o_projection）只写 Godot 侧断言（alien_projection）：开关两支都不同于原版，探针不带异化。
+## 异化投影估值（O-121 XSmartAI.o_projection）只写 Godot 侧断言（alien_projection）：开关两支都不同于原版，探针不带异化。
 ## 单场景约 400 秒：伤害行与选择用例按序号轮流分成 parts 份（xiyou_smart_ai 管第 0 份，_b／_c／_d 各管一份），
 ## 来源指纹、行动序列、自动战斗分派与边界伤害只在第 0 份比，断言总数与拆分前相同
 @export var part := 0
@@ -159,7 +159,7 @@ func routing(ref: Dictionary) -> void:
 	opt.queue_free()
 
 
-## O-待定 o_projection：逆祷者的攻击按治疗友方估值、祸祝 7100（对自己附加幻日虹）按对敌诅咒估值；关时回到读原技能
+## O-121 o_projection：逆祷者的攻击按治疗友方估值、祸祝 7100（对自己附加幻日虹）按对敌诅咒估值；关时回到读原技能
 func alien_projection(ref: Dictionary) -> void:
 	var blessing := XDB.rec("Skills", 7100)
 	var saved := [blessing.stypeId, blessing.mpCost, blessing.tpCost]
