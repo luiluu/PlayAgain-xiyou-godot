@@ -384,6 +384,19 @@ def prune_manual_copies(sandbox: Path, hours: float = MANUAL_STALE_HOURS) -> lis
     return removed
 
 
+def clone_or_copy(src: Path, dst: Path) -> None:
+    """备份用 APFS 克隆（cp -c，同卷不另占空间，原文件之后被改写时才分叉）；克隆不成（别的文件系统、跨卷）退回普通复制。
+    每份备份原来占 1.1 GB（oracle），三份加上各工作树的同步备份是磁盘告急的来源之一（Kyo 2026-10-30，哪吒_10）。"""
+    if sys.platform == 'darwin' and subprocess.run(['cp', '-cRp', str(src), str(dst)], capture_output=True).returncode == 0:
+        return
+    if dst.exists():
+        shutil.rmtree(dst) if dst.is_dir() else dst.unlink()
+    if src.is_dir():
+        shutil.copytree(src, dst)
+    else:
+        shutil.copy2(src, dst)
+
+
 def prune_backups(root: Path, keep: int = KEEP_BACKUPS) -> list:
     """同步备份只留最近 keep 份（用户 2026-10-18 定，含本次新建的这份）；只删「日期_时间_…」命名的备份目录。"""
     dirs = sorted((d for d in root.iterdir() if d.is_dir() and re.match(r'^\d{8}_\d{6}', d.name)),
@@ -765,10 +778,8 @@ def _main() -> int:
     pruned_manual = prune_manual_copies(SANDBOX)
     for name in ['oracle', 'db', 'maps', 'manifest.json', 'slice.json']:
         src = gen / name
-        if src.is_dir():
-            shutil.copytree(src, backup / name)
-        elif src.exists():
-            shutil.copy2(src, backup / name)
+        if src.exists():
+            clone_or_copy(src, backup / name)
     report = {'from': old_version, 'to': new_version, 'backup': str(backup.relative_to(ROOT)), 'generated': str(gen),
               'prunedBackups': report_pruned, 'prunedManualCopies': len(pruned_manual), 'comparisonBaseline': str(baseline.relative_to(ROOT))}
     # 探针按环境变量取正式源（XIYOU_APP）与转换产物（XIYOU_GENERATED，event_probe 读地图），与 --app/--generated 一致
