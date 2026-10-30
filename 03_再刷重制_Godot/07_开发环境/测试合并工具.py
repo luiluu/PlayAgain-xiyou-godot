@@ -1226,6 +1226,33 @@ for name in filter(None, files):
         self.assertEqual(self.call('--finish'), 0, self.last_output)
         self.assertFalse(merge.dirty(self.root))
 
+    def test_optimization_placeholder_gets_next_numbers(self):
+        """唐僧 10-30：总装手换 O-119／O-120 漏了一处注释；合并工具按已登记最大 O-NNN 顺延换号，同一占位换同一号，
+        代码注释、文档、交付单草稿都换，带 -1／-2 的是不同的号。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n\n- **O-118 旧项**\n## 待交叉核查\n\n## end\n')
+        self.g('add', '.'); self.g('commit', '-m', 'register has O-118')
+        self.g('merge', 'main', cwd=self.wt)
+        rel = merge.SUB / '00_设计/界面风格.md'
+        gd = merge.PROJECT / 'modes/注释.gd'
+        for r, text in [(rel, '# 风格\n%s-1 与 %s-2；再提 %s-1。\n' % (tok, tok, tok)), (gd, '# %s-2：说明\n# 也见 %s\n' % (tok, tok))]:
+            (self.wt / r).parent.mkdir(parents=True, exist_ok=True)
+            (self.wt / r).write_text(text)
+        sheet = self.wt / self.receipt
+        sheet.write_text(sheet.read_text().replace('- fixture change', '- fixture change %s-1' % tok))
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'lane docs with placeholders', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        doc = (self.root / rel).read_text()
+        self.assertEqual(doc, '# 风格\nO-119 与 O-120；再提 O-119。\n')
+        code = (self.root / gd).read_text()
+        self.assertIn('# O-120：说明', code)
+        self.assertIn('# 也见 O-121', code)       # 不带序号的是第三个不同占位
+        self.assertNotIn(tok, doc + code)
+        log = (self.root / merge.LOG).read_text()
+        self.assertIn('fixture change O-119', log)
+        self.assertNotIn(tok, log)
+
     def test_version_document_extra_edit_is_preserved_and_rejected(self):
         rel = self.lane_document()
         self.assertEqual(self.call(), 0, self.last_output)

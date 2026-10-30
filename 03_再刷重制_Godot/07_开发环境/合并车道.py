@@ -40,6 +40,11 @@ COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/交接板归档.md'
           Path('00_项目管理/当前状态.json'), Path('00_项目管理/来源登记.json'),
           SUB / '开发编号.json', PROJECT / 'project.godot', PROJECT / 'content/build_info.json']}
 VERSION_MARKER = 'dev.' + '待定'
+# 优化登记号占位：车道文档里写 O-待定（同一份里要区分几项就写 O-待定-1、O-待定-2），合并时按已登记的最大 O-NNN 顺延换号
+# （总装手换漏过一处注释，唐僧 10-30）。占位字面量拆开写，免得本文件自己被换号。
+OPT_TOKEN = re.compile('O-' + '待定' + r'(?:-\d+)?')
+OPT_NUMBERED = re.compile(r'O-(\d{3})(?!\d)')
+OPT_REGISTERS = ['00_项目管理/交接板.md', '00_项目管理/交接板归档.md', '00_项目管理/变更记录.md']
 VERSION_EXEMPT = {'AGENTS.md', '00_项目管理/交付/README.md'}
 # 车道工作树里只有这些目录下的未跟踪文件时仍可合并（按分支引用，不清理工作树）
 EVIDENCE_DIRS = ('00_项目管理/核查范围/', str(SUB / '04_验证/本地结果') + '/')
@@ -423,7 +428,7 @@ def plan(root, task):
     # 只替换目标车道带来的编号占位，不扫描、暂存主工作区的其它文件。
     version_paths = [p for p in changed if p != str(delivery) and p not in extra and p not in VERSION_EXEMPT
                      and Path(p).suffix in {'.md', '.json', '.gd', '.py', '.sh'}
-                     and VERSION_MARKER in (read(p) or '')]
+                     and (VERSION_MARKER in (read(p) or '') or OPT_TOKEN.search(read(p) or ''))]
     return dict(task=task, branch=branch, worktree=str(wt) if wt else '', base=base, target=target,
                 delivery=str(delivery), extraDeliveries=extra, refresh=refresh, acceptChanges=accept, gameplay=game, phase='planned', head=base,
                 versionPaths=version_paths, evidenceFiles=evidence,
@@ -453,15 +458,47 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def assign_opt_numbers(root, state):
+    """本条合并带来的 O-待定[-n] 各换成顺延的 O-NNN：起点＝登记文件（交接板、归档、变更记录及其分卷）与本条文件里已有的最大号 +1，
+    同一个占位全合并里换成同一个号，按第一次出现的顺序编号。无占位时返回空表。"""
+    texts, tokens = [], []
+    for rel in list(state.get('versionPaths', [])) + sheets(state):
+        f = root / rel
+        if f.is_file() and not f.is_symlink():
+            texts.append(f.read_text(errors='replace'))
+    for t in texts:
+        for m in OPT_TOKEN.finditer(t):
+            if m.group(0) not in tokens:
+                tokens.append(m.group(0))
+    if not tokens:
+        return {}
+    regs = [root / r for r in OPT_REGISTERS] + sorted((root / '00_项目管理').glob('变更记录*.md'))
+    top = 0
+    for f in regs:
+        if f.is_file():
+            top = max([top] + [int(n) for n in OPT_NUMBERED.findall(f.read_text(errors='replace'))])
+    for t in texts:
+        top = max([top] + [int(n) for n in OPT_NUMBERED.findall(t)])
+    return {tok: 'O-%03d' % (top + i + 1) for i, tok in enumerate(tokens)}
+
+
+def substitute(text, state):
+    text = text.replace(VERSION_MARKER, state['version'])
+    for tok, num in sorted(state.get('optNumbers', {}).items(), key=lambda kv: -len(kv[0])):
+        text = text.replace(tok, num)
+    return text
+
+
 def replace_versions(root, state, state_file):
     if 'versionEdits' not in state:
+        state['optNumbers'] = assign_opt_numbers(root, state)
         edits = {}
         for rel in state.get('versionPaths', []):
             path = root / rel
             if path.is_symlink() or not path.is_file():
                 raise RuntimeError('编号占位文件已改变类型：' + rel)
             before = path.read_bytes()
-            after = before.decode().replace(VERSION_MARKER, state['version']).encode()
+            after = substitute(before.decode(), state).encode()
             if before != after:
                 edits[rel] = {'before': digest(before), 'after': digest(after)}
         # 先保存计划再写文件；中断时只接受原内容或已经替换完的内容。
@@ -476,7 +513,7 @@ def replace_versions(root, state, state_file):
             continue
         if digest(current) != hashes['before']:
             raise RuntimeError('编号替换过程中出现额外改动，保留现场：' + rel)
-        after = current.decode().replace(VERSION_MARKER, state['version']).encode()
+        after = substitute(current.decode(), state).encode()
         if digest(after) != hashes['after']:
             raise RuntimeError('编号替换结果与计划不一致：' + rel)
         path.write_bytes(after)
@@ -594,7 +631,7 @@ def prepare(root, state, state_file, executor):
             if any(not (root / s).exists() for s in sheets(state)):
                 raise RuntimeError('交付单已不存在且变更记录无本批标记，先人工核对')
             body = '\n\n'.join(relink(draft((root / s).read_text()), root) for s in sheets(state))
-            body = body.replace(VERSION_MARKER, state['version'])
+            body = substitute(body, state)
             (root / LOG).write_text(log.rstrip() + '\n\n' + body + '\n\n' + marker + '\n')
         for s in sheets(state):
             (root / s).unlink(missing_ok=True)
