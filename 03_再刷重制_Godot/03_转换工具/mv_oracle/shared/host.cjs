@@ -9,6 +9,10 @@ function start() {
   const identity = sourceIdentity(APP), r = boot(APP, {tolerant:true, log:false}), w = r.window;
   if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败: '+JSON.stringify(r.errors));
   w.Star.Achievement.Manager.init();
+  // 原版插件报错时常 SceneManager.terminate（正式游戏直接退出）；参照引擎里退出会让后面的用例全挂、只报 location 未定义。
+  // 这里记一笔并抛错，用例的 errors 直接写出是哪一步。要照「报错被吞」继续跑的探针自己再覆盖（如 alien_affix_probe 记次数）
+  const terminated = [];
+  w.SceneManager.terminate = function () { const e = new Error('SceneManager.terminate：原版在这里退出游戏'); terminated.push(String(e.stack).slice(0, 800)); throw e; };
   const newGame = () => {
     w.eval('ConfigManager.applyData({});DataManager.setupNewGame();Math.random=function(){return 0.5;};Graphics.frameCount=0;for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
     w.Input.clear();
@@ -16,7 +20,7 @@ function start() {
     w.eval('$gameParty._actors=[];[1,8,9,10].forEach(function(id){$gameParty.addActor(id);});');
   };
   const restore = json => { w.DataManager.createGameObjects(); w.DataManager.extractSaveContents(w.JsonEx.parse(json)); };
-  return {w, identity, newGame, restore, encode:() => w.JsonEx.stringify(w.DataManager.makeSaveContents())};
+  return {w, identity, newGame, restore, terminated, encode:() => w.JsonEx.stringify(w.DataManager.makeSaveContents())};
 }
 function makeCase(id, setup, measure) {
   try { return {id, setup, observed:measure(), errors:[]}; }
