@@ -528,13 +528,25 @@ def validate_version_edits(root, state):
             raise RuntimeError('编号替换文件还有其它改动，保留现场：' + rel)
 
 
+def review_status(root, state):
+    """合并提交的核查尾注（Kyo 2026-10-30：Codex 停用核查，改审查线程）：审查线程自己的分支不再被核，写「无」；其余写「待审查」。"""
+    if state['branch'].startswith('claude/review-'):
+        return '无'
+    try:
+        sheet = git(root, 'show', state['target'] + ':' + state['delivery'])
+    except RuntimeError:
+        sheet = ''
+    if re.search(r'执行者[:：]\s*Claude[（(]审查[）)]', sheet):
+        return '无'
+    return '待审查'
+
+
 def prepare(root, state, state_file, executor):
     if state['phase'] != 'planned' and git(root, 'rev-parse', 'HEAD') != state['head']:
         raise RuntimeError('准备过程中 main HEAD 已改变，先人工核对')
     if state['phase'] == 'planned':
         actor = 'Claude（唐僧）' if executor == 'Claude' else 'Codex（沙僧）'
-        reviewer = 'Codex' if executor == 'Claude' else 'Claude'
-        message = ['-m', '合并 ' + state['branch'], '-m', '执行者: ' + actor + '\n核查: 待' + reviewer]
+        message = ['-m', '合并 ' + state['branch'], '-m', '执行者: ' + actor + '\n核查: ' + review_status(root, state)]
         if merge_head(root) == state['target']:
             # 上次合并停在冲突：唐僧解决并 git add 后重跑本工具，由它照规范提交合并，再往下接续。
             unmerged = git(root, 'diff', '--name-only', '--diff-filter=U')
@@ -986,8 +998,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False):
         if remaining:
             run(root, ['git', 'add', '--', *sorted(remaining)])
         actor = 'Claude（唐僧）' if executor == 'Claude' else 'Codex（沙僧）'
-        reviewer = 'Codex' if executor == 'Claude' else 'Claude'
-        trailer = '执行者: ' + actor + '\n核查: 待' + reviewer
+        trailer = '执行者: ' + actor + '\n核查: ' + review_status(root, state)
         if affected and not batch:
             trailer += '\n验证: 选测（基准 %s，当天全量前算选测已验）' % check[-1][:9]
         run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾', '-m', trailer])

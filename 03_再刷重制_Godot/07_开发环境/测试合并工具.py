@@ -1226,6 +1226,26 @@ for name in filter(None, files):
         self.assertEqual(self.call('--finish'), 0, self.last_output)
         self.assertFalse(merge.dirty(self.root))
 
+    def test_review_trailer_is_pending_review_and_none_for_review_thread(self):
+        """Kyo 10-30 停用 Codex 核查：Claude 执行默认写 `核查: 待审查`；审查线程自己的分支（claude/review-*，或交付单执行者
+        是「Claude（审查）」）写 `核查: 无`，不进待核查清单。"""
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertIn('核查: 待审查', self.g('log', '-1', '--format=%B', 'HEAD'))
+        self.assertNotIn('待Codex', self.g('log', '-1', '--format=%B', 'HEAD'))
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertIn('核查: 待审查', self.g('log', '-1', '--format=%B', 'HEAD'))
+
+    def test_review_status_for_review_thread(self):
+        state = {'branch': 'claude/review-9', 'target': 'claude/task', 'delivery': str(self.receipt)}
+        self.assertEqual(merge.review_status(self.root, state), '无')
+        state['branch'] = 'claude/task'
+        self.assertEqual(merge.review_status(self.root, state), '待审查')
+        sheet = self.wt / self.receipt
+        sheet.write_text(sheet.read_text().replace('# delivery\n', '# delivery\n- 执行者：Claude（审查）\n'))
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'review sheet', cwd=self.wt)
+        self.assertEqual(merge.review_status(self.root, state), '无')
+
     def test_optimization_placeholder_gets_next_numbers(self):
         """唐僧 10-30：总装手换 O-119／O-120 漏了一处注释；合并工具按已登记最大 O-NNN 顺延换号，同一占位换同一号，
         代码注释、文档、交付单草稿都换，带 -1／-2 的是不同的号。"""
