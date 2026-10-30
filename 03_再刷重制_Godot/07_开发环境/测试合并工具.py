@@ -287,8 +287,9 @@ class ParallelTestRunnerTests(unittest.TestCase):
         # 假 Godot：--version 照常回答；每次运行把场景名记进 runs；b 在 seen 不存在时失败一次；FAIL_C 时 c 失败；
         # BUSY 时用 mkdir 当互斥标记，检测同一时刻是否有两个测试在跑
         self.godot = self.tmp / 'godot'
-        self.godot.write_text('#!/bin/zsh\nn=${@[-1]:t}\n[[ $n == --version ]] && { echo 4.x; exit 0; }\n'
+        self.godot.write_text('#!/bin/zsh\nzmodload zsh/datetime\nn=${@[-1]:t}\n[[ $n == --version ]] && { echo 4.x; exit 0; }\n'
                               'print -r -- $n >> %(t)s/runs\n'
+                              'if [[ -n ${SPIN:-} ]]; then t=$EPOCHREALTIME; while (( EPOCHREALTIME - t < 0.3 )); do :; done; fi\n'
                               'if [[ -n ${BUSY:-} ]]; then mkdir %(t)s/busy 2>/dev/null || touch %(t)s/overlap; sleep 0.3; rmdir %(t)s/busy 2>/dev/null; fi\n'
                               'if [[ $n == b.tscn && -n ${FLAKY_B:-} && ! -e %(t)s/seen ]]; then touch %(t)s/seen; echo \'%(bad)s\'; exit 1; fi\n'
                               'if [[ $n == c.tscn && -n ${FAIL_C:-} ]]; then echo \'%(bad)s\'; exit 1; fi\necho \'%(ok)s\'\n'
@@ -370,6 +371,36 @@ class ParallelTestRunnerTests(unittest.TestCase):
         p, _ = self.run_tests('--full', '--quiet')
         self.assertEqual(p.returncode, 0, p.stdout)
         self.assertIn('3 个场景，全部通过', p.stdout)
+
+    def test_quiet_still_heartbeats_for_long_task_watchdog(self):
+        # 八戒 dev.206：长任务里加 --quiet 整段没输出，被一小时无输出看门狗杀掉；--quiet 只省通过行，心跳照打
+        p, _ = self.run_tests('--full', '--quiet', jobs=3, BUSY='1', XIYOU_TEST_HEARTBEAT='0.1', CHECK_GLOBAL_JOBS='1')
+        self.assertEqual(p.returncode, 0, p.stdout)
+        self.assertIn('进行中：完成', p.stdout)
+        self.assertNotIn('✓', p.stdout)
+
+    def test_timings_record_child_user_cpu(self):
+        # 八戒 dev.206：test_timings.json 只有墙钟，负载高时分不清场景慢还是机器满；每次尝试另记子进程 user／sys CPU
+        logs = self.tmp / 'logs'
+        p, _ = self.run_tests('--full', '--log-dir', str(logs), FLAKY_B='1', SPIN='1')
+        self.assertEqual(p.returncode, 0, p.stdout)
+        rows = {r['name']: r for r in json.loads((logs / 'test_timings.json').read_text())['scenes']}
+        for r in rows.values():
+            self.assertEqual(r['userCpuSeconds'], r['attempts'][0]['userCpuSeconds'])
+            for t in r['attempts']:
+                self.assertGreater(t['userCpuSeconds'], 0.1, r)  # 假 Godot 空转约 0.3 秒 CPU
+                self.assertGreaterEqual(t['sysCpuSeconds'], 0)
+        self.assertEqual(len(rows['b.tscn']['attempts']), 2)
+
+    def test_run_with_rusage_timeout_keeps_partial_output(self):
+        par = load('par_rusage', HERE / '并行测试.py')
+        rc, out, cpu = par.run_with_rusage(['sh', '-c', 'echo early; echo err >&2; sleep 30'], dict(os.environ), 0.5)
+        self.assertEqual(rc, 142)
+        self.assertIn('early', out)
+        self.assertIn('err', out)
+        self.assertGreaterEqual(cpu['user'], 0)
+        rc, out, _ = par.run_with_rusage(['sh', '-c', 'echo hi; exit 3'], dict(os.environ), 10)
+        self.assertEqual((rc, out), (3, 'hi\n'))
 
     def test_failure_summary_is_last_and_written_for_checker(self):
         """哪吒_7 t4 第 1 项：长任务日志里失败明细夹在几百行进度中间，收尾单列失败场景与日志路径，并交给 检查.sh 汇总。"""
