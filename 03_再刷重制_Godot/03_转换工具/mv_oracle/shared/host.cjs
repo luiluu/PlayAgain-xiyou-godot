@@ -9,10 +9,11 @@ function start() {
   const identity = sourceIdentity(APP), r = boot(APP, {tolerant:true, log:false}), w = r.window;
   if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败: '+JSON.stringify(r.errors));
   w.Star.Achievement.Manager.init();
-  // 原版插件报错时常 SceneManager.terminate（正式游戏直接退出）；参照引擎里退出会让后面的用例全挂、只报 location 未定义。
-  // 这里记一笔并抛错，用例的 errors 直接写出是哪一步。要照「报错被吞」继续跑的探针自己再覆盖（如 alien_affix_probe 记次数）
-  const terminated = [];
-  w.SceneManager.terminate = function () { const e = new Error('SceneManager.terminate：原版在这里退出游戏'); terminated.push(String(e.stack).slice(0, 800)); throw e; };
+  // 原版插件报错时常 SceneManager.terminate（正式游戏直接退出）；参照引擎里退出后，后面的用例常只报 location 未定义、看不出原因。
+  // 这里先记一笔（host.terminated，finish 时在 stderr 打出是哪个用例、哪一步），再照原样调原来的 terminate，不改任何探针的产物。
+  // 要照「报错被吞」继续跑的探针自己再覆盖（如 alien_affix_probe 记次数）
+  const terminated = [], terminate = w.SceneManager.terminate;
+  w.SceneManager.terminate = function () { terminated.push({caseId: current.id, stack: String(new Error('SceneManager.terminate').stack).slice(0, 800)}); return terminate.apply(this, arguments); };
   const newGame = () => {
     w.eval('ConfigManager.applyData({});DataManager.setupNewGame();Math.random=function(){return 0.5;};Graphics.frameCount=0;for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
     w.Input.clear();
@@ -22,7 +23,9 @@ function start() {
   const restore = json => { w.DataManager.createGameObjects(); w.DataManager.extractSaveContents(w.JsonEx.parse(json)); };
   return {w, identity, newGame, restore, terminated, encode:() => w.JsonEx.stringify(w.DataManager.makeSaveContents())};
 }
+const current = {id: null};  // 正在测的用例（terminate 记录用）
 function makeCase(id, setup, measure) {
+  current.id = id;
   try { return {id, setup, observed:measure(), errors:[]}; }
   catch(e) { return {id, setup, observed:null, errors:[String(e && e.stack || e).slice(0,1500)]}; }
 }
@@ -32,6 +35,7 @@ function finish(host, name, data) {
   fs.mkdirSync(path.resolve(__dirname,'../.sandbox'), {recursive:true});
   fs.writeFileSync(path.resolve(__dirname,'../.sandbox',name), JSON.stringify(out,null,1)+'\n');
   const bad = out.cases.filter(c=>c.errors.length);
+  (host.terminated || []).forEach(t => console.error('⚠ SceneManager.terminate 在用例 ' + t.caseId + ' 被调用（原版这里退出游戏）\n' + t.stack));
   console.log(JSON.stringify({file:name,cases:out.cases.length,errors:bad.map(c=>({id:c.id,errors:c.errors}))}));
   return bad.length === 0;
 }
