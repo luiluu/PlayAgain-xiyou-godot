@@ -2329,6 +2329,7 @@ sys.exit(0)
         self.assertEqual(self.call('--finish'), 1)
         self.assertIn('--also', self.last_output)
         self.assertIn('git reset --soft', self.last_output)
+        self.assertIn('separate fix', self.last_output)  # 点名多出的是哪个提交
 
     def test_uid_of_lane_new_script_is_committed(self):
         # 车道新加 modes/测试.gd 但漏交 .uid：main 上导入生成后收尾自动带入；别的未跟踪 .uid 仍拦

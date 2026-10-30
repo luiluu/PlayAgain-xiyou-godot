@@ -61,6 +61,10 @@ def git(root, *args):
     return p.stdout.strip()
 
 
+# 主工作区 main 有提交守卫（装提交守卫.sh）：本工具自己的提交与合并带这个变量放行
+MAIN_COMMIT_ENV = dict(os.environ, XIYOU_MAIN_COMMIT='1')
+
+
 def run(root, args, env=None):
     print('== ' + ' '.join(map(str, args)), flush=True)
     subprocess.run(list(map(str, args)), cwd=root, check=True, env=env)
@@ -573,12 +577,12 @@ def prepare(root, state, state_file, executor):
             if marked:
                 raise RuntimeError('已暂存的文件里还有冲突标记（<<<<<<< / >>>>>>>），未提交合并：' + '、'.join(marked)
                                    + '；删掉标记后重新 git add，再运行同一命令')
-            run(root, ['git', 'commit', *message])
+            run(root, ['git', 'commit', *message], env=MAIN_COMMIT_ENV)
         if dirty(root):
             raise RuntimeError('尚有冲突或未提交现场，须先人工处理；未自动回退')
         if git(root, 'rev-parse', 'HEAD') == state['base']:
             try:
-                run(root, ['git', 'merge', '--no-ff', state['target'], *message])
+                run(root, ['git', 'merge', '--no-ff', state['target'], *message], env=MAIN_COMMIT_ENV)
             except subprocess.CalledProcessError:
                 raise RuntimeError('合并有冲突，现场保留：解决后 git add，再运行同一命令接续（工具会提交合并）；'
                                    '放弃就 git merge --abort，让车道 git merge main 后重新交付，再运行即按新提交重排')
@@ -949,10 +953,11 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
             state.update(head=head, mergeCommit=head)
             save(state_file, state)
         else:
-            raise RuntimeError('准备后 main HEAD 已改变（%s → %s）；保留现场。准备之后不要另起提交：总装修测试或别的文件留成未提交改动，'
+            extra = git(root, 'log', '--format=%h %s（%an，%ad）', '--date=format:%H:%M', state['head'] + '..' + head)
+            raise RuntimeError('准备后 main HEAD 已改变（%s → %s）；多出的提交（不是本工具做的）：\n%s\n保留现场。准备之后不要另起提交：总装修测试或别的文件留成未提交改动，'
                                '--finish 时用 --also <路径> 一并带入（00_项目管理/ 下的 .md 用 --accept-doc-edits）；'
                                '要修合并提交本身就 git commit --amend（父提交不变，工具会自动认）。已另起提交的，'
-                               'git reset --soft %s 退回成未提交改动再 --finish' % (state['head'][:9], head[:9], state['head'][:9]))
+                               'git reset --soft %s 退回成未提交改动再 --finish' % (state['head'][:9], head[:9], extra, state['head'][:9]))
     if subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode:
         raise RuntimeError('交付提交不在 main 历史里，先人工核对')
     moved = lane_moved(state)
@@ -1020,7 +1025,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         trailer = '执行者: ' + actor + '\n核查: ' + review_status(root, state)
         if affected and not batch:
             trailer += '\n验证: 选测（基准 %s，当天全量前算选测已验）' % check[-1][:9]
-        run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾', '-m', trailer])
+        run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾', '-m', trailer], env=MAIN_COMMIT_ENV)
         state.update(phase='committed', head=git(root, 'rev-parse', 'HEAD'), batch=batch)
         save(state_file, state)
     folder = state_file.parent

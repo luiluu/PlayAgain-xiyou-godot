@@ -170,6 +170,7 @@ want tools && { if python3 "$ENV_DIR/测试转换器写入.py"; then ok "转换�
 want tools && { if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试云端准备.py"; then ok "云端导入失败保护"; else bad "云端导入保护回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试提交守卫.py" >/dev/null 2>&1; then ok "主工作区 main 提交守卫"; else bad "提交守卫回归失败，单跑 07_开发环境/测试提交守卫.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试选测.py" >/dev/null 2>&1; then ok "选测对照与 检查.sh --affected"; else bad "选测回归失败，单跑 07_开发环境/测试选测.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试角色同步提速.py" >/dev/null 2>&1; then ok "扩角色同步提速（缓存携带、手动种子隔离、六难度共用并发池）"; else bad "扩角色同步提速回归失败，单跑 07_开发环境/测试角色同步提速.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试事件探针分段.py" >/dev/null 2>&1; then ok "事件探针分段并行（均衡分组、拼回顺序逐字相同）"; else bad "事件探针分段回归失败，单跑 07_开发环境/测试事件探针分段.py 看详情"; fi; }
