@@ -4,6 +4,8 @@ extends Node2D
 ## 行走图：文件名带 $ 为单人图（3×4 帧），否则一张 8 人（每人 3×4 帧）；带 ! 的物件不上移 6 像素。
 
 const TS := MVTiles.TILE_SIZE
+## 角色上方（优先级 2）的 z_index：地图上层图块是 10（XMapScene.load_map）
+const ABOVE_UPPER_Z := 11
 
 var grid := Vector2i.ZERO
 var real := Vector2.ZERO           # 以格为单位的实际位置（移动中为小数）
@@ -21,6 +23,8 @@ var character_name := ""
 var character_index := 0
 var tile_id := 0
 var opacity := 255
+## Game_Vehicle._altitude：screenY 减去它（只有飞艇用，见 XMapScene._refresh_airship_sprite）
+var altitude := 0
 var _tex: Texture2D
 ## 行走图格式（XAppearance.walk：格子、序列、停步序号、方向行），默认 MV 3×4
 var _walk := {"cell": Vector2(48, 48), "origin": Vector2.ZERO, "sequence": [0, 1, 2, 1], "stand": 1, "rows": {2: 0, 4: 1, 6: 2, 8: 3}}
@@ -290,8 +294,9 @@ func _update_animation() -> void:
 
 func _sync_position() -> void:
 	var at := real + (tilemap.loop_shift(real) if tilemap and (tilemap.loop_x or tilemap.loop_y) else Vector2.ZERO)
-	position = Vector2(at.x * TS + TS / 2.0, at.y * TS + TS - (jump_height() if is_jumping() else 0.0))
-	z_index = (0 if priority_type == 1 else (-1 if priority_type == 0 else 1))
+	position = Vector2(at.x * TS + TS / 2.0, at.y * TS + TS - (jump_height() if is_jumping() else 0.0) - altitude)
+	# screenZ＝优先级×2＋1（1／3／5），上层图块 z 4（ShaderTilemap._upperLayer）：角色上方的压在上层图块（地图 z_index 10）之上
+	z_index = (0 if priority_type == 1 else (-1 if priority_type == 0 else ABOVE_UPPER_Z))
 	queue_redraw()
 
 

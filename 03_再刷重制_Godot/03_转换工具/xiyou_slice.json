@@ -2027,6 +2027,13 @@
   "weaponScan": 60,
   "extraImages": [
     "characters/Vehicle",
+    "characters/Vehicle2",
+    "characters/SF_Vehicle",
+    "characters/SF_Vehicle2",
+    "characters/Nature2_mvt",
+    "characters/tg-cm03-chr-01",
+    "characters/$Ravendel's Wyvern",
+    "characters/!$occ01jp_mv03_georgette_tv",
     "pictures/BattleCursor_A",
     "pictures/BattleCursor_B",
     "menus/Background",
