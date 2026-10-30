@@ -289,7 +289,7 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.godot = self.tmp / 'godot'
         self.godot.write_text('#!/bin/zsh\nzmodload zsh/datetime\nn=${@[-1]:t}\n[[ $n == --version ]] && { echo 4.x; exit 0; }\n'
                               'print -r -- $n >> %(t)s/runs\n'
-                              'if [[ -n ${SPIN:-} ]]; then t=$EPOCHREALTIME; while (( EPOCHREALTIME - t < 0.3 )); do :; done; fi\n'
+                              'if [[ -n ${SPIN:-} ]]; then i=0; while (( i++ < 400000 )); do :; done; fi\n'
                               'if [[ -n ${BUSY:-} ]]; then mkdir %(t)s/busy 2>/dev/null || touch %(t)s/overlap; sleep 0.3; rmdir %(t)s/busy 2>/dev/null; fi\n'
                               'if [[ $n == b.tscn && -n ${FLAKY_B:-} && ! -e %(t)s/seen ]]; then touch %(t)s/seen; echo \'%(bad)s\'; exit 1; fi\n'
                               'if [[ $n == c.tscn && -n ${FAIL_C:-} ]]; then echo \'%(bad)s\'; exit 1; fi\necho \'%(ok)s\'\n'
@@ -388,7 +388,8 @@ class ParallelTestRunnerTests(unittest.TestCase):
         for r in rows.values():
             self.assertEqual(r['userCpuSeconds'], r['attempts'][0]['userCpuSeconds'])
             for t in r['attempts']:
-                self.assertGreater(t['userCpuSeconds'], 0.1, r)  # 假 Godot 空转约 0.3 秒 CPU
+                # 假 Godot 固定空转 40 万次（约 0.35 秒 CPU）；原按墙钟转 0.3 秒，机器满时分不到 0.1 秒 CPU 而偶发（哪吒_10）
+                self.assertGreater(t['userCpuSeconds'], 0.1, r)
                 self.assertGreaterEqual(t['sysCpuSeconds'], 0)
         self.assertEqual(len(rows['b.tscn']['attempts']), 2)
 
@@ -1859,8 +1860,8 @@ for name in filter(None, files):
                 self.assertIn('活动会话' if case == 'process' else 'worktree lock', self.last_output)
                 self.assertIn('只提示不删', self.last_output)
 
-    def test_worktree_missing_from_board_or_marked_keep_is_not_removed(self):
-        # 合并前交接板「正在进行」没有提到该工作树／分支，或那行写了「不要删」：不删
+    def test_board_row_marked_keep_is_not_removed_but_missing_row_is(self):
+        # 交接板「正在进行」那行写了「不要删」才留；没提到该工作树／分支不再是保留理由（哪吒_10，磁盘告急，合并后随手删）
         for row in ['', '| 核查 | claude/task（清理时不要删此目录） |']:
             with self.subTest(row=row):
                 self.tearDown(); self.setUp()
@@ -1869,8 +1870,11 @@ for name in filter(None, files):
                 self.assertEqual(self.call(), 0, self.last_output)
                 self.register()
                 self.assertEqual(self.call('--finish'), 0, self.last_output)
-                self.assertTrue(self.wt.exists())
-                self.assertIn('不要删' if row else '没有提到它', self.last_output)
+                self.assertEqual(self.wt.exists(), bool(row), self.last_output)
+                if row:
+                    self.assertIn('不要删', self.last_output)
+                else:
+                    self.assertNotIn('claude/task', self.branches())
 
     def test_untracked_evidence_merges_by_ref_and_keeps_worktree(self):
         # 沙僧 state-effects-2b：只有核查范围／本地结果下的未跟踪证据时按分支引用合并，工作树与证据都留着

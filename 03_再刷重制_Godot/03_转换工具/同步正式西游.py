@@ -384,6 +384,19 @@ def prune_manual_copies(sandbox: Path, hours: float = MANUAL_STALE_HOURS) -> lis
     return removed
 
 
+def clone_or_copy(src: Path, dst: Path) -> None:
+    """备份用 APFS 克隆（cp -c，同卷不另占空间，原文件之后被改写时才分叉）；克隆不成（别的文件系统、跨卷）退回普通复制。
+    每份备份原来占 1.1 GB（oracle），三份加上各工作树的同步备份是磁盘告急的来源之一（Kyo 2026-10-30，哪吒_10）。"""
+    if sys.platform == 'darwin' and subprocess.run(['cp', '-cRp', str(src), str(dst)], capture_output=True).returncode == 0:
+        return
+    if dst.exists():
+        shutil.rmtree(dst) if dst.is_dir() else dst.unlink()
+    if src.is_dir():
+        shutil.copytree(src, dst)
+    else:
+        shutil.copy2(src, dst)
+
+
 def prune_backups(root: Path, keep: int = KEEP_BACKUPS) -> list:
     """同步备份只留最近 keep 份（用户 2026-10-18 定，含本次新建的这份）；只删「日期_时间_…」命名的备份目录。"""
     dirs = sorted((d for d in root.iterdir() if d.is_dir() and re.match(r'^\d{8}_\d{6}', d.name)),
@@ -713,7 +726,7 @@ def run_probes(log, cache=None):
             'commands': [{'command': cmd, 'seconds': round(sec, 3), 'exitCode': code} for cmd, code, _, sec in results]}
 
 
-def _main() -> int:
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--app', type=Path, default=DEFAULT_APP)
     ap.add_argument('--generated', type=Path, default=DEFAULT_OUT)
@@ -727,7 +740,11 @@ def _main() -> int:
     ap.add_argument('--from-worktree', type=Path, help='合并时用车道已同步的产物（按指纹核对），不满足条件退出码 3')
     ap.add_argument('--full', '--full-probes', dest='full', action='store_true', help='忽略探针缓存，强制全量转换与全部探针（--full-probes 同义）')
     ap.add_argument('--no-import', action='store_true', help='结束时不跑 godot --import')
-    a = ap.parse_args()
+    return ap
+
+
+def _main() -> int:
+    a = build_parser().parse_args()
     try:
         withdraw = {int(re.sub(r'^(?i:map)', '', str(m))) for m in a.accept_withdrawal}
     except ValueError:
@@ -761,10 +778,8 @@ def _main() -> int:
     pruned_manual = prune_manual_copies(SANDBOX)
     for name in ['oracle', 'db', 'maps', 'manifest.json', 'slice.json']:
         src = gen / name
-        if src.is_dir():
-            shutil.copytree(src, backup / name)
-        elif src.exists():
-            shutil.copy2(src, backup / name)
+        if src.exists():
+            clone_or_copy(src, backup / name)
     report = {'from': old_version, 'to': new_version, 'backup': str(backup.relative_to(ROOT)), 'generated': str(gen),
               'prunedBackups': report_pruned, 'prunedManualCopies': len(pruned_manual), 'comparisonBaseline': str(baseline.relative_to(ROOT))}
     # 探针按环境变量取正式源（XIYOU_APP）与转换产物（XIYOU_GENERATED，event_probe 读地图），与 --app/--generated 一致
@@ -959,6 +974,8 @@ def main() -> int:
 
 
 if __name__ == '__main__':
+    # 先解析参数：--help 和参数写错直接在这里退出，不经长任务包装、不先打印 TASK_LOG 路径（哪吒_10）
+    build_parser().parse_args()
     if os.environ.get('XIYOU_LONG_TASK_MANAGED') != '1':
         wrapper = ROOT / '03_再刷重制_Godot/07_开发环境/长任务.py'
         task_log = os.environ.get('XIYOU_TASK_LOG') or str(ROOT / '03_再刷重制_Godot/04_验证/本地结果/任务' /

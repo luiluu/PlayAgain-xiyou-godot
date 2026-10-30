@@ -116,8 +116,8 @@ def lane_protected(root, lane):
     active = board.split('## 正在进行', 1)[1].split('\n## ', 1)[0] if '## 正在进行' in board else ''
     named = re.compile(r'(?<![\w-])(?:%s|%s)(?![\w-])' % (re.escape(wt.name), re.escape(lane['branch'])))
     rows = [l for l in active.splitlines() if l.startswith('|') and named.search(l)]
-    if not rows:
-        return '合并前交接板「正在进行」表里没有提到它（%s／%s）' % (wt.name, lane['branch'])
+    # 交接板没提到它不再算保留理由（Kyo 2026-10-30「worktree 合并以后要随手删掉」，磁盘只剩 36G）：交付已并入 main、
+    # 工作树干净、没有活动会话、没被锁，就删；车道会话复用时 新建工作树.sh <任务名> 原路径重建。只有写了「不要删」的才留
     if any('不要删' in l for l in rows):
         return '交接板写明清理时不要删'
     return ''

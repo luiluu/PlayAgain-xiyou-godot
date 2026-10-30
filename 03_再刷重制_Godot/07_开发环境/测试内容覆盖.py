@@ -22,8 +22,21 @@ func _execute(c):
 			pass
 		117, 201:
 			pass
-		301:
+		111, 301:
 			pass
+
+func _condition(p):
+	match int(p[0]):
+		0, 1:
+			pass
+		4:
+			match int(p[2]):
+				9:
+					pass
+
+func _condition_env(p):
+	if int(p[0]) == 6:
+		pass
 
 func _plugin_command(line):
 	match args[0]:
@@ -43,8 +56,17 @@ func _execute(c):
 	match c.code:
 		101:
 			pass
-		117:
+		111, 117:
 			pass
+
+func _condition(p):
+	match int(p[0]):
+		0, 1:
+			pass
+
+func _condition_env(p):
+	if int(p[0]) == 5:
+		pass
 
 func _execute_env(c):
 	match int(c.code):
@@ -131,6 +153,28 @@ class CoverageTests(unittest.TestCase):
         self.assertIn('未翻译|CE0003|指令 333', issues)   # 场合「随时」：菜单里用时在地图上跑
         self.assertIn('未翻译|CE0004|指令 333', issues)   # 地图页调用
         self.assertIn('未翻译|CE0005|指令 201', issues)   # 战斗里不认地图宿主指令
+
+    def test_condition_kinds(self):
+        # 条件分支 111 的条件类型（哪吒_10）：_condition 顶层 match 与宿主 _condition_env 都不认的算未翻译；
+        # 嵌套 match 的分支（角色种类 9）不算认得；战斗与地图各按自己的宿主
+        self.assertEqual(cov.handled_conditions(INTERP), {0, 1, 4, 6})
+        self.assertEqual(cov.handled_conditions(BATTLE), {0, 1, 5})
+        ce = self.gen / 'db/CommonEvents.json'
+        rows = json.loads(ce.read_text())
+        rows += [{'id': 2, 'list': [cmd(111, 5, 0, 0), cmd(111, 6, -1, 2), cmd(0)]}]
+        ce.write_text(json.dumps(rows))
+        (self.gen / 'db/Skills.json').write_text(json.dumps([None, {'id': 1, 'occasion': 1, 'effects': [{'code': 44, 'dataId': 2}]}]))
+        (self.gen / 'manifest.json').write_text(json.dumps({'slice': {'commonEvents': [2]}}))
+        m = json.loads((self.gen / 'maps/Map001.json').read_text())
+        m['events'][1]['pages'][0]['list'][:0] = [cmd(111, 0, 1, 0), cmd(111, 6, -1, 2), cmd(111, 9, 1, False), cmd(111, 10, 1, False)]
+        (self.gen / 'maps/Map001.json').write_text(json.dumps(m))
+        self.run_tool()
+        issues = self.report()['issues']
+        self.assertIn('未翻译|Map001/EV001/p1|条件类型 9', issues)
+        self.assertIn('未翻译|Map001/EV001/p1|条件类型 10', issues)
+        self.assertIn('未翻译|CE0002|条件类型 6', issues)     # 战斗里不认地图宿主的「角色朝向」
+        self.assertFalse(any(i.endswith('条件类型 0') or i.endswith('条件类型 5') or i.startswith('未翻译|Map001/EV001/p1|条件类型 6')
+                             or '指令 111' in i for i in issues), issues)
 
     def test_baseline_gates_new_issues(self):
         self.assertEqual(self.run_tool('--check')[0], 1)

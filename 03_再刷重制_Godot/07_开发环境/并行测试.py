@@ -4,6 +4,7 @@
 用法：并行测试.py <godot> <工程目录> [--jobs N] [--full] [--names-file 文件] [场景名或前缀 ...]
 - 每个测试一个独立的临时 HOME，因此 user://（存档、配置）互不干扰，也不会读写本机真实的用户数据目录。
 - 导入（--import）由调用方先单独做一次；这里只读工程缓存。例外：工程里有 class_name 不在导入缓存里（车道新加脚本后直接跑）时先导入一次。
+- 每个测试用 -s 挂 tests/test_main_loop.gd（哪吒_10）：场景加载前把神秘生物刷新的真实时钟固定到窗口外，免得整点／半点偶发。
 - 每个测试最多 600 秒；脚本语法错误时场景不会自行退出，超时即判失败。用时超过一半（300 秒）时提示拆场景。
 - 并行时只有少数（≤3）测试失败的，逐个单独重跑一次：单跑通过记为「偶发」，仍算通过但打印 ⚠，写进交付单；单跑仍失败才判失败。
   首次与重跑的输出、退出码、耗时分别保留（日志 <场景>.log 与 <场景>.rerun1.log、test_timings.json 的 attempts），
@@ -348,6 +349,10 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
             gate.close()
 
 
+## 测试公共启动：场景加载前固定神秘生物真实时钟等（见该文件头）。工程里没有它（旧工程、测试夹具）时不挂
+MAIN_LOOP = 'res://tests/test_main_loop.gd'
+
+
 def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progress: Progress = None) -> tuple:
     if progress:
         with progress.lock:
@@ -360,7 +365,8 @@ def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progres
         start = time.time()
         with tempfile.TemporaryDirectory(prefix='xiyou_test_home_') as home:
             env = dict(os.environ, HOME=home)
-            rc, out, cpu = run_with_rusage([godot, '--headless', '--path', project, 'res://tests/' + name], env, TIMEOUT)
+            loop = ['-s', MAIN_LOOP] if (Path(project) / MAIN_LOOP[len('res://'):]).is_file() else []
+            rc, out, cpu = run_with_rusage([godot, '--headless', '--path', project] + loop + ['res://tests/' + name], env, TIMEOUT)
         if progress:
             with progress.lock:
                 progress.running.discard(name)
