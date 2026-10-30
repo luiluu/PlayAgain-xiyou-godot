@@ -111,6 +111,7 @@ func _fly_to(c: Vector2i) -> bool:
 
 ## 按确认（Game_Player.triggerButtonAction）
 func _press() -> void:
+	await _until(func(): return not map.busy)
 	await map._on_action()
 
 
@@ -253,10 +254,13 @@ func _first_flight() -> void:
 	map.open_transfer()
 	_check("transfer_page_locked", map.transfer_page == null)
 	await _fly_to(Vector2i(63, 49))
-	_check("no_touch_event", map.map_id == 69 and not map.busy and s.vehicle_type == "airship", [map.map_id, map.busy, s.vehicle_type, map.player.grid])
+	# 判据是没被 EV5 传到 Map071；地图上偶尔有别的提示（修行指引等）在跑，先等它跑完（并行负载下曾撞上，偶发 1 次）
+	await _until(func(): return not map.busy)
+	_check("no_touch_event", map.map_id == 69 and s.vehicle_type == "airship" and map.player.grid == Vector2i(63, 49), [map.map_id, map.busy, s.vehicle_type, map.player.grid])
 	_check("no_steps_no_encounter", s.steps == steps and map.encounter_count == 1 and not map.can_encounter() and not map._in_battle, [s.steps, steps, map.encounter_count])
 	await _press()
-	_check("no_land_on_event", bool(_airship().driving) and not map._vehicle_getting_off and map.map_id == 69 and not map.busy, [_airship(), map._vehicle_getting_off, map.map_id, map.busy])
+	await _until(func(): return not map.busy)
+	_check("no_land_on_event", bool(_airship().driving) and not map._vehicle_getting_off and map.map_id == 69, [_airship(), map._vehicle_getting_off, map.map_id, map.busy])
 	map.map_data.encounterList = []
 	# isAirshipLandOk 不过的格（最近的一格）
 	var bad := Vector2i(-1, -1)
