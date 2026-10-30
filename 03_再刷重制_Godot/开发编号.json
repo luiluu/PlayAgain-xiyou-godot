@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.216",
-  "sequence": 216,
-  "next": "dev.217",
-  "nextSequence": 217,
+  "current": "dev.217",
+  "sequence": 217,
+  "next": "dev.218",
+  "nextSequence": 218,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "wukong-airship1",
+  "currentChange": "bajie-alien-erode",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
