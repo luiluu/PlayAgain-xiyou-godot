@@ -335,12 +335,17 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 			return
 		zq_pojia_rate = 0.5
 		hp = 0.0
+		# die：clearStates／clearBuffs；异化包装保留疫囊（此刻还没有阵亡状态，算活着）、囚厄接收、绝缘的外来保护等
+		XAlienBattle.dying = self
 		for sid in state_ids.duplicate():
-			if not XResourceContext.permanent(sid):
+			if not XResourceContext.permanent(sid) and not XAlienBattle.keeps_state(self, sid):
 				state_ids.erase(sid)
 				state_turns.erase(sid)
-		buffs.fill(0)
-		buff_turns.fill(0)
+		for pid in buffs.size():
+			if not XAlienBattle.keeps_buff(self, pid):
+				buffs[pid] = 0
+				buff_turns[pid] = 0
+		XAlienBattle.dying = null
 		if self is XEnemy:
 			XEnemyBook.note_death(self)  # AB_EnemyBook Game_Enemy.die：击败数即时 +1
 		XRaceBattle.on_death(self)  # 种族 die 包装：清反攻
@@ -665,9 +670,10 @@ func attack_skill_id() -> int:
 func replace_attack_objects() -> Array:
 	return states()
 
-## Game_Action.isAttack：这一招是不是此刻的「攻击」（item === $dataSkills[attackSkillId()]，物品恒否）
+## Game_Action.isAttack：这一招是不是此刻的「攻击」（item === $dataSkills[attackSkillId()]，物品恒否）；
+## 异化投影（逆祷等，item() 是副本）不是同一个对象，恒否
 func is_attack(item: Dictionary) -> bool:
-	return not item.is_empty() and not XBattleLogic.is_item(item) and int(item.get("id", 0)) == attack_skill_id()
+	return not item.is_empty() and not XBattleLogic.is_item(item) and int(item.get("id", 0)) == attack_skill_id() and not item.has("_alienMode")
 
 ## 普通攻击技能记录（指令窗、自动战斗与不能用时的退回用它）
 func attack_skill() -> Dictionary:

@@ -506,6 +506,8 @@ func _change_resource(a: XActor, code: int, value: float, allow_death: bool) -> 
 			var applied := -a.absorb_shield(-value) if value < 0.0 else value
 			a.hp = clampf(a.hp + applied, 0.0, a.mhp)
 		312:
+			if XAlienBattle.gain_mp_outside(a, value):
+				return  # 异化 gainMp 包装（空壳回蓝变护盾、饕餮无效、绝缘拒收外来回蓝）
 			a.mp = clampf(a.mp + value, 0.0, a.mmp)
 		326:
 			a.tp = clampf(a.tp + value, 0.0, a.max_tp())
@@ -831,6 +833,12 @@ func _condition(p: Array) -> bool:
 				2: return s.gold < g
 		8:
 			return s.item_count(int(p[1])) > 0
+		9, 10:
+			# 武器／防具 [9|10, 编号, 含装备]（YEP_ItemCore Game_Party.hasItem）：背包里按底材编号有一件；含装备时再看队员身上（isAnyMemberEquipped）
+			var kind := "weapon" if int(p[0]) == 9 else "armor"
+			if s.gear_count(kind, int(p[1])) > 0:
+				return true
+			return bool(p[2]) and s.members().any(func(a): return a.equip_list().any(func(e): return e.get("kind", "") == kind and int(e.get("base", 0)) == int(p[1])))
 		12:
 			# 脚本条件：白名单表达式（MVScript.eval_expr）；挂机相关写法与认不出的视为 false
 			var code := str(p[1])
