@@ -281,6 +281,7 @@ func _tyrant(c: Dictionary) -> void:
 	XToji.CLEAR_DEBUFFS = false
 	a.learn_skill(XToji.TYRANT)
 	XToji.CLEAR_DEBUFFS = true
+	check("tyrant.original_threw", str(o.relearned.get("threw")) == "removeDebuff 不存在", o.relearned.get("threw"))  # 原版清弱化抛错（O-待定 CLEAR_DEBUFFS）
 	check("tyrant.relearned_original", has.call() == _norm(o.relearned.states) and _norm(a.buffs) == _norm(o.relearned.buffs) and bool(o.relearned.learned) and a.skill_ids.has(XToji.TYRANT), [has.call(), a.buffs])
 	a.learn_skill(XToji.TYRANT)
 	check("tyrant.relearned_cleared", not a.buffs.any(func(v): return v < 0), a.buffs)

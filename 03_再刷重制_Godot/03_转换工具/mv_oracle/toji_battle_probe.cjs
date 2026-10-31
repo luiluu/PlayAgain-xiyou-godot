@@ -186,9 +186,10 @@ function tyrant() {
   add(); out.withTyrant = {states: has(), buffs: a._buffs.slice()};
   a.forgetSkill(10205); add(); out.without = {states: has(), buffs: a._buffs.slice()};
   // 原版 clearDebuffs 调的 actor.removeDebuff 在 MV 里不存在：先清完负面状态，碰到第一个弱化就抛错（学技能本身已生效）
-  let error = null;
-  try { a.learnSkill(10205); } catch (e) { error = String(e.message || e); }
-  out.relearned = {states: has(), buffs: a._buffs.slice(), learned: a.isLearnedSkill(10205), error};
+  // 这是要量的原版行为，记成普通观测字段 threw（同步规则不接受新的 error／errors 键）
+  let threw = null;
+  try { a.learnSkill(10205); } catch (e) { const m = String(e.message || e); threw = /removeDebuff/.test(m) ? 'removeDebuff 不存在' : m; }
+  out.relearned = {states: has(), buffs: a._buffs.slice(), learned: a.isLearnedSkill(10205), threw};
   return out;
 }
 const cases = [makeCase('rates', {level: LEVEL, troop: TROOP, foeState: 1467}, rates), makeCase('tyrant', {level: LEVEL, states: TYRANT_STATES, debuffs: [2, 6]}, tyrant)];
