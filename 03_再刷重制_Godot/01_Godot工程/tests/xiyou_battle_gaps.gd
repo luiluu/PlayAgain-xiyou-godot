@@ -1,7 +1,7 @@
 extends Node
 ## 【Claude·悟空·未经审查】战斗核心缺口：与 battle_gaps_probe（tests/fixtures/battle_gaps_oracle.json，正式引擎）逐例比对。
 ## ① 百分比 MP 消耗：43 个带 <MP Cost: x%> 的技能 × 基础／大 MP／消耗率 0.63／减耗 30／加耗 600（比例部分下限 −100%），
-##    另核备注边界 7225（7.5% 原版不认）与 9944（<TP Cost: 200> 改基础 TP）；比实扣 XBattleLogic.skill_cost 与说明卡 XCharacterHelp._cost。
+##    另核备注边界 7225（7.5% 原版不认；O-129 默认按 7.5% 收，参照只比回退支）与 9944（<TP Cost: 200> 改基础 TP）；比实扣 XBattleLogic.skill_cost 与说明卡 XCharacterHelp._cost。
 ## ② 角色能力上限：8 项都夹 99999999（加值超、比率叠满后超），饿狼 173 夹 999999999999；比 param、mhp／mmp。
 ## ③ 技能 HP 费用：15 个带 <HP Cost: n>／<HP Cost: n%> 的技能，比费用、生命为满／等于费用／费用＋1 时能否付（can_use 的费用部分）、付费后的生命。
 ## ④ 战斗奖励：6 个难度 × 3 个敌群，另有 passiveGRUP 连乘、神话、金钱双倍；比 XBattleLogic.rewards 的经验与金钱（×8／×5，难度倍率不生效）。
@@ -114,6 +114,16 @@ func _run() -> void:
 				a.forced_mcr = float(c.setup.mcr)
 			var sk := XDB.rec("Skills", int(c.setup.skill))
 			check(c.id + ".mmp", a.mmp == float(o.mmp), [a.mmp, o.mmp])
+			if int(c.setup.skill) == 7225:
+				# O-129 例外登记：参照是原版（7.5% 认不出、只扣基础）；回退支按参照比，默认支按最大 MP 7.5% 收
+				XBattleLogic.o_decimal_mp_cost = false
+				var orig := logic.skill_cost(a, sk)
+				check(c.id + ".o129_off", int(orig.mp) == int(o.mp) and XCharacterHelp._cost(a, sk, "MP") == int(o.mp), [orig, o.mp])
+				XBattleLogic.o_decimal_mp_cost = true
+				var want := floori((float(o.mpCost) + a.mmp * 0.075) * a.mcr)
+				var on := logic.skill_cost(a, sk)
+				check(c.id + ".o129_on", int(on.mp) == want and want > int(o.mp) and XCharacterHelp._cost(a, sk, "MP") == want, [on, want, o.mp])
+				continue
 			var got := logic.skill_cost(a, sk)
 			check(c.id + ".cost", int(got.mp) == int(o.mp) and int(got.tp) == int(o.tp), [got, o.mp, o.tp])
 			check(c.id + ".help", XCharacterHelp._cost(a, sk, "MP") == int(o.mp) and XCharacterHelp._cost(a, sk, "TP") == int(o.tp))

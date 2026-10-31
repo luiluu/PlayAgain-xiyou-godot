@@ -328,11 +328,14 @@ static func is_item(rec: Dictionary) -> bool:
 	return rec.has("itypeId")
 
 ## YEP_SkillCore 的消耗备注（逐行、冒号后恰一个空格、只认整数）：<MP Cost: n> 改基础 MP、<MP Cost: n%> 记最大 MP 比例，TP、HP 同理（HP 默认 0）。
-## 「<MP Cost: 7.5%>」这类带小数的写法原版认不出（7225 降众天华比例为 0），照原版。按备注缓存
+## 「<MP Cost: 7.5%>」这类带小数的写法原版认不出（7225 降众天华比例为 0）；O-129 开着时 MP 比例认小数（按 7.5% 收）。按备注缓存
+## O-129（用户 10-31 定：做）：false＝原版，只扣基础 MP
+static var o_decimal_mp_cost := true
 static var _note_cost_cache := {}
 static func note_costs(skill: Dictionary) -> Dictionary:
 	var note := str(skill.get("note", ""))
-	if not _note_cost_cache.has(note):
+	var key := note if not o_decimal_mp_cost else "o129:" + note
+	if not _note_cost_cache.has(key):
 		var out := {}
 		for line in note.split("\n"):
 			for kind in ["MP", "TP", "HP"]:
@@ -340,12 +343,14 @@ static func note_costs(skill: Dictionary) -> Dictionary:
 				if m != null:
 					out[kind.to_lower() + "Cost"] = int(m.get_string(1))
 					break
-				m = RegEx.create_from_string("(?i)<(?:%s COST):[ ](\\d+)([%%％])>" % kind).search(line)
+				# O-129：MP 比例认小数（7225 降众天华 <MP Cost: 7.5%>；原版 YEP 正则只认整数，比例 0、只扣基础）
+				var digits := "\\d+(?:\\.\\d+)?" if o_decimal_mp_cost and kind == "MP" else "\\d+"
+				m = RegEx.create_from_string("(?i)<(?:%s COST):[ ](%s)([%%％])>" % [kind, digits]).search(line)
 				if m != null:
 					out[kind.to_lower() + "CostPer"] = float(m.get_string(1)) * 0.01
 					break
-		_note_cost_cache[note] = out
-	return _note_cost_cache[note]
+		_note_cost_cache[key] = out
+	return _note_cost_cache[key]
 
 ## YEP_SkillCore skillHpCost：⌊基础＋最大HP×比例⌋、不低于 0（熟练度公式原样、费用为正时至少 1，等于不变）。
 ## 异化空壳在战斗中按开场参照生命上限算（Adv:126），见 XAlienBattle.hp_cost_mhp
