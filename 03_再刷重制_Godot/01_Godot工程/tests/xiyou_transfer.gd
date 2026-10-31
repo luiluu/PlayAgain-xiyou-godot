@@ -59,6 +59,16 @@ func _run() -> void:
 	check("preview_enemies", enemies.map(func(e): return int(e.id)) == [1])
 	var d := XMapTransfer.drops(s, enemies[0])
 	check("preview_drops", d.map(func(x): return [x.id, x.rate]) == [[52, 13.3], [53, 1.33], [4542, 0.133]], d.map(func(x): return [x.id, x.rate]))
+	# O-013 回退（PREVIEW_FIXED_NORMAL = false）：原版每次预览新建 Game_Enemy，神话 50%（掉率 ×5），同一只敌人时而 1 倍时而 5 倍
+	XMapTransfer.PREVIEW_FIXED_NORMAL = false
+	var seen := {}
+	for i in 64:
+		seen[snappedf(XMapTransfer.drop_item_rate(s, enemies[0]), 0.0001)] = true
+	XMapTransfer.PREVIEW_FIXED_NORMAL = true
+	var base := 0.2 * 1.33
+	var elite := XEnemy.new().setup(1, s.difficulty, 0.0).drop_rate_bonus()
+	check("preview_random_elite_original", elite > 1.0 and seen.keys().size() == 2 and seen.has(snappedf(base, 0.0001)) and seen.has(snappedf(base * elite, 0.0001)), [seen.keys(), elite])
+	check("preview_fixed_normal", is_equal_approx(XMapTransfer.drop_item_rate(s, enemies[0]), base), XMapTransfer.drop_item_rate(s, enemies[0]))
 	check("preview_extra_enemies", XMapTransfer.preview_enemies(220).map(func(e): return int(e.id)) == [1, 475])
 	check("format_hp", [100.0, 10000.0, 12345.0, 15000.0, 123456789.0].map(XMapTransfer.format_hp) == ["100", "1万", "1.23万", "1.5万", "1.23亿"])
 	var img := Image.create_from_data(3, 1, false, Image.FORMAT_RGBA8, PackedByteArray([200, 100, 50, 255, 255, 0, 0, 255, 12, 200, 77, 255]))
@@ -107,6 +117,14 @@ func _run() -> void:
 	await frames(2)
 	page.request_transfer()
 	check("locked_no_transfer", page.mode == "drops" and not page.confirm_win.visible)
+	# O-014 回退（REQUIRE_UNLOCK = false）：原版只看 canTransfer，未解锁（???）的楼层按 F 照样开确认
+	XMapTransfer.REQUIRE_UNLOCK = false
+	check("locked_can_transfer_original", XMapTransfer.can_transfer(s, page.current_map()))
+	page.request_transfer()
+	check("locked_transfer_original", page.mode == "confirm" and page.confirm_win.visible)
+	page.cancel()
+	XMapTransfer.REQUIRE_UNLOCK = true
+	check("locked_original_back", page.mode == "drops" and not page.confirm_win.visible and not XMapTransfer.can_transfer(s, page.current_map()))
 	page.cancel()
 	check("drops_cancel_to_list", page.mode == "list")
 	XMapTransfer.on_arrive(s, 5)

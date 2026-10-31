@@ -10,9 +10,9 @@ extends RefCounted
 ##   passiveIRUP 逐个连乘）。O-013：不随机抽神话（原版每次预览新建 Game_Enemy，50% 显示成神话 ×5 的掉率）。
 
 ## O-013：预览掉率固定按非神话敌人；设 false 恢复原版的随机神话（几率与倍率同 XEnemy）。
-const PREVIEW_FIXED_NORMAL := true
+static var PREVIEW_FIXED_NORMAL := true
 ## O-014：未解锁（???）的地图不能传送；设 false 恢复原版（F 可直接传送到未到过的楼层）。
-const REQUIRE_UNLOCK := true
+static var REQUIRE_UNLOCK := true
 ## Game_Party.ABILITY_DROP_ITEM_DOUBLE（特性 64 队伍能力，dataId 5）
 const DROP_ITEM_DOUBLE := 5
 const TYPES := {1: "Item", 2: "Weapon", 3: "Armor"}

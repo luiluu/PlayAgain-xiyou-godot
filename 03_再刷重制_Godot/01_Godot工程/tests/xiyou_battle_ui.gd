@@ -473,6 +473,30 @@ func _race_ui(b: XBattleScene, s: XState) -> void:
 	await _shot("battle_51c_race_poison_card")
 	await _press("ui_left")
 	_check("race_poison_card_hides", b._hover != e and not b.help_card.visible)
+	# O-107 回退（POISON_HELP_NEAR = false）：照原版 Window_BattleEnemy.updateHelp，卡从上一张卡的位置再按 setItem 修正一次
+	# （x<900 右移 52、否则左移 10，y<220 下移 32、>400 上移 100、仍>500 再上移 250，超出右／下边留 30），每回到这只就再挪一次；
+	# 移到没有毒鸡汤的敌人时上一段文字留着、不收
+	XBattleScene.POISON_HELP_NEAR = false
+	await _press("ui_right")
+	var p1: Vector2 = b.help_card.position - b._origin
+	_check("race_poison_card_original_shown", b._hover == e and b.help_card.visible and str(b.help_card.rows[0][0]) == want, [b._hover == e, b.help_card.visible])
+	await _press("ui_left")
+	_check("race_poison_card_original_stays", b._hover != e and b.help_card.visible and str(b.help_card.rows[0][0]) == want, [b.help_card.visible, b.help_card.rows])
+	await _press("ui_right")
+	var p2: Vector2 = b.help_card.position - b._origin
+	var sz: Vector2 = b.help_card.size
+	var drift := p1
+	drift.x += 52 if drift.x < 900 else -10
+	drift.y += 32 if drift.y < 220 else 0
+	drift.y -= 100 if drift.y > 400 else 0
+	drift.y -= 250 if drift.y > 500 else 0
+	if drift.x + sz.x > 1280:
+		drift.x = 1280 - sz.x - 30
+	if drift.y + sz.y > 720:
+		drift.y = 720 - sz.y - 30
+	_check("race_poison_card_original_drifts", p2.is_equal_approx(drift) and not p2.is_equal_approx(p1), [p1, p2, drift])
+	XBattleScene.POISON_HELP_NEAR = true
+	b.help_card.visible = false
 	await _press("ui_cancel")
 	await _frames(5)
 	# 恢复
