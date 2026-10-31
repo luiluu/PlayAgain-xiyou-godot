@@ -27,9 +27,21 @@ extends RefCounted
 ##   换装（changeEquip 包装，XEquipment.change）后同步一次。法宝只给饿狼由备注 <req_actors: 173> 管（XActor.can_equip）。
 ## 原版的不合理处（不照搬）：describeRelic 每次同步往法宝备注写 <CodexGarouHelp> 说明块，进化时旧说明块被当成额外备注行带走、
 ##   再被正则半删，备注里残留旧形态说明行（界面层；重制备注里不写说明块）。
-## 未移植（第三期起）：进化／解析／反击／追击与伤害钩子 garou、itemCnt、技能使用条件（认真一拳要琦玉模式）、技能分类与指令窗、
-## 进阶界面的饿狼提示（重制走 XAdvance.fail_text）、星空外观 Garou_Cosmic、法宝说明 describeRelic、图鉴立绘、旧档迁移（不迁移 MV 旧存档）。
-## 参照：slice_probe（切片角色行与伤害行）、actor_passive_probe（各等级技能表）、garou_progress_probe；测试 tests/xiyou_actor_modules.gd、tests/xiyou_garou_progress.gd。
+## 第三期（参照 garou_battle_probe → tests/fixtures/garou_battle_oracle.json，测试 tests/xiyou_garou_battle.gd）：战斗内被动。
+## - 施放帧（startAction → XGarou.begin）：记施放开始时的进化层；各目标第一次被打时记下解析层，命中与伤害由 apply 包装（applied）记。
+## - 伤害钩子 garou（XActorDamageHooks）：解析每层无视物防／魔防 形态%（最多 99%），按公式定物理／混合，进化 ×(1＋层×(形态每层＋法宝每层)/100)。
+## - 饿狼拳法收尾（endAction 之前，XGarou.finish）：每个命中目标——追击开着、施放开始时解析满 3 层就追加神杀瞬击 10258（沿用施放开始的进化），
+##   再加一层解析；有命中就进化 +1（最多 3）；流水岩碎拳命中回 20 TP（gainSilentTp）。
+## - 敌人 HP 伤害行动命中饿狼：受伤就进化 +1（每回合一次）、给出手的敌人加一层解析；33%（规则流 garou_counter）用流水岩碎拳反击，
+##   反击命中再加一层解析。回合结束（onTurnEnd 之后）清「本回合受过伤」与琦玉模式；开战、结束战斗清全部。
+## - itemCnt：饿狼不被原生反击；meetsSkillConditions：未到形态的拳法、追击 10258 不能用，认真一拳 10263 要琦玉模式（模式：琦玉 10262
+##   命中自己开，认真一拳打完关）。
+## 未移植：输入阶段预排了模式：琦玉时认真一拳可选（原版看 BattleManager._phase 'input' 的已排行动，重制选指令时没有预排）、
+## skillMasteryLevel 包装（追击／反击借主拳熟练度，重制无熟练度）、applyCritical 0 伤不暴击、技能分类与指令窗 [2,1,5,4]、
+## 进阶界面的饿狼提示（重制走 XAdvance.fail_text）、胜利提示 victory_texts 上画面、星空外观 Garou_Cosmic、法宝说明 describeRelic、
+## 图鉴立绘、读档同步（extractSaveContents 包装）、旧档迁移（不迁移 MV 旧存档）。
+## 参照：slice_probe（切片角色行与伤害行）、actor_passive_probe（各等级技能表）、garou_progress_probe、garou_battle_probe；
+## 测试 tests/xiyou_actor_modules.gd、tests/xiyou_garou_progress.gd、tests/xiyou_garou_battle.gd。
 
 const ACTOR := 173
 const HORN := 2940
