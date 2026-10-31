@@ -125,6 +125,8 @@ var seen := {}
 var flags := {}
 ## $gamePlayer.SaveActorName：开局输入的名字（称号、成就里用）
 var actor_name := ""
+## $gamePlayer.DesignationName／DesignationIcon／DesignationColor：当前称号（见 XDesignation）；没选过为空
+var designation := {}
 ## 事件脚本「所有角色学会/忘记技能」：MV 会当场建出全部角色；这里按顺序记下，角色第一次建出时补上（见 actor()）
 ## 每条 {"op": "learn"/"forget", "skill": N, "ids": [] 为全体, "exclude": [], "named": 只限有名字的角色}
 var actor_ops: Array = []
@@ -713,7 +715,7 @@ func mark_seen(rec: Dictionary) -> void:
 const GOLD_MAX := 999999999999
 const GOLD_MIN_ORIGINAL := -99999999
 ## O-085：精魂不扣成负数；设 false 恢复原版下限 -99999999
-const GOLD_FLOOR_ZERO := true
+static var GOLD_FLOOR_ZERO := true
 
 func gain_gold(amount: int) -> void:
 	gold = clampi(gold + amount, 0 if GOLD_FLOOR_ZERO else GOLD_MIN_ORIGINAL, GOLD_MAX)
@@ -747,7 +749,7 @@ func to_dict() -> Dictionary:
 	return {"version": SAVE_VERSION, "mode": "xiyou", "difficulty": difficulty, "party": party, "battleSlots": battle_slots, "actors": a, "gold": gold,
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
-		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
+		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "designation": designation, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "vehicles": [vehicle(0), vehicle(1), vehicle(2)], "vehicleType": vehicle_type, "walkingBgm": walking_bgm, "battleback": battleback, "erasedEvents": erased_events, "mapEvents": map_event_snapshot.call() if map_event_snapshot.is_valid() else map_events, "encounterEnabled": encounter_enabled, "allowAutosave": allow_autosave, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "unknownOrigin": unknown_origin, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "costumeOff": costume_off, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills), "codexRaven": XRaven.to_save(raven), "codexGarou": XGarou.to_save(garou)}
@@ -843,6 +845,8 @@ static func from_dict(d: Dictionary) -> XState:
 		"m": rom.get("m", []).map(func(v): return int(v))}  # 藏宝图本轮挖过的宝点（$gameParty.GameMapxy，见 XTreasureMap）
 	s.flags = d.get("flags", {})
 	s.actor_name = str(d.get("actorName", ""))
+	var dg = d.get("designation", {})
+	s.designation = {"name": str(dg.name), "icon": int(dg.icon), "color": str(dg.color)} if dg is Dictionary and dg.has("name") else {}
 	for op in d.get("actorOps", []):
 		s.actor_ops.append({"op": str(op.op), "skill": int(op.skill), "ids": op.get("ids", []).map(func(v): return int(v)),
 			"exclude": op.get("exclude", []).map(func(v): return int(v)), "named": bool(op.get("named", false))})

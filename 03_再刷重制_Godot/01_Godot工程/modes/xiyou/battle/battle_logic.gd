@@ -476,6 +476,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if not XYunshang.meets(a, skill, self):  # 云裳 meetsSkillConditions：没解锁、敕衣点神要有人穿天衣、收针要有人觉醒
 		return false
+	if not XToji.meets(a, skill):  # 甚尔 meetsSkillConditions：主技能只能用当前形态、切换技能要可切且不是当前形态
+		return false
 	if not XSukuna.meets(a, skill, self):  # 宿傩 meetsSkillConditions：解锁、领域冷却、神灶要蓄力目标、神灶：开要准备层
 		return false
 	if not XMira.meets(a, skill):  # 米拉 meetsSkillConditions：人形／黑龙技按形态、解放的进阶与等级、劫焰不能单放
@@ -1617,10 +1619,17 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 
 ## 兼容现有扩展：_damage_value 覆写的是已结算终值，不能在其返回后再乘一轮状态倍率。
 ## 新的基础数值夹具／扩展覆写 _calculate_damage，默认路径会统一执行 Confirm→固定减伤→React。
-func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
+## push：本次是 _apply 的结算（伤害／治疗时挂状态在 Confirm 之后、React 之前，见 _push_states）；逆祷算预算的内层调用不挂
+## （原版逆祷包装在 Codex 之外，内层 heal 动作的结果不进结算，参照 pushstate prayer 读码）
+func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool, push := false) -> float:
 	if skill.get("_alienMode", "") == "prayer":
 		return XAlienBattle.prayer_heal(self, u, skill, t)  # 异化逆祷 makeDamageValue 包装：按治疗技能算预算再分摊
-	return XDamage.finish(_calculate_damage(u, skill, t, critical), skill, u, t, true, _state_context(u, skill, t, _damage_record))
+	var res := _calculate_damage(u, skill, t, critical)
+	var ctx := _state_context(u, skill, t, _damage_record)
+	if push:
+		var sign := float(res.value)  # 按 makeDamageValue（CodexDamage.calculate）的正负
+		ctx.after_confirm = func(): _push_states(u, skill, t, sign)
+	return XDamage.finish(res, skill, u, t, true, ctx)
 
 
 func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
@@ -1732,7 +1741,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_action_resources.result(dt).critical = r.critical
 		var previous_record := _damage_record
 		_damage_record = r
-		var value := _damage_value(u, skill, dt, r.critical)
+		var value := _damage_value(u, skill, dt, r.critical, true)
 		if XBlackFlash.boosted(dt):
 			r.critical = true  # 黑闪 modifyCritical：结果记为暴击
 			_action_resources.result(dt).critical = true
@@ -1760,6 +1769,25 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_die(t)
 		r.died = true
 	return r
+
+
+## dsPassiveSkill 被动缓存的 PushState／RecPushState／PushsubState，由 installDamageElementRuntime 在结算时按 makeDamageValue 的正负挂：
+## 正 → pushStates 给目标、pushSelfStates 给自己；负 → recPushStates 给目标（不看阵营，同原版）；只认角色行动者，异化虚空的攻击伤害除外；
+## 每条按概率掷（Math.random()*100 < p），目标已有就不挂。由 XDamage.finish 在 Confirm／固定减伤之后、React 之前调（参照 pushstate order.1580）。
+var _push_sign := 0.0
+func _push_states(u: XBattler, skill: Dictionary, t: XBattler, sign: float) -> void:
+	_push_sign = sign
+	# 反射回行动者自己时目标就是行动者，照样挂给自己（参照 pushstate invoke.reflect）；反击由反击者结算（invoke.counter）
+	if not (u is XActor) or sign == 0.0 or (XAlienBattle.has(u, "void") and XAlienBattle.attack_damage(skill)):
+		return
+	var cache: Dictionary = u.passive_cache()
+	for row in cache.get("recPushStates" if sign < 0.0 else "pushStates", []):
+		if _float("push_state") * 100.0 < float(row.probability) and not t.is_state_affected(int(row.stateId)):
+			_state_add(t, int(row.stateId))
+	if sign > 0.0:
+		for row in cache.get("pushSelfStates", []):
+			if _float("push_self_state") * 100.0 < float(row.probability) and not u.is_state_affected(int(row.stateId)):
+				_state_add(u, int(row.stateId))
 
 
 ## Game_Action.applyItemUserEffect：行动者得 floor(tpGain × tcr)（gainSilentTp）
@@ -2140,9 +2168,9 @@ func _avg_agi(list: Array) -> float:
 # ---- 奖励（经验、金钱；物品掉落见 _roll_drops）----
 ## BattleManager.makeRewards（正式版 rpg_managers）：金钱 goldTotal×5、经验 expTotal×8。
 ## 经验：Game_Enemy.exp 被后装的 EliteEnemy 改写成「数据库经验 × 神话倍率」，Vitsuno 难度的经验／金钱倍率包在里层、被盖掉不生效
-## （参照 battle_gaps reward.*：难度 1～13 奖励相同；O-待定 开关默认按难度乘，见下）；GT_EquipSuitCore 在 expTotal／goldTotal 外再套套装。
+## （参照 battle_gaps reward.*：难度 1～13 奖励相同；O-130 开关默认按难度乘，见下）；GT_EquipSuitCore 在 expTotal／goldTotal 外再套套装。
 ## 金钱：dsPassiveSkill 的 goldTotal 按出战成员的每个 passiveGRUP 依次 rate += v×0.01×rate，floor(Σ gold×rate × 金钱双倍)。
-## O-待定（Kyo 10-31 定：加回来）：难度表的经验／金钱倍率照 Vitsuno 本来的挂点乘在每只敌人的 exp／gold 上；false＝原版（被 EliteEnemy 盖掉、不生效）
+## O-130（Kyo 10-31 定：加回来）：难度表的经验／金钱倍率照 Vitsuno 本来的挂点乘在每只敌人的 exp／gold 上；false＝原版（被 EliteEnemy 盖掉、不生效）
 static var o_difficulty_reward := true
 func rewards() -> Dictionary:
 	var exp := 0
@@ -2158,7 +2186,7 @@ func rewards() -> Dictionary:
 	for e in enemies:
 		if e.hidden:
 			continue  # deadMembers：没出现的成员不算
-		# O-待定：Vitsuno 的挂点是 Game_Enemy.exp／gold（每只敌人 floor(值×倍率)），在 expTotal／goldTotal、套装与 ×8／×5 之前
+		# O-130：Vitsuno 的挂点是 Game_Enemy.exp／gold（每只敌人 floor(值×倍率)），在 expTotal／goldTotal、套装与 ×8／×5 之前
 		exp += floori(e.exp_reward() * float(rates[0]))
 		gold += floorf(e.gold_reward() * float(rates[1])) * gold_rate
 		drops.append_array(drops_of(e))

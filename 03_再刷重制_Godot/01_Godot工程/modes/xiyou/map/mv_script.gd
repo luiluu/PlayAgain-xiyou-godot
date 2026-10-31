@@ -72,6 +72,12 @@ static func _module_recruit(module: String) -> Callable:
 					return false
 				await interp.host.show_text("", 0, [XGarou.RECRUIT_TEXT])  # $gameMessage.add
 				return true
+		"CodexToji":
+			return func(s: XState, interp) -> bool:
+				var lines := XToji.recruit(s)
+				for line in lines:
+					interp.host.toast(line)  # $.toaster
+				return not lines.is_empty()
 		"CodexSukuna":
 			return func(s: XState, interp) -> bool:
 				if not XSukuna.recruit(s):
@@ -153,7 +159,7 @@ static func run(code: String, interp) -> Array:
 		return []
 	# 专属角色号角（公共事件 9006～9016）：try { if (!X.recruit()) $gameParty.gainItem($dataItems[号角或 X.ids().horn],1); } catch(error) {…}
 	# 招募没成功（已在队、超强者门槛挡下）就还号角；catch 分支是脚本出错时的返还，重制不会走到。
-	# 模块没移植的（甚尔、谷雨、屠苏、璇）只有门槛挡下这一支能照做，放行时照旧算没认出
+	# 模块没移植的（谷雨、屠苏、璇）只有门槛挡下这一支能照做，放行时照旧算没认出
 	var horn := _re("^try\\s*\\{\\s*if\\s*\\(\\s*!\\s*(\\w+)\\.recruit\\(\\)\\s*\\)\\s*\\$gameParty\\.gainItem\\(\\$dataItems\\[(\\d+|\\1\\.ids\\(\\)\\.horn)\\]\\s*,\\s*1\\);?\\s*\\}\\s*catch\\s*\\(\\s*error\\s*\\)\\s*\\{.*\\}$").search(js)
 	if horn:
 		var module := horn.get_string(1)
@@ -339,6 +345,16 @@ static func _statements(js: String, interp) -> Array:
 		# 星级仓库（Star_Warehouse 通用仓库，见 XStarWarehouse）：黄金大厅通用仓库管理员 Map041 EV1「存放」「取出」
 		if (st == "SceneManager.push(Scene_StarSaveWarehouse)" or st == "SceneManager.push(Scene_StarWarehouse)") and interp.host.has_method("open_star_warehouse"):
 			await interp.host.open_star_warehouse(st.contains("Save"))
+			continue
+		# 称号（Star_Designation，见 XDesignation）：方桌大厅 Map4 EV1「更换称号」；原版预约公共事件、本事件结束后弹，那一支后面没有别的指令，这里当场弹
+		if st == "Star.Designation.ChooseTitle()":
+			await XDesignation.choose(interp)
+			continue
+		if st == "$gamePlayer.DesignationN = $gamePlayer.DesignationN || []":
+			continue  # 原版给 $gamePlayer 挂的空数组，没人读
+		var title := _re("^ConfigManager\\.DesignationN\\[(\\d+)\\]\\s*=\\s*true$").search(st)
+		if title:
+			XDesignation.unlock(int(title.get_string(1)))  # 各处称号奖励：Map4 EV55、CE367／434 等 59 处
 			continue
 		# 更衣（Star_ChangeClothes，见 XChangeClothes）：方桌大厅衣橱管理员 Map4 EV17「查看衣橱」
 		if st == "SceneManager.push(Scene_ChangeClothes)" and interp.host.has_method("open_change_clothes"):
@@ -549,8 +565,9 @@ static func eval_expr(js: String) -> Variant:
 	for s in subs:
 		e = e.replace(s[0], s[1])
 	e = _re("\\$gameParty\\.numItems\\(\\$dataItems\\[(\\d+)\\]\\)").sub(e, "items($1)", true)
+	e = _re("ConfigManager\\.DesignationN\\[(\\d+)\\]").sub(e, "designation($1)", true)  # 称号解锁（Map2 EV2 条件）
 	e = _re("!(?!=)").sub(e, " not ", true)
-	var allowed := ["v", "sw", "playtime", "gold", "steps", "party_size", "map_id", "items", "entry_accepted", "entry_hard", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
+	var allowed := ["v", "sw", "designation", "playtime", "gold", "steps", "party_size", "map_id", "items", "entry_accepted", "entry_hard", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
 	for w in _re("[A-Za-z_$][A-Za-z_0-9$.]*").search_all(e):
 		if not allowed.has(w.get_string()):
 			return null
@@ -566,6 +583,7 @@ static func eval_expr(js: String) -> Variant:
 class ExprEnv:
 	extends RefCounted
 	func v(id: float) -> float: return XState.current.variable(int(id))
+	func designation(id: float) -> bool: return XDesignation.unlocked(int(id))
 	func sw(id: float) -> bool: return XState.current.switch(int(id))
 	func playtime() -> float: return floorf(XState.current.play_seconds)
 	func gold() -> float: return float(XState.current.gold)

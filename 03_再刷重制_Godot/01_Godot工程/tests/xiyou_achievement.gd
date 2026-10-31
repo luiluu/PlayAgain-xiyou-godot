@@ -98,6 +98,12 @@ func _ready() -> void:
 	await _defs()
 	await _steps()
 	_gains()
+	# O-076 回退（GAIN_ONLY、BEFORE_REDIRECT 设 false）：_gains 按开关算期望，两个都关时期望就是参照原样（失去也触发、魂灯只记 112）
+	XAchievement.GAIN_ONLY = false
+	XAchievement.BEFORE_REDIRECT = false
+	_gains()
+	XAchievement.GAIN_ONLY = true
+	XAchievement.BEFORE_REDIRECT = true
 	_kyo()
 	await _popup_layout()
 	await _ui()
@@ -359,6 +365,14 @@ func _script_and_save() -> void:
 		var s3 := XState.new_game_blank()
 		await MVInterpreter.new(self, at[0], at[1], code).run()
 		check("floor12_fix_%d" % at[0], XAchievement.party_has(s3, at[2]) and _ids(s3.achievements) == [at[2]], s3.achievements)
+	# 回退（FLOOR12_FIX = false）：照原版两处十二层守层者也给 13
+	XAchievement.FLOOR12_FIX = false
+	for at in [[23, 1], [65, 2]]:
+		_reset_config()
+		var s4 := XState.new_game_blank()
+		await MVInterpreter.new(self, at[0], at[1], code).run()
+		check("floor12_original_%d" % at[0], _ids(s4.achievements) == [13], s4.achievements)
+	XAchievement.FLOOR12_FIX = true
 	XState.current = s
 	it = await run_list(XDB.rec("CommonEvents", 431).list)
 	check("script_ce431_opens_book", it.skipped.is_empty() and opened == 1)
@@ -417,5 +431,17 @@ func _script_and_save() -> void:
 	XConfig.path_override = path
 	XConfig.ensure_loaded()
 	check("config_reloaded", XAchievement.global_has(60) and XAchievement.global_time(60) == TIME)
+	# 回退（SAVE_NOW = false）：原版只改内存，要等设置等页面关闭时才写盘；中途退出（重新读配置）就丢
+	XAchievement.SAVE_NOW = false
+	XAchievement.reward(61, XState.new_game_blank())
+	var mem := XAchievement.global_has(61)
+	var disk = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
+	XAchievement.SAVE_NOW = true
+	XConfig.path_override = DIR.path_join("other.json")
+	XConfig.ensure_loaded()
+	XConfig.path_override = path
+	XConfig.ensure_loaded()
+	check("config_not_written_original", mem and disk is Dictionary and not disk.get("SAchievementS", {}).has("61") and not XAchievement.global_has(61)
+		and XAchievement.global_has(60), [mem, disk])
 	XConfig.path_override = ""
 	_popups()

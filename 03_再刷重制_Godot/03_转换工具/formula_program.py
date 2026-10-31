@@ -371,6 +371,8 @@ MODULE_FORMULAS.update({f'CodexGarou.base(a,b,{i})': 'garou' for i in range(1025
 MODULE_FORMULAS.update({f'CodexMira.damage(a,b,{i})': 'mira' for i in range(10140, 10152)})
 # 172 宿傩 CodexSukuna.damage(a,b,id,this)：10229～10233、10236～10238（XSukuna.formula）
 MODULE_FORMULAS.update({f'CodexSukuna.damage(a,b,{i},this)': 'sukuna' for i in [10229, 10230, 10231, 10232, 10233, 10236, 10237, 10238]})
+# 171 甚尔 CodexToji.damage(a,b,id,this)：主技能 10216～10219、武器库 10220～10223、术师杀手·反弹 10224（XToji.formula）
+MODULE_FORMULAS.update({f'CodexToji.damage(a,b,{i},this)': 'toji' for i in range(10216, 10225)})
 # 169 黄泉 CodexYomi.damage(a,b,id)：10171～10174（XYomiJingliu.formula）
 MODULE_FORMULAS.update({f'CodexYomi.damage(a,b,{i})': 'yomi' for i in range(10171, 10175)})
 # 170 镜流 CodexJingliu.damage(a,b,id)：10187～10193（XYomiJingliu.j_formula）

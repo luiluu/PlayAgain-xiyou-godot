@@ -69,6 +69,9 @@ const AIRSHIP_SHADOW_Z := MVCharacter.ABOVE_UPPER_Z + 1
 ## 飞艇（Game_Map.airship）的地图精灵：画面上移 altitude（Game_Vehicle.screenY），驾驶或升降中在上层图块之上
 var airship: MVCharacter
 var airship_shadow: Sprite2D
+## 头顶名牌（Star_Designation）：玩家与飞艇的精灵各一张，见 XDesignationPlate
+var player_plate: XDesignationPlate
+var airship_plate: XDesignationPlate
 ## Game_Player._vehicleGettingOn／_vehicleGettingOff 与上下载具时的 gatherFollowers（不随档，读档时按飞艇状态补，见 _place_vehicle）
 var _vehicle_getting_on := false
 var _vehicle_getting_off := false
@@ -307,6 +310,8 @@ func _place_party(x: int, y: int, d: int) -> void:
 	player.dash = not bool(map_data.get("disableDashing", false))
 	player.tilemap = lower
 	chars.add_child(player)
+	player_plate = XDesignationPlate.new()
+	player.add_child(player_plate)
 	player.locate(x, y)
 	player.direction = d if d > 0 else 2
 	# 队伍跟随（System 显示队伍跟随）：出战成员第 2～5 人，场所移动后叠在玩家脚下
@@ -352,6 +357,7 @@ func _process(delta: float) -> void:
 		player.auto_step = _hang_up_step if hanging else Callable()
 		hang_overlay.visible = not _menu_open and transfer_page == null
 		hang_overlay.refresh()
+		_update_plates()
 		var s := XState.current
 		s.x = player.grid.x
 		s.y = player.grid.y
@@ -633,6 +639,19 @@ func in_vehicle() -> bool:
 	return XState.current != null and XState.current.vehicle_type != "walk"
 
 
+## 头顶名牌：玩家精灵透明时随精灵隐藏；飞艇的那张只在玩家坐着它、位置重合时显示（Star_Designation updateOther）
+func _update_plates() -> void:
+	var s := XState.current
+	if player_plate != null:
+		player_plate.place(0.0 if player.is_object() else 6.0)
+		player_plate.visible = not player.transparent
+		player_plate.refresh(s)
+	if airship_plate != null and is_instance_valid(airship):
+		airship_plate.place(0.0 if airship.is_object() else 6.0)
+		airship_plate.visible = in_airship() and airship.real == player.real
+		airship_plate.refresh(s)
+
+
 func in_airship() -> bool:
 	return XState.current != null and XState.current.vehicle_type == "airship"
 
@@ -814,6 +833,8 @@ func _place_vehicle() -> void:
 	airship.move_speed = 6
 	chars.add_child(airship)
 	airship.locate(int(v.x), int(v.y))
+	airship_plate = XDesignationPlate.new()
+	airship.add_child(airship_plate)
 	airship_shadow = Sprite2D.new()
 	airship_shadow.name = "AirshipShadow"
 	var shadow_path := XDB.img_path("system", "Shadow1")
