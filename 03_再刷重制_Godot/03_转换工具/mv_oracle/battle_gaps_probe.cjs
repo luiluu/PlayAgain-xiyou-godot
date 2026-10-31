@@ -2,7 +2,7 @@
 // 【Claude·悟空·未经审查】战斗核心缺口定向参照：① 百分比 MP 消耗（YEP_SkillCore <MP Cost: x%>，经 dsPassive 减耗、
 // installSkillCostRuntime 的 −100% 下限）进实扣 skillMpCost；② 角色能力上限（YEP_CoreEngine Actor MaxHP/MaxMP/Parameter＝99999999，
 // G_StateParam 在 paramMax 处夹；饿狼 173 的 paramMax 包装放到 999999999999）；③ 技能 HP 费用（<HP Cost: n>／<HP Cost: n%>）；
-// ④ 战斗经验与金钱（makeRewards 的 ×8／×5、难度倍率是否生效、passiveGRUP 连乘、金钱双倍、神话）。
+// ④ 战斗经验与金钱（makeRewards 的 ×8／×5、难度倍率是否生效、passiveGRUP 连乘、金钱双倍、神话）；⑤ 防御技能 2 给 TP（tpGain×tcr 取整）。
 // 真实冻结插件、全内存新局；只写 .sandbox/battle_gaps.json，拷成 tests/fixtures/battle_gaps_oracle.json（不接入全量同步）。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
@@ -103,5 +103,16 @@ for (const [name, cfg] of REWARD_VARIANTS) {
     return {exp: rw.exp, gold: rw.gold, grup, suitGold: w.$gameParty.equipSuitBonusBResultCal(1000, 1), enemies: ms.map(e => ({id: e.enemyId(), exp: e.exp(), gold: e.gold(), elite: !!e.isElite()}))};
   }));
 }
-process.exitCode = finish(host, 'battle_gaps.json', {scope: 'percent MP cost in skillMpCost; actor param cap; skill HP cost; battle rewards exp/gold', percentSkills, hpSkills, cases}) ? 0 : 1;
+// ---- ⑤ 防御给 TP：防御技能 2（tpGain 10）对自己 Game_Action.apply 一次，applyItemUserEffect 得 floor(tpGain×tcr)（gainSilentTp，上限夹 maxTp）----
+const GUARD_VARIANTS = [['tp0', {tp: 0}], ['tp95', {tp: 95}], ['tcr125', {tp: 30, tcr: 1.25}], ['tcr05', {tp: 30, tcr: 0.5}]];
+for (const [name, cfg] of GUARD_VARIANTS) {
+  cases.push(makeCase(`guard.${name}`, {actor: 1, skill: 2, ...cfg}, () => {
+    newGame(); const a = bare(1);
+    if (cfg.tcr !== undefined) a._states = realmArray([state('', [{code: 23, dataId: 5, value: cfg.tcr}])]);
+    settle(a); a.setTp(cfg.tp);
+    const act = new w.Game_Action(a); act.setGuard(); act.apply(a);
+    return {tp: a.tp, maxTp: a.maxTp(), tcr: a.tcr, tpGain: w.$dataSkills[2].tpGain, hit: a.result().isHit()};
+  }));
+}
+process.exitCode = finish(host, 'battle_gaps.json', {scope: 'percent MP cost in skillMpCost; actor param cap; skill HP cost; battle rewards exp/gold; guard TP gain', percentSkills, hpSkills, cases}) ? 0 : 1;
 process.exit();

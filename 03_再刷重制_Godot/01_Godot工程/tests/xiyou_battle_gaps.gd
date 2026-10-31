@@ -5,6 +5,7 @@ extends Node
 ## ② 角色能力上限：8 项都夹 99999999（加值超、比率叠满后超），饿狼 173 夹 999999999999；比 param、mhp／mmp。
 ## ③ 技能 HP 费用：15 个带 <HP Cost: n>／<HP Cost: n%> 的技能，比费用、生命为满／等于费用／费用＋1 时能否付（can_use 的费用部分）、付费后的生命。
 ## ④ 战斗奖励：6 个难度 × 3 个敌群，另有 passiveGRUP 连乘、神话、金钱双倍；比 XBattleLogic.rewards 的经验与金钱（×8／×5，难度倍率不生效）。
+## ⑤ 防御给 TP：技能 2 走 XBattleLogic.act 防御支，TP 0／95（上限 200）、tcr 1.25／0.5，比防御后的 TP。
 const FIXTURE := "res://tests/fixtures/battle_gaps_oracle.json"
 var passed := 0
 var total := 0
@@ -72,12 +73,34 @@ func _reward(cfg: Dictionary) -> Array:
 	var r := logic.rewards()
 	return [int(r.exp), int(r.gold)]
 
+## 探针 ⑤：角色 1 清空后进敌群 1，开战后再按用例给 tcr 状态、定 TP，防御一次
+func _guard_tp(cfg: Dictionary) -> Array:
+	var s := XState.new_game(2, 1, [8, 9, 10])
+	for a in s.members():
+		a.equips.clear()
+		a.skill_ids.clear()
+		a.state_ids.clear()
+		a.param_mark_dirty()
+		a.refresh_passive()
+	var logic := XBattleLogic.new()
+	logic.elite_roll = 100.0
+	logic.setup(1, s)
+	var a: XActor = logic.actors[0]
+	a.state_ids.clear()
+	if cfg.has("tcr"):
+		a.state_ids.append(_state("", [{"code": 23, "dataId": 5, "value": float(cfg.tcr)}]))
+	a.param_mark_dirty()
+	a.param_refresh()
+	a.tp = float(cfg.tp)
+	logic.act(a, XDB.rec("Skills", 2), null)
+	return [a.tp, a.max_tp()]
+
 func _run() -> void:
 	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	check("percent_skills", ref.percentSkills.size() == 43 and not ref.percentSkills.has(7225.0), ref.percentSkills.size())
 	var logic := XBattleLogic.new()
-	var count := {"cost": 0, "cap": 0, "hp": 0, "reward": 0}
+	var count := {"cost": 0, "cap": 0, "hp": 0, "reward": 0, "guard": 0}
 	for c in ref.cases:
 		check(c.id + ".native", c.errors.is_empty(), c.errors)
 		if not c.errors.is_empty():
@@ -115,6 +138,10 @@ func _run() -> void:
 			count.reward += 1
 			var got := _reward(c.setup)
 			check(c.id + ".reward", got == [int(o.exp), int(o.gold)], [got, o.exp, o.gold, o.grup])
+		elif str(c.id).begins_with("guard."):
+			count.guard += 1
+			var got := _guard_tp(c.setup)
+			check(c.id + ".tp", got == [float(o.tp), float(o.maxTp)], [got, o])
 		elif str(c.id).begins_with("cap."):
 			count.cap += 1
 			var p := float(c.setup.plus)
@@ -132,6 +159,6 @@ func _run() -> void:
 			check(c.id + ".max", a.param_max(0) == float(o.max[0]), [a.param_max(0), o.max[0]])
 			check(c.id + ".res", [a.mhp, a.mmp] == [float(o.mhp), float(o.mmp)], [a.mhp, a.mmp, o])
 	check("hp_skills", ref.hpSkills.size() == 15, ref.get("hpSkills"))
-	check("counts", count.cost == 43 * 5 + 2 and count.cap == 5 and count.hp == 15 and count.reward == 21, count)
+	check("counts", count.cost == 43 * 5 + 2 and count.cap == 5 and count.hp == 15 and count.reward == 21 and count.guard == 4, count)
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total else 1)

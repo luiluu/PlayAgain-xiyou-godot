@@ -737,6 +737,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XStateEffects.run("initiate", u, gctx)
 		XStateEffects.run("select", u, gctx)
 		u.guarding = true
+		_user_tp_gain(u, skill)  # apply 命中后的 applyItemUserEffect：防御技能 2 的 tpGain 10（参照 battle_gaps guard.*）
 		_otb_user_shift(u, skill)
 		XStateEffects.run("deselect", u, gctx)
 		XStateEffects.run("conclude", u, gctx)
@@ -1708,11 +1709,18 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	for eff in skill.get("effects", []):
 		_effect(u, t, eff, r)
 	_otb_target_shift(skill, t)
-	_action_resources.silent_gain(u, "tp", float(skill.get("tpGain", 0)) * u.tcr)
+	_user_tp_gain(u, skill)
 	if t.hp <= 0.0 and t.is_dead():
 		_die(t)
 		r.died = true
 	return r
+
+
+## Game_Action.applyItemUserEffect：行动者得 floor(tpGain × tcr)（gainSilentTp）
+func _user_tp_gain(u: XBattler, skill: Dictionary) -> void:
+	var resources := _operation_resources(u)  # 防御支不经 _apply，没有本次行动的资源上下文
+	resources.silent_gain(u, "tp", floorf(float(skill.get("tpGain", 0)) * u.tcr))
+	_finish_lifecycle_operation(resources, u)
 
 
 ## installBossDifficultyRuntime的最外层普通伤害包装。倍率为1时也floor，非正值及自身代价原样传入。

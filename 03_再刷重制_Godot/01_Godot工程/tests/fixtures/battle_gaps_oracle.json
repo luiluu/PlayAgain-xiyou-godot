@@ -640,7 +640,7 @@
    "js/rpg_οbjects.js": "455b1890ff891795df24653e3b8c15ab6ef5050661656c2dd1840339b34d5b7d"
   }
  },
- "scope": "percent MP cost in skillMpCost; actor param cap; skill HP cost; battle rewards exp/gold",
+ "scope": "percent MP cost in skillMpCost; actor param cap; skill HP cost; battle rewards exp/gold; guard TP gain",
  "percentSkills": [
   5724,
   7226,
@@ -6808,6 +6808,72 @@
       "elite": false
      }
     ]
+   },
+   "errors": []
+  },
+  {
+   "id": "guard.tp0",
+   "setup": {
+    "actor": 1,
+    "skill": 2,
+    "tp": 0
+   },
+   "observed": {
+    "tp": 10,
+    "maxTp": 200,
+    "tcr": 1,
+    "tpGain": 10,
+    "hit": true
+   },
+   "errors": []
+  },
+  {
+   "id": "guard.tp95",
+   "setup": {
+    "actor": 1,
+    "skill": 2,
+    "tp": 95
+   },
+   "observed": {
+    "tp": 105,
+    "maxTp": 200,
+    "tcr": 1,
+    "tpGain": 10,
+    "hit": true
+   },
+   "errors": []
+  },
+  {
+   "id": "guard.tcr125",
+   "setup": {
+    "actor": 1,
+    "skill": 2,
+    "tp": 30,
+    "tcr": 1.25
+   },
+   "observed": {
+    "tp": 42,
+    "maxTp": 200,
+    "tcr": 1.25,
+    "tpGain": 10,
+    "hit": true
+   },
+   "errors": []
+  },
+  {
+   "id": "guard.tcr05",
+   "setup": {
+    "actor": 1,
+    "skill": 2,
+    "tp": 30,
+    "tcr": 0.5
+   },
+   "observed": {
+    "tp": 35,
+    "maxTp": 200,
+    "tcr": 0.5,
+    "tpGain": 10,
+    "hit": true
    },
    "errors": []
   }
