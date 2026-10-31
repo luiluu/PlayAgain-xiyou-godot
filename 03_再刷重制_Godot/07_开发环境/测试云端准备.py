@@ -189,6 +189,45 @@ class CloudWaitTests(unittest.TestCase):
         self.assertEqual(r.returncode, 4, r.stdout)
         self.assertIn('额度用完', r.stdout)
 
+    def stub_gh_with_artifacts(self, shards_in_plan=(1, 2), shards_with_result=(1, 2), failed=(), plan_sha=None):
+        """云端 report 任务没起来（运行失败、无 job），但 plan 与各片结果工件都在：gh run download 把它们写到 -D 目录。"""
+        plan = {'sha': plan_sha or self.sha, 'branch': 'ci/x', 'mode': 'affected', 'base': 'b', 'scenes': ['a.tscn', 'b.tscn'],
+                'shards': [{'shard': n, 'scenes': ['a.tscn']} for n in shards_in_plan]}
+        files = {'plan/plan.json': json.dumps(plan)}
+        for n in shards_with_result:
+            files['result-shard-%d/shard-%d.json' % (n, n)] = json.dumps(
+                {'shard': n, 'rc': 1 if n in failed else 0, 'wallSeconds': 60, 'scenes': ['a.tscn'], 'timings': {'a.tscn': 5},
+                 'failed': ['a.tscn'] if n in failed else [], 'flaky': []})
+        src = Path(self.temp.name) / 'artifacts'
+        for rel, text in files.items():
+            (src / rel).parent.mkdir(parents=True, exist_ok=True)
+            (src / rel).write_text(text)
+        self.gh.write_text('#!/bin/sh\ncase "$2" in\n list) echo \'[{"databaseId":9,"status":"completed","conclusion":"failure"}]\';;\n'
+                           ' view) echo \'{"jobs":[]}\';;\n download) while [ $# -gt 0 ]; do [ "$1" = -D ] && d=$2; shift; done; cp -R %s/. "$d";;\nesac\n' % src)
+        self.gh.chmod(0o755)
+
+    def test_report_computed_locally_when_cloud_report_job_did_not_start(self):
+        """今天 run 41167600311：13 片全过，report 任务被 spending limit 挡了没起来，wait 判「没有结果」，合并收尾因此失败。"""
+        self.stub_gh_with_artifacts()
+        r = self.wait(timeout=60)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('由本机用云端各片的结果工件算出', r.stdout)
+        self.assertIn('云端选测通过', r.stdout)
+
+    def test_local_report_failing_shard_fails(self):
+        self.stub_gh_with_artifacts(failed=(2,))
+        r = self.wait(timeout=60)
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn('失败场景', r.stdout)
+
+    def test_incomplete_artifacts_are_not_a_result(self):
+        self.stub_gh_with_artifacts(shards_with_result=(1,))                 # 缺第 2 片
+        r = self.wait(timeout=60)
+        self.assertEqual(r.returncode, 4, r.stdout)
+        self.assertIn('额度用完', r.stdout)
+        self.stub_gh_with_artifacts(plan_sha='0' * 40)                       # 工件属于别的提交
+        self.assertEqual(self.wait(timeout=60).returncode, 4)
+
     def test_gh_unavailable_falls_back_to_timeout(self):
         self.gh.write_text('#!/bin/sh\nexit 1\n'); self.gh.chmod(0o755)
         self.assertEqual(self.wait(timeout=2).returncode, 124)

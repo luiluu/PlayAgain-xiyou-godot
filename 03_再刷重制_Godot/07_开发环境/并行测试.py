@@ -366,7 +366,7 @@ def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progres
         with tempfile.TemporaryDirectory(prefix='xiyou_test_home_') as home:
             env = dict(os.environ, HOME=home)
             loop = ['-s', MAIN_LOOP] if (Path(project) / MAIN_LOOP[len('res://'):]).is_file() else []
-            rc, out, cpu = run_with_rusage([godot, '--headless', '--path', project] + loop + ['res://tests/' + name], env, TIMEOUT)
+            rc, out, cpu = run_with_rusage([godot, '--headless', '--path', project] + loop + ['res://tests/' + name], env, TIMEOUT, FATAL_LOAD)
         if progress:
             with progress.lock:
                 progress.running.discard(name)
@@ -374,21 +374,37 @@ def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progres
         return name, rc, out, time.time() - start, cpu
 
 
-def run_with_rusage(cmd: list, env: dict, timeout: float) -> tuple:
+# 脚本解析失败（加载不了测试场景或它依赖的脚本）：Godot 不退出，一直等到单场景超时（600 秒）才被杀。出现这些行就没必要再等了。
+# 只认 Godot 自己的这两种报错行；测试正文里打印的 "Parse Error"（如 JSON 解析失败的断言信息）不匹配。
+FATAL_LOAD = re.compile(r'^SCRIPT ERROR: Parse Error: |^ERROR: Failed to load script "[^"]*" with error "Parse error"', re.M)
+
+
+def run_with_rusage(cmd: list, env: dict, timeout: float, fatal=None) -> tuple:
     """跑一个子进程，返回 (退出码, 标准输出＋标准错误, {user, sys} CPU 秒)。超时杀掉、退出码记 142、输出保留已有部分。
     CPU 用 os.wait4 取本子进程（含它等过的孙进程）的 rusage：批测各线程并行，RUSAGE_CHILDREN 的差值会混进别的场景
     （八戒 dev.206：墙钟受负载影响大，单看秒数分不清是场景慢还是机器满）。"""
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     bufs = [[], []]
-    readers = [threading.Thread(target=lambda f=f, b=b: b.append(f.read()), daemon=True) for f, b in zip((p.stdout, p.stderr), bufs)]
+    def drain(f, b):   # 边读边存：出现致命报错行时能在进程还活着的时候发现
+        for chunk in iter(lambda: f.read1(65536), b''):
+            b.append(chunk)
+    readers = [threading.Thread(target=drain, args=(f, b), daemon=True) for f, b in zip((p.stdout, p.stderr), bufs)]
     for t in readers:
         t.start()
     deadline = time.monotonic() + timeout
-    timed_out = False
+    timed_out = early = False
+    scanned = [0, 0]
     while True:
         pid, status, usage = os.wait4(p.pid, os.WNOHANG)
         if pid:
             break
+        if fatal and any(len(b) != n for b, n in zip(bufs, scanned)):
+            scanned = [len(b) for b in bufs]
+            if fatal.search(''.join(b''.join(b).decode(errors='replace') for b in bufs)):
+                early = True
+                p.kill()
+                pid, status, usage = os.wait4(p.pid, 0)
+                break
         if time.monotonic() > deadline:
             timed_out = True
             p.kill()
@@ -397,10 +413,14 @@ def run_with_rusage(cmd: list, env: dict, timeout: float) -> tuple:
         time.sleep(0.05)
     p.returncode = os.waitstatus_to_exitcode(status)  # 已由 wait4 收尸，告诉 Popen 别再等
     for t in readers:
-        t.join()
-    p.stdout.close()
-    p.stderr.close()
+        t.join(2 if (early or timed_out) else None)   # 被杀后孙进程可能还攥着管道，最多再等 2 秒收尾巴
+    if not any(t.is_alive() for t in readers):   # 孙进程还攥着管道时 close 会等到它退出，留给守护线程自生自灭
+        p.stdout.close()
+        p.stderr.close()
     out = ''.join(b''.join(b).decode(errors='replace') for b in bufs)
+    if early:
+        out += '\n提前终止：出现脚本解析错误，不等超时（并行测试.py FATAL_LOAD）\n'
+        p.returncode = 143
     return 142 if timed_out else p.returncode, out, {'user': round(usage.ru_utime, 3), 'sys': round(usage.ru_stime, 3)}
 
 
