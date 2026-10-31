@@ -1289,6 +1289,40 @@
     }
    },
    "errors": []
+  },
+  {
+   "id": "order.1580",
+   "setup": {
+    "skills": [
+     1580
+    ],
+    "skill": 1,
+    "target": "enemy",
+    "rnd": 0.1,
+    "react": true
+   },
+   "observed": {
+    "log": [
+     "add:161",
+     "react",
+     "pre-done"
+    ],
+    "out": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [
+       161
+      ],
+      "turns": {
+       "161": 5
+      }
+     }
+    }
+   },
+   "errors": []
   }
  ]
 }

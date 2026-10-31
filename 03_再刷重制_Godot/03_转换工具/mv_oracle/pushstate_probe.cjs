@@ -47,9 +47,23 @@ function run(cfg) {
   w.Math.random = () => cfg.rnd;
   const value = act.makeDamageValue(target, false);
   const confirmed = act.onPreDamageStateEffects(target, value);
+  if (cfg.react) act.onReactStateEffects(target, confirmed);
   w.Math.random = () => 0.5;
   return {value, confirmed, equips: a.equips().filter(Boolean).map(e => [e.baseItemId || e.id, e.name]), before, after: {user: snap(a), target: snap(target)},
     cache: {push: (a._passiveCache.pushStates || []).length, rec: (a._passiveCache.recPushStates || []).length, self: (a._passiveCache.pushSelfStates || []).length}};
+}
+// 时机：记 addState 与 React（onReactStateEffects）的先后——原版 _after 在结算 part() 里执行
+function order(cfg) {
+  const log = [], react = w.Game_Action.prototype.onReactStateEffects;
+  const protos = [w.Game_Battler.prototype, w.Game_Actor.prototype, w.Game_Enemy.prototype].filter(p => Object.prototype.hasOwnProperty.call(p, 'addState'));
+  const saved = protos.map(p => p.addState);
+  protos.forEach((p, i) => { p.addState = function (id) { if (WATCH.includes(id)) log.push('add:' + id); return saved[i].apply(this, arguments); }; });
+  w.Game_Action.prototype.onReactStateEffects = function () { log.push('react'); return react.apply(this, arguments); };
+  try {
+    const out = run(cfg);
+    log.push('pre-done');
+    return {log, out: out.after};
+  } finally { protos.forEach((p, i) => { p.addState = saved[i]; }); w.Game_Action.prototype.onReactStateEffects = react; }
 }
 const CASES = [
   ['push.1580.hit', {skills: [1580], skill: 1, target: 'enemy', rnd: 0.5}],
@@ -68,5 +82,6 @@ const CASES = [
   ['rec.6706.already', {skills: [6706], skill: 8, target: 'ally', rnd: 0.1, pre: [1561]}],
 ];
 const cases = CASES.map(([id, cfg]) => makeCase(id, cfg, () => run(cfg)));
+cases.push(makeCase('order.1580', {skills: [1580], skill: 1, target: 'enemy', rnd: 0.1, react: true}, () => order({skills: [1580], skill: 1, target: 'enemy', rnd: 0.1, react: true})));
 process.exitCode = finish(host, 'pushstate.json', {scope: 'PushState / RecPushState / PushsubState applied at settlement by sign of makeDamageValue', cases}) ? 0 : 1;
 process.exit();

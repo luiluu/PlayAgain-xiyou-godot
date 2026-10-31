@@ -1,6 +1,6 @@
 extends Node
 ## 【cc·悟空·未经审查】伤害／治疗时挂状态（dsPassiveSkill PushState／RecPushState／PushsubState，正式版由 installDamageElementRuntime
-## 在结算时按 makeDamageValue 正负挂）：与 mv_oracle/pushstate_probe.cjs（tests/fixtures/pushstate_oracle.json，正式引擎）14 例逐条比（含装备上的标签：武器 1706、防具 4966）。
+## 在结算时按 makeDamageValue 正负挂）：与 mv_oracle/pushstate_probe.cjs（tests/fixtures/pushstate_oracle.json，正式引擎）15 例逐条比（含装备上的标签：武器 1706、防具 4966；order.1580 记原版挂状态在 React 之前）。
 ## 每例：新局难度 2，角色 1 清技能／装备／状态后学被动，角色 8 生命 1 当友方目标，敌群 1 第一只当敌方目标；行动技能公式定 1000、无浮动不暴击，
 ## 命中、闪避固定成命中，挂状态的掷骰固定成用例的 rnd；比缓存三类条数、正负、前后状态与回合数（已有不重挂＝回合不被重置）。
 const FIXTURE := "res://tests/fixtures/pushstate_oracle.json"
@@ -88,13 +88,18 @@ func _case(cfg: Dictionary) -> Dictionary:
 func _run() -> void:
 	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("cases", ref.cases.size() == 14, ref.cases.size())
+	check("cases", ref.cases.size() == 15, ref.cases.size())
 	for c in ref.cases:
 		check(c.id + ".native", c.errors.is_empty(), c.errors)
 		if not c.errors.is_empty():
 			continue
 		var o: Dictionary = c.observed
 		var got := _case(c.setup)
+		if str(c.id).begins_with("order."):
+			# 原版 addState 在 React 之前（log：add → react）；重制由 XDamage.finish 在 React 前调，这里只比结果
+			check(c.id + ".log", o.log == ["add:161", "react", "pre-done"], o.log)
+			check(c.id + ".after", got.after.target.states == o.out.target.states, [got.after, o.out])
+			continue
 		check(c.id + ".cache", got.cache == o.cache, [got.cache, o.cache])
 		check(c.id + ".sign", got.sign == signf(float(o.value)), [got.sign, o.value])
 		check(c.id + ".after", got.after.user.states == o.after.user.states and got.after.target.states == o.after.target.states, [got.after, o.after])
