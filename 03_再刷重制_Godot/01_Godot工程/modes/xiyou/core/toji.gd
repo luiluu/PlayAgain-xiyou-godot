@@ -39,8 +39,10 @@ extends RefCounted
 ## - apply 包装：命中后万里锁对其余活着的敌人溅射（倍率 0.33，觉醒中的主行动 0.50；内部行动、不判黑闪、不再溅射）；
 ##   天逆鉾给目标附封印 2634，次数 max(原次数或 1, 觉醒中的主行动 2／否则 1)，状态去掉时次数清零。
 ## - 封印失效（applyGlobal 包装）：带 2634 的行动者下一次主动技能失效并扣一次，普攻、防御、物品不扣。
+## - 命中／闪避／暴击：天与咒缚物理行动命中＋影速（速度比超出 1 的部分 ×0.15，至多 0.3）、被物理行动打时闪避＋影速；
+##   五感时主技能与武器库不被闪避，主技能、武器库、反弹读到的目标暴击闪避 ×0.34（西游闪避公式为 0，命中常满，参照只看得出后两项）。
 ## 未移植（第三期起，清单见交付单 cc_bajie-toji2「下期」）：武器库追击与借用特效、术师杀手减伤与反弹、
-##   暴君免负面状态与弱化、天与咒缚的命中／闪避、五感必中与暴击闪避、智能 AI 档案；说明框熟练度行（画面）；读档时 repair。
+##   暴君免负面状态与弱化、智能 AI 档案；说明框熟练度行（画面）；读档时 repair。
 ##   原版 makeDamageValue 包装是死代码（installDamageElementRuntime 后装、整个换掉 makeDamageValue 不调旧链），不移植。
 ## 参照：slice_probe（切片角色行与伤害行）、toji_probe（等级／进阶／血量各档的能力值、公式、钩子帧，tests/xiyou_toji.gd）。
 
@@ -432,6 +434,33 @@ static func _spread(logic, u, skill: Dictionary, source, rate: float) -> Array:
 	spread_rate = 0.0
 	internal = false
 	return out
+
+
+## shadowRate：快的一方相对慢的一方速度比超出 1 的部分 ×0.15，夹到 0～cap
+static func _shadow(faster, slower, cap: float) -> float:
+	return minf(cap, maxf(0.0, float(faster.agi) / maxf(1.0, float(slower.agi)) - 1) * 0.15)
+
+
+## itemHit 包装：天与咒缚的物理行动命中＋影速（夹值在外层）
+static func hit_bonus(u, skill: Dictionary, t) -> float:
+	return _shadow(u, t, 0.30) if XDamage.is_physical(skill) and knows(u, NO_MP) else 0.0
+
+
+## itemEva 包装：五感时主技能与武器库不被闪避
+static func sure(u, skill: Dictionary) -> bool:
+	var id := int(skill.get("id", 0))
+	return knows(u, SENSES) and (is_main(id) or is_random(id))
+
+
+## itemEva 包装：天与咒缚被物理行动打时闪避＋影速
+static func eva_bonus(u, skill: Dictionary, t) -> float:
+	return _shadow(t, u, 0.30) if XDamage.is_physical(skill) and knows(t, NO_MP) else 0.0
+
+
+## itemCri 包装：五感时主技能、武器库、反弹读到的目标暴击闪避 ×0.34
+static func cev_rate(u, skill: Dictionary) -> float:
+	var id := int(skill.get("id", 0))
+	return 0.34 if knows(u, SENSES) and (is_main(id) or is_random(id) or id == REFLECT) else 1.0
 
 
 ## Game_Action.applyGlobal 包装（付费之后）：带封印 2634 的行动者用主动技能（非物品、非普攻、非防御）时这次失效，扣一次，

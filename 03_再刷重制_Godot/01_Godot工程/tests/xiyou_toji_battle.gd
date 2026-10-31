@@ -155,6 +155,40 @@ func _script(c: Dictionary) -> void:
 	check(c.id + ".gap", absf(gap[0] - GAP) < 1e-4, gap[0])
 
 
+## 命中／闪避／暴击（参照 rates）：忘暴君、e0 加暴击闪避＋60%，再依次忘五感、天与咒缚
+func _rates(c: Dictionary) -> void:
+	var r := _battle()
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var e: XEnemy = logic.enemies[0]
+	a.forget_skill(XToji.TYRANT)
+	a.refresh_passive()
+	logic._state_add(e, int(c.setup.foeState))
+	var rows: Array = c.observed.rows
+	var i := 0
+	for tag in ["base", "noSenses", "noBond"]:
+		if tag == "noSenses":
+			a.forget_skill(XToji.SENSES)
+		elif tag == "noBond":
+			a.forget_skill(XToji.NO_MP)
+		a.refresh_passive()
+		for sid in [10216, 10220, 10224, 3]:
+			_rate_row(logic, a, e, sid, rows[i])
+			i += 1
+		_rate_row(logic, e, a, 3, rows[i])
+		i += 1
+	check("rates.covers", i == rows.size(), [i, rows.size()])
+	logic.end_battle(0)
+
+
+func _rate_row(logic: XBattleLogic, u: XBattler, t: XBattler, sid: int, want: Dictionary) -> void:
+	var sk := XDB.rec("Skills", sid)
+	var cri := clampf(u.cri * (1.0 - t.cev * XToji.cev_rate(u, sk)), 0.0, 1.0) if bool(sk.damage.critical) else 0.0  # 同 _apply 的暴击率
+	var got := [logic.item_hit(u, sk, t), logic.item_eva(u, sk, t), cri]
+	var exp := [float(want.hit), float(want.eva), float(want.cri)]
+	check("rates.%s.%s.%d" % [want.tag, want.user, sid], range(3).all(func(k): return absf(got[k] - exp[k]) < 1e-9), [got, exp])
+
+
 func _local() -> void:
 	# 反向：1 号主角普攻不收单目标、不溅射、不封印，甚尔的行动帧不动
 	var r := _battle()
@@ -181,8 +215,11 @@ func _run() -> void:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
 		if c.errors.is_empty():
 			seen += 1
-			_script(c)
-	check("covers_all", seen == 5, seen)
+			if c.id == "rates":
+				_rates(c)
+			else:
+				_script(c)
+	check("covers_all", seen == 6, seen)
 	_local()
 	finish()
 

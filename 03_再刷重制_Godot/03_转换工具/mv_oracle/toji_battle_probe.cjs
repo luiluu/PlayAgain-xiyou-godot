@@ -128,7 +128,17 @@ const SCRIPTS = {
 SCRIPTS.seal = [['act', 10215, 0], ['act', 10219, 0], ['foe', 0, 1, 1], ['foe', 0, 2, 0], ['foe', 0, 3, 1], ['foe', 0, 3, 1],
   ['act', 10216, 1], ['act', 10216, 1], ['act', 10219, 2], ['foe', 2, 3, 1], ['foe', 2, 3, 1], ['foe', 2, 3, 1]];
 const DRAWS = {flash: [0], seal: [1, 0]};
-const cases = [];
+// 命中／闪避／暴击（第二期④）：开战后忘掉暴君（暴击回到 1 以下才看得出暴击闪避）、e0 加暴击闪避＋60%（1467）；
+// 甚尔打 e0（主技能、武器库、反弹、普通技能 3）与 e0 用物理技能 3 打甚尔，各记 itemHit／itemEva／itemCri；再忘掉五感、天与咒缚各量一遍
+function rates() {
+  const env = battle(), {a, foes} = env, e = foes[0], out = [];
+  a.forgetSkill(10205); e.addState(1467); e.refresh();
+  const one = (u, t, sid) => { const x = new w.Game_Action(u); x.setSkill(sid); return {user: key(u), target: key(t), skill: sid, hit: x.itemHit(t), eva: x.itemEva(t), cri: x.itemCri(t)}; };
+  const sweep = tag => { for (const sid of [10216, 10220, 10224, 3]) out.push(Object.assign({tag}, one(a, e, sid))); out.push(Object.assign({tag}, one(e, a, 3))); };  // 敌人用物理的 3（普攻 1 在西游是魔法）
+  sweep('base'); a.forgetSkill(10206); sweep('noSenses'); a.forgetSkill(10203); sweep('noBond');
+  return {agi: [a.agi, e.agi], cev: e.cev, cri: a.cri, rows: out};
+}
+const cases = [makeCase('rates', {level: LEVEL, troop: TROOP, foeState: 1467}, rates)];
 for (const [name, steps] of Object.entries(SCRIPTS)) {
   cases.push(makeCase(`script.${name}`, {actor: ID, level: LEVEL, troop: TROOP, steps, draws: DRAWS[name] || []}, () => ({steps: run(steps, DRAWS[name])})));
 }
