@@ -325,7 +325,7 @@ func _battle_flow_original() -> void:
 	l.set_meta("pet_random", tape([0.0] + range(40).map(func(_i): return 0.5)))
 	l.execute(l.actors[0], XDB.rec("Items", 317), l.enemies[0])
 	l.run_events()
-	var captured := l.enemies[0].hidden and s.pets.list.size() == 1
+	var captured: bool = l.enemies[0].hidden and s.pets.list.size() == 1
 	l.turn = 5
 	var end := l.end_turn()
 	XPetCapture.FLEE_ALIVE_ONLY = true
