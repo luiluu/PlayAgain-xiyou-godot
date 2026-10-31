@@ -173,7 +173,20 @@ want tools && { if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; the
 want tools && { if python3 "$ENV_DIR/测试云端准备.py"; then ok "云端导入失败保护"; else bad "云端导入保护回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试提交守卫.py" >/dev/null 2>&1; then ok "主工作区 main 提交守卫"; else bad "提交守卫回归失败，单跑 07_开发环境/测试提交守卫.py 看详情"; fi; }
-want tools && { if python3 "$ENV_DIR/测试选测.py" >/dev/null 2>&1; then ok "选测对照与 检查.sh --affected"; else bad "选测回归失败，单跑 07_开发环境/测试选测.py 看详情"; fi; }
+# 测试选测满载偶发 1 项失败、单跑复现不了：失败时打出用例名，整份输出留在 本地结果/选测回归/ 当证据（tools22）
+if want tools; then
+  sel_log=$(mktemp -t xiyou_sel_test)
+  if python3 "$ENV_DIR/测试选测.py" >"$sel_log" 2>&1; then
+    ok "选测对照与 检查.sh --affected"
+  else
+    sel_keep=$ROOT/03_再刷重制_Godot/04_验证/本地结果/选测回归/$(date +%Y%m%d_%H%M%S)-$$.log
+    mkdir -p "${sel_keep:h}" && cp "$sel_log" "$sel_keep"
+    sel_cases=(${(f)"$(sed -n 's/^FAILED_CASE=\([^	]*\).*/\1/p' "$sel_log")"})
+    grep '^FAILED_CASE=' "$sel_log" | sed 's/^FAILED_CASE=/    /' | head -5
+    bad "选测回归失败：${${(j:、:)sel_cases}:-未打出用例名}；日志 $sel_keep（满载偶发时先单跑 07_开发环境/测试选测.py 对照）"
+  fi
+  rm -f "$sel_log"
+fi
 want tools && { if python3 "$ENV_DIR/测试角色同步提速.py" >/dev/null 2>&1; then ok "扩角色同步提速（缓存携带、手动种子隔离、六难度共用并发池）"; else bad "扩角色同步提速回归失败，单跑 07_开发环境/测试角色同步提速.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试事件探针分段.py" >/dev/null 2>&1; then ok "事件探针分段并行（均衡分组、拼回顺序逐字相同）"; else bad "事件探针分段回归失败，单跑 07_开发环境/测试事件探针分段.py 看详情"; fi; }
 # 内容覆盖（沙僧协助计划第 8 项）：缺素材／无效引用／未翻译不得出现基线外的新问题；修好或接受后 --update-baseline
