@@ -1,7 +1,7 @@
 # 交付：claude/bajie-warehouse
 
 - 车道／工作者：B 界面·规则／八戒（Claude，八戒_91）
-- 状态：进行中
+- 状态：可合并
 
 ## 方案修订（对 `提案_星级仓库_20261027.md` 第二节，按沙僧第七期 Q1～Q3、审查第 1 期 B1～B3、C1）
 
@@ -31,6 +31,7 @@
    - 画面 `XStarWarehouseScene`（`modes/xiyou/ui/star_warehouse.gd`，`save_mode` 一个画面两用）：分类窗 (0,1,1280,64)「装备／宠物」，列表 (0,65,1280,655) 两列、行高 36、17 行；装备图标＋品质色名字，宠物只写名字（存放列 `XPets.pet_name`，带「[出战]」；取出列原名、不去稀有度标签）；只有普通确定音；装备出说明卡，宠物不出（O-待定-5）。
    - 入口：`mv_script.gd` 认 `SceneManager.push(Scene_StarSaveWarehouse／Scene_StarWarehouse)` 两句脚本，`map_scene.gd` 加 `open_star_warehouse(save_mode)`；同一句写成插件指令照原版无操作；`PHWarehouse create <通用仓库>` 照旧建出用不到的 PH 仓库。
    - `xiyou_slice.json` 加 Map041（EV1 管理员、EV2 回 Map040），说明里那句「41 等星级仓库」改掉。
+   - `mv_event_core.gd` `_plugin_command` 加一支：Map041 EV1 误写成插件指令的 `SceneManager.push(Scene_StarSaveWarehouse)` 认作无操作（原版也没插件认它；覆盖检查原报「未翻译」）。`xiyou_event_compare` 的宿主加 `open_star_warehouse` 记场景名（新用例 m41e1p0）。
 2. **参照**：新探针 `mv_oracle/star_warehouse_probe.cjs`（入同步表 `star_warehouse.json`）在正式引擎建出两个画面，用列表 `processOk` 逐件存入（普通、PushDct、锁定、吞器供体、吞器异化）、宠物（出战、普通）、换局后取出、空格确定，记列表、背包、仓库、声音、提示、`ConfigManager.save` 次数（0）；浏览器参照页 `ui_reference/review_system_pages.js` 加 `star_warehouse`（9 态，压成 `tests/fixtures/star_warehouse_oracle.json`，`review_system_pages.py` 身份表加 Star_Warehouse.js）。
 3. **优化登记**（都可回退，`优化登记.md` 末五行）：O-待定-1 存取立即写盘（`o_save_now`）；O-待定-2 跨档异化装备存入清配置、取出换 uid（`o_alien_reset`，审查 B1）；O-待定-3 挡下吞器供体与待选重抽的异化装备（`o_block_bound`，审查 B2）；O-待定-4 PH 仓库存供体不复制（`XWarehouse.o_reserved_no_dup`，审查 C1，补登记）；O-待定-5 宠物列表不报错（原版进宠物列表即停机）。
 4. **专项 `xiyou_star_warehouse`**（78 项）：画面 9 态逐字对浏览器参照（文字、坐标、宽、字号、颜色、窗口矩形、光标、说明卡有无、仓库／宠物数据）；存取 18 步对探针（三开关切原版时全同；默认开时只有供体一步不同，另断言）；Q1 两档同号取出不撞号、gear_query 两件都在；待选重抽挡下与回退；写盘重读、损坏、路径；o_save_now 关时不写、`XConfig._write` 时才写；PH 仓库存供体两态；Map041 的三行脚本只开两次画面（存放、取出）。
@@ -56,11 +57,16 @@
 ## 待交叉核查
 
 - 新文件：`core/star_warehouse.gd`、`ui/star_warehouse.gd`、`tests/xiyou_star_warehouse.gd`、`mv_oracle/star_warehouse_probe.cjs`。
+- A 车道文件（小改，请总装留意）：`core/mv_event_core.gd`（`_plugin_command` 一支无操作）、`tests/xiyou_event_compare.gd`（宿主一个方法）。
 - 改动：`core/warehouse.gd`（`deposit` 的 O-待定-4 原版支）、`core/xconfig.gd`（`_write` 开头一行 `flush_pending`）、`map/mv_script.gd`、`map/map_scene.gd`、`xiyou_slice.json`（Map041）、`同步正式西游.py`（探针表一行）、`ui_reference/review_system_pages.js／.py`。没改原沙僧核心文件。
 
 ## 验证
 
-（待写）
+- 合 main（fa29dc7c，带来 mira_battle_probe 与同步表改动，`同步正式西游.py` 自动合并无冲突）后，`新建工作树.sh --补齐` 与 `同步正式西游.py --accept-additions` 都通过（「新增用例，已接受（不登记）」：events 5806→5808，Map041 两个事件），留了产物指纹。
+- `内容覆盖检查.py`：Map041 原报新问题 1（上面的插件指令），认作无操作后 new 0，已 `--update-baseline`（登记无变化）。
+- 本机选测 17 个场景：`xiyou_star_warehouse`（78/78）、`xiyou_warehouse`、`xiyou_rules`／`_d1b`／`_d1c`／`_d1d`、`xiyou_pets`、`xiyou_alien_workshop`、`xiyou_alien_config`、`xiyou_actor_warehouse`、`xiyou_global_vars`、`xiyou_options_basic`、`xiyou_options_misc`、`xiyou_floor_reach040`、`xiyou_transfer`、`xiyou_gear_search` 通过；`xiyou_event_compare` 首轮因新用例 m41e1p0（测试宿主没有 `open_star_warehouse`）退步 1 项，补上宿主方法后 `--only=m41,m40` 7/7 一致、5/5 通过（其余用例首轮已全一致，改动只加了宿主方法）。
+- 反向验证：见变更记录草稿第 4 条。
+- 没跑全量与非 Godot 检查。
 
 ## 没做／差异
 
@@ -70,4 +76,9 @@
 
 ## 本分支提交
 
-（待写）
+- 2b77df7c 交付单方案修订
+- a7afd1d8 原版探针 star_warehouse_probe
+- 995d4c15 XStarWarehouse／画面／脚本入口／参照页与专项；Map041 入切片
+- d2f565bd O-待定-1～5 登记、交付单草稿
+- 1870a488 Map041 插件指令那一行认作无操作
+- （本提交）event_compare 宿主补 open_star_warehouse；交付单可合并
