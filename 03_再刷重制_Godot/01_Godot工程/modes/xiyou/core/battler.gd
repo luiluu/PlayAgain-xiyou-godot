@@ -349,6 +349,7 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 		XAlienBattle.dying = null
 		if self is XEnemy:
 			XEnemyBook.note_death(self)  # AB_EnemyBook Game_Enemy.die：击败数即时 +1
+			XRaven.on_enemy_death(self)  # 渡鸦 Game_Enemy.die 包装：得魂、判铸印
 		XRaceBattle.on_death(self)  # 种族 die 包装：清反攻
 	if not state_ids.has(id):
 		state_ids.append(id)

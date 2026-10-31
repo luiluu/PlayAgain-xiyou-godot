@@ -47,6 +47,8 @@ var costume_off: Array[int] = []
 var actor_advance := {}
 ## 技能共享／羁绊／领袖技能的上次记录（XPartySkills，O-095 开着时随存档，存档键 partySkills；旧档没有为空）
 var party_skills := {}
+## 渡鸦灵魂与已铸印的阶（_codexRavenSoul／_codexRavenForgedStage，存档 codexRaven，见 XRaven；旧档没有为空＝0 魂、没铸过）
+var raven := {}
 var switches := {}                  # id -> bool
 var variables := {}                 # id -> 数值
 var self_switches := {}             # "map,event,A" -> bool
@@ -746,7 +748,7 @@ func to_dict() -> Dictionary:
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "actorOps": actor_ops,
 		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "vehicles": [vehicle(0), vehicle(1), vehicle(2)], "vehicleType": vehicle_type, "walkingBgm": walking_bgm, "battleback": battleback, "erasedEvents": erased_events, "mapEvents": map_event_snapshot.call() if map_event_snapshot.is_valid() else map_events, "encounterEnabled": encounter_enabled, "allowAutosave": allow_autosave, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "unknownOrigin": unknown_origin, "ecoFrac": eco_frac,
-		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "costumeOff": costume_off, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills)}
+		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "costumeOff": costume_off, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills), "codexRaven": XRaven.to_save(raven)}
 
 static func from_dict(d: Dictionary) -> XState:
 	# dev.099 once persisted strict engine-specific RNG state. Ignore that obsolete
@@ -813,6 +815,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.costume_off = XCostumes.from_save(d.get("costumeOff"))
 	s.actor_advance = XAdvance.from_save(d.get("actorAdvance"))
 	s.party_skills = XPartySkills.from_save(d.get("partySkills"))
+	s.raven = XRaven.from_save(d.get("codexRaven"))
 	for a in s.actors.values():a.refresh_passive()
 	for k in d.switches:
 		s.switches[int(k)] = bool(d.switches[k])
