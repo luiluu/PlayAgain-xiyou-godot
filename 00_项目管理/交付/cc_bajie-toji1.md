@@ -1,8 +1,8 @@
 # 交付：cc/bajie-toji1
 
 - 车道／工作者：C 规则／八戒（Claude，八戒_92 开分支后交接）
-- 状态：进行中
-- 分支从 cc/bajie-blackflash 末端 3d530eb8 切（总装六交代），工作树 `.claude/worktrees/compassionate-gagarin-ec734e`。
+- 状态：可合并
+- 分支从 cc/bajie-blackflash 末端 3d530eb8 切（总装六交代），工作树原为 `.claude/worktrees/compassionate-gagarin-ec734e`，八戒_93 改在 `.claude/worktrees/charming-thompson-b2b988`。
 
 ## 交接（八戒_92 → 下一位八戒）
 
@@ -46,7 +46,7 @@
 | 20 | 万里锁溅射 33%（觉醒 50%）、借用 16%（305-318、351-354） | 未移植 | 期二 |
 | 21 | apply 包装：段数计数、天逆鉾封印 2634 附加与次数（331-357） | 未移植 | 期二 |
 | 22 | 咒具切换豁免技能类别封印（359-366） | 未移植（异化 O-113 已提到） | 期二 |
-| 23 | 技能条件：主技能只能用当前形态、切换技能条件（367-377） | 未移植 | 期二 |
+| 23 | 技能条件：主技能只能用当前形态、切换技能条件（367-377） | `XToji.meets`，接在 `battle_logic.can_use`（切片加 171 后 wtype 参照覆盖到 10212，提前到期一） | 期一 |
 | 24 | 技能列表过滤 Window_SkillList.includes（378-386） | 逻辑未移植；画面 | 期二（逻辑）／画面 |
 | 25 | 咒具熟练度说明框 masteryInfo／Sprite_ItemHelp（387-405） | 未移植（画面） | 画面车道 |
 | 26 | 封印次数随 eraseState／clearStates 清（406-412） | 未移植 | 期二 |
@@ -70,10 +70,11 @@
 2. **接线**：`XActorModules`（setup、param、xparam、被动缓存，IDS 加 171）、`XActorDamageHooks`、`XFormulaExecution` 模块公式 toji、`XAdvance.advance` 后 `XToji.after_advance`、`mv_script` 号角招募 CodexToji；`XActor` 加 `param_native`（包装之内的原值）。转换器 `formula_program.py` 登记 CodexToji.damage 为模块公式；切片 `actors` 加 171（slice_probe、actor_passive_probe 等自动覆盖甚尔）。
 3. **参照与专项**：新探针 `mv_oracle/toji_probe.cjs`（31 例：等级 1～99 × 进阶 0／1 × 生命满／半的能力、暴击、被动缓存、技能表、成长与 8 个技能的结算，戴法宝一档，招募三例），新专项 `xiyou_toji`；`xiyou_actor_p0` 招募表加 9006→171。
    - 反向验证：拿掉大力（物攻与伤害对不上）、拿掉暴君（暴击、缓存、伤害对不上）、换成 1 号角色（钩子空、公式 0、能力不改），写在专项里常驻。
+4. **技能条件**（meetsSkillConditions 包装）：主技能只有当前形态那个能用，咒具切换要学了切换与对应主技能、且不是当前形态；`battle_logic.can_use` 接 `XToji.meets`。切片加 171 后 `xiyou_wtype` 参照覆盖到切换·游云 10212（当前已是游云形态，原版不能用），没接时 8 项失败，所以从期二提前。
 
 ## 下期
 
-- **期二（战斗内，按收益排）**：①咒具形态与切换（#28～31：开战第一形态、切换技能 endAction 换形态、复活回第一形态、主技能只能用当前形态 #23、战斗中技能列表 #24 逻辑、切换豁免类别封印 #22）；②多段与追加次数（startAction 记 `_tojiExtra`、游云 5＋追加段、万里锁／天逆鉾 1＋追加段第 2 段起 ×0.8、单目标、actionActionEffect 逐段；`XToji.formula` 里的 extra／index 换成战斗字段）与黑闪觉醒游云额外一击（XBlackFlash 的 extraHitSkill，`black_flash.gd` 文件头「未移植」那条）；③暴君免负面状态与弱化、学暴君清负面（#9，先看异化 O-106 的弱化包装顺序）；④五感必中与暴击闪避 ×0.34、天与咒缚影速命中／闪避（#13～15）；⑤武器库追击 50%（随机咒具、借用特效、天逆鉾 50% 封印）与万里锁溅射（#20、#28）；⑥天逆鉾封印 2634（附加、次数、吞技能、清次数，#21、#26、#27）；⑦术师杀手受魔法伤害 ×0.2 与反弹（#17、#19：钩子受击分支、反弹行动换属性）。
+- **期二（战斗内，按收益排）**：①咒具形态与切换（#28～31：开战第一形态、切换技能 endAction 换形态、复活回第一形态、战斗中技能列表 #24 逻辑、切换豁免类别封印 #22；技能条件 #23 已在期一）；②多段与追加次数（startAction 记 `_tojiExtra`、游云 5＋追加段、万里锁／天逆鉾 1＋追加段第 2 段起 ×0.8、单目标、actionActionEffect 逐段；`XToji.formula` 里的 extra／index 换成战斗字段）与黑闪觉醒游云额外一击（XBlackFlash 的 extraHitSkill，`black_flash.gd` 文件头「未移植」那条）；③暴君免负面状态与弱化、学暴君清负面（#9，先看异化 O-106 的弱化包装顺序）；④五感必中与暴击闪避 ×0.34、天与咒缚影速命中／闪避（#13～15）；⑤武器库追击 50%（随机咒具、借用特效、天逆鉾 50% 封印）与万里锁溅射（#20、#28）；⑥天逆鉾封印 2634（附加、次数、吞技能、清次数，#21、#26、#27）；⑦术师杀手受魔法伤害 ×0.2 与反弹（#17、#19：钩子受击分支、反弹行动换属性）。
 - **期三**：智能 AI 档案 aiProfile（#11，交智能 AI 车道或随期二末尾）。
 - **画面车道（只出逻辑记录，期二做完逻辑再交）**：咒具熟练度说明框两行（#25：「咒具熟练：Lv…；本级进度…」「当前咒具…」）；技能页里主技能显示规则（#24：技能页战技类别列主技能，战斗中只列切换技能）；招募两条右上角提示已走 `interp.host.toast`；切片现在导出了甚尔的行走图／脸图／SV 图（同步 changedInputs），`ui/actor_book.gd` 文件头写 169～171 没导出 SV 图，171 这条可以去掉、状态页可画立绘。
 - **读档 repair**：原版读档会再跑一次 repair（rank≥1 后升到 30 级学到的 10208 在下次读档被忘掉）；重制不跑，技能表上会同时有 10208 与 10210，数值不受影响（杰作优先）。要不要补，等期二一起看。
@@ -101,14 +102,22 @@
 - 新专项 `xiyou_toji`：68/68（31 例参照逐例＋3 条常驻反向验证）。
 - 反向验证（临时改代码，已还原）：霸王血铠已损生命系数 0.12→0.13、藏兵咒灵 1.11→1.12，5 项失败（4 档半血＋戴法宝档）。
 - 同步：`同步正式西游.py --accept-additions` 通过，测量只增（slice_d1～d6 加 171 角色行与伤害行、actor_passive、wtype、help_cards、新增 toji.json），来源核对 0 问题。
-- 选测：`检查.sh --oracle --affected dd374cdf`（待写结果）
+- 选测：`检查.sh --oracle --affected dd374cdf`，178 个场景 177 过、非 Godot 检查（content、guards、same_source、tools、文档登记）全过；挂的 `xiyou_wtype` 是切片加 171 后新覆盖的 8 项（10212 技能条件），补上 #23 后单跑 16429/16429。
+- 补 #23 后（改了 `battle_logic.gd`）补跑：`xiyou_wtype`、`xiyou_toji`（71 项，加换形态后的技能条件 3 项）、`xiyou_smart_ai` 四段、`xiyou_super_deploy`、`xiyou_combat`、`xiyou_actor_p0`，9 个场景全过。
+- 合 main（749a0945，饿狼第二期改了 `actor_modules.gd`／`actor_damage_hooks.gd`，两处冲突都两边保留）后：`新建工作树.sh --补齐`＋`同步正式西游.py --accept-additions` 通过（只增），补跑 `xiyou_toji`、`xiyou_actor_modules`、`xiyou_actor_p0`、`xiyou_wtype`、`xiyou_garou_battle`、`xiyou_garou_progress`、`xiyou_sukuna_battle`、`xiyou_module_hooks`、`xiyou_actor_advanced`、`xiyou_raven_soul`，10 个场景全过。
 
 ## 待交叉核查
 
-- 甲档（战斗核心）：`modes/xiyou/core/actor.gd`（加 `param_native`）——原沙僧核心文件，请重点核；`toji.gd` 能力值与伤害钩子、`actor_modules.gd`／`actor_damage_hooks.gd`／`formula_execution.gd`／`advance.gd` 挂点。
+- 甲档（战斗核心）：`modes/xiyou/core/actor.gd`（加 `param_native`）、`modes/xiyou/battle/battle_logic.gd`（`can_use` 接 `XToji.meets`）——原沙僧核心文件，请重点核；`toji.gd` 能力值与伤害钩子、`actor_modules.gd`／`actor_damage_hooks.gd`／`formula_execution.gd`／`advance.gd` 挂点。
 - 乙档：`mv_script.gd` 号角招募、切片加 171、转换器模块公式。
 - 丙档：`toji_probe.cjs`、`xiyou_toji`、`xiyou_actor_p0` 招募表。
 
 ## 本分支提交
 
-（待写）
+- 4c43f159 甚尔第一期接线（XToji、挂点、伤害钩子、模块公式、号角招募、进阶 repair、切片加 171）
+- 2503ef16 参照探针 toji_probe，登记进同步
+- 925b1410 专项 xiyou_toji
+- 93b99d4a 交付单（机制对照、下期、待交叉核查）
+- 4469eec6 技能条件 meetsSkillConditions
+- 7edb11b1 合 main（749a0945）
+- （本提交）交付单可合并
