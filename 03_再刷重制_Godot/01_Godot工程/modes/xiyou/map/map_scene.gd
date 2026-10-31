@@ -1272,6 +1272,17 @@ func open_actor_warehouse() -> void:
 	refresh_events()
 
 
+## 星级仓库（SceneManager.push(Scene_StarSaveWarehouse／Scene_StarWarehouse)）：通用仓库管理员「存放」「取出」，关闭后回到地图
+func open_star_warehouse(save_mode: bool) -> void:
+	hud.visible = false
+	var page := XStarWarehouseScene.new()
+	page.save_mode = save_mode
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 ## 更衣（SceneManager.push(Scene_ChangeClothes)）：衣橱管理员「查看衣橱」，关闭后回到地图；
 ## 替换／还原形象改的是玩家行走图（原版 characterName 每帧现取），回地图后刷新队首行走图
 func open_change_clothes() -> void:
