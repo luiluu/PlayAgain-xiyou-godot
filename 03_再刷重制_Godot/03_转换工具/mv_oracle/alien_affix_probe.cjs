@@ -337,15 +337,6 @@ battleCase('erosion', {affix: 'erosion', learn: [1924], config: {actorId: 1, ski
   {user: 'a', skill: 1924, target: 1, view: true}, {user: 'e1', def: S(11, 0)}, {user: 'a', skill: 1924, target: 1},
   {user: 'e0', skill: 1926}, {shield: {who: 'e0', value: 1000}}, {user: 'a', skill: 1924, view: true}, {user: 'a', skill: 1924, view: true},
   {user: 'e0', skill: 1928}, {user: 'a', skill: 1924, view: true}, {user: 'a', skill: 1}, {user: 'b', skill: 1}]);
-// 蚀术命中判定（审查第 2 期 D2／P3）：e0 先用 1926 留下可封的上次技能，再由角色 1 直接对活着的 e0 apply 选定的 1924：
-// 临时把 1924 的 scope 改成 9（对阵亡友方，复活类）时 used 为假、不算命中、不封印；scope 照旧时命中并封印
-battleCase('erosion.used', {affix: 'erosion', learn: [1924], config: {actorId: 1, skillId: 1924}}, [
-  {user: 'e0', skill: 1926}, {apply: {user: 'a', target: 'e0', skill: 1924, scope: 9}}, {apply: {user: 'a', target: 'e0', skill: 1924}}]);
-// 技能 HP 费用（YEP_SkillCore＋Adv:126-128）：搏命 3913（3% 生命上限）。空壳按开场参照上限算、看护盾够不够（护盾 1 时不能用、硬用扣到 0）、
-// 从护盾扣；连命从生命池扣；嫁祸由保护者（角色 8）的生命付
-battleCase('hollow.hpcost', {affix: 'hollow', learn: [3913]}, [{user: 'a', skill: 3913, view: true}, {set: {aShield: 1}}, {user: 'a', skill: 3913, view: true}]);
-battleCase('lifelink.hpcost', {affix: 'lifelink', learn: [3913], config: {actorId: 1, partnerId: 8}}, [{user: 'a', skill: 3913, view: true}]);
-battleCase('scapegoat.hpcost', {affix: 'scapegoat', learn: [3913], config: {actorId: 1, partnerId: 8}}, [{user: 'a', skill: 3913, view: true}]);
 // 第④批·装备类：吞器（本体 1044 武器，供体背包里的普通独立武器 6 指虎）：衣服栏（装备类型 4，穿皮甲 3）整场空出，
 // 借来供体的登记效果（命中、暴击各 +1%）；不继承供体的能力值；供体留在背包。逃跑结束后装备栏还原，供体、异化武器都不多不少
 battleCase('swallow', {affix: 'swallow', gear: true, donors: [6], body: 3, config: {actorId: 1, donorId: 'd0'}}, [
@@ -388,4 +379,14 @@ battleCase('hollow.mp', {affix: 'hollow'}, [{set: {aMp: 0.5}}, {event: {who: 'a'
 battleCase('glutton.mp', {affix: 'glutton'}, [{event: {who: 'a', value: 300, mp: true}}, {event: {who: 'a', value: -100, mp: true}}]);
 battleCase('insulation.mp', {affix: 'insulation'}, [{set: {aMp: 0.5}}, {event: {who: 'a', value: 300, mp: true, src: 'b'}},
   {event: {who: 'a', value: 300, mp: true}}, {event: {who: 'a', value: -100, mp: true, src: 'b'}}]);
+// 以下是后加的用例，放在末尾（同步按下标比对，插在中间会被当成改动）
+// 蚀术命中判定（审查第 2 期 D2／P3）：e0 先用 1926 留下可封的上次技能，再由角色 1 直接对活着的 e0 apply 选定的 1924：
+// 临时把 1924 的 scope 改成 9（对阵亡友方，复活类）时 used 为假、不算命中、不封印；scope 照旧时命中并封印
+battleCase('erosion.used', {affix: 'erosion', learn: [1924], config: {actorId: 1, skillId: 1924}}, [
+  {user: 'e0', skill: 1926}, {apply: {user: 'a', target: 'e0', skill: 1924, scope: 9}}, {apply: {user: 'a', target: 'e0', skill: 1924}}]);
+// 技能 HP 费用（YEP_SkillCore＋Adv:126-128）：搏命 3913（3% 生命上限）。空壳按开场参照上限算、看护盾够不够（护盾 1 时不能用、硬用扣到 0）、
+// 从护盾扣；连命从生命池扣；嫁祸由保护者（角色 8）的生命付
+battleCase('hollow.hpcost', {affix: 'hollow', learn: [3913]}, [{user: 'a', skill: 3913, view: true}, {set: {aShield: 1}}, {user: 'a', skill: 3913, view: true}]);
+battleCase('lifelink.hpcost', {affix: 'lifelink', learn: [3913], config: {actorId: 1, partnerId: 8}}, [{user: 'a', skill: 3913, view: true}]);
+battleCase('scapegoat.hpcost', {affix: 'scapegoat', learn: [3913], config: {actorId: 1, partnerId: 8}}, [{user: 'a', skill: 3913, view: true}]);
 process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）、MP 费用（缄默、饕餮）、借技能（百相、无相）、蚀术、第④批装备类（吞器、献器）、补漏（setHp、阵亡保留、锁队检查已倒下与重复绑定、逆祷反击与连击与持续伤害帧、事件增减 MP）', config, cases}) ? 0 : 1);
