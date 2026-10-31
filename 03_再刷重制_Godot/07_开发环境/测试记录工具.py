@@ -209,6 +209,26 @@ class ReviewListTests(unittest.TestCase):
         r.git('commit', '-q', '-m', '审查线程自己的合并\n\n执行者: Claude（唐僧）\n核查: 无\n')
         self.assertNotIn('审查线程自己的合并', self.labels())
 
+    def test_cc_names_are_recognized_like_claude(self):
+        # Kyo 10-31 把 claude 改叫 cc：分支 cc/…、执行者 cc（…）、条目【cc·…】核查、核查者 cc（审查）都照旧销账
+        r = self.repo
+        r.put('03_再刷重制_Godot/h.py', 'x')
+        r.commit('cc 的提交', '审查', 'cc（哪吒）')
+        r.git('checkout', '-q', '-b', 'cc/lane2')
+        r.put('03_再刷重制_Godot/i.py', 'x')
+        r.commit('分支上的提交', '审查', 'cc（悟空）')
+        r.git('checkout', '-q', 'main')
+        r.git('merge', '-q', '--no-ff', '-m', '合并 cc/lane2', 'cc/lane2')
+        items = self.labels()
+        self.assertEqual(items['cc 的提交']['executor'], 'cc（哪吒）')
+        self.assertIn('合并 cc/lane2', items)
+        r.put(LOG, '# 变更记录\n\n## 2099-01-01 【cc·审查】核查 cc/lane2：通过\n')
+        items = self.labels()
+        self.assertNotIn('合并 cc/lane2', items)                    # 分支名 cc/… 能销整批
+        self.assertIn('cc 的提交', items)
+        r.put(LOG, '# 变更记录\n\n## 2099-01-01 【cc·哪吒】核查 claude/lane\n\n- 核查者: cc（审查）\n')
+        self.assertNotIn('合并 claude/lane', self.labels())     # 核查者行写 cc（审查）也认，且仍销旧的 claude/ 分支
+
     def test_dev_numbers(self):
         self.assertEqual(review.dev_numbers('dev.081／083／085、dev.086～088'), {81, 83, 85, 86, 87, 88})
 
