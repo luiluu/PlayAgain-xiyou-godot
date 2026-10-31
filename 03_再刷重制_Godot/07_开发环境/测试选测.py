@@ -664,5 +664,9 @@ class CheckerTests(Fixture):
 if __name__ == '__main__':
     result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__]))
     passed = result.testsRun - len(result.failures) - len(result.errors)
+    # 满载时偶发 1 项失败、单跑复现不了（哪吒_10）：失败时把用例名和末行原因单独打出，检查.sh 留日志当证据（tools22）
+    for case, trace in result.failures + result.errors:
+        lines = [x for x in trace.strip().splitlines() if x.strip()]
+        print('FAILED_CASE=%s\t%s' % (case.id().rsplit('.', 2)[-2] + '.' + case.id().rsplit('.', 1)[-1], lines[-1][:240] if lines else ''))
     print('TEST_RESULT=' + json.dumps({'passed': passed, 'total': result.testsRun}))
     raise SystemExit(0 if result.wasSuccessful() else 1)
