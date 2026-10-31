@@ -292,6 +292,10 @@ static func _statements(js: String, interp) -> Array:
 			for line in XYomiJingliu.recruit(s, XYomiJingliu.YOMI if st.begins_with("CodexYomi") else XYomiJingliu.JINGLIU):
 				interp.host.toast(line)
 			continue
+		if st == "CodexYunshang.recruit()":  # 公共事件 9010：174 云裳入队（见 XYunshang.recruit；$.toaster 提示）
+			XYunshang.recruit(s)
+			interp.host.toast(XYunshang.RECRUIT_TEXT)
+			continue
 		if st == "CodexRaven.recruit()":  # 公共事件 9002：167 渡鸦入队（见 XRaven.recruit；$.toaster 提示）
 			if XRaven.recruit(s):
 				interp.host.toast(XRaven.RECRUIT_TEXT)

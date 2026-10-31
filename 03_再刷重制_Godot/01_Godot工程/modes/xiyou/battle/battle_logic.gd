@@ -474,6 +474,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if not XYomiJingliu.meets(a, skill):  # 黄泉 meetsSkillConditions：残梦不满 9 不能用 10174
 		return false
+	if not XYunshang.meets(a, skill, self):  # 云裳 meetsSkillConditions：没解锁、敕衣点神要有人穿天衣、收针要有人觉醒
+		return false
 	if not XSukuna.meets(a, skill, self):  # 宿傩 meetsSkillConditions：解锁、领域冷却、神灶要蓄力目标、神灶：开要准备层
 		return false
 	if not XMira.meets(a, skill):  # 米拉 meetsSkillConditions：人形／黑龙技按形态、解放的进阶与等级、劫焰不能单放
@@ -556,7 +558,7 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Arr
 			if not alive(friends).is_empty():
 				out.append(_random_target(alive(friends)))
 		return out
-	return XAlienBattle.filter_targets(a, skill, _targets_for(a, skill, chosen))
+	return XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, _targets_for(a, skill, chosen)))  # 云裳云丝展幅 makeTargets 包装在异化之内
 
 
 func _targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Array:
@@ -1399,7 +1401,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击（isAttack：此刻的 attackSkillId）的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
-		var times := XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, 1)))  # 黄泉 numRepeats 包装（也开始新行动）；渡鸦包装在里层
+		var times := XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, 1))))  # 黄泉 numRepeats 包装（也开始新行动）；渡鸦包装在里层、云裳双针 ×2 在外层
 		var list := []
 		for t in targets_for(u, skill, chosen):
 			for i in range(maxi(1, times)):
@@ -1411,7 +1413,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		logs.append_array(XSukuna.begin(self, u, skill, list))  # 宿傩 startAction 包装：领域展开、施放帧
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		return logs
-	var repeats := XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1)))))  # 黄泉 numRepeats 包装；渡鸦冥羽连葬在里层
+	var repeats := XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1))))))  # 黄泉 numRepeats 包装；渡鸦冥羽连葬在里层
 	var targets := targets_for(u, skill, chosen)
 	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
@@ -1577,14 +1579,14 @@ static func certain_hit(u: XBattler, skill: Dictionary) -> bool:
 ## userHitRate 物理 user.hit、魔法 user.hit*1.1、必中 10000000；targetEvadeRate 物理 target.eva、魔法 target.mev、必中 0）；
 ## 最后 installDamageElementRuntime 夹到 0～1。Olivia_AntiPlayerStress 的命中修正在西游关闭（Hit Rate Stacking=false）。
 func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
-	if certain_hit(u, skill) or XYomiJingliu.sure(u, skill):  # 黄泉技能 itemHit 包装：必中
+	if certain_hit(u, skill) or XYomiJingliu.sure(u, skill) or XYunshang.sure(u, skill):  # 黄泉技能、云裳伤害技能 itemHit 包装：必中
 		return 1.0
 	return clampf(_hit_formula("Accuracy Formula", "skillHitRate * (userHitRate - targetEvadeRate)", u, skill, t), 0.0, 1.0)
 
 
 ## itemEva：YEP「Evade Formula」（西游为 0）夹到 0～1。原版闪避已并入命中公式。
 func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
-	if XYomiJingliu.sure(u, skill) or XSukuna.no_evade(u, skill, t):  # 黄泉技能、宿傩斩击打有看破的目标 itemEva 包装：不闪避
+	if XYomiJingliu.sure(u, skill) or XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t):  # 黄泉技能、云裳伤害技能、宿傩斩击打有看破的目标 itemEva 包装：不闪避
 		return 0.0
 	return clampf(_hit_formula("Evade Formula", "0", u, skill, t), 0.0, 1.0)
 
@@ -1725,6 +1727,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		var cri := u.cri * (1.0 - dt.cev) if bool(dmg.critical) else 0.0
 		if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
 			cri = 1.0
+		cri = XYunshang.cri(u, skill, cri)  # 云裳 itemCri 包装：戴织神天梭 +3
 		r.critical = _float("critical") < clampf(cri, 0.0, 1.0)
 		_action_resources.result(dt).critical = r.critical
 		var previous_record := _damage_record

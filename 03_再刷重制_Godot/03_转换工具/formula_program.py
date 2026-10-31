@@ -375,6 +375,8 @@ MODULE_FORMULAS.update({f'CodexSukuna.damage(a,b,{i},this)': 'sukuna' for i in [
 MODULE_FORMULAS.update({f'CodexYomi.damage(a,b,{i})': 'yomi' for i in range(10171, 10175)})
 # 170 镜流 CodexJingliu.damage(a,b,id)：10187～10193（XYomiJingliu.j_formula）
 MODULE_FORMULAS.update({f'CodexJingliu.damage(a,b,{i})': 'jingliu' for i in range(10187, 10194)})
+# 174 云裳 CodexYunshang.formula(this,a,b)：10270、10271、10274、10282、10286（XYunshang.formula）
+MODULE_FORMULAS['CodexYunshang.formula(this,a,b)'] = 'yunshang'
 # 167 渡鸦 5 个伤害技能：整条公式含 CodexRaven.legionStrikeRate／skillCoefficient（XRaven.formula 照原文逐技能写）
 MODULE_FORMULAS.update({re.sub(r'\s+', '', f): 'raven' for f in [
     '(a.mat * 78 + a.mmp * 39) * (CodexRaven.legionStrikeRate(a) * CodexRaven.skillCoefficient(a, 10122))',
