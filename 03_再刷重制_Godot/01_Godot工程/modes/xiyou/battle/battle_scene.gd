@@ -1090,7 +1090,7 @@ func _select_target(b) -> void:
 
 ## 优化 O-107：选敌时的毒鸡汤说明卡贴在该敌人旁边，选到没有毒鸡汤的敌人就收起。
 ## false 照原版：卡片位置从上一张卡的位置再按 setItem 修正（每次都会再挪一次），选到没有毒鸡汤的敌人时上一段文字留着。
-const POISON_HELP_NEAR := true
+static var POISON_HELP_NEAR := true
 
 ## Window_BattleEnemy.updateHelp 的种族包装：本回合有人在该敌人身上记了毒鸡汤时，说明卡（Sprite_ItemHelp.setText）写「敌人名＋说明」；
 ## YEP 的 setBattler 说明卡上没有（异常被吞），所以没有毒鸡汤时原版什么也不画。
