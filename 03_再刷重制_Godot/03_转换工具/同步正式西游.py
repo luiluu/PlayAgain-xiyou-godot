@@ -49,7 +49,7 @@ sys.path.insert(0, str(HERE))
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT  # noqa: E402
 from incremental_sync import SHARDS, ProbeCache
 from oracle_additions import (compare_directories, current_digest, payload, source_preserved, has_error, retained_errors_unchanged,  # noqa: E402
-                              load_acceptances, apply_acceptances, change_candidates, KEYS, groups)
+                              load_acceptances, apply_acceptances, change_candidates, field_keys, groups)
 
 ORACLE_DIR = HERE / 'mv_oracle'
 SANDBOX = ORACLE_DIR / '.sandbox'
@@ -217,7 +217,32 @@ def godot_import(log=None) -> None:
         raise RuntimeError('Godot 引擎或工程目录缺失，无法确认导入')
 
 
-def diff_paths(a, b, path='', out=None, limit=20):
+def keyed_diff(a, b, fields, path, out, limit):
+    """按稳定键对齐的列表差异：新增键、删除键、同键内容改变（插在中间、重排不再报成一串下标改动，tools23）。键不全时返回 False。"""
+    try:
+        ga, gb = groups(a, fields), groups(b, fields)
+    except ValueError:
+        return False
+    def label(key):
+        return '[' + ','.join('%s=%s' % (k, v if isinstance(v, str) else json.dumps(v, ensure_ascii=False)) for k, v in json.loads(key)) + ']'
+    for key in sorted(ga.keys() | gb.keys()):
+        if len(out) >= limit:
+            break
+        if key not in gb:
+            out.append(path + label(key) + ' 删除')
+        elif key not in ga:
+            out.append(path + label(key) + ' 新增')
+        elif ga[key] != gb[key]:
+            if sum(ga[key].values()) == 1 and sum(gb[key].values()) == 1:
+                diff_paths(json.loads(next(iter(ga[key]))), json.loads(next(iter(gb[key]))), path + label(key), out, limit)
+            else:
+                out.append(path + label(key) + ' 同键 %d→%d 条' % (sum(ga[key].values()), sum(gb[key].values())))
+    return True
+
+
+def diff_paths(a, b, path='', out=None, limit=20, name=None):
+    """给人看的测量差异路径。name（参照文件名）给出时，顶层带稳定键的列表（oracle_additions 的 KEYS 与自动认的 cases）按键对齐；
+    其余列表照旧按下标。是否放行由 compare_directories 判，这里只是报告。"""
     out = [] if out is None else out
     if len(out) >= limit:
         return out
@@ -227,6 +252,9 @@ def diff_paths(a, b, path='', out=None, limit=20):
         for k in sorted(set(a) | set(b), key=str):
             if k not in a or k not in b:
                 out.append(path + '/' + str(k))
+            elif (name and not path and isinstance(a[k], list) and isinstance(b[k], list) and a[k] != b[k]
+                  and (fields := field_keys(name, k, a[k], b[k])) and keyed_diff(a[k], b[k], fields, '/' + str(k), out, limit)):
+                continue
             else:
                 diff_paths(a[k], b[k], path + '/' + str(k), out, limit)
     elif isinstance(a, list):
@@ -396,9 +424,6 @@ def withdraw_baseline(old_dir: Path, new_dir: Path, out_dir: Path, dropped: dict
                 for k in gone:
                     blame(old.name, k, k)
                     del data[k]
-            keys = dict(KEYS.get(old.name, {}))
-            if old.name.startswith('slice_d'):
-                keys['damage'] = lambda row: (('troop', 'actor', 'skill') if 'actor' in row else ('troop', 'enemy', 'target', 'skill'))
             for field in (a.keys() & b.keys()) if old.name != 'maps.json' else ():
                 x, y = a[field], b[field]
                 if isinstance(x, dict) and isinstance(y, dict) and (old.name.startswith('slice_d') and field in ('enemies', 'actors')
@@ -412,10 +437,10 @@ def withdraw_baseline(old_dir: Path, new_dir: Path, out_dir: Path, dropped: dict
                             unattributed.append('%s %s:%s' % (old.name, field, k))
                     data[field] = {k: v for k, v in x.items() if k in y}
                     gone += ['%s:%s' % (field, k) for k in drop]
-                elif field in keys and isinstance(x, list) and isinstance(y, list):
+                elif isinstance(x, list) and isinstance(y, list) and (fields := field_keys(old.name, field, x, y)):
                     try:
-                        have = set(groups(y, keys[field]))
-                        rows = [(next(iter(groups([row], keys[field]))), row) for row in x]
+                        have = set(groups(y, fields))
+                        rows = [(next(iter(groups([row], fields))), row) for row in x]
                     except ValueError:
                         continue   # 缺稳定键：不动，交给照常比较报问题
                     for k, row in rows:
@@ -931,7 +956,7 @@ def _main() -> int:
         if not old.exists():
             measure[f.name] = ['新增参照']
             continue
-        d = diff_paths(strip(json.loads(old.read_text())), strip(json.loads(f.read_text())))
+        d = diff_paths(strip(json.loads(old.read_text())), strip(json.loads(f.read_text())), name=f.name)
         if d:
             measure[f.name] = d
     report['measurementChanges'] = measure

@@ -75,7 +75,7 @@ class AcceptedBaselineTests(unittest.TestCase):
     def set_payload(self, data):
         (self.app / 'payload.json').write_text(json.dumps(data))
 
-    def run_sync(self, *extra, do_import=False, cache_error=False, lane=None):
+    def run_sync(self, *extra, do_import=False, cache_error=False, lane=None, oracle_file='events.json'):
         real_run = subprocess.run
 
         def external(command, **kwargs):
@@ -99,7 +99,7 @@ class AcceptedBaselineTests(unittest.TestCase):
         output = io.StringIO()
         with contextlib.ExitStack() as stack:
             stack.enter_context(mock.patch.multiple(sync, ROOT=self.root, HERE=self.tools, ORACLE_DIR=self.oracle,
-                                SANDBOX=self.oracle / '.sandbox', PROBES=[(['baseline_probe.cjs'], ['events.json'])],
+                                SANDBOX=self.oracle / '.sandbox', PROBES=[(['baseline_probe.cjs'], [oracle_file])],
                                 run=export, tools_digest=lambda *args: 'fixture'))
             stack.enter_context(mock.patch.object(sync.subprocess, 'run', side_effect=external))
             stack.enter_context(mock.patch.object(sync, 'godot_import', side_effect=self.import_error))
@@ -358,6 +358,53 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.set_payload({'cases': [{'id': 'stable', 'value': 3}]})
         self.assertEqual(self.run_sync('--accept-changes', str(spec))[0], 2)
         self.assertEqual(self.run_sync('--accept-additions')[0], 2)
+
+    def test_unregistered_cases_align_by_id_insert_reorder_delete(self):
+        """没登记 KEYS 的探针 cases（如 alien_battle、shield）按 id 对齐（tools23，悟空交接的同步坑）：插在中间只算新增、
+        重排不算变化、删一条照旧拒收；报告的测量变化按键列，不再是一串下标；改一条的接受单按 [["id",…]] 对上。"""
+        name = 'novel_cases.json'
+        row = lambda i, v=1: {'id': i, 'value': v}
+        (self.gen / 'oracle' / name).write_text(json.dumps({'hostScope': 'x', 'cases': [row('a'), row('b'), row('c')]}))
+        (self.oracle / 'baseline_probe.cjs').write_text(
+            "require('fs').copyFileSync(process.env.XIYOU_APP + '/payload.json', '.sandbox/%s');\n" % name)
+        self.set_payload({'hostScope': 'x', 'cases': [row('a'), row('x'), row('b'), row('c')]})
+        result, report = self.run_sync(oracle_file=name)
+        self.assertEqual(result, 2)                                             # 只增新用例：要 --accept-additions
+        self.assertEqual(report['measurementChanges'][name], ['/cases[id=x] 新增'])
+        self.assertEqual(report['additionCheck']['additions'][name], [{'collection': 'cases', 'key': '[["id","x"]]', 'count': 1}])
+        self.assertEqual(self.run_sync('--accept-additions', oracle_file=name)[0], 0)
+        self.set_payload({'hostScope': 'x', 'cases': [row('c'), row('b'), row('x'), row('a')]})
+        result, report = self.run_sync(oracle_file=name)
+        self.assertEqual(result, 0, report['result'])
+        self.assertNotIn(name, report['measurementChanges'])
+        self.set_payload({'hostScope': 'x', 'cases': [row('c'), row('x'), row('a')]})
+        result, report = self.run_sync('--accept-additions', oracle_file=name)
+        self.assertEqual(result, 2)
+        self.assertEqual(report['measurementChanges'][name], ['/cases[id=b] 删除'])
+        self.assertIn(name, report['additionCheck']['problems'])
+        self.set_payload({'hostScope': 'x', 'cases': [row('c'), row('b'), row('x', 2), row('a')]})
+        result, report = self.run_sync(oracle_file=name)
+        self.assertEqual(result, 2)
+        self.assertEqual(report['measurementChanges'][name], ['/cases[id=x]/value'])
+        (candidate,) = report['changeCandidates']
+        self.assertEqual((candidate['key'], candidate['fields']), ('[["id","x"]]', ['value']))
+        result, report = self.run_sync('--accept-changes', str(self.acceptance(report)), oracle_file=name)
+        self.assertEqual(result, 0, report['result'])
+
+    def test_unkeyed_or_duplicate_cases_still_compare_whole(self):
+        name = 'novel_cases.json'
+        (self.oracle / 'baseline_probe.cjs').write_text(
+            "require('fs').copyFileSync(process.env.XIYOU_APP + '/payload.json', '.sandbox/%s');\n" % name)
+        for old, new in [([{'v': 1}], [{'v': 1}, {'v': 2}]),                                  # 没有 id／key
+                         ([{'id': 'a', 'v': 1}], [{'id': 'a', 'v': 1}, {'id': 'a', 'v': 2}])]:  # 重号
+            (self.gen / 'oracle' / name).write_text(json.dumps({'cases': old}))
+            self.set_payload({'cases': new})
+            result, report = self.run_sync('--accept-additions', oracle_file=name)
+            self.assertEqual(result, 2)
+            self.assertEqual(report['additionCheck']['problems'][name], ['非新增用例字段改变：cases'])
+            self.assertIn('/cases 长度 1→2', report['measurementChanges'][name])
+            for p in (self.root / '03_再刷重制_Godot/04_验证/本地结果/同步基线').iterdir():
+                shutil.rmtree(p)
 
     def test_acceptance_needs_additions_flag_same_source_and_covers_every_problem(self):
         self.set_payload({'cases': [{'id': 'stable', 'value': 2}, {'id': 'new', 'value': 3}]})
