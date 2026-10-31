@@ -2,7 +2,7 @@
 
 - 车道／工作者：C 规则／悟空（cc）
 - 基线：从 cc/wukong-battle-gaps3 末端 d38414b7 切出；实现前合了 main（含 gaps3、rollback2）。
-- 状态：进行中（实现与专项已做，相关战斗场景在跑）
+- 状态：可合并
 
 ## 接手要点（给下一位悟空）
 
@@ -66,7 +66,7 @@
 
 - 参照：`pushstate_probe` 12 例无报错（正式冻结 v0.28）。
 - 专项：`xiyou_pushstate` 52/52。反向：去掉 `_push_states` 钩子 46/52；去掉「目标已有不挂」51/52（already 用例回合被重置）；复原后全过。
-- 相关战斗场景（本机）：待写
+- 相关战斗场景（本机）：`xiyou_battle`、`xiyou_combat`、`xiyou_passive_content`、`xiyou_challenge_passives`、`xiyou_battle_gaps`、`xiyou_state_effects*`、`xiyou_custom_damage`、`xiyou_alien_battle`、`xiyou_mira_battle`、`xiyou_sukuna_battle`、`xiyou_determinism`、`xiyou_actor_p0` 共 20 个场景全部通过（758 秒）。
 - 选测：`选测.py main` 选出 185 个场景（改了 actor.gd、battle_logic.gd），交总装合并时跑。注意：这套原来不生效，带这些被动的角色战斗结果会变，六难度对照（xiyou_rules*）若有带标签的角色可能要重看。
 - 改动的原沙僧核心文件：`actor.gd`（`refresh_passive`）、`battle_logic.gd`（`_damage_value` 两行、`_apply` 一行、新 `_push_states`）。
 
