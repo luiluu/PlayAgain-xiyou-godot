@@ -1,7 +1,7 @@
 # 交付：cc/bajie-toji3
 
 - 车道／工作者：C 规则／八戒（cc，八戒_93）
-- 状态：进行中
+- 状态：可合并
 - 分支从 cc/bajie-toji2 末端 233f08c6 切（总装八派），工作树 `.claude/worktrees/charming-thompson-b2b988`。机制编号沿用 toji1 交付单「机制对照」。
 
 ## 做到哪
@@ -38,7 +38,9 @@
 ## 验证
 
 - `xiyou_toji_battle` 774/774、`xiyou_toji` 71/71。
-- （待写：同步与相关战斗场景）
+- 同步 `同步正式西游.py --accept-additions`：测量不变（toji_battle.json 两段新用例已在本工作树产物里），来源核对 0 问题。
+- main 在 233f08c6 之后的新提交（镜流第二期收尾、审查第 15 期）没碰本分支文件，没合（照车道须知「验收只做一轮」）。
+- 相关战斗场景 33 个（甚尔两项、宿傩／黄泉／镜流两期／米拉／饿狼两项／渡鸦、行动序列、combat、battle_gaps、smart_ai 四段、异化两项、小猫、琦玉、state_effects、battle_events、otb、actor_modules、wtype、shield、种族、battle_common_events、custom_damage、settlement、imported_balance）全部通过；按改动选测超过 40 个的全量交合并时跑。
 
 ## 待交叉核查
 
@@ -49,3 +51,5 @@
 
 - 6506db8d ⑦ 术师杀手
 - d6a12770 ⑤ 武器库
+- 31d3efed 交付单
+- （本提交）交付单可合并
