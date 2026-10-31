@@ -49,6 +49,20 @@ beginAction／targetRow／base 第 203～215 行，makeDamageValue 第 217 行�
 
 优化登记草稿：无（本期没有改原版行为的地方）。
 
+## 饿狼余项（非画面，总装七让列）
+
+对照原版 installNativeGarouRuntime.js，三期之后逻辑层只剩下面这些，**不够一期**，没开 cc/bailong-garou4，等总装派下一个角色：
+
+| 余项 | 量 | 说明 |
+| --- | --- | --- |
+| 输入阶段预排模式：琦玉后可选认真一拳（meetsSkillConditions 看 `_phase==='input'` 的已排行动） | 约 5 行 | 要等画面车道的指令输入能给出「本回合已排的行动」，逻辑层留一个参数就行 |
+| 读档同步（extractSaveContents 包装：clearBattle＋G.sync） | 约 3 行 | 战斗数据不进存档；读档同步只影响突破夹门槛与法宝进化，正常流程里这两样都在同步时已做，读进来的档不会处在要修的状态（不迁移 MV 旧档） |
+| applyCritical 0 伤不暴击 | 1 行 | 伤害 0 时暴击与否不改数值，只影响弹字 |
+| skillMasteryLevel 包装（追击／反击借主拳熟练度） | 1 行 | 重制没有熟练度系统，做不了 |
+| 技能分类 addedSkillTypes [2,1,5,4]、指令窗 [2,1,5] | 3 行 | 能不能用已经由职业特性管（专项 meets.s6 证实星空魔法拳能用），剩下的是菜单顺序，归画面 |
+
+画面层（归画面车道）：performAttack 突刺动作、技能名品质色、法宝图标图集、图鉴立绘、describeRelic 法宝说明、星空外观 Garou_Cosmic、战斗日志的追击／反击、胜利提示 victory_texts、进阶界面原因提示。
+
 ## 待交叉核查
 
 - 原 Codex 核心文件：改了 `modes/xiyou/battle/battle_logic.gd`——`execute` 开头 `XGarou.begin`；`_invoke` 反击率加 `XGarou.no_counter`、普通 apply 之后 `XGarou.applied`；`act` 与强制行动在宿傩收尾之前 `XGarou.finish`；`can_use` 加 `XGarou.meets`；`turn_end_battler` 末尾 `XGarou.turn_end`；`end_battle` 加 `XGarou.clear_battle`。没碰 note_costs 与经验奖励（悟空 gaps2）。
@@ -82,3 +96,5 @@ beginAction／targetRow／base 第 203～215 行，makeDamageValue 第 217 行�
 - b15c1613 XGarou 第三期与专项 xiyou_garou_battle
 - d79a35f9 交付单草稿、头注释
 - 50798646 合并 main
+- 6be4375b 补 xiyou_garou_battle.gd.uid
+- 交付单补饿狼余项清单
