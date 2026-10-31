@@ -1,7 +1,7 @@
 # 交付：cc/bailong-garou3
 
 - 车道／工作者：E 角色专属／白龙_7（cc，项目线程「做饿狼第二期」local_f2e515ec）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -56,7 +56,9 @@ beginAction／targetRow／base 第 203～215 行，makeDamageValue 第 217 行�
 
 ## 验证
 
-（待写）
+- 专项 xiyou_garou_battle 255/255（本机）。
+- 相关战斗选测（本机，并行 2，负载 30～40，用时 2350 秒）：xiyou_garou_battle、xiyou_garou_progress、xiyou_actor_modules、xiyou_action_sequence、xiyou_alien_battle、xiyou_battle、xiyou_battle_gaps、xiyou_cat、xiyou_custom_damage、xiyou_mira_battle、xiyou_otb、xiyou_race_battle、xiyou_raven_soul、xiyou_rules 与 d1b／d1c／d1d、xiyou_smart_ai 与 _b／_c／_d、xiyou_sukuna_battle（含黑闪）、xiyou_yomi_battle、xiyou_battle_events，24 个全部通过，无偶发。
+- 没改切片、转换器、全量同步里的探针、界面，没跑同步与事件对照。已合 main 50798646（带进的只有工具、文档与 garou2 的 .uid），合进来的没有游戏代码，没重跑。
 
 ## 交接板
 
@@ -78,3 +80,5 @@ beginAction／targetRow／base 第 203～215 行，makeDamageValue 第 217 行�
 - 3dd857b1 补 tests/xiyou_garou_progress.gd.uid
 - 35b010b0 参照 garou_battle_probe 与夹具
 - b15c1613 XGarou 第三期与专项 xiyou_garou_battle
+- d79a35f9 交付单草稿、头注释
+- 50798646 合并 main
