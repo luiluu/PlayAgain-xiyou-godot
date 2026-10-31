@@ -231,7 +231,7 @@ func _local() -> void:
 	a.forget_skill(10215)
 	check("local.unlearned_switch", not logic.can_use(a, XDB.rec("Skills", 10215)) and not XToji.set_shape(logic, a, 3))
 	logic.end_battle(0)
-	check("local.end_clears", not XToji.SHAPES.any(func(id): return a.state_ids.has(id)) and XToji._logic == null)
+	check("local.end_clears", not XToji.SHAPES.any(func(id): return a.state_ids.has(id)) and not XToji.battling)
 
 
 func _run() -> void:

@@ -76,8 +76,8 @@ static var _negative_re := RegEx.create_from_string("中毒|毒|灼|诅咒|封�
 static var _buff_type_re := RegEx.create_from_string("<BuffType:([^>]+)>")
 static var _system_states := {}
 
-## 战斗内：当前战斗（开战设、结束清；复活回形态与切换用）
-static var _logic = null
+## 战斗内：开战设、结束清（复活回形态只在战斗中）。不存战斗对象本身：静态变量拿着它，没走 end_battle 的测试退出时引擎会崩
+static var battling := false
 ## 本次行动（startAction 记，endAction 清）：switch 切换到的形态；count 段数、extra 追加次数、index 第几段、done 段已打完
 static var action := {}
 ## 内部行动（溅射）进行中与它的倍率
@@ -369,7 +369,7 @@ static func set_shape(logic, a, index: int) -> bool:
 
 ## BattleManager.startBattle 包装（原 startBattle 之前）：甚尔在队就设第一形态
 static func start_battle(logic) -> void:
-	_logic = logic
+	battling = true
 	action = {}
 	internal = false
 	spread_rate = 0.0
@@ -385,13 +385,13 @@ static func end_battle(logic) -> void:
 		for id in SHAPES:
 			if a.state_ids.has(id):
 				logic._state_remove(a, id)
-	_logic = null
+	battling = false
 	action = {}
 
 
 ## Game_Actor.removeState 包装：战斗中复活（去掉阵亡）且没有形态时回游云
 static func revived(a, id: int, had: bool) -> void:
-	if _logic == null or id != DEATH or not had or not own(a) or not a.is_alive() or SHAPES.any(func(s): return a.state_ids.has(s)):
+	if not battling or id != DEATH or not had or not own(a) or not a.is_alive() or SHAPES.any(func(s): return a.state_ids.has(s)):
 		return
 	set_shape(null, a, 0)
 
