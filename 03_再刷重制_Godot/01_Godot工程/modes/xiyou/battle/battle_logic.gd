@@ -1554,7 +1554,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	XGarou.applied(u, skill, tt, r, used)  # 饿狼 Game_Action.apply 包装：本帧命中与伤害、琦玉模式
 	XYomiJingliu.j_applied(u, skill, tt, r, used)  # （j_before 在 apply 之前）  # 镜流 Game_Action.apply 包装：主目标、命中
 	XRaven.applied(self, u, skill, tt, r, used)  # 渡鸦 Game_Action.apply 包装：神话形态、鸦啄回 MP、黑暗侵蚀、按目标累计伤害
-	return [r]
+	return [r] + XToji.reflect(self, tt)  # 甚尔 Game_Action.apply 包装：术师杀手反弹给出手者
 
 
 ## BattleManager.applySubstitute：目标濒死（活着且 hp < mhp/4）、技能不是必中时，同队出战成员里第一个能掩护的替它挨打
@@ -1627,7 +1627,8 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
 	if skill.get("_alienMode", "") == "prayer":
 		return XAlienBattle.prayer_heal(self, u, skill, t)  # 异化逆祷 makeDamageValue 包装：按治疗技能算预算再分摊
-	return XDamage.finish(_calculate_damage(u, skill, t, critical), skill, u, t, true, _state_context(u, skill, t, _damage_record))
+	var calc := _calculate_damage(u, skill, t, critical)
+	return XToji.record(u, skill, t, calc, XDamage.finish(calc, skill, u, t, true, _state_context(u, skill, t, _damage_record)))  # 甚尔术师杀手：结算后记反弹
 
 
 func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:

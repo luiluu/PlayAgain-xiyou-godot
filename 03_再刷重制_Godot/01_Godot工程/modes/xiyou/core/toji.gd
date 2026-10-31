@@ -45,7 +45,12 @@ extends RefCounted
 ##   弱化留着；重制照说明清掉（CLEAR_DEBUFFS）。正常游戏里甚尔 1 级就学会暴君、弱化本来加不上，碰不到。
 ## - 命中／闪避／暴击：天与咒缚物理行动命中＋影速（速度比超出 1 的部分 ×0.15，至多 0.3）、被物理行动打时闪避＋影速；
 ##   五感时主技能与武器库不被闪避，主技能、武器库、反弹读到的目标暴击闪避 ×0.34（西游闪避公式为 0，命中常满，参照只看得出后两项）。
-## 未移植（第三期起，清单见交付单 cc_bajie-toji2「下期」）：武器库追击与借用特效、术师杀手减伤与反弹、
+## 第三期：
+## - 术师杀手 10207（伤害钩子 toji 受击一支＋apply 包装）：被别人的魔法生命伤害（不是反弹本身）打时受伤 ×0.2；结算（含
+##   Confirm 与固定减伤）为正时记反弹：基数 0.264×结算值÷0.2、属性取结算行的属性；那次 apply 后（出手者还活着）甚尔用
+##   术师杀手·反弹 10224 打回出手者：内部行动、不判黑闪、不再触发反弹，技能属性换成记下的属性（原版 item() 包装），
+##   公式＝反弹基数（结算里减防项为 0），钩子按魔法、五感魔防率 ×0.67、暴君 ×3、成长 outputGrowth(非主)，不吃藏兵咒灵。
+## 未移植（第四期起）：武器库追击与借用特效、
 ##   智能 AI 档案；说明框熟练度行（画面）；读档时 repair。
 ##   原版 makeDamageValue 包装是死代码（installDamageElementRuntime 后装、整个换掉 makeDamageValue 不调旧链），不移植。
 ## 参照：slice_probe（切片角色行与伤害行）、toji_probe（等级／进阶／血量各档的能力值、公式、钩子帧，tests/xiyou_toji.gd）。
@@ -85,6 +90,11 @@ static var internal := false
 static var spread_rate := 0.0
 ## 天逆鉾封印次数（_tojiSealCharges）；状态不在时视为没有
 static var seal_charges := {}
+const SLAYER := 10207
+## 术师杀手：本次 apply 记下的反弹（target 甚尔、source 出手者、base、element）；反弹进行中的基数
+static var pending := {}
+static var no_reflect := false
+static var reflect_base := 0.0
 const BALANCE_AT_70 := 0.188208
 ## repair 的 unlock 表：技能 → 解锁等级
 const UNLOCK := {10203: 1, 10205: 1, 10206: 10, 10207: 20, 10208: 30, 10209: 35, 10212: 1, 10213: 15, 10214: 30, 10215: 40,
@@ -236,7 +246,7 @@ static func formula(a, _b, item: Dictionary) -> float:
 		return base * (0.8 if index > 1 else 4.0)
 	if is_random(id):
 		return maxf(0.0, 2666 * atk)
-	return 0.0  # REFLECT：action._tojiReflectBase（第二期）
+	return reflect_base if id == REFLECT else 0.0  # action._tojiReflectBase
 
 
 ## 伤害钩子 toji（只含自己的技能；术师杀手受击分支第三期）
@@ -548,6 +558,45 @@ static func finish(logic, u, _skill) -> void:
 	action = {}
 	if shape != null:
 		set_shape(logic, u, int(shape))
+
+
+# ---- 第三期：术师杀手 ----
+
+static func _slayer_hit(item: Dictionary, a, b) -> bool:
+	return knows(b, SLAYER) and XDamage.is_magical(item) and int(item.get("damage", {}).get("type", 0)) == 1 and a != b and not no_reflect
+
+
+## 伤害钩子 toji 受击一支：受伤 ×0.2
+static func incoming_ops(item: Dictionary, a, b) -> Array:
+	return [{"op": "mul", "field": "incomingMultiplier", "value": 0.2}] if _slayer_hit(item, a, b) else []
+
+
+## f.after：结算值为正时记反弹（返回原结算值）
+static func record(a, item: Dictionary, b, calc: Dictionary, value: float) -> float:
+	if _slayer_hit(item, a, b) and value > 0.0:
+		var row: Dictionary = calc.get("breakdown", {}).get("row", {})
+		pending = {"target": b, "source": a, "base": 0.264 * value / 0.2, "element": int(row.get("element", item.get("damage", {}).get("elementId", 0)))}
+	return value
+
+
+## reflect：出手者那次 apply 之后，甚尔用 10224 打回去
+static func reflect(logic, target) -> Array:
+	var p := pending
+	pending = {}
+	if p.is_empty() or p.target != target or not p.source.is_alive():
+		return []
+	var item: Dictionary = XDB.rec("Skills", REFLECT).duplicate(true)
+	item.damage.elementId = int(p.element)
+	internal = true
+	no_reflect = true
+	reflect_base = float(p.base)
+	XBlackFlash.nested += 1
+	var r: Dictionary = logic.apply(target, item, p.source)
+	XBlackFlash.nested -= 1
+	reflect_base = 0.0
+	no_reflect = false
+	internal = false
+	return [r]
 
 
 ## CodexToji.recruit()：入队了返回提示行，已在队返回空

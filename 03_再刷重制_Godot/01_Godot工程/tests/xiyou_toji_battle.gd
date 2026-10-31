@@ -145,6 +145,8 @@ func _script(c: Dictionary) -> void:
 					if gap[0] == 0.0 and w > 0.0 and str(e.user) == "a171":
 						gap[0] = got[k].hp / w
 					var hp_ok: bool = absf(got[k].hp - w) <= 1.0 if str(e.user) != "a171" else absf(got[k].hp / w - gap[0]) < 1e-6  # 敌人打我方照原值比
+					if int(e.skill) == XToji.REFLECT:
+						hp_ok = absf(got[k].hp - w * GAP) <= 1.0  # 反弹基数来自敌人那下（个位数），比值受取整影响：按固定比值换算后差 1 以内
 					same = got[k].skill == int(e.skill) and got[k].user == str(e.user) and got[k].target == str(e.target) \
 						and hp_ok and got[k].critical == bool(e.critical)
 			check(name + ".hits", same, [got, exp])
@@ -249,7 +251,7 @@ func _run() -> void:
 				_tyrant(c)
 			else:
 				_script(c)
-	check("covers_all", seen == 7, seen)
+	check("covers_all", seen == 8, seen)
 	_local()
 	finish()
 
