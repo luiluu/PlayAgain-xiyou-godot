@@ -1,8 +1,8 @@
 # 交付：claude/wukong-hp-cost
 
 - 车道／工作者：C 规则（暂由 A 车道接）／悟空（Claude）
-- 基线：从 claude/wukong-battle-gaps 末提交 8816923d 切出（总装要求），本分支含 battle-gaps 的三个提交；battle-gaps 先合则这里只多本期改动。
-- 状态：进行中
+- 基线：从 claude/wukong-battle-gaps 末提交 8816923d 切出（总装要求）；交付前已合 main（含已合并的 battle-gaps）。
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -49,8 +49,14 @@
 
 ## 验证
 
-- （待写）
+- 参照：`battle_gaps_probe` 237 例、`alien_affix_probe` 60 例，都无报错（正式冻结 v0.28）。
+- 同步：合 main 后 `同步正式西游.py --accept-additions` 退出码 0，「新增用例，已接受」（alien_affix.json 56→60，新用例放在末尾；同时带进 main 的 star_warehouse.json）。
+- 专项：`xiyou_battle_gaps` 952/952，`xiyou_alien_affix` 2117/2117。反向验证：生命等于费用也算能付 937/952；不扣生命 937/952；used 改回旧写法 2116/2117（battle.erosion.used.1 多封印）；异化 HP 费用照普通角色处理 2070/2079（空壳 hpcost 三项等）；复原后全过。
+- 选测：云端被挡（Actions 额度用完，job 未启动），改在本机 `检查.sh --affected main`：169 个 Godot 场景与工具回归全部通过，8241 秒（期间等其他车道占的槽）。同源检查选中但没加 --oracle、未跑（合并时带 --oracle）。
+- 改动的原沙僧核心文件（请审查重点看）：`battle_logic.gd`（`note_costs` 认 HP、`skill_hp_cost`／`can_pay_hp`／`pay_hp`、`can_use`、行动付费、`apply` 的 `used`）。另改 `alien_battle.gd`（`hp_cost_mhp`／`can_pay_hp`／`pay_hp`）、`smart_ai.gd`（`cost_multiplier`）、`battle_scene.gd`、`ui/skill_scene.gd`。没碰白龙的渡鸦钩子。
 
 ## 本分支提交
 
-- （待写）
+- d24b8112 技能 HP 费用、蚀术命中判定、参照与专项
+- 合并 main（bbacb4fa，alien_affix_probe 冲突：main 的 flare.gain 用例在前、本期用例在后）
+- （本提交）交付单可合并
