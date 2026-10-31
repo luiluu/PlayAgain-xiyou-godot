@@ -508,7 +508,7 @@ class CheckerTests(Fixture):
         self.assertIn('guard_check.cjs', self.names(ran))                   # 非 Godot 检查仍在本机
         cloud = [l for l in ran if l.startswith('cloud')]
         self.assertEqual(cloud[0], 'cloud run --no-upload')
-        self.assertRegex(cloud[1], r'^cloud wait [0-9a-f]{40} --mode affected --timeout 3600$')
+        self.assertRegex(cloud[1], r'^cloud wait [0-9a-f]{40} --mode affected --timeout 2700$')
 
     def test_cloud_uploads_unless_told_not_to(self):
         rc, out, ran = self.cloud_check()
@@ -528,6 +528,12 @@ class CheckerTests(Fixture):
         self.assertIn('改用本机', out)
         self.assertNotIn('godot', self.names(ran))
         self.assertNotIn('并行测试.py', self.names(ran))
+
+    def test_cloud_run_finished_without_result_is_an_error(self):
+        rc, out, ran = self.cloud_check(wait_rc=3)
+        self.assertEqual(rc, 1, out)
+        self.assertIn('云端运行已结束但没有结果', out)
+        self.assertNotIn('godot', self.names(ran))
 
     def test_cloud_unavailable_is_an_error_not_a_local_fallback(self):
         rc, out, ran = self.cloud_check(run_rc=1)

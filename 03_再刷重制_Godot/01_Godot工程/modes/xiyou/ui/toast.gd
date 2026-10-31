@@ -12,8 +12,9 @@ const WIDTH := 280.0
 const MARGIN := 10.0
 const PADDING := 10.0
 const FONT_SIZE := 18
-# 冻结源同字体 CSS normal 的实际行高为21；Label默认字高27并另加3像素。
-const FONT_TRIM := -3
+# 冻结源同字体 CSS normal 的实际行高为21。Label 字高取主字体与回退字体里最高的（Mac 有苹方时 27，Linux 文泉驿时 22），
+# 所以不写死每侧减 3，而是按当前字高把行高收到 21（Mac 上仍是每侧减 3，结果不变）。
+const LINE_HEIGHT := 21
 const BACK := Color(0, 0, 0, 0.7)
 const SHADOW := Color(0, 0, 0, 0.5)
 const FADE := 0.6
@@ -71,8 +72,9 @@ func _add(message: String) -> void:
 	var inner := WIDTH - MARGIN * 2 - PADDING * 2
 	var font := FontVariation.new()
 	font.base_font = XUI.font()
-	font.spacing_top = FONT_TRIM
-	font.spacing_bottom = FONT_TRIM
+	var trim := LINE_HEIGHT - int(font.get_height(FONT_SIZE))   # 上下合计要减的像素（回退字体更矮时可能为 -1 之类）
+	font.spacing_top = floori(trim / 2.0)
+	font.spacing_bottom = trim - floori(trim / 2.0)
 	# 外层只占高度、裁掉内容：收起时把高度缩到 0，后面的提示跟着上移（jQuery animate height → 0）
 	var slot := Control.new()
 	slot.clip_contents = true
