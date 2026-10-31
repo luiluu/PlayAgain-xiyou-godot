@@ -90,6 +90,9 @@ function battle(spec) {
     const old = e.traitObjects; e.traitObjects = function () { return old.call(this).concat([more]); }; });
   if (spec.mirror) enemies[0]._alienEnemy = {variant: 'mirror', boss: true, shieldGranted: false, mirrorRound: -1, mirrorCharged: true,
     plagueRound: -1, drainRound: -1, visualPulse: 0};
+  // 烈变（flare：true 为 Boss 烈变 ×1.15，'mob' 为小怪异化 ×1.1）：敌人 0 直接写成异化变体，量 outgoing（行动帧里的扣血加成）
+  if (spec.flare) enemies[0]._alienEnemy = {variant: 'flare', boss: spec.flare !== 'mob', shieldGranted: false, mirrorRound: -1, mirrorCharged: false,
+    plagueRound: -1, drainRound: -1, visualPulse: 0};
   A.lockParty();
   w.$gameParty._inBattle = true;
   w.CodexYunshang._acted = [];
@@ -379,6 +382,10 @@ battleCase('hollow.mp', {affix: 'hollow'}, [{set: {aMp: 0.5}}, {event: {who: 'a'
 battleCase('glutton.mp', {affix: 'glutton'}, [{event: {who: 'a', value: 300, mp: true}}, {event: {who: 'a', value: -100, mp: true}}]);
 battleCase('insulation.mp', {affix: 'insulation'}, [{set: {aMp: 0.5}}, {event: {who: 'a', value: 300, mp: true, src: 'b'}},
   {event: {who: 'a', value: 300, mp: true}}, {event: {who: 'a', value: -100, mp: true, src: 'b'}}]);
+// 遗留①：烈变加成也算在行动帧里的 gainHp 上（Runtime wrapHp：帧为 active、不在 executeHpDamage 里时 v=-outgoing），
+// 如效果「恢复 HP」负值、技能备注 b.gainHp(-3000)（净化之雷 857、4013）；普攻走 executeHpDamage 本来就加（对照：不能多乘一次）
+battleCase('flare.gain', {flare: true}, [{user: 'e0', def: S(1, 0, [11, 0, -0.1])}, {user: 'e0', skill: 1}]);
+battleCase('flare.gain.mob', {flare: 'mob'}, [{user: 'e0', def: S(1, 0, [11, 0, -0.1])}, {user: 'e0', skill: 1}]);
 // 以下是后加的用例，放在末尾（同步按下标比对，插在中间会被当成改动）
 // 蚀术命中判定（审查第 2 期 D2／P3）：e0 先用 1926 留下可封的上次技能，再由角色 1 直接对活着的 e0 apply 选定的 1924：
 // 临时把 1924 的 scope 改成 9（对阵亡友方，复活类）时 used 为假、不算命中、不封印；scope 照旧时命中并封印

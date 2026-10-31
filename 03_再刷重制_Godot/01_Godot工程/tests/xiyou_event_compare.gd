@@ -86,6 +86,9 @@ class EventHost:
 	func open_actor_warehouse() -> void:
 		trace.append({"t": "scene", "name": "Star_Scene_ActorWarehouse"})
 
+	func open_star_warehouse(save_mode: bool) -> void:
+		trace.append({"t": "scene", "name": "Scene_StarSaveWarehouse" if save_mode else "Scene_StarWarehouse"})
+
 	func open_change_clothes() -> void:
 		trace.append({"t": "scene", "name": "Scene_ChangeClothes"})
 

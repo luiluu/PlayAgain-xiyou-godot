@@ -450,6 +450,19 @@ static func outgoing(logic, u, item: Dictionary, value: float) -> float:
 	return value
 
 
+## Runtime wrapHp／setHp 包装（行动帧里、不在 executeHpDamage 里的扣血，如效果「恢复 HP」负值、备注里的 b.gainHp(-3000)）：
+## 帧为 active（行动 apply 帧，不是支援、自定义状态效果、反击这类）时同样乘 outgoing。executeHpDamage 里那次由
+## battle_logic.execute_hp_damage 已乘过（资源上下文那时处在 settled 段，调用处据此跳过）
+static func frame_outgoing(value: float) -> float:
+	if _action_frames.is_empty():
+		return value
+	var f: Dictionary = _action_frames[_action_frames.size() - 1]
+	var logic = active_logic()
+	if logic == null or (f.item as Dictionary).is_empty():
+		return value
+	return outgoing(logic, f.source, f.item, value)
+
+
 ## recordDamage：镜骸被行动根的角色打掉生命（不含反击、反射）
 static func record(logic, u, t, loss: float) -> void:
 	if not logic.has_meta("xalien") or loss <= 0.0 or not t is XEnemy or t.alien.is_empty() or str(t.alien.variant) != "mirror":

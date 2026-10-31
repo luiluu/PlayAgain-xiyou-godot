@@ -433,6 +433,9 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 	if bool(st.get("mirror", false)):  # 敌人 0 直接写成镜骸变体（同参照，不经遭遇抽签）
 		enemies[0].alien = {"variant": "mirror", "boss": true, "shieldGranted": false, "mirrorRound": -1, "mirrorCharged": true,
 			"plagueRound": -1, "drainRound": -1}
+	if st.has("flare"):  # 敌人 0 直接写成烈变（true Boss ×1.15，"mob" 小怪 ×1.1，同参照）
+		enemies[0].alien = {"variant": "flare", "boss": str(st.flare) != "mob", "shieldGranted": false, "mirrorRound": -1, "mirrorCharged": false,
+			"plagueRound": -1, "drainRound": -1}
 	XAlienBattle.open(logic)
 	var tag := str(c.id)
 	var locked := [a, b].map(func(x):
