@@ -1,6 +1,7 @@
 class_name XRaven
 extends RefCounted
-## 167 渡鸦（正式 js/codex/runtime/installNativeRavenRuntime.js，W.CodexRaven）第一期：招募、开机数据、技能解锁、公式、被动、伤害钩子。
+## 167 渡鸦（正式 js/codex/runtime/installNativeRavenRuntime.js，W.CodexRaven）第一期：招募、开机数据、技能解锁、公式、被动、伤害钩子；
+## 第二期：灵魂积累与铸印。
 ## - 阶位 stage＝原版 _codexRavenStage（取 _AdvancedNum 与它的较大者，进阶时两者同步），重制读 XAdvance.rank，夹在 0～5。
 ## - 开机数据（isDatabaseLoaded 的 finishRavenDatabaseCompatibility）：给原版角色进阶表补渡鸦 0～4 次的 5 行（需求等级 15／25／35／45／45、
 ##   冥羽进阶印 2901×1，学 10131／10132／10133／10134／[10127,10170]），由转换器 boot_database_records 写进 Plugins.json。
@@ -10,10 +11,19 @@ extends RefCounted
 ##   legionStrikeRate：学了 10138「魄」时 [6,10,20,33,66,99][阶]/11，否则 1；skillCoefficient 按阶位查表。
 ## - 被动（initPassiveCache 包装）：学了 10137 时暴伤池、终伤池按等级插值（1／10／25／40／55／70 级）加进 critHarmRi／globalHarmRi（÷100）。
 ## - 面板暴击（NumberBoost 的 xparam 包装，学了 10137）：+10×灵魂进度；伤害钩子 raven 见 XActorDamageHooks。
-## - 灵魂值 soul：第一期不积累（恒 0），进度、冥河冠冕溢出、法宝魂力加成都按 0 算。
+## - 灵魂值 soul（_codexRavenSoul）与已铸印的阶 forged（_codexRavenForgedStage，没铸过 −1）存在 XState.raven（存档 codexRaven，旧档没有＝0／−1）。
+##   得魂（Game_Enemy.die 包装 gainSoulFrom，XBattler 阵亡分支调 on_enemy_death）：渡鸦在 $gameParty.members()（战斗中＝出战成员）里、
+##   这个敌人没算过时，clamp(10..50, floor(12＋5×log2(1＋经验/100)))，神话 ×3、备注 <Boss>／<boss> ×10，再夹到 50；随后判铸印。
+##   经验取 Game_Enemy.exp()：数据库经验 × 神话倍率（enemy_exp）。
+##   铸印（awardRavenAdvanceSeal）：阶 < 5、本阶没铸过、灵魂 ≥ REQUIRE[阶＋1] → 记本阶已铸；背包没有冥羽进阶印 2901 才给一枚。
+##   进阶确认（Scene_ActorAdvanced.onConfirmOk 包装，XAdvance.advance 末尾调 after_advance）：渡鸦升了一阶 → 灵魂清零、重排技能、再判铸印。
+##   新局／读档时原版再判一次铸印（restoreRavenState）：重制的灵魂只在倒敌（当场判过）和进阶（清零）时变，读进来的档不会处在
+##   「够了却没铸」的状态（只有 MV 旧档会，不迁移），不移植。
+##   参照 mv_oracle/raven_soul_probe.cjs。
 ## - 招募（公共事件 9002 的 CodexRaven.recruit()）：不在队就入队；重排技能；队伍（含已装备）没有冥河断罪镰 4001 才给一件；
 ##   提示「渡鸦加入队伍，获得专属法宝：冥河断罪镰！」。总是返回 true。
-## 未移植（第二期起）：灵魂积累与铸印、进阶界面的渡鸦分支、神话形态、残响／三羽成环／收割与回响追加伤害、numRepeats（冥羽连葬吃再动）、
+## 未移植（第三期起）：得魂时的残响 10132／狩猎 10133 计数与神话形态回合续期（随残响、神话形态一起做）、技能说明里的灵魂进度行
+## （Window_SkillList.updateHelp，界面）、神话形态、残响／三羽成环／收割与回响追加伤害、numRepeats（冥羽连葬吃再动）、
 ## 法宝 4001 的运行时法宝字段（每级成长、等级上限）与 paramPlus 固定加成、熟练度上限、技能分类与界面、敌人掉率与图鉴、
 ## 插件指令 RavenAdd、商店价格字段、表现模块（RavenSkillEffects／RavenMonsterVisual）、旧档迁移。
 
@@ -21,6 +31,7 @@ const ACTOR := 167
 const CLASS := 165
 const ARTIFACT := 4001
 const HORN := 2902
+const SEAL := 2901
 const LEGION := 10138
 const SOUL_LEDGER := 10137
 const SKILL_GATE := {10129: [5, 0], 10130: [10, 0], 10131: [15, 0], 10123: [20, 1], 10132: [25, 0], 10124: [30, 2],
@@ -42,8 +53,85 @@ static func stage(a) -> int:
 	return clampi(XAdvance.rank(XState.current, ACTOR), 0, 5) if own(a) else 0
 
 
-static func soul(_a) -> float:
-	return 0.0
+static func soul(a) -> float:
+	return float(_store().get("soul", 0.0)) if own(a) else 0.0
+
+
+static func _store() -> Dictionary:
+	return XState.current.raven if XState.current != null else {}
+
+
+static func forged() -> int:
+	return int(_store().get("forged", -1))
+
+
+## Game_Enemy.exp()：数据库经验 × 神话倍率（EliteEnemy）。Vitsuno_Difficulty 的难度经验倍率包在里层，被后装的 exp 改写盖掉，
+## 原版这里读不到（参照：难度 2 的经验倍率是 3，敌人 3 的 exp() 仍是 40）
+static func enemy_exp(e) -> int:
+	return e.exp_reward()
+
+
+static func soul_gain(e) -> int:
+	var gain := clampi(floori(12 + 5 * log(1 + maxf(0.0, enemy_exp(e)) / 100.0) / log(2.0)), 10, 50)
+	if e.elite:
+		gain *= 3
+	var meta: Dictionary = e.data().get("meta", {})
+	if meta.has("boss") or meta.has("Boss"):
+		gain *= 10
+	return mini(50, gain)
+
+
+## $gameParty.members()：战斗中是出战成员，战斗外是全队
+static func active(a) -> bool:
+	var logic = XRaceBattle.active_logic()
+	return (logic.actors if logic != null else XState.current.members()).has(a)
+
+
+## Game_Enemy.die 包装（只在第一次倒下时调）
+static func on_enemy_death(e) -> void:
+	var s := XState.current
+	if s == null or not s.actors.has(ACTOR) or e.has_meta("raven_soul_counted"):
+		return
+	var a: XActor = s.actors[ACTOR]
+	if not active(a):
+		return
+	e.set_meta("raven_soul_counted", true)
+	s.raven["soul"] = soul(a) + soul_gain(e)
+	a.param_mark_dirty()
+	award_seal(s, a)
+
+
+static func can_forge(a) -> bool:
+	var next := stage(a) + 1
+	return own(a) and next <= 5 and forged() != stage(a) and soul(a) >= REQUIRE[next]
+
+
+## awardRavenAdvanceSeal
+static func award_seal(s: XState, a) -> bool:
+	if not can_forge(a) or not active(a):
+		return false
+	s.raven["forged"] = stage(a)
+	if s.item_count(SEAL) <= 0:
+		s.gain_item(SEAL, 1)
+	return true
+
+
+## 进阶确认之后（previous 是进阶前的阶）
+static func after_advance(s: XState, a, previous: int) -> void:
+	if own(a) and stage(a) == previous + 1:
+		s.raven["soul"] = 0.0
+		sync(a)
+		award_seal(s, a)
+
+
+static func to_save(v: Dictionary) -> Dictionary:
+	return {"soul": float(v.get("soul", 0.0)), "forged": int(v.get("forged", -1))}
+
+
+static func from_save(v) -> Dictionary:
+	if not v is Dictionary:
+		return {}
+	return {"soul": maxf(0.0, float(v.get("soul", 0.0))), "forged": int(v.get("forged", -1))}
 
 
 static func progress(a) -> float:
