@@ -38,6 +38,7 @@ KEYS = {
     'lobby_shops.json': {'cases': ('id',)},
     'map132_shops.json': {'cases': ('id',)},
     'yomi_battle.json': {'cases': ('id',)},
+    'sukuna_battle.json': {'cases': ('id',)},
     'mira_battle.json': {'cases': ('id',)},
     'common_scripts.json': {'cases': ('id',)},
     'attack_query.json': {'cases': ('id',)},

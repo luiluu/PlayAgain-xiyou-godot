@@ -147,6 +147,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	var leaving := XAlienBattle.possession_partners(self)
 	if not leaving.is_empty():
 		actors = everyone.filter(func(a): return not leaving.has(a))
+	XSukuna.start_battle(self)  # 宿傩 startBattle 包装（之前）：清战斗数据、同步技能
 	for a in actors:
 		for sid in a.state_ids.duplicate():
 			if not bool(XDB.rec("States", sid).get("removeAtBattleEnd", false)):
@@ -162,6 +163,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XRaceBattle.start(self)  # 种族祝福：BattleManager.startBattle 包装清本场数据，出战成员建数据（记开战最大生命）
 	actors = everyone
 	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
+	XSukuna.start_tp(self)  # 宿傩 startBattle 包装（之后）：TP 至少 60
 	# 本版改过的 BattleManager.startBattle：每场开战预约公共事件 1320「战斗开始时调整变量」，开战第一次事件检查先跑它
 	XBattleCommonEvent.reserve(self, XBattleCommonEvent.START_EVENT)
 
@@ -392,6 +394,7 @@ func _skill_cost(a: XBattler, skill: Dictionary, panel: bool, shift: float) -> D
 		cost.mp = floori(cost.mp * (1.0 - reduce / 100.0))
 		cost.tp = floori(cost.tp * (1.0 - reduce / 100.0))
 	cost = {"mp": XMira.cost(a, skill, int(cost.mp)), "tp": XMira.cost(a, skill, int(cost.tp))}  # 米拉禁忌 skillMpCost／skillTpCost 包装：主动技 ×0.75
+	cost.tp = XSukuna.tp_cost(a, skill, int(cost.tp))  # 宿傩 skillTpCost 包装：领域中解／捌减半（种族包装在外）
 	if not panel and XAlienBattle.silence_skill(a, skill):
 		cost.mp = 0  # 异化缄默 skillMpCost 包装（Adv:132）：选定技能不花 MP，改锁生命上限
 	return {"mp": XRaceBattle.cost(a, int(cost.mp)), "tp": XRaceBattle.cost(a, int(cost.tp))}
@@ -423,6 +426,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if not wtype_ok(a, skill):
 		return false
 	if not XYomiJingliu.meets(a, skill):  # 黄泉 meetsSkillConditions：残梦不满 9 不能用 10174
+		return false
+	if not XSukuna.meets(a, skill, self):  # 宿傩 meetsSkillConditions：解锁、领域冷却、神灶要蓄力目标、神灶：开要准备层
 		return false
 	if not XMira.meets(a, skill):  # 米拉 meetsSkillConditions：人形／黑龙技按形态、解放的进阶与等级、劫焰不能单放
 		return false
@@ -476,7 +481,7 @@ func usable_skills(a: XActor) -> Array:
 func battle_skills(a: XActor) -> Array:
 	var out := []
 	for s in a.skills():
-		if int(s.id) > GUARD_SKILL and int(s.stypeId) != 4 and not s.get("meta", {}).has("Hide in Battle"):
+		if int(s.id) > GUARD_SKILL and int(s.stypeId) != 4 and not s.get("meta", {}).has("Hide in Battle") and XSukuna.listed(a, s):
 			out.append(s)
 	return out
 
@@ -688,12 +693,14 @@ func act(u: XBattler, skill, target) -> Array:
 	# 行动无效（敌人没有行动、或 isValid 假整次跳过）：原版 processTurn 不 startAction／endAction，onAllActionsEnd 在
 	# _processTurn 里不 updateStateActionEnd（YEP_BattleEngineCore:4166），行动结束的状态不减回合
 	var started := true
-	if not can_move(u):
+	var skipped := not can_move(u)
+	if skipped:
 		logs.append({"type": "skip", "user": u})
 	elif skill == null or (skill is Dictionary and skill.is_empty()):
 		started = false
 	elif int(skill.id) == GUARD_SKILL and not is_item(skill):
 		XAlienBattle.start_action(self, u, skill)  # 异化蚀术 startAction 包装：防御也算原有合法行动窗口
+		XSukuna.begin(self, u, skill, [])  # 宿傩 startAction 包装：清上一帧
 		XStateEffects.run("action_start", u)  # 防御也走 startAction
 		# 防御技能在原版也对自己 Game_Action.apply 一次：initiate／select／deselect／conclude 四段都跑（无伤害段）
 		u.param_refresh()  # native useItem refresh precedes guard apply
@@ -710,6 +717,8 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(execute(u, skill, target))
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
+	if started and not skipped:
+		logs.append_array(XSukuna.finish(self, u, skill))  # 宿傩 endAction 包装（原 endAction 之前）：神灶：开、追斩、看破、适应
 	XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
 	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
 	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
@@ -730,6 +739,7 @@ func end_turn() -> Array:
 	_acted.clear()
 	XAlienBattle.spread_pest(self)  # 异化疫囊 endTurn 包装（原 endTurn 之前）：传播异常与减益
 	XCat.end_turn(self)  # BattleManager.endTurn 的小猫剑圣包装：删过期的识破／剑痕
+	logs.append_array(XSukuna.end_round(self))  # 宿傩 endTurn 包装（原 endTurn 之前，在米拉外层）：领域斩击、神灶：开、伤口到期
 	logs.append_array(XMira.end_turn(self))  # 米拉 endTurn 包装（原 endTurn 之前）：修雷德劫火追加
 	logs.append_array(XPetCapture.end_turn(self))  # Star_PetSystem 的 endTurn 包装：第 5 回合可捕捉的敌人逃跑
 	for b in actors + enemies:
@@ -1048,6 +1058,7 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 			_cleared[u] = true
 		var before := _movable_snapshot()
 		logs.append_array(execute(u, skill, _forced_target(u, skill, int(p[3])), true))
+		logs.append_array(XSukuna.finish(self, u, skill, true))
 		XRaceBattle.finish(self, logs)
 		XCat.end_action(self, u, skill)
 		XAlienBattle.finish(self, logs)
@@ -1325,6 +1336,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		XAlienBattle.set_heal_targets(skill, list.size())  # 逆祷治疗按目标数（含重复）分摊
 		XRaceBattle.begin(self, u, skill, list, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 		XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
+		logs.append_array(XSukuna.begin(self, u, skill, list))  # 宿傩 startAction 包装：领域展开、施放帧
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		return logs
 	var repeats := XYomiJingliu.begin_action(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1))))  # 黄泉 numRepeats 包装
@@ -1332,6 +1344,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 	XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
+	logs.append_array(XSukuna.begin(self, u, skill, targets))  # 宿傩 startAction 包装：领域展开、施放帧
 	for t in targets:
 		for i in range(maxi(1, repeats)):
 			if t.is_dead() and not [9, 10].has(int(skill.scope)):
@@ -1428,11 +1441,12 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	if _float("reflection") < mrf:
 		_reflecting = true  # 导入角色平衡：反射回行动者自己的结算照样缩放
 		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反射是独立数值来源，不是原行动
-		var r := apply(u, skill, u)
+		var rs := XSukuna.apply(self, u, skill, u) if XSukuna.wraps(u, skill) else [apply(u, skill, u)]  # 宿傩 Game_Action.apply 包装
 		XRaceBattle.derived_end(self, race_prev)
 		_reflecting = false
-		r.reflected = true
-		return [{"type": "reflect", "user": u, "target": t}, r]
+		for r in rs:
+			r.reflected = true
+		return [{"type": "reflect", "user": u, "target": t}] + rs
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure else 0.0
 	if _float("counter") < cnt:
 		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反击是独立数值来源，不是原行动
@@ -1446,6 +1460,8 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		XYomiJingliu.before_apply(self, u, skill, tt)
 		var r := apply(u, skill, tt)
 		return [r] + XYomiJingliu.after_apply(self, u, skill, tt, r)
+	if XSukuna.wraps(u, skill):
+		return XSukuna.apply(self, u, skill, tt)  # 宿傩 Game_Action.apply 包装：捌两段、伤口、神灶蓄力
 	return [apply(u, skill, tt)]
 
 
@@ -1485,7 +1501,7 @@ func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 
 ## itemEva：YEP「Evade Formula」（西游为 0）夹到 0～1。原版闪避已并入命中公式。
 func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
-	if XYomiJingliu.sure(u, skill):  # 黄泉技能 itemEva 包装：不闪避
+	if XYomiJingliu.sure(u, skill) or XSukuna.no_evade(u, skill, t):  # 黄泉技能、宿傩斩击打有看破的目标 itemEva 包装：不闪避
 		return 0.0
 	return clampf(_hit_formula("Evade Formula", "0", u, skill, t), 0.0, 1.0)
 
@@ -1677,7 +1693,10 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 	if not _action_resources.boss_output.is_settled(t, "hp"):
 		value = _boss_output_value(u, t, value)
 	_action_resources.boss_output.enter_settled(t, "hp")
+	var sukuna_shield := XSukuna.strip_shield(u, t, item)  # 宿傩 executeHpDamage 包装：真伤免护盾
+	var sukuna_hp := t.hp
 	var out := _execute_hp_damage(u, t, value, drain)
+	XSukuna.restore_shield(u, t, sukuna_shield, sukuna_hp)
 	_action_resources.boss_output.leave_settled()
 	XAlienBattle.record(self, u, t, maxf(0.0, alien_before - t.hp))
 	return out
@@ -1861,6 +1880,7 @@ func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = 
 				applied = -t.absorb_shield(-value)
 				if not t is XActor:
 					shown = applied
+			applied = XSukuna.heal(t, applied)  # 宿傩 gainHp 包装：带伤口的受治疗减半
 			t.hp = clampf(t.hp + applied, 0.0, t.mhp)
 		"MP":
 			t.mp = clampf(t.mp + value, 0.0, t.mmp)
@@ -1979,6 +1999,8 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 			dh = -b.absorb_shield(-shown)
 			if not b is XActor:
 				shown = dh
+		dh = XSukuna.heal(b, dh)  # 宿傩 gainHp 包装：带伤口的再生回复减半
+		shown = XSukuna.heal(b, shown)
 		b.hp = clampf(b.hp + dh, 1.0, b.mhp) if dh < 0.0 else minf(b.mhp, b.hp + dh)
 		if shown != 0.0:  # 生命 1 时夹成 0，原版不调 gainHp、不弹字
 			logs.append({"type": "regen", "target": b, "hp": -shown, "views": views([b])})
@@ -2158,6 +2180,7 @@ func end_battle(result := -1) -> void:
 	XAlienBattle.end(self, result)  # 异化 endBattle 包装：胜利补发、结算、清锁队
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
+	XSukuna.end_battle(self)  # 宿傩 endBattle 包装：清战斗数据与领域、适应、觉醒状态
 	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	# ShieldSystem Scene_Battle.terminate：全队与敌群护盾清零
