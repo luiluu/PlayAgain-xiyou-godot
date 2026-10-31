@@ -85,7 +85,7 @@ func _same_vehicle(v: Dictionary, o: Dictionary) -> bool:
 		and JSON.stringify(JSON.parse_string(JSON.stringify(v.bgm))) == JSON.stringify(o.bgm)
 
 
-func _oracle(id: String):
+func _oracle(id: String) -> Variant:
 	for c in ref.get("cases", []):
 		if c.id == id:
 			return c.observed if c.errors.is_empty() else null

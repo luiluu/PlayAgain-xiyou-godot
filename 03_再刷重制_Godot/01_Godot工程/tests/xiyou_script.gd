@@ -55,13 +55,14 @@ func _ready() -> void:
 
 
 ## 条件分歧 9／10 武器／防具 [9|10, 底材编号, 含装备]（YEP_ItemCore hasItem＋isAnyMemberEquipped；审查 10-31 D3）：
-## 开局四人，先把队员身上那件武器、防具的底材从背包清掉，再逐支构造：只穿在身上、背包里有一件、都没有
+## 开局四人，给第一人穿上武器、防具各一件、背包清掉这两种底材，再逐支构造：只穿在身上、背包里有一件、都没有
 func _gear_conditions() -> void:
 	var g := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = g
-	var a: XActor = g.members()[0]
-	var w: Dictionary = a.equip_list().filter(func(e): return e.get("kind", "") == "weapon")[0]
-	var ar: Dictionary = a.equip_list().filter(func(e): return e.get("kind", "") == "armor")[0]
+	# 开局队员身上还是空的：给第一人穿上一件武器 4、防具 2 的实例（不进背包）
+	var w := XGear.create("weapon", 4, g)
+	var ar := XGear.create("armor", 2, g)
+	g.members()[0].equips = [w, ar]
 	var wb := int(w.base)
 	var ab := int(ar.base)
 	g.gear = g.gear.filter(func(e): return int(e.base) not in [wb, ab])

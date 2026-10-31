@@ -255,8 +255,9 @@ func _first_flight() -> void:
 	_check("transfer_page_locked", map.transfer_page == null)
 	# O-117 回退（SAFE_AIRSHIP_MENU = false）：原版传送按钮、挂机都不看载具，飞行中照样可用
 	XMapScene.SAFE_AIRSHIP_MENU = false
+	await _until(func(): return not map.busy)
 	await get_tree().process_frame
-	_check("transfer_unlocked_original", not map.map_hud.transfer_button.disabled)
+	_check("transfer_unlocked_original", not map.map_hud.transfer_button.disabled, [map.busy, map._menu_open, s.vehicle_type])
 	map.toggle_hang_up()
 	_check("hang_up_original", s.hang_up_active)
 	XHangUp.stop(s)

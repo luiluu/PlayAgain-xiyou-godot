@@ -94,7 +94,7 @@ func _press() -> void:
 	await map._on_action()
 
 
-func _oracle(id: String):
+func _oracle(id: String) -> Variant:
 	for c in ref.get("cases", []):
 		if c.id == id:
 			return c.observed if c.errors.is_empty() else null
