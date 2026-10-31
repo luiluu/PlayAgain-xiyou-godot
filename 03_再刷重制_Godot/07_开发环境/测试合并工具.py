@@ -1328,6 +1328,39 @@ for name in filter(None, files):
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
 
+    def cc_lane(self, task, extra=''):
+        wt = Path(self.tmp.name) / ('lane_' + task)
+        self.g('worktree', 'add', '-b', 'cc/' + task, str(wt))
+        receipt = wt / ('00_项目管理/交付/cc_%s.md' % task)
+        receipt.parent.mkdir(parents=True, exist_ok=True)
+        receipt.write_text('# delivery\n- 状态：可合并\n' + extra + '\n## 变更记录草稿\n\n## 日期 【cc】新写法（' + merge.VERSION_MARKER + '）\n\n- cc change\n\n## 交接板\n- fixture\n')
+        (wt / (task + '.md')).write_text('cc lane\n')
+        self.g('add', '.', cwd=wt); self.g('commit', '-m', 'cc feature', cwd=wt)
+        return wt
+
+    def test_cc_prefix_lane_merges_with_cc_trailer_and_old_executor_flag(self):
+        """Kyo 10-31 把 claude 改叫 cc：cc/<任务> 分支、cc_<任务>.md 交付单、尾注「执行者: cc（唐僧）」；旧的 --executor Claude 等价。"""
+        wt = self.cc_lane('ccjob')
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n\n## 待交叉核查\n| cc/ccjob |\n## end\n')
+        self.g('add', '.'); self.g('commit', '-m', 'board lists cc lane')
+        self.assertEqual(self.call_task('ccjob', '--executor', 'Claude'), 0, self.last_output)
+        body = self.g('log', '-1', '--format=%B')
+        self.assertIn('执行者: cc（唐僧）', body)
+        self.assertIn('核查: 待审查', body)
+        self.assertTrue(self.g('log', '-1', '--format=%s').startswith('合并 cc/ccjob'))
+        self.assertIn('【cc】新写法', (self.root / merge.LOG).read_text())
+        self.assertEqual(self.call_task('ccjob', '--finish'), 0, self.last_output)   # 缺省 cc，与上面的 Claude 等价，不报「接续执行者不同」
+        self.assertFalse(wt.exists())
+
+    def test_cc_review_branch_and_sheet_executor_write_no_review_needed(self):
+        state = {'branch': 'cc/review-3', 'target': 'cc/review-3', 'delivery': 'x.md'}
+        self.assertEqual(merge.review_status(self.root, state), '无')
+        state = {'branch': 'cc/task', 'target': 'claude/task', 'delivery': str(self.receipt)}
+        sheet = self.wt / self.receipt
+        sheet.write_text(sheet.read_text().replace('# delivery\n', '# delivery\n- 执行者：cc（审查）\n'))
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'cc review sheet', cwd=self.wt)
+        self.assertEqual(merge.review_status(self.root, state), '无')
+
     def test_review_status_for_review_thread(self):
         state = {'branch': 'claude/review-9', 'target': 'claude/task', 'delivery': str(self.receipt)}
         self.assertEqual(merge.review_status(self.root, state), '无')
@@ -1780,7 +1813,7 @@ for name in filter(None, files):
         self.put(str(merge.PROJECT / 'modes/测试.gd'), '# resolved\n')
         self.g('add', str(merge.PROJECT / 'modes/测试.gd'))
         self.assertEqual(self.call(), 0, self.last_output)
-        self.assertIn('执行者: Claude（唐僧）', self.g('log', '-1', '--skip=0', '--format=%B', 'HEAD^{commit}'))
+        self.assertIn('执行者: cc（唐僧）', self.g('log', '-1', '--skip=0', '--format=%B', 'HEAD^{commit}'))
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
         self.assertEqual((self.root / merge.PROJECT / 'modes/测试.gd').read_text(), '# resolved\n')

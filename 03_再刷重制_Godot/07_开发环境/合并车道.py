@@ -312,7 +312,7 @@ def problem_entry(text, heads):
                            '只交问题的期次至少要有标题带「问题」的节（如「## 本期问题交总装」），据此生成最简条目')
     name = re.search(r'^# 交付[：:]\s*(\S+)', text, re.M)
     branch = name.group(1) if name else '（未写分支）'
-    who = 'Codex·沙僧' if branch.startswith('codex/') else 'Claude·未经Codex检验'
+    who = 'Codex·沙僧' if branch.startswith('codex/') else ('cc·未经审查' if branch.startswith('cc/') else 'Claude·未经Codex检验')
     print('提示：交付单 %s 没有变更记录草稿，按「问题」节生成最简条目；--finish 前可在变更记录里改写' % branch,
           file=sys.stderr, flush=True)
     return '## %s 【%s】%s（仅交问题，不销账）\n\n%s' % (time.strftime('%Y-%m-%d'), who, branch, '\n\n'.join(parts))
@@ -354,7 +354,7 @@ def plan(root, task):
         hint = ('；其中未跟踪的（%s）若是本机临时文件（如通知、草稿），可把路径写进本地 .git/info/exclude（不入 Git），'
                 '不必删' % '、'.join(untracked[:5])) if untracked else ''
         raise RuntimeError('main 必须干净，包含未跟踪文件；本工具不自动保存或覆盖现场：' + '、'.join(sorted(changed)[:8]) + hint)
-    lanes = [w for w in worktrees(root) if w.get('branch') in ['claude/' + task, 'codex/' + task]]
+    lanes = [w for w in worktrees(root) if w.get('branch') in ['cc/' + task, 'claude/' + task, 'codex/' + task]]
     if len(lanes) > 1:
         raise RuntimeError('须有且只有一个对应任务的已登记车道工作树')
     evidence = []
@@ -376,7 +376,7 @@ def plan(root, task):
             return f.read_text() if f.is_file() and not f.is_symlink() else None
     else:
         # 车道交付后已在同一工作树换新分支接着做：没有工作树停在交付分支上，按分支引用合并，文件从交付提交里读
-        refs = [b for b in ['claude/' + task, 'codex/' + task]
+        refs = [b for b in ['cc/' + task, 'claude/' + task, 'codex/' + task]
                 if subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', 'refs/heads/' + b],
                                   capture_output=True).returncode == 0]
         if len(refs) != 1:
@@ -621,7 +621,7 @@ def validate_version_edits(root, state):
 
 def review_status(root, state):
     """合并提交的核查尾注（Kyo 2026-10-30：Codex 停用核查，改审查线程）：审查线程自己的分支不再被核，写「无」；其余写「待审查」。"""
-    if state['branch'].startswith('claude/review-'):
+    if state['branch'].startswith(('claude/review-', 'cc/review-')):
         return '无'
     try:
         sheet = git(root, 'show', state['target'] + ':' + state['delivery'])
@@ -629,7 +629,7 @@ def review_status(root, state):
         sheet = ''
     # 只认交付单头部（第一个二级标题之前）的执行者行，正文里引用这句话不算
     head = re.split(r'^## ', sheet, maxsplit=1, flags=re.M)[0]
-    if re.search(r'^\W*执行者[:：]\s*Claude[（(]审查[）)]', head, re.M):
+    if re.search(r'^\W*执行者[:：]\s*(?:Claude|cc)[（(]审查[）)]', head, re.M):
         return '无'
     return '待审查'
 
@@ -638,7 +638,7 @@ def prepare(root, state, state_file, executor):
     if state['phase'] != 'planned' and git(root, 'rev-parse', 'HEAD') != state['head']:
         raise RuntimeError('准备过程中 main HEAD 已改变，先人工核对')
     if state['phase'] == 'planned':
-        actor = 'Claude（唐僧）' if executor == 'Claude' else 'Codex（沙僧）'
+        actor = 'cc（唐僧）' if executor == 'cc' else 'Codex（沙僧）'
         message = ['-m', '合并 ' + state['branch'], '-m', '执行者: ' + actor + '\n核查: ' + review_status(root, state)]
         if merge_head(root) == state['target']:
             # 上次合并停在冲突：唐僧解决并 git add 后重跑本工具，由它照规范提交合并，再往下接续。
@@ -1100,7 +1100,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         remaining = changed - set(sheets(state))
         if remaining:
             run(root, ['git', 'add', '--', *sorted(remaining)])
-        actor = 'Claude（唐僧）' if executor == 'Claude' else 'Codex（沙僧）'
+        actor = 'cc（唐僧）' if executor == 'cc' else 'Codex（沙僧）'
         trailer = '执行者: ' + actor + '\n核查: ' + review_status(root, state)
         if affected and not batch:
             trailer += '\n验证: 选测（基准 %s，当天全量前算选测已验）' % check[-1][:9]
@@ -1258,7 +1258,8 @@ def main(argv=None):
     modes = ap.add_mutually_exclusive_group()
     modes.add_argument('--dry-run', action='store_true')
     modes.add_argument('--finish', action='store_true')
-    ap.add_argument('--executor', choices=['Claude', 'Codex'], default='Claude')
+    ap.add_argument('--executor', choices=['cc', 'Claude', 'Codex'], default='cc',
+                    help='执行者；Claude 是 cc 的旧写法（Kyo 10-31 改叫 cc），两者等价，写进提交尾注的都是 cc')
     modes.add_argument('--close-batch', action='store_true',
                        help='本批都 --finish --batch 收尾后、没有新车道要合时：统一跑 检查.sh --oracle（可加 --affected），通过后清理本批工作树、推送')
     modes.add_argument('--abort', action='store_true',
@@ -1281,6 +1282,7 @@ def main(argv=None):
     ap.add_argument('--also', action='append', default=[], metavar='路径',
                     help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则），可重复')
     a = ap.parse_args(argv)
+    a.executor = 'cc' if a.executor == 'Claude' else a.executor
     root = a.root or Path(git(Path(__file__).parent, 'rev-parse', '--path-format=absolute', '--git-common-dir')).parent
     root = root.resolve()
     lock = None
@@ -1326,7 +1328,7 @@ def main(argv=None):
         if (state and state['phase'] == 'planned' and merge_head(root) is None
                 and subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode):
             # 还没合进来（放弃了冲突合并、车道重新交付，或 main 又前进）：按车道与 main 的现状重新计划。
-            executor = state.get('executor', a.executor)
+            executor = 'cc' if state.get('executor', a.executor) == 'Claude' else state.get('executor', a.executor)
             state = plan(root, a.task)
             state['executor'] = executor
             save(state_file, state)
@@ -1336,7 +1338,7 @@ def main(argv=None):
             state = plan(root, a.task)
             state['executor'] = a.executor
             save(state_file, state)
-        elif state.get('executor', a.executor) != a.executor:
+        elif ('cc' if state.get('executor', a.executor) == 'Claude' else state.get('executor', a.executor)) != a.executor:
             raise RuntimeError('接续执行者不同，请先核对原执行者登记')
         if a.accept_changes:
             add_acceptances(root, state, a.accept_changes)
