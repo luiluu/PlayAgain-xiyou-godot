@@ -712,7 +712,8 @@ func refresh_passive() -> void:
 	var c := {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "skillPass": {}, "skillTypeDvup": {},
 		"SkETypeHarmRi": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0, "itemRateUp": 0.0,
 		"certainHit": {"global": false, "bySkill": {}}, "damageElement": 0,
-		"consumeReduce": {"bySkill": {}, "byType": {"Zj": 0, "Mf": 0}, "all": 0}}
+		"consumeReduce": {"bySkill": {}, "byType": {"Zj": 0, "Mf": 0}, "all": 0},
+		"recPushStates": [], "pushStates": [], "pushSelfStates": []}
 	var objs := stat_equips() + skills() + states()
 	for o in objs:
 		var note := str(o.get("note", ""))
@@ -750,6 +751,10 @@ func refresh_passive() -> void:
 			c.damageElement = int(str(meta.DamageElements).strip_edges())
 		if meta.has("passiveIRUP"):
 			c.itemRateUp += _num(meta.passiveIRUP)
+		# 伤害／治疗时挂状态（dsPassiveSkill 7～9 节）：状态号 parseInt、% 可省、概率只认整数（<PushsubState0742: 0.2%> 认不出）
+		for pair in [["RecPushState", "recPushStates"], ["PushState", "pushStates"], ["PushsubState", "pushSelfStates"]]:
+			for m in _scan(note, "<%s(\\d+):\\s*(\\d+)%%?>" % pair[0]):
+				c[pair[1]].append({"stateId": int(m[0]), "probability": float(m[1])})
 		# dsPassiveSkill读取meta（重复同名标签取最后一条），parseInt按首个有符号整数解析。
 		for key in meta:
 			var tag := str(key)

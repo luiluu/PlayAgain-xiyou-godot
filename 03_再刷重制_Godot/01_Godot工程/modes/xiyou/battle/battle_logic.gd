@@ -1604,7 +1604,9 @@ func _eval_hit(code: String, u: XBattler, t: XBattler, extra: Dictionary) -> flo
 func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> float:
 	if skill.get("_alienMode", "") == "prayer":
 		return XAlienBattle.prayer_heal(self, u, skill, t)  # 异化逆祷 makeDamageValue 包装：按治疗技能算预算再分摊
-	return XDamage.finish(_calculate_damage(u, skill, t, critical), skill, u, t, true, _state_context(u, skill, t, _damage_record))
+	var res := _calculate_damage(u, skill, t, critical)
+	_push_sign = float(res.value)  # 伤害／治疗时挂状态按 makeDamageValue（CodexDamage.calculate）的正负，见 _push_states
+	return XDamage.finish(res, skill, u, t, true, _state_context(u, skill, t, _damage_record))
 
 
 func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
@@ -1716,6 +1718,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		var previous_record := _damage_record
 		_damage_record = r
 		var value := _damage_value(u, skill, dt, r.critical)
+		_push_states(u, skill, dt)  # installDamageElementRuntime makeDamageValue 的 result._after：伤害／治疗时挂状态
 		if XBlackFlash.boosted(dt):
 			r.critical = true  # 黑闪 modifyCritical：结果记为暴击
 			_action_resources.result(dt).critical = true
@@ -1743,6 +1746,23 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_die(t)
 		r.died = true
 	return r
+
+
+## dsPassiveSkill 被动缓存的 PushState／RecPushState／PushsubState，由 installDamageElementRuntime 在结算时按 makeDamageValue 的正负挂：
+## 正 → pushStates 给目标、pushSelfStates 给自己；负 → recPushStates 给目标（不看阵营，同原版）；只认角色行动者，异化虚空的攻击伤害除外；
+## 每条按概率掷（Math.random()*100 < p），目标已有就不挂。原版在 Confirm 之后、React 之前挂，这里在整段结算之后（参照 pushstate_oracle）。
+var _push_sign := 0.0
+func _push_states(u: XBattler, skill: Dictionary, t: XBattler) -> void:
+	if not (u is XActor) or _push_sign == 0.0 or (XAlienBattle.has(u, "void") and XAlienBattle.attack_damage(skill)):
+		return
+	var cache: Dictionary = u.passive_cache()
+	for row in cache.get("recPushStates" if _push_sign < 0.0 else "pushStates", []):
+		if _float("push_state") * 100.0 < float(row.probability) and not t.is_state_affected(int(row.stateId)):
+			_state_add(t, int(row.stateId))
+	if _push_sign > 0.0:
+		for row in cache.get("pushSelfStates", []):
+			if _float("push_self_state") * 100.0 < float(row.probability) and not u.is_state_affected(int(row.stateId)):
+				_state_add(u, int(row.stateId))
 
 
 ## Game_Action.applyItemUserEffect：行动者得 floor(tpGain × tcr)（gainSilentTp）
