@@ -89,10 +89,12 @@
 - 专项：`xiyou_sukuna_battle` 425/425（参照 `sukuna_battle.json`，探针在本工作树跑出，8 秒）。
 - 选测（`并行测试.py`，25 个场景全过、无偶发，1062 秒）：xiyou_sukuna_battle、actor_modules、alien_affix、alien_battle、attack_element、attack_query、battle、battle_common_events、battle_events、battle_ui、cat、custom_damage、mira_battle、race_battle、yomi_battle、rules（难度 1 四段 rules／d1b／d1c／d1d）、smart_ai 四段、help_card、difficulty_inherit_battle。
 - 同步：本工作树 `同步正式西游.py --accept-additions` 通过（新探针执行 1、复用 67，测量不变），产物指纹已留。
-- 未合 main：分支基于 main 96bfe11c，交付时 main 没有前进。
+- 合 main：写完交付单时 main 前进到 081291ee（悟空 battle-gaps，改了 `battle_logic.gd` 的 `skill_cost`），已合进来、无冲突（522243fb）；宿傩的 TP 半价仍在 `_skill_cost` 里米拉之后。合并后重跑 11 个场景全过（663 秒）：xiyou_sukuna_battle、battle_gaps、actor_modules、custom_damage、battle、yomi_battle、mira_battle、rules 难度 1 四段。
 
 ## 本分支提交
 
 - c77cd443 宿傩第二期战斗内机制初稿
 - a8e3aa76 原版探针 sukuna_battle_probe 与专项 xiyou_sukuna_battle；去掉 ×1.99
-- 本提交：交付单验证、可合并
+- ad02968a 交付单验证、可合并
+- 522243fb 合 main（081291ee）
+- 本提交：合 main 后的验证
