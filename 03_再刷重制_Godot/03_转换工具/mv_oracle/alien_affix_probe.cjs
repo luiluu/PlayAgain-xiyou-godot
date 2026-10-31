@@ -51,7 +51,7 @@ function independent(kind, id) { const bag = kind === 'w' ? '_weapons' : '_armor
 function battle(spec) {
   newGame(); uncap();
   const a = w.$gameActors.actor(1), b = w.$gameActors.actor(8);
-  a.changeLevel(spec.level || 99, false); b.changeLevel(30, false);
+  a.changeLevel(spec.level || 99, false); b.changeLevel(spec.allyLevel || 30, false);
   if (spec.learn) spec.learn.forEach(id => a.learnSkill(id));  // 祸祝等要先学会模板技能才穿得上（canEquip 看 A.ready）
   if (spec.teach) spec.teach.forEach(id => b.learnSkill(id));  // 无面借入的技能要来源队友（角色 8）已学会
   party(spec.extra ? [1, 8, spec.extra.actor] : [1, 8]);
@@ -61,6 +61,8 @@ function battle(spec) {
   // 吞器供体：背包里的普通独立武器；config.donorId 写 'd序号'，换成供体的编号。lockDonor 给第一件供体名字加【锁定】
   const donors = (spec.donors || []).map(id => independent('w', id));
   if (spec.lockDonor) donors[0].name += '【锁定】';
+  // 队友（角色 8）自己也穿一件本体 1044 的异化武器（allyAffix；夺舍的队友照样锁队冻结）
+  if (spec.allyAffix) { const own = A.create('w', 1044, 'boss', spec.allyAffix); b._equips[0].setObject(own); }
   if (spec.config) { A.mark(item).config = JSON.parse(JSON.stringify(spec.config));
     const c = A.mark(item).config; if (typeof c.donorId === 'string') c.donorId = donors[Number(c.donorId.slice(1))].id; }
   // 衣服栏（装备类型 4）穿一件普通独立防具（从背包拿出来）
@@ -124,6 +126,9 @@ const ERODE_WATCH = [1, 1924, 1926, 1928];
 const seals = x => Object.keys(x._alienSeals || {}).map(Number).sort((p, q) => p - q);
 const extra = x => { const d = x._alienBattle; if (!d) return {};
   if (['silence', 'glutton'].indexOf(d.affix) >= 0) return {mhp: r(x.mhp), mmp: r(x.mmp), capLock: r(d.capLock), hunger: r(d.hunger)};
+  // 夺舍另记出战名单、敌人等级、角色 1 技能表里有没有借来的 9（火焰）与被动 16（剑道天赋）、能不能用 9
+  if (d.affix === 'possession') return {members: w.$gameParty.battleMembers().map(m => m.actorId()), lv: w.$gameTroop.members().map(e => e.level),
+    has: [9, 16].filter(id => x.skills().some(s => s.id === id)), usable: [9].filter(id => x.canUse(w.$dataSkills[id]))};
   if (['mimic', 'faceless'].indexOf(d.affix) >= 0) return {observed: d.observed.slice(), selected: d.selected,
     has: WATCH.filter(id => x.skills().some(s => s.id === id)), usable: WATCH.filter(id => x.canUse(w.$dataSkills[id]))};
   if (d.affix === 'erosion') return {seals: seals(x), usable: ERODE_WATCH.filter(id => x.canUse(w.$dataSkills[id])),
@@ -265,6 +270,13 @@ battleCase('hollow.event', {affix: 'hollow'}, [{event: {who: 'a', value: 500}}, 
 // 连命者的负再生（中毒 4）先吃护盾：护盾够吸收时只扣护盾；不够时击穿，余下的进生命池（沙僧第三十六期补核的现场）
 battleCase('lifelink.regen_shield', {affix: 'lifelink', config: {actorId: 1, partnerId: 8}}, [{set: {aShield: 1000}}, {user: 'e0', def: S(1, 0, [21, 4, 1])}, {regen: 'a'}]);
 battleCase('lifelink.regen_shield_break', {affix: 'lifelink', config: {actorId: 1, partnerId: 8}}, [{set: {aShield: 100}}, {user: 'e0', def: S(1, 0, [21, 4, 1])}, {regen: 'a'}]);
+// 夺舍（Adv:11、37、72、80、86、105）：队友（角色 8，90 级）整场退出战斗（battleMembers 去掉），角色 1（35 级）借队友学会的
+// possessionSkills（教 9 火焰）与安全被动（教 16 剑道天赋）；敌人等级在锁队前已按队伍最高等级定（含队友）；自己倒下时队友也倒下
+const POSSESS = {affix: 'possession', config: {actorId: 1, partnerId: 8}, level: 35, allyLevel: 90, teach: [9, 16]};  // 本体 1044 要 35 级
+battleCase('possession', POSSESS, [{user: 'a', skill: 9}, {user: 'e0', skill: 1}, {event: {who: 'a', value: -99999, death: true}}]);
+// 被夺舍的队友自己穿饕餮：锁队照样冻结（法力归 0）
+battleCase('possession.glutton', Object.assign({allyAffix: 'glutton'}, POSSESS), [{user: 'e0', skill: 1}]);
+battleCase('possession.invalid', Object.assign({dead: ['b']}, POSSESS), [{user: 'e0', skill: 1}]);
 // 锁队检查（Adv:62）：绑定的队友（角色 2）不在场，异化装备卸下放回背包，本场不生效
 battleCase('lifelink.invalid', {affix: 'lifelink', config: {actorId: 1, partnerId: 2}}, [{user: 'e0', skill: 1}]);
 // 第③批·行动道具投影：祸祝把 templates.blessing（7100 幻日虹，自身加速 2421）改为敌方单体、状态换成 statePairs 的诅咒（2668 减速）；

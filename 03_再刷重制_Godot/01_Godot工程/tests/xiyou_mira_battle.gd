@@ -4,7 +4,7 @@ extends Node
 ## - meets.*：各进阶／等级／形态下技能能不能用（含技能同步后的已学列表）；
 ## - cost.*：进阶 1／2 时主动技 MP／TP 费用（禁忌 ×0.75）；
 ## - act.*：敌群 3（每只生命加 1e12）、随机数全取 0.5 的真实行动：逐段比目标与伤害，再比行动后生命、MP、TP、状态、减益、劫火累计、
-##   各敌人状态，跑一次回合结束后比各人生命变化（劫火追加、不灭龙血回血、中毒）。act.liberate.end.debuff 原版抛错（O-待定），
+##   各敌人状态，跑一次回合结束后比各人生命变化（劫火追加、不灭龙血回血、中毒）。act.liberate.end.debuff 原版抛错（O-123），
 ##   重制默认清掉减益，另以 DEBUFF_FIX 关掉核对其余部分与原版一致；
 ## - immune.*：黑龙形态有无终焉时附加名单状态与减益；incoming.*：敌人普通攻击（攻击加 1e6）对米拉的伤害（不灭龙血 ×0.8）；
 ## - end：战斗结束删 2592／2597～2599。
@@ -164,7 +164,7 @@ func _act(c: Dictionary, debuff_fix := true) -> void:
 		_ratios.append(values[0] / float(o.log[0].value))
 	var tag: String = c.id + ("" if debuff_fix else ".original")
 	if o.has("threw"):
-		# 原版在解放收尾抛错：已加黑龙形态、减益未清。重制默认清掉（O-待定），关掉时与原版留下的一样
+		# 原版在解放收尾抛错：已加黑龙形态、减益未清。重制默认清掉（O-123），关掉时与原版留下的一样
 		check(tag + ".states", _sorted(a.state_ids) == _ints(o.states), [a.state_ids, o.states])
 		check(tag + ".debuffs", _debuffs(a) == ([] if debuff_fix else _ints(o.debuffs)), [_debuffs(a), o.debuffs])
 		XMira.DEBUFF_FIX = true

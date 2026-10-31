@@ -214,6 +214,7 @@ static func open(logic) -> void:
 static func lock_party(logic) -> void:
 	var st := _store(logic)
 	restore_gear(logic)  # 重新锁队（测试夹具）前先还原上次空出的装备栏，免得把空栏当成原装备存下
+	unpossess(logic)  # 同理先把上次夺舍退场的队友放回出战名单
 	eject_invalid(logic)
 	st.party = {}
 	st.battling = true
@@ -227,6 +228,7 @@ static func lock_party(logic) -> void:
 	else:
 		for a in logic.actors:
 			setup_gear(logic, a, st.party[a])
+	setup_possession(logic)
 
 
 ## lockParty 包装（Adv:62）：配置失效的异化装备（A.ready 不过；绑定词条的队友不在场、已倒下或已被前面的人绑定）
@@ -298,6 +300,7 @@ static func end(logic, result: int) -> void:
 		if result == 0:
 			grant(logic)
 		x.settled = true
+	unpossess(logic)  # 夺舍：队友回到名单，下面的还原（饕餮法力、吞器衣服栏等）照原版按全队做
 	restore_gear(logic)
 	if bool(_store(logic).get("status", false)):
 		end_life(logic)
@@ -1243,6 +1246,8 @@ static func set_life(logic, p: Dictionary, value: float) -> void:
 static func sync_relations(logic = null) -> void:
 	if logic == null:
 		logic = active_logic()
+	if logic != null and logic.has_meta("xalien"):
+		sync_possession(logic)
 	if logic == null or not status_battle() or not bool(_store(logic).get("life", false)):
 		return
 	sync_pools(logic)
@@ -1304,7 +1309,9 @@ static func after_gain(b, resource: String) -> void:
 ## 行动外直接改生命（没走 gain_hp_outside）之后：gainHp 包装末尾的 A.syncRelations（Adv:101）。
 ## 只有嫁祸保护者需要——嫁祸者的生命按保护者的比例、保护者倒下嫁祸者跟着倒下（镜骸反噬、腐蚀、事件「增减生命」）
 static func after_outside_hp(b) -> void:
-	if _hp_resolving == 0 and status_battle() and b is XActor and active_logic().actors.any(func(a): return a.has_meta("xalien_protector") and is_same(a.get_meta("xalien_protector"), b)):
+	if _hp_resolving == 0 and b is XActor and b.has_meta("xalien_possession") and battling():
+		sync_relations()  # 夺舍者行动外倒下：队友跟着倒下（同一 syncRelations）
+	elif _hp_resolving == 0 and status_battle() and b is XActor and active_logic().actors.any(func(a): return a.has_meta("xalien_protector") and is_same(a.get_meta("xalien_protector"), b)):
 		sync_relations()
 
 
@@ -1585,6 +1592,12 @@ static func blocked_skills(d: Dictionary) -> Array:
 ## 百相在战斗中加当前仿形（可借才加、不重复），记录两项以上再加切换仿形
 static func skill_ids(a: XActor, ids: Array) -> Array:
 	var d := XAlienation.for_actor(a)
+	if not d.is_empty() and str(d.affix) == "possession" and battling():
+		var out := ids.duplicate()
+		for id in possession_skill_ids(a):  # 夺舍 skills 包装（Adv:86）：按 id 去重追加
+			if not out.has(id):
+				out.append(id)
+		return out
 	if d.is_empty() or not str(d.affix) in ["mimic", "faceless"]:
 		return ids
 	var blocked := blocked_skills(d)
@@ -1838,9 +1851,9 @@ static func setup_gear(logic, a, d) -> void:
 
 ## traitObjects 包装（Adv:81-85）：战斗中吞器者多供体的借用效果，献器的队友多收到的效果
 static func gear_effects(a) -> Array:
-	if not a.has_meta("xalien_ghosts") and not a.has_meta("xalien_received"):
+	if not a.has_meta("xalien_ghosts") and not a.has_meta("xalien_received") and not a.has_meta("xalien_possession"):
 		return []
-	return Array(a.get_meta("xalien_ghosts", [])) + Array(a.get_meta("xalien_received", []))
+	return Array(a.get_meta("xalien_ghosts", [])) + Array(a.get_meta("xalien_received", [])) + Array(a.get_meta("xalien_possession", []))
 
 
 ## changeEquip／forceChangeEquip 包装（Adv:87 的战斗部分）：战斗中吞器、献器者与献器的队友不能换装备
@@ -1875,3 +1888,130 @@ static func restore_gear(logic) -> void:
 		a.refresh_passive()
 		a.param_mark_dirty()
 		a.refresh_resources()
+
+
+# ---- 词条效果④：夺舍（installAlienationAdvanced 11、36-37、72、80、85-86、105、196） ----
+
+## Game_Party.battleMembers 包装（Adv:80）：战斗中被夺舍的队友不算出战成员（XState.battle_members 全局过滤）
+static func possessed(a) -> bool:
+	return a is XActor and a.has_meta("xalien_possessed_by") and battling()
+
+
+## A.safePassive（Adv:36）：被动（技能类型 4）、没有效果、备注不含自定义／角色专属类写法，且至少有一个 passive／StartPush／TurnPush
+## 标签、全部在白名单里
+static var _unsafe_note_re := RegEx.create_from_string("(?i)Custom|Codex|Actor|Unique|Passive State|\\$game|SkillKill|SkillFr|Summon|死亡|复活|变身")
+static var _passive_tag_re := RegEx.create_from_string("(?i)<((?:passive|StartPush|TurnPush)[a-zA-Z0-9]+)\\s*:")
+static var _safe_tag_re := RegEx.create_from_string("(?i)^passive(?:PBST[2-7]|XPBST[0-9]|ELUP[0-9]+|WPNM[0-9]+|HarmRi|CrHarmRi|HarmRe[0-9]+|IRUP|GRUP|SPBST2)$")
+static func safe_passive(sk: Dictionary) -> bool:
+	if sk.is_empty() or int(sk.get("stypeId", 0)) != 4 or not (sk.get("effects", []) as Array).is_empty():
+		return false
+	var note := str(sk.get("note", ""))
+	if _unsafe_note_re.search(note) != null:
+		return false
+	var tags := _passive_tag_re.search_all(note)
+	return not tags.is_empty() and tags.all(func(m): return _safe_tag_re.search(m.get_string(1)) != null)
+
+
+## A.borrowedSkills（Adv:37）＋skills 包装（Adv:86）：队友已学会的 possessionSkills 与队友的安全被动（被动不要求已学会，
+## nativeSkills 含装备特性加的）。返回要加进夺舍者技能表的技能号
+static func possession_skill_ids(a) -> Array:
+	var d = locked(a)
+	if d == null or str(d.affix) != "possession" or d.get("partner") == null:
+		return []
+	var p: XActor = d.partner
+	var out := []
+	for sk in XAlienation.native_skills(p):
+		var id := int(sk.id)
+		if (p.skill_ids.has(id) and _in_template("possessionSkills", id)) or safe_passive(sk):
+			out.append(id)
+	return out
+
+
+## 锁队预判（不改状态）：本场会被夺舍的队友。同 eject_invalid 的判定：异化装备就绪、绑定队友在场、活着、没被前面的人绑定。
+## battle_logic.setup 里原版属于原 startBattle（锁队之后）的读取（开战移除状态、初始 TP、预热、种族）不算他们
+static func possession_partners(logic) -> Array:
+	var out := []
+	var claimed := []
+	for a in logic.actors:
+		var item = null
+		for e in a.equips:
+			if e is Dictionary and not XAlienation.mark(e).is_empty():
+				item = e
+				break
+		if item == null:
+			continue
+		var m := XAlienation.mark(item)
+		if not Array(XAlienation.config().get("boundKeys", [])).has(str(m.affix)) or not XAlienation.ready(logic.state, a, item):
+			continue
+		var p = null
+		for x in logic.actors:
+			if x.actor_id == int(m.get("config", {}).get("partnerId", 0)):
+				p = x
+		if p == null or not _live(p) or claimed.any(func(c): return is_same(c, p)):
+			continue
+		claimed.append(p)
+		if str(m.affix) == "possession":
+			out.append(p)
+	return out
+
+
+## 锁队（Adv:72、77）：队友记 _alienPossessedBy，夺舍者记 possessionTraits（队友安全被动的备注；MV 技能没有特性字段），
+## 刷新夺舍者的被动缓存。锁队用未过滤的名单（队友自己的异化装备照样冻结），之后才把队友从本场出战名单拿掉
+static func setup_possession(logic) -> void:
+	var st := _store(logic)
+	var roster: Array = logic.actors.duplicate()
+	var leaving := []
+	for a in logic.actors:
+		var d = st.party.get(a)
+		if d == null or str(d.affix) != "possession":
+			continue
+		var p = null
+		for x in logic.actors:
+			if x.actor_id == int(d.config.get("partnerId", 0)):
+				p = x
+		if p == null:
+			continue
+		d.partner = p
+		p.set_meta("xalien_possessed_by", a)
+		a.set_meta("xalien_possession", XAlienation.native_skills(p).filter(safe_passive).map(func(sk): return {"traits": [], "note": str(sk.get("note", "")), "meta": sk.get("meta", {})}))
+		leaving.append(p)
+		a.refresh_passive()
+		a.param_mark_dirty()
+		a.refresh_resources()
+	if leaving.is_empty():
+		return
+	st.roster = roster
+	for p in leaving:
+		logic.actors.erase(p)
+
+
+## A.syncRelations 里的夺舍（Adv:105）：夺舍者倒下而队友没倒下，队友生命 0 并附加阵亡（经 _alienDeathSync）
+static func sync_possession(logic) -> void:
+	var st := _store(logic)
+	for a in st.get("roster", []):
+		if not a.has_meta("xalien_possessed_by"):
+			continue
+		var owner = a.get_meta("xalien_possessed_by")
+		if not _live(owner) and not a.state_ids.has(1):
+			a.hp = 0.0
+			_death_sync += 1
+			a.add_state(1)
+			_death_sync -= 1
+
+
+## endBattle 包装（Adv:196）的夺舍部分：清记号、队友放回出战名单；队友身上的阵亡不还原
+static func unpossess(logic) -> void:
+	var st := _store(logic)
+	var roster: Array = st.get("roster", [])
+	if roster.is_empty():
+		return
+	var leaving := roster.filter(func(a): return a.has_meta("xalien_possessed_by"))
+	for a in roster:
+		for k in ["xalien_possessed_by", "xalien_possession"]:
+			if a.has_meta(k):
+				a.remove_meta(k)
+				a.refresh_passive()
+				a.param_mark_dirty()
+	var current: Array = logic.actors.duplicate()
+	logic.actors.assign(roster.filter(func(a): return current.has(a) or leaving.has(a)))
+	st.roster = []
