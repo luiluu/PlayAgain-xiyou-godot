@@ -90,6 +90,9 @@ function battle(spec) {
     const old = e.traitObjects; e.traitObjects = function () { return old.call(this).concat([more]); }; });
   if (spec.mirror) enemies[0]._alienEnemy = {variant: 'mirror', boss: true, shieldGranted: false, mirrorRound: -1, mirrorCharged: true,
     plagueRound: -1, drainRound: -1, visualPulse: 0};
+  // 烈变（flare：true 为 Boss 烈变 ×1.15，'mob' 为小怪异化 ×1.1）：敌人 0 直接写成异化变体，量 outgoing（行动帧里的扣血加成）
+  if (spec.flare) enemies[0]._alienEnemy = {variant: 'flare', boss: spec.flare !== 'mob', shieldGranted: false, mirrorRound: -1, mirrorCharged: false,
+    plagueRound: -1, drainRound: -1, visualPulse: 0};
   A.lockParty();
   w.$gameParty._inBattle = true;
   w.CodexYunshang._acted = [];
@@ -370,4 +373,8 @@ battleCase('hollow.mp', {affix: 'hollow'}, [{set: {aMp: 0.5}}, {event: {who: 'a'
 battleCase('glutton.mp', {affix: 'glutton'}, [{event: {who: 'a', value: 300, mp: true}}, {event: {who: 'a', value: -100, mp: true}}]);
 battleCase('insulation.mp', {affix: 'insulation'}, [{set: {aMp: 0.5}}, {event: {who: 'a', value: 300, mp: true, src: 'b'}},
   {event: {who: 'a', value: 300, mp: true}}, {event: {who: 'a', value: -100, mp: true, src: 'b'}}]);
+// 遗留①：烈变加成也算在行动帧里的 gainHp 上（Runtime wrapHp：帧为 active、不在 executeHpDamage 里时 v=-outgoing），
+// 如效果「恢复 HP」负值、技能备注 b.gainHp(-3000)（净化之雷 857、4013）；普攻走 executeHpDamage 本来就加（对照：不能多乘一次）
+battleCase('flare.gain', {flare: true}, [{user: 'e0', def: S(1, 0, [11, 0, -0.1])}, {user: 'e0', skill: 1}]);
+battleCase('flare.gain.mob', {flare: 'mob'}, [{user: 'e0', def: S(1, 0, [11, 0, -0.1])}, {user: 'e0', skill: 1}]);
 process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）、MP 费用（缄默、饕餮）、借技能（百相、无相）、蚀术、第④批装备类（吞器、献器）、补漏（setHp、阵亡保留、锁队检查已倒下与重复绑定、逆祷反击与连击与持续伤害帧、事件增减 MP）', config, cases}) ? 0 : 1);
