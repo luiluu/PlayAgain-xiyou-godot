@@ -51,8 +51,17 @@
 
 ## 验证
 
-- 待写
+- 参照：`airship_probe` 10 例无报错（正式冻结 v0.28）；`battle_gaps_probe` 没改。
+- 专项（本机）：`xiyou_battle_gaps`（O-129 开关两支、21 例 reward.* 开关两支）、`xiyou_battle`、`xiyou_zhenqi_break`、`xiyou_zhenqi_daofa`、`xiyou_airship_fly`／`_state`／`_view`、`xiyou_script`（26/26，含 5 条新条件断言）、`xiyou_floor_reach075` 通过；O-129 牵涉的 `xiyou_mira_battle`、`xiyou_wtype`、`xiyou_loose_fixes`、`xiyou_battle_ui`、`xiyou_race_battle`、`xiyou_challenge_passives`、`xiyou_smart_ai*` 10 个场景通过（2227 秒）。
+- 反向：开关两支在专项里各自断言（O-129 关＝参照、开＞参照；难度倍率关＝参照、开＝按参照敌人值重算；O-117 切原版两样可用再切回锁上）。
+- 选测：`选测.py main` 选出 187 个场景（改了 map_scene.gd 与 battle_logic.gd），超过 40 个，按总装说的等 11-01 Actions 走云端，还没跑。
+- 改动的原沙僧核心文件：`battle_logic.gd`（`note_costs`、`rewards`）。另改 `map_scene.gd`（只把 SAFE_AIRSHIP_MENU 改成 static var）。
 
 ## 本分支提交
 
-- 待写
+- 7349ac6e O-129 降众天华 MP 比例认小数
+- cdd0d33e 合并 main
+- 2e48b3fd O-117 回退支断言；条件 9／10 断言挪进 xiyou_script
+- 6ecab698 飞艇原版参照 airship_probe
+- 8104f19c 难度经验／金钱倍率加回来
+- c42bde3f 修新断言、交付单
