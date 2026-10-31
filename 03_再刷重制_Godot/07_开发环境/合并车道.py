@@ -343,7 +343,29 @@ def sheets(state):
     return [state['delivery'], *state.get('extraDeliveries', [])]
 
 
-def plan(root, task):
+def lane_branches(task, branch=None):
+    """这个任务可能对应的分支：给了 --branch 就只认它（任务名仍是交付单名）；否则 cc/、claude/、codex/ 加任务名。"""
+    return [branch] if branch else ['cc/' + task, 'claude/' + task, 'codex/' + task]
+
+
+def branch_hint(root, task):
+    """找不到 <前缀>/<任务> 时的线索：交付单名是 <前缀>_<任务>.md 的分支（app 自建工作树常把车道建在 cc/<随机名> 上）。"""
+    try:
+        refs = git(root, 'for-each-ref', '--sort=-committerdate', '--count=60', '--format=%(refname:short)', 'refs/heads').splitlines()
+    except RuntimeError:
+        return ''
+    found = []
+    for ref in refs:
+        try:
+            names = git(root, 'ls-tree', '--name-only', ref, '00_项目管理/交付/').splitlines()
+        except RuntimeError:
+            continue
+        if any(re.fullmatch(r'00_项目管理/交付/(?:cc|claude|codex)_' + re.escape(task) + r'\.md', n) for n in names):
+            found.append(ref)
+    return '；交付单名对得上的分支有：%s（用 --branch <分支> 指定）' % '、'.join(found) if found else ''
+
+
+def plan(root, task, branch=None):
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', task):
         raise RuntimeError('任务名只允许字母、数字、点、下划线和短横线')
     if git(root, 'branch', '--show-current') != 'main':
@@ -354,7 +376,7 @@ def plan(root, task):
         hint = ('；其中未跟踪的（%s）若是本机临时文件（如通知、草稿），可把路径写进本地 .git/info/exclude（不入 Git），'
                 '不必删' % '、'.join(untracked[:5])) if untracked else ''
         raise RuntimeError('main 必须干净，包含未跟踪文件；本工具不自动保存或覆盖现场：' + '、'.join(sorted(changed)[:8]) + hint)
-    lanes = [w for w in worktrees(root) if w.get('branch') in ['cc/' + task, 'claude/' + task, 'codex/' + task]]
+    lanes = [w for w in worktrees(root) if w.get('branch') in lane_branches(task, branch)]
     if len(lanes) > 1:
         raise RuntimeError('须有且只有一个对应任务的已登记车道工作树')
     evidence = []
@@ -376,11 +398,11 @@ def plan(root, task):
             return f.read_text() if f.is_file() and not f.is_symlink() else None
     else:
         # 车道交付后已在同一工作树换新分支接着做：没有工作树停在交付分支上，按分支引用合并，文件从交付提交里读
-        refs = [b for b in ['cc/' + task, 'claude/' + task, 'codex/' + task]
+        refs = [b for b in lane_branches(task, branch)
                 if subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', 'refs/heads/' + b],
                                   capture_output=True).returncode == 0]
         if len(refs) != 1:
-            raise RuntimeError('须有且只有一个对应任务的车道工作树或车道分支')
+            raise RuntimeError('须有且只有一个对应任务的车道工作树或车道分支' + (branch_hint(root, task) if not refs else ''))
         branch, wt = refs[0], None
         target = git(root, 'rev-parse', 'refs/heads/' + branch)
         if not evidence:
@@ -395,6 +417,14 @@ def plan(root, task):
     fork = git(root, 'merge-base', base, target)
     delivery = Path('00_项目管理/交付') / (branch.replace('/', '_') + '.md')
     text = read(delivery)
+    if text is None and branch not in ['%s/%s' % (p, task) for p in ('cc', 'claude', 'codex')]:
+        # 分支名与任务名对不上（--branch 指定了别的分支）：交付单按任务名找 <前缀>_<任务>.md
+        for prefix in ('cc', 'claude', 'codex'):
+            alt = Path('00_项目管理/交付') / ('%s_%s.md' % (prefix, task))
+            text = read(alt)
+            if text is not None:
+                delivery = alt
+                break
     if text is None:
         raise RuntimeError('车道分支缺少交付单：' + str(delivery))
     draft(text)
@@ -1268,6 +1298,7 @@ def main(argv=None):
                        help='本批最后的检查失败、要撤出某条车道时：存备份后退回本批开始前的 main，车道工作树都保留')
     ap.add_argument('--batch', action='store_true',
                     help='--finish 时本条先不跑检查、不清理、不推送，记入本批；最后一条不加它统一检查')
+    ap.add_argument('--branch', help='车道分支（任务名仍写交付单名）：app 自建的工作树常把车道建在 cc/<随机名> 上，名字与派单的 <前缀>/<任务> 对不上时用')
     ap.add_argument('--cloud', action='store_true',
                     help='和 --affected 一起用（--finish 或 --close-batch）：选中的 Godot 场景交给 GitHub Actions 云端跑（云端选测.py run＋wait），'
                          '非 Godot 检查仍在本机；云端不可用时明确失败，不静默改本机')
@@ -1320,7 +1351,7 @@ def main(argv=None):
         if a.accept_changes and (a.finish or a.dry_run):
             raise RuntimeError('--accept-changes 只用于准备阶段接着同步（不配 --finish、--dry-run）')
         if a.dry_run:
-            print(json.dumps(plan(root, a.task), ensure_ascii=False, indent=2)); return 0
+            print(json.dumps(plan(root, a.task, a.branch), ensure_ascii=False, indent=2)); return 0
         lock = take_lock(folder)
         state = json.loads(state_file.read_text()) if state_file.exists() else None
         if state and state['task'] != a.task:
@@ -1329,13 +1360,13 @@ def main(argv=None):
                 and subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode):
             # 还没合进来（放弃了冲突合并、车道重新交付，或 main 又前进）：按车道与 main 的现状重新计划。
             executor = 'cc' if state.get('executor', a.executor) == 'Claude' else state.get('executor', a.executor)
-            state = plan(root, a.task)
+            state = plan(root, a.task, a.branch)
             state['executor'] = executor
             save(state_file, state)
         if state is None:
             if a.finish or a.accept_changes:
                 raise RuntimeError('没有准备中的合并')
-            state = plan(root, a.task)
+            state = plan(root, a.task, a.branch)
             state['executor'] = a.executor
             save(state_file, state)
         elif ('cc' if state.get('executor', a.executor) == 'Claude' else state.get('executor', a.executor)) != a.executor:

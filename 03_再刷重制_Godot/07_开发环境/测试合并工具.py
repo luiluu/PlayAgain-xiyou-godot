@@ -403,6 +403,24 @@ class ParallelTestRunnerTests(unittest.TestCase):
         rc, out, _ = par.run_with_rusage(['sh', '-c', 'echo hi; exit 3'], dict(os.environ), 10)
         self.assertEqual((rc, out), (3, 'hi\n'))
 
+    def test_script_parse_error_fails_fast_instead_of_waiting_for_timeout(self):
+        """八戒宿傩交付单：脚本解析错误时 Godot 不退出，要等单场景超时（600 秒）才判失败。出现 Godot 的解析错误行就立刻终止；
+        测试正文里打印的 "Parse Error"（如 JSON 解析失败的断言信息）不算。"""
+        import time as _t
+        par = load('par_fatal', HERE / '并行测试.py')
+        t0 = _t.monotonic()
+        rc, out, _ = par.run_with_rusage(['sh', '-c', 'echo "SCRIPT ERROR: Parse Error: Identifier x not declared in the current scope." >&2; sleep 60'],
+                                         dict(os.environ), 60, par.FATAL_LOAD)
+        self.assertLess(_t.monotonic() - t0, 20)
+        self.assertEqual(rc, 143)
+        self.assertIn('提前终止', out)
+        self.assertIn('Identifier x', out)
+        rc, out, _ = par.run_with_rusage(['sh', '-c', 'echo \'ERROR: Failed to load script "res://a.gd" with error "Parse error".\' >&2; sleep 60'],
+                                         dict(os.environ), 60, par.FATAL_LOAD)
+        self.assertEqual(rc, 143)
+        rc, out, _ = par.run_with_rusage(['sh', '-c', 'echo "assert: JSON Parse Error: bad input"; exit 0'], dict(os.environ), 10, par.FATAL_LOAD)
+        self.assertEqual((rc, 'JSON Parse Error' in out), (0, True))
+
     def test_failure_summary_is_last_and_written_for_checker(self):
         """哪吒_7 t4 第 1 项：长任务日志里失败明细夹在几百行进度中间，收尾单列失败场景与日志路径，并交给 检查.sh 汇总。"""
         summary = self.tmp / 'failed.tsv'
@@ -1350,6 +1368,26 @@ for name in filter(None, files):
         self.assertTrue(self.g('log', '-1', '--format=%s').startswith('合并 cc/ccjob'))
         self.assertIn('【cc】新写法', (self.root / merge.LOG).read_text())
         self.assertEqual(self.call_task('ccjob', '--finish'), 0, self.last_output)   # 缺省 cc，与上面的 Claude 等价，不报「接续执行者不同」
+        self.assertFalse(wt.exists())
+
+    def test_branch_option_merges_lane_built_on_differently_named_branch(self):
+        """今天八戒派单是 claude/bajie-sukuna2，app 实际建在 cc/compassionate-gagarin-ec734e 上做，总装手动快进。
+        --branch 指定车道分支，任务名仍是交付单名；不给 --branch 时报错并点出交付单名对得上的分支。"""
+        wt = Path(self.tmp.name) / 'lane_app'
+        self.g('worktree', 'add', '-b', 'cc/compassionate-gagarin-ec734e', str(wt))
+        receipt = wt / '00_项目管理/交付/claude_sukuna2.md'
+        receipt.parent.mkdir(parents=True, exist_ok=True)
+        receipt.write_text('# delivery\n- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【cc】宿傩（' + merge.VERSION_MARKER + '）\n\n- change\n\n## 交接板\n- x\n')
+        (wt / 'sukuna.md').write_text('x\n')
+        self.g('add', '.', cwd=wt); self.g('commit', '-m', 'sukuna', cwd=wt)
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n\n## 待交叉核查\n| cc/compassionate-gagarin-ec734e |\n## end\n')
+        self.g('add', '.'); self.g('commit', '-m', 'board')
+        self.assertEqual(self.call_task('sukuna2'), 1)
+        self.assertIn('--branch', self.last_output)
+        self.assertIn('cc/compassionate-gagarin-ec734e', self.last_output)
+        self.assertEqual(self.call_task('sukuna2', '--branch', 'cc/compassionate-gagarin-ec734e'), 0, self.last_output)
+        self.assertIn('【cc】宿傩', (self.root / merge.LOG).read_text())
+        self.assertEqual(self.call_task('sukuna2', '--branch', 'cc/compassionate-gagarin-ec734e', '--finish'), 0, self.last_output)
         self.assertFalse(wt.exists())
 
     def test_cc_review_branch_and_sheet_executor_write_no_review_needed(self):

@@ -241,7 +241,8 @@ class ReviewListTests(unittest.TestCase):
                  ('乙-楼层内容', {P + '03_转换工具/xiyou_slice.json': '{}', P + '01_Godot工程/tests/xiyou_floor.gd': 'x'}),
                  ('丙-工具文档', {P + '07_开发环境/工具.py': 'x', '00_项目管理/交接板.md': 'x'}),
                  ('混合取最高', {P + '07_开发环境/工具2.py': 'x', P + '01_Godot工程/tests/t2.gd': 'x', P + '01_Godot工程/modes/xiyou/battle/b.gd.uid': 'x'}),
-                 ('拿不准按甲', {P + '01_Godot工程/modes/xiyou/ui/shop.gd': 'x'})]
+                 ('拿不准按甲', {P + '01_Godot工程/modes/xiyou/entry.gd': 'x'}),
+                 ('乙-界面', {P + '01_Godot工程/modes/xiyou/ui/shop.gd': 'x'})]
         for name, files in cases:
             for path, text in files.items():
                 r.put(path, text)
@@ -250,8 +251,8 @@ class ReviewListTests(unittest.TestCase):
         items = self.labels()
         got = {n: items[n]['tier'] for n, _ in cases + [('空提交', 0)]}
         self.assertEqual(got, {'甲-战斗核心': '甲', '甲-存档': '甲', '甲-新优化': '甲', '乙-楼层内容': '乙', '丙-工具文档': '丙',
-                               '混合取最高': '甲', '拿不准按甲': '甲', '空提交': '丙'})
-        self.assertEqual(items['拿不准按甲']['unsure'], [P + '01_Godot工程/modes/xiyou/ui/shop.gd'])
+                               '混合取最高': '甲', '拿不准按甲': '甲', '乙-界面': '乙', '空提交': '丙'})
+        self.assertEqual(items['拿不准按甲']['unsure'], [P + '01_Godot工程/modes/xiyou/entry.gd'])
         self.assertEqual(items['拿不准按甲']['sureTier'], '丙')
         self.assertEqual(items['甲-战斗核心']['unsure'], [])
         n = {t: sum(1 for i in items.values() if i['tier'] == t) for t in '甲乙丙'}
