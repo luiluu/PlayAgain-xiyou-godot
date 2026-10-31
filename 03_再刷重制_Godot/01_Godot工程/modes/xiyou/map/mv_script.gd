@@ -18,6 +18,7 @@ extends RefCounted
 ## - 成就：Star.AchievementSystem.GetAcReward(N) → XAchievement.reward；SceneManager.push(Scene_AchievementBook) → 成就界面（host.open_achievements）。
 ## - 装备镶嵌图鉴：SceneManager.push(Scene_EquipInlayBook) → host.open_inlay_book（XInlayBook）。
 ## - 角色仓库：SceneManager.push(Star_Scene_ActorWarehouse) → host.open_actor_warehouse（XActorWarehouse）。
+## - 通用仓库：SceneManager.push(Scene_StarSaveWarehouse／Scene_StarWarehouse) → host.open_star_warehouse(存放?)（XStarWarehouseScene）。
 ## - 更衣：if(ConfigManager.ChangeClothesLite.indexOf(N) == -1){ ConfigManager.ChangeClothesLite.push(N); } → XChangeClothes.unlock；
 ##   SceneManager.push(Scene_ChangeClothes) → host.open_change_clothes（XChangeClothes）。
 ## - 角色进阶：SceneManager.push(Scene_ActorAdvanced) → host.open_actor_advanced（XAdvance）。
@@ -330,6 +331,10 @@ static func _statements(js: String, interp) -> Array:
 		# 角色仓库（Star_ActorWarehouse，见 XActorWarehouse）：方桌大厅仓库管理员 Map4 EV8「角色仓库」
 		if st == "SceneManager.push(Star_Scene_ActorWarehouse)" and interp.host.has_method("open_actor_warehouse"):
 			await interp.host.open_actor_warehouse()
+			continue
+		# 通用仓库（Star_Warehouse，见 XStarWarehouse）：黄金大厅 Map041 EV1「存放」／「取出」（原文带尾随空格，已 strip）
+		if st in ["SceneManager.push(Scene_StarSaveWarehouse)", "SceneManager.push(Scene_StarWarehouse)"] and interp.host.has_method("open_star_warehouse"):
+			await interp.host.open_star_warehouse(st == "SceneManager.push(Scene_StarSaveWarehouse)")
 			continue
 		# 更衣（Star_ChangeClothes，见 XChangeClothes）：方桌大厅衣橱管理员 Map4 EV17「查看衣橱」
 		if st == "SceneManager.push(Scene_ChangeClothes)" and interp.host.has_method("open_change_clothes"):

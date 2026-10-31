@@ -1260,6 +1260,16 @@ func open_warehouse() -> void:
 	hud.visible = true
 
 
+## 通用仓库（SceneManager.push(Scene_StarSaveWarehouse／Scene_StarWarehouse)）：通用仓库管理员「存放／取出」，关闭后回到地图
+func open_star_warehouse(save_mode: bool) -> void:
+	hud.visible = false
+	var page := XStarWarehouseScene.new(save_mode)
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 ## 角色仓库（SceneManager.push(Star_Scene_ActorWarehouse)）：仓库管理员「角色仓库」，关闭后回到地图；
 ## 存取时原版 $gamePlayer.refresh／$gameMap.requestRefresh，所以回地图后刷新队首行走图与事件页
 func open_actor_warehouse() -> void:

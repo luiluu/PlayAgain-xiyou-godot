@@ -232,6 +232,7 @@ static func _write() -> bool:
 	var p := path()
 	if p == "":
 		return true
+	XStarWarehouse.flush()  # 通用仓库照原版存在配置里：O-待定 o_write_through 关时只在配置写盘时落盘（开着时早已写过，这里无事）
 	if DirAccess.make_dir_recursive_absolute(p.get_base_dir()) != OK:
 		return false
 	var f := FileAccess.open(p, FileAccess.WRITE)
