@@ -1,7 +1,7 @@
 # 交付：claude/wukong-battle-gaps
 
 - 车道／工作者：C 规则（暂由 A 车道接）／悟空（Claude）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -16,6 +16,7 @@
 - **黄泉 55 级伤害低约 3.9%（白龙_5 报）**：查明是**五乘区修正**，不修。正式引擎 CodexDamage 的 breakdown 逐环对照（黄泉 55 级、敌群 3 第一只、10171～10174）：公式值、熟练度（0 级）、技能倍率、加算 1.88、元素 1.77、攻防比、抗性、受伤率、暴击、防御都一致，只有成长修正 growth＝1.0408107741923882（原版 origins「五乘区修正 ×1.04」；CodexZones 的 top 只有「人物自身·分档系数（P3）」一项，真气 rate 与天道补偿都是 1）。重制 growth 写死 1，是用户 2026-10-27 定的「五乘区维持不移植」（交接板已定事项），所以这 3.9% 是已定的刻意差异；四个技能比值相同也对得上（修正值只按角色算，与技能无关）。
 - **参照 `mv_oracle/battle_gaps_probe.cjs`（新，定向、不接全量同步）**：真实冻结插件、全内存新局；产物 `.sandbox/battle_gaps.json` 拷成 `tests/fixtures/battle_gaps_oracle.json`。222 例：43 个比例技能 × 5 种（基础／最大 MP 加 87654／消耗率 0.63／减耗 30／加耗 600），加 7225、9944 两个备注边界；能力上限 5 例（加值未超／加值超／加值未超但比率 ×10 后超／饿狼超 1 亿／饿狼超上限）。
 - **新专项 `xiyou_battle_gaps`**：逐例比实扣 `skill_cost`、说明卡 `_cost`、最大 MP；能力上限比 8 项 param、上限、mhp／mmp。
+- **测试放开上限**：46 个楼层／流程测试拿装备把队伍属性堆到 1e13～2e19 好一回合打完守层者（`item.params = [1.0e14, …]`），上限夹住后打不过（云端首轮 floor_run_b／c、reach225 失败）。加 `XActor.test_param_max`（大于 0 时代替上限，只在测试里设），这 46 处堆属性的下一行设 1e30，测试意图不变。
 
 ## 交接板
 
@@ -41,8 +42,14 @@
 
 ## 验证
 
-- （待写）
+- 参照：`node battle_gaps_probe.cjs` 222 例、无报错（正式冻结 v0.28）。黄泉对照用临时脚本（同 yomi_battle_probe 的 battle()，调 `CodexDamage.calculate(…, {preview, isolated})` 取 breakdown），数据见上，脚本没入库。
+- 专项 `xiyou_battle_gaps` 891/891。反向验证：不算最大 MP 比例 461/891；不设 −100% 下限 805/891；上限放回 1e30 880/891；复原 891/891。
+- 云端选测：首轮 260 场景 29 个失败，其中 26 个（xiyou_rules 六难度各段、xiyou_equipment、xiyou_mira_battle）是本工作树的转换产物还停在技能树分支的 TOOL_VERSION 21，`--补齐` 重转后本机通过；另 3 个（floor_run_b／c、reach225）是上面的测试堆属性，加 `test_param_max` 后本机通过。第二轮（4a0d9fc3）云端整轮 268 个场景全部通过，偶发 1 个（xiyou_floor_reach080，单跑通过）。
+- 改动的原沙僧核心文件（请审查重点看）：`battle_logic.gd`（`skill_cost` 拆成 `note_costs`／`percent_share`／`consume_reduce`／`_skill_cost`）、`actor.gd`（`param_max`、`test_param_max`）。另改 `ui/character_help.gd`（`_cost`）。白龙_6 渡鸦的钩子在 `battler.gd` 的 `_add_state`，本分支没碰 battler.gd。
+- 没改切片、转换器、同步探针清单，不需要重同步。
 
 ## 本分支提交
 
-- （待写）
+- bcf828c0 百分比 MP 消耗进实扣、角色能力上限、定向参照与专项
+- 4a0d9fc3 流程测试的队伍属性放开上限（test_param_max）
+- （本提交）交付单可合并
