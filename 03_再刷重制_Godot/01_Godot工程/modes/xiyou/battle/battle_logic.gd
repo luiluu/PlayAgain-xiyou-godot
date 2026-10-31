@@ -125,6 +125,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	troop_id = troop
 	XImportedBalance.set_acting(null)
 	actors = s.battle_members()
+	XYomiJingliu.start_battle(self)  # 镜流 startBattle 包装：放血累计清零
 	_garou = XGarou.start_battle(actors)  # 饿狼 startBattle 包装：同步、记下出战的饿狼
 	victory_texts.clear()
 	XZhenqi.battle_setup(s, troop)  # 真气：本场路线、楼层、溢出计数（BattleManager.setup）
@@ -225,6 +226,13 @@ func _finish_lifecycle_operation(resources: XResourceContext, b: XBattler) -> vo
 func _state_add(b: XBattler, id: int) -> void:
 	var resources := _operation_resources(b)
 	resources.add_state(b, id)
+	_finish_lifecycle_operation(resources, b)
+
+## Game_Battler.gainHp：走资源上下文（宿傩伤口、异化 wrapHp 帧内归零／烈变加成、连命／嫁祸／空壳路由、首领扣血上限），
+## 给模块里不经伤害计算的直接扣血用（渡鸦收割／回响、米拉劫火追加；审查第 14 期 P3）
+func gain_hp(b: XBattler, amount: float) -> void:
+	var resources := _operation_resources(b)
+	resources.gain(b, "hp", amount)
 	_finish_lifecycle_operation(resources, b)
 
 func _state_remove(b: XBattler, id: int, automatic := false) -> void:
@@ -695,6 +703,7 @@ func start_turn() -> void:
 			_event_flags.erase(i)
 	_cleared.clear()
 	XRaven.start_turn()  # 渡鸦 BattleManager.startTurn 包装：清「本回合有敌人倒下」
+	XYomiJingliu.start_turn(self)  # 镜流 BattleManager.startTurn 包装：月魄满 3
 	XMira.start_turn()  # 米拉 BattleManager.startTurn 包装：清劫火累计
 	turn += 1
 	# YEP_X_SkillCooldowns：Game_Troop.increaseTurn 时双方冷却/预热各减 1
@@ -769,12 +778,14 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(XGarou.finish(self, u, skill))  # 饿狼 endAction 包装（原 endAction 之前）：进化、解析、追击、流水回 TP；敌人命中饿狼的进化、解析、反击
 		logs.append_array(XSukuna.finish(self, u, skill))  # 宿傩 endAction 包装（原 endAction 之前）：神灶：开、追斩、看破、适应
 		XBlackFlash.finish(self, u, skill)  # 黑闪 endAction 包装（宿傩之内）：集中、连闪、觉醒
-		XToji.finish(self, u, skill)  # 甚尔 endAction 包装（原 endAction 之后）：切换技能换形态
+		logs.append_array(XYomiJingliu.j_finish(self, u, skill))  # 镜流 endAction 包装（黑闪之内、渡鸦之外）：追加段、霜痕／裂隙、月魄、追加行动
+		XToji.finish(self, u, skill)  # 甚尔 endAction 包装（原 endAction 之后，镜流在里层）：切换技能换形态
 		logs.append_array(XRaven.finish(self, u, skill))  # 渡鸦 endAction 包装（各专属模块最内层，原 endAction 之前）：冥界收割、回响
 	XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
 	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
 	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
 	_acted[u] = int(_acted.get(u, 0)) + 1
+	XYomiJingliu.queue_extra(self, u)  # 镜流 queueJingliu（原 endAction 之后）：追加行动插队
 	if started:
 		XMira.pay_hp(u, skill)  # 米拉 endAction 包装（原 endAction 之前）：禁忌生命代价
 		_tick_states(u, 1)
@@ -1116,6 +1127,7 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 		logs.append_array(execute(u, skill, _forced_target(u, skill, int(p[3])), true))
 		logs.append_array(XGarou.finish(self, u, skill))
 		logs.append_array(XSukuna.finish(self, u, skill, true))
+		logs.append_array(XYomiJingliu.j_finish(self, u, skill))
 		logs.append_array(XRaven.finish(self, u, skill))
 		XRaceBattle.finish(self, logs)
 		XCat.end_action(self, u, skill)
@@ -1537,8 +1549,10 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	if XToji.wraps(u, skill):
 		return XToji.apply(self, u, skill, tt)  # 甚尔 Game_Action.apply 包装：计段、天逆鉾封印、万里锁溅射
 	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
+	XYomiJingliu.j_before(self, u, skill, tt)  # 镜流 apply 包装（原 apply 之前）：主目标、绽放、放血、记印记
 	var r := apply(u, skill, tt)
 	XGarou.applied(u, skill, tt, r, used)  # 饿狼 Game_Action.apply 包装：本帧命中与伤害、琦玉模式
+	XYomiJingliu.j_applied(u, skill, tt, r, used)  # （j_before 在 apply 之前）  # 镜流 Game_Action.apply 包装：主目标、命中
 	XRaven.applied(self, u, skill, tt, r, used)  # 渡鸦 Game_Action.apply 包装：神话形态、鸦啄回 MP、黑暗侵蚀、按目标累计伤害
 	return [r]
 
@@ -2134,9 +2148,9 @@ func _avg_agi(list: Array) -> float:
 # ---- 奖励（经验、金钱；物品掉落见 _roll_drops）----
 ## BattleManager.makeRewards（正式版 rpg_managers）：金钱 goldTotal×5、经验 expTotal×8。
 ## 经验：Game_Enemy.exp 被后装的 EliteEnemy 改写成「数据库经验 × 神话倍率」，Vitsuno 难度的经验／金钱倍率包在里层、被盖掉不生效
-## （参照 battle_gaps reward.*：难度 1～13 奖励相同；O-待定 开关默认按难度乘，见下）；GT_EquipSuitCore 在 expTotal／goldTotal 外再套套装。
+## （参照 battle_gaps reward.*：难度 1～13 奖励相同；O-130 开关默认按难度乘，见下）；GT_EquipSuitCore 在 expTotal／goldTotal 外再套套装。
 ## 金钱：dsPassiveSkill 的 goldTotal 按出战成员的每个 passiveGRUP 依次 rate += v×0.01×rate，floor(Σ gold×rate × 金钱双倍)。
-## O-待定（Kyo 10-31 定：加回来）：难度表的经验／金钱倍率照 Vitsuno 本来的挂点乘在每只敌人的 exp／gold 上；false＝原版（被 EliteEnemy 盖掉、不生效）
+## O-130（Kyo 10-31 定：加回来）：难度表的经验／金钱倍率照 Vitsuno 本来的挂点乘在每只敌人的 exp／gold 上；false＝原版（被 EliteEnemy 盖掉、不生效）
 static var o_difficulty_reward := true
 func rewards() -> Dictionary:
 	var exp := 0
@@ -2152,7 +2166,7 @@ func rewards() -> Dictionary:
 	for e in enemies:
 		if e.hidden:
 			continue  # deadMembers：没出现的成员不算
-		# O-待定：Vitsuno 的挂点是 Game_Enemy.exp／gold（每只敌人 floor(值×倍率)），在 expTotal／goldTotal、套装与 ×8／×5 之前
+		# O-130：Vitsuno 的挂点是 Game_Enemy.exp／gold（每只敌人 floor(值×倍率)），在 expTotal／goldTotal、套装与 ×8／×5 之前
 		exp += floori(e.exp_reward() * float(rates[0]))
 		gold += floorf(e.gold_reward() * float(rates[1])) * gold_rate
 		drops.append_array(drops_of(e))

@@ -404,8 +404,7 @@ static func _direct(logic, t, value: float, kind: String) -> Array:
 	if t == null or t.is_dead() or value <= 0.0:
 		return []
 	var amount := floorf(value)
-	t.hp = maxf(0.0, t.hp - amount)
-	t.refresh_resources()
+	logic.gain_hp(t, -amount)
 	var logs := [{"type": "regen", "target": t, "hp": amount, "raven": kind, "views": logic.views([t])}]
 	if t.is_dead():
 		logs.append({"type": "collapse", "target": t, "views": logic.views([t])})
