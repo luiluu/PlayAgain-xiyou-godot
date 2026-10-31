@@ -68,26 +68,29 @@ function order(cfg) {
 // 反射／反击：走 BattleManager.invokeAction（invokeMagicReflection 对行动者自己 apply；invokeCounterAttack 由反击者对行动者普通攻击）。
 // （反射率／反击率用 defineProperty 定成 1：加状态特性时 krz 的状态缓存不跟着刷新）
 // reflect：角色 1（1580）对带魔法反射 100% 的敌人用魔法技能 → 反射回自己，PushState 给的是「目标」＝角色自己；
+// cover：敌群 2，第一只生命 1、第二只掩护（isSubstitute 定真），角色 1 普攻第一只 → 第二只代受，161 挂给代受者；
 // counter：敌人对角色 1（1580，反击率 100%）普通攻击 → 角色反击打敌人，敌人挂 161。
 function invoke(kind, rnd) {
   newGame(); w.$gameSystem.setDifficultyId(2);
   const a = bare(1); a.learnSkill(1580); a._paramPlus[0] = 100000;   // 生命加厚，反射伤害打不死自己
   settle(a); a.recoverAll();
-  w.Math.random = () => 0.99; w.$gameTroop.setup(1); w.Math.random = () => 0.5;
+  w.Math.random = () => 0.99; w.$gameTroop.setup(kind === 'cover' ? 2 : 1); w.Math.random = () => 0.5;
   const foe = w.$gameTroop.members()[0]; foe.clearStates(); foe.refresh(); if (foe.refreshPassiveCache) foe.refreshPassiveCache();
+  const guard = w.$gameTroop.members()[1];
   const sk = w.$dataSkills[1]; sk.damage.formula = '1000'; sk.damage.variance = 0; sk.damage.critical = false;
   let subject, target;
   if (kind === 'reflect') { Object.defineProperty(foe, 'mrf', {get: () => 1, configurable: true}); sk.hitType = 2; subject = a; target = foe; }
+  else if (kind === 'cover') { guard.clearStates(); guard.refresh(); if (guard.refreshPassiveCache) guard.refreshPassiveCache(); guard.isSubstitute = () => true; foe.setHp(1); sk.hitType = 1; subject = a; target = foe; }
   else { Object.defineProperty(a, 'cnt', {get: () => 1, configurable: true}); sk.hitType = 1; subject = foe; target = a; }
   if (foe.refreshPassiveCache) foe.refreshPassiveCache();
   const act = new w.Game_Action(subject); act.setSkill(1);
   const hp0 = [a.hp, foe.hp], rates = {mrf: foe.mrf, cnt: a.cnt};
-  w.BattleManager._subject = subject; w.BattleManager._action = act; w.BattleManager._logWindow = {push() {}, displayActionResults() {}, displayCounter() {}, displayReflection() {}, displayAffectedStatus() {}};
+  w.BattleManager._subject = subject; w.BattleManager._action = act; w.BattleManager._logWindow = {push() {}, displayActionResults() {}, displayCounter() {}, displayReflection() {}, displaySubstitute() {}, displayAffectedStatus() {}};
   w.Math.random = () => rnd;
   w.BattleManager.invokeAction(subject, target);
   w.Math.random = () => 0.5;
   sk.hitType = 1;
-  return {addable: [a.isStateAddable(161), foe.isStateAddable(161)], rates, hpLoss: [hp0[0] - a.hp, hp0[1] - foe.hp], reflected: !!subject.result().reflected, actor: snap(a), foe: snap(foe)};
+  return {addable: [a.isStateAddable(161), foe.isStateAddable(161)], rates, hpLoss: [hp0[0] - a.hp, hp0[1] - foe.hp], reflected: !!subject.result().reflected, actor: snap(a), foe: snap(foe), guard: guard ? snap(guard) : null};
 }
 const CASES = [
   ['push.1580.hit', {skills: [1580], skill: 1, target: 'enemy', rnd: 0.5}],
@@ -106,7 +109,7 @@ const CASES = [
   ['rec.6706.already', {skills: [6706], skill: 8, target: 'ally', rnd: 0.1, pre: [1561]}],
 ];
 const cases = CASES.map(([id, cfg]) => makeCase(id, cfg, () => run(cfg)));
-for (const kind of ['reflect', 'counter']) cases.push(makeCase(`invoke.${kind}`, {kind, rnd: 0.1}, () => invoke(kind, 0.1)));
+for (const kind of ['reflect', 'counter', 'cover']) cases.push(makeCase(`invoke.${kind}`, {kind, rnd: 0.1}, () => invoke(kind, 0.1)));
 cases.push(makeCase('order.1580', {skills: [1580], skill: 1, target: 'enemy', rnd: 0.1, react: true}, () => order({skills: [1580], skill: 1, target: 'enemy', rnd: 0.1, react: true})));
 process.exitCode = finish(host, 'pushstate.json', {scope: 'PushState / RecPushState / PushsubState applied at settlement by sign of makeDamageValue', cases}) ? 0 : 1;
 process.exit();

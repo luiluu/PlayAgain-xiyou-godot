@@ -1321,7 +1321,8 @@
     "foe": {
      "states": [],
      "turns": {}
-    }
+    },
+    "guard": null
    },
    "errors": []
   },
@@ -1350,6 +1351,46 @@
      "turns": {}
     },
     "foe": {
+     "states": [
+      161
+     ],
+     "turns": {
+      "161": 5
+     }
+    },
+    "guard": null
+   },
+   "errors": []
+  },
+  {
+   "id": "invoke.cover",
+   "setup": {
+    "kind": "cover",
+    "rnd": 0.1
+   },
+   "observed": {
+    "addable": [
+     true,
+     true
+    ],
+    "rates": {
+     "mrf": 0,
+     "cnt": 0
+    },
+    "hpLoss": [
+     0,
+     0
+    ],
+    "reflected": false,
+    "actor": {
+     "states": [],
+     "turns": {}
+    },
+    "foe": {
+     "states": [],
+     "turns": {}
+    },
+    "guard": {
      "states": [
       161
      ],
