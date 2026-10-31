@@ -46,7 +46,7 @@
 
 ## 验证
 
-- 合 main（70a281fa，带来切片、两个探针与 battle_logic／xstate 的改动，无冲突；前一次合 main 优化登记 O-120／O-121 行冲突，取 main 的 O-120、本分支的 O-121）后，`新建工作树.sh --补齐` 与 `同步正式西游.py --accept-additions` 都通过（「新增用例，已接受（不登记）」，alien_affix 57 例），留了产物指纹。
+- 合 main（70a281fa，带来切片、两个探针与 battle_logic／xstate 的改动，无冲突；前一次合 main 优化登记 O-120／O-121 行冲突，取 main 的 O-120、本分支的 O-121）后，`新建工作树.sh --补齐` 与 `同步正式西游.py --accept-additions` 都通过（「新增用例，已接受（不登记）」，alien_affix 54 例），留了产物指纹。
 - 本地专项：`xiyou_alien_affix` 1999/1999（新 3 例逐步对照＋夺舍 5 项结束／即死断言）；`xiyou_smart_ai` 第 0 份的 `alien_projection` 6 项（开 3／关 3）。
 - 选测（253 个场景，超过 40 个按新规走云端 `云端选测.py run`，13 片，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41151419334）：252 个通过；`xiyou_book_capacity_ui` 失败（提示框尺寸 toast.*.boxRect／textHeight 差 10 像素），**main 自己的云端选测（41150258069）同一场景同样失败**，像是云端字体度量与 Mac 不同，不是本分支；本机单跑通过（85/85）。
 - 反向验证：见变更记录草稿各项（O-121 关开关 3 项；夺舍过滤、倒下同步、借技能三处）。都已还原。
