@@ -640,7 +640,7 @@
    "js/rpg_οbjects.js": "455b1890ff891795df24653e3b8c15ab6ef5050661656c2dd1840339b34d5b7d"
   }
  },
- "scope": "percent MP cost in skillMpCost; actor param cap; skill HP cost",
+ "scope": "percent MP cost in skillMpCost; actor param cap; skill HP cost; battle rewards exp/gold",
  "percentSkills": [
   5724,
   7226,
@@ -5923,6 +5923,891 @@
      "plus1": true
     },
     "afterPay": 4388
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d1.t1",
+   "setup": {
+    "difficulty": 1,
+    "troop": 1
+   },
+   "observed": {
+    "exp": 160,
+    "gold": 130,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 1,
+      "exp": 20,
+      "gold": 20,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d1.t173",
+   "setup": {
+    "difficulty": 1,
+    "troop": 173
+   },
+   "observed": {
+    "exp": 9600,
+    "gold": 7980,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 181,
+      "exp": 1200,
+      "gold": 1200,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d1.t300",
+   "setup": {
+    "difficulty": 1,
+    "troop": 300
+   },
+   "observed": {
+    "exp": 3200,
+    "gold": 6650,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 340,
+      "exp": 400,
+      "gold": 1000,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d2.t1",
+   "setup": {
+    "difficulty": 2,
+    "troop": 1
+   },
+   "observed": {
+    "exp": 160,
+    "gold": 130,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 1,
+      "exp": 20,
+      "gold": 20,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d2.t173",
+   "setup": {
+    "difficulty": 2,
+    "troop": 173
+   },
+   "observed": {
+    "exp": 9600,
+    "gold": 7980,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 181,
+      "exp": 1200,
+      "gold": 1200,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d2.t300",
+   "setup": {
+    "difficulty": 2,
+    "troop": 300
+   },
+   "observed": {
+    "exp": 3200,
+    "gold": 6650,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 340,
+      "exp": 400,
+      "gold": 1000,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d3.t1",
+   "setup": {
+    "difficulty": 3,
+    "troop": 1
+   },
+   "observed": {
+    "exp": 160,
+    "gold": 130,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 1,
+      "exp": 20,
+      "gold": 20,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d3.t173",
+   "setup": {
+    "difficulty": 3,
+    "troop": 173
+   },
+   "observed": {
+    "exp": 9600,
+    "gold": 7980,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 181,
+      "exp": 1200,
+      "gold": 1200,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d3.t300",
+   "setup": {
+    "difficulty": 3,
+    "troop": 300
+   },
+   "observed": {
+    "exp": 3200,
+    "gold": 6650,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 340,
+      "exp": 400,
+      "gold": 1000,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d5.t1",
+   "setup": {
+    "difficulty": 5,
+    "troop": 1
+   },
+   "observed": {
+    "exp": 160,
+    "gold": 130,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 1,
+      "exp": 20,
+      "gold": 20,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d5.t173",
+   "setup": {
+    "difficulty": 5,
+    "troop": 173
+   },
+   "observed": {
+    "exp": 9600,
+    "gold": 7980,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 181,
+      "exp": 1200,
+      "gold": 1200,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d5.t300",
+   "setup": {
+    "difficulty": 5,
+    "troop": 300
+   },
+   "observed": {
+    "exp": 3200,
+    "gold": 6650,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 340,
+      "exp": 400,
+      "gold": 1000,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d10.t1",
+   "setup": {
+    "difficulty": 10,
+    "troop": 1
+   },
+   "observed": {
+    "exp": 160,
+    "gold": 130,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 1,
+      "exp": 20,
+      "gold": 20,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d10.t173",
+   "setup": {
+    "difficulty": 10,
+    "troop": 173
+   },
+   "observed": {
+    "exp": 9600,
+    "gold": 7980,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 181,
+      "exp": 1200,
+      "gold": 1200,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d10.t300",
+   "setup": {
+    "difficulty": 10,
+    "troop": 300
+   },
+   "observed": {
+    "exp": 3200,
+    "gold": 6650,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 340,
+      "exp": 400,
+      "gold": 1000,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d13.t1",
+   "setup": {
+    "difficulty": 13,
+    "troop": 1
+   },
+   "observed": {
+    "exp": 160,
+    "gold": 130,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 1,
+      "exp": 20,
+      "gold": 20,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d13.t173",
+   "setup": {
+    "difficulty": 13,
+    "troop": 173
+   },
+   "observed": {
+    "exp": 9600,
+    "gold": 7980,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 181,
+      "exp": 1200,
+      "gold": 1200,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.d13.t300",
+   "setup": {
+    "difficulty": 13,
+    "troop": 300
+   },
+   "observed": {
+    "exp": 3200,
+    "gold": 6650,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 340,
+      "exp": 400,
+      "gold": 1000,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.grup",
+   "setup": {
+    "difficulty": 2,
+    "troop": 173,
+    "skills": {
+     "1": [
+      2157,
+      2235
+     ],
+     "8": [
+      351
+     ]
+    }
+   },
+   "observed": {
+    "exp": 9600,
+    "gold": 13765,
+    "grup": [
+     [
+      1,
+      [
+       25,
+       20,
+       33
+      ]
+     ],
+     [
+      8,
+      [
+       15
+      ]
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 181,
+      "exp": 1200,
+      "gold": 1200,
+      "elite": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.elite",
+   "setup": {
+    "difficulty": 5,
+    "troop": 1,
+    "elite": [
+     0
+    ]
+   },
+   "observed": {
+    "exp": 192,
+    "gold": 155,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      []
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 1,
+      "exp": 24,
+      "gold": 24,
+      "elite": true
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reward.goldDouble",
+   "setup": {
+    "difficulty": 3,
+    "troop": 300,
+    "goldDouble": true,
+    "skills": {
+     "9": [
+      2575
+     ]
+    }
+   },
+   "observed": {
+    "exp": 3200,
+    "gold": 15295,
+    "grup": [
+     [
+      1,
+      [
+       33
+      ]
+     ],
+     [
+      8,
+      []
+     ],
+     [
+      9,
+      [
+       15
+      ]
+     ],
+     [
+      10,
+      []
+     ]
+    ],
+    "suitGold": 1000,
+    "enemies": [
+     {
+      "id": 340,
+      "exp": 400,
+      "gold": 1000,
+      "elite": false
+     }
+    ]
    },
    "errors": []
   }

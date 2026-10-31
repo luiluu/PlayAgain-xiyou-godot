@@ -4,6 +4,7 @@ extends Node
 ##    另核备注边界 7225（7.5% 原版不认）与 9944（<TP Cost: 200> 改基础 TP）；比实扣 XBattleLogic.skill_cost 与说明卡 XCharacterHelp._cost。
 ## ② 角色能力上限：8 项都夹 99999999（加值超、比率叠满后超），饿狼 173 夹 999999999999；比 param、mhp／mmp。
 ## ③ 技能 HP 费用：15 个带 <HP Cost: n>／<HP Cost: n%> 的技能，比费用、生命为满／等于费用／费用＋1 时能否付（can_use 的费用部分）、付费后的生命。
+## ④ 战斗奖励：6 个难度 × 3 个敌群，另有 passiveGRUP 连乘、神话、金钱双倍；比 XBattleLogic.rewards 的经验与金钱（×8／×5，难度倍率不生效）。
 const FIXTURE := "res://tests/fixtures/battle_gaps_oracle.json"
 var passed := 0
 var total := 0
@@ -49,12 +50,34 @@ func _actor(id: int, plus: Array, state_ids: Array) -> CostActor:
 	a.refresh_passive()
 	return a
 
+## 探针 ④：开局四人清技能、装备、状态，按用例学被动；敌人全部计入（全灭后结算）
+func _reward(cfg: Dictionary) -> Array:
+	var s := XState.new_game(int(cfg.difficulty), 1, [8, 9, 10])
+	var skills: Dictionary = cfg.get("skills", {})
+	for a in s.members():
+		a.equips.clear()
+		a.skill_ids.clear()
+		a.state_ids.clear()
+		for sid in skills.get(str(a.actor_id), []):
+			a.learn_skill(int(sid))
+		a.param_mark_dirty()
+		a.refresh_passive()
+	var logic := XBattleLogic.new()
+	logic.elite_roll = 100.0
+	logic.setup(int(cfg.troop), s)
+	for i in cfg.get("elite", []):
+		logic.enemies[int(i)].elite = true
+	if cfg.get("goldDouble", false):
+		logic.actors[0].state_ids.append(_state("", [{"code": 64, "dataId": 4, "value": 1}]))
+	var r := logic.rewards()
+	return [int(r.exp), int(r.gold)]
+
 func _run() -> void:
 	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	check("percent_skills", ref.percentSkills.size() == 43 and not ref.percentSkills.has(7225.0), ref.percentSkills.size())
 	var logic := XBattleLogic.new()
-	var count := {"cost": 0, "cap": 0, "hp": 0}
+	var count := {"cost": 0, "cap": 0, "hp": 0, "reward": 0}
 	for c in ref.cases:
 		check(c.id + ".native", c.errors.is_empty(), c.errors)
 		if not c.errors.is_empty():
@@ -88,6 +111,10 @@ func _run() -> void:
 			a.hp = a.mhp
 			logic.pay_hp(a, sk)
 			check(c.id + ".afterPay", a.hp == float(o.afterPay), [a.hp, o.afterPay])
+		elif str(c.id).begins_with("reward."):
+			count.reward += 1
+			var got := _reward(c.setup)
+			check(c.id + ".reward", got == [int(o.exp), int(o.gold)], [got, o.exp, o.gold, o.grup])
 		elif str(c.id).begins_with("cap."):
 			count.cap += 1
 			var p := float(c.setup.plus)
@@ -105,6 +132,6 @@ func _run() -> void:
 			check(c.id + ".max", a.param_max(0) == float(o.max[0]), [a.param_max(0), o.max[0]])
 			check(c.id + ".res", [a.mhp, a.mmp] == [float(o.mhp), float(o.mmp)], [a.mhp, a.mmp, o])
 	check("hp_skills", ref.hpSkills.size() == 15, ref.get("hpSkills"))
-	check("counts", count.cost == 43 * 5 + 2 and count.cap == 5 and count.hp == 15, count)
+	check("counts", count.cost == 43 * 5 + 2 and count.cap == 5 and count.hp == 15 and count.reward == 21, count)
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total else 1)

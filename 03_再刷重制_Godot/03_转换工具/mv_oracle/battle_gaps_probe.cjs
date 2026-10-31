@@ -1,7 +1,8 @@
 'use strict';
 // 【Claude·悟空·未经审查】战斗核心缺口定向参照：① 百分比 MP 消耗（YEP_SkillCore <MP Cost: x%>，经 dsPassive 减耗、
 // installSkillCostRuntime 的 −100% 下限）进实扣 skillMpCost；② 角色能力上限（YEP_CoreEngine Actor MaxHP/MaxMP/Parameter＝99999999，
-// G_StateParam 在 paramMax 处夹；饿狼 173 的 paramMax 包装放到 999999999999）；③ 技能 HP 费用（<HP Cost: n>／<HP Cost: n%>）。
+// G_StateParam 在 paramMax 处夹；饿狼 173 的 paramMax 包装放到 999999999999）；③ 技能 HP 费用（<HP Cost: n>／<HP Cost: n%>）；
+// ④ 战斗经验与金钱（makeRewards 的 ×8／×5、难度倍率是否生效、passiveGRUP 连乘、金钱双倍、神话）。
 // 真实冻结插件、全内存新局；只写 .sandbox/battle_gaps.json，拷成 tests/fixtures/battle_gaps_oracle.json（不接入全量同步）。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
@@ -76,5 +77,31 @@ for (const id of hpSkills) {
     return out;
   }));
 }
-process.exitCode = finish(host, 'battle_gaps.json', {scope: 'percent MP cost in skillMpCost; actor param cap; skill HP cost', percentSkills, hpSkills, cases}) ? 0 : 1;
+// ---- ④ 战斗奖励（BattleManager.makeRewards：rpg_managers 的 gold×5、exp×8；Game_Troop.expTotal／goldTotal 走 deadMembers，
+// dsPassiveSkill 的 goldTotal 按出战成员 passiveGRUP 依次连乘、×金钱双倍，GT_EquipSuitCore 再套套装；EliteEnemy 后装的 exp／gold 盖掉 Vitsuno 难度倍率）----
+// 全队清技能、装备、状态后按用例学被动；敌人全部倒下（addState 1）再 makeRewards
+const REWARD_VARIANTS = [];
+for (const d of [1, 2, 3, 5, 10, 13]) for (const t of [1, 173, 300]) REWARD_VARIANTS.push([`d${d}.t${t}`, {difficulty: d, troop: t}]);
+REWARD_VARIANTS.push(['grup', {difficulty: 2, troop: 173, skills: {1: [2157, 2235], 8: [351]}}]);
+REWARD_VARIANTS.push(['elite', {difficulty: 5, troop: 1, elite: [0]}]);
+REWARD_VARIANTS.push(['goldDouble', {difficulty: 3, troop: 300, goldDouble: true, skills: {9: [2575]}}]);
+for (const [name, cfg] of REWARD_VARIANTS) {
+  cases.push(makeCase(`reward.${name}`, cfg, () => {
+    newGame(); w.$gameSystem.setDifficultyId(cfg.difficulty);
+    for (const id of [1, 8, 9, 10]) {
+      const a = bare(id);
+      for (const sid of (cfg.skills || {})[id] || []) a.learnSkill(sid);
+      if (cfg.goldDouble && id === 1) a._states = realmArray([state('', [{code: 64, dataId: 4, value: 1}])]);
+      settle(a); if (a.refreshPassiveSkillCache) a.refreshPassiveSkillCache();
+    }
+    w.$gameTroop.setup(cfg.troop);
+    const ms = w.$gameTroop.members();
+    for (const i of cfg.elite || []) ms[i]._elite = true;
+    ms.forEach(e => e.addState(1));
+    w.BattleManager.makeRewards(); const rw = w.BattleManager._rewards;
+    const grup = w.$gameParty.battleMembers().map(a => { const v = []; a.iteratePassiveSkill('passiveGRUP', m => v.push(Number(m))); return [a.actorId(), v]; });
+    return {exp: rw.exp, gold: rw.gold, grup, suitGold: w.$gameParty.equipSuitBonusBResultCal(1000, 1), enemies: ms.map(e => ({id: e.enemyId(), exp: e.exp(), gold: e.gold(), elite: !!e.isElite()}))};
+  }));
+}
+process.exitCode = finish(host, 'battle_gaps.json', {scope: 'percent MP cost in skillMpCost; actor param cap; skill HP cost; battle rewards exp/gold', percentSkills, hpSkills, cases}) ? 0 : 1;
 process.exit();
