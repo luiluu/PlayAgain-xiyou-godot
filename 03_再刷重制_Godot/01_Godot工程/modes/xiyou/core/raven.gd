@@ -399,14 +399,14 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 		row[1] = float(row[1]) + maxf(0.0, float(r.get("hp", 0.0)))
 
 
-## directDamage：直接扣血（不经伤害计算），倒下照常
+## directDamage：gainHp(−floor(值))，不经伤害计算，倒下照常；记录的 hp 是 gainHp 的值（同原版弹出的 hpDamage，可大于剩余生命）
 static func _direct(logic, t, value: float, kind: String) -> Array:
 	if t == null or t.is_dead() or value <= 0.0:
 		return []
-	var before: float = t.hp
-	t.hp = maxf(0.0, t.hp - floorf(value))
+	var amount := floorf(value)
+	t.hp = maxf(0.0, t.hp - amount)
 	t.refresh_resources()
-	var logs := [{"type": "regen", "target": t, "hp": before - t.hp, "raven": kind, "views": logic.views([t])}]
+	var logs := [{"type": "regen", "target": t, "hp": amount, "raven": kind, "views": logic.views([t])}]
 	if t.is_dead():
 		logs.append({"type": "collapse", "target": t, "views": logic.views([t])})
 	return logs

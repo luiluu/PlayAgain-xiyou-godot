@@ -30,7 +30,7 @@ const ACTOR = 167, BIG_HP = 1e12, TROOP = 3;
 const key = b => !b ? null : b.isActor() ? 'a' + b.actorId() : 'e' + b.index();
 
 // 新局、开挑战开关 2494（渡鸦是超强者）、阶 rank、level 级、招募；party 为渡鸦之后再入队的成员（默认 [1]）；
-// 出战成员与敌群 3 每只生命加 1e12；opts.reserve：渡鸦排在第 5 位（后备，不出战）
+// 全队与敌群 3 每只生命加 1e12；opts.reserve：渡鸦排在第 5 位（本作出战上限够，仍在 members 里，照样计残响）
 function battle(rank, level, opts = {}) {
   newGame();
   w.$gameSwitches.setValue(2494, true);

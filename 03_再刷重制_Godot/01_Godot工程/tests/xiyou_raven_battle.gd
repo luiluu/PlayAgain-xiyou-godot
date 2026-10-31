@@ -15,11 +15,15 @@ const RATIO_TOLERANCE := 1e-6
 var results := []
 
 
+## 规则流全取 0.5；整数同参照 Math.randomInt（floor(n×0.5)），伤害浮动才与参照同为中点（取原始 uint 时浮动随数量级乱跳）
 class FixedStream extends XRandomStream:
 	var value := 0.5
 	func _take(kind: String, _reason: String, _event_key: String):
 		draws += 1
 		return value if kind == "float" else 2147483648
+	func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
+		_take("uint32", reason, event_key)
+		return lo + floori((hi - lo + 1) * value)
 
 
 func check(name: String, ok: bool, detail = null) -> bool:
@@ -33,7 +37,7 @@ func _ready() -> void:
 	_run.call_deferred()
 
 
-## 同参照 battle()：新局、挑战开关 2494、阶 rank、level 级、招募、再入队 1（reserve：先入 1、8、9、10，渡鸦排第 5 不出战）；
+## 同参照 battle()：新局、挑战开关 2494、阶 rank、level 级、招募、再入队 1（reserve：先入 1、8、9、10，渡鸦排第 5，仍在出战成员里）；
 ## 全队生命加 1e12；敌群 3 每只生命加 1e12；规则流全取 0.5；开第一回合
 func _battle(rank: int, level: int, reserve := false) -> Array:
 	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [8])
@@ -164,7 +168,8 @@ func _myth(c: Dictionary) -> void:
 			steps.append(_turn(logic, a))
 		steps.append(_cast(logic, a, XRaven.MYTH, a))
 		a._level_up()
-		steps.append(_snap(logic, a).merged({"levelUp": true}, true))
+		# 升级后原版 MP 回满（升级回复不在本期，重制直接调 _level_up 不回），这一步不比 MP
+		steps.append(_snap(logic, a).merged({"levelUp": true, "mp": float(c.observed.steps[steps.size()].mp)}, true))
 	_compare(c.id, steps, c.observed.steps)
 
 
@@ -209,7 +214,7 @@ func _residue(c: Dictionary) -> void:
 	if reserve:
 		var members := XState.current.members().map(func(b): return b.actor_id)
 		check(c.id + ".members", members == (c.observed.members as Array).map(func(v): return int(v)), [members, c.observed.members])
-		check(c.id + ".not_fighting", not logic.actors.has(a))
+		check(c.id + ".fighting", logic.actors.has(a))  # 第 5 位仍出战（参照 members 五人都在）
 		steps.append(_kill(logic, a, 0))
 	else:
 		steps.append(_turn(logic, a))
