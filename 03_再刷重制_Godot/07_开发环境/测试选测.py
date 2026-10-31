@@ -446,7 +446,7 @@ class MergeBaseTests(Fixture):
 
 
 STUB_CHECKS = ['测试工作树清理.py', '测试导出过滤.py', '测试共性验收.py', '测试合并工具.py', '测试公式程序.py', '测试转换器写入.py',
-               '测试记录工具.py', '测试云端准备.py', '测试内容覆盖.py', '测试角色同步提速.py', '测试事件探针分段.py', '测试状态js翻译.py', '测试参照批次.py', '参照批次.py', '测试选测.py', '变更记录分卷.py', '待核查.py']
+               '测试记录工具.py', '测试云端准备.py', '测试内容覆盖.py', '测试角色同步提速.py', '测试事件探针分段.py', '测试状态js翻译.py', '测试参照批次.py', '测试提交守卫.py', '参照批次.py', '测试选测.py', '变更记录分卷.py', '待核查.py']
 
 
 class CheckerTests(Fixture):
@@ -487,6 +487,64 @@ class CheckerTests(Fixture):
 
     def names(self, ran):
         return sorted({line.split()[0] for line in ran})
+
+    def cloud_check(self, run_rc=0, wait_rc=0, *args, no_upload=False):
+        """XIYOU_CLOUD_SCRIPT 桩：记下参数；run／wait 的退出码由参数定，wait 退出前打印一行汇总。"""
+        stub = self.root / 'cloud_stub.py'
+        stub.write_text('import sys\nopen(%r, "a").write("cloud " + " ".join(sys.argv[1:]) + "\\n")\n'
+                        'rc = {"run": %d, "wait": %d}[sys.argv[1]]\n'
+                        'if sys.argv[1] == "wait": print("云端汇总：" + ("通过" if rc == 0 else "失败 xiyou_shop.tscn" if rc == 1 else "超时"))\n'
+                        'sys.exit(rc)\n' % (str(self.calls), run_rc, wait_rc))
+        self.put(UI / 'shop.gd', 'class_name XShopScene\n# cloud\n')
+        self.env = dict(self.env, XIYOU_CLOUD_SCRIPT=str(stub), **({'CHECK_CLOUD_NO_UPLOAD': '1'} if no_upload else {}))
+        return self.check('--affected', self.base, '--cloud', *args)
+
+    def test_cloud_passes_and_skips_local_godot(self):
+        rc, out, ran = self.cloud_check(no_upload=True)
+        self.assertEqual(rc, 0, out)
+        self.assertIn('云端选测通过', out)
+        self.assertNotIn('godot', self.names(ran))
+        self.assertNotIn('并行测试.py', self.names(ran))
+        self.assertIn('guard_check.cjs', self.names(ran))                   # 非 Godot 检查仍在本机
+        cloud = [l for l in ran if l.startswith('cloud')]
+        self.assertEqual(cloud[0], 'cloud run --no-upload')
+        self.assertRegex(cloud[1], r'^cloud wait [0-9a-f]{40} --mode affected --timeout 3600$')
+
+    def test_cloud_uploads_unless_told_not_to(self):
+        rc, out, ran = self.cloud_check()
+        self.assertEqual(rc, 0, out)
+        self.assertEqual([l for l in ran if l.startswith('cloud run')], ['cloud run'])
+
+    def test_cloud_failure_lists_failure(self):
+        rc, out, _ = self.cloud_check(wait_rc=1)
+        self.assertEqual(rc, 1, out)
+        self.assertIn('失败 xiyou_shop.tscn', out)
+        self.assertIn('云端选测未通过', out)
+
+    def test_cloud_timeout_is_an_error_not_a_local_fallback(self):
+        rc, out, ran = self.cloud_check(wait_rc=124)
+        self.assertEqual(rc, 1, out)
+        self.assertIn('云端选测超时', out)
+        self.assertIn('改用本机', out)
+        self.assertNotIn('godot', self.names(ran))
+        self.assertNotIn('并行测试.py', self.names(ran))
+
+    def test_cloud_unavailable_is_an_error_not_a_local_fallback(self):
+        rc, out, ran = self.cloud_check(run_rc=1)
+        self.assertEqual(rc, 1, out)
+        self.assertIn('云端选测触发失败', out)
+        self.assertNotIn('cloud wait', '\n'.join(ran))
+        self.assertNotIn('并行测试.py', self.names(ran))
+
+    def test_cloud_needs_affected_and_skips_when_no_scenes(self):
+        rc, out, _ = self.check('--cloud')
+        self.assertEqual(rc, 2, out)
+        self.assertIn('--cloud 只和 --affected', out)
+        self.put(Path('00_项目管理/交接板.md'), '# board 2\n')
+        self.env = dict(self.env, XIYOU_CLOUD_SCRIPT=str(self.root / 'nope.py'))
+        rc, out, ran = self.check('--affected', self.base, '--cloud')
+        self.assertEqual(rc, 0, out)                                         # 没有 Godot 场景：不碰云端
+        self.assertIn('跳过导入与测试', out)
 
     def test_default_runs_everything(self):
         rc, out, ran = self.check('--oracle')

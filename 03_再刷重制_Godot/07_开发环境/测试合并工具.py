@@ -1244,6 +1244,26 @@ for name in filter(None, files):
         state = {'branch': 'claude/task', 'target': 'claude/task', 'delivery': str(self.receipt)}
         self.assertEqual(merge.review_status(self.root, state), '待审查')
 
+    def test_optimization_placeholder_only_in_lane_added_lines_and_never_in_registers(self):
+        """唐僧 10-30（白龙期一）：车道分支带着交接板里的占位字样，被整片换成 O-122。换号只认交付单与车道自己新增的行；
+        交接板、归档、变更记录永远不扫；车道改过的文档里原有的占位行（main 上的说明）不动。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        doc = merge.SUB / '00_设计/界面风格.md'
+        self.put(str(doc), '# 风格\n说明里提到 %s 这个写法\n' % tok)
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n| claude/task | 预分配 %s |\n## 待交叉核查\n\n## end\n' % tok)
+        self.g('add', '.'); self.g('commit', '-m', 'main has placeholder words')
+        self.g('merge', 'main', cwd=self.wt)
+        (self.wt / doc).write_text('# 风格\n说明里提到 %s 这个写法\n车道新增 %s\n' % (tok, tok))
+        board = self.wt / merge.BOARD
+        board.write_text(board.read_text() + '车道也动了交接板 %s\n' % tok)
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'lane edits', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertEqual((self.root / doc).read_text(), '# 风格\n说明里提到 %s 这个写法\n车道新增 O-001\n' % tok)
+        self.assertEqual((self.root / merge.BOARD).read_text().count(tok), 2)       # 交接板两处都原样
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+
     def test_optimization_placeholder_in_tool_source_is_not_numbered(self):
         """唐僧 10-30：合并车道.py 自己注释里的占位被换成 O-122；工具源码（07_开发环境、03_转换工具）里的不换号，文档照换。"""
         tok = 'O-' + '待定'
@@ -2040,6 +2060,42 @@ for name in filter(None, files):
         self.g('merge', 'main', cwd=self.wt)
         return log
 
+    def test_finish_cloud_passes_flag_and_no_upload_when_no_refresh(self):
+        """--finish --affected --cloud：检查.sh 多收 --cloud；本批没带切片／参照刷新时 CHECK_CLOUD_NO_UPLOAD=1。--cloud 不配 --affected。"""
+        bare = self.github()
+        log = Path(self.tmp.name) / 'check_args'
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\necho "$* upload_skip=${CHECK_CLOUD_NO_UPLOAD:-0}" >> %s\n' % log); checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'args checker')
+        self.g('merge', 'main', cwd=self.wt)
+        base = self.g('rev-parse', 'main')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--cloud'), 1)
+        self.assertIn('--cloud 只和 --affected', self.last_output)
+        self.assertEqual(self.call('--finish', '--affected', '--cloud'), 0, self.last_output)
+        self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base, '--cloud', 'upload_skip=1'])
+        self.assertFalse(self.wt.exists())
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
+
+    def test_finish_cloud_failure_keeps_lane_and_does_not_push(self):
+        """云端判失败（检查.sh 非零，覆盖通过以外的失败、超时、不可用）：保留现场，不提交收尾、不清理、不推送。"""
+        bare = self.github()
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\nexit 1\n'); checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'failing checker')
+        self.g('merge', 'main', cwd=self.wt)
+        pushed = self.g('rev-parse', 'main', cwd=bare)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertNotEqual(self.call('--finish', '--affected', '--cloud'), 0)
+        self.assertTrue(self.wt.exists())
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), pushed)
+
+    def test_cloud_env_uploads_only_when_a_lane_refreshed_reference_or_slice(self):
+        self.assertEqual(merge.cloud_env({'refresh': False}, {})['CHECK_CLOUD_NO_UPLOAD'], '1')
+        self.assertNotEqual(merge.cloud_env({'refresh': False}, {'refresh': True}).get('CHECK_CLOUD_NO_UPLOAD'), '1')
+
     def test_finish_affected_uses_premerge_main_and_marks_commit(self):
         bare = self.github()
         log = self.args_checker()
@@ -2293,6 +2349,7 @@ sys.exit(0)
         self.assertEqual(self.call('--finish'), 1)
         self.assertIn('--also', self.last_output)
         self.assertIn('git reset --soft', self.last_output)
+        self.assertIn('separate fix', self.last_output)  # 点名多出的是哪个提交
 
     def test_uid_of_lane_new_script_is_committed(self):
         # 车道新加 modes/测试.gd 但漏交 .uid：main 上导入生成后收尾自动带入；别的未跟踪 .uid 仍拦

@@ -259,11 +259,18 @@ func loop_shift(real: Vector2) -> Vector2:
 ## 地图场景设为本图上的事件；不设时只看地图图块。
 var tile_events: Callable
 
+## O-122（B3）：厄运监狱 Map079 的入口落点区域和牢房走廊在图块上完全不连通（(15,8)、(15,10) 两格墙隔开，正式引擎 isPassable
+## 逐格 BFS 实测：整座监狱走不进去，只有开「穿墙」才行），首领、牢门都碰不到。这两格改为四向可通行，打通入口到牢房走廊。
+## 键＝地图号 → 打通的格；设为空字典 {} 恢复原版（专项要两边都跑，所以是 static var）。
+static var open_cells_fix := {79: [Vector2i(15, 8), Vector2i(15, 10)]}
+## 本图被打通的格（地图场景按 open_cells_fix 设置）
+var open_cells: Array = []
+
 ## d 为方向 2/4/6/8；返回该格朝 d 方向能否离开/进入。设置「穿墙开关」开着时一律可通行（地图外仍不行，MV canPass 先查 isValid）。
 func is_passable(x: int, y: int, d: int) -> bool:
 	if x < 0 or y < 0 or x >= width or y >= height:
 		return false
-	if XConfig.flag("cq"):
+	if XConfig.flag("cq") or (not open_cells.is_empty() and open_cells.has(Vector2i(x, y))):
 		return true
 	return check_passage(x, y, (1 << (d / 2 - 1)) & 0x0f)
 
