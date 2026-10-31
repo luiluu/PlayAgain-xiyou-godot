@@ -82,6 +82,7 @@ func _party() -> void:
 		if item.is_empty():
 			continue
 		item.params = [1.0e14, 1.0e6, 5.0e13, 5.0e6, 5.0e13, 5.0e6, 1.0e5, 1.0e3]
+		XActor.test_param_max = 1.0e30  # 队伍属性堆过原版上限 99999999（XActor.PARAM_MAX），只在测试里放开
 		a.refresh_passive()
 		a.hp = a.mhp
 		a.mp = a.mmp

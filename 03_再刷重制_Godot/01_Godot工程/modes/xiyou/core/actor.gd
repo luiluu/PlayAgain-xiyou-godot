@@ -649,7 +649,11 @@ static func magic_param(e: Dictionary, i: int) -> float:
 ## 饿狼 173 的 paramMax 包装（installNativeGarouRuntime）放到 999999999999。参照 battle_gaps_probe（cap.*）
 const PARAM_MAX := 99999999.0
 const GAROU_PARAM_MAX := 999999999999.0
+## 测试用：流程测试拿装备把队伍属性堆到 1e13 以上好一回合打完守层者，原版上限会压回 99999999；只在测试里设（大于 0 时代替上限）
+static var test_param_max := 0.0
 func param_max(_i: int) -> float:
+	if test_param_max > 0.0:
+		return test_param_max
 	return GAROU_PARAM_MAX if actor_id == XGarou.ACTOR else PARAM_MAX
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
