@@ -122,6 +122,7 @@ PROBES = [
     (['alien_affix_probe.cjs'], ['alien_affix.json']),
     (['attack_query_probe.cjs'], ['attack_query.json']),
     (['weapon_unleash_probe.cjs'], ['weapon_unleash.json']),
+    (['star_warehouse_probe.cjs'], ['star_warehouse.json']),
     (['skill_change_to_probe.cjs'], ['skill_change_to.json']),
     (['enemy_book_defeat_probe.cjs'], ['enemy_book_defeat.json']),
     (['lobby_shop_probe.cjs'], ['lobby_shops.json']),
