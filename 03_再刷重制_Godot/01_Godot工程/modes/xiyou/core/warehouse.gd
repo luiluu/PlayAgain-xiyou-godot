@@ -15,6 +15,9 @@ const DEFAULT_CAPACITY := 50
 static var last_active := ""
 static var last_option := 0          # 0 取出、1 储存
 static var last_category := "item"
+## O-128（优化登记）：原版存放（PH_Warehouse.js 1099～1103）先记进仓库再 loseItem，吞器占用的供体被 Adv:88 挡下没失去，
+## 背包和仓库各有一件（复制）。true＝照常移走（仓库里一件、背包里没了）；false＝照原版复制
+static var o_reserved_no_dup := true
 
 
 ## checkSentence：取 <…> 里的内容
@@ -137,6 +140,11 @@ static func deposit(s: XState, cat: String, rec: Dictionary) -> bool:
 		var i := s.gear.find_custom(func(e): return is_same(e, rec))
 		if i < 0:
 			return false
+		if not o_reserved_no_dup and XAlienation.reserved(s, rec):
+			# 原版：先 deposit 记进仓库，再 loseItem 被 Adv:88 挡下，供体留在背包，仓库里多一份
+			w.items[cat].append(rec.duplicate(true))
+			w.currentCapacity = int(w.currentCapacity) + 1
+			return true
 		s.gear.remove_at(i)
 		w.items[cat].append(rec)
 	else:

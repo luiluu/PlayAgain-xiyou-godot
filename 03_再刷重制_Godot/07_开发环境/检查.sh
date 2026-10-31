@@ -9,7 +9,7 @@
 #             选中的场景按工程指纹沿用上次通过结果（并行测试.py --reuse；--full 不沿用）
 #   --cloud   只和 --affected 用：选中的 Godot 场景改在 GitHub Actions 云端跑（云端选测.py run＋wait，只测已提交的 HEAD、
 #             基准是 GitHub 上的 main；文档、守卫、工具回归等非 Godot 检查照旧在本机跑）。云端不可用（推送失败、超时）直接判失败并提示
-#             去掉 --cloud 改本机跑，不静默降级。环境变量：CHECK_CLOUD_NO_UPLOAD=1 不重传转换产物，CHECK_CLOUD_TIMEOUT=秒（默认 3600）
+#             去掉 --cloud 改本机跑，不静默降级。环境变量：CHECK_CLOUD_NO_UPLOAD=1 不重传转换产物，CHECK_CLOUD_TIMEOUT=秒（默认 2700）
 #   --keep-going  文档与登记检查（JSON／链接／开发编号）失败后仍跑 Godot 测试与其余检查（默认此时立即失败退出，免得白跑几十分钟）
 set -u
 ENV_DIR=${0:A:h}
@@ -128,11 +128,12 @@ elif (( CLOUD )); then
   cloud_run=(python3 "$CLOUD_SCRIPT" run); (( ${CHECK_CLOUD_NO_UPLOAD:-0} )) && cloud_run+=(--no-upload)
   if ! "${cloud_run[@]}"; then
     bad "云端选测触发失败（网络、权限或额度）；去掉 --cloud 改用本机跑"
-  elif python3 "$CLOUD_SCRIPT" wait "$cloud_head" --mode affected --timeout ${CHECK_CLOUD_TIMEOUT:-3600}; then
+  elif python3 "$CLOUD_SCRIPT" wait "$cloud_head" --mode affected --timeout ${CHECK_CLOUD_TIMEOUT:-2700}; then
     ok "云端选测通过（$cloud_head[1,9]）"
   else
     cloud_rc=$?
     if (( cloud_rc == 124 )); then bad "云端选测超时没有结果（$cloud_head[1,9]）；看 GitHub Actions「云端选测」，或去掉 --cloud 改用本机跑"
+    elif (( cloud_rc == 3 )); then bad "云端运行已结束但没有结果（$cloud_head[1,9]）；看 GitHub Actions「云端选测」，或去掉 --cloud 改用本机跑"
     else bad "云端选测未通过（$cloud_head[1,9]），失败场景见上方汇总"; fi
   fi
 else

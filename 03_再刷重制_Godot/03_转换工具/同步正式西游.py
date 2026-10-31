@@ -106,6 +106,7 @@ PROBES = [
     (['formula_action_probe.cjs'], ['formula_actions.json']),
     (['review_fix_probe.cjs'], ['review_fix.json']),
     (['global_vars_probe.cjs'], ['global_vars.json']),
+    (['star_warehouse_probe.cjs'], ['star_warehouse.json']),
     (['actor_passive_probe.cjs'], ['actor_passive.json']),
     (['achievement_probe.cjs'], ['achievements.json']),
     (['achievement_badge_probe.cjs'], ['achievement_badges.json']),

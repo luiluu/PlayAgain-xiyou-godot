@@ -123,6 +123,8 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		return {}  # 异化空壳回蓝变护盾（gainMp 包装）
 	if resource == "hp" and amount < 0.0 and XAlienBattle.frame_blocks_hp(b):
 		amount = 0.0  # 异化 gainHp 包装（Runtime wrapHp）：逆祷者的帧里对敌人扣血归零
+	elif resource == "hp" and amount < 0.0 and not boss_output.is_settled(b, "hp"):
+		amount = -XAlienBattle.frame_outgoing(-amount)  # 同一包装：不在 executeHpDamage 里的行动帧扣血也吃烈变／小怪异化加成
 	var before := snapshot(b)
 	var requested := amount
 	if amount < 0.0:
@@ -169,6 +171,8 @@ func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
 		return gain(b, "hp", value - b.hp)  # 异化 setHp 包装：生命池、嫁祸、空壳、舍身、绝缘按 gainHp(差值) 走
 	if resource == "hp" and value < b.hp and XAlienBattle.frame_blocks_hp(b):
 		value = b.hp  # 异化 setHp 包装（Runtime）：逆祷者的帧里对敌人压低生命无效
+	elif resource == "hp" and value < b.hp and not boss_output.is_settled(b, "hp"):
+		value = b.hp - XAlienBattle.frame_outgoing(b.hp - value)  # 同一包装：帧里压低生命按烈变／小怪异化加成
 	var before := snapshot(b)
 	var old: float = b.get(resource)
 	_set_resource(b, resource, value)
