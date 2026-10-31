@@ -34,9 +34,16 @@ extends RefCounted
 ## - 战斗：剑技必中不闪避；段数固定 {10187:1,10188:3,10189:2,10190:5,10191:2,10192:7,10193:1}；月魄（0～3，只在战斗内）开回合满 3、
 ##   强化剑技要 ≥1 才能用、付费时扣 1（先记付费前的值给公式），10187／10189／10191 命中或 10193 打到敌人后 +1
 ##   （25 级学了朔望盈满 10195 时前三个 +2），结束战斗清零；10187 命中给主目标霜痕、10189 命中给裂隙。
-## 镜流未移植（第二期）：放血（强化剑技扣队友生命、累计倍率）、昙华绽放（10193 后的 10192 ×1.0666）、强化剑技的追加段与去印记、
-## 裂隙演化（学了 10201 时目标防御 ×0.89、寒冰抗性 +0.0111）、月魄到 2 与放血后的追加行动、开战清放血累计、读档时技能整理、
-## 星魂说明行（界面）、技能图标。
+## 镜流第二期（参照 mv_oracle/jingliu2_probe → tests/xiyou_jingliu2）：
+## - 施放准备（apply 包装、原 apply 之前，j_before）：强化剑技第一次打到活着的敌人时放血——其余活着的出战队友各扣 min(floor(最大生命×3%／5%／8%), 生命−1)
+##   （gainHp），累计 _blood（开战清零），本次伤害 ×(1＋min(累计/(5×最大生命), 上限−1))，上限 1.25／1.5／1.8（10192 学了 10202 为 2.5）；记下主目标当时有没有霜痕／裂隙；
+##   10192 时用掉昙华绽放（之前放过 10193），伤害钩子 ×1.0666。
+## - 追加段（j_finish）：10188 主目标有霜痕再追一段并去霜痕；10190 主目标有裂隙时其余活着的敌人各追一段、主目标去裂隙；10192 全部活着的敌人各追一段、
+##   主目标去裂隙。追加段直接 apply（不再走 apply 包装），公式用进阶行（学了 10200～10202 加成）。
+## - 裂隙演化：10189 命中时目标记下「学没学 10201」；演化过且有裂隙时 Game_Enemy.param(3) floor(×0.89)、elementRate(3) +0.0111。
+## - 追加行动：月魄从 <2 涨到 ≥2（每回合一次）、10192 真放了血且学了 10202（每回合一次），行动结束后插到本回合行动队首（本回合行动不到 5 次）。
+## - 读档（XState.from_dict 末尾）：重新整理技能、放血累计清零。
+## 镜流未移植：星魂说明行（界面）、技能图标、追加段的战斗日志显示（记录带 supplemental）。
 
 ## 优化登记（O 号待总装分配；原版缺陷）：10185 说明写「暴击率＋999%」，原版包的是 Game_BattlerBase.prototype.xparam，但 dsPassiveSkill
 ## 在插件加载时已把 Game_Actor.prototype.xparam 存成别名（_Game_Actor_xparam），角色的 xparam 走不到这层包装，加成实际不生效
@@ -55,6 +62,8 @@ const J_ROWS := {10187: [99995, 1833.3], 10188: [166665, 3330], 10189: [183330, 
 	10191: [611110, 11110], 10192: [3333330, 33330], 10193: [833330, 11110]}
 const J_REPEATS := {10187: 1, 10188: 3, 10189: 2, 10190: 5, 10191: 2, 10192: 7, 10193: 1}
 const J_ENHANCED := [10188, 10190, 10192]
+## 进阶行：基础 [攻击系数, 生命系数]，学了对应剑意再加
+const J_ADVANCED := {10188: [[55555, 1111.1], 10200, [55555, 0]], 10190: [[99995, 1111.1], 10201, [83335, 2218.9]], 10192: [[888885, 11110], 10202, [222225, 0]]}
 const J_UNLOCKS := {10187: 1, 10188: 10, 10189: 15, 10190: 20, 10191: 30, 10192: 40, 10193: 45, 10194: 20, 10195: 25, 10196: 1}
 ## recruit(actorId, armorId, name, artifactName)
 const RECRUIT := {YOMI: [Y_ARMOR, "黄泉", "赤雨双缨"], JINGLIU: [J_ARMOR, "镜流", "月魄剑匣"]}
@@ -230,6 +239,11 @@ static func end_battle() -> void:
 	spread_rate = 0.0
 	_moon.clear()
 	_j_frame = {}
+	_blood.clear()
+	_bloom.clear()
+	_moon_extra.clear()
+	_blood_extra.clear()
+	_queued = null
 
 
 ## Game_Action.apply 包装是否接管（扩散的补充结算不再进来）
@@ -308,6 +322,13 @@ static func recruit(s: XState, actor_id: int) -> Array:
 static var _moon := {}
 ## 本行动（原版记在 Game_Action 上，重制在 paySkillCost 时新开）：行动者、技能、付费前月魄 moon_before、主目标 main、命中 hit
 static var _j_frame := {}
+## 放血累计、昙华绽放、本回合用过的两种追加行动（原版角色字段，只在战斗内）：实例 ID → 值
+static var _blood := {}
+static var _bloom := {}
+static var _moon_extra := {}
+static var _blood_extra := {}
+## 行动结束后要插队的镜流
+static var _queued = null
 
 
 static func _j_action(u, skill: Dictionary) -> bool:
@@ -323,10 +344,11 @@ static func soul(a, level: int) -> bool:
 	return jingliu(a) and a.skill_ids.has(10194) and int(a.level) >= level
 
 
-## normalizeJingliuSkills（Game_Actor.setup 包装）
-static func setup(a) -> void:
+## normalizeJingliuSkills（Game_Actor.setup 包装；读档时 state 给读进来的那份，进阶次数从它取）
+static func setup(a, state: XState = null) -> void:
 	if not jingliu(a):
 		return
+	var r := XAdvance.rank(state, JINGLIU) if state != null else rank(a)
 	for id in J_UNLOCKS:
 		if int(a.level) >= int(J_UNLOCKS[id]):
 			a.learn_skill(id)
@@ -335,7 +357,7 @@ static func setup(a) -> void:
 	for id in [10197, 10198, 10199]:
 		a.forget_skill(id)
 	for id in [10200, 10201, 10202]:
-		if rank(a) >= 1:
+		if r >= 1:
 			a.learn_skill(id)
 		else:
 			a.forget_skill(id)
@@ -371,9 +393,12 @@ static func j_formula(a, b, item: Dictionary, calculating := true) -> float:
 	var balance := low / high if high > 0.0 else 0.0
 	var mine: bool = is_same(_j_frame.get("user"), a) and _j_frame.has("moon_before")
 	var m: int = int(_j_frame.moon_before) if mine else moon(a)
+	if mine and _j_frame.get("extra_row") != null:
+		row = _j_frame.extra_row
+	var blood: float = float(_j_frame.get("blood", 1.0)) if mine else 1.0
 	var marks := 1.0 + (0.10 if b.state_ids.has(J_FROST) else 0.0) + (0.10 if b.state_ids.has(J_GAP) else 0.0)
 	var guard := 1.0 if calculating else 1.0 / (1.0 + maxf(0.0, b.param(3)) / maxf(1.0, 10.0 * atk + 2.0 * hp))
-	return (atk * row[0] + hp * row[1]) * (0.85 + 0.15 * balance) * (1.0 + 0.06 * (m - 2.5)) * marks * guard
+	return (atk * row[0] + hp * row[1]) * (0.85 + 0.15 * balance) * (1.0 + 0.06 * (m - 2.5)) * marks * guard * blood
 
 
 ## 伤害钩子 yomi-jingliu 的镜流部分
@@ -392,40 +417,170 @@ static func j_damage_ops(item: Dictionary, a) -> Array:
 				ops.append({"op": "mul", "field": "skillMultiplier", "value": 2.0})
 			if J_ENHANCED.has(id) and soul(a, 45):
 				ops.append({"op": "mul", "field": "skillMultiplier", "value": 2.0})
+			if id == 10192 and is_same(_j_frame.get("user"), a) and bool(_j_frame.get("bloom", false)):
+				ops.append({"op": "mul", "field": "skillMultiplier", "value": 1.0666})
 			if id == 10192 and a.skill_ids.has(10202):
 				ops.append({"op": "mul", "field": "skillMultiplier", "value": 1.1})
 	return ops
 
 
-## Game_Action.apply 包装（原 apply 之后）：第一次打到活着的敌人记主目标；命中记下
-static func j_applied(u, skill: Dictionary, t, r: Dictionary, alive_before: bool) -> void:
-	if not _j_action(u, skill) or not is_same(_j_frame.get("user"), u) or not (t is XEnemy and alive_before):
+static func _j_mine(u, skill: Dictionary) -> bool:
+	return _j_action(u, skill) and is_same(_j_frame.get("user"), u) and not bool(_j_frame.get("supplemental", false))
+
+
+## Game_Action.apply 包装（原 apply 之前）：第一次打到活着的敌人时准备——主目标、昙华绽放、放血、记下印记
+static func j_before(logic, u, skill: Dictionary, t) -> void:
+	if not _j_mine(u, skill) or not (t is XEnemy and t.is_alive()) or _j_frame.has("main"):
 		return
-	if not _j_frame.has("main"):
-		_j_frame["main"] = t
+	var id := int(skill.id)
+	_j_frame["main"] = t
+	var key = u.get_instance_id()
+	_j_frame["bloom"] = id == 10192 and bool(_bloom.get(key, false))
+	if _j_frame.bloom:
+		_bloom[key] = false
+	if J_ENHANCED.has(id):
+		var p: Array = {10188: [0.03, 1.25], 10190: [0.05, 1.50], 10192: [0.08, 2.50 if u.skill_ids.has(10202) else 1.80]}[id]
+		_pay_blood(logic, u, float(p[0]), float(p[1]))
+		_j_frame["had_frost"] = t.state_ids.has(J_FROST)
+		_j_frame["had_gap"] = t.state_ids.has(J_GAP)
+
+
+## payBlood
+static func _pay_blood(logic, u, percent: float, cap: float) -> void:
+	var total := 0.0
+	for ally in logic.actors:
+		if is_same(ally, u) or not ally.is_alive():
+			continue
+		var actual := minf(floorf(ally.mhp * percent), maxf(0.0, ally.hp - 1.0))
+		if actual > 0.0:
+			logic.gain_hp(ally, -actual)
+			total += actual
+	var key = u.get_instance_id()
+	_blood[key] = float(_blood.get(key, 0.0)) + total
+	_j_frame["lost"] = total > 0.0
+	_j_frame["blood"] = 1.0 + minf(float(_blood[key]) / maxf(1.0, 5.0 * u.mhp), cap - 1.0)
+
+
+## Game_Action.apply 包装（原 apply 之后）：命中记下
+static func j_applied(u, skill: Dictionary, t, r: Dictionary, alive_before: bool) -> void:
+	if not _j_mine(u, skill) or not (t is XEnemy and alive_before) or not _j_frame.has("main"):
+		return
 	if not bool(r.get("missed", false)) and not bool(r.get("evaded", false)):
 		_j_frame["hit"] = true
 
 
-## BattleManager.endAction 包装（原 endAction 之前）：霜痕／裂隙、月魄回复
-static func j_finish(logic, u, skill) -> void:
+static func _advanced_row(u, id: int) -> Array:
+	var c: Array = J_ADVANCED[id]
+	var row: Array = (c[0] as Array).duplicate()
+	if u.skill_ids.has(int(c[1])):
+		row[0] += c[2][0]
+		row[1] += c[2][1]
+	return row
+
+
+## supplemental：直接 apply（不走 apply 包装），公式换进阶行
+static func _supplemental(logic, u, skill: Dictionary, t, row: Array) -> Array:
+	if not (t is XEnemy and t.is_alive()):
+		return []
+	_j_frame["supplemental"] = true
+	_j_frame["extra_row"] = row
+	var r: Dictionary = logic.apply(u, skill, t)
+	_j_frame["supplemental"] = false
+	_j_frame["extra_row"] = null
+	r["supplemental"] = true
+	return logic.mark_views([r])
+
+
+## BattleManager.endAction 包装（原 endAction 之前）：追加段与去印记、霜痕／裂隙、月魄回复、昙华绽放、追加行动；返回追加段的记录
+static func j_finish(logic, u, skill) -> Array:
+	var logs := []
 	if not skill is Dictionary or not _j_action(u, skill) or not is_same(_j_frame.get("user"), u) or not _j_frame.has("main") or _j_frame.get("finished", false):
-		return
+		return logs
 	_j_frame["finished"] = true
 	var id := int(skill.id)
 	var hit := bool(_j_frame.get("hit", false))
 	var main = _j_frame.main
+	var key = u.get_instance_id()
+	var extra := false
+	if id == 10188 and bool(_j_frame.get("had_frost", false)):
+		logs.append_array(_supplemental(logic, u, skill, main, _advanced_row(u, 10188)))
+		logic._state_remove(main, J_FROST)
+	if id == 10190 and bool(_j_frame.get("had_gap", false)):
+		var row := _advanced_row(u, 10190)
+		for e in logic.enemies.filter(func(x): return x.is_alive()):
+			if not is_same(e, main):
+				logs.append_array(_supplemental(logic, u, skill, e, row))
+		logic._state_remove(main, J_GAP)
+	if id == 10192:
+		var row := _advanced_row(u, 10192)
+		for e in logic.enemies.filter(func(x): return x.is_alive()):
+			logs.append_array(_supplemental(logic, u, skill, e, row))
+		if main.state_ids.has(J_GAP):
+			logic._state_remove(main, J_GAP)
 	if hit and id == 10187:
 		logic._state_add(main, J_FROST)
 	if hit and id == 10189:
 		logic._state_add(main, J_GAP)
+		main.set_meta("jingliu_gap_evolved", u.skill_ids.has(10201))
 	if ([10187, 10189, 10191].has(id) and hit) or id == 10193:
+		var previous := moon(u)
 		var gain := 2 if id != 10193 and int(u.level) >= 25 and u.skill_ids.has(10195) else 1
-		_moon[u.get_instance_id()] = mini(3, moon(u) + gain)
+		_moon[key] = mini(3, previous + gain)
+		if previous < 2 and moon(u) >= 2 and not bool(_moon_extra.get(key, false)):
+			_moon_extra[key] = true
+			extra = true
+	if id == 10193:
+		_bloom[key] = true
+	if id == 10192 and bool(_j_frame.get("lost", false)) and u.skill_ids.has(10202) and not bool(_blood_extra.get(key, false)):
+		_blood_extra[key] = true
+		extra = true
+	if extra:
+		_queued = u
+	return logs
+
+
+## queueJingliu（原 endAction 之后）：活着且本回合行动不到 5 次时插到行动队首
+static func queue_extra(logic, u) -> void:
+	if _queued == null or not is_same(_queued, u):
+		return
+	_queued = null
+	if u.is_alive() and int(logic._acted.get(u, 0)) < 5:
+		logic.current_order.push_front(u)
+
+
+## 裂隙演化：Game_Enemy.param(3) 包装
+static func enemy_param(e, i: int, v: float) -> float:
+	return floorf(v * 0.89) if i == 3 and _gap_evolved(e) else v
+
+
+## 裂隙演化：elementRate(3) 包装
+static func element_rate(b, element: int, v: float) -> float:
+	return v + 0.0111 if element == 3 and _gap_evolved(b) else v
+
+
+static func _gap_evolved(b) -> bool:
+	return b is XEnemy and bool(b.get_meta("jingliu_gap_evolved", false)) and b.state_ids.has(J_GAP)
+
+
+## BattleManager.startBattle 包装：放血累计清零
+static func start_battle(logic) -> void:
+	var s: XState = logic.state
+	if s != null and s.actors.has(JINGLIU):
+		_blood.erase(s.actors[JINGLIU].get_instance_id())
+
+
+## extractSaveContents 包装：读档时整理技能、放血累计清零
+static func after_load(s: XState) -> void:
+	if s.actors.has(JINGLIU):
+		setup(s.actors[JINGLIU], s)
+		_blood.erase(s.actors[JINGLIU].get_instance_id())
 
 
 ## BattleManager.startTurn 包装：月魄满 3
 static func start_turn(logic) -> void:
 	var s: XState = logic.state
 	if s != null and s.actors.has(JINGLIU):
-		_moon[s.actors[JINGLIU].get_instance_id()] = 3
+		var key = s.actors[JINGLIU].get_instance_id()
+		_moon[key] = 3
+		_moon_extra[key] = false
+		_blood_extra[key] = false

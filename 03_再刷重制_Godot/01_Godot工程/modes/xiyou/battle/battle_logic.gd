@@ -125,6 +125,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	troop_id = troop
 	XImportedBalance.set_acting(null)
 	actors = s.battle_members()
+	XYomiJingliu.start_battle(self)  # 镜流 startBattle 包装：放血累计清零
 	_garou = XGarou.start_battle(actors)  # 饿狼 startBattle 包装：同步、记下出战的饿狼
 	victory_texts.clear()
 	XZhenqi.battle_setup(s, troop)  # 真气：本场路线、楼层、溢出计数（BattleManager.setup）
@@ -769,12 +770,13 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(XGarou.finish(self, u, skill))  # 饿狼 endAction 包装（原 endAction 之前）：进化、解析、追击、流水回 TP；敌人命中饿狼的进化、解析、反击
 		logs.append_array(XSukuna.finish(self, u, skill))  # 宿傩 endAction 包装（原 endAction 之前）：神灶：开、追斩、看破、适应
 		XBlackFlash.finish(self, u, skill)  # 黑闪 endAction 包装（宿傩之内）：集中、连闪、觉醒
-		XYomiJingliu.j_finish(self, u, skill)  # 镜流 endAction 包装（黑闪之内、渡鸦之外）：霜痕／裂隙、月魄回复
+		logs.append_array(XYomiJingliu.j_finish(self, u, skill))  # 镜流 endAction 包装（黑闪之内、渡鸦之外）：追加段、霜痕／裂隙、月魄、追加行动
 		logs.append_array(XRaven.finish(self, u, skill))  # 渡鸦 endAction 包装（各专属模块最内层，原 endAction 之前）：冥界收割、回响
 	XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
 	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
 	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
 	_acted[u] = int(_acted.get(u, 0)) + 1
+	XYomiJingliu.queue_extra(self, u)  # 镜流 queueJingliu（原 endAction 之后）：追加行动插队
 	if started:
 		XMira.pay_hp(u, skill)  # 米拉 endAction 包装（原 endAction 之前）：禁忌生命代价
 		_tick_states(u, 1)
@@ -1116,7 +1118,7 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 		logs.append_array(execute(u, skill, _forced_target(u, skill, int(p[3])), true))
 		logs.append_array(XGarou.finish(self, u, skill))
 		logs.append_array(XSukuna.finish(self, u, skill, true))
-		XYomiJingliu.j_finish(self, u, skill)
+		logs.append_array(XYomiJingliu.j_finish(self, u, skill))
 		logs.append_array(XRaven.finish(self, u, skill))
 		XRaceBattle.finish(self, logs)
 		XCat.end_action(self, u, skill)
@@ -1533,9 +1535,10 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	if XSukuna.wraps(u, skill):
 		return XSukuna.apply(self, u, skill, tt)  # 宿傩 Game_Action.apply 包装：捌两段、伤口、神灶蓄力
 	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
+	XYomiJingliu.j_before(self, u, skill, tt)  # 镜流 apply 包装（原 apply 之前）：主目标、绽放、放血、记印记
 	var r := apply(u, skill, tt)
 	XGarou.applied(u, skill, tt, r, used)  # 饿狼 Game_Action.apply 包装：本帧命中与伤害、琦玉模式
-	XYomiJingliu.j_applied(u, skill, tt, r, used)  # 镜流 Game_Action.apply 包装：主目标、命中
+	XYomiJingliu.j_applied(u, skill, tt, r, used)  # （j_before 在 apply 之前）  # 镜流 Game_Action.apply 包装：主目标、命中
 	XRaven.applied(self, u, skill, tt, r, used)  # 渡鸦 Game_Action.apply 包装：神话形态、鸦啄回 MP、黑暗侵蚀、按目标累计伤害
 	return [r]
 

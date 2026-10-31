@@ -219,7 +219,7 @@ func param_base(i: int) -> float:
 ## 四舍五入少 1（二十七层多宝 463 攻击 19438，敌群事件参照）。战斗中经 krz 能力值缓存（见 XBattler.param_cells）。
 func param(i: int) -> float:
 	var native := cached_param(i, param_now) if param_cache_on else param_now(i)
-	native = roundf(native * warehouse_rate())
+	native = XYomiJingliu.enemy_param(self, i, roundf(native * warehouse_rate()))  # 镜流裂隙演化（在仓库倍率之外、首领倍率之内）
 	return XAlienBattle.hp_param(self, i, roundf(native * boss_attribute_rate()))
 
 ## Star_Warehouse 的难度怪物属性：$gameParty.DCultyL1～5（公共事件 714 按难度开关置位，标志存在 XState.flags）从小到大取第一个为真的，
