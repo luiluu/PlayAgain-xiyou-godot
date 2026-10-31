@@ -370,6 +370,53 @@
         extra: function () { return awState(); }
     };
 
+    // 星级仓库（八戒_91）：黄金大厅通用仓库管理员 Map041 EV1「存放／取出」＝SceneManager.push(Scene_StarSaveWarehouse／Scene_StarWarehouse)。
+    // 摆法：背包放武器本体 2、52（PushDct）、3，防具本体 2；宠物敌人 1／2／3，第 2 只出战；ConfigManager.GetEq／GetPet 先清空（不读写配置文件）。
+    // 截图：存放开场（分类窗）、装备列表、存入第 1 件（光标不动）、宠物列表；退出后打开取出：开场、装备列表、宠物列表、取光宠物后的空列表
+    // 宠物是 Game_Enemy，没有 note：列表选中宠物时 updateHelp→Sprite_ItemHelp→HelpExtend getItemExtraDescParams 读 item.note.split 抛错，
+    // 正式版里这发生在场景 update 中（SceneManager.catchException 停机）。这里接住并记下，接着摆后面的状态。
+    var swErrors = [];
+    function swTry(fn) { try { fn(); } catch (e) { swErrors.push(String(e && e.message)); } }
+    function swState() {
+        var s = scene(), l = s && s._itemWindow, c = s && s._categoryWindow, h = s && s._helpWindow;
+        return {GetEq: (ConfigManager.GetEq || []).map(function (i) { return [i.id, i.baseItemId, i.name]; }),
+            GetPet: (ConfigManager.GetPet || []).map(function (p) { return [p._enemyId, p.name()]; }),
+            pets: ($gameParty.Pets || []).map(function (p) { return [p._enemyId, p.name()]; }),
+            list: l ? {category: l._category, index: l.index(), active: l.active, maxCols: l.maxCols(), spacing: l.spacing(), itemHeight: l.itemHeight(),
+                data: l._data.map(function (i) { return i && (i._enemyId ? ['pet', i._enemyId, i.name()] : [i.id, i.baseItemId, i.name, i.iconIndex]); })} : null,
+            category: c ? {index: c.index(), active: c.active, symbol: c.currentSymbol()} : null,
+            help: h ? {rect: [h.x, h.y, h.width, h.height], text: h._text, visible: h.visible} : null, errors: swErrors.slice()};
+    }
+    P.star_warehouse = {
+        setup: async function () {
+            $gameParty._weapons = {}; $gameParty._armors = {}; $gameParty._items = {};
+            [2, 52, 3].forEach(function (id) { $gameParty.gainItem($dataWeapons[id], 1); });
+            $gameParty.gainItem($dataArmors[2], 1);
+            ConfigManager.GetEq = []; ConfigManager.GetPet = []; swErrors = [];
+            $gameParty.Pets = [1, 2, 3].map(function (id) { return Star.PetSystem.GetingPet(new Game_Enemy(id, 0, 0)); });
+            $gameParty.GTWar = $gameParty.Pets[1];
+            await push(Scene_StarSaveWarehouse);
+        },
+        shots: {
+            sw_0_save_open: async function () {},
+            sw_1_save_equip: async function () { scene()._categoryWindow.processOk(); },
+            sw_2_save_one: async function () { scene()._itemWindow.processOk(); },
+            sw_3_save_pet: async function () {
+                var s = scene(); s._itemWindow.processCancel(); s._categoryWindow.select(1); s._categoryWindow.update();
+                swTry(function () { s._categoryWindow.processOk(); });
+            },
+            sw_3b_save_pet_one: async function () { var l = scene()._itemWindow; swTry(function () { l.processOk(); }); },
+            sw_4_load_open: async function () { SceneManager.pop(); await settle(); await push(Scene_StarWarehouse); },
+            sw_5_load_equip: async function () { scene()._categoryWindow.processOk(); },
+            sw_6_load_pet: async function () {
+                var s = scene(); s._itemWindow.processCancel(); s._categoryWindow.select(1); s._categoryWindow.update();
+                swTry(function () { s._categoryWindow.processOk(); });
+            },
+            sw_7_load_empty: async function () { var l = scene()._itemWindow; swTry(function () { l.processOk(); }); l.activate(); swTry(function () { l.processOk(); }); }
+        },
+        extra: function () { return swState(); }
+    };
+
     // 更衣（八戒_67）：衣橱管理员 Map4 EV17「查看衣橱」＝SceneManager.push(Scene_ChangeClothes)。
     // 摆法：队伍 1/8/9/10，仓库 [13]；ConfigManager.ChangeClothesLite 先放 -9、-12、-20（换装表第 9／12／20 项），
     // 打开时 initialize 再补上队伍与仓库的角色。$.toaster 包一层记下提示文字。

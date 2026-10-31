@@ -229,6 +229,7 @@ static func save_clothes() -> bool:
 
 
 static func _write() -> bool:
+	XStarWarehouse.flush_pending()  # 星级仓库照原版落盘时机时（o_save_now 关）随配置一起写
 	var p := path()
 	if p == "":
 		return true
