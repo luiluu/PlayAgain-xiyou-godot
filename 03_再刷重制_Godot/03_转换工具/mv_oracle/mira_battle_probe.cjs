@@ -27,7 +27,7 @@ const BIG_HP = 1e12, TROOP = 3, ACTOR = 168, DRAGON = 2592, SWITCH = 2494, FOE_A
 const ACTIVE = [10140, 10141, 10142, 10143, 10146, 10147, 10148, 10149, 10150, 10151, 10152];
 
 // 新局、开挑战开关 2494（168 是超强角色，BossDifficulty 只在挑战开关或混沌难度下让他出战、入队），队伍 [168, 1]，各 level 级；米拉进阶 rank、照 CodexSkillProgression.sync
-// 同步专属技能（正式游戏里入队、升级、进阶都同步），再忘掉 drop 里的；敌群 3 每只生命加 1e12
+// 同步专属技能（正式游戏里入队、升级、进阶都同步），再忘掉 drop 里的；敌群 3 每只生命加 1e12（角色不加：YEP_CoreEngine 角色生命上限 99999999）
 function battle(rank, level, drop) {
   newGame();
   w.eval('$gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');  // 等级上限照 slice_probe 放开到 99
@@ -37,7 +37,7 @@ function battle(rank, level, drop) {
   const a = w.$gameActors.actor(ACTOR);
   a._AdvancedNum = rank;
   for (const id of [ACTOR, 1]) {
-    const b = w.$gameActors.actor(id); b.changeLevel(level, false); b._paramPlus[0] = BIG_HP; b.recoverAll();
+    const b = w.$gameActors.actor(id); b.changeLevel(level, false); b.recoverAll();
   }
   w.CodexSkillProgression.sync(a);
   for (const id of drop) a.forgetSkill(id);
@@ -104,7 +104,9 @@ function actCase(id, setup, prepare) {
     if (setup.dragon) a.addState(DRAGON);
     for (const s of setup.preStates || []) a.addState(s);
     for (const p of setup.preDebuffs || []) a.addDebuff(p, 3);
+    a.need_refresh = true; a.refresh();  // krz 缓存：测试里直接加的状态要刷新后才进能力值（正式流程由解放收尾 refresh）
     a._mp = a.mmp; a._tp = a.maxTp();
+    if (setup.hpRate) a._hp = Math.floor(a.mhp * setup.hpRate);
     if (setup.hp) a._hp = setup.hp;
     if (prepare) prepare(a);
     const hp0 = a.hp;
@@ -128,9 +130,9 @@ actCase('act.liberate.end', {rank: 3, level: 55, drop: [], skill: 10146, preStat
 actCase('act.liberate.end.debuff', {rank: 3, level: 55, drop: [], skill: 10146, preStates: [4], preDebuffs: [2, 3]});
 actCase('act.liberate.keep', {rank: 3, level: 55, drop: NO_END, skill: 10146, preStates: [4, 6], preDebuffs: [2, 3]});
 for (const s of [10148, 10149, 10150, 10151, 10152])
-  actCase(`act.dragon.s${s}`, {rank: 3, level: 55, drop: [], skill: s, dragon: true, hp: 5e7});
+  actCase(`act.dragon.s${s}`, {rank: 3, level: 55, drop: [], skill: s, dragon: true, hpRate: 0.5});
 actCase('act.dragon.s10148.no10162', {rank: 3, level: 55, drop: [10162], skill: 10148, dragon: true});
-actCase('act.dragon.s10148.no10154', {rank: 3, level: 55, drop: [10154], skill: 10148, dragon: true, hp: 5e7});
+actCase('act.dragon.s10148.no10154', {rank: 3, level: 55, drop: [10154], skill: 10148, dragon: true, hpRate: 0.5});
 actCase('act.human.s10140', {rank: 3, level: 55, drop: NO_END, skill: 10140});
 actCase('act.human.s10142.r2', {rank: 2, level: 55, drop: [], skill: 10142});
 actCase('act.human.s10140.hp1', {rank: 2, level: 55, drop: [], skill: 10140, hp: 1});
