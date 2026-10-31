@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "sukuna_battle.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"script.flash\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "e7cf0a249e36340f",
+      "newDigest": "f4658b31309add03",
+      "reason": "宿傩 flash 剧本去掉防御后定回 100 TP：原版防御 apply 给 tpGain 10，重制防御支已同样给，第 4 步起 TP 与依 TP 的技能条件随之变化"
+    }
+  ]
+}

@@ -23,7 +23,7 @@ extends Control
 signal closed
 
 ## O-078：图鉴固定按普通（非神话）敌人显示；false 恢复原版随机神话
-const BOOK_FIXED_NORMAL := true
+static var BOOK_FIXED_NORMAL := true
 const INDEX_RECT := Rect2(0, 0, 426, 720)
 const STATUS_RECT := Rect2(426, 0, 854, 720)
 const LH := 36.0
