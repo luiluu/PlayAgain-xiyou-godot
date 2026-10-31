@@ -27,7 +27,7 @@ extends RefCounted
 ## - 技能整理（setup 时 normalizeJingliuSkills）：10187～10196 按解锁等级学／忘，忘掉 10197～10199，进阶 ≥1 学 10200～10202、否则忘。
 ## - 星魂（学了命途：毁灭 10194 且到级）：paramBase 20 级、40 级各再加一份最大生命基础值，35 级再加一份攻击基础值（XActorModules.param_base）。
 ## - 公式 CodexJingliu.damage(a,b,id)：(攻击×r0＋最大生命×r1)×剑势均衡(0.85＋0.15×小/大，生命按 17463/136584 折算)×月魄(1＋0.06×(月魄−2.5)，
-##   用付费之前的月魄)×印记(1＋霜痕 2628 0.1＋裂隙 2629 0.1)；守势项在伤害计算中恒为 1（CodexDamage.isCalculating）。
+##   用付费之前的月魄)×印记(1＋霜痕 2628 0.1＋裂隙 2629 0.1)×守势（伤害计算中恒为 1，CodexDamage.isCalculating；计算外见 j_formula）。
 ## - 伤害钩子镜流部分：剑技物理；戴月魄剑匣时（技能类型 4 除外）普通伤害 +0.25；寒冰（元素 3）伤害：星魂 25 级寒冰 +1，
 ##   剑技里 10187／10189／10191 星魂 30 级 ×2、强化剑技 10188／10190／10192 星魂 45 级 ×2、10192 学了 10202 ×1.1。
 ##   原版 makeDamageValue 包装同黄泉，被 installDamageElementRuntime 换掉不生效，不移植。
@@ -356,8 +356,9 @@ static func param_base(a, i: int, v: float) -> float:
 	return out
 
 
-## CodexJingliu.damage(a,b,id)
-static func j_formula(a, b, item: Dictionary) -> float:
+## CodexJingliu.damage(a,b,id)；calculating＝在伤害计算里（CodexDamage.isCalculating，战斗结算都是），守势项恒为 1，
+## 否则乘 1/(1＋目标防御/max(1, 10×攻击＋2×最大生命))
+static func j_formula(a, b, item: Dictionary, calculating := true) -> float:
 	var id := int(item.get("id", 0))
 	if not jingliu(a) or not J_ROWS.has(id):
 		return 0.0
@@ -371,7 +372,8 @@ static func j_formula(a, b, item: Dictionary) -> float:
 	var mine: bool = is_same(_j_frame.get("user"), a) and _j_frame.has("moon_before")
 	var m: int = int(_j_frame.moon_before) if mine else moon(a)
 	var marks := 1.0 + (0.10 if b.state_ids.has(J_FROST) else 0.0) + (0.10 if b.state_ids.has(J_GAP) else 0.0)
-	return (atk * row[0] + hp * row[1]) * (0.85 + 0.15 * balance) * (1.0 + 0.06 * (m - 2.5)) * marks
+	var guard := 1.0 if calculating else 1.0 / (1.0 + maxf(0.0, b.param(3)) / maxf(1.0, 10.0 * atk + 2.0 * hp))
+	return (atk * row[0] + hp * row[1]) * (0.85 + 0.15 * balance) * (1.0 + 0.06 * (m - 2.5)) * marks * guard
 
 
 ## 伤害钩子 yomi-jingliu 的镜流部分
