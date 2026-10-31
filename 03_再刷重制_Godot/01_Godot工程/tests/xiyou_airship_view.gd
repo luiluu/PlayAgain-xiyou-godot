@@ -6,6 +6,7 @@ extends Node
 ## - 飞行中鼠标点前方一格是飞过去（triggerTouchActionD2 只查事件），点脚下才降落（D1）；
 ## - 降落：逐帧采样高度每帧最多 −1、精灵与影子一致，到 0 回角色下方；
 ## - 指令 323 换图（改造包）：精灵照新图画，存读档后图还对；带 ! 的物件图（萌物）不上移 6，影子也跟着；
+## - 每帧画面另按原版参照的同高度一行比：精灵上移、影子位置、透明度（shadowOpacity÷255）；升到 48、降到 0 的逐帧序列与参照相同；
 ## - 空中存读档、升空中存读档、降落中存读档：读回高度与存时一样，画面与高度一致，接着升或降到底。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const SAVE_DIR := "user://test_airship_view"
@@ -17,6 +18,9 @@ var s: XState
 var map: XMapScene
 ## --out=<目录>：在上艇、飞行、降落三处截图（对照原版，见交付单 claude_wukong-airship3；无头运行时不截）
 var out_dir := ""
+## 原版参照 airship_probe（view.rows.walk／object：高度 0～48 每档的精灵、影子偏移与透明度；view.rise_fall：升降逐帧高度）
+const FIXTURE := "res://tests/fixtures/airship_oracle.json"
+var ref := {}
 
 
 func _ready() -> void:
@@ -90,6 +94,25 @@ func _press() -> void:
 	await map._on_action()
 
 
+func _oracle(id: String):
+	for c in ref.get("cases", []):
+		if c.id == id:
+			return c.observed if c.errors.is_empty() else null
+	return null
+
+
+## 原版同高度一行：Game_Vehicle.screenY 相对停地上移 dy、影子在 shadowY（含行走图 shiftY）、透明度 shadowOpacity
+func _row_ok(a, sh, ground: Vector2, alt: int) -> bool:
+	var o = _oracle("view.rows.object" if a.is_object() else "view.rows.walk")
+	if o == null or alt < 0 or alt >= o.rows.size():
+		return false
+	var row: Dictionary = o.rows[alt]
+	var shift := float(o.parked.shiftY)
+	return a.position.is_equal_approx(ground + Vector2(0, float(row.dy))) \
+		and (a.position + sh.position).is_equal_approx(ground + Vector2(float(row.shadowDx), float(row.shadowDy) - shift)) \
+		and is_equal_approx(sh.modulate.a, float(row.shadowOpacity) / 255.0)
+
+
 ## 画面与飞艇状态一致：精灵上移＝高度、影子在原位（行走图上移 6，物件 0）、透明度＝高度÷48、层级
 func _view(tag: String) -> bool:
 	var v := _airship()
@@ -102,7 +125,7 @@ func _view(tag: String) -> bool:
 	var z_ok := a.z_index == -1 if alt <= 0 else (a.z_index == MVCharacter.ABOVE_UPPER_Z and a.z_index > map.upper.z_index and sh.z_index > a.z_index)
 	return _check(tag, a.altitude == alt and a.position.is_equal_approx(ground - Vector2(0, alt))
 		and (a.position + sh.position).is_equal_approx(ground - Vector2(0, shift)) and a.real.is_equal_approx(map.player.real) and map.followers.all(func(f): return f.transparent == map.player.transparent) and is_equal_approx(sh.modulate.a, alt / 48.0)
-		and sh.texture != null and z_ok and a.character_name == str(v.characterName) and a.character_index == int(v.characterIndex),
+		and sh.texture != null and z_ok and _row_ok(a, sh, ground, alt) and a.character_name == str(v.characterName) and a.character_index == int(v.characterIndex),
 		[alt, a.altitude, a.position, ground, sh.position, sh.modulate.a, a.z_index, sh.z_index, a.character_name, a.character_index, v.characterName])
 
 
@@ -135,6 +158,8 @@ func _get_on(tag: String) -> void:
 	_check(tag + "_getting_on", s.vehicle_type == "airship" and not map.vehicle_can_move(), _airship())
 	var seen := await _sample(tag + "_rise", 1, func(): return map.vehicle_can_move(), 24, tag + "_rise_24")
 	_check(tag + "_rise_0_to_48", seen.front() == 0 and seen.back() == 48 and seen.size() == 49, seen)
+	var rf = _oracle("view.rise_fall")
+	_check(tag + "_rise_oracle", rf != null and seen == rf.rise.map(func(v): return int(v)) and int(_oracle("view.rows.walk").maxAltitude) == XMapScene.AIRSHIP_MAX_ALTITUDE, [seen, rf])
 	_check(tag + "_flying", map.vehicle_can_move() and map.airship.step_anime and map.airship.priority_type == 2, _airship())
 	await _view(tag + "_high")
 
@@ -144,6 +169,10 @@ func _land(tag: String) -> void:
 	_check(tag + "_landing", map._vehicle_getting_off, _airship())
 	var seen := await _sample(tag + "_fall", -1, func(): return s.vehicle_type == "walk")
 	_check(tag + "_fall_to_0", seen.front() >= 47 and seen.back() == 0 and seen.size() == seen.front() + 1, seen)
+	# 参照从 48 降起；重制按下降键那一帧可能已降了一格，比参照序列的对应尾段
+	var rf = _oracle("view.rise_fall")
+	var want: Array = rf.fall.map(func(v): return int(v)) if rf != null else []
+	_check(tag + "_fall_oracle", rf != null and seen == want.slice(want.size() - seen.size()), [seen, want])
 	_check(tag + "_parked", map.airship.priority_type == 0 and map.airship.z_index == -1 and is_zero_approx(map.airship_shadow.modulate.a) and not map.airship.step_anime)
 
 
@@ -169,6 +198,8 @@ func _save_load_altitude(tag: String, id: int) -> int:
 
 
 func _run() -> void:
+	ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
+	_check("oracle_source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	XSave.dir_override = SAVE_DIR
 	XMessageBox.auto = true
 	_fast_clock(true)
