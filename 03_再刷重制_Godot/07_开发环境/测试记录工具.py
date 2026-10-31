@@ -5,6 +5,7 @@ import importlib.util
 import io
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -228,6 +229,41 @@ class ReviewListTests(unittest.TestCase):
         self.assertIn('cc 的提交', items)
         r.put(LOG, '# 变更记录\n\n## 2099-01-01 【cc·哪吒】核查 claude/lane\n\n- 核查者: cc（审查）\n')
         self.assertNotIn('合并 claude/lane', self.labels())     # 核查者行写 cc（审查）也认，且仍销旧的 claude/ 分支
+
+    def test_tiers_by_files_limit_counts_only_tier_a(self):
+        """Kyo 10-30：待核查按甲／乙／丙三档，上限只算甲档。一批的档＝所改文件里最高的；规则表见 待核查分档.json；
+        有文件却没有规则匹配的按甲并列出；没有改动文件的批算丙。"""
+        r = self.repo
+        P = '03_再刷重制_Godot/'
+        cases = [('甲-战斗核心', {P + '01_Godot工程/modes/xiyou/core/actor.gd': 'x'}),
+                 ('甲-存档', {P + '01_Godot工程/modes/xiyou/ui/save_page.gd': 'x'}),
+                 ('甲-新优化', {P + '00_设计/优化登记.md': 'x'}),
+                 ('乙-楼层内容', {P + '03_转换工具/xiyou_slice.json': '{}', P + '01_Godot工程/tests/xiyou_floor.gd': 'x'}),
+                 ('丙-工具文档', {P + '07_开发环境/工具.py': 'x', '00_项目管理/交接板.md': 'x'}),
+                 ('混合取最高', {P + '07_开发环境/工具2.py': 'x', P + '01_Godot工程/tests/t2.gd': 'x', P + '01_Godot工程/modes/xiyou/battle/b.gd.uid': 'x'}),
+                 ('拿不准按甲', {P + '01_Godot工程/modes/xiyou/ui/shop.gd': 'x'})]
+        for name, files in cases:
+            for path, text in files.items():
+                r.put(path, text)
+            r.commit(name, '审查', 'Claude（哪吒）')
+        r.commit('空提交', '审查', 'Claude（哪吒）')
+        items = self.labels()
+        got = {n: items[n]['tier'] for n, _ in cases + [('空提交', 0)]}
+        self.assertEqual(got, {'甲-战斗核心': '甲', '甲-存档': '甲', '甲-新优化': '甲', '乙-楼层内容': '乙', '丙-工具文档': '丙',
+                               '混合取最高': '甲', '拿不准按甲': '甲', '空提交': '丙'})
+        self.assertEqual(items['拿不准按甲']['unsure'], [P + '01_Godot工程/modes/xiyou/ui/shop.gd'])
+        self.assertEqual(items['拿不准按甲']['sureTier'], '丙')
+        self.assertEqual(items['甲-战斗核心']['unsure'], [])
+        n = {t: sum(1 for i in items.values() if i['tier'] == t) for t in '甲乙丙'}
+        out = subprocess.run([sys.executable, str(HERE / '待核查.py'), '--root', str(r.root), '--limit', str(n['甲'] - 1)], capture_output=True, text=True).stdout
+        guess = sum(1 for i in items.values() if i['tier'] == '甲' and i['sureTier'] != '甲')   # 夹具里原有的批也可能有拿不准的文件
+        self.assertEqual(items['拿不准按甲']['sureTier'] != '甲', True)
+        self.assertIn(f"甲 {n['甲']} 批（其中 {guess} 批只因有文件拿不准才算甲）、乙 {n['乙']} 批、丙 {n['丙']} 批", out)
+        self.assertIn(f"计入 {n['甲']} 批", out)
+        self.assertIn('拿不准归哪档', out)
+        self.assertIn(f"⚠ 待交叉核查甲档 {n['甲']} 批，超过 {n['甲'] - 1} 批上限", out)
+        out = subprocess.run([sys.executable, str(HERE / '待核查.py'), '--root', str(r.root), '--limit', str(n['甲'])], capture_output=True, text=True).stdout
+        self.assertNotIn('超过', out)                                            # 乙、丙再多也不触发
 
     def test_dev_numbers(self):
         self.assertEqual(review.dev_numbers('dev.081／083／085、dev.086～088'), {81, 83, 85, 86, 87, 88})
