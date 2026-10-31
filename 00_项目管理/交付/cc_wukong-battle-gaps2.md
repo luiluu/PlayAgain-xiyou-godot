@@ -34,6 +34,7 @@
 ## 下期清单
 
 - 物品掉落疑似也有出入（只看了源码，**没有参照**）：原版 Vitsuno 的难度掉率那段被作者注掉，EliteEnemy 的 `dropItemRate` 是「物品双倍 ? 1 : 0.2」× 神话倍率；重制 `_roll_drops` 乘的是难度 Drop Rate 第 3 项起、没有 0.2 基础。要做 makeDropItems 的定向参照（固定 Math.random）再改。
+- 伤害／治疗时挂状态没移植（查蔷薇时发现）：dsPassiveSkill 的 `<PushState N: p%>`（伤害为正时给目标）、`<RecPushState N: p%>`（为负时给目标）、`<PushsubState N: p%>`（伤害为正时给自己），技能 153、武器 95、防具 83 条备注，原版走 installDamageElementRuntime 的 makeDamageValue 包装（`result._after`，结算时按 makeDamageValue 的正负挂，只认角色行动者、异化虚空攻击除外）。重制全工程没有这套，蔷薇刺鞭破防、蔷薇进阶等都不生效。照原版移植（含原版治疗时不看目标是不是我方，Kyo：线上那个 bug 不归我们管），请总装排期。
 - 谷雨按最大 MP 比例收费（installNativeGuyuRuntime 的 `CFG.mp`）：谷雨 175 不在切片、运行模块没移植，本期只记，谷雨上线时一起做。
 
 ## 可优化（流程／工具／效率）
