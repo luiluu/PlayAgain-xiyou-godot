@@ -13,7 +13,7 @@ static func descriptor() -> Dictionary:
 
 
 static func capture(item: Dictionary, a: XBattler, b: XBattler) -> Dictionary:
-	var ops: Array = XRaven.damage_ops(item, a) + XNumberBoost.damage_ops(item, a, b) + mira_ops(item, a, b) + XSukuna.damage_ops(item, a) + XYomiJingliu.damage_ops(item, a, b) + XToji.damage_ops(item, a) + XGarou.damage_ops(item, a, b) + XBlackFlash.damage_ops(b)
+	var ops: Array = XRaven.damage_ops(item, a) + XNumberBoost.damage_ops(item, a, b) + mira_ops(item, a, b) + XSukuna.damage_ops(item, a) + XYomiJingliu.damage_ops(item, a, b) + XToji.damage_ops(item, a) + XToji.incoming_ops(item, a, b) + XGarou.damage_ops(item, a, b) + XBlackFlash.damage_ops(b)
 	return {"ops": ops}
 
 

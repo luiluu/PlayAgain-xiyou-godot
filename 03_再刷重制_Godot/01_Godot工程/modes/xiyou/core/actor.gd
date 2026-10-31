@@ -213,6 +213,8 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 		return
 	if XMira.resists(self, id):
 		return  # 米拉终焉 isStateResist／addState 包装：黑龙形态挡名单状态
+	if XToji.blocks_state(self, id):
+		return  # 甚尔 addState 包装：暴君挡负面状态
 	var fresh := not state_ids.has(id)
 	super(id, random)
 	if fresh and state_ids.has(id) and lifecycle_context.get("resources") == null:
@@ -223,6 +225,7 @@ func remove_state(id: int) -> void:
 	super(id)
 	if had:
 		release_to_party()
+	XToji.revived(self, id, had)  # 甚尔 removeState 包装：战斗中复活且没有形态时回游云
 
 func refresh_resources(random: XRandomStream = null) -> void:
 	super(random)
@@ -392,6 +395,7 @@ func learn_skill(id: int) -> void:
 	if not skill_ids.has(id) and not XDB.rec("Skills", id).is_empty():
 		skill_ids.append(id)
 		skill_ids.sort()
+	XToji.learned(self, id)  # 甚尔 learnSkill 包装：学暴君时清负面状态与弱化
 
 func forget_skill(id: int) -> void:
 	if XPowerBooks.protected_forget(self, id):

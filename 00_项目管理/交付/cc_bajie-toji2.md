@@ -1,0 +1,74 @@
+# 交付：cc/bajie-toji2
+
+- 车道／工作者：C 规则／八戒（cc，八戒_93）
+- 状态：可合并
+- 分支从 cc/bajie-toji1 末端 9054c714 切（总装八派），工作树 `.claude/worktrees/charming-thompson-b2b988`。机制编号沿用 toji1 交付单「机制对照」。
+
+## 做到哪
+
+- ✓ ① 咒具形态与切换（#28～31 中的切换、开战、复活、结束；#24 战斗中技能列表；#22 切换豁免类别封印）
+- ✓ ② 多段与追加次数（#28 段数／单目标、#29 逐段）、黑闪觉醒游云额外一击；顺带 #20 万里锁溅射（主技能一支）、#21 天逆鉾附封印与次数（这两项是同一个 apply 包装，参照脚本里躲不开）
+- ✓ ③ 暴君挡负面状态与弱化、学暴君与 repair 时清（#9）
+- ✓ ④ 天与咒缚影速命中／闪避、五感必中与暴击闪避 ×0.34（#13～15）
+- ✓ ⑥ 天逆鉾封印吞技能（#26、#27：applyGlobal 失效、扣次数、扣完去状态）
+- ○ ⑤ 武器库追击与借用特效、⑦ 术师杀手减伤与反弹：留到下期（见「下期」）
+
+## 变更记录草稿
+
+## 2026-10-31 【cc·八戒_93·未经审查】伏黑甚尔 171 第二期：咒具形态与切换、多段、封印、暴君、命中与暴击（dev.待定）
+
+1. **咒具形态**（`modes/xiyou/core/toji.gd`）：开战设第一形态（之后开战清 removeAtBattleEnd 状态，参照里开战后没有形态状态，普攻按游云）；切换技能 10212～10215 在行动结束后换形态；战斗中阵亡后复活回游云；战斗结束清形态。战斗中技能列表的战技类别只列切换技能，主技能、武器库、反弹不列；切换技能不受战技类别封印。
+2. **多段**：主技能收成单目标，记追加次数（攻击次数＋）；游云 5＋追加段、释魂刀 1 段（×(5＋追加)×0.95）、万里锁／天逆鉾 1＋追加段（第 2 段起 ×0.8），在行动序列第一条 ACTION EFFECT 里逐段打完；黑闪觉醒中游云多 1 段。
+3. **apply 包装**：命中后万里锁对其余活着的敌人溅射 33%（觉醒 50%，不判黑闪）；天逆鉾给目标附封印 2634，次数 1（觉醒 2）。释魂刀觉醒中物理穿透 0.80。
+4. **封印失效**（applyGlobal 包装）：带 2634 的行动者下一次主动技能（非普攻、非防御、非物品）失效、扣一次，扣完去状态，整段行动序列跳过。
+5. **暴君**：负面状态（照原版 negativeState：难度系统状态、阵亡、形态除外；限制行动、BuffType 不在祝福等七类、没 BuffType 时名字带毒灼诅咒封印等）与弱化都加不上；学暴君与 repair 时清掉负面状态与弱化。O-待定：原版清弱化调了不存在的 removeDebuff，碰到弱化就抛错留着，重制照说明清掉（`XToji.CLEAR_DEBUFFS`，false 回原版）；正常游戏碰不到。
+6. **命中／闪避／暴击**：天与咒缚物理行动命中＋影速、被物理行动打时闪避＋影速（速度比超出 1 的部分 ×0.15，至多 0.3）；五感时主技能与武器库不被闪避，主技能、武器库、反弹读到的目标暴击闪避 ×0.34。
+7. **接线**：`battle_logic.gd` 加一行一行的钩子（开战、技能列表、类别封印豁免、startAction、applyGlobal、apply、endAction、endBattle、addDebuff、itemHit／itemEva／暴击率三处改在原行末尾）；`actor.gd` 的 `add_state`（暴君挡）、`learn_skill`（学暴君清）各一行；`action_sequence.gd` 的 ACTION EFFECT 本体抽成 `_action_effect`，前面接 `XToji.effects`；`actor.gd` 的 `remove_state` 末尾接复活回形态。
+8. **参照与专项**：新探针 `mv_oracle/toji_battle_probe.cjs`（真实 startBattle 推进到输入；5 段脚本：形态、追加次数、阵亡复活与类别封印、黑闪觉醒、封印失效；另有命中／闪避／暴击率与暴君两例），新专项 `xiyou_toji_battle` 567 项（每步命中＋快照，甚尔伤害按 55 级固定比值 0.96079 比、敌人伤害照原值）。
+   - 反向验证（临时改代码，已还原）：去掉觉醒额外一段 1 项失败、去掉溅射 5 项、去掉切换换形态 80 项、去掉封印失效 12 项、暴击闪避不乘 0.34 3 项、去掉影速闪避 2 项、暴君不挡状态 1 项。
+
+## 发现的问题（不在本期范围，交总装）
+
+- **角色能力值少一层最终夹值**：原版 `installNativeYunshangRuntime.js:57-67` 的 Game_Actor.param 包装对所有角色最后做 `round(clamp(v, id==0?1:0, paramMax))`（装在各专属模块与小猫剑圣之后、异化与种族之前）；重制 `XActor.param_before_alien` 没有这层，专属模块乘完超过 99999999 时不夹（甚尔最大生命加 1e18 时原版 99999999、重制 6.5e18，探针一开始因此差 6.24 倍）。正常数值远到不了上限，所以本期探针改成不给我方加生命，没动 `actor.gd` 这条链；要补的话一行 `minf(param_max(i), …)`，会碰所有角色，建议单派并跑 xiyou_rules 全段。
+
+## 下期
+
+- ⑤ 武器库（进阶 1 次后 10211）：主技能 startAction 时 50% 先用随机另一把可切咒具的武器库技能 10220～10223 打一次（内部行动、记熟练度），本次主技能借用它的特效：借游云＋1 段、借万里锁 16% 溅射、借释魂刀物理穿透 0.33、借天逆鉾 50% 封印；武器库·万里锁自己也 16% 溅射。`XToji.begin`／`apply`／`damage_ops` 里已留 borrow 字段的位置。
+- ⑦ 术师杀手（20 级 10207）：被别人的魔法生命伤害打时受伤 ×0.2，伤害结算后记反弹基数（×0.264÷0.2）与属性，那次 apply 后甚尔用 10224 打回出手者（内部、不再反弹、换成原属性，五感时魔防率 ×0.67）。需要伤害钩子的 after 回调（重制 XActorDamageHooks 只有帧操作）或在 apply 末尾接，先看哪种改动小。
+- 期三：智能 AI 档案 aiProfile（#11）；原版 makeDamageValue 包装里的术师杀手一支是死代码，照宿傩不移植。
+- 画面车道：说明框熟练度两行（#25）；切换技能、主技能在技能页／战斗中的显示（逻辑已在 `XToji.listed`）。
+
+## 优化登记草稿
+
+| 编号 | 内容 | 回退 |
+| --- | --- | --- |
+| O-待定 | 甚尔学暴君／repair 时清弱化：原版 `installNativeTojiRuntime.js:160` 调的 `actor.removeDebuff` 在 MV 不存在，清完负面状态碰到第一个弱化就抛 TypeError、弱化留着（toji_battle_probe tyrant 例）；重制照技能说明清掉。正常游戏里甚尔 1 级学会暴君、弱化加不上，碰不到 | `XToji.CLEAR_DEBUFFS = false` |
+
+## 交接板
+
+- 下一步：见「下期」。
+- 用户试玩说明：战斗里甚尔能切咒具（游云 5 段、万里锁带溅射、释魂刀一刀、天逆鉾封印——被封的敌人下一个技能放不出来），攻击次数＋会加段，黑闪觉醒后游云多一段；阵亡复活回游云；天与暴君让他不吃负面状态和弱化，速度快时更难被物理攻击打中。武器库和术师杀手还没做。
+- 需要用户决定：无
+
+## 验证
+
+- 新专项 `xiyou_toji_battle` 567/567（含 7 组反向验证，见变更记录草稿第 8 条）；`xiyou_toji` 71/71。
+- 同步 `同步正式西游.py --accept-additions`：新增 toji_battle.json，其余只增／不变，来源核对 0 问题。
+- 合 main（e7376947：toji1 dev.247、镜流第二期等）：`battle_logic.gd` endAction 一处冲突（镜流 j_finish 与甚尔 finish），两边保留、甚尔在镜流之后（原版甚尔包装在外层）；合并后 `--补齐`＋同步（测量不变）。
+- 相关战斗场景（选测按改动选出 187 个，超过 40 个，全量交合并时跑）：本机挑 37 个跑——甚尔两项、宿傩／黄泉／镜流两期／米拉／饿狼／渡鸦、行动序列与演出、战斗规则（combat、battle_gaps、smart_ai 四段、otb、battle_events、battle_common_events、state_effects、state_operation、shield、custom_damage）、异化两项、小猫、琦玉、种族、actor_modules、actor_p0、wtype、attack_query、super_deploy、actor_advanced，全部通过。
+- 途中修了一处：`XToji` 起初用静态变量存战斗对象，没走 end_battle 的测试（xiyou_battle_common_events）退出时引擎崩（rc=-6，recursive_mutex），改成只存布尔，复跑通过。
+
+## 待交叉核查
+
+- 甲档（战斗核心）：`battle/battle_logic.gd`（开战、技能列表、类别封印豁免、startAction、applyGlobal、apply、endAction、endBattle、addDebuff 各一行，itemHit／itemEva／暴击率三处在原行上加项）、`battle/action_sequence.gd`（ACTION EFFECT 抽函数＋钩子）、`core/actor.gd`（add_state、remove_state、learn_skill 各一行）——原沙僧核心文件，请重点核；`toji.gd` 第二期段。
+- 丙档：`toji_battle_probe.cjs`、`xiyou_toji_battle`。
+
+## 本分支提交
+
+- fb2a8534 第二期①②（形态、多段、溅射、封印附加、黑闪额外一击；探针与专项）
+- 8beec090 ⑥ 封印失效
+- f9d76add ④ 命中／闪避／暴击
+- 0f4060cb ③ 暴君（含 O-待定）
+- 368bebc5 不用静态变量存战斗对象
+- 2694d2b8 合 main（e7376947）
+- （本提交）交付单可合并
