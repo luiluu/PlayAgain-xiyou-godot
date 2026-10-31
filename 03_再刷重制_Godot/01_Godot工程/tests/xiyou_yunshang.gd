@@ -5,7 +5,8 @@ extends Node
 ## - formula：五个伤害技能与御风在目标魔防 19／37519 下的公式值（战斗外，1e-9 相对误差）；
 ## - recruit：入队、背包一件织神天梭、第二次不再给；
 ## - battle.*：钉影、拆神、普通攻击各打一次——每段的技能、目标、暴击逐条比（必中、戴织神天梭必暴击、双针两段、云丝展幅打全体），
-##   伤害比本例第一段的比值（双针 ×0.555、展幅非主目标 ×0.5／0.66／0.77、织神天梭结算 ×1.99 与暴伤、魔法路线对物防 +5000 的敌人）；
+##   伤害比本例第一段的比值（双针 ×0.555、展幅非主目标 ×0.5／0.66／0.77、织神天梭结算 ×1.99 与暴伤、魔法路线对物防 +5000 的敌人；
+##   伤害是整数、等级低时只有几百到几万，容差加上取整误差；绝对值另有与本期无关的伤害链差约 4%，同 xiyou_garou_battle 不比）；
 ##   每步后六个技能能不能用（没解锁、冷却、敕衣点神要有人穿天衣、收针要有人觉醒、被动不能用）。
 const FIXTURE := "res://tests/fixtures/yunshang_oracle.json"
 const RATIO_TOLERANCE := 1e-6
@@ -119,6 +120,7 @@ func _formula(c: Dictionary) -> void:
 func _recruit(c: Dictionary) -> void:
 	var o: Dictionary = c.observed
 	var s := _new_game()
+	s.switches[2494] = true  # 同参照：超强者门槛在公共事件那一层（mv_script 的 _recruit_blocked）
 	XYunshang.recruit(s)
 	var a := s.actor(XYunshang.ACTOR)
 	var worn := a.equip_list().map(func(e): return int(e.get("base", 0)))
@@ -220,7 +222,9 @@ func _battle_case(c: Dictionary) -> void:
 				base = [float(gl[k].value), float(wl[k].value)]
 			var rg: float = float(gl[k].value) / base[0]
 			var rw: float = float(wl[k].value) / base[1]
-			check("%s.ratio%d" % [sid, k], absf(rg - rw) <= RATIO_TOLERANCE * maxf(1.0, absf(rw)), [gl[k].value, wl[k].value, rg, rw])
+			# 伤害是整数：容差加上两边取整（各 ±0.5）带来的比值误差
+			var round_err: float = rw * (1.0 / float(wl[k].value) + 1.0 / base[1])
+			check("%s.ratio%d" % [sid, k], absf(rg - rw) <= RATIO_TOLERANCE * maxf(1.0, absf(rw)) + round_err, [gl[k].value, wl[k].value, rg, rw])
 
 
 func _run() -> void:

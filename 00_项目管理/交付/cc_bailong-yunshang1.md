@@ -1,51 +1,63 @@
 # 交付：cc/bailong-yunshang1
 
-- 车道／工作者：E 角色专属／白龙_8（cc，项目线程「做渡鸦第三期战斗机制」）
-- 状态：WIP（只做了盘点；上下文接近 70% 停手线，交下一个白龙会话接）
-- 分支从 cc/bailong-jingliu2 末端 8740add3 切出，还没有代码改动。
+- 车道／工作者：E 角色专属／白龙_9（cc，接白龙_8 的盘点）
+- 状态：WIP（代码、参照、专项已写，等同步与选测）
+- 分支从 cc/bailong-jingliu2 末端 8740add3 切出，白龙_8 盘点提交 10eaa282；白龙_9 在工作树 great-snyder-6f0aed 接手（heuristic-wing-4e9b42 改成游离 HEAD 让出分支，没有改动），合过 main（带进甚尔第一期）。
 
-## 接续要点（下一个会话从这里开工）
+## 变更记录草稿
 
-1. 开工：`新建工作树.sh --补齐 <自己的路径> --branch cc/bailong-yunshang1 --from <本分支末端>`，或在本工作树 heuristic-wing-4e9b42 直接接（分支已在）。
-2. 原版：`冻结正式源/app.nw/js/codex/runtime/installNativeYunshangRuntime.js`，772 行但多是压成一行的长行（第 5 行配置 C 就 4000 字），读时用 `cut -c` 分段，别整行打印。云裳是 174（职业 172），天衣是防具本体 7920～7934（序号 key＝本体−7920，共 15 件，**谁穿谁吃效果**，不只云裳）。
-3. 本期范围（总装八）：入切片 → 招募、能力值／被动、公式、伤害钩子 → 战斗内机制盘点（量小就一起做）。做法照镜流一期（交付单 cc_bailong-jingliu1.md）：slice 加 174、formula_program 加模块公式、XActorModules 挂点、mv_oracle 新探针、专项、反向验证、同步一轮、内容覆盖检查、选测（规则对照用 `RULES_ONLY_ACTORS=174` 跑 xiyou_rules 与 d2～d6 六个）。
+## 2026-11-01 【cc·白龙_9·未经审查】云裳第一期：入切片、招募、技能同步、能力值、被动、公式、伤害钩子与本人战斗包装（dev.待定）
 
-## 原版盘点（按行号，行号是 installNativeYunshangRuntime.js 的）
+照原版 installNativeYunshangRuntime.js（W.CodexYunshang；配置第 5 行，sync／setup／levelUp 第 51～56 行，param 第 57～70 行，recruit 第 206 行，
+meetsSkillConditions／itemHit／itemEva／itemCri／numRepeats／makeTargets 第 251～265 行，offensiveGrowth／refreshPassiveCache／formula 第 266～283 行，
+startAction 记主目标第 394 行，伤害钩子 yunshang 第 749～773 行），新模块 `XYunshang`（`modes/xiyou/core/yunshang.gd`）：
 
-| 行 | 内容 | 归哪期 |
-| --- | --- | --- |
-| 5～6 | 配置 C：actor 174、class 172、skills（pin 10270、cut、mountain、shop…）、gates（技能解锁 [等级, 进阶]）、robes（天衣表、等级与进阶门槛）、robeDamageCoefficients、advance、relic、unknownBattles、visual | 一期要读 |
-| 24～49 | 工具：robe(a)（身上天衣）、key、relic、normalizeRobe（天衣备注品质）、data(a)（每件天衣的战斗数据 _yunBattle：wakeUntil、bank、debts、captured、stored、ghost…）、awake、unlocked、damageAction、sourceOriginal（gift／stored 行动来源） | 一期（基础）＋二期 |
-| 51～56 | Y.sync（按 gates 学忘专属技能）、setup／levelUp／changeLevel 包装 | 一期 |
-| 57～70 | Game_Actor.param 包装（云裳 0／4／6 按等级 25／30／35… 倍率）等能力值 | 一期 |
-| 71～145 | 账本 ledger／profile／transaction／replay（天衣制作、订单，存在独立日志里） | 养成，另期 |
-| 146～187 | 天衣铺：advance（进阶）、pool、equipmentCap、submit／claim／progress（订单） | 养成／界面，另期 |
-| 188～205 | setupNewGame／extractSaveContents／loadGame／gainItem／tradeItemWithParty 包装（账本恢复、天衣进出背包） | 养成，另期 |
-| 206 | Y.recruit（入队、进阶取账本、sync） | 一期 |
-| 207～213 | 商店追加、天衣图标 | 商店已由 Map132 期接；图标归界面 |
-| 214～247 | Y.wake（觉醒）、settleDebt／repay、resetRound、startBattle／startTurn／endTurn／endBattle 包装、isImmortalClear（未知战斗免死清除） | 二期 |
-| 248～265 | skills（借技能 borrowable）、meetsSkillConditions、testApply、itemHit／itemEva／itemCri、numRepeats、makeTargets 包装 | 二期（itemHit 等若只看云裳本人可提到一期） |
-| 266～283 | offensiveGrowth（25 级起暴击＋1.88×(等级−24)、终伤＋0.1888×…）、refreshPassiveCache 包装、Y.formula | 一期 |
-| 284～345 | storedDamage、nativeDamage、makeDamageValue 包装（注意：installDamageElementRuntime 后装会整个换掉 makeDamageValue，先核这层生不生效，同黄泉／镜流）、derived、burst、ghost 结束 | 二期（先核生效与否） |
-| 346～379 | die／revive／deadMembers／smoothDeadTarget／removeState／addState／executeHpDamage 包装（幽灵、捕获、状态复制） | 二期 |
-| 380～436 | prepareAction／startAction／applyCommand／apply／executeDamage／finishAction／endAction 包装 | 二期 |
-| 437～447 | **addActions、getNextSubject、freeGift、storeActions、release、cut**（赠行、储行、放行、拆段） | 二期 |
-| 448～468 | evaluate 与自动战斗 AI（aiBattle／aiAwake／aiGather…） | 二期 |
-| 469～607 | 选择窗 Window_YunChoices、Scene_Yunshang（天衣铺界面、配置） | 界面（重制已有选择窗与提示，进度 0.1 的那部分） |
-| 608～772 | 法宝显示、天衣名、图标；749～772 伤害钩子 yunshang（带 split：拆段） | 钩子一期，split 二期 |
+1. **入切片**：`xiyou_slice.json` 的 actors 加 174；转换器 `formula_program.py` 把 `CodexYunshang.formula(this,a,b)` 记成模块公式 yunshang，`formula_execution.gd` 调 `XYunshang.formula`。
+2. **招募**（公共事件 9010 的 `CodexYunshang.recruit()`，超强者门槛已有）：入队、同步；本档第一次给一件织神天梭 7935 进背包（只进背包、不装，存档旗标 `_codexYunshangRecruited`）；提示「云裳已加入队伍」。原版进阶次数取订单账本（独立文件），重制的进阶次数本来就在存档里，不另设；账本、订单、天衣铺是养成期。
+3. **技能同步**（`XActorModules` 的 setup／level_up／level_down 挂点）：10270～10281 与天衣铺 10287 按 [等级, 进阶] 门槛学／忘；10282～10286 是天衣给的技能，不在这里学。
+4. **能力值**（`XActorModules.param`）：最大生命／魔攻／敏捷 ×1.5（25 级）／2（30）／2.5（35 且进阶≥1）／3（40 且≥1）／4（50 且≥2），取整、夹上下限。
+5. **被动缓存**（`XActorModules.passive_cache`）：学了云丝展幅 10276 时 n＝min(99,等级)−24，暴伤 +1.88n、终伤 +0.1888n；戴织神天梭终伤 +3。
+6. **公式** `XYunshang.formula`：钉影 66.66／拆神 111.88／符针 33.33 ×max(0,魔攻−防×0.1)，收针 246.21×max(0,魔攻−防×0.05)×觉醒回合数（第一期 0），山河击 888.88×max(0,物防＋魔防−防×0.1)；伤害计算里防为 0，计算外取目标魔防。
+7. **伤害钩子** yunshang 的 build（`XActorDamageHooks.capture` 加 `XYunshang.damage_ops`）：云裳的伤害行动定魔法；双针并行 10277 技能倍率 ×0.555；云丝展幅时单体行动打非主目标 ×0.77（银针织阵 10278）／0.66（双针）／0.5；戴织神天梭技能结算 ×1.99。原版 makeDamageValue 那层被后装的 installDamageElementRuntime 整个换掉，不生效，同黄泉／宿傩不移植。
+8. **本人战斗包装**（battle_logic 六处一行）：云裳的伤害技能必中、不闪避；戴织神天梭会暴击的行动暴击率 +3（必暴击）；双针并行时伤害行动段数 ×2；云丝展幅时单体对敌伤害行动打主目标再打其余活着的敌人；主目标＝targets_for 后第一个（原版 startAction 包装的 _yunPrimary）；能不能用：没解锁不能用、敕衣点神 10273 要有活着的出战成员穿天衣、收针 10274 要有人觉醒（觉醒是第二期，现在一直不能用）。
+- 第二期（未做）：觉醒（敕衣点神）、赊账、幽灵、借技能、赠行／储行、拆段 split、符针、御风敏捷 ×1.33、天衣 15 件各自的战斗效果（含六衡裁身、万法同裳 categoryMax）、自动战斗 AI。
+- 不做（别的期）：订单账本、天衣铺页面、进阶、天衣图标与多帧立绘、说明行。
+- 参照：新探针 `mv_oracle/yunshang_probe.cjs`（真实 BattleManager／Game_Action，Math.random 0.5）24 例：各级×进阶的技能、能力值、暴伤／终伤 13，戴织神天梭 2，降级 1，公式 1（12 行），招募 1，战斗 6（20／25／30／30 戴梭／35 进阶 1／35 进阶 1 戴梭）。产物拷成 `tests/fixtures/yunshang_oracle.json`，**不接全量同步**。探针宿主的队伍清不掉（addActor 会补回 1、8、9、10），战斗例把 174 排到 `_actors` 与出战表 `_battleMembers` 第一位，并开挑战开关 2494（超强者才能出战）。
+- 专项 `tests/xiyou_yunshang`：逐例比技能、八项能力值、暴伤／终伤；公式 12 行（1e-9）；招募；战斗每段技能／目标／暴击、伤害比值（1e-6）、每步六个技能能不能用。`xiyou_actor_p0` 的招募表补 9010。
 
-## 别的模块等着云裳的点
+## 优化登记草稿
 
-- 异化（八戒 dev.234 清账时留下）：绝缘对云裳 `wake`／`addActions`／`freeGift` 的拦截（`alien_battle.gd:1670`、`1804` 注释写着「重制没有赠行／储行这两种行动来源」），要等二期的行动来源（`_yunActionSource` gift／stored）。`alienation.gd` 的 `CodexYunshang.key`（297）、`lifeCompatible` 不穿第 3 件（338）已按读码接了，入切片后要用真天衣核一次。
-- 悟空 PushState 二期：「云裳拆段整体只挂一次」——对应伤害钩子 `split`（749 行起）与 `Y.cut`（447），二期做。
-- 界面：`actor_book.gd:465`、`character_help.gd` 的云裳 dyn2 行，等天衣与进阶数据在了再接。
+优化登记草稿：无（本期没有改原版行为的地方）。
 
-## 探针宿主清不掉队伍（总装八让写清怎么改）
+## 验证
 
-- 现象：`w.eval('$gameParty._actors=[];')` 不生效，新局的 1、8、9、10 还在（渡鸦三期、镜流一二期的探针都踩到，见 cc_bailong-jingliu2.md）。
-- 正确写法：`w.$gameParty._actors.length = 0;` 然后逐个 `w.$gameParty.addActor(id)`，再 `w.$gameParty.members().map(b => b.actorId())` 打出来核一次。重制专项照同一个队伍建（`s.party.clear()` 后 `s.add_actor`）。
-- 已有探针（raven_battle、jingliu、jingliu2）的夹具按「1、8、9、10＋角色」量的，专项也照这个比，结论不受影响；不用回头改。
+（待补）
+
+## 交接板
+
+- 下一步：云裳第二期——觉醒与天衣各件的战斗效果（量大，建议按天衣分两批），以及赠行／储行行动来源（异化绝缘拦截等着它）。
+- 用户试玩说明：云裳现在能用云裳号角招募入队（第一次招募送织神天梭进背包）。她的技能按等级与进阶自动学会；伤害技能必中、走法术；25 级起技能会扩散打全体（非主目标伤害减半），30 级起每次打两段；戴上织神天梭必暴击、技能伤害约 ×2。觉醒与天衣的效果下一期才有，敕衣点神与收针现在还用不了。
+- 需要用户决定：无。
+
+## 进度账
+
+- 角色与专属机制：云裳（installNativeYunshangRuntime.js 772 行，战斗与基础约 450 行）完成度 0 → 0.3（入切片、基础、本人战斗包装；剩觉醒与天衣战斗、养成与界面），角色约 +0.8 个百分点（450×0.3÷8817×50≈0.77）。按行数估，不是测量值。
+
+## 可优化（流程／工具／效率）
+
+- 发现（文档）：白龙_8 写的「探针宿主清不掉队伍，改用 `_actors.length = 0`」这条也不对：`addActor` 会把 1、8、9、10 补回来（installBossDifficultyRuntime 的 enforceParty 之类），出战看的是 `_battleMembers`。要让新角色出战，得把它挪到 `_actors` 和 `_battleMembers` 前面，超强者还要开挑战开关 2494。可以在 `mv_oracle/README.md` 写一句，免得下个探针再踩。
+
+## 待交叉核查
+
+- 原 Codex 核心文件：`modes/xiyou/battle/battle_logic.gd`——`item_hit`／`item_eva` 加 `XYunshang.sure`；暴击率在小猫之后加 `XYunshang.cri`；两处段数外层套 `XYunshang.repeats`；`targets_for` 里 `_targets_for` 外套 `XYunshang.targets`（在异化 filter_targets 之内），末尾 `XYunshang.set_primary`（异化逆祷随机友方那条也记）；`can_use` 在甚尔前加 `XYunshang.meets`。
+- `actor_modules.gd`：IDS 加 174、setup／level_up／level_down 加 `XYunshang.sync`、param 最外层套 `XYunshang.param`、passive_cache 加 `XYunshang.passive_cache`。`actor_damage_hooks.gd` capture 加 `XYunshang.damage_ops`。`formula_execution.gd` 加 yunshang 分支。`mv_script.gd` 接 `CodexYunshang.recruit()`。
+- 切片：`xiyou_slice.json` actors 加 174；转换器 `formula_program.py` 加模块公式映射。
+- 核查时可留意：原版 param 包装最后的取整夹值对**所有角色**都做（第 69 行），重制只给云裳做；前面各层已取整夹值，其余角色应无差别，没单独测。
 
 ## 本分支提交
 
-- 本提交：盘点与接续要点（无代码）
+- 10eaa282 白龙_8 盘点
+- 0a1d3cb7 云裳第一期接线
+- 合并 main
+- WIP：主目标、参照与专项
+- 本提交：交付单草稿

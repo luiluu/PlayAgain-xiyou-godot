@@ -37,6 +37,8 @@ function wearRelic(a) {
   w.$gameParty.gainItem(w.$dataArmors[RELIC], 1, false);
   const gear = w.$gameParty.armors().filter(i => (i.baseItemId || i.id) === RELIC).slice(-1)[0];
   a.changeEquip(a.equipSlots().indexOf(w.$dataArmors[RELIC].etypeId), gear);
+  // krz_state_re 的倍率缓存：换装不清，最大生命的 ×1.33 要等下次 need_refresh 才算进去（缓存的时机问题，不是规则）；这里照其它探针刷新一次
+  a.need_refresh = true; a.refresh();
   return gear;
 }
 
@@ -123,9 +125,10 @@ cases.push(makeCase('formula', {level: 45, stage: 1}, () => {
   }
   return {mat: a.mat, def: a.def, mdf: a.mdf, rows};
 }));
-// ③ 招募：新局（队里 1、8、9、10）招两次
+// ③ 招募：新局（队里 1、8、9、10）、开挑战开关 2494 后招两次（超强者门槛在公共事件那一层，重制 mv_script 的 _recruit_blocked 已接）
 cases.push(makeCase('recruit', {level: 1}, () => {
   newGame();
+  w.$gameSwitches.setValue(2494, true);
   Y.recruit();
   const count = () => w.$gameParty.armors().filter(i => (i.baseItemId || i.id) === RELIC).length;
   const first = {party: w.$gameParty.members().map(b => b.actorId()), relics: count(), worn: w.$gameActors.actor(ACTOR).equips().filter(Boolean).map(i => i.baseItemId || i.id)};
