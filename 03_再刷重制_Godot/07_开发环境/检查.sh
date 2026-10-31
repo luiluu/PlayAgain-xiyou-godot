@@ -1,12 +1,15 @@
 #!/bin/zsh
 # 共用提交前检查：Claude 与 Codex 每次提交前都跑这一条。
-# 用法：03_再刷重制_Godot/07_开发环境/检查.sh [--oracle] [--full] [--affected <基准提交>]
+# 用法：03_再刷重制_Godot/07_开发环境/检查.sh [--oracle] [--full] [--affected <基准提交> [--cloud]]
 #   在 worktree（多会话车道）里也可运行：测试自动只并行 2 个；交付单／开发编号占位检查只在主工作区做
 #   --oracle  另外启动 MV 参照引擎做一次启动检查（约 5 秒）
 #   --full    Godot 测试整轮重跑，不沿用上轮通过结果（也可 CHECK_FULL=1；沿用条件见 并行测试.py 文件头）
 #   --affected <基准>  选测（三级检查②）：按 选测对照.json 只跑与「基准到工作区」改动相关的 Godot 场景和非 Godot 检查，
 #             先打印选了什么、为什么；文档与登记检查照常；有拿不准的改动就整轮。不加时行为不变（全量）
 #             选中的场景按工程指纹沿用上次通过结果（并行测试.py --reuse；--full 不沿用）
+#   --cloud   只和 --affected 用：选中的 Godot 场景改在 GitHub Actions 云端跑（云端选测.py run＋wait，只测已提交的 HEAD、
+#             基准是 GitHub 上的 main；文档、守卫、工具回归等非 Godot 检查照旧在本机跑）。云端不可用（推送失败、超时）直接判失败并提示
+#             去掉 --cloud 改本机跑，不静默降级。环境变量：CHECK_CLOUD_NO_UPLOAD=1 不重传转换产物，CHECK_CLOUD_TIMEOUT=秒（默认 3600）
 #   --keep-going  文档与登记检查（JSON／链接／开发编号）失败后仍跑 Godot 测试与其余检查（默认此时立即失败退出，免得白跑几十分钟）
 set -u
 ENV_DIR=${0:A:h}
@@ -18,17 +21,20 @@ fi
 PROJECT=$ROOT/03_再刷重制_Godot/01_Godot工程
 GODOT=${GODOT:-$ENV_DIR/godot}   # 云端等没有本机 Godot.app 时用环境变量指定（见 云端测试.md）
 FAIL=0
-ORACLE=0; TEST_ARGS=(); AFFECTED=; KEEP_GOING=0
+ORACLE=0; TEST_ARGS=(); AFFECTED=; KEEP_GOING=0; CLOUD=0
+CLOUD_SCRIPT=${XIYOU_CLOUD_SCRIPT:-$ENV_DIR/云端选测.py}
 while (( $# )); do
   case $1 in
     --oracle) ORACLE=1 ;;
     --full) TEST_ARGS+=(--full) ;;
     --keep-going) KEEP_GOING=1 ;;
+    --cloud) CLOUD=1 ;;
     --affected) (( $# >= 2 )) || { print -r -- "--affected 要跟基准提交"; exit 2; }; AFFECTED=$2; shift ;;
-    *) print -r -- "未知参数：$1（只认 --oracle、--full、--keep-going、--affected <基准>）"; exit 2 ;;
+    *) print -r -- "未知参数：$1（只认 --oracle、--full、--keep-going、--affected <基准>、--cloud）"; exit 2 ;;
   esac
   shift
 done
+(( ! CLOUD )) || [[ -n $AFFECTED ]] || { print -r -- "--cloud 只和 --affected 一起用（云端只做选测；整轮请在本机跑）"; exit 2; }
 ok()   { print -r -- "  ✓ $1"; }
 bad()  { print -r -- "  ✗ $1"; FAIL=1; FAIL_ITEMS+=("$1"); }
 FAIL_ITEMS=()  # 收尾汇总用（哪吒_7 t4：失败项夹在长日志中间难找，Godot 场景带日志路径）
@@ -115,6 +121,20 @@ print "== Godot 测试"
 (( SEL_FULL )) || TEST_ARGS+=(--reuse)
 if (( ! SEL_FULL && ${#SEL_SCENES} == 0 )); then
   print "  （选测：没有要跑的 Godot 场景，跳过导入与测试）"
+elif (( CLOUD )); then
+  # 云端选测：推 HEAD 到 ci/<分支> 触发 GitHub Actions，等结果（汇总里有失败场景）；只测已提交的 HEAD
+  print "  （--cloud：选中的 ${#SEL_SCENES} 个场景交给云端，本机不跑 Godot；云端只测已提交的 HEAD）"
+  cloud_head=$(git -C "$ROOT" rev-parse HEAD)
+  cloud_run=(python3 "$CLOUD_SCRIPT" run); (( ${CHECK_CLOUD_NO_UPLOAD:-0} )) && cloud_run+=(--no-upload)
+  if ! "${cloud_run[@]}"; then
+    bad "云端选测触发失败（网络、权限或额度）；去掉 --cloud 改用本机跑"
+  elif python3 "$CLOUD_SCRIPT" wait "$cloud_head" --mode affected --timeout ${CHECK_CLOUD_TIMEOUT:-3600}; then
+    ok "云端选测通过（$cloud_head[1,9]）"
+  else
+    cloud_rc=$?
+    if (( cloud_rc == 124 )); then bad "云端选测超时没有结果（$cloud_head[1,9]）；看 GitHub Actions「云端选测」，或去掉 --cloud 改用本机跑"
+    else bad "云端选测未通过（$cloud_head[1,9]），失败场景见上方汇总"; fi
+  fi
 else
 # 车道 worktree：补齐带进来的主工作区参照与本分支切片不同批时提示（不判失败，见 参照批次.py）
 python3 "$ENV_DIR/参照批次.py" check "$PROJECT/modes/xiyou/generated" || true
@@ -150,6 +170,7 @@ want tools && { if python3 "$ENV_DIR/测试转换器写入.py"; then ok "转换�
 want tools && { if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试云端准备.py"; then ok "云端导入失败保护"; else bad "云端导入保护回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试提交守卫.py" >/dev/null 2>&1; then ok "主工作区 main 提交守卫"; else bad "提交守卫回归失败，单跑 07_开发环境/测试提交守卫.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试选测.py" >/dev/null 2>&1; then ok "选测对照与 检查.sh --affected"; else bad "选测回归失败，单跑 07_开发环境/测试选测.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试角色同步提速.py" >/dev/null 2>&1; then ok "扩角色同步提速（缓存携带、手动种子隔离、六难度共用并发池）"; else bad "扩角色同步提速回归失败，单跑 07_开发环境/测试角色同步提速.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试事件探针分段.py" >/dev/null 2>&1; then ok "事件探针分段并行（均衡分组、拼回顺序逐字相同）"; else bad "事件探针分段回归失败，单跑 07_开发环境/测试事件探针分段.py 看详情"; fi; }

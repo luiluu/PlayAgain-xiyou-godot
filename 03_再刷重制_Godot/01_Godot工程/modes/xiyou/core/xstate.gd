@@ -406,7 +406,10 @@ func _difficulty_profile() -> Dictionary:
 	var managed := difficulty_managed_skills()
 	var source: XActor = actors.get(1)
 	if source == null:
-		for aid in actors:
+		# 原版 $gameActors._data 按角色号从小到大遍历；字典按建对象先后遍历，先排序（审查第 4 期 P3）
+		var ids := actors.keys()
+		ids.sort()
+		for aid in ids:
 			if int(aid) < 167 and managed.any(func(sid): return actors[aid].skill_ids.has(sid)):
 				source = actors[aid]
 				break

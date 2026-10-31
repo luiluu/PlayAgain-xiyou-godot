@@ -38,6 +38,8 @@ refresh_oracle() {
 
 prepare() {
   local wt=${1:A}
+  # 主工作区 main 提交守卫（车道误在主工作区提交的防线，幂等；别人写的同名 hook 不覆盖，只提示）
+  zsh "$ENV_DIR/装提交守卫.sh" || print -u2 "⚠ 提交守卫没装好（见上），不影响补齐"
   [[ -e $wt/.git ]] || { print -u2 "✗ $wt 不是 git 工作区"; exit 1; }
   [[ $wt != $MAIN ]] || { print -u2 "✗ 这是主工作区，不需要补齐"; exit 1; }
   local env=$wt/$GODOT_SUB/07_开发环境 menv=$MAIN/$GODOT_SUB/07_开发环境
