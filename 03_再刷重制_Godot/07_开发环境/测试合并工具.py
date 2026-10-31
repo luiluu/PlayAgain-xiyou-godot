@@ -303,6 +303,7 @@ class ParallelTestRunnerTests(unittest.TestCase):
                               'if [[ -n ${SPIN:-} ]]; then i=0; while (( i++ < 400000 )); do :; done; fi\n'
                               'if [[ -n ${BUSY:-} ]]; then mkdir %(t)s/busy 2>/dev/null || touch %(t)s/overlap; sleep 0.3; rmdir %(t)s/busy 2>/dev/null; fi\n'
                               'if [[ $n == b.tscn && -n ${FLAKY_B:-} && ! -e %(t)s/seen ]]; then touch %(t)s/seen; echo \'%(bad)s\'; exit 1; fi\n'
+                              'if [[ $n == c.tscn && -n ${PARSE_C:-} ]]; then echo "SCRIPT ERROR: Parse Error: Expected end of statement." >&2; sleep 30; fi\n'
                               'if [[ $n == c.tscn && -n ${FAIL_C:-} ]]; then echo \'%(bad)s\'; exit 1; fi\necho \'%(ok)s\'\n'
                               % {'t': self.tmp, 'bad': self.BAD, 'ok': self.OK})
         self.godot.chmod(0o755)
@@ -327,6 +328,35 @@ class ParallelTestRunnerTests(unittest.TestCase):
         p, _ = self.run_tests('--full', FAIL_C='1')
         self.assertEqual(p.returncode, 1, p.stdout)
         self.assertIn('✗ c.tscn', p.stdout)
+
+    def test_parse_error_is_not_rerun_as_flaky(self):
+        # 白龙 garou3（tools27）：解析错误是确定的，原来按偶发再单独跑一次，又等一次槽、再报一次
+        p, runs = self.run_tests(PARSE_C='1')
+        self.assertEqual(p.returncode, 1, p.stdout)
+        self.assertEqual(runs.count('c.tscn'), 1, runs)
+        self.assertIn('✗ c.tscn (rc=143)', p.stdout)
+        self.assertIn('语法检查.py', p.stdout)
+        par = load('par_norerun', HERE / '并行测试.py')
+        self.assertTrue(par.NO_RERUN_PARSE_ERROR)
+
+    def test_short_prefix_stops_unless_star_or_wide(self):
+        # 白龙_8（tools27）：xiyou_battle、xiyou_rules 这类短名扩成几十个场景，车道照抄就排进 50 多个；超过上限先停下
+        for i in range(4):
+            (self.tmp / 'proj/tests' / ('x%d.tscn' % i)).touch()
+        p, runs = self.run_tests('x', XIYOU_PREFIX_STOP='3')
+        self.assertEqual(p.returncode, 2, p.stdout)
+        self.assertIn('前缀扩出的场景太多', p.stdout)
+        self.assertEqual(runs, [])
+        p, runs = self.run_tests('x*', XIYOU_PREFIX_STOP='3')
+        self.assertEqual((p.returncode, sorted(runs)), (0, ['x0.tscn', 'x1.tscn', 'x2.tscn', 'x3.tscn']), p.stdout)
+        p, runs = self.run_tests('--full', '--wide', 'x', XIYOU_PREFIX_STOP='3')
+        self.assertEqual((p.returncode, len(runs)), (0, 4), p.stdout)
+        p, runs = self.run_tests('--full', 'x', XIYOU_PREFIX_STOP='0')
+        self.assertEqual((p.returncode, len(runs)), (0, 4), p.stdout)
+        p, runs = self.run_tests('--full', 'x1', 'x2.tscn', 'a', XIYOU_PREFIX_STOP='3')  # 全名与小前缀不受影响
+        self.assertEqual((p.returncode, sorted(runs)), (0, ['a.tscn', 'x1.tscn', 'x2.tscn']), p.stdout)
+        par = load('par_stop', HERE / '并行测试.py')
+        self.assertEqual(par.PREFIX_STOP, 40)
 
     def test_names_file_and_wide_prefix_hint(self):
         names = self.tmp / 'names.txt'
@@ -1962,6 +1992,25 @@ for name in filter(None, files):
         finally:
             os.environ.pop('BAD')
 
+    def test_syntax_check_entry(self):
+        # tools27（白龙 garou3）：语法检查.py 只载工程、不跑场景，沿用 parse_check；有 Parse Error 退出 1，干净退出 0
+        self.put(str(merge.PROJECT / 'project.godot'), 'config/version="dev.001"\n[autoload]\nGameApp="*res://core/app.gd"\n\n[display]\n')
+        godot = self.root / merge.ENV / 'godot'
+        godot.write_text('#!/bin/zsh\n[[ "$*" == *--import* ]] && exit 0\n'
+                         'print "SCRIPT ERROR: Compile Error: Identifier not found: GameApp"\nprint "          at: GDScript::reload (res://entry.gd:3)"\n'
+                         '[[ -n $BAD ]] && { print "SCRIPT ERROR: Parse Error: Expected end of statement."; print "          at: GDScript::reload (res://modes/broken.gd:7)"; }\n'
+                         'print PARSE_CHECK_DONE\n')
+        godot.chmod(0o755)
+        run = lambda **env: subprocess.run([sys.executable, str(HERE / '语法检查.py'), '--root', str(self.root)], capture_output=True, text=True,
+                                           env=dict(os.environ, **env))
+        r = run()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('语法检查通过', r.stdout)
+        r = run(BAD='1')
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn('res://modes/broken.gd：Parse Error', r.stdout)
+        self.assertNotIn('GameApp', r.stdout)
+
     def test_parse_check_flags_import_and_load_process_failures(self):
         # 沙僧第十七期 P3：导入阶段退出码非零并打印 ERROR:、加载阶段正常打印完成标志，原来返回零问题
         self.put(str(merge.PROJECT / 'project.godot'), 'config/version="dev.001"\n[autoload]\nGameApp="*res://core/app.gd"\n\n[display]\n')
@@ -2036,6 +2085,37 @@ for name in filter(None, files):
                     self.assertIsNone(merge.active_cwds(wt))
                     reason = merge.lane_protected(self.root, {'worktree': str(wt), 'branch': 'claude/task', 'base': 'HEAD'})
                 self.assertIn('无法确认有无活动会话', reason)
+
+    def test_app_session_keeps_idle_worktree(self):
+        # 总装七 10-31（tools27）：审查会话空闲时没有进程 cwd 在工作树里，lsof 认不出，--finish 清理把它删了。
+        # 桌面 app 的会话记录（claude-code-sessions/*/*/local_*.json）里有没归档、用这个工作树的会话就只提示不删
+        sessions = Path(self.tmp.name) / 'app_sessions'
+        rec = sessions / 'acct' / 'org' / 'local_1.json'
+        rec.parent.mkdir(parents=True)
+        lane = {'worktree': str(self.wt), 'branch': 'claude/task', 'base': 'HEAD'}
+        env = {'XIYOU_APP_SESSIONS': str(sessions)}
+        with mock.patch.dict(os.environ, env), mock.patch.object(merge, 'active_cwds', lambda _p: []):
+            rec.write_text(json.dumps({'sessionId': 'local_1', 'title': '清理核查积压', 'worktreePath': str(self.wt), 'isArchived': False}))
+            self.assertEqual(merge.app_session(self.wt), '清理核查积压')
+            self.assertIn('没归档的会话「清理核查积压」', merge.lane_protected(self.root, lane))
+            rec.write_text(json.dumps({'sessionId': 'local_1', 'title': 'x', 'cwd': str(self.wt) + '/', 'isArchived': False}))
+            self.assertEqual(merge.app_session(self.wt), 'x')  # 只记了 cwd 的也认
+            rec.write_text(json.dumps({'sessionId': 'local_1', 'worktreePath': str(self.wt), 'isArchived': True}))
+            self.assertIsNone(merge.app_session(self.wt))  # 归档了就不拦
+            rec.write_text(json.dumps({'sessionId': 'local_1', 'worktreePath': str(self.wt) + '-other', 'isArchived': False}))
+            self.assertIsNone(merge.app_session(self.wt))
+            rec.write_text('{broken')
+            self.assertIsNone(merge.app_session(self.wt))  # 读不了的跳过
+            rec.write_text(json.dumps({'worktreePath': str(self.wt), 'isArchived': False}))
+            with mock.patch.dict(os.environ, {'XIYOU_APP_SESSION_GUARD': '0'}):
+                self.assertIsNone(merge.app_session(self.wt))  # 回退开关
+        # 真走一遍 --finish：会话没归档时工作树留着
+        with mock.patch.dict(os.environ, env):
+            self.assertEqual(self.call(), 0, self.last_output)
+            self.register()
+            self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertTrue(self.wt.exists())
+        self.assertIn('没归档的会话', self.last_output)
 
     def test_abort_and_lane_redelivery_replans(self):
         self.put(str(merge.PROJECT / 'modes/测试.gd'), '# main version\n')

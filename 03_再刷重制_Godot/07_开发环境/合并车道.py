@@ -129,6 +129,31 @@ def active_cwds(path):
     return found
 
 
+APP_SESSION_GUARD = True  # tools27：工作树属于没归档的 app 会话就不删；设 False（或 XIYOU_APP_SESSION_GUARD=0）回到只看 lsof／锁／交接板
+APP_SESSIONS = Path.home() / 'Library/Application Support/Claude/claude-code-sessions'
+
+
+def app_session(path):
+    """桌面 app 里用这个工作树、还没归档的会话（claude-code-sessions/*/*/local_*.json 的 worktreePath／cwd 与 isArchived），
+    返回会话标题；没有返回 None。会话空闲时没有进程的 cwd 在里面，lsof 认不出（总装七 10-31：审查会话的
+    affectionate-taussig-9508e5 被 --finish 清理删掉）。只读这些 json；目录不在（云端、没装 app）或读不了的文件跳过。"""
+    if not APP_SESSION_GUARD or os.environ.get('XIYOU_APP_SESSION_GUARD') == '0':
+        return None
+    folder = Path(os.environ.get('XIYOU_APP_SESSIONS', str(APP_SESSIONS)))
+    base = os.path.realpath(path)
+    for f in folder.glob('*/*/local_*.json'):
+        try:
+            d = json.loads(f.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(d, dict) or d.get('isArchived'):
+            continue
+        used = [d.get('worktreePath'), d.get('cwd')]
+        if any(isinstance(u, str) and u and os.path.realpath(u) == base for u in used):
+            return str(d.get('title') or d.get('sessionId') or f.stem)
+    return None
+
+
 def lane_protected(root, lane):
     """清理车道工作树前的保护：返回不删的原因，没有就返回空串。"""
     wt = Path(lane['worktree'])
@@ -137,6 +162,9 @@ def lane_protected(root, lane):
         return '无法确认有无活动会话（lsof 不可用、超时或失败），保守不删'
     if procs:
         return '有活动会话（进程 %s 的当前目录在其中）' % '、'.join('%s %s' % p for p in procs[:3])
+    owner = app_session(wt)
+    if owner:
+        return '属于桌面 app 里没归档的会话「%s」（会话空闲时 lsof 认不出；归档该会话后再清理）' % owner
     meta = Path(git(wt, 'rev-parse', '--path-format=absolute', '--git-dir'))
     if (meta / 'locked').exists():
         return '被 git worktree lock 锁住'
