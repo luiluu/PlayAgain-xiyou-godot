@@ -355,7 +355,7 @@ static func can_pick(s: XState, i: int, other: int) -> bool:
 
 ## O-080：原版 getRandomArrayElements 在要的个数多于技能数时（两只合起来不到 4 个技能）会把空位换进结果，得到 undefined 技能；
 ## 这里把个数限在 0～技能数。设 false 恢复原版算法（空位记为 0）
-const SYNTH_CLAMP_SKILLS := true
+static var SYNTH_CLAMP_SKILLS := true
 
 
 ## Star.PetSynthesis.RefStat：随机取 A 或 B 当结果，学习次数清零，14 项加成 = (A+B)/2 × floor(随机×41+80)/100，

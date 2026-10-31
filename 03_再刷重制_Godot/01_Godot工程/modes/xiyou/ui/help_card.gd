@@ -43,9 +43,9 @@ const ELEMENT_COLORS := ["#c1c9d5", "#d5dce6", "#ff846b", "#9be4ff", "#d8ac74", 
 	"#fff0b0", "#bd8bc9", "#6fe4c0", "#b59cf0", "#f497c8", "#7eb8ff", "#65ccef", "#bce986"]
 const BACK := Color8(0x16, 0x1c, 0x25)
 ## 优化 O-007：说明卡最小字号（原版描述 10、能力/价格 12、元素行 14，在 1280×720 上难以看清）。设 0 恢复原版。
-const MIN_FONT := 16
+static var MIN_FONT := 16
 ## 优化 O-008：true 贴着选中行（place_near）；false 照原版位置公式（place_original）。
-const PLACE_NEAR := true
+static var PLACE_NEAR := true
 ## 技能书附卡之间的间距：原版 10（品质框外扩 10，相邻卡的框会叠在一起）；O-008 留出两边的框再加 4。
 const EXTRA_GAP_ORIGINAL := 10.0
 const EXTRA_GAP_NEAR := 24.0

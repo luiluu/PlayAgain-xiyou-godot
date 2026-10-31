@@ -140,6 +140,7 @@ func _run() -> void:
 	check("syn_result", r == int(res.sel) and push_ok and pet.skills == res.skills.map(func(x): return int(x)) and [int(pet.ls), int(pet.ls_max)] == res.ls.map(func(x): return int(x))
 		and s.pets.list.map(func(p): return int(p.enemy)) == res.order.map(func(x): return int(x)) and XPets.pet_name(s, pet) == str(res.name),
 		[r, pet.get("push"), pet.get("skills"), s.pets.list.map(func(p): return int(p.enemy))])
+	_synth_clamp()
 	await _flow(ref)
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
@@ -218,3 +219,24 @@ func _flow(ref: Dictionary) -> void:
 	check("status_restored_after_feed", is_equal_approx(page.status_cover, XPetScene.STATUS_RECT.end.y))
 	page.queue_free()
 	await frames()
+
+
+## O-080：两只合起来只有 2 个技能、却要留 4 个。原版 getRandomArrayElements 洗牌越界：i = −1 那一步把 shuffled[−1]（undefined）
+## 换进 0 号位，结果 [undefined, 1374]（冻结 v0.28 Star_PetSynthesis.js 原函数用同一随机序列 0.7/0.2/0.9/0.4 在 node 跑出，4 次取数）；
+## 重制空位记 0。默认把个数限在技能数，只取 2 次、结果是原来两个技能
+func _synth_clamp() -> void:
+	var seq := [0.7, 0.2, 0.9, 0.4]
+	var k := [0]
+	var rnd := func() -> float:
+		var v := float(seq[k[0] % seq.size()])
+		k[0] += 1
+		return v
+	var got := XPets._random_elements([1365, 1374], 4, rnd)
+	var sorted := got.duplicate()
+	sorted.sort()
+	check("synth_clamp_skills", sorted == [1365, 1374] and k[0] == 2, [got, k[0]])
+	XPets.SYNTH_CLAMP_SKILLS = false
+	k[0] = 0
+	got = XPets._random_elements([1365, 1374], 4, rnd)
+	XPets.SYNTH_CLAMP_SKILLS = true
+	check("synth_clamp_skills_original", got == [0, 1374] and k[0] == 4, [got, k[0]])
