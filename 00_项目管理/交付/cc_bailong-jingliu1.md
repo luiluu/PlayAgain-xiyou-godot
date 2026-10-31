@@ -1,8 +1,8 @@
 # 交付：cc/bailong-jingliu1
 
 - 车道／工作者：E 角色专属／白龙_8（cc，项目线程「做渡鸦第三期战斗机制」）
-- 状态：同步与选测在跑（跑完改「可合并」）
-- 分支从 cc/bailong-raven3b 末端 738b7468 切出（raven3b 未合时一起带进来）。
+- 状态：可合并
+- 分支从 cc/bailong-raven3b 末端 738b7468 切出；raven3b 已由总装八合进 main（dev.244），本分支又合了 main，带进来的 raven3b 提交都已在 main。
 
 ## 变更记录草稿
 
@@ -33,8 +33,9 @@ endAction 第 376～421 行，startTurn／endBattle 第 422～450 行，normaliz
 
 - 专项 xiyou_jingliu 104/104（本机单跑）；xiyou_raven_battle 356/356、xiyou_yomi_battle 142/142（单跑，确认改动没碰坏）。
 - 反向验证两轮，都已还原：①星魂 20 级不加、印记不加成、命中只回 1、剑匣不加、段数改 1 一起改，26 项失败；②剑匣不加、段数改 1、月魄 0 也能用强化剑技，10 项失败（battle 7、hook 3）。
-- 同步一轮（`同步正式西游.py --accept-additions`）：在跑。
-- 角色相关专项与选测：待同步完再跑。
+- 同步：改切片后在本树跑一轮 `同步正式西游.py --accept-additions`（新增用例已接受：slice_probe、actor_passive 等量了 170；只多了镜流三张图的来源输入）；合 main（abd0334b，带进 battle_gaps／sukuna 探针改动）后 `--补齐` 再同步一轮，退出 0、新增用例已接受，产物指纹已留。
+- 内容覆盖检查：7009 页、硬问题 2（老的），新增 0、消失 0；`--update-baseline` 后基线无变化。
+- 选测（本机，并行 2，不超 40 个）：①规则对照只比镜流（`RULES_ONLY_ACTORS=170`）xiyou_rules 与 d2～d6 共 6 个，85 秒全过；②xiyou_jingliu、xiyou_actor_p0、xiyou_actor_modules、xiyou_yomi_battle、xiyou_wtype、xiyou_actor_book、xiyou_help_card、xiyou_raven_battle、xiyou_mira_battle、xiyou_raven_soul、xiyou_battle、xiyou_battle_gaps、xiyou_otb、xiyou_custom_damage、xiyou_sukuna_battle、xiyou_garou_battle、xiyou_alien_battle、xiyou_race_battle、xiyou_cat、xiyou_action_sequence、xiyou_battle_events、xiyou_actor_advanced 共 22 个，1158 秒全过，无偶发。
 
 ## 交接板
 
@@ -62,3 +63,7 @@ endAction 第 376～421 行，startTurn／endBattle 第 422～450 行，normaliz
 - 5bfa51e2 镜流第一期接线
 - （常量去重）
 - 1670004d 参照 jingliu_probe 与专项 xiyou_jingliu
+- 9f08df18 交付单草稿
+- e4cf4e2f 帧内 gainHp（渡鸦、米拉）
+- 合并 main、补 xiyou_jingliu.gd.uid
+- 本提交：交付单可合并
