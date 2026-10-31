@@ -23,7 +23,7 @@ const ATTR_X := 325.0
 const ATTR_W := 220.0
 const DETAIL_X := 550.0
 ## O-031（优化登记）：false 恢复原版「自身 N  ·  装备战力 N」
-const SHOW_GEAR_GAIN := true
+static var SHOW_GEAR_GAIN := true
 const ZHENQI_W := 300.0
 const ZHENQI_SIZE := 18
 const ZHENQI_WARN := Color8(255, 170, 120)

@@ -23,9 +23,9 @@ extends RefCounted
 const DEFAULTS := {"range": 10, "showInter": true, "fastFt": false, "deathStop": true, "autoSave": true,
 	"RareEscape": false, "UnprecedentedEscape": false, "CommonEscape": false, "DropShield": false}
 ## O-016：只在挂机中因阵亡停止时播放取消音；设 false 恢复原版（任何战斗结束有人阵亡都播）。
-const SILENT_WHEN_IDLE := true
+static var SILENT_WHEN_IDLE := true
 ## O-017：「自动储存」设置生效、说明写实际存档位（开局选的固定存档位）；设 false 恢复原版（开关无效、说明写 saveId 参数，空为 1）。
-const AUTO_SAVE_SETTING := true
+static var AUTO_SAVE_SETTING := true
 
 
 static func params() -> Dictionary:

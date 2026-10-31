@@ -22,7 +22,7 @@ const LH := 36.0
 const ROWS := 12
 const STATUS_W := 120.0
 ## O-024：从挂机设置/消息提醒子页返回时保留光标位置（原版 Scene_Options 重建，回到第 0 项）
-const KEEP_INDEX_AFTER_PAGE := true
+static var KEEP_INDEX_AFTER_PAGE := true
 ## [名字, 符号, 已重制]（正式 v0.19 Window_Options._list 顺序：v0.19 加「消息提醒」、去掉「技能升级通告」）
 const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", true], ["始终跑步", "alwaysDash", true],
 	["记住指令", "commandRemember", true], ["Battle Camera", "battleCamera", true], ["开启掉落动画", "MOG_TrPopUpBattle_Key", true],

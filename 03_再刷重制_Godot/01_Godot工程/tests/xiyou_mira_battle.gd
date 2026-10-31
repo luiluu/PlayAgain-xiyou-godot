@@ -8,6 +8,8 @@ extends Node
 ##   重制默认清掉减益，另以 DEBUFF_FIX 关掉核对其余部分与原版一致；
 ## - immune.*：黑龙形态有无终焉时附加名单状态与减益；incoming.*：敌人普通攻击（攻击加 1e6）对米拉的伤害（不灭龙血 ×0.8）；
 ## - end：战斗结束删 2592／2597～2599。
+## - otb.second_slot（只在重制，75% 后审查第 11 期 G3）：米拉带「再次行动」44 有两个行动位，第一个放解放·黑龙，同回合第二个行动位照常
+##   （原版解放收尾 clearActions，OTB 每个行动位开头重新 makeActions，不影响后面的行动位；重制不清）。
 ## 原版参照的 BattleManager.setup 不走 startBattle，没有开战预热：比技能条件前清掉重制开战设的预热（10151 <Warmup: 2>）。
 const ORACLE := "oracle/mira_battle.json"
 const BIG_HP := 1e12
@@ -280,7 +282,35 @@ func _run() -> void:
 		var v: Array = _incoming_values[k]
 		check(k + ".ratio", base[0] > 0.0 and absf(v[0] / base[0] - v[1] / base[1]) < 1e-6, [v, base])
 	check("incoming.cases", _incoming_values.size() == 3, _incoming_values.keys())
+	_otb_second_slot()
 	finish()
+
+
+## 一回合两个行动位：第一个解放·黑龙，第二个普通攻击；敌人都放弃
+func _otb_second_slot() -> void:
+	var r := _battle({"rank": 3, "level": 55, "drop": [10167]})
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	logic._state_add(a, 44)
+	a.param_mark_dirty()
+	a.param_refresh()
+	a.mp = a.mmp
+	logic.start_turn()
+	check("otb.second_slot.slots", logic.current_order.count(a) == 2, logic.current_order.map(func(b): return _key(logic, b)))
+	var used := []
+	while true:
+		var u := logic.next_subject()
+		if u == null:
+			break
+		if u != a:
+			logic.act(u, null, null)
+			continue
+		var skill := XDB.rec("Skills", XMira.LIBERATE if used.is_empty() else 1)
+		var logs := logic.act(a, skill, logic.enemies[0])
+		var acted := logs.filter(func(l): return l.get("type") == "action" and l.get("user") == a)
+		var hits := logs.filter(func(l): return l.get("type") == "hit" and l.get("user") == a and l.get("target") is XEnemy and not bool(l.get("missed", false)))
+		used.append([int(skill.id), acted.size(), hits.size(), XMira.dragon(a)])
+	check("otb.second_slot.acts", used.size() == 2 and used[0][0] == XMira.LIBERATE and used[0][3] and used[1] == [1, 1, 1, true], used)
 
 
 func finish() -> void:

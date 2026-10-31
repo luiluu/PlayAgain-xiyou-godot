@@ -183,6 +183,18 @@ func _run() -> void:
 	check("page_closed", opt._page == null and opt.win.visible)
 	check("options_status_updated", opt.status_text(oi) == "2项关闭", opt.status_text(oi))
 	check("options_index_kept", opt.index == oi if XOptionsScene.KEEP_INDEX_AFTER_PAGE else opt.index == 0)
+	# O-024 回退（KEEP_INDEX_AFTER_PAGE = false）：原版 Scene_Options 重建，从子页返回光标回到第 0 项、列表滚回顶部
+	XOptionsScene.KEEP_INDEX_AFTER_PAGE = false
+	opt._select(oi)
+	var top_before := opt.top
+	await press("ui_accept")
+	await frames()
+	var reopened := opt._page is XNoticeOptionsScene
+	await press("ui_cancel")
+	await frames()
+	XOptionsScene.KEEP_INDEX_AFTER_PAGE = true
+	check("options_index_reset_original", reopened and opt._page == null and opt.index == 0 and opt.top == 0 and top_before > 0, [reopened, opt.index, opt.top, top_before])
+	opt._select(oi)
 	await shot("消息提醒_设置页.png")
 	opt.queue_free()
 	set_off([])
