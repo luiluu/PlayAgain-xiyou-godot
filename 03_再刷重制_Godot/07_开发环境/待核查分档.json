@@ -1,0 +1,16 @@
+{
+  "说明": "待核查批的分档表（Kyo 2026-10-30 起：甲＝战斗核心、存档、新优化，逐批细核；乙＝楼层内容抽核；丙＝工具、文档只看结论；积压上限只算甲档）。待核查.py 按每批合并带进来的文件逐个归档：rules 自上而下第一条正则（对仓库相对路径，.uid 先去掉后缀）匹配的档就是这个文件的档；一批取其中最高的档（甲>乙>丙）。没有任何一条匹配的文件按甲（保守）并在输出里列出，加规则即可归档。改这张表不用动代码。",
+  "limitTier": "甲",
+  "rules": [
+    {"tier": "甲", "match": "^03_再刷重制_Godot/00_设计/优化登记\\.md$", "why": "新优化登记"},
+    {"tier": "甲", "match": "^03_再刷重制_Godot/01_Godot工程/modes/xiyou/(core|battle)/", "why": "战斗与角色核心"},
+    {"tier": "甲", "match": "^03_再刷重制_Godot/01_Godot工程/modes/.*(save|存档)", "why": "存档"},
+    {"tier": "乙", "match": "^03_再刷重制_Godot/03_转换工具/xiyou_slice\\.json$", "why": "切片内容（楼层／地图）"},
+    {"tier": "乙", "match": "^03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/", "why": "地图"},
+    {"tier": "乙", "match": "^03_再刷重制_Godot/01_Godot工程/tests/", "why": "对应测试"},
+    {"tier": "丙", "match": "^03_再刷重制_Godot/(07_开发环境|03_转换工具|04_验证)/", "why": "工具与验证"},
+    {"tier": "丙", "match": "^(00_项目管理/|\\.github/|AGENTS\\.md$|CLAUDE\\.md$|README[^/]*\\.md$)", "why": "项目管理与规则"},
+    {"tier": "丙", "match": "^03_再刷重制_Godot/(开发编号\\.json$|01_Godot工程/(project\\.godot|content/build_info\\.json)$)", "why": "编号登记"},
+    {"tier": "丙", "match": "\\.md$", "why": "其它文档"}
+  ]
+}
