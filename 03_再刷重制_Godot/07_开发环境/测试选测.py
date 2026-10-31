@@ -482,7 +482,7 @@ class MergeBaseTests(Fixture):
 
 
 STUB_CHECKS = ['测试工作树清理.py', '测试导出过滤.py', '测试共性验收.py', '测试合并工具.py', '测试公式程序.py', '测试转换器写入.py',
-               '测试记录工具.py', '测试云端准备.py', '测试内容覆盖.py', '测试角色同步提速.py', '测试事件探针分段.py', '测试状态js翻译.py', '测试参照批次.py', '测试提交守卫.py', '测试回退开关覆盖.py', '回退开关覆盖.py', '参照批次.py', '测试选测.py', '变更记录分卷.py', '待核查.py']
+               '测试记录工具.py', '测试云端准备.py', '测试内容覆盖.py', '测试角色同步提速.py', '测试事件探针分段.py', '测试状态js翻译.py', '测试参照批次.py', '测试提交守卫.py', '测试回退开关覆盖.py', '回退开关覆盖.py', '语法检查.py', '参照批次.py', '测试选测.py', '变更记录分卷.py', '待核查.py']
 
 
 class CheckerTests(Fixture):
@@ -514,8 +514,8 @@ class CheckerTests(Fixture):
         self.commit('checker fixture')
         self.base = self.g('rev-parse', 'HEAD')
 
-    def check(self, *args):
-        env = dict(self.env, XIYOU_LONG_TASK_MANAGED='1', GODOT=str(self.godot))
+    def check(self, *args, env=None):
+        env = dict(self.env, XIYOU_LONG_TASK_MANAGED='1', GODOT=str(self.godot), **(env or {}))
         p = subprocess.run(['zsh', str(self.root / ENV / '检查.sh'), *args], capture_output=True, text=True, env=env)
         ran = self.calls.read_text().splitlines() if self.calls.exists() else []
         self.calls.unlink(missing_ok=True)
@@ -653,6 +653,18 @@ class CheckerTests(Fixture):
         rc, out, _ = self.check()
         self.assertEqual(rc, 0, out)
         self.assertNotIn('失败项汇总', out)
+
+    def test_syntax_error_skips_godot_tests(self):
+        # tools28：Godot 段先跑 语法检查.py，有 Parse Error 就不排测试队列；CHECK_SYNTAX=0 回到直接跑测试
+        self.put(ENV / '语法检查.py', 'import sys\nprint("  ✗ res://x.gd：Parse Error")\nsys.exit(1)\n')
+        rc, out, ran = self.check()
+        self.assertEqual(rc, 1, out)
+        self.assertIn('语法检查不通过', out)
+        self.assertIn('res://x.gd：Parse Error', out)
+        self.assertNotIn('并行测试.py', self.names(ran))
+        rc, out, ran = self.check(env={'CHECK_SYNTAX': '0'})
+        self.assertNotIn('语法检查.py', self.names(ran))
+        self.assertIn('并行测试.py', self.names(ran))
 
     def test_prose_brackets_are_not_links_but_real_breaks_are(self):
         # 唐僧_13 2026-10-26：表格正文「变身[萧萧](a)」被当成失效链接卡住合并；只放过 1～2 个字符、不含 / 与 . 的目标

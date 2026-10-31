@@ -149,8 +149,15 @@ if (( import_rc != 0 )) || print -r -- "$import_out" | grep -qE 'SCRIPT ERROR|^E
 fi
 # 测试并行运行（每个测试独立临时 HOME，互不干扰、不碰真实用户数据）；CHECK_JOBS=1 时逐个运行
 # 慢的先跑、各工作树共用并发上限、工程未变时沿用上轮通过结果（--full 强制整轮），见 并行测试.py 文件头
+# 先只载工程查一遍语法（语法检查.py，约 10 秒，不占测试槽）：有 Parse Error 就不排测试队列（tools28）；CHECK_SYNTAX=0 跳过这一步
+syntax_ok=1
+if (( ${CHECK_SYNTAX:-1} )); then
+  if python3 "$ENV_DIR/语法检查.py" --root "$ROOT"; then ok "语法检查"; else syntax_ok=0; bad "语法检查不通过（见上方 ✗ 行），未运行 Godot 测试"; fi
+fi
 failed_file=$(mktemp -t xiyou_check_failed)
-if ! CHECK_FAILED_FILE=$failed_file python3 "$ENV_DIR/并行测试.py" "$GODOT" "$PROJECT" "${TEST_ARGS[@]}" "${SEL_SCENES[@]}"; then
+if (( ! syntax_ok )); then
+  :
+elif ! CHECK_FAILED_FILE=$failed_file python3 "$ENV_DIR/并行测试.py" "$GODOT" "$PROJECT" "${TEST_ARGS[@]}" "${SEL_SCENES[@]}"; then
   FAIL=1
   scene_rows=("${(@f)$(<$failed_file)}")
   for row in ${scene_rows:#}; do FAIL_ITEMS+=("Godot 场景 ${row%%$'\t'*}  日志 ${row#*$'\t'}"); done
