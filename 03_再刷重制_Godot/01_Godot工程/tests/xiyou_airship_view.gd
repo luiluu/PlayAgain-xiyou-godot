@@ -6,6 +6,7 @@ extends Node
 ## - 飞行中鼠标点前方一格是飞过去（triggerTouchActionD2 只查事件），点脚下才降落（D1）；
 ## - 降落：逐帧采样高度每帧最多 −1、精灵与影子一致，到 0 回角色下方；
 ## - 指令 323 换图（改造包）：精灵照新图画，存读档后图还对；带 ! 的物件图（萌物）不上移 6，影子也跟着；
+## - 头顶名牌（XDesignationPlate）：走路时在玩家上方、乘飞艇时换到飞艇上；
 ## - 每帧画面另按原版参照的同高度一行比：精灵上移、影子位置、透明度（shadowOpacity÷255）；升到 48、降到 0 的逐帧序列与参照相同；
 ## - 空中存读档、升空中存读档、降落中存读档：读回高度与存时一样，画面与高度一致，接着升或降到底。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -214,7 +215,19 @@ func _run() -> void:
 		return _finish()
 	_check("texture_loaded", map.airship._tex != null and map.airship.character_name == "Vehicle" and map.airship.character_index == 3)
 	await _view("parked")
+	# 头顶名牌（XDesignationPlate）：走路时挂在玩家上、在精灵原点上方 6＋48、画布 180×78；飞艇那张藏着
+	s.actor_name = "测试名"
+	s.designation = {"name": "征服者", "icon": 1468, "color": "#7b68ee"}
+	for i in 3:
+		await get_tree().process_frame  # 地图 _process 每帧摆名牌；测试节点可能先于地图走帧
+	_check("plate_walk", map.player_plate != null and map.player_plate.visible and map.player_plate.position == Vector2(-90, -6 - 48 - 78)
+		and map.player_plate.size == Vector2(180, 78) and map.airship_plate != null and not map.airship_plate.visible,
+		[map.player_plate.position if map.player_plate else null, map.player_plate.visible if map.player_plate else null])
 	await _get_on("first")
+	await get_tree().process_frame
+	# 乘上飞艇：玩家透明，名牌跟着藏；飞艇那张显示（玩家坐着它、位置重合），随飞艇升高
+	_check("plate_airship", not map.player_plate.visible and map.airship_plate.visible and map.airship_plate.get_parent() == map.airship,
+		[map.player_plate.visible, map.airship_plate.visible])
 	# 飞几格：影子跟着
 	map.player.touch_target = Vector2i(65, 52)
 	await _until(func(): return map.player.grid == Vector2i(65, 52) and not map.player.is_moving())
