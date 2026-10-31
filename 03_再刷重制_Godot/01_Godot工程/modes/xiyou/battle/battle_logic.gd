@@ -1934,6 +1934,10 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 			sequence_buff(t, int(eff.dataId), true, true, int(v1))
 		32:
 			add_debuff_effect(u, t, int(eff.dataId), int(v1))
+		42:
+			# itemEffectGrow：addParam(dataId, floor(value1))（丹药加最大生命等；敌人没有永久加成账本，不做）
+			if t is XActor:
+				(t as XActor).add_param(int(eff.dataId), floorf(v1))
 		33, 34:
 			var id := int(eff.dataId)
 			if XAlienBattle.blocks_buff_removal(t, id):

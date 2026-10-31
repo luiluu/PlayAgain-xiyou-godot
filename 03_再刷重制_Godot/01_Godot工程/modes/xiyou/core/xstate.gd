@@ -10,7 +10,15 @@ static var current: XState
 ## Ordinary saves omit it; every new/restored XState starts empty.
 var _reserved_common_event_id := 0
 
+## 批量服用（XBulkPills）：一颗期间的预约先收集，没审过的按先进先出排在单槽后面，槽被取走（clear）时补上下一条。不存档。
+var _reserve_capture = null
+var _deferred_common_events: Array = []
+
 func reserve_common_event(id: int) -> void:
+	if _reserve_capture != null:
+		if id > 0:
+			_reserve_capture.append(id)
+		return
 	_reserved_common_event_id = id
 
 func peek_common_event() -> int:
@@ -18,6 +26,25 @@ func peek_common_event() -> int:
 
 func clear_common_event() -> void:
 	_reserved_common_event_id = 0
+	if not _deferred_common_events.is_empty():
+		_reserved_common_event_id = int(_deferred_common_events.pop_front())
+
+## 跑 body，期间 reserve_common_event 只记下来不占槽；返回记下的事件（先后顺序）
+func capture_common_events(body: Callable) -> Array:
+	var saved = _reserve_capture
+	var got := []
+	_reserve_capture = got
+	body.call()
+	_reserve_capture = saved
+	return got
+
+## deferNativeEvents：槽空就占槽，否则排队
+func defer_common_events(ids: Array) -> void:
+	for id in ids:
+		if _reserved_common_event_id <= 0:
+			_reserved_common_event_id = int(id)
+		else:
+			_deferred_common_events.append(int(id))
 
 var difficulty := 3
 var party: Array[int] = []          # 队伍顺序（$gameParty._actors；出战成员在前，见 battle_slots）

@@ -1371,6 +1371,69 @@
     "forFriend": true
    },
    "errors": []
+  },
+  {
+   "id": "learned",
+   "setup": {},
+   "observed": [
+    {
+     "item": 1497,
+     "skill": 5974,
+     "learned": true,
+     "inSkills": true,
+     "before": {
+      "testApply": true,
+      "canUse": false
+     },
+     "after": {
+      "testApply": false,
+      "canUse": false
+     }
+    },
+    {
+     "item": 1498,
+     "skill": 5975,
+     "learned": true,
+     "inSkills": true,
+     "before": {
+      "testApply": true,
+      "canUse": false
+     },
+     "after": {
+      "testApply": false,
+      "canUse": false
+     }
+    },
+    {
+     "item": 1499,
+     "skill": 5976,
+     "learned": true,
+     "inSkills": true,
+     "before": {
+      "testApply": true,
+      "canUse": false
+     },
+     "after": {
+      "testApply": false,
+      "canUse": false
+     }
+    },
+    {
+     "item": 1500,
+     "skill": 5977,
+     "learned": true,
+     "inSkills": true,
+     "before": {
+      "testApply": true,
+      "canUse": false
+     },
+     "after": {
+      "testApply": false,
+      "canUse": false
+     }
+    }
+   ],
+   "errors": []
   }
  ]
 }

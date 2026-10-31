@@ -71,6 +71,18 @@ const BATCHES = [
   ['short', 1685, 5, 3, null],
 ];
 for (const [name, id, req, stock, pre] of BATCHES) cases.push(makeCase('batch.' + name, {item: id, requested: req, stock, preVar: pre}, () => batch(id, req, stock, pre)));
+// ③ 已学满：万灵增元丹 1497～1500 只有效果 43。原版 fullyLearned 在 Scene_Item.useItem 里，但 onActorOk 先看 canUse＝能用且 isItemEffective；
+//    记已学会前后 testApply 与 canUse，看原版流程到不到得了 fullyLearned
+cases.push(makeCase('learned', {}, () => {
+  newGame();
+  const user = w.$gameParty.members()[0];
+  return [1497, 1498, 1499, 1500].map(id => {
+    const item = w.$dataItems[id], skill = item.effects.find(e => e.code === 43).dataId;
+    const row = act => { const a = new w.Game_Action(user); a.setItemObject(item); return {testApply: a.testApply(user), canUse: user.canUse(item)}; };
+    const before = row(); user.learnSkill(skill); const after = row();
+    return {item: id, skill, learned: user.isLearnedSkill(skill), inSkills: user._skills.indexOf(skill) >= 0, before, after};
+  });
+}));
 w.Game_Interpreter.prototype.pluginCommand = oldPlugin;
 process.exitCode = finish(host, 'bulk_pills.json', {scope: 'CodexBulkPills supports() and processBatch order without scene', cases}) ? 0 : 1;
 process.exit();
