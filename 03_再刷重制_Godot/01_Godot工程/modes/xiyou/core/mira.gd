@@ -1,6 +1,6 @@
 class_name XMira
 extends RefCounted
-## 168 米拉（正式 js/codex/runtime/installNativeMiraRuntime.js，W.CodexMira）第一期：招募、能力值包装、公式。
+## 168 米拉（正式 js/codex/runtime/installNativeMiraRuntime.js，W.CodexMira）：招募、能力值包装、公式（第一期），解放·黑龙与黑龙形态（第二期）。
 ## - 进阶次数 rank＝原版 a._AdvancedNum（XAdvance.rank）；has(技能, 需要次数)＝进阶够且学会。
 ## - 能力值（Game_Actor.param 包装，对最终面板乘算后取整、夹上限）：非黑龙形态时 30 级起学了 10144 物防／魔防
 ##   ×1.25×(1＋0.25×min(1,(等级−30)/5))；40 级起学了 10145 攻击／魔攻 ×1.10、速度再 ×(1＋0.25×min(1,(等级−40)/5))；
@@ -8,12 +8,25 @@ extends RefCounted
 ## - 公式 CodexMira.damage(a,b,id)：照原版逐技能写；技能熟练度经 skillMasteryLevel（重制首期恒 0）。
 ##   CodexDamage 结算里减防项为 0（原版 CodexDamage.isCalculating() 时去掉 35×b.def 之类）。
 ## - 黑龙形态 dragon()：原版要在战斗中、进阶 3 次以上、学了 10161 且带状态 2592；重制以带状态 2592 代替「在战斗中」
-##   （2592 只由解放·黑龙在战斗里加、战斗结束即删）。第一期不做解放，所以实际不会进入黑龙形态。
+##   （2592 只由解放·黑龙在战斗里加，战斗结束必删：它 removeAtBattleEnd，end_battle 也删；战斗中不能存档）。
 ## - 强者分档（6216／6235 等）在 XActor._fix_strong_classification，不在这里。
 ## - 招募（公共事件 9003 的 CodexMira.recruit()）：已在队返回 false；没戴黑龙心鳞 4577 时，背包里有同款就拿、没有就生成独立法宝，
 ##   装进它装备类型的槽；入队。
-## 未移植（第二期起）：解放·黑龙与黑龙形态（变身、技能可用条件、免疫状态、受伤 ×0.8、回合回血、劫火追加伤害）、禁忌的减耗与扣血、
-## 深渊掉落 2903、Map132 商店补号角 2904、伤害钩子 mira 的 mode（第一期各技能 hitType 与它一致）、名字与外观、旧档迁移。
+## 第二期（参照 mv_oracle/mira_battle_probe.cjs）：
+## - meetsSkillConditions（meets）：黑龙技 10148～10152 只在黑龙形态，人形技 10140～10143 黑龙形态不能用，解放 10146 要进阶 3、50 级、
+##   学会且不在黑龙形态，10147 永远不能单放。
+## - 禁忌 10166（进阶 2）：主动技（人形 4＋解放＋劫焰＋黑龙 5）skillMpCost／skillTpCost ×0.75 取整（cost）；paySkillCost 登记生命代价
+##   max(1, floor(mhp×10%))（pay），本次行动结束（原 endAction 之前）扣，未命中照扣、最低留 1（pay_hp）。
+## - 解放（原 endAction 之后，liberate）：用 10146 且进阶 3、学了 10146 → 加 2592；学了终焉 10167 再清名单状态与全部减益。
+##   原版清减益调的是不存在的 removeDebuff，身上有减益时这里抛 TypeError（正式游戏报错），重制照字面意思清掉（O-123，DEBUFF_FIX）。
+##   原版随后 clearActions：OTB 每个行动位开头都重新 makeActions，清掉也不影响本回合后面的行动位，重制不做（按代码阅读，未单测）。
+## - 终焉（黑龙形态且学了 10167）：名单状态 isStateResist／addState 挡（resists，XActor.add_state），addDebuff 全挡（blocks_debuff）。
+## - 不灭龙血 10154（进阶 3）：黑龙形态受伤 ×0.8（伤害钩子 mira，XActorDamageHooks.mira_ops）；onTurnEnd 之后活着回 floor(mhp×5%)（turn_end）。
+## - 修雷德劫火 10162（55 级、进阶 3）：黑龙形态或用解放时，本回合对每个敌人命中的火属性（元素 2）生命伤害累计（after_apply）；
+##   endTurn（原 endTurn 之前）对活着的目标再扣 floor(累计×30%)（end_turn）；startTurn 清空。累计只在战斗内、不存档。
+## - endBattle：删 2592／2597／2598／2599，清代价与劫火（end_battle）。
+## 未移植：战斗图换成 sv_enemies/BlackDragon_Mira_Enemy（Sprite_Actor.updateBitmap 包装，缩 0.55、下移、藏武器）、深渊掉落 2903
+## （makeRewards：地图名以「深渊」开头的胜利 1/30 加奖励，依赖楼层）、名字与外观、旧档迁移。
 ## 共用的 MiraRavenNumberBoost 在 XNumberBoost。
 
 const ACTOR := 168
@@ -21,6 +34,20 @@ const ARMOR := 4577
 const DRAGON := 2592
 const DRAGON_ATTACKS := [10148, 10149, 10150, 10151]
 const LIBERATE := 10146
+const FLAME := 10147
+const HUMAN_SKILLS := [10140, 10141, 10142, 10143]
+const DRAGON_SKILLS := [10148, 10149, 10150, 10151, 10152]
+const ACTIVE_SKILLS := [10140, 10141, 10142, 10143, 10146, 10148, 10149, 10150, 10151, 10152]
+const BATTLE_STATES := [2592, 2597, 2598, 2599]
+## M.endOfAllImmuneStates
+const END_OF_ALL_IMMUNE := [4, 6, 10, 29, 30, 33, 35, 46, 100, 107, 126, 127, 128, 130, 131, 150, 178, 184, 234, 263, 264, 274, 320, 741, 742,
+	927, 995, 1082, 1101, 1102, 1114, 1119, 1264, 1544, 2016, 2042, 2043, 2503, 2507, 2513]
+## O-123：解放时终焉照说明清掉全部减益（原版调不存在的 removeDebuff 抛错）；false＝不清（不照搬报错）
+static var DEBUFF_FIX := true
+## 本次施放登记的禁忌生命代价 {skill, cost}（_codexMiraForbiddenHpDue）
+static var _due = null
+## 本回合劫火累计 [[目标, 量], …]（_codexMiraTurnFlame）
+static var _flame := []
 
 
 static func own(a) -> bool:
@@ -147,3 +174,140 @@ static func recruit(s: XState) -> bool:
 		a.refresh_passive()
 	s.add_actor(ACTOR)
 	return true
+
+
+static func end_of_all(a) -> bool:
+	return dragon(a) and has(a, 10167, 3)
+
+
+## 终焉 isStateResist／addState 包装
+static func resists(b, id: int) -> bool:
+	return END_OF_ALL_IMMUNE.has(id) and end_of_all(b)
+
+
+## 终焉 addDebuff 包装
+static func blocks_debuff(b) -> bool:
+	return end_of_all(b)
+
+
+## Game_Actor.meetsSkillConditions 包装
+static func meets(a, skill: Dictionary) -> bool:
+	if not own(a) or skill.is_empty():
+		return true
+	var id := int(skill.get("id", 0))
+	if DRAGON_SKILLS.has(id) and not dragon(a):
+		return false
+	if HUMAN_SKILLS.has(id) and dragon(a):
+		return false
+	if id == LIBERATE and (rank(a) < 3 or int(a.level) < 50 or not has(a, LIBERATE, 3) or dragon(a)):
+		return false
+	return id != FLAME
+
+
+## 禁忌 skillMpCost／skillTpCost 包装（v 是包装前的费用）
+static func cost(a, skill: Dictionary, v: int) -> int:
+	return floori(v * 0.75) if ACTIVE_SKILLS.has(int(skill.get("id", 0))) and has(a, 10166, 2) else v
+
+
+## 禁忌 paySkillCost 包装：只登记，行动结束才扣
+static func pay(a, skill: Dictionary) -> void:
+	if not own(a):
+		return
+	_due = null
+	if ACTIVE_SKILLS.has(int(skill.get("id", 0))) and has(a, 10166, 2):
+		_due = {"skill": int(skill.id), "cost": maxf(1.0, floorf(a.mhp * 0.1))}
+
+
+## BattleManager.endAction 包装（原 endAction 之前）：扣登记的生命代价，最低留 1
+static func pay_hp(u, skill) -> void:
+	if not own(u):
+		return
+	var due = _due
+	_due = null
+	if due == null or not skill is Dictionary or int(skill.get("id", 0)) != int(due.skill):
+		return
+	var paid := minf(float(due.cost), maxf(0.0, u.hp - 1.0))
+	if paid > 0.0:
+		u.hp -= paid
+		u.refresh_resources()
+
+
+## BattleManager.endAction 包装（原 endAction 之后）：解放·黑龙
+static func liberate(logic, u, skill) -> void:
+	if not own(u) or not skill is Dictionary or int(skill.get("id", 0)) != LIBERATE or rank(u) < 3 or not has(u, LIBERATE, 3):
+		return
+	logic._state_add(u, DRAGON)
+	if end_of_all(u):
+		for id in END_OF_ALL_IMMUNE:
+			if u.state_ids.has(id):
+				logic._state_remove(u, id)
+		if DEBUFF_FIX:
+			for pid in range(8):
+				if u.buffs[pid] < 0:
+					logic.sequence_buff(u, pid, false, false, 0)
+	u.param_refresh()
+
+
+## Game_Action.apply 包装：黑龙形态或解放命中敌人的火属性生命伤害记进本回合劫火
+static func after_apply(u, skill: Dictionary, t, r: Dictionary) -> void:
+	if not own(u) or not t is XEnemy:
+		return
+	var result: Dictionary = r.get("result", {})
+	var amount := maxf(0.0, float(result.get("hpDamage", 0.0))) if not bool(r.get("missed", false)) and not bool(r.get("evaded", false)) else 0.0
+	if amount <= 0.0 or int(skill.get("damage", {}).get("elementId", 0)) != 2:
+		return
+	if int(u.level) < 55 or not has(u, 10162, 3) or not (dragon(u) or int(skill.get("id", 0)) == LIBERATE):
+		return
+	for e in _flame:
+		if e[0] == t:
+			e[1] += amount
+			return
+	_flame.append([t, amount])
+
+
+## BattleManager.startTurn 包装
+static func start_turn() -> void:
+	_flame.clear()
+
+
+## BattleManager.endTurn 包装（原 endTurn 之前）：劫火追加 floor(累计×30%)；返回弹字记录
+static func end_turn(logic) -> Array:
+	var logs := []
+	var a = logic.state.actors.get(ACTOR)
+	if a == null or int(a.level) < 55 or not has(a, 10162, 3):
+		return logs
+	for e in _flame:
+		var t = e[0]
+		var extra := floorf(float(e[1]) * 0.3)
+		if t == null or t.is_dead() or extra <= 0.0:
+			continue
+		var before: float = t.hp
+		t.hp = maxf(0.0, t.hp - extra)
+		t.refresh_resources()
+		logs.append({"type": "regen", "target": t, "hp": before - t.hp, "views": logic.views([t])})
+		if t.is_dead():
+			logs.append({"type": "collapse", "target": t, "views": logic.views([t])})
+	_flame.clear()
+	return logs
+
+
+## Game_Actor.onTurnEnd 包装（原 onTurnEnd 之后）：不灭龙血回 5%
+static func turn_end(logic, b, logs: Array) -> void:
+	if not (dragon(b) and has(b, 10154, 3) and b.is_alive()):
+		return
+	var before: float = b.hp
+	b.hp = minf(b.mhp, b.hp + floorf(b.mhp * 0.05))
+	b.refresh_resources()
+	if b.hp != before:
+		logs.append({"type": "regen", "target": b, "hp": before - b.hp, "views": logic.views([b])})
+
+
+## BattleManager.endBattle 包装
+static func end_battle(s: XState) -> void:
+	_due = null
+	_flame.clear()
+	var a = s.actors.get(ACTOR) if s != null else null
+	if a != null:
+		for id in BATTLE_STATES:
+			if a.state_ids.has(id):
+				a.remove_state(id)
