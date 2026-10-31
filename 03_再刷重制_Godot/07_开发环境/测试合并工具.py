@@ -303,6 +303,7 @@ class ParallelTestRunnerTests(unittest.TestCase):
                               'if [[ -n ${SPIN:-} ]]; then i=0; while (( i++ < 400000 )); do :; done; fi\n'
                               'if [[ -n ${BUSY:-} ]]; then mkdir %(t)s/busy 2>/dev/null || touch %(t)s/overlap; sleep 0.3; rmdir %(t)s/busy 2>/dev/null; fi\n'
                               'if [[ $n == b.tscn && -n ${FLAKY_B:-} && ! -e %(t)s/seen ]]; then touch %(t)s/seen; echo \'%(bad)s\'; exit 1; fi\n'
+                              'if [[ $n == c.tscn && -n ${PARSE_C:-} ]]; then echo "SCRIPT ERROR: Parse Error: Expected end of statement." >&2; sleep 30; fi\n'
                               'if [[ $n == c.tscn && -n ${FAIL_C:-} ]]; then echo \'%(bad)s\'; exit 1; fi\necho \'%(ok)s\'\n'
                               % {'t': self.tmp, 'bad': self.BAD, 'ok': self.OK})
         self.godot.chmod(0o755)
@@ -327,6 +328,16 @@ class ParallelTestRunnerTests(unittest.TestCase):
         p, _ = self.run_tests('--full', FAIL_C='1')
         self.assertEqual(p.returncode, 1, p.stdout)
         self.assertIn('✗ c.tscn', p.stdout)
+
+    def test_parse_error_is_not_rerun_as_flaky(self):
+        # 白龙 garou3（tools27）：解析错误是确定的，原来按偶发再单独跑一次，又等一次槽、再报一次
+        p, runs = self.run_tests(PARSE_C='1')
+        self.assertEqual(p.returncode, 1, p.stdout)
+        self.assertEqual(runs.count('c.tscn'), 1, runs)
+        self.assertIn('✗ c.tscn (rc=143)', p.stdout)
+        self.assertIn('语法检查.py', p.stdout)
+        par = load('par_norerun', HERE / '并行测试.py')
+        self.assertTrue(par.NO_RERUN_PARSE_ERROR)
 
     def test_names_file_and_wide_prefix_hint(self):
         names = self.tmp / 'names.txt'
@@ -1961,6 +1972,25 @@ for name in filter(None, files):
             self.assertEqual(self.call('--no-parse-check'), 0, self.last_output)
         finally:
             os.environ.pop('BAD')
+
+    def test_syntax_check_entry(self):
+        # tools27（白龙 garou3）：语法检查.py 只载工程、不跑场景，沿用 parse_check；有 Parse Error 退出 1，干净退出 0
+        self.put(str(merge.PROJECT / 'project.godot'), 'config/version="dev.001"\n[autoload]\nGameApp="*res://core/app.gd"\n\n[display]\n')
+        godot = self.root / merge.ENV / 'godot'
+        godot.write_text('#!/bin/zsh\n[[ "$*" == *--import* ]] && exit 0\n'
+                         'print "SCRIPT ERROR: Compile Error: Identifier not found: GameApp"\nprint "          at: GDScript::reload (res://entry.gd:3)"\n'
+                         '[[ -n $BAD ]] && { print "SCRIPT ERROR: Parse Error: Expected end of statement."; print "          at: GDScript::reload (res://modes/broken.gd:7)"; }\n'
+                         'print PARSE_CHECK_DONE\n')
+        godot.chmod(0o755)
+        run = lambda **env: subprocess.run([sys.executable, str(HERE / '语法检查.py'), '--root', str(self.root)], capture_output=True, text=True,
+                                           env=dict(os.environ, **env))
+        r = run()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('语法检查通过', r.stdout)
+        r = run(BAD='1')
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn('res://modes/broken.gd：Parse Error', r.stdout)
+        self.assertNotIn('GameApp', r.stdout)
 
     def test_parse_check_flags_import_and_load_process_failures(self):
         # 沙僧第十七期 P3：导入阶段退出码非零并打印 ERROR:、加载阶段正常打印完成标志，原来返回零问题

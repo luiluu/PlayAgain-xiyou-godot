@@ -58,6 +58,7 @@ from pathlib import Path
 
 TIMEOUT = 600  # xiyou_rules 角色 P0 后单跑约 200 秒，满负载并行时超过 300
 SLOW = TIMEOUT // 2  # 超过就提示按场景拆分（xiyou_rules、smart_ai 已拆成约 100 秒一份）
+NO_RERUN_PARSE_ERROR = True  # 解析错误不当偶发重跑（tools27）；设 False 回到照常重跑
 FLAKY_RERUN_MAX = 3  # 并行负载下偶发失败（floor16、floor_run_c 等）最多单独重跑这么多个
 RESULTS_KEEP = 20  # 共用状态目录里最多保留这么多份整轮结果（按指纹）
 RULES_FILTER_ENV = ('RULES_ONLY_TROOPS', 'RULES_ONLY_ACTORS')  # xiyou_rules 的编号过滤，结果不完整
@@ -583,6 +584,9 @@ def main() -> int:
             for name, rc, out, secs, cpu in pool.map(lambda n: run_one(a.godot, a.project, n, sdir, limit, progress), todo):
                 attempts[name] = [(rc, out, secs, cpu)]
         failed = [n for n in todo if not result_ok(*attempts[n][0][:2])]
+        if NO_RERUN_PARSE_ERROR:
+            # 脚本解析错误（FATAL_LOAD 提前终止，rc 143）是确定的，重跑只会再等一次槽、再报一次（白龙 garou3）
+            failed = [n for n in failed if not (attempts[n][0][0] == 143 and FATAL_LOAD.search(attempts[n][0][1]))]
         if a.jobs > 1 and len(todo) > 1 and 0 < len(failed) <= FLAKY_RERUN_MAX:
             progress.total += len(failed)
             for name in failed:
@@ -620,6 +624,8 @@ def main() -> int:
             print('  ✗ %s (rc=%d)' % (name, rc))
             for l in [l for l in out.splitlines() if re.search(r'ERROR|FAIL |passed|TEST_RESULT', l)][:8]:
                 print('      ' + l)
+            if rc == 143 and FATAL_LOAD.search(out):
+                print('      脚本解析错误：改好后可先跑 07_开发环境/语法检查.py（只载工程、不跑场景、不等测试槽）确认')
             failed_logs[name] = a.log_dir / (Path(name).stem + ('.rerun%d' % (len(tries) - 1) if len(tries) > 1 else '') + '.log')
             print('      完整输出：' + str(failed_logs[name]))
     wall = time.monotonic() - started
