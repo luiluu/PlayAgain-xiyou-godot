@@ -169,8 +169,11 @@ func _run() -> void:
 		and [p1.get("ref_day"), p1.get("ref_hour"), p1.get("ref_minute")] == ref.troop1.ref.map(func(x): return int(x)), [l1.enemies[0].enemy_id, p1])
 	troop1.enemyId = 1
 	XPetCapture.clock = Callable()
+	_refresh_original()
+	_turns_original()
 	_books()
 	_battle_flow()
+	_battle_flow_original()
 	_defeat_count(true)
 	_defeat_count(false)
 	var passed := results.filter(func(r): return r.passed).size()
@@ -195,6 +198,15 @@ func _books() -> void:
 	s2.pets.list = [{"enemy": 1, "push": range(14).map(func(_i): return 0), "skills": [], "lv_skills": {}, "exp": 0, "ls": 0, "ls_max": 3}]
 	s2.pets.war = 0
 	check("book_372_fix", XPets.learn_book(s2, 1673) == "高级灵根 学习成功" and s2.pets.list[0].skills == [1672], s2.pets.list[0])
+	# 回退（BOOK_FIX_372 = false）：照原版 372 走公共事件 218，学的是 1673 高级灵甲术
+	XPets.BOOK_FIX_372 = false
+	var s3 := XState.new_game(3, 1, [8, 9, 10])
+	s3.last_item = 372
+	s3.pets.list = [{"enemy": 1, "push": range(14).map(func(_i): return 0), "skills": [], "lv_skills": {}, "exp": 0, "ls": 0, "ls_max": 3}]
+	s3.pets.war = 0
+	var shown3 := XPets.learn_book(s3, 1673)
+	XPets.BOOK_FIX_372 = true
+	check("book_372_original", shown3 == str(XDB.rec("Skills", 1673).name) + " 学习成功" and s3.pets.list[0].skills == [1673], [shown3, s3.pets.list[0]])
 
 
 ## 战斗里真的用一次：角色对可捕捉的嘤嘤怪用大师级捕获器（成功率 80%，掷 0）：行动只预约公共事件 173，事件检查时才捕到；
@@ -256,3 +268,65 @@ func _defeat_count(single: bool) -> void:
 	# 另外两只逃跑，也是 die＋hide
 	check("defeat_flee_%s" % tag, l.enemies.all(func(e): return e.hidden) and total.call() == per * 3, total.call())
 	XPetCapture.SINGLE_DEFEAT_COUNT = true
+
+
+## O-101 回退（SHOW_REFRESH_TEXT = false）：开关、敌群 1 照参照，提示只在存档 pets.show_text（$gameParty.PetShowTextT）为真时弹。
+## 参照是把 PetShowTextT 打开录的（pet_capture_probe.cjs），所以 show_text 为真时提示与参照相同，为假时一条也没有
+func _refresh_original() -> void:
+	XPetCapture.SHOW_REFRESH_TEXT = false
+	var troop1: Dictionary = XDB.rec("Troops", 1).members[0]
+	for rf in ref.refreshes.filter(func(r): return r.last == null and not str(r.name).ends_with("_preset")):
+		for flag in [false, true]:
+			var s := XState.new_game(3, 1, [8, 9, 10])
+			XPetCapture.clock = func(): return {"day": 15, "hour": int(rf.hm[0]), "minute": int(rf.hm[1])}
+			s.pets.ref_capture = bool(rf.refCapture)
+			if flag:
+				s.pets.show_text = true
+			troop1.enemyId = 1
+			var draws: Array = rf.draws.duplicate()
+			var shown := XPetCapture.check(s, func(): return float(draws.pop_front()))
+			var on := s.self_switches.keys().filter(func(k): return s.self_switches[k])
+			on.sort()
+			var want_on: Array = rf.on.duplicate()
+			want_on.sort()
+			check("refresh_original_%s_%s" % [rf.name, "shown" if flag else "silent"],
+				on == want_on and int(troop1.enemyId) == int(rf.troop1) and shown == (rf.toasts if flag else []) and draws.is_empty(), [on, want_on, shown])
+	troop1.enemyId = 1
+	XPetCapture.clock = Callable()
+	XPetCapture.SHOW_REFRESH_TEXT = true
+
+
+## O-102 回退（FLEE_ALIVE_ONLY = false）：判「不算阵亡」。参照的回合场景里倒下的那只本来就不逃，结果应与参照逐项相同
+func _turns_original() -> void:
+	XPetCapture.FLEE_ALIVE_ONLY = false
+	for tr in ref.turns:
+		var l := battle(2)
+		for i in l.enemies.size():
+			l.enemies[i].capture = i != 1
+		l.enemies[2].hp = 0.0
+		l._die(l.enemies[2])
+		l.turn = int(tr.turn)
+		var logs := XPetCapture.end_turn(l)
+		var got := l.enemies.map(func(e): return {"capture": e.capture, "dead": e.is_dead(), "hidden": e.hidden, "hp0": e.hp == 0.0, "states": e.state_ids})
+		var want: Array = tr.enemies.map(func(e): return {"capture": bool(e.capture), "dead": bool(e.dead), "hidden": bool(e.hidden), "hp0": int(e.hp) == 0, "states": e.states.map(func(x): return int(x))})
+		check("turn_%d_original" % int(tr.turn), got == want and toasts(logs) == tr.toasts, [got, want, toasts(logs)])
+	XPetCapture.FLEE_ALIVE_ONLY = true
+
+
+## O-102 回退：已被捕走（die＋hide，不算阵亡）的那只在第 5 回合再提示一次「敌人逃跑」，三只都提示
+func _battle_flow_original() -> void:
+	XPetCapture.FLEE_ALIVE_ONLY = false
+	var l := battle(2)
+	var s := l.state
+	s.gain_item(317, 1)
+	XPetCapture.roll_battle(l)
+	for e in l.enemies:
+		e.capture = true
+	l.set_meta("pet_random", tape([0.0] + range(40).map(func(_i): return 0.5)))
+	l.execute(l.actors[0], XDB.rec("Items", 317), l.enemies[0])
+	l.run_events()
+	var captured: bool = l.enemies[0].hidden and s.pets.list.size() == 1
+	l.turn = 5
+	var end := l.end_turn()
+	XPetCapture.FLEE_ALIVE_ONLY = true
+	check("battle_flee_turn5_original", captured and l.enemies.all(func(e): return e.hidden) and toasts(end) == ["敌人逃跑", "敌人逃跑", "敌人逃跑"], toasts(end))
