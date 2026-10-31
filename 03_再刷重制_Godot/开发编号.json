@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.242",
-  "sequence": 242,
-  "next": "dev.243",
-  "nextSequence": 243,
+  "current": "dev.243",
+  "sequence": 243,
+  "next": "dev.244",
+  "nextSequence": 244,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "nezha-rollback1",
+  "currentChange": "wukong-battle-gaps2",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
