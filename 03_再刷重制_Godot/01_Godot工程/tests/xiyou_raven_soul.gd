@@ -115,11 +115,12 @@ func _advance(c: Dictionary) -> void:
 
 func _save_roundtrip() -> void:
 	var s := _setup(30, 2, [XRaven.ACTOR, 1])
-	s.raven = {"soul": 12345.0, "forged": 1}
+	s.raven = {"soul": 12345.0, "forged": 1, "residue": 2, "hunter": true, "myth": 3}  # 第三期：残响、狩猎存档，神话回合不存
 	var d := s.to_dict()
-	check("save.key", d.get("codexRaven") == {"soul": 12345.0, "forged": 1}, d.get("codexRaven"))
+	var want := {"soul": 12345.0, "forged": 1, "residue": 2, "hunter": true}
+	check("save.key", d.get("codexRaven") == want, d.get("codexRaven"))
 	var back := XState.from_dict(JSON.parse_string(JSON.stringify(d)))
-	check("save.roundtrip", back.raven == {"soul": 12345.0, "forged": 1}, back.raven)
+	check("save.roundtrip", back.raven == want, back.raven)
 	d.erase("codexRaven")
 	var old := XState.from_dict(JSON.parse_string(JSON.stringify(d)))
 	XState.current = old
