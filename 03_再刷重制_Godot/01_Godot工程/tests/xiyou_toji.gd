@@ -164,7 +164,19 @@ func _run() -> void:
 		else:
 			_recruit(c)
 	check("covers_all", seen == 31, seen)
+	_meets()
 	finish()
+
+
+## 技能条件（原版 meetsSkillConditions 包装；切片参照只覆盖 10 级没有形态状态的 10212，这里补换形态后的几种）
+func _meets() -> void:
+	var s := _state()
+	var a := _toji(s, {"level": 20})
+	var sk := func(id): return XDB.rec("Skills", id)
+	check("meets.shape0", XToji.meets(a, sk.call(10216)) and not XToji.meets(a, sk.call(10217)) and not XToji.meets(a, sk.call(10212)) and XToji.meets(a, sk.call(10213)))
+	a.add_state(XToji.SHAPES[1])
+	check("meets.shape1", not XToji.meets(a, sk.call(10216)) and XToji.meets(a, sk.call(10217)) and XToji.meets(a, sk.call(10212)) and not XToji.meets(a, sk.call(10213)))
+	check("meets.unlearned", not XToji.meets(a, sk.call(10214)) and XToji.meets(s.actor(1), sk.call(10214)))
 
 
 func finish() -> void:

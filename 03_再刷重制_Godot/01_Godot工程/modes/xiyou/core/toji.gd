@@ -22,11 +22,14 @@ extends RefCounted
 ##   非反弹且戴藏兵咒灵 4580 ×1.11；暴君 ×3；溅射倍率（第二期）。
 ## - 招募（公共事件 9006 的 try { if (!CodexToji.recruit()) 还号角 }）：已在队返回 false；没戴藏兵咒灵时背包有就拿、没有就生成，
 ##   装进它装备类型（13）的槽，换下的进背包；入队；两条右上角提示。
+## - 技能条件（meetsSkillConditions 包装，原版 367-377）：主技能只有当前形态那个（＝普攻技能）能用；咒具切换 10212～10215
+##   要学了切换与对应主技能、且不是当前形态才能用（当前形态：第一个带着的形态状态 2630～2633，没有算游云）。
+##   切换技能单独豁免战技类别封印（359-366）第二期做。切片加 171 后 wtype 参照（10 级、未进战斗）覆盖到 10212。
 ## - 已在别处：普攻＝当前形态主技能与指令名（XActor.attack_skill_id）、进阶石 rollAdvanceStone（XDungeon）、Map132 商店号角（XItemMarks）、
 ##   黑闪配置（XBlackFlash.CONFIGS 171）。
 ## 未移植（第二期起，清单见交付单 cc_bajie-toji1「机制对照」）：咒具形态与切换（2630～2633、10212～10215）、多段与追加次数、武器库追击、
 ##   万里锁溅射、天逆鉾封印 2634、术师杀手减伤与反弹、暴君免负面状态与弱化、天与咒缚的命中／闪避、五感必中与暴击闪避、
-##   技能条件与战斗中技能列表、智能 AI 档案、黑闪觉醒额外一击；说明框熟练度行（画面）；读档时 repair（重制存档存的就是同步后的技能）。
+##   切换技能豁免类别封印、战斗中技能列表、智能 AI 档案、黑闪觉醒额外一击；说明框熟练度行（画面）；读档时 repair（重制存档存的就是同步后的技能）。
 ##   原版 makeDamageValue 包装是死代码（installDamageElementRuntime 后装、整个换掉 makeDamageValue 不调旧链），不移植。
 ## 参照：slice_probe（切片角色行与伤害行）、toji_probe（等级／进阶／血量各档的能力值、公式、钩子帧，tests/xiyou_toji.gd）。
 
@@ -43,6 +46,8 @@ const MAIN := [10216, 10217, 10218, 10219]
 ## 原版 RANDOM 按形态序（游云、万里锁、释魂刀、天逆鉾）
 const RANDOM := [10220, 10223, 10221, 10222]
 const REFLECT := 10224
+const SWITCH := [10212, 10213, 10214, 10215]
+const SHAPES := [2630, 2631, 2632, 2633]
 const BALANCE_AT_70 := 0.188208
 ## repair 的 unlock 表：技能 → 解锁等级
 const UNLOCK := {10203: 1, 10205: 1, 10206: 10, 10207: 20, 10208: 30, 10209: 35, 10212: 1, 10213: 15, 10214: 30, 10215: 40,
@@ -220,6 +225,30 @@ static func damage_ops(item: Dictionary, a) -> Array:
 		mult *= output_growth(a, false)
 	ops.append({"op": "mul", "field": "skillMultiplier", "value": mult})
 	return ops
+
+
+## eligibleShape：学了该形态的切换与主技能
+static func eligible_shape(a, index: int) -> bool:
+	return index >= 0 and index < 4 and knows(a, SWITCH[index]) and knows(a, MAIN[index])
+
+
+## currentShape：第一个带着的形态状态，没有算 0
+static func current_shape(a) -> int:
+	for i in 4:
+		if a.state_ids.has(SHAPES[i]):
+			return i
+	return 0
+
+
+## meetsSkillConditions 包装：false 就不能用（其余条件照常由原链判）
+static func meets(a, skill: Dictionary) -> bool:
+	if not own(a):
+		return true
+	var id := int(skill.get("id", 0))
+	if is_main(id) and id != a.attack_skill_id():
+		return false
+	var index := SWITCH.find(id)
+	return index < 0 or (eligible_shape(a, index) and current_shape(a) != index)
 
 
 ## CodexToji.recruit()：入队了返回提示行，已在队返回空

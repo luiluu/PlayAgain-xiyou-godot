@@ -452,6 +452,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if not XYomiJingliu.meets(a, skill):  # 黄泉 meetsSkillConditions：残梦不满 9 不能用 10174
 		return false
+	if not XToji.meets(a, skill):  # 甚尔 meetsSkillConditions：主技能只能用当前形态、切换技能要可切且不是当前形态
+		return false
 	if not XSukuna.meets(a, skill, self):  # 宿傩 meetsSkillConditions：解锁、领域冷却、神灶要蓄力目标、神灶：开要准备层
 		return false
 	if not XMira.meets(a, skill):  # 米拉 meetsSkillConditions：人形／黑龙技按形态、解放的进阶与等级、劫焰不能单放
