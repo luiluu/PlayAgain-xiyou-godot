@@ -1,0 +1,19 @@
+{
+ "sha": "03e74ac97d3d1a4d5e7136319440e26221c27982",
+ "branch": "ci/claude/nezha-tools17",
+ "mode": "full",
+ "base": "origin/main",
+ "passed": true,
+ "scenes": 266,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 13,
+ "longestShardSeconds": 750.2,
+ "testSeconds": 14434,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "daf32b526c9e799046d860222c60d80cf9c9894c",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41156097576",
+ "time": "2026-10-31T01:50:12+00:00"
+}
