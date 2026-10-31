@@ -117,6 +117,20 @@ func _run() -> void:
 	if by_id.has("battle.insulation"):
 		var rows := _battle(by_id["battle.insulation"], false)
 		check("o106.insulation_debuff_blocked", rows[7].a.buffs[0] == 0, rows[7].a.buffs)
+	if by_id.has("battle.possession"):  # 结束后（Adv:196）：队友回到出战名单、记号清掉，身上的阵亡不还原
+		_battle(by_id["battle.possession"], false, func(logic, a):
+			var b: XActor = XState.current.actor(8)
+			check("possession.out_of_logic", not logic.actors.has(b) and b.has_meta("xalien_possessed_by"), logic.actors.map(func(x): return x.actor_id))
+			XAlienBattle.end(logic, 0)
+			check("possession.end_dead_kept", b.state_ids.has(1) and b.hp == 0.0, [b.hp, b.state_ids])
+			check("possession.end_restored", logic.actors.has(b) and XState.current.battle_members().has(b) and not b.has_meta("xalien_possessed_by") and not a.has_meta("xalien_possession"), logic.actors.map(func(x): return x.actor_id)))
+	if by_id.has("battle.possession.glutton"):  # 即死（直接附加阵亡）要到行动结束（endAction 后的 syncRelations，Adv:185）才同步队友
+		_battle(by_id["battle.possession.glutton"], false, func(logic, a):
+			var b: XActor = XState.current.actor(8)
+			a.add_state(1)
+			var before := b.state_ids.has(1)
+			XAlienBattle.finish(logic, [])
+			check("possession.instant_death_at_action_end", not before and b.state_ids.has(1) and b.hp == 0.0, [before, b.hp, b.state_ids]))
 	for id in ["battle.swallow", "battle.offer"]:
 		if by_id.has(id):
 			for result in [0, 1, 2]:
@@ -172,6 +186,12 @@ func _reading(enemies: Array, a, b) -> Dictionary:
 			var ids: Array = a.skills().map(func(sk): return int(sk.id))
 			ra.has = WATCH.filter(func(id): return ids.has(id))
 			ra.usable = WATCH.filter(func(id): return _typed(a, id) and XAlienBattle.active_logic().can_use(a, XDB.rec("Skills", id)))
+		elif str(d.affix) == "possession":  # 出战名单、敌人等级、借来的 9／被动 16 在不在技能表、9 能不能用
+			ra.members = XState.current.battle_members().map(func(m): return m.actor_id)
+			ra.lv = enemies.map(func(e): return int(e.level))
+			var sids: Array = a.skills().map(func(sk): return int(sk.id))
+			ra.has = [9, 16].filter(func(id): return sids.has(id))
+			ra.usable = [9].filter(func(id): return XAlienBattle.active_logic().can_use(a, XDB.rec("Skills", id)))
 		elif str(d.affix) == "erosion":
 			var logic = XAlienBattle.active_logic()
 			ra.seals = _sealed(logic, a)
@@ -322,7 +342,7 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 	var a := s.actor(1)
 	var b := s.actor(8)
 	a.change_level_mv(int(st.get("level", 99)))
-	b.change_level_mv(30)
+	b.change_level_mv(int(st.get("allyLevel", 30)))
 	for id in st.get("learn", []):
 		a.learn_skill(int(id))
 	for id in st.get("teach", []):
@@ -337,6 +357,8 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 	if st.has("affix"):
 		XGear.force_roll = 0.5  # 同参照 Math.random 0.5：属性浮动与词缀随机
 		var item: Dictionary = XAlienation.create(s, "a" if st.has("armor") else "w", int(st.get("armor", st.weapon)), "boss", str(st.affix)).ok
+		if st.has("allyAffix"):  # 队友自己也穿一件本体 1044 的异化武器（同参照，在 a 的之后建）
+			b.equips[0] = XAlienation.create(s, "w", 1044, "boss", str(st.allyAffix)).ok
 		# 吞器供体（背包里的普通独立武器）、衣服栏的普通防具，同参照的建立顺序
 		var donors: Array = st.get("donors", []).map(func(id):
 			var d := XGear.create("weapon", int(id), s)
