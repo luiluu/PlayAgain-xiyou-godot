@@ -6,10 +6,10 @@
 
 ## 变更记录草稿
 
-## 2026-10-31 【cc·审查】核查 饿狼第三期：战斗内进化、解析、反击、追击
+## 2026-10-31 【cc·审查】核查 饿狼第三期：战斗内进化、解析、反击、追击；九个优化开关的回退测试
 
-- 核查覆盖：cc/bailong-garou3（3226cc85）；收尾 285b0b20
-- 结论：通过，没有 P1、P2。伤害钩子、finishAction、trigger、itemCnt 都和原版一致；原版 makeDamageValue 里的进化乘法被 installDamageElementRuntime 整个换掉，「只乘一次」是对的。P3：`battle_logic.gd:1502` 的注释和交付单写成「饿狼不被原生反击」，实际意思是饿狼挨打时自己不做原生反击，代码本身对。详见[报告](核查报告_20261031_审查第13期.md)。
+- 核查覆盖：cc/bailong-garou3（3226cc85）；收尾 285b0b20；cc/nezha-rollback1（32db5af6）、收尾 97511856
+- 结论：通过，没有 P1、P2。伤害钩子、finishAction、trigger、itemCnt 都和原版一致；原版 makeDamageValue 里的进化乘法被 installDamageElementRuntime 整个换掉，「只乘一次」是对的。P3：`battle_logic.gd:1502` 的注释和交付单写成「饿狼不被原生反击」，实际意思是饿狼挨打时自己不做原生反击，代码本身对。rollback1 通过：6 个 const 改成 static var 后没有别的 const 或 match 引用它们，9 条回退测试断言的都是原版行为。详见[报告](核查报告_20261031_审查第13期.md)。
 - 验证：读 diff 对冻结 v0.28 原版源码；没跑 Godot（车道专项 255/255、合并时本机选测 107 个场景已过）。
 
 ## 交接板
