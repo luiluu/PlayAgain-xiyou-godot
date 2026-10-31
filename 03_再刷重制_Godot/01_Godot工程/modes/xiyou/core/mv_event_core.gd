@@ -704,6 +704,9 @@ func _plugin_command(line: String) -> void:
 		"PHWarehouse":
 			if XWarehouse.plugin_command(state(), args):  # PH_Warehouse create／remove（show 交给宿主）
 				return
+		"SceneManager.push(Scene_StarSaveWarehouse)":
+			# 黄金大厅 Map041 EV1「存放」误写成插件指令的一行：原版没有插件认它，无操作（紧跟的同句脚本才打开星级仓库）
+			return
 		"Autosave", "EnableAutosave", "DisableAutosave":
 			# YEP_X_Autosave：Enable／DisableAutosave 开关 $gameSystem.setAutosave（随存档）；「Autosave」在允许时存到最近用过的
 			# 存档位（没手动存过就不存）。公共事件 5 是 Enable→Autosave→Disable，之后的 Autosave 不再写档（原版弹的「存档成功！」小字不做）
