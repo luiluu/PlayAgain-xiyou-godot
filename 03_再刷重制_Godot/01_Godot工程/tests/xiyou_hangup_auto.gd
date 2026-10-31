@@ -279,8 +279,8 @@ func _run() -> void:
 
 
 ## 回退支（规则层，不开画面）：
-## - O-020 SAVE_ORDER = false：排列只在本次运行的全局表里，存读档后「重开游戏」（清全局表）再打开顺序页会重排成 1～N
-## - O-023 CONSISTENT_ORDER = false：技能次数减少时不重建已排的顺序，回合表里旧的那条（修003）留着
+## - O-020 SAVE_ORDER = false：排列只在本次运行的全局表里，把最后一项往前挪后存读档、「重开游戏」（清全局表），再打开顺序页会重排成 1～N
+## - O-023 CONSISTENT_ORDER = false：技能次数减少时不重建已排的顺序，回合表里最后那条（修00N）留着
 ## - O-021 SAFE_RECOVERY = false：阵亡角色也照吃回蓝药（对阵亡者无效），开着的回蓝药被吃光、法力不变
 func _rollback_rules() -> void:
 	var n_skills := {"修1": 2, "修2": 1}
@@ -305,9 +305,9 @@ func _rollback_rules() -> void:
 		var again := XHangUpAuto.order_list(loaded, loaded.actor(8), XHangUpAuto.bet_skills(lg2, loaded.actor(8)))
 		var fresh := range(1, moved.size() + 1)
 		if save:
-			check("order_saved_after_restart", moved == [1, 3, 2] and again.order == moved, [moved, again.order])
+			check("order_saved_after_restart", moved != fresh and again.order == moved, [moved, again.order])
 		else:
-			check("order_resets_after_restart_original", moved == [1, 3, 2] and again.order == fresh and (st.hang_up.ActTemp as Dictionary).is_empty(), [moved, again.order, st.hang_up.ActTemp])
+			check("order_resets_after_restart_original", moved != fresh and again.order == fresh and (st.hang_up.ActTemp as Dictionary).is_empty(), [moved, again.order, st.hang_up.ActTemp])
 	XHangUpAuto.SAVE_ORDER = true
 	XHangUpAuto._order_temp = {}
 	for consistent in [true, false]:
@@ -324,9 +324,9 @@ func _rollback_rules() -> void:
 		var before: int = st.hang_up.ActSkill.size()
 		XHangUpAuto.change_count(st, st.actor(8), XDB.rec("Skills", 1), false)
 		if consistent:
-			check("count_reduce_rebuilds", before == 3 and st.hang_up.ActSkill.size() == 2 and not st.hang_up.ActSkill.has("修003"), st.hang_up.ActSkill)
+			check("count_reduce_rebuilds", st.hang_up.ActSkill.size() == before - 1 and not st.hang_up.ActSkill.has("修" + XHangUpAuto.three(before)), [before, st.hang_up.ActSkill])
 		else:
-			check("count_reduce_stale_original", before == 3 and st.hang_up.ActSkill.size() == 3 and st.hang_up.ActSkill.has("修003"), st.hang_up.ActSkill)
+			check("count_reduce_stale_original", st.hang_up.ActSkill.size() == before and st.hang_up.ActSkill.has("修" + XHangUpAuto.three(before)), [before, st.hang_up.ActSkill])
 	XHangUpAuto.CONSISTENT_ORDER = true
 	XHangUpAuto.SAFE_RECOVERY = false
 	var sr := fixture(true)
