@@ -1,7 +1,7 @@
 class_name XYomiJingliu
 extends RefCounted
 ## 169 黄泉、170 镜流（正式 js/codex/runtime/installNativeYomiJingliuRuntime.js，W.CodexYomi／W.CodexJingliu，两人共用一个模块）。
-## 本期（第一期）做共用框架与黄泉：招募、能力值／被动、公式、伤害钩子；镜流整套留下一期（只留共用的招募表与判定）。
+## 第一期做共用框架与黄泉：招募、能力值／被动、公式、伤害钩子。镜流见文末「镜流第一期」。
 ## - 开机数据：本模块不在运行时改 $data*（只在 isDatabaseLoaded 里核对 169／170 数据在不在、预载图标），转换器无需复现。
 ## - 黄泉能力值：paramPlus 学了 10176 幸运＋888、10177 速度＋777、10182 攻击＋888（XActor._param_plus 挂点）；
 ##   param 进阶 2 次且学了 10186 攻击＋floor(幸运×1.88)；xparam 学了 10185 暴击＋9.99（见 CRIT_FIX）；actionPlusSet 学了 10175 多一个 1（必定再动一次）。
@@ -21,7 +21,22 @@ extends RefCounted
 ## - apply 包装（XBattleLogic._invoke，掩护之后、目标是活着的敌人）：before_apply 本行动第一次（10174 除外）给目标施集真赤 2627 与
 ##   Y_RANDOM_DEBUFFS 随机一个（Math.randomInt(6)，rule 流 "yomi_debuff"；10173 学了 10185 再施一次）；after_apply 命中且目标有负面状态
 ##   残梦＋1（10174 不加），10172／10173／10174 再对其余活着的敌人各结算一次，伤害钩子 skillMultiplier × SPREAD（spread_rate）。
-## 未移植：隐藏呼吸技能分类、图标与品质色、Map132 商店补号角 2931／2932、旧档迁移。镜流（170）全部留下一期。
+## 未移植：隐藏呼吸技能分类、图标与品质色、旧档迁移。
+## 镜流第一期（170，参照 mv_oracle/jingliu_probe → tests/xiyou_jingliu）：
+## - 招募（公共事件 9005 的 CodexJingliu.recruit()）：同黄泉，装上月魄剑匣 4579。
+## - 技能整理（setup 时 normalizeJingliuSkills）：10187～10196 按解锁等级学／忘，忘掉 10197～10199，进阶 ≥1 学 10200～10202、否则忘。
+## - 星魂（学了命途：毁灭 10194 且到级）：paramBase 20 级、40 级各再加一份最大生命基础值，35 级再加一份攻击基础值（XActorModules.param_base）。
+## - 公式 CodexJingliu.damage(a,b,id)：(攻击×r0＋最大生命×r1)×剑势均衡(0.85＋0.15×小/大，生命按 17463/136584 折算)×月魄(1＋0.06×(月魄−2.5)，
+##   用付费之前的月魄)×印记(1＋霜痕 2628 0.1＋裂隙 2629 0.1)；守势项在伤害计算中恒为 1（CodexDamage.isCalculating）。
+## - 伤害钩子镜流部分：剑技物理；戴月魄剑匣时（技能类型 4 除外）普通伤害 +0.25；寒冰（元素 3）伤害：星魂 25 级寒冰 +1，
+##   剑技里 10187／10189／10191 星魂 30 级 ×2、强化剑技 10188／10190／10192 星魂 45 级 ×2、10192 学了 10202 ×1.1。
+##   原版 makeDamageValue 包装同黄泉，被 installDamageElementRuntime 换掉不生效，不移植。
+## - 战斗：剑技必中不闪避；段数固定 {10187:1,10188:3,10189:2,10190:5,10191:2,10192:7,10193:1}；月魄（0～3，只在战斗内）开回合满 3、
+##   强化剑技要 ≥1 才能用、付费时扣 1（先记付费前的值给公式），10187／10189／10191 命中或 10193 打到敌人后 +1
+##   （25 级学了朔望盈满 10195 时前三个 +2），结束战斗清零；10187 命中给主目标霜痕、10189 命中给裂隙。
+## 镜流未移植（第二期）：放血（强化剑技扣队友生命、累计倍率）、昙华绽放（10193 后的 10192 ×1.0666）、强化剑技的追加段与去印记、
+## 裂隙演化（学了 10201 时目标防御 ×0.89、寒冰抗性 +0.0111）、月魄到 2 与放血后的追加行动、开战清放血累计、读档时技能整理、
+## 星魂说明行（界面）、技能图标。
 
 ## 优化登记（O 号待总装分配；原版缺陷）：10185 说明写「暴击率＋999%」，原版包的是 Game_BattlerBase.prototype.xparam，但 dsPassiveSkill
 ## 在插件加载时已把 Game_Actor.prototype.xparam 存成别名（_Game_Actor_xparam），角色的 xparam 走不到这层包装，加成实际不生效
@@ -34,6 +49,13 @@ const Y_ARMOR := 4578
 const J_ARMOR := 4579
 const Y_ROWS := {10171: [50000, 5000, 5000, 500, 7000, 700], 10172: [70000, 7000, 7000, 700, 9000, 900],
 	10173: [80000, 8000, 8000, 800, 10000, 1000], 10174: [230000, 23000, 23000, 2300, 35000, 3500]}
+const J_FROST := 2628
+const J_GAP := 2629
+const J_ROWS := {10187: [99995, 1833.3], 10188: [166665, 3330], 10189: [183330, 3330], 10190: [333330, 5555],
+	10191: [611110, 11110], 10192: [3333330, 33330], 10193: [833330, 11110]}
+const J_REPEATS := {10187: 1, 10188: 3, 10189: 2, 10190: 5, 10191: 2, 10192: 7, 10193: 1}
+const J_ENHANCED := [10188, 10190, 10192]
+const J_UNLOCKS := {10187: 1, 10188: 10, 10189: 15, 10190: 20, 10191: 30, 10192: 40, 10193: 45, 10194: 20, 10195: 25, 10196: 1}
 ## recruit(actorId, armorId, name, artifactName)
 const RECRUIT := {YOMI: [Y_ARMOR, "黄泉", "赤雨双缨"], JINGLIU: [J_ARMOR, "镜流", "月魄剑匣"]}
 const Y_RANDOM_DEBUFFS := [22, 32, 37, 67, 75, 88]
@@ -54,6 +76,14 @@ static func yomi(a) -> bool:
 
 static func yomi_skill(id: int) -> bool:
 	return id >= 10171 and id <= 10174
+
+
+static func jingliu(a) -> bool:
+	return a is XActor and int(a.actor_id) == JINGLIU
+
+
+static func jingliu_skill(id: int) -> bool:
+	return id >= 10187 and id <= 10193
 
 
 static func rank(a) -> int:
@@ -125,6 +155,8 @@ static func formula(a, b, item: Dictionary) -> float:
 static func damage_ops(item: Dictionary, a, b) -> Array:
 	var id := int(item.get("id", 0))
 	var ops := []
+	if jingliu(a):
+		return j_damage_ops(item, a)
 	if not (yomi(a) and yomi_skill(id)):
 		return ops
 	var pen := penetration(a)
@@ -154,13 +186,15 @@ static func _yomi_action(u, skill: Dictionary) -> bool:
 
 ## itemHit 1／itemEva 0
 static func sure(u, skill: Dictionary) -> bool:
-	return _yomi_action(u, skill)
+	return _yomi_action(u, skill) or _j_action(u, skill)
 
 
 ## numRepeats 包装：黄泉技能换成 repeats()，否则原次数；同时开始新行动（清已施印）
 static func begin_action(u, skill: Dictionary, base: int) -> int:
 	_marked = false
 	spread_rate = 0.0
+	if _j_action(u, skill):
+		return int(J_REPEATS[int(skill.id)])
 	return repeats(u, int(skill.id)) if _yomi_action(u, skill) else base
 
 
@@ -174,6 +208,8 @@ static func set_dream(a, n: int) -> void:
 
 ## meetsSkillConditions：10174 残梦不满 9 不能用
 static func meets(a, skill: Dictionary) -> bool:
+	if _j_action(a, skill) and J_ENHANCED.has(int(skill.id)) and moon(a) < 1:
+		return false  # 镜流强化剑技要月魄 ≥1
 	return not (yomi(a) and int(skill.get("id", 0)) == DREAM_SKILL and not XBattleLogic.is_item(skill) and dream(a) < 9)
 
 
@@ -181,6 +217,10 @@ static func meets(a, skill: Dictionary) -> bool:
 static func pay(a, skill: Dictionary) -> void:
 	if yomi(a) and int(skill.get("id", 0)) == DREAM_SKILL and not XBattleLogic.is_item(skill):
 		set_dream(a, maxi(0, dream(a) - 9))
+	if _j_action(a, skill):
+		_j_frame = {"user": a, "skill": skill, "moon_before": moon(a)}  # 镜流施放帧在付费时开（付费在定段数之前）
+		if J_ENHANCED.has(int(skill.id)):
+			_moon[a.get_instance_id()] = maxi(0, moon(a) - 1)
 
 
 ## BattleManager.endBattle：清残梦
@@ -188,6 +228,8 @@ static func end_battle() -> void:
 	_dream.clear()
 	_marked = false
 	spread_rate = 0.0
+	_moon.clear()
+	_j_frame = {}
 
 
 ## Game_Action.apply 包装是否接管（扩散的补充结算不再进来）
@@ -234,6 +276,13 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> Array:
 	return out
 
 
+const J_FROST := 2628
+const J_GAP := 2629
+const J_ROWS := {10187: [99995, 1833.3], 10188: [166665, 3330], 10189: [183330, 3330], 10190: [333330, 5555],
+	10191: [611110, 11110], 10192: [3333330, 33330], 10193: [833330, 11110]}
+const J_REPEATS := {10187: 1, 10188: 3, 10189: 2, 10190: 5, 10191: 2, 10192: 7, 10193: 1}
+const J_ENHANCED := [10188, 10190, 10192]
+const J_UNLOCKS := {10187: 1, 10188: 10, 10189: 15, 10190: 20, 10191: 30, 10192: 40, 10193: 45, 10194: 20, 10195: 25, 10196: 1}
 ## recruit(actorId, armorId, name, artifactName)：已在队返回空数组；否则入队，返回要提示的两条文字
 static func recruit(s: XState, actor_id: int) -> Array:
 	if s.party.has(actor_id):
@@ -259,3 +308,129 @@ static func recruit(s: XState, actor_id: int) -> Array:
 		a.refresh_passive()  # changeEquip 刷新特性与被动
 	s.add_actor(actor_id)
 	return ["小伙伴 " + str(row[1]) + " 加入队伍", "获得并装备专属法宝：" + str(row[2])]
+
+
+# ---- 镜流第一期 ----
+## 月魄（原版 actor._codexJingliuMoon；开回合满 3、结束战斗清零，只在战斗内）：实例 ID → 层数
+static var _moon := {}
+## 本行动（原版记在 Game_Action 上，重制在 paySkillCost 时新开）：行动者、技能、付费前月魄 moon_before、主目标 main、命中 hit
+static var _j_frame := {}
+
+
+static func _j_action(u, skill: Dictionary) -> bool:
+	return jingliu(u) and jingliu_skill(int(skill.get("id", 0))) and not XBattleLogic.is_item(skill)
+
+
+static func moon(a) -> int:
+	return clampi(int(_moon.get(a.get_instance_id(), 0)), 0, 3) if a != null else 0
+
+
+## soul(actor, level)：学了命途：毁灭 10194 且到级
+static func soul(a, level: int) -> bool:
+	return jingliu(a) and a.skill_ids.has(10194) and int(a.level) >= level
+
+
+## normalizeJingliuSkills（Game_Actor.setup 包装）
+static func setup(a) -> void:
+	if not jingliu(a):
+		return
+	for id in J_UNLOCKS:
+		if int(a.level) >= int(J_UNLOCKS[id]):
+			a.learn_skill(id)
+		else:
+			a.forget_skill(id)
+	for id in [10197, 10198, 10199]:
+		a.forget_skill(id)
+	for id in [10200, 10201, 10202]:
+		if rank(a) >= 1:
+			a.learn_skill(id)
+		else:
+			a.forget_skill(id)
+
+
+## Game_Actor.paramBase 包装：v 是原 paramBase；星魂 20／40 级各再加一份最大生命，35 级再加一份攻击
+static func param_base(a, i: int, v: float) -> float:
+	if not jingliu(a):
+		return v
+	var out := v
+	if i == 0:
+		if soul(a, 20):
+			out += v
+		if soul(a, 40):
+			out += v
+	if i == 2 and soul(a, 35):
+		out += v
+	return out
+
+
+## CodexJingliu.damage(a,b,id)
+static func j_formula(a, b, item: Dictionary) -> float:
+	var id := int(item.get("id", 0))
+	if not jingliu(a) or not J_ROWS.has(id):
+		return 0.0
+	var row: Array = J_ROWS[id]
+	var atk := maxf(0.0, a.atk)
+	var hp := maxf(0.0, a.mhp)
+	var scaled := hp * (17463.0 / 136584.0)
+	var high := maxf(atk, scaled)
+	var low := minf(atk, scaled)
+	var balance := low / high if high > 0.0 else 0.0
+	var mine: bool = is_same(_j_frame.get("user"), a) and _j_frame.has("moon_before")
+	var m: int = int(_j_frame.moon_before) if mine else moon(a)
+	var marks := 1.0 + (0.10 if b.state_ids.has(J_FROST) else 0.0) + (0.10 if b.state_ids.has(J_GAP) else 0.0)
+	return (atk * row[0] + hp * row[1]) * (0.85 + 0.15 * balance) * (1.0 + 0.06 * (m - 2.5)) * marks
+
+
+## 伤害钩子 yomi-jingliu 的镜流部分
+static func j_damage_ops(item: Dictionary, a) -> Array:
+	var id := int(item.get("id", 0))
+	var ops := []
+	if jingliu_skill(id):
+		ops.append({"op": "set", "field": "mode", "value": "physical"})
+	if a.has_base_equip("armor", J_ARMOR) and int(item.get("stypeId", 0)) != 4:
+		ops.append({"op": "add", "field": "normalAdd", "value": 0.25})
+	if int(item.get("damage", {}).get("elementId", 0)) == 3:
+		if soul(a, 25):
+			ops.append({"op": "add", "field": "elementAdd", "element": 3, "value": 1.0})
+		if jingliu_skill(id):
+			if [10187, 10189, 10191].has(id) and soul(a, 30):
+				ops.append({"op": "mul", "field": "skillMultiplier", "value": 2.0})
+			if J_ENHANCED.has(id) and soul(a, 45):
+				ops.append({"op": "mul", "field": "skillMultiplier", "value": 2.0})
+			if id == 10192 and a.skill_ids.has(10202):
+				ops.append({"op": "mul", "field": "skillMultiplier", "value": 1.1})
+	return ops
+
+
+## Game_Action.apply 包装（原 apply 之后）：第一次打到活着的敌人记主目标；命中记下
+static func j_applied(u, skill: Dictionary, t, r: Dictionary, alive_before: bool) -> void:
+	if not _j_action(u, skill) or not is_same(_j_frame.get("user"), u) or not (t is XEnemy and alive_before):
+		return
+	if not _j_frame.has("main"):
+		_j_frame["main"] = t
+	if not bool(r.get("missed", false)) and not bool(r.get("evaded", false)):
+		_j_frame["hit"] = true
+
+
+## BattleManager.endAction 包装（原 endAction 之前）：霜痕／裂隙、月魄回复
+static func j_finish(logic, u, skill) -> void:
+	if not skill is Dictionary or not _j_action(u, skill) or not is_same(_j_frame.get("user"), u) or not _j_frame.has("main") or _j_frame.get("finished", false):
+		return
+	_j_frame["finished"] = true
+	var id := int(skill.id)
+	var hit := bool(_j_frame.get("hit", false))
+	var main = _j_frame.main
+	if hit and id == 10187:
+		logic._state_add(main, J_FROST)
+	if hit and id == 10189:
+		logic._state_add(main, J_GAP)
+	if ([10187, 10189, 10191].has(id) and hit) or id == 10193:
+		var gain := 2 if id != 10193 and int(u.level) >= 25 and u.skill_ids.has(10195) else 1
+		_moon[u.get_instance_id()] = mini(3, moon(u) + gain)
+
+
+## BattleManager.startTurn 包装：月魄满 3
+static func start_turn(logic) -> void:
+	var s: XState = logic.state
+	if s != null and s.actors.has(JINGLIU):
+		_moon[s.actors[JINGLIU].get_instance_id()] = 3
