@@ -559,8 +559,11 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Arr
 		for i in range(n):
 			if not alive(friends).is_empty():
 				out.append(_random_target(alive(friends)))
+		XYunshang.set_primary(a, out)
 		return out
-	return XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, _targets_for(a, skill, chosen)))  # 云裳云丝展幅 makeTargets 包装在异化之内
+	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, _targets_for(a, skill, chosen)))  # 云裳云丝展幅 makeTargets 包装在异化之内
+	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
+	return list
 
 
 func _targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Array:

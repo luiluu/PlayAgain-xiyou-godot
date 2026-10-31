@@ -13,8 +13,8 @@ extends RefCounted
 ##   山河击 888.88×max(0,物防＋魔防−防×0.1)，符针 33.33×max(0,魔攻−防×0.1)；防在 CodexDamage 计算中为 0，计算外取目标魔防（物理路线取物防，第二期）。
 ##   觉醒回合数（_yunGatherRounds）、符针记下的魔攻、_yunRaw 都来自第二期的觉醒与派生伤害，第一期为 0／本人魔攻／无。
 ## - 伤害钩子 yunshang 的 build（第 765～773 行）：云裳的伤害行动（伤害类型 1／2／5／6）定魔法；学了双针并行 10277 技能倍率 ×0.555；
-##   学了云丝展幅且单体行动、目标不是 _yunPrimary 时 ×0.77（银针织阵 10278）／0.66（双针）／0.5——_yunPrimary 只在战力估算里设，
-##   实战从不设，所以主目标也吃这一档（原版线上行为，照原版）；戴织神天梭时技能结算 ×1.99。split／enter、六衡与万法同裳的 categoryMax、
+##   学了云丝展幅且单体行动、目标不是主目标 _yunPrimary 时 ×0.77（银针织阵 10278）／0.66（双针）／0.5；主目标＝startAction 包装里
+##   makeTargets 后的第一个目标（第 394 行，重制在 targets_for 末尾记，见 primary）；戴织神天梭时技能结算 ×1.99。split／enter、六衡与万法同裳的 categoryMax、
 ##   符针与灯的倍率是第二期。原版 makeDamageValue 整个换掉的那层（第 309～329 行）被后装的 installDamageElementRuntime 整个换掉、不调旧链，
 ##   不生效，同黄泉／宿傩不移植（山河击取暴伤／终伤下限那段也在里面）。
 ## - 战斗（第 252～265 行）：云裳的伤害技能 itemHit 1、itemEva 0；戴织神天梭时会暴击的行动暴击率 +3（夹到 1）；学了双针并行时伤害行动段数 ×2；
@@ -145,13 +145,22 @@ static func formula(a, b, item: Dictionary, calculating := true) -> float:
 static var gather_rounds := 0
 
 
-static func damage_ops(item: Dictionary, a) -> Array:
+## 主目标（action._yunPrimary）：云裳每次 makeTargets（targets_for）后记第一个目标；apply 包装（第 408 行）没记时取第一个打到的，重制的行动都先过 targets_for
+static var primary = null
+
+
+static func set_primary(u, list: Array) -> void:
+	if own(u):
+		primary = list[0] if not list.is_empty() else null
+
+
+static func damage_ops(item: Dictionary, a, b) -> Array:
 	var ops := []
 	if own(a) and damage_action(item):
 		ops.append({"op": "set", "field": "mode", "value": "magical"})
 		if knows(a, DOUBLE):
 			ops.append({"op": "mul", "field": "skillMultiplier", "value": 0.555})
-		if knows(a, SPREAD) and for_one(item):
+		if knows(a, SPREAD) and for_one(item) and b != primary:
 			ops.append({"op": "mul", "field": "skillMultiplier", "value": 0.77 if knows(a, SILVER) else (0.66 if knows(a, DOUBLE) else 0.5)})
 	if relic(a) and not XBattleLogic.is_item(item) and int(item.get("damage", {}).get("type", 0)) > 0:
 		ops.append({"op": "mul", "field": "settlementMultiplier", "value": 1.99})
