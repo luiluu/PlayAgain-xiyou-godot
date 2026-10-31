@@ -50,7 +50,7 @@ func _run() -> void:
 	_check("troop2_won", logic.is_won(), {"turns": turns, "enemyHp": logic.enemies.map(func(e): return e.hp)})
 	_check("reasonable_length", turns >= 2 and turns <= 30, turns)
 	var r := logic.rewards()
-	_check("rewards_exp_gold", r.exp == roundi(3 * 20 * 4.5) and r.gold > 0, r)
+	_check("rewards_exp_gold", r.exp == 3 * 20 * 8 and r.gold > 0, r)
 	var ups := logic.grant(r)
 	logic.end_battle()
 	_check("exp_granted", s.actor(1).exp_total > 0, s.actor(1).exp_total)

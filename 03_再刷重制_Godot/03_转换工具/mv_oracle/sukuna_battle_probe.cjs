@@ -87,7 +87,7 @@ function run(rank, steps, draws) {
       log.length = 0;
       const [kind, x, y] = st;
       if (kind === 'act') act(bm, a, x, y);
-      else if (kind === 'guard') { act(bm, a, 2, 0); a.setTp(100); }  // 防御后 TP 定回 100：原版防御 apply 给 tpGain 10，重制防御支没给（另报总装）
+      else if (kind === 'guard') act(bm, a, 2, 0);  // 防御 apply 给 tpGain 10，不再定回 100（重制防御支已同样给）
       else if (kind === 'foe') act(bm, foes[x], 1, 0);  // 敌人普通攻击打宿傩
       else if (kind === 'end') { bm._enteredEndPhase = false; bm._phase = 'turn'; bm.endTurn(); bm._phase = 'turn'; }
       else if (kind === 'shield') foes[x]._shield = y;

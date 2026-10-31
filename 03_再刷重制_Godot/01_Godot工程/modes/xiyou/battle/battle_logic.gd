@@ -746,6 +746,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XStateEffects.run("initiate", u, gctx)
 		XStateEffects.run("select", u, gctx)
 		u.guarding = true
+		_user_tp_gain(u, skill)  # apply 命中后的 applyItemUserEffect：防御技能 2 的 tpGain 10（参照 battle_gaps guard.*）
 		_otb_user_shift(u, skill)
 		XStateEffects.run("deselect", u, gctx)
 		XStateEffects.run("conclude", u, gctx)
@@ -1726,11 +1727,18 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	for eff in skill.get("effects", []):
 		_effect(u, t, eff, r)
 	_otb_target_shift(skill, t)
-	_action_resources.silent_gain(u, "tp", float(skill.get("tpGain", 0)) * u.tcr)
+	_user_tp_gain(u, skill)
 	if t.hp <= 0.0 and t.is_dead():
 		_die(t)
 		r.died = true
 	return r
+
+
+## Game_Action.applyItemUserEffect：行动者得 floor(tpGain × tcr)（gainSilentTp）
+func _user_tp_gain(u: XBattler, skill: Dictionary) -> void:
+	var resources := _operation_resources(u)  # 防御支不经 _apply，没有本次行动的资源上下文
+	resources.silent_gain(u, "tp", floorf(float(skill.get("tpGain", 0)) * u.tcr))
+	_finish_lifecycle_operation(resources, u)
 
 
 ## installBossDifficultyRuntime的最外层普通伤害包装。倍率为1时也floor，非正值及自身代价原样传入。
@@ -2101,24 +2109,29 @@ func _avg_agi(list: Array) -> float:
 	return s / maxf(l.size(), 1.0)
 
 
-# ---- 奖励（难度掉率：经验、金钱、物品1~3）----
+# ---- 奖励（经验、金钱；物品掉落见 _roll_drops）----
+## BattleManager.makeRewards（正式版 rpg_managers）：金钱 goldTotal×5、经验 expTotal×8。
+## 经验：Game_Enemy.exp 被后装的 EliteEnemy 改写成「数据库经验 × 神话倍率」，Vitsuno 难度的经验／金钱倍率包在里层、被盖掉不生效
+## （参照 battle_gaps reward.*：难度 1～13 奖励相同）；GT_EquipSuitCore 在 expTotal／goldTotal 外再套套装。
+## 金钱：dsPassiveSkill 的 goldTotal 按出战成员的每个 passiveGRUP 依次 rate += v×0.01×rate，floor(Σ gold×rate × 金钱双倍)。
 func rewards() -> Dictionary:
-	var rates := _difficulty_rates()
-	var exp := 0.0
+	var exp := 0
 	var gold := 0.0
 	var drops := []
-	var gold_up := 0.0
+	var gold_rate := 1.0
 	# GT_EquipSuitCore 用 $gameParty.members()，战斗中即出战成员
 	var reward_members := actors
 	for a in actors:
-		gold_up = maxf(gold_up, _passive_sum(a, "passiveGRUP"))
+		for v in a.passive_values("passiveGRUP"):
+			gold_rate += XActor._num(v) * 0.01 * gold_rate  # 原式 rate += v×0.01×rate（与连乘差在末位，会差一档取整）
 	for e in enemies:
 		if e.hidden:
 			continue  # deadMembers：没出现的成员不算
-		exp += float(e.exp_reward()) * rates[0]
-		gold += float(e.gold_reward()) * rates[1] * (1.0 + gold_up / 100.0)
+		exp += e.exp_reward()
+		gold += float(e.gold_reward()) * gold_rate
 		drops.append_array(drops_of(e))
-	return {"exp": int(XEquipSuits.reward(reward_members,roundi(exp),0)), "gold": int(XEquipSuits.reward(reward_members,roundi(gold),1)), "drops": drops}
+	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
+	return {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8, "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
 
 
 func _difficulty_rates() -> Array:

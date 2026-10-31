@@ -313,11 +313,6 @@ func _run() -> void:
 				continue
 			var got = _case(c.id, c.setup)
 			var want = c.observed
-			if c.id.begins_with("break.fight.") and want is Dictionary and want.has("rewards") and got is Dictionary:
-				# 经验、金钱走通用结算链（难度掉率、套装等，见 settlement 参照），这里只比瓶颈之战清空物品
-				want = want.duplicate(true)
-				want.rewards = {"items": want.rewards.items}
-				got.rewards = {"items": got.rewards.items}
 			check(c.id, (got != null or want == null) and _same(got, want), [got, want])
 	check("second_batch_cases", n >= 60, n)
 	_extra()
