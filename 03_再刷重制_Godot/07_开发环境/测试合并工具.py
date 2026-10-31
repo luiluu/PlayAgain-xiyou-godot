@@ -70,7 +70,18 @@ class AdditionTests(unittest.TestCase):
             self.assertTrue(additions.compare_file('events.json', self.old, self.new)[1])
 
     def test_unknown_collection_is_rejected(self):
-        self.assertTrue(additions.compare_file('unknown.json', self.old, self.new)[1])
+        old, new = {'rows': self.old['cases']}, {'rows': self.new['cases']}            # 没登记、也不是 cases：整段比
+        self.assertTrue(additions.compare_file('unknown.json', old, new)[1])
+
+    def test_unregistered_cases_with_ids_align_by_id(self):
+        # 没登记的 cases 每条都有 id 且不重号：按 id 认（tools23）；插中间算新增，重排不算变化，删一条照旧拒收
+        self.new['cases'].insert(0, self.new['cases'].pop())
+        extra, bad = additions.compare_file('unknown.json', self.old, self.new)
+        self.assertEqual((extra, bad), ([{'collection': 'cases', 'key': '[["id","b"]]', 'count': 1}], []))
+        self.assertEqual(additions.compare_file('unknown.json', self.new, {'cases': self.new['cases'][::-1]}), ([], []))
+        self.assertTrue(additions.compare_file('unknown.json', self.new, self.old)[1])
+        self.assertEqual(additions.field_keys('unknown.json', 'cases', [{'key': 1}], [{'key': 2}]), ('key',))
+        self.assertIsNone(additions.field_keys('unknown.json', 'cases', [{'id': 1}, {'id': 1}]))
 
     def test_missing_keys_are_rejected(self):
         self.new['cases'][-1] = {'delta': {}}

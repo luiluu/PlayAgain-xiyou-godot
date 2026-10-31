@@ -143,6 +143,8 @@ class GuardTests(unittest.TestCase):
         self.assertEqual(self.git('rev-parse', 'HEAD', cwd=self.lane).stdout, self.git('rev-parse', 'main').stdout)
         self.assertEqual(self.git('show-ref', '--verify', '--quiet', 'refs/heads/claude/task').returncode, 0)   # 原分支不删
         self.assertTrue((self.lane / 'scratch.log').exists())
+        self.assertIn('原分支 claude/task 没有自己的提交', r.stdout)                         # app 起的空分支：只提示可删
+        self.assertEqual(self.git('show-ref', '--verify', '--quiet', 'refs/heads/claude/task').returncode, 0)
         self.git('switch', '-q', 'claude/task', cwd=self.lane)
         self.new_worktree('--branch', 'cc/nezha-y')                                        # --from 缺省为 main
         self.assertEqual(self.git('rev-parse', 'HEAD', cwd=self.lane).stdout, self.git('rev-parse', 'main').stdout)
@@ -156,6 +158,10 @@ class GuardTests(unittest.TestCase):
         r = self.new_worktree('--branch', 'claude/task')
         self.assertIn('已存在', r.stderr)
         self.assertEqual(self.commit(self.lane).returncode, 0)
+        r = self.new_worktree('--branch', 'cc/has-work')                                    # 原分支有自己的提交：不提示删
+        self.assertIn('切出 cc/has-work', r.stdout)
+        self.assertNotIn('用不着可删', r.stdout)
+        self.git('switch', '-q', 'claude/task', cwd=self.lane)
         (self.lane / 'f.txt').write_text('dirty')
         r = self.new_worktree('--branch', 'cc/z')
         self.assertNotEqual(r.returncode, 0)
