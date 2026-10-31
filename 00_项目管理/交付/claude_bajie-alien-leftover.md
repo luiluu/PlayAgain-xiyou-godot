@@ -1,7 +1,8 @@
 # 交付：claude/bajie-alien-leftover
 
 - 车道／工作者：C 规则／八戒（Claude，八戒_91，Opus／medium）
-- 状态：进行中
+- 状态：可合并
+- 本分支从 claude/bajie-warehouse 末端 80e6ab99 切（唐僧交代），带着星级仓库期一的提交；请在 bajie-warehouse 之后合。
 
 ## 现状核对（交接板「异化没做（八戒 dev.206／208／209）」与 dev.210 新增，逐条对冻结 v0.28 installAlienation*.js）
 
@@ -65,8 +66,13 @@
 
 ## 验证
 
-（待写）
+- 合 main（c758dd62，nezha-tools17，没碰探针／切片）后 `同步正式西游.py --accept-additions` 通过（「新增用例，已接受（不登记）」：alien_affix 54→56；events 5806→5808 是本分支带的星级仓库 Map041），留了产物指纹。
+- 本机选测 19 个场景全过：`xiyou_alien_affix`（2037/2037）、`xiyou_alien_battle`、`xiyou_alien_config`、`xiyou_alien_workshop`、`xiyou_boss_output`、`xiyou_boss_output_context`、`xiyou_mira_battle`、`xiyou_race_battle`、`xiyou_smart_ai` 四份、`xiyou_state_effects`／`_tp`、`xiyou_rules`／`_d1b`／`_d1c`／`_d1d`、`xiyou_event_compare`。
+- 反向验证：见变更记录草稿第 1 条。
+- 没跑全量与非 Godot 检查。
 
 ## 本分支提交
 
-（待写）
+- eab6787d 异化遗留①：烈变加成接行动帧扣血，探针两例
+- fbb50c98 交付单（现状核对表）
+- （本提交）交付单可合并
