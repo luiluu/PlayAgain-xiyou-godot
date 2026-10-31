@@ -26,7 +26,8 @@ const ACTOR = 170, BIG_HP = 1e12, TROOP = 3, FROST = 2628, GAP = 2629;
 const key = b => !b ? null : b.isActor() ? 'a' + b.actorId() : 'e' + b.index();
 const uncap = () => w.eval('$gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
 
-// 新局、镜流 level 级、进阶 rank、招募、给一把剑（编号 2）、再入队 1；全队生命加 1e12（队友 1 的生命另乘 allyRate）、敌群 3 生命加 1e12；开第一回合
+// 新局、镜流 level 级、进阶 rank、招募、给一把剑（编号 2）；全队生命加 1e12（opts.allyHp 另设队友 1 的生命）、敌群 3 生命加 1e12；开第一回合。
+// 注意：下面 eval 清队伍不生效（新局的 1、8、9、10 还在），出战是 1、8、9、10、170 五人，放血扣四个队友；重制专项照这个队伍比
 function battle(level, rank, opts = {}) {
   newGame(); uncap();
   w.eval('$gameParty._actors=[];');
