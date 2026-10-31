@@ -2067,6 +2067,37 @@ for name in filter(None, files):
                     reason = merge.lane_protected(self.root, {'worktree': str(wt), 'branch': 'claude/task', 'base': 'HEAD'})
                 self.assertIn('无法确认有无活动会话', reason)
 
+    def test_app_session_keeps_idle_worktree(self):
+        # 总装七 10-31（tools27）：审查会话空闲时没有进程 cwd 在工作树里，lsof 认不出，--finish 清理把它删了。
+        # 桌面 app 的会话记录（claude-code-sessions/*/*/local_*.json）里有没归档、用这个工作树的会话就只提示不删
+        sessions = Path(self.tmp.name) / 'app_sessions'
+        rec = sessions / 'acct' / 'org' / 'local_1.json'
+        rec.parent.mkdir(parents=True)
+        lane = {'worktree': str(self.wt), 'branch': 'claude/task', 'base': 'HEAD'}
+        env = {'XIYOU_APP_SESSIONS': str(sessions)}
+        with mock.patch.dict(os.environ, env), mock.patch.object(merge, 'active_cwds', lambda _p: []):
+            rec.write_text(json.dumps({'sessionId': 'local_1', 'title': '清理核查积压', 'worktreePath': str(self.wt), 'isArchived': False}))
+            self.assertEqual(merge.app_session(self.wt), '清理核查积压')
+            self.assertIn('没归档的会话「清理核查积压」', merge.lane_protected(self.root, lane))
+            rec.write_text(json.dumps({'sessionId': 'local_1', 'title': 'x', 'cwd': str(self.wt) + '/', 'isArchived': False}))
+            self.assertEqual(merge.app_session(self.wt), 'x')  # 只记了 cwd 的也认
+            rec.write_text(json.dumps({'sessionId': 'local_1', 'worktreePath': str(self.wt), 'isArchived': True}))
+            self.assertIsNone(merge.app_session(self.wt))  # 归档了就不拦
+            rec.write_text(json.dumps({'sessionId': 'local_1', 'worktreePath': str(self.wt) + '-other', 'isArchived': False}))
+            self.assertIsNone(merge.app_session(self.wt))
+            rec.write_text('{broken')
+            self.assertIsNone(merge.app_session(self.wt))  # 读不了的跳过
+            rec.write_text(json.dumps({'worktreePath': str(self.wt), 'isArchived': False}))
+            with mock.patch.dict(os.environ, {'XIYOU_APP_SESSION_GUARD': '0'}):
+                self.assertIsNone(merge.app_session(self.wt))  # 回退开关
+        # 真走一遍 --finish：会话没归档时工作树留着
+        with mock.patch.dict(os.environ, env):
+            self.assertEqual(self.call(), 0, self.last_output)
+            self.register()
+            self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertTrue(self.wt.exists())
+        self.assertIn('没归档的会话', self.last_output)
+
     def test_abort_and_lane_redelivery_replans(self):
         self.put(str(merge.PROJECT / 'modes/测试.gd'), '# main version\n')
         self.g('add', '.'); self.g('commit', '-m', 'conflicting main update')
