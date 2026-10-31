@@ -7,6 +7,7 @@
     {"tier": "甲", "match": "^03_再刷重制_Godot/01_Godot工程/modes/.*(save|存档)", "why": "存档"},
     {"tier": "乙", "match": "^03_再刷重制_Godot/03_转换工具/xiyou_slice\\.json$", "why": "切片内容（楼层／地图）"},
     {"tier": "乙", "match": "^03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/", "why": "地图"},
+    {"tier": "乙", "match": "^03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/", "why": "界面页面（总装六 10-31 定）"},
     {"tier": "乙", "match": "^03_再刷重制_Godot/01_Godot工程/tests/", "why": "对应测试"},
     {"tier": "丙", "match": "^03_再刷重制_Godot/(07_开发环境|03_转换工具|04_验证)/", "why": "工具与验证"},
     {"tier": "丙", "match": "^(00_项目管理/|\\.github/|AGENTS\\.md$|CLAUDE\\.md$|README[^/]*\\.md$)", "why": "项目管理与规则"},
