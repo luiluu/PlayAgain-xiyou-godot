@@ -181,6 +181,7 @@ func _run() -> void:
 		check("help.extras-retained",not initial_extras.is_empty() and result.help.extras.map(func(c): return c.rows) == initial_extras)
 		check("help.minimum-readable",result.help.fontSizes.all(func(n): return n >= 16))
 	var layer := get_tree().root.get_node_or_null("XToast") as XToast
+	print("[diag] font path=",XUI.font().resource_path," exists=",ResourceLoader.exists(GameFont.PATH)," height18=",XUI.font().get_height(18)," fonts=",str(XUI.font()))
 	check("toast.exists",layer != null and layer.stack.get_child_count() == 2)
 	if layer != null and layer.stack.get_child_count() == 2:
 		for i in 120:
