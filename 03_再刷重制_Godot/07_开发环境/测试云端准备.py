@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -82,6 +83,79 @@ exit 0
         self.assertNotEqual(failed.returncode, 0)
         self.assertIn('ERROR:', failed.stderr)
         self.assertNotIn('export GODOT=', failed.stdout)
+
+
+class CloudWaitTests(unittest.TestCase):
+    """云端选测.py wait：临时资料库＋本地裸库充当 GitHub，gh 用桩（XIYOU_GH）。"""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='xiyou_cloud_wait_')
+        self.addCleanup(self.temp.cleanup)
+        root = Path(self.temp.name).resolve()
+        self.repo, self.remote = root / 'repo', root / 'remote.git'
+        env_dir = self.repo / '03_再刷重制_Godot/07_开发环境'
+        env_dir.mkdir(parents=True)
+        shutil.copy2(HERE / '云端选测.py', env_dir)
+        self.tool = env_dir / '云端选测.py'
+        self.env = dict(os.environ, GIT_AUTHOR_NAME='f', GIT_AUTHOR_EMAIL='f@x.invalid', GIT_COMMITTER_NAME='f', GIT_COMMITTER_EMAIL='f@x.invalid')
+        self.env.pop('GITHUB_ACTIONS', None)
+        subprocess.run(['git', 'init', '-q', '--bare', str(self.remote)], check=True)
+        self.git('init', '-q', '-b', 'main')
+        self.git('remote', 'add', 'origin', str(self.remote))
+        self.git('add', '.'); self.git('commit', '-q', '-m', 'base')
+        self.sha = self.git('rev-parse', 'HEAD')
+        self.gh = root / 'gh'
+
+    def git(self, *args, stdin=None):
+        return subprocess.run(['git', '-C', str(self.repo), *args], input=stdin, capture_output=True, text=True, check=True, env=self.env).stdout.strip()
+
+    def publish(self, mode, passed=True):
+        blob = lambda text: self.git('hash-object', '-w', '--stdin', stdin=text)
+        tree = self.git('mktree', stdin='100644 blob %s\tresult.json\n100644 blob %s\tsummary.md\n'
+                        % (blob(json.dumps({'passed': passed})), blob('云端汇总 ' + mode)))
+        commit = self.git('commit-tree', tree, '-m', 'r')
+        self.git('push', '-q', 'origin', '%s:refs/ci/results/%s/%s' % (commit, self.sha, mode))
+
+    def stub_gh(self, statuses):
+        self.gh.write_text('#!/bin/sh\necho \'%s\'\n' % json.dumps([{'status': s} for s in statuses])); self.gh.chmod(0o755)
+
+    def wait(self, *args, timeout=6):
+        env = dict(self.env, XIYOU_GH=str(self.gh))
+        return subprocess.run([sys.executable, str(self.tool), 'wait', self.sha, '--interval', '1', '--timeout', str(timeout), *args],
+                              capture_output=True, text=True, env=env)
+
+    def test_full_result_satisfies_affected_wait(self):
+        """选测扩成整轮时云端把结果写在 /full：等 affected 的（检查.sh）也要认。"""
+        self.stub_gh(['in_progress'])
+        self.publish('full')
+        r = self.wait('--mode', 'affected')
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, '云端汇总 full'), r.stderr)
+
+    def test_affected_result_and_failure(self):
+        self.stub_gh(['in_progress'])
+        self.publish('affected', passed=False)
+        self.assertEqual(self.wait().returncode, 1)
+
+    def test_full_wait_ignores_affected_result(self):
+        self.stub_gh(['in_progress'])
+        self.publish('affected')
+        r = self.wait('--mode', 'full', timeout=2)
+        self.assertEqual(r.returncode, 124, r.stdout)
+
+    def test_timeout_when_run_still_going(self):
+        self.stub_gh(['in_progress'])
+        r = self.wait(timeout=2)
+        self.assertEqual(r.returncode, 124)
+        self.assertIn('还没有', r.stdout)
+
+    def test_finished_run_without_result_fails_fast(self):
+        self.stub_gh(['completed'])
+        r = self.wait(timeout=60)
+        self.assertEqual(r.returncode, 3, r.stdout)
+        self.assertIn('云端运行已结束', r.stdout)
+
+    def test_gh_unavailable_falls_back_to_timeout(self):
+        self.gh.write_text('#!/bin/sh\nexit 1\n'); self.gh.chmod(0o755)
+        self.assertEqual(self.wait(timeout=2).returncode, 124)
 
 
 if __name__ == '__main__':

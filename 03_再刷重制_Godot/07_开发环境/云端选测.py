@@ -192,13 +192,29 @@ def cmd_run(a):
     return 0
 
 
+def actions_finished(sha):
+    """GitHub Actions 上这个提交的「云端选测」运行是否都已结束：True／False；查不到（没装 gh、没网、没有运行记录）返回 None。
+    结果ref只在运行最后一步写出，运行已结束还没有结果ref，就是计划被跳过、准备失败或被取消，再等下去不会有结果。"""
+    gh = os.environ.get('XIYOU_GH') or shutil.which('gh')
+    if not gh:
+        return None
+    p = subprocess.run([gh, 'run', 'list', '--commit', sha, '--json', 'status', '--limit', '20'], cwd=ROOT, capture_output=True, text=True)
+    try:
+        runs = json.loads(p.stdout) if p.returncode == 0 else []
+    except ValueError:
+        return None
+    return all(r.get('status') == 'completed' for r in runs) if runs else None
+
+
 def cmd_wait(a):
     sha = git('rev-parse', a.commit or 'HEAD')
     bare, remote = cache_repo(), remote_name()
     url = git('remote', 'get-url', remote)
-    modes = [a.mode] if a.mode else ['affected', 'full']
+    # 选测扩成整轮时（改了共用文件、或基准落后很多）结果写在 /full：整轮覆盖选测，等选测的也认它
+    modes = ['affected', 'full'] if a.mode in (None, 'affected') else [a.mode]
     refs = [RESULT_PREFIX + sha + '/' + m for m in modes]
     deadline = time.time() + a.timeout
+    finished_seen = 0
     while True:
         found = ls_remote(url, *refs, git_dir=bare)
         if found:
@@ -210,6 +226,11 @@ def cmd_wait(a):
         if time.time() > deadline:
             print('等了 %d 秒还没有 %s 的云端结果（看 GitHub Actions「云端选测」）' % (a.timeout, sha[:10]))
             return 124
+        # 运行已结束却没有结果：连续两次都是结束状态（留出结果ref写出的时间）才判定，免得白等到超时
+        finished_seen = finished_seen + 1 if actions_finished(sha) else 0
+        if finished_seen >= 2:
+            print('云端运行已结束，但没有 %s 的结果（可能被取消、计划被跳过或准备失败），看 GitHub Actions「云端选测」' % sha[:10])
+            return 3
         time.sleep(a.interval)
 
 
