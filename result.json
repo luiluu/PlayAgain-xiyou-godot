@@ -1,0 +1,21 @@
+{
+ "sha": "4a5456b225f579906dea55de93308393969edafe",
+ "branch": "ci/claude/bajie-star-warehouse",
+ "mode": "affected",
+ "base": "origin/main",
+ "passed": false,
+ "scenes": 260,
+ "failed": [
+  "xiyou_book_capacity_ui.tscn"
+ ],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 13,
+ "longestShardSeconds": 873.9,
+ "testSeconds": 14749,
+ "generatedRef": "refs/ci/generated/claude/bajie-star-warehouse",
+ "generatedCommit": "f97f4954ba030541f3052ed823e40c1bb5cd9b77",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41157226971",
+ "time": "2026-10-31T02:10:03+00:00"
+}
