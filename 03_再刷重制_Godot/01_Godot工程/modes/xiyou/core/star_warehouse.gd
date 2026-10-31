@@ -61,9 +61,19 @@ static func pets() -> Array:
 	return _pets
 
 
-## 存放画面的装备列表（$gameParty.armors().concat(weapons())）：背包里的防具在前、武器在后，各自按入手先后
+## 存放画面的装备列表（$gameParty.armors().concat(weapons())）：背包里的防具在前、武器在后，各自按本体编号排、同本体按入手先后
+## （参照 star_warehouse：入手 6、1044、52，列出来是 6、52、1044）
 static func carried_gear(s: XState) -> Array:
-	return s.gear.filter(func(e): return str(e.kind) == "armor") + s.gear.filter(func(e): return str(e.kind) == "weapon")
+	return _by_base(s.gear, "armor") + _by_base(s.gear, "weapon")
+
+
+static func _by_base(list: Array, kind: String) -> Array:
+	var rows := []
+	for i in list.size():
+		if str(list[i].kind) == kind:
+			rows.append([int(list[i].base), i, list[i]])
+	rows.sort_custom(func(x, y): return x[0] < y[0] or (x[0] == y[0] and x[1] < y[1]))
+	return rows.map(func(r): return r[2])
 
 
 static func storable(rec: Dictionary) -> bool:
