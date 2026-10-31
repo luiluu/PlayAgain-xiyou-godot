@@ -146,6 +146,7 @@ func _run() -> void:
 		_check("skill_book_extra_clear_of_row", not Rect2(card.position + ex.position, ex.size).grow(10).intersects(Rect2(0, 187, 768, 36)), [card.position, ex.position])
 	card.show_for(XDB.rec("Items", 1))
 	_check("plain_item_no_extra", card.extras.is_empty())
+	_rollback_display(card)
 	# 七档品质（西游 v0.15～v0.18）：映射、标签（多标签用 ·）、边框、列表名字色
 	var grades := range(16).map(func(q): return XQuality.grade_of(q))
 	_check("quality_grades", grades == [0, 0, 1, 2, 3, 4, 4, 4, 5, 5, 5, 5, 6, 5, 6, 6] and XQuality.grade_of(20) == 6, grades)
@@ -165,3 +166,50 @@ func _run() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)
+
+
+## 原版 Sprite_ItemHelp.updatePos＋setItem 的位置公式（优化登记 O-008「原版行为」栏）：战斗在行左 −宽−80，其他在行右 −4，行底 −4，
+## 出画面贴边留 4；再 x<900 右移 52（否则左移 10）、y<220 下移 32、y>400 上移 100、仍>500 再上移 250，超出右／下边留 30
+static func _original_pos(anchor: Rect2, sz: Vector2, battle: bool) -> Vector2:
+	var p := Vector2(anchor.position.x - sz.x - 80, anchor.end.y - 4) if battle else Vector2(anchor.end.x - 4, anchor.end.y - 4)
+	p.x = 4 if p.x < 0 else (1280 - sz.x - 4 if p.x + sz.x > 1280 else p.x)
+	if p.y + sz.y > 720:
+		p.y = 720 - sz.y - 4
+	p.x += 52 if p.x < 900 else -10
+	p.y += 32 if p.y < 220 else 0
+	p.y -= 100 if p.y > 400 else 0
+	p.y -= 250 if p.y > 500 else 0
+	if p.x + sz.x > 1280:
+		p.x = 1280 - sz.x - 30
+	if p.y + sz.y > 720:
+		p.y = 720 - sz.y - 30
+	return p.round()
+
+
+## O-007／O-008 回退：MIN_FONT 设 0 回到原版字号（描述 10），卡变矮；PLACE_NEAR 设 false 照原版位置公式、技能书附卡间距回到 10
+func _rollback_display(card: XHelpCard) -> void:
+	var item := XDB.rec("Items", 1)
+	card.show_for(item)
+	var big_h := card.size.y
+	XHelpCard.MIN_FONT = 0
+	var small := XHelpCard.new()
+	add_child(small)
+	small.show_for(item)
+	XHelpCard.MIN_FONT = 16
+	_check("min_font_original_O007", small.min_font == 0 and small.size.y < big_h, [small.min_font, small.size.y, big_h])
+	small.queue_free()
+	XHelpCard.PLACE_NEAR = false
+	for c in [[Rect2(0, 187, 768, 36), false], [Rect2(0, 600, 768, 36), false], [Rect2(900, 300, 300, 36), true]]:
+		card.place_for_row(c[0], c[1])
+		var want := _original_pos(c[0], card.size, c[1])
+		_check("place_original_O008_%d_%d" % [int(c[0].position.y), int(c[1])], card.position == want, [card.position, want])
+	card.show_for(XDB.rec("Items", 15))
+	card.place_for_row(Rect2(0, 187, 768, 36))
+	if card.extras.size() == 1:
+		var ex: XHelpCard = card.extras[0]
+		_check("extra_gap_original_O008", ex.position == Vector2(card.size.x + 10, 0) or ex.position == Vector2(-10 - ex.size.x, 0)
+			or ex.position == Vector2(0, card.size.y + 10), [card.position, card.size, ex.position])
+	else:
+		_check("extra_gap_original_O008", false, card.extras.size())
+	XHelpCard.PLACE_NEAR = true
+	card.show_for(item)

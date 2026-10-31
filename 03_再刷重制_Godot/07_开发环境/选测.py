@@ -11,6 +11,8 @@
   键不认识、JSON 解析失败、文件新增或删除时退回整组 converter。对照表 sliceSections.enabled 设 false 即完全回到整组。
   其中 maps／keepEvents（slice_map）再按图号收窄楼层专项（sliceSections.narrowFloorsByMap，哪吒_3）：只留引用了增删改图号的
   xiyou_floor*／xiyou_map* 场景，遍历全部楼层的与认不出图号的照旧选；子开关 enabled 设 false 回到楼层专项全选。
+  认出的图号不保证完整（沙僧第八期 F1：MAPS 出口表、HUB 常量、_wait_map(变量)），所以脚本（连同 preload 的 tests/ 脚本）里
+  出现改动图号的整数字面量、或与 always 场景共用脚本的也保留（anyLiteral，tools24；设 false 回到只按认出的图号求交集）。
 - 分叉点（mergeBase，2026-10-26）：基准不是 HEAD 的祖先时（车道跑 --affected main 而 main 已前进），改用 merge-base(基准, HEAD)，
   只算本分支自己的改动；基准是祖先时（总装批首）两者相同。对照表 mergeBase 设 false 即按基准本身比。
 - 工具引用（toolRefs，测试夹具用）：没有 Godot 测试引用、但 07_开发环境／03_转换工具 的脚本按文件名读它时，跑工具回归、不整轮
@@ -202,10 +204,26 @@ class Tests:
             return [name] if name in self.scenes else []
         return [s for s in self.scenes if re.search(r'res://tests/' + re.escape(name) + r'"', self.text.get(s, ''))]
 
+    def scripts(self, scene):
+        """场景挂的 tests/ 脚本，连同这些脚本再 preload／extends 的 tests/ 脚本（xiyou_reach_check.gd、xiyou_map186.gd 等，tools24）。"""
+        seen, todo = [], re.findall(r'res://tests/([\w.]+\.gd)"', self.text.get(scene, ''))
+        while todo:
+            name = todo.pop(0)
+            if name not in seen:
+                seen.append(name)
+                todo += re.findall(r'res://tests/([\w.]+\.gd)"', self.text.get(name, ''))
+        return seen
+
+    def mentions(self, scene, ids):
+        """场景的脚本里有没有等于 ids 中某个图号的整数字面量（MAPS 出口表、HUB 常量、坐标表里的图号都算；tools24）。
+        只看 .gd，不看 .tscn 头里的 load_steps／format 之类。宁可多选：坐标、次数碰上同一个数也保留。"""
+        return any(int(m) in ids for n in self.scripts(scene)
+                   for m in re.findall(r'(?<![\w.])(\d+)(?![\w.])', self.text.get(n, '')))
+
     def map_ids(self, scene):
-        """场景（连同它挂的 tests/ 脚本）引用的地图编号；一个也认不出时返回 None（按判不出处理）。"""
-        texts = [self.text.get(scene, '')]
-        texts += [self.text.get(n, '') for n in re.findall(r'res://tests/([\w.]+\.gd)"', texts[0])]
+        """场景（连同它挂的、再 preload 的 tests/ 脚本）按 MAP_REF_PATTERNS 认出的地图编号；一个也认不出时返回 None（按判不出处理）。
+        认出的不保证完整（沙僧第八期 F1）：收窄时另用 mentions 兜底。"""
+        texts = [self.text.get(scene, '')] + [self.text.get(n, '') for n in self.scripts(scene)]
         ids = set()
         for text in texts:
             for pattern in MAP_REF_PATTERNS:
@@ -252,8 +270,13 @@ def select(root, base, table=TABLE, head=None):
         if map_ids is not None and narrow.get('enabled') and group in narrow.get('groups', []):
             floors = {s for p in narrow.get('scenes', []) for s in tests.glob(p)}
             always = {s for p in narrow.get('always', []) for s in tests.glob(p)}
+            # anyLiteral（tools24，沙僧第八期 F1／P2）：认出的图号不全时（MAPS 出口表、HUB 常量、_wait_map(变量)），脚本里只要出现
+            # 改动图号的字面量、或与 always 场景共用脚本（按内容数据遍历），就保留；设 false 回到只按认出的图号求交集
+            guard = narrow.get('anyLiteral', True)
+            shared = {n for s in always for n in tests.scripts(s)}
             keep = {s for s in floors & picked
-                    if s in always or tests.map_ids(s) is None or tests.map_ids(s) & map_ids}
+                    if s in always or tests.map_ids(s) is None or tests.map_ids(s) & map_ids
+                    or guard and (tests.mentions(s, map_ids) or shared & set(tests.scripts(s)))}
             dropped = (floors & picked) - keep
             picked -= dropped
             why += '，楼层专项按图号 %s 收窄（留 %d、省 %d）' % ('、'.join(map(str, sorted(map_ids))) or '无',

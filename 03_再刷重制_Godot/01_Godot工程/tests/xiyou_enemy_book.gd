@@ -196,6 +196,18 @@ func _run() -> void:
 		if d != "" or names != want_names or not e.elite:
 			bad.append("%d %s %s %s" % [id, d, JSON.stringify(names).left(200), JSON.stringify(want_names).left(200)])
 	check("oracle_elite", bad.is_empty(), {"count": bad.size(), "first": bad.slice(0, 3)})
+	# O-078 回退（BOOK_FIXED_NORMAL = false）：原版每次打开图鉴新建 Game_Enemy，神话照常按几率抽，同一只敌人时而普通时而【神话】
+	var eid := int(ref.elite[ref.elite.keys()[0]][0])
+	var elite_seen := {}
+	XEnemyBookPage.BOOK_FIXED_NORMAL = false
+	for i in 64:
+		elite_seen[XEnemyBookPage.new_enemy(eid).elite] = true
+	XEnemyBookPage.BOOK_FIXED_NORMAL = true
+	var fixed_seen := {}
+	for i in 16:
+		fixed_seen[XEnemyBookPage.new_enemy(eid).elite] = true
+	check("book_random_elite_original", elite_seen.has(true) and elite_seen.has(false), elite_seen)
+	check("book_fixed_normal", fixed_seen.keys() == [false], fixed_seen)
 	page.queue_free()
 	await frames()
 	await _flow(ref)

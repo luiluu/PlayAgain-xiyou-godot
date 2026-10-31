@@ -70,7 +70,18 @@ class AdditionTests(unittest.TestCase):
             self.assertTrue(additions.compare_file('events.json', self.old, self.new)[1])
 
     def test_unknown_collection_is_rejected(self):
-        self.assertTrue(additions.compare_file('unknown.json', self.old, self.new)[1])
+        old, new = {'rows': self.old['cases']}, {'rows': self.new['cases']}            # 没登记、也不是 cases：整段比
+        self.assertTrue(additions.compare_file('unknown.json', old, new)[1])
+
+    def test_unregistered_cases_with_ids_align_by_id(self):
+        # 没登记的 cases 每条都有 id 且不重号：按 id 认（tools23）；插中间算新增，重排不算变化，删一条照旧拒收
+        self.new['cases'].insert(0, self.new['cases'].pop())
+        extra, bad = additions.compare_file('unknown.json', self.old, self.new)
+        self.assertEqual((extra, bad), ([{'collection': 'cases', 'key': '[["id","b"]]', 'count': 1}], []))
+        self.assertEqual(additions.compare_file('unknown.json', self.new, {'cases': self.new['cases'][::-1]}), ([], []))
+        self.assertTrue(additions.compare_file('unknown.json', self.new, self.old)[1])
+        self.assertEqual(additions.field_keys('unknown.json', 'cases', [{'key': 1}], [{'key': 2}]), ('key',))
+        self.assertIsNone(additions.field_keys('unknown.json', 'cases', [{'id': 1}, {'id': 1}]))
 
     def test_missing_keys_are_rejected(self):
         self.new['cases'][-1] = {'delta': {}}
@@ -1390,6 +1401,39 @@ for name in filter(None, files):
         self.assertEqual(self.call_task('sukuna2', '--branch', 'cc/compassionate-gagarin-ec734e', '--finish'), 0, self.last_output)
         self.assertFalse(wt.exists())
 
+    def test_cc_branch_with_old_claude_sheet_merges_and_two_sheets_refuse(self):
+        """10-31 八戒：分支 cc/bajie-blackflash、交付单却叫 claude_bajie-blackflash.md，总装只好建 claude/ 别名分支绕（tools22）。
+        cc_／claude_ 两种前缀都找：只有一份就用它；两份都在就报错，不随便挑一份。"""
+        wt = self.cc_lane('blackflash')
+        sheet = wt / '00_项目管理/交付/cc_blackflash.md'
+        old = sheet.with_name('claude_blackflash.md')
+        old.write_text(sheet.read_text())
+        self.g('add', '.', cwd=wt); self.g('commit', '-m', 'second sheet', cwd=wt)
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n\n## 待交叉核查\n| cc/blackflash |\n## end\n')
+        self.g('add', '.'); self.g('commit', '-m', 'board')
+        self.assertEqual(self.call_task('blackflash'), 1)
+        self.assertIn('2 份交付单', self.last_output)
+        self.assertIn('claude_blackflash.md', self.last_output)
+        self.g('rm', '-q', str(sheet), cwd=wt); self.g('commit', '-m', 'keep claude_ sheet only', cwd=wt)
+        self.assertEqual(self.call_task('blackflash'), 0, self.last_output)
+        self.assertIn('【cc】新写法', (self.root / merge.LOG).read_text())
+        self.assertFalse((self.root / '00_项目管理/交付/claude_blackflash.md').exists())
+        self.assertEqual(self.call_task('blackflash', '--finish'), 0, self.last_output)
+        self.assertFalse(wt.exists())
+
+    def test_both_cc_and_claude_branches_ask_for_branch_option(self):
+        wt = self.cc_lane('twin')
+        self.g('branch', 'claude/twin', 'cc/twin')                        # 只有 cc/twin 有工作树时照工作树合并，不报错
+        self.g('worktree', 'remove', '--force', str(wt))
+        self.assertEqual(self.call_task('twin'), 1)
+        self.assertIn('须有且只有一个', self.last_output)
+        self.assertIn('cc/twin、claude/twin 都在，用 --branch <分支> 指定', self.last_output)
+        wt2 = Path(self.tmp.name) / 'lane_twin2'
+        self.g('worktree', 'add', str(wt2), 'claude/twin')
+        self.g('worktree', 'add', str(wt), 'cc/twin')
+        self.assertEqual(self.call_task('twin'), 1)
+        self.assertIn('都有工作树，用 --branch <分支> 指定', self.last_output)
+
     def test_cc_review_branch_and_sheet_executor_write_no_review_needed(self):
         state = {'branch': 'cc/review-3', 'target': 'cc/review-3', 'delivery': 'x.md'}
         self.assertEqual(merge.review_status(self.root, state), '无')
@@ -1936,6 +1980,39 @@ for name in filter(None, files):
                     for k in env:
                         os.environ.pop(k)
         self.assertEqual(self.call(), 0, self.last_output)  # 健康的假 godot 照常通过
+
+    def test_abort_refuses_pushed_merge_after_parse_failure(self):
+        # 沙僧第七期 T2／P2：解析检查不过时 state 停在 planned、没记 mergeCommit，--abort 原来不查远端，把已推送的合并退回 base
+        bare = self.github()
+        godot = self.root / merge.ENV / 'godot'
+        godot.write_text('#!/bin/zsh\n[[ "$*" == *--import* ]] && exit 0\n'
+                         'print "SCRIPT ERROR: Parse Error: Expected end of statement."\nprint "          at: GDScript::reload (res://modes/broken.gd:7)"\n'
+                         'print PARSE_CHECK_DONE\n')
+        godot.chmod(0o755)
+        self.put(str(merge.PROJECT / 'project.godot'), 'config/version="dev.001"\n')
+        self.g('add', '.'); self.g('commit', '-m', 'godot fixture'); self.g('merge', 'main', cwd=self.wt)
+        self.g('push', 'github', 'main')
+        base = self.g('rev-parse', 'HEAD')
+        self.assertEqual(self.call(), 1, self.last_output)
+        self.assertIn('解析检查不通过', self.last_output)
+        state = json.loads((self.root / '.git/lane-merge/state.json').read_text())
+        self.assertNotIn('mergeCommit', state)
+        self.g('push', 'github', 'main')  # 有人把带错的合并推了上去
+        merged = self.g('rev-parse', 'HEAD')
+        self.assertEqual(self.call('--abort'), 1, self.last_output)
+        self.assertIn('已推送到 GitHub', self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), merged)
+        # 推上去之后又 amend：当前提交不在远端，但推上去的那版合并在，照样不退
+        subprocess.run(['git', '-C', str(self.root), 'commit', '--amend', '-m', 'amended merge'], capture_output=True, check=True,
+                       env=dict(os.environ, **merge.MAIN_COMMIT_ENV))
+        self.assertNotEqual(self.g('rev-parse', 'HEAD'), merged)
+        self.assertEqual(self.call('--abort'), 1, self.last_output)
+        self.assertIn('已推送到 GitHub', self.last_output)
+        # 没推送的照常能退
+        self.g('push', '-f', 'github', base + ':main'); self.g('fetch', 'github')
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), base)
+        self.assertEqual(self.call('--abort'), 0, self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), base)
 
     def test_active_cwds_unknown_when_lsof_unavailable_keeps_worktree(self):
         # 沙僧第十六期 P2：lsof 缺失／超时／失败时原来返回空、清理放行；现在无法确认就保守不删

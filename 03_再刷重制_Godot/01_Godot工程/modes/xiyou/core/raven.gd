@@ -22,8 +22,18 @@ extends RefCounted
 ##   参照 mv_oracle/raven_soul_probe.cjs。
 ## - 招募（公共事件 9002 的 CodexRaven.recruit()）：不在队就入队；重排技能；队伍（含已装备）没有冥河断罪镰 4001 才给一件；
 ##   提示「渡鸦加入队伍，获得专属法宝：冥河断罪镰！」。总是返回 true。
-## 未移植（第三期起）：得魂时的残响 10132／狩猎 10133 计数与神话形态回合续期（随残响、神话形态一起做）、技能说明里的灵魂进度行
-## （Window_SkillList.updateHelp，界面）、神话形态、残响／三羽成环／收割与回响追加伤害、numRepeats（冥羽连葬吃再动）、
+## 第三期：战斗内机制（参照 mv_oracle/raven_battle_probe.cjs，测试 tests/xiyou_raven_battle）。
+## - 神话形态 myth（_codexRavenMythTurns，只在战斗内，存在 XState.raven 但不存档）：Game_Action.apply 包装里 <CodexRavenMyth> 技能 10127
+##   打到目标、学了 10127、不在形态中 → 3 回合；endTurn 减一；得魂时不到 5 回合加一；endBattle 与 setupRaven（sync）清零。
+##   神话之力＝形态中且学了 10170：伤害钩子普通／黑暗伤害 +1、最终伤害 +1.5，魔防穿透 +5%（封顶 95%）；战斗图换 Raven_Mythic_SV（界面未接）。
+## - 残响 residue（_codexRavenResidue，0～3）与狩猎 hunter（_codexRavenHunter）存在 XState.raven（存档 codexRaven）：学了 10132 时得魂后 +1，
+##   本回合（startTurn 起）没有敌人倒下时 endTurn 也 +1（渡鸦要在出战成员里）；学了 10133 且满 3 进入狩猎。sync 时没学 10132 清残响、没学 10133 清狩猎。
+## - 追加伤害（endAction 之前，<CodexRavenDamage> 技能）：施放帧按目标累计实际 HP 伤害；狩猎中先消耗狩猎与残响，对存活目标直接扣
+##   累计 ×1（神话之力 ×1.5，冥界收割）；神话之力时对仍存活的目标再扣 ×0.85（回响）。直接扣血不经伤害计算，倒下照常得魂。
+## - apply 包装：鸦啄 10122 每次施放第一次命中回 floor(2% 最大 MP)（至少 1）；盛宴 10124／万魂 10126 命中时学了 10134 直接附加黑暗侵蚀 1663，
+##   否则二阶的盛宴按普通附加状态（效果 21）附加。numRepeats：冥羽连葬 10123 加 floor(额外攻击次数)。
+## 未移植：魔法反射时原版同一行动对渡鸦自己累计伤害、行动结束对自己追加（重制反射支不记帧）；技能说明里的灵魂进度行
+## （Window_SkillList.updateHelp，界面）、神话形态战斗图、收割／回响等特效（R.Fx）、
 ## 法宝 4001 的运行时法宝字段（每级成长、等级上限）与 paramPlus 固定加成、熟练度上限、技能分类与界面、敌人掉率与图鉴、
 ## 插件指令 RavenAdd、商店价格字段、表现模块（RavenSkillEffects／RavenMonsterVisual）、旧档迁移。
 
@@ -34,6 +44,16 @@ const HORN := 2902
 const SEAL := 2901
 const LEGION := 10138
 const SOUL_LEDGER := 10137
+const PECK := 10122
+const FEATHER := 10123
+const FEAST := 10124
+const SOULS := 10126
+const MYTH := 10127
+const MYTH_PASSIVE := 10170
+const RESIDUE := 10132
+const HUNTER := 10133
+const EMBER := 10134
+const EROSION := 1663
 const SKILL_GATE := {10129: [5, 0], 10130: [10, 0], 10131: [15, 0], 10123: [20, 1], 10132: [25, 0], 10124: [30, 2],
 	10133: [35, 3], 10125: [40, 3], 10134: [45, 0], 10126: [50, 4], 10138: [1, 0], 10139: [55, 3],
 	10127: [1, 5], 10136: [60, 5], 10170: [1, 5]}
@@ -89,6 +109,7 @@ static func active(a) -> bool:
 
 ## Game_Enemy.die 包装（只在第一次倒下时调）
 static func on_enemy_death(e) -> void:
+	any_death = true  # BattleManager._codexRavenAnyDeath（得魂之后设，次序无关）
 	var s := XState.current
 	if s == null or not s.actors.has(ACTOR) or e.has_meta("raven_soul_counted"):
 		return
@@ -99,6 +120,10 @@ static func on_enemy_death(e) -> void:
 	s.raven["soul"] = soul(a) + soul_gain(e)
 	a.param_mark_dirty()
 	award_seal(s, a)
+	if has(a, RESIDUE):
+		_add_residue(a)
+	if is_myth(a) and myth_turns(a) < 5:
+		s.raven["myth"] = myth_turns(a) + 1
 
 
 static func can_forge(a) -> bool:
@@ -124,14 +149,16 @@ static func after_advance(s: XState, a, previous: int) -> void:
 		award_seal(s, a)
 
 
+## 神话形态回合数只在战斗内（endBattle 清零），不存档
 static func to_save(v: Dictionary) -> Dictionary:
-	return {"soul": float(v.get("soul", 0.0)), "forged": int(v.get("forged", -1))}
+	return {"soul": float(v.get("soul", 0.0)), "forged": int(v.get("forged", -1)), "residue": int(v.get("residue", 0)), "hunter": bool(v.get("hunter", false))}
 
 
 static func from_save(v) -> Dictionary:
 	if not v is Dictionary:
 		return {}
-	return {"soul": maxf(0.0, float(v.get("soul", 0.0))), "forged": int(v.get("forged", -1))}
+	return {"soul": maxf(0.0, float(v.get("soul", 0.0))), "forged": int(v.get("forged", -1)),
+		"residue": clampi(int(v.get("residue", 0)), 0, 3), "hunter": bool(v.get("hunter", false))}
 
 
 static func progress(a) -> float:
@@ -162,6 +189,12 @@ static func sync(a) -> void:
 			a.forget_skill(id)
 	for id in all:
 		a.learn_skill(id)
+	var st := _store()
+	st["myth"] = 0
+	if not has(a, RESIDUE):
+		st["residue"] = 0
+	if not has(a, HUNTER):
+		st["hunter"] = false
 	a.refresh_passive()
 
 
@@ -228,7 +261,10 @@ static func crown_rate(a) -> float:
 static func defense_factor(a) -> float:
 	if not own(a) or not has(a, 10130):
 		return 1.0
-	return 1.0 - minf(0.90, 0.60 + 0.30 * progress(a))
+	var pierce := minf(0.90, 0.60 + 0.30 * progress(a))
+	if myth_power(a):
+		pierce = minf(0.95, pierce + 0.05)
+	return 1.0 - pierce
 
 
 static func growth_rate(a) -> float:
@@ -254,11 +290,12 @@ static func damage_ops(item: Dictionary, a) -> Array:
 	var tempered := has(a, 10131)
 	var ops := [{"op": "set", "field": "mode", "value": "magical"},
 		{"op": "mul", "field": "magicalDefenseRate", "value": defense_factor(a)}]
+	var power := 1.0 if myth_power(a) else 0.0
 	if int(item.get("damage", {}).get("elementId", 0)) == 9:
-		ops.append({"op": "add", "field": "elementAdd", "element": 9, "value": (2 + p) if tempered else 0.0})
+		ops.append({"op": "add", "field": "elementAdd", "element": 9, "value": ((2 + p) if tempered else 0.0) + power})
 	else:
-		ops.append({"op": "add", "field": "normalAdd", "value": (1.5 + p) if tempered else 0.0})
-	ops.append({"op": "add", "field": "finalAdd", "value": 1.5 * minf(1.0, (stage(a) + p) / 5.0) if tempered else 0.0})
+		ops.append({"op": "add", "field": "normalAdd", "value": ((1.5 + p) if tempered else 0.0) + power})
+	ops.append({"op": "add", "field": "finalAdd", "value": (1.5 * minf(1.0, (stage(a) + p) / 5.0) if tempered else 0.0) + 1.5 * power})
 	if has(a, 10136):
 		ops.append({"op": "mul", "field": "finalMultiplier", "value": 1.1})
 	ops.append({"op": "mul", "field": "skillMultiplier", "value": 1.6 if artifact_equipped(a) else 1.0})
@@ -278,3 +315,147 @@ static func recruit(s: XState) -> bool:
 	if not held:
 		s.gain_gear("armor", ARTIFACT, 1)
 	return true
+
+
+## ---- 第三期：战斗内机制 ----
+## BattleManager._codexRavenAnyDeath：startTurn 清，任何敌人倒下（Game_Enemy.die）置位
+static var any_death := false
+## 施放帧（原版记在 Game_Action 上）：行动者、鸦啄回过 MP 没有、各目标累计伤害 [目标, 伤害]、是否已结算
+static var frame := {}
+
+
+static func myth_turns(a) -> int:
+	return int(_store().get("myth", 0)) if own(a) else 0
+
+
+static func is_myth(a) -> bool:
+	return myth_turns(a) > 0
+
+
+static func myth_power(a) -> bool:
+	return is_myth(a) and has(a, MYTH_PASSIVE)
+
+
+static func residue(a) -> int:
+	return int(_store().get("residue", 0)) if own(a) else 0
+
+
+static func hunter(a) -> bool:
+	return bool(_store().get("hunter", false)) if own(a) else false
+
+
+static func _add_residue(a) -> void:
+	var st := _store()
+	st["residue"] = mini(3, residue(a) + 1)
+	if has(a, HUNTER) and int(st.residue) >= 3:
+		st["hunter"] = true
+
+
+static func _meta(item) -> Dictionary:
+	return item.get("meta", {}) if item is Dictionary and not XBattleLogic.is_item(item) else {}
+
+
+## numRepeats 包装：冥羽连葬加额外攻击次数（取整）
+static func repeats(u, skill: Dictionary, n: int) -> int:
+	if own(u) and int(skill.get("id", 0)) == FEATHER and not XBattleLogic.is_item(skill):
+		return n + maxi(0, floori(u.attack_times_add()))
+	return n
+
+
+## BattleManager.startAction：每次行动一个新的 Game_Action
+static func begin(u, skill) -> void:
+	frame = {"user": u, "skill": skill, "peck": false, "targets": [], "handled": false}
+
+
+## Game_Action.apply 包装（原 apply 之后）
+static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -> void:
+	var meta := _meta(skill)
+	if not own(u) or meta.is_empty():
+		return
+	if meta.has("CodexRavenMyth") and has(u, MYTH) and not is_myth(u):
+		_store()["myth"] = 3
+	if not meta.has("CodexRavenDamage") or t == null:
+		return
+	var hit: bool = used and not bool(r.get("missed", false)) and not bool(r.get("evaded", false))
+	var id := int(skill.get("id", 0))
+	var mine: bool = not frame.is_empty() and is_same(frame.user, u)
+	if id == PECK and mine and not bool(frame.peck) and hit:
+		frame.peck = true
+		u.mp = minf(u.mmp, u.mp + maxf(1.0, floorf(u.mmp * 0.02)))  # gainMp
+		u.refresh_resources()
+	if (id == FEAST or id == SOULS) and hit:
+		if has(u, EMBER):
+			logic._state_add(t, EROSION)
+		elif stage(u) == 2 and id == FEAST and has(u, FEAST):
+			logic._effect(u, t, {"code": 21, "dataId": EROSION, "value1": 1.0, "value2": 0.0}, r)  # itemEffectAddNormalState
+	if mine:
+		var row = null
+		for x in frame.targets:
+			if is_same(x[0], t):
+				row = x
+		if row == null:
+			row = [t, 0.0]
+			frame.targets.append(row)
+		row[1] = float(row[1]) + maxf(0.0, float(r.get("hp", 0.0)))
+
+
+## directDamage：gainHp(−floor(值))，不经伤害计算，倒下照常；记录的 hp 是 gainHp 的值（同原版弹出的 hpDamage，可大于剩余生命）
+static func _direct(logic, t, value: float, kind: String) -> Array:
+	if t == null or t.is_dead() or value <= 0.0:
+		return []
+	var amount := floorf(value)
+	t.hp = maxf(0.0, t.hp - amount)
+	t.refresh_resources()
+	var logs := [{"type": "regen", "target": t, "hp": amount, "raven": kind, "views": logic.views([t])}]
+	if t.is_dead():
+		logs.append({"type": "collapse", "target": t, "views": logic.views([t])})
+	return logs
+
+
+## BattleManager.endAction 包装（原 endAction 之前）：冥界收割与回响
+static func finish(logic, u, skill) -> Array:
+	var logs := []
+	if frame.is_empty() or bool(frame.handled) or not is_same(frame.user, u) or not own(u) or not _meta(skill).has("CodexRavenDamage"):
+		return logs
+	frame.handled = true
+	var st := _store()
+	var hunting := hunter(u) and has(u, HUNTER)
+	if hunting:
+		st["hunter"] = false
+		st["residue"] = 0
+	for row in frame.targets:
+		var t = row[0]
+		var base: float = row[1]
+		if t == null or t.is_dead() or base <= 0.0:
+			continue
+		if hunting:
+			logs.append_array(_direct(logic, t, base * (1.5 if myth_power(u) else 1.0), "harvest"))
+		if myth_power(u) and not t.is_dead():
+			logs.append_array(_direct(logic, t, base * 0.85, "echo"))
+	return logs
+
+
+## BattleManager.startTurn 包装
+static func start_turn() -> void:
+	any_death = false
+
+
+## BattleManager.endTurn 包装（原 endTurn 之前）：本回合没有敌人倒下时残响 +1；神话形态减一回合
+static func end_turn(logic) -> void:
+	var s: XState = logic.state
+	if s == null or not s.actors.has(ACTOR):
+		return
+	var a: XActor = s.actors[ACTOR]
+	if not active(a):
+		return
+	if not any_death and has(a, RESIDUE):
+		_add_residue(a)
+	if is_myth(a):
+		s.raven["myth"] = myth_turns(a) - 1
+
+
+## BattleManager.endBattle 包装：神话形态只在当前战斗
+static func end_battle(s: XState) -> void:
+	if s != null:
+		s.raven["myth"] = 0
+	frame = {}

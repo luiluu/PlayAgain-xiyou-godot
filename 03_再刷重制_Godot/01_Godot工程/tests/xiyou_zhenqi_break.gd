@@ -128,7 +128,9 @@ func _trial_battle(aid: int, o: Dictionary) -> Dictionary:
 	for e in logic.enemies:
 		en.append({"enemyId": e.enemy_id, "base": _params(e, func(x, i): return x.param_base(i) / float(x._rates[i])), "param": _params(e, func(x, i): return x.param(i)),
 			"hp": e.hp, "mp": e.mp, "drops": logic.drops_of(e).size()})
+	XBattleLogic.o_difficulty_reward = false  # 参照是原版：难度经验／金钱倍率不生效（O-待定 回退支）
 	var rw := logic.rewards()
+	XBattleLogic.o_difficulty_reward = true
 	for id in o.get("dead", []):
 		s.actor(int(id)).hp = 0
 	XZhenqi.toasts.clear()
@@ -313,11 +315,6 @@ func _run() -> void:
 				continue
 			var got = _case(c.id, c.setup)
 			var want = c.observed
-			if c.id.begins_with("break.fight.") and want is Dictionary and want.has("rewards") and got is Dictionary:
-				# 经验、金钱走通用结算链（难度掉率、套装等，见 settlement 参照），这里只比瓶颈之战清空物品
-				want = want.duplicate(true)
-				want.rewards = {"items": want.rewards.items}
-				got.rewards = {"items": got.rewards.items}
 			check(c.id, (got != null or want == null) and _same(got, want), [got, want])
 	check("second_batch_cases", n >= 60, n)
 	_extra()

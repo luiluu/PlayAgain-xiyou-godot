@@ -134,7 +134,6 @@ func _script(c: Dictionary) -> void:
 				logs = logic.act(a, XDB.rec("Skills", int(st[1])), logic.enemies[int(st[2])])
 			"guard":
 				logs = logic.act(a, XDB.rec("Skills", 2), null)
-				a.tp = 100.0  # 同参照：防御的 tpGain 两边不同（重制防御支没给 10，另报），这里定回 100
 			"foe":
 				logs = logic.act(logic.enemies[int(st[1])], XDB.rec("Skills", 1), a)
 			"end":

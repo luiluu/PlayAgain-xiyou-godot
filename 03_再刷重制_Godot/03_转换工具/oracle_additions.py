@@ -145,8 +145,10 @@ def retained_errors_unchanged(name, old, new):
     for field, value in new.items():
         if not has_error(value):
             continue
-        fields = KEYS.get(name, {}).get(field)
         previous = old.get(field)
+        fields = KEYS.get(name, {}).get(field)
+        if fields is None and field not in keys_for(name) and isinstance(value, list) and isinstance(previous, list):
+            fields = field_keys(name, field, value, previous)   # 没登记的 cases 按 id 认（tools23）
         if fields and isinstance(value, list) and isinstance(previous, list):
             try:
                 groups([row for row in value if has_error(row)], fields)
@@ -189,6 +191,26 @@ def keys_for(name):
     return keys
 
 
+# 没在 KEYS 登记的 cases：两边每条都是带 id（都没有就看 key）的字典、且各自不重号时按它对齐（tools23，悟空交接的同步坑：
+# alien_battle、shield 等探针的 cases 没登记，加一条整段算改动，只好放末尾还被报成改动）。其它字段、缺键或重号的照旧整段比。
+AUTO_KEY_FIELDS = ('cases',)
+AUTO_KEYS = ('id', 'key')
+
+
+def field_keys(name, field, *values):
+    """该字段比对用的稳定键：KEYS 登记的优先；否则 cases 按 AUTO_KEYS 自动认；认不出返回 None（整段比）。"""
+    keys = keys_for(name)
+    if field in keys:
+        return keys[field]
+    if field not in AUTO_KEY_FIELDS or not values or not all(isinstance(v, list) for v in values):
+        return None
+    for k in AUTO_KEYS:
+        if all(isinstance(r, dict) and k in r for v in values for r in v) and \
+                all(len({canonical(r[k]) for r in v}) == len(v) for v in values):
+            return (k,)
+    return None
+
+
 def current_digest(name, data, collection, key):
     """参照 data 里接受单条目所指那一条（顶层字段、角色／敌人键、按稳定键的单条用例）现在的摘要；找不到或不唯一返回 None。
     与 compare_file 里 change() 记录 newDigest 的取法一致。"""
@@ -200,9 +222,10 @@ def current_digest(name, data, collection, key):
     value = data.get(collection)
     if isinstance(value, dict):
         return digest(value[key]) if key in value else None
-    if isinstance(value, list) and collection in keys_for(name):
+    fields = field_keys(name, collection, value) if isinstance(value, list) else None
+    if fields:
         try:
-            rows = groups(value, keys_for(name)[collection]).get(key)
+            rows = groups(value, fields).get(key)
         except ValueError:
             return None
         if rows and sum(rows.values()) == 1:
@@ -241,7 +264,6 @@ def compare_file(name, old, new, changes=None):
             else:
                 additions.append({'collection': 'maps', 'key': key, 'count': 1})
         return additions, problems
-    keys = keys_for(name)
     if set(old) != set(new):
         problems.append('顶层字段集合变化')
     for field in old.keys() & new.keys():
@@ -284,9 +306,9 @@ def compare_file(name, old, new, changes=None):
                     problems.append('新增' + ('敌人' if field == 'enemies' else '角色') + '有错误：' + key)
                 else:
                     additions.append({'collection': field, 'key': key, 'count': 1})
-        elif field in keys and isinstance(a, list) and isinstance(b, list):
+        elif isinstance(a, list) and isinstance(b, list) and (fields := field_keys(name, field, a, b)):
             try:
-                ga, gb = groups(a, keys[field]), groups(b, keys[field])
+                ga, gb = groups(a, fields), groups(b, fields)
             except ValueError as error:
                 problems.append(str(error)); continue
             for key, value in ga.items():
