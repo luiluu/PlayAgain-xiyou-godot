@@ -328,11 +328,14 @@ static func is_item(rec: Dictionary) -> bool:
 	return rec.has("itypeId")
 
 ## YEP_SkillCore 的消耗备注（逐行、冒号后恰一个空格、只认整数）：<MP Cost: n> 改基础 MP、<MP Cost: n%> 记最大 MP 比例，TP、HP 同理（HP 默认 0）。
-## 「<MP Cost: 7.5%>」这类带小数的写法原版认不出（7225 降众天华比例为 0），照原版。按备注缓存
+## 「<MP Cost: 7.5%>」这类带小数的写法原版认不出（7225 降众天华比例为 0）；O-129 开着时 MP 比例认小数（按 7.5% 收）。按备注缓存
+## O-129（用户 10-31 定：做）：false＝原版，只扣基础 MP
+static var o_decimal_mp_cost := true
 static var _note_cost_cache := {}
 static func note_costs(skill: Dictionary) -> Dictionary:
 	var note := str(skill.get("note", ""))
-	if not _note_cost_cache.has(note):
+	var key := note if not o_decimal_mp_cost else "o129:" + note
+	if not _note_cost_cache.has(key):
 		var out := {}
 		for line in note.split("\n"):
 			for kind in ["MP", "TP", "HP"]:
@@ -340,12 +343,14 @@ static func note_costs(skill: Dictionary) -> Dictionary:
 				if m != null:
 					out[kind.to_lower() + "Cost"] = int(m.get_string(1))
 					break
-				m = RegEx.create_from_string("(?i)<(?:%s COST):[ ](\\d+)([%%％])>" % kind).search(line)
+				# O-129：MP 比例认小数（7225 降众天华 <MP Cost: 7.5%>；原版 YEP 正则只认整数，比例 0、只扣基础）
+				var digits := "\\d+(?:\\.\\d+)?" if o_decimal_mp_cost and kind == "MP" else "\\d+"
+				m = RegEx.create_from_string("(?i)<(?:%s COST):[ ](%s)([%%％])>" % [kind, digits]).search(line)
 				if m != null:
 					out[kind.to_lower() + "CostPer"] = float(m.get_string(1)) * 0.01
 					break
-		_note_cost_cache[note] = out
-	return _note_cost_cache[note]
+		_note_cost_cache[key] = out
+	return _note_cost_cache[key]
 
 ## YEP_SkillCore skillHpCost：⌊基础＋最大HP×比例⌋、不低于 0（熟练度公式原样、费用为正时至少 1，等于不变）。
 ## 异化空壳在战斗中按开场参照生命上限算（Adv:126），见 XAlienBattle.hp_cost_mhp
@@ -686,6 +691,7 @@ func start_turn() -> void:
 		if int(pages[i].get("span", 0)) == 1:
 			_event_flags.erase(i)
 	_cleared.clear()
+	XRaven.start_turn()  # 渡鸦 BattleManager.startTurn 包装：清「本回合有敌人倒下」
 	XMira.start_turn()  # 米拉 BattleManager.startTurn 包装：清劫火累计
 	turn += 1
 	# YEP_X_SkillCooldowns：Game_Troop.increaseTurn 时双方冷却/预热各减 1
@@ -746,6 +752,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XStateEffects.run("initiate", u, gctx)
 		XStateEffects.run("select", u, gctx)
 		u.guarding = true
+		_user_tp_gain(u, skill)  # apply 命中后的 applyItemUserEffect：防御技能 2 的 tpGain 10（参照 battle_gaps guard.*）
 		_otb_user_shift(u, skill)
 		XStateEffects.run("deselect", u, gctx)
 		XStateEffects.run("conclude", u, gctx)
@@ -759,6 +766,7 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(XGarou.finish(self, u, skill))  # 饿狼 endAction 包装（原 endAction 之前）：进化、解析、追击、流水回 TP；敌人命中饿狼的进化、解析、反击
 		logs.append_array(XSukuna.finish(self, u, skill))  # 宿傩 endAction 包装（原 endAction 之前）：神灶：开、追斩、看破、适应
 		XBlackFlash.finish(self, u, skill)  # 黑闪 endAction 包装（宿傩之内）：集中、连闪、觉醒
+		logs.append_array(XRaven.finish(self, u, skill))  # 渡鸦 endAction 包装（各专属模块最内层，原 endAction 之前）：冥界收割、回响
 	XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
 	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
 	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
@@ -782,6 +790,7 @@ func end_turn() -> Array:
 	logs.append_array(XSukuna.end_round(self))  # 宿傩 endTurn 包装（原 endTurn 之前，在米拉外层）：领域斩击、神灶：开、伤口到期
 	XBlackFlash.end_round(self)  # 黑闪 endTurn 包装（宿傩之内、米拉之外）：觉醒到期
 	logs.append_array(XMira.end_turn(self))  # 米拉 endTurn 包装（原 endTurn 之前）：修雷德劫火追加
+	XRaven.end_turn(self)  # 渡鸦 endTurn 包装（原 endTurn 之前，在米拉之内、宠物捕捉插件之外）：残响、神话形态减一回合
 	logs.append_array(XPetCapture.end_turn(self))  # Star_PetSystem 的 endTurn 包装：第 5 回合可捕捉的敌人逃跑
 	for b in actors + enemies:
 		turn_end_battler(b, logs)
@@ -1103,6 +1112,7 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 		logs.append_array(execute(u, skill, _forced_target(u, skill, int(p[3])), true))
 		logs.append_array(XGarou.finish(self, u, skill))
 		logs.append_array(XSukuna.finish(self, u, skill, true))
+		logs.append_array(XRaven.finish(self, u, skill))
 		XRaceBattle.finish(self, logs)
 		XCat.end_action(self, u, skill)
 		XAlienBattle.finish(self, logs)
@@ -1339,6 +1349,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	if not forcing and not u.is_actor() and not can_use(u, skill):
 		return logs
 	XGarou.begin(u, skill)  # 饿狼 startAction 包装：开施放帧（记施放开始时的进化层）
+	XRaven.begin(u, skill)  # 渡鸦：新行动的施放帧（原版记在 Game_Action 上）
 	XAlienBattle.start_action(self, u, skill)  # 异化蚀术 startAction 包装（最外层）：记上次用的技能、列出要解的封印
 	skill = change_to(u, skill)  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
@@ -1376,7 +1387,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击（isAttack：此刻的 attackSkillId）的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
-		var times := XYomiJingliu.begin_action(u, skill, attack_repeats(u, skill, 1))  # 黄泉 numRepeats 包装（也开始新行动）
+		var times := XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, 1)))  # 黄泉 numRepeats 包装（也开始新行动）；渡鸦包装在里层
 		var list := []
 		for t in targets_for(u, skill, chosen):
 			for i in range(maxi(1, times)):
@@ -1388,7 +1399,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		logs.append_array(XSukuna.begin(self, u, skill, list))  # 宿傩 startAction 包装：领域展开、施放帧
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		return logs
-	var repeats := XYomiJingliu.begin_action(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1))))  # 黄泉 numRepeats 包装
+	var repeats := XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1)))))  # 黄泉 numRepeats 包装；渡鸦冥羽连葬在里层
 	var targets := targets_for(u, skill, chosen)
 	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
@@ -1519,6 +1530,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
 	var r := apply(u, skill, tt)
 	XGarou.applied(u, skill, tt, r, used)  # 饿狼 Game_Action.apply 包装：本帧命中与伤害、琦玉模式
+	XRaven.applied(self, u, skill, tt, r, used)  # 渡鸦 Game_Action.apply 包装：神话形态、鸦啄回 MP、黑暗侵蚀、按目标累计伤害
 	return [r]
 
 
@@ -1726,11 +1738,18 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	for eff in skill.get("effects", []):
 		_effect(u, t, eff, r)
 	_otb_target_shift(skill, t)
-	_action_resources.silent_gain(u, "tp", float(skill.get("tpGain", 0)) * u.tcr)
+	_user_tp_gain(u, skill)
 	if t.hp <= 0.0 and t.is_dead():
 		_die(t)
 		r.died = true
 	return r
+
+
+## Game_Action.applyItemUserEffect：行动者得 floor(tpGain × tcr)（gainSilentTp）
+func _user_tp_gain(u: XBattler, skill: Dictionary) -> void:
+	var resources := _operation_resources(u)  # 防御支不经 _apply，没有本次行动的资源上下文
+	resources.silent_gain(u, "tp", floorf(float(skill.get("tpGain", 0)) * u.tcr))
+	_finish_lifecycle_operation(resources, u)
 
 
 ## installBossDifficultyRuntime的最外层普通伤害包装。倍率为1时也floor，非正值及自身代价原样传入。
@@ -2101,24 +2120,33 @@ func _avg_agi(list: Array) -> float:
 	return s / maxf(l.size(), 1.0)
 
 
-# ---- 奖励（难度掉率：经验、金钱、物品1~3）----
+# ---- 奖励（经验、金钱；物品掉落见 _roll_drops）----
+## BattleManager.makeRewards（正式版 rpg_managers）：金钱 goldTotal×5、经验 expTotal×8。
+## 经验：Game_Enemy.exp 被后装的 EliteEnemy 改写成「数据库经验 × 神话倍率」，Vitsuno 难度的经验／金钱倍率包在里层、被盖掉不生效
+## （参照 battle_gaps reward.*：难度 1～13 奖励相同；O-待定 开关默认按难度乘，见下）；GT_EquipSuitCore 在 expTotal／goldTotal 外再套套装。
+## 金钱：dsPassiveSkill 的 goldTotal 按出战成员的每个 passiveGRUP 依次 rate += v×0.01×rate，floor(Σ gold×rate × 金钱双倍)。
+## O-待定（Kyo 10-31 定：加回来）：难度表的经验／金钱倍率照 Vitsuno 本来的挂点乘在每只敌人的 exp／gold 上；false＝原版（被 EliteEnemy 盖掉、不生效）
+static var o_difficulty_reward := true
 func rewards() -> Dictionary:
-	var rates := _difficulty_rates()
-	var exp := 0.0
+	var exp := 0
 	var gold := 0.0
 	var drops := []
-	var gold_up := 0.0
+	var gold_rate := 1.0
 	# GT_EquipSuitCore 用 $gameParty.members()，战斗中即出战成员
 	var reward_members := actors
 	for a in actors:
-		gold_up = maxf(gold_up, _passive_sum(a, "passiveGRUP"))
+		for v in a.passive_values("passiveGRUP"):
+			gold_rate += XActor._num(v) * 0.01 * gold_rate  # 原式 rate += v×0.01×rate（与连乘差在末位，会差一档取整）
+	var rates := _difficulty_rates() if o_difficulty_reward else [1.0, 1.0]
 	for e in enemies:
 		if e.hidden:
 			continue  # deadMembers：没出现的成员不算
-		exp += float(e.exp_reward()) * rates[0]
-		gold += float(e.gold_reward()) * rates[1] * (1.0 + gold_up / 100.0)
+		# O-待定：Vitsuno 的挂点是 Game_Enemy.exp／gold（每只敌人 floor(值×倍率)），在 expTotal／goldTotal、套装与 ×8／×5 之前
+		exp += floori(e.exp_reward() * float(rates[0]))
+		gold += floorf(e.gold_reward() * float(rates[1])) * gold_rate
 		drops.append_array(drops_of(e))
-	return {"exp": int(XEquipSuits.reward(reward_members,roundi(exp),0)), "gold": int(XEquipSuits.reward(reward_members,roundi(gold),1)), "drops": drops}
+	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
+	return {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8, "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
 
 
 func _difficulty_rates() -> Array:
@@ -2253,6 +2281,7 @@ func end_battle(result := -1) -> void:
 	XBlackFlash.end_battle(self)  # 黑闪 endBattle 包装
 	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火
 	XGarou.clear_battle()  # 饿狼 endBattle 包装：清进化、解析、琦玉
+	XRaven.end_battle(state)  # 渡鸦 endBattle 包装：清神话形态
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	# ShieldSystem Scene_Battle.terminate：全队与敌群护盾清零
 	for e in enemies:

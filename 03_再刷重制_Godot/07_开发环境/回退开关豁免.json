@@ -15,7 +15,6 @@
   "O-100 ACTOR_IMAGE_FIX": "tools26 初始盘点：const 开关，测试改不了；要补回退支先改成 static var",
   "O-105 XPetCapture.SINGLE_DEFEAT_COUNT": "人工确认（tools26）：测试按参数／循环把开关设成回退值，见 tests/xiyou_pet_capture.gd:229",
   "O-112 SELECT_ALL_HIGHLIGHT": "人工确认（tools26）：测试按参数／循环把开关设成回退值，见 tests/xiyou_battle_ui.gd:524",
-  "O-117 SAFE_AIRSHIP_MENU": "tools26 初始盘点：const 开关，测试改不了；要补回退支先改成 static var",
   "O-121 XSmartAI.o_projection": "人工确认（tools26）：测试按参数／循环把开关设成回退值，见 tests/xiyou_smart_ai.gd:170",
   "O-122 MVTilemap.open_cells_fix": "间接覆盖：xiyou_floor_reach079 把 map.lower.open_cells 清空验原版牢房不通（tools26 人工看过）",
   "O-123 XMira.DEBUFF_FIX": "人工确认（tools26）：测试按参数／循环把开关设成回退值，见 tests/xiyou_mira_battle.gd:137",
