@@ -24,9 +24,10 @@ extends RefCounted
 ##   之后 3 回合内不能再展开；stage≥2 时领域中解／捌 TP ×0.5）、神灶 10232 只能打被主技能命中过的目标（命中后消耗）、
 ##   神灶：开 10233（直接施放不结算，行动结束按准备层数对全体打）、追斩 10241（每回合一次 10236）、咒力体术 10238 命中回 20 TP、
 ##   魔虚罗适应 10246（被敌人主行动扣血后 +1 层至 3，斩击 ×(1＋0.05×层)）、开战 TP 至少 60、技能条件与战斗中技能列表过滤。
-## 未移植（第三期起）：黑闪（CodexBlackFlash，与甚尔共用；斩击强化 emp 与觉醒的内部神灶 ×1.2 恒无）、看破的闪避归零在西游无效
-##   （YEP 闪避公式为 0，照写）、applyCriticalRate 改写在 CodexDamage 下不走（原版注释：旧暴击链会重复乘），无需移植；
-##   熟练度上限包装（重制熟练度恒 0）；神灶选目标窗只列已蓄力的敌人、战斗日志文字（画面车道）；技能分类与界面、外观、旧档迁移。
+## 第三期：黑闪接 XBlackFlash（与甚尔共用；施放帧 emp＝觉醒时的斩击强化层，解／捌／伏魔御厨子 ×(1＋领域 0.35／否则 0.2＋0.05×(层−1))，
+##   觉醒时内部神灶：开另 ×1.2，终式不判黑闪，回合结束不觉醒才清 emp）；阵亡清战斗数据（on_death）。
+## 未移植：看破的闪避归零在西游无效（YEP 闪避公式为 0，照写）、applyCriticalRate 改写在 CodexDamage 下不走（原版注释：旧暴击链会重复乘），
+##   无需移植；熟练度上限包装（重制熟练度恒 0）；神灶选目标窗只列已蓄力的敌人、战斗日志文字（画面车道）；技能分类与界面、外观、旧档迁移。
 const ACTOR := 172
 const ARMOR := 4581
 const WOUND := 2637
@@ -131,6 +132,8 @@ static func formula(a, b, item: Dictionary) -> float:
 			value *= 1.2
 	if actual == 10233 and artifact(a):
 		value *= 1.2
+	if internal and actual == 10233 and XBlackFlash.status(a).awake:
+		value *= 1.2  # 共用觉醒只管直接施放，内部神灶：开自己乘一次
 	return value
 
 static func param(a, i: int, v: float) -> float:
@@ -389,7 +392,8 @@ static func apply(logic, a, skill: Dictionary, t) -> Array:
 
 static func _new_cast(a, id: int, t) -> Dictionary:
 	var q := target_data(t)
-	return {"target": t, "layers": int(q.layers), "wounded": t.state_ids.has(WOUND), "emp": 0, "terminal": _terminal(a, id, int(q.layers)), "hit": false}
+	return {"target": t, "layers": int(q.layers), "wounded": t.state_ids.has(WOUND), "emp": int(temp(a).emp) if XBlackFlash.status(a).awake else 0,
+		"terminal": _terminal(a, id, int(q.layers)), "hit": false}
 
 
 ## S.begin（BattleManager.startAction 之后）：伏魔御厨子展开领域；按第一个目标建施放帧，终式记日志。任何人的行动都清上一帧。
@@ -409,6 +413,8 @@ static func begin(logic, u, skill: Dictionary, targets: Array) -> Array:
 		return []
 	cast = _new_cast(u, id, targets[0])
 	if int(cast.terminal) != 0:
+		if not XBlackFlash.cast.is_empty():
+			XBlackFlash.cast.eligible = false  # 终式不判黑闪
 		return [_text(u.display_name() + "发动了" + str(XDB.rec("Skills", int(cast.terminal)).get("name", "")) + "！")]
 	return []
 
@@ -493,7 +499,8 @@ static func end_round(logic) -> Array:
 					_end_domain(logic, a)
 		elif int(d.domain) != 0:
 			_end_domain(logic, a)
-		d.emp = 0  # 黑闪觉醒未移植，恒不觉醒
+		if not XBlackFlash.status(a).awake:
+			d.emp = 0
 	for t in logic.enemies:
 		if int(target_data(t).wound_until) <= round and t.state_ids.has(WOUND):
 			logic._state_remove(t, WOUND)
@@ -546,6 +553,11 @@ static func no_evade(a, skill: Dictionary, t) -> bool:
 	if not own(a) or not slash(int(skill.get("id", 0)), part):
 		return false
 	return (int(cast.layers) if not cast.is_empty() else int(target_data(t).layers)) >= 1
+
+
+## Game_Actor.die 包装：清战斗数据
+static func on_death(b) -> void:
+	_temp.erase(b)
 
 
 ## gainHp 包装：带伤口的受治疗减半

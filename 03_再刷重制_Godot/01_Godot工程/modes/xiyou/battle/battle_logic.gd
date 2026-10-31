@@ -148,6 +148,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	if not leaving.is_empty():
 		actors = everyone.filter(func(a): return not leaving.has(a))
 	XSukuna.start_battle(self)  # 宿傩 startBattle 包装（之前）：清战斗数据、同步技能
+	XBlackFlash.start_battle(self)  # 黑闪 startBattle 包装（宿傩之内）：round 归 0、清数据
 	for a in actors:
 		for sid in a.state_ids.duplicate():
 			if not bool(XDB.rec("States", sid).get("removeAtBattleEnd", false)):
@@ -695,11 +696,13 @@ func act(u: XBattler, skill, target) -> Array:
 	var started := true
 	var skipped := not can_move(u)
 	if skipped:
+		XBlackFlash.break_chain(u)  # 黑闪 processTurn／OTB 包装：不能行动连闪归 0
 		logs.append({"type": "skip", "user": u})
 	elif skill == null or (skill is Dictionary and skill.is_empty()):
 		started = false
 	elif int(skill.id) == GUARD_SKILL and not is_item(skill):
 		XAlienBattle.start_action(self, u, skill)  # 异化蚀术 startAction 包装：防御也算原有合法行动窗口
+		XBlackFlash.begin(u, skill, [])  # 黑闪 startAction 包装：防御也建帧（不 eligible，结束时连闪归 0）
 		XSukuna.begin(self, u, skill, [])  # 宿傩 startAction 包装：清上一帧
 		XStateEffects.run("action_start", u)  # 防御也走 startAction
 		# 防御技能在原版也对自己 Game_Action.apply 一次：initiate／select／deselect／conclude 四段都跑（无伤害段）
@@ -719,6 +722,7 @@ func act(u: XBattler, skill, target) -> Array:
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
 	if started and not skipped:
 		logs.append_array(XSukuna.finish(self, u, skill))  # 宿傩 endAction 包装（原 endAction 之前）：神灶：开、追斩、看破、适应
+		XBlackFlash.finish(self, u, skill)  # 黑闪 endAction 包装（宿傩之内）：集中、连闪、觉醒
 	XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
 	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
 	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
@@ -740,6 +744,7 @@ func end_turn() -> Array:
 	XAlienBattle.spread_pest(self)  # 异化疫囊 endTurn 包装（原 endTurn 之前）：传播异常与减益
 	XCat.end_turn(self)  # BattleManager.endTurn 的小猫剑圣包装：删过期的识破／剑痕
 	logs.append_array(XSukuna.end_round(self))  # 宿傩 endTurn 包装（原 endTurn 之前，在米拉外层）：领域斩击、神灶：开、伤口到期
+	XBlackFlash.end_round(self)  # 黑闪 endTurn 包装（宿傩之内、米拉之外）：觉醒到期
 	logs.append_array(XMira.end_turn(self))  # 米拉 endTurn 包装（原 endTurn 之前）：修雷德劫火追加
 	logs.append_array(XPetCapture.end_turn(self))  # Star_PetSystem 的 endTurn 包装：第 5 回合可捕捉的敌人逃跑
 	for b in actors + enemies:
@@ -756,6 +761,7 @@ func end_turn() -> Array:
 
 ## 单个战斗者的 onTurnEnd。krz 前后各标一次 dirty，中间 regenerateAll 已 refresh（活着时）。
 func turn_end_battler(b: XBattler, logs: Array) -> void:
+	b.runtime_result = XResourceContext.empty_result()  # Game_Battler.onTurnEnd 首句 clearResult（之前去掉的状态这时起可以再附加）
 	b.guarding = false
 	b.param_mark_dirty()
 	if b.is_alive():
@@ -1336,6 +1342,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		XAlienBattle.set_heal_targets(skill, list.size())  # 逆祷治疗按目标数（含重复）分摊
 		XRaceBattle.begin(self, u, skill, list, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 		XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
+		XBlackFlash.begin(u, skill, list, forcing)  # 黑闪 startAction 包装（宿傩之内）：建施放帧
 		logs.append_array(XSukuna.begin(self, u, skill, list))  # 宿傩 startAction 包装：领域展开、施放帧
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		return logs
@@ -1344,6 +1351,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 	XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
+	XBlackFlash.begin(u, skill, targets, forcing)  # 黑闪 startAction 包装（宿傩之内）：建施放帧
 	logs.append_array(XSukuna.begin(self, u, skill, targets))  # 宿傩 startAction 包装：领域展开、施放帧
 	for t in targets:
 		for i in range(maxi(1, repeats)):
@@ -1441,7 +1449,9 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	if _float("reflection") < mrf:
 		_reflecting = true  # 导入角色平衡：反射回行动者自己的结算照样缩放
 		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反射是独立数值来源，不是原行动
+		XBlackFlash.nested += 1  # 黑闪 invokeMagicReflection 包装
 		var rs := XSukuna.apply(self, u, skill, u) if XSukuna.wraps(u, skill) else [apply(u, skill, u)]  # 宿傩 Game_Action.apply 包装
+		XBlackFlash.nested -= 1
 		XRaceBattle.derived_end(self, race_prev)
 		_reflecting = false
 		for r in rs:
@@ -1450,7 +1460,9 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure else 0.0
 	if _float("counter") < cnt:
 		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反击是独立数值来源，不是原行动
+		XBlackFlash.nested += 1  # 黑闪 invokeCounterAttack 包装
 		var r := apply(t, XAlienBattle.project(t, t.attack_skill()), u)  # invokeCounterAttack：反击者 setAttack（异化逆祷：反击也读投影）
+		XBlackFlash.nested -= 1
 		XRaceBattle.derived_end(self, race_prev)
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
@@ -1540,6 +1552,8 @@ func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) 
 
 func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
 	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
+	_formula_outcome.value = XBlackFlash.formula(self, u, skill, t, float(_formula_outcome.value))  # 黑闪 evalDamageFormula 包装：觉醒 ×1.2、判黑闪
+	critical = critical or XBlackFlash.boosted(t)  # 黑闪 modifyCritical 包装：黑闪必暴击
 	return XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule(),
 		"battleRound": maxi(1, turn), "raceAction": true})  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
 
@@ -1565,6 +1579,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if XAlienBattle.apply_switch(self, u, skill):
 		return {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
 			"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
+	var black_flash = XBlackFlash.apply_begin(u, skill, t)  # 黑闪 Game_Action.apply 包装（在异化之内）：本次 apply 的命中帧
 	var before = XZhenqi.pojia_actor
 	XZhenqi.pojia_actor = u if XZhenqi.has_daofa(u, "pojia") else null
 	var previous_resources := _action_resources
@@ -1610,6 +1625,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	_action_resources = previous_resources
 	XZhenqi.pojia_actor = before
 	XMira.after_apply(u, skill, t, r)  # 米拉 Game_Action.apply 包装：记劫火累计
+	XBlackFlash.apply_end(black_flash)
 	return r
 
 
@@ -1643,6 +1659,9 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		var previous_record := _damage_record
 		_damage_record = r
 		var value := _damage_value(u, skill, dt, r.critical)
+		if XBlackFlash.boosted(dt):
+			r.critical = true  # 黑闪 modifyCritical：结果记为暴击
+			_action_resources.result(dt).critical = true
 		_damage_record = previous_record
 		r.state_value = value
 		_action_resources.result(dt).success = true
@@ -1696,6 +1715,7 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 	var sukuna_shield := XSukuna.strip_shield(u, t, item)  # 宿傩 executeHpDamage 包装：真伤免护盾
 	var sukuna_hp := t.hp
 	var out := _execute_hp_damage(u, t, value, drain)
+	XBlackFlash.after_hp(u, t, sukuna_hp - t.hp, item)  # 黑闪 executeHpDamage 包装（宿傩之内）：记伤害、黑闪成功
 	XSukuna.restore_shield(u, t, sukuna_shield, sukuna_hp)
 	_action_resources.boss_output.leave_settled()
 	XAlienBattle.record(self, u, t, maxf(0.0, alien_before - t.hp))
@@ -2022,6 +2042,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 ## MV：逃跑率在战斗开始时算一次（0.5×我方平均敏捷/敌方平均敏捷），每失败一次 +0.1。
 ## 逃跑失败在 OTB 下只消耗这名角色的本次行动（由画面层调用 act(u, null, null)）。
 func try_escape() -> bool:
+	XBlackFlash.escape(self)  # 黑闪 processEscape 包装：连闪归 0
 	escaped = _float("escape") < _escape_ratio
 	if not escaped:
 		_escape_ratio += 0.1
@@ -2181,6 +2202,7 @@ func end_battle(result := -1) -> void:
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XSukuna.end_battle(self)  # 宿傩 endBattle 包装：清战斗数据与领域、适应、觉醒状态
+	XBlackFlash.end_battle(self)  # 黑闪 endBattle 包装
 	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	# ShieldSystem Scene_Battle.terminate：全队与敌群护盾清零
