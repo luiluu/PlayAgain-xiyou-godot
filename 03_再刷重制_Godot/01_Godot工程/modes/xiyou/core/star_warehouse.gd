@@ -7,18 +7,18 @@ extends RefCounted
 ## - 存入装备：<PushDct> 不收（「不可存放」）；锁定、异化装备照原版能存。取出：去掉原实例编号，按本档重编号
 ##   （原版取出时 id = $dataWeapons.length 重分配；两档各有 xg:1 时不重编号会撞号，gear_query 按编号去重会漏件）。
 ## - 存入宠物：出战宠物不收（原版点了没反应，只有确定音）；其余走 XPets.release 的序号修正。取出追加在末尾。
-## - 原版缺陷的处理（优化登记，见各开关）：O-待定-1 立即写盘、O-待定-2 跨档异化装备清配置换 uid、O-待定-3 挡下供体与待选重抽。
+## - 原版缺陷的处理（优化登记，见各开关）：O-124 立即写盘、O-126 跨档异化装备清配置换 uid、O-127 挡下供体与待选重抽。
 ## 复制问题照原版不防（存放后不存档读旧档，旧档里那件还在；用户默认甲）。
 
 const PUSH_DCT := "PushDct"
 
-## O-待定-1（优化登记）：原版仓库画面不写配置，要等下一次配置写盘（关设置页等）东西才落盘，期间退出就丢。
+## O-124（优化登记）：原版仓库画面不写配置，要等下一次配置写盘（关设置页等）东西才落盘，期间退出就丢。
 ## true＝每次存取立即写盘；false＝照原版，只改内存，等 XConfig 下一次写盘时一起写（flush_pending）
 static var o_save_now := true
-## O-待定-2：异化装备的配置（actorId／partnerId／skillId／donorId）指向本档的角色和装备实例，搬到别的档就错位（原版同样带走）。
+## O-126：异化装备的配置（actorId／partnerId／skillId／donorId）指向本档的角色和装备实例，搬到别的档就错位（原版同样带走）。
 ## true＝存入时清掉配置、取出时按本档账本换 uid，到工坊重配；false＝照原版原样带走
 static var o_alien_reset := true
-## O-待定-3：原版存放直接 delete，不经 loseItem，吞器占用的供体、待选重抽中的异化装备也能存走（吞器开战即卸下、待选永远落空）。
+## O-127：原版存放直接 delete，不经 loseItem，吞器占用的供体、待选重抽中的异化装备也能存走（吞器开战即卸下、待选永远落空）。
 ## true＝这两种挡下（「不可存放」）；false＝照原版放行
 static var o_block_bound := true
 
@@ -98,7 +98,7 @@ static func deposit_gear(s: XState, rec: Dictionary) -> String:
 	return ""
 
 
-## 取出一件：按本档重编号（O-待定-2 开时异化装备另换 uid），放回背包
+## 取出一件：按本档重编号（O-126 开时异化装备另换 uid），放回背包
 static func withdraw_gear(s: XState, rec: Dictionary) -> bool:
 	ensure_loaded()
 	var i := _gear.find_custom(func(e): return is_same(e, rec))

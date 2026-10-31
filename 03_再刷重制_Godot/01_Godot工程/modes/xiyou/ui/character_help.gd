@@ -105,19 +105,9 @@ static func resource_cost(t: String) -> bool:
 	return _re("^(?:(?:基础)?(?:MP|TP)?)?消耗[：:]", t) and _re("(?:MP|TP|魔法)", t) and not _re("(?:行动|生命|残梦|朔望|唤醒)", t)
 
 
-## YEP_SkillCore skillMpCost／skillTpCost：(基础＋上限×<MP Cost: x%>)×消耗率，向下取整（鬼族另打折，同 XBattleLogic.skill_cost）
+## currentHelpText 调原生 skillMpCost／skillTpCost：与实扣同一条链（XBattleLogic.skill_cost，含最大 MP 比例、减耗、下限、鬼族）
 static func _cost(a, item: Dictionary, kind: String) -> int:
-	var per := 0.0
-	var m := RegEx.create_from_string("(?i)<%s Cost:\\s*([\\d.]+)%%>" % kind).search(str(item.get("note", "")))
-	if m != null:
-		per = float(m.get_string(1)) * 0.01
-	# currentHelpText calls native skillMpCost/skillTpCost, including dsPassive reductions.
-	# Keep percentage-base parsing here, then use the same rounding/reduction/race chain as settlement.
-	var priced := item.duplicate()
-	var field := "mpCost" if kind == "MP" else "tpCost"
-	priced[field] = float(item.get(field, 0)) + (a.mmp if kind == "MP" else a.max_tp()) * per
-	var logic := XBattleLogic.new()
-	return int(logic.skill_cost(a, priced)["mp" if kind == "MP" else "tp"])
+	return int(XBattleLogic.new().skill_cost(a, item)["mp" if kind == "MP" else "tp"])
 
 
 ## currentHelpText；返回 null 表示这一行不显示

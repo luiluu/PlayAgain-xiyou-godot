@@ -11,7 +11,7 @@ extends Control
 ##   声音：只有普通确定音（Window_Selectable.processOk，isCurrentItemEnabled 恒真），存取成功也没有装备音效，出战宠物、空格、
 ##   不可存放都不蜂鸣（这与 PH 仓库 XWarehouseScene 不同，别「统一」）；不可存放另弹提示。
 ## - 说明卡：装备选中时显示（同物品页的说明卡）；宠物不显示——原版宠物是 Game_Enemy 没有 note，选中时 HelpExtend 读
-##   item.note.split 抛错停机（O-待定-5，优化登记），这里不画卡、照常存取。
+##   item.note.split 抛错停机（O-125，优化登记），这里不画卡、照常存取。
 
 signal closed
 

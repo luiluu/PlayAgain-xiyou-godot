@@ -443,6 +443,7 @@ func _boost_party(s: XState, atk := 2.0e16) -> void:
 		# 三十一至三十三层守层者生命约 3.75e17／2.5e18／1.5e19（HP≤30% 时第 3 页 1397 回满，≤10% 变身）：到这几层时再提到 atk（BIG_ATK）。
 		# 不从开局就提：2e19 时二十九层太白金星（敌群 465，吸收属性 1）两百多回合打不动。
 		item.params = [5.0e8, 1.0e6, atk, 5.0e6, atk, 5.0e6, 1.0e5, 1.0e3]
+		XActor.test_param_max = 1.0e30  # 队伍属性堆过原版上限 99999999（XActor.PARAM_MAX），只在测试里放开
 		a.refresh_passive()
 		a.hp = a.mhp
 		a.mp = a.mmp
