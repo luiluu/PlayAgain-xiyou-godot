@@ -1,7 +1,7 @@
 # 交付：cc/bajie-toji2
 
 - 车道／工作者：C 规则／八戒（cc，八戒_93）
-- 状态：进行中
+- 状态：可合并
 - 分支从 cc/bajie-toji1 末端 9054c714 切（总装八派），工作树 `.claude/worktrees/charming-thompson-b2b988`。机制编号沿用 toji1 交付单「机制对照」。
 
 ## 做到哪
@@ -52,13 +52,23 @@
 
 ## 验证
 
-- `xiyou_toji_battle` 419/419；`xiyou_toji` 待补跑。（待写）
+- 新专项 `xiyou_toji_battle` 567/567（含 7 组反向验证，见变更记录草稿第 8 条）；`xiyou_toji` 71/71。
+- 同步 `同步正式西游.py --accept-additions`：新增 toji_battle.json，其余只增／不变，来源核对 0 问题。
+- 合 main（e7376947：toji1 dev.247、镜流第二期等）：`battle_logic.gd` endAction 一处冲突（镜流 j_finish 与甚尔 finish），两边保留、甚尔在镜流之后（原版甚尔包装在外层）；合并后 `--补齐`＋同步（测量不变）。
+- 相关战斗场景（选测按改动选出 187 个，超过 40 个，全量交合并时跑）：本机挑 37 个跑——甚尔两项、宿傩／黄泉／镜流两期／米拉／饿狼／渡鸦、行动序列与演出、战斗规则（combat、battle_gaps、smart_ai 四段、otb、battle_events、battle_common_events、state_effects、state_operation、shield、custom_damage）、异化两项、小猫、琦玉、种族、actor_modules、actor_p0、wtype、attack_query、super_deploy、actor_advanced，全部通过。
+- 途中修了一处：`XToji` 起初用静态变量存战斗对象，没走 end_battle 的测试（xiyou_battle_common_events）退出时引擎崩（rc=-6，recursive_mutex），改成只存布尔，复跑通过。
 
 ## 待交叉核查
 
-- 甲档（战斗核心）：`battle/battle_logic.gd`（7 行钩子）、`battle/action_sequence.gd`（ACTION EFFECT 抽函数＋钩子）、`core/actor.gd`（remove_state 末尾一行）——原沙僧核心文件，请重点核；`toji.gd` 第二期段。
+- 甲档（战斗核心）：`battle/battle_logic.gd`（开战、技能列表、类别封印豁免、startAction、applyGlobal、apply、endAction、endBattle、addDebuff 各一行，itemHit／itemEva／暴击率三处在原行上加项）、`battle/action_sequence.gd`（ACTION EFFECT 抽函数＋钩子）、`core/actor.gd`（add_state、remove_state、learn_skill 各一行）——原沙僧核心文件，请重点核；`toji.gd` 第二期段。
 - 丙档：`toji_battle_probe.cjs`、`xiyou_toji_battle`。
 
 ## 本分支提交
 
 - fb2a8534 第二期①②（形态、多段、溅射、封印附加、黑闪额外一击；探针与专项）
+- 8beec090 ⑥ 封印失效
+- f9d76add ④ 命中／闪避／暴击
+- 0f4060cb ③ 暴君（含 O-待定）
+- 368bebc5 不用静态变量存战斗对象
+- 2694d2b8 合 main（e7376947）
+- （本提交）交付单可合并
