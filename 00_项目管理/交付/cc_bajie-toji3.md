@@ -52,4 +52,5 @@
 - 6506db8d ⑦ 术师杀手
 - d6a12770 ⑤ 武器库
 - 31d3efed 交付单
-- （本提交）交付单可合并
+- 0ca7b753 交付单可合并
+- 4c4699b9 修：甚尔说明卡 dyn2（总装八急派：toji1 进 main 后 xiyou_help_card 新增甚尔技能卡 2 处对不上；原版 installDisplayPreferencesRuntime.js:540-543 按当前等级改写 10205 成长行与咒具成长系数行，重制 `character_help._dyn2` 漏了 171；改 character_help.gd、toji.gd 加 output_growth_at、xiyou_help_card 建 10 级 171；skills 657/657、xiyou_toji 71/71）
