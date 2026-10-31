@@ -1,7 +1,7 @@
 # 交付：cc/bailong-jingliu2
 
 - 车道／工作者：E 角色专属／白龙_8（cc，项目线程「做渡鸦第三期战斗机制」）
-- 状态：选测在跑（跑完改「可合并」）
+- 状态：可合并
 - 分支从 cc/bailong-jingliu1 末端 c502b4ba 切出（jingliu1 未合时一起带进来）。
 
 ## 变更记录草稿
@@ -30,7 +30,8 @@ endAction 第 374～421 行，startTurn／startBattle／endBattle 第 422～450 
 
 - 专项 xiyou_jingliu2 251/251、xiyou_jingliu 104/104、xiyou_raven_battle 356/356（本机单跑）。
 - 反向验证两轮，都已还原：①放血倍率不乘、10188 不追加段，100 项失败；②不插队、绽放不乘、裂隙演化不减防、读档不整理，42 项失败（只打出前 20 条：bloom、gap.r1、river.r1）。
-- 相关战斗选测：在跑（规则对照只比镜流 6 个＋21 个相关专项）。
+- 相关战斗选测（本机，并行 2）：规则对照只比镜流（RULES_ONLY_ACTORS=170）xiyou_rules 与 d2～d6 共 6 个，343 秒全过；xiyou_jingliu2、xiyou_jingliu、xiyou_raven_battle、xiyou_mira_battle、xiyou_yomi_battle、xiyou_alien_battle、xiyou_battle、xiyou_battle_gaps、xiyou_otb、xiyou_custom_damage、xiyou_sukuna_battle、xiyou_garou_battle、xiyou_race_battle、xiyou_cat、xiyou_action_sequence、xiyou_battle_events、xiyou_actor_modules、xiyou_actor_p0、xiyou_save_events、xiyou_save_page、xiyou_raven_soul 共 21 个，71 秒全过（逐个看过日志都实际跑了），无偶发。
+- 选测后合了 main（0bbb47fc，带进悟空 gaps3 的 battle_logic 改动与飞艇探针），无冲突；合后单跑 xiyou_jingliu2 251、xiyou_jingliu 104、xiyou_raven_battle 356 全过，其余没重跑。
 - 没改切片、转换器、全量同步里的探针、界面，没跑同步。
 
 ## 交接板
@@ -57,3 +58,5 @@ endAction 第 374～421 行，startTurn／startBattle／endBattle 第 422～450 
 - 67c120e8 参照 jingliu2_probe 与夹具
 - 5430dde7 第二期实现
 - da8fc0aa 专项 xiyou_jingliu2
+- d9df4275 交付单草稿
+- 合并 main、补 xiyou_jingliu2.gd.uid、交付单可合并
