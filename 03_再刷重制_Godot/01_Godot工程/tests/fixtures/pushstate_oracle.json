@@ -655,6 +655,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "equips": [],
     "before": {
      "user": {
       "states": [],
@@ -700,6 +701,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "equips": [],
     "before": {
      "user": {
       "states": [],
@@ -744,6 +746,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "equips": [],
     "before": {
      "user": {
       "states": [],
@@ -793,6 +796,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "equips": [],
     "before": {
      "user": {
       "states": [],
@@ -838,6 +842,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "equips": [],
     "before": {
      "user": {
       "states": [],
@@ -883,6 +888,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "equips": [],
     "before": {
      "user": {
       "states": [],
@@ -924,6 +930,7 @@
    "observed": {
     "value": 635,
     "confirmed": 635,
+    "equips": [],
     "before": {
      "user": {
       "states": [],
@@ -969,6 +976,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "equips": [],
     "before": {
      "user": {
       "states": [],
@@ -1010,6 +1018,7 @@
    "observed": {
     "value": -1000,
     "confirmed": -1000,
+    "equips": [],
     "before": {
      "user": {
       "states": [],
@@ -1055,6 +1064,7 @@
    "observed": {
     "value": -1000,
     "confirmed": -1000,
+    "equips": [],
     "before": {
      "user": {
       "states": [],
@@ -1100,6 +1110,7 @@
    "observed": {
     "value": 56,
     "confirmed": 56,
+    "equips": [],
     "before": {
      "user": {
       "states": [],
@@ -1129,6 +1140,104 @@
    "errors": []
   },
   {
+   "id": "equip.1706.weapon",
+   "setup": {
+    "weapon": 1706,
+    "skill": 1,
+    "target": "enemy",
+    "rnd": 0.99
+   },
+   "observed": {
+    "value": 1478,
+    "confirmed": 1478,
+    "equips": [
+     [
+      1706,
+      "无极西瓜刀"
+     ]
+    ],
+    "before": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [],
+      "turns": {}
+     }
+    },
+    "after": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [
+       521
+      ],
+      "turns": {
+       "521": 1
+      }
+     }
+    },
+    "cache": {
+     "push": 1,
+     "rec": 0,
+     "self": 0
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "equip.4966.armor",
+   "setup": {
+    "armor": 4966,
+    "skill": 8,
+    "target": "ally",
+    "rnd": 0.99
+   },
+   "observed": {
+    "value": -1000,
+    "confirmed": -1000,
+    "equips": [
+     [
+      4966,
+      "纯美的赞诗"
+     ]
+    ],
+    "before": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [],
+      "turns": {}
+     }
+    },
+    "after": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [
+       1734
+      ],
+      "turns": {
+       "1734": 1
+      }
+     }
+    },
+    "cache": {
+     "push": 0,
+     "rec": 1,
+     "self": 0
+    }
+   },
+   "errors": []
+  },
+  {
    "id": "rec.6706.already",
    "setup": {
     "skills": [
@@ -1144,6 +1253,7 @@
    "observed": {
     "value": -1000,
     "confirmed": -1000,
+    "equips": [],
     "before": {
      "user": {
       "states": [],

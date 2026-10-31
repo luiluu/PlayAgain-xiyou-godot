@@ -1,10 +1,10 @@
 extends Node
 ## 【cc·悟空·未经审查】伤害／治疗时挂状态（dsPassiveSkill PushState／RecPushState／PushsubState，正式版由 installDamageElementRuntime
-## 在结算时按 makeDamageValue 正负挂）：与 mv_oracle/pushstate_probe.cjs（tests/fixtures/pushstate_oracle.json，正式引擎）12 例逐条比。
+## 在结算时按 makeDamageValue 正负挂）：与 mv_oracle/pushstate_probe.cjs（tests/fixtures/pushstate_oracle.json，正式引擎）14 例逐条比（含装备上的标签：武器 1706、防具 4966）。
 ## 每例：新局难度 2，角色 1 清技能／装备／状态后学被动，角色 8 生命 1 当友方目标，敌群 1 第一只当敌方目标；行动技能公式定 1000、无浮动不暴击，
 ## 命中、闪避固定成命中，挂状态的掷骰固定成用例的 rnd；比缓存三类条数、正负、前后状态与回合数（已有不重挂＝回合不被重置）。
 const FIXTURE := "res://tests/fixtures/pushstate_oracle.json"
-const WATCH := [161, 42, 309, 742, 1561]
+const WATCH := [161, 42, 309, 742, 1561, 521, 1734]
 var passed := 0
 var total := 0
 
@@ -46,6 +46,14 @@ func _case(cfg: Dictionary) -> Dictionary:
 		a.skill_ids.clear()
 		a.state_ids.clear()
 	var a: XActor = s.actor(1)
+	# 装备用例：给角色 1 穿上一件带标签的武器／防具实例（参照里 gainItem 后 changeEquip）
+	var slots := a.equip_slots()
+	for i in slots.size():
+		a.equips.append({})
+	for kind in ["weapon", "armor"]:
+		if cfg.has(kind):
+			var g := XGear.create(kind, int(cfg[kind]), s)
+			a.equips[slots.find(1 if kind == "weapon" else int(XDB.rec("Armors", int(cfg[kind])).etypeId))] = g
 	for sid in cfg.get("skills", []):
 		a.learn_skill(int(sid))
 	for m in s.members():
@@ -80,7 +88,7 @@ func _case(cfg: Dictionary) -> Dictionary:
 func _run() -> void:
 	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("cases", ref.cases.size() == 12, ref.cases.size())
+	check("cases", ref.cases.size() == 14, ref.cases.size())
 	for c in ref.cases:
 		check(c.id + ".native", c.errors.is_empty(), c.errors)
 		if not c.errors.is_empty():

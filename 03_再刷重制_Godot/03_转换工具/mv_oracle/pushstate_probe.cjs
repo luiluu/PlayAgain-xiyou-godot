@@ -20,12 +20,21 @@ function settle(a) {
   a.need_refresh_param = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
   a.refresh(); if (a.initPassiveCache) a.initPassiveCache(); a.refreshPassiveCache();
 }
-const WATCH = [161, 42, 309, 742, 1561];
+const WATCH = [161, 42, 309, 742, 1561, 521, 1734];
 const snap = b => ({states: WATCH.filter(id => b.isStateAffected(id)), turns: Object.fromEntries(WATCH.filter(id => b.isStateAffected(id)).map(id => [id, b._stateTurns[id]]))});
 // cfg：skills 角色 1 学的被动、weapon 角色 1 武器、skill 行动技能（公式固定 1000、无浮动不暴击）、target 'enemy'|'ally'、rnd 掷骰、pre 目标先有的状态（回合定为 1）
 function run(cfg) {
   newGame(); w.$gameSystem.setDifficultyId(2);
   const a = bare(1); for (const id of cfg.skills || []) a.learnSkill(id);
+  // 装备：gainItem 后取背包里新生成的独立装备实例，changeEquip 到对应栏（新局角色 1 能穿 1706 无极西瓜刀、4966 纯美的赞诗）
+  for (const [kind, id] of [['weapon', cfg.weapon], ['armor', cfg.armor]]) {
+    if (!id) continue;
+    const base = kind === 'weapon' ? w.$dataWeapons[id] : w.$dataArmors[id];
+    w.$gameParty.gainItem(base, 1);
+    const list = kind === 'weapon' ? w.$gameParty.weapons() : w.$gameParty.armors();
+    const inst = list[list.length - 1];
+    a.changeEquip(kind === 'weapon' ? 0 : a.equipSlots().indexOf(base.etypeId), inst);
+  }
   settle(a); a.recoverAll();
   const ally = bare(8); settle(ally); ally.recoverAll(); ally.setHp(1);
   w.Math.random = () => 0.99; w.$gameTroop.setup(1); w.Math.random = () => 0.5;
@@ -39,7 +48,7 @@ function run(cfg) {
   const value = act.makeDamageValue(target, false);
   const confirmed = act.onPreDamageStateEffects(target, value);
   w.Math.random = () => 0.5;
-  return {value, confirmed, before, after: {user: snap(a), target: snap(target)},
+  return {value, confirmed, equips: a.equips().filter(Boolean).map(e => [e.baseItemId || e.id, e.name]), before, after: {user: snap(a), target: snap(target)},
     cache: {push: (a._passiveCache.pushStates || []).length, rec: (a._passiveCache.recPushStates || []).length, self: (a._passiveCache.pushSelfStates || []).length}};
 }
 const CASES = [
@@ -54,6 +63,8 @@ const CASES = [
   ['rec.6706.ally', {skills: [6706], skill: 8, target: 'ally', rnd: 0.99}],
   ['rec.6706.enemy', {skills: [6706], skill: 8, target: 'enemy', rnd: 0.99}],
   ['rec.6706.damage', {skills: [6706], skill: 1, target: 'enemy', rnd: 0.1}],
+  ['equip.1706.weapon', {weapon: 1706, skill: 1, target: 'enemy', rnd: 0.99}],          // 武器 <PushState0521: 100%>
+  ['equip.4966.armor', {armor: 4966, skill: 8, target: 'ally', rnd: 0.99}],             // 防具 <RecPushState1734: 100%>
   ['rec.6706.already', {skills: [6706], skill: 8, target: 'ally', rnd: 0.1, pre: [1561]}],
 ];
 const cases = CASES.map(([id, cfg]) => makeCase(id, cfg, () => run(cfg)));
