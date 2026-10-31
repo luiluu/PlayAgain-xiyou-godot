@@ -350,6 +350,8 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 		if self is XEnemy:
 			XEnemyBook.note_death(self)  # AB_EnemyBook Game_Enemy.die：击败数即时 +1
 		XRaceBattle.on_death(self)  # 种族 die 包装：清反攻
+		XSukuna.on_death(self)  # 宿傩 Game_Actor.die 包装：清战斗数据（领域、适应等状态已随 die 清掉）
+		XBlackFlash.on_death(self)  # 黑闪 die 包装：清集中、连闪、觉醒
 	if not state_ids.has(id):
 		state_ids.append(id)
 		_sort_states()
