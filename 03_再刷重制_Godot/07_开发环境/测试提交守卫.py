@@ -123,6 +123,46 @@ class GuardTests(unittest.TestCase):
         self.merging().unlink()
         self.assertEqual(self.commit(self.main, {'XIYOU_MAIN_COMMIT': '1'}).returncode, 0)
 
+    def new_worktree(self, *args):
+        script = self.main / '03_再刷重制_Godot/07_开发环境/新建工作树.sh'
+        if not script.exists():
+            shutil.copy2(HERE / '新建工作树.sh', script)
+        return subprocess.run(['zsh', str(script), '--补齐', str(self.lane), *args], capture_output=True, text=True, env=self.env)
+
+    def lane_branch(self):
+        return self.git('symbolic-ref', '--short', 'HEAD', cwd=self.lane).stdout.strip()
+
+    def test_fill_in_switches_app_worktree_to_assigned_branch_first(self):
+        # app 给的工作树在别的分支上：--branch/--from 先切出派单分支再补齐（临时库没有引擎和产物，补齐本身在后面失败）
+        (self.main / 'm.txt').write_text('m')
+        self.git('add', 'm.txt'); self.git('commit', '-q', '-m', 'main moved', extra={'XIYOU_MAIN_COMMIT': '1'})
+        (self.lane / 'scratch.log').write_text('untracked stays')
+        r = self.new_worktree('--branch', 'cc/nezha-x', '--from', 'main')
+        self.assertIn('切出 cc/nezha-x', r.stdout, r.stderr)
+        self.assertEqual(self.lane_branch(), 'cc/nezha-x')
+        self.assertEqual(self.git('rev-parse', 'HEAD', cwd=self.lane).stdout, self.git('rev-parse', 'main').stdout)
+        self.assertEqual(self.git('show-ref', '--verify', '--quiet', 'refs/heads/claude/task').returncode, 0)   # 原分支不删
+        self.assertTrue((self.lane / 'scratch.log').exists())
+        self.git('switch', '-q', 'claude/task', cwd=self.lane)
+        self.new_worktree('--branch', 'cc/nezha-y')                                        # --from 缺省为 main
+        self.assertEqual(self.git('rev-parse', 'HEAD', cwd=self.lane).stdout, self.git('rev-parse', 'main').stdout)
+
+    def test_fill_in_branch_switch_refuses_unsafe_cases(self):
+        r = self.new_worktree('--from', 'main')
+        self.assertEqual(r.returncode, 64)
+        self.assertIn('--from 要和 --branch 一起给', r.stderr)
+        r = self.new_worktree('--branch', 'cc/z', '--from', 'no-such-ref')
+        self.assertIn('--from 找不到', r.stderr)
+        r = self.new_worktree('--branch', 'claude/task')
+        self.assertIn('已存在', r.stderr)
+        self.assertEqual(self.commit(self.lane).returncode, 0)
+        (self.lane / 'f.txt').write_text('dirty')
+        r = self.new_worktree('--branch', 'cc/z')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('有未提交的已跟踪改动', r.stderr)
+        self.assertEqual(self.lane_branch(), 'claude/task')
+        self.assertNotEqual(self.git('show-ref', '--verify', '--quiet', 'refs/heads/cc/z').returncode, 0)
+
     def test_installer_is_idempotent_checks_and_keeps_foreign_hooks(self):
         self.assertEqual(self.install('--check').returncode, 0)
         out = self.install().stdout
@@ -146,7 +186,7 @@ class GuardTests(unittest.TestCase):
         self.assertTrue((self.main / '.git/hooks/pre-commit').is_file())
 
     def test_new_worktree_script_installs_guard_and_merge_tool_sets_variable(self):
-        self.assertIn('装提交守卫.sh', (HERE / '新建工作树.sh').read_text(encoding='utf-8'))
+        self.assertIn('"$MAIN/$GODOT_SUB/07_开发环境/装提交守卫.sh"', (HERE / '新建工作树.sh').read_text(encoding='utf-8'))  # 装主工作区那份
         text = (HERE / '合并车道.py').read_text(encoding='utf-8')
         self.assertEqual(text.count('env=MAIN_COMMIT_ENV'), 3)           # 合并、冲突后提交、收尾提交
         self.assertIn("XIYOU_MAIN_COMMIT='1', XIYOU_LANE_MERGE='1'", text)  # 合并进行中守卫只认后者

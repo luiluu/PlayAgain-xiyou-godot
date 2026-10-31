@@ -1390,6 +1390,39 @@ for name in filter(None, files):
         self.assertEqual(self.call_task('sukuna2', '--branch', 'cc/compassionate-gagarin-ec734e', '--finish'), 0, self.last_output)
         self.assertFalse(wt.exists())
 
+    def test_cc_branch_with_old_claude_sheet_merges_and_two_sheets_refuse(self):
+        """10-31 八戒：分支 cc/bajie-blackflash、交付单却叫 claude_bajie-blackflash.md，总装只好建 claude/ 别名分支绕（tools22）。
+        cc_／claude_ 两种前缀都找：只有一份就用它；两份都在就报错，不随便挑一份。"""
+        wt = self.cc_lane('blackflash')
+        sheet = wt / '00_项目管理/交付/cc_blackflash.md'
+        old = sheet.with_name('claude_blackflash.md')
+        old.write_text(sheet.read_text())
+        self.g('add', '.', cwd=wt); self.g('commit', '-m', 'second sheet', cwd=wt)
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n\n## 待交叉核查\n| cc/blackflash |\n## end\n')
+        self.g('add', '.'); self.g('commit', '-m', 'board')
+        self.assertEqual(self.call_task('blackflash'), 1)
+        self.assertIn('2 份交付单', self.last_output)
+        self.assertIn('claude_blackflash.md', self.last_output)
+        self.g('rm', '-q', str(sheet), cwd=wt); self.g('commit', '-m', 'keep claude_ sheet only', cwd=wt)
+        self.assertEqual(self.call_task('blackflash'), 0, self.last_output)
+        self.assertIn('【cc】新写法', (self.root / merge.LOG).read_text())
+        self.assertFalse((self.root / '00_项目管理/交付/claude_blackflash.md').exists())
+        self.assertEqual(self.call_task('blackflash', '--finish'), 0, self.last_output)
+        self.assertFalse(wt.exists())
+
+    def test_both_cc_and_claude_branches_ask_for_branch_option(self):
+        wt = self.cc_lane('twin')
+        self.g('branch', 'claude/twin', 'cc/twin')                        # 只有 cc/twin 有工作树时照工作树合并，不报错
+        self.g('worktree', 'remove', '--force', str(wt))
+        self.assertEqual(self.call_task('twin'), 1)
+        self.assertIn('须有且只有一个', self.last_output)
+        self.assertIn('cc/twin、claude/twin 都在，用 --branch <分支> 指定', self.last_output)
+        wt2 = Path(self.tmp.name) / 'lane_twin2'
+        self.g('worktree', 'add', str(wt2), 'claude/twin')
+        self.g('worktree', 'add', str(wt), 'cc/twin')
+        self.assertEqual(self.call_task('twin'), 1)
+        self.assertIn('都有工作树，用 --branch <分支> 指定', self.last_output)
+
     def test_cc_review_branch_and_sheet_executor_write_no_review_needed(self):
         state = {'branch': 'cc/review-3', 'target': 'cc/review-3', 'delivery': 'x.md'}
         self.assertEqual(merge.review_status(self.root, state), '无')
