@@ -170,7 +170,7 @@ func _paint_list(c: XMVCanvas) -> void:
 			dw -= c.text_width(str(cost.text), COST_SIZE) + 5
 
 
-## YEP_SkillCore drawSkillCost / YEP_X_SkillCooldowns：预热、冷却优先，否则 TP、MP 由右往左
+## YEP_SkillCore drawSkillCost / YEP_X_SkillCooldowns：预热、冷却优先，否则 TP、MP、HP 由右往左（HP 色 18、图标 1266）
 func _costs(a: XActor, s: Dictionary) -> Array:
 	var wu := int(ceilf(float(a.warmups.get(int(s.id), 0))))
 	var cd := int(ceilf(float(a.cooldowns.get(int(s.id), 0))))
@@ -184,6 +184,9 @@ func _costs(a: XActor, s: Dictionary) -> Array:
 		out.append({"text": "%sTP" % XMenu._group(c.tp), "color": XUI.text_color(29), "icon": 1268})
 	if c.mp > 0:
 		out.append({"text": "%sMP" % XMenu._group(c.mp), "color": XUI.text_color(23), "icon": 1269})
+	var hp := XBattleLogic.skill_hp_cost(a, s)
+	if hp > 0:
+		out.append({"text": "%sHP" % XMenu._group(hp), "color": XUI.text_color(18), "icon": 1266})
 	return out
 
 
@@ -258,6 +261,7 @@ func use_skill() -> void:
 	var c := logic.skill_cost(a, s)
 	a.mp -= c.mp
 	a.tp -= c.tp
+	logic.pay_hp(a, s)
 	for t in targets:
 		for e in s.get("effects", []):
 			logic._effect(a, t, e, {"skill": s, "hp": 0.0, "mp": 0.0, "added": [], "removed": []})

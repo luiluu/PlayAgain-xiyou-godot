@@ -1,7 +1,7 @@
 'use strict';
 // 【Claude·悟空·未经审查】战斗核心缺口定向参照：① 百分比 MP 消耗（YEP_SkillCore <MP Cost: x%>，经 dsPassive 减耗、
 // installSkillCostRuntime 的 −100% 下限）进实扣 skillMpCost；② 角色能力上限（YEP_CoreEngine Actor MaxHP/MaxMP/Parameter＝99999999，
-// G_StateParam 在 paramMax 处夹；饿狼 173 的 paramMax 包装放到 999999999999）。
+// G_StateParam 在 paramMax 处夹；饿狼 173 的 paramMax 包装放到 999999999999）；③ 技能 HP 费用（<HP Cost: n>／<HP Cost: n%>）。
 // 真实冻结插件、全内存新局；只写 .sandbox/battle_gaps.json，拷成 tests/fixtures/battle_gaps_oracle.json（不接入全量同步）。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
@@ -64,5 +64,17 @@ for (const [name, cfg] of CAP_VARIANTS) {
     return {param: Array.from({length: 8}, (_, i) => a.param(i)), max: Array.from({length: 8}, (_, i) => a.paramMax(i)), mhp: a.mhp, mmp: a.mmp};
   }));
 }
-process.exitCode = finish(host, 'battle_gaps.json', {scope: 'percent MP cost in skillMpCost; actor param cap', percentSkills, cases}) ? 0 : 1;
+// ---- ③ HP 费用（YEP_SkillCore skillHpCost／canPaySkillHpCost／paySkillHpCost）----
+// 角色 1 生命上限加 5000；生命取 满／等于费用／费用＋1 时能否付（canPaySkillCost，MP／TP 都满），满血时付费后的生命（paySkillCost）
+const hpSkills = w.$dataSkills.filter(s => s && (Number(s.hpCost) > 0 || Number(s.hpCostPer) > 0)).map(s => s.id);
+for (const id of hpSkills) {
+  cases.push(makeCase(`hp.${id}`, {actor: 1, skill: id, mhpPlus: 5000}, () => {
+    newGame(); const a = bare(1); a._paramPlus[0] = 5000; settle(a); a.recoverAll(); a.setTp(100);
+    const sk = w.$dataSkills[id], cost = a.skillHpCost(sk), out = {cost, mhp: a.mhp, canPay: {}};
+    for (const [k, hp] of [['full', a.mhp], ['equal', cost], ['plus1', cost + 1]]) { a._hp = hp; out.canPay[k] = a.canPaySkillCost(sk); }
+    a._hp = a.mhp; a.paySkillCost(sk); out.afterPay = a.hp;
+    return out;
+  }));
+}
+process.exitCode = finish(host, 'battle_gaps.json', {scope: 'percent MP cost in skillMpCost; actor param cap; skill HP cost', percentSkills, hpSkills, cases}) ? 0 : 1;
 process.exit();

@@ -317,7 +317,7 @@ func vars() -> Array:
 static func is_item(rec: Dictionary) -> bool:
 	return rec.has("itypeId")
 
-## YEP_SkillCore 的消耗备注（逐行、冒号后恰一个空格、只认整数）：<MP Cost: n> 改基础 MP、<MP Cost: n%> 记最大 MP 比例，TP 同理。
+## YEP_SkillCore 的消耗备注（逐行、冒号后恰一个空格、只认整数）：<MP Cost: n> 改基础 MP、<MP Cost: n%> 记最大 MP 比例，TP、HP 同理（HP 默认 0）。
 ## 「<MP Cost: 7.5%>」这类带小数的写法原版认不出（7225 降众天华比例为 0），照原版。按备注缓存
 static var _note_cost_cache := {}
 static func note_costs(skill: Dictionary) -> Dictionary:
@@ -325,7 +325,7 @@ static func note_costs(skill: Dictionary) -> Dictionary:
 	if not _note_cost_cache.has(note):
 		var out := {}
 		for line in note.split("\n"):
-			for kind in ["MP", "TP"]:
+			for kind in ["MP", "TP", "HP"]:
 				var m := RegEx.create_from_string("(?i)<(?:%s COST):[ ](\\d+)>" % kind).search(line)
 				if m != null:
 					out[kind.to_lower() + "Cost"] = int(m.get_string(1))
@@ -336,6 +336,24 @@ static func note_costs(skill: Dictionary) -> Dictionary:
 					break
 		_note_cost_cache[note] = out
 	return _note_cost_cache[note]
+
+## YEP_SkillCore skillHpCost：⌊基础＋最大HP×比例⌋、不低于 0（熟练度公式原样、费用为正时至少 1，等于不变）。
+## 异化空壳在战斗中按开场参照生命上限算（Adv:126），见 XAlienBattle.hp_cost_mhp
+static func skill_hp_cost(a: XBattler, skill: Dictionary) -> int:
+	if is_item(skill):
+		return 0
+	var nc := note_costs(skill)
+	if not nc.has("hpCost") and not nc.has("hpCostPer"):
+		return 0
+	return maxi(0, floori(float(nc.get("hpCost", 0)) + XAlienBattle.hp_cost_mhp(a) * float(nc.get("hpCostPer", 0.0))))
+
+## canPaySkillHpCost：费用为 0 能付，否则生命要大于费用；异化空壳／嫁祸／连命另看护盾、保护者、生命池（Adv:127）
+static func can_pay_hp(a: XBattler, skill: Dictionary) -> bool:
+	var cost := skill_hp_cost(a, skill)
+	var alien = XAlienBattle.can_pay_hp(a, cost)
+	if alien != null:
+		return alien
+	return cost <= 0 or a.hp > cost
 
 ## 最大 MP 比例部分占整笔 MP 的份额（installSkillCostRuntime C.percentShare）
 static func percent_share(a: XBattler, skill: Dictionary) -> float:
@@ -396,6 +414,12 @@ func _skill_cost(a: XBattler, skill: Dictionary, panel: bool, shift: float) -> D
 		cost.mp = 0  # 异化缄默 skillMpCost 包装（Adv:132）：选定技能不花 MP，改锁生命上限
 	return {"mp": XRaceBattle.cost(a, int(cost.mp)), "tp": XRaceBattle.cost(a, int(cost.tp))}
 
+## paySkillHpCost：直接减生命（_hp -= 费用，不走伤害）；异化连命扣池、嫁祸扣保护者、空壳扣护盾（Adv:128）
+func pay_hp(u: XBattler, skill: Dictionary) -> void:
+	var cost := skill_hp_cost(u, skill)
+	if not XAlienBattle.pay_hp(self, u, cost):
+		u.hp -= cost
+
 func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if skill.is_empty():
 		return false
@@ -431,6 +455,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if XAlienBattle.blocks_borrowed(state, a, skill):  # 异化百相、无面 meetsSkillConditions：被替换的、没选中的仿形、来源不会了的借来技能
 		return false
 	if XAlienBattle.silence_blocks(self, a, skill):  # 异化缄默 canPaySkillCost：生命上限锁不下了
+		return false
+	if not can_pay_hp(a, skill):  # YEP_SkillCore canPaySkillCost：先看 HP 费用
 		return false
 	var c := skill_cost(a, skill)
 	var mp = XAlienBattle.glutton_mp(a)  # 异化饕餮 canPaySkillCost：MP 费用看饥饿储备
@@ -1302,6 +1328,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 			else:
 				u.mp -= c.mp
 			u.tp -= c.tp
+			pay_hp(u, skill)  # YEP_SkillCore paySkillCost：MP／TP 之后扣 HP 费用
 		u.pay_cooldown(skill)
 		_otb_user_shift(u, skill)
 	# YEP_BattleEngineCore useItem：付费后 refresh，消费行动者此前的 dirty，并照 Game_BattlerBase.refresh 把 MP／TP 截回 [0, 上限]
@@ -1568,7 +1595,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if not blocked:
 		XStateEffects.run("initiate", u, ctx)
 		XStateEffects.run("select", t, ctx)
-	var used := not blocked and (not t.is_dead() or int(skill.get("scope", 0)) in [9, 10])  # result.used（testApply）
+	var used := not blocked and (int(skill.get("scope", 0)) in [9, 10]) == t.is_dead()  # result.used（testApply：isForDeadFriend() === target.isDead()，复活类打活目标不算）
 	var r := _apply(u, skill, t)
 	XAlienBattle.after_apply(self, u, skill, t, r)  # 异化 apply 包装：灾疫附加腐蚀
 	XAlienBattle.seal_last(self, u, skill, t, used and not r.missed and not r.evaded)  # 异化蚀术 apply 包装：命中后封印

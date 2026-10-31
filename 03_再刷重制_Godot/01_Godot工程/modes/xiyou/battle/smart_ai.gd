@@ -317,8 +317,13 @@ func cost_multiplier(rec: Dictionary, item: bool) -> float:
 	if item:
 		return 0.65
 	var c := logic.skill_cost(actor, rec)
+	# HP 费用：付完剩不到 25% 生命 +4、不到 50% +1.6，另加 1.5×费用÷当前生命
+	var hp := float(XBattleLogic.skill_hp_cost(actor, rec))
+	var after := (actor.hp - hp) / maxf(1.0, actor.mhp)
+	var danger := (4.0 if after < 0.25 else 1.6 if after < 0.5 else 0.0) if hp > 0.0 else 0.0
 	return 1.0 / (1.0 + 0.25 * c.mp / maxf(1.0, actor.mmp) + 0.6 * c.mp / maxf(1.0, actor.mp)
-		+ 0.25 * c.tp / maxf(1.0, actor.max_tp()) + 0.35 * c.tp / maxf(1.0, actor.tp))
+		+ 0.25 * c.tp / maxf(1.0, actor.max_tp()) + 0.35 * c.tp / maxf(1.0, actor.tp)
+		+ 1.5 * hp / maxf(1.0, actor.hp) + danger)
 
 
 static func has_cooldown(rec: Dictionary) -> bool:
