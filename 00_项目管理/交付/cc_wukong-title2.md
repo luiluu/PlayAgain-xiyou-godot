@@ -2,7 +2,7 @@
 
 - 车道／工作者：B 界面（C 车道接）／悟空（cc）
 - 基线：从 cc/wukong-title1 末端 fa95126d 切出。
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -45,9 +45,12 @@
 ## 验证
 
 - 专项：`xiyou_airship_view`（含名牌两条）、`xiyou_airship_fly`、`xiyou_airship_state` 通过。
-- 相关场景：待写
+- 相关场景（本机）：`xiyou_map`、`xiyou_hud`、`xiyou_floor_run*`、`xiyou_designation`、`xiyou_transfer` 共 13 个场景全部通过；`xiyou_drop_record`、`xiyou_pushstate`、`xiyou_cat`、`xiyou_mira_battle` 通过。
+- 解析检查（合并车道.parse_check，基准 main）：426 个 .gd、0 个问题。
+- 顺带修了 pushstate2 漏的一处：`tests/xiyou_drop_record.gd` 子类覆写 `_damage_value` 没跟上父类新加的 `push` 参数（Parse Error，总装合并时撤出），补成 `_push := false`。
 - 改动：`map_scene.gd`（两个名牌变量、创建处各两行、`_update_plates` 与 _process 一行）；新 `map/designation_plate.gd`。没改 actor／xstate。
 
 ## 本分支提交
 
 - 994b1d7c 头顶名牌与断言
+- 079b7df3 修 drop_record 子类签名、交付单
