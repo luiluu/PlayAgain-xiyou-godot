@@ -108,12 +108,12 @@ class CloudWaitTests(unittest.TestCase):
     def git(self, *args, stdin=None):
         return subprocess.run(['git', '-C', str(self.repo), *args], input=stdin, capture_output=True, text=True, check=True, env=self.env).stdout.strip()
 
-    def publish(self, mode, passed=True):
+    def publish(self, mode, passed=True, sha=None):
         blob = lambda text: self.git('hash-object', '-w', '--stdin', stdin=text)
         tree = self.git('mktree', stdin='100644 blob %s\tresult.json\n100644 blob %s\tsummary.md\n'
                         % (blob(json.dumps({'passed': passed})), blob('云端汇总 ' + mode)))
         commit = self.git('commit-tree', tree, '-m', 'r')
-        self.git('push', '-q', 'origin', '%s:refs/ci/results/%s/%s' % (commit, self.sha, mode))
+        self.git('push', '-q', 'origin', '%s:refs/ci/results/%s/%s' % (commit, sha or self.sha, mode))
 
     def stub_gh(self, statuses):
         self.gh.write_text('#!/bin/sh\necho \'%s\'\n' % json.dumps([{'status': s} for s in statuses])); self.gh.chmod(0o755)
@@ -152,6 +152,42 @@ class CloudWaitTests(unittest.TestCase):
         r = self.wait(timeout=60)
         self.assertEqual(r.returncode, 3, r.stdout)
         self.assertIn('云端运行已结束', r.stdout)
+
+    def commit(self, name):
+        (self.repo / name).write_text(name)
+        self.git('add', name); self.git('commit', '-q', '-m', name)
+        return self.git('rev-parse', 'HEAD')
+
+    def test_verified_base_is_nearest_ancestor_with_passed_result(self):
+        c1 = self.sha
+        c2 = self.commit('b'); c3 = self.commit('c'); self.commit('d')
+        self.git('push', '-q', 'origin', 'HEAD:refs/heads/main')
+        self.publish('affected', sha=c1)
+        self.publish('full', passed=False, sha=c3)        # 最近的一个没通过：跳过
+        self.publish('affected', sha=c2)
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('cloud', self.tool)
+        mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+        self.assertEqual(mod.verified_base(str(self.remote), mod.cache_repo()), c2)
+        self.git('push', '-q', '--delete', 'origin', 'refs/ci/results/%s/affected' % c2)
+        self.assertEqual(mod.verified_base(str(self.remote), mod.cache_repo()), c1)
+
+    def test_run_pins_base_ref_and_pushes_branch(self):
+        c1 = self.sha
+        head = self.commit('b')
+        self.publish('affected', sha=c1)
+        r = subprocess.run([sys.executable, str(self.tool), 'run', '--no-upload', '--branch', 'x'], cwd=self.repo, capture_output=True, text=True, env=self.env)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        refs = subprocess.run(['git', 'ls-remote', str(self.remote)], capture_output=True, text=True).stdout
+        self.assertIn('%s\trefs/ci/base/%s' % (c1, head), refs)
+        self.assertIn('%s\trefs/heads/ci/x' % head, refs)
+
+    def test_blocked_run_without_jobs_says_quota(self):
+        self.gh.write_text('#!/bin/sh\ncase "$2" in list) echo \'[{"databaseId":7,"status":"completed","conclusion":"failure"}]\';; view) echo \'{"jobs":[]}\';; esac\n')
+        self.gh.chmod(0o755)
+        r = self.wait(timeout=60)
+        self.assertEqual(r.returncode, 4, r.stdout)
+        self.assertIn('额度用完', r.stdout)
 
     def test_gh_unavailable_falls_back_to_timeout(self):
         self.gh.write_text('#!/bin/sh\nexit 1\n'); self.gh.chmod(0o755)
