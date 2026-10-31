@@ -1291,6 +1291,76 @@
    "errors": []
   },
   {
+   "id": "invoke.reflect",
+   "setup": {
+    "kind": "reflect",
+    "rnd": 0.1
+   },
+   "observed": {
+    "addable": [
+     true,
+     true
+    ],
+    "rates": {
+     "mrf": 1,
+     "cnt": 0
+    },
+    "hpLoss": [
+     1296,
+     0
+    ],
+    "reflected": false,
+    "actor": {
+     "states": [
+      161
+     ],
+     "turns": {
+      "161": 5
+     }
+    },
+    "foe": {
+     "states": [],
+     "turns": {}
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "invoke.counter",
+   "setup": {
+    "kind": "counter",
+    "rnd": 0.1
+   },
+   "observed": {
+    "addable": [
+     true,
+     true
+    ],
+    "rates": {
+     "mrf": 0,
+     "cnt": 1
+    },
+    "hpLoss": [
+     0,
+     862
+    ],
+    "reflected": false,
+    "actor": {
+     "states": [],
+     "turns": {}
+    },
+    "foe": {
+     "states": [
+      161
+     ],
+     "turns": {
+      "161": 5
+     }
+    }
+   },
+   "errors": []
+  },
+  {
    "id": "order.1580",
    "setup": {
     "skills": [

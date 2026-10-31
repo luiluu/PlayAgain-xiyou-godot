@@ -1,6 +1,6 @@
 extends Node
 ## 【cc·悟空·未经审查】伤害／治疗时挂状态（dsPassiveSkill PushState／RecPushState／PushsubState，正式版由 installDamageElementRuntime
-## 在结算时按 makeDamageValue 正负挂）：与 mv_oracle/pushstate_probe.cjs（tests/fixtures/pushstate_oracle.json，正式引擎）15 例逐条比（含装备上的标签：武器 1706、防具 4966；order.1580 记原版挂状态在 React 之前）。
+## 在结算时按 makeDamageValue 正负挂）：与 mv_oracle/pushstate_probe.cjs（tests/fixtures/pushstate_oracle.json，正式引擎）15 例逐条比（含装备上的标签：武器 1706、防具 4966；order.1580 记原版挂状态在 React 之前；invoke.reflect／counter 走 _invoke：反射回自己时挂给自己、反击由反击者挂）。
 ## 每例：新局难度 2，角色 1 清技能／装备／状态后学被动，角色 8 生命 1 当友方目标，敌群 1 第一只当敌方目标；行动技能公式定 1000、无浮动不暴击，
 ## 命中、闪避固定成命中，挂状态的掷骰固定成用例的 rnd；比缓存三类条数、正负、前后状态与回合数（已有不重挂＝回合不被重置）。
 const FIXTURE := "res://tests/fixtures/pushstate_oracle.json"
@@ -19,6 +19,8 @@ class FixedLogic extends XBattleLogic:
 				return 0.99
 			"push_state", "push_self_state":
 				return rnd
+			"reflection", "counter":
+				return 0.0
 		return super(reason)
 
 func check(label: String, ok: bool, detail = null) -> void:
@@ -85,15 +87,64 @@ func _case(cfg: Dictionary) -> Dictionary:
 	return {"sign": signf(logic._push_sign), "before": before, "after": {"user": _snap(a), "target": _snap(t)},
 		"cache": {"push": float(c.pushStates.size()), "rec": float(c.recPushStates.size()), "self": float(c.pushSelfStates.size())}}
 
+func _trait_state(code: int, data_id: int) -> int:
+	var states: Array = XDB.table("States")
+	var id := states.size()
+	states.append({"id": id, "name": "挂状态参照", "note": "", "meta": {}, "traits": [{"code": code, "dataId": data_id, "value": 1.0}], "effects": [],
+		"restriction": 0, "priority": 50, "minTurns": 1, "maxTurns": 1})
+	return id
+
+## 探针 invoke.*：reflect 角色 1（1580，生命加厚）对魔法反射 100% 的敌人用魔法版技能 1；counter 敌人打反击率 100% 的角色 1
+func _invoke_case(cfg: Dictionary) -> Dictionary:
+	var s := XState.new_game(2, 1, [8, 9, 10])
+	XState.current = s
+	for m in s.members():
+		m.equips.clear()
+		m.skill_ids.clear()
+		m.state_ids.clear()
+	s.mv_param_plus["1"] = [100000, 0, 0, 0, 0, 0, 0, 0]
+	var a: XActor = s.actor(1)
+	a.learn_skill(1580)
+	for m in s.members():
+		m.param_mark_dirty()
+		m.param_refresh()
+		m.refresh_passive()
+		m.recover_all()
+	var logic := FixedLogic.new()
+	logic.elite_roll = 100.0
+	logic.setup(1, s)
+	logic.rnd = float(cfg.rnd)
+	var foe: XEnemy = logic.enemies[0]
+	for b in [a, foe]:
+		b.state_ids.clear()
+		b.state_turns.clear()
+	var sk: Dictionary = XDB.rec("Skills", 1).duplicate(true)
+	sk.damage.formula = "1000"
+	sk.damage.variance = 0
+	sk.damage.critical = false
+	if str(cfg.kind) == "reflect":
+		foe.state_ids.append(_trait_state(22, 5))
+		sk.hitType = 2
+		logic._invoke(a, sk, foe)
+	else:
+		a.state_ids.append(_trait_state(22, 6))
+		sk.hitType = 1
+		logic._invoke(foe, sk, a)
+	return {"actor": _snap(a), "foe": _snap(foe)}
+
 func _run() -> void:
 	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("cases", ref.cases.size() == 15, ref.cases.size())
+	check("cases", ref.cases.size() == 17, ref.cases.size())
 	for c in ref.cases:
 		check(c.id + ".native", c.errors.is_empty(), c.errors)
 		if not c.errors.is_empty():
 			continue
 		var o: Dictionary = c.observed
+		if str(c.id).begins_with("invoke."):
+			var inv := _invoke_case(c.setup)
+			check(c.id + ".states", inv.actor.states == o.actor.states and inv.foe.states == o.foe.states, [inv, o.actor, o.foe])
+			continue
 		var got := _case(c.setup)
 		if str(c.id).begins_with("order."):
 			# 原版 addState 在 React 之前（log：add → react）；重制由 XDamage.finish 在 React 前调，这里只比结果

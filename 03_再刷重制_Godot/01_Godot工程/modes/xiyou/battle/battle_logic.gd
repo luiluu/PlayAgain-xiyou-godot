@@ -1758,6 +1758,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 var _push_sign := 0.0
 func _push_states(u: XBattler, skill: Dictionary, t: XBattler, sign: float) -> void:
 	_push_sign = sign
+	# 反射回行动者自己时目标就是行动者，照样挂给自己（参照 pushstate invoke.reflect）；反击由反击者结算（invoke.counter）
 	if not (u is XActor) or sign == 0.0 or (XAlienBattle.has(u, "void") and XAlienBattle.attack_damage(skill)):
 		return
 	var cache: Dictionary = u.passive_cache()
