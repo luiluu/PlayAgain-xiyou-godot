@@ -39,6 +39,7 @@ KEYS = {
     'map132_shops.json': {'cases': ('id',)},
     'yomi_battle.json': {'cases': ('id',)},
     'sukuna_battle.json': {'cases': ('id',)},
+    'toji.json': {'cases': ('id',)},
     'mira_battle.json': {'cases': ('id',)},
     'raven_soul.json': {'cases': ('id',)},
     'common_scripts.json': {'cases': ('id',)},
