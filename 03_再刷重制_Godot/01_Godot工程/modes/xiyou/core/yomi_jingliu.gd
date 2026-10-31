@@ -276,13 +276,6 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> Array:
 	return out
 
 
-const J_FROST := 2628
-const J_GAP := 2629
-const J_ROWS := {10187: [99995, 1833.3], 10188: [166665, 3330], 10189: [183330, 3330], 10190: [333330, 5555],
-	10191: [611110, 11110], 10192: [3333330, 33330], 10193: [833330, 11110]}
-const J_REPEATS := {10187: 1, 10188: 3, 10189: 2, 10190: 5, 10191: 2, 10192: 7, 10193: 1}
-const J_ENHANCED := [10188, 10190, 10192]
-const J_UNLOCKS := {10187: 1, 10188: 10, 10189: 15, 10190: 20, 10191: 30, 10192: 40, 10193: 45, 10194: 20, 10195: 25, 10196: 1}
 ## recruit(actorId, armorId, name, artifactName)：已在队返回空数组；否则入队，返回要提示的两条文字
 static func recruit(s: XState, actor_id: int) -> Array:
 	if s.party.has(actor_id):
