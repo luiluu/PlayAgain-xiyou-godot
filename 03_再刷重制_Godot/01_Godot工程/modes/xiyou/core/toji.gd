@@ -27,9 +27,19 @@ extends RefCounted
 ##   切换技能单独豁免战技类别封印（359-366）第二期做。切片加 171 后 wtype 参照（10 级、未进战斗）覆盖到 10212。
 ## - 已在别处：普攻＝当前形态主技能与指令名（XActor.attack_skill_id）、进阶石 rollAdvanceStone（XDungeon）、Map132 商店号角（XItemMarks）、
 ##   黑闪配置（XBlackFlash.CONFIGS 171）。
-## 未移植（第二期起，清单见交付单 cc_bajie-toji1「机制对照」）：咒具形态与切换（2630～2633、10212～10215）、多段与追加次数、武器库追击、
-##   万里锁溅射、天逆鉾封印 2634、术师杀手减伤与反弹、暴君免负面状态与弱化、天与咒缚的命中／闪避、五感必中与暴击闪避、
-##   切换技能豁免类别封印、战斗中技能列表、智能 AI 档案、黑闪觉醒额外一击；说明框熟练度行（画面）；读档时 repair（重制存档存的就是同步后的技能）。
+## 第二期（战斗内，参照 toji_battle_probe）：
+## - 咒具形态：开战设第一形态（startBattle 包装在原 startBattle 之前，随后开战清 removeAtBattleEnd 状态又把它清掉，参照里开战后
+##   没有形态状态，普攻照「没有算游云」）；切换技能 10212～10215 在 endAction 后换形态（去掉别的形态状态、加这一个）；
+##   战斗中阵亡后复活（removeState 阵亡）且没有形态状态时回游云；endBattle 清形态。
+## - 战斗中技能列表（Window_SkillList.includes）：战技类别只列切换技能，主技能、武器库、反弹不列；切换技能检查条件时
+##   不受战技类别封印（isSkillTypeSealed 豁免，原版 359-366）。
+## - 多段（startAction／actionActionEffect 包装）：主技能把目标收成第一个，记追加次数 floor(attackTimesAdd)；游云 5＋追加段、
+##   释魂刀 1 段（追加次数折进 ×(5＋追加)×0.95）、万里锁／天逆鉾 1＋追加段，在第一条 ACTION EFFECT 里逐段打完（目标全倒就停），
+##   之后的 ACTION EFFECT 不再打。每段 apply 计第几段（万里锁／天逆鉾第 2 段起 ×0.8）。黑闪觉醒中的游云（extraHitSkill）多 1 段。
+## - apply 包装：命中后万里锁对其余活着的敌人溅射（倍率 0.33，觉醒中的主行动 0.50；内部行动、不判黑闪、不再溅射）；
+##   天逆鉾给目标附封印 2634，次数 max(原次数或 1, 觉醒中的主行动 2／否则 1)，状态去掉时次数清零。
+## 未移植（第三期起，清单见交付单 cc_bajie-toji2「下期」）：武器库追击与借用特效、封印吞技能（applyGlobal）、术师杀手减伤与反弹、
+##   暴君免负面状态与弱化、天与咒缚的命中／闪避、五感必中与暴击闪避、智能 AI 档案；说明框熟练度行（画面）；读档时 repair。
 ##   原版 makeDamageValue 包装是死代码（installDamageElementRuntime 后装、整个换掉 makeDamageValue 不调旧链），不移植。
 ## 参照：slice_probe（切片角色行与伤害行）、toji_probe（等级／进阶／血量各档的能力值、公式、钩子帧，tests/xiyou_toji.gd）。
 
@@ -48,6 +58,19 @@ const RANDOM := [10220, 10223, 10221, 10222]
 const REFLECT := 10224
 const SWITCH := [10212, 10213, 10214, 10215]
 const SHAPES := [2630, 2631, 2632, 2633]
+const SEAL := 2634
+const AWAKENING := 10226
+const DEATH := 1
+
+## 战斗内：当前战斗（开战设、结束清；复活回形态与切换用）
+static var _logic = null
+## 本次行动（startAction 记，endAction 清）：switch 切换到的形态；count 段数、extra 追加次数、index 第几段、done 段已打完
+static var action := {}
+## 内部行动（溅射）进行中与它的倍率
+static var internal := false
+static var spread_rate := 0.0
+## 天逆鉾封印次数（_tojiSealCharges）；状态不在时视为没有
+static var seal_charges := {}
 const BALANCE_AT_70 := 0.188208
 ## repair 的 unlock 表：技能 → 解锁等级
 const UNLOCK := {10203: 1, 10205: 1, 10206: 10, 10207: 20, 10208: 30, 10209: 35, 10212: 1, 10213: 15, 10214: 30, 10215: 40,
@@ -189,8 +212,8 @@ static func formula(a, _b, item: Dictionary) -> float:
 	var atk := maxf(0.0, float(a.atk))
 	if is_main(id):
 		var base := maxf(0.0, 7777 * atk + 888 * maxf(0.0, float(a.mhp)))
-		var extra := 0  # action._tojiExtra（第二期）
-		var index := 1  # action._tojiIndex（第二期）
+		var extra := int(action.get("extra", 0))  # action._tojiExtra
+		var index := int(action.get("index", 0))  # action._tojiIndex（溅射沿用源行动的）
 		if id == MAIN[0]:
 			return base
 		if id == MAIN[2]:
@@ -201,7 +224,7 @@ static func formula(a, _b, item: Dictionary) -> float:
 	return 0.0  # REFLECT：action._tojiReflectBase（第二期）
 
 
-## 伤害钩子 toji（只含自己的技能；术师杀手受击分支第二期）
+## 伤害钩子 toji（只含自己的技能；术师杀手受击分支第三期）
 static func damage_ops(item: Dictionary, a) -> Array:
 	var id := int(item.get("id", 0))
 	if not own(a) or not (is_main(id) or is_random(id) or id == REFLECT):
@@ -210,7 +233,7 @@ static func damage_ops(item: Dictionary, a) -> Array:
 	if knows(a, SENSES):
 		ops.append({"op": "mul", "field": "physicalDefenseRate", "value": 0.67})
 		ops.append({"op": "mul", "field": "magicalDefenseRate", "value": 0.67})
-	ops.append({"op": "set", "field": "physicalIncomingPierce", "value": 0.66 if id == MAIN[2] else (0.33 if id == RANDOM[2] else 0.0)})
+	ops.append({"op": "set", "field": "physicalIncomingPierce", "value": (0.80 if awakened(a, id) else 0.66) if id == MAIN[2] else (0.33 if id == RANDOM[2] else 0.0)})
 	var mult := 1.0
 	if is_random(id):
 		mult *= 1 + 0.10 * a.skillMasteryLevel(ARMORY)
@@ -221,6 +244,8 @@ static func damage_ops(item: Dictionary, a) -> Array:
 		mult *= 1.11
 	if knows(a, TYRANT):
 		mult *= 3
+	if spread_rate > 0.0:
+		mult *= spread_rate
 	if not main_tyrant:
 		mult *= output_growth(a, false)
 	ops.append({"op": "mul", "field": "skillMultiplier", "value": mult})
@@ -249,6 +274,173 @@ static func meets(a, skill: Dictionary) -> bool:
 		return false
 	var index := SWITCH.find(id)
 	return index < 0 or (eligible_shape(a, index) and current_shape(a) != index)
+
+
+# ---- 第二期：战斗内 ----
+
+## 本次是觉醒中的主行动（awakenedAction：黑闪施放帧觉醒、未结束、不是内部行动、学了觉醒：伏黑）
+static func awakened(a, id: int) -> bool:
+	var c: Dictionary = XBlackFlash.cast
+	return is_main(id) and not internal and knows(a, AWAKENING) and not c.is_empty() and c.actor == a and bool(c.awake)
+
+
+## setShape：可切才换；去掉其余形态状态、加这一个
+static func set_shape(logic, a, index: int) -> bool:
+	if not own(a) or not eligible_shape(a, index):
+		return false
+	for id in SHAPES:
+		if a.state_ids.has(id):
+			if logic != null:
+				logic._state_remove(a, id)
+			else:
+				a.remove_state(id)
+	if logic != null:
+		logic._state_add(a, SHAPES[index])
+	else:
+		a.add_state(SHAPES[index])
+	return a.state_ids.has(SHAPES[index])
+
+
+## BattleManager.startBattle 包装（原 startBattle 之前）：甚尔在队就设第一形态
+static func start_battle(logic) -> void:
+	_logic = logic
+	action = {}
+	internal = false
+	spread_rate = 0.0
+	seal_charges.clear()
+	if logic.state.party.has(ACTOR):
+		set_shape(logic, logic.state.actor(ACTOR), 0)
+
+
+## BattleManager.endBattle 包装：清形态
+static func end_battle(logic) -> void:
+	if logic.state.actors.has(ACTOR):
+		var a = logic.state.actors[ACTOR]
+		for id in SHAPES:
+			if a.state_ids.has(id):
+				logic._state_remove(a, id)
+	_logic = null
+	action = {}
+
+
+## Game_Actor.removeState 包装：战斗中复活（去掉阵亡）且没有形态时回游云
+static func revived(a, id: int, had: bool) -> void:
+	if _logic == null or id != DEATH or not had or not own(a) or not a.is_alive() or SHAPES.any(func(s): return a.state_ids.has(s)):
+		return
+	set_shape(null, a, 0)
+
+
+## Window_SkillList.includes 包装（战斗中）：战技类别只列切换技能；主技能、武器库、反弹不列
+static func listed(a, skill: Dictionary) -> bool:
+	if not own(a):
+		return true
+	var id := int(skill.get("id", 0))
+	if int(skill.get("stypeId", 0)) == 1 and not SWITCH.has(id):
+		return false
+	return not (is_main(id) or is_random(id) or id == REFLECT)
+
+
+## isSkillTypeSealed 豁免：检查切换技能条件时战技类别不算封印
+static func switch_unsealed(a, skill: Dictionary) -> bool:
+	return own(a) and SWITCH.has(int(skill.get("id", 0))) and int(skill.get("stypeId", 0)) == 1
+
+
+## BattleManager.startAction 包装：切换记形态；主技能把目标收成第一个，记段数与追加次数（targets 原地改）
+static func begin(_logic_ref, u, skill: Dictionary, targets: Array) -> void:
+	if not own(u):
+		return
+	action = {}
+	var id := int(skill.get("id", 0))
+	if SWITCH.has(id):
+		action.switch = SWITCH.find(id)
+		return
+	if not is_main(id) or targets.is_empty():
+		return
+	var index := MAIN.find(id)
+	var extra := maxi(0, floori(float(u.attack_times_add())))
+	var target = targets[0]
+	targets.clear()
+	targets.append(target)
+	action.merge({"extra": extra, "index": 0, "count": 5 + extra if index == 0 else (1 if index == 2 else 1 + extra), "done": false})
+
+
+## 黑闪 startAction 包装：觉醒中的游云多 1 段（读施放帧，第一次打段时算）
+static func _count(u, id: int) -> int:
+	var c: Dictionary = XBlackFlash.cast
+	var extra_hit: bool = id == MAIN[0] and not c.is_empty() and c.actor == u and bool(c.awake)
+	return int(action.count) + (1 if extra_hit else 0)
+
+
+## BattleManager.actionActionEffect 包装：主技能第一条 ACTION EFFECT 打完全部段（目标全倒就停），之后的不打。true＝已处理
+static func effects(seq, args: Array) -> bool:
+	if not own(seq.user) or not is_main(int(seq.skill.get("id", 0))) or internal or not action.has("count"):
+		return false
+	if bool(action.done):
+		return true
+	action.done = true
+	for i in _count(seq.user, int(seq.skill.id)):
+		var list: Array = seq.make_targets(str(args[0])) if not args.is_empty() and str(args[0]) != "" else seq.targets
+		if not list.any(func(t): return t != null and t.is_alive()):
+			break
+		seq._action_effect(args)
+	return true
+
+
+## Game_Action.apply 包装要接管的：甚尔的主技能与武器库
+static func wraps(u, skill: Dictionary) -> bool:
+	var id := int(skill.get("id", 0))
+	return own(u) and (is_main(id) or is_random(id))
+
+
+static func seal_count(t) -> int:
+	if not t.state_ids.has(SEAL):
+		seal_charges.erase(t)
+		return 0
+	return int(seal_charges.get(t, 0))
+
+
+## Game_Action.apply 包装：计段、命中后天逆鉾封印、万里锁溅射。返回本次（含溅射）的结果
+static func apply(logic, u, skill: Dictionary, t) -> Array:
+	var id := int(skill.get("id", 0))
+	if is_main(id) and not internal and action.has("count"):
+		action.index = int(action.index) + 1
+	var used: bool = t.is_alive() or int(skill.get("scope", 0)) in [9, 10]
+	var r: Dictionary = logic.apply(u, skill, t)
+	var out := [r]
+	if not (used and not r.missed and not r.evaded):
+		return out
+	if id == MAIN[3]:
+		logic._state_add(t, SEAL)
+		if t.state_ids.has(SEAL):
+			seal_charges[t] = maxi(maxi(seal_count(t), 1), 2 if awakened(u, id) else 1)
+	if spread_rate == 0.0 and id == MAIN[1]:
+		out.append_array(_spread(logic, u, skill, t, 0.50 if awakened(u, id) else 0.33))
+	return out
+
+
+## spread：对其余活着的敌人各打一次内部行动（不判黑闪、不再溅射）
+static func _spread(logic, u, skill: Dictionary, source, rate: float) -> Array:
+	var out := []
+	internal = true
+	spread_rate = rate
+	XBlackFlash.nested += 1
+	for e in logic.alive(logic.enemies):
+		if e != source:
+			out.append(logic.apply(u, skill, e))
+	XBlackFlash.nested -= 1
+	spread_rate = 0.0
+	internal = false
+	return out
+
+
+## BattleManager.endAction 包装（原 endAction 之后）：切换技能换形态；清本次行动
+static func finish(logic, u, _skill) -> void:
+	if not own(u):
+		return
+	var shape = action.get("switch")
+	action = {}
+	if shape != null:
+		set_shape(logic, u, int(shape))
 
 
 ## CodexToji.recruit()：入队了返回提示行，已在队返回空

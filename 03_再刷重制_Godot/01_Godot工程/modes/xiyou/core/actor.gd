@@ -223,6 +223,7 @@ func remove_state(id: int) -> void:
 	super(id)
 	if had:
 		release_to_party()
+	XToji.revived(self, id, had)  # 甚尔 removeState 包装：战斗中复活且没有形态时回游云
 
 func refresh_resources(random: XRandomStream = null) -> void:
 	super(random)
