@@ -1,0 +1,21 @@
+{
+ "sha": "ab14b6a57030ad907620373eb2846ad47f8d49a7",
+ "branch": "ci/claude/bailong-exclusive3",
+ "mode": "affected",
+ "base": "origin/main",
+ "passed": false,
+ "scenes": 259,
+ "failed": [
+  "xiyou_book_capacity_ui.tscn"
+ ],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 13,
+ "longestShardSeconds": 870.9,
+ "testSeconds": 15068,
+ "generatedRef": "refs/ci/generated/claude/bailong-exclusive3",
+ "generatedCommit": "33c1a758eaffd80049ddb4a64f269ad1b4ef1496",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41151342470",
+ "time": "2026-10-31T00:59:15+00:00"
+}
