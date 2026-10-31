@@ -586,7 +586,7 @@ func param_base(i: int) -> float:
 		if parts.size() >= 3 and _condition(parts[1].strip_edges(), float(parts[2])):
 			v += _param_boost(base, parts[0])
 	v += XTraining.param_bonus(self, i)
-	return v
+	return XActorModules.param_base(self, i, v)  # 专属角色模块的 paramBase 包装（镜流星魂）
 
 ## 装备属性；被动 passiveWPNMxx / passiveARMMxx 按武器/防具类型放大该装备的正值属性。
 ## 178 持剑：全量＋(全量−去掉武器槽)，即剑的整份贡献再算一遍（CodexCat paramPlus 包装）
@@ -663,6 +663,10 @@ func param(i: int) -> float:
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:
 	return XCat.param(self, i, XActorModules.param(self, i, super.param(i)))
+
+## 专属角色模块之内的原值（甚尔天与咒缚读原 MP／魔攻：原版 oldParam.call(this, 1／4)）
+func param_native(i: int) -> float:
+	return super.param(i)
 
 ## 永久写能力属于当前真实实例；影子克隆虽保留actor_id，也不能借它写真实账本。
 func can_add_param() -> bool:

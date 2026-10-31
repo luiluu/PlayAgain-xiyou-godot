@@ -581,7 +581,7 @@ func element_rate(e: int) -> float:
 		current = minf(current - 2.0, -0.01)
 	for p in passive:
 		current *= p
-	return additive_rate(TRAIT_ELEMENT_RATE, e, current, passive)
+	return XYomiJingliu.element_rate(self, e, additive_rate(TRAIT_ELEMENT_RATE, e, current, passive))  # 镜流裂隙演化：寒冰 +0.0111
 
 ## 正式版的加算池（installDamageElementRuntime.additiveRate）：多项抗性/减伤按 1+Σ(v-1) 相加，
 ## 不再连乘；任意一项为 0 视为免疫；敌人不低于 min(0.01, 连乘)。

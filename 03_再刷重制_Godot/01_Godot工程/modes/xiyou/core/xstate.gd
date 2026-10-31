@@ -819,6 +819,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.party_skills = XPartySkills.from_save(d.get("partySkills"))
 	s.raven = XRaven.from_save(d.get("codexRaven"))
 	s.garou = XGarou.from_save(d.get("codexGarou"))
+	XYomiJingliu.after_load(s)  # 镜流 extractSaveContents 包装：整理技能、清放血累计
 	for a in s.actors.values():a.refresh_passive()
 	for k in d.switches:
 		s.switches[int(k)] = bool(d.switches[k])

@@ -84,6 +84,7 @@ PROBES = [
     (['map132_shop_probe.cjs'], ['map132_shops.json']),
     (['yomi_battle_probe.cjs'], ['yomi_battle.json']),
     (['sukuna_battle_probe.cjs'], ['sukuna_battle.json']),
+    (['toji_probe.cjs'], ['toji.json']),
     (['mira_battle_probe.cjs'], ['mira_battle.json']),
     (['raven_soul_probe.cjs'], ['raven_soul.json']),
     (['settlement_probe.cjs'], ['settlement.json']),

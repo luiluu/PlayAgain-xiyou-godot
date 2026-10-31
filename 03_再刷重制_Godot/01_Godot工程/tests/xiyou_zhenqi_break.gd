@@ -128,7 +128,7 @@ func _trial_battle(aid: int, o: Dictionary) -> Dictionary:
 	for e in logic.enemies:
 		en.append({"enemyId": e.enemy_id, "base": _params(e, func(x, i): return x.param_base(i) / float(x._rates[i])), "param": _params(e, func(x, i): return x.param(i)),
 			"hp": e.hp, "mp": e.mp, "drops": logic.drops_of(e).size()})
-	XBattleLogic.o_difficulty_reward = false  # 参照是原版：难度经验／金钱倍率不生效（O-待定 回退支）
+	XBattleLogic.o_difficulty_reward = false  # 参照是原版：难度经验／金钱倍率不生效（O-130 回退支）
 	var rw := logic.rewards()
 	XBattleLogic.o_difficulty_reward = true
 	for id in o.get("dead", []):
