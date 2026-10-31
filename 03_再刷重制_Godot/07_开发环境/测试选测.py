@@ -417,6 +417,42 @@ class FloorNarrowTests(SliceFixture):
         self.assertTrue({'xiyou_floor_gate.tscn', 'xiyou_floor_goto.tscn', 'xiyou_map186.tscn'} <= set(s['scenes']))
         self.assertNotIn('收窄', s['reasons'][0][1])
 
+    def test_floor_with_unrecognized_map_refs_is_kept(self):
+        """沙僧第八期 F1／P2：认出一张图就当集合完整、按交集删场景，漏了 MAPS 表里的出口图（unknown160 漏 32）、
+        HUB 常量（floor30_seeker 漏 4）。脚本里出现改动图号的整数字面量就保留；preload 的 tests/ 脚本一并看（tools24）。"""
+        self.scene('xiyou_floor_unknown160', '## 未知之地（Map160）\nconst MAPS := {"exits": [[1, 32], [2, 33]]}\n'
+                   'func t(dest):\n\tawait _wait_map(dest[1])\n')
+        self.scene('xiyou_floor30_seeker', 'const HUB := 4\nfunc t():\n\t_start(55, 1, 1)\n\tawait _wait_map(HUB)\n')
+        self.scene('xiyou_floor_helped', 'const R := preload("res://tests/xiyou_helper_x.gd")\nfunc t():\n\t_start(56, 1, 1)\n')
+        self.put(TESTS / 'xiyou_helper_x.gd', 'extends Node\nfunc go():\n\tawait _wait_map(77)\n')
+        self.commit('f1 fixtures')
+        self.base = self.g('rev-parse', 'HEAD')
+        for maps, scene in [([1, 2, 32], 'xiyou_floor_unknown160.tscn'), ([1, 2, 4], 'xiyou_floor30_seeker.tscn'),
+                            ([1, 2, 77], 'xiyou_floor_helped.tscn')]:
+            self.edit(maps=maps)
+            s = self.pick()['scenes']
+            self.assertIn(scene, s, maps)
+            self.assertNotIn('xiyou_floor_reach069.tscn', s)                       # 仍能收窄：69 号没改
+        self.edit(maps=[1, 2, 160])
+        self.assertNotIn('xiyou_floor30_seeker.tscn', self.pick()['scenes'])
+
+    def test_literal_guard_switch_off_restores_old_rule(self):
+        self.scene('xiyou_floor30_seeker', 'const HUB := 4\nfunc t():\n\t_start(55, 1, 1)\n\tawait _wait_map(HUB)\n')
+        self.commit('seeker')
+        self.base = self.g('rev-parse', 'HEAD')
+        table = json.loads((HERE / '选测对照.json').read_text())
+        table['sliceSections']['narrowFloorsByMap']['anyLiteral'] = False
+        off = self.root / 'off.json'
+        off.write_text(json.dumps(table))
+        self.edit(maps=[1, 2, 4])
+        self.assertNotIn('xiyou_floor30_seeker.tscn', sel.select(self.root, self.base, table=off)['scenes'])
+        self.assertIn('xiyou_floor30_seeker.tscn', self.pick()['scenes'])
+
+    def test_real_f1_counterexamples_are_kept(self):
+        tests = sel.Tests(HERE.parent.parent)
+        self.assertTrue(tests.mentions('xiyou_floor_unknown160.tscn', {32}))
+        self.assertTrue(tests.mentions('xiyou_floor30_seeker.tscn', {4}))
+
     def test_real_tests_reference_their_maps(self):
         tests = sel.Tests(HERE.parent.parent)
         self.assertEqual(tests.map_ids('xiyou_floor_reach069.tscn') >= {69, 71, 88, 89, 91, 112}, True)
@@ -446,7 +482,7 @@ class MergeBaseTests(Fixture):
 
 
 STUB_CHECKS = ['测试工作树清理.py', '测试导出过滤.py', '测试共性验收.py', '测试合并工具.py', '测试公式程序.py', '测试转换器写入.py',
-               '测试记录工具.py', '测试云端准备.py', '测试内容覆盖.py', '测试角色同步提速.py', '测试事件探针分段.py', '测试状态js翻译.py', '测试参照批次.py', '测试提交守卫.py', '参照批次.py', '测试选测.py', '变更记录分卷.py', '待核查.py']
+               '测试记录工具.py', '测试云端准备.py', '测试内容覆盖.py', '测试角色同步提速.py', '测试事件探针分段.py', '测试状态js翻译.py', '测试参照批次.py', '测试提交守卫.py', '测试回退开关覆盖.py', '回退开关覆盖.py', '参照批次.py', '测试选测.py', '变更记录分卷.py', '待核查.py']
 
 
 class CheckerTests(Fixture):
@@ -573,7 +609,8 @@ class CheckerTests(Fixture):
         self.assertIn('== 选测', out)
         self.assertIn('跳过导入与测试', out)
         self.assertIn('选测全部通过', out)
-        self.assertEqual(self.names(ran), ['boot_check.cjs', '变更记录分卷.py', '待核查.py'])
+        # 回退开关覆盖属文档与登记（读优化登记），只改文档也跑（tools26，不到 1 秒、只警告）
+        self.assertEqual(self.names(ran), ['boot_check.cjs', '变更记录分卷.py', '回退开关覆盖.py', '待核查.py'])
 
     def test_ui_change_runs_selected_scenes_only(self):
         self.put(UI / 'shop.gd', 'class_name XShopScene\n# 2\n')
