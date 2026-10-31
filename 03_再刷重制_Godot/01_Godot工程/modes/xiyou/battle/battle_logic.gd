@@ -22,6 +22,10 @@ var drop_lock := false
 var _treasure := {}
 var _drop_granted := {}
 var _rewards_granted := false
+## 开战时出战栏里的饿狼（G._battleGarou）、是否 Boss 战（G._bossBattle）与胜利结算要提示的文字（神之触媒；画面还没接）
+var _garou = null
+var _garou_boss := false
+var victory_texts: Array = []
 ## Rule parameter captured at battle start; icon visibility is presentation only.
 var advance_loot_on_collapse := false
 var auto := false
@@ -121,6 +125,8 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	troop_id = troop
 	XImportedBalance.set_acting(null)
 	actors = s.battle_members()
+	_garou = XGarou.start_battle(actors)  # 饿狼 startBattle 包装：同步、记下出战的饿狼
+	victory_texts.clear()
 	XZhenqi.battle_setup(s, troop)  # 真气：本场路线、楼层、溢出计数（BattleManager.setup）
 	enemies.clear()
 	var t := XDB.rec("Troops", troop)
@@ -134,6 +140,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		e.hidden = bool(m.get("hidden", false))
 		enemies.append(e)
 	XEnemyBook.bind_battle(s, enemies)
+	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
 	for i in range(actors.size()):
 		_ids[actors[i]] = "actor:%d:%d" % [i, actors[i].actor_id]
@@ -450,6 +457,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if not wtype_ok(a, skill):
 		return false
+	if not XGarou.meets(a, skill):  # 饿狼 meetsSkillConditions：未到形态、追击不能用，认真一拳要琦玉模式
+		return false
 	if not XYomiJingliu.meets(a, skill):  # 黄泉 meetsSkillConditions：残梦不满 9 不能用 10174
 		return false
 	if not XSukuna.meets(a, skill, self):  # 宿傩 meetsSkillConditions：解锁、领域冷却、神灶要蓄力目标、神灶：开要准备层
@@ -748,6 +757,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
 	if started and not skipped:
+		logs.append_array(XGarou.finish(self, u, skill))  # 饿狼 endAction 包装（原 endAction 之前）：进化、解析、追击、流水回 TP；敌人命中饿狼的进化、解析、反击
 		logs.append_array(XSukuna.finish(self, u, skill))  # 宿傩 endAction 包装（原 endAction 之前）：神灶：开、追斩、看破、适应
 		XBlackFlash.finish(self, u, skill)  # 黑闪 endAction 包装（宿傩之内）：集中、连闪、觉醒
 	XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
@@ -813,6 +823,7 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 	b.decay_shield()  # ShieldSystem 包在 regenerateAll 最外层，倒下的也衰减
 	b.param_mark_dirty()
 	XMira.turn_end(self, b, logs)  # 米拉 Game_Actor.onTurnEnd 包装（之后）：不灭龙血回 5%
+	XGarou.turn_end(b)  # 饿狼 Game_Actor.onTurnEnd 包装（之后）：清本回合受过伤、琦玉模式
 
 
 ## 无界面测试用：跑完一整个回合。commands: actor -> [技能, 目标]（[null, null] 表示放弃）。
@@ -1091,6 +1102,7 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 			_cleared[u] = true
 		var before := _movable_snapshot()
 		logs.append_array(execute(u, skill, _forced_target(u, skill, int(p[3])), true))
+		logs.append_array(XGarou.finish(self, u, skill))
 		logs.append_array(XSukuna.finish(self, u, skill, true))
 		XRaceBattle.finish(self, logs)
 		XCat.end_action(self, u, skill)
@@ -1201,6 +1213,8 @@ func _action_times_modification(order: Array, first_current := false) -> void:
 
 ## MV makeActionTimes：每个「追加行动」几率（actionPlusSet，含道法分神的 [1]）各掷一次，成功加 1 次。
 func make_action_times(b: XBattler) -> int:
+	if XGarou.own(b):  # 饿狼 makeActionTimes 包装：形态行动次数，不掷追加行动
+		return XGarou.action_times(b)
 	var n := 1
 	for p in b.action_plus_set():
 		if _float("action_times") < float(p):
@@ -1325,6 +1339,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# 角色在 OTB 下输入完（或不能输入时 makeActions 后）直接 startAction，不看 isValid，照原样执行。参照 attack_query_probe skip 组。
 	if not forcing and not u.is_actor() and not can_use(u, skill):
 		return logs
+	XGarou.begin(u, skill)  # 饿狼 startAction 包装：开施放帧（记施放开始时的进化层）
 	XAlienBattle.start_action(self, u, skill)  # 异化蚀术 startAction 包装（最外层）：记上次用的技能、列出要解的封印
 	skill = change_to(u, skill)  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
@@ -1485,7 +1500,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		for r in rs:
 			r.reflected = true
 		return [{"type": "reflect", "user": u, "target": t}] + rs
-	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure else 0.0
+	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure and not XGarou.no_counter(t) else 0.0  # 饿狼 itemCnt 包装：不被原生反击
 	if _float("counter") < cnt:
 		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反击是独立数值来源，不是原行动
 		XBlackFlash.nested += 1  # 黑闪 invokeCounterAttack 包装
@@ -1502,7 +1517,10 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		return [r] + XYomiJingliu.after_apply(self, u, skill, tt, r)
 	if XSukuna.wraps(u, skill):
 		return XSukuna.apply(self, u, skill, tt)  # 宿傩 Game_Action.apply 包装：捌两段、伤口、神灶蓄力
-	return [apply(u, skill, tt)]
+	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
+	var r := apply(u, skill, tt)
+	XGarou.applied(u, skill, tt, r, used)  # 饿狼 Game_Action.apply 包装：本帧命中与伤害、琦玉模式
+	return [r]
 
 
 ## BattleManager.applySubstitute：目标濒死（活着且 hp < mhp/4）、技能不是必中时，同队出战成员里第一个能掩护的替它挨打
@@ -2207,6 +2225,9 @@ func grant(r: Dictionary) -> Array:
 	if _rewards_granted:
 		return []
 	_rewards_granted = true
+	var garou_text := XGarou.credit_victory(state, _garou, _garou_boss)  # 饿狼 processVictory 包装：累计突破、神之触媒
+	if garou_text != "":
+		victory_texts.append(garou_text)
 	XZhenqi.on_victory(state, actors, XZhenqi.troop_members(troop_id, enemies, state.difficulty))  # 真气胜利结算（含没出场的隐藏成员）（BattleManager.endBattle(0)；每场一次）
 	state.gain_gold(r.gold)
 	if not drop_lock:
@@ -2244,6 +2265,7 @@ func end_battle(result := -1) -> void:
 	XSukuna.end_battle(self)  # 宿傩 endBattle 包装：清战斗数据与领域、适应、觉醒状态
 	XBlackFlash.end_battle(self)  # 黑闪 endBattle 包装
 	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火
+	XGarou.clear_battle()  # 饿狼 endBattle 包装：清进化、解析、琦玉
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	# ShieldSystem Scene_Battle.terminate：全队与敌群护盾清零
 	for e in enemies:

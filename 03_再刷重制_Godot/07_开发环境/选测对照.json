@@ -29,6 +29,8 @@
     "narrowFloorsByMap": {
       "说明": "楼层专项按图号收窄（哪吒_3，2026-10-26）：切片 maps／keepEvents 改动时，算出 maps 列表增删的图号与 keepEvents 内容有增删改的图号，groups 里的组选到的 scenes 范围内的场景只留引用了这些图号的（引用写法见 选测.py MAP_REF_PATTERNS：MapNNN、MAP 常量、_start／_wait_map／map_id ==／_goto 的图号）；always 里的场景（按内容数据遍历全部楼层或全部地图）与认不出任何图号的场景照旧选上。事件对照、xiyou_flow 不在 scenes 里，不收窄。enabled 设 false 即回到上一期行为（楼层专项全选）。依据见 00_项目管理/交付/claude_nezha-floor-narrow.md。",
       "enabled": true,
+      "anyLiteral": true,
+      "anyLiteral说明": "沙僧第八期 F1／P2（tools24）：认出的图号不一定完整（MAPS 出口表、HUB 常量、_wait_map(变量)、preload 的辅助脚本），只按交集删会漏真实专项。为 true 时场景脚本（连同 preload 的 tests/ 脚本）里只要出现改动图号的整数字面量、或与 always 场景共用脚本就保留；设 false 回到只按认出的图号求交集。",
       "groups": ["slice_map"],
       "scenes": ["xiyou_floor*.tscn", "xiyou_map*.tscn"],
       "always": ["xiyou_floor_run*.tscn", "xiyou_map.tscn"]

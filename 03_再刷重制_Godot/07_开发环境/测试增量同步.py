@@ -75,7 +75,7 @@ class AcceptedBaselineTests(unittest.TestCase):
     def set_payload(self, data):
         (self.app / 'payload.json').write_text(json.dumps(data))
 
-    def run_sync(self, *extra, do_import=False, cache_error=False, lane=None):
+    def run_sync(self, *extra, do_import=False, cache_error=False, lane=None, oracle_file='events.json'):
         real_run = subprocess.run
 
         def external(command, **kwargs):
@@ -99,7 +99,7 @@ class AcceptedBaselineTests(unittest.TestCase):
         output = io.StringIO()
         with contextlib.ExitStack() as stack:
             stack.enter_context(mock.patch.multiple(sync, ROOT=self.root, HERE=self.tools, ORACLE_DIR=self.oracle,
-                                SANDBOX=self.oracle / '.sandbox', PROBES=[(['baseline_probe.cjs'], ['events.json'])],
+                                SANDBOX=self.oracle / '.sandbox', PROBES=[(['baseline_probe.cjs'], [oracle_file])],
                                 run=export, tools_digest=lambda *args: 'fixture'))
             stack.enter_context(mock.patch.object(sync.subprocess, 'run', side_effect=external))
             stack.enter_context(mock.patch.object(sync, 'godot_import', side_effect=self.import_error))
@@ -312,6 +312,61 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.assertIn('改用主工作区的版本', out.getvalue())
         self.assertIn('moved.json', out.getvalue())
 
+    def test_lane_merged_main_takes_whole_main_oracle_as_baseline(self):
+        # tools23（悟空交接）：车道同步过的参照比主工作区新，合 main 后 --补齐 按修改时间不刷新，main 期间接受的改变被当成车道的；
+        # 车道已合进当前 main 时基线整份取主工作区的，车道独有的参照仍取本树的；基线记下 main 提交，main 前进并合进来后重取
+        main_gen = self.root / 'main_gen'
+        (main_gen / 'oracle').mkdir(parents=True)
+        (main_gen / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'a', 'v': 'main-accepted'}]}))
+        (self.gen / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'a', 'v': 'lane-old'}]}))
+        (self.gen / 'oracle/lane_only.json').write_text('{"cases": []}')
+        out = io.StringIO()
+        with mock.patch.object(sync, 'ROOT', self.root), mock.patch.object(sync, 'merged_main', return_value='a' * 40), \
+                contextlib.redirect_stdout(out):
+            baseline = sync.comparison_baseline(self.gen, main_gen)
+            self.assertEqual(json.loads((baseline / 'oracle/events.json').read_text())['cases'][0]['v'], 'main-accepted')
+            self.assertTrue((baseline / 'oracle/lane_only.json').is_file())
+            self.assertIn('车道已合进当前 main（aaaaaaaaa）', out.getvalue())
+            self.assertIn('1 个与本树不同：events.json', out.getvalue())
+            out.truncate(0); out.seek(0)
+            sync.comparison_baseline(self.gen, main_gen)                            # 同一版 main：拒收后重跑沿用原基线
+            self.assertNotIn('重取', out.getvalue())
+            (main_gen / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'a', 'v': 'main-newer'}]}))
+            with mock.patch.object(sync, 'merged_main', return_value='b' * 40):
+                baseline = sync.comparison_baseline(self.gen, main_gen)
+            self.assertIn('按它的已接受测量重取基线', out.getvalue())
+            self.assertEqual(json.loads((baseline / 'oracle/events.json').read_text())['cases'][0]['v'], 'main-newer')
+            out.truncate(0); out.seek(0)
+            with mock.patch.object(sync, 'merged_main', return_value=None):       # 车道没合进最新 main：沿用已取的基线
+                baseline = sync.comparison_baseline(self.gen, main_gen)
+            self.assertEqual(out.getvalue(), '')
+            self.assertEqual(json.loads((baseline / 'main.json').read_text()), {'head': 'b' * 40})
+
+    def test_merged_main_checks_branch_ancestry_and_merge_in_progress(self):
+        env = dict(os.environ, GIT_AUTHOR_NAME='f', GIT_AUTHOR_EMAIL='f@x.invalid', GIT_COMMITTER_NAME='f',
+                   GIT_COMMITTER_EMAIL='f@x.invalid', XIYOU_MAIN_COMMIT='1', XIYOU_LANE_MERGE='1')
+        main, lane = self.root / 'repo', self.root / 'lane'
+        main.mkdir()
+        def git(*args, cwd=main):
+            subprocess.run(['git', '-C', str(cwd), *args], check=True, capture_output=True, env=env)
+        def commit(cwd, name):
+            (cwd / name).write_text(name); git('add', name, cwd=cwd); git('commit', '-q', '-m', name, cwd=cwd)
+        git('init', '-q', '-b', 'main'); commit(main, 'base')
+        git('worktree', 'add', '-q', '-b', 'cc/x', str(lane))
+        commit(lane, 'lane')
+        head = lambda: subprocess.run(['git', '-C', str(main), 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+        with mock.patch.object(sync, 'ROOT', lane):
+            self.assertEqual(sync.merged_main(main), head())                       # 车道从当前 main 切出
+            commit(main, 'main moved')
+            self.assertIsNone(sync.merged_main(main))                               # main 前进、车道没合
+            git('merge', '-q', '--no-edit', 'main', cwd=lane)
+            self.assertEqual(sync.merged_main(main), head())
+            (main / '.git/lane-merge').mkdir(); (main / '.git/lane-merge/state.json').write_text('{}')
+            self.assertIsNone(sync.merged_main(main))                               # 主工作区在合并中：产物可能在变
+            (main / '.git/lane-merge/state.json').unlink()
+            git('switch', '-q', '-c', 'scratch')
+            self.assertIsNone(sync.merged_main(main))                               # 主工作区不在 main 上
+
     def test_existing_case_with_new_fields_is_an_addition(self):
         self.set_payload({'cases': [{'id': 'stable', 'value': 1, 'extra': [1, 2]}]})
         result, report = self.run_sync()
@@ -358,6 +413,53 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.set_payload({'cases': [{'id': 'stable', 'value': 3}]})
         self.assertEqual(self.run_sync('--accept-changes', str(spec))[0], 2)
         self.assertEqual(self.run_sync('--accept-additions')[0], 2)
+
+    def test_unregistered_cases_align_by_id_insert_reorder_delete(self):
+        """没登记 KEYS 的探针 cases（如 alien_battle、shield）按 id 对齐（tools23，悟空交接的同步坑）：插在中间只算新增、
+        重排不算变化、删一条照旧拒收；报告的测量变化按键列，不再是一串下标；改一条的接受单按 [["id",…]] 对上。"""
+        name = 'novel_cases.json'
+        row = lambda i, v=1: {'id': i, 'value': v}
+        (self.gen / 'oracle' / name).write_text(json.dumps({'hostScope': 'x', 'cases': [row('a'), row('b'), row('c')]}))
+        (self.oracle / 'baseline_probe.cjs').write_text(
+            "require('fs').copyFileSync(process.env.XIYOU_APP + '/payload.json', '.sandbox/%s');\n" % name)
+        self.set_payload({'hostScope': 'x', 'cases': [row('a'), row('x'), row('b'), row('c')]})
+        result, report = self.run_sync(oracle_file=name)
+        self.assertEqual(result, 2)                                             # 只增新用例：要 --accept-additions
+        self.assertEqual(report['measurementChanges'][name], ['/cases[id=x] 新增'])
+        self.assertEqual(report['additionCheck']['additions'][name], [{'collection': 'cases', 'key': '[["id","x"]]', 'count': 1}])
+        self.assertEqual(self.run_sync('--accept-additions', oracle_file=name)[0], 0)
+        self.set_payload({'hostScope': 'x', 'cases': [row('c'), row('b'), row('x'), row('a')]})
+        result, report = self.run_sync(oracle_file=name)
+        self.assertEqual(result, 0, report['result'])
+        self.assertNotIn(name, report['measurementChanges'])
+        self.set_payload({'hostScope': 'x', 'cases': [row('c'), row('x'), row('a')]})
+        result, report = self.run_sync('--accept-additions', oracle_file=name)
+        self.assertEqual(result, 2)
+        self.assertEqual(report['measurementChanges'][name], ['/cases[id=b] 删除'])
+        self.assertIn(name, report['additionCheck']['problems'])
+        self.set_payload({'hostScope': 'x', 'cases': [row('c'), row('b'), row('x', 2), row('a')]})
+        result, report = self.run_sync(oracle_file=name)
+        self.assertEqual(result, 2)
+        self.assertEqual(report['measurementChanges'][name], ['/cases[id=x]/value'])
+        (candidate,) = report['changeCandidates']
+        self.assertEqual((candidate['key'], candidate['fields']), ('[["id","x"]]', ['value']))
+        result, report = self.run_sync('--accept-changes', str(self.acceptance(report)), oracle_file=name)
+        self.assertEqual(result, 0, report['result'])
+
+    def test_unkeyed_or_duplicate_cases_still_compare_whole(self):
+        name = 'novel_cases.json'
+        (self.oracle / 'baseline_probe.cjs').write_text(
+            "require('fs').copyFileSync(process.env.XIYOU_APP + '/payload.json', '.sandbox/%s');\n" % name)
+        for old, new in [([{'v': 1}], [{'v': 1}, {'v': 2}]),                                  # 没有 id／key
+                         ([{'id': 'a', 'v': 1}], [{'id': 'a', 'v': 1}, {'id': 'a', 'v': 2}])]:  # 重号
+            (self.gen / 'oracle' / name).write_text(json.dumps({'cases': old}))
+            self.set_payload({'cases': new})
+            result, report = self.run_sync('--accept-additions', oracle_file=name)
+            self.assertEqual(result, 2)
+            self.assertEqual(report['additionCheck']['problems'][name], ['非新增用例字段改变：cases'])
+            self.assertIn('/cases 长度 1→2', report['measurementChanges'][name])
+            for p in (self.root / '03_再刷重制_Godot/04_验证/本地结果/同步基线').iterdir():
+                shutil.rmtree(p)
 
     def test_acceptance_needs_additions_flag_same_source_and_covers_every_problem(self):
         self.set_payload({'cases': [{'id': 'stable', 'value': 2}, {'id': 'new', 'value': 3}]})

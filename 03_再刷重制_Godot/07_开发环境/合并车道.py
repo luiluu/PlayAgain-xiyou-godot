@@ -64,8 +64,9 @@ def git(root, *args):
     return p.stdout.strip()
 
 
-# 主工作区 main 有提交守卫（装提交守卫.sh）：本工具自己的提交与合并带这个变量放行
-MAIN_COMMIT_ENV = dict(os.environ, XIYOU_MAIN_COMMIT='1')
+# 主工作区 main 有提交守卫（装提交守卫.sh）：本工具自己的提交与合并带这个变量放行；
+# 合并在进行（state.json 在）时守卫只认 XIYOU_LANE_MERGE，总装手动带 XIYOU_MAIN_COMMIT=1 的提交也拦（tools22）
+MAIN_COMMIT_ENV = dict(os.environ, XIYOU_MAIN_COMMIT='1', XIYOU_LANE_MERGE='1')
 
 
 def run(root, args, env=None):
@@ -378,7 +379,8 @@ def plan(root, task, branch=None):
         raise RuntimeError('main 必须干净，包含未跟踪文件；本工具不自动保存或覆盖现场：' + '、'.join(sorted(changed)[:8]) + hint)
     lanes = [w for w in worktrees(root) if w.get('branch') in lane_branches(task, branch)]
     if len(lanes) > 1:
-        raise RuntimeError('须有且只有一个对应任务的已登记车道工作树')
+        raise RuntimeError('须有且只有一个对应任务的已登记车道工作树（%s 都有工作树，用 --branch <分支> 指定）'
+                           % '、'.join(w['branch'] for w in lanes))
     evidence = []
     if lanes:
         branch, wt = lanes[0]['branch'], Path(lanes[0]['path'])
@@ -402,7 +404,8 @@ def plan(root, task, branch=None):
                 if subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', 'refs/heads/' + b],
                                   capture_output=True).returncode == 0]
         if len(refs) != 1:
-            raise RuntimeError('须有且只有一个对应任务的车道工作树或车道分支' + (branch_hint(root, task) if not refs else ''))
+            raise RuntimeError('须有且只有一个对应任务的车道工作树或车道分支' + (
+                branch_hint(root, task) if not refs else '（%s 都在，用 --branch <分支> 指定）' % '、'.join(refs)))
         branch, wt = refs[0], None
         target = git(root, 'rev-parse', 'refs/heads/' + branch)
         if not evidence:
@@ -415,18 +418,20 @@ def plan(root, task, branch=None):
     if base == target or not git(root, 'rev-list', base + '..' + target):
         raise RuntimeError('车道没有待合并提交')
     fork = git(root, 'merge-base', base, target)
-    delivery = Path('00_项目管理/交付') / (branch.replace('/', '_') + '.md')
-    text = read(delivery)
-    if text is None and branch not in ['%s/%s' % (p, task) for p in ('cc', 'claude', 'codex')]:
-        # 分支名与任务名对不上（--branch 指定了别的分支）：交付单按任务名找 <前缀>_<任务>.md
-        for prefix in ('cc', 'claude', 'codex'):
-            alt = Path('00_项目管理/交付') / ('%s_%s.md' % (prefix, task))
-            text = read(alt)
-            if text is not None:
-                delivery = alt
-                break
-    if text is None:
-        raise RuntimeError('车道分支缺少交付单：' + str(delivery))
+    # 交付单：按分支名（/ 换成 _），再按任务名找 cc_／claude_／codex_<任务>.md。分支与交付单前缀常对不上：
+    # --branch 指定的 app 随机名分支；10-31 八戒分支 cc/bajie-blackflash 交付单却叫 claude_bajie-blackflash.md（tools22）
+    own = Path('00_项目管理/交付') / (branch.replace('/', '_') + '.md')
+    names = dict.fromkeys([own] + [Path('00_项目管理/交付') / ('%s_%s.md' % (p, task)) for p in ('cc', 'claude', 'codex')])
+    found = {d: s for d, s in ((d, read(d)) for d in names) if s is not None}
+    if not found:
+        raise RuntimeError('车道分支缺少交付单：' + '、'.join(map(str, names)) + ' 都没有')
+    if len(found) > 1:
+        # 车道没合 main 时树里可能还留着本任务早先已归并、main 已删的那份：不算
+        found = {d: s for d, s in found.items()
+                 if (root / d).exists() or not git(root, 'log', '--diff-filter=D', '--format=%H', '-1', base, '--', str(d))} or found
+    if len(found) > 1:
+        raise RuntimeError('车道分支上有 %d 份交付单（%s），须只留一份：车道删掉多的那份再交' % (len(found), '、'.join(map(str, found))))
+    (delivery, text), = found.items()
     draft(text)
     check_opt_drafts(text, str(delivery))
     # 只认相对本次合并前 main 真有改动的文件：交叉合并时 merge-base 可能取到旧基点，基点 diff 会把 main 早就有的
@@ -802,6 +807,22 @@ def report_batch(root, pending, state):
           '再把没问题的车道重新合；只是检查本身的问题（偶发、环境）修好后重跑同一条 --finish 即可。', flush=True)
 
 
+def pushed_since(root, base, *commits):
+    """GitHub 跟踪分支上有没有 base 之后、又在 commits 任一条历史里的提交（＝本次合并已推上去）。
+    不靠 state 里的 mergeCommit：解析检查不过时停在 planned、没记 mergeCommit；推上去后又 amend 的，HEAD 不在远端
+    但旧的那版在，所以把 HEAD 和记下的合并提交都拿来比（沙僧第七期 T2）。没有跟踪分支时当没推送。"""
+    tracking = 'refs/remotes/github/main'
+    if subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', tracking], capture_output=True).returncode:
+        return False
+    remote = set(git(root, 'rev-list', tracking, '^' + base).split())
+    for c in filter(None, commits):
+        if subprocess.run(['git', '-C', str(root), 'cat-file', '-e', c + '^{commit}'], capture_output=True).returncode:
+            continue
+        if remote & set(git(root, 'rev-list', c, '^' + base).split()):
+            return True
+    return False
+
+
 def abort_batch(root, folder):
     """退回本批开始前的 main：先存备份引用，不删任何车道工作树；已推送到 GitHub 的批不能退。"""
     pending = load_batch(folder)
@@ -816,10 +837,8 @@ def abort_batch(root, folder):
         raise RuntimeError('有进行中的合并冲突，先 git merge --abort 或解决')
     if any(x.startswith('??') for x in porcelain(root)):
         raise RuntimeError('有未跟踪文件，先移走或提交，免得退回时丢失')
-    tracking = 'refs/remotes/github/main'
-    first = pending[0].get('mergeCommit') or pending[0]['head']
-    if (subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', tracking], capture_output=True).returncode == 0
-            and subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', first, tracking]).returncode == 0):
+    marks = [x.get('mergeCommit') or x.get('head') for x in pending] + [state and state.get('mergeCommit')]
+    if pushed_since(root, base, 'HEAD', *marks):
         raise RuntimeError('本批已推送到 GitHub，不能退回；改用新提交修复')
     stamp = time.strftime('%Y%m%d_%H%M%S')
     backup = 'refs/lane-merge/aborted-' + stamp
@@ -1001,10 +1020,7 @@ def abort_one(root, folder, task):
         raise RuntimeError('本条合并前的 main（%s）不在当前 main 历史里，先人工核对' % base[:9])
     if any(x.startswith('??') for x in porcelain(root)):
         raise RuntimeError('有未跟踪文件，先移走或提交，免得退回时丢失')
-    tracking = 'refs/remotes/github/main'
-    mc = state.get('mergeCommit')
-    if (mc and subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', tracking], capture_output=True).returncode == 0
-            and subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', mc, tracking]).returncode == 0):
+    if pushed_since(root, base, 'HEAD', state.get('mergeCommit')):
         raise RuntimeError('本条已推送到 GitHub，不能退回；改用新提交修复')
     stamp = time.strftime('%Y%m%d_%H%M%S')
     backup = 'refs/lane-merge/aborted-' + stamp

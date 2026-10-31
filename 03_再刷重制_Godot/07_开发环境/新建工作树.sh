@@ -3,6 +3,10 @@
 # 用法：
 #   新建工作树.sh <任务名> [cc|codex]   从 main 最新提交切出分支 <执行者>/<任务名>，建在主工作区的 .claude/worktrees/<任务名>（已信任的项目文件夹内，开车道会话不用再确认信任；该目录已被 .gitignore 忽略）
 #   新建工作树.sh --补齐 <worktree 路径>      只补齐已有 worktree（如桌面 app 自己建的）
+#   新建工作树.sh --补齐 <worktree 路径> --branch <新分支名> [--from <提交或分支>]
+#                                           车道开工用这条：app 给的工作树在 cc/<随机名> 上，先在该工作树里从 --from（默认 main）
+#                                           切出派单的分支（如 cc/nezha-tools22）再补齐；工作树须无已跟踪改动，新分支不能已存在。
+#                                           交付后总装照派单的任务名合并；分支名与任务名对不上时 合并车道.py --branch <分支> 指定。
 # 补齐内容：Godot 引擎链接、西游资料库链接、冻结正式源链接、mv_oracle/node_modules、转换产物 generated/、导入缓存 .godot/。
 # node_modules、generated、.godot 用 APFS 克隆（cp -c）复制主工作区的，不另占空间；随后按本分支重跑转换器与 godot --import。
 # 已有 generated 时，generated/oracle 里主工作区较新的文件会覆盖进来（本分支自己生成、主工作区没有或比主工作区新的保留）。
@@ -17,7 +21,7 @@ SELF_ROOT=${ENV_DIR:h:h}
 MAIN=${$(git -C "$SELF_ROOT" rev-parse --path-format=absolute --git-common-dir):h}
 GODOT_SUB=03_再刷重制_Godot
 
-usage() { print -u2 "用法：${0:t} <任务名> [cc|codex]   或   ${0:t} --补齐 <worktree 路径>"; exit 64; }
+usage() { print -u2 "用法：${0:t} <任务名> [cc|codex]   或   ${0:t} --补齐 <worktree 路径> [--branch <新分支名> [--from <提交或分支>]]"; exit 64; }
 
 # 参照副本按时间戳刷新：主工作区有、本分支没有或比主工作区旧的文件，克隆主工作区的；其余不动。
 # 合并 main 后若不刷新，worktree 会拿旧参照对新切片而误报。
@@ -38,8 +42,9 @@ refresh_oracle() {
 
 prepare() {
   local wt=${1:A}
-  # 主工作区 main 提交守卫（车道误在主工作区提交的防线，幂等；别人写的同名 hook 不覆盖，只提示）
-  zsh "$ENV_DIR/装提交守卫.sh" || print -u2 "⚠ 提交守卫没装好（见上），不影响补齐"
+  # 主工作区 main 提交守卫（车道误在主工作区提交的防线，幂等；别人写的同名 hook 不覆盖，只提示）。
+  # 用主工作区那份装：车道分支里改了守卫时，合进 main 前不会先装上（新守卫可能要 main 上的合并工具配套，tools22）
+  zsh "$MAIN/$GODOT_SUB/07_开发环境/装提交守卫.sh" || print -u2 "⚠ 提交守卫没装好（见上），不影响补齐"
   [[ -e $wt/.git ]] || { print -u2 "✗ $wt 不是 git 工作区"; exit 1; }
   [[ $wt != $MAIN ]] || { print -u2 "✗ 这是主工作区，不需要补齐"; exit 1; }
   local env=$wt/$GODOT_SUB/07_开发环境 menv=$MAIN/$GODOT_SUB/07_开发环境
@@ -80,9 +85,42 @@ prepare() {
 }
 
 (( $# >= 1 )) || usage
+# 在已有工作树里切出新分支：只在没有已跟踪改动时切（未跟踪文件随工作树留着），原分支不删
+switch_branch() {
+  local wt=${1:A} branch=$2 from=$3 old
+  [[ -e $wt/.git ]] || { print -u2 "✗ $wt 不是 git 工作区"; exit 1; }
+  [[ $wt != $MAIN ]] || { print -u2 "✗ 这是主工作区，不在这里切车道分支"; exit 1; }
+  git check-ref-format --branch "$branch" >/dev/null 2>&1 && [[ $branch != -* ]] || { print -u2 "✗ 分支名不合法：$branch"; exit 64; }
+  git -C "$wt" rev-parse -q --verify "$from^{commit}" >/dev/null || { print -u2 "✗ --from 找不到：$from"; exit 1; }
+  if git -C "$wt" show-ref --verify --quiet "refs/heads/$branch"; then
+    print -u2 "✗ 分支 $branch 已存在（接手已有分支：在工作树里 git switch $branch，再只用 --补齐）"; exit 1
+  fi
+  [[ -z $(git -C "$wt" status --porcelain --untracked-files=no) ]] || {
+    print -u2 "✗ $wt 有未提交的已跟踪改动，先提交（可 WIP:）或处理掉再切分支"; git -C "$wt" status --short --untracked-files=no | head -8 >&2; exit 1; }
+  old=$(git -C "$wt" symbolic-ref --short -q HEAD || git -C "$wt" rev-parse --short HEAD)
+  git -C "$wt" switch -q -c "$branch" "$from"
+  print "== 已在 $wt 从 $from（$(git -C "$wt" rev-parse --short HEAD)）切出 $branch（原来在 $old，没删）"
+  # app 每开一个会话起一个 cc/<随机名>：原分支没有自己的提交（都已在 main 里）时提示可删，免得越攒越多（只提示不删，tools23）
+  if [[ $old != main ]] && git -C "$wt" show-ref --verify --quiet "refs/heads/$old" \
+      && git -C "$wt" merge-base --is-ancestor "refs/heads/$old" main 2>/dev/null; then
+    print "  提示：原分支 $old 没有自己的提交（都已在 main 里），用不着可删：git branch -d $old（只提示，没删）"
+  fi
+}
+
 if [[ $1 == --补齐 ]]; then
-  (( $# == 2 )) || usage
-  prepare "$2"
+  (( $# >= 2 )) || usage
+  wt=$2 branch='' from=''
+  shift 2
+  while (( $# )); do
+    case $1 in
+      --branch) (( $# >= 2 )) || usage; branch=$2; shift 2 ;;
+      --from) (( $# >= 2 )) || usage; from=$2; shift 2 ;;
+      *) usage ;;
+    esac
+  done
+  [[ -n $branch || -z $from ]] || { print -u2 "✗ --from 要和 --branch 一起给（切出的新分支名）"; exit 64; }
+  [[ -z $branch ]] || switch_branch "$wt" "$branch" "${from:-main}"
+  prepare "$wt"
   exit 0
 fi
 name=$1 who=${2:-cc}   # Kyo 10-31 起前缀叫 cc；claude 是旧写法，仍可显式给

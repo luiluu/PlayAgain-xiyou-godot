@@ -93,6 +93,10 @@ static func max_text(s: XState, actor_id: int) -> int:
 
 ## onBottomConfirmOk 的条件：等级、金钱、每种物品够数。返回缺项文字（空＝满足）；没有行返回 ["已满"]
 static func missing(s: XState, a: XActor) -> Array:
+	if XGarou.own(a):  # 饿狼 onBottomConfirmOk 包装：先查形态条件（等级、累计突破、神之触媒），不满足只给原因
+		var why := XGarou.reason(s, a)
+		if why != "":
+			return [why]
 	var r = row(s, a.actor_id)
 	if r == null:
 		return ["已满"]
@@ -115,6 +119,8 @@ static func fail_text(lack: Array) -> String:
 
 ## onConfirmOk：遗忘 → 学会 → 次数 +1 → 扣金钱 → 扣物品。不检查条件（界面在底部确定时已查过）；没有行返回 false
 static func advance(s: XState, a: XActor) -> bool:
+	if XGarou.own(a):  # 饿狼 onConfirmOk 包装：走 G.advance（不扣表里的物品，星空另扣神之触媒）
+		return bool(XGarou.advance(s, a, rank(s, a.actor_id)).ok)
 	var r = row(s, a.actor_id)
 	if r == null:
 		return false
