@@ -22,6 +22,10 @@ var drop_lock := false
 var _treasure := {}
 var _drop_granted := {}
 var _rewards_granted := false
+## 开战时出战栏里的饿狼（G._battleGarou）、是否 Boss 战（G._bossBattle）与胜利结算要提示的文字（神之触媒；画面还没接）
+var _garou = null
+var _garou_boss := false
+var victory_texts: Array = []
 ## Rule parameter captured at battle start; icon visibility is presentation only.
 var advance_loot_on_collapse := false
 var auto := false
@@ -121,6 +125,8 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	troop_id = troop
 	XImportedBalance.set_acting(null)
 	actors = s.battle_members()
+	_garou = XGarou.start_battle(actors)  # 饿狼 startBattle 包装：同步、记下出战的饿狼
+	victory_texts.clear()
 	XZhenqi.battle_setup(s, troop)  # 真气：本场路线、楼层、溢出计数（BattleManager.setup）
 	enemies.clear()
 	var t := XDB.rec("Troops", troop)
@@ -134,6 +140,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		e.hidden = bool(m.get("hidden", false))
 		enemies.append(e)
 	XEnemyBook.bind_battle(s, enemies)
+	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
 	for i in range(actors.size()):
 		_ids[actors[i]] = "actor:%d:%d" % [i, actors[i].actor_id]
@@ -1200,6 +1207,8 @@ func _action_times_modification(order: Array, first_current := false) -> void:
 
 ## MV makeActionTimes：每个「追加行动」几率（actionPlusSet，含道法分神的 [1]）各掷一次，成功加 1 次。
 func make_action_times(b: XBattler) -> int:
+	if XGarou.own(b):  # 饿狼 makeActionTimes 包装：形态行动次数，不掷追加行动
+		return XGarou.action_times(b)
 	var n := 1
 	for p in b.action_plus_set():
 		if _float("action_times") < float(p):
@@ -2194,6 +2203,9 @@ func grant(r: Dictionary) -> Array:
 	if _rewards_granted:
 		return []
 	_rewards_granted = true
+	var garou_text := XGarou.credit_victory(state, _garou, _garou_boss)  # 饿狼 processVictory 包装：累计突破、神之触媒
+	if garou_text != "":
+		victory_texts.append(garou_text)
 	XZhenqi.on_victory(state, actors, XZhenqi.troop_members(troop_id, enemies, state.difficulty))  # 真气胜利结算（含没出场的隐藏成员）（BattleManager.endBattle(0)；每场一次）
 	state.gain_gold(r.gold)
 	if not drop_lock:
