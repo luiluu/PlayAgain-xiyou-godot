@@ -18,7 +18,7 @@ extends RefCounted
 ## - 禁忌 10166（进阶 2）：主动技（人形 4＋解放＋劫焰＋黑龙 5）skillMpCost／skillTpCost ×0.75 取整（cost）；paySkillCost 登记生命代价
 ##   max(1, floor(mhp×10%))（pay），本次行动结束（原 endAction 之前）扣，未命中照扣、最低留 1（pay_hp）。
 ## - 解放（原 endAction 之后，liberate）：用 10146 且进阶 3、学了 10146 → 加 2592；学了终焉 10167 再清名单状态与全部减益。
-##   原版清减益调的是不存在的 removeDebuff，身上有减益时这里抛 TypeError（正式游戏报错），重制照字面意思清掉（O-待定，DEBUFF_FIX）。
+##   原版清减益调的是不存在的 removeDebuff，身上有减益时这里抛 TypeError（正式游戏报错），重制照字面意思清掉（O-123，DEBUFF_FIX）。
 ##   原版随后 clearActions：OTB 每个行动位开头都重新 makeActions，清掉也不影响本回合后面的行动位，重制不做（按代码阅读，未单测）。
 ## - 终焉（黑龙形态且学了 10167）：名单状态 isStateResist／addState 挡（resists，XActor.add_state），addDebuff 全挡（blocks_debuff）。
 ## - 不灭龙血 10154（进阶 3）：黑龙形态受伤 ×0.8（伤害钩子 mira，XActorDamageHooks.mira_ops）；onTurnEnd 之后活着回 floor(mhp×5%)（turn_end）。
@@ -42,7 +42,7 @@ const BATTLE_STATES := [2592, 2597, 2598, 2599]
 ## M.endOfAllImmuneStates
 const END_OF_ALL_IMMUNE := [4, 6, 10, 29, 30, 33, 35, 46, 100, 107, 126, 127, 128, 130, 131, 150, 178, 184, 234, 263, 264, 274, 320, 741, 742,
 	927, 995, 1082, 1101, 1102, 1114, 1119, 1264, 1544, 2016, 2042, 2043, 2503, 2507, 2513]
-## O-待定：解放时终焉照说明清掉全部减益（原版调不存在的 removeDebuff 抛错）；false＝不清（不照搬报错）
+## O-123：解放时终焉照说明清掉全部减益（原版调不存在的 removeDebuff 抛错）；false＝不清（不照搬报错）
 static var DEBUFF_FIX := true
 ## 本次施放登记的禁忌生命代价 {skill, cost}（_codexMiraForbiddenHpDue）
 static var _due = null
