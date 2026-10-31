@@ -13,8 +13,8 @@ extends RefCounted
 ##   这几项不靠战斗机制，照写；其余战斗内状态第一期恒为初值。
 ## - 伤害钩子 sukuna（XActorDamageHooks）：10229～10238 定物理（神灶 10232／10233 为魔法）；空间斩／次元斩（10234／10235）为真伤、
 ##   属性 13；其余物防率 ×0.5（捌非冲击段 ×0.15）、魔防率 ×0.5；stage 3 结算 ×1.5。
-##   原版 stage 3 另包 makeDamageValue（结果 ×1.99 取整）：照 MiraRavenNumberBoost 先例在 CodexDamage 结算下并进钩子，结算再 ×1.99
-##   （只差取整次序；参照伤害行是 1 级 0 进阶，不涉及）。
+##   原版 stage 3 另包 makeDamageValue（结果 ×1.99）是死代码：installDamageElementRuntime 后装、整个换掉 makeDamageValue 不调旧链，
+##   不生效（第一期曾并进钩子，第二期 sukuna_battle 参照 3 进阶各段比值证实没有，已去掉；二十指说明也只写结算 ×1.5）。
 ## - 招募（公共事件 9007 的 try { if (!CodexSukuna.recruit()) 还号角 }）：已在队返回 false；没戴神武解 4581 时背包有就拿、没有就生成，
 ##   装进装备类型 13 的槽；入队、同步；右上角提示「宿傩加入队伍，已装备神武解。」。
 ## 第二期（战斗内，S.begin／finish／endRound 与 Game_Action.apply 包装）：看破层数（10240，每回合每目标最多 +2、上限 3，敌人行动结束也给自己 +1）、
@@ -171,7 +171,6 @@ static func damage_ops(item: Dictionary, a) -> Array:
 			ops.append({"op": "mul", "field": "magicalDefenseRate", "value": 0.5})
 	if stage(a) == 3:
 		ops.append({"op": "mul", "field": "settlementMultiplier", "value": 1.5})
-		ops.append({"op": "mul", "field": "settlementMultiplier", "value": 1.99})  # makeDamageValue 包装
 	return ops
 
 ## CodexSukuna.recruit()
