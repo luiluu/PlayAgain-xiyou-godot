@@ -118,6 +118,7 @@ static func advance(s: XState, a: XActor) -> bool:
 	var r = row(s, a.actor_id)
 	if r == null:
 		return false
+	var previous := rank(s, a.actor_id)
 	for id in r.forget:
 		a.forget_skill(int(id))
 	for id in r.learn:
@@ -127,6 +128,7 @@ static func advance(s: XState, a: XActor) -> bool:
 	for p in r.items:
 		s.gain_item(int(p[0]), -int(p[1]))
 	a.refresh_passive()
+	XRaven.after_advance(s, a, previous)  # 渡鸦 onConfirmOk 包装：灵魂清零、重排技能、再判铸印
 	return true
 
 

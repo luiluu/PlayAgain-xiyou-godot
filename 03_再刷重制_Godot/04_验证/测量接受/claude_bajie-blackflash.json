@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "sukuna_battle.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"script.layers\"]]",
+      "fields": [
+        "observed",
+        "setup"
+      ],
+      "oldDigest": "1befc834a379de31",
+      "newDigest": "089b857bdce22404",
+      "reason": "八戒黑闪期：sukuna_battle_probe 加黑闪段（cases 5→6），已有用例补记暴击、emp、flash 等黑闪字段，见交付单第 4 条"
+    },
+    {
+      "file": "sukuna_battle.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"script.terminal\"]]",
+      "fields": [
+        "observed",
+        "setup"
+      ],
+      "oldDigest": "1c3a60131e620555",
+      "newDigest": "c1c3f5f70393fa0d",
+      "reason": "八戒黑闪期：sukuna_battle_probe 加黑闪段（cases 5→6），已有用例补记暴击、emp、flash 等黑闪字段，见交付单第 4 条"
+    },
+    {
+      "file": "sukuna_battle.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"script.domain\"]]",
+      "fields": [
+        "observed",
+        "setup"
+      ],
+      "oldDigest": "7ee16b41f2ac5bbe",
+      "newDigest": "280a6cb4e5974c22",
+      "reason": "八戒黑闪期：sukuna_battle_probe 加黑闪段（cases 5→6），已有用例补记暴击、emp、flash 等黑闪字段，见交付单第 4 条"
+    },
+    {
+      "file": "sukuna_battle.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"script.adapt\"]]",
+      "fields": [
+        "observed",
+        "setup"
+      ],
+      "oldDigest": "d1192ce64a103076",
+      "newDigest": "34376fc9ede4fe30",
+      "reason": "八戒黑闪期：sukuna_battle_probe 加黑闪段（cases 5→6），已有用例补记暴击、emp、flash 等黑闪字段，见交付单第 4 条"
+    }
+  ]
+}

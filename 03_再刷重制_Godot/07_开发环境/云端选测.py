@@ -236,6 +236,39 @@ def cmd_run(a):
     return 0
 
 
+def local_report(sha):
+    """云端 report 任务没起来（多半是 spending limit 挡了）但各片都跑完时：下载 plan 与全部 result-shard 工件，在本机算 report。
+    工件齐全才算（plan 的提交号对得上、每个分片都有结果），返回通过(0)／失败(1)；不齐或下不到返回 None。不写 refs/ci/results。"""
+    gh = os.environ.get('XIYOU_GH') or shutil.which('gh')
+    if not gh:
+        return None
+    p = subprocess.run([gh, 'run', 'list', '--commit', sha, '--json', 'databaseId', '--limit', '20'], cwd=ROOT, capture_output=True, text=True)
+    try:
+        ids = sorted((x['databaseId'] for x in json.loads(p.stdout)), reverse=True) if p.returncode == 0 else []
+    except (ValueError, KeyError, TypeError):
+        return None
+    for run_id in ids:
+        tmp = tempfile.mkdtemp(prefix='xiyou_cloud_report_')
+        try:
+            d = subprocess.run([gh, 'run', 'download', str(run_id), '-D', tmp, '--pattern', 'plan', '--pattern', 'result-shard-*'],
+                               cwd=ROOT, capture_output=True, text=True)
+            plan_file = Path(tmp) / 'plan' / 'plan.json'
+            if d.returncode or not plan_file.is_file():
+                continue
+            plan = json.loads(plan_file.read_text())
+            want = {x['shard'] for x in plan.get('shards', [])}
+            got = {json.loads(f.read_text()).get('shard') for f in Path(tmp).glob('**/shard-*.json')}
+            if plan.get('sha') != sha or not want or want - got:
+                continue
+            print('（云端 report 任务没起来，下面的汇总由本机用云端各片的结果工件算出，没有写 refs/ci/results；运行 %d）' % run_id)
+            return cmd_report(argparse.Namespace(plan=str(plan_file), results=tmp, timings=None, job_status='success', mode=None, publish=False))
+        except (ValueError, KeyError, OSError):
+            continue
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    return None
+
+
 def actions_blocked(sha):
     """已结束却没有结果的运行里，有没有「一个任务都没启动」的（多半是本月 Actions 额度用完或账户被挡）。查不到返回 False。"""
     gh = os.environ.get('XIYOU_GH') or shutil.which('gh')
@@ -297,6 +330,9 @@ def cmd_wait(a):
         # 运行已结束却没有结果：连续两次都是结束状态（留出结果ref写出的时间）才判定，免得白等到超时
         finished_seen = finished_seen + 1 if actions_finished(sha) else 0
         if finished_seen >= 2:
+            local = local_report(sha)
+            if local is not None:
+                return local
             if actions_blocked(sha):
                 print('云端运行没有启动任何任务，多半是本月 GitHub Actions 额度用完（或账户被挡）：%s 没有结果，改用本机跑选测（检查.sh 去掉 --cloud）' % sha[:10])
                 return 4

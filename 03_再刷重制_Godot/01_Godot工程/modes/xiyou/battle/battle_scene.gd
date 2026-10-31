@@ -893,6 +893,9 @@ func _list_entry(a: XActor, e: Dictionary, items: bool) -> Dictionary:
 			row.costs.append({"text": "%sTP" % XMenu._group(c.tp), "color": XUI.text_color(29), "icon": 1268})
 		if c.mp > 0:
 			row.costs.append({"text": "%sMP" % XMenu._group(c.mp), "color": XUI.text_color(23), "icon": 1269})
+		var hp := XBattleLogic.skill_hp_cost(a, e)
+		if hp > 0:
+			row.costs.append({"text": "%sHP" % XMenu._group(hp), "color": XUI.text_color(18), "icon": 1266})  # YEP drawHpCost
 	return row
 
 
