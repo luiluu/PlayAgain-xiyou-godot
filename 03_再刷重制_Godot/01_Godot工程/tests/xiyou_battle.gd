@@ -50,7 +50,11 @@ func _run() -> void:
 	_check("troop2_won", logic.is_won(), {"turns": turns, "enemyHp": logic.enemies.map(func(e): return e.hp)})
 	_check("reasonable_length", turns >= 2 and turns <= 30, turns)
 	var r := logic.rewards()
-	_check("rewards_exp_gold", r.exp == 3 * 20 * 8 and r.gold > 0, r)
+	# 难度 3 经验倍率 4.5（O-待定 默认开，每只 floor(20×4.5)），再 ×8；关掉时原版 3×20×8
+	_check("rewards_exp_gold", r.exp == 3 * floori(20 * 4.5) * 8 and r.gold > 0, r)
+	XBattleLogic.o_difficulty_reward = false
+	_check("rewards_exp_original", logic.rewards().exp == 3 * 20 * 8, logic.rewards())
+	XBattleLogic.o_difficulty_reward = true
 	var ups := logic.grant(r)
 	logic.end_battle()
 	_check("exp_granted", s.actor(1).exp_total > 0, s.actor(1).exp_total)

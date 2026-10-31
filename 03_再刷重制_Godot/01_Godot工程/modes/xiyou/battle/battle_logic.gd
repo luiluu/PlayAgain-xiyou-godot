@@ -336,11 +336,14 @@ static func is_item(rec: Dictionary) -> bool:
 	return rec.has("itypeId")
 
 ## YEP_SkillCore 的消耗备注（逐行、冒号后恰一个空格、只认整数）：<MP Cost: n> 改基础 MP、<MP Cost: n%> 记最大 MP 比例，TP、HP 同理（HP 默认 0）。
-## 「<MP Cost: 7.5%>」这类带小数的写法原版认不出（7225 降众天华比例为 0），照原版。按备注缓存
+## 「<MP Cost: 7.5%>」这类带小数的写法原版认不出（7225 降众天华比例为 0）；O-129 开着时 MP 比例认小数（按 7.5% 收）。按备注缓存
+## O-129（用户 10-31 定：做）：false＝原版，只扣基础 MP
+static var o_decimal_mp_cost := true
 static var _note_cost_cache := {}
 static func note_costs(skill: Dictionary) -> Dictionary:
 	var note := str(skill.get("note", ""))
-	if not _note_cost_cache.has(note):
+	var key := note if not o_decimal_mp_cost else "o129:" + note
+	if not _note_cost_cache.has(key):
 		var out := {}
 		for line in note.split("\n"):
 			for kind in ["MP", "TP", "HP"]:
@@ -348,12 +351,14 @@ static func note_costs(skill: Dictionary) -> Dictionary:
 				if m != null:
 					out[kind.to_lower() + "Cost"] = int(m.get_string(1))
 					break
-				m = RegEx.create_from_string("(?i)<(?:%s COST):[ ](\\d+)([%%％])>" % kind).search(line)
+				# O-129：MP 比例认小数（7225 降众天华 <MP Cost: 7.5%>；原版 YEP 正则只认整数，比例 0、只扣基础）
+				var digits := "\\d+(?:\\.\\d+)?" if o_decimal_mp_cost and kind == "MP" else "\\d+"
+				m = RegEx.create_from_string("(?i)<(?:%s COST):[ ](%s)([%%％])>" % [kind, digits]).search(line)
 				if m != null:
 					out[kind.to_lower() + "CostPer"] = float(m.get_string(1)) * 0.01
 					break
-		_note_cost_cache[note] = out
-	return _note_cost_cache[note]
+		_note_cost_cache[key] = out
+	return _note_cost_cache[key]
 
 ## YEP_SkillCore skillHpCost：⌊基础＋最大HP×比例⌋、不低于 0（熟练度公式原样、费用为正时至少 1，等于不变）。
 ## 异化空壳在战斗中按开场参照生命上限算（Adv:126），见 XAlienBattle.hp_cost_mhp
@@ -2132,8 +2137,10 @@ func _avg_agi(list: Array) -> float:
 # ---- 奖励（经验、金钱；物品掉落见 _roll_drops）----
 ## BattleManager.makeRewards（正式版 rpg_managers）：金钱 goldTotal×5、经验 expTotal×8。
 ## 经验：Game_Enemy.exp 被后装的 EliteEnemy 改写成「数据库经验 × 神话倍率」，Vitsuno 难度的经验／金钱倍率包在里层、被盖掉不生效
-## （参照 battle_gaps reward.*：难度 1～13 奖励相同）；GT_EquipSuitCore 在 expTotal／goldTotal 外再套套装。
+## （参照 battle_gaps reward.*：难度 1～13 奖励相同；O-待定 开关默认按难度乘，见下）；GT_EquipSuitCore 在 expTotal／goldTotal 外再套套装。
 ## 金钱：dsPassiveSkill 的 goldTotal 按出战成员的每个 passiveGRUP 依次 rate += v×0.01×rate，floor(Σ gold×rate × 金钱双倍)。
+## O-待定（Kyo 10-31 定：加回来）：难度表的经验／金钱倍率照 Vitsuno 本来的挂点乘在每只敌人的 exp／gold 上；false＝原版（被 EliteEnemy 盖掉、不生效）
+static var o_difficulty_reward := true
 func rewards() -> Dictionary:
 	var exp := 0
 	var gold := 0.0
@@ -2144,11 +2151,13 @@ func rewards() -> Dictionary:
 	for a in actors:
 		for v in a.passive_values("passiveGRUP"):
 			gold_rate += XActor._num(v) * 0.01 * gold_rate  # 原式 rate += v×0.01×rate（与连乘差在末位，会差一档取整）
+	var rates := _difficulty_rates() if o_difficulty_reward else [1.0, 1.0]
 	for e in enemies:
 		if e.hidden:
 			continue  # deadMembers：没出现的成员不算
-		exp += e.exp_reward()
-		gold += float(e.gold_reward()) * gold_rate
+		# O-待定：Vitsuno 的挂点是 Game_Enemy.exp／gold（每只敌人 floor(值×倍率)），在 expTotal／goldTotal、套装与 ×8／×5 之前
+		exp += floori(e.exp_reward() * float(rates[0]))
+		gold += floorf(e.gold_reward() * float(rates[1])) * gold_rate
 		drops.append_array(drops_of(e))
 	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
 	return {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8, "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}

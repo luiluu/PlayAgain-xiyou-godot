@@ -11,7 +11,7 @@ extends Node
 ##   B1（O-120，MVInterpreter.seal_check_fix）：有副本没重置（变量 5＝1）时点「挑战副本」只提示「请重置副本！」，不扣符文不进门；
 ##   seal_check_fix 设 {} 时条件照原版按变量 5＝副本号比（只核条件，不传进副本图）；
 ## - 回：78 EV1 → 76 (17,26)，76 EV2 面朝下 → 75 (17,0)，75 EV2 面朝下 → 69 (22,53)，走回飞艇再上；
-## - 敌群 272～280 各打赢一场；共用核心条件类型 9／10（持有武器／防具，含装备一支）单独核。
+## - 敌群 272～280 各打赢一场。（条件类型 9／10 的单独断言 10-31 挪进 xiyou_script。）
 ## 队伍生命攻击都很大（只查流程）。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const FIXTURE := "res://tests/fixtures/airship_land.json"
@@ -459,16 +459,6 @@ func _troops() -> void:
 
 
 ## 共用核心条件类型 9／10：背包按底材编号；含装备时队员身上的也算
-func _gear_conditions() -> void:
-	var a: XActor = s.members()[0]
-	var w: Dictionary = a.equips[0]
-	var base := int(w.base)
-	var it := MVInterpreter.new(map, 0, 0, [])
-	var bag := s.gear_count("weapon", base)
-	_check("cond9_equipped", it._condition([9, base, true]) and (bag > 0) == it._condition([9, base, false]), [base, bag])
-	_check("cond10_absent", not it._condition([10, 1764, true]) and not it._condition([10, 1764, false]))
-
-
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_floor_reach075"
 	XConfig.path_override = XSave.dir().path_join("options.json")
@@ -488,7 +478,6 @@ func _run() -> void:
 		await _map78()
 		await _walk_home()
 	await _troops()
-	await _gear_conditions()
 	_finish()
 
 
