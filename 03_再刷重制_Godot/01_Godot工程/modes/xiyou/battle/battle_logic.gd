@@ -1387,6 +1387,8 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	logs.append({"type": "action", "user": u, "skill": skill, "views": views()})
 	if blocked:
 		return logs
+	if XToji.suppressed(self, u, skill):  # 甚尔天逆鉾封印 applyGlobal 包装：这次主动技能失效（扣一次），整段序列跳过
+		return logs
 	XImportedBalance.set_acting(u)  # YEP 附加状态记 BattleManager._subject 为来源
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击（isAttack：此刻的 attackSkillId）的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。

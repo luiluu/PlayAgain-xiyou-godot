@@ -35,6 +35,7 @@ function battle() {
   for (const id of [ID, 1]) {
     const b = w.$gameActors.actor(id); b.changeLevel(LEVEL, false); b.recoverAll();
   }
+  w.$gameActors.actor(1)._paramPlus[0] = BIG_HP;  // 敌人行动只打 1 号（夹在 99999999）
   const a = w.$gameActors.actor(ID);
   w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
   w.Math.random = () => 0.99;
@@ -98,6 +99,7 @@ function run(steps, draws) {
       else if (kind === 'end') { bm._enteredEndPhase = false; bm._phase = 'turn'; bm.endTurn(); bm._phase = 'turn'; }
       else if (kind === 'state') a.addState(x);
       else if (kind === 'unstate') a.removeState(x);
+      else if (kind === 'foe') act(bm, foes[x], y, st[3]);  // 敌人用技能 y 打我方第 st[3] 位
       else if (kind === 'die') { a.addState(a.deathStateId()); }
       else if (kind === 'revive') { a.removeState(a.deathStateId()); a.setHp(a.mhp); }
       out.push({step: st, hits: log.slice(), snap: snapshot(env)});
@@ -121,7 +123,11 @@ const SCRIPTS = {
   flash: [['act', 10216, 0], ['act', 10216, 0], ['act', 10213, 0], ['act', 10217, 0], ['act', 10214, 0], ['act', 10218, 1], ['act', 10215, 0],
     ['act', 10219, 2], ['end']],
 };
-const DRAWS = {flash: [0]};
+// 天逆鉾封印（第二期⑥，applyGlobal）：被封的敌人下一次主动技能（非普攻、非防御）失效并扣一次，普攻与防御不扣；
+// 觉醒中的天逆鉾给 2 次
+SCRIPTS.seal = [['act', 10215, 0], ['act', 10219, 0], ['foe', 0, 1, 1], ['foe', 0, 2, 0], ['foe', 0, 3, 1], ['foe', 0, 3, 1],
+  ['act', 10216, 1], ['act', 10216, 1], ['act', 10219, 2], ['foe', 2, 3, 1], ['foe', 2, 3, 1], ['foe', 2, 3, 1]];
+const DRAWS = {flash: [0], seal: [1, 0]};
 const cases = [];
 for (const [name, steps] of Object.entries(SCRIPTS)) {
   cases.push(makeCase(`script.${name}`, {actor: ID, level: LEVEL, troop: TROOP, steps, draws: DRAWS[name] || []}, () => ({steps: run(steps, DRAWS[name])})));

@@ -38,7 +38,8 @@ extends RefCounted
 ##   之后的 ACTION EFFECT 不再打。每段 apply 计第几段（万里锁／天逆鉾第 2 段起 ×0.8）。黑闪觉醒中的游云（extraHitSkill）多 1 段。
 ## - apply 包装：命中后万里锁对其余活着的敌人溅射（倍率 0.33，觉醒中的主行动 0.50；内部行动、不判黑闪、不再溅射）；
 ##   天逆鉾给目标附封印 2634，次数 max(原次数或 1, 觉醒中的主行动 2／否则 1)，状态去掉时次数清零。
-## 未移植（第三期起，清单见交付单 cc_bajie-toji2「下期」）：武器库追击与借用特效、封印吞技能（applyGlobal）、术师杀手减伤与反弹、
+## - 封印失效（applyGlobal 包装）：带 2634 的行动者下一次主动技能失效并扣一次，普攻、防御、物品不扣。
+## 未移植（第三期起，清单见交付单 cc_bajie-toji2「下期」）：武器库追击与借用特效、术师杀手减伤与反弹、
 ##   暴君免负面状态与弱化、天与咒缚的命中／闪避、五感必中与暴击闪避、智能 AI 档案；说明框熟练度行（画面）；读档时 repair。
 ##   原版 makeDamageValue 包装是死代码（installDamageElementRuntime 后装、整个换掉 makeDamageValue 不调旧链），不移植。
 ## 参照：slice_probe（切片角色行与伤害行）、toji_probe（等级／进阶／血量各档的能力值、公式、钩子帧，tests/xiyou_toji.gd）。
@@ -431,6 +432,20 @@ static func _spread(logic, u, skill: Dictionary, source, rate: float) -> Array:
 	spread_rate = 0.0
 	internal = false
 	return out
+
+
+## Game_Action.applyGlobal 包装（付费之后）：带封印 2634 的行动者用主动技能（非物品、非普攻、非防御）时这次失效，扣一次，
+## 扣完去状态；之后整段行动序列跳过（processActionSequenceCheck、startAction 清目标）。true＝失效
+static func suppressed(logic, u, skill: Dictionary) -> bool:
+	if XBattleLogic.is_item(skill) or u.is_attack(skill) or int(skill.get("id", 0)) == XBattleLogic.GUARD_SKILL or not u.state_ids.has(SEAL):
+		return false
+	var left := maxi(0, maxi(seal_count(u), 1) - 1)
+	seal_charges[u] = left
+	if left == 0:
+		logic._state_remove(u, SEAL)
+	if own(u):
+		action = {}  # 失效的切换不换形态
+	return true
 
 
 ## BattleManager.endAction 包装（原 endAction 之后）：切换技能换形态；清本次行动

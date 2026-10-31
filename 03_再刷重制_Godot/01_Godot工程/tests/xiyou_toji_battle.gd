@@ -45,6 +45,7 @@ func _battle(flash := []) -> Array:
 	s.add_actor(1)
 	for id in [171, 1]:
 		s.actor(id).refresh_passive()
+	s.actor(1).add_param(0, 1e18)  # 敌人行动只打 1 号（夹在 99999999）
 	var rand := XBattleRandom.create("0000000000000171")
 	rand.rule = HalfStream.new()
 	rand.rule.flash = flash.duplicate()
@@ -124,6 +125,8 @@ func _script(c: Dictionary) -> void:
 				logic._state_add(a, int(st[1]))
 			"unstate":
 				logic._state_remove(a, int(st[1]))
+			"foe":
+				logs = logic.act(logic.enemies[int(st[1])], XDB.rec("Skills", int(st[2])), logic.actors[int(st[3])])
 			"die":
 				logic._state_add(a, XBattleLogic.DEATH_STATE)
 			"revive":
@@ -139,10 +142,11 @@ func _script(c: Dictionary) -> void:
 				if same:
 					var e: Dictionary = exp[k]
 					var w := float(e.hp)
-					if gap[0] == 0.0 and w > 0.0:
+					if gap[0] == 0.0 and w > 0.0 and str(e.user) == "a171":
 						gap[0] = got[k].hp / w
+					var hp_ok: bool = absf(got[k].hp - w) <= 1.0 if str(e.user) != "a171" else absf(got[k].hp / w - gap[0]) < 1e-6  # 敌人打我方照原值比
 					same = got[k].skill == int(e.skill) and got[k].user == str(e.user) and got[k].target == str(e.target) \
-						and absf(got[k].hp / w - gap[0]) < 1e-6 and got[k].critical == bool(e.critical)
+						and hp_ok and got[k].critical == bool(e.critical)
 			check(name + ".hits", same, [got, exp])
 		var snap: Dictionary = _norm(_snap(logic, a))
 		var ws: Dictionary = _norm(want.snap)
@@ -178,7 +182,7 @@ func _run() -> void:
 		if c.errors.is_empty():
 			seen += 1
 			_script(c)
-	check("covers_all", seen == 4, seen)
+	check("covers_all", seen == 5, seen)
 	_local()
 	finish()
 
