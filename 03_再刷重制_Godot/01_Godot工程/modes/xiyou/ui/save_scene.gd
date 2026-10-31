@@ -254,7 +254,7 @@ static func playtime(sec: float) -> String:
 
 ## 存档容量。O-042：正式 drawFileSize 把 encodeURI(存档字符串) 里 %XX 的个数当字节数（只数非 ASCII、空格、引号等要转义的
 ## 字节），并不是存档大小；Godot 默认显示实际存档文件大小（B／KB／MB 一位小数）。REAL_FILE_SIZE 设 false 恢复原版算法。
-const REAL_FILE_SIZE := true
+static var REAL_FILE_SIZE := true
 const URI_KEEP := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789;,/?:@&=+$-_.!~*'()#"
 
 static func file_size(slot_no: int) -> String:

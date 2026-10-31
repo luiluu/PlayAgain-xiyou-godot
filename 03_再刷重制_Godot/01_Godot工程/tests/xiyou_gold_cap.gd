@@ -43,21 +43,12 @@ func _run() -> void:
 	if check("gold_oracle_loaded", d is Dictionary and d.has("seqs"), ORACLE):
 		check("max_gold", XState.GOLD_MAX == int(d.maxGold), [XState.GOLD_MAX, d.maxGold])
 		check("gold_font", XShop.GOLD_FONT == int(d.goldFontSize) and XMenu.GOLD_OVERLAP == str(d.goldOverlap) and XMenu.GOLD_ICON == int(d.goldIcon))
-		for sq in d.seqs:
-			var s := XState.new_game_blank()
-			s.gold = int(sq.start)
-			var got := []
-			var want := []
-			var prev := int(sq.start)
-			for step in sq.steps:
-				s.gain_gold(int(step))
-				got.append(s.gold)
-				prev = clampi(prev + int(step), 0, XState.GOLD_MAX)
-				want.append(prev)
-			# 原版没扣成负数的段逐步相同；扣成负数的段在 O-085 开着时按下限 0 逐步夹取
-			var neg: bool = sq.after.any(func(v): return int(v) < 0)
-			var ref: Array = want if neg and XState.GOLD_FLOOR_ZERO else sq.after.map(func(v): return int(v))
-			check("seq_" + str(sq.name), got == ref, [got, ref, sq.after])
+		_seqs(d, "")
+		# O-085 回退（GOLD_FLOOR_ZERO = false）：下限回到 -99999999，逐步结果与参照原样相同
+		XState.GOLD_FLOOR_ZERO = false
+		_seqs(d, "original_")
+		check("seq_original_covers_negative", d.seqs.any(func(sq): return sq.after.any(func(v): return int(v) < 0)))
+		XState.GOLD_FLOOR_ZERO = true
 		for g in d.groups:
 			check("group_%s" % str(g[0]), XMenu._group(float(g[0])) == str(g[1]), [XMenu._group(float(g[0])), g[1]])
 		for sv in d.saves:
@@ -123,3 +114,22 @@ func _check_ui() -> void:
 	menu.free()
 	craft.free()
 	shop.free()
+
+
+## 金币收支逐步对参照（tag 区分开关取值）
+func _seqs(d: Dictionary, tag: String) -> void:
+	for sq in d.seqs:
+		var s := XState.new_game_blank()
+		s.gold = int(sq.start)
+		var got := []
+		var want := []
+		var prev := int(sq.start)
+		for step in sq.steps:
+			s.gain_gold(int(step))
+			got.append(s.gold)
+			prev = clampi(prev + int(step), 0, XState.GOLD_MAX)
+			want.append(prev)
+		# 原版没扣成负数的段逐步相同；扣成负数的段在 O-085 开着时按下限 0 逐步夹取
+		var neg: bool = sq.after.any(func(v): return int(v) < 0)
+		var ref: Array = want if neg and XState.GOLD_FLOOR_ZERO else sq.after.map(func(v): return int(v))
+		check("seq_" + tag + str(sq.name), got == ref, [got, ref, sq.after])

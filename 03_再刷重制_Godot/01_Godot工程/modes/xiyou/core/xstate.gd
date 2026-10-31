@@ -713,7 +713,7 @@ func mark_seen(rec: Dictionary) -> void:
 const GOLD_MAX := 999999999999
 const GOLD_MIN_ORIGINAL := -99999999
 ## O-085：精魂不扣成负数；设 false 恢复原版下限 -99999999
-const GOLD_FLOOR_ZERO := true
+static var GOLD_FLOOR_ZERO := true
 
 func gain_gold(amount: int) -> void:
 	gold = clampi(gold + amount, 0 if GOLD_FLOOR_ZERO else GOLD_MIN_ORIGINAL, GOLD_MAX)

@@ -193,6 +193,7 @@ func _run() -> void:
 	await _sell_rewards()
 	await _item_marks_oracle()
 	await _number_window_rewards()
+	_list_only_names_original()
 	DirAccess.remove_absolute(XSave.dir())
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
@@ -465,3 +466,26 @@ func _number_window_rewards() -> void:
 			await shot("shop_number_sell_reward_961")
 	shop.queue_free()
 	await frames()
+
+
+## O-030 回退（LIST_ONLY_NAMES = false）：照原版 Star_ShopOnekey／Star_ItemTop 直接改数据库记录的名字（商店、对话、获得提示里都带标记），
+## 列表显示不再另做副本；取消时名字改回。默认只在物品列表里画标记、数据库名字不变
+func _list_only_names_original() -> void:
+	var s := XState.new_game_blank()
+	var rec := XDB.rec("Items", 2)
+	var name := str(rec.name)
+	XItemMarks.toggle_lock(s, rec)
+	var shown_default := str(XItemMarks.decorate(s, rec).name)
+	check("lock_list_only_default", str(rec.name) == name and shown_default == name + XItemMarks.LOCK, [rec.name, shown_default])
+	XItemMarks.toggle_lock(s, rec)
+	XItemMarks.LIST_ONLY_NAMES = false
+	XItemMarks.toggle_lock(s, rec)
+	var locked_name := str(rec.name)
+	var same_rec := is_same(XItemMarks.decorate(s, rec), rec)
+	XItemMarks.toggle_top(s, rec)
+	var both := str(rec.name)
+	XItemMarks.toggle_top(s, rec)
+	XItemMarks.toggle_lock(s, rec)
+	XItemMarks.LIST_ONLY_NAMES = true
+	check("lock_renames_db_original", locked_name == name + XItemMarks.LOCK and same_rec and both == name + XItemMarks.LOCK + XItemMarks.TOP
+		and str(rec.name) == name and not XItemMarks.is_locked(s, rec) and not XItemMarks.is_top(s, rec), [locked_name, both, rec.name])

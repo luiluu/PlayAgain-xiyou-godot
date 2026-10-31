@@ -69,6 +69,7 @@ func _run() -> void:
 		XSave.save(3)
 		await _page(fx, s)
 		await _menu_load()
+	_file_size_original()
 	for i in range(1, XSave.SLOTS + 1):
 		XSave.remove(i)
 	DirAccess.remove_absolute(XSave.dir_override)
@@ -302,3 +303,17 @@ class RecCanvas extends XMVCanvas:
 
 	func cursor(r: Rect2, active := true) -> void:
 		log.append(["cursor", r, active])
+
+
+## O-042 回退（REAL_FILE_SIZE = false）：原版 drawFileSize 数的是 encodeURI 后 %XX 的个数（只算要转义的字节）。
+## 内容 a b"中：实际 7 字节；要转义的是空格、引号各 1 字节和「中」3 字节，共 5
+func _file_size_original() -> void:
+	var f := FileAccess.open(XSave.path(XSave.SLOTS), FileAccess.WRITE)
+	f.store_string('a b"中')
+	f.close()
+	var real := XSaveScene.file_size(XSave.SLOTS)
+	XSaveScene.REAL_FILE_SIZE = false
+	var orig := XSaveScene.file_size(XSave.SLOTS)
+	XSaveScene.REAL_FILE_SIZE = true
+	check("file_size_real", real == "7B", real)
+	check("file_size_original_escape_count", orig == "5B", orig)

@@ -10,7 +10,7 @@ extends RefCounted
 const LOCK := "[锁定]"
 const TOP := "[置顶]"
 ## O-030：物品的标记只画在物品列表里（不改数据库名字）。设 false 恢复原版：切换时直接改 XDB 物品记录的名字（全局生效到重启）。
-const LIST_ONLY_NAMES := true
+static var LIST_ONLY_NAMES := true
 
 
 static func _ids(s: XState, key: String) -> Array:
