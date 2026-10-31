@@ -2,7 +2,7 @@
 
 - 车道／工作者：C 规则／悟空（cc）
 - 基线：从 cc/wukong-pushstate1 末端 8ebdbffa 切出。
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -35,13 +35,14 @@
 ## 验证
 
 - 参照：`pushstate_probe` 18 例无报错。
-- 专项：`xiyou_pushstate` 69/69。反向：待写
-- 相关战斗场景：待写
+- 专项：`xiyou_pushstate` 69/69。反向：`XDamage.finish` 不调 `after_confirm` 时 43/69；复原后全过。
+- 相关战斗场景（本机）：`xiyou_battle`、`xiyou_combat`、`xiyou_passive_content`、`xiyou_challenge_passives`、`xiyou_battle_gaps`、`xiyou_state_effects*`、`xiyou_custom_damage`、`xiyou_alien_battle`、`xiyou_alien_affix`、`xiyou_mira_battle`、`xiyou_sukuna_battle`、`xiyou_determinism`、`xiyou_actor_p0`、`xiyou_pushstate` 共 22 个场景全部通过。选测（改了 battle_logic、damage）超过 40 个，交总装合并时跑。
 - 改动的原沙僧核心文件：`battle_logic.gd`（`_damage_value` 加 `push` 参数与回调、`_apply` 调用改一处、`_push_states` 改收 sign）、`damage.gd`（`finish` 在 React 前调 `after_confirm`）。
 
 ## 本分支提交
 
 - 10f4c153 装备两例
-- （时机）挂状态挪到 React 前、逆祷内层不挂
-- （反射／反击）invoke.*
-- （掩护）invoke.cover
+- 99717be5 挂状态挪到 React 前、逆祷内层不挂
+- a6c1dab5 反射／反击 invoke.*
+- 1c905b47 掩护 invoke.cover
+- 51002389 交付单
