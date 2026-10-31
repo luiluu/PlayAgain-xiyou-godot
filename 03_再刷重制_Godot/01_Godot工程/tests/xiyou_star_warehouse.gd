@@ -328,7 +328,7 @@ func _probe(probe: Dictionary, optimized: bool) -> void:
 		var got := _got(cur.page, roles, XToast.shown.slice(shown))
 		var want := _want(steps[label])
 		if optimized:
-			# O-待定-3：供体挡下（提示「不可存放」、留在背包），其余与原版相同：两边都去掉供体再比
+			# O-127：供体挡下（提示「不可存放」、留在背包），其余与原版相同：两边都去掉供体再比
 			for k in ["list", "weapons", "GetEq"]:
 				if got[k] is Array and want[k] is Array:
 					got[k] = got[k].filter(func(r): return str(r) != "donor")
@@ -405,7 +405,7 @@ func _probe(probe: Dictionary, optimized: bool) -> void:
 		check(tag + "flush_on_config_write", not FileAccess.file_exists(XStarWarehouse.path()) and XConfig._write() and FileAccess.file_exists(XStarWarehouse.path()))
 
 
-## Q1：两档各有 xg:1，取出后不撞号；待选重抽的异化装备挡下（O-待定-3）
+## Q1：两档各有 xg:1，取出后不撞号；待选重抽的异化装备挡下（O-127）
 func _renumber(swallow_base: int) -> void:
 	_fresh_store()
 	var a := XState.new_game_blank()
