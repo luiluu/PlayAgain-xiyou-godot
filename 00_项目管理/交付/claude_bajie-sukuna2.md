@@ -1,7 +1,7 @@
 # 交付：claude/bajie-sukuna2
 
 - 车道／工作者：C 规则／八戒（Claude，八戒_91 开分支后交接，八戒_92 做完，Opus／medium）
-- 状态：进行中
+- 状态：可合并
 - 分支从 claude/bajie-shaseng-p2 末端 a05a72b7 切（唐僧交代），带着 warehouse、alien-leftover、shaseng-p2 三条的提交。
 - **提交所在分支**：`cc/compassionate-gagarin-ec734e`（工作树 `.claude/worktrees/compassionate-gagarin-ec734e`）。它从 `claude/bajie-sukuna2` 末端 711e16e0 快进而来，本期提交都在它上面；`claude/bajie-sukuna2` 本身还停在 711e16e0。原因：本会话的 app 工作树守卫不许写别的工作树，派单指定的 funny-wozniak 工作树写不进去（第一个提交 c77cd443 是在那边用命令行写的，之后挪回本工作树）。合并时请合 `cc/compassionate-gagarin-ec734e`，或先把 `claude/bajie-sukuna2` 快进到它再照常合。
 
@@ -86,9 +86,13 @@
 
 ## 验证
 
-（待写）
+- 专项：`xiyou_sukuna_battle` 425/425（参照 `sukuna_battle.json`，探针在本工作树跑出，8 秒）。
+- 选测（`并行测试.py`，25 个场景全过、无偶发，1062 秒）：xiyou_sukuna_battle、actor_modules、alien_affix、alien_battle、attack_element、attack_query、battle、battle_common_events、battle_events、battle_ui、cat、custom_damage、mira_battle、race_battle、yomi_battle、rules（难度 1 四段 rules／d1b／d1c／d1d）、smart_ai 四段、help_card、difficulty_inherit_battle。
+- 同步：本工作树 `同步正式西游.py --accept-additions` 通过（新探针执行 1、复用 67，测量不变），产物指纹已留。
+- 未合 main：分支基于 main 96bfe11c，交付时 main 没有前进。
 
 ## 本分支提交
 
 - c77cd443 宿傩第二期战斗内机制初稿
 - a8e3aa76 原版探针 sukuna_battle_probe 与专项 xiyou_sukuna_battle；去掉 ×1.99
+- 本提交：交付单验证、可合并
