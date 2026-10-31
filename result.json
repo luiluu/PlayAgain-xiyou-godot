@@ -1,0 +1,21 @@
+{
+ "sha": "5a1430a7ed0e5fd8704b8cb93b7566cac1717cc1",
+ "branch": "ci/claude/bajie-alien-seize",
+ "mode": "affected",
+ "base": "origin/main",
+ "passed": false,
+ "scenes": 253,
+ "failed": [
+  "xiyou_book_capacity_ui.tscn"
+ ],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 13,
+ "longestShardSeconds": 848.5,
+ "testSeconds": 14797,
+ "generatedRef": "refs/ci/generated/claude/bajie-alien-seize",
+ "generatedCommit": "97144934ef683da7543b1bdd88a5298e91b0e1db",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41151419334",
+ "time": "2026-10-31T01:08:06+00:00"
+}
