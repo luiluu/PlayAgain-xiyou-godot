@@ -191,6 +191,15 @@ function battleCase(name, spec, steps) {
         who(st.shield.who)._shield = st.shield.value;
       } else if (st.forget) {
         who(st.forget.who).forgetSkill(st.forget.id);
+      } else if (st.apply) {
+        // 直接对指定目标 Game_Action.apply（不经选目标）：result.used＝testApply（isForDeadFriend() === target.isDead()），蚀术命中才封印
+        // scope 给定时临时改该技能的 scope（行动后还原）
+        const sk = w.$dataSkills[st.apply.skill], scope0 = sk.scope;
+        if (st.apply.scope != null) sk.scope = st.apply.scope;
+        const action = new w.Game_Action(who(st.apply.user)); action.setSkill(st.apply.skill); who(st.apply.target).clearResult();
+        try { action.apply(who(st.apply.target)); } finally { sk.scope = scope0; }
+        const res = who(st.apply.target).result();
+        rows.push(Object.assign({step: st, used: res.used, hit: res.isHit()}, reading(ctx, atk))); continue;
       } else if (st.expire) {
         const x = who(st.expire.who); A.naturalRemoval = true; try { x.removeState(st.expire.id); } finally { A.naturalRemoval = false; }
       } else {
@@ -377,4 +386,14 @@ battleCase('insulation.mp', {affix: 'insulation'}, [{set: {aMp: 0.5}}, {event: {
 // 如效果「恢复 HP」负值、技能备注 b.gainHp(-3000)（净化之雷 857、4013）；普攻走 executeHpDamage 本来就加（对照：不能多乘一次）
 battleCase('flare.gain', {flare: true}, [{user: 'e0', def: S(1, 0, [11, 0, -0.1])}, {user: 'e0', skill: 1}]);
 battleCase('flare.gain.mob', {flare: 'mob'}, [{user: 'e0', def: S(1, 0, [11, 0, -0.1])}, {user: 'e0', skill: 1}]);
+// 以下是后加的用例，放在末尾（同步按下标比对，插在中间会被当成改动）
+// 蚀术命中判定（审查第 2 期 D2／P3）：e0 先用 1926 留下可封的上次技能，再由角色 1 直接对活着的 e0 apply 选定的 1924：
+// 临时把 1924 的 scope 改成 9（对阵亡友方，复活类）时 used 为假、不算命中、不封印；scope 照旧时命中并封印
+battleCase('erosion.used', {affix: 'erosion', learn: [1924], config: {actorId: 1, skillId: 1924}}, [
+  {user: 'e0', skill: 1926}, {apply: {user: 'a', target: 'e0', skill: 1924, scope: 9}}, {apply: {user: 'a', target: 'e0', skill: 1924}}]);
+// 技能 HP 费用（YEP_SkillCore＋Adv:126-128）：搏命 3913（3% 生命上限）。空壳按开场参照上限算、看护盾够不够（护盾 1 时不能用、硬用扣到 0）、
+// 从护盾扣；连命从生命池扣；嫁祸由保护者（角色 8）的生命付
+battleCase('hollow.hpcost', {affix: 'hollow', learn: [3913]}, [{user: 'a', skill: 3913, view: true}, {set: {aShield: 1}}, {user: 'a', skill: 3913, view: true}]);
+battleCase('lifelink.hpcost', {affix: 'lifelink', learn: [3913], config: {actorId: 1, partnerId: 8}}, [{user: 'a', skill: 3913, view: true}]);
+battleCase('scapegoat.hpcost', {affix: 'scapegoat', learn: [3913], config: {actorId: 1, partnerId: 8}}, [{user: 'a', skill: 3913, view: true}]);
 process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）、MP 费用（缄默、饕餮）、借技能（百相、无相）、蚀术、第④批装备类（吞器、献器）、补漏（setHp、阵亡保留、锁队检查已倒下与重复绑定、逆祷反击与连击与持续伤害帧、事件增减 MP）', config, cases}) ? 0 : 1);

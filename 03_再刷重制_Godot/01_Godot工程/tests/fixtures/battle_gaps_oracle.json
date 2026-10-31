@@ -640,7 +640,7 @@
    "js/rpg_οbjects.js": "455b1890ff891795df24653e3b8c15ab6ef5050661656c2dd1840339b34d5b7d"
   }
  },
- "scope": "percent MP cost in skillMpCost; actor param cap",
+ "scope": "percent MP cost in skillMpCost; actor param cap; skill HP cost",
  "percentSkills": [
   5724,
   7226,
@@ -685,6 +685,23 @@
   10336,
   10337,
   10338
+ ],
+ "hpSkills": [
+  834,
+  2358,
+  3913,
+  3926,
+  3927,
+  3928,
+  3929,
+  4780,
+  5633,
+  5635,
+  5637,
+  5757,
+  5763,
+  6037,
+  7471
  ],
  "cases": [
   {
@@ -5621,6 +5638,291 @@
     ],
     "mhp": 999999999999,
     "mmp": 999999999999
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.834",
+   "setup": {
+    "actor": 1,
+    "skill": 834,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 500,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 4985
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.2358",
+   "setup": {
+    "actor": 1,
+    "skill": 2358,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 1919,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 3566
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.3913",
+   "setup": {
+    "actor": 1,
+    "skill": 3913,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 164,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 5321
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.3926",
+   "setup": {
+    "actor": 1,
+    "skill": 3926,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 548,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 4937
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.3927",
+   "setup": {
+    "actor": 1,
+    "skill": 3927,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 822,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 4663
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.3928",
+   "setup": {
+    "actor": 1,
+    "skill": 3928,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 1097,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 4388
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.3929",
+   "setup": {
+    "actor": 1,
+    "skill": 3929,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 1810,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 3675
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.4780",
+   "setup": {
+    "actor": 1,
+    "skill": 4780,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 822,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 4663
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.5633",
+   "setup": {
+    "actor": 1,
+    "skill": 5633,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 1755,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 3730
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.5635",
+   "setup": {
+    "actor": 1,
+    "skill": 5635,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 877,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 4608
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.5637",
+   "setup": {
+    "actor": 1,
+    "skill": 5637,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 2632,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 2853
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.5757",
+   "setup": {
+    "actor": 1,
+    "skill": 5757,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 1810,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 3675
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.5763",
+   "setup": {
+    "actor": 1,
+    "skill": 5763,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 1645,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 3840
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.6037",
+   "setup": {
+    "actor": 1,
+    "skill": 6037,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 1316,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 4169
+   },
+   "errors": []
+  },
+  {
+   "id": "hp.7471",
+   "setup": {
+    "actor": 1,
+    "skill": 7471,
+    "mhpPlus": 5000
+   },
+   "observed": {
+    "cost": 1097,
+    "mhp": 5485,
+    "canPay": {
+     "full": true,
+     "equal": false,
+     "plus1": true
+    },
+    "afterPay": 4388
    },
    "errors": []
   }

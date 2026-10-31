@@ -1255,6 +1255,43 @@ static func set_life(logic, p: Dictionary, value: float) -> void:
 	_death_sync -= 1
 
 
+## skillHpCost 包装（Adv:126）：空壳在战斗中算 HP 费用时读开场参照生命上限（referenceDepth，不读 1）
+static func hp_cost_mhp(a) -> float:
+	if a is XActor and _affix_of(a) == "hollow" and status_battle():
+		return XRaceBattle.param(a, 0, a.param_before_alien(0))
+	return a.mhp
+
+
+## canPaySkillHpCost 包装（Adv:127）：空壳（战斗中）看护盾、嫁祸看活着的保护者生命、连命看池，都要大于费用（费用 0 也一样）；null＝照常
+static func can_pay_hp(a, cost: float):
+	if a is XActor and _affix_of(a) == "hollow" and status_battle():
+		return a.shield > cost
+	if a.has_meta("xalien_protector"):
+		var p = a.get_meta("xalien_protector")
+		return _live(p) and p.hp > cost
+	if a.has_meta("xalien_life"):
+		return float(a.get_meta("xalien_life").current) > cost
+	return null
+
+
+## paySkillHpCost 包装（Adv:128）：连命扣池、嫁祸扣保护者生命（不低于 0）后同步、空壳（战斗中、费用为正）扣护盾。返回真＝已扣
+static func pay_hp(logic, a, cost: float) -> bool:
+	if a.has_meta("xalien_life"):
+		var pool: Dictionary = a.get_meta("xalien_life")
+		set_life(logic, pool, float(pool.current) - cost)
+		return true
+	if a.has_meta("xalien_protector"):
+		var p = a.get_meta("xalien_protector")
+		p.hp = maxf(0.0, p.hp - cost)
+		p.refresh_resources()
+		sync_relations(logic)
+		return true
+	if a is XActor and _affix_of(a) == "hollow" and status_battle() and cost > 0.0:
+		a.shield = maxf(0.0, a.shield - cost)
+		return true
+	return false
+
+
 ## A.syncRelations：池同步；嫁祸者的生命按保护者比例，保护者倒下自己也倒下
 static func sync_relations(logic = null) -> void:
 	if logic == null:

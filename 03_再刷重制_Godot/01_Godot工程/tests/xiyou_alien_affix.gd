@@ -506,6 +506,13 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 			who.call(str(sp.forget.who)).skill_ids.erase(int(sp.forget.id))
 		elif sp.has("expire"):
 			logic._state_remove(who.call(str(sp.expire.who)), int(sp.expire.id), true)
+		elif sp.has("apply"):  # 直接对目标 apply（不选目标）；scope 给定时临时改技能的 scope（蚀术命中判定 used＝testApply）
+			var rec := XDB.rec("Skills", int(sp.apply.skill))
+			var scope0 = rec.scope
+			if sp.apply.has("scope"):
+				rec.scope = int(sp.apply.scope)
+			logic.apply(who.call(str(sp.apply.user)), rec, who.call(str(sp.apply.target)))
+			rec.scope = scope0
 		else:
 			var user: XBattler = who.call(str(sp.get("user", "a")))
 			user.tp = 100.0
@@ -530,8 +537,8 @@ func _battle(c: Dictionary, compare := true, hook := Callable()) -> Array:
 					if not _typed(a, int(sp.skill)):
 						want.erase("usable")
 						got_view.erase("usable")
-				elif not (tag.begins_with("battle.prayer") or tag.begins_with("battle.silence") or tag.begins_with("battle.glutton")):
-					want.erase("usable")  # 重制 can_use 另查技能类型已添加（界面用），原版 canUse 不查；只在逆祷用例里比
+				elif not (tag.begins_with("battle.prayer") or tag.begins_with("battle.silence") or tag.begins_with("battle.glutton") or tag.ends_with(".hpcost")):
+					want.erase("usable")  # 重制 can_use 另查技能类型已添加（界面用），原版 canUse 不查；只在逆祷、缄默、饕餮与 HP 费用用例里比
 					got_view.erase("usable")
 				check(step + ".view", _norm(got_view) == _norm(want), [got_view, want])
 		var reading := _reading(enemies, a, b)
