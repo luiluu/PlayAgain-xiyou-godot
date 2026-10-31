@@ -14,7 +14,7 @@
 - **语法检查入口**（白龙 garou3 提）：新增 `07_开发环境/语法检查.py [--base 提交]`。它沿用合并工具的 `parse_check`：先 `godot --import`，再用外置脚本逐个 load 全部 .gd，autoload 名的「Identifier not found」不算（`--check-only --script` 报 GameApp 找不到就是这个原因）。不跑场景、不占测试槽，真实工程约 10 秒；有问题退出 1。`--base` 给了时另查改过的 .gd 有没有同名 func。
 - **并行测试不再重跑解析错误**：解析错误（FATAL_LOAD 提前终止，rc 143）是确定的，原来当偶发再单独跑一次，又要等一次槽、再报一次。现在不重跑，失败行下面提示先跑 `语法检查.py`。
   - 回退：`并行测试.py` 的 `NO_RERUN_PARSE_ERROR = False`。
-  - 遇到 Parse Error 立刻判失败，这条 dev.208 前后（4770d909）已经有了（`FATAL_LOAD`），本期没改。
+  - 遇到 Parse Error 立刻判失败，这条 4770d909 已经有了（`FATAL_LOAD`），本期没改。
 
 ## 交接板
 
