@@ -22,6 +22,7 @@ endAction 第 376～421 行，startTurn／endBattle 第 422～450 行，normaliz
 - 第二期（未做，约 90 行）：放血（强化剑技扣队友生命 3%／5%／8%、累计倍率）、昙华绽放（10193 后的 10192 ×1.0666）、强化剑技的追加段与去印记（10188 霜痕追加、10190 裂隙扩散、10192 全体）、裂隙演化（学了 10201：目标防御 ×0.89、寒冰抗性 +0.0111）、月魄到 2 与放血后的追加行动（OTB 插队）、开战清放血累计、读档时技能整理（extractSaveContents）。
 - 不做：星魂说明行（HelpExtend，界面）、技能图标与立绘、Map132 号角（已由 dev 早期的 Map132 商店期接好）。
 - 参照：新探针 `mv_oracle/jingliu_probe.cjs`（真实 BattleManager／Game_Action，Math.random 0.5）15 例：各级技能与能力值 9、忘掉 10194 1、公式 112 行 1、招募 1、战斗月魄与印记 2（45 级、20 级）、伤害钩子比值 1。产物拷成 `tests/fixtures/jingliu_oracle.json`，**不接全量同步**。探针里战斗外 addState 附加不上印记，公式例直接写状态表；剑技要求武器类型，战斗例给一把能装的剑（编号 2）。
+- **帧内 gainHp（审查第 14 期 P3，总装八加派）**：`XBattleLogic.gain_hp(b, 值)` 走资源上下文的 gain（宿傩伤口、异化 wrapHp 帧内逆祷归零／烈变加成、连命／嫁祸／空壳路由、首领扣血上限），渡鸦收割／回响（`XRaven._direct`）与米拉劫火追加（`XMira.end_turn`）改用它，不再直接写 hp。xiyou_raven_battle 356/356、xiyou_mira_battle 287/287 不变（普通敌人上两条路结果相同）。**原版用例「逆祷者穿着时收割为 0」没做，挪到下一期**：重制的逆祷帧（`_action_frames`）只在 apply 里压栈，收割在 endAction 之前、apply 之外，帧可能已经弹出；原版那一刻有没有帧要用探针实测（要在参照里给渡鸦穿上带逆祷词条的异化装备），实测前不好断言归零。
 - 专项 `tests/xiyou_jingliu`（104 项）：技能、八项能力值、paramBase 逐级比；公式 112 行逐条比（1e-9）；招募；战斗每步月魄、霜痕／裂隙、强化剑技能不能用，非强化剑技的扣血段逐条比目标并比比值；剑匣与星魂的伤害比值。
 
 ## 优化登记草稿
@@ -51,9 +52,9 @@ endAction 第 376～421 行，startTurn／endBattle 第 422～450 行，normaliz
 
 ## 待交叉核查
 
-- 原 Codex 核心文件：`modes/xiyou/battle/battle_logic.gd`——`start_turn` 加 `XYomiJingliu.start_turn(self)`；`act` 在黑闪收尾之后、渡鸦收尾之前加 `XYomiJingliu.j_finish`，`_force_action` 同位置加一行；`_invoke` 普通 apply 之后加 `XYomiJingliu.j_applied`。必中、段数、能不能用、付费、结束战斗走黄泉已有的挂点（函数里加了镜流分支）。没碰 note_costs、经验奖励、防御 TP（悟空）与甚尔（八戒）。
+- 原 Codex 核心文件：`modes/xiyou/battle/battle_logic.gd`——新函数 `gain_hp`（`_state_remove` 之前）；`start_turn` 加 `XYomiJingliu.start_turn(self)`；`act` 在黑闪收尾之后、渡鸦收尾之前加 `XYomiJingliu.j_finish`，`_force_action` 同位置加一行；`_invoke` 普通 apply 之后加 `XYomiJingliu.j_applied`。必中、段数、能不能用、付费、结束战斗走黄泉已有的挂点（函数里加了镜流分支）。没碰 note_costs、经验奖励、防御 TP（悟空）与甚尔（八戒）。
 - `modes/xiyou/core/actor.gd`：`param_base` 末尾改成 `return XActorModules.param_base(self, i, v)`；`actor_modules.gd`：IDS 加 170、setup 加 `XYomiJingliu.setup`、新挂点 `param_base`。
-- `actor_damage_hooks.gd` 没改。
+- `actor_damage_hooks.gd` 没改。`raven.gd` 的 `_direct`、`mira.gd` 的 `end_turn` 改用 `gain_hp`。
 - 切片：`xiyou_slice.json` actors 加 170；转换器 `formula_program.py` 加模块公式映射。
 
 ## 本分支提交

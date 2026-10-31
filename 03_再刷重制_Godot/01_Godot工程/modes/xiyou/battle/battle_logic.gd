@@ -226,6 +226,13 @@ func _state_add(b: XBattler, id: int) -> void:
 	resources.add_state(b, id)
 	_finish_lifecycle_operation(resources, b)
 
+## Game_Battler.gainHp：走资源上下文（宿傩伤口、异化 wrapHp 帧内归零／烈变加成、连命／嫁祸／空壳路由、首领扣血上限），
+## 给模块里不经伤害计算的直接扣血用（渡鸦收割／回响、米拉劫火追加；审查第 14 期 P3）
+func gain_hp(b: XBattler, amount: float) -> void:
+	var resources := _operation_resources(b)
+	resources.gain(b, "hp", amount)
+	_finish_lifecycle_operation(resources, b)
+
 func _state_remove(b: XBattler, id: int, automatic := false) -> void:
 	var resources := _operation_resources(b)
 	b.remove_state_with_context(id, resources.state_context(b), automatic)
