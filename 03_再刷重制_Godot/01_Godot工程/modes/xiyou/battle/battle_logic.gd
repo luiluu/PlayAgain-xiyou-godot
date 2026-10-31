@@ -761,6 +761,7 @@ func end_turn() -> Array:
 
 ## 单个战斗者的 onTurnEnd。krz 前后各标一次 dirty，中间 regenerateAll 已 refresh（活着时）。
 func turn_end_battler(b: XBattler, logs: Array) -> void:
+	b.runtime_result = XResourceContext.empty_result()  # Game_Battler.onTurnEnd 首句 clearResult（之前去掉的状态这时起可以再附加）
 	b.guarding = false
 	b.param_mark_dirty()
 	if b.is_alive():

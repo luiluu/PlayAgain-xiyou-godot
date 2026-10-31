@@ -5,7 +5,8 @@ extends Node
 ## 生命伤害比对参照的比值：55 级宿傩各技能重制恒为原版的 0.96079 倍（同黄泉 xiyou_yomi_battle 记的 55 级约 3.9% 固定差，
 ## 出在伤害链／能力值，与本期机制无关，交付单记着留给伤害链核查），所以每例取第一段的比值，其余各段（含终式、冲击段、领域斩击、
 ## 神灶：开）都要与它相同；为 0 的段（护盾吸收）两边都要为 0。
-## 另有本地断言（参照不调 startBattle）：开战 TP 至少 60；反向——别的角色不吃宿傩的包装、没伤口时治疗不减半。
+## 另有本地断言（参照不调 startBattle）：开战 TP 至少 60；反向——别的角色不吃宿傩的包装、没伤口时治疗不减半；阵亡清数据。
+## 第三期加 flash 一段（黑闪，参照给定黑闪判定的随机数）。
 const ORACLE := "oracle/sukuna_battle.json"
 const MARKS := [2636, 2637, 2638, 2639, 2640, 2641, 2642]
 var results := []
@@ -23,13 +24,16 @@ func _ready() -> void:
 
 
 class HalfStream extends XRandomStream:
-	func _take(kind: String, _reason: String, _event_key: String):
+	var flash: Array = []  # 黑闪判定（reason black_flash）依次取，用完回 0.5，同参照 B.random
+	func _take(kind: String, reason: String, _event_key: String):
 		draws += 1
+		if kind == "float" and reason == "black_flash" and not flash.is_empty():
+			return float(flash.pop_front())
 		return 0.5 if kind == "float" else 2147483648
 
 
 ## 同参照 battle()：新局、开 2494（超强角色可出战）、队伍 [172, 1] 各 55 级、宿傩进阶 rank；双方生命加 1e12；规则流全取 0.5
-func _battle(rank: int, tp := 100.0) -> Array:
+func _battle(rank: int, tp := 100.0, flash := []) -> Array:
 	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [8])
 	XState.current = s
 	s.actor_max_level = 99
@@ -48,6 +52,7 @@ func _battle(rank: int, tp := 100.0) -> Array:
 		s.actor(id).refresh_passive()
 	var rand := XBattleRandom.create("0000000000000172")
 	rand.rule = HalfStream.new()
+	rand.rule.flash = flash.duplicate()
 	rand.rule.domain = "rule"
 	var logic := XBattleLogic.new()
 	logic.setup(3, s, rand)
@@ -79,7 +84,9 @@ func _marks(b) -> Array:
 
 func _snap(logic: XBattleLogic, a: XActor) -> Dictionary:
 	var d := XSukuna.temp(a)
-	return {"round": XSukuna.round, "tp": a.tp,
+	var f := XBlackFlash.status(a)
+	return {"round": XSukuna.round, "tp": a.tp, "emp": int(d.emp),
+		"flash": {"focus": int(f.focus), "chain": int(f.chain), "awake": bool(f.awake), "probability": float(f.probability)},
 		"sukuna": {"domain": int(d.domain), "prep": int(d.prep), "available": int(d.available), "adapt": int(d.adapt), "chase": int(d.chase), "states": _marks(a)},
 		"foes": logic.enemies.map(func(t): var q := XSukuna.target_data(t); return {"layers": int(q.layers), "charged": bool(q.charged), "states": _marks(t)}),
 		"meets": [10229, 10230, 10231, 10232, 10233].map(func(id): return logic.can_use(a, XDB.rec("Skills", id))),
@@ -97,6 +104,8 @@ static func _norm(v):
 		return v.map(func(x): return _norm(x))
 	if v is float and is_equal_approx(v, roundf(v)):
 		return int(v)
+	if v is float:
+		return snappedf(v, 1e-9)  # 黑闪概率 0.15000000000000002 之类
 	return v
 
 
@@ -105,12 +114,12 @@ func _hits(logic: XBattleLogic, logs: Array) -> Array:
 	for l in logs:
 		if l.get("type") != "hit" or bool(l.missed) or bool(l.evaded) or not int(l.skill.get("damage", {}).get("type", 0)) in [1, 3, 5]:
 			continue
-		out.append({"skill": int(l.skill.id), "user": _key(logic, l.user), "target": _key(logic, l.target), "hp": float(l.hp)})
+		out.append({"skill": int(l.skill.id), "user": _key(logic, l.user), "target": _key(logic, l.target), "hp": float(l.hp), "critical": bool(l.critical)})
 	return out
 
 
 func _script(c: Dictionary) -> void:
-	var r := _battle(int(c.setup.rank))
+	var r := _battle(int(c.setup.rank), 100.0, c.setup.get("draws", []))
 	var logic: XBattleLogic = r[0]
 	var a: XActor = r[1]
 	var steps: Array = c.observed.steps
@@ -123,6 +132,9 @@ func _script(c: Dictionary) -> void:
 		match str(st[0]):
 			"act":
 				logs = logic.act(a, XDB.rec("Skills", int(st[1])), logic.enemies[int(st[2])])
+			"guard":
+				logs = logic.act(a, XDB.rec("Skills", 2), null)
+				a.tp = 100.0  # 同参照：防御的 tpGain 两边不同（重制防御支没给 10，另报），这里定回 100
 			"foe":
 				logs = logic.act(logic.enemies[int(st[1])], XDB.rec("Skills", 1), a)
 			"end":
@@ -147,7 +159,7 @@ func _script(c: Dictionary) -> void:
 					if gap[0] == 0.0 and w > 0.0 and str(e.user) == "a172":
 						gap[0] = got[k].hp / w
 					var hp_ok: bool = got[k].hp == 0.0 if w == 0.0 else (str(e.user).begins_with("e") and absf(got[k].hp - w) <= 1.0) or absf(got[k].hp / w - gap[0]) < 1e-6
-					same = got[k].skill == int(e.skill) and got[k].user == str(e.user) and got[k].target == str(e.target) and hp_ok
+					same = got[k].skill == int(e.skill) and got[k].user == str(e.user) and got[k].target == str(e.target) and hp_ok and got[k].critical == bool(e.critical)
 			check(name + ".hits", same, [got, exp])
 		var snap: Dictionary = _norm(_snap(logic, a))
 		var ws: Dictionary = _norm(want.snap)
@@ -188,6 +200,16 @@ func _local() -> void:
 	check("local.flame_uncharged_noop", _hits(logic, logs).is_empty(), _hits(logic, logs))
 	logic.end_battle(0)
 	check("local.end_battle_clears", XSukuna._temp.is_empty() and XSukuna._target.is_empty() and not a.state_ids.has(XSukuna.DOMAIN))
+	# 阵亡清数据（Game_Actor.die／Game_BattlerBase.die 包装）：领域展开、攒过黑闪集中后阵亡，宿傩与黑闪的战斗数据都清掉、领域状态随 die 去掉
+	r = _battle(2)
+	logic = r[0]
+	a = r[1]
+	logic.act(a, XDB.rec("Skills", 10231), logic.enemies[0])
+	logic.act(a, XDB.rec("Skills", 10238), logic.enemies[0])
+	var had := XSukuna._temp.has(a) and int(XBlackFlash.temp(a).focus) == 1 and a.state_ids.has(XSukuna.DOMAIN)
+	logic._state_add(a, 1)
+	check("local.death_clears", had and a.is_dead() and not XSukuna._temp.has(a) and not XBlackFlash._temp.has(a) and not a.state_ids.has(XSukuna.DOMAIN), [had, a.state_ids])
+	logic.end_battle(0)
 
 
 func _run() -> void:
@@ -205,7 +227,7 @@ func _run() -> void:
 			check("module", int(o.domain) == XSukuna.DOMAIN and int(o.wound) == XSukuna.WOUND and int(o.maho) == XSukuna.MAHO and int(o.awake) == XSukuna.AWAKE)
 		else:
 			_script(c)
-	check("covers_all", seen.size() == 5, seen.keys())
+	check("covers_all", seen.size() == 6, seen.keys())
 	_local()
 	finish()
 
