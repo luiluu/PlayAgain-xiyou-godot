@@ -142,6 +142,18 @@ func _script(c: Dictionary) -> void:
 				a.hp = a.mhp
 			"endBattle":
 				logic.end_battle(0)
+			"forget":
+				a.forget_skill(int(st[1]))
+			"foehp":
+				for k in logic.enemies.size():
+					logic.enemies[k].hp = float(st[1][k])
+			"foestate":  # 同参照 addState 后 refresh
+				var e: XBattler = logic.enemies[int(st[1])]
+				logic._state_add(e, int(st[2]))
+				e.param_mark_dirty()
+				e.param_refresh()
+			"ai":
+				_ai(logic, a, want.ai, name)
 		if want.has("hits"):
 			var got := _hits(logic, logs)
 			var exp: Array = want.hits
@@ -162,7 +174,55 @@ func _script(c: Dictionary) -> void:
 		var ws: Dictionary = _norm(want.snap)
 		for k in ws:
 			check(name + "." + k, snap[k] == ws[k], [snap[k], ws[k]])
-	check(c.id + ".gap", absf(gap[0] - GAP) < 1e-4, gap[0])
+	if not str(c.id).begins_with("script.ai") or gap[0] != 0.0:  # 智能 AI 段只有切换、没有甚尔的伤害行
+		check(c.id + ".gap", absf(gap[0] - GAP) < 1e-4, gap[0])
+
+
+func _target_index(logic: XBattleLogic, t) -> int:
+	if t == null:
+		return -1
+	var i := logic.enemies.find(t)
+	return i if i >= 0 else logic.actors.find(t)
+
+
+## 智能 AI 档案（第四期，参照 aiSnap）：各技能 profile（参照只记数值项）、主技能对各敌人的 safeDamage、choose 的选择与前 6 名候选。
+## 参照是原版：档案段数再乘 numRepeats（O-待定 o_profile_hits 关）
+func _ai(logic: XBattleLogic, a: XActor, want: Dictionary, name: String) -> void:
+	var keep := XSmartAI.o_profile_hits
+	XSmartAI.o_profile_hits = false
+	check(name + ".extra", a.attack_times_add() == float(want.extra), [a.attack_times_add(), want.extra])
+	var power: Array = logic.enemies.map(func(t): return snappedf(t.atk + t.mat + t.agi * 0.3, 1e-6))
+	check(name + ".power", power == want.power.map(func(v): return snappedf(float(v), 1e-6)), [power, want.power])  # 威胁度读的能力
+	var ai := XSmartAI.new(logic, a)
+	for id in SKILLS:
+		var rec := XDB.rec("Skills", id)
+		var got := XSmartAI.profile(a, rec)
+		got.erase("extra")
+		var exp: Dictionary = want.profile[str(id)]
+		var same := got.size() == exp.size()
+		for k in exp:
+			same = same and got.has(k) and absf(float(got[k]) - float(exp[k])) <= 1e-9 * maxf(1.0, absf(float(exp[k])))
+		check(name + ".profile.%d" % id, same, [got, exp])
+		if id >= 10216:
+			var dmg := []
+			for t in logic.enemies:
+				dmg.append(ai.safe_damage(a, t, rec))
+			var ok := true
+			for k in dmg.size():
+				ok = ok and absf(dmg[k] - float(want.damage[str(id)][k])) <= maxf(1.0, absf(float(want.damage[str(id)][k])) * 1e-9)
+			check(name + ".damage.%d" % id, ok, [dmg, want.damage[str(id)]])
+	var r := XSmartAI.choose(logic, a)
+	var wc = want.choice
+	check(name + ".choice", wc != null and r.has("skill") and int(r.skill.id) == int(wc.id) and _target_index(logic, r.target) == int(wc.target),
+		[int(r.skill.id) if r.has("skill") else null, _target_index(logic, r.get("target")), wc])
+	var cands: Array = r.get("candidates", [])
+	var exp_c: Array = want.candidates
+	var same := cands.size() == exp_c.size()
+	for k in cands.size():
+		if same:
+			same = int(cands[k].id) == int(exp_c[k].id) and absf(float(cands[k].score) - float(exp_c[k].score)) <= maxf(1.0, absf(float(exp_c[k].score)) * 1e-4)
+	check(name + ".candidates", same, [cands.map(func(x): return [x.id, x.score]), exp_c.map(func(x): return [x.id, x.score])])
+	XSmartAI.o_profile_hits = keep
 
 
 ## 命中／闪避／暴击（参照 rates）：忘暴君、e0 加暴击闪避＋60%，再依次忘五感、天与咒缚
@@ -259,7 +319,7 @@ func _run() -> void:
 				_tyrant(c)
 			else:
 				_script(c)
-	check("covers_all", seen == 9, seen)
+	check("covers_all", seen == 11, seen)
 	_local()
 	finish()
 

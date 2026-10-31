@@ -83,6 +83,23 @@ function snapshot(env) {
     foes: foes.map(t => ({seal: t.isStateAffected(SEAL), charges: t._tojiSealCharges || 0})),
   };
 }
+// 智能 AI 档案（第四期，T.aiProfile 登记进 CodexSmartAI）：各技能的 profile、主技能对各敌人的 safeDamage（新 Game_Action）、
+// choose 的选择与前 6 名候选（_codexLastAIDecision）。只读，不改形态、不付费、不掷随机数
+const AI = w.CodexSmartAI;
+function aiSnap(env) {
+  const {a, foes} = env, S = w.$dataSkills, profile = {}, damage = {};
+  a.need_refresh = true; a.refresh();  // krz_state_re 的状态缓存：脚本里直接 addState 后要刷新一次，追加次数才读得到（实战行动中会刷新）
+  const fresh = id => { const x = new w.Game_Action(a); x.setSkill(id); return x; };
+  for (const id of SKILLS) {
+    const p = AI.profile(a, S[id], fresh(id));
+    profile[id] = Object.fromEntries(Object.entries(p).filter(([, v]) => typeof v === 'number'));
+    if (id >= 10216) damage[id] = foes.map(t => AI.safeDamage(a, t, S[id], fresh(id)));
+  }
+  a._codexLastAIDecision = null;
+  const best = AI.choose(a), d = a._codexLastAIDecision;
+  return {profile, damage, choice: best ? {id: best.item().id, target: best._targetIndex} : null, candidates: d ? d.candidates : [],
+    extra: a.attackTimesAdd(), pdr: foes.map(t => t.pdr), def: foes.map(t => t.def), power: foes.map(t => t.atk + t.mat + t.agi * 0.3), hp: foes.map(t => t.hp)};
+}
 function run(steps, draws, rank) {
   const env = battle(rank), {bm, a, foes} = env, out = [];
   const seq = (draws || []).slice();
@@ -106,6 +123,10 @@ function run(steps, draws, rank) {
       else if (kind === 'foe') act(bm, foes[x], y, st[3]);  // 敌人用技能 y 打我方第 st[3] 位
       else if (kind === 'die') { a.addState(a.deathStateId()); }
       else if (kind === 'revive') { a.removeState(a.deathStateId()); a.setHp(a.mhp); }
+      else if (kind === 'forget') a.forgetSkill(x);
+      else if (kind === 'foehp') foes.forEach((t, i) => { t._hp = x[i]; });
+      else if (kind === 'foestate') { foes[x].addState(y); foes[x].refresh(); }
+      if (kind === 'ai') { out.push({step: st, ai: aiSnap(env), snap: snapshot(env)}); continue; }
       out.push({step: st, hits: log.slice(), snap: snapshot(env)});
     }
     bm.endBattle(0);
@@ -137,8 +158,15 @@ SCRIPTS.slayer = [['act', 10216, 0], ['foe', 0, 1, 0], ['foe', 1, 1, 1], ['foe',
 // 万里锁借游云（＋1 段）、没掷中不追击
 SCRIPTS.armory = [['rng', [0.1, 0.0]], ['act', 10216, 0], ['rng', [0.1, 0.5]], ['act', 10216, 1], ['rng', [0.1, 0.9, 0.1]], ['act', 10216, 2],
   ['act', 10213, 0], ['rng', [0.1, 0.0]], ['act', 10217, 0], ['rng', [0.9]], ['act', 10217, 1], ['end']];
+// 智能 AI 档案（第四期）：游云开局、敌人全残血 1（万里锁溅射能全杀，切万里锁胜过游云）、追加＋1、万里锁（溅射）、释魂刀（e1 加阴阳合一 1825 物理减伤 0.5 看穿透）、天逆鉾、
+// e0 残血 1（击杀分）、忘暴君、忘五感（减防项不 ×0.67）；aiflash：黑闪觉醒后游云＋1 段、万里锁溅射 50%、释魂刀穿透 80%、倍率 ×1.2
+SCRIPTS.ai = [['ai'], ['foehp', [1, 1, 1]], ['ai'], ['foehp', [1e18, 1e18, 1e18]], ['state', 1541], ['ai'], ['unstate', 1541], ['act', 10213, 0], ['ai'], ['state', 1541], ['ai'], ['unstate', 1541],
+  ['act', 10214, 0], ['foestate', 1, 1825], ['ai'], ['act', 10215, 0], ['ai'], ['foehp', [1, 1e18, 1e18]], ['ai'],
+  ['forget', 10205], ['ai'], ['forget', 10206], ['ai']];
+SCRIPTS.aiflash = [['act', 10216, 0], ['ai'], ['state', 1541], ['ai'], ['unstate', 1541], ['act', 10213, 0], ['ai'],
+  ['act', 10214, 0], ['foestate', 1, 1825], ['ai']];
 const RANKS = {armory: 1};
-const DRAWS = {flash: [0], seal: [1, 0]};
+const DRAWS = {flash: [0], seal: [1, 0], aiflash: [0]};
 // 命中／闪避／暴击（第二期④）：开战后忘掉暴君（暴击回到 1 以下才看得出暴击闪避）、e0 加暴击闪避＋60%（1467）；
 // 甚尔打 e0（主技能、武器库、反弹、普通技能 3）与 e0 用物理技能 3 打甚尔，各记 itemHit／itemEva／itemCri；再忘掉五感、天与咒缚各量一遍
 function rates() {

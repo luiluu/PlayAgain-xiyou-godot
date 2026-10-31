@@ -54,8 +54,8 @@ extends RefCounted
 ##   10221 释魂刀、10222 天逆鉾）打一次目标（倒了换第一个活着的；内部行动、不判黑闪）；本次主技能借它的特效：借游云追加次数＋1、
 ##   借万里锁每段 16% 溅射、借释魂刀物理穿透 0.33、借天逆鉾且 50% 掷中时附封印（武器库·天逆鉾本身同样掷中才封）；
 ##   武器库·万里锁自己也 16% 溅射。熟练度（_actionMastery）重制恒 0，不记。随机数 rule 流 toji_armory／toji_pick／toji_spear。
-## 未移植（第四期起）：
-##   智能 AI 档案；说明框熟练度行（画面）；读档时 repair。
+## 第四期：智能 AI 档案（ai_profile、ai_damage，XSmartAI 的 profile 与估伤读）。
+## 未移植：说明框熟练度行（画面）；读档时 repair。
 ##   原版 makeDamageValue 包装是死代码（installDamageElementRuntime 后装、整个换掉 makeDamageValue 不调旧链），不移植。
 ## 参照：slice_probe（切片角色行与伤害行）、toji_probe（等级／进阶／血量各档的能力值、公式、钩子帧，tests/xiyou_toji.gd）。
 
@@ -639,6 +639,46 @@ static func reflect(logic, target) -> Array:
 	no_reflect = false
 	internal = false
 	return [r]
+
+
+# ---- 第四期：智能 AI 档案 ----
+
+## T.aiProfile（登记进 CodexSmartAI 的 profile，只读：不换形态、不付费、不掷随机数）：
+## 切换技能（可切且不是当前形态）给后续主技能 followupSkill、铺垫 1 次行动；主技能给段数 hits（游云 5＋追加＋觉醒 1，
+## 释魂刀 1〔追加折进公式〕，万里锁／天逆鉾 1＋追加×0.2〔第 2 段起 ×0.8 而非 ×4〕）、倍率 multiplier（学暴君 成长(主)×3，
+## 否则 成长(非主)；藏兵咒灵 ×1.11；觉醒 ×1.2）、溅射 splash（万里锁 0.33／觉醒 0.50）、穿透 pierce（释魂刀 0.66／觉醒 0.80）。
+## extra 是追加次数（原版写进 action._tojiExtra 给估伤读）。觉醒＝学了伏黑、带觉醒状态且黑闪觉醒未到期。其余返回空
+static func ai_profile(a, skill: Dictionary) -> Dictionary:
+	if not own(a):
+		return {}
+	var id := int(skill.get("id", 0))
+	var si := SWITCH.find(id)
+	if si >= 0:
+		return {"followupSkill": MAIN[si], "setupActions": 1} if eligible_shape(a, si) and current_shape(a) != si else {}
+	var index := MAIN.find(id)
+	if index < 0:
+		return {}
+	var extra := maxi(0, floori(float(a.attack_times_add())))
+	var awake: bool = knows(a, AWAKENING) and a.state_ids.has(XBlackFlash.STATE) \
+		and int(XBlackFlash._temp.get(a, {}).get("expires", -1)) >= XBlackFlash.round
+	var hits := float(5 + extra + (1 if awake else 0)) if index == 0 else 1.0 if index == 2 else 1.0 + extra * 0.2
+	var mult := (output_growth(a, true) * 3 if knows(a, TYRANT) else output_growth(a, false)) * (1.11 if weapon(a) else 1.0) * (1.2 if awake else 1.0)
+	return {"hits": hits, "multiplier": mult, "splash": (0.50 if awake else 0.33) if index == 1 else 0.0,
+		"pierce": (0.80 if awake else 0.66) if index == 2 else 0.0, "extra": extra}
+
+
+## 智能 AI 估伤（CodexSmartAI.safeDamage 的 CodexToji.damage 一支，主技能 10216～10219）：不在结算里，减防项照算
+## （目标防御，五感 ×0.67）；AI 的行动没有第几段，万里锁／天逆鉾按第 1 段 ×4；释魂刀 ×(5＋追加)×0.95
+static func ai_damage(a, t, id: int, extra: int) -> float:
+	if not own(a) or t == null or not is_main(id):
+		return 0.0
+	var guard := maxf(0.0, float(t.def)) * (0.67 if knows(a, SENSES) else 1.0)
+	var base := maxf(0.0, 7777 * maxf(0.0, float(a.atk)) + 888 * maxf(0.0, float(a.mhp)) - guard)
+	if id == MAIN[0]:
+		return base
+	if id == MAIN[2]:
+		return base * (5 + extra) * 0.95
+	return base * 4.0
 
 
 ## CodexToji.recruit()：入队了返回提示行，已在队返回空
