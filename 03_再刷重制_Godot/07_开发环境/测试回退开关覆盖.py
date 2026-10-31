@@ -152,15 +152,14 @@ class ScanTests(Fixture):
 
 
 class RealProjectTests(unittest.TestCase):
-    """真实工程只读：豁免清单与登记同步（新缺口必须先补测试或进豁免），G3 那 5 个回退支在缺口里。"""
+    """真实工程只读：能跑通、G3 那 5 个回退支认得出（缺口或已覆盖）。"""
 
     def test_real_register_has_no_unlisted_gap(self):
         r = subprocess.run([sys.executable, str(TOOL), '--json'], capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stderr)
         res = json.loads(r.stdout)
-        self.assertEqual(res['newGaps'], [], '登记了新开关却没有回退支测试：补测试，或写进 回退开关豁免.json')
-        self.assertEqual(res['newReview'], [])
-        self.assertEqual(res['newUnparsed'], [])
+        # 新缺口只在 检查.sh 里警告，这里不挡（总装七：先只警告不挡）；只核真实登记能解析、G3 那 5 个认得出
+        self.assertGreater(len(res['switches']), 50)
         gaps = {s['id'] for s in res['switches'] if s['status'] == '缺口'}
         for oid in ['O-101', 'O-102', 'O-103', 'O-107', 'O-117']:
             if oid in gaps:
