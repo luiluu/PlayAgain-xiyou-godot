@@ -535,6 +535,12 @@ class CheckerTests(Fixture):
         self.assertIn('云端运行已结束但没有结果', out)
         self.assertNotIn('godot', self.names(ran))
 
+    def test_cloud_quota_exhausted_is_an_error_with_local_hint(self):
+        rc, out, _ = self.cloud_check(wait_rc=4)
+        self.assertEqual(rc, 1, out)
+        self.assertIn('额度用完', out)
+        self.assertIn('改用本机', out)
+
     def test_cloud_unavailable_is_an_error_not_a_local_fallback(self):
         rc, out, ran = self.cloud_check(run_rc=1)
         self.assertEqual(rc, 1, out)

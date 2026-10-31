@@ -133,6 +133,7 @@ elif (( CLOUD )); then
   else
     cloud_rc=$?
     if (( cloud_rc == 124 )); then bad "云端选测超时没有结果（$cloud_head[1,9]）；看 GitHub Actions「云端选测」，或去掉 --cloud 改用本机跑"
+    elif (( cloud_rc == 4 )); then bad "云端没有启动（多半是本月 GitHub Actions 额度用完）（$cloud_head[1,9]）；去掉 --cloud 改用本机跑选测"
     elif (( cloud_rc == 3 )); then bad "云端运行已结束但没有结果（$cloud_head[1,9]）；看 GitHub Actions「云端选测」，或去掉 --cloud 改用本机跑"
     else bad "云端选测未通过（$cloud_head[1,9]），失败场景见上方汇总"; fi
   fi
