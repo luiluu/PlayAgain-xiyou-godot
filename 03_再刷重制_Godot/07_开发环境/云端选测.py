@@ -176,6 +176,41 @@ def cmd_upload(a):
     return 0
 
 
+BASE_PREFIX = 'refs/ci/base/'
+
+
+def verified_base(url, bare, limit=300):
+    """HEAD 的祖先里最近一个云端已通过的提交（refs/ci/results/<提交>/{affected,full} 里 passed）；没有返回 None。
+    选测基准取它，只测此后新增的改动。基准取 GitHub main 的分叉点时，本地 main 领先未推送的合并（早在云端测过）会全被算进来，
+    战斗核心之类的改动一多就扩成整轮（每轮约 140～155 分钟额度）。"""
+    results = ls_remote(url, RESULT_PREFIX + '*', git_dir=bare)
+    by_sha = {}
+    for ref in results:
+        sha, _, mode = ref[len(RESULT_PREFIX):].partition('/')
+        by_sha.setdefault(sha, []).append(ref)
+    head = git('rev-parse', 'HEAD')
+    for sha in git('rev-list', '-n', str(limit), 'HEAD').splitlines():
+        if sha == head or sha not in by_sha:
+            continue
+        for ref in by_sha[sha]:
+            try:
+                git('fetch', '-q', '--no-tags', url, '+%s:%s' % (ref, ref), git_dir=bare)
+                if json.loads(git('cat-file', '-p', ref + ':result.json', git_dir=bare)).get('passed'):
+                    return sha
+            except (RuntimeError, ValueError):
+                continue
+    return None
+
+
+def print_estimate(base, full):
+    """推送前打印预计用多少分钟额度（不拦，只让人心里有数）；算不出来不影响推送。"""
+    try:
+        a = argparse.Namespace(base=base, full=full, jobs=2, target=600, max_shards=16)
+        cmd_estimate(a)
+    except Exception as e:  # noqa: BLE001 估算失败不挡推送
+        log('预计分钟数算不出来：%s' % e)
+
+
 def cmd_run(a):
     branch = a.branch or current_branch()
     if not a.no_upload:
@@ -186,10 +221,43 @@ def cmd_run(a):
     head = git('rev-parse', 'HEAD')
     if git('status', '--porcelain', '--untracked-files=no'):
         log('注意：工作区有未提交改动，云端只测已提交的 HEAD')
+    base = ''
+    if not a.full:
+        url = git('remote', 'get-url', remote)
+        base = a.base or verified_base(url, cache_repo()) or ''
+        if base:
+            log('选测基准：%s（%s）' % (base[:10], '指定' if a.base else '上次云端通过的祖先'))
+            # 基准提交已在 GitHub 上（它有云端结果）；先推基准ref，计划步骤据它取 refs/ci/base/<HEAD>
+            git('push', '--force', '--no-verify', remote, '%s:%s%s' % (base, BASE_PREFIX, head), env={'GIT_TERMINAL_PROMPT': '0'})
+    print_estimate(base or None, a.full)
     git('push', '--force', '--no-verify', remote, 'HEAD:refs/heads/' + target, env={'GIT_TERMINAL_PROMPT': '0'})
-    print('已推送 %s → %s，云端开始选测（基准 GitHub main 的分叉点%s）' % (head[:10], target, '，整轮' if a.full else ''))
+    print('已推送 %s → %s，云端开始选测（基准 %s%s）' % (head[:10], target, base[:10] if base else 'GitHub main 的分叉点', '，整轮' if a.full else ''))
     print('等结果：python3 %s wait %s%s' % (Path(__file__).relative_to(ROOT), head, ' --mode full' if a.full else ''))
     return 0
+
+
+def actions_blocked(sha):
+    """已结束却没有结果的运行里，有没有「一个任务都没启动」的（多半是本月 Actions 额度用完或账户被挡）。查不到返回 False。"""
+    gh = os.environ.get('XIYOU_GH') or shutil.which('gh')
+    if not gh:
+        return False
+    p = subprocess.run([gh, 'run', 'list', '--commit', sha, '--json', 'databaseId,conclusion', '--limit', '20'],
+                       cwd=ROOT, capture_output=True, text=True)
+    try:
+        runs = json.loads(p.stdout) if p.returncode == 0 else []
+    except ValueError:
+        return False
+    for run in runs:
+        if run.get('conclusion') == 'startup_failure':
+            return True
+        v = subprocess.run([gh, 'run', 'view', str(run.get('databaseId')), '--json', 'jobs'], cwd=ROOT, capture_output=True, text=True)
+        try:
+            info = json.loads(v.stdout) if v.returncode == 0 else None
+        except ValueError:
+            info = None
+        if isinstance(info, dict) and not info.get('jobs'):
+            return True
+    return False
 
 
 def actions_finished(sha):
@@ -229,6 +297,9 @@ def cmd_wait(a):
         # 运行已结束却没有结果：连续两次都是结束状态（留出结果ref写出的时间）才判定，免得白等到超时
         finished_seen = finished_seen + 1 if actions_finished(sha) else 0
         if finished_seen >= 2:
+            if actions_blocked(sha):
+                print('云端运行没有启动任何任务，多半是本月 GitHub Actions 额度用完（或账户被挡）：%s 没有结果，改用本机跑选测（检查.sh 去掉 --cloud）' % sha[:10])
+                return 4
             print('云端运行已结束，但没有 %s 的结果（可能被取消、计划被跳过或准备失败），看 GitHub Actions「云端选测」' % sha[:10])
             return 3
         time.sleep(a.interval)
@@ -410,6 +481,9 @@ def cmd_plan(a):
         scenes, base = all_scenes, ''
     else:
         base = a.base
+        pinned = ls_remote('origin', BASE_PREFIX + sha).get(BASE_PREFIX + sha)
+        if pinned and git('rev-parse', '--verify', '-q', pinned + '^{commit}', check=False):
+            base = pinned   # Mac 端 run 选的：上次云端通过的祖先
         if not base or set(base) == {'0'} or git('rev-parse', '--verify', '-q', base + '^{commit}', check=False) == '':
             base = 'HEAD~1'  # 新分支第一次推送时 before 全 0
         selector = load_module('selector', HERE / '选测.py')
@@ -555,6 +629,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest='cmd', required=True)
     p = sub.add_parser('upload'); p.add_argument('--branch')
     p = sub.add_parser('run'); p.add_argument('--branch'); p.add_argument('--full', action='store_true')
+    p.add_argument('--base', help='选测基准提交；默认取 HEAD 的祖先里最近一个云端已通过的，没有就用 GitHub main 的分叉点')
     p.add_argument('--no-upload', action='store_true', help='不传产物（用 GitHub 上已有的本分支或 main 的快照）')
     p = sub.add_parser('estimate'); p.add_argument('--base', help='默认 <GitHub 远端>/main'); p.add_argument('--full', action='store_true')
     p.add_argument('--jobs', type=int, default=2); p.add_argument('--target', type=int, default=600); p.add_argument('--max-shards', type=int, default=16)

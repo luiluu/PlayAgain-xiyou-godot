@@ -5,7 +5,7 @@
 或条目里有一行 `核查者: Claude（审查）`，都算「审查」条目，可销任何待核查尾注（含旧的 `待Codex`／`待Claude`）；旧写法照样计入、照旧销账。
 
 用法：待核查.py [--root 路径] [--json] [--limit N]
-  默认打印分批清单；检查.sh 调用它，批数（不计只改文档、登记的批）超过 N（默认 10）时提示停派新车道。
+  默认打印分批清单；检查.sh 调用它，甲档批数超过 N（默认 10）时提示停派新车道。
 
 覆盖规则（核查者只能销对方的提交：Codex 的核查条目只销 `核查: 待Codex` 的提交，反之亦然）：
   - 核查条目 = 标题形如 `## 日期 【Claude…】核查 …` 或 `【Codex…】核查 …` 的一段（含正文）。
@@ -27,16 +27,45 @@ LOG = '00_项目管理/变更记录.md'
 VOLUMES = '00_项目管理/变更记录卷'
 TRAILER = re.compile(r'^核查[:：]\s*待(Codex|Claude|审查)\s*$', re.M)
 EXECUTOR = re.compile(r'^执行者[:：]\s*(.+?)\s*$', re.M)
-REVIEW = re.compile(r'^## (\d{4}-\d{2}-\d{2}) 【(Claude|Codex)([^】]*)】\s*核查', re.M)
-REVIEWER_LINE = re.compile(r'^\s*[-*]?\s*(?:\*\*)?核查者(?:\*\*)?[:：]\s*(?:Claude|Codex)[（(]审查[）)]', re.M)
+REVIEW = re.compile(r'^## (\d{4}-\d{2}-\d{2}) 【(Claude|cc|Codex)([^】]*)】\s*核查', re.M)   # Kyo 10-31 起写 cc；旧条目写 Claude
+REVIEWER_LINE = re.compile(r'^\s*[-*]?\s*(?:\*\*)?核查者(?:\*\*)?[:：]\s*(?:Claude|cc|Codex)[（(]审查[）)]', re.M)
 ENTRY = re.compile(r'^## \d{4}-\d{2}-\d{2}\b', re.M)
 HASH = re.compile(r'(?<![0-9A-Za-z])[0-9a-f]{7,40}(?![0-9A-Za-z])')  # 纯数字的提交号（如 7432182）也算
-BRANCH = re.compile(r'(?:claude|codex)/[A-Za-z0-9_\-.]*[A-Za-z0-9_\-]')
+BRANCH = re.compile(r'(?<![A-Za-z0-9_])(?:claude|cc|codex)/[A-Za-z0-9_\-.]*[A-Za-z0-9_\-]')
 DEV = re.compile(r'dev\.(\d{3})((?:\s*[～~至到\-]\s*(?:dev\.)?\d{3})?)((?:[／/]\s*(?:dev\.)?\d{3}|、\d{3})*)')
 # 核查条目里的销账范围行（标题行另算）：列表行开头是这些标签，后面不紧跟别的汉字（「核查结果」不算）
 SCOPE_LINE = re.compile(r'^\s*[-*]\s*(?:\*\*)?(?:核查覆盖|核查范围|范围|核查文档登记|核查|提交)(?![\u4e00-\u9fff])')
-MERGE = re.compile(r'^(?:合并|并入)\s+((?:claude|codex)/[^\s（(]+)')
+MERGE = re.compile(r'^(?:合并|并入)\s+((?:claude|cc|codex)/[^\s（(]+)')
+TIERS_FILE = Path(__file__).resolve().parent / '待核查分档.json'
+TIER_ORDER = {'甲': 0, '乙': 1, '丙': 2}
 DOC_ONLY = re.compile(r'^(?:00_项目管理/|AGENTS\.md$|CLAUDE\.md$|README[^/]*\.md$)|\.md$')
+
+
+def load_tiers():
+    """分档表（待核查分档.json）：[(档, 正则, 理由)]、上限档；读不到整张表时全部按甲并提示。"""
+    try:
+        data = json.loads(TIERS_FILE.read_text(encoding='utf-8'))
+        return [(x['tier'], re.compile(x['match']), x.get('why', '')) for x in data['rules']], data.get('limitTier', '甲')
+    except (OSError, ValueError, KeyError, re.error) as e:
+        print(f'  ⚠ 待核查分档表读不了（{e}），全部按甲档算', file=sys.stderr)
+        return [], '甲'
+
+
+def tier_of(files, rules):
+    """一批的档：每个文件按第一条匹配的规则归档，取最高档（甲>乙>丙）；返回 (档, 拿不准的文件, 不算拿不准文件时的档)。
+    没有改动文件的批没有可核的东西，算丙；有文件却没有规则匹配的按甲并列出。"""
+    best, sure, unsure = '丙', '丙', []
+    for f in files:
+        path = f[:-4] if f.endswith('.uid') else f
+        hit = next((t for t, rx, _ in rules if rx.search(path)), None)
+        if hit is None:
+            unsure.append(f)
+            hit = '甲'
+        elif TIER_ORDER[hit] < TIER_ORDER[sure]:
+            sure = hit
+        if TIER_ORDER[hit] < TIER_ORDER[best]:
+            best = hit
+    return best, unsure, sure
 
 
 def git(root, *args):
@@ -76,7 +105,7 @@ def reviews(root):
             if m:
                 body = text[s:e]
                 audit = '审查' in m.group(3) or REVIEWER_LINE.search(body) is not None
-                out.append((m.group(1), '审查' if audit else m.group(2), body))
+                out.append((m.group(1), '审查' if audit else ('Claude' if m.group(2) == 'cc' else m.group(2)), body))
     return out
 
 
@@ -125,7 +154,8 @@ def changed_files(root, c):
     return [f for f in git(root, 'diff', '--name-only', '--no-renames', c['parent'], c['sha']).split('\n') if f]
 
 
-def pending(root):
+def pending(root, rules=None):
+    rules = load_tiers()[0] if rules is None else rules
     batches = commits(root)
     revs = reviews(root)
     for b in batches:
@@ -147,7 +177,8 @@ def pending(root):
         if not left:
             continue
         files = {f for c in b['commits'] for f in changed_files(root, c)}
-        out.append({'label': b['label'], 'date': b['date'], 'need': sorted({c['need'] for c in left}),
+        tier, unsure, sure = tier_of(files, rules)
+        out.append({'label': b['label'], 'date': b['date'], 'need': sorted({c['need'] for c in left}), 'tier': tier, 'sureTier': sure, 'unsure': sorted(unsure),
                     'commits': [c['sha'][:7] for c in left],
                     'executor': '、'.join(dict.fromkeys(c['executor'] for c in left if c['executor'])),
                     'docOnly': bool(files) and all(DOC_ONLY.search(f) for f in files)})
@@ -164,21 +195,29 @@ def main(argv=None):
     if a.json:
         print(json.dumps(items, ensure_ascii=False, indent=1))
         return 0
-    counted = [i for i in items if not i['docOnly']]
+    limit_tier = load_tiers()[1]
+    counted = [i for i in items if TIER_ORDER[i['tier']] <= TIER_ORDER[limit_tier]]   # 上限只算甲档
+    shown_items = [i for i in items if not i['docOnly'] or i['tier'] == '甲']
     for need in ['Codex', 'Claude', '审查']:
-        group = [i for i in counted if need in i['need']]
-        docs = [i for i in items if i['docOnly'] and need in i['need']]
+        group = [i for i in shown_items if need in i['need']]
+        docs = [i for i in items if i not in shown_items and need in i['need']]
         if not group and not docs:
             continue
         print(f'  待{need}核查 {len(group)} 批' + (f'，另有只改文档、登记的 {len(docs)} 批（只看结论与编号）' if docs else '') + '：')
         for i in group:
             shown = ' '.join(i['commits']) if len(i['commits']) <= 4 else f"{len(i['commits'])} 个提交 {i['commits'][0]}…{i['commits'][-1]}"
-            print(f"    {i['date']} {i['label'][:48]}｜{shown}｜{i['executor']}")
+            print(f"    [{i['tier']}] {i['date']} {i['label'][:48]}｜{shown}｜{i['executor']}")
         if docs:
             print('    文档：' + ' '.join(c for i in docs for c in i['commits']))
-    print(f'  待交叉核查共 {len(items)} 批，计入上限 {len(counted)} 批（只改文档、登记的不计；按提交尾注减去变更记录核查条目）')
+    count = {t: sum(1 for i in items if i['tier'] == t) for t in TIER_ORDER}
+    guess = sum(1 for i in items if i['tier'] == '甲' and i['sureTier'] != '甲')
+    print(f"  待交叉核查共 {len(items)} 批：甲 {count['甲']} 批{f'（其中 {guess} 批只因有文件拿不准才算甲）' if guess else ''}、乙 {count['乙']} 批、丙 {count['丙']} 批；"
+          f"上限只算{limit_tier}档，计入 {len(counted)} 批（分档表 待核查分档.json；按提交尾注减去变更记录核查条目）")
+    unsure = sorted({f for i in items for f in i['unsure']})
+    if unsure:
+        print('  拿不准归哪档、已按甲算的文件（到 待核查分档.json 加规则）：' + '、'.join(unsure[:12]) + (f' 等 {len(unsure)} 个' if len(unsure) > 12 else ''))
     if len(counted) > a.limit:
-        print(f'  ⚠ 待交叉核查 {len(counted)} 批，超过 {a.limit} 批上限：停派新车道、停新功能，先派审查线程核查')
+        print(f'  ⚠ 待交叉核查甲档 {len(counted)} 批，超过 {a.limit} 批上限：停派新车道、停新功能，先派审查线程核查')
     return 0
 
 

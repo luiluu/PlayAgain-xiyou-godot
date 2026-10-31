@@ -40,6 +40,7 @@ LOG = Path('00_项目管理/变更记录.md')
 COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/交接板归档.md'), Path('00_项目管理/重制步骤清单.md'),
           Path('00_项目管理/当前状态.json'), Path('00_项目管理/来源登记.json'),
           SUB / '开发编号.json', PROJECT / 'project.godot', PROJECT / 'content/build_info.json']}
+OPT_REGISTRY = SUB / '00_设计/优化登记.md'
 VERSION_MARKER = 'dev.' + '待定'
 # 优化登记号占位：车道文档里写 O-待定（同一份里要区分几项就写 O-待定-1、O-待定-2），合并时按已登记的最大 O-NNN 顺延换号
 # （总装手换漏过一处注释，唐僧 10-30）。占位字面量拆开写，免得本文件自己被换号。
@@ -311,7 +312,7 @@ def problem_entry(text, heads):
                            '只交问题的期次至少要有标题带「问题」的节（如「## 本期问题交总装」），据此生成最简条目')
     name = re.search(r'^# 交付[：:]\s*(\S+)', text, re.M)
     branch = name.group(1) if name else '（未写分支）'
-    who = 'Codex·沙僧' if branch.startswith('codex/') else 'Claude·未经Codex检验'
+    who = 'Codex·沙僧' if branch.startswith('codex/') else ('cc·未经审查' if branch.startswith('cc/') else 'Claude·未经Codex检验')
     print('提示：交付单 %s 没有变更记录草稿，按「问题」节生成最简条目；--finish 前可在变更记录里改写' % branch,
           file=sys.stderr, flush=True)
     return '## %s 【%s】%s（仅交问题，不销账）\n\n%s' % (time.strftime('%Y-%m-%d'), who, branch, '\n\n'.join(parts))
@@ -353,7 +354,7 @@ def plan(root, task):
         hint = ('；其中未跟踪的（%s）若是本机临时文件（如通知、草稿），可把路径写进本地 .git/info/exclude（不入 Git），'
                 '不必删' % '、'.join(untracked[:5])) if untracked else ''
         raise RuntimeError('main 必须干净，包含未跟踪文件；本工具不自动保存或覆盖现场：' + '、'.join(sorted(changed)[:8]) + hint)
-    lanes = [w for w in worktrees(root) if w.get('branch') in ['claude/' + task, 'codex/' + task]]
+    lanes = [w for w in worktrees(root) if w.get('branch') in ['cc/' + task, 'claude/' + task, 'codex/' + task]]
     if len(lanes) > 1:
         raise RuntimeError('须有且只有一个对应任务的已登记车道工作树')
     evidence = []
@@ -375,7 +376,7 @@ def plan(root, task):
             return f.read_text() if f.is_file() and not f.is_symlink() else None
     else:
         # 车道交付后已在同一工作树换新分支接着做：没有工作树停在交付分支上，按分支引用合并，文件从交付提交里读
-        refs = [b for b in ['claude/' + task, 'codex/' + task]
+        refs = [b for b in ['cc/' + task, 'claude/' + task, 'codex/' + task]
                 if subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', 'refs/heads/' + b],
                                   capture_output=True).returncode == 0]
         if len(refs) != 1:
@@ -397,6 +398,7 @@ def plan(root, task):
     if text is None:
         raise RuntimeError('车道分支缺少交付单：' + str(delivery))
     draft(text)
+    check_opt_drafts(text, str(delivery))
     # 只认相对本次合并前 main 真有改动的文件：交叉合并时 merge-base 可能取到旧基点，基点 diff 会把 main 早就有的
     # 文件（如别期的测量接受单）当成本期带来，gameplay 误判为真、文档期白递增开发编号（哪吒_8，10-29 八戒 attack-query2）
     real = set(git(root, 'diff', '--name-only', base, target).splitlines())
@@ -486,6 +488,53 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+OPT_DRAFT_HEAD = re.compile(r'^## (?!.*【).*优化登记草稿.*$', re.M)
+OPT_NONE = re.compile(r'^(?:[-*]\s*)?优化登记草稿[：:]\s*无\s*$', re.M)
+
+
+def opt_draft_rows(text):
+    """交付单「## 优化登记草稿」节里的表行（首格是占位或编号的行）；表头与分隔行不算。"""
+    m = OPT_DRAFT_HEAD.search(text)
+    if not m:
+        return []
+    rest = text[m.end():]
+    nxt = re.search(r'^## ', rest, re.M)
+    block = rest[:nxt.start()] if nxt else rest
+    return [x.strip() for x in block.splitlines() if re.match(r'^\|\s*O-', x)]
+
+
+def check_opt_drafts(text, name):
+    """正文提到 O-待定 却没有草稿表：登记没人写（总装只能手补），拦下让车道补表；确无新优化可写「优化登记草稿：无」。"""
+    if OPT_TOKEN.search(text) and not opt_draft_rows(text) and not OPT_NONE.search(text):
+        raise RuntimeError('交付单 %s 提到优化号占位却没有「## 优化登记草稿」表行：车道补一张表（表头照优化登记.md，首格写占位），'
+                           '确无新优化就写一行「优化登记草稿：无」' % name)
+
+
+def append_opt_registry(root, state):
+    """把各交付单草稿表里的占位行（换好号）追加到优化登记末行之后，返回 [(编号, 项目)] 供提示总装补交接板「需要用户决定」。"""
+    reg = root / OPT_REGISTRY
+    text = reg.read_text() if reg.is_file() else ''
+    lines = text.split('\n')
+    have = set(OPT_NUMBERED.findall(text))
+    added, rows = [], []
+    for s in sheets(state):
+        for row in opt_draft_rows((root / s).read_text()):
+            row = substitute(row, state)
+            number = re.match(r'^\|\s*O-(\d{3})(?!\d)', row)
+            if not number or number.group(1) in have or OPT_TOKEN.search(row):
+                continue
+            have.add(number.group(1))
+            rows.append(row)
+            added.append(('O-' + number.group(1), row.split('|')[2].strip()))
+    if rows:
+        last = max((i for i, x in enumerate(lines) if re.match(r'^\|\s*O-\d{3}', x)), default=None)
+        if last is None:
+            raise RuntimeError('优化登记.md 里找不到登记表行，无法追加草稿行')
+        lines[last + 1:last + 1] = rows
+        reg.write_text('\n'.join(lines))
+    return added
+
+
 def is_register(rel):
     return rel in OPT_REGISTERS or bool(re.fullmatch(r'00_项目管理/变更记录[^/]*\.md', rel))
 
@@ -505,7 +554,7 @@ def assign_opt_numbers(root, state):
                 tokens.append(m.group(0))
     if not tokens:
         return {}
-    regs = [root / r for r in OPT_REGISTERS] + sorted((root / '00_项目管理').glob('变更记录*.md'))
+    regs = [root / r for r in OPT_REGISTERS] + [root / OPT_REGISTRY] + sorted((root / '00_项目管理').glob('变更记录*.md'))
     top = 0
     for f in regs:
         if f.is_file():
@@ -572,7 +621,7 @@ def validate_version_edits(root, state):
 
 def review_status(root, state):
     """合并提交的核查尾注（Kyo 2026-10-30：Codex 停用核查，改审查线程）：审查线程自己的分支不再被核，写「无」；其余写「待审查」。"""
-    if state['branch'].startswith('claude/review-'):
+    if state['branch'].startswith(('claude/review-', 'cc/review-')):
         return '无'
     try:
         sheet = git(root, 'show', state['target'] + ':' + state['delivery'])
@@ -580,7 +629,7 @@ def review_status(root, state):
         sheet = ''
     # 只认交付单头部（第一个二级标题之前）的执行者行，正文里引用这句话不算
     head = re.split(r'^## ', sheet, maxsplit=1, flags=re.M)[0]
-    if re.search(r'^\W*执行者[:：]\s*Claude[（(]审查[）)]', head, re.M):
+    if re.search(r'^\W*执行者[:：]\s*(?:Claude|cc)[（(]审查[）)]', head, re.M):
         return '无'
     return '待审查'
 
@@ -589,7 +638,7 @@ def prepare(root, state, state_file, executor):
     if state['phase'] != 'planned' and git(root, 'rev-parse', 'HEAD') != state['head']:
         raise RuntimeError('准备过程中 main HEAD 已改变，先人工核对')
     if state['phase'] == 'planned':
-        actor = 'Claude（唐僧）' if executor == 'Claude' else 'Codex（沙僧）'
+        actor = 'cc（唐僧）' if executor == 'cc' else 'Codex（沙僧）'
         message = ['-m', '合并 ' + state['branch'], '-m', '执行者: ' + actor + '\n核查: ' + review_status(root, state)]
         if merge_head(root) == state['target']:
             # 上次合并停在冲突：唐僧解决并 git add 后重跑本工具，由它照规范提交合并，再往下接续。
@@ -688,12 +737,17 @@ def prepare(root, state, state_file, executor):
                 raise RuntimeError('交付单已不存在且变更记录无本批标记，先人工核对')
             body = '\n\n'.join(relink(draft((root / s).read_text()), root) for s in sheets(state))
             body = substitute(body, state)
+            added = append_opt_registry(root, state)
             (root / LOG).write_text(log.rstrip() + '\n\n' + body + '\n\n' + marker + '\n')
+            state['optAppended'] = added
+            save(state_file, state)
         for s in sheets(state):
             (root / s).unlink(missing_ok=True)
         # 归并记录并删除交付单后若进程中断，凭本批标记安全接续，不重复追加或编号。
         state['phase'] = 'prepared'
         save(state_file, state)
+    for number, name in state.get('optAppended', []):
+        print('新优化 %s 已写进优化登记.md；请在交接板「需要用户决定」加一行：- %s %s（默认保留，重制完成后由用户逐条决定）' % (number, number, name), flush=True)
     print('已准备合并。请唐僧手改交接板（移除活动车道、加入待核查）与进度账，保持改动未提交；然后运行 --finish。', flush=True)
 
 
@@ -998,7 +1052,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
             raise RuntimeError('待交叉核查尚未登记本车道分支或提交号')
         changed = dirty(root)
         uids = lane_uids(root, state)
-        allowed = COMMON | set(sheets(state)) | set(state.get('versionEdits', {})) | set(state.get('also', [])) | uids
+        allowed = COMMON | {str(OPT_REGISTRY)} | set(sheets(state)) | set(state.get('versionEdits', {})) | set(state.get('also', [])) | uids
         docs = doc_edits(changed - allowed)
         if state.get('acceptDocEdits') and docs:
             print('一并暂存总装手修的文档：' + '、'.join(sorted(docs)), flush=True)
@@ -1046,7 +1100,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         remaining = changed - set(sheets(state))
         if remaining:
             run(root, ['git', 'add', '--', *sorted(remaining)])
-        actor = 'Claude（唐僧）' if executor == 'Claude' else 'Codex（沙僧）'
+        actor = 'cc（唐僧）' if executor == 'cc' else 'Codex（沙僧）'
         trailer = '执行者: ' + actor + '\n核查: ' + review_status(root, state)
         if affected and not batch:
             trailer += '\n验证: 选测（基准 %s，当天全量前算选测已验）' % check[-1][:9]
@@ -1204,7 +1258,8 @@ def main(argv=None):
     modes = ap.add_mutually_exclusive_group()
     modes.add_argument('--dry-run', action='store_true')
     modes.add_argument('--finish', action='store_true')
-    ap.add_argument('--executor', choices=['Claude', 'Codex'], default='Claude')
+    ap.add_argument('--executor', choices=['cc', 'Claude', 'Codex'], default='cc',
+                    help='执行者；Claude 是 cc 的旧写法（Kyo 10-31 改叫 cc），两者等价，写进提交尾注的都是 cc')
     modes.add_argument('--close-batch', action='store_true',
                        help='本批都 --finish --batch 收尾后、没有新车道要合时：统一跑 检查.sh --oracle（可加 --affected），通过后清理本批工作树、推送')
     modes.add_argument('--abort', action='store_true',
@@ -1227,6 +1282,7 @@ def main(argv=None):
     ap.add_argument('--also', action='append', default=[], metavar='路径',
                     help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则），可重复')
     a = ap.parse_args(argv)
+    a.executor = 'cc' if a.executor == 'Claude' else a.executor
     root = a.root or Path(git(Path(__file__).parent, 'rev-parse', '--path-format=absolute', '--git-common-dir')).parent
     root = root.resolve()
     lock = None
@@ -1272,7 +1328,7 @@ def main(argv=None):
         if (state and state['phase'] == 'planned' and merge_head(root) is None
                 and subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode):
             # 还没合进来（放弃了冲突合并、车道重新交付，或 main 又前进）：按车道与 main 的现状重新计划。
-            executor = state.get('executor', a.executor)
+            executor = 'cc' if state.get('executor', a.executor) == 'Claude' else state.get('executor', a.executor)
             state = plan(root, a.task)
             state['executor'] = executor
             save(state_file, state)
@@ -1282,7 +1338,7 @@ def main(argv=None):
             state = plan(root, a.task)
             state['executor'] = a.executor
             save(state_file, state)
-        elif state.get('executor', a.executor) != a.executor:
+        elif ('cc' if state.get('executor', a.executor) == 'Claude' else state.get('executor', a.executor)) != a.executor:
             raise RuntimeError('接续执行者不同，请先核对原执行者登记')
         if a.accept_changes:
             add_acceptances(root, state, a.accept_changes)

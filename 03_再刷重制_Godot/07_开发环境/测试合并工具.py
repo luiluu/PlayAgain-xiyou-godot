@@ -605,10 +605,11 @@ state, limit, seconds = __import__('pathlib').Path(sys.argv[2]), int(sys.argv[3]
 mode = sys.argv[5]
 if mode == 'hog':  # 批测：limit 个线程，放掉马上重抢
     end = time.monotonic() + seconds
+    stop = state / 'hog_stop'   # 需要时由测试喊停：不靠固定时长，机器忙时进程起得慢也不会提前放槽
     held = threading.Barrier(limit, action=lambda: (state / 'hog_ready').touch())  # 全部槽都占上才放来者
     def worker():
         first = True
-        while time.monotonic() < end:
+        while time.monotonic() < end and not stop.exists():
             with p.global_slot(state, limit):
                 if first:
                     held.wait(); first = False
@@ -666,22 +667,27 @@ with p.global_slot(state, limit, weight, priority=p.slot_priority('.')):
         lane = dict(os.environ, XIYOU_SLOT_PRIORITY='0')
         main = dict(os.environ, XIYOU_SLOT_PRIORITY='1')
         par = str(HERE / '并行测试.py')
-        hog = subprocess.Popen([sys.executable, str(script), par, str(self.state), '2', '6', 'hog'], env=lane, stdout=subprocess.DEVNULL)
+        (self.state / 'hog_stop').unlink(missing_ok=True)
+        hog = subprocess.Popen([sys.executable, str(script), par, str(self.state), '1', '600', 'hog'], env=lane, stdout=subprocess.DEVNULL)
         try:
             self.assertTrue(self.wait_for(lambda: (self.state / 'hog_ready').exists(), 30))
-            other = subprocess.Popen([sys.executable, str(prio), par, str(self.state), '2', '1', '0.5', 'lane'], env=lane,
+            other = subprocess.Popen([sys.executable, str(prio), par, str(self.state), '1', '1', '0.5', 'lane'], env=lane,
                                      stdout=subprocess.PIPE, text=True)
             # 等车道等候者真登记进排队目录，再让总装来（不靠固定时间）
             self.assertTrue(self.wait_for(lambda: any((self.state / 'slots/queue').glob('*_%d_*' % other.pid)), 30))
+            boss = subprocess.Popen([sys.executable, str(prio), par, str(self.state), '1', '1', '0', 'main'], env=main,
+                                    stdout=subprocess.PIPE, text=True)
+            # 总装等候者真登记了优先级，批测才放槽（不靠固定时间：机器忙时进程起得慢）
+            self.assertTrue(self.wait_for(lambda: boss.poll() is not None or any((self.state / 'slots/priority').glob('*_%d_*' % boss.pid)), 60))  # 空档里直接拿到的不用登记
             t0 = __import__('time').time()
-            boss = subprocess.run([sys.executable, str(prio), par, str(self.state), '2', '1', '0', 'main'], env=main,
-                                  capture_output=True, text=True, timeout=30)
-            got_main = float(boss.stdout.split()[1])
-            got_lane = float(other.communicate(timeout=30)[0].split()[1])
+            (self.state / 'hog_stop').touch()
+            got_main = float(boss.communicate(timeout=60)[0].split()[1])
+            got_lane = float(other.communicate(timeout=60)[0].split()[1])
         finally:
-            hog.wait(30)
-        self.assertLess(got_main, got_lane, '总装请求应排在先来的车道等候者前面')
-        self.assertLess(got_main - t0, 1.5)  # 车道批测放槽后让路，下一轮就归总装
+            (self.state / 'hog_stop').touch()
+            hog.wait(60)
+        self.assertLess(got_main, got_lane, '总装请求应排在先来的车道等候者前面')  # 上限 1：同一时刻只有一个能拿，先后由槽决定，不是两个时间戳的竞速
+        self.assertLess(got_main - t0, 10)  # 批测放槽后总装先拿到（上限只防永远等；先后次序由上一条断言保证）
         self.assertFalse(list((self.state / 'slots/priority').iterdir()))
 
     def test_lane_single_yields_to_live_priority_waiter_even_with_free_slots(self):
@@ -1264,6 +1270,48 @@ for name in filter(None, files):
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
 
+    def registry(self, rows):
+        head = '# 优化登记\n\n## 登记表\n\n| 编号 | 项目 | 原版问题 | 重制做法 | 理由 | 回退 | 提出 | 状态 |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n'
+        self.put(str(merge.OPT_REGISTRY), head + rows + '\n')
+        self.g('add', '.'); self.g('commit', '-m', 'registry')
+        self.g('merge', 'main', cwd=self.wt)
+
+    def sheet_with(self, extra):
+        sheet = self.wt / self.receipt
+        sheet.write_text(sheet.read_text() + extra)
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'sheet', cwd=self.wt)
+
+    def test_optimization_draft_rows_are_appended_to_registry_with_new_numbers(self):
+        """唐僧总装 五 10-31：本批 O-122／O-123 的草稿表行都是总装手补的。准备阶段把草稿表行（换好号）追加到登记末行之后。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-001 | 旧项 | a | b | c | d | e | f |\n| O-118 | 最后一项 | a | b | c | d | e | f |')
+        row = lambda n, name: '| %s | %s | 问题 | 做法 | 理由 | 回退 | 车道 | 待用户决定 |' % (n, name)
+        self.sheet_with('\n## 优化登记草稿\n\n| 编号 | 项目 | 原版问题 | 重制做法 | 理由 | 回退 | 提出 | 状态 |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n'
+                        + row(tok + '-1', '甲项') + '\n' + row(tok + '-2', '乙项') + '\n\n说明里提到 %s-1\n' % tok)
+        self.assertEqual(self.call(), 0, self.last_output)
+        reg = (self.root / merge.OPT_REGISTRY).read_text().split('\n')
+        i = next(k for k, x in enumerate(reg) if x.startswith('| O-118'))
+        self.assertEqual(reg[i + 1], row('O-119', '甲项'))
+        self.assertEqual(reg[i + 2], row('O-120', '乙项'))
+        self.assertNotIn(tok, '\n'.join(reg))
+        self.assertIn('请在交接板「需要用户决定」加一行：- O-119 甲项', self.last_output)
+        self.assertIn('O-120 乙项', self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)      # 登记文件的改动随收尾一并提交，不算预期外改动
+        self.assertFalse(merge.dirty(self.root))
+
+    def test_optimization_token_without_draft_table_is_refused(self):
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        self.sheet_with('\n- 新优化 %s（XFoo.fix）\n' % tok)
+        self.assertEqual(self.call(), 1)
+        self.assertIn('优化登记草稿', self.last_output)
+        self.sheet_with('\n优化登记草稿：无\n')                            # 确无新优化：声明后放行
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertNotIn(tok, (self.root / merge.OPT_REGISTRY).read_text())
+
     def test_optimization_placeholder_in_tool_source_is_not_numbered(self):
         """唐僧 10-30：合并车道.py 自己注释里的占位被换成 O-122；工具源码（07_开发环境、03_转换工具）里的不换号，文档照换。"""
         tok = 'O-' + '待定'
@@ -1279,6 +1327,39 @@ for name in filter(None, files):
         self.assertEqual((self.root / doc).read_text(), '# 风格\nO-001\n')
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
+
+    def cc_lane(self, task, extra=''):
+        wt = Path(self.tmp.name) / ('lane_' + task)
+        self.g('worktree', 'add', '-b', 'cc/' + task, str(wt))
+        receipt = wt / ('00_项目管理/交付/cc_%s.md' % task)
+        receipt.parent.mkdir(parents=True, exist_ok=True)
+        receipt.write_text('# delivery\n- 状态：可合并\n' + extra + '\n## 变更记录草稿\n\n## 日期 【cc】新写法（' + merge.VERSION_MARKER + '）\n\n- cc change\n\n## 交接板\n- fixture\n')
+        (wt / (task + '.md')).write_text('cc lane\n')
+        self.g('add', '.', cwd=wt); self.g('commit', '-m', 'cc feature', cwd=wt)
+        return wt
+
+    def test_cc_prefix_lane_merges_with_cc_trailer_and_old_executor_flag(self):
+        """Kyo 10-31 把 claude 改叫 cc：cc/<任务> 分支、cc_<任务>.md 交付单、尾注「执行者: cc（唐僧）」；旧的 --executor Claude 等价。"""
+        wt = self.cc_lane('ccjob')
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n\n## 待交叉核查\n| cc/ccjob |\n## end\n')
+        self.g('add', '.'); self.g('commit', '-m', 'board lists cc lane')
+        self.assertEqual(self.call_task('ccjob', '--executor', 'Claude'), 0, self.last_output)
+        body = self.g('log', '-1', '--format=%B')
+        self.assertIn('执行者: cc（唐僧）', body)
+        self.assertIn('核查: 待审查', body)
+        self.assertTrue(self.g('log', '-1', '--format=%s').startswith('合并 cc/ccjob'))
+        self.assertIn('【cc】新写法', (self.root / merge.LOG).read_text())
+        self.assertEqual(self.call_task('ccjob', '--finish'), 0, self.last_output)   # 缺省 cc，与上面的 Claude 等价，不报「接续执行者不同」
+        self.assertFalse(wt.exists())
+
+    def test_cc_review_branch_and_sheet_executor_write_no_review_needed(self):
+        state = {'branch': 'cc/review-3', 'target': 'cc/review-3', 'delivery': 'x.md'}
+        self.assertEqual(merge.review_status(self.root, state), '无')
+        state = {'branch': 'cc/task', 'target': 'claude/task', 'delivery': str(self.receipt)}
+        sheet = self.wt / self.receipt
+        sheet.write_text(sheet.read_text().replace('# delivery\n', '# delivery\n- 执行者：cc（审查）\n'))
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'cc review sheet', cwd=self.wt)
+        self.assertEqual(merge.review_status(self.root, state), '无')
 
     def test_review_status_for_review_thread(self):
         state = {'branch': 'claude/review-9', 'target': 'claude/task', 'delivery': str(self.receipt)}
@@ -1304,7 +1385,7 @@ for name in filter(None, files):
             (self.wt / r).parent.mkdir(parents=True, exist_ok=True)
             (self.wt / r).write_text(text)
         sheet = self.wt / self.receipt
-        sheet.write_text(sheet.read_text().replace('- fixture change', '- fixture change %s-1' % tok))
+        sheet.write_text(sheet.read_text().replace('- fixture change', '- fixture change %s-1' % tok) + '\n优化登记草稿：无\n')
         self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'lane docs with placeholders', cwd=self.wt)
         self.assertEqual(self.call(), 0, self.last_output)
         doc = (self.root / rel).read_text()
@@ -1732,7 +1813,7 @@ for name in filter(None, files):
         self.put(str(merge.PROJECT / 'modes/测试.gd'), '# resolved\n')
         self.g('add', str(merge.PROJECT / 'modes/测试.gd'))
         self.assertEqual(self.call(), 0, self.last_output)
-        self.assertIn('执行者: Claude（唐僧）', self.g('log', '-1', '--skip=0', '--format=%B', 'HEAD^{commit}'))
+        self.assertIn('执行者: cc（唐僧）', self.g('log', '-1', '--skip=0', '--format=%B', 'HEAD^{commit}'))
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
         self.assertEqual((self.root / merge.PROJECT / 'modes/测试.gd').read_text(), '# resolved\n')
