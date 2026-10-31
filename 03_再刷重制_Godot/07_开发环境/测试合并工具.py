@@ -339,6 +339,25 @@ class ParallelTestRunnerTests(unittest.TestCase):
         par = load('par_norerun', HERE / '并行测试.py')
         self.assertTrue(par.NO_RERUN_PARSE_ERROR)
 
+    def test_short_prefix_stops_unless_star_or_wide(self):
+        # 白龙_8（tools27）：xiyou_battle、xiyou_rules 这类短名扩成几十个场景，车道照抄就排进 50 多个；超过上限先停下
+        for i in range(4):
+            (self.tmp / 'proj/tests' / ('x%d.tscn' % i)).touch()
+        p, runs = self.run_tests('x', XIYOU_PREFIX_STOP='3')
+        self.assertEqual(p.returncode, 2, p.stdout)
+        self.assertIn('前缀扩出的场景太多', p.stdout)
+        self.assertEqual(runs, [])
+        p, runs = self.run_tests('x*', XIYOU_PREFIX_STOP='3')
+        self.assertEqual((p.returncode, sorted(runs)), (0, ['x0.tscn', 'x1.tscn', 'x2.tscn', 'x3.tscn']), p.stdout)
+        p, runs = self.run_tests('--full', '--wide', 'x', XIYOU_PREFIX_STOP='3')
+        self.assertEqual((p.returncode, len(runs)), (0, 4), p.stdout)
+        p, runs = self.run_tests('--full', 'x', XIYOU_PREFIX_STOP='0')
+        self.assertEqual((p.returncode, len(runs)), (0, 4), p.stdout)
+        p, runs = self.run_tests('--full', 'x1', 'x2.tscn', 'a', XIYOU_PREFIX_STOP='3')  # 全名与小前缀不受影响
+        self.assertEqual((p.returncode, sorted(runs)), (0, ['a.tscn', 'x1.tscn', 'x2.tscn']), p.stdout)
+        par = load('par_stop', HERE / '并行测试.py')
+        self.assertEqual(par.PREFIX_STOP, 40)
+
     def test_names_file_and_wide_prefix_hint(self):
         names = self.tmp / 'names.txt'
         names.write_text('# 选测清单\na.tscn\n\nc  # 尾注释\n')

@@ -508,6 +508,7 @@ def git_head(project: str) -> str:
 
 
 PREFIX_HINT = int(os.environ.get('XIYOU_PREFIX_HINT', '20'))  # 一个名字前缀匹配超过这么多场景时提示
+PREFIX_STOP = int(os.environ.get('XIYOU_PREFIX_STOP', '40'))  # 不带 * 的前缀扩出超过这么多场景就停下（白龙_8，tools27）；0 不停
 
 
 def main() -> int:
@@ -522,6 +523,7 @@ def main() -> int:
     ap.add_argument('--quiet', action='store_true', help='不打通过行，只打失败、偶发、提示、心跳与汇总')
     ap.add_argument('--names-file', type=Path, action='append', default=[], metavar='文件',
                     help='场景名或前缀每行一个（# 起为注释），与命令行名字合并；选测清单、复跑失败项用（哪吒_8）')
+    ap.add_argument('--wide', action='store_true', help='允许不带 * 的短前缀扩出超过 XIYOU_PREFIX_STOP（默认 40）个场景')
     ap.add_argument('names', nargs='*')
     a = ap.parse_intermixed_args()
     for f in a.names_file:
@@ -537,12 +539,23 @@ def main() -> int:
     limit = global_limit()
     scenes = sorted(p.name for p in (Path(a.project) / 'tests').glob('*.tscn'))
     if a.names:
+        # 「xiyou_rules*」显式写 * 的是有意的前缀；不带 * 的照旧按前缀匹配，但扩得太多时停下（白龙_8：车道照抄
+        # xiyou_battle、xiyou_rules 这类短名，一下排进 50 多个场景）
+        wanted = [n[:-1] if n.endswith('*') else n for n in a.names]
+        wide = []
         # 前缀一次带出很多场景时提示一行（如误写 xiyou_ 选中两百多个），免得以为只跑了几个（哪吒_8）
-        for n in a.names:
+        for raw, n in zip(a.names, wanted):
             hit = [s for s in scenes if s.startswith(n) and s not in (n, n + '.tscn')]
             if len(hit) > PREFIX_HINT:
                 print('  · 前缀 %s 匹配 %d 个场景（%s 等）；要精确选就写全名' % (n, len(hit), '、'.join(hit[:3])))
-        scenes = [s for s in scenes if any(s == n or s == n + '.tscn' or s.startswith(n) for n in a.names)]
+            if PREFIX_STOP and not raw.endswith('*') and len(hit) > PREFIX_STOP:
+                wide.append((n, len(hit)))
+        selected = [s for s in scenes if any(s == n or s == n + '.tscn' or s.startswith(n) for n in wanted)]
+        if wide and not a.wide and len(selected) > PREFIX_STOP:
+            print('  ✗ 前缀扩出的场景太多，先停下：%s。要的就是这些就把名字写成「前缀*」或加 --wide；'
+                  '只想跑一个就写全名（XIYOU_PREFIX_STOP=0 关掉这道检查）' % '、'.join('%s → %d 个' % w for w in wide))
+            return 2
+        scenes = selected
     if not scenes:
         print('  ✗ tests/ 下没有匹配的测试场景')
         return 1
