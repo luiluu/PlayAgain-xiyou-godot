@@ -39,10 +39,14 @@ extends RefCounted
 ## - apply 包装：命中后万里锁对其余活着的敌人溅射（倍率 0.33，觉醒中的主行动 0.50；内部行动、不判黑闪、不再溅射）；
 ##   天逆鉾给目标附封印 2634，次数 max(原次数或 1, 觉醒中的主行动 2／否则 1)，状态去掉时次数清零。
 ## - 封印失效（applyGlobal 包装）：带 2634 的行动者下一次主动技能失效并扣一次，普攻、防御、物品不扣。
+## - 暴君（addState／addDebuff 包装）：负面状态（不是难度系统状态、阵亡与形态以外；限制行动的、BuffType 不在祝福／变身／魔法／
+##   合剂／食物／愤怒／共鸣里的、没有 BuffType 时名字带毒灼诅咒封印等的）与弱化都加不上；学暴君（learnSkill 包装）与 repair 时清掉
+##   身上的负面状态与弱化。O-待定（优化登记）：原版清弱化调的 removeDebuff 在 MV 里不存在，清完负面状态碰到第一个弱化就抛错，
+##   弱化留着；重制照说明清掉（CLEAR_DEBUFFS）。正常游戏里甚尔 1 级就学会暴君、弱化本来加不上，碰不到。
 ## - 命中／闪避／暴击：天与咒缚物理行动命中＋影速（速度比超出 1 的部分 ×0.15，至多 0.3）、被物理行动打时闪避＋影速；
 ##   五感时主技能与武器库不被闪避，主技能、武器库、反弹读到的目标暴击闪避 ×0.34（西游闪避公式为 0，命中常满，参照只看得出后两项）。
 ## 未移植（第三期起，清单见交付单 cc_bajie-toji2「下期」）：武器库追击与借用特效、术师杀手减伤与反弹、
-##   暴君免负面状态与弱化、智能 AI 档案；说明框熟练度行（画面）；读档时 repair。
+##   智能 AI 档案；说明框熟练度行（画面）；读档时 repair。
 ##   原版 makeDamageValue 包装是死代码（installDamageElementRuntime 后装、整个换掉 makeDamageValue 不调旧链），不移植。
 ## 参照：slice_probe（切片角色行与伤害行）、toji_probe（等级／进阶／血量各档的能力值、公式、钩子帧，tests/xiyou_toji.gd）。
 
@@ -64,6 +68,13 @@ const SHAPES := [2630, 2631, 2632, 2633]
 const SEAL := 2634
 const AWAKENING := 10226
 const DEATH := 1
+
+## O-待定（优化登记）：学暴君／repair 时清弱化。false＝照原版（removeDebuff 不存在，抛错后弱化留着）
+static var CLEAR_DEBUFFS := true
+const POSITIVE_BUFF_TYPES := ["祝福", "变身", "魔法", "合剂", "食物", "愤怒", "共鸣"]
+static var _negative_re := RegEx.create_from_string("中毒|毒|灼|诅咒|封印|眩晕|麻痹|虚弱|减速|沉默|睡眠|冻结|流血|失效")
+static var _buff_type_re := RegEx.create_from_string("<BuffType:([^>]+)>")
+static var _system_states := {}
 
 ## 战斗内：当前战斗（开战设、结束清；复活回形态与切换用）
 static var _logic = null
@@ -146,6 +157,7 @@ static func repair(a) -> void:
 		else:
 			a.forget_skill(id)
 	a.mp = 0.0
+	clear_debuffs(a)
 	a.refresh_passive()
 
 
@@ -253,6 +265,57 @@ static func damage_ops(item: Dictionary, a) -> Array:
 		mult *= output_growth(a, false)
 	ops.append({"op": "mul", "field": "skillMultiplier", "value": mult})
 	return ops
+
+
+## CodexDifficulty.isSystemState：难度系统技能（XState.difficulty_managed_skills 与分档技能）备注 <Start(WT)PushStateN: 100%> 给的状态
+static func system_state(id: int) -> bool:
+	if _system_states.is_empty():
+		var re := RegEx.create_from_string("(?i)<Start(?:WT)?PushState(\\d+):\\s*100%>")
+		for sid in XState.difficulty_managed_skills() + XState.DIFFICULTY_ROLE_SKILLS:
+			for m in re.search_all(str(XDB.rec("Skills", int(sid)).get("note", ""))):
+				_system_states[int(m.get_string(1))] = true
+		_system_states[-1] = true  # 已建表
+	return _system_states.has(id)
+
+
+## negativeState
+static func negative_state(id: int) -> bool:
+	if system_state(id) or id == DEATH or SHAPES.has(id):
+		return false
+	var st := XDB.rec("States", id)
+	if st.is_empty():
+		return false
+	if int(st.get("restriction", 0)) > 0:
+		return true
+	var m := _buff_type_re.search(str(st.get("note", "")))
+	if m:
+		return not POSITIVE_BUFF_TYPES.has(m.get_string(1))
+	return _negative_re.search(str(st.get("name", ""))) != null
+
+
+## Game_Actor.addState 包装：暴君挡负面状态
+static func blocks_state(a, id: int) -> bool:
+	return knows(a, TYRANT) and negative_state(id)
+
+
+## T.clearDebuffs（学了暴君才清）：去掉负面状态，再去掉弱化（CLEAR_DEBUFFS，见上）
+static func clear_debuffs(a) -> void:
+	if not knows(a, TYRANT):
+		return
+	for id in a.state_ids.duplicate():
+		if negative_state(int(id)):
+			a.remove_state(int(id))
+	if CLEAR_DEBUFFS:
+		for p in a.buffs.size():
+			if a.buffs[p] < 0:
+				a.buffs[p] = 0
+				a.buff_turns[p] = 0
+
+
+## Game_Actor.learnSkill 包装：学暴君时清
+static func learned(a, id: int) -> void:
+	if id == TYRANT and own(a):
+		clear_debuffs(a)
 
 
 ## eligibleShape：学了该形态的切换与主技能

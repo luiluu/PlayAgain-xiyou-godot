@@ -189,6 +189,34 @@ func _rate_row(logic: XBattleLogic, u: XBattler, t: XBattler, sid: int, want: Di
 	check("rates.%s.%s.%d" % [want.tag, want.user, sid], range(3).all(func(k): return absf(got[k] - exp[k]) < 1e-9), [got, exp])
 
 
+## 暴君（参照 tyrant）：挡负面状态与弱化；忘掉后照常加；学回时清负面状态。弱化：原版清到一半抛错留着（CLEAR_DEBUFFS＝false 照原版），
+## 重制默认清掉（O-待定）
+func _tyrant(c: Dictionary) -> void:
+	var r := _battle()
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var ids: Array = c.setup.states
+	var has := func(): return ids.filter(func(id): return a.state_ids.has(int(id))).map(func(id): return int(id))
+	var add := func():
+		for id in ids:
+			logic._state_add(a, int(id))
+		for p in c.setup.debuffs:
+			logic.sequence_buff(a, int(p), true, false, 3)
+	var o: Dictionary = c.observed
+	add.call()
+	check("tyrant.with", has.call() == _norm(o.withTyrant.states) and _norm(a.buffs) == _norm(o.withTyrant.buffs), [has.call(), a.buffs])
+	a.forget_skill(XToji.TYRANT)
+	add.call()
+	check("tyrant.without", has.call() == _norm(o.without.states) and _norm(a.buffs) == _norm(o.without.buffs), [has.call(), a.buffs])
+	XToji.CLEAR_DEBUFFS = false
+	a.learn_skill(XToji.TYRANT)
+	XToji.CLEAR_DEBUFFS = true
+	check("tyrant.relearned_original", has.call() == _norm(o.relearned.states) and _norm(a.buffs) == _norm(o.relearned.buffs) and bool(o.relearned.learned) and a.skill_ids.has(XToji.TYRANT), [has.call(), a.buffs])
+	a.learn_skill(XToji.TYRANT)
+	check("tyrant.relearned_cleared", not a.buffs.any(func(v): return v < 0), a.buffs)
+	logic.end_battle(0)
+
+
 func _local() -> void:
 	# 反向：1 号主角普攻不收单目标、不溅射、不封印，甚尔的行动帧不动
 	var r := _battle()
@@ -217,9 +245,11 @@ func _run() -> void:
 			seen += 1
 			if c.id == "rates":
 				_rates(c)
+			elif c.id == "tyrant":
+				_tyrant(c)
 			else:
 				_script(c)
-	check("covers_all", seen == 6, seen)
+	check("covers_all", seen == 7, seen)
 	_local()
 	finish()
 

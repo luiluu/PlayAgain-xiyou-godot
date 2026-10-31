@@ -138,7 +138,21 @@ function rates() {
   sweep('base'); a.forgetSkill(10206); sweep('noSenses'); a.forgetSkill(10203); sweep('noBond');
   return {agi: [a.agi, e.agi], cev: e.cev, cri: a.cri, rows: out};
 }
-const cases = [makeCase('rates', {level: LEVEL, troop: TROOP, foeState: 1467}, rates)];
+// 暴君（第二期③）：负面状态与弱化加不上；忘掉暴君后照常加上，再学回暴君时负面状态清掉、正面与系统状态留着（弱化见下）
+const TYRANT_STATES = [4, 5, 6, 7, 11, 12, 130, 995, 1541, 1691, 2635];
+function tyrant() {
+  const env = battle(), {a} = env, out = {};
+  const has = () => TYRANT_STATES.filter(id => a.isStateAffected(id));
+  const add = () => { TYRANT_STATES.forEach(id => a.addState(id)); a.addDebuff(2, 3); a.addDebuff(6, 3); };
+  add(); out.withTyrant = {states: has(), buffs: a._buffs.slice()};
+  a.forgetSkill(10205); add(); out.without = {states: has(), buffs: a._buffs.slice()};
+  // 原版 clearDebuffs 调的 actor.removeDebuff 在 MV 里不存在：先清完负面状态，碰到第一个弱化就抛错（学技能本身已生效）
+  let error = null;
+  try { a.learnSkill(10205); } catch (e) { error = String(e.message || e); }
+  out.relearned = {states: has(), buffs: a._buffs.slice(), learned: a.isLearnedSkill(10205), error};
+  return out;
+}
+const cases = [makeCase('rates', {level: LEVEL, troop: TROOP, foeState: 1467}, rates), makeCase('tyrant', {level: LEVEL, states: TYRANT_STATES, debuffs: [2, 6]}, tyrant)];
 for (const [name, steps] of Object.entries(SCRIPTS)) {
   cases.push(makeCase(`script.${name}`, {actor: ID, level: LEVEL, troop: TROOP, steps, draws: DRAWS[name] || []}, () => ({steps: run(steps, DRAWS[name])})));
 }

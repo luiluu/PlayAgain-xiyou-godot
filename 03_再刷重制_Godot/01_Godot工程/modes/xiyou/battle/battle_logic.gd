@@ -1990,6 +1990,8 @@ func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int, ali
 	if add:
 		if t.is_dead():
 			return
+		if not buff and XToji.knows(t, XToji.TYRANT):
+			return  # 甚尔 Game_Actor.addDebuff 包装：暴君挡弱化（角色上最外层，在异化路由之前）
 		if not alien_routed and XAlienBattle.route_buff(self, t, pid, buff, turns):
 			return  # 异化 addBuff／addDebuff 包装：绝缘拒收外来、舍身增益转给队友、囚厄接收队友减益
 		if not buff and XMira.blocks_debuff(t):
