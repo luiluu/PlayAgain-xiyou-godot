@@ -100,6 +100,11 @@ switch_branch() {
   old=$(git -C "$wt" symbolic-ref --short -q HEAD || git -C "$wt" rev-parse --short HEAD)
   git -C "$wt" switch -q -c "$branch" "$from"
   print "== 已在 $wt 从 $from（$(git -C "$wt" rev-parse --short HEAD)）切出 $branch（原来在 $old，没删）"
+  # app 每开一个会话起一个 cc/<随机名>：原分支没有自己的提交（都已在 main 里）时提示可删，免得越攒越多（只提示不删，tools23）
+  if [[ $old != main ]] && git -C "$wt" show-ref --verify --quiet "refs/heads/$old" \
+      && git -C "$wt" merge-base --is-ancestor "refs/heads/$old" main 2>/dev/null; then
+    print "  提示：原分支 $old 没有自己的提交（都已在 main 里），用不着可删：git branch -d $old（只提示，没删）"
+  fi
 }
 
 if [[ $1 == --补齐 ]]; then

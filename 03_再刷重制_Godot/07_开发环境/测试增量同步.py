@@ -312,6 +312,61 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.assertIn('改用主工作区的版本', out.getvalue())
         self.assertIn('moved.json', out.getvalue())
 
+    def test_lane_merged_main_takes_whole_main_oracle_as_baseline(self):
+        # tools23（悟空交接）：车道同步过的参照比主工作区新，合 main 后 --补齐 按修改时间不刷新，main 期间接受的改变被当成车道的；
+        # 车道已合进当前 main 时基线整份取主工作区的，车道独有的参照仍取本树的；基线记下 main 提交，main 前进并合进来后重取
+        main_gen = self.root / 'main_gen'
+        (main_gen / 'oracle').mkdir(parents=True)
+        (main_gen / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'a', 'v': 'main-accepted'}]}))
+        (self.gen / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'a', 'v': 'lane-old'}]}))
+        (self.gen / 'oracle/lane_only.json').write_text('{"cases": []}')
+        out = io.StringIO()
+        with mock.patch.object(sync, 'ROOT', self.root), mock.patch.object(sync, 'merged_main', return_value='a' * 40), \
+                contextlib.redirect_stdout(out):
+            baseline = sync.comparison_baseline(self.gen, main_gen)
+            self.assertEqual(json.loads((baseline / 'oracle/events.json').read_text())['cases'][0]['v'], 'main-accepted')
+            self.assertTrue((baseline / 'oracle/lane_only.json').is_file())
+            self.assertIn('车道已合进当前 main（aaaaaaaaa）', out.getvalue())
+            self.assertIn('1 个与本树不同：events.json', out.getvalue())
+            out.truncate(0); out.seek(0)
+            sync.comparison_baseline(self.gen, main_gen)                            # 同一版 main：拒收后重跑沿用原基线
+            self.assertNotIn('重取', out.getvalue())
+            (main_gen / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'a', 'v': 'main-newer'}]}))
+            with mock.patch.object(sync, 'merged_main', return_value='b' * 40):
+                baseline = sync.comparison_baseline(self.gen, main_gen)
+            self.assertIn('按它的已接受测量重取基线', out.getvalue())
+            self.assertEqual(json.loads((baseline / 'oracle/events.json').read_text())['cases'][0]['v'], 'main-newer')
+            out.truncate(0); out.seek(0)
+            with mock.patch.object(sync, 'merged_main', return_value=None):       # 车道没合进最新 main：沿用已取的基线
+                baseline = sync.comparison_baseline(self.gen, main_gen)
+            self.assertEqual(out.getvalue(), '')
+            self.assertEqual(json.loads((baseline / 'main.json').read_text()), {'head': 'b' * 40})
+
+    def test_merged_main_checks_branch_ancestry_and_merge_in_progress(self):
+        env = dict(os.environ, GIT_AUTHOR_NAME='f', GIT_AUTHOR_EMAIL='f@x.invalid', GIT_COMMITTER_NAME='f',
+                   GIT_COMMITTER_EMAIL='f@x.invalid', XIYOU_MAIN_COMMIT='1', XIYOU_LANE_MERGE='1')
+        main, lane = self.root / 'repo', self.root / 'lane'
+        main.mkdir()
+        def git(*args, cwd=main):
+            subprocess.run(['git', '-C', str(cwd), *args], check=True, capture_output=True, env=env)
+        def commit(cwd, name):
+            (cwd / name).write_text(name); git('add', name, cwd=cwd); git('commit', '-q', '-m', name, cwd=cwd)
+        git('init', '-q', '-b', 'main'); commit(main, 'base')
+        git('worktree', 'add', '-q', '-b', 'cc/x', str(lane))
+        commit(lane, 'lane')
+        head = lambda: subprocess.run(['git', '-C', str(main), 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+        with mock.patch.object(sync, 'ROOT', lane):
+            self.assertEqual(sync.merged_main(main), head())                       # 车道从当前 main 切出
+            commit(main, 'main moved')
+            self.assertIsNone(sync.merged_main(main))                               # main 前进、车道没合
+            git('merge', '-q', '--no-edit', 'main', cwd=lane)
+            self.assertEqual(sync.merged_main(main), head())
+            (main / '.git/lane-merge').mkdir(); (main / '.git/lane-merge/state.json').write_text('{}')
+            self.assertIsNone(sync.merged_main(main))                               # 主工作区在合并中：产物可能在变
+            (main / '.git/lane-merge/state.json').unlink()
+            git('switch', '-q', '-c', 'scratch')
+            self.assertIsNone(sync.merged_main(main))                               # 主工作区不在 main 上
+
     def test_existing_case_with_new_fields_is_an_addition(self):
         self.set_payload({'cases': [{'id': 'stable', 'value': 1, 'extra': [1, 2]}]})
         result, report = self.run_sync()

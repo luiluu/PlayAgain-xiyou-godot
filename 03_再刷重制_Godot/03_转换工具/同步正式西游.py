@@ -320,19 +320,51 @@ def main_baseline_files(gen: Path, main_gen: Path, drift: list) -> list:
             and recorded[n] != hashlib.sha256((gen / 'oracle' / n).read_bytes()).hexdigest()]
 
 
+def merged_main(main_gen: Path):
+    """车道已合进主工作区当前 main（主工作区在 main 上、不在合并中，其提交是本树 HEAD 的祖先）时返回该提交号，否则 None。
+    这时主工作区 generated/oracle 就是本树所含 main 的已接受测量，可整份当比较基线（tools23）。"""
+    def git(*args, cwd=main_gen):
+        p = subprocess.run(['git', '-C', str(cwd), *args], capture_output=True, text=True)
+        return p.stdout.strip() if p.returncode == 0 else None
+    common = git('rev-parse', '--path-format=absolute', '--git-common-dir')
+    head = git('rev-parse', 'HEAD')
+    if not common or not head or git('symbolic-ref', '--short', '-q', 'HEAD') != 'main' or (Path(common) / 'lane-merge/state.json').exists():
+        return None
+    return head if git('merge-base', '--is-ancestor', head, 'HEAD', cwd=ROOT) is not None else None
+
+
 def comparison_baseline(gen: Path, main_gen: Path = None) -> Path:
     """首次写产物前原子保存接受边界；拒绝或中断后仍比较同一份数据。
     车道工作树新取基线时（main_gen 给出主工作区 generated），与主工作区不同的参照逐个提示：基线取的是车道自己的，
     手动拷进 generated/oracle 的探针输出会被当成基线、测量改变看不出来（八戒 dev.208 hostScope）。不改用主工作区当基线：
     main 前进后车道没合 main 时，车道产物缺 main 的新用例，会被误判成删除。
     折中（哪吒_10）：补齐记批次时记了主工作区各参照的摘要，其中主工作区至今没变、本树却改过的（补齐后手拷的探针输出），
-    基线改用主工作区的版本，手拷的改动才会显示成测量改变；main 已前进的拿不准，仍取车道自己的并提示。"""
+    基线改用主工作区的版本，手拷的改动才会显示成测量改变；main 已前进的拿不准，仍取车道自己的并提示。
+    车道已合进当前 main 时（merged_main，tools23）：主工作区有的参照整份取主工作区的当基线，车道相对 main 的新增与改变照常显示，
+    不用再手拷主工作区 generated/oracle（悟空交接：合 main 后 --补齐 按修改时间刷新，车道同步过的文件更新、不被刷新，
+    main 期间接受的改变就被当成车道的改变）。拒收后留下的基线是按旧的 main 取的、main 又前进并已合进来时，按新 main 重取。"""
     key = hashlib.sha256(str(gen.resolve()).encode()).hexdigest()
     parent = ROOT / '03_再刷重制_Godot/04_验证/本地结果/同步基线'
     parent.mkdir(parents=True, exist_ok=True)
     baseline = parent / key
     use_main = []
-    if not baseline.exists() and main_gen is not None:
+    head = merged_main(main_gen) if main_gen is not None else None
+    if head and baseline.exists():
+        try:
+            old_head = json.loads((baseline / 'main.json').read_text()).get('head')
+        except (OSError, ValueError, AttributeError):
+            old_head = None
+        if old_head != head:
+            print('提示：上次留下的比较基线取自%s，车道已合进当前 main（%s），按它的已接受测量重取基线'
+                  % ('另一版 main（%s）' % old_head[:9] if old_head else '车道自己的产物', head[:9]), flush=True)
+            finish_comparison(baseline)
+    if not baseline.exists() and head:
+        use_main = sorted(p.name for p in (main_gen / 'oracle').glob('*.json') if (gen / 'oracle' / p.name).is_file())
+        drift = [n for n in lane_drift(gen, main_gen) if n in use_main]
+        print('提示：车道已合进当前 main（%s），比较基线取主工作区 generated/oracle（%d 个参照，其中 %d 个与本树不同%s）；'
+              '车道相对 main 的新增与改变照常显示，不用手拷' % (head[:9], len(use_main), len(drift),
+                                                    '：' + '、'.join(drift[:8]) + ('等' if len(drift) > 8 else '') if drift else ''), flush=True)
+    elif not baseline.exists() and main_gen is not None:
         drift = lane_drift(gen, main_gen)
         use_main = main_baseline_files(gen, main_gen, drift)
         if use_main:
@@ -341,7 +373,7 @@ def comparison_baseline(gen: Path, main_gen: Path = None) -> Path:
         drift = [n for n in drift if n not in use_main]
         if drift:
             print('提示：本次比较基线取车道自己的 generated/oracle，其中 %d 个与主工作区不同（%s）；'
-                  '若是手动拷进去的探针输出，先从主工作区拷回再同步，否则这些改动看不出来'
+                  '本树还没合进当前 main：先 git merge main 再同步，基线就整份取主工作区的（不用手拷）；不合 main 时手拷进去的探针输出改动看不出来'
                   % (len(drift), '、'.join(drift[:8]) + ('等' if len(drift) > 8 else '')), flush=True)
     if not baseline.exists():
         staging = Path(tempfile.mkdtemp(prefix=key + '.pending-', dir=parent))
@@ -351,6 +383,8 @@ def comparison_baseline(gen: Path, main_gen: Path = None) -> Path:
             for n in use_main:
                 shutil.copy2(main_gen / 'oracle' / n, staging / 'oracle' / n)
             (staging / 'identity.json').write_text(json.dumps({'schema': 1, 'generated': str(gen.resolve())}))
+            if head:
+                (staging / 'main.json').write_text(json.dumps({'head': head}))
             staging.rename(baseline)
         finally:
             if staging.exists():
