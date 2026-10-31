@@ -143,7 +143,12 @@ static func _smooth_tail(lv: float, anchor: float, base: float, slope: float, en
 
 ## T.outputGrowth(actor, main)
 static func output_growth(a, main: bool) -> float:
-	var lv := maxf(1.0, float(a.level))
+	return output_growth_at(int(a.level), main)
+
+
+## 按等级算（说明卡用：预览没有角色时取说明卡的等级）
+static func output_growth_at(level: int, main: bool) -> float:
+	var lv := maxf(1.0, float(level))
 	var anchor := 20.0 if main else 10.0
 	var p := _original_growth(anchor)
 	var base := (1 + 0.1 * anchor) * p if main else p

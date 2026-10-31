@@ -99,8 +99,8 @@ func _run() -> void:
 	var prior := XState.current
 	var cat_state := XState.new()
 	cat_state.actor(XCat.ACTOR).change_level(10)
-	# 专属角色技能（10122～10299）同理：characterHelpActor 取探针已建好的 10 级所属角色（切片里的 166 奈叶、167 渡鸦、168 米拉、172 宿傩、173 饿狼）
-	for id in [166, 167, 168, 172, 173]:
+	# 专属角色技能（10122～10299）同理：characterHelpActor 取探针已建好的 10 级所属角色（切片里的 166 奈叶、167 渡鸦、168 米拉、171 甚尔、172 宿傩、173 饿狼）
+	for id in [166, 167, 168, 171, 172, 173]:
 		cat_state.actor(id).change_level(10)
 	if data is Dictionary:
 		for cat in ["skills", "items", "weapons", "armors", "gear"]:
