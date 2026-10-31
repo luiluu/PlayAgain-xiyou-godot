@@ -110,6 +110,17 @@ func _strip(o: Dictionary, s: XState) -> void:
 	var a1 := s.actor(int(o.actors[0].actorId))
 	var p1 := XPower.actor(a1)
 	check("gear_gain_sums_to_total", int(p1.self) + int(p1.gear) == int(p1.total) and XPowerStrip.detail_text(p1).contains("装备提升 " + XPowerNotice.delta(float(p1.gear))), p1)
+	# O-031 回退（SHOW_GEAR_GAIN = false）：第三段照原版只写「自身 N  ·  装备战力 N」，条上画的也是这一段
+	XPowerStrip.SHOW_GEAR_GAIN = false
+	var orig_text := XPowerStrip.detail_text(p1)
+	var holder := Control.new()
+	add_child(holder)
+	var st := XPowerStrip.make(holder, a1, 0.0, 1280.0)
+	var drawn: Array = st.layout().filter(func(c): return str(c[0]).begins_with("自身")) if st != null else []
+	XPowerStrip.SHOW_GEAR_GAIN = true
+	check("detail_original_O031", orig_text == "自身 " + XPower.format(float(p1.self)) + "  ·  装备战力 " + XPower.format(float(p1.gearScore))
+		and drawn.size() == 1 and str(drawn[0][0]) == orig_text, [orig_text, drawn])
+	holder.queue_free()
 	# 关掉「战力显示与估算」：不建条、页窗不下移
 	XConfig.set_flag("codexPowerEnabled", false)
 	XPower.clear_cache()

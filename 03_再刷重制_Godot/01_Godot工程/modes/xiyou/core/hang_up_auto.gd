@@ -10,12 +10,12 @@ extends RefCounted
 ## 角色名用 display_name()（原版 actor._name）；三位数照 Star.NumToThreeNum（≥100 原样）。
 
 ## O-020：顺序页的排列随存档；false 时与原版一样只留在本次运行（重开游戏后打开顺序页会重排为 1～N）
-const SAVE_ORDER := true
+static var SAVE_ORDER := true
 ## O-021：吃药/回蓝的循环加上限（原版不可消耗的药会无限循环卡死）；阵亡者不吃回蓝药（原版会把开着的回蓝药全吃光）
-const SAFE_RECOVERY := true
+static var SAFE_RECOVERY := true
 const LOOP_CAP := 2000
 ## O-023：顺序号保持 1～N 且删去旧表残留，次数改动后重建已排过的顺序；false 恢复原版延迟刷新/残留。
-const CONSISTENT_ORDER := true
+static var CONSISTENT_ORDER := true
 
 static var _order_temp := {}
 static var better_frequency := 0

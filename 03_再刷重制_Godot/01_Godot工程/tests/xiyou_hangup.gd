@@ -195,6 +195,7 @@ func _run() -> void:
 		if XSave.exists(i):
 			DirAccess.remove_absolute(XSave.path(i))
 	DirAccess.remove_absolute(XSave.dir())
+	_rollback_logic()
 	XEnemy.force_roll = -1.0
 	OS.low_processor_usage_mode_sleep_usec = _clock_before[0]
 	Engine.physics_ticks_per_second = _clock_before[1]
@@ -203,3 +204,44 @@ func _run() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## O-016／O-017 回退（只算规则，不开地图）：
+## - SILENT_WHEN_IDLE = false：没在挂机时战斗结束有人阵亡，原版 refrishHangUp 也调 stopHangUp，播一声取消音（system 2）
+## - AUTO_SAVE_SETTING = false：原版定时存档不看「自动储存」（needAutoSave 没被调用），关着也照存；说明里的档位取插件参数 saveId，空为 1
+func _rollback_logic() -> void:
+	var prev := XState.current
+	var st := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = st
+	for silent in [true, false]:
+		if silent:
+			XHangUp.SILENT_WHEN_IDLE = true
+		else:
+			XHangUp.SILENT_WHEN_IDLE = false  # 回退值写成字面量，回退开关覆盖.py 才认得
+		XHangUp.clear(st)
+		st.members()[1].hp = 0
+		XSound.system_log.clear()
+		XHangUp.after_battle(st)
+		st.members()[1].hp = 1
+		check("idle_death_sound_%s" % ("silent" if silent else "original"), not XHangUp.is_active(st) and XSound.system_log.has(2) != silent, XSound.system_log)
+	XHangUp.SILENT_WHEN_IDLE = true
+	st.flags["SaveGameId"] = 7
+	var raw := str(XHangUp.params().get("saveId", ""))
+	var param_slot := int(raw) if raw.is_valid_int() and int(raw) != 0 else 1
+	for setting in [true, false]:
+		if setting:
+			XHangUp.AUTO_SAVE_SETTING = true
+		else:
+			XHangUp.AUTO_SAVE_SETTING = false  # 回退值写成字面量，回退开关覆盖.py 才认得
+		XHangUp.settings(st).autoSave = false
+		st.hang_up_active = true
+		st.hang_up_origin = Vector2i(1, 1)
+		st.hang_up_save_pending = false
+		st.hang_up_count = XHangUp.save_frames() - 1
+		XHangUp.tick(st)
+		var tag := "setting" if setting else "original"
+		check("auto_save_off_%s" % tag, st.hang_up_save_pending != setting, [st.hang_up_count, st.hang_up_save_pending])
+		check("auto_save_slot_%s" % tag, XHangUp.auto_save_slot(st) == (7 if setting else param_slot), XHangUp.auto_save_slot(st))
+	XHangUp.AUTO_SAVE_SETTING = true
+	XHangUp.clear(st)
+	XState.current = prev
