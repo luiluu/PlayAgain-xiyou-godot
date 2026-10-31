@@ -304,6 +304,40 @@ func _local() -> void:
 	check("local.end_clears", not XToji.SHAPES.any(func(id): return a.state_ids.has(id)) and not XToji.battling)
 
 
+## 智能 AI 档案的本地断言：O-待定 o_profile_hits 开（默认）时追加＋1 的游云估伤是关时的一半（关时多乘 numRepeats 2）；
+## 藏兵咒灵倍率 ×1.11；别的角色、甚尔的非主技能与当前形态的切换没有档案；档案只读（不换形态、不动随机数）
+func _local_ai() -> void:
+	var r := _battle()
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var yun := XDB.rec("Skills", 10216)
+	logic._state_add(a, 1541)
+	var ai := XSmartAI.new(logic, a)
+	var keep := XSmartAI.o_profile_hits
+	XSmartAI.o_profile_hits = true
+	var on := ai.safe_damage(a, logic.enemies[0], yun)
+	XSmartAI.o_profile_hits = false
+	var off := ai.safe_damage(a, logic.enemies[0], yun)
+	XSmartAI.o_profile_hits = keep
+	check("local_ai.profile_hits", on > 0.0 and absf(off / on - 2.0) < 1e-9, [on, off])
+	var plain := float(XSmartAI.profile(a, yun).multiplier)
+	var slot := a.equip_slots().find(int(XDB.rec("Armors", XToji.ARMOR).get("etypeId", 0)))
+	logic.state.gain_gear("armor", XToji.ARMOR, 1)  # 同 recruit：生成一件装进它的槽
+	a.equips[slot] = logic.state.gear.pop_back()
+	a.refresh_passive()
+	check("local_ai.weapon", XToji.weapon(a) and absf(XSmartAI.profile(a, yun).multiplier / plain - 1.11) < 1e-9, [plain, XSmartAI.profile(a, yun)])
+	var hero: XActor = logic.state.actor(1)
+	check("local_ai.other_actor", XSmartAI.profile(hero, yun).is_empty() and XSmartAI.profile(hero, XDB.rec("Skills", 10213)).is_empty()
+		and ai.safe_damage(hero, logic.enemies[0], yun) == 0.0)
+	check("local_ai.no_profile", XSmartAI.profile(a, XDB.rec("Skills", 10212)).is_empty() and XSmartAI.profile(a, XDB.rec("Skills", 10220)).is_empty()
+		and XSmartAI.profile(a, XDB.rec("Skills", 1)).is_empty())
+	var draws := logic.random.rule.draws
+	XSmartAI.choose(logic, a)
+	check("local_ai.readonly", logic.random.rule.draws == draws and XToji.current_shape(a) == 0 and not XToji.SHAPES.any(func(id): return a.state_ids.has(id))
+		and XToji.action.is_empty(), [logic.random.rule.draws, draws, XToji.action])
+	logic.end_battle(0)
+
+
 func _run() -> void:
 	var ref = XDB.load_json(ORACLE)
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
@@ -321,6 +355,7 @@ func _run() -> void:
 				_script(c)
 	check("covers_all", seen == 11, seen)
 	_local()
+	_local_ai()
 	finish()
 
 
