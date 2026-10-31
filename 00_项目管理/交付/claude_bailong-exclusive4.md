@@ -1,7 +1,7 @@
 # 交付：claude/bailong-exclusive4
 
 - 车道／工作者：C 规则·机制（角色专属养成）／白龙_6（Claude）
-- 状态：进行中
+- 状态：可合并
 - 分支基于 claude/bailong-exclusive3 末端（期三已并入 main，dev.231）。
 
 ## 变更记录草稿
@@ -35,9 +35,9 @@
 
 ## 验证
 
-- 专项：`xiyou_raven_soul` 97/97（本地）。
-- 选测：待写
-- 同步：待写
+- 专项：`xiyou_raven_soul` 97/97；直接相关 `xiyou_actor_modules` 56/56、`xiyou_advance_reads` 8/8、`xiyou_mira_battle` 285/285（本地，同步之后，日志 `04_验证/本地结果/并行测试/20261031_050309_fk30unuf`）。
+- 选测：改了 `battler.gd`／`xstate.gd`／`advance.gd`，云端选测 80 个场景（基准 GitHub main 分叉点 e85f20c3，9 片）全部通过、无偶发（提交 8eda1595，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41167516364）。最后的 report 作业 3 秒失败、没有日志（疑似本月 Actions 额度到顶），结果引用没写回，`云端选测.py wait` 因此等不到；通过与否是下载 9 片的 result-shard-*.json 逐片汇总的（failed／flaky 全空）。
+- 同步：本工作树 `同步正式西游.py --accept-additions` 退出 0、「测量不变」（`04_验证/本地结果/白龙6_同步3.log`；第一次同步报 alien_affix／events 用例数变化，是合并 main 之后 main 又前进、--补齐 拷来的参照比代码新，再合一次 main 后消失）。
 
 ## 待交叉核查（改了原沙僧核心文件）
 
@@ -53,3 +53,6 @@
 
 - fa487612 渡鸦灵魂积累与铸印：XRaven 第二期、存档 codexRaven、raven_soul_probe 参照与专项
 - 1d8e3318 合并 main
+- 6c682cc6 交付单草稿
+- 8eda1595 合并 main
+- （本提交）交付单
