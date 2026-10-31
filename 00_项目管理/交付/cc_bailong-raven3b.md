@@ -1,7 +1,7 @@
 # 交付：cc/bailong-raven3b
 
 - 车道／工作者：E 角色专属／白龙_8（cc，项目线程「完成再刷西游Godot引擎重制」，接白龙_7）
-- 状态：选测在跑（跑完改「可合并」）
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -29,8 +29,8 @@ startTurn／endTurn／endBattle 第 1074～1095 行，伤害钩子 raven 第 111
 
 - 专项 xiyou_raven_battle 356/356、xiyou_mira_battle 287/287（本机单跑）。
 - 反向验证三轮，都已还原：①收割不乘 1.5、回合结束不加残响、冥羽连葬不加次数、神话之力不进伤害钩子、得魂不续期一起改，45 项失败；②收割倍率、连葬次数、夜蚀余烬不附加侵蚀、鸦啄不回 MP，56 项失败；③只改收割倍率与连葬次数，11 项失败（hunt.* 8、repeats.* 3）。
-- 相关战斗选测（本机，照 garou3 的 24 个场景口径加 xiyou_raven_battle，共 25 个）：在跑。
-- 没改切片、转换器、全量同步里的探针、界面，没跑同步与事件对照。分支从 main 3226cc85（已含 garou3 合并）切出，main 之后没有新提交，未再合。
+- 相关战斗选测（本机，并行 2，负载 30～40，用时 4622 秒）：照 garou3 的 24 个场景口径加 xiyou_raven_battle，共 25 个——xiyou_raven_battle、xiyou_garou_battle、xiyou_garou_progress、xiyou_actor_modules、xiyou_action_sequence、xiyou_alien_battle、xiyou_battle、xiyou_battle_gaps、xiyou_cat、xiyou_custom_damage、xiyou_mira_battle、xiyou_otb、xiyou_race_battle、xiyou_raven_soul、xiyou_rules 与 d1b／d1c／d1d、xiyou_smart_ai 与 _b／_c／_d、xiyou_sukuna_battle、xiyou_yomi_battle、xiyou_battle_events。24 个通过、无偶发；xiyou_raven_soul 的存档两项（save.key、save.roundtrip）因 codexRaven 多了 residue／hunter 失败，是本期改了存档格式、测试期望没跟上，已把期望改成四个键（另核神话回合不存），单跑 97/97。xiyou_rules、xiyou_rules_d1c 用时 428／452 秒，超过上限一半（与本期无关，提示照录）。
+- 没改切片、转换器、全量同步里的探针、界面，没跑同步与事件对照。选测跑到一半合了 main f12657eb（garou3 收尾 dev.241、nezha-rollback1，只碰 battle_scene／pets／map_transfer／help_card 的回退开关常量，没碰战斗逻辑与渡鸦），没重跑。
 
 ## 交接板
 
@@ -59,3 +59,6 @@ startTurn／endTurn／endBattle 第 1074～1095 行，伤害钩子 raven 第 111
 - 94653997 XRaven 战斗内机制与专项
 - ea808a73 专项 356/356、米拉 G3 测试
 - 951ed6a4 补 xiyou_raven_battle.gd.uid
+- 9c8262a3 交付单草稿
+- f12657eb 合并 main
+- 本提交：raven_soul 存档期望跟上、交付单可合并
