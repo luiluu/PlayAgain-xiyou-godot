@@ -332,6 +332,7 @@ func skill_cost(a: XBattler, skill: Dictionary, panel := false) -> Dictionary:
 		reduce = minf(reduce, 100.0)
 		cost.mp = floori(cost.mp * (1.0 - reduce / 100.0))
 		cost.tp = floori(cost.tp * (1.0 - reduce / 100.0))
+	cost = {"mp": XMira.cost(a, skill, int(cost.mp)), "tp": XMira.cost(a, skill, int(cost.tp))}  # 米拉禁忌 skillMpCost／skillTpCost 包装：主动技 ×0.75
 	if not panel and XAlienBattle.silence_skill(a, skill):
 		cost.mp = 0  # 异化缄默 skillMpCost 包装（Adv:132）：选定技能不花 MP，改锁生命上限
 	return {"mp": XRaceBattle.cost(a, int(cost.mp)), "tp": XRaceBattle.cost(a, int(cost.tp))}
@@ -363,6 +364,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if not wtype_ok(a, skill):
 		return false
 	if not XYomiJingliu.meets(a, skill):  # 黄泉 meetsSkillConditions：残梦不满 9 不能用 10174
+		return false
+	if not XMira.meets(a, skill):  # 米拉 meetsSkillConditions：人形／黑龙技按形态、解放的进阶与等级、劫焰不能单放
 		return false
 	if XAlienBattle.blocks_skill(a, skill):  # 异化逆祷 meetsSkillConditions：模板外的伤害技能不能用
 		return false
@@ -583,6 +586,7 @@ func start_turn() -> void:
 		if int(pages[i].get("span", 0)) == 1:
 			_event_flags.erase(i)
 	_cleared.clear()
+	XMira.start_turn()  # 米拉 BattleManager.startTurn 包装：清劫火累计
 	turn += 1
 	# YEP_X_SkillCooldowns：Game_Troop.increaseTurn 时双方冷却/预热各减 1
 	for b in actors + enemies:
@@ -652,7 +656,9 @@ func act(u: XBattler, skill, target) -> Array:
 	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
 	_acted[u] = int(_acted.get(u, 0)) + 1
 	if started:
+		XMira.pay_hp(u, skill)  # 米拉 endAction 包装（原 endAction 之前）：禁忌生命代价
 		_tick_states(u, 1)
+		XMira.liberate(self, u, skill)  # 米拉 endAction 包装（原 endAction 之后）：解放·黑龙
 	_sync_orders(before, true)
 	resolve_collapses()
 	return logs
@@ -665,6 +671,7 @@ func end_turn() -> Array:
 	_acted.clear()
 	XAlienBattle.spread_pest(self)  # 异化疫囊 endTurn 包装（原 endTurn 之前）：传播异常与减益
 	XCat.end_turn(self)  # BattleManager.endTurn 的小猫剑圣包装：删过期的识破／剑痕
+	logs.append_array(XMira.end_turn(self))  # 米拉 endTurn 包装（原 endTurn 之前）：修雷德劫火追加
 	logs.append_array(XPetCapture.end_turn(self))  # Star_PetSystem 的 endTurn 包装：第 5 回合可捕捉的敌人逃跑
 	for b in actors + enemies:
 		turn_end_battler(b, logs)
@@ -703,6 +710,7 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 	XStateEffects.run("turn_end", b)
 	b.decay_shield()  # ShieldSystem 包在 regenerateAll 最外层，倒下的也衰减
 	b.param_mark_dirty()
+	XMira.turn_end(self, b, logs)  # 米拉 Game_Actor.onTurnEnd 包装（之后）：不灭龙血回 5%
 
 
 ## 无界面测试用：跑完一整个回合。commands: actor -> [技能, 目标]（[null, null] 表示放弃）。
@@ -984,7 +992,9 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 		XRaceBattle.finish(self, logs)
 		XCat.end_action(self, u, skill)
 		XAlienBattle.finish(self, logs)
+		XMira.pay_hp(u, skill)
 		_tick_states(u, 1)
+		XMira.liberate(self, u, skill)
 		_sync_orders(before, true)
 	return logs
 
@@ -1227,6 +1237,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		# 异化 paySkillCost 包装：缄默先锁生命上限（付不起整次不付 MP／TP），饕餮的 MP 费用从饥饿储备扣
 		if XAlienBattle.pay_silence(self, u, skill):
 			XYomiJingliu.pay(u, skill)  # 黄泉 paySkillCost 包装：10174 扣 9 层残梦
+			XMira.pay(u, skill)  # 米拉禁忌 paySkillCost 包装：登记生命代价
 			if XAlienBattle.glutton_mp(u) != null:
 				XAlienBattle.pay_glutton(u, c.mp)
 			else:
@@ -1523,6 +1534,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	_action_resources.boss_output.leave_action()
 	_action_resources = previous_resources
 	XZhenqi.pojia_actor = before
+	XMira.after_apply(u, skill, t, r)  # 米拉 Game_Action.apply 包装：记劫火累计
 	return r
 
 
@@ -1808,6 +1820,8 @@ func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int, ali
 			return
 		if not alien_routed and XAlienBattle.route_buff(self, t, pid, buff, turns):
 			return  # 异化 addBuff／addDebuff 包装：绝缘拒收外来、舍身增益转给队友、囚厄接收队友减益
+		if not buff and XMira.blocks_debuff(t):
+			return  # 米拉终焉 addDebuff 包装
 		if t.buffs[pid] != t.buff_limit(pid, buff):
 			t.buffs[pid] += 1 if buff else -1
 		if t.buffs[pid] != 0 and t.buff_turns[pid] < turns:
@@ -2085,6 +2099,7 @@ func end_battle(result := -1) -> void:
 	XAlienBattle.end(self, result)  # 异化 endBattle 包装：胜利补发、结算、清锁队
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
+	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	# ShieldSystem Scene_Battle.terminate：全队与敌群护盾清零
 	for e in enemies:
