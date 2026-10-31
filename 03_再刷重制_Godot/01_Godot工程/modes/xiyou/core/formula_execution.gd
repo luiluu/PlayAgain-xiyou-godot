@@ -43,6 +43,8 @@ static func _run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swi
 		return {"available": true, "value": XSukuna.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "toji":  # CodexToji.damage(a,b,id,this)（171 甚尔，XToji.formula）
 		return {"available": true, "value": XToji.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
+	if status == "module" and program.get("module") == "jingliu":  # CodexJingliu.damage(a,b,id)（170 镜流，XYomiJingliu.j_formula）
+		return {"available": true, "value": XYomiJingliu.j_formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "yomi":  # CodexYomi.damage(a,b,id)（169 黄泉，XYomiJingliu.formula）
 		return {"available": true, "value": XYomiJingliu.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "raven":  # 渡鸦 5 个伤害技能的整条公式（167，XRaven.formula）

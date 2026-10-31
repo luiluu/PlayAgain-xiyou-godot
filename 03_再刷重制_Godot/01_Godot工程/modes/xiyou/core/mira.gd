@@ -282,8 +282,7 @@ static func end_turn(logic) -> Array:
 		if t == null or t.is_dead() or extra <= 0.0:
 			continue
 		var before: float = t.hp
-		t.hp = maxf(0.0, t.hp - extra)
-		t.refresh_resources()
+		logic.gain_hp(t, -extra)  # gainHp（审查第 14 期 P3：原来直接写 hp，绕过异化与连命等路由）
 		logs.append({"type": "regen", "target": t, "hp": before - t.hp, "views": logic.views([t])})
 		if t.is_dead():
 			logs.append({"type": "collapse", "target": t, "views": logic.views([t])})
