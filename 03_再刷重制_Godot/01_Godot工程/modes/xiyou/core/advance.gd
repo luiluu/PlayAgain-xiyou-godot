@@ -129,6 +129,7 @@ static func advance(s: XState, a: XActor) -> bool:
 		s.gain_item(int(p[0]), -int(p[1]))
 	a.refresh_passive()
 	XRaven.after_advance(s, a, previous)  # 渡鸦 onConfirmOk 包装：灵魂清零、重排技能、再判铸印
+	XToji.after_advance(a)  # 甚尔 onConfirmOk 包装：进阶后 repair（杰作·霸王血铠、武器库）
 	return true
 
 

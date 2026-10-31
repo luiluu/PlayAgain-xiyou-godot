@@ -664,6 +664,10 @@ func param(i: int) -> float:
 func param_before_alien(i: int) -> float:
 	return XCat.param(self, i, XActorModules.param(self, i, super.param(i)))
 
+## 专属角色模块之内的原值（甚尔天与咒缚读原 MP／魔攻：原版 oldParam.call(this, 1／4)）
+func param_native(i: int) -> float:
+	return super.param(i)
+
 ## 永久写能力属于当前真实实例；影子克隆虽保留actor_id，也不能借它写真实账本。
 func can_add_param() -> bool:
 	if XState.current == null or XState.current.actors.get(actor_id) != self:
