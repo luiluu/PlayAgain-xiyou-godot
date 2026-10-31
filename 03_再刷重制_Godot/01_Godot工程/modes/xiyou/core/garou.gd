@@ -220,6 +220,7 @@ static func boss_meter(enemy_id: int) -> bool:
 
 ## BattleManager.startBattle 包装：同步一次，记下出战栏里的饿狼（胜利时只给他记突破）
 static func start_battle(actors: Array) -> Variant:
+	clear_battle()  # G.clearBattle（开战）
 	var a = null
 	for b in actors:
 		if own(b):
@@ -432,3 +433,188 @@ static func from_save(v) -> Dictionary:
 	if not v is Dictionary:
 		return {}
 	return {"breakthroughs": float(v.get("breakthroughs", 0)), "catalyst": bool(v.get("catalyst", false))}
+
+
+# ---- 第三期：战斗内被动（进化、解析、反击、追击，参照 garou_battle_probe）----
+## 破限之心每层进化另加（G.config.stages[*].relic.evolution_bonus_per_stack_percent，按当前形态、戴着法宝才加）
+const RELIC_EVOLUTION := [3, 5, 7, 11, 15, 18, 22]
+const WATER := 10250
+const MODE := 10262
+const SERIOUS := 10263
+## 每个形态的主拳（G.main）：追击、反击借它的熟练度（重制没有熟练度，只记）
+const MAIN := [10250, 10251, 10252, 10253, 10255, 10255, 10259]
+## G.config.skills 的 stage（未到形态不能用）
+const SKILL_STAGE := {10250: 0, 10251: 1, 10252: 2, 10253: 3, 10254: 3, 10255: 4, 10256: 4, 10257: 5, 10258: 4, 10259: 6,
+	10260: 6, 10261: 6, 10262: 6, 10263: 6}
+## 原版 33% 反击（Math.random() < .33）
+const COUNTER_RATE := 0.33
+
+## 战斗数据（a._garouEvolution／_garouAnalysis／_garouReceivedThisRound／_garouSaitama）：开战、结束战斗清空
+static var evolution := 0
+static var analysis := {}
+static var received := false
+static var saitama := false
+## 施放帧（action._garouFrame）：施放开始时的进化层、各目标第一次被打时的解析层、是否命中与伤害
+static var frame := {}
+
+
+static func is_fist(item) -> bool:
+	return item is Dictionary and SKILL_STAGE.has(int(item.get("id", 0))) and not XBattleLogic.is_item(item)
+
+
+static func _hp_damage(item: Dictionary) -> bool:
+	return int(item.get("damage", {}).get("type", 0)) == 1
+
+
+## G.form 包装后的被动开关（学了对应被动才开）：反击 10265、进化 10266、解析 10267、追击 10268
+static func passives(a) -> Dictionary:
+	var st := stage(a)
+	var p: Array = FORM_PASSIVES[st]
+	var learned := func(id): return a != null and a.skill_ids.has(id)
+	var ana: bool = p[2] and learned.call(10267)
+	return {"counter": learned.call(10265), "evolution": p[0] and learned.call(10266), "evolution_percent": int(p[1]),
+		"analysis": ana, "def_percent": int(p[3]) if ana else 0, "mdf_percent": int(p[4]) if ana else 0,
+		"followup": st >= 4 and learned.call(10268)}
+
+
+static func clear_battle() -> void:
+	evolution = 0
+	analysis = {}
+	received = false
+	saitama = false
+	frame = {}
+
+
+static func layers(b) -> int:
+	return int(analysis.get(b, 0))
+
+
+## G.addAnalysis：解析开着时给目标加一层，最多 3
+static func add_analysis(a, b) -> void:
+	if b == null or not passives(a).analysis:
+		return
+	analysis[b] = mini(3, layers(b) + 1)
+
+
+## G.beginAction（BattleManager.startAction）：任何人的行动都开新帧
+static func begin(u, skill) -> void:
+	frame = {"user": u, "skill": skill, "evolution": evolution, "targets": [], "finished": false, "triggered": ""}
+
+
+## G.targetRow：本帧对这个目标的记录（第一次碰到时记下解析层）
+static func target_row(b) -> Dictionary:
+	for row in frame.get("targets", []):
+		if is_same(row.target, b):
+			return row
+	var row := {"target": b, "analysis": layers(b) if own(frame.get("user")) else 0, "hit": false, "damage": 0.0}
+	if not frame.is_empty():
+		frame.targets.append(row)
+	return row
+
+
+## 伤害钩子 garou（CodexDamageHooks）：解析无视物防／魔防、按公式定物理／混合、进化增伤
+static func damage_ops(item: Dictionary, a, b) -> Array:
+	if not own(a) or not is_fist(item):
+		return []
+	var id := int(item.id)
+	var p := passives(a)
+	var in_frame := not frame.is_empty() and is_same(frame.user, a)
+	var n: int = target_row(b).analysis if in_frame and b != null else layers(b)
+	var e: int = int(frame.evolution) if in_frame else evolution
+	if not p.evolution:
+		e = 0
+	var extra: int = RELIC_EVOLUTION[stage(a)] if gear(a) != null else 0
+	var c: Array = COEFF.get(id, [0.0, 0.0])
+	return [{"op": "mul", "field": "physicalDefenseRate", "value": 1.0 - minf(0.99, n * p.def_percent / 100.0)},
+		{"op": "mul", "field": "magicalDefenseRate", "value": 1.0 - minf(0.99, n * p.mdf_percent / 100.0)},
+		{"op": "set", "field": "mode", "value": "mixed" if float(c[1]) != 0.0 and float(c[0]) != 0.0 else ("magical" if float(c[1]) != 0.0 else "physical")},
+		{"op": "mul", "field": "skillMultiplier", "value": 1.0 + e * (int(p.evolution_percent) + extra) / 100.0}]
+
+
+## Game_Action.apply 包装：本帧（不是追击／反击）记命中与伤害；模式：琦玉命中自己开琦玉模式
+static func applied(u, skill: Dictionary, t, r: Dictionary, used: bool) -> void:
+	var hit: bool = used and not bool(r.get("missed", false)) and not bool(r.get("evaded", false))
+	if not frame.is_empty() and is_same(frame.user, u) and str(frame.triggered) == "":
+		var row := target_row(t)
+		row.hit = row.hit or hit
+		row.damage = float(row.damage) + maxf(0.0, float(r.get("hp", 0.0)))
+	if own(u) and int(skill.get("id", 0)) == MODE and is_same(t, u) and hit:
+		saitama = true
+
+
+## itemCnt 包装：饿狼不被原生反击
+static func no_counter(t) -> bool:
+	return own(t)
+
+
+## meetsSkillConditions 包装：未到形态的拳法、追击不能用；认真一拳要琦玉模式（输入阶段已排了模式：琦玉的不做，重制没有预排）
+static func meets(a, skill: Dictionary) -> bool:
+	if not own(a) or not is_fist(skill):
+		return true
+	var id := int(skill.id)
+	if int(SKILL_STAGE[id]) > stage(a) or id == TRIGGERED:
+		return false
+	return id != SERIOUS or saitama
+
+
+## G.trigger：追击／反击，直接 apply（不经 startAction／endAction）；返回战斗记录
+static func trigger(logic, a, b, id: int, kind: String, evo := -1) -> Array:
+	if a == null or b == null or not a.is_alive() or not b.is_alive():
+		return []
+	var saved := frame
+	frame = {"user": a, "skill": XDB.rec("Skills", id), "evolution": evolution if evo < 0 else evo, "targets": [], "finished": false, "triggered": kind}
+	var used: bool = b.is_alive()
+	var r: Dictionary = logic.apply(a, XDB.rec("Skills", id), b)
+	r[kind] = true
+	if kind == "counter" and used and not r.missed and not r.evaded:
+		add_analysis(a, b)
+	frame = saved
+	return logic.mark_views([r])
+
+
+## G.finishAction（BattleManager.endAction 之前）
+static func finish(logic, u, skill) -> Array:
+	var logs := []
+	if frame.is_empty() or bool(frame.finished) or not is_same(frame.user, u):
+		return logs
+	var f: Dictionary = frame
+	f.finished = true
+	if not skill is Dictionary or skill.is_empty():
+		return logs
+	if own(u) and is_fist(skill) and _hp_damage(skill):
+		var p := passives(u)
+		var hit := false
+		for row in f.targets:
+			if not row.hit:
+				continue
+			hit = true
+			if p.followup and int(row.analysis) == 3:
+				logs.append_array(trigger(logic, u, row.target, TRIGGERED, "followup", int(f.evolution)))
+			add_analysis(u, row.target)
+		if hit and p.evolution:
+			evolution = mini(3, evolution + 1)
+		if hit and int(skill.id) == WATER and u.is_alive():
+			u.tp = minf(u.max_tp(), u.tp + 20.0)  # gainSilentTp(20)：每次完整施放命中一次
+	elif u is XEnemy and _hp_damage(skill):
+		for row in f.targets:
+			var b = row.target
+			if not own(b) or not row.hit:
+				continue
+			var p := passives(b)
+			if float(row.damage) > 0.0:
+				if p.evolution and not received:
+					evolution = mini(3, evolution + 1)
+					received = true
+				add_analysis(b, u)
+			if b.is_alive() and p.counter and logic._float("garou_counter") < COUNTER_RATE:
+				logs.append_array(trigger(logic, b, u, WATER, "counter"))
+	if own(u) and int(skill.id) == SERIOUS:
+		saitama = false
+	return logs
+
+
+## Game_Actor.onTurnEnd 包装（之后）：清本回合受过伤与琦玉模式
+static func turn_end(b) -> void:
+	if own(b):
+		received = false
+		saitama = false
