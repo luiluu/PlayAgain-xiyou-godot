@@ -1,0 +1,21 @@
+{
+ "sha": "4a0d9fc3199c37169ee110a11ed13f1396a092e2",
+ "branch": "ci/claude/wukong-battle-gaps",
+ "mode": "full",
+ "base": "origin/main（分叉点 c758dd6229）",
+ "passed": true,
+ "scenes": 268,
+ "failed": [],
+ "flaky": [
+  "xiyou_floor_reach080.tscn"
+ ],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 6,
+ "longestShardSeconds": 2154.1,
+ "testSeconds": 16682,
+ "generatedRef": "refs/ci/generated/claude/wukong-battle-gaps",
+ "generatedCommit": "e1bc7d7766cfac96623092288d31daad0e3b8a8d",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41163867333",
+ "time": "2026-10-31T03:57:26+00:00"
+}
