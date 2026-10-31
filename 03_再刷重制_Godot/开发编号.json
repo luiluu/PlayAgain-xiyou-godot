@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.235",
-  "sequence": 235,
-  "next": "dev.236",
-  "nextSequence": 236,
+  "current": "dev.236",
+  "sequence": 236,
+  "next": "dev.237",
+  "nextSequence": 237,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "wukong-battle-gaps",
+  "currentChange": "bajie-sukuna2",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
