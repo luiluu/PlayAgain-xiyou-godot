@@ -1,7 +1,8 @@
 extends Node
 ## 事件脚本翻译（MVScript）与开局用到的解释器指令：直接拿正式版的公共事件当输入。
 ## 所有角色学技能的几种循环（839/1319/1345/1443/1435）、固定存档位存档（公共事件 1，成功与失败）、
-## prompt 输入名字、DCultyL 标记、随机伙伴魂灯（1344：变量取物品＋标签跳转＋提示）、插件指令设难度、增减技能（318）。
+## prompt 输入名字、DCultyL 标记、随机伙伴魂灯（1344：变量取物品＋标签跳转＋提示）、插件指令设难度、增减技能（318）；
+## 条件分歧 9／10 武器／防具（背包有、只穿在身上、含不含装备）。
 
 var results := []
 var saved: Array = []
@@ -51,6 +52,31 @@ func script(code: String) -> Array:
 
 func _ready() -> void:
 	_run.call_deferred()
+
+
+## 条件分歧 9／10 武器／防具 [9|10, 底材编号, 含装备]（YEP_ItemCore hasItem＋isAnyMemberEquipped；审查 10-31 D3）：
+## 开局四人，给第一人穿上武器、防具各一件、背包清掉这两种底材，再逐支构造：只穿在身上、背包里有一件、都没有
+func _gear_conditions() -> void:
+	var g := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = g
+	# 开局队员身上还是空的：给第一人穿上一件武器 4、防具 2 的实例（不进背包）
+	var w := XGear.create("weapon", 4, g)
+	var ar := XGear.create("armor", 2, g)
+	g.members()[0].equips = [w, ar]
+	var wb := int(w.base)
+	var ab := int(ar.base)
+	g.gear = g.gear.filter(func(e): return int(e.base) not in [wb, ab])
+	var it := MVInterpreter.new(self, 0, 0, [])
+	# 只穿在身上：不含装备→假，含装备→真（防具同）
+	check("cond9_worn_only", not it._condition([9, wb, false]) and it._condition([9, wb, true]), [wb, g.gear_count("weapon", wb)])
+	check("cond10_worn_only", not it._condition([10, ab, false]) and it._condition([10, ab, true]), [ab, g.gear_count("armor", ab)])
+	# 背包里有一件：不含装备也真
+	g.gain_gear("weapon", wb, 1)
+	g.gain_gear("armor", ab, 1)
+	check("cond9_bag", it._condition([9, wb, false]) and it._condition([9, wb, true]), g.gear_count("weapon", wb))
+	check("cond10_bag", it._condition([10, ab, false]) and it._condition([10, ab, true]), g.gear_count("armor", ab))
+	# 背包、身上都没有：两种都假（1764 不在开局队身上）
+	check("cond10_absent", not it._condition([10, 1764, true]) and not it._condition([10, 1764, false]))
 
 
 func _run() -> void:
@@ -134,6 +160,8 @@ func _run() -> void:
 	messages.clear()
 	check("roster_super", (await script(roster_js % "super")).is_empty() and messages.size() == 1 and str(messages[0].lines[0]).ends_with("超强者名单（49人）")
 		and messages[0].lines.any(func(l): return str(l).contains("（停用）")) and messages[0].lines.all(func(l): return str(l).length() <= 24 or not str(l).contains("、")), messages)
+	_gear_conditions()
+	XState.current = s
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)

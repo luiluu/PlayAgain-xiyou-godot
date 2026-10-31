@@ -60,7 +60,7 @@ const SAFE_HUD_ACTIONS := true
 const RERUN_AFTER_PAGE := {"4:36:2": true}
 ## O-117：乘飞艇时（含升降中）地图传送按钮不可用、不能开始挂机。原版 MapTransferPlugin 与 XdRs_HangUp 都不看载具，
 ## 飞行中能把飞艇带进楼层地图、越墙降落，挂机还会带着飞艇乱飞。设 false 恢复原版。
-const SAFE_AIRSHIP_MENU := true
+static var SAFE_AIRSHIP_MENU := true  # O-117；测试要切回原版，用 static var
 ## Game_Vehicle.maxAltitude：飞艇升到 48 才能飞（canMove 要 isHighest），降到 0 才算下完
 const AIRSHIP_MAX_ALTITUDE := 48
 ## 飞艇影子（Spriteset_Map.createShadow：system/Shadow1，锚点底边中点，z 6 在飞艇 z 5 之上）；挂在飞艇精灵下跟着它的格子位置，
