@@ -317,19 +317,78 @@ func vars() -> Array:
 static func is_item(rec: Dictionary) -> bool:
 	return rec.has("itypeId")
 
+## YEP_SkillCore 的消耗备注（逐行、冒号后恰一个空格、只认整数）：<MP Cost: n> 改基础 MP、<MP Cost: n%> 记最大 MP 比例，TP 同理。
+## 「<MP Cost: 7.5%>」这类带小数的写法原版认不出（7225 降众天华比例为 0），照原版。按备注缓存
+static var _note_cost_cache := {}
+static func note_costs(skill: Dictionary) -> Dictionary:
+	var note := str(skill.get("note", ""))
+	if not _note_cost_cache.has(note):
+		var out := {}
+		for line in note.split("\n"):
+			for kind in ["MP", "TP"]:
+				var m := RegEx.create_from_string("(?i)<(?:%s COST):[ ](\\d+)>" % kind).search(line)
+				if m != null:
+					out[kind.to_lower() + "Cost"] = int(m.get_string(1))
+					break
+				m = RegEx.create_from_string("(?i)<(?:%s COST):[ ](\\d+)([%%％])>" % kind).search(line)
+				if m != null:
+					out[kind.to_lower() + "CostPer"] = float(m.get_string(1)) * 0.01
+					break
+		_note_cost_cache[note] = out
+	return _note_cost_cache[note]
+
+## 最大 MP 比例部分占整笔 MP 的份额（installSkillCostRuntime C.percentShare）
+static func percent_share(a: XBattler, skill: Dictionary) -> float:
+	var nc := note_costs(skill)
+	var per := float(nc.get("mpCostPer", 0.0))
+	if per <= 0.0:
+		return 0.0
+	var pct := a.mmp * per
+	var flat := maxf(0.0, float(nc.get("mpCost", skill.get("mpCost", 0))))
+	return pct / (pct + flat) if pct > 0.0 else 0.0
+
+## installSkillCostRuntime 第 5 节：最大 MP 比例部分的合计减耗下限 −100%（挑战加耗最多 ×2）
+const PERCENT_FLOOR := -100.0
+
+## 实扣与显示共用的费用（Game_Actor.skillMpCost／skillTpCost 全链）。
+## installSkillCostRuntime 最后安装、在最外层：角色的技能带最大 MP 比例且合计减耗低于 −100% 时，按原减耗与按下限各算一次，
+## 再按比例部分的份额合成（固定部分、TP 不变）。
 ## panel：异化缄默的面板费用（A.panelMpCost：mcr 记 1、不按缄默归零）
 func skill_cost(a: XBattler, skill: Dictionary, panel := false) -> Dictionary:
+	var cost := _skill_cost(a, skill, panel, 0.0)
+	if panel or not (a is XActor) or is_item(skill):
+		return cost
+	var share := percent_share(a, skill)
+	var r := consume_reduce(a, skill)
+	if share <= 0.0 or r >= PERCENT_FLOOR:
+		return cost
+	var floored := _skill_cost(a, skill, panel, PERCENT_FLOOR - r)
+	cost.mp = maxi(0, floori(floored.mp + (cost.mp - floored.mp) * (1.0 - share)))
+	return cost
+
+## dsPassiveSkill 减耗：指定技能＋类型（1 战技、2 魔法）＋全体，相加后封顶 100（只算角色）
+static func consume_reduce(a: XBattler, skill: Dictionary, shift := 0.0) -> float:
+	if not (a is XActor):
+		return 0.0
+	var cache: Dictionary = a.passive_cache().get("consumeReduce", {})
+	var reduce := float(cache.get("bySkill", {}).get(int(skill.get("id", 0)), 0))
+	var stype := int(skill.get("stypeId", 0))
+	if stype in [1, 2]:
+		reduce += float(cache.get("byType", {}).get("Zj" if stype == 1 else "Mf", 0))
+	reduce += float(cache.get("all", 0)) + shift
+	return minf(reduce, 100.0)
+
+## shift：加到全体减耗上的量（下限那一遍用）
+func _skill_cost(a: XBattler, skill: Dictionary, panel: bool, shift: float) -> Dictionary:
 	if is_item(skill):
 		return {"mp": 0, "tp": 0}
-	var cost := {"mp": floori(float(skill.get("mpCost", 0)) * (1.0 if panel else a.mcr)), "tp": int(skill.get("tpCost", 0))}
+	var nc := note_costs(skill)
+	# YEP skillMpCost：(基础＋最大MP×比例)×mcr 向下取整、不低于 0；skillTpCost：基础＋最大TP×比例 向下取整
+	var mp := float(nc.get("mpCost", skill.get("mpCost", 0))) + a.mmp * float(nc.get("mpCostPer", 0.0))
+	var tp := float(nc.get("tpCost", skill.get("tpCost", 0))) + a.max_tp() * float(nc.get("tpCostPer", 0.0))
+	var cost := {"mp": maxi(0, floori(mp * (1.0 if panel else a.mcr))), "tp": maxi(0, floori(tp))}
 	if a is XActor:
-		var cache: Dictionary = a.passive_cache().get("consumeReduce", {})
-		var reduce := float(cache.get("bySkill", {}).get(int(skill.get("id", 0)), 0))
-		var stype := int(skill.get("stypeId", 0))
-		if stype in [1, 2]:
-			reduce += float(cache.get("byType", {}).get("Zj" if stype == 1 else "Mf", 0))
-		reduce += float(cache.get("all", 0))
-		reduce = minf(reduce, 100.0)
+		var reduce := consume_reduce(a, skill, shift)
 		cost.mp = floori(cost.mp * (1.0 - reduce / 100.0))
 		cost.tp = floori(cost.tp * (1.0 - reduce / 100.0))
 	cost = {"mp": XMira.cost(a, skill, int(cost.mp)), "tp": XMira.cost(a, skill, int(cost.tp))}  # 米拉禁忌 skillMpCost／skillTpCost 包装：主动技 ×0.75
