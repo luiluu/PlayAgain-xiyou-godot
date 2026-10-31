@@ -43,7 +43,7 @@
     "editorStartupVerified": true,
     "visibleProjectManagerVerified": true,
     "runnableBuildKind": "playable_slice",
-    "developmentVersion": "dev.233",
+    "developmentVersion": "dev.234",
     "developmentRegistry": "03_再刷重制_Godot/开发编号.json",
     "deferredPlatforms": [
       "Windows",
@@ -68,7 +68,7 @@
     "sourceId": "legacy_xiyou_mod_kyo",
     "releaseVersion": "v0.28",
     "contentPath": "/Users/kyo/Applications/再刷一把：西游（mod_KYO）.app/Contents/Resources/app.nw",
-    "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261031_041455_998033_v0.28-v0.28/当前西游来源清单.json",
+    "fingerprint": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261031_041825_775240_v0.28-v0.28/当前西游来源清单.json",
     "fingerprintedFiles": 2142,
     "convertedContentReleaseVersion": "v0.28",
     "uiReferenceReleaseVersion": "mixed:v0.05,v0.08,v0.10,v0.13,v0.15(help_cards,difficulty_notice),v0.16(options,hangup_options),v0.17(hangup_subpages),v0.27(shop_buy),v0.28(gear_search,status_power,equip_compare)",
