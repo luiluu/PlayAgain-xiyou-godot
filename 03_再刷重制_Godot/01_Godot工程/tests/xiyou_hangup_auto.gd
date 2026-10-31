@@ -125,6 +125,7 @@ func _run() -> void:
 	var manifest: Dictionary = XDB.load_json("manifest.json")
 	check("source_identity", ref.sourceIdentity.runtimeInputs == manifest.runtimeInputs and ref.sourceIdentity.releaseVersion == manifest.releaseVersion)
 	rules(ref)
+	_rollback_rules()
 	var s := fixture()
 	s.items = {1: 9, 2: 8, 137: 7}
 	for kind in ["actors_count", "counts", "medication", "sell", "hp", "mp"]:
@@ -260,8 +261,81 @@ func _run() -> void:
 	XHangUp.stop(s)
 	map.hang_overlay.refresh()
 	check("panel_clears_on_stop", map.hang_overlay._lines.is_empty())
+	# O-022 回退（CLEAR_SUMMARY = false）：原版 drawHMPU 只清 (120,0,120,28)，状态变了旧文字还在；停止挂机后上一段摘要仍留着叠画
+	XHangUpOverlay.CLEAR_SUMMARY = false
+	XHangUp.ready_start(s, true, Vector2i(s.x, s.y))
+	map.hang_overlay.refresh()
+	var shown: Dictionary = map.hang_overlay._lines.duplicate(true)
+	XHangUp.stop(s)
+	map.hang_overlay.refresh()
+	check("panel_keeps_old_text_original", not shown.is_empty() and map.hang_overlay._lines.is_empty()
+		and not map.hang_overlay._summary_history.is_empty() and same(map.hang_overlay._summary_history[-1], shown), map.hang_overlay._summary_history)
+	XHangUpOverlay.CLEAR_SUMMARY = true
 	map.queue_free()
 	await frames()
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## 回退支（规则层，不开画面）：
+## - O-020 SAVE_ORDER = false：排列只在本次运行的全局表里，存读档后「重开游戏」（清全局表）再打开顺序页会重排成 1～N
+## - O-023 CONSISTENT_ORDER = false：技能次数减少时不重建已排的顺序，回合表里旧的那条（修003）留着
+## - O-021 SAFE_RECOVERY = false：阵亡角色也照吃回蓝药（对阵亡者无效），开着的回蓝药被吃光、法力不变
+func _rollback_rules() -> void:
+	var n_skills := {"修1": 2, "修2": 1}
+	for save in [true, false]:
+		if save:
+			XHangUpAuto.SAVE_ORDER = true
+		else:
+			XHangUpAuto.SAVE_ORDER = false  # 回退值写成字面量，回退开关覆盖.py 才认得
+		XHangUpAuto._order_temp = {}
+		var st := fixture()
+		st.hang_up.ActSkills = n_skills.duplicate()
+		st.hang_up.ActTemp = {}
+		var lg := XBattleLogic.new()
+		lg.state = st
+		var ol := XHangUpAuto.order_list(st, st.actor(8), XHangUpAuto.bet_skills(lg, st.actor(8)))
+		XHangUpAuto.move_earlier(st, ol, ol.order.size() - 1)
+		var moved: Array = ol.order.duplicate()
+		var loaded := XState.from_dict(JSON.parse_string(JSON.stringify(st.to_dict())))
+		XHangUpAuto._order_temp = {}  # 重开游戏：原版 ActSkilltemporary 是不存档的全局对象
+		var lg2 := XBattleLogic.new()
+		lg2.state = loaded
+		var again := XHangUpAuto.order_list(loaded, loaded.actor(8), XHangUpAuto.bet_skills(lg2, loaded.actor(8)))
+		var fresh := range(1, moved.size() + 1)
+		if save:
+			check("order_saved_after_restart", moved == [1, 3, 2] and again.order == moved, [moved, again.order])
+		else:
+			check("order_resets_after_restart_original", moved == [1, 3, 2] and again.order == fresh and (st.hang_up.ActTemp as Dictionary).is_empty(), [moved, again.order, st.hang_up.ActTemp])
+	XHangUpAuto.SAVE_ORDER = true
+	XHangUpAuto._order_temp = {}
+	for consistent in [true, false]:
+		if consistent:
+			XHangUpAuto.CONSISTENT_ORDER = true
+		else:
+			XHangUpAuto.CONSISTENT_ORDER = false  # 回退值写成字面量，回退开关覆盖.py 才认得
+		var st := fixture()
+		st.hang_up.ActSkills = n_skills.duplicate()
+		st.hang_up.ActTemp = {}
+		var lg := XBattleLogic.new()
+		lg.state = st
+		XHangUpAuto.order_list(st, st.actor(8), XHangUpAuto.bet_skills(lg, st.actor(8)))
+		var before: int = st.hang_up.ActSkill.size()
+		XHangUpAuto.change_count(st, st.actor(8), XDB.rec("Skills", 1), false)
+		if consistent:
+			check("count_reduce_rebuilds", before == 3 and st.hang_up.ActSkill.size() == 2 and not st.hang_up.ActSkill.has("修003"), st.hang_up.ActSkill)
+		else:
+			check("count_reduce_stale_original", before == 3 and st.hang_up.ActSkill.size() == 3 and st.hang_up.ActSkill.has("修003"), st.hang_up.ActSkill)
+	XHangUpAuto.CONSISTENT_ORDER = true
+	XHangUpAuto.SAFE_RECOVERY = false
+	var sr := fixture(true)
+	sr.actor(10).add_state(1)
+	sr.actor(10).mp = 100
+	sr.items[2] = 10
+	sr.hang_up.RecoveryHMP = {"HpV": 50, "MpV": 50, "GetHpArrItems": [], "GetMpArrItems": [[true, 2]]}
+	var lr := XBattleLogic.new()
+	lr.state = sr
+	XHangUpAuto.after_battle_recovery(sr, lr)
+	XHangUpAuto.SAFE_RECOVERY = true
+	check("dead_eats_mp_potions_original", sr.actor(10).mp == 100 and sr.item_count(2) == 0, [sr.actor(10).mp, sr.item_count(2)])

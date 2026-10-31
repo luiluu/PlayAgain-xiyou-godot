@@ -20,7 +20,7 @@ const TIP_SRC := Rect2(0, 0, 546, 88)
 const TIP_POS := Vector2(360, 100)
 const TEXT_COLOR := Color8(0, 200, 0)
 ## O-022：摘要随状态清除。false 按状态保留并叠画旧文字，恢复原版残留。
-const CLEAR_SUMMARY := true
+static var CLEAR_SUMMARY := true
 
 var inter: Control
 var tip: TextureRect
