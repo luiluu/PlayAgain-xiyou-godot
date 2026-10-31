@@ -807,6 +807,22 @@ def report_batch(root, pending, state):
           '再把没问题的车道重新合；只是检查本身的问题（偶发、环境）修好后重跑同一条 --finish 即可。', flush=True)
 
 
+def pushed_since(root, base, *commits):
+    """GitHub 跟踪分支上有没有 base 之后、又在 commits 任一条历史里的提交（＝本次合并已推上去）。
+    不靠 state 里的 mergeCommit：解析检查不过时停在 planned、没记 mergeCommit；推上去后又 amend 的，HEAD 不在远端
+    但旧的那版在，所以把 HEAD 和记下的合并提交都拿来比（沙僧第七期 T2）。没有跟踪分支时当没推送。"""
+    tracking = 'refs/remotes/github/main'
+    if subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', tracking], capture_output=True).returncode:
+        return False
+    remote = set(git(root, 'rev-list', tracking, '^' + base).split())
+    for c in filter(None, commits):
+        if subprocess.run(['git', '-C', str(root), 'cat-file', '-e', c + '^{commit}'], capture_output=True).returncode:
+            continue
+        if remote & set(git(root, 'rev-list', c, '^' + base).split()):
+            return True
+    return False
+
+
 def abort_batch(root, folder):
     """退回本批开始前的 main：先存备份引用，不删任何车道工作树；已推送到 GitHub 的批不能退。"""
     pending = load_batch(folder)
@@ -821,10 +837,8 @@ def abort_batch(root, folder):
         raise RuntimeError('有进行中的合并冲突，先 git merge --abort 或解决')
     if any(x.startswith('??') for x in porcelain(root)):
         raise RuntimeError('有未跟踪文件，先移走或提交，免得退回时丢失')
-    tracking = 'refs/remotes/github/main'
-    first = pending[0].get('mergeCommit') or pending[0]['head']
-    if (subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', tracking], capture_output=True).returncode == 0
-            and subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', first, tracking]).returncode == 0):
+    marks = [x.get('mergeCommit') or x.get('head') for x in pending] + [state and state.get('mergeCommit')]
+    if pushed_since(root, base, 'HEAD', *marks):
         raise RuntimeError('本批已推送到 GitHub，不能退回；改用新提交修复')
     stamp = time.strftime('%Y%m%d_%H%M%S')
     backup = 'refs/lane-merge/aborted-' + stamp
@@ -1006,10 +1020,7 @@ def abort_one(root, folder, task):
         raise RuntimeError('本条合并前的 main（%s）不在当前 main 历史里，先人工核对' % base[:9])
     if any(x.startswith('??') for x in porcelain(root)):
         raise RuntimeError('有未跟踪文件，先移走或提交，免得退回时丢失')
-    tracking = 'refs/remotes/github/main'
-    mc = state.get('mergeCommit')
-    if (mc and subprocess.run(['git', '-C', str(root), 'rev-parse', '--verify', '-q', tracking], capture_output=True).returncode == 0
-            and subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', mc, tracking]).returncode == 0):
+    if pushed_since(root, base, 'HEAD', state.get('mergeCommit')):
         raise RuntimeError('本条已推送到 GitHub，不能退回；改用新提交修复')
     stamp = time.strftime('%Y%m%d_%H%M%S')
     backup = 'refs/lane-merge/aborted-' + stamp

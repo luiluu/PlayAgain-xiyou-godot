@@ -1981,6 +1981,39 @@ for name in filter(None, files):
                         os.environ.pop(k)
         self.assertEqual(self.call(), 0, self.last_output)  # 健康的假 godot 照常通过
 
+    def test_abort_refuses_pushed_merge_after_parse_failure(self):
+        # 沙僧第七期 T2／P2：解析检查不过时 state 停在 planned、没记 mergeCommit，--abort 原来不查远端，把已推送的合并退回 base
+        bare = self.github()
+        godot = self.root / merge.ENV / 'godot'
+        godot.write_text('#!/bin/zsh\n[[ "$*" == *--import* ]] && exit 0\n'
+                         'print "SCRIPT ERROR: Parse Error: Expected end of statement."\nprint "          at: GDScript::reload (res://modes/broken.gd:7)"\n'
+                         'print PARSE_CHECK_DONE\n')
+        godot.chmod(0o755)
+        self.put(str(merge.PROJECT / 'project.godot'), 'config/version="dev.001"\n')
+        self.g('add', '.'); self.g('commit', '-m', 'godot fixture'); self.g('merge', 'main', cwd=self.wt)
+        self.g('push', 'github', 'main')
+        base = self.g('rev-parse', 'HEAD')
+        self.assertEqual(self.call(), 1, self.last_output)
+        self.assertIn('解析检查不通过', self.last_output)
+        state = json.loads((self.root / '.git/lane-merge/state.json').read_text())
+        self.assertNotIn('mergeCommit', state)
+        self.g('push', 'github', 'main')  # 有人把带错的合并推了上去
+        merged = self.g('rev-parse', 'HEAD')
+        self.assertEqual(self.call('--abort'), 1, self.last_output)
+        self.assertIn('已推送到 GitHub', self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), merged)
+        # 推上去之后又 amend：当前提交不在远端，但推上去的那版合并在，照样不退
+        subprocess.run(['git', '-C', str(self.root), 'commit', '--amend', '-m', 'amended merge'], capture_output=True, check=True,
+                       env=dict(os.environ, **merge.MAIN_COMMIT_ENV))
+        self.assertNotEqual(self.g('rev-parse', 'HEAD'), merged)
+        self.assertEqual(self.call('--abort'), 1, self.last_output)
+        self.assertIn('已推送到 GitHub', self.last_output)
+        # 没推送的照常能退
+        self.g('push', '-f', 'github', base + ':main'); self.g('fetch', 'github')
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), base)
+        self.assertEqual(self.call('--abort'), 0, self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), base)
+
     def test_active_cwds_unknown_when_lsof_unavailable_keeps_worktree(self):
         # 沙僧第十六期 P2：lsof 缺失／超时／失败时原来返回空、清理放行；现在无法确认就保守不删
         wt = self.wt
