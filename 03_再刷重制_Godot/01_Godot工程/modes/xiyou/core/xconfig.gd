@@ -21,7 +21,7 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"MOG_TrPopUpBattle_Key": false, "CombatDamageRecordKey": false,
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
 	"codexSkillLevelNotice": true, "cq": false, "codexPowerEnabled": true,
-	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": []}
+	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": [], "DesignationN": {}}
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
 const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
@@ -72,6 +72,10 @@ static func ensure_loaded() -> void:
 					# Star_AchievementSystem applyData：config.SAchievementS || {}（成就 ID→true，"<ID>Time"→完成时间）
 					var saved = data.get(key)
 					_values[key] = saved.duplicate() if saved is Dictionary else {}
+				elif key == "DesignationN":
+					# Star_Designation applyData：config.DesignationN || {}（称号解锁，编号→true，见 XDesignation）
+					var dn = data.get(key)
+					_values[key] = dn.duplicate() if dn is Dictionary else {}
 				elif key == "ChangeClothesLite":
 					# Star_ChangeClothes applyData：config.ChangeClothesLite || []（更衣解锁表，见 XChangeClothes）
 					var saved = data.get(key)
@@ -213,6 +217,17 @@ static func achievements() -> Dictionary:
 
 
 static func save_achievements() -> bool:
+	ensure_loaded()
+	return _write()
+
+
+## 称号解锁（ConfigManager.DesignationN，所有存档共用；见 XDesignation）。返回的字典可直接改，改完 save_designations。
+static func designations() -> Dictionary:
+	ensure_loaded()
+	return _values.DesignationN
+
+
+static func save_designations() -> bool:
 	ensure_loaded()
 	return _write()
 
