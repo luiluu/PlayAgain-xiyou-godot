@@ -1413,7 +1413,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		XAlienBattle.set_heal_targets(skill, list.size())  # 逆祷治疗按目标数（含重复）分摊
 		XRaceBattle.begin(self, u, skill, list, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 		XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
-		XToji.begin(self, u, skill, list)  # 甚尔 startAction 包装（黑闪之内）：切换记形态；主技能收成单目标、记段数
+		logs.append_array(mark_views(XToji.begin(self, u, skill, list)))  # 甚尔 startAction 包装（黑闪之内）：切换记形态；武器库追击；主技能收成单目标、记段数
 		XBlackFlash.begin(u, skill, list, forcing)  # 黑闪 startAction 包装（宿傩之内）：建施放帧
 		logs.append_array(XSukuna.begin(self, u, skill, list))  # 宿傩 startAction 包装：领域展开、施放帧
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())

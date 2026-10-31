@@ -50,7 +50,11 @@ extends RefCounted
 ##   Confirm 与固定减伤）为正时记反弹：基数 0.264×结算值÷0.2、属性取结算行的属性；那次 apply 后（出手者还活着）甚尔用
 ##   术师杀手·反弹 10224 打回出手者：内部行动、不判黑闪、不再触发反弹，技能属性换成记下的属性（原版 item() 包装），
 ##   公式＝反弹基数（结算里减防项为 0），钩子按魔法、五感魔防率 ×0.67、暴君 ×3、成长 outputGrowth(非主)，不吃藏兵咒灵。
-## 未移植（第四期起）：武器库追击与借用特效、
+## - 武器库 10211（进阶 1 次后，startAction 包装）：主技能 50% 先用随机另一把可切咒具的武器库技能（10220 游云、10223 万里锁、
+##   10221 释魂刀、10222 天逆鉾）打一次目标（倒了换第一个活着的；内部行动、不判黑闪）；本次主技能借它的特效：借游云追加次数＋1、
+##   借万里锁每段 16% 溅射、借释魂刀物理穿透 0.33、借天逆鉾且 50% 掷中时附封印（武器库·天逆鉾本身同样掷中才封）；
+##   武器库·万里锁自己也 16% 溅射。熟练度（_actionMastery）重制恒 0，不记。随机数 rule 流 toji_armory／toji_pick／toji_spear。
+## 未移植（第四期起）：
 ##   智能 AI 档案；说明框熟练度行（画面）；读档时 repair。
 ##   原版 makeDamageValue 包装是死代码（installDamageElementRuntime 后装、整个换掉 makeDamageValue 不调旧链），不移植。
 ## 参照：slice_probe（切片角色行与伤害行）、toji_probe（等级／进阶／血量各档的能力值、公式、钩子帧，tests/xiyou_toji.gd）。
@@ -258,7 +262,7 @@ static func damage_ops(item: Dictionary, a) -> Array:
 	if knows(a, SENSES):
 		ops.append({"op": "mul", "field": "physicalDefenseRate", "value": 0.67})
 		ops.append({"op": "mul", "field": "magicalDefenseRate", "value": 0.67})
-	ops.append({"op": "set", "field": "physicalIncomingPierce", "value": (0.80 if awakened(a, id) else 0.66) if id == MAIN[2] else (0.33 if id == RANDOM[2] else 0.0)})
+	ops.append({"op": "set", "field": "physicalIncomingPierce", "value": (0.80 if awakened(a, id) else 0.66) if id == MAIN[2] else (0.33 if id == RANDOM[2] or (is_main(id) and int(action.get("borrow", -1)) == 2) else 0.0)})
 	var mult := 1.0
 	if is_random(id):
 		mult *= 1 + 0.10 * a.skillMasteryLevel(ARMORY)
@@ -422,22 +426,51 @@ static func switch_unsealed(a, skill: Dictionary) -> bool:
 
 
 ## BattleManager.startAction 包装：切换记形态；主技能把目标收成第一个，记段数与追加次数（targets 原地改）
-static func begin(_logic_ref, u, skill: Dictionary, targets: Array) -> void:
+## 返回武器库追击打出的结果（记进行动日志）
+static func begin(logic, u, skill: Dictionary, targets: Array) -> Array:
 	if not own(u):
-		return
+		return []
 	action = {}
 	var id := int(skill.get("id", 0))
 	if SWITCH.has(id):
 		action.switch = SWITCH.find(id)
-		return
+		return []
 	if not is_main(id) or targets.is_empty():
-		return
+		return []
 	var index := MAIN.find(id)
 	var extra := maxi(0, floori(float(u.attack_times_add())))
 	var target = targets[0]
 	targets.clear()
+	action.merge({"extra": extra, "index": 0, "borrow": -1, "spear": false, "done": false})
+	var out := []
+	# 武器库（进阶后 10211）：50% 先用随机另一把可切咒具的武器库技能打一次，本次主技能借它的特效
+	if knows(u, ARMORY) and rank(u) >= 1 and logic._float("toji_armory") < 0.5:
+		var pool := range(4).filter(func(n): return n != index and eligible_shape(u, n))
+		if not pool.is_empty():
+			var pick: int = pool[floori(logic._float("toji_pick") * pool.size())]
+			var alive_foes: Array = logic.alive(logic.enemies)
+			var aim = target if target.is_alive() else (alive_foes[0] if not alive_foes.is_empty() else null)
+			if aim != null:
+				var spear: bool = pick == 3 and logic._float("toji_spear") < 0.5
+				action.spear = spear
+				internal = true
+				XBlackFlash.nested += 1
+				out = apply(logic, u, XDB.rec("Skills", RANDOM[pick]), aim)
+				XBlackFlash.nested -= 1
+				internal = false
+				action.borrow = pick
+				if pick == 0:
+					extra += 1
+				if not target.is_alive():
+					alive_foes = logic.alive(logic.enemies)
+					target = alive_foes[0] if not alive_foes.is_empty() else null
+	if target == null:
+		action = {}
+		return out
 	targets.append(target)
-	action.merge({"extra": extra, "index": 0, "count": 5 + extra if index == 0 else (1 if index == 2 else 1 + extra), "done": false})
+	action.extra = extra
+	action.count = 5 + extra if index == 0 else (1 if index == 2 else 1 + extra)
+	return out
 
 
 ## 黑闪 startAction 包装：觉醒中的游云多 1 段（读施放帧，第一次打段时算）
@@ -485,12 +518,16 @@ static func apply(logic, u, skill: Dictionary, t) -> Array:
 	var out := [r]
 	if not (used and not r.missed and not r.evaded):
 		return out
-	if id == MAIN[3]:
+	var borrow := int(action.get("borrow", -1))
+	var spear: bool = bool(action.get("spear", false))
+	if (is_main(id) and (id == MAIN[3] or (borrow == 3 and spear))) or (id == RANDOM[3] and spear):
 		logic._state_add(t, SEAL)
 		if t.state_ids.has(SEAL):
-			seal_charges[t] = maxi(maxi(seal_count(t), 1), 2 if awakened(u, id) else 1)
-	if spread_rate == 0.0 and id == MAIN[1]:
-		out.append_array(_spread(logic, u, skill, t, 0.50 if awakened(u, id) else 0.33))
+			seal_charges[t] = maxi(maxi(seal_count(t), 1), 2 if id == MAIN[3] and awakened(u, id) else 1)
+	if spread_rate == 0.0 and is_main(id) and (id == MAIN[1] or borrow == 1):
+		out.append_array(_spread(logic, u, skill, t, (0.50 if awakened(u, id) else 0.33) if id == MAIN[1] else 0.16))
+	elif spread_rate == 0.0 and id == RANDOM[1]:
+		out.append_array(_spread(logic, u, skill, t, 0.16))
 	return out
 
 

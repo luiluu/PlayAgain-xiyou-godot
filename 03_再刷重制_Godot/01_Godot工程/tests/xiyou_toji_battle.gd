@@ -24,15 +24,18 @@ func _ready() -> void:
 
 class HalfStream extends XRandomStream:
 	var flash: Array = []  # 黑闪判定（reason black_flash）依次取，用完回 0.5，同参照 B.random
+	var toji: Array = []  # 'rng' 步给的随机数：只给甚尔武器库的三次掷（reason toji_*），同参照
 	func _take(kind: String, reason: String, _event_key: String):
 		draws += 1
 		if kind == "float" and reason == "black_flash" and not flash.is_empty():
 			return float(flash.pop_front())
+		if kind == "float" and reason.begins_with("toji_") and not toji.is_empty():
+			return float(toji.pop_front())
 		return 0.5 if kind == "float" else 2147483648
 
 
 ## 同参照 battle()：新局、开 2494、队伍 [171, 1] 各 55 级；敌人生命加 1e18；规则流全取 0.5
-func _battle(flash := []) -> Array:
+func _battle(flash := [], rank := 0) -> Array:
 	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [8])
 	XState.current = s
 	s.actor_max_level = 99
@@ -41,6 +44,9 @@ func _battle(flash := []) -> Array:
 	s.battle_slots.clear()
 	for id in [171, 1]:
 		s.actor(id).change_level_mv(55)
+	if rank > 0:
+		s.actor_advance[171] = rank
+		XToji.repair(s.actor(171))
 	s.add_actor(171)
 	s.add_actor(1)
 	for id in [171, 1]:
@@ -104,7 +110,7 @@ func _hits(logic: XBattleLogic, logs: Array) -> Array:
 
 
 func _script(c: Dictionary) -> void:
-	var r := _battle(c.setup.get("draws", []))
+	var r := _battle(c.setup.get("draws", []), int(c.setup.get("rank", 0)))
 	var logic: XBattleLogic = r[0]
 	var a: XActor = r[1]
 	var steps: Array = c.observed.steps
@@ -125,6 +131,8 @@ func _script(c: Dictionary) -> void:
 				logic._state_add(a, int(st[1]))
 			"unstate":
 				logic._state_remove(a, int(st[1]))
+			"rng":
+				logic.random.rule.toji = (st[1] as Array).duplicate()
 			"foe":
 				logs = logic.act(logic.enemies[int(st[1])], XDB.rec("Skills", int(st[2])), logic.actors[int(st[3])])
 			"die":
@@ -251,7 +259,7 @@ func _run() -> void:
 				_tyrant(c)
 			else:
 				_script(c)
-	check("covers_all", seen == 8, seen)
+	check("covers_all", seen == 9, seen)
 	_local()
 	finish()
 
