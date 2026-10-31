@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """提交守卫（装提交守卫.sh＋git-hooks/main-guard.sh）：只用一次性临时资料库，不碰真实 hooks。"""
+import json
 import os
 from pathlib import Path
 import shutil
@@ -20,7 +21,7 @@ class GuardTests(unittest.TestCase):
         shutil.copy2(HERE / '装提交守卫.sh', env)
         shutil.copy2(HERE / 'git-hooks/main-guard.sh', env / 'git-hooks')
         self.installer = env / '装提交守卫.sh'
-        self.env = {k: v for k, v in os.environ.items() if k != 'XIYOU_MAIN_COMMIT'}
+        self.env = {k: v for k, v in os.environ.items() if k not in ('XIYOU_MAIN_COMMIT', 'XIYOU_LANE_MERGE')}
         self.env.update(GIT_AUTHOR_NAME='f', GIT_AUTHOR_EMAIL='f@x.invalid', GIT_COMMITTER_NAME='f', GIT_COMMITTER_EMAIL='f@x.invalid')
         self.git('init', '-q', '-b', 'main')
         self.git('add', '.')
@@ -77,6 +78,51 @@ class GuardTests(unittest.TestCase):
         r = self.git('merge', '--no-ff', '-m', 'merge', 'claude/task', extra={'XIYOU_MAIN_COMMIT': '1'})
         self.assertEqual(r.returncode, 0, r.stderr)
 
+    def merging(self, task='bajie-blackflash', phase='prepared'):
+        # 与 合并车道.py save() 同格式（indent=2）
+        state = self.main / '.git/lane-merge/state.json'
+        state.parent.mkdir(exist_ok=True)
+        state.write_text(json.dumps(dict(task=task, branch='cc/' + task, phase=phase, head='x'), ensure_ascii=False, indent=2) + '\n')
+        return state
+
+    def test_merge_in_progress_refuses_manual_main_commit_even_with_variable(self):
+        self.merging()
+        r = self.commit(self.main, {'XIYOU_MAIN_COMMIT': '1'})
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('有合并在进行（任务 bajie-blackflash，阶段 待收尾（prepared））', r.stderr)
+        self.assertIn('--also', r.stderr)
+        self.assertIn('--accept-doc-edits', r.stderr)
+        self.assertIn('--abort', r.stderr)
+        self.assertEqual(self.git('log', '--oneline').stdout.count('\n'), 1)
+        r = self.commit(self.main)                                        # 没带变量：同样先报合并在进行
+        self.assertIn('有合并在进行', r.stderr)
+
+    def test_merge_in_progress_lets_merge_tool_commit_through(self):
+        self.merging(phase='committed')
+        r = self.commit(self.main, {'XIYOU_MAIN_COMMIT': '1', 'XIYOU_LANE_MERGE': '1'})
+        self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_merge_in_progress_guards_merge_commit_and_reports_unknown_phase(self):
+        self.commit(self.lane)
+        self.merging(task='wukong-hp-cost', phase='synced')
+        r = self.git('merge', '--no-ff', '-m', 'merge', 'claude/task', extra={'XIYOU_MAIN_COMMIT': '1'})
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('任务 wukong-hp-cost，阶段 准备中（synced）', r.stderr)
+        self.git('merge', '--abort')
+        (self.main / '.git/lane-merge/state.json').write_text('{}')
+        r = self.commit(self.main, {'XIYOU_MAIN_COMMIT': '1'})
+        self.assertIn('任务 未知，阶段 未知', r.stderr)
+
+    def test_merge_in_progress_does_not_touch_lanes_or_other_branches(self):
+        self.merging()
+        self.assertEqual(self.commit(self.lane).returncode, 0)
+        self.git('switch', '-q', '-c', 'scratch')
+        self.assertEqual(self.commit(self.main).returncode, 0)
+
+    def test_finished_merge_restores_normal_rule(self):
+        self.merging().unlink()
+        self.assertEqual(self.commit(self.main, {'XIYOU_MAIN_COMMIT': '1'}).returncode, 0)
+
     def test_installer_is_idempotent_checks_and_keeps_foreign_hooks(self):
         self.assertEqual(self.install('--check').returncode, 0)
         out = self.install().stdout
@@ -103,6 +149,7 @@ class GuardTests(unittest.TestCase):
         self.assertIn('装提交守卫.sh', (HERE / '新建工作树.sh').read_text(encoding='utf-8'))
         text = (HERE / '合并车道.py').read_text(encoding='utf-8')
         self.assertEqual(text.count('env=MAIN_COMMIT_ENV'), 3)           # 合并、冲突后提交、收尾提交
+        self.assertIn("XIYOU_MAIN_COMMIT='1', XIYOU_LANE_MERGE='1'", text)  # 合并进行中守卫只认后者
 
 
 if __name__ == '__main__':

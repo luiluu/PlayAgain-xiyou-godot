@@ -64,8 +64,9 @@ def git(root, *args):
     return p.stdout.strip()
 
 
-# 主工作区 main 有提交守卫（装提交守卫.sh）：本工具自己的提交与合并带这个变量放行
-MAIN_COMMIT_ENV = dict(os.environ, XIYOU_MAIN_COMMIT='1')
+# 主工作区 main 有提交守卫（装提交守卫.sh）：本工具自己的提交与合并带这个变量放行；
+# 合并在进行（state.json 在）时守卫只认 XIYOU_LANE_MERGE，总装手动带 XIYOU_MAIN_COMMIT=1 的提交也拦（tools22）
+MAIN_COMMIT_ENV = dict(os.environ, XIYOU_MAIN_COMMIT='1', XIYOU_LANE_MERGE='1')
 
 
 def run(root, args, env=None):
