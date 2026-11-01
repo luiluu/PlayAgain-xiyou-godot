@@ -1,7 +1,7 @@
 # 交付：cc/bajie-guyu2b
 
 - 车道／工作者：C 规则／八戒（cc，八戒）
-- 状态：进行中
+- 状态：可合并
 - 分支从 cc/bajie-guyu2a 末端 5f48e4fb 切（总装十派），工作树 `.claude/worktrees/pensive-ardinghelli-6b5eb0`。guyu2a 还没进 main：合本分支会把一期、二期 A 一起带进来（两张交付单都在本分支上）。
 
 ## 做到哪
@@ -36,7 +36,11 @@
 
 ## 验证
 
-（待写）
+- 专项：`xiyou_guyu_battle` 1523/1523（二期 A 的 9 例照旧，新 7 例）。
+- 反向验证（临时改代码，已还原，各自在对应例上失败）：代命恒不成立（sub 8 项）、归根付 40%（sub 3 项）、再生晚一回合（sub 5 项）、花荫 25%（shield 4 项）、账本不吸收（shield 3 项）、待绽付 25%（transfer 3 项）、归春 20%（relic 3 项）、自动战斗受伤线 50%（ai 1 项）、先许一枝开不强化（shield 1 项）。
+- 选测（本机 CHECK_JOBS=3，`RULES_ONLY_ACTORS=175`，54 个场景全过，用时 2048 秒）：`xiyou_guyu`、`xiyou_guyu_battle`、`xiyou_actor_p0`、`xiyou_actor_modules`、`xiyou_help_card`、`xiyou_wtype`、`xiyou_rules*`（24 份）、`xiyou_smart_ai`／`_b`／`_c`／`_d`、`xiyou_battle*`（8 个）、`xiyou_shield`、`xiyou_toji_battle`、`xiyou_yunshang`、`xiyou_sukuna_battle`、`xiyou_yomi_battle`、`xiyou_mira_battle`、`xiyou_raven_battle`、`xiyou_garou_battle`、`xiyou_race_battle`、`xiyou_alien_battle`、`xiyou_boss_lifecycle`。
+- 同步（一轮）`同步正式西游.py --accept-additions`：只重跑了 guyu_battle_probe，「测量不变」（本树参照已是新 16 例），来源核对 0 问题。main 上合并时 guyu_battle.json 整份算新增（guyu2a 一起进）。
+- `语法检查.py` 通过；没有偶发。没合 main（总装说 guyu2a 进 main 后通知再合）。
 
 ## 待交叉核查
 
@@ -56,3 +60,5 @@
 
 - 7439a2c8 WIP：二期 B 逻辑与钩子
 - 478a7c46 WIP：参照 16 例、专项全过
+- 交付单草稿、反向验证
+- 交付单可合并（本提交）
