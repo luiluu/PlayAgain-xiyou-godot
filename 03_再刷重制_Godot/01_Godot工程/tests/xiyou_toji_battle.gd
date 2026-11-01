@@ -33,6 +33,15 @@ class HalfStream extends XRandomStream:
 			return float(toji.pop_front())
 		return 0.5 if kind == "float" else 2147483648
 
+	## 参照里 Math.random 恒为 0.5：整数取法是 floor(0.5×n)＝n÷2，不是原始 uint 2^31 对 n 取模（同 xiyou_alien_affix）
+	func next_index_mod(n: int, reason: String, event_key := "") -> int:
+		next_uint(reason, event_key)
+		return n / 2 if n > 0 else 0
+
+	func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
+		next_uint(reason, event_key)
+		return lo + (hi - lo + 1) / 2
+
 
 ## 同参照 battle()：新局、开 2494、队伍 [171, 1] 各 55 级；敌人生命加 1e18；规则流全取 0.5
 func _battle(flash := [], rank := 0) -> Array:

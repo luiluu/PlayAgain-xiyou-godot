@@ -340,23 +340,43 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.assertTrue(par.NO_RERUN_PARSE_ERROR)
 
     def test_short_prefix_stops_unless_star_or_wide(self):
+        """回退开关 XIYOU_BARE_PREFIX=1（旧行为：不带 * 也按前缀）下的 40 个上限（tools27）。"""
         # 白龙_8（tools27）：xiyou_battle、xiyou_rules 这类短名扩成几十个场景，车道照抄就排进 50 多个；超过上限先停下
         for i in range(4):
             (self.tmp / 'proj/tests' / ('x%d.tscn' % i)).touch()
-        p, runs = self.run_tests('x', XIYOU_PREFIX_STOP='3')
+        p, runs = self.run_tests('x', XIYOU_PREFIX_STOP='3', XIYOU_BARE_PREFIX='1')
         self.assertEqual(p.returncode, 2, p.stdout)
         self.assertIn('前缀扩出的场景太多', p.stdout)
         self.assertEqual(runs, [])
-        p, runs = self.run_tests('x*', XIYOU_PREFIX_STOP='3')
+        p, runs = self.run_tests('x*', XIYOU_PREFIX_STOP='3', XIYOU_BARE_PREFIX='1')
         self.assertEqual((p.returncode, sorted(runs)), (0, ['x0.tscn', 'x1.tscn', 'x2.tscn', 'x3.tscn']), p.stdout)
-        p, runs = self.run_tests('--full', '--wide', 'x', XIYOU_PREFIX_STOP='3')
+        p, runs = self.run_tests('--full', '--wide', 'x', XIYOU_PREFIX_STOP='3', XIYOU_BARE_PREFIX='1')
         self.assertEqual((p.returncode, len(runs)), (0, 4), p.stdout)
-        p, runs = self.run_tests('--full', 'x', XIYOU_PREFIX_STOP='0')
+        p, runs = self.run_tests('--full', 'x', XIYOU_PREFIX_STOP='0', XIYOU_BARE_PREFIX='1')
         self.assertEqual((p.returncode, len(runs)), (0, 4), p.stdout)
-        p, runs = self.run_tests('--full', 'x1', 'x2.tscn', 'a', XIYOU_PREFIX_STOP='3')  # 全名与小前缀不受影响
+        p, runs = self.run_tests('--full', 'x1', 'x2.tscn', 'a', XIYOU_PREFIX_STOP='3', XIYOU_BARE_PREFIX='1')  # 全名与小前缀不受影响
         self.assertEqual((p.returncode, sorted(runs)), (0, ['a.tscn', 'x1.tscn', 'x2.tscn']), p.stdout)
         par = load('par_stop', HERE / '并行测试.py')
         self.assertEqual(par.PREFIX_STOP, 40)
+
+    def test_bare_name_matches_full_name_only_by_default(self):
+        """tools38（白龙_8）：不带 * 的名字只按全名选，要前缀显式写「前缀*」；只有前缀匹配时提示，不再悄悄扩开。"""
+        for i in range(4):
+            (self.tmp / 'proj/tests' / ('x%d.tscn' % i)).touch()
+        (self.tmp / 'proj/tests/x.tscn').touch()
+        p, runs = self.run_tests('--full', 'x')
+        self.assertEqual((p.returncode, runs), (0, ['x.tscn']), p.stdout)
+        self.assertIn('另有 4 个同前缀场景没选', p.stdout)
+        p, runs = self.run_tests('--full', 'x*')
+        self.assertEqual(len(runs), 5, p.stdout)
+        p, runs = self.run_tests('--full', 'x1', 'a')
+        self.assertEqual(sorted(runs), ['a.tscn', 'x1.tscn'], p.stdout)
+        p, runs = self.run_tests('--full', 'x', 'a', XIYOU_BARE_PREFIX='1')   # 回退：旧行为
+        self.assertEqual(len(runs), 6, p.stdout)
+        (self.tmp / 'proj/tests/x.tscn').unlink()
+        p, runs = self.run_tests('--full', 'x', 'a')                          # 只有前缀可匹配：提示，不扩
+        self.assertEqual(runs, ['a.tscn'], p.stdout)
+        self.assertIn('x 不是场景全名', p.stdout)
 
     def test_names_file_and_wide_prefix_hint(self):
         names = self.tmp / 'names.txt'
@@ -365,7 +385,7 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stdout)
         self.assertEqual(sorted(runs), ['a.tscn', 'c.tscn'])
         self.assertNotIn('前缀', p.stdout)
-        p, runs = self.run_tests('', XIYOU_PREFIX_HINT='2')  # 空前缀匹配全部 3 个
+        p, runs = self.run_tests('*', XIYOU_PREFIX_HINT='2')  # 空前缀（写 *）匹配全部 3 个
         self.assertIn('前缀  匹配 3 个场景', p.stdout)
 
     def test_new_class_name_triggers_one_import(self):
@@ -1400,6 +1420,56 @@ for name in filter(None, files):
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)      # 登记文件的改动随收尾一并提交，不算预期外改动
         self.assertFalse(merge.dirty(self.root))
+
+    HEAD8 = '\n## 优化登记草稿\n\n| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n'
+
+    def two_item_lane(self, comment):
+        """一张交付单两条同写 O-待定 的草稿（stateCopy、千军入袖）；代码里各有一处注释占位。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        row = lambda name, sw: '| %s | %s | 问题 | 做法 | 理由 | `%s = false` | cc | 待用户决定 |' % (tok, name, sw)
+        self.sheet_with(self.HEAD8 + row('状态复制（XFoo）', 'XFoo.STATE_COPY') + '\n' + row('千军入袖', 'XBar.QIANJUN_SLEEVE') + '\n')
+        gd = merge.PROJECT / 'modes/注释.gd'
+        (self.wt / gd).parent.mkdir(parents=True, exist_ok=True)
+        (self.wt / gd).write_text(comment.replace('TOK', tok))
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'code placeholders', cwd=self.wt)
+        return tok, gd
+
+    def test_same_placeholder_for_two_drafts_gets_two_numbers(self):
+        """审查第 18 期 P2：yunshang8 一张交付单两条 O-待定，整文件替换成同一个 O-135。按草稿行逐条对号，代码注释靠开关名认条。"""
+        tok, gd = self.two_item_lane('# TOK：STATE_COPY 回退开关\n# TOK QIANJUN_SLEEVE 的说明\n')
+        self.assertEqual(self.call(), 0, self.last_output)
+        reg = (self.root / merge.OPT_REGISTRY).read_text().split('\n')
+        i = next(k for k, x in enumerate(reg) if x.startswith('| O-118'))
+        self.assertIn('状态复制', reg[i + 1]); self.assertTrue(reg[i + 1].startswith('| O-119 |'), reg[i + 1])
+        self.assertIn('千军入袖', reg[i + 2]); self.assertTrue(reg[i + 2].startswith('| O-120 |'), reg[i + 2])
+        code = (self.root / gd).read_text()
+        self.assertEqual(code, '# O-119：STATE_COPY 回退开关\n# O-120 QIANJUN_SLEEVE 的说明\n')
+        self.assertNotIn(tok, code + '\n'.join(reg))
+
+    def test_placeholder_line_matching_no_draft_stops(self):
+        tok, gd = self.two_item_lane('# TOK：这一行谁也对不上\n')
+        self.assertEqual(self.call(), 1)
+        self.assertIn('对不上是哪条', self.last_output)
+        self.assertNotIn(tok, '\n'.join(x for x in (self.root / gd).read_text().split('\n') if 'O-119' in x))
+
+    def test_draft_written_as_list_is_refused(self):
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        self.sheet_with('\n## 优化登记草稿\n\n- %s 甲项（XFoo.A）\n' % tok)
+        self.assertEqual(self.call(), 1)
+        self.assertIn('是列表不是表格', self.last_output)
+
+    def test_duplicate_numbers_in_one_batch_fail(self):
+        """tools36：同一批草稿表行写了同一个 O-NNN（yunshang8 那种两条同号）就直接失败，不再悄悄只登一条。"""
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        row = lambda name: '| O-125 | %s | 问题 | 做法 | 理由 | 回退 | 车道 | 待用户决定 |' % name
+        self.sheet_with(self.HEAD8 + row('甲项') + '\n' + row('乙项') + '\n')
+        self.assertEqual(self.call(), 1)
+        self.assertIn('重号 O-125', self.last_output)
 
     def test_optimization_token_without_draft_table_is_refused(self):
         tok = 'O-' + '待定'

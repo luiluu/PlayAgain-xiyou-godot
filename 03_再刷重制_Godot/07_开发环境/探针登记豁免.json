@@ -1,0 +1,7 @@
+{
+ "说明": "探针登记检查.py 的豁免：mv_oracle 里既不进 PROBES、夹具名又对不上 <名>_oracle.json 的探针，写明去处。",
+ "exempt": {
+  "otb_probe.cjs": "夹具是 tests/fixtures/otb.json（xiyou_otb 读，记录插件 SHA 对照当前来源），名字对不上",
+  "state_effects_tp_context_probe.cjs": "state_effects 的 2e 补充证据，手动跑；不覆盖 state_effects.json，没有测试读它"
+ }
+}

@@ -269,7 +269,7 @@ func _fire_and_chaos() -> void:
 	# 大菠萝：按变量 208／209／210 发奖（固定变量值逐支核对），打完重掷三个变量、开关清零
 	var cases := [
 		{"v": [1, 3, 0], "gear": 2971, "what": "rare3"},
-		{"v": [50, 0, 5], "gear": 2855, "what": "normal5", "extra": 1},   # 大菠萝自己也掉一份 2851～2859 套装，所以这支多 1
+		{"v": [50, 0, 5], "gear": 2855, "what": "normal5", "extra": 1},   # 大菠萝自己也可能掉一份 2851～2859 套装（dev.257 掉落照原版后看概率），所以这支可多 0～1
 		{"v": [1, 7, 0], "item": 751, "what": "rare7"},
 	]
 	for c in cases:
@@ -281,7 +281,7 @@ func _fire_and_chaos() -> void:
 		var n0 := battles.size()
 		await _run_event(map, 23, [], "win")
 		var g1 := s.gear_count("armor", int(c.get("gear", 1))) if c.has("gear") else s.item_count(int(c.get("item", 1)))
-		_check("chaos_boss412_" + c.what, battles.size() == n0 + 1 and int(battles[-1].troop) == 412 and g1 == g0 + 1 + int(c.get("extra", 0)), [battles.slice(n0), g0, g1])
+		_check("chaos_boss412_" + c.what, battles.size() == n0 + 1 and int(battles[-1].troop) == 412 and g1 >= g0 + 1 and g1 <= g0 + 1 + int(c.get("extra", 0)), [battles.slice(n0), g0, g1])
 		_check("chaos_reroll_" + c.what, int(s.variable(238)) == 0 and not s.switch(186) and int(s.variable(208)) >= 1 and int(s.variable(208)) <= 100 and int(s.variable(209)) >= 1 and int(s.variable(209)) <= 6 and int(s.variable(210)) >= 1 and int(s.variable(210)) <= 12, [s.variable(238), s.variable(208), s.variable(209), s.variable(210)])
 	# 衣卒尔传回火焰之河，再出口
 	await _run_event(map, 17, [0], "")
