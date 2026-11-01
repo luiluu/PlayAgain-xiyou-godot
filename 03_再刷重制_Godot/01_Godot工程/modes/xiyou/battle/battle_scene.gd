@@ -733,7 +733,8 @@ func _preview(a: XBattler, skill, targets: Array = []) -> void:
 	otb.set_preview(entries)
 
 
-## 指令（Window_ActorCommand＋OTB）：攻击（YEP_WeaponUnleash：替换后的技能与名字）、加入的技能类型（按编号；CP_MagicWeapon 不列 3～6，没有该类技能也列出）、
+## 指令（Window_ActorCommand＋OTB）：攻击（YEP_WeaponUnleash：替换后的技能与名字）、加入的技能类型（按编号；CP_MagicWeapon 不列 3～6，没有该类技能也列出；
+## 渡鸦／宿傩／饿狼照 XActorModules.battle_skill_types 固定几栏）、
 ## 防御、物品、逃跑（OTB Escape Actor Window：总是列出，不能逃时灰显）；魔族再加「血契：开／关」。
 func _command_entries(a: XActor) -> Array:
 	var terms: Array = XDB.system().terms.commands
@@ -741,7 +742,11 @@ func _command_entries(a: XActor) -> Array:
 	var grd := XDB.rec("Skills", XBattleLogic.GUARD_SKILL)
 	var opts := [{"text": a.attack_command_text(), "key": "attack", "enabled": logic.can_use(a, atk), "preview": atk}]
 	var stypes: Array = XDB.system().skillTypes
-	var added := a.traits_set(XBattler.TRAIT_STYPE_ADD)
+	var forced = XActorModules.battle_skill_types(a)  # 渡鸦／宿傩／饿狼 addSkillCommands 包装：固定几栏、照次序
+	if forced != null:
+		for t in forced:
+			opts.append({"text": str(stypes[int(t)]), "key": "stype:%d" % int(t)})
+	var added := a.traits_set(XBattler.TRAIT_STYPE_ADD) if forced == null else []
 	added.sort()
 	for t in added:
 		if not [3, 4, 5, 6].has(int(t)) and int(t) < stypes.size():

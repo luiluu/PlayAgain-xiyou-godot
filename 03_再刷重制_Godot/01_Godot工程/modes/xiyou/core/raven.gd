@@ -401,6 +401,16 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 		row[1] = float(row[1]) + maxf(0.0, float(r.get("hp", 0.0)))
 
 
+## Window_SkillList.updateHelp 包装：渡鸦选中「魂簿」（10137）时说明卡换成当前存档的灵魂与进阶（toLocaleString 千分位）；别的为空
+static func ledger_help(a, skill: Dictionary) -> Array:
+	if not own(a) or int(skill.get("id", 0)) != SOUL_LEDGER:
+		return []
+	var st := stage(a)
+	var seals := XState.current.item_count(SEAL) if XState.current != null else 0
+	var destination := "已完成五阶；灵魂可继续积累" if st >= 5 else "本阶达" + XMenu._group(REQUIRE[mini(5, st + 1)]) + "魂得印；进阶后清零"
+	return ["灵魂：" + XMenu._group(soul(a)) + "　进阶：%d/5　进阶印：%d" % [st, seals], destination]
+
+
 ## 战斗画面要放的渡鸦特效（XRavenFx）记在命中记录上
 static func _fx(r: Dictionary, kind: String) -> void:
 	if not r.has("raven_fx"):

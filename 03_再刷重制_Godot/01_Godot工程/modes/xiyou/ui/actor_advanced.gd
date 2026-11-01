@@ -259,6 +259,12 @@ func ok() -> void:
 				mode = "confirm"
 				confirm_index = 0
 				confirm_win.visible = true
+			elif XGarou.own(current_actor()):
+				# 饿狼 onBottomConfirmOk 包装：蜂鸣＋$gameMessage.add(原因)，不走原确认、不出「进阶条件未达成」；
+				# 原版菜单里没有消息窗，这句回地图才出，重制当场右上角提示（同 O-094）
+				XSound.system(3)
+				mode = "list"
+				XToast.show_text(str(lack[0]), true)
 			else:
 				XSound.system(1)
 				mode = "list"

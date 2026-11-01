@@ -52,6 +52,8 @@ func _run() -> void:
 	await sukuna_case(b, sukuna, foes)
 	await raven_case(b, raven, foes)
 	await garou_case(b, garou, foes)
+	skill_types(b, [sukuna, raven, garou])
+	ledger(raven)
 	b.queue_free()
 	await frames(3)
 	finish()
@@ -168,6 +170,36 @@ func garou_case(b: XBattleScene, a: XActor, foes: Array) -> void:
 	lines = await play_and_peek(b, [{"type": "counter", "user": foes[0], "target": a}, native])
 	check("garou.native-counter", lines.size() == 1 and not lines[0][1], lines)
 	check("garou.skill", int(skill.id) == XGarou.WATER)
+
+
+## 技能分类（battlelog2）：指令窗照 addSkillCommands 包装固定几栏、照次序；菜单照 addedSkillTypes 包装、升序；别的角色照特性
+func skill_types(b: XBattleScene, who: Array) -> void:
+	var stypes: Array = XDB.system().skillTypes
+	var want := {XSukuna.ACTOR: [2, 1, 5, 3], XRaven.ACTOR: [2, 1, 5], XGarou.ACTOR: [2, 1, 5]}
+	for a in who:
+		var keys: Array = b._command_entries(a).map(func(o): return str(o.key)).filter(func(k): return k.begins_with("stype:"))
+		var texts: Array = b._command_entries(a).filter(func(o): return str(o.key).begins_with("stype:")).map(func(o): return o.text)
+		check("types.battle.%d" % a.actor_id, keys == want[a.actor_id].map(func(t): return "stype:%d" % t)
+			and texts == want[a.actor_id].map(func(t): return str(stypes[t])), [keys, texts])
+	check("types.menu", XActorModules.menu_skill_types(who[0]) == [2, 1, 5, 3, 4] and XActorModules.menu_skill_types(who[2]) == [2, 1, 5, 4]
+		and XActorModules.menu_skill_types(XState.current.actor(1)) == null and XActorModules.battle_skill_types(XState.current.actor(1)) == null)
+	var page := XSkillScene.new()
+	add_child(page)
+	page.actor_index = XState.current.party.find(XGarou.ACTOR)
+	check("types.menu-sorted", page.types() == [1, 2, 4, 5], page.types())
+	page.queue_free()
+
+
+## 渡鸦魂簿（10137）的说明卡：当前存档的灵魂、进阶、进阶印与下一阶门槛（千分位）
+func ledger(a: XActor) -> void:
+	var s := XState.current
+	s.raven["soul"] = 12345.0
+	var lines := XRaven.ledger_help(a, XDB.rec("Skills", XRaven.SOUL_LEDGER))
+	var st := XRaven.stage(a)
+	var next := ["", "3,000", "12,000", "35,000", "80,000", "150,000"][mini(5, st + 1)]
+	check("ledger.text", lines == ["灵魂：12,345　进阶：%d/5　进阶印：%d" % [st, s.item_count(XRaven.SEAL)], "本阶达" + next + "魂得印；进阶后清零"], lines)
+	check("ledger.other-skill", XRaven.ledger_help(a, XDB.rec("Skills", XRaven.PECK)).is_empty())
+	check("ledger.other-actor", XRaven.ledger_help(s.actor(XSukuna.ACTOR), XDB.rec("Skills", XRaven.SOUL_LEDGER)).is_empty())
 
 
 func finish() -> void:
