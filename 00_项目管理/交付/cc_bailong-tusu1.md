@@ -1,7 +1,7 @@
 # 交付：cc/bailong-tusu1
 
 - 车道／工作者：E 角色专属／白龙_13（cc）
-- 状态：进行中
+- 状态：可合并
 - 分支从 cc/bailong-cat-trial1 末端 f3070079 切出（链式交付，**包含 cat-trial1**，那张交付单照它自己的合），开工后合过 main 22238e0b（第七批）。
 - 范围：屠苏 176、璇 177 专属盘点（下表）；第一期做招募与等级成长（别的机制都读它：系数、解锁、技能列表）。画面层不做。
 
@@ -39,28 +39,31 @@
 2. **招募**（installNativeTusuRuntime.js 第 614～628 行、installNativeXuanRuntime.js 第 499～512 与 52～69 行）：`XTusuXuan.recruit`：入队；首次送并装上专属法宝（止戈环 4047、璇玑星盘 4048，只送一次）；璇先建星谱（星砂 0、三槽「余辉、同调、移光」各 1 级）并学槽里的星纹技能。标记存 s.flags（`_codexTusuRelicGiven`、`_codexXuanRelicGiven`、`_codexXuanChart`，原版记在角色上）。**事件脚本还没接**：两人的战斗机制要从绑定框架起才有，现在接上玩家会招到用不了的角色。
 - 钩子各一行：`actor.gd` skills()、`battle_logic.gd` can_use、`actor_modules.gd`（IDS 加 176／177，level_up／level_down 同步）、`xsave.gd` 读档。
 - 不做：屠苏旧名「【最终兵器】屠苏」改回（重制名字直接读数据库，没有改名）；说明卡伤害系数改写（HelpExtend，画面）。
+3. **审查第 20 期两处小修**（总装十二插单）：
+   - P2＋P3①：云裳订单账本给旧档第一次建档案时，进阶阶数原版写 0（已进阶的云裳账上归零），重制取当前进阶次数；改成可回退开关 `XYunshangOrders.o_profile_stage`（O-待定，见优化登记草稿）。
+   - P3②：`battle_logic.gd` item_eva 补上哈基米必中剑段（XCat.sure_segment）：导入角色平衡装在甚尔之后，包在外层，必中剑段闪避 0、不再加甚尔影速（混乱时打到天与咒缚的甚尔才碰得到）。
 - 参照：新探针 `mv_oracle/tusu_growth_probe.cjs`（不进同步，产物拷成 `tests/fixtures/tusu_growth_oracle.json`）：真实 recruit、bindGrowth、changeLevel 逐级升降。新专项 `xiyou_tusu`。
 
 ## 优化登记草稿
 
-无。
+| O-待定 | 云裳订单账本旧档建档（`core/yunshang_orders.gd` _new_profile，installNativeYunshangRuntime 账本 profile） | 旧档（没有订单档案编号）第一次建档时 stage 写 0：已进阶的云裳账上归零，之后进阶按账本阶数算材料会对不上；另：账本不可用时原版卖出／存仓库天衣抛错、整次做不成，重制照样拿掉天衣（交易记不进账、提示出错原因） | 建档 stage 取当前进阶次数（XAdvance.rank）；账本不可用时装备照常离开背包 | 原版只考虑新档，旧档迁移漏了已进阶的情况；抛错会卡住卖出与仓库 | `XYunshangOrders.o_profile_stage = false`（stage 写 0；账本不可用时拿掉天衣这半没有开关，照原版要改 XState.lose_gear） | cc（白龙_13） | 待用户确认 |
 
 ## 验证
 
 - 专项 xiyou_tusu 306/306：两人各自的标签查表与成长表、招募（入队、技能、法宝槽、星谱、第二次 false、离队卸下后再招不再送）、23 个等级升上去再降回来逐级比学会的技能／列出的技能／各伤害键系数／各解锁键、归形战斗外不能用、别人身上的专属技能三档等级滤除与不能用、存档往返后读档补学。
 - 反向验证 12 处 11 处抓到：系数不取整、解锁用大于、别人看自己等级、技能不滤、降级不同步、同步不忘高阶、法宝每次都送、星纹不学、归形可用、can_use 不接、读档不同步。**升级不同步没抓到**：升级时原生职业习得表本来就会学，这一步同步与原版一样是多余的，测不出差别（保留同原版）。
 - 语法检查通过。
-- 选测：（进行中）
+- 选测（全名，CHECK_JOBS=3）全过：屠苏璇一轮 25 个——xiyou_tusu、xiyou_actor_modules、xiyou_actor_p0、xiyou_guyu、xiyou_guyu_battle、xiyou_skill_page、xiyou_determinism、xiyou_event_compare、xiyou_rules、xiyou_rules_d3、xiyou_save_events、xiyou_autosave、xiyou_party_skills、xiyou_smart_ai、xiyou_imported_balance、xiyou_super_acquire、xiyou_item_marks、xiyou_cat、xiyou_cat_trial、xiyou_yunshang、xiyou_advance_reads、xiyou_help_card、xiyou_status_page、xiyou_battle、xiyou_garou_progress，另补 xiyou_actor_book、xiyou_three_growth、xiyou_character_help_cost；插单后一轮 11 个——xiyou_review20_fix、xiyou_toji_eva、xiyou_toji_battle、xiyou_cat、xiyou_yunshang_shop、xiyou_yunshang、xiyou_yunshang_ui、xiyou_rules、xiyou_rules_d3、xiyou_determinism、xiyou_event_compare。`选测.py` 因碰了 actor／battle_logic／xsave 会选两百多个；钩子只在 176／177、哈基米剑段、旧档建档时生效，所以改跑上面的名单。
 
 ## 需要用户决定
 
-- 无。
+- O-待定（云裳旧档建档阶数）：默认开（取当前进阶次数），关掉照原版写 0。
 
 ## 交接板
 
 - 下一步：屠苏、璇二期：来源护盾账本抽成公用＋形态绑定框架（见盘点）；同时请派 A 车道把 176／177 加进切片 actors、CodexTusu／CodexXuan 公式进 MODULE_FORMULAS。
 - 用户试玩说明：本期玩家看不到变化（招募脚本没接）。
-- 需要用户决定：无。
+- 需要用户决定：O-待定 云裳旧档建档阶数（默认取当前进阶次数）。
 
 ## 进度账
 
@@ -74,6 +77,7 @@
 
 - 共用核心各一行：`core/actor.gd`（skills）、`battle/battle_logic.gd`（can_use）、`core/actor_modules.gd`（IDS 与两处同步）、`core/xsave.gd`（load_slot）。
 - `core/tusu_xuan.gd` 全文；新探针、夹具、专项。
+- 审查第 20 期插单：`core/yunshang_orders.gd` 第 147 行一带 `_new_profile`（o_profile_stage 开关）；`battle/battle_logic.gd` item_eva 第一行加 `XCat.sure_segment(u)`。新专项 `xiyou_review20_fix`（旧档读档建档两支、必中剑段打天与咒缚的甚尔闪避 0），反向 2 处都抓到。
 
 ## 接续要点
 
@@ -86,4 +90,5 @@
 - WIP: 参照 tusu_growth_probe
 - WIP: XTusuXuan 与专项 306/306
 - 合 main 22238e0b
-- 本提交：交付单
+- 交付单（WIP）
+- 本提交：审查第 20 期两处小修、选测结果，交付单可合并

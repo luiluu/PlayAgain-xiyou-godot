@@ -1653,7 +1653,7 @@ func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 
 ## itemEva：YEP「Evade Formula」（西游为 0）夹到 0～1。原版闪避已并入命中公式。
 func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
-	if XGuyu.sure(skill):  # 谷雨 itemEva 包装：绽放、终结、治疗不闪避
+	if XGuyu.sure(skill) or XCat.sure_segment(u):  # 谷雨 itemEva 包装：绽放、终结、治疗不闪避；哈基米必中剑段（导入角色平衡在甚尔外层，影速也不加）
 		return 0.0
 	if XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t) or XToji.sure(u, skill):  # 云裳伤害技能、宿傩斩击打有看破的目标、甚尔五感主技能／武器库 itemEva 包装：不闪避
 		return 0.0
