@@ -177,6 +177,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XYunshang.start_battle(self)  # 云裳 startBattle 包装：建战斗数据、天衣无缝全醒
 	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
 	XSukuna.start_tp(self)  # 宿傩 startBattle 包装（之后）：TP 至少 60
+	XCat.trial_start_battle(self)  # 小猫试炼 startBattle 包装（之后）：178 回满、TP 满
 	# 本版改过的 BattleManager.startBattle：每场开战预约公共事件 1320「战斗开始时调整变量」，开战第一次事件检查先跑它
 	XBattleCommonEvent.reserve(self, XBattleCommonEvent.START_EVENT)
 
@@ -760,6 +761,9 @@ func next_subject() -> XBattler:
 ## 行动者当场决定的行动：敌人按 AI，角色在自动战斗时按自动规则，否则普通攻击。返回 [技能, 目标]。
 func decide(b: XBattler) -> Array:
 	if b is XEnemy:
+		var cat := XCat.dragon_action(self, b)  # 小猫试炼巨龙 makeActions 包装：按回合轮换出招，不掷随机数
+		if not cat.is_empty():
+			return cat
 		var sk := enemy_action(b)
 		return [null if sk.is_empty() else sk, null]  # 没有行动：同逃跑失败的放弃（processTurn 没有 currentAction 就 endAction）
 	return auto_battle_action(b) if auto else [b.attack_skill(), null]
@@ -1277,7 +1281,7 @@ func make_action_times(b: XBattler) -> int:
 	for p in b.action_plus_set():
 		if _float("action_times") < float(p):
 			n += 1
-	return n
+	return n + XCat.extra_actions(b)  # 小猫剑圣 makeActionTimes 包装：进阶学了速剑多 1 次
 
 
 ## otbClearActionOrdersOfUnableBattlers
@@ -1434,6 +1438,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	else:
 		u.refresh_resources()
 	logs.append({"type": "action", "user": u, "skill": skill, "views": views()})
+	logs.append_array(XCat.start_action(u, skill))  # 小猫试炼 startAction 包装：巨龙蓄息时日志加一行
 	if blocked:
 		return logs
 	if XToji.suppressed(self, u, skill):  # 甚尔天逆鉾封印 applyGlobal 包装：这次主动技能失效（扣一次），整段序列跳过
