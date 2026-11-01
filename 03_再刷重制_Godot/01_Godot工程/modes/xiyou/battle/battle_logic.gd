@@ -456,7 +456,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if is_item(skill):
 		return a.is_actor() and state.items.get(int(skill.id), 0) > 0
-	if a.cooldown_left(int(skill.id)) > 0:
+	# 云裳九曲回针 meetsSkillConditions：醒着的针眼每回合一次不看冷却（原版临时把冷却设 0 再判，预热照判）
+	if (a.cooldown_left(int(skill.id)) if not XYunshang.eye_bypass(a, skill) else ceili(float(a.warmups.get(int(skill.id), 0)))) > 0:
 		return false
 	if not XCat.legal(self, a, skill):  # 小猫剑圣的剑技／试炼条件、178 没持剑不能用物理技能
 		return false
@@ -563,7 +564,7 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Arr
 				out.append(_random_target(alive(friends)))
 		XYunshang.set_primary(a, out)
 		return out
-	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, _targets_for(a, skill, chosen)))  # 云裳云丝展幅 makeTargets 包装在异化之内
+	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, _targets_for(a, skill, chosen), chosen))  # 云裳云丝展幅、千军入袖收袖 makeTargets 包装在异化之内
 	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
 	return list
 
@@ -1652,12 +1653,22 @@ func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool, 
 
 
 func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
-	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
-	_formula_outcome.value = XBlackFlash.formula(self, u, skill, t, float(_formula_outcome.value))  # 黑闪 evalDamageFormula 包装：觉醒 ×1.2、判黑闪
+	var raw := _formula_raw(u, skill, t)
 	critical = critical or XBlackFlash.boosted(t)  # 黑闪 modifyCritical 包装：黑闪必暴击
-	var options := {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule(),
+	var options := {"critical": critical, "vars": vars(), "rawValue": raw, "random": _rule(),
 		"battleRound": maxi(1, turn), "raceAction": true}  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
-	return XYunshang.calculate_split(skill, u, t, options)  # 云裳伤害钩子 split：七曜流霞元素、万法同裳两路（没有就照常算一次）
+	var outcome := _formula_outcome
+	# 云裳伤害钩子 split：七曜流霞元素、万法同裳两路、千军入袖收袖的各目标（公式对别的目标重新求值；没有就照常算一次）
+	var res := XYunshang.calculate_split(skill, u, t, options, func(pt): return _formula_raw(u, skill, pt))
+	_formula_outcome = outcome
+	return res
+
+
+## evalDamageFormula(target)：执行公式（实战路径），再经黑闪包装（觉醒 ×1.2、判黑闪）
+func _formula_raw(u: XBattler, skill: Dictionary, t: XBattler) -> float:
+	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
+	_formula_outcome.value = XBlackFlash.formula(self, u, skill, t, float(_formula_outcome.value))
+	return float(_formula_outcome.value)
 
 
 func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -> Dictionary:

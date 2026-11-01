@@ -211,14 +211,21 @@ static func repeats(u, skill: Dictionary, n: int) -> int:
 	return n * 2 if own(u) and knows(u, DOUBLE) and damage_action(skill) else n
 
 
-## makeTargets 包装：学了云丝展幅的单体对敌伤害行动＝[主目标]＋其余活着的敌人（没有主目标就是全部活着的敌人）
-static func targets(logic, u, skill: Dictionary, list: Array) -> Array:
-	if not (own(u) and knows(u, SPREAD) and int(skill.get("scope", 0)) in [1, 3] and damage_action(skill)):
-		return list
-	var foes: Array = logic.alive(logic.enemies)
-	if list.is_empty():
-		return foes
-	return [list[0]] + foes.filter(func(x): return x != list[0])
+## makeTargets 包装：学了云丝展幅的单体对敌伤害行动＝[主目标]＋其余活着的敌人（没有主目标就是全部活着的敌人）；
+## 千军入袖收袖（第 265 行，本次行动 frame.sleeve）：对敌全体（scope 2），或云裳学了云丝展幅的伤害行动，记下全部活着的对手
+## （_yunSleeveTargets，伤害按他们各算一次相加，见 split），目标收成 smoothTarget 那一个（段数照外层重复）
+static func targets(logic, u, skill: Dictionary, list: Array, chosen = null) -> Array:
+	var out := list
+	if own(u) and knows(u, SPREAD) and int(skill.get("scope", 0)) in [1, 3] and damage_action(skill):
+		var foes: Array = logic.alive(logic.enemies)
+		out = foes if list.is_empty() else [list[0]] + foes.filter(func(x): return x != list[0])
+	if battle != 0 and is_same(frame.get("user"), u) and bool(frame.get("sleeve", false)) \
+			and (int(skill.get("scope", 0)) == 2 or own(u) and knows(u, SPREAD) and damage_action(skill)):
+		var opp: Array = logic.alive(logic.enemies if u is XActor else logic.actors)
+		frame.sleeve_targets = opp.duplicate()
+		var t = chosen if chosen != null and opp.has(chosen) else (opp[0] if not opp.is_empty() else null)
+		out = [t] if t != null else []
+	return out
 
 
 ## meetsSkillConditions 包装：没解锁的不能用；敕衣点神要有活着的出战成员穿天衣；收针要有人觉醒（第二期，现恒否）
@@ -236,6 +243,15 @@ static func meets(a, skill: Dictionary, logic) -> bool:
 		return false
 	if id == STORE and (key(a) != 9 or not source_original(a) or int(data(a).get("ghost", 0)) > 0):
 		return false
+	if key(a) == 6 and not knows(a, id):  # 空袖藏星（第 253 行）：借来的技能要排在可借的前几个、主人在出战且会、可借
+		var choices: Array = setting(a).borrow
+		for i in choices.size():
+			if int(choices[i].skill) != id:
+				continue
+			var owner = _borrow_owner(int(choices[i].owner))
+			if i >= (3 if awake(a) else 1) or owner == null or not knows(owner, id) or not borrowable(skill):
+				return false
+			break
 	return true
 
 
@@ -285,7 +301,8 @@ static func data(a) -> Dictionary:
 		d = {"uid": uid, "battle": battle, "key": key(a), "wake_until": 0, "stored": 0, "gifts": 0, "free_gift_round": -1,
 			"release_round": -1, "cut_round": -1, "cut_values": null, "cut_choices": [], "cut_snapshot": {}, "cut_awake": false,
 			"bank": 0.0, "debts": [], "captured": [], "ghost": 0, "ghost_done": 0, "ghost_used": false, "ghost_expires": 0, "revived": false,
-			"clone_round": -1, "debt_conversion": false, "exchange_charge": false, "guard_until": 0, "lamp_round": -1}
+			"clone_round": -1, "debt_conversion": false, "exchange_charge": false, "guard_until": 0, "lamp_round": -1,
+			"needle_used": false, "needle_other": [], "needle_bypass_round": -1}
 		_data[a] = d
 	return d
 
@@ -297,7 +314,7 @@ static func awake(a) -> bool:
 
 static func setting(a) -> Dictionary:
 	if not settings.has(a):
-		settings[a] = {"eye": 0, "elements": [2, 3, 4], "element": 2}
+		settings[a] = {"borrow": [], "eye": 0, "elements": [2, 3, 4], "element": 2}
 	return settings[a]
 
 
@@ -334,6 +351,8 @@ static func wake(logic, a) -> bool:
 	if fresh:
 		d.debt_conversion = true
 		d.exchange_charge = true
+		if int(d.key) == 7 and int(setting(a).eye) > 0:
+			a.cooldowns.erase(int(setting(a).eye))  # 九曲回针：觉醒那一刻清针眼冷却
 	if fresh and int(d.key) == 8 and int(d.cut_round) == round:
 		cut(a, d.cut_choices)
 	var c := _cloud(logic)
@@ -387,6 +406,7 @@ static func start_turn(logic) -> void:
 			continue
 		d.gifts = 0
 		d.lamp_round = -1
+		d.needle_other = []
 		if int(d.key) == 9 and awake(a):
 			d.stored = mini(3, int(d.stored) + 1)
 	_acted = []
@@ -440,6 +460,7 @@ static func end_battle(logic = null) -> void:
 	lamp_shared = []
 	team_buff = false
 	_data.clear()
+	borrow_stats.clear()
 	wind_until.clear()
 	afterglow.clear()
 	gift_received.clear()
@@ -476,6 +497,8 @@ static func battle_param(a, i: int, v: float) -> float:
 		_pair_guard = true
 		v = maxf(v, a.param(4 if i == 2 else 2))
 		_pair_guard = false
+	if borrow_stats.has(a) and i in [2, 4]:
+		v = maxf(v, float(borrow_stats[a].get(i, 0.0)))  # 空袖藏星：醒着用借来的技能时物攻／魔攻至少取主人的
 	if i == 6 and int(wind_until.get(a, -1)) >= round:
 		v *= 1.33
 	return v
@@ -518,6 +541,12 @@ static func skill_ids(a, ids: Array) -> Array:
 	var extra: int = {0: MOUNTAIN, 4: EXCHANGE, 11: GIFT, 9: STORE}.get(k, 0)
 	if extra != 0 and not ids.has(extra):
 		ids.append(extra)
+	if k == 6:  # 空袖藏星（第 248 行）：天衣铺设的借用技能，没醒取前 1 个、醒取前 3 个；主人在出战且会、可借
+		for r in (setting(a).borrow as Array).slice(0, 3 if awake(a) else 1):
+			var owner = _borrow_owner(int(r.owner))
+			var sid := int(r.skill)
+			if owner != null and knows(owner, sid) and not ids.has(sid) and borrowable(XDB.rec("Skills", sid)):
+				ids.append(sid)
 	return ids
 
 
@@ -635,6 +664,19 @@ static func prepare(logic, u, skill: Dictionary) -> Array:
 		d.guard_until = round + 1
 	if int(d.get("key", -1)) == 2 and awake(u) and bool(d.debt_conversion) and damage_action(skill):
 		frame.debt = debt_total(d)
+	frame.sleeve = bool(sleeve.get(u, false))  # action._yunSleeve（指令窗或自动战斗设的收袖开关）
+	var sid := int(skill.get("id", 0)) if not XBattleLogic.is_item(skill) else 0
+	if int(d.get("key", -1)) == 6 and awake(u) and sid > 0:
+		for b in setting(u).borrow:
+			if int(b.skill) == sid:
+				var owner = _borrow_owner(int(b.owner))
+				if owner != null:
+					borrow_stats[u] = {2: float(owner.atk), 4: float(owner.mat)}
+					_refresh(u)
+				break
+	if eye_bypass(u, skill):  # 九曲回针：醒着每回合一次越过冷却（付费前清掉，付费再照常进冷却）
+		d.needle_bypass_round = round
+		u.cooldowns.erase(sid)
 	if not _acted.has(u):
 		_acted.append(u)
 	team_buff = int(skill.get("scope", 0)) in [8, 10]  # startAction 包装：对友方全体的行动
@@ -679,6 +721,15 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 	if not d.is_empty() and damage_action(skill) and not bool(frame.robe_hit) and float(frame.total) > 0.0:
 		frame.robe_hit = true
 		logs.append_array(_robe_hit(logic, u, d))
+	if o_sleeve_overflow and frame.has("sleeve_targets") and not d.is_empty() and awake(u) and id > 0 and t.hp <= 0.0 and float(r.get("hp", 0.0)) > 0.0:
+		# 千军入袖觉醒（第 422 行）：打倒目标时溢出量（这段伤害−打前生命）依次传给其余活着的敌人
+		var overflow := maxf(0.0, float(r.hp) - float(frame.get("hp_before", 0.0)))
+		for e in logic.alive(logic.enemies).filter(func(x): return x != t and x.hp > 0.0):
+			if overflow <= 0.0:
+				break
+			var before: float = e.hp
+			logs.append_array(derived(logic, u, e, id, {"damage": overflow}))
+			overflow = maxf(0.0, overflow - before)
 	return logs
 
 
@@ -856,6 +907,7 @@ static func derived(logic, src, t, skill_id: int, o: Dictionary) -> Array:
 
 
 ## 伤害钩子 yunshang 的 split：七曜流霞（没醒用选定元素，醒了用元素组）、万法同裳觉醒（物理、魔法两路各算一次）
+## 千军入袖收袖（第 752 行）：对 _yunSleeveTargets 每个目标各算一次（"_target"，取各自的防御、元素抗性，公式也按各自求值）
 static func split(u, skill: Dictionary) -> Array:
 	if battle == 0 or not derived_frame.is_empty() or not damage_action(skill):
 		return []
@@ -866,28 +918,38 @@ static func split(u, skill: Dictionary) -> Array:
 	if int(d.key) == 14:
 		es = (setting(u).elements as Array).duplicate() if awake(u) else [int(setting(u).element)]
 	var routes := ["magical", "physical"] if int(d.key) == 13 and awake(u) else [""]
-	if es == null and routes.size() == 1:
+	var sleeved: Array = frame.get("sleeve_targets", []) if is_same(frame.get("user"), u) else []
+	if es == null and routes.size() == 1 and sleeved.size() <= 1:
 		return []
 	var parts := []
-	for mode in routes:
-		var o := {}
-		if es != null:
-			o["elements"] = es
-		if mode != "":
-			o["mode"] = mode  # 字符串键（o.mode 会建 StringName 键，伤害计算的模块快照不认）
-		parts.append(o)
+	for t in (sleeved if not sleeved.is_empty() else [null]):
+		for mode in routes:
+			var o := {}
+			if t != null:
+				o["_target"] = t
+			if es != null:
+				o["elements"] = es
+			if mode != "":
+				o["mode"] = mode  # 字符串键（o.mode 会建 StringName 键，伤害计算的模块快照不认）
+			parts.append(o)
 	return parts
 
 
-## 伤害计算（_calculate_damage）：有 split 时按各段（元素、物理／魔法路线）各算一次再相加（CodexDamage dispatch：取整、任一段暴击算暴击）
-static func calculate_split(skill: Dictionary, u, t, options: Dictionary) -> Dictionary:
+## 伤害计算（_calculate_damage）：有 split 时按各段（元素、物理／魔法路线、收袖的各目标）各算一次再相加（CodexDamage dispatch：取整、任一段暴击算暴击）。
+## 收袖的段对别的目标时公式按那个目标重新求值（raw_for，原版 compute 每段 evalDamageFormula(p.target)）；打到的目标那段沿用已算好的
+static func calculate_split(skill: Dictionary, u, t, options: Dictionary, raw_for := Callable()) -> Dictionary:
 	var parts := split(u, skill)
 	if parts.is_empty():
 		return XDamage.calculate(skill, u, t, options)
 	var out := {}
 	var total := 0.0
 	for p in parts:
-		var res := XDamage.calculate(skill, u, t, options.merged(p, true))
+		var pt = p.get("_target", t)
+		var o := options.merged(p, true)
+		o.erase("_target")
+		if pt != t and raw_for.is_valid():
+			o["rawValue"] = raw_for.call(pt)
+		var res := XDamage.calculate(skill, u, pt, o)
 		if out.is_empty():
 			out = res
 		elif bool(res.get("critical", false)):
@@ -1022,6 +1084,8 @@ static func state_copy(logic, from, to, id: int, turns = null) -> bool:
 
 ## executeHpDamage 包装（原扣血之前）：山河作骨 0 觉醒者替出战队友分担 33%（记进 bank，上限最大生命 ×3）；赊月偿星 2 把 50% 记成债（债总额上限最大生命 ×2，到期＝下一回合末）
 static func hp_damage(logic, _u, t, value: float) -> float:
+	if battle != 0 and derived_frame.is_empty() and is_same(frame.get("user"), _u):
+		frame.hp_before = t.hp  # executeDamage 包装：action._yunHpBefore（千军入袖溢出用）
 	if battle == 0 or value <= 0.0:
 		return value
 	if t is XActor and logic.actors.has(t):
@@ -1062,6 +1126,9 @@ static func after_hp(logic, u, t, value: float, item: Dictionary) -> void:
 static func finish(logic, u, skill) -> Array:
 	var logs := []
 	team_buff = false
+	if borrow_stats.has(u):  # delete a._yunBorrowStats
+		borrow_stats.erase(u)
+		_refresh(u)
 	if battle == 0 or skill == null or not skill is Dictionary or skill.is_empty():
 		return logs
 	var d := data(u)
@@ -1072,6 +1139,17 @@ static func finish(logic, u, skill) -> Array:
 	if mine:
 		frame.finished = true
 	var dmg := mine and damage_action(skill)
+	if int(d.key) == 7 and (mine or id == XBattleLogic.GUARD_SKILL) and not XBattleLogic.is_item(skill):  # 防御不走 prepare，也算一次别的技能
+		var eye := int(setting(u).eye)
+		if id == eye:
+			d.needle_used = true
+		elif bool(d.needle_used) and (d.needle_other as Array).size() < 3 and not (d.needle_other as Array).has(id):
+			(d.needle_other as Array).append(id)  # 九曲回针：用过针眼后，别的技能（每回合最多 3 种）各让针眼冷却 −1
+			var left := maxf(0.0, float(u.cooldowns.get(eye, 0.0)) - 1.0)
+			if left > 0.0:
+				u.cooldowns[eye] = left
+			else:
+				u.cooldowns.erase(eye)
 	if int(d.key) == 2 and dmg:
 		repay(d, float(frame.total) * 0.33)
 	if int(d.key) == 12 and dmg and (awake(u) or int(d.clone_round) != round):
@@ -1098,3 +1176,53 @@ static func finish(logic, u, skill) -> Array:
 		elif int(d.ghost) <= 0:
 			end_ghost(logic, u, d)
 	return logs
+
+
+# ---- 第二期 B 批后一半：千军入袖 5、空袖藏星 6、九曲回针 7（孤灯照众 10 见 state_added）----
+## 千军入袖的收袖开关（原版 a._yunSleeve：指令窗「收袖」切换，自动战斗设为开）；每次行动 prepare 时抄进 frame.sleeve
+static var sleeve := {}
+## O-待定：千军入袖觉醒的溢出（第 422 行）要 !live(target)，可原版行动中目标有 YEP IMMORTAL（行动序列 immortal: targets, true），
+## 生命到 0 也不倒下，溢出从来不触发，打倒目标后剩下的段照样打在它身上。true＝目标生命到 0 就算打倒、溢出照写的传给其余敌人；
+## false＝照原版（不传）
+static var o_sleeve_overflow := true
+## 空袖藏星：醒着用借来的技能时主人的物攻／魔攻（a._yunBorrowStats，prepare 记、finish 清）
+static var borrow_stats := {}
+static var _borrow_res := []
+
+
+## 借用技能的主人：在出战（members()＝battleMembers；不取 XState.battle_members，它会整队）
+static func _borrow_owner(owner_id: int):
+	var s := XState.current
+	if s == null or not s.party.has(owner_id) or not s.battle_slots.has(owner_id):
+		return null
+	return s.actor(owner_id)
+
+
+## Y.borrowable（第 249 行）：普通技能才能借（编号在云裳技能之前、不是不能用的场合、不是被动类别 4；备注、公式、名字的排除；
+## 不带特殊效果 43／44，附加／解除状态 21／22 只许普通增减益）
+static func borrowable(s: Dictionary) -> bool:
+	if s.is_empty() or int(s.get("id", 0)) >= PIN or int(s.get("occasion", 0)) == 3 or int(s.get("stypeId", 0)) == 4:
+		return false
+	if _borrow_res.is_empty():
+		_borrow_res = [RegEx.create_from_string("(?i)<(?:Custom|Passive|SkillKill|SkillFrUse|Switch|Variable|Actor|req_|MagicWeapon)"),
+			RegEx.create_from_string("Codex|\\$game|\\ba\\._|\\bb\\._|\\ba\\.[A-Za-z]+\\s*\\("),
+			RegEx.create_from_string("形态|领域|觉醒|进阶|制作|唤醒|召唤|复活|变身|解放|无限|天与")]
+	if _borrow_res[0].search(str(s.get("note", ""))) != null or _borrow_res[1].search(str(s.get("damage", {}).get("formula", ""))) != null \
+			or _borrow_res[2].search(str(s.get("name", ""))) != null:
+		return false
+	var bad := transfer_debuffs()
+	for e in s.get("effects", []):
+		var code := int(e.get("code", 0))
+		var sid := int(e.get("dataId", 0))
+		if code in [43, 44] or code in [21, 22] and not bad.has(sid) and not SHARE_BUFFS.has(sid):
+			return false
+	return true
+
+
+## 九曲回针（第 254 行）：醒着、这是针眼、本回合还没越过——能不能用时不看冷却（预热照看）
+static func eye_bypass(a, skill: Dictionary) -> bool:
+	if not a is XActor or XBattleLogic.is_item(skill) or battle == 0:
+		return false
+	var d := data(a)
+	return int(d.get("key", -1)) == 7 and int(setting(a).eye) == int(skill.get("id", 0)) and int(setting(a).eye) > 0 \
+		and awake(a) and int(d.needle_bypass_round) != round
