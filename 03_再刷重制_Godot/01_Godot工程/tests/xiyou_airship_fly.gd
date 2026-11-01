@@ -22,6 +22,7 @@ const BLOCKS_69 := [
 ## 神魔战场各块：[块, 对话事件（农田／矿：选「我再看看」）, 0, 0, 应答]
 const BLOCKS_186 := [[2, 21, 0, 0, [1]], [3, 6, 0, 0, [1]], [6, 5, 0, 0, [1]], [19, 12, 0, 0, [1]], [32, 14, 0, 0, [1]],
 	[38, 7, 0, 0, [1]], [41, 10, 0, 0, [1]], [47, 4, 0, 0, [1]]]
+const ROUTE := preload("res://tests/xiyou_airship_route.gd")
 const DIRS := {2: Vector2i(0, 1), 4: Vector2i(-1, 0), 6: Vector2i(1, 0), 8: Vector2i(0, -1)}
 
 var results: Array = []
@@ -97,10 +98,13 @@ func _event(id: int) -> MVEvent:
 	return null
 
 
-## 按 touch_target 一格一格走（走 MVPlayer.update_character 的真实路径：stepped、接触、确认都照常）
+## 走一格、按确认、走路 BFS、走到事件跑一次：用楼层专项的公共步骤（xiyou_airship_route，原来这里有一份一样的）
+func _r():
+	return ROUTE.new(self, map)
+
+
 func _step_to(c: Vector2i) -> bool:
-	map.player.touch_target = c
-	return await _until(func(): return map.busy or (map.player.grid == c and not map.player.is_moving()), 600)
+	return await _r().step_to(c)
 
 
 ## 飞到某格（穿透，_toward 直线靠近）
@@ -109,10 +113,8 @@ func _fly_to(c: Vector2i) -> bool:
 	return await _until(func(): return map.player.grid == c and not map.player.is_moving())
 
 
-## 按确认（Game_Player.triggerButtonAction）
 func _press() -> void:
-	await _until(func(): return not map.busy)
-	await map._on_action()
+	await _r().press()
 
 
 func _get_on(tag: String) -> bool:
@@ -129,66 +131,19 @@ func _land(tag: String) -> bool:
 	return _check(tag + "_walk", await _until(func(): return s.vehicle_type == "walk" and map.vehicle_can_move()) and not map.player.transparent and int(_airship().altitude) == 0, _airship())
 
 
-## 走路 BFS（图块双向通行、同层事件挡路；不踩别的事件格）
 func _path(from: Vector2i, goal: Vector2i) -> Array:
-	var occupied := {}
-	for e in map.events:
-		if not e.page.is_empty():
-			occupied[e.grid] = true
-	var prev := {from: from}
-	var q := [from]
-	while not q.is_empty():
-		var c: Vector2i = q.pop_front()
-		if c == goal:
-			var out := []
-			while c != from:
-				out.push_front(c)
-				c = prev[c]
-			return out
-		for d in DIRS:
-			var n: Vector2i = c + DIRS[d]
-			if prev.has(n) or not map.lower.is_valid(n) or (occupied.has(n) and n != goal):
-				continue
-			if map.lower.is_passable(c.x, c.y, d) and map.lower.is_passable(n.x, n.y, 10 - d):
-				prev[n] = c
-				q.append(n)
-	return []
+	return _r().path(from, goal)
 
 
 func _walk(goal: Vector2i) -> bool:
-	for c in _path(map.player.grid, goal):
-		if not await _step_to(c) or map.busy:
-			return false
-	return map.player.grid == goal
+	return await _r().walk(goal)
 
 
-## 走到事件跑一次：同层的从四边（下、上、左、右，事件可能要求朝向）靠过去撞它；角色下方的踩上去。
-## 跑完后 dest＞0 要换到 dest，否则只要跑过。地图场景跨传送不换（load_map 在本场景里），事件节点会换
+## 走到事件跑一次（公共步骤 walk_to：同层的从下、上、左、右靠过去撞，下方的踩上去）；dest＞0 要换到 dest，否则只要跑过
 func _run_exit(ev_id: int, dest: int, answers: Array) -> bool:
-	var e := _event(ev_id)
-	if e == null:
-		return false
-	var grid := e.grid
-	var normal := e.is_normal_priority()
-	var map_id := map.map_id
-	var sides: Array = [grid + DIRS[2], grid + DIRS[8], grid + DIRS[4], grid + DIRS[6]] if normal else [grid]
-	for side in sides:
-		if map.player.grid != side and _path(map.player.grid, side).is_empty():
-			continue
-		XMessageBox.auto_answers = answers.duplicate()
-		var ran := [false]
-		var cb := func(b: bool): ran[0] = ran[0] or b
-		map.busy_changed.connect(cb)
-		await _walk(side)
-		if normal and not map.busy and map.map_id == map_id:
-			await _step_to(grid)   # 撞上去：update_character 走不过去时面向目标、按调查
-		await _until(func(): return not map.busy)
-		map.busy_changed.disconnect(cb)
-		if dest > 0 and map.map_id == dest:
-			return await _wait_map(dest) != null
-		if dest == 0 and ran[0]:
-			return true
-	return false
+	if dest > 0:
+		return await _r().walk_to(ev_id, answers, func(): return map.map_id == dest) and await _wait_map(dest) != null
+	return await _r().walk_to(ev_id, answers)
 
 
 ## 跑目标图的出口事件回到 to（出口常要求朝向，如 Map088、071 要朝下：依次转向再跑，相当于在出口格上转身）
