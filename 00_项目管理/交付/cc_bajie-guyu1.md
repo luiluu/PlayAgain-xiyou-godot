@@ -1,7 +1,7 @@
 # 交付：cc/bajie-guyu1
 
 - 车道／工作者：C 规则／八戒（cc，八戒）
-- 状态：进行中
+- 状态：可合并
 - 分支接在 cc/bajie-toji4 末端 6d8173e1 后面（总装八建议：谷雨也在 actor_modules、切片等处加行，带着甚尔切少一次冲突；先从 main bbeecb5b 切、做完一半后 rebase 过来），工作树 `.claude/worktrees/sleepy-khayyam-db2439`。
 
 ## 做到哪
@@ -52,7 +52,11 @@
 
 ## 验证
 
-（待写）
+- 专项：`xiyou_guyu` 66/66；`xiyou_help_card` 1011/1011（专项里 10 级的专属角色补上 175：参照探针把切片角色都 changeLevel 到 10，说明卡的消耗行与「成长：」行按谷雨当前值算）。
+- 扩角色那套（同步前先跑单探针）：slice_probe、actor_passive_probe 单跑，`RULES_ONLY_ACTORS=175` 六个难度第 0 份 `xiyou_rules`／`_d2`～`_d6` 各 1905～1907 项全过；`xiyou_actor_p0`、`xiyou_actor_modules`、`xiyou_wtype`、`xiyou_toji`、`xiyou_toji_battle` 全过。
+- 同步（一轮）`同步正式西游.py --accept-additions`：「新增用例，已接受」，新增 actor_passive（175 五档）、help_cards（10288、10289、10290、10293、10298）、slice_d1～d6（175 的能力与伤害行）、wtype；来源核对 0 问题。
+- `内容覆盖检查.py`：new 0、resolved 0，不用更新 baseline。
+- `语法检查.py` 通过。没合 main（分支接在 toji4 后面，等总装合 toji4 时一起理）。
 
 ## 待交叉核查
 
@@ -68,3 +72,4 @@
 
 - 30bb278f WIP：XGuyu 与接线、切片加 175
 - 069866f2 探针与专项、说明卡成长行
+- 说明卡专项补 10 级谷雨、交付单可合并（本提交）
