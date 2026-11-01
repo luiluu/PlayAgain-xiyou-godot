@@ -374,8 +374,10 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 		return
 	if meta.has("CodexRavenMyth") and has(u, MYTH) and not is_myth(u):
 		_store()["myth"] = 3
+		_fx(r, "ring")  # R.Fx.play(subject, target, 'ring')
 	if not meta.has("CodexRavenDamage") or t == null:
 		return
+	_fx(r, "slash")  # 每次 apply 都放（R.Fx.play 'slash'，不看命中）
 	var hit: bool = used and not bool(r.get("missed", false)) and not bool(r.get("evaded", false))
 	var id := int(skill.get("id", 0))
 	var mine: bool = not frame.is_empty() and is_same(frame.user, u)
@@ -397,6 +399,13 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 			row = [t, 0.0]
 			frame.targets.append(row)
 		row[1] = float(row[1]) + maxf(0.0, float(r.get("hp", 0.0)))
+
+
+## 战斗画面要放的渡鸦特效（XRavenFx）记在命中记录上
+static func _fx(r: Dictionary, kind: String) -> void:
+	if not r.has("raven_fx"):
+		r["raven_fx"] = []
+	r.raven_fx.append(kind)
 
 
 ## directDamage：gainHp(−floor(值))，不经伤害计算，倒下照常；记录的 hp 是 gainHp 的值（同原版弹出的 hpDamage，可大于剩余生命）
