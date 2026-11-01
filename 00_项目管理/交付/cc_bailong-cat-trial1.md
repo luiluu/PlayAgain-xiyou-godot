@@ -1,7 +1,7 @@
 # 交付：cc/bailong-cat-trial1
 
 - 车道／工作者：E 角色专属／白龙_13（cc）
-- 状态：进行中
+- 状态：可合并
 - 分支从 cc/bailong-exclusive-gaps1 末端 b825c89f 切出（总装十一派单），**包含 yunshang9～11 与 exclusive-gaps1**，那几张交付单照它们自己的合；开工时合过一次 main（5bbccdcc）。
 - 范围：小猫剑圣守誓巨龙试炼（公共事件 9018，小猫进阶石 2900 唯一来源），顺带进阶速剑多一次行动、178 在队号角不能用；终技品质 10 查明看不出差别，不做。
 
@@ -25,7 +25,8 @@
 - 专项 xiyou_cat_trial 53/53：条件三种不够、换队与记下的队伍、开战回满、经 decide 的 12 回合出招与目标、经 act 的蓄息日志、8 项原值参数、24 个状态在试炼中／还原后、五次还原（首胜、再胜、输倒下、输没倒、-1）、存档往返后还原、速剑四种组合、号角在队／离队、品质 9／10 同档、事件脚本开战／输／条件不够。
 - 反向验证 12 处全抓到：出招不减 1、decide 不接巨龙、不回满、不挡难度状态、参数不用原值、首胜可重复给、输了不留 1 血、不还原出战栏、速剑不加、号角不看在队、蓄息不加日志、脚本不开战。
 - 语法检查通过。
-- 选测：（进行中）
+- 选测：`选测.py c2c25026^`（本分支自己的改动）因为碰了 battle_logic／enemy／xsave 选上 273 个；钩子只在敌人 1999、角色 178 与试炼标记下生效，改跑与战斗、出招、小猫、读档、物品、事件脚本相关的 30 个全名（CHECK_JOBS=3）全过：xiyou_cat、xiyou_cat_trial、xiyou_actor_p0、xiyou_advance_reads、xiyou_help_card、xiyou_event_compare、xiyou_determinism、xiyou_battle、xiyou_otb、xiyou_rules、xiyou_rules_d3、xiyou_enemy_warehouse、xiyou_boss_lifecycle、xiyou_param_cache、xiyou_item_use、xiyou_item_bag、xiyou_script、xiyou_common_scripts、xiyou_save_events、xiyou_autosave、xiyou_zhenqi_break、xiyou_imported_balance、xiyou_smart_ai、xiyou_garou_battle、xiyou_yunshang_shop、xiyou_difficulty_inherit_load、xiyou_module_hooks、xiyou_random_streams、xiyou_mira_abyss、xiyou_actor_modules。
+  - xiyou_event_compare 第一轮报 m4e1p2／m4e1p3 回归与 m221e3p0／ce1344 参照报错：开工合 main 后没重跑 `--补齐`，generated/oracle 旧了；补齐后单跑通过。
 
 ## 交接板
 
@@ -52,4 +53,5 @@
 - 前面同 exclusive-gaps1（到 b825c89f），合 main
 - c2c25026 WIP: 参照 cat_trial_probe
 - b74649bd WIP: 重制与专项 53/53
-- 本提交：交付单
+- 777f225b WIP: 交付单
+- 本提交：选测结果，交付单可合并
