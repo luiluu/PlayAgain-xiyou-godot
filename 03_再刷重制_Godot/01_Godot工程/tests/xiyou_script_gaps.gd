@@ -100,7 +100,7 @@ func _defeat(ref: Dictionary) -> void:
 		var page: Dictionary = XDB.map(17).events[4].pages[0]
 		var it := MVInterpreter.new(self, 17, 4, page.list)
 		await it.run()
-		var ok := kills >= 999
+		var ok: bool = kills >= 999
 		_check("map17_ev4_%d" % kills, it.skipped.is_empty() and XDesignation.unlocked(5) == ok and s.achievements.has("121") == ok,
 			[it.skipped, XDesignation.unlocked(5), s.achievements.keys()])
 	# 反向：别的对象上的同名函数仍认不出（按假走）
