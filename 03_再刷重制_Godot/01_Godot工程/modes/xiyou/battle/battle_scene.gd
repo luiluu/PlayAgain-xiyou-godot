@@ -1429,6 +1429,8 @@ func _play(logs: Array) -> void:
 				await _show_hit(l)
 			"toast":
 				XToast.show_text(str(l.text))
+			"mastery_up":
+				_start_animation(int(l.animation), l.target)  # YEP_SkillMasteryLevels onAllActionsEnd：升级动画（不镜像，不等）
 			"se":
 				play_se(l.se)
 			"battle_text":

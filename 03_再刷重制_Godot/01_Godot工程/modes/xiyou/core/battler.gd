@@ -206,9 +206,14 @@ func end_battle_cooldowns() -> void:
 	warmups.clear()
 
 
-## 公式兼容：技能熟练度（YEP_SkillMasteryLevels），首期统一为 0。
-func skillMasteryLevel(_skill_id: int) -> int:
-	return 0
+## 技能熟练度（YEP_SkillMasteryLevels，XSkillMastery）：技能 → 等级、本级已用次数；action_mastery 是本行动付过费、待 onAllActionsEnd 计数的技能
+var mastery_levels := {}
+var mastery_uses := {}
+var action_mastery: Array[int] = []
+
+
+func skillMasteryLevel(skill_id: int) -> int:
+	return int(mastery_levels.get(skill_id, 0))
 
 
 # ---- 护盾（ShieldSystem v2.8；参数 decayRate／damageReduction 取自插件设置）----

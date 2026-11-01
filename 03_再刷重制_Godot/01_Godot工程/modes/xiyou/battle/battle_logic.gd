@@ -824,6 +824,7 @@ func act(u: XBattler, skill, target) -> Array:
 	if started:
 		XMira.pay_hp(u, skill)  # 米拉 endAction 包装（原 endAction 之前）：禁忌生命代价
 		_tick_states(u, 1)
+		_mastery_end(u, logs)
 		XMira.liberate(self, u, skill)  # 米拉 endAction 包装（原 endAction 之后）：解放·黑龙
 		logs.append_array(mark_views(XGuyu.after_action(self, u, skill)))  # 谷雨 endAction 包装（原 endAction 之后）afterAction：花期里队友用技能后绽放
 	_sync_orders(before, true)
@@ -1174,6 +1175,7 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 		XAlienBattle.finish(self, logs)
 		XMira.pay_hp(u, skill)
 		_tick_states(u, 1)
+		_mastery_end(u, logs)
 		XMira.liberate(self, u, skill)
 		_sync_orders(before, true)
 	return logs
@@ -1432,6 +1434,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 				u.mp -= c.mp
 			u.tp -= c.tp
 			pay_hp(u, skill)  # YEP_SkillCore paySkillCost：MP／TP 之后扣 HP 费用
+			XSkillMastery.record(u, skill)  # YEP_SkillMasteryLevels paySkillCost 包装：战斗里记下技能，onAllActionsEnd 计次
 		u.pay_cooldown(skill)
 		_otb_user_shift(u, skill)
 	# YEP_BattleEngineCore useItem：付费后 refresh，消费行动者此前的 dirty，并照 Game_BattlerBase.refresh 把 MP／TP 截回 [0, 上限]
@@ -2175,6 +2178,13 @@ func _die(b: XBattler) -> void:
 
 
 ## timing 1 = 行动结束，2 = 回合结束（MV autoRemovalTiming）
+## YEP_SkillMasteryLevels onAllActionsEnd 包装（原 onAllActionsEnd 之后）：本行动付过费的技能各计一次使用，有升级就在行动者身上放动画 742
+func _mastery_end(u: XBattler, logs: Array) -> void:
+	var anim := XSkillMastery.all_actions_end(u)
+	if anim > 0:
+		logs.append({"type": "mastery_up", "target": u, "animation": anim})
+
+
 func _tick_states(b: XBattler, timing: int) -> void:
 	for id in b.state_ids.duplicate():
 		var s := XDB.rec("States", id)
