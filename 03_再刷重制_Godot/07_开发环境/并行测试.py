@@ -30,6 +30,9 @@
 - 总装优先（2026-10-30 哪吒_9）：主工作区（或 XIYOU_SLOT_PRIORITY=1）的占槽请求排进 slots/priority/，
   别的工作树的单槽申请只要看到还活着的优先等候者就让（不论谁先来）；车道的多槽进程在拿 heavy.lock 前也先等优先等候者走完。
   已占到槽在跑的不打断。XIYOU_SLOT_PRIORITY=0 让主工作区也按普通排队。
+- 快车道（tools30，白龙：单个专项直接跑 8 秒、排槽要 7 分钟）：这一次只跑 ≤EXPRESS_SCENES 个场景、且每个上次实测都不超过
+  EXPRESS_SECONDS 秒时，先试 slots/express.lock（全机只有一把，非阻塞 flock）：拿到就不排共用槽直接跑，最多比共用上限多一个进程；
+  拿不到（别人在用快车道）照常排队。没有实测记录的不走快车道。XIYOU_SLOT_EXPRESS=0 回到一律排队。
 - 心跳：批测与排槽期间每 XIYOU_TEST_HEARTBEAT 秒（默认 300，0 关闭）打印一行进度（完成数、等槽数、在跑的场景），
   免得长任务.py 的无输出看门狗（默认 3600 秒）把仍在推进的批测判成卡住；不放宽看门狗、不改并发。
 - 日志：--log-dir（或 CHECK_LOG_DIR）没给时写到 <工程上一级>/04_验证/本地结果/并行测试/<时间戳>/（只留最近 LOGS_KEEP 份），
@@ -62,6 +65,8 @@ NO_RERUN_PARSE_ERROR = True  # 解析错误不当偶发重跑（tools27）；设
 FLAKY_RERUN_MAX = 3  # 并行负载下偶发失败（floor16、floor_run_c 等）最多单独重跑这么多个
 RESULTS_KEEP = 20  # 共用状态目录里最多保留这么多份整轮结果（按指纹）
 RULES_FILTER_ENV = ('RULES_ONLY_TROOPS', 'RULES_ONLY_ACTORS')  # xiyou_rules 的编号过滤，结果不完整
+EXPRESS_SCENES = 2  # 快车道：一次最多几个场景
+EXPRESS_SECONDS = 60  # 快车道：每个场景上次实测不超过几秒
 HEARTBEAT = 300  # 默认心跳间隔（秒），远小于长任务.py 的 3600 秒无输出上限
 LOGS_KEEP = 10  # 默认日志目录（本地结果/并行测试/）最多保留这么多份
 
@@ -354,11 +359,47 @@ def global_slot(sdir: Path, limit: int, weight: int = 1, on_wait=None, wait_inte
 MAIN_LOOP = 'res://tests/test_main_loop.gd'
 
 
-def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progress: Progress = None) -> tuple:
+@contextlib.contextmanager
+def express_slot(sdir: Path):
+    """快车道（见文件头）：拿到 slots/express.lock 就 yield True（不再占共用槽），拿不到 yield False。"""
+    slots = sdir / 'slots'
+    slots.mkdir(exist_ok=True)
+    f = open(slots / 'express.lock', 'a')
+    try:
+        try:
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            yield False
+            return
+        yield True
+    finally:
+        f.close()
+
+
+def express_eligible(todo: list, timings: dict) -> bool:
+    """这一次够不够走快车道：场景少、每个都有不超过 EXPRESS_SECONDS 的实测。"""
+    if os.environ.get('XIYOU_SLOT_EXPRESS', '1') == '0' or not 0 < len(todo) <= EXPRESS_SCENES:
+        return False
+    return all(n in timings and float(timings[n]) <= EXPRESS_SECONDS for n in todo)
+
+
+@contextlib.contextmanager
+def test_slot(sdir: Path, limit: int, project: str, express: bool):
+    """快车道拿得到就用它，否则排共用槽。"""
+    if express:
+        with express_slot(sdir) as got:
+            if got:
+                yield 'express'
+                return
+    with global_slot(sdir, limit, priority=slot_priority(project)) as n:
+        yield n
+
+
+def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progress: Progress = None, express: bool = False) -> tuple:
     if progress:
         with progress.lock:
             progress.waiting.add(name)
-    with global_slot(sdir, limit, priority=slot_priority(project)):
+    with test_slot(sdir, limit, project, express):
         if progress:
             with progress.lock:
                 progress.waiting.discard(name)
@@ -590,11 +631,14 @@ def main() -> int:
     attempts = {}  # 场景 → [(rc, out, secs, cpu), …]：首次在前，重跑依次追加，不覆盖
     started = time.monotonic()
     progress = Progress(len(todo))
+    express = express_eligible(todo, timings)
+    if express:
+        print('  （快车道：%d 个短场景，先试不排共用槽）' % len(todo), flush=True)
     flaky = []
     # --quiet 也打心跳：长任务里加 --quiet 时整段没输出，被一小时无输出看门狗杀掉（八戒 dev.206）；心跳 5 分钟一行，管道给 tail 时看不到
     with heartbeat(progress, float(os.environ.get('XIYOU_TEST_HEARTBEAT', HEARTBEAT))):
         with cf.ThreadPoolExecutor(max_workers=a.jobs) as pool:
-            for name, rc, out, secs, cpu in pool.map(lambda n: run_one(a.godot, a.project, n, sdir, limit, progress), todo):
+            for name, rc, out, secs, cpu in pool.map(lambda n: run_one(a.godot, a.project, n, sdir, limit, progress, express), todo):
                 attempts[name] = [(rc, out, secs, cpu)]
         failed = [n for n in todo if not result_ok(*attempts[n][0][:2])]
         if NO_RERUN_PARSE_ERROR:

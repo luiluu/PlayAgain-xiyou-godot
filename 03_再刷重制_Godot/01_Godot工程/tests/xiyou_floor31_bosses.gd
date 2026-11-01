@@ -10,6 +10,7 @@ const FLOOR_MAP := 148
 ## 龙之祖（8）要先于瑞丁（6，页条件：变量 1109≥1）；神·金之巨人（1）1112、怨之脑·魇之眼（4）1113。
 const BOSSES := {2: [125, 1111], 3: [816, 1107], 13: [817, 1108], 9: [661, 0], 8: [126, 1109], 6: [818, 1115], 1: [830, 1112], 4: [831, 1113]}
 const TIMEOUT_MS := 90000
+const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
 
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
@@ -38,8 +39,8 @@ func _scene() -> Node:
 
 
 func _wait_map(map_id: int) -> bool:
-	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var t0 := WaitBudget.new(TIMEOUT_MS)
+	while t0.waiting():
 		var s = _scene()
 		if s is XMapScene and s.map_id == map_id and s.player != null and not s.busy:
 			return true
@@ -76,8 +77,8 @@ func _run_event(map: XMapScene, id: int, answers: Array, kill := false) -> bool:
 	(func():
 		await map.run_event(e)
 		st.done = true).call()
-	var t0 := Time.get_ticks_msec()
-	while not st.done and Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var t0 := WaitBudget.new(TIMEOUT_MS)
+	while not st.done and t0.waiting():
 		if kill:
 			var b := _battle_of(map)
 			if b != null and not b.logic.enemies.is_empty():

@@ -3,7 +3,7 @@ extends RefCounted
 ## 专属角色模块（167～177）在 XActor 上的公共挂点：XActor 只调这里，这里按角色分派到各模块。
 ## 不在 IDS 里的角色走快速路径（直接返回／原值），行为与没有挂点时完全一样。沙僧改 actor.gd 时请保留这些挂点。
 ## 各挂点对应原版包的哪一层：
-## - setup：Game_Actor.setup 包装（XActor.setup 末尾）——饿狼 G.sync＋recoverAll、渡鸦 setupRaven、宿傩 S.sync、甚尔 repair。
+## - setup：Game_Actor.setup 包装（XActor.setup 末尾）——饿狼 G.sync＋recoverAll、渡鸦 setupRaven、宿傩 S.sync、甚尔 repair、谷雨 syncSkills。
 ## - can_learn：Game_Actor.learnSkill 包装（XActor.learn_skill 开头；false 就不学）——只有饿狼包了 learnSkill
 ##   （10265～10269 未到形态／等级不学），所以事件学技能、技能共享／羁绊／领袖、进阶学技能也一样被挡。
 ##   渡鸦没包 learnSkill，只在 setup／levelUp 后重排（setupRaven），不放这里。
@@ -25,7 +25,7 @@ extends RefCounted
 ##   云裳云丝展幅的暴伤／终伤与织神天梭终伤（原版包的是 refreshPassiveCache，按差值增减，与每次重算后加上等价）。
 ## - 云裳 174（XYunshang）：setup、levelUp、changeLevel 后 Y.sync；param 最大生命／魔攻／敏捷按等级与进阶的倍率。
 
-const IDS := [167, 168, 169, 170, 171, 172, 173, 174]
+const IDS := [167, 168, 169, 170, 171, 172, 173, 174, 175]
 
 
 static func _module(a) -> bool:
@@ -42,6 +42,7 @@ static func setup(a) -> void:
 	XToji.repair(a)
 	XYomiJingliu.setup(a)  # 镜流 normalizeJingliuSkills
 	XYunshang.sync(a)  # 云裳 Y.sync
+	XGuyu.sync(a)  # 谷雨 setup 包装：syncSkills
 
 
 static func can_learn(a, id: int) -> bool:
@@ -56,6 +57,7 @@ static func level_up(a) -> void:
 	XSkillProgression.sync(a)
 	XSukuna.sync(a)
 	XYunshang.sync(a)  # 云裳包的是 levelUp 与 changeLevel
+	XGuyu.sync(a)  # 谷雨 levelUp／changeLevel 包装：syncSkills
 
 
 static func level_down(a) -> void:
@@ -65,6 +67,7 @@ static func level_down(a) -> void:
 	XSkillProgression.sync(a)  # CodexSkillProgression 包的是 changeLevel：逐级降级每步都同步
 	XSukuna.sync(a)  # 宿傩包的是 changeLevel：逐级降级每步都同步，结果与降完再同步一次相同
 	XYunshang.sync(a)  # 云裳同宿傩（changeLevel）
+	XGuyu.sync(a)  # 谷雨同样包 changeLevel（不包 levelDown），同宿傩
 
 
 static func level_changed(a, before: int) -> void:
@@ -112,3 +115,19 @@ static func passive_cache(a, c: Dictionary) -> void:
 		XSukuna.passive_cache(a, c)
 		XToji.passive_cache(a, c)
 		XYunshang.passive_cache(a, c)
+
+
+## Game_Actor.addedSkillTypes 包装（菜单技能分类；Window_SkillType 照 YEP_CoreEngine 再升序排）：渡鸦（不在战斗）［2,1,5,3,4］、
+## 宿傩［2,1,5,3,4］、饿狼［2,1,5,4］，没学到那类技能也列出；别的角色返回 null（照特性 41）。
+const MENU_SKILL_TYPES := {167: [2, 1, 5, 3, 4], 172: [2, 1, 5, 3, 4], 173: [2, 1, 5, 4]}
+## Window_ActorCommand.addSkillCommands 包装（战斗指令，照这个次序、不排序、不再按 CP_MagicWeapon 去掉 3～6）：
+## 渡鸦［2,1,5］、宿傩［2,1,5,3］、饿狼［2,1,5］；别的角色返回 null
+const BATTLE_SKILL_TYPES := {167: [2, 1, 5], 172: [2, 1, 5, 3], 173: [2, 1, 5]}
+
+
+static func menu_skill_types(a):
+	return (MENU_SKILL_TYPES[int(a.actor_id)] as Array).duplicate() if a is XActor and MENU_SKILL_TYPES.has(int(a.actor_id)) else null
+
+
+static func battle_skill_types(a):
+	return (BATTLE_SKILL_TYPES[int(a.actor_id)] as Array).duplicate() if a is XActor and BATTLE_SKILL_TYPES.has(int(a.actor_id)) else null

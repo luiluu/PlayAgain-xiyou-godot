@@ -16,10 +16,10 @@ var _strict_random_set_checks := 0
 var _strict_random_extra_checks := 0
 ## 随机选技能的敌群：军团 676～693（神魔战场）、超级 Boos 嘤族之光 739
 const RANDOM_AI_TROOPS := [676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686, 687, 688, 689, 690, 691, 692, 693, 739]
-## 参照用例按序号轮流分 parts 份，一个场景管一份（xiyou_troop_events 是第 0 份，_b 是第 1 份），免得单场景在并行全量里逼近 300 秒；
-## 来源指纹与 _unit_checks 只在第 0 份做，断言总数与拆分前相同
+## 参照用例按序号轮流分 parts 份，一个场景管一份（xiyou_troop_events 是第 0 份，_b／_c／_d 各管一份），免得单场景在并行全量里逼近上限
+## （两份时满负载 534／600 秒，_b 被杀，tools30 改四份）；来源指纹与 _unit_checks 只在第 0 份做，断言总数与拆分前相同
 @export var part := 0
-@export var parts := 2
+@export var parts := 4
 @export var oracle_half := false
 ## 敌群 462（金角、银角）：强制 8111（全体友方，必中）给银角附加轮回困难 1460——必中技能附加状态不乘状态有效度与幸运差。
 ## 三十层起变身例：336 变身后紧接的 334 按变身前的生命上限回满（冻结源能力值缓存）；334 保留 <Permanent> 状态（686 天道*祝福）。

@@ -126,6 +126,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XImportedBalance.set_acting(null)
 	actors = s.battle_members()
 	XYomiJingliu.start_battle(self)  # 镜流 startBattle 包装：放血累计清零
+	XGuyu.after_load(s)  # 谷雨 startBattle 包装：syncAll（同读档）
 	_garou = XGarou.start_battle(actors)  # 饿狼 startBattle 包装：同步、记下出战的饿狼
 	victory_texts.clear()
 	XZhenqi.battle_setup(s, troop)  # 真气：本场路线、楼层、溢出计数（BattleManager.setup）
@@ -438,6 +439,9 @@ func _skill_cost(a: XBattler, skill: Dictionary, panel: bool, shift: float) -> D
 	cost.tp = XSukuna.tp_cost(a, skill, int(cost.tp))  # 宿傩 skillTpCost 包装：领域中解／捌减半（种族包装在外）
 	if not panel and XAlienBattle.silence_skill(a, skill):
 		cost.mp = 0  # 异化缄默 skillMpCost 包装（Adv:132）：选定技能不花 MP，改锁生命上限
+	var guyu := XGuyu.mp_cost(a, skill, 1.0 if panel else a.mcr, consume_reduce(a, skill, shift))
+	if guyu >= 0:
+		cost.mp = guyu  # 谷雨 skillMpCost 包装（米拉、异化之外，种族之内）：五个主动技按最大 MP 比例
 	return {"mp": XRaceBattle.cost(a, int(cost.mp)), "tp": XRaceBattle.cost(a, int(cost.tp))}
 
 ## paySkillHpCost：直接减生命（_hp -= 费用，不走伤害）；异化连命扣池、嫁祸扣保护者、空壳扣护盾（Adv:128）
@@ -484,6 +488,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if not XSukuna.meets(a, skill, self):  # 宿傩 meetsSkillConditions：解锁、领域冷却、神灶要蓄力目标、神灶：开要准备层
 		return false
 	if not XMira.meets(a, skill):  # 米拉 meetsSkillConditions：人形／黑龙技按形态、解放的进阶与等级、劫焰不能单放
+		return false
+	if not XGuyu.meets(a, skill):  # 谷雨 meetsSkillConditions：五个主动技只有谷雨能用、要解锁，花期／终结／花荫／转移看战斗内状态
 		return false
 	if XAlienBattle.blocks_skill(a, skill):  # 异化逆祷 meetsSkillConditions：模板外的伤害技能不能用
 		return false
@@ -1607,6 +1613,8 @@ static func certain_hit(u: XBattler, skill: Dictionary) -> bool:
 ## userHitRate 物理 user.hit、魔法 user.hit*1.1、必中 10000000；targetEvadeRate 物理 target.eva、魔法 target.mev、必中 0）；
 ## 最后 installDamageElementRuntime 夹到 0～1。Olivia_AntiPlayerStress 的命中修正在西游关闭（Hit Rate Stacking=false）。
 func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
+	if XGuyu.sure(skill):  # 谷雨 itemHit 包装：绽放、终结、治疗必中
+		return 1.0
 	if certain_hit(u, skill) or XYomiJingliu.sure(u, skill) or XYunshang.sure(u, skill):  # 黄泉技能、云裳伤害技能 itemHit 包装：必中
 		return 1.0
 	return clampf(_hit_formula("Accuracy Formula", "skillHitRate * (userHitRate - targetEvadeRate)", u, skill, t) + XToji.hit_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemHit 包装：天与咒缚影速
@@ -1812,11 +1820,25 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 ## 正 → pushStates 给目标、pushSelfStates 给自己；负 → recPushStates 给目标（不看阵营，同原版）；只认角色行动者，异化虚空的攻击伤害除外；
 ## 每条按概率掷（Math.random()*100 < p），目标已有就不挂。由 XDamage.finish 在 Confirm／固定减伤之后、React 之前调（参照 pushstate order.1580）。
 var _push_sign := 0.0
+## O-134（审查 17 P2）：归墟（异化 void）的攻击类伤害（类型 1／2／5／6）不挂 PushState／PushsubState。原版 installDamageElementRuntime
+## 本意如此，但排除写成 CodexAlienation.isAttackDamage(this)，_after 回调是直调的、严格模式下 this 为 undefined，恒为假，排除从没生效
+## （正式引擎实测照挂，参照 pushstate void.*）。true 照本意排除；false 恢复原版照挂。
+static var VOID_PUSH_EXCLUDE := true
+
 func _push_states(u: XBattler, skill: Dictionary, t: XBattler, sign: float) -> void:
 	_push_sign = sign
 	# 反射回行动者自己时目标就是行动者，照样挂给自己（参照 pushstate invoke.reflect）；反击由反击者结算（invoke.counter）
-	if not (u is XActor) or sign == 0.0 or (XAlienBattle.has(u, "void") and XAlienBattle.attack_damage(skill)):
+	var void_attack := XAlienBattle.has(u, "void") and XAlienBattle.attack_damage(skill)
+	if not (u is XActor) or sign == 0.0 or (void_attack and VOID_PUSH_EXCLUDE):
 		return
+	if void_attack:
+		XAlienBattle.push_action(u, {})  # 原版照挂时归墟的 addState 包装也不拦（参照 void.1580.apply）：垫一层不是攻击的行动帧
+	_push_rows(u, t, sign)
+	if void_attack:
+		XAlienBattle.pop_action()
+
+
+func _push_rows(u: XBattler, t: XBattler, sign: float) -> void:
 	var cache: Dictionary = u.passive_cache()
 	for row in cache.get("recPushStates" if sign < 0.0 else "pushStates", []):
 		if _float("push_state") * 100.0 < float(row.probability) and not t.is_state_affected(int(row.stateId)):
