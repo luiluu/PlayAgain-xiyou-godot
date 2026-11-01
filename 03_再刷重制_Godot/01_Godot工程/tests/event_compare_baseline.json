@@ -2,10 +2,16 @@
 	"cases": 5753,
 	"match": 5752,
 	"mismatch": {
+		"m4e1p2": [
+			"trace"
+		],
+		"m4e1p3": [
+			"trace"
+		],
 		"m4e73p0": [
 			"trace"
 		]
 	},
-	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 1 例：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。",
+	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 3 例：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。 m4e1p2／m4e1p3 方桌大厅 EV1「更换称号」：原版 Star.Designation.ChooseTitle 预约 Scene_Title 时才补上的公共事件（ComLen＝原公共事件数），参照探针不经过标题画面，ComLen 未定义、预约落空，选项窗不出现；重制 XDesignation.choose 当场弹出同样的选项（实机原版是本事件结束后弹，该分支后面没有别的指令），属参照探针缺口，不是重制不一致（悟空 title2fix）。",
 	"source": "v0.28"
 }
