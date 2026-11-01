@@ -2278,24 +2278,28 @@ func resolve_collapse(e: XEnemy) -> void:
 func _roll_drops(e: XEnemy) -> Array:
 	if random == null:
 		random = XBattleRandom.create(XRandomStream.hex64(XState._fresh_seed())) # standalone fixture owner; real battles initialize in setup
-	var rates := _difficulty_rates()
-	var item_up := 0.0
-	for a in actors:
-		item_up = maxf(item_up, _passive_sum(a, "passiveIRUP"))
-	var suit_drop := XEquipSuits.reward(actors,1.0,2)
-	var d: Dictionary = e.data()
 	var drops := []
-	var di: Array = d.get("dropItems", [])
-	for i in range(di.size()):
-		var drop: Dictionary = di[i]
-		if int(drop.kind) > 0 and int(drop.denominator) > 0:
-			var rate := float(rates[2 + i]) if 2 + i < rates.size() else 1.0
-			if random.reward.next_float("drop", stable_id(e)) * int(drop.denominator) < rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
-				drops.append({"kind": int(drop.kind), "id": int(drop.dataId)})
-	for extra in _extra_drops(d):
-		if random.reward.next_float("extra_drop", stable_id(e)) < extra.rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
-			drops.append({"kind": extra.kind, "id": extra.id})
+	for c in drop_chances(e):
+		if random.reward.next_float("extra_drop" if c.extra else "drop", stable_id(e)) < c.chance:
+			drops.append({"kind": c.kind, "id": c.id})
 	return drops
+
+
+## 各掉落这一次掉出的概率（参照 battle_drop_probe）：MV makeDropItems 的 Math.random()×分母 < dropItemRate()，
+## dropItemRate＝EliteEnemy（双倍掉落 ? 1 : 0.2，×神话倍率）×全队掉率（套装、出战 passiveIRUP 连乘、亡魂汲取 +1），同怪物图鉴
+## （XAlienBattle.drop_item_rate）。<Enemy Drops> 的 x% 运行时并进 dropItems（分母 100/x），同一式。
+## 难度不影响：Vitsuno_Difficulty 的按序号掉率在原版整段注释掉了。原来这里按难度「Drop Rate」×(1＋出战 passiveIRUP 最大值)×套装算，
+## 没有 0.2 底、没有亡魂汲取，难度 2 时约多掉十几倍（悟空 drops1 改）。
+func drop_chances(e: XEnemy) -> Array:
+	var rate := XAlienBattle.drop_item_rate(state, e)
+	var out := []
+	var di: Array = e.data().get("dropItems", [])
+	for drop: Dictionary in di:
+		if int(drop.kind) > 0 and float(drop.denominator) > 0:
+			out.append({"kind": int(drop.kind), "id": int(drop.dataId), "chance": rate / float(drop.denominator), "extra": false})
+	for extra in _extra_drops(e.data()):
+		out.append({"kind": extra.kind, "id": extra.id, "chance": extra.rate * rate, "extra": true})
+	return out
 
 
 ## 把掉落放进背包（BattleManager.gainDropItems / SpriteEnemyTrP.gainDropItems）
@@ -2306,12 +2310,6 @@ func gain_drops(drops: Array) -> void:
 			2: state.gain_gear("weapon", d.id, 1)
 			3: state.gain_gear("armor", d.id, 1)
 
-
-func _passive_sum(a: XActor, tag: String) -> float:
-	var v := 0.0
-	for m in a.passive_values(tag):
-		v += XActor._num(m)
-	return v
 
 ## YEP_ExtraEnemyDrops：<Enemy Drops> Item/Weapon/Armor x: y% </Enemy Drops>
 static func _extra_drops(d: Dictionary) -> Array:
