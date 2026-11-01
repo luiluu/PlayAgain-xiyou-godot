@@ -143,7 +143,7 @@ static func reload() -> void:
 	_loaded_path = "<unloaded>"
 
 
-## O-待定：旧档第一次建订单档案时，原版 stage 写 0（已进阶的云裳进阶账归零，之后按进阶次数补材料会对不上）。
+## O-142：旧档第一次建订单档案时，原版 stage 写 0（已进阶的云裳进阶账归零，之后按进阶次数补材料会对不上）。
 ## true＝取当前进阶次数 XAdvance.rank；false＝照原版 0
 static var o_profile_stage := true
 
