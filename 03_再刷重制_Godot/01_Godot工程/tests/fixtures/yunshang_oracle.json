@@ -1323,7 +1323,7 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 49086,
+        "value": 47161,
         "critical": false
        }
       ],
@@ -1343,7 +1343,7 @@
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 82384,
+        "value": 79153,
         "critical": false
        }
       ],
@@ -1363,7 +1363,7 @@
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 292,
+        "value": 281,
         "critical": false
        }
       ],
@@ -1422,21 +1422,21 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 108730,
+        "value": 104467,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 54365,
+        "value": 52233,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 54365,
+        "value": 52233,
         "critical": false
        }
       ],
@@ -1456,21 +1456,21 @@
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 182489,
+        "value": 175333,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 91244,
+        "value": 87667,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 91244,
+        "value": 87667,
         "critical": false
        }
       ],
@@ -1490,21 +1490,21 @@
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 410,
+        "value": 394,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 205,
+        "value": 197,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 205,
+        "value": 197,
         "critical": false
        }
       ],
@@ -1564,42 +1564,42 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 171903,
+        "value": 165163,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 171903,
+        "value": 165163,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 113456,
+        "value": 109008,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 113456,
+        "value": 109008,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 113456,
+        "value": 109008,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 113456,
+        "value": 109008,
         "critical": false
        }
       ],
@@ -1619,42 +1619,42 @@
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 288517,
+        "value": 277204,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 288517,
+        "value": 277204,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 190421,
+        "value": 182955,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 190421,
+        "value": 182955,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 190421,
+        "value": 182955,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 190421,
+        "value": 182955,
         "critical": false
        }
       ],
@@ -1674,42 +1674,42 @@
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 469,
+        "value": 450,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 469,
+        "value": 450,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 309,
+        "value": 297,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 309,
+        "value": 297,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 309,
+        "value": 297,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 309,
+        "value": 297,
         "critical": false
        }
       ],
@@ -1769,42 +1769,42 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 14703215,
+        "value": 14126694,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 14703215,
+        "value": 14126694,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 9704122,
+        "value": 9323618,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 9704122,
+        "value": 9323618,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 9704122,
+        "value": 9323618,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 9704122,
+        "value": 9323618,
         "critical": true
        }
       ],
@@ -1824,42 +1824,42 @@
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 24677403,
+        "value": 23709788,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 24677403,
+        "value": 23709788,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 16287086,
+        "value": 15648460,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 16287086,
+        "value": 15648460,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 16287086,
+        "value": 15648460,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 16287086,
+        "value": 15648460,
         "critical": true
        }
       ],
@@ -1879,42 +1879,42 @@
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 33086,
+        "value": 31788,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 33086,
+        "value": 31788,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 21836,
+        "value": 20980,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 21836,
+        "value": 20980,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 21836,
+        "value": 20980,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 21836,
+        "value": 20980,
         "critical": true
        }
       ],
@@ -1977,42 +1977,42 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 359469,
+        "value": 345374,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 359469,
+        "value": 345374,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 276791,
+        "value": 265938,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 276791,
+        "value": 265938,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 276791,
+        "value": 265938,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 276791,
+        "value": 265938,
         "critical": false
        }
       ],
@@ -2032,42 +2032,42 @@
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 603322,
+        "value": 579665,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 603322,
+        "value": 579665,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 464558,
+        "value": 446342,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 464558,
+        "value": 446342,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 464558,
+        "value": 446342,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 464558,
+        "value": 446342,
         "critical": false
        }
       ],
@@ -2087,42 +2087,42 @@
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 763,
+        "value": 733,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 763,
+        "value": 733,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 588,
+        "value": 565,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 588,
+        "value": 565,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 588,
+        "value": 565,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 588,
+        "value": 565,
         "critical": false
        }
       ],
@@ -2185,42 +2185,42 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 43492426,
+        "value": 41787064,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 43492426,
+        "value": 41787064,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 33489168,
+        "value": 32176039,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 33489168,
+        "value": 32176039,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 33489168,
+        "value": 32176039,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 33489168,
+        "value": 32176039,
         "critical": true
        }
       ],
@@ -2240,42 +2240,42 @@
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 72996290,
+        "value": 70134064,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 72996290,
+        "value": 70134064,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 56207143,
+        "value": 54003229,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 56207143,
+        "value": 54003229,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 56207143,
+        "value": 54003229,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 56207143,
+        "value": 54003229,
         "critical": true
        }
       ],
@@ -2295,42 +2295,42 @@
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 75518,
+        "value": 72557,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 75518,
+        "value": 72557,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 58149,
+        "value": 55869,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 58149,
+        "value": 55869,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 58149,
+        "value": 55869,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 58149,
+        "value": 55869,
         "critical": true
        }
       ],
@@ -2564,56 +2564,56 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 1063560,
+        "value": 3805484,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 106356,
+        "value": 380548,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 106356,
+        "value": 380548,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 1063560,
+        "value": 3805484,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 818940,
+        "value": 2930222,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 818940,
+        "value": 2930222,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 818940,
+        "value": 2930222,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 818940,
+        "value": 2930222,
         "critical": false
        }
       ],
@@ -2656,21 +2656,21 @@
         "user": "a1",
         "skill": 1,
         "target": "e2",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e2",
-        "value": 81894,
+        "value": 293022,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e2",
-        "value": 81894,
+        "value": 293022,
         "critical": false
        }
       ],
@@ -2768,42 +2768,42 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 2304984,
+        "value": 1496354,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 2304984,
+        "value": 1496354,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 1774837,
+        "value": 1152193,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 1774837,
+        "value": 1152193,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 1774837,
+        "value": 1152193,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 1774837,
+        "value": 1152193,
         "critical": false
        }
       ],
@@ -2846,42 +2846,42 @@
         "user": "a174",
         "skill": 10274,
         "target": "e1",
-        "value": 17027004,
+        "value": 11053625,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10274,
         "target": "e1",
-        "value": 17027004,
+        "value": 11053625,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10274,
         "target": "e0",
-        "value": 13110793,
+        "value": 8511291,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10274,
         "target": "e0",
-        "value": 13110793,
+        "value": 8511291,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10274,
         "target": "e2",
-        "value": 13110793,
+        "value": 8511291,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10274,
         "target": "e2",
-        "value": 13110793,
+        "value": 8511291,
         "critical": false
        }
       ],
@@ -2974,42 +2974,42 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 57844927,
+        "value": 55576795,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 57844927,
+        "value": 55576795,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 44540594,
+        "value": 42794132,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 44540594,
+        "value": 42794132,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 44540594,
+        "value": 42794132,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 44540594,
+        "value": 42794132,
         "critical": true
        }
       ],
@@ -3047,42 +3047,42 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 43492426,
+        "value": 41787064,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 43492426,
+        "value": 41787064,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 33489168,
+        "value": 32176039,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 33489168,
+        "value": 32176039,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 33489168,
+        "value": 32176039,
         "critical": true
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 33489168,
+        "value": 32176039,
         "critical": true
        }
       ],
@@ -3162,42 +3162,42 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 885921,
+        "value": 851184,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 885921,
+        "value": 851184,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 682159,
+        "value": 655411,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 682159,
+        "value": 655411,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 682159,
+        "value": 655411,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 682159,
+        "value": 655411,
         "critical": false
        }
       ],
@@ -3235,42 +3235,42 @@
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 1486902,
+        "value": 1428599,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 1486902,
+        "value": 1428599,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 1144914,
+        "value": 1100022,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 1144914,
+        "value": 1100022,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 1144914,
+        "value": 1100022,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 1144914,
+        "value": 1100022,
         "critical": false
        }
       ],
@@ -3308,42 +3308,42 @@
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 177184,
+        "value": 170237,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 177184,
+        "value": 170237,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 177184,
+        "value": 170237,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 177184,
+        "value": 170237,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 177184,
+        "value": 170237,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 177184,
+        "value": 170237,
         "critical": false
        },
        {
@@ -4091,42 +4091,42 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 2192714,
+        "value": 1423471,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 2192714,
+        "value": 1423471,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 1447191,
+        "value": 939491,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 1447191,
+        "value": 939491,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 1447191,
+        "value": 939491,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 1447191,
+        "value": 939491,
         "critical": false
        }
       ],
@@ -4164,42 +4164,42 @@
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 6820,
+        "value": 4428,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 6820,
+        "value": 4428,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 4501,
+        "value": 2922,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 4501,
+        "value": 2922,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 4501,
+        "value": 2922,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 4501,
+        "value": 2922,
         "critical": false
        }
       ],
@@ -4278,56 +4278,56 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 4396475,
+        "value": 2854112,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 586197,
+        "value": 380548,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 586197,
+        "value": 380548,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 4396475,
+        "value": 2854112,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 3385285,
+        "value": 2197667,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 3385285,
+        "value": 2197667,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 3385285,
+        "value": 2197667,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 3385285,
+        "value": 2197667,
         "critical": false
        }
       ],
@@ -4365,56 +4365,56 @@
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 6837,
+        "value": 4439,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e2",
-        "value": 451371,
+        "value": 293022,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e2",
-        "value": 451371,
+        "value": 293022,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 6837,
+        "value": 4439,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 5265,
+        "value": 3418,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 5265,
+        "value": 3418,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 5265,
+        "value": 3418,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 5265,
+        "value": 3418,
         "critical": false
        }
       ],
@@ -4588,7 +4588,7 @@
         "user": "a1",
         "skill": 1,
         "target": "e2",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        }
       ],
@@ -4627,7 +4627,7 @@
       ],
       "mp": 1,
       "d": {
-       "debt": 9861.77,
+       "debt": 9856.49,
        "due": [
         2
        ],
@@ -4693,7 +4693,7 @@
       ],
       "mp": 1,
       "d": {
-       "debt": 20294.77,
+       "debt": 20289.489999999998,
        "due": [
         2,
         2
@@ -4721,14 +4721,14 @@
         "user": "a1",
         "skill": 1,
         "target": "e2",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 10286,
         "target": "e2",
-        "value": 38372675,
+        "value": 38715648,
         "critical": false
        }
       ],
@@ -5291,7 +5291,7 @@
         "user": "a1",
         "skill": 1,
         "target": "e2",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        }
       ],
@@ -5355,7 +5355,7 @@
         "user": "a1",
         "skill": 1,
         "target": "e2",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        }
       ],
@@ -5612,7 +5612,7 @@
         "user": "a1",
         "skill": 1,
         "target": "e2",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        }
       ],
@@ -5676,7 +5676,7 @@
         "user": "a1",
         "skill": 1,
         "target": "e2",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        }
       ],
@@ -5938,14 +5938,14 @@
         "user": "a1",
         "skill": 10282,
         "target": "e1",
-        "value": 464847,
+        "value": 469124,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 10282,
         "target": "e1",
-        "value": 805467,
+        "value": 812877,
         "critical": false
        }
       ],
@@ -6015,7 +6015,7 @@
         "user": "a1",
         "skill": 10282,
         "target": "e1",
-        "value": 232424,
+        "value": 234562,
         "critical": false
        }
       ],
@@ -6286,7 +6286,7 @@
         "user": "a1",
         "skill": 1,
         "target": "e1",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        }
       ],
@@ -6501,7 +6501,7 @@
         "user": "a1",
         "skill": 1,
         "target": "e1",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        }
       ],
@@ -7197,14 +7197,14 @@
         "user": "a1",
         "skill": 1,
         "target": "e1",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 1,
         "target": "e1",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        }
       ],
@@ -7268,7 +7268,7 @@
         "user": "a1",
         "skill": 1,
         "target": "e1",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        }
       ],
@@ -7332,21 +7332,21 @@
         "user": "a1",
         "skill": 1,
         "target": "e1",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 1,
         "target": "e1",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 1,
         "target": "e1",
-        "value": 1731,
+        "value": 1747,
         "critical": false
        }
       ],
@@ -7477,84 +7477,84 @@
         "user": "a1",
         "skill": 160,
         "target": "e0",
-        "value": 6961,
+        "value": 7025,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e1",
-        "value": 6961,
+        "value": 7025,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e2",
-        "value": 6961,
+        "value": 7025,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e0",
-        "value": 6961,
+        "value": 7025,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e0",
-        "value": 6961,
+        "value": 7025,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e0",
-        "value": 6961,
+        "value": 7025,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e1",
-        "value": 6961,
+        "value": 7025,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e1",
-        "value": 6961,
+        "value": 7025,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e1",
-        "value": 6961,
+        "value": 7025,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e2",
-        "value": 6961,
+        "value": 7025,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e2",
-        "value": 6961,
+        "value": 7025,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e2",
-        "value": 6961,
+        "value": 7025,
         "critical": false
        }
       ],
@@ -7618,28 +7618,28 @@
         "user": "a1",
         "skill": 160,
         "target": "e0",
-        "value": 20883,
+        "value": 21075,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e0",
-        "value": 20883,
+        "value": 21075,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e0",
-        "value": 20883,
+        "value": 21075,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e0",
-        "value": 20883,
+        "value": 21075,
         "critical": false
        }
       ],
@@ -7703,28 +7703,28 @@
         "user": "a1",
         "skill": 160,
         "target": "e0",
-        "value": 20883,
+        "value": 21075,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e0",
-        "value": 20883,
+        "value": 21075,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e0",
-        "value": 20883,
+        "value": 21075,
         "critical": false
        },
        {
         "user": "a1",
         "skill": 160,
         "target": "e0",
-        "value": 20883,
+        "value": 21075,
         "critical": false
        }
       ],
@@ -7853,168 +7853,168 @@
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 13415,
+        "value": 8709,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 13415,
+        "value": 8709,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 13415,
+        "value": 8709,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 13415,
+        "value": 8709,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 13415,
+        "value": 8709,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 13415,
+        "value": 8709,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 13415,
+        "value": 8709,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 13415,
+        "value": 8709,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 8854,
+        "value": 5748,
         "critical": false
        }
       ],
@@ -8123,168 +8123,168 @@
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 15542,
+        "value": 10089,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 15542,
+        "value": 10089,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 15542,
+        "value": 10089,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 15542,
+        "value": 10089,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 15542,
+        "value": 10089,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 15542,
+        "value": 10089,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 15542,
+        "value": 10089,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e1",
-        "value": 15542,
+        "value": 10089,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e0",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 311,
         "target": "e2",
-        "value": 10257,
+        "value": 6659,
         "critical": false
        }
       ],
@@ -8339,168 +8339,168 @@
         "user": "a174",
         "skill": 160,
         "target": "e0",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e0",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e1",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e1",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e2",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e2",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e0",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e0",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e0",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e0",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e0",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e0",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e1",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e1",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e1",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e1",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e1",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e1",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e2",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e2",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e2",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e2",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e2",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 160,
         "target": "e2",
-        "value": 4494,
+        "value": 2917,
         "critical": false
        }
       ],
@@ -8621,42 +8621,42 @@
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 1464099,
+        "value": 950467,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 1464099,
+        "value": 950467,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        }
       ],
@@ -8772,42 +8772,42 @@
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 1464099,
+        "value": 950467,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 1464099,
+        "value": 950467,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        }
       ],
@@ -8870,42 +8870,42 @@
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 1464099,
+        "value": 950467,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 1464099,
+        "value": 950467,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        }
       ],
@@ -8968,56 +8968,56 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 872335,
+        "value": 566304,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 436168,
+        "value": 283152,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 436168,
+        "value": 283152,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 872335,
+        "value": 566304,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 575741,
+        "value": 373761,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 575741,
+        "value": 373761,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 575741,
+        "value": 373761,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 575741,
+        "value": 373761,
         "critical": false
        }
       ],
@@ -9080,56 +9080,56 @@
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 872335,
+        "value": 566304,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 436168,
+        "value": 283152,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10286,
         "target": "e1",
-        "value": 436168,
+        "value": 283152,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e1",
-        "value": 872335,
+        "value": 566304,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 575741,
+        "value": 373761,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e0",
-        "value": 575741,
+        "value": 373761,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 575741,
+        "value": 373761,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10270,
         "target": "e2",
-        "value": 575741,
+        "value": 373761,
         "critical": false
        }
       ],
@@ -9192,42 +9192,42 @@
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 2227,
+        "value": 1446,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e1",
-        "value": 2227,
+        "value": 1446,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 1470,
+        "value": 954,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e0",
-        "value": 1470,
+        "value": 954,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 1470,
+        "value": 954,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 1,
         "target": "e2",
-        "value": 1470,
+        "value": 954,
         "critical": false
        }
       ],
@@ -9290,42 +9290,42 @@
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 1464099,
+        "value": 950467,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 1464099,
+        "value": 950467,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        }
       ],
@@ -9441,42 +9441,42 @@
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 1464099,
+        "value": 950467,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e1",
-        "value": 1464099,
+        "value": 950467,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e0",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        },
        {
         "user": "a174",
         "skill": 10271,
         "target": "e2",
-        "value": 966305,
+        "value": 627308,
         "critical": false
        }
       ],

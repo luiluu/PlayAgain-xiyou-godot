@@ -10,6 +10,8 @@ const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
 const Y = w.CodexYunshang;
 if (!Y || typeof Y.formula !== 'function') throw new Error('云裳模块未安装');
+// 五乘区（installNativePowerZonesRuntime）重制不移植（O-050），关掉才比得了绝对伤害（同 race_battle／attack_element 探针）
+w.eval('CodexZones.ENABLED=false;');
 const stub = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprites = new Map();
 w.Game_Battler.prototype.battler = function () {

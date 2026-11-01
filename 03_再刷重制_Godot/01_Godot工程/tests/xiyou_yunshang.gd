@@ -5,15 +5,15 @@ extends Node
 ## - formula：五个伤害技能与御风在目标魔防 19／37519 下的公式值（战斗外，1e-9 相对误差）；
 ## - recruit：入队、背包一件织神天梭、第二次不再给；
 ## - battle.*：钉影、拆神、普通攻击各打一次——每段的技能、目标、暴击逐条比（必中、戴织神天梭必暴击、双针两段、云丝展幅打全体），
-##   伤害比本例第一段的比值（双针 ×0.555、展幅非主目标 ×0.5／0.66／0.77、织神天梭结算 ×1.99 与暴伤、魔法路线对物防 +5000 的敌人；
-##   伤害是整数、等级低时只有几百到几万，容差加上取整误差；绝对值另有与本期无关的伤害链差约 4%，同 xiyou_garou_battle 不比）；
+##   每段伤害比绝对值（双针 ×0.555、展幅非主目标 ×0.5／0.66／0.77、织神天梭结算 ×1.99 与暴伤、魔法路线对物防 +5000 的敌人；
+##   参照关了五乘区 CodexZones（重制不移植，O-050），之前按比值比是因为没关；伤害是整数，容差 1）；
 ##   每步后六个技能能不能用（没解锁、冷却、敕衣点神要有人穿天衣、收针要有人觉醒、被动不能用）。
 ## - p2.*（第二期 A 批，参照 battle2：开战＋第一回合，只给敌人加生命）：觉醒（敕衣点神、天衣无缝、神纹自鸣随机唤醒、到期）、收针（按所选觉醒者剩余回合、消耗觉醒）、
 ##   余辉、符针（千丝成阵种针、敌人行动前全部引爆、钉影虚弱 ×0.67、觉醒伤害引爆一根）、御风（敏捷 ×1.33）、赠行（每回合 3 次、觉醒免费赠 2）、
 ##   储行（收存、放行、觉醒每回合加份、放行翻倍）、六衡裁身、万法同裳（双攻取高、物魔两路）、七曜流霞（元素）；每步比回合、觉醒、战斗数据、
-##   行动来源标签、队列里 174 与 1 号的行动数（比开局的增减）、余辉，以及各例的能力值、敏捷、符针数、能不能用；伤害按行动者分组比比值。
+##   行动来源标签、队列里 174 与 1 号的行动数（比开局的增减）、余辉，以及各例的能力值、敏捷、符针数、能不能用；角色出手的伤害比绝对值。
 const FIXTURE := "res://tests/fixtures/yunshang_oracle.json"
-const RATIO_TOLERANCE := 1e-6
+const DAMAGE_TOLERANCE := 1.0  # 伤害是整数，两边各自取整
 const MEETS := [10270, 10271, 10272, 10273, 10274, 10277]
 var results := []
 
@@ -206,7 +206,6 @@ func _battle_case(c: Dictionary) -> void:
 	steps.append(_cast(logic, a, 1, 2))
 	logic.end_battle(0)
 	check(c.id + ".steps", steps.size() == (o.steps as Array).size(), [steps.size(), (o.steps as Array).size()])
-	var base := [0.0, 0.0]
 	for i in mini(steps.size(), (o.steps as Array).size()):
 		var g: Dictionary = steps[i]
 		var w: Dictionary = o.steps[i]
@@ -222,13 +221,7 @@ func _battle_case(c: Dictionary) -> void:
 		if gs != ws:
 			continue
 		for k in gs.size():
-			if base[0] == 0.0:
-				base = [float(gl[k].value), float(wl[k].value)]
-			var rg: float = float(gl[k].value) / base[0]
-			var rw: float = float(wl[k].value) / base[1]
-			# 伤害是整数：容差加上两边取整（各 ±0.5）带来的比值误差
-			var round_err: float = rw * (1.0 / float(wl[k].value) + 1.0 / base[1])
-			check("%s.ratio%d" % [sid, k], absf(rg - rw) <= RATIO_TOLERANCE * maxf(1.0, absf(rw)) + round_err, [gl[k].value, wl[k].value, rg, rw])
+			check("%s.abs%d" % [sid, k], absf(float(gl[k].value) - float(wl[k].value)) <= DAMAGE_TOLERANCE, [gl[k].value, wl[k].value])
 
 
 func _run() -> void:
@@ -260,7 +253,9 @@ func _run() -> void:
 				_p4_case(c)
 			"p5":
 				_p5_case(c)
-	check("covers_all", seen.keys().size() == 9, seen.keys())
+			"p6":
+				pass  # 战斗指令窗，xiyou_yunshang_ui 比
+	check("covers_all", seen.keys().size() == 10, seen.keys())
 	finish()
 
 
@@ -372,7 +367,6 @@ func _meets_of(logic: XBattleLogic, a: XActor) -> Array:
 
 func _p2_compare(id: String, steps: Array, want: Array) -> void:
 	check(id + ".steps", steps.size() == want.size(), [steps.size(), want.size()])
-	var base := {}
 	var q0 := [0, 0, 0, 0]
 	for i in mini(steps.size(), want.size()):
 		var g: Dictionary = steps[i]
@@ -407,13 +401,7 @@ func _p2_compare(id: String, steps: Array, want: Array) -> void:
 		if gk != wk:
 			continue
 		for k in gk.size():
-			var who: String = gl[k].user
-			if not base.has(who):
-				base[who] = [float(gl[k].value), float(wl[k].value)]
-			var rg: float = float(gl[k].value) / base[who][0]
-			var rw: float = float(wl[k].value) / base[who][1]
-			var round_err: float = rw * (1.0 / float(wl[k].value) + 1.0 / base[who][1])
-			check("%s.ratio%d" % [sid, k], absf(rg - rw) <= RATIO_TOLERANCE * maxf(1.0, absf(rw)) + round_err, [gl[k].value, wl[k].value, rg, rw])
+			check("%s.abs%d" % [sid, k], absf(float(gl[k].value) - float(wl[k].value)) <= DAMAGE_TOLERANCE, [gl[k].value, wl[k].value])
 
 
 ## 先算 x 再取 v（GDScript 的 a().merged(b()) 先求参数，读数会落在行动之前）
@@ -859,7 +847,6 @@ func _p5_case(c: Dictionary) -> void:
 
 func _p3_compare(id: String, steps: Array, want: Array) -> void:
 	check(id + ".steps", steps.size() == want.size(), [steps.size(), want.size()])
-	var base := {}
 	for i in mini(steps.size(), want.size()):
 		var g: Dictionary = steps[i]
 		var w: Dictionary = want[i]
@@ -895,17 +882,13 @@ func _p3_compare(id: String, steps: Array, want: Array) -> void:
 		check(sid + ".log", gk == wk, [gk, wk])
 		if gk != wk:
 			continue
-		# 角色出手的伤害按行动者分组比比值（同 A 批；1 号的基础伤害与原版差约 0.9%，是既有差异）；敌人出手的数值看生命、债、bank
+		# 角色出手的伤害比绝对值（参照关了五乘区；之前 1 号差约 0.9% 就是它）；敌人出手的数值看生命、债、bank
 		# （原版记的是包装外层 executeHpDamage 的入参，重制记的是分担／记债之后的）
 		for k in gk.size():
 			var who: String = gl[k].user
 			if not who.begins_with("a"):
 				continue
-			if not base.has(who):
-				base[who] = [float(gl[k].value), float(wl[k].value)]
-			var rg: float = float(gl[k].value) / base[who][0]
-			var rw: float = float(wl[k].value) / base[who][1]
-			check("%s.ratio%d" % [sid, k], absf(rg - rw) <= P3_TOLERANCE * maxf(1.0, absf(rw)), [gl[k].value, wl[k].value, rg, rw])
+			check("%s.abs%d" % [sid, k], absf(float(gl[k].value) - float(wl[k].value)) <= DAMAGE_TOLERANCE, [gl[k].value, wl[k].value])
 
 
 
