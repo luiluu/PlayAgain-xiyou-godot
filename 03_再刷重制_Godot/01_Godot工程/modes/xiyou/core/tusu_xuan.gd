@@ -107,8 +107,8 @@ static func meets(a, skill: Dictionary) -> bool:
 	var o := owner_of(int(skill.get("id", 0)))
 	if int(o[0]) == 0:
 		return true
-	if str(o[1]).begins_with("yiwu.") and own(a) and int(a.actor_id) == TUSU:
-		return false  # 【cc·悟空】易武要屠苏被绑定（原版 meetsSkillConditions 第 376 行）；绑定框架没进 main 前恒假，屠苏三期 XTusu.meets 合进来时删掉这行
+	if own(a) and int(a.actor_id) == int(o[0]) and (str(o[1]).begins_with("yiwu.") or str(o[1]) in ["jixing.possess", "liexing"]):
+		return false  # 【cc·悟空】易武（屠苏 376 行）、寄星·附身与列星（璇 458、460 行）要本人被绑定；绑定框架没进 main 前恒假，屠苏三期／璇的绑定期合进来时删掉这行
 	if str(o[1]) == "return" and own(a) and int(a.actor_id) == int(o[0]):
 		return false
 	return _listed(a, int(skill.id))
