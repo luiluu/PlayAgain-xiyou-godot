@@ -2272,6 +2272,7 @@ func rewards() -> Dictionary:
 		exp += floori(e.exp_reward() * float(rates[0]))
 		gold += floorf(e.gold_reward() * float(rates[1])) * gold_rate
 		drops.append_array(drops_of(e))
+	drops.append_array(XMira.abyss_bonus(self))  # 米拉 makeRewards 包装：深渊地图 1/30 黑龙进阶石
 	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
 	return {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8, "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
 
