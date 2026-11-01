@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """并行运行 Godot 测试场景（检查.sh 调用；也可单独用来跑几个专项）。
 
-用法：并行测试.py <godot> <工程目录> [--jobs N] [--full] [--names-file 文件] [场景名或前缀 ...]
+用法：并行测试.py <godot> <工程目录> [--jobs N] [--full] [--names-file 文件] [场景全名或「前缀*」 ...]（不带 * 的名字只按全名选，XIYOU_BARE_PREFIX=1 回到按前缀）
 - 每个测试一个独立的临时 HOME，因此 user://（存档、配置）互不干扰，也不会读写本机真实的用户数据目录。
 - 导入（--import）由调用方先单独做一次；这里只读工程缓存。例外：工程里有 class_name 不在导入缓存里（车道新加脚本后直接跑）时先导入一次。
 - 每个测试用 -s 挂 tests/test_main_loop.gd（哪吒_10）：场景加载前把神秘生物刷新的真实时钟固定到窗口外，免得整点／半点偶发。
@@ -580,18 +580,32 @@ def main() -> int:
     limit = global_limit()
     scenes = sorted(p.name for p in (Path(a.project) / 'tests').glob('*.tscn'))
     if a.names:
-        # 「xiyou_rules*」显式写 * 的是有意的前缀；不带 * 的照旧按前缀匹配，但扩得太多时停下（白龙_8：车道照抄
-        # xiyou_battle、xiyou_rules 这类短名，一下排进 50 多个场景）
+        # 名字默认只按全名匹配（tools38，白龙_8：xiyou_battle、xiyou_rules 这类短名按前缀会一下排进 9／23 个场景）；
+        # 要前缀就显式写「前缀*」。回退：XIYOU_BARE_PREFIX=1 回到不带 * 也按前缀（再按下面的 PREFIX_STOP 把关）。
+        bare_prefix = os.environ.get('XIYOU_BARE_PREFIX', '') not in ('', '0')
         wanted = [n[:-1] if n.endswith('*') else n for n in a.names]
-        wide = []
-        # 前缀一次带出很多场景时提示一行（如误写 xiyou_ 选中两百多个），免得以为只跑了几个（哪吒_8）
+        wide, notes = [], []
         for raw, n in zip(a.names, wanted):
+            starred = raw.endswith('*')
             hit = [s for s in scenes if s.startswith(n) and s not in (n, n + '.tscn')]
-            if len(hit) > PREFIX_HINT:
-                print('  · 前缀 %s 匹配 %d 个场景（%s 等）；要精确选就写全名' % (n, len(hit), '、'.join(hit[:3])))
-            if PREFIX_STOP and not raw.endswith('*') and len(hit) > PREFIX_STOP:
-                wide.append((n, len(hit)))
-        selected = [s for s in scenes if any(s == n or s == n + '.tscn' or s.startswith(n) for n in wanted)]
+            if starred or bare_prefix:
+                # 前缀一次带出很多场景时提示一行（如误写 xiyou_ 选中两百多个），免得以为只跑了几个（哪吒_8）
+                if len(hit) > PREFIX_HINT:
+                    print('  · 前缀 %s 匹配 %d 个场景（%s 等）；要精确选就写全名' % (n, len(hit), '、'.join(hit[:3])))
+                if PREFIX_STOP and not starred and len(hit) > PREFIX_STOP:
+                    wide.append((n, len(hit)))
+            elif hit and any(sc == n or sc == n + '.tscn' for sc in scenes):
+                notes.append('%s 只按全名选 1 个；另有 %d 个同前缀场景没选（%s 等），要它们写成「%s*」' % (n, len(hit), '、'.join(hit[:2]), n))
+        if bare_prefix:
+            selected = [s for s in scenes if any(s == n or s == n + '.tscn' or s.startswith(n) for n in wanted)]
+        else:
+            selected = [s for s in scenes if any(s == n or s == n + '.tscn' or (r.endswith('*') and s.startswith(n))
+                                                for r, n in zip(a.names, wanted))]
+        for note in notes:
+            print('  · ' + note)
+        for raw, n in zip(a.names, wanted):
+            if not raw.endswith('*') and not bare_prefix and not any(s == n or s == n + '.tscn' for s in scenes):
+                print('  ⚠ %s 不是场景全名，没选到%s' % (raw, '（前缀要写成「%s*」，能匹配 %d 个）' % (n, len([sc for sc in scenes if sc.startswith(n)])) if any(sc.startswith(n) for sc in scenes) else ''))
         if wide and not a.wide and len(selected) > PREFIX_STOP:
             print('  ✗ 前缀扩出的场景太多，先停下：%s。要的就是这些就把名字写成「前缀*」或加 --wide；'
                   '只想跑一个就写全名（XIYOU_PREFIX_STOP=0 关掉这道检查）' % '、'.join('%s → %d 个' % w for w in wide))
