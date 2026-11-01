@@ -467,6 +467,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if not XCat.legal(self, a, skill):  # 小猫剑圣的剑技／试炼条件、178 没持剑不能用物理技能
 		return false
+	if not XTusuXuan.meets(a, skill):  # 屠苏／璇 bindGrowth meetsSkillConditions：没解锁的专属技能、归形
+		return false
 	if a.is_actor() and int(skill.stypeId) > 0:
 		if not a.traits_set(XBattler.TRAIT_STYPE_ADD).has(int(skill.stypeId)):
 			return false
