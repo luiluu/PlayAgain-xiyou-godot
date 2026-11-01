@@ -32,9 +32,9 @@ extends RefCounted
 ##   累计 ×1（神话之力 ×1.5，冥界收割）；神话之力时对仍存活的目标再扣 ×0.85（回响）。直接扣血不经伤害计算，倒下照常得魂。
 ## - apply 包装：鸦啄 10122 每次施放第一次命中回 floor(2% 最大 MP)（至少 1）；盛宴 10124／万魂 10126 命中时学了 10134 直接附加黑暗侵蚀 1663，
 ##   否则二阶的盛宴按普通附加状态（效果 21）附加。numRepeats：冥羽连葬 10123 加 floor(额外攻击次数)。
-## 未移植：魔法反射时原版同一行动对渡鸦自己累计伤害、行动结束对自己追加（重制反射支不记帧）；技能说明里的灵魂进度行
-## （Window_SkillList.updateHelp，界面）、神话形态战斗图、收割／回响等特效（R.Fx）、
-## 法宝 4001 的运行时法宝字段（每级成长、等级上限）与 paramPlus 固定加成、熟练度上限、技能分类与界面、敌人掉率与图鉴、
+## 第四期：法宝 4001 装着时的 paramPlus（param_plus，参照 raven_artifact_probe → tests/xiyou_raven_artifact）。
+## 未移植：魔法反射时原版同一行动对渡鸦自己累计伤害、行动结束对自己追加（重制反射支不记帧）；收割／回响等特效（R.Fx）、
+## 熟练度上限（重制无熟练度）、敌人掉率与图鉴、
 ## 插件指令 RavenAdd、商店价格字段、表现模块（RavenSkillEffects／RavenMonsterVisual）、旧档迁移。
 
 const ACTOR := 167
@@ -276,6 +276,31 @@ static func growth_rate(a) -> float:
 		if int(a.level) >= k:
 			best = maxi(best, k)
 	return float(GROWTH[best])
+
+
+## 冥河断罪镰 4001 装着时的 paramPlus（installNativeRavenRuntime 的 Game_Actor.paramPlus 包装；参照 raven_artifact_probe）：
+## 固定 ARTIFACT_BASE_BONUS，魔攻另加 ⌊阶×50＋魂×(0.02＋阶×0.006)⌋，生命另加 ⌊阶×400＋魂×(0.04＋阶×0.008)⌋。
+## 每级成长 R.ARTIFACT_LEVEL_GROWTH 与备注的 <… Param +n per Level> 相同、上限 888 同 <Max Level>，照 CP_MagicWeapon 原路算（XActor.magic_param）。
+const ARTIFACT_BASE_BONUS := [350, 100, 0, 80, 150, 80, 90, 35]
+
+
+static func param_plus(a, i: int, v: float) -> float:
+	if not artifact_equipped(a):
+		return v
+	v += ARTIFACT_BASE_BONUS[i]
+	if i == 4:
+		v += artifact_mat_bonus(a)
+	elif i == 0:
+		v += artifact_hp_bonus(a)
+	return v
+
+
+static func artifact_mat_bonus(a) -> float:
+	return floorf(stage(a) * 50 + soul(a) * (0.02 + stage(a) * 0.006)) if artifact_equipped(a) else 0.0
+
+
+static func artifact_hp_bonus(a) -> float:
+	return floorf(stage(a) * 400 + soul(a) * (0.04 + stage(a) * 0.008)) if artifact_equipped(a) else 0.0
 
 
 static func artifact_equipped(a) -> bool:

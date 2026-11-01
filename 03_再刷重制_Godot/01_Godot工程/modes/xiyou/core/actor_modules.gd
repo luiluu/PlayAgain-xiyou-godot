@@ -101,7 +101,7 @@ static func param_base(a, i: int, v: float) -> float:
 
 
 static func param_plus(a, i: int, v: float) -> float:
-	return XYomiJingliu.param_plus(a, i, v) if _module(a) else v
+	return XRaven.param_plus(a, i, XYomiJingliu.param_plus(a, i, v)) if _module(a) else v
 
 
 static func action_plus_set(a, rates: Array) -> void:

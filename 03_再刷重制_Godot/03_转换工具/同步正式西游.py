@@ -88,6 +88,7 @@ PROBES = [
     (['toji_battle_probe.cjs'], ['toji_battle.json']),
     (['mira_battle_probe.cjs'], ['mira_battle.json']),
     (['raven_soul_probe.cjs'], ['raven_soul.json']),
+    (['raven_artifact_probe.cjs'], ['raven_artifact.json']),
     (['settlement_probe.cjs'], ['settlement.json']),
     (['item_marks_probe.cjs'], ['item_marks.json']),
     (['orb_probe.cjs'], ['orbs.json']),
