@@ -8,6 +8,10 @@ extends Node
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
+const ROUTE := preload("res://tests/xiyou_airship_route.gd")
+const REACH := preload("res://tests/xiyou_reach_check.gd")
+## 进天之上的落点：恰兰吉尔南出口（Map071 EV3）进 (63,50)，飞艇停在 (65,56)（同 xiyou_floor_reach094、xiyou_airship_fly）
+const SKY_ENTRY := Vector2i(63, 50)
 
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
@@ -125,6 +129,7 @@ func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
 func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = s
+	ROUTE.park(s, 69)
 	s.map_id = map_id
 	s.x = x
 	s.y = y
@@ -177,12 +182,19 @@ func _run() -> void:
 	_finish()
 
 
-## 进入天之上，跑入口事件，等到目标图
-func _enter(tag: String, enter_ev: int, dir: int, map_id: int, arrive: Vector2i, sky_at: Vector2i) -> bool:
-	_start(69, sky_at.x, sky_at.y, dir)
+## 从进天之上的落点坐飞艇到入口，等到目标图
+func _enter(tag: String, enter_ev: int, dir: int, map_id: int, arrive: Vector2i, fly := true) -> bool:
+	_start(69, SKY_ENTRY.x, SKY_ENTRY.y, dir)
 	if not _check(tag + "_sky", await _wait_map(69)):
 		return false
-	await _run_event(_scene(), enter_ev, [], "")
+	# 入口在别的岛上（fly）：从落点走不到，走到飞艇、飞过去降落、走过去踩／撞入口；跟落点同一块：直接走过去（原来都是直接跑入口事件）
+	var route = ROUTE.new(self, _scene())
+	if fly:
+		_check(tag + "_needs_airship", REACH.unreachable(_scene(), _scene().player.grid, [enter_ev]) == [enter_ev])
+		_check(tag + "_fly_in", await route.go(enter_ev), [_scene().map_id, _scene().player.grid])
+	else:
+		_check(tag + "_on_foot", REACH.unreachable(_scene(), _scene().player.grid, [enter_ev]).is_empty())
+		_check(tag + "_walk_in", await route.walk_to(enter_ev), [_scene().map_id, _scene().player.grid])
 	return _check(tag + "_entered", await _wait_map(map_id) and _scene().player.grid == arrive, [_scene().map_id, _scene().player.grid])
 
 
@@ -205,7 +217,7 @@ func _fight(tag: String, map: XMapScene, troops: Array) -> void:
 
 func _wuyan() -> void:
 	# 入口 EV46（天之上 (104,45)）→ (11,46)；出口 EV5 面朝上回 (104,46)
-	if not await _enter("wy46", 46, 8, 106, Vector2i(11, 46), Vector2i(104, 45)):
+	if not await _enter("wy46", 46, 8, 106, Vector2i(11, 46)):
 		return
 	var map: XMapScene = _scene()
 	_check("wy_events", range(1, 21).all(func(i): return _event(map, i) != null))
@@ -224,7 +236,7 @@ func _wuyan() -> void:
 	await _run_event(map, 5, [], "")
 	_check("wy46_back", await _wait_map(69) and _scene().player.grid == Vector2i(104, 46), [_scene().map_id, _scene().player.grid])
 	# 入口 EV57（天之上 (104,43)）→ (38,0)；出口 EV1 面朝上回 (104,42)
-	if not await _enter("wy57", 57, 8, 106, Vector2i(38, 0), Vector2i(104, 43)):
+	if not await _enter("wy57", 57, 8, 106, Vector2i(38, 0)):
 		return
 	map = _scene()
 	map.player.direction = 8
@@ -239,8 +251,8 @@ func _has_shop(map: XMapScene, id: int, goods: int) -> bool:
 
 func _snake() -> void:
 	var troops := [298, 299, 300, 301, 302, 577, 578, 579, 580, 581, 582]
-	# 天之上 EV47（(38,77)）面朝上进 (13,28)
-	if not await _enter("snake", 47, 8, 87, Vector2i(13, 28), Vector2i(38, 77)):
+	# 天之上 EV47（(38,77)）面朝上进 (13,28)；跟进天之上的落点同一块，走过去
+	if not await _enter("snake", 47, 8, 87, Vector2i(13, 28), false):
 		return
 	var map: XMapScene = _scene()
 	_check("snake_events", range(5, 9).all(func(i): return _event(map, i) != null))

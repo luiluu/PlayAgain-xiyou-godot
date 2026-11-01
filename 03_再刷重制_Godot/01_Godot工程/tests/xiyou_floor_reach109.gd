@@ -10,6 +10,10 @@ extends Node
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
+const ROUTE := preload("res://tests/xiyou_airship_route.gd")
+const REACH := preload("res://tests/xiyou_reach_check.gd")
+## 进天之上的落点：恰兰吉尔南出口（Map071 EV3）进 (63,50)，飞艇停在 (65,56)（同 xiyou_floor_reach094、xiyou_airship_fly）
+const SKY_ENTRY := Vector2i(63, 50)
 
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
@@ -127,6 +131,7 @@ func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
 func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = s
+	ROUTE.park(s, 69)
 	s.map_id = map_id
 	s.x = x
 	s.y = y
@@ -197,13 +202,15 @@ func _sw(s: XState, ids: Array, on: bool) -> void:
 
 
 func _palace() -> void:
-	var s := _start(69, 122, 20, 8)
+	var s := _start(69, SKY_ENTRY.x, SKY_ENTRY.y, 8)
 	if not _check("p_sky", await _wait_map(69)):
 		return
 	var map: XMapScene = _scene()
-	# 缺符文不进
+	# 缺符文不进：EV65 在别的岛上，从落点走不到；坐飞艇过去撞它（原来开局就站在 (122,20) 直接跑）
 	s.items.erase(397)
-	await _run_event(map, 65, [0], "")
+	_check("p_needs_airship", REACH.unreachable(map, map.player.grid, [65]) == [65])
+	_check("p_fly_in", await ROUTE.new(self, map).go(65, [0]), [_scene().map_id, _scene().player.grid])
+	map = _scene()
 	_check("p_no_rune", _scene().map_id == 69 and int(s.variable(6)) != 20, [_scene().map_id, s.variable(6)])
 	# 三张符文：扣 3 张进 109 (12,28)
 	s.gain_item(397, 3)

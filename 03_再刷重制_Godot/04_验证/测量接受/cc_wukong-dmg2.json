@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m221e3p0\"]]",
+      "fields": [
+        "delta",
+        "finished",
+        "frames",
+        "trace"
+      ],
+      "oldDigest": "9e74e0e5893673f8",
+      "newDigest": "2ae64a0faa66b4b0",
+      "reason": "事件对照探针修缺口（悟空 dmg2）：随机伙伴 ce1344／m221e3p0 的事件随机数改按固定序列，不再固定 0.5 死循环；更换称号 m4e1p2／p3 先补标题画面才接的称号公共事件并当场跑完"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m4e1p2\"]]",
+      "fields": [
+        "frames",
+        "trace"
+      ],
+      "oldDigest": "fef19f6e11100c02",
+      "newDigest": "0cff816080bbe296",
+      "reason": "事件对照探针修缺口（悟空 dmg2）：随机伙伴 ce1344／m221e3p0 的事件随机数改按固定序列，不再固定 0.5 死循环；更换称号 m4e1p2／p3 先补标题画面才接的称号公共事件并当场跑完"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m4e1p3\"]]",
+      "fields": [
+        "frames",
+        "trace"
+      ],
+      "oldDigest": "5bd72d75d8cce5a0",
+      "newDigest": "68b65442f1dbdcbc",
+      "reason": "事件对照探针修缺口（悟空 dmg2）：随机伙伴 ce1344／m221e3p0 的事件随机数改按固定序列，不再固定 0.5 死循环；更换称号 m4e1p2／p3 先补标题画面才接的称号公共事件并当场跑完"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1344\"]]",
+      "fields": [
+        "delta",
+        "finished",
+        "frames",
+        "trace"
+      ],
+      "oldDigest": "d5e6fb62cff83ada",
+      "newDigest": "8248f390d4644080",
+      "reason": "事件对照探针修缺口（悟空 dmg2）：随机伙伴 ce1344／m221e3p0 的事件随机数改按固定序列，不再固定 0.5 死循环；更换称号 m4e1p2／p3 先补标题画面才接的称号公共事件并当场跑完"
+    }
+  ]
+}

@@ -20,6 +20,13 @@ const identity = sourceIdentity(APP);
 const r = boot(APP, {tolerant: true, log: false}), w = r.window;
 if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败');
 w.Input.clear();   // 参照启动不走 Scene_Boot 的 Input.initialize；玩家移动路线（门事件）的 isDebugThrough 要读 Input._currentState
+// 选择称号公共事件：正式版在标题画面 Scene_Title.initialize 里接到 $dataCommonEvents 末尾（Star.Designation.ComLen），参照不进标题画面，
+// 照 designation_probe 原样调一次（父类 initialize 换成空函数）；否则 ChooseTitle 预约落空（m4e1p2／p3 更换称号，悟空 dmg2）
+{
+  const parent = w.Star.Designation.STitle_initialize; w.Star.Designation.STitle_initialize = function () {};
+  try { w.Scene_Title.prototype.initialize.call(Object.create(w.Scene_Title.prototype)); } finally { w.Star.Designation.STitle_initialize = parent; }
+}
+const TITLE_CE = w.Star.Designation.ComLen;
 
 // ---- 用例：Godot 实际导出的事件（generated/maps）的每一页 ＋ 切片公共事件 ----
 const cases = [];
@@ -146,6 +153,10 @@ function delta(a, b) {
   return d;
 }
 
+// 随机数改成固定序列（循环取）的用例：随机伙伴（CE1344，地图 221 引路人赢了以后也调它）抽 2701～2819 里的伙伴号角，
+// 和已抽到的相同就跳回标签重抽；随机数固定 0.5 时每次都抽到同一个，死循环到帧数上限（悟空 dmg2）。Godot 侧 MVEventCore.random_sequence 同表。
+const RANDOM_SEQUENCES = {ce1344: [0.5, 0.1, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6, 0.05], m221e3p0: [0.5, 0.1, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6, 0.05]};
+
 // ---- 运行一个用例 ----
 const NEW_GAME_SNAPSHOT = true;
 let newGameSave = null;
@@ -193,6 +204,15 @@ function runCase(c) {
     const named = String(firstWarehouse.parameters[0]).match(/<([^>:]*)/);
     if (named) w.PHPlugins.PHWarehouse.createWarehouse('<' + named[1] + '>');
   }
+  // 序列只给事件指令 122（变量操作·随机数）用，战斗等别处照旧 0.5（Godot 侧也只有事件随机数走序列）
+  const seq = RANDOM_SEQUENCES[c.id], command122 = w.Game_Interpreter.prototype.command122;
+  if (seq) {
+    let at = 0;
+    w.Game_Interpreter.prototype.command122 = function () {
+      const old = w.Math.random; w.Math.random = () => seq[at++ % seq.length];
+      try { return command122.apply(this, arguments); } finally { w.Math.random = old; }
+    };
+  }
   const it = new w.Game_Interpreter();
   it.setup(w.JsonEx.makeDeepCopy(list), c.event);
   const errors = [];
@@ -232,7 +252,14 @@ function runCase(c) {
         w.DataManager.loadMapData(p._newMapId);
         p.performTransfer();
       }
-      if (w.$gameTemp.isCommonEventReserved()) {
+      if (w.$gameTemp.isCommonEventReserved() && w.$gameTemp._commonEventId === TITLE_CE) {
+        // 称号选择：实机是本事件结束后由 setupStartingEvent 跑；它不读本事件之后改的开关，这里当场在子解释器里跑完，
+        // 选项进 trace（同 Godot XDesignation.choose 当场弹）
+        w.$gameTemp.clearCommonEvent();
+        const child = new w.Game_Interpreter();
+        child.setup(w.JsonEx.makeDeepCopy(w.$dataCommonEvents[TITLE_CE].list), 0);
+        for (; frames < MAX_FRAMES && child.isRunning(); frames++) { w.Graphics.frameCount++; child.update(); msg(); }
+      } else if (w.$gameTemp.isCommonEventReserved()) {
         rec({t: 'reserve', common: w.$gameTemp._commonEventId});
         w.$gameTemp.clearCommonEvent();
       }
@@ -244,6 +271,7 @@ function runCase(c) {
   const out = {id: c.id, kind: c.kind, map: c.map, event: c.event, page: c.page, common: c.common, finished: !it.isRunning(), frames,
     trace, delta: delta(before, snap())};
   if (errors.length) out.errors = errors;
+  w.Game_Interpreter.prototype.command122 = command122;
   trace = null;
   return out;
 }

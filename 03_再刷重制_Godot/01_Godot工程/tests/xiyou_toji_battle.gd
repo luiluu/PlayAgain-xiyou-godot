@@ -269,7 +269,7 @@ func _rate_row(logic: XBattleLogic, u: XBattler, t: XBattler, sid: int, want: Di
 
 
 ## 暴君（参照 tyrant）：挡负面状态与弱化；忘掉后照常加；学回时清负面状态。弱化：原版清到一半抛错留着（CLEAR_DEBUFFS＝false 照原版），
-## 重制默认清掉（O-131）
+## 重制默认清掉（O-138）
 func _tyrant(c: Dictionary) -> void:
 	var r := _battle()
 	var logic: XBattleLogic = r[0]
@@ -290,7 +290,7 @@ func _tyrant(c: Dictionary) -> void:
 	XToji.CLEAR_DEBUFFS = false
 	a.learn_skill(XToji.TYRANT)
 	XToji.CLEAR_DEBUFFS = true
-	check("tyrant.original_threw", str(o.relearned.get("threw")) == "removeDebuff 不存在", o.relearned.get("threw"))  # 原版清弱化抛错（O-131 CLEAR_DEBUFFS）
+	check("tyrant.original_threw", str(o.relearned.get("threw")) == "removeDebuff 不存在", o.relearned.get("threw"))  # 原版清弱化抛错（O-138 CLEAR_DEBUFFS）
 	check("tyrant.relearned_original", has.call() == _norm(o.relearned.states) and _norm(a.buffs) == _norm(o.relearned.buffs) and bool(o.relearned.learned) and a.skill_ids.has(XToji.TYRANT), [has.call(), a.buffs])
 	a.learn_skill(XToji.TYRANT)
 	check("tyrant.relearned_cleared", not a.buffs.any(func(v): return v < 0), a.buffs)

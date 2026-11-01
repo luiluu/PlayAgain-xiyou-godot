@@ -118,6 +118,11 @@ func _slot() -> void:
 	l.state.set_variable(5, 3)
 	r.advance()
 	check("toaster_in_battle", r.take_logs().map(func(x): return x.get("text")) == ["天虎令当前剑思为 3"] and r.skipped.is_empty())
+	# 公共事件 46（一掷千金，战斗场合）里的 250 播放音效：记一条 se 给画面层放，不算没翻译（悟空 dmg1）
+	var se := XBattleEventRunner.new(l, [(XDB.rec("CommonEvents", 46).list as Array)[6], {"code": 0, "indent": 0, "parameters": []}])
+	se.advance()
+	var se_logs := se.take_logs().filter(func(x): return x.get("type") == "se")
+	check("se_in_battle", not se_logs.is_empty() and str(se_logs[0].se.name) == "Absorb1" and not se.skipped.any(func(x): return str(x).contains("250")), [se_logs, se.skipped])
 
 
 ## 盘点：切片里战斗中能用（occasion 0／1）的技能、物品带的 44 公共事件，逐个在战斗里跑一遍，统计没翻译的指令

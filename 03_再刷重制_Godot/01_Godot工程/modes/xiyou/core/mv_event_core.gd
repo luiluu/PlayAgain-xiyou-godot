@@ -28,6 +28,16 @@ static var steps := 0
 static var aborted := false
 ## 对照工具用：≥0 时随机数固定为该值（同参照引擎把 Math.random 固定），默认 −1 不固定
 static var fixed_random := -1.0
+## 对照工具用：不空时随机数按这串循环取（优先于 fixed_random；随机伙伴要重抽到不重复，固定一个值会死循环），_sequence_at 是下一个
+static var random_sequence: Array = []
+static var _sequence_at := 0
+
+
+static func _next_fixed() -> float:
+	if not random_sequence.is_empty():
+		_sequence_at += 1
+		return float(random_sequence[(_sequence_at - 1) % random_sequence.size()])
+	return fixed_random
 
 ## No-state tooling fallback stays independent of presentation/global RNG.
 static var _fallback_random := XRandomStream.create(XRandomStream.fresh_seed(), "world")
@@ -38,13 +48,13 @@ static func _world(owner: XState) -> XRandomStream:
 
 ## MV Math.random()
 static func random_float(owner: XState = null) -> float:
-	return fixed_random if fixed_random >= 0.0 else _world(owner).next_float("event_random")
+	return _next_fixed() if fixed_random >= 0.0 or not random_sequence.is_empty() else _world(owner).next_float("event_random")
 
 
 ## MV Math.randomInt(hi − lo + 1) + lo
 static func random_int(lo: int, hi: int, owner: XState = null) -> int:
-	if fixed_random >= 0.0:
-		return lo + floori((hi - lo + 1) * fixed_random)
+	if fixed_random >= 0.0 or not random_sequence.is_empty():
+		return lo + floori((hi - lo + 1) * _next_fixed())
 	return _world(owner).next_int_inclusive(lo, hi, "event_random_int")
 
 
