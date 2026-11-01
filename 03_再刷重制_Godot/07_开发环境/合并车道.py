@@ -10,7 +10,7 @@
 
 白天合并可用 --finish --affected 只跑选测（三级检查②，基准为本次（或本批第一条）合并前的 main），通过后照常提交、清理、推送；
 收尾提交带「验证: 选测」尾注，当天全量前算选测已验；全量仍是不加 --affected 的 --finish。
-加 --cloud（与 --affected 同用，--close-batch 同理）则选中的 Godot 场景交给 云端选测.py 在 GitHub Actions 上跑，非 Godot 检查仍在本机；云端不可用时明确失败，不静默改本机。
+加 --cloud（与 --affected 同用，--close-batch 同理）则选中的 Godot 场景交给 云端选测.py 在 GitHub Actions 上跑，非 Godot 检查仍在本机；云端不可用时明确失败，不静默改本机（GitHub 因账单／额度没启动任务时 检查.sh 明说原因并改本机跑，tools29）。
 
 车道交付后在同一工作树接着做（换新分支、新提交或未提交改动）不拦合并：只跳过该工作树的清理，交付分支不再是当前分支就照删。
 清理前还要过两道（哪吒 2026-10-27，曾误清另一账号会话的干净工作树）：有进程的当前目录在该工作树里（活动会话）或工作树被
@@ -1369,7 +1369,7 @@ def main(argv=None):
     ap.add_argument('--branch', help='车道分支（任务名仍写交付单名）：app 自建的工作树常把车道建在 cc/<随机名> 上，名字与派单的 <前缀>/<任务> 对不上时用')
     ap.add_argument('--cloud', action='store_true',
                     help='和 --affected 一起用（--finish 或 --close-batch）：选中的 Godot 场景交给 GitHub Actions 云端跑（云端选测.py run＋wait），'
-                         '非 Godot 检查仍在本机；云端不可用时明确失败，不静默改本机')
+                         '非 Godot 检查仍在本机；云端不可用时明确失败，不静默改本机（账单／额度没启动任务时 检查.sh 改本机跑）')
     ap.add_argument('--affected', action='store_true',
                     help='--finish 时只跑选测（检查.sh --oracle --affected <本次合并前的 main>），通过后照常提交、清理、推送；不和 --batch 同用')
     ap.add_argument('--accept-changes', action='append', default=[], metavar='接受单',

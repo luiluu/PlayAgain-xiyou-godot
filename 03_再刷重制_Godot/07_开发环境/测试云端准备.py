@@ -189,6 +189,29 @@ class CloudWaitTests(unittest.TestCase):
         self.assertEqual(r.returncode, 4, r.stdout)
         self.assertIn('额度用完', r.stdout)
 
+    def test_billing_block_is_named_not_quota_or_code(self):
+        """10-31 run 41251532841：plan 任务在、结论 failure、没有步骤，注解是付款失败／花费上限。认成账单问题，退出码 5。"""
+        note = "X The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+        self.gh.write_text('#!/bin/sh\ncase "$2" in list) echo \'[{"databaseId":7,"status":"completed","conclusion":"failure"}]\';;\n'
+                           ' view) if [ "$4" = --json ]; then echo \'{"jobs":[{"name":"plan","conclusion":"failure","steps":[]}]}\'; '
+                           'else printf "ANNOTATIONS\\n%%s\\nplan: .github#1\\n" "%s"; fi;;\n download) exit 1;;\nesac\n' % note.replace('"', '\\"'))
+        self.gh.chmod(0o755)
+        r = self.wait(timeout=60)
+        self.assertEqual(r.returncode, 5, r.stdout + r.stderr)
+        self.assertIn('账单问题，不是代码问题', r.stdout)
+        self.assertIn('spending limit', r.stdout)
+        self.assertIn('Billing & plans', r.stdout)
+
+    def test_billing_note_on_report_only_still_uses_shard_results(self):
+        """只有 report 被账单挡、各片都跑完：照旧本机算结果，不报账单失败。"""
+        self.stub_gh_with_artifacts()
+        script = self.gh.read_text().replace(" view) echo '{\"jobs\":[]}';;", " view) echo 'X recent account payments have failed';;")
+        self.assertIn('payments have failed', script)
+        self.gh.write_text(script)
+        r = self.wait(timeout=60)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('由本机用云端各片的结果工件算出', r.stdout)
+
     def stub_gh_with_artifacts(self, shards_in_plan=(1, 2), shards_with_result=(1, 2), failed=(), plan_sha=None):
         """云端 report 任务没起来（运行失败、无 job），但 plan 与各片结果工件都在：gh run download 把它们写到 -D 目录。"""
         plan = {'sha': plan_sha or self.sha, 'branch': 'ci/x', 'mode': 'affected', 'base': 'b', 'scenes': ['a.tscn', 'b.tscn'],

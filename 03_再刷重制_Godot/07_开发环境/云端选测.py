@@ -10,7 +10,8 @@ Mac 端（总装、车道）
                                 基准是 GitHub 上的 main（取分叉点）。打印要等的提交号。
   estimate [--base 基准] [--full]  只估算：会选哪些场景、分几片、约用多少分钟额度（不推送）
   wait [提交] [--timeout 秒]    等云端结果 refs/ci/results/<提交>/<affected|full>，打印汇总。
-                                通过返回 0，失败 1，超时 124。
+                                通过返回 0，失败 1，超时 124；运行结束没结果 3，没启动任何任务 4（多半额度用完），
+                                GitHub 因账单拒绝启动 5（付款失败／花费上限，见 billing_blocked）。
 CI 端（工作流调用，本机一般不用）
   godot / fetch / plan / shard / report
 
@@ -293,6 +294,29 @@ def actions_blocked(sha):
     return False
 
 
+## GitHub 因账单拒绝启动任务时写在注解里的话（10-31 实测：「The job was not started because recent account payments have failed
+## or your spending limit needs to be increased.」，任务在、结论 failure、一步都没有）
+BILLING_RE = re.compile(r'payments? have failed|spending limit', re.I)
+
+
+def billing_blocked(sha):
+    """这个提交的运行里有没有被账单挡下的（gh run view 的 ANNOTATIONS 里有付款失败／花费上限那句）：有就返回那句话，否则空串。"""
+    gh = os.environ.get('XIYOU_GH') or shutil.which('gh')
+    if not gh:
+        return ''
+    p = subprocess.run([gh, 'run', 'list', '--commit', sha, '--json', 'databaseId', '--limit', '20'], cwd=ROOT, capture_output=True, text=True)
+    try:
+        ids = [x['databaseId'] for x in json.loads(p.stdout)] if p.returncode == 0 else []
+    except (ValueError, KeyError, TypeError):
+        return ''
+    for run_id in ids:
+        v = subprocess.run([gh, 'run', 'view', str(run_id)], cwd=ROOT, capture_output=True, text=True)
+        for line in (v.stdout or '').splitlines():
+            if BILLING_RE.search(line):
+                return line.strip().lstrip('X').strip()
+    return ''
+
+
 def actions_finished(sha):
     """GitHub Actions 上这个提交的「云端选测」运行是否都已结束：True／False；查不到（没装 gh、没网、没有运行记录）返回 None。
     结果ref只在运行最后一步写出，运行已结束还没有结果ref，就是计划被跳过、准备失败或被取消，再等下去不会有结果。"""
@@ -333,8 +357,14 @@ def cmd_wait(a):
             local = local_report(sha)
             if local is not None:
                 return local
+            # 各片跑完、只有 report 被账单挡下时上面已由本机算出结果；到这里是一片都没跑
+            billing = billing_blocked(sha)
+            if billing:
+                print('GitHub 拒绝启动云端选测：是账单问题，不是代码问题（%s 没有拿到结果）。GitHub 原话：%s\n'
+                      '到 GitHub Settings → Billing & plans 处理付款或调高花费上限；检查.sh 会自动改用本机跑这批场景' % (sha[:10], billing))
+                return 5
             if actions_blocked(sha):
-                print('云端运行没有启动任何任务，多半是本月 GitHub Actions 额度用完（或账户被挡）：%s 没有结果，改用本机跑选测（检查.sh 去掉 --cloud）' % sha[:10])
+                print('云端运行没有启动任何任务，多半是本月 GitHub Actions 额度用完（或账户被挡）：%s 没有结果；检查.sh 会自动改用本机跑这批场景（CHECK_CLOUD_FALLBACK=0 时手动去掉 --cloud）' % sha[:10])
                 return 4
             print('云端运行已结束，但没有 %s 的结果（可能被取消、计划被跳过或准备失败），看 GitHub Actions「云端选测」' % sha[:10])
             return 3
