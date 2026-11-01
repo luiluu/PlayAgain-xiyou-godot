@@ -1193,7 +1193,7 @@ static func finish(logic, u, skill) -> Array:
 # ---- 第二期 B 批后一半：千军入袖 5、空袖藏星 6、九曲回针 7（孤灯照众 10 见 state_added）----
 ## 千军入袖的收袖开关（原版 a._yunSleeve：指令窗「收袖」切换，自动战斗设为开）；每次行动 prepare 时抄进 frame.sleeve
 static var sleeve := {}
-## O-135：千军入袖觉醒的溢出（第 422 行）要 !live(target)，可原版行动中目标有 YEP IMMORTAL（行动序列 immortal: targets, true），
+## O-136：千军入袖觉醒的溢出（第 422 行）要 !live(target)，可原版行动中目标有 YEP IMMORTAL（行动序列 immortal: targets, true），
 ## 生命到 0 也不倒下，溢出从来不触发，打倒目标后剩下的段照样打在它身上。true＝目标生命到 0 就算打倒、溢出照写的传给其余敌人；
 ## false＝照原版（不传）
 static var o_sleeve_overflow := true

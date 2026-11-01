@@ -72,7 +72,7 @@ func replay(trial_seed: int, visual: bool, icons: bool, camera: bool, sound: boo
  actor.change_level_mv(3)
  var gear := XGear.template("weapon",56)
  gear.params[0] = 1000000
- gear.traits.append_array([{"code":22,"dataId":6,"value":0.18},{"code":22,"dataId":5,"value":0.16},{"code":61,"dataId":0,"value":0.25}])
+ gear.traits.append_array([{"code":22,"dataId":6,"value":0.18},{"code":22,"dataId":5,"value":0.16},{"code":61,"dataId":0,"value":0.25},{"code":64,"dataId":XMapTransfer.DROP_ITEM_DOUBLE,"value":1}])
  actor.equips[0] = gear
  actor.learn_skill(104)
  actor.refresh_passive();actor.recover_all()
@@ -91,6 +91,9 @@ func replay(trial_seed: int, visual: bool, icons: bool, camera: bool, sound: boo
  logic.advance_loot_on_collapse = advance
  for e in logic.enemies:
   e._rates[0] *= 1000
+  # 掉落照原版（dev.257：dropItemRate／分母，0.2 底）后要让夹具必掉：上面装备给双倍掉落（rate 1）、这里分母改 1
+  for d: Dictionary in e.data().get("dropItems", []):
+   d.denominator = 1
   e.recover_all()
  logic.sequence_add_state(logic.enemies[1],5) # real 3–5 turn state duration
  var all_logs := []

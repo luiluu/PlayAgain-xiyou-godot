@@ -646,7 +646,7 @@ func _eye_view(logic: XBattleLogic, a: XActor, x := {}) -> Dictionary:
 
 
 ## p4.*（B 批后一半）：千军入袖、空袖藏星、九曲回针照 p3 的步骤比（_p3_case）；孤灯照众逐步比全队状态。
-## 千军入袖的溢出原版打不出（O-135，行动中目标 IMMORTAL）：先关开关照参照比，再开开关另比溢出（_sleeve_overflow）
+## 千军入袖的溢出原版打不出（O-136，行动中目标 IMMORTAL）：先关开关照参照比，再开开关另比溢出（_sleeve_overflow）
 func _p4_case(c: Dictionary) -> void:
 	if str(c.id) == "p4.sleeve":
 		XYunshang.o_sleeve_overflow = false
@@ -684,7 +684,7 @@ func _p4_case(c: Dictionary) -> void:
 		check("p4.lamp.%d.party" % i, got[i] == want[i], [got[i], want[i]])
 
 
-## O-135 开着：觉醒收袖打倒目标（生命 1000）时，第一段溢出＝这段伤害−1000，之后各段打在生命 0 的目标上整段溢出，依次传给 1 号敌人
+## O-136 开着：觉醒收袖打倒目标（生命 1000）时，第一段溢出＝这段伤害−1000，之后各段打在生命 0 的目标上整段溢出，依次传给 1 号敌人
 func _sleeve_overflow(c: Dictionary) -> void:
 	var r := _battle2(c.setup)
 	var logic: XBattleLogic = r[0]
