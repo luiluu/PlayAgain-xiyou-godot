@@ -8,8 +8,12 @@ extends Node
 ## - save：存档往返；旧档没有熟练度字段读回 0 级。
 ## - 期二 notice.*：技能升级通告（同帧合并、只报角色、关掉设置／读档／标题不报、最多 3 条）；power：熟练度进战力（缓存照原版不因熟练度失效）。
 const FIXTURE := "res://tests/fixtures/skill_mastery_oracle.json"
-## 渡鸦 10122～10139、10170 的熟练度设定由 installNativeRavenRuntime 运行时改写（上限 8／0、次数 8＋4×等级、每级 8%），归期三，这里先跳过
-const RAVEN_PENDING := [10122, 10123, 10124, 10125, 10126, 10127, 10128, 10129, 10130, 10131, 10132, 10133, 10134, 10135, 10136, 10137, 10138, 10139, 10170]
+## - 期三（tests/fixtures/skill_mastery3_oracle.json，mv_oracle/skill_mastery3_probe.cjs）：渡鸦运行时设定、包装后等级、费用、涨熟练度；
+##   宿傩来源技能；饿狼借主拳（O-待定 o_garou_borrow）与进阶继承；异化无面／百相取 min（O-待定 o_alien_object）；通告读包装后的等级。
+const FIXTURE3 := "res://tests/fixtures/skill_mastery3_oracle.json"
+const RAVEN := 167
+const SUKUNA := 172
+const GAROU := 173
 ## 参照里 7940 号的名字是运行时补上的（数据库为空名、无伤害），重制不算进 count
 const RUNTIME_NAMED := [7940]
 const BIG := 1e9
@@ -94,10 +98,8 @@ func _table(c: Dictionary) -> void:
 		if rec == null or str(rec.get("name", "")) == "":
 			continue
 		count += 1
-		if RAVEN_PENDING.has(id):
-			continue
 		var d := XSkillMastery.data(id)
-		var got := [float(d.max)]
+		var got := [float(XSkillMastery.max_level(id))]
 		for lv in [1, 2, 5]:
 			got.append(snappedf(XSkillMastery.eval(str(d.exp), 0.0, lv), 1e-6))
 		for lv in [0, 1, 3]:
@@ -311,7 +313,361 @@ func _run() -> void:
 				elif kind == "damage":
 					_damage(c)
 	check("covers_all", seen.keys().size() == 6, seen.keys())
+	_run3()
 	finish()
+
+
+# ---- 期三 ----
+func _run3() -> void:
+	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE3))
+	if not check("oracle3_present", ref is Dictionary and ref.has("cases")):
+		return
+	var seen := {}
+	for c in ref.cases:
+		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
+		if not c.errors.is_empty():
+			continue
+		seen[c.id] = true
+		match c.id:
+			"raven.data": _raven_data(c)
+			"raven.level": _raven_level(c)
+			"raven.cost": _raven_cost(c)
+			"raven.gain": _raven_gain(c)
+			"sukuna.level": _sukuna_level(c)
+			"sukuna.gain": _sukuna_gain(c)
+			"garou.borrow": _garou_borrow(c)
+			"garou.advance": _garou_advance(c)
+			"alien.faceless": _alien_faceless(c)
+			"alien.mimic": _alien_mimic(c)
+			"notice": _notice3(c)
+	check("covers_all3", seen.size() == 11, seen.keys())
+	_toji_armory()
+	_yunshang_derived()
+
+
+class TojiStream extends XRandomStream:
+	func _take(kind: String, reason: String, _event_key: String):
+		draws += 1
+		if kind == "float" and reason.begins_with("toji_"):
+			return 0.3  # 武器库 50% 掷中、挑第一把
+		return 0.5 if kind == "float" else 2147483648
+
+
+## 甚尔武器库（参照没量，照 installNativeTojiRuntime:461 读）：掷中时 _actionMastery 推 10211，随 onAllActionsEnd 计一次
+func _toji_armory() -> void:
+	var s := _new()
+	s.switches[2494] = true
+	s.party.clear()
+	s.battle_slots.clear()
+	s.actor(171).change_level_mv(55)
+	s.actor_advance[171] = 1
+	XToji.repair(s.actor(171))
+	s.add_actor(171)
+	var a := s.actor(171)
+	a.add_param(0, BIG)
+	a.refresh_passive()
+	var rand := XBattleRandom.create("0000000000000171")
+	rand.rule = TojiStream.new()
+	rand.rule.domain = "rule"
+	var logic := XBattleLogic.new()
+	logic.setup(3, s, rand)
+	for e in logic.enemies:
+		var p: Array = (e.data().params as Array).map(func(x): return float(x))
+		p[0] += BIG
+		e.zq_ref = {"p": p, "k": 1.0}
+		e.param_mark_dirty()
+		e.param_refresh()
+		e.recover_all()
+	a.param_refresh()
+	a.recover_all()
+	_act(logic, a, 10216, logic.enemies[0])
+	check("toji.armory_counted", XSkillMastery.uses(a, 10211) == 1.0 and XSkillMastery.uses(a, 10216) == 1.0 and a.action_mastery.is_empty(),
+		[XSkillMastery.uses(a, 10211), XSkillMastery.uses(a, 10216)])
+	XSkillMastery.set_level(a, 10211, 3)
+	check("toji.armory_level", a.skillMasteryLevelOf(10211) == 3)
+
+
+## 云裳派生伤害（nativeDamage 里 _yunMasteryLevel 换掉这个派生技能自己的等级）：符针用种针时的等级
+func _yunshang_derived() -> void:
+	var s := _new()
+	var a := s.actor(1)
+	var rec := XDB.rec("Skills", XYunshang.NEEDLE)
+	var plain := XSkillMastery.damage(rec, a, 1000.0)
+	XYunshang.derived_frame = {"mastery": 3, "mastery_skill": XYunshang.NEEDLE}
+	var lifted := XSkillMastery.damage(rec, a, 1000.0)
+	XYunshang.derived_frame = {"mastery": 3, "mastery_skill": 1}
+	var other := XSkillMastery.damage(rec, a, 1000.0)
+	XYunshang.derived_frame = {}
+	var want := XSkillMastery.eval(str(XSkillMastery.data(XYunshang.NEEDLE).damage), 1000.0, 3)
+	check("yunshang.derived_mastery", plain == XSkillMastery.eval(str(XSkillMastery.data(XYunshang.NEEDLE).damage), 1000.0, 0) and lifted == want and other == plain, [plain, lifted, want, other])
+
+
+func _new(party := []) -> XState:
+	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [])
+	s.actor_max_level = 99
+	XState.current = s
+	if not party.is_empty():
+		s.party.clear()
+		s.battle_slots.clear()
+		s.switches[2494] = true  # 超强者（渡鸦、宿傩）入队要挑战开关；参照 $gameParty.addActor 不经这道拦截
+		for id in party:
+			s.add_actor(int(id))
+	return s
+
+
+## 同参照 battle(ids, vars)：队伍 ids、生命加 BIG；敌群 3 每只生命加 BIG
+func _battle_party(ids: Array, vars := []) -> XBattleLogic:
+	var s := _new(ids)
+	for v in vars:
+		s.set_variable(int(v[0]), float(v[1]))
+	for id in ids:
+		s.actor(int(id)).add_param(0, BIG)
+		s.actor(int(id)).refresh_passive()
+	var rand := XBattleRandom.create("0000000000000001")
+	rand.rule = FixedStream.new()
+	rand.rule.domain = "rule"
+	var logic := XBattleLogic.new()
+	logic.setup(3, s, rand)
+	for e in logic.enemies:
+		var p: Array = (e.data().params as Array).map(func(x): return float(x))
+		p[0] += BIG
+		e.zq_ref = {"p": p, "k": 1.0}
+		e.param_mark_dirty()
+		e.param_refresh()
+		e.recover_all()
+	for b in logic.actors:
+		b.param_mark_dirty()
+		b.param_refresh()
+		b.recover_all()
+	return logic
+
+
+func _n(v) -> float:
+	return snappedf(float(v), 1e-6)
+
+
+func _raven_data(c: Dictionary) -> void:
+	var s := _new()
+	for v8 in c.observed:
+		s.set_variable(8, float(v8))
+		var bad := []
+		for id in range(10122, 10140):
+			var d := XSkillMastery.data(id)
+			var got := [_n(XSkillMastery.max_level(id)), _n(XSkillMastery.eval(str(d.exp), 0.0, 1)), _n(XSkillMastery.eval(str(d.exp), 0.0, 3)),
+				_n(XSkillMastery.eval(str(d.damage), 1000.0, 3)), _n(XSkillMastery.eval(str(d.mp), 100.0, 3)), _n(XSkillMastery.eval(str(d.tp), 100.0, 3)),
+				_n(XSkillMastery.eval(str(d.hp), 100.0, 3)), _n(XSkillMastery.eval(str(d.cooldown), 5.0, 3))]
+			var want: Array = (c.observed[v8][str(id)] as Array).map(func(x): return _n(x))
+			if got != want:
+				bad.append([id, got, want])
+		check("raven.data.v%s" % v8, bad.is_empty(), bad.slice(0, 3))
+
+
+func _raven_level(c: Dictionary) -> void:
+	var s := _new()
+	s.set_variable(8, 5)
+	for id in [RAVEN, 1]:
+		var a := s.actor(id)
+		a.mastery_levels[10122] = 12
+		a.mastery_levels[10127] = 3
+		var w: Dictionary = c.observed[str(id)]
+		var got := [a.skillMasteryLevel(10122), a.skillMasteryLevelOf(10122), XSkillMastery.is_maxed(a, 10122), a.skillMasteryLevel(10127), _n(XSkillMastery.rate(a, 10122))]
+		check("raven.level.%d" % id, got == [int(w.num), int(w.obj), bool(w.maxed), int(w.other), _n(w.rate)], [got, w])
+
+
+func _raven_cost(c: Dictionary) -> void:
+	var s := _new()
+	s.set_variable(8, 20)
+	var a := s.actor(RAVEN)
+	a.change_level_mv(60)
+	a.recover_all()
+	var logic := XBattleLogic.new()
+	logic.state = s
+	check("raven.cost.mmp", int(a.mmp) == int(c.observed.mmp), [a.mmp, c.observed.mmp])
+	for lv in c.observed.out:
+		var bad := []
+		for id in range(10122, 10128):
+			XSkillMastery.set_level(a, id, int(lv))
+			var cost := logic.skill_cost(a, XDB.rec("Skills", id))
+			var got := [a.skillMasteryLevel(id), int(cost.mp), int(cost.tp)]
+			var want: Array = (c.observed.out[lv][str(id)] as Array).map(func(x): return int(x))
+			if got != want:
+				bad.append([id, got, want])
+		check("raven.cost.lv%s" % lv, bad.is_empty(), bad)
+
+
+func _raven_gain(c: Dictionary) -> void:
+	var logic := _battle_party([RAVEN], [[8, 2]])
+	var a := logic.state.actor(RAVEN)
+	var steps: Array = c.observed.steps
+	var bad := []
+	for i in steps.size():
+		var logs := _act(logic, a, 10122, logic.enemies[0])
+		var ups := logs.filter(func(l): return l.get("type") == "mastery_up").size()
+		var w: Dictionary = steps[i]
+		var got := [XSkillMastery.level(a, 10122), int(XSkillMastery.uses(a, 10122)), a.skillMasteryLevel(10122), ups]
+		if got != [int(w.level), int(w.uses), int(w.lv), int(w.anims)]:
+			bad.append([i, got, w])
+	check("raven.gain", bad.is_empty(), bad.slice(0, 3))
+
+
+func _sukuna_level(c: Dictionary) -> void:
+	for v8 in c.observed:
+		var s := _new()
+		s.set_variable(8, float(v8))
+		for id in [SUKUNA, 1]:
+			var a := s.actor(id)
+			a.mastery_levels.merge({10229: 4, 10234: 9, 10231: 2}, true)
+			var bad := []
+			var w: Dictionary = c.observed[v8][str(id)]
+			for sid in w:
+				var got := [a.skillMasteryLevel(int(sid)), a.skillMasteryLevelOf(int(sid)), XSkillMastery.is_maxed(a, int(sid))]
+				if got != [int(w[sid][0]), int(w[sid][1]), bool(w[sid][2])]:
+					bad.append([sid, got, w[sid]])
+			check("sukuna.level.v%s.%d" % [v8, id], bad.is_empty(), bad)
+
+
+func _sukuna_gain(c: Dictionary) -> void:
+	var logic := _battle_party([SUKUNA])
+	var a := logic.state.actor(SUKUNA)
+	var steps: Array = c.observed.steps
+	var bad := []
+	for i in steps.size():
+		a.action_mastery.assign([10234] if i % 2 else [10234, 10229])
+		var logs := []
+		logic._mastery_end(a, logs)
+		var w: Dictionary = steps[i]
+		var got := [XSkillMastery.level(a, 10234), int(XSkillMastery.uses(a, 10234)), XSkillMastery.level(a, 10229), int(XSkillMastery.uses(a, 10229)),
+			a.skillMasteryLevel(10234), logs.size()]
+		if got != [int(w.s34.level), int(w.s34.uses), int(w.s29.level), int(w.s29.uses), int(w.lv34), int(w.anims)]:
+			bad.append([i, got, w])
+	check("sukuna.gain", bad.is_empty(), bad.slice(0, 3))
+
+
+func _garou_borrow(c: Dictionary) -> void:
+	var s := _new()
+	s.actor_advance[GAROU] = 2
+	var a := s.actor(GAROU)
+	a.change_level_mv(60)
+	XGarou.sync(a)
+	var o: Dictionary = c.observed
+	var main: int = XGarou.MAIN[XGarou.stage(a)]
+	check("garou.borrow.main", main == int(o.main), [main, o.main])
+	XSkillMastery.set_level(a, main, 3)
+	XGarou.mastery_source = main
+	# 修好（默认）：角色读到 Game_BattlerBase 那一层（借主拳）；回退：照原版角色读自己的（被渡鸦装的 Game_Actor 包装挡住）
+	check("garou.borrow.fixed", a.skillMasteryLevel(10262) == int(o.base) and a.skillMasteryLevelOf(10262) == int(o.base), a.skillMasteryLevel(10262))
+	XSkillMastery.o_garou_borrow = false
+	check("garou.borrow.original", a.skillMasteryLevel(10262) == int(o.actor) and a.skillMasteryLevelOf(10262) == int(o.actorObj), a.skillMasteryLevel(10262))
+	XSkillMastery.o_garou_borrow = true
+	XGarou.mastery_source = 0
+	check("garou.borrow.after", a.skillMasteryLevel(10262) == int(o.after))
+
+
+func _garou_advance(c: Dictionary) -> void:
+	var s := _new()
+	s.actor_advance[GAROU] = 0
+	s.actor(GAROU).change_level_mv(20)
+	XGarou.sync(s.actor(GAROU))
+	check("garou.advance.recruit", XGarou.recruit(s))
+	var a := s.actor(GAROU)
+	XSkillNotice.dispatched.clear()
+	var steps: Array = c.observed.steps
+	for st in 6:
+		var next: Dictionary = XGarou.STAGES[st + 1]
+		a.change_level_mv(int(next.level))
+		s.garou["breakthroughs"] = float(next.breakthroughs)
+		if st == 5:
+			s.gain_item(XGarou.CATALYST, 1)
+		for id in range(10250, 10262):
+			if a.skill_ids.has(id) and not a.mastery_levels.has(id):
+				XSkillMastery.set_level(a, id, id - 10248 + st)
+				XSkillMastery.set_uses(a, id, 5 if id == 10256 else 2)
+		if a.skill_ids.has(10256):
+			a.mastery_uses[10256] = 7
+		_flush_notices()
+		var result := XGarou.advance(s, a, st)
+		var lv := {}
+		for id in range(10250, 10262):
+			if a.mastery_levels.has(id):
+				lv[str(id)] = [int(a.mastery_levels[id]), int(a.mastery_uses.get(id, 0))]
+		var w: Dictionary = steps[st]
+		var want := {}
+		for k in w.lv:
+			want[k] = (w.lv[k] as Array).map(func(x): return int(x))
+		check("garou.advance.s%d" % (st + 1), bool(result.ok) and XGarou.stage(a) == int(w.stage) and lv == want, [result, lv, want])
+		check("garou.advance.s%d.quiet" % (st + 1), _flush_notices().is_empty())  # _garouAdvancing：继承不报通告
+
+
+func _alien_item(s: XState, affix: String, config: Dictionary) -> Dictionary:
+	XAlienation.force_roll = 0.5
+	XGear.force_roll = 0.5
+	var item: Dictionary = XAlienation.create(s, "w", 1044, "boss", affix).ok
+	XAlienation.mark(item).config = config
+	return item
+
+
+func _alien_setup(affix: String, config: Dictionary) -> XActor:
+	var s := _new([1, 8])
+	var a := s.actor(1)
+	var b := s.actor(8)
+	a.change_level_mv(99)
+	b.change_level_mv(30)
+	b.learn_skill(1924)
+	b.learn_skill(1926)
+	a.equips[0] = _alien_item(s, affix, config)
+	for x in [a, b]:
+		x.mastery_levels.merge({1924: 50 if x == a else 10, 1926: 50 if x == a else 10, 9: 50 if x == a else 10}, true)
+	return a
+
+
+func _alien_faceless(c: Dictionary) -> void:
+	var a := _alien_setup("faceless", {"actorId": 1, "pairs": [{"ownerId": 8, "skillId": 1924, "replaceId": 160}]})
+	var o: Dictionary = c.observed
+	var got := [a.skillMasteryLevel(1924), a.skillMasteryLevel(9), XSkillMastery.is_maxed(a, 1924), _n(XSkillMastery.rate(a, 1924))]
+	check("alien.faceless.num", got == [int(o.num), int(o.other), bool(o.maxed), _n(o.rate)], [got, o])
+	# 传技能对象：修好（默认）也取 min；回退照原版用自己的
+	check("alien.faceless.obj_fixed", a.skillMasteryLevelOf(1924) == int(o.num))
+	XSkillMastery.o_alien_object = false
+	check("alien.faceless.obj_original", a.skillMasteryLevelOf(1924) == int(o.obj) and a.skillMasteryLevel(1924) == int(o.num))
+	XSkillMastery.o_alien_object = true
+
+
+func _alien_mimic(c: Dictionary) -> void:
+	var a0 := _alien_setup("mimic", {"actorId": 1, "replace": 160})
+	var s := XState.current
+	var rand := XBattleRandom.create("0000000000000001")
+	rand.rule = FixedStream.new()
+	rand.rule.domain = "rule"
+	var logic := XBattleLogic.new()
+	logic.setup(3, s, rand)
+	var a := s.actor(1)
+	var d = XAlienBattle.locked(a)
+	if not check("alien.mimic.locked", d != null and str(d.affix) == "mimic", d):
+		return
+	d.observed = [1926]
+	d.selected = 1926
+	a.change_level_mv(40)
+	var o: Dictionary = c.observed
+	check("alien.mimic.num", a.skillMasteryLevel(1926) == int(o.num) and a.skillMasteryLevel(9) == int(o.other), [a.skillMasteryLevel(1926), o])
+	check("alien.mimic.obj_fixed", a.skillMasteryLevelOf(1926) == int(o.num))
+	XSkillMastery.o_alien_object = false
+	check("alien.mimic.obj_original", a.skillMasteryLevelOf(1926) == int(o.obj))
+	XSkillMastery.o_alien_object = true
+	check("alien.mimic.same_actor", a == a0)
+
+
+func _notice3(c: Dictionary) -> void:
+	var s := _new()
+	XSkillNotice.dispatched.clear()
+	var a := s.actor(SUKUNA)
+	XSkillMastery.set_level(a, 10234, 5)
+	XSkillMastery.set_level(a, 10229, 2)
+	check("notice3.sukuna", _rows(_flush_notices()) == _rows(c.observed.rows), c.observed.rows)
+	var r := s.actor(RAVEN)
+	s.set_variable(8, 3)
+	r.mastery_levels[10122] = 3
+	XSkillMastery.set_level(r, 10122, 5)
+	check("notice3.raven_capped", _rows(_flush_notices()) == _rows(c.observed.capped) and XSkillMastery.level(r, 10122) == int(c.observed.raw.level))
 
 
 func finish() -> void:
