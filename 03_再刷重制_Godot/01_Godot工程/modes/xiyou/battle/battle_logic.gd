@@ -668,6 +668,9 @@ func _meets(e: XEnemy, act: Dictionary) -> bool:
 ## 智能AI开着（默认）——技能顺序表排了且能用就照表（XdRs_HangUp makeAction），否则 XSmartAI 选；没有可选的退回普通攻击。
 ## 智能AI关着——照表，否则普通攻击（XdRs_HangUp 的 makeAction 不再走 MV 原生评估）。
 func auto_battle_action(a: XActor) -> Array:
+	var guyu := XGuyu.auto_action(self, a)  # 谷雨 makeAutoBattleActions 包装（最外层）：固定判断压过挂机与智能 AI
+	if not guyu.is_empty():
+		return guyu
 	# 异化饕餮 makeAction 包装（Adv:138-142）：原生挂机选技比的是实际 MP（恒 0），饕餮改按手动输入的合法性（canUse 读饥饿储备）
 	if XAlienBattle.devours(a):
 		var id := int(XHangUpAuto.data(state, "ActSkill").get(a.display_name() + XHangUpAuto.three(turn), 0))
@@ -791,6 +794,7 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(execute(u, skill, target))
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
+	XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
 	if started and not skipped:
 		logs.append_array(XGarou.finish(self, u, skill))  # 饿狼 endAction 包装（原 endAction 之前）：进化、解析、追击、流水回 TP；敌人命中饿狼的进化、解析、反击
 		logs.append_array(XSukuna.finish(self, u, skill))  # 宿傩 endAction 包装（原 endAction 之前）：神灶：开、追斩、看破、适应
@@ -1843,6 +1847,7 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 ## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：Boss输出→导入平衡→真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
 ## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
+	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：花荫先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):
 		var er := _action_resources.result(t)
