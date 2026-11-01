@@ -1401,6 +1401,47 @@ for name in filter(None, files):
         self.assertEqual(self.call('--finish'), 0, self.last_output)      # 登记文件的改动随收尾一并提交，不算预期外改动
         self.assertFalse(merge.dirty(self.root))
 
+    HEAD8 = '\n## 优化登记草稿\n\n| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n'
+
+    def two_item_lane(self, comment):
+        """一张交付单两条同写 O-待定 的草稿（stateCopy、千军入袖）；代码里各有一处注释占位。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        row = lambda name, sw: '| %s | %s | 问题 | 做法 | 理由 | `%s = false` | cc | 待用户决定 |' % (tok, name, sw)
+        self.sheet_with(self.HEAD8 + row('状态复制（XFoo）', 'XFoo.STATE_COPY') + '\n' + row('千军入袖', 'XBar.QIANJUN_SLEEVE') + '\n')
+        gd = merge.PROJECT / 'modes/注释.gd'
+        (self.wt / gd).parent.mkdir(parents=True, exist_ok=True)
+        (self.wt / gd).write_text(comment.replace('TOK', tok))
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'code placeholders', cwd=self.wt)
+        return tok, gd
+
+    def test_same_placeholder_for_two_drafts_gets_two_numbers(self):
+        """审查第 18 期 P2：yunshang8 一张交付单两条 O-待定，整文件替换成同一个 O-135。按草稿行逐条对号，代码注释靠开关名认条。"""
+        tok, gd = self.two_item_lane('# TOK：STATE_COPY 回退开关\n# TOK QIANJUN_SLEEVE 的说明\n')
+        self.assertEqual(self.call(), 0, self.last_output)
+        reg = (self.root / merge.OPT_REGISTRY).read_text().split('\n')
+        i = next(k for k, x in enumerate(reg) if x.startswith('| O-118'))
+        self.assertIn('状态复制', reg[i + 1]); self.assertTrue(reg[i + 1].startswith('| O-119 |'), reg[i + 1])
+        self.assertIn('千军入袖', reg[i + 2]); self.assertTrue(reg[i + 2].startswith('| O-120 |'), reg[i + 2])
+        code = (self.root / gd).read_text()
+        self.assertEqual(code, '# O-119：STATE_COPY 回退开关\n# O-120 QIANJUN_SLEEVE 的说明\n')
+        self.assertNotIn(tok, code + '\n'.join(reg))
+
+    def test_placeholder_line_matching_no_draft_stops(self):
+        tok, gd = self.two_item_lane('# TOK：这一行谁也对不上\n')
+        self.assertEqual(self.call(), 1)
+        self.assertIn('对不上是哪条', self.last_output)
+        self.assertNotIn(tok, '\n'.join(x for x in (self.root / gd).read_text().split('\n') if 'O-119' in x))
+
+    def test_draft_written_as_list_is_refused(self):
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        self.sheet_with('\n## 优化登记草稿\n\n- %s 甲项（XFoo.A）\n' % tok)
+        self.assertEqual(self.call(), 1)
+        self.assertIn('是列表不是表格', self.last_output)
+
     def test_optimization_token_without_draft_table_is_refused(self):
         tok = 'O-' + '待定'
         self.realistic_checker()
