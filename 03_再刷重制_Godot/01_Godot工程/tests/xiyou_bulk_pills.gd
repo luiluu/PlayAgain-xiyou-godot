@@ -64,10 +64,17 @@ static func _magic_exp(s: XState) -> Array:
 	return out
 
 
+## 物品页的 _effective（testApply）；页面不进场景树，共用一个，最后释放
+var _probe_page: XItemScene
+
+
 func _effective_for(item: Dictionary) -> Callable:
-	var page := XItemScene.new()
-	page._item = item
-	return func(t): return page._effective(t)
+	if _probe_page == null:
+		_probe_page = XItemScene.new()
+	var page := _probe_page
+	return func(t):
+		page._item = item
+		return page._effective(t)
 
 
 func _batch(c: Dictionary) -> void:
@@ -278,5 +285,7 @@ func _run() -> void:
 	check("batches", batches == 7, batches)
 	await _deferred()
 	await _scene()
+	_probe_page.free()
+	await get_tree().process_frame
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total else 1)
