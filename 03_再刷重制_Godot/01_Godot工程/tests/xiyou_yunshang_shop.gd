@@ -583,6 +583,15 @@ func p9_display() -> void:
 	check("p9.icons.texture128", big != null and big.get_size() == Vector2(128, 128), big)
 	var img := XYunshang.icon_image(210118)
 	check("p9.icons.pad", img != null and img.get_pixel(2, 2).a8 == 0 and img.get_pixel(125, 125).a8 == 0 and img.get_pixel(64, 64).a8 > 0)
+	# 缩放：128 图里不透明的范围＝原格不透明的范围 ×112/格宽、再移 8（±1）
+	var atlas: Image = (load(XDB.img_path("system", XYunshang.ICON_ATLAS)) as Texture2D).get_image()
+	atlas.decompress()
+	var cell := atlas.get_width() / 6.0
+	var src_box := atlas.get_region(Rect2i(0, roundi(3 * cell), roundi(cell), roundi(cell))).get_used_rect()
+	var box := img.get_used_rect()
+	var k := 112.0 / roundi(cell)
+	check("p9.icons.scale", absf(box.position.x - (8 + src_box.position.x * k)) <= 1.5 and absf(box.end.x - (8 + src_box.end.x * k)) <= 1.5
+		and absf(box.position.y - (8 + src_box.position.y * k)) <= 1.5, [box, src_box, cell])
 	check("p9.icons.native", XUI.icon_texture(100) != null and XUI.icon_texture(100).atlas.resource_path.contains("IconSet_1"))
 	var s := new_cloud(45)
 	var i := 0
