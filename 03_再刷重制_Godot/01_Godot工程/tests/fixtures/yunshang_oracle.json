@@ -9281,6 +9281,255 @@
        [],
        []
       ]
+     },
+     {
+      "cast": 10271,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e1",
+        "value": 1464099,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e1",
+        "value": 1464099,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e0",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e0",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e2",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e2",
+        "value": 966305,
+        "critical": false
+       }
+      ],
+      "cds": [
+       0,
+       2,
+       0
+      ],
+      "meets": [
+       false
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 7,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "turn": true,
+      "cds": [
+       -1,
+       1,
+       -1
+      ],
+      "meets": [
+       true
+      ],
+      "round": 2,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 7,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1,
+       "a174": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 10271,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e1",
+        "value": 1464099,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e1",
+        "value": 1464099,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e0",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e0",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e2",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e2",
+        "value": 966305,
+        "critical": false
+       }
+      ],
+      "cds": [
+       -1,
+       2,
+       -1
+      ],
+      "meets": [
+       false
+      ],
+      "round": 2,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 7,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1,
+       "a174": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
      }
     ]
    },

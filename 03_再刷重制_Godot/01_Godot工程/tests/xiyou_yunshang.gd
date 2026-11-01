@@ -347,10 +347,11 @@ func _target(logic: XBattleLogic, u, skill: Dictionary, idx: int):
 	return list[idx] if idx < list.size() else null
 
 
-func _cast2(logic: XBattleLogic, u, id: int, idx: int) -> Dictionary:
+func _cast2(logic: XBattleLogic, u, id: int, idx: int, clear_cd := true) -> Dictionary:
 	u.mp = u.mmp
 	u.tp = u.max_tp()
-	u.cooldowns.clear()
+	if clear_cd:
+		u.cooldowns.clear()
 	var skill := XDB.rec("Skills", id)
 	var logs := logic.act(u, skill, _target(logic, u, skill, idx))
 	var hits := []
@@ -606,14 +607,65 @@ func _p3_case(c: Dictionary) -> void:
 			at.call(_cast2(logic, ally, 1, 1))
 			XYunshang.wake(logic, ally)
 			at.call(_cast2(logic, ally, 1, 1))
+		"p4.sleeve":
+			at.call()
+			at.call(_cast2(logic, ally, 160, 0))
+			XYunshang.sleeve[ally] = true
+			at.call(_cast2(logic, ally, 160, 0))
+			XYunshang.wake(logic, ally)
+			foes[0].hp = 1000.0
+			at.call(_cast2(logic, ally, 160, 0))
+			XYunshang.sleeve.erase(ally)
+		"p4.borrow":
+			XYunshang.setting(a).borrow = [{"owner": 1, "skill": 311}, {"owner": 1, "skill": 160}]
+			at.call(_borrow_view(logic, a))
+			at.call(_cast2(logic, a, 311, 1))
+			XYunshang.wake(logic, a)
+			at.call(_borrow_view(logic, a))
+			at.call(_cast2(logic, a, 311, 1))
+			at.call(_cast2(logic, a, 160, 1))
+		"p4.eye":
+			XYunshang.setting(a).eye = XYunshang.CUT
+			at.call(_eye_view(logic, a))
+			at.call(_eye_view(logic, a, _cast2(logic, a, XYunshang.CUT, 1, false)))
+			XYunshang.wake(logic, a)
+			at.call(_eye_view(logic, a))
+			for sid in [XYunshang.CUT, XYunshang.CUT, XYunshang.PIN, XYunshang.PIN, 1, XYunshang.CUT]:
+				at.call(_eye_view(logic, a, _cast2(logic, a, sid, 1, false)))
+			_turn(logic)  # 第 2 回合（觉醒到本回合末）：针眼冷却 1，本回合还没越过
+			at.call(_eye_view(logic, a))
+			at.call(_eye_view(logic, a, _cast2(logic, a, XYunshang.CUT, 1, false)))
 	if XYunshang.battle != 0:
 		logic.end_battle(0)
+	XYunshang.settings.erase(a)
 	_p3_compare(id, steps, c.observed.steps)
 
 
-## p4.*（B 批后一半）：先只接孤灯照众（p4.lamp）；千军入袖、空袖藏星、九曲回针的参照例已加，重制还没做，跳过（见交付单）
+## p4.borrow 每步另比：云裳的普通技能（借来的，没醒 1 个、醒 3 个）与两个借来的技能能不能用
+func _borrow_view(logic: XBattleLogic, a: XActor) -> Dictionary:
+	return {"skills": a.skills().map(func(sk): return int(sk.id)).filter(func(i): return i < XYunshang.PIN),
+		"meets": [311, 160].map(func(i): return logic.can_use(a, XDB.rec("Skills", i)))}
+
+
+## p4.eye 每步另比：钉影／拆神／御风的冷却、针眼（拆神）能不能用（参照 castKeep：施放不清冷却）
+func _eye_view(logic: XBattleLogic, a: XActor, x := {}) -> Dictionary:
+	x.cds = [XYunshang.PIN, XYunshang.CUT, XYunshang.WIND].map(func(i): return float(a.cooldowns.get(i, 0.0)))
+	a.mp = a.mmp
+	x.meets = [logic.can_use(a, XDB.rec("Skills", XYunshang.CUT))]
+	return x
+
+
+## p4.*（B 批后一半）：千军入袖、空袖藏星、九曲回针照 p3 的步骤比（_p3_case）；孤灯照众逐步比全队状态。
+## 千军入袖的溢出原版打不出（O-待定，行动中目标 IMMORTAL）：先关开关照参照比，再开开关另比溢出（_sleeve_overflow）
 func _p4_case(c: Dictionary) -> void:
+	if str(c.id) == "p4.sleeve":
+		XYunshang.o_sleeve_overflow = false
+		_p3_case(c)
+		XYunshang.o_sleeve_overflow = true
+		_sleeve_overflow(c)
+		return
 	if str(c.id) != "p4.lamp":
+		_p3_case(c)
 		return
 	var r := _battle2(c.setup)
 	var logic: XBattleLogic = r[0]
@@ -642,6 +694,29 @@ func _p4_case(c: Dictionary) -> void:
 		check("p4.lamp.%d.party" % i, got[i] == want[i], [got[i], want[i]])
 
 
+## O-待定 开着：觉醒收袖打倒目标（生命 1000）时，第一段溢出＝这段伤害−1000，之后各段打在生命 0 的目标上整段溢出，依次传给 1 号敌人
+func _sleeve_overflow(c: Dictionary) -> void:
+	var r := _battle2(c.setup)
+	var logic: XBattleLogic = r[0]
+	var ally: XActor = r[2]
+	var foes: Array = logic.enemies
+	XYunshang.sleeve[ally] = true
+	XYunshang.wake(logic, ally)
+	foes[0].hp = 1000.0
+	var before: float = foes[1].hp
+	var got: Array = _cast2(logic, ally, 160, 0).log
+	XYunshang.sleeve.erase(ally)
+	var hits := got.filter(func(l): return l.target == "e0")
+	var flows := got.filter(func(l): return l.target == "e1")
+	var want := hits.map(func(l): return float(l.value))
+	if not want.is_empty():
+		want[0] -= 1000.0
+	check("p4.sleeve.overflow.hits", hits.size() == 4 and got.size() == 8, got)
+	check("p4.sleeve.overflow.values", flows.map(func(l): return float(l.value)) == want, [flows, want])
+	check("p4.sleeve.overflow.hp", is_equal_approx(before - foes[1].hp, want.reduce(func(s, v): return s + v, 0.0)) and foes[0].is_dead(), [before - foes[1].hp, foes[0].hp])
+	logic.end_battle(0)
+
+
 func _p3_compare(id: String, steps: Array, want: Array) -> void:
 	check(id + ".steps", steps.size() == want.size(), [steps.size(), want.size()])
 	var base := {}
@@ -666,6 +741,11 @@ func _p3_compare(id: String, steps: Array, want: Array) -> void:
 			check(sid + ".d", (wv.d == null) == (gv.d == null), [gv.d, wv.d])
 		if w.has("skills"):
 			check(sid + ".skills", g.get("skills") == (w.skills as Array).map(func(v): return int(v)), [g.get("skills"), w.skills])
+		if w.has("meets"):
+			check(sid + ".meets", g.get("meets") == (w.meets as Array).map(func(v): return bool(v)), [g.get("meets"), w.meets])
+		if w.has("cds"):
+			# YEP 回合开始把所有冷却都减 1（0 变 −1），重制减到 0 就删掉；≤0 都是没在冷却
+			check(sid + ".cds", g.get("cds") == (w.cds as Array).map(func(v): return maxf(0.0, float(v))), [g.get("cds"), w.cds])
 		if not w.has("log"):
 			continue
 		var gl: Array = g.log

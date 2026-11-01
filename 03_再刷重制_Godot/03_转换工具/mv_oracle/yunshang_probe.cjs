@@ -399,6 +399,10 @@ p3('p4.eye', {level: 45, stage: 0, robe: 7}, ({bm, a, ally, foes, at}) => {
   at({...castKeep(bm, a, 10270, 1), cds: cds(a), meets: m()});
   at({...castKeep(bm, a, 10270, 1), cds: cds(a), meets: m()});
   at({...castKeep(bm, a, 1, 1), cds: cds(a), meets: m()});
+  // 下一回合（觉醒到本回合末）：针眼在冷却中，本回合还没越过，能用；越过后照常进冷却
+  at({...castKeep(bm, a, 10271, 1), cds: cds(a), meets: m()});
+  bm.startTurn(); at({turn: true, cds: cds(a), meets: m()});
+  at({...castKeep(bm, a, 10271, 1), cds: cds(a), meets: m()});
 });
 // 孤灯照众：没醒时自己每回合第一次新得的普通增益分给全队；醒着时任何人新得的普通增益（每回合最多 3 种）分给全队（含敌人得到的，见 O 项）
 p3('p4.lamp', {level: 20, stage: 0, allyRobe: 10}, ({bm, a, ally, foes, at}) => {
