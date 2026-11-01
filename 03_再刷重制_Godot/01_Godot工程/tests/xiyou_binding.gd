@@ -183,6 +183,17 @@ func _step(st: Array):
 				ret.append({"hp": a.hp, "state": a.is_state_affected(int(sub[2])) if str(sub[0]) == "state" else null})
 			XBinding.end_action()
 			logs = logic.act(e, XDB.rec("Skills", 1), null)
+		"pick":
+			var e = logic.enemies[int(st[1])]
+			XBinding.start_action(e)
+			ret = _key(logic._random_target(logic.alive(logic.actors)))
+			XBinding.end_action()
+			logs = logic.act(e, XDB.rec("Skills", 1), null)
+		"apply":
+			var t: XActor = _who(st[2])
+			var r := logic.apply(logic.enemies[int(st[1])], XDB.rec("Skills", 1), t)
+			ret = {"hp": t.hp, "used": not bool(r.get("unused", false))}
+			logs = [r]
 		"end":
 			logic.end_battle(0)
 	return [ret, logs]
@@ -194,7 +205,7 @@ func _ready() -> void:
 
 func _go() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	check("oracle", ref.cases.size() == 7 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
+	check("oracle", ref.cases.size() == 8 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	_register()
 	for c in ref.cases:
 		logic = _battle()

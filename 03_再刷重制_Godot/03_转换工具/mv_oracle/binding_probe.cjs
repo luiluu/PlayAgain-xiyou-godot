@@ -95,7 +95,7 @@ const oldExec = w.Game_Action.prototype.executeHpDamage;
 w.Game_Action.prototype.executeHpDamage = function (t, v) { hits.push(['hp', key(this.subject()), key(t), v]); return oldExec.apply(this, arguments); };
 // 步骤：bind o t｜unbind o 原因｜spend o n｜gain o n｜turn（endTurn＋startTurn）｜act 人 技能 目标序号｜foe 敌序号 技能 目标序号（−1 随机）｜
 // kill 人｜revive 人｜leave 人｜back 人（回到出战）｜canHost｜defaultHost｜manual 真假｜deny 角色｜
-// during 敌序号 [子步骤…]（敌人普攻开始后、结算前做子步骤：hurt 人 量、set 人 生命、state 人 状态）｜end（endBattle）
+// pick 敌序号（敌人行动中 randomTarget）｜apply 敌序号 人（敌人普攻直接 apply）｜during 敌序号 [子步骤…]（敌人普攻开始后、结算前做子步骤：hurt 人 量、set 人 生命、state 人 状态）｜end（endBattle）
 function step(bm, st) {
   const [op, x, y, z] = st;
   let ret = null;
@@ -122,6 +122,14 @@ function step(bm, st) {
       return {hp: a.hp, state: o === 'state' ? a.isStateAffected(q) : null};
     });
     run(bm);
+  } else if (op === 'pick') {  // 敌人行动开始后 $gameParty.randomTarget()
+    begin(bm, who('e' + x), 1, -1);
+    ret = key(w.$gameParty.randomTarget());
+    run(bm);
+  } else if (op === 'apply') {  // 敌人普攻直接 apply 到 y（不在行动里）
+    const act = new w.Game_Action(who('e' + x)); act.setAttack();
+    const t = who(y); act.apply(t);
+    ret = {hp: t.hp, used: !!t.result().used};
   } else if (op === 'end') bm.endBattle(0);
   else throw new Error('未知步骤 ' + op);
   return ret;
@@ -158,6 +166,8 @@ const SCRIPTS = {
   // 敌方行动期间的脚本扣血、setHp、加状态
   during: [['bind', 9, 1], ['during', 0, [['hurt', 9, 50], ['set', 9, 10], ['state', 9, 4], ['state', 9, FORM], ['hurt', 1, 50]]], ['unbind', 9, 'manual'],
     ['during', 0, [['hurt', 9, 50]]]],
+  // 直接调：8 号不在时 randomTarget 原生抽到 9（形态中）→ 换人；敌人 apply 直接打 9 不生效、解绑后生效
+  direct: [['bind', 9, 1], ['leave', 8], ['pick', 0], ['apply', 0, 9], ['unbind', 9, 'manual'], ['apply', 0, 9], ['pick', 0]],
   // 战斗结束清理
   end: [['bind', 9, 1], ['turn'], ['end']],
 };

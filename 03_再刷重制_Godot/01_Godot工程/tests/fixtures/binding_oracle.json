@@ -6558,6 +6558,608 @@
    "errors": []
   },
   {
+   "id": "direct",
+   "setup": {
+    "steps": [
+     [
+      "bind",
+      9,
+      1
+     ],
+     [
+      "leave",
+      8
+     ],
+     [
+      "pick",
+      0
+     ],
+     [
+      "apply",
+      0,
+      9
+     ],
+     [
+      "unbind",
+      9,
+      "manual"
+     ],
+     [
+      "apply",
+      0,
+      9
+     ],
+     [
+      "pick",
+      0
+     ]
+    ],
+    "owner": 9,
+    "form": 367,
+    "empty": 654,
+    "all": 180
+   },
+   "observed": [
+    {
+     "step": [
+      "start"
+     ],
+     "snap": {
+      "round": 1,
+      "party": {
+       "a1": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 485,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a8": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 450,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a9": {
+        "data": {
+         "charges": 0,
+         "hostId": 0,
+         "boundRound": 0,
+         "returnedRound": 0
+        },
+        "form": false,
+        "empty": false,
+        "hp": 525,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a10": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 480,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       }
+      },
+      "members": [
+       "a1",
+       "a8",
+       "a9",
+       "a10"
+      ]
+     }
+    },
+    {
+     "step": [
+      "bind",
+      9,
+      1
+     ],
+     "ret": true,
+     "events": [
+      [
+       "bind",
+       "a9",
+       "a1",
+       "bind",
+       null
+      ]
+     ],
+     "hits": [],
+     "snap": {
+      "round": 1,
+      "party": {
+       "a1": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 485,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a8": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 450,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a9": {
+        "data": {
+         "charges": 0,
+         "hostId": 1,
+         "boundRound": 1,
+         "returnedRound": 0
+        },
+        "form": true,
+        "empty": false,
+        "hp": 525,
+        "alive": true,
+        "untargetable": true,
+        "host": "a1",
+        "bound": true
+       },
+       "a10": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 480,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       }
+      },
+      "members": [
+       "a1",
+       "a8",
+       "a9",
+       "a10"
+      ]
+     }
+    },
+    {
+     "step": [
+      "leave",
+      8
+     ],
+     "ret": null,
+     "events": [],
+     "hits": [],
+     "snap": {
+      "round": 1,
+      "party": {
+       "a1": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 485,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a8": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 450,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a9": {
+        "data": {
+         "charges": 0,
+         "hostId": 1,
+         "boundRound": 1,
+         "returnedRound": 0
+        },
+        "form": true,
+        "empty": false,
+        "hp": 525,
+        "alive": true,
+        "untargetable": true,
+        "host": "a1",
+        "bound": true
+       },
+       "a10": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 480,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       }
+      },
+      "members": [
+       "a1",
+       "a9",
+       "a10"
+      ]
+     }
+    },
+    {
+     "step": [
+      "pick",
+      0
+     ],
+     "ret": "a10",
+     "events": [],
+     "hits": [
+      [
+       "hp",
+       "e0",
+       "a10",
+       31
+      ]
+     ],
+     "snap": {
+      "round": 1,
+      "party": {
+       "a1": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 485,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a8": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 450,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a9": {
+        "data": {
+         "charges": 0,
+         "hostId": 1,
+         "boundRound": 1,
+         "returnedRound": 0
+        },
+        "form": true,
+        "empty": false,
+        "hp": 525,
+        "alive": true,
+        "untargetable": true,
+        "host": "a1",
+        "bound": true
+       },
+       "a10": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 449,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       }
+      },
+      "members": [
+       "a1",
+       "a9",
+       "a10"
+      ]
+     }
+    },
+    {
+     "step": [
+      "apply",
+      0,
+      9
+     ],
+     "ret": {
+      "hp": 525,
+      "used": false
+     },
+     "events": [],
+     "hits": [],
+     "snap": {
+      "round": 1,
+      "party": {
+       "a1": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 485,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a8": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 450,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a9": {
+        "data": {
+         "charges": 0,
+         "hostId": 1,
+         "boundRound": 1,
+         "returnedRound": 0
+        },
+        "form": true,
+        "empty": false,
+        "hp": 525,
+        "alive": true,
+        "untargetable": true,
+        "host": "a1",
+        "bound": true
+       },
+       "a10": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 449,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       }
+      },
+      "members": [
+       "a1",
+       "a9",
+       "a10"
+      ]
+     }
+    },
+    {
+     "step": [
+      "unbind",
+      9,
+      "manual"
+     ],
+     "ret": true,
+     "events": [
+      [
+       "unbind",
+       "a9",
+       "a1",
+       "manual"
+      ]
+     ],
+     "hits": [],
+     "snap": {
+      "round": 1,
+      "party": {
+       "a1": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 485,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a8": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 450,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a9": {
+        "data": {
+         "charges": 0,
+         "hostId": 0,
+         "boundRound": 1,
+         "returnedRound": 1
+        },
+        "form": false,
+        "empty": true,
+        "hp": 525,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a10": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 449,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       }
+      },
+      "members": [
+       "a1",
+       "a9",
+       "a10"
+      ]
+     }
+    },
+    {
+     "step": [
+      "apply",
+      0,
+      9
+     ],
+     "ret": {
+      "hp": 494,
+      "used": true
+     },
+     "events": [],
+     "hits": [
+      [
+       "hp",
+       "e0",
+       "a9",
+       31
+      ]
+     ],
+     "snap": {
+      "round": 1,
+      "party": {
+       "a1": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 485,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a8": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 450,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a9": {
+        "data": {
+         "charges": 0,
+         "hostId": 0,
+         "boundRound": 1,
+         "returnedRound": 1
+        },
+        "form": false,
+        "empty": true,
+        "hp": 494,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a10": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 449,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       }
+      },
+      "members": [
+       "a1",
+       "a9",
+       "a10"
+      ]
+     }
+    },
+    {
+     "step": [
+      "pick",
+      0
+     ],
+     "ret": "a9",
+     "events": [],
+     "hits": [
+      [
+       "hp",
+       "e0",
+       "a9",
+       31
+      ]
+     ],
+     "snap": {
+      "round": 1,
+      "party": {
+       "a1": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 485,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a8": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 450,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a9": {
+        "data": {
+         "charges": 0,
+         "hostId": 0,
+         "boundRound": 1,
+         "returnedRound": 1
+        },
+        "form": false,
+        "empty": true,
+        "hp": 463,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       },
+       "a10": {
+        "data": null,
+        "form": false,
+        "empty": false,
+        "hp": 449,
+        "alive": true,
+        "untargetable": false,
+        "host": null,
+        "bound": false
+       }
+      },
+      "members": [
+       "a1",
+       "a9",
+       "a10"
+      ]
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
    "id": "end",
    "setup": {
     "steps": [
