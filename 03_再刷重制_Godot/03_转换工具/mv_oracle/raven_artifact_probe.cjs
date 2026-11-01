@@ -5,6 +5,7 @@
 // ② params.*：渡鸦（等级、进阶 rank、灵魂 soul）装上法宝、法宝等级 L 时 paramPlus(0..7) 与 param(0..7)，同条件不装时的同两项；
 //    Game_Actor.paramPlus 包装：装着 4001 加固定 ARTIFACT_BASE_BONUS，魔攻另加 artifactMagicAttackBonus（⌊阶×50＋魂×(0.02＋阶×0.006)⌋），
 //    生命另加 artifactHpBonus（⌊阶×400＋魂×(0.04＋阶×0.008)⌋）；CP_MagicWeapon 每级成长＝等级×paramPlusPerLevel。
+// ③ 见下（掉率倍率）。
 // 真实新局、Math.random 0.5，只在内存；产物 .sandbox/raven_artifact.json（generated/oracle/raven_artifact.json，tests/xiyou_raven_artifact.gd 读）。
 const {start, makeCase, finish, round} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
@@ -61,6 +62,21 @@ for (const [level, rank, soul, lv] of [[1, 0, 0, 1], [30, 0, 500, 1], [45, 2, 20
     const worn = read(a);
     return {slot, itemLevel: item.level, bare, worn,
       matBonus: round(R.artifactMagicAttackBonus(a)), hpBonus: round(R.artifactHpBonus(a))};
+  }));
+}
+// ③ drop.*：R.teamDropRateFactor（Game_Enemy.dropItemRate 与图鉴、地图详情共用）：亡魂汲取 10129（渡鸦 5 级起）在出战成员里时 +1（加在套装与 passiveIRUP 之后，不乘）；
+//    渡鸦在后备（第 5 个以后不出战）不加。
+for (const [id, level, party] of [['l1', 1, [1, ACTOR]], ['l30', 30, [1, ACTOR]], ['reserve', 30, [1, 8, 9, 10, 11, ACTOR]]]) {
+  cases.push(makeCase(`drop.${id}`, {level, party}, () => {
+    newGame();
+    w.eval('$gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
+    w.$gameSwitches.setValue(SWITCH, true);
+    w.eval('$gameParty._actors=[]; $gameParty._battleMembers=[0,0,0,0,0];');
+    for (const x of party) w.$gameParty.addActor(x);
+    const a = w.$gameActors.actor(ACTOR);
+    a.changeLevel(level, false);
+    R.recruit();
+    return {members: w.$gameParty.battleMembers().map(b => b.actorId()), knows: a.isLearnedSkill(10129), factor: round(R.teamDropRateFactor())};
   }));
 }
 process.exit(finish(host, 'raven_artifact.json', {hostScope: '正式 installNativeRavenRuntime（法宝字段、Game_Actor.paramPlus 包装）＋CP_MagicWeapon 每级成长', cases}) ? 0 : 1);

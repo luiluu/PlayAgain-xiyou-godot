@@ -282,6 +282,8 @@ static func growth_rate(a) -> float:
 ## 固定 ARTIFACT_BASE_BONUS，魔攻另加 ⌊阶×50＋魂×(0.02＋阶×0.006)⌋，生命另加 ⌊阶×400＋魂×(0.04＋阶×0.008)⌋。
 ## 每级成长 R.ARTIFACT_LEVEL_GROWTH 与备注的 <… Param +n per Level> 相同、上限 888 同 <Max Level>，照 CP_MagicWeapon 原路算（XActor.magic_param）。
 const ARTIFACT_BASE_BONUS := [350, 100, 0, 80, 150, 80, 90, 35]
+## 亡魂汲取：出战时全队掉率 +100%（XMapTransfer.team_drop_factor）
+const SOUL_DRAIN := 10129
 
 
 static func param_plus(a, i: int, v: float) -> float:

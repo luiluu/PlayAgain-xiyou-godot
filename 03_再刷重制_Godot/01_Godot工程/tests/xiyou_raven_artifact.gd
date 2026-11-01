@@ -3,6 +3,7 @@ extends Node
 ## 与 mv_oracle/raven_artifact_probe.cjs 的冻结 v0.28 参照（generated/oracle/raven_artifact.json）逐例比。
 ## - module：每级成长、上限 888 照备注（与 installNativeRavenRuntime 的 ARTIFACT_LEVEL_GROWTH／artifactMaxLevel 一致）、固定加成表；
 ## - params.*：渡鸦（等级、进阶、灵魂）不装与装上法宝（法宝等级 1～888）时 paramPlus(0..7) 与 param(0..7)，另核魔攻／生命的灵魂加成。
+## - drop.*：全队掉率 XMapTransfer.team_drop_factor（亡魂汲取 10129 出战 +1；1 级没学、后备不出战不加）。
 ## 反向：不装法宝时 XRaven.param_plus 不加；别的角色不加。
 const ORACLE := "oracle/raven_artifact.json"
 var results := []
@@ -57,12 +58,14 @@ func _read(a: XActor) -> Dictionary:
 
 func _run() -> void:
 	var d = JSON.parse_string(FileAccess.get_file_as_string(XDB.BASE + ORACLE))
-	if not check("oracle", d is Dictionary and d.cases.size() >= 6 and d.cases.all(func(c): return c.errors.is_empty()), ORACLE):
+	if not check("oracle", d is Dictionary and d.cases.size() >= 9 and d.cases.all(func(c): return c.errors.is_empty()), ORACLE):
 		finish()
 		return
 	for c in d.cases:
 		if c.id == "module":
 			_module(c.observed)
+		elif c.id.begins_with("drop."):
+			_drop(c)
 		else:
 			_params(c)
 	_reverse()
@@ -97,6 +100,26 @@ func _params(c: Dictionary) -> void:
 	check(c.id + ".worn_param", worn.param == _nums(o.worn.param), [worn.param, o.worn.param])
 	check(c.id + ".bonus", XRaven.artifact_mat_bonus(a) == float(o.matBonus) and XRaven.artifact_hp_bonus(a) == float(o.hpBonus),
 		[XRaven.artifact_mat_bonus(a), XRaven.artifact_hp_bonus(a), o.matBonus, o.hpBonus])
+
+
+## 全队掉率（同参照：新局、挑战开关、入队名单 party、渡鸦 level 级、招募）
+func _drop(c: Dictionary) -> void:
+	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [8])
+	XState.current = s
+	s.actor_max_level = 99
+	s.set_switch(2494, true)
+	s.party.clear()
+	s.battle_slots.clear()
+	for id in c.setup.party:
+		s.add_actor(int(id))
+	var a := s.actor(XRaven.ACTOR)
+	a.change_level_mv(int(c.setup.level))
+	XRaven.recruit(s)
+	var o: Dictionary = c.observed
+	var members := s.battle_members().map(func(b): return b.actor_id)
+	check(c.id + ".members", members == _nums(o.members).map(func(x): return int(x)), [members, o.members])
+	check(c.id + ".knows", XRaven.has(a, XRaven.SOUL_DRAIN) == bool(o.knows), o.knows)
+	check(c.id + ".factor", is_equal_approx(XMapTransfer.team_drop_factor(s), float(o.factor)), [XMapTransfer.team_drop_factor(s), o.factor])
 
 
 ## 反向：不装法宝不加；别的角色（孙悟空 1）原样
