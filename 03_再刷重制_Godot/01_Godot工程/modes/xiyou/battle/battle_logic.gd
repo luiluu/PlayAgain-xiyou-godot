@@ -366,7 +366,7 @@ static func note_costs(skill: Dictionary) -> Dictionary:
 		_note_cost_cache[key] = out
 	return _note_cost_cache[key]
 
-## YEP_SkillCore skillHpCost：⌊基础＋最大HP×比例⌋、不低于 0（熟练度公式原样、费用为正时至少 1，等于不变）。
+## YEP_SkillCore skillHpCost：⌊基础＋最大HP×比例⌋、不低于 0；再过熟练度公式（XSkillMastery.cost，正式西游都原样、费用为正时至少 1）。
 ## 异化空壳在战斗中按开场参照生命上限算（Adv:126），见 XAlienBattle.hp_cost_mhp
 static func skill_hp_cost(a: XBattler, skill: Dictionary) -> int:
 	if is_item(skill):
@@ -374,7 +374,8 @@ static func skill_hp_cost(a: XBattler, skill: Dictionary) -> int:
 	var nc := note_costs(skill)
 	if not nc.has("hpCost") and not nc.has("hpCostPer"):
 		return 0
-	return maxi(0, floori(float(nc.get("hpCost", 0)) + XAlienBattle.hp_cost_mhp(a) * float(nc.get("hpCostPer", 0.0))))
+	var cost := maxi(0, floori(float(nc.get("hpCost", 0)) + XAlienBattle.hp_cost_mhp(a) * float(nc.get("hpCostPer", 0.0))))
+	return XSkillMastery.cost(a, skill, "hp", cost)  # YEP_SkillMasteryLevels skillHpCost 包装
 
 ## canPaySkillHpCost：费用为 0 能付，否则生命要大于费用；异化空壳／嫁祸／连命另看护盾、保护者、生命池（Adv:127）
 static func can_pay_hp(a: XBattler, skill: Dictionary) -> bool:
@@ -434,6 +435,7 @@ func _skill_cost(a: XBattler, skill: Dictionary, panel: bool, shift: float) -> D
 	var mp := float(nc.get("mpCost", skill.get("mpCost", 0))) + a.mmp * float(nc.get("mpCostPer", 0.0))
 	var tp := float(nc.get("tpCost", skill.get("tpCost", 0))) + a.max_tp() * float(nc.get("tpCostPer", 0.0))
 	var cost := {"mp": maxi(0, floori(mp * (1.0 if panel else a.mcr))), "tp": maxi(0, floori(tp))}
+	cost = {"mp": XSkillMastery.cost(a, skill, "mp", int(cost.mp)), "tp": XSkillMastery.cost(a, skill, "tp", int(cost.tp))}  # YEP_SkillMasteryLevels skillMpCost／TpCost 包装
 	if a is XActor:
 		var reduce := consume_reduce(a, skill, shift)
 		cost.mp = floori(cost.mp * (1.0 - reduce / 100.0))

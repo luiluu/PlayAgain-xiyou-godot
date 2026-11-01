@@ -21,7 +21,7 @@ extends RefCounted
 ##   （存进 XBattleLogic.victory_texts，画面还没接）。同步时夹到当前门槛。
 ## - 进阶（Scene_ActorAdvanced 包装，XAdvance.missing／advance 分派到 reason／advance）：条件依次是有下一形态、等级、累计突破、
 ##   四臂进星空要神之触媒 ×1；进阶＝遗忘 → 学会 → 形态 +1 → 同步（含法宝进化）→ 星空扣 1 个神之触媒（原版表里的金钱、物品不再另扣）。
-##   熟练度继承（skillMasteryLevel／Uses）重制没有熟练度，不做；原版出错回滚（snapshotProgression）GDScript 无异常，不做。
+##   熟练度继承（INHERIT：新技能取被替换技能的 skillMasteryLevel、Uses，学会之后 set）；原版出错回滚（snapshotProgression）GDScript 无异常，不做。
 ## - 法宝进化（G.evolveRelic，同步时）：戴着的饿狼法宝换成当前形态的模板，保留实例与旧模板的差值——能力值、特性（比率类连乘、
 ##   加值类相加后求差，其他特性按条带走）、多出的备注行；等级、经验、自定名字保留（名字含旧模板名的换成新模板名）。
 ##   换装（changeEquip 包装，XEquipment.change）后同步一次。法宝只给饿狼由备注 <req_actors: 173> 管（XActor.can_equip）。
@@ -37,7 +37,7 @@ extends RefCounted
 ## - itemCnt：饿狼不被原生反击；meetsSkillConditions：未到形态的拳法、追击 10258 不能用，认真一拳 10263 要琦玉模式（模式：琦玉 10262
 ##   命中自己开，认真一拳打完关）。
 ## 未移植：输入阶段预排了模式：琦玉时认真一拳可选（原版看 BattleManager._phase 'input' 的已排行动，重制选指令时没有预排）、
-## skillMasteryLevel 包装（追击／反击借主拳熟练度，重制无熟练度）、applyCritical 0 伤不暴击、技能分类与指令窗 [2,1,5,4]、
+## applyCritical 0 伤不暴击、技能分类与指令窗 [2,1,5,4]、
 ## 进阶界面的饿狼提示（重制走 XAdvance.fail_text）、胜利提示 victory_texts 上画面、法宝说明 describeRelic、
 ## 图鉴立绘、读档同步（extractSaveContents 包装）、旧档迁移（不迁移 MV 旧存档）。
 ## 参照：slice_probe（切片角色行与伤害行）、actor_passive_probe（各等级技能表）、garou_progress_probe、garou_battle_probe；
@@ -304,10 +304,20 @@ static func advance(s: XState, a, expected: int) -> Dictionary:
 	if why != "":
 		return {"ok": false, "reason": why}
 	var next: Dictionary = STAGES[expected + 1]
+	var inherit := []
+	for id in next.learn:
+		if INHERIT.has(int(id)):
+			var src: int = INHERIT[int(id)]
+			inherit.append([int(id), a.skillMasteryLevel(src), XSkillMastery.uses(a, src)])
 	for id in next.forget:
 		a.forget_skill(int(id))
 	for id in next.learn:
 		a.learn_skill(int(id))
+	advancing = true  # a._garouAdvancing：继承期间不报技能升级通告
+	for r in inherit:
+		XSkillMastery.set_level(a, r[0], r[1])
+		XSkillMastery.set_uses(a, r[0], r[2])
+	advancing = false
 	s.actor_advance[ACTOR] = expected + 1
 	sync(a)
 	if expected + 1 == 6:
@@ -464,7 +474,7 @@ const RELIC_EVOLUTION := [3, 5, 7, 11, 15, 18, 22]
 const WATER := 10250
 const MODE := 10262
 const SERIOUS := 10263
-## 每个形态的主拳（G.main）：追击、反击借它的熟练度（重制没有熟练度，只记）
+## 每个形态的主拳（G.main）：追击、反击借它的熟练度（_garouMasterySource，XSkillMastery._native；原版借不到，O-待定 o_garou_borrow）
 const MAIN := [10250, 10251, 10252, 10253, 10255, 10255, 10259]
 ## G.config.skills 的 stage（未到形态不能用）
 const SKILL_STAGE := {10250: 0, 10251: 1, 10252: 2, 10253: 3, 10254: 3, 10255: 4, 10256: 4, 10257: 5, 10258: 4, 10259: 6,
@@ -477,6 +487,12 @@ static var evolution := 0
 static var analysis := {}
 static var received := false
 static var saitama := false
+## a._garouMasterySource：G.trigger 期间是主拳编号，平时 0
+static var mastery_source := 0
+## a._garouAdvancing（进阶期间）
+static var advancing := false
+## 进阶的熟练度继承（G.config.skills 的 replaces）：新技能 → 被替换的技能
+const INHERIT := {10251: 10250, 10252: 10251, 10253: 10252, 10255: 10253, 10257: 10256, 10259: 10255, 10260: 10257, 10261: 10254}
 ## 施放帧（action._garouFrame）：施放开始时的进化层、各目标第一次被打时的解析层、是否命中与伤害
 static var frame := {}
 
@@ -506,6 +522,7 @@ static func clear_battle() -> void:
 	received = false
 	saitama = false
 	frame = {}
+	mastery_source = 0
 
 
 static func layers(b) -> int:
@@ -585,6 +602,8 @@ static func trigger(logic, a, b, id: int, kind: String, evo := -1) -> Array:
 	if a == null or b == null or not a.is_alive() or not b.is_alive():
 		return []
 	var saved := frame
+	var prior := mastery_source
+	mastery_source = MAIN[stage(a)]  # a._garouMasterySource = G.main(a)
 	frame = {"user": a, "skill": XDB.rec("Skills", id), "evolution": evolution if evo < 0 else evo, "targets": [], "finished": false, "triggered": kind}
 	var used: bool = b.is_alive()
 	var r: Dictionary = logic.apply(a, XDB.rec("Skills", id), b)
@@ -593,6 +612,7 @@ static func trigger(logic, a, b, id: int, kind: String, evo := -1) -> Array:
 	if kind == "counter" and used and not r.missed and not r.evaded:
 		add_analysis(a, b)
 	frame = saved
+	mastery_source = prior
 	return logic.mark_views([r])
 
 
