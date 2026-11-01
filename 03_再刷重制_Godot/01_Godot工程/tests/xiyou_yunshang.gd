@@ -24,6 +24,9 @@ class FixedStream extends XRandomStream:
 	func _take(kind: String, _reason: String, _event_key: String):
 		draws += 1
 		return value if kind == "float" else 2147483648
+	func next_index_mod(n: int, reason: String, event_key := "") -> int:
+		_take("uint32", reason, event_key)
+		return floori(n * value) if n > 0 else 0
 	func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
 		_take("uint32", reason, event_key)
 		return lo + floori((hi - lo + 1) * value)
