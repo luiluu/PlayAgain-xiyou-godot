@@ -288,11 +288,14 @@ static func _statements(js: String, interp) -> Array:
 			if got != "":
 				interp.host.toast(got)
 			continue
-		# 公共事件 9011 天衣铺、9018 小猫试炼：只移植了条件不够时的提示（installNativeYunshangRuntime openCrafting：174 云裳在队且
-		# 20 级；installImportedBalanceRuntime startTrial：178 在队、35 级且武器槽是剑）。条件够时的天衣铺页面与试炼战斗没移植，照旧算没认出。
-		# 两处原版还判 $gameParty.inBattle()，重制的脚本翻译只在地图上跑，不用判
+		# 公共事件 9011 天衣铺、9018 小猫试炼：条件不够时的提示（installNativeYunshangRuntime openCrafting：174 云裳在队且
+		# 20 级；installImportedBalanceRuntime startTrial：178 在队、35 级且武器槽是剑）。条件够时天衣铺打开 XYunshangShop（host.open_yunshang_shop），
+		# 试炼战斗没移植，照旧算没认出。两处原版还判 $gameParty.inBattle()，重制的脚本翻译只在地图上跑，不用判
 		if st == "CodexYunshang.openCrafting()" and not _actor_ready(s, 174, 20):
 			interp.host.toast("云裳达到20级后，可在战斗外使用天衣铺")
+			continue
+		if st == "CodexYunshang.openCrafting()" and interp.host.has_method("open_yunshang_shop"):
+			await interp.host.open_yunshang_shop()
 			continue
 		if st == "CodexCat.startTrial(this)" and not (_actor_ready(s, XCat.ACTOR, 35) and XCat.has_sword(s.actor(XCat.ACTOR))):
 			interp.host.toast("小猫剑圣达到35级并装备剑后，才能挑战。")

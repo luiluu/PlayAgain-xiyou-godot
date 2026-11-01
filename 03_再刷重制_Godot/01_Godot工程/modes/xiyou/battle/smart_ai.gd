@@ -154,9 +154,10 @@ static func formula_safe(formula: String) -> bool:
 	return RegEx.create_from_string("(?:^|[^=!<>])=(?!=)|\\+\\+|--").search(s) == null
 
 
-## 角色档案（registerProfile 依次问，第一个非空的；重制只有甚尔）
+## 角色档案（registerProfile 依次问，第一个非空的；重制有甚尔、云裳）
 static func profile(a: XBattler, rec: Dictionary) -> Dictionary:
-	return XToji.ai_profile(a, rec)
+	var p := XToji.ai_profile(a, rec)
+	return p if not p.is_empty() else XYunshang.ai_profile(a, rec)
 
 
 func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
@@ -167,6 +168,8 @@ func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var id := int(rec.get("id", 0))
 	if id >= 10216 and id <= 10219 and _toji_formula_re.search(str(dmg.get("formula", ""))) != null:
 		value = XToji.ai_damage(a, t, id, int(p.get("extra", 0)))  # 甚尔主技能：受控的估算函数
+	elif XYunshang.ai_raw(logic, a, t, rec) != null:
+		value = float(XYunshang.ai_raw(logic, a, t, rec))  # CodexAIEstimators：云裳公式（防取 0）
 	else:
 		if not formula_safe(str(dmg.get("formula", "0"))):
 			return 0.0
@@ -185,7 +188,7 @@ func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 		defense = t.pdr if int(rec.get("hitType", 0)) == 1 else t.mdr if int(rec.get("hitType", 0)) == 2 else 1.0
 	if float(p.get("pierce", 0.0)) > 0.0 and defense < 1.0:
 		defense += float(p.pierce) * (1.0 - defense)
-	var repeats := float(XBattleLogic.attack_repeats(a, rec, 1))  # action.numRepeats：普攻（isAttack，看 attackSkillId）时加追加次数
+	var repeats := float(XYunshang.repeats(a, rec, XBattleLogic.attack_repeats(a, rec, 1)))  # action.numRepeats：普攻（isAttack，看 attackSkillId）时加追加次数；云裳双针 ×2
 	if p.has("hits") and o_profile_hits:
 		repeats = float(p.hits)
 	else:
@@ -381,10 +384,12 @@ func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary, dir := {}) ->
 	var targets: Array = ctx.foes if for_opponent(d) else [actor] if for_user(d) else \
 		ctx.friends.filter(func(t): return t.is_dead() if for_dead_friend(d) else t.is_alive())
 	targets = XAlienBattle.filter_targets(actor, rec, targets)  # 恶愿：除自己外
+	var p := profile(actor, rec)
+	if p.has("targetAllowed"):
+		targets = targets.filter(func(t): return p.targetAllowed.call(t, ctx, self))  # 档案的目标限制（云裳敕衣点神、赠行）
 	if targets.is_empty() or (XAlienBattle._mode(rec) == "wish" and not XAlienBattle.wish_affordable(actor, rec)):
 		return {"score": 0.0, "target": null}
 	var dmg_type := int(rec.get("damage", {}).get("type", 0))
-	var p := profile(actor, rec)
 	var splash := float(p.get("splash", 0.0))
 	var rows := []
 	for t in targets:
@@ -395,6 +400,8 @@ func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary, dir := {}) ->
 			var gap := maxf(0.0, t.mhp * 0.8 - shield_points(t))
 			score += 16000.0 * minf(gap, shield_estimate(actor, t, rec)) / maxf(1.0, t.mhp) * (1.0 if ctx.longFight else 0.12)
 		score += benefit(t, rec, ctx, d)
+		if p.has("targetUtility"):
+			score += float(p.targetUtility.call(t, ctx, self))  # 档案的目标收益（云裳御风、换锦、赠行、储行、敕衣点神）
 		if for_opponent(d) and dmg_type in [1, 5]:
 			hit_damage = expected_damage(actor, t, rec)
 			hit_score = damage_utility(t, hit_damage, ctx.foes, ctx)
@@ -436,7 +443,10 @@ func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary, dir := {}) ->
 	if not ctx.get("noSetup", false) and p.has("followupSkill"):
 		score = maxf(score, (score + _followup_score(rec, int(p.followupSkill), ctx)) \
 			/ maxf(1.0, float(p.get("setupActions", 1)) + 1.0) * 0.92 * (0.6 if ctx.urgent else 1.0))  # duration 缺省 1
-	return {"score": score, "target": null if for_all(d) or random else best.target}
+	var out := {"score": score, "target": null if for_all(d) or random else best.target}
+	if p.has("prepareTarget"):
+		out.prepare = p.prepareTarget.bind(best.target, ctx, self)  # 选中这个候选时再记（原版记在各候选自己的 action 上）
+	return out
 
 
 ## 铺垫后的后续技能分：付完本技能的 MP／TP／HP 代价（原版 Object.create 出的 future）后，后续技能按 noSetup 打分；不是伤害技能记 0
@@ -503,7 +513,7 @@ func _choose() -> Dictionary:
 		ranking.append({"id": int(c.rec.id), "item": c.item, "score": roundf(r.score), "target": r.target})
 		if r.score > best_score:
 			best_score = r.score
-			best = {"skill": c.rec, "target": r.target}
+			best = {"skill": c.rec, "target": r.target, "prepare": r.get("prepare", Callable())}
 	if best.is_empty() and not foes.is_empty() and legal(attack, false):
 		var low: XBattler = foes.reduce(func(x, y): return y if y.hp < x.hp else x)
 		best = {"skill": attack, "target": low}
@@ -514,6 +524,9 @@ func _choose() -> Dictionary:
 		var guard := XDB.rec("Skills", XBattleLogic.GUARD_SKILL)
 		if can_use(guard):
 			best = {"skill": guard, "target": actor}
+	if best.get("prepare", Callable()).is_valid():
+		best.prepare.call()
+	best.erase("prepare")
 	ranking.sort_custom(func(x, y): return x.score > y.score)
 	best["score"] = best_score
 	best["candidates"] = ranking.slice(0, 6)

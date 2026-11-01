@@ -57,6 +57,8 @@ var cmd_win: XBattleList
 var list_win: XBattleList
 ## 异化百相切换仿形的选择窗（开着时）
 var mimic_win: XAlienMimicWindow
+## 云裳的选择窗（赠行选人、裁身、七曜元素、收针选人、换锦选状态）
+var yun_win: XYunChoicesWindow
 var auto_btn: Button
 var speed_btn: Button
 var bgm: AudioStreamPlayer
@@ -697,12 +699,13 @@ func _command(u: XBattler):
 
 
 func _close_windows() -> void:
-	for w in [cmd_win, list_win, mimic_win]:
+	for w in [cmd_win, list_win, mimic_win, yun_win]:
 		if w and is_instance_valid(w):
 			w.queue_free()
 	cmd_win = null
 	list_win = null
 	mimic_win = null
+	yun_win = null
 	_help()
 	otb.clear_preview()
 
@@ -735,7 +738,7 @@ func _preview(a: XBattler, skill, targets: Array = []) -> void:
 
 ## 指令（Window_ActorCommand＋OTB）：攻击（YEP_WeaponUnleash：替换后的技能与名字）、加入的技能类型（按编号；CP_MagicWeapon 不列 3～6，没有该类技能也列出；
 ## 渡鸦／宿傩／饿狼照 XActorModules.battle_skill_types 固定几栏）、
-## 防御、物品、逃跑（OTB Escape Actor Window：总是列出，不能逃时灰显）；魔族再加「血契：开／关」。
+## 防御、物品、逃跑（OTB Escape Actor Window：总是列出，不能逃时灰显）；云裳的天衣指令（XYunshang.command_entries）；魔族再加「血契：开／关」。
 func _command_entries(a: XActor) -> Array:
 	var terms: Array = XDB.system().terms.commands
 	var atk := a.attack_skill()
@@ -754,6 +757,7 @@ func _command_entries(a: XActor) -> Array:
 	opts.append({"text": str(terms[3]), "key": "guard", "enabled": logic.can_use(a, grd), "preview": grd})
 	opts.append({"text": str(terms[4]), "key": "item"})
 	opts.append({"text": str(terms[1]), "key": "escape", "enabled": logic.can_escape})
+	opts.append_array(XYunshang.command_entries(a))  # 云裳 makeCommandList 包装（种族之前装）：赠行、放行、裁身、收袖、七曜元素
 	# installNativeRaceRuntime makeCommandList 包装：魔族在最后加「血契：开／关」
 	var blood := XRaceBattle.blood_command_text(a)
 	if blood != "":
@@ -809,6 +813,21 @@ func _command_for(a: XActor):
 				XRace.toggle_blood(logic.state, a)
 				opts = _command_entries(a)
 				last_index = initial_command_index(a, opts)
+			"yunSleeve", "yunRelease":
+				# 原版处理器：切换收袖／放行后 setup(actor) 重画指令窗（光标照 selectLast）
+				if pick == "yunSleeve":
+					XYunshang.sleeve[a] = not bool(XYunshang.sleeve.get(a, false))
+				else:
+					XYunshang.release(logic, a)
+				opts = _command_entries(a)
+				last_index = initial_command_index(a, opts)
+			"yunGift", "yunCut", "yunElement":
+				cmd_win.active = false
+				if await _yun_command(a, pick):
+					opts = _command_entries(a)
+					last_index = initial_command_index(a, opts)
+				if logic.auto:
+					return "auto"
 			"escape":
 				return "escape"
 			"item":
@@ -840,17 +859,89 @@ func _pick_action_list(a: XActor, entries: Array, items: bool):
 			if pick == null:
 				continue
 			XAlienBattle.choose_mimic(a, pick)
+		# 云裳 onSkillOk 包装（异化之内）：收针先选觉醒者，没醒的换锦先选自己的状态；取消回技能列表
+		var yun := {}
+		if not items and int(entry.id) == XYunshang.GATHER:
+			var t = await _yun_pick(XYunshang.gather_rows(logic))
+			if logic.auto:
+				return null
+			if t == null:
+				continue
+			yun.gather = t.target
+		if not items and XYunshang.exchange_needs_pick(a, entry):
+			var m = await _yun_pick(XYunshang.exchange_rows(a, false))
+			if logic.auto:
+				return null
+			if m == null:
+				continue
+			yun.mine = int(m.id)
 		# Scene_Battle.onSkillOk/onItemOk：先记选择，再选目标；取消目标也保留。
 		if items:
 			logic.state.last_item = int(entry.id)
 		else:
 			a.last_battle_skill = int(entry.id)
 		var target = await _pick_target(entry, a)
+		while target is XEnemy and yun.has("mine"):
+			# 云裳 onEnemyOk 包装：选完敌人再选它的状态；取消回选敌
+			var th = await _yun_pick(XYunshang.exchange_rows(target, true))
+			if logic.auto:
+				return null
+			if th != null:
+				yun.theirs = int(th.id)
+				break
+			target = await _pick_target(entry, a)
 		if target != null:
+			if yun.has("gather"):
+				XYunshang.wake_target = yun.gather  # action._yunWakeTarget
+			if yun.has("mine"):
+				XYunshang.exchange_pick = [yun.mine, int(yun.get("theirs", 0))]  # action._yunExchangeSelf／_yunExchangeEnemy
 			return [entry, target]
 		if mimic:
 			XAlienBattle.choose_mimic(a, 0)  # 原版选择记在这次输入的行动上，取消后不会带到别的回合
 	return null
+
+
+## 云裳指令窗的三项选择（第 535 行处理器）：赠行选人→免费赠 2 次；裁身选一项（觉醒选两项）→Y.cut；七曜选元素。
+## 选完返回真（原版 setup(actor) 重画指令窗）；任何一步取消返回假（只把指令窗激活回来，选过的作废）
+func _yun_command(a: XActor, key: String) -> bool:
+	match key:
+		"yunGift":
+			var r = await _yun_pick(XYunshang.gift_rows(logic, a))
+			if r == null:
+				return false
+			XYunshang.free_gift(logic, a, r.target)
+		"yunCut":
+			var chosen := []
+			while true:
+				var r = await _yun_pick(XYunshang.cut_rows(chosen))
+				if r == null:
+					return false
+				chosen.append(int(r.id))
+				if not (XYunshang.awake(a) and chosen.size() < 2):
+					break
+			XYunshang.cut(a, chosen)
+		"yunElement":
+			var r = await _yun_pick(XYunshang.element_rows(a))
+			if r == null:
+				return false
+			XYunshang.setting(a).element = int(r.id)
+			XYunshang.element_round[a] = XYunshang.round
+	return true
+
+
+## 开一个云裳选择窗（XYunChoicesWindow），返回选中的那一行（Dictionary）；取消返回 null
+func _yun_pick(rows: Array):
+	yun_win = XYunChoicesWindow.for_rows(ui, rows)
+	yun_win.position += _origin
+	var w := yun_win
+	w.chosen.connect(func(i): _picked.emit(w.entries[i]))
+	w.cancelled.connect(func(): _picked.emit("cancel"))
+	var r = await _picked
+	if is_instance_valid(w):
+		w.queue_free()
+	if yun_win == w:
+		yun_win = null
+	return r if r is Dictionary else null
 
 
 ## 异化百相的选仿形窗（Window_AlienMimic）：列出仿形记录，当前仿形不可选。返回选中的技能号，取消返回 null
@@ -1015,6 +1106,9 @@ func _pick_target(skill: Dictionary, a: XActor, forced := true):
 				initial = b
 	_select_target(initial)
 	var r = await _picked
+	while r is XBattler and pool.has(r) and XYunshang.rejects_target(a, skill, r):
+		XSound.system(3)  # 云裳 onActorOk 包装：敕衣点神选没穿天衣的、赠行选自己——蜂鸣，留在选人
+		r = await _picked
 	_target_mode = ""
 	_target_pool = []
 	_target_group = []

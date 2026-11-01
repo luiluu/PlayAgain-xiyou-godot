@@ -1363,6 +1363,16 @@ func open_inlay_book() -> void:
 	hud.visible = true
 
 
+## 公共事件 9011「天衣铺」：CodexYunshang.openCrafting() → SceneManager.push(Scene_Yunshang)，关闭后回到地图
+func open_yunshang_shop() -> void:
+	hud.visible = false
+	var page := XYunshangShop.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 ## 公共事件 169「宠物」：SceneManager.push(Scene_PetSystem)，关闭后回到地图
 func open_pets() -> void:
 	hud.visible = false
