@@ -17,6 +17,9 @@ extends Control
 ##   「\c[16]孔类型:\c[0] 宝珠／- 空 -」（Augment Slot Format），确定打开宝珠列表（占列表位置，XItemRow；不可选的半透明、
 ##   确定蜂鸣；孔里有宝珠时首行「取下镶嵌物」，选中它时不显示说明卡）；确定即镶嵌（装备音效），回到操作菜单原行。
 ##   信息窗在插槽信息之后画「镶嵌物」标题（x −32 居中，系统色）与每个孔一行（x 226）。读数见 tests/fixtures/orb_ui_oracle.json。
+## - 批量服用（installBulkPillsRuntime，规则见 XBulkPills）：支持的丹药在原本「使用」的那一步（对队友的选人确定后、不对队友的直接）
+##   改开数量窗（居中 456×8 行，「服用数量」、名字、× 数量、「持有：N 颗」、按键说明；左右 ±1、上下 ±10，1～库存），
+##   确定后逐颗服用，结束提示「已服用 名字 × N；剩余 N 颗（原因）」；还有库存且对队友时留在选人，否则回列表；有预约的事件回地图。
 
 signal closed
 ## 用了带公共事件的物品：关闭后菜单也要关，回地图执行预约（Scene_ItemBase.checkCommonEvent → goto(Scene_Map)）
@@ -60,6 +63,10 @@ var gear_filter := {}
 var toolbar: HBoxContainer
 var search_panel: XGearSearch
 var power_page: XPowerForget
+var bulk_win: XMVWindow
+var _bulk: Dictionary = {}          # 批量服用数量窗：{item, available, number, targets, for_friend}；空＝没开
+var _bulk_busy := false             # 正在逐颗服用（挡住输入）
+const BULK_RECT := Rect2(412, 198, 456, 324)   # Window_BulkPillNumber：宽 456、fittingHeight(8)，居中
 
 
 func _ready() -> void:
@@ -73,7 +80,9 @@ func _ready() -> void:
 	list_win = XMVWindow.make(self, LIST_RECT, op, _paint_list)
 	info_win = XMVWindow.make(self, INFO_RECT, op, _paint_info)
 	actor_win = XMVWindow.make(self, ACTOR_RECT, op, _paint_actors)
-	for w in [cat_win, list_win, actor_win]:
+	bulk_win = XMVWindow.make(self, BULK_RECT, 255, _paint_bulk)
+	bulk_win.visible = false
+	for w in [cat_win, list_win, actor_win, bulk_win]:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
 	add_child(help_card)
@@ -272,7 +281,8 @@ func _refresh() -> void:
 	for w in [cat_win, status_win, list_win, info_win]:
 		w.visible = not actor_mode
 	actor_win.visible = actor_mode
-	for w in [cat_win, status_win, list_win, info_win, actor_win]:
+	bulk_win.visible = not _bulk.is_empty() and not _bulk_busy
+	for w in [cat_win, status_win, list_win, info_win, actor_win, bulk_win]:
 		w.refresh()
 	if toolbar != null:
 		var gear := entries().filter(func(e): return XItemMarks.is_gear(e.rec)).size()
@@ -472,6 +482,9 @@ static func _current_max(c: XMVCanvas, label: String, cur: float, mx: float, x: 
 # ---- 操作 ----
 func _unhandled_input(event: InputEvent) -> void:
 	if search_panel != null or power_page != null:
+		return
+	if _bulk_busy or not _bulk.is_empty():
+		_bulk_input(event)
 		return
 	var handled := true
 	if event.is_action_pressed("ui_cancel"):
@@ -715,6 +728,8 @@ func _use() -> void:
 	if s.item_count(int(_item.get("id", 0))) <= 0 or not targets.any(func(t): return _effective(t)):
 		XSound.system(3)
 		return
+	if _open_bulk(targets, true):
+		return
 	XSound.system(22)   # SoundManager.playUseItem
 	# Scene_Item.user：可行动角色中药物知识 pha 最大者；与战斗共用效果栏实现。
 	var logic := XBattleLogic.new()
@@ -750,10 +765,145 @@ func _use_direct() -> void:
 	if int(_item.get("id",0)) == XPowerBooks.FORGET_ITEM:
 		_open_power_forget()
 		return
+	if _open_bulk([], false):
+		return
 	XSound.system(22)   # SoundManager.playUseItem
 	if bool(_item.get("consumable", true)):
 		s.gain_item(int(_item.id), -1)
 	_after_use()
+
+
+# ---- 批量服用（installBulkPillsRuntime：Scene_Item.useItem 换成数量窗）----
+## 支持的丹药开数量窗并返回 true；不支持的返回 false，照原来单颗使用。库存不足或已有预约的事件时蜂鸣、不开（仍返回 true）
+func _open_bulk(targets: Array, for_friend: bool) -> bool:
+	var rec := XDB.rec("Items", int(_item.get("id", 0)))
+	if not XBulkPills.supports(rec):
+		return false
+	var s := XState.current
+	var available := XBulkPills.stock(s, rec)
+	if available < 1 or s.peek_common_event() > 0:
+		XSound.system(3)
+		XToast.show_text("丹药库存不足" if available < 1 else "请先完成当前道具事件", true)
+		return true
+	_bulk = {"item": rec, "available": available, "number": 1, "targets": targets, "for_friend": for_friend}
+	return true
+
+
+## Window_ShopNumber：左右 ±1、上下 ±10，范围 1～持有数
+func _bulk_change(d: int) -> void:
+	var n := clampi(int(_bulk.number) + d, 1, int(_bulk.available))
+	if n != int(_bulk.number):
+		XSound.system(0)
+	_bulk.number = n
+
+
+func _bulk_input(event: InputEvent) -> void:
+	if _bulk_busy:
+		get_viewport().set_input_as_handled()
+		return
+	var handled := true
+	if event.is_action_pressed("ui_cancel"):
+		_bulk_cancel()
+	elif event.is_action_pressed("ui_accept"):
+		_bulk_ok()
+	elif event.is_action_pressed("ui_right", true):
+		_bulk_change(1)
+	elif event.is_action_pressed("ui_left", true):
+		_bulk_change(-1)
+	elif event.is_action_pressed("ui_up", true):
+		_bulk_change(10)
+	elif event.is_action_pressed("ui_down", true):
+		_bulk_change(-10)
+	else:
+		handled = false
+	if handled:
+		get_viewport().set_input_as_handled()
+		_refresh()
+
+
+## 鼠标：窗内左键确定，右键取消，滚轮 ±1
+func _bulk_click(event: InputEventMouseButton) -> void:
+	if _bulk_busy:
+		return
+	match event.button_index:
+		MOUSE_BUTTON_RIGHT:
+			_bulk_cancel()
+		MOUSE_BUTTON_LEFT:
+			if BULK_RECT.has_point(event.position):
+				_bulk_ok()
+		MOUSE_BUTTON_WHEEL_UP:
+			_bulk_change(1)
+		MOUSE_BUTTON_WHEEL_DOWN:
+			_bulk_change(-1)
+	_refresh()
+
+
+## onCodexBulkNumberCancel：关窗，回到选人（对队友）或列表
+func _bulk_cancel() -> void:
+	XSound.system(2)
+	var ctx := _bulk
+	_bulk = {}
+	_bulk_restore(ctx)
+
+
+## restoreSelection：还有库存且对队友时留在选人，否则回列表（光标夹在列表内）
+func _bulk_restore(ctx: Dictionary) -> void:
+	if XBulkPills.stock(XState.current, ctx.item) > 0 and bool(ctx.for_friend):
+		_mode = "actor"
+	else:
+		_mode = "list"
+		_index = clampi(_index, 0, maxi(0, entries().size() - 1))
+		_top = XMenu._scroll_to(_index, _top, _rows())
+
+
+## onCodexBulkNumberOk：数量夹在持有数内，播一次使用音效，逐颗服用；结束提示，有预约的事件就回地图
+func _bulk_ok() -> void:
+	var ctx := _bulk
+	var s := XState.current
+	var requested := mini(int(ctx.number), mini(int(ctx.available), XBulkPills.stock(s, ctx.item)))
+	if requested < 1:
+		_bulk_cancel()
+		return
+	_bulk_busy = true
+	_refresh()
+	XSound.system(22)   # playSeForItem
+	var host := XBulkPills.EventHost.new()
+	add_child(host)
+	var result: Dictionary = await XBulkPills.run(host, s, ctx.item, requested, ctx.targets, bool(ctx.for_friend), _effective)
+	host.queue_free()
+	_bulk_busy = false
+	_bulk = {}
+	last_bulk = result
+	_bulk_restore(ctx)
+	_refresh()
+	XToast.show_text(XBulkPills.notice(ctx.item, result), true)
+	if s.peek_common_event() > 0:
+		to_map = true
+		closed.emit()
+
+
+var last_bulk: Dictionary = {}      # 上一批的结果（CodexBulkPills.lastResult；测试核对用）
+
+
+## Window_BulkPillNumber.refresh：「服用数量」（系统色居中）、名字、× 数量（光标框）、「持有：N 颗」（右）、按键说明（居中）
+func _paint_bulk(c: XMVCanvas) -> void:
+	if _bulk.is_empty():
+		return
+	var w := c.size.x
+	var rec: Dictionary = _bulk.item
+	var lh := LH
+	c.text("服用数量", 0, 0, w, "center", XUI.SYSTEM)
+	c.icon(int(rec.get("iconIndex", 0)), 2, lh + 2)
+	c.text(XQuality.list_name(rec), 36, lh, w - 36, "left", XGear.color(rec))
+	var digits := str(int(_bulk.available))
+	var cw := c.text_width(digits) + 12
+	var cx := w - cw - 6
+	var sign_w := c.text_width("×")
+	c.text("×", cx - sign_w * 2, lh * 2, sign_w)
+	c.cursor(Rect2(cx, lh * 2, cw, lh))
+	c.text(str(int(_bulk.number)), cx, lh * 2, cw - 6, "right")
+	c.text("持有：%d 颗" % int(_bulk.available), 0, lh * 3, w, "right")
+	c.text("← / → ±1    ↑ / ↓ ±10", 0, lh * 4, w, "center")
 
 
 ## The native item action opens a child chooser without using/consuming the item.
@@ -793,6 +943,9 @@ func _after_use() -> void:
 # ---- 鼠标：先选中再点确定；右键取消；滚轮滚动 ----
 func _gui_input(event: InputEvent) -> void:
 	if search_panel != null or power_page != null or not (event is InputEventMouseButton and event.pressed):
+		return
+	if _bulk_busy or not _bulk.is_empty():
+		_bulk_click(event)
 		return
 	var p: Vector2 = event.position
 	var pad := Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
