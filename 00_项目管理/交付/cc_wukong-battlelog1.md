@@ -2,7 +2,7 @@
 
 - 车道／工作者：B 界面（战斗画面）／悟空（cc）
 - 基线：总装九派单，从 cc/wukong-casino1 末端 93808909 切出（带着 itembag1、casino1 的提交与交付单；那两条先合了的话这里只多出本期）。
-- 状态：进行中
+- 状态：可合并
 
 ## 盘点：三位专属角色在原版走哪条显示路径
 
@@ -30,7 +30,10 @@
 
 ## 验证
 
-- （待写）
+- 专项 `xiyou_battle_log`（新，30/30，单跑 8 秒）：真战斗画面（敌群 2、地图 5，队伍宿傩／渡鸦／饿狼 55 级）。宿傩：行动后的 battle_text 是技能名下面第二行、回合末单独一行、播完清日志、日志最多 10 行、神灶过滤（别的技能／别的角色不过滤）与 `_pick_target` 实际的目标池；渡鸦：`XRaven.applied` 记 slash（不看命中，别人不记）、命中记录的 ring／slash 与收割／回响 regen 依次放进特效层、4 个图形轮流、ring 28 帧／弧 16 帧、每帧 ×0.88 与 +0.025、到时隐藏；饿狼：`XGarou.trigger` 记 `garou_trigger`，追击在主行动技能名下加一行，原生反击只出「%1的反击！」。
+- 选测（CHECK_JOBS=3，墙钟 13 分钟）19 场景全过、无偶发：`xiyou_battle_log`、`xiyou_sukuna_battle`、`xiyou_raven_battle`、`xiyou_raven_soul`、`xiyou_garou_battle`、`xiyou_garou_progress`、`xiyou_battle_ui`、`xiyou_battle`（前缀扩出 `xiyou_battle_common_events`、`xiyou_battle_options`、`xiyou_battle_events`、`xiyou_battleback_save`、`xiyou_battle_gaps`、`xiyou_battle_common_event_child`、`xiyou_battle_start_event`）、`xiyou_sequence_visual`、`xiyou_action_sequence`（`_play` 序列判定）、`xiyou_regen_popup`、`xiyou_popup_overlap`（`_perform_damage` 抽出、regen 弹字）。日志 `04_验证/本地结果/并行测试/20261101_031447_zjy0goqd/`。
+- `语法检查.py` 通过。
+- 没做原版参照探针：这几处都是把原版已知的写法照搬到画面（文字取各模块已有、已对过原版的记录），特效常量逐条抄自 R.Fx；时机只到「哪一条记录之后」，没有逐帧对原版截图。
 
 ## 交接板
 
@@ -48,4 +51,5 @@
 ## 本分支提交
 
 - 38465517 WIP：画面接日志、神灶选目标、渡鸦特效、饿狼追击／反击行
-- 专项 xiyou_battle_log、交付单定稿
+- 2f18c148／d98ca28d WIP：专项 xiyou_battle_log、交付单草稿
+- 交付单定稿（本提交）
