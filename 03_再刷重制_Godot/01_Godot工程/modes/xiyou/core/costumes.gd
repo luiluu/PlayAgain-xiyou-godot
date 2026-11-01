@@ -68,7 +68,7 @@ static func current(a: XActor):
 
 ## Game_Actor.battlerName 包装（战斗中）：有卡状态且启用＝卡图，否则自身形态
 static func battler_name(s: XState, a: XActor, in_battle := true) -> String:
-	var own := str(a.data().get("battlerName", ""))
+	var own := XRaven.battler_name(a, str(a.data().get("battlerName", "")), in_battle)  # 渡鸦的 battlerName 包装在卡图那层里面
 	var card = current(a)
 	if card == null or not in_battle:
 		return own

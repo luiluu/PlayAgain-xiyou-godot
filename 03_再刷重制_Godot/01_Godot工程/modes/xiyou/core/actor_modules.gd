@@ -80,7 +80,7 @@ static func level_changed(a, before: int) -> void:
 
 
 static func param(a, i: int, v: float) -> float:
-	return XYunshang.param(a, i, XYomiJingliu.param(a, i, XSukuna.param(a, i, XToji.param(a, i, XMira.param(a, i, v))))) if _module(a) else v
+	return XYomiJingliu.param(a, i, XSukuna.param(a, i, XToji.param(a, i, XMira.param(a, i, v)))) if _module(a) else v  # 云裳那层在小猫剑圣外面，见 XActor.param_before_alien
 
 
 static func xparam(a, i: int, v: float) -> float:
@@ -101,7 +101,7 @@ static func param_base(a, i: int, v: float) -> float:
 
 
 static func param_plus(a, i: int, v: float) -> float:
-	return XYomiJingliu.param_plus(a, i, v) if _module(a) else v
+	return XRaven.param_plus(a, i, XYomiJingliu.param_plus(a, i, v)) if _module(a) else v
 
 
 static func action_plus_set(a, rates: Array) -> void:

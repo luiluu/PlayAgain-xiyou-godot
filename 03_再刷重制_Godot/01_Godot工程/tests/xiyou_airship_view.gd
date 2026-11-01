@@ -224,7 +224,8 @@ func _run() -> void:
 		and map.player_plate.size == Vector2(180, 78) and map.airship_plate != null and not map.airship_plate.visible,
 		[map.player_plate.position if map.player_plate else null, map.player_plate.visible if map.player_plate else null])
 	await _get_on("first")
-	await get_tree().process_frame
+	for i in 3:
+		await get_tree().process_frame  # 同 plate_walk：等地图 _process 摆过名牌（负载高时升空的物理帧会挤在少数几个画面帧里）
 	# 乘上飞艇：玩家透明，名牌跟着藏；飞艇那张显示（玩家坐着它、位置重合），随飞艇升高
 	_check("plate_airship", not map.player_plate.visible and map.airship_plate.visible and map.airship_plate.get_parent() == map.airship,
 		[map.player_plate.visible, map.airship_plate.visible])

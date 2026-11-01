@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.255",
-  "sequence": 255,
-  "next": "dev.256",
-  "nextSequence": 256,
+  "current": "dev.258",
+  "sequence": 258,
+  "next": "dev.259",
+  "nextSequence": 259,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "wukong-battlelog2",
+  "currentChange": "bailong-yunshang8",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

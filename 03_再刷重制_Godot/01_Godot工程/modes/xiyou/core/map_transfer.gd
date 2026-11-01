@@ -113,7 +113,8 @@ static func preview_enemies(map_id: int) -> Array:
 	return out
 
 
-## Codex 全队掉率：套装倍率（全体队员）× 出战成员每个 passiveIRUP 依次 ×(1 + v/100)
+## Codex 全队掉率（R.teamDropRateFactor）：套装倍率（全体队员）× 出战成员每个 passiveIRUP 依次 ×(1 + v/100)，
+## 出战成员里有渡鸦学会亡魂汲取 10129 时再 +1（加在最后，不乘前面的；参照 raven_artifact_probe drop.*）
 static func team_drop_factor(s: XState) -> float:
 	if s == null:
 		return 1.0
@@ -121,6 +122,8 @@ static func team_drop_factor(s: XState) -> float:
 	for a in s.battle_members():
 		for v in a.passive_values("passiveIRUP"):
 			f += XActor._num(v) * 0.01 * f
+	if s.battle_members().any(func(a): return XRaven.has(a, XRaven.SOUL_DRAIN)):
+		f += 1.0
 	return maxf(0.0, f)
 
 

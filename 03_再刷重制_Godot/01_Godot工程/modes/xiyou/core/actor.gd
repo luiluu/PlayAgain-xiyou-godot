@@ -647,6 +647,9 @@ static func magic_param(e: Dictionary, i: int) -> float:
 	var lv = XEquipmentView.level(e)
 	if float(lv) < 0.0:
 		return 0.0
+	var grown := XThreeGrowth.sync_item(e)  # 三法宝成长 magicWeaponCustomParam 包装：所属人物 60 级进化，每级成长翻倍
+	if not grown.is_empty():
+		return float(lv) * float(grown[i])
 	var kind := str(e.get("kind", ""))
 	var key := kind + ":" + str(int(e.get("base", e.get("id", 0))))
 	if not _magic_growth_cache.has(key):
@@ -667,11 +670,15 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XRaceBattle.param(self, i, XAlienBattle.param(self, i, param_before_alien(i)))  # 按原版安装先后由内到外：专属角色模块（米拉 98、宿傩 113）→小猫剑圣（115）→异化逆骨（129）→种族祝福（148）
+	return XRaceBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i))))  # 按原版安装先后由内到外：专属角色模块（米拉 98、宿傩 113）→小猫剑圣（115）→云裳（夹值）→异化逆骨（129）→谷雨储备（133）→种族祝福（148）
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:
-	return XCat.param(self, i, final_clamp(i, XYunshang.battle_param(self, i, XActorModules.param(self, i, super.param(i)))))  # 云裳包装的战斗内层（六衡、万法、御风）
+	# 原版安装先后由内到外：专属角色模块（米拉、黄泉、甚尔、宿傩，模块表 2～18）→小猫剑圣（installImportedBalanceRuntime，第 20 个）
+	# →云裳（第 31 个：云裳自身倍率、战斗内层六衡／万法／御风，最后夹值）。审查第 17 期 P3：原来夹值写在小猫剑圣里面，次序反了
+	# （XCat 只管 178、云裳倍率只管 174，结果一样；战斗内层对别的角色生效时才有差）。
+	var v := XCat.param(self, i, XActorModules.param(self, i, super.param(i)))
+	return final_clamp(i, XYunshang.battle_param(self, i, XYunshang.param(self, i, v)))
 
 ## 云裳 installNativeYunshangRuntime 的 Game_Actor.param 包装（模块表第 30 个，在米拉、黄泉、甚尔、宿傩、饿狼之后，异化、种族之前）：
 ## 对所有角色最后 round(max(HP?1:0, min(paramMax, v)))，专属倍率乘过上限的压回上限（八戒 toji2；参照 param_max_probe）。

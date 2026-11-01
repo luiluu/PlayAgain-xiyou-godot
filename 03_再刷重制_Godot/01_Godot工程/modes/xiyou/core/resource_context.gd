@@ -105,7 +105,24 @@ func snapshot(b: XBattler) -> Dictionary:
 		"alive": not b.state_ids.has(1), "dead": b.state_ids.has(1), "immortal": b.immortal,
 		"result": result(b).duplicate(true)}
 
+## 谷雨 gainHp 包装（宿傩、异化之外）：直接治疗先取整；原 gainHp 之后，出战角色之前活着就把回血量记进生命储备
 func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
+	if resource != "hp" or preview or not error.is_empty():
+		return _gain(b, resource, amount)
+	if amount > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0:
+		return {}  # 归根中不回血
+	var temp := XGuyu.isolated_begin() if amount < 0.0 else {}  # 不在行动里的扣血包一个临时事件（代命）
+	amount = XGuyu.heal_value(amount)
+	if amount < 0.0:
+		amount = -XGuyu.ledger_absorb(b, -amount)  # 护盾账本 gainHp 包装（最外层）：花荫先吸收
+	var was_alive := b.is_alive() and b.hp > 0.0
+	var entry := _gain(b, resource, amount)
+	if error.is_empty():
+		XGuyu.gained(b, amount, was_alive)
+	XGuyu.isolated_end(temp)
+	return entry
+
+func _gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	if not error.is_empty():
 		return {}
 	if not resource in ["hp", "mp", "tp"] or is_nan(amount) or is_inf(amount):
@@ -169,6 +186,11 @@ func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
 	if not unsupported.is_empty():
 		error = unsupported
 		return {}
+	if resource == "hp" and not preview:
+		if value > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0:
+			return {}  # 谷雨 setHp 包装：归根中抬不起生命
+		if value < b.hp:
+			value = b.hp - XGuyu.ledger_absorb(b, b.hp - value)  # 护盾账本 setHp 包装（最外层）：花荫先吸收
 	if resource == "hp" and XAlienBattle.routes_set_hp(b):
 		return gain(b, "hp", value - b.hp)  # 异化 setHp 包装：生命池、嫁祸、空壳、舍身、绝缘按 gainHp(差值) 走
 	if resource == "hp" and value < b.hp and XAlienBattle.frame_blocks_hp(b):

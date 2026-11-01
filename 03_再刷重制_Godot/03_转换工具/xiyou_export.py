@@ -1020,6 +1020,10 @@ class Exporter:
             a = db['Actors'][aid]
             self.ref_img('faces', a['faceName']); self.ref_img('characters', a['characterName']); self.ref_img('sv_actors', a['battlerName'])
             self.ref_super_sv(a['meta'])
+        # Mx_SuperSV 状态换图：状态备注的 <sv:名>（宿傩完全体 2643、饿狼形态 2644～2650），状态全表都导出，图跟着全带上
+        for st in db['States']:
+            if st:
+                self.ref_super_sv(st.get('meta', {}))
         enemies = set()
         for tid in troops:
             t = db['Troops'][tid]
@@ -1094,6 +1098,10 @@ class Exporter:
         # 界面用图（标题、菜单底图等），写成「文件夹/文件名」
         for rel in cfg.get('extraImages', []):
             self.img.add(rel)
+        # 脚本里写死的逐帧图（Codex_MiraRavenMultiFrame 的米拉／渡鸦变身、小猫剑圣）：整个 sv_actors/sv/文件夹 带上
+        for folder in cfg.get('extraSvFolders', []):
+            for f in sorted((self.app / 'img' / 'sv_actors' / 'sv' / folder).glob('*.png')):
+                self.ref_img('sv_actors', f'sv/{folder}/{f.stem}')
         for rel in cfg.get('extraAudio', []):
             self.audio.add(rel)
         self.collect_transfer_preview()
