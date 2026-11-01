@@ -1632,9 +1632,11 @@ func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 
 ## itemEva：YEP「Evade Formula」（西游为 0）夹到 0～1。原版闪避已并入命中公式。
 func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
-	if XYomiJingliu.sure(u, skill) or XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t) or XToji.sure(u, skill):  # 黄泉技能、云裳伤害技能、宿傩斩击打有看破的目标、甚尔五感主技能／武器库 itemEva 包装：不闪避
+	if XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t) or XToji.sure(u, skill):  # 云裳伤害技能、宿傩斩击打有看破的目标、甚尔五感主技能／武器库 itemEva 包装：不闪避
 		return 0.0
-	return clampf(_hit_formula("Evade Formula", "0", u, skill, t) + XToji.eva_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemEva 包装：被打时天与咒缚影速
+	# 镜流黄泉的包装在甚尔里面：必中只把内层闪避压成 0，甚尔照样加目标的影速（审查第 18 期 P3②，参照 toji_eva_probe）
+	var base := 0.0 if XYomiJingliu.sure(u, skill) else _hit_formula("Evade Formula", "0", u, skill, t)
+	return clampf(base + XToji.eva_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemEva 包装：被打时天与咒缚影速
 
 
 static var _hit_exprs := {}

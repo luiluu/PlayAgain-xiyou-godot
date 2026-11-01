@@ -8,6 +8,10 @@ extends Node
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
+const ROUTE := preload("res://tests/xiyou_airship_route.gd")
+const REACH := preload("res://tests/xiyou_reach_check.gd")
+## 进天之上的落点：恰兰吉尔南出口（Map071 EV3）进 (63,50)，飞艇停在 (65,56)（同 xiyou_floor_reach094、xiyou_airship_fly）
+const SKY_ENTRY := Vector2i(63, 50)
 
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
@@ -125,6 +129,7 @@ func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
 func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = s
+	ROUTE.park(s, 69)
 	s.map_id = map_id
 	s.x = x
 	s.y = y
@@ -176,11 +181,13 @@ func _run() -> void:
 	_finish()
 
 
-func _enter(tag: String, enter_ev: int, dir: int, map_id: int, arrive: Vector2i, sky_at: Vector2i) -> XState:
-	var s := _start(69, sky_at.x, sky_at.y, dir)
+func _enter(tag: String, enter_ev: int, dir: int, map_id: int, arrive: Vector2i) -> XState:
+	var s := _start(69, SKY_ENTRY.x, SKY_ENTRY.y, dir)
 	if not _check(tag + "_sky", await _wait_map(69)):
 		return null
-	await _run_event(_scene(), enter_ev, [], "")
+	# 入口在别的岛上：从落点走不到（要坐飞艇）；走到飞艇、飞过去降落、走过去踩／撞入口（原来直接跑入口事件）
+	_check(tag + "_needs_airship", REACH.unreachable(_scene(), _scene().player.grid, [enter_ev]) == [enter_ev])
+	_check(tag + "_fly_in", await ROUTE.new(self, _scene()).go(enter_ev), [_scene().map_id, _scene().player.grid])
 	if not _check(tag + "_entered", await _wait_map(map_id) and _scene().player.grid == arrive, [_scene().map_id, _scene().player.grid]):
 		return null
 	return s
@@ -215,7 +222,7 @@ func _has_shop(map: XMapScene, id: int, goods: int) -> bool:
 
 
 func _fire_and_chaos() -> void:
-	var s := await _enter("fire", 70, 8, 115, Vector2i(24, 49), Vector2i(30, 110))
+	var s := await _enter("fire", 70, 8, 115, Vector2i(24, 49))
 	if s == null:
 		return
 	var map: XMapScene = _scene()
@@ -262,7 +269,7 @@ func _fire_and_chaos() -> void:
 	# 大菠萝：按变量 208／209／210 发奖（固定变量值逐支核对），打完重掷三个变量、开关清零
 	var cases := [
 		{"v": [1, 3, 0], "gear": 2971, "what": "rare3"},
-		{"v": [50, 0, 5], "gear": 2855, "what": "normal5", "extra": 1},   # 大菠萝自己也掉一份 2851～2859 套装，所以这支多 1
+		{"v": [50, 0, 5], "gear": 2855, "what": "normal5", "extra": 1},   # 大菠萝自己也可能掉一份 2851～2859 套装（dev.257 掉落照原版后看概率），所以这支可多 0～1
 		{"v": [1, 7, 0], "item": 751, "what": "rare7"},
 	]
 	for c in cases:
@@ -274,7 +281,7 @@ func _fire_and_chaos() -> void:
 		var n0 := battles.size()
 		await _run_event(map, 23, [], "win")
 		var g1 := s.gear_count("armor", int(c.get("gear", 1))) if c.has("gear") else s.item_count(int(c.get("item", 1)))
-		_check("chaos_boss412_" + c.what, battles.size() == n0 + 1 and int(battles[-1].troop) == 412 and g1 == g0 + 1 + int(c.get("extra", 0)), [battles.slice(n0), g0, g1])
+		_check("chaos_boss412_" + c.what, battles.size() == n0 + 1 and int(battles[-1].troop) == 412 and g1 >= g0 + 1 and g1 <= g0 + 1 + int(c.get("extra", 0)), [battles.slice(n0), g0, g1])
 		_check("chaos_reroll_" + c.what, int(s.variable(238)) == 0 and not s.switch(186) and int(s.variable(208)) >= 1 and int(s.variable(208)) <= 100 and int(s.variable(209)) >= 1 and int(s.variable(209)) <= 6 and int(s.variable(210)) >= 1 and int(s.variable(210)) <= 12, [s.variable(238), s.variable(208), s.variable(209), s.variable(210)])
 	# 衣卒尔传回火焰之河，再出口
 	await _run_event(map, 17, [0], "")

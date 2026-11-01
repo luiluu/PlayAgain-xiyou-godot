@@ -10,6 +10,16 @@ extends Node
 @export var part := 0
 @export var parts := 16
 const CASE_GROUP := 4  # 每个敌群×场面的角色数（探针出战 1/8/9/10）
+## 共用布置（tools31）：原来每条伤害行、每个选择用例都重新开局布置（setup 约 43 毫秒，两万多次）。同一敌群×场面连着的几条共用一次布置；
+## 每次复用前比一遍「战斗指纹」（双方 HP／MP／TP、状态与回合、增减益、冷却、护盾、各项能力、学会的技能、物品与变量开关、随机流快照、回合数），
+## 跟刚布置完时不一样就说明上一条改了状态：丢掉重新布置，记进 drift，最后 share_setup_isolated 判失败并列出是哪组、哪些字段。
+## 回退：环境变量 XIYOU_SMART_AI_SHARE=0（或 SHARE_SETUP = false）回到逐条开局；两边断言一样多。
+static var SHARE_SETUP := OS.get_environment("XIYOU_SMART_AI_SHARE") != "0"
+var _shared_key := ""
+var _shared_logic: XBattleLogic
+var _shared_print := ""
+var drift: Array = []
+var setups := 0
 
 var results := []
 var mismatches := []
@@ -29,7 +39,62 @@ func close(a: float, b: float, rel := 1e-4) -> bool:
 	return absf(a - b) <= maxf(1.0, absf(b) * rel)
 
 
+## 取一份布置：共用时同一敌群×场面连着复用（见 SHARE_SETUP），否则逐条开局
+func logic_for(ref: Dictionary, troop: int, scene: String) -> XBattleLogic:
+	if not SHARE_SETUP:
+		return setup(ref, troop, scene)
+	var key := "%d:%s" % [troop, scene]
+	if key == _shared_key:
+		var now := fingerprint(_shared_logic)
+		if now == _shared_print:
+			return _shared_logic
+		if drift.size() < 20:
+			drift.append({"key": key, "fields": _diff_fields(_shared_print, now)})
+	_shared_key = key
+	_shared_logic = setup(ref, troop, scene)
+	_shared_print = fingerprint(_shared_logic)
+	return _shared_logic
+
+
+static func _battler_print(b: XBattler) -> Dictionary:
+	var params := []
+	for i in range(8):
+		params.append(b.param(i))
+	var out := {"hp": b.hp, "mp": b.mp, "tp": b.tp, "states": b.state_ids.duplicate(), "stateTurns": b.state_turns.duplicate(true),
+		"stateData": b.state_data.duplicate(true), "stateOrigins": b.state_origins.duplicate(true), "buffs": b.buffs.duplicate(),
+		"buffTurns": b.buff_turns.duplicate(), "guarding": b.guarding, "lastTarget": b.last_target_index, "cooldowns": b.cooldowns.duplicate(true),
+		"warmups": b.warmups.duplicate(true), "shield": b.shield, "zq": [b.zq_guard, b.zq_pojia_rate], "immortal": b.immortal,
+		"params": params, "xparams": [b.hit, b.eva, b.cri, b.cev, b.mev, b.mrf, b.cnt, b.hrg, b.mrg, b.trg, b.tgr, b.grd, b.rec, b.pha, b.mcr],
+		"lifecycle": b.lifecycle_context.keys()}
+	if b is XActor:
+		out.skills = (b as XActor).skill_ids.duplicate()
+	return out
+
+
+## 战斗指纹：复用前与刚布置完时逐项比（见 SHARE_SETUP）
+static func fingerprint(logic: XBattleLogic) -> String:
+	var s := logic.state
+	return JSON.stringify({"actors": logic.actors.map(_battler_print), "enemies": logic.enemies.map(_battler_print), "turn": logic.turn,
+		"random": logic.random.snapshot() if logic.random != null else null, "items": s.items, "variables": s.variables, "switches": s.switches})
+
+
+static func _diff_fields(a: String, b: String) -> Array:
+	var x = JSON.parse_string(a)
+	var y = JSON.parse_string(b)
+	var out := []
+	for side in ["actors", "enemies"]:
+		for i in range(mini(x[side].size(), y[side].size())):
+			for k in x[side][i]:
+				if x[side][i][k] != y[side][i].get(k):
+					out.append("%s[%d].%s" % [side, i, k])
+	for k in ["turn", "random", "items", "variables", "switches"]:
+		if x[k] != y[k]:
+			out.append(k)
+	return out
+
+
 func setup(ref: Dictionary, troop: int, scene: String) -> XBattleLogic:
+	setups += 1
 	XEnemy.force_roll = 100.0
 	var party: Array = ref.party
 	var s := XState.new_game(int(ref.difficulty), int(party[0]), party.slice(1))
@@ -85,7 +150,7 @@ func _run() -> void:
 		check("seq.%d" % int(row.skill), int(XDB.rec("Skills", int(row.skill)).get("yepEffects", 0)) == int(row.hits), [row.skill, row.hits])
 	for i in range(part, ref.damage.size(), parts):
 		var row: Dictionary = ref.damage[i]
-		var logic := setup(ref, int(row.troop), "full")
+		var logic := logic_for(ref, int(row.troop), "full")
 		var a: XActor = logic.state.actor(int(row.actor))
 		var ai := XSmartAI.new(logic, a)
 		var v := ai.safe_damage(a, logic.enemies[int(row.target)], XDB.rec("Skills", int(row.skill)))
@@ -104,7 +169,7 @@ func _run() -> void:
 		var tag: String = "case.t%d.%s.a%d" % [int(c.troop), c.scene, int(c.actor)]
 		if c.get("skipped", false):
 			continue
-		var logic := setup(ref, int(c.troop), c.scene)
+		var logic := logic_for(ref, int(c.troop), c.scene)
 		var a: XActor = logic.state.actor(int(c.actor))
 		var r := XSmartAI.choose(logic, a)
 		var mine = {"id": int(r.skill.id), "item": XSmartAI.is_item(r.skill), "target": target_index(logic, r.target)} if r.has("skill") else null
@@ -216,6 +281,8 @@ func alien_projection(ref: Dictionary) -> void:
 
 
 func finish() -> void:
+	check("share_setup_isolated", drift.is_empty(), drift)
+	print("SETUPS %d（共用布置%s）" % [setups, "开" if SHARE_SETUP else "关"])
 	var passed := results.filter(func(r): return r.passed).size()
 	for m in mismatches.slice(0, 40):
 		print("MISMATCH ", m.name, " ", JSON.stringify(m.detail).left(700))

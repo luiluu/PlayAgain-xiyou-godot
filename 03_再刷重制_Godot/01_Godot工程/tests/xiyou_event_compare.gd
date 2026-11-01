@@ -12,7 +12,9 @@ const ORACLE := "res://modes/xiyou/generated/oracle/events.json"
 const BASELINE := "res://tests/event_compare_baseline.json"
 const PARTY := [1, 8, 10, 9]
 const MAX_STEPS := 20000
-const KNOWN_ORACLE_ERRORS := ["m221e3p0", "ce1344"]
+const KNOWN_ORACLE_ERRORS := []
+## 随机数按序列循环取的用例（同参照 event_probe.cjs RANDOM_SEQUENCES）：随机伙伴重抽到不重复，固定 0.5 会死循环
+const RANDOM_SEQUENCES := {"ce1344": [0.5, 0.1, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6, 0.05], "m221e3p0": [0.5, 0.1, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6, 0.05]}
 
 var results := []
 var out_dir := ""
@@ -276,6 +278,7 @@ func _finish() -> void:
 	DirAccess.remove_absolute(XSave.dir())
 	MVInterpreter.max_steps = 0
 	MVInterpreter.fixed_random = -1.0
+	MVInterpreter.random_sequence = []
 	XDungeon.restore_difficulty = true
 	XDungeon.restore_hang_up = true
 	XDungeon.battle_end_counts = true
@@ -320,6 +323,8 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	var before := _snap(s)
 	MVInterpreter.max_steps = MAX_STEPS
 	MVInterpreter.fixed_random = 0.5
+	MVInterpreter.random_sequence = RANDOM_SEQUENCES.get(str(c.id), [])  # 同参照 event_probe 的 RANDOM_SEQUENCES
+	MVInterpreter._sequence_at = 0
 	MVInterpreter.steps = 0
 	MVInterpreter.aborted = false
 	var interp := MVInterpreter.new(host, int(c.map), int(c.event), list)
@@ -440,6 +445,10 @@ func _trace_norm(trace: Array) -> Array:
 			x.number = true
 		if x.t == "transfer":
 			x.erase("d")
+		if x.t == "msg" and x.has("choices"):
+			# 选项里的控制符：原版脚本拼的选项直接带 ESC（\x1b，即 convertEscapeCharacters 之后的写法，如称号选项 \x1bI[0]），
+			# 重制写成反斜杠；显示时两者一样，比较前统一成反斜杠（悟空 dmg2，m4e1p2／p3）
+			x.choices = (x.choices as Array).map(func(t): return str(t).replace(char(27), "\\"))
 		return _norm(x))
 
 
