@@ -176,15 +176,17 @@ func _tianzhishang() -> void:
 	s.gain_item(731, 1)
 	await _run_event(map, 51, [0], "")
 	_check("tree_purify", s.item_count(731) == 0 and s.item_count(2530) == 3, [s.item_count(731), s.item_count(2530)])
-	# 镇凶塔：查看、镇压六臂魔猿
+	# 镇凶塔：在别的岛上（块 38），从落点走不到；坐飞艇到塔旁、面向它（原来在落点直接跑），再查看、镇压六臂魔猿
+	_check("tower_needs_airship", REACH.unreachable(map, map.player.grid, [71]) == [71], map.player.grid)
+	_check("tower_reach", await ROUTE.new(self, map).approach(71), map.player.grid)
 	s.set_variable(202, 0)
 	var n0 := battles.size()
 	await _run_event(map, 71, [0, 0], "win")
 	map = _scene()
 	_check("tower_boss", battles.size() == n0 + 1 and battles[-1].troop == 396 and battles[-1].result == 0, [battles.slice(n0)])
 	_check("tower_var", int(s.variable(202)) >= 0 and int(s.variable(202)) <= 2, [s.variable(202)])
-	# 回恰兰吉尔
-	await _run_event(map, 5, [], "")
+	# 回恰兰吉尔：从塔那块走回飞艇、飞回落点那块、走过去踩出口
+	_check("sky_back_fly", await ROUTE.new(self, map).go(5), [_scene().map_id, _scene().player.grid])
 	_check("sky_back_town", await _wait_map(71) and _scene().player.grid == Vector2i(40, 75), [_scene().map_id, _scene().player.grid])
 
 

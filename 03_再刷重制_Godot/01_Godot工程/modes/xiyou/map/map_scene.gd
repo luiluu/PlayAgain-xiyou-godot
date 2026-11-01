@@ -719,6 +719,7 @@ func get_off_vehicle() -> bool:
 	_vehicle_getting_off = true
 	player.vehicle_speed = 0
 	player.move_speed = 4
+	s.player_move_speed = 4   # Game_Player.getOffVehicle：setMoveSpeed(4)
 	player.through = false
 	_make_encounter_count()
 	_vehicle_gathering = true
@@ -1490,7 +1491,7 @@ func _hang_up_step() -> Array:
 	var s := XState.current
 	if (SAFE_HANG_UP and busy) or _menu_open or transfer_page != null:
 		return []
-	player.move_speed = 5 if player.is_dashing() else 4
+	player.move_speed = player.walk_speed()
 	# 回原点照 moveTowardPosition 的 deltaXFrom：循环地图上朝较近的一边走
 	var back_to: Vector2i = player.grid + lower.delta(s.hang_up_origin, player.grid)
 	if map_data.get("encounterList", []).is_empty():

@@ -35,6 +35,7 @@ KEYS = {
     'qiyu.json': {'cases': ('id',)},
     'cat.json': {'cases': ('id',)},
     'enemy_book_defeat.json': {'cases': ('id',)},
+    'script_gaps.json': {'cases': ('id',)},
     'lobby_shops.json': {'cases': ('id',)},
     'map132_shops.json': {'cases': ('id',)},
     'yomi_battle.json': {'cases': ('id',)},
