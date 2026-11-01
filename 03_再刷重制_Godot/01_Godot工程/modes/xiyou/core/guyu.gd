@@ -458,6 +458,7 @@ static func reset() -> void:
 	_shield_value = 0.0
 	calc_owner = null
 	_base.clear()
+	test_relic = false
 	_logic_ref = null
 
 
@@ -640,9 +641,10 @@ static func root(g, forced: bool) -> void:
 	r.root_until = round + 1
 
 
-## hasRelic：10 级起戴着百谷生
+## hasRelic：10 级起戴着百谷生（或测试开关 G.setTestRelic，reset 清）
+static var test_relic := false
 static func has_relic(b) -> bool:
-	return own(b) and int(b.level) >= 10 and b.equips.any(func(e): return e is Dictionary and not e.is_empty() and str(e.get("kind", "")) == "armor" and int(e.get("base", e.get("id", 0))) == RELIC)
+	return own(b) and int(b.level) >= 10 and (test_relic or b.equips.any(func(e): return e is Dictionary and not e.is_empty() and str(e.get("kind", "")) == "armor" and int(e.get("base", e.get("id", 0))) == RELIC))
 
 
 ## regenerate：去死亡、生命回满；60 级戴着百谷生、本场第一次时归春

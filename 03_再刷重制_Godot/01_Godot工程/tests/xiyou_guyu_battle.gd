@@ -2,7 +2,8 @@ extends Node
 ## 175 谷雨第二期 A 战斗内机制（XGuyu：生命周期、生命储备与上限、回血记储备、生未央、花期与冷却、绽放、终结、我即万物之春不付、
 ## 胜利掉谷种金缮石）：与 mv_oracle/guyu_battle_probe.cjs 的冻结 v0.28 参照（generated/oracle/guyu_battle.json）逐步比。
 ## 每步比命中（技能、出手者、目标、生命伤害，治疗为负）与快照（回合、花期、冷却、花期序号、种子、两人储备／上限／最大生命／
-## 不含储备的最大生命／生命、技能条件、累计）。技能条件只比治疗、花期、终结（花荫、转移第二期 B，重制恒不能用）。
+## 不含储备的最大生命／生命、技能条件、累计）。第二期 A 的例技能条件只比治疗、花期、终结（参照量的时候花荫、转移还没移植）；
+## 第二期 B 的例（sub／self／nosub／shield／transfer／relic／ai）五个都比，另比各人花荫、归根、活着、待绽、上回合压力与累计、自动战斗的选择。
 ## 另有本地断言（反向）：谷雨不在队不记储备、战斗外不加最大生命、不在花期不绽放、物品不绽放、别的角色用花期不生效。
 const ORACLE := "oracle/guyu_battle.json"
 const DIFFICULTY := 2
@@ -53,7 +54,7 @@ func _random(stone := []) -> XBattleRandom:
 
 
 ## 同参照 battle()：新局、开 2494、队伍 [175, 1] 同级；敌人生命加 1e9；规则流全取 0.5；推进到第一回合（round 1）
-func _battle(level: int, rank: int) -> XBattleLogic:
+func _battle(level: int, rank: int, relic := false) -> XBattleLogic:
 	var s := _state(rank)
 	for id in [XGuyu.ACTOR, 1]:
 		s.actor(id).change_level_mv(level)
@@ -71,6 +72,7 @@ func _battle(level: int, rank: int) -> XBattleLogic:
 		e.zq_ref = {"p": p, "k": 1.0}
 		e.param_mark_dirty()
 		e.param_refresh()
+	XGuyu.test_relic = relic  # 同参照 G.setTestRelic（setup 之后）
 	logic.start_turn()
 	for b in logic.actors + logic.enemies:
 		b.param_mark_dirty()
@@ -94,7 +96,16 @@ func _snap(logic: XBattleLogic) -> Dictionary:
 		"seed": XGuyu.seed if XGuyu.seed >= 0 else null, "battle": XGuyu.active_battle,
 		"party": [_row(s.actor(XGuyu.ACTOR)), _row(s.actor(1))],
 		"meets": MEETS_COMPARED.map(func(i): return XGuyu.meets(s.actor(XGuyu.ACTOR), XDB.rec("Skills", ACTIVE[i]))),
-		"totals": XGuyu.totals.duplicate()}
+		"totals": {"generated": XGuyu.totals.generated, "wasted": XGuyu.totals.wasted, "spent": XGuyu.totals.spent, "blooms": XGuyu.totals.blooms}}
+
+
+## 第二期 B 的例另记（同参照 ext）
+func _ext(logic: XBattleLogic) -> Dictionary:
+	var s := logic.state
+	var t := XGuyu.totals
+	return {"members": [s.actor(XGuyu.ACTOR), s.actor(1)].map(func(b): return {"shield": XGuyu.shield_of(b), "rooted": XGuyu.rooted(b),
+		"alive": b.is_alive(), "dead": b.state_ids.has(1), "bud": XGuyu.has_bud(b)}),
+		"totals": {"deaths": t.deaths, "regenerations": t.regenerations, "shielded": t.shielded, "transferred": t.transferred}}
 
 
 static func _norm(v):
@@ -125,7 +136,8 @@ func _target(logic: XBattleLogic, skill: Dictionary, i: int) -> XBattler:
 
 
 func _script(c: Dictionary) -> void:
-	var logic := _battle(int(c.setup.level), int(c.setup.rank))
+	var logic := _battle(int(c.setup.level), int(c.setup.rank), bool(c.setup.get("relic", false)))
+	var ext := bool(c.setup.get("ext", false))
 	var s := logic.state
 	var who := func(x): return s.actor(XGuyu.ACTOR) if str(x) == "g" else s.actor(1)
 	var steps: Array = c.observed.steps
@@ -150,6 +162,20 @@ func _script(c: Dictionary) -> void:
 				a.mp = a.mmp
 			"foehp":
 				logic.enemies[int(st[1])].hp = float(st[2])
+			"foe":
+				logs = logic.act(logic.enemies[int(st[1])], XDB.rec("Skills", int(st[2])), logic.actors[int(st[3])])
+			"revive":  # 同参照 removeState(死亡)＋setHp(最大生命)＋recoverAll，归根中都无效
+				var a: XActor = s.actor(XGuyu.ACTOR)
+				a.remove_state(1)
+				var rc := logic._operation_resources(a)
+				rc.set_resource(a, "hp", a.mhp)
+				logic._finish_lifecycle_operation(rc, a)
+				a.recover_all()
+			"ai":
+				var got := XGuyu.auto_action(logic, s.actor(XGuyu.ACTOR))
+				var ai = null if got.is_empty() else {"skill": int(got[0].id), "target": logic.enemies.find(got[1]) if got[1] != null else -1}
+				var wa = want.ai
+				check(name + ".ai", (ai == null and wa == null) or (ai != null and wa != null and ai.skill == int(wa.skill) and ai.target == int(wa.target)), [ai, wa])
 			"endBattle":
 				logic.end_battle(0)
 		if want.has("hits"):
@@ -161,7 +187,18 @@ func _script(c: Dictionary) -> void:
 			check(name + ".foes", foes == want.foes.map(func(v): return bool(v)), [foes, want.foes])
 		var snap: Dictionary = _norm(_snap(logic))
 		var ws: Dictionary = _norm(want.snap)
-		ws.meets = MEETS_COMPARED.map(func(k): return bool(ws.meets[k]))
+		if ext:
+			ws.meets = (ws.meets as Array).map(func(v): return bool(v))
+			snap.meets = ACTIVE.map(func(id): return XGuyu.meets(s.actor(XGuyu.ACTOR), XDB.rec("Skills", id)))
+			var we: Dictionary = ws.ext
+			var ge: Dictionary = _norm(_ext(logic))
+			check(name + ".pressure", absf(XGuyu.last_round_pressure - float(we.pressure)) < 1e-6, [XGuyu.last_round_pressure, we.pressure])
+			we.erase("pressure")
+			for k in we:
+				check(name + ".ext." + k, ge[k] == we[k], [ge[k], we[k]])
+			ws.erase("ext")
+		else:
+			ws.meets = MEETS_COMPARED.map(func(k): return bool(ws.meets[k]))
 		for k in ws:
 			check(name + "." + k, snap[k] == ws[k], [snap[k], ws[k]])
 	if XGuyu.active_battle:
@@ -234,7 +271,7 @@ func _run() -> void:
 				_stone(c)
 			else:
 				_script(c)
-	check("covers_all", seen == 9, seen)
+	check("covers_all", seen == 16, seen)
 	_local()
 	finish()
 

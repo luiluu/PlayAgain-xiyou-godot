@@ -19,6 +19,9 @@ for (const name of ['route-suppress', 'zones-correction']) {
   if (i < 0) throw new Error('伤害钩子 ' + name + ' 不在');
   hooks.splice(i, 1);
 }
+// 同一条 O-050：路线压制对队友的治疗、护盾（含谷雨花荫进账本）、效果栏回复、增益都乘 otherScale，改成恒 1
+if (!w.CodexRouteSuppress || typeof w.CodexRouteSuppress.otherScale !== 'function') throw new Error('路线压制模块不在');
+w.CodexRouteSuppress.otherScale = () => 1;
 const stub = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprites = new Map();
 w.Game_Battler.prototype.battler = function () {
@@ -37,7 +40,7 @@ const BIG_HP = 1e9, TROOP = 3, ID = 175, STONE = 2944;
 const ACTIVE = [10288, 10289, 10290, 10291, 10292];
 
 const rng = [];  // 'rng' 给的随机数：只给谷雨运行时（rollStone 的 Math.randomInt），用完回 0.5
-function battle(level, rank) {
+function battle(level, rank, relic) {
   newGame();
   w.eval('$gameSystem.setDifficultyId(2); $gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
   w.eval('$gameSwitches.setValue(2494, true); $gameParty._actors=[' + ID + ',1]; $gameParty._battleMembers=[' + ID + ',1,0,0,0];');
@@ -50,6 +53,8 @@ function battle(level, rank) {
   const bm = w.BattleManager; bm.setup(TROOP, false, false);
   w.Math.random = () => rng.length && /installNativeGuyuRuntime/.test(String(new Error().stack).split('\n').slice(2, 4).join()) ? rng.shift() : 0.5;
   bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
+  // 百谷生用测试开关 G.setTestRelic（setup 的 reset 清，所以放在 setup 之后）：真戴上时 60 级的生命与重制差 47（三法宝成长未移植），这里只量归春
+  if (relic) G.setTestRelic(a, true);
   for (const t of w.$gameTroop.members()) t._paramPlus[0] = BIG_HP;
   for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) { b.need_refresh = true; b.refresh(); b.recoverAll(); }
   bm.startBattle();
@@ -72,14 +77,19 @@ function act(bm, user, skillId, targetIndex) {
   bm._phase = 'turn';
 }
 function row(b) { return {e: G.reserve(b), cap: G.isGuyu(b) ? null : G.cap(b), mhp: b.mhp, base: G.baseMhp(b), hp: b.hp}; }
-function snapshot(env) {
+function snapshot(env, ext) {
   const {a, hero} = env, t = G.totals || {};
-  return {round: G.round, flowerUntil: G.flowerUntil, openAt: G.openAt, serial: G.flowerSerial, seed: G.seed ? G.seed.index() : null,
+  const out = {round: G.round, flowerUntil: G.flowerUntil, openAt: G.openAt, serial: G.flowerSerial, seed: G.seed ? G.seed.index() : null,
     battle: !!G.activeBattle, party: [row(a), row(hero)], meets: ACTIVE.map(id => a.meetsSkillConditions(w.$dataSkills[id])),
     totals: {generated: t.generated, wasted: t.wasted, spent: t.spent, blooms: t.blooms}};
+  if (!ext) return out;
+  // 第二期 B 的例另记：各人花荫、归根、活着、待绽，上回合压力，死亡／再生／花荫／转移累计
+  out.ext = {members: [a, hero].map(b => ({shield: G.shield(b), rooted: G.isRooted(b), alive: b.isAlive(), dead: b.isStateAffected(1), bud: G.hasBud(b)})),
+    pressure: +(G.lastRoundPressure || 0).toFixed(6), totals: {deaths: t.deaths, regenerations: t.regenerations, shielded: t.shielded, transferred: t.transferred}};
+  return out;
 }
-function run(steps, level, rank) {
-  const env = battle(level, rank), {bm, a, hero, foes} = env, out = [];
+function run(steps, level, rank, ext, relic) {
+  const env = battle(level, rank, relic), {bm, a, hero, foes} = env, out = [];
   const who = x => x === 'g' ? a : hero;
   const log = [], old = w.Game_Action.prototype.executeHpDamage;
   w.Game_Action.prototype.executeHpDamage = function (target, value) {
@@ -88,7 +98,7 @@ function run(steps, level, rank) {
     return r;
   };
   try {
-    out.push({step: ['start'], snap: snapshot(env)});
+    out.push({step: ['start'], snap: snapshot(env, ext)});
     for (const st of steps) {
       log.length = 0;
       const [kind, x, y, z] = st;
@@ -97,10 +107,17 @@ function run(steps, level, rank) {
       else if (kind === 'hp') who(x).setHp(y);
       else if (kind === 'mp') a.setMp(a.mmp);
       else if (kind === 'foehp') foes[x]._hp = y;
-      out.push({step: st, hits: log.slice(), snap: snapshot(env), foes: foes.map(t => t.isAlive())});
+      else if (kind === 'foe') act(bm, foes[x], y, z);  // 敌人用技能 y 打我方第 z 位
+      else if (kind === 'revive') { a.removeState(a.deathStateId()); a.setHp(a.mhp); a.recoverAll(); }  // 归根中都无效
+      else if (kind === 'ai') {  // G.autoAction 的选择（技能、目标序号；没有目标为 -1）
+        const x2 = G.autoAction(a);
+        out.push({step: st, ai: x2 ? {skill: x2.item().id, target: x2._targetIndex} : null, foehp: foes.map(t => t.hp), snap: snapshot(env, ext)});
+        continue;
+      }
+      out.push({step: st, hits: log.slice(), snap: snapshot(env, ext), foes: foes.map(t => t.isAlive())});
     }
     bm.endBattle(0);
-    out.push({step: ['endBattle'], snap: snapshot(env)});
+    out.push({step: ['endBattle'], snap: snapshot(env, ext)});
   } finally { w.Game_Action.prototype.executeHpDamage = old; }
   return out;
 }
@@ -119,6 +136,29 @@ const SCRIPTS = {
   lv60: [['act', 'g', 10288, 0], ['act', 'g', 10289, 1], ['act', 'h', 1, 1], ['act', 'g', 10292, 1], ['turn'], ['turn'], ['act', 'g', 10289, 0]],
 };
 const LEVELS = {lv10: [10, 0], lv35: [35, 0], lv45: [45, 0], lv60: [60, 5]};
+// 第二期 B（快照另记 ext）。敌人普攻 1 打我方；hp 步用 setHp（有花荫时会被账本吸收，所以花荫后不用）
+const SCRIPTS_B = {
+  // 35 级众生之劫：1 号残血被打死 → 代命（1 号留 1 血）、谷雨归根（付储备一半、收束花期）；归根中 1 号攻击不绽放、复活／回满无效、
+  // 条件全否；下一回合末再生（回满）；再生后能治疗
+  sub: [['act', 'g', 10288, 0], ['act', 'g', 10289, 0], ['hp', 'h', 1], ['foe', 0, 1, 1], ['act', 'h', 1, 0], ['revive'], ['turn'], ['turn'], ['act', 'g', 10288, 0]],
+  // 35 级谷雨自己被打死 → 归根（不 forced）；两回合末再生
+  self: [['act', 'g', 10288, 0], ['hp', 'g', 1], ['foe', 0, 1, 0], ['turn'], ['turn']],
+  // 20 级还没有众生之劫：1 号照常倒下
+  nosub: [['act', 'g', 10288, 0], ['hp', 'h', 1], ['foe', 0, 1, 1]],
+  // 35 级花荫：付储备 30%、两人各得 min(值, 不含储备的最大生命)；敌人打 1 号先扣花荫；先许一枝开强化下次绽放 ×1.1；
+  // 受伤压力；两回合后花荫撤销
+  shield: [['act', 'g', 10288, 0], ['act', 'g', 10288, 0], ['act', 'g', 10291, 0], ['foe', 0, 1, 1], ['foe', 1, 1, 0], ['act', 'g', 10289, 2],
+    ['act', 'h', 1, 0], ['act', 'h', 1, 0], ['turn'], ['foe', 2, 1, 1], ['turn']],
+  // 35 级转移：给 1 号 50%（不在花期 → 下次花期待绽），开花期后 1 号绽放付 35%；花期里再转移（本次花期待绽）再绽放；储备满了转不进
+  transfer: [['act', 'g', 10288, 0], ['act', 'g', 10290, 1], ['act', 'g', 10289, 0], ['act', 'h', 1, 0], ['act', 'g', 10290, 1], ['act', 'h', 1, 0],
+    ['act', 'h', 1, 0]],
+  // 60 级 5 阶百谷生（测试开关）：代命归根不付储备，再生时归春（谷雨与 1 号各得 18%）
+  relic: [['act', 'g', 10288, 0], ['hp', 'h', 1], ['foe', 0, 1, 1], ['turn'], ['turn']],
+  // 自动战斗：满血没储备 → 治疗；攒够储备 → 花期打生命最多的敌人；1 号残血 → 治疗；两人都受伤 → 花荫；花期里储备比够 → 终结
+  ai: [['ai'], ['act', 'g', 10288, 0], ['act', 'g', 10288, 0], ['act', 'g', 10288, 0], ['ai'], ['foehp', 1, 1e11], ['ai'], ['hp', 'h', 100], ['ai'],
+    ['hp', 'h', 4600], ['hp', 'g', 13000], ['ai'], ['act', 'g', 10289, 0], ['ai'], ['hp', 'h', 7000], ['ai'], ['turn'], ['ai']],
+};
+const LEVELS_B = {sub: [35, 0], self: [35, 0], nosub: [20, 0], shield: [35, 0], transfer: [35, 0], relic: [60, 5, true], ai: [35, 0]};
 // 胜利掉谷种金缮石：谷雨在队、还差进阶、背包里少于差额、Math.randomInt(50)==0 才掉 1 个
 function stone(rank, have, draw) {
   newGame();
@@ -138,6 +178,10 @@ const cases = [];
 for (const [name, steps] of Object.entries(SCRIPTS)) {
   const [level, rank] = LEVELS[name];
   cases.push(makeCase(`script.${name}`, {actor: ID, level, rank, troop: TROOP, steps}, () => ({steps: run(steps, level, rank)})));
+}
+for (const [name, steps] of Object.entries(SCRIPTS_B)) {
+  const [level, rank, relic] = LEVELS_B[name];
+  cases.push(makeCase(`script.${name}`, {actor: ID, level, rank, relic: !!relic, troop: TROOP, steps, ext: true}, () => ({steps: run(steps, level, rank, true, relic)})));
 }
 for (const [name, rank, have, draw] of [['drop', 0, 0, 0], ['roll', 0, 0, 0.5], ['enough', 3, 2, 0], ['short', 3, 1, 0], ['full', 5, 0, 0]]) {
   cases.push(makeCase(`stone.${name}`, {rank, have, draw}, () => stone(rank, have, draw)));
