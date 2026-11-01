@@ -2487,12 +2487,12 @@
     "mastery": 3
    },
    "observed": {
-    "before": 746,
-    "cached": 746,
-    "forced": 748,
+    "before": 808,
+    "cached": 808,
+    "forced": 811,
     "burst": [
-     468.9252,
-     468.9252
+     700.389,
+     700.389
     ]
    },
    "errors": []

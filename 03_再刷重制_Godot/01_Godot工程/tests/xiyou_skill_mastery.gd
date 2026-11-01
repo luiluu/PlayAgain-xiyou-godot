@@ -6,6 +6,7 @@ extends Node
 ##   变量 13／8 夹等级；敌人也涨）；gain.menu：不在战斗不记；
 ## - damage.*：熟练度 0／1／3 级同一行动的扣血，比 1 级、3 级对 0 级的比值（绝对值另有与本期无关的伤害链差，只打印）；治疗不受影响；
 ## - save：存档往返；旧档没有熟练度字段读回 0 级。
+## - 期二 notice.*：技能升级通告（同帧合并、只报角色、关掉设置／读档／标题不报、最多 3 条）；power：熟练度进战力（缓存照原版不因熟练度失效）。
 const FIXTURE := "res://tests/fixtures/skill_mastery_oracle.json"
 ## 渡鸦 10122～10139、10170 的熟练度设定由 installNativeRavenRuntime 运行时改写（上限 8／0、次数 8＋4×等级、每级 8%），归期三，这里先跳过
 const RAVEN_PENDING := [10122, 10123, 10124, 10125, 10126, 10127, 10128, 10129, 10130, 10131, 10132, 10133, 10134, 10135, 10136, 10137, 10138, 10139, 10170]
@@ -188,6 +189,93 @@ func _save(c: Dictionary) -> void:
 	check("save.omit_empty", not (fresh.to_dict().actors["1"] as Dictionary).has("masteryLevels"))
 
 
+## 期二：通告行只比 actorId、skillId、from、to（名字另比）
+func _rows(list: Array) -> Array:
+	return list.map(func(r): return [int(r.actorId), int(r.skillId), int(r.from), int(r.to), str(r.skillName)])
+
+
+func _flush_notices() -> Array:
+	XSkillNotice._flush()
+	var out := XSkillNotice.dispatched.duplicate()
+	XSkillNotice.dispatched.clear()
+	return out
+
+
+func _notice_battle(c: Dictionary) -> void:
+	var r := _battle()
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	XSkillNotice.dispatched.clear()
+	var steps: Array = c.observed.steps
+	for i in steps.size():
+		if i < 13:
+			_act(logic, a, 1, logic.enemies[0])
+		else:
+			for k in 7:
+				_act(logic, logic.enemies[0], 1, a)
+		var got := _rows(_flush_notices())
+		check("%s.%d" % [c.id, i], got == _rows(steps[i]), [got, steps[i]])
+	XSkillNotice.clear()
+
+
+func _notice_set(c: Dictionary) -> void:
+	var s := XState.new_game(2, 1, [])
+	XState.current = s
+	var a := s.actor(1)
+	XSkillNotice.dispatched.clear()
+	var o: Dictionary = c.observed
+	XSkillMastery.set_level(a, 9, 2)
+	XSkillMastery.set_level(a, 9, 4)
+	XSkillMastery.set_level(a, 1, 1)
+	var merged := _rows(_flush_notices())
+	check("notice.set.merged", merged == _rows(o.merged), [merged, o.merged])
+	check("notice.set.names", (o.merged as Array).all(func(r): return str(r.actorName) == a.display_name()), o.merged)
+	XSkillMastery.set_level(a, 9, 1)
+	check("notice.set.down", _rows(_flush_notices()) == _rows(o.down))
+	var was := XConfig.notice_on("skillLevel")
+	XConfig._values.codexSkillLevelNotice = false
+	XSkillMastery.set_level(a, 9, 3)
+	check("notice.set.config", _rows(_flush_notices()) == _rows(o.config))
+	XConfig._values.codexSkillLevelNotice = was
+	var loaded := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
+	check("notice.set.load", _rows(_flush_notices()) == _rows(o.load) and XSkillMastery.level(loaded.actor(1), 9) == int(o.levels.s9))
+	# 敌人不报（参照 notice.battle 末项）；标题画面（没有 XState.current）不报
+	XState.current = null
+	XSkillMastery.set_level(a, 9, 5)
+	check("notice.title", _flush_notices().is_empty())
+	XState.current = loaded
+	# 画面：最多 3 条同时显示，其余排队
+	for id in [1, 9, 3, 4, 5]:
+		XSkillMastery.set_level(loaded.actor(1), id, 6)
+	XSkillNotice._flush()
+	check("notice.max_visible", XSkillNotice.shown.size() == 3 and XSkillNotice.queue.size() == 2, [XSkillNotice.shown.size(), XSkillNotice.queue.size()])
+	var box: Control = XSkillNotice.shown[0]
+	check("notice.layout", is_equal_approx(box.position.x + box.size.x, 1280 - 16) and is_equal_approx(box.position.y, 16) and is_equal_approx(box.size.x, 380), [box.position, box.size])
+	XSkillNotice.clear()
+	XSkillNotice.dispatched.clear()
+
+
+func _power(c: Dictionary) -> void:
+	# 同 xiyou_power：设置写到测试目录、战力开着、装备随机取 0.5、新局照 new_game_blank
+	XSave.dir_override = "user://test_xiyou_skill_mastery"
+	XConfig.path_override = XSave.dir().path_join("options.json")
+	XConfig.set_flag("codexPowerEnabled", true)
+	XGear.force_roll = 0.5
+	var s := XState.new_game_blank()
+	var a := s.actor(1)
+	a.change_level_mv(30)
+	a.recover_all()
+	var before := float(XPower.actor(a, true).total)
+	XSkillMastery.set_level(a, 1, 3)
+	var cached := float(XPower.actor(a).total)
+	var forced := float(XPower.actor(a, true).total)
+	var o: Dictionary = c.observed
+	print("INFO power 重制 ", [before, cached, forced], " 原版 ", [o.before, o.cached, o.forced])
+	check("power.before", is_equal_approx(before, float(o.before)), [before, o.before])
+	check("power.cached", is_equal_approx(cached, float(o.cached)), [cached, o.cached])
+	check("power.forced", is_equal_approx(forced, float(o.forced)), [forced, o.forced])
+
+
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
@@ -211,12 +299,18 @@ func _run() -> void:
 				check("gain.menu", _snap(s.actor(1), 8) == _want(c.observed) and s.actor(1).action_mastery.is_empty())
 			"save":
 				_save(c)
+			"notice.battle":
+				_notice_battle(c)
+			"notice.set":
+				_notice_set(c)
+			"power":
+				_power(c)
 			_:
 				if kind == "gain":
 					_gain(c)
 				elif kind == "damage":
 					_damage(c)
-	check("covers_all", seen.keys().size() == 4, seen.keys())
+	check("covers_all", seen.keys().size() == 6, seen.keys())
 	finish()
 
 

@@ -163,12 +163,16 @@ asyncCases.push(['notice.set', {}, async () => {
 }]);
 asyncCases.push(['power', {actor: 1, level: 30, skill: 1, mastery: 3}, async () => {
   newGame();
+  // 同 power_probe：关掉 CodexZones（installNativePowerZonesRuntime，重制没移植；它的「技能熟练度」乘区 masteryRate 随它一起）
+  w.CodexZones.ENABLED = false;
   const P = w.CodexCombatPower, a = w.$gameActors.actor(1);
   a.changeLevel(30, false); a.recoverAll();
   const before = P.actor(a, true);
   a.setSkillMasteryLevel(1, 3);
   const cached = P.actor(a), forced = P.actor(a, true);
-  return {before: before.total, cached: cached.total, forced: forced.total, burst: [before.evaluation.burst, forced.evaluation.burst]};
+  const out = {before: before.total, cached: cached.total, forced: forced.total, burst: [before.evaluation.burst, forced.evaluation.burst]};
+  w.CodexZones.ENABLED = true;
+  return out;
 }]);
 (async () => {
   for (const [id, setup, fn] of asyncCases) {
