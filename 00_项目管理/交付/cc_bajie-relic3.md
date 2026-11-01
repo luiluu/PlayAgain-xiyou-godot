@@ -1,7 +1,7 @@
 # 交付：cc/bajie-relic3
 
 - 车道／工作者：C 规则／八戒（cc，八戒）
-- 状态：进行中
+- 状态：可合并
 - 分支从 cc/bajie-guyu2b 末端 6cd1f05f 切（总装十派），工作树 `.claude/worktrees/pensive-ardinghelli-6b5eb0`。guyu2a、guyu2b 还没进 main，合本分支会一起带进来。
 
 ## 做到哪
@@ -35,7 +35,10 @@
 
 ## 验证
 
-（待写）
+- 专项：`xiyou_three_growth` 全过（新）；`xiyou_guyu_battle` 1523/1523（relic 例改回真戴百谷生）。反向验证见变更记录草稿。
+- 选测（本机 CHECK_JOBS=3，`RULES_ONLY_ACTORS=175`，33 个场景全过，用时 1969 秒）：`xiyou_guyu`、`xiyou_guyu_battle`、`xiyou_three_growth`、`xiyou_magic_weapon`、`xiyou_magic_weapon_level`、`xiyou_actor_p0`、`xiyou_actor_modules`、`xiyou_help_card`、`xiyou_wtype`、`xiyou_rules*`（24 份）。三件法宝的持有者里只有谷雨在切片，谷雨的战斗专项就是 `xiyou_guyu_battle`。
+- 同步（一轮）`同步正式西游.py --accept-additions`：重跑 three_growth_probe 与 guyu_battle_probe，「测量不变」（本树参照已是新的），来源核对 0 问题。main 上合并时 three_growth.json、guyu_battle.json 算新增。
+- `语法检查.py` 通过；没有偶发。没合 main（等总装通知）。
 
 ## 待交叉核查
 
@@ -54,3 +57,5 @@
 ## 本分支提交
 
 - 4f8aaa0b WIP：探针、XThreeGrowth、钩子、专项；谷雨归春例改回真戴
+- 73fc936f WIP：交付单草稿、选测
+- 交付单可合并（本提交）
