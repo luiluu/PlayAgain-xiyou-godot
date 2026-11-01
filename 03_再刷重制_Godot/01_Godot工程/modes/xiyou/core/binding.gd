@@ -225,6 +225,7 @@ static func _fresh() -> Dictionary:
 
 ## startBattle（原 startBattle 之后）：在场的本体建新数据、去掉形态状态
 static func start_battle(logic) -> void:
+	XTusu.register_kind()  # 角色模块的种类（原版各自安装时 register）
 	clear_all()
 	_logic_ref = weakref(logic)
 	_opening = true

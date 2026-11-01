@@ -100,7 +100,7 @@ static func _listed(a, id: int) -> bool:
 	return unlocked(int(o[0]), who, str(o[1]))
 
 
-## Game_Actor.meetsSkillConditions 包装：「归形」只在战斗中被绑定时可用（绑定框架还没移植，恒假）；没解锁的不能用
+## Game_Actor.meetsSkillConditions 包装：「归形」只在战斗中被绑定、活着、能动时可用（直接返回，不再往里问）；没解锁的不能用
 static func meets(a, skill: Dictionary) -> bool:
 	if XBattleLogic.is_item(skill):
 		return true
@@ -108,7 +108,8 @@ static func meets(a, skill: Dictionary) -> bool:
 	if int(o[0]) == 0:
 		return true
 	if str(o[1]) == "return" and own(a) and int(a.actor_id) == int(o[0]):
-		return false
+		var logic = XBinding._logic()
+		return logic != null and XBinding.is_bound(a) and a.is_alive() and a.hp > 0.0 and logic.can_move(a)  # 战斗中、绑定、活着、能动
 	return _listed(a, int(skill.id))
 
 
