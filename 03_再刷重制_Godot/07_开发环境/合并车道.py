@@ -668,6 +668,36 @@ def append_opt_registry(root, state):
     return added
 
 
+def opt_audit(root):
+    """收尾自检（tools40）：工程代码（不含 tests）里回退开关 `static var X := true/false` 上方紧挨的注释块里第一个 O-NNN，
+    在优化登记里要有行、该行要写到开关名 X（同号指两个开关、登记行写的是别的优化都报）；代码注释里别处提到的 O-NNN 也要登记过。
+    返回问题列表。11-01 第七批：O-140 同时标在 FIT_ROWS、TRANSFER_HELP_NEAR 上，登记行却是云裳针眼。"""
+    reg = root / OPT_REGISTRY
+    rows = {m.group(1): m.group(0) for m in re.finditer(r'^\|\s*O-(\d{3})(?!\d).*$', reg.read_text() if reg.is_file() else '', re.M)}
+    problems = []
+    for rel in git(root, 'ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', str(PROJECT) + '/*.gd').split('\0'):
+        f = root / rel
+        if not rel or rel.startswith(str(PROJECT / 'tests') + '/') or not f.is_file():
+            continue
+        lines = f.read_text(errors='replace').split('\n')
+        for i, line in enumerate(lines):
+            if '#' in line:
+                for n in OPT_NUMBERED.findall(line[line.index('#'):]):
+                    if n not in rows:
+                        problems.append('%s:%d 注释写 O-%s，优化登记没有这一行' % (rel, i + 1, n))
+            m = re.match(r'\s*static var (\w+)\s*(?::\s*bool\s*)?:?=\s*(?:true|false)\b', line)
+            if not m:
+                continue
+            j = i
+            while j > 0 and lines[j - 1].lstrip().startswith('#'):
+                j -= 1
+            nums = OPT_NUMBERED.findall('\n'.join(lines[j:i]))
+            if nums and nums[0] in rows and m.group(1) not in rows[nums[0]]:
+                problems.append('%s:%d 开关 %s 标的是 O-%s，优化登记 O-%s 那行没写这个开关（%s）'
+                                % (rel, i + 1, m.group(1), nums[0], nums[0], rows[nums[0]].split('|')[2].strip()[:40]))
+    return problems
+
+
 def is_register(rel):
     return rel in OPT_REGISTERS or bool(re.fullmatch(r'00_项目管理/变更记录[^/]*\.md', rel))
 
@@ -680,10 +710,15 @@ def assign_opt_numbers(root, state):
         f = root / rel
         if f.is_file() and not f.is_symlink():
             texts.append(f.read_text(errors='replace'))
-    texts += ['\n'.join(lines) for lines in state.get('optAdded', {}).values()]
+    lane = ['\n'.join(lines) for lines in state.get('optAdded', {}).values()]
+    # 交付单正文里讲占位写法本身的字样不是优化（11-01 tools32 一句「都写 O-待定 时」并入变更记录被换成 O-139，tools40）：
+    # 只给草稿表行首格的占位和车道代码／文档新增行里的占位发号，别的占位字样原样留着、不占号
+    real = {m.group(0) for t in texts for row in opt_draft_rows(t) for m in [OPT_TOKEN.fullmatch(row.split('|')[1].strip())] if m}
+    real |= {m.group(0) for t in lane for m in OPT_TOKEN.finditer(t)}
+    texts += lane
     for t in texts:
         for m in OPT_TOKEN.finditer(t):
-            if m.group(0) not in tokens:
+            if m.group(0) in real and m.group(0) not in tokens:
                 tokens.append(m.group(0))
     if not tokens:
         return {}
@@ -736,8 +771,9 @@ def substitute_opt(text, state, after=''):
         lines = text.split('\n')
         tail = lambda i: '\n'.join(lines[i + 1:i + 3]) if i + 1 < len(lines) else after
         text = '\n'.join(substitute_ambiguous(x, state, tail(i)) for i, x in enumerate(lines))
-    for tok, num in sorted(state.get('optNumbers', {}).items(), key=lambda kv: -len(kv[0])):
-        text = text.replace(tok, num)
+    for tok, num in state.get('optNumbers', {}).items():
+        # 只换整个占位：没发号的 O-待定-1 不能被 O-待定 的号换掉前半
+        text = re.sub(re.escape(tok) + r'(?!-?\d)', num, text)
     return text
 
 
@@ -1292,6 +1328,10 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         if changed & uids:
             print('一并提交车道新加脚本的 Godot .uid（车道漏交）：' + '、'.join(sorted(changed & uids)), flush=True)
         run(root, ['git', 'diff', '--check'])
+        audit = opt_audit(root)
+        if audit:
+            raise RuntimeError('优化号自检不通过（代码注释里的 O 号与优化登记对不上），未提交：\n  ' + '\n  '.join(audit[:12])
+                               + '\n改好注释或登记后留成未提交，重跑 --finish 加 --also <改过的文件>')
         # 已暂存删除的路径已不在索引里，重复 git add 会报 pathspec 不存在：本批交付单之外，总装 git rm 后 --also 点名的
         # （如分支带来、未标可合并的另一张交付单）也一样（tools39）
         tracked = set(git(root, 'ls-files', '-z').split('\0'))

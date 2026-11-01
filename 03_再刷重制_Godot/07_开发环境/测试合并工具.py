@@ -1497,6 +1497,62 @@ for name in filter(None, files):
         self.assertEqual(self.call(), 0, self.last_output)
         self.assertIn('| O-120 | 新项', (self.root / merge.OPT_REGISTRY).read_text())
 
+    def test_placeholder_words_in_sheet_prose_are_kept_and_take_no_number(self):
+        """tools40：tools32 交付单讲占位写法（「几条都写 O-待定 时」），并入变更记录被换成 O-139，还占了一个号。
+        只给草稿表行和车道代码／文档新增行里的占位发号；正文字样原样进变更记录；变更记录旧行里的占位字样也不动。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        self.put(str(merge.LOG), '# log\n\n- 旧段落讲 %s 写法\n' % tok)
+        self.g('add', '.'); self.g('commit', '-m', 'old log mentions placeholder')
+        self.g('merge', 'main', cwd=self.wt)
+        sheet = self.wt / self.receipt
+        sheet.write_text(sheet.read_text().replace('- fixture change', '- 同一张单几条都写 %s 时逐条对号；%s-1 也照此' % (tok, tok))
+                         + '\n优化登记草稿：无\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'prose', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        log = (self.root / merge.LOG).read_text()
+        self.assertIn('- 旧段落讲 %s 写法' % tok, log)
+        self.assertIn('几条都写 %s 时逐条对号；%s-1 也照此' % (tok, tok), log)
+        self.assertNotIn('O-119', log)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        # 下一条真优化仍从 O-119 起：正文字样没占号
+        state = {'delivery': str(self.receipt), 'extraDeliveries': [], 'optAdded': {'x.gd': ['# %s：XFoo.FIX' % tok]}}
+        self.assertEqual(merge.assign_opt_numbers(self.root, state), {tok: 'O-119'})
+
+    def test_unnumbered_suffixed_placeholder_is_not_half_replaced(self):
+        tok = 'O-' + '待定'
+        state = {'version': 'dev.002', 'optNumbers': {tok: 'O-119'}}
+        self.assertEqual(merge.substitute('%s 与 %s-2' % (tok, tok), state), 'O-119 与 %s-2' % tok)
+
+    def audit_tree(self, reg_rows, code):
+        self.put(str(merge.OPT_REGISTRY), '# 优化登记\n\n' + reg_rows + '\n')
+        self.put(str(merge.PROJECT / 'modes/开关.gd'), code)
+        self.put(str(merge.PROJECT / 'tests/测.gd'), '# O-777 测试里随口提到的不查\n')
+        return merge.opt_audit(self.root)
+
+    def test_opt_audit(self):
+        """tools40 收尾自检：开关注释的 O 号要登记、登记行要写到该开关；同号标两个开关、登记行是别的优化都报。"""
+        row = lambda n, sw: '| O-%s | 项 | a | b | c | `%s = false` | cc | 待用户确认 |' % (n, sw)
+        good = '## 优化 O-140：窗高\nstatic var FIT_ROWS := true\n\n## O-141 开关（同 O-140 的写法）\n## 第二行\nstatic var HELP_NEAR := false\nstatic var _rows: Array = []\n'
+        self.assertEqual(self.audit_tree(row(140, 'XWin.FIT_ROWS') + '\n' + row(141, 'XScene.HELP_NEAR'), good), [])
+        bad = good.replace('O-141 开关', 'O-140 开关')
+        problems = self.audit_tree(row(140, 'XWin.FIT_ROWS') + '\n' + row(141, 'XScene.HELP_NEAR'), bad)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn('HELP_NEAR 标的是 O-140', problems[0])
+        problems = self.audit_tree(row(140, 'XWin.FIT_ROWS'), good)
+        self.assertTrue(any('O-141，优化登记没有' in p for p in problems), problems)
+
+    def test_finish_stops_on_opt_audit(self):
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.put(str(merge.PROJECT / 'modes/开关.gd'), '## 优化 O-150：没登记\nstatic var FOO := true\n')
+        self.assertEqual(self.call('--finish', '--also', str(merge.PROJECT / 'modes/开关.gd')), 1)
+        self.assertIn('优化号自检不通过', self.last_output)
+        self.assertIn('O-150', self.last_output)
+        self.assertTrue(self.wt.exists())
+
     def test_also_with_git_rm_sheet_at_finish(self):
         """唐僧总装 十一：分支带了未标可合并的另一张交付单，提示「在 main 删掉、--finish 加 --also」；总装 git rm 后 --finish --also，
         收尾 git add 那份已暂存删除的路径报 pathspec 不存在。已暂存删除的路径不再 git add。"""
