@@ -206,6 +206,29 @@ class SelectTests(Fixture):
         self.assertIn('xiyou_flow.tscn', s['scenes'])
         self.assertIn('按 game', s['reasons'][0][1])
 
+    def test_xstate_actor_row_save_lines_stay_in_save_tests(self):
+        # 角色行里加存档键（a[str(id)]["k"] = …）、XFoo.to_save／from_save 一行也算存读档写法（哪吒_41，来自 bajie-ui-gaps1 的可优化）
+        body = ('class_name XState\nfunc to_dict() -> Dictionary:\n\tfor id in actors:\n\t\tvar x2 = actors[id]\n\t\ta[str(id)] = {}\n'
+                '\treturn a\n\nstatic func from_dict(d: Dictionary) -> XState:\n\tvar s := XState.new()\n\tfor row in d.actors:\n\t\tvar x2 = XActor.new()\n'
+                '\treturn s\n')
+        self.put(CORE / 'xstate.gd', body)
+        self.scene('xiyou_save_page', 'XState.new()')
+        self.scene('xiyou_flow', 'XState.new()')
+        self.commit('xstate')
+        self.base = self.g('rev-parse', 'HEAD')
+        new_body = (body.replace('\t\ta[str(id)] = {}\n', '\t\ta[str(id)] = {}\n\t\t# 技能熟练度\n'
+                                 '\t\tif not x2.mastery_levels.is_empty() or not x2.mastery_uses.is_empty():\n'
+                                 '\t\t\tvar m := XSkillMastery.to_save(x2)\n\t\t\ta[str(id)]["masteryLevels"] = m[0]\n')
+                    .replace('\t\tvar x2 = XActor.new()\n', '\t\tvar x2 = XActor.new()\n\t\tXSkillMastery.from_save(x2, row.get("masteryLevels", {}), row.get("masteryUses", {}))\n'))
+        self.put(CORE / 'xstate.gd', new_body)
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertNotIn('xiyou_flow.tscn', s['scenes'])
+        self.assertIn('xiyou_save_page.tscn', s['scenes'])
+        # 同一位置塞进别的逻辑（赋值之外的 if／调用）仍退回 game 组
+        self.put(CORE / 'xstate.gd', body.replace('\t\ta[str(id)] = {}\n', '\t\ta[str(id)] = {}\n\t\tif x2.hp > 0:\n\t\t\tx2.hp = 0\n'))
+        self.assertIn('xiyou_flow.tscn', self.pick()['scenes'])
+
     def test_selecting_every_scene_becomes_full(self):
         self.put(PROJECT / 'modes/xiyou/core/xstate.gd', 'class_name XState\n')
         self.commit('xstate')

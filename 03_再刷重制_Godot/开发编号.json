@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.263",
-  "sequence": 263,
-  "next": "dev.264",
-  "nextSequence": 264,
+  "current": "dev.267",
+  "sequence": 267,
+  "next": "dev.268",
+  "nextSequence": 268,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "wukong-events1",
+  "currentChange": "bajie-mastery2",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
