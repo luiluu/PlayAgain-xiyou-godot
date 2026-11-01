@@ -253,9 +253,9 @@ func _run() -> void:
 				_p4_case(c)
 			"p5":
 				_p5_case(c)
-			"p6":
-				pass  # 战斗指令窗，xiyou_yunshang_ui 比
-	check("covers_all", seen.keys().size() == 10, seen.keys())
+			"p6", "p7":
+				pass  # 战斗指令窗、天衣铺，xiyou_yunshang_ui 比
+	check("covers_all", seen.keys().size() == 11, seen.keys())
 	finish()
 
 
@@ -627,7 +627,7 @@ func _p3_case(c: Dictionary) -> void:
 			at.call(_eye_view(logic, a, _cast2(logic, a, XYunshang.CUT, 1, false)))
 	if XYunshang.battle != 0:
 		logic.end_battle(0)
-	XYunshang.settings.erase(a)
+	XState.current.flags.erase(XYunshang.SETTINGS_FLAG)
 	_p3_compare(id, steps, c.observed.steps)
 
 

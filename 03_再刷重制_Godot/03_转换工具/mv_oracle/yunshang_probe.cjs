@@ -512,4 +512,41 @@ for (const k of [5, 8, 9, 11, 14]) cases.push(makeCase(`p6.cmd${k}`, {level: 20,
   bm.endBattle(0);
   return {steps};
 }));
+// ===== 界面二期：天衣铺（Scene_Yunshang，第 519～533、554 行）=====
+// Scene_Yunshang 是闭包里的类：拦 SceneManager.push 拿到它，建一个不进场景树的实例（addWindow 空），各页只读 Window_YunChoices 的 info／rows；
+// 选一项照 Window_Command：select(i) 后调 'choose' 处理器。设置按天衣存（a._yunSettings[_yunUid 或 native:id]）
+function shopScene() {
+  let Sc = null; const push = w.SceneManager.push; w.SceneManager.push = C => { Sc = C; };
+  try { Y.openCrafting(); } finally { w.SceneManager.push = push; }
+  const sc = Object.create(Sc.prototype); sc.addWindow = () => {}; sc.popScene = () => { sc._popped = true; };
+  return sc;
+}
+const page = sc => { const wn = sc._yunChoices; return wn && wn.visible !== false ? {info: wn.info.slice(), rows: wn.rows.map(r => [r.label, r.enabled !== false])} : null; };
+const pick = (sc, i) => { const wn = sc._yunChoices; wn.select(i); wn._handlers.choose(); };
+const cancel = sc => sc._yunChoices._handlers.cancel();
+const yset = b => JSON.parse(JSON.stringify(Y.setting(b)));
+// 队伍 1、8、9、10 号与云裳（45 级进阶 0；原版进阶次数取订单账本，开页会照账本重设，取 0 两边才一致）；1 号穿九曲回针、8 号七曜流霞、9 号寸光留仙、云裳空袖藏星
+cases.push(makeCase('p7.shop', {level: 45, stage: 0}, () => {
+  newGame(); maxLevel(); w.$gameSwitches.setValue(2494, true);
+  const a = grow(45, 0); w.$gameParty.addActor(ACTOR);
+  const one = w.$gameActors.actor(1), eight = w.$gameActors.actor(8), nine = w.$gameActors.actor(9);
+  for (const b of [one, eight, nine]) b.changeLevel(55, false);
+  wearRobe(a, 6); wearRobe(one, 7); wearRobe(eight, 14); wearRobe(nine, 9);
+  const sc = shopScene(), steps = [], at = (tag, extra) => steps.push({tag, page: page(sc), ...(extra || {})});
+  sc.home(); at('home');
+  pick(sc, 3); at('actors');
+  pick(sc, 3); at('borrow0');
+  pick(sc, 0); at('borrow1');
+  cancel(sc); at('borrowCancel', {setting: yset(a)});
+  pick(sc, 3); pick(sc, 3); pick(sc, 0); pick(sc, 0); at('borrow2'); pick(sc, 1); at('borrowed', {setting: yset(a)});
+  pick(sc, 3); pick(sc, 0); at('eye');
+  pick(sc, 1); at('eyed', {setting: yset(one)});
+  pick(sc, 3); pick(sc, 1); at('element0');
+  pick(sc, 2); at('element1');
+  pick(sc, 0); pick(sc, 0); at('elemented', {setting: yset(eight)});
+  pick(sc, 3); pick(sc, 2); at('plain', {setting: yset(nine)});
+  pick(sc, 3); cancel(sc); at('actorsCancel');
+  pick(sc, 4); at('back', {popped: !!sc._popped});
+  return {steps};
+}));
 process.exit(finish(host, 'yunshang.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批', cases}) ? 0 : 1);

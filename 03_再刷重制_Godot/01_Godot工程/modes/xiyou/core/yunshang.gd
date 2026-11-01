@@ -280,8 +280,9 @@ static var wind_until := {}
 static var gift_received := {}
 static var needles := {}
 static var pin_until := {}
-## 天衣铺的战前设置（setting(a)：针眼、元素组、当前元素；选择界面是养成期，先用原版默认值）
+## 天衣铺的战前设置（setting(a)）：没有当前存档时（单元测试）放这里；有存档时进 flags（见 setting）
 static var settings := {}
+const SETTINGS_FLAG := "_yunSettings"
 ## 当前主动行动（原版记在 Game_Action 上）：user、prepared、glow（余辉）、weaken（钉影虚弱）、total（本次扣血）、
 ## burst／command／dispel（每次行动一次）、planted（已种针的目标）
 static var frame := {}
@@ -312,10 +313,20 @@ static func awake(a) -> bool:
 	return not d.is_empty() and int(d.wake_until) >= round and int(d.wake_until) > 0
 
 
+## setting(a)（第 220 行）：天衣铺的战前设置，按身上那件天衣存（原版 a._yunSettings[_yunUid 或 native:id]，随角色进存档）：
+## 借用技能 borrow [{owner, skill}]、针眼 eye、七曜元素组 elements 与当前元素 element。重制存进 flags._yunSettings[角色号][天衣]（读档后数字是浮点，读的地方都取 int）
 static func setting(a) -> Dictionary:
-	if not settings.has(a):
-		settings[a] = {"borrow": [], "eye": 0, "elements": [2, 3, 4], "element": 2}
-	return settings[a]
+	var r := robe(a)
+	var uid := str(r.get("instanceId", "native:%d" % int(r.get("base", 0)))) if not r.is_empty() else "undefined"
+	var box: Dictionary
+	if XState.current != null and a is XActor:
+		var all: Dictionary = XState.current.flags.get_or_add(SETTINGS_FLAG, {})
+		box = all.get_or_add(str(a.actor_id), {})
+	else:
+		box = settings.get_or_add(a, {})
+	if not box.has(uid):
+		box[uid] = {"borrow": [], "eye": 0, "elements": [2, 3, 4], "element": 2}
+	return box[uid]
 
 
 static func source_original(a) -> bool:
@@ -917,7 +928,7 @@ static func split(u, skill: Dictionary) -> Array:
 		return []
 	var es = null
 	if int(d.key) == 14:
-		es = (setting(u).elements as Array).duplicate() if awake(u) else [int(setting(u).element)]
+		es = (setting(u).elements as Array).map(func(e): return int(e)) if awake(u) else [int(setting(u).element)]
 	var routes := ["magical", "physical"] if int(d.key) == 13 and awake(u) else [""]
 	var sleeved: Array = frame.get("sleeve_targets", []) if is_same(frame.get("user"), u) else []
 	if es == null and routes.size() == 1 and sleeved.size() <= 1:
