@@ -820,6 +820,9 @@ func _p5_case(c: Dictionary) -> void:
 				logic._state_add(foes[1], 55)
 				logic._state_add(foes[2], 43)
 			snap.call(0, ally, ROBE_AI)
+			if id == "p5.robe4":  # prepareTarget：选中换锦时记下要换的一对（自己的减益 5、目标 1 号敌人的增益 55）
+				check(id + ".exchange_pick", str(XYunshang.exchange_pick) == str([5, 55]), XYunshang.exchange_pick)
+				XYunshang.exchange_pick = null
 			XYunshang.wake(logic, ally)
 			snap.call(1, ally, ROBE_AI)
 		"p5.wake":
