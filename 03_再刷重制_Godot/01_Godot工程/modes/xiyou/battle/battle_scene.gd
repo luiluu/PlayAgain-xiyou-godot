@@ -1276,7 +1276,7 @@ func _poison_help(e: XEnemy) -> void:
 	_text_help(e.display_name() + "\n" + info, e, "right", POISON_HELP_NEAR)
 
 
-## 优化 O-待定：转移选目标时的说明卡贴在该队员左侧。false 照原版：每次换目标（Window_BattleActor.select）都 setText，
+## 优化 O-140：转移选目标时的说明卡贴在该队员左侧。false 照原版：每次换目标（Window_BattleActor.select）都 setText，
 ## 卡片从上一张卡的位置再按 setItem 修正一次（同 O-107 关掉时的毒鸡汤卡）。
 static var TRANSFER_HELP_NEAR := true
 
