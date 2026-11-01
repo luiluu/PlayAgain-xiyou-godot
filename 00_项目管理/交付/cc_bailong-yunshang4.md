@@ -1,7 +1,7 @@
 # 交付：cc/bailong-yunshang4
 
 - 车道／工作者：E 角色专属／白龙_10（cc）
-- 状态：进行中
+- 状态：可合并
 - 分支从 cc/bailong-yunshang3 末端 c54dfbb8 切出（总装九派单），中途合过一次 main（main 已含云裳一期与 A 批，dev.253）。cc/bailong-yunshang3 只有一张盘点交付单，内容都在这里，合本分支就够；它的交付单 cc_bailong-yunshang3.md 一并带进来，只是接续要点，没有标可合并。
 - 范围：云裳第二期 B 批前一半——天衣 0 山河作骨、1 百厄成锦、2 赊月偿星、3 不渡黄泉、4 逆命换锦、12 一身两世，赊账、衣魂、状态复制 stateCopy、每段命中记录。后一半（5、6、7、10＋自动战斗 AI）留下一期。
 
@@ -31,7 +31,7 @@
 - 专项 xiyou_yunshang 950/950（直接跑）。
 - 反向验证（逐个改、各自单跑，已还原）20 项全部抓到（1～17 项失败）：记债 50%、还债 33%、debt／bank 倍率、符文终伤下限、衣魂 2 次、回 50% 生命、分担 33%、反击 ×0.5、收录上限、醒着转全敌、醒着当场去掉、夺 3 个增益、换锦互换、复演 2 遍、复演每回合一次、到期回合、战斗结束结清、觉醒转债、守势期限。
 - 语法检查通过。没改切片与转换器；只改了 yunshang_probe（不接全量同步），不用重跑同步与内容覆盖检查。
-- 选测：待写
+- 选测（本机 CHECK_JOBS=3，规则对照 `RULES_ONLY_ACTORS=174`，45 分钟）32 个名字、展开 57 个场景全过（xiyou_rules 等名字按前缀扩到各难度分份）：xiyou_yunshang、xiyou_help_card、xiyou_alien_battle、xiyou_alien_affix、xiyou_rules、xiyou_rules_d2～d6、xiyou_battle、xiyou_battle_gaps、xiyou_otb、xiyou_action_sequence、xiyou_custom_damage、xiyou_jingliu、xiyou_jingliu2、xiyou_sukuna_battle、xiyou_garou_battle、xiyou_raven_battle、xiyou_mira_battle、xiyou_yomi_battle、xiyou_toji、xiyou_toji_battle、xiyou_race_battle、xiyou_cat、xiyou_smart_ai（四份）、xiyou_actor_p0、xiyou_actor_modules。没有偶发。合 main 后补齐过一次（main 的 toji4 改了切片与探针）。
 
 ## 交接板
 
@@ -59,4 +59,5 @@
 - 92c9dfe7 参照 p3.* 
 - 3adcec21 实现与专项 950/950
 - 合并 main（解 actor.gd）
-- 本提交：交付单
+- WIP 交付单草稿
+- 本提交：交付单可合并
