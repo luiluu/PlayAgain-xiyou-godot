@@ -119,11 +119,49 @@ class BatchTests(unittest.TestCase):
         self.assertEqual(r.returncode, 0)
         self.assertFalse((self.lane / 'oracle_batch.json').exists())
 
+    def test_compare_flags_stale_outputs_with_same_slice(self):
+        # 并行测试开跑前比对：同一份切片、产物清单却不同＝工作树 generated/ 落后主工作区（yunshang_shop 挂在 HD 图标，哪吒_41）
+        write(self.main / 'manifest.json', {'sliceConfigSHA256': 's', 'outputs': {'img/a.png': 'new', 'db/x.json': 'x'}})
+        write(self.lane / 'manifest.json', {'sliceConfigSHA256': 's', 'outputs': {'img/a.png': 'old', 'db/x.json': 'x'}})
+        r = self.run_tool('compare', self.lane, self.main)
+        self.assertEqual(r.returncode, 3, r.stdout)
+        self.assertIn('img/a.png', r.stdout)
+        self.assertIn('--补齐', r.stdout)
+        write(self.lane / 'manifest.json', {'sliceConfigSHA256': 's', 'outputs': {'img/a.png': 'new', 'db/x.json': 'x'}})
+        r = self.run_tool('compare', self.lane, self.main)
+        self.assertEqual((r.returncode, r.stdout), (0, ''))
+
+    def test_compare_ignores_lane_with_its_own_slice(self):
+        write(self.main / 'manifest.json', {'sliceConfigSHA256': 's', 'outputs': {'a': '1'}})
+        write(self.lane / 'manifest.json', {'sliceConfigSHA256': 'lane-slice', 'outputs': {'a': '2', 'b': '3'}})
+        self.assertEqual(self.run_tool('compare', self.lane, self.main).returncode, 0)
+
+    def test_compare_flags_older_oracle_unless_lane_synced(self):
+        write(self.main / 'manifest.json', {'sliceConfigSHA256': 's', 'outputs': {}})
+        write(self.lane / 'manifest.json', {'sliceConfigSHA256': 's', 'outputs': {}})
+        write(self.main / 'oracle/p.json', {'v': 2})
+        write(self.lane / 'oracle/p.json', {'v': 1})
+        self.run_tool('record', self.lane, self.main)
+        r = self.run_tool('compare', self.lane, self.main)
+        self.assertEqual(r.returncode, 3, r.stdout)
+        self.assertIn('p.json', r.stdout)
+        write(self.lane / 'sync_stamp.json', {'outputsDigest': 'c' * 64})  # 本树自己同步过，参照以本树为准
+        self.assertEqual(self.run_tool('compare', self.lane, self.main).returncode, 0)
+
+    def test_compare_missing_manifest_is_silent(self):
+        self.assertEqual(self.run_tool('compare', self.lane, self.main / 'nope').returncode, 0)
+
     def test_bad_usage(self):
         self.assertEqual(self.run_tool('check').returncode, 64)
 
 
 class WiringTests(unittest.TestCase):
+    def test_parallel_tests_compare_generated_in_linked_worktree(self):
+        text = (HERE / '并行测试.py').read_text(encoding='utf-8')
+        self.assertIn("'compare'", text)
+        self.assertIn('XIYOU_SKIP_GENERATED_CHECK', text)
+        self.assertIn('--skip-generated-check', text)
+
     def test_new_worktree_records_after_copy_and_checks_after_export(self):
         text = (HERE / '新建工作树.sh').read_text(encoding='utf-8')
         copy = text.index('refresh_oracle "$mgen/oracle" "$gen/oracle"')

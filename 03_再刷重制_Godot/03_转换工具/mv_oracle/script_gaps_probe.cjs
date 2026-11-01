@@ -34,4 +34,47 @@ for (const need of [999, 9999]) {
     }));
   }
 }
-process.exit(finish(host, 'script_gaps.json', {hostScope: '新游戏（Math.random 0.5）；事件脚本普查第一批：调速脚本、击败数条件（悟空 events1）', cases}) ? 0 : 1);
+// 第二批（悟空 events2）：
+// - 失去剩余的伙伴号角（CE1391，鼬号角 CE1511 调）：给 2701～2805 里几件（一件、三件），跑 CE1391，读剩多少；范围外 2700、2806 不动。
+// - 按变量取人学技能＋提示（CE1313 第一支：var actor = $gameActors.actor($gameVariables.value(348)); learnSkill(6128); $.toaster 角色名）：
+//   变量 348＝1（在队）／0（没人：读 null 抛错、YEP 吞掉，不学不提示）；鲲拳 CE1160 那种只有一句声明的段跑完什么都不变。
+const toasts = [];
+if (w.$) w.$.toaster = o => toasts.push(String(o && (o.message || o.title) || ''));
+const scriptCmds = lines => lines.map((s, i) => cmd(i ? 655 : 355, [s]));
+cases.push(makeCase('loseHorns', {ce: 1391, give: {2700: 1, 2701: 1, 2750: 3, 2805: 1, 2806: 1}}, () => {
+  newGame();
+  for (const [id, n] of [[2700, 1], [2701, 1], [2750, 3], [2805, 1], [2806, 1]]) w.$gameParty.gainItem(w.$dataItems[id], n);
+  runList(w.JsonEx.makeDeepCopy(w.$dataCommonEvents[1391].list));
+  const out = {}; for (const id of [2700, 2701, 2750, 2805, 2806]) out[id] = w.$gameParty.numItems(w.$dataItems[id]);
+  return out;
+}));
+const learn = w.$dataCommonEvents[1313].list.filter((c, i, l) => i >= 30 && i <= 32).map(c => c.parameters[0]);
+for (const who of [1, 0]) {
+  cases.push(makeCase('actorVar.learn.' + who, {ce: 1313, lines: learn, variable348: who}, () => {
+    newGame(); toasts.length = 0;
+    w.$gameVariables.setValue(348, who);
+    const before = w.$gameActors.actor(1).hasSkill(6128);
+    runList(scriptCmds(learn).concat([cmd(0, [])]));
+    return {before, learned: w.$gameActors.actor(1).hasSkill(6128), toasts: toasts.slice()};
+  }));
+}
+cases.push(makeCase('actorVar.declareOnly', {ce: 1160, line: 'var actor = $gameActors.actor($gameVariables.value(348));'}, () => {
+  newGame(); toasts.length = 0; w.$gameVariables.setValue(348, 1);
+  const skills = w.$gameActors.actor(1)._skills.slice();
+  runList([cmd(355, ['var actor = $gameActors.actor($gameVariables.value(348));']), cmd(0, [])]);
+  return {sameSkills: JSON.stringify(skills) === JSON.stringify(w.$gameActors.actor(1)._skills), toasts: toasts.slice()};
+}));
+// - 战斗里按角色号加状态（CE43「PUA」，技能 73 调）：var actorN = $gameActors.actor(K); … actorN.addState(708);
+//   战斗中（敌群 2），13～15 在队（队伍 13／14／15／1）与不在队（1／8／9／10）各一例，读三人是否有 708。
+for (const [tag, party] of [['inParty', [13, 14, 15, 1]], ['notInParty', [1, 8, 9, 10]]]) {
+  cases.push(makeCase('actorStates.' + tag, {ce: 43, troop: 2, party}, () => {
+    newGame();
+    w.eval('$gameParty._actors=[];[' + party.join(',') + '].forEach(function(id){$gameParty.addActor(id);});');
+    w.$gameTroop.setup(2); w.$gameParty._inBattle = true;
+    runList(w.JsonEx.makeDeepCopy(w.$dataCommonEvents[43].list.slice(8)));   // 只跑脚本那段（前面是角色 13 在队时的强制行动）
+    const out = {}; for (const id of [13, 14, 15]) out[id] = w.$gameActors.actor(id).isStateAffected(708);
+    w.$gameParty._inBattle = false;
+    return out;
+  }));
+}
+process.exit(finish(host, 'script_gaps.json', {hostScope: '新游戏（Math.random 0.5）；事件脚本普查：调速脚本、击败数条件（悟空 events1）；伙伴号角清理、按变量取人学技能、战斗里按角色号加状态（events2）', cases}) ? 0 : 1);
