@@ -496,10 +496,12 @@ def plan(root, task, branch=None):
                 continue
             try:
                 draft(read(p))
-                extra.append(p)
             except RuntimeError:
                 print('提示：另有交付单 ' + p + ' 未标可合并或草稿不完整，未并入；不要它就在 main 删掉，--finish 时加 --also ' + p,
                       file=sys.stderr, flush=True)
+                continue
+            check_opt_drafts(read(p), p)        # 接续交付单的优化草稿照本期的查（tools39）
+            extra.append(p)
     refresh = any(p in [str(TOOLS / 'xiyou_slice.json'), str(TOOLS / 'xiyou_export.py')]
                   or (p.startswith(str(TOOLS / 'mv_oracle') + '/') and p.endswith('.cjs')) for p in changed)
     # 车道带来的测量接受单（同步正式西游.py --accept-changes）：main 的同步对自己的旧基线同样逐条核对
@@ -556,10 +558,12 @@ OPT_NONE = re.compile(r'^(?:[-*]\s*)?优化登记草稿[：:]\s*无\s*$', re.M)
 
 
 def opt_draft_rows(text):
-    """交付单「## 优化登记草稿」节里的表行（首格是占位或编号的行）；表头与分隔行不算。"""
+    """交付单「## 优化登记草稿」节里的表行（首格是占位或编号的行）；表头与分隔行不算。
+    没有这个标题时，认正文里首格是占位的 8 列表行（11-01 guyu4 把表写在「## 发现的原版问题」下，工具读不到，两条同号、没登记，tools39）。"""
     m = OPT_DRAFT_HEAD.search(text)
     if not m:
-        return []
+        return [x.strip() for x in text.splitlines()
+                if re.match(r'^\|\s*O-', x) and len(x.strip().split('|')) == 10 and OPT_TOKEN.fullmatch(x.split('|')[1].strip())]
     rest = text[m.end():]
     nxt = re.search(r'^## ', rest, re.M)
     block = rest[:nxt.start()] if nxt else rest
@@ -615,8 +619,9 @@ def opt_row_entries(texts):
     return out
 
 
-def substitute_ambiguous(line, state):
-    """同一个占位在本批有几条不同草稿时，按行对号：行里出现哪条草稿独有的识别键就换哪条的号；对不上或对上几条就停下，让总装手改。"""
+def substitute_ambiguous(line, state, after=''):
+    """同一个占位在本批有几条不同草稿时，按行对号：行里出现哪条草稿独有的识别键就换哪条的号；本行没有就看紧跟的两行
+    （after：代码注释写在开关声明上一行，「## 优化 O-待定：…」下一行才是 static var FIT_ROWS，tools39）；对不上或对上几条就停下，让总装手改。"""
     for tok, entries in state.get('optEntries', {}).items():
         pat = re.compile(re.escape(tok) + r'(?!-?\d)')
         if not pat.search(line):
@@ -624,6 +629,8 @@ def substitute_ambiguous(line, state):
         hit = [e for e in entries if line.strip() == e['row']]
         if not hit:
             hit = [e for e in entries if any(k in line for k in e['keys'])]
+        if not hit and after:
+            hit = [e for e in entries if any(k in after for k in e['keys'])]
         if len(hit) != 1:
             raise RuntimeError('占位 %s 在本批对应 %d 条优化草稿（%s），这一行对不上是哪条（%s）：总装手改成对应的编号，再重跑'
                                % (tok, len(entries), '、'.join(e['number'] for e in entries), line.strip()[:80]))
@@ -692,6 +699,10 @@ def assign_opt_numbers(root, state):
             top = max([top] + [int(n) for n in OPT_NUMBERED.findall(f.read_text(errors='replace'))])
     for t in texts:
         top = max([top] + [int(n) for n in OPT_NUMBERED.findall(t)])
+    # 全树已用的号也算：上一条写进代码注释却没登记的号，下一条不能再发（11-01 云裳又拿到 O-140，tools39）；工具源码里的举例不算
+    used = subprocess.run(['git', '-C', str(root), 'grep', '-I', '-h', '-o', '-E', r'O-[0-9]{3,}', 'HEAD', '--', '.',
+                           *(':!' + d for d in OPT_SKIP)], capture_output=True, text=True).stdout
+    top = max([top] + [int(x[2:]) for x in used.split() if len(x) == 5])
     numbers, ambiguous, n = {}, {}, top
     for tok in tokens:
         if len(rows.get(tok, [])) >= 2:
@@ -714,13 +725,17 @@ def substitute(text, state, rel=''):
         added = set(state.get('optAdded', {}).get(rel, []))
         if not added:
             return text
-        return '\n'.join(substitute_opt(line, state) if line in added else line for line in text.split('\n'))
+        lines = text.split('\n')
+        return '\n'.join(substitute_opt(line, state, '\n'.join(lines[i + 1:i + 3])) if line in added else line
+                         for i, line in enumerate(lines))
     return substitute_opt(text, state)
 
 
-def substitute_opt(text, state):
+def substitute_opt(text, state, after=''):
     if state.get('optEntries'):
-        text = '\n'.join(substitute_ambiguous(x, state) for x in text.split('\n'))
+        lines = text.split('\n')
+        tail = lambda i: '\n'.join(lines[i + 1:i + 3]) if i + 1 < len(lines) else after
+        text = '\n'.join(substitute_ambiguous(x, state, tail(i)) for i, x in enumerate(lines))
     for tok, num in sorted(state.get('optNumbers', {}).items(), key=lambda kv: -len(kv[0])):
         text = text.replace(tok, num)
     return text
@@ -1277,8 +1292,10 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         if changed & uids:
             print('一并提交车道新加脚本的 Godot .uid（车道漏交）：' + '、'.join(sorted(changed & uids)), flush=True)
         run(root, ['git', 'diff', '--check'])
-        # 已暂存删除的路径已不在索引里，重复 git add 会报 pathspec 不存在。
-        remaining = changed - set(sheets(state))
+        # 已暂存删除的路径已不在索引里，重复 git add 会报 pathspec 不存在：本批交付单之外，总装 git rm 后 --also 点名的
+        # （如分支带来、未标可合并的另一张交付单）也一样（tools39）
+        tracked = set(git(root, 'ls-files', '-z').split('\0'))
+        remaining = {p for p in changed - set(sheets(state)) if (root / p).exists() or p in tracked}
         if remaining:
             run(root, ['git', 'add', '--', *sorted(remaining)])
         actor = 'cc（唐僧）' if executor == 'cc' else 'Codex（沙僧）'
