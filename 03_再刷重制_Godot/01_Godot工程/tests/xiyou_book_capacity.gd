@@ -105,6 +105,7 @@ func return_context_guards() -> void:
 		s.map_id = 5
 		s.item_target_actor_id = 2
 		s.set_variable(9,0)
+		s.actor(2)  # 先建出角色：快照只比已建的角色（原版 $gameActors._data），免得 refund 里建出角色 2 算成变化
 		var ctx := XItemBagReturn.begin(s,item,0,2)
 		check("return."+mode+".rejected",XPassiveBooks.refund_if_full(s,6301,item))
 		XItemBagReturn.hold(s,ctx)
