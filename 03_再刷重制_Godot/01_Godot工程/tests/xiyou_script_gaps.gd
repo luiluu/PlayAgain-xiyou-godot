@@ -6,7 +6,8 @@ extends Node
 ##   对照 defeat.* 各例的分支；再用真事件页（选「认证 牛头人」）核 999 只时开称号 5、成就 121，998 只时不开。
 ## - 大厅猫哥「清理存档」（Map004 EV024）DataManager.cleanupIndependentItems()：无操作，不再记认不出。
 ## - 第二批（events2）：失去剩余伙伴号角 CE1391（for 循环 loseItem）；按变量 348 取人学技能＋角色名提示（CE1313 第一支），
-##   没人时不学不提示；鲲拳 CE1160 只有一句声明的段无操作；大厅老妪头顶倒计时（Map004 EV005，画在看不见的名字条上）无操作。
+##   没人时不学不提示；鲲拳 CE1160 只有一句声明的段无操作；大厅老妪头顶倒计时（Map004 EV005，画在看不见的名字条上）无操作；
+##   战斗里按角色号加状态（CE43 脚本段，XBattleEventRunner._actor_states_script）：13～15 在队、不在队都加上 708。
 ## 反向：写法稍变（速度写成变量、击败数写成别的对象）仍记认不出。
 const REF := "oracle/script_gaps.json"
 
@@ -183,16 +184,50 @@ func _batch2(ref: Dictionary) -> void:
 	_check("lottery_timer_write_unknown", not (await script("window.StarGetRefLAM45Time = setInterval(function(){ Star.GetLotteryAnimation._eventsName[5].bitmap.clear(); $gameVariables.setValue(1, 2); }, 1000)")).is_empty())
 
 
+func _battle_states(ref: Dictionary) -> void:
+	var list: Array = XDB.rec("CommonEvents", 43).list.slice(8)
+	for tag in ["inParty", "notInParty"]:
+		var c: Dictionary = ref["actorStates." + tag]
+		var party: Array = c.setup.party
+		var s := XState.new_game(3, int(party[0]), party.slice(1).map(func(x): return int(x)))
+		XState.current = s
+		var l := XBattleLogic.new()
+		l.elite_roll = 100.0
+		l.setup(2, s)
+		var r := XBattleEventRunner.new(l, list.duplicate(true))
+		for k in 50:
+			if r.advance().kind == "done":
+				break
+		var got := {}
+		for id in [13, 14, 15]:
+			var b = null
+			for a in l.actors:
+				if a != null and int(a.actor_id) == id:
+					b = a
+			got[str(id)] = (b if b != null else s.actor(id)).is_state_affected(708)
+		_check("battle_states_" + tag, r.skipped.is_empty() and got.keys().all(func(k): return bool(got[k]) == bool(c.observed[k])), [r.skipped, got, c.observed])
+	# 反向：夹一句别的写法，整段不认、照记认不出
+	var l2 := XBattleLogic.new()
+	l2.setup(2, XState.current)
+	var r2 := XBattleEventRunner.new(l2, [{"code": 355, "indent": 0, "parameters": ["var a = $gameActors.actor(13);"]},
+		{"code": 655, "indent": 0, "parameters": ["a.addState(708); a.gainHp(5);"]}, {"code": 0, "indent": 0, "parameters": []}])
+	for k in 20:
+		if r2.advance().kind == "done":
+			break
+	_check("battle_states_unknown_tail", not r2.skipped.is_empty(), r2.skipped)
+
+
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_script_gaps"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
 	var ref := _ref()
-	_check("ref_loaded", ref.size() == 14, ref.size())
+	_check("ref_loaded", ref.size() == 16, ref.size())
 	await _speed(ref)
 	await _defeat(ref)
 	await _cleanup()
 	await _batch2(ref)
+	_battle_states(ref)
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)

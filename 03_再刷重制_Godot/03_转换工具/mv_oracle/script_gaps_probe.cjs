@@ -64,4 +64,17 @@ cases.push(makeCase('actorVar.declareOnly', {ce: 1160, line: 'var actor = $gameA
   runList([cmd(355, ['var actor = $gameActors.actor($gameVariables.value(348));']), cmd(0, [])]);
   return {sameSkills: JSON.stringify(skills) === JSON.stringify(w.$gameActors.actor(1)._skills), toasts: toasts.slice()};
 }));
-process.exit(finish(host, 'script_gaps.json', {hostScope: '新游戏（Math.random 0.5）；事件脚本普查：调速脚本、击败数条件（悟空 events1）；伙伴号角清理、按变量取人学技能（events2）', cases}) ? 0 : 1);
+// - 战斗里按角色号加状态（CE43「PUA」，技能 73 调）：var actorN = $gameActors.actor(K); … actorN.addState(708);
+//   战斗中（敌群 2），13～15 在队（队伍 13／14／15／1）与不在队（1／8／9／10）各一例，读三人是否有 708。
+for (const [tag, party] of [['inParty', [13, 14, 15, 1]], ['notInParty', [1, 8, 9, 10]]]) {
+  cases.push(makeCase('actorStates.' + tag, {ce: 43, troop: 2, party}, () => {
+    newGame();
+    w.eval('$gameParty._actors=[];[' + party.join(',') + '].forEach(function(id){$gameParty.addActor(id);});');
+    w.$gameTroop.setup(2); w.$gameParty._inBattle = true;
+    runList(w.JsonEx.makeDeepCopy(w.$dataCommonEvents[43].list.slice(8)));   // 只跑脚本那段（前面是角色 13 在队时的强制行动）
+    const out = {}; for (const id of [13, 14, 15]) out[id] = w.$gameActors.actor(id).isStateAffected(708);
+    w.$gameParty._inBattle = false;
+    return out;
+  }));
+}
+process.exit(finish(host, 'script_gaps.json', {hostScope: '新游戏（Math.random 0.5）；事件脚本普查：调速脚本、击败数条件（悟空 events1）；伙伴号角清理、按变量取人学技能、战斗里按角色号加状态（events2）', cases}) ? 0 : 1);

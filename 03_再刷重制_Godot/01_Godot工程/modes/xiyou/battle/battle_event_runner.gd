@@ -70,6 +70,51 @@ func _member_states_script(code: String) -> bool:
 	return true
 
 
+## 按角色号加／解状态（CE43「PUA」给 13～15 加 708、CE92、CE1094 给 82 加 896～899 等）：
+##   var a1 = $gameActors.actor(K); … 之后若干 a1.addState(S); / a1.removeState(S);（整段都认得才执行）。
+## 原版 $gameActors.actor(K) 不看在不在队：在战斗里的走战斗加状态（抗性、倒下照 addState），不在队的直接加在角色身上
+## （参照 script_gaps actorStates.inParty／notInParty：两种都加上）。
+func _actor_states_script(code: String) -> bool:
+	var js := _compact_js(code)
+	var who := {}
+	var head := RegEx.create_from_string("^var(\\w+)=\\$gameActors\\.actor\\((\\d+)\\);")
+	var m := head.search(js)
+	while m != null:
+		who[m.get_string(1)] = int(m.get_string(2))
+		js = js.substr(m.get_end())
+		m = head.search(js)
+	if who.is_empty():
+		return false
+	var ops := []
+	var op := RegEx.create_from_string("^(\\w+)\\.(addState|removeState)\\((\\d+)\\);?")
+	while js != "":
+		m = op.search(js)
+		if m == null or not who.has(m.get_string(1)):
+			return false
+		ops.append([who[m.get_string(1)], m.get_string(2), int(m.get_string(3))])
+		js = js.substr(m.get_end())
+	if ops.is_empty():
+		return false
+	for o in ops:
+		if XDB.rec("Actors", o[0]).is_empty():
+			return true   # 原版读到 null 抛错、YEP 吞掉：这句起都不做
+		var b = null
+		for a in logic.actors:
+			if a != null and int(a.actor_id) == o[0]:
+				b = a
+		if o[1] == "addState":
+			if b != null:
+				logic.sequence_add_state(b, o[2])
+				b.refresh_resources()
+			else:
+				state().actor(o[0]).add_state(o[2])
+		elif b != null:
+			b.remove_state(o[2])
+		else:
+			state().actor(o[0]).remove_state(o[2])
+	return true
+
+
 ## 去注释、去空白后的脚本（下面两段只认这种紧凑写法，脚本里没有字符串）
 static func _compact_js(code: String) -> String:
 	return RegEx.create_from_string("\\s+").sub(RegEx.create_from_string("//[^\\n]*").sub(code, "", true), "", true)
@@ -210,7 +255,7 @@ func _execute_env(c: Dictionary):
 			while at + 1 < list.size() and int(list[at + 1].code) == 655:
 				at += 1
 				code += "\n" + str(list[at].parameters[0])
-			if _member_states_script(code) or _count_skills_script(code) or _count_members_script(code):
+			if _member_states_script(code) or _count_skills_script(code) or _count_members_script(code) or _actor_states_script(code):
 				index = at
 				return null
 			if code.strip_edges() == "Star.PetSystem.PetGet()":  # 公共事件 173：捕获网（XPetCapture）
