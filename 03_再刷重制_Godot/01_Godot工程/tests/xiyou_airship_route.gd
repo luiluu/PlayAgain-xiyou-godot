@@ -5,6 +5,7 @@ extends RefCounted
 ## 开图前先 park(状态, 图号)；go：从现在的位置走到飞艇、按确认上艇、等升空，
 ## 飞到离事件最近（曼哈顿 ≥ 2）且下艇后走得到事件旁的可降落格（XMapScene.airship_land_ok），按确认降落，
 ## 再按图块通行 BFS 走过去：同层事件从下、上、左、右靠过去撞它，下方的踩上去。事件跑过（或换了图）返回 true。
+## walk_to(事件号, 应答)：不坐飞艇，从现在的位置走过去踩／撞（入口跟落点在同一块时用）。
 ## 只在测试里用；走不到（没有能降落又走得到的格）返回 false，调用方照原版记缺口。
 
 const DIRS := {2: Vector2i(0, 1), 4: Vector2i(-1, 0), 6: Vector2i(1, 0), 8: Vector2i(0, -1)}
@@ -141,6 +142,14 @@ func go(ev_id: int, answers := []) -> bool:
 	if not await _until(func(): return XState.current.vehicle_type == "walk" and map.vehicle_can_move()):
 		return false
 	landed = land
+	return await walk_to(ev_id, answers)
+
+
+## 不坐飞艇：从现在的位置按图块通行走过去踩／撞事件（同 go 降落之后那段）。事件跑过（或换了图）返回 true。
+func walk_to(ev_id: int, answers := []) -> bool:
+	var e := _event(ev_id)
+	if e == null:
+		return false
 	var map_id := map.map_id
 	var normal := e.is_normal_priority()
 	for side in _sides(e):

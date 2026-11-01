@@ -183,13 +183,18 @@ func _run() -> void:
 
 
 ## 从进天之上的落点坐飞艇到入口，等到目标图
-func _enter(tag: String, enter_ev: int, dir: int, map_id: int, arrive: Vector2i) -> bool:
+func _enter(tag: String, enter_ev: int, dir: int, map_id: int, arrive: Vector2i, fly := true) -> bool:
 	_start(69, SKY_ENTRY.x, SKY_ENTRY.y, dir)
 	if not _check(tag + "_sky", await _wait_map(69)):
 		return false
-	# 入口在别的岛上：从落点走不到（要坐飞艇）；走到飞艇、飞过去降落、走过去踩／撞入口（原来直接跑入口事件）
-	_check(tag + "_needs_airship", REACH.unreachable(_scene(), _scene().player.grid, [enter_ev]) == [enter_ev])
-	_check(tag + "_fly_in", await ROUTE.new(self, _scene()).go(enter_ev), [_scene().map_id, _scene().player.grid])
+	# 入口在别的岛上（fly）：从落点走不到，走到飞艇、飞过去降落、走过去踩／撞入口；跟落点同一块：直接走过去（原来都是直接跑入口事件）
+	var route = ROUTE.new(self, _scene())
+	if fly:
+		_check(tag + "_needs_airship", REACH.unreachable(_scene(), _scene().player.grid, [enter_ev]) == [enter_ev])
+		_check(tag + "_fly_in", await route.go(enter_ev), [_scene().map_id, _scene().player.grid])
+	else:
+		_check(tag + "_on_foot", REACH.unreachable(_scene(), _scene().player.grid, [enter_ev]).is_empty())
+		_check(tag + "_walk_in", await route.walk_to(enter_ev), [_scene().map_id, _scene().player.grid])
 	return _check(tag + "_entered", await _wait_map(map_id) and _scene().player.grid == arrive, [_scene().map_id, _scene().player.grid])
 
 
@@ -246,8 +251,8 @@ func _has_shop(map: XMapScene, id: int, goods: int) -> bool:
 
 func _snake() -> void:
 	var troops := [298, 299, 300, 301, 302, 577, 578, 579, 580, 581, 582]
-	# 天之上 EV47（(38,77)）面朝上进 (13,28)
-	if not await _enter("snake", 47, 8, 87, Vector2i(13, 28)):
+	# 天之上 EV47（(38,77)）面朝上进 (13,28)；跟进天之上的落点同一块，走过去
+	if not await _enter("snake", 47, 8, 87, Vector2i(13, 28), false):
 		return
 	var map: XMapScene = _scene()
 	_check("snake_events", range(5, 9).all(func(i): return _event(map, i) != null))
