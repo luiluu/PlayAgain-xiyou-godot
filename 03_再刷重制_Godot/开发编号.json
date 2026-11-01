@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.261",
-  "sequence": 261,
-  "next": "dev.262",
-  "nextSequence": 262,
+  "current": "dev.262",
+  "sequence": 262,
+  "next": "dev.263",
+  "nextSequence": 263,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-raven-ui1",
+  "currentChange": "bailong-exclusive-gaps1",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

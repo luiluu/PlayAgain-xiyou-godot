@@ -94,7 +94,7 @@ func configure(a: XActor) -> void:
 		_borrow(conf, pool, [])
 		return
 	if k == 7:
-		# 原版条件里的 s.cooldown 是 YEP_X_SkillCooldowns 给每个技能都建的 {}，恒真，没有冷却的技能也列出；O-待定 默认只列有冷却的（XYunshang.eye_candidate）
+		# 原版条件里的 s.cooldown 是 YEP_X_SkillCooldowns 给每个技能都建的 {}，恒真，没有冷却的技能也列出；O-140 默认只列有冷却的（XYunshang.eye_candidate）
 		var re := RegEx.create_from_string("唤醒|复活|制作|进阶")
 		var rows := a.skills().filter(func(sk): return int(sk.id) < XYunshang.MOUNTAIN and int(sk.get("occasion", 0)) != 3 and re.search(str(sk.name)) == null \
 			and XYunshang.eye_candidate(sk)) \

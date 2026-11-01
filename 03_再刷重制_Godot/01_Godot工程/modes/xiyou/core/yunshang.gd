@@ -1235,7 +1235,7 @@ static func borrowable(s: Dictionary) -> bool:
 	return true
 
 
-## O-待定：天衣铺给九曲回针选针眼（第 530 行）原版想只列有冷却的技能（s.cooldown），可 YEP_X_SkillCooldowns 给每个技能都建了 cooldown 对象，
+## O-140：天衣铺给九曲回针选针眼（第 530 行）原版想只列有冷却的技能（s.cooldown），可 YEP_X_SkillCooldowns 给每个技能都建了 cooldown 对象，
 ## 条件恒真，没冷却的技能也能选成针眼（选了也没用：针眼只是醒着时每回合越过一次冷却）。true＝只列有自己冷却（<Cooldown: x> x>0 或 <Cooldown Eval>、
 ## 不在 Cooldown Bypass 里）的技能；false＝照原版全列
 static var o_eye_cooldown := true
