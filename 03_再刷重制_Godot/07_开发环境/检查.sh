@@ -9,7 +9,9 @@
 #             选中的场景按工程指纹沿用上次通过结果（并行测试.py --reuse；--full 不沿用）
 #   --cloud   只和 --affected 用：选中的 Godot 场景改在 GitHub Actions 云端跑（云端选测.py run＋wait，只测已提交的 HEAD、
 #             基准是 GitHub 上的 main；文档、守卫、工具回归等非 Godot 检查照旧在本机跑）。云端不可用（推送失败、超时）直接判失败并提示
-#             去掉 --cloud 改本机跑，不静默降级。环境变量：CHECK_CLOUD_NO_UPLOAD=1 不重传转换产物，CHECK_CLOUD_TIMEOUT=秒（默认 2700）
+#             去掉 --cloud 改本机跑，不静默降级。例外（tools29）：GitHub 根本没启动任务——账单问题（付款失败、花费上限）或本月额度用完——
+#             时明说原因（不是代码问题），自动改用本机跑同一批场景（CHECK_JOBS 默认 3）；CHECK_CLOUD_FALLBACK=0 回到判失败。
+#             环境变量：CHECK_CLOUD_NO_UPLOAD=1 不重传转换产物，CHECK_CLOUD_TIMEOUT=秒（默认 2700）
 #   --keep-going  文档与登记检查（JSON／链接／开发编号）失败后仍跑 Godot 测试与其余检查（默认此时立即失败退出，免得白跑几十分钟）
 set -u
 ENV_DIR=${0:A:h}
@@ -121,6 +123,7 @@ fi
 
 print "== Godot 测试"
 (( SEL_FULL )) || TEST_ARGS+=(--reuse)
+CLOUD_FALLBACK=0
 if (( ! SEL_FULL && ${#SEL_SCENES} == 0 )); then
   print "  （选测：没有要跑的 Godot 场景，跳过导入与测试）"
 elif (( CLOUD )); then
@@ -135,11 +138,20 @@ elif (( CLOUD )); then
   else
     cloud_rc=$?
     if (( cloud_rc == 124 )); then bad "云端选测超时没有结果（$cloud_head[1,9]）；看 GitHub Actions「云端选测」，或去掉 --cloud 改用本机跑"
-    elif (( cloud_rc == 4 )); then bad "云端没有启动（多半是本月 GitHub Actions 额度用完）（$cloud_head[1,9]）；去掉 --cloud 改用本机跑选测"
+    elif (( cloud_rc == 4 || cloud_rc == 5 )); then
+      # 任务一个都没启动：不是代码的事，同一批场景改在本机跑（tools29；CHECK_CLOUD_FALLBACK=0 回到判失败）
+      if (( cloud_rc == 5 )); then why="GitHub 拒绝启动云端选测：是账单问题（最近付款失败或花费上限不够），不是代码问题；到 GitHub Settings → Billing & plans 处理"
+      else why="云端没有启动（多半是本月 GitHub Actions 额度用完），不是代码问题"; fi
+      if (( ${CHECK_CLOUD_FALLBACK:-1} )); then
+        export CHECK_JOBS=${CHECK_JOBS:-3}
+        print "  ⚠ $why（$cloud_head[1,9]）。改用本机跑这 ${#SEL_SCENES} 个场景（CHECK_JOBS=$CHECK_JOBS）"
+        CLOUD_FALLBACK=1
+      else bad "$why（$cloud_head[1,9]）；去掉 --cloud 改用本机跑选测"; fi
     elif (( cloud_rc == 3 )); then bad "云端运行已结束但没有结果（$cloud_head[1,9]）；看 GitHub Actions「云端选测」，或去掉 --cloud 改用本机跑"
     else bad "云端选测未通过（$cloud_head[1,9]），失败场景见上方汇总"; fi
   fi
-else
+fi
+if (( (SEL_FULL || ${#SEL_SCENES}) && (! CLOUD || CLOUD_FALLBACK) )); then
 # 车道 worktree：补齐带进来的主工作区参照与本分支切片不同批时提示（不判失败，见 参照批次.py）
 python3 "$ENV_DIR/参照批次.py" check "$PROJECT/modes/xiyou/generated" || true
 # 导入是重进程：先占共用槽（占槽.py），排队心跳经 fd 3 送回本日志

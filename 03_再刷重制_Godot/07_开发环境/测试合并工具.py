@@ -1971,6 +1971,55 @@ for name in filter(None, files):
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
 
+    def test_prepare_fix_folds_into_merge_with_guard(self):
+        """tools29：准备阶段停在解析检查时，真实守卫不收手动 amend；改好留成未提交、重跑加 --also，由工具并进合并提交。"""
+        hook = self.root / '.git/hooks/pre-commit'
+        shutil.copy2(HERE / 'git-hooks/main-guard.sh', hook); hook.chmod(0o755)
+        rel = merge.PROJECT / 'modes/marks.gd'
+        body = 'extends RefCounted\n\nstatic func a() -> int:\n\treturn 1\n' + ''.join('\n# 段 %d\n' % i for i in range(12)) + '\nstatic func z() -> int:\n\treturn 2\n'
+        self.put(str(rel), body); self.g('add', '.')
+        subprocess.run(['git', '-C', str(self.root), 'commit', '-m', 'marks'], check=True, capture_output=True,
+                       env=dict(os.environ, XIYOU_MAIN_COMMIT='1'))
+        self.g('merge', 'main', cwd=self.wt)
+        dup = '\nstatic func is_super_strong(id: int) -> bool:\n\treturn id > 0\n'
+        (self.wt / rel).write_text(body.replace('\n# 段 2\n', '\n# 段 2\n' + dup))
+        self.g('commit', '-am', 'lane adds is_super_strong', cwd=self.wt)
+        self.put(str(rel), body + dup); self.g('add', '.')
+        subprocess.run(['git', '-C', str(self.root), 'commit', '-m', 'main adds is_super_strong'], check=True, capture_output=True,
+                       env=dict(os.environ, XIYOU_MAIN_COMMIT='1'))
+        base = self.g('rev-parse', 'HEAD')
+        self.assertEqual(self.call(), 1, self.last_output)
+        self.assertIn('解析检查不通过', self.last_output)
+        self.assertIn('--also', self.last_output)
+        self.assertNotIn('git commit --amend', self.last_output)
+        merged = self.g('rev-parse', 'HEAD')
+        fixed = body.replace('\n# 段 2\n', '\n# 段 2\n' + dup)
+        self.put(str(rel), fixed)
+        # 提示过去写的「git commit --amend」：合并进行中守卫照拦（XIYOU_MAIN_COMMIT=1 也不放行）
+        r = subprocess.run(['git', '-C', str(self.root), 'commit', '-a', '--amend', '--no-edit'], capture_output=True, text=True,
+                           env=dict(os.environ, XIYOU_MAIN_COMMIT='1'))
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('--also', r.stderr)
+        # 不点名：拒绝并说出路
+        self.assertEqual(self.call(), 1, self.last_output)
+        self.assertIn(str(rel), self.last_output)
+        self.assertIn('--also', self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), merged)
+        # 点了别的文件：照拒
+        self.assertEqual(self.call('--also', 'AGENTS.md'), 1, self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), merged)
+        self.assertEqual(self.call('--also', str(rel)), 0, self.last_output)
+        self.assertIn('已把修正并进合并提交', self.last_output)
+        head = self.g('rev-parse', 'HEAD^{commit}')
+        state = json.loads((self.root / '.git/lane-merge/state.json').read_text())
+        self.assertEqual(state['mergeCommit'], self.g('rev-list', '-n', '1', '--grep', '^合并 claude/task', 'HEAD'))
+        merge_commit = state['mergeCommit']
+        self.assertEqual(self.g('rev-list', '--parents', '-n', '1', merge_commit).split()[1:], [base, self.g('rev-parse', 'claude/task')])
+        self.assertEqual(self.g('show', merge_commit + ':' + str(rel)), fixed.rstrip('\n'))
+        self.assertIn('执行者: cc（唐僧）', self.g('log', '-1', '--format=%B', merge_commit))
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+
     def test_parse_check_reads_godot_log_and_skip_flag(self):
         # 假 godot：--import 不出声；--script 时打一条 autoload 的假错误（不算）和一条真错误
         self.put(str(merge.PROJECT / 'project.godot'), 'config/version="dev.001"\n[autoload]\nGameApp="*res://core/app.gd"\n\n[display]\n')

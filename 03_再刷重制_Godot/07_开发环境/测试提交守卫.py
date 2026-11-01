@@ -194,7 +194,7 @@ class GuardTests(unittest.TestCase):
     def test_new_worktree_script_installs_guard_and_merge_tool_sets_variable(self):
         self.assertIn('"$MAIN/$GODOT_SUB/07_开发环境/装提交守卫.sh"', (HERE / '新建工作树.sh').read_text(encoding='utf-8'))  # 装主工作区那份
         text = (HERE / '合并车道.py').read_text(encoding='utf-8')
-        self.assertEqual(text.count('env=MAIN_COMMIT_ENV'), 3)           # 合并、冲突后提交、收尾提交
+        self.assertEqual(text.count('env=MAIN_COMMIT_ENV'), 4)           # 合并、冲突后提交、准备阶段并入修正（tools29）、收尾提交
         self.assertIn("XIYOU_MAIN_COMMIT='1', XIYOU_LANE_MERGE='1'", text)  # 合并进行中守卫只认后者
 
 
