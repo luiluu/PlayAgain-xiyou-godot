@@ -571,11 +571,37 @@ class CheckerTests(Fixture):
         self.assertIn('云端运行已结束但没有结果', out)
         self.assertNotIn('godot', self.names(ran))
 
-    def test_cloud_quota_exhausted_is_an_error_with_local_hint(self):
-        rc, out, _ = self.cloud_check(wait_rc=4)
-        self.assertEqual(rc, 1, out)
+    def test_cloud_quota_exhausted_falls_back_to_local(self):
+        # tools29：云端一个任务都没启动（额度用完）不是代码问题，同一批场景改在本机跑，CHECK_JOBS 默认 3
+        rc, out, ran = self.cloud_check(wait_rc=4)
+        self.assertEqual(rc, 0, out)
         self.assertIn('额度用完', out)
-        self.assertIn('改用本机', out)
+        self.assertIn('改用本机跑', out)
+        self.assertIn('CHECK_JOBS=3', out)
+        self.assertIn('并行测试.py', self.names(ran))                          # 云端要跑的那批（这里选测扩成整轮）改在本机跑
+
+    def test_cloud_billing_block_falls_back_and_says_not_code(self):
+        rc, out, ran = self.cloud_check(wait_rc=5)
+        self.assertEqual(rc, 0, out)
+        self.assertIn('账单问题', out)
+        self.assertIn('不是代码问题', out)
+        self.assertIn('并行测试.py', self.names(ran))
+        self.assertIn('godot', self.names(ran))                               # 本机照常先导入
+
+    def test_cloud_fallback_switch_off_restores_error(self):
+        self.env = dict(self.env, CHECK_CLOUD_FALLBACK='0')
+        for code, words in [(4, '额度用完'), (5, '账单问题')]:
+            rc, out, ran = self.cloud_check(wait_rc=code)
+            self.assertEqual(rc, 1, out)
+            self.assertIn(words, out)
+            self.assertIn('去掉 --cloud', out)
+            self.assertNotIn('并行测试.py', self.names(ran))
+
+    def test_cloud_fallback_keeps_given_jobs(self):
+        self.env = dict(self.env, CHECK_JOBS='2')
+        rc, out, _ = self.cloud_check(wait_rc=5)
+        self.assertEqual(rc, 0, out)
+        self.assertIn('CHECK_JOBS=2', out)
 
     def test_cloud_unavailable_is_an_error_not_a_local_fallback(self):
         rc, out, ran = self.cloud_check(run_rc=1)

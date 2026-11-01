@@ -1667,7 +1667,7 @@ static func skill_ids(a: XActor, ids: Array) -> Array:
 
 
 ## meetsSkillConditions 包装（Affixes:22）：被替换的技能不能用（当前仿形除外）；切换仿形要记录两项以上
-## （原版另要求不是云裳赠行／储行的行动，重制没有这两种行动来源）；记录了但不是当前仿形、又不是自己本来会的不能用；
+## （原版另要求不是云裳赠行／储行的行动：XYunshang.source_original）；记录了但不是当前仿形、又不是自己本来会的不能用；
 ## 借来的技能要来源队友还在队伍里且仍会
 static func blocks_borrowed(s: XState, a, skill: Dictionary) -> bool:
 	if not a is XActor or XBattleLogic.is_item(skill):
@@ -1683,7 +1683,7 @@ static func blocks_borrowed(s: XState, a, skill: Dictionary) -> bool:
 	if mimic:
 		var observed: Array = d.get("observed", [])
 		if id == switch_id():
-			return observed.size() <= 1
+			return observed.size() <= 1 or not XYunshang.source_original(a)
 		if observed.has(id) and id != int(d.get("selected", 0)) and not (a.native_skill_ids().has(id) and not blocked.has(id)):
 			return true
 		return false
@@ -1801,7 +1801,7 @@ static func sealed(logic, b, skill: Dictionary) -> bool:
 
 
 ## startAction 包装（Adv:184，最外层）：技能行动记行动者上次用的技能（>2）；带封印的这次就是原有合法行动窗口，
-## 列出行动结束要解的封印（能动、且不看异化封印也合技能条件的）。原版另排除云裳赠行／储行的行动，重制没有这两种来源
+## 列出行动结束要解的封印（能动、且不看异化封印也合技能条件的）。云裳赠行／储行的行动不算（XYunshang.source_original）
 static func start_action(logic, u, skill: Dictionary) -> void:
 	if not logic.has_meta("xalien") or skill.is_empty() or XBattleLogic.is_item(skill):
 		return
@@ -1811,7 +1811,8 @@ static func start_action(logic, u, skill: Dictionary) -> void:
 			st.last = {}
 		st.last[u] = int(skill.id)
 	st.started = u
-	_list_release(logic, u)
+	if XYunshang.source_original(u):
+		_list_release(logic, u)
 
 
 static func _list_release(logic, u) -> void:

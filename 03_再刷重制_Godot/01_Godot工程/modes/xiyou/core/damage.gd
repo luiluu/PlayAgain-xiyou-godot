@@ -293,7 +293,11 @@ static func finish(res: Dictionary, item: Dictionary, a: XBattler, b: XBattler, 
 	# installDamageElementRuntime：HP 伤害／吸取被元素吸收时跳过攻击方 Confirm（普通回复仍照常）。
 	var absorbed: bool = float(res.value) < 0.0 and int(item.damage.type) in [1, 5]
 	var confirmed: float = res.value if absorbed else apply_state_effects(res.value, item, a, b, [], "confirm", execute, bool(res.get("critical", false)), ctx)
-	return apply_state_effects(apply_fixed_mitigation(confirmed, res), item, a, b, [], "react", execute, bool(res.get("critical", false)), ctx)
+	var mitigated := apply_fixed_mitigation(confirmed, res)
+	# installDamageElementRuntime 结算 part() 末尾的 result._after（伤害／治疗时挂状态，XBattleLogic._push_states），在 React 之前
+	if execute and ctx.has("after_confirm"):
+		ctx.after_confirm.call()
+	return apply_state_effects(mitigated, item, a, b, [], "react", execute, bool(res.get("critical", false)), ctx)
 
 
 ## 正式 installDamageElementRuntime 的 entered 阶段：Confirm 之后的伤害按比例摊回各属性候选，各减固定减伤，取最大；

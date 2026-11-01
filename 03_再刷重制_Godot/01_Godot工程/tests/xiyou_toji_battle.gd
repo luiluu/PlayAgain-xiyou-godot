@@ -186,7 +186,7 @@ func _target_index(logic: XBattleLogic, t) -> int:
 
 
 ## 智能 AI 档案（第四期，参照 aiSnap）：各技能 profile（参照只记数值项）、主技能对各敌人的 safeDamage、choose 的选择与前 6 名候选。
-## 参照是原版：档案段数再乘 numRepeats（O-待定 o_profile_hits 关）
+## 参照是原版：档案段数再乘 numRepeats（O-131 o_profile_hits 关）
 func _ai(logic: XBattleLogic, a: XActor, want: Dictionary, name: String) -> void:
 	var keep := XSmartAI.o_profile_hits
 	XSmartAI.o_profile_hits = false
@@ -260,7 +260,7 @@ func _rate_row(logic: XBattleLogic, u: XBattler, t: XBattler, sid: int, want: Di
 
 
 ## 暴君（参照 tyrant）：挡负面状态与弱化；忘掉后照常加；学回时清负面状态。弱化：原版清到一半抛错留着（CLEAR_DEBUFFS＝false 照原版），
-## 重制默认清掉（O-待定）
+## 重制默认清掉（O-131）
 func _tyrant(c: Dictionary) -> void:
 	var r := _battle()
 	var logic: XBattleLogic = r[0]
@@ -281,7 +281,7 @@ func _tyrant(c: Dictionary) -> void:
 	XToji.CLEAR_DEBUFFS = false
 	a.learn_skill(XToji.TYRANT)
 	XToji.CLEAR_DEBUFFS = true
-	check("tyrant.original_threw", str(o.relearned.get("threw")) == "removeDebuff 不存在", o.relearned.get("threw"))  # 原版清弱化抛错（O-待定 CLEAR_DEBUFFS）
+	check("tyrant.original_threw", str(o.relearned.get("threw")) == "removeDebuff 不存在", o.relearned.get("threw"))  # 原版清弱化抛错（O-131 CLEAR_DEBUFFS）
 	check("tyrant.relearned_original", has.call() == _norm(o.relearned.states) and _norm(a.buffs) == _norm(o.relearned.buffs) and bool(o.relearned.learned) and a.skill_ids.has(XToji.TYRANT), [has.call(), a.buffs])
 	a.learn_skill(XToji.TYRANT)
 	check("tyrant.relearned_cleared", not a.buffs.any(func(v): return v < 0), a.buffs)
@@ -305,7 +305,7 @@ func _local() -> void:
 	check("local.end_clears", not XToji.SHAPES.any(func(id): return a.state_ids.has(id)) and not XToji.battling)
 
 
-## 智能 AI 档案的本地断言：O-待定 o_profile_hits 开（默认）时追加＋1 的游云估伤是关时的一半（关时多乘 numRepeats 2）；
+## 智能 AI 档案的本地断言：O-131 o_profile_hits 开（默认）时追加＋1 的游云估伤是关时的一半（关时多乘 numRepeats 2）；
 ## 藏兵咒灵倍率 ×1.11；别的角色、甚尔的非主技能与当前形态的切换没有档案；档案只读（不换形态、不动随机数）
 func _local_ai() -> void:
 	var r := _battle()

@@ -419,6 +419,7 @@ func native_skills() -> Array:
 
 func skills() -> Array:
 	var ids: Array[int] = native_skill_ids()
+	XYunshang.skill_ids(self, ids)  # 云裳 skills 包装（在异化之内）：天衣给的赠行／收存余光
 	ids.assign(XAlienBattle.skill_ids(self, ids))  # 异化百相、无面 skills 包装（Affixes:21）：拿掉被替换的，加借来的、仿形与切换
 	ids.assign(XGuyu.skill_ids(self, ids))  # 谷雨 skills 包装：先许一枝开 10 级起、绽放不列、其余按解锁
 	if XAlienBattle.devours(self):  # 异化饕餮 skills 包装（Adv:86）：战斗中多吞噬技能（原版 push 不去重）
@@ -667,7 +668,7 @@ func param(i: int) -> float:
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:
-	return XCat.param(self, i, final_clamp(i, XActorModules.param(self, i, super.param(i))))
+	return XCat.param(self, i, final_clamp(i, XYunshang.battle_param(self, i, XActorModules.param(self, i, super.param(i)))))  # 云裳包装的战斗内层（六衡、万法、御风）
 
 ## 云裳 installNativeYunshangRuntime 的 Game_Actor.param 包装（模块表第 30 个，在米拉、黄泉、甚尔、宿傩、饿狼之后，异化、种族之前）：
 ## 对所有角色最后 round(max(HP?1:0, min(paramMax, v)))，专属倍率乘过上限的压回上限（八戒 toji2；参照 param_max_probe）。
@@ -728,7 +729,8 @@ func refresh_passive() -> void:
 	var c := {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "skillPass": {}, "skillTypeDvup": {},
 		"SkETypeHarmRi": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0, "itemRateUp": 0.0,
 		"certainHit": {"global": false, "bySkill": {}}, "damageElement": 0,
-		"consumeReduce": {"bySkill": {}, "byType": {"Zj": 0, "Mf": 0}, "all": 0}}
+		"consumeReduce": {"bySkill": {}, "byType": {"Zj": 0, "Mf": 0}, "all": 0},
+		"recPushStates": [], "pushStates": [], "pushSelfStates": []}
 	var objs := stat_equips() + skills() + states()
 	for o in objs:
 		var note := str(o.get("note", ""))
@@ -766,6 +768,10 @@ func refresh_passive() -> void:
 			c.damageElement = int(str(meta.DamageElements).strip_edges())
 		if meta.has("passiveIRUP"):
 			c.itemRateUp += _num(meta.passiveIRUP)
+		# 伤害／治疗时挂状态（dsPassiveSkill 7～9 节）：状态号 parseInt、% 可省、概率只认整数（<PushsubState0742: 0.2%> 认不出）
+		for pair in [["RecPushState", "recPushStates"], ["PushState", "pushStates"], ["PushsubState", "pushSelfStates"]]:
+			for m in _scan(note, "<%s(\\d+):\\s*(\\d+)%%?>" % pair[0]):
+				c[pair[1]].append({"stateId": int(m[0]), "probability": float(m[1])})
 		# dsPassiveSkill读取meta（重复同名标签取最后一条），parseInt按首个有符号整数解析。
 		for key in meta:
 			var tag := str(key)

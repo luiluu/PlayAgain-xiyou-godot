@@ -10,7 +10,7 @@ var out_dir := ""
 class FixedDamageLogic:
 	extends XBattleLogic
 	var base_damage := 100.0
-	func _damage_value(_u: XBattler, _skill: Dictionary, _t: XBattler, _critical: bool) -> float:
+	func _damage_value(_u: XBattler, _skill: Dictionary, _t: XBattler, _critical: bool, _push := false) -> float:
 		return base_damage
 
 
