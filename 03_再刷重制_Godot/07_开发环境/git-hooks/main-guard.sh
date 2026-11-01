@@ -23,7 +23,8 @@ if [ -f "$state" ] && [ "${XIYOU_LANE_MERGE:-}" != 1 ]; then
     *) stage=${phase:-未知} ;;
   esac
   echo "✗ 有合并在进行（任务 ${task:-未知}，阶段 ${stage}），main 现在不收工具以外的提交（XIYOU_MAIN_COMMIT=1 也不放行）。" >&2
-  echo "  把改动留成未提交，等收尾用 合并车道.py --finish --also <文件>／--accept-doc-edits 带入；或先 合并车道.py --abort 撤出这条合并。" >&2
+  echo "  把改动留成未提交，重跑同一命令点名带入：准备阶段停下（冲突标记、解析检查）时 合并车道.py <任务> --also <文件>（工具并进合并提交），" >&2
+  echo "  准备之后 合并车道.py <任务> --finish --also <文件>／--accept-doc-edits；或先 合并车道.py <任务> --abort 撤出这条合并。" >&2
   echo "  现场：${state}" >&2
   exit 1
 fi

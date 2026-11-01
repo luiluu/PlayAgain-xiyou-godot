@@ -79,6 +79,12 @@ static func _module_recruit(module: String) -> Callable:
 				for line in lines:
 					interp.host.toast(line)  # $.toaster
 				return not lines.is_empty()
+		"Guyu":
+			return func(s: XState, interp) -> bool:
+				var text := XGuyu.recruit(s)
+				if text != "":
+					interp.host.toast(text)  # $.toaster
+				return text != ""
 		"CodexSukuna":
 			return func(s: XState, interp) -> bool:
 				if not XSukuna.recruit(s):
@@ -165,7 +171,7 @@ static func run(code: String, interp) -> Array:
 		return []
 	# 专属角色号角（公共事件 9006～9016）：try { if (!X.recruit()) $gameParty.gainItem($dataItems[号角或 X.ids().horn],1); } catch(error) {…}
 	# 招募没成功（已在队、超强者门槛挡下）就还号角；catch 分支是脚本出错时的返还，重制不会走到。
-	# 模块没移植的（谷雨、屠苏、璇）只有门槛挡下这一支能照做，放行时照旧算没认出
+	# 模块没移植的（屠苏、璇）只有门槛挡下这一支能照做，放行时照旧算没认出
 	var horn := _re("^try\\s*\\{\\s*if\\s*\\(\\s*!\\s*(\\w+)\\.recruit\\(\\)\\s*\\)\\s*\\$gameParty\\.gainItem\\(\\$dataItems\\[(\\d+|\\1\\.ids\\(\\)\\.horn)\\]\\s*,\\s*1\\);?\\s*\\}\\s*catch\\s*\\(\\s*error\\s*\\)\\s*\\{.*\\}$").search(js)
 	if horn:
 		var module := horn.get_string(1)
@@ -303,6 +309,10 @@ static func _statements(js: String, interp) -> Array:
 		if st == "CodexYomi.recruit()" or st == "CodexJingliu.recruit()":  # 公共事件 9004／9005：169 黄泉、170 镜流入队并装上专属法宝（见 XYomiJingliu.recruit；两条 $.toaster 提示）
 			for line in XYomiJingliu.recruit(s, XYomiJingliu.YOMI if st.begins_with("CodexYomi") else XYomiJingliu.JINGLIU):
 				interp.host.toast(line)
+			continue
+		if st == "CodexYunshang.recruit()":  # 公共事件 9010：174 云裳入队（见 XYunshang.recruit；$.toaster 提示）
+			XYunshang.recruit(s)
+			interp.host.toast(XYunshang.RECRUIT_TEXT)
 			continue
 		if st == "CodexRaven.recruit()":  # 公共事件 9002：167 渡鸦入队（见 XRaven.recruit；$.toaster 提示）
 			if XRaven.recruit(s):

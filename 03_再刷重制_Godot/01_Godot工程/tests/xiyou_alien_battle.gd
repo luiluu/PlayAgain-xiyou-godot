@@ -97,6 +97,9 @@ func _encounter(c: Dictionary) -> void:
 	s.map_id = int(st.map)
 	s.unknown_origin = int(st.origin) if st.has("origin") else null
 	XAlienation.force_roll = 0.5
+	# 奖励本体的前后缀与属性浮动（XGear.create）：参照里序列用完后 Math.random 一律 0.5；重制原来走新局的装备随机流（种子每局不同），
+	# 偶尔掷出前后缀（boss_150 名字成了「天外天·灼烂歼鬼小李飞刀」，累计偶发 5 次，tools30）。这里同参照固定 0.5
+	XGear.force_roll = 0.5
 	var logic := _logic(s, int(st.troop))
 	var tag := str(c.id)
 	check(tag + ".start_miss", XAlienBattle.encounter(logic) == null)
@@ -120,6 +123,7 @@ func _encounter(c: Dictionary) -> void:
 	check(tag + ".sequence", int(XAlienation.ledger(s).sequence) - seq0 == int(o.sequenceGain), [int(XAlienation.ledger(s).sequence) - seq0, o.sequenceGain])
 	var got_e := logic.enemies.map(func(e): return {"id": e.enemy_id, "name": e.display_name(), "mhp": e.mhp, "hp": e.hp, "boss": XZhenqi.is_boss_enemy(e)})
 	check(tag + ".enemies", _norm(got_e) == _norm(o.enemies), [got_e, o.enemies])
+	XGear.force_roll = -1.0
 	XState.current = null
 
 

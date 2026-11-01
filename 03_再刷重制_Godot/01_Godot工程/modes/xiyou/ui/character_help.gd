@@ -20,7 +20,7 @@ extends RefCounted
 ## 5. dyn2View：按前缀把行换成当前数值（渡鸦魄倍率／阶位系数／魔防穿透／魂海池，米拉人形倍率与共鸣，黄泉段数，宿傩术式威力／斩击强化，甚尔暴君成长与咒具成长系数，
 ##    饿狼形态系数／进化／解析／当前形态）。
 ## 未移植：listCosts（技能界面／战斗里消耗行不显示；重制说明卡不知道窗口，一律显示）、helpRankChanges「进阶变化」行（只在已进阶时出现）、
-## nowGrowthView（谷雨／屠苏／璇）、镜流星魂行（镜流第二期）、云裳的 dyn2、各角色第二期才有的战斗内字段（渡鸦灵魂恒 0、
+## nowGrowthView 的屠苏／璇（谷雨已接，_now_growth_view）、镜流星魂行（镜流第二期）、云裳的 dyn2、各角色第二期才有的战斗内字段（渡鸦灵魂恒 0、
 ## 宿傩斩击强化恒「未储存」）、专属装备（4001、4577～4581、破限之心等）的角色说明。
 
 const VIEW_COLOR := "rgba(235,240,247,1)"
@@ -352,7 +352,54 @@ static func view(obj: Dictionary, rows: Array, list_costs := false) -> Array:
 	var out := []
 	for g in groups:
 		out.append_array(g)
-	return _dyn2_view(obj, out, a)
+	return _now_growth_view(obj, _dyn2_view(obj, out, a), a)
+
+
+## nowGrowthRows（谷雨部分；屠苏、璇未接）：按技能所属角色当前等级／阶位算的「成长：」行；null＝不换
+static func _now_growth_rows(obj: Dictionary, a) -> Variant:
+	if owner(obj) != XGuyu.ACTOR or not str(obj.get("note", "")).contains("<GuyuSkill:"):
+		return null
+	var lv := _level(obj, a)
+	var rank := clampi(_rank(obj, a), 0, 5)
+	var c := func(v: Array, l := [1, 20, 40, 60]) -> float: return XGuyu.curve(lv, v, l)
+	var pct := func(n: float) -> String: return num(roundf(n * 1000.0) / 10.0) + "%"
+	var x := func(n: float) -> String: return num(roundf(n * 100.0) / 100.0)
+	match int(obj.get("id", 0)):
+		10290:
+			return ["成长：转移比例可选25%／50%／75%" if lv >= 10 else "成长：转移比例50%"]
+		10298:
+			return ["成长：待绽比例" + ("50%" if lv >= 60 else "35%") + "；花荫倍率×" + ("1.2" if lv >= 60 else "1.1" if lv >= 20 else "1")]
+		10288:
+			return ["成长：治疗比例" + pct.call(c.call([0.25, 0.30, 0.35, 0.40]))]
+		10293:
+			return ["成长：队友储备比例" + pct.call(c.call([1, 1.25, 1.5, 1.75]) + 0.15 * rank), "成长：绽放系数" + x.call(c.call([5, 6, 7, 8]))]
+		10292:
+			return ["成长：归春系数" + x.call(c.call([33, 50], [40, 60]))]
+	return null
+
+
+## nowGrowthView：把所有「成长：」行换成 nowGrowthRows（放在第一条成长行处，末行沿用原最后一条成长行的分隔）
+static func _now_growth_view(obj: Dictionary, rows: Array, a) -> Array:
+	var now = _now_growth_rows(obj, a)
+	if now == null:
+		return rows
+	var old := range(rows.size()).filter(func(i): return _re("^成长[：:]", XHelpCard.plain(str(rows[i][0]))))
+	if old.is_empty():
+		return rows
+	var line = rows[old.back()][3]
+	var out := []
+	for i in rows.size():
+		var r: Array = rows[i]
+		if i != old[0]:
+			if not old.has(i):
+				out.append(r)
+			continue
+		for k in now.size():
+			var v: Array = r.duplicate()
+			v[0] = "\\c[3]" + now[k]
+			v[3] = line if k == now.size() - 1 else false
+			out.append(v)
+	return out
 
 
 ## styled：只换文字与颜色，保留行的字号（分隔、对齐在作者行阶段已清掉）

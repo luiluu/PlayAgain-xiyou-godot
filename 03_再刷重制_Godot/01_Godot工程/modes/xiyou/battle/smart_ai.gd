@@ -12,6 +12,10 @@ extends RefCounted
 ##   增减益与状态收益（长战才计满）、代价倍率（药 0.65；技能按 MP/TP 消耗比例），全体取合计、单体取最佳目标、随机按期望段数。
 ## - 护盾（ShieldSystem）：剩余 HP 与急需度按 HP＋护盾算；对友方的加盾技能按 shieldEstimate 加分（缺口＝生命上限 80%−现有护盾）。
 ##   重制版没有 YEP 吸收屏障与来源护盾账本，shieldPoints 只算原生护盾。
+## - 角色档案 profile（v0.28 registerProfile，只读）：段数 hits 代替行动序列段数、倍率 multiplier、穿透 pierce（防御率＋穿透×(1−防御率)）、
+##   单体技能的溅射 splash（其余敌人按期望伤害×溅射算伤害效用）、铺垫 followupSkill／setupActions（付完本技能代价后
+##   用后续技能打分〔noSetup，不再铺垫〕，取 max(本分, (本分＋后续)÷(铺垫次数＋1)×0.92×(急需时 0.6))）。
+##   重制只登记了甚尔（XToji.ai_profile；估伤 10216～10219 走 XToji.ai_damage）。O-131 o_profile_hits 见下。
 ## - 没移植（重制版尚无这些角色/系统）：奈叶小魔炮、米拉/渡鸦/宿傩等角色专属估算与 profile、Boss 霸体（CodexBossDifficulty）。
 ##   这些在正式版里也只对对应角色/敌人生效；随相关内容接入时补上。
 ## - 异化行动道具投影（祸祝、恶愿、逆祷，XAlienBattle.project）：见 o_projection。
@@ -24,6 +28,10 @@ static var _boss_ids := {}
 ## 全 0 分时退回「普攻打 HP 最低的敌人」（setTarget 敌人序号，投影成友方单体后落到同序号的队友）。
 ## true＝读投影；false＝照原版混读（方向、范围读投影，估值读原技能，退回目标落到同序号队友）
 static var o_projection := true
+## O-131（优化登记）：档案给了段数 hits 时，原版仍再乘 action.numRepeats（普攻带追加次数），甚尔游云「5＋追加」段又乘了
+## 一次（1＋追加），追加次数大于 0 时估伤翻倍（实战甚尔把目标收成一个，只打 hits 段）。true＝hits 就是总段数；false＝照原版相乘
+static var o_profile_hits := true
+static var _toji_formula_re := RegEx.create_from_string("^CodexToji\\.damage\\(a,b,1021[6-9],this\\)$")
 
 var logic: XBattleLogic
 var actor: XActor
@@ -146,17 +154,28 @@ static func formula_safe(formula: String) -> bool:
 	return RegEx.create_from_string("(?:^|[^=!<>])=(?!=)|\\+\\+|--").search(s) == null
 
 
+## 角色档案（registerProfile 依次问，第一个非空的；重制只有甚尔）
+static func profile(a: XBattler, rec: Dictionary) -> Dictionary:
+	return XToji.ai_profile(a, rec)
+
+
 func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var dmg: Dictionary = rec.get("damage", {})
 	var type := int(dmg.get("type", 0))
-	if not formula_safe(str(dmg.get("formula", "0"))):
-		return 0.0
-	# 正式 choose 暂时把 Math.random 固定为0.5；预览不能抽走实战随机数。
-	var preview := rec.duplicate()
-	preview.damage = dmg.duplicate()
-	if dmg.get("formulaGd") is String:
-		preview.damage.formulaGd = dmg.formulaGd.replace("randf()", "0.5")
-	var value := XDamage.eval_formula(preview, a, t, logic.vars())
+	var p := profile(a, rec)
+	var value := 0.0
+	var id := int(rec.get("id", 0))
+	if id >= 10216 and id <= 10219 and _toji_formula_re.search(str(dmg.get("formula", ""))) != null:
+		value = XToji.ai_damage(a, t, id, int(p.get("extra", 0)))  # 甚尔主技能：受控的估算函数
+	else:
+		if not formula_safe(str(dmg.get("formula", "0"))):
+			return 0.0
+		# 正式 choose 暂时把 Math.random 固定为0.5；预览不能抽走实战随机数。
+		var preview := rec.duplicate()
+		preview.damage = dmg.duplicate()
+		if dmg.get("formulaGd") is String:
+			preview.damage.formulaGd = dmg.formulaGd.replace("randf()", "0.5")
+		value = XDamage.eval_formula(preview, a, t, logic.vars())
 	if type in [3, 4]:
 		value = -value
 	var element := int(dmg.get("elementId", 0))
@@ -164,12 +183,17 @@ func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var defense := 1.0
 	if not type in [3, 4]:
 		defense = t.pdr if int(rec.get("hitType", 0)) == 1 else t.mdr if int(rec.get("hitType", 0)) == 2 else 1.0
-	var repeats := XBattleLogic.attack_repeats(a, rec, 1)  # action.numRepeats：普攻（isAttack，看 attackSkillId）时加追加次数
-	repeats *= int(rec.get("yepEffects", 1))
+	if float(p.get("pierce", 0.0)) > 0.0 and defense < 1.0:
+		defense += float(p.pierce) * (1.0 - defense)
+	var repeats := float(XBattleLogic.attack_repeats(a, rec, 1))  # action.numRepeats：普攻（isAttack，看 attackSkillId）时加追加次数
+	if p.has("hits") and o_profile_hits:
+		repeats = float(p.hits)
+	else:
+		repeats *= float(p.hits) if p.has("hits") else float(rec.get("yepEffects", 1))
 	var level := maxf(0.0, float(a.skillMasteryLevel(int(rec.id)))) if not is_item(rec) else 0.0
 	var m := RegEx.create_from_string("(?i)" + MASTERY_NOTE).search(str(rec.get("note", "")))
 	var mastery := 1.0 + level * (float(m.get_string(1)) if m else 0.10)
-	var extra := 1.0
+	var extra := float(p.get("multiplier", 1.0))
 	if type == 1 and a is XActor:
 		extra *= maxf(0.0, 1.0 + float(a.passive_cache().get("globalHarmRi", 0.0)))
 	var balance := 0.01 if a is XActor and int(a.data().get("id", 0)) >= 141 and int(a.data().get("id", 0)) <= 166 and type in [1, 2, 5, 6] else 1.0
@@ -184,7 +208,7 @@ func expected_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var v := 0.0
 	if damage > 0.0:
 		var hit := logic.item_hit(a, rec, t) * (1.0 - logic.item_eva(a, rec, t))
-		var crit := clampf(a.cri * (1.0 - t.cev), 0.0, 1.0) if bool(rec.get("damage", {}).get("critical", false)) else 0.0
+		var crit := clampf(a.cri * (1.0 - t.cev * XToji.cev_rate(a, rec)), 0.0, 1.0) if bool(rec.get("damage", {}).get("critical", false)) else 0.0  # itemCri（含甚尔五感包装）
 		v = damage * hit * (1.0 + crit * 0.5)
 	_damage_cache[key] = v
 	return v
@@ -360,6 +384,8 @@ func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary, dir := {}) ->
 	if targets.is_empty() or (XAlienBattle._mode(rec) == "wish" and not XAlienBattle.wish_affordable(actor, rec)):
 		return {"score": 0.0, "target": null}
 	var dmg_type := int(rec.get("damage", {}).get("type", 0))
+	var p := profile(actor, rec)
+	var splash := float(p.get("splash", 0.0))
 	var rows := []
 	for t in targets:
 		var score := recovery_utility(t, rec, item, d) if for_friend(d) else 0.0
@@ -373,6 +399,10 @@ func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary, dir := {}) ->
 			hit_damage = expected_damage(actor, t, rec)
 			hit_score = damage_utility(t, hit_damage, ctx.foes, ctx)
 			score += hit_score
+			if splash > 0.0 and not for_all(d):
+				for o in ctx.foes:
+					if o != t:
+						score += damage_utility(o, expected_damage(actor, o, rec) * splash, ctx.foes, ctx)
 		elif for_opponent(d) and dmg_type in [2, 6]:
 			score += 4000.0 * minf(t.mp, expected_damage(actor, t, rec)) / maxf(1.0, t.mmp)
 		rows.append({"target": t, "score": score, "hitDamage": hit_damage, "hitScore": hit_score})
@@ -403,7 +433,29 @@ func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary, dir := {}) ->
 	score *= cost_multiplier(rec, item)
 	if not item and not ctx.longFight and has_cooldown(rec):
 		score *= 0.94
+	if not ctx.get("noSetup", false) and p.has("followupSkill"):
+		score = maxf(score, (score + _followup_score(rec, int(p.followupSkill), ctx)) \
+			/ maxf(1.0, float(p.get("setupActions", 1)) + 1.0) * 0.92 * (0.6 if ctx.urgent else 1.0))  # duration 缺省 1
 	return {"score": score, "target": null if for_all(d) or random else best.target}
+
+
+## 铺垫后的后续技能分：付完本技能的 MP／TP／HP 代价（原版 Object.create 出的 future）后，后续技能按 noSetup 打分；不是伤害技能记 0
+func _followup_score(rec: Dictionary, follow_id: int, ctx: Dictionary) -> float:
+	var follow := XDB.rec("Skills", follow_id)
+	if not int(follow.get("damage", {}).get("type", 0)) in [1, 2, 5, 6]:
+		return 0.0
+	var c := logic.skill_cost(actor, rec)
+	var saved := [actor.hp, actor.mp, actor.tp]
+	actor.mp = maxf(0.0, actor.mp - float(c.mp))
+	actor.tp = maxf(0.0, actor.tp - float(c.tp))
+	actor.hp = maxf(1.0, actor.hp - float(XBattleLogic.skill_hp_cost(actor, rec)))
+	var sub := ctx.duplicate()
+	sub.noSetup = true
+	var r := score_candidate(follow, false, sub)
+	actor.hp = saved[0]
+	actor.mp = saved[1]
+	actor.tp = saved[2]
+	return maxf(0.0, float(r.score))
 
 
 func _choose() -> Dictionary:
@@ -428,9 +480,11 @@ func _choose() -> Dictionary:
 			scale = maxf(scale, expected_damage(actor, t, rec) * reps)
 	context.damageScale = scale
 	var best_attack := 0.0
+	var no_setup := context.duplicate()
+	no_setup.noSetup = true
 	for c in candidates:
 		if int(c.eval.get("damage", {}).get("type", 0)) in [1, 5]:
-			best_attack = maxf(best_attack, float(score_candidate(c.eval, false, context, c.dir).score))
+			best_attack = maxf(best_attack, float(score_candidate(c.eval, false, no_setup, c.dir).score))
 	var whole := 0.0
 	for t in foes:
 		whole += damage_utility(t, t.hp + shield_points(t), foes)

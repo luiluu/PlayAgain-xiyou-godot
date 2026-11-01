@@ -7,7 +7,8 @@ extends Node
 ## 各段都自己开新局，三个场景断言合计与不拆时相同。不设时四段全跑。
 @export var sections: Array = ["gate", "legion", "farm", "boss"]
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
-const TIMEOUT_MS := 90000
+const TIMEOUT_MS := 90000  # 墙钟与帧数（60 帧/秒折算）都过了、事件也不再推进才算卡住，见 wait_budget.gd
+const WaitBudget := preload("res://tests/wait_budget.gd")
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
 
@@ -41,8 +42,8 @@ func _scene() -> Node:
 
 
 func _wait_map(map_id: int) -> bool:
-	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var w := WaitBudget.new(TIMEOUT_MS)
+	while w.waiting():
 		var s = _scene()
 		if s is XMapScene and s.map_id == map_id and s.player != null and not s.busy:
 			return true
@@ -90,6 +91,15 @@ func _battle_of(map: XMapScene) -> XBattleScene:
 	return null
 
 
+## 事件进度签名：打完的场数、当前战斗（哪一场、第几回合、敌人剩几个）、还没用掉的自动回答
+func _progress(map: XMapScene) -> Array:
+	var b := _battle_of(map)
+	var alive := -1
+	if b != null:
+		alive = b.logic.enemies.filter(func(en): return en.is_alive()).size()
+	return [battles.size(), b.get_instance_id() if b != null else 0, b.logic.turn if b != null else -1, alive, XMessageBox.auto_answers.size()]
+
+
 ## 跑一个事件到结束；mode：""＝不干预，"win"＝战斗一开始击倒全部敌人，"lose"＝击倒全部队员
 func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
 	var e := _event(map, id)
@@ -105,8 +115,9 @@ func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
 	(func():
 		await map.run_event(e)
 		st.done = true).call()
-	var t0 := Time.get_ticks_msec()
-	while not st.done and Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	# 事件还在推进（打完一场、换了一场、回合往前、答了一句）就续等，不单靠墙钟（tools30）
+	var w := WaitBudget.new(TIMEOUT_MS)
+	while not st.done and w.waiting(_progress(map)):
 		var b := _battle_of(map)
 		if b != null and not b.logic.enemies.is_empty():
 			if mode == "win":

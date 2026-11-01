@@ -8,7 +8,7 @@ extends RefCounted
 const WARDROBE_EVENT := 1343
 const META := "item_bag_pending"
 
-## O-待定：原版快照不含 TP，回 TP 的道具（能量药剂、无尽哈啤等）明明加了 TP，提示却是「已使用」，不消耗的直接说
+## O-133：原版快照不含 TP，回 TP 的道具（能量药剂、无尽哈啤等）明明加了 TP，提示却是「已使用」，不消耗的直接说
 ## 「未检测到效果……（请检查使用条件）」。重制把每个角色的 TP 也记进快照。设为 false 恢复原版（专项两边都跑）。
 static var snapshot_tp := true
 

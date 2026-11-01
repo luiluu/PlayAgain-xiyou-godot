@@ -9,7 +9,7 @@ extends RefCounted
 ##   （文字跳过、选项选第 0 项「赢下所有」、最外层跳过 212／230），抽取中 $.toaster 静音（XMapScene.toast）。
 ##   最外层缩进 5 的选项记「二阶段」，抽取中 learnSkill(8101) 记「欧皇达标」（这里看本抽新增的全员技能操作）。
 ## - finish：记 last_result，关掉弹窗，抽过才加一句三行（停下的再加原因）结果消息。
-## O-待定（一抽没跑就结束要说明）：原版点「开始抽取」后第一抽前就停（积分已低于门槛、赌场已关）时 used 为 0，不出任何消息，
+## O-132（一抽没跑就结束要说明）：原版点「开始抽取」后第一抽前就停（积分已低于门槛、赌场已关）时 used 为 0，不出任何消息，
 ## 弹窗直接消失；重制加一句「未开始」与原因。取消不算。恢复方法：`XCasinoBatch.notify_unstarted = false`。
 
 const TICKET := 1639
@@ -24,7 +24,7 @@ const MODES := {
 const DRAWS_PER_FRAME := 4
 ## 原版每帧抽取的时间上限（毫秒）；专项为对齐参照放宽
 static var frame_budget_ms := 8
-## O-待定：一抽没跑就结束时说明原因；false 恢复原版（不出消息）
+## O-132：一抽没跑就结束时说明原因；false 恢复原版（不出消息）
 static var notify_unstarted := true
 ## 进行中的一局（原版 C.session）；没有为空字典
 static var session: Dictionary = {}

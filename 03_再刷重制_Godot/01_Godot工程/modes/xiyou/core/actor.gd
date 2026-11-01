@@ -213,6 +213,8 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 		return
 	if XMira.resists(self, id):
 		return  # 米拉终焉 isStateResist／addState 包装：黑龙形态挡名单状态
+	if XToji.blocks_state(self, id):
+		return  # 甚尔 addState 包装：暴君挡负面状态
 	var fresh := not state_ids.has(id)
 	super(id, random)
 	if fresh and state_ids.has(id) and lifecycle_context.get("resources") == null:
@@ -223,6 +225,7 @@ func remove_state(id: int) -> void:
 	super(id)
 	if had:
 		release_to_party()
+	XToji.revived(self, id, had)  # 甚尔 removeState 包装：战斗中复活且没有形态时回游云
 
 func refresh_resources(random: XRandomStream = null) -> void:
 	super(random)
@@ -392,6 +395,7 @@ func learn_skill(id: int) -> void:
 	if not skill_ids.has(id) and not XDB.rec("Skills", id).is_empty():
 		skill_ids.append(id)
 		skill_ids.sort()
+	XToji.learned(self, id)  # 甚尔 learnSkill 包装：学暴君时清负面状态与弱化
 
 func forget_skill(id: int) -> void:
 	if XPowerBooks.protected_forget(self, id):
@@ -415,7 +419,9 @@ func native_skills() -> Array:
 
 func skills() -> Array:
 	var ids: Array[int] = native_skill_ids()
+	XYunshang.skill_ids(self, ids)  # 云裳 skills 包装（在异化之内）：天衣给的赠行／收存余光
 	ids.assign(XAlienBattle.skill_ids(self, ids))  # 异化百相、无面 skills 包装（Affixes:21）：拿掉被替换的，加借来的、仿形与切换
+	ids.assign(XGuyu.skill_ids(self, ids))  # 谷雨 skills 包装：先许一枝开 10 级起、绽放不列、其余按解锁
 	if XAlienBattle.devours(self):  # 异化饕餮 skills 包装（Adv:86）：战斗中多吞噬技能（原版 push 不去重）
 		ids.append(XAlienBattle.devour_id())
 	return _skill_records(ids)
@@ -662,7 +668,7 @@ func param(i: int) -> float:
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:
-	return XCat.param(self, i, final_clamp(i, XActorModules.param(self, i, super.param(i))))
+	return XCat.param(self, i, final_clamp(i, XYunshang.battle_param(self, i, XActorModules.param(self, i, super.param(i)))))  # 云裳包装的战斗内层（六衡、万法、御风）
 
 ## 云裳 installNativeYunshangRuntime 的 Game_Actor.param 包装（模块表第 30 个，在米拉、黄泉、甚尔、宿傩、饿狼之后，异化、种族之前）：
 ## 对所有角色最后 round(max(HP?1:0, min(paramMax, v)))，专属倍率乘过上限的压回上限（八戒 toji2；参照 param_max_probe）。

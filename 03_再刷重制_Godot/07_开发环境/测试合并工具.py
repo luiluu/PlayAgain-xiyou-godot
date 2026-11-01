@@ -594,6 +594,47 @@ class ParallelTestRunnerTests(unittest.TestCase):
         p, _ = self.run_tests('--full', jobs=3, BUSY='1', XIYOU_TEST_HEARTBEAT='0')
         self.assertNotIn('进行中：完成', p.stdout)
 
+    def test_express_lane_skips_full_slots_for_short_single_scene(self):
+        """tools30：共用槽全被占着时，一个上次只跑 1 秒的场景走快车道直接跑；快车道也被占或关掉时照常排队。"""
+        import fcntl
+        self.state.mkdir(parents=True, exist_ok=True)
+        (self.state / 'slots').mkdir(exist_ok=True)
+        (self.state / 'timings.json').write_text(json.dumps({'a.tscn': 1.0, 'b.tscn': 120.0}))
+        hold = open(self.state / 'slots' / '0.lock', 'a')
+        fcntl.flock(hold, fcntl.LOCK_EX)
+        try:
+            t0 = time.monotonic()
+            p, runs = self.run_tests('--full', 'a.tscn', CHECK_GLOBAL_JOBS='1')
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            self.assertEqual(runs, ['a.tscn'])
+            self.assertIn('快车道', p.stdout)
+            self.assertLess(time.monotonic() - t0, 20)
+            # 上次实测超过上限的、关掉开关的、快车道正被别人用的：都照常排队（这里共用槽一直占着，排不上，被超时杀掉前没跑）
+            for args, env in [(('--full', 'b.tscn'), {}), (('--full', 'a.tscn'), {'XIYOU_SLOT_EXPRESS': '0'})]:
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    self.run_tests_timeout(args, 4, CHECK_GLOBAL_JOBS='1', **env)
+            express = open(self.state / 'slots' / 'express.lock', 'a')
+            fcntl.flock(express, fcntl.LOCK_EX)
+            try:
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    self.run_tests_timeout(('--full', 'a.tscn'), 4, CHECK_GLOBAL_JOBS='1')
+            finally:
+                express.close()
+        finally:
+            hold.close()
+
+    def run_tests_timeout(self, args, timeout, **env):
+        cmd = [sys.executable, str(HERE / '并行测试.py'), '--jobs', '1', str(self.godot), str(self.tmp / 'proj'), *args]
+        base = {k: v for k, v in os.environ.items() if k not in ('CHECK_FULL', 'CHECK_JOBS', 'CHECK_LOG_DIR')}
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True,
+                             env=dict(base, XIYOU_TEST_STATE_DIR=str(self.state), XIYOU_TEST_HEARTBEAT='0', **env))
+        try:
+            return p.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            os.killpg(p.pid, 9)
+            p.communicate()
+            raise
+
     def test_global_slot_limit_across_runners(self):
         cmd = [sys.executable, str(HERE / '并行测试.py'), '--jobs', '3', '--full', str(self.godot), str(self.tmp / 'proj')]
         base = {k: v for k, v in os.environ.items() if k not in ('CHECK_FULL', 'CHECK_JOBS', 'CHECK_LOG_DIR')}
@@ -1968,6 +2009,55 @@ for name in filter(None, files):
         self.put(str(rel), body.replace('\n# 段 2\n', '\n# 段 2\n' + dup))
         self.g('commit', '-a', '--amend', '--no-edit')
         self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+
+    def test_prepare_fix_folds_into_merge_with_guard(self):
+        """tools29：准备阶段停在解析检查时，真实守卫不收手动 amend；改好留成未提交、重跑加 --also，由工具并进合并提交。"""
+        hook = self.root / '.git/hooks/pre-commit'
+        shutil.copy2(HERE / 'git-hooks/main-guard.sh', hook); hook.chmod(0o755)
+        rel = merge.PROJECT / 'modes/marks.gd'
+        body = 'extends RefCounted\n\nstatic func a() -> int:\n\treturn 1\n' + ''.join('\n# 段 %d\n' % i for i in range(12)) + '\nstatic func z() -> int:\n\treturn 2\n'
+        self.put(str(rel), body); self.g('add', '.')
+        subprocess.run(['git', '-C', str(self.root), 'commit', '-m', 'marks'], check=True, capture_output=True,
+                       env=dict(os.environ, XIYOU_MAIN_COMMIT='1'))
+        self.g('merge', 'main', cwd=self.wt)
+        dup = '\nstatic func is_super_strong(id: int) -> bool:\n\treturn id > 0\n'
+        (self.wt / rel).write_text(body.replace('\n# 段 2\n', '\n# 段 2\n' + dup))
+        self.g('commit', '-am', 'lane adds is_super_strong', cwd=self.wt)
+        self.put(str(rel), body + dup); self.g('add', '.')
+        subprocess.run(['git', '-C', str(self.root), 'commit', '-m', 'main adds is_super_strong'], check=True, capture_output=True,
+                       env=dict(os.environ, XIYOU_MAIN_COMMIT='1'))
+        base = self.g('rev-parse', 'HEAD')
+        self.assertEqual(self.call(), 1, self.last_output)
+        self.assertIn('解析检查不通过', self.last_output)
+        self.assertIn('--also', self.last_output)
+        self.assertNotIn('git commit --amend', self.last_output)
+        merged = self.g('rev-parse', 'HEAD')
+        fixed = body.replace('\n# 段 2\n', '\n# 段 2\n' + dup)
+        self.put(str(rel), fixed)
+        # 提示过去写的「git commit --amend」：合并进行中守卫照拦（XIYOU_MAIN_COMMIT=1 也不放行）
+        r = subprocess.run(['git', '-C', str(self.root), 'commit', '-a', '--amend', '--no-edit'], capture_output=True, text=True,
+                           env=dict(os.environ, XIYOU_MAIN_COMMIT='1'))
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('--also', r.stderr)
+        # 不点名：拒绝并说出路
+        self.assertEqual(self.call(), 1, self.last_output)
+        self.assertIn(str(rel), self.last_output)
+        self.assertIn('--also', self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), merged)
+        # 点了别的文件：照拒
+        self.assertEqual(self.call('--also', 'AGENTS.md'), 1, self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), merged)
+        self.assertEqual(self.call('--also', str(rel)), 0, self.last_output)
+        self.assertIn('已把修正并进合并提交', self.last_output)
+        head = self.g('rev-parse', 'HEAD^{commit}')
+        state = json.loads((self.root / '.git/lane-merge/state.json').read_text())
+        self.assertEqual(state['mergeCommit'], self.g('rev-list', '-n', '1', '--grep', '^合并 claude/task', 'HEAD'))
+        merge_commit = state['mergeCommit']
+        self.assertEqual(self.g('rev-list', '--parents', '-n', '1', merge_commit).split()[1:], [base, self.g('rev-parse', 'claude/task')])
+        self.assertEqual(self.g('show', merge_commit + ':' + str(rel)), fixed.rstrip('\n'))
+        self.assertIn('执行者: cc（唐僧）', self.g('log', '-1', '--format=%B', merge_commit))
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
 
