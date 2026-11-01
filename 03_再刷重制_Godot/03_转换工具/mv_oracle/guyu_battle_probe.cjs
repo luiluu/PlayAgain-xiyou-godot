@@ -4,13 +4,21 @@
 // Game_Action.apply 包装的 doSpecial（花期 open、终结 finish）、绽放 G.bloom、evalDamageFormula 绽放与终结、胜利掉进阶石 rollStone）。
 // 真实 BattleManager：setup→startBattle→推进到第一次输入；之后每步 startAction→行动列表→endAction、或 endTurn＋startTurn。
 // 队伍 [175, 1] 同级（进阶按例）、开 2494；敌人生命加 1e9（不夹值，绽放、终结打不死）；Math.random 0.5。
-// 不碰二期 B：1 号与谷雨都不挨打（没有代命、归根），不用花荫、转移。
+// 去掉五乘区与路线压制两个伤害钩子（O-050 不移植）。不碰二期 B：1 号与谷雨都不挨打（没有代命、归根），不用花荫、转移。
 // 每步记 executeHpDamage（技能、出手者、目标、生命伤害，治疗为负）与之后的快照（回合、花期到哪回合、冷却、花期序号、种子、
 // 两人的储备、储备上限、最大生命、不含储备的最大生命、生命，五个主动技条件，累计）。只在内存，产物 .sandbox/guyu_battle.json。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
 const G = w.Guyu;
 if (!G || typeof G.bloom !== 'function') throw new Error('谷雨模块未安装');
+// 用户 10-12 定不移植五乘区与超强者路线压制（O-050）：去掉这两个伤害钩子，参照只量谷雨本身
+// （否则谷雨给队友的治疗 ×0.5、各人伤害再乘成长修正，储备数跟着变）
+const hooks = w.CodexDamageHooks || [];
+for (const name of ['route-suppress', 'zones-correction']) {
+  const i = hooks.findIndex(h => h.name === name);
+  if (i < 0) throw new Error('伤害钩子 ' + name + ' 不在');
+  hooks.splice(i, 1);
+}
 const stub = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprites = new Map();
 w.Game_Battler.prototype.battler = function () {

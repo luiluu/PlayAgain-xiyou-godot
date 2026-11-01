@@ -24,6 +24,9 @@ var _random: XRandomStream
 
 ## evalDamageFormula 的异化包装（逆骨）：公式求值期间压公式帧
 static func run_item(item: Dictionary, a: XBattler, b: XBattler, variables, switches := {}, execute := false, random: XRandomStream = null, resource_context: XResourceContext = null) -> Dictionary:
+	var guyu = XGuyu.formula(item, a, b, true)  # 谷雨 evalDamageFormula 包装（异化之外）：治疗按最大生命比例、绽放与终结按威力
+	if guyu != null:
+		return {"available": true, "value": float(guyu), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	XAlienBattle.push_formula(item, a, b, true)
 	var out := _run_item(item, a, b, variables, switches, execute, random, resource_context)
 	XAlienBattle.pop_formula()

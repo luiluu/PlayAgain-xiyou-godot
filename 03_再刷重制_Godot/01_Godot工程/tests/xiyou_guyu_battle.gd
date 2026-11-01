@@ -62,6 +62,8 @@ func _battle(level: int, rank: int) -> XBattleLogic:
 		s.actor(id).refresh_passive()
 		s.actor(id).recover_all()
 	var logic := XBattleLogic.new()
+	logic.elite_roll = 99.0  # 参照开战时 Math.random 0.99：不出神话、等级浮动取高端
+	logic.level_roll = 0.99
 	logic.setup(3, s, _random())
 	for e in logic.enemies:
 		var p: Array = (e.data().params as Array).map(func(v): return float(v))
