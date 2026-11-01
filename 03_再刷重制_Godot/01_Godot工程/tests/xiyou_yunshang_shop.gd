@@ -12,6 +12,7 @@ extends Node
 ## - p8.clear：不朽的未知战斗胜利给天丝（来源地图、Leviathan 来源、难度变量 107、unpaired、10280 偶数次多 1、逃跑与别的敌群不给、每场一次）。
 ## - p8.advance：进阶页按键走一遍云裳的进阶（条件不够的提示、选天衣页、取消、灰行、确认窗字、进阶后的碎片／天衣／技能／账本），再比两次进阶后的提示。
 ## - p8.fallback：本档的账本记录缺失时首页是兜底页，确定关页；Y.submit 的提示。
+## - p9：图标格号（技能与天衣等走 HD 图集，32／128 两种大小、四边透明）、织神天梭说明（等级 1／5／888）、天衣说明的粉色与粉色窗口皮。
 ## - p8.lose.sell／.base：领取后穿上卸下（不记）、商店卖出（XItemMarks.sell，记移除）／按底子扣（s.gain_gear 负数，不记），再读领取前的档；
 ##   重制另比存进方桌仓库（XWarehouse.deposit＝原版 loseItem，同卖出）与星级仓库（直接改 _armors，同按底子扣）。
 const FIXTURE := "res://tests/fixtures/yunshang_oracle.json"
@@ -203,6 +204,7 @@ func _run() -> void:
 	await p8_fallback()
 	for how in ["sell", "base", "warehouse", "star"]:
 		p8_lose(how)
+	p9_display()
 	XGear.force_roll = -1.0
 	finish()
 
@@ -567,6 +569,51 @@ func p8_lose(how: String) -> void:
 	at.call("lost")
 	check(id + "." + how + ".load", XSave.load_slot(3))
 	at.call("reloaded", {"seq": XState.current.flags.get(XYunshangOrders.SEQ_FLAG)})
+
+
+
+## 显示：图标、织神天梭说明、天衣粉色
+func p9_display() -> void:
+	for pair in cases["p9.icons"].out:
+		var want := int(pair[1]) if pair[1] != null else -1
+		same("p9.icons.%d" % int(pair[0]), XYunshang.icon_slot(int(pair[0])), want)
+	var t := XUI.icon_texture(130270)
+	check("p9.icons.texture32", t != null and t.get_size() == Vector2(32, 32), t)
+	var big := XItemStatusPainter.large_icon(210118)
+	check("p9.icons.texture128", big != null and big.get_size() == Vector2(128, 128), big)
+	var img := XYunshang.icon_image(210118)
+	check("p9.icons.pad", img != null and img.get_pixel(2, 2).a8 == 0 and img.get_pixel(125, 125).a8 == 0 and img.get_pixel(64, 64).a8 > 0)
+	check("p9.icons.native", XUI.icon_texture(100) != null and XUI.icon_texture(100).atlas.resource_path.contains("IconSet_1"))
+	var s := new_cloud(45)
+	var i := 0
+	for want in cases["p9.relicHelp"].out:
+		s.gain_gear("armor", XYunshang.RELIC, 1)
+		var r: Dictionary = s.gear[s.gear.size() - 1]
+		r.level = int(want.level)
+		r.exp = int(want.exp)
+		same("p9.relicHelp%d" % i, XHelpCard.desc_params(r, 2).map(func(x): return [x[0], x[1], x[2]]), want.rows)
+		i += 1
+	for want in cases["p9.robeHelp"].out:
+		s.gain_gear("armor", int(want.id), 1)
+		var r: Dictionary = s.gear[s.gear.size() - 1]
+		same("p9.robeHelp%d.rows" % int(want.id), XHelpCard.desc_params(r, 2).map(func(x): return [x[0], x[1], x[2]]), want.rows)
+		same("p9.robeHelp%d.color" % int(want.id), XQuality.color_text(r), want.normal)
+		var card := XHelpCard.new()
+		add_child(card)
+		card.show_for(r, "armor")
+		check("p9.robeHelp%d.skin" % int(want.id), card.robe_card)
+		card.queue_free()
+	var relic := XDB.rec("Armors", XYunshang.RELIC)
+	check("p9.relic.not_pink", XQuality.color_text(relic) != XYunshang.ROBE_COLOR and not XYunshang.is_robe(relic) and not XYunshang.is_robe(XDB.rec("Skills", 7920)))
+	# 粉色窗口皮：每个不透明像素＝粉色×(0.18＋0.82×亮度)
+	var path := XDB.img_path("system", "Window12")
+	var src: Image = (load(path) as Texture2D).get_image()
+	src.decompress()
+	var tinted: Image = XYunshang.robe_skin(path).get_image()
+	var c := src.get_pixel(40, 40)
+	var shade := 0.18 + 0.82 * (c.r8 * 0.2126 + c.g8 * 0.7152 + c.b8 * 0.0722) / 255.0
+	var g := tinted.get_pixel(40, 40)
+	check("p9.skin", c.a8 == 0 or (g.r8 == roundi(255 * shade) and g.g8 == roundi(169 * shade) and g.b8 == roundi(202 * shade) and g.a8 == c.a8), [c, g])
 
 
 func finish() -> void:

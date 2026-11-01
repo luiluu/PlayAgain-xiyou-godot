@@ -55,6 +55,7 @@ static var REAL_SELL_PRICE := true
 
 var rows: Array = []          # content() 的结果
 var quality := 0
+var robe_card := false      # 云裳天衣：窗口皮换成粉色
 var min_font := MIN_FONT
 ## 卡宽（Sprite_ItemHelp 构造参数；人物图鉴技能详情为 727，其余 400）
 var card_width := WIDTH
@@ -147,7 +148,7 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 			_prices(obj, rows)
 			pos[2] = rows.size()
 		1, 2:
-			var params: Array = obj.get("params", [])
+			var params: Array = obj.get("params", []) if not XYunshang.relic_item(obj) else XYunshang.relic_params(obj)
 			for i in range(params.size()):
 				if params[i] != null and float(params[i]) != 0.0:
 					rows.append([str(terms.get("params", [])[i]) + ":" + _num(params[i]), OTHER_SIZE, PARAM_COLORS[i], false, null])
@@ -164,6 +165,8 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 			pos[4] = rows.size()
 	for line in str(obj.get("note", "")).split("\n"):
 		_extra_row(rows, pos, line.strip_edges(false, true), normal)
+	if type == 2 and XYunshang.relic_item(obj):
+		_relic_rows(obj, rows, pos)
 	# ItemQuality：<pos=AD text=品质：名称 size=18 color=normalcolor line=false align=0>
 	_extra_row(rows, pos, "<pos=AD text=品质：%s size=18 color=normalcolor line=false align=0>" % XQuality.grade_name(obj), normal)
 	# 西游 v0.15 Q.labelRows：所有「品质：」行换成七档名称，装备带标签（品质：不朽（传家宝））
@@ -176,6 +179,18 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 	for r in rows:
 		r[0] = _terms(str(r[0]))
 	return rows
+
+
+## 云裳 getDescParams 包装：织神天梭在「等级需求：1」后面（没有就在 APs 位置）插等级与法宝经验两行
+static func _relic_rows(obj: Dictionary, rows: Array, pos: Array) -> void:
+	var lv := int(XMagicWeapon.level_of(obj))
+	var top := int(XMagicWeapon.max_level(obj))
+	var xp := int(XMagicWeapon.exp_of(obj))
+	var at := rows.find_custom(func(r): return str(r[0]) == "等级需求：1")
+	at = at + 1 if at >= 0 else int(pos[3])
+	var lines := ["当前等级：%d / %d" % [lv, top], "法宝经验：%d" % xp + ("（已满级）" if lv >= top else " / %d" % int(XMagicWeapon.next_level_exp(obj)))]
+	for i in lines.size():
+		rows.insert(at + i, [lines[i], OTHER_SIZE, "rgba(255,255,255,1)", false, 0])
 
 
 static func _prices(obj: Dictionary, rows: Array) -> void:
@@ -686,6 +701,7 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 		return
 	rows = content(obj, kind, skill_copy)
 	quality = _quality(obj)
+	robe_card = XYunshang.is_robe(obj)
 	_apply(note_width(obj, card_width))
 	_set_extras(obj if with_extras and visible else {})
 
@@ -695,6 +711,7 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 func show_text(text: String) -> void:
 	rows = [[text, OTHER_SIZE, "#ffffff", false, 0]]
 	quality = 0
+	robe_card = false
 	_apply(card_width)
 	_set_extras({})
 
@@ -847,7 +864,8 @@ func _draw_frame() -> void:
 	var skin_path := XDB.img_path("system", "Window%d" % XQuality.window_skin(quality))
 	_frame_style = XUI.panel(60)
 	if skin_path != "":
-		_frame_style.skin = load(skin_path)
+		# 云裳 Sprite_ItemHelp.drawBackground 包装：天衣的说明卡用改成粉色的 Window12
+		_frame_style.skin = XYunshang.robe_skin(XDB.img_path("system", "Window12")) if robe_card else load(skin_path)
 	_frame_style.back_opacity = 60.0 / 255.0
 	for i in range(4):
 		frame.draw_style_box(_frame_style, Rect2(Vector2.ZERO, frame.size))
