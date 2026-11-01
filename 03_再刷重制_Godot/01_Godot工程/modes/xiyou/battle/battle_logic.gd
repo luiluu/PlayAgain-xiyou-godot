@@ -1801,7 +1801,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 ## 正 → pushStates 给目标、pushSelfStates 给自己；负 → recPushStates 给目标（不看阵营，同原版）；只认角色行动者，异化虚空的攻击伤害除外；
 ## 每条按概率掷（Math.random()*100 < p），目标已有就不挂。由 XDamage.finish 在 Confirm／固定减伤之后、React 之前调（参照 pushstate order.1580）。
 var _push_sign := 0.0
-## O-待定（审查 17 P2）：归墟（异化 void）的攻击类伤害（类型 1／2／5／6）不挂 PushState／PushsubState。原版 installDamageElementRuntime
+## O-134（审查 17 P2）：归墟（异化 void）的攻击类伤害（类型 1／2／5／6）不挂 PushState／PushsubState。原版 installDamageElementRuntime
 ## 本意如此，但排除写成 CodexAlienation.isAttackDamage(this)，_after 回调是直调的、严格模式下 this 为 undefined，恒为假，排除从没生效
 ## （正式引擎实测照挂，参照 pushstate void.*）。true 照本意排除；false 恢复原版照挂。
 static var VOID_PUSH_EXCLUDE := true

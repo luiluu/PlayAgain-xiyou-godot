@@ -3,7 +3,7 @@ extends Node
 ## （mv_oracle/casino_batch_probe.cjs，12 例，Math.random 固定 0.5）：真地图 Map004，地图解释器（事件 60）跑大厅 EV60 那句
 ## CodexCasino.open 脚本，在数量框里填数／MAX／取消、开始抽取，抽取中按例关赌场或点停止。
 ## 比：开没开、数量框文字（标签、预览、MAX 后）、抽取结果（次数、积分、券、停止原因、前 20 抽样本）、结果消息、提示静音、
-## 抽后的变量与全员技能。O-待定（一抽没跑就结束要说明）：先关掉开关对原版，再开着看「未开始」消息。
+## 抽后的变量与全员技能。O-132（一抽没跑就结束要说明）：先关掉开关对原版，再开着看「未开始」消息。
 var checks := 0
 var failures: Array = []
 var map: XMapScene

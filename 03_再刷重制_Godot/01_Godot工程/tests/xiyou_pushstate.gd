@@ -1,7 +1,7 @@
 extends Node
 ## 【cc·悟空·未经审查】伤害／治疗时挂状态（dsPassiveSkill PushState／RecPushState／PushsubState，正式版由 installDamageElementRuntime
 ## 在结算时按 makeDamageValue 正负挂）：与 mv_oracle/pushstate_probe.cjs（tests/fixtures/pushstate_oracle.json，正式引擎）23 例逐条比（含装备上的标签：武器 1706、防具 4966；order.1580 记原版挂状态在 React 之前；invoke.reflect／counter／cover 走 _invoke：反射回自己时挂给自己、反击由反击者挂、掩护挂给代受者）。
-## void.*（审查 17 P2）：归墟角色的攻击伤害原版照挂（排除写错），O-待定开关 VOID_PUSH_EXCLUDE 两支都跑；plain.1580.apply 是整条 apply 的对照。
+## void.*（审查 17 P2）：归墟角色的攻击伤害原版照挂（排除写错），O-134 开关 VOID_PUSH_EXCLUDE 两支都跑；plain.1580.apply 是整条 apply 的对照。
 ## 每例：新局难度 2，角色 1 清技能／装备／状态后学被动，角色 8 生命 1 当友方目标，敌群 1 第一只当敌方目标；行动技能公式定 1000、无浮动不暴击，
 ## 命中、闪避固定成命中，挂状态的掷骰固定成用例的 rnd；比缓存三类条数、正负、前后状态与回合数（已有不重挂＝回合不被重置）。
 const FIXTURE := "res://tests/fixtures/pushstate_oracle.json"
@@ -156,7 +156,7 @@ func _run() -> void:
 				and (o.guard == null or inv.guard.states == o.guard.states), [inv, o.actor, o.foe, o.guard])
 			continue
 		if str(c.id).begins_with("void."):
-			# O-待定（审查 17 P2）：关掉开关照原版（归墟攻击照挂），再开着看攻击伤害不挂、治疗照挂
+			# O-134（审查 17 P2）：关掉开关照原版（归墟攻击照挂），再开着看攻击伤害不挂、治疗照挂
 			XBattleLogic.VOID_PUSH_EXCLUDE = false
 			var native := _case(c.setup)
 			XBattleLogic.VOID_PUSH_EXCLUDE = true

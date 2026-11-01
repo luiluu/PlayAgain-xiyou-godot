@@ -3,7 +3,7 @@ extends Node
 ## （mv_oracle/item_bag_probe.cjs，11 例）：真地图 → 主菜单 → 物品页 → 使用（对队友的选第 1 位）。
 ## 比：当场的结果提示（主说明卡／toaster）、是否回地图、事件跑完后回到物品页的分类与选中、回来后的提示、队伍与数量。
 ## 「换画面」一例在物品页关掉后往地图 ui 里加一个页面（原版 Scene_Map.stop 时下一个是 Scene_Battle）。
-## O-待定（快照记 TP）：回 TP 两例先关掉开关对原版，再开着看改成「已生效」。
+## O-133（快照记 TP）：回 TP 两例先关掉开关对原版，再开着看改成「已生效」。
 var checks := 0
 var failures: Array = []
 var map: XMapScene
