@@ -7,6 +7,9 @@ extends Control
 ## - 护盾（ShieldSystem 钩 Window_BattleSideHP.refresh）：护盾大于 0 时，在 HP 条上按 max(生命上限, HP＋护盾) 折算，
 ##   从 HP 位置到 HP＋护盾位置叠一段蓝色 rgba(0,136,255,0.7)（高 6，贴行底）；HP 字样右侧 6px 写「盾＋数值」（12 号、#88ccff、描边黑 0.7，万／亿／兆…一位小数）。
 ##   画面对照（八戒_50，原版参照 battle_shield_side）：蓝段四种情形逐像素一致。
+## - 谷雨（installNativeGuyuRuntime 489～510，参照 guyu_ui_probe）：护盾数值与蓝段按合计（其他来源＋花荫账本，XGuyu.total_shield）；
+##   谷雨在队的战斗中名字行右侧写状态字（XGuyu.status_text：储备、归根／待绽／花期／生长）：名字宽收到 floor(200×0.38)＝76，
+##   状态字 10 号（max(10, floor(16×0.68))）、#b7ead0，在 76～200 之间靠右。
 ## - 状态格（installEquipmentStatusRuntime）：(−36, 20) 36×36，有图标状态时每 1.4 秒轮换显示一个，否则深色方块里写「i」。
 ## - 轮到输入或正在行动的角色左移 48，被选为目标时左移 24，每帧移动 4px。
 
@@ -25,6 +28,11 @@ const SHIELD_SEG := Color8(0, 136, 255, 179)
 const SHIELD_COLOR := Color("#88ccff")
 ## ShieldSystem 设 outlineColor rgba(0,0,0,0.7)、outlineWidth 2；宽度被正式版封顶 0.75px（同通用细描边），颜色照设
 const SHIELD_OUTLINE := Color(0, 0, 0, 0.7)
+## 名字子窗口宽（Window_BattleSideStatus 宽 296 − 2×ActiveBattlerMove 48）
+const NAME_W := 200.0
+const GUYU_SPLIT := 76.0
+const GUYU_FS := 10
+const GUYU_COLOR := Color("#b7ead0")
 
 var actor: XActor
 ## 演出中的读数（XBattleScene.show_views 设、clear_views 清）；空时读实时状态
@@ -91,10 +99,13 @@ func _paint(c: XMVCanvas) -> void:
 		c.text("i", ox - 36, 20, 32, "center", XUI.TEXT, 22, 36)
 	else:
 		c.icon(icons[_cycle % icons.size()], ox - 36, 20)
-	# 名字
-	c.text(actor.display_name(), ox + PAD, 6, 200, "left", _hp_color(), FS, LH)
-	# HP / MP / TP
+	# 名字（谷雨状态字在右）
 	var v := _v()
+	var info := str(v.get("guyu_text", ""))
+	c.text(actor.display_name(), ox + PAD, 6, GUYU_SPLIT if info != "" else NAME_W, "left", _hp_color(), FS, LH)
+	if info != "":
+		c.text(info, ox + GUYU_SPLIT, 6, NAME_W - GUYU_SPLIT, "right", GUYU_COLOR, GUYU_FS, LH)
+	# HP / MP / TP
 	_param(c, ox + 8 + PAD, 28, "HP", v.hp, v.mhp, XUI.GAUGES.hp, _hp_color(), true)
 	_shield(c, ox + 8 + PAD, 28, v)
 	_param(c, ox + 16 + PAD, 50, "MP", v.mp, v.mmp, XUI.GAUGES.mp, XUI.TEXT, true)
@@ -105,11 +116,11 @@ func _v() -> Dictionary:
 	if not view.is_empty():
 		return view
 	return {"hp": actor.hp, "mhp": actor.mhp, "mp": actor.mp, "mmp": actor.mmp, "tp": actor.tp, "mtp": actor.max_tp(), "dead": actor.is_dead(),
-		"shield": actor.shield}
+		"shield": actor.shield, "guyu_shield": XGuyu.shield_of(actor), "guyu_text": XGuyu.status_text(actor)}
 
 
 func _shield(c: XMVCanvas, x: float, y: float, v: Dictionary) -> void:
-	var s := float(v.get("shield", 0.0))
+	var s := float(v.get("shield", 0.0)) + float(v.get("guyu_shield", 0.0))
 	if s <= 0.0:
 		return
 	var seg := shield_segment(v.hp, v.mhp, s, x)

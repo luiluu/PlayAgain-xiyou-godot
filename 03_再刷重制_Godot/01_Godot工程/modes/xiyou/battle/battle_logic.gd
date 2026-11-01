@@ -295,7 +295,8 @@ func view_of(b: XBattler) -> Dictionary:
 		if int(st.get("iconIndex", 0)) > 0:
 			icons.append(int(st.iconIndex))
 	return {"hp": b.hp, "mp": b.mp, "tp": b.tp, "mhp": b.mhp, "mmp": b.mmp, "mtp": b.max_tp(), "dead": b.is_dead(),
-		"guarding": b.guarding, "can_move": can_move(b), "icons": icons, "shield": b.shield, "look": XAppearance.battler_key(b)}  # look：换装卡换图（画面用）
+		"guarding": b.guarding, "can_move": can_move(b), "icons": icons, "shield": b.shield, "look": XAppearance.battler_key(b),
+		"guyu_shield": XGuyu.shield_of(b), "guyu_text": XGuyu.status_text(b)}  # look：换装卡换图；guyu_*：谷雨花荫与侧栏状态字（画面用）
 
 
 ## 全体战斗者 → view_of
@@ -795,6 +796,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
 	XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
+	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：本次行动里的归根反馈（画面）
 	if started and not skipped:
 		logs.append_array(XGarou.finish(self, u, skill))  # 饿狼 endAction 包装（原 endAction 之前）：进化、解析、追击、流水回 TP；敌人命中饿狼的进化、解析、反击
 		logs.append_array(XSukuna.finish(self, u, skill))  # 宿傩 endAction 包装（原 endAction 之前）：神灶：开、追斩、看破、适应
@@ -838,6 +840,7 @@ func end_turn() -> Array:
 	logs.append_array(XRaceBattle.round_end(self))  # endTurn 的种族包装：毒鸡汤结算、残响交接
 	XYunshang.end_turn(self)  # 云裳 endTurn 包装：六衡裁身回合末清除
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
+	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs

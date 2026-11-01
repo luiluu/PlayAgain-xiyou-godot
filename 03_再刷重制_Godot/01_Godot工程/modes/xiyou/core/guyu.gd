@@ -54,13 +54,20 @@ extends RefCounted
 ##   进护盾账本（installSourceShieldLedgerRuntime，来源 guyu.shield：不衰减、击穿不减半、不吃护盾加成，同源取较高）两回合；
 ##   账本在最外层先吸收（executeHpDamage／gainHp／setHp），自然回合末撤销到期的。先许一枝开 20 级起：被花荫挡下一次后
 ##   下次绽放 ×1.1（60 级 ×1.2，installThreeGrowthRelicRuntime 的 onAbsorb），每次新花荫重置。重制只做谷雨这一个来源的账本。
-## - 转移 transfer：给出／收回，比例 50%（10 级起可选 25／50／75%；重制没有转移窗口，固定给出 50%），接收者储备不超上限；
+## - 转移 transfer：给出／收回，比例 50%（10 级起可选 25／50／75%，战斗界面的选择窗写 transfer_mode／transfer_ratio，
+##   行动结束 end_action 设回给出 50%：原版写在这次的 Game_Action 上，没写的行动按 give／CFG.transfer.ratio），接收者储备不超上限；
 ##   10 级起从谷雨给出时受赠者待绽（当前花期里就是本次，否则下一次花期），待绽绽放付 35%（60 级我即万物之春 50%）。
 ## - 受伤压力：executeHpDamage 包装记本回合我方受到的生命伤害（账本吸收之后），endRound 换成占全队最大生命的比例。
 ## - 自动战斗 autoAction（makeAutoBattleActions 包装，重制 auto_battle_action 首行，压过挂机与智能 AI）：最低血＜35% 治疗；
 ##   受伤（＜70% 且无花荫）≥2 人或上回合压力≥20%、且没人有花荫：花荫；花期中储备比≥80% 或花期最后一回合：终结；
 ##   不在花期且有人储备≥上限一半：花期打生命最多的敌人；否则治疗。储备比的上限对谷雨也按 referenceCap。
-## 未移植：转移窗口（模式与比例选择）、isValid 包装（重制的角色行动不看 isValid）、战斗界面储备条、立绘与动作（画面）。
+## 战斗界面（参照 guyu_ui_probe；画面在 battle_scene／side_status／battler_sprite／guyu_transfer_window）：
+## - 状态字 statusText（侧栏名字行）：谷雨在队的战斗中每人「储」＋shortNumber(储备)，归根加「 归根N」（N＝归根到期回合−当前回合，
+##   不小于 0），待绽加「 待绽」，谷雨本人另加「 花期N」（剩几回合，含本回合）或「 生长」。shortNumber：亿／万一位小数，以下取整。
+## - 护盾合计 totalShield：其他来源的护盾（b.shield）＋花荫账本（重制账本不并进 b.shield，所以相加；原版账本就是 b.shield）。
+## - 转移说明 transferText 与 transferPreview 的原因：请选择存活的出战队友／当前装备不支持此转移方式／供给者生命储备不足／接收者储备已满。
+## - 动作 G.visuals.motions：治疗 spell、花期 chant、转移 item、花荫 guard、终结 skill（归根中、内部行动不换）。
+## 未移植：isValid 包装（重制的角色行动不看 isValid）。
 
 const ACTOR := 175
 const RELIC := 7912
@@ -459,6 +466,9 @@ static func reset() -> void:
 	calc_owner = null
 	_base.clear()
 	test_relic = false
+	transfer_mode = "give"
+	transfer_ratio = 0.5
+	visuals = []
 	_logic_ref = null
 
 
@@ -577,6 +587,8 @@ static func _end(e: Dictionary) -> void:
 
 ## endAction 包装（原 endAction 之前）：结束行动事件；afterAction 在原 endAction 之后
 static func end_action() -> void:
+	transfer_mode = "give"
+	transfer_ratio = 0.5
 	_last = current()
 	if not _last.is_empty():
 		_end(_last)
@@ -639,6 +651,17 @@ static func root(g, forced: bool) -> void:
 		r.root_until = round + 1
 		internal -= 1
 	r.root_until = round + 1
+	visuals.append({"type": "guyu_visual", "target": g, "kind": "root"})  # queueVisual(g, 'root')
+
+
+## queueVisual：归根的画面反馈（金边瓷片与枯叶，只属于精灵，不进存档）；行动末与回合末由 XBattleLogic 取走放进记录
+static var visuals: Array = []
+
+
+static func take_visuals() -> Array:
+	var out := visuals
+	visuals = []
+	return out
 
 
 ## hasRelic：10 级起戴着百谷生（或测试开关 G.setTestRelic，reset 清）
@@ -798,25 +821,97 @@ static func transfer_ratios(b) -> Array:
 	return [0.25, 0.5, 0.75] if has_spring(b) else [0.5]
 
 
-## G.transferPreview
+## G.transferPreview（reason：不合法的原因，转移选目标时的说明卡写它）
 static func transfer_preview(b, t, mode := "give", ratio := 0.5) -> Dictionary:
-	var out := {"valid": false, "amount": 0.0}
+	var out := {"valid": false, "amount": 0.0, "reason": "请选择存活的出战队友"}
 	if not active_battle or b == null or b != active() or not unlocked(b, "transfer") or t == null or t == b or not _members().has(t) \
 			or not t is XActor or not t.is_alive() or rooted(t):
 		return out
 	if not mode in ["give", "back"] or not transfer_ratios(b).has(ratio):
+		out.reason = "当前装备不支持此转移方式"
 		return out
 	out.from = t if mode == "back" else b
 	out.to = b if out.from == t else t
 	var want := floorf(reserve(out.from) * ratio)
 	var room := maxf(0.0, cap(out.to) - reserve(out.to))
 	out.amount = minf(want, room)
+	out.capped = want > room
 	out.valid = float(out.amount) >= 1.0
+	out.ratio = ratio
+	out.mode = mode
+	out.reason = "" if out.valid else ("供给者生命储备不足" if want < 1.0 else "接收者储备已满")
 	return out
+
+
+## G.transferText：转移选目标时说明卡的文字（不合法时是原因）
+static func transfer_text(b, t, mode := "give", ratio := 0.5) -> String:
+	var p := transfer_preview(b, t, mode, ratio)
+	if not bool(p.valid):
+		return str(p.reason)
+	return ("还春" if p.mode == "back" else "赠春") + " " + str(roundi(float(p.ratio) * 100.0)) + "%：" + p.from.display_name() + " → " + p.to.display_name() \
+		+ "，储备 " + short_number(float(p.amount)) + ("（受接收上限限制）" if bool(p.capped) else "") + "。\n转移不回复HP" \
+		+ ("；赋予一次待绽。" if has_spring(b) and p.mode == "give" else "。")
+
+
+## shortNumber：亿／万一位小数（toFixed(1)），以下取整
+static func short_number(n: float) -> String:
+	if n >= 100000000.0:
+		return "%.1f亿" % (n / 100000000.0)
+	if n >= 10000.0:
+		return "%.1f万" % (n / 10000.0)
+	return str(int(floorf(n)))
+
+
+## G.statusText：侧栏名字行右侧的状态字（战斗中、谷雨在队才有）
+static func status_text(b) -> String:
+	if not active_battle or _guyu() == null or not b is XActor:
+		return ""
+	var text := "储" + short_number(reserve(b))
+	if rooted(b):
+		text += " 归根" + str(maxi(0, int(rows[b.actor_id].root_until) - round))
+	elif has_bud(b):
+		text += " 待绽"
+	elif own(b):
+		text += " 花期" + str(flower_until - round + 1) if blooming() else " 生长"
+	return text
+
+
+## G.totalShield：生命条上画的护盾合计（其他来源 b.shield ＋ 花荫账本）
+static func total_shield(b) -> float:
+	return float(b.shield) + shield_of(b) if b is XActor else 0.0
+
+
+## G.visuals.motions：五个主动技的动作（performAction 包装）
+const MOTIONS := {"heal": "spell", "open": "chant", "transfer": "item", "shield": "guard", "finish": "skill"}
+
+
+## performAction 包装：谷雨用主动技时换的动作；不换时空（内部行动 _guyuInternal 即绽放，归根中不换）
+static func action_motion(a, skill: Dictionary) -> String:
+	if not own(a) or rooted(a) or key(skill) == "bloom":
+		return ""
+	return str(MOTIONS.get(key(skill), ""))
 
 
 static func can_transfer(b, mode: String, ratio: float) -> bool:
 	return _members().any(func(t): return bool(transfer_preview(b, t, mode, ratio).valid))
+
+
+## Window_GuyuTransfer.makeCommandList：每种比例「赠春（n%）」「还春（n%）」各一行，没有能转的目标时灰掉
+static func transfer_commands(a) -> Array:
+	var out := []
+	for r in transfer_ratios(a):
+		var pct := roundi(float(r) * 100.0)
+		out.append({"text": "赠春（%d%%）" % pct, "enabled": can_transfer(a, "give", r), "mode": "give", "ratio": r})
+		out.append({"text": "还春（%d%%）" % pct, "enabled": can_transfer(a, "back", r), "mode": "back", "ratio": r})
+	return out
+
+
+## 选择窗打开时的光标：默认比例（CFG.transfer.ratio 50%）的「赠春」；它灰着就第一个能选的，都灰着停在第一行
+static func transfer_default_index(entries: Array) -> int:
+	var i := entries.find_custom(func(e): return e.mode == "give" and is_equal_approx(float(e.ratio), 0.5))
+	if i < 0 or not bool(entries[i].enabled):
+		i = entries.find_custom(func(e): return bool(e.enabled))
+	return maxi(0, i)
 
 
 # ---- gainHp 包装 ----

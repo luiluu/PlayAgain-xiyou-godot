@@ -16,6 +16,7 @@ extends Control
 ## 5. installCombatPowerRuntime（setItem 最外层）：装备在名字后插「装备战力：N」（18 号、rgba(255,211,115,1)、align 0），
 ##    N 是与穿戴者无关的装备评分 XPower.equipment；设置页关掉「战力显示与估算」时不插。
 ##    专属角色技能（ID 10122～10299）改走 characterHelpView（XCharacterHelp，ui/character_help.gd）。
+## 6. installThreeGrowthRelicRuntime R.syncItem：三法宝（谷雨百谷生／万象长春盏）先按所属人物等级改写名字、说明与备注里的条目（XThreeGrowth.view）。
 ## 未做：心钢、狂妄等专属装备的动态说明（切片里没有）。
 ##
 ## 版面（layout()）：宽 400、内边距 4；每行按 RJO.SW 逐字排版：可用宽 392−x，放不下换行；行高 = 该行最大字号 + 8；
@@ -82,6 +83,7 @@ var _frame_style: XWindowStyle
 static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	if obj.is_empty():
 		return []
+	obj = XThreeGrowth.view(obj)  # 三法宝成长 R.syncItem：法宝说明条目（relicLines）、名字、说明
 	if kind == "":
 		kind = kind_of(obj)
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
