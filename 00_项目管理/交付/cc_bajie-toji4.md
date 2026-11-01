@@ -1,8 +1,8 @@
 # 交付：cc/bajie-toji4
 
 - 车道／工作者：C 规则／八戒（cc，八戒）
-- 状态：进行中
-- 分支从 main f9c5c48c 切，工作树 `.claude/worktrees/sleepy-khayyam-db2439`。机制编号沿用 toji1 交付单「机制对照」（#11 智能 AI 档案）。
+- 状态：可合并
+- 分支从 f9c5c48c（当时的 main，含 toji2、toji3 的合并；总装后来把 toji3 从 main 撤出，合 toji4 时一起带进来）切，工作树 `.claude/worktrees/sleepy-khayyam-db2439`。机制编号沿用 toji1 交付单「机制对照」（#11 智能 AI 档案）。
 
 ## 做到哪
 
@@ -16,7 +16,8 @@
 1. **智能 AI 档案通道**（`battle/smart_ai.gd`，照 v0.28 Codex_SmartBattleAI 的 profile）：`XSmartAI.profile(a, rec)` 依次问各角色档案（重制只有 `XToji.ai_profile`）。safeDamage：档案的段数 hits 代替行动序列段数、倍率 multiplier 乘进额外倍率、穿透 pierce 让防御率＋穿透×(1−防御率)；scoreCandidate：单体技能有溅射 splash 时其余敌人按「期望伤害×溅射」再算伤害效用；有铺垫 followupSkill 时，付完本技能代价后给后续技能打分（noSetup，不再铺垫），分数取 max(本分, (本分＋后续)÷(铺垫次数＋1)×0.92×(急需时 0.6))；choose 里算「能不能一招打完」的 bestAttack 改用 noSetup（原版同）。期望伤害的暴击率读 itemCri 口径（甚尔五感：目标暴击闪避 ×0.34）。
 2. **甚尔档案**（`core/toji.gd` `ai_profile`、`ai_damage`）：切换技能可切且不是当前形态时给后续主技能、铺垫 1 次；主技能段数（游云 5＋追加＋觉醒 1、释魂刀 1、万里锁／天逆鉾 1＋追加×0.2）、倍率（暴君 成长(主)×3，否则 成长(非主)；藏兵咒灵 ×1.11；觉醒 ×1.2）、溅射（万里锁 0.33／觉醒 0.50）、穿透（释魂刀 0.66／觉醒 0.80）。估伤 10216～10219 不在结算里，减防项照算（目标防御、五感 ×0.67），万里锁／天逆鉾按第 1 段 ×4。只读：不换形态、不付费、不掷随机数。
 3. **O-待定**（`XSmartAI.o_profile_hits`）：原版档案给了段数仍再乘 numRepeats，甚尔有追加次数时游云估伤翻倍；重制默认 hits 就是总段数。
-4. **参照与专项**：`toji_battle_probe.cjs` 加 ai（游云开局、敌人全残血 1 时切万里锁胜过游云、追加＋1、万里锁溅射、释魂刀对阴阳合一 1825 物理减伤 0.5 的穿透、天逆鉾、残血击杀分、忘暴君、忘五感）与 aiflash（黑闪觉醒后各形态）两段，每个 'ai' 步记各技能档案、主技能对各敌人的 safeDamage、choose 的选择与前 6 名候选分、敌人威胁度读的能力；`xiyou_toji_battle` 1321 项（比参照时 o_profile_hits 关；本地断言开关、藏兵咒灵倍率、别的角色与非主技能没档案、choose 只读）。
+4. **修 toji3 同步挡下的问题**（总装八急派）：`toji_battle_probe` 暴君例把原版清弱化抛的错记成了 `relearned.error`，同步规则不接受新的 error 键；改记成普通观测字段 `threw: "removeDebuff 不存在"`，专项加一条比它。
+5. **参照与专项**：`toji_battle_probe.cjs` 加 ai（游云开局、敌人全残血 1 时切万里锁胜过游云、追加＋1、万里锁溅射、释魂刀对阴阳合一 1825 物理减伤 0.5 的穿透、天逆鉾、残血击杀分、忘暴君、忘五感）与 aiflash（黑闪觉醒后各形态）两段，每个 'ai' 步记各技能档案、主技能对各敌人的 safeDamage、choose 的选择与前 6 名候选分、敌人威胁度读的能力；`xiyou_toji_battle` 1321 项（比参照时 o_profile_hits 关；本地断言开关、藏兵咒灵倍率、别的角色与非主技能没档案、choose 只读）。
    - 参照里脚本直接 addState 后先 refresh 一次再量（krz_state_re 的状态缓存不刷新读不到追加次数，实战行动中会刷新）。
    - 反向验证（临时改代码，已还原）：去掉溅射与穿透后，万里锁各场景候选分、残血时切万里锁的选择、释魂刀对减伤目标的估伤共 8 项失败。
 
@@ -43,7 +44,10 @@
 
 ## 验证
 
-（待写）
+- `xiyou_toji_battle` 1322/1322、`xiyou_toji` 71/71（同步后的产物）。
+- 同步：先删掉工作树里旧的 toji_battle.json 再跑 `同步正式西游.py --accept-additions`（同 main 上没有旧产物的情况）：「新增用例，已接受」，toji_battle.json 新增参照，来源核对 0 问题。
+- 回归 14 个场景全过：`xiyou_smart_ai` 四段、`xiyou_toji`、`xiyou_attack_query`、`xiyou_alien_affix*`、`xiyou_help_card`、`xiyou_hang*`、`xiyou_combat`、`xiyou_battle_gaps`。
+- `语法检查.py` 通过。main 后来的新提交（悟空 title2）只改了别的探针（designation、pushstate），没碰本分支文件，没合。
 
 ## 待交叉核查
 
@@ -57,4 +61,5 @@
 ## 本分支提交
 
 - 6489ca85 第四期：档案通道＋甚尔档案，参照 ai／aiflash
-- 本地断言提交
+- f1ff9774 本地断言
+- 45cad583 修：探针原版抛错记成 threw
