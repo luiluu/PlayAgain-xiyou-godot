@@ -243,6 +243,23 @@ func _local() -> void:
 		check("reverse.item_no_bloom", not _hits(logic, logs).any(func(h): return h.skill == XGuyu.BLOOM), potion)
 	logs = logic.act(hero, XDB.rec("Skills", 10289), logic.enemies[0])
 	check("reverse.other_open", XGuyu.flower_serial == 1 and XGuyu.seed == 1, [XGuyu.flower_serial, XGuyu.seed])
+	# itemHit／itemEva／itemCri 包装（installNativeGuyuRuntime 315）：绽放、终结、治疗必中、不闪避、不暴击。
+	# 闪避公式改成 1、技能复制一份改成会暴击（出手者用暴击率大于 0 的 1 号），照样 0；对照的普攻照常闪避、暴击
+	var hit_cfg := XDB.plugin("YEP_HitAccuracy")
+	var old_eva = hit_cfg.get("Evade Formula")
+	hit_cfg["Evade Formula"] = "1"
+	check("local.control_has_cri", hero.cri > 0.0, hero.cri)
+	for id in [10288, 10292, XGuyu.BLOOM]:
+		var sk: Dictionary = XDB.rec("Skills", id).duplicate(true)
+		sk.damage.critical = true
+		var t: XBattler = logic.enemies[0] if int(sk.scope) >= 1 and int(sk.scope) <= 6 else hero
+		check("local.sure_%d" % id, logic.item_hit(hero, sk, t) == 1.0 and logic.item_eva(hero, sk, t) == 0.0 and logic.item_cri(hero, sk, t) == 0.0,
+			[logic.item_hit(hero, sk, t), logic.item_eva(hero, sk, t), logic.item_cri(hero, sk, t)])
+	var plain: Dictionary = XDB.rec("Skills", 1).duplicate(true)
+	plain.damage.critical = true
+	check("local.plain_control", logic.item_eva(hero, plain, logic.enemies[0]) == 1.0 and logic.item_cri(hero, plain, logic.enemies[0]) > 0.0,
+		[logic.item_eva(hero, plain, logic.enemies[0]), logic.item_cri(hero, plain, logic.enemies[0])])
+	hit_cfg["Evade Formula"] = old_eva
 	logic.end_battle(0)
 	check("local.after_battle", not XGuyu.active_battle and XGuyu.reserve(hero) == 0.0 and hero.mhp == XGuyu.base_mhp(hero) and hero.hp <= hero.mhp)
 	# 谷雨不在出战：只有 1 号

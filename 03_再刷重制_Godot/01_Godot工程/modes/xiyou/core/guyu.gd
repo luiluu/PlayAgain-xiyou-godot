@@ -15,7 +15,8 @@ extends RefCounted
 ## - 公式 evalDamageFormula 包装：谷雨的「泽苍生」heal ＝ −(目标最大生命×治疗比例)，治疗比例 curve(.25,.30,.35,.40；1/20/40/60 级)
 ##   ×Π(1＋被动 passiveHEUP%)；治疗被动已算在比例里，结算时不再乘（applyPassiveHealRate 包装）。
 ##   绽放、终结 ＝ max(0, 威力−(结算里 0，否则 魔防×0.5))，威力是战斗内字段（第二期），第一期 0。
-## - 命中：绽放、终结、治疗 itemHit 恒 1（闪避、暴击原表就是 0）。
+## - 命中：绽放、终结、治疗 itemHit 恒 1、itemEva 与 itemCri 恒 0（installNativeGuyuRuntime 315，三个包装都在外层；
+##   西游的闪避公式是 0、这三个技能原表不暴击，平常本来就是 0，包装让别的来源也加不上）。
 ## - 招募 G.recruit（公共事件 9012 的 try { if (!Guyu.recruit()) 还号角 }）：已在队返回 false；没送过百谷生（$gameSystem._guyuRelicGranted）
 ##   时背包里有就拿、没有就生成，装进它装备类型（13）的槽；入队；同步技能；一条右上角提示。
 ## - CodexBinding.curve（installNativeBindingChargeRuntime）：按等级在各档之间线性插值。

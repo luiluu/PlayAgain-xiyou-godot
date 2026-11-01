@@ -475,9 +475,6 @@ var _fx: Node2D
 var _fx_kind := ""
 var _fx_time := 0
 const FX_ROOT_FRAMES := 48
-## CodexSV 的谷雨素材边界（160×160 帧，可见部分 [23,45,137,145]）：反馈画在可见的脚底中点
-const GUYU_BOUNDS := [23.0, 45.0, 137.0, 145.0]
-const GUYU_FRAME := 160.0
 
 
 func guyu_visual(kind: String) -> void:
@@ -490,7 +487,8 @@ func guyu_visual(kind: String) -> void:
 	_fx_kind = kind
 	_fx_time = 0
 	_fx.visible = true
-	_fx.position = Vector2(((GUYU_BOUNDS[0] + GUYU_BOUNDS[2]) / 2.0 - GUYU_FRAME / 2.0) * body_scale, -(GUYU_FRAME - GUYU_BOUNDS[3]) * body_scale)
+	# 原版画在可见的脚底中点（按 CodexSV 档）：站姿归一后正是身体原点（_place_body），没有档时是图底边中点，也是原点
+	_fx.position = Vector2.ZERO
 
 
 func _fx_tick() -> void:

@@ -1633,8 +1633,21 @@ func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 	return clampf(_hit_formula("Accuracy Formula", "skillHitRate * (userHitRate - targetEvadeRate)", u, skill, t) + XToji.hit_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemHit 包装：天与咒缚影速
 
 
+## itemCri（各包装由内到外）
+func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
+	if XGuyu.sure(skill):  # 谷雨 itemCri 包装：绽放、终结、治疗不暴击
+		return 0.0
+	var cri := u.cri * (1.0 - dt.cev * XToji.cev_rate(u, skill)) if bool(skill.damage.critical) else 0.0  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34
+	if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
+		cri = 1.0
+	cri = XYunshang.cri(u, skill, cri)  # 云裳 itemCri 包装：戴织神天梭 +3
+	return clampf(cri, 0.0, 1.0)
+
+
 ## itemEva：YEP「Evade Formula」（西游为 0）夹到 0～1。原版闪避已并入命中公式。
 func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
+	if XGuyu.sure(skill):  # 谷雨 itemEva 包装：绽放、终结、治疗不闪避
+		return 0.0
 	if XYomiJingliu.sure(u, skill) or XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t) or XToji.sure(u, skill):  # 黄泉技能、云裳伤害技能、宿傩斩击打有看破的目标、甚尔五感主技能／武器库 itemEva 包装：不闪避
 		return 0.0
 	return clampf(_hit_formula("Evade Formula", "0", u, skill, t) + XToji.eva_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemEva 包装：被打时天与咒缚影速
@@ -1795,11 +1808,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		return r
 	var type := int(dmg.type)
 	if type > 0:
-		var cri := u.cri * (1.0 - dt.cev * XToji.cev_rate(u, skill)) if bool(dmg.critical) else 0.0  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34
-		if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
-			cri = 1.0
-		cri = XYunshang.cri(u, skill, cri)  # 云裳 itemCri 包装：戴织神天梭 +3
-		r.critical = _float("critical") < clampf(cri, 0.0, 1.0)
+		r.critical = _float("critical") < item_cri(u, skill, dt)
 		_action_resources.result(dt).critical = r.critical
 		var previous_record := _damage_record
 		_damage_record = r
