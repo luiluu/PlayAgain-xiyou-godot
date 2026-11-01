@@ -1,7 +1,7 @@
 # 交付：cc/bailong-yunshang10
 
 - 车道／工作者：E 角色专属／白龙_12（cc）
-- 状态：选测进行中
+- 状态：可合并（在 yunshang9 之后合）
 - 分支从 cc/bailong-yunshang9 末端 e089eb11 切出（总装十派单），**包含 yunshang9**，那张交付单照它自己的合。yunshang9 还没进 main，没合 main（总装十一：第六批推送后通知再合）。
 - 范围：XState 加「装备离开背包」的统一出口 `lose_gear`；领取的云裳天衣被卖出、存进方桌仓库、分解时记进订单账本（原版 gainItem 包装），堵住「领取→卖掉→读领取前的档再领」。
 
@@ -40,7 +40,7 @@
 - 专项 xiyou_yunshang_shop 362/362（多 83 项）：p8.lose 四种——卖出（XItemMarks.sell）、方桌仓库存入（比参照的卖出那组，另查仓库里有这件）记移除，读领取前的档背包里没有、_yunSeq 3；按底子扣（s.gain_gear 负数）、星级仓库存入（比参照的按底子那组）不记，读档照样在；两组都先穿上再卸下（不记）。
 - 反向验证 5 处全抓到：卖出不记、按底子也记、方桌仓库不记、星级仓库也记、出口不看天衣。
 - 语法检查通过。
-- 选测：`选测.py e089eb11` 因为改了 xstate.gd 选中 295 个（等于全量），车道不跑全量；改跑引用了改动模块的场景＋商店／挂机／物品／事件类，39 个写全名（CHECK_JOBS=3）：结果待补。
+- 选测：`选测.py e089eb11` 因为改了 xstate.gd 选中 295 个（等于全量），车道不跑全量；改跑引用了改动模块的场景＋商店／挂机／物品／事件类，39 个写全名（CHECK_JOBS=3，和别的车道共用测试槽，51 分钟）全过、没有偶发：xiyou_actor_modules、xiyou_alien_affix、xiyou_alien_battle、xiyou_alien_config、xiyou_alien_workshop、xiyou_attack_query、xiyou_battle_ui、xiyou_bulk_pills、xiyou_common_scripts、xiyou_crafting、xiyou_event_compare、xiyou_gold_cap、xiyou_hangup、xiyou_hangup_auto、xiyou_hangup_options、xiyou_item_bag、xiyou_item_list、xiyou_item_marks、xiyou_item_use、xiyou_jingliu2、xiyou_map132_shop、xiyou_party_skills、xiyou_review_fixes、xiyou_script、xiyou_shop_auto_close、xiyou_shop_buy、xiyou_shop_stock、xiyou_star_warehouse、xiyou_super_acquire、xiyou_super_deploy、xiyou_system_evidence、xiyou_toji、xiyou_warehouse、xiyou_weapon_unleash、xiyou_yunshang、xiyou_yunshang_shop、xiyou_yunshang_ui、xiyou_equipment、xiyou_flow。
 
 ## 交接板
 
@@ -66,4 +66,4 @@
 
 - 前面同 yunshang9（到 e089eb11）
 - WIP：出口、p8.lose、专项 362/362
-- 本提交：交付单
+- 本提交：选测全过，交付单可合并
