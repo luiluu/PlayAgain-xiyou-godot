@@ -24,6 +24,7 @@ extends RefCounted
 ## - 角色进阶：SceneManager.push(Scene_ActorAdvanced) → host.open_actor_advanced（XAdvance）。
 ## - 魔兽要诀：Star.PetSystem.ComEveLearnSkill(N) → XPets.learn_book（出战宠物学技能，提示走 host.toast）。
 ## - 已移除地图提示：CodexMapRemoval.notice(N) → 文字「【区域已移除】…」（Map080 王座宝箱，见 MVInterpreter.removed_gate_fix）。
+## - 批量抽奖：if(window.CodexCasino)CodexCasino.open(this[,"twenty"]);else … → XCasinoBatch.open（等这一局结束）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## 正式版移除的地图（Codex_StabilityPerformancePatch 1.1）：地图 ID → 名字
@@ -98,6 +99,11 @@ static func run(code: String, interp) -> Array:
 		interp.host.toast(XPassiveBooks.limit_message(s))
 		return []
 	# ---- 整段写法 ----
+	# 批量抽奖（installCasinoBatchRuntime，大厅 Map004 EV60「自定义单抽／自定义20连抽」）：else 支是没装运行时的旧版提示，正式版不走
+	var casino := _re("^if\\(window\\.CodexCasino\\)CodexCasino\\.open\\(this(?:,\\s*\"(twenty)\")?\\);else \\$gameMessage\\.add\\(\"[^\"]*\"\\);?$").search(js)
+	if casino:
+		await XCasinoBatch.open(interp, "twenty" if casino.get_string(1) == "twenty" else "single")
+		return []
 	if js == "Star.RunForgetSkill();":  # 遗忘河之水 CE83：选中角色的遗忘界面（Star_Scene_ForgetSkill）
 		if interp.host.has_method("open_forget_skill"):
 			await interp.host.open_forget_skill(s.item_target_actor_id)

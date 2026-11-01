@@ -135,9 +135,9 @@ func _ready() -> void:
 	XItemMarks.deploy_start(XState.current)  # Scene_Map.start 包装：清出战栏里的超强者并提示
 
 
-## Scene_Map.stop 包装：地图上开了别的画面（战斗、商店、各种页面；输入文字 prompt 不算）就不再回物品页
+## Scene_Map.stop 包装：地图上开了别的画面（战斗、商店、各种页面；输入文字 prompt 与批量抽奖的数量框不算）就不再回物品页
 func _on_ui_page(node: Node) -> void:
-	if not node is XTextPrompt:
+	if not node is XTextPrompt and not node is XCasinoDialog:
 		XItemBagReturn.scene_opened(XState.current)
 
 
@@ -1160,6 +1160,8 @@ func return_to_title() -> void:
 
 ## $.toaster 提示（AXY_Toast 样式，见 XToast）
 func toast(text: String) -> void:
+	if XCasinoBatch.drawing:  # 批量抽奖每抽静音 $.toaster（installCasinoBatchRuntime）
+		return
 	toasts.append(XToast.plain(text))
 	XToast.show_text(text, _menu_open)
 
