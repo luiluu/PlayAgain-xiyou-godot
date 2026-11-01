@@ -78,12 +78,12 @@ for (const [tag, party] of [['inParty', [13, 14, 15, 1]], ['notInParty', [1, 8, 
   }));
 }
 // 第三批（悟空 events3）：
-// - 投石问路（CE2486，技能 7188）：战斗中（敌群 2）每个敌人一条 (i+1)+'号敌人暴闪为'+cev.toFixed(2)*100+'%!'；
+// - 投石问路（CE2486，技能 7188）：战斗中（敌群 53，有暴闪 5% 的敌人）每个敌人一条 (i+1)+'号敌人暴闪为'+cev.toFixed(2)*100+'%!'；
 // - 猛击（CE78，技能 459）：for i<30 找带状态 345 且身上有防具 506 的角色，有就给全体敌人加状态 43。
-//   一例给 1 号角色穿上 506 并加 345，一例只加 345 不穿；读敌人是否有 43。
-cases.push(makeCase('troopCev', {ce: 2486, troop: 2}, () => {
+//   一例让 1 号角色的 hasArmor(506) 为真（当作穿着）并加 345，一例只加 345；读敌人是否有 43。
+cases.push(makeCase('troopCev', {ce: 2486, troop: 53}, () => {
   newGame(); toasts.length = 0;
-  w.$gameTroop.setup(2); w.$gameParty._inBattle = true;
+  w.$gameTroop.setup(53); w.$gameParty._inBattle = true;
   runList(w.JsonEx.makeDeepCopy(w.$dataCommonEvents[2486].list.filter(c => c.code === 355 || c.code === 655 || c.code === 0).slice(-4)));
   const cev = w.$gameTroop.members().map(e => e.cev);
   w.$gameParty._inBattle = false;
@@ -94,7 +94,7 @@ for (const wear of [true, false]) {
     newGame();
     w.$gameTroop.setup(2); w.$gameParty._inBattle = true;
     const a = w.$gameActors.actor(1);
-    if (wear) { const slot = a.equipSlots().indexOf(w.$dataArmors[506].etypeId); w.$gameParty.gainItem(w.$dataArmors[506], 1); a.changeEquip(slot, w.$dataArmors[506]); }
+    if (wear) { const has = a.hasArmor; a.hasArmor = function (x) { return x === w.$dataArmors[506] || has.call(this, x); }; }   // 506 在新局穿不上（独立装备／获取门槛），只替换 hasArmor 当作穿着，测脚本本身
     a.addState(345);
     runList(w.JsonEx.makeDeepCopy(w.$dataCommonEvents[78].list));
     const out = {hasArmor: a.hasArmor(w.$dataArmors[506]), enemies: w.$gameTroop.members().map(e => e.isStateAffected(43))};
