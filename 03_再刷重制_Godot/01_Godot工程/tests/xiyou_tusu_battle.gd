@@ -204,6 +204,8 @@ func _step(st: Array) -> Array:
 			var a: XActor = _who(st[1])
 			a.remove_state(1)
 			_set_hp(a, a.mhp)
+		"cost":
+			ret = {"mp": int(logic.skill_cost(_who(st[1]), XDB.rec("Skills", int(st[2]))).mp)}
 		"formula":
 			var a: XActor = _who(st[1])
 			ret = {"damage": XTusu.damage(a, logic.enemies[0], str(st[2])), "sword": XTusu.base(a, "sword"), "book": XTusu.base(a, "book"),

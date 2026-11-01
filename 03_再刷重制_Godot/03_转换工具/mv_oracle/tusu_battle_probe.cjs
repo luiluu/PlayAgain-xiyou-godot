@@ -106,7 +106,7 @@ const hits = [];
 const oldExec = w.Game_Action.prototype.executeHpDamage;
 w.Game_Action.prototype.executeHpDamage = function (t, v) { hits.push(['hp', key(this.subject()), key(t), v]); return oldExec.apply(this, arguments); };
 // 步骤：use 人 键 目标角色（屠苏的指令：走真实 startAction～endAction；目标角色给角色号）｜act 人 技能号 敌序号｜turn｜mp 人 值｜pay 人 键（直接 paySkillCost）｜
-// kill 人｜revive 人｜formula 人 键（T.damage(人, 敌0, 键)、T.base 剑／书、系数）｜end
+// kill 人｜revive 人｜cost 人 技能号（skillMpCost）｜formula 人 键（T.damage(人, 敌0, 键)、T.base 剑／书、系数）｜end
 function step(bm, st) {
   const [op, x, y, z] = st;
   let ret = null;
@@ -123,7 +123,8 @@ function step(bm, st) {
   else if (op === 'formula') {
     const a = who(x), e = who('e0');
     ret = {damage: T.damage(a, e, y), sword: T.base(a, 'sword'), book: T.base(a, 'book'), coef: T.coefficient(y)};
-  } else if (op === 'end') bm.endBattle(0);
+  } else if (op === 'cost') ret = {mp: who(x).skillMpCost(w.$dataSkills[y])};  // 持武者原生技能的 MP（书相魔法技能 ×0.7）
+  else if (op === 'end') bm.endBattle(0);
   else throw new Error('未知步骤 ' + op);
   return ret;
 }
@@ -139,14 +140,14 @@ function play(levels, steps) {
 const SCRIPTS = {
   // 人形：化武剑给 1 号（宿主持剑、屠苏武具态、攻击换归形）；易武弓预约；下一回合换弓；归形（manual 没有充能：条件不过）；
   // 宿主能用的武装技能按武相；公式与基准
-  basic: [{176: 30}, [['formula', 176, 'body_phys'], ['use', 176, 'huawu.sword', 1], ['formula', 1, 'zhanfeng'], ['formula', 1, 'chiling'],
+  basic: [{176: 30}, [['formula', 176, 'body_phys'], ['use', 176, 'huawu.sword', 1], ['cost', 1, 49], ['formula', 1, 'zhanfeng'], ['formula', 1, 'chiling'],
     ['use', 176, 'yiwu.bow'], ['use', 176, 'yiwu.bow'], ['turn'], ['use', 176, 'yiwu.book'], ['turn'], ['use', 176, 'return'], ['turn'], ['end']]],
   // 化武盾：宿主双防补底到屠苏；换宿主不能（武具态不能化武）；宿主阵亡解除（回人形，上次武相记着）；再化武用上次武相
   shield: [{176: 40, 8: 1}, [['use', 176, 'huawu.shield', 8], ['act', 8, 1, 0], ['kill', 8], ['act', 1, 1, 0], ['revive', 8], ['use', 176, 'huawu.sword', 10],
     ['turn'], ['end']]],
   // 噬主：屠苏自付 → 屠苏魔法 0 后持武者付三倍 → 两人都 0 回合开始维持不了回人形
   devour: [{176: 60}, [['use', 176, 'huawu.sword', 1], ['pay', 1, 'arm.zhanfeng'], ['mp', 176, 0], ['pay', 1, 'arm.zhanfeng'], ['mp', 1, 0], ['turn'],
-    ['use', 176, 'huawu.book', 1], ['mp', 176, 99999], ['pay', 176, 'support.heming'], ['mp', 176, 0], ['mp', 1, 99999], ['pay', 176, 'support.heming'], ['end']]],
+    ['use', 176, 'huawu.book', 1], ['cost', 1, 49], ['cost', 1, 1], ['mp', 176, 99999], ['pay', 176, 'support.heming'], ['mp', 176, 0], ['mp', 1, 99999], ['pay', 176, 'support.heming'], ['end']]],
   // 等级低：没解锁的武装技能、支援不能用
   low: [{176: 5}, [['use', 176, 'huawu.bow', 1], ['turn'], ['use', 176, 'yiwu.sword'], ['turn'], ['end']]],
 };
