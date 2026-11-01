@@ -593,10 +593,10 @@ for (const roll of [0.5, 0.1]) cases.push(makeCase(`p8.craft${roll === 0.5 ? '' 
   const tokens = [];
   for (let i = 0; i < 9; i++) tokens.push(Y.progress('t' + i));
   tokens.push(Y.progress('t3'));
-  sc.home(); at('nine', {tokens});
+  sc.home(); at('nine', {tokens: tokens.slice()});
   steps.push({tag: 'early', claim: tryErr(() => Y.claim())});
   tokens.push(Y.progress('t9'), Y.progress('t10'));
-  sc.home(); at('ten', {tokens});
+  sc.home(); at('ten', {tokens: tokens.slice()});
   pick(sc, 1); at('claimed', {robes: robes(), uid: !!w.$gameParty.armors().filter(i => i._yunUid).length});
   host.restore(before); sc.home(); at('reloadedClaimed', {robes: robes(), seq: w.$gameSystem._yunSeq});
   return {steps};
