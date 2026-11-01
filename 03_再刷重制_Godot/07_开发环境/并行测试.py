@@ -530,6 +530,26 @@ def project_fingerprint(godot: str, project: str, sdir: Path) -> str:
     return h.hexdigest()
 
 
+def stale_generated(project: str):
+    """linked worktree 里 generated/ 落后主工作区时返回提示文字，否则 None（哪吒_41，参照批次.py compare）。
+    回退：--skip-generated-check 或 XIYOU_SKIP_GENERATED_CHECK=1。"""
+    if not in_linked_worktree(project):
+        return None
+    try:
+        out = subprocess.run(['git', '-C', project, 'rev-parse', '--path-format=absolute', '--show-toplevel', '--git-common-dir'],
+                             capture_output=True, text=True, check=True).stdout.split('\n')
+        main_root = Path(out[1]).parent
+        rel = Path(project).resolve().relative_to(Path(out[0]).resolve())
+    except (OSError, subprocess.CalledProcessError, IndexError, ValueError):
+        return None
+    gen, main_gen = Path(project).resolve() / 'modes/xiyou/generated', main_root / rel / 'modes/xiyou/generated'
+    tool = Path(__file__).resolve().parent / '参照批次.py'
+    if not gen.is_dir() or not main_gen.is_dir() or not tool.is_file():
+        return None
+    p = subprocess.run([sys.executable, str(tool), 'compare', str(gen), str(main_gen)], capture_output=True, text=True)
+    return p.stdout.strip() if p.returncode == 3 else None
+
+
 def default_log_dir(project: str) -> Path:
     """<工程上一级>/04_验证/本地结果/并行测试/<时间戳>；旧的只留最近 LOGS_KEEP 份（只删本工具起名的目录）。"""
     parent = Path(project).resolve().parent / '04_验证/本地结果/并行测试'
@@ -564,6 +584,7 @@ def main() -> int:
     ap.add_argument('--quiet', action='store_true', help='不打通过行，只打失败、偶发、提示、心跳与汇总')
     ap.add_argument('--names-file', type=Path, action='append', default=[], metavar='文件',
                     help='场景名或前缀每行一个（# 起为注释），与命令行名字合并；选测清单、复跑失败项用（哪吒_8）')
+    ap.add_argument('--skip-generated-check', action='store_true', help='worktree 里不比对 generated/ 与主工作区（也可 XIYOU_SKIP_GENERATED_CHECK=1）')
     ap.add_argument('--wide', action='store_true', help='允许不带 * 的短前缀扩出超过 XIYOU_PREFIX_STOP（默认 40）个场景')
     ap.add_argument('names', nargs='*')
     a = ap.parse_intermixed_args()
@@ -614,6 +635,11 @@ def main() -> int:
     if not scenes:
         print('  ✗ tests/ 下没有匹配的测试场景')
         return 1
+    if not a.skip_generated_check and os.environ.get('XIYOU_SKIP_GENERATED_CHECK', '') in ('', '0'):
+        stale = stale_generated(a.project)
+        if stale:
+            print(stale)
+            return 2
     sdir = state_dir(a.project)
     missing = missing_classes(a.project)
     if missing:
