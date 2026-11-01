@@ -251,7 +251,7 @@ static func _members(logic) -> Array:
 
 
 static func _text(text: String) -> Dictionary:
-	return {"type": "battle_text", "text": text}  # BattleManager._logWindow addText（画面未接）
+	return {"type": "battle_text", "text": text}  # BattleManager._logWindow addText（战斗画面 _log_add）
 
 
 static func _layers(logic, t, n: int) -> void:
@@ -523,6 +523,13 @@ static func meets(a, skill: Dictionary, logic = null) -> bool:
 	if id == 10232 and (logic == null or not logic.alive(logic.enemies).any(func(t): return bool(target_data(t).charged))):
 		return false
 	return true
+
+
+## Window_BattleEnemy.refresh 包装：宿傩选神灶（10232）的目标时只列蓄力（被主技能命中过）的敌人
+static func selectable_enemies(a, skill: Dictionary, pool: Array) -> Array:
+	if not own(a) or int(skill.get("id", 0)) != 10232:
+		return pool
+	return pool.filter(func(t): return bool(target_data(t).charged))
 
 
 ## Game_Actor.skills 包装的战斗中过滤（allowed 之外）：空间斩／次元斩、领域有准备层时的神灶、没有准备层时的神灶：开不列出

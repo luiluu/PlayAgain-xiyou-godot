@@ -115,3 +115,19 @@ static func passive_cache(a, c: Dictionary) -> void:
 		XSukuna.passive_cache(a, c)
 		XToji.passive_cache(a, c)
 		XYunshang.passive_cache(a, c)
+
+
+## Game_Actor.addedSkillTypes 包装（菜单技能分类；Window_SkillType 照 YEP_CoreEngine 再升序排）：渡鸦（不在战斗）［2,1,5,3,4］、
+## 宿傩［2,1,5,3,4］、饿狼［2,1,5,4］，没学到那类技能也列出；别的角色返回 null（照特性 41）。
+const MENU_SKILL_TYPES := {167: [2, 1, 5, 3, 4], 172: [2, 1, 5, 3, 4], 173: [2, 1, 5, 4]}
+## Window_ActorCommand.addSkillCommands 包装（战斗指令，照这个次序、不排序、不再按 CP_MagicWeapon 去掉 3～6）：
+## 渡鸦［2,1,5］、宿傩［2,1,5,3］、饿狼［2,1,5］；别的角色返回 null
+const BATTLE_SKILL_TYPES := {167: [2, 1, 5], 172: [2, 1, 5, 3], 173: [2, 1, 5]}
+
+
+static func menu_skill_types(a):
+	return (MENU_SKILL_TYPES[int(a.actor_id)] as Array).duplicate() if a is XActor and MENU_SKILL_TYPES.has(int(a.actor_id)) else null
+
+
+static func battle_skill_types(a):
+	return (BATTLE_SKILL_TYPES[int(a.actor_id)] as Array).duplicate() if a is XActor and BATTLE_SKILL_TYPES.has(int(a.actor_id)) else null

@@ -2,6 +2,7 @@
 // 【cc·悟空·未经审查】伤害／治疗时挂状态定向参照（PushState 一期）：dsPassiveSkill 被动缓存的 pushStates／recPushStates／pushSelfStates，
 // 正式版由 installDamageElementRuntime 的 makeDamageValue 包装挂在 result._after，结算（onPreDamageStateEffects）时按 makeDamageValue 的正负挂：
 // 正 → PushState 给目标、PushsubState 给自己；负 → RecPushState 给目标（不看阵营）；只认角色行动者；目标已有就不挂；Math.random()*100 < 概率。
+// 归墟 void.*（审查 17 P2）见 CASES 末尾。
 // 用例：蔷薇刺鞭 1580（PushState0161 60%）／6510（100%）、先祖赐福 1491（PushsubState0042 20%）、4458（写成 100 不带 %）、4680（0.2% 小数认不出）、蔷薇进阶 6706（RecPushState1561 100%）；
 // 掷中／没掷中、目标已有（看回合数有没有被重置）、治疗打友方／敌方、伤害时不挂治疗标签。
 // 装备上的标签走同一个缓存（equips().concat(skills(), states())），但新局角色 1 穿不上带这类标签的武器（canEquip 假、会被卸下），这里只用技能量。
@@ -36,6 +37,8 @@ function run(cfg) {
     a.changeEquip(kind === 'weapon' ? 0 : a.equipSlots().indexOf(base.etypeId), inst);
   }
   settle(a); a.recoverAll();
+  // 归墟（异化 void）：战斗中 CodexAlienation.forActor 读 actor._alienBattle
+  if (cfg.void) { w.$gameParty._inBattle = true; a._alienBattle = {affix: 'void', config: {}}; }
   const ally = bare(8); settle(ally); ally.recoverAll(); ally.setHp(1);
   w.Math.random = () => 0.99; w.$gameTroop.setup(1); w.Math.random = () => 0.5;
   const foe = w.$gameTroop.members()[0]; foe.clearStates(); foe.refresh();
@@ -45,11 +48,23 @@ function run(cfg) {
   const act = new w.Game_Action(a); act.setSkill(cfg.skill);
   const before = {user: snap(a), target: snap(target)};
   w.Math.random = () => cfg.rnd;
-  const value = act.makeDamageValue(target, false);
-  const confirmed = act.onPreDamageStateEffects(target, value);
-  if (cfg.react) act.onReactStateEffects(target, confirmed);
+  let value, confirmed = null;
+  if (cfg.apply) {
+    // 整条 Game_Action.apply（异化 withFrame 行动帧在内：归墟 voidState 拦截别人身上的 addState）
+    w.BattleManager._subject = a; w.BattleManager._action = act;
+    w.BattleManager._logWindow = {push() {}, displayActionResults() {}, displayCounter() {}, displayReflection() {}, displaySubstitute() {}, displayAffectedStatus() {}};
+    if (w.CodexYunshang && !w.CodexYunshang._acted) w.CodexYunshang._acted = w.eval('[]');   // 云裳 startBattle 才建的已行动表
+    act.apply(target);
+    value = target.result().hpDamage;
+  } else {
+    value = act.makeDamageValue(target, false);
+    confirmed = act.onPreDamageStateEffects(target, value);
+    if (cfg.react) act.onReactStateEffects(target, confirmed);
+  }
   w.Math.random = () => 0.5;
-  return {value, confirmed, equips: a.equips().filter(Boolean).map(e => [e.baseItemId || e.id, e.name]), before, after: {user: snap(a), target: snap(target)},
+  const voidActive = !!(w.CodexAlienation && w.CodexAlienation.has(a, 'void'));
+  w.$gameParty._inBattle = false;
+  return {value, confirmed, voidActive, equips: a.equips().filter(Boolean).map(e => [e.baseItemId || e.id, e.name]), before, after: {user: snap(a), target: snap(target)},
     cache: {push: (a._passiveCache.pushStates || []).length, rec: (a._passiveCache.recPushStates || []).length, self: (a._passiveCache.pushSelfStates || []).length}};
 }
 // 时机：记 addState 与 React（onReactStateEffects）的先后——原版 _after 在结算 part() 里执行
@@ -107,6 +122,13 @@ const CASES = [
   ['equip.1706.weapon', {weapon: 1706, skill: 1, target: 'enemy', rnd: 0.99}],          // 武器 <PushState0521: 100%>
   ['equip.4966.armor', {armor: 4966, skill: 8, target: 'ally', rnd: 0.99}],             // 防具 <RecPushState1734: 100%>
   ['rec.6706.already', {skills: [6706], skill: 8, target: 'ally', rnd: 0.1, pre: [1561]}],
+  // 归墟（审查 17 P2）：installDamageElementRuntime 的排除写成 CodexAlienation.isAttackDamage(this)，_after 回调直调时 this 为 undefined，
+  // 恒为假、排除不生效。direct 同上面各例只调 makeDamageValue＋onPreDamageStateEffects；apply 走整条 Game_Action.apply（有行动帧）。
+  ['void.1580.direct', {skills: [1580], skill: 1, target: 'enemy', rnd: 0.1, void: true}],
+  ['void.1580.apply', {skills: [1580], skill: 1, target: 'enemy', rnd: 0.1, void: true, apply: true}],
+  ['void.1491.apply', {skills: [1491], skill: 1, target: 'enemy', rnd: 0.1, void: true, apply: true}],
+  ['void.6706.heal', {skills: [6706], skill: 8, target: 'ally', rnd: 0.99, void: true, apply: true}],
+  ['plain.1580.apply', {skills: [1580], skill: 1, target: 'enemy', rnd: 0.1, apply: true}],
 ];
 const cases = CASES.map(([id, cfg]) => makeCase(id, cfg, () => run(cfg)));
 for (const kind of ['reflect', 'counter', 'cover']) cases.push(makeCase(`invoke.${kind}`, {kind, rnd: 0.1}, () => invoke(kind, 0.1)));

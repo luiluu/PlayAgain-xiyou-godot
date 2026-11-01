@@ -578,6 +578,7 @@ static func trigger(logic, a, b, id: int, kind: String, evo := -1) -> Array:
 	var used: bool = b.is_alive()
 	var r: Dictionary = logic.apply(a, XDB.rec("Skills", id), b)
 	r[kind] = true
+	r["garou_trigger"] = kind  # 战斗画面：displayAction 加一行技能名（原生反击也有 counter 标记，靠这个区分）
 	if kind == "counter" and used and not r.missed and not r.evaded:
 		add_analysis(a, b)
 	frame = saved
