@@ -273,11 +273,18 @@ static func order(s: XState):
 
 
 # ---- 读档 ----
-## extractSaveContents 包装：记下旧档身份（第几格＋文件的 sha256），重放；出错只记下、普通读档照常
+## extractSaveContents 包装：记下旧档身份（第几格＋文件的 sha256），重放；出错只记下、普通读档照常。
+## 存档里没有编号、账本里也没有这个旧档身份时不新建（原版这里会建一条并写进 $gameSystem；重制的新局要到第一次用账本才建，
+## 读这种档时什么都不用补，存档读回再存一字不差）
 static func after_load(s: XState, identity: String) -> void:
 	_for(s)
 	_legacy = identity
 	error = ""
+	if str(s.flags.get(PROFILE_FLAG, "")) == "":
+		var l = load_ledger()
+		if l == null or not (l.legacyProfiles as Dictionary).has(identity):
+			storage_error = "" if l != null else error
+			return
 	storage_error = "" if replay(s) else error
 	if storage_error != "" and s.actors.has(XYunshang.ACTOR):
 		XYunshang.sync(s.actor(XYunshang.ACTOR))

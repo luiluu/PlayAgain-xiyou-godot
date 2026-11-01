@@ -253,9 +253,9 @@ func _run() -> void:
 				_p4_case(c)
 			"p5":
 				_p5_case(c)
-			"p6", "p7":
-				pass  # 战斗指令窗、天衣铺，xiyou_yunshang_ui 比
-	check("covers_all", seen.keys().size() == 11, seen.keys())
+			"p6", "p7", "p8":
+				pass  # 战斗指令窗 xiyou_yunshang_ui、天衣铺一二期 xiyou_yunshang_shop 比
+	check("covers_all", seen.keys().size() == 12, seen.keys())
 	finish()
 
 
