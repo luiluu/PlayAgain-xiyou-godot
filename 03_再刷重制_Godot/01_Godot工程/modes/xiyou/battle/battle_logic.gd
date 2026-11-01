@@ -1823,6 +1823,9 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 			1, 3, 5:
 				var race_mark := XRaceBattle.before_hp(self, u, skill, dt)
 				r.hp = execute_hp_damage(u, dt, value, type == 5, skill)
+				var flash := XBlackFlash.take_announced()  # 黑闪 announce：出手者头上弹字、日志一行（画面）
+				if not flash.is_empty():
+					r.custom_popups = flash
 				XRaceBattle.after_hp(self, u, skill, dt, race_mark)
 				if dt != t:
 					XAlienBattle.sync_relations(self)

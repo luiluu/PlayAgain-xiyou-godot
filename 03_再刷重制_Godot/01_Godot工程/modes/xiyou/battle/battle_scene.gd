@@ -417,6 +417,7 @@ func _help(entry = null) -> void:
 	if not (entry is Dictionary) or list_win == null or not is_instance_valid(list_win) or list_win.index < 0:
 		help_card.visible = false
 		return
+	XHelpCard.scene_actor = _active  # 黑闪说明卡读 scene._skillWindow._actor
 	help_card.show_for(entry)
 	ui.move_child(help_card, -1)
 	# 选中行：纵向取该行，横向取整个列表窗口（卡片外发光不压到窗口边框）
@@ -1539,6 +1540,9 @@ func _hit_visual(l: Dictionary) -> bool:
 	var ts: XBattlerSprite = sprites[t]
 	var hit: bool = not (l.missed or l.evaded)
 	show_views(l.get("views", {}))
+	for c in l.get("custom_popups", []):
+		_custom_popup(c.target, str(c.text), int(c.format))  # 黑闪 announce：customPopup(label, 2)
+		_log_add(str(c.log))  # _logWindow.push('addText', 名字＋打出了＋label)
 	combo.applied(l.user, t, hit, int(l.skill.get("damage", {}).get("type", 0)), float(l.hp) if float(l.hp) != 0.0 else float(l.mp))
 	if record and hit:
 		record.record(l.user, t, float(l.get("record_hp", l.hp)))
@@ -1669,6 +1673,18 @@ func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := fals
 	fx.add_child(p)
 	live.append(p)
 	_popups[b] = live
+
+
+## LGP customPopup(文字, 格式)：格式 2 伤害色、1 回复色，原地不动，最后 10 次淡出（设置「战斗伤害显示」关掉时不弹）
+func _custom_popup(b: XBattler, text: String, format: int) -> void:
+	if not XConfig.flag("CombatDamageShow"):
+		return
+	var s: XBattlerSprite = sprites[b]
+	var p := XDamagePopup.new()
+	p.position = s.position + (Vector2.ZERO if b is XActor else Vector2(0, -s.height() / s.body_scale / 2.0 + 16))
+	p.z_index = POPUP_Z
+	p.setup_custom(text, format)
+	fx.add_child(p)
 
 
 func _say(text: String, seconds: float) -> void:
