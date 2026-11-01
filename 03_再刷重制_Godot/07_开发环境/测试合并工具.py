@@ -501,7 +501,27 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.state.mkdir()
         (self.state / 'timings.json').write_text(json.dumps({'a.tscn': 1, 'c.tscn': 100}))
         _, runs = self.run_tests(jobs=1)
-        self.assertEqual(runs, ['b.tscn', 'c.tscn', 'a.tscn'])  # 没有记录的当作最慢
+        self.assertEqual(runs, ['c.tscn', 'b.tscn', 'a.tscn'])  # 没有记录的排中间（按已知耗时的中位数），哪吒_42
+
+    def test_history_median_orders_queue_and_slowest_ten_printed(self):
+        # 最近几次的中位数排队：一次负载尖峰（a 上次 500 秒）不压过常年更慢的 c；收尾打印最慢场景
+        self.state.mkdir()
+        (self.state / 'timings.json').write_text(json.dumps({'a.tscn': 500, 'b.tscn': 5, 'c.tscn': 5}))
+        (self.state / 'timing_history.json').write_text(json.dumps({'a.tscn': [2, 3, 500], 'b.tscn': [5], 'c.tscn': [50, 60, 40]}))
+        p, runs = self.run_tests(jobs=1)
+        self.assertEqual(runs, ['c.tscn', 'b.tscn', 'a.tscn'])
+        self.assertIn('最慢 3 个场景', p.stdout)
+        hist = json.loads((self.state / 'timing_history.json').read_text())
+        self.assertEqual(len(hist['a.tscn']), 4)  # 追加本次
+        for i in range(8):
+            self.run_tests('--full', jobs=1)
+        self.assertEqual(len(json.loads((self.state / 'timing_history.json').read_text())['a.tscn']), 5)  # 只留最近 5 次
+
+    def test_order_switch_off_runs_by_name(self):
+        self.state.mkdir()
+        (self.state / 'timings.json').write_text(json.dumps({'a.tscn': 1, 'c.tscn': 100}))
+        _, runs = self.run_tests(jobs=1, XIYOU_TEST_ORDER='name')  # 回退：不按耗时排
+        self.assertEqual(runs, ['a.tscn', 'b.tscn', 'c.tscn'])
 
     def test_unchanged_project_reuses_passes_and_reruns_failures(self):
         p, runs = self.run_tests(jobs=1, FAIL_C='1')
@@ -1520,6 +1540,21 @@ for name in filter(None, files):
         # 下一条真优化仍从 O-119 起：正文字样没占号
         state = {'delivery': str(self.receipt), 'extraDeliveries': [], 'optAdded': {'x.gd': ['# %s：XFoo.FIX' % tok]}}
         self.assertEqual(merge.assign_opt_numbers(self.root, state), {tok: 'O-119'})
+
+    def test_prose_placeholder_words_stay_when_batch_has_a_real_one(self):
+        """审查第 21 期 P3②（哪吒_42）：同一批里有真的草稿表占位时，交付单正文里讲占位写法的字样原来仍被整段换成同一个号。
+        正文只换带本批草稿识别键（项目／恢复方法里的标识符）的行；讲写法的行原样留着。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        sheet = self.wt / self.receipt
+        sheet.write_text(sheet.read_text().replace('- fixture change', '- 新优化 %s（XFoo.FIX_ROWS 窗高适配）\n- 同一张单几条都写 %s 时逐条对号' % (tok, tok))
+                         + self.HEAD8 + '| %s | XFoo.FIX_ROWS 窗高 | 问题 | 做法 | 理由 | `XFoo.FIX_ROWS = false` | cc | 待用户确认 |\n' % tok)
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'real and prose', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        log = (self.root / merge.LOG).read_text()
+        self.assertIn('- 新优化 O-119（XFoo.FIX_ROWS 窗高适配）', log)
+        self.assertIn('几条都写 %s 时逐条对号' % tok, log)
 
     def test_unnumbered_suffixed_placeholder_is_not_half_replaced(self):
         tok = 'O-' + '待定'

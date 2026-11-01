@@ -777,6 +777,23 @@ def substitute_opt(text, state, after=''):
     return text
 
 
+def substitute_body(text, state, sheet_texts):
+    """变更记录正文（交付单「变更记录草稿」节）换号：版本占位整段换；优化占位里，来自草稿表的只换带本批草稿识别键的行和表行，
+    讲占位写法的字样（「几条都写 O-待定 时」）原样留着（审查第 21 期 P3②，哪吒_42）；只来自车道代码／文档新增行的占位照旧整段换。
+    正文里引用草稿表占位的行写不出识别键（项目／恢复方法里的标识符或三字以上中文词）就不会被换，留在变更记录里由 检查.sh 的遗留占位检查报出。"""
+    text = text.replace(VERSION_MARKER, state['version'])
+    keys, table_tokens = set(), set()
+    for tok, _row, ks in opt_row_entries(sheet_texts):
+        keys |= ks
+        table_tokens.add(tok)
+    if not table_tokens:
+        return substitute_opt(text, state)
+    rest = dict(state, optEntries={}, optNumbers={t: n for t, n in state.get('optNumbers', {}).items() if t not in table_tokens})
+    lines = text.split('\n')
+    return '\n'.join(substitute_opt(x, state) if x.lstrip().startswith('|') or any(k in x for k in keys) else substitute_opt(x, rest)
+                     for x in lines)
+
+
 def replace_versions(root, state, state_file):
     if 'versionEdits' not in state:
         state['optNumbers'] = assign_opt_numbers(root, state)
@@ -957,7 +974,7 @@ def prepare(root, state, state_file, executor, also=()):
             if any(not (root / s).exists() for s in sheets(state)):
                 raise RuntimeError('交付单已不存在且变更记录无本批标记，先人工核对')
             body = '\n\n'.join(relink(draft((root / s).read_text()), root) for s in sheets(state))
-            body = substitute(body, state)
+            body = substitute_body(body, state, [(root / x).read_text() for x in sheets(state) if (root / x).is_file()])
             added = append_opt_registry(root, state)
             (root / LOG).write_text(log.rstrip() + '\n\n' + body + '\n\n' + marker + '\n')
             state['optAppended'] = added

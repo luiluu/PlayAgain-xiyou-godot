@@ -13,19 +13,6 @@ const RATIO_TOLERANCE := 1e-5
 var results := []
 
 
-class FixedStream extends XRandomStream:
-	var value := 0.5
-	func _take(kind: String, _reason: String, _event_key: String):
-		draws += 1
-		return value if kind == "float" else 2147483648
-	func next_index_mod(n: int, reason: String, event_key := "") -> int:
-		_take("uint32", reason, event_key)
-		return floori(n * value) if n > 0 else 0
-	func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
-		_take("uint32", reason, event_key)
-		return lo + floori((hi - lo + 1) * value)
-
-
 func check(name: String, ok: bool, detail = null) -> bool:
 	results.append({"name": name, "passed": ok})
 	if not ok and results.filter(func(r): return not r.passed).size() <= 20:
@@ -57,7 +44,7 @@ func _battle(stage: int, level: int, relic: bool) -> Array:
 		s.actor(id).add_param(0, 1e12)
 		s.actor(id).refresh_passive()
 	var rand := XBattleRandom.create("0000000000000173")
-	rand.rule = FixedStream.new()
+	rand.rule = FixedMidStream.new()
 	rand.rule.domain = "rule"
 	var logic := XBattleLogic.new()
 	logic.setup(3, s, rand)

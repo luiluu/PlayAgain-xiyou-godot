@@ -12,7 +12,8 @@
 - 输出与原来逐个运行时相同（按场景名排序），失败时返回 1。
 - test_timings.json 每个场景记墙钟秒数与子进程 user／sys CPU 秒（os.wait4 的 rusage，哪吒_9）：墙钟高、CPU 低是在等机器，CPU 也高才是场景本身慢。
 - 并行数：CHECK_JOBS 或 --jobs；都没给时主工作区用 CPU 核数一半（最多 6），worktree 里只用 2（多会话并行时给其他车道留余量）。
-- 派发顺序：按上次实测耗时从慢到快（没有记录的排最前，当作最慢），免得最慢的场景压到队尾。
+- 派发顺序：按最近 5 次实测耗时的中位数从慢到快（timing_history.json；没有历史时用 timings.json 的上次值；完全没记录的排在已知耗时的中位数处），
+  免得最慢的场景压到队尾、也不被一次负载尖峰带偏。收尾打印最慢 10 个。XIYOU_TEST_ORDER=name 回到按名字排（哪吒_42）。
 - 所有工作树共用一个并发上限（CHECK_GLOBAL_JOBS，默认 CPU 核数一半、最多 6）：每个测试先在共用状态目录里占一个槽位
   （flock，进程退出即释放），几条车道同时跑检查也不会把机器压到超时。同步正式西游.py 的 node 探针占同一组槽位。等槽位的时间不计入 600 秒。
 - 沿用上轮结果（不指定场景的整轮运行，或指定场景时加 --reuse，检查.sh 选测用）：工程指纹与上次记录相同时，
@@ -63,6 +64,7 @@ TIMEOUT = 600  # xiyou_rules 角色 P0 后单跑约 200 秒，满负载并行时
 SLOW = TIMEOUT // 2  # 超过就提示按场景拆分（xiyou_rules、smart_ai 已拆成约 100 秒一份）
 NO_RERUN_PARSE_ERROR = True  # 解析错误不当偶发重跑（tools27）；设 False 回到照常重跑
 FLAKY_RERUN_MAX = 3  # 并行负载下偶发失败（floor16、floor_run_c 等）最多单独重跑这么多个
+HISTORY_KEEP = 5  # 每个场景留最近几次耗时（派发排序取中位数）
 RESULTS_KEEP = 20  # 共用状态目录里最多保留这么多份整轮结果（按指纹）
 RULES_FILTER_ENV = ('RULES_ONLY_TROOPS', 'RULES_ONLY_ACTORS')  # xiyou_rules 的编号过滤，结果不完整
 EXPRESS_SCENES = 2  # 快车道：一次最多几个场景
@@ -376,6 +378,26 @@ def express_slot(sdir: Path):
         f.close()
 
 
+def queue_order(names, timings: dict, history: dict) -> list:
+    """派发顺序（哪吒_42）：按估计耗时从慢到快；估计＝最近几次的中位数，没有历史时用上次值，都没有的排在已知估计的中位数处。
+    XIYOU_TEST_ORDER=name 回退成按名字排。"""
+    if os.environ.get('XIYOU_TEST_ORDER', '') == 'name':
+        return sorted(names)
+    def median(v):
+        v = sorted(v)
+        return v[len(v) // 2] if len(v) % 2 else (v[len(v) // 2 - 1] + v[len(v) // 2]) / 2
+
+    est = {}
+    for n in names:
+        h = [float(x) for x in history.get(n, []) if isinstance(x, (int, float))]
+        if h:
+            est[n] = median(h)
+        elif isinstance(timings.get(n), (int, float)):
+            est[n] = float(timings[n])
+    mid = median(list(est.values())) if est else 0.0
+    return sorted(names, key=lambda n: (-est.get(n, mid), n))
+
+
 def express_eligible(todo: list, timings: dict) -> bool:
     """这一次够不够走快车道：场景少、每个都有不超过 EXPRESS_SECONDS 的实测。"""
     if os.environ.get('XIYOU_SLOT_EXPRESS', '1') == '0' or not 0 < len(todo) <= EXPRESS_SCENES:
@@ -667,7 +689,8 @@ def main() -> int:
         prev = reusable_results(read_json(sdir / 'results' / (fingerprint + '.json'), {}), fingerprint, all_scenes)
         reused = {n: prev[n] for n in scenes if n in prev}
     timings = read_json(sdir / 'timings.json', {})
-    todo = sorted((n for n in scenes if n not in reused), key=lambda n: (-float(timings.get(n, 1e9)), n))
+    history = read_json(sdir / 'timing_history.json', {})
+    todo = queue_order([n for n in scenes if n not in reused], timings, history)
     attempts = {}  # 场景 → [(rc, out, secs, cpu), …]：首次在前，重跑依次追加，不覆盖
     started = time.monotonic()
     progress = Progress(len(todo))
@@ -730,11 +753,18 @@ def main() -> int:
         print('  · 工程未变：沿用上轮通过 %d 个，实际运行 %d 个（--full 或 CHECK_FULL=1 强制整轮）' % (len(reused), len(todo)))
     print('  · 测试用时 %d 秒（并行 %d，共用上限 %d）%s' % (wall, a.jobs, limit, '' if not a.quiet else '；%d 个场景，%s' % (
         len(scenes), '全部通过' if not fail else '有失败')))
+    if todo:
+        slow = sorted(todo, key=lambda n: attempts[n][0][2], reverse=True)[:10]
+        print('  · 最慢 %d 个场景：%s' % (len(slow), '、'.join('%s %d秒' % (n.replace('.tscn', ''), attempts[n][0][2]) for n in slow)))
     now = datetime.datetime.now().isoformat(timespec='seconds')
     with file_lock(sdir / 'state.lock'):
         timings = read_json(sdir / 'timings.json', {})
         timings.update({n: round(attempts[n][0][2], 3) for n in todo})
         write_json(sdir / 'timings.json', timings)
+        history = read_json(sdir / 'timing_history.json', {})
+        for n in todo:
+            history[n] = (list(history.get(n, [])) + [round(attempts[n][0][2], 3)])[-HISTORY_KEEP:]
+        write_json(sdir / 'timing_history.json', history)
         if flaky:
             with open(sdir / 'flaky.jsonl', 'a') as f:
                 for n in flaky:
