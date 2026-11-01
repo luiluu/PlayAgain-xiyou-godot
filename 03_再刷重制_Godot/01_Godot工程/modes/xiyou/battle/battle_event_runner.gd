@@ -192,6 +192,8 @@ func _execute_env(c: Dictionary):
 			logic._change_enemy_state(p)
 		331:
 			_change_enemy_hp(p)
+		250:
+			logs.append({"type": "se", "se": p[0]})  # 播放音效（CE46 一掷千金，战斗场合）：画面层 XBattleScene.play_se 放
 		334:
 			logs.append_array(logic.enemy_recover_all(int(p[0])))
 		335:

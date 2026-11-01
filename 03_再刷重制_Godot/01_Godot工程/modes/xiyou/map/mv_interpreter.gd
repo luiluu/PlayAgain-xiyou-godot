@@ -110,6 +110,10 @@ func _execute_env(c: Dictionary):
 		339:
 			# 强制战斗行动：MV iterateBattler 只在战斗内遍历战斗者，地图上空操作（CE2499 炭治郎-免疫负面）
 			return null
+		331:
+			# 更改敌人 HP：MV iterateEnemyIndex 遍历 $gameTroop.members()，战斗外只剩上一场的敌人（下场开战 setup 重建），
+			# 改了也没有可见结果，地图上空操作（CE1401「敌人恢复所有血量」，强者／霸者／大道／天道领域 6067～6071 场合随时）
+			return null
 	return super(c)
 
 

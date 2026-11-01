@@ -1265,6 +1265,8 @@ func _play(logs: Array) -> void:
 				await _show_hit(l)
 			"toast":
 				XToast.show_text(str(l.text))
+			"se":
+				play_se(l.se)
 			"battle_text":
 				_log_add(str(l.text))  # BattleManager._logWindow.push('addText')（宿傩「发动了神灶：开！」等）
 			"enemy_change":
@@ -1574,3 +1576,11 @@ func _victory() -> void:
 	screen.setup(r, before, logic.actors, logic.auto)
 	ui.add_child(screen)
 	await screen.continued
+
+
+## 事件指令 250 播放音效（战斗里的公共事件）：同地图 XMapScene.play_se，音量／音调不读
+func play_se(audio) -> void:
+	var p := XDB.audio_path("se", str(audio.get("name", ""))) if audio is Dictionary else ""
+	if p != "" and se:
+		se.stream = load(p)
+		se.play()
