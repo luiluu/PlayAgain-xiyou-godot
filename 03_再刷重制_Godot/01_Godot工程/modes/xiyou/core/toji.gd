@@ -41,7 +41,7 @@ extends RefCounted
 ## - 封印失效（applyGlobal 包装）：带 2634 的行动者下一次主动技能失效并扣一次，普攻、防御、物品不扣。
 ## - 暴君（addState／addDebuff 包装）：负面状态（不是难度系统状态、阵亡与形态以外；限制行动的、BuffType 不在祝福／变身／魔法／
 ##   合剂／食物／愤怒／共鸣里的、没有 BuffType 时名字带毒灼诅咒封印等的）与弱化都加不上；学暴君（learnSkill 包装）与 repair 时清掉
-##   身上的负面状态与弱化。O-131（优化登记）：原版清弱化调的 removeDebuff 在 MV 里不存在，清完负面状态碰到第一个弱化就抛错，
+##   身上的负面状态与弱化。O-138（优化登记）：原版清弱化调的 removeDebuff 在 MV 里不存在，清完负面状态碰到第一个弱化就抛错，
 ##   弱化留着；重制照说明清掉（CLEAR_DEBUFFS）。正常游戏里甚尔 1 级就学会暴君、弱化本来加不上，碰不到。
 ## - 命中／闪避／暴击：天与咒缚物理行动命中＋影速（速度比超出 1 的部分 ×0.15，至多 0.3）、被物理行动打时闪避＋影速；
 ##   五感时主技能与武器库不被闪避，主技能、武器库、反弹读到的目标暴击闪避 ×0.34（西游闪避公式为 0，命中常满，参照只看得出后两项）。
@@ -78,7 +78,7 @@ const SEAL := 2634
 const AWAKENING := 10226
 const DEATH := 1
 
-## O-131（优化登记）：学暴君／repair 时清弱化。false＝照原版（removeDebuff 不存在，抛错后弱化留着）
+## O-138（优化登记）：学暴君／repair 时清弱化。false＝照原版（removeDebuff 不存在，抛错后弱化留着）
 static var CLEAR_DEBUFFS := true
 const POSITIVE_BUFF_TYPES := ["祝福", "变身", "魔法", "合剂", "食物", "愤怒", "共鸣"]
 static var _negative_re := RegEx.create_from_string("中毒|毒|灼|诅咒|封印|眩晕|麻痹|虚弱|减速|沉默|睡眠|冻结|流血|失效")
