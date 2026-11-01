@@ -213,8 +213,11 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 		return
 	if XMira.resists(self, id):
 		return  # 米拉终焉 isStateResist／addState 包装：黑龙形态挡名单状态
+	if XYunshang.ghost_death(self, id):
+		return  # 云裳不渡黄泉 addState／die 包装：首次倒下留衣魂，衣魂期间不阵亡
 	var fresh := not state_ids.has(id)
 	super(id, random)
+	XYunshang.state_added(self, id, not fresh)  # 云裳 stateAdded 包装：百厄成锦收录减益
 	if fresh and state_ids.has(id) and lifecycle_context.get("resources") == null:
 		release_to_party()
 

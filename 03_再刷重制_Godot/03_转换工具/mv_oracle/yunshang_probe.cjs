@@ -326,13 +326,14 @@ for (const woke of [false, true]) p3(`p3.ghost${woke ? '.awake' : ''}`, {level: 
   at(cast2(bm, foes[1], 1, 1));
   at(cast2(bm, ally, 1, 2));
   at(cast2(bm, ally, 1, 2));
-  at(cast2(bm, foes[1], 1, 1));
+  at(cast2(bm, foes[1], 1, 2));
 });
+// 敌人打的是 8 号、不打云裳：云裳是超强者，原版天灾／地狱路线压制承伤 ×1.2／×1.5（installSuperStrongRouteRuntime），重制还没移植（交接板「统一调整阶段」）
 // 山河作骨：1 号觉醒时队友承伤 33% 分给他（记进 bank，上限最大生命 ×3）；山河击取 bank 转附加伤害（×188.88）、守势到下一回合末，期间被敌人打反击一次（×0.5）
 p3('p3.mountain', {level: 20, stage: 0, allyRobe: 0, foeAtk: 300, allyHp: 1000000}, ({bm, a, ally, foes, at}) => {
   Y.wake(ally);
   at({start: true, skills: ally.skills().map(s => s.id).filter(id => id >= 10270)});
-  at(cast2(bm, foes[1], 1, 0));
+  at(cast2(bm, foes[1], 1, 2));
   at(cast2(bm, ally, 10282, 1));
   at(cast2(bm, foes[1], 1, 1));
   at(cast2(bm, foes[1], 1, 1));

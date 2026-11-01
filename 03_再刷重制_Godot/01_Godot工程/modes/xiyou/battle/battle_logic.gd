@@ -787,6 +787,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XBlackFlash.finish(self, u, skill)  # 黑闪 endAction 包装（宿傩之内）：集中、连闪、觉醒
 		logs.append_array(XYomiJingliu.j_finish(self, u, skill))  # 镜流 endAction 包装（黑闪之内、渡鸦之外）：追加段、霜痕／裂隙、月魄、追加行动
 		logs.append_array(XRaven.finish(self, u, skill))  # 渡鸦 endAction 包装（各专属模块最内层，原 endAction 之前）：冥界收割、回响
+		logs.append_array(XYunshang.finish(self, u, skill))  # 云裳 endAction 包装（finishAction）：赊账还债、一身两世复演、衣魂计次
 	XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
 	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
 	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
@@ -1136,6 +1137,7 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 		logs.append_array(XSukuna.finish(self, u, skill, true))
 		logs.append_array(XYomiJingliu.j_finish(self, u, skill))
 		logs.append_array(XRaven.finish(self, u, skill))
+		logs.append_array(XYunshang.finish(self, u, skill))
 		XRaceBattle.finish(self, logs)
 		XCat.end_action(self, u, skill)
 		XAlienBattle.finish(self, logs)
@@ -1832,11 +1834,13 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 	if not _action_resources.boss_output.is_settled(t, "hp"):
 		value = _boss_output_value(u, t, value)
 	_action_resources.boss_output.enter_settled(t, "hp")
+	value = XYunshang.hp_damage(self, u, t, value)  # 云裳 executeHpDamage 包装：山河作骨分担、赊月偿星记债
 	var sukuna_shield := XSukuna.strip_shield(u, t, item)  # 宿傩 executeHpDamage 包装：真伤免护盾
 	var sukuna_hp := t.hp
 	var out := _execute_hp_damage(u, t, value, drain)
 	XBlackFlash.after_hp(u, t, sukuna_hp - t.hp, item)  # 黑闪 executeHpDamage 包装（宿傩之内）：记伤害、黑闪成功
 	XSukuna.restore_shield(u, t, sukuna_shield, sukuna_hp)
+	XYunshang.after_hp(self, u, t, value, item)  # 云裳 executeHpDamage 包装：记每段命中、山河作骨守势反击
 	_action_resources.boss_output.leave_settled()
 	XAlienBattle.record(self, u, t, maxf(0.0, alien_before - t.hp))
 	return out
@@ -2334,7 +2338,7 @@ func end_battle(result := -1) -> void:
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XSukuna.end_battle(self)  # 宿傩 endBattle 包装：清战斗数据与领域、适应、觉醒状态
-	XYunshang.end_battle()  # 云裳 endBattle 包装：清战斗数据、御风、余辉、符针
+	XYunshang.end_battle(self)  # 云裳 endBattle 包装：结清赊账、结束衣魂，清战斗数据、御风、余辉、符针
 	XBlackFlash.end_battle(self)  # 黑闪 endBattle 包装
 	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火
 	XGarou.clear_battle()  # 饿狼 endBattle 包装：清进化、解析、琦玉

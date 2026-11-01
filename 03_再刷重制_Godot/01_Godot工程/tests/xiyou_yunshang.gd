@@ -254,7 +254,9 @@ func _run() -> void:
 				_battle_case(c)
 			"p2":
 				_p2_case(c)
-	check("covers_all", seen.keys().size() == 6, seen.keys())
+			"p3":
+				_p3_case(c)
+	check("covers_all", seen.keys().size() == 7, seen.keys())
 	finish()
 
 
@@ -495,6 +497,164 @@ func _p2_case(c: Dictionary) -> void:
 			snap.call(_cast2(logic, a, 1, 2))
 	logic.end_battle(0)
 	_p2_compare(str(c.id), steps, c.observed.steps)
+
+
+# ---- 第二期 B 批前一半（p3.*）：赊账、幽灵、山河作骨、百厄成锦、逆命换锦、一身两世 ----
+const P3_TOLERANCE := 0.002
+
+
+func _st3(b) -> Array:
+	return b.state_ids.filter(func(i): return int(i) != 1).map(func(i): return [int(i), int(b.state_turns.get(i, 0))])
+
+
+func _v3(logic: XBattleLogic, a: XActor, ally: XActor) -> Dictionary:
+	var d := XYunshang.data(ally)
+	var yd = null
+	if not d.is_empty():
+		yd = {"debt": XYunshang.debt_total(d), "due": (d.debts as Array).map(func(x): return int(x.due)), "bank": float(d.bank), "ghost": int(d.ghost),
+			"ghostDone": int(d.ghost_done), "ghostUsed": bool(d.ghost_used), "revived": bool(d.revived),
+			"captured": (d.captured as Array).map(func(x): return [int(x.id), int(x.turns) if x.turns != null else -1, bool(x.cleaned)])}
+	var st := [_st3(a), _st3(ally)]
+	for e in logic.enemies:
+		st.append(_st3(e))
+	return {"hp": [a.mhp - a.hp, ally.mhp - ally.hp], "alive": [a.is_alive(), ally.is_alive()], "mp": ally.mp / ally.mmp, "d": yd, "st": st}
+
+
+func _w_v3(w: Dictionary) -> Dictionary:
+	var yd = null
+	if w.d != null:
+		yd = {"debt": float(w.d.debt), "due": (w.d.due as Array).map(func(v): return int(v)), "bank": float(w.d.bank), "ghost": int(w.d.ghost),
+			"ghostDone": int(w.d.ghostDone), "ghostUsed": bool(w.d.ghostUsed), "revived": bool(w.d.revived),
+			"captured": (w.d.captured as Array).map(func(x): return [int(x[0]), int(x[1]) if x[1] != null else -1, bool(x[2])])}
+	var st := (w.st as Array).map(func(l): return (l as Array).map(func(x): return [int(x[0]), int(x[1]) if x[1] != null else 0]))
+	return {"hp": (w.hp as Array).map(func(v): return float(v)), "alive": (w.alive as Array).map(func(v): return bool(v)), "mp": float(w.mp), "d": yd, "st": st}
+
+
+func _near(g: float, w: float) -> bool:
+	return absf(g - w) <= P3_TOLERANCE * maxf(1.0, absf(w)) + 1.0
+
+
+func _p3_case(c: Dictionary) -> void:
+	var o: Dictionary = c.setup
+	var r := _battle2(o)
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var ally: XActor = r[2]
+	var foes: Array = logic.enemies
+	var steps := []
+	var at := func(x := {}) -> void:
+		x.ys = _ys(logic, a, ally)
+		x.v = _v3(logic, a, ally)
+		steps.append(x)
+	var robe_skills := func() -> Array: return ally.skills().map(func(sk): return int(sk.id)).filter(func(i): return i >= 10270)
+	var id := str(c.id)
+	if id.ends_with(".awake"):
+		XYunshang.wake(logic, ally)
+	match id:
+		"p3.debt":
+			at.call({"skills": robe_skills.call()})
+			at.call(_cast2(logic, foes[1], 1, 1))
+			at.call(_cast2(logic, ally, 1, 2))
+			at.call(_cast2(logic, foes[1], 1, 1))
+			XYunshang.wake(logic, ally)
+			at.call(_cast2(logic, ally, 1, 2))
+			at.call(_cast2(logic, foes[1], 1, 1))
+			logic.end_battle(0)
+			at.call()
+		"p3.debt.due":
+			at.call(_cast2(logic, foes[1], 1, 1))
+			logic.end_turn()
+			at.call()
+			_turn(logic)
+			at.call()
+			logic.end_turn()
+			at.call()
+		"p3.ghost", "p3.ghost.awake":
+			at.call()
+			at.call(_cast2(logic, foes[1], 1, 1))
+			at.call(_cast2(logic, ally, 1, 2))
+			at.call(_cast2(logic, ally, 1, 2))
+			at.call(_cast2(logic, foes[1], 1, 2))
+		"p3.mountain":
+			XYunshang.wake(logic, ally)
+			at.call({"skills": robe_skills.call()})
+			at.call(_cast2(logic, foes[1], 1, 2))
+			at.call(_cast2(logic, ally, XYunshang.MOUNTAIN, 1))
+			at.call(_cast2(logic, foes[1], 1, 1))
+			at.call(_cast2(logic, foes[1], 1, 1))
+		"p3.hundred", "p3.hundred.awake":
+			at.call()
+			for sid in [5, 6, 55]:
+				logic._state_add(ally, sid)
+			at.call()
+			at.call(_cast2(logic, ally, 1, 1))
+		"p3.exchange", "p3.exchange.awake":
+			logic._state_add(ally, 5)
+			logic._state_add(a, 6)
+			logic._state_add(foes[1], 55)
+			logic._state_add(foes[2], 43)
+			at.call({"skills": robe_skills.call()})
+			XYunshang.exchange_pick = [5, 55]
+			at.call(_cast2(logic, ally, XYunshang.EXCHANGE, 1))
+			XYunshang.exchange_pick = [5, 43]
+			at.call(_cast2(logic, ally, XYunshang.EXCHANGE, 2))
+		"p3.clone":
+			at.call()
+			at.call(_cast2(logic, ally, 1, 1))
+			at.call(_cast2(logic, ally, 1, 1))
+			XYunshang.wake(logic, ally)
+			at.call(_cast2(logic, ally, 1, 1))
+	if XYunshang.battle != 0:
+		logic.end_battle(0)
+	_p3_compare(id, steps, c.observed.steps)
+
+
+func _p3_compare(id: String, steps: Array, want: Array) -> void:
+	check(id + ".steps", steps.size() == want.size(), [steps.size(), want.size()])
+	var base := {}
+	for i in mini(steps.size(), want.size()):
+		var g: Dictionary = steps[i]
+		var w: Dictionary = want[i]
+		var sid := "%s.%d" % [id, i]
+		var gv: Dictionary = g.v
+		var wv := _w_v3(w)
+		check(sid + ".awake", g.ys.awake == (w.awake as Array).map(func(v): return bool(v)), [g.ys.awake, w.awake])
+		check(sid + ".alive", gv.alive == wv.alive, [gv.alive, wv.alive])
+		check(sid + ".st", gv.st == wv.st, [gv.st, wv.st])
+		check(sid + ".hp", _near(gv.hp[0], wv.hp[0]) and _near(gv.hp[1], wv.hp[1]), [gv.hp, wv.hp])
+		check(sid + ".mp", absf(gv.mp - wv.mp) < 1e-6, [gv.mp, wv.mp])
+		if wv.d != null and gv.d != null:
+			var gd: Dictionary = gv.d
+			var wd: Dictionary = wv.d
+			check(sid + ".debt", _near(gd.debt, wd.debt) and _near(gd.bank, wd.bank) and gd.due == wd.due, [gd, wd])
+			for k in ["ghost", "ghostDone", "ghostUsed", "revived", "captured"]:
+				check("%s.%s" % [sid, k], gd[k] == wd[k], [gd[k], wd[k]])
+		else:
+			check(sid + ".d", (wv.d == null) == (gv.d == null), [gv.d, wv.d])
+		if w.has("skills"):
+			check(sid + ".skills", g.get("skills") == (w.skills as Array).map(func(v): return int(v)), [g.get("skills"), w.skills])
+		if not w.has("log"):
+			continue
+		var gl: Array = g.log
+		var wl: Array = w.log
+		var gk := gl.map(func(l): return [l.user, l.skill, l.target, l.critical])
+		var wk := wl.map(func(l): return [str(l.user), int(l.skill), str(l.target), bool(l.critical)])
+		check(sid + ".log", gk == wk, [gk, wk])
+		if gk != wk:
+			continue
+		# 角色出手的伤害按行动者分组比比值（同 A 批；1 号的基础伤害与原版差约 0.9%，是既有差异）；敌人出手的数值看生命、债、bank
+		# （原版记的是包装外层 executeHpDamage 的入参，重制记的是分担／记债之后的）
+		for k in gk.size():
+			var who: String = gl[k].user
+			if not who.begins_with("a"):
+				continue
+			if not base.has(who):
+				base[who] = [float(gl[k].value), float(wl[k].value)]
+			var rg: float = float(gl[k].value) / base[who][0]
+			var rw: float = float(wl[k].value) / base[who][1]
+			check("%s.ratio%d" % [sid, k], absf(rg - rw) <= P3_TOLERANCE * maxf(1.0, absf(rw)), [gl[k].value, wl[k].value, rg, rw])
+
+
 
 
 func finish() -> void:

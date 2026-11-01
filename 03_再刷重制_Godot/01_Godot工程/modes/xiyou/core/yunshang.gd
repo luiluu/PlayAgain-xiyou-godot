@@ -35,6 +35,7 @@ const SPREAD := 10276
 const DOUBLE := 10277
 const SILVER := 10278
 const MOUNTAIN := 10282
+const EXCHANGE := 10283
 const NEEDLE := 10286
 const SHOP := 10287
 const WIND := 10272
@@ -56,6 +57,8 @@ const RECRUITED_FLAG := "_codexYunshangRecruited"
 const GATES := {10270: [1, 0], 10271: [10, 0], 10272: [20, 0], 10273: [35, 1], 10274: [50, 2], 10275: [35, 1], 10276: [25, 0], 10277: [30, 0],
 	10278: [35, 1], 10279: [40, 1], 10280: [45, 1], 10281: [55, 2], 10282: [1, 0], 10283: [1, 0], 10284: [1, 0], 10285: [1, 0], 10286: [1, 0], 10287: [20, 0]}
 const COEFFICIENTS := {PIN: 66.66, CUT: 111.88, GATHER: 246.21, NEEDLE: 33.33, MOUNTAIN: 888.88}
+## robeDamageCoefficients：山河作骨 bank、赊月偿星 debt 转附加伤害的倍率（Y.storedDamage）
+const STORED := {"bank": 188.88, "debt": 188.88}
 
 
 static func own(a) -> bool:
@@ -155,6 +158,8 @@ static func formula(a, b, item: Dictionary, calculating := true) -> float:
 			v = COEFFICIENTS[id] * maxf(0.0, a.mat - defense * 0.05) * gather_rounds
 		MOUNTAIN:
 			v = COEFFICIENTS[id] * maxf(0.0, a.def + a.mdf - defense * 0.1)
+	if derived_frame.has("raw"):
+		v = float(derived_frame.raw)  # action._yunRaw（山河 bank、赊账 debt 的附加伤害）
 	return maxf(0.0, v)
 
 ## 收针的觉醒回合数（action._yunGatherRounds，prepare 时按所选觉醒者算好）
@@ -227,9 +232,9 @@ static func meets(a, skill: Dictionary, logic) -> bool:
 		return false
 	if id == GATHER and not logic.actors.any(func(m): return awake(m)):
 		return false
-	if id == GIFT and (key(a) != 11 or int(data(a).get("gifts", 0)) >= 3 or not source_original(a)):
+	if id == GIFT and (key(a) != 11 or int(data(a).get("gifts", 0)) >= 3 or not source_original(a) or int(data(a).get("ghost", 0)) > 0):
 		return false
-	if id == STORE and (key(a) != 9 or not source_original(a)):
+	if id == STORE and (key(a) != 9 or not source_original(a) or int(data(a).get("ghost", 0)) > 0):
 		return false
 	return true
 
@@ -278,7 +283,9 @@ static func data(a) -> Dictionary:
 	var d = _data.get(a)
 	if d == null or d.uid != uid or int(d.battle) != battle:
 		d = {"uid": uid, "battle": battle, "key": key(a), "wake_until": 0, "stored": 0, "gifts": 0, "free_gift_round": -1,
-			"release_round": -1, "cut_round": -1, "cut_values": null, "cut_choices": [], "cut_snapshot": {}, "cut_awake": false}
+			"release_round": -1, "cut_round": -1, "cut_values": null, "cut_choices": [], "cut_snapshot": {}, "cut_awake": false,
+			"bank": 0.0, "debts": [], "captured": [], "ghost": 0, "ghost_done": 0, "ghost_used": false, "ghost_expires": 0, "revived": false,
+			"clone_round": -1, "debt_conversion": false, "exchange_charge": false, "guard_until": 0}
 		_data[a] = d
 	return d
 
@@ -324,6 +331,9 @@ static func wake(logic, a) -> bool:
 		return false
 	var fresh := not awake(a)
 	d.wake_until = maxi(int(d.wake_until), round + 1)
+	if fresh:
+		d.debt_conversion = true
+		d.exchange_charge = true
 	if fresh and int(d.key) == 8 and int(d.cut_round) == round:
 		cut(a, d.cut_choices)
 	var c := _cloud(logic)
@@ -390,17 +400,41 @@ static func start_turn(logic) -> void:
 			_refresh(a)
 
 
-## endTurn 包装：六衡裁身回合末清除（赊账到期、衣魂是 B 批）
+## endTurn 包装：到期的债扣生命、衣魂过期倒下、六衡裁身回合末清除
 static func end_turn(logic) -> void:
 	for a in logic.actors:
 		var d := data(a)
-		if not d.is_empty() and d.cut_values != null:
+		if d.is_empty():
+			continue
+		var due := 0.0
+		var rest := []
+		for x in d.debts:
+			if int(x.due) <= round:
+				due += float(x.amount)
+			else:
+				rest.append(x)
+		d.debts = rest
+		if due > 0.0:
+			logic.gain_hp(a, -due)
+		if int(d.ghost) > 0 and round >= int(d.ghost_expires):
+			end_ghost(logic, a, d)
+		if d.cut_values != null:
 			d.cut_values = null
 			_refresh(a)
 
 
-## endBattle 包装：清所有战斗数据
-static func end_battle() -> void:
+## endBattle 包装：结清赊账、结束衣魂，再清所有战斗数据
+static func end_battle(logic = null) -> void:
+	if logic != null and battle != 0:
+		for a in logic.actors:
+			var d: Dictionary = _data.get(a, {})
+			if d.is_empty() or int(d.battle) != battle:
+				continue
+			settle_debt(logic, a, d)
+			if int(d.ghost) > 0:
+				end_ghost(logic, a, d)
+	pending.clear()
+	exchange_pick = null
 	_data.clear()
 	wind_until.clear()
 	afterglow.clear()
@@ -474,10 +508,10 @@ static func cut(a, choices: Array) -> bool:
 	return true
 
 
-## Game_Actor.skills 包装：天衣给的技能（同袍换日 11 赠行、寸光留仙 9 收存余光；其余天衣的技能是 B 批）
+## Game_Actor.skills 包装：天衣给的技能（山河作骨 0 山河击、逆命换锦 4 换锦、同袍换日 11 赠行、寸光留仙 9 收存余光；空袖藏星 6 借技能是下一期）
 static func skill_ids(a, ids: Array) -> Array:
 	var k := key(a)
-	var extra := GIFT if k == 11 else (STORE if k == 9 else 0)
+	var extra: int = {0: MOUNTAIN, 4: EXCHANGE, 11: GIFT, 9: STORE}.get(k, 0)
 	if extra != 0 and not ids.has(extra):
 		ids.append(extra)
 	return ids
@@ -570,7 +604,8 @@ static func prepare(logic, u, skill: Dictionary) -> Array:
 	frame = {}
 	if battle == 0 or skill.is_empty():
 		return logs
-	frame = {"user": u, "glow": 1.0, "weaken": false, "total": 0.0, "burst": false, "command": false, "dispel": false, "planted": []}
+	frame = {"user": u, "glow": 1.0, "weaken": false, "total": 0.0, "burst": false, "command": false, "dispel": false, "planted": [], "hits": [],
+		"robe_hit": false, "bank": 0.0, "debt": 0.0, "finished": false}
 	if u is XEnemy:
 		logs.append_array(burst(logic, u, true))
 		if int(pin_until.get(u, -1)) >= round and damage_action(skill):
@@ -589,6 +624,13 @@ static func prepare(logic, u, skill: Dictionary) -> Array:
 			gather_rounds = int(data(t).wake_until) - round + 1
 			data(t).wake_until = 0
 			_refresh(t)
+	var d := data(u)
+	if int(d.get("key", -1)) == 0 and int(skill.get("id", 0)) == MOUNTAIN and not XBattleLogic.is_item(skill):
+		frame.bank = float(d.bank)
+		d.bank = 0.0
+		d.guard_until = round + 1
+	if int(d.get("key", -1)) == 2 and awake(u) and bool(d.debt_conversion) and damage_action(skill):
+		frame.debt = debt_total(d)
 	if not _acted.has(u):
 		_acted.append(u)
 	return logs
@@ -597,9 +639,12 @@ static func prepare(logic, u, skill: Dictionary) -> Array:
 ## Game_Action.apply 包装（原 apply 之后）：命中时的指令（御风、敕衣点神、赠行、收存余光，每次行动一次）、钉影种针、拆神驱散、
 ## 觉醒中的伤害引爆目标一根符针。返回派生伤害的记录
 static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -> Array:
-	var logs := []
+	var logs := pending.duplicate()
+	pending.clear()
 	if battle == 0 or not is_same(frame.get("user"), u) or not derived_frame.is_empty():
 		return logs
+	if not frame.has("primary"):
+		frame.primary = primary if own(u) else t  # action._yunPrimary
 	if damage_action(skill):
 		frame.total = float(frame.total) + maxf(0.0, float(r.get("hp", 0.0)))
 	if not used or bool(r.get("missed", false)) or bool(r.get("evaded", false)):
@@ -625,6 +670,38 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 	if damage_action(skill) and awake(u) and float(frame.total) > 0.0 and not bool(frame.burst):
 		frame.burst = true
 		logs.append_array(burst(logic, t, false))
+	var d := data(u)
+	if not d.is_empty() and damage_action(skill) and not bool(frame.robe_hit) and float(frame.total) > 0.0:
+		frame.robe_hit = true
+		logs.append_array(_robe_hit(logic, u, d))
+	return logs
+
+
+## 天衣命中（每次伤害行动一次）：百厄成锦 1 把收录的减益转给主目标（醒：全部敌人）；赊月偿星 2 觉醒时把债转成符针附加伤害；山河作骨 0 山河击取 bank 转附加伤害
+static func _robe_hit(logic, u, d: Dictionary) -> Array:
+	var logs := []
+	var target = frame.get("primary")
+	if int(d.key) == 1 and not (d.captured as Array).is_empty():
+		var enemies: Array = logic.alive(logic.enemies) if awake(u) else [target]
+		var pending_states := []
+		for s in d.captured:
+			var ok := false
+			for e in enemies:
+				ok = state_copy(logic, u, e, int(s.id), s.turns) or ok
+			if awake(u) or ok:
+				logic._state_remove(u, int(s.id))
+			else:
+				pending_states.append(s)
+		d.captured = pending_states
+	if int(d.key) == 2 and float(frame.debt) > 0.0:
+		var n := float(frame.debt)
+		d.debt_conversion = false
+		repay(d, n)
+		logs.append_array(derived(logic, u, target, NEEDLE, {"raw": n * STORED.debt, "kind": "debt"}))
+		frame.debt = 0.0
+	if int(d.key) == 0 and float(frame.bank) > 0.0:
+		logs.append_array(derived(logic, u, target, MOUNTAIN, {"raw": float(frame.bank) * STORED.bank, "kind": "bank"}))
+		frame.bank = 0.0
 	return logs
 
 
@@ -644,6 +721,58 @@ static func _command(logic, u, id: int, t) -> void:
 		add_actions(logic, t, 1, "gift")
 	elif id == STORE:
 		store_actions(logic, u)
+	elif id == EXCHANGE:
+		_exchange(logic, u, t)
+
+
+## 换锦（逆命换锦 4）：觉醒后第一次（每次觉醒一次）全队普通减益转给全部敌人、夺敌人最多 3 个普通增益给全队；
+## 否则自己的一个减益与目标的一个增益互换（原版战斗里的选择窗，重制 exchange_pick＝[自己的减益, 目标的增益]，不给就照自动战斗：各取第一个）
+static func _exchange(logic, u, t) -> void:
+	var d := data(u)
+	var bad_ids := transfer_debuffs()
+	if awake(u) and bool(d.exchange_charge):
+		d.exchange_charge = false
+		var bad := {}
+		for x in logic.actors:
+			for i in x.state_ids:
+				if bad_ids.has(int(i)) and not bad.has(int(i)):
+					bad[int(i)] = x
+		var good := {}
+		for x in logic.alive(logic.enemies):
+			for i in x.state_ids:
+				if SHARE_BUFFS.has(int(i)) and not good.has(int(i)) and good.size() < 3:
+					good[int(i)] = x
+		var bk: Array = bad.keys()
+		bk.sort()  # JS Object.keys：整数键按数值升序
+		for i in bk:
+			var ok := false
+			for x in logic.alive(logic.enemies):
+				ok = state_copy(logic, bad[i], x, i) or ok
+			if ok:
+				for x in logic.actors:
+					logic._state_remove(x, i)
+		var gk: Array = good.keys()
+		gk.sort()
+		for i in gk:
+			var ok := false
+			for x in logic.actors:
+				ok = state_copy(logic, good[i], x, i) or ok
+			if ok:
+				for x in logic.alive(logic.enemies):
+					logic._state_remove(x, i)
+		return
+	var pick = exchange_pick
+	exchange_pick = null
+	if pick == null:
+		var mine_list: Array = u.state_ids.filter(func(i): return bad_ids.has(int(i)))
+		var theirs_list: Array = t.state_ids.filter(func(i): return SHARE_BUFFS.has(int(i)))
+		pick = [int(mine_list[0]) if not mine_list.is_empty() else 0, int(theirs_list[0]) if not theirs_list.is_empty() else 0]
+	var mine := int(pick[0])
+	var theirs := int(pick[1])
+	if mine != 0 and u.state_ids.has(mine) and state_copy(logic, u, t, mine):
+		logic._state_remove(u, mine)
+	if theirs != 0 and t.state_ids.has(theirs) and state_copy(logic, t, u, theirs):
+		logic._state_remove(t, theirs)
 
 
 ## 拆神：去掉目标第一个普通增益；成功时队伍（醒着的先）里第一个有普通减益的去掉一个
@@ -693,7 +822,25 @@ static func derived(logic, src, t, skill_id: int, o: Dictionary) -> Array:
 	frame = {}
 	var base_cri: float = src.cri * (1.0 - t.cev) if bool(skill.get("damage", {}).get("critical", false)) else 0.0
 	var critical: bool = logic._float("yunshang_derived_critical") < clampf(cri(src, skill, base_cri), 0.0, 1.0)
-	var value := roundf(logic._damage_value(src, skill, t, critical))
+	var value := 0.0
+	if o.has("damage"):
+		value = roundf(float(o.damage))  # 一身两世复演：照每段命中的数值，不再计算
+	else:
+		# 山河 bank／赊账 debt（_yunStoredKind）直接调 nativeDamage，那段的符文下限在这条路上生效：被动缓存的暴伤、终伤至少取
+		# offensiveGrowth（n＝min(99,等级)−24：暴伤 1.88n、终伤 0.1888n），算完还原（山河击本身与反击走后装的 makeDamageValue，不经这段）
+		var cache: Dictionary = src.passive_cache() if o.has("kind") else {}
+		var saved := [cache.get("critHarmRi", 0.0), cache.get("globalHarmRi", 0.0)]
+		if o.has("kind"):
+			var g := maxf(0.0, mini(99, int(src.level)) - 24.0)
+			cache.critHarmRi = maxf(float(saved[0]), g * 1.88)
+			cache.globalHarmRi = maxf(float(saved[1]), g * 0.1888)
+		value = logic._damage_value(src, skill, t, critical)
+		if o.has("kind"):
+			cache.critHarmRi = saved[0]
+			cache.globalHarmRi = saved[1]
+		if o.has("raw") and relic(src):
+			value *= 1.99  # nativeDamage(raw) 之外另乘（伤害钩子里戴梭的 ×1.99 照算）
+		value = roundf(value)
 	derived_frame = {}
 	frame = saved_frame
 	logic.gain_hp(t, -value)
@@ -744,3 +891,186 @@ static func calculate_split(skill: Dictionary, u, t, options: Dictionary) -> Dic
 	out.value = roundf(total)
 	out.breakdown = {}  # 分段结果没有单一元素行：固定减伤（apply_fixed_mitigation）不再按第一段的行摊（原版各段 breakdown 存在 segments 里）
 	return out
+
+
+# ---- 第二期 B 批前一半：状态复制、赊账（2 赊月偿星）、衣魂（3 不渡黄泉）、山河作骨 0、百厄成锦 1、逆命换锦 4、一身两世 12 ----
+## 派生伤害的记录里没法当场返回的（敌人打山河作骨守势者时的反击）：下一次 applied 带出去
+static var pending := []
+## 换锦的选择（原版选择窗写 action._yunExchangeSelf／_yunExchangeEnemy）：[自己的减益, 目标的增益]，用一次就清
+static var exchange_pick = null
+static var _transferring := 0
+## O-待定：stateCopy 的来源身上没有这个状态时（一身两世复演复制技能附加的状态），原版把回合数写成 undefined，
+## 这个状态在回合末永不到期（只等战斗结束或被驱散）。true＝保留附加时掷出的回合数；false＝照原版永不按回合到期
+static var o_copy_turns := true
+const NEVER_EXPIRES := 1 << 30
+
+
+static func ghost(a) -> bool:
+	return battle != 0 and int(data(a).get("ghost", 0)) > 0
+
+
+static func debt_total(d: Dictionary) -> float:
+	var n := 0.0
+	for x in d.get("debts", []):
+		n += float(x.amount)
+	return n
+
+
+## repay：按记债先后还 n
+static func repay(d: Dictionary, n: float) -> void:
+	for x in d.debts:
+		if n <= 0.0:
+			break
+		var pay := minf(n, float(x.amount))
+		x.amount = float(x.amount) - pay
+		n -= pay
+	d.debts = (d.debts as Array).filter(func(x): return float(x.amount) > 0.0)
+
+
+## settleDebt：一次扣完全部债
+static func settle_debt(logic, a, d: Dictionary) -> void:
+	var total := debt_total(d)
+	d.debts = []
+	if total > 0.0:
+		logic.gain_hp(a, -total)
+
+
+## endGhost：衣魂结束，生命归 0、倒下
+static func end_ghost(logic, a, d: Dictionary) -> void:
+	d.ghost = 0
+	d.ghost_ending = true
+	logic.gain_hp(a, -a.hp)
+	logic._die(a)
+	d.erase("ghost_ending")
+
+
+## Game_Actor.addState 包装（原 addState 之前）的阵亡那段与 die 包装 ghostDie：不渡黄泉 3 每场首次倒下不阵亡，留衣魂 2 次行动（生命 1，到下一回合末）；
+## 衣魂期间不再阵亡。返回真＝这次不加阵亡状态
+static func ghost_death(a, id: int) -> bool:
+	if battle == 0 or id != 1:
+		return false
+	var d := data(a)
+	if d.is_empty() or int(d.key) != 3 or d.has("ghost_ending"):
+		return false
+	if not bool(d.ghost_used):
+		d.ghost_used = true
+		d.ghost = 2
+		d.ghost_done = 0
+		d.ghost_expires = round + 1
+		a.hp = 1.0
+		return true
+	return int(d.ghost) > 0
+
+
+## stateAdded 包装（原 addState 之后，新附加的状态）：百厄成锦 1 收录普通减益（没醒 3 个、醒 6 个；醒着当场去掉）。孤灯照众 10 的共享是下一期
+static func state_added(a, id: int, had: bool) -> void:
+	if battle == 0 or had or _transferring > 0 or not a.state_ids.has(id):
+		return
+	var d := data(a)
+	if d.is_empty() or int(d.key) != 1 or not transfer_debuffs().has(id):
+		return
+	var cap := 6 if awake(a) else 3
+	if (d.captured as Array).size() < cap and not (d.captured as Array).any(func(x): return int(x.id) == id):
+		d.captured.append({"id": id, "turns": a.state_turns.get(id), "cleaned": awake(a)})
+		if awake(a):
+			var logic = XAlienBattle.active_logic()
+			if logic != null:
+				logic._state_remove(a, id)
+
+
+## stateCopy：异化支援帧里（来源＝from）给 to 附加 id，回合数照 turns（不给就照 from 身上的）；腐蚀同步层数
+static func state_copy(logic, from, to, id: int, turns = null) -> bool:
+	if to == null or to.is_dead() or to.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) or logic.state_rate(to, id) <= 0.0:
+		return false
+	_transferring += 1
+	XAlienBattle._support(to, from, func(): logic._state_add(to, id))
+	if to.state_ids.has(id):
+		if turns == null:
+			turns = from.state_turns.get(id)
+		if turns != null:
+			to.state_turns[id] = int(turns)
+		elif not o_copy_turns:
+			to.state_turns[id] = NEVER_EXPIRES
+		if id == XAlienBattle.corrosion_id():
+			XAlienBattle.sync_corrosion(to)
+	_transferring -= 1
+	return to.state_ids.has(id)
+
+
+## executeHpDamage 包装（原扣血之前）：山河作骨 0 觉醒者替出战队友分担 33%（记进 bank，上限最大生命 ×3）；赊月偿星 2 把 50% 记成债（债总额上限最大生命 ×2，到期＝下一回合末）
+static func hp_damage(logic, _u, t, value: float) -> float:
+	if battle == 0 or value <= 0.0:
+		return value
+	if t is XActor and logic.actors.has(t):
+		var guards: Array = logic.actors.filter(func(x): return x != t and x.is_alive() and key(x) == 0 and awake(x))
+		if not guards.is_empty():
+			var total := floorf(value * 0.33)
+			var each := floorf(total / guards.size())
+			var remainder := total - each * guards.size()
+			value -= total
+			for i in guards.size():
+				var g = guards[i]
+				var take := each + (remainder if i == 0 else 0.0)
+				var before: float = g.hp
+				logic.gain_hp(g, -take)
+				data(g).bank = minf(g.mhp * 3.0, float(data(g).bank) + minf(before, take))
+	var d := data(t)
+	if int(d.get("key", -1)) == 2:
+		var delay := minf(floorf(value * 0.5), maxf(0.0, t.mhp * 2.0 - debt_total(d)))
+		if delay > 0.0:
+			d.debts.append({"amount": delay, "due": round + 1})
+			value -= delay
+	return value
+
+
+## executeHpDamage 包装（原扣血之后）：记主动伤害行动的每段命中（一身两世复演用）；山河作骨守势中被敌人打，反击一次山河击 ×0.5
+static func after_hp(logic, u, t, value: float, item: Dictionary) -> void:
+	if battle == 0:
+		return
+	if derived_frame.is_empty() and is_same(frame.get("user"), u) and damage_action(item):
+		(frame.hits as Array).append({"target": t, "value": value, "critical": bool(logic._action_resources.result(t).get("critical", false))})
+	var d := data(t)
+	if int(d.get("key", -1)) == 0 and int(d.guard_until) >= round and int(d.guard_until) > 0 and derived_frame.is_empty() and u is XEnemy and value > 0.0:
+		d.guard_until = 0
+		pending.append_array(derived(logic, t, u, MOUNTAIN, {"rate": 0.5}))
+
+
+## finishAction（endAction 包装，原 endAction 之前）：赊月偿星 2 用伤害还债 33%；一身两世 12 复演（每回合一次，醒着每次 2 遍）；衣魂计次（赠行、收存余光不算）
+static func finish(logic, u, skill) -> Array:
+	var logs := []
+	if battle == 0 or skill == null or not skill is Dictionary or skill.is_empty():
+		return logs
+	var d := data(u)
+	if d.is_empty():
+		return logs
+	var id := int(skill.get("id", 0))
+	var mine: bool = is_same(frame.get("user"), u) and not bool(frame.get("finished", true))  # 防御不走 prepare（见交付单），没有本次行动的帧
+	if mine:
+		frame.finished = true
+	var dmg := mine and damage_action(skill)
+	if int(d.key) == 2 and dmg:
+		repay(d, float(frame.total) * 0.33)
+	if int(d.key) == 12 and dmg and (awake(u) or int(d.clone_round) != round):
+		var clones := 2 if awake(u) else 1
+		d.clone_round = round
+		var foes: Array = logic.enemies if u is XActor else logic.actors
+		for n in clones:
+			for h in frame.hits:
+				var t = h.target if h.target.is_alive() else (logic.alive(foes)[0] if not logic.alive(foes).is_empty() else null)
+				if t == null:
+					continue
+				logs.append_array(derived(logic, u, t, id, {"damage": h.value}))
+				for e in skill.get("effects", []):
+					if int(e.code) == 21 and (transfer_debuffs().has(int(e.dataId)) or SHARE_BUFFS.has(int(e.dataId))) and logic._float("yunshang_clone_state") < float(e.value1):
+						state_copy(logic, u, t, int(e.dataId))
+	if int(d.ghost) > 0 and not (not XBattleLogic.is_item(skill) and id in [GIFT, STORE]):
+		d.ghost = int(d.ghost) - 1
+		d.ghost_done = int(d.ghost_done) + 1
+		if awake(u) and int(d.ghost_done) >= 2 and not bool(d.revived):
+			d.revived = true
+			d.ghost = 0
+			u.hp = floorf(u.mhp * 0.5)
+			u.mp = floorf(u.mmp * 0.5)
+		elif int(d.ghost) <= 0:
+			end_ghost(logic, u, d)
+	return logs
