@@ -19,8 +19,48 @@ extends RefCounted
 ## - 招募 G.recruit（公共事件 9012 的 try { if (!Guyu.recruit()) 还号角 }）：已在队返回 false；没送过百谷生（$gameSystem._guyuRelicGranted）
 ##   时背包里有就拿、没有就生成，装进它装备类型（13）的槽；入队；同步技能；一条右上角提示。
 ## - CodexBinding.curve（installNativeBindingChargeRuntime）：按等级在各档之间线性插值。
-## 未移植（第二期起，全是战斗内）：生命储备（治疗溢出转储备、储备并进最大生命、上限）、花期与绽放、代命与归根再生、花荫护盾、
-## 转移、终结、谷雨自动战斗固定判断 autoAction、胜利掉进阶石 rollStone、战斗界面储备条与转移窗口、立绘与动作。
+## 第二期 A（战斗内，参照 guyu_battle_probe）：
+## - 生命周期：BattleManager.setup 包装 reset＋activeBattle；startTurn 包装 G.round＝turnCount＋1，跑完原 startTurn 再设回 turnCount
+##   （重制 start_turn 首尾两行）；endTurn 包装（原 endTurn 之后）endRound：花期到期收束；endBattle 包装（原 endBattle 之前）finishBattle：
+##   reset、全队生命夹到不含储备的上限，胜利（0）再 rollStone。
+## - 生命储备 row(b).e（重制按角色 id 记）：param 包装给战斗中的角色 param(0) 加储备（baseMhp 走计数器不加）；
+##   上限 cap：谷雨本人无上限，其余 floor((curve(1,1.25,1.5,1.75)＋0.15×谷雨阶位)×不含储备的最大生命)；addE 超出记浪费；
+##   pay 付储备（学了我即万物之春不付）后生命夹到新上限。
+## - gainHp 包装（重制 XResourceContext.gain 外层）：回血时谷雨活跃、受益者是出战角色且之前活着：储备 ＋floor(回血量)
+##   （传进原 gainHp 的量，不是实际回了多少，满血也全记）；来源是谷雨的直接治疗（Game_Action.apply 包装记的 G.healing：
+##   isHpRecover 或带效果 11）先 floor，学了生未央（45 级）且不在花期再 ＋floor(×0.2)。
+## - 行动事件：startAction 包装 G.begin（学了众生之劫时记各出战队员此刻的最大生命 heights，治疗公式用它），endAction 包装
+##   原 endAction 之后 afterAction：本次行动的技能（不是物品、防御、绽放本身，不是花期、花荫、终结）真的执行过、出手者活着就 G.bloom。
+## - Game_Action.apply 包装 doSpecial：花期 open（目标活着、不在花期、过了冷却：花期序号＋1、花期到 round＋1、种子＝目标）；
+##   终结 finish（花期中且储备 ≥1：威力＝全部储备×curve(33,50；40/60 级)，付全部、收束花期）；没生效时整次不结算。
+##   收束 closeFlower：花期 −1、种子清空、冷却到 round＋2。
+## - 绽放 G.bloom：先校种子（死了换第一个活着的敌人，不在花期也照校），谷雨活跃、出手者是活着的出战队员、在花期里：
+##   付 floor(储备×25%)（不足 1 不放），威力＝付出×curve(5,6,7,8)，用技能 10299 直接 apply 种子（不反射、不反击、不掩护），
+##   伤害按谷雨算（makeDamageValue 期间 subject＝谷雨，重制 _damage_value 换攻击者），不会心。
+## - 胜利 rollStone：谷雨在队、还差进阶、背包里谷种金缮石少于差额、Math.randomInt(50)==0 给 1 个。
+## 第二期 B（参照 guyu_battle_probe 的 sub／root／shield／transfer／ai 例）：
+## - 行动事件栈 G.events：startAction 开一个；不是当前行动的 apply（反击、绽放）与不在行动里的扣血（回合末毒、事件）各开临时的
+##   （isolated，不 eligible）。学了众生之劫（25 级）开事件时记下活着的其余出战队员 protected。
+## - 代命 protect（addState 死亡的包装，重制 XBattler.add_state 首行）：当前事件有谷雨、受保护、不在内部操作／付费中、没有抗死、
+##   不是不死：生命改 1、不加死亡，事件记 pendingDeath（期间谷雨不算活跃）；事件结束 G.end 时谷雨归根（forced）。
+## - 归根 root：学了骨生花（25 级）才有；付储备一半（我即万物之春不付）、死亡计数、收束花期；forced 时谷雨生命 0、强加死亡；
+##   rootUntil＝round＋1。谷雨自己倒下（addState 死亡之后、不在内部操作）也归根（不 forced）。
+##   归根中：isAlive 假、isDead 真、canMove 假，不能回血、setHp 抬不起、去不掉死亡、recoverAll 无效（重制 is_dead、gain、
+##   set_resource、remove_state、recover_all 各一行）。
+## - 再生 regenerate：endRound 时归根到期且有别的队员活着、finishBattle 时（不是输）有幸存者：去死亡、生命回满；
+##   60 级戴着百谷生、本场第一次再生时归春：谷雨与储备比最低的活着队友各得 floor(不含储备的最大生命×18%) 储备。
+##   OTB 复活插队交给重制 end_turn 的 _sync_orders（恢复行动的只补进下个回合）。
+## - 花荫 shield：储备 30%（不足 1 不能用），付一次，每个活着、没归根的出战队员各得 min(值, 不含储备的最大生命)，
+##   进护盾账本（installSourceShieldLedgerRuntime，来源 guyu.shield：不衰减、击穿不减半、不吃护盾加成，同源取较高）两回合；
+##   账本在最外层先吸收（executeHpDamage／gainHp／setHp），自然回合末撤销到期的。先许一枝开 20 级起：被花荫挡下一次后
+##   下次绽放 ×1.1（60 级 ×1.2，installThreeGrowthRelicRuntime 的 onAbsorb），每次新花荫重置。重制只做谷雨这一个来源的账本。
+## - 转移 transfer：给出／收回，比例 50%（10 级起可选 25／50／75%；重制没有转移窗口，固定给出 50%），接收者储备不超上限；
+##   10 级起从谷雨给出时受赠者待绽（当前花期里就是本次，否则下一次花期），待绽绽放付 35%（60 级我即万物之春 50%）。
+## - 受伤压力：executeHpDamage 包装记本回合我方受到的生命伤害（账本吸收之后），endRound 换成占全队最大生命的比例。
+## - 自动战斗 autoAction（makeAutoBattleActions 包装，重制 auto_battle_action 首行，压过挂机与智能 AI）：最低血＜35% 治疗；
+##   受伤（＜70% 且无花荫）≥2 人或上回合压力≥20%、且没人有花荫：花荫；花期中储备比≥80% 或花期最后一回合：终结；
+##   不在花期且有人储备≥上限一半：花期打生命最多的敌人；否则治疗。储备比的上限对谷雨也按 referenceCap。
+## 未移植：转移窗口（模式与比例选择）、isValid 包装（重制的角色行动不看 isValid）、战斗界面储备条、立绘与动作（画面）。
 
 const ACTOR := 175
 const RELIC := 7912
@@ -37,10 +77,53 @@ const RECRUIT_TEXT := "谷雨加入队伍，已装备百谷生。"
 const RECRUIT_TEXT_PLAIN := "谷雨加入队伍。"
 ## G._notifiedRelic：本次运行里已提示过送法宝（不存档）
 static var _notified_relic := false
-## 战斗内字段（第二期）：花期到哪回合、开花冷却到哪回合、当前回合
+const BLOOM := 10299
+const CAP_CURVE := [1.0, 1.25, 1.5, 1.75]
+const BLOOM_RATIO := 0.25
+const GROWTH_RATIO := 0.2
+const STONE_ONE_IN := 50
+const STONE_TEXT := "获得了 %s！"
+## 战斗内状态（G.reset 清）：activeBattle、花期到哪回合、开花冷却到哪回合、当前回合、花期序号、种子（敌群序号，-1＝没有）
+static var active_battle := false
 static var flower_until := -1
 static var open_at := 0
 static var round := 0
+static var flower_serial := 0
+static var seed := -1
+## 生命储备 row(b).e：角色 id → 储备
+static var reserves := {}
+## G.totals 的生成、浪费、付出、绽放次数
+static var totals := {}
+## 本场战斗（弱引用：静态量拿着战斗对象，没走 end_battle 的测试退出时会崩）
+static var _logic_ref: WeakRef = null
+## 行动事件栈 G.events：{user（弱引用）, eligible, executed, guyu（开事件时谷雨活跃）, protected、heights（角色 id → 开始时的最大生命）, pending}
+static var _events: Array = []
+## 刚结束的行动事件（afterAction 用）
+static var _last := {}
+## 每人的战斗内状态（角色 id → {root_until, bud, bud_flower, spring_boost, spring_hit_used, spring_action, shield, shield_until}）
+static var rows := {}
+## G.internal／G.unprotected 计数；本回合受伤、上回合压力；归春用过；finishBattle 中
+static var internal := 0
+static var unprotected := 0
+static var round_taken := 0.0
+static var last_round_pressure := 0.0
+static var spring_return_done := false
+static var ending := false
+## 转移的模式与比例（原版转移窗口选；重制没有窗口，固定给出 50%）
+static var transfer_mode := "give"
+static var transfer_ratio := 0.5
+## 本次行动的花荫值（_guyuShieldValue）、行动序号（花荫重置先许一枝开的 springShieldAction）
+static var _shield_value := 0.0
+static var _action_serial := 0
+## G.healing：本次 Game_Action.apply 的 {guyu: 出手者是谷雨, direct: isHpRecover 或带效果 11}
+static var healing := {}
+## action._guyuSpecialDone／_guyuPower（每次 startAction 清）；绽放的威力与 calcOwner
+static var _special_done := false
+static var _finish_power := 0.0
+static var _bloom_power := 0.0
+static var calc_owner: XActor = null
+## baseMhp：这些角色 id 的 param(0) 暂时不加储备
+static var _base := {}
 
 
 static func own(a) -> bool:
@@ -136,13 +219,17 @@ static func meets(a, skill: Dictionary) -> bool:
 		return true
 	if not own(a):
 		return false
-	if not unlocked(a, k):
+	if not unlocked(a, k) or rooted(a):
 		return false
 	match k:
 		"open":
 			return not (flower_until >= round or round < open_at)
-		"finish", "shield", "transfer":
-			return false  # 要战斗内储备／花期（第二期）；第一期恒没有
+		"finish":
+			return blooming() and reserve(a) >= 1.0
+		"shield":
+			return shield_value(a) >= 1.0
+		"transfer":
+			return transfer_ratios(a).any(func(r): return can_transfer(a, "give", r) or can_transfer(a, "back", r))
 	return true
 
 
@@ -150,10 +237,16 @@ static func meets(a, skill: Dictionary) -> bool:
 static func formula(item: Dictionary, a, b, calculating: bool):
 	var k := key(item)
 	if k == "heal" and own(a):
-		return -float(b.mhp) * heal_ratio(a)
+		return -height(b) * heal_ratio(a)
 	if k == "bloom" or (k == "finish" and own(a)):
-		return maxf(0.0, 0.0 - (0.0 if calculating else float(b.mdf) * 0.5))  # 威力（_guyuPower）第二期
+		return maxf(0.0, (_bloom_power if k == "bloom" else _finish_power) - (0.0 if calculating else float(b.mdf) * 0.5))
 	return null
+
+
+## 治疗公式的 h：本次行动开始时记下的最大生命（含储备；只在学了众生之劫时记），没有就取现在的
+static func height(b) -> float:
+	var h: Dictionary = current().get("heights", {})
+	return float(h[b.actor_id]) if b is XActor and h.has(b.actor_id) else float(b.mhp)
 
 
 ## healRatio：curve(.25,.30,.35,.40)×Π(1＋passiveHEUP%)
@@ -201,3 +294,635 @@ static func recruit(s: XState) -> String:
 	var text := RECRUIT_TEXT if bool(s.flags.get("guyu_relic_granted", false)) and not _notified_relic else RECRUIT_TEXT_PLAIN
 	_notified_relic = true
 	return text
+
+
+# ---------------- 第二期：战斗内 ----------------
+
+static func _logic():
+	return _logic_ref.get_ref() if _logic_ref != null else null
+
+
+static func _members() -> Array:
+	var logic = _logic()
+	return logic.actors if logic != null else []
+
+
+## guyu()：出战队员里的谷雨
+static func _guyu() -> XActor:
+	for b in _members():
+		if own(b):
+			return b
+	return null
+
+
+## active()：战斗中、谷雨出战且活着、没归根、没有代命待死
+static func active() -> XActor:
+	var g := _guyu()
+	if not active_battle or g == null or g.hp <= 0.0 or not g.is_alive():
+		return null
+	for e in _events:
+		if bool(e.guyu) and bool(e.pending):
+			return null
+	return g
+
+
+static func blooming() -> bool:
+	return flower_until >= round and active() != null
+
+
+## G.reserve
+static func reserve(b) -> float:
+	return float(reserves.get(b.actor_id, 0.0)) if active_battle and b is XActor else 0.0
+
+
+static func _row(b) -> Dictionary:
+	var id: int = b.actor_id
+	if not rows.has(id):
+		rows[id] = {"root_until": -1, "bud": false, "bud_flower": 0, "spring_boost": false, "spring_hit_used": false, "spring_action": 0,
+			"shield": 0.0, "shield_until": 0}
+	return rows[id]
+
+
+## G.isRooted
+static func rooted(b) -> bool:
+	return active_battle and b is XActor and rows.has(b.actor_id) and int(rows[b.actor_id].root_until) >= 0
+
+
+## G.hasBud：待绽且是本次或之后的花期
+static func has_bud(b) -> bool:
+	if not active_battle or not b is XActor or not rows.has(b.actor_id):
+		return false
+	var r: Dictionary = rows[b.actor_id]
+	return bool(r.bud) and int(r.bud_flower) >= flower_serial
+
+
+## G.shield：账本里 guyu.shield 的量
+static func shield_of(b) -> float:
+	return float(rows[b.actor_id].shield) if active_battle and b is XActor and rows.has(b.actor_id) else 0.0
+
+
+## baseMhp：不含储备的生命上限
+static func base_mhp(b) -> float:
+	var id: int = b.actor_id
+	var depth := int(_base.get(id, 0))
+	_base[id] = depth + 1
+	var v: float = b.mhp
+	if depth > 0:
+		_base[id] = depth
+	else:
+		_base.erase(id)
+	return v
+
+
+## referenceCap：floor((curve(1,1.25,1.5,1.75)＋0.15×谷雨阶位)×baseMhp)（自动战斗对谷雨本人也用它）
+static func reference_cap(b) -> float:
+	var g := _guyu()
+	if g == null:
+		return 0.0
+	return floorf((curve(int(g.level), CAP_CURVE) + 0.15 * stage(g)) * base_mhp(b))
+
+
+## cap：谷雨本人无上限
+static func cap(b) -> float:
+	return INF if own(b) else reference_cap(b)
+
+
+## param 包装（异化之外、种族之内）：战斗中角色的最大生命加储备
+static func param(a, i: int, v: float) -> float:
+	if i != 0 or not active_battle or _base.has(a.actor_id):
+		return v
+	return v + float(reserves.get(a.actor_id, 0.0))
+
+
+static func _total(k: String, v: float) -> void:
+	totals[k] = float(totals.get(k, 0.0)) + v
+
+
+## addE：超出上限的记浪费
+static func add_e(b, v: float) -> float:
+	var n := floorf(v)
+	if n <= 0.0:
+		return 0.0
+	var e := reserve(b)
+	var add := minf(n, maxf(0.0, cap(b) - e))
+	_total("wasted", n - add)
+	if add <= 0.0:
+		return 0.0
+	reserves[b.actor_id] = e + add
+	b.hp = minf(b.hp, b.mhp)
+	_total("generated", add)
+	return add
+
+
+## pay：学了我即万物之春不付；付了生命夹到新上限
+static func pay(b, q: float) -> float:
+	q = floorf(q)
+	var g := active()
+	var s := 0.0 if g != null and unlocked(g, "spring") else q
+	if s > 0.0:
+		reserves[b.actor_id] = maxf(0.0, reserve(b) - s)
+		b.hp = minf(b.hp, b.mhp)
+		_total("spent", s)
+	return s
+
+
+static func close_flower() -> void:
+	flower_until = -1
+	seed = -1
+	open_at = round + 2
+	for id in rows:
+		rows[id].bud = false
+		rows[id].bud_flower = 0
+
+
+static func reset() -> void:
+	active_battle = false
+	round = 0
+	flower_until = -1
+	flower_serial = 0
+	open_at = 0
+	seed = -1
+	reserves.clear()
+	rows.clear()
+	_events.clear()
+	_last = {}
+	healing = {}
+	internal = 0
+	unprotected = 0
+	round_taken = 0.0
+	last_round_pressure = 0.0
+	spring_return_done = false
+	_special_done = false
+	_finish_power = 0.0
+	_bloom_power = 0.0
+	_shield_value = 0.0
+	calc_owner = null
+	_base.clear()
+	test_relic = false
+	_logic_ref = null
+
+
+## BattleManager.setup 包装（原 setup 之前）；护盾账本 startBattle 时清空（同在 reset 里）
+static func setup(logic) -> void:
+	reset()
+	active_battle = true
+	totals = {"generated": 0.0, "wasted": 0.0, "spent": 0.0, "blooms": 0.0, "deaths": 0.0, "regenerations": 0.0, "shielded": 0.0, "transferred": 0.0}
+	_logic_ref = weakref(logic)
+
+
+## startTurn 包装：首行 round＝turnCount＋1，末行 round＝turnCount
+static func start_turn(turn: int) -> void:
+	round = turn
+
+
+## endTurn 包装（原 endTurn 之后）endRound：受伤压力、花期到期收束、归根到期且有队友活着就再生；护盾账本的回合末撤销到期来源
+static func end_round() -> void:
+	if not active_battle:
+		return
+	var members := _members()
+	var pool := 0.0
+	for b in members:
+		pool += maxf(1.0, b.mhp)
+	last_round_pressure = round_taken / maxf(1.0, pool)
+	round_taken = 0.0
+	var others_alive := members.any(func(b): return not own(b) and b.is_alive() and b.hp > 0.0)
+	var r := maxi(1, round)
+	for id in rows:
+		if float(rows[id].shield) > 0.0 and int(rows[id].shield_until) <= r:
+			rows[id].shield = 0.0
+	if flower_until >= 0 and flower_until <= round:
+		close_flower()
+	var g := _guyu()
+	if g != null and rooted(g) and int(_row(g).root_until) <= round and others_alive:
+		regenerate(g)
+
+
+## endBattle 包装（原 endBattle 之前）finishBattle：不是输且有幸存者时先再生归根的谷雨；清状态、全队生命夹到不含储备的上限；胜利掉进阶石
+static func end_battle(logic, result: int) -> void:
+	var g := _guyu()
+	var survivor := _members().any(func(b): return b != g and b.is_alive() and b.hp > 0.0)
+	ending = true
+	if result != 2 and g != null and rooted(g) and survivor:
+		regenerate(g)
+	ending = false
+	var tracked := reserves.keys()
+	reset()
+	var s: XState = logic.state
+	if s == null:
+		return
+	var all: Array = s.members()
+	for id in tracked:
+		if s.actors.has(id) and not all.has(s.actors[id]):
+			all.append(s.actors[id])
+	for b in all:
+		b.hp = minf(b.hp, b.mhp)
+	if result == 0:
+		roll_stone(logic)
+
+
+## G.rollStone：谷雨在队、还差进阶、背包里不够、Math.randomInt(50)==0
+static func roll_stone(logic) -> bool:
+	var s: XState = logic.state
+	if not s.party.has(ACTOR):
+		return false
+	var need := 5 - clampi(XAdvance.rank(s, ACTOR), 0, 5)
+	if need <= 0 or s.item_count(STONE) >= need or floori(logic._float("guyu_stone") * STONE_ONE_IN) != 0:
+		return false
+	s.gain_item(STONE, 1)
+	XToast.show_text(STONE_TEXT % str(XDB.rec("Items", STONE).get("name", "")), false, "guyu")
+	return true
+
+
+# ---- 行动事件、代命、归根 ----
+
+static func current() -> Dictionary:
+	return _events.back() if not _events.is_empty() else {}
+
+
+## G.begin：学了众生之劫时记活着的其余队员（protected）与各人此刻的最大生命（heights）
+static func _new_event(u, eligible: bool) -> Dictionary:
+	var g := active()
+	var e := {"user": weakref(u) if u != null else null, "eligible": eligible, "executed": false, "guyu": g != null, "protected": {},
+		"heights": {}, "pending": false}
+	if g != null and unlocked(g, "substitute"):
+		for b in _members():
+			if b != g and b.hp > 0.0 and b.is_alive():
+				e.protected[b.actor_id] = true
+			e.heights[b.actor_id] = b.mhp
+	return e
+
+
+## startAction 包装：清本次行动的特效标记，开行动事件（前一次没收尾的丢掉）
+static func begin(u) -> void:
+	_special_done = false
+	_finish_power = 0.0
+	_shield_value = 0.0
+	_action_serial += 1
+	_events.clear()
+	if active_battle:
+		_events.append(_new_event(u, true))
+
+
+## G.end：代命成立就归根
+static func _end(e: Dictionary) -> void:
+	var i := _events.rfind(e)
+	if i < 0:
+		return
+	_events.remove_at(i)
+	if bool(e.pending) and bool(e.guyu):
+		var g := _guyu()
+		if g != null:
+			root(g, true)
+
+
+## endAction 包装（原 endAction 之前）：结束行动事件；afterAction 在原 endAction 之后
+static func end_action() -> void:
+	_last = current()
+	if not _last.is_empty():
+		_end(_last)
+
+
+## isolated：不在行动里的扣血包一个临时事件（代命同样生效）
+static func isolated_begin() -> Dictionary:
+	if not active_battle or not _events.is_empty() or internal > 0 or unprotected > 0:
+		return {}
+	var e := _new_event(null, false)
+	_events.append(e)
+	return e
+
+
+static func isolated_end(e: Dictionary) -> void:
+	if not e.is_empty():
+		_end(e)
+
+
+## protect（addState 死亡的包装，最先）：代命——生命改 1、不加死亡
+static func protect(b) -> bool:
+	if not b is XActor or not active_battle:
+		return false
+	var e := current()
+	if e.is_empty() or not bool(e.guyu) or not e.protected.has(b.actor_id) or internal > 0 or unprotected > 0:
+		return false
+	if b.traits_set(XBattler.TRAIT_STATE_RESIST).has(1) or b.immortal:  # 原有死亡免疫与 YEP 不死优先
+		return false
+	e.pending = true
+	b.hp = 1.0
+	return true
+
+
+## addState 包装（原 addState 之后）：谷雨自己倒下就归根
+static func after_add_state(b, id: int) -> void:
+	if id == 1 and active_battle and own(b) and internal == 0 and b.state_ids.has(1):
+		root(b, false)
+
+
+## root：付储备一半、收束花期、到下回合归根；forced 时强加死亡
+static func root(g, forced: bool) -> void:
+	var r := _row(g)
+	if not unlocked(g, "root") or int(r.root_until) >= 0:
+		return
+	var q := floorf(reserve(g) * 0.5)
+	var s := 0.0 if unlocked(g, "spring") else q
+	if s > 0.0:
+		reserves[g.actor_id] = reserve(g) - s
+		_total("spent", s)
+	_total("deaths", 1.0)
+	close_flower()
+	if forced:
+		internal += 1
+		g.hp = 0.0
+		g.immortal = false
+		g.add_state(1)
+		g.hp = 0.0
+		if not g.state_ids.has(1):  # 死亡免疫不能取消已经成立的代命
+			g.state_ids.append(1)
+		r.root_until = round + 1
+		internal -= 1
+	r.root_until = round + 1
+
+
+## hasRelic：10 级起戴着百谷生（或测试开关 G.setTestRelic，reset 清）
+static var test_relic := false
+static func has_relic(b) -> bool:
+	return own(b) and int(b.level) >= 10 and (test_relic or b.equips.any(func(e): return e is Dictionary and not e.is_empty() and str(e.get("kind", "")) == "armor" and int(e.get("base", e.get("id", 0))) == RELIC))
+
+
+## regenerate：去死亡、生命回满；60 级戴着百谷生、本场第一次时归春
+static func regenerate(g) -> void:
+	var r := _row(g)
+	internal += 1
+	r.root_until = -1
+	g.remove_state(1)
+	g.hp = g.mhp
+	internal -= 1
+	_total("regenerations", 1.0)
+	if has_relic(g) and int(g.level) >= 60 and not spring_return_done:
+		spring_return_done = true
+		var q := floorf(base_mhp(g) * 0.18)
+		add_e(g, q)
+		var best = null
+		for b in _members():
+			if b != g and b.is_alive() and not rooted(b) and (best == null or reserve(b) / maxf(1.0, cap(b)) < reserve(best) / maxf(1.0, cap(best))):
+				best = b
+		if best != null:
+			add_e(best, q)
+
+
+# ---- Game_Action.apply 包装、花期、转移、花荫、终结 ----
+
+## Game_Action.apply 包装（异化之外、种族之内）：G.healing、doSpecial，花期／转移／花荫／终结没生效就整次不结算；行动执行标记
+static func apply(logic, u, skill: Dictionary, t) -> Dictionary:
+	var k := key(skill)
+	var prev := healing
+	healing = {"guyu": own(u), "direct": int(skill.get("damage", {}).get("type", 0)) == 3 or skill.get("effects", []).any(func(x): return int(x.code) == 11)}
+	var e := current()
+	var mine: bool = not e.is_empty() and e.user != null and e.user.get_ref() == u
+	var temp := {}
+	if active_battle and not mine:  # isolated(a, run)：不是当前行动的 apply（反击、绽放等）另开一个事件
+		temp = _new_event(null, false)
+		_events.append(temp)
+	_special(logic, u, k, t)
+	if own(u) and k in ["open", "transfer", "shield", "finish"] and not _special_done:
+		healing = prev
+		isolated_end(temp)
+		return {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false,
+			"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
+	if not current().is_empty():
+		current().executed = true
+	var r: Dictionary = logic._apply_core(u, skill, t)
+	if k in ["open", "transfer", "shield"] and _special_done and r.has("result"):
+		r.result.success = true  # makeSuccess
+	healing = prev
+	isolated_end(temp)
+	return r
+
+
+## doSpecial
+static func _special(logic, u, k: String, t) -> void:
+	if not own(u) or active() == null or not UNLOCK.has(k) or not unlocked(u, k):
+		return
+	if k == "open" and not _special_done:
+		if not t.is_alive() or flower_until >= round or round < open_at:
+			return
+		_special_done = true
+		flower_serial += 1
+		flower_until = round + 1
+		seed = logic.enemies.find(t)
+	elif k == "transfer" and not _special_done:
+		var p := transfer_preview(u, t, transfer_mode, transfer_ratio)
+		if not bool(p.valid):
+			return
+		_special_done = true
+		reserves[p.from.actor_id] = reserve(p.from) - float(p.amount)
+		reserves[p.to.actor_id] = reserve(p.to) + float(p.amount)
+		for x in [p.from, p.to]:
+			x.hp = minf(x.hp, x.mhp)
+		_total("transferred", float(p.amount))
+		if has_spring(u) and p.from == u:
+			var bud := _row(p.to)
+			bud.bud = true
+			bud.bud_flower = flower_serial + (0 if blooming() else 1)
+	elif k == "shield":
+		if not _members().has(t) or not t.is_alive() or rooted(t):
+			return
+		if not _special_done:
+			_shield_value = shield_value(u)
+			if _shield_value < 1.0:
+				return
+			_special_done = true
+			pay(u, _shield_value)
+		var v := minf(_shield_value, floorf(base_mhp(t)))
+		_grant_shield(t, v)
+		var r := _row(t)
+		if int(r.spring_action) != _action_serial:
+			r.spring_action = _action_serial
+			r.spring_boost = false
+			r.spring_hit_used = false
+		_total("shielded", v)
+	elif k == "finish" and not _special_done:
+		if not blooming() or reserve(u) < 1.0:
+			return
+		_special_done = true
+		var q := reserve(u)
+		_finish_power = q * curve(int(u.level), [33, 50], [40, 60])
+		pay(u, q)
+		close_flower()
+
+
+static func shield_value(g) -> float:
+	return floorf(reserve(g) * 0.3)
+
+
+## CodexShieldLedger.grant(target, 'guyu.shield', v, 2, …, {noDecay, noHalve, noBonus})：同源取较高、期限到 round()＋1
+static func _grant_shield(t, v: float) -> void:
+	var value := floorf(maxf(0.0, v))
+	if value <= 0.0:
+		return
+	var r := _row(t)
+	var until := maxi(1, round) + 1
+	if float(r.shield) > 0.0:
+		r.shield = maxf(float(r.shield), value)
+		r.shield_until = maxi(int(r.shield_until), until)
+	else:
+		r.shield = value
+		r.shield_until = until
+
+
+## 账本吸收（executeHpDamage／gainHp／setHp 的最外层）：返回剩下的伤害；谷雨付费中（unprotected）不吸收。
+## 挡下过就 springShieldHit（先许一枝开 20 级起：下次绽放强化，一次花荫一次）
+static func ledger_absorb(b, damage: float) -> float:
+	if not active_battle or damage <= 0.0 or not b is XActor or not rows.has(b.actor_id) or unprotected > 0:
+		return damage
+	var r: Dictionary = rows[b.actor_id]
+	if float(r.shield) <= 0.0:
+		return damage
+	var take := minf(float(r.shield), damage)
+	r.shield = float(r.shield) - take
+	if take > 0.0:
+		var g := active()
+		if g != null and has_spring(g) and int(g.level) >= 20 and not bool(r.spring_hit_used):
+			r.spring_hit_used = true
+			r.spring_boost = true
+	return damage - take
+
+
+## executeHpDamage：账本先吸收，再记本回合我方受到的伤害（受伤压力）
+static func hp_damage(t, value: float) -> float:
+	value = ledger_absorb(t, value)
+	if active_battle and value > 0.0 and t is XActor:
+		round_taken += value
+	return value
+
+
+static func transfer_ratios(b) -> Array:
+	return [0.25, 0.5, 0.75] if has_spring(b) else [0.5]
+
+
+## G.transferPreview
+static func transfer_preview(b, t, mode := "give", ratio := 0.5) -> Dictionary:
+	var out := {"valid": false, "amount": 0.0}
+	if not active_battle or b == null or b != active() or not unlocked(b, "transfer") or t == null or t == b or not _members().has(t) \
+			or not t is XActor or not t.is_alive() or rooted(t):
+		return out
+	if not mode in ["give", "back"] or not transfer_ratios(b).has(ratio):
+		return out
+	out.from = t if mode == "back" else b
+	out.to = b if out.from == t else t
+	var want := floorf(reserve(out.from) * ratio)
+	var room := maxf(0.0, cap(out.to) - reserve(out.to))
+	out.amount = minf(want, room)
+	out.valid = float(out.amount) >= 1.0
+	return out
+
+
+static func can_transfer(b, mode: String, ratio: float) -> bool:
+	return _members().any(func(t): return bool(transfer_preview(b, t, mode, ratio).valid))
+
+
+# ---- gainHp 包装 ----
+
+## gainHp 包装：直接治疗的回血量先取整
+static func heal_value(amount: float) -> float:
+	if amount > 0.0 and bool(healing.get("guyu", false)) and bool(healing.get("direct", false)):
+		return floorf(amount)
+	return amount
+
+
+## gainHp 包装（原 gainHp 之后）：出战角色之前活着、谷雨活跃时回血记储备；谷雨的直接治疗在生未央下不在花期再加 20%
+static func gained(b, amount: float, was_alive: bool) -> void:
+	if not active_battle or amount <= 0.0 or not was_alive or not b is XActor or not _members().has(b) or internal > 0:
+		return
+	var g := active()
+	if g == null:
+		return
+	var n := floorf(amount)
+	add_e(b, n)
+	if bool(healing.get("guyu", false)) and bool(healing.get("direct", false)) and unlocked(g, "growth") and not blooming():
+		add_e(b, floorf(n * GROWTH_RATIO))
+
+
+# ---- 绽放 ----
+
+## validSeed：种子活着就是它，否则换第一个活着的敌人（记下）
+static func _valid_seed(logic) -> XBattler:
+	if seed >= 0 and seed < logic.enemies.size() and logic.enemies[seed].is_alive():
+		return logic.enemies[seed]
+	var alive: Array = logic.alive(logic.enemies)
+	seed = logic.enemies.find(alive[0]) if not alive.is_empty() else -1
+	return alive[0] if not alive.is_empty() else null
+
+
+## endAction 包装（原 endAction 之后）afterAction：本次行动的技能真的执行过、出手者活着就绽放
+static func after_action(logic, u, skill) -> Array:
+	var e := _last
+	_last = {}
+	if e.is_empty() or not bool(e.eligible) or not bool(e.executed) or e.user == null or e.user.get_ref() != u or not u.is_alive() \
+			or not skill is Dictionary or skill.is_empty():
+		return []
+	if XBattleLogic.is_item(skill) or int(skill.id) == XBattleLogic.GUARD_SKILL or key(skill) in ["open", "shield", "finish", "bloom"]:
+		return []
+	return bloom(logic, u)
+
+
+## G.bloom：待绽付 35%（60 级我即万物之春 50%），否则 25%；先许一枝开 20 级起挡过一次花荫 ×1.1（60 级 ×1.2）
+static func bloom(logic, b) -> Array:
+	var g := active()
+	var target := _valid_seed(logic)
+	if g == null or target == null or b == null or not _members().has(b) or not b.is_alive() or not blooming():
+		return []
+	var r := _row(b)
+	var bud := has_bud(b) and int(r.bud_flower) == flower_serial
+	var q := floorf(reserve(b) * ((0.5 if has_spring(g) and int(g.level) >= 60 else 0.35) if bud else BLOOM_RATIO))
+	if q < 1.0:
+		return []
+	pay(b, q)
+	r.bud = false
+	r.bud_flower = 0
+	_total("blooms", 1.0)
+	var boost := (1.2 if int(g.level) >= 60 else 1.1) if has_spring(g) and int(g.level) >= 20 and bool(r.spring_boost) else 1.0
+	r.spring_boost = false
+	_bloom_power = q * curve(int(g.level), [5, 6, 7, 8]) * boost
+	calc_owner = g
+	var out: Dictionary = logic.apply(b, XDB.rec("Skills", BLOOM), target)
+	calc_owner = null
+	_bloom_power = 0.0
+	return [out]
+
+
+## makeDamageValue 包装：绽放期间伤害按谷雨算
+static func owner(u):
+	return calc_owner if calc_owner != null else u
+
+
+# ---- 自动战斗 ----
+
+## G.autoAction（makeAutoBattleActions 包装）：返回 [技能, 目标]，没有就空
+static func auto_action(logic, a) -> Array:
+	if not own(a) or not active_battle or not logic.can_move(a):
+		return []
+	var team := _members().filter(func(b): return b.is_alive())
+	var foes: Array = logic.alive(logic.enemies)
+	if foes.is_empty():
+		return []
+	var can := func(k: String) -> bool: return logic.can_use(a, XDB.rec("Skills", SKILL[k]))
+	var lowest = null
+	for b in team:
+		if lowest == null or b.hp / b.mhp < lowest.hp / lowest.mhp:
+			lowest = b
+	var hurt := team.filter(func(b): return b.hp / b.mhp < 0.7 and shield_of(b) <= 0.0).size()
+	var ratio := reserve(a) / maxf(1.0, reference_cap(a))
+	if lowest != null and lowest.hp / lowest.mhp < 0.35 and can.call("heal"):
+		return [XDB.rec("Skills", SKILL.heal), null]
+	if (hurt >= 2 or last_round_pressure >= 0.2) and can.call("shield") and not team.any(func(b): return shield_of(b) > 0.0):
+		return [XDB.rec("Skills", SKILL.shield), null]
+	if blooming() and can.call("finish") and (ratio >= 0.8 or flower_until == round):
+		return [XDB.rec("Skills", SKILL.finish), null]
+	if not blooming() and can.call("open") and team.any(func(b): return reserve(b) >= reference_cap(b) * 0.5):
+		var boss = null
+		for t in foes:
+			if boss == null or t.hp > boss.hp:
+				boss = t
+		return [XDB.rec("Skills", SKILL.open), boss]
+	if can.call("heal"):
+		return [XDB.rec("Skills", SKILL.heal), null]
+	return []

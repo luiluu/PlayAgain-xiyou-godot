@@ -311,6 +311,8 @@ func push_state_result(key: String, id: int) -> void:
 			result[key].append(id)
 
 func add_state(id: int, random: XRandomStream = null) -> void:
+	if id == 1 and XGuyu.protect(self):
+		return  # 谷雨 addState 包装（最外层）：众生之劫代命，生命改 1、不加死亡
 	# _Fix_StackOverflow: one global lock, including additions to another battler.
 	if _adding_state:
 		return
@@ -323,6 +325,7 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	_add_state(id, random)
 	_adding_state = false
 	XAlienBattle.after_add_state(self, id, alien_rev)  # 异化囚厄：其他角色得到的 jailStates 转给囚厄者
+	XGuyu.after_add_state(self, id)  # 谷雨 addState 包装（原 addState 之后）：谷雨自己倒下就归根
 
 func _add_state(id: int, random: XRandomStream = null) -> void:
 	if XDB.rec("States", id).is_empty():
@@ -394,6 +397,8 @@ func remove_state_auto(id: int) -> void:
 	_leaving_state = false
 
 func remove_state(id: int) -> void:
+	if id == 1 and XGuyu.rooted(self) and XGuyu.internal == 0:
+		return  # 谷雨 removeState／revive 包装：归根中去不掉死亡
 	if XAlienBattle.blocks_removal(self, id, _leaving_state):
 		return  # 异化疫囊、囚厄、绝缘 removeState 包装：只能自然到期
 	if id == 1 and state_ids.has(id) and hp <= 0.0 and XAlienBattle.route_revive(self):
@@ -810,6 +815,8 @@ func clear_states() -> void:
 
 ## Game_BattlerBase.recoverAll：清状态后按（可能是旧缓存的）上限回满，YEP_BattleEngineCore 再 refresh（只消费 dirty，不截资源）
 func recover_all() -> void:
+	if XGuyu.rooted(self) and XGuyu.internal == 0:
+		return  # 谷雨 recoverAll 包装：归根中无效
 	clear_states()
 	resource_death_blocked = false
 	hp = mhp
@@ -817,7 +824,7 @@ func recover_all() -> void:
 	param_refresh()
 
 func is_dead() -> bool:
-	return state_ids.has(1) or (hp <= 0.0 and not immortal and not resource_death_blocked and not traits_set(TRAIT_STATE_RESIST).has(1))
+	return XGuyu.rooted(self) or state_ids.has(1) or (hp <= 0.0 and not immortal and not resource_death_blocked and not traits_set(TRAIT_STATE_RESIST).has(1))
 
 func is_alive() -> bool:
 	return not is_dead()

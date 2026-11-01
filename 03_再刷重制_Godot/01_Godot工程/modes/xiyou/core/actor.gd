@@ -647,6 +647,9 @@ static func magic_param(e: Dictionary, i: int) -> float:
 	var lv = XEquipmentView.level(e)
 	if float(lv) < 0.0:
 		return 0.0
+	var grown := XThreeGrowth.sync_item(e)  # 三法宝成长 magicWeaponCustomParam 包装：所属人物 60 级进化，每级成长翻倍
+	if not grown.is_empty():
+		return float(lv) * float(grown[i])
 	var kind := str(e.get("kind", ""))
 	var key := kind + ":" + str(int(e.get("base", e.get("id", 0))))
 	if not _magic_growth_cache.has(key):
@@ -667,7 +670,7 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XRaceBattle.param(self, i, XAlienBattle.param(self, i, param_before_alien(i)))  # 按原版安装先后由内到外：专属角色模块（米拉 98、宿傩 113）→小猫剑圣（115）→云裳（夹值）→异化逆骨（129）→种族祝福（148）
+	return XRaceBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i))))  # 按原版安装先后由内到外：专属角色模块（米拉 98、宿傩 113）→小猫剑圣（115）→云裳（夹值）→异化逆骨（129）→谷雨储备（133）→种族祝福（148）
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:
