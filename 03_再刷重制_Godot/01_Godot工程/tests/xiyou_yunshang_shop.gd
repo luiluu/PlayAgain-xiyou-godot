@@ -3,7 +3,7 @@ extends Node
 ## Window_YunChoices 说明行与各行），用按键走同一串操作——首页、选队员、空袖藏星选借用技能（中途取消不改）、九曲回针选针眼、
 ## 七曜流霞选元素、寸光留仙无需配置、选队员时取消、返回；每页比说明行、各行文字与能不能选，选完比设置。
 ## 再存档→清掉内存里的设置→读档：设置按天衣带回来（JSON 读回是浮点），读档后空袖藏星的借用技能照样出现在云裳的技能里。
-## 针眼照原版全列时（XYunshang.o_eye_cooldown = false）比参照；默认（O-待定）只列有冷却的，比参照里有冷却的那几行。
+## 针眼照原版全列时（XYunshang.o_eye_cooldown = false）比参照；默认（O-141）只列有冷却的，比参照里有冷却的那几行。
 ## 【cc·白龙_12·未经审查】二期照参照 p8（XYunshangOrders，账本文件放测试目录）：
 ## - p8.craft／.r01：制作（装备随机数 0.5／0.1：选中的天衣、八项、插槽、品质）→读开工前的档（天丝照扣、订单还在）→进度 9／10 格→领取→
 ##   再读最早的档（天衣照发）；各步比首页、天丝、账本摘要。
@@ -155,7 +155,7 @@ func _run() -> void:
 	await pick(1)
 	at.call("eyed")
 	same_setting("eyed", XYunshang.setting(one), want.eyed.setting)
-	# O-待定 默认：针眼只列有冷却的。1 号这时会的四个都没有冷却，列表为空；再教他青龙斩（<Cooldown: 3>），只列它
+	# O-141 默认：针眼只列有冷却的。1 号这时会的四个都没有冷却，列表为空；再教他青龙斩（<Cooldown: 3>），只列它
 	XYunshang.o_eye_cooldown = true
 	var by_name := {}
 	for sk in one.skills():
