@@ -2,14 +2,15 @@ class_name XYunshangShop
 extends Control
 ## 【cc·白龙_11·未经审查】云裳的天衣铺（installNativeYunshangRuntime.js 第 519～533、554 行 Scene_Yunshang；公共事件 9011 Y.openCrafting）。
 ## 只用一个居中的 XYunChoicesWindow（原版 Window_YunChoices）换着列各页，打开时光标在第一项：
-## - 首页：说明 4 行（「天衣铺　云裳 N级　进阶x/2　不朽天丝 n」、订单、两行规则）＋制作天衣、领取、角色进阶、配置天衣神纹、返回；取消＝返回。
-##   **一期只接配置天衣神纹**：制作、领取、进阶要订单账本与云裳进阶，下一期做，现在灰显（原版制作 35 级起、进阶够等级时能选）。
+## - 首页：说明 4 行（「天衣铺　云裳 N级　进阶x/2　不朽天丝 n」、订单「制作中：名字　n/10回合」或「当前没有制作订单」、两行规则）＋
+##   制作天衣（35 级起、没订单时能选）、领取（满 10 格能选）、角色进阶（没进阶满、等级够时能选：开进阶页，关掉回首页）、配置天衣神纹、返回；
+##   取消＝返回。制作、领取出错时提示原因、回首页。订单与进阶在 XYunshangOrders（账本文件）。
+##   账本不可用（文件坏了、本档的记录缺失）时首页换成兜底页（第 585 行）：「制作记录暂不可用，请恢复配套记录后重试」（灰）与返回，确定、取消都关页。
 ## - 配置天衣神纹：先选穿天衣的队员（「名字｜天衣名」），再按天衣——空袖藏星选 3 个借用技能（队员会的可借技能「主人：技能」，
 ##   说明「选择借用技能 n/3（首个为常驻）」，选过的不再列）、九曲回针选针眼、七曜流霞选 3 个元素（首个为当前元素）；
 ##   别的天衣提示「这件天衣无需战前配置」。中途取消一律回首页、什么都不改。设置写进 XYunshang.setting（按天衣进存档）。
 signal closed
 
-const SILK := 2942  # C.silk 不朽天丝
 var win: XYunChoicesWindow
 var _ok: Callable
 var _cancel: Callable
@@ -36,11 +37,37 @@ func choose(rows: Array, ok: Callable, cancel: Callable, info := []) -> void:
 func home() -> void:
 	var s := XState.current
 	var a := s.actor(XYunshang.ACTOR)
-	var info := ["天衣铺　云裳 %d级　进阶%d/2　不朽天丝 %d" % [int(a.level), XYunshang.stage(a), int(s.items.get(SILK, 0))], "当前没有制作订单",
+	var p = XYunshangOrders.profile(s)
+	if p == null:
+		choose([{"text": "制作记录暂不可用，请恢复配套记录后重试", "enabled": false}, {"text": "返回"}], func(_r): _close(), _close)
+		return
+	var order = p.order
+	var st := XYunshang.stage(a)
+	var info := ["天衣铺　云裳 %d级　进阶%d/2　不朽天丝 %d" % [int(a.level), st, s.item_count(XYunshangOrders.SILK)],
+		"制作中：%s　%d/10回合" % [str(order.spec.name), int(order.progress)] if order != null else "当前没有制作订单",
 		"制作池按等级与进阶开放（35级起可制作）", "属性与词条开工时确定，领取或读档不重抽"]
-	var rows := [{"text": "制作天衣　不朽天丝×15", "enabled": false}, {"text": "领取已完成的天衣", "enabled": false}, {"text": "角色进阶", "enabled": false},
+	var rows := [{"text": "制作天衣　不朽天丝×15", "run": func(): return XYunshangOrders.submit(s), "enabled": a.level >= 35 and order == null},
+		{"text": "领取已完成的天衣", "run": func(): return XYunshangOrders.claim(s), "enabled": order != null and int(order.progress) >= XYunshangOrders.PROGRESS},
+		{"text": "角色进阶", "run": advance, "enabled": st < 2 and a.level >= int(XYunshangOrders.ADVANCE[mini(st, 1)].level)},
 		{"text": "配置天衣神纹", "run": config_actor}, {"text": "返回", "run": _close}]
-	choose(rows, func(r): if r.has("run"): r.run.call(), _close, info)
+	choose(rows, func(r):
+		var why = r.run.call()
+		if why is String:
+			if why != "":
+				XToast.show_text(why, true)
+			home(), _close, info)
+
+
+## 角色进阶：SceneManager.push(Scene_ActorAdvanced)；回来时原版重建本页（create→home）
+func advance() -> void:
+	if win and is_instance_valid(win):
+		win.queue_free()
+	win = null
+	var page := XActorAdvancedScene.new()
+	add_child(page)
+	await page.closed
+	page.queue_free()
+	home()
 
 
 func _close() -> void:
@@ -67,9 +94,10 @@ func configure(a: XActor) -> void:
 		_borrow(conf, pool, [])
 		return
 	if k == 7:
-		# 原版条件里的 s.cooldown 是 YEP_X_SkillCooldowns 给每个技能都建的 {}，恒真，没有冷却的技能也列出（照抄）
+		# 原版条件里的 s.cooldown 是 YEP_X_SkillCooldowns 给每个技能都建的 {}，恒真，没有冷却的技能也列出；O-待定 默认只列有冷却的（XYunshang.eye_candidate）
 		var re := RegEx.create_from_string("唤醒|复活|制作|进阶")
-		var rows := a.skills().filter(func(sk): return int(sk.id) < XYunshang.MOUNTAIN and int(sk.get("occasion", 0)) != 3 and re.search(str(sk.name)) == null) \
+		var rows := a.skills().filter(func(sk): return int(sk.id) < XYunshang.MOUNTAIN and int(sk.get("occasion", 0)) != 3 and re.search(str(sk.name)) == null \
+			and XYunshang.eye_candidate(sk)) \
 			.map(func(sk): return {"text": str(sk.name), "skill": int(sk.id)})
 		choose(rows, func(r):
 			conf.eye = r.skill

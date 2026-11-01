@@ -2289,6 +2289,7 @@ func rewards() -> Dictionary:
 		exp += floori(e.exp_reward() * float(rates[0]))
 		gold += floorf(e.gold_reward() * float(rates[1])) * gold_rate
 		drops.append_array(drops_of(e))
+	drops.append_array(XMira.abyss_bonus(self))  # 米拉 makeRewards 包装：深渊地图 1/30 黑龙进阶石
 	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
 	return {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8, "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
 
@@ -2421,7 +2422,7 @@ func end_battle(result := -1) -> void:
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XSukuna.end_battle(self)  # 宿傩 endBattle 包装：清战斗数据与领域、适应、觉醒状态
-	XYunshang.end_battle(self)  # 云裳 endBattle 包装：结清赊账、结束衣魂，清战斗数据、御风、余辉、符针
+	XYunshang.end_battle(self, result)  # 云裳 endBattle 包装：不朽天丝，结清赊账、结束衣魂，清战斗数据、御风、余辉、符针
 	XBlackFlash.end_battle(self)  # 黑闪 endBattle 包装
 	XToji.end_battle(self)  # 甚尔 endBattle 包装：清形态
 	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火

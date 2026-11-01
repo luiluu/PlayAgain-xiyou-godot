@@ -42,6 +42,8 @@ static var _large := {}
 static func large_icon(index: int) -> Texture2D:
 	if index <= 0:
 		return null
+	if not _large.has(index) and XYunshang.icon_slot(index) >= 0:  # 云裳 HD 图标：128 的图平滑缩放（原版画 Q.bitmap 那张）
+		_large[index] = XYunshang.icon_texture(index, int(ICON_SIZE))
 	if not _large.has(index):
 		var t := XUI.icon_texture(index)
 		if t == null:
