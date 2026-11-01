@@ -16,6 +16,7 @@ extends Control
 ## 5. installCombatPowerRuntime（setItem 最外层）：装备在名字后插「装备战力：N」（18 号、rgba(255,211,115,1)、align 0），
 ##    N 是与穿戴者无关的装备评分 XPower.equipment；设置页关掉「战力显示与估算」时不插。
 ##    专属角色技能（ID 10122～10299）改走 characterHelpView（XCharacterHelp，ui/character_help.gd）。
+## 6. installThreeGrowthRelicRuntime R.syncItem：三法宝（谷雨百谷生／万象长春盏）先按所属人物等级改写名字、说明与备注里的条目（XThreeGrowth.view）。
 ## 未做：心钢、狂妄等专属装备的动态说明（切片里没有）。
 ##
 ## 版面（layout()）：宽 400、内边距 4；每行按 RJO.SW 逐字排版：可用宽 392−x，放不下换行；行高 = 该行最大字号 + 8；
@@ -52,9 +53,12 @@ const EXTRA_GAP_NEAR := 24.0
 ## 优化 O-049：「出售价格」写实际卖出价（XItemMarks.selling_price：<Sell Price> 优先，否则半价向下取整，与商店付的钱一致）；
 ## false 照原版 HelpExtend 写 Math.round(价格/2)，奇数价格比实卖多 1。
 static var REAL_SELL_PRICE := true
+## 打开说明卡的那一页的角色（Scene_Skill._actor／战斗技能窗的角色）；黑闪说明卡用，别的页留空
+static var scene_actor = null
 
 var rows: Array = []          # content() 的结果
 var quality := 0
+var robe_card := false      # 云裳天衣：窗口皮换成粉色
 var min_font := MIN_FONT
 ## 卡宽（Sprite_ItemHelp 构造参数；人物图鉴技能详情为 727，其余 400）
 var card_width := WIDTH
@@ -82,6 +86,7 @@ var _frame_style: XWindowStyle
 static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	if obj.is_empty():
 		return []
+	obj = XThreeGrowth.view(obj)  # 三法宝成长 R.syncItem：法宝说明条目（relicLines）、名字、说明
 	if kind == "":
 		kind = kind_of(obj)
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
@@ -92,6 +97,7 @@ static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	if type == 3:
 		# 专属角色技能（10122～10299）走 characterHelpView（XCharacterHelp），其余技能走 genericHelpView
 		rows = XCharacterHelp.view(obj, rows) if XCharacterHelp.target(obj) else _generic_view(obj, rows)
+		rows.append_array(XBlackFlash.help_rows(obj, scene_actor))  # 黑闪 Sprite_ItemHelp.setItem 包装（在 characterHelpView 之内）：卡尾两行现况
 	for r in rows:
 		r[0] = _terms(str(r[0]))
 	# v0.18 starredHead：名字行（第一行、名字字号）前加星级，只给武器/防具
@@ -147,7 +153,7 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 			_prices(obj, rows)
 			pos[2] = rows.size()
 		1, 2:
-			var params: Array = obj.get("params", [])
+			var params: Array = obj.get("params", []) if not XYunshang.relic_item(obj) else XYunshang.relic_params(obj)
 			for i in range(params.size()):
 				if params[i] != null and float(params[i]) != 0.0:
 					rows.append([str(terms.get("params", [])[i]) + ":" + _num(params[i]), OTHER_SIZE, PARAM_COLORS[i], false, null])
@@ -164,6 +170,8 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 			pos[4] = rows.size()
 	for line in str(obj.get("note", "")).split("\n"):
 		_extra_row(rows, pos, line.strip_edges(false, true), normal)
+	if type == 2 and XYunshang.relic_item(obj):
+		_relic_rows(obj, rows, pos)
 	# ItemQuality：<pos=AD text=品质：名称 size=18 color=normalcolor line=false align=0>
 	_extra_row(rows, pos, "<pos=AD text=品质：%s size=18 color=normalcolor line=false align=0>" % XQuality.grade_name(obj), normal)
 	# 西游 v0.15 Q.labelRows：所有「品质：」行换成七档名称，装备带标签（品质：不朽（传家宝））
@@ -176,6 +184,18 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 	for r in rows:
 		r[0] = _terms(str(r[0]))
 	return rows
+
+
+## 云裳 getDescParams 包装：织神天梭在「等级需求：1」后面（没有就在 APs 位置）插等级与法宝经验两行
+static func _relic_rows(obj: Dictionary, rows: Array, pos: Array) -> void:
+	var lv := int(XMagicWeapon.level_of(obj))
+	var top := int(XMagicWeapon.max_level(obj))
+	var xp := int(XMagicWeapon.exp_of(obj))
+	var at := rows.find_custom(func(r): return str(r[0]) == "等级需求：1")
+	at = at + 1 if at >= 0 else int(pos[3])
+	var lines := ["当前等级：%d / %d" % [lv, top], "法宝经验：%d" % xp + ("（已满级）" if lv >= top else " / %d" % int(XMagicWeapon.next_level_exp(obj)))]
+	for i in lines.size():
+		rows.insert(at + i, [lines[i], OTHER_SIZE, "rgba(255,255,255,1)", false, 0])
 
 
 static func _prices(obj: Dictionary, rows: Array) -> void:
@@ -686,6 +706,7 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 		return
 	rows = content(obj, kind, skill_copy)
 	quality = _quality(obj)
+	robe_card = XYunshang.is_robe(obj)
 	_apply(note_width(obj, card_width))
 	_set_extras(obj if with_extras and visible else {})
 
@@ -695,6 +716,7 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 func show_text(text: String) -> void:
 	rows = [[text, OTHER_SIZE, "#ffffff", false, 0]]
 	quality = 0
+	robe_card = false
 	_apply(card_width)
 	_set_extras({})
 
@@ -847,7 +869,8 @@ func _draw_frame() -> void:
 	var skin_path := XDB.img_path("system", "Window%d" % XQuality.window_skin(quality))
 	_frame_style = XUI.panel(60)
 	if skin_path != "":
-		_frame_style.skin = load(skin_path)
+		# 云裳 Sprite_ItemHelp.drawBackground 包装：天衣的说明卡用改成粉色的 Window12
+		_frame_style.skin = XYunshang.robe_skin(XDB.img_path("system", "Window12")) if robe_card else load(skin_path)
 	_frame_style.back_opacity = 60.0 / 255.0
 	for i in range(4):
 		frame.draw_style_box(_frame_style, Rect2(Vector2.ZERO, frame.size))

@@ -11,6 +11,13 @@ extends Control
 ## - 操作：名单移动重画状态与金钱；确定 → 有下一阶开底部，已满原地；取消关闭。底部确定 → 条件满足开确认窗，否则提示「进阶条件未达成」回名单；
 ##   底部取消回名单。确认「是」→ 进阶、提示「进阶完成」、回名单；「否」／取消 → 回名单。
 ## O-094（可回退，XAdvance.SHOW_MISSING／MAX_BUZZER）：条件不足时提示列出缺项；已满时确定放蜂鸣（原版无反馈）。
+## 【cc·白龙_12·未经审查】云裳 174（installNativeYunshangRuntime.js 第 561～583 行的三个包装，规则在 XYunshangOrders）：
+## - 底部确定（onBottomConfirmOk 包装，不调原来的）：底部窗关掉；条件不够（Y.advanceRequirements）蜂鸣＋提示原因、回名单；
+##   够了在画面正中开 XYunChoicesWindow 逐件选背包里的天衣——第一行「选择进阶所需天衣 n/N」（灰）＋没选过的天衣「名字　编号K」，
+##   取消回名单、选的作废；选够开确认窗「消耗N件天衣，确认进阶」。
+## - 确认「是」（onConfirmOk 包装）：XYunshangOrders.advance（扣碎片、移除所选天衣、账本进阶＋1，提示「云裳完成第N次进阶」），出错蜂鸣＋提示；
+##   不走进阶表那一行的学技能、扣金钱。「否」／取消：选的作废。
+## - 状态窗（drawAllContents 包装）：还有下一阶时，第 12 行起用 18 号字写「背包天衣×N（确认时选择）」「已装备的天衣须先卸下」。
 
 signal closed
 
@@ -27,7 +34,10 @@ const CONFIRM_TEXT := "是否进阶"
 const SPRITE_TICK := 12
 const PATTERNS := [0, 1, 2, 1]
 
-var mode := "list"          # list / bottom / confirm
+var mode := "list"          # list / bottom / confirm / yun（云裳选天衣）
+var confirm_text := CONFIRM_TEXT
+var yun_win: XYunChoicesWindow
+var yun_selection = null    # 云裳选好的天衣 {actor, stage, items}（_yunAdvanceSelection）
 var index := 0
 var top := 0
 var bottom := -1
@@ -188,6 +198,9 @@ func _paint_status(c: XMVCanvas) -> void:
 	for id in r.learn:
 		_item_name(c, XDB.rec("Skills", int(id)), c2, y, cw)
 		y += LH
+	if XYunshang.own(a) and XYunshang.stage(a) < XYunshangOrders.ADVANCE.size():
+		c.text("背包天衣×%d（确认时选择）" % XYunshangOrders.needed(a), 0, LH * 12, cw, "left", XUI.TEXT, 18)
+		c.text("已装备的天衣须先卸下", 0, LH * 13, cw, "left", XUI.TEXT, 18)
 
 
 ## Window_Base.drawItemName：图标 (x+2, y+2)，名字 x+36（品质色）
@@ -220,7 +233,7 @@ func _paint_bottom(c: XMVCanvas) -> void:
 
 
 func _paint_confirm(c: XMVCanvas) -> void:
-	var t := XMVText.new(CONFIRM_TEXT, 6, 0, c.size.x)
+	var t := XMVText.new(confirm_text, 6, 0, c.size.x)
 	t.run()
 	XMVText.paint(c, t.glyphs)
 	for i in range(2):
@@ -246,9 +259,13 @@ func ok() -> void:
 			XSound.system(1)
 			mode = "bottom"
 			bottom = 0
+			bottom_win.visible = true
 			_refresh()
 		"bottom":
 			XSound.system(1)
+			if XYunshang.own(current_actor()):
+				_yun_bottom()
+				return
 			# onBottomConfirmOk
 			XSound.system(1)
 			var s := XState.current
@@ -256,6 +273,7 @@ func ok() -> void:
 			bottom = -1
 			if lack.is_empty():
 				XSound.system(1)
+				confirm_text = CONFIRM_TEXT
 				mode = "confirm"
 				confirm_index = 0
 				confirm_win.visible = true
@@ -276,16 +294,84 @@ func ok() -> void:
 				_close_confirm()
 				return
 			# onConfirmOk
-			XAdvance.advance(XState.current, current_actor())
-			XToast.show_text(XAdvance.DONE_TEXT, true)
+			if XYunshang.own(current_actor()):
+				_yun_confirm()
+			else:
+				XAdvance.advance(XState.current, current_actor())
+				XToast.show_text(XAdvance.DONE_TEXT, true)
 			_close_confirm()
 			_draw_status()
 
 
 func _close_confirm() -> void:
 	confirm_win.visible = false
+	yun_selection = null
 	mode = "list"
 	_refresh()
+
+
+# ---- 云裳：底部确定选天衣、确认进阶 ----
+func _yun_bottom() -> void:
+	var s := XState.current
+	var a := current_actor()
+	var why := XYunshangOrders.requirements(s, a)
+	bottom = -1
+	bottom_win.visible = false
+	if why != "":
+		XSound.system(3)
+		XToast.show_text(why, true)
+		mode = "list"
+		_refresh()
+		return
+	_yun_pick(a, [])
+
+
+func _yun_pick(a: XActor, chosen: Array) -> void:
+	var s := XState.current
+	var need := XYunshangOrders.needed(a)
+	if chosen.size() == need:
+		_yun_close_win()
+		yun_selection = {"actor": a, "stage": XYunshang.stage(a), "items": chosen}
+		# startConfirmWindow：确定音，确认窗换字
+		XSound.system(1)
+		confirm_text = "消耗%d件天衣，确认进阶" % need
+		mode = "confirm"
+		confirm_index = 0
+		confirm_win.visible = true
+		_refresh()
+		return
+	var rows := [{"text": "选择进阶所需天衣 %d/%d" % [chosen.size(), need], "enabled": false}]
+	for e in XYunshangOrders.owned(s):
+		if not chosen.any(func(x): return is_same(x, e)):
+			rows.append({"text": XYunshangOrders.robe_label(s, e), "item": e})
+	_yun_close_win()
+	mode = "yun"
+	_refresh()
+	yun_win = XYunChoicesWindow.for_rows(self, rows)
+	var w := yun_win
+	w.chosen.connect(func(i): if w == yun_win: _yun_pick(a, chosen + [w.entries[i].item]))
+	w.cancelled.connect(func(): if w == yun_win:
+		_yun_close_win()
+		yun_selection = null
+		mode = "list"
+		_refresh())
+
+
+func _yun_close_win() -> void:
+	if yun_win and is_instance_valid(yun_win):
+		yun_win.queue_free()
+	yun_win = null
+
+
+func _yun_confirm() -> void:
+	var a := current_actor()
+	var sel = yun_selection
+	var why := "进阶选择已失效，请重新选择"
+	if sel != null and sel.actor == a and int(sel.stage) == XYunshang.stage(a):
+		why = XYunshangOrders.advance(XState.current, sel.items)
+	if why != "":
+		XSound.system(3)
+		XToast.show_text(why, true)
 
 
 func cancel() -> void:
@@ -327,7 +413,7 @@ func _move(d: int, wrap: bool) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton and event.pressed):
+	if not (event is InputEventMouseButton and event.pressed) or mode == "yun":
 		return
 	var p: Vector2 = event.position
 	var pad := XMVWindow.PADDING
@@ -367,6 +453,8 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if mode == "yun":
+		return
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		cancel()

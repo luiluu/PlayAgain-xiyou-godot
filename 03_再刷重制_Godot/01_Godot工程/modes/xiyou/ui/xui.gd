@@ -241,6 +241,8 @@ static func icon_texture(index: int) -> AtlasTexture:
 		return null
 	if index >= XCat.ICON and index < XCat.ICON + 9:  # 小猫剑圣自带的图标条（CatSwordSaint_Icons，9 格横排）
 		return XCat.icon_texture(index)
+	if XYunshang.icon_slot(index) >= 0:  # 云裳的 HD 图集（技能、天衣、织神天梭、号角、天丝）
+		return XYunshang.icon_texture(index)
 	var sheet := floori(index / 1600.0)
 	var p := XDB.img_path("system", "IconSet_%d" % (sheet + 1))
 	if p == "":

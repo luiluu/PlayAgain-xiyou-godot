@@ -25,8 +25,9 @@ extends RefCounted
 ## - 修雷德劫火 10162（55 级、进阶 3）：黑龙形态或用解放时，本回合对每个敌人命中的火属性（元素 2）生命伤害累计（after_apply）；
 ##   endTurn（原 endTurn 之前）对活着的目标再扣 floor(累计×30%)（end_turn）；startTurn 清空。累计只在战斗内、不存档。
 ## - endBattle：删 2592／2597／2598／2599，清代价与劫火（end_battle）。
-## 未移植：战斗图换成 sv_enemies/BlackDragon_Mira_Enemy（Sprite_Actor.updateBitmap 包装，缩 0.55、下移、藏武器）、深渊掉落 2903
-## （makeRewards：地图名以「深渊」开头的胜利 1/30 加奖励，依赖楼层）、名字与外观、旧档迁移。
+## 深渊掉落（makeRewards 包装，第 392～401 行；【cc·白龙_12·未经审查】）：MapInfos 名字以「深渊」开头的地图上胜利，每场判一次，
+## 1/30（Math.randomInt(30)===0，重制取战斗奖励随机数）多给一个黑龙进阶石 2903（米拉三次进阶都要 1 个，原版只有这一处来源）。见 abyss_bonus。
+## 未移植：战斗图换成 sv_enemies/BlackDragon_Mira_Enemy（Sprite_Actor.updateBitmap 包装，缩 0.55、下移、藏武器）、名字与外观、旧档迁移。
 ## 共用的 MiraRavenNumberBoost 在 XNumberBoost。
 
 const ACTOR := 168
@@ -310,3 +311,18 @@ static func end_battle(s: XState) -> void:
 		for id in BATTLE_STATES:
 			if a.state_ids.has(id):
 				a.remove_state(id)
+
+
+const ABYSS_STONE := 2903
+
+## makeRewards 包装：深渊地图的胜利 1/30 多一个黑龙进阶石；一场只判一次（结果记在这场的 logic 上，rewards() 再调不重掷）
+static func abyss_bonus(logic) -> Array:
+	if logic.has_meta("mira_abyss"):
+		return logic.get_meta("mira_abyss")
+	var out := []
+	var s: XState = logic.state
+	if s != null and logic.random != null and str(XDB.rec("MapInfos", s.map_id).get("name", "")).begins_with("深渊") and not XDB.rec("Items", ABYSS_STONE).is_empty():
+		if floori(logic.random.reward.next_float("mira_abyss_stone", "0") * 30) == 0:
+			out.append({"kind": 1, "id": ABYSS_STONE})
+	logic.set_meta("mira_abyss", out)
+	return out

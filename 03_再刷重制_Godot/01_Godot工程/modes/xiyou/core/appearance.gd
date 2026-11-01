@@ -200,6 +200,8 @@ const PROFILES := {
 	"Yunshang": [192, 192, 34, 52, 158, 184], "Codex_Garou_QHuman": [64, 64, 7, 0, 51, 64],
 	"Codex_Garou_QCosmic": [112, 112, 32, 24, 80, 96], "Codex_Sukuna_QFull": [64, 64, 8, 6, 47, 62],
 	"CatSwordSaint_v3": [192, 160, 65, 72, 128, 144], "CatSwordSaint_SV_v3": [128, 128, 43, 64, 85, 113],
+	# 谷雨的档由 installNativeGuyuRuntime installVisualHooks（Scene_Boot.start）登记进同一张表，不走 inferProfile
+	"Codex_Guyu": [160, 160, 23, 45, 137, 145],
 }
 const PROFILE_H := 72.0
 const PROFILE_W := 129.0

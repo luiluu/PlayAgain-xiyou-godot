@@ -86,8 +86,12 @@ static func _apply_note_params(item: Dictionary) -> void:
 		item.params[param_id(m.get_string(1))] = int(m.get_string(2))
 
 static func create(kind: String, id: int, owner: XState = null) -> Dictionary:
-	var item := template(kind, id)
+	return roll_item(template(kind, id), owner)
+
+## 对一份已备好的模板掷词缀、属性浮动与插槽（DreamX.RandomPrefixSuffix.makeItem 那段）；云裳天衣铺开工时用改过的模板调它
+static func roll_item(item: Dictionary, owner: XState = null) -> Dictionary:
 	if item.is_empty(): return {}
+	var kind := str(item.kind)
 	var definition: Dictionary = item.get("equipment", {})
 	var table := "Weapons" if kind == "weapon" else "Armors"
 	if item.get("meta", {}).has("prefixSuffixUseArmorDatabase"): table = "Armors"

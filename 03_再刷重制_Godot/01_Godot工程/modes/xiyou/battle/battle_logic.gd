@@ -295,7 +295,8 @@ func view_of(b: XBattler) -> Dictionary:
 		if int(st.get("iconIndex", 0)) > 0:
 			icons.append(int(st.iconIndex))
 	return {"hp": b.hp, "mp": b.mp, "tp": b.tp, "mhp": b.mhp, "mmp": b.mmp, "mtp": b.max_tp(), "dead": b.is_dead(),
-		"guarding": b.guarding, "can_move": can_move(b), "icons": icons, "shield": b.shield, "look": XAppearance.battler_key(b)}  # look：换装卡换图（画面用）
+		"guarding": b.guarding, "can_move": can_move(b), "icons": icons, "shield": b.shield, "look": XAppearance.battler_key(b),
+		"guyu_shield": XGuyu.shield_of(b), "guyu_text": XGuyu.status_text(b)}  # look：换装卡换图；guyu_*：谷雨花荫与侧栏状态字（画面用）
 
 
 ## 全体战斗者 → view_of
@@ -802,6 +803,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
 	XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
+	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：本次行动里的归根反馈（画面）
 	if started and not skipped:
 		logs.append_array(XGarou.finish(self, u, skill))  # 饿狼 endAction 包装（原 endAction 之前）：进化、解析、追击、流水回 TP；敌人命中饿狼的进化、解析、反击
 		logs.append_array(XSukuna.finish(self, u, skill))  # 宿傩 endAction 包装（原 endAction 之前）：神灶：开、追斩、看破、适应
@@ -846,6 +848,7 @@ func end_turn() -> Array:
 	logs.append_array(XRaceBattle.round_end(self))  # endTurn 的种族包装：毒鸡汤结算、残响交接
 	XYunshang.end_turn(self)  # 云裳 endTurn 包装：六衡裁身回合末清除
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
+	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs
@@ -1630,8 +1633,21 @@ func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 	return clampf(_hit_formula("Accuracy Formula", "skillHitRate * (userHitRate - targetEvadeRate)", u, skill, t) + XToji.hit_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemHit 包装：天与咒缚影速
 
 
+## itemCri（各包装由内到外）
+func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
+	if XGuyu.sure(skill):  # 谷雨 itemCri 包装：绽放、终结、治疗不暴击
+		return 0.0
+	var cri := u.cri * (1.0 - dt.cev * XToji.cev_rate(u, skill)) if bool(skill.damage.critical) else 0.0  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34
+	if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
+		cri = 1.0
+	cri = XYunshang.cri(u, skill, cri)  # 云裳 itemCri 包装：戴织神天梭 +3
+	return clampf(cri, 0.0, 1.0)
+
+
 ## itemEva：YEP「Evade Formula」（西游为 0）夹到 0～1。原版闪避已并入命中公式。
 func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
+	if XGuyu.sure(skill):  # 谷雨 itemEva 包装：绽放、终结、治疗不闪避
+		return 0.0
 	if XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t) or XToji.sure(u, skill):  # 云裳伤害技能、宿傩斩击打有看破的目标、甚尔五感主技能／武器库 itemEva 包装：不闪避
 		return 0.0
 	# 镜流黄泉的包装在甚尔里面：必中只把内层闪避压成 0，甚尔照样加目标的影速（审查第 18 期 P3②，参照 toji_eva_probe）
@@ -1794,11 +1810,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		return r
 	var type := int(dmg.type)
 	if type > 0:
-		var cri := u.cri * (1.0 - dt.cev * XToji.cev_rate(u, skill)) if bool(dmg.critical) else 0.0  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34
-		if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
-			cri = 1.0
-		cri = XYunshang.cri(u, skill, cri)  # 云裳 itemCri 包装：戴织神天梭 +3
-		r.critical = _float("critical") < clampf(cri, 0.0, 1.0)
+		r.critical = _float("critical") < item_cri(u, skill, dt)
 		_action_resources.result(dt).critical = r.critical
 		var previous_record := _damage_record
 		_damage_record = r
@@ -1813,6 +1825,9 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 			1, 3, 5:
 				var race_mark := XRaceBattle.before_hp(self, u, skill, dt)
 				r.hp = execute_hp_damage(u, dt, value, type == 5, skill)
+				var flash := XBlackFlash.take_announced()  # 黑闪 announce：出手者头上弹字、日志一行（画面）
+				if not flash.is_empty():
+					r.custom_popups = flash
 				XRaceBattle.after_hp(self, u, skill, dt, race_mark)
 				if dt != t:
 					XAlienBattle.sync_relations(self)
@@ -2274,6 +2289,7 @@ func rewards() -> Dictionary:
 		exp += floori(e.exp_reward() * float(rates[0]))
 		gold += floorf(e.gold_reward() * float(rates[1])) * gold_rate
 		drops.append_array(drops_of(e))
+	drops.append_array(XMira.abyss_bonus(self))  # 米拉 makeRewards 包装：深渊地图 1/30 黑龙进阶石
 	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
 	return {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8, "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
 
@@ -2406,7 +2422,7 @@ func end_battle(result := -1) -> void:
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XSukuna.end_battle(self)  # 宿傩 endBattle 包装：清战斗数据与领域、适应、觉醒状态
-	XYunshang.end_battle(self)  # 云裳 endBattle 包装：结清赊账、结束衣魂，清战斗数据、御风、余辉、符针
+	XYunshang.end_battle(self, result)  # 云裳 endBattle 包装：不朽天丝，结清赊账、结束衣魂，清战斗数据、御风、余辉、符针
 	XBlackFlash.end_battle(self)  # 黑闪 endBattle 包装
 	XToji.end_battle(self)  # 甚尔 endBattle 包装：清形态
 	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火

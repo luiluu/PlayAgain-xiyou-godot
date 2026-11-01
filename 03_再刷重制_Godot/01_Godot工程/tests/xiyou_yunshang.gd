@@ -256,10 +256,39 @@ func _run() -> void:
 				_p4_case(c)
 			"p5":
 				_p5_case(c)
-			"p6", "p7":
-				pass  # 战斗指令窗、天衣铺，xiyou_yunshang_ui 比
-	check("covers_all", seen.keys().size() == 11, seen.keys())
+			"p6", "p7", "p8", "p9":
+				pass  # 战斗指令窗 xiyou_yunshang_ui、天衣铺一二期与显示 xiyou_yunshang_shop 比
+	check("covers_all", seen.keys().size() == 13, seen.keys())
+	_copy_turns()
 	finish()
+
+
+## O-135：stateCopy 的来源身上没有这个状态、又没给回合数时（一身两世复演复制技能附加的状态），默认保留附加时掷出的回合数，
+## 回退（o_copy_turns = false）照原版写成永不到期
+func _copy_turns() -> void:
+	for keep in [true, false]:
+		var r := _battle(20, 0, false)
+		var logic: XBattleLogic = r[0]
+		var a: XActor = r[1]
+		var foe = logic.enemies[0]
+		if keep:
+			XYunshang.o_copy_turns = true
+		else:
+			XYunshang.o_copy_turns = false
+		var id := -1
+		for sid in XYunshang.TRANSFER_DEBUFFS:
+			if not a.state_ids.has(int(sid)) and XYunshang.state_copy(logic, a, foe, int(sid)):
+				id = int(sid)
+				break
+		check("copy_turns.%s.added" % keep, id > 0)
+		if id > 0:
+			var turns := int(foe.state_turns.get(id, -1))
+			if keep:
+				check("copy_turns.true", turns > 0 and turns < XYunshang.NEVER_EXPIRES, turns)
+			else:
+				check("copy_turns.false", turns == XYunshang.NEVER_EXPIRES, turns)
+		logic.end_battle(-1)
+	XYunshang.o_copy_turns = true
 
 
 

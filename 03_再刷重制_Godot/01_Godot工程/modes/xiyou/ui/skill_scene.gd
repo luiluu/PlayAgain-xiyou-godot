@@ -127,6 +127,7 @@ func _update_help() -> void:
 	if mode != "list" or current().is_empty():
 		help_card.show_for({})
 		return
+	XHelpCard.scene_actor = actor()  # 黑闪说明卡读 scene._actor
 	help_card.show_for(current())
 	var soul := XRaven.ledger_help(actor(), current())
 	if not soul.is_empty():

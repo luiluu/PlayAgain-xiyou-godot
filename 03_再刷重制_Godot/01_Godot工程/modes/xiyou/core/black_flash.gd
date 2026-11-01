@@ -9,12 +9,15 @@ extends RefCounted
 ## - evalDamageFormula 包装（formula）：本帧的这次 apply、目标是本次 apply 的目标且原值为正时，觉醒且技能在 awake 表里 ×1.2；
 ##   eligible、宿傩 canRoll（10238 或捌冲击段）、本帧还没判过、目标是施放时的第一个敌人且活着，就判一次：
 ##   随机 < 概率×(1−目标暴击闪避) 即黑闪，强制暴击（modifyCritical）、CodexDamage 暴伤加成 +[1, 1.2, 1.4, 1.6][min(连闪, 3)]。
-## - executeHpDamage 包装：本次 apply 对敌人扣了血就记 damage；黑闪那次记 success（宣告「黑闪！」等，画面未接）。
+## - executeHpDamage 包装：本次 apply 对敌人扣了血就记 damage；黑闪那次记 success 并宣告 announce：出手者头上弹「黑闪！」／「黑闪·二连！」…
+##   （customPopup 格式 2，设置「战斗伤害显示」开着才弹）、战斗日志加一行「名字打出了黑闪！」——放进 announced，由命中记录带给画面。
+## - 说明卡（Sprite_ItemHelp.setItem 包装）：黑闪技能 10225 给当前角色（技能页／战斗技能窗的角色）有配置时，卡尾加两行现况（help_rows）。
 ## - finish（endAction，宿傩包装之后）：成功则集中归 0、连闪 +1、觉醒 3 回合（有觉醒技能才加状态），宿傩 onSuccess（学了 10242）
 ##   斩击强化 emp＝max(emp, min(连闪, 4))；失败则连闪归 0，eligible 且打出伤害时集中 +1（至 4）。
 ## - endRound（endTurn 之前，宿傩包装之后）：不再启用的清空；觉醒到期（round ≥ expires）去状态。round +1。
 ## - 不能行动（processTurn／OTB 判不能动）、逃跑时连闪归 0；开战、战斗结束、阵亡清空。
-## 未移植：甚尔的额外一击（extraHitSkill 10216 觉醒时 _tojiHitCount＋1，甚尔运行时未移植）、遗忘 10225／觉醒技时清空、
+## 甚尔的额外一击（extraHitSkill 10216 觉醒时 _tojiHitCount＋1）在 XToji 的段数里（toji.gd「黑闪觉醒中的游云多 1 段」）。
+## 未移植：遗忘 10225／觉醒技时清空、
 ## 说明框里的实时状态行、宣告的弹字与日志（画面）。旧档 unlock（学 10225／觉醒技）宿傩由 XSukuna.sync 管。
 
 const SKILL := 10225
@@ -31,6 +34,9 @@ static var nested := 0
 static var cast := {}
 static var hit := {}
 static var _temp := {}
+## announce 待画面显示的宣告（XBattleLogic._apply 取走挂到命中记录 custom_popups）
+static var announced: Array = []
+const LABELS := ["", "黑闪！", "黑闪·二连！", "黑闪·三连！", "黑闪·四连！"]
 
 
 static func config(a) -> Dictionary:
@@ -85,6 +91,7 @@ static func start_battle(logic) -> void:
 	nested = 0
 	cast = {}
 	hit = {}
+	announced = []
 	for a in logic.state.members():
 		if not config(a).is_empty():
 			clear(logic, a)
@@ -179,6 +186,29 @@ static func after_hp(u, t, loss: float, skill: Dictionary) -> void:
 	if bool(hit.boost) and not bool(c.success):
 		c.success = true
 		c.hp_loss = loss
+		_announce(u, c)
+
+
+## announce：第 n 次连闪（chain＋1）的宣告
+static func _announce(u, c: Dictionary) -> void:
+	var n := int(c.chain) + 1
+	var label: String = LABELS[n] if n < LABELS.size() else "黑闪·%d连！" % n
+	announced.append({"target": u, "text": label, "format": 2, "log": u.display_name() + "打出了" + label})
+
+
+static func take_announced() -> Array:
+	var out := announced
+	announced = []
+	return out
+
+
+## 说明卡的两行（白、18 号、不分隔、靠左）；不是黑闪技能或角色没有配置时空
+static func help_rows(skill: Dictionary, a) -> Array:
+	if int(skill.get("id", 0)) != SKILL or not skill.has("stypeId") or a == null or config(a).is_empty():
+		return []
+	var st := status(a)
+	return [["当前：集中%d层；连闪%d次；概率%d%%" % [st.focus, st.chain, roundi(st.probability * 100.0)] if st.unlocked else "当前：尚未解锁", 18, "#ffffff", false, 0],
+		["觉醒：生效；剩余%d个完整回合" % st.remaining if st.awake else "觉醒：未生效", 18, "#ffffff", false, 0]]
 
 
 ## B.finish
