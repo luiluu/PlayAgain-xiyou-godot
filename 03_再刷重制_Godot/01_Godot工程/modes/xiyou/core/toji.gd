@@ -543,8 +543,8 @@ static func _spread(logic, u, skill: Dictionary, source, rate: float) -> Array:
 	spread_rate = rate
 	XBlackFlash.nested += 1
 	for e in logic.alive(logic.enemies):
-		if e != source:
-			out.append(logic.apply(u, skill, e))
+		if e != source:  # 子行动 child.apply 也走云裳包装（各自一帧，觉醒时各引爆自己目标一根针）
+			out.append_array(XYunshang.child(logic, u, skill, e, func(): return [logic.apply(u, skill, e)]))
 	XBlackFlash.nested -= 1
 	spread_rate = 0.0
 	internal = false
@@ -633,12 +633,12 @@ static func reflect(logic, target) -> Array:
 	no_reflect = true
 	reflect_base = float(p.base)
 	XBlackFlash.nested += 1
-	var r: Dictionary = logic.apply(target, item, p.source)
+	var out := XYunshang.child(logic, target, item, p.source, func(): return [logic.apply(target, item, p.source)])  # 子行动也走云裳包装（敌人出手前引爆身上全部针）
 	XBlackFlash.nested -= 1
 	reflect_base = 0.0
 	no_reflect = false
 	internal = false
-	return [r]
+	return out
 
 
 # ---- 第四期：智能 AI 档案 ----

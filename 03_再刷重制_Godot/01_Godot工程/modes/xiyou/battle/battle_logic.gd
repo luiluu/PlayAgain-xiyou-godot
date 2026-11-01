@@ -1608,16 +1608,29 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
 	var tt := substitute_for(skill, t)
-	# 黄泉 Game_Action.apply 包装：施集真赤、充残梦、扩散到其余敌人（扩散各次接在主目标之后）
+	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
+	# 黄泉（modules.json 第 9 个）、甚尔（10）、宿傩（18）的 Game_Action.apply 包装在饿狼（19）、云裳（31）之内：
+	# 整次包装跑完再走外层的饿狼记帧与云裳指令／种针／觉醒引爆（沙僧二审 S2-1-03；镜流、渡鸦只管自己的行动，这里没有）
+	var wrapped := []
 	if XYomiJingliu.wraps(u, skill, tt):
+		# 黄泉：施集真赤、充残梦、扩散到其余敌人（扩散各次接在主目标之后）
 		XYomiJingliu.before_apply(self, u, skill, tt)
 		var r := apply(u, skill, tt)
-		return [r] + XYomiJingliu.after_apply(self, u, skill, tt, r)
-	if XSukuna.wraps(u, skill):
-		return XSukuna.apply(self, u, skill, tt)  # 宿傩 Game_Action.apply 包装：捌两段、伤口、神灶蓄力
-	if XToji.wraps(u, skill):
-		return XToji.apply(self, u, skill, tt)  # 甚尔 Game_Action.apply 包装：计段、天逆鉾封印、万里锁溅射
-	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
+		wrapped = [r] + XYomiJingliu.after_apply(self, u, skill, tt, r)
+	elif XSukuna.wraps(u, skill):
+		wrapped = XSukuna.apply(self, u, skill, tt)  # 宿傩：捌两段、伤口、神灶蓄力
+	elif XToji.wraps(u, skill):
+		wrapped = XToji.apply(self, u, skill, tt)  # 甚尔：计段、天逆鉾封印、万里锁溅射
+	else:
+		wrapped = [null]
+	if wrapped != [null]:
+		var last := {}  # 外层看到的 target.result()：对主目标的最后一段
+		for x in wrapped:
+			if x is Dictionary and x.get("type") == "hit" and is_same(x.get("target"), tt) and is_same(x.get("user"), u):
+				last = x
+		if not last.is_empty():
+			XGarou.applied(u, skill, tt, last, used)
+		return wrapped + XYunshang.after_wrapped(self, u, skill, tt, wrapped, used)
 	XYomiJingliu.j_before(self, u, skill, tt)  # 镜流 apply 包装（原 apply 之前）：主目标、绽放、放血、记印记
 	var r := apply(u, skill, tt)
 	XGarou.applied(u, skill, tt, r, used)  # 饿狼 Game_Action.apply 包装：本帧命中与伤害、琦玉模式
@@ -1952,7 +1965,7 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 	var out := _execute_hp_damage(u, t, value, drain)
 	XBlackFlash.after_hp(u, t, sukuna_hp - t.hp, item)  # 黑闪 executeHpDamage 包装（宿傩之内）：记伤害、黑闪成功
 	XSukuna.restore_shield(u, t, sukuna_shield, sukuna_hp)
-	XYunshang.after_hp(self, u, t, value, item)  # 云裳 executeHpDamage 包装：记每段命中、山河作骨守势反击
+	XYunshang.after_hp(self, u, t, value, item, sukuna_hp)  # 云裳 executeHpDamage 包装：记每段命中与 _yunTotal、山河作骨守势反击
 	_action_resources.boss_output.leave_settled()
 	XAlienBattle.record(self, u, t, maxf(0.0, alien_before - t.hp))
 	return out
