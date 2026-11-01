@@ -1429,6 +1429,8 @@ func _play(logs: Array) -> void:
 				await _show_hit(l)
 			"toast":
 				XToast.show_text(str(l.text))
+			"mastery_up":
+				_start_animation(int(l.animation), l.target)  # YEP_SkillMasteryLevels onAllActionsEnd：升级动画（不镜像，不等）
 			"battle_text":
 				_log_add(str(l.text))  # BattleManager._logWindow.push('addText')（宿傩「发动了神灶：开！」等）
 			"enemy_change":
