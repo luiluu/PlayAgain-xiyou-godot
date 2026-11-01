@@ -670,17 +670,17 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XRaceBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i))))  # 按原版安装先后由内到外：专属角色模块（米拉 98、宿傩 113）→小猫剑圣（115）→云裳（夹值）→异化逆骨（129）→谷雨储备（133）→种族祝福（148）
+	return XRaceBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i))))  # 按原版安装先后由内到外：专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→异化逆骨（33）→谷雨储备（38）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:
-	# 原版安装先后由内到外：专属角色模块（米拉、黄泉、甚尔、宿傩，模块表 2～18）→小猫剑圣（installImportedBalanceRuntime，第 20 个）
-	# →云裳（第 31 个：云裳自身倍率、战斗内层六衡／万法／御风，最后夹值）。审查第 17 期 P3：原来夹值写在小猫剑圣里面，次序反了
+	# 原版安装先后由内到外：专属角色模块（米拉、黄泉、甚尔、宿傩，modules.json 第 2～18 个）→小猫剑圣（installImportedBalanceRuntime，第 20 个）
+	# →云裳（第 31 个，同样从 1 数：云裳自身倍率、战斗内层六衡／万法／御风，最后夹值）。审查第 17 期 P3：原来夹值写在小猫剑圣里面，次序反了
 	# （XCat 只管 178、云裳倍率只管 174，结果一样；战斗内层对别的角色生效时才有差）。
 	var v := XCat.param(self, i, XActorModules.param(self, i, super.param(i)))
 	return final_clamp(i, XYunshang.battle_param(self, i, XYunshang.param(self, i, v)))
 
-## 云裳 installNativeYunshangRuntime 的 Game_Actor.param 包装（模块表第 30 个，在米拉、黄泉、甚尔、宿傩、饿狼之后，异化、种族之前）：
+## 云裳 installNativeYunshangRuntime 的 Game_Actor.param 包装（modules.json 第 31 个，在米拉、黄泉、甚尔、宿傩、饿狼之后，异化、种族之前）：
 ## 对所有角色最后 round(max(HP?1:0, min(paramMax, v)))，专属倍率乘过上限的压回上限（八戒 toji2；参照 param_max_probe）。
 ## 设 false 回到没有这一层（专属模块乘完不夹）
 static var FINAL_CLAMP := true

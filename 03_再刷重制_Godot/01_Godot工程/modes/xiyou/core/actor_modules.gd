@@ -121,7 +121,7 @@ static func passive_cache(a, c: Dictionary) -> void:
 ## 宿傩［2,1,5,3,4］、饿狼［2,1,5,4］、云裳［2,1,5,4］，没学到那类技能也列出；别的角色返回 null（照特性 41）。
 const MENU_SKILL_TYPES := {167: [2, 1, 5, 3, 4], 172: [2, 1, 5, 3, 4], 173: [2, 1, 5, 4], 174: [2, 1, 5, 4]}
 ## Window_ActorCommand.addSkillCommands 包装（战斗指令，照这个次序、不排序、不再按 CP_MagicWeapon 去掉 3～6）：
-## 渡鸦［2,1,5］、宿傩［2,1,5,3］、饿狼［2,1,5］、云裳［2,1,5］（云裳只包 addedSkillTypes＝[2,1,5,4]，指令窗照这个次序、不列被动 4，参照 p6.cmd*）；别的角色返回 null
+## 渡鸦［2,1,5］、宿傩［2,1,5,3］、饿狼［2,1,5］、云裳［2,1,5］（云裳原版直接包 addSkillCommands，固定 [2,1,5]、不列被动 4，参照 p6.cmd*；addedSkillTypes 的 [2,1,5,4] 只管技能菜单）；别的角色返回 null
 const BATTLE_SKILL_TYPES := {167: [2, 1, 5], 172: [2, 1, 5, 3], 173: [2, 1, 5], 174: [2, 1, 5]}
 
 

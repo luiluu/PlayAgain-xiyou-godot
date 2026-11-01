@@ -94,11 +94,42 @@ def check(gen):
     return 3
 
 
+def compare(gen, main_gen):
+    """并行测试开跑前比对车道与主工作区当前的 generated/。
+
+    只在「本树没有自己的改动」时判落后，车道改了切片、自己同步过的一律不拦：
+    ① 两边切片指纹相同，manifest 产物清单（outputs）却有差异＝产物旧了（yunshang_shop 因此挂在 HD 图标，补齐后 418/418）；
+    ② 本树没自己同步过（同步戳与记批次时一致，或没有批次记录），主工作区的参照（oracle/*.json）已比本树新。
+    任何一边缺 manifest 都不说话（主工作区就是自己、或还没生成）。"""
+    gen, main_gen = Path(gen), Path(main_gen)
+    lane_m, main_m = _read(gen / 'manifest.json'), _read(main_gen / 'manifest.json')
+    if not lane_m.get('sliceConfigSHA256') or lane_m.get('sliceConfigSHA256') != main_m.get('sliceConfigSHA256'):
+        return 0
+    stale = []
+    lo, mo = lane_m.get('outputs'), main_m.get('outputs')
+    if isinstance(lo, dict) and isinstance(mo, dict):
+        stale += sorted(k for k in set(lo) | set(mo) if lo.get(k) != mo.get(k))
+    own = _identity(gen)['outputsDigest']
+    batch = _read(gen / BATCH)
+    self_synced = _valid_digest(own) and (not batch or own != batch.get('laneOutputsDigest'))
+    if not self_synced:
+        now = _oracle_digests(gen)
+        stale += ['oracle/' + n for n, d in sorted(_oracle_digests(main_gen).items()) if now.get(n) != d]
+    if not stale:
+        return 0
+    print(f'  ✗ 本树 generated/ 落后主工作区（{len(stale)} 项不同：{"、".join(stale[:4])}{"等" if len(stale) > 4 else ""}）。'
+          '直接跑会出一堆假失败（图标、地图、参照对不上）。先 git merge main，再 新建工作树.sh --补齐 <本树> --branch <本分支>；'
+          '确认要照现状跑就加 --skip-generated-check（或 XIYOU_SKIP_GENERATED_CHECK=1）。')
+    return 3
+
+
 def main(argv):
     if len(argv) == 3 and argv[0] == 'record':
         return record(argv[1], argv[2])
     if len(argv) == 2 and argv[0] == 'check':
         return check(argv[1])
+    if len(argv) == 3 and argv[0] == 'compare':
+        return compare(argv[1], argv[2])
     print(__doc__.strip(), file=sys.stderr)
     return 64
 
