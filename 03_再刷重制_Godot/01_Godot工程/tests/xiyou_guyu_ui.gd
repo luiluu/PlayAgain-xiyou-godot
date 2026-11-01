@@ -328,6 +328,9 @@ func _scene() -> void:
 	check("scene.planted_wait", sp.motion == "wait" and sp._frame == 0 and b.sprites[hero].motion == "walk", [sp.motion, sp._frame, b.sprites[hero].motion])
 	await _frames(20)
 	check("scene.planted_still", sp.motion == "wait" and sp._frame == 0, [sp.motion, sp._frame])
+	# 站姿归一用谷雨运行时登记的档 Codex_Guyu（160×160，可见 [23,45,137,145]）：缩放 min(72/100, 129/114)＝0.72，不走 inferProfile
+	check("scene.guyu_profile", not sp._profile.is_empty() and sp._profile.bounds == Rect2(23, 45, 114, 100) and is_equal_approx(sp.body_scale, 0.72),
+		[sp._profile, sp.body_scale])
 	b.status_rows[g].refresh()
 	await _shot("guyu_ui_side")
 	check("scene.side_text", b.status_rows[g]._v().guyu_text == "储3000 生长" and b.status_rows[hero]._v().guyu_text == "储0", [b.status_rows[g]._v().guyu_text, b.status_rows[hero]._v().guyu_text])
