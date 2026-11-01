@@ -872,6 +872,8 @@ static func from_dict(d: Dictionary) -> XState:
 	s.raven = XRaven.from_save(d.get("codexRaven"))
 	s.garou = XGarou.from_save(d.get("codexGarou"))
 	XYomiJingliu.after_load(s)  # 镜流 extractSaveContents 包装：整理技能、清放血累计
+	XShieldLedger.clear_all()  # 护盾账本 extractSaveContents 包装：清空
+	XBinding.clear_all(s)  # 绑定 extractSaveContents 包装：清数据与形态状态
 	XGuyu.after_load(s)  # 谷雨 extractSaveContents 包装：syncAll
 	for a in s.actors.values():a.refresh_passive()
 	for k in d.switches:

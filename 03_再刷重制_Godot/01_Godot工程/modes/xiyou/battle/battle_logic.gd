@@ -96,6 +96,7 @@ var _names_count := {}
 
 func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XGuyu.setup(self)  # 谷雨 BattleManager.setup 包装（原 setup 之前）：reset、activeBattle
+	XShieldLedger.setup(self)  # 护盾账本 startBattle 包装：清空、开始记账
 	s.sync_difficulty_on_battle()
 	random = random_context if random_context != null else s.reserve_battle_random()
 	replay_runtime_start = s.runtime_random_snapshot()
@@ -128,6 +129,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	actors = s.battle_members()
 	XYomiJingliu.start_battle(self)  # 镜流 startBattle 包装：放血累计清零
 	XGuyu.after_load(s)  # 谷雨 startBattle 包装：syncAll（同读档）
+	XBinding.start_battle(self)  # 绑定 startBattle 包装（原 startBattle 之后）：在场本体建新数据、去掉形态状态
 	_garou = XGarou.start_battle(actors)  # 饿狼 startBattle 包装：同步、记下出战的饿狼
 	victory_texts.clear()
 	XZhenqi.battle_setup(s, troop)  # 真气：本场路线、楼层、溢出计数（BattleManager.setup）
@@ -576,6 +578,7 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Arr
 		XYunshang.set_primary(a, out)
 		return out
 	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, _targets_for(a, skill, chosen), chosen))  # 云裳云丝展幅、千军入袖收袖 makeTargets 包装在异化之内
+	list = XBinding.filter_targets(self, a, skill, list)  # 绑定 makeTargets 包装：敌方对敌技能滤掉形态中的本体
 	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
 	return list
 
@@ -624,8 +627,8 @@ func _random_target(list: Array) -> XBattler:
 	for b in list:
 		r -= b.tgr
 		if r <= 0.0:
-			return b
-	return list[0]
+			return XBinding.retarget(self, b)  # 绑定 randomTarget 包装：敌方行动中抽到形态中的本体就换人
+	return XBinding.retarget(self, list[0])
 
 
 # ---- 敌人 AI（MV Game_Enemy.selectAllActions）----
@@ -749,6 +752,7 @@ func start_turn() -> void:
 	XYunshang.start_turn(self)  # 云裳 startTurn 包装：resetRound（储行加份、神纹自鸣随机唤醒）
 	XAlienBattle.start_turn(self)  # 异化 startTurn 包装：镜骸重新充能
 	XGuyu.start_turn(turn)  # 谷雨 startTurn 包装：跑完原 startTurn 设回 turnCount
+	XBinding.start_turn(self)  # 绑定 startTurn 包装（原 startTurn 之后）：行动次数转为充能
 
 
 ## 取出下一位行动者；本回合结束时返回 null。
@@ -788,6 +792,7 @@ func act(u: XBattler, skill, target) -> Array:
 	elif skill == null or (skill is Dictionary and skill.is_empty()):
 		started = false
 	elif int(skill.id) == GUARD_SKILL and not is_item(skill):
+		XBinding.start_action(u)  # 绑定 startAction 包装：validate、记行动者、回归扣充能
 		XAlienBattle.start_action(self, u, skill)  # 异化蚀术 startAction 包装：防御也算原有合法行动窗口
 		XBlackFlash.begin(u, skill, [])  # 黑闪 startAction 包装：防御也建帧（不 eligible，结束时连闪归 0）
 		XSukuna.begin(self, u, skill, [])  # 宿傩 startAction 包装：清上一帧
@@ -805,6 +810,8 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append({"type": "guard", "user": u})
 	else:
 		started = u.is_actor() or can_use(u, skill)  # 同 execute 开头的行动无效判断（非强制）
+		if started:
+			XBinding.start_action(u)  # 绑定 startAction 包装：validate、记行动者、回归扣充能
 		logs.append_array(execute(u, skill, target))
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
@@ -823,6 +830,8 @@ func act(u: XBattler, skill, target) -> Array:
 	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
 	_acted[u] = int(_acted.get(u, 0)) + 1
 	XYomiJingliu.queue_extra(self, u)  # 镜流 queueJingliu（原 endAction 之后）：追加行动插队
+	if started and not skipped:
+		XBinding.end_action()  # 绑定 endAction 包装（原 endAction 之后）：清行动者、validate
 	if started:
 		XMira.pay_hp(u, skill)  # 米拉 endAction 包装（原 endAction 之前）：禁忌生命代价
 		_tick_states(u, 1)
@@ -854,6 +863,8 @@ func end_turn() -> Array:
 	logs.append_array(XAlienBattle.round_end(self))  # endTurn 的异化包装（在种族包装之内）：蚀能、腐蚀
 	logs.append_array(XRaceBattle.round_end(self))  # endTurn 的种族包装：毒鸡汤结算、残响交接
 	XYunshang.end_turn(self)  # 云裳 endTurn 包装：六衡裁身回合末清除
+	XShieldLedger.round_end()  # 护盾账本 endTurn 包装（原 endTurn 之后）：撤销到期来源、衰减
+	XBinding.end_turn()  # 绑定 endTurn 包装（原 endTurn 之后）：剩余充能交给角色模块，清零
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
 	_sync_orders(before, false)
@@ -1732,6 +1743,8 @@ func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -
 
 ## Game_Action.apply：行动者有道法「破甲」时，期间附加的破甲·真气（2705）用它的倍率（XZhenqi.pojia_actor）
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
+	if XBinding.blocks_apply(u, t):
+		return XBinding.unused_result(u, skill, t)  # 绑定 Game_Action.apply 包装：敌方效果打不到形态中的本体
 	return XGuyu.apply(self, u, skill, t)  # 谷雨 Game_Action.apply 包装：治疗来源、花期／终结生效（没生效整次不结算）、行动执行标记
 
 
@@ -1907,7 +1920,7 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 ## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：Boss输出→导入平衡→真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
 ## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
-	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：花荫先吸收；谷雨记本回合我方受伤（受伤压力）
+	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：账本先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):
 		var er := _action_resources.result(t)
@@ -2113,7 +2126,7 @@ func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = 
 		"HP":
 			var applied := value
 			if value < 0.0:
-				applied = -t.absorb_shield(-value)
+				applied = -t.absorb_shield(XShieldLedger.hp(t, -value))  # 护盾账本 gainHp／setHp 包装先吸收，再原生护盾
 				if not t is XActor:
 					shown = applied
 			applied = XSukuna.heal(t, applied)  # 宿傩 gainHp 包装：带伤口的受治疗减半
@@ -2241,7 +2254,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		if dh < 0.0:
 			# regenerateHp：先按 maxSlipDamage 夹到 hp−1，再吸收护盾、减半（弹字同 gainHp：角色记夹后原值，敌人记减免后）
 			shown = maxf(dh, -maxf(b.hp - 1.0, 0.0))
-			dh = -b.absorb_shield(-shown)
+			dh = -b.absorb_shield(XShieldLedger.hp(b, -shown))  # 护盾账本 setHp 包装先吸收，再原生护盾
 			if not b is XActor:
 				shown = dh
 		dh = XSukuna.heal(b, dh)  # 宿傩 gainHp 包装：带伤口的再生回复减半
@@ -2445,6 +2458,8 @@ func end_battle(result := -1) -> void:
 	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火
 	XGarou.clear_battle()  # 饿狼 endBattle 包装：清进化、解析、琦玉
 	XRaven.end_battle(state)  # 渡鸦 endBattle 包装：清神话形态
+	XShieldLedger.end_battle()  # 护盾账本 endBattle 包装（finally）：清空
+	XBinding.end_battle(self)  # 绑定 endBattle 包装（finally）：清数据与形态状态
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	# ShieldSystem Scene_Battle.terminate：全队与敌群护盾清零
 	for e in enemies:
