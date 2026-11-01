@@ -2,7 +2,7 @@
 
 - 车道／工作者：C 规则／悟空（cc）
 - 基线：从 main bbeecb5b 切出（brief 没等到，按上期 cc/wukong-smallsys1 盘点表做；smallsys1 只有盘点、不用合）。
-- 状态：**道具用完回背包（ItemBagContinuation）做完，可合并**；批量抽奖（CasinoBatch）只做了原版参照，重制代码没写，交给下一位（见文末「接续」）。
+- 状态：**可合并**（道具用完回背包做完）；批量抽奖（CasinoBatch）只做了原版参照，重制代码没写，交给下一位（见文末「接续」）。
 
 ## 道具用完回背包（installItemBagContinuationRuntime）
 
@@ -32,7 +32,7 @@
 
 - 专项 `xiyou_item_bag`（新，160/160，单跑 17 秒）：11 例对原版（提示文字、回不回地图、回到的分类／列表／选中、回来后的提示与 toaster、队伍与数量、技能增减、取消回主菜单、光标挪开提示消失）＋纯规则＋O-待定两支。
 - `xiyou_book_capacity` 的续用守卫改成测通用 API（多了「换画面」与「另有预约是等不是放弃」两条）；它的 messages 比较滤掉物品页结果提示（原版探针直接走 Scene_ItemBase，没有 Scene_Item 包装）。
-- 选测（相关 25 场景，含必跑 `xiyou_event_compare`）：见下方「选测结果」。
+- 选测（相关 25 场景，含必跑 `xiyou_event_compare`；本机槽很挤，墙钟 65 分钟）：23 过；`xiyou_book_capacity` 挂 1 项（续用守卫里 refund 才建出角色 2，被快照算成变化——测试问题，已改成先建角色，提交 后补的那条），复跑 `xiyou_book_capacity`＋`_ui`＋`xiyou_item_bag` 3 场景全过；`xiyou_event_compare` 挂 m4e1p2／p3（更换称号），来自 main 上已合的 title2，不是本分支改动：已在 cc/wukong-title2fix fb830b96 登记（参照探针不经过标题画面、ChooseTitle 预约落空），总装九带进第四批收尾，本分支合并时以 main 为准即可。
 - `语法检查.py` 通过。
 
 ## 交接板
@@ -64,4 +64,7 @@
 
 - f7bd9003 WIP：XItemBagReturn、物品页提示、换装卡当场跑、item_bag_probe
 - 579f0a4c WIP：专项 xiyou_item_bag
-- （casino 参照）、（本交付单）
+- 批量抽奖参照 casino_batch_probe＋fixture（WIP）
+- 交付单草稿、book_capacity 先建角色 2、交付单定稿
+
+可合并
