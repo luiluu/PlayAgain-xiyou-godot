@@ -1,7 +1,7 @@
 # 交付：cc/wukong-reach-air4
 
 - 车道／工作者：悟空（cc），飞艇专项收尾＋切片外地图盘点（第四期）
-- 基线：从 `cc/wukong-reach-air3` 末端 56a737ba 切出（air3 已含合 main c68bf4fd）。
+- 基线：从 `cc/wukong-reach-air3` 末端 56a737ba 切出；交付前合 main（6ee392e7，main 到 734ecb10；合进来的改了切片的 extraImages 和探针，地图没变，仍 206 张），补齐后重跑 airship_fly 245/245、reach069 53/53。
 - 状态：可合并
 
 ## ① 飞艇专项收尾
@@ -72,4 +72,6 @@
 ## 本分支提交
 
 - d72b4157 WIP：airship_fly 用公共步骤、镇凶塔、云端用时表
-- 交付单＋盘点脚本（本提交）
+- 25733376 交付单＋盘点脚本
+- 6ee392e7 合并 main
+- 交付单补合 main 后验证（本提交）
