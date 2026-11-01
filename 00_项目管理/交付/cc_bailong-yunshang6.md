@@ -1,8 +1,8 @@
 # 交付：cc/bailong-yunshang6
 
 - 车道／工作者：E 角色专属／白龙_10、白龙_11（cc）
-- 状态：进行中
-- 分支从 cc/bailong-yunshang5 末端 c579efdd 切出（总装十同意；yunshang5 的工作树守卫不让写），**包含 yunshang4 与 yunshang5**。yunshang5 的交付单内容（孤灯照众 10）并进本单，那张已删掉，合本分支就够。yunshang4 是独立的「可合并」交付单（B 批前一半），照它自己的单合；它合进 main 后本分支再合一次 main。
+- 状态：可合并
+- 分支从 cc/bailong-yunshang5 末端 c579efdd 切出（总装十同意；yunshang5 的工作树守卫不让写），**包含 yunshang4 与 yunshang5**。yunshang5 的交付单内容（孤灯照众 10）并进本单，那张已删掉，合本分支就够。yunshang4 是独立的「可合并」交付单（B 批前一半），照它自己的单合。本分支已合过一次 main（cbaf1d48，含谷雨一期、battlelog2、tools30，没有冲突），合完补齐过一次。
 - 范围：云裳第二期 B 批后一半——天衣 5 千军入袖、6 空袖藏星（借技能）、7 九曲回针（针眼）、10 孤灯照众，自动战斗 AI（智能 AI 档案、估算器、makeAutoBattleActions 包装）。战斗指令窗与天衣铺界面不做（界面车道）。
 
 ## 变更记录草稿
@@ -33,7 +33,8 @@
 - 专项 xiyou_yunshang 1570/1570（直接跑；B 批前一半 950＋孤灯 12＋千军入袖、空袖藏星、九曲回针约 330＋自动战斗约 280）。千军入袖的参照比较在开关关着时跑，开关开着另比溢出（4 段派生伤害、数值与目标生命）。
 - 反向验证（逐个改、各自单跑，用备份文件还原，已还原）19 项有 18 项抓到：收袖不拆目标、不取主人能力、针眼不越过冷却、别的技能不减冷却、醒着只借 1 个、溢出不传、觉醒不清冷却、双针倍率、溅射、御风等人、换锦觉醒计数、赠行收益、估算器、收袖不开、六衡反选、不免费赠行、敕衣点神不限目标、一身两世倍率。**储行收益没抓到**：参照里队友总打得到人（aiOutput＞0），储行的 4500 分没出现过，只按读码接。
 - 语法检查通过。没改切片与转换器；只改了 yunshang_probe（不接全量同步），不用重跑同步与内容覆盖检查。
-- 选测：待写
+- 选测（本机 CHECK_JOBS=3，规则对照 `RULES_ONLY_ACTORS=174`，合 main 并补齐后，22 分钟）54 个场景全过、没有偶发，名单写全名：xiyou_yunshang、xiyou_help_card、xiyou_alien_battle、xiyou_alien_affix、xiyou_rules 与 xiyou_rules_d1b～d6d 全部 24 份、xiyou_battle、xiyou_battle_gaps、xiyou_otb、xiyou_action_sequence、xiyou_custom_damage、xiyou_jingliu、xiyou_jingliu2、xiyou_sukuna_battle、xiyou_garou_battle、xiyou_raven_battle、xiyou_mira_battle、xiyou_yomi_battle、xiyou_toji、xiyou_toji_battle、xiyou_race_battle、xiyou_cat、xiyou_smart_ai、xiyou_smart_ai_b、xiyou_smart_ai_c、xiyou_smart_ai_d、xiyou_actor_p0、xiyou_actor_modules，另加改动直接相关的 xiyou_boss_output_context、xiyou_state_effects、xiyou_state_effects_tp（覆写 `_calculate_damage`）与 xiyou_attack_query（调 `auto_battle_action`）。合 main 前跑过一轮，help_card 与 rules 共 7 个失败，是分支落后 main、产物来自主工作区（谷雨、来源指纹）所致，合 main 补齐后全过。
+- 回退开关覆盖：`回退开关覆盖.py` 新缺口 0（o_sleeve_overflow 在专项里赋了回退值）。
 
 ## 交接板
 
@@ -65,3 +66,6 @@
 - c78da23e 参照 p5.*（WIP）
 - 94e03da6 自动战斗：档案、估算器、自动战斗包装，XSmartAI 三个回调（WIP）
 - e5b05e14 专项补 prepareTarget，1570/1570（WIP）
+- 9b6a770c 交付单（WIP）
+- cbaf1d48 合并 main
+- 本提交：选测全过，交付单可合并
