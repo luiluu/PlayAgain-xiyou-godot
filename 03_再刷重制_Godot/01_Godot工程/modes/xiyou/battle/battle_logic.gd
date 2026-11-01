@@ -171,6 +171,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		e.param_cache_begin()
 	XRaceBattle.start(self)  # 种族祝福：BattleManager.startBattle 包装清本场数据，出战成员建数据（记开战最大生命）
 	actors = everyone
+	XYunshang.start_battle(self)  # 云裳 startBattle 包装：建战斗数据、天衣无缝全醒
 	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
 	XSukuna.start_tp(self)  # 宿傩 startBattle 包装（之后）：TP 至少 60
 	# 本版改过的 BattleManager.startBattle：每场开战预约公共事件 1320「战斗开始时调整变量」，开战第一次事件检查先跑它
@@ -722,6 +723,7 @@ func start_turn() -> void:
 		b.param_mark_dirty()
 		b.param_refresh()
 	_make_action_orders()
+	XYunshang.start_turn(self)  # 云裳 startTurn 包装：resetRound（储行加份、神纹自鸣随机唤醒）
 	XAlienBattle.start_turn(self)  # 异化 startTurn 包装：镜骸重新充能
 
 
@@ -730,6 +732,7 @@ func next_subject() -> XBattler:
 	while not current_order.is_empty():
 		var b: XBattler = current_order.pop_front()
 		if b.is_alive() and (actors.has(b) or enemies.has(b)):
+			XYunshang.took(b)  # 云裳 getNextSubject 包装：这次行动的来源（原有／赠行／储行）
 			return b
 	return null
 
@@ -817,6 +820,7 @@ func end_turn() -> Array:
 		b.param_refresh()
 	logs.append_array(XAlienBattle.round_end(self))  # endTurn 的异化包装（在种族包装之内）：蚀能、腐蚀
 	logs.append_array(XRaceBattle.round_end(self))  # endTurn 的种族包装：毒鸡汤结算、残响交接
+	XYunshang.end_turn(self)  # 云裳 endTurn 包装：六衡裁身回合末清除
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs
@@ -1370,6 +1374,9 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	XGarou.begin(u, skill)  # 饿狼 startAction 包装：开施放帧（记施放开始时的进化层）
 	XRaven.begin(u, skill)  # 渡鸦：新行动的施放帧（原版记在 Game_Action 上）
 	XAlienBattle.start_action(self, u, skill)  # 异化蚀术 startAction 包装（最外层）：记上次用的技能、列出要解的封印
+	logs.append_array(XYunshang.prepare(self, u, skill))  # 云裳 startAction 包装（prepareAction）：敌人引爆符针、钉影虚弱、余辉、收针
+	if u.is_dead():
+		return logs  # 被引爆的符针打倒：原版 _subject 清空，整次行动不执行
 	skill = change_to(u, skill)  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
 	skill = weapon_unleash(u, skill)  # YEP_WeaponUnleash：行动开始状态效果之后、付费之前
@@ -1552,7 +1559,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	XGarou.applied(u, skill, tt, r, used)  # 饿狼 Game_Action.apply 包装：本帧命中与伤害、琦玉模式
 	XYomiJingliu.j_applied(u, skill, tt, r, used)  # （j_before 在 apply 之前）  # 镜流 Game_Action.apply 包装：主目标、命中
 	XRaven.applied(self, u, skill, tt, r, used)  # 渡鸦 Game_Action.apply 包装：神话形态、鸦啄回 MP、黑暗侵蚀、按目标累计伤害
-	return [r]
+	return [r] + XYunshang.applied(self, u, skill, tt, r, used)  # 云裳 Game_Action.apply 包装：指令、种针、拆神驱散、觉醒引爆
 
 
 ## BattleManager.applySubstitute：目标濒死（活着且 hp < mhp/4）、技能不是必中时，同队出战成员里第一个能掩护的替它挨打
@@ -1639,8 +1646,9 @@ func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bo
 	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
 	_formula_outcome.value = XBlackFlash.formula(self, u, skill, t, float(_formula_outcome.value))  # 黑闪 evalDamageFormula 包装：觉醒 ×1.2、判黑闪
 	critical = critical or XBlackFlash.boosted(t)  # 黑闪 modifyCritical 包装：黑闪必暴击
-	return XDamage.calculate(skill, u, t, {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule(),
-		"battleRound": maxi(1, turn), "raceAction": true})  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
+	var options := {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule(),
+		"battleRound": maxi(1, turn), "raceAction": true}  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
+	return XYunshang.calculate_split(skill, u, t, options)  # 云裳伤害钩子 split：七曜流霞元素、万法同裳两路（没有就照常算一次）
 
 
 func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -> Dictionary:
@@ -2326,6 +2334,7 @@ func end_battle(result := -1) -> void:
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XSukuna.end_battle(self)  # 宿傩 endBattle 包装：清战斗数据与领域、适应、觉醒状态
+	XYunshang.end_battle()  # 云裳 endBattle 包装：清战斗数据、御风、余辉、符针
 	XBlackFlash.end_battle(self)  # 黑闪 endBattle 包装
 	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火
 	XGarou.clear_battle()  # 饿狼 endBattle 包装：清进化、解析、琦玉

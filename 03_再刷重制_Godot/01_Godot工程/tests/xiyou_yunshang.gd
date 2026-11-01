@@ -8,6 +8,10 @@ extends Node
 ##   伤害比本例第一段的比值（双针 ×0.555、展幅非主目标 ×0.5／0.66／0.77、织神天梭结算 ×1.99 与暴伤、魔法路线对物防 +5000 的敌人；
 ##   伤害是整数、等级低时只有几百到几万，容差加上取整误差；绝对值另有与本期无关的伤害链差约 4%，同 xiyou_garou_battle 不比）；
 ##   每步后六个技能能不能用（没解锁、冷却、敕衣点神要有人穿天衣、收针要有人觉醒、被动不能用）。
+## - p2.*（第二期 A 批，参照 battle2：开战＋第一回合，只给敌人加生命）：觉醒（敕衣点神、天衣无缝、神纹自鸣随机唤醒、到期）、收针（按所选觉醒者剩余回合、消耗觉醒）、
+##   余辉、符针（千丝成阵种针、敌人行动前全部引爆、钉影虚弱 ×0.67、觉醒伤害引爆一根）、御风（敏捷 ×1.33）、赠行（每回合 3 次、觉醒免费赠 2）、
+##   储行（收存、放行、觉醒每回合加份、放行翻倍）、六衡裁身、万法同裳（双攻取高、物魔两路）、七曜流霞（元素）；每步比回合、觉醒、战斗数据、
+##   行动来源标签、队列里 174 与 1 号的行动数（比开局的增减）、余辉，以及各例的能力值、敏捷、符针数、能不能用；伤害按行动者分组比比值。
 const FIXTURE := "res://tests/fixtures/yunshang_oracle.json"
 const RATIO_TOLERANCE := 1e-6
 const MEETS := [10270, 10271, 10272, 10273, 10274, 10277]
@@ -248,8 +252,234 @@ func _run() -> void:
 				_recruit(c)
 			"battle":
 				_battle_case(c)
-	check("covers_all", seen.keys().size() == 5, seen.keys())
+			"p2":
+				_p2_case(c)
+	check("covers_all", seen.keys().size() == 6, seen.keys())
 	finish()
+
+
+
+# ---- 第二期 A 批（p2.*，参照 battle2）----
+func _wear_robe(s: XState, a: XActor, k: int) -> void:
+	s.gain_gear("armor", XYunshang.ROBE_FIRST + k, 1)
+	XEquipment.change(s, a, a.equip_slots().find(4), s.gear[s.gear.size() - 1])
+
+
+## 同参照 battle2()：挑战开关、云裳 level 级 stage 进阶（可戴织神天梭、天衣），1 号 55 级（可穿天衣）；队伍 174、1、8、9、10；只给敌人加生命；开战再开第一回合
+func _battle2(o: Dictionary) -> Array:
+	var s := _new_game()
+	s.switches[2494] = true
+	var a := _grow(s, int(o.level), int(o.stage))
+	s.party.clear()
+	s.battle_slots.clear()
+	for id in [XYunshang.ACTOR, 1, 8, 9, 10]:
+		s.add_actor(id)
+	var ally := s.actor(1)
+	ally.change_level_mv(55)
+	if bool(o.get("relic", false)):
+		_wear_relic(s, a)
+	if o.get("robe") != null:
+		_wear_robe(s, a, int(o.robe))
+	if o.get("allyRobe") != null:
+		_wear_robe(s, ally, int(o.allyRobe))
+	var rand := XBattleRandom.create("0000000000000174")
+	rand.rule = FixedStream.new()
+	rand.rule.domain = "rule"
+	var logic := XBattleLogic.new()
+	logic.setup(3, s, rand)
+	for e in logic.enemies:
+		var p: Array = (e.data().params as Array).map(func(v): return float(v))
+		p[0] += 1e12
+		e.zq_ref = {"p": p, "k": 1.0}
+		e.param_mark_dirty()
+		e.param_refresh()
+		e.recover_all()
+	for b in logic.actors:
+		b.param_mark_dirty()
+		b.param_refresh()
+		b.recover_all()
+	logic.start_turn()
+	return [logic, a, ally]
+
+
+func _yd(b) -> Variant:
+	var d := XYunshang.data(b)
+	return null if d.is_empty() else [int(d.key), int(d.wake_until), int(d.stored), int(d.gifts)]
+
+
+func _ys(logic: XBattleLogic, a: XActor, ally: XActor) -> Dictionary:
+	var tags := {}
+	for id in XYunshang._gift_sources:
+		tags[str(id)] = (XYunshang._gift_sources[id] as Array).map(func(t): return str(t))
+	return {"round": XYunshang.round, "awake": [XYunshang.awake(a), XYunshang.awake(ally)], "data": [_yd(a), _yd(ally)], "tags": tags,
+		"q174": logic.current_order.count(a), "q1": logic.current_order.count(ally), "afterglow": bool(XYunshang.afterglow.get(a, false))}
+
+
+func _w_ys(w: Dictionary) -> Dictionary:
+	var d := []
+	for x in w.data:
+		d.append(null if x == null else [int(x.key), int(x.wakeUntil), int(x.stored), int(x.gifts)])
+	var tags := {}
+	for k in w.tags:
+		tags[str(k)] = (w.tags[k] as Array).map(func(t): return str(t))
+	return {"round": int(w.round), "awake": (w.awake as Array).map(func(v): return bool(v)), "data": d, "tags": tags,
+		"q174": int(w.queue.get("a174", 0)), "q1": int(w.queue.get("a1", 0)), "afterglow": bool(w.afterglow)}
+
+
+func _target(logic: XBattleLogic, u, skill: Dictionary, idx: int):
+	var friend := int(skill.get("scope", 1)) in [7, 8, 9, 10, 11]
+	var mine: Array = logic.actors if u is XActor else logic.enemies
+	var theirs: Array = logic.enemies if u is XActor else logic.actors
+	var list: Array = mine if friend else theirs
+	return list[idx] if idx < list.size() else null
+
+
+func _cast2(logic: XBattleLogic, u, id: int, idx: int) -> Dictionary:
+	u.mp = u.mmp
+	u.tp = u.max_tp()
+	u.cooldowns.clear()
+	var skill := XDB.rec("Skills", id)
+	var logs := logic.act(u, skill, _target(logic, u, skill, idx))
+	var hits := []
+	for l in logs:
+		var derived: bool = l.get("type") == "yunshang_derived"
+		if (l.get("type") == "hit" and not bool(l.get("missed", false)) and not bool(l.get("evaded", false)) and int(l.skill.get("damage", {}).get("type", 0)) > 0) or derived:
+			hits.append({"user": _key(logic, l.user), "skill": int(l.skill.id), "target": _key(logic, l.target), "value": float(l.hp), "critical": bool(l.critical)})
+	return {"log": hits}
+
+
+func _meets_of(logic: XBattleLogic, a: XActor) -> Array:
+	a.mp = a.mmp
+	a.tp = a.max_tp()
+	return MEETS.map(func(id): return logic.can_use(a, XDB.rec("Skills", id)))
+
+
+func _p2_compare(id: String, steps: Array, want: Array) -> void:
+	check(id + ".steps", steps.size() == want.size(), [steps.size(), want.size()])
+	var base := {}
+	var q0 := [0, 0, 0, 0]
+	for i in mini(steps.size(), want.size()):
+		var g: Dictionary = steps[i]
+		var w: Dictionary = want[i]
+		var sid := "%s.%d" % [id, i]
+		var gs: Dictionary = g.ys
+		var ws := _w_ys(w)
+		if i == 0:
+			q0 = [gs.q174, gs.q1, ws.q174, ws.q1]
+		gs.q174 -= q0[0]
+		gs.q1 -= q0[1]
+		ws.q174 -= q0[2]
+		ws.q1 -= q0[3]
+		check(sid + ".state", gs == ws, [gs, ws])
+		for k in ["meets", "giftMeets", "storeMeets", "free", "again", "release", "cut", "skills"]:
+			if w.has(k):
+				var wv = w[k]
+				var gv = g.get(k)
+				if wv is Array:
+					wv = (wv as Array).map(func(v): return int(v) if (v is float) else v)
+				check("%s.%s" % [sid, k], gv == wv, [gv, wv])
+		for k in ["params", "agi", "needles"]:
+			if w.has(k):
+				check("%s.%s" % [sid, k], g.get(k) == (w[k] as Array).map(func(v): return float(v)), [g.get(k), w[k]])
+		if not w.has("log"):
+			continue
+		var gl: Array = g.log
+		var wl: Array = w.log
+		var gk := gl.map(func(l): return [l.user, l.skill, l.target, l.critical])
+		var wk := wl.map(func(l): return [str(l.user), int(l.skill), str(l.target), bool(l.critical)])
+		check(sid + ".log", gk == wk, [gk, wk])
+		if gk != wk:
+			continue
+		for k in gk.size():
+			var who: String = gl[k].user
+			if not base.has(who):
+				base[who] = [float(gl[k].value), float(wl[k].value)]
+			var rg: float = float(gl[k].value) / base[who][0]
+			var rw: float = float(wl[k].value) / base[who][1]
+			var round_err: float = rw * (1.0 / float(wl[k].value) + 1.0 / base[who][1])
+			check("%s.ratio%d" % [sid, k], absf(rg - rw) <= RATIO_TOLERANCE * maxf(1.0, absf(rw)) + round_err, [gl[k].value, wl[k].value, rg, rw])
+
+
+func _p2_case(c: Dictionary) -> void:
+	var o: Dictionary = c.setup
+	var r := _battle2(o)
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var ally: XActor = r[2]
+	var steps := []
+	var snap := func(extra := {}) -> void:
+		steps.append(extra.merged({"ys": _ys(logic, a, ally)}, true))
+	match str(c.id):
+		"p2.wake":
+			snap.call()
+			var x := _cast2(logic, a, 10273, 0)
+			x.meets = _meets_of(logic, a)
+			snap.call(x)
+			logic.start_turn()
+			snap.call()
+			logic.start_turn()
+			snap.call()
+		"p2.seamless":
+			snap.call({"params": _params(a)})
+			snap.call(_cast2(logic, a, 10270, 1))
+			snap.call(_cast2(logic, ally, 1, 2))
+		"p2.gather":
+			snap.call({"meets": _meets_of(logic, a)})
+			snap.call(_cast2(logic, a, 10270, 1))
+			XYunshang.wake_target = ally
+			var x := _cast2(logic, a, 10274, 1)
+			x.meets = _meets_of(logic, a)
+			snap.call(x)
+		"p2.afterglow":
+			snap.call()
+			snap.call(_cast2(logic, a, 10270, 1))
+			snap.call(_cast2(logic, a, 10270, 1))
+		"p2.needle":
+			var count := func() -> Array: return logic.enemies.map(func(e): return float((XYunshang.needles.get(e, []) as Array).size()))
+			snap.call({"needles": count.call()})
+			snap.call(_cast2(logic, a, 10270, 1).merged({"needles": count.call()}))
+			snap.call(_cast2(logic, a, 10271, 0).merged({"needles": count.call()}))
+			snap.call(_cast2(logic, logic.enemies[1], 1, 1).merged({"needles": count.call()}))
+			snap.call(_cast2(logic, logic.enemies[1], 1, 1).merged({"needles": count.call()}))
+		"p2.wind":
+			var agi := func() -> Array: return logic.actors.map(func(b): return b.agi)
+			snap.call({"agi": agi.call()})
+			snap.call(_cast2(logic, a, 10272, 0).merged({"agi": agi.call()}))
+			logic.start_turn()
+			snap.call({"agi": agi.call()})
+			logic.start_turn()
+			snap.call({"agi": agi.call()})
+		"p2.gift":
+			var gm := func() -> bool:
+				ally.mp = ally.mmp
+				return logic.can_use(ally, XDB.rec("Skills", XYunshang.GIFT))
+			snap.call({"skills": ally.skills().map(func(sk): return int(sk.id)).filter(func(i): return i >= 10270), "giftMeets": gm.call()})
+			for i in range(3):
+				snap.call(_cast2(logic, ally, XYunshang.GIFT, 0).merged({"giftMeets": gm.call()}))
+			XYunshang.wake(logic, ally)
+			var free := XYunshang.free_gift(logic, ally, a)
+			snap.call({"free": free, "again": XYunshang.free_gift(logic, ally, a)})
+		"p2.store":
+			snap.call({"storeMeets": logic.can_use(ally, XDB.rec("Skills", XYunshang.STORE))})
+			snap.call(_cast2(logic, ally, XYunshang.STORE, 0))
+			var rel := XYunshang.release(logic, ally)
+			snap.call({"release": rel, "again": XYunshang.release(logic, ally)})
+			XYunshang.wake(logic, ally)
+			logic.start_turn()
+			snap.call()
+			snap.call({"release": XYunshang.release(logic, ally)})
+		"p2.cut":
+			snap.call({"params": _params(ally)})
+			var ok := XYunshang.cut(ally, [4])
+			snap.call({"cut": ok, "params": _params(ally)})
+			XYunshang.wake(logic, ally)
+			snap.call({"params": _params(ally)})
+		_:  # p2.seven.*
+			snap.call()
+			snap.call(_cast2(logic, a, 10270, 1))
+			snap.call(_cast2(logic, a, 1, 2))
+	logic.end_battle(0)
+	_p2_compare(str(c.id), steps, c.observed.steps)
 
 
 func finish() -> void:
