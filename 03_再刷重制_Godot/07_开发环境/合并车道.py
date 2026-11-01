@@ -697,7 +697,25 @@ def review_status(root, state):
     return '待审查'
 
 
-def prepare(root, state, state_file, executor):
+## 合并进行中修文件只有一条路：改好留成未提交，重跑同一命令加 --also（准备阶段由工具并进合并提交，准备之后随收尾提交）
+FIX_HINT = '在 main 改好后留成未提交改动，重跑同一命令并点名改过的文件：合并车道.sh %s --also <路径>（可重复），工具把它们并进合并提交（合并进行中守卫不收手动 commit／amend）'
+
+
+def fold_into_merge(root, state, changed, also):
+    """准备阶段停下后总装的修正：只收 --also 点名的文件，并进本次的合并提交（父提交不变）。"""
+    extra = sorted(changed - set(also))
+    if extra:
+        raise RuntimeError('合并提交之后有未提交改动：' + '、'.join(extra[:8]) + '；要并进合并提交就' + FIX_HINT % state['task']
+                           + '；不是本次修正的先移走')
+    parents = git(root, 'rev-list', '--parents', '-n', '1', 'HEAD').split()[1:]
+    if parents != [state['base'], state['target']]:
+        raise RuntimeError('HEAD 不是本次的合并提交（%s），不改它；先人工核对' % git(root, 'log', '-1', '--format=%h %s'))
+    run(root, ['git', 'add', '-A', '--', *sorted(changed)])
+    run(root, ['git', 'commit', '--amend', '--no-edit'], env=MAIN_COMMIT_ENV)
+    print('已把修正并进合并提交：' + '、'.join(sorted(changed)), flush=True)
+
+
+def prepare(root, state, state_file, executor, also=()):
     if state['phase'] != 'planned' and git(root, 'rev-parse', 'HEAD') != state['head']:
         raise RuntimeError('准备过程中 main HEAD 已改变，先人工核对')
     if state['phase'] == 'planned':
@@ -715,8 +733,15 @@ def prepare(root, state, state_file, executor):
                 raise RuntimeError('已暂存的文件里还有冲突标记（<<<<<<< / >>>>>>>），未提交合并：' + '、'.join(marked)
                                    + '；删掉标记后重新 git add，再运行同一命令')
             run(root, ['git', 'commit', *message], env=MAIN_COMMIT_ENV)
-        if dirty(root):
+        changed = dirty(root)
+        committed = git(root, 'rev-parse', 'HEAD') != state['base'] and not subprocess.run(
+            ['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode
+        if changed and not committed:
             raise RuntimeError('尚有冲突或未提交现场，须先人工处理；未自动回退')
+        if changed:
+            # 合并已提交、停在冲突标记或解析检查：修正留成未提交改动，重跑时 --also 点名，由工具并进合并提交
+            # （合并进行中 main 守卫不收手动 commit／amend，tools29）
+            fold_into_merge(root, state, changed, also)
         if git(root, 'rev-parse', 'HEAD') == state['base']:
             try:
                 run(root, ['git', 'merge', '--no-ff', state['target'], *message], env=MAIN_COMMIT_ENV)
@@ -729,14 +754,13 @@ def prepare(root, state, state_file, executor):
             # 唐僧解冲突后自己 git commit 了合并：同样不放行带标记的合并提交
             marked = conflict_markers(root, state['base'] + '..HEAD')
             if marked:
-                raise RuntimeError('合并提交里有冲突标记：' + '、'.join(marked) + '；先修好（git commit --amend）再运行同一命令')
+                raise RuntimeError('合并提交里有冲突标记：' + '、'.join(marked) + '；' + FIX_HINT % state['task'])
         if not state.get('noParseCheck'):
             problems = parse_check(root, state['base'])
             if problems:
                 shown = problems[:12] + (['……另 %d 条（多是连带错误）' % (len(problems) - 12)] if len(problems) > 12 else [])
                 raise RuntimeError('合并后解析检查不通过（还没同步、没跑检查）：\n  ' + '\n  '.join(shown)
-                                   + '\n在 main 改好后 git commit --amend（或另提交），再运行同一命令接续；放弃就 合并车道.sh %s --abort'
-                                   % state['task'])
+                                   + '\n' + FIX_HINT % state['task'] + '；放弃就 合并车道.sh %s --abort' % state['task'])
         head = git(root, 'rev-parse', 'HEAD')
         state.update(phase='merged', head=head, mergeCommit=head)
         save(state_file, state)
@@ -1108,8 +1132,8 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         else:
             extra = git(root, 'log', '--format=%h %s（%an，%ad）', '--date=format:%H:%M', state['head'] + '..' + head)
             raise RuntimeError('准备后 main HEAD 已改变（%s → %s）；多出的提交（不是本工具做的）：\n%s\n保留现场。准备之后不要另起提交：总装修测试或别的文件留成未提交改动，'
-                               '--finish 时用 --also <路径> 一并带入（00_项目管理/ 下的 .md 用 --accept-doc-edits）；'
-                               '要修合并提交本身就 git commit --amend（父提交不变，工具会自动认）。已另起提交的，'
+                               '--finish 时用 --also <路径> 一并带入（00_项目管理/ 下的 .md 用 --accept-doc-edits），修合并带进来的代码也一样；'
+                               '已另起提交的，'
                                'git reset --soft %s 退回成未提交改动再 --finish' % (state['head'][:9], head[:9], extra, state['head'][:9]))
     if subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode:
         raise RuntimeError('交付提交不在 main 历史里，先人工核对')
@@ -1355,7 +1379,8 @@ def main(argv=None):
     ap.add_argument('--no-parse-check', action='store_true',
                     help='准备阶段跳过合并后的快速解析检查（只管本次运行；检查卡住或误报、确认无误时用）')
     ap.add_argument('--also', action='append', default=[], metavar='路径',
-                    help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则），可重复')
+                    help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则、修好的代码）；准备阶段停在冲突标记或解析检查时，'
+                         '重跑同一命令加它点名修正的文件，工具并进合并提交。可重复')
     a = ap.parse_args(argv)
     a.executor = 'cc' if a.executor == 'Claude' else a.executor
     root = a.root or Path(git(Path(__file__).parent, 'rev-parse', '--path-format=absolute', '--git-common-dir')).parent
@@ -1432,7 +1457,7 @@ def main(argv=None):
             if pending and not any(x['task'] == a.task for x in pending):
                 print('提示：本批已有 %d 条收尾未检查（%s）；这条可 --finish --batch 继续攒，或直接 --finish 统一检查。'
                       % (len(pending), '、'.join(x['task'] for x in pending)), flush=True)
-            prepare(root, state, state_file, a.executor)
+            prepare(root, state, state_file, a.executor, a.also)
         return 0
     except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError, KeyError, IndexError) as error:
         print('合并已停止，现场保留：' + str(error), file=sys.stderr)
