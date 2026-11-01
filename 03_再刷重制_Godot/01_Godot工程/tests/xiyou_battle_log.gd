@@ -30,10 +30,16 @@ func _ready() -> void:
 func _run() -> void:
 	XMessageBox.auto = true
 	var s := XState.new_game_blank()
+	s.actor_max_level = 99
+	s.switches[2494] = true  # 超强角色可出战
 	s.party.clear()
 	s.battle_slots.clear()
 	for id in [XSukuna.ACTOR, XRaven.ACTOR, XGarou.ACTOR]:
+		s.actor(id).change_level_mv(55)
 		s.add_actor(id)
+		s.actor(id).add_param(0, 1e12)
+		s.actor(id).refresh_passive()
+		s.actor(id).recover_all()
 	var b := XBattleScene.new()
 	b.setup(2, true, false, XDB.map(5))
 	add_child(b)
