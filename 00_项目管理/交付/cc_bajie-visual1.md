@@ -1,7 +1,7 @@
 # 交付：cc/bajie-visual1
 
 - 车道／工作者：B 界面（总装十二派给八戒）／八戒（cc，八戒）
-- 状态：进行中
+- 状态：可合并
 - 分支从 cc/bajie-mastery3 末端 2373ba91 切（链式：ui-gaps1 → mastery2 → mastery3 → 本期，总装只合链尾）。
 
 ## 盘点（installNativeCharacterVisualRuntime，冻结 v0.28，258 行）
@@ -46,7 +46,7 @@
 ## 验证
 
 - `xiyou_cat` 998/998（新 visual 4 条）。
-- 选测：xiyou_appearance、change_clothes、costumes、actor_looks、battle_ui、cat、guyu_battle 7 个收工时在跑，结果没看到；接手先单跑这 7 个再标可合并。
+- 选测 7 个全过：xiyou_appearance、change_clothes、costumes、actor_looks、battle_ui、cat、guyu_battle（2099 秒，多在等槽）。
 - 没对浏览器截图：这两处是动作选择，不是像素；期二的法阵、描边要截图。
 - 语法检查 0 问题。
 
