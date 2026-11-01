@@ -126,6 +126,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XImportedBalance.set_acting(null)
 	actors = s.battle_members()
 	XYomiJingliu.start_battle(self)  # 镜流 startBattle 包装：放血累计清零
+	XGuyu.after_load(s)  # 谷雨 startBattle 包装：syncAll（同读档）
 	_garou = XGarou.start_battle(actors)  # 饿狼 startBattle 包装：同步、记下出战的饿狼
 	victory_texts.clear()
 	XZhenqi.battle_setup(s, troop)  # 真气：本场路线、楼层、溢出计数（BattleManager.setup）
@@ -438,6 +439,9 @@ func _skill_cost(a: XBattler, skill: Dictionary, panel: bool, shift: float) -> D
 	cost.tp = XSukuna.tp_cost(a, skill, int(cost.tp))  # 宿傩 skillTpCost 包装：领域中解／捌减半（种族包装在外）
 	if not panel and XAlienBattle.silence_skill(a, skill):
 		cost.mp = 0  # 异化缄默 skillMpCost 包装（Adv:132）：选定技能不花 MP，改锁生命上限
+	var guyu := XGuyu.mp_cost(a, skill, 1.0 if panel else a.mcr, consume_reduce(a, skill, shift))
+	if guyu >= 0:
+		cost.mp = guyu  # 谷雨 skillMpCost 包装（米拉、异化之外，种族之内）：五个主动技按最大 MP 比例
 	return {"mp": XRaceBattle.cost(a, int(cost.mp)), "tp": XRaceBattle.cost(a, int(cost.tp))}
 
 ## paySkillHpCost：直接减生命（_hp -= 费用，不走伤害）；异化连命扣池、嫁祸扣保护者、空壳扣护盾（Adv:128）
@@ -483,6 +487,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if not XSukuna.meets(a, skill, self):  # 宿傩 meetsSkillConditions：解锁、领域冷却、神灶要蓄力目标、神灶：开要准备层
 		return false
 	if not XMira.meets(a, skill):  # 米拉 meetsSkillConditions：人形／黑龙技按形态、解放的进阶与等级、劫焰不能单放
+		return false
+	if not XGuyu.meets(a, skill):  # 谷雨 meetsSkillConditions：五个主动技只有谷雨能用、要解锁，花期／终结／花荫／转移看战斗内状态
 		return false
 	if XAlienBattle.blocks_skill(a, skill):  # 异化逆祷 meetsSkillConditions：模板外的伤害技能不能用
 		return false
@@ -1598,6 +1604,8 @@ static func certain_hit(u: XBattler, skill: Dictionary) -> bool:
 ## userHitRate 物理 user.hit、魔法 user.hit*1.1、必中 10000000；targetEvadeRate 物理 target.eva、魔法 target.mev、必中 0）；
 ## 最后 installDamageElementRuntime 夹到 0～1。Olivia_AntiPlayerStress 的命中修正在西游关闭（Hit Rate Stacking=false）。
 func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
+	if XGuyu.sure(skill):  # 谷雨 itemHit 包装：绽放、终结、治疗必中
+		return 1.0
 	if certain_hit(u, skill) or XYomiJingliu.sure(u, skill) or XYunshang.sure(u, skill):  # 黄泉技能、云裳伤害技能 itemHit 包装：必中
 		return 1.0
 	return clampf(_hit_formula("Accuracy Formula", "skillHitRate * (userHitRate - targetEvadeRate)", u, skill, t) + XToji.hit_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemHit 包装：天与咒缚影速
