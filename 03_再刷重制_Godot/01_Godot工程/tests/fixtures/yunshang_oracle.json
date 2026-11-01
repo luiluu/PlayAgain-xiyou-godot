@@ -640,7 +640,7 @@
    "js/rpg_οbjects.js": "455b1890ff891795df24653e3b8c15ab6ef5050661656c2dd1840339b34d5b7d"
   }
  },
- "hostScope": "真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期",
+ "hostScope": "真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批",
  "cases": [
   {
    "id": "skills.lv1.s0",
@@ -2342,6 +2342,2105 @@
        false,
        false
       ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p2.wake",
+   "setup": {
+    "level": 45,
+    "stage": 1,
+    "robe": 8,
+    "allyRobe": 9
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10273,
+      "user": "a174",
+      "log": [],
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "meets": [
+       true,
+       true,
+       true,
+       false,
+       false,
+       false
+      ]
+     },
+     {
+      "turn": true,
+      "round": 2,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 1,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "turn": true,
+      "round": 3,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 9,
+        "wakeUntil": 4,
+        "stored": 1,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p2.seamless",
+   "setup": {
+    "level": 55,
+    "stage": 2,
+    "robe": 13,
+    "allyRobe": 9
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "params": [
+       44160,
+       6012,
+       7524,
+       644,
+       7524,
+       1049,
+       7524,
+       644
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 13,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 1,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10270,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 1063560,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 106356,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 106356,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 1063560,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 818940,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 818940,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 818940,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 818940,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 13,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 1,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 1,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e2",
+        "value": 1731,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e2",
+        "value": 81894,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e2",
+        "value": 81894,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 13,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 1,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p2.gather",
+   "setup": {
+    "level": 50,
+    "stage": 2,
+    "robe": 8,
+    "allyRobe": 9
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "meets": [
+       true,
+       true,
+       true,
+       true,
+       true,
+       false
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10270,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 2304984,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 2304984,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 1774837,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 1774837,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 1774837,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 1774837,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10274,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10274,
+        "target": "e1",
+        "value": 17027004,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10274,
+        "target": "e1",
+        "value": 17027004,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10274,
+        "target": "e0",
+        "value": 13110793,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10274,
+        "target": "e0",
+        "value": 13110793,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10274,
+        "target": "e2",
+        "value": 13110793,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10274,
+        "target": "e2",
+        "value": 13110793,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 9,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "meets": [
+       true,
+       true,
+       true,
+       true,
+       false,
+       false
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p2.afterglow",
+   "setup": {
+    "level": 35,
+    "stage": 1,
+    "relic": true,
+    "allyRobe": 9
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": true
+     },
+     {
+      "cast": 10270,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 57844927,
+        "critical": true
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 57844927,
+        "critical": true
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 44540594,
+        "critical": true
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 44540594,
+        "critical": true
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 44540594,
+        "critical": true
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 44540594,
+        "critical": true
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10270,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 43492426,
+        "critical": true
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 43492426,
+        "critical": true
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 33489168,
+        "critical": true
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 33489168,
+        "critical": true
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 33489168,
+        "critical": true
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 33489168,
+        "critical": true
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p2.needle",
+   "setup": {
+    "level": 45,
+    "stage": 1
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "needles": [
+       0,
+       0,
+       0
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10270,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 885921,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 885921,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 682159,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 682159,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 682159,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 682159,
+        "critical": false
+       }
+      ],
+      "needles": [
+       3,
+       3,
+       3
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10271,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e0",
+        "value": 1486902,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e0",
+        "value": 1486902,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e1",
+        "value": 1144914,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e1",
+        "value": 1144914,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e2",
+        "value": 1144914,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e2",
+        "value": 1144914,
+        "critical": false
+       }
+      ],
+      "needles": [
+       3,
+       3,
+       3
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 177184,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 177184,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 177184,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 177184,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 177184,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 177184,
+        "critical": false
+       },
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a1",
+        "value": 3,
+        "critical": false
+       }
+      ],
+      "needles": [
+       3,
+       0,
+       3
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a1",
+        "value": 5,
+        "critical": false
+       }
+      ],
+      "needles": [
+       3,
+       0,
+       3
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p2.wind",
+   "setup": {
+    "level": 20,
+    "stage": 0
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "agi": [
+       726,
+       0,
+       20,
+       20,
+       30
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10272,
+      "user": "a174",
+      "log": [],
+      "agi": [
+       966,
+       0,
+       27,
+       27,
+       40
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a10": 1,
+       "a8": 1,
+       "a9": 1,
+       "a1": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "turn": true,
+      "agi": [
+       966,
+       0,
+       27,
+       27,
+       40
+      ],
+      "round": 2,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "turn": true,
+      "agi": [
+       726,
+       0,
+       20,
+       20,
+       30
+      ],
+      "round": 3,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p2.gift",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 11
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "skills": [
+       10284
+      ],
+      "giftMeets": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 11,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10284,
+      "user": "a1",
+      "log": [],
+      "giftMeets": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 11,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 1
+       }
+      ],
+      "tags": {
+       "174": [
+        "gift"
+       ]
+      },
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1,
+       "a174": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10284,
+      "user": "a1",
+      "log": [],
+      "giftMeets": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 11,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 2
+       }
+      ],
+      "tags": {
+       "174": [
+        "gift",
+        "gift"
+       ]
+      },
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1,
+       "a174": 2
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10284,
+      "user": "a1",
+      "log": [],
+      "giftMeets": false,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 11,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 3
+       }
+      ],
+      "tags": {
+       "174": [
+        "gift",
+        "gift",
+        "gift"
+       ]
+      },
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1,
+       "a174": 3
+      },
+      "afterglow": false
+     },
+     {
+      "free": true,
+      "again": false,
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 3
+       }
+      ],
+      "tags": {
+       "174": [
+        "gift",
+        "gift",
+        "gift",
+        "gift",
+        "gift"
+       ]
+      },
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1,
+       "a174": 5
+      },
+      "afterglow": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p2.store",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 9
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "storeMeets": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 9,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10285,
+      "user": "a1",
+      "log": [],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 9,
+        "wakeUntil": 0,
+        "stored": 2,
+        "gifts": 0
+       }
+      ],
+      "tags": {
+       "1": []
+      },
+      "queue": {
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "release": true,
+      "again": false,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 9,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {
+       "1": [
+        "stored",
+        "stored"
+       ]
+      },
+      "queue": {
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1,
+       "a1": 2
+      },
+      "afterglow": false
+     },
+     {
+      "turn": true,
+      "round": 2,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 1,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "release": true,
+      "round": 2,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 9,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {
+       "1": [
+        "original",
+        "stored",
+        "stored"
+       ]
+      },
+      "queue": {
+       "a1": 3,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p2.cut",
+   "setup": {
+    "level": 30,
+    "stage": 0,
+    "allyRobe": 8
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "params": [
+       4814,
+       1876,
+       207,
+       230,
+       230,
+       128,
+       0,
+       182
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cut": true,
+      "params": [
+       4814,
+       1876,
+       139,
+       154,
+       477,
+       86,
+       0,
+       122
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "woke": true,
+      "params": [
+       4814,
+       1876,
+       385,
+       230,
+       408,
+       128,
+       0,
+       182
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p2.seven.lv55.s0",
+   "setup": {
+    "level": 55,
+    "stage": 0,
+    "robe": 14
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 14,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10270,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 2192714,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 2192714,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 1447191,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 1447191,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 1447191,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 1447191,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 14,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 1,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e2",
+        "value": 6820,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e2",
+        "value": 6820,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e0",
+        "value": 4501,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e0",
+        "value": 4501,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e1",
+        "value": 4501,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e1",
+        "value": 4501,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 14,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p2.seven.lv55.s2",
+   "setup": {
+    "level": 55,
+    "stage": 2,
+    "robe": 14
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 14,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10270,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 4396475,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 586197,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 586197,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 4396475,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 3385285,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 3385285,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 3385285,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 3385285,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 14,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 1,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e2",
+        "value": 6837,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e2",
+        "value": 451371,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e2",
+        "value": 451371,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e2",
+        "value": 6837,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e0",
+        "value": 5265,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e0",
+        "value": 5265,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e1",
+        "value": 5265,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e1",
+        "value": 5265,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 14,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
      }
     ]
    },
