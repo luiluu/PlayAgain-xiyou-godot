@@ -2,7 +2,7 @@ extends Node
 ## 【cc·白龙_14·未经审查】共用来源护盾账本 XShieldLedger：照参照 shield_ledger_probe（tests/fixtures/shield_ledger_oracle.json）逐步比——
 ## grant（护盾效果加成、同源取较高、期限、opts）、gainHp／setHp 两处吸收（走 XResourceContext 的真钩子）、absorbRaceDamage、
 ## 回合末到期与衰减、撤销类；每步后比两人的生命、原生护盾、合计、累计挡下与账本各行。
-## 参照是原版行为，所以比对时 O-待定 开关 o_skip_unshielded 设回退值 false；另测默认开时 skip 行不再白挡。
+## 参照是原版行为，所以比对时 O-144 开关 o_skip_unshielded 设回退值 false；另测默认开时 skip 行不再白挡。
 ## 另：战斗外不记、setup／end_battle／读档清空。
 const FIXTURE := "res://tests/fixtures/shield_ledger_oracle.json"
 var checks := 0

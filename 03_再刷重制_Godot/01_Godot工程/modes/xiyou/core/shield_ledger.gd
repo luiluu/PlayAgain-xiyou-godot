@@ -158,7 +158,7 @@ static func _on_absorb(b, _got: float, list: Array) -> void:
 		XGuyu.spring_shield_hit(b)  # 三法宝成长 onAbsorb：花荫挡下过 → 谷雨 springShieldHit
 
 
-## O-待定：skip 跳过的行不替角色挡伤害。原版账本行的量经子类 getter 并进 b.shield，跳过的行还留着量，
+## O-144：skip 跳过的行不替角色挡伤害。原版账本行的量经子类 getter 并进 b.shield，跳过的行还留着量，
 ## 后面 ShieldSystem 的吸收读到合计 > 0，按合计「吸收」、却只扣原生那份（扣到 0 为止）：跳过的行白挡一份伤害、自己不少
 ## （谷雨付生命费用时花荫还在就是这样）。false 照原版。
 static var o_skip_unshielded := true
