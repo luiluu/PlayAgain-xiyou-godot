@@ -44,12 +44,12 @@ func _event(id: int) -> MVEvent:
 	return null
 
 
-func _step_to(c: Vector2i) -> bool:
+func step_to(c: Vector2i) -> bool:
 	map.player.touch_target = c
 	return await _until(func(): return map.busy or (map.player.grid == c and not map.player.is_moving()), 600)
 
 
-func _press() -> void:
+func press() -> void:
 	await _until(func(): return not map.busy)
 	await map._on_action()
 
@@ -80,9 +80,9 @@ func path(from: Vector2i, goal: Vector2i) -> Array:
 	return []
 
 
-func _walk(goal: Vector2i) -> bool:
+func walk(goal: Vector2i) -> bool:
 	for c in path(map.player.grid, goal):
-		if not await _step_to(c) or map.busy:
+		if not await step_to(c) or map.busy:
 			return false
 	return map.player.grid == goal
 
@@ -123,9 +123,9 @@ func board() -> bool:
 	if int(a.get("mapId", 0)) != map.map_id:
 		return false
 	var at := Vector2i(int(a.x), int(a.y))
-	if map.player.grid != at and not await _walk(at):
+	if map.player.grid != at and not await walk(at):
 		return false
-	await _press()
+	await press()
 	return await _until(func(): return XState.current.vehicle_type == "airship" and map.vehicle_can_move())
 
 
@@ -144,7 +144,7 @@ func _fly_near(e: MVEvent) -> bool:
 	map.player.touch_target = land
 	if not await _until(func(): return map.player.grid == land and not map.player.is_moving()):
 		return false
-	await _press()
+	await press()
 	if not await _until(func(): return XState.current.vehicle_type == "walk" and map.vehicle_can_move()):
 		return false
 	landed = land
@@ -161,7 +161,7 @@ func approach(ev_id: int, fly := true) -> bool:
 	for side in [g + DIRS[2], g + DIRS[8], g + DIRS[4], g + DIRS[6]]:
 		if map.player.grid != side and path(map.player.grid, side).is_empty():
 			continue
-		if not await _walk(side):
+		if not await walk(side):
 			return false
 		var d: Vector2i = g - side
 		for k in DIRS:
@@ -171,8 +171,9 @@ func approach(ev_id: int, fly := true) -> bool:
 	return false
 
 
-## 不坐飞艇：从现在的位置按图块通行走过去踩／撞事件（同 go 降落之后那段）。事件跑过（或换了图）返回 true。
-func walk_to(ev_id: int, answers := []) -> bool:
+## 不坐飞艇：从现在的位置按图块通行走过去踩／撞事件（同 go 降落之后那段）。事件跑过（或换了图）返回 true；
+## 给了 done 就改成 done() 为真才算成，不成换下一边再撞（出口要朝向时用，如 xiyou_airship_fly 要换到目标图）。
+func walk_to(ev_id: int, answers := [], done := Callable()) -> bool:
 	var e := _event(ev_id)
 	if e == null:
 		return false
@@ -185,12 +186,15 @@ func walk_to(ev_id: int, answers := []) -> bool:
 		var ran := [false]
 		var cb := func(b: bool): ran[0] = ran[0] or b
 		map.busy_changed.connect(cb)
-		await _walk(side)
+		await walk(side)
 		if normal and not map.busy and map.map_id == map_id:
-			await _step_to(e.grid)   # 撞上去：走不过去时面向目标、按调查
+			await step_to(e.grid)   # 撞上去：走不过去时面向目标、按调查
 		await _until(func(): return not map.busy)
 		if is_instance_valid(map) and map.busy_changed.is_connected(cb):
 			map.busy_changed.disconnect(cb)
-		if ran[0] or not is_instance_valid(map) or map.map_id != map_id:
+		if done.is_valid():
+			if done.call():
+				return true
+		elif ran[0] or not is_instance_valid(map) or map.map_id != map_id:
 			return true
 	return false

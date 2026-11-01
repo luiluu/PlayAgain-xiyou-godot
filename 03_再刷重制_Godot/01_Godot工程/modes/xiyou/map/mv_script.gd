@@ -8,6 +8,7 @@ extends RefCounted
 ## - $gamePlayer.SaveActorName = prompt(提示, 默认) → 输入名字窗口。
 ## - $.toaster({message: '...'}) → 右上角提示；$gameParty.gainItem($dataItems[$gameVariables.value(N)], n) 与对应的提示。
 ## - $gameParty.DCultyL1～8 等标记、ConfigManager 界面选项（无对应设置，忽略）、$gameSystem.onBeforeSave()（无操作）、
+##   $gamePlayer._moveSpeed = N（XState.player_move_speed）、DataManager.cleanupIndependentItems()（无操作）、
 ##   Star_RomGetItems 的 RomGet 预掷池初始化。
 ## - v0.27 轮回入口（installReincarnationRandomRuntime）：CodexReincarnationRandom.open(this) → 选「轮回普通／困难」再选阵容规则；
 ##   条件 entryAccepted()／entryHard() 读选择结果；finishEntry() 无操作。随机角色模式暂不开放（O-035），菜单只列「常规阵容」。
@@ -231,6 +232,14 @@ static func _statements(js: String, interp) -> Array:
 			XConfig.set_map_xy(m.get_string(1) == "true")
 			continue
 		if _re("^ConfigManager\\.\\w+\\s*=\\s*\\w+$").search(st) or st == "$gameSystem.onBeforeSave()":
+			continue
+		# 大厅小盖盖调移动速度（Map004 EV044）：Game_Player._moveSpeed，随存档；走路时再按冲刺加 1（realMoveSpeed）
+		m = _re("^\\$gamePlayer\\._moveSpeed\\s*=\\s*(\\d+)$").search(st)
+		if m:
+			s.player_move_speed = clampi(int(m.get_string(1)), 1, 6)
+			continue
+		# 大厅猫哥「清理存档」（Map004 EV024，YEP_ItemCore 删掉没人持有的独立装备条目）：重制只存持有的装备实例，没有可清的，无操作
+		if st == "DataManager.cleanupIndependentItems()":
 			continue
 		m = _re("^\\$gamePlayer\\.SaveActorName\\s*=\\s*prompt\\(\\s*\"([^\"]*)\"\\s*,\\s*\"([^\"]*)\"\\s*\\)$").search(st)
 		if m:
@@ -576,13 +585,14 @@ static func eval_expr(js: String) -> Variant:
 		["$gameParty.gold()", "gold()"], ["$gameParty.steps()", "steps()"], ["$gameParty.size()", "party_size()"],
 		["$gameMap.mapId()", "map_id()"], ["$gameMap._mapId", "map_id()"], ["Math.floor(", "floor("], ["Math.ceil(", "ceil("],
 		["Math.max(", "max("], ["Math.min(", "min("], ["Math.abs(", "abs("], ["===", "=="], ["!==", "!="], ["&&", " and "], ["||", " or "],
-		["CodexReincarnationRandom.entryAccepted()", "entry_accepted()"], ["CodexReincarnationRandom.entryHard()", "entry_hard()"]]
+		["CodexReincarnationRandom.entryAccepted()", "entry_accepted()"], ["CodexReincarnationRandom.entryHard()", "entry_hard()"],
+		["$gameSystem.defeatNumber(", "defeats("]]
 	for s in subs:
 		e = e.replace(s[0], s[1])
 	e = _re("\\$gameParty\\.numItems\\(\\$dataItems\\[(\\d+)\\]\\)").sub(e, "items($1)", true)
 	e = _re("ConfigManager\\.DesignationN\\[(\\d+)\\]").sub(e, "designation($1)", true)  # 称号解锁（Map2 EV2 条件）
 	e = _re("!(?!=)").sub(e, " not ", true)
-	var allowed := ["v", "sw", "designation", "playtime", "gold", "steps", "party_size", "map_id", "items", "entry_accepted", "entry_hard", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
+	var allowed := ["v", "sw", "defeats", "designation", "playtime", "gold", "steps", "party_size", "map_id", "items", "entry_accepted", "entry_hard", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
 	for w in _re("[A-Za-z_$][A-Za-z_0-9$.]*").search_all(e):
 		if not allowed.has(w.get_string()):
 			return null
@@ -599,6 +609,8 @@ class ExprEnv:
 	extends RefCounted
 	func v(id: float) -> float: return XState.current.variable(int(id))
 	func designation(id: float) -> bool: return XDesignation.unlocked(int(id))
+	## AB_EnemyBook Game_System.defeatNumber：该敌人被打倒的次数（Map017 EV004 牛头人／纯爱战士认证）
+	func defeats(id: float) -> float: return float(XEnemyBook.defeat_number(XState.current, int(id)))
 	func sw(id: float) -> bool: return XState.current.switch(int(id))
 	func playtime() -> float: return floorf(XState.current.play_seconds)
 	func gold() -> float: return float(XState.current.gold)
