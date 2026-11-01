@@ -1,4 +1,4 @@
-# 交付：cc/nezha-bulkpills1（哪吒_12 起，哪吒_13 接续，批量服用丹药 BulkPills）
+# 交付：cc/nezha-bulkpills1b（哪吒_12 起于 cc/nezha-bulkpills1，哪吒_13 接续，批量服用丹药 BulkPills）
 
 - 车道／工作者：C 规则·机制／哪吒（cc，哪吒_12 探针；哪吒_13 逻辑、入口与专项）
 - 状态：可合并
