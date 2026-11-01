@@ -14,6 +14,22 @@ var results: Array = []
 var host
 
 
+## 记录替身宿主再补上地图宿主才有的界面入口（脚本按 has_method 找它们；没有就当认不出）
+class CensusHost:
+	extends EC.EventHost
+	func open_achievements() -> void: pass
+	func open_actor_book() -> void: pass
+	func open_enemy_book() -> void: pass
+	func open_pets() -> void: pass
+	func open_save() -> void: pass
+	func open_yunshang_shop(_a = null, _b = null) -> void: pass
+	func treasure_popup(_a = null, _b = null, _c = null) -> void: pass
+	func erase_event(_id = 0) -> void: pass
+	func flash_screen(_a = null, _b = null, _c = null) -> void: pass
+	func shake_screen(_a = null, _b = null, _c = null) -> void: pass
+	func change_battleback(_a = null, _b = null) -> void: pass
+
+
 func _ready() -> void:
 	_run.call_deferred()
 
@@ -88,7 +104,8 @@ func _try(row: Dictionary) -> Array:
 		"script":
 			return await MVScript.run(str(row.code), it)
 		"plugin":
-			it._plugin_command(str(row.code))
+			if not it._host_plugin(str(row.code)):   # 要宿主画面的（仓库、怪物图鉴）交宿主，同 MVInterpreter._execute 356
+				it._plugin_command(str(row.code))
 		"cond":
 			it._condition([12, str(row.code)])
 		"var":
@@ -102,7 +119,7 @@ func _run() -> void:
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
 	XShop.auto_close = true
-	host = EC.EventHost.new()
+	host = CensusHost.new()
 	add_child(host)
 	var rows := _collect()
 	var unknown := {}
