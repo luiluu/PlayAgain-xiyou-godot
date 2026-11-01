@@ -7,8 +7,8 @@ extends Node
 ## 只读数据；跑脚本的副作用落在一局空白新游戏上，每条写法前重开。
 const EC := preload("res://tests/xiyou_event_compare.gd")
 const OUT := "user://script_census.json"
-## 已知认不出的写法（键＝种类|原文前 80 字）；现状清单，补一条删一条
-const KNOWN := {}
+## 已知认不出的写法（键＝种类|原文前 80 字 → 分类）；现状清单，补一条删一条
+const KNOWN_FILE := "res://tests/fixtures/script_census_known.json"
 
 var results: Array = []
 var host
@@ -28,6 +28,7 @@ class CensusHost:
 	func flash_screen(_a = null, _b = null, _c = null) -> void: pass
 	func shake_screen(_a = null, _b = null, _c = null) -> void: pass
 	func change_battleback(_a = null, _b = null) -> void: pass
+	func show_text_with_choices(_face: String, _idx: int, _lines: Array, _options: Array, _cancel: int) -> int: return 0
 
 
 func _ready() -> void:
@@ -73,6 +74,8 @@ func _collect() -> Dictionary:
 						add.call("var", JSON.stringify(c), where)
 			i += 1
 	for id in range(1, 260):
+		if not FileAccess.file_exists(XDB.BASE + "maps/Map%03d.json" % id):   # 切片外的图没导出，别让 XDB 报读取失败
+			continue
 		var m := XDB.map(id)
 		if m.is_empty():
 			continue
@@ -121,6 +124,7 @@ func _run() -> void:
 	XShop.auto_close = true
 	host = CensusHost.new()
 	add_child(host)
+	var KNOWN: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(KNOWN_FILE)).known
 	var rows := _collect()
 	var unknown := {}
 	for key in rows:

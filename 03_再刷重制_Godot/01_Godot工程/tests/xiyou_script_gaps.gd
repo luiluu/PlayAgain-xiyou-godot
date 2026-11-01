@@ -34,6 +34,10 @@ func refresh_events() -> void:
 	pass
 
 
+func character(_id: int, _this_event: int):
+	return null
+
+
 func script(code: String) -> Array:
 	return await MVScript.run(code, MVInterpreter.new(self, 0, 0, []))
 
@@ -56,6 +60,7 @@ func _speed(ref: Dictionary) -> void:
 		var miss: Array = await script("$gamePlayer._moveSpeed = %d" % speed)
 		var o: Dictionary = ref["moveSpeed.%d" % speed].observed
 		var p := MVPlayer.new()
+		p.dash = false   # 走：不冲刺（参照 _dashing false）
 		p.touch_target = Vector2i(-1, -1)
 		var walk := p.walk_speed()
 		p.dash = true
@@ -97,7 +102,10 @@ func _defeat(ref: Dictionary) -> void:
 		XState.current = s
 		for i in kills:
 			XEnemyBook.add_defeat(s, 66)
-		var page: Dictionary = XDB.map(17).events[4].pages[0]
+		var page: Dictionary = {}
+		for e in XDB.map(17).events:
+			if e != null and int(e.id) == 4:
+				page = e.pages[0]
 		var it := MVInterpreter.new(self, 17, 4, page.list)
 		await it.run()
 		var ok: bool = kills >= 999
