@@ -1,0 +1,65 @@
+# 交付：cc/bajie-toji4
+
+- 车道／工作者：C 规则／八戒（cc，八戒）
+- 状态：可合并
+- 分支从 f9c5c48c（当时的 main，含 toji2、toji3 的合并；总装后来把 toji3 从 main 撤出，合 toji4 时一起带进来）切，工作树 `.claude/worktrees/sleepy-khayyam-db2439`。机制编号沿用 toji1 交付单「机制对照」（#11 智能 AI 档案）。
+
+## 做到哪
+
+- ✓ #11 智能 AI 档案（T.aiProfile）。重制 `XSmartAI` 原按 v0.18 移植、没有 v0.28 的档案通道（registerProfile），这期一起补上，目前只登记甚尔。
+- 甚尔原版运行时 37 项里只剩画面两项（#24 切换与主技能在技能页、战斗中的显示，#25 说明框熟练度行）；读档 repair 照 toji1 交付单不跑。
+
+## 变更记录草稿
+
+## 2026-11-01 【cc·八戒·未经审查】伏黑甚尔 171 第四期：智能 AI 档案（dev.待定）
+
+1. **智能 AI 档案通道**（`battle/smart_ai.gd`，照 v0.28 Codex_SmartBattleAI 的 profile）：`XSmartAI.profile(a, rec)` 依次问各角色档案（重制只有 `XToji.ai_profile`）。safeDamage：档案的段数 hits 代替行动序列段数、倍率 multiplier 乘进额外倍率、穿透 pierce 让防御率＋穿透×(1−防御率)；scoreCandidate：单体技能有溅射 splash 时其余敌人按「期望伤害×溅射」再算伤害效用；有铺垫 followupSkill 时，付完本技能代价后给后续技能打分（noSetup，不再铺垫），分数取 max(本分, (本分＋后续)÷(铺垫次数＋1)×0.92×(急需时 0.6))；choose 里算「能不能一招打完」的 bestAttack 改用 noSetup（原版同）。期望伤害的暴击率读 itemCri 口径（甚尔五感：目标暴击闪避 ×0.34）。
+2. **甚尔档案**（`core/toji.gd` `ai_profile`、`ai_damage`）：切换技能可切且不是当前形态时给后续主技能、铺垫 1 次；主技能段数（游云 5＋追加＋觉醒 1、释魂刀 1、万里锁／天逆鉾 1＋追加×0.2）、倍率（暴君 成长(主)×3，否则 成长(非主)；藏兵咒灵 ×1.11；觉醒 ×1.2）、溅射（万里锁 0.33／觉醒 0.50）、穿透（释魂刀 0.66／觉醒 0.80）。估伤 10216～10219 不在结算里，减防项照算（目标防御、五感 ×0.67），万里锁／天逆鉾按第 1 段 ×4。只读：不换形态、不付费、不掷随机数。
+3. **O-待定**（`XSmartAI.o_profile_hits`）：原版档案给了段数仍再乘 numRepeats，甚尔有追加次数时游云估伤翻倍；重制默认 hits 就是总段数。
+4. **修 toji3 同步挡下的问题**（总装八急派）：`toji_battle_probe` 暴君例把原版清弱化抛的错记成了 `relearned.error`，同步规则不接受新的 error 键；改记成普通观测字段 `threw: "removeDebuff 不存在"`，专项加一条比它。
+5. **参照与专项**：`toji_battle_probe.cjs` 加 ai（游云开局、敌人全残血 1 时切万里锁胜过游云、追加＋1、万里锁溅射、释魂刀对阴阳合一 1825 物理减伤 0.5 的穿透、天逆鉾、残血击杀分、忘暴君、忘五感）与 aiflash（黑闪觉醒后各形态）两段，每个 'ai' 步记各技能档案、主技能对各敌人的 safeDamage、choose 的选择与前 6 名候选分、敌人威胁度读的能力；`xiyou_toji_battle` 1321 项（比参照时 o_profile_hits 关；本地断言开关、藏兵咒灵倍率、别的角色与非主技能没档案、choose 只读）。
+   - 参照里脚本直接 addState 后先 refresh 一次再量（krz_state_re 的状态缓存不刷新读不到追加次数，实战行动中会刷新）。
+   - 反向验证（临时改代码，已还原）：去掉溅射与穿透后，万里锁各场景候选分、残血时切万里锁的选择、释魂刀对减伤目标的估伤共 8 项失败。
+
+## 下期
+
+- 画面车道：说明框熟练度两行（#25）；切换与主技能在技能页、战斗中的显示（逻辑在 `XToji.listed`）；反弹、武器库追击的日志与弹字。
+- 别的角色的 v0.28 档案与估算（米拉 168 化龙铺垫、渡鸦 167 神话铺垫、宿傩 172 领域、黄泉 169 溅射；safeDamage 的米拉／渡鸦／黄泉／镜流／宿傩／饿狼／心钢估算支）随各角色补；通道已在，加一支 `XSmartAI.profile` 即可。
+
+## 优化登记草稿
+
+| 编号 | 内容 | 回退 |
+| --- | --- | --- |
+| O-待定 | 智能 AI 估伤：档案给了段数 hits 时原版仍再乘 action.numRepeats（普攻带追加次数），甚尔游云「5＋追加」段又乘了 (1＋追加)，追加次数大于 0 时估伤翻倍（实战甚尔把目标收成一个，只打 hits 段；参照 aiflash 第 2 步游云 safeDamage 是不带追加时的 2×7/6 倍）。重制把 hits 当总段数 | `XSmartAI.o_profile_hits = false` |
+
+## 交接板
+
+- 下一步：见「下期」。
+- 用户试玩说明：自动战斗时甚尔会按咒具的段数、溅射、穿透估伤害，划算时先切咒具（比如敌人都残血时切万里锁一次扫掉）。
+- 需要用户决定：无
+
+## 进度账
+
+- 甚尔 171：原版运行时 37 项 → 只剩画面两项。
+
+## 验证
+
+- `xiyou_toji_battle` 1322/1322、`xiyou_toji` 71/71（同步后的产物）。
+- 同步：先删掉工作树里旧的 toji_battle.json 再跑 `同步正式西游.py --accept-additions`（同 main 上没有旧产物的情况）：「新增用例，已接受」，toji_battle.json 新增参照，来源核对 0 问题。
+- 回归 14 个场景全过：`xiyou_smart_ai` 四段、`xiyou_toji`、`xiyou_attack_query`、`xiyou_alien_affix*`、`xiyou_help_card`、`xiyou_hang*`、`xiyou_combat`、`xiyou_battle_gaps`。
+- `语法检查.py` 通过。main 后来的新提交（悟空 title2）只改了别的探针（designation、pushstate），没碰本分支文件，没合。
+
+## 待交叉核查
+
+- 甲档（战斗核心）：`battle/smart_ai.gd`（档案通道，见变更记录草稿第 1 条）、`toji.gd` 第四期段。
+- 丙档：`toji_battle_probe.cjs` 两段、`xiyou_toji_battle`。
+
+## 可优化（流程／工具／效率）
+
+- 无
+
+## 本分支提交
+
+- 6489ca85 第四期：档案通道＋甚尔档案，参照 ai／aiflash
+- f1ff9774 本地断言
+- 45cad583 修：探针原版抛错记成 threw
