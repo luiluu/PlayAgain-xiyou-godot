@@ -116,6 +116,39 @@ func _try(row: Dictionary) -> Array:
 	return it.skipped.map(func(x): return str(x.text))
 
 
+## 战斗版：同一写法交给战斗事件解释器 XBattleEventRunner（技能／物品公共事件、敌群页在战斗里跑的那一套）跑，返回认不出的原文
+func _try_battle(row: Dictionary) -> Array:
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = s
+	for v in [348, 881, 884]:
+		s.set_variable(v, 1)
+	var l := XBattleLogic.new()
+	l.elite_roll = 100.0
+	l.setup(2, s)
+	var list := []
+	match row.kind:
+		"script":
+			var lines: PackedStringArray = str(row.code).split("\n")
+			for k in lines.size():
+				list.append({"code": 355 if k == 0 else 655, "indent": 0, "parameters": [lines[k]]})
+		"plugin":
+			list.append({"code": 356, "indent": 0, "parameters": [str(row.code)]})
+		"cond":
+			list.append({"code": 111, "indent": 0, "parameters": [12, str(row.code)]})
+			list.append({"code": 0, "indent": 1, "parameters": []})
+			list.append({"code": 412, "indent": 0, "parameters": []})
+		"var":
+			list.append(JSON.parse_string(str(row.code)))
+	list.append({"code": 0, "indent": 0, "parameters": []})
+	var r := XBattleEventRunner.new(l, list)
+	for k in 200:
+		var step := r.advance()
+		if step.kind == "done":
+			break
+		r.resume(null)
+	return r.skipped.map(func(x): return str(x.text))
+
+
 func _run() -> void:
 	GameApp.fast_headless_frames()
 	XSave.dir_override = "user://test_xiyou_script_census"
@@ -141,6 +174,16 @@ func _run() -> void:
 	var new_keys := unknown.keys().filter(func(k): return not KNOWN.has(k))
 	_check("no_new_unknown", new_keys.is_empty(), new_keys.slice(0, 20))
 	var fixed := KNOWN.keys().filter(func(k): return rows.has(k) and not unknown.has(k))
+	# 战斗里跑的（清单分类 E）：再按战斗事件解释器跑一遍，分出战斗里其实认得的与真缺的
+	var battle_known := 0
+	for key in unknown:
+		if str(KNOWN.get(key, "")) != "E":
+			continue
+		var bm: Array = await _try_battle(unknown[key])
+		if bm.is_empty():
+			battle_known += 1
+		print("CENSUS_BATTLE ", JSON.stringify({"key": key, "miss": bm.slice(0, 3)}))
+	print("CENSUS_BATTLE_KNOWN ", battle_known)
 	_check("known_still_unknown", fixed.is_empty(), fixed)
 	_finish()
 
