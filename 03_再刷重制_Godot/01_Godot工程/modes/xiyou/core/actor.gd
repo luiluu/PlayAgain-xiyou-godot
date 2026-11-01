@@ -644,6 +644,9 @@ static func magic_param(e: Dictionary, i: int) -> float:
 	var lv = XEquipmentView.level(e)
 	if float(lv) < 0.0:
 		return 0.0
+	var grown := XThreeGrowth.sync_item(e)  # 三法宝成长 magicWeaponCustomParam 包装：所属人物 60 级进化，每级成长翻倍
+	if not grown.is_empty():
+		return float(lv) * float(grown[i])
 	var kind := str(e.get("kind", ""))
 	var key := kind + ":" + str(int(e.get("base", e.get("id", 0))))
 	if not _magic_growth_cache.has(key):

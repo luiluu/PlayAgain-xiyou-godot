@@ -32,7 +32,7 @@ class HalfStream extends XRandomStream:
 		return 0.5 if kind == "float" else 2147483648
 
 
-func _state(rank: int) -> XState:
+func _state(rank: int, relic := false) -> XState:
 	var s := XState.new_game(DIFFICULTY, 1, [8])
 	XState.current = s
 	s.actor_max_level = 99
@@ -40,6 +40,9 @@ func _state(rank: int) -> XState:
 	s.party.clear()
 	s.battle_slots.clear()
 	s.actor_advance[XGuyu.ACTOR] = rank
+	if relic:
+		XGuyu._notified_relic = false
+		XGuyu.recruit(s)  # 同参照：招募时装上百谷生（60 级进化成万象长春盏，XThreeGrowth）
 	s.add_actor(XGuyu.ACTOR)
 	s.add_actor(1)
 	return s
@@ -55,7 +58,7 @@ func _random(stone := []) -> XBattleRandom:
 
 ## 同参照 battle()：新局、开 2494、队伍 [175, 1] 同级；敌人生命加 1e9；规则流全取 0.5；推进到第一回合（round 1）
 func _battle(level: int, rank: int, relic := false) -> XBattleLogic:
-	var s := _state(rank)
+	var s := _state(rank, relic)
 	for id in [XGuyu.ACTOR, 1]:
 		s.actor(id).change_level_mv(level)
 	XGuyu.sync(s.actor(XGuyu.ACTOR))
@@ -72,7 +75,6 @@ func _battle(level: int, rank: int, relic := false) -> XBattleLogic:
 		e.zq_ref = {"p": p, "k": 1.0}
 		e.param_mark_dirty()
 		e.param_refresh()
-	XGuyu.test_relic = relic  # 同参照 G.setTestRelic（setup 之后）
 	logic.start_turn()
 	for b in logic.actors + logic.enemies:
 		b.param_mark_dirty()

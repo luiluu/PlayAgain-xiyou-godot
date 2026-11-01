@@ -43,6 +43,7 @@ const rng = [];  // 'rng' 给的随机数：只给谷雨运行时（rollStone �
 function battle(level, rank, relic) {
   newGame();
   w.eval('$gameSystem.setDifficultyId(2); $gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
+  if (relic) { w.$gameSwitches.setValue(2494, true); G._notifiedRelic = false; G.recruit(); }  // 招募时装上百谷生（60 级进化成万象长春盏）
   w.eval('$gameSwitches.setValue(2494, true); $gameParty._actors=[' + ID + ',1]; $gameParty._battleMembers=[' + ID + ',1,0,0,0];');
   for (const id of [ID, 1]) { const b = w.$gameActors.actor(id); b.changeLevel(level, false); }
   const a = w.$gameActors.actor(ID);
@@ -53,8 +54,6 @@ function battle(level, rank, relic) {
   const bm = w.BattleManager; bm.setup(TROOP, false, false);
   w.Math.random = () => rng.length && /installNativeGuyuRuntime/.test(String(new Error().stack).split('\n').slice(2, 4).join()) ? rng.shift() : 0.5;
   bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
-  // 百谷生用测试开关 G.setTestRelic（setup 的 reset 清，所以放在 setup 之后）：真戴上时 60 级的生命与重制差 47（三法宝成长未移植），这里只量归春
-  if (relic) G.setTestRelic(a, true);
   for (const t of w.$gameTroop.members()) t._paramPlus[0] = BIG_HP;
   for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) { b.need_refresh = true; b.refresh(); b.recoverAll(); }
   bm.startBattle();
@@ -152,7 +151,7 @@ const SCRIPTS_B = {
   // 35 级转移：给 1 号 50%（不在花期 → 下次花期待绽），开花期后 1 号绽放付 35%；花期里再转移（本次花期待绽）再绽放；储备满了转不进
   transfer: [['act', 'g', 10288, 0], ['act', 'g', 10290, 1], ['act', 'g', 10289, 0], ['act', 'h', 1, 0], ['act', 'g', 10290, 1], ['act', 'h', 1, 0],
     ['act', 'h', 1, 0]],
-  // 60 级 5 阶百谷生（测试开关）：代命归根不付储备，再生时归春（谷雨与 1 号各得 18%）
+  // 60 级 5 阶戴百谷生：代命归根不付储备，再生时归春（谷雨与 1 号各得 18%）
   relic: [['act', 'g', 10288, 0], ['hp', 'h', 1], ['foe', 0, 1, 1], ['turn'], ['turn']],
   // 自动战斗：满血没储备 → 治疗；攒够储备 → 花期打生命最多的敌人；1 号残血 → 治疗；两人都受伤 → 花荫；花期里储备比够 → 终结
   ai: [['ai'], ['act', 'g', 10288, 0], ['act', 'g', 10288, 0], ['act', 'g', 10288, 0], ['ai'], ['foehp', 1, 1e11], ['ai'], ['hp', 'h', 100], ['ai'],
