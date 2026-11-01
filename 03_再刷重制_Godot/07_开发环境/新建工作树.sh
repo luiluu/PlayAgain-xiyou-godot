@@ -69,6 +69,14 @@ prepare() {
   fi
   (( ORACLE_COPIED == 0 )) || python3 "$ENV_DIR/参照批次.py" record "$gen" "$mgen"
   [[ -e $proj/.godot ]] || cp -cR "$mproj/.godot" "$proj/.godot"
+  # 分支落后 main 且 main 改了切片／转换器／探针：此时按本分支转换会把 main 新增的角色等当成「删除」，同步白跑一轮（悟空 tools33 提）
+  if ! git -C "$wt" merge-base --is-ancestor main HEAD 2>/dev/null; then
+    local behind
+    behind=$(git -C "$wt" diff --name-only "$(git -C "$wt" merge-base HEAD main)" main -- "$GODOT_SUB/03_转换工具" 2>/dev/null | wc -l | tr -d ' ')
+    if (( behind > 0 )); then
+      print -u2 "⚠ 本分支落后 main，且 main 改了 $behind 个切片／转换器／探针文件：先在工作树里 git merge main，再重跑一次 --补齐（否则同步会把 main 新增的内容报成「删除」）"
+    fi
+  fi
   print "== 按本分支重跑转换器"
   python3 "$tools/xiyou_export.py" --out "$gen" | tail -1 | cut -c1-160
   python3 "$ENV_DIR/参照批次.py" check "$gen" || true

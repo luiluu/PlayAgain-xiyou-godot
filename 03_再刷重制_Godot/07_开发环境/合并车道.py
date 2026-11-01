@@ -566,11 +566,69 @@ def opt_draft_rows(text):
     return [x.strip() for x in block.splitlines() if re.match(r'^\|\s*O-', x)]
 
 
+def opt_draft_list_items(text):
+    """交付单「## 优化登记草稿」节里写成列表（「- O-待定 …」）的条目：登记表是 8 列，列表凑不出各列，合并工具不认。"""
+    m = OPT_DRAFT_HEAD.search(text)
+    if not m:
+        return []
+    rest = text[m.end():]
+    nxt = re.search(r'^## ', rest, re.M)
+    block = rest[:nxt.start()] if nxt else rest
+    return [x.strip() for x in block.splitlines() if re.match(r'^\s*[-*]\s+.*' + OPT_TOKEN.pattern, x)]
+
+
 def check_opt_drafts(text, name):
-    """正文提到 O-待定 却没有草稿表：登记没人写（总装只能手补），拦下让车道补表；确无新优化可写「优化登记草稿：无」。"""
+    """正文提到 O-待定 却没有草稿表：登记没人写（总装只能手补），拦下让车道补表；确无新优化可写「优化登记草稿：无」。
+    草稿写成列表（「- O-待定 …」）也拦下：登记表要 8 列，列表对不上，不静默丢掉。"""
+    items = opt_draft_list_items(text)
+    if items:
+        raise RuntimeError('交付单 %s 的「## 优化登记草稿」是列表不是表格（%s…）：改成表格行（表头照优化登记.md，8 列，首格写占位），合并工具只认表行'
+                           % (name, items[0][:40]))
     if OPT_TOKEN.search(text) and not opt_draft_rows(text) and not OPT_NONE.search(text):
         raise RuntimeError('交付单 %s 提到优化号占位却没有「## 优化登记草稿」表行：车道补一张表（表头照优化登记.md，首格写占位），'
                            '确无新优化就写一行「优化登记草稿：无」' % name)
+
+
+def opt_row_keys(row):
+    """草稿表行的识别键：项目／位置列和恢复方法列里的标识符（含开关名去掉类名的后半）与三字以上的中文词。
+    代码注释、文档里的占位靠这些键对上是哪一条草稿（同一份交付单里有几条不同优化时）。"""
+    cells = row.split('|')
+    text = ' '.join(cells[2:3] + cells[6:7])
+    keys = set()
+    for ident in re.findall(r'[A-Za-z_][A-Za-z0-9_.]{3,}', text):
+        keys.add(ident)
+        last = ident.split('.')[-1]
+        if len(last) >= 4:
+            keys.add(last)
+    keys.update(re.findall(r'[\u4e00-\u9fff]{3,}', cells[2] if len(cells) > 2 else ''))
+    return keys
+
+
+def opt_row_entries(texts):
+    """各交付单草稿表行里首格是占位的条目，按出现顺序：[(占位, 行, 识别键)]。"""
+    out = []
+    for t in texts:
+        for row in opt_draft_rows(t):
+            m = OPT_TOKEN.fullmatch(row.split('|')[1].strip())
+            if m:
+                out.append((m.group(0), row, opt_row_keys(row)))
+    return out
+
+
+def substitute_ambiguous(line, state):
+    """同一个占位在本批有几条不同草稿时，按行对号：行里出现哪条草稿独有的识别键就换哪条的号；对不上或对上几条就停下，让总装手改。"""
+    for tok, entries in state.get('optEntries', {}).items():
+        pat = re.compile(re.escape(tok) + r'(?!-?\d)')
+        if not pat.search(line):
+            continue
+        hit = [e for e in entries if line.strip() == e['row']]
+        if not hit:
+            hit = [e for e in entries if any(k in line for k in e['keys'])]
+        if len(hit) != 1:
+            raise RuntimeError('占位 %s 在本批对应 %d 条优化草稿（%s），这一行对不上是哪条（%s）：总装手改成对应的编号，再重跑'
+                               % (tok, len(entries), '、'.join(e['number'] for e in entries), line.strip()[:80]))
+        line = pat.sub(hit[0]['number'], line)
+    return line
 
 
 def append_opt_registry(root, state):
@@ -579,13 +637,18 @@ def append_opt_registry(root, state):
     text = reg.read_text() if reg.is_file() else ''
     lines = text.split('\n')
     have = set(OPT_NUMBERED.findall(text))
-    added, rows = [], []
+    added, rows, batch = [], [], set()
     for s in sheets(state):
         for row in opt_draft_rows((root / s).read_text()):
             row = substitute(row, state)
             number = re.match(r'^\|\s*O-(\d{3})(?!\d)', row)
-            if not number or number.group(1) in have or OPT_TOKEN.search(row):
+            if not number or OPT_TOKEN.search(row):
                 continue
+            if number.group(1) in batch:
+                raise RuntimeError('同批优化登记草稿出现重号 O-%s（%s）：每条优化要自己的号，总装手改成不同的号再重跑' % (number.group(1), row.split('|')[2].strip()[:40]))
+            batch.add(number.group(1))
+            if number.group(1) in have:
+                continue          # 登记里已有（中断后接续）
             have.add(number.group(1))
             rows.append(row)
             added.append(('O-' + number.group(1), row.split('|')[2].strip()))
@@ -617,6 +680,11 @@ def assign_opt_numbers(root, state):
                 tokens.append(m.group(0))
     if not tokens:
         return {}
+    # 同一占位在草稿表里对应几条不同优化：每条一个号，不再并成同一个
+    rows = {}
+    sheet_texts = [(root / rel).read_text(errors='replace') for rel in sheets(state) if (root / rel).is_file()]
+    for tok, row, keys in opt_row_entries(sheet_texts):
+        rows.setdefault(tok, []).append((row, keys))
     regs = [root / r for r in OPT_REGISTERS] + [root / OPT_REGISTRY] + sorted((root / '00_项目管理').glob('变更记录*.md'))
     top = 0
     for f in regs:
@@ -624,7 +692,20 @@ def assign_opt_numbers(root, state):
             top = max([top] + [int(n) for n in OPT_NUMBERED.findall(f.read_text(errors='replace'))])
     for t in texts:
         top = max([top] + [int(n) for n in OPT_NUMBERED.findall(t)])
-    return {tok: 'O-%03d' % (top + i + 1) for i, tok in enumerate(tokens)}
+    numbers, ambiguous, n = {}, {}, top
+    for tok in tokens:
+        if len(rows.get(tok, [])) >= 2:
+            entries = [{'number': 'O-%03d' % (n + i + 1), 'row': row, 'keys': keys} for i, (row, keys) in enumerate(rows[tok])]
+            n += len(entries)
+            # 各条共有的键分不出是哪条，丢掉
+            for e in entries:
+                e['keys'] = sorted(k for k in e['keys'] if sum(k in o['keys'] for o in entries) == 1)
+            ambiguous[tok] = entries
+        else:
+            n += 1
+            numbers[tok] = 'O-%03d' % n
+    state['optEntries'] = ambiguous
+    return numbers
 
 
 def substitute(text, state, rel=''):
@@ -638,6 +719,8 @@ def substitute(text, state, rel=''):
 
 
 def substitute_opt(text, state):
+    if state.get('optEntries'):
+        text = '\n'.join(substitute_ambiguous(x, state) for x in text.split('\n'))
     for tok, num in sorted(state.get('optNumbers', {}).items(), key=lambda kv: -len(kv[0])):
         text = text.replace(tok, num)
     return text

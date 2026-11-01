@@ -115,6 +115,8 @@ PY
 (( FAIL )) && FAIL_ITEMS+=("文档与登记（见上方 == 文档与登记 段）")
 # 优化开关的回退支有没有测试设过回退值（tools26，75% 审查 G3）：只警告不挡，已知缺口在 回退开关豁免.json
 python3 "$ENV_DIR/回退开关覆盖.py" || true
+# mv_oracle 探针都要在 PROBES 里或有夹具（tools31；新探针忘了登记就没人跑）
+if ! python3 "$ENV_DIR/探针登记检查.py"; then FAIL=1; FAIL_ITEMS+=("探针登记（见上方 ✗）"); fi
 
 if (( FAIL && ! KEEP_GOING )); then
   print "文档与登记检查失败：先修好再跑（未运行 Godot 测试与其余检查；要照旧全跑加 --keep-going）"
@@ -186,7 +188,7 @@ want tools && { if python3 "$ENV_DIR/测试参照批次.py" >/dev/null 2>&1; the
 want guards && { if python3 "$ENV_DIR/测试导出过滤.py"; then ok "导出包排除测试与参照数据"; else bad "导出过滤没挡住测试或参照数据"; fi; }
 want tools && { if python3 "$ENV_DIR/测试共性验收.py"; then ok "共性参照对照工具保护"; else bad "共性验收工具回归失败"; fi; }
 want content && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/共性参照验收.py"; then ok "共性参照完整性（尚非Godot实现验收）"; else bad "共性参照缺失或异常"; fi; }
-want tools && { if python3 "$ENV_DIR/测试合并工具.py"; then ok "新增用例、进度账与合并保护"; else bad "合并工具回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试反向验证.py" >/dev/null 2>&1 && python3 "$ENV_DIR/测试合并工具.py"; then ok "新增用例、进度账与合并保护"; else bad "合并工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试公式程序.py"; then ok "结构化公式编译边界"; else bad "公式编译边界失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试状态js翻译.py" >/dev/null 2>&1; then ok "状态效果 js 再翻译整块边界"; else bad "状态 js 翻译边界失败，单跑 07_开发环境/测试状态js翻译.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试转换器写入.py"; then ok "转换器增量写入与中断恢复"; else bad "转换器写入回归失败"; fi; }

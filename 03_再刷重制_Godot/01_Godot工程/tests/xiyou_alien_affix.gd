@@ -154,6 +154,15 @@ class HalfStream extends XRandomStream:
 		draws += 1
 		return 0.5 if kind == "float" else 2147483648
 
+	## 参照里 Math.random 恒为 0.5：整数取法是 floor(0.5×n)＝n÷2，不是「原始 uint 对 n 取模」（2^31 % n 对 n=3、6 之类会得 2、2，对不上）
+	func next_index_mod(n: int, reason: String, event_key := "") -> int:
+		next_uint(reason, event_key)
+		return n / 2 if n > 0 else 0
+
+	func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
+		next_uint(reason, event_key)
+		return lo + (hi - lo + 1) / 2
+
 
 func _logic(s: XState, troop: int) -> XBattleLogic:
 	var rand := XBattleRandom.create("0000000000000176")
