@@ -27,6 +27,7 @@ const COLORS := {
 	"tp": [Color8(150, 150, 100), Color8(50, 50, 0)],
 	"tp_heal": [Color8(255, 255, 150), Color8(100, 100, 50)],
 	"miss": [Color8(168, 145, 200), Color8(100, 100, 100)],
+	"custom": [Color8(255, 50, 50), Color8(100, 0, 0)],
 }
 
 var text := ""
@@ -64,6 +65,19 @@ func setup(value: float, is_mp := false, critical := false, miss := false, actor
 		text = shown
 	if value < 0:
 		_scale = 0.0
+
+
+## customPopup：drawCustomText 锚点 (0.5, 0.5)、格式 2 伤害色／1 回复色；默认移动码不动它，最后 10 次整体淡出
+func setup_custom(value: String, format: int) -> void:
+	_font = XUI.font()
+	kind = "custom"
+	text = value
+	_scale = 1.0
+	if format == 1:
+		_heal_color = true
+
+
+var _heal_color := false  # customPopup 格式 1
 
 
 ## LGP 的数字缩写（万/亿/兆/京/垓/秭/穰，保留两位小数，去掉多余的 0）
@@ -127,7 +141,7 @@ func is_heal() -> bool:
 
 ## 文字精灵的纵向锚点（见文件头）
 func anchor_y() -> float:
-	return 0.5 if kind == "miss" else float(stack + (1 if is_heal() else 0))
+	return 0.5 if kind in ["miss", "custom"] else float(stack + (1 if is_heal() else 0))
 
 
 func _draw() -> void:
@@ -138,7 +152,7 @@ func _draw() -> void:
 	var ay := anchor_y()
 	var top_left := Vector2(-w * 0.5, -h * ay)
 	var base := FONT_SIZE - (FONT_SIZE - FONT_SIZE * 0.7) / 2.0
-	var c: Array = COLORS[kind]
+	var c: Array = COLORS["hp_heal"] if kind == "custom" and _heal_color else COLORS[kind]
 	draw_set_transform(Vector2(_x, _y), 0.0, Vector2(_scale, _scale))
 	var pos := top_left + Vector2(0, base)
 	draw_string_outline(_font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE, 1, Color(c[1], _alpha))

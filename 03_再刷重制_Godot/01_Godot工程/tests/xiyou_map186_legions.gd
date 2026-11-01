@@ -7,6 +7,10 @@ extends Node
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 90000  # 墙钟与帧数（60 帧/秒折算）都过了、事件也不再推进才算卡住，见 wait_budget.gd
 const WaitBudget := preload("res://tests/wait_budget.gd")
+const ROUTE := preload("res://tests/xiyou_airship_route.gd")
+const REACH := preload("res://tests/xiyou_reach_check.gd")
+## 从入口门（Map116 EV5）进神魔战场的落点；飞艇开局就停在 (50,49)（System.json），同一块
+const ENTRY := Vector2i(46, 51)
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
 
@@ -165,7 +169,7 @@ func _run() -> void:
 	_finish()
 
 
-func _in_war(x := 46, y := 52) -> Array:
+func _in_war(x := ENTRY.x, y := ENTRY.y) -> Array:
 	var s := _start(WAR, x, y)
 	if not await _wait_map(WAR):
 		_check("war_loaded", false)
@@ -173,14 +177,24 @@ func _in_war(x := 46, y := 52) -> Array:
 	return [s, _scene()]
 
 
+## 走到事件旁、面向它（fly＝从落点走不到，要坐飞艇；先核走得到／走不到），事件再由 _run_event 跑（原来开局就站在事件旁）
+func _reach(tag: String, map: XMapScene, id: int, fly: bool) -> bool:
+	var miss: bool = REACH.unreachable(map, map.player.grid, [id]) == [id]
+	_check(tag + ("_needs_airship" if fly else "_on_foot"), miss == fly, map.player.grid)
+	return _check(tag + "_reach", await ROUTE.new(self, map).approach(id, fly), [map.player.grid])
+
+
 ## 其余八个军团（EV24～31）：变量 666～673 档 7 时连打八场（精英小队＋元帅），犒劳后换到自开关 A 页
 func _other_legions() -> void:
 	for id in range(first_event, last_event + 1):
-		var r := await _in_war(46, 52)
+		var r := await _in_war()
 		if r.is_empty():
 			return
 		var s: XState = r[0]
 		var map: XMapScene = r[1]
+		# EV24 跟落点同一块，走过去；EV25～31 在别的岛上，坐飞艇
+		if not await _reach("legion%d" % id, map, id, id != 24):
+			continue
 		for v in range(665, 674):
 			s.set_variable(v, 7)
 		var n0 := battles.size()

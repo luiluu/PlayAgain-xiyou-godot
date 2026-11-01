@@ -3,12 +3,18 @@ extends Node
 ## 胜后封刀奖励 CE999、自开关 A／B 重建城、C 科技与商店）、农田（EV3～15：占领连打五场、收取果实按 playtime、增减奴隶）、
 ## 矿（EV16～23）、超级 Boos EV32（敌群 739，playtime−变量 707≥180）、外界使者 EV33（送物品 1634）。
 ## 走地图场景真走一遍；数值（敌群事件）由 xiyou_troop_events 对照参照。
-## 分段（照 xiyou_rules 拆场景，免得单场景超过 600 秒上限的一半）：xiyou_map186 跑入口门＋九军团，_b 跑农田与矿，_c 跑超级 Boss 与使者；
-## 各段都自己开新局，三个场景断言合计与不拆时相同。不设时四段全跑。
-@export var sections: Array = ["gate", "legion", "farm", "boss"]
+## 分段（照 xiyou_rules 拆场景，免得单场景超过 600 秒上限的一半）：xiyou_map186 跑入口门＋九军团，_b 跑农田，_d 跑矿，_c 跑超级 Boss 与使者；
+## 各段都自己开新局，四个场景断言合计与不拆时相同。不设时五段全跑。
+## 各事件都从门进来的落点 (46,51) 走过去或坐飞艇（飞艇开局停在 (50,49)）到事件旁再跑（xiyou_airship_route.approach；原来开局就站在事件旁）；
+## 矿改坐飞艇后 _b 跑到 310 秒，矿另拆成 _d（悟空 reach-air3）。
+@export var sections: Array = ["gate", "legion", "farm", "mine", "boss"]
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 90000  # 墙钟与帧数（60 帧/秒折算）都过了、事件也不再推进才算卡住，见 wait_budget.gd
 const WaitBudget := preload("res://tests/wait_budget.gd")
+const ROUTE := preload("res://tests/xiyou_airship_route.gd")
+const REACH := preload("res://tests/xiyou_reach_check.gd")
+## 从入口门（Map116 EV5）进神魔战场的落点；飞艇开局就停在 (50,49)（System.json），同一块
+const ENTRY := Vector2i(46, 51)
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
 
@@ -169,17 +175,26 @@ func _run() -> void:
 		await _legion()
 	if "farm" in sections:
 		await _farm()
+	if "mine" in sections:
+		await _mines()
 	if "boss" in sections:
 		await _boss_and_envoy()
 	_finish()
 
 
-func _in_war(x := 46, y := 52) -> Array:
+func _in_war(x := ENTRY.x, y := ENTRY.y) -> Array:
 	var s := _start(WAR, x, y)
 	if not await _wait_map(WAR):
 		_check("war_loaded", false)
 		return []
 	return [s, _scene()]
+
+
+## 走到事件旁、面向它（fly＝从落点走不到，要坐飞艇；先核走得到／走不到），事件再由 _run_event 跑（原来开局就站在事件旁）
+func _reach(tag: String, map: XMapScene, id: int, fly: bool) -> bool:
+	var miss: bool = REACH.unreachable(map, map.player.grid, [id]) == [id]
+	_check(tag + ("_needs_airship" if fly else "_on_foot"), miss == fly, map.player.grid)
+	return _check(tag + "_reach", await ROUTE.new(self, map).approach(id, fly), [map.player.grid])
 
 
 func _gate() -> void:
@@ -213,6 +228,8 @@ func _legion() -> void:
 	var s: XState = r[0]
 	var map: XMapScene = r[1]
 	s.set_variable(665, 7)
+	if not await _reach("legion", map, 2, false):
+		return
 	var n0 := battles.size()
 	await _run_event(map, 2, [2], "")
 	_check("legion_think", battles.size() == n0)
@@ -242,6 +259,8 @@ func _legion() -> void:
 	s = r[0]
 	map = r[1]
 	s.set_variable(665, 8)
+	if not await _reach("legion8", map, 2, false):
+		return
 	n0 = battles.size()
 	await _run_event(map, 2, [0, 1], "win")
 	fought = battles.slice(n0).map(func(b): return b.troop)
@@ -252,11 +271,13 @@ func _legion() -> void:
 ## 农田（EV3 西瓜地：变量 561 随机 1～9 档，每档五场（敌群 676＋2×(档−1)）；占领后收取果实＝(1＋干活奴隶)×(playtime−变量 601)×0.01 个西瓜）与矿（EV16～23）
 func _farm() -> void:
 	for k in [0.0, 0.99]:
-		var r := await _in_war(14, 42)
+		var r := await _in_war()
 		if r.is_empty():
 			return
 		var s: XState = r[0]
 		var map: XMapScene = r[1]
+		if not await _reach("farm_%d" % int(k * 100), map, 3, false):
+			return
 		MVEventCore.fixed_random = k
 		var n0 := battles.size()
 		await _run_event(map, 3, [0], "win")
@@ -282,12 +303,18 @@ func _farm() -> void:
 			await _run_event(map, 3, [0], "")
 			_check("farm_harvest", s.item_count(934) >= 100, s.item_count(934))
 	MVEventCore.fixed_random = -1.0
-	# 矿：每个事件占领一次（至少开一场战斗、翻到收取页）
+
+
+## 矿（EV16～23）：每个事件占领一次（至少开一场战斗、翻到收取页）
+func _mines() -> void:
 	for id in range(16, 24):
-		var r := await _in_war(46, 52)
+		var r := await _in_war()
 		if r.is_empty():
 			return
 		var map: XMapScene = r[1]
+		# 矿 EV16／19／23 跟落点同一块，走过去；其余在别的岛上，坐飞艇
+		if not await _reach("mine%d" % id, map, id, not id in [16, 19, 23]):
+			continue
 		MVEventCore.fixed_random = 0.0
 		var n0 := battles.size()
 		await _run_event(map, id, [0], "win")
@@ -298,11 +325,14 @@ func _farm() -> void:
 
 ## 超级 Boos EV32（敌群 739，距上次 3 分钟以上）与外界使者 EV33
 func _boss_and_envoy() -> void:
-	var r := await _in_war(48, 6)
+	var r := await _in_war()
 	if r.is_empty():
 		return
 	var s: XState = r[0]
 	var map: XMapScene = r[1]
+	# 超级 Boss 在块 3、使者在块 38，都要坐飞艇
+	if not await _reach("boss", map, 32, true):
+		return
 	# 第一次变量 707＝0 先记 −1200，满足 ≥180 开战
 	var n0 := battles.size()
 	await _run_event(map, 32, [], "win")
@@ -310,6 +340,8 @@ func _boss_and_envoy() -> void:
 	var n1 := battles.size()
 	await _run_event(map, 32, [], "")
 	_check("boss_rest", battles.size() == n1)
+	if not await _reach("envoy", map, 33, true):
+		return
 	await _run_event(map, 33, [], "")
 	_check("envoy_gift", s.item_count(1634) == 1, s.item_count(1634))
 	await _run_event(map, 33, [], "")

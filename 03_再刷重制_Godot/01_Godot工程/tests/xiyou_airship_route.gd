@@ -5,12 +5,13 @@ extends RefCounted
 ## 开图前先 park(状态, 图号)；go：从现在的位置走到飞艇、按确认上艇、等升空，
 ## 飞到离事件最近（曼哈顿 ≥ 2）且下艇后走得到事件旁的可降落格（XMapScene.airship_land_ok），按确认降落，
 ## 再按图块通行 BFS 走过去：同层事件从下、上、左、右靠过去撞它，下方的踩上去。事件跑过（或换了图）返回 true。
+## approach(事件号, 是否飞)：只走／飞到事件旁、面向它，不触发（专项再自己跑事件）。
 ## walk_to(事件号, 应答)：不坐飞艇，从现在的位置走过去踩／撞（入口跟落点在同一块时用）。
 ## 只在测试里用；走不到（没有能降落又走得到的格）返回 false，调用方照原版记缺口。
 
 const DIRS := {2: Vector2i(0, 1), 4: Vector2i(-1, 0), 6: Vector2i(1, 0), 8: Vector2i(0, -1)}
-## 飞艇停靠格（地图号 → 格）：天之上恰兰吉尔那块，同 xiyou_airship_fly
-const PARK := {69: Vector2i(65, 56)}
+## 飞艇停靠格（地图号 → 格）：天之上恰兰吉尔那块，同 xiyou_airship_fly；186 是 System.json 飞艇起始格（新游戏默认就在这）
+const PARK := {69: Vector2i(65, 56), 186: Vector2i(50, 49)}
 const WAIT := 6000
 
 var host: Node
@@ -130,8 +131,13 @@ func board() -> bool:
 
 func go(ev_id: int, answers := []) -> bool:
 	var e := _event(ev_id)
-	if e == null:
+	if e == null or not await _fly_near(e):
 		return false
+	return await walk_to(ev_id, answers)
+
+
+## 上艇、飞到 landing_for(e)、降落
+func _fly_near(e: MVEvent) -> bool:
 	var land := landing_for(e)
 	if land.x < 0 or not await board():
 		return false
@@ -142,7 +148,27 @@ func go(ev_id: int, answers := []) -> bool:
 	if not await _until(func(): return XState.current.vehicle_type == "walk" and map.vehicle_can_move()):
 		return false
 	landed = land
-	return await walk_to(ev_id, answers)
+	return true
+
+
+## 只走到事件旁、面向它，不触发（事件由调用方自己跑：连战、选项要专项管）；fly＝先坐飞艇飞过去。
+## 同层事件站到四邻之一；下方／上方的事件站到它四邻走得到的一格。到了返回 true。
+func approach(ev_id: int, fly := true) -> bool:
+	var e := _event(ev_id)
+	if e == null or (fly and not await _fly_near(e)):
+		return false
+	var g := e.grid
+	for side in [g + DIRS[2], g + DIRS[8], g + DIRS[4], g + DIRS[6]]:
+		if map.player.grid != side and path(map.player.grid, side).is_empty():
+			continue
+		if not await _walk(side):
+			return false
+		var d: Vector2i = g - side
+		for k in DIRS:
+			if DIRS[k] == d:
+				map.player.direction = k
+		return true
+	return false
 
 
 ## 不坐飞艇：从现在的位置按图块通行走过去踩／撞事件（同 go 降落之后那段）。事件跑过（或换了图）返回 true。

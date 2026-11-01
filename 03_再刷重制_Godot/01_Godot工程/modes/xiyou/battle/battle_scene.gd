@@ -59,6 +59,8 @@ var list_win: XBattleList
 var mimic_win: XAlienMimicWindow
 ## 云裳的选择窗（赠行选人、裁身、七曜元素、收针选人、换锦选状态）
 var yun_win: XYunChoicesWindow
+## 谷雨赠春／还春选择窗（开着时）
+var transfer_win: XGuyuTransferWindow
 var auto_btn: Button
 var speed_btn: Button
 var bgm: AudioStreamPlayer
@@ -415,6 +417,7 @@ func _help(entry = null) -> void:
 	if not (entry is Dictionary) or list_win == null or not is_instance_valid(list_win) or list_win.index < 0:
 		help_card.visible = false
 		return
+	XHelpCard.scene_actor = _active  # 黑闪说明卡读 scene._skillWindow._actor
 	help_card.show_for(entry)
 	ui.move_child(help_card, -1)
 	# 选中行：纵向取该行，横向取整个列表窗口（卡片外发光不压到窗口边框）
@@ -699,13 +702,14 @@ func _command(u: XBattler):
 
 
 func _close_windows() -> void:
-	for w in [cmd_win, list_win, mimic_win, yun_win]:
+	for w in [cmd_win, list_win, mimic_win, yun_win, transfer_win]:
 		if w and is_instance_valid(w):
 			w.queue_free()
 	cmd_win = null
 	list_win = null
 	mimic_win = null
 	yun_win = null
+	transfer_win = null
 	_help()
 	otb.clear_preview()
 
@@ -896,6 +900,8 @@ func _pick_action_list(a: XActor, entries: Array, items: bool):
 			if yun.has("mine"):
 				XYunshang.exchange_pick = [yun.mine, int(yun.get("theirs", 0))]  # action._yunExchangeSelf／_yunExchangeEnemy
 			return [entry, target]
+		XGuyu.transfer_mode = "give"  # 谷雨 onActorCancel 包装：回技能列表（原版选择记在这次输入的行动上，下次选转移重新开窗）
+		XGuyu.transfer_ratio = 0.5
 		if mimic:
 			XAlienBattle.choose_mimic(a, 0)  # 原版选择记在这次输入的行动上，取消后不会带到别的回合
 	return null
@@ -1034,6 +1040,15 @@ func _pick_from_list(a: XActor, entries: Array, items: bool, initial_index := 0)
 	_help(entries[list_win.index] if list_win.index >= 0 and list_win.index < entries.size() else null)
 	while true:
 		var r = await _picked
+		if r is Dictionary and not items and XGuyu.key(r) == "transfer":
+			var t = await _pick_transfer(a)
+			if t is String and t == "cancel":
+				# returnToSkills：技能窗重新可操作，说明卡回到选中行
+				list_win.active = true
+				_help(entries[list_win.index] if list_win.index >= 0 and list_win.index < entries.size() else null)
+				continue
+			if not t is bool:
+				r = t
 		if r is Dictionary:
 			_close_list()
 			return r
@@ -1042,6 +1057,38 @@ func _pick_from_list(a: XActor, entries: Array, items: bool, initial_index := 0)
 			if cmd_win:
 				cmd_win.active = true
 			return null
+
+
+## 谷雨 onSkillOk 包装（installNativeGuyuRuntime 530～562）：选了「借一枝春色」先开赠春／还春选择窗——技能窗留着但不可操作、
+## 说明卡收起；选定把方向与比例写进这次行动（XGuyu.transfer_mode／transfer_ratio，行动结束设回）再选目标，取消回技能列表。
+## 选定时再校一次（choose 处理器）：没有能转的目标就重画、留在窗里。返回 true（选定）、"cancel" 或别的 _picked（自动、退回）。
+func _pick_transfer(a: XActor):
+	list_win.active = false
+	_help()
+	transfer_win = XGuyuTransferWindow.for_actor(ui, a)
+	transfer_win.position += _origin
+	var w := transfer_win
+	w.chosen.connect(func(i): _picked.emit({"guyu_transfer": i}))
+	w.cancelled.connect(func(): _picked.emit("cancel"))
+	var out = null
+	while true:
+		var r = await _picked
+		if r is Dictionary and r.has("guyu_transfer"):
+			var e: Dictionary = w.entries[int(r.guyu_transfer)]
+			if not XGuyu.can_transfer(a, str(e.mode), float(e.ratio)):
+				w.entries = XGuyu.transfer_commands(a)
+				w.refresh()
+				continue
+			XGuyu.transfer_mode = str(e.mode)
+			XGuyu.transfer_ratio = float(e.ratio)
+			out = true
+		else:
+			out = r
+		break
+	if is_instance_valid(w):
+		w.queue_free()
+	transfer_win = null
+	return out
 
 
 func _close_list() -> void:
@@ -1106,8 +1153,15 @@ func _pick_target(skill: Dictionary, a: XActor, forced := true):
 				initial = b
 	_select_target(initial)
 	var r = await _picked
-	while r is XBattler and pool.has(r) and XYunshang.rejects_target(a, skill, r):
-		XSound.system(3)  # 云裳 onActorOk 包装：敕衣点神选没穿天衣的、赠行选自己——蜂鸣，留在选人
+	while true:
+		if r is XBattler and pool.has(r) and XYunshang.rejects_target(a, skill, r):
+			XSound.system(3)  # 云裳 onActorOk 包装：敕衣点神选没穿天衣的、赠行选自己——蜂鸣，留在选人
+		elif r is XActor and XGuyu.key(skill) == "transfer" and not bool(XGuyu.transfer_preview(a, r, XGuyu.transfer_mode, XGuyu.transfer_ratio).valid):
+			# 谷雨 onActorOk 包装：转移的预览不合法（自己、归根的、储备不足或已满）时蜂鸣、留在选目标，说明卡再写一次
+			XSound.system(3)
+			_select_target(r)
+		else:
+			break
 		r = await _picked
 	_target_mode = ""
 	_target_pool = []
@@ -1203,6 +1257,8 @@ func _select_target(b) -> void:
 		_preview(_active, _target_skill, [b])
 	if b is XEnemy and _target_mode == "enemy":
 		_poison_help(b)
+	elif b is XActor and _target_mode == "ally" and XGuyu.key(_target_skill) == "transfer":
+		_transfer_help(b)
 
 
 ## 优化 O-107：选敌时的毒鸡汤说明卡贴在该敌人旁边，选到没有毒鸡汤的敌人就收起。
@@ -1217,16 +1273,30 @@ func _poison_help(e: XEnemy) -> void:
 		if POISON_HELP_NEAR and help_card != null:
 			help_card.visible = false
 		return
+	_text_help(e.display_name() + "\n" + info, e, "right", POISON_HELP_NEAR)
+
+
+## 优化 O-140：转移选目标时的说明卡贴在该队员左侧。false 照原版：每次换目标（Window_BattleActor.select）都 setText，
+## 卡片从上一张卡的位置再按 setItem 修正一次（同 O-107 关掉时的毒鸡汤卡）。
+static var TRANSFER_HELP_NEAR := true
+
+## 谷雨 guyuUpdateTransferHelp（Window_BattleActor.select 包装）：选队友时说明卡写 G.transferText（方向、比例、去向、储备量；不合法时是原因）
+func _transfer_help(t: XActor) -> void:
+	_text_help(XGuyu.transfer_text(_active, t, XGuyu.transfer_mode, XGuyu.transfer_ratio), t, "left", TRANSFER_HELP_NEAR)
+
+
+## Sprite_ItemHelp.setText 的说明卡：near 时贴在战斗者图（连同脚下约 40px）的 side 一侧；否则照原版从上一张卡的位置再修正
+func _text_help(text: String, b: XBattler, side: String, near: bool) -> void:
 	if help_card == null:
 		_help()
-	help_card.show_text(e.display_name() + "\n" + info)
+	help_card.show_text(text)
 	ui.move_child(help_card, -1)
 	var p := help_card.position - _origin  # 画布坐标（1280×720）
-	if POISON_HELP_NEAR:
-		# 敌人图（脚底居中）连同脚下的名字与血条（约 176 宽）的右侧，放不下就放左侧
-		var sp: XBattlerSprite = sprites[e]
+	if near:
+		# 战斗者图（脚底居中）连同脚下的名字与血条（约 176 宽）的一侧，放不下就放另一侧
+		var sp: XBattlerSprite = sprites[b]
 		var w := maxf(sp.width(), 180.0)
-		help_card.place_near(Rect2(sp.position - Vector2(w / 2.0, sp.height()), Vector2(w, sp.height() + 40.0)), "right")
+		help_card.place_near(Rect2(sp.position - Vector2(w / 2.0, sp.height()), Vector2(w, sp.height() + 40.0)), side)
 	else:
 		# Sprite_ItemHelp.setItem：在上一张卡的位置上再修正一次
 		var sz := help_card.size
@@ -1395,6 +1465,8 @@ func _play(logs: Array) -> void:
 				await cs.collapse()
 				if l.target is XEnemy:
 					_enemy_collapsed(l.target)
+			"guyu_visual":
+				sprites[l.target].guyu_visual(str(l.kind))
 			"skip":
 				pass
 		_refresh_status()
@@ -1431,6 +1503,10 @@ func _perform_action(a: XActor, skill: Dictionary) -> void:
 		# Game_Action.isMagicSkill：技能类型在 System.magicSkills 里
 		var magic: Array = XDB.system().get("magicSkills", [])
 		s.set_motion("spell" if magic.has(int(skill.get("stypeId", 0))) or magic.has(float(skill.get("stypeId", 0))) else "skill")
+	# 谷雨 performAction 包装（原 performAction 之后）：五个主动技换自己的动作（治疗 spell、花期 chant、转移 item、花荫 guard、终结 skill）
+	var own := XGuyu.action_motion(a, skill)
+	if own != "":
+		s.set_motion(own)
 
 
 func _reflect_animation() -> int:
@@ -1466,6 +1542,9 @@ func _hit_visual(l: Dictionary) -> bool:
 	var ts: XBattlerSprite = sprites[t]
 	var hit: bool = not (l.missed or l.evaded)
 	show_views(l.get("views", {}))
+	for c in l.get("custom_popups", []):
+		_custom_popup(c.target, str(c.text), int(c.format))  # 黑闪 announce：customPopup(label, 2)
+		_log_add(str(c.log))  # _logWindow.push('addText', 名字＋打出了＋label)
 	combo.applied(l.user, t, hit, int(l.skill.get("damage", {}).get("type", 0)), float(l.hp) if float(l.hp) != 0.0 else float(l.mp))
 	if record and hit:
 		record.record(l.user, t, float(l.get("record_hp", l.hp)))
@@ -1596,6 +1675,18 @@ func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := fals
 	fx.add_child(p)
 	live.append(p)
 	_popups[b] = live
+
+
+## LGP customPopup(文字, 格式)：格式 2 伤害色、1 回复色，原地不动，最后 10 次淡出（设置「战斗伤害显示」关掉时不弹）
+func _custom_popup(b: XBattler, text: String, format: int) -> void:
+	if not XConfig.flag("CombatDamageShow"):
+		return
+	var s: XBattlerSprite = sprites[b]
+	var p := XDamagePopup.new()
+	p.position = s.position + (Vector2.ZERO if b is XActor else Vector2(0, -s.height() / s.body_scale / 2.0 + 16))
+	p.z_index = POPUP_Z
+	p.setup_custom(text, format)
+	fx.add_child(p)
 
 
 func _say(text: String, seconds: float) -> void:

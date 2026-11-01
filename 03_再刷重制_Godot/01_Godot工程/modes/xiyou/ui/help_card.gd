@@ -16,6 +16,7 @@ extends Control
 ## 5. installCombatPowerRuntime（setItem 最外层）：装备在名字后插「装备战力：N」（18 号、rgba(255,211,115,1)、align 0），
 ##    N 是与穿戴者无关的装备评分 XPower.equipment；设置页关掉「战力显示与估算」时不插。
 ##    专属角色技能（ID 10122～10299）改走 characterHelpView（XCharacterHelp，ui/character_help.gd）。
+## 6. installThreeGrowthRelicRuntime R.syncItem：三法宝（谷雨百谷生／万象长春盏）先按所属人物等级改写名字、说明与备注里的条目（XThreeGrowth.view）。
 ## 未做：心钢、狂妄等专属装备的动态说明（切片里没有）。
 ##
 ## 版面（layout()）：宽 400、内边距 4；每行按 RJO.SW 逐字排版：可用宽 392−x，放不下换行；行高 = 该行最大字号 + 8；
@@ -52,6 +53,8 @@ const EXTRA_GAP_NEAR := 24.0
 ## 优化 O-049：「出售价格」写实际卖出价（XItemMarks.selling_price：<Sell Price> 优先，否则半价向下取整，与商店付的钱一致）；
 ## false 照原版 HelpExtend 写 Math.round(价格/2)，奇数价格比实卖多 1。
 static var REAL_SELL_PRICE := true
+## 打开说明卡的那一页的角色（Scene_Skill._actor／战斗技能窗的角色）；黑闪说明卡用，别的页留空
+static var scene_actor = null
 
 var rows: Array = []          # content() 的结果
 var quality := 0
@@ -83,6 +86,7 @@ var _frame_style: XWindowStyle
 static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	if obj.is_empty():
 		return []
+	obj = XThreeGrowth.view(obj)  # 三法宝成长 R.syncItem：法宝说明条目（relicLines）、名字、说明
 	if kind == "":
 		kind = kind_of(obj)
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
@@ -93,6 +97,7 @@ static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	if type == 3:
 		# 专属角色技能（10122～10299）走 characterHelpView（XCharacterHelp），其余技能走 genericHelpView
 		rows = XCharacterHelp.view(obj, rows) if XCharacterHelp.target(obj) else _generic_view(obj, rows)
+		rows.append_array(XBlackFlash.help_rows(obj, scene_actor))  # 黑闪 Sprite_ItemHelp.setItem 包装（在 characterHelpView 之内）：卡尾两行现况
 	for r in rows:
 		r[0] = _terms(str(r[0]))
 	# v0.18 starredHead：名字行（第一行、名字字号）前加星级，只给武器/防具
