@@ -4,7 +4,9 @@
 - 基线：从 main bbeecb5b 切出（brief 没等到，按上期 cc/wukong-smallsys1 盘点表做；smallsys1 只有盘点、不用合）。
 - 状态：**可合并**（道具用完回背包做完）；批量抽奖（CasinoBatch）只做了原版参照，重制代码没写，交给下一位（见文末「接续」）。
 
-## 道具用完回背包（installItemBagContinuationRuntime）
+## 变更记录草稿
+
+## 2026-11-01 【cc·悟空·未经审查】道具用完回背包：物品页结果提示、跑完事件回物品页（dev.待定）
 
 新模块 `core/item_bag_return.gd`（XItemBagReturn），原来只给 CE1317（被动书容量满）做的专用续用（`XPassiveBooks.remember_return／take_return`）换成通用的：
 
@@ -14,6 +16,8 @@
 - 改动文件：`core/item_bag_return.gd`（新）、`ui/item_scene.gd`（`_after_use(ctx)`、`show_notice`、`restore_return` 取代 `restore_capacity_return`）、`map/map_scene.gd`（`_process` 回背包、`run_common_event` 记事件开始、`ui.child_entered_tree`；删掉 open_menu 里的 take_return）、`core/passive_books.gd`（删专用续用三个函数与 meta）。
 
 - 共用文件改动行号（本分支末端，对 main bbeecb5b）：`map/map_scene.gd` 110（连 ui.child_entered_tree）、138～143（`_on_ui_page`）、392～396（`_process` 回背包）、1117（`run_common_event` 记事件开始）、1411（`restore_return`）、原 1406～1410 删 take_return；`core/passive_books.gd` 删原 19 行（capacity_refund meta）与原 24～45 行（begin_item／remember_return／take_return）；`ui/item_scene.gd` 309～314（`_update_help` 结果提示）、738／747（`_use` 记快照与传 ctx）、760／763（`_use_direct`）、785～852（`_after_use(ctx)`、`_run_wardrobe_inline`、`show_notice`、`_paint_notice`）、935～948（`restore_return` 取代 `restore_capacity_return`）。
+
+- O-待定 道具结果提示记 TP（见下，开关 `XItemBagReturn.snapshot_tp`）；专项 `xiyou_item_bag`（新，11 例对原版参照 item_bag_probe）。
 
 ## 原版缺陷（O-待定，开关可回退）
 
