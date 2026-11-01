@@ -139,13 +139,8 @@ func _conditions_met(name: String) -> bool:
 
 func _command(name: String, args: Array) -> void:
 	if name == "ACTION EFFECT":
-		var list := make_targets(str(args[0])) if not args.is_empty() and str(args[0]) != "" else targets
-		for t in list:
-			if t == null:
-				continue
-			if t.is_dead() and not [9, 10].has(int(skill.get("scope", 0))):
-				continue
-			logs.append_array(logic.mark_views(logic._invoke(user, skill, t)))
+		if not XToji.effects(self, args):  # 甚尔 actionActionEffect 包装：主技能在第一条里逐段打完，之后的不打
+			_action_effect(args)
 		return
 	if name == "ACTION COMMON EVENT":
 		XBattleCommonEvent.reserve_action(logic, user, skill, all_targets)  # actionActionCommonEvent：44 效果依次预约（单槽）
@@ -206,6 +201,17 @@ func _command(name: String, args: Array) -> void:
 		for t in make_targets(str(args[0]) if not args.is_empty() else ""):
 			logic.sequence_buff(t, pid, m.get_string(1) == "ADD", m.get_string(3) == "BUFF", turns)
 		return
+
+
+## BattleManager.actionActionEffect 本体：对指定目标（缺省为当前目标）各 invoke 一次
+func _action_effect(args: Array) -> void:
+	var list := make_targets(str(args[0])) if not args.is_empty() and str(args[0]) != "" else targets
+	for t in list:
+		if t == null:
+			continue
+		if t.is_dead() and not [9, 10].has(int(skill.get("scope", 0))):
+			continue
+		logs.append_array(logic.mark_views(logic._invoke(user, skill, t)))
 
 
 static func _ids(text: String) -> Array:
