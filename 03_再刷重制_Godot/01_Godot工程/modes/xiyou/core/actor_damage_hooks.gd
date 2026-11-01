@@ -9,7 +9,7 @@ static func descriptor() -> Dictionary:
 	return {"id": "actor-modules", "version": "1", "capabilities": ["damage.actor_modules"],
 		"contexts": ["facts"], "hooks": [{"point": "damage.before", "order": 3, "reads": ["facts.actorModules"],
 			"writes": ["mode", "kind", "elements", "physicalDefenseRate", "physicalIncomingPierce", "resistancePierce", "magicalDefenseRate", "elementAdd", "normalAdd", "finalAdd", "finalMultiplier", "skillMultiplier",
-				"settlementMultiplier", "criticalAdd", "incomingMultiplier"], "handler": build}]}
+				"settlementMultiplier", "criticalAdd", "incomingMultiplier", "categoryMax"], "handler": build}]}
 
 
 static func capture(item: Dictionary, a: XBattler, b: XBattler) -> Dictionary:

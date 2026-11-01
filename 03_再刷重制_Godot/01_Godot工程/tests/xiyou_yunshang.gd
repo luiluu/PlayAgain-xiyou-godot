@@ -298,8 +298,14 @@ func _battle2(o: Dictionary) -> Array:
 		b.param_mark_dirty()
 		b.param_refresh()
 		b.recover_all()
-	logic.start_turn()
+	_turn(logic)
 	return [logic, a, ally]
+
+
+## 参照 bm.startTurn()：OTB 开回合时最快的行动者（174）已取走，不在 _actionBattlers 里；重制照样取一次
+func _turn(logic: XBattleLogic) -> void:
+	logic.start_turn()
+	logic.next_subject()
 
 
 func _yd(b) -> Variant:
@@ -400,6 +406,12 @@ func _p2_compare(id: String, steps: Array, want: Array) -> void:
 			check("%s.ratio%d" % [sid, k], absf(rg - rw) <= RATIO_TOLERANCE * maxf(1.0, absf(rw)) + round_err, [gl[k].value, wl[k].value, rg, rw])
 
 
+## 先算 x 再取 v（GDScript 的 a().merged(b()) 先求参数，读数会落在行动之前）
+func _with(x: Dictionary, k: String, v) -> Dictionary:
+	x[k] = v
+	return x
+
+
 func _p2_case(c: Dictionary) -> void:
 	var o: Dictionary = c.setup
 	var r := _battle2(o)
@@ -415,9 +427,9 @@ func _p2_case(c: Dictionary) -> void:
 			var x := _cast2(logic, a, 10273, 0)
 			x.meets = _meets_of(logic, a)
 			snap.call(x)
-			logic.start_turn()
+			_turn(logic)
 			snap.call()
-			logic.start_turn()
+			_turn(logic)
 			snap.call()
 		"p2.seamless":
 			snap.call({"params": _params(a)})
@@ -437,17 +449,17 @@ func _p2_case(c: Dictionary) -> void:
 		"p2.needle":
 			var count := func() -> Array: return logic.enemies.map(func(e): return float((XYunshang.needles.get(e, []) as Array).size()))
 			snap.call({"needles": count.call()})
-			snap.call(_cast2(logic, a, 10270, 1).merged({"needles": count.call()}))
-			snap.call(_cast2(logic, a, 10271, 0).merged({"needles": count.call()}))
-			snap.call(_cast2(logic, logic.enemies[1], 1, 1).merged({"needles": count.call()}))
-			snap.call(_cast2(logic, logic.enemies[1], 1, 1).merged({"needles": count.call()}))
+			snap.call(_with(_cast2(logic, a, 10270, 1), "needles", count.call()))
+			snap.call(_with(_cast2(logic, a, 10271, 0), "needles", count.call()))
+			snap.call(_with(_cast2(logic, logic.enemies[1], 1, 1), "needles", count.call()))
+			snap.call(_with(_cast2(logic, logic.enemies[1], 1, 1), "needles", count.call()))
 		"p2.wind":
 			var agi := func() -> Array: return logic.actors.map(func(b): return b.agi)
 			snap.call({"agi": agi.call()})
-			snap.call(_cast2(logic, a, 10272, 0).merged({"agi": agi.call()}))
-			logic.start_turn()
+			snap.call(_with(_cast2(logic, a, 10272, 0), "agi", agi.call()))
+			_turn(logic)
 			snap.call({"agi": agi.call()})
-			logic.start_turn()
+			_turn(logic)
 			snap.call({"agi": agi.call()})
 		"p2.gift":
 			var gm := func() -> bool:
@@ -455,7 +467,7 @@ func _p2_case(c: Dictionary) -> void:
 				return logic.can_use(ally, XDB.rec("Skills", XYunshang.GIFT))
 			snap.call({"skills": ally.skills().map(func(sk): return int(sk.id)).filter(func(i): return i >= 10270), "giftMeets": gm.call()})
 			for i in range(3):
-				snap.call(_cast2(logic, ally, XYunshang.GIFT, 0).merged({"giftMeets": gm.call()}))
+				snap.call(_with(_cast2(logic, ally, XYunshang.GIFT, 0), "giftMeets", gm.call()))
 			XYunshang.wake(logic, ally)
 			var free := XYunshang.free_gift(logic, ally, a)
 			snap.call({"free": free, "again": XYunshang.free_gift(logic, ally, a)})
@@ -465,7 +477,7 @@ func _p2_case(c: Dictionary) -> void:
 			var rel := XYunshang.release(logic, ally)
 			snap.call({"release": rel, "again": XYunshang.release(logic, ally)})
 			XYunshang.wake(logic, ally)
-			logic.start_turn()
+			_turn(logic)
 			snap.call()
 			snap.call({"release": XYunshang.release(logic, ally)})
 		"p2.cut":

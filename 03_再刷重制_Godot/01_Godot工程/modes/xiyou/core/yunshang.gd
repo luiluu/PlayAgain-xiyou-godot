@@ -720,9 +720,9 @@ static func split(u, skill: Dictionary) -> Array:
 	for mode in routes:
 		var o := {}
 		if es != null:
-			o.elements = es
+			o["elements"] = es
 		if mode != "":
-			o.mode = mode
+			o["mode"] = mode  # 字符串键（o.mode 会建 StringName 键，伤害计算的模块快照不认）
 		parts.append(o)
 	return parts
 
