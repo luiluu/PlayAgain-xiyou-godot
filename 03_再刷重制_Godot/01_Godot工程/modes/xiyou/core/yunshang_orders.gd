@@ -26,8 +26,9 @@ extends RefCounted
 ##   clears＋1、天丝＋1；云裳出战且学了天丝成锦 10280 时 bonusClears＋1，偶数次多给 1 份。来源地图 Game_Map.setup 包装记在 flags._yunUnknownOrigin。
 ## - 进阶 Y.advance：C.advance＝[{35 级, 天衣 3 件, 人道意志碎片 2530×50}, {50 级, 9 件, ×188}]；只认背包里的天衣（穿着的要先卸下）；
 ##   扣碎片、移除所选天衣、stage＋1，提示「云裳完成第N次进阶」。不走进阶表那一行的学技能、扣金钱（原版 onConfirmOk 包装不调旧的），技能由同步按等级与进阶学。
-## 没做：原版 gainItem 包装——身上带 _yunUid 的天衣被卖、丢弃时也记 remove，读更早的档时一并移除；重制的去处太多（商店、分解、仓库…），
-##   这一期没接，领取后卖掉再读领取前的档会再发一次（见交付单）。招募仍按存档旗标（一期），不进账本。
+## - 失去天衣（gainItem 包装，第 200～204 行）：带 _yunUid 的天衣被直接失去（商店卖出、存进仓库、分解，走 XState.lose_gear）时记一条 remove，
+##   读领取前的档时重放发了再移除，不能再领一次；穿上卸下、按底子扣（事件、合成材料、星级仓库）照原版不记。参照 p8.lose。
+## 招募仍按存档旗标（一期），不进账本。
 
 const FILE := "yunshang_orders_v1.json"
 const SILK := 2942
@@ -444,6 +445,14 @@ static func end_battle(logic, result: int) -> void:
 		if bonus:
 			p.bonusClears = int(p.get("bonusClears", 0)) + 1
 		p.journal.append({"item": SILK, "delta": 1 + (1 if bonus and int(p.bonusClears) % 2 == 0 else 0)})))
+
+
+## gainItem 包装：这一件被直接失去时记移除（transaction 的重放会把它从背包拿掉）；账本不可用返回 false
+static func lost(s: XState, item: Dictionary) -> bool:
+	error = ""
+	var uid := str(item.get("_yunUid", ""))
+	return uid != "" and transaction(s, func(p):
+		p.journal.append({"remove": uid, "instance": str(item.get("instanceId", "")), "baseId": int(item.get("base", 0))}))
 
 
 # ---- 进阶 ----

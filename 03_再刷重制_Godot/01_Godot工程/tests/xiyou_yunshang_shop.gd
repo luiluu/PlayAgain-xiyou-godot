@@ -12,6 +12,8 @@ extends Node
 ## - p8.clear：不朽的未知战斗胜利给天丝（来源地图、Leviathan 来源、难度变量 107、unpaired、10280 偶数次多 1、逃跑与别的敌群不给、每场一次）。
 ## - p8.advance：进阶页按键走一遍云裳的进阶（条件不够的提示、选天衣页、取消、灰行、确认窗字、进阶后的碎片／天衣／技能／账本），再比两次进阶后的提示。
 ## - p8.fallback：本档的账本记录缺失时首页是兜底页，确定关页；Y.submit 的提示。
+## - p8.lose.sell／.base：领取后穿上卸下（不记）、商店卖出（XItemMarks.sell，记移除）／按底子扣（s.gain_gear 负数，不记），再读领取前的档；
+##   重制另比存进方桌仓库（XWarehouse.deposit＝原版 loseItem，同卖出）与星级仓库（直接改 _armors，同按底子扣）。
 const FIXTURE := "res://tests/fixtures/yunshang_oracle.json"
 var checks := 0
 var failures: Array = []
@@ -92,6 +94,8 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(XSave.dir())
 	DirAccess.remove_absolute(XYunshangOrders.path_override)
 	XYunshangOrders.reload()
+	XStarWarehouse.path_override = XSave.dir().path_join("star_warehouse.json")
+	DirAccess.remove_absolute(XStarWarehouse.path_override)
 	XGear.force_roll = 0.5
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	for c in ref.cases:
@@ -197,6 +201,8 @@ func _run() -> void:
 	p8_clear()
 	await p8_advance()
 	await p8_fallback()
+	for how in ["sell", "base", "warehouse", "star"]:
+		p8_lose(how)
 	XGear.force_roll = -1.0
 	finish()
 
@@ -514,6 +520,53 @@ func p8_fallback() -> void:
 	same("p8.fallback.submit", XYunshangOrders.submit(s), want.submit)
 	shop.queue_free()
 	await frames(2)
+
+
+
+## 领取的天衣离开背包：直接失去这一件记移除（读领取前的档不再发），交换与按底子扣不记
+func p8_lose(how: String) -> void:
+	var id := "p8.lose." + ("sell" if how in ["sell", "warehouse"] else "base")
+	var w := steps_of(id)
+	var s := new_cloud(45)
+	s.gain_item(SILK, 15)
+	check(id + "." + how + ".submit", XYunshangOrders.submit(s) == "")
+	for i in 10:
+		XYunshangOrders.progress(s, "t%d" % i)
+	check(id + "." + how + ".save", XSave.save(3))
+	check(id + "." + how + ".claim", XYunshangOrders.claim(s) == "")
+	var a := s.actor(XYunshang.ACTOR)
+	var at := func(tag: String, extra := {}) -> void:
+		var t := XState.current
+		var b := t.actor(XYunshang.ACTOR)
+		var want: Dictionary = w[tag]
+		var r := XYunshang.robe(b)
+		same("%s.%s.%s.robes" % [id, how, tag], robes(t), want.robes)
+		same("%s.%s.%s.equipped" % [id, how, tag], str(r.name) if not r.is_empty() else null, want.equipped)
+		same("%s.%s.%s.ledger" % [id, how, tag], ledger_sum(t), want.ledger)
+		for k in extra:
+			same("%s.%s.%s.%s" % [id, how, tag, k], extra[k], want[k])
+	at.call("claimed")
+	var item = func(): return s.gear.filter(func(e): return str(e.get("_yunUid", "")) != "")[0]
+	var slot := a.equip_slots().find(4)
+	XEquipment.change(s, a, slot, item.call())
+	at.call("worn")
+	XEquipment.change(s, a, slot, null)
+	at.call("unworn")
+	var robe: Dictionary = item.call()
+	match how:
+		"sell":
+			XItemMarks.sell(s, robe)
+		"base":
+			s.gain_gear("armor", int(robe.base), -1)
+		"warehouse":
+			XWarehouse.create(s, "<仓库:999>")
+			check(id + ".warehouse.deposit", XWarehouse.deposit(s, "armor", robe))
+			check(id + ".warehouse.stored", XWarehouse.stored(s, "armor").any(func(e): return is_same(e, robe) or (e is Dictionary and e.get("rec") is Dictionary and is_same(e.rec, robe))), XWarehouse.stored(s, "armor"))
+		"star":
+			check(id + ".star.deposit", XStarWarehouse.deposit_gear(s, robe) == "")
+	at.call("lost")
+	check(id + "." + how + ".load", XSave.load_slot(3))
+	at.call("reloaded", {"seq": XState.current.flags.get(XYunshangOrders.SEQ_FLAG)})
 
 
 func finish() -> void:

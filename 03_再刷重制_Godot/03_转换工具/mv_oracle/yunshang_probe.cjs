@@ -709,4 +709,24 @@ cases.push(makeCase('p8.fallback', {level: 45, stage: 0}, () => {
   pick(sc, 1);
   return {page: p, popped: !!sc._popped, submit: tryErr(() => Y.submit())};
 }));
+// 领取的天衣（带 _yunUid）离开背包（gainItem 包装，第 200～204 行）：直接拿这一件失去（商店卖出、仓库存入、分解都是 loseItem(这件)）记一条移除，
+// 读领取前的档时重放发天衣再移除，不能再领一次；穿上／卸下（tradeItemWithParty）不记；按底子扣（事件「增减防具」、合成材料）不经这一件，也不记
+for (const how of ['sell', 'base']) cases.push(makeCase(`p8.lose.${how}`, {level: 45, stage: 0}, () => {
+  newGame(); maxLevel(); w.$gameSwitches.setValue(2494, true);
+  const a = grow(45, 0); w.$gameParty.addActor(ACTOR);
+  w.$gameParty.gainItem(w.$dataItems[SILK], 15); Y.submit();
+  for (let i = 0; i < 10; i++) Y.progress('t' + i);
+  const before = host.encode();
+  Y.claim();
+  const steps = [], at = (tag, extra) => steps.push({tag, robes: robes(), equipped: Y.robe(a) ? Y.robe(a).name : null, ledger: ledger(), ...(extra || {})});
+  at('claimed');
+  const item = () => w.$gameParty.armors().filter(i => i._yunUid)[0];
+  a.changeEquip(a.equipSlots().indexOf(4), item()); at('worn');
+  a.changeEquip(a.equipSlots().indexOf(4), null); at('unworn');
+  if (how === 'sell') w.$gameParty.loseItem(item(), 1, false);
+  else w.$gameParty.gainItem(w.$dataArmors[item().baseItemId], -1, false);
+  at('lost');
+  host.restore(before); at('reloaded', {seq: w.$gameSystem._yunSeq});
+  return {steps};
+}));
 process.exit(finish(host, 'yunshang.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批', cases}) ? 0 : 1);

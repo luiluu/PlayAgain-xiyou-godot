@@ -15924,6 +15924,283 @@
     "submit": "此存档的云裳订单记录缺失；请恢复对应订单文件，暂不可制作或进阶"
    },
    "errors": []
+  },
+  {
+   "id": "p8.lose.sell",
+   "setup": {
+    "level": 45,
+    "stage": 0
+   },
+   "observed": {
+    "steps": [
+     {
+      "tag": "claimed",
+      "robes": [
+       [
+        "百厄成锦",
+        7921
+       ]
+      ],
+      "equipped": null,
+      "ledger": {
+       "journal": [
+        [
+         "delta",
+         2942,
+         -15
+        ],
+        [
+         "grant",
+         "百厄成锦"
+        ]
+       ],
+       "order": null,
+       "clears": 0,
+       "bonusClears": 0,
+       "stage": 0
+      }
+     },
+     {
+      "tag": "worn",
+      "robes": [],
+      "equipped": "百厄成锦",
+      "ledger": {
+       "journal": [
+        [
+         "delta",
+         2942,
+         -15
+        ],
+        [
+         "grant",
+         "百厄成锦"
+        ]
+       ],
+       "order": null,
+       "clears": 0,
+       "bonusClears": 0,
+       "stage": 0
+      }
+     },
+     {
+      "tag": "unworn",
+      "robes": [
+       [
+        "百厄成锦",
+        7921
+       ]
+      ],
+      "equipped": null,
+      "ledger": {
+       "journal": [
+        [
+         "delta",
+         2942,
+         -15
+        ],
+        [
+         "grant",
+         "百厄成锦"
+        ]
+       ],
+       "order": null,
+       "clears": 0,
+       "bonusClears": 0,
+       "stage": 0
+      }
+     },
+     {
+      "tag": "lost",
+      "robes": [],
+      "equipped": null,
+      "ledger": {
+       "journal": [
+        [
+         "delta",
+         2942,
+         -15
+        ],
+        [
+         "grant",
+         "百厄成锦"
+        ],
+        [
+         "remove"
+        ]
+       ],
+       "order": null,
+       "clears": 0,
+       "bonusClears": 0,
+       "stage": 0
+      }
+     },
+     {
+      "tag": "reloaded",
+      "robes": [],
+      "equipped": null,
+      "ledger": {
+       "journal": [
+        [
+         "delta",
+         2942,
+         -15
+        ],
+        [
+         "grant",
+         "百厄成锦"
+        ],
+        [
+         "remove"
+        ]
+       ],
+       "order": null,
+       "clears": 0,
+       "bonusClears": 0,
+       "stage": 0
+      },
+      "seq": 3
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p8.lose.base",
+   "setup": {
+    "level": 45,
+    "stage": 0
+   },
+   "observed": {
+    "steps": [
+     {
+      "tag": "claimed",
+      "robes": [
+       [
+        "百厄成锦",
+        7921
+       ]
+      ],
+      "equipped": null,
+      "ledger": {
+       "journal": [
+        [
+         "delta",
+         2942,
+         -15
+        ],
+        [
+         "grant",
+         "百厄成锦"
+        ]
+       ],
+       "order": null,
+       "clears": 0,
+       "bonusClears": 0,
+       "stage": 0
+      }
+     },
+     {
+      "tag": "worn",
+      "robes": [],
+      "equipped": "百厄成锦",
+      "ledger": {
+       "journal": [
+        [
+         "delta",
+         2942,
+         -15
+        ],
+        [
+         "grant",
+         "百厄成锦"
+        ]
+       ],
+       "order": null,
+       "clears": 0,
+       "bonusClears": 0,
+       "stage": 0
+      }
+     },
+     {
+      "tag": "unworn",
+      "robes": [
+       [
+        "百厄成锦",
+        7921
+       ]
+      ],
+      "equipped": null,
+      "ledger": {
+       "journal": [
+        [
+         "delta",
+         2942,
+         -15
+        ],
+        [
+         "grant",
+         "百厄成锦"
+        ]
+       ],
+       "order": null,
+       "clears": 0,
+       "bonusClears": 0,
+       "stage": 0
+      }
+     },
+     {
+      "tag": "lost",
+      "robes": [],
+      "equipped": null,
+      "ledger": {
+       "journal": [
+        [
+         "delta",
+         2942,
+         -15
+        ],
+        [
+         "grant",
+         "百厄成锦"
+        ]
+       ],
+       "order": null,
+       "clears": 0,
+       "bonusClears": 0,
+       "stage": 0
+      }
+     },
+     {
+      "tag": "reloaded",
+      "robes": [
+       [
+        "百厄成锦",
+        7921
+       ]
+      ],
+      "equipped": null,
+      "ledger": {
+       "journal": [
+        [
+         "delta",
+         2942,
+         -15
+        ],
+        [
+         "grant",
+         "百厄成锦"
+        ]
+       ],
+       "order": null,
+       "clears": 0,
+       "bonusClears": 0,
+       "stage": 0
+      },
+      "seq": 2
+     }
+    ]
+   },
+   "errors": []
   }
  ]
 }

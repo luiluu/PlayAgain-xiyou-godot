@@ -702,7 +702,22 @@ func gain_gear(kind: String, base_id: int, amount: int) -> void:
 		for i in range(-amount):
 			var idx := gear.find_custom(func(e): return e.kind == kind and int(e.base) == base_id)
 			if idx >= 0:
-				gear.remove_at(idx)
+				lose_gear(gear[idx], false)  # 按底子扣（getMatchingBaseItem→removeIndependentItem），不经这一件的 gainItem，不记云裳账本
+
+## 装备离开背包、不再属于队伍（卖出、存进仓库、分解、按底子扣）的统一出口：从背包拿掉这件实例，返回有没有拿到。
+## record：这一件是直接被失去的（原版 $gameParty.loseItem(这件)），带 _yunUid 的云裳天衣就照 installNativeYunshangRuntime 第 200～204 行的
+## gainItem 包装记进订单账本（重放时由账本移除，读更早的档也移除）；账本不可用时照常拿掉（原版这里会抛错、卖不掉）。
+## 穿上／卸下（XEquipment.change、专属角色招募时装上法宝）是交换，不走这里。
+func lose_gear(item: Dictionary, record := true) -> bool:
+	var i := gear.find_custom(func(e): return is_same(e, item))
+	if i < 0:
+		return false
+	if record and str(item.get("_yunUid", "")) != "":
+		XYunshangOrders.lost(self, item)
+		i = gear.find_custom(func(e): return is_same(e, item))
+	if i >= 0:
+		gear.remove_at(i)
+	return true
 
 func register_gear(item: Dictionary) -> void:
 	var defaults := XGear.template(str(item.kind),int(item.base))

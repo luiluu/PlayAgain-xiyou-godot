@@ -89,7 +89,7 @@ static func deposit_gear(s: XState, rec: Dictionary) -> String:
 		return "不可存放"
 	if push_dct(rec) or o_block_bound and (XAlienation.reserved(s, rec) or XAlienation.is_pending(s, rec)):
 		return "不可存放"
-	s.gear.remove_at(i)
+	s.lose_gear(rec, false)  # 原版直接改 $gameParty._armors，不经 gainItem，不记云裳账本
 	if o_alien_reset and not XAlienation.mark(rec).is_empty():
 		XAlienation.mark(rec).config = {}
 	ensure_loaded()
