@@ -15,7 +15,7 @@ extends RefCounted
 ## - 角色档案 profile（v0.28 registerProfile，只读）：段数 hits 代替行动序列段数、倍率 multiplier、穿透 pierce（防御率＋穿透×(1−防御率)）、
 ##   单体技能的溅射 splash（其余敌人按期望伤害×溅射算伤害效用）、铺垫 followupSkill／setupActions（付完本技能代价后
 ##   用后续技能打分〔noSetup，不再铺垫〕，取 max(本分, (本分＋后续)÷(铺垫次数＋1)×0.92×(急需时 0.6))）。
-##   重制只登记了甚尔（XToji.ai_profile；估伤 10216～10219 走 XToji.ai_damage）。O-待定 o_profile_hits 见下。
+##   重制只登记了甚尔（XToji.ai_profile；估伤 10216～10219 走 XToji.ai_damage）。O-131 o_profile_hits 见下。
 ## - 没移植（重制版尚无这些角色/系统）：奈叶小魔炮、米拉/渡鸦/宿傩等角色专属估算与 profile、Boss 霸体（CodexBossDifficulty）。
 ##   这些在正式版里也只对对应角色/敌人生效；随相关内容接入时补上。
 ## - 异化行动道具投影（祸祝、恶愿、逆祷，XAlienBattle.project）：见 o_projection。
@@ -28,7 +28,7 @@ static var _boss_ids := {}
 ## 全 0 分时退回「普攻打 HP 最低的敌人」（setTarget 敌人序号，投影成友方单体后落到同序号的队友）。
 ## true＝读投影；false＝照原版混读（方向、范围读投影，估值读原技能，退回目标落到同序号队友）
 static var o_projection := true
-## O-待定（优化登记）：档案给了段数 hits 时，原版仍再乘 action.numRepeats（普攻带追加次数），甚尔游云「5＋追加」段又乘了
+## O-131（优化登记）：档案给了段数 hits 时，原版仍再乘 action.numRepeats（普攻带追加次数），甚尔游云「5＋追加」段又乘了
 ## 一次（1＋追加），追加次数大于 0 时估伤翻倍（实战甚尔把目标收成一个，只打 hits 段）。true＝hits 就是总段数；false＝照原版相乘
 static var o_profile_hits := true
 static var _toji_formula_re := RegEx.create_from_string("^CodexToji\\.damage\\(a,b,1021[6-9],this\\)$")
