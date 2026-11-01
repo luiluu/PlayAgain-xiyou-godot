@@ -1,8 +1,8 @@
 # 交付：cc/bajie-ui-gaps1
 
 - 车道／工作者：B 界面／规则（总装十一派给八戒）／八戒（cc，八戒）
-- 状态：验证中
-- 分支从 cc/bajie-raven-ui1 末端 0450abcc 切（要先合 guyu4→guyu5→sukuna3→raven-ui1）。
+- 状态：可合并
+- 分支从 cc/bajie-raven-ui1 末端 0450abcc 切，已合 main 22238e0b（含 guyu4～raven-ui1）；合并冲突只有 battle_scene 日志分支一处（mastery_up 与 main 的 se 并排）。
 
 ## 变更记录草稿
 
@@ -35,7 +35,9 @@
 ## 验证
 
 - 专项 `xiyou_skill_mastery` 216/216。反向 5 处都能抓到：去掉变量 13 上限 212/216、去掉 mastered 208/216、不记账 113/216、不读档 214/216、不认自定义公式 195/216。
-- 选测：（验证中）
+- 选测（合 main 前，基准 0450abcc；选测.py 因 xstate.gd 改动退回 game 组 304 个，车道只跑战斗核心＋存档＋各角色战斗专项 126 个，清单是 rules 全 24 段、event_compare、determinism、combat、battle*、smart_ai*、各角色 *_battle、*save*、*_load 等）：124 过；`xiyou_determinism` early_inventory_rule 1 处在基准 0450abcc 原文件上同样失败（不是本期引入），`xiyou_guyu_ui` 缺 oracle/guyu_ui.json（前几期新探针的产物，主工作区还没同步）。
+- 合 main 22238e0b、`--补齐` 后复跑 10 个：skill_mastery、determinism、guyu_ui、event_compare、combat、battle、garou_battle、rules、save_page、cat，全过（determinism、guyu_ui 都由 main 修好）。语法检查 470 个 0 问题。
+- 新探针 skill_mastery_probe 不接入全量同步（同 garou_battle），产物手拷进 tests/fixtures，所以没跑 同步正式西游.py。
 
 ## 可优化（流程／工具／效率）
 
@@ -46,4 +48,5 @@
 
 - WIP: 技能熟练度期一：参照探针、XSkillMastery 解析／涨熟练度／伤害 mastered／存档
 - WIP: 熟练度专项 xiyou_skill_mastery 216/216，反向 5 处
+- 合并 main 22238e0b
 - 本交付单
