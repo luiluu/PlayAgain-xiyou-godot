@@ -362,4 +362,53 @@ p3('p3.clone', {level: 20, stage: 0, allyRobe: 12}, ({bm, a, ally, foes, at}) =>
   Y.wake(ally);
   at(cast2(bm, ally, 1, 1));
 });
-process.exit(finish(host, 'yunshang.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批前一半', cases}) ? 0 : 1);
+// ===== 第二期 B 批后一半：千军入袖 5、空袖藏星 6（借技能）、九曲回针 7（针眼）、孤灯照众 10 =====
+const cds = u => [10270, 10271, 10272].map(id => u.cooldown ? u.cooldown(id) : 0);
+const castKeep = (bm, u, id, target) => { u.setMp(u.mmp); u.setTp(u.maxTp()); return {cast: id, user: key(u), log: record(() => act(bm, u, id, target))}; };
+const party3 = () => w.$gameParty.battleMembers().map(st3);
+// 千军入袖：收袖时群攻改成打一个目标、伤害按全部敌人各算一次相加；觉醒中打倒目标时溢出的伤害依次传给其余敌人
+p3('p4.sleeve', {level: 20, stage: 0, allyRobe: 5}, ({bm, a, ally, foes, at}) => {
+  at({start: true});
+  at(cast2(bm, ally, 160, 0));
+  at(cast2(bm, ally, 160, 0, x => { x._yunSleeve = true; }));
+  Y.wake(ally);
+  foes[0].setHp(1000);
+  at(cast2(bm, ally, 160, 0, x => { x._yunSleeve = true; }));
+});
+// 空袖藏星：借出场队友会的普通技能（天衣铺战前设置，没醒 1 个、醒 3 个）；醒着用借来的技能时物攻／魔攻至少取主人的
+p3('p4.borrow', {level: 45, stage: 0, robe: 6}, ({bm, a, ally, foes, at}) => {
+  Y.setting(a).borrow = [{owner: 1, skill: 311}, {owner: 1, skill: 160}];
+  const m = () => [311, 160].map(id => a.meetsSkillConditions(w.$dataSkills[id]));
+  at({start: true, skills: a.skills().map(s => s.id).filter(id => id < 10270), meets: m()});
+  at(cast2(bm, a, 311, 1));
+  Y.wake(a);
+  at({woke: true, skills: a.skills().map(s => s.id).filter(id => id < 10270), meets: m()});
+  at(cast2(bm, a, 311, 1));
+  at(cast2(bm, a, 160, 1));
+});
+// 九曲回针：针眼（战前设置）觉醒时清冷却、每回合一次越过冷却；用过针眼后，用别的技能（每回合最多 3 种）各让针眼冷却 −1
+p3('p4.eye', {level: 45, stage: 0, robe: 7}, ({bm, a, ally, foes, at}) => {
+  Y.setting(a).eye = 10271;
+  const m = () => [10271].map(id => { a.setMp(a.mmp); return a.meetsSkillConditions(w.$dataSkills[id]); });
+  at({start: true, cds: cds(a), meets: m()});
+  at({...castKeep(bm, a, 10271, 1), cds: cds(a), meets: m()});
+  Y.wake(a);
+  at({woke: true, cds: cds(a), meets: m()});
+  at({...castKeep(bm, a, 10271, 1), cds: cds(a), meets: m()});
+  at({...castKeep(bm, a, 10271, 1), cds: cds(a), meets: m()});
+  at({...castKeep(bm, a, 10270, 1), cds: cds(a), meets: m()});
+  at({...castKeep(bm, a, 10270, 1), cds: cds(a), meets: m()});
+  at({...castKeep(bm, a, 1, 1), cds: cds(a), meets: m()});
+});
+// 孤灯照众：没醒时自己每回合第一次新得的普通增益分给全队；醒着时任何人新得的普通增益（每回合最多 3 种）分给全队（含敌人得到的，见 O 项）
+p3('p4.lamp', {level: 20, stage: 0, allyRobe: 10}, ({bm, a, ally, foes, at}) => {
+  at({start: true, party: party3()});
+  ally.addState(55); at({party: party3()});
+  ally.addState(43); at({party: party3()});
+  a.addState(64); at({party: party3()});
+  Y.wake(ally);
+  foes[1].addState(65); at({party: party3()});
+  a.addState(72); a.addState(78); at({party: party3()});
+  ally.addState(82); at({party: party3()});
+});
+process.exit(finish(host, 'yunshang.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批', cases}) ? 0 : 1);

@@ -256,7 +256,9 @@ func _run() -> void:
 				_p2_case(c)
 			"p3":
 				_p3_case(c)
-	check("covers_all", seen.keys().size() == 7, seen.keys())
+			"p4":
+				_p4_case(c)
+	check("covers_all", seen.keys().size() == 8, seen.keys())
 	finish()
 
 
@@ -607,6 +609,37 @@ func _p3_case(c: Dictionary) -> void:
 	if XYunshang.battle != 0:
 		logic.end_battle(0)
 	_p3_compare(id, steps, c.observed.steps)
+
+
+## p4.*（B 批后一半）：先只接孤灯照众（p4.lamp）；千军入袖、空袖藏星、九曲回针的参照例已加，重制还没做，跳过（见交付单）
+func _p4_case(c: Dictionary) -> void:
+	if str(c.id) != "p4.lamp":
+		return
+	var r := _battle2(c.setup)
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var ally: XActor = r[2]
+	var party := func() -> Array: return logic.actors.map(func(b): return _st3(b))
+	var got := [party.call()]
+	logic._state_add(ally, 55)
+	got.append(party.call())
+	logic._state_add(ally, 43)
+	got.append(party.call())
+	logic._state_add(a, 64)
+	got.append(party.call())
+	XYunshang.wake(logic, ally)
+	logic._state_add(logic.enemies[1], 65)
+	got.append(party.call())
+	logic._state_add(a, 72)
+	logic._state_add(a, 78)
+	got.append(party.call())
+	logic._state_add(ally, 82)
+	got.append(party.call())
+	logic.end_battle(0)
+	var want: Array = c.observed.steps.map(func(st): return (st.party as Array).map(func(l): return (l as Array).map(func(x): return [int(x[0]), int(x[1])])))
+	check("p4.lamp.steps", got.size() == want.size(), [got.size(), want.size()])
+	for i in mini(got.size(), want.size()):
+		check("p4.lamp.%d.party" % i, got[i] == want[i], [got[i], want[i]])
 
 
 func _p3_compare(id: String, steps: Array, want: Array) -> void:

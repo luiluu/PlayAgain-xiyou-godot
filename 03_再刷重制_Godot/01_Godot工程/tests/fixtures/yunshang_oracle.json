@@ -640,7 +640,7 @@
    "js/rpg_οbjects.js": "455b1890ff891795df24653e3b8c15ab6ef5050661656c2dd1840339b34d5b7d"
   }
  },
- "hostScope": "真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批前一半",
+ "hostScope": "真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批",
  "cases": [
   {
    "id": "skills.lv1.s0",
@@ -7399,6 +7399,2757 @@
        [],
        [],
        [],
+       []
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p4.sleeve",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 5
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 5,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 160,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e0",
+        "value": 6961,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e1",
+        "value": 6961,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e2",
+        "value": 6961,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e0",
+        "value": 6961,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e0",
+        "value": 6961,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e0",
+        "value": 6961,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e1",
+        "value": 6961,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e1",
+        "value": 6961,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e1",
+        "value": 6961,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e2",
+        "value": 6961,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e2",
+        "value": 6961,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e2",
+        "value": 6961,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 5,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 0.920042643923241,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 160,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e0",
+        "value": 20883,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e0",
+        "value": 20883,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e0",
+        "value": 20883,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e0",
+        "value": 20883,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 5,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 0.920042643923241,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 160,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e0",
+        "value": 20883,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e0",
+        "value": 20883,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e0",
+        "value": 20883,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 160,
+        "target": "e0",
+        "value": 20883,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 5,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 0.920042643923241,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p4.borrow",
+   "setup": {
+    "level": 45,
+    "stage": 0,
+    "robe": 6
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "skills": [
+       5562,
+       311
+      ],
+      "meets": [
+       false,
+       false
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 6,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 311,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 13415,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 13415,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 13415,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 13415,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 13415,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 13415,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 13415,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 13415,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 8854,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 8854,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 6,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "woke": true,
+      "skills": [
+       5562,
+       311,
+       160
+      ],
+      "meets": [
+       false,
+       false
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 6,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 311,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 15542,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 15542,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 15542,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 15542,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 15542,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 15542,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 15542,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e1",
+        "value": 15542,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e0",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 10257,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 311,
+        "target": "e2",
+        "value": 10257,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 6,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 160,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e0",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e0",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e1",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e1",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e2",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e2",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e0",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e0",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e0",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e0",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e0",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e0",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e1",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e1",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e1",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e1",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e1",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e1",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e2",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e2",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e2",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e2",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e2",
+        "value": 4494,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 160,
+        "target": "e2",
+        "value": 4494,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 6,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p4.eye",
+   "setup": {
+    "level": 45,
+    "stage": 0,
+    "robe": 7
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "cds": [
+       0,
+       0,
+       0
+      ],
+      "meets": [
+       true
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 7,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 10271,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e1",
+        "value": 1464099,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e1",
+        "value": 1464099,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e0",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e0",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e2",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e2",
+        "value": 966305,
+        "critical": false
+       }
+      ],
+      "cds": [
+       0,
+       2,
+       0
+      ],
+      "meets": [
+       false
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 7,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "woke": true,
+      "cds": [
+       0,
+       0,
+       0
+      ],
+      "meets": [
+       true
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 7,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 10271,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e1",
+        "value": 1464099,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e1",
+        "value": 1464099,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e0",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e0",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e2",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e2",
+        "value": 966305,
+        "critical": false
+       }
+      ],
+      "cds": [
+       0,
+       2,
+       0
+      ],
+      "meets": [
+       false
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 7,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 10271,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e1",
+        "value": 1464099,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e1",
+        "value": 1464099,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e0",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e0",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e2",
+        "value": 966305,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10271,
+        "target": "e2",
+        "value": 966305,
+        "critical": false
+       }
+      ],
+      "cds": [
+       0,
+       2,
+       0
+      ],
+      "meets": [
+       false
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 7,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 10270,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 872335,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 436168,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 436168,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 872335,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 575741,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 575741,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 575741,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 575741,
+        "critical": false
+       }
+      ],
+      "cds": [
+       0,
+       1,
+       0
+      ],
+      "meets": [
+       false
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 7,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 10270,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 872335,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 436168,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10286,
+        "target": "e1",
+        "value": 436168,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e1",
+        "value": 872335,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 575741,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e0",
+        "value": 575741,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 575741,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 10270,
+        "target": "e2",
+        "value": 575741,
+        "critical": false
+       }
+      ],
+      "cds": [
+       0,
+       1,
+       0
+      ],
+      "meets": [
+       false
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 7,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "a174",
+      "log": [
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e1",
+        "value": 2227,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e1",
+        "value": 2227,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e0",
+        "value": 1470,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e0",
+        "value": 1470,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e2",
+        "value": 1470,
+        "critical": false
+       },
+       {
+        "user": "a174",
+        "skill": 1,
+        "target": "e2",
+        "value": 1470,
+        "critical": false
+       }
+      ],
+      "cds": [
+       0,
+       0,
+       0
+      ],
+      "meets": [
+       true
+      ],
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 7,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       null
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": null,
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p4.lamp",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 10
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "party": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 10,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "party": [
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ]
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 10,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "party": [
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ]
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 10,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ]
+       ],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "party": [
+       [
+        [
+         55,
+         5
+        ],
+        [
+         64,
+         1
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ]
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 10,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [
+        [
+         55,
+         5
+        ],
+        [
+         64,
+         1
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ]
+       ],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "party": [
+       [
+        [
+         55,
+         5
+        ],
+        [
+         64,
+         1
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ]
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 10,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [
+        [
+         55,
+         5
+        ],
+        [
+         64,
+         1
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ]
+       ],
+       [],
+       [
+        [
+         65,
+         2
+        ]
+       ],
+       []
+      ]
+     },
+     {
+      "party": [
+       [
+        [
+         55,
+         5
+        ],
+        [
+         64,
+         1
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ]
+       ]
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 10,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [
+        [
+         55,
+         5
+        ],
+        [
+         64,
+         1
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ]
+       ],
+       [],
+       [
+        [
+         65,
+         2
+        ]
+       ],
+       []
+      ]
+     },
+     {
+      "party": [
+       [
+        [
+         55,
+         5
+        ],
+        [
+         64,
+         1
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ],
+        [
+         82,
+         3
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ],
+        [
+         82,
+         3
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ],
+        [
+         82,
+         3
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ],
+        [
+         82,
+         3
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ],
+        [
+         82,
+         3
+        ]
+       ]
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 10,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [
+        [
+         55,
+         5
+        ],
+        [
+         64,
+         1
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ],
+        [
+         82,
+         3
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ],
+        [
+         72,
+         2
+        ],
+        [
+         78,
+         3
+        ],
+        [
+         82,
+         3
+        ]
+       ],
+       [],
+       [
+        [
+         65,
+         2
+        ]
+       ],
        []
       ]
      }

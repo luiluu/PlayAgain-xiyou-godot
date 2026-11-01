@@ -285,7 +285,7 @@ static func data(a) -> Dictionary:
 		d = {"uid": uid, "battle": battle, "key": key(a), "wake_until": 0, "stored": 0, "gifts": 0, "free_gift_round": -1,
 			"release_round": -1, "cut_round": -1, "cut_values": null, "cut_choices": [], "cut_snapshot": {}, "cut_awake": false,
 			"bank": 0.0, "debts": [], "captured": [], "ghost": 0, "ghost_done": 0, "ghost_used": false, "ghost_expires": 0, "revived": false,
-			"clone_round": -1, "debt_conversion": false, "exchange_charge": false, "guard_until": 0}
+			"clone_round": -1, "debt_conversion": false, "exchange_charge": false, "guard_until": 0, "lamp_round": -1}
 		_data[a] = d
 	return d
 
@@ -386,10 +386,12 @@ static func start_turn(logic) -> void:
 		if d.is_empty():
 			continue
 		d.gifts = 0
+		d.lamp_round = -1
 		if int(d.key) == 9 and awake(a):
 			d.stored = mini(3, int(d.stored) + 1)
 	_acted = []
 	_gift_sources = {}
+	lamp_shared = []
 	var c := _cloud(logic)
 	if c != null and c.is_alive() and knows(c, RANDOM):
 		var sleeping: Array = logic.actors.filter(func(m): return m.is_alive() and not robe(m).is_empty() and not awake(m))
@@ -435,6 +437,8 @@ static func end_battle(logic = null) -> void:
 				end_ghost(logic, a, d)
 	pending.clear()
 	exchange_pick = null
+	lamp_shared = []
+	team_buff = false
 	_data.clear()
 	wind_until.clear()
 	afterglow.clear()
@@ -633,6 +637,7 @@ static func prepare(logic, u, skill: Dictionary) -> Array:
 		frame.debt = debt_total(d)
 	if not _acted.has(u):
 		_acted.append(u)
+	team_buff = int(skill.get("scope", 0)) in [8, 10]  # startAction 包装：对友方全体的行动
 	return logs
 
 
@@ -899,6 +904,9 @@ static var pending := []
 ## 换锦的选择（原版选择窗写 action._yunExchangeSelf／_yunExchangeEnemy）：[自己的减益, 目标的增益]，用一次就清
 static var exchange_pick = null
 static var _transferring := 0
+## 孤灯照众：本回合醒着的灯已共享过的增益（Y._lampShared）；全体增益技能施放中（Y._teamBuffApplying）
+static var lamp_shared := []
+static var team_buff := false
 ## O-待定：stateCopy 的来源身上没有这个状态时（一身两世复演复制技能附加的状态），原版把回合数写成 undefined，
 ## 这个状态在回合末永不到期（只等战斗结束或被驱散）。true＝保留附加时掷出的回合数；false＝照原版永不按回合到期
 static var o_copy_turns := true
@@ -962,11 +970,26 @@ static func ghost_death(a, id: int) -> bool:
 	return int(d.ghost) > 0
 
 
-## stateAdded 包装（原 addState 之后，新附加的状态）：百厄成锦 1 收录普通减益（没醒 3 个、醒 6 个；醒着当场去掉）。孤灯照众 10 的共享是下一期
+## stateAdded 包装（原 addState 之后，新附加的状态）：百厄成锦 1 收录普通减益（没醒 3 个、醒 6 个；醒着当场去掉）；
+## 孤灯照众 10 共享普通增益（有醒着的穿戴者时，任何队员新得的、每回合最多 3 种；没醒的穿戴者自己每回合第一次新得的），全体增益技能施放中不共享。
+## 原版也包在 Game_Battler.addState 上，但敌人得到的增益参照里不共享（p4.lamp），所以只接角色
 static func state_added(a, id: int, had: bool) -> void:
 	if battle == 0 or had or _transferring > 0 or not a.state_ids.has(id):
 		return
 	var d := data(a)
+	if SHARE_BUFFS.has(id) and not team_buff:
+		var logic = XAlienBattle.active_logic()
+		var lamps: Array = logic.actors.filter(func(x): return key(x) == 10 and awake(x)) if logic != null else []
+		var use: bool = not lamps.is_empty() and not lamp_shared.has(id) and lamp_shared.size() < 3
+		if not use and int(d.get("key", -1)) == 10 and not awake(a) and int(d.lamp_round) != round:
+			d.lamp_round = round
+			use = true
+		if use and logic != null:
+			if not lamps.is_empty():
+				lamp_shared.append(id)
+			for m in logic.actors:
+				if m != a:
+					state_copy(logic, a, m, id)
 	if d.is_empty() or int(d.key) != 1 or not transfer_debuffs().has(id):
 		return
 	var cap := 6 if awake(a) else 3
@@ -1038,6 +1061,7 @@ static func after_hp(logic, u, t, value: float, item: Dictionary) -> void:
 ## finishAction（endAction 包装，原 endAction 之前）：赊月偿星 2 用伤害还债 33%；一身两世 12 复演（每回合一次，醒着每次 2 遍）；衣魂计次（赠行、收存余光不算）
 static func finish(logic, u, skill) -> Array:
 	var logs := []
+	team_buff = false
 	if battle == 0 or skill == null or not skill is Dictionary or skill.is_empty():
 		return logs
 	var d := data(u)
