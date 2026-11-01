@@ -198,7 +198,6 @@ static func run(host: Node, s: XState, item: Dictionary, requested: int, targets
 static func _use_one(s: XState, logic: XBattleLogic, user: XActor, item: Dictionary, targets: Array) -> void:
 	if targets.size() == 1:
 		s.item_target_actor_id = targets[0].actor_id
-	XPassiveBooks.begin_item(s)
 	if bool(item.get("consumable", true)):
 		s.gain_item(int(item.id), -1)
 	var dead_scope := int(item.get("scope", 0)) in [9, 10]

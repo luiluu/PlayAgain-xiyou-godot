@@ -38,7 +38,7 @@ extends RefCounted
 ##   命中自己开，认真一拳打完关）。
 ## 未移植：输入阶段预排了模式：琦玉时认真一拳可选（原版看 BattleManager._phase 'input' 的已排行动，重制选指令时没有预排）、
 ## skillMasteryLevel 包装（追击／反击借主拳熟练度，重制无熟练度）、applyCritical 0 伤不暴击、技能分类与指令窗 [2,1,5,4]、
-## 进阶界面的饿狼提示（重制走 XAdvance.fail_text）、胜利提示 victory_texts 上画面、星空外观 Garou_Cosmic、法宝说明 describeRelic、
+## 进阶界面的饿狼提示（重制走 XAdvance.fail_text）、胜利提示 victory_texts 上画面、法宝说明 describeRelic、
 ## 图鉴立绘、读档同步（extractSaveContents 包装）、旧档迁移（不迁移 MV 旧存档）。
 ## 参照：slice_probe（切片角色行与伤害行）、actor_passive_probe（各等级技能表）、garou_progress_probe、garou_battle_probe；
 ## 测试 tests/xiyou_actor_modules.gd、tests/xiyou_garou_progress.gd、tests/xiyou_garou_battle.gd。
@@ -137,7 +137,18 @@ static func sync(a) -> void:
 		elif not desired.has(id) and a.skill_ids.has(id):
 			a.forget_skill(id)
 	evolve_relic(a)
+	_sync_look(a, st)
 	a.refresh_passive()
+
+
+## G.sync 的星空外观：形态 6 换战斗图与头像 Garou_Cosmic，否则 Garou_Human（setBattlerImage／setFaceImage(名, 0)）。
+## 原版用 _garouVisualStage 记上次换到哪套、只在变了时换；重制比对当前图（存进 looks 随存档），只有事件 322 改过饿狼的图时才有差别（切片里没有）。
+## 多帧图按形态状态 2644～2650 由 Mx_SuperSV 选（XAppearance._state_sv），这里只管侧视图与头像。
+static func _sync_look(a, st: int) -> void:
+	var img := "Garou_Cosmic" if st == 6 else "Garou_Human"
+	var d: Dictionary = a.data()
+	if str(d.get("battlerName", "")) != img or str(d.get("faceName", "")) != img or int(d.get("faceIndex", 0)) != 0:
+		a.set_looks({"battlerName": img, "faceName": img, "faceIndex": 0})
 
 
 ## Game_Actor.setup 包装：同步后回满
@@ -578,6 +589,7 @@ static func trigger(logic, a, b, id: int, kind: String, evo := -1) -> Array:
 	var used: bool = b.is_alive()
 	var r: Dictionary = logic.apply(a, XDB.rec("Skills", id), b)
 	r[kind] = true
+	r["garou_trigger"] = kind  # 战斗画面：displayAction 加一行技能名（原生反击也有 counter 标记，靠这个区分）
 	if kind == "counter" and used and not r.missed and not r.evaded:
 		add_analysis(a, b)
 	frame = saved

@@ -259,7 +259,8 @@ func _run() -> void:
 		print("REGRESSION ", id, " ", report.filter(func(r): return r.id == id)[0].diffs.slice(0, 3))
 	if update_baseline and only.is_empty():
 		var f := FileAccess.open(ProjectSettings.globalize_path(BASELINE), FileAccess.WRITE)
-		f.store_string(JSON.stringify({"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 1 例：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。",
+		# 说明照登记里原有的写（各例的理由是人写的），没有登记时用默认说明
+		f.store_string(JSON.stringify({"note": str(baseline.get("note", "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 1 例：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。")),
 			"source": str(oracle.get("sourceIdentity", {}).get("releaseVersion", "")), "match": ok_count, "cases": report.size(), "mismatch": mismatched}, "\t", true))
 		f.close()
 	if out_dir != "":

@@ -316,6 +316,12 @@ func _update_help() -> void:
 	help_card.show_for(rec if row >= 0 else {})
 	if help_card.visible:
 		help_card.place_for_row(Rect2(LIST_RECT.position + Vector2(0, XMVWindow.PADDING + row * LH), Vector2(LIST_RECT.size.x, LH)))
+	# 用道具的结果提示：光标换了行（或回到分类、进了升级／宝珠列表）才被说明盖掉；选人阶段只是暂时隐藏
+	if not _notice.is_empty():
+		if _mode == "list" and _index == int(_notice.index):
+			_paint_notice()
+		elif _mode != "actor":
+			_notice = {}
 
 
 func _commit_seen() -> void:
@@ -744,7 +750,7 @@ func _use() -> void:
 			user = a
 	if targets.size() == 1:
 		s.item_target_actor_id = targets[0].actor_id
-	XPassiveBooks.begin_item(s)
+	var ctx := XItemBagReturn.begin(s, XDB.rec("Items", int(_item.id)), _cat, _index)
 	# Native useItem consumes first; a full-capacity effect refunds afterward (also at max stack).
 	if bool(_item.get("consumable", true)):
 		s.gain_item(int(_item.id), -1)
@@ -753,7 +759,7 @@ func _use() -> void:
 			continue
 		for e in _item.get("effects", []):
 			logic._effect(user, t, e, {"skill": _item, "hp": 0.0, "mp": 0.0, "added": [], "removed": []})
-	_after_use()
+	_after_use(ctx)
 
 
 ## 不对队友的物品（determineItem 的 else）：useItem 不经选人、没有对象，消耗后只做全局效果
@@ -768,9 +774,10 @@ func _use_direct() -> void:
 	if _open_bulk([], false):
 		return
 	XSound.system(22)   # SoundManager.playUseItem
+	var ctx := XItemBagReturn.begin(s, XDB.rec("Items", int(_item.id)), _cat, _index)
 	if bool(_item.get("consumable", true)):
 		s.gain_item(int(_item.id), -1)
-	_after_use()
+	_after_use(ctx)
 
 
 # ---- 批量服用（installBulkPillsRuntime：Scene_Item.useItem 换成数量窗）----
@@ -925,8 +932,10 @@ func _close_power_forget() -> void:
 	_refresh()
 
 ## Game_Action.applyGlobal：效果里的公共事件（44）逐条 reserveCommonEvent（单槽，后一条盖前一条）；
-## Scene_ItemBase.checkCommonEvent：有预约就回地图执行——物品页与菜单一起关掉（to_map 由菜单接着关）
-func _after_use() -> void:
+## Scene_ItemBase.checkCommonEvent：有预约就回地图执行——物品页与菜单一起关掉（to_map 由菜单接着关）。
+## installItemBagContinuationRuntime（XItemBagReturn）：换装卡 CE1343 当场跑完、留在物品页；回地图的记下，事件跑完回物品页；
+## 没回地图的当场提示结果（主说明卡＋toaster）
+func _after_use(ctx: Dictionary) -> void:
 	var s := XState.current
 	s.last_item = int(_item.get("id", 0))  # Scene_Item.useItem：$gameParty.setLastItem（魔兽要诀失败时按它退还）
 	var reserved := s.peek_common_event() > 0
@@ -934,10 +943,63 @@ func _after_use() -> void:
 		if int(e.code) == 44:
 			s.reserve_common_event(int(e.dataId))
 			reserved = true
-	XPassiveBooks.remember_return(s,_item,_cat,_index)
+	if reserved and _run_wardrobe_inline(s, ctx):
+		reserved = false
 	if reserved:
+		XItemBagReturn.hold(s, ctx)
 		to_map = true
 		closed.emit()
+		return
+	show_notice(XItemBagReturn.result_text(s, ctx))
+
+
+## checkCommonEvent 包装：预约的是这件道具自己的换装卡 CE1343（只有变量与脚本）时，在物品页用地图解释器当场跑完
+func _run_wardrobe_inline(s: XState, ctx: Dictionary) -> bool:
+	var ev := s.peek_common_event()
+	var ce := XDB.rec("CommonEvents", ev)
+	var host := get_parent()
+	while host != null and not host is XMapScene:
+		host = host.get_parent()
+	if host == null or not XItemBagReturn.item_calls(ctx.item, ev) or not XItemBagReturn.inline_wardrobe(ce):
+		return false
+	var interp := MVInterpreter.new(host, s.map_id, 0, ce.list)
+	s.clear_common_event()
+	var done := [false]
+	interp.finished.connect(func(): done[0] = true)
+	interp.run()
+	if not done[0]:
+		push_warning("CE1343 没有当场跑完")  # 只含 0/122/355/655，正常不会挂起；挂起时让它自己跑完，不再回地图重跑
+	if not interp.skipped.is_empty():
+		host.skipped_log.append_array(interp.skipped)
+	ctx.inline = true
+	return true
+
+
+## notifyBag：主说明卡换成这句（附卡保留），同时 toaster；列表光标不动就一直显示，选人阶段说明卡照旧隐藏
+var _notice := {}
+
+func show_notice(text: String) -> void:
+	_notice = {"text": text, "index": _index}
+	if _mode in ["list", "action"]:
+		_paint_notice()
+	XToast.show_text(text, true)
+
+
+## 沿用本项目说明卡的最小字号（O-007／O-008）与贴着选中行的摆位
+func _paint_notice() -> void:
+	var card := help_card
+	card.rows = [[str(_notice.text), XHelpCard.OTHER_SIZE, "#ffffff", false, 0]]
+	card.quality = 0
+	var layout := XHelpCard.layout(card.rows, card.min_font, card.card_width)
+	card._lines = layout.lines
+	card.size = Vector2(card.card_width, layout.height)
+	card.frame.position = Vector2(-10, -10)
+	card.frame.size = card.size + Vector2(20, 20)
+	card.canvas.size = card.size
+	card.visible = true
+	card.frame.queue_redraw()
+	card.canvas.queue_redraw()
+	card.place_for_row(Rect2(LIST_RECT.position + Vector2(0, XMVWindow.PADDING + (_index - _top) * LH), Vector2(LIST_RECT.size.x, LH)))
 
 
 # ---- 鼠标：先选中再点确定；右键取消；滚轮滚动 ----
@@ -1023,8 +1085,8 @@ func _click(p: Vector2, pad: Vector2) -> void:
 					_aug_index = i
 
 
-## Restore the selected list after this period’s full-capacity CE1317.
-static func restore_capacity_return(menu: XMenu, saved: Dictionary) -> void:
+## Scene_Item.create／start 包装：回到物品页时选回原分类与那件道具（没了就同一格，夹在列表内），焦点在列表，提示跑完后的结果
+static func restore_return(menu: XMenu, saved: Dictionary) -> void:
 	menu._show_items()
 	var pages := menu.get_children().filter(func(n): return n is XItemScene)
 	if pages.is_empty():
@@ -1033,23 +1095,9 @@ static func restore_capacity_return(menu: XMenu, saved: Dictionary) -> void:
 	page._cat = int(saved.category)
 	page._mode = "list"
 	var entries := page.entries()
-	var index := entries.find_custom(func(e): return int(e.rec.id) == int(saved.item))
+	var index := entries.find_custom(func(e): return int(e.rec.id) == int(saved.item.id))
 	page._index = index if index >= 0 else clampi(int(saved.index),0,maxi(0,entries.size()-1))
 	page._top = XMenu._scroll_to(page._index,0,page._rows())
+	page._notice = {"text": str(saved.message), "index": page._index}
 	page._refresh()
-	# Native notifyBag replaces only the main HelpExtend card; learned-skill extras remain.
-	# Keep the project's existing O-007/O-008 minimum type size and near-row placement.
-	var card := page.help_card
-	card.rows = [[str(saved.message),XHelpCard.OTHER_SIZE,"#ffffff",false,0]]
-	card.quality = 0
-	var layout := XHelpCard.layout(card.rows,card.min_font,card.card_width)
-	card._lines = layout.lines
-	card.size = Vector2(card.card_width,layout.height)
-	card.frame.position = Vector2(-10,-10)
-	card.frame.size = card.size+Vector2(20,20)
-	card.canvas.size = card.size
-	card.visible = true
-	card.frame.queue_redraw()
-	card.canvas.queue_redraw()
-	card.place_for_row(Rect2(LIST_RECT.position+Vector2(0,XMVWindow.PADDING+(page._index-page._top)*LH),Vector2(LIST_RECT.size.x,LH)))
 	XToast.show_text(str(saved.message),true)

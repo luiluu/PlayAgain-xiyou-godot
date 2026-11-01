@@ -18,6 +18,9 @@ static func elements_data() -> Dictionary:
 
 # ---- Structured formula entry; previews never own live mutation capabilities. ----
 static func eval_formula(item: Dictionary, a: XBattler, b: XBattler, vars: Array) -> float:
+	var guyu = XGuyu.formula(item, a, b, true)  # 谷雨 evalDamageFormula 包装：治疗按最大生命比例、绽放与终结按威力
+	if guyu != null:
+		return float(guyu)
 	var program: Dictionary = item.damage.get("formulaProgram", {})
 	if program.get("status") == "pure":
 		XAlienBattle.push_formula(item, a, b, true)  # evalDamageFormula 包装（逆骨）
@@ -327,7 +330,7 @@ static func _healing(item: Dictionary, a: XBattler, b: XBattler, options: Dictio
 		mult /= es.size()
 	var value: float = base * mult * maxf(0.0, frame.healingMultiplier) * maxf(0.0, b.rec)
 	# installDamageElementRuntime.healing：治疗被动在浮动与取整之前相乘。
-	if value < 0.0 and a is XActor:
+	if value < 0.0 and a is XActor and not XGuyu.skip_heal_rate(item, a):  # 谷雨 applyPassiveHealRate 包装：泽苍生已算过
 		for bonus in a.passive_values("passiveHEUP"):
 			value *= 1.0 + float(bonus) * 0.01
 	if options.get("variance", true) and not options.get("preview", false):

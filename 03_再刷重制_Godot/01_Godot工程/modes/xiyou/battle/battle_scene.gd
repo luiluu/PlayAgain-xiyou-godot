@@ -42,6 +42,8 @@ var gauges := {}                  # XEnemy -> {box, timer}
 var status_rows := {}             # XActor -> XSideStatus
 var field: Node2D
 var fx: Node2D
+## 渡鸦特效层（XRavenFx，战场里），第一次放时才建
+var raven_fx: XRavenFx
 var combo: XComboCounter
 var record: XDamageRecord
 var ui: Control
@@ -420,6 +422,22 @@ func _help(entry = null) -> void:
 	help_card.position += _origin
 
 
+## Window_BattleLog.addText：在日志里再加一行（最多 10 行，多了挤掉最早的）
+func _log_add(text: String) -> void:
+	_log_lines.append({"text": text, "simple": false})
+	if _log_lines.size() > 10:
+		_log_lines.pop_front()
+	log_canvas.queue_redraw()
+
+
+## YEP displayAction 不清日志时（饿狼追击／反击直接 apply）：再加一行「<SIMPLE>\i[图标]名字」
+func _log_add_action(skill: Dictionary) -> void:
+	_log_lines.append({"text": "\\i[%d]%s" % [int(skill.get("iconIndex", 0)), str(skill.get("name", ""))], "simple": true})
+	if _log_lines.size() > 10:
+		_log_lines.pop_front()
+	log_canvas.queue_redraw()
+
+
 func _banner(text: String) -> void:
 	_log_lines = [] if text == "" else [{"text": text, "simple": false}]
 	log_canvas.queue_redraw()
@@ -715,7 +733,8 @@ func _preview(a: XBattler, skill, targets: Array = []) -> void:
 	otb.set_preview(entries)
 
 
-## 指令（Window_ActorCommand＋OTB）：攻击（YEP_WeaponUnleash：替换后的技能与名字）、加入的技能类型（按编号；CP_MagicWeapon 不列 3～6，没有该类技能也列出）、
+## 指令（Window_ActorCommand＋OTB）：攻击（YEP_WeaponUnleash：替换后的技能与名字）、加入的技能类型（按编号；CP_MagicWeapon 不列 3～6，没有该类技能也列出；
+## 渡鸦／宿傩／饿狼照 XActorModules.battle_skill_types 固定几栏）、
 ## 防御、物品、逃跑（OTB Escape Actor Window：总是列出，不能逃时灰显）；魔族再加「血契：开／关」。
 func _command_entries(a: XActor) -> Array:
 	var terms: Array = XDB.system().terms.commands
@@ -723,7 +742,11 @@ func _command_entries(a: XActor) -> Array:
 	var grd := XDB.rec("Skills", XBattleLogic.GUARD_SKILL)
 	var opts := [{"text": a.attack_command_text(), "key": "attack", "enabled": logic.can_use(a, atk), "preview": atk}]
 	var stypes: Array = XDB.system().skillTypes
-	var added := a.traits_set(XBattler.TRAIT_STYPE_ADD)
+	var forced = XActorModules.battle_skill_types(a)  # 渡鸦／宿傩／饿狼 addSkillCommands 包装：固定几栏、照次序
+	if forced != null:
+		for t in forced:
+			opts.append({"text": str(stypes[int(t)]), "key": "stype:%d" % int(t)})
+	var added := a.traits_set(XBattler.TRAIT_STYPE_ADD) if forced == null else []
 	added.sort()
 	for t in added:
 		if not [3, 4, 5, 6].has(int(t)) and int(t) < stypes.size():
@@ -956,7 +979,7 @@ func _pick_target(skill: Dictionary, a: XActor, forced := true):
 	var foe := (scope >= 1 and scope <= 6) or prey_pick
 	var pool: Array
 	if foe:
-		pool = logic.alive(logic.enemies)
+		pool = XSukuna.selectable_enemies(a, skill, logic.alive(logic.enemies))  # 宿傩 Window_BattleEnemy.refresh 包装：神灶只列蓄力的敌人
 	elif scope == 7:
 		pool = logic.alive(logic.actors)
 	elif scope == 9:
@@ -1194,7 +1217,14 @@ func _play(logs: Array) -> void:
 		if l.type in ["action", "regen", "collapse"] and l.has("views"):
 			show_views(l.views)
 		# YEP 行动序列：行动记录后面跟着 seq_* 条目时交给 XSequencePlayer 逐帧演出（到 seq_end 为止）
-		if l.type == "action" and i < logs.size() and str(logs[i].type) == "seq_phase":
+		# 行动记录与序列之间可能夹着专属模块 startAction 包装的日志行（宿傩终式），先加进日志再交给序列
+		var k := i
+		while l.type == "action" and k < logs.size() and str(logs[k].type) == "battle_text":
+			k += 1
+		if l.type == "action" and k < logs.size() and str(logs[k].type) == "seq_phase":
+			for t in logs.slice(i, k):
+				_log_add(str(t.text))
+			i = k
 			if acting:
 				await _finish_action(started)
 				acting = false
@@ -1230,9 +1260,13 @@ func _play(logs: Array) -> void:
 					s.flash(Color(1, 1, 1))
 				await _wait_frames(ACT_HIT_FRAMES)
 			"hit":
+				if l.has("garou_trigger"):
+					_log_add_action(l.skill)  # 饿狼 G.trigger 追击／反击：displayAction 加一行技能名，再放动画、弹伤害
 				await _show_hit(l)
 			"toast":
 				XToast.show_text(str(l.text))
+			"battle_text":
+				_log_add(str(l.text))  # BattleManager._logWindow.push('addText')（宿傩「发动了神灶：开！」等）
 			"enemy_change":
 				if l.kind == "vanish":
 					_apply_enemy_change(l)  # die＋hide（XPetCapture：逃跑；被捕的在公共事件 173 里，由 _play_troop_events 处理）
@@ -1252,6 +1286,10 @@ func _play(logs: Array) -> void:
 					_start_animation(int(l.animation), l.target)
 				if float(l.hp) != 0.0:
 					_popup(l.target, float(l.hp), false)  # regen 记录与 hpDamage 同号：正伤害、负回复
+				if l.has("raven"):
+					# 渡鸦 directDamage：startDamagePopup＋performDamage（敌人闪烁、角色受伤动作），再放收割／回响特效
+					_perform_damage(l.target)
+					_raven_fx(str(l.raven), l.target)
 			"collapse":
 				# 行动序列 IMMORTAL 解除时 HP 为 0 的倒下
 				var cs: XBattlerSprite = sprites[l.target]
@@ -1346,22 +1384,37 @@ func _hit_visual(l: Dictionary) -> bool:
 			_popup(t, float(l.get("popup_hp", l.hp)), l.critical)
 			# MV performDamage：敌人闪烁（requestEffect blink），角色做受伤动作
 			if float(l.hp) > 0.0:
-				if t is XEnemy:
-					ts.blink()
-				else:
-					ts.set_motion("damage")
+				_perform_damage(t)
 		if float(l.mp) != 0.0:
 			_popup(t, float(l.mp), false, "", true)
 		if float(l.get("tp", 0.0)) != 0.0:
 			_popup(t, float(l.tp), false, "", false, true)
 		if t is XEnemy:
 			_show_enemy_gauge(t)
+	for kind in l.get("raven_fx", []):
+		_raven_fx(str(kind), t)  # 渡鸦 Game_Action.apply 包装：神话封解 ring、伤害技能每次 slash
 	if l.died:
 		if gauges.has(t):
 			gauges[t].box.visible = false
 			gauges[t].timer = 0.0
 		return true
 	return false
+
+
+## MV Game_Battler.performDamage：敌人闪烁（requestEffect blink），角色做受伤动作
+func _perform_damage(t: XBattler) -> void:
+	if t is XEnemy:
+		sprites[t].blink()
+	else:
+		sprites[t].set_motion("damage")
+
+
+## 渡鸦 R.Fx.play：特效层在战场里、战斗者之上，第一次用时才建
+func _raven_fx(kind: String, t: XBattler) -> void:
+	if raven_fx == null:
+		raven_fx = XRavenFx.new()
+		field.add_child(raven_fx)
+	raven_fx.play(kind, sprites[t].position, t)
 
 
 ## 行动序列里的倒下：不等倒下演完（正式版 performCollapse 只启动效果，WAIT FOR EFFECT 才等）

@@ -655,6 +655,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "voidActive": false,
     "equips": [],
     "before": {
      "user": {
@@ -701,6 +702,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "voidActive": false,
     "equips": [],
     "before": {
      "user": {
@@ -746,6 +748,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "voidActive": false,
     "equips": [],
     "before": {
      "user": {
@@ -796,6 +799,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "voidActive": false,
     "equips": [],
     "before": {
      "user": {
@@ -842,6 +846,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "voidActive": false,
     "equips": [],
     "before": {
      "user": {
@@ -888,6 +893,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "voidActive": false,
     "equips": [],
     "before": {
      "user": {
@@ -930,6 +936,7 @@
    "observed": {
     "value": 635,
     "confirmed": 635,
+    "voidActive": false,
     "equips": [],
     "before": {
      "user": {
@@ -976,6 +983,7 @@
    "observed": {
     "value": 862,
     "confirmed": 862,
+    "voidActive": false,
     "equips": [],
     "before": {
      "user": {
@@ -1018,6 +1026,7 @@
    "observed": {
     "value": -1000,
     "confirmed": -1000,
+    "voidActive": false,
     "equips": [],
     "before": {
      "user": {
@@ -1064,6 +1073,7 @@
    "observed": {
     "value": -1000,
     "confirmed": -1000,
+    "voidActive": false,
     "equips": [],
     "before": {
      "user": {
@@ -1110,6 +1120,7 @@
    "observed": {
     "value": 56,
     "confirmed": 56,
+    "voidActive": false,
     "equips": [],
     "before": {
      "user": {
@@ -1150,6 +1161,7 @@
    "observed": {
     "value": 1478,
     "confirmed": 1478,
+    "voidActive": false,
     "equips": [
      [
       1706,
@@ -1199,6 +1211,7 @@
    "observed": {
     "value": -1000,
     "confirmed": -1000,
+    "voidActive": false,
     "equips": [
      [
       4966,
@@ -1253,6 +1266,7 @@
    "observed": {
     "value": -1000,
     "confirmed": -1000,
+    "voidActive": false,
     "equips": [],
     "before": {
      "user": {
@@ -1285,6 +1299,249 @@
     "cache": {
      "push": 0,
      "rec": 1,
+     "self": 0
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "void.1580.direct",
+   "setup": {
+    "skills": [
+     1580
+    ],
+    "skill": 1,
+    "target": "enemy",
+    "rnd": 0.1,
+    "void": true
+   },
+   "observed": {
+    "value": 449,
+    "confirmed": 449,
+    "voidActive": true,
+    "equips": [],
+    "before": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [],
+      "turns": {}
+     }
+    },
+    "after": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [
+       161
+      ],
+      "turns": {
+       "161": 5
+      }
+     }
+    },
+    "cache": {
+     "push": 1,
+     "rec": 0,
+     "self": 0
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "void.1580.apply",
+   "setup": {
+    "skills": [
+     1580
+    ],
+    "skill": 1,
+    "target": "enemy",
+    "rnd": 0.1,
+    "void": true,
+    "apply": true
+   },
+   "observed": {
+    "value": 449,
+    "confirmed": null,
+    "voidActive": true,
+    "equips": [],
+    "before": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [],
+      "turns": {}
+     }
+    },
+    "after": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [
+       161
+      ],
+      "turns": {
+       "161": 5
+      }
+     }
+    },
+    "cache": {
+     "push": 1,
+     "rec": 0,
+     "self": 0
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "void.1491.apply",
+   "setup": {
+    "skills": [
+     1491
+    ],
+    "skill": 1,
+    "target": "enemy",
+    "rnd": 0.1,
+    "void": true,
+    "apply": true
+   },
+   "observed": {
+    "value": 449,
+    "confirmed": null,
+    "voidActive": true,
+    "equips": [],
+    "before": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [],
+      "turns": {}
+     }
+    },
+    "after": {
+     "user": {
+      "states": [
+       42
+      ],
+      "turns": {
+       "42": 5
+      }
+     },
+     "target": {
+      "states": [],
+      "turns": {}
+     }
+    },
+    "cache": {
+     "push": 0,
+     "rec": 0,
+     "self": 1
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "void.6706.heal",
+   "setup": {
+    "skills": [
+     6706
+    ],
+    "skill": 8,
+    "target": "ally",
+    "rnd": 0.99,
+    "void": true,
+    "apply": true
+   },
+   "observed": {
+    "value": -1000,
+    "confirmed": null,
+    "voidActive": true,
+    "equips": [],
+    "before": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [],
+      "turns": {}
+     }
+    },
+    "after": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [
+       1561
+      ],
+      "turns": {
+       "1561": 1
+      }
+     }
+    },
+    "cache": {
+     "push": 0,
+     "rec": 1,
+     "self": 0
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "plain.1580.apply",
+   "setup": {
+    "skills": [
+     1580
+    ],
+    "skill": 1,
+    "target": "enemy",
+    "rnd": 0.1,
+    "apply": true
+   },
+   "observed": {
+    "value": 862,
+    "confirmed": null,
+    "voidActive": false,
+    "equips": [],
+    "before": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [],
+      "turns": {}
+     }
+    },
+    "after": {
+     "user": {
+      "states": [],
+      "turns": {}
+     },
+     "target": {
+      "states": [
+       161
+      ],
+      "turns": {
+       "161": 5
+      }
+     }
+    },
+    "cache": {
+     "push": 1,
+     "rec": 0,
      "self": 0
     }
    },

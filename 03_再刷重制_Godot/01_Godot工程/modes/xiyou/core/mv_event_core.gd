@@ -73,6 +73,11 @@ var halted := false
 ## "flush" 待显示文字（应答后不前进）、"command" 宿主指令
 var _wait := ""
 var _wait_arg = null
+## installCasinoBatchRuntime（XCasinoBatch）批量抽奖里整条跑的抽奖公共事件：本抽的记录 {second}，不在批量里为 null。
+## 批量时文字（101＋401）跳过、选项（102）选第 0 项、待显示文字不在中途显示；子游标（117、setup_child）跟着带上
+var casino_draw = null
+## 批量抽奖最外层的那条：缩进 5 的选项记「二阶段」，212 显示动画、230 等待直接跳过（子游标不带）
+var casino_root := false
 
 
 func state() -> XState:
@@ -119,7 +124,7 @@ func advance() -> Dictionary:
 				return _flush_request()
 			return {"kind": "done"}
 		var c: Dictionary = list[index]
-		if not pending_lines.is_empty() and _waits(c):
+		if not pending_lines.is_empty() and casino_draw == null and _waits(c):
 			return _flush_request()
 		if max_steps > 0:
 			steps += 1
@@ -207,6 +212,20 @@ func _execute(c: Dictionary):
 	var p: Array = c.get("parameters", [])
 	var indent := int(c.get("indent", 0))
 	var code := int(c.code)
+	if casino_draw != null:
+		match code:
+			101:
+				while index + 1 < list.size() and int(list[index + 1].code) == 401:
+					index += 1
+				return null
+			102:
+				if casino_root and indent == 5:
+					casino_draw.second = true
+				_branch[indent] = 0
+				return null
+			212, 230:
+				if casino_root:
+					return null
 	match code:
 		101:
 			# MV command101：文字、紧跟的选项/数值输入合成一条消息
@@ -274,6 +293,7 @@ func _execute(c: Dictionary):
 					_child.common_id = ce_id
 					_child.pending_lines = pending_lines
 					_child.receipt = receipt
+					_child.casino_draw = casino_draw
 					return {"kind": "child"}
 		118:
 			pass
@@ -456,6 +476,7 @@ func setup_child(commands: Array, ce_id := 0) -> void:
 	_child.common_id = ce_id
 	_child.pending_lines = pending_lines
 	_child.receipt = receipt
+	_child.casino_draw = casino_draw
 
 
 ## 公共事件子游标（同类、同环境）；_depth、common_id、pending_lines、receipt 由调用方设置

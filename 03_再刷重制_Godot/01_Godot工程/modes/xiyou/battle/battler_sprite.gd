@@ -31,6 +31,12 @@ var prey := false
 var _selection_frame := 0
 ## 图像缩放只作用于身体（MV 缩放 _mainSprite），影子与位置不缩放
 var body_scale := 1.0
+## setup 给的缩放（旧式角色 0.75、敌人 1／精英 1.8）；新增角色有归一档时改用档里的缩放（_show_frame）
+var _base_scale := 1.0
+## Codex_MiraRavenMultiFrame 站姿归一档（XAppearance.profile，角色 ID ≥ 167 才有）：此刻这一帧的
+var _profile := {}
+## 渡鸦神话浮空（applyVisual 的 float：−14＋sin((帧＋角色 ID)／22)×1.5，阵亡时 0），加在身体的脚底位置上
+var _float_px := 0.0
 ## 会逐帧播放动作（侧视图、逐帧、场景；敌人单图不播放）
 var sv := false
 var motion := "walk"
@@ -76,14 +82,8 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	sv = look.animated()
 	if b is XEnemy and look.sideview:
 		facing_left = false
-	# MV Sprite_Actor.createShadowSprite：Shadow2，中心锚点，y −2（YEP_BattleEngineCore Show Shadows）；Mx_SuperSV <YCyy:true> 隐藏
 	if b is XActor and not look.hide_shadow:
-		var sp := XDB.img_path("system", "Shadow2")
-		if sp != "":
-			shadow = Sprite2D.new()
-			shadow.texture = load(sp)
-			shadow.position.y = -2
-			add_child(shadow)
+		_make_shadow()
 	if look.kind == "scene" and look.scene:
 		sprite = look.scene.instantiate() as Node2D
 		_hook_scene_finished()
@@ -97,6 +97,7 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	add_child(sprite)
 	if b is XEnemy and look.sideview:
 		_set_flip(true)
+	_base_scale = sprite_scale
 	body_scale = sprite_scale * look.scale
 	_apply_scale()
 	var cursor_name := str(XDB.plugin("YEP_BattleSelectCursor").get("Ally Cursor" if b is XActor else "Enemy Cursor", ""))
@@ -116,16 +117,32 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 		_show_frame(look.frame("walk", 0))
 
 
+## MV Sprite_Actor.createShadowSprite：Shadow2，中心锚点，y −2（YEP_BattleEngineCore Show Shadows）；Mx_SuperSV <YCyy:true> 隐藏
+func _make_shadow() -> void:
+	var sp := XDB.img_path("system", "Shadow2")
+	if sp != "":
+		shadow = Sprite2D.new()
+		shadow.texture = load(sp)
+		shadow.position.y = -2
+		add_child(shadow)
+		move_child(shadow, 0)
+
+
 static func _load(folder: String, name: String) -> Texture2D:
 	var p := XDB.img_path(folder, name)
 	return load(p) if p != "" else null
 
 
+## Game_Actor.spriteWidth／spriteHeight：有归一档时按可见范围（选择光标、状态图标跟着看得见的身体），浮空另加高
 func width() -> float:
+	if not _profile.is_empty():
+		return _profile.bounds.size.x * _profile.scale
 	return (look.cell.x if look.cell.x > 0 else 64.0) * body_scale
 
 
 func height() -> float:
+	if not _profile.is_empty():
+		return _profile.bounds.size.y * _profile.scale + maxf(0.0, -_float_px)
 	return (look.cell.y if look.cell.y > 0 else 64.0) * body_scale
 
 
@@ -164,7 +181,7 @@ func start_weapon(id: int) -> void:
 		add_child(weapon)
 	var tex := _load("system", "Weapons%d" % (floori((id - 1) / 12.0) + 1)) if id > 0 else null
 	weapon.texture = tex
-	weapon.visible = tex != null
+	weapon.visible = tex != null and not _profile.get("multi", false)  # applyVisual：新增角色在逐帧图时藏武器
 	_weapon_frame()
 
 
@@ -224,6 +241,13 @@ func _process(delta: float) -> void:
 		sprite.modulate = lit if _selection_frame % 30 < 15 else (Color(1.3, 0.85, 0.85) if prey else Color.WHITE)
 	else:
 		_selection_frame = 0
+	if not _profile.is_empty():
+		var raven := _look_key.contains("|form:RavenMythic")
+		var f := -14.0 + sin((Engine.get_process_frames() + int((battler as XActor).actor_id)) / 22.0) * 1.5 \
+			if raven and not (view.dead if not view.is_empty() else battler.is_dead()) else 0.0
+		if f != _float_px:
+			_float_px = f
+			_place_body()
 	if breathing and not (view.dead if not view.is_empty() else battler.is_dead()):
 		_breath_t += delta * TAU / 2.4
 		sprite.scale.y = body_scale * (1.0 + sin(_breath_t) * 0.02)
@@ -244,6 +268,10 @@ func swap_look(key: String) -> void:
 	sv = look.animated()
 	(sprite as Sprite2D).region_enabled = look.sideview
 	_apply_scale()
+	if shadow == null and not look.hide_shadow:
+		_make_shadow()
+	if shadow:
+		shadow.visible = not look.hide_shadow  # Mx_SuperSV updateShadow：<YCyy:true> 每帧藏影子（渡鸦神话那套带它）
 	_frame = mini(_frame, maxi(look.frame_count(motion) - 1, 0))
 	if sv:
 		_apply()
@@ -291,8 +319,29 @@ func _show_frame(f: Dictionary) -> void:
 	body.region_enabled = r.has_area()
 	if r.has_area():
 		body.region_rect = r
-	var h := r.size.y if r.has_area() else float((f.tex as Texture2D).get_height())
-	body.offset.y = -h / 2.0
+	_frame_h = r.size.y if r.has_area() else float((f.tex as Texture2D).get_height())
+	_profile = XAppearance.profile(f, motion) if battler is XActor and int((battler as XActor).actor_id) >= 167 else {}
+	body_scale = (_profile.scale if not _profile.is_empty() else _base_scale) * look.scale
+	_apply_scale()
+	if weapon and _profile.get("multi", false):
+		weapon.visible = false
+	_place_body()
+
+
+var _frame_h := 0.0
+
+
+## 身体以脚底为原点；有归一档时可见范围的底边中点落在原点（anchor 0.5,1 再挪 ((宽／2−可见中线), (高−可见底边))×缩放），浮空往上
+func _place_body() -> void:
+	var body := sprite as Sprite2D
+	if body == null:
+		return
+	if _profile.is_empty():
+		body.offset = Vector2(0, -_frame_h / 2.0)
+		return
+	var size: Vector2 = _profile.size
+	var b: Rect2 = _profile.bounds
+	body.offset = Vector2(size.x / 2.0 - b.get_center().x, size.y / 2.0 - b.end.y) + Vector2(0, _float_px / maxf(body_scale, 0.0001))
 
 
 # ---- 场景外观：根节点有 play_motion(名) 就调用，否则找 AnimationPlayer / AnimatedSprite2D 播同名动画 ----

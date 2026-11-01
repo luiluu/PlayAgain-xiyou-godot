@@ -25,17 +25,17 @@ extends RefCounted
 ## 第三期：战斗内机制（参照 mv_oracle/raven_battle_probe.cjs，测试 tests/xiyou_raven_battle）。
 ## - 神话形态 myth（_codexRavenMythTurns，只在战斗内，存在 XState.raven 但不存档）：Game_Action.apply 包装里 <CodexRavenMyth> 技能 10127
 ##   打到目标、学了 10127、不在形态中 → 3 回合；endTurn 减一；得魂时不到 5 回合加一；endBattle 与 setupRaven（sync）清零。
-##   神话之力＝形态中且学了 10170：伤害钩子普通／黑暗伤害 +1、最终伤害 +1.5，魔防穿透 +5%（封顶 95%）；战斗图换 Raven_Mythic_SV（界面未接）。
+##   神话之力＝形态中且学了 10170：伤害钩子普通／黑暗伤害 +1、最终伤害 +1.5，魔防穿透 +5%（封顶 95%）。形态中战斗图换 Raven_Mythic_SV（battler_name）、逐帧图 UserSV_RavenMythic（XAppearance.sv_form）。
 ## - 残响 residue（_codexRavenResidue，0～3）与狩猎 hunter（_codexRavenHunter）存在 XState.raven（存档 codexRaven）：学了 10132 时得魂后 +1，
 ##   本回合（startTurn 起）没有敌人倒下时 endTurn 也 +1（渡鸦要在出战成员里）；学了 10133 且满 3 进入狩猎。sync 时没学 10132 清残响、没学 10133 清狩猎。
 ## - 追加伤害（endAction 之前，<CodexRavenDamage> 技能）：施放帧按目标累计实际 HP 伤害；狩猎中先消耗狩猎与残响，对存活目标直接扣
 ##   累计 ×1（神话之力 ×1.5，冥界收割）；神话之力时对仍存活的目标再扣 ×0.85（回响）。直接扣血不经伤害计算，倒下照常得魂。
 ## - apply 包装：鸦啄 10122 每次施放第一次命中回 floor(2% 最大 MP)（至少 1）；盛宴 10124／万魂 10126 命中时学了 10134 直接附加黑暗侵蚀 1663，
 ##   否则二阶的盛宴按普通附加状态（效果 21）附加。numRepeats：冥羽连葬 10123 加 floor(额外攻击次数)。
-## 未移植：魔法反射时原版同一行动对渡鸦自己累计伤害、行动结束对自己追加（重制反射支不记帧）；技能说明里的灵魂进度行
-## （Window_SkillList.updateHelp，界面）、神话形态战斗图、收割／回响等特效（R.Fx）、
-## 法宝 4001 的运行时法宝字段（每级成长、等级上限）与 paramPlus 固定加成、熟练度上限、技能分类与界面、敌人掉率与图鉴、
-## 插件指令 RavenAdd、商店价格字段、表现模块（RavenSkillEffects／RavenMonsterVisual）、旧档迁移。
+## 第四期：法宝 4001 装着时的 paramPlus（param_plus，参照 raven_artifact_probe → tests/xiyou_raven_artifact）。
+## 未移植：魔法反射时原版同一行动对渡鸦自己累计伤害、行动结束对自己追加（重制反射支不记帧）；收割／回响等特效（R.Fx）、
+## 熟练度上限（重制无熟练度）、战斗里实际掉落的亡魂汲取 +100%（battle_logic._roll_drops 没走 team_drop_factor，待规则车道核）、
+## 插件指令 RavenAdd（冻结数据里没有事件用到；商店价格与限购字段转换器已从运行时记录导出）、表现模块（RavenSkillEffects／RavenMonsterVisual）、旧档迁移。
 
 const ACTOR := 167
 const CLASS := 165
@@ -278,6 +278,33 @@ static func growth_rate(a) -> float:
 	return float(GROWTH[best])
 
 
+## 冥河断罪镰 4001 装着时的 paramPlus（installNativeRavenRuntime 的 Game_Actor.paramPlus 包装；参照 raven_artifact_probe）：
+## 固定 ARTIFACT_BASE_BONUS，魔攻另加 ⌊阶×50＋魂×(0.02＋阶×0.006)⌋，生命另加 ⌊阶×400＋魂×(0.04＋阶×0.008)⌋。
+## 每级成长 R.ARTIFACT_LEVEL_GROWTH 与备注的 <… Param +n per Level> 相同、上限 888 同 <Max Level>，照 CP_MagicWeapon 原路算（XActor.magic_param）。
+const ARTIFACT_BASE_BONUS := [350, 100, 0, 80, 150, 80, 90, 35]
+## 亡魂汲取：出战时全队掉率 +100%（XMapTransfer.team_drop_factor）
+const SOUL_DRAIN := 10129
+
+
+static func param_plus(a, i: int, v: float) -> float:
+	if not artifact_equipped(a):
+		return v
+	v += ARTIFACT_BASE_BONUS[i]
+	if i == 4:
+		v += artifact_mat_bonus(a)
+	elif i == 0:
+		v += artifact_hp_bonus(a)
+	return v
+
+
+static func artifact_mat_bonus(a) -> float:
+	return floorf(stage(a) * 50 + soul(a) * (0.02 + stage(a) * 0.006)) if artifact_equipped(a) else 0.0
+
+
+static func artifact_hp_bonus(a) -> float:
+	return floorf(stage(a) * 400 + soul(a) * (0.04 + stage(a) * 0.008)) if artifact_equipped(a) else 0.0
+
+
 static func artifact_equipped(a) -> bool:
 	return own(a) and a.equip_list().any(func(e): return int(e.get("base", e.get("id", 0))) == ARTIFACT and str(e.get("kind", "")) == "armor")
 
@@ -332,6 +359,13 @@ static func is_myth(a) -> bool:
 	return myth_turns(a) > 0
 
 
+## Game_Actor.battlerName 包装（在换装卡那层里面）：渡鸦战斗中神话＝Raven_Mythic_SV，否则 Raven_Normal_SV；别人照 own
+static func battler_name(a, own_name: String, in_battle := true) -> String:
+	if not own(a):
+		return own_name
+	return "Raven_Mythic_SV" if is_myth(a) and in_battle else "Raven_Normal_SV"
+
+
 static func myth_power(a) -> bool:
 	return is_myth(a) and has(a, MYTH_PASSIVE)
 
@@ -374,8 +408,10 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 		return
 	if meta.has("CodexRavenMyth") and has(u, MYTH) and not is_myth(u):
 		_store()["myth"] = 3
+		_fx(r, "ring")  # R.Fx.play(subject, target, 'ring')
 	if not meta.has("CodexRavenDamage") or t == null:
 		return
+	_fx(r, "slash")  # 每次 apply 都放（R.Fx.play 'slash'，不看命中）
 	var hit: bool = used and not bool(r.get("missed", false)) and not bool(r.get("evaded", false))
 	var id := int(skill.get("id", 0))
 	var mine: bool = not frame.is_empty() and is_same(frame.user, u)
@@ -397,6 +433,23 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 			row = [t, 0.0]
 			frame.targets.append(row)
 		row[1] = float(row[1]) + maxf(0.0, float(r.get("hp", 0.0)))
+
+
+## Window_SkillList.updateHelp 包装：渡鸦选中「魂簿」（10137）时说明卡换成当前存档的灵魂与进阶（toLocaleString 千分位）；别的为空
+static func ledger_help(a, skill: Dictionary) -> Array:
+	if not own(a) or int(skill.get("id", 0)) != SOUL_LEDGER:
+		return []
+	var st := stage(a)
+	var seals := XState.current.item_count(SEAL) if XState.current != null else 0
+	var destination := "已完成五阶；灵魂可继续积累" if st >= 5 else "本阶达" + XMenu._group(REQUIRE[mini(5, st + 1)]) + "魂得印；进阶后清零"
+	return ["灵魂：" + XMenu._group(soul(a)) + "　进阶：%d/5　进阶印：%d" % [st, seals], destination]
+
+
+## 战斗画面要放的渡鸦特效（XRavenFx）记在命中记录上
+static func _fx(r: Dictionary, kind: String) -> void:
+	if not r.has("raven_fx"):
+		r["raven_fx"] = []
+	r.raven_fx.append(kind)
 
 
 ## directDamage：gainHp(−floor(值))，不经伤害计算，倒下照常；记录的 hp 是 gainHp 的值（同原版弹出的 hpDamage，可大于剩余生命）
