@@ -13,6 +13,8 @@
 - **换装卡 CE1343**：只含 0/122/355/655 的那条在物品页当场用地图解释器跑完，不回地图。
 - 改动文件：`core/item_bag_return.gd`（新）、`ui/item_scene.gd`（`_after_use(ctx)`、`show_notice`、`restore_return` 取代 `restore_capacity_return`）、`map/map_scene.gd`（`_process` 回背包、`run_common_event` 记事件开始、`ui.child_entered_tree`；删掉 open_menu 里的 take_return）、`core/passive_books.gd`（删专用续用三个函数与 meta）。
 
+- 共用文件改动行号（本分支末端，对 main bbeecb5b）：`map/map_scene.gd` 110（连 ui.child_entered_tree）、138～143（`_on_ui_page`）、392～396（`_process` 回背包）、1117（`run_common_event` 记事件开始）、1411（`restore_return`）、原 1406～1410 删 take_return；`core/passive_books.gd` 删原 19 行（capacity_refund meta）与原 24～45 行（begin_item／remember_return／take_return）；`ui/item_scene.gd` 309～314（`_update_help` 结果提示）、738／747（`_use` 记快照与传 ctx）、760／763（`_use_direct`）、785～852（`_after_use(ctx)`、`_run_wardrobe_inline`、`show_notice`、`_paint_notice`）、935～948（`restore_return` 取代 `restore_capacity_return`）。
+
 ## 原版缺陷（O-待定，开关可回退）
 
 - **O-待定 快照记 TP**：原版快照不含 TP，回 TP 的道具明明加了 TP，提示却是「已使用」，不消耗的（无尽哈啤 789）直接说「未检测到效果……（请检查使用条件）」。重制把各角色 TP 记进快照。恢复方法：`XItemBagReturn.snapshot_tp = false`。专项两支都跑（关时对原版、开时改成「已生效」）。
