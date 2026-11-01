@@ -81,6 +81,8 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	# 原生 isStateAddable 要求 isAlive；HP0本身不等于原版阵亡状态。
 	if hidden or state_ids.has(1):
 		return
+	if XCat.trial_blocks_state(self, id):  # 小猫试炼 addState 包装：巨龙不吃难度状态
+		return
 	if boss_hyper_armor and boss_difficulty_boss and boss_control_state(id):
 		return
 	super(id, random)
@@ -218,6 +220,9 @@ func param_base(i: int) -> float:
 ## 乘法次序照 JS，倍率不预乘进基础值：预乘时 10250×1.4 得 14349.999999999998，再×1.25＋1500 为 19437.499999999996，
 ## 四舍五入少 1（二十七层多宝 463 攻击 19438，敌群事件参照）。战斗中经 krz 能力值缓存（见 XBattler.param_cells）。
 func param(i: int) -> float:
+	var dragon := XCat.dragon_param(self, i)  # 小猫试炼巨龙 param 最外层包装：数据库原值
+	if not is_nan(dragon):
+		return dragon
 	var native := cached_param(i, param_now) if param_cache_on else param_now(i)
 	native = XYomiJingliu.enemy_param(self, i, roundf(native * warehouse_rate()))  # 镜流裂隙演化（在仓库倍率之外、首领倍率之内）
 	return XAlienBattle.hp_param(self, i, roundf(native * boss_attribute_rate()))
