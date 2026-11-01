@@ -34,8 +34,8 @@ extends RefCounted
 ##   否则二阶的盛宴按普通附加状态（效果 21）附加。numRepeats：冥羽连葬 10123 加 floor(额外攻击次数)。
 ## 第四期：法宝 4001 装着时的 paramPlus（param_plus，参照 raven_artifact_probe → tests/xiyou_raven_artifact）。
 ## 未移植：魔法反射时原版同一行动对渡鸦自己累计伤害、行动结束对自己追加（重制反射支不记帧）；收割／回响等特效（R.Fx）、
-## 熟练度上限（重制无熟练度）、敌人掉率与图鉴、
-## 插件指令 RavenAdd、商店价格字段、表现模块（RavenSkillEffects／RavenMonsterVisual）、旧档迁移。
+## 熟练度上限（重制无熟练度）、战斗里实际掉落的亡魂汲取 +100%（battle_logic._roll_drops 没走 team_drop_factor，待规则车道核）、
+## 插件指令 RavenAdd（冻结数据里没有事件用到；商店价格与限购字段转换器已从运行时记录导出）、表现模块（RavenSkillEffects／RavenMonsterVisual）、旧档迁移。
 
 const ACTOR := 167
 const CLASS := 165
