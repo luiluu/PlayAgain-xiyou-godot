@@ -8,6 +8,7 @@ extends Node
 ## - XSave 真存档读档往返一致。上下飞艇、飞行、画面是甲二、甲三的事，本专项不碰。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 120000
+const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
 const SAVE_DIR := "user://test_airship_state"
 const FIXTURE := "res://tests/fixtures/airship_oracle.json"
 var ref := {}
@@ -35,8 +36,8 @@ func _check(name: String, ok: bool, detail = null) -> bool:
 
 
 func _wait_map(map_id: int) -> XMapScene:
-	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var t0 := WaitBudget.new(TIMEOUT_MS)
+	while t0.waiting():
 		var m = get_tree().current_scene
 		if m is XMapScene and m.map_id == map_id and m.player != null and not m.busy:
 			return m

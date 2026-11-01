@@ -4,6 +4,7 @@ extends Node
 ## 第 9 档开关 2464。每次都开关 2483、变量 1482＝1。事件列表直接交给地图场景的解释器跑；对照参照见 xiyou_event_compare（公共事件 1441 已入切片 extraCommonEvents）。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 90000
+const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
 
@@ -36,8 +37,8 @@ func _scene() -> Node:
 
 
 func _wait_map(map_id: int) -> bool:
-	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var t0 := WaitBudget.new(TIMEOUT_MS)
+	while t0.waiting():
 		var s = _scene()
 		if s is XMapScene and s.map_id == map_id and s.player != null and not s.busy:
 			return true
@@ -100,8 +101,8 @@ func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
 	(func():
 		await map.run_event(e)
 		st.done = true).call()
-	var t0 := Time.get_ticks_msec()
-	while not st.done and Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var t0 := WaitBudget.new(TIMEOUT_MS)
+	while not st.done and t0.waiting():
 		var b := _battle_of(map)
 		if b != null and not b.logic.enemies.is_empty():
 			if mode == "win":

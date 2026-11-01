@@ -5,6 +5,7 @@ extends Node
 ## - 存读档保留色调与天气，换地图不清。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 60000
+const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
 
 var results: Array = []
 
@@ -31,8 +32,8 @@ func _near(a: float, b: float) -> bool:
 
 
 func _wait_map(map_id: int) -> XMapScene:
-	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var t0 := WaitBudget.new(TIMEOUT_MS)
+	while t0.waiting():
 		var m = get_tree().current_scene
 		if m is XMapScene and m.map_id == map_id and m.player != null and not m.busy:
 			return m
