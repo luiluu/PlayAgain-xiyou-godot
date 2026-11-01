@@ -162,10 +162,12 @@ static func summary(slot: int) -> String:
 static func load_slot(slot: int) -> bool:
 	if not exists(slot):
 		return false
-	var d = JSON.parse_string(FileAccess.get_file_as_string(path(slot)))
+	var text := FileAccess.get_file_as_string(path(slot))
+	var d = JSON.parse_string(text)
 	if not valid_data(d):
 		return false
 	XState.from_dict(d)
+	XYunshangOrders.after_load(XState.current, XYunshangOrders.identity(slot, text))  # 云裳 extractSaveContents 包装：订单账本重放
 	# dev.015 及以前忽略 ConfigManager 脚本，没有配置文件。已完成大厅 EV20 的 Godot 档补其 MapXy=true；
 	# 已有配置（包括显式 false）始终优先，不从存档回滚局外选项，不读取 MV 存档。
 	if not XConfig.has_map_xy() and XState.current.self_switch(4, 20, "A"):

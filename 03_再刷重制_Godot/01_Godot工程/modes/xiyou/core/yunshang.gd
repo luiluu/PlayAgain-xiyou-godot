@@ -380,6 +380,7 @@ static func _refresh(a) -> void:
 
 ## startBattle 包装（原 startBattle 之后）：新一场、round 1；清出战成员的战斗数据、御风、余辉再建；同步云裳；天衣无缝全醒
 static func start_battle(logic) -> void:
+	XYunshangOrders.start_battle()  # 本场编号（回合进度的 token）、本场还没发不朽天丝
 	_battle_seq += 1
 	battle = _battle_seq
 	round = 1
@@ -454,10 +455,13 @@ static func end_turn(logic) -> void:
 		if d.cut_values != null:
 			d.cut_values = null
 			_refresh(a)
+	XYunshangOrders.end_turn(logic)  # 云裳出战时给天衣订单记一格
 
 
-## endBattle 包装：结清赊账、结束衣魂，再清所有战斗数据
-static func end_battle(logic = null) -> void:
+## endBattle 包装：先发不朽天丝（result 0 胜利，见 XYunshangOrders），再结清赊账、结束衣魂，清所有战斗数据
+static func end_battle(logic = null, result := -1) -> void:
+	if logic != null:
+		XYunshangOrders.end_battle(logic, result)
 	if logic != null and battle != 0:
 		for a in logic.actors:
 			var d: Dictionary = _data.get(a, {})
@@ -1229,6 +1233,21 @@ static func borrowable(s: Dictionary) -> bool:
 		if code in [43, 44] or code in [21, 22] and not bad.has(sid) and not SHARE_BUFFS.has(sid):
 			return false
 	return true
+
+
+## O-待定：天衣铺给九曲回针选针眼（第 530 行）原版想只列有冷却的技能（s.cooldown），可 YEP_X_SkillCooldowns 给每个技能都建了 cooldown 对象，
+## 条件恒真，没冷却的技能也能选成针眼（选了也没用：针眼只是醒着时每回合越过一次冷却）。true＝只列有自己冷却（<Cooldown: x> x>0 或 <Cooldown Eval>、
+## 不在 Cooldown Bypass 里）的技能；false＝照原版全列
+static var o_eye_cooldown := true
+
+
+static func eye_candidate(sk: Dictionary) -> bool:
+	if not o_eye_cooldown:
+		return true
+	if XBattler.cooldown_bypass(int(sk.get("id", 0))):
+		return false
+	var cd = sk.get("meta", {}).get("Cooldown")
+	return cd != null and float(str(cd).strip_edges()) > 0.0 or str(sk.get("note", "")).to_lower().contains("<cooldown eval>")
 
 
 ## 九曲回针（第 254 行）：醒着、这是针眼、本回合还没越过——能不能用时不看冷却（预热照看）
