@@ -729,4 +729,38 @@ for (const how of ['sell', 'base']) cases.push(makeCase(`p8.lose.${how}`, {level
   host.restore(before); at('reloaded', {seq: w.$gameSystem._yunSeq});
   return {steps};
 }));
+// ===== 显示（第 594～772 行）：图标、织神天梭说明、天衣粉色 =====
+// 图标：最后装的 Y.iconInfo——技能 10270～10287（图标 130270～130287）是 HD 图集 Yunshang_Icons_HD_v1（6×6 格）的第 0～17 格，
+// 天衣、织神天梭、号角、天丝（图标 210118～210135）是第 18～35 格；color 只进缓存键，不改色。
+cases.push(makeCase('p9.icons', {}, () => {
+  const out = [];
+  for (let i = 130269; i <= 130288; i++) out.push([i, Y.iconInfo(i) ? Y.iconInfo(i).source : null]);
+  for (let i = 210117; i <= 210136; i++) out.push([i, Y.iconInfo(i) ? Y.iconInfo(i).source : null]);
+  return {out, image: Y.iconAtlas};
+}));
+// 织神天梭的说明（RJO.HE.getDescParams 包装）：八项照等级加每级成长；「等级需求：1」后面插「当前等级：L / 最大」「法宝经验：exp / 下一级所需」（满级写「（已满级）」）
+cases.push(makeCase('p9.relicHelp', {}, () => {
+  newGame();
+  const out = [];
+  for (const [level, exp] of [[1, 0], [5, 37], [888, 12]]) {
+    w.$gameParty.gainItem(w.$dataArmors[RELIC], 1, false);
+    const r = w.$gameParty.armors().filter(i => (i.baseItemId || i.id) === RELIC).slice(-1)[0];
+    r.level = level; r.exp = exp;
+    w.RJO.HE.getDescParams(r, 2);
+    out.push({level, exp, rows: r.descParams.map(x => [x[0], x[1], x[2]])});
+  }
+  return {out};
+}));
+// 天衣：名字、描述、品质行用粉色 rgba(255,169,202,1)（normalcolor／namecolor 包装），织神天梭照品质色
+cases.push(makeCase('p9.robeHelp', {}, () => {
+  newGame();
+  const out = [];
+  for (const id of [7920, 7934]) {
+    w.$gameParty.gainItem(w.$dataArmors[id], 1, false);
+    const r = w.$gameParty.armors().filter(i => (i.baseItemId || i.id) === id).slice(-1)[0];
+    w.RJO.HE.getDescParams(r, 2);
+    out.push({id, rows: r.descParams.map(x => [x[0], x[1], x[2]]), normal: w.RJO.HE.normalcolor(r), name: w.RJO.HE.namecolor(r)});
+  }
+  return {out};
+}));
 process.exit(finish(host, 'yunshang.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批', cases}) ? 0 : 1);
