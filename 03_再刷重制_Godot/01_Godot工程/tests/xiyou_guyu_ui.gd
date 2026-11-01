@@ -6,10 +6,11 @@ extends Node
 ## 五个主动技的动作、法宝说明卡条目（XThreeGrowth：名字、说明、APs 行、每级成长标签）。
 ## 另在真实战斗画面走一遍：选转移先开选择窗（技能窗留着不可操作）、取消回技能列表、选还春 25% 后选目标、说明卡写转移说明并贴在队员左侧
 ## （TRANSFER_HELP_NEAR 关掉时照原版从上一张卡的位置修正）、选自己蜂鸣留下、选 1 号按所选方向比例转移、行动后设回给出 50%；
-## 侧栏状态字、谷雨待机定在第 0 帧、归根反馈记录与 48 帧画面。只在内存，不写存档。
+## 侧栏状态字、谷雨待机定在第 0 帧、归根反馈记录与 48 帧画面。只在内存，不写存档。窗口模式加 -- --out=<目录> 截图。
 const ORACLE := "oracle/guyu_ui.json"
 const DIFFICULTY := 2
 var results := []
+var out_dir := ""
 
 
 func check(name: String, ok: bool, detail = null) -> bool:
@@ -20,7 +21,18 @@ func check(name: String, ok: bool, detail = null) -> bool:
 
 
 func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out_dir = arg.substr(6)
 	_run.call_deferred()
+
+
+func _shot(name: String) -> void:
+	if out_dir == "" or DisplayServer.get_name() == "headless":
+		return
+	await get_tree().process_frame
+	RenderingServer.force_draw(false)
+	check("screenshot_" + name, get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png")) == OK)
 
 
 class HalfStream extends XRandomStream:
@@ -317,6 +329,7 @@ func _scene() -> void:
 	await _frames(20)
 	check("scene.planted_still", sp.motion == "wait" and sp._frame == 0, [sp.motion, sp._frame])
 	b.status_rows[g].refresh()
+	await _shot("guyu_ui_side")
 	check("scene.side_text", b.status_rows[g]._v().guyu_text == "储3000 生长" and b.status_rows[hero]._v().guyu_text == "储0", [b.status_rows[g]._v().guyu_text, b.status_rows[hero]._v().guyu_text])
 	# 技能（类型 2）→ 借一枝春色
 	b._picked.emit("stype:2")
@@ -337,6 +350,7 @@ func _scene() -> void:
 		b.queue_free()
 		return
 	check("scene.window_rect", w.position - b._origin == Vector2(480, (720.0 - 244.0) / 2.0) and w.size == Vector2(320, 244) and w.index == 2, [w.position, w.size, w.index])
+	await _shot("guyu_ui_window")
 	w.cancelled.emit()
 	await _frames(3)
 	check("scene.window_cancel", b.transfer_win == null and b.list_win != null and b.list_win.active and b.help_card.visible, b.transfer_win != null)
@@ -345,6 +359,7 @@ func _scene() -> void:
 	await _frames(3)
 	w = b.transfer_win
 	check("scene.window_original_rows", w != null and w.size == Vector2(320, 100) and w.top == 1 and w.index == 2, null if w == null else [w.size, w.top])
+	await _shot("guyu_ui_window_2rows")
 	XGuyuTransferWindow.FIT_ROWS = true
 	var back25 := w.entries.find_custom(func(e): return e.mode == "back" and e.ratio == 0.25) if w != null else -1
 	# 还春要 1 号有储备：先给 1 号一些
@@ -361,6 +376,7 @@ func _scene() -> void:
 	var card_x := b.help_card.position.x - b._origin.x
 	check("scene.help_near_left", card_x + b.help_card.size.x <= hs.position.x and b.help_card.rows[0][0] == "还春 25%：狗逍遥 → 谷雨，储备 200。\n转移不回复HP。",
 		[card_x, b.help_card.size.x, hs.position.x, b.help_card.rows[0][0]])
+	await _shot("guyu_ui_help")
 	# 原版：每次换目标都在上一张卡的位置上再修正一次
 	XBattleScene.TRANSFER_HELP_NEAR = false
 	var before := b.help_card.position - b._origin

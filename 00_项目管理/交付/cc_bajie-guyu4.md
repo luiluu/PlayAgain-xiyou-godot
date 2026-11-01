@@ -1,7 +1,7 @@
 # 交付：cc/bajie-guyu4
 
 - 车道／工作者：B 界面（总装十派给八戒）／八戒（cc，八戒）
-- 状态：进行中
+- 状态：可合并
 - 分支从 cc/bajie-guyu3 末端 46047272 切（guyu3 被旧工作树占着，那边只有交接稿与 relic3 的提交），工作树 `.claude/worktrees/ecstatic-archimedes-4ef973`。
   guyu3 的交接稿 `cc_bajie-guyu3.md` 已并进本单并删掉；合并本分支即带上 guyu3 的提交。
 
@@ -42,7 +42,10 @@
 
 ## 验证
 
-（待写）
+- 新参照 `guyu_ui_probe.cjs` 9 例无错；工作树 `同步正式西游.py --accept-additions`：测量不变（新增 guyu_ui.json 已接受，只重跑 3 个探针、其余 74 个复用），自动同步备份 `04_验证/本地结果/自动同步/20261101_084243_592451_v0.28-v0.28`。
+- 新专项 `xiyou_guyu_ui` 790/790（窗口模式加截图 794/794，四张截图看过：选择窗 6 行与 2 行、侧栏状态字、说明卡贴队员左侧）。反向验证 4 处都抓到：选定不写方向比例（scene.target_mode 等 3 项）、花期剩余回合差 1（lv35 状态字 7 步）、FIT_ROWS 不起作用（window.original 2 项）、归根不发画面记录（script.sub.root_visuals）。
+- 选测 27 个（合并 main 后、补齐与同步之后，并行 2）：xiyou_guyu、xiyou_guyu_battle、xiyou_guyu_ui、xiyou_three_growth、xiyou_help_card、xiyou_character_help_cost、xiyou_actor_book、xiyou_book_capacity_ui、xiyou_battle_ui、xiyou_costume_battle、xiyou_sequence_visual、xiyou_appearance、xiyou_battle_events、xiyou_shield、xiyou_otb、xiyou_poison_collapse、xiyou_race_battle、xiyou_panels、xiyou_battle、xiyou_action_sequence、xiyou_yunshang、xiyou_event_compare（必跑）、xiyou_rules.tscn、xiyou_rules_d1b、xiyou_rules_d1c、xiyou_rules_d1d 共 26 个通过；**xiyou_determinism 371/372**：`early_inventory_rule`（敌人倒下没掉装备，gear 0）。不是本分支引入的：白龙 `cc/bailong-yunshang9`（含同一个 main 909f5638、不含本分支改动）的工作树 08:39 与 09:13 两次跑都是同一条失败；主工作区 07:00 那次 372/372，所以是 07:00 之后合进 main 的批次（yunshang8／relic3／wukong-drops1 收尾一带）带来的，请总装查。
+- `语法检查.py` 0 个问题。
 
 ## 可优化（流程／工具／效率）
 
@@ -54,4 +57,4 @@
 - 3917793d 谷雨界面参照 guyu_ui_probe，登记进同步
 - fc5da81a 谷雨界面：选择窗、说明卡与选目标校验、侧栏状态字与护盾合计、待机定帧、动作、归根反馈、法宝说明条目；专项与反向
 - 0b35a090 合并 main（云裳三期、relic3）
-- 本交付单
+- 交付单草稿、同步、截图（本单）
