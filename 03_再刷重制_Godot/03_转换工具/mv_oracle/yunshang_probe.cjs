@@ -151,7 +151,7 @@ for (const [level, stage, relic] of [[20, 0, false], [25, 0, false], [30, 0, fal
 }
 // ===== 第二期 A 批：觉醒、收针、余辉、符针、御风、赠行／储行、六衡裁身、万法同裳、七曜流霞 =====
 // battle2：开挑战开关、云裳 level 级 stage 进阶（可戴织神天梭、天衣 robe），1 号 55 级（可穿天衣 allyRobe）；队伍 174、1、8、9、10；
-// 只给敌人加生命；startBattle 再开第一回合（startBattle 包装：建战斗数据、天衣无缝全醒；startTurn 包装：神纹自鸣随机唤醒）
+// 只给敌人加生命（符针例另给敌人物攻 +5000、1 号生命 +1e6，让钉影虚弱的 ×0.67 看得出）；startBattle 再开第一回合（startBattle 包装：建战斗数据、天衣无缝全醒；startTurn 包装：神纹自鸣随机唤醒）
 const ROBE = k => 7920 + k;
 function wearRobe(a, k) {
   w.$gameParty.gainItem(w.$dataArmors[ROBE(k)], 1, false);
@@ -175,7 +175,8 @@ function battle2(o) {
   bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
   w.$gameParty._inBattle = true;
   w.CodexYunshang._acted = [];
-  for (const e of w.$gameTroop.members()) e._paramPlus[0] = BIG_HP;
+  for (const e of w.$gameTroop.members()) { e._paramPlus[0] = BIG_HP; e._paramPlus[2] = o.foeAtk || 0; }
+  ally._paramPlus[0] = o.allyHp || 0;
   for (const b of [...w.$gameParty.allMembers(), ...w.$gameTroop.members()]) { b.need_refresh = true; b.refresh(); b.recoverAll(); }
   bm.startBattle();
   bm.startTurn();
@@ -223,8 +224,8 @@ cases.push(makeCase('p2.afterglow', {level: 35, stage: 1, relic: true, allyRobe:
 }));
 // 符针：千丝成阵每个目标种 3 根（没穿天衣、不觉醒）；敌人行动前引爆身上全部，且这次伤害 ×0.67（觉醒中的伤害引爆一根见 p2.seamless）
 // 天衣有等级需求（req_level），穿不上时原版不生效，所以各例按需求给等级
-cases.push(makeCase('p2.needle', {level: 45, stage: 1}, () => {
-  const {bm, a, ally} = battle2({level: 45, stage: 1});
+cases.push(makeCase('p2.needle', {level: 45, stage: 1, foeAtk: 5000, allyHp: 1000000}, () => {
+  const {bm, a, ally} = battle2({level: 45, stage: 1, foeAtk: 5000, allyHp: 1000000});
   const foes = w.$gameTroop.members();
   const needles = () => foes.map(e => (e._yunNeedles || []).length);
   const steps = [step({start: true, needles: needles()}, a, ally)];

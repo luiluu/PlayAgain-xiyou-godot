@@ -3120,7 +3120,9 @@
    "id": "p2.needle",
    "setup": {
     "level": 45,
-    "stage": 1
+    "stage": 1,
+    "foeAtk": 5000,
+    "allyHp": 1000000
    },
    "observed": {
     "steps": [
@@ -3348,7 +3350,7 @@
         "user": "e1",
         "skill": 1,
         "target": "a1",
-        "value": 3,
+        "value": 13981,
         "critical": false
        }
       ],
@@ -3386,7 +3388,7 @@
         "user": "e1",
         "skill": 1,
         "target": "a1",
-        "value": 5,
+        "value": 20867,
         "critical": false
        }
       ],

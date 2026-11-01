@@ -290,10 +290,13 @@ func _battle2(o: Dictionary) -> Array:
 	for e in logic.enemies:
 		var p: Array = (e.data().params as Array).map(func(v): return float(v))
 		p[0] += 1e12
+		p[2] += float(o.get("foeAtk", 0))
 		e.zq_ref = {"p": p, "k": 1.0}
 		e.param_mark_dirty()
 		e.param_refresh()
 		e.recover_all()
+	if o.has("allyHp"):
+		ally.add_param(0, float(o.allyHp))
 	for b in logic.actors:
 		b.param_mark_dirty()
 		b.param_refresh()
