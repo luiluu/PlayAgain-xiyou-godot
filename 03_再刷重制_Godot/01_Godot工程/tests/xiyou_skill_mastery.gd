@@ -335,12 +335,13 @@ func _run3() -> void:
 			"raven.gain": _raven_gain(c)
 			"sukuna.level": _sukuna_level(c)
 			"sukuna.gain": _sukuna_gain(c)
+			"sukuna.gain37": _sukuna_gain37(c)
 			"garou.borrow": _garou_borrow(c)
 			"garou.advance": _garou_advance(c)
 			"alien.faceless": _alien_faceless(c)
 			"alien.mimic": _alien_mimic(c)
 			"notice": _notice3(c)
-	check("covers_all3", seen.size() == 11, seen.keys())
+	check("covers_all3", seen.size() == 12, seen.keys())
 	_toji_armory()
 	_yunshang_derived()
 
@@ -543,6 +544,24 @@ func _sukuna_gain(c: Dictionary) -> void:
 	check("sukuna.gain", bad.is_empty(), bad.slice(0, 3))
 
 
+## 10237 读 10231 的等级：自己练到升级（原始 0→1），包装后不变，不放动画
+func _sukuna_gain37(c: Dictionary) -> void:
+	var logic := _battle_party([SUKUNA])
+	var a := logic.state.actor(SUKUNA)
+	a.mastery_levels[10231] = 2
+	var steps: Array = c.observed.steps
+	var bad := []
+	for i in steps.size():
+		a.action_mastery.assign([10237])
+		var logs := []
+		logic._mastery_end(a, logs)
+		var w: Dictionary = steps[i]
+		var got := [XSkillMastery.level(a, 10237), int(XSkillMastery.uses(a, 10237)), a.skillMasteryLevel(10237), logs.size()]
+		if got != [int(w.s37.level), int(w.s37.uses), int(w.lv37), int(w.anims)]:
+			bad.append([i, got, w])
+	check("sukuna.gain37", bad.is_empty(), bad.slice(0, 3))
+
+
 func _garou_borrow(c: Dictionary) -> void:
 	var s := _new()
 	s.actor_advance[GAROU] = 2
@@ -660,9 +679,11 @@ func _notice3(c: Dictionary) -> void:
 	var s := _new()
 	XSkillNotice.dispatched.clear()
 	var a := s.actor(SUKUNA)
+	a.mastery_levels[10231] = 2
 	XSkillMastery.set_level(a, 10234, 5)
+	XSkillMastery.set_level(a, 10237, 5)
 	XSkillMastery.set_level(a, 10229, 2)
-	check("notice3.sukuna", _rows(_flush_notices()) == _rows(c.observed.rows), c.observed.rows)
+	check("notice3.sukuna", _rows(_flush_notices()) == _rows(c.observed.rows) and XSkillMastery.level(a, 10237) == int(c.observed.s37.level), c.observed.rows)
 	var r := s.actor(RAVEN)
 	s.set_variable(8, 3)
 	r.mastery_levels[10122] = 3

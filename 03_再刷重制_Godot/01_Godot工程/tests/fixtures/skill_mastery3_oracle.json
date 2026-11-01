@@ -1961,6 +1961,87 @@
    "errors": []
   },
   {
+   "id": "sukuna.gain37",
+   "setup": {
+    "raw": {
+     "10231": 2
+    },
+    "queue": [
+     10237
+    ],
+    "rounds": 8
+   },
+   "observed": {
+    "steps": [
+     {
+      "s37": {
+       "level": 0,
+       "uses": 1
+      },
+      "lv37": 2,
+      "anims": 0
+     },
+     {
+      "s37": {
+       "level": 0,
+       "uses": 2
+      },
+      "lv37": 2,
+      "anims": 0
+     },
+     {
+      "s37": {
+       "level": 0,
+       "uses": 3
+      },
+      "lv37": 2,
+      "anims": 0
+     },
+     {
+      "s37": {
+       "level": 0,
+       "uses": 4
+      },
+      "lv37": 2,
+      "anims": 0
+     },
+     {
+      "s37": {
+       "level": 0,
+       "uses": 5
+      },
+      "lv37": 2,
+      "anims": 0
+     },
+     {
+      "s37": {
+       "level": 1,
+       "uses": 0
+      },
+      "lv37": 2,
+      "anims": 0
+     },
+     {
+      "s37": {
+       "level": 1,
+       "uses": 1
+      },
+      "lv37": 2,
+      "anims": 0
+     },
+     {
+      "s37": {
+       "level": 1,
+       "uses": 2
+      },
+      "lv37": 2,
+      "anims": 0
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
    "id": "garou.borrow",
    "setup": {
     "mainLevel": 3
@@ -2224,6 +2305,10 @@
     "capped": [],
     "raw": {
      "level": 3,
+     "uses": 0
+    },
+    "s37": {
+     "level": 5,
      "uses": 0
     }
    },

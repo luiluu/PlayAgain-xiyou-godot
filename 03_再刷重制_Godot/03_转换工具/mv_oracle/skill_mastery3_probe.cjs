@@ -134,6 +134,17 @@ cases.push(makeCase('sukuna.gain', {queue: [10234, 10229], rounds: 14}, () => {
   }
   return {steps};
 }));
+// 10237（读 10231 的等级）自己练：原始等级涨了、包装后不变，不放升级动画
+cases.push(makeCase('sukuna.gain37', {raw: {10231: 2}, queue: [10237], rounds: 8}, () => {
+  battle([SUKUNA]);
+  const a = w.$gameActors.actor(SUKUNA), steps = [];
+  a.checkSkillMasteryLevels(); a._skillMasteryLevels[10231] = 2;
+  for (let i = 0; i < 8; i++) {
+    anims.length = 0; a._actionMastery = [10237]; a.onAllActionsEnd();
+    steps.push({s37: raw(a, 10237), lv37: a.skillMasteryLevel(10237), anims: anims.filter(x => x.id === 742).length});
+  }
+  return {steps};
+}));
 // ④ 饿狼：主拳原始 3 级，追击技能 0 级；_garouMasterySource 指向主拳时，角色的 skillMasteryLevel 与 Game_BattlerBase 那一层各读多少
 cases.push(makeCase('garou.borrow', {mainLevel: 3}, () => {
   newGame(); uncap();
@@ -208,11 +219,12 @@ function notices(fn) {
   try {
     newGame();
     const a = w.$gameActors.actor(SUKUNA);
-    const rows = await notices(() => { a.setSkillMasteryLevel(10234, 5); a.setSkillMasteryLevel(10229, 2); });
+    a.checkSkillMasteryLevels(); a._skillMasteryLevels[10231] = 2;
+    const rows = await notices(() => { a.setSkillMasteryLevel(10234, 5); a.setSkillMasteryLevel(10237, 5); a.setSkillMasteryLevel(10229, 2); });
     const raven = w.$gameActors.actor(RAVEN);
     w.$gameVariables.setValue(8, 3);
     const capped = await notices(() => { raven.checkSkillMasteryLevels(); raven._skillMasteryLevels[10122] = 3; raven.setSkillMasteryLevel(10122, 5); });
-    c = {id: 'notice', setup: {}, observed: JSON.parse(JSON.stringify({rows, capped, raw: raw(raven, 10122)})), errors: []};
+    c = {id: 'notice', setup: {}, observed: JSON.parse(JSON.stringify({rows, capped, raw: raw(raven, 10122), s37: raw(a, 10237)})), errors: []};
   } catch (e) { c = {id: 'notice', setup: {}, observed: null, errors: [String(e && e.stack || e).slice(0, 1500)]}; }
   cases.push(c);
   process.exit(finish(host, 'skill_mastery3.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；YEP_SkillMasteryLevels 期三（角色模块包装）', cases}) ? 0 : 1);
