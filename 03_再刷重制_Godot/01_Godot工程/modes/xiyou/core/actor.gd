@@ -420,6 +420,7 @@ func native_skills() -> Array:
 func skills() -> Array:
 	var ids: Array[int] = native_skill_ids()
 	ids.assign(XAlienBattle.skill_ids(self, ids))  # 异化百相、无面 skills 包装（Affixes:21）：拿掉被替换的，加借来的、仿形与切换
+	ids.assign(XGuyu.skill_ids(self, ids))  # 谷雨 skills 包装：先许一枝开 10 级起、绽放不列、其余按解锁
 	if XAlienBattle.devours(self):  # 异化饕餮 skills 包装（Adv:86）：战斗中多吞噬技能（原版 push 不去重）
 		ids.append(XAlienBattle.devour_id())
 	return _skill_records(ids)

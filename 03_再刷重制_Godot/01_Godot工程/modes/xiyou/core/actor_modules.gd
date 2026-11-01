@@ -3,7 +3,7 @@ extends RefCounted
 ## 专属角色模块（167～177）在 XActor 上的公共挂点：XActor 只调这里，这里按角色分派到各模块。
 ## 不在 IDS 里的角色走快速路径（直接返回／原值），行为与没有挂点时完全一样。沙僧改 actor.gd 时请保留这些挂点。
 ## 各挂点对应原版包的哪一层：
-## - setup：Game_Actor.setup 包装（XActor.setup 末尾）——饿狼 G.sync＋recoverAll、渡鸦 setupRaven、宿傩 S.sync、甚尔 repair。
+## - setup：Game_Actor.setup 包装（XActor.setup 末尾）——饿狼 G.sync＋recoverAll、渡鸦 setupRaven、宿傩 S.sync、甚尔 repair、谷雨 syncSkills。
 ## - can_learn：Game_Actor.learnSkill 包装（XActor.learn_skill 开头；false 就不学）——只有饿狼包了 learnSkill
 ##   （10265～10269 未到形态／等级不学），所以事件学技能、技能共享／羁绊／领袖、进阶学技能也一样被挡。
 ##   渡鸦没包 learnSkill，只在 setup／levelUp 后重排（setupRaven），不放这里。
@@ -23,7 +23,7 @@ extends RefCounted
 ## - param_base：Game_Actor.paramBase 包装（XActor.param_base 末尾）——镜流星魂 20／40 级最大生命、35 级攻击各再加一份。
 ## - passive_cache：initPassiveCache 包装（XActor.refresh_passive 写回缓存前）——渡鸦魂海刻度、宿傩十指／二十指终伤与暴伤、甚尔暴君终伤与暴伤。
 
-const IDS := [167, 168, 169, 170, 171, 172, 173]
+const IDS := [167, 168, 169, 170, 171, 172, 173, 175]
 
 
 static func _module(a) -> bool:
@@ -39,6 +39,7 @@ static func setup(a) -> void:
 	XSukuna.sync(a)
 	XToji.repair(a)
 	XYomiJingliu.setup(a)  # 镜流 normalizeJingliuSkills
+	XGuyu.sync(a)  # 谷雨 setup 包装：syncSkills
 
 
 static func can_learn(a, id: int) -> bool:
@@ -52,6 +53,7 @@ static func level_up(a) -> void:
 	XRaven.level_up(a)
 	XSkillProgression.sync(a)
 	XSukuna.sync(a)
+	XGuyu.sync(a)  # 谷雨 levelUp／changeLevel 包装：syncSkills
 
 
 static func level_down(a) -> void:
@@ -60,6 +62,7 @@ static func level_down(a) -> void:
 	XGarou.level_up(a)  # G.sync 同样挂在 levelDown
 	XSkillProgression.sync(a)  # CodexSkillProgression 包的是 changeLevel：逐级降级每步都同步
 	XSukuna.sync(a)  # 宿傩包的是 changeLevel：逐级降级每步都同步，结果与降完再同步一次相同
+	XGuyu.sync(a)  # 谷雨同样包 changeLevel（不包 levelDown），同宿傩
 
 
 static func level_changed(a, before: int) -> void:
