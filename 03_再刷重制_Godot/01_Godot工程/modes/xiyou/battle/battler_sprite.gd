@@ -220,7 +220,7 @@ func motion_tick() -> void:
 	if look.kind == "scene":
 		return
 	if _guyu_planted():
-		# 谷雨 planted（updateFrame／updateMotionCount 包装）：不在移动时「走」改「待机」，待机停在第 0 帧
+		# 谷雨、小猫剑圣 planted（updateFrame／updateMotionCount 包装）：不在移动时「走」改「待机」，待机停在第 0 帧
 		if motion == "walk":
 			set_motion("wait")
 		if motion == "wait":
@@ -465,8 +465,11 @@ var _moving := false
 var _last_pos := Vector2.INF
 
 
+## 谷雨（installNativeGuyuRuntime）与小猫剑圣（installNativeCharacterVisualRuntime planted）同一套：不在移动时「走」改「待机」，待机停在第 0 帧
 func _guyu_planted() -> bool:
-	return battler is XActor and XGuyu.own(battler) and _look_key == "Guyu" and not _moving
+	if _moving or not battler is XActor:
+		return false
+	return (XGuyu.own(battler) and _look_key == "Guyu") or XAppearance.cat_visual(battler)
 
 
 ## queueVisual 的画面反馈（只属于精灵，不进存档、不用战斗随机数）：归根 root 48 帧——脚下落八片金边瓷片、五片枯叶，
