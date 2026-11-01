@@ -292,8 +292,9 @@ func _super_sv(meta: Dictionary) -> void:
 		var list = JSON.parse_string(str(meta.get("Cfdz%d" % i, ""))) if meta.has("Cfdz%d" % i) else null
 		if list is Array:
 			for x in list:
-				if str(x).strip_edges().is_valid_int() and int(x) >= 0 and int(x) < MOTIONS.size():
-					source[int(x)] = i
+				var id := _motion_id(x)
+				if id >= 0:
+					source[id] = i
 	var speed_s := str(meta.get("SVspeed", "")).strip_edges()
 	var speed := int(speed_s) if speed_s.is_valid_int() and int(speed_s) > 0 else 0
 	for i in range(MOTIONS.size()):
@@ -337,6 +338,17 @@ func _state_sv(states: Array, actor_meta: Dictionary) -> void:
 			if not frames.is_empty():
 				motions[MOTIONS[i]] = {"frames": frames, "loop": LOOP.has(MOTIONS[i]), "wait": speed}
 				break
+
+
+## Cfdz 列表里的一项：原版 Number(x) === 动作号（数字或去空白后非空的字符串）。JSON 解析出来的数字是浮点，
+## 原来写成 str(x).is_valid_int() 认不出 1.0，映射全部没生效（数据库里没有角色／敌人写 Cfdz，变身那套才用到）。
+static func _motion_id(x) -> int:
+	var v := NAN
+	if x is int or x is float:
+		v = float(x)
+	elif x is String and x.strip_edges() != "" and x.strip_edges().is_valid_float():
+		v = x.strip_edges().to_float()
+	return int(v) if not is_nan(v) and v == floorf(v) and v >= 0 and v < MOTIONS.size() else -1
 
 
 func _from_override(o: Dictionary) -> void:
