@@ -1,7 +1,7 @@
 # 交付：cc/bailong-yunshang2
 
 - 车道／工作者：E 角色专属／白龙_9（cc）
-- 状态：WIP（代码、参照、专项已写，等选测）
+- 状态：可合并
 - 分支从 cc/bailong-yunshang1 末端 86c69d8e 切出（总装九派单），**包含云裳第一期**：一期还没合的话，合本分支就一起合进去（一期交付单 cc_bailong-yunshang1.md 照样有效）。main 在切出后没动。
 
 ## 天衣分批（15 件，key＝本体−7920；谁穿谁吃效果）
@@ -43,7 +43,11 @@ apply 包装第 407～422 行，addActions／getNextSubject／freeGift／storeAc
 
 ## 验证
 
-（待补）
+- 专项 xiyou_yunshang 419/419（直接跑与并行测试都过）。
+- 反向验证（逐个改、各自单跑，已还原）：余辉、御风、赠行上限、裁身比例、万法两路、千丝倍率、收针回合、储行加份、觉醒期限、七曜元素、万法取高、放行翻倍、免费赠 2 次、钉影虚弱各自都有失败（1～26 项）；categoryMax 改掉不失败（本例没有带 SelfPhysRate／SelfElemRate 的角色，见待交叉核查）。钉影虚弱起初看不出（敌人伤害只有 3～5），参照与专项给符针例的敌人加物攻 5000、1 号生命 +1e6 后能看出。
+- 没改切片、转换器、探针以外的参照（yunshang_probe 不接全量同步），不用重跑同步与内容覆盖检查。语法检查通过。
+- 选测（本机 CHECK_JOBS=3，规则对照 `RULES_ONLY_ACTORS=174`，48 分钟）31 个全过：xiyou_yunshang、xiyou_help_card、xiyou_alien_battle、xiyou_alien_affix、xiyou_rules、xiyou_rules_d2～d6、xiyou_battle、xiyou_battle_gaps、xiyou_otb、xiyou_action_sequence、xiyou_custom_damage、xiyou_jingliu、xiyou_jingliu2、xiyou_sukuna_battle、xiyou_garou_battle、xiyou_raven_battle、xiyou_mira_battle、xiyou_yomi_battle、xiyou_toji、xiyou_race_battle、xiyou_cat、xiyou_smart_ai（四份）、xiyou_actor_p0、xiyou_actor_modules。
+- ⚠ 偶发：xiyou_alien_battle 首轮 1 项失败（encounter.boss_150.plainName：首领名带不带「天外天·灼烂歼鬼」前缀，与云裳无关），单跑通过；这个场景累计偶发已 5 次（别的车道也踩），该修测试了，不在本车道范围，写进「可优化」。
 
 ## 交接板
 
@@ -59,6 +63,7 @@ apply 包装第 407～422 行，addActions／getNextSubject／freeGift／storeAc
 
 - 发现（工具）：单个专项直接跑 `07_开发环境/godot --headless --path 01_Godot工程 res://tests/<场景>.tscn` 只要 8 秒，并行测试在机器忙时排槽要 7 分钟；改错→重跑的循环用直接跑，交付前再走并行测试留记录。
 - 发现（坑）：GDScript 的 `a().merged(b())` 先求参数 b() 再调 a()，测试里「先行动再读数」要分两步（本专项的 `_with`）；字典写 `o.mode = x` 会建 StringName 键，伤害计算的模块快照（value_copy）不认，要写 `o["mode"]`。
+- 发现（测试）：xiyou_alien_battle 的 encounter.boss_150.plainName 累计偶发 5 次（flaky.jsonl），按规矩第二次偶发就该修测试（固定随机或等名字生成完），请总装派给合适的车道。
 - 发现（坑）：伤害钩子写了没在 `actor_damage_hooks.gd` descriptor 的 writes 里声明的字段，整次伤害计算失败成 NaN（不报错，只在 diagnostic 里），新字段记得登记。
 
 ## 待交叉核查
@@ -71,5 +76,5 @@ apply 包装第 407～422 行，addActions／getNextSubject／freeGift／storeAc
 ## 本分支提交
 
 - 95160db7 参照 p2.* 11 例
-- WIP：接线与专项、categoryMax 声明、分段字符串键、符针例敌人物攻
-- 本提交：交付单草稿
+- WIP：接线与专项、categoryMax 声明、分段字符串键、符针例敌人物攻、交付单草稿
+- 本提交：交付单可合并
