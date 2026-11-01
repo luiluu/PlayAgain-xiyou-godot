@@ -1,6 +1,6 @@
 extends Node
 ## 【cc·白龙_13·未经审查】审查第 20 期两处小修：
-## ① O-待定 XYunshangOrders.o_profile_stage：旧档（没有订单档案编号）读档后第一次建档，stage 取当前进阶次数；回退支照原版写 0。
+## ① O-142 XYunshangOrders.o_profile_stage：旧档（没有订单档案编号）读档后第一次建档，stage 取当前进阶次数；回退支照原版写 0。
 ## ② item_eva：哈基米必中剑段（XCat.sure_segment）在甚尔外层，打天与咒缚的甚尔（混乱时）闪避 0，不加影速。
 var checks := 0
 var failures: Array = []
