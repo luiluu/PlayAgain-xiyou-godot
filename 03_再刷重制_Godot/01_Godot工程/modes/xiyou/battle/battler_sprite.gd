@@ -161,6 +161,8 @@ func _apply_scale() -> void:
 
 
 func set_motion(m: String) -> void:
+	if m == "walk" and _guyu_planted():
+		m = "wait"
 	motion = m
 	_frame = 0
 	_tick = 0
@@ -195,8 +197,12 @@ func _weapon_frame() -> void:
 ## MV Sprite_Actor.updateMotionCount / Sprite_Weapon.updatePattern：按帧计数（60 帧/秒）。
 ## 行动序列演出时由 XSequencePlayer 在每帧固定位置调用（seq_driven），保证与正式版同一帧换动作。
 func _physics_process(_delta: float) -> void:
+	_moving = move_left > 0 or (_last_pos != Vector2.INF and position != _last_pos)
+	_last_pos = position
 	if not seq_driven:
 		motion_tick()
+	if _fx != null:
+		_fx_tick()
 
 
 func motion_tick() -> void:
@@ -213,6 +219,16 @@ func motion_tick() -> void:
 		return
 	if look.kind == "scene":
 		return
+	if _guyu_planted():
+		# 谷雨 planted（updateFrame／updateMotionCount 包装）：不在移动时「走」改「待机」，待机停在第 0 帧
+		if motion == "walk":
+			set_motion("wait")
+		if motion == "wait":
+			_tick = 0
+			if _frame != 0:
+				_frame = 0
+				_apply()
+			return
 	_tick += 1
 	var w := look.wait_of(motion)
 	if _tick >= (w if w > 0 else MOTION_SPEED):
@@ -441,6 +457,80 @@ func blink() -> void:
 		sprite.visible = f % 10 < 5
 		await get_tree().physics_frame
 	sprite.visible = true
+
+
+# ---- 谷雨（installNativeGuyuRuntime 565～680 installVisualHooks，v0.28 谷雨原素材待机稳定修复）----
+## OTB 等输入时用「走」，谷雨本人的素材（battlerName Guyu、没有换装卡）走与待机帧都带步子：不在移动时改「待机」并定在第 0 帧。
+var _moving := false
+var _last_pos := Vector2.INF
+
+
+func _guyu_planted() -> bool:
+	return battler is XActor and XGuyu.own(battler) and _look_key == "Guyu" and not _moving
+
+
+## queueVisual 的画面反馈（只属于精灵，不进存档、不用战斗随机数）：归根 root 48 帧——脚下落八片金边瓷片、五片枯叶，
+## 透明度 sin(π×进度)。原版另画了「再生」的抽芽开花（64 帧），但只排过 root，那段画不到，没移植。
+var _fx: Node2D
+var _fx_kind := ""
+var _fx_time := 0
+const FX_ROOT_FRAMES := 48
+
+
+func guyu_visual(kind: String) -> void:
+	if not (battler is XActor and XGuyu.own(battler)):
+		return
+	if _fx == null:
+		_fx = Node2D.new()
+		_fx.draw.connect(_fx_draw)
+		add_child(_fx)
+	_fx_kind = kind
+	_fx_time = 0
+	_fx.visible = true
+	# 原版画在可见的脚底中点（按 CodexSV 档）：站姿归一后正是身体原点（_place_body），没有档时是图底边中点，也是原点
+	_fx.position = Vector2.ZERO
+
+
+func _fx_tick() -> void:
+	if _fx_kind == "":
+		return
+	_fx_time += 1
+	if _fx_time > FX_ROOT_FRAMES or not XGuyu.active_battle:
+		_fx_kind = ""
+		_fx_time = 0
+		_fx.visible = false
+	_fx.queue_redraw()
+
+
+func _fx_draw() -> void:
+	if _fx_kind != "root":
+		return
+	var life := float(_fx_time) / FX_ROOT_FRAMES
+	var alpha := sin(PI * life)
+	var edge := Color8(0xe1, 0xb8, 0x58)
+	edge.a = alpha * 0.8
+	var chip := Color8(0xe7, 0xdc, 0xc1)
+	chip.a = alpha * 0.85
+	for i in 8:
+		var side := 1.0 if i % 2 else -1.0
+		var x := side * (7.0 + i * 2.4 + life * 13.0)
+		var y := -22.0 + life * 26.0 + sin(i * 2.1) * 7.0
+		var pts := PackedVector2Array([Vector2(x - 2, y - 2), Vector2(x + 3, y - 1), Vector2(x + 1, y + 3), Vector2(x - 3, y + 1)])
+		_fx.draw_colored_polygon(pts, chip)
+		var ring := pts.duplicate()
+		ring.append(pts[0])
+		_fx.draw_polyline(ring, edge, 1.0)
+	var leaf := Color8(0x89, 0x9a, 0x56)
+	leaf.a = alpha * 0.7
+	for j in 5:
+		_fx_petal(Vector2(cos(j * 2.1) * (8.0 + life * 20.0), -34.0 + life * 36.0 + j * 3.0), 2.4, leaf)
+
+
+## drawPetal：横向椭圆（半径 r×1.6、r×0.65）
+func _fx_petal(c: Vector2, r: float, color: Color) -> void:
+	_fx.draw_set_transform(c, 0.0, Vector2(r * 1.6, r * 0.65))
+	_fx.draw_circle(Vector2.ZERO, 1.0, color)
+	_fx.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func step(forward: bool) -> void:
