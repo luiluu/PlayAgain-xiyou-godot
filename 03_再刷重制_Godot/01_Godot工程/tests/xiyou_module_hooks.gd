@@ -188,9 +188,14 @@ func registration() -> void:
 	check("immutable_table",registry.dispatch("damage.before",ctx,frame).frame.finalAdd==6)
 	var manifest := registry.manifest();manifest[0].id="changed"
 	check("manifest_is_copy",registry.manifest()[0].id!="changed")
+	# illegal 故意写没登记的 criticalAdd：这里关掉 push_error（否则日志里的 ERROR: 行让本场景判失败），只看诊断里点了模块和字段名
+	XModuleRegistry.REPORT_UNDECLARED = false
 	for handler in [illegal,invalid_number,bad_result]:
 		var result := XModuleRegistry.compile([descriptor("invalid",0,handler,["finalAdd"])]).dispatch("damage.before",ctx,frame)
 		check("invalid_handler."+str(handler.get_method()),not result.available and result.frame.finalAdd==0 and not result.diagnostics.is_empty(),result)
+		if handler == illegal:
+			check("undeclared_write_names_field",result.diagnostics==["invalid:undeclared_write:criticalAdd"],result.diagnostics)
+	XModuleRegistry.REPORT_UNDECLARED = true
 	check("missing_context",not registry.dispatch("damage.before",{},frame).available)
 	check("missing_nested_context",not XModuleRegistry.standard().dispatch("damage.before",ctx,frame).available)
 	var dependency := descriptor("dependent",-1,noop,[]);dependency.dependsOn=["b"]

@@ -25,6 +25,9 @@ var _entries: Array = []
 var _hooks: Array = []
 var _errors: Array = []
 static var _standard: XModuleRegistry
+## 钩子写了 descriptor writes 里没登记的字段：本次伤害整个不可用（值是 NaN），原来只 push_warning，测试看不出来。
+## 这是写代码时漏登记，当场 push_error 报出模块与字段名（并行测试把 ERROR: 行判失败）；false 回到只警告（tools30）
+static var REPORT_UNDECLARED := true
 
 static func standard() -> XModuleRegistry:
 	if _standard == null:
@@ -229,6 +232,8 @@ func dispatch(point: String, context: Dictionary, initial: Dictionary) -> Dictio
 			"operationId": str(snapshot.get("operationId", "")), "input": before,
 			"ops": value_copy(result.get("ops", [])) if result is Dictionary else [], "diagnostic": diagnostic})
 		if not diagnostic.is_empty():
+			if REPORT_UNDECLARED and diagnostic.begins_with("undeclared_write:"):
+				push_error("伤害钩子 %s（%s）写了 descriptor writes 里没登记的字段 %s：本次伤害成了 NaN，把它加进该钩子的 writes" % [row.id, point, diagnostic.trim_prefix("undeclared_write:")])
 			errors.append(row.id + ":" + diagnostic)
 			break
 		frame = next

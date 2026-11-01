@@ -594,6 +594,47 @@ class ParallelTestRunnerTests(unittest.TestCase):
         p, _ = self.run_tests('--full', jobs=3, BUSY='1', XIYOU_TEST_HEARTBEAT='0')
         self.assertNotIn('进行中：完成', p.stdout)
 
+    def test_express_lane_skips_full_slots_for_short_single_scene(self):
+        """tools30：共用槽全被占着时，一个上次只跑 1 秒的场景走快车道直接跑；快车道也被占或关掉时照常排队。"""
+        import fcntl
+        self.state.mkdir(parents=True, exist_ok=True)
+        (self.state / 'slots').mkdir(exist_ok=True)
+        (self.state / 'timings.json').write_text(json.dumps({'a.tscn': 1.0, 'b.tscn': 120.0}))
+        hold = open(self.state / 'slots' / '0.lock', 'a')
+        fcntl.flock(hold, fcntl.LOCK_EX)
+        try:
+            t0 = time.monotonic()
+            p, runs = self.run_tests('--full', 'a.tscn', CHECK_GLOBAL_JOBS='1')
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            self.assertEqual(runs, ['a.tscn'])
+            self.assertIn('快车道', p.stdout)
+            self.assertLess(time.monotonic() - t0, 20)
+            # 上次实测超过上限的、关掉开关的、快车道正被别人用的：都照常排队（这里共用槽一直占着，排不上，被超时杀掉前没跑）
+            for args, env in [(('--full', 'b.tscn'), {}), (('--full', 'a.tscn'), {'XIYOU_SLOT_EXPRESS': '0'})]:
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    self.run_tests_timeout(args, 4, CHECK_GLOBAL_JOBS='1', **env)
+            express = open(self.state / 'slots' / 'express.lock', 'a')
+            fcntl.flock(express, fcntl.LOCK_EX)
+            try:
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    self.run_tests_timeout(('--full', 'a.tscn'), 4, CHECK_GLOBAL_JOBS='1')
+            finally:
+                express.close()
+        finally:
+            hold.close()
+
+    def run_tests_timeout(self, args, timeout, **env):
+        cmd = [sys.executable, str(HERE / '并行测试.py'), '--jobs', '1', str(self.godot), str(self.tmp / 'proj'), *args]
+        base = {k: v for k, v in os.environ.items() if k not in ('CHECK_FULL', 'CHECK_JOBS', 'CHECK_LOG_DIR')}
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True,
+                             env=dict(base, XIYOU_TEST_STATE_DIR=str(self.state), XIYOU_TEST_HEARTBEAT='0', **env))
+        try:
+            return p.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            os.killpg(p.pid, 9)
+            p.communicate()
+            raise
+
     def test_global_slot_limit_across_runners(self):
         cmd = [sys.executable, str(HERE / '并行测试.py'), '--jobs', '3', '--full', str(self.godot), str(self.tmp / 'proj')]
         base = {k: v for k, v in os.environ.items() if k not in ('CHECK_FULL', 'CHECK_JOBS', 'CHECK_LOG_DIR')}

@@ -18,6 +18,7 @@ const FIXTURE := "res://tests/fixtures/airship_land.json"
 const REACH := preload("res://tests/xiyou_reach_check.gd")
 const WAIT := 6000
 const TIMEOUT_MS := 240000
+const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
 const DIRS := {2: Vector2i(0, 1), 4: Vector2i(-1, 0), 6: Vector2i(1, 0), 8: Vector2i(0, -1)}
 const RUNE := 397
 
@@ -248,8 +249,8 @@ func _win(call: Callable) -> bool:
 	(func():
 		await call.call()
 		st.done = true).call()
-	var t0 := Time.get_ticks_msec()
-	while not st.done and Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var t0 := WaitBudget.new(TIMEOUT_MS)
+	while not st.done and t0.waiting():
 		for n in map.ui.get_children():
 			if n is XBattleScene and not n.logic.enemies.is_empty():
 				for en in n.logic.enemies:
