@@ -1614,7 +1614,7 @@ static func devour(u, skill: Dictionary, t):
 
 
 # ---- 词条效果③：百相、无面（借技能，installAlienationAffixes 8-26、Runtime 74、91） ----
-# 技能熟练度的包装（Affixes:23：借来的、仿形的取 min(自己、等级、来源)）没移植：重制熟练度恒 0（XBattler.skillMasteryLevel），取 min 不变。
+# 技能熟练度的包装（Affixes:23：借来的、仿形的取 min(自己、等级、来源)）在 XSkillMastery.effective（传技能对象的地方原版取不到 min，O-待定 o_alien_object）。
 # 百相切换窗口（Workshop:32-34，Window_AlienMimic）归界面：选了的仿形用 choose_mimic 写进去，没选时照 Affixes:26 的缺省。
 # 没移植：原版 canEquip 包装（Runtime）带 A.ready，战斗中配置失效（无面来源忘掉技能、百相替换的技能被忘）后下一次 useItem 的 refresh
 # 就把异化装备卸回背包（锁队数据仍在）；重制 can_equip 不带异化就绪、refresh 也不卸装，装备留着，下一场开战 eject_invalid 再卸。

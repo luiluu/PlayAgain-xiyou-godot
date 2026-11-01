@@ -634,7 +634,7 @@ func _motion(kind: String, args: Array, movers: Array) -> bool:
 			"attack":
 				if b is XActor:
 					var v := (b as XActor).attack_visual()
-					sp.set_motion(v.motion)
+					sp.set_motion("swing" if XAppearance.cat_visual(b) else v.motion)  # 小猫剑圣 performAttack 包装：改挥舞
 					if int(v.image) > 0:
 						sp.start_weapon(int(v.image))
 			"randattack":

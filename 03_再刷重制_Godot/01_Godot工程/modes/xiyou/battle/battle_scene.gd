@@ -1496,7 +1496,7 @@ func _perform_action(a: XActor, skill: Dictionary) -> void:
 		s.set_motion("item")
 	elif a.is_attack(skill):  # action.isAttack()：替换后的技能也按武器动作
 		var v := a.attack_visual()
-		s.set_motion(v.motion)
+		s.set_motion("swing" if XAppearance.cat_visual(a) else v.motion)  # installNativeCharacterVisualRuntime performAttack：小猫剑圣原动作之后再要挥舞
 		if int(v.image) > 0:
 			s.start_weapon(int(v.image))
 	elif int(skill.id) == XBattleLogic.GUARD_SKILL:

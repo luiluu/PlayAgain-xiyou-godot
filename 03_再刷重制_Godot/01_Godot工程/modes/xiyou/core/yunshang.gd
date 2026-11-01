@@ -286,7 +286,8 @@ const SETTINGS_FLAG := "_yunSettings"
 ## 当前主动行动（原版记在 Game_Action 上）：user、prepared、glow（余辉）、weaken（钉影虚弱）、total（本次扣血）、
 ## burst／command／dispel（每次行动一次）、planted（已种针的目标）
 static var frame := {}
-## 派生伤害（符针 derived）：mat、rate、glow；不空时伤害钩子按派生算
+## 派生伤害（符针 derived）：mat、rate、glow；mastery（action._yunMasteryLevel：符针用种针时 10270 的等级、赊账用触发技能的等级，
+## 只替这个派生技能自己的熟练度，XSkillMastery.damage 读）；不空时伤害钩子按派生算
 static var derived_frame := {}
 ## 收针选的觉醒者（原版选择窗 onSkillOk 写 action._yunWakeTarget）：下一次收针用，空就照自动战斗 aiGather 选
 static var wake_target = null
@@ -680,6 +681,7 @@ static func prepare(logic, u, skill: Dictionary) -> Array:
 		d.guard_until = round + 1
 	if int(d.get("key", -1)) == 2 and awake(u) and bool(d.debt_conversion) and damage_action(skill):
 		frame.debt = debt_total(d)
+		frame.debt_mastery = u.skillMasteryLevel(int(skill.id))  # action._yunDebtMastery
 	frame.sleeve = bool(sleeve.get(u, false))  # action._yunSleeve（指令窗或自动战斗设的收袖开关）
 	var sid := int(skill.get("id", 0)) if not XBattleLogic.is_item(skill) else 0
 	if int(d.get("key", -1)) == 6 and awake(u) and sid > 0:
@@ -725,7 +727,7 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 		if not needles.has(t):
 			needles[t] = []
 		for i in range(count):
-			(needles[t] as Array).append({"mat": u.mat, "parts": parts, "rate": rate * (0.555 if parts == 2 else 1.0) * spread, "glow": float(frame.glow)})
+			(needles[t] as Array).append({"mat": u.mat, "mastery": u.skillMasteryLevel(PIN), "parts": parts, "rate": rate * (0.555 if parts == 2 else 1.0) * spread, "glow": float(frame.glow)})
 		pin_until[t] = round + 1
 	if own(u) and id == CUT and not bool(frame.dispel):
 		frame.dispel = true
@@ -769,7 +771,7 @@ static func _robe_hit(logic, u, d: Dictionary) -> Array:
 		var n := float(frame.debt)
 		d.debt_conversion = false
 		repay(d, n)
-		logs.append_array(derived(logic, u, target, NEEDLE, {"raw": n * STORED.debt, "kind": "debt"}))
+		logs.append_array(derived(logic, u, target, NEEDLE, {"raw": n * STORED.debt, "kind": "debt", "mastery": int(frame.get("debt_mastery", 0))}))
 		frame.debt = 0.0
 	if int(d.key) == 0 and float(frame.bank) > 0.0:
 		logs.append_array(derived(logic, u, target, MOUNTAIN, {"raw": float(frame.bank) * STORED.bank, "kind": "bank"}))
@@ -880,7 +882,8 @@ static func burst(logic, t, all: bool) -> Array:
 		for p in range(int(n.parts)):
 			if t.is_dead():
 				break
-			logs.append_array(derived(logic, src, t, NEEDLE, {"mat": n.mat, "rate": n.rate, "glow": n.glow}))
+			logs.append_array(derived(logic, src, t, NEEDLE, {"mat": n.mat, "rate": n.rate, "glow": n.glow,
+				"mastery": int(n.mastery) if n.has("mastery") else src.skillMasteryLevel(PIN)}))
 	return logs
 
 
@@ -891,6 +894,8 @@ static func derived(logic, src, t, skill_id: int, o: Dictionary) -> Array:
 	var skill := XDB.rec("Skills", skill_id)
 	var saved_frame := frame
 	derived_frame = o
+	if o.has("mastery"):
+		derived_frame["mastery_skill"] = skill_id
 	frame = {}
 	var base_cri: float = src.cri * (1.0 - t.cev) if bool(skill.get("damage", {}).get("critical", false)) else 0.0
 	var critical: bool = logic._float("yunshang_derived_critical") < clampf(cri(src, skill, base_cri), 0.0, 1.0)

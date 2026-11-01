@@ -429,6 +429,8 @@ class _ParamProxy:
 		return src.sparam(i)
 	func skillMasteryLevel(id: int) -> int:
 		return src.skillMasteryLevel(id)
+	func skillMasteryLevelOf(id: int) -> int:
+		return src.skillMasteryLevelOf(id)
 
 
 static func _module_element_bonus(a: XBattler, element: int, frame: Dictionary) -> float:

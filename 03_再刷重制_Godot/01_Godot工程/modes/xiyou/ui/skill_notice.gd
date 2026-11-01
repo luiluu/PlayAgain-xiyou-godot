@@ -40,7 +40,7 @@ static var dispatched := []
 
 ## XSkillMastery 改等级之后调：before→after 升高才报
 static func report(b, skill_id: int, before: int, after: int) -> void:
-	if not (b is XActor) or after <= before or XState.current == null or not XConfig.notice_on("skillLevel"):
+	if not (b is XActor) or after <= before or XState.current == null or not XConfig.notice_on("skillLevel") or (XGarou.advancing and XGarou.own(b)):  # actor._garouAdvancing
 		return
 	var rec := XDB.rec("Skills", skill_id)
 	if rec.is_empty():

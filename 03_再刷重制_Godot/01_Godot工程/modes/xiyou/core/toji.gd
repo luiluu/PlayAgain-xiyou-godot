@@ -53,7 +53,7 @@ extends RefCounted
 ## - 武器库 10211（进阶 1 次后，startAction 包装）：主技能 50% 先用随机另一把可切咒具的武器库技能（10220 游云、10223 万里锁、
 ##   10221 释魂刀、10222 天逆鉾）打一次目标（倒了换第一个活着的；内部行动、不判黑闪）；本次主技能借它的特效：借游云追加次数＋1、
 ##   借万里锁每段 16% 溅射、借释魂刀物理穿透 0.33、借天逆鉾且 50% 掷中时附封印（武器库·天逆鉾本身同样掷中才封）；
-##   武器库·万里锁自己也 16% 溅射。熟练度（_actionMastery）重制恒 0，不记。随机数 rule 流 toji_armory／toji_pick／toji_spear。
+##   武器库·万里锁自己也 16% 溅射。用了武器库就给 10211 记一次熟练度（_actionMastery），随机武器伤害 ×(1＋0.1×武器库等级)。随机数 rule 流 toji_armory／toji_pick／toji_spear。
 ## 第四期：智能 AI 档案（ai_profile、ai_damage，XSmartAI 的 profile 与估伤读）。
 ## 未移植：说明框熟练度行（画面）；读档时 repair。
 ##   原版 makeDamageValue 包装是死代码（installDamageElementRuntime 后装、整个换掉 makeDamageValue 不调旧链），不移植。
@@ -270,7 +270,7 @@ static func damage_ops(item: Dictionary, a) -> Array:
 	ops.append({"op": "set", "field": "physicalIncomingPierce", "value": (0.80 if awakened(a, id) else 0.66) if id == MAIN[2] else (0.33 if id == RANDOM[2] or (is_main(id) and int(action.get("borrow", -1)) == 2) else 0.0)})
 	var mult := 1.0
 	if is_random(id):
-		mult *= 1 + 0.10 * a.skillMasteryLevel(ARMORY)
+		mult *= 1 + 0.10 * a.skillMasteryLevelOf(ARMORY)  # 原版传 $dataSkills[armory]
 	var main_tyrant := is_main(id) and knows(a, TYRANT)
 	if main_tyrant:
 		mult *= output_growth(a, true)
@@ -463,6 +463,7 @@ static func begin(logic, u, skill: Dictionary, targets: Array) -> Array:
 				out = apply(logic, u, XDB.rec("Skills", RANDOM[pick]), aim)
 				XBlackFlash.nested -= 1
 				internal = false
+				u.action_mastery.append(ARMORY)  # actor._actionMastery.push(PASSIVE.armory)：武器库被动随 onAllActionsEnd 计一次
 				action.borrow = pick
 				if pick == 0:
 					extra += 1

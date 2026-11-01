@@ -143,6 +143,14 @@ const CAT_SHEET := "CatSwordSaint_SV_v3"
 const CAT_FRAMES := "CatSwordSaint_v3"
 
 
+## installNativeCharacterVisualRuntime own()：battlerName 是 CatSwordSaint_SV_v3、没开卡图（小猫剑圣的画面包装都认这个）
+static func cat_visual(b) -> bool:
+	if not b is XActor:
+		return false
+	var s := XState.current
+	return XCostumes.battler_name(s, b) == CAT_SHEET and not XCostumes.active(s, b)
+
+
 ## Mx.SuperSVMetaProvider 链（里到外：Codex_MiraRavenMultiFrame → 原生角色画面 installNativeCharacterVisualRuntime；
 ## 卡图那层在 for_look 里先判）。name：此刻的 battlerName。
 static func sv_provider(_a: XActor, name: String, meta: Dictionary, form: String) -> Dictionary:
