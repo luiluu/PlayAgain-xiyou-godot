@@ -415,4 +415,80 @@ p3('p4.lamp', {level: 20, stage: 0, allyRobe: 10}, ({bm, a, ally, foes, at}) => 
   a.addState(72); a.addState(78); at({party: party3()});
   ally.addState(82); at({party: party3()});
 });
+// ===== 第二期 B 批：自动战斗（智能 AI 档案 registerProfile、估算器 CodexAIEstimators、makeAutoBattleActions 包装）=====
+// aiSnap：各技能档案的数值项、targetAllowed／targetUtility（三种情境 × 各目标；不许的记 null）、云裳伤害技能对各敌人的 safeDamage、
+// choose 的选择与前 6 名候选（_codexLastAIDecision）。只读，不付费、不掷随机数（choose 自己把 Math.random 固定 0.5）
+const AI = w.CodexSmartAI;
+const CTXS = [{longFight: true, urgent: false}, {longFight: false, urgent: false}, {longFight: true, urgent: true}];
+function aiSnap(u, ids) {
+  const S = w.$dataSkills, profile = {}, util = {}, damage = {};
+  u.need_refresh = true; u.refresh();
+  const friends = u.friendsUnit().members(), foes = u.opponentsUnit().aliveMembers();
+  for (const id of ids) {
+    const x = new w.Game_Action(u); x.setSkill(id);
+    const p = AI.profile(u, S[id], x) || {};
+    profile[id] = Object.fromEntries(Object.entries(p).filter(([, v]) => typeof v === 'number'));
+    if (p.targetUtility || p.targetAllowed) {
+      const targets = x.isForOpponent() ? foes : x.isForUser() ? [u] : friends.filter(t => x.isForDeadFriend() ? t.isDead() : t.isAlive());
+      util[id] = CTXS.map(c => targets.map(t => {
+        const ctx = Object.assign({friends, foes}, c);
+        if (p.targetAllowed && !p.targetAllowed(t, ctx)) return null;
+        return p.targetUtility ? Number(p.targetUtility(t, ctx)) || 0 : 0;
+      }));
+      util[id + 'k'] = targets.map(key);
+    }
+    if (Y.is(u) && [1, 5].indexOf(S[id].damage.type) >= 0) damage[id] = foes.map(t => { const y = new w.Game_Action(u); y.setSkill(id); return AI.safeDamage(u, t, S[id], y); });
+  }
+  u._codexLastAIDecision = null;
+  const best = AI.choose(u), d = u._codexLastAIDecision;
+  return {profile, util, damage, choice: best ? {id: best.item().id, target: best._targetIndex} : null, candidates: d ? d.candidates : []};
+}
+const CLOUD_AI = [10270, 10271, 10272, 10273, 10274, 1];
+const ROBE_AI = [10282, 10283, 10284, 10285, 10273, 1, 311];
+const p5 = (id, o, body) => cases.push(makeCase(id, o, () => {
+  const {bm, a, ally} = battle2(o), foes = w.$gameTroop.members(), steps = [];
+  body({bm, a, ally, foes, steps});
+  bm.endBattle(0);
+  return {steps};
+}));
+// 云裳：双针 ×0.555、戴织神天梭 ×1.99（余辉再 ×1.33）、云丝展幅溅射；1 号穿一身两世：没醒 ×2、醒 ×3（30 级进阶 0，没有神纹自鸣）
+p5('p5.cloud', {level: 30, stage: 0, relic: true, allyRobe: 12}, ({a, ally, steps}) => {
+  steps.push({who: 'a174', ...aiSnap(a, CLOUD_AI)});
+  steps.push({who: 'a1', ...aiSnap(ally, ROBE_AI)});
+  Y.wake(ally);
+  steps.push({who: 'a174', ...aiSnap(a, CLOUD_AI)});
+  steps.push({who: 'a1', ...aiSnap(ally, ROBE_AI)});
+});
+// 估算器（防取 0；收针按 aiGather 选的觉醒者回合数）：50 级进阶 2，开局神纹自鸣已唤醒 1 号
+p5('p5.gather', {level: 50, stage: 2, relic: true, allyRobe: 9}, ({a, steps}) => {
+  steps.push({who: 'a174', ...aiSnap(a, CLOUD_AI)});
+});
+// 天衣给的技能：山河作骨 0（山河击）、逆命换锦 4（换锦：自己减益 5、敌人增益 55）、储行 9、赠行 11；没醒、醒各一次
+for (const k of [0, 4, 9, 11]) p5(`p5.robe${k}`, {level: 20, stage: 0, allyRobe: k}, ({a, ally, foes, steps}) => {
+  if (k === 4) { ally.addState(5); a.addState(6); foes[1].addState(55); foes[2].addState(43); }
+  steps.push({who: 'a1', ...aiSnap(ally, ROBE_AI)});
+  Y.wake(ally);
+  steps.push({who: 'a1', ...aiSnap(ally, ROBE_AI)});
+});
+// 敕衣点神：1 号穿天衣没醒才可选（开局神纹自鸣唤醒的，先让它睡）；御风：队列里第一个敌人之后还有没行动的队友才有分，用过到下一回合末不再给
+p5('p5.wake', {level: 35, stage: 1, allyRobe: 9}, ({bm, a, ally, steps}) => {
+  Y.data(ally).wakeUntil = 0;
+  const q = bm._actionBattlers, i = q.indexOf(w.$gameActors.actor(8));
+  q.splice(i, 1); q.push(w.$gameActors.actor(8));
+  steps.push({who: 'a174', queue: q.map(key), ...aiSnap(a, CLOUD_AI)});
+  Y.wake(ally);
+  a._yunWindUntil = Y.round();
+  steps.push({who: 'a174', ...aiSnap(a, CLOUD_AI)});
+});
+// makeAutoBattleActions 包装：收袖开（5）、六衡裁身按双攻选（8）、放行（9）、觉醒的赠行免费给双攻最高的队友（11）
+for (const k of [5, 8, 9, 11]) p5(`p5.auto${k}`, {level: 20, stage: 0, allyRobe: k}, ({bm, a, ally, steps}) => {
+  if (k === 9) { const d = Y.data(ally); d.stored = 2; }
+  if (k === 11) Y.wake(ally);
+  ally._actions = [new w.Game_Action(ally)];
+  ally.makeAutoBattleActions();
+  const d = Y.data(ally);
+  steps.push({sleeve: !!ally._yunSleeve, actionSleeve: ally._actions.map(x => !!x._yunSleeve), choice: ally._actions.map(x => x.item() ? x.item().id : 0),
+    cut: d.cutRound === Y.round() ? d.cutChoices.slice() : null, stored: d.stored, freeGift: d.freeGiftRound, queue: (bm._actionBattlers || []).map(key),
+    tags: JSON.parse(JSON.stringify(Y._giftSources || {})), received: w.$gameParty.battleMembers().map(b => b._yunGiftReceived || 0), params: params(ally)});
+});
 process.exit(finish(host, 'yunshang.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批', cases}) ? 0 : 1);
