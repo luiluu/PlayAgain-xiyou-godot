@@ -93,15 +93,7 @@ static func _diff_fields(a: String, b: String) -> Array:
 	return out
 
 
-var T := {}
-func tick(k: String, t0: int) -> void:
-	T[k] = T.get(k, 0) + Time.get_ticks_usec() - t0
 func setup(ref: Dictionary, troop: int, scene: String) -> XBattleLogic:
-	var _t0 := Time.get_ticks_usec()
-	var r := setup_inner(ref, troop, scene)
-	tick("setup", _t0)
-	return r
-func setup_inner(ref: Dictionary, troop: int, scene: String) -> XBattleLogic:
 	setups += 1
 	XEnemy.force_roll = 100.0
 	var party: Array = ref.party
@@ -156,7 +148,6 @@ func _run() -> void:
 			and ref.sourceIdentity.get("runtimeInputs") == manifest.runtimeInputs, [ref.sourceIdentity.get("releaseVersion"), manifest.releaseVersion])
 	for row in (ref.sequence if lead else []):
 		check("seq.%d" % int(row.skill), int(XDB.rec("Skills", int(row.skill)).get("yepEffects", 0)) == int(row.hits), [row.skill, row.hits])
-	var t_dmg := Time.get_ticks_usec()
 	for i in range(part, ref.damage.size(), parts):
 		var row: Dictionary = ref.damage[i]
 		var logic := logic_for(ref, int(row.troop), "full")
@@ -171,8 +162,6 @@ func _run() -> void:
 			absf(logic.item_hit(a, sk, e) - float(row.hit)) < 1e-4 and absf(logic.item_eva(a, sk, e) - float(row.eva)) < 1e-4,
 			{"godot": [logic.item_hit(a, sk, e), logic.item_eva(a, sk, e)], "mv": [row.hit, row.eva]})
 		check("cri.t%d.a%d.s%d.e%d" % [int(row.troop), int(row.actor), int(row.skill), int(row.target)], absf(cri - float(row.cri)) < 1e-4, {"godot": cri, "mv": row.cri, "a.cri": a.cri, "e.cev": e.cev})
-	tick("damage_loop", t_dmg)
-	var t_case := Time.get_ticks_usec()
 	for i in range(ref.cases.size()):
 		if (i / CASE_GROUP) % parts != part:
 			continue
@@ -182,9 +171,7 @@ func _run() -> void:
 			continue
 		var logic := logic_for(ref, int(c.troop), c.scene)
 		var a: XActor = logic.state.actor(int(c.actor))
-		var _tc := Time.get_ticks_usec()
 		var r := XSmartAI.choose(logic, a)
-		tick("choose", _tc)
 		var mine = {"id": int(r.skill.id), "item": XSmartAI.is_item(r.skill), "target": target_index(logic, r.target)} if r.has("skill") else null
 		var theirs = {"id": int(c.chosen.id), "item": bool(c.chosen.item), "target": int(c.chosen.target)} if c.chosen else null
 		check(tag + ".choice", mine == theirs, {"godot": mine, "mv": theirs, "godot_rank": r.get("candidates", []).map(func(x): return [x.id, x.item, x.score]), "mv_rank": c.candidates})
@@ -192,7 +179,6 @@ func _run() -> void:
 			var m = r.candidates.filter(func(x): return x.id == int(cand.id) and x.item == bool(cand.item))
 			check(tag + ".score.%s%d" % ["i" if cand.item else "s", int(cand.id)], not m.is_empty() and close(float(m[0].score), float(cand.score), 2e-3),
 				{"godot": m[0].score if not m.is_empty() else null, "mv": cand.score})
-	tick("case_loop", t_case)
 	if not lead:
 		return finish()
 	routing(ref)
@@ -261,9 +247,7 @@ func alien_projection(ref: Dictionary) -> void:
 				a.learn_skill(7100)
 			XAlienBattle._logic_ref = weakref(logic)
 			XAlienBattle._store(logic).party = {a: {"affix": affix, "item": {}, "config": {}, "observed": [], "selected": 0}}
-			var _tc := Time.get_ticks_usec()
-		var r := XSmartAI.choose(logic, a)
-		tick("choose", _tc)
+			var r := XSmartAI.choose(logic, a)
 			var rank: Array = r.candidates.map(func(x): return [x.id, x.score, x.target.display_name() if x.target else null])
 			if affix == "prayer":
 				var att: Array = r.candidates.filter(func(x): return x.id == XBattleLogic.ATTACK_SKILL and not x.item)
@@ -298,7 +282,6 @@ func alien_projection(ref: Dictionary) -> void:
 
 func finish() -> void:
 	check("share_setup_isolated", drift.is_empty(), drift)
-	print("TIMES ", JSON.stringify(T))
 	print("SETUPS %d（共用布置%s）" % [setups, "开" if SHARE_SETUP else "关"])
 	var passed := results.filter(func(r): return r.passed).size()
 	for m in mismatches.slice(0, 40):

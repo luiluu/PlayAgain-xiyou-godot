@@ -115,6 +115,8 @@ PY
 (( FAIL )) && FAIL_ITEMS+=("文档与登记（见上方 == 文档与登记 段）")
 # 优化开关的回退支有没有测试设过回退值（tools26，75% 审查 G3）：只警告不挡，已知缺口在 回退开关豁免.json
 python3 "$ENV_DIR/回退开关覆盖.py" || true
+# mv_oracle 探针都要在 PROBES 里或有夹具（tools31；新探针忘了登记就没人跑）
+if ! python3 "$ENV_DIR/探针登记检查.py"; then FAIL=1; FAIL_ITEMS+=("探针登记（见上方 ✗）"); fi
 
 if (( FAIL && ! KEEP_GOING )); then
   print "文档与登记检查失败：先修好再跑（未运行 Godot 测试与其余检查；要照旧全跑加 --keep-going）"
