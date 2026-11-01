@@ -105,7 +105,18 @@ func snapshot(b: XBattler) -> Dictionary:
 		"alive": not b.state_ids.has(1), "dead": b.state_ids.has(1), "immortal": b.immortal,
 		"result": result(b).duplicate(true)}
 
+## 谷雨 gainHp 包装（宿傩、异化之外）：直接治疗先取整；原 gainHp 之后，出战角色之前活着就把回血量记进生命储备
 func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
+	if resource != "hp" or preview or not error.is_empty():
+		return _gain(b, resource, amount)
+	amount = XGuyu.heal_value(amount)
+	var was_alive := b.is_alive() and b.hp > 0.0
+	var entry := _gain(b, resource, amount)
+	if error.is_empty():
+		XGuyu.gained(b, amount, was_alive)
+	return entry
+
+func _gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	if not error.is_empty():
 		return {}
 	if not resource in ["hp", "mp", "tp"] or is_nan(amount) or is_inf(amount):
