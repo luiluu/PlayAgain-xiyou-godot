@@ -461,6 +461,7 @@ static func end_battle(logic = null) -> void:
 	team_buff = false
 	_data.clear()
 	borrow_stats.clear()
+	element_round.clear()
 	wind_until.clear()
 	afterglow.clear()
 	gift_received.clear()
@@ -1406,3 +1407,74 @@ static func auto_battle(logic, a) -> void:
 		cut(a, [4, 6] if a.mat >= a.atk else [2, 6])
 	if int(d.key) == 5:
 		sleeve[a] = true
+
+
+# ---- 界面一期：战斗指令窗（第 534～538 行）----
+## 七曜流霞本回合选过元素（a._yunElementChosenRound）
+static var element_round := {}
+
+
+## Window_ActorCommand.makeCommandList 包装（原列表之后、种族血契之前）：同袍换日觉醒时「神纹赠行（免费）」、寸光留仙「释放余光」、
+## 六衡裁身、千军入袖「收袖：开启／关闭」、七曜流霞「选择七曜元素」。返回 [{text, key, enabled}]
+static func command_entries(a) -> Array:
+	var d := data(a)
+	if d.is_empty():
+		return []
+	var out := []
+	var k := int(d.key)
+	if k == 11 and awake(a):
+		out.append({"text": "神纹赠行（免费）", "key": "yunGift", "enabled": int(d.free_gift_round) != round and int(d.ghost) <= 0})
+	if k == 9:
+		out.append({"text": "释放余光", "key": "yunRelease", "enabled": int(d.stored) > 0 and int(d.release_round) != round and int(d.ghost) <= 0})
+	if k == 8:
+		out.append({"text": "六衡裁身", "key": "yunCut", "enabled": int(d.cut_round) != round})
+	if k == 5:
+		out.append({"text": "收袖：开启" if bool(sleeve.get(a, false)) else "收袖：关闭", "key": "yunSleeve", "enabled": true})
+	if k == 14:
+		out.append({"text": "选择七曜元素", "key": "yunElement", "enabled": int(element_round.get(a, -1)) != round})
+	return out
+
+
+## 赠行选人（第 535 行 yunGift）：出战里除自己外活着的，受赠满 2 次的灰显
+static func gift_rows(logic, a) -> Array:
+	return logic.actors.filter(func(t): return t != a and t.is_alive()).map(func(t): return {"text": t.display_name(), "target": t, "enabled": int(gift_received.get(t, 0)) < 2})
+
+
+## 裁身选项（yunCut）：物攻、魔攻、物防、魔防、敏捷、运气（这个次序），去掉已选的
+static func cut_rows(chosen: Array) -> Array:
+	var names: Array = XDB.system().get("terms", {}).get("params", [])
+	return [2, 4, 3, 5, 6, 7].filter(func(i): return not chosen.has(i)).map(func(i): return {"text": str(names[i]) if i < names.size() else "", "id": i, "enabled": true})
+
+
+## 七曜元素（yunElement）：天衣铺设的元素组
+static func element_rows(a) -> Array:
+	var names: Array = XDB.system().get("elements", [])
+	return (setting(a).elements as Array).map(func(e): return {"text": str(names[int(e)]) if int(e) < names.size() else "", "id": int(e), "enabled": true})
+
+
+## 收针选人（onSkillOk）：出战里觉醒中的
+static func gather_rows(logic) -> Array:
+	return logic.actors.filter(func(t): return awake(t)).map(func(t): return {"text": t.display_name(), "target": t, "enabled": true})
+
+
+## 换锦选状态（onSkillOk 选自己的、onEnemyOk 选目标的）：首行「不选自身状态／不选敌方状态」，再列身上的普通增减益
+static func exchange_rows(b, enemy: bool) -> Array:
+	var bad := transfer_debuffs()
+	var out := [{"text": "不选敌方状态" if enemy else "不选自身状态", "id": 0, "enabled": true}]
+	for i in b.state_ids:
+		if bad.has(int(i)) or SHARE_BUFFS.has(int(i)):
+			out.append({"text": str(XDB.rec("States", int(i)).get("name", "")), "id": int(i), "enabled": true})
+	return out
+
+
+## onSkillOk 包装：没醒的换锦要先选自己的状态（醒着的全队互换不用选）
+static func exchange_needs_pick(a, skill: Dictionary) -> bool:
+	return not XBattleLogic.is_item(skill) and int(skill.get("id", 0)) == EXCHANGE and not awake(a)
+
+
+## onActorOk 包装：敕衣点神选的人要穿着天衣、赠行不能选自己，否则蜂鸣、留在选人
+static func rejects_target(a, skill: Dictionary, t) -> bool:
+	if XBattleLogic.is_item(skill):
+		return false
+	var id := int(skill.get("id", 0))
+	return id == WAKE and (t == null or robe(t).is_empty()) or id == GIFT and t == a

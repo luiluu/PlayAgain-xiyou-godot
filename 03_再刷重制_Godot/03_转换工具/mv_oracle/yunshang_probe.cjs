@@ -493,4 +493,21 @@ for (const k of [5, 8, 9, 11]) p5(`p5.auto${k}`, {level: 20, stage: 0, allyRobe:
     cut: d.cutRound === Y.round() ? d.cutChoices.slice() : null, stored: d.stored, freeGift: d.freeGiftRound, queue: (bm._actionBattlers || []).map(key),
     tags: JSON.parse(JSON.stringify(Y._giftSources || {})), received: w.$gameParty.battleMembers().map(b => b._yunGiftReceived || 0), params: params(ally)});
 });
+// ===== 界面一期：战斗指令窗（Window_ActorCommand.makeCommandList 包装，第 534 行）=====
+// 只调 makeCommandList 收 _list（名字、符号、能不能选），不建窗口。云裳本人的技能类型栏；各天衣的指令在用过／条件变化前后各记一次
+const cmds = u => { const win = Object.create(w.Window_ActorCommand.prototype); win._list = []; win._actor = u; win.makeCommandList(); return win._list.map(c => [c.name, c.symbol, !!c.enabled]); };
+for (const k of [5, 8, 9, 11, 14]) cases.push(makeCase(`p6.cmd${k}`, {level: 20, stage: 0, allyRobe: k}, () => {
+  const {bm, a, ally} = battle2({level: 20, stage: 0, allyRobe: k}), d = Y.data(ally), steps = [];
+  if (k === 11) Y.wake(ally);
+  steps.push({cloud: cmds(a), ally: cmds(ally)});
+  if (k === 5) ally._yunSleeve = true;
+  if (k === 8) Y.cut(ally, [4]);
+  if (k === 9) d.stored = 1;
+  if (k === 11) Y.freeGift(ally, a);
+  if (k === 14) ally._yunElementChosenRound = Y.round();
+  steps.push({ally: cmds(ally)});
+  if (k === 9) { Y.release(ally); steps.push({ally: cmds(ally)}); }
+  bm.endBattle(0);
+  return {steps};
+}));
 process.exit(finish(host, 'yunshang.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批', cases}) ? 0 : 1);
