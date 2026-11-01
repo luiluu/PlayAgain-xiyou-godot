@@ -1,7 +1,7 @@
 # 交付：cc/bailong-exclusive-gaps1
 
 - 车道／工作者：E 角色专属／白龙_12（cc）
-- 状态：选测进行中
+- 状态：可合并（在 yunshang11 之后合）
 - 分支从 cc/bailong-yunshang11 末端 a63b2c96 切出（总装十一派单），**包含 yunshang9～11**，那三张交付单照它们自己的合；没合 main。
 - 范围：盘点角色专属剩余缺口（下表）；做了米拉深渊掉落黑龙进阶石；删两处过时注释。表里最大的一项「小猫剑圣·守誓巨龙试炼」上下文不够做完，留给下一期（计划见文末）。
 
@@ -46,7 +46,7 @@
 - 专项 xiyou_mira_abyss 41/41：12 例逐个比多出来的 2903 个数与地图名、再调 rewards() 不重掷、发进背包。
 - 反向验证 3 处全抓到：结算不加、1/29、不看深渊。
 - 语法检查通过。
-- 选测：结果待补。
+- 选测：`选测.py a63b2c96` 因为改了 battle_logic.gd（战斗核心）选上百个连 rules 24 段；改动只是 rewards() 里一行、只在深渊地图名下加掉落，改跑与奖励、掉落、深渊楼层、米拉相关的 23 个全名（CHECK_JOBS=3，12 分钟）：22 过；xiyou_determinism early_inventory_rule 一处是 yunshang9 时就有的 main 掉落改动夹具问题（总装十说第六批收尾已修，本分支没合到那次修），不是本分支的。过的：xiyou_mira_abyss、xiyou_mira_battle、xiyou_battle_drop、xiyou_battle、xiyou_floor_abyss037、xiyou_floor_abyss174、xiyou_floor_abyss211、xiyou_floor_unknown160、xiyou_floor_run、xiyou_floor_run_b、xiyou_floor_run_c、xiyou_flow、xiyou_hangup_auto、xiyou_event_compare、xiyou_cat、xiyou_toji_battle、xiyou_sukuna_battle、xiyou_rules、xiyou_rules_d1b、xiyou_rules_d1c、xiyou_rules_d1d、xiyou_actor_modules。
 
 ## 交接板
 
@@ -76,4 +76,5 @@
 
 - 前面同 yunshang11（到 a63b2c96）
 - 米拉深渊掉落（WIP）
-- 本提交：盘点、过时注释、交付单
+- 盘点、过时注释、交付单（WIP）
+- 本提交：选测结果，交付单可合并
