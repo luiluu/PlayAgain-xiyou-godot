@@ -102,4 +102,14 @@ for (const wear of [true, false]) {
     return out;
   }));
 }
+// - 猫哥清理存档（Map004 EV024，zchuli.js DataManager.cleanupIndependentItems）：独立装备重编号之后 updateActorEquips 给在队成员
+//   gainHp(mhp)、gainMp(mmp)、refresh（审查 21 期 P3①）。新局四人：1 号半血半蓝、8 号倒下（HP 0、死亡状态）、其余满；读每人 HP／MP 与是否倒下。
+cases.push(makeCase('cleanupHeal', {map: 4, event: 24, script: 'DataManager.cleanupIndependentItems();'}, () => {
+  newGame();
+  const m = w.$gameParty.members();
+  m[0].setHp(Math.floor(m[0].mhp / 2)); m[0].setMp(Math.floor(m[0].mmp / 2));
+  m[1].setHp(0); m[1].addState(1);
+  runList([cmd(355, ['DataManager.cleanupIndependentItems();']), cmd(0, [])]);
+  return {members: w.$gameParty.members().map(a => ({id: a.actorId(), full: a.hp === a.mhp && a.mp === a.mmp, dead: a.isDead()}))};
+}));
 process.exit(finish(host, 'script_gaps.json', {hostScope: '新游戏（Math.random 0.5）；事件脚本普查：调速脚本、击败数条件（悟空 events1）；伙伴号角清理、按变量取人学技能、战斗里按角色号加状态（events2）；敌人暴闪提示、套装加敌人状态（events3）', cases}) ? 0 : 1);

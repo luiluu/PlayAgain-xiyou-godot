@@ -121,12 +121,32 @@ func _defeat(ref: Dictionary) -> void:
 	_check("defeat_other_unknown", it2.skipped.size() == 1, it2.skipped)
 
 
-func _cleanup() -> void:
-	var s := XState.new_game(3, 1, [8, 9, 10])
-	XState.current = s
-	var before := JSON.stringify(s.gear)
-	var miss: Array = await script("DataManager.cleanupIndependentItems();")
-	_check("cleanup_noop", miss.is_empty() and JSON.stringify(s.gear) == before, miss)
+## 猫哥清理存档（zchuli.js，审查 21 期 P3①）：在队成员回满 HP／MP、倒下的救起（参照 cleanupHeal）；身上与背包的装备不变；
+## 仓库里的武器防具：O-待定 o_cleanup_keep_warehouse 默认留着，false 照原版丢掉（道具不动）
+func _cleanup(ref: Dictionary) -> void:
+	for keep in [true, false]:
+		MVScript.o_cleanup_keep_warehouse = true if keep else false
+		var s := XState.new_game(3, 1, [8, 9, 10])
+		XState.current = s
+		var m := s.members()
+		m[0].hp = floorf(m[0].mhp / 2.0)
+		m[0].mp = floorf(m[0].mmp / 2.0)
+		m[1].hp = 0.0
+		m[1].add_state(1)
+		XWarehouse.create(s, "<仓库:999>")
+		var w: Dictionary = s.warehouses["仓库"]
+		w.items.armor.append(XGear.create("armor", 2, s))
+		w.items.item.append(5)
+		w.qtty.item["5"] = 3
+		w.currentCapacity = 4
+		var before := JSON.stringify(s.gear)
+		var miss: Array = await script("DataManager.cleanupIndependentItems();")
+		var got: Array = s.members().map(func(a): return {"id": int(a.actor_id), "full": a.hp == a.mhp and a.mp == a.mmp, "dead": a.is_dead()})
+		var want: Array = ref.cleanupHeal.observed.members.map(func(x): return {"id": int(x.id), "full": bool(x.full), "dead": bool(x.dead)})
+		_check("cleanup_heal_%s" % keep, miss.is_empty() and got == want and JSON.stringify(s.gear) == before, [miss, got, want])
+		_check("cleanup_warehouse_%s" % keep, w.items.armor.size() == (1 if keep else 0) and w.items.item == [5] and int(w.qtty.item["5"]) == 3
+			and int(w.currentCapacity) == (4 if keep else 3), [w.items.armor.size(), w.items.item, w.currentCapacity])
+	MVScript.o_cleanup_keep_warehouse = true
 
 
 func _batch2(ref: Dictionary) -> void:
@@ -260,10 +280,10 @@ func _run() -> void:
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
 	var ref := _ref()
-	_check("ref_loaded", ref.size() == 19, ref.size())
+	_check("ref_loaded", ref.size() == 20, ref.size())
 	await _speed(ref)
 	await _defeat(ref)
-	await _cleanup()
+	await _cleanup(ref)
 	await _batch2(ref)
 	_battle_states(ref)
 	_battle_batch3(ref)
