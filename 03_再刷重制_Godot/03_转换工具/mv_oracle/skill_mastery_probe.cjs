@@ -135,4 +135,47 @@ cases.push(makeCase('save', {}, () => {
   const b = w.$gameActors.actor(1);
   return {a1: snap(b, 1), a9: snap(b, 9), raw: {levels: b._skillMasteryLevels, uses: b._skillMasteryUses}};
 }));
-process.exit(finish(host, 'skill_mastery.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；YEP_SkillMasteryLevels 期一', cases}) ? 0 : 1);
+// ⑤ 期二：升级通告（installSkillLevelNoticeRuntime：同一微任务里同一角色同一技能合并成一行 from→to；只有角色；新局、读档期间不报）
+//    与战力（CodexCombatPower.actor：签名里有 _skillMasteryLevels，改熟练度后不强制也重算）
+function notices(fn) {
+  const rows = [], on = e => rows.push(e.detail);
+  w.document.addEventListener('codex-skill-level-up', on);
+  return Promise.resolve().then(fn).then(() => new Promise(r => setTimeout(r, 0))).then(() => { w.document.removeEventListener('codex-skill-level-up', on); return rows; });
+}
+const asyncCases = [];
+asyncCases.push(['notice.battle', {skill: 1, casts: 13, user: 'a1'}, async () => {
+  const {bm, a, foes} = battle();
+  const out = [];
+  for (let i = 0; i < 13; i++) out.push(await notices(() => act(bm, a, 1, 0)));
+  out.push(await notices(() => { for (let i = 0; i < 7; i++) act(bm, foes[0], 1, a.index()); }));
+  return {steps: out};
+}]);
+asyncCases.push(['notice.set', {}, async () => {
+  newGame();
+  const a = w.$gameActors.actor(1);
+  const merged = await notices(() => { a.setSkillMasteryLevel(9, 2); a.setSkillMasteryLevel(9, 4); a.setSkillMasteryLevel(1, 1); });
+  const down = await notices(() => a.setSkillMasteryLevel(9, 1));
+  const config = (w.ConfigManager.codexSkillLevelNotice = false, await notices(() => a.setSkillMasteryLevel(9, 3)));
+  w.ConfigManager.codexSkillLevelNotice = true;
+  const json = host.encode();
+  const load = await notices(() => host.restore(json));
+  return {merged, down, config, load, levels: {s9: w.$gameActors.actor(1).skillMasteryLevel(9)}};
+}]);
+asyncCases.push(['power', {actor: 1, level: 30, skill: 1, mastery: 3}, async () => {
+  newGame();
+  const P = w.CodexCombatPower, a = w.$gameActors.actor(1);
+  a.changeLevel(30, false); a.recoverAll();
+  const before = P.actor(a, true);
+  a.setSkillMasteryLevel(1, 3);
+  const cached = P.actor(a), forced = P.actor(a, true);
+  return {before: before.total, cached: cached.total, forced: forced.total, burst: [before.evaluation.burst, forced.evaluation.burst]};
+}]);
+(async () => {
+  for (const [id, setup, fn] of asyncCases) {
+    let c;
+    try { c = {id, setup, observed: JSON.parse(JSON.stringify(await fn(), (k, v) => typeof v === 'number' ? round(v) : v)), errors: []}; }
+    catch (e) { c = {id, setup, observed: null, errors: [String(e && e.stack || e).slice(0, 1500)]}; }
+    cases.push(c);
+  }
+  process.exit(finish(host, 'skill_mastery.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；YEP_SkillMasteryLevels 期一、期二（通告、战力）', cases}) ? 0 : 1);
+})();

@@ -243,6 +243,7 @@ static func _become_current(s: XState) -> void:
 	XZhenqi.pending_trial = {}
 	XZhenqi.trial_done = {}
 	XZhenqi.pending_scale = {}
+	XSkillNotice.clear()  # installSkillLevelNoticeRuntime：setupNewGame／loadGame 清掉待报与正在显示的通告
 
 
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:

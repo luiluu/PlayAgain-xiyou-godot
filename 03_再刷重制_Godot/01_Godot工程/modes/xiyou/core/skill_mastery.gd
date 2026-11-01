@@ -12,6 +12,7 @@ class_name XSkillMastery
 ##   不在战斗里付费不记；敌人也涨（每场新建，从 0 起）。
 ## - 伤害：installDamageElementRuntime 在 raw＋flatSkill 之后乘 masteryDamage（只对技能；治疗、settled 不走），masteryRate 也乘进元素固定增伤
 ##   （XDamage._calculate）。
+## - 期二：改等级后报技能升级通告（XSkillNotice）；XEquipment.clone 带上熟练度（战力、装备预览的伤害预演照原版 JsonEx 深拷贝读到熟练度）。
 ## - 存档：角色的 _skillMasteryLevels／_skillMasteryUses（XState.to_dict 的 masteryLevels／masteryUses；旧档没有就是 0 级）。
 
 const ANIMATION_DEFAULT := 742
@@ -113,12 +114,22 @@ static func is_maxed(b, skill_id: int) -> bool:
 	return level(b, skill_id) >= max_level(skill_id)
 
 
+## skillMasteryRate：满级 1，否则 本级已用÷本级所需
+static func rate(b, skill_id: int) -> float:
+	if is_maxed(b, skill_id):
+		return 1.0
+	var m := usage_max(b, skill_id)
+	return uses(b, skill_id) / m if m != 0.0 else 0.0
+
+
 ## setSkillMasteryLevel：夹到 [0, 上限]，已用次数归 0
 static func set_level(b, skill_id: int, value: int) -> void:
 	if XDB.rec("Skills", skill_id).is_empty():
 		return
+	var before := level(b, skill_id)
 	b.mastery_levels[skill_id] = clampi(value, 0, max_level(skill_id))
 	b.mastery_uses[skill_id] = 0
+	XSkillNotice.report(b, skill_id, before, level(b, skill_id))  # installSkillLevelNoticeRuntime 包装
 
 
 ## gainSkillMasteryLevel：先夹上限，变量 13 为 1 时再夹变量 8（0 当 100000）；已用次数归 0
@@ -128,8 +139,10 @@ static func gain_level(b, skill_id: int, value: int) -> void:
 	if s != null and int(s.variable(13)) == 1:
 		var cap := int(s.variable(8))
 		lv = clampi(lv, 0, 100000 if cap == 0 else cap)
+	var before := level(b, skill_id)
 	b.mastery_levels[skill_id] = lv
 	b.mastery_uses[skill_id] = 0
+	XSkillNotice.report(b, skill_id, before, lv)  # installSkillLevelNoticeRuntime 包装
 
 
 ## setSkillMasteryUses：够数就升一级

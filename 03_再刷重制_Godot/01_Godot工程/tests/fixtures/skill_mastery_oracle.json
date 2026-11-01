@@ -640,7 +640,7 @@
    "js/rpg_οbjects.js": "455b1890ff891795df24653e3b8c15ab6ef5050661656c2dd1840339b34d5b7d"
   }
  },
- "hostScope": "真实 BattleManager／Game_Action（Math.random 0.5）；YEP_SkillMasteryLevels 期一",
+ "hostScope": "真实 BattleManager／Game_Action（Math.random 0.5）；YEP_SkillMasteryLevels 期一、期二（通告、战力）",
  "cases": [
   {
    "id": "table",
@@ -2399,6 +2399,101 @@
       "9": 0
      }
     }
+   },
+   "errors": []
+  },
+  {
+   "id": "notice.battle",
+   "setup": {
+    "skill": 1,
+    "casts": 13,
+    "user": "a1"
+   },
+   "observed": {
+    "steps": [
+     [],
+     [],
+     [],
+     [],
+     [],
+     [
+      {
+       "actorId": 1,
+       "skillId": 1,
+       "actorName": "狗逍遥",
+       "skillName": "攻击",
+       "from": 0,
+       "to": 1
+      }
+     ],
+     [],
+     [],
+     [],
+     [],
+     [],
+     [
+      {
+       "actorId": 1,
+       "skillId": 1,
+       "actorName": "狗逍遥",
+       "skillName": "攻击",
+       "from": 1,
+       "to": 2
+      }
+     ],
+     [],
+     []
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "notice.set",
+   "setup": {},
+   "observed": {
+    "merged": [
+     {
+      "actorId": 1,
+      "skillId": 9,
+      "actorName": "狗逍遥",
+      "skillName": "火焰",
+      "from": 0,
+      "to": 4
+     },
+     {
+      "actorId": 1,
+      "skillId": 1,
+      "actorName": "狗逍遥",
+      "skillName": "攻击",
+      "from": 0,
+      "to": 1
+     }
+    ],
+    "down": [],
+    "config": [],
+    "load": [],
+    "levels": {
+     "s9": 3
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "power",
+   "setup": {
+    "actor": 1,
+    "level": 30,
+    "skill": 1,
+    "mastery": 3
+   },
+   "observed": {
+    "before": 746,
+    "cached": 746,
+    "forced": 748,
+    "burst": [
+     468.9252,
+     468.9252
+    ]
    },
    "errors": []
   }
