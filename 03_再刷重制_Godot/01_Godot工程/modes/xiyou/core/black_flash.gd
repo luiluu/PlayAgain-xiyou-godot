@@ -14,7 +14,8 @@ extends RefCounted
 ##   斩击强化 emp＝max(emp, min(连闪, 4))；失败则连闪归 0，eligible 且打出伤害时集中 +1（至 4）。
 ## - endRound（endTurn 之前，宿傩包装之后）：不再启用的清空；觉醒到期（round ≥ expires）去状态。round +1。
 ## - 不能行动（processTurn／OTB 判不能动）、逃跑时连闪归 0；开战、战斗结束、阵亡清空。
-## 未移植：甚尔的额外一击（extraHitSkill 10216 觉醒时 _tojiHitCount＋1，甚尔运行时未移植）、遗忘 10225／觉醒技时清空、
+## 甚尔的额外一击（extraHitSkill 10216 觉醒时 _tojiHitCount＋1）在 XToji 的段数里（toji.gd「黑闪觉醒中的游云多 1 段」）。
+## 未移植：遗忘 10225／觉醒技时清空、
 ## 说明框里的实时状态行、宣告的弹字与日志（画面）。旧档 unlock（学 10225／觉醒技）宿傩由 XSukuna.sync 管。
 
 const SKILL := 10225

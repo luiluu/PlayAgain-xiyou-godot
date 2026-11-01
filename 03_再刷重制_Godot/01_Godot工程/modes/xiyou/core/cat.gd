@@ -13,7 +13,7 @@ extends RefCounted
 ## - 伤害钩子 cat-sword（持剑技加成、抱剑护身、巨龙减伤）在 cat_damage_hooks.gd（沙僧，模块挂接点），读这里的 advanced。
 ## 进阶 advanced() 读 XAdvance.rank（进阶后成长曲线、说明文字都随之变）。
 ## 未移植（交付单写明）：进阶后额外行动（makeActionTimes＋1，在 battler，未接）、进阶后终技帮助品质 10（helpItem）、守誓巨龙试炼（9018，伤害钩子要宿主传 battleRound）、
-## 号角 2899 入队后不可用、Map132 商店补号角、段间 WAIT 6 的画面节奏。
+## 号角 2899 入队后不可用、段间 WAIT 6 的画面节奏。（Map132 商店补号角已在 XItemMarks 的 LOBBY_CAT_HORN。）
 ## 参照：mv_oracle/cat_probe.cjs（generated/oracle/cat.json），测试 tests/xiyou_cat.gd。
 
 const ACTOR := 178
