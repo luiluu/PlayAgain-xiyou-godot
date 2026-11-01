@@ -27,7 +27,10 @@ extends RefCounted
 ## 第三期：黑闪接 XBlackFlash（与甚尔共用；施放帧 emp＝觉醒时的斩击强化层，解／捌／伏魔御厨子 ×(1＋领域 0.35／否则 0.2＋0.05×(层−1))，
 ##   觉醒时内部神灶：开另 ×1.2，终式不判黑闪，回合结束不觉醒才清 emp）；阵亡清战斗数据（on_death）。
 ## 未移植：看破的闪避归零在西游无效（YEP 闪避公式为 0，照写）、applyCriticalRate 改写在 CodexDamage 下不走（原版注释：旧暴击链会重复乘），
-##   无需移植；熟练度上限包装（重制熟练度恒 0）；神灶选目标窗只列已蓄力的敌人、战斗日志文字（画面车道）；技能分类与界面、外观、旧档迁移。
+##   无需移植；熟练度上限包装（重制熟练度恒 0）；神灶选目标窗只列已蓄力的敌人、战斗日志文字（画面车道）；技能分类与界面、旧档迁移。
+## 完全体外观（Sprite_Actor.updateBitmap 包装，full_look）：进阶 3 时把 2643「宿傩·完全体战斗形象」直接塞进状态（不走 addState），
+##   否则 eraseState；Mx_SuperSV 按状态选逐帧图 Codex_Sukuna_QFull。原版 update 包装里的 y＝40、藏武器被 Codex_MiraRavenMultiFrame
+##   之后的 applyVisual 盖掉（站姿归一＋多帧藏武器），不另做。
 const ACTOR := 172
 const ARMOR := 4581
 const WOUND := 2637
@@ -68,6 +71,22 @@ static func knows(a, id: int) -> bool:
 
 static func stage(a) -> int:
 	return 3 if knows(a, 10245) else (2 if knows(a, 10244) else (1 if knows(a, 10243) else 0))
+
+
+const FULL_LOOK := 2643
+
+
+## Sprite_Actor.updateBitmap 包装（战斗图每帧，重制在取外观键 XAppearance.battler_key 时）：
+## 完全体（stage 3）且没有 2643 就 _states.push（不排序、不刷新、不记回合），不是就 eraseState。2643 没有特性、不随战斗结束去掉。
+static func full_look(a) -> void:
+	if not own(a):
+		return
+	var full := stage(a) == 3
+	if full and not a.state_ids.has(FULL_LOOK):
+		a.state_ids.append(FULL_LOOK)
+	elif not full and a.state_ids.has(FULL_LOOK):
+		a.state_ids.erase(FULL_LOOK)
+		a.state_turns.erase(FULL_LOOK)
 
 
 static func sync(a) -> void:

@@ -2057,8 +2057,12 @@
     "titles2/Particles3",
     "pictures/Ui_HangUpTCLH",
     "codex_achievements/EssenceMaster",
-    "codex_achievements/KYO"
+    "codex_achievements/KYO",
+    "sv_actors/Raven_Mythic_SV",
+    "sv_actors/Garou_Cosmic",
+    "faces/Garou_Cosmic"
   ],
+  "extraSvFolders": ["UserSV_RavenMythic", "UserSV_MiraHuman", "UserSV_MiraDragon", "CatSwordSaint_v3"],
   "fonts": [
     "FZLanTYJW_ZhongCu.TTF"
   ],
