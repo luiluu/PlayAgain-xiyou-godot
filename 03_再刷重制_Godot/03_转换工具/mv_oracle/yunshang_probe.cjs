@@ -285,5 +285,80 @@ for (const [level, stage] of [[55, 0], [55, 2]]) {
     return {steps};
   }));
 }
-process.exit(finish(host, 'yunshang.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批', cases}) ? 0 : 1);
-
+// ===== 第二期 B 批（前一半）：赊账与赊月偿星 2、幽灵与不渡黄泉 3、山河作骨 0、百厄成锦 1、逆命换锦 4、一身两世 12 =====
+// 云裳 20 级进阶 0（没有神纹自鸣），1 号 55 级穿天衣；数值只比同一例里的比值（z3 把各数除以本例第一个非零基准）
+const st3 = b => b._states.filter(i => i !== 1).map(i => [i, b._stateTurns[i]]);
+const yd3 = b => { const d = Y.data(b); return d ? {debt: d.debts.reduce((s, x) => s + x.amount, 0), due: d.debts.map(x => x.due), bank: d.bank, ghost: d.ghost, ghostDone: d.ghostDone,
+  ghostUsed: d.ghostUsed, revived: d.revived, captured: d.captured.map(x => [x.id, x.turns, x.cleaned])} : null; };
+const v3 = (a, ally, foes) => ({hp: [a.mhp - a.hp, ally.mhp - ally.hp], alive: [a.isAlive(), ally.isAlive()], mp: ally.mp / ally.mmp, d: yd3(ally),
+  st: [st3(a), st3(ally), ...foes.map(st3)]});
+const p3 = (id, o, body) => cases.push(makeCase(id, o, () => {
+  const {bm, a, ally} = battle2(o), foes = w.$gameTroop.members();
+  const steps = [];
+  const at = (x, extra) => steps.push({...x, ...ys(a, ally), ...v3(a, ally, foes), ...(extra || {})});
+  body({bm, a, ally, foes, at});
+  return {steps};
+}));
+// 赊月偿星：承伤 50% 记债（到期回合＝round+1）；行动的伤害还债 33%；觉醒后下一次主动命中把全部债转成符针附加伤害（×188.88）；endBattle 结清
+p3('p3.debt', {level: 20, stage: 0, allyRobe: 2, foeAtk: 5000, allyHp: 1000000}, ({bm, a, ally, foes, at}) => {
+  at({start: true, skills: ally.skills().map(s => s.id).filter(id => id >= 10270)});
+  at(cast2(bm, foes[1], 1, 1));
+  at(cast2(bm, ally, 1, 2));
+  at(cast2(bm, foes[1], 1, 1));
+  Y.wake(ally);
+  at(cast2(bm, ally, 1, 2));
+  at(cast2(bm, foes[1], 1, 1));
+  bm.endBattle(0);
+  at({end: true});
+});
+// 到期：回合末（endTurn 包装）扣到期的债；round 1 记的债 round 2 末到期
+const endTurn = bm => { bm._phase = 'turnEnd'; bm._enteredEndPhase = true; bm.endTurn(); };
+p3('p3.debt.due', {level: 20, stage: 0, allyRobe: 2, foeAtk: 5000, allyHp: 1000000}, ({bm, a, ally, foes, at}) => {
+  at(cast2(bm, foes[1], 1, 1));
+  endTurn(bm); at({endTurn: 1});
+  bm.startTurn(); at({turn: 2});
+  endTurn(bm); at({endTurn: 2});
+});
+// 不渡黄泉：每场首次倒下留衣魂 2 次真实行动（生命 1、不算阵亡），用完倒下；觉醒中用完 2 次回 50% 生命／MP；第二次倒下照常阵亡
+for (const woke of [false, true]) p3(`p3.ghost${woke ? '.awake' : ''}`, {level: 20, stage: 0, allyRobe: 3, foeAtk: 500000}, ({bm, a, ally, foes, at}) => {
+  if (woke) Y.wake(ally);
+  at({start: true});
+  at(cast2(bm, foes[1], 1, 1));
+  at(cast2(bm, ally, 1, 2));
+  at(cast2(bm, ally, 1, 2));
+  at(cast2(bm, foes[1], 1, 1));
+});
+// 山河作骨：1 号觉醒时队友承伤 33% 分给他（记进 bank，上限最大生命 ×3）；山河击取 bank 转附加伤害（×188.88）、守势到下一回合末，期间被敌人打反击一次（×0.5）
+p3('p3.mountain', {level: 20, stage: 0, allyRobe: 0, foeAtk: 300, allyHp: 1000000}, ({bm, a, ally, foes, at}) => {
+  Y.wake(ally);
+  at({start: true, skills: ally.skills().map(s => s.id).filter(id => id >= 10270)});
+  at(cast2(bm, foes[1], 1, 0));
+  at(cast2(bm, ally, 10282, 1));
+  at(cast2(bm, foes[1], 1, 1));
+  at(cast2(bm, foes[1], 1, 1));
+});
+// 百厄成锦：收录身上新得的普通减益（没醒 3 个、醒 6 个；醒着当场去掉），下一次主动伤害命中转给主目标（醒：全部敌人）
+for (const woke of [false, true]) p3(`p3.hundred${woke ? '.awake' : ''}`, {level: 20, stage: 0, allyRobe: 1}, ({bm, a, ally, foes, at}) => {
+  if (woke) Y.wake(ally);
+  at({start: true});
+  ally.addState(5); ally.addState(6); ally.addState(55);
+  at({added: true});
+  at(cast2(bm, ally, 1, 1));
+});
+// 逆命换锦：没醒时换锦把自己的一个减益与目标的一个增益互换（原版选择窗，这里给 _yunExchangeSelf／_yunExchangeEnemy）；醒着（每次觉醒一次）全队减益转全敌、夺 3 个增益
+for (const woke of [false, true]) p3(`p3.exchange${woke ? '.awake' : ''}`, {level: 20, stage: 0, allyRobe: 4}, ({bm, a, ally, foes, at}) => {
+  if (woke) Y.wake(ally);
+  ally.addState(5); a.addState(6); foes[1].addState(55); foes[2].addState(43);
+  at({start: true, skills: ally.skills().map(s => s.id).filter(id => id >= 10270)});
+  at(cast2(bm, ally, 10283, 1, x => { x._yunExchangeSelf = 5; x._yunExchangeEnemy = 55; }));
+  at(cast2(bm, ally, 10283, 2, x => { x._yunExchangeSelf = 5; x._yunExchangeEnemy = 43; }));
+});
+// 一身两世：伤害行动结束后按每段命中复演一次（每回合一次；觉醒时每次 2 遍、不限回合）
+p3('p3.clone', {level: 20, stage: 0, allyRobe: 12}, ({bm, a, ally, foes, at}) => {
+  at({start: true});
+  at(cast2(bm, ally, 1, 1));
+  at(cast2(bm, ally, 1, 1));
+  Y.wake(ally);
+  at(cast2(bm, ally, 1, 1));
+});
+process.exit(finish(host, 'yunshang.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批前一半', cases}) ? 0 : 1);

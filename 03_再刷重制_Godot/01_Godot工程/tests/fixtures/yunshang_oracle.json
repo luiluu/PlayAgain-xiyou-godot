@@ -640,7 +640,7 @@
    "js/rpg_οbjects.js": "455b1890ff891795df24653e3b8c15ab6ef5050661656c2dd1840339b34d5b7d"
   }
  },
- "hostScope": "真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批",
+ "hostScope": "真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批前一半",
  "cases": [
   {
    "id": "skills.lv1.s0",
@@ -4443,6 +4443,2969 @@
        "e2": 1
       },
       "afterglow": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p3.debt",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 2,
+    "foeAtk": 5000,
+    "allyHp": 1000000
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "skills": [],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 2,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a1",
+        "value": 20867,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 2,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       10434
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 10433,
+       "due": [
+        2
+       ],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e2",
+        "value": 1731,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 2,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       10434
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 9861.77,
+       "due": [
+        2
+       ],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a1",
+        "value": 20867,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 2,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       20868
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 20294.77,
+       "due": [
+        2,
+        2
+       ],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e2",
+        "value": 1731,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 10286,
+        "target": "e2",
+        "value": 38372675,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 2,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       20868
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a1",
+        "value": 20867,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 2,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       31302
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 10433,
+       "due": [
+        2
+       ],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "end": true,
+      "round": 0,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 2,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       41735
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p3.debt.due",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 2,
+    "foeAtk": 5000,
+    "allyHp": 1000000
+   },
+   "observed": {
+    "steps": [
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a1",
+        "value": 20867,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 2,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       10434
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 10433,
+       "due": [
+        2
+       ],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "endTurn": 1,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 2,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       10434
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 10433,
+       "due": [
+        2
+       ],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "turn": 2,
+      "round": 2,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 2,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e2": 1,
+       "e1": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       10434
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 10433,
+       "due": [
+        2
+       ],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "endTurn": 2,
+      "round": 2,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 2,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e2": 1,
+       "e1": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       20867
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p3.ghost",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 3,
+    "foeAtk": 500000
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 3,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a1",
+        "value": 2159237,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 3,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       4813
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 2,
+       "ghostDone": 0,
+       "ghostUsed": true,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e2",
+        "value": 1731,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 3,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       4813
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 1,
+       "ghostDone": 1,
+       "ghostUsed": true,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e2",
+        "value": 1731,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 3,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       4814
+      ],
+      "alive": [
+       true,
+       false
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 2,
+       "ghostUsed": true,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a174",
+        "value": 3598555,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 3,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       4460,
+       4814
+      ],
+      "alive": [
+       false,
+       false
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 2,
+       "ghostUsed": true,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p3.ghost.awake",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 3,
+    "foeAtk": 500000
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 3,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a1",
+        "value": 2159237,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 3,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       4813
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 2,
+       "ghostDone": 0,
+       "ghostUsed": true,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e2",
+        "value": 1731,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 3,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       4813
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 1,
+       "ghostDone": 1,
+       "ghostUsed": true,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e2",
+        "value": 1731,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 3,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       2407
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 0.5,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 2,
+       "ghostUsed": true,
+       "revived": true,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a1",
+        "value": 2159237,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 3,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       4814
+      ],
+      "alive": [
+       true,
+       false
+      ],
+      "mp": 0.5,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 2,
+       "ghostUsed": true,
+       "revived": true,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p3.mountain",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 0,
+    "foeAtk": 300,
+    "allyHp": 1000000
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "skills": [
+       10282
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 0,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a174",
+        "value": 1346,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 0,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       902,
+       444
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 444,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 10282,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 10282,
+        "target": "e1",
+        "value": 464847,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 10282,
+        "target": "e1",
+        "value": 839500,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 0,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       902,
+       444
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 0.8875266524520256,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a1",
+        "value": 846,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 10282,
+        "target": "e1",
+        "value": 232424,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 0,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       902,
+       1290
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 0.8875266524520256,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "e1",
+      "log": [
+       {
+        "user": "e1",
+        "skill": 1,
+        "target": "a1",
+        "value": 846,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 0,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       902,
+       2136
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 0.8875266524520256,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p3.hundred",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 1
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 1,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "added": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 1,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": [
+        [
+         5,
+         4,
+         false
+        ],
+        [
+         6,
+         4,
+         false
+        ]
+       ]
+      },
+      "st": [
+       [],
+       [
+        [
+         6,
+         4
+        ],
+        [
+         5,
+         4
+        ],
+        [
+         55,
+         5
+        ]
+       ],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e1",
+        "value": 1731,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 1,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [],
+       [
+        [
+         6,
+         4
+        ],
+        [
+         5,
+         4
+        ]
+       ],
+       []
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p3.hundred.awake",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 1
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 1,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "added": true,
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 1,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": [
+        [
+         5,
+         4,
+         true
+        ],
+        [
+         6,
+         4,
+         true
+        ]
+       ]
+      },
+      "st": [
+       [],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e1",
+        "value": 1731,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 1,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         6,
+         4
+        ],
+        [
+         5,
+         4
+        ]
+       ],
+       [
+        [
+         6,
+         4
+        ],
+        [
+         5,
+         4
+        ]
+       ],
+       [
+        [
+         6,
+         4
+        ],
+        [
+         5,
+         4
+        ]
+       ]
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p3.exchange",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 4
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "skills": [
+       10283
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 4,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [
+        [
+         6,
+         4
+        ]
+       ],
+       [
+        [
+         5,
+         4
+        ]
+       ],
+       [],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ]
+       ]
+      ]
+     },
+     {
+      "cast": 10283,
+      "user": "a1",
+      "log": [],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 4,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 0.8976545842217484,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [
+        [
+         6,
+         4
+        ]
+       ],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [],
+       [
+        [
+         5,
+         4
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ]
+       ]
+      ]
+     },
+     {
+      "cast": 10283,
+      "user": "a1",
+      "log": [],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 4,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 0.8976545842217484,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [
+        [
+         6,
+         4
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ]
+       ],
+       [],
+       [
+        [
+         5,
+         4
+        ]
+       ],
+       []
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p3.exchange.awake",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 4
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "skills": [
+       10283
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 4,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [
+        [
+         6,
+         4
+        ]
+       ],
+       [
+        [
+         5,
+         4
+        ]
+       ],
+       [],
+       [
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ]
+       ]
+      ]
+     },
+     {
+      "cast": 10283,
+      "user": "a1",
+      "log": [],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 4,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 0.8976545842217484,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         6,
+         4
+        ],
+        [
+         5,
+         4
+        ]
+       ],
+       [
+        [
+         6,
+         4
+        ],
+        [
+         5,
+         4
+        ]
+       ],
+       [
+        [
+         6,
+         4
+        ],
+        [
+         5,
+         4
+        ]
+       ]
+      ]
+     },
+     {
+      "cast": 10283,
+      "user": "a1",
+      "log": [],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 4,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 0.8976545842217484,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         43,
+         1
+        ],
+        [
+         55,
+         5
+        ]
+       ],
+       [
+        [
+         6,
+         4
+        ],
+        [
+         5,
+         4
+        ]
+       ],
+       [
+        [
+         6,
+         4
+        ],
+        [
+         5,
+         4
+        ]
+       ],
+       [
+        [
+         6,
+         4
+        ],
+        [
+         5,
+         4
+        ]
+       ]
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p3.clone",
+   "setup": {
+    "level": 20,
+    "stage": 0,
+    "allyRobe": 12
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 12,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e1",
+        "value": 1731,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e1",
+        "value": 1731,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 12,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e1",
+        "value": 1731,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       null,
+       {
+        "key": 12,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
+     },
+     {
+      "cast": 1,
+      "user": "a1",
+      "log": [
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e1",
+        "value": 1731,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e1",
+        "value": 1731,
+        "critical": false
+       },
+       {
+        "user": "a1",
+        "skill": 1,
+        "target": "e1",
+        "value": 1731,
+        "critical": false
+       }
+      ],
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       null,
+       {
+        "key": 12,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false,
+      "hp": [
+       0,
+       0
+      ],
+      "alive": [
+       true,
+       true
+      ],
+      "mp": 1,
+      "d": {
+       "debt": 0,
+       "due": [],
+       "bank": 0,
+       "ghost": 0,
+       "ghostDone": 0,
+       "ghostUsed": false,
+       "revived": false,
+       "captured": []
+      },
+      "st": [
+       [],
+       [],
+       [],
+       [],
+       []
+      ]
      }
     ]
    },
