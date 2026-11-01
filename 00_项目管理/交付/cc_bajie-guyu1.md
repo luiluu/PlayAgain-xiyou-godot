@@ -2,7 +2,7 @@
 
 - 车道／工作者：C 规则／八戒（cc，八戒）
 - 状态：进行中
-- 分支从 main bbeecb5b 切（不带甚尔 toji2～4），工作树 `.claude/worktrees/sleepy-khayyam-db2439`。
+- 分支接在 cc/bajie-toji4 末端 6d8173e1 后面（总装八建议：谷雨也在 actor_modules、切片等处加行，带着甚尔切少一次冲突；先从 main bbeecb5b 切、做完一半后 rebase 过来），工作树 `.claude/worktrees/sleepy-khayyam-db2439`。
 
 ## 做到哪
 
@@ -66,5 +66,5 @@
 
 ## 本分支提交
 
-- 5be50577 WIP：XGuyu 与接线、切片加 175
-- 0d43bade 探针与专项、说明卡成长行
+- 30bb278f WIP：XGuyu 与接线、切片加 175
+- 069866f2 探针与专项、说明卡成长行
