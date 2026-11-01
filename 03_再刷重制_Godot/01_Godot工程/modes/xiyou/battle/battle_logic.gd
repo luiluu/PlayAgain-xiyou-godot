@@ -96,6 +96,7 @@ var _names_count := {}
 
 func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XGuyu.setup(self)  # 谷雨 BattleManager.setup 包装（原 setup 之前）：reset、activeBattle
+	XShieldLedger.setup(self)  # 护盾账本 startBattle 包装：清空、开始记账
 	s.sync_difficulty_on_battle()
 	random = random_context if random_context != null else s.reserve_battle_random()
 	replay_runtime_start = s.runtime_random_snapshot()
@@ -853,6 +854,7 @@ func end_turn() -> Array:
 	logs.append_array(XAlienBattle.round_end(self))  # endTurn 的异化包装（在种族包装之内）：蚀能、腐蚀
 	logs.append_array(XRaceBattle.round_end(self))  # endTurn 的种族包装：毒鸡汤结算、残响交接
 	XYunshang.end_turn(self)  # 云裳 endTurn 包装：六衡裁身回合末清除
+	XShieldLedger.round_end()  # 护盾账本 endTurn 包装（原 endTurn 之后）：撤销到期来源、衰减
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
 	_sync_orders(before, false)
@@ -1904,7 +1906,7 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 ## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：Boss输出→导入平衡→真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
 ## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
-	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：花荫先吸收；谷雨记本回合我方受伤（受伤压力）
+	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：账本先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):
 		var er := _action_resources.result(t)
@@ -2110,7 +2112,7 @@ func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = 
 		"HP":
 			var applied := value
 			if value < 0.0:
-				applied = -t.absorb_shield(-value)
+				applied = -t.absorb_shield(XShieldLedger.hp(t, -value))  # 护盾账本 gainHp／setHp 包装先吸收，再原生护盾
 				if not t is XActor:
 					shown = applied
 			applied = XSukuna.heal(t, applied)  # 宿傩 gainHp 包装：带伤口的受治疗减半
@@ -2231,7 +2233,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		if dh < 0.0:
 			# regenerateHp：先按 maxSlipDamage 夹到 hp−1，再吸收护盾、减半（弹字同 gainHp：角色记夹后原值，敌人记减免后）
 			shown = maxf(dh, -maxf(b.hp - 1.0, 0.0))
-			dh = -b.absorb_shield(-shown)
+			dh = -b.absorb_shield(XShieldLedger.hp(b, -shown))  # 护盾账本 setHp 包装先吸收，再原生护盾
 			if not b is XActor:
 				shown = dh
 		dh = XSukuna.heal(b, dh)  # 宿傩 gainHp 包装：带伤口的再生回复减半
@@ -2435,6 +2437,7 @@ func end_battle(result := -1) -> void:
 	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火
 	XGarou.clear_battle()  # 饿狼 endBattle 包装：清进化、解析、琦玉
 	XRaven.end_battle(state)  # 渡鸦 endBattle 包装：清神话形态
+	XShieldLedger.end_battle()  # 护盾账本 endBattle 包装（finally）：清空
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	# ShieldSystem Scene_Battle.terminate：全队与敌群护盾清零
 	for e in enemies:
