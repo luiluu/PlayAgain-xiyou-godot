@@ -1,7 +1,7 @@
 # 交付：cc/bajie-guyu2a
 
 - 车道／工作者：C 规则／八戒（cc，八戒）
-- 状态：进行中
+- 状态：可合并
 - 分支从 cc/bajie-guyu2 末端 424e383b（含一期 cc/bajie-guyu1 846f2ceb＋上一位的交接稿）切（总装九派），开工先合了 main（甚尔四期、云裳二期）；工作树 `.claude/worktrees/pensive-ardinghelli-6b5eb0`。一期还没并进 main，合本分支会把一期一起带进来（cc_bajie-guyu1.md 也在本分支上，状态可合并）。
 - 上一位的交接稿（原 cc_bajie-guyu2.md）已并进本单，原文件改名为本单。
 
@@ -47,7 +47,12 @@
 
 ## 验证
 
-（待写）
+- 专项：`xiyou_guyu_battle` 544/544（新）；`xiyou_guyu` 66/66。
+- 选测第一轮（本机 CHECK_JOBS=3，云端不用）：`xiyou_guyu`、`xiyou_guyu_battle`、`xiyou_actor_modules`、`xiyou_battle`（前缀扩出 xiyou_battle_* 共 8 个）、`xiyou_battle_gaps`、`xiyou_shield`、`xiyou_toji_battle`、`xiyou_yunshang`、`xiyou_sukuna_battle`、`xiyou_yomi_battle`、`xiyou_mira_battle`、`xiyou_raven_battle`、`xiyou_garou_battle`、`xiyou_race_battle`、`xiyou_alien_battle`、`xiyou_boss_lifecycle` 全过；`xiyou_actor_p0` 当时缺 174 参照（本树参照是主工作区旧批），同步后第二轮已过。
+- 同步（一轮）`同步正式西游.py --accept-additions`：「新增用例，已接受」（actor_passive、help_cards、slice_d1～d6、wtype 的 174／175 行，来自合进来的云裳与一期），来源核对 0 问题；`guyu.json`、`guyu_battle.json` 由同步重新生成。main 的参照里还没有这两份，总装合并后同步会当新增用例接受。
+- `内容覆盖检查.py`：new 0、resolved 0，不用更新 baseline。
+- 第二轮（同步后，`RULES_ONLY_ACTORS=175`）：`xiyou_actor_p0` 3403、`xiyou_actor_modules` 56、`xiyou_help_card` 1013、`xiyou_wtype` 16779、`xiyou_guyu` 66、`xiyou_guyu_battle` 544、`xiyou_rules`／`_d2`～`_d6` 各 1905～1907（前缀扩出各难度 b／c／d 份，共 30 个场景）全过。
+- `语法检查.py` 通过；没有偶发。
 
 ## 待交叉核查
 
@@ -68,3 +73,5 @@
 - d1c2ce81 合并 main（甚尔四期、云裳二期）
 - 9e8d8500 WIP：探针、XGuyu 战斗内、一行钩子、专项、同步登记
 - 2a960a96 WIP：专项 544/544、参照去掉五乘区与路线压制、治疗公式走 run_item
+- d2fcd2be WIP：同步通过、专项脚本 uid
+- 交付单可合并（本提交）
