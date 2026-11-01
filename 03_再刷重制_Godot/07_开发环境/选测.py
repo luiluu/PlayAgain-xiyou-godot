@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """选测（三级检查②，用户 2026-10-24）：按 git diff <基准> 的改动文件，查 选测对照.json 选出要跑的 Godot 场景与非 Godot 检查。
 
-用法：选测.py <基准提交> [--root 资料库] [--head 提交] [--shell]
+用法：选测.py <基准提交> [--root 资料库] [--head 提交] [--shell | --list]
 - 改动 = 基准到工作区（已提交＋未提交）的差异，加上未跟踪文件；每个文件按对照表第一条匹配的规则归组，各组取并集。
 - 引用查找（refs）：在 tests/*.gd、*.tscn 里找改动文件的文件名（如 orbs.gd、orb_probe.cjs）与它声明的 class_name；
   找到的是辅助脚本时换成用它的场景（如 xiyou_rules.gd → xiyou_rules*.tscn 全部段）。删除的文件从基准里读 class_name。
@@ -19,6 +19,8 @@
   （如 state_js_translation.json 只被 测试状态js翻译.py 读；2026-10-26 哪吒）。
 - --head 回放时测试场景与脚本也从 head 读（head 里新增的测试要找得到）。
 - 默认打印人读的选择理由；--shell 另在标准输出给 检查.sh 用的 SEL_FULL／SEL_SCENES／SEL_CHECKS（理由改到标准错误）。
+- --list（车道手写选测前用，tools35）：只在标准输出逐行打场景名（不带 .tscn，可直接接到 并行测试.py 后面），理由与结论改到标准错误；
+  整轮时不打场景名、退出 0 并在标准错误说明。车道交付的手写选测名单至少含这里列出的场景（至少战斗核心类），不跑要在交付单说明为什么。
 - 基准不存在、对照表无效时退出 2。
 """
 import argparse
@@ -359,13 +361,21 @@ def main(argv=None):
     ap.add_argument('--table', type=Path, default=TABLE)
     ap.add_argument('--head', help='只看 基准..这个提交 的差异（不含工作区），用来回看某次合并会选什么')
     ap.add_argument('--shell', action='store_true')
+    ap.add_argument('--list', action='store_true', help='标准输出只打场景名，一行一个')
     a = ap.parse_args(argv)
     try:
         sel = select(a.root, a.base, a.table, a.head)
     except (RuntimeError, ValueError, KeyError, OSError) as error:
         print('选测失败：' + str(error), file=sys.stderr)
         return 2
-    report(sel, sys.stderr if a.shell else sys.stdout)
+    report(sel, sys.stderr if a.shell or a.list else sys.stdout)
+    if a.list:
+        if sel['full']:
+            print('选测结论是整轮（有拿不准的改动）：没有可列的场景名，按整轮跑或问总装', file=sys.stderr)
+        else:
+            for x in sel['scenes']:
+                print(x[:-len('.tscn')] if x.endswith('.tscn') else x)
+        return 0
     if a.shell:
         safe = re.compile(r'^[A-Za-z0-9_.-]+$')
         assert all(safe.match(x) for x in sel['scenes'] + sel['checks'])
