@@ -11,7 +11,7 @@ const W := 320.0
 const MLH := 36.0
 const MTPAD := 6.0
 const ORIGINAL_ROWS := 2
-## 优化 O-待定：窗高按命令行数（10 级起 6 行全露出来）；false 照原版固定 2 行（建窗时的行数）、其余要滚动
+## 优化 O-139：窗高按命令行数（10 级起 6 行全露出来）；false 照原版固定 2 行（建窗时的行数）、其余要滚动
 static var FIT_ROWS := true
 
 

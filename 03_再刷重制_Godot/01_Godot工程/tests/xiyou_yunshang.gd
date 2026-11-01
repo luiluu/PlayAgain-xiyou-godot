@@ -24,6 +24,9 @@ class FixedStream extends XRandomStream:
 	func _take(kind: String, _reason: String, _event_key: String):
 		draws += 1
 		return value if kind == "float" else 2147483648
+	func next_index_mod(n: int, reason: String, event_key := "") -> int:
+		_take("uint32", reason, event_key)
+		return floori(n * value) if n > 0 else 0
 	func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
 		_take("uint32", reason, event_key)
 		return lo + floori((hi - lo + 1) * value)
@@ -253,10 +256,39 @@ func _run() -> void:
 				_p4_case(c)
 			"p5":
 				_p5_case(c)
-			"p6", "p7":
-				pass  # 战斗指令窗、天衣铺，xiyou_yunshang_ui 比
-	check("covers_all", seen.keys().size() == 11, seen.keys())
+			"p6", "p7", "p8", "p9":
+				pass  # 战斗指令窗 xiyou_yunshang_ui、天衣铺一二期与显示 xiyou_yunshang_shop 比
+	check("covers_all", seen.keys().size() == 13, seen.keys())
+	_copy_turns()
 	finish()
+
+
+## O-135：stateCopy 的来源身上没有这个状态、又没给回合数时（一身两世复演复制技能附加的状态），默认保留附加时掷出的回合数，
+## 回退（o_copy_turns = false）照原版写成永不到期
+func _copy_turns() -> void:
+	for keep in [true, false]:
+		var r := _battle(20, 0, false)
+		var logic: XBattleLogic = r[0]
+		var a: XActor = r[1]
+		var foe = logic.enemies[0]
+		if keep:
+			XYunshang.o_copy_turns = true
+		else:
+			XYunshang.o_copy_turns = false
+		var id := -1
+		for sid in XYunshang.TRANSFER_DEBUFFS:
+			if not a.state_ids.has(int(sid)) and XYunshang.state_copy(logic, a, foe, int(sid)):
+				id = int(sid)
+				break
+		check("copy_turns.%s.added" % keep, id > 0)
+		if id > 0:
+			var turns := int(foe.state_turns.get(id, -1))
+			if keep:
+				check("copy_turns.true", turns > 0 and turns < XYunshang.NEVER_EXPIRES, turns)
+			else:
+				check("copy_turns.false", turns == XYunshang.NEVER_EXPIRES, turns)
+		logic.end_battle(-1)
+	XYunshang.o_copy_turns = true
 
 
 
@@ -646,7 +678,7 @@ func _eye_view(logic: XBattleLogic, a: XActor, x := {}) -> Dictionary:
 
 
 ## p4.*（B 批后一半）：千军入袖、空袖藏星、九曲回针照 p3 的步骤比（_p3_case）；孤灯照众逐步比全队状态。
-## 千军入袖的溢出原版打不出（O-135，行动中目标 IMMORTAL）：先关开关照参照比，再开开关另比溢出（_sleeve_overflow）
+## 千军入袖的溢出原版打不出（O-136，行动中目标 IMMORTAL）：先关开关照参照比，再开开关另比溢出（_sleeve_overflow）
 func _p4_case(c: Dictionary) -> void:
 	if str(c.id) == "p4.sleeve":
 		XYunshang.o_sleeve_overflow = false
@@ -684,7 +716,7 @@ func _p4_case(c: Dictionary) -> void:
 		check("p4.lamp.%d.party" % i, got[i] == want[i], [got[i], want[i]])
 
 
-## O-135 开着：觉醒收袖打倒目标（生命 1000）时，第一段溢出＝这段伤害−1000，之后各段打在生命 0 的目标上整段溢出，依次传给 1 号敌人
+## O-136 开着：觉醒收袖打倒目标（生命 1000）时，第一段溢出＝这段伤害−1000，之后各段打在生命 0 的目标上整段溢出，依次传给 1 号敌人
 func _sleeve_overflow(c: Dictionary) -> void:
 	var r := _battle2(c.setup)
 	var logic: XBattleLogic = r[0]

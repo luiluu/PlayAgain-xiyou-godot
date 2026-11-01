@@ -12,8 +12,8 @@ extends RefCounted
 ## - 使用条件：见文末 legal。
 ## - 伤害钩子 cat-sword（持剑技加成、抱剑护身、巨龙减伤）在 cat_damage_hooks.gd（沙僧，模块挂接点），读这里的 advanced。
 ## 进阶 advanced() 读 XAdvance.rank（进阶后成长曲线、说明文字都随之变）。
-## 未移植（交付单写明）：进阶后额外行动（makeActionTimes＋1，在 battler，未接）、进阶后终技帮助品质 10（helpItem）、守誓巨龙试炼（9018，伤害钩子要宿主传 battleRound）、
-## 号角 2899 入队后不可用、Map132 商店补号角、段间 WAIT 6 的画面节奏。
+## 守誓巨龙试炼、进阶速剑多一次行动、178 在队号角不可用：见文末「守誓巨龙试炼」（参照 mv_oracle/cat_trial_probe.cjs，夹具 tests/fixtures/cat_trial_oracle.json，测试 tests/xiyou_cat_trial.gd）。
+## 不做：进阶后终技说明品质 10（helpItem）——七档品质里 9 与 10 都是不朽，名字色、边框、品质行都一样。未移植：段间 WAIT 6 的画面节奏。（Map132 商店补号角已在 XItemMarks 的 LOBBY_CAT_HORN。）
 ## 参照：mv_oracle/cat_probe.cjs（generated/oracle/cat.json），测试 tests/xiyou_cat.gd。
 
 const ACTOR := 178
@@ -626,3 +626,115 @@ static func legal(logic, a, item: Dictionary) -> bool:
 	if id == IDS.echo:
 		return false
 	return not (own(a) and int(item.get("stypeId", 0)) == 1 and not has_sword(a))
+
+
+# ---- 守誓巨龙试炼（公共事件 9018 的 CodexCat.startTrial，installImportedBalanceRuntime 第 247～263 行） ----
+# 原版把要还原的队伍记在 $gameSystem._codexCatTrial，首胜记 _codexCatTrialWon；这里照原名存进 s.flags（随存档）。
+# 队伍只剩 178：party＝[178]、出战栏 [178, 0, 0, 0, 0]（原版另设 _BattleMaxSize 1，重制出战栏固定 5 格，空格不出战，效果相同）。
+const TROOP := 1999
+const DRAGON := 1999
+const STONE := 2900
+const HORN := 2899
+## 巨龙按 (round−1)%5 出招：爪、蓄息、喷焰、空（不行动）、尾
+const DRAGON_SKILLS := [10447, 10448, 10449, 0, 10450]
+const SKILL_CHARGE := 10448
+const CHARGE_TEXT := "巨龙昂首蓄息！下一回合将喷出铜焰，架剑防御！"
+const TRIAL_NOT_READY := "小猫剑圣达到35级并装备剑后，才能挑战。"
+const TRIAL_WON := "守誓巨龙认可了你的剑。获得小猫进阶石×1！"
+const TRIAL_LOST := "试炼未通过，可再次挑战。"
+## trialDifficultyStates：固定预算的个人试炼不继承塔内挑战的怪物强化
+const TRIAL_DIFFICULTY_STATES := [1271, 1284, 1460, 1461, 1462, 1463, 1464, 1465, 1466, 1467, 1469, 1470, 1471, 1633, 1634, 1636,
+	1641, 1643, 1657, 1658, 1659, 1682]
+
+
+static func trial_ready(s: XState) -> bool:
+	return s.party.has(ACTOR) and int(s.actor(ACTOR).level) >= 35 and has_sword(s.actor(ACTOR))
+
+
+static func in_trial(s: XState) -> bool:
+	return s != null and s.flags.has("_codexCatTrial")
+
+
+## C.startTrial 换队那一半：记下队伍与出战栏，只留 178；开战（setup(1999, 不能逃, 可以输)）由调用处做。条件不够返回 false
+static func start_trial(s: XState) -> bool:
+	if not trial_ready(s):
+		return false
+	s.flags["_codexCatTrial"] = {"actors": s.party.duplicate(), "slots": s.battle_slots.duplicate()}
+	s.party.assign([ACTOR])
+	s.battle_slots = [ACTOR, 0, 0, 0, 0]
+	XZhenqi.pending_trial = {}  # CodexZhenqi._battle＝null：不让一笔待开的瓶颈之战吃掉这场
+	return true
+
+
+## restoreTrial：还原队伍；result 0（胜）首次给小猫进阶石，2（败）178 倒下时留 1 血。返回要提示的文字（没有时为空）
+static func restore_trial(s: XState, result: int) -> String:
+	if not in_trial(s):
+		return ""
+	var d: Dictionary = s.flags["_codexCatTrial"]
+	s.party.assign(d.actors.map(func(v): return int(v)))
+	s.battle_slots = d.slots.map(func(v): return int(v))
+	s.flags.erase("_codexCatTrial")
+	if result == 0 and not bool(s.flags.get("_codexCatTrialWon", false)):
+		s.flags["_codexCatTrialWon"] = true
+		s.gain_item(STONE, 1)
+		return TRIAL_WON
+	if result == 2:
+		var a := s.actor(ACTOR)
+		if a.is_dead():
+			a.hp = 1.0  # setHp(1)：refresh 见 HP 大于 0 就去掉阵亡状态
+			if a.state_ids.has(1):
+				a.remove_state(1)
+		return TRIAL_LOST
+	return ""
+
+
+## BattleManager.startBattle 包装（原 startBattle 之后）：试炼中 178 回满、TP 满
+static func trial_start_battle(logic) -> void:
+	if not in_trial(logic.state):
+		return
+	var a: XActor = logic.state.actor(ACTOR)
+	a.recover_all()
+	a.tp = a.max_tp()
+
+
+static func is_dragon(b) -> bool:
+	return b is XEnemy and int(b.enemy_id) == DRAGON
+
+
+## Game_Enemy.makeActions 包装（不看是否在试炼）：OTB 下 n＝round()＝max(1, 回合数)；空回合不行动。不是巨龙返回 []
+static func dragon_action(logic, e) -> Array:
+	if not is_dragon(e):
+		return []
+	var id: int = DRAGON_SKILLS[(maxi(1, int(logic.turn)) - 1) % 5]
+	if id == 0:
+		return [null, null]
+	var foes: Array = logic.actors.filter(func(a): return a.is_alive())
+	var t = logic.actors[0] if not logic.actors.is_empty() and logic.actors[0].is_alive() else (foes[0] if not foes.is_empty() else null)
+	return [XDB.rec("Skills", id), t]  # setTarget(0)：smoothTarget(0)，第一位活着的角色
+
+
+## BattleManager.startAction 包装：巨龙蓄息时日志加一行
+static func start_action(u, skill) -> Array:
+	if is_dragon(u) and skill is Dictionary and int(skill.get("id", 0)) == SKILL_CHARGE and not XBattleLogic.is_item(skill):
+		return [{"type": "battle_text", "text": CHARGE_TEXT}]
+	return []
+
+
+## Game_Enemy.addState 包装：试炼中的巨龙（敌人 1999 只在敌群 1999 里）不吃 22 个难度状态
+static func trial_blocks_state(e, id: int) -> bool:
+	return is_dragon(e) and in_trial(XState.current) and TRIAL_DIFFICULTY_STATES.has(id)
+
+
+## Game_Enemy.param 最外层包装（不看是否在试炼）：巨龙用数据库原值。不是巨龙返回 NAN
+static func dragon_param(e, i: int) -> float:
+	return float(e.data().params[i]) if is_dragon(e) else NAN
+
+
+## makeActionTimes 包装：进阶且学了速剑 10442，多 1 次行动
+static func extra_actions(b) -> int:
+	return 1 if advanced(b) and learned(b, SKILL_SPEED) else 0
+
+
+## Game_BattlerBase.canUse 包装：178 在队时号角 2899 不能用
+static func horn_blocked(s: XState, item: Dictionary) -> bool:
+	return s != null and XBattleLogic.is_item(item) and int(item.get("id", 0)) == HORN and s.party.has(ACTOR)

@@ -65,6 +65,33 @@ class ParseTests(unittest.TestCase):
 
 
 class ScanTests(Fixture):
+    def test_remove_entry_form_and_erase_coverage(self):
+        """tools36：「`X.NAME` 删 `条目` 一条」认得出（O-062 TRANSFER_FIX）；测试里有 NAME.erase("条目") 才算覆盖，否则缺口，不再是「解析不了」。"""
+        self.assertEqual(rb.parse_switches('`MVInterpreter.TRANSFER_FIX` 删 `4:36:157:24:12` 一条'), [('MVInterpreter', 'TRANSFER_FIX', '删:4:36:157:24:12')])
+        self.put('core/interp.gd', 'class_name XInterp\nstatic var FIX := {"a:1": 1, "b:2": 2}\n')
+        self.put('tests/a.gd', 'func t():\n\tXInterp.FIX.erase("a:1")\n')
+        self.register(row('O-001', '`XInterp.FIX` 删 `a:1` 一条'), row('O-002', '`XInterp.FIX` 删 `b:2` 一条'))
+        got = self.by_key()
+        self.assertEqual(got['O-001 XInterp.FIX']['status'], '覆盖')
+        self.assertEqual(got['O-002 XInterp.FIX']['status'], '缺口')
+        self.assertEqual(rb.scan(self.root)['unparsed'], [])
+
+    def test_gap_line_names_lane_that_last_touched_it(self):
+        """tools36：缺口行带「最后改它的」车道（git log 里把那次提交并进主线的合并标题）。"""
+        env = {**os.environ, 'GIT_AUTHOR_NAME': 'f', 'GIT_AUTHOR_EMAIL': 'f@x.invalid', 'GIT_COMMITTER_NAME': 'f', 'GIT_COMMITTER_EMAIL': 'f@x.invalid'}
+        g = lambda *a: subprocess.run(['git', '-C', str(self.root), *a], check=True, capture_output=True, text=True, env=env).stdout
+        self.put('core/pets.gd', 'class_name XPets\nstatic var CLAMP := true\n')
+        g('init', '-b', 'main'); g('add', '.'); g('commit', '-m', 'base')
+        g('switch', '-c', 'cc/lane1')
+        self.put('core/pets.gd', 'class_name XPets\nstatic var CLAMP := true\nstatic var OTHER := 1\n')
+        self.put('core/pets2.gd', 'class_name XPets2\nstatic var CLAMP2 := true\n')
+        g('add', '.'); g('commit', '-m', 'lane work'); g('switch', 'main')
+        g('merge', '--no-ff', 'cc/lane1', '-m', '合并 cc/lane1')
+        self.assertEqual(rb.last_lane(self.root, 'core/pets2.gd', 'CLAMP2'), '合并 cc/lane1')
+        self.register(row('O-002', '`XPets2.CLAMP2` 设 false'))
+        rc, out = self.run_tool()
+        self.assertIn('最后改它的：合并 cc/lane1', out)
+
     def test_coverage_literal_dynamic_and_gap(self):
         self.put('core/pets.gd', 'class_name XPets\nstatic var BOOK_FIX := true\nstatic var CLAMP := true\nstatic var EXACT := true\n')
         self.put('ui/card.gd', 'class_name XCard\nconst NEAR := true\n')

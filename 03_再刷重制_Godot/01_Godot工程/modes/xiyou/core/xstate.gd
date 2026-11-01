@@ -186,6 +186,7 @@ var erased_events: Array[int] = []
 ## 存档时由地图场景现取（map_event_snapshot）；读档后地图场景整图重建时套回一次（XMapScene.load_map）。旧档没有＝事件回初始。
 var map_events: Dictionary = {}
 var map_event_snapshot: Callable
+var player_move_speed := 4         # Game_Player._moveSpeed（大厅 Map004 EV044 调速脚本；下载具时 setMoveSpeed(4)）；走路实际速度再按冲刺加 1
 var followers_visible := true      # Game_Followers._visible（初值 System optFollowers；指令 216、设置「队列跟随」）
 var pingbi_quality: Array = []      # 屏蔽掉落：旧档 0～7 是否屏蔽（$gameSystem._pingbiQuality）
 ## 副本上下文（XDungeon：进门时的 pending、进入后的 context）、副本 Boss 熟练度（$gameSystem._codexBossMastery：敌群 → 次数）、
@@ -702,7 +703,22 @@ func gain_gear(kind: String, base_id: int, amount: int) -> void:
 		for i in range(-amount):
 			var idx := gear.find_custom(func(e): return e.kind == kind and int(e.base) == base_id)
 			if idx >= 0:
-				gear.remove_at(idx)
+				lose_gear(gear[idx], false)  # 按底子扣（getMatchingBaseItem→removeIndependentItem），不经这一件的 gainItem，不记云裳账本
+
+## 装备离开背包、不再属于队伍（卖出、存进仓库、分解、按底子扣）的统一出口：从背包拿掉这件实例，返回有没有拿到。
+## record：这一件是直接被失去的（原版 $gameParty.loseItem(这件)），带 _yunUid 的云裳天衣就照 installNativeYunshangRuntime 第 200～204 行的
+## gainItem 包装记进订单账本（重放时由账本移除，读更早的档也移除）；账本不可用时照常拿掉（原版这里会抛错、卖不掉）。
+## 穿上／卸下（XEquipment.change、专属角色招募时装上法宝）是交换，不走这里。
+func lose_gear(item: Dictionary, record := true) -> bool:
+	var i := gear.find_custom(func(e): return is_same(e, item))
+	if i < 0:
+		return false
+	if record and str(item.get("_yunUid", "")) != "":
+		XYunshangOrders.lost(self, item)
+		i = gear.find_custom(func(e): return is_same(e, item))
+	if i >= 0:
+		gear.remove_at(i)
+	return true
 
 func register_gear(item: Dictionary) -> void:
 	var defaults := XGear.template(str(item.kind),int(item.base))
@@ -782,7 +798,7 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "designation": designation, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "battleBgm": battle_bgm, "vehicles": [vehicle(0), vehicle(1), vehicle(2)], "vehicleType": vehicle_type, "walkingBgm": walking_bgm, "battleback": battleback, "erasedEvents": erased_events, "mapEvents": map_event_snapshot.call() if map_event_snapshot.is_valid() else map_events, "encounterEnabled": encounter_enabled, "allowAutosave": allow_autosave, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "playerMoveSpeed": player_move_speed, "battleBgm": battle_bgm, "vehicles": [vehicle(0), vehicle(1), vehicle(2)], "vehicleType": vehicle_type, "walkingBgm": walking_bgm, "battleback": battleback, "erasedEvents": erased_events, "mapEvents": map_event_snapshot.call() if map_event_snapshot.is_valid() else map_events, "encounterEnabled": encounter_enabled, "allowAutosave": allow_autosave, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "unknownOrigin": unknown_origin, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "costumeOff": costume_off, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills), "codexRaven": XRaven.to_save(raven), "codexGarou": XGarou.to_save(garou)}
 
@@ -921,6 +937,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.hang_up_total = int(d.get("hangUpTotal", 0))
 	s.pingbi_quality = Array(d.get("pingbiQuality", [])).map(func(v): return bool(v))
 	s.followers_visible = bool(d.get("followersVisible", XDB.system().get("optFollowers", false)))
+	s.player_move_speed = clampi(int(d.get("playerMoveSpeed", 4)), 1, 6)
 	s.battle_bgm = d.get("battleBgm", {}) if d.get("battleBgm", {}) is Dictionary else {}
 	# 载具：旧档没有＝System 起始位置、走路；缺的键按缺省补
 	var vs = d.get("vehicles", [])

@@ -62,7 +62,7 @@ func _same(name: String, got: Dictionary, want: Dictionary) -> void:
 		if k == "rates":
 			continue  # 重制的实例不改特性（原表就是这三条）；原版重复的那一例见 _case
 		if k == "params" and w.get("rates", []).size() != 3:
-			# O-待定：原版刚招募、没改过等级的实例倍率特性重复（生命 ×1.6、物防 ×1.4），重制不重现；这一例只比其余六项
+			# O-137：原版刚招募、没改过等级的实例倍率特性重复（生命 ×1.6、物防 ×1.4），重制不重现；这一例只比其余六项
 			check(name + ".params_dup", g.params[0] < w.params[0] and g.params[3] < w.params[3] and g.params.slice(1, 3) == w.params.slice(1, 3)
 				and g.params.slice(4) == w.params.slice(4), [g.params, w.params])
 			continue

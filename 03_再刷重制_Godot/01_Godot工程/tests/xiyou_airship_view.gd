@@ -63,6 +63,14 @@ func _until(cond: Callable, limit := WAIT) -> bool:
 	return cond.call()
 
 
+## 等地图 _process（画面帧）摆好名牌：按条件等，最多 120 个画面帧；至少让出 3 帧，测试节点可能先于地图走帧
+func _plates(cond: Callable) -> void:
+	for i in 120:
+		await get_tree().process_frame
+		if i >= 2 and cond.call():
+			return
+
+
 func _wait_map(id: int) -> XMapScene:
 	var ok := await _until(func():
 		var m = get_tree().current_scene
@@ -218,14 +226,12 @@ func _run() -> void:
 	# 头顶名牌（XDesignationPlate）：走路时挂在玩家上、在精灵原点上方 6＋48、画布 180×78；飞艇那张藏着
 	s.actor_name = "测试名"
 	s.designation = {"name": "征服者", "icon": 1468, "color": "#7b68ee"}
-	for i in 3:
-		await get_tree().process_frame  # 地图 _process 每帧摆名牌；测试节点可能先于地图走帧
+	await _plates(func(): return map.player_plate != null and map.airship_plate != null and map.player_plate.visible and not map.airship_plate.visible)  # 名牌由地图 _process 摆，条件等
 	_check("plate_walk", map.player_plate != null and map.player_plate.visible and map.player_plate.position == Vector2(-90, -6 - 48 - 78)
 		and map.player_plate.size == Vector2(180, 78) and map.airship_plate != null and not map.airship_plate.visible,
 		[map.player_plate.position if map.player_plate else null, map.player_plate.visible if map.player_plate else null])
 	await _get_on("first")
-	for i in 3:
-		await get_tree().process_frame  # 同 plate_walk：等地图 _process 摆过名牌（负载高时升空的物理帧会挤在少数几个画面帧里）
+	await _plates(func(): return not map.player_plate.visible and map.airship_plate.visible)  # 同上：按条件等地图 _process 摆过名牌，不数固定帧数
 	# 乘上飞艇：玩家透明，名牌跟着藏；飞艇那张显示（玩家坐着它、位置重合），随飞艇升高
 	_check("plate_airship", not map.player_plate.visible and map.airship_plate.visible and map.airship_plate.get_parent() == map.airship,
 		[map.player_plate.visible, map.airship_plate.visible])

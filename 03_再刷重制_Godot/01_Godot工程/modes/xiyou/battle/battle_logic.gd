@@ -177,6 +177,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XYunshang.start_battle(self)  # 云裳 startBattle 包装：建战斗数据、天衣无缝全醒
 	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
 	XSukuna.start_tp(self)  # 宿傩 startBattle 包装（之后）：TP 至少 60
+	XCat.trial_start_battle(self)  # 小猫试炼 startBattle 包装（之后）：178 回满、TP 满
 	# 本版改过的 BattleManager.startBattle：每场开战预约公共事件 1320「战斗开始时调整变量」，开战第一次事件检查先跑它
 	XBattleCommonEvent.reserve(self, XBattleCommonEvent.START_EVENT)
 
@@ -761,6 +762,9 @@ func next_subject() -> XBattler:
 ## 行动者当场决定的行动：敌人按 AI，角色在自动战斗时按自动规则，否则普通攻击。返回 [技能, 目标]。
 func decide(b: XBattler) -> Array:
 	if b is XEnemy:
+		var cat := XCat.dragon_action(self, b)  # 小猫试炼巨龙 makeActions 包装：按回合轮换出招，不掷随机数
+		if not cat.is_empty():
+			return cat
 		var sk := enemy_action(b)
 		return [null if sk.is_empty() else sk, null]  # 没有行动：同逃跑失败的放弃（processTurn 没有 currentAction 就 endAction）
 	return auto_battle_action(b) if auto else [b.attack_skill(), null]
@@ -1282,7 +1286,7 @@ func make_action_times(b: XBattler) -> int:
 	for p in b.action_plus_set():
 		if _float("action_times") < float(p):
 			n += 1
-	return n
+	return n + XCat.extra_actions(b)  # 小猫剑圣 makeActionTimes 包装：进阶学了速剑多 1 次
 
 
 ## otbClearActionOrdersOfUnableBattlers
@@ -1440,6 +1444,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	else:
 		u.refresh_resources()
 	logs.append({"type": "action", "user": u, "skill": skill, "views": views()})
+	logs.append_array(XCat.start_action(u, skill))  # 小猫试炼 startAction 包装：巨龙蓄息时日志加一行
 	if blocked:
 		return logs
 	if XToji.suppressed(self, u, skill):  # 甚尔天逆鉾封印 applyGlobal 包装：这次主动技能失效（扣一次），整段序列跳过
@@ -1651,9 +1656,11 @@ func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 	if XGuyu.sure(skill):  # 谷雨 itemEva 包装：绽放、终结、治疗不闪避
 		return 0.0
-	if XYomiJingliu.sure(u, skill) or XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t) or XToji.sure(u, skill):  # 黄泉技能、云裳伤害技能、宿傩斩击打有看破的目标、甚尔五感主技能／武器库 itemEva 包装：不闪避
+	if XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t) or XToji.sure(u, skill):  # 云裳伤害技能、宿傩斩击打有看破的目标、甚尔五感主技能／武器库 itemEva 包装：不闪避
 		return 0.0
-	return clampf(_hit_formula("Evade Formula", "0", u, skill, t) + XToji.eva_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemEva 包装：被打时天与咒缚影速
+	# 镜流黄泉的包装在甚尔里面：必中只把内层闪避压成 0，甚尔照样加目标的影速（审查第 18 期 P3②，参照 toji_eva_probe）
+	var base := 0.0 if XYomiJingliu.sure(u, skill) else _hit_formula("Evade Formula", "0", u, skill, t)
+	return clampf(base + XToji.eva_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemEva 包装：被打时天与咒缚影速
 
 
 static var _hit_exprs := {}
@@ -2297,6 +2304,7 @@ func rewards() -> Dictionary:
 		exp += floori(e.exp_reward() * float(rates[0]))
 		gold += floorf(e.gold_reward() * float(rates[1])) * gold_rate
 		drops.append_array(drops_of(e))
+	drops.append_array(XMira.abyss_bonus(self))  # 米拉 makeRewards 包装：深渊地图 1/30 黑龙进阶石
 	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
 	return {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8, "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
 
@@ -2429,7 +2437,7 @@ func end_battle(result := -1) -> void:
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XSukuna.end_battle(self)  # 宿傩 endBattle 包装：清战斗数据与领域、适应、觉醒状态
-	XYunshang.end_battle(self)  # 云裳 endBattle 包装：结清赊账、结束衣魂，清战斗数据、御风、余辉、符针
+	XYunshang.end_battle(self, result)  # 云裳 endBattle 包装：不朽天丝，结清赊账、结束衣魂，清战斗数据、御风、余辉、符针
 	XBlackFlash.end_battle(self)  # 黑闪 endBattle 包装
 	XToji.end_battle(self)  # 甚尔 endBattle 包装：清形态
 	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火

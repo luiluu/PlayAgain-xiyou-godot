@@ -82,6 +82,19 @@ class Fixture(unittest.TestCase):
 
 
 class SelectTests(Fixture):
+    def test_list_prints_scene_names_one_per_line(self):
+        """tools35：--list 供车道手写选测前对照：标准输出只有场景名（不带 .tscn），理由走标准错误。"""
+        import contextlib, io
+        self.put(CORE / 'battler.gd', 'class_name XBattler\n# changed\n')
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sel.main([self.base, '--root', str(self.root), '--list'])
+        self.assertEqual(rc, 0)
+        names = out.getvalue().split()
+        self.assertIn('xiyou_battle', names)
+        self.assertTrue(all(not n.endswith('.tscn') for n in names))
+        self.assertIn('== 选测', err.getvalue())
+
     def test_docs_only(self):
         self.put(Path('00_项目管理/交接板.md'), '# board 2\n')
         self.put(SUB / '00_设计/新文档.md', 'new\n')  # 未跟踪也算改动
@@ -330,6 +343,13 @@ class SliceSectionTests(SliceFixture):
         self.assertEqual(s['scenes'], ['ui_smoke.tscn', 'xiyou_event_compare.tscn', 'xiyou_panels.tscn'])
         self.assertEqual(s['checks'], ['guards', 'tools'])
 
+    def test_sv_folders_is_asset_key_not_converter(self):
+        """tools37：extraSvFolders（导出时拷的 SV 战斗图文件夹）原来不在键表里，一改就退回整组 converter（rules 全部段）；现归图像组。"""
+        self.edit(extraSvFolders=['UserSV_A'])
+        s = self.pick()
+        self.assertEqual(s['scenes'], ['ui_smoke.tscn', 'xiyou_event_compare.tscn', 'xiyou_panels.tscn'])
+        self.assertFalse(set(RULES) & set(s['scenes']))
+
     def test_bad_json_and_unknown_key_fall_back_to_converter(self):
         self.put(SLICE, '{"maps": [1, 2, 69],\n')
         s = self.pick()
@@ -482,7 +502,7 @@ class MergeBaseTests(Fixture):
 
 
 STUB_CHECKS = ['测试工作树清理.py', '测试导出过滤.py', '测试共性验收.py', '测试合并工具.py', '测试公式程序.py', '测试转换器写入.py',
-               '测试记录工具.py', '测试云端准备.py', '测试内容覆盖.py', '测试角色同步提速.py', '测试事件探针分段.py', '测试状态js翻译.py', '测试参照批次.py', '测试提交守卫.py', '测试回退开关覆盖.py', '回退开关覆盖.py', '语法检查.py', '参照批次.py', '测试选测.py', '变更记录分卷.py', '待核查.py']
+               '测试记录工具.py', '测试云端准备.py', '测试内容覆盖.py', '测试角色同步提速.py', '测试事件探针分段.py', '测试状态js翻译.py', '测试参照批次.py', '测试提交守卫.py', '测试回退开关覆盖.py', '回退开关覆盖.py', '探针登记检查.py', '测试反向验证.py', '语法检查.py', '参照批次.py', '测试选测.py', '变更记录分卷.py', '待核查.py']
 
 
 class CheckerTests(Fixture):
@@ -635,8 +655,8 @@ class CheckerTests(Fixture):
         self.assertIn('== 选测', out)
         self.assertIn('跳过导入与测试', out)
         self.assertIn('选测全部通过', out)
-        # 回退开关覆盖属文档与登记（读优化登记），只改文档也跑（tools26，不到 1 秒、只警告）
-        self.assertEqual(self.names(ran), ['boot_check.cjs', '变更记录分卷.py', '回退开关覆盖.py', '待核查.py'])
+        # 回退开关覆盖属文档与登记（读优化登记），只改文档也跑（tools26，不到 1 秒、只警告）；探针登记检查同样每次跑（tools31 守卫，不到 1 秒）
+        self.assertEqual(self.names(ran), ['boot_check.cjs', '变更记录分卷.py', '回退开关覆盖.py', '待核查.py', '探针登记检查.py'])
 
     def test_ui_change_runs_selected_scenes_only(self):
         self.put(UI / 'shop.gd', 'class_name XShopScene\n# 2\n')

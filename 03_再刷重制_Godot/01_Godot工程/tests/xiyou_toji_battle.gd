@@ -33,6 +33,15 @@ class HalfStream extends XRandomStream:
 			return float(toji.pop_front())
 		return 0.5 if kind == "float" else 2147483648
 
+	## 参照里 Math.random 恒为 0.5：整数取法是 floor(0.5×n)＝n÷2，不是原始 uint 2^31 对 n 取模（同 xiyou_alien_affix）
+	func next_index_mod(n: int, reason: String, event_key := "") -> int:
+		next_uint(reason, event_key)
+		return n / 2 if n > 0 else 0
+
+	func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
+		next_uint(reason, event_key)
+		return lo + (hi - lo + 1) / 2
+
 
 ## 同参照 battle()：新局、开 2494、队伍 [171, 1] 各 55 级；敌人生命加 1e18；规则流全取 0.5
 func _battle(flash := [], rank := 0) -> Array:
@@ -260,7 +269,7 @@ func _rate_row(logic: XBattleLogic, u: XBattler, t: XBattler, sid: int, want: Di
 
 
 ## 暴君（参照 tyrant）：挡负面状态与弱化；忘掉后照常加；学回时清负面状态。弱化：原版清到一半抛错留着（CLEAR_DEBUFFS＝false 照原版），
-## 重制默认清掉（O-131）
+## 重制默认清掉（O-138）
 func _tyrant(c: Dictionary) -> void:
 	var r := _battle()
 	var logic: XBattleLogic = r[0]
@@ -281,7 +290,7 @@ func _tyrant(c: Dictionary) -> void:
 	XToji.CLEAR_DEBUFFS = false
 	a.learn_skill(XToji.TYRANT)
 	XToji.CLEAR_DEBUFFS = true
-	check("tyrant.original_threw", str(o.relearned.get("threw")) == "removeDebuff 不存在", o.relearned.get("threw"))  # 原版清弱化抛错（O-131 CLEAR_DEBUFFS）
+	check("tyrant.original_threw", str(o.relearned.get("threw")) == "removeDebuff 不存在", o.relearned.get("threw"))  # 原版清弱化抛错（O-138 CLEAR_DEBUFFS）
 	check("tyrant.relearned_original", has.call() == _norm(o.relearned.states) and _norm(a.buffs) == _norm(o.relearned.buffs) and bool(o.relearned.learned) and a.skill_ids.has(XToji.TYRANT), [has.call(), a.buffs])
 	a.learn_skill(XToji.TYRANT)
 	check("tyrant.relearned_cleared", not a.buffs.any(func(v): return v < 0), a.buffs)

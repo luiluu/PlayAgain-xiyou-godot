@@ -40,6 +40,8 @@ static func grade_name(item: Dictionary) -> String:
 
 
 static func color_text(item: Dictionary) -> String:
+	if XYunshang.is_robe(item):  # 云裳 normalcolor／namecolor 包装：15 件天衣用粉色
+		return XYunshang.ROBE_COLOR
 	return str(config().colors[grade(item)])
 
 

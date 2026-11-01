@@ -241,8 +241,7 @@ static func dismantle(s: XState, i: Dictionary) -> Dictionary:
 	var n := 5 if str(mark(i).origin) == "boss" else 1
 	if s.item_count(energy_id()) + n > MAX_ITEMS:
 		return {"error": "异化能量已达持有上限"}
-	var idx := s.gear.find_custom(func(e): return is_same(e, i))
-	s.gear.remove_at(idx)
+	s.lose_gear(i)  # $gameParty.loseItem(i, 1)
 	s.gain_item(energy_id(), n)
 	return {"ok": n}
 

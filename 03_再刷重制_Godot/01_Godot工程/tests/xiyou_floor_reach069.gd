@@ -9,6 +9,10 @@ extends Node
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
+const ROUTE := preload("res://tests/xiyou_airship_route.gd")
+const REACH := preload("res://tests/xiyou_reach_check.gd")
+## 进天之上的落点：恰兰吉尔南出口（Map071 EV3）进 (63,50)，飞艇停在 (65,56)（同 xiyou_floor_reach094、xiyou_airship_fly）
+const SKY_ENTRY := Vector2i(63, 50)
 
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
@@ -127,6 +131,7 @@ func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
 func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = s
+	ROUTE.park(s, 69)
 	s.map_id = map_id
 	s.x = x
 	s.y = y
@@ -171,24 +176,33 @@ func _tianzhishang() -> void:
 	s.gain_item(731, 1)
 	await _run_event(map, 51, [0], "")
 	_check("tree_purify", s.item_count(731) == 0 and s.item_count(2530) == 3, [s.item_count(731), s.item_count(2530)])
-	# 镇凶塔：查看、镇压六臂魔猿
+	# 镇凶塔：在别的岛上（块 38），从落点走不到；坐飞艇到塔旁、面向它（原来在落点直接跑），再查看、镇压六臂魔猿
+	_check("tower_needs_airship", REACH.unreachable(map, map.player.grid, [71]) == [71], map.player.grid)
+	_check("tower_reach", await ROUTE.new(self, map).approach(71), map.player.grid)
 	s.set_variable(202, 0)
 	var n0 := battles.size()
 	await _run_event(map, 71, [0, 0], "win")
 	map = _scene()
 	_check("tower_boss", battles.size() == n0 + 1 and battles[-1].troop == 396 and battles[-1].result == 0, [battles.slice(n0)])
 	_check("tower_var", int(s.variable(202)) >= 0 and int(s.variable(202)) <= 2, [s.variable(202)])
-	# 回恰兰吉尔
-	await _run_event(map, 5, [], "")
+	# 回恰兰吉尔：从塔那块走回飞艇、飞回落点那块、走过去踩出口
+	_check("sky_back_fly", await ROUTE.new(self, map).go(5), [_scene().map_id, _scene().player.grid])
 	_check("sky_back_town", await _wait_map(71) and _scene().player.grid == Vector2i(40, 75), [_scene().map_id, _scene().player.grid])
 
 
-## 近邻三张图（含帐篷）：进出与商店
+## 入口在别的岛上：先核从现在的位置走不到（要坐飞艇），再走到飞艇、飞过去降落、走过去踩／撞入口（原来直接跑入口事件）
+func _fly_in(tag: String, ev: int, answers := []) -> bool:
+	var map: XMapScene = _scene()
+	_check(tag + "_needs_airship", REACH.unreachable(map, map.player.grid, [ev]) == [ev], map.player.grid)
+	return _check(tag + "_fly_in", await ROUTE.new(self, map).go(ev, answers), [_scene().map_id, _scene().player.grid])
+
+
+## 近邻三张图（含帐篷）：进出与商店（都从进天之上的落点坐飞艇过去）
 func _neighbors() -> void:
-	var s := _start(69, 92, 8, 8)
+	var s := _start(69, SKY_ENTRY.x, SKY_ENTRY.y, 8)
 	if not _check("sky_start", await _wait_map(69)):
 		return
-	await _run_event(_scene(), 44, [], "")
+	await _fly_in("river", 44)
 	if not _check("river_entered", await _wait_map(88) and _scene().player.grid == Vector2i(19, 20), [_scene().map_id, _scene().player.grid]):
 		return
 	var map: XMapScene = _scene()
@@ -202,8 +216,8 @@ func _neighbors() -> void:
 	_scene().player.direction = 2   # EV4 条件：面朝下
 	await _run_event(_scene(), 4, [], "")
 	_check("river_to_sky", await _wait_map(69) and _scene().player.grid == Vector2i(92, 8), [_scene().map_id, _scene().player.grid])
-	# 蓝天飞艇公司
-	await _run_event(_scene(), 48, [], "")
+	# 蓝天飞艇公司：从魂河畔回来的那块走回飞艇再飞
+	await _fly_in("airship", 48)
 	if not _check("airship_entered", await _wait_map(91) and _scene().player.grid == Vector2i(16, 31), [_scene().map_id, _scene().player.grid]):
 		return
 	map = _scene()
@@ -211,7 +225,7 @@ func _neighbors() -> void:
 	await _run_event(map, 2, [], "")
 	_check("airship_back", await _wait_map(69) and _scene().player.grid == Vector2i(64, 24), [_scene().map_id, _scene().player.grid])
 	# 飨龙教堂
-	await _run_event(_scene(), 69, [], "")
+	await _fly_in("church", 69)
 	if not _check("church_entered", await _wait_map(112) and _scene().player.grid == Vector2i(9, 19), [_scene().map_id, _scene().player.grid]):
 		return
 	map = _scene()

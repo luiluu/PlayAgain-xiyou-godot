@@ -8,6 +8,10 @@ extends Node
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
+const ROUTE := preload("res://tests/xiyou_airship_route.gd")
+const REACH := preload("res://tests/xiyou_reach_check.gd")
+## 进天之上的落点：恰兰吉尔南出口（Map071 EV3）进 (63,50)，飞艇停在 (65,56)（同 xiyou_floor_reach069、xiyou_airship_fly）
+const SKY_ENTRY := Vector2i(63, 50)
 
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
@@ -125,6 +129,7 @@ func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
 func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = s
+	ROUTE.park(s, 69)
 	s.map_id = map_id
 	s.x = x
 	s.y = y
@@ -205,10 +210,13 @@ func _cthulhu() -> void:
 
 ## 一张野外图：进、事件在、遇敌表、真遇敌打完一场、出
 func _field(tag: String, enter_ev: int, enter_dir: int, map_id: int, arrive: Vector2i, events: Array, exit_dir: int, back: Vector2i, troops: Array) -> void:
-	_start(69, back.x, back.y, enter_dir)
+	_start(69, SKY_ENTRY.x, SKY_ENTRY.y, enter_dir)
 	if not _check(tag + "_sky", await _wait_map(69)):
 		return
-	await _run_event(_scene(), enter_ev, [], "")
+	# 入口在别的岛上：从落点走不到（要坐飞艇）
+	_check(tag + "_needs_airship", REACH.unreachable(_scene(), _scene().player.grid, [enter_ev]) == [enter_ev])
+	# 从进天之上的落点走到飞艇、飞到入口所在的岛、降落后走过去踩／撞入口（原来直接跑入口事件）
+	_check(tag + "_fly_in", await ROUTE.new(self, _scene()).go(enter_ev), [_scene().map_id, _scene().player.grid])
 	if not _check(tag + "_entered", await _wait_map(map_id) and _scene().player.grid == arrive, [_scene().map_id, _scene().player.grid]):
 		return
 	var map: XMapScene = _scene()
@@ -235,10 +243,11 @@ func _field(tag: String, enter_ev: int, enter_dir: int, map_id: int, arrive: Vec
 
 ## 北丑居：进、南贤（修炼界面）、出
 func _beichou() -> void:
-	_start(69, 64, 6, 8)
+	_start(69, SKY_ENTRY.x, SKY_ENTRY.y, 8)
 	if not _check("bc_sky", await _wait_map(69)):
 		return
-	await _run_event(_scene(), 45, [], "")
+	_check("bc_needs_airship", REACH.unreachable(_scene(), _scene().player.grid, [45]) == [45])
+	_check("bc_fly_in", await ROUTE.new(self, _scene()).go(45), [_scene().map_id, _scene().player.grid])
 	if not _check("bc_entered", await _wait_map(90) and _scene().player.grid == Vector2i(8, 13), [_scene().map_id, _scene().player.grid]):
 		return
 	var map: XMapScene = _scene()

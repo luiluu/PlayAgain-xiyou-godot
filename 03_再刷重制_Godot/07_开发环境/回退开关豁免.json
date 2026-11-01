@@ -22,6 +22,7 @@
   "O-126 XStarWarehouse.o_alien_reset": "人工确认（tools26）：测试按参数／循环把开关设成回退值，见 tests/xiyou_star_warehouse.gd:313",
   "O-128 XWarehouse.o_reserved_no_dup": "人工确认（tools26）：测试按参数／循环把开关设成回退值，见 tests/xiyou_star_warehouse.gd:479",
   "O-062": "tools26：提到 TRANSFER_FIX 但认不出回退值（恢复方法写的是删条目／改下限，不是开关回退值）",
-  "O-085": "tools26：提到 GOLD_MIN_ORIGINAL 但认不出回退值（恢复方法写的是删条目／改下限，不是开关回退值）"
+  "O-085": "tools26：提到 GOLD_MIN_ORIGINAL 但认不出回退值（恢复方法写的是删条目／改下限，不是开关回退值）",
+  "O-062 MVInterpreter.TRANSFER_FIX": "tools36：「删条目」类回退；const 字典测试改不了，要补回退支先改成 static var 再 erase 那一条"
  }
 }

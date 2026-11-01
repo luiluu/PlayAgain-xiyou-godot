@@ -145,7 +145,7 @@ static func deposit(s: XState, cat: String, rec: Dictionary) -> bool:
 			w.items[cat].append(rec.duplicate(true))
 			w.currentCapacity = int(w.currentCapacity) + 1
 			return true
-		s.gear.remove_at(i)
+		s.lose_gear(rec)  # 原版 $gameParty.loseItem(item, 1)：云裳天衣记进账本
 		w.items[cat].append(rec)
 	else:
 		var id := int(rec.id)

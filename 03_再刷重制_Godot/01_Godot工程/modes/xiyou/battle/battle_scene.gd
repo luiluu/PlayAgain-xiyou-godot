@@ -1276,7 +1276,7 @@ func _poison_help(e: XEnemy) -> void:
 	_text_help(e.display_name() + "\n" + info, e, "right", POISON_HELP_NEAR)
 
 
-## 优化 O-待定：转移选目标时的说明卡贴在该队员左侧。false 照原版：每次换目标（Window_BattleActor.select）都 setText，
+## 优化 O-140：转移选目标时的说明卡贴在该队员左侧。false 照原版：每次换目标（Window_BattleActor.select）都 setText，
 ## 卡片从上一张卡的位置再按 setItem 修正一次（同 O-107 关掉时的毒鸡汤卡）。
 static var TRANSFER_HELP_NEAR := true
 
@@ -1431,6 +1431,8 @@ func _play(logs: Array) -> void:
 				XToast.show_text(str(l.text))
 			"mastery_up":
 				_start_animation(int(l.animation), l.target)  # YEP_SkillMasteryLevels onAllActionsEnd：升级动画（不镜像，不等）
+			"se":
+				play_se(l.se)
 			"battle_text":
 				_log_add(str(l.text))  # BattleManager._logWindow.push('addText')（宿傩「发动了神灶：开！」等）
 			"enemy_change":
@@ -1761,3 +1763,11 @@ func _victory() -> void:
 	screen.setup(r, before, logic.actors, logic.auto)
 	ui.add_child(screen)
 	await screen.continued
+
+
+## 事件指令 250 播放音效（战斗里的公共事件）：同地图 XMapScene.play_se，音量／音调不读
+func play_se(audio) -> void:
+	var p := XDB.audio_path("se", str(audio.get("name", ""))) if audio is Dictionary else ""
+	if p != "" and se:
+		se.stream = load(p)
+		se.play()

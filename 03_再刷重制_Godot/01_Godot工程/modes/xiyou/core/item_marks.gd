@@ -185,7 +185,7 @@ static func sell(s: XState, rec: Dictionary, number := 1) -> void:
 		s.gain_item(int(id), int(r.items[id]) * number)
 	if is_gear(rec):
 		if not XAlienation.reserved(s, rec):  # Adv:88 loseItem 包装：吞器占用的供体不失去（钱照给，见 sellable_gear）
-			s.gear.erase(rec)
+			s.lose_gear(rec)
 	else:
 		s.gain_item(int(rec.get("id", 0)), -number)
 

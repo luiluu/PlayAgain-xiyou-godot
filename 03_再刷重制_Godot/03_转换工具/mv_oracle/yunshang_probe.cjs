@@ -7,6 +7,7 @@
 // 觉醒、天衣各件、赠行／储行、拆段、符针是第二期，本探针不放。
 // 真实 BattleManager／Game_Action（Math.random 0.5）；只在内存，产物 .sandbox/yunshang.json，拷成 tests/fixtures/yunshang_oracle.json（不接入全量同步）。
 const {start, makeCase, finish} = require('./shared/host.cjs');
+const fs = require('fs');
 const host = start(), {w, newGame} = host;
 const Y = w.CodexYunshang;
 if (!Y || typeof Y.formula !== 'function') throw new Error('云裳模块未安装');
@@ -515,9 +516,12 @@ for (const k of [5, 8, 9, 11, 14]) cases.push(makeCase(`p6.cmd${k}`, {level: 20,
 // ===== 界面二期：天衣铺（Scene_Yunshang，第 519～533、554 行）=====
 // Scene_Yunshang 是闭包里的类：拦 SceneManager.push 拿到它，建一个不进场景树的实例（addWindow 空），各页只读 Window_YunChoices 的 info／rows；
 // 选一项照 Window_Command：select(i) 后调 'choose' 处理器。设置按天衣存（a._yunSettings[_yunUid 或 native:id]）
+// 拿到的类记下来：开不了页的情形（如兜底页用例）也能建
+let ShopClass = null;
 function shopScene() {
   let Sc = null; const push = w.SceneManager.push; w.SceneManager.push = C => { Sc = C; };
   try { Y.openCrafting(); } finally { w.SceneManager.push = push; }
+  Sc = ShopClass = Sc || ShopClass;
   const sc = Object.create(Sc.prototype); sc.addWindow = () => {}; sc.popScene = () => { sc._popped = true; };
   return sc;
 }
@@ -548,5 +552,215 @@ cases.push(makeCase('p7.shop', {level: 45, stage: 0}, () => {
   pick(sc, 3); cancel(sc); at('actorsCancel');
   pick(sc, 4); at('back', {popped: !!sc._popped});
   return {steps};
+}));
+// ===== 天衣铺二期：订单账本、制作、领取、进阶、不朽天丝（第 94～200、235～244、519～590 行）=====
+// 账本是存档目录旁的独立文件 yunshang_orders_v1.json（这里落在参照沙盒的存档目录）；存档只记 $gameSystem._yunProfile 与已重放到的 _yunSeq。
+// 账本里的进阶次数是云裳的 _AdvancedNum（replay 时盖回），用例改账本文件再 reloadJournal＋replay 设进阶。
+const LEDGER = () => require('path').join(w.StorageManager.localFileDirectoryPath(), 'yunshang_orders_v1.json');
+function setStage(n) {
+  const f = LEDGER(), l = JSON.parse(fs.readFileSync(f, 'utf8'));
+  l.profiles[Y.profileIdentity()].stage = n;
+  fs.writeFileSync(f, JSON.stringify(l)); Y.reloadJournal(); Y.replay();
+}
+const SILK = 2942, SHARD = 2530;
+const count = id => w.$gameParty.numItems(w.$dataItems[id]);
+const robes = () => w.$gameParty.armors().filter(i => (i.baseItemId || i.id) >= 7920 && (i.baseItemId || i.id) < 7935).map(i => [i.name, i.baseItemId || i.id]);
+// 订单里那件天衣：名字、底子、八项、特性、词缀名、插槽、品质（DreamX 开工时掷好）
+const spec = sp => sp && {name: sp.name, base: sp.baseItemId, params: sp.params.slice(), traits: sp.traits.map(t => [t.code, t.dataId, t.value]),
+  prefix: sp.namePrefix || '', suffix: sp.nameSuffix || '', slots: sp.upgradeSlots, quality: sp.meta.quality, ici: sp.meta.ici, variance: sp.meta['Random Variance'] || null};
+const ledger = () => { const p = Y.ledger(); return {journal: p.journal.map(j => j.delta ? ['delta', j.item, j.delta] : j.grant ? ['grant', j.grant.name] : ['remove']),
+  order: p.order && {name: p.order.spec.name, progress: p.order.progress, tokens: p.order.roundTokens.length}, clears: p.clears, bonusClears: p.bonusClears || 0, stage: p.stage}; };
+const tryErr = fn => { try { fn(); return ''; } catch (e) { return String(e.message); } };
+const toasts = [];
+function withToasts(fn) {
+  const old$ = w.$; w.$ = {toaster: o => toasts.push(o.message)};
+  try { return fn(); } finally { w.$ = old$; }
+}
+// 制作→读早先的档（账本重放：天丝照扣、订单还在，不重抽）→进度 10 格→领取→再读最早的档（天衣照发）
+for (const roll of [0.5, 0.1]) cases.push(makeCase(`p8.craft${roll === 0.5 ? '' : '.r01'}`, {level: 45, stage: 0, roll}, () => {
+  newGame(); maxLevel(); w.$gameSwitches.setValue(2494, true);
+  const a = grow(45, 0); w.$gameParty.addActor(ACTOR);
+  w.$gameParty.gainItem(w.$dataItems[SILK], 20);
+  const sc = shopScene(), steps = [], at = (tag, extra) => steps.push({tag, page: page(sc), silk: count(SILK), ledger: ledger(), ...(extra || {})});
+  sc.home(); at('home');
+  const before = host.encode();
+  w.eval('Math.random=function(){return ' + roll + ';};$gameParty.RomDreamX=[];$gameParty.RomDreamXNum=0;$gameParty.RomDreamXs=[];$gameParty.RomDreamXsNum=0;');
+  pick(sc, 0);
+  w.eval('Math.random=function(){return 0.5;};');
+  at('submitted', {spec: spec(Y.ledger().order.spec)});
+  steps.push({tag: 'errors', again: tryErr(() => Y.submit()), claim: tryErr(() => Y.claim())});
+  host.restore(before); sc.home(); at('reloaded', {seq: w.$gameSystem._yunSeq});
+  const tokens = [];
+  for (let i = 0; i < 9; i++) tokens.push(Y.progress('t' + i));
+  tokens.push(Y.progress('t3'));
+  sc.home(); at('nine', {tokens: tokens.slice()});
+  steps.push({tag: 'early', claim: tryErr(() => Y.claim())});
+  tokens.push(Y.progress('t9'), Y.progress('t10'));
+  sc.home(); at('ten', {tokens: tokens.slice()});
+  pick(sc, 1); at('claimed', {robes: robes(), uid: !!w.$gameParty.armors().filter(i => i._yunUid).length});
+  host.restore(before); sc.home(); at('reloadedClaimed', {robes: robes(), seq: w.$gameSystem._yunSeq});
+  return {steps};
+}));
+// 34 级、35 级没天丝：制作灰显／Y.submit 的提示；没进阶 35 级可选进阶、50 级进阶 1 次可选、进阶 2 次不可选
+cases.push(makeCase('p8.gates', {}, () => {
+  const out = [];
+  for (const [level, stage, silk] of [[34, 0, 20], [35, 0, 0], [35, 0, 15], [49, 1, 0], [50, 1, 0], [55, 2, 0]]) {
+    newGame(); maxLevel(); w.$gameSwitches.setValue(2494, true);
+    const a = grow(level, 0); w.$gameParty.addActor(ACTOR); setStage(stage);
+    if (silk) w.$gameParty.gainItem(w.$dataItems[SILK], silk);
+    const sc = shopScene(); sc.home();
+    out.push({level, stage, silk, page: page(sc), submit: tryErr(() => { const o = Y.submit(); if (o) throw Error('ok:' + o.spec.name); }), pool: Y.pool().map(r => r.name)});
+  }
+  return {out};
+}));
+// 回合进度：云裳出战时每回合末（endTurn 包装、turnEnd 阶段）记 1 格，token＝本场编号:敌群回合数，同一回合只记一次；不在队伍不记
+for (const inParty of [true, false]) cases.push(makeCase(`p8.progress${inParty ? '' : '.bench'}`, {level: 45, stage: 0}, () => {
+  const {bm, a} = battle(45, 0, false);
+  w.$gameParty._inBattle = false; w.$gameParty.gainItem(w.$dataItems[SILK], 15); Y.submit(); w.$gameParty._inBattle = true;
+  if (!inParty) w.$gameParty.removeActor(ACTOR);
+  const out = [];
+  endTurn(bm); out.push(ledger().order.progress);
+  endTurn(bm); out.push(ledger().order.progress);
+  bm.startTurn(); endTurn(bm); out.push(ledger().order.progress);
+  return {out};
+}));
+// 不朽天丝：胜利且是不朽的未知战斗（来源地图在 immortalOrigins；没记来源时 152／176 看 Leviathan 记的来源，再看 unpaired 或难度变量 107）每场 +1；
+// 云裳出战且学了 10280 时另记 bonusClears，偶数次多 +1；逃跑、失败不给
+cases.push(makeCase('p8.clear', {level: 45, stage: 1}, () => {
+  const out = [];
+  const clear = (from, to, troop, result, o = {}) => {
+    newGame(); maxLevel(); w.$gameSwitches.setValue(2494, true);
+    const a = grow(45, 0); w.$gameParty.addActor(ACTOR); setStage(o.stage == null ? 1 : o.stage);
+    if (o.bench) w.$gameParty.removeActor(ACTOR);
+    if (o.var107 != null) w.$gameVariables.setValue(107, o.var107);
+    const runs = o.runs || 1, got = [];
+    if (from) { w.DataManager.loadMapData(from); w.$gameMap.setup(from); }
+    w.DataManager.loadMapData(to); w.$gameMap.setup(to);
+    if ('leviathan' in o) { w.$gameMap._yunUnknownOrigin = null; w.$gameMap._codexLeviathanUnknownOrigin = o.leviathan; }
+    for (let i = 0; i < runs; i++) {
+      w.BattleManager.setup(troop, true, true); w.BattleManager._logWindow = stub; w.BattleManager._spriteset = stub; w.BattleManager._statusWindow = stub;
+      w.BattleManager.startBattle();
+      w.BattleManager.endBattle(result); w.BattleManager.endBattle(result);
+      got.push(count(SILK));
+    }
+    out.push({from, to, troop, result, ...o, origin: w.$gameMap._yunUnknownOrigin == null ? null : w.$gameMap._yunUnknownOrigin, got, ledger: ledger()});
+  };
+  clear(168, 141, 577, 0, {runs: 3});
+  clear(167, 141, 577, 0);
+  clear(168, 141, 577, 1);
+  clear(168, 141, 600, 0);
+  clear(168, 141, 577, 0, {bench: true, runs: 2});
+  clear(168, 141, 577, 0, {stage: 0, runs: 2});
+  clear(174, 177, 584, 0);
+  clear(4, 177, 584, 0);
+  clear(0, 152, 454, 0, {leviathan: 38});
+  clear(0, 152, 454, 0, {leviathan: null, var107: 1});
+  clear(0, 152, 454, 0, {leviathan: null, var107: 2});
+  return {out};
+}));
+// 角色进阶：Scene_ActorAdvanced 底部确定（onBottomConfirmOk 包装）——条件不够蜂鸣＋提示原因；够了逐件选背包里的天衣（已装备的不算），
+// 选够开确认窗「消耗N件天衣，确认进阶」；确认（onConfirmOk 包装）走 Y.advance：扣碎片、移除所选天衣、账本进阶＋1、同步技能，提示「云裳完成第N次进阶」
+function advScene(index) {
+  const sc = Object.create(w.Scene_ActorAdvanced.prototype); sc.addWindow = () => {};
+  const win = () => ({active: false, activate() { this.active = true; }, deactivate() { this.active = false; }, close() {}, open() {}, select() {}, setupWhenCheck() {},
+    setData(t) { sc._confirmText = t; }, index: () => index});
+  for (const k of ['_indexWindow', '_BottomconfirmWindow', '_confirmWindow', '_goldWindow', '_statusWindow']) sc[k] = win();
+  return sc;
+}
+cases.push(makeCase('p8.advance', {}, () => {
+  newGame(); maxLevel(); w.$gameSwitches.setValue(2494, true);
+  const a = grow(34, 0); w.$gameParty.addActor(ACTOR);
+  const idx = w.$gameParty.members().indexOf(a), steps = [];
+  const sc = advScene(idx);
+  const at = (tag, extra) => steps.push({tag, page: page(sc), toasts: toasts.splice(0), confirm: sc._confirmText || null, index: sc._indexWindow.active,
+    stage: a._AdvancedNum, shards: count(SHARD), robes: robes(), ...(extra || {})});
+  withToasts(() => {
+    sc.onBottomConfirmOk(); at('level');
+    a.changeLevel(35, false); sc.onBottomConfirmOk(); at('shards');
+    w.$gameParty.gainItem(w.$dataItems[SHARD], 60);
+    // 穿上走 changeEquip（背包少一件；wearRobe 的 forceChangeEquip 不动背包）
+    w.$gameParty.gainItem(w.$dataArmors[7920], 1, false);
+    a.changeEquip(a.equipSlots().indexOf(4), w.$gameParty.armors().filter(i => (i.baseItemId || i.id) === 7920).slice(-1)[0]);
+    for (const k of [3, 1]) w.$gameParty.gainItem(w.$dataArmors[7920 + k], 1, false);
+    sc.onBottomConfirmOk(); at('robes', {reason: Y.advanceRequirements(a)});
+    w.$gameParty.gainItem(w.$dataArmors[7922], 1, false); w.$gameParty.gainItem(w.$dataArmors[7921], 1, false);
+    sc.onBottomConfirmOk(); at('pick0', {reason: Y.advanceRequirements(a)});
+    pick(sc, 2); at('pick1');
+    cancel(sc); at('pickCancel', {selection: !!sc._yunAdvanceSelection});
+    sc.onBottomConfirmOk(); pick(sc, 0); at('pickDisabled');
+    pick(sc, 1); pick(sc, 1); at('pick2');
+    pick(sc, 2); at('picked', {selection: sc._yunAdvanceSelection && sc._yunAdvanceSelection.items.map(i => i.name)});
+    // uuid 用 Math.random：固定 0.5 时同一毫秒给的编号全一样，三件只移除得了一件；这里换成会变的数（真实游戏各件编号不同）
+    w.eval('var __yr=0;Math.random=function(){__yr=(__yr+0.1373)%1;return __yr;};');
+    sc._windowIdx = idx; sc.onConfirmOk();
+    w.eval('Math.random=function(){return 0.5;};'); at('advanced', {skills: skills(a), ledger: ledger(), equipped: !!Y.robe(a)});
+    sc.onBottomConfirmOk(); at('again', {reason: Y.advanceRequirements(a)});
+    a.changeLevel(50, false); sc.onBottomConfirmOk(); at('again50', {reason: Y.advanceRequirements(a)});
+    setStage(2); sc._confirmText = null; sc.onBottomConfirmOk(); at('done', {reason: Y.advanceRequirements(a)});
+    steps.push({tag: 'errors', count: tryErr(() => Y.advance([])), level: (setStage(1), a.changeLevel(40, false), tryErr(() => Y.advance([])))});
+  });
+  return {steps};
+}));
+// 账本缺了本档的记录（profile 抛错）：首页换成兜底页「制作记录暂不可用，请恢复配套记录后重试」（灰）＋返回，确定、取消都关页
+cases.push(makeCase('p8.fallback', {level: 45, stage: 0}, () => {
+  newGame(); maxLevel(); const a = grow(45, 0); w.$gameParty.addActor(ACTOR);
+  w.$gameSystem._yunProfile = 'missing-profile';
+  const sc = shopScene(); sc.home(); const p = page(sc);
+  pick(sc, 1);
+  return {page: p, popped: !!sc._popped, submit: tryErr(() => Y.submit())};
+}));
+// 领取的天衣（带 _yunUid）离开背包（gainItem 包装，第 200～204 行）：直接拿这一件失去（商店卖出、仓库存入、分解都是 loseItem(这件)）记一条移除，
+// 读领取前的档时重放发天衣再移除，不能再领一次；穿上／卸下（tradeItemWithParty）不记；按底子扣（事件「增减防具」、合成材料）不经这一件，也不记
+for (const how of ['sell', 'base']) cases.push(makeCase(`p8.lose.${how}`, {level: 45, stage: 0}, () => {
+  newGame(); maxLevel(); w.$gameSwitches.setValue(2494, true);
+  const a = grow(45, 0); w.$gameParty.addActor(ACTOR);
+  w.$gameParty.gainItem(w.$dataItems[SILK], 15); Y.submit();
+  for (let i = 0; i < 10; i++) Y.progress('t' + i);
+  const before = host.encode();
+  Y.claim();
+  const steps = [], at = (tag, extra) => steps.push({tag, robes: robes(), equipped: Y.robe(a) ? Y.robe(a).name : null, ledger: ledger(), ...(extra || {})});
+  at('claimed');
+  const item = () => w.$gameParty.armors().filter(i => i._yunUid)[0];
+  a.changeEquip(a.equipSlots().indexOf(4), item()); at('worn');
+  a.changeEquip(a.equipSlots().indexOf(4), null); at('unworn');
+  if (how === 'sell') w.$gameParty.loseItem(item(), 1, false);
+  else w.$gameParty.gainItem(w.$dataArmors[item().baseItemId], -1, false);
+  at('lost');
+  host.restore(before); at('reloaded', {seq: w.$gameSystem._yunSeq});
+  return {steps};
+}));
+// ===== 显示（第 594～772 行）：图标、织神天梭说明、天衣粉色 =====
+// 图标：最后装的 Y.iconInfo——技能 10270～10287（图标 130270～130287）是 HD 图集 Yunshang_Icons_HD_v1（6×6 格）的第 0～17 格，
+// 天衣、织神天梭、号角、天丝（图标 210118～210135）是第 18～35 格；color 只进缓存键，不改色。
+cases.push(makeCase('p9.icons', {}, () => {
+  const out = [];
+  for (let i = 130269; i <= 130288; i++) out.push([i, Y.iconInfo(i) ? Y.iconInfo(i).source : null]);
+  for (let i = 210117; i <= 210136; i++) out.push([i, Y.iconInfo(i) ? Y.iconInfo(i).source : null]);
+  return {out, image: Y.iconAtlas};
+}));
+// 织神天梭的说明（RJO.HE.getDescParams 包装）：八项照等级加每级成长；「等级需求：1」后面插「当前等级：L / 最大」「法宝经验：exp / 下一级所需」（满级写「（已满级）」）
+cases.push(makeCase('p9.relicHelp', {}, () => {
+  newGame();
+  const out = [];
+  for (const [level, exp] of [[1, 0], [5, 37], [888, 12]]) {
+    w.$gameParty.gainItem(w.$dataArmors[RELIC], 1, false);
+    const r = w.$gameParty.armors().filter(i => (i.baseItemId || i.id) === RELIC).slice(-1)[0];
+    r.level = level; r.exp = exp;
+    w.RJO.HE.getDescParams(r, 2);
+    out.push({level, exp, rows: r.descParams.map(x => [x[0], x[1], x[2]])});
+  }
+  return {out};
+}));
+// 天衣：名字、描述、品质行用粉色 rgba(255,169,202,1)（normalcolor／namecolor 包装），织神天梭照品质色
+cases.push(makeCase('p9.robeHelp', {}, () => {
+  newGame();
+  const out = [];
+  for (const id of [7920, 7934]) {
+    w.$gameParty.gainItem(w.$dataArmors[id], 1, false);
+    const r = w.$gameParty.armors().filter(i => (i.baseItemId || i.id) === id).slice(-1)[0];
+    w.RJO.HE.getDescParams(r, 2);
+    out.push({id, rows: r.descParams.map(x => [x[0], x[1], x[2]]), normal: w.RJO.HE.normalcolor(r), name: w.RJO.HE.namecolor(r)});
+  }
+  return {out};
 }));
 process.exit(finish(host, 'yunshang.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批', cases}) ? 0 : 1);

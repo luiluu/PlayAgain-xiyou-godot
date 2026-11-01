@@ -21,6 +21,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 HERE = Path(__file__).resolve().parent
@@ -38,6 +39,8 @@ ASSIGN_IN_TICKS = re.compile(r'`(?:(%s)\.)?(%s)\s*:?=\s*%s`' % (IDENT, IDENT, VA
 SET_AFTER_TICKS = re.compile(r'`(?:(%s)\.)?(%s)`\s*设为?\s*`?%s`?' % (IDENT, IDENT, VALUE))
 # `X.A`、`B`、`C` 分别设 v
 EACH = re.compile(r'((?:`[\w.]+`\s*[、，,]\s*)+`[\w.]+`)\s*分别设为?\s*`?%s`?' % VALUE)
+# `X.NAME` 删 `条目` 一条（字典常量里删一个条目回退，如 O-062 的 MVInterpreter.TRANSFER_FIX）：回退值记成「删:条目」，测试里要有 NAME.erase("条目")
+REMOVE_ENTRY = re.compile(r'`(?:(%s)\.)?(%s)`\s*删\s*`([^`]+)`\s*一条' % (IDENT, IDENT))
 SWITCHY = re.compile(r'`(?:%s\.)?([A-Z][A-Z0-9_]{2,}|o\d*_\w+)`' % IDENT)
 
 
@@ -67,6 +70,8 @@ def parse_switches(restore):
     for rx in (ASSIGN_IN_TICKS, SET_AFTER_TICKS):
         for m in rx.finditer(restore):
             found.append((m.group(1), m.group(2), m.group(3)))
+    for m in REMOVE_ENTRY.finditer(restore):
+        found.append((m.group(1), m.group(2), '删:' + m.group(3)))
     seen, uniq = set(), []
     for c, n, v in found:
         if (c, n) not in seen:
@@ -113,6 +118,11 @@ def locate(cls, name, classes, decls):
 
 def coverage(name, value, tests):
     """('literal', [位置]) 有测试赋回退值；('dynamic', [位置]) 只有非字面量赋值；(None, []) 没碰。"""
+    if value.startswith('删:'):
+        erase = re.compile(r'(?<![\w.])(?:\w+\.)*%s\.erase\(\s*["\']%s["\']\s*\)' % (name, re.escape(value[2:])))
+        hits = ['%s:%d' % (path, i) for path, text in tests if name in text
+                for i, line in enumerate(text.splitlines(), 1) if erase.search(line.split('#', 1)[0])]
+        return ('literal', hits) if hits else (None, [])
     v = re.escape(value).replace(r'\{\}', r'\{\s*\}').replace(r'\[\]', r'\[\s*\]')
     lit = re.compile(r'(?<![\w.])(?:\w+\.)*%s\s*:?=(?!=)\s*%s(?![\w.])|\.set\(\s*["\']%s["\']\s*,\s*%s\s*\)' % (name, v, name, v))
     anyset = re.compile(r'(?<![\w.])(?:\w+\.)*%s\s*:?=(?!=)\s*(?!true\b|false\b|-?\d|\{|\[|")(\S+)|\.set\(\s*["\']%s["\']\s*,\s*(?!true\b|false\b|-?\d|\{|\[|")' % (name, name))
@@ -159,6 +169,20 @@ def scan(root):
     return {'switches': switches, 'unparsed': unparsed}
 
 
+def last_lane(root, rel, name):
+    """最后改动该开关声明的车道：找最后一次动了 name 的提交，再找把它并进主线的合并提交标题（「合并 cc/xxx」）；找不到返回空串。"""
+    def git(*args):
+        return subprocess.run(['git', '-C', str(root), *args], capture_output=True, text=True, timeout=30).stdout.strip()
+    try:
+        commit = git('log', '-1', '--format=%H', '-S' + name, '--', '%s/%s' % (PROJECT, rel))
+        if not commit:
+            return ''
+        merge = git('log', '--merges', '--ancestry-path', '--reverse', '-1', '-E', '--grep=^合并 (cc|claude|codex)/', '--format=%s', commit + '..HEAD')
+        return merge or git('log', '-1', '--format=%s', commit)
+    except (OSError, subprocess.SubprocessError):
+        return ''
+
+
 def load_allow(path):
     try:
         data = json.loads(Path(path).read_text(encoding='utf-8'))
@@ -197,7 +221,8 @@ def main(argv=None):
     for s in (gaps if a.all else new):
         note = '；const，测试改不了，要先改成 static var' if s['kind'] == 'const' else ''
         tag = '' if s['key'] not in known else '（豁免）'
-        print('  ⚠ 缺口%s %s = %s（%s%s）' % (tag, s['key'], s['value'], s['file'], note))
+        lane = last_lane(Path(a.root), s['file'], s['name'])
+        print('  ⚠ 缺口%s %s = %s（%s%s%s）' % (tag, s['key'], s['value'], s['file'], note, '；最后改它的：' + lane[:60] if lane else ''))
     for s in res['switches']:
         if s['status'] == '人工确认' and (a.all or s['key'] not in known):
             print('  ? 人工确认 %s：只见非字面量赋值 %s' % (s['key'], '、'.join(s['where'])))

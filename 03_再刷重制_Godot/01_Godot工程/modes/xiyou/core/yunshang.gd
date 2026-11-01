@@ -380,6 +380,7 @@ static func _refresh(a) -> void:
 
 ## startBattle 包装（原 startBattle 之后）：新一场、round 1；清出战成员的战斗数据、御风、余辉再建；同步云裳；天衣无缝全醒
 static func start_battle(logic) -> void:
+	XYunshangOrders.start_battle()  # 本场编号（回合进度的 token）、本场还没发不朽天丝
 	_battle_seq += 1
 	battle = _battle_seq
 	round = 1
@@ -454,10 +455,13 @@ static func end_turn(logic) -> void:
 		if d.cut_values != null:
 			d.cut_values = null
 			_refresh(a)
+	XYunshangOrders.end_turn(logic)  # 云裳出战时给天衣订单记一格
 
 
-## endBattle 包装：结清赊账、结束衣魂，再清所有战斗数据
-static func end_battle(logic = null) -> void:
+## endBattle 包装：先发不朽天丝（result 0 胜利，见 XYunshangOrders），再结清赊账、结束衣魂，清所有战斗数据
+static func end_battle(logic = null, result := -1) -> void:
+	if logic != null:
+		XYunshangOrders.end_battle(logic, result)
 	if logic != null and battle != 0:
 		for a in logic.actors:
 			var d: Dictionary = _data.get(a, {})
@@ -1193,7 +1197,7 @@ static func finish(logic, u, skill) -> Array:
 # ---- 第二期 B 批后一半：千军入袖 5、空袖藏星 6、九曲回针 7（孤灯照众 10 见 state_added）----
 ## 千军入袖的收袖开关（原版 a._yunSleeve：指令窗「收袖」切换，自动战斗设为开）；每次行动 prepare 时抄进 frame.sleeve
 static var sleeve := {}
-## O-135：千军入袖觉醒的溢出（第 422 行）要 !live(target)，可原版行动中目标有 YEP IMMORTAL（行动序列 immortal: targets, true），
+## O-136：千军入袖觉醒的溢出（第 422 行）要 !live(target)，可原版行动中目标有 YEP IMMORTAL（行动序列 immortal: targets, true），
 ## 生命到 0 也不倒下，溢出从来不触发，打倒目标后剩下的段照样打在它身上。true＝目标生命到 0 就算打倒、溢出照写的传给其余敌人；
 ## false＝照原版（不传）
 static var o_sleeve_overflow := true
@@ -1229,6 +1233,21 @@ static func borrowable(s: Dictionary) -> bool:
 		if code in [43, 44] or code in [21, 22] and not bad.has(sid) and not SHARE_BUFFS.has(sid):
 			return false
 	return true
+
+
+## O-141：天衣铺给九曲回针选针眼（第 530 行）原版想只列有冷却的技能（s.cooldown），可 YEP_X_SkillCooldowns 给每个技能都建了 cooldown 对象，
+## 条件恒真，没冷却的技能也能选成针眼（选了也没用：针眼只是醒着时每回合越过一次冷却）。true＝只列有自己冷却（<Cooldown: x> x>0 或 <Cooldown Eval>、
+## 不在 Cooldown Bypass 里）的技能；false＝照原版全列
+static var o_eye_cooldown := true
+
+
+static func eye_candidate(sk: Dictionary) -> bool:
+	if not o_eye_cooldown:
+		return true
+	if XBattler.cooldown_bypass(int(sk.get("id", 0))):
+		return false
+	var cd = sk.get("meta", {}).get("Cooldown")
+	return cd != null and float(str(cd).strip_edges()) > 0.0 or str(sk.get("note", "")).to_lower().contains("<cooldown eval>")
 
 
 ## 九曲回针（第 254 行）：醒着、这是针眼、本回合还没越过——能不能用时不看冷却（预热照看）
@@ -1489,3 +1508,109 @@ static func rejects_target(a, skill: Dictionary, t) -> bool:
 		return false
 	var id := int(skill.get("id", 0))
 	return id == WAKE and (t == null or robe(t).is_empty()) or id == GIFT and t == a
+
+
+# ---- 显示（第 594～772 行）：图标、织神天梭说明、天衣粉色 ----
+## 【cc·白龙_12·未经审查】参照 yunshang_probe p9，专项 xiyou_yunshang_shop。
+## - 图标（最后装的 Y.iconInfo 与 CodexQualityIcons.bitmap／draw）：技能 10270～10287 的图标 130270～130287 是 HD 图集 Yunshang_Icons_HD_v1
+##   （1254² 的 6×6 格）第 0～17 格，天衣、织神天梭、号角、不朽天丝的图标 210118～210135 是第 18～35 格。每格平滑缩到 112 放进 128 的
+##   透明方块正中（边 8），再按要画的大小平滑缩放；不改色（品质色只进原版的缓存键）。早先装的 Yunshang_Icons 小图（210000～210013）
+##   与品质改色那两层被这层盖掉，数据里也没有用到那段编号，不移植。
+## - 天衣（7920～7934）的名字、描述、品质行与列表名字用粉色 rgba(255,169,202,1)（RJO.HE normalcolor／namecolor、drawItemName 包装），
+##   说明卡的窗口皮（Window12）每个像素按亮度改成粉色（coloredRobeSkin）；见 XQuality.color_text、XHelpCard。
+## - 织神天梭 7935 的说明（getDescParams 包装）：八项照等级加每级成长（relicDisplayParams），「等级需求：1」后面插
+##   「当前等级：L / 最大」「法宝经验：exp / 下一级所需」（满级写「（已满级）」，12 号、白）；见 XHelpCard.desc_params。
+## - 说明文字刷新 refreshYunshangText（换掉旧版本天衣备注里的说明行、描述与图标照模板）：重制的天衣实例都照当前模板建，没有旧版本，不移植。
+const ICON_ATLAS := "Yunshang_Icons_HD_v1"
+const ROBE_COLOR := "rgba(255,169,202,1)"
+static var _icons := {}
+static var _icon_textures := {}
+static var _robe_skins := {}
+
+
+## Y.iconInfo 的格号（不是云裳的图标返回 -1）
+static func icon_slot(index: int) -> int:
+	if index >= 130270 and index <= 130287:
+		return index - 130270
+	if index >= 210118 and index <= 210135:
+		return index - 210100
+	return -1
+
+
+## 128×128 的图（CodexQualityIcons.bitmap 的 yunHD 支）
+static func icon_image(index: int) -> Image:
+	var slot := icon_slot(index)
+	if slot < 0:
+		return null
+	if not _icons.has(slot):
+		var p := XDB.img_path("system", ICON_ATLAS)
+		if p == "":
+			return null
+		var src: Image = (load(p) as Texture2D).get_image()
+		if src.is_compressed():
+			src.decompress()
+		var cell := src.get_width() / 6.0
+		var part := src.get_region(Rect2i(roundi((slot % 6) * cell), roundi(floori(slot / 6.0) * cell), roundi(cell), roundi(cell)))
+		part.convert(Image.FORMAT_RGBA8)
+		part.resize(112, 112, Image.INTERPOLATE_LANCZOS)
+		var img := Image.create(128, 128, false, Image.FORMAT_RGBA8)
+		img.blit_rect(part, Rect2i(0, 0, 112, 112), Vector2i(8, 8))
+		_icons[slot] = img
+	return _icons[slot]
+
+
+## 按 size 平滑缩好的图标（XUI.icon_texture 用 32、说明窗大图标用 128）
+static func icon_texture(index: int, size := 32) -> AtlasTexture:
+	var key := "%d:%d" % [index, size]
+	if not _icon_textures.has(key):
+		var img := icon_image(index)
+		if img == null:
+			return null
+		var scaled := img.duplicate() as Image
+		if size != 128:
+			scaled.resize(size, size, Image.INTERPOLATE_LANCZOS)
+		var a := AtlasTexture.new()
+		a.atlas = ImageTexture.create_from_image(scaled)
+		a.region = Rect2(0, 0, size, size)
+		_icon_textures[key] = a
+	return _icon_textures[key]
+
+
+## Y.isRobeItem：底子是 15 件天衣之一的防具
+static func is_robe(item) -> bool:
+	if not item is Dictionary or not item.has("etypeId"):
+		return false
+	var b := int(item.get("base", item.get("id", 0)))
+	return b >= ROBE_FIRST and b < ROBE_END
+
+
+## coloredRobeSkin：窗口皮每个像素按亮度（0.2126R＋0.7152G＋0.0722B）改成粉色 ×(0.18＋0.82×亮度)，透明度不变
+static func robe_skin(path: String) -> Texture2D:
+	if not _robe_skins.has(path):
+		var img: Image = (load(path) as Texture2D).get_image()
+		if img.is_compressed():
+			img.decompress()
+		img.convert(Image.FORMAT_RGBA8)
+		for y in img.get_height():
+			for x in img.get_width():
+				var c := img.get_pixel(x, y)
+				if c.a8 == 0:
+					continue
+				var shade := 0.18 + 0.82 * (c.r8 * 0.2126 + c.g8 * 0.7152 + c.b8 * 0.0722) / 255.0
+				img.set_pixel(x, y, Color8(roundi(255 * shade), roundi(169 * shade), roundi(202 * shade), c.a8))
+		_robe_skins[path] = ImageTexture.create_from_image(img)
+	return _robe_skins[path]
+
+
+## Y.relicDisplayParams：织神天梭说明里的八项＝本身＋等级×每级成长
+static func relic_params(item: Dictionary) -> Array:
+	var out := []
+	var params: Array = item.get("params", [])
+	for i in params.size():
+		out.append(float(params[i]) + XActor.magic_param(item, i))
+	return out
+
+
+## yunRelicItem：织神天梭（防具，底子 7935）
+static func relic_item(item) -> bool:
+	return item is Dictionary and item.has("etypeId") and int(item.get("base", item.get("id", 0))) == RELIC

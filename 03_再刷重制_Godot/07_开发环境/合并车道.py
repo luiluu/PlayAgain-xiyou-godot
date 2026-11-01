@@ -496,10 +496,12 @@ def plan(root, task, branch=None):
                 continue
             try:
                 draft(read(p))
-                extra.append(p)
             except RuntimeError:
                 print('提示：另有交付单 ' + p + ' 未标可合并或草稿不完整，未并入；不要它就在 main 删掉，--finish 时加 --also ' + p,
                       file=sys.stderr, flush=True)
+                continue
+            check_opt_drafts(read(p), p)        # 接续交付单的优化草稿照本期的查（tools39）
+            extra.append(p)
     refresh = any(p in [str(TOOLS / 'xiyou_slice.json'), str(TOOLS / 'xiyou_export.py')]
                   or (p.startswith(str(TOOLS / 'mv_oracle') + '/') and p.endswith('.cjs')) for p in changed)
     # 车道带来的测量接受单（同步正式西游.py --accept-changes）：main 的同步对自己的旧基线同样逐条核对
@@ -556,21 +558,84 @@ OPT_NONE = re.compile(r'^(?:[-*]\s*)?优化登记草稿[：:]\s*无\s*$', re.M)
 
 
 def opt_draft_rows(text):
-    """交付单「## 优化登记草稿」节里的表行（首格是占位或编号的行）；表头与分隔行不算。"""
+    """交付单「## 优化登记草稿」节里的表行（首格是占位或编号的行）；表头与分隔行不算。
+    没有这个标题时，认正文里首格是占位的 8 列表行（11-01 guyu4 把表写在「## 发现的原版问题」下，工具读不到，两条同号、没登记，tools39）。"""
     m = OPT_DRAFT_HEAD.search(text)
     if not m:
-        return []
+        return [x.strip() for x in text.splitlines()
+                if re.match(r'^\|\s*O-', x) and len(x.strip().split('|')) == 10 and OPT_TOKEN.fullmatch(x.split('|')[1].strip())]
     rest = text[m.end():]
     nxt = re.search(r'^## ', rest, re.M)
     block = rest[:nxt.start()] if nxt else rest
     return [x.strip() for x in block.splitlines() if re.match(r'^\|\s*O-', x)]
 
 
+def opt_draft_list_items(text):
+    """交付单「## 优化登记草稿」节里写成列表（「- O-待定 …」）的条目：登记表是 8 列，列表凑不出各列，合并工具不认。"""
+    m = OPT_DRAFT_HEAD.search(text)
+    if not m:
+        return []
+    rest = text[m.end():]
+    nxt = re.search(r'^## ', rest, re.M)
+    block = rest[:nxt.start()] if nxt else rest
+    return [x.strip() for x in block.splitlines() if re.match(r'^\s*[-*]\s+.*' + OPT_TOKEN.pattern, x)]
+
+
 def check_opt_drafts(text, name):
-    """正文提到 O-待定 却没有草稿表：登记没人写（总装只能手补），拦下让车道补表；确无新优化可写「优化登记草稿：无」。"""
+    """正文提到 O-待定 却没有草稿表：登记没人写（总装只能手补），拦下让车道补表；确无新优化可写「优化登记草稿：无」。
+    草稿写成列表（「- O-待定 …」）也拦下：登记表要 8 列，列表对不上，不静默丢掉。"""
+    items = opt_draft_list_items(text)
+    if items:
+        raise RuntimeError('交付单 %s 的「## 优化登记草稿」是列表不是表格（%s…）：改成表格行（表头照优化登记.md，8 列，首格写占位），合并工具只认表行'
+                           % (name, items[0][:40]))
     if OPT_TOKEN.search(text) and not opt_draft_rows(text) and not OPT_NONE.search(text):
         raise RuntimeError('交付单 %s 提到优化号占位却没有「## 优化登记草稿」表行：车道补一张表（表头照优化登记.md，首格写占位），'
                            '确无新优化就写一行「优化登记草稿：无」' % name)
+
+
+def opt_row_keys(row):
+    """草稿表行的识别键：项目／位置列和恢复方法列里的标识符（含开关名去掉类名的后半）与三字以上的中文词。
+    代码注释、文档里的占位靠这些键对上是哪一条草稿（同一份交付单里有几条不同优化时）。"""
+    cells = row.split('|')
+    text = ' '.join(cells[2:3] + cells[6:7])
+    keys = set()
+    for ident in re.findall(r'[A-Za-z_][A-Za-z0-9_.]{3,}', text):
+        keys.add(ident)
+        last = ident.split('.')[-1]
+        if len(last) >= 4:
+            keys.add(last)
+    keys.update(re.findall(r'[\u4e00-\u9fff]{3,}', cells[2] if len(cells) > 2 else ''))
+    return keys
+
+
+def opt_row_entries(texts):
+    """各交付单草稿表行里首格是占位的条目，按出现顺序：[(占位, 行, 识别键)]。"""
+    out = []
+    for t in texts:
+        for row in opt_draft_rows(t):
+            m = OPT_TOKEN.fullmatch(row.split('|')[1].strip())
+            if m:
+                out.append((m.group(0), row, opt_row_keys(row)))
+    return out
+
+
+def substitute_ambiguous(line, state, after=''):
+    """同一个占位在本批有几条不同草稿时，按行对号：行里出现哪条草稿独有的识别键就换哪条的号；本行没有就看紧跟的两行
+    （after：代码注释写在开关声明上一行，「## 优化 O-待定：…」下一行才是 static var FIT_ROWS，tools39）；对不上或对上几条就停下，让总装手改。"""
+    for tok, entries in state.get('optEntries', {}).items():
+        pat = re.compile(re.escape(tok) + r'(?!-?\d)')
+        if not pat.search(line):
+            continue
+        hit = [e for e in entries if line.strip() == e['row']]
+        if not hit:
+            hit = [e for e in entries if any(k in line for k in e['keys'])]
+        if not hit and after:
+            hit = [e for e in entries if any(k in after for k in e['keys'])]
+        if len(hit) != 1:
+            raise RuntimeError('占位 %s 在本批对应 %d 条优化草稿（%s），这一行对不上是哪条（%s）：总装手改成对应的编号，再重跑'
+                               % (tok, len(entries), '、'.join(e['number'] for e in entries), line.strip()[:80]))
+        line = pat.sub(hit[0]['number'], line)
+    return line
 
 
 def append_opt_registry(root, state):
@@ -579,13 +644,18 @@ def append_opt_registry(root, state):
     text = reg.read_text() if reg.is_file() else ''
     lines = text.split('\n')
     have = set(OPT_NUMBERED.findall(text))
-    added, rows = [], []
+    added, rows, batch = [], [], set()
     for s in sheets(state):
         for row in opt_draft_rows((root / s).read_text()):
             row = substitute(row, state)
             number = re.match(r'^\|\s*O-(\d{3})(?!\d)', row)
-            if not number or number.group(1) in have or OPT_TOKEN.search(row):
+            if not number or OPT_TOKEN.search(row):
                 continue
+            if number.group(1) in batch:
+                raise RuntimeError('同批优化登记草稿出现重号 O-%s（%s）：每条优化要自己的号，总装手改成不同的号再重跑' % (number.group(1), row.split('|')[2].strip()[:40]))
+            batch.add(number.group(1))
+            if number.group(1) in have:
+                continue          # 登记里已有（中断后接续）
             have.add(number.group(1))
             rows.append(row)
             added.append(('O-' + number.group(1), row.split('|')[2].strip()))
@@ -596,6 +666,36 @@ def append_opt_registry(root, state):
         lines[last + 1:last + 1] = rows
         reg.write_text('\n'.join(lines))
     return added
+
+
+def opt_audit(root):
+    """收尾自检（tools40）：工程代码（不含 tests）里回退开关 `static var X := true/false` 上方紧挨的注释块里第一个 O-NNN，
+    在优化登记里要有行、该行要写到开关名 X（同号指两个开关、登记行写的是别的优化都报）；代码注释里别处提到的 O-NNN 也要登记过。
+    返回问题列表。11-01 第七批：O-140 同时标在 FIT_ROWS、TRANSFER_HELP_NEAR 上，登记行却是云裳针眼。"""
+    reg = root / OPT_REGISTRY
+    rows = {m.group(1): m.group(0) for m in re.finditer(r'^\|\s*O-(\d{3})(?!\d).*$', reg.read_text() if reg.is_file() else '', re.M)}
+    problems = []
+    for rel in git(root, 'ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', str(PROJECT) + '/*.gd').split('\0'):
+        f = root / rel
+        if not rel or rel.startswith(str(PROJECT / 'tests') + '/') or not f.is_file():
+            continue
+        lines = f.read_text(errors='replace').split('\n')
+        for i, line in enumerate(lines):
+            if '#' in line:
+                for n in OPT_NUMBERED.findall(line[line.index('#'):]):
+                    if n not in rows:
+                        problems.append('%s:%d 注释写 O-%s，优化登记没有这一行' % (rel, i + 1, n))
+            m = re.match(r'\s*static var (\w+)\s*(?::\s*bool\s*)?:?=\s*(?:true|false)\b', line)
+            if not m:
+                continue
+            j = i
+            while j > 0 and lines[j - 1].lstrip().startswith('#'):
+                j -= 1
+            nums = OPT_NUMBERED.findall('\n'.join(lines[j:i]))
+            if nums and nums[0] in rows and m.group(1) not in rows[nums[0]]:
+                problems.append('%s:%d 开关 %s 标的是 O-%s，优化登记 O-%s 那行没写这个开关（%s）'
+                                % (rel, i + 1, m.group(1), nums[0], nums[0], rows[nums[0]].split('|')[2].strip()[:40]))
+    return problems
 
 
 def is_register(rel):
@@ -610,13 +710,23 @@ def assign_opt_numbers(root, state):
         f = root / rel
         if f.is_file() and not f.is_symlink():
             texts.append(f.read_text(errors='replace'))
-    texts += ['\n'.join(lines) for lines in state.get('optAdded', {}).values()]
+    lane = ['\n'.join(lines) for lines in state.get('optAdded', {}).values()]
+    # 交付单正文里讲占位写法本身的字样不是优化（11-01 tools32 一句「都写 O-待定 时」并入变更记录被换成 O-139，tools40）：
+    # 只给草稿表行首格的占位和车道代码／文档新增行里的占位发号，别的占位字样原样留着、不占号
+    real = {m.group(0) for t in texts for row in opt_draft_rows(t) for m in [OPT_TOKEN.fullmatch(row.split('|')[1].strip())] if m}
+    real |= {m.group(0) for t in lane for m in OPT_TOKEN.finditer(t)}
+    texts += lane
     for t in texts:
         for m in OPT_TOKEN.finditer(t):
-            if m.group(0) not in tokens:
+            if m.group(0) in real and m.group(0) not in tokens:
                 tokens.append(m.group(0))
     if not tokens:
         return {}
+    # 同一占位在草稿表里对应几条不同优化：每条一个号，不再并成同一个
+    rows = {}
+    sheet_texts = [(root / rel).read_text(errors='replace') for rel in sheets(state) if (root / rel).is_file()]
+    for tok, row, keys in opt_row_entries(sheet_texts):
+        rows.setdefault(tok, []).append((row, keys))
     regs = [root / r for r in OPT_REGISTERS] + [root / OPT_REGISTRY] + sorted((root / '00_项目管理').glob('变更记录*.md'))
     top = 0
     for f in regs:
@@ -624,7 +734,24 @@ def assign_opt_numbers(root, state):
             top = max([top] + [int(n) for n in OPT_NUMBERED.findall(f.read_text(errors='replace'))])
     for t in texts:
         top = max([top] + [int(n) for n in OPT_NUMBERED.findall(t)])
-    return {tok: 'O-%03d' % (top + i + 1) for i, tok in enumerate(tokens)}
+    # 全树已用的号也算：上一条写进代码注释却没登记的号，下一条不能再发（11-01 云裳又拿到 O-140，tools39）；工具源码里的举例不算
+    used = subprocess.run(['git', '-C', str(root), 'grep', '-I', '-h', '-o', '-E', r'O-[0-9]{3,}', 'HEAD', '--', '.',
+                           *(':!' + d for d in OPT_SKIP)], capture_output=True, text=True).stdout
+    top = max([top] + [int(x[2:]) for x in used.split() if len(x) == 5])
+    numbers, ambiguous, n = {}, {}, top
+    for tok in tokens:
+        if len(rows.get(tok, [])) >= 2:
+            entries = [{'number': 'O-%03d' % (n + i + 1), 'row': row, 'keys': keys} for i, (row, keys) in enumerate(rows[tok])]
+            n += len(entries)
+            # 各条共有的键分不出是哪条，丢掉
+            for e in entries:
+                e['keys'] = sorted(k for k in e['keys'] if sum(k in o['keys'] for o in entries) == 1)
+            ambiguous[tok] = entries
+        else:
+            n += 1
+            numbers[tok] = 'O-%03d' % n
+    state['optEntries'] = ambiguous
+    return numbers
 
 
 def substitute(text, state, rel=''):
@@ -633,13 +760,20 @@ def substitute(text, state, rel=''):
         added = set(state.get('optAdded', {}).get(rel, []))
         if not added:
             return text
-        return '\n'.join(substitute_opt(line, state) if line in added else line for line in text.split('\n'))
+        lines = text.split('\n')
+        return '\n'.join(substitute_opt(line, state, '\n'.join(lines[i + 1:i + 3])) if line in added else line
+                         for i, line in enumerate(lines))
     return substitute_opt(text, state)
 
 
-def substitute_opt(text, state):
-    for tok, num in sorted(state.get('optNumbers', {}).items(), key=lambda kv: -len(kv[0])):
-        text = text.replace(tok, num)
+def substitute_opt(text, state, after=''):
+    if state.get('optEntries'):
+        lines = text.split('\n')
+        tail = lambda i: '\n'.join(lines[i + 1:i + 3]) if i + 1 < len(lines) else after
+        text = '\n'.join(substitute_ambiguous(x, state, tail(i)) for i, x in enumerate(lines))
+    for tok, num in state.get('optNumbers', {}).items():
+        # 只换整个占位：没发号的 O-待定-1 不能被 O-待定 的号换掉前半
+        text = re.sub(re.escape(tok) + r'(?!-?\d)', num, text)
     return text
 
 
@@ -1194,8 +1328,14 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         if changed & uids:
             print('一并提交车道新加脚本的 Godot .uid（车道漏交）：' + '、'.join(sorted(changed & uids)), flush=True)
         run(root, ['git', 'diff', '--check'])
-        # 已暂存删除的路径已不在索引里，重复 git add 会报 pathspec 不存在。
-        remaining = changed - set(sheets(state))
+        audit = opt_audit(root)
+        if audit:
+            raise RuntimeError('优化号自检不通过（代码注释里的 O 号与优化登记对不上），未提交：\n  ' + '\n  '.join(audit[:12])
+                               + '\n改好注释或登记后留成未提交，重跑 --finish 加 --also <改过的文件>')
+        # 已暂存删除的路径已不在索引里，重复 git add 会报 pathspec 不存在：本批交付单之外，总装 git rm 后 --also 点名的
+        # （如分支带来、未标可合并的另一张交付单）也一样（tools39）
+        tracked = set(git(root, 'ls-files', '-z').split('\0'))
+        remaining = {p for p in changed - set(sheets(state)) if (root / p).exists() or p in tracked}
         if remaining:
             run(root, ['git', 'add', '--', *sorted(remaining)])
         actor = 'cc（唐僧）' if executor == 'cc' else 'Codex（沙僧）'

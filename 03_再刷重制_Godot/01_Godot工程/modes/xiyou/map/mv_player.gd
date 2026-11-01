@@ -53,7 +53,7 @@ func update_character() -> void:
 		if d == 0:
 			touch_target = Vector2i(-1, -1)
 	if d != 0:
-		move_speed = vehicle_speed if vehicle_speed > 0 else (5 if is_dashing() else 4)
+		move_speed = vehicle_speed if vehicle_speed > 0 else walk_speed()
 		if move_straight(d):
 			stepped.emit()
 		elif touch_target.x >= 0:
@@ -117,3 +117,9 @@ func _toward(t: Vector2i) -> int:
 	if second == vert and diff.y != 0 and can_pass(vert):
 		return vert
 	return first
+
+
+## 走路速度（Game_CharacterBase.realMoveSpeed）：Game_Player._moveSpeed（XState.player_move_speed，默认 4）＋冲刺 1
+func walk_speed() -> int:
+	var base := XState.current.player_move_speed if XState.current != null else 4
+	return base + (1 if is_dashing() else 0)
