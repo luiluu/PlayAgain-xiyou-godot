@@ -1,7 +1,7 @@
 # 交付：cc/bailong-yunshang1
 
 - 车道／工作者：E 角色专属／白龙_9（cc，接白龙_8 的盘点）
-- 状态：WIP（代码、参照、专项已写，等同步与选测）
+- 状态：可合并
 - 分支从 cc/bailong-jingliu2 末端 8740add3 切出，白龙_8 盘点提交 10eaa282；白龙_9 在工作树 great-snyder-6f0aed 接手（heuristic-wing-4e9b42 改成游离 HEAD 让出分支，没有改动），合过 main（带进甚尔第一期）。
 
 ## 变更记录草稿
@@ -31,7 +31,12 @@ startAction 记主目标第 394 行，伤害钩子 yunshang 第 749～773 行）
 
 ## 验证
 
-（待补）
+- 专项 xiyou_yunshang 225/225（本机单跑）。
+- 反向验证一轮（已还原）：展幅不减、织神天梭结算不乘、30 级倍率改 1.5、双针不加段、暴伤成长改 1.0 一起改，32 项失败。
+- 同步：改切片后在本树跑一轮 `同步正式西游.py --accept-additions`，退出 0、新增用例已接受（slice_probe、actor_passive 等量了 174），产物指纹已留。合 main 在同步之前，之后 main 没再动。
+- 内容覆盖检查：7009 页、硬问题 2（老的），新增 0、消失 0；`--update-baseline` 后基线无变化。
+- 选测（本机，并行 2，机器负载 30 多，用时 72 分钟）：规则对照只比云裳（`RULES_ONLY_ACTORS=174`）xiyou_rules 与 d2～d6 共 6 个；另 xiyou_action_sequence、xiyou_actor_book、xiyou_actor_modules、xiyou_actor_p0、xiyou_alien_battle、xiyou_battle、xiyou_battle_gaps、xiyou_cat、xiyou_custom_damage、xiyou_formula_equipment、xiyou_formula_program、xiyou_formulas、xiyou_garou_battle、xiyou_help_card、xiyou_jingliu、xiyou_jingliu2、xiyou_mira_battle、xiyou_otb、xiyou_power、xiyou_power_books、xiyou_race_battle、xiyou_raven_battle、xiyou_smart_ai（四份）、xiyou_sukuna_battle、xiyou_super_acquire、xiyou_toji、xiyou_wtype、xiyou_yomi_battle 共 31 个。36 个过；xiyou_help_card 首轮 2 项失败（云裳钉影／拆神的消耗行：测试没建 10 级云裳，显示成公式原文），测试补建 174 后单跑 1008/1008。
+- ⚠ 偶发：xiyou_smart_ai_c 并行时 600 秒超时（rc=142），单独重跑通过（258 秒），累计偶发 1 次；负载 30 多时 smart_ai 四份都过了 300 秒，是机器忙，不是本期改动。
 
 ## 交接板
 
@@ -52,6 +57,8 @@ startAction 记主目标第 394 行，伤害钩子 yunshang 第 749～773 行）
 - 原 Codex 核心文件：`modes/xiyou/battle/battle_logic.gd`——`item_hit`／`item_eva` 加 `XYunshang.sure`；暴击率在小猫之后加 `XYunshang.cri`；两处段数外层套 `XYunshang.repeats`；`targets_for` 里 `_targets_for` 外套 `XYunshang.targets`（在异化 filter_targets 之内），末尾 `XYunshang.set_primary`（异化逆祷随机友方那条也记）；`can_use` 在甚尔前加 `XYunshang.meets`。
 - `actor_modules.gd`：IDS 加 174、setup／level_up／level_down 加 `XYunshang.sync`、param 最外层套 `XYunshang.param`、passive_cache 加 `XYunshang.passive_cache`。`actor_damage_hooks.gd` capture 加 `XYunshang.damage_ops`。`formula_execution.gd` 加 yunshang 分支。`mv_script.gd` 接 `CodexYunshang.recruit()`。
 - 切片：`xiyou_slice.json` actors 加 174；转换器 `formula_program.py` 加模块公式映射。
+- 测试：新 `tests/xiyou_yunshang`；`xiyou_actor_p0` 招募表补 9010；`xiyou_help_card` 专属角色技能卡补建 10 级 174。
+- 异化（八戒 dev.234 留的）：`alienation.gd` 的 `yunshang_key` 与 `life_compatible` 不穿第 3 件，本期没动、也还没用真天衣核（天衣要第二期或天衣铺才拿得到），二期接天衣时一起核。
 - 核查时可留意：原版 param 包装最后的取整夹值对**所有角色**都做（第 69 行），重制只给云裳做；前面各层已取整夹值，其余角色应无差别，没单独测。
 
 ## 本分支提交
@@ -60,4 +67,5 @@ startAction 记主目标第 394 行，伤害钩子 yunshang 第 749～773 行）
 - 0a1d3cb7 云裳第一期接线
 - 合并 main
 - WIP：主目标、参照与专项
-- 本提交：交付单草稿
+- WIP：专项 225/225、参照刷新织神天梭缓存
+- 本提交：help_card 补建 10 级云裳、交付单可合并
