@@ -196,7 +196,7 @@ func ledger(a: XActor) -> void:
 	s.raven["soul"] = 12345.0
 	var lines := XRaven.ledger_help(a, XDB.rec("Skills", XRaven.SOUL_LEDGER))
 	var st := XRaven.stage(a)
-	var next := ["", "3,000", "12,000", "35,000", "80,000", "150,000"][mini(5, st + 1)]
+	var next: String = ["", "3,000", "12,000", "35,000", "80,000", "150,000"][mini(5, st + 1)]
 	check("ledger.text", lines == ["灵魂：12,345　进阶：%d/5　进阶印：%d" % [st, s.item_count(XRaven.SEAL)], "本阶达" + next + "魂得印；进阶后清零"], lines)
 	check("ledger.other-skill", XRaven.ledger_help(a, XDB.rec("Skills", XRaven.PECK)).is_empty())
 	check("ledger.other-actor", XRaven.ledger_help(s.actor(XSukuna.ACTOR), XDB.rec("Skills", XRaven.SOUL_LEDGER)).is_empty())
