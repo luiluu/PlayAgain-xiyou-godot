@@ -28,8 +28,10 @@ func compare(tag: String, got, want) -> void:
 	else:
 		check(tag,got == want,[got,want])
 
+# 原版探针直接走 Scene_ItemBase（没有 Scene_Item.useItem 的道具续用包装），所以不比物品页的结果提示（见 xiyou_item_bag）
 func snapshot(a: XActor, item: int) -> Dictionary:
-	return {"skills":a.skill_ids.duplicate(),"passives":XPassiveBooks.learned(a),"book":s.item_count(item),"reserved":s.peek_common_event(),"wentMap":page.to_map,"messages":XToast.shown.duplicate()}
+	var messages := XToast.shown.filter(func(t): return not XItemBagReturn.is_result_text(str(t)))
+	return {"skills":a.skill_ids.duplicate(),"passives":XPassiveBooks.learned(a),"book":s.item_count(item),"reserved":s.peek_common_event(),"wentMap":page.to_map,"messages":messages}
 
 func run_case(c: Dictionary) -> void:
 	var spec: Dictionary = c.setup
@@ -70,11 +72,12 @@ func run_case(c: Dictionary) -> void:
 			a.learn_skill(int(page._item.effects[0].dataId))
 		elif spec.has("selected") and allowed:
 			# Explicitly sample stale selection separately from ordinary UI, as in native fixture.
+			var ctx := XItemBagReturn.begin(s,page._item,0,0)
 			s.gain_item(item,-1)
 			var logic := XBattleLogic.new()
 			logic.state = s
 			logic._effect(a,a,page._item.effects[0],{"skill":page._item})
-			page._after_use()
+			page._after_use(ctx)
 		elif not spec.get("cancel",false):
 			page._use()
 		compare(c.id+".after-effect",snapshot(a,item),row.after)
@@ -94,17 +97,19 @@ func run_case(c: Dictionary) -> void:
 	page.queue_free()
 	await get_tree().process_frame
 
-# Continuation is runtime context, never permission to reopen after another reservation/state.
+# Continuation is runtime context (XItemBagReturn): only after its own event started, same map, nothing else queued.
 func return_context_guards() -> void:
 	var item := XDB.rec("Items",1461)
-	for mode in ["ok","overwritten","pending","map","state"]:
+	for mode in ["ok","overwritten","pending","map","state","scene"]:
 		s = XState.new_game_blank()
 		s.map_id = 5
 		s.item_target_actor_id = 2
 		s.set_variable(9,0)
+		s.actor(2)  # 先建出角色：快照只比已建的角色（原版 $gameActors._data），免得 refund 里建出角色 2 算成变化
+		var ctx := XItemBagReturn.begin(s,item,0,2)
 		check("return."+mode+".rejected",XPassiveBooks.refund_if_full(s,6301,item))
-		XPassiveBooks.remember_return(s,item,0,2)
-		check("return."+mode+".captured",s.has_meta("capacity_bag_return"))
+		XItemBagReturn.hold(s,ctx)
+		check("return."+mode+".captured",s.has_meta(XItemBagReturn.META))
 		s.clear_common_event()
 		var consumed := 1317
 		match mode:
@@ -112,9 +117,19 @@ func return_context_guards() -> void:
 			"pending": s.reserve_common_event(1316)
 			"map": s.map_id = 6
 			"state": XState.new_game_blank()
-		var saved := XPassiveBooks.take_return(s,consumed)
+		XItemBagReturn.event_started(s,consumed)
+		if mode == "scene":
+			XItemBagReturn.scene_opened(s)
+		var target := XState.current if mode == "state" else s
+		var saved := XItemBagReturn.take(target,false)
 		check("return."+mode+".scope",not saved.is_empty() if mode == "ok" else saved.is_empty(),saved)
-		check("return."+mode+".one-shot",XPassiveBooks.take_return(s,consumed).is_empty())
+		if mode == "ok":
+			check("return.ok.message",saved.message == "事件已执行："+str(item.name)+"（未检测到可确认的变化）",saved.message)
+		check("return."+mode+".one-shot",XItemBagReturn.take(target,false).is_empty())
+		# 另有预约时是等，不是放弃：那条跑完再回
+		if mode == "pending":
+			s.clear_common_event()
+			check("return.pending.after-queue",not XItemBagReturn.take(s,false).is_empty())
 
 func _ready() -> void:
 	_run.call_deferred()

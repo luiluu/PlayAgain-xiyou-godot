@@ -24,6 +24,7 @@ extends RefCounted
 ## - 角色进阶：SceneManager.push(Scene_ActorAdvanced) → host.open_actor_advanced（XAdvance）。
 ## - 魔兽要诀：Star.PetSystem.ComEveLearnSkill(N) → XPets.learn_book（出战宠物学技能，提示走 host.toast）。
 ## - 已移除地图提示：CodexMapRemoval.notice(N) → 文字「【区域已移除】…」（Map080 王座宝箱，见 MVInterpreter.removed_gate_fix）。
+## - 批量抽奖：if(window.CodexCasino)CodexCasino.open(this[,"twenty"]);else … → XCasinoBatch.open（等这一局结束）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## 正式版移除的地图（Codex_StabilityPerformancePatch 1.1）：地图 ID → 名字
@@ -104,6 +105,11 @@ static func run(code: String, interp) -> Array:
 		interp.host.toast(XPassiveBooks.limit_message(s))
 		return []
 	# ---- 整段写法 ----
+	# 批量抽奖（installCasinoBatchRuntime，大厅 Map004 EV60「自定义单抽／自定义20连抽」）：else 支是没装运行时的旧版提示，正式版不走
+	var casino := _re("^if\\(window\\.CodexCasino\\)CodexCasino\\.open\\(this(?:,\\s*\"(twenty)\")?\\);else \\$gameMessage\\.add\\(\"[^\"]*\"\\);?$").search(js)
+	if casino:
+		await XCasinoBatch.open(interp, "twenty" if casino.get_string(1) == "twenty" else "single")
+		return []
 	if js == "Star.RunForgetSkill();":  # 遗忘河之水 CE83：选中角色的遗忘界面（Star_Scene_ForgetSkill）
 		if interp.host.has_method("open_forget_skill"):
 			await interp.host.open_forget_skill(s.item_target_actor_id)
@@ -282,11 +288,14 @@ static func _statements(js: String, interp) -> Array:
 			if got != "":
 				interp.host.toast(got)
 			continue
-		# 公共事件 9011 天衣铺、9018 小猫试炼：只移植了条件不够时的提示（installNativeYunshangRuntime openCrafting：174 云裳在队且
-		# 20 级；installImportedBalanceRuntime startTrial：178 在队、35 级且武器槽是剑）。条件够时的天衣铺页面与试炼战斗没移植，照旧算没认出。
-		# 两处原版还判 $gameParty.inBattle()，重制的脚本翻译只在地图上跑，不用判
+		# 公共事件 9011 天衣铺、9018 小猫试炼：条件不够时的提示（installNativeYunshangRuntime openCrafting：174 云裳在队且
+		# 20 级；installImportedBalanceRuntime startTrial：178 在队、35 级且武器槽是剑）。条件够时天衣铺打开 XYunshangShop（host.open_yunshang_shop），
+		# 试炼战斗没移植，照旧算没认出。两处原版还判 $gameParty.inBattle()，重制的脚本翻译只在地图上跑，不用判
 		if st == "CodexYunshang.openCrafting()" and not _actor_ready(s, 174, 20):
 			interp.host.toast("云裳达到20级后，可在战斗外使用天衣铺")
+			continue
+		if st == "CodexYunshang.openCrafting()" and interp.host.has_method("open_yunshang_shop"):
+			await interp.host.open_yunshang_shop()
 			continue
 		if st == "CodexCat.startTrial(this)" and not (_actor_ready(s, XCat.ACTOR, 35) and XCat.has_sword(s.actor(XCat.ACTOR))):
 			interp.host.toast("小猫剑圣达到35级并装备剑后，才能挑战。")

@@ -462,7 +462,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if is_item(skill):
 		return a.is_actor() and state.items.get(int(skill.id), 0) > 0
-	if a.cooldown_left(int(skill.id)) > 0:
+	# 云裳九曲回针 meetsSkillConditions：醒着的针眼每回合一次不看冷却（原版临时把冷却设 0 再判，预热照判）
+	if (a.cooldown_left(int(skill.id)) if not XYunshang.eye_bypass(a, skill) else ceili(float(a.warmups.get(int(skill.id), 0)))) > 0:
 		return false
 	if not XCat.legal(self, a, skill):  # 小猫剑圣的剑技／试炼条件、178 没持剑不能用物理技能
 		return false
@@ -571,7 +572,7 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Arr
 				out.append(_random_target(alive(friends)))
 		XYunshang.set_primary(a, out)
 		return out
-	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, _targets_for(a, skill, chosen)))  # 云裳云丝展幅 makeTargets 包装在异化之内
+	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, _targets_for(a, skill, chosen), chosen))  # 云裳云丝展幅、千军入袖收袖 makeTargets 包装在异化之内
 	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
 	return list
 
@@ -669,9 +670,15 @@ func _meets(e: XEnemy, act: Dictionary) -> bool:
 ## 智能AI开着（默认）——技能顺序表排了且能用就照表（XdRs_HangUp makeAction），否则 XSmartAI 选；没有可选的退回普通攻击。
 ## 智能AI关着——照表，否则普通攻击（XdRs_HangUp 的 makeAction 不再走 MV 原生评估）。
 func auto_battle_action(a: XActor) -> Array:
-	var guyu := XGuyu.auto_action(self, a)  # 谷雨 makeAutoBattleActions 包装（最外层）：固定判断压过挂机与智能 AI
+	var guyu := XGuyu.auto_action(self, a)  # 谷雨 makeAutoBattleActions 包装（云裳之外：modules.json 谷雨第 37、云裳第 30）：固定判断压过挂机与智能 AI
 	if not guyu.is_empty():
 		return guyu
+	var r := _auto_battle_action(a)
+	XYunshang.auto_battle(self, a)  # 云裳 makeAutoBattleActions 包装（原选择之后）：免费赠行、放行、六衡裁身、收袖
+	return r
+
+
+func _auto_battle_action(a: XActor) -> Array:
 	# 异化饕餮 makeAction 包装（Adv:138-142）：原生挂机选技比的是实际 MP（恒 0），饕餮改按手动输入的合法性（canUse 读饥饿储备）
 	if XAlienBattle.devours(a):
 		var id := int(XHangUpAuto.data(state, "ActSkill").get(a.display_name() + XHangUpAuto.three(turn), 0))
@@ -804,6 +811,7 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(XYomiJingliu.j_finish(self, u, skill))  # 镜流 endAction 包装（黑闪之内、渡鸦之外）：追加段、霜痕／裂隙、月魄、追加行动
 		XToji.finish(self, u, skill)  # 甚尔 endAction 包装（原 endAction 之后，镜流在里层）：切换技能换形态
 		logs.append_array(XRaven.finish(self, u, skill))  # 渡鸦 endAction 包装（各专属模块最内层，原 endAction 之前）：冥界收割、回响
+		logs.append_array(XYunshang.finish(self, u, skill))  # 云裳 endAction 包装（finishAction）：赊账还债、一身两世复演、衣魂计次
 	XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
 	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
 	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
@@ -1156,6 +1164,7 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 		logs.append_array(XSukuna.finish(self, u, skill, true))
 		logs.append_array(XYomiJingliu.j_finish(self, u, skill))
 		logs.append_array(XRaven.finish(self, u, skill))
+		logs.append_array(XYunshang.finish(self, u, skill))
 		XRaceBattle.finish(self, logs)
 		XCat.end_action(self, u, skill)
 		XAlienBattle.finish(self, logs)
@@ -1671,12 +1680,22 @@ func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool, 
 
 
 func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
-	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
-	_formula_outcome.value = XBlackFlash.formula(self, u, skill, t, float(_formula_outcome.value))  # 黑闪 evalDamageFormula 包装：觉醒 ×1.2、判黑闪
+	var raw := _formula_raw(u, skill, t)
 	critical = critical or XBlackFlash.boosted(t)  # 黑闪 modifyCritical 包装：黑闪必暴击
-	var options := {"critical": critical, "vars": vars(), "rawValue": _formula_outcome.value, "random": _rule(),
+	var options := {"critical": critical, "vars": vars(), "rawValue": raw, "random": _rule(),
 		"battleRound": maxi(1, turn), "raceAction": true}  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
-	return XYunshang.calculate_split(skill, u, t, options)  # 云裳伤害钩子 split：七曜流霞元素、万法同裳两路（没有就照常算一次）
+	var outcome := _formula_outcome
+	# 云裳伤害钩子 split：七曜流霞元素、万法同裳两路、千军入袖收袖的各目标（公式对别的目标重新求值；没有就照常算一次）
+	var res := XYunshang.calculate_split(skill, u, t, options, func(pt): return _formula_raw(u, skill, pt))
+	_formula_outcome = outcome
+	return res
+
+
+## evalDamageFormula(target)：执行公式（实战路径），再经黑闪包装（觉醒 ×1.2、判黑闪）
+func _formula_raw(u: XBattler, skill: Dictionary, t: XBattler) -> float:
+	_formula_outcome = XFormulaExecution.run_item(skill, u, t, vars(), state.switches if state != null else {}, true, _rule(), _action_resources)
+	_formula_outcome.value = XBlackFlash.formula(self, u, skill, t, float(_formula_outcome.value))
+	return float(_formula_outcome.value)
 
 
 func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -> Dictionary:
@@ -1818,11 +1837,25 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 ## 正 → pushStates 给目标、pushSelfStates 给自己；负 → recPushStates 给目标（不看阵营，同原版）；只认角色行动者，异化虚空的攻击伤害除外；
 ## 每条按概率掷（Math.random()*100 < p），目标已有就不挂。由 XDamage.finish 在 Confirm／固定减伤之后、React 之前调（参照 pushstate order.1580）。
 var _push_sign := 0.0
+## O-134（审查 17 P2）：归墟（异化 void）的攻击类伤害（类型 1／2／5／6）不挂 PushState／PushsubState。原版 installDamageElementRuntime
+## 本意如此，但排除写成 CodexAlienation.isAttackDamage(this)，_after 回调是直调的、严格模式下 this 为 undefined，恒为假，排除从没生效
+## （正式引擎实测照挂，参照 pushstate void.*）。true 照本意排除；false 恢复原版照挂。
+static var VOID_PUSH_EXCLUDE := true
+
 func _push_states(u: XBattler, skill: Dictionary, t: XBattler, sign: float) -> void:
 	_push_sign = sign
 	# 反射回行动者自己时目标就是行动者，照样挂给自己（参照 pushstate invoke.reflect）；反击由反击者结算（invoke.counter）
-	if not (u is XActor) or sign == 0.0 or (XAlienBattle.has(u, "void") and XAlienBattle.attack_damage(skill)):
+	var void_attack := XAlienBattle.has(u, "void") and XAlienBattle.attack_damage(skill)
+	if not (u is XActor) or sign == 0.0 or (void_attack and VOID_PUSH_EXCLUDE):
 		return
+	if void_attack:
+		XAlienBattle.push_action(u, {})  # 原版照挂时归墟的 addState 包装也不拦（参照 void.1580.apply）：垫一层不是攻击的行动帧
+	_push_rows(u, t, sign)
+	if void_attack:
+		XAlienBattle.pop_action()
+
+
+func _push_rows(u: XBattler, t: XBattler, sign: float) -> void:
 	var cache: Dictionary = u.passive_cache()
 	for row in cache.get("recPushStates" if sign < 0.0 else "pushStates", []):
 		if _float("push_state") * 100.0 < float(row.probability) and not t.is_state_affected(int(row.stateId)):
@@ -1865,11 +1898,13 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 	if not _action_resources.boss_output.is_settled(t, "hp"):
 		value = _boss_output_value(u, t, value)
 	_action_resources.boss_output.enter_settled(t, "hp")
+	value = XYunshang.hp_damage(self, u, t, value)  # 云裳 executeHpDamage 包装：山河作骨分担、赊月偿星记债
 	var sukuna_shield := XSukuna.strip_shield(u, t, item)  # 宿傩 executeHpDamage 包装：真伤免护盾
 	var sukuna_hp := t.hp
 	var out := _execute_hp_damage(u, t, value, drain)
 	XBlackFlash.after_hp(u, t, sukuna_hp - t.hp, item)  # 黑闪 executeHpDamage 包装（宿傩之内）：记伤害、黑闪成功
 	XSukuna.restore_shield(u, t, sukuna_shield, sukuna_hp)
+	XYunshang.after_hp(self, u, t, value, item)  # 云裳 executeHpDamage 包装：记每段命中、山河作骨守势反击
 	_action_resources.boss_output.leave_settled()
 	XAlienBattle.record(self, u, t, maxf(0.0, alien_before - t.hp))
 	return out
@@ -2282,24 +2317,28 @@ func resolve_collapse(e: XEnemy) -> void:
 func _roll_drops(e: XEnemy) -> Array:
 	if random == null:
 		random = XBattleRandom.create(XRandomStream.hex64(XState._fresh_seed())) # standalone fixture owner; real battles initialize in setup
-	var rates := _difficulty_rates()
-	var item_up := 0.0
-	for a in actors:
-		item_up = maxf(item_up, _passive_sum(a, "passiveIRUP"))
-	var suit_drop := XEquipSuits.reward(actors,1.0,2)
-	var d: Dictionary = e.data()
 	var drops := []
-	var di: Array = d.get("dropItems", [])
-	for i in range(di.size()):
-		var drop: Dictionary = di[i]
-		if int(drop.kind) > 0 and int(drop.denominator) > 0:
-			var rate := float(rates[2 + i]) if 2 + i < rates.size() else 1.0
-			if random.reward.next_float("drop", stable_id(e)) * int(drop.denominator) < rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
-				drops.append({"kind": int(drop.kind), "id": int(drop.dataId)})
-	for extra in _extra_drops(d):
-		if random.reward.next_float("extra_drop", stable_id(e)) < extra.rate * e.drop_rate_bonus() * (1.0 + item_up / 100.0) * suit_drop:
-			drops.append({"kind": extra.kind, "id": extra.id})
+	for c in drop_chances(e):
+		if random.reward.next_float("extra_drop" if c.extra else "drop", stable_id(e)) < c.chance:
+			drops.append({"kind": c.kind, "id": c.id})
 	return drops
+
+
+## 各掉落这一次掉出的概率（参照 battle_drop_probe）：MV makeDropItems 的 Math.random()×分母 < dropItemRate()，
+## dropItemRate＝EliteEnemy（双倍掉落 ? 1 : 0.2，×神话倍率）×全队掉率（套装、出战 passiveIRUP 连乘、亡魂汲取 +1），同怪物图鉴
+## （XAlienBattle.drop_item_rate）。<Enemy Drops> 的 x% 运行时并进 dropItems（分母 100/x），同一式。
+## 难度不影响：Vitsuno_Difficulty 的按序号掉率在原版整段注释掉了。原来这里按难度「Drop Rate」×(1＋出战 passiveIRUP 最大值)×套装算，
+## 没有 0.2 底、没有亡魂汲取，难度 2 时约多掉十几倍（悟空 drops1 改）。
+func drop_chances(e: XEnemy) -> Array:
+	var rate := XAlienBattle.drop_item_rate(state, e)
+	var out := []
+	var di: Array = e.data().get("dropItems", [])
+	for drop: Dictionary in di:
+		if int(drop.kind) > 0 and float(drop.denominator) > 0:
+			out.append({"kind": int(drop.kind), "id": int(drop.dataId), "chance": rate / float(drop.denominator), "extra": false})
+	for extra in _extra_drops(e.data()):
+		out.append({"kind": extra.kind, "id": extra.id, "chance": extra.rate * rate, "extra": true})
+	return out
 
 
 ## 把掉落放进背包（BattleManager.gainDropItems / SpriteEnemyTrP.gainDropItems）
@@ -2310,12 +2349,6 @@ func gain_drops(drops: Array) -> void:
 			2: state.gain_gear("weapon", d.id, 1)
 			3: state.gain_gear("armor", d.id, 1)
 
-
-func _passive_sum(a: XActor, tag: String) -> float:
-	var v := 0.0
-	for m in a.passive_values(tag):
-		v += XActor._num(m)
-	return v
 
 ## YEP_ExtraEnemyDrops：<Enemy Drops> Item/Weapon/Armor x: y% </Enemy Drops>
 static func _extra_drops(d: Dictionary) -> Array:
@@ -2374,7 +2407,7 @@ func end_battle(result := -1) -> void:
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XSukuna.end_battle(self)  # 宿傩 endBattle 包装：清战斗数据与领域、适应、觉醒状态
-	XYunshang.end_battle()  # 云裳 endBattle 包装：清战斗数据、御风、余辉、符针
+	XYunshang.end_battle(self)  # 云裳 endBattle 包装：结清赊账、结束衣魂，清战斗数据、御风、余辉、符针
 	XBlackFlash.end_battle(self)  # 黑闪 endBattle 包装
 	XToji.end_battle(self)  # 甚尔 endBattle 包装：清形态
 	XMira.end_battle(state)  # 米拉 endBattle 包装：删黑龙形态等状态，清代价与劫火

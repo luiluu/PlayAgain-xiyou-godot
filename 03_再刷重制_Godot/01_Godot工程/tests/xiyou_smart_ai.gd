@@ -3,10 +3,13 @@ extends Node
 ## （普通难度、出战 1/8/9/10、10 级、开局被动与开战状态、药 1/2/137；切片敌群 × 满状态/队友低血/队友阵亡/没蓝/敌人残血）。
 ## 比较：每个角色选中的技能/药与目标、前 6 名候选的分数，以及 safeDamage 估算；另比 YEP 行动序列段数（转换器 yepEffects）。
 ## 异化投影估值（O-121 XSmartAI.o_projection）只写 Godot 侧断言（alien_projection）：开时是优化；关时照原版混读，断言按原版源码的结果写（探针不带异化）。
-## 单场景约 400 秒：伤害行与选择用例按序号轮流分成 parts 份（xiyou_smart_ai 管第 0 份，_b／_c／_d 各管一份），
+## 分 parts 份（xiyou_smart_ai 管第 0 份，_b～_p 各管一份）：伤害行按序号轮流；选择用例按「同敌群同场面的 4 个角色」整组轮流
+## （用例按 敌群×场面×角色 1/8/9/10 排，原来四份逐条轮流时每份正好是一个角色，角色 10 那份满负载 600 秒被杀。tools30 改整组轮流；
+## 每份约 120 CPU 秒时负载 10～15 下 130～165 秒，满负载要再翻倍，所以分 16 份，每份约 60 CPU 秒）。
 ## 来源指纹、行动序列、自动战斗分派与边界伤害只在第 0 份比，断言总数与拆分前相同
 @export var part := 0
-@export var parts := 4
+@export var parts := 16
+const CASE_GROUP := 4  # 每个敌群×场面的角色数（探针出战 1/8/9/10）
 
 var results := []
 var mismatches := []
@@ -94,7 +97,9 @@ func _run() -> void:
 			absf(logic.item_hit(a, sk, e) - float(row.hit)) < 1e-4 and absf(logic.item_eva(a, sk, e) - float(row.eva)) < 1e-4,
 			{"godot": [logic.item_hit(a, sk, e), logic.item_eva(a, sk, e)], "mv": [row.hit, row.eva]})
 		check("cri.t%d.a%d.s%d.e%d" % [int(row.troop), int(row.actor), int(row.skill), int(row.target)], absf(cri - float(row.cri)) < 1e-4, {"godot": cri, "mv": row.cri, "a.cri": a.cri, "e.cev": e.cev})
-	for i in range(part, ref.cases.size(), parts):
+	for i in range(ref.cases.size()):
+		if (i / CASE_GROUP) % parts != part:
+			continue
 		var c: Dictionary = ref.cases[i]
 		var tag: String = "case.t%d.%s.a%d" % [int(c.troop), c.scene, int(c.actor)]
 		if c.get("skipped", false):

@@ -215,8 +215,11 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 		return  # 米拉终焉 isStateResist／addState 包装：黑龙形态挡名单状态
 	if XToji.blocks_state(self, id):
 		return  # 甚尔 addState 包装：暴君挡负面状态
+	if XYunshang.ghost_death(self, id):
+		return  # 云裳不渡黄泉 addState／die 包装：首次倒下留衣魂，衣魂期间不阵亡
 	var fresh := not state_ids.has(id)
 	super(id, random)
+	XYunshang.state_added(self, id, not fresh)  # 云裳 stateAdded 包装：百厄成锦收录减益
 	if fresh and state_ids.has(id) and lifecycle_context.get("resources") == null:
 		release_to_party()
 
@@ -667,11 +670,15 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XRaceBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i))))  # 按原版安装先后由内到外：专属角色模块（米拉 98、宿傩 113）→小猫剑圣（115）→异化逆骨（129）→谷雨储备（133）→种族祝福（148）
+	return XRaceBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i))))  # 按原版安装先后由内到外：专属角色模块（米拉 98、宿傩 113）→小猫剑圣（115）→云裳（夹值）→异化逆骨（129）→谷雨储备（133）→种族祝福（148）
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:
-	return XCat.param(self, i, final_clamp(i, XYunshang.battle_param(self, i, XActorModules.param(self, i, super.param(i)))))  # 云裳包装的战斗内层（六衡、万法、御风）
+	# 原版安装先后由内到外：专属角色模块（米拉、黄泉、甚尔、宿傩，模块表 2～18）→小猫剑圣（installImportedBalanceRuntime，第 20 个）
+	# →云裳（第 31 个：云裳自身倍率、战斗内层六衡／万法／御风，最后夹值）。审查第 17 期 P3：原来夹值写在小猫剑圣里面，次序反了
+	# （XCat 只管 178、云裳倍率只管 174，结果一样；战斗内层对别的角色生效时才有差）。
+	var v := XCat.param(self, i, XActorModules.param(self, i, super.param(i)))
+	return final_clamp(i, XYunshang.battle_param(self, i, XYunshang.param(self, i, v)))
 
 ## 云裳 installNativeYunshangRuntime 的 Game_Actor.param 包装（模块表第 30 个，在米拉、黄泉、甚尔、宿傩、饿狼之后，异化、种族之前）：
 ## 对所有角色最后 round(max(HP?1:0, min(paramMax, v)))，专属倍率乘过上限的压回上限（八戒 toji2；参照 param_max_probe）。

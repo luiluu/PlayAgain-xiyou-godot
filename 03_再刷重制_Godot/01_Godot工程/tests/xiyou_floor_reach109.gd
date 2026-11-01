@@ -9,6 +9,7 @@ extends Node
 ## 事件随机数用 MVEventCore.fixed_random 固定，逐支核对（商品对照表来自冻结源事件命令）。队伍生命攻击都很大（只查流程）。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
+const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
 
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
@@ -43,8 +44,8 @@ func _scene() -> Node:
 
 
 func _wait_map(map_id: int) -> bool:
-	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var t0 := WaitBudget.new(TIMEOUT_MS)
+	while t0.waiting():
 		var s = _scene()
 		if s is XMapScene and s.map_id == map_id and s.player != null and not s.busy:
 			return true
@@ -105,8 +106,8 @@ func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
 	(func():
 		await map.run_event(e)
 		st.done = true).call()
-	var t0 := Time.get_ticks_msec()
-	while not st.done and Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var t0 := WaitBudget.new(TIMEOUT_MS)
+	while not st.done and t0.waiting():
 		var b := _battle_of(map)
 		if b != null and not b.logic.enemies.is_empty():
 			if mode == "win":
@@ -152,8 +153,8 @@ func _run_call(map: XMapScene, call: Callable, mode := "win") -> bool:
 	(func():
 		await call.call()
 		st.done = true).call()
-	var t0 := Time.get_ticks_msec()
-	while not st.done and Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var t0 := WaitBudget.new(TIMEOUT_MS)
+	while not st.done and t0.waiting():
 		var b := _battle_of(map)
 		if b != null and not b.logic.enemies.is_empty() and mode == "win":
 			for en in b.logic.enemies:

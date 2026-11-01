@@ -15,6 +15,7 @@ const BOSS_LINE := "很久没有打的这么尽兴了"
 const STUN := 29   # 眩晕（行动限制 4：不能行动）
 ## 各段等待上限（墙钟）。原 90 秒在多车道满负载并行时不够（单跑全程约 51 秒，首领战占一半），放宽到 300 秒，仍在单场 600 秒上限内
 const TIMEOUT_MS := 300000
+const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
 ## 眩晕的剩余回合直接拉满：它本是回合末自动解除（1 回合），测试按渲染帧补；战斗主循环按物理帧推进，负载高时一渲染帧可跑多达 8 个物理帧，
 ## 回合末解除后到下回合角色出手之间可能来不及补，队伍提前打死首领、到不了第 4 回合。拉满后不再依赖补的时机。
 const STUN_TURNS := 999999
@@ -51,8 +52,8 @@ func _scene() -> Node:
 
 
 func _wait_map(map_id: int) -> bool:
-	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var t0 := WaitBudget.new(TIMEOUT_MS)
+	while t0.waiting():
 		var s = _scene()
 		if s is XMapScene and s.map_id == map_id and s.player != null and not s.busy:
 			return true
@@ -116,8 +117,8 @@ func _run_event(map: XMapScene, id: int, answers: Array, watch_boss := false) ->
 		await map.run_event(e)
 		info.done = true).call()
 	var boosted := false
-	var t0 := Time.get_ticks_msec()
-	while not info.done and Time.get_ticks_msec() - t0 < TIMEOUT_MS:
+	var t0 := WaitBudget.new(TIMEOUT_MS)
+	while not info.done and t0.waiting():
 		if watch_boss:
 			var b := _battle_of(map)
 			if b != null and not b.logic.enemies.is_empty():
@@ -210,8 +211,8 @@ func _run() -> void:
 	(func():
 		await map.start_battle(796, false, false)
 		gdone.v = true).call()
-	var gt0 := Time.get_ticks_msec()
-	while not gdone.v and Time.get_ticks_msec() - gt0 < TIMEOUT_MS:
+	var gt0 := WaitBudget.new(TIMEOUT_MS)
+	while not gdone.v and gt0.waiting():
 		var gb := _battle_of(map)
 		if gb != null and not gdone.cut and not gb.logic.enemies.is_empty():
 			gdone.cut = true

@@ -107,6 +107,7 @@ func _ready() -> void:
 	fader.modulate.a = 0.0
 	ui.add_child(fader)
 	_build_hud()
+	ui.child_entered_tree.connect(_on_ui_page)
 	# EnemyNameColorByDifficulty 的提示位于窗口层之上，随地图快照进入战斗背景。
 	difficulty_notice = XDifficultyNoticeCanvas.new()
 	ui.add_child(difficulty_notice)
@@ -132,6 +133,12 @@ func _ready() -> void:
 	var s := XState.current
 	await load_map(s.map_id, s.x, s.y, s.direction)
 	XItemMarks.deploy_start(XState.current)  # Scene_Map.start 包装：清出战栏里的超强者并提示
+
+
+## Scene_Map.stop 包装：地图上开了别的画面（战斗、商店、各种页面；输入文字 prompt 与批量抽奖的数量框不算）就不再回物品页
+func _on_ui_page(node: Node) -> void:
+	if not node is XTextPrompt and not node is XCasinoDialog:
+		XItemBagReturn.scene_opened(XState.current)
 
 
 func _difficulty_notice_active() -> bool:
@@ -382,6 +389,11 @@ func _process(delta: float) -> void:
 			run_reserved_common_event(XState.current)
 		else:
 			_check_autorun()
+		# installItemBagContinuationRuntime：物品页预约的公共事件跑完（没有别的预约、事件与文字）就回物品页
+		if not busy and transfer_page == null and not XHangUp.is_active(XState.current):
+			var back := XItemBagReturn.take(XState.current, false)
+			if not back.is_empty():
+				open_menu(back)
 		if not busy and transfer_page == null:
 			_check_milestone()
 	if not busy and Input.is_action_just_pressed("ui_cancel") and not XMessageBox.consumed_input_this_frame():
@@ -1102,6 +1114,7 @@ func run_common_event(id: int, reservation: XState = null) -> void:
 	var interp := MVInterpreter.new(self, map_id, 0, ce.list)
 	if reservation != null:
 		reservation.clear_common_event()
+		XItemBagReturn.event_started(reservation, id)
 	await interp.run()
 	if not interp.skipped.is_empty():
 		skipped_log.append_array(interp.skipped)
@@ -1147,6 +1160,8 @@ func return_to_title() -> void:
 
 ## $.toaster 提示（AXY_Toast 样式，见 XToast）
 func toast(text: String) -> void:
+	if XCasinoBatch.drawing:  # 批量抽奖每抽静音 $.toaster（installCasinoBatchRuntime）
+		return
 	toasts.append(XToast.plain(text))
 	XToast.show_text(text, _menu_open)
 
@@ -1348,6 +1363,16 @@ func open_inlay_book() -> void:
 	hud.visible = true
 
 
+## 公共事件 9011「天衣铺」：CodexYunshang.openCrafting() → SceneManager.push(Scene_Yunshang)，关闭后回到地图
+func open_yunshang_shop() -> void:
+	hud.visible = false
+	var page := XYunshangShop.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 ## 公共事件 169「宠物」：SceneManager.push(Scene_PetSystem)，关闭后回到地图
 func open_pets() -> void:
 	hud.visible = false
@@ -1395,7 +1420,7 @@ func open_menu(resume_items: Dictionary = {}) -> void:
 	menu.player_tile = player_screen_tile()
 	ui.add_child(menu)
 	if not resume_items.is_empty():
-		XItemScene.restore_capacity_return(menu,resume_items)
+		XItemScene.restore_return(menu,resume_items)
 	await menu.closed
 	var zhenqi := menu.zhenqi_requested
 	menu.queue_free()
@@ -1403,11 +1428,7 @@ func open_menu(resume_items: Dictionary = {}) -> void:
 	XItemMarks.deploy_start(XState.current)  # 回地图＝Scene_Map.start
 	hud.visible = true
 	_reset_transfer_button()
-	var reserved := owner.peek_common_event()
 	await run_reserved_common_event(owner)
-	var resume := XPassiveBooks.take_return(owner,reserved)
-	if not resume.is_empty():
-		open_menu.call_deferred(resume)
 	if zhenqi:
 		await run_zhenqi_retreat()
 	# 整队/换人后队首与跟随的行走图

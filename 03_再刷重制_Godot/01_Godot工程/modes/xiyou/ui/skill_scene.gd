@@ -66,6 +66,10 @@ func actor() -> XActor:
 
 ## Window_SkillType.makeCommandList：addedSkillTypes 升序
 func types() -> Array:
+	var forced = XActorModules.menu_skill_types(actor())  # 渡鸦／宿傩／饿狼 addedSkillTypes 包装
+	if forced != null:
+		forced.sort()
+		return forced
 	var ids := []
 	for t in actor().all_traits():
 		if int(t.code) == 41 and not ids.has(int(t.dataId)):
@@ -124,10 +128,29 @@ func _update_help() -> void:
 		help_card.show_for({})
 		return
 	help_card.show_for(current())
+	var soul := XRaven.ledger_help(actor(), current())
+	if not soul.is_empty():
+		_paint_text(soul)
 	var row := index / 2 - top
 	var col := index % 2
 	# 两列列表：O-008 的贴边放法会盖住另一列，这里一律用正式位置
 	help_card.place_original(Rect2(LIST_RECT.position.x + col * (COL_W + SPACING), LIST_RECT.position.y + row * LH, COL_W, LH))
+
+
+## 说明卡整个换成几行字（原版 _helpWindow.setText），字号同本项目说明卡的其它行（O-007）
+func _paint_text(lines: Array) -> void:
+	var card := help_card
+	card.rows = lines.map(func(t): return [str(t), XHelpCard.OTHER_SIZE, "#ffffff", false, 0])
+	card.quality = 0
+	var layout := XHelpCard.layout(card.rows, card.min_font, card.card_width)
+	card._lines = layout.lines
+	card.size = Vector2(card.card_width, layout.height)
+	card.frame.position = Vector2(-10, -10)
+	card.frame.size = card.size + Vector2(20, 20)
+	card.canvas.size = card.size
+	card.visible = true
+	card.frame.queue_redraw()
+	card.canvas.queue_redraw()
 
 
 # ---- 绘制 ----
