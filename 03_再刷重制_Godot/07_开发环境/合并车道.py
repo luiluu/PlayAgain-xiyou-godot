@@ -637,13 +637,18 @@ def append_opt_registry(root, state):
     text = reg.read_text() if reg.is_file() else ''
     lines = text.split('\n')
     have = set(OPT_NUMBERED.findall(text))
-    added, rows = [], []
+    added, rows, batch = [], [], set()
     for s in sheets(state):
         for row in opt_draft_rows((root / s).read_text()):
             row = substitute(row, state)
             number = re.match(r'^\|\s*O-(\d{3})(?!\d)', row)
-            if not number or number.group(1) in have or OPT_TOKEN.search(row):
+            if not number or OPT_TOKEN.search(row):
                 continue
+            if number.group(1) in batch:
+                raise RuntimeError('同批优化登记草稿出现重号 O-%s（%s）：每条优化要自己的号，总装手改成不同的号再重跑' % (number.group(1), row.split('|')[2].strip()[:40]))
+            batch.add(number.group(1))
+            if number.group(1) in have:
+                continue          # 登记里已有（中断后接续）
             have.add(number.group(1))
             rows.append(row)
             added.append(('O-' + number.group(1), row.split('|')[2].strip()))

@@ -1442,6 +1442,15 @@ for name in filter(None, files):
         self.assertEqual(self.call(), 1)
         self.assertIn('是列表不是表格', self.last_output)
 
+    def test_duplicate_numbers_in_one_batch_fail(self):
+        """tools36：同一批草稿表行写了同一个 O-NNN（yunshang8 那种两条同号）就直接失败，不再悄悄只登一条。"""
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        row = lambda name: '| O-125 | %s | 问题 | 做法 | 理由 | 回退 | 车道 | 待用户决定 |' % name
+        self.sheet_with(self.HEAD8 + row('甲项') + '\n' + row('乙项') + '\n')
+        self.assertEqual(self.call(), 1)
+        self.assertIn('重号 O-125', self.last_output)
+
     def test_optimization_token_without_draft_table_is_refused(self):
         tok = 'O-' + '待定'
         self.realistic_checker()
