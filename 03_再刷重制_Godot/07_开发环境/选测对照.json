@@ -38,7 +38,7 @@
     "keys": {
       "说明": "docs", "keepEvents说明": "docs",
       "maps": "slice_map", "keepEvents": "slice_map",
-      "extraImages": "slice_asset", "systemImages": "slice_asset", "fonts": "slice_asset", "extraAudio": "slice_asset",
+      "extraImages": "slice_asset", "extraSvFolders": "slice_asset", "systemImages": "slice_asset", "fonts": "slice_asset", "extraAudio": "slice_asset",
       "actors": "converter", "troops": "converter", "maxLevel": "converter", "extraSkills": "converter", "extraCommonEvents": "converter",
       "extraAnimations": "converter", "weaponScan": "converter"
     }

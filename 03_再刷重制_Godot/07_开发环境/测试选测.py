@@ -343,6 +343,13 @@ class SliceSectionTests(SliceFixture):
         self.assertEqual(s['scenes'], ['ui_smoke.tscn', 'xiyou_event_compare.tscn', 'xiyou_panels.tscn'])
         self.assertEqual(s['checks'], ['guards', 'tools'])
 
+    def test_sv_folders_is_asset_key_not_converter(self):
+        """tools37：extraSvFolders（导出时拷的 SV 战斗图文件夹）原来不在键表里，一改就退回整组 converter（rules 全部段）；现归图像组。"""
+        self.edit(extraSvFolders=['UserSV_A'])
+        s = self.pick()
+        self.assertEqual(s['scenes'], ['ui_smoke.tscn', 'xiyou_event_compare.tscn', 'xiyou_panels.tscn'])
+        self.assertFalse(set(RULES) & set(s['scenes']))
+
     def test_bad_json_and_unknown_key_fall_back_to_converter(self):
         self.put(SLICE, '{"maps": [1, 2, 69],\n')
         s = self.pick()
