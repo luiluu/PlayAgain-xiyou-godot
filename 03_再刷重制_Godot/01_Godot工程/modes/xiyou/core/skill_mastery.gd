@@ -18,7 +18,7 @@ class_name XSkillMastery
 ##   - 渡鸦 10122～10139 的设定是运行时改写的（installNativeRavenRuntime）：所需次数 8＋4×级、伤害每级 +8%、MP 每级 −3%、TP 每级 −2%（向下取整、不低于 0），
 ##     HP、冷却不变；上限 10122～10126 跟变量 8（R.masteryCap：0 当 8、最多 999），其余 0（没有 CodexRavenDamage）。
 ##   - 角色的 skillMasteryLevel 包装链（effective；main.js 装的先后：渡鸦 → 宿傩 → 饿狼 → 异化）：渡鸦 10122～10126 夹 R.masteryCap；
-##     宿傩 10229～10238 读来源技能的等级、夹变量 8（0 时取来源上限）；饿狼借主拳（O-待定 o_garou_borrow）；异化无面／百相取 min（O-待定 o_alien_object）。
+##     宿傩 10229～10238 读来源技能的等级、夹变量 8（0 时取来源上限）；饿狼借主拳（O-145 o_garou_borrow）；异化无面／百相取 min（O-146 o_alien_object）。
 ##     原版凡是读等级的地方（满级判断、onAllActionsEnd 比较升级、通告、技能窗）都读包装后的；所需次数、已用次数读原始的。
 ##   - 费用、冷却（YEP skillMpCost／TpCost／HpCost、applyCooldownMods 包装，在 YEP_SkillCore 之上、dsPassiveSkill 减耗之内）：
 ##     费用为正时 ⌊公式⌋、不低于 Minimum（1）；冷却为正时 ⌊公式⌋、不低于 Minimum Cooldown（1）。正式西游只有渡鸦的公式不是原样。
@@ -31,11 +31,11 @@ const SUKUNA_FIRST := 10229
 const SUKUNA_LAST := 10238
 static var _cache := {}
 
-## O-待定（优化登记）：饿狼追击／反击借主拳熟练度（G.trigger 设 _garouMasterySource）包在 Game_BattlerBase.skillMasteryLevel 上，
+## O-145（优化登记）：饿狼追击／反击借主拳熟练度（G.trigger 设 _garouMasterySource）包在 Game_BattlerBase.skillMasteryLevel 上，
 ## 可渡鸦先在 Game_Actor 上装了自有的包装，角色从来读不到它（参照 garou.borrow：角色读 0、BattlerBase 那层读 3）。
 ## true＝追击／反击照设计读主拳等级；false＝照原版读自己的（追击技能没人练，恒 0）
 static var o_garou_borrow := true
-## O-待定（优化登记）：异化无面／百相的取 min（Affixes:23）拿参数直接和技能编号比，原版伤害、费用、技能窗传的是技能对象，对不上，
+## O-146（优化登记）：异化无面／百相的取 min（Affixes:23）拿参数直接和技能编号比，原版伤害、费用、技能窗传的是技能对象，对不上，
 ## 只有传编号的地方（满级判断、升级比较、通告）取到 min（参照 alien.faceless：编号 10、对象 50）。
 ## true＝传对象也取 min；false＝照原版（伤害、费用、技能窗用自己的等级）
 static var o_alien_object := true

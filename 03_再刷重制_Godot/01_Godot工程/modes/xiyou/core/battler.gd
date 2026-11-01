@@ -216,7 +216,7 @@ var action_mastery: Array[int] = []
 func skillMasteryLevel(skill_id: int) -> int:
 	return XSkillMastery.effective(self, skill_id)
 
-## 原版传技能对象的那几处（伤害、费用、甚尔武器库、技能窗）：异化取 min 看 O-待定 o_alien_object
+## 原版传技能对象的那几处（伤害、费用、甚尔武器库、技能窗）：异化取 min 看 O-146 o_alien_object
 func skillMasteryLevelOf(skill_id: int) -> int:
 	return XSkillMastery.effective(self, skill_id, true)
 

@@ -9,7 +9,7 @@ extends Node
 ## - 期二 notice.*：技能升级通告（同帧合并、只报角色、关掉设置／读档／标题不报、最多 3 条）；power：熟练度进战力（缓存照原版不因熟练度失效）。
 const FIXTURE := "res://tests/fixtures/skill_mastery_oracle.json"
 ## - 期三（tests/fixtures/skill_mastery3_oracle.json，mv_oracle/skill_mastery3_probe.cjs）：渡鸦运行时设定、包装后等级、费用、涨熟练度；
-##   宿傩来源技能；饿狼借主拳（O-待定 o_garou_borrow）与进阶继承；异化无面／百相取 min（O-待定 o_alien_object）；通告读包装后的等级。
+##   宿傩来源技能；饿狼借主拳（O-145 o_garou_borrow）与进阶继承；异化无面／百相取 min（O-146 o_alien_object）；通告读包装后的等级。
 const FIXTURE3 := "res://tests/fixtures/skill_mastery3_oracle.json"
 const RAVEN := 167
 const SUKUNA := 172

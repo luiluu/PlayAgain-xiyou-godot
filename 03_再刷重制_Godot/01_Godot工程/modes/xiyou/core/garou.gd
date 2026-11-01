@@ -474,7 +474,7 @@ const RELIC_EVOLUTION := [3, 5, 7, 11, 15, 18, 22]
 const WATER := 10250
 const MODE := 10262
 const SERIOUS := 10263
-## 每个形态的主拳（G.main）：追击、反击借它的熟练度（_garouMasterySource，XSkillMastery._native；原版借不到，O-待定 o_garou_borrow）
+## 每个形态的主拳（G.main）：追击、反击借它的熟练度（_garouMasterySource，XSkillMastery._native；原版借不到，O-145 o_garou_borrow）
 const MAIN := [10250, 10251, 10252, 10253, 10255, 10255, 10259]
 ## G.config.skills 的 stage（未到形态不能用）
 const SKILL_STAGE := {10250: 0, 10251: 1, 10252: 2, 10253: 3, 10254: 3, 10255: 4, 10256: 4, 10257: 5, 10258: 4, 10259: 6,
