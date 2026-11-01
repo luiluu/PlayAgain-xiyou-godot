@@ -417,12 +417,14 @@ p3('p4.lamp', {level: 20, stage: 0, allyRobe: 10}, ({bm, a, ally, foes, at}) => 
 });
 // ===== 第二期 B 批：自动战斗（智能 AI 档案 registerProfile、估算器 CodexAIEstimators、makeAutoBattleActions 包装）=====
 // aiSnap：各技能档案的数值项、targetAllowed／targetUtility（三种情境 × 各目标；不许的记 null）、云裳伤害技能对各敌人的 safeDamage、
-// choose 的选择与前 6 名候选（_codexLastAIDecision）。只读，不付费、不掷随机数（choose 自己把 Math.random 固定 0.5）
+// choose 的选择与前 6 名候选（_codexLastAIDecision）。只读，不付费、不掷随机数（choose 自己把 Math.random 固定 0.5）。
+// 行动者 MP 满、TP 50（开战 TP 是随机的，代价倍率看 TP）；记下行动队列（御风看队列，重制的开局顺序与此不同，照这里排）
 const AI = w.CodexSmartAI;
 const CTXS = [{longFight: true, urgent: false}, {longFight: false, urgent: false}, {longFight: true, urgent: true}];
 function aiSnap(u, ids) {
   const S = w.$dataSkills, profile = {}, util = {}, damage = {};
-  u.need_refresh = true; u.refresh();
+  u.setMp(u.mmp); u.setTp(50);
+  for (const b of [...w.$gameParty.battleMembers(), ...w.$gameTroop.members()]) { b.need_refresh = true; b.refresh(); }  // krz 状态缓存：脚本里加的状态要刷新才生效
   const friends = u.friendsUnit().members(), foes = u.opponentsUnit().aliveMembers();
   for (const id of ids) {
     const x = new w.Game_Action(u); x.setSkill(id);
@@ -441,7 +443,7 @@ function aiSnap(u, ids) {
   }
   u._codexLastAIDecision = null;
   const best = AI.choose(u), d = u._codexLastAIDecision;
-  return {profile, util, damage, choice: best ? {id: best.item().id, target: best._targetIndex} : null, candidates: d ? d.candidates : []};
+  return {queue: (w.BattleManager._actionBattlers || []).map(key), profile, util, damage, choice: best ? {id: best.item().id, target: best._targetIndex} : null, candidates: d ? d.candidates : []};
 }
 const CLOUD_AI = [10270, 10271, 10272, 10273, 10274, 1];
 const ROBE_AI = [10282, 10283, 10284, 10285, 10273, 1, 311];

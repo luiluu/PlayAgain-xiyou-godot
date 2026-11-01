@@ -258,7 +258,9 @@ func _run() -> void:
 				_p3_case(c)
 			"p4":
 				_p4_case(c)
-	check("covers_all", seen.keys().size() == 8, seen.keys())
+			"p5":
+				_p5_case(c)
+	check("covers_all", seen.keys().size() == 9, seen.keys())
 	finish()
 
 
@@ -489,11 +491,11 @@ func _p2_case(c: Dictionary) -> void:
 			snap.call()
 			snap.call({"release": XYunshang.release(logic, ally)})
 		"p2.cut":
-			snap.call({"params": _params(ally)})
+			snap.call({"params": _params(ally).map(func(v): return float(v))})
 			var ok := XYunshang.cut(ally, [4])
-			snap.call({"cut": ok, "params": _params(ally)})
+			snap.call({"cut": ok, "params": _params(ally).map(func(v): return float(v))})
 			XYunshang.wake(logic, ally)
-			snap.call({"params": _params(ally)})
+			snap.call({"params": _params(ally).map(func(v): return float(v))})
 		_:  # p2.seven.*
 			snap.call()
 			snap.call(_cast2(logic, a, 10270, 1))
@@ -714,6 +716,141 @@ func _sleeve_overflow(c: Dictionary) -> void:
 	check("p4.sleeve.overflow.hits", hits.size() == 4 and got.size() == 8, got)
 	check("p4.sleeve.overflow.values", flows.map(func(l): return float(l.value)) == want, [flows, want])
 	check("p4.sleeve.overflow.hp", is_equal_approx(before - foes[1].hp, want.reduce(func(s, v): return s + v, 0.0)) and foes[0].is_dead(), [before - foes[1].hp, foes[0].hp])
+	logic.end_battle(0)
+
+
+# ---- 自动战斗（p5.*，参照 aiSnap）----
+const CLOUD_AI := [10270, 10271, 10272, 10273, 10274, 1]
+const ROBE_AI := [10282, 10283, 10284, 10285, 10273, 1, 311]
+const CTXS := [[true, false], [false, false], [true, true]]  # [longFight, urgent]
+
+
+func _target_index(logic: XBattleLogic, t) -> int:
+	if t == null:
+		return -1
+	var i := logic.enemies.find(t)
+	return i if i >= 0 else logic.actors.find(t)
+
+
+## 同参照 aiSnap：档案的数值项、targetAllowed／targetUtility（三种情境 × 各目标，不许的记 null）、云裳伤害技能的 safeDamage、choose 与前 6 名候选
+func _ai_snap(logic: XBattleLogic, u: XActor, ids: Array, name: String, want: Dictionary) -> void:
+	u.param_mark_dirty()
+	u.param_refresh()
+	u.mp = u.mmp
+	u.tp = 50.0
+	_order(logic, want.queue)  # 行动队列照参照排（重制开局的 OTB 顺序与参照不同；御风的收益看队列）
+	var ai := XSmartAI.new(logic, u)
+	var friends: Array = logic.actors
+	var foes: Array = logic.alive(logic.enemies)
+	for id in ids:
+		var rec := XDB.rec("Skills", id)
+		var p := XSmartAI.profile(u, rec)
+		var nums := {}
+		for k in p:
+			if p[k] is float or p[k] is int:
+				nums[k] = float(p[k])
+		var wp: Dictionary = want.profile[str(id)]
+		var same := nums.size() == wp.size()
+		for k in wp:
+			same = same and nums.has(k) and absf(nums[k] - float(wp[k])) <= 1e-9 * maxf(1.0, absf(float(wp[k])))
+		check("%s.profile.%d" % [name, id], same, [nums, wp])
+		if want.util.has(str(id)):
+			var targets: Array = foes if XSmartAI.for_opponent(rec) else [u] if XSmartAI.for_user(rec) \
+				else friends.filter(func(t): return t.is_dead() if XSmartAI.for_dead_friend(rec) else t.is_alive())
+			check("%s.util_targets.%d" % [name, id], targets.map(func(t): return _key(logic, t)) == want.util[str(id) + "k"], [targets.size(), want.util[str(id) + "k"]])
+			var got := []
+			for cx in CTXS:
+				var ctx := {"friends": friends, "foes": foes, "longFight": cx[0], "urgent": cx[1]}
+				got.append(targets.map(func(t):
+					if p.has("targetAllowed") and not p.targetAllowed.call(t, ctx, ai):
+						return null
+					return float(p.targetUtility.call(t, ctx, ai)) if p.has("targetUtility") else 0.0))
+			var wu: Array = want.util[str(id)].map(func(row): return row.map(func(v): return null if v == null else float(v)))
+			check("%s.util.%d" % [name, id], str(got) == str(wu), [got, wu])
+		if want.damage.has(str(id)):
+			var dmg: Array = foes.map(func(t): return ai.safe_damage(u, t, rec))
+			var ok: bool = dmg.size() == want.damage[str(id)].size()
+			for k in mini(dmg.size(), want.damage[str(id)].size()):
+				ok = ok and absf(dmg[k] - float(want.damage[str(id)][k])) <= maxf(1.0, absf(float(want.damage[str(id)][k])) * 1e-6)
+			check("%s.damage.%d" % [name, id], ok, [dmg, want.damage[str(id)]])
+	var r := XSmartAI.choose(logic, u)
+	var wc = want.choice
+	check(name + ".choice", wc != null and r.has("skill") and int(r.skill.id) == int(wc.id) and _target_index(logic, r.target) == int(wc.target),
+		[int(r.skill.id) if r.has("skill") else null, _target_index(logic, r.get("target")), wc])
+	var cands: Array = r.get("candidates", [])
+	var exp_c: Array = want.candidates
+	var same := cands.size() == exp_c.size()
+	for k in cands.size():
+		if same:
+			same = int(cands[k].id) == int(exp_c[k].id) and absf(float(cands[k].score) - float(exp_c[k].score)) <= maxf(1.0, absf(float(exp_c[k].score)) * 1e-4)
+	check(name + ".candidates", same, [cands.map(func(x): return [x.id, x.score]), exp_c.map(func(x): return [x.id, x.score])])
+
+
+func _order(logic: XBattleLogic, keys: Array) -> void:
+	var order := []
+	for k in keys:
+		order.append(logic.state.actor(int(str(k).substr(1))) if str(k).begins_with("a") else logic.enemies[int(str(k).substr(1))])
+	logic.current_order.assign(order)
+
+
+func _p5_case(c: Dictionary) -> void:
+	XSave.dir_override = "user://test_xiyou_yunshang"
+	XConfig.path_override = XSave.dir().path_join("options.json")
+	var r := _battle2(c.setup)
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var ally: XActor = r[2]
+	var foes: Array = logic.enemies
+	var id := str(c.id)
+	var want: Array = c.observed.steps
+	var snap := func(i: int, u: XActor, ids: Array) -> void: _ai_snap(logic, u, ids, "%s.%d" % [id, i], want[i])
+	match id:
+		"p5.cloud":
+			snap.call(0, a, CLOUD_AI)
+			snap.call(1, ally, ROBE_AI)
+			XYunshang.wake(logic, ally)
+			snap.call(2, a, CLOUD_AI)
+			snap.call(3, ally, ROBE_AI)
+		"p5.gather":
+			snap.call(0, a, CLOUD_AI)
+		"p5.robe0", "p5.robe4", "p5.robe9", "p5.robe11":
+			if id == "p5.robe4":
+				logic._state_add(ally, 5)
+				logic._state_add(a, 6)
+				logic._state_add(foes[1], 55)
+				logic._state_add(foes[2], 43)
+			snap.call(0, ally, ROBE_AI)
+			XYunshang.wake(logic, ally)
+			snap.call(1, ally, ROBE_AI)
+		"p5.wake":
+			XYunshang.data(ally).wake_until = 0  # 参照把 8 号挪到队尾，_ai_snap 照参照的队列排
+			snap.call(0, a, CLOUD_AI)
+			XYunshang.wake(logic, ally)
+			XYunshang.wind_until[a] = XYunshang.round
+			snap.call(1, a, CLOUD_AI)
+		_:  # p5.auto*：makeAutoBattleActions 包装
+			var k := int(id.trim_prefix("p5.auto"))
+			_order(logic, ["a1", "a8", "a9", "a10", "e0", "e1", "e2"])  # 参照 battle2 开局的队列（174 已取走）；重制的开局顺序不同，赠行／放行加在队尾
+			if k == 9:
+				XYunshang.data(ally).stored = 2
+			if k == 11:
+				XYunshang.wake(logic, ally)
+			var choice: Array = logic.auto_battle_action(ally)
+			var d := XYunshang.data(ally)
+			var w: Dictionary = want[0]
+			var tags := {}
+			for t in XYunshang._gift_sources:
+				tags[str(t)] = (XYunshang._gift_sources[t] as Array).map(func(x): return str(x))
+			var got := {"sleeve": bool(XYunshang.sleeve.get(ally, false)), "choice": int(choice[0].id),
+				"cut": d.cut_choices if int(d.cut_round) == XYunshang.round else null, "stored": int(d.stored), "freeGift": int(d.free_gift_round),
+				"queue": logic.current_order.map(func(b): return _key(logic, b)), "tags": tags,
+				"received": logic.actors.map(func(b): return int(XYunshang.gift_received.get(b, 0))), "params": _params(ally).map(func(v): return float(v))}
+			var exp := {"sleeve": bool(w.sleeve), "choice": int(w.choice[0]), "cut": null if w.cut == null else (w.cut as Array).map(func(v): return int(v)),
+				"stored": int(w.stored), "freeGift": int(w.freeGift), "queue": w.queue, "tags": w.tags, "received": (w.received as Array).map(func(v): return int(v)),
+				"params": (w.params as Array).map(func(v): return float(v))}
+			for key in exp:
+				check("%s.%s" % [id, key], str(got[key]) == str(exp[key]), [got[key], exp[key]])
+			XYunshang.sleeve.erase(ally)
 	logic.end_battle(0)
 
 

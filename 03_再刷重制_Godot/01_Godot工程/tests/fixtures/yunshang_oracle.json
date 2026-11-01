@@ -10418,6 +10418,15 @@
     "steps": [
      {
       "who": "a174",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {
         "splash": 0.66,
@@ -10559,6 +10568,15 @@
      },
      {
       "who": "a1",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {},
        "311": {},
@@ -10653,25 +10671,40 @@
        {
         "id": 160,
         "item": false,
-        "score": 12922,
+        "score": 5604,
         "target": -1
        },
        {
-        "id": 1,
+        "id": 311,
         "item": false,
-        "score": 596,
+        "score": 3569,
         "target": 0
        },
        {
         "id": 101,
         "item": false,
-        "score": 567,
+        "score": 296,
+        "target": 0
+       },
+       {
+        "id": 1,
+        "item": false,
+        "score": 258,
         "target": 0
        }
       ]
      },
      {
       "who": "a174",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {
         "splash": 0.66,
@@ -10813,6 +10846,15 @@
      },
      {
       "who": "a1",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {},
        "311": {},
@@ -10907,19 +10949,25 @@
        {
         "id": 160,
         "item": false,
-        "score": 12922,
+        "score": 5604,
         "target": -1
        },
        {
-        "id": 1,
+        "id": 311,
         "item": false,
-        "score": 596,
+        "score": 3569,
         "target": 0
        },
        {
         "id": 101,
         "item": false,
-        "score": 567,
+        "score": 296,
+        "target": 0
+       },
+       {
+        "id": 1,
+        "item": false,
+        "score": 258,
         "target": 0
        }
       ]
@@ -10940,6 +10988,15 @@
     "steps": [
      {
       "who": "a174",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {
         "splash": 0.77,
@@ -11106,6 +11163,15 @@
     "steps": [
      {
       "who": "a1",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {},
        "311": {},
@@ -11210,21 +11276,36 @@
         "target": -1
        },
        {
-        "id": 1,
+        "id": 311,
         "item": false,
-        "score": 12,
+        "score": 165,
         "target": 0
        },
        {
         "id": 101,
         "item": false,
-        "score": 11,
+        "score": 14,
+        "target": 0
+       },
+       {
+        "id": 1,
+        "item": false,
+        "score": 12,
         "target": 0
        }
       ]
      },
      {
       "who": "a1",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {},
        "311": {},
@@ -11329,15 +11410,21 @@
         "target": -1
        },
        {
-        "id": 1,
+        "id": 311,
         "item": false,
-        "score": 12,
+        "score": 165,
         "target": 0
        },
        {
         "id": 101,
         "item": false,
-        "score": 11,
+        "score": 14,
+        "target": 0
+       },
+       {
+        "id": 1,
+        "item": false,
+        "score": 12,
         "target": 0
        }
       ]
@@ -11357,6 +11444,15 @@
     "steps": [
      {
       "who": "a1",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {},
        "311": {},
@@ -11394,21 +11490,21 @@
        ],
        "10284": [
         [
-         18000,
+         0,
          null,
          0,
          0,
          0
         ],
         [
-         1800,
+         0,
          null,
          0,
          0,
          0
         ],
         [
-         18000,
+         0,
          null,
          0,
          0,
@@ -11457,25 +11553,40 @@
        {
         "id": 160,
         "item": false,
-        "score": 12922,
+        "score": 5604,
         "target": -1
        },
        {
-        "id": 1,
+        "id": 311,
         "item": false,
-        "score": 596,
+        "score": 3569,
         "target": 0
        },
        {
         "id": 101,
         "item": false,
-        "score": 567,
+        "score": 296,
+        "target": 0
+       },
+       {
+        "id": 1,
+        "item": false,
+        "score": 258,
         "target": 0
        }
       ]
      },
      {
       "who": "a1",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {},
        "311": {},
@@ -11513,21 +11624,21 @@
        ],
        "10284": [
         [
-         18000,
+         0,
          null,
          0,
          0,
          0
         ],
         [
-         1800,
+         0,
          null,
          0,
          0,
          0
         ],
         [
-         18000,
+         0,
          null,
          0,
          0,
@@ -11576,19 +11687,25 @@
        {
         "id": 160,
         "item": false,
-        "score": 12922,
+        "score": 5604,
         "target": -1
        },
        {
-        "id": 1,
+        "id": 311,
         "item": false,
-        "score": 596,
+        "score": 3569,
         "target": 0
        },
        {
         "id": 101,
         "item": false,
-        "score": 567,
+        "score": 296,
+        "target": 0
+       },
+       {
+        "id": 1,
+        "item": false,
+        "score": 258,
         "target": 0
        }
       ]
@@ -11608,6 +11725,15 @@
     "steps": [
      {
       "who": "a1",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {},
        "311": {},
@@ -11702,19 +11828,25 @@
        {
         "id": 160,
         "item": false,
-        "score": 12922,
+        "score": 5604,
         "target": -1
        },
        {
-        "id": 1,
+        "id": 311,
         "item": false,
-        "score": 596,
+        "score": 3569,
         "target": 0
        },
        {
         "id": 101,
         "item": false,
-        "score": 567,
+        "score": 296,
+        "target": 0
+       },
+       {
+        "id": 1,
+        "item": false,
+        "score": 258,
         "target": 0
        },
        {
@@ -11727,6 +11859,15 @@
      },
      {
       "who": "a1",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {},
        "311": {},
@@ -11821,19 +11962,25 @@
        {
         "id": 160,
         "item": false,
-        "score": 12922,
+        "score": 5604,
         "target": -1
        },
        {
-        "id": 1,
+        "id": 311,
         "item": false,
-        "score": 596,
+        "score": 3569,
         "target": 0
        },
        {
         "id": 101,
         "item": false,
-        "score": 567,
+        "score": 296,
+        "target": 0
+       },
+       {
+        "id": 1,
+        "item": false,
+        "score": 258,
         "target": 0
        },
        {
@@ -11859,6 +12006,15 @@
     "steps": [
      {
       "who": "a1",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {},
        "311": {},
@@ -11959,25 +12115,40 @@
        {
         "id": 160,
         "item": false,
-        "score": 12922,
+        "score": 5604,
         "target": -1
        },
        {
-        "id": 1,
+        "id": 311,
         "item": false,
-        "score": 596,
+        "score": 3569,
         "target": 0
        },
        {
         "id": 101,
         "item": false,
-        "score": 567,
+        "score": 296,
+        "target": 0
+       },
+       {
+        "id": 1,
+        "item": false,
+        "score": 258,
         "target": 0
        }
       ]
      },
      {
       "who": "a1",
+      "queue": [
+       "a1",
+       "a8",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2"
+      ],
       "profile": {
        "1": {},
        "311": {},
@@ -12078,19 +12249,25 @@
        {
         "id": 160,
         "item": false,
-        "score": 12922,
+        "score": 5604,
         "target": -1
        },
        {
-        "id": 1,
+        "id": 311,
         "item": false,
-        "score": 596,
+        "score": 3569,
         "target": 0
        },
        {
         "id": 101,
         "item": false,
-        "score": 567,
+        "score": 296,
+        "target": 0
+       },
+       {
+        "id": 1,
+        "item": false,
+        "score": 258,
         "target": 0
        }
       ]
@@ -12266,6 +12443,15 @@
      },
      {
       "who": "a174",
+      "queue": [
+       "a1",
+       "a9",
+       "a10",
+       "e0",
+       "e1",
+       "e2",
+       "a8"
+      ],
       "profile": {
        "1": {
         "splash": 0.77,

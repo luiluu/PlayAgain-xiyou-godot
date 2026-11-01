@@ -662,6 +662,12 @@ func _meets(e: XEnemy, act: Dictionary) -> bool:
 ## 智能AI开着（默认）——技能顺序表排了且能用就照表（XdRs_HangUp makeAction），否则 XSmartAI 选；没有可选的退回普通攻击。
 ## 智能AI关着——照表，否则普通攻击（XdRs_HangUp 的 makeAction 不再走 MV 原生评估）。
 func auto_battle_action(a: XActor) -> Array:
+	var r := _auto_battle_action(a)
+	XYunshang.auto_battle(self, a)  # 云裳 makeAutoBattleActions 包装（原选择之后）：免费赠行、放行、六衡裁身、收袖
+	return r
+
+
+func _auto_battle_action(a: XActor) -> Array:
 	# 异化饕餮 makeAction 包装（Adv:138-142）：原生挂机选技比的是实际 MP（恒 0），饕餮改按手动输入的合法性（canUse 读饥饿储备）
 	if XAlienBattle.devours(a):
 		var id := int(XHangUpAuto.data(state, "ActSkill").get(a.display_name() + XHangUpAuto.three(turn), 0))

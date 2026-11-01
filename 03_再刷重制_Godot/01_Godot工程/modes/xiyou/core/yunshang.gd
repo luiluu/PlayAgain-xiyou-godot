@@ -1226,3 +1226,183 @@ static func eye_bypass(a, skill: Dictionary) -> bool:
 	var d := data(a)
 	return int(d.get("key", -1)) == 7 and int(setting(a).eye) == int(skill.get("id", 0)) and int(setting(a).eye) > 0 \
 		and awake(a) and int(d.needle_bypass_round) != round
+
+
+# ---- 自动战斗（第 448～505、541 行）：智能 AI 档案 registerProfile、估算器 CodexAIEstimators、makeAutoBattleActions 包装 ----
+## 原版另包了 Game_Action.evaluate（关掉智能 AI 时的原生自动战斗估值）；重制关掉智能 AI 时自动战斗直接普通攻击（XBattleLogic.auto_battle_action），那层用不上，不移植
+const AI_FORMULA := "CodexYunshang.formula(this,a,b)"
+
+
+## aiBattle：本场、同一件天衣的战斗数据（不新建）
+static func _ai_data(a) -> Dictionary:
+	var r := robe(a)
+	var d = _data.get(a)
+	if r.is_empty() or d == null or d.uid != str(r.get("instanceId", "native:%d" % int(r.get("base", 0)))) or int(d.battle) != battle:
+		return {}
+	return d
+
+
+static func _ai_awake(a) -> bool:
+	var d := _ai_data(a)
+	return not d.is_empty() and int(d.wake_until) > 0 and int(d.wake_until) >= round
+
+
+## aiGather：收针会选的觉醒者（剩余回合多的先，同样多时行动者自己排后，再按队伍顺序）
+static func _ai_gather(logic, u):
+	var holders: Array = logic.actors.filter(func(t): return t.is_alive() and _ai_awake(t))
+	var best = null
+	for t in holders:
+		if best == null:
+			best = t
+			continue
+		var dt := int(_ai_data(t).wake_until) - int(_ai_data(best).wake_until)
+		if dt > 0 or dt == 0 and (best == u and t != u or (t == u) == (best == u) and logic.actors.find(t) < logic.actors.find(best)):
+			best = t
+	return best
+
+
+## CodexAIEstimators（第 470 行）：云裳公式的五个伤害技能，防取 0（统一伤害另算防御），收针按 aiGather 选的觉醒者回合数；不适用返回 null
+static func ai_raw(logic, a, t, rec: Dictionary):
+	var id := int(rec.get("id", 0))
+	if XBattleLogic.is_item(rec) or str(rec.get("damage", {}).get("formula", "")) != AI_FORMULA or not id in [PIN, CUT, GATHER, MOUNTAIN, NEEDLE]:
+		return null
+	var saved := gather_rounds
+	gather_rounds = 0
+	if id == GATHER:
+		var h = _ai_gather(logic, a)
+		gather_rounds = maxi(0, int(_ai_data(h).wake_until) - round + 1) if h != null else 0
+	var v := formula(a, t, rec, true)
+	gather_rounds = saved
+	return v
+
+
+## aiAccept／aiExchange：普通增减益、对方能附加；换锦会换的一对（自己的减益、目标的增益，对方身上已有的不算）
+static func _ai_accept(logic, to, id: int) -> bool:
+	return (transfer_debuffs().has(id) or SHARE_BUFFS.has(id)) and to != null and to.is_alive() \
+		and not to.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and logic.state_rate(to, id) > 0.0
+
+
+static func _ai_exchange(logic, a, t) -> Array:
+	var bad := transfer_debuffs()
+	var mine := 0
+	var theirs := 0
+	for id in a.state_ids:
+		if bad.has(int(id)) and not t.state_ids.has(id) and _ai_accept(logic, t, int(id)):
+			mine = int(id)
+			break
+	for id in t.state_ids:
+		if SHARE_BUFFS.has(int(id)) and not a.state_ids.has(id) and _ai_accept(logic, a, int(id)):
+			theirs = int(id)
+			break
+	return [mine, theirs]
+
+
+## aiOutput：会用的伤害技能（含普通攻击）对各敌人 safeDamage 的最大值
+static func _ai_output(ai, a, foes: Array) -> float:
+	var best := 0.0
+	for s in a.skills() + [a.attack_skill()]:
+		if not int(s.get("damage", {}).get("type", 0)) in [1, 5] or not ai.logic.can_use(a, s):
+			continue
+		for t in foes:
+			best = maxf(best, ai.safe_damage(a, t, s))
+	return best
+
+
+## registerProfile（第 476～505 行）：云裳的伤害技能（双针 ×0.555、戴梭 ×1.99、余辉再 ×1.33、展幅溅射）、天衣的倍率（一身两世 12、万法同裳 13），
+## 敕衣点神／御风／换锦／赠行／储行的目标限制与收益。回调都是 (目标, 情境, XSmartAI)；不是云裳、也不是天衣给的技能返回空
+static func ai_profile(a, rec: Dictionary) -> Dictionary:
+	var id := 0 if XBattleLogic.is_item(rec) else int(rec.get("id", 0))
+	var cloud := own(a)
+	if not cloud and not id in [MOUNTAIN, EXCHANGE, GIFT, STORE]:
+		return {}
+	var offense := damage_action(rec)
+	var d := _ai_data(a)
+	var p := {}
+	var mult := 1.0
+	if cloud and offense:
+		if knows(a, DOUBLE):
+			mult *= 0.555
+		if relic(a):
+			mult *= 1.99 * (1.33 if bool(afterglow.get(a, false)) else 1.0)
+		if knows(a, SPREAD):
+			p.splash = 0.77 if knows(a, SILVER) else (0.66 if knows(a, DOUBLE) else 0.5)
+	if offense and not d.is_empty():
+		var logic = XAlienBattle.active_logic()
+		var active: bool = _ai_awake(a) and not (id == GATHER and logic != null and _ai_gather(logic, a) == a)
+		if int(d.key) == 12:
+			mult *= 3.0 if active else (1.0 if int(d.clone_round) == round else 2.0)
+		if int(d.key) == 13 and active:
+			mult *= 2.0
+	p.multiplier = mult
+	if id == WAKE:
+		p.targetAllowed = func(t, _c, _ai): return t.is_alive() and not robe(t).is_empty() and not _ai_awake(t)
+		p.targetUtility = func(t, c, _ai):
+			if not bool(c.longFight):
+				return 0.0
+			var td := _ai_data(t)
+			return 12500.0 if bool(c.urgent) and not td.is_empty() and int(td.key) in [0, 3] else 6500.0
+	elif id == WIND:
+		p.targetUtility = func(_t, c, ai):
+			if not bool(c.longFight) or int(wind_until.get(a, -1)) >= round:
+				return 0.0
+			var q: Array = ai.logic.current_order
+			var first := -1
+			for i in q.size():
+				if q[i] is XEnemy:
+					first = i
+					break
+			for i in q.size():
+				if first >= 0 and i > first and q[i] is XActor and q[i] != a and not _acted.has(q[i]):
+					return 5500.0 / maxf(1.0, (c.friends as Array).filter(func(f): return f.is_alive()).size())
+			return 0.0
+	elif id == EXCHANGE:
+		p.targetUtility = func(t, c, ai):
+			var pair := _ai_exchange(ai.logic, a, t)
+			var count := int(pair[0] != 0) + int(pair[1] != 0)
+			if not d.is_empty() and _ai_awake(a) and bool(d.exchange_charge):
+				var bad := {}
+				var good := {}
+				var ids := transfer_debuffs()
+				for f in (c.friends as Array).filter(func(x): return x.is_alive()):
+					for sid in f.state_ids:
+						if ids.has(int(sid)) and (c.foes as Array).any(func(e): return not e.state_ids.has(sid) and _ai_accept(ai.logic, e, int(sid))):
+							bad[int(sid)] = true
+				for e in c.foes:
+					for sid in e.state_ids:
+						if SHARE_BUFFS.has(int(sid)) and (c.friends as Array).any(func(f): return not f.state_ids.has(sid) and _ai_accept(ai.logic, f, int(sid))):
+							good[int(sid)] = true
+				count = bad.size() + mini(3, good.size())
+			return count * 8500.0 * (1.0 if bool(c.longFight) else 0.15)
+		p.prepareTarget = func(t, _c, ai): exchange_pick = _ai_exchange(ai.logic, a, t)  # action._yunExchangeSelf／_yunExchangeEnemy
+	elif id == GIFT:
+		p.targetAllowed = func(t, _c, _ai): return t.is_alive() and t != a
+		p.targetUtility = func(t, c, ai):
+			var mine := _ai_output(ai, a, c.foes)
+			var theirs := _ai_output(ai, t, c.foes)
+			return minf(18000.0, 5500.0 * theirs / maxf(1.0, mine)) * (1.0 if bool(c.longFight) else 0.1) if theirs > mine else 0.0
+	elif id == STORE:
+		# 储行要牺牲这次行动：存满不再存，已经打得到人时不拖
+		p.targetUtility = func(_t, c, ai):
+			return 4500.0 if not d.is_empty() and int(d.stored) < 3 and bool(c.longFight) and _ai_output(ai, a, c.foes) == 0.0 else 0.0
+	return p
+
+
+## makeAutoBattleActions 包装（第 541 行，原 makeAutoBattleActions 之后）：觉醒的同袍换日免费赠给双攻最高的队友（每人最多受赠 2）、
+## 寸光留仙放行、六衡裁身选（魔攻≥物攻 ? 魔攻＋敏捷 : 物攻＋敏捷）、千军入袖开收袖。收针选觉醒者（aiGather）与 prepare 没选时的默认相同，不另记
+static func auto_battle(logic, a) -> void:
+	var d := data(a)
+	if d.is_empty():
+		return
+	if int(d.key) == 11 and awake(a):
+		var best = null
+		for t in logic.actors:
+			if t != a and t.is_alive() and int(gift_received.get(t, 0)) < 2 and (best == null or t.atk + t.mat > best.atk + best.mat):
+				best = t
+		if best != null:
+			free_gift(logic, a, best)
+	if int(d.key) == 9:
+		release(logic, a)
+	if int(d.key) == 8 and int(d.cut_round) != round:
+		cut(a, [4, 6] if a.mat >= a.atk else [2, 6])
+	if int(d.key) == 5:
+		sleeve[a] = true
