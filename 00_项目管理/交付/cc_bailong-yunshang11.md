@@ -1,7 +1,7 @@
 # 交付：cc/bailong-yunshang11
 
 - 车道／工作者：E 角色专属／白龙_12（cc）
-- 状态：选测进行中
+- 状态：可合并（在 yunshang10 之后合）
 - 分支从 cc/bailong-yunshang10 末端 7ddac2d8 切出（总装十一派单），**包含 yunshang9、10**，那两张交付单照它们自己的合；没合 main。
 - 范围：① O-135 回退支测试；② 云裳的显示：HD 图标、织神天梭说明、天衣粉色（名字、说明、说明卡窗口皮）。
 
@@ -29,8 +29,8 @@
 - 反向验证 7 处全抓到：回退支不写永不到期、天衣格号错一格、天衣不粉、不插等级经验、八项不加成长、皮按原色、图标不留边。
 - 语法检查通过。
 - 没在画面上看过（无界面环境跑不出画面）；图标、粉色只按像素与数据核对。
-- 同步 `同步正式西游.py --accept-additions`：结果待补。
-- 选测：`选测.py 7ddac2d8` 选 61 个，其中 xiyou_rules 24 段是因为改了 yunshang_probe.cjs（探针组）；这个探针不进同步、不进 rules 的参照，切片只改了图像名单，所以只留难度 1 四段，其余 20 段不跑。改跑 41 个全名：结果待补。
+- 同步 `同步正式西游.py --accept-additions`：测量不变（留下产物指纹）；`内容覆盖检查.py` 新 0、解决 0，不用更新基线。
+- 选测：`选测.py 7ddac2d8` 选 61 个，其中 xiyou_rules 24 段是因为改了 yunshang_probe.cjs（探针组）；这个探针不进同步、不进 rules 的参照，切片只改了图像名单，所以只留难度 1 四段，其余 20 段不跑。改跑 41 个全名（CHECK_JOBS=3，9 分钟）全过、没有偶发：ui_smoke、xiyou_actor_advanced、xiyou_actor_book、xiyou_actor_warehouse、xiyou_battle_ui、xiyou_book_capacity_ui、xiyou_change_clothes、xiyou_character_help_cost、xiyou_crafting、xiyou_enemy_book、xiyou_event_compare、xiyou_gear_search、xiyou_gear_ui、xiyou_gold_cap、xiyou_hangup_auto、xiyou_help_card、xiyou_inlay_book、xiyou_item_list、xiyou_item_marks、xiyou_mac_export、xiyou_magic_level、xiyou_message、xiyou_orb_shop_ui、xiyou_orb_ui、xiyou_panels、xiyou_pet_synth、xiyou_pets、xiyou_power_books_menu、xiyou_rules、xiyou_rules_d1b、xiyou_rules_d1c、xiyou_rules_d1d、xiyou_save_page、xiyou_shop_buy、xiyou_shop_stock、xiyou_star_warehouse、xiyou_transfer、xiyou_warehouse、xiyou_yunshang、xiyou_yunshang_shop、xiyou_yunshang_ui。
 
 ## 交接板
 
@@ -55,4 +55,4 @@
 
 - 前面同 yunshang10（到 7ddac2d8）
 - O-135 回退支测试；p9 参照与切片；显示实现、专项 417；covers_all 与缩放检查
-- 本提交：交付单
+- 本提交：同步与选测通过，交付单可合并
