@@ -2,7 +2,7 @@
 
 - 车道／工作者：白龙（cc），派单 G tusu7：审查第 26 期 P3-1、P3-3 与屠苏画面
 - 基线：开工合 main 6adc3f4a（合并 cc/wukong-content2），工作树 `.claude/worktrees/bailong-tusu7`
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -56,7 +56,11 @@
 
 ## 验证
 
-- 待写
+- 开工合 main（609c6f55）；`script_census_known.json` 删「CodexTusu.openForge」一行（mv_script 已认，census 的 known_still_unknown 失败即此）；`新建工作树.sh --补齐` 刷新 generated 后重跑。
+- 命令：`并行测试.py 07_开发环境/godot 01_Godot工程 --jobs 2` ＋ 41 个场景名：xiyou_script_census、xiyou_floor_odds、xiyou_floor_inherit、xiyou_floor_run_c（上轮挂的 4 个）、xiyou_tusu／_battle／_ui、xiyou_wtype、xiyou_event_compare、xiyou_determinism、xiyou_skill_page／_mastery、xiyou_window_rects、xiyou_battle_ui／_log／_options、xiyou_script／_gaps、xiyou_battle、xiyou_combat、xiyou_state_effects、xiyou_rules_d1b／d2c／d3d／d3e／d4b／d5c／d6d（选测抽样）、xiyou_smart_ai／_f／_k／_p、xiyou_map、xiyou_item_list、xiyou_panels。
+- 结果：全部通过，无失败、无偶发；xiyou_tusu_battle 4977/4977，xiyou_tusu_ui 28/28，xiyou_tusu 327/327。上轮挂的 floor_odds／floor_inherit／floor_run_c 刷新 generated 后过了，确为旧切片所致。
+- 日志：`03_再刷重制_Godot/04_验证/本地结果/并行测试/20261102_235329_tsk2cmd8/`
+- 没跑：选测的其余约 180 个场景（含楼层 reach 系列、其余 rules／smart_ai 抽样段）和全量，留总装合并后跑；车道不跑全量。
 
 ## 本分支提交
 
