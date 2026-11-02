@@ -114,7 +114,7 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	var temp := XGuyu.isolated_begin() if amount < 0.0 else {}  # 不在行动里的扣血包一个临时事件（代命）
 	amount = XGuyu.heal_value(amount)
 	if amount < 0.0:
-		amount = -XGuyu.ledger_absorb(b, -amount)  # 护盾账本 gainHp 包装（最外层）：花荫先吸收
+		amount = -XShieldLedger.hp(b, -amount)  # 护盾账本 gainHp 包装（最外层）：账本先吸收
 	var was_alive := b.is_alive() and b.hp > 0.0
 	var entry := _gain(b, resource, amount)
 	if error.is_empty():
@@ -190,7 +190,7 @@ func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
 		if value > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0:
 			return {}  # 谷雨 setHp 包装：归根中抬不起生命
 		if value < b.hp:
-			value = b.hp - XGuyu.ledger_absorb(b, b.hp - value)  # 护盾账本 setHp 包装（最外层）：花荫先吸收
+			value = b.hp - XShieldLedger.hp(b, b.hp - value)  # 护盾账本 setHp 包装（最外层）：账本先吸收
 	if resource == "hp" and XAlienBattle.routes_set_hp(b):
 		return gain(b, "hp", value - b.hp)  # 异化 setHp 包装：生命池、嫁祸、空壳、舍身、绝缘按 gainHp(差值) 走
 	if resource == "hp" and value < b.hp and XAlienBattle.frame_blocks_hp(b):

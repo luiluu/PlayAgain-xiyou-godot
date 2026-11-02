@@ -23,8 +23,9 @@ class FakeHost extends Node:
 		toasts.append(text)
 	func refresh_party_sprites() -> void:
 		pass
+	var refreshed := []  # 每次刷新事件时的队伍
 	func refresh_events() -> void:
-		pass
+		refreshed.append(XState.current.party.duplicate())
 
 
 func check(tag: String, ok: bool, detail = null) -> void:
@@ -178,6 +179,7 @@ func _run() -> void:
 	var unknown: Array = await MVScript.run("CodexCat.startTrial(this);", interp)
 	check("script.battle", unknown.is_empty() and host.battles == [[XCat.TROOP, false, true]] and host.party_during == [XCat.ACTOR], [unknown, host.battles, host.party_during])
 	check("script.restore", [s.party, s.battle_slots] == before and host.toasts == [XCat.TRIAL_WON] and s.item_count(XCat.STONE) == 1, [s.party, host.toasts])
+	check("script.refresh", not host.refreshed.is_empty() and host.refreshed.back() == s.party, [host.refreshed, s.party])  # 审查第 21 期 P3③：还原后再刷事件
 	host.result = 2
 	await MVScript.run("CodexCat.startTrial(this);", interp)
 	check("script.lose", host.toasts.back() == XCat.TRIAL_LOST and s.item_count(XCat.STONE) == 1 and [s.party, s.battle_slots] == before, host.toasts)

@@ -143,8 +143,13 @@ static func reload() -> void:
 	_loaded_path = "<unloaded>"
 
 
+## O-142：旧档第一次建订单档案时，原版 stage 写 0（已进阶的云裳进阶账归零，之后按进阶次数补材料会对不上）。
+## true＝取当前进阶次数 XAdvance.rank；false＝照原版 0
+static var o_profile_stage := true
+
+
 static func _new_profile(s: XState) -> Dictionary:
-	return {"journal": [], "order": null, "clears": 0, "stage": XAdvance.rank(s, XYunshang.ACTOR), "recruited": false}
+	return {"journal": [], "order": null, "clears": 0, "stage": XAdvance.rank(s, XYunshang.ACTOR) if o_profile_stage else 0, "recruited": false}
 
 
 ## profile()：本档那一条；没有编号就新建（旧档按读档身份对上）。编号在、账本里没有＝记录缺失，返回 null

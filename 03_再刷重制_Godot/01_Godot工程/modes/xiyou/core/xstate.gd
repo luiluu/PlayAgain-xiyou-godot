@@ -243,6 +243,7 @@ static func _become_current(s: XState) -> void:
 	XZhenqi.pending_trial = {}
 	XZhenqi.trial_done = {}
 	XZhenqi.pending_scale = {}
+	XSkillNotice.clear()  # installSkillLevelNoticeRuntime：setupNewGame／loadGame 清掉待报与正在显示的通告
 
 
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
@@ -774,6 +775,11 @@ func to_dict() -> Dictionary:
 			"hp": x2.hp, "mp": x2.mp, "tp": x2.tp, "states": x2.state_ids, "stateTurns": x2.state_turns,
 			"buffs": x2.buffs, "buffTurns": x2.buff_turns, "cooldowns": x2.cooldowns,
 			"lastCommand": x2.last_command, "lastBattleSkill": x2.last_battle_skill, "zhenqi": x2.zhenqi}
+		# 技能熟练度（_skillMasteryLevels／_skillMasteryUses）：没有就不写，旧档读回是 0 级
+		if not x2.mastery_levels.is_empty() or not x2.mastery_uses.is_empty():
+			var m := XSkillMastery.to_save(x2)
+			a[str(id)]["masteryLevels"] = m[0]
+			a[str(id)]["masteryUses"] = m[1]
 		# A removed-death result can leave a native battler alive at zero HP.
 		# Persist only this exceptional state; legacy saves retain their HP fallback.
 		if x2.resource_death_blocked:
@@ -834,6 +840,7 @@ static func from_dict(d: Dictionary) -> XState:
 		x2.zhenqi = XZhenqi.from_save(row.zhenqi) if row.has("zhenqi") and row.zhenqi is Dictionary and not row.zhenqi.is_empty() else {}
 		for k in row.get("cooldowns", {}):
 			x2.cooldowns[int(k)] = float(row.cooldowns[k])
+		XSkillMastery.from_save(x2, row.get("masteryLevels", {}), row.get("masteryUses", {}))
 		s.actors[int(id_s)] = x2
 	s.party.assign(d.party.map(func(v): return int(v)))
 	# 旧档没有出战栏位：按队伍前 5 人（toInitializeBattleMembers）
@@ -865,6 +872,9 @@ static func from_dict(d: Dictionary) -> XState:
 	s.raven = XRaven.from_save(d.get("codexRaven"))
 	s.garou = XGarou.from_save(d.get("codexGarou"))
 	XYomiJingliu.after_load(s)  # 镜流 extractSaveContents 包装：整理技能、清放血累计
+	XShieldLedger.clear_all()  # 护盾账本 extractSaveContents 包装：清空
+	XBinding.clear_all(s)  # 绑定 extractSaveContents 包装：清数据与形态状态
+	XTusu.clear(s)  # 屠苏 extractSaveContents 包装：清全队持武状态与本场数据
 	XGuyu.after_load(s)  # 谷雨 extractSaveContents 包装：syncAll
 	for a in s.actors.values():a.refresh_passive()
 	for k in d.switches:

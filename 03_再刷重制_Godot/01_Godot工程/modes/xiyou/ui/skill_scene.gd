@@ -182,9 +182,11 @@ func _paint_list(c: XMVCanvas) -> void:
 		var alpha := 1.0 if usable(s) else XUI.DIM.a
 		var w := COL_W - 6.0
 		var name_w := w - c.text_width("000")
+		_paint_mastery_gauge(c, a, s, x, y, name_w, alpha)
 		if int(s.get("iconIndex", 0)) > 0:
 			c.icon(int(s.iconIndex), x + 2, y + 2, alpha)
 		c.text(str(s.name), x + 36, y, name_w - 36, "left", XQuality.list_color(s), XUI.FONT_SIZE, LH, alpha)
+		_paint_mastery_level(c, a, s, x, y, alpha)
 		var dw := w
 		for cost in _costs(a, s):
 			if int(cost.get("icon", 0)) > 0:
@@ -192,6 +194,33 @@ func _paint_list(c: XMVCanvas) -> void:
 				dw -= 34
 			c.text(str(cost.text), x, y, dw, "right", cost.color, COST_SIZE, LH, alpha)
 			dw -= c.text_width(str(cost.text), COST_SIZE) + 5
+
+
+## YEP_SkillMasteryLevels 包过的 Window_Base.drawItemName（菜单技能窗有 _actor；战斗技能窗被 Olivia_SideBattleUI 整个换掉，不画）：
+## 量条在名字之前画——上限 >0 且等级 >0（Show Level 0 关）才画；x 从图标后 (x+36) 起、宽 名字宽−36，高 10、贴行底上 2（y+24）；
+## 底 gaugeBackColor（字色 19）铺满，再按 本级已用÷本级所需（满级 1）从字色 6 到 10 渐变（Gauge Outline 关）
+func _paint_mastery_gauge(c: XMVCanvas, a: XActor, s: Dictionary, x: float, y: float, width: float, alpha: float) -> void:
+	var id := int(s.get("id", 0))
+	if a == null or id <= 0 or XSkillMastery.max_level(id) <= 0 or a.skillMasteryLevelOf(id) <= 0:  # 原版 skillMasteryLevel(skill) 读包装后的
+		return
+	var gh := float(XDB.plugin("YEP_SkillMasteryLevels").get("Gauge Height", "10"))
+	var gx := x + 36.0
+	var gw := width - 36.0
+	var gy := y + LH - gh - 2.0
+	c.fill_rect(Rect2(gx, gy, gw, gh), Color(XUI.text_color(19), alpha))
+	var fw := floorf(gw * XSkillMastery.rate(a, id))
+	if fw > 0.0:
+		c.gradient(Rect2(gx, gy, fw, gh), Color(XUI.text_color(6), alpha), Color(XUI.text_color(10), alpha))
+
+
+## 名字之后在图标格里写「LV.n」：(x+2, y−8)、宽 32、右对齐、15 号、字色 29；0 级不写
+func _paint_mastery_level(c: XMVCanvas, a: XActor, s: Dictionary, x: float, y: float, alpha: float) -> void:
+	var id := int(s.get("id", 0))
+	var lv := a.skillMasteryLevelOf(id) if a != null and id > 0 else 0
+	if lv <= 0:
+		return
+	c.text(str(XDB.plugin("YEP_SkillMasteryLevels").get("Text Format", "LV.%1")).replace("%1", str(lv)), x + 2, y - 8, 32, "right",
+		XUI.text_color(29), 15, LH, alpha)
 
 
 ## YEP_SkillCore drawSkillCost / YEP_X_SkillCooldowns：预热、冷却优先，否则 TP、MP、HP 由右往左（HP 色 18、图标 1266）

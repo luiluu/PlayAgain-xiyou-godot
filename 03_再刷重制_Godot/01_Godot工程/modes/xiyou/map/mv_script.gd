@@ -135,9 +135,26 @@ static func run(code: String, interp) -> Array:
 					who.forget_skill(int(call[1]))
 				elif call[0] == "removeState":  # 心法 CE1003～1018：学新心法时解除另两种心法状态
 					who.remove_state(int(call[1]))
+				elif call[0] == "toast":
+					var text := _toaster_text(call[1])
+					if text != "":
+						interp.host.toast(text)
 				else:
 					who.learn_skill(int(call[1]))
 			who.refresh_passive()
+		return []
+	# 大厅老妪／抽奖机头顶倒计时（Map004 EV005／006、CE817；Star_LotteryAnimation 的 setInterval 往事件名字条上画剩余时间）：
+	# 名字条只在事件备注以 LotteryAnimation 开头时加进画面，正式版没有一个事件这样写，原版画在看不见的位图上；无操作。
+	# 只认整段只读这几样的：计时器、名字条位图、$gameMap._mapId、$gameVariables.value、$gameSystem.playtime()
+	if js.contains("StarGetRefLAM") and js.contains("GetLotteryAnimation"):
+		var rest := _re("Star\\.GetLotteryAnimation|\\$gameMap\\._mapId|\\$gameVariables\\.value|\\$gameSystem\\.playtime").sub(js, "", true)
+		if not rest.contains("$game") and not rest.contains("Star.") and not rest.contains("setValue"):
+			return []
+	# 失去剩余的伙伴号角（CE1391，用鼬号角 CE1511 时调）：for (var i = A; i < B; i++) { $gameParty.loseItem($dataItems[i], n, true); }
+	var lose := _re("^for\\s*\\(\\s*var\\s+i\\s*=\\s*(\\d+)\\s*;\\s*i\\s*<\\s*(\\d+)\\s*;\\s*i\\+\\+\\s*\\)\\s*\\{\\s*\\$gameParty\\.loseItem\\(\\$dataItems\\[i\\]\\s*,\\s*(\\d+)\\s*(?:,\\s*(?:true|false)\\s*)?\\);?\\s*\\}$").search(js)
+	if lose:
+		for i in range(int(lose.get_string(1)), int(lose.get_string(2))):
+			s.gain_item(i, -int(lose.get_string(3)))   # gain_item 负数＝失去，不够时扣到 0（同 loseItem）
 		return []
 	var loop := _actor_loop(js)
 	if not loop.is_empty():
@@ -314,6 +331,8 @@ static func _statements(js: String, interp) -> Array:
 			var result: int = await interp.host.start_battle(XCat.TROOP, false, true)
 			var note := XCat.restore_trial(s, result)
 			interp.host.refresh_party_sprites()
+			if interp.host.has_method("refresh_events"):
+				interp.host.refresh_events()  # 审查第 21 期 P3③：start_battle 结束时刷新过事件，但那时还是试炼的单人队伍；还原后再刷，「角色在队」条件的事件页按原队伍
 			if note != "":
 				interp.host.toast(note)
 			continue
@@ -630,7 +649,8 @@ class ExprEnv:
 	func entry_hard() -> bool: return bool(MVScript.reincarnation_entry.get("hard", false))
 
 
-## var actor = $gameActors.actor($gameVariables.value(N)); 后跟若干 actor.learnSkill(X)/forgetSkill(X)/removeState(X)；认不出返回空
+## var actor = $gameActors.actor($gameVariables.value(N)); 后跟若干（可以没有）actor.learnSkill(X)/forgetSkill(X)/removeState(X)、
+## 读同一变量角色名的 $.toaster；认不出返回空
 static func _actor_by_variable(js: String) -> Dictionary:
 	var flat := js.replace("\n", ";")
 	var head := _re("^var\\s+actor\\s*=\\s*\\$gameActors\\.actor\\(\\$gameVariables\\.value\\((\\d+)\\)\\)\\s*;(.*)$").search(flat.strip_edges())
@@ -638,11 +658,18 @@ static func _actor_by_variable(js: String) -> Dictionary:
 		return {}
 	var calls := []
 	for st in head.get_string(2).split(";", false):
+		if st.strip_edges() == "":
+			continue
+		# 学完的提示（CE1313 六灭秘本「已领悟：…」）：toaster 里读同一个变量的角色名
+		if _re("^\\$\\.toaster\\(\\s*\\{.*\\}\\s*\\)$").search(st.strip_edges()):
+			calls.append(["toast", st.strip_edges()])
+			continue
 		var m := _re("^\\s*actor\\.(learnSkill|forgetSkill|removeState)\\((\\d+)\\)\\s*$").search(st)
 		if m == null:
 			return {}
 		calls.append([m.get_string(1), m.get_string(2)])
-	return {} if calls.is_empty() else {"variable": int(head.get_string(1)), "calls": calls}
+	# 只有一句声明（鲲拳 CE1160～1185 每支开头单独一段 var actor = …;，后面另起一段 toaster）：无操作
+	return {"variable": int(head.get_string(1)), "calls": calls}
 
 
 ## 物品选中角色（$gameParty._targetActorId，重制为 XState.item_target_actor_id）的技能脚本（CE623、637～648、941～947、1003～1018、
@@ -892,7 +919,9 @@ static func _actor_loop(js: String) -> Array:
 		return []
 	var body := head.get_string(2)
 	var calls := _re("(forgetSkill|learnSkill)\\((\\d+)\\)").search_all(body)
-	if calls.is_empty() or _re("\\b(if|else)\\b").search(body.replace("if($dataActors[j].name != '')", "").replace("if ($dataActors[j].name != '')", "")):
+	# CE1431／1432 的 if(actor)：actor(j) 为空只在没有该角色数据时，角色操作本来就只落到有数据的角色（沙僧二审 S2-1-02）
+	var plain := body.replace("if($dataActors[j].name != '')", "").replace("if ($dataActors[j].name != '')", "").replace("if(actor)", "").replace("if (actor)", "")
+	if calls.is_empty() or _re("\\b(if|else)\\b").search(plain):
 		return []
 	var named := _re(_NAMED).search(body) != null
 	var out := []

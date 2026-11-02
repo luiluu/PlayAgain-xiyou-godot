@@ -395,22 +395,16 @@ static func limit_loss(logic, t, loss: float) -> float:
 
 
 ## 种族自己的伤害（毒鸡汤、残响）：对目标免疫（死了、没毒鸡汤状态、对应伤害率 0、全部属性有效度 ≤0）不算；
-## 先过护盾（CodexShieldLedger.absorbRaceDamage 的原生护盾部分），扣血、刷新、倒下；返回扣血＋扣盾
+## 先过护盾（CodexShieldLedger.absorbRaceDamage：账本再原生护盾），扣血、刷新、倒下；返回扣血＋扣盾
 static func settled_damage(logic, t, n: float, item: Dictionary, poison: int, logs: Array, u = null) -> float:
 	if n <= 0.0 or _immune(t, item, poison, u):
 		return 0.0
 	var st := _store(logic)
 	st.derived = int(st.derived) + 1
 	var before: float = t.hp
-	var remaining := floorf(n)
-	var absorbed := 0.0
-	if t.shield > 0.0 and remaining > 0.0:
-		var take := minf(t.shield, remaining)
-		t.shield -= take
-		remaining -= take
-		absorbed += take
-		if remaining > 0.0:
-			remaining = floorf(remaining * (1.0 - XBattler._shield_param("damageReduction", "0.5")))
+	var ab := XShieldLedger.absorb_race(t, floorf(n))  # 账本静默先扣，再扣原生护盾
+	var remaining: float = ab.remaining
+	var absorbed: float = ab.absorbed
 	t.hp = maxf(0.0, t.hp - remaining)
 	t.refresh_resources()
 	logs.append({"type": "regen", "target": t, "hp": before - t.hp, "views": logic.views([t])})

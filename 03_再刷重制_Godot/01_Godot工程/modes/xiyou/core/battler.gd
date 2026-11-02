@@ -175,7 +175,7 @@ func pay_cooldown(skill: Dictionary) -> void:
 	var cd = skill.get("meta", {}).get("Cooldown")
 	if cd == null or cooldown_bypass(int(skill.id)):
 		return
-	cooldowns[int(skill.id)] = maxf(0.0, float(str(cd).strip_edges()))
+	cooldowns[int(skill.id)] = XSkillMastery.cooldown(self, int(skill.id), maxf(0.0, float(str(cd).strip_edges())))  # YEP_SkillMasteryLevels applyCooldownMods 包装
 
 ## 战斗开始：<Warmup: x> 的技能设预热。
 func start_warmups() -> void:
@@ -206,9 +206,19 @@ func end_battle_cooldowns() -> void:
 	warmups.clear()
 
 
-## 公式兼容：技能熟练度（YEP_SkillMasteryLevels），首期统一为 0。
-func skillMasteryLevel(_skill_id: int) -> int:
-	return 0
+## 技能熟练度（YEP_SkillMasteryLevels，XSkillMastery）：技能 → 等级、本级已用次数；action_mastery 是本行动付过费、待 onAllActionsEnd 计数的技能
+var mastery_levels := {}
+var mastery_uses := {}
+var action_mastery: Array[int] = []
+
+
+## 包装后的等级（角色的渡鸦／宿傩／饿狼／异化包装，XSkillMastery.effective）；原始等级是 XSkillMastery.level
+func skillMasteryLevel(skill_id: int) -> int:
+	return XSkillMastery.effective(self, skill_id)
+
+## 原版传技能对象的那几处（伤害、费用、甚尔武器库、技能窗）：异化取 min 看 O-146 o_alien_object
+func skillMasteryLevelOf(skill_id: int) -> int:
+	return XSkillMastery.effective(self, skill_id, true)
 
 
 # ---- 护盾（ShieldSystem v2.8；参数 decayRate／damageReduction 取自插件设置）----

@@ -425,6 +425,7 @@ func skills() -> Array:
 	XYunshang.skill_ids(self, ids)  # 云裳 skills 包装（在异化之内）：天衣给的赠行／收存余光
 	ids.assign(XAlienBattle.skill_ids(self, ids))  # 异化百相、无面 skills 包装（Affixes:21）：拿掉被替换的，加借来的、仿形与切换
 	ids.assign(XGuyu.skill_ids(self, ids))  # 谷雨 skills 包装：先许一枝开 10 级起、绽放不列、其余按解锁
+	ids.assign(XTusuXuan.skill_ids(self, ids))  # 屠苏／璇 bindGrowth skills 包装：专属技能按本体等级解锁
 	if XAlienBattle.devours(self):  # 异化饕餮 skills 包装（Adv:86）：战斗中多吞噬技能（原版 push 不去重）
 		ids.append(XAlienBattle.devour_id())
 	return _skill_records(ids)
@@ -505,6 +506,8 @@ func attack_skill_id() -> int:
 		return TOJI_MAIN[0]
 	if actor_id == XSukuna.ACTOR:
 		return 10238
+	if actor_id == XTusu.ACTOR:
+		return XTusu.attack_id(self, super.attack_skill_id())  # 屠苏 attackSkillId 包装：武具态恒为归形
 	return super.attack_skill_id()
 
 ## 指令窗「攻击」那一项的名字：YEP_WeaponUnleash addAttackCommand 取技能的 commandAttackText（备注 <Command Text: x>／<Attack Text: x>，
@@ -670,7 +673,7 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XRaceBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i))))  # 按原版安装先后由内到外：专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→异化逆骨（33）→谷雨储备（38）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
+	return XRaceBattle.param(self, i, XTusu.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i)))))  # 按原版安装先后由内到外：专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→异化逆骨（33）→谷雨储备（38）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:

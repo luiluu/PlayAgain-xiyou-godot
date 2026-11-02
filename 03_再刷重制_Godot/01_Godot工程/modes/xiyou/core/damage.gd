@@ -222,7 +222,11 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var raw := maxf(0.0, float(options.rawValue) if options.has("rawValue") else eval_formula(item, a, b, vars))
 	if kind == "settled":
 		return {"value": XPower.js_round(raw), "critical": false, "breakdown": {"base": raw}, "moduleTrace": report.trace}
-	var basis := maxf(0.0, (raw + float(frame.flatSkill)) * float(frame.skillMultiplier))
+	# installDamageElementRuntime：initial＝raw＋flatSkill，技能再乘熟练度 masteryDamage（mastered）；masteryRate 也乘进元素固定增伤
+	var mastery_base := raw + float(frame.flatSkill)
+	var mastered := XSkillMastery.damage(item, a, mastery_base)
+	var mastery_rate := mastered / mastery_base if mastery_base != 0.0 else 1.0
+	var basis := maxf(0.0, mastered * float(frame.skillMultiplier))
 	var weights := [0.0, 1.0] if mode == "magical" else [1.0, 0.0]
 	if mode == "mixed":
 		weights = _mixed_weights(item, a, b, vars)
@@ -265,7 +269,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 		var match_rate: float = 1.0 if kind == "true" else matchup(e, affinity(b))
 		var bonus: float = 1.0 if frame.noElement else _module_element_bonus(a, e, frame)
 		var flat_element := 0.0 if frame.noElement else _sum_yep(a, "elementAmplifyN", e, _yep_objects(a))
-		var multiplied: float = (basis + flat_element * float(frame.skillMultiplier)) * normal_mult * bonus * race.multiplier * final_mult * (1.0 if absorb else growth)
+		var multiplied: float = (basis + flat_element * mastery_rate * float(frame.skillMultiplier)) * normal_mult * bonus * race.multiplier * final_mult * (1.0 if absorb else growth)
 		var crit: float = 1.0 if absorb else critical_mult
 		var before_fixed: float = multiplied * defense * match_rate * absf(resistance) * incoming * crit
 		var flat: float = 0.0 if kind == "true" else _flat_mitigation(a, b, e, frame) + race.flat
@@ -425,6 +429,8 @@ class _ParamProxy:
 		return src.sparam(i)
 	func skillMasteryLevel(id: int) -> int:
 		return src.skillMasteryLevel(id)
+	func skillMasteryLevelOf(id: int) -> int:
+		return src.skillMasteryLevelOf(id)
 
 
 static func _module_element_bonus(a: XBattler, element: int, frame: Dictionary) -> float:

@@ -54,7 +54,7 @@ extends RefCounted
 ## - 花荫 shield：储备 30%（不足 1 不能用），付一次，每个活着、没归根的出战队员各得 min(值, 不含储备的最大生命)，
 ##   进护盾账本（installSourceShieldLedgerRuntime，来源 guyu.shield：不衰减、击穿不减半、不吃护盾加成，同源取较高）两回合；
 ##   账本在最外层先吸收（executeHpDamage／gainHp／setHp），自然回合末撤销到期的。先许一枝开 20 级起：被花荫挡下一次后
-##   下次绽放 ×1.1（60 级 ×1.2，installThreeGrowthRelicRuntime 的 onAbsorb），每次新花荫重置。重制只做谷雨这一个来源的账本。
+##   下次绽放 ×1.1（60 级 ×1.2，installThreeGrowthRelicRuntime 的 onAbsorb），每次新花荫重置。账本是共用的 XShieldLedger（白龙_14 抽出）。
 ## - 转移 transfer：给出／收回，比例 50%（10 级起可选 25／50／75%，战斗界面的选择窗写 transfer_mode／transfer_ratio，
 ##   行动结束 end_action 设回给出 50%：原版写在这次的 Game_Action 上，没写的行动按 give／CFG.transfer.ratio），接收者储备不超上限；
 ##   10 级起从谷雨给出时受赠者待绽（当前花期里就是本次，否则下一次花期），待绽绽放付 35%（60 级我即万物之春 50%）。
@@ -65,7 +65,7 @@ extends RefCounted
 ## 战斗界面（参照 guyu_ui_probe；画面在 battle_scene／side_status／battler_sprite／guyu_transfer_window）：
 ## - 状态字 statusText（侧栏名字行）：谷雨在队的战斗中每人「储」＋shortNumber(储备)，归根加「 归根N」（N＝归根到期回合−当前回合，
 ##   不小于 0），待绽加「 待绽」，谷雨本人另加「 花期N」（剩几回合，含本回合）或「 生长」。shortNumber：亿／万一位小数，以下取整。
-## - 护盾合计 totalShield：其他来源的护盾（b.shield）＋花荫账本（重制账本不并进 b.shield，所以相加；原版账本就是 b.shield）。
+## - 护盾合计 totalShield：原生护盾（b.shield）＋账本（XShieldLedger.total；重制账本不并进 b.shield，所以相加；原版账本就是 b.shield）。
 ## - 转移说明 transferText 与 transferPreview 的原因：请选择存活的出战队友／当前装备不支持此转移方式／供给者生命储备不足／接收者储备已满。
 ## - 动作 G.visuals.motions：治疗 spell、花期 chant、转移 item、花荫 guard、终结 skill（归根中、内部行动不换）。
 ## 未移植：isValid 包装（重制的角色行动不看 isValid）。
@@ -108,7 +108,7 @@ static var _logic_ref: WeakRef = null
 static var _events: Array = []
 ## 刚结束的行动事件（afterAction 用）
 static var _last := {}
-## 每人的战斗内状态（角色 id → {root_until, bud, bud_flower, spring_boost, spring_hit_used, spring_action, shield, shield_until}）
+## 每人的战斗内状态（角色 id → {root_until, bud, bud_flower, spring_boost, spring_hit_used, spring_action}）
 static var rows := {}
 ## G.internal／G.unprotected 计数；本回合受伤、上回合压力；归春用过；finishBattle 中
 static var internal := 0
@@ -346,8 +346,7 @@ static func reserve(b) -> float:
 static func _row(b) -> Dictionary:
 	var id: int = b.actor_id
 	if not rows.has(id):
-		rows[id] = {"root_until": -1, "bud": false, "bud_flower": 0, "spring_boost": false, "spring_hit_used": false, "spring_action": 0,
-			"shield": 0.0, "shield_until": 0}
+		rows[id] = {"root_until": -1, "bud": false, "bud_flower": 0, "spring_boost": false, "spring_hit_used": false, "spring_action": 0}
 	return rows[id]
 
 
@@ -366,7 +365,7 @@ static func has_bud(b) -> bool:
 
 ## G.shield：账本里 guyu.shield 的量
 static func shield_of(b) -> float:
-	return float(rows[b.actor_id].shield) if active_battle and b is XActor and rows.has(b.actor_id) else 0.0
+	return XShieldLedger.amount(b, "guyu.shield") if active_battle and b is XActor else 0.0
 
 
 ## baseMhp：不含储备的生命上限
@@ -497,10 +496,6 @@ static func end_round() -> void:
 	last_round_pressure = round_taken / maxf(1.0, pool)
 	round_taken = 0.0
 	var others_alive := members.any(func(b): return not own(b) and b.is_alive() and b.hp > 0.0)
-	var r := maxi(1, round)
-	for id in rows:
-		if float(rows[id].shield) > 0.0 and int(rows[id].shield_until) <= r:
-			rows[id].shield = 0.0
 	if flower_until >= 0 and flower_until <= round:
 		close_flower()
 	var g := _guyu()
@@ -756,7 +751,7 @@ static func _special(logic, u, k: String, t) -> void:
 			_special_done = true
 			pay(u, _shield_value)
 		var v := minf(_shield_value, floorf(base_mhp(t)))
-		_grant_shield(t, v)
+		_grant_shield(u, t, v)
 		var r := _row(t)
 		if int(r.spring_action) != _action_serial:
 			r.spring_action = _action_serial
@@ -777,42 +772,29 @@ static func shield_value(g) -> float:
 	return floorf(reserve(g) * 0.3)
 
 
-## CodexShieldLedger.grant(target, 'guyu.shield', v, 2, …, {noDecay, noHalve, noBonus})：同源取较高、期限到 round()＋1
-static func _grant_shield(t, v: float) -> void:
-	var value := floorf(maxf(0.0, v))
-	if value <= 0.0:
+## CodexShieldLedger.grant(target, 'guyu.shield', v, 2, 谷雨, {noDecay, noHalve, noBonus, skip: 谷雨付费中})：同源取较高、期限到 round()＋1
+static func _grant_shield(u, t, v: float) -> void:
+	XShieldLedger.grant(t, "guyu.shield", v, 2, int(u.actor_id), {"noDecay": true, "noHalve": true, "noBonus": true, "skip": _unprotected})
+
+
+static func _unprotected() -> bool:
+	return unprotected > 0
+
+
+## G.springShieldHit（账本 onAbsorb 里花荫挡下过时调）：先许一枝开 20 级起，下次绽放强化，一次花荫一次
+static func spring_shield_hit(b) -> void:
+	if not active_battle or not b is XActor:
 		return
-	var r := _row(t)
-	var until := maxi(1, round) + 1
-	if float(r.shield) > 0.0:
-		r.shield = maxf(float(r.shield), value)
-		r.shield_until = maxi(int(r.shield_until), until)
-	else:
-		r.shield = value
-		r.shield_until = until
-
-
-## 账本吸收（executeHpDamage／gainHp／setHp 的最外层）：返回剩下的伤害；谷雨付费中（unprotected）不吸收。
-## 挡下过就 springShieldHit（先许一枝开 20 级起：下次绽放强化，一次花荫一次）
-static func ledger_absorb(b, damage: float) -> float:
-	if not active_battle or damage <= 0.0 or not b is XActor or not rows.has(b.actor_id) or unprotected > 0:
-		return damage
-	var r: Dictionary = rows[b.actor_id]
-	if float(r.shield) <= 0.0:
-		return damage
-	var take := minf(float(r.shield), damage)
-	r.shield = float(r.shield) - take
-	if take > 0.0:
-		var g := active()
-		if g != null and has_spring(g) and int(g.level) >= 20 and not bool(r.spring_hit_used):
-			r.spring_hit_used = true
-			r.spring_boost = true
-	return damage - take
+	var r := _row(b)
+	var g := active()
+	if g != null and has_spring(g) and int(g.level) >= 20 and not bool(r.spring_hit_used):
+		r.spring_hit_used = true
+		r.spring_boost = true
 
 
 ## executeHpDamage：账本先吸收，再记本回合我方受到的伤害（受伤压力）
 static func hp_damage(t, value: float) -> float:
-	value = ledger_absorb(t, value)
+	value = XShieldLedger.hp(t, value)
 	if active_battle and value > 0.0 and t is XActor:
 		round_taken += value
 	return value
@@ -879,7 +861,7 @@ static func status_text(b) -> String:
 
 ## G.totalShield：生命条上画的护盾合计（其他来源 b.shield ＋ 花荫账本）
 static func total_shield(b) -> float:
-	return float(b.shield) + shield_of(b) if b is XActor else 0.0
+	return XShieldLedger.total(b) if b is XActor else 0.0
 
 
 ## G.visuals.motions：五个主动技的动作（performAction 包装）
