@@ -642,6 +642,18 @@ class ReuseTests(SampleTests):
         self.assertEqual(keep, ['xiyou_rules_d2.tscn'])                    # 第二组车道一段也没测
         self.assertEqual(used['xiyou_rules_d1c.tscn'][2], 'xiyou_rules_d1b.tscn')
 
+    def test_touched_part_is_not_replaced_by_group_mate(self):
+        """审查 26 P2-1：差异只改了 d1c 这一段的 .tscn，C 时 d1b、d1c 都通过；d1c 被波及，不能拿 d1b 的旧结果顶掉。"""
+        c = self.lane()
+        self.put(TESTS / 'xiyou_rules_d1c.tscn', '[ext_resource path="res://tests/xiyou_rules.gd" id="1"]\n# edited\n')
+        keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_rules_d1c.tscn'],
+                                   {c: ('本机', {'xiyou_rules_d1b.tscn', 'xiyou_rules_d1c.tscn'})}, sel)
+        self.assertEqual((keep, used), (['xiyou_rules_d1c.tscn'], {}))
+        old = self.g('rev-parse', 'HEAD~1')                                 # 更早的 C 也一样：被波及就不替补
+        keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_rules_d1c.tscn'],
+                                   {c: ('本机', {'xiyou_rules_d1c.tscn'}), old: ('本机', {'xiyou_rules_d1b.tscn'})}, sel)
+        self.assertEqual(keep, ['xiyou_rules_d1c.tscn'])
+
     def test_local_records_need_same_environment(self):
         sdir = self.root / 'state'
         (sdir / 'commit_results').mkdir(parents=True)
