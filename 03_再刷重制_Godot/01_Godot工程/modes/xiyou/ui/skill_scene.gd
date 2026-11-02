@@ -201,7 +201,7 @@ func _paint_list(c: XMVCanvas) -> void:
 ## 底 gaugeBackColor（字色 19）铺满，再按 本级已用÷本级所需（满级 1）从字色 6 到 10 渐变（Gauge Outline 关）
 func _paint_mastery_gauge(c: XMVCanvas, a: XActor, s: Dictionary, x: float, y: float, width: float, alpha: float) -> void:
 	var id := int(s.get("id", 0))
-	if a == null or id <= 0 or XSkillMastery.max_level(id) <= 0 or XSkillMastery.level(a, id) <= 0:
+	if a == null or id <= 0 or XSkillMastery.max_level(id) <= 0 or a.skillMasteryLevelOf(id) <= 0:  # 原版 skillMasteryLevel(skill) 读包装后的
 		return
 	var gh := float(XDB.plugin("YEP_SkillMasteryLevels").get("Gauge Height", "10"))
 	var gx := x + 36.0
@@ -213,13 +213,18 @@ func _paint_mastery_gauge(c: XMVCanvas, a: XActor, s: Dictionary, x: float, y: f
 		c.gradient(Rect2(gx, gy, fw, gh), Color(XUI.text_color(6), alpha), Color(XUI.text_color(10), alpha))
 
 
+## Yanfly.Util.toGroup(level)：正式版 Digit Grouping 开着，1000 级起带千位逗号（LV.1,000；审查第 22 期 P3-2）
+static func mastery_level_text(lv: int) -> String:
+	return XMenu._group(lv)
+
+
 ## 名字之后在图标格里写「LV.n」：(x+2, y−8)、宽 32、右对齐、15 号、字色 29；0 级不写
 func _paint_mastery_level(c: XMVCanvas, a: XActor, s: Dictionary, x: float, y: float, alpha: float) -> void:
 	var id := int(s.get("id", 0))
-	var lv := XSkillMastery.level(a, id) if a != null and id > 0 else 0
+	var lv := a.skillMasteryLevelOf(id) if a != null and id > 0 else 0
 	if lv <= 0:
 		return
-	c.text(str(XDB.plugin("YEP_SkillMasteryLevels").get("Text Format", "LV.%1")).replace("%1", str(lv)), x + 2, y - 8, 32, "right",
+	c.text(str(XDB.plugin("YEP_SkillMasteryLevels").get("Text Format", "LV.%1")).replace("%1", mastery_level_text(lv)), x + 2, y - 8, 32, "right",
 		XUI.text_color(29), 15, LH, alpha)
 
 

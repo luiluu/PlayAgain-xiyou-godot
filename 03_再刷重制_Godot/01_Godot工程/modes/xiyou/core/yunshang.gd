@@ -286,7 +286,8 @@ const SETTINGS_FLAG := "_yunSettings"
 ## 当前主动行动（原版记在 Game_Action 上）：user、prepared、glow（余辉）、weaken（钉影虚弱）、total（本次扣血）、
 ## burst／command／dispel（每次行动一次）、planted（已种针的目标）
 static var frame := {}
-## 派生伤害（符针 derived）：mat、rate、glow；不空时伤害钩子按派生算
+## 派生伤害（符针 derived）：mat、rate、glow；mastery（action._yunMasteryLevel：符针用种针时 10270 的等级、赊账用触发技能的等级，
+## 只替这个派生技能自己的熟练度，XSkillMastery.damage 读）；不空时伤害钩子按派生算
 static var derived_frame := {}
 ## 收针选的觉醒者（原版选择窗 onSkillOk 写 action._yunWakeTarget）：下一次收针用，空就照自动战斗 aiGather 选
 static var wake_target = null
@@ -680,6 +681,7 @@ static func prepare(logic, u, skill: Dictionary) -> Array:
 		d.guard_until = round + 1
 	if int(d.get("key", -1)) == 2 and awake(u) and bool(d.debt_conversion) and damage_action(skill):
 		frame.debt = debt_total(d)
+		frame.debt_mastery = u.skillMasteryLevel(int(skill.id))  # action._yunDebtMastery
 	frame.sleeve = bool(sleeve.get(u, false))  # action._yunSleeve（指令窗或自动战斗设的收袖开关）
 	var sid := int(skill.get("id", 0)) if not XBattleLogic.is_item(skill) else 0
 	if int(d.get("key", -1)) == 6 and awake(u) and sid > 0:
@@ -699,6 +701,33 @@ static func prepare(logic, u, skill: Dictionary) -> Array:
 	return logs
 
 
+## 子行动（原版 new Game_Action(...).apply：甚尔万里锁溅射、术师杀手反弹，宿傩 S.perform 的追斩、神灶）也走一遍云裳 apply 包装，
+## 各自一份行动帧（prepareAction、_yunTotal、只引爆一次）：先存外层帧，prepare 建子帧，跑 body（返回 apply 记录），
+## 按对 t 的最后一条记录调 applied，再还原外层帧（沙僧二审 S2-1-03；参照 yunshang_wraps_probe）。返回 prepare 记录＋body 记录＋applied 记录
+static func child(logic, u, skill: Dictionary, t, body: Callable) -> Array:
+	if battle == 0:
+		return body.call()
+	var saved := [frame, team_buff]
+	var logs := prepare(logic, u, skill)
+	var rs: Array = body.call()
+	logs.append_array(rs)
+	logs.append_array(after_wrapped(logic, u, skill, t, rs, true))
+	frame = saved[0]
+	team_buff = saved[1]
+	return logs
+
+
+## 黄泉／宿傩／甚尔的 apply 包装在云裳之内：整次包装跑完，看对主目标的最后一条记录（target.result()）调 applied；没有记录（宿傩神灶直接施放、没蓄力）当没命中
+static func after_wrapped(logic, u, skill: Dictionary, t, rs: Array, used: bool) -> Array:
+	for i in range(rs.size() - 1, -1, -1):
+		var r = rs[i]
+		if r is Dictionary and r.get("type") == "hit" and is_same(r.get("target"), t) and is_same(r.get("user"), u):
+			return applied(logic, u, skill, t, r, used)
+	var logs := pending.duplicate()
+	pending.clear()
+	return logs
+
+
 ## Game_Action.apply 包装（原 apply 之后）：命中时的指令（御风、敕衣点神、赠行、收存余光，每次行动一次）、钉影种针、拆神驱散、
 ## 觉醒中的伤害引爆目标一根符针。返回派生伤害的记录
 static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -> Array:
@@ -708,8 +737,6 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 		return logs
 	if not frame.has("primary"):
 		frame.primary = primary if own(u) else t  # action._yunPrimary
-	if damage_action(skill):
-		frame.total = float(frame.total) + maxf(0.0, float(r.get("hp", 0.0)))
 	if not used or bool(r.get("missed", false)) or bool(r.get("evaded", false)):
 		return logs
 	var id := int(skill.get("id", 0)) if not XBattleLogic.is_item(skill) else 0
@@ -725,7 +752,7 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 		if not needles.has(t):
 			needles[t] = []
 		for i in range(count):
-			(needles[t] as Array).append({"mat": u.mat, "parts": parts, "rate": rate * (0.555 if parts == 2 else 1.0) * spread, "glow": float(frame.glow)})
+			(needles[t] as Array).append({"mat": u.mat, "mastery": u.skillMasteryLevel(PIN), "parts": parts, "rate": rate * (0.555 if parts == 2 else 1.0) * spread, "glow": float(frame.glow)})
 		pin_until[t] = round + 1
 	if own(u) and id == CUT and not bool(frame.dispel):
 		frame.dispel = true
@@ -769,7 +796,7 @@ static func _robe_hit(logic, u, d: Dictionary) -> Array:
 		var n := float(frame.debt)
 		d.debt_conversion = false
 		repay(d, n)
-		logs.append_array(derived(logic, u, target, NEEDLE, {"raw": n * STORED.debt, "kind": "debt"}))
+		logs.append_array(derived(logic, u, target, NEEDLE, {"raw": n * STORED.debt, "kind": "debt", "mastery": int(frame.get("debt_mastery", 0))}))
 		frame.debt = 0.0
 	if int(d.key) == 0 and float(frame.bank) > 0.0:
 		logs.append_array(derived(logic, u, target, MOUNTAIN, {"raw": float(frame.bank) * STORED.bank, "kind": "bank"}))
@@ -880,7 +907,8 @@ static func burst(logic, t, all: bool) -> Array:
 		for p in range(int(n.parts)):
 			if t.is_dead():
 				break
-			logs.append_array(derived(logic, src, t, NEEDLE, {"mat": n.mat, "rate": n.rate, "glow": n.glow}))
+			logs.append_array(derived(logic, src, t, NEEDLE, {"mat": n.mat, "rate": n.rate, "glow": n.glow,
+				"mastery": int(n.mastery) if n.has("mastery") else src.skillMasteryLevel(PIN)}))
 	return logs
 
 
@@ -891,6 +919,8 @@ static func derived(logic, src, t, skill_id: int, o: Dictionary) -> Array:
 	var skill := XDB.rec("Skills", skill_id)
 	var saved_frame := frame
 	derived_frame = o
+	if o.has("mastery"):
+		derived_frame["mastery_skill"] = skill_id
 	frame = {}
 	var base_cri: float = src.cri * (1.0 - t.cev) if bool(skill.get("damage", {}).get("critical", false)) else 0.0
 	var critical: bool = logic._float("yunshang_derived_critical") < clampf(cri(src, skill, base_cri), 0.0, 1.0)
@@ -1127,10 +1157,12 @@ static func hp_damage(logic, _u, t, value: float) -> float:
 
 
 ## executeHpDamage 包装（原扣血之后）：记主动伤害行动的每段命中（一身两世复演用）；山河作骨守势中被敌人打，反击一次山河击 ×0.5
-static func after_hp(logic, u, t, value: float, item: Dictionary) -> void:
+## hp_before 是原扣血之前的生命（_yunTotal 累计 min(打前生命, 伤害)，黄泉溅射、宿傩两段这类包在里层的多次扣血都算进同一次行动）
+static func after_hp(logic, u, t, value: float, item: Dictionary, hp_before := INF) -> void:
 	if battle == 0:
 		return
 	if derived_frame.is_empty() and is_same(frame.get("user"), u) and damage_action(item):
+		frame.total = float(frame.total) + minf(hp_before, maxf(0.0, value))
 		(frame.hits as Array).append({"target": t, "value": value, "critical": bool(logic._action_resources.result(t).get("critical", false))})
 	var d := data(t)
 	if int(d.get("key", -1)) == 0 and int(d.guard_until) >= round and int(d.guard_until) > 0 and derived_frame.is_empty() and u is XEnemy and value > 0.0:

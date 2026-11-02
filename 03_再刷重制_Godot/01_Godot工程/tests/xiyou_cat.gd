@@ -187,7 +187,25 @@ func _run() -> void:
 				_legal(c)
 	check("covers_all", seen.keys().size() == 7, seen.keys())
 	_dragon_round()
+	_visual()
 	finish()
+
+
+## installNativeCharacterVisualRuntime（小猫剑圣部分）：battlerName CatSwordSaint_SV_v3、没开卡图才认；普攻改挥舞、站定时走改待机
+func _visual() -> void:
+	var s := XState.new_game(3, 1, [8])
+	XState.current = s
+	var cat := s.actor(XCat.ACTOR)
+	check("visual.cat", XAppearance.cat_visual(cat), XCostumes.battler_name(s, cat))
+	check("visual.other", not XAppearance.cat_visual(s.actor(1)) and not XAppearance.cat_visual(null))
+	var sp := XBattlerSprite.new()
+	sp.battler = cat
+	sp.set_motion("walk")
+	check("visual.planted", sp.motion == "wait", sp.motion)
+	sp.battler = s.actor(1)
+	sp.set_motion("walk")
+	check("visual.other_walk", sp.motion == "walk", sp.motion)
+	sp.free()
 
 
 ## legal：战斗中逐个技能比 canUse（等级 × 武器 × 至圣斩冷却）

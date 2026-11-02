@@ -354,6 +354,8 @@ static func _statements(js: String, interp) -> Array:
 			var result: int = await interp.host.start_battle(XCat.TROOP, false, true)
 			var note := XCat.restore_trial(s, result)
 			interp.host.refresh_party_sprites()
+			if interp.host.has_method("refresh_events"):
+				interp.host.refresh_events()  # 审查第 21 期 P3③：start_battle 结束时刷新过事件，但那时还是试炼的单人队伍；还原后再刷，「角色在队」条件的事件页按原队伍
 			if note != "":
 				interp.host.toast(note)
 			continue

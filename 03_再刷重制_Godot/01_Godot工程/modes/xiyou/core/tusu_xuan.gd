@@ -65,9 +65,10 @@ static func own(a) -> bool:
 	return a is XActor and TAGS.has(int(a.actor_id))
 
 
-## $gameActors 里的本体（一定有实例；没有存档时返回 null）
+## ownerInstance：$gameActors._data 里的本体，只读不建（审查第 22 期 P3-1：原来用 XState.actor() 会新建 1 级本体）；
+## 没建过时返回 null：别人的专属技能全滤、不能用，系数按 1 级（B.curve 的 a 为空取 1 级）
 static func _owner(actor_id: int):
-	return XState.current.actor(actor_id) if XState.current != null else null
+	return XState.current.actors.get(actor_id) if XState.current != null else null
 
 
 ## M.coefficient(key, a)：a 省略时用本体
@@ -100,7 +101,7 @@ static func _listed(a, id: int) -> bool:
 	return unlocked(int(o[0]), who, str(o[1]))
 
 
-## Game_Actor.meetsSkillConditions 包装：「归形」只在战斗中被绑定时可用（绑定框架还没移植，恒假）；没解锁的不能用
+## Game_Actor.meetsSkillConditions 包装：「归形」只在战斗中被绑定、活着、能动时可用（直接返回，不再往里问）；没解锁的不能用
 static func meets(a, skill: Dictionary) -> bool:
 	if XBattleLogic.is_item(skill):
 		return true
@@ -110,7 +111,8 @@ static func meets(a, skill: Dictionary) -> bool:
 	if own(a) and int(a.actor_id) == int(o[0]) and (str(o[1]).begins_with("yiwu.") or str(o[1]) in ["jixing.possess", "liexing"]):
 		return false  # 【cc·悟空】易武（屠苏 376 行）、寄星·附身与列星（璇 458、460 行）要本人被绑定；绑定框架没进 main 前恒假，屠苏三期／璇的绑定期合进来时删掉这行
 	if str(o[1]) == "return" and own(a) and int(a.actor_id) == int(o[0]):
-		return false
+		var logic = XBinding._logic()
+		return logic != null and XBinding.is_bound(a) and a.is_alive() and a.hp > 0.0 and logic.can_move(a)  # 战斗中、绑定、活着、能动
 	return _listed(a, int(skill.id))
 
 

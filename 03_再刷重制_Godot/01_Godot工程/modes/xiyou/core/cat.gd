@@ -84,13 +84,13 @@ static func growth(a) -> float:
 	return 1.0
 
 
-## 已学剑技里最高的技能等级（不超过变量 8）；Godot 技能熟练度首期恒 0
+## 已学剑技里最高的技能等级（不超过变量 8）；原版直接读 _skillMasteryLevels（原始等级，不经角色包装）
 static func mastery(a) -> int:
 	var cap := int(XState.current.variable(8)) if XState.current != null else 0
 	var best := 0
 	for sid in ACTIVE:
 		if learned(a, sid):
-			best = maxi(best, mini(cap, a.skillMasteryLevel(sid)))
+			best = maxi(best, mini(cap, XSkillMastery.level(a, sid)))
 	return best
 
 
