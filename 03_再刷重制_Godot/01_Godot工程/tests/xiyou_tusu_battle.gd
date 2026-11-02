@@ -16,6 +16,7 @@ const PENDING := {}
 var checks := 0
 var failures: Array = []
 var logic: XBattleLogic
+var huzhen_seen := 0
 
 
 func check(tag: String, ok: bool, detail = null) -> void:
@@ -199,6 +200,9 @@ func _step(st: Array) -> Array:
 			a.action_mastery.clear()
 			logic.pay_skill_cost(a, s)  # 与 execute 同一个付费：噬主包装＋里层（异化、扣费、HP 费用、熟练度记次）＋冷却
 			ret = {"tusu": _who(TUSU).mp, "self": a.mp, "mastery": a.action_mastery.duplicate()}
+		"force":
+			# 事件强制行动（339：[1 角色, 角色号, 技能, 目标序号]），走 _forced_run（审查第 26 期 P3-1）
+			logs = logic._force_action([1, int(st[1]), XTusu.skill_id(str(st[2])), int(st[3])], null)
 		"arm":
 			var a: XActor = _who(st[1])
 			var s := XDB.rec("Skills", XTusu.skill_id(str(st[2])))
@@ -278,7 +282,7 @@ func _ready() -> void:
 
 func _go() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	check("oracle", ref.cases.size() == 12 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
+	check("oracle", ref.cases.size() == 13 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:
 		if PENDING.has(c.id):
 			print("SKIP ", c.id, "：", PENDING[c.id])
@@ -302,6 +306,12 @@ func _go() -> void:
 			for k in ws.get("cooldown", {}):
 				ws.cooldown[k] = maxi(0, int(ws.cooldown[k]))  # 原版冷却减到负数（YEP 不夹），重制剩余回合不低于 0
 			if str(st[0]) == "end":
+				# 审查第 26 期 P3-3：护阵两边不比之后，另看重制自己战斗结束删了护阵（结束前身上有护阵的例记数，免得断言空转）
+				var huzhen := XTusu.state_id("huzhen")
+				var prev: Dictionary = _norm(steps[i - 1].snap)
+				if prev.party.values().any(func(p): return (p.states as Array).has(huzhen)):
+					huzhen_seen += 1
+				check(tag + ".huzhen_cleared", not got.party.values().any(func(p): return (p.states as Array).has(huzhen)), got.party)
 				# 参照的宿主战斗结束后 inBattle 还是真，技能条件、费用、payer 还按战斗中算；重制已经出了战斗。只比清理结果
 				for x in [got, ws]:
 					for k in ["round", "payer", "maintain", "host", "members", "cooldown"]:
@@ -320,5 +330,6 @@ func _go() -> void:
 					check("%s.%s" % [tag, k], got.get(k) == ws[k], [got.get(k), ws[k]])
 		if XBinding.in_battle():
 			logic.end_battle(0)
+	check("huzhen_end_coverage", huzhen_seen >= 1, huzhen_seen)
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_tusu_battle", "passed": checks - failures.size(), "total": checks, "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)
