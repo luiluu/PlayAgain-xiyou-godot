@@ -874,7 +874,6 @@ static func from_dict(d: Dictionary) -> XState:
 	XYomiJingliu.after_load(s)  # 镜流 extractSaveContents 包装：整理技能、清放血累计
 	XShieldLedger.clear_all()  # 护盾账本 extractSaveContents 包装：清空
 	XBinding.clear_all(s)  # 绑定 extractSaveContents 包装：清数据与形态状态
-	XGuyu.after_load(s)  # 谷雨 extractSaveContents 包装：syncAll
 	for a in s.actors.values():a.refresh_passive()
 	for k in d.switches:
 		s.switches[int(k)] = bool(d.switches[k])
@@ -978,6 +977,9 @@ static func from_dict(d: Dictionary) -> XState:
 	XGlobalVars.apply(s)  # extractSaveContents 之后：跨存档变量盖掉档里的值
 	s.sync_difficulty_after_load()
 	_become_current(s)
+	# 谷雨 extractSaveContents 包装：syncAll。原版包装在原函数之后，读的是新档的进阶次数；
+	# XGuyu.stage 查 XState.current，所以要等换成新档后再同步（沙僧二审 S2-2-01）
+	XGuyu.after_load(s)
 	XPets.loaded(s)
 	# setup时曾缓存空状态；恢复完当前存档后重建效果快照，不额外夹HP／MP。
 	for a in s.actors.values():

@@ -314,8 +314,15 @@ func _run() -> void:
 					_damage(c)
 	check("covers_all", seen.keys().size() == 6, seen.keys())
 	_run3()
+	_level_text()
 	finish()
 
+
+
+## 技能窗「LV.n」：drawSkillMasteryLevel 用 Yanfly.Util.toGroup，正式版 toLocaleString('en')（审查第 22 期 P3-2）
+func _level_text() -> void:
+	var got := [1, 6, 999, 1000, 12345, 100000].map(func(v): return XSkillScene.mastery_level_text(v))
+	check("ui.level_text_group", got == ["1", "6", "999", "1,000", "12,345", "100,000"], got)
 
 # ---- 期三 ----
 func _run3() -> void:
