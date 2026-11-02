@@ -230,7 +230,7 @@ func _reach(m: int) -> void:
 		_scene().relocate_race_guide()
 	var ids: Array = XMapScene.slice().keepEvents[str(m)].map(func(v): return int(v)).filter(func(id):
 		var e := _event(_scene(), id)
-		return e != null and not (e.data.pages as Array).all(func(p): return int(p.trigger) in [3, 4]))
+		return e != null and not (e.data.pages as Array).filter(func(p): return (p.list as Array).size() > 1).all(func(p): return int(p.trigger) in [3, 4]))
 	var miss := REACH.unreachable(_scene(), _scene().player.grid, ids)
 	var want: Array = UNREACHABLE.get(m, [])
 	_check("reach_map%d" % m, miss == want, [miss, want])
