@@ -524,6 +524,7 @@ static func apply(logic, u, skill: Dictionary, t) -> Array:
 	var out := [r]
 	if not (used and not r.missed and not r.evaded):
 		return out
+	_hit_animation(r, id)
 	var borrow := int(action.get("borrow", -1))
 	var spear: bool = bool(action.get("spear", false))
 	if (is_main(id) and (id == MAIN[3] or (borrow == 3 and spear))) or (id == RANDOM[3] and spear):
@@ -535,6 +536,18 @@ static func apply(logic, u, skill: Dictionary, t) -> Array:
 	elif spread_rate == 0.0 and id == RANDOM[1]:
 		out.append_array(_spread(logic, u, skill, t, 0.16))
 	return out
+
+
+## 角色形象 Game_Action.apply 包装（CharacterVisual，装在甚尔包装之外，命中后）：在目标身上放动画，记在命中记录的 toji_anims [[动画, 延迟帧]]。
+## 武器库内部行动 10220～10224（不是溅射）放该技能动画、不延迟；主技能游云 10216（不是内部）第 2 段起放动画 1，延迟 min(18, (段−1)×3) 帧
+static func _hit_animation(r: Dictionary, id: int) -> void:
+	var anim := []
+	if internal and spread_rate == 0.0 and id >= RANDOM[0] and id <= REFLECT:
+		anim = [int(r.skill.get("animationId", 0)), 0]
+	elif id == MAIN[0] and not internal and int(action.get("index", 0)) > 1:
+		anim = [1, mini(18, (int(action.index) - 1) * 3)]
+	if not anim.is_empty():
+		r["toji_anims"] = r.get("toji_anims", []) + [anim]
 
 
 ## spread：对其余活着的敌人各打一次内部行动（不判黑闪、不再溅射）
@@ -634,7 +647,11 @@ static func reflect(logic, target) -> Array:
 	no_reflect = true
 	reflect_base = float(p.base)
 	XBlackFlash.nested += 1
-	var out := XYunshang.child(logic, target, item, p.source, func(): return [logic.apply(target, item, p.source)])  # 子行动也走云裳包装（敌人出手前引爆身上全部针）
+	var out := XYunshang.child(logic, target, item, p.source, func():
+		var r: Dictionary = logic.apply(target, item, p.source)
+		if not r.missed and not r.evaded:
+			_hit_animation(r, REFLECT)  # 角色形象包装：反弹命中也放 10224 的动画
+		return [r])  # 子行动也走云裳包装（敌人出手前引爆身上全部针）
 	XBlackFlash.nested -= 1
 	reflect_base = 0.0
 	no_reflect = false

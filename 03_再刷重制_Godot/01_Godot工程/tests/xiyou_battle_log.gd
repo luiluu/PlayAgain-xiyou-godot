@@ -51,6 +51,7 @@ func _run() -> void:
 	check("setup", b.logic.actors.size() == 3 and foes.size() >= 2, [b.logic.actors.size(), foes.size()])
 	await sukuna_case(b, sukuna, foes)
 	await raven_case(b, raven, foes)
+	toji_anim_case(b, raven, foes)
 	await garou_case(b, garou, foes)
 	skill_types(b, [sukuna, raven, garou])
 	ledger(raven)
@@ -117,6 +118,24 @@ func sukuna_case(b: XBattleScene, a: XActor, foes: Array) -> void:
 	await frames(3)
 	for t in foes:
 		XSukuna.target_data(t).charged = false
+
+
+## 角色形象（CharacterVisual）甚尔命中动画：命中记录的 toji_anims 在目标身上放动画，延迟记在 wait（Sprite_Animation._delay）
+func toji_anim_case(b: XBattleScene, a: XActor, foes: Array) -> void:
+	var keep := XConfig.flag("CombatSkillAnimation")
+	XConfig.set_flag("CombatSkillAnimation", true)
+	var before := b.fx.get_children()
+	b._hit_visual(hit(a, foes[0], XDB.rec("Skills", 10216), {"toji_anims": [[1, 6], [12, 0]]}))
+	var added: Array = b.fx.get_children().filter(func(n): return n is MVAnimation and not before.has(n))
+	check("toji.anims", added.size() == 2 and added.map(func(n): return [int(n.anim.id), n.wait]) == [[1, 6], [12, 0]]
+		and added.all(func(n): return n.target == b.sprites[foes[0]]), added.map(func(n): return [n.anim.get("id"), n.wait]))
+	before = b.fx.get_children()
+	b._hit_visual(hit(a, foes[0], XDB.rec("Skills", 10216)))
+	check("toji.no-anims", not b.fx.get_children().any(func(n): return n is MVAnimation and not before.has(n)))
+	XConfig.set_flag("CombatSkillAnimation", keep)
+	for n in b.fx.get_children():
+		if n is MVAnimation:
+			n.queue_free()
 
 
 func raven_case(b: XBattleScene, a: XActor, foes: Array) -> void:

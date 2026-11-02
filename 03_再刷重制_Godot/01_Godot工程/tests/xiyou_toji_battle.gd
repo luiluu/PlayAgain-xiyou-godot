@@ -348,6 +348,35 @@ func _local_ai() -> void:
 	logic.end_battle(0)
 
 
+## 角色形象（CharacterVisual）Game_Action.apply 包装：游云第 2 段起放动画 1、延迟 min(18,(段−1)×3)；武器库内部行动放该技能动画、
+## 不延迟，它的溅射不放；术师杀手反弹命中放 10224 的动画；别的角色、没打中都不放
+func _local_visual() -> void:
+	var r := _battle()
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var logs := logic.act(a, XDB.rec("Skills", 10216), logic.enemies[0])
+	var yun := logs.filter(func(l): return l.get("type") == "hit" and int(l.skill.id) == 10216)
+	var got: Array = yun.map(func(l): return l.get("toji_anims", []))
+	var want := []
+	for i in yun.size():
+		want.append([] if i == 0 else [[1, mini(18, 3 * i)]])
+	check("visual.yun", yun.size() == 5 and got == want, got)
+	XToji.internal = true
+	var armory := XToji.apply(logic, a, XDB.rec("Skills", XToji.RANDOM[0]), logic.enemies[0])
+	check("visual.armory", armory.size() == 1 and armory[0].get("toji_anims", []) == [[1, 0]], armory.map(func(l): return l.get("toji_anims")))
+	var chain := XToji.apply(logic, a, XDB.rec("Skills", XToji.RANDOM[1]), logic.enemies[0])
+	XToji.internal = false
+	check("visual.armory_spread", chain.size() == logic.alive(logic.enemies).size() and chain[0].get("toji_anims", []) == [[368, 0]]
+		and chain.slice(1).all(func(l): return not l.has("toji_anims")), chain.map(func(l): return l.get("toji_anims")))
+	XToji.pending = {"target": a, "source": logic.enemies[1], "base": 10.0, "element": 0}
+	var back := XToji.reflect(logic, a)
+	var back_hit := back.filter(func(l): return l.get("type") == "hit")
+	check("visual.reflect", back_hit.size() == 1 and back_hit[0].get("toji_anims", []) == [[12, 0]], back.map(func(l): return l.get("toji_anims")))
+	var hero_logs := logic.act(logic.state.actor(1), XDB.rec("Skills", 1), logic.enemies[0])
+	check("visual.other_actor", not hero_logs.any(func(l): return l.has("toji_anims")))
+	logic.end_battle(0)
+
+
 func _run() -> void:
 	var ref = XDB.load_json(ORACLE)
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
@@ -366,6 +395,7 @@ func _run() -> void:
 	check("covers_all", seen == 11, seen)
 	_local()
 	_local_ai()
+	_local_visual()
 	finish()
 
 
