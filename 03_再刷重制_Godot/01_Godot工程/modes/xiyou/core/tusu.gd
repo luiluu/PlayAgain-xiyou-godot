@@ -1201,6 +1201,42 @@ static func attack_id(a, native: int) -> int:
 	return RETURN_SKILL if is_tusu(a) and _in_battle() and XBinding.is_bound(a) else native
 
 
+# ---- 战斗指令窗（Window_ActorCommand／Window_BattleSkill 包装，tusu7） ----
+## 武具态的屠苏（绑定中）：指令窗只有「易武」一栏技能、加「武相支援」、防御改名「待命」
+static func bound_tusu(a) -> bool:
+	return is_tusu(a) and XBinding.is_bound(a)
+
+
+## makeCommandList 包装：持武者的技能栏按技能类型去重；武具态在第 2 行插「武相支援」（当前武相的支援技能名，没有时「武相支援」，
+## 能用才亮），防御改名「待命」。entries 是 battle_scene 的指令行 {text, key, enabled, preview}
+static func command_entries(logic, a, entries: Array) -> Array:
+	if weapon_of_host(a) != null:
+		var seen := {}
+		entries = entries.filter(func(e):
+			if not str(e.key).begins_with("stype:"):
+				return true
+			if seen.has(e.key):
+				return false
+			seen[e.key] = true
+			return true)
+	if bound_tusu(a):
+		var sk := support_skill(a)
+		entries.insert(mini(1, entries.size()), {"text": str(sk.name) if not sk.is_empty() else "武相支援", "key": "tusuSupport",
+			"enabled": not sk.is_empty() and logic.can_use(a, sk) and logic.can_move(a), "preview": sk if not sk.is_empty() else null})
+		for e in entries:
+			if e.key == "guard":
+				e.text = "待命"
+	return entries
+
+
+## Window_BattleSkill.includes 包装：武具态的屠苏只列解锁了的易武
+static func battle_listed(a, skill: Dictionary, stype: int) -> bool:
+	if bound_tusu(a):
+		var key := key_of(skill)
+		return key.begins_with("yiwu.") and unlocked(a, key)
+	return int(skill.get("stypeId", 0)) == stype
+
+
 ## Game_Action.apply 包装：归形、易武、化武只做自己的事（makeSuccess）；返回 {} 表示不是这三个
 static func apply_command(logic, u, skill: Dictionary, t) -> Dictionary:
 	var key := key_of(skill)
