@@ -5,7 +5,7 @@ extends Node
 ## - 页：开关 2303 第 1 页、2307 第 3 页；变量 20（层数）过了本层（≥16／21／26）换「传承之火已熄」页（2／4），没有战斗；两个开关都关不出现。
 ## - 五支传承逐支：先用技能书的公共事件（1346／1350／1356／1360／1366）记下学习者（物品选中 8 号），
 ##   选这一支 → 打传承战（敌群）→ 学习公共事件让 8 号忘旧学新 → 变量置 1、提示「你获得了…的传承！」；再选同一支只说「你已经获得我的传承」，不再打。
-## - 敌群事件（每层第一支）：第 0 回合页调公共事件 1396 强者领域，全队加 1105 霸者*灭绝、敌人加 1109 等；没有跳过的指令。
+## - 敌群事件（每层第一支）：第 0 回合页调领域公共事件（十五层 1396 强者领域：全队 1105、敌人 1109；二十、二十五层 1397 霸者领域：全队 1106、敌人 1110）；没有跳过的指令。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const REACH := preload("res://tests/xiyou_reach_check.gd")
 const TIMEOUT_MS := 240000
@@ -13,21 +13,21 @@ const WaitBudget := preload("res://tests/wait_budget.gd")
 const LEARNER := 8
 ## 技能书公共事件：记学习者（$gameParty._targetActorId）到变量
 const BOOK_CE := {857: 1346, 881: 1350, 882: 1356, 883: 1360, 884: 1366}
-## 地图 → 事件、层数、落点、五支（选项顺序）：传承变量、敌群、记学习者的变量、学会／忘掉的技能
+## 地图 → 事件、层数、落点、领域状态（全队、敌人）、五支（选项顺序）：传承变量、敌群、记学习者的变量、学会／忘掉的技能
 const FLOORS := {
-	32: {"event": 8, "floor": 15, "land": Vector2i(31, 14), "rows": [
+	32: {"event": 8, "floor": 15, "land": Vector2i(31, 14), "domain": [1105, 1109], "rows": [
 		{"var": 810, "troop": 774, "actorVar": 857, "learn": [6218], "forget": []},
 		{"var": 811, "troop": 775, "actorVar": 881, "learn": [6232], "forget": []},
 		{"var": 812, "troop": 772, "actorVar": 882, "learn": [6226], "forget": [6225]},
 		{"var": 813, "troop": 773, "actorVar": 883, "learn": [6222], "forget": [6221]},
 		{"var": 823, "troop": 784, "actorVar": 884, "learn": [2828], "forget": []}]},
-	116: {"event": 7, "floor": 20, "land": Vector2i(17, 27), "rows": [
+	116: {"event": 7, "floor": 20, "land": Vector2i(17, 27), "domain": [1106, 1110], "rows": [
 		{"var": 814, "troop": 778, "actorVar": 857, "learn": [6219], "forget": []},
 		{"var": 815, "troop": 779, "actorVar": 881, "learn": [6233], "forget": []},
 		{"var": 816, "troop": 776, "actorVar": 882, "learn": [6227], "forget": [6226]},
 		{"var": 817, "troop": 777, "actorVar": 883, "learn": [6223], "forget": [6222]},
 		{"var": 824, "troop": 785, "actorVar": 884, "learn": [2829], "forget": []}]},
-	147: {"event": 5, "floor": 25, "land": Vector2i(12, 21), "rows": [
+	147: {"event": 5, "floor": 25, "land": Vector2i(12, 21), "domain": [1106, 1110], "rows": [
 		{"var": 818, "troop": 782, "actorVar": 857, "learn": [6220], "forget": []},
 		{"var": 819, "troop": 783, "actorVar": 881, "learn": [6234], "forget": []},
 		{"var": 820, "troop": 780, "actorVar": 882, "learn": [6228], "forget": [6227]},
@@ -38,7 +38,7 @@ const FLOORS := {
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
 var battle_skipped: Array = []
-## 敌群事件第 0 回合页之后看到的状态：{troop, actor1105, enemy1109}
+## 敌群事件第 0 回合页之后看到的状态：{troop, actor, enemy}（全队／敌人是否都有领域状态）
 var observed: Array = []
 
 
@@ -137,8 +137,8 @@ func _on_ui_child(n: Node) -> void:
 			battle_skipped.append_array(n.logic.common_event_skipped), CONNECT_ONE_SHOT)
 
 
-## 跑事件到结束：mode "win"＝战斗一开始就击倒敌人；"observe"＝先等敌群第 0 回合页跑完（全队有 1105）记下状态再击倒
-func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
+## 跑事件到结束：mode "win"＝战斗一开始就击倒敌人；"observe"＝先等敌群第 0 回合页跑完（全队有领域状态 domain[0]）记下状态再击倒
+func _run_event(map: XMapScene, id: int, answers: Array, mode := "win", domain := []) -> bool:
 	var e := _event(map, id)
 	if not _check("map%d_event%d_present" % [map.map_id, id], e != null):
 		return false
@@ -156,10 +156,10 @@ func _run_event(map: XMapScene, id: int, answers: Array, mode := "win") -> bool:
 		if b != null and not b.logic.enemies.is_empty() and b.logic.enemies.any(func(en): return en.is_alive()):
 			var kill := mode == "win"
 			if mode == "observe":
-				var a1105: bool = b.logic.actors.all(func(a): return a.is_state_affected(1105))
-				if a1105 or b.logic.turn >= 3:
-					observed.append({"troop": b.logic.troop_id, "actor1105": a1105,
-						"enemy1109": b.logic.enemies.all(func(en): return en.is_state_affected(1109))})
+				var on_actor: bool = b.logic.actors.all(func(a): return a.is_state_affected(int(domain[0])))
+				if on_actor or b.logic.turn >= 3:
+					observed.append({"troop": b.logic.troop_id, "actor": on_actor,
+						"enemy": b.logic.enemies.all(func(en): return en.is_state_affected(int(domain[1])))})
 					mode = "win"
 					kill = true
 			if kill:
@@ -248,7 +248,7 @@ func _branch(m: int, i: int) -> void:
 	battles.clear()
 	battle_skipped.clear()
 	XToast.shown.clear()
-	await _run_event(map, int(f.event), [i], "observe" if i == 0 else "win")
+	await _run_event(map, int(f.event), [i], "observe" if i == 0 else "win", f.domain)
 	_check("battle_" + tag, battles.size() == 1 and int(battles[0].troop) == int(row.troop) and int(battles[0].result) == 0, battles)
 	_check("var_" + tag, int(s.variable(int(row.var))) == 1, s.variable(int(row.var)))
 	var learned: bool = (row.learn as Array).all(func(sk): return a.skill_ids.has(int(sk)))
@@ -257,7 +257,7 @@ func _branch(m: int, i: int) -> void:
 	_check("toast_" + tag, XToast.shown.any(func(t): return str(t).contains("的传承！")), XToast.shown)
 	if i == 0:
 		var ob: Dictionary = observed.back() if not observed.is_empty() else {}
-		_check("troop_event_" + tag, int(ob.get("troop", 0)) == int(row.troop) and bool(ob.get("actor1105", false)) and bool(ob.get("enemy1109", false)), ob)
+		_check("troop_event_" + tag, int(ob.get("troop", 0)) == int(row.troop) and bool(ob.get("actor", false)) and bool(ob.get("enemy", false)), ob)
 	# 再选同一支：已获得，不再打
 	battles.clear()
 	await _run_event(map, int(f.event), [i], "win")
