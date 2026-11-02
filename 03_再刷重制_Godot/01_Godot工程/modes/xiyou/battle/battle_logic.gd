@@ -82,6 +82,8 @@ var _cleared := {}
 var troop_event_skipped: Array = []
 ## 技能／物品公共事件（XBattleCommonEvent）里尚未翻译、本次跳过的指令（"代码 内容 公共事件N"）
 var common_event_skipped: Array = []
+## 脚本里 BattleManager.forceAction 记下的强制行动 {user, skill}（只留最后一次，同 _actionForcedBattler）：公共事件跑完、下一次事件检查前结算
+var pending_force: Dictionary = {}
 ## 战斗内事件的游标（XBattleEventRunner）：当前页没执行完时非空；本次检查的条件 {first, turn_end, moment, guard}
 var _runner: XBattleEventRunner = null
 var _check := {}
@@ -1011,6 +1013,7 @@ func _drive_events() -> Array:
 					if _runner.has_meta("common_event"): common_event_skipped.append("%d %s 公共事件%d" % [int(sk.code), str(sk.text), int(_runner.get_meta("common_event"))])
 					else: troop_event_skipped.append("%d %s 第%d页" % [int(sk.code), str(sk.text), int(_runner.get_meta("page")) + 1])
 				_runner = null
+				logs.append_array(_take_pending_force())
 	_runner = null
 	_check = {}
 	return logs
@@ -1021,6 +1024,7 @@ func _clear_event_cursor() -> void:
 	_runner = null
 	_check = {}
 	_waiting = {}
+	pending_force = {}
 
 
 ## $gameTroop.members()[i]（含隐藏成员）
@@ -1135,6 +1139,7 @@ func _change_actor_state(p: Array) -> void:
 		elif a.is_state_affected(int(p[3])):
 			_state_remove(a, int(p[3]))
 		_refresh_battler(a)
+		a.runtime_result = XResourceContext.empty_result()  # command313 每人最后 actor.clearResult()：刚解除的状态之后的行动里可以再附加（参照 recast_skill_learned）
 
 
 func _page_meets(page: Dictionary, turn_end: bool) -> bool:
@@ -1182,23 +1187,44 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 	for u in users:
 		if u.is_dead() or skill.is_empty():
 			continue
-		if u == first_subject:
-			_cleared[u] = true
-		var before := _movable_snapshot()
-		logs.append_array(execute(u, skill, _forced_target(u, skill, int(p[3])), true))
-		logs.append_array(XGarou.finish(self, u, skill))
-		logs.append_array(XSukuna.finish(self, u, skill, true))
-		logs.append_array(XYomiJingliu.j_finish(self, u, skill))
-		logs.append_array(XRaven.finish(self, u, skill))
-		logs.append_array(XYunshang.finish(self, u, skill))
-		XRaceBattle.finish(self, logs)
-		XCat.end_action(self, u, skill)
-		XAlienBattle.finish(self, logs)
-		XMira.pay_hp(u, skill)
-		_tick_states(u, 1)
-		_mastery_end(u, logs)
-		XMira.liberate(self, u, skill)
-		_sync_orders(before, true)
+		logs.append_array(_forced_run(u, skill, _forced_target(u, skill, int(p[3])), first_subject))
+	return logs
+
+
+## processForcedAction：事件里脚本强制的行动在事件跑完后的下一帧执行（currentAction 是 splice 进去的那个；行动者本回合已行动完，
+## _actions 原本是空的）。目标照 decideRandomTarget 随机（targets_for 取数）。倒下了就不行动（startAction 前 action.isValid 不成立）。
+func _take_pending_force() -> Array:
+	if pending_force.is_empty():
+		return []
+	var f := pending_force
+	pending_force = {}
+	var u: XBattler = f.user
+	var skill := XDB.rec("Skills", int(f.skill))
+	if u.is_dead() or skill.is_empty() or is_won() or is_lost():
+		return []
+	return _forced_run(u, skill, null, null)
+
+
+## 强制行动的一次结算（339，以及脚本里的 BattleManager.forceAction，见 pending_force）
+func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject: XBattler) -> Array:
+	var logs := []
+	if u == first_subject:
+		_cleared[u] = true
+	var before := _movable_snapshot()
+	logs.append_array(execute(u, skill, target, true))
+	logs.append_array(XGarou.finish(self, u, skill))
+	logs.append_array(XSukuna.finish(self, u, skill, true))
+	logs.append_array(XYomiJingliu.j_finish(self, u, skill))
+	logs.append_array(XRaven.finish(self, u, skill))
+	logs.append_array(XYunshang.finish(self, u, skill))
+	XRaceBattle.finish(self, logs)
+	XCat.end_action(self, u, skill)
+	XAlienBattle.finish(self, logs)
+	XMira.pay_hp(u, skill)
+	_tick_states(u, 1)
+	_mastery_end(u, logs)
+	XMira.liberate(self, u, skill)
+	_sync_orders(before, true)
 	return logs
 
 

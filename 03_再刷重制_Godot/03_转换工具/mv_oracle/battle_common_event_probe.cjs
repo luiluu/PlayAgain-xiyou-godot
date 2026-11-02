@@ -127,7 +127,7 @@ recast('recast_armor_worn', {party: [23, 8, 9, 10], user: 8, use: [785, false, 0
 recast('recast_armor_half', {party: [23, 8, 9, 10], user: 8, use: [785, false, 0], wear: [['armor', 932]]}, a => { wear(a, 'armor', 932); });
 recast('recast_weapon', {party: [23, 8, 9, 10], user: 8, use: [2260, false, 0], wear: [['weapon', 472]]}, a => { wear(a, 'weapon', 472); });
 recast('recast_skill_learned', {party: [23, 8, 9, 10], user: 8, use: [3669, false, 0], learn: [3671]}, a => { a.learnSkill(3671); });
-recast('recast_skill_not', {party: [23, 8, 9, 10], user: 8, use: [3669, false, 0], learn: []}, a => { a.forgetSkill(3671); });
+recast('recast_skill_not', {party: [23, 8, 9, 10], user: 8, use: [3669, false, 0], forget: [3671]}, a => { a.forgetSkill(3671); });
 // 打倒最后一只敌人：checkBattleEnd 先成立，预约的 84 不跑
 caseRun('thunder_battle_end', {party: [23, 8, 9, 10], troop: 2, learn: [217, 5083], use: [217, false, 0], enemiesHp: 1, othersHidden: true}, o => {
   setup([23, 8, 9, 10], 2); const a = w.$gameActors.actor(23); a.learnSkill(217); a.learnSkill(5083); a._mp = a.mmp;
