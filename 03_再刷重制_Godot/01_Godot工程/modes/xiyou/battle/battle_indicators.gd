@@ -74,7 +74,8 @@ static func sync_outline(root: Node2D, body: Sprite2D) -> void:
 		clone.modulate = Color(1, 1, 1, body.modulate.a)
 
 
-## domainCircle：PIXI.Graphics 画的法阵，y 压扁 0.34；透明度 0.82±0.08 呼吸（每帧 tick+1、cos(tick×0.04)），图形每帧转 0.003
+## domainCircle：PIXI.Graphics 画的法阵，y 压扁 0.34；透明度 0.82±0.08 呼吸（每帧 tick+1、cos(tick×0.04)），图形每帧转 0.003。
+## 线不抗锯齿（原版渲染器 antialias 关）：与原版 pixi.js 同帧截图比，红色掩码交并比 0.98（03_转换工具/ui_reference/domain_circle_ref.py）
 class DomainCircle extends Node2D:
 	const RED := Color8(243, 43, 64)
 	const DARK := Color8(36, 3, 11)
@@ -94,7 +95,7 @@ class DomainCircle extends Node2D:
 		drawing.rotation += 0.003
 
 	func _ring(r: float, width: float, c: Color) -> void:
-		drawing.draw_arc(Vector2.ZERO, r, 0.0, TAU, 96, c, width, true)
+		drawing.draw_arc(Vector2.ZERO, r, 0.0, TAU, 96, c, width, false)
 
 	func _paint() -> void:
 		drawing.draw_circle(Vector2.ZERO, 88.0, Color(RED, 0.07))
@@ -110,12 +111,12 @@ class DomainCircle extends Node2D:
 			for point in 4:
 				var angle := -PI / 2.0 + triangle * PI + point * TAU / 3.0
 				pts.append(Vector2(cos(angle), sin(angle)) * 59.0)
-			drawing.draw_polyline(pts, thin, 1.5, true)
+			drawing.draw_polyline(pts, thin, 1.5, false)
 		# 12 个符：折线 3 点＋一道横
 		for glyph in 12:
 			var a := glyph * PI / 6.0
 			var c := cos(a)
 			var s := sin(a)
 			drawing.draw_polyline(PackedVector2Array([Vector2(c * 77 - s * 3, s * 77 + c * 3), Vector2(c * 84 - s * 3, s * 84 + c * 3),
-				Vector2(c * 84 + s * 3, s * 84 - c * 3)]), thin, 1.5, true)
-			drawing.draw_line(Vector2(c * 80 - s * 5, s * 80 + c * 5), Vector2(c * 80 + s * 5, s * 80 - c * 5), thin, 1.5, true)
+				Vector2(c * 84 + s * 3, s * 84 - c * 3)]), thin, 1.5, false)
+			drawing.draw_line(Vector2(c * 80 - s * 5, s * 80 + c * 5), Vector2(c * 80 + s * 5, s * 80 - c * 5), thin, 1.5, false)
