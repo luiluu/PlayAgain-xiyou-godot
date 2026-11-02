@@ -229,7 +229,7 @@ static func run(code: String, interp) -> Array:
 
 
 ## 逐条处理简单语句（分号或换行分隔）
-## O-待定（悟空 events3，审查 21 期 P3①）：猫哥清理存档时仓库里的武器防具。true＝留着（重制存的是实例，不会失效）；
+## O-待定-1（悟空 events3，审查 21 期 P3①）：猫哥清理存档时仓库里的武器防具。true＝留着（重制存的是实例，不会失效）；
 ## false＝照原版：zchuli.js 只给身上与背包的独立装备重编号，仓库里记的旧编号失效，这里按全部丢掉
 static var o_cleanup_keep_warehouse := true
 
@@ -277,7 +277,7 @@ static func _statements(js: String, interp) -> Array:
 			continue
 		# 大厅猫哥「清理存档」（Map004 EV024，zchuli.js DataManager.cleanupIndependentItems）：原版把在队成员身上与背包里的独立装备
 		# 重新编号、其余独立装备条目丢掉（仓库里存的会失效），最后给在队成员回满 HP／MP 并 refresh（倒下的也救起，参照 script_gaps cleanupHeal）。
-		# 重制只存持有的装备实例，重编号没有可做的；回满照做。仓库：O-待定 o_cleanup_keep_warehouse（默认留着，false＝照原版丢掉仓库里的武器防具）
+		# 重制只存持有的装备实例，重编号没有可做的；回满照做。仓库：O-待定-1 o_cleanup_keep_warehouse（默认留着，false＝照原版丢掉仓库里的武器防具）
 		if st == "DataManager.cleanupIndependentItems()":
 			_cleanup_independent(s)
 			continue

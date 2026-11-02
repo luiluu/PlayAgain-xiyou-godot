@@ -122,7 +122,7 @@ func _defeat(ref: Dictionary) -> void:
 
 
 ## 猫哥清理存档（zchuli.js，审查 21 期 P3①）：在队成员回满 HP／MP、倒下的救起（参照 cleanupHeal）；身上与背包的装备不变；
-## 仓库里的武器防具：O-待定 o_cleanup_keep_warehouse 默认留着，false 照原版丢掉（道具不动）
+## 仓库里的武器防具：O-待定-1 o_cleanup_keep_warehouse 默认留着，false 照原版丢掉（道具不动）
 func _cleanup(ref: Dictionary) -> void:
 	for keep in [true, false]:
 		MVScript.o_cleanup_keep_warehouse = true if keep else false
