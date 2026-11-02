@@ -586,7 +586,8 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Arr
 				out.append(_random_target(alive(friends)))
 		XYunshang.set_primary(a, out)
 		return out
-	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, _targets_for(a, skill, chosen), chosen))  # 云裳云丝展幅、千军入袖收袖 makeTargets 包装在异化之内
+	var tusu_list = XTusu.targets(self, a, skill, chosen)  # 屠苏 makeTargets 包装：自己的和鸣、锁定给持武者，金汤滤掉形态中的本体
+	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, _targets_for(a, skill, chosen) if tusu_list == null else tusu_list, chosen))  # 云裳云丝展幅、千军入袖收袖 makeTargets 包装在异化之内
 	list = XBinding.filter_targets(self, a, skill, list)  # 绑定 makeTargets 包装：敌方对敌技能滤掉形态中的本体
 	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
 	return list
@@ -824,7 +825,7 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(execute(u, skill, target))
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
-	XTusu.end_action(u, skill)  # 屠苏 endAction 包装（原 endAction 之前，在谷雨之外）：敕令消费和鸣
+	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（原 endAction 之前，在谷雨之外）：贯日消费锁定、敕令消费和鸣，持武者行动后剑气／镇魂（内部施放）
 	XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：本次行动里的归根反馈（画面）
 	if started and not skipped:
@@ -876,6 +877,7 @@ func end_turn() -> Array:
 	XTusu.end_turn(self)  # 屠苏 endTurn 包装（原 endTurn 之后）：挫势到期
 	XShieldLedger.round_end()  # 护盾账本 endTurn 包装（原 endTurn 之后）：撤销到期来源、衰减
 	XBinding.end_turn()  # 绑定 endTurn 包装（原 endTurn 之后）：剩余充能交给角色模块，清零
+	logs.append_array(XTusu.take_logs())  # 屠苏回合末释放支援的命中
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
 	_sync_orders(before, false)
@@ -1450,6 +1452,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# 角色在 OTB 下输入完（或不能输入时 makeActions 后）直接 startAction，不看 isValid，照原样执行。参照 attack_query_probe skip 组。
 	if not forcing and not u.is_actor() and not can_use(u, skill):
 		return logs
+	logs.append_array(XTusu.start_action(self, u, skill, chosen))  # 屠苏 startAction 包装（原 startAction 之前）：持武者贯日锁定、敕令和鸣，盾相敌人出手前金汤（内部施放）
 	XGuyu.begin(u)  # 谷雨 startAction 包装：清特效标记、开行动事件（众生之劫记各人最大生命）
 	XGarou.begin(u, skill)  # 饿狼 startAction 包装：开施放帧（记施放开始时的进化层）
 	XRaven.begin(u, skill)  # 渡鸦：新行动的施放帧（原版记在 Game_Action 上）

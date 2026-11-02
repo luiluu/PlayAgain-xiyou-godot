@@ -36,8 +36,12 @@ const BOOK_MP_RATE := 0.7
 const SHIELD_FLOOR := 1.0
 const LAST_FLAG := "_codexTusuLast"
 
-## 屠苏的本场数据（战斗内）
+## 屠苏的本场数据（战斗内）：trigger 支援随主成长读的持武者伤害、growth 本场成长加成用掉的回合（growthSupportRound）
 static var _d := {}
+
+
+static func _fresh() -> Dictionary:
+	return {"weapon": null, "reserve": null, "pending": null, "host_actions": 0, "supported": {}, "trigger": 0.0, "growth": 0}
 static var _states := {}
 
 
@@ -136,6 +140,7 @@ static func _clear_host_states(logic, h) -> void:
 		_set_state(logic, h, state_id("hold." + x), false)
 	for k in ["lock", "heming"]:
 		_set_state(logic, h, state_id(k), false)
+	_locks.erase(h)
 	h.param_mark_dirty()
 	h.param_refresh()
 
@@ -156,13 +161,14 @@ static func register_kind() -> void:
 		"is_owner": func(a): return is_tusu(a),
 		"manual": func(_a): return true,
 		"form_state": state_id("armed"), "empty_state": state_id("empty"),
-		"on_bind": _on_bind, "on_unbind": _on_unbind, "on_round_start": _on_round_start, "on_clear": _on_clear})
+		"on_bind": _on_bind, "on_unbind": _on_unbind, "on_round_start": _on_round_start, "on_round_end": _round_end_release,
+		"on_clear": _on_clear})
 
 
 static func _on_bind(owner, h, _reason, _previous) -> void:
 	var logic = _logic()
 	if _d.is_empty():
-		_d = {"weapon": null, "reserve": null, "pending": null, "host_actions": 0, "supported": {}}
+		_d = _fresh()
 	var w = _d.pending if _d.pending != null else (_d.weapon if _d.weapon != null else _last(logic.state))
 	if w == null:
 		w = "sword"
@@ -289,20 +295,54 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 
 ## BattleManager.endAction 包装（原 endAction 之前，屠苏两层里的外层）：锁定、和鸣启动即消费（没打中或被免疫也不退回）。
 ## 贯日的锁定在支援「锁定」移植后补（四期剩余）
-static func end_action(u, skill) -> void:
+static func end_action(logic, u, skill) -> Array:
 	if not skill is Dictionary or u == null:
-		return
+		_act = {}
+		return []
 	var key := key_of(skill)
 	var heming := state_id("heming")
+	# 止戈环（最外层）：开刃·书的护持法术用过和鸣就消费
+	if float(_act.get("book_heming", 0.0)) > 0.0 and heming > 0 and u.state_ids.has(heming):
+		_set_state(logic, u, heming, false)
+	# 锁定、和鸣：启动即消费（没打中或被免疫也不退回）；开刃·弓贯日击杀锁定目标时锁定下一个最危险的敌人
+	if key == "arm.guanri" and _locks.has(u):
+		var target = _locks[u]
+		var killed: bool = target != null and target.is_dead()
+		_locks.erase(u)
+		_set_state(logic, u, state_id("lock"), false)
+		if killed and has_kairen("bow"):
+			var nxt = danger_enemy(logic)
+			if nxt != null:
+				_locks[u] = nxt
+				logic._state_add(u, state_id("lock"))
 	if key == "arm.chiling" and heming > 0 and u.state_ids.has(heming):
 		u.remove_state(heming)
+	# 持武者的主动行动（不是内部施放）：记这次对敌人的伤害作支援随主成长的读数；剑相物理伤害、锤相对敌行动后放支援
+	var t = tusu()
+	if t != null and XBinding.is_bound(t) and not _act.has("internal") and is_same(u, holder(t)) and u.is_alive():
+		var w = weapon(t)
+		_d.supported = _d.get("supported", {})
+		_d.trigger = float(_act.get("dealt", 0.0))
+		var dtype := int(skill.get("damage", {}).get("type", 0))
+		if w == "sword" and int(skill.get("hitType", 0)) == 1 and dtype in [1, 5] and XSmartAI.for_opponent(skill):
+			round_support(logic, t, "jianqi", false)
+		if w == "hammer" and XSmartAI.for_opponent(skill):
+			round_support(logic, t, "zhenhun", false)
+	# 屠苏自己的支援：生效了，本回合不再给成长加成
+	if manual_support(u, skill) != "" and data(u) != null and bool(_act.get("successful", false)):
+		_d.growth = XBinding.current_round()
 	_sword_targets.clear()  # 横扫的目标表记在行动上，行动结束就没了
 	_action_no += 1
+	_act = {}
+	return take_logs()
 
 
-## 持武者的锁定目标（host._codexTusuLock.target）；锁定由支援「锁定」给，四期剩余，现在恒为空
-static func lock_target(_h):
-	return null
+## 持武者的锁定目标（host._codexTusuLock.target）：支援「锁定」给，贯日结束时消费
+static var _locks := {}
+
+
+static func lock_target(h):
+	return _locks.get(h)
 
 
 # ---- 挫势（installNativeTusuRuntime applyCuoshi、endTurn 包装） ----
@@ -499,6 +539,10 @@ static func hp_after(u, t, value: float, item: Dictionary, was_cuoshi: bool) -> 
 	if value <= 0.0:
 		return
 	var k := key_of(item)
+	if not _act.has("internal") and t is XEnemy:
+		_act.dealt = float(_act.get("dealt", 0.0)) + value  # 持武者主动行动的直接伤害（屠苏 executeHpDamage 包装）
+	if k == "support.jianqi" or k == "support.zhenhun":
+		_act.successful = true
 	var o = owner_actor()
 	if k == "arm.zhanfeng" or k == "arm.hengsao":
 		_forged.erase(t)
@@ -513,21 +557,288 @@ static func hp_after(u, t, value: float, item: Dictionary, was_cuoshi: bool) -> 
 ## applyItemUserEffect 包装（命中后）：护阵给目标挂护阵（60 级另记首次敌方伤害）；震击、镇魂给活着的敌人挂挫势
 static func user_effect(logic, u, skill: Dictionary, t) -> void:
 	var key := key_of(skill)
+	if key == "support.suoding" and _act.get("lock_target") != null:
+		_locks[t] = _act.lock_target
+		logic._state_add(t, state_id("lock"))
+	if key == "support.heming":
+		logic._state_add(t, state_id("heming"))
+	if key == "support.jintang":
+		var o = u if is_tusu(u) else tusu()
+		var amount := shield_amount(o, t) * temper_rate(o, "support.jintang") * float(_act.get("support_bonus", 1.0)) * shield_support_rate(o)
+		var before := XShieldLedger.amount(t, "tusu.jintang")
+		XShieldLedger.grant(t, "tusu.jintang", amount, JINTANG_TURNS, ACTOR)
+		if XShieldLedger.amount(t, "tusu.jintang") > before:
+			_act.successful = true
+	if key == "body.guard" and is_tusu(u):
+		XShieldLedger.grant(t, "tusu.body", shield_amount(u, t) * BODY_GUARD_RATE, BODY_GUARD_TURNS, ACTOR)
 	if key == "arm.huzhen":
 		logic._state_add(t, state_id("huzhen"))
 		if owner_actor() != null and _guard == null:
 			_guard = {"targets": [], "action": null}
 	if (key == "arm.zhenji" or key == "support.zhenhun") and t is XEnemy and t.is_alive():
 		apply_cuoshi(logic, t)
+	if key == "support.jianqi" and has_kairen("sword") and t is XEnemy and t.is_alive():
+		logic.sequence_buff(t, 3, true, false, KAIREN_SWORD_DEBUFF_TURNS)  # 开刃·剑：物防减益 2 回合（直接挂，不掷）
 
 
 static func _clear_marks() -> void:
+	_locks.clear()
+	_act = {}
+	_logs.clear()
 	_cuoshi.clear()
 	_forged.clear()
 	_crushed.clear()
 	_sword_targets.clear()
 	_segment = null
 	_guard = null
+
+
+# ---- 武相支援（installNativeTusuRuntime：屠苏自己用的主动支援、内部施放 B.cast、持武者行动触发、回合末释放） ----
+const SUPPORT_RATE_R := 0.5
+const SUPPORT_RATE_M := 2.7
+const JINTANG_HP := 5.0
+const JINTANG_DEF := 30.0
+const JINTANG_TURNS := 2
+const BODY_GUARD_RATE := 0.5
+const BODY_GUARD_TURNS := 2
+const KAIREN_SWORD_DEBUFF_TURNS := 2
+const SHIELD_BELOW := 0.5
+## 当前行动（原版记在 Game_Action 上的 _codexInternal、_codexTusuDealt、_codexTusuLockTarget、_codexTusuSupportBonus、
+## _codexTusuResultSuccessful、_codex60BookHemingRate）；内部施放另开一份，放完还原
+static var _act := {}
+## 内部施放的结果（命中记录），由 start_action／end_action／回合末交回战斗记录
+static var _logs := []
+
+
+static func take_logs() -> Array:
+	var out := _logs
+	_logs = []
+	return out
+
+
+## manualSupport：屠苏自己（不是内部施放）用的支援，返回武相支援键（jianqi 等），否则空
+static func manual_support(u, skill: Dictionary) -> String:
+	var key := key_of(skill)
+	return key.substr(8) if not _act.has("internal") and is_tusu(u) and key.begins_with("support.") else ""
+
+
+static func unlocked(a, key: String) -> bool:
+	return XTusuXuan.unlocked(ACTOR, a, key)
+
+
+## T.weight／shieldAmount／supportBonus／shieldSupportRate
+static func weight(a) -> float:
+	return XGuyu.curve(int(a.level), [0.1, 0.2, 0.35, 0.5, 0.65, 0.8, 1.0], [1, 10, 20, 30, 40, 50, 60])
+
+
+static func shield_amount(a, t) -> float:
+	return maxf((JINTANG_HP * a.mhp + JINTANG_DEF * (a.def + a.mdf)) * weight(a), XGuyu.curve(int(a.level), [0.1, 0.3], [1, 60]) * t.mhp)
+
+
+static func support_bonus(a, k: String) -> float:
+	var d = data(a)
+	if k in ["jianqi", "zhenhun", "jintang"] and int(a.level) >= 40 and (d == null or int(d.get("growth", 0)) != XBinding.current_round()):
+		return XGuyu.curve(int(a.level), [1, 1.2], [40, 60])
+	return 1.0
+
+
+static func _boss_hyper_round(logic) -> bool:
+	for e in logic.enemies:
+		if e.is_alive() and _hyper(e):
+			return true
+	return false
+
+
+static func shield_support_rate(a) -> float:
+	var logic = _logic()
+	return 1.2 if is_tusu(a) and has_kairen("shield") and logic != null and _boss_hyper_round(logic) else 1.0
+
+
+## dangerEnemy：活着的敌人里 Boss 优先，再按物攻＋魔攻从高到低（同分保持原顺序）
+static func danger_enemy(logic):
+	var best = null
+	for e in logic.enemies:
+		if not e.is_alive():
+			continue
+		if best == null:
+			best = e
+			continue
+		var bb := 1 if best.boss_difficulty_boss else 0
+		var be := 1 if e.boss_difficulty_boss else 0
+		if be > bb or (be == bb and e.atk + e.mat > best.atk + best.mat):
+			best = e
+	return best
+
+
+## 支援的伤害上下限（统一伤害 res.after）：剑气、镇魂按自身基式，至少持武者这次伤害 ×0.5、至多自身 ×2.7，再乘成长加成；只在真结算时
+static func support_after(item: Dictionary, a, value: float) -> float:
+	var key := key_of(item)
+	if key != "support.jianqi" and key != "support.zhenhun":
+		return value
+	var t = a if is_tusu(a) else tusu()
+	var d = data(t)
+	var trig := float(d.get("trigger", 0.0)) if d != null else 0.0
+	return floorf(minf(maxf(value, trig * SUPPORT_RATE_R), value * SUPPORT_RATE_M) * float(_act.get("support_bonus", 1.0)))
+
+
+## makeTargets 包装（屠苏自己的支援）：和鸣给持武者；锁定选的是敌人，实际给持武者；金汤滤掉形态中的本体。返回 null＝不管
+static func targets(logic, a, skill: Dictionary, chosen):
+	var key := manual_support(a, skill)
+	if key == "":
+		return null
+	var sk := support_skill(a)
+	var h = holder(a)
+	if sk.is_empty() or int(sk.id) != int(skill.id) or h == null or not h.is_alive():
+		return []
+	if key == "heming":
+		return [h]
+	if key == "suoding":
+		var e = chosen if chosen is XEnemy and chosen.is_alive() else (logic.alive(logic.enemies)[0] if not logic.alive(logic.enemies).is_empty() else null)  # smoothTarget
+		if e == null:
+			return []
+		_act.lock_target = e
+		return [h]
+	if key == "jintang":
+		return logic._targets_for(a, skill, chosen).filter(func(x): return not XBinding.untargetable(x))
+	return null
+
+
+## B.cast：内部施放，照常查冷却、付费（不插入行动序列），对每个活着的目标 apply 一次；返回实际作用的目标，失败返回空
+static func cast(logic, owner, skill_id: int, list: Array, free: bool, setup: Dictionary) -> Array:
+	var skill := XDB.rec("Skills", skill_id)
+	if skill.is_empty() or not XBinding._live(owner):
+		return []
+	if not free:
+		if owner.cooldown_left(skill_id) > 0:
+			return []
+		var can = can_pay(owner, skill, float(logic.skill_cost(owner, skill).tp))
+		if can != null and not bool(can):
+			return []
+	var dead_scope := int(skill.get("scope", 0)) in [9, 10]
+	list = list.filter(func(x): return x != null and (x.is_dead() if dead_scope else x.is_alive()))
+	if list.is_empty():
+		return []
+	var prev := _act
+	_act = {"internal": "tusu-support", "dealt": 0.0}
+	_act.merge(setup, true)
+	if not free:
+		logic.pay_skill_cost(owner, skill)
+	for x in list:
+		_logs.append(logic.apply(owner, skill, x))
+	setup.successful = bool(_act.get("successful", false))
+	_act = prev
+	return list
+
+
+## ready：解锁、冷却好了、付得起；冷却好了却谁都付不起就噬主失败回人形
+static func _ready_support(owner, key: String) -> bool:
+	var id := skill_id("support." + key)
+	var skill := XDB.rec("Skills", id)
+	if skill.is_empty() or not unlocked(owner, "support." + key) or owner.cooldown_left(id) > 0:
+		return false
+	var can = can_pay(owner, skill, 0.0)
+	if can == null or bool(can):
+		return true
+	devour_fail(owner)
+	return false
+
+
+## support：屠苏放支援（非 free 要 1 点兵势，屠苏 manual，兵势平时恒 0）
+static func support(logic, owner, key: String, list: Array, lock = null, free := false) -> bool:
+	if list.is_empty() or not unlocked(owner, "support." + key):
+		return false
+	if not free and XBinding.charges(owner) < 1:
+		return false
+	if not free and not _ready_support(owner, key):
+		return false
+	if data(owner) == null:
+		return false
+	var setup := {"support_bonus": support_bonus(owner, key)}
+	if lock != null:
+		setup.lock_target = lock
+	if cast(logic, owner, skill_id("support." + key), list, free, setup).is_empty():
+		return false
+	if not free:
+		XBinding.spend(owner, 1)
+	if bool(setup.get("successful", false)) and data(owner) != null:
+		_d.growth = XBinding.current_round()
+	return true
+
+
+## roundSupport：按武相放支援（剑气打全体、镇魂打最危险的敌人、金汤给队友、和鸣给没有和鸣的持武者、锁定最危险的敌人）
+static func round_support(logic, owner, key: String, free: bool) -> bool:
+	var h = holder(owner)
+	if h == null:
+		return false
+	match key:
+		"jianqi":
+			return support(logic, owner, "jianqi", logic.alive(logic.enemies), null, free)
+		"zhenhun":
+			var e = danger_enemy(logic)
+			return e != null and support(logic, owner, "zhenhun", [e], null, free)
+		"jintang":
+			return support(logic, owner, "jintang", logic.actors.filter(func(x): return x.is_alive() and not (XBinding.untargetable(x) and x != h)), null, free)
+		"heming":
+			return not h.state_ids.has(state_id("heming")) and support(logic, owner, "heming", [h], null, free)
+		"suoding":
+			var e = danger_enemy(logic)
+			return e != null and not _locks.has(h) and support(logic, owner, "suoding", [h], e, free)
+	return false
+
+
+## 回合末：还有兵势就按当前武相放一次支援（没有触发行动，按自身基式）
+static func _round_end_release(owner) -> void:
+	var w = weapon(owner)
+	var logic = _logic()
+	if w == null or logic == null or XBinding.charges(owner) < 1 or not XBinding.is_bound(owner):
+		return
+	if data(owner) != null:
+		_d.trigger = 0.0
+	round_support(logic, owner, SUPPORT_OF[w], false)
+
+
+## startAction 包装（原 startAction 之前，由外到内）：
+## 止戈环 bookProtection：持书且开刃·书的持武者用护持法术（治疗、复活、护盾、璃壁），没有和鸣先放和鸣，这次治疗／护盾 ×hemingRate；
+## 持武者贯日前锁定目标、敕令前和鸣；敌人对我方的伤害行动前，盾相且全体攻击或有人半血以下就放金汤；屠苏自己的支援：读数清零、记成长加成
+static func start_action(logic, u, skill: Dictionary, chosen) -> Array:
+	_act = {"dealt": 0.0}
+	var t = tusu()
+	if t != null and XBinding.is_bound(t):
+		if _book_protection(t, u, skill):
+			if not u.state_ids.has(state_id("heming")):
+				round_support(logic, t, "heming", false)
+			if u.state_ids.has(state_id("heming")):
+				_act.book_heming = heming_rate(t)
+		var h = holder(t)
+		var w = weapon(t)
+		var key := key_of(skill)
+		if is_same(u, h) and w == "bow" and key == "arm.guanri" and not _locks.has(h):
+			if chosen is XEnemy and chosen.is_alive():
+				support(logic, t, "suoding", [h], chosen)
+		if is_same(u, h) and w == "book" and key == "arm.chiling" and not h.state_ids.has(state_id("heming")):
+			support(logic, t, "heming", [h])
+		if u is XEnemy and w == "shield" and XSmartAI.for_opponent(skill) and int(skill.get("damage", {}).get("type", 0)) in [1, 5]:
+			var risky := XSmartAI.scope_of(skill) in [2, 8, 10]
+			for x in logic.actors:
+				if x.is_alive() and x.hp / maxf(1.0, x.mhp) <= SHIELD_BELOW:
+					risky = true
+			if risky:
+				round_support(logic, t, "jintang", false)
+	var mk := manual_support(u, skill)
+	if mk != "" and data(u) != null:
+		_d.trigger = 0.0
+		_act.support_bonus = support_bonus(u, mk)
+	return take_logs()
+
+
+static func _book_protection(t, u, skill: Dictionary) -> bool:
+	if not (is_same(holder(t), u) and weapon(t) == "book" and has_kairen("book") and int(skill.get("hitType", 0)) == 2):
+		return false
+	if _act.has("internal") or not XSmartAI.scope_of(skill) in [7, 8, 9, 10, 11]:
+		return false
+	var f := str(skill.get("damage", {}).get("formula", ""))
+	return int(skill.get("damage", {}).get("type", 0)) == 3 or skill.get("effects", []).any(func(e): return int(e.code) == 11) \
+		or RegEx.create_from_string("(?:addShield|gainShield|ShieldLedger\\.grant)").search(f) != null or XTusuXuan.owner_of(int(skill.id)) == [177, "libi"]
 
 
 # ---- 噬主 ----
@@ -692,7 +1003,7 @@ static func apply_command(logic, u, skill: Dictionary, t) -> Dictionary:
 		_set_reserve(logic, u, key.substr(5))
 	elif XBinding.can_host(u, t):
 		if _d.is_empty():
-			_d = {"weapon": null, "reserve": null, "pending": null, "host_actions": 0, "supported": {}}
+			_d = _fresh()
 		_d.pending = key.substr(6)
 		XBinding.bind(u, t, "huawu")
 	return {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false, "success": true,

@@ -89,7 +89,8 @@ function skillRow(a, key) {
 function snap() {
   const t = who(TUSU), d = t._codexTusu, bd = B.data(t), h = B.host(t);
   const states = a => a._states.filter(id => w.$dataStates[id] && /<Codex(?:Tusu|Bind):/.test(w.$dataStates[id].note)).sort((x, y) => x - y);
-  const out = {round: B.round(), tusu: {data: d ? {weapon: d.weapon || null, reserve: d.reserve || null, pending: d.pendingWeapon || null, hostActions: d.hostActions || 0} : null,
+  const out = {round: B.round(), tusu: {data: d ? {weapon: d.weapon || null, reserve: d.reserve || null, pending: d.pendingWeapon || null, hostActions: d.hostActions || 0,
+      trigger: d.trigger || 0, growth: d.growthSupportRound || 0} : null,
     last: t._codexTusuLast || null, bind: bd ? {charges: bd.charges, hostId: bd.hostId || 0, returnedRound: bd.returnedRound || 0} : null,
     states: states(t), hp: t.hp, mp: t.mp, mmp: t.mmp, atk: t.atk, mat: t.mat, def: t.def, mdf: t.mdf, attack: t.attackSkillId(), canMove: t.canMove(),
     skills: Object.fromEntries(TUSU_KEYS.map(k => [k, skillRow(t, k)])), guard: t.meetsSkillConditions(w.$dataSkills[2]), atk1: t.meetsSkillConditions(w.$dataSkills[1])},
@@ -102,6 +103,8 @@ function snap() {
   out.payer = Object.fromEntries(PAY_KEYS.map(k => [k, T.payer(k)]));
   out.maintain = Object.fromEntries(W5.map(x => [x, T.canMaintain(x)]));
   out.host = h ? 'a' + h.actorId() : null;
+  out.locks = Object.fromEntries([1, 8, 10].filter(id => who(id)._codexTusuLock).map(id => ['a' + id, key(who(id)._codexTusuLock.target)]));
+  out.cooldown = Object.fromEntries(['support.jianqi', 'support.suoding', 'support.jintang', 'support.heming', 'support.zhenhun'].map(k => [k, t.cooldown(K(k))]));
   const e0 = who('e0'), c = e0._codexTusuCuoshi;  // 挫势（敌人）与眩晕
   out.e0 = {cuoshi: c ? {rate: c.rate, stack: c.stack, until: c.until} : null, states: e0._states.filter(id => id === T.config.stunState || /<CodexTusu:/.test((w.$dataStates[id] || {}).note || '')).sort((x, y) => x - y)};
   out.members = w.$gameParty.battleMembers().map(key);
@@ -126,6 +129,9 @@ function step(bm, st) {
   else if (op === 'state') who(x).addState(I.state[y]);  // 直接挂屠苏的状态（和鸣、护阵；支援施放是四期剩余）
   else if (op === 'hit') { begin(bm, who(x), y, w.$gameParty.members().indexOf(who(z))); run(bm); }  // 敌人用技能打角色 z
   else if (op === 'pay') { const a = who(x); a._actionMastery = []; a.paySkillCost(w.$dataSkills[K(y)]); ret = {tusu: who(TUSU).mp, self: a.mp, mastery: a._actionMastery.slice()}; }
+  else if (op === 'sup') { begin(bm, who(x), K(y), z); run(bm); }  // 屠苏自己用支援（指令窗「武相支援」）：z 敌序号（锁定选敌人），−1 不指定
+  else if (op === 'gain') B.gain(who(x), y);  // 给屠苏兵势（原版屠苏 manual，兵势恒 0，内部施放的支援实际放不出来；这里补兵势量内部施放）
+  else if (op === 'sethp') who(x).setHp(y);
   else if (op === 'kill') { const a = who(x); a.setHp(0); a.refresh(); }
   else if (op === 'revive') { const a = who(x); a.removeState(a.deathStateId()); a.setHp(a.mhp); }
   else if (op === 'formula') {
@@ -166,6 +172,18 @@ const SCRIPTS = {
   arm60: [{176: 60}, [['use', 176, 'huawu.sword', 1], ['arm', 1, 'arm.hengsao', 0], ['use', 176, 'yiwu.bow'], ['turn'], ['arm', 1, 'arm.dianshe', 0], ['arm', 1, 'arm.guanri', 1],
     ['use', 176, 'yiwu.shield'], ['turn'], ['arm', 1, 'arm.huzhen', 0], ['hit', 'e0', 1, 8], ['hit', 'e1', 1, 8], ['use', 176, 'yiwu.hammer'], ['turn'],
     ['arm', 1, 'arm.zhenji', 0], ['arm', 1, 'arm.zhenji', 0], ['hit', 'e0', 1, 10], ['hit', 'e0', 1, 10], ['turn'], ['end']]],
+  // 屠苏自己用支援（tusu5）：剑气（按自身基式、40 级起成长加成 ×curve，本回合成功一次后不再加）、锁定敌人给持武者、贯日 ×lockRate 并消费、
+  // 金汤（护盾进账本）、和鸣给持武者、敕令 ×hemingRate、镇魂重击挂挫势
+  support: [{176: 60}, [['use', 176, 'huawu.sword', 1], ['arm', 1, 'arm.zhanfeng', 0], ['sup', 176, 'support.jianqi', -1], ['sup', 176, 'support.jianqi', -1],
+    ['use', 176, 'yiwu.bow'], ['turn'], ['sup', 176, 'support.suoding', 1], ['arm', 1, 'arm.guanri', 1], ['use', 176, 'yiwu.shield'], ['turn'],
+    ['sup', 176, 'support.jintang', -1], ['use', 176, 'yiwu.book'], ['turn'], ['sup', 176, 'support.heming', -1], ['arm', 1, 'arm.chiling', 0],
+    ['use', 176, 'yiwu.hammer'], ['turn'], ['sup', 176, 'support.zhenhun', 0], ['turn'], ['end']]],
+  // 内部施放（B.cast，补兵势才放得出）：敕令前自动和鸣、斩锋后剑气纵横（按持武者这次的伤害定上下限）、回合末余下兵势释放、震击后镇魂打最危险的敌人、
+  // 盾相敌人出手前有人半血以下放金汤、贯日前自动锁定
+  cast: [{176: 60}, [['use', 176, 'huawu.book', 1], ['gain', 176, 3], ['arm', 1, 'arm.chiling', 0], ['use', 176, 'yiwu.sword'], ['turn'], ['gain', 176, 3],
+    ['arm', 1, 'arm.zhanfeng', 0], ['turn'], ['gain', 176, 1], ['use', 176, 'yiwu.hammer'], ['turn'], ['gain', 176, 2], ['arm', 1, 'arm.zhenji', 0],
+    ['use', 176, 'yiwu.shield'], ['turn'], ['gain', 176, 1], ['sethp', 8, 100], ['hit', 'e0', 1, 8], ['use', 176, 'yiwu.bow'], ['turn'], ['gain', 176, 1],
+    ['arm', 1, 'arm.guanri', 1], ['end']]],
   // 等级低：没解锁的武装技能、支援不能用
   low: [{176: 5}, [['use', 176, 'huawu.bow', 1], ['turn'], ['use', 176, 'yiwu.sword'], ['turn'], ['end']]],
 };

@@ -122,7 +122,8 @@ func _snap() -> Dictionary:
 	for k in TUSU_KEYS:
 		skills[k] = _row(t, k)
 	var out := {"round": XBinding.current_round(), "tusu": {"data": null if d == null else {"weapon": d.weapon, "reserve": d.reserve, "pending": d.pending,
-		"hostActions": int(d.host_actions)}, "last": logic.state.flags.get(XTusu.LAST_FLAG), "bind": null if bd == null else {"charges": int(bd.charges),
+		"hostActions": int(d.host_actions),
+		"trigger": float(d.trigger), "growth": int(d.growth)}, "last": logic.state.flags.get(XTusu.LAST_FLAG), "bind": null if bd == null else {"charges": int(bd.charges),
 		"hostId": int(bd.host_id), "returnedRound": int(bd.returned_round)}, "states": _states(t), "hp": t.hp, "mp": t.mp, "mmp": t.mmp, "atk": t.atk,
 		"mat": t.mat, "def": t.def, "mdf": t.mdf, "attack": t.attack_skill_id(), "canMove": logic.can_move(t), "skills": skills,
 		"guard": logic.can_use(t, XDB.rec("Skills", 2)) and logic.can_move(t), "atk1": logic.can_use(t, XDB.rec("Skills", 1)) and logic.can_move(t)}, "party": {}}
@@ -143,6 +144,15 @@ func _snap() -> Dictionary:
 	out.maintain = keep
 	out.host = _key(h)
 	out.members = logic.actors.map(func(b): return _key(b))
+	var locks := {}
+	for id in [1, 8, 10]:
+		if XTusu.lock_target(_who(id)) != null:
+			locks["a%d" % id] = _key(XTusu.lock_target(_who(id)))
+	out.locks = locks
+	var cd := {}
+	for k in ["support.jianqi", "support.suoding", "support.jintang", "support.heming", "support.zhenhun"]:
+		cd[k] = maxi(0, t.cooldown_left(XTusu.skill_id(k)))
+	out.cooldown = cd
 	var e0: XBattler = logic.enemies[0]
 	var c = XTusu.cuoshi_of(e0)
 	var es := (e0.state_ids as Array).filter(func(id): return int(id) == XTusu.STUN_STATE or RegEx.create_from_string("<CodexTusu:").search(str(XDB.rec("States", int(id)).get("note", ""))) != null)
@@ -218,6 +228,12 @@ func _step(st: Array) -> Array:
 			logs = logic.act(e, XDB.rec("Skills", int(st[2])), _who(st[3]))
 			if stunned and not e.state_ids.has(XTusu.STUN_STATE):
 				e.state_ids.append(XTusu.STUN_STATE)
+		"sup":
+			logs = logic.act(_who(st[1]), XDB.rec("Skills", XTusu.skill_id(str(st[2]))), logic.enemies[int(st[3])] if int(st[3]) >= 0 else null)
+		"gain":
+			XBinding.gain(_who(st[1]), int(st[2]))
+		"sethp":
+			_set_hp(_who(st[1]), float(st[2]))
 		"kill":
 			_set_hp(_who(st[1]), 0.0)
 		"revive":
@@ -241,7 +257,7 @@ func _ready() -> void:
 
 func _go() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	check("oracle", ref.cases.size() == 7 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
+	check("oracle", ref.cases.size() == 9 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:
 		if PENDING.has(c.id):
 			print("SKIP ", c.id, "：", PENDING[c.id])
@@ -259,10 +275,12 @@ func _go() -> void:
 			check(tag + ".hits", _norm(_hits(out[1])) == _norm(want.hits), [_hits(out[1]), want.hits])
 			var got: Dictionary = _norm(_snap())
 			var ws: Dictionary = _norm(want.snap)
+			for k in ws.get("cooldown", {}):
+				ws.cooldown[k] = maxi(0, int(ws.cooldown[k]))  # 原版冷却减到负数（YEP 不夹），重制剩余回合不低于 0
 			if str(st[0]) == "end":
 				# 参照的宿主战斗结束后 inBattle 还是真，技能条件、费用、payer 还按战斗中算；重制已经出了战斗。只比清理结果
 				for x in [got, ws]:
-					for k in ["round", "payer", "maintain", "host", "members"]:
+					for k in ["round", "payer", "maintain", "host", "members", "cooldown"]:
 						x.erase(k)
 					for k in ["attack", "skills", "guard", "atk1", "canMove", "def", "mdf"]:
 						x.tusu.erase(k)

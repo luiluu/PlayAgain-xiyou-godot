@@ -298,6 +298,8 @@ static func finish(res: Dictionary, item: Dictionary, a: XBattler, b: XBattler, 
 	var absorbed: bool = float(res.value) < 0.0 and int(item.damage.type) in [1, 5]
 	var confirmed: float = res.value if absorbed else apply_state_effects(res.value, item, a, b, [], "confirm", execute, bool(res.get("critical", false)), ctx)
 	var mitigated := apply_fixed_mitigation(confirmed, res)
+	if execute:
+		mitigated = XTusu.support_after(item, a, mitigated)  # 屠苏伤害钩子的 res.after：剑气、镇魂的上下限与成长加成（在挂状态之前）
 	# installDamageElementRuntime 结算 part() 末尾的 result._after（伤害／治疗时挂状态，XBattleLogic._push_states），在 React 之前
 	if execute and ctx.has("after_confirm"):
 		ctx.after_confirm.call()
