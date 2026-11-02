@@ -192,10 +192,7 @@ static func recruit(s: XState, actor_id: int) -> bool:
 	return true
 
 
-# ---- 模块公式（转换器 MODULE_FORMULAS 的 tusu／xuan，【cc·悟空·未经审查】events3 进切片时接上；屠苏三期 XTusu.damage 合进来后可改调它） ----
-## T.armWeapon：武相技能的伤害基准看出战成员里的屠苏（书相取魔攻，其余取物攻）
-const TUSU_ARM := {"chiling": "book", "dianshe": "bow", "guanri": "bow", "hengsao": "sword", "zhanfeng": "sword", "zhenji": "hammer"}
-const TUSU_MAGIC := ["body_mag"]
+# ---- 模块公式（转换器 MODULE_FORMULAS 的 tusu／xuan，【cc·悟空·未经审查】events3 进切片时接上；屠苏的走 XTusu.damage） ----
 static var _formula_key := RegEx.create_from_string("'([a-z_]+)'")
 
 
@@ -208,34 +205,13 @@ static func formula(a, b, item: Dictionary):
 	if m == null:
 		return null
 	if text.begins_with("CodexTusu.damage("):
-		return tusu_damage(a, m.get_string(1))
+		return XTusu.damage(a, b, m.get_string(1))
 	if text.begins_with("CodexXuan.damage("):
 		return float(a.mat) * coefficient(XUAN, m.get_string(1), a)  # X.damage：璇（a）魔攻×系数
 	return null
-
-
-## T.damage：武相取出战屠苏的基准；身相取 a（是屠苏时）或出战屠苏
-static func tusu_damage(a, key: String) -> float:
-	var t = a if a is XActor and int(a.actor_id) == TUSU else _battle_tusu()
-	if TUSU_ARM.has(key):
-		t = _battle_tusu()
-	if t == null:
-		return 0.0
-	var arm_book := str(TUSU_ARM.get(key, "")) == "book"
-	return float(t.mat if arm_book or TUSU_MAGIC.has(key) else t.atk) * coefficient(TUSU, key)
 
 
 ## X.healAmount：max(魔攻×[10,20]，目标最大生命×[20%,35%])，按璇等级 1～60 插值（不取整）
 static func xuan_heal(a, b) -> float:
 	var lv := int(a.level)
 	return maxf(XGuyu.curve(lv, [10, 20], [1, 60]) * float(a.mat), XGuyu.curve(lv, [0.2, 0.35], [1, 60]) * float(b.mhp) if b != null else 0.0)
-
-
-## tusu()：$gameParty.battleMembers() 里的屠苏
-static func _battle_tusu():
-	if XState.current == null:
-		return null
-	for x in XState.current.battle_members():
-		if x is XActor and int(x.actor_id) == TUSU:
-			return x
-	return null
