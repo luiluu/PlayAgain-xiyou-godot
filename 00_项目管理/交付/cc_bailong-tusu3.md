@@ -3,7 +3,7 @@
 - 车道／工作者：E 角色专属／白龙_14（cc）起头，白龙 tusu3b（cc）接手收尾
 - 状态：**可合并**（见文末「选测」）
 - 分支从 cc/bailong-tusu2 末端 d3a80a62 切出（链式交付，包含 tusu2、tusu1、cat-trial1；tusu1 已在 main）。11-02 合了 main 两次（到 4c31709f）：`actor.gd` param 链冲突，main 改了注释的序号写法，本分支加了屠苏一层，合成两边都留、屠苏标第 42 个（冻结 modules.json：谷雨 38、屠苏 42、种族 53）。
-- 范围：屠苏三期，另插审查第 21 期 P3③（总装十二插单）、沙僧二审 S2-1-03（总装插单，甲档）。画面层不做。
+- 范围：屠苏三期，另插审查第 21 期 P3③（总装十二插单）、沙僧二审 S2-1-03（总装插单，甲档）、审查第 22 期 P3-1（总装插单）。画面层不做。
 - 旧工作树 `.claude/worktrees/nostalgic-curie-5a2b2d` 还挂着本分支（白龙_14 的），已不再写，清理时删。
 
 ## 本期选了盘点表的哪几行、为什么
@@ -40,6 +40,7 @@ tusu1 盘点表三期写的是屠苏的三行，本期做了前两行和第三�
    - `_yunTotal` 原版在 executeHpDamage 包装里累计 min(打前生命, 伤害)，包在里层的多段（宿傩冲击＋斩、黄泉溅射）都算进同一次行动。
    - 改法：`battle_logic._invoke` 三支不再提前 return，跑完走 `XGarou.applied`（外层看最后一段）和新的 `XYunshang.after_wrapped`；新 `XYunshang.child` 给子行动存外层帧、prepare 建子帧、跑完 applied 再还原（`toji._spread`、`toji.reflect`、`sukuna.perform` 用）；`frame.total` 从 applied 挪到 `after_hp`（battle_logic 传打前生命）。
    - 镜流 `j_applied`、渡鸦 `applied`：原版也在内层，但只管自己的行动（own(u)），黄泉／宿傩／甚尔出手时是空操作，不用动。
+4. **审查第 22 期 P3-1**：`tusu_xuan.gd` 的 `_owner` 原来用 `XState.actor()`，本体没建过时会顺手新建一个 1 级本体；原版 ownerInstance 读 `$gameActors._data[本体]`，不建。改成只读 `s.actors.get(本体)`：本体不存在时别人的屠苏／璇专属技能全滤、不能用，系数按 1 级（B.curve 的 a 为空取 1 级，与原来一样）。xiyou_tusu 补 no_owner 两例（176、177 各：滤掉、不能用、系数、不建本体）。
 - 钩子各一行：`battle_logic.gd`（can_use 加 XTusu.meets；canPay 的噬主包装；付费的噬主包装；_skill_cost 的屠苏费用；apply 的三个指令；end_battle 清理）、`actor.gd`（attack_skill_id、param 链加盾相补底）、`xstate.gd`（读档清理）、`binding.gd`（start_battle 登记屠苏种类）。
 - 参照：新探针 `mv_oracle/tusu_battle_probe.cjs`（真实 CodexTusu＋CodexBinding、真实 BattleManager），不进同步，产物拷成 `tests/fixtures/tusu_battle_oracle.json`。新专项 `xiyou_tusu_battle`。
 - 参照：新探针 `mv_oracle/yunshang_wraps_probe.cjs`（真实 BattleManager，Math.random 0.5，关五乘区），不进同步，产物拷成 `tests/fixtures/yunshang_wraps_oracle.json`。新专项 `xiyou_yunshang_wraps`。
@@ -55,6 +56,8 @@ tusu1 盘点表三期写的是屠苏的三行，本期做了前两行和第三�
 
 - 专项 xiyou_tusu_battle 992/992：参照 4 个例逐步比（basic 化武剑、易武预约、换武相、归形；shield 盾相补底、宿主阵亡解除、换宿主；devour 屠苏自付、持武者三倍代付、都付不起回人形、书相时持武者魔法技能 MP ×0.7（tusu3b 补的 cost 步：水泡术 65→45）；low 低等级没解锁的武装技能与支援）。
 - 专项 xiyou_yunshang_wraps 214/214：参照 6 个例（黄泉、宿傩、甚尔 × 觉醒／没醒），逐步比每段扣血（出手者、技能、目标、暴击、绝对值）、各敌人剩余针数、觉醒、技能表、暴击率与幸运。黄泉 10185 暴击＋9.99 原版不生效（O-098），专项里照 xiyou_yomi_battle 关掉 CRIT_FIX 比。
+- P3-1：xiyou_tusu 314/314（godot 直接单跑）；反向「_owner 改回 XState.actor()」6 项失败（滤掉、不能用、不建本体，两个角色），咬住；系数一项改回也过（新建的也是 1 级，结果相同），是预期。xiyou_tusu_battle 992/992、xiyou_binding 291/291、xiyou_skill_page 21/21 直接单跑全过。
+  - **没跑完的**：P3-1 之后本机测试槽一直被占（等了约 20 分钟没排上），没用 `并行测试.py` 跑；`xiyou_help_card` 用 godot 直接单跑是 887/1013，但把 `_owner` 改回旧写法同样 887/1013，说明是直接单跑的环境差、不是这次改动（云端选测时它是过的）。请总装合并选测里带上 xiyou_help_card、xiyou_character_help_cost、xiyou_tusu 再确认一次。
 - 相关专项另跑：xiyou_yunshang、xiyou_sukuna_battle、xiyou_toji_battle、xiyou_yomi_battle、xiyou_garou_battle 全过。
 - **屠苏还没进切片**，重制里她的能力值和原版对不上（30 级魔攻 1312 对 1530；5 级、60 级各项）。专项里把屠苏六项能力值钉成参照开局的值，只比本期的逻辑。悟空把 176／177 进切片后，去掉专项里的 TusuActor 再比一次（写在接续要点）。
 - xiyou_cat_trial 54/54（新一例 script.refresh）；反向「还原后不刷事件」咬住。
@@ -84,7 +87,7 @@ tusu1 盘点表三期写的是屠苏的三行，本期做了前两行和第三�
 
 - **S2-1-03（甲档）**：`battle/battle_logic.gd` `_invoke` 黄泉／宿傩／甚尔三支改成跑完再走饿狼、云裳（after_wrapped），after_hp 多传打前生命；`core/yunshang.gd`（新 child、after_wrapped；frame.total 从 applied 挪到 after_hp，改成 min(打前生命, 伤害)，所有角色的云裳累计都受影响）；`core/toji.gd`（_spread、reflect 走 XYunshang.child）；`core/sukuna.gd`（perform 走 XYunshang.child）；新探针、夹具、专项 xiyou_yunshang_wraps。
 - 共用核心：`battle/battle_logic.gd`（can_use 加 XTusu.meets；can_use 末尾 canPay 前 3 行噬主；execute 付费块改成先 XTusu.pay；_skill_cost 谷雨之后一行；apply 里绑定之后 3 行；end_battle 一行）；`core/actor.gd`（attack_skill_id 一支、param 链加 XTusu.param）；`core/xstate.gd` from_dict 一行；`core/binding.gd` start_battle 首行登记。
-- `core/tusu_xuan.gd` meets 的归形条件（行为变化：绑定时归形可用）。
+- `core/tusu_xuan.gd` meets 的归形条件（行为变化：绑定时归形可用）；`_owner` 只读不建（P3-1）。
 - `map/mv_script.gd` 小猫试炼还原后刷新事件。
 - `core/tusu.gd` 全文；新探针、夹具、专项。
 
@@ -123,4 +126,5 @@ S2-1-03（xiyou_yunshang_wraps）5 处全咬住：包装分支不走云裳、_yu
 - 合并 main（两次，解 actor.gd 冲突）
 - 沙僧二审 S2-1-03：云裳／饿狼包住黄泉、宿傩、甚尔；子行动各自一帧；_yunTotal 在扣血处累计
 - 屠苏专项补书相省蓝参照
+- 审查第 22 期 P3-1：_owner 只读不建
 - 本提交：交付单可合并

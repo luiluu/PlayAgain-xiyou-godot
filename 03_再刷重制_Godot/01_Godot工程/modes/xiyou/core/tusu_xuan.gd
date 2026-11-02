@@ -65,9 +65,10 @@ static func own(a) -> bool:
 	return a is XActor and TAGS.has(int(a.actor_id))
 
 
-## $gameActors 里的本体（一定有实例；没有存档时返回 null）
+## ownerInstance：$gameActors._data 里的本体，只读不建（审查第 22 期 P3-1：原来用 XState.actor() 会新建 1 级本体）；
+## 没建过时返回 null：别人的专属技能全滤、不能用，系数按 1 级（B.curve 的 a 为空取 1 级）
 static func _owner(actor_id: int):
-	return XState.current.actor(actor_id) if XState.current != null else null
+	return XState.current.actors.get(actor_id) if XState.current != null else null
 
 
 ## M.coefficient(key, a)：a 省略时用本体
