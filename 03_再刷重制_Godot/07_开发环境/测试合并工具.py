@@ -501,7 +501,27 @@ class ParallelTestRunnerTests(unittest.TestCase):
         self.state.mkdir()
         (self.state / 'timings.json').write_text(json.dumps({'a.tscn': 1, 'c.tscn': 100}))
         _, runs = self.run_tests(jobs=1)
-        self.assertEqual(runs, ['b.tscn', 'c.tscn', 'a.tscn'])  # 没有记录的当作最慢
+        self.assertEqual(runs, ['c.tscn', 'b.tscn', 'a.tscn'])  # 没有记录的排中间（按已知耗时的中位数），哪吒_42
+
+    def test_history_median_orders_queue_and_slowest_ten_printed(self):
+        # 最近几次的中位数排队：一次负载尖峰（a 上次 500 秒）不压过常年更慢的 c；收尾打印最慢场景
+        self.state.mkdir()
+        (self.state / 'timings.json').write_text(json.dumps({'a.tscn': 500, 'b.tscn': 5, 'c.tscn': 5}))
+        (self.state / 'timing_history.json').write_text(json.dumps({'a.tscn': [2, 3, 500], 'b.tscn': [5], 'c.tscn': [50, 60, 40]}))
+        p, runs = self.run_tests(jobs=1)
+        self.assertEqual(runs, ['c.tscn', 'b.tscn', 'a.tscn'])
+        self.assertIn('最慢 3 个场景', p.stdout)
+        hist = json.loads((self.state / 'timing_history.json').read_text())
+        self.assertEqual(len(hist['a.tscn']), 4)  # 追加本次
+        for i in range(8):
+            self.run_tests('--full', jobs=1)
+        self.assertEqual(len(json.loads((self.state / 'timing_history.json').read_text())['a.tscn']), 5)  # 只留最近 5 次
+
+    def test_order_switch_off_runs_by_name(self):
+        self.state.mkdir()
+        (self.state / 'timings.json').write_text(json.dumps({'a.tscn': 1, 'c.tscn': 100}))
+        _, runs = self.run_tests(jobs=1, XIYOU_TEST_ORDER='name')  # 回退：不按耗时排
+        self.assertEqual(runs, ['a.tscn', 'b.tscn', 'c.tscn'])
 
     def test_unchanged_project_reuses_passes_and_reruns_failures(self):
         p, runs = self.run_tests(jobs=1, FAIL_C='1')
@@ -1385,7 +1405,9 @@ for name in filter(None, files):
         board.write_text(board.read_text() + '车道也动了交接板 %s\n' % tok)
         self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'lane edits', cwd=self.wt)
         self.assertEqual(self.call(), 0, self.last_output)
-        self.assertEqual((self.root / doc).read_text(), '# 风格\n说明里提到 %s 这个写法\n车道新增 O-001\n' % tok)
+        # 没有草稿表行的占位不发号（审查第 23 期 P3-1，tools42）：车道新增行也原样留着，只提示
+        self.assertEqual((self.root / doc).read_text(), '# 风格\n说明里提到 %s 这个写法\n车道新增 %s\n' % (tok, tok))
+        self.assertIn('未换号的优化占位', self.last_output)
         self.assertEqual((self.root / merge.BOARD).read_text().count(tok), 2)       # 交接板两处都原样
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
@@ -1517,9 +1539,62 @@ for name in filter(None, files):
         self.assertNotIn('O-119', log)
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
-        # 下一条真优化仍从 O-119 起：正文字样没占号
+        # 正文字样没占号：只有车道代码新增行里的占位、没有草稿表行，也不发号（tools42）
         state = {'delivery': str(self.receipt), 'extraDeliveries': [], 'optAdded': {'x.gd': ['# %s：XFoo.FIX' % tok]}}
-        self.assertEqual(merge.assign_opt_numbers(self.root, state), {tok: 'O-119'})
+        self.assertEqual(merge.assign_opt_numbers(self.root, state), {})
+
+    def test_prose_placeholder_words_stay_when_batch_has_a_real_one(self):
+        """审查第 21 期 P3②（哪吒_42）：同一批里有真的草稿表占位时，交付单正文里讲占位写法的字样原来仍被整段换成同一个号。
+        正文只换带本批草稿识别键（项目／恢复方法里的标识符）的行；讲写法的行原样留着。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        sheet = self.wt / self.receipt
+        sheet.write_text(sheet.read_text().replace('- fixture change', '- 新优化 %s（XFoo.FIX_ROWS 窗高适配）\n- 同一张单几条都写 %s 时逐条对号' % (tok, tok))
+                         + self.HEAD8 + '| %s | XFoo.FIX_ROWS 窗高 | 问题 | 做法 | 理由 | `XFoo.FIX_ROWS = false` | cc | 待用户确认 |\n' % tok)
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'real and prose', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        log = (self.root / merge.LOG).read_text()
+        self.assertIn('- 新优化 O-119（XFoo.FIX_ROWS 窗高适配）', log)
+        self.assertIn('几条都写 %s 时逐条对号' % tok, log)
+
+    def test_report_prose_placeholder_is_not_numbered_even_with_a_real_draft(self):
+        """审查第 23 期 P3-1（tools42）：合 review-21 时报告正文「建议登记一条 O-待定」被换成 O-143，那批没有草稿表行，号空了。
+        只有草稿表行的占位发号；同批有真占位时，车道新加的报告（文档）里不带本批草稿识别键的占位字样也原样留着并提示，
+        带识别键的文档行和代码注释照换。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        report = Path('00_项目管理/核查报告_测试.md')
+        gd = merge.PROJECT / 'modes/注释.gd'
+        (self.wt / gd).parent.mkdir(parents=True, exist_ok=True)
+        (self.wt / report).write_text('# 报告\n- 建议登记一条 %s（回退写「无」）\n- XFoo.FIX_ROWS 是新优化 %s\n' % (tok, tok))
+        (self.wt / gd).write_text('## 优化 %s：窗高\nstatic var FIX_ROWS := true\n' % tok)
+        self.sheet_with(self.HEAD8 + '| %s | XFoo.FIX_ROWS 窗高 | 问题 | 做法 | 理由 | `XFoo.FIX_ROWS = false` | cc | 待用户确认 |\n' % tok)
+        self.assertEqual(self.call(), 0, self.last_output)
+        text = (self.root / report).read_text()
+        self.assertIn('- 建议登记一条 %s（回退写「无」）' % tok, text)
+        self.assertIn('- XFoo.FIX_ROWS 是新优化 O-119', text)
+        self.assertIn('## 优化 O-119：窗高', (self.root / gd).read_text())
+        self.assertIn('未换号的优化占位', self.last_output)
+        self.assertIn('核查报告_测试.md:2', self.last_output)
+        self.assertNotIn('O-120', text + (self.root / merge.OPT_REGISTRY).read_text())
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+
+    def test_report_placeholder_without_any_draft_takes_no_number(self):
+        """review-21 原样：车道只加了报告，报告里写占位，交付单没有草稿表行：不发号、优化登记不动，下一条真优化仍从 O-119 起。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        report = Path('00_项目管理/核查报告_测试.md')
+        (self.wt / report).write_text('# 报告\n- 建议登记一条 %s\n' % tok)
+        self.sheet_with('\n')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.assertEqual((self.root / report).read_text(), '# 报告\n- 建议登记一条 %s\n' % tok)
+        self.assertIn('未换号的优化占位', self.last_output)
+        state = {'delivery': str(self.receipt), 'extraDeliveries': [], 'optAdded': {str(report): ['- 建议登记一条 %s' % tok]}}
+        self.assertEqual(merge.assign_opt_numbers(self.root, state), {})
 
     def test_unnumbered_suffixed_placeholder_is_not_half_replaced(self):
         tok = 'O-' + '待定'
@@ -1605,15 +1680,17 @@ for name in filter(None, files):
         """唐僧 10-30：合并车道.py 自己注释里的占位被换成 O-122；工具源码（07_开发环境、03_转换工具）里的不换号，文档照换。"""
         tok = 'O-' + '待定'
         self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
         tool = merge.ENV / '说明.py'
         doc = merge.SUB / '00_设计/界面风格.md'
-        for r, text in [(tool, '# 占位写法 %s-1\n' % tok), (doc, '# 风格\n%s\n' % tok)]:
+        for r, text in [(tool, '# 占位写法 %s-1\n' % tok), (doc, '# 风格\n%s XFoo.STYLE\n' % tok)]:
             (self.wt / r).parent.mkdir(parents=True, exist_ok=True)
             (self.wt / r).write_text(text)
         self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'placeholders', cwd=self.wt)
+        self.sheet_with(self.HEAD8 + '| %s | XFoo.STYLE | 问题 | 做法 | 理由 | `XFoo.STYLE = false` | cc | 待用户确认 |\n' % tok)
         self.assertEqual(self.call(), 0, self.last_output)
         self.assertEqual((self.root / tool).read_text(), '# 占位写法 %s-1\n' % tok)
-        self.assertEqual((self.root / doc).read_text(), '# 风格\nO-001\n')
+        self.assertEqual((self.root / doc).read_text(), '# 风格\nO-119 XFoo.STYLE\n')
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
 
@@ -1720,24 +1797,26 @@ for name in filter(None, files):
         self.realistic_checker()
         self.put(str(merge.BOARD), '# board\n## 正在进行\n\n- **O-118 旧项**\n## 待交叉核查\n\n## end\n')
         self.g('add', '.'); self.g('commit', '-m', 'register has O-118')
-        self.g('merge', 'main', cwd=self.wt)
+        self.registry('| O-118 | 旧项 | a | b | c | d | e | f |')
         rel = merge.SUB / '00_设计/界面风格.md'
         gd = merge.PROJECT / 'modes/注释.gd'
-        for r, text in [(rel, '# 风格\n%s-1 与 %s-2；再提 %s-1。\n' % (tok, tok, tok)), (gd, '# %s-2：说明\n# 也见 %s\n' % (tok, tok))]:
+        for r, text in [(rel, '# 风格\n%s-1 与 %s-2；再提 %s-1（风格甲项）。\n' % (tok, tok, tok)), (gd, '# %s-2：说明\n# 也见 %s\n' % (tok, tok))]:
             (self.wt / r).parent.mkdir(parents=True, exist_ok=True)
             (self.wt / r).write_text(text)
         sheet = self.wt / self.receipt
-        sheet.write_text(sheet.read_text().replace('- fixture change', '- fixture change %s-1' % tok) + '\n优化登记草稿：无\n')
+        row = lambda t, name: '| %s | %s | 问题 | 做法 | 理由 | 回退 | cc | 待用户确认 |\n' % (t, name)
+        sheet.write_text(sheet.read_text().replace('- fixture change', '- fixture change %s-1 风格甲项' % tok) + self.HEAD8
+                         + row(tok + '-1', '风格甲项') + row(tok + '-2', '风格乙项') + row(tok, '风格丙项'))
         self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'lane docs with placeholders', cwd=self.wt)
         self.assertEqual(self.call(), 0, self.last_output)
         doc = (self.root / rel).read_text()
-        self.assertEqual(doc, '# 风格\nO-119 与 O-120；再提 O-119。\n')
+        self.assertEqual(doc, '# 风格\nO-119 与 O-120；再提 O-119（风格甲项）。\n')
         code = (self.root / gd).read_text()
         self.assertIn('# O-120：说明', code)
         self.assertIn('# 也见 O-121', code)       # 不带序号的是第三个不同占位
         self.assertNotIn(tok, doc + code)
         log = (self.root / merge.LOG).read_text()
-        self.assertIn('fixture change O-119', log)
+        self.assertIn('fixture change O-119 风格甲项', log)
         self.assertNotIn(tok, log)
 
     def test_version_document_extra_edit_is_preserved_and_rejected(self):

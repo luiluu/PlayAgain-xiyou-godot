@@ -44,6 +44,7 @@ OPT_REGISTRY = SUB / '00_设计/优化登记.md'
 VERSION_MARKER = 'dev.' + '待定'
 # 优化登记号占位：车道文档里写 O-待定（同一份里要区分几项就写 O-待定-1、O-待定-2），合并时按已登记的最大 O-NNN 顺延换号
 # （总装手换漏过一处注释，唐僧 10-30）。占位字面量拆开写，免得本文件自己被换号。
+# 只有交付单优化登记草稿表行首格的占位发号；代码注释照换，文档（.md）行要带本批草稿的识别键才换，其余原样留着、准备阶段提示（tools42）。
 # 工具源码（开发环境、转换工具）里提到占位的注释与文档串不是车道登记的优化项，不换号（唐僧 10-30 合 tools13 时被误换）。
 OPT_SKIP = (str(ENV) + '/', str(TOOLS) + '/')
 OPT_TOKEN = re.compile('O-' + '待定' + r'(?:-\d+)?')
@@ -712,9 +713,9 @@ def assign_opt_numbers(root, state):
             texts.append(f.read_text(errors='replace'))
     lane = ['\n'.join(lines) for lines in state.get('optAdded', {}).values()]
     # 交付单正文里讲占位写法本身的字样不是优化（11-01 tools32 一句「都写 O-待定 时」并入变更记录被换成 O-139，tools40）：
-    # 只给草稿表行首格的占位和车道代码／文档新增行里的占位发号，别的占位字样原样留着、不占号
+    # 只给草稿表行首格的占位发号；车道代码／文档新增行里的占位没有草稿表行就不发号、原样留着，准备阶段提示
+    # （合 review-21 时报告正文「建议登记一条 O-待定」被换成 O-143，登记里没有那行、号空了，审查第 23 期 P3-1，tools42）
     real = {m.group(0) for t in texts for row in opt_draft_rows(t) for m in [OPT_TOKEN.fullmatch(row.split('|')[1].strip())] if m}
-    real |= {m.group(0) for t in lane for m in OPT_TOKEN.finditer(t)}
     texts += lane
     for t in texts:
         for m in OPT_TOKEN.finditer(t):
@@ -738,7 +739,7 @@ def assign_opt_numbers(root, state):
     used = subprocess.run(['git', '-C', str(root), 'grep', '-I', '-h', '-o', '-E', r'O-[0-9]{3,}', 'HEAD', '--', '.',
                            *(':!' + d for d in OPT_SKIP)], capture_output=True, text=True).stdout
     top = max([top] + [int(x[2:]) for x in used.split() if len(x) == 5])
-    numbers, ambiguous, n = {}, {}, top
+    numbers, ambiguous, keys, n = {}, {}, {}, top
     for tok in tokens:
         if len(rows.get(tok, [])) >= 2:
             entries = [{'number': 'O-%03d' % (n + i + 1), 'row': row, 'keys': keys} for i, (row, keys) in enumerate(rows[tok])]
@@ -750,7 +751,9 @@ def assign_opt_numbers(root, state):
         else:
             n += 1
             numbers[tok] = 'O-%03d' % n
+            keys[tok] = sorted(rows[tok][0][1]) if tok in rows else []
     state['optEntries'] = ambiguous
+    state['optKeys'] = keys
     return numbers
 
 
@@ -761,9 +764,45 @@ def substitute(text, state, rel=''):
         if not added:
             return text
         lines = text.split('\n')
-        return '\n'.join(substitute_opt(line, state, '\n'.join(lines[i + 1:i + 3])) if line in added else line
-                         for i, line in enumerate(lines))
+        keys = draft_keys(state) if rel.endswith('.md') else None
+        out = []
+        for i, line in enumerate(lines):
+            after = '\n'.join(lines[i + 1:i + 3])
+            if line not in added:
+                out.append(line)
+            elif keys is not None and not keyed(line, keys):
+                # 文档（报告、设计说明）新增行讲到占位却不带本批草稿的识别键：多半是「建议登记一条」之类的字样，不换（审查第 23 期 P3-1）
+                out.append(substitute_opt(line, unkeyed_state(state)))
+            else:
+                out.append(substitute_opt(line, state, after))
+        return '\n'.join(out)
     return substitute_opt(text, state)
+
+
+def draft_keys(state):
+    return set().union(*(e['keys'] for es in state.get('optEntries', {}).values() for e in es),
+                       *state.get('optKeys', {}).values())
+
+
+def keyed(line, keys):
+    return line.lstrip().startswith('|') or any(k in line for k in keys)
+
+
+def unkeyed_state(state):
+    """草稿表来源的占位一个不换（只换版本占位）。"""
+    return dict(state, optEntries={}, optNumbers={})
+
+
+def leftover_opt_hints(root, state):
+    """换号后车道新增行里还留着的占位：没有草稿表行或文档行不带识别键，不发号、原样留着。只提示总装，不挡合并。"""
+    out = []
+    for rel, lines in state.get('optAdded', {}).items():
+        f = root / rel
+        text = f.read_text(errors='replace') if f.is_file() else ''
+        for i, line in enumerate(text.split('\n')):
+            if OPT_TOKEN.search(line) and any(OPT_TOKEN.sub('', line) == OPT_TOKEN.sub('', x) for x in lines):
+                out.append('%s:%d %s' % (rel, i + 1, line.strip()[:60]))
+    return out
 
 
 def substitute_opt(text, state, after=''):
@@ -775,6 +814,18 @@ def substitute_opt(text, state, after=''):
         # 只换整个占位：没发号的 O-待定-1 不能被 O-待定 的号换掉前半
         text = re.sub(re.escape(tok) + r'(?!-?\d)', num, text)
     return text
+
+
+def substitute_body(text, state, sheet_texts):
+    """变更记录正文（交付单「变更记录草稿」节）换号：版本占位整段换；优化占位只换表行和带本批草稿识别键的行，
+    讲占位写法的字样（「几条都写 O-待定 时」）原样留着（审查第 21 期 P3②，哪吒_42）。只有草稿表行的占位才发号（tools42）。
+    正文里引用草稿表占位的行写不出识别键（项目／恢复方法里的标识符或三字以上中文词）就不会被换，准备阶段打印「未换号」提示。"""
+    text = text.replace(VERSION_MARKER, state['version'])
+    keys = set()
+    for _tok, _row, ks in opt_row_entries(sheet_texts):
+        keys |= ks
+    rest = unkeyed_state(state)
+    return '\n'.join(substitute_opt(x, state) if keyed(x, keys) else substitute_opt(x, rest) for x in text.split('\n'))
 
 
 def replace_versions(root, state, state_file):
@@ -957,16 +1008,19 @@ def prepare(root, state, state_file, executor, also=()):
             if any(not (root / s).exists() for s in sheets(state)):
                 raise RuntimeError('交付单已不存在且变更记录无本批标记，先人工核对')
             body = '\n\n'.join(relink(draft((root / s).read_text()), root) for s in sheets(state))
-            body = substitute(body, state)
+            body = substitute_body(body, state, [(root / x).read_text() for x in sheets(state) if (root / x).is_file()])
             added = append_opt_registry(root, state)
             (root / LOG).write_text(log.rstrip() + '\n\n' + body + '\n\n' + marker + '\n')
             state['optAppended'] = added
+            state['optLeftover'] = leftover_opt_hints(root, state) + ['变更记录正文 ' + x.strip()[:60] for x in body.split('\n') if OPT_TOKEN.search(x)]
             save(state_file, state)
         for s in sheets(state):
             (root / s).unlink(missing_ok=True)
         # 归并记录并删除交付单后若进程中断，凭本批标记安全接续，不重复追加或编号。
         state['phase'] = 'prepared'
         save(state_file, state)
+    for x in state.get('optLeftover', []):
+        print('提示：未换号的优化占位（没有草稿表行，或文档行不带草稿识别键），原样留着：' + x, flush=True)
     for number, name in state.get('optAppended', []):
         print('新优化 %s 已写进优化登记.md；请在交接板「需要用户决定」加一行：- %s %s（默认保留，重制完成后由用户逐条决定）' % (number, number, name), flush=True)
     print('已准备合并。请唐僧手改交接板（移除活动车道、加入待核查）与进度账，保持改动未提交；然后运行 --finish。', flush=True)
