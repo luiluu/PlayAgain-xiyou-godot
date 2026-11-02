@@ -170,6 +170,12 @@ static func set_default(s: XState, r: int, in_menu := false) -> bool:
 	return true
 
 
+## R.relocateGuide 的「已选过」：选过族、有开局默认、向导自开关 A，或七族开关任一开着
+static func guide_chosen(s: XState) -> bool:
+	return bool(state(s).get("guideChosen", false)) or default_race(s) >= 0 or s.self_switch(4, 22, "A") \
+		or SWITCHES.any(func(id): return s.switch(id))
+
+
 static func _member(s: XState, a: XActor) -> bool:
 	return a != null and s.party.has(a.actor_id)
 

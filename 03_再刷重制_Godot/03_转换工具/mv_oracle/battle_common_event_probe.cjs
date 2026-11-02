@@ -128,6 +128,18 @@ recast('recast_armor_half', {party: [23, 8, 9, 10], user: 8, use: [785, false, 0
 recast('recast_weapon', {party: [23, 8, 9, 10], user: 8, use: [2260, false, 0], wear: [['weapon', 472]]}, a => { wear(a, 'weapon', 472); });
 recast('recast_skill_learned', {party: [23, 8, 9, 10], user: 8, use: [3669, false, 0], learn: [3671]}, a => { a.learnSkill(3671); });
 recast('recast_skill_not', {party: [23, 8, 9, 10], user: 8, use: [3669, false, 0], forget: [3671]}, a => { a.forgetSkill(3671); });
+// CE1327 三千烦恼风再释放（百八烦恼风 6181 带效果 44）：角色取 $gameParty._targetActorId（菜单里最后用物品选中的人），
+// 会 6184 不灭神风才强制 6182。target 是谁、谁会 6184 四种；0 号没有角色时 actor.hasSkill 抛错（YEP 吞掉）。
+function recastTarget(id, target, holder) {
+  recast(id, {party: [23, 8, 9, 10], user: 8, use: [6181, false, 0], target, holder}, a => {
+    if (holder === 8) a.learnSkill(6184); else { a.forgetSkill(6184); w.$gameActors.actor(holder).learnSkill(6184); }
+    w.$gameParty._targetActorId = target;
+  });
+}
+recastTarget('recast_target_caster', 8, 8);
+recastTarget('recast_target_other', 9, 8);
+recastTarget('recast_target_zero', 0, 8);
+recastTarget('recast_target_other_holder', 9, 9);
 // 打倒最后一只敌人：checkBattleEnd 先成立，预约的 84 不跑
 caseRun('thunder_battle_end', {party: [23, 8, 9, 10], troop: 2, learn: [217, 5083], use: [217, false, 0], enemiesHp: 1, othersHidden: true}, o => {
   setup([23, 8, 9, 10], 2); const a = w.$gameActors.actor(23); a.learnSkill(217); a.learnSkill(5083); a._mp = a.mmp;

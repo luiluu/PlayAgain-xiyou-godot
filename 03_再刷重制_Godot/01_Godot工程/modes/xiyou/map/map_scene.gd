@@ -280,6 +280,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 			if saved.get(str(e.event_id)) is Dictionary:
 				e.restore_state(saved[str(e.event_id)])
 	s.map_events = {}
+	relocate_race_guide()
 	s.map_event_snapshot = _snapshot_events
 	lower.tile_events = _tile_events_at
 	_clear_treasure_popups()
@@ -1404,6 +1405,28 @@ func open_race_menu(rank := 0) -> void:
 	await page.closed
 	page.queue_free()
 	hud.visible = true
+	relocate_race_guide()
+
+
+## R.relocateGuide（installNativeRaceRuntime）：大厅种族向导（EV22，备注 <CodexRaceGuide>）开局站在入塔门口，
+## 选过族后挪到赌场 EV47 右边一格、面朝下，把门口让出来。进大厅（Game_Map.setup）与选族后各摆一次。
+func relocate_race_guide() -> void:
+	if map_id != 4:
+		return
+	var guide: MVEvent = null
+	var gambler: Dictionary = {}
+	for e in events:
+		if e.event_id == 22 and str(e.data.get("note", "")) == "<CodexRaceGuide>":
+			guide = e
+	for ev in map_data.events:
+		if ev is Dictionary and int(ev.id) == 47:
+			gambler = ev
+	if guide == null or gambler.is_empty():
+		return
+	var to := Vector2i(int(gambler.x) + 1, int(gambler.y)) if XRace.guide_chosen(XState.current) else Vector2i(int(guide.data.x), int(guide.data.y))
+	if guide.grid != to:
+		guide.locate(to.x, to.y)
+		guide.set_direction(2)
 
 
 func open_menu(resume_items: Dictionary = {}) -> void:

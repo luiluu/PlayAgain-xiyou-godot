@@ -20,9 +20,14 @@ const CHAIN_LIMIT := 64
 const START_EVENT := 1320
 
 
-static func reserve(logic, id: int) -> void:
+static func reserve(logic, id: int, user = null) -> void:
 	if id > 0:
 		logic.set_meta("battle_ce", id)
+		# 预约它的行动者（ACTION COMMON EVENT 才有）；CE1327 再释放按它（O-待定-1）
+		if user != null:
+			logic.set_meta("battle_ce_user", user)
+		elif logic.has_meta("battle_ce_user"):
+			logic.remove_meta("battle_ce_user")
 
 
 ## ActSeqPack1 actionCommonEvent：$gameTroop 事件运行中 → $gameTroop._interpreter.setupChild(list, 0)，否则预约。
@@ -42,7 +47,7 @@ static func reserve_action(logic, user, item: Dictionary, targets: Array) -> voi
 		logic.set_meta("last_item_action", {"user": user, "item": item, "target": targets[0] if not targets.is_empty() else null})
 	for e in item.get("effects", []):
 		if int(e.code) == 44:
-			reserve(logic, int(e.dataId))
+			reserve(logic, int(e.dataId), user)
 
 
 static func reserved(logic) -> int:
@@ -58,6 +63,10 @@ static func take(logic) -> XBattleEventRunner:
 	var id := reserved(logic)
 	if id <= 0:
 		return null
+	var user = null
+	if logic.has_meta("battle_ce_user"):
+		user = logic.get_meta("battle_ce_user")
+		logic.remove_meta("battle_ce_user")
 	logic.remove_meta("battle_ce")
 	var ce := XDB.rec("CommonEvents", id)
 	if ce.is_empty():
@@ -70,4 +79,6 @@ static func take(logic) -> XBattleEventRunner:
 	var r := XBattleEventRunner.new(logic, ce.get("list", []), logic._check.get("first"))
 	r.set_meta("page", -1)
 	r.set_meta("common_event", id)
+	if user != null:
+		r.set_meta("ce_user", user)
 	return r

@@ -125,7 +125,10 @@ func _defeat(ref: Dictionary) -> void:
 ## 仓库里的武器防具：O-147 o_cleanup_keep_warehouse 默认留着，false 照原版丢掉（道具不动）
 func _cleanup(ref: Dictionary) -> void:
 	for keep in [true, false]:
-		MVScript.o_cleanup_keep_warehouse = true if keep else false
+		if keep:
+			MVScript.o_cleanup_keep_warehouse = true
+		else:
+			MVScript.o_cleanup_keep_warehouse = false
 		var s := XState.new_game(3, 1, [8, 9, 10])
 		XState.current = s
 		var m := s.members()

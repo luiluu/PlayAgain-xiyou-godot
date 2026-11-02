@@ -121,6 +121,38 @@ func _recast(id: String) -> void:
 	check(id + ".no_pending", l.pending_force.is_empty())
 
 
+## CE1327 三千烦恼风再释放（百八烦恼风 6181）：原版角色取 $gameParty._targetActorId（重制 item_target_actor_id）。
+## 回退（O_RECAST_CASTER＝false）逐例比参照；默认按放 6181 的人（8 号）：8 号会 6184 就再放，与 target 无关。
+## other_holder：原版 9 号还没行动，forceAction 让它先做自己的防御、6182 留在队尾没放；重制回退支直接给 9 号强制 6182（已知差异，只在回退支）。
+func _recast_target(id: String, default_forced: bool) -> void:
+	var c := _case(id)
+	var st: Dictionary = c.setup
+	for caster in [false, true]:
+		XBattleEventRunner.O_RECAST_CASTER = false if not caster else true
+		var tag := id + (".caster" if caster else ".rollback")
+		var l := battle(st.party)
+		var s := l.state
+		var a := s.actor(int(st.user))
+		a.learn_skill(6181)
+		s.actor(int(st.holder)).learn_skill(6184)
+		if int(st.holder) != int(st.user):
+			a.forget_skill(6184)
+		s.item_target_actor_id = int(st.target)
+		a.mp = a.mmp
+		a.tp = 100
+		l.act(a, XDB.rec("Skills", 6181), l.enemies[0])
+		check(tag + ".reserved", XBattleCommonEvent.reserved(l) == 1327, XBattleCommonEvent.reserved(l))
+		var got := actions(l.run_events()).map(func(x): return [("a%d" % x[0].actor_id) if x[0] is XActor else "?", x[1]])
+		var want: Array = c.observed.actions.filter(func(x): return bool(x.forcing)).map(func(x): return [x.subject, int(x.item[1])])
+		if caster:
+			want = [["a8", 6182]] if default_forced else []
+		elif id == "recast_target_other_holder":
+			want = [["a9", 6182]]
+		check(tag + ".forced", JSON.stringify(got) == JSON.stringify(want), [got, want])
+		check(tag + ".no_pending", l.pending_force.is_empty())
+	XBattleEventRunner.O_RECAST_CASTER = true
+
+
 func _net() -> void:
 	var c := _case("net_after_action")
 	var l := battle([1, 8, 9, 10])
@@ -197,6 +229,10 @@ func _run() -> void:
 	_thunder("thunder_battle_end", true, true)
 	for id in ["recast_armor_worn", "recast_armor_half", "recast_weapon", "recast_skill_learned", "recast_skill_not"]:
 		_recast(id)
+	_recast_target("recast_target_caster", true)
+	_recast_target("recast_target_other", true)
+	_recast_target("recast_target_zero", true)
+	_recast_target("recast_target_other_holder", false)
 	_net()
 	_slot()
 	_inventory()

@@ -905,6 +905,436 @@
    }
   },
   {
+   "id": "recast_target_caster",
+   "setup": {
+    "party": [
+     23,
+     8,
+     9,
+     10
+    ],
+    "user": 8,
+    "use": [
+     6181,
+     false,
+     0
+    ],
+    "target": 8,
+    "holder": 8
+   },
+   "errors": [],
+   "observed": {
+    "worn": [
+     [
+      1,
+      4
+     ]
+    ],
+    "actions": [
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a23",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "skill",
+       6181
+      ],
+      "target": 0,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "skill",
+       6182
+      ],
+      "target": 1,
+      "forcing": true,
+      "enemyHp": [
+       99999963302,
+       100000009900,
+       100000009900
+      ]
+     }
+    ],
+    "events": [
+     {
+      "commonEvent": 1320,
+      "afterActions": 0,
+      "marked": []
+     },
+     {
+      "commonEvent": 1327,
+      "afterActions": 3,
+      "marked": []
+     }
+    ],
+    "toasts": [],
+    "phase": "input",
+    "enemies": [
+     {
+      "index": 0,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 1,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 2,
+      "alive": true,
+      "hidden": false
+     }
+    ],
+    "state345": false
+   }
+  },
+  {
+   "id": "recast_target_other",
+   "setup": {
+    "party": [
+     23,
+     8,
+     9,
+     10
+    ],
+    "user": 8,
+    "use": [
+     6181,
+     false,
+     0
+    ],
+    "target": 9,
+    "holder": 8
+   },
+   "errors": [],
+   "observed": {
+    "worn": [
+     [
+      1,
+      4
+     ]
+    ],
+    "actions": [
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a23",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "skill",
+       6181
+      ],
+      "target": 0,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     }
+    ],
+    "events": [
+     {
+      "commonEvent": 1320,
+      "afterActions": 0,
+      "marked": []
+     },
+     {
+      "commonEvent": 1327,
+      "afterActions": 3,
+      "marked": []
+     }
+    ],
+    "toasts": [],
+    "phase": "input",
+    "enemies": [
+     {
+      "index": 0,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 1,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 2,
+      "alive": true,
+      "hidden": false
+     }
+    ],
+    "state345": false
+   }
+  },
+  {
+   "id": "recast_target_zero",
+   "setup": {
+    "party": [
+     23,
+     8,
+     9,
+     10
+    ],
+    "user": 8,
+    "use": [
+     6181,
+     false,
+     0
+    ],
+    "target": 0,
+    "holder": 8
+   },
+   "errors": [],
+   "observed": {
+    "worn": [
+     [
+      1,
+      4
+     ]
+    ],
+    "actions": [
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a23",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "skill",
+       6181
+      ],
+      "target": 0,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     }
+    ],
+    "events": [
+     {
+      "commonEvent": 1320,
+      "afterActions": 0,
+      "marked": []
+     },
+     {
+      "commonEvent": 1327,
+      "afterActions": 3,
+      "marked": []
+     }
+    ],
+    "toasts": [],
+    "phase": "input",
+    "enemies": [
+     {
+      "index": 0,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 1,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 2,
+      "alive": true,
+      "hidden": false
+     }
+    ],
+    "state345": false
+   }
+  },
+  {
+   "id": "recast_target_other_holder",
+   "setup": {
+    "party": [
+     23,
+     8,
+     9,
+     10
+    ],
+    "user": 8,
+    "use": [
+     6181,
+     false,
+     0
+    ],
+    "target": 9,
+    "holder": 9
+   },
+   "errors": [],
+   "observed": {
+    "worn": [
+     [
+      1,
+      4
+     ]
+    ],
+    "actions": [
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a23",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "skill",
+       6181
+      ],
+      "target": 0,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     }
+    ],
+    "events": [
+     {
+      "commonEvent": 1320,
+      "afterActions": 0,
+      "marked": []
+     },
+     {
+      "commonEvent": 1327,
+      "afterActions": 3,
+      "marked": []
+     }
+    ],
+    "toasts": [],
+    "phase": "input",
+    "enemies": [
+     {
+      "index": 0,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 1,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 2,
+      "alive": true,
+      "hidden": false
+     }
+    ],
+    "state345": false
+   }
+  },
+  {
    "id": "thunder_battle_end",
    "setup": {
     "party": [
