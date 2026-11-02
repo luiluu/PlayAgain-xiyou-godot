@@ -586,6 +586,8 @@ func _opening() -> void:
 		await get_tree().process_frame
 	_check("hub_reached", ok and s.self_switch(HUB, 20, "A") and s.variable(20) == 1, [ok, s.variable(20)])
 	_check("hub_saved_slot", XSave.exists(s.fixed_save_slot()), s.fixed_save_slot())
+	XRace.state(s).guideChosen = true   # 选过族：种族向导 22 让开入塔门口（大厅事件上图后原版同样要先选族才走得到门）
+	_scene().relocate_race_guide()
 	_boost_party(s)
 	log_lines.append("开局到大厅：存档位 %d，队伍 %s" % [s.fixed_save_slot(), s.party])
 
