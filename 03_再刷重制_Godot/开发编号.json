@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.276",
-  "sequence": 276,
-  "next": "dev.277",
-  "nextSequence": 277,
+  "current": "dev.277",
+  "sequence": 277,
+  "next": "dev.278",
+  "nextSequence": 278,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "wukong-content1",
+  "currentChange": "bailong-tusu5",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
