@@ -13,6 +13,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+# 合并工具 --cloud 收尾不需重传产物时给 检查.sh 设 CHECK_CLOUD_NO_UPLOAD=1，会漏进这里的子进程与 cloud_env，用例按默认环境跑
+
+os.environ.pop('CHECK_CLOUD_NO_UPLOAD', None)
 HERE = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location('selector', HERE / '选测.py')
 sel = importlib.util.module_from_spec(spec)

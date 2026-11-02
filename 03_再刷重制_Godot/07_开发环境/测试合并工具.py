@@ -15,6 +15,9 @@ import time
 import unittest
 from unittest import mock
 
+# 合并工具 --cloud 收尾不需重传产物时给 检查.sh 设 CHECK_CLOUD_NO_UPLOAD=1，会漏进这里的子进程与 cloud_env，用例按默认环境跑
+
+os.environ.pop('CHECK_CLOUD_NO_UPLOAD', None)
 HERE = Path(__file__).resolve().parent
 TOOLS = HERE.parent / '03_转换工具'
 
