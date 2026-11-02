@@ -228,7 +228,6 @@ static func run(code: String, interp) -> Array:
 	return await _statements(js, interp)
 
 
-## 逐条处理简单语句（分号或换行分隔）
 ## O-147（悟空 events3，审查 21 期 P3①）：猫哥清理存档时仓库里的武器防具。true＝留着（重制存的是实例，不会失效）；
 ## false＝照原版：zchuli.js 只给身上与背包的独立装备重编号，仓库里记的旧编号失效，这里按全部丢掉
 static var o_cleanup_keep_warehouse := true
@@ -249,6 +248,7 @@ static func _cleanup_independent(s: XState) -> void:
 		a.refresh_resources()
 
 
+## 逐条处理简单语句（分号或换行分隔）
 static func _statements(js: String, interp) -> Array:
 	var s := XState.current
 	var unknown := []
