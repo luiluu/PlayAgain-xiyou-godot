@@ -21,6 +21,9 @@ for (const name of ['route-suppress', 'zones-correction']) {
 }
 if (!w.CodexRouteSuppress || typeof w.CodexRouteSuppress.otherScale !== 'function') throw new Error('路线压制模块不在');
 w.CodexRouteSuppress.otherScale = () => 1;
+// 同一条 O-050：路线压制还把锁定、和鸣、护阵倍率按超强者往 1 收（屠苏是超强者，地狱路线 toward(r, 0.5)：和鸣 1.5→1.25、护阵 0.7→0.85），
+// 包装里每次读 R.isSuper，改成恒假（tusu5 查明 tusu4 记的「和鸣只 ×1.25」就是它）
+w.CodexRouteSuppress.isSuper = () => false;
 const stub = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprites = new Map();
 w.Game_Battler.prototype.battler = function () {
@@ -93,12 +96,14 @@ function snap() {
     party: {}};
   for (const id of [1, 8, 10]) {
     const a = who(id);
-    out.party['a' + id] = {states: states(a), hp: a.hp, mp: a.mp, mmp: a.mmp, def: a.def, mdf: a.mdf,
+    out.party['a' + id] = {states: states(a), hp: a.hp, mp: a.mp, mmp: a.mmp, def: a.def, mdf: a.mdf, shield: w.CodexShieldLedger.amount(a),
       arm: Object.fromEntries(ARM_KEYS.map(k => [k, skillRow(a, k)]))};
   }
   out.payer = Object.fromEntries(PAY_KEYS.map(k => [k, T.payer(k)]));
   out.maintain = Object.fromEntries(W5.map(x => [x, T.canMaintain(x)]));
   out.host = h ? 'a' + h.actorId() : null;
+  const e0 = who('e0'), c = e0._codexTusuCuoshi;  // 挫势（敌人）与眩晕
+  out.e0 = {cuoshi: c ? {rate: c.rate, stack: c.stack, until: c.until} : null, states: e0._states.filter(id => id === T.config.stunState || /<CodexTusu:/.test((w.$dataStates[id] || {}).note || '')).sort((x, y) => x - y)};
   out.members = w.$gameParty.battleMembers().map(key);
   return out;
 }
@@ -156,6 +161,11 @@ const SCRIPTS = {
   // 武装技能伤害（伤害钩子 tusu）：书相敕令魔法、和鸣 ×hemingRate 后消费；锤相震击；护阵中的角色受伤 ×huzhenRate
   armdmg: [{176: 60}, [['use', 176, 'huawu.book', 1], ['arm', 1, 'arm.chiling', 0], ['state', 1, 'heming'], ['arm', 1, 'arm.chiling', 0],
     ['use', 176, 'yiwu.hammer'], ['turn'], ['arm', 1, 'arm.zhenji', 0], ['hit', 'e0', 1, 8], ['state', 8, 'huzhen'], ['hit', 'e0', 1, 8], ['end']]],
+  // 止戈环 60 级（tusu5）：横扫第二个目标起 ×curve；点射 2 段、贯日 3 段；护阵挂护阵、首次敌方伤害给护阵队友护盾（屠苏双防和 ×18）；
+  // 震击打有挫势的敌人 → 它下一次直接伤害 ×0.9（连同挫势 ×0.8）；挫势回合末到期
+  arm60: [{176: 60}, [['use', 176, 'huawu.sword', 1], ['arm', 1, 'arm.hengsao', 0], ['use', 176, 'yiwu.bow'], ['turn'], ['arm', 1, 'arm.dianshe', 0], ['arm', 1, 'arm.guanri', 1],
+    ['use', 176, 'yiwu.shield'], ['turn'], ['arm', 1, 'arm.huzhen', 0], ['hit', 'e0', 1, 8], ['hit', 'e1', 1, 8], ['use', 176, 'yiwu.hammer'], ['turn'],
+    ['arm', 1, 'arm.zhenji', 0], ['arm', 1, 'arm.zhenji', 0], ['hit', 'e0', 1, 10], ['hit', 'e0', 1, 10], ['turn'], ['end']]],
   // 等级低：没解锁的武装技能、支援不能用
   low: [{176: 5}, [['use', 176, 'huawu.bow', 1], ['turn'], ['use', 176, 'yiwu.sword'], ['turn'], ['end']]],
 };

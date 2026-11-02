@@ -873,6 +873,7 @@ func end_turn() -> Array:
 	logs.append_array(XAlienBattle.round_end(self))  # endTurn 的异化包装（在种族包装之内）：蚀能、腐蚀
 	logs.append_array(XRaceBattle.round_end(self))  # endTurn 的种族包装：毒鸡汤结算、残响交接
 	XYunshang.end_turn(self)  # 云裳 endTurn 包装：六衡裁身回合末清除
+	XTusu.end_turn(self)  # 屠苏 endTurn 包装（原 endTurn 之后）：挫势到期
 	XShieldLedger.round_end()  # 护盾账本 endTurn 包装（原 endTurn 之后）：撤销到期来源、衰减
 	XBinding.end_turn()  # 绑定 endTurn 包装（原 endTurn 之后）：剩余充能交给角色模块，清零
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
@@ -1623,7 +1624,9 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	# 黄泉（modules.json 第 9 个）、甚尔（10）、宿傩（18）的 Game_Action.apply 包装在饿狼（19）、云裳（31）之内：
 	# 整次包装跑完再走外层的饿狼记帧与云裳指令／种针／觉醒引爆（沙僧二审 S2-1-03；镜流、渡鸦只管自己的行动，这里没有）
 	var wrapped := []
-	if XYomiJingliu.wraps(u, skill, tt):
+	if XTusu.segments(skill) > 1:
+		wrapped = XTusu.apply_segments(self, u, skill, tt)  # 止戈环 60 级 apply 包装（最外层）：点射 2 段、贯日 3 段、敕令 2 段
+	elif XYomiJingliu.wraps(u, skill, tt):
 		# 黄泉：施集真赤、充残梦、扩散到其余敌人（扩散各次接在主目标之后）
 		XYomiJingliu.before_apply(self, u, skill, tt)
 		var r := apply(u, skill, tt)
@@ -1744,7 +1747,7 @@ func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool, 
 	if push:
 		var sign := float(calc.value)  # 按 makeDamageValue（CodexDamage.calculate）的正负
 		ctx.after_confirm = func(): _push_states(u, skill, t, sign)
-	return XToji.record(u, skill, t, calc, XDamage.finish(calc, skill, u, t, true, ctx))  # 甚尔术师杀手：结算后记反弹
+	return XTusu.segment_value(XToji.record(u, skill, t, calc, XDamage.finish(calc, skill, u, t, true, ctx)))  # 甚尔术师杀手：结算后记反弹；止戈环分段 makeDamageValue 包装：每段 ×1.2/段数
 
 
 func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
@@ -1900,6 +1903,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_effect(u, t, eff, r)
 	_otb_target_shift(skill, t)
 	_user_tp_gain(u, skill)
+	XTusu.user_effect(self, u, skill, t)  # 屠苏 applyItemUserEffect 包装（原效果之后）：护阵、挫势
 	if t.hp <= 0.0 and t.is_dead():
 		_die(t)
 		r.died = true
@@ -1956,6 +1960,13 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 ## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：Boss输出→导入平衡→真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
 ## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
+	var tusu_cuoshi := XTusu.hp_before(u, t, value, item)  # 止戈环 60 级 executeHpDamage 包装（护盾账本之外）：护阵首伤护盾、打前有没有挫势
+	var out := _execute_hp_damage_ledger(u, t, value, drain, item)
+	XTusu.hp_after(u, t, value, item, tusu_cuoshi)  # 锻痕、挫势减伤标记的消费与新挂
+	return out
+
+
+func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
 	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：账本先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):

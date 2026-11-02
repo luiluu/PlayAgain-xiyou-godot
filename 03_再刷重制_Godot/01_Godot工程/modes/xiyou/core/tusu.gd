@@ -280,9 +280,11 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 			ops.append({"op": "mul", "field": "finalMultiplier", "value": lock_rate(t)})
 		if key == "arm.chiling" and wielder is XBattler and wielder.state_ids.has(state_id("heming")):
 			ops.append({"op": "mul", "field": "finalMultiplier", "value": heming_rate(t)})
+	if a is XEnemy and _cuoshi.has(a):
+		ops.append({"op": "mul", "field": "finalMultiplier", "value": float(_cuoshi[a].rate)})  # 挫势：敌人出手 ×rate（到期由回合末删）
 	if b is XActor and state_id("huzhen") > 0 and b.state_ids.has(state_id("huzhen")):
 		ops.append({"op": "mul", "field": "incomingMultiplier", "value": huzhen_rate(tusu())})
-	return ops
+	return ops + _three60_ops(item, a, b)
 
 
 ## BattleManager.endAction 包装（原 endAction 之前，屠苏两层里的外层）：锁定、和鸣启动即消费（没打中或被免疫也不退回）。
@@ -294,11 +296,238 @@ static func end_action(u, skill) -> void:
 	var heming := state_id("heming")
 	if key == "arm.chiling" and heming > 0 and u.state_ids.has(heming):
 		u.remove_state(heming)
+	_sword_targets.clear()  # 横扫的目标表记在行动上，行动结束就没了
+	_action_no += 1
 
 
 ## 持武者的锁定目标（host._codexTusuLock.target）；锁定由支援「锁定」给，四期剩余，现在恒为空
 static func lock_target(_h):
 	return null
+
+
+# ---- 挫势（installNativeTusuRuntime applyCuoshi、endTurn 包装） ----
+const STUN_STATE := 29
+## 敌人身上的挫势（e._codexTusuCuoshi）：{base, stack, until, rate}
+static var _cuoshi := {}
+
+
+static func cuoshi_of(e):
+	return _cuoshi.get(e)
+
+
+static func _hyper(e) -> bool:
+	return e is XEnemy and e.boss_difficulty_boss and e.boss_hyper_armor
+
+
+static func _resist(e, id: int) -> bool:
+	return e.traits_set(XBattler.TRAIT_STATE_RESIST).has(id)
+
+
+## 震击、镇魂命中活着的敌人：同源不叠加，刷新取较低倍率与较晚到期；开刃·锤后最多 2 层（倍率按层数连乘）。
+## 霸体 Boss：倍率 0.85～0.70、多挂一回合、挂 cuoshi2、不试眩晕；其余 0.90～0.80，再按状态接受率试一次眩晕（29）
+static func apply_cuoshi(logic, e) -> bool:
+	var hyper := _hyper(e)
+	var lv := int(tusu().level) if tusu() != null else 1
+	var r := XBinding.current_round()
+	var rate := XGuyu.curve(lv, [0.85, 0.70], [20, 60]) if hyper else XGuyu.curve(lv, [0.90, 0.80], [20, 60])
+	var until := r + (2 if hyper else 1)
+	var sid := state_id("cuoshi2" if hyper else "cuoshi")
+	if sid <= 0 or _resist(e, sid):
+		return false
+	var c = _cuoshi.get(e)
+	var max_stack := 2 if has_kairen("hammer") else 1
+	if c != null and int(c.until) >= r:
+		c.base = minf(float(c.base), rate)
+		c.stack = mini(max_stack, int(c.stack) + 1)
+		c.until = maxi(int(c.until), until)
+	else:
+		c = {"base": rate, "stack": 1, "until": until}
+		_cuoshi[e] = c
+	c.rate = pow(float(c.base), int(c.stack))
+	for k in ["cuoshi", "cuoshi2"]:
+		_set_state(logic, e, state_id(k), false)
+	logic._state_add(e, sid)
+	if not hyper and logic._float("tusu_stun") < logic.state_rate(e, STUN_STATE) and not _resist(e, STUN_STATE):
+		logic._state_add(e, STUN_STATE)
+	return true
+
+
+## endTurn 包装（原 endTurn 之后）：挫势按自然回合到期
+static func end_turn(logic) -> void:
+	var r := XBinding.current_round()
+	for e in logic.enemies:
+		var c = _cuoshi.get(e)
+		if c != null and int(c.until) <= r:
+			_cuoshi.erase(e)
+			for k in ["cuoshi", "cuoshi2"]:
+				_set_state(logic, e, state_id(k), false)
+
+
+## 开刃：器谱选的武相（a._codexTusuKairen，存 s.flags），只算进阶阶数以内的（最多三相）
+const KAIREN_FLAG := "_codexTusuKairen"
+static func kairen(s: XState = null) -> Array:
+	if s == null:
+		s = XState.current
+	return (s.flags.get(KAIREN_FLAG, []) as Array) if s != null else []
+
+
+static func has_kairen(w: String) -> bool:
+	var t = tusu()
+	if t == null:
+		return false
+	var k := kairen()
+	var stage := clampi(XAdvance.rank(XState.current, ACTOR), 0, 3)
+	return k.has(w) and k.find(w) < stage
+
+
+# ---- 止戈环 60 级与五兵淬纹（installThreeGrowthRelicRuntime 的 three60-effects 伤害钩子、apply／makeDamageValue／executeHpDamage／
+# applyItemUserEffect 包装；都读屠苏的等级，屠苏不出战也读） ----
+const RELIC := 4047
+## T.TEMPER：五兵淬纹（屠苏成长被动，不需要装备法宝）10／20／30／40 级起 ×1.1，60 级 ×1.2；剑气纵横一直 ×1.1
+const TEMPER := {"support.jianqi": 10, "arm.hengsao": 20, "arm.dianshe": 20, "arm.guanri": 20, "support.jintang": 30, "arm.chiling": 30, "arm.zhenji": 40, "support.zhenhun": 40}
+const SEGMENTS := {"arm.dianshe": 2, "arm.guanri": 3, "arm.chiling": 2}
+## 本次分段（action._codex60Segment）：{count, index, remainder}
+static var _segment = null
+## 横扫本次打到的目标（action._codex60SwordTargets），endAction 清
+static var _sword_targets := []
+## 剑气留在敌人身上的锻痕（target._codex60Forged.until）、挫势目标的下一次直接伤害减（enemy._codex60Crushed.until）
+static var _forged := {}
+static var _crushed := {}
+## 护阵首次敌方伤害（t._codex60Guard）：{targets, action}；action 记第几次行动（原版比 Game_Action 对象，每次行动一个）
+static var _guard = null
+static var _action_no := 0
+
+
+static func owner_actor():
+	var s := XState.current
+	return s.actors.get(ACTOR) if s != null else null
+
+
+static func relic_on(t) -> bool:
+	if t == null:
+		return false
+	for e in t.equips:
+		if e is Dictionary and str(e.get("kind", "armor")) == "armor" and int(e.get("base", e.get("id", 0))) == RELIC:
+			return true
+	return false
+
+
+static func temper_rate(t, k: String) -> float:
+	var lv := int(t.level) if t != null else 1
+	if not TEMPER.has(k) or lv < int(TEMPER[k]):
+		return 1.0
+	return 1.1 if lv < 60 or k == "support.jianqi" else 1.2
+
+
+static func _evolved(t) -> bool:
+	return t != null and int(t.level) >= 60 and relic_on(t)
+
+
+## R.segments：60 级戴止戈环时点射 2 段、贯日 3 段、敕令 2 段
+static func segments(skill: Dictionary) -> int:
+	return int(SEGMENTS.get(key_of(skill), 1)) if _evolved(owner_actor()) else 1
+
+
+## Game_Action.apply 包装（最外层）：一次行动分段打同一目标，目标倒下就停
+static func apply_segments(logic, u, skill: Dictionary, t) -> Array:
+	var n := segments(skill)
+	var out := []
+	_segment = {"count": n, "index": 0, "remainder": 0.0}
+	for i in n:
+		if not t.is_alive():
+			break
+		_segment.index = i
+		out.append(logic.apply(u, skill, t))
+	_segment = null
+	return out
+
+
+## makeDamageValue 包装：每段 ×1.2/段数向下取整，余数攒到最后一段
+static func segment_value(value: float) -> float:
+	if _segment == null:
+		return value
+	var exact := value * 1.2 / int(_segment.count)
+	var part := floorf(exact)
+	_segment.remainder = float(_segment.remainder) + exact - part
+	if int(_segment.index) == int(_segment.count) - 1:
+		part += floorf(float(_segment.remainder) + 1e-8)
+	return part
+
+
+## direct(action)：敌人用伤害类型 1／5、对敌方的行动
+static func _direct(a, item: Dictionary) -> bool:
+	return a is XEnemy and int(item.get("damage", {}).get("type", 0)) in [1, 5] and XSmartAI.for_opponent(item)
+
+
+static func _three60_ops(item: Dictionary, a, b) -> Array:
+	var ops := []
+	var t = owner_actor()
+	var k := key_of(item)
+	var r := XBinding.current_round()
+	if k != "" and t != null:
+		var rate := temper_rate(t, k)
+		if SEGMENTS.has(k) and _evolved(t) and _segment != null:
+			rate = 1.0
+		if rate != 1.0:
+			ops.append({"op": "mul", "field": "finalMultiplier", "value": rate})
+		if k == "arm.hengsao":
+			if not _sword_targets.has(b):
+				_sword_targets.append(b)
+			if _sword_targets.find(b) > 0:
+				ops.append({"op": "mul", "field": "finalMultiplier", "value": XGuyu.curve(int(t.level), [1, 1.2], [20, 60])})
+		if (k == "arm.zhanfeng" or k == "arm.hengsao") and int(_forged.get(b, -1)) >= r:
+			ops.append({"op": "mul", "field": "finalMultiplier", "value": 1.1})
+	if _direct(a, item) and int(_crushed.get(a, -1)) >= r:
+		ops.append({"op": "mul", "field": "finalMultiplier", "value": 0.9})
+	return ops
+
+
+## executeHpDamage 包装（屠苏、护盾账本之外）：护阵首次敌方伤害给命中的护阵队友护盾（屠苏双防和 ×18，1 回合）；返回打之前目标有没有挫势
+static func hp_before(u, t, value: float, item: Dictionary) -> bool:
+	var o = owner_actor()
+	if value > 0.0 and _direct(u, item) and _evolved(o) and t is XActor and state_id("huzhen") > 0 and t.state_ids.has(state_id("huzhen")) and _guard != null:
+		if _guard.action == null:
+			_guard.action = _action_no
+		if int(_guard.action) == _action_no and not _guard.targets.has(t):
+			_guard.targets.append(t)
+			XShieldLedger.grant(t, "tusu.fiveguard", (o.def + o.mdf) * 18.0, 1, ACTOR, {"noBonus": true, "noDecay": true})
+	var c = _cuoshi.get(t)
+	return c != null and int(c.until) >= XBinding.current_round()
+
+
+static func hp_after(u, t, value: float, item: Dictionary, was_cuoshi: bool) -> void:
+	if value <= 0.0:
+		return
+	var k := key_of(item)
+	var o = owner_actor()
+	if k == "arm.zhanfeng" or k == "arm.hengsao":
+		_forged.erase(t)
+	if _direct(u, item):
+		_crushed.erase(u)
+	if _evolved(o) and k == "support.jianqi":
+		_forged[t] = XBinding.current_round()
+	if _evolved(o) and was_cuoshi and (k == "arm.zhenji" or k == "support.zhenhun"):
+		_crushed[t] = XBinding.current_round() + 1
+
+
+## applyItemUserEffect 包装（命中后）：护阵给目标挂护阵（60 级另记首次敌方伤害）；震击、镇魂给活着的敌人挂挫势
+static func user_effect(logic, u, skill: Dictionary, t) -> void:
+	var key := key_of(skill)
+	if key == "arm.huzhen":
+		logic._state_add(t, state_id("huzhen"))
+		if owner_actor() != null and _guard == null:
+			_guard = {"targets": [], "action": null}
+	if (key == "arm.zhenji" or key == "support.zhenhun") and t is XEnemy and t.is_alive():
+		apply_cuoshi(logic, t)
+
+
+static func _clear_marks() -> void:
+	_cuoshi.clear()
+	_forged.clear()
+	_crushed.clear()
+	_sword_targets.clear()
+	_segment = null
+	_guard = null
 
 
 # ---- 噬主 ----
@@ -487,6 +716,7 @@ static func param(a, i: int, v: float) -> float:
 ## endBattle（finally）、读档：清全队的持武／锁定／和鸣状态与本场数据
 static func clear(s: XState, logic = null) -> void:
 	_d = {}
+	_clear_marks()  # 敌人的挫势与止戈环标记（敌人身上的挫势、眩晕状态不删，同原版）
 	if s == null:
 		return
 	for a in s.members():
