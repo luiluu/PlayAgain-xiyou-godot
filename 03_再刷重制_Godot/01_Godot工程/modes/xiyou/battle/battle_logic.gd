@@ -826,6 +826,7 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(execute(u, skill, target))
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
+	XTusu.end_action(u, skill)  # 屠苏 endAction 包装（原 endAction 之前，在谷雨之外）：敕令消费和鸣
 	XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：本次行动里的归根反馈（画面）
 	if started and not skipped:
@@ -1447,6 +1448,26 @@ static func attack_repeats(u: XBattler, skill: Dictionary, base: int) -> int:
 	return floori(base + u.attack_times_add()) if u.is_attack(skill) else base
 
 
+## Game_BattlerBase.paySkillCost（含各包装）与 YEP 冷却：execute 付费、专项直接付费共用
+func pay_skill_cost(u, skill: Dictionary) -> void:
+	var tusu_who = XTusu.pay_begin(u, skill)  # 屠苏噬主包装在最外层：屠苏自付或持武者三倍代付，里层照走（审查第 24 期 P2-1）
+	if not (tusu_who is String and tusu_who.is_empty()):  # ""：都付不起（支付前已查），整次不付
+		var c := skill_cost(u, skill)
+		# 异化 paySkillCost 包装：缄默先锁生命上限（付不起整次不付 MP／TP），饕餮的 MP 费用从饥饿储备扣
+		if XAlienBattle.pay_silence(self, u, skill):
+			XYomiJingliu.pay(u, skill)  # 黄泉 paySkillCost 包装：10174 扣 9 层残梦
+			XMira.pay(u, skill)  # 米拉禁忌 paySkillCost 包装：登记生命代价
+			if XAlienBattle.glutton_mp(u) != null:
+				XAlienBattle.pay_glutton(u, c.mp)
+			else:
+				u.mp -= c.mp
+			u.tp -= c.tp
+			pay_hp(u, skill)  # YEP_SkillCore paySkillCost：MP／TP 之后扣 HP 费用
+			XSkillMastery.record(u, skill)  # YEP_SkillMasteryLevels paySkillCost 包装：战斗里记下技能，onAllActionsEnd 计次
+	XTusu.pay_after(u, skill, tusu_who)
+	u.pay_cooldown(skill)
+
+
 ## 执行一次行动：消耗、目标、连击、命中、伤害、效果。
 func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false) -> Array:
 	var logs := []
@@ -1471,21 +1492,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		if bool(skill.get("consumable", true)):
 			state.gain_item(int(skill.id), -1)
 	elif not blocked:
-		var c := skill_cost(u, skill)
-		# 异化 paySkillCost 包装：缄默先锁生命上限（付不起整次不付 MP／TP），饕餮的 MP 费用从饥饿储备扣
-		if XTusu.pay(self, u, skill):
-			pass  # 屠苏噬主 paySkillCost 包装：屠苏自付或持武者三倍代付
-		elif XAlienBattle.pay_silence(self, u, skill):
-			XYomiJingliu.pay(u, skill)  # 黄泉 paySkillCost 包装：10174 扣 9 层残梦
-			XMira.pay(u, skill)  # 米拉禁忌 paySkillCost 包装：登记生命代价
-			if XAlienBattle.glutton_mp(u) != null:
-				XAlienBattle.pay_glutton(u, c.mp)
-			else:
-				u.mp -= c.mp
-			u.tp -= c.tp
-			pay_hp(u, skill)  # YEP_SkillCore paySkillCost：MP／TP 之后扣 HP 费用
-			XSkillMastery.record(u, skill)  # YEP_SkillMasteryLevels paySkillCost 包装：战斗里记下技能，onAllActionsEnd 计次
-		u.pay_cooldown(skill)
+		pay_skill_cost(u, skill)
 		_otb_user_shift(u, skill)
 	# YEP_BattleEngineCore useItem：付费后 refresh，消费行动者此前的 dirty，并照 Game_BattlerBase.refresh 把 MP／TP 截回 [0, 上限]
 	# （付不起时 MP 4 用 5 的技能记 0，不是 -1；沙僧第六期 P1）。被挡的 useItem 原版直接返回、不 refresh，只刷缓存
@@ -1637,6 +1644,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
 	var tt := substitute_for(skill, t)
+	u = XTusu.apply_subject(u, skill)  # 屠苏 subject 包装：apply 里面各层（饿狼、云裳、渡鸦等）看到的出手者是屠苏
 	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
 	# 黄泉（modules.json 第 9 个）、甚尔（10）、宿傩（18）的 Game_Action.apply 包装在饿狼（19）、云裳（31）之内：
 	# 整次包装跑完再走外层的饿狼记帧与云裳指令／种针／觉醒引爆（沙僧二审 S2-1-03；镜流、渡鸦只管自己的行动，这里没有）
@@ -1793,6 +1801,7 @@ func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -
 
 ## Game_Action.apply：行动者有道法「破甲」时，期间附加的破甲·真气（2705）用它的倍率（XZhenqi.pojia_actor）
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
+	u = XTusu.apply_subject(u, skill)  # 屠苏 Game_Action.apply／subject 包装（在绑定之外）：武装技能整个 apply 以屠苏为出手者
 	if XBinding.blocks_apply(u, t):
 		return XBinding.unused_result(u, skill, t)  # 绑定 Game_Action.apply 包装：敌方效果打不到形态中的本体
 	var tusu_cmd := XTusu.apply_command(self, u, skill, t)  # 屠苏 Game_Action.apply 包装：归形、易武、化武

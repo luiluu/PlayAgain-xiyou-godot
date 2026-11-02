@@ -72,6 +72,7 @@ static func _call(spec: Dictionary, name: String, args: Array):
 static func kind_of(a) -> Dictionary:
 	if a == null or not a is XActor:
 		return {}
+	XTusu.register_kind()  # 原版屠苏模块装入时就 registerBinding；开机没打过仗就读档也得认得屠苏（审查第 24 期 P3-1）
 	for k in kinds:
 		if bool(_call(kinds[k], "is_owner", [a])):
 			return kinds[k]
@@ -225,7 +226,6 @@ static func _fresh() -> Dictionary:
 
 ## startBattle（原 startBattle 之后）：在场的本体建新数据、去掉形态状态
 static func start_battle(logic) -> void:
-	XTusu.register_kind()  # 角色模块的种类（原版各自安装时 register）
 	clear_all()
 	_logic_ref = weakref(logic)
 	_opening = true

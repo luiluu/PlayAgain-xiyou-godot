@@ -27,6 +27,9 @@ static func run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swit
 	var guyu = XGuyu.formula(item, a, b, true)  # 谷雨 evalDamageFormula 包装（异化之外）：治疗按最大生命比例、绽放与终结按威力
 	if guyu != null:
 		return {"available": true, "value": float(guyu), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
+	var tusu = XTusu.formula(item, a, b)  # CodexTusu.damage(a,b,'键')（176 屠苏）：转换器还没标成 module（屠苏没进切片，A 车道），先按原文认
+	if tusu != null:
+		return {"available": true, "value": float(tusu), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	XAlienBattle.push_formula(item, a, b, true)
 	var out := _run_item(item, a, b, variables, switches, execute, random, resource_context)
 	XAlienBattle.pop_formula()
