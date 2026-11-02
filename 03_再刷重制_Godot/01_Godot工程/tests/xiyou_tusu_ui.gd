@@ -133,8 +133,35 @@ func _forge() -> void:
 	page.queue_free()
 
 
+## 技能页用「器谱」（scope 0、效果公共事件 9014）：不选人直接用，预约 9014、页面带 to_map 关掉（主菜单接着关、回地图执行）
+func _skill_page() -> void:
+	var s := _state()
+	var page := XSkillScene.new()
+	page.actor_index = s.party.find(TUSU)
+	add_child(page)
+	var forge := XTusu.skill_id("menu.forge")
+	var hit := -1
+	for ti in page.types().size():
+		page.type_index = ti
+		var i := page.entries().find_custom(func(x): return int(x.id) == forge)
+		if i >= 0:
+			hit = i
+			break
+	check("skill.listed", hit >= 0)
+	page.index = hit
+	page.mode = "list"
+	var closed := [false]
+	page.closed.connect(func(): closed[0] = true)
+	check("skill.usable", page.usable(page.current()), [page.current().get("name"), page.current().get("occasion"), page.logic.can_use(page.actor(), page.current())])
+	page.ok()
+	check("skill.ce", s.peek_common_event() == 9014 and page.to_map and closed[0] and page.mode == "list", [s.peek_common_event(), page.to_map, closed[0], page.mode])
+	s.clear_common_event()
+	page.queue_free()
+
+
 func _go() -> void:
 	_battle_ui()
 	_forge()
+	_skill_page()
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_tusu_ui", "passed": checks - failures.size(), "total": checks, "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)
