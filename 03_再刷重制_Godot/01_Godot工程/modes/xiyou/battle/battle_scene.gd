@@ -1544,6 +1544,10 @@ func _hit_visual(l: Dictionary) -> bool:
 	var ts: XBattlerSprite = sprites[t]
 	var hit: bool = not (l.missed or l.evaded)
 	show_views(l.get("views", {}))
+	for p in l.get("toji_anims", []):
+		var a := _start_animation(int(p[0]), t)  # 角色形象 apply 包装：甚尔武器库／反弹／游云追加段命中时 target.startAnimation(动画, false, 延迟)
+		if a:
+			a.wait = int(p[1])
 	for c in l.get("custom_popups", []):
 		_custom_popup(c.target, str(c.text), int(c.format))  # 黑闪 announce：customPopup(label, 2)
 		_log_add(str(c.log))  # _logWindow.push('addText', 名字＋打出了＋label)
