@@ -127,5 +127,17 @@ func _ready() -> void:
 		var key := str(XTusuXuan.DAMAGE[id].keys()[0])
 		check("no_owner.%d.coef" % id, XTusuXuan.coefficient(id, key) == floori(XGuyu.curve(1, XTusuXuan.DAMAGE[id][key], XTusuXuan.LEVELS)))
 		check("no_owner.%d.not_created" % id, not s.actors.has(id), s.actors.keys())
+	# 审查第 24 期 P3-1：开机后没打过仗（屠苏种类没登记）就读档，屠苏身上的武具／空形态状态也要清掉（原版模块装入时就登记）
+	var s9 := fresh()
+	var t9 := s9.actor(XTusu.ACTOR)
+	var forms := [XTusu.state_id("armed"), XTusu.state_id("empty")]
+	for sid in forms:
+		t9.state_ids.append(sid)
+		t9.state_turns[sid] = 0
+	var dump := JSON.stringify(s9.to_dict())
+	XBinding.kinds.erase("tusu")
+	var loaded9 := XState.from_dict(JSON.parse_string(dump))
+	check("load_forms.cleared", not forms.any(func(sid): return loaded9.actor(XTusu.ACTOR).state_ids.has(sid)), loaded9.actor(XTusu.ACTOR).state_ids)
+	check("load_forms.kind", XBinding.kinds.has("tusu"))
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_tusu", "passed": checks - failures.size(), "total": checks, "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)
