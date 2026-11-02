@@ -149,6 +149,48 @@ func _recruit(c: Dictionary) -> void:
 			check(c.id, (text != "") == bool(o.ok) and [text] == o.toasts and _same_party(_party(s), o.after), [text, _party(s), o.after])
 
 
+## 内存读档（沙僧二审 S2-2-01）：真走 to_dict→JSON→from_dict，读档前的当前局与新档进阶次数不同。
+## 原版 extractSaveContents 包装在原函数之后 syncAll，看的是新档（guyu_probe stats.s5.lv60 经 encode／restore 后含 10297）。
+## 读后不进战斗查技能账本、技能表、被动缓存，再进战斗 setup 后、结束后各查一次；全程与「新档存档前」的同一角色比。
+func _load_cases() -> void:
+	for pair in [[5, 0], [0, 5]]:
+		var saved_stage: int = pair[0]
+		var old_stage: int = pair[1]
+		var tag := "load.s%d_over_s%d" % [saved_stage, old_stage]
+		var src := _state()
+		var g := _guyu(src, {"level": 60, "stage": saved_stage})
+		if not src.party.has(XGuyu.ACTOR):
+			src.add_actor(XGuyu.ACTOR)
+		var want := _own(g.skill_ids)
+		want.sort()
+		var want_listed := _own(g.skills().map(func(x): return int(x.id)))
+		var want_cache := JSON.stringify(g.passive_cache())
+		check(tag + ".source", want.has(XGuyu.SKILL.spring) == (saved_stage >= 5), want)
+		var blob := JSON.stringify(src.to_dict())
+		var old := _state()  # 读档前的当前局：同等级、另一进阶次数
+		_guyu(old, {"level": 60, "stage": old_stage})
+		check(tag + ".old_current", XState.current == old and XGuyu.stage(old.actor(XGuyu.ACTOR)) == old_stage)
+		var s := XState.from_dict(JSON.parse_string(blob))
+		var a := s.actor(XGuyu.ACTOR)
+		var phases := {}
+		phases["menu"] = [XState.current == s, XGuyu.stage(a)]
+		_load_same(tag + ".menu", a, want, want_listed, want_cache)
+		var battle := XBattleLogic.new()
+		battle.setup(3, s)
+		_load_same(tag + ".battle", a, want, want_listed, want_cache)
+		battle.end_battle(0)
+		_load_same(tag + ".after_battle", a, want, want_listed, want_cache)
+		check(tag + ".current_stage", phases.menu == [true, saved_stage], phases)
+
+
+func _load_same(name: String, a: XActor, want: Array, want_listed: Array, want_cache: String) -> void:
+	var learned := _own(a.skill_ids)
+	learned.sort()
+	var listed := _own(a.skills().map(func(x): return int(x.id)))
+	check(name, learned == want and listed == want_listed and JSON.stringify(a.passive_cache()) == want_cache,
+		[learned, want, listed, want_listed])
+
+
 func _run() -> void:
 	var ref = XDB.load_json(ORACLE)
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
@@ -164,6 +206,7 @@ func _run() -> void:
 		else:
 			_recruit(c)
 	check("covers_all", seen == 29, seen)
+	_load_cases()
 	finish()
 
 
