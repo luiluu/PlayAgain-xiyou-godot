@@ -991,6 +991,65 @@ static func ai_raw(a, b, item: Dictionary):
 	return 0.0
 
 
+# ---- 器谱：开刃（T.forgeRows／setKairen／syncKairenSkills；菜单画面没做） ----
+const REFORGE_ITEM := 2530
+const REFORGE_COUNT := 10
+const FORGE_NAMES := {"forgeInfo": "每次进阶可开刃一相，最多三相；重新开刃消耗人道意志碎片×10", "forgePick": "第%d道铭文：选择开刃的武相",
+	"forgeTitle": "器谱　开刃 %d/3", "kairen_sword": "开刃·剑", "kairen_bow": "开刃·弓", "kairen_shield": "开刃·盾", "kairen_book": "开刃·书", "kairen_hammer": "开刃·锤",
+	"kairenDesc_sword": "剑气纵横附带群体破防", "kairenDesc_bow": "贯日击杀目标时返还锁定", "kairenDesc_shield": "霸体回合主动施放金汤时，护盾量额外提高20%",
+	"kairenDesc_book": "和鸣增幅一次治疗或护盾法术；仍支付支援费用", "kairenDesc_hammer": "挫势可叠到2层"}
+
+
+static func _stage(s: XState) -> int:
+	return clampi(XAdvance.rank(s, ACTOR), 0, 3)
+
+
+## 器谱各行：标题「器谱　开刃 n/3」，三道铭文（进阶到了才开放）
+static func forge_rows(s: XState) -> Array:
+	var k := kairen(s)
+	var n := _stage(s)
+	var rows := [{"label": FORGE_NAMES.forgeTitle % n, "enabled": false}]
+	for i in 3:
+		var w = k[i] if i < k.size() else null
+		rows.append({"slot": i, "label": ("" if i < n else "（未开放）") + "第%d道铭文：" % (i + 1) + (FORGE_NAMES["kairen_" + str(w)] if w != null else "未开刃"), "enabled": i < n})
+	return rows
+
+
+## setKairen：第 slot 道铭文开刃 w（已开在别的铭文上的相不能再开）；换掉已开的相要人道意志碎片 ×10，不够返回提示，成功返回空
+static func set_kairen(s: XState, slot: int, w: String) -> String:
+	var k := kairen(s).duplicate()
+	if slot >= _stage(s) or not WEAPONS.has(w):
+		return "invalid"
+	if k.has(w) and k.find(w) != slot:
+		return "invalid"
+	if slot < k.size() and k[slot] != null and k[slot] != w:
+		if s.item_count(REFORGE_ITEM) < REFORGE_COUNT:
+			return "重新开刃需要%s×%d" % [str(XDB.rec("Items", REFORGE_ITEM).get("name", "")), REFORGE_COUNT]
+		s.gain_item(REFORGE_ITEM, -REFORGE_COUNT)
+	while k.size() <= slot:
+		k.append(null)
+	k[slot] = w
+	s.flags[KAIREN_FLAG] = k
+	sync_kairen_skills(s)
+	return ""
+
+
+## syncKairenSkills：进阶阶数以内开了的相学「开刃·x」被动，其余忘掉（读档、开刃时同步）
+static func sync_kairen_skills(s: XState) -> void:
+	var a = s.actors.get(ACTOR) if s != null else null
+	if a == null:
+		return
+	var k := kairen(s).slice(0, _stage(s))
+	for w in WEAPONS:
+		var id := skill_id("kairen." + w)
+		if id <= 0:
+			continue
+		if k.has(w):
+			a.learn_skill(id)
+		else:
+			a.forget_skill(id)
+
+
 # ---- 噬主 ----
 ## B.percentMpCost：MP 只按最大 MP 比例（基础 0），照常乘 mcr、减耗
 static func percent_cost(a, skill: Dictionary, rate: float) -> int:

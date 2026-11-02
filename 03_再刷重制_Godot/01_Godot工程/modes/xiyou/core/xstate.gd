@@ -897,6 +897,7 @@ static func from_dict(d: Dictionary) -> XState:
 		"g": rom.get("g", []).map(func(v): return int(v)), "gn": int(rom.get("gn", 0)),
 		"m": rom.get("m", []).map(func(v): return int(v))}  # 藏宝图本轮挖过的宝点（$gameParty.GameMapxy，见 XTreasureMap）
 	s.flags = d.get("flags", {})
+	XTusu.sync_kairen_skills(s)  # 屠苏 extractSaveContents 包装：按进阶阶数同步开刃被动（开刃记在 flags，读完才同步）
 	s.actor_name = str(d.get("actorName", ""))
 	var dg = d.get("designation", {})
 	s.designation = {"name": str(dg.name), "icon": int(dg.icon), "color": str(dg.color)} if dg is Dictionary and dg.has("name") else {}
