@@ -225,6 +225,82 @@ static func damage(a, _b, key: String) -> float:
 	return (t.mat if MAGIC_KEYS.has(key) else t.atk) * coefficient(key)
 
 
+## 技能公式「CodexTusu.damage(a,b,'键')」（武装技能、支援、本体技能）：公式程序不认引号，这里直接算；不是这种公式返回 null
+static var _formula_re: RegEx = null
+static func formula(item: Dictionary, a, b):
+	var f := str(item.get("damage", {}).get("formula", ""))
+	if not f.begins_with("CodexTusu.damage("):
+		return null
+	if _formula_re == null:
+		_formula_re = RegEx.create_from_string("^CodexTusu\\.damage\\(\\s*a\\s*,\\s*b\\s*,\\s*'(\\w+)'\\s*\\)$")
+	var m := _formula_re.search(f.strip_edges())
+	return damage(a, b, m.get_string(1)) if m != null else null
+
+
+## Game_Action.apply／subject 包装（外层）：持武者用武装技能时，整个 apply 以屠苏为出手者（按屠苏的属性与加成结算；屠苏来源豁免异界制约，
+## 屠苏不是导入角色，缩放本来就是 1）。apply 外面（付费、反击判定、行动次数）仍是持武者
+static func apply_subject(u, skill: Dictionary):
+	if u is XActor and not is_tusu(u) and key_of(skill).begins_with("arm."):
+		var t = tusu()
+		if t != null:
+			return t
+	return u
+
+
+const ARM_ACTIONS := 2
+## T.lockRate／hemingRate／huzhenRate：随屠苏等级（20～60 级插值）
+static func lock_rate(t) -> float:
+	return XGuyu.curve(int(t.level) if t != null else 1, [1.3, 1.5], [20, 60])
+
+
+static func heming_rate(t) -> float:
+	return XGuyu.curve(int(t.level) if t != null else 1, [1.2, 1.5], [20, 60])
+
+
+static func huzhen_rate(t) -> float:
+	return XGuyu.curve(int(t.level) if t != null else 1, [0.85, 0.70], [20, 60])
+
+
+## 伤害钩子 tusu（CodexDamageHooks）：武装技能按武相定物理／魔法、威力按持武者本回合行动次数分摊（2 次为基准）、
+## 贯日打锁定目标、敕令带和鸣；护阵中的角色受伤减免。a 是出手者（武装技能时已是屠苏，见 apply_subject）
+## 不做（四期剩余）：支援上下限（res.after）、止戈环支援加成（CFG.relicBonus.support＝1，乘了也不变）、挫势（敌人 _codexTusuCuoshi，挫势还没移植）
+static func damage_ops(item: Dictionary, a, b) -> Array:
+	var ops := []
+	var key := key_of(item)
+	if key.begins_with("arm.") and ARM_WEAPON.has(key.substr(4)):
+		ops.append({"op": "set", "field": "mode", "value": "magical" if ARM_WEAPON[key.substr(4)] == "book" else "physical"})
+		var t = tusu()
+		var td = data(t)
+		if td != null and int(td.host_actions) > 0:
+			ops.append({"op": "mul", "field": "finalMultiplier", "value": float(ARM_ACTIONS) / maxi(1, int(td.host_actions))})
+		var wielder = a
+		if is_tusu(a) and holder(a) != null:
+			wielder = holder(a)
+		if key == "arm.guanri" and wielder is XBattler and is_same(lock_target(wielder), b):
+			ops.append({"op": "mul", "field": "finalMultiplier", "value": lock_rate(t)})
+		if key == "arm.chiling" and wielder is XBattler and wielder.state_ids.has(state_id("heming")):
+			ops.append({"op": "mul", "field": "finalMultiplier", "value": heming_rate(t)})
+	if b is XActor and state_id("huzhen") > 0 and b.state_ids.has(state_id("huzhen")):
+		ops.append({"op": "mul", "field": "incomingMultiplier", "value": huzhen_rate(tusu())})
+	return ops
+
+
+## BattleManager.endAction 包装（原 endAction 之前，屠苏两层里的外层）：锁定、和鸣启动即消费（没打中或被免疫也不退回）。
+## 贯日的锁定在支援「锁定」移植后补（四期剩余）
+static func end_action(u, skill) -> void:
+	if not skill is Dictionary or u == null:
+		return
+	var key := key_of(skill)
+	var heming := state_id("heming")
+	if key == "arm.chiling" and heming > 0 and u.state_ids.has(heming):
+		u.remove_state(heming)
+
+
+## 持武者的锁定目标（host._codexTusuLock.target）；锁定由支援「锁定」给，四期剩余，现在恒为空
+static func lock_target(_h):
+	return null
+
+
 # ---- 噬主 ----
 ## B.percentMpCost：MP 只按最大 MP 比例（基础 0），照常乘 mcr、减耗
 static func percent_cost(a, skill: Dictionary, rate: float) -> int:

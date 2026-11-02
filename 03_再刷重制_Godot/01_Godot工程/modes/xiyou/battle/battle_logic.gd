@@ -824,6 +824,7 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(execute(u, skill, target))
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
+	XTusu.end_action(u, skill)  # 屠苏 endAction 包装（原 endAction 之前，在谷雨之外）：敕令消费和鸣
 	XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：本次行动里的归根反馈（画面）
 	if started and not skipped:
@@ -1617,6 +1618,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
 	var tt := substitute_for(skill, t)
+	u = XTusu.apply_subject(u, skill)  # 屠苏 subject 包装：apply 里面各层（饿狼、云裳、渡鸦等）看到的出手者是屠苏
 	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
 	# 黄泉（modules.json 第 9 个）、甚尔（10）、宿傩（18）的 Game_Action.apply 包装在饿狼（19）、云裳（31）之内：
 	# 整次包装跑完再走外层的饿狼记帧与云裳指令／种针／觉醒引爆（沙僧二审 S2-1-03；镜流、渡鸦只管自己的行动，这里没有）
@@ -1773,6 +1775,7 @@ func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -
 
 ## Game_Action.apply：行动者有道法「破甲」时，期间附加的破甲·真气（2705）用它的倍率（XZhenqi.pojia_actor）
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
+	u = XTusu.apply_subject(u, skill)  # 屠苏 Game_Action.apply／subject 包装（在绑定之外）：武装技能整个 apply 以屠苏为出手者
 	if XBinding.blocks_apply(u, t):
 		return XBinding.unused_result(u, skill, t)  # 绑定 Game_Action.apply 包装：敌方效果打不到形态中的本体
 	var tusu_cmd := XTusu.apply_command(self, u, skill, t)  # 屠苏 Game_Action.apply 包装：归形、易武、化武
