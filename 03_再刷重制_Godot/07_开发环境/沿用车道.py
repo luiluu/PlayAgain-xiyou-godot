@@ -104,6 +104,7 @@ def plan(root, base, scenes, records, selector, table=None):
     table = table or selector.TABLE
     notes, reused = [], {}
     usable = {}  # 场景 → (提交, 来源)：新的提交在前
+    per = []     # [(提交, 来源, 该提交通过且没被波及的场景, 波及的场景)]：替补按提交逐个找
     for sha, (src, ok) in records.items():
         try:
             sel = selector.select(root, sha, table, sample=False)
@@ -120,6 +121,7 @@ def plan(root, base, scenes, records, selector, table=None):
         hit = set(sel['scenes'])
         for n in ok - hit:
             usable.setdefault(n, (sha, src))
+        per.append((sha, src, ok - hit, hit))
     sample = selector.load_sample(table)
     all_scenes = sorted(p.name for p in (Path(root) / PROJECT_REL / 'tests').glob('*.tscn'))
     chunks = {s: c for _, c in selector.sample_chunks(all_scenes, sample) for s in c} if sample else {}
@@ -128,9 +130,11 @@ def plan(root, base, scenes, records, selector, table=None):
         if s in usable:
             reused[s] = usable[s] + (s,)
             continue
-        alt = next((m for m in chunks.get(s, []) if m in usable), None)
+        # 同组替补只在「s 自己没被 C→现在的差异波及」的 C 里找：s 被改过（如只改了这一段的 .tscn）就照跑（审查 26 P2-1）
+        alt = next(((sha, src, m) for sha, src, good, hit in per if s not in hit
+                    for m in chunks.get(s, []) if m in good), None)
         if alt:
-            reused[s] = usable[alt] + (alt,)
+            reused[s] = alt
         else:
             keep.append(s)
     return keep, reused, notes
