@@ -570,6 +570,18 @@ class SampleTests(Fixture):
         self.put(CORE / 'battler.gd', 'class_name XBattler\n# changed\n')
         self.assertEqual(self.pick()['scenes'], self.pick()['scenes'])
 
+    def test_four_consecutive_commits_cover_each_group(self):
+        """审查 26 P3-2：种子是沿第一父的提交数，主线连续 4 个提交正好轮完每组 4 段（原按提交号哈希，不保证）。"""
+        self.put(CORE / 'battler.gd', 'class_name XBattler\n# changed\n')
+        seen, seeds = set(), []
+        for i in range(4):
+            self.put(UI / 'nobody.gd', 'class_name XNobody\n# %d\n' % i)
+            self.commit('step %d' % i)
+            seeds.append(sel.sample_seed(self.root))
+            seen.update(x for x in self.pick()['scenes'] if x in self.rules)
+        self.assertEqual(seeds, list(range(seeds[0], seeds[0] + 4)))
+        self.assertEqual(seen, set(self.rules))
+
     def test_changed_part_runs_and_represents_its_group(self):
         self.put(CORE / 'battler.gd', 'class_name XBattler\n# changed\n')
         self.put(TESTS / 'xiyou_rules_d2c.tscn', '[ext_resource path="res://tests/xiyou_rules.gd" id="1"]\n# edited\n')
@@ -641,6 +653,18 @@ class ReuseTests(SampleTests):
                                    {c: ('本机', {'xiyou_rules_d1b.tscn'})}, sel)
         self.assertEqual(keep, ['xiyou_rules_d2.tscn'])                    # 第二组车道一段也没测
         self.assertEqual(used['xiyou_rules_d1c.tscn'][2], 'xiyou_rules_d1b.tscn')
+
+    def test_touched_part_is_not_replaced_by_group_mate(self):
+        """审查 26 P2-1：差异只改了 d1c 这一段的 .tscn，C 时 d1b、d1c 都通过；d1c 被波及，不能拿 d1b 的旧结果顶掉。"""
+        c = self.lane()
+        self.put(TESTS / 'xiyou_rules_d1c.tscn', '[ext_resource path="res://tests/xiyou_rules.gd" id="1"]\n# edited\n')
+        keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_rules_d1c.tscn'],
+                                   {c: ('本机', {'xiyou_rules_d1b.tscn', 'xiyou_rules_d1c.tscn'})}, sel)
+        self.assertEqual((keep, used), (['xiyou_rules_d1c.tscn'], {}))
+        old = self.g('rev-parse', 'HEAD~1')                                 # 更早的 C 也一样：被波及就不替补
+        keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_rules_d1c.tscn'],
+                                   {c: ('本机', {'xiyou_rules_d1c.tscn'}), old: ('本机', {'xiyou_rules_d1b.tscn'})}, sel)
+        self.assertEqual(keep, ['xiyou_rules_d1c.tscn'])
 
     def test_local_records_need_same_environment(self):
         sdir = self.root / 'state'

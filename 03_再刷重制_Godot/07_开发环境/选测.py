@@ -22,7 +22,7 @@
 - --list（车道手写选测前用，tools35）：只在标准输出逐行打场景名（不带 .tscn，可直接接到 并行测试.py 后面），理由与结论改到标准错误；
   整轮时不打场景名、退出 0 并在标准错误说明。车道交付的手写选测名单至少含这里列出的场景（至少战斗核心类），不跑要在交付单说明为什么。
 - 抽样（sample，用户 2026-11-02 同意，tools43）：选测（不是整轮）选到 xiyou_rules*／xiyou_smart_ai* 时，每组按名字排序、每 chunk 段
-  （rules 每个难度 4 段、smart_ai 每 4 段）只留 1 段，留哪段按提交号（--head 或 HEAD）确定性轮换。改了测试本身（exemptGroups 里的组）
+  （rules 每个难度 4 段、smart_ai 每 4 段）只留 1 段，留哪段按 --head 或 HEAD 沿第一父的提交数取余轮换（主线连续 4 个提交轮完一组）。改了测试本身（exemptGroups 里的组）
   选上的段照跑、并算作该组已有代表。段数不是 chunk 的整数倍时这一族不抽样。全量（不加 --affected、选测结论整轮）照跑全套。
   回退：对照表 sample.enabled 设 false，或环境变量 XIYOU_SAMPLE=0。
 - 基准不存在、对照表无效时退出 2。
@@ -113,6 +113,11 @@ def sample_chunks(all_scenes, sample):
         if n > 1 and members and len(members) % n == 0:
             out += [(fam['name'], members[i:i + n]) for i in range(0, len(members), n)]
     return out
+
+
+def sample_seed(root, head=None):
+    """抽样种子：HEAD（或 --head）沿第一父的提交数。主线上相邻提交差 1，同一组连续 4 个提交正好轮完 4 段（审查 26 P3-2；原按提交号哈希是伪随机）。"""
+    return int(git(root, 'rev-list', '--first-parent', '--count', head or 'HEAD').strip())
 
 
 def apply_sample(scenes, pinned, all_scenes, sample, seed):
@@ -389,7 +394,7 @@ def select(root, base, table=TABLE, head=None, sample=True):
         reasons.append(('（全部场景）', '选中了全部 %d 个场景，按整轮跑' % len(tests.scenes), '', [], True))
     sampled = []
     if sample_cfg and not full:
-        seed = int(git(root, 'rev-parse', head or 'HEAD').strip()[:8], 16)
+        seed = sample_seed(root, head)
         scenes, sampled = apply_sample(scenes, pinned, tests.scenes, sample_cfg, seed)
     return dict(base=shown_base, files=files, full=full, scenes=sorted(scenes), checks=sorted(checks), reasons=reasons,
                 sampled=sampled)
