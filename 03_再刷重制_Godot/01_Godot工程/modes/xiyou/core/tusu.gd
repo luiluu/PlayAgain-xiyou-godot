@@ -165,7 +165,21 @@ static func register_kind() -> void:
 		"on_clear": _on_clear})
 
 
-static func _on_bind(owner, h, _reason, _previous) -> void:
+## CFG.lines、CFG.names：战斗日志里的台词（BattleManager._logWindow addText）
+const LINES := {"devour": "屠苏：「魔力不够了——借你的。」", "devourFail": "屠苏：「你也撑不住了……先放开我。」", "fallen": "屠苏：「……起来。我还没认可你呢。」",
+	"huawu": "屠苏：「握稳。我不喜欢掉在地上。」", "reserve": "下回合武相：%s", "ret": "屠苏：「换个人。别误会，不是你不好。」", "support": "屠苏：「这一下，我自己来。」",
+	"yiwu_book": "屠苏：「书。字念对，别念错。」", "yiwu_bow": "屠苏：「弓。看准了再松手。」", "yiwu_hammer": "屠苏：「锤。砸它的势，不必砸它的命。」",
+	"yiwu_shield": "屠苏：「盾。站到我后面。」", "yiwu_sword": "屠苏：「剑。放开了砍。」"}
+const NAMES := {"sword": "剑", "bow": "弓", "shield": "盾", "book": "书", "hammer": "锤"}
+
+
+## 日志一行（画面 _log_add），跟内部施放的命中一起交回战斗记录；回合开始换武相那句在下一次取走时一起出
+static func _line(key: String, arg := "") -> void:
+	var text: String = LINES[key]
+	_logs.append({"type": "battle_text", "text": text % arg if arg != "" else text})
+
+
+static func _on_bind(owner, h, reason, _previous) -> void:
 	var logic = _logic()
 	if _d.is_empty():
 		_d = _fresh()
@@ -177,13 +191,20 @@ static func _on_bind(owner, h, _reason, _previous) -> void:
 	logic.state.flags[LAST_FLAG] = w
 	_set_reserve(logic, owner, null)
 	_set_hold(logic, h, w)
+	if reason != "opening":
+		_line("huawu")
 
 
-static func _on_unbind(owner, h, _reason) -> void:
+static func _on_unbind(owner, h, reason) -> void:
 	var logic = _logic()
 	_clear_host_states(logic, h)
 	if data(owner) != null:
 		_set_reserve(logic, owner, null)
+	if reason == "death-host":
+		_line("fallen")
+	elif reason == "return":
+		_line("ret")
+	# 原版另给 W.CodexTusuDevour.unbind／paid 计数，但正式版没有定义 CodexTusuDevour，计数从不生效，不移植
 
 
 static func _on_round_start(owner, _n) -> void:
@@ -195,6 +216,7 @@ static func _on_round_start(owner, _n) -> void:
 		d.weapon = d.reserve
 		logic.state.flags[LAST_FLAG] = d.weapon
 		_set_hold(logic, holder(owner), d.weapon)
+		_line("yiwu_" + str(d.weapon))
 	_set_reserve(logic, owner, null)
 	d.supported = {}
 	var h = holder(owner)
@@ -727,6 +749,7 @@ static func cast(logic, owner, skill_id: int, list: Array, free: bool, setup: Di
 		_logs.append(logic.apply(owner, skill, x))
 	setup.successful = bool(_act.get("successful", false))
 	_act = prev
+	_line("support")
 	return list
 
 
@@ -1013,6 +1036,7 @@ static func can_maintain(w, h = null) -> bool:
 static func devour_fail(t) -> bool:
 	if t == null or not XBinding.is_bound(t):
 		return false
+	_line("devourFail")
 	return XBinding.unbind(t, "devour")
 
 
@@ -1074,6 +1098,8 @@ static func pay_after(a, skill: Dictionary, who) -> void:
 		t.mp = t.mp - own_cost(t, key)
 	if who == "host" and is_tusu(a) and h != null:
 		h.mp = h.mp - devour_cost(h, key)
+	if who == "host":
+		_line("devour")
 
 
 # ---- 技能条件与指令 ----
@@ -1128,6 +1154,7 @@ static func apply_command(logic, u, skill: Dictionary, t) -> Dictionary:
 		XBinding.unbind(u, "return")
 	elif key.begins_with("yiwu."):
 		_set_reserve(logic, u, key.substr(5))
+		_line("reserve", NAMES[key.substr(5)])
 	elif XBinding.can_host(u, t):
 		if _d.is_empty():
 			_d = _fresh()

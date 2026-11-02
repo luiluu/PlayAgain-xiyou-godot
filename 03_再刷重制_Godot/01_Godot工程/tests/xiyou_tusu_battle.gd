@@ -288,6 +288,9 @@ func _go() -> void:
 			if want.ret != null or out[0] != null:
 				check(tag + ".ret", _norm(out[0]) == _norm(want.ret), [out[0], want.ret])
 			check(tag + ".hits", _norm(_hits(out[1])) == _norm(want.hits), [_hits(out[1]), want.hits])
+			# 台词（日志 addText）：本步的记录，加上还没取走的（回合开始换武相那句、直接付费的噬主）
+			var lines := ((out[1] as Array) + XTusu.take_logs()).filter(func(l): return l is Dictionary and l.get("type") == "battle_text").map(func(l): return str(l.text))
+			check(tag + ".lines", lines == (want.get("lines", []) as Array), [lines, want.get("lines")])
 			var got: Dictionary = _norm(_snap())
 			var ws: Dictionary = _norm(want.snap)
 			for k in ws.get("cooldown", {}):

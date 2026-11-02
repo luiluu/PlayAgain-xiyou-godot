@@ -1034,6 +1034,7 @@
       "coef": 15000
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -1350,6 +1351,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -1678,6 +1682,7 @@
       "mp": 65
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -2009,6 +2014,7 @@
       "coef": 18000
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -2340,6 +2346,7 @@
       "coef": 25000
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -2666,6 +2673,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：弓"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -2993,6 +3003,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：弓"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -3318,6 +3331,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「弓。看准了再松手。」"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -3644,6 +3660,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：书"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -3969,6 +3988,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「书。字念对，别念错。」"
+     ],
      "snap": {
       "round": 3,
       "tusu": {
@@ -4295,6 +4317,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「换个人。别误会，不是你不好。」"
+     ],
      "snap": {
       "round": 3,
       "tusu": {
@@ -4615,6 +4640,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 4,
       "tusu": {
@@ -4935,6 +4961,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 4,
       "tusu": {
@@ -5610,6 +5637,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -5944,6 +5974,7 @@
        53
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -6269,6 +6300,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -6601,6 +6633,9 @@
        308
       ]
      ],
+     "lines": [
+      "屠苏：「……起来。我还没认可你呢。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -6922,6 +6957,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -7245,6 +7281,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -7567,6 +7606,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -7891,6 +7931,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -8600,6 +8641,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -8932,6 +8976,7 @@
       ]
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -9258,6 +9303,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -9590,6 +9636,9 @@
       ]
      },
      "hits": [],
+     "lines": [
+      "屠苏：「魔力不够了——借你的。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -9916,6 +9965,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -10240,6 +10290,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「你也撑不住了……先放开我。」"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -10563,6 +10616,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -10889,6 +10945,7 @@
       "mp": 45
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -11215,6 +11272,7 @@
       "mp": 0
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -11539,6 +11597,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -11869,6 +11928,7 @@
       ]
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -12193,6 +12253,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -12517,6 +12578,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -12847,6 +12909,9 @@
       ]
      },
      "hits": [],
+     "lines": [
+      "屠苏：「魔力不够了——借你的。」"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -13169,6 +13234,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -13831,6 +13897,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -14167,6 +14236,7 @@
        72695258
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -14493,6 +14563,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -14829,6 +14900,9 @@
        72695258
       ]
      ],
+     "lines": [
+      "屠苏：「魔力不够了——借你的。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -15153,6 +15227,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -15846,6 +15921,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -16188,6 +16266,7 @@
        60579382
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -16514,6 +16593,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -16857,6 +16937,7 @@
        90869072
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -17183,6 +17264,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：锤"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -17508,6 +17592,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「锤。砸它的势，不必砸它的命。」"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -17844,6 +17931,7 @@
        121158763
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -18185,6 +18273,7 @@
        25
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -18518,6 +18607,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -18861,6 +18951,7 @@
        17
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -19194,6 +19285,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -19931,6 +20023,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -20279,6 +20374,7 @@
        87234310
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -20605,6 +20701,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：弓"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -20930,6 +21029,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「弓。看准了再松手。」"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -21272,6 +21374,7 @@
        87234310
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -21620,6 +21723,7 @@
        174468619
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -21946,6 +22050,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：盾"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -22271,6 +22378,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「盾。站到我后面。」"
+     ],
      "snap": {
       "round": 3,
       "tusu": {
@@ -22600,6 +22710,7 @@
       "uses": 1
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 3,
       "tusu": {
@@ -22940,6 +23051,7 @@
        21
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 3,
       "tusu": {
@@ -23280,6 +23392,7 @@
        21
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 3,
       "tusu": {
@@ -23612,6 +23725,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：锤"
+     ],
      "snap": {
       "round": 3,
       "tusu": {
@@ -23943,6 +24059,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「锤。砸它的势，不必砸它的命。」"
+     ],
      "snap": {
       "round": 4,
       "tusu": {
@@ -24285,6 +24404,7 @@
        121158763
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 4,
       "tusu": {
@@ -24634,6 +24754,7 @@
        121158763
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 4,
       "tusu": {
@@ -24980,6 +25101,7 @@
        15
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 4,
       "tusu": {
@@ -25326,6 +25448,7 @@
        17
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 4,
       "tusu": {
@@ -25662,6 +25785,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 5,
       "tusu": {
@@ -25990,6 +26114,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 5,
       "tusu": {
@@ -26724,6 +26849,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -27060,6 +27188,7 @@
        72695258
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -27406,6 +27535,7 @@
        87961262
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -27752,6 +27882,7 @@
        73301052
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -28078,6 +28209,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：弓"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -28403,6 +28537,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「弓。看准了再松手。」"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -28730,6 +28867,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -29081,6 +29219,7 @@
        261702929
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -29407,6 +29546,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：盾"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -29732,6 +29874,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「盾。站到我后面。」"
+     ],
      "snap": {
       "round": 3,
       "tusu": {
@@ -30059,6 +30204,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 3,
       "tusu": {
@@ -30385,6 +30531,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：书"
+     ],
      "snap": {
       "round": 3,
       "tusu": {
@@ -30710,6 +30859,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「书。字念对，别念错。」"
+     ],
      "snap": {
       "round": 4,
       "tusu": {
@@ -31037,6 +31189,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 4,
       "tusu": {
@@ -31380,6 +31533,7 @@
        181738145
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 4,
       "tusu": {
@@ -31706,6 +31860,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：锤"
+     ],
      "snap": {
       "round": 4,
       "tusu": {
@@ -32031,6 +32188,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「锤。砸它的势，不必砸它的命。」"
+     ],
      "snap": {
       "round": 5,
       "tusu": {
@@ -32365,6 +32525,7 @@
        104681172
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 5,
       "tusu": {
@@ -32696,6 +32857,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 6,
       "tusu": {
@@ -33026,6 +33188,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 6,
       "tusu": {
@@ -33779,6 +33942,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -34105,6 +34271,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -34447,6 +34614,9 @@
        90869072
       ]
      ],
+     "lines": [
+      "屠苏：「这一下，我自己来。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -34773,6 +34943,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：剑"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -35098,6 +35271,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「剑。放开了砍。」"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -35424,6 +35600,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -35778,6 +35955,9 @@
        87961262
       ]
      ],
+     "lines": [
+      "屠苏：「这一下，我自己来。」"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -36102,6 +36282,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 3,
       "tusu": {
@@ -36428,6 +36609,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 3,
       "tusu": {
@@ -36794,6 +36976,9 @@
        237495408
       ]
      ],
+     "lines": [
+      "屠苏：「这一下，我自己来。」"
+     ],
      "snap": {
       "round": 3,
       "tusu": {
@@ -37120,6 +37305,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：锤"
+     ],
      "snap": {
       "round": 3,
       "tusu": {
@@ -37445,6 +37633,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「锤。砸它的势，不必砸它的命。」"
+     ],
      "snap": {
       "round": 4,
       "tusu": {
@@ -37771,6 +37962,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 4,
       "tusu": {
@@ -38113,6 +38305,9 @@
        104681172
       ]
      ],
+     "lines": [
+      "屠苏：「这一下，我自己来。」"
+     ],
      "snap": {
       "round": 4,
       "tusu": {
@@ -38445,6 +38640,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：盾"
+     ],
      "snap": {
       "round": 4,
       "tusu": {
@@ -38776,6 +38974,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「盾。站到我后面。」"
+     ],
      "snap": {
       "round": 5,
       "tusu": {
@@ -39106,6 +39307,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 5,
       "tusu": {
@@ -39436,6 +39638,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 5,
       "tusu": {
@@ -39774,6 +39977,9 @@
        22
       ]
      ],
+     "lines": [
+      "屠苏：「这一下，我自己来。」"
+     ],
      "snap": {
       "round": 5,
       "tusu": {
@@ -40104,6 +40310,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：弓"
+     ],
      "snap": {
       "round": 5,
       "tusu": {
@@ -40433,6 +40642,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「弓。看准了再松手。」"
+     ],
      "snap": {
       "round": 6,
       "tusu": {
@@ -40759,6 +40971,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 6,
       "tusu": {
@@ -41107,6 +41320,9 @@
        261702929
       ]
      ],
+     "lines": [
+      "屠苏：「这一下，我自己来。」"
+     ],
      "snap": {
       "round": 6,
       "tusu": {
@@ -41431,6 +41647,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 6,
       "tusu": {
@@ -42160,6 +42377,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -42476,6 +42694,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -42802,6 +43023,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -43128,6 +43350,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -43476,6 +43699,9 @@
        130851465
       ]
      ],
+     "lines": [
+      "屠苏：「这一下，我自己来。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -43804,6 +44030,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：锤"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -44131,6 +44360,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「锤。砸它的势，不必砸它的命。」"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -44469,6 +44701,7 @@
        121158763
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -44814,6 +45047,7 @@
        121158763
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -45156,6 +45390,7 @@
        18
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -45490,6 +45725,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：书"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -45823,6 +46061,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「书。字念对，别念错。」"
+     ],
      "snap": {
       "round": 3,
       "tusu": {
@@ -46155,6 +46396,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 3,
       "tusu": {
@@ -46487,6 +46729,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 3,
       "tusu": {
@@ -46827,6 +47070,9 @@
        -840
       ]
      ],
+     "lines": [
+      "屠苏：「这一下，我自己来。」"
+     ],
      "snap": {
       "round": 3,
       "tusu": {
@@ -47167,6 +47413,7 @@
        -840
       ]
      ],
+     "lines": [],
      "snap": {
       "round": 3,
       "tusu": {
@@ -47497,6 +47744,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 3,
       "tusu": {
@@ -48197,6 +48445,7 @@
       "target": 3
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -48513,6 +48762,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -48841,6 +49093,7 @@
       "target": -1
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -49169,6 +49422,7 @@
       "target": -1
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -49495,6 +49749,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -49821,6 +50076,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -50149,6 +50405,7 @@
       "target": -1
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 1,
       "tusu": {
@@ -50475,6 +50732,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：锤"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -50800,6 +51060,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「锤。砸它的势，不必砸它的命。」"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -51128,6 +51391,7 @@
       "target": 0
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -51453,6 +51717,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -51781,6 +52046,7 @@
       "target": 0
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -52109,6 +52375,7 @@
       "target": -1
      },
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -52434,6 +52701,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -52758,6 +53026,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -53414,6 +53683,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「握稳。我不喜欢掉在地上。」"
+     ],
      "snap": {
       "round": 1,
       "tusu": {
@@ -53738,6 +54010,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 2,
       "tusu": {
@@ -54064,6 +54337,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "下回合武相：剑"
+     ],
      "snap": {
       "round": 2,
       "tusu": {
@@ -54389,6 +54665,9 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [
+      "屠苏：「剑。放开了砍。」"
+     ],
      "snap": {
       "round": 3,
       "tusu": {
@@ -54713,6 +54992,7 @@
      ],
      "ret": null,
      "hits": [],
+     "lines": [],
      "snap": {
       "round": 3,
       "tusu": {

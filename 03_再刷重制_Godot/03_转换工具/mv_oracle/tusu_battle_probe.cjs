@@ -36,6 +36,9 @@ w.BattleManager.actionBattleHud = () => true;
 w.BattleManager.otbDisplayWindow = () => stub;
 if (!w.$) w.$ = {};
 w.$.toaster = () => {};
+// 战斗日志：只记 addText 的台词（tusu5）
+const lines = [];
+const logWin = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : k === 'push' ? ((m, t) => { if (m === 'addText') lines.push(t); }) : (() => false), set: () => true});
 const key = b => !b ? null : b.isActor() ? 'a' + b.actorId() : 'e' + b.index();
 const TUSU = 176, PARTY = [1, 8, TUSU, 10], BIG_HP = 1e9, TROOP = 3;
 function battle(levels) {
@@ -50,7 +53,7 @@ function battle(levels) {
   w.Math.random = () => 0.99;
   const bm = w.BattleManager; bm.setup(TROOP, false, false);
   w.Math.random = () => 0.5;
-  bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
+  bm._logWindow = logWin; bm._spriteset = stub; bm._statusWindow = stub;
   for (const t of w.$gameTroop.members()) t._paramPlus[0] = BIG_HP;
   for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) { b.need_refresh = true; b.refresh(); b.recoverAll(); }
   bm.startBattle();
@@ -153,9 +156,9 @@ function step(bm, st) {
 function play(levels, steps) {
   const bm = battle(levels), out = [{step: ['start'], snap: snap()}];
   for (const st of steps) {
-    hits.length = 0;
+    hits.length = 0; lines.length = 0;
     const ret = step(bm, st);
-    out.push({step: st, ret, hits: hits.slice(), snap: snap()});
+    out.push({step: st, ret, hits: hits.slice(), lines: lines.slice(), snap: snap()});
   }
   return out;
 }
