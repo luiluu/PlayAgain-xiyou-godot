@@ -21,7 +21,8 @@ extends RefCounted
 ## 【cc·白龙·未经审查】tusu5 补齐：武相支援（屠苏自用、内部施放、持武者行动触发、回合末释放、上下限与成长加成）、锁定与和鸣的消费、挫势、
 ## 止戈环 60 级与五兵淬纹（installThreeGrowthRelicRuntime 的屠苏部分：分段、横扫多目标、锻痕、护阵首伤护盾、挫势减伤、开刃·书护持）、开刃三相、
 ## 自动战斗与智能 AI 估算、战斗日志台词、器谱开刃逻辑。
-## 还没做（画面）：指令窗（武相支援一栏、易武子菜单、「待命」改名、持武者指令去重）、器谱菜单、支援目标选择的取消返回。
+## tusu7 补画面：指令窗（武相支援一栏、易武子菜单、「待命」改名、持武者指令去重，见 command_entries／battle_listed 与 battle_scene）、
+## 支援目标选择的取消回指令窗、器谱菜单（ui/tusu_forge.gd，公共事件 9014），专项 tests/xiyou_tusu_ui.gd。
 ## 原版锁定、和鸣、护阵倍率另被超强者路线压制往 1 收（O-050 不移植），参照里关掉。
 ## 参照：mv_oracle/tusu_battle_probe.cjs（tests/fixtures/tusu_battle_oracle.json），测试 tests/xiyou_tusu_battle.gd。
 
@@ -989,7 +990,7 @@ static func ai_raw(a, b, item: Dictionary):
 	return 0.0
 
 
-# ---- 器谱：开刃（T.forgeRows／setKairen／syncKairenSkills；菜单画面没做） ----
+# ---- 器谱：开刃（T.forgeRows／setKairen／syncKairenSkills；菜单画面在 XTusuForge） ----
 const REFORGE_ITEM := 2530
 const REFORGE_COUNT := 10
 const FORGE_NAMES := {"forgeInfo": "每次进阶可开刃一相，最多三相；重新开刃消耗人道意志碎片×10", "forgePick": "第%d道铭文：选择开刃的武相",
