@@ -1831,7 +1831,8 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 			"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
 	var black_flash = XBlackFlash.apply_begin(u, skill, t)  # 黑闪 Game_Action.apply 包装（在异化之内）：本次 apply 的命中帧
 	var before = XZhenqi.pojia_actor
-	XZhenqi.pojia_actor = u if XZhenqi.has_daofa(u, "pojia") else null
+	var pojia_u = XTusu.outer_subject(u, skill)  # 真气 apply 包装装在屠苏外面：武装技能读持武者，不是换上来的屠苏（审查第 25 期 P3-2）
+	XZhenqi.pojia_actor = pojia_u if XZhenqi.has_daofa(pojia_u, "pojia") else null
 	var previous_resources := _action_resources
 	_action_resources = _new_lifecycle_resources()
 	if previous_resources != null:

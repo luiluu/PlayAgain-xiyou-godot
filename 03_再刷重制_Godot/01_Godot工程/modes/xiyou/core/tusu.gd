@@ -278,6 +278,13 @@ static func apply_subject(u, skill: Dictionary):
 	return u
 
 
+## 装在屠苏 apply 包装外面的层（真气破甲）看到的出手者：武装技能换上来的屠苏还原成持武者
+static func outer_subject(u, skill: Dictionary):
+	if is_tusu(u) and key_of(skill).begins_with("arm.") and holder(u) != null:
+		return holder(u)
+	return u
+
+
 const ARM_ACTIONS := 2
 ## T.lockRate／hemingRate／huzhenRate：随屠苏等级（20～60 级插值）
 static func lock_rate(t) -> float:

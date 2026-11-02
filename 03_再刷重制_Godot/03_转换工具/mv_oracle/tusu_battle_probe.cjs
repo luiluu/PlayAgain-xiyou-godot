@@ -141,6 +141,17 @@ function step(bm, st) {
   else if (op === 'sup') { begin(bm, who(x), K(y), z); run(bm); }  // 屠苏自己用支援（指令窗「武相支援」）：z 敌序号（锁定选敌人），−1 不指定
   else if (op === 'gain') B.gain(who(x), y);  // 给屠苏兵势（原版屠苏 manual，兵势恒 0，内部施放的支援实际放不出来；这里补兵势量内部施放）
   else if (op === 'sethp') who(x).setHp(y);
+  else if (op === 'zq') {  // 真气道法（同 zhenqi_probe withDaofa）：x 角色、y 境界、z 道法键
+    const a = who(x), Z = w.CodexZhenqi;
+    a._codexZhenqi = {qi: Z.REALMS[y].need, firsts: {}, realm: y, pending: [], daofa: Object.fromEntries(z.map(k => [k, 1])), spec: {}};
+    for (const k of z) a.learnSkill(Z.skillKey('daofa:' + k));
+    Z.refreshRewards(a);
+  } else if (op === 'atkst') {  // 武装技能 y 临时加「普攻附加状态」效果（武装技能本身没有效果；用来量破甲·真气附加时读谁的道法），x＝1 加、0 去
+    const s = w.$dataSkills[K(x)];
+    s.effects = y ? [{code: 21, dataId: 0, value1: 1, value2: 0}] : [];
+  } else if (op === 'pq') {  // 敌人 0 号的破甲·真气：有没有、附加时记的双防倍率；unpq 去掉
+    const e = who('e0'); ret = {affected: e.isStateAffected(2705), rate: e._codexZqPojiaRate === undefined ? null : e._codexZqPojiaRate};
+  } else if (op === 'unpq') { const e = who('e0'); e.removeState(2705); e.clearResult(); }
   else if (op === 'smart') w.ConfigManager.codexSmartAI = !!x;  // 智能战斗 AI 开关（关了持武者按挂机表、否则普通攻击，再由屠苏包装比武装技能）
   else if (op === 'auto') {  // 自动战斗选的行动（makeAutoBattleActions，原选择＋屠苏包装）：技能（屠苏的记键）与目标序号
     const a = who(x); a._actions = [new w.Game_Action(a)]; a.makeAutoBattleActions();
@@ -209,6 +220,10 @@ const SCRIPTS = {
   // 自动战斗（tusu5）：人形化武给默认宿主（上次武相）；武具态敌人 3 个持剑放剑气；两人低于 40% 易武盾；持武者比武装技能（预览 ×1.1）
   ai: [{176: 60}, [['auto', 176], ['use', 176, 'huawu.sword', 1], ['auto', 176], ['auto', 1], ['sethp', 8, 100], ['sethp', 10, 100], ['auto', 176],
     ['use', 176, 'yiwu.hammer'], ['turn'], ['auto', 1], ['smart', 0], ['auto', 1], ['auto', 8], ['smart', 1], ['end']]],
+  // 审查第 25 期 P3-2：真气 apply 包装装在屠苏外面，破甲·真气附加时读的是持武者（不是换上来的屠苏）。屠苏有破甲（炼气，倍率 0.875）、持武者没有 → 0.5；
+  // 持武者也有破甲（结丹，0.75）→ 0.75。斩锋临时加普攻附加状态（屠苏的 passiveATKST2705 才附加得上）
+  pojia: [{176: 60}, [['zq', 176, 0, ['pojia']], ['atkst', 'arm.zhanfeng', 1], ['use', 176, 'huawu.sword', 1], ['arm', 1, 'arm.zhanfeng', 0], ['pq'],
+    ['unpq'], ['zq', 1, 3, ['pojia']], ['arm', 1, 'arm.zhanfeng', 0], ['pq'], ['atkst', 'arm.zhanfeng', 0], ['end']]],
   // 等级低：没解锁的武装技能、支援不能用
   low: [{176: 5}, [['use', 176, 'huawu.bow', 1], ['turn'], ['use', 176, 'yiwu.sword'], ['turn'], ['end']]],
 };

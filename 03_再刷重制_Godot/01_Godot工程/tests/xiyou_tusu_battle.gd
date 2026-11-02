@@ -221,6 +221,25 @@ func _step(st: Array) -> Array:
 			XBinding.gain(_who(st[1]), int(st[2]))
 		"sethp":
 			_set_hp(_who(st[1]), float(st[2]))
+		"zq":
+			var a: XActor = _who(st[1])
+			var df := {}
+			for k in st[3]:
+				df[str(k)] = 1
+			var z := XZhenqi.default_data()
+			z.merge({"realm": int(st[2]), "qi": int(XZhenqi.REALMS[int(st[2])].need), "daofa": df}, true)
+			a.zhenqi = XZhenqi.from_save(z)
+			for k in st[3]:
+				a.learn_skill(XZhenqi.skill_key("daofa:" + str(k)))
+			XZhenqi.refresh_rewards(a)
+		"atkst":
+			XDB.rec("Skills", XTusu.skill_id(str(st[1]))).effects = [{"code": 21, "dataId": 0, "value1": 1.0, "value2": 0.0}] if int(st[2]) != 0 else []
+		"pq":
+			var e: XBattler = logic.enemies[0]
+			var on := e.state_ids.has(XZhenqi.POJIA_STATE)
+			ret = {"affected": on, "rate": e.zq_pojia_rate if on else null}
+		"unpq":
+			logic._state_remove(logic.enemies[0], XZhenqi.POJIA_STATE)
 		"smart":
 			XConfig.ensure_loaded()
 			XConfig._values.codexSmartAI = int(st[1]) != 0  # 只改内存，不写设置文件
@@ -259,7 +278,7 @@ func _ready() -> void:
 
 func _go() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	check("oracle", ref.cases.size() == 11 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
+	check("oracle", ref.cases.size() == 12 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:
 		if PENDING.has(c.id):
 			print("SKIP ", c.id, "：", PENDING[c.id])
