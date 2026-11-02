@@ -2,7 +2,7 @@
 
 - 车道／工作者：悟空（cc），内容／楼层：盘点「楼层、副本与剧情内容」剩下的缺口；收 events3 剩的 CE1327；做收益最大的一簇
 - 基线：从 main 6d781e06（dev.274 收尾＋白龙 tusu4 已合）切出，工作树 `.claude/worktrees/wukong-content1`（`新建工作树.sh wukong-content1 cc` 建）
-- 状态：进行中
+- 状态：可合并
 
 ## 一、盘点（11-02，只读冻结 v0.28 与切片）
 
@@ -43,11 +43,15 @@
 
 ## 验证
 
-（进行中）
+- 收尾（content1b，11-02）：合 main 后同步 `--accept-additions` 跑完（退出 0），内容覆盖检查 新 0／解决 0（基线不动）。
+- 本机选测（`选测.py main --list` 138 个＋`xiyou_floor_reach004`＋`xiyou_battle_common_events*`，并行 2）：135 通过，`xiyou_floor_run`／`_b`／`_c` 失败——大厅事件上图后种族向导 EV22 挡在入塔门口，测试没选族走不到门。已改测试（开局到大厅后标 guideChosen 并 `relocate_race_guide`），三个重跑全过（125 秒）。
+- 再合 main（只带进工具改动）：测试选测 85/85、测试合并工具 250/250、测试回退开关覆盖 OK、xiyou_loose_fixes／xiyou_script_gaps 通过；`语法检查.py` 0 问题；回退开关覆盖 新缺口 0（审查 25 期 P3-1 已消）。
+- 审查 25 期 P3-1（O-147 回退测试拆字面量 true／false）、P3-4（`_statements` 文档注释挪回）已改。
+- 没跑：全量 `检查.sh`（车道不跑）。
 
 ## 交接板
 
-- 下一步：传承人（Map032 EV8、Map147 EV5，敌群 772～783）与盘点表里的小件。
+- 下一步（本期不做）：传承人（Map032 EV8、Map147 EV5，敌群 772～783）与盘点表里的小件。
 
 ## 进度账
 
