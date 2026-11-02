@@ -158,12 +158,20 @@ func _set_armor_troop_state_script(code: String) -> bool:
 ## 条件认：actor、!actor.isDeathStateAffected()、actor._states.includes(S)、actor._skills.includes(K)（学会的，不含特性附加）、
 ## actor.hasArmor／hasWeapon（按基础编号）、actor.hasSkill(K)、($gameVariables.value(V)==K)、!BattleManager.checkBattleEnd()。
 ## forceAction 只记最后一个（logic.pending_force），事件跑完后才结算；读到没有数据的角色（无 actor 守卫）抛错、YEP 吞掉，后面都不做。
+## 第三种写法 CE1327 三千烦恼风再释放：var actor = $gameActors.actor($gameParty._targetActorId); if(actor.hasSkill(6184)){ ACT }。
+## 原版 _targetActorId 是菜单里最后一次用物品选中的角色，与这次谁放的百八烦恼风无关：别人最后用过物品就不触发、
+## 新开局（0 号没有角色）抛错不做（O-待定-1）。重制默认按预约这条公共事件的行动者（XBattleCommonEvent.take 记的 ce_user），
+## 没有行动者（开战预约、事件里装子事件）时退回物品选中的角色；O_RECAST_CASTER 设 false 回到原版。
 ## 参照 battle_common_event recast_*。整段都认得才执行。
+static var O_RECAST_CASTER := true
+
 func _recast_script(code: String) -> bool:
 	var js := _compact_js(code)
 	var act := "varaction=newGame_Action\\(actor,true\\);action\\.setSkill\\((\\d+)\\);action\\.decideRandomTarget\\(\\);actor\\._actions\\.splice\\(1,0,action\\);(?:!\\$gameTroop\\.isAllDead\\(\\)&&)?BattleManager\\.forceAction\\(actor\\);"
 	var loop := RegEx.create_from_string("^for\\(leti=1;i<(\\d+);i\\+\\+\\)\\{varactor=\\$gameActors\\.actor\\(i\\);(.*)\\}$").search(js)
 	var by_var := RegEx.create_from_string("^varactor=\\$gameActors\\.actor\\(\\$gameVariables\\.value\\((\\d+)\\)\\);(.*)$").search(js)
+	if by_var == null:
+		by_var = RegEx.create_from_string("^varactor=\\$gameActors\\.actor\\(\\$gameParty\\.(_targetActorId)\\);(.*)$").search(js)
 	if loop == null and by_var == null:
 		return false
 	var body := (loop if loop != null else by_var).get_string(2)
@@ -188,7 +196,7 @@ func _recast_script(code: String) -> bool:
 		body = body.substr(m.get_end())
 	if clauses.is_empty():
 		return false
-	var ids: Array = range(1, int(loop.get_string(1))) if loop != null else [int(state().variable(int(by_var.get_string(1))))]
+	var ids: Array = range(1, int(loop.get_string(1))) if loop != null else [_recast_actor_id(by_var.get_string(1))]
 	for i in ids:
 		var a = null if XDB.rec("Actors", int(i)).is_empty() else state().actor(int(i))
 		var taken := false
@@ -202,6 +210,16 @@ func _recast_script(code: String) -> bool:
 			if ok and logic.actors.has(a) and not logic.alive(logic.enemies).is_empty():
 				logic.pending_force = {"user": a, "skill": int(cl[1])}
 	return true
+
+
+## by_var 写法的角色号：变量号，或 _targetActorId（见 O_RECAST_CASTER）
+func _recast_actor_id(src: String) -> int:
+	if src != "_targetActorId":
+		return int(state().variable(int(src)))
+	var user = get_meta("ce_user") if has_meta("ce_user") else null
+	if O_RECAST_CASTER and user is XActor:
+		return int(user.actor_id)
+	return int(state().item_target_actor_id)
 
 
 ## 条件一项：[种类, 数]；认不得返回 []
