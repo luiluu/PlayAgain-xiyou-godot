@@ -115,5 +115,17 @@ func _ready() -> void:
 		var loaded := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
 		XTusuXuan.after_load(loaded)
 		check("load.%d" % id, not high.is_empty() and sorted(loaded.actor(id).skill_ids) == full, [high.size(), sorted(loaded.actor(id).skill_ids), full])
+	# 审查第 22 期 P3-1：本体没建过时（原版 $gameActors._data[本体] 为空）别人的专属技能全滤、不能用，系数按 1 级，且不顺手建出本体
+	for id in [XTusuXuan.TUSU, XTusuXuan.XUAN]:
+		var s := fresh()
+		s.actors.erase(id)
+		var other := s.actor(1)
+		var sid := XTusuXuan.skill_id(id, str(XTusuXuan.keys(id).values()[0]))
+		other.learn_skill(sid)
+		check("no_owner.%d.filtered" % id, not other.skills().any(func(x): return int(x.id) == sid))
+		check("no_owner.%d.meets" % id, not XTusuXuan.meets(other, XDB.rec("Skills", sid)))
+		var key := str(XTusuXuan.DAMAGE[id].keys()[0])
+		check("no_owner.%d.coef" % id, XTusuXuan.coefficient(id, key) == floori(XGuyu.curve(1, XTusuXuan.DAMAGE[id][key], XTusuXuan.LEVELS)))
+		check("no_owner.%d.not_created" % id, not s.actors.has(id), s.actors.keys())
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_tusu", "passed": checks - failures.size(), "total": checks, "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)

@@ -874,6 +874,7 @@ static func from_dict(d: Dictionary) -> XState:
 	XYomiJingliu.after_load(s)  # 镜流 extractSaveContents 包装：整理技能、清放血累计
 	XShieldLedger.clear_all()  # 护盾账本 extractSaveContents 包装：清空
 	XBinding.clear_all(s)  # 绑定 extractSaveContents 包装：清数据与形态状态
+	XTusu.clear(s)  # 屠苏 extractSaveContents 包装：清全队持武状态与本场数据
 	for a in s.actors.values():a.refresh_passive()
 	for k in d.switches:
 		s.switches[int(k)] = bool(d.switches[k])
