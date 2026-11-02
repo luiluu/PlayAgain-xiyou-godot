@@ -1,0 +1,19 @@
+{
+ "sha": "cb315f63269fa329d1dd40101b7fe6b780de4a94",
+ "branch": "ci/cc/bajie-guyu-fix1",
+ "mode": "affected",
+ "base": "007c3c722dbb237de57ca61c4fbb5b6682408782",
+ "passed": true,
+ "scenes": 311,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 14,
+ "longestShardSeconds": 1010.5,
+ "testSeconds": 19940,
+ "generatedRef": "refs/ci/generated/cc/bajie-guyu-fix1",
+ "generatedCommit": "de1797c66983c8eaa3cce0087dd33f4ef125c6f6",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41367931973",
+ "time": "2026-11-02T00:57:28+00:00"
+}
