@@ -701,6 +701,33 @@ static func prepare(logic, u, skill: Dictionary) -> Array:
 	return logs
 
 
+## 子行动（原版 new Game_Action(...).apply：甚尔万里锁溅射、术师杀手反弹，宿傩 S.perform 的追斩、神灶）也走一遍云裳 apply 包装，
+## 各自一份行动帧（prepareAction、_yunTotal、只引爆一次）：先存外层帧，prepare 建子帧，跑 body（返回 apply 记录），
+## 按对 t 的最后一条记录调 applied，再还原外层帧（沙僧二审 S2-1-03；参照 yunshang_wraps_probe）。返回 prepare 记录＋body 记录＋applied 记录
+static func child(logic, u, skill: Dictionary, t, body: Callable) -> Array:
+	if battle == 0:
+		return body.call()
+	var saved := [frame, team_buff]
+	var logs := prepare(logic, u, skill)
+	var rs: Array = body.call()
+	logs.append_array(rs)
+	logs.append_array(after_wrapped(logic, u, skill, t, rs, true))
+	frame = saved[0]
+	team_buff = saved[1]
+	return logs
+
+
+## 黄泉／宿傩／甚尔的 apply 包装在云裳之内：整次包装跑完，看对主目标的最后一条记录（target.result()）调 applied；没有记录（宿傩神灶直接施放、没蓄力）当没命中
+static func after_wrapped(logic, u, skill: Dictionary, t, rs: Array, used: bool) -> Array:
+	for i in range(rs.size() - 1, -1, -1):
+		var r = rs[i]
+		if r is Dictionary and r.get("type") == "hit" and is_same(r.get("target"), t) and is_same(r.get("user"), u):
+			return applied(logic, u, skill, t, r, used)
+	var logs := pending.duplicate()
+	pending.clear()
+	return logs
+
+
 ## Game_Action.apply 包装（原 apply 之后）：命中时的指令（御风、敕衣点神、赠行、收存余光，每次行动一次）、钉影种针、拆神驱散、
 ## 觉醒中的伤害引爆目标一根符针。返回派生伤害的记录
 static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -> Array:
@@ -710,8 +737,6 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 		return logs
 	if not frame.has("primary"):
 		frame.primary = primary if own(u) else t  # action._yunPrimary
-	if damage_action(skill):
-		frame.total = float(frame.total) + maxf(0.0, float(r.get("hp", 0.0)))
 	if not used or bool(r.get("missed", false)) or bool(r.get("evaded", false)):
 		return logs
 	var id := int(skill.get("id", 0)) if not XBattleLogic.is_item(skill) else 0
@@ -1132,10 +1157,12 @@ static func hp_damage(logic, _u, t, value: float) -> float:
 
 
 ## executeHpDamage 包装（原扣血之后）：记主动伤害行动的每段命中（一身两世复演用）；山河作骨守势中被敌人打，反击一次山河击 ×0.5
-static func after_hp(logic, u, t, value: float, item: Dictionary) -> void:
+## hp_before 是原扣血之前的生命（_yunTotal 累计 min(打前生命, 伤害)，黄泉溅射、宿傩两段这类包在里层的多次扣血都算进同一次行动）
+static func after_hp(logic, u, t, value: float, item: Dictionary, hp_before := INF) -> void:
 	if battle == 0:
 		return
 	if derived_frame.is_empty() and is_same(frame.get("user"), u) and damage_action(item):
+		frame.total = float(frame.total) + minf(hp_before, maxf(0.0, value))
 		(frame.hits as Array).append({"target": t, "value": value, "critical": bool(logic._action_resources.result(t).get("critical", false))})
 	var d := data(t)
 	if int(d.get("key", -1)) == 0 and int(d.guard_until) >= round and int(d.guard_until) > 0 and derived_frame.is_empty() and u is XEnemy and value > 0.0:

@@ -449,6 +449,7 @@ func _skill_cost(a: XBattler, skill: Dictionary, panel: bool, shift: float) -> D
 	var guyu := XGuyu.mp_cost(a, skill, 1.0 if panel else a.mcr, consume_reduce(a, skill, shift))
 	if guyu >= 0:
 		cost.mp = guyu  # 谷雨 skillMpCost 包装（米拉、异化之外，种族之内）：五个主动技按最大 MP 比例
+	cost.mp = XTusu.mp_cost(a, skill, int(cost.mp))  # 屠苏 skillMpCost 包装（谷雨之外、种族之内）：专属技能按比例、噬主费用、书相省蓝
 	return {"mp": XRaceBattle.cost(a, int(cost.mp)), "tp": XRaceBattle.cost(a, int(cost.tp))}
 
 ## paySkillHpCost：直接减生命（_hp -= 费用，不走伤害）；异化连命扣池、嫁祸扣保护者、空壳扣护盾（Adv:128）
@@ -473,6 +474,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if not XCat.legal(self, a, skill):  # 小猫剑圣的剑技／试炼条件、178 没持剑不能用物理技能
 		return false
 	if not XTusuXuan.meets(a, skill):  # 屠苏／璇 bindGrowth meetsSkillConditions：没解锁的专属技能、归形
+		return false
+	if not XTusu.meets(a, skill):  # 屠苏 meetsSkillConditions：易武／化武／支援／武装技能看武相，武具态只有防御
 		return false
 	if a.is_actor() and int(skill.stypeId) > 0:
 		if not a.traits_set(XBattler.TRAIT_STYPE_ADD).has(int(skill.stypeId)):
@@ -504,6 +507,9 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if XAlienBattle.blocks_borrowed(state, a, skill):  # 异化百相、无面 meetsSkillConditions：被替换的、没选中的仿形、来源不会了的借来技能
 		return false
+	var tusu_pay = XTusu.can_pay(a, skill, float(skill_cost(a, skill).tp))  # 屠苏噬主 canPaySkillCost 包装：屠苏或持武者付得起
+	if tusu_pay != null:
+		return bool(tusu_pay)
 	if XAlienBattle.silence_blocks(self, a, skill):  # 异化缄默 canPaySkillCost：生命上限锁不下了
 		return false
 	if not can_pay_hp(a, skill):  # YEP_SkillCore canPaySkillCost：先看 HP 费用
@@ -1440,7 +1446,9 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	elif not blocked:
 		var c := skill_cost(u, skill)
 		# 异化 paySkillCost 包装：缄默先锁生命上限（付不起整次不付 MP／TP），饕餮的 MP 费用从饥饿储备扣
-		if XAlienBattle.pay_silence(self, u, skill):
+		if XTusu.pay(self, u, skill):
+			pass  # 屠苏噬主 paySkillCost 包装：屠苏自付或持武者三倍代付
+		elif XAlienBattle.pay_silence(self, u, skill):
 			XYomiJingliu.pay(u, skill)  # 黄泉 paySkillCost 包装：10174 扣 9 层残梦
 			XMira.pay(u, skill)  # 米拉禁忌 paySkillCost 包装：登记生命代价
 			if XAlienBattle.glutton_mp(u) != null:
@@ -1602,16 +1610,29 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
 	var tt := substitute_for(skill, t)
-	# 黄泉 Game_Action.apply 包装：施集真赤、充残梦、扩散到其余敌人（扩散各次接在主目标之后）
+	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
+	# 黄泉（modules.json 第 9 个）、甚尔（10）、宿傩（18）的 Game_Action.apply 包装在饿狼（19）、云裳（31）之内：
+	# 整次包装跑完再走外层的饿狼记帧与云裳指令／种针／觉醒引爆（沙僧二审 S2-1-03；镜流、渡鸦只管自己的行动，这里没有）
+	var wrapped := []
 	if XYomiJingliu.wraps(u, skill, tt):
+		# 黄泉：施集真赤、充残梦、扩散到其余敌人（扩散各次接在主目标之后）
 		XYomiJingliu.before_apply(self, u, skill, tt)
 		var r := apply(u, skill, tt)
-		return [r] + XYomiJingliu.after_apply(self, u, skill, tt, r)
-	if XSukuna.wraps(u, skill):
-		return XSukuna.apply(self, u, skill, tt)  # 宿傩 Game_Action.apply 包装：捌两段、伤口、神灶蓄力
-	if XToji.wraps(u, skill):
-		return XToji.apply(self, u, skill, tt)  # 甚尔 Game_Action.apply 包装：计段、天逆鉾封印、万里锁溅射
-	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
+		wrapped = [r] + XYomiJingliu.after_apply(self, u, skill, tt, r)
+	elif XSukuna.wraps(u, skill):
+		wrapped = XSukuna.apply(self, u, skill, tt)  # 宿傩：捌两段、伤口、神灶蓄力
+	elif XToji.wraps(u, skill):
+		wrapped = XToji.apply(self, u, skill, tt)  # 甚尔：计段、天逆鉾封印、万里锁溅射
+	else:
+		wrapped = [null]
+	if wrapped != [null]:
+		var last := {}  # 外层看到的 target.result()：对主目标的最后一段
+		for x in wrapped:
+			if x is Dictionary and x.get("type") == "hit" and is_same(x.get("target"), tt) and is_same(x.get("user"), u):
+				last = x
+		if not last.is_empty():
+			XGarou.applied(u, skill, tt, last, used)
+		return wrapped + XYunshang.after_wrapped(self, u, skill, tt, wrapped, used)
 	XYomiJingliu.j_before(self, u, skill, tt)  # 镜流 apply 包装（原 apply 之前）：主目标、绽放、放血、记印记
 	var r := apply(u, skill, tt)
 	XGarou.applied(u, skill, tt, r, used)  # 饿狼 Game_Action.apply 包装：本帧命中与伤害、琦玉模式
@@ -1747,6 +1768,9 @@ func _state_context(u: XBattler, skill: Dictionary, t: XBattler, record := {}) -
 func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if XBinding.blocks_apply(u, t):
 		return XBinding.unused_result(u, skill, t)  # 绑定 Game_Action.apply 包装：敌方效果打不到形态中的本体
+	var tusu_cmd := XTusu.apply_command(self, u, skill, t)  # 屠苏 Game_Action.apply 包装：归形、易武、化武
+	if not tusu_cmd.is_empty():
+		return tusu_cmd
 	return XGuyu.apply(self, u, skill, t)  # 谷雨 Game_Action.apply 包装：治疗来源、花期／终结生效（没生效整次不结算）、行动执行标记
 
 
@@ -1943,7 +1967,7 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 	var out := _execute_hp_damage(u, t, value, drain)
 	XBlackFlash.after_hp(u, t, sukuna_hp - t.hp, item)  # 黑闪 executeHpDamage 包装（宿傩之内）：记伤害、黑闪成功
 	XSukuna.restore_shield(u, t, sukuna_shield, sukuna_hp)
-	XYunshang.after_hp(self, u, t, value, item)  # 云裳 executeHpDamage 包装：记每段命中、山河作骨守势反击
+	XYunshang.after_hp(self, u, t, value, item, sukuna_hp)  # 云裳 executeHpDamage 包装：记每段命中与 _yunTotal、山河作骨守势反击
 	_action_resources.boss_output.leave_settled()
 	XAlienBattle.record(self, u, t, maxf(0.0, alien_before - t.hp))
 	return out
@@ -2462,6 +2486,7 @@ func end_battle(result := -1) -> void:
 	XRaven.end_battle(state)  # 渡鸦 endBattle 包装：清神话形态
 	XShieldLedger.end_battle()  # 护盾账本 endBattle 包装（finally）：清空
 	XBinding.end_battle(self)  # 绑定 endBattle 包装（finally）：清数据与形态状态
+	XTusu.clear(state, self)  # 屠苏 endBattle 包装（finally）：清全队持武／锁定／和鸣状态与本场数据
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
 	# ShieldSystem Scene_Battle.terminate：全队与敌群护盾清零
 	for e in enemies:
