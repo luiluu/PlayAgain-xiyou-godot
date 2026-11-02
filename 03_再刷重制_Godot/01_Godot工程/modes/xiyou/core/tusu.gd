@@ -18,8 +18,11 @@ extends RefCounted
 ## - 属性基准 base：书相取屠苏魔攻，其余取屠苏物攻；公式 damage(a, b, 键)：武装技能＝基准×系数，其余＝屠苏物攻（body_mag 魔攻）×系数。
 ##   公式接转换器 MODULE_FORMULAS 是 A 车道的事，这里只给函数。
 ## - 战斗结束、读档：清全队的持武／锁定／和鸣状态与本场数据。
-## 不做（四期）：支援的施放与效果（剑气、锁定、金汤、和鸣、镇魂、内部施放 cast、持武者行动触发）、统一伤害钩子（武装基准代入、分摊、锁定、和鸣、
-## 支援上下限、挫势、护阵）、自动战斗与智能 AI、开刃与器谱、战斗日志里的台词（画面）、指令窗（画面）。
+## 【cc·白龙·未经审查】tusu5 补齐：武相支援（屠苏自用、内部施放、持武者行动触发、回合末释放、上下限与成长加成）、锁定与和鸣的消费、挫势、
+## 止戈环 60 级与五兵淬纹（installThreeGrowthRelicRuntime 的屠苏部分：分段、横扫多目标、锻痕、护阵首伤护盾、挫势减伤、开刃·书护持）、开刃三相、
+## 自动战斗与智能 AI 估算、战斗日志台词、器谱开刃逻辑。
+## 还没做（画面）：指令窗（武相支援一栏、易武子菜单、「待命」改名、持武者指令去重）、器谱菜单、支援目标选择的取消返回。
+## 原版锁定、和鸣、护阵倍率另被超强者路线压制往 1 收（O-050 不移植），参照里关掉。
 ## 参照：mv_oracle/tusu_battle_probe.cjs（tests/fixtures/tusu_battle_oracle.json），测试 tests/xiyou_tusu_battle.gd。
 
 const ACTOR := 176
@@ -291,7 +294,7 @@ static func huzhen_rate(t) -> float:
 
 ## 伤害钩子 tusu（CodexDamageHooks）：武装技能按武相定物理／魔法、威力按持武者本回合行动次数分摊（2 次为基准）、
 ## 贯日打锁定目标、敕令带和鸣；护阵中的角色受伤减免。a 是出手者（武装技能时已是屠苏，见 apply_subject）
-## 不做（四期剩余）：支援上下限（res.after）、止戈环支援加成（CFG.relicBonus.support＝1，乘了也不变）、挫势（敌人 _codexTusuCuoshi，挫势还没移植）
+## 止戈环支援加成 CFG.relicBonus.support＝1（乘了也不变，不写）；支援上下限在 XDamage.finish 里（support_after）
 static func damage_ops(item: Dictionary, a, b) -> Array:
 	var ops := []
 	var key := key_of(item)
