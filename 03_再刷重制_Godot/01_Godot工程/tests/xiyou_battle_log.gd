@@ -52,6 +52,7 @@ func _run() -> void:
 	await sukuna_case(b, sukuna, foes)
 	await raven_case(b, raven, foes)
 	toji_anim_case(b, raven, foes)
+	await indicator_case(b, sukuna, raven)
 	await garou_case(b, garou, foes)
 	skill_types(b, [sukuna, raven, garou])
 	ledger(raven)
@@ -136,6 +137,62 @@ func toji_anim_case(b: XBattleScene, a: XActor, foes: Array) -> void:
 	for n in b.fx.get_children():
 		if n is MVAnimation:
 			n.queue_free()
+
+
+## 角色形象 CodexBattleIndicators：宿傩领域法阵（影子之下、可见脚底、呼吸与转动）、黑闪觉醒描边（身体之下 16 个剪影、跟身体同帧）；
+## 回放时按命中记录的读数；阵亡、别的角色不显示
+func indicator_case(b: XBattleScene, a: XActor, other: XActor) -> void:
+	var sp: XBattlerSprite = b.sprites[a]
+	check("indicator.none", sp._domain_circle == null and sp._outline == null)
+	XSukuna.temp(a).domain = 2
+	b.logic._state_add(a, XSukuna.DOMAIN)
+	await frames(3)
+	var c := sp._domain_circle
+	check("indicator.domain", c != null and c.visible and c.get_index() == 0 and c.position == sp.sprite.position and is_equal_approx(c.scale.y, 0.34),
+		[c != null, c.get_index() if c else -1])
+	if c != null:
+		var t0 := c.tick
+		var r0 := c.drawing.rotation
+		await frames(10)
+		check("indicator.domain-anim", c.tick == t0 + 10 and is_equal_approx(c.drawing.rotation, r0 + 0.03)
+			and is_equal_approx(c.modulate.a, 0.82 + cos(c.tick * 0.04) * 0.08), [c.tick, t0, c.drawing.rotation, c.modulate.a])
+		b.show_views({a: b.logic.view_of(a).merged({"domain": false}, true)})
+		await frames(1)
+		check("indicator.domain-view", not c.visible)
+		b.clear_views()
+		await frames(1)
+		check("indicator.domain-live", c.visible)
+	check("indicator.other-actor", b.sprites[other]._domain_circle == null)
+	# 黑闪觉醒：学 10225 与觉醒技 10242、觉醒状态 2639、未到期
+	a.learn_skill(XBlackFlash.SKILL)
+	a.learn_skill(10242)
+	b.logic._state_add(a, 2639)
+	XBlackFlash.temp(a).expires = XBlackFlash.round + 3
+	await frames(2)
+	var o := sp._outline
+	var body := sp.sprite as Sprite2D
+	check("indicator.outline", o != null and o.visible and o.get_child_count() == 16 and o.get_index() == body.get_index() - 1, [o != null])
+	if o != null:
+		var c0: Sprite2D = o.get_child(0)
+		var c9: Sprite2D = o.get_child(9)
+		check("indicator.outline-sync", c0.texture == body.texture and c0.region_rect == body.region_rect and c0.offset == body.offset
+			and c0.scale == body.scale and c0.position.is_equal_approx(body.position + Vector2(3.5, 0))
+			and c9.position.is_equal_approx(body.position + Vector2.from_angle(PI / 4.0) * 2.0)
+			and c0.material.get_shader_parameter("fill") == XBattleIndicators.OUTLINE_COLORS[0]
+			and c9.material.get_shader_parameter("fill") == XBattleIndicators.OUTLINE_COLORS[1], [c0.position, c9.position, body.position])
+	XBlackFlash.temp(a).expires = XBlackFlash.round - 1
+	await frames(1)
+	check("indicator.outline-expired", o == null or not o.visible)
+	XBlackFlash.temp(a).expires = XBlackFlash.round + 3
+	b.logic._state_add(a, XBattleLogic.DEATH_STATE)
+	await frames(1)
+	check("indicator.dead", (c == null or not c.visible) and (o == null or not o.visible))
+	b.logic._state_remove(a, XBattleLogic.DEATH_STATE)
+	a.hp = a.mhp
+	b.logic._state_remove(a, XSukuna.DOMAIN)
+	b.logic._state_remove(a, 2639)
+	XSukuna.temp(a).domain = 0
+	await frames(1)
 
 
 func raven_case(b: XBattleScene, a: XActor, foes: Array) -> void:

@@ -203,6 +203,8 @@ func _physics_process(_delta: float) -> void:
 		motion_tick()
 	if _fx != null:
 		_fx_tick()
+	if _domain_circle != null and _domain_circle.visible:
+		_domain_circle.step()
 
 
 func motion_tick() -> void:
@@ -268,6 +270,40 @@ func _process(delta: float) -> void:
 		_breath_t += delta * TAU / 2.4
 		sprite.scale.y = body_scale * (1.0 + sin(_breath_t) * 0.02)
 		sprite.position.y = -_lift_px
+	_update_indicators()
+
+
+# ---- 角色形象 CodexBattleIndicators：宿傩领域法阵、黑闪觉醒描边（XBattleIndicators） ----
+var _domain_circle: XBattleIndicators.DomainCircle
+var _outline: Node2D
+
+
+## updateIndicators：回放行动时按命中记录的读数（view），平时按当前状态；第一次要显示时才建
+func _update_indicators() -> void:
+	if not battler is XActor:
+		return
+	var body := sprite as Sprite2D
+	var shown: bool = not (view.dead if not view.is_empty() else battler.is_dead()) and sprite.visible and sprite.modulate.a > 0.0 \
+		and (body == null or body.texture != null)
+	var domain: bool = shown and (bool(view.get("domain", false)) if not view.is_empty() else XBattleIndicators.domain_shown(battler))
+	var awake: bool = shown and body != null and (bool(view.get("flash_awake", false)) if not view.is_empty() else XBattleIndicators.outline_shown(battler))
+	if domain:
+		if _domain_circle == null:
+			_domain_circle = XBattleIndicators.DomainCircle.new()
+			add_child(_domain_circle)
+			move_child(_domain_circle, 0)  # addChildAt(root, 0)：影子之下
+		# 可见脚底：身体以脚底为原点（有归一档时是可见范围的底边中点），跟着身体的位置
+		_domain_circle.position = sprite.position
+	if _domain_circle != null:
+		_domain_circle.visible = domain
+	if awake:
+		if _outline == null:
+			_outline = XBattleIndicators.make_outline()
+			add_child(_outline)
+			move_child(_outline, sprite.get_index())  # 插在身体之下：身体盖住剪影内部，只露出边
+		XBattleIndicators.sync_outline(_outline, body)
+	if _outline != null:
+		_outline.visible = awake
 
 
 ## 换装卡（卡状态 Custom Apply／Remove Effect 的 setBattlerImage）：按外观键换图，动作与帧接着播。
