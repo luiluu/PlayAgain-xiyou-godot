@@ -170,15 +170,27 @@ def scan(root):
 
 
 def last_lane(root, rel, name):
-    """最后改动该开关声明的车道：找最后一次动了 name 的提交，再找把它并进主线的合并提交标题（「合并 cc/xxx」）；找不到返回空串。"""
+    """最后改动该开关声明的车道：找最后一次动了 name 的提交，再找把它并进主线的那次合并（「合并 cc/xxx」）；
+    返回「合并标题 · 短号 提交标题」，没有车道合并时只给提交，找不到返回空串。
+    tools43：原来 --reverse -1 先截 1 条再反转，取到的是最新的合并（O-147 报成 tusu4，实为 events3）；
+    现在按时间从早到晚逐个看，取第一个「提交在第二父、不在第一父」的合并。"""
     def git(*args):
         return subprocess.run(['git', '-C', str(root), *args], capture_output=True, text=True, timeout=30).stdout.strip()
+
+    def ancestor(a, b):
+        return subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', a, b], capture_output=True, timeout=30).returncode == 0
     try:
-        commit = git('log', '-1', '--format=%H', '-S' + name, '--', '%s/%s' % (PROJECT, rel))
+        # -G（改动行里出现 name）而不是 -S（name 出现次数变了）：只改回退值（true → false）的提交 -S 看不见（tools43）
+        commit = git('log', '-1', '--format=%H', '-G' + r'(^|[^A-Za-z0-9_])' + re.escape(name) + r'([^A-Za-z0-9_]|$)', '--', '%s/%s' % (PROJECT, rel))
         if not commit:
             return ''
-        merge = git('log', '--merges', '--ancestry-path', '--reverse', '-1', '-E', '--grep=^合并 (cc|claude|codex)/', '--format=%s', commit + '..HEAD')
-        return merge or git('log', '-1', '--format=%s', commit)
+        own = git('log', '-1', '--format=%h %s', commit)
+        merges = git('log', '--merges', '--ancestry-path', '--reverse', '-E', '--grep=^合并 (cc|claude|codex)/', '--format=%H %s', commit + '..HEAD')
+        for line in merges.splitlines()[:200]:
+            sha, _, title = line.partition(' ')
+            if ancestor(commit, sha + '^2') and not ancestor(commit, sha + '^1'):
+                return '%s · %s' % (title, own)
+        return own
     except (OSError, subprocess.SubprocessError):
         return ''
 
@@ -222,7 +234,7 @@ def main(argv=None):
         note = '；const，测试改不了，要先改成 static var' if s['kind'] == 'const' else ''
         tag = '' if s['key'] not in known else '（豁免）'
         lane = last_lane(Path(a.root), s['file'], s['name'])
-        print('  ⚠ 缺口%s %s = %s（%s%s%s）' % (tag, s['key'], s['value'], s['file'], note, '；最后改它的：' + lane[:60] if lane else ''))
+        print('  ⚠ 缺口%s %s = %s（%s%s%s）' % (tag, s['key'], s['value'], s['file'], note, '；最后改它的：' + lane[:100] if lane else ''))
     for s in res['switches']:
         if s['status'] == '人工确认' and (a.all or s['key'] not in known):
             print('  ? 人工确认 %s：只见非字面量赋值 %s' % (s['key'], '、'.join(s['where'])))

@@ -21,11 +21,16 @@
 - 默认打印人读的选择理由；--shell 另在标准输出给 检查.sh 用的 SEL_FULL／SEL_SCENES／SEL_CHECKS（理由改到标准错误）。
 - --list（车道手写选测前用，tools35）：只在标准输出逐行打场景名（不带 .tscn，可直接接到 并行测试.py 后面），理由与结论改到标准错误；
   整轮时不打场景名、退出 0 并在标准错误说明。车道交付的手写选测名单至少含这里列出的场景（至少战斗核心类），不跑要在交付单说明为什么。
+- 抽样（sample，用户 2026-11-02 同意，tools43）：选测（不是整轮）选到 xiyou_rules*／xiyou_smart_ai* 时，每组按名字排序、每 chunk 段
+  （rules 每个难度 4 段、smart_ai 每 4 段）只留 1 段，留哪段按提交号（--head 或 HEAD）确定性轮换。改了测试本身（exemptGroups 里的组）
+  选上的段照跑、并算作该组已有代表。段数不是 chunk 的整数倍时这一族不抽样。全量（不加 --affected、选测结论整轮）照跑全套。
+  回退：对照表 sample.enabled 设 false，或环境变量 XIYOU_SAMPLE=0。
 - 基准不存在、对照表无效时退出 2。
 """
 import argparse
 import fnmatch
 import json
+import os
 import re
 import subprocess
 import sys
@@ -89,6 +94,45 @@ def load_table(path=TABLE):
 def load_options(path=TABLE):
     table = json.loads(Path(path).read_text())
     return table.get('sliceSections') or {}, table.get('mergeBase', False)
+
+
+def load_sample(path=TABLE):
+    """抽样设置；关着（对照表 enabled false 或 XIYOU_SAMPLE=0）返回 None。"""
+    if os.environ.get('XIYOU_SAMPLE', '') == '0':
+        return None
+    sample = json.loads(Path(path).read_text()).get('sample') or {}
+    return sample if sample.get('enabled') else None
+
+
+def sample_chunks(all_scenes, sample):
+    """[(族名, [段…]), …]：每族按名字排序、每 chunk 个一组；段数不是 chunk 整数倍的族不抽样（不出现在结果里）。"""
+    out = []
+    for fam in (sample or {}).get('families', []):
+        members = sorted(s for s in all_scenes if fnmatch.fnmatchcase(s, fam['scenes']))
+        n = int(fam.get('chunk', 4))
+        if n > 1 and members and len(members) % n == 0:
+            out += [(fam['name'], members[i:i + n]) for i in range(0, len(members), n)]
+    return out
+
+
+def apply_sample(scenes, pinned, all_scenes, sample, seed):
+    """每组选中的段里只留 1 段：组里有 pinned 的就留 pinned（全留），否则按 seed 轮换。返回 (留下的场景, [(族, 组, 留, 省)…])。"""
+    keep, info = set(scenes), []
+    for i, (fam, chunk) in enumerate(sample_chunks(all_scenes, sample)):
+        chosen = [s for s in chunk if s in keep]
+        if len(chosen) < 2:
+            continue
+        fixed = [s for s in chosen if s in pinned]
+        if fixed:
+            stay = fixed
+        else:
+            start = (seed + i) % len(chunk)
+            stay = [next(chunk[(start + k) % len(chunk)] for k in range(len(chunk)) if chunk[(start + k) % len(chunk)] in chosen)]
+        dropped = [s for s in chosen if s not in stay]
+        keep -= set(dropped)
+        if dropped:
+            info.append((fam, chunk, stay, dropped))
+    return sorted(keep), info
 
 
 def effective_base(root, base, head=None):
@@ -243,7 +287,8 @@ class Tests:
         return hits
 
 
-def select(root, base, table=TABLE, head=None):
+def select(root, base, table=TABLE, head=None, sample=True):
+    """sample=False：不抽样（合并沿用车道结果时算「哪些场景被差异波及」用）。"""
     root = Path(root)
     git(root, 'rev-parse', '--verify', '-q', base + '^{commit}')
     groups, rules = load_table(table)
@@ -256,6 +301,8 @@ def select(root, base, table=TABLE, head=None):
     files = changed_files(root, base, head)
     tests = Tests(root, head)
     full, scenes, checks, reasons = False, set(), set(), []
+    pinned = set()  # 改了测试本身选上的场景：抽样时照跑
+    sample_cfg = load_sample(table) if sample else None
 
     narrow = sections.get('narrowFloorsByMap') or {}
 
@@ -312,6 +359,8 @@ def select(root, base, table=TABLE, head=None):
         if g.get('full'):
             full = True
         scenes.update(picked)
+        if sample_cfg and group in sample_cfg.get('exemptGroups', []):
+            pinned.update(picked)
         checks.update(g.get('checks', []))
         reasons.append((path, why, g.get('说明', ''), sorted(picked), g.get('full', False)))
 
@@ -338,7 +387,12 @@ def select(root, base, table=TABLE, head=None):
     if not full and tests.scenes and scenes >= set(tests.scenes):
         full = True  # 选中了全部场景：按整轮跑，才能沿用上轮通过结果
         reasons.append(('（全部场景）', '选中了全部 %d 个场景，按整轮跑' % len(tests.scenes), '', [], True))
-    return dict(base=shown_base, files=files, full=full, scenes=sorted(scenes), checks=sorted(checks), reasons=reasons)
+    sampled = []
+    if sample_cfg and not full:
+        seed = int(git(root, 'rev-parse', head or 'HEAD').strip()[:8], 16)
+        scenes, sampled = apply_sample(scenes, pinned, tests.scenes, sample_cfg, seed)
+    return dict(base=shown_base, files=files, full=full, scenes=sorted(scenes), checks=sorted(checks), reasons=reasons,
+                sampled=sampled)
 
 
 def report(sel, out):
@@ -347,6 +401,14 @@ def report(sel, out):
         extra = '整轮' if full else ('%d 个场景' % len(picked) if picked else '无场景')
         shown = '、'.join(picked[:6]) + ('……' if len(picked) > 6 else '')
         print('  %s → %s（%s）：%s%s' % (path, why, note, extra, '：' + shown if shown and not full else ''), file=out)
+    if sel.get('sampled'):
+        fams = {}
+        for fam, _, stay, dropped in sel['sampled']:
+            f = fams.setdefault(fam, [[], 0])
+            f[0] += [x[:-5] for x in stay]
+            f[1] += len(dropped)
+        for fam, (stay, n) in fams.items():
+            print('  抽样（XIYOU_SAMPLE=0 关）：%s 每组留 1 段，跑 %s，省 %d 个' % (fam, ' '.join(stay), n), file=out)
     if sel['full']:
         print('  结论：整轮（有拿不准的改动），等同不加 --affected', file=out)
     else:

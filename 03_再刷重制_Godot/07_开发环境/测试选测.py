@@ -527,6 +527,202 @@ class MergeBaseTests(Fixture):
         self.assertEqual(sel.select(self.root, self.base)['base'], self.base)  # 基准是祖先：照旧
 
 
+class SampleTests(Fixture):
+    """tools43①：rules／smart_ai 每 4 段留 1 段，按提交号轮换；改了测试本身的段照跑；开关关掉回到全跑。"""
+    def setUp(self):
+        super().setUp()
+        for part in ['d1c', 'd1d', 'd2b', 'd2c', 'd2d']:
+            self.put(TESTS / ('xiyou_rules_%s.tscn' % part), '[ext_resource path="res://tests/xiyou_rules.gd" id="1"]\n')
+        self.scene('xiyou_smart_ai', 'XBattler')
+        for part in 'bcd':
+            self.put(TESTS / ('xiyou_smart_ai_%s.tscn' % part), '[ext_resource path="res://tests/xiyou_smart_ai.gd" id="1"]\n')
+        self.commit('eight rules parts, four smart_ai parts')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.rules = ['xiyou_rules.tscn'] + ['xiyou_rules_%s.tscn' % p for p in ['d1b', 'd1c', 'd1d', 'd2', 'd2b', 'd2c', 'd2d']]
+        self.ai = ['xiyou_smart_ai.tscn'] + ['xiyou_smart_ai_%s.tscn' % p for p in 'bcd']
+
+    def test_battle_change_keeps_one_part_per_group(self):
+        self.put(CORE / 'battler.gd', 'class_name XBattler\n# changed\n')
+        s = self.pick()
+        self.assertFalse(s['full'])
+        kept = [x for x in s['scenes'] if x in self.rules]
+        self.assertEqual(len(kept), 2)
+        self.assertEqual(sorted(self.rules.index(x) // 4 for x in kept), [0, 1])  # 每个难度一段
+        self.assertEqual(len([x for x in s['scenes'] if x in self.ai]), 1)
+        self.assertEqual(sum(len(d) for *_, d in s['sampled']), 9)
+        self.assertIn('xiyou_battle.tscn', s['scenes'])                     # 不在族里的照选
+        import contextlib, io
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            sel.report(s, sys.stdout)
+        self.assertIn('抽样', out.getvalue())
+        self.assertIn('省 6 个', out.getvalue())
+
+    def test_rotation_is_by_commit_and_covers_every_part(self):
+        sample = sel.load_sample()
+        seen = set()
+        for seed in range(4):
+            keep, _ = sel.apply_sample(self.rules, set(), self.rules, sample, seed)
+            self.assertEqual(len(keep), 2)
+            self.assertEqual(keep, sel.apply_sample(self.rules, set(), self.rules, sample, seed)[0])  # 同提交同结果
+            seen.update(keep)
+        self.assertEqual(seen, set(self.rules))
+        self.put(CORE / 'battler.gd', 'class_name XBattler\n# changed\n')
+        self.assertEqual(self.pick()['scenes'], self.pick()['scenes'])
+
+    def test_changed_part_runs_and_represents_its_group(self):
+        self.put(CORE / 'battler.gd', 'class_name XBattler\n# changed\n')
+        self.put(TESTS / 'xiyou_rules_d2c.tscn', '[ext_resource path="res://tests/xiyou_rules.gd" id="1"]\n# edited\n')
+        kept = [x for x in self.pick()['scenes'] if x in self.rules]
+        self.assertIn('xiyou_rules_d2c.tscn', kept)
+        self.assertEqual(len(kept), 2)
+        self.put(TESTS / 'xiyou_rules.gd', 'extends Node\nXBattler\n# helper edited\n')
+        self.assertEqual([x for x in self.pick()['scenes'] if x in self.rules], self.rules)  # 改了共用脚本：全跑
+
+    def test_switches_and_uneven_family(self):
+        self.put(CORE / 'battler.gd', 'class_name XBattler\n# changed\n')
+        os.environ['XIYOU_SAMPLE'] = '0'
+        try:
+            self.assertEqual([x for x in self.pick()['scenes'] if x in self.rules], self.rules)
+        finally:
+            del os.environ['XIYOU_SAMPLE']
+        table = json.loads((HERE / '选测对照.json').read_text())
+        table['sample']['enabled'] = False
+        off = self.root / 'off.json'
+        off.write_text(json.dumps(table))
+        self.assertEqual([x for x in sel.select(self.root, self.base, off)['scenes'] if x in self.rules], self.rules)
+        self.assertEqual([x for x in sel.select(self.root, self.base, sample=False)['scenes'] if x in self.rules], self.rules)
+        (self.root / TESTS / 'xiyou_smart_ai_d.tscn').unlink()             # 3 段不是 4 的整数倍：这一族不抽
+        self.assertEqual([x for x in self.pick()['scenes'] if x.startswith('xiyou_smart_ai')], self.ai[:3])
+
+    def test_full_selection_is_not_sampled(self):
+        self.put(PROJECT / 'mystery.txt', 'x\n')
+        s = self.pick()
+        self.assertTrue(s['full'])
+        self.assertEqual(s['sampled'], [])
+
+
+reuse_spec = importlib.util.spec_from_file_location('reuse', HERE / '沿用车道.py')
+reuse = importlib.util.module_from_spec(reuse_spec)
+reuse_spec.loader.exec_module(reuse)
+
+
+class ReuseTests(SampleTests):
+    """tools43②：车道测过的提交 → 现在工作区的差异没波及的场景沿用；差异整轮、改了产物来源时一个都不沿用。"""
+    def lane(self):
+        self.put(UI / 'nobody.gd', 'class_name XNobody\n# lane\n')
+        self.commit('lane work')
+        return self.g('rev-parse', 'HEAD')
+
+    def test_untouched_scenes_reuse_lane_result(self):
+        c = self.lane()
+        self.put(UI / 'shop.gd', 'class_name XShopScene\n# main moved\n')  # 合并后主线带来的改动波及 shop
+        want = ['xiyou_shop.tscn', 'xiyou_event_compare.tscn', 'xiyou_battle.tscn']
+        keep, used, notes = reuse.plan(self.root, self.base, want, {c: ('本机', {'xiyou_shop.tscn', 'xiyou_battle.tscn'})}, sel)
+        self.assertEqual(keep, ['xiyou_shop.tscn', 'xiyou_event_compare.tscn'])  # shop 被波及，event_compare 车道没测
+        self.assertEqual(used, {'xiyou_battle.tscn': (c, '本机', 'xiyou_battle.tscn')})
+        self.assertIn('沿用 %s（本机）1 个：xiyou_battle' % c[:9], reuse.summarize(used))
+
+    def test_generated_inputs_or_full_diff_reuse_nothing(self):
+        c = self.lane()
+        self.put(TOOLS / 'xiyou_slice.json', '{"troops": [1]}\n')
+        keep, used, notes = reuse.plan(self.root, self.base, ['xiyou_battle.tscn'], {c: ('本机', {'xiyou_battle.tscn'})}, sel)
+        self.assertEqual((keep, used), (['xiyou_battle.tscn'], {}))
+        self.assertIn('产物来源', notes[0])
+        self.g('checkout', '--', str(TOOLS / 'xiyou_slice.json'))
+        self.put(PROJECT / 'mystery.txt', 'x\n')
+        keep, used, notes = reuse.plan(self.root, self.base, ['xiyou_battle.tscn'], {c: ('本机', {'xiyou_battle.tscn'})}, sel)
+        self.assertEqual(used, {})
+        self.assertIn('整轮', notes[0])
+
+    def test_sampled_part_reuses_other_part_of_same_group(self):
+        c = self.lane()
+        keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_rules_d1c.tscn', 'xiyou_rules_d2.tscn'],
+                                   {c: ('本机', {'xiyou_rules_d1b.tscn'})}, sel)
+        self.assertEqual(keep, ['xiyou_rules_d2.tscn'])                    # 第二组车道一段也没测
+        self.assertEqual(used['xiyou_rules_d1c.tscn'][2], 'xiyou_rules_d1b.tscn')
+
+    def test_local_records_need_same_environment(self):
+        sdir = self.root / 'state'
+        (sdir / 'commit_results').mkdir(parents=True)
+        now = {'godot': '4.5', 'generated': 'g1', 'timeout': 600}
+        rec = dict(now, scenes={'a.tscn': True, 'b.tscn': False}, time='t')
+        (sdir / 'commit_results/c1.json').write_text(json.dumps(rec))
+        (sdir / 'commit_results/c2.json').write_text(json.dumps(dict(rec, generated='g2')))
+        (sdir / 'commit_results/c3.json').write_text('not json')
+        got = reuse.local_records(sdir, ['c1', 'c2', 'c3', 'c4'], now)
+        self.assertEqual(list(got), ['c1'])
+        self.assertEqual(got['c1'][1], {'a.tscn'})
+
+    def test_cli_disabled_and_note_file(self):
+        import contextlib, io
+        c = self.lane()
+        note = self.root / '.git' / reuse.NOTE
+        note.write_text('stale\n')
+        out = io.StringIO()
+        os.environ['XIYOU_REUSE_LANE'] = '0'
+        try:
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                rc = reuse.main([self.base, '--root', str(self.root), '--godot', 'none', '--project', str(self.root / PROJECT),
+                                 '--shell', 'xiyou_battle'])
+        finally:
+            del os.environ['XIYOU_REUSE_LANE']
+        self.assertEqual(rc, 0)
+        self.assertIn('REUSE_KEEP=(xiyou_battle.tscn)', out.getvalue())
+        self.assertIn('REUSE_COUNT=0', out.getvalue())
+        self.assertFalse(note.exists())                                      # 旧说明不留给收尾尾注
+
+
+class CloudSkipTests(unittest.TestCase):
+    """tools43②：云端计划读 Mac 推来的 refs/ci/skip/<提交>；没有、读坏都当空集合（照跑）。"""
+    def test_skip_list(self):
+        spec = importlib.util.spec_from_file_location('cloud', HERE / '云端选测.py')
+        cloud = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cloud)
+        blobs = {}
+        cloud.ls_remote = lambda remote, *refs, git_dir=None: {r: 'x' for r in refs if r in blobs}
+        cloud.git = lambda *a, **k: blobs.get(cloud.SKIP_PREFIX + 'abc', '') if a[0] == 'cat-file' else ''
+        self.assertEqual(cloud.skip_list('abc'), set())
+        blobs[cloud.SKIP_PREFIX + 'abc'] = '["a.tscn", "b.tscn", 3]'
+        self.assertEqual(cloud.skip_list('abc'), {'a.tscn', 'b.tscn'})
+        blobs[cloud.SKIP_PREFIX + 'abc'] = 'oops'
+        self.assertEqual(cloud.skip_list('abc'), set())
+
+
+runner_spec = importlib.util.spec_from_file_location('runner', HERE / '并行测试.py')
+runner = importlib.util.module_from_spec(runner_spec)
+runner_spec.loader.exec_module(runner)
+
+
+class CommitRecordTests(Fixture):
+    """tools43②：并行测试.py 只在工程目录干净时按提交记账，环境变了不混旧行。"""
+    def test_records_only_clean_commits(self):
+        godot = self.root / 'fake_godot'
+        godot.write_text('#!/bin/sh\necho 4.5.fake\n'); godot.chmod(0o755)
+        (self.root / '.gitignore').write_text('fake_godot\nstate/\n' + str(PROJECT / 'modes/xiyou/generated') + '/\n')
+        gen = self.root / PROJECT / 'modes/xiyou/generated'
+        gen.mkdir(parents=True)
+        (gen / 'a.json').write_text('{}')
+        self.commit('ignore')
+        sdir = self.root / 'state'
+        sdir.mkdir()
+        project = str(self.root / PROJECT)
+        sha = runner.record_commit_results(project, sdir, str(godot), {'x.tscn': True})
+        self.assertEqual(sha, self.g('rev-parse', 'HEAD'))
+        rec = json.loads((sdir / 'commit_results' / (sha + '.json')).read_text())
+        self.assertEqual((rec['godot'], rec['scenes']), ('4.5.fake', {'x.tscn': True}))
+        runner.record_commit_results(project, sdir, str(godot), {'y.tscn': False})
+        self.assertEqual(json.loads((sdir / 'commit_results' / (sha + '.json')).read_text())['scenes'], {'x.tscn': True, 'y.tscn': False})
+        (gen / 'a.json').write_text('{"changed": 1}')                     # 产物变了：旧行作废
+        runner.record_commit_results(project, sdir, str(godot), {'z.tscn': True})
+        self.assertEqual(json.loads((sdir / 'commit_results' / (sha + '.json')).read_text())['scenes'], {'z.tscn': True})
+        self.put(UI / 'shop.gd', 'dirty\n')                                # 有未提交改动：不记
+        self.assertEqual(runner.record_commit_results(project, sdir, str(godot), {'x.tscn': True}), '')
+        self.g('checkout', '--', str(UI / 'shop.gd'))
+        self.put(TESTS / 'new.gd', 'x\n')                                  # 未跟踪的新文件也算不干净
+        self.assertEqual(runner.record_commit_results(project, sdir, str(godot), {'x.tscn': True}), '')
+
+
 STUB_CHECKS = ['测试工作树清理.py', '测试导出过滤.py', '测试共性验收.py', '测试合并工具.py', '测试公式程序.py', '测试转换器写入.py',
                '测试记录工具.py', '测试云端准备.py', '测试内容覆盖.py', '测试角色同步提速.py', '测试事件探针分段.py', '测试状态js翻译.py', '测试参照批次.py', '测试提交守卫.py', '测试回退开关覆盖.py', '回退开关覆盖.py', '探针登记检查.py', '测试反向验证.py', '语法检查.py', '参照批次.py', '测试选测.py', '变更记录分卷.py', '待核查.py']
 
@@ -543,6 +739,11 @@ class CheckerTests(Fixture):
         record = 'import sys, pathlib\nwith open(%r, "a") as f: f.write(pathlib.Path(sys.argv[0]).name + " " + " ".join(sys.argv[1:]) + "\\n")\n' % str(self.calls)
         for name in STUB_CHECKS + ['并行测试.py']:
             self.put(ENV / name, record)
+        # 沿用车道.py 替身（tools43）：记一行；FAKE_REUSE_DROP 里的场景当作沿用（不再跑），其余原样交回
+        self.put(ENV / '沿用车道.py', record + 'import os\nnames = sys.argv[sys.argv.index("--shell") + 1:]\n'
+                 'drop = set(os.environ.get("FAKE_REUSE_DROP", "").split())\n'
+                 'print("REUSE_KEEP=(%s)" % " ".join(n for n in names if n not in drop))\n'
+                 'print("REUSE_COUNT=%d" % len([n for n in names if n in drop]))\n')
         # 占槽.py 替身：直接跑 -- 后面的命令（真的占槽要用真的 并行测试.py）
         self.put(ENV / '占槽.py', 'import subprocess, sys\nsys.exit(subprocess.run(sys.argv[sys.argv.index("--") + 1:]).returncode)\n')
         for rel in ['共性参照验收.py', '内容覆盖检查.py', '验证西游来源.py', 'ui_reference/guard_check.py']:
@@ -692,6 +893,43 @@ class CheckerTests(Fixture):
         self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_shop.tscn'])  # 选测按指纹沿用
         self.assertIn('guard_check.cjs', self.names(ran))
         self.assertNotIn('测试合并工具.py', self.names(ran))
+
+    def test_lane_reuse_drops_scenes_and_switch_off(self):
+        """tools43②：沿用车道.py 说沿用的场景不交给 并行测试.py；XIYOU_REUSE_LANE=0 不调它、照跑。"""
+        self.put(UI / 'shop.gd', 'class_name XShopScene\n# 2\n')
+        rc, out, ran = self.check('--affected', self.base, env={'FAKE_REUSE_DROP': 'xiyou_shop.tscn'})
+        self.assertEqual(rc, 0, out)
+        self.assertIn('沿用车道.py', self.names(ran))
+        runner = next(l for l in ran if l.startswith('并行测试.py')).split()
+        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn'])
+        rc, out, ran = self.check('--affected', self.base, env={'FAKE_REUSE_DROP': 'xiyou_shop.tscn xiyou_event_compare.tscn'})
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn('并行测试.py', self.names(ran))                    # 全沿用：不导入、不跑
+        self.assertIn('跳过导入与测试', out)
+        rc, out, ran = self.check('--affected', self.base, env={'FAKE_REUSE_DROP': 'xiyou_shop.tscn', 'XIYOU_REUSE_LANE': '0'})
+        self.assertNotIn('沿用车道.py', self.names(ran))
+        runner = next(l for l in ran if l.startswith('并行测试.py')).split()
+        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_shop.tscn'])
+        rc, out, ran = self.check('--oracle')                               # 全量不调
+        self.assertNotIn('沿用车道.py', self.names(ran))
+
+    def test_lane_reuse_failure_runs_everything(self):
+        self.put(ENV / '沿用车道.py', 'import sys\nsys.exit(3)\n')
+        self.put(UI / 'shop.gd', 'class_name XShopScene\n# 2\n')
+        rc, out, ran = self.check('--affected', self.base)
+        self.assertEqual(rc, 0, out)
+        self.assertIn('沿用车道结果判断失败', out)
+        runner = next(l for l in ran if l.startswith('并行测试.py')).split()
+        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_shop.tscn'])
+
+    def test_cloud_gets_reused_scenes_as_skip(self):
+        self.env = dict(self.env, FAKE_REUSE_DROP='xiyou_shop.tscn')
+        with open(self.root / '.git/info/exclude', 'a') as f:                # 桩文件不算改动，免得选测整轮
+            f.write('cloud_stub.py\ncalls\n')
+        rc, out, ran = self.cloud_check(no_upload=True)
+        self.assertIn('沿用车道.py', self.names(ran))
+        self.assertEqual(rc, 0, out)
+        self.assertEqual([l for l in ran if l.startswith('cloud run')], ['cloud run --no-upload --skip xiyou_shop.tscn'])
 
     def test_static_failure_stops_before_godot(self):
         # 文档与登记检查失败：默认在 Godot 测试前就退出；--keep-going 照旧全跑

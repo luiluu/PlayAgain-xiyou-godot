@@ -178,6 +178,7 @@ def cmd_upload(a):
 
 
 BASE_PREFIX = 'refs/ci/base/'
+SKIP_PREFIX = 'refs/ci/skip/'  # 合并沿用车道结果（tools43）：Mac 端算出的不用再跑的场景，计划步骤从选测里去掉
 
 
 def verified_base(url, bare, limit=300):
@@ -230,6 +231,12 @@ def cmd_run(a):
             log('选测基准：%s（%s）' % (base[:10], '指定' if a.base else '上次云端通过的祖先'))
             # 基准提交已在 GitHub 上（它有云端结果）；先推基准ref，计划步骤据它取 refs/ci/base/<HEAD>
             git('push', '--force', '--no-verify', remote, '%s:%s%s' % (base, BASE_PREFIX, head), env={'GIT_TERMINAL_PROMPT': '0'})
+    if a.skip and not a.full:
+        blob = git('hash-object', '-w', '--stdin', input=json.dumps(sorted(a.skip.split()), ensure_ascii=False) + '\n')
+        tree = git('mktree', input='100644 blob %s\tskip.json\n' % blob)
+        commit = git('commit-tree', tree, input='ci skip %s\n' % head, env=BOT)
+        git('push', '--force', '--no-verify', remote, '%s:%s%s' % (commit, SKIP_PREFIX, head), env={'GIT_TERMINAL_PROMPT': '0'})
+        log('沿用车道结果：%d 个场景不在云端重跑' % len(a.skip.split()))
     print_estimate(base or None, a.full)
     git('push', '--force', '--no-verify', remote, 'HEAD:refs/heads/' + target, env={'GIT_TERMINAL_PROMPT': '0'})
     print('已推送 %s → %s，云端开始选测（基准 %s%s）' % (head[:10], target, base[:10] if base else 'GitHub main 的分叉点', '，整轮' if a.full else ''))
@@ -559,6 +566,10 @@ def cmd_plan(a):
         if sel['full']:
             mode = 'full'
         reasons = ['%s → %s' % (p, why) for p, why, _, _, _ in sel['reasons']]
+        skip = skip_list(sha)
+        if skip and mode == 'affected':
+            scenes = [x for x in scenes if x not in skip]
+            reasons.append('沿用车道结果、不再跑 %d 个：%s' % (len(skip), '、'.join(sorted(skip))))
         if sel['checks']:
             reasons.append('（非 Godot 检查 %s 不在云端跑，仍在 Mac 上跑）' % '、'.join(sel['checks']))
     est = estimates(scenes, a.timings)
@@ -579,6 +590,18 @@ def cmd_plan(a):
     matrix = {'include': [{'shard': i + 1, 'scenes': ' '.join(s)} for i, s in enumerate(shards)]}
     gh_output(skip='false', count=len(shards), matrix=json.dumps(matrix), generated_ref=ref, generated_commit=gen, mode=mode)
     return 0
+
+
+def skip_list(sha):
+    """Mac 端推来的「沿用车道结果」场景表（refs/ci/skip/<提交>:skip.json）；没有或读不了返回空集合（照跑）。"""
+    if not ls_remote('origin', SKIP_PREFIX + sha):
+        return set()
+    git('fetch', '-q', '--no-tags', 'origin', '+%s%s:refs/xiyou-ci/skip' % (SKIP_PREFIX, sha), check=False)
+    try:
+        got = json.loads(git('cat-file', '-p', 'refs/xiyou-ci/skip:skip.json', check=False) or '[]')
+    except ValueError:
+        return set()
+    return {x for x in got if isinstance(x, str)} if isinstance(got, list) else set()
 
 
 def billable_minutes(shards, est, jobs):
@@ -662,6 +685,7 @@ def cmd_report(a):
            'jobStatus': a.job_status, 'shards': len(want), 'longestShardSeconds': max(walls or [0]),
            'testSeconds': round(sum(sum(r['timings'].values()) for r in results)),
            'generatedRef': plan.get('generatedRef', ''), 'generatedCommit': plan.get('generatedCommit', ''), 'runUrl': run_url,
+           'sceneNames': plan.get('scenes', []),  # 合并沿用车道结果用（沿用车道.py，tools43）
            'time': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')}
     head = '✓ 云端选测通过' if passed else '✗ 云端选测有失败'
     how = {'full': '整轮', 'scenes': '指定场景'}.get(res['mode'], '选测（基准 %s）' % res['base'])
@@ -697,6 +721,7 @@ def main(argv=None):
     p = sub.add_parser('run'); p.add_argument('--branch'); p.add_argument('--full', action='store_true')
     p.add_argument('--base', help='选测基准提交；默认取 HEAD 的祖先里最近一个云端已通过的，没有就用 GitHub main 的分叉点')
     p.add_argument('--no-upload', action='store_true', help='不传产物（用 GitHub 上已有的本分支或 main 的快照）')
+    p.add_argument('--skip', default='', help='沿用车道结果、云端不再跑的场景（空格分隔，检查.sh 据 沿用车道.py 给；tools43）')
     p = sub.add_parser('estimate'); p.add_argument('--base', help='默认 <GitHub 远端>/main'); p.add_argument('--full', action='store_true')
     p.add_argument('--jobs', type=int, default=2); p.add_argument('--target', type=int, default=600); p.add_argument('--max-shards', type=int, default=16)
     p = sub.add_parser('wait'); p.add_argument('commit', nargs='?'); p.add_argument('--mode', choices=['affected', 'full'])
