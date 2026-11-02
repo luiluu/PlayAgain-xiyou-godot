@@ -1,0 +1,23 @@
+{
+ "sha": "21dade590e629fa812c550c09bc7647ed790705c",
+ "branch": "ci/cc/wukong-events3",
+ "mode": "affected",
+ "base": "960363127f7cf48a8e509305d899257fd8bf0633",
+ "passed": false,
+ "scenes": 217,
+ "failed": [
+  "xiyou_wtype.tscn"
+ ],
+ "flaky": [
+  "xiyou_floor_reach080.tscn"
+ ],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 13,
+ "longestShardSeconds": 1004.8,
+ "testSeconds": 17656,
+ "generatedRef": "refs/ci/generated/cc/wukong-events3",
+ "generatedCommit": "d6808b4bbf420cadefcce85f485f1f0e5f5b902c",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41388614981",
+ "time": "2026-11-02T04:54:56+00:00"
+}
