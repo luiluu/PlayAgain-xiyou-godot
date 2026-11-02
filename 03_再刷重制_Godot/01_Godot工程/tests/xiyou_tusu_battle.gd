@@ -234,6 +234,11 @@ func _step(st: Array) -> Array:
 			XBinding.gain(_who(st[1]), int(st[2]))
 		"sethp":
 			_set_hp(_who(st[1]), float(st[2]))
+		"kairen":
+			logic.state.actor_advance[TUSU] = 3
+			logic.state.flags[XTusu.KAIREN_FLAG] = (st[2] as Array).duplicate()
+		"heal":
+			logs = logic.act(_who(st[1]), XDB.rec("Skills", int(st[2])), _who(st[3]))
 		"kill":
 			_set_hp(_who(st[1]), 0.0)
 		"revive":
@@ -257,7 +262,7 @@ func _ready() -> void:
 
 func _go() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	check("oracle", ref.cases.size() == 9 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
+	check("oracle", ref.cases.size() == 10 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:
 		if PENDING.has(c.id):
 			print("SKIP ", c.id, "：", PENDING[c.id])

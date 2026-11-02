@@ -132,6 +132,8 @@ function step(bm, st) {
   else if (op === 'sup') { begin(bm, who(x), K(y), z); run(bm); }  // 屠苏自己用支援（指令窗「武相支援」）：z 敌序号（锁定选敌人），−1 不指定
   else if (op === 'gain') B.gain(who(x), y);  // 给屠苏兵势（原版屠苏 manual，兵势恒 0，内部施放的支援实际放不出来；这里补兵势量内部施放）
   else if (op === 'sethp') who(x).setHp(y);
+  else if (op === 'kairen') { const a = who(x); a._AdvancedNum = 3; a._codexTusuKairen = y.slice(); T.syncKairenSkills(a); }  // 进阶 3 次、器谱开刃这几相
+  else if (op === 'heal') { begin(bm, who(x), y, w.$gameParty.members().indexOf(who(z))); run(bm); }  // 角色 x 对队友 z 用技能 y
   else if (op === 'kill') { const a = who(x); a.setHp(0); a.refresh(); }
   else if (op === 'revive') { const a = who(x); a.removeState(a.deathStateId()); a.setHp(a.mhp); }
   else if (op === 'formula') {
@@ -179,11 +181,16 @@ const SCRIPTS = {
     ['sup', 176, 'support.jintang', -1], ['use', 176, 'yiwu.book'], ['turn'], ['sup', 176, 'support.heming', -1], ['arm', 1, 'arm.chiling', 0],
     ['use', 176, 'yiwu.hammer'], ['turn'], ['sup', 176, 'support.zhenhun', 0], ['turn'], ['end']]],
   // 内部施放（B.cast，补兵势才放得出）：敕令前自动和鸣、斩锋后剑气纵横（按持武者这次的伤害定上下限）、回合末余下兵势释放、震击后镇魂打最危险的敌人、
-  // 盾相敌人出手前有人半血以下放金汤、贯日前自动锁定
+  // 盾相敌人出手前有人半血以下放金汤、贯日前自动锁定；横扫打三个敌人后的剑气被下限（持武者伤害 ×0.5）抬高（上限 ×2.7 这里够不着）
   cast: [{176: 60}, [['use', 176, 'huawu.book', 1], ['gain', 176, 3], ['arm', 1, 'arm.chiling', 0], ['use', 176, 'yiwu.sword'], ['turn'], ['gain', 176, 3],
-    ['arm', 1, 'arm.zhanfeng', 0], ['turn'], ['gain', 176, 1], ['use', 176, 'yiwu.hammer'], ['turn'], ['gain', 176, 2], ['arm', 1, 'arm.zhenji', 0],
+    ['arm', 1, 'arm.zhanfeng', 0], ['turn'], ['gain', 176, 2], ['arm', 1, 'arm.hengsao', 0], ['use', 176, 'yiwu.hammer'], ['turn'], ['gain', 176, 2], ['arm', 1, 'arm.zhenji', 0],
     ['use', 176, 'yiwu.shield'], ['turn'], ['gain', 176, 1], ['sethp', 8, 100], ['hit', 'e0', 1, 8], ['use', 176, 'yiwu.bow'], ['turn'], ['gain', 176, 1],
     ['arm', 1, 'arm.guanri', 1], ['end']]],
+  // 开刃（tusu5）：弓——贯日击杀锁定目标后锁定下一个最危险的敌人；锤——挫势叠 2 层（×0.8²）；书——持武者对队友的魔法治疗先自动和鸣、
+  // 治疗 ×hemingRate 后消费（4442 悦耳）
+  kairen: [{176: 60}, [['kairen', 176, ['bow', 'hammer', 'book']], ['use', 176, 'huawu.bow', 1], ['gain', 176, 1], ['sethp', 'e1', 1],
+    ['arm', 1, 'arm.guanri', 1], ['use', 176, 'yiwu.hammer'], ['turn'], ['arm', 1, 'arm.zhenji', 0], ['arm', 1, 'arm.zhenji', 0], ['hit', 'e0', 1, 10],
+    ['use', 176, 'yiwu.book'], ['turn'], ['gain', 176, 1], ['sethp', 8, 100], ['heal', 1, 4442, 8], ['heal', 1, 4442, 8], ['end']]],
   // 等级低：没解锁的武装技能、支援不能用
   low: [{176: 5}, [['use', 176, 'huawu.bow', 1], ['turn'], ['use', 176, 'yiwu.sword'], ['turn'], ['end']]],
 };

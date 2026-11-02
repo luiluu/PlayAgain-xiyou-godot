@@ -71,6 +71,7 @@ static func total(b) -> float:
 static func grant(target, source: String, value: float, turns: float, owner := 0, opts := {}) -> float:
 	if target == null or not active:
 		return 0.0
+	value *= XTusu.book_rate()  # 止戈环 L.grant 包装：开刃·书的护持护盾 ×hemingRate
 	var bonus := 0.0 if bool(opts.get("noBonus", false)) else _num(target.shield_effect_bonus())
 	var v := floorf(maxf(0.0, _num(value)) * (1.0 + bonus))
 	if v <= 0.0:

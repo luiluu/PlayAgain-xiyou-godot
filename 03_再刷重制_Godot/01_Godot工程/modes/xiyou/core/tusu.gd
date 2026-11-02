@@ -831,6 +831,15 @@ static func start_action(logic, u, skill: Dictionary, chosen) -> Array:
 	return take_logs()
 
 
+## 开刃·书的护持法术带和鸣：这次的治疗（executeHpDamage 负值）、护盾（addShield、账本 grant）×hemingRate（止戈环包装）
+static func book_rate() -> float:
+	return float(_act.get("book_heming", 1.0)) if _act.has("book_heming") else 1.0
+
+
+static func book_heal(value: float) -> float:
+	return floorf(value * book_rate()) if value < 0.0 and _act.has("book_heming") else value
+
+
 static func _book_protection(t, u, skill: Dictionary) -> bool:
 	if not (is_same(holder(t), u) and weapon(t) == "book" and has_kairen("book") and int(skill.get("hitType", 0)) == 2):
 		return false

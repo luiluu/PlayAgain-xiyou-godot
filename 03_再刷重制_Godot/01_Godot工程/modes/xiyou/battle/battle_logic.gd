@@ -1963,6 +1963,7 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 ## Game_Action.executeHpDamage（类型 1／3／5），外层到内层：Boss输出→导入平衡→真气（护法减伤、元婴护体，只在战斗中）→ ShieldSystem 护盾吸收、
 ## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
+	value = XTusu.book_heal(value)  # 止戈环 executeHpDamage 包装（最外层）：开刃·书的护持治疗 ×hemingRate
 	var tusu_cuoshi := XTusu.hp_before(u, t, value, item)  # 止戈环 60 级 executeHpDamage 包装（护盾账本之外）：护阵首伤护盾、打前有没有挫势
 	var out := _execute_hp_damage_ledger(u, t, value, drain, item)
 	XTusu.hp_after(u, t, value, item, tusu_cuoshi)  # 锻痕、挫势减伤标记的消费与新挂

@@ -240,6 +240,7 @@ func shield_effect_bonus() -> float:
 
 ## addShield：正数乘 (1＋加成)，负数直接扣；不取整，不低于 0。非有限数按 0。
 func add_shield(value: float) -> void:
+	value *= XTusu.book_rate()  # 止戈环 addShield 包装（最外层）：开刃·书的护持护盾 ×hemingRate
 	if is_nan(value) or is_inf(value):
 		value = 0.0
 	if XAlienBattle.blocks_life_shield(self) or XAlienBattle.route_shield(self, value):
