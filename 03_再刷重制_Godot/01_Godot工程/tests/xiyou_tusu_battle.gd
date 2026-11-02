@@ -12,7 +12,7 @@ const TUSU_KEYS := ["return", "menu.forge", "body.phys", "body.mag", "body.guard
 const ARM_KEYS := ["arm.zhanfeng", "arm.hengsao", "arm.dianshe", "arm.guanri", "arm.huzhen", "arm.chiling", "arm.zhenji"]
 const PAY_KEYS := ARM_KEYS + ["support.jianqi", "support.suoding", "support.jintang", "support.heming", "support.zhenhun"]
 ## 参照里已经记了、重制还没做完的例（四期剩余，做完删掉这一行再比）
-const PENDING := {"armdmg": "止戈环 60 级分段与五兵淬纹（installThreeGrowthRelicRuntime 的 three60-effects）、挫势、和鸣倍率（参照 ×1.25，按 hemingRate 应 ×1.5，待查）"}
+const PENDING := {}
 var checks := 0
 var failures: Array = []
 var logic: XBattleLogic
@@ -109,7 +109,8 @@ func _snap() -> Dictionary:
 	for k in TUSU_KEYS:
 		skills[k] = _row(t, k)
 	var out := {"round": XBinding.current_round(), "tusu": {"data": null if d == null else {"weapon": d.weapon, "reserve": d.reserve, "pending": d.pending,
-		"hostActions": int(d.host_actions)}, "last": logic.state.flags.get(XTusu.LAST_FLAG), "bind": null if bd == null else {"charges": int(bd.charges),
+		"hostActions": int(d.host_actions),
+		"trigger": float(d.trigger), "growth": int(d.growth)}, "last": logic.state.flags.get(XTusu.LAST_FLAG), "bind": null if bd == null else {"charges": int(bd.charges),
 		"hostId": int(bd.host_id), "returnedRound": int(bd.returned_round)}, "states": _states(t), "hp": t.hp, "mp": t.mp, "mmp": t.mmp, "atk": t.atk,
 		"mat": t.mat, "def": t.def, "mdf": t.mdf, "attack": t.attack_skill_id(), "canMove": logic.can_move(t), "skills": skills,
 		"guard": logic.can_use(t, XDB.rec("Skills", 2)) and logic.can_move(t), "atk1": logic.can_use(t, XDB.rec("Skills", 1)) and logic.can_move(t)}, "party": {}}
@@ -118,7 +119,7 @@ func _snap() -> Dictionary:
 		var arm := {}
 		for k in ARM_KEYS:
 			arm[k] = _row(a, k)
-		out.party["a%d" % id] = {"states": _states(a), "hp": a.hp, "mp": a.mp, "mmp": a.mmp, "def": a.def, "mdf": a.mdf, "arm": arm}
+		out.party["a%d" % id] = {"states": _states(a), "hp": a.hp, "mp": a.mp, "mmp": a.mmp, "def": a.def, "mdf": a.mdf, "shield": XShieldLedger.amount(a), "arm": arm}
 	var payer := {}
 	for k in PAY_KEYS:
 		var p := XTusu.payer(k)
@@ -130,6 +131,20 @@ func _snap() -> Dictionary:
 	out.maintain = keep
 	out.host = _key(h)
 	out.members = logic.actors.map(func(b): return _key(b))
+	var locks := {}
+	for id in [1, 8, 10]:
+		if XTusu.lock_target(_who(id)) != null:
+			locks["a%d" % id] = _key(XTusu.lock_target(_who(id)))
+	out.locks = locks
+	var cd := {}
+	for k in ["support.jianqi", "support.suoding", "support.jintang", "support.heming", "support.zhenhun"]:
+		cd[k] = maxi(0, t.cooldown_left(XTusu.skill_id(k)))
+	out.cooldown = cd
+	var e0: XBattler = logic.enemies[0]
+	var c = XTusu.cuoshi_of(e0)
+	var es := (e0.state_ids as Array).filter(func(id): return int(id) == XTusu.STUN_STATE or RegEx.create_from_string("<CodexTusu:").search(str(XDB.rec("States", int(id)).get("note", ""))) != null)
+	es.sort()
+	out.e0 = {"cuoshi": null if c == null else {"rate": c.rate, "stack": c.stack, "until": c.until}, "states": es}
 	return out
 
 
@@ -138,7 +153,7 @@ func _hits(logs: Array) -> Array:
 	for l in logs:
 		if l is Dictionary and l.get("type") == "hit" and not bool(l.get("unused", false)) and not bool(l.missed) and not bool(l.evaded) \
 				and int(l.skill.get("damage", {}).get("type", 0)) in [1, 3, 5]:
-			out.append(["hp", _key(l.user), _key(l.target), float(l.hp)])
+			out.append(["hp", _key(l.user), _key(l.target), float(l.get("state_value", l.hp))])  # 参照记 executeHpDamage 收到的值（护盾吸收之前）
 	return out
 
 
@@ -192,6 +207,53 @@ func _step(st: Array) -> Array:
 		"state":
 			_who(st[1]).add_state(XTusu.state_id(str(st[2])))
 		"hit":
+			# 参照的 begin 直接 startAction，眩晕（震击挂上的）的敌人照样出手；重制的 act 会跳过不能行动的人，这里先拿掉眩晕再放回
+			var e = _who(st[1])
+			var stunned: bool = e.state_ids.has(XTusu.STUN_STATE)
+			if stunned:
+				e.state_ids.erase(XTusu.STUN_STATE)
+			logs = logic.act(e, XDB.rec("Skills", int(st[2])), _who(st[3]))
+			if stunned and not e.state_ids.has(XTusu.STUN_STATE):
+				e.state_ids.append(XTusu.STUN_STATE)
+		"sup":
+			logs = logic.act(_who(st[1]), XDB.rec("Skills", XTusu.skill_id(str(st[2]))), logic.enemies[int(st[3])] if int(st[3]) >= 0 else null)
+		"gain":
+			XBinding.gain(_who(st[1]), int(st[2]))
+		"sethp":
+			_set_hp(_who(st[1]), float(st[2]))
+		"zq":
+			var a: XActor = _who(st[1])
+			var df := {}
+			for k in st[3]:
+				df[str(k)] = 1
+			var z := XZhenqi.default_data()
+			z.merge({"realm": int(st[2]), "qi": int(XZhenqi.REALMS[int(st[2])].need), "daofa": df}, true)
+			a.zhenqi = XZhenqi.from_save(z)
+			for k in st[3]:
+				a.learn_skill(XZhenqi.skill_key("daofa:" + str(k)))
+			XZhenqi.refresh_rewards(a)
+		"atkst":
+			XDB.rec("Skills", XTusu.skill_id(str(st[1]))).effects = [{"code": 21, "dataId": 0, "value1": 1.0, "value2": 0.0}] if int(st[2]) != 0 else []
+		"pq":
+			var e: XBattler = logic.enemies[0]
+			var on := e.state_ids.has(XZhenqi.POJIA_STATE)
+			ret = {"affected": on, "rate": e.zq_pojia_rate if on else null}
+		"unpq":
+			logic._state_remove(logic.enemies[0], XZhenqi.POJIA_STATE)
+		"smart":
+			XConfig.ensure_loaded()
+			XConfig._values.codexSmartAI = int(st[1]) != 0  # 只改内存，不写设置文件
+		"auto":
+			var r: Array = logic.auto_battle_action(_who(st[1]))
+			var sk = r[0] if r.size() > 0 else null
+			var tg = r[1] if r.size() > 1 else null
+			var k := XTusu.key_of(sk) if sk is Dictionary else ""
+			ret = {"skill": null if not sk is Dictionary else (k if k != "" else int(sk.id)),
+				"target": -1 if tg == null else (logic.actors.find(tg) if tg is XActor else logic.enemies.find(tg))}
+		"kairen":
+			logic.state.actor_advance[TUSU] = 3
+			logic.state.flags[XTusu.KAIREN_FLAG] = (st[2] as Array).duplicate()
+		"heal":
 			logs = logic.act(_who(st[1]), XDB.rec("Skills", int(st[2])), _who(st[3]))
 		"kill":
 			_set_hp(_who(st[1]), 0.0)
@@ -216,7 +278,7 @@ func _ready() -> void:
 
 func _go() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	check("oracle", ref.cases.size() == 6 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
+	check("oracle", ref.cases.size() == 12 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:
 		if PENDING.has(c.id):
 			print("SKIP ", c.id, "：", PENDING[c.id])
@@ -232,17 +294,24 @@ func _go() -> void:
 			if want.ret != null or out[0] != null:
 				check(tag + ".ret", _norm(out[0]) == _norm(want.ret), [out[0], want.ret])
 			check(tag + ".hits", _norm(_hits(out[1])) == _norm(want.hits), [_hits(out[1]), want.hits])
+			# 台词（日志 addText）：本步的记录，加上还没取走的（回合开始换武相那句、直接付费的噬主）
+			var lines := ((out[1] as Array) + XTusu.take_logs()).filter(func(l): return l is Dictionary and l.get("type") == "battle_text").map(func(l): return str(l.text))
+			check(tag + ".lines", lines == (want.get("lines", []) as Array), [lines, want.get("lines")])
 			var got: Dictionary = _norm(_snap())
 			var ws: Dictionary = _norm(want.snap)
+			for k in ws.get("cooldown", {}):
+				ws.cooldown[k] = maxi(0, int(ws.cooldown[k]))  # 原版冷却减到负数（YEP 不夹），重制剩余回合不低于 0
 			if str(st[0]) == "end":
 				# 参照的宿主战斗结束后 inBattle 还是真，技能条件、费用、payer 还按战斗中算；重制已经出了战斗。只比清理结果
 				for x in [got, ws]:
-					for k in ["round", "payer", "maintain", "host", "members"]:
+					for k in ["round", "payer", "maintain", "host", "members", "cooldown"]:
 						x.erase(k)
 					for k in ["attack", "skills", "guard", "atk1", "canMove", "def", "mdf"]:
 						x.tusu.erase(k)
 					for id in x.party:
-						x.party[id] = {"states": x.party[id].states, "hp": x.party[id].hp, "mp": x.party[id].mp}
+						# 参照直接调 endBattle，不走 onBattleEnd：护阵（战斗结束解除）留在身上；重制结束时照常删。护阵不比，持武等由屠苏自己清的照比
+						x.party[id] = {"states": (x.party[id].states as Array).filter(func(sid): return int(sid) != XTusu.state_id("huzhen")), "hp": x.party[id].hp, "mp": x.party[id].mp}
+					x.e0 = {"cuoshi": x.e0.cuoshi}  # 敌人的挫势、眩晕状态同理不比；挫势记录两边都清（XTusu.clear）
 			for k in ws:
 				if k == "tusu" or k == "party":
 					for kk in ws[k]:
