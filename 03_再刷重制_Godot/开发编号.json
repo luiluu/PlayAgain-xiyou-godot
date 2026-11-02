@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.272",
-  "sequence": 272,
-  "next": "dev.273",
-  "nextSequence": 273,
+  "current": "dev.273",
+  "sequence": 273,
+  "next": "dev.274",
+  "nextSequence": 274,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-guyu-fix1",
+  "currentChange": "bajie-visual2",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
