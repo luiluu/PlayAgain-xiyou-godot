@@ -87,10 +87,24 @@ class ScanTests(Fixture):
         self.put('core/pets2.gd', 'class_name XPets2\nstatic var CLAMP2 := true\n')
         g('add', '.'); g('commit', '-m', 'lane work'); g('switch', 'main')
         g('merge', '--no-ff', 'cc/lane1', '-m', '合并 cc/lane1')
-        self.assertEqual(rb.last_lane(self.root, 'core/pets2.gd', 'CLAMP2'), '合并 cc/lane1')
+        self.assertTrue(rb.last_lane(self.root, 'core/pets2.gd', 'CLAMP2').startswith('合并 cc/lane1 · '))
+        # tools43：之后又并了别的车道（没碰这一行）：仍报真正改它的 lane1，不报最新的合并（O-147 曾报成 tusu4）
+        for lane in ['cc/lane2', 'cc/lane3']:
+            g('switch', '-c', lane)
+            self.put('core/%s.gd' % lane[3:], 'class_name X%s\n' % lane[3:])
+            g('add', '.'); g('commit', '-m', lane + ' work'); g('switch', 'main')
+            g('merge', '--no-ff', lane, '-m', '合并 ' + lane)
+        got = rb.last_lane(self.root, 'core/pets2.gd', 'CLAMP2')
+        self.assertTrue(got.startswith('合并 cc/lane1 · '), got)
+        self.assertTrue(got.endswith(' lane work'), got)                  # 带上真正改它的提交
         self.register(row('O-002', '`XPets2.CLAMP2` 设 false'))
         rc, out = self.run_tool()
-        self.assertIn('最后改它的：合并 cc/lane1', out)
+        self.assertIn('最后改它的：合并 cc/lane1 · ', out)
+        g('switch', '-c', 'cc/lane4')                                     # 车道分支里又合过 main：仍认把它并进主线的那次
+        self.put('core/pets2.gd', 'class_name XPets2\nstatic var CLAMP2 := false\n')
+        g('add', '.'); g('commit', '-m', 'lane4 flips'); g('merge', '--no-ff', 'main', '-m', '合并 main'); g('switch', 'main')
+        g('merge', '--no-ff', 'cc/lane4', '-m', '合并 cc/lane4')
+        self.assertTrue(rb.last_lane(self.root, 'core/pets2.gd', 'CLAMP2').startswith('合并 cc/lane4 · '))
 
     def test_coverage_literal_dynamic_and_gap(self):
         self.put('core/pets.gd', 'class_name XPets\nstatic var BOOK_FIX := true\nstatic var CLAMP := true\nstatic var EXACT := true\n')

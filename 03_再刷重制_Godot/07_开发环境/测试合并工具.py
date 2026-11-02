@@ -2712,6 +2712,7 @@ for name in filter(None, files):
         self.assertIn('--cloud 只和 --affected', self.last_output)
         self.assertEqual(self.call('--finish', '--affected', '--cloud'), 0, self.last_output)
         self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base, '--cloud', 'upload_skip=1'])
+        self.assertIn('验证: 选测（基准 ' + base[:9], self.g('log', '-1', '--format=%B', 'main'))  # tools43：原来写成「基准 --cloud」
         self.assertFalse(self.wt.exists())
         self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
 
@@ -2747,6 +2748,33 @@ for name in filter(None, files):
         self.assertIn('验证: 选测（基准 ' + base[:9], body)
         self.assertFalse(self.wt.exists())
         self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
+
+    def test_finish_affected_records_reused_lane_results_in_trailer(self):
+        """tools43②：检查.sh 里 沿用车道.py 写的说明进收尾尾注「沿用:」；检查前先删旧说明，没写就不带。"""
+        log = Path(self.tmp.name) / 'check_args'
+        note = Path(self.g('rev-parse', '--path-format=absolute', '--git-dir')) / 'xiyou_reuse_note.txt'
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\necho "$*" >> %s\n[[ -n $FAKE_NOTE ]] && print -r -- "$FAKE_NOTE" > %s\nexit 0\n' % (log, note))
+        checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'note checker')
+        self.g('merge', 'main', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        os.environ['FAKE_NOTE'] = '沿用 abc123456（本机）2 个：xiyou_a、xiyou_b'
+        try:
+            self.assertEqual(self.call('--finish', '--affected'), 0, self.last_output)
+        finally:
+            del os.environ['FAKE_NOTE']
+        self.assertIn('\n沿用: 沿用 abc123456（本机）2 个：xiyou_a、xiyou_b', self.g('log', '-1', '--format=%B'))
+
+    def test_finish_affected_ignores_stale_reuse_note(self):
+        log = self.args_checker()
+        note = Path(self.g('rev-parse', '--path-format=absolute', '--git-dir')) / 'xiyou_reuse_note.txt'
+        note.write_text('沿用 old（本机）1 个：stale\n')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--affected'), 0, self.last_output)
+        self.assertNotIn('沿用:', self.g('log', '-1', '--format=%B'))
 
     def test_batch_final_affected_covers_whole_batch(self):
         wt2, _ = self.batch_fixture()
