@@ -35,8 +35,14 @@ if (!w.$) w.$ = {};
 w.$.toaster = () => {};
 const key = b => !b ? null : b.isActor() ? 'a' + b.actorId() : 'e' + b.index();
 const TUSU = 176, PARTY = [1, 8, TUSU, 10], BIG_HP = 1e9, TROOP = 3;
+// 三法宝原件（4047／4048／7912）：R.syncItem 会改写 $dataArmors 原件（名字、进化标记、特效倍率），同一进程里前一例会带进后一例
+// （devour 60 级进化后 low 5 级也按进化算）。每例开局还原原件，再像读档（extractSaveContents）一样先同步一次原件：
+// 之后登记的实例照原件复制，不会多出旧版倍率去重剩下的那条魔攻×1.2（O-待定 法宝倍率，events3c）。
+const RELICS = [4047, 4048, 7912], pristine = RELICS.map(id => JSON.parse(JSON.stringify(w.$dataArmors[id])));
 function battle(levels) {
   newGame();
+  RELICS.forEach((id, i) => { w.$dataArmors[id] = JSON.parse(JSON.stringify(pristine[i])); });
+  w.CodexThreeGrowth.sync();
   w.eval('$gameSystem.setDifficultyId(2); $gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
   w.$gameSwitches.setValue(2494, true);  // 超强者可出战（同 tusu_growth 专项的开关）
   T.recruit();
