@@ -192,12 +192,14 @@ func _step(st: Array) -> Array:
 		"pay":
 			var a: XActor = _who(st[1])
 			var s := XDB.rec("Skills", XTusu.skill_id(str(st[2])))
-			if not XTusu.pay(logic, a, s):
-				var c := logic.skill_cost(a, s)
-				a.mp -= c.mp
-				a.tp -= c.tp
-			a.pay_cooldown(s)  # YEP 的冷却在 paySkillCost 里（重制在 execute 付费后另调）
-			ret = {"tusu": _who(TUSU).mp, "self": a.mp}
+			a.action_mastery.clear()
+			logic.pay_skill_cost(a, s)  # 与 execute 同一个付费：噬主包装＋里层（异化、扣费、HP 费用、熟练度记次）＋冷却
+			ret = {"tusu": _who(TUSU).mp, "self": a.mp, "mastery": a.action_mastery.duplicate()}
+		"arm":
+			var a: XActor = _who(st[1])
+			var s := XDB.rec("Skills", XTusu.skill_id(str(st[2])))
+			logs = logic.act(a, s, logic.enemies[int(st[3])])
+			ret = {"uses": XSkillMastery.uses(a, int(s.id))}
 		"kill":
 			_set_hp(_who(st[1]), 0.0)
 		"revive":
@@ -221,7 +223,7 @@ func _ready() -> void:
 
 func _go() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	check("oracle", ref.cases.size() == 4 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
+	check("oracle", ref.cases.size() == 5 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:
 		logic = _battle(c.setup.levels, c.observed[0].snap)
 		var steps: Array = c.observed

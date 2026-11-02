@@ -307,26 +307,30 @@ static func can_pay(a, skill: Dictionary, tp_cost: float):
 	return payer(key) != "" and a.tp >= tp_cost
 
 
-## paySkillCost 包装：返回真＝已处理（cost 是这次按 mp_cost 算好的 {mp, tp}）
-static func pay(logic, a, skill: Dictionary) -> bool:
+## paySkillCost 包装（外层，installNativeTusuRuntime 440～450 行）：返回 null＝不是噬主技能，不管；""＝都付不起（调用方在支付前已查），
+## 整次不付；否则是付款方 "tusu"／"host"。原版包装里 old.apply 照走里层（异化缄默／饕餮、扣 MP／TP、HP 费用、熟练度记次），
+## 只是期间 devourPaying 让支援的面板 MP 记 0；所以调用方拿到付款方后照常走里层支付，再调 pay_after 补扣另一人的魔法（审查第 24 期 P2-1）
+static func pay_begin(a, skill: Dictionary) -> Variant:
 	var key := key_of(skill)
 	if not a is XActor or not _devour_key(a, key):
-		return false
+		return null
 	var who := payer(key)
+	_devour_paying = who == "host" and is_tusu(a)
+	return who
+
+
+## pay_begin 之后、里层付完：放下 devourPaying，屠苏代付武装技能扣屠苏、持武者代付支援扣持武者
+static func pay_after(a, skill: Dictionary, who) -> void:
+	_devour_paying = false
+	if who == null or who == "":
+		return
+	var key := key_of(skill)
 	var t = tusu()
 	var h = holder(t) if t != null else null
-	if who == "":
-		return true  # 由调用方在支付前检查；这里不扣到负数
-	_devour_paying = who == "host" and is_tusu(a)
-	var c: Dictionary = logic.skill_cost(a, skill)
-	_devour_paying = false
-	a.mp -= c.mp
-	a.tp -= c.tp
 	if who == "tusu" and not is_tusu(a):
 		t.mp = t.mp - own_cost(t, key)
 	if who == "host" and is_tusu(a) and h != null:
 		h.mp = h.mp - devour_cost(h, key)
-	return true
 
 
 # ---- 技能条件与指令 ----

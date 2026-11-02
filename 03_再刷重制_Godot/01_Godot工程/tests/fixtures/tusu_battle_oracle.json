@@ -8513,7 +8513,10 @@
      ],
      "ret": {
       "tusu": 2833,
-      "self": 200
+      "self": 200,
+      "mastery": [
+       10312
+      ]
      },
      "hits": [],
      "snap": {
@@ -9134,7 +9137,10 @@
      ],
      "ret": {
       "tusu": 0,
-      "self": 170
+      "self": 170,
+      "mastery": [
+       10312
+      ]
      },
      "hits": [],
      "snap": {
@@ -11291,7 +11297,10 @@
      ],
      "ret": {
       "tusu": 2804,
-      "self": 2804
+      "self": 2804,
+      "mastery": [
+       10322
+      ]
      },
      "hits": [],
      "snap": {
@@ -12215,7 +12224,10 @@
      ],
      "ret": {
       "tusu": 0,
-      "self": 0
+      "self": 0,
+      "mastery": [
+       10322
+      ]
      },
      "hits": [],
      "snap": {
@@ -12649,6 +12661,1892 @@
         "states": [],
         "hp": 485,
         "mp": 164,
+        "mmp": 200,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          false,
+          30
+         ],
+         "arm.hengsao": [
+          false,
+          false,
+          60
+         ],
+         "arm.dianshe": [
+          false,
+          false,
+          30
+         ],
+         "arm.guanri": [
+          false,
+          false,
+          60
+         ],
+         "arm.huzhen": [
+          false,
+          false,
+          60
+         ],
+         "arm.chiling": [
+          false,
+          false,
+          36
+         ],
+         "arm.zhenji": [
+          false,
+          false,
+          60
+         ]
+        }
+       },
+       "a8": {
+        "states": [],
+        "hp": 450,
+        "mp": 220,
+        "mmp": 220,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          false,
+          33
+         ],
+         "arm.hengsao": [
+          false,
+          false,
+          66
+         ],
+         "arm.dianshe": [
+          false,
+          false,
+          33
+         ],
+         "arm.guanri": [
+          false,
+          false,
+          66
+         ],
+         "arm.huzhen": [
+          false,
+          false,
+          66
+         ],
+         "arm.chiling": [
+          false,
+          false,
+          39
+         ],
+         "arm.zhenji": [
+          false,
+          false,
+          66
+         ]
+        }
+       },
+       "a10": {
+        "states": [],
+        "hp": 480,
+        "mp": 200,
+        "mmp": 200,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          false,
+          30
+         ],
+         "arm.hengsao": [
+          false,
+          false,
+          60
+         ],
+         "arm.dianshe": [
+          false,
+          false,
+          30
+         ],
+         "arm.guanri": [
+          false,
+          false,
+          60
+         ],
+         "arm.huzhen": [
+          false,
+          false,
+          60
+         ],
+         "arm.chiling": [
+          false,
+          false,
+          36
+         ],
+         "arm.zhenji": [
+          false,
+          false,
+          60
+         ]
+        }
+       }
+      },
+      "payer": {
+       "arm.zhanfeng": null,
+       "arm.hengsao": null,
+       "arm.dianshe": null,
+       "arm.guanri": null,
+       "arm.huzhen": null,
+       "arm.chiling": null,
+       "arm.zhenji": null,
+       "support.jianqi": null,
+       "support.suoding": null,
+       "support.jintang": null,
+       "support.heming": null,
+       "support.zhenhun": null
+      },
+      "maintain": {
+       "sword": false,
+       "bow": false,
+       "shield": false,
+       "book": false,
+       "hammer": false
+      },
+      "host": null,
+      "members": [
+       "a1",
+       "a8",
+       "a176",
+       "a10"
+      ]
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "id": "mastery",
+   "setup": {
+    "levels": {
+     "176": 60
+    },
+    "steps": [
+     [
+      "use",
+      176,
+      "huawu.sword",
+      1
+     ],
+     [
+      "arm",
+      1,
+      "arm.zhanfeng",
+      0
+     ],
+     [
+      "mp",
+      176,
+      0
+     ],
+     [
+      "arm",
+      1,
+      "arm.zhanfeng",
+      0
+     ],
+     [
+      "end"
+     ]
+    ]
+   },
+   "observed": [
+    {
+     "step": [
+      "start"
+     ],
+     "snap": {
+      "round": 1,
+      "tusu": {
+       "data": null,
+       "last": null,
+       "bind": {
+        "charges": 0,
+        "hostId": 0,
+        "returnedRound": 0
+       },
+       "states": [],
+       "hp": 6876,
+       "mp": 2982,
+       "mmp": 2982,
+       "atk": 2543,
+       "mat": 2543,
+       "def": 985,
+       "mdf": 985,
+       "attack": 1,
+       "canMove": true,
+       "skills": {
+        "return": [
+         false,
+         true,
+         0
+        ],
+        "menu.forge": [
+         false,
+         true,
+         0
+        ],
+        "body.phys": [
+         true,
+         true,
+         149
+        ],
+        "body.mag": [
+         true,
+         true,
+         178
+        ],
+        "body.guard": [
+         true,
+         true,
+         298
+        ],
+        "yiwu.sword": [
+         false,
+         true,
+         0
+        ],
+        "yiwu.bow": [
+         false,
+         true,
+         0
+        ],
+        "yiwu.shield": [
+         false,
+         true,
+         0
+        ],
+        "yiwu.book": [
+         false,
+         true,
+         0
+        ],
+        "yiwu.hammer": [
+         false,
+         true,
+         0
+        ],
+        "huawu.sword": [
+         true,
+         true,
+         0
+        ],
+        "huawu.bow": [
+         true,
+         true,
+         0
+        ],
+        "huawu.shield": [
+         true,
+         true,
+         0
+        ],
+        "huawu.book": [
+         true,
+         true,
+         0
+        ],
+        "huawu.hammer": [
+         true,
+         true,
+         0
+        ],
+        "support.jianqi": [
+         false,
+         true,
+         178
+        ],
+        "support.suoding": [
+         false,
+         true,
+         178
+        ],
+        "support.jintang": [
+         false,
+         true,
+         357
+        ],
+        "support.heming": [
+         false,
+         true,
+         178
+        ],
+        "support.zhenhun": [
+         false,
+         true,
+         298
+        ]
+       },
+       "guard": true,
+       "atk1": true
+      },
+      "party": {
+       "a1": {
+        "states": [],
+        "hp": 485,
+        "mp": 200,
+        "mmp": 200,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          true,
+          0
+         ],
+         "arm.hengsao": [
+          false,
+          true,
+          0
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          0
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          0
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          0
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          0
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          0
+         ]
+        }
+       },
+       "a8": {
+        "states": [],
+        "hp": 450,
+        "mp": 220,
+        "mmp": 220,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          true,
+          0
+         ],
+         "arm.hengsao": [
+          false,
+          true,
+          0
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          0
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          0
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          0
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          0
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          0
+         ]
+        }
+       },
+       "a10": {
+        "states": [],
+        "hp": 480,
+        "mp": 200,
+        "mmp": 200,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          true,
+          0
+         ],
+         "arm.hengsao": [
+          false,
+          true,
+          0
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          0
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          0
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          0
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          0
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          0
+         ]
+        }
+       }
+      },
+      "payer": {
+       "arm.zhanfeng": "tusu",
+       "arm.hengsao": "tusu",
+       "arm.dianshe": "tusu",
+       "arm.guanri": "tusu",
+       "arm.huzhen": "tusu",
+       "arm.chiling": "tusu",
+       "arm.zhenji": "tusu",
+       "support.jianqi": "tusu",
+       "support.suoding": "tusu",
+       "support.jintang": "tusu",
+       "support.heming": "tusu",
+       "support.zhenhun": "tusu"
+      },
+      "maintain": {
+       "sword": true,
+       "bow": true,
+       "shield": true,
+       "book": true,
+       "hammer": true
+      },
+      "host": null,
+      "members": [
+       "a1",
+       "a8",
+       "a176",
+       "a10"
+      ]
+     }
+    },
+    {
+     "step": [
+      "use",
+      176,
+      "huawu.sword",
+      1
+     ],
+     "ret": null,
+     "hits": [],
+     "snap": {
+      "round": 1,
+      "tusu": {
+       "data": {
+        "weapon": "sword",
+        "reserve": null,
+        "pending": null,
+        "hostActions": 0
+       },
+       "last": "sword",
+       "bind": {
+        "charges": 0,
+        "hostId": 1,
+        "returnedRound": 0
+       },
+       "states": [
+        2681
+       ],
+       "hp": 6876,
+       "mp": 2982,
+       "mmp": 2982,
+       "atk": 2543,
+       "mat": 2543,
+       "def": 985,
+       "mdf": 985,
+       "attack": 10301,
+       "canMove": true,
+       "skills": {
+        "return": [
+         true,
+         true,
+         0
+        ],
+        "menu.forge": [
+         false,
+         true,
+         0
+        ],
+        "body.phys": [
+         false,
+         true,
+         149
+        ],
+        "body.mag": [
+         false,
+         true,
+         178
+        ],
+        "body.guard": [
+         false,
+         true,
+         298
+        ],
+        "yiwu.sword": [
+         false,
+         true,
+         0
+        ],
+        "yiwu.bow": [
+         true,
+         true,
+         0
+        ],
+        "yiwu.shield": [
+         true,
+         true,
+         0
+        ],
+        "yiwu.book": [
+         true,
+         true,
+         0
+        ],
+        "yiwu.hammer": [
+         true,
+         true,
+         0
+        ],
+        "huawu.sword": [
+         false,
+         true,
+         0
+        ],
+        "huawu.bow": [
+         false,
+         true,
+         0
+        ],
+        "huawu.shield": [
+         false,
+         true,
+         0
+        ],
+        "huawu.book": [
+         false,
+         true,
+         0
+        ],
+        "huawu.hammer": [
+         false,
+         true,
+         0
+        ],
+        "support.jianqi": [
+         true,
+         true,
+         178
+        ],
+        "support.suoding": [
+         false,
+         true,
+         178
+        ],
+        "support.jintang": [
+         false,
+         true,
+         357
+        ],
+        "support.heming": [
+         false,
+         true,
+         178
+        ],
+        "support.zhenhun": [
+         false,
+         true,
+         298
+        ]
+       },
+       "guard": true,
+       "atk1": false
+      },
+      "party": {
+       "a1": {
+        "states": [
+         2682
+        ],
+        "hp": 485,
+        "mp": 200,
+        "mmp": 200,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          true,
+          true,
+          0
+         ],
+         "arm.hengsao": [
+          true,
+          true,
+          0
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          0
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          0
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          0
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          0
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          0
+         ]
+        }
+       },
+       "a8": {
+        "states": [],
+        "hp": 450,
+        "mp": 220,
+        "mmp": 220,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          true,
+          0
+         ],
+         "arm.hengsao": [
+          false,
+          true,
+          0
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          0
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          0
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          0
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          0
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          0
+         ]
+        }
+       },
+       "a10": {
+        "states": [],
+        "hp": 480,
+        "mp": 200,
+        "mmp": 200,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          true,
+          0
+         ],
+         "arm.hengsao": [
+          false,
+          true,
+          0
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          0
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          0
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          0
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          0
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          0
+         ]
+        }
+       }
+      },
+      "payer": {
+       "arm.zhanfeng": "tusu",
+       "arm.hengsao": "tusu",
+       "arm.dianshe": "tusu",
+       "arm.guanri": "tusu",
+       "arm.huzhen": "tusu",
+       "arm.chiling": "tusu",
+       "arm.zhenji": "tusu",
+       "support.jianqi": "tusu",
+       "support.suoding": "tusu",
+       "support.jintang": "tusu",
+       "support.heming": "tusu",
+       "support.zhenhun": "tusu"
+      },
+      "maintain": {
+       "sword": true,
+       "bow": true,
+       "shield": true,
+       "book": true,
+       "hammer": true
+      },
+      "host": "a1",
+      "members": [
+       "a1",
+       "a8",
+       "a176",
+       "a10"
+      ]
+     }
+    },
+    {
+     "step": [
+      "arm",
+      1,
+      "arm.zhanfeng",
+      0
+     ],
+     "ret": {
+      "uses": 1
+     },
+     "hits": [
+      [
+       "hp",
+       "a176",
+       "e0",
+       72695258
+      ]
+     ],
+     "snap": {
+      "round": 1,
+      "tusu": {
+       "data": {
+        "weapon": "sword",
+        "reserve": null,
+        "pending": null,
+        "hostActions": 0
+       },
+       "last": "sword",
+       "bind": {
+        "charges": 0,
+        "hostId": 1,
+        "returnedRound": 0
+       },
+       "states": [
+        2681
+       ],
+       "hp": 6876,
+       "mp": 2833,
+       "mmp": 2982,
+       "atk": 2543,
+       "mat": 2543,
+       "def": 985,
+       "mdf": 985,
+       "attack": 10301,
+       "canMove": true,
+       "skills": {
+        "return": [
+         true,
+         true,
+         0
+        ],
+        "menu.forge": [
+         false,
+         true,
+         0
+        ],
+        "body.phys": [
+         false,
+         true,
+         149
+        ],
+        "body.mag": [
+         false,
+         true,
+         178
+        ],
+        "body.guard": [
+         false,
+         true,
+         298
+        ],
+        "yiwu.sword": [
+         false,
+         true,
+         0
+        ],
+        "yiwu.bow": [
+         true,
+         true,
+         0
+        ],
+        "yiwu.shield": [
+         true,
+         true,
+         0
+        ],
+        "yiwu.book": [
+         true,
+         true,
+         0
+        ],
+        "yiwu.hammer": [
+         true,
+         true,
+         0
+        ],
+        "huawu.sword": [
+         false,
+         true,
+         0
+        ],
+        "huawu.bow": [
+         false,
+         true,
+         0
+        ],
+        "huawu.shield": [
+         false,
+         true,
+         0
+        ],
+        "huawu.book": [
+         false,
+         true,
+         0
+        ],
+        "huawu.hammer": [
+         false,
+         true,
+         0
+        ],
+        "support.jianqi": [
+         true,
+         true,
+         178
+        ],
+        "support.suoding": [
+         false,
+         true,
+         178
+        ],
+        "support.jintang": [
+         false,
+         true,
+         357
+        ],
+        "support.heming": [
+         false,
+         true,
+         178
+        ],
+        "support.zhenhun": [
+         false,
+         true,
+         298
+        ]
+       },
+       "guard": true,
+       "atk1": false
+      },
+      "party": {
+       "a1": {
+        "states": [
+         2682
+        ],
+        "hp": 485,
+        "mp": 200,
+        "mmp": 200,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          true,
+          true,
+          0
+         ],
+         "arm.hengsao": [
+          true,
+          true,
+          0
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          0
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          0
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          0
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          0
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          0
+         ]
+        }
+       },
+       "a8": {
+        "states": [],
+        "hp": 450,
+        "mp": 220,
+        "mmp": 220,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          true,
+          0
+         ],
+         "arm.hengsao": [
+          false,
+          true,
+          0
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          0
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          0
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          0
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          0
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          0
+         ]
+        }
+       },
+       "a10": {
+        "states": [],
+        "hp": 480,
+        "mp": 200,
+        "mmp": 200,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          true,
+          0
+         ],
+         "arm.hengsao": [
+          false,
+          true,
+          0
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          0
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          0
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          0
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          0
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          0
+         ]
+        }
+       }
+      },
+      "payer": {
+       "arm.zhanfeng": "tusu",
+       "arm.hengsao": "tusu",
+       "arm.dianshe": "tusu",
+       "arm.guanri": "tusu",
+       "arm.huzhen": "tusu",
+       "arm.chiling": "tusu",
+       "arm.zhenji": "tusu",
+       "support.jianqi": "tusu",
+       "support.suoding": "tusu",
+       "support.jintang": "tusu",
+       "support.heming": "tusu",
+       "support.zhenhun": "tusu"
+      },
+      "maintain": {
+       "sword": true,
+       "bow": true,
+       "shield": true,
+       "book": true,
+       "hammer": true
+      },
+      "host": "a1",
+      "members": [
+       "a1",
+       "a8",
+       "a176",
+       "a10"
+      ]
+     }
+    },
+    {
+     "step": [
+      "mp",
+      176,
+      0
+     ],
+     "ret": null,
+     "hits": [],
+     "snap": {
+      "round": 1,
+      "tusu": {
+       "data": {
+        "weapon": "sword",
+        "reserve": null,
+        "pending": null,
+        "hostActions": 0
+       },
+       "last": "sword",
+       "bind": {
+        "charges": 0,
+        "hostId": 1,
+        "returnedRound": 0
+       },
+       "states": [
+        2681
+       ],
+       "hp": 6876,
+       "mp": 0,
+       "mmp": 2982,
+       "atk": 2543,
+       "mat": 2543,
+       "def": 985,
+       "mdf": 985,
+       "attack": 10301,
+       "canMove": true,
+       "skills": {
+        "return": [
+         true,
+         true,
+         0
+        ],
+        "menu.forge": [
+         false,
+         true,
+         0
+        ],
+        "body.phys": [
+         false,
+         false,
+         149
+        ],
+        "body.mag": [
+         false,
+         false,
+         178
+        ],
+        "body.guard": [
+         false,
+         false,
+         298
+        ],
+        "yiwu.sword": [
+         false,
+         true,
+         0
+        ],
+        "yiwu.bow": [
+         true,
+         true,
+         0
+        ],
+        "yiwu.shield": [
+         true,
+         true,
+         0
+        ],
+        "yiwu.book": [
+         true,
+         true,
+         0
+        ],
+        "yiwu.hammer": [
+         true,
+         true,
+         0
+        ],
+        "huawu.sword": [
+         false,
+         true,
+         0
+        ],
+        "huawu.bow": [
+         false,
+         true,
+         0
+        ],
+        "huawu.shield": [
+         false,
+         true,
+         0
+        ],
+        "huawu.book": [
+         false,
+         true,
+         0
+        ],
+        "huawu.hammer": [
+         false,
+         true,
+         0
+        ],
+        "support.jianqi": [
+         true,
+         true,
+         178
+        ],
+        "support.suoding": [
+         false,
+         true,
+         178
+        ],
+        "support.jintang": [
+         false,
+         true,
+         357
+        ],
+        "support.heming": [
+         false,
+         true,
+         178
+        ],
+        "support.zhenhun": [
+         false,
+         true,
+         298
+        ]
+       },
+       "guard": true,
+       "atk1": false
+      },
+      "party": {
+       "a1": {
+        "states": [
+         2682
+        ],
+        "hp": 485,
+        "mp": 200,
+        "mmp": 200,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          true,
+          true,
+          30
+         ],
+         "arm.hengsao": [
+          true,
+          true,
+          60
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          30
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          60
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          60
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          36
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          60
+         ]
+        }
+       },
+       "a8": {
+        "states": [],
+        "hp": 450,
+        "mp": 220,
+        "mmp": 220,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          true,
+          33
+         ],
+         "arm.hengsao": [
+          false,
+          true,
+          66
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          33
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          66
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          66
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          39
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          66
+         ]
+        }
+       },
+       "a10": {
+        "states": [],
+        "hp": 480,
+        "mp": 200,
+        "mmp": 200,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          true,
+          30
+         ],
+         "arm.hengsao": [
+          false,
+          true,
+          60
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          30
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          60
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          60
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          36
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          60
+         ]
+        }
+       }
+      },
+      "payer": {
+       "arm.zhanfeng": "host",
+       "arm.hengsao": "host",
+       "arm.dianshe": "host",
+       "arm.guanri": "host",
+       "arm.huzhen": "host",
+       "arm.chiling": "host",
+       "arm.zhenji": "host",
+       "support.jianqi": "host",
+       "support.suoding": "host",
+       "support.jintang": "host",
+       "support.heming": "host",
+       "support.zhenhun": "host"
+      },
+      "maintain": {
+       "sword": true,
+       "bow": true,
+       "shield": true,
+       "book": true,
+       "hammer": true
+      },
+      "host": "a1",
+      "members": [
+       "a1",
+       "a8",
+       "a176",
+       "a10"
+      ]
+     }
+    },
+    {
+     "step": [
+      "arm",
+      1,
+      "arm.zhanfeng",
+      0
+     ],
+     "ret": {
+      "uses": 2
+     },
+     "hits": [
+      [
+       "hp",
+       "a176",
+       "e0",
+       72695258
+      ]
+     ],
+     "snap": {
+      "round": 1,
+      "tusu": {
+       "data": {
+        "weapon": "sword",
+        "reserve": null,
+        "pending": null,
+        "hostActions": 0
+       },
+       "last": "sword",
+       "bind": {
+        "charges": 0,
+        "hostId": 1,
+        "returnedRound": 0
+       },
+       "states": [
+        2681
+       ],
+       "hp": 6876,
+       "mp": 0,
+       "mmp": 2982,
+       "atk": 2543,
+       "mat": 2543,
+       "def": 985,
+       "mdf": 985,
+       "attack": 10301,
+       "canMove": true,
+       "skills": {
+        "return": [
+         true,
+         true,
+         0
+        ],
+        "menu.forge": [
+         false,
+         true,
+         0
+        ],
+        "body.phys": [
+         false,
+         false,
+         149
+        ],
+        "body.mag": [
+         false,
+         false,
+         178
+        ],
+        "body.guard": [
+         false,
+         false,
+         298
+        ],
+        "yiwu.sword": [
+         false,
+         true,
+         0
+        ],
+        "yiwu.bow": [
+         true,
+         true,
+         0
+        ],
+        "yiwu.shield": [
+         true,
+         true,
+         0
+        ],
+        "yiwu.book": [
+         true,
+         true,
+         0
+        ],
+        "yiwu.hammer": [
+         true,
+         true,
+         0
+        ],
+        "huawu.sword": [
+         false,
+         true,
+         0
+        ],
+        "huawu.bow": [
+         false,
+         true,
+         0
+        ],
+        "huawu.shield": [
+         false,
+         true,
+         0
+        ],
+        "huawu.book": [
+         false,
+         true,
+         0
+        ],
+        "huawu.hammer": [
+         false,
+         true,
+         0
+        ],
+        "support.jianqi": [
+         true,
+         true,
+         178
+        ],
+        "support.suoding": [
+         false,
+         true,
+         178
+        ],
+        "support.jintang": [
+         false,
+         true,
+         357
+        ],
+        "support.heming": [
+         false,
+         true,
+         178
+        ],
+        "support.zhenhun": [
+         false,
+         true,
+         298
+        ]
+       },
+       "guard": true,
+       "atk1": false
+      },
+      "party": {
+       "a1": {
+        "states": [
+         2682
+        ],
+        "hp": 485,
+        "mp": 170,
+        "mmp": 200,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          true,
+          true,
+          30
+         ],
+         "arm.hengsao": [
+          true,
+          true,
+          60
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          30
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          60
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          60
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          36
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          60
+         ]
+        }
+       },
+       "a8": {
+        "states": [],
+        "hp": 450,
+        "mp": 220,
+        "mmp": 220,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          true,
+          33
+         ],
+         "arm.hengsao": [
+          false,
+          true,
+          66
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          33
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          66
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          66
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          39
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          66
+         ]
+        }
+       },
+       "a10": {
+        "states": [],
+        "hp": 480,
+        "mp": 200,
+        "mmp": 200,
+        "def": 20,
+        "mdf": 20,
+        "arm": {
+         "arm.zhanfeng": [
+          false,
+          true,
+          30
+         ],
+         "arm.hengsao": [
+          false,
+          true,
+          60
+         ],
+         "arm.dianshe": [
+          false,
+          true,
+          30
+         ],
+         "arm.guanri": [
+          false,
+          true,
+          60
+         ],
+         "arm.huzhen": [
+          false,
+          true,
+          60
+         ],
+         "arm.chiling": [
+          false,
+          true,
+          36
+         ],
+         "arm.zhenji": [
+          false,
+          true,
+          60
+         ]
+        }
+       }
+      },
+      "payer": {
+       "arm.zhanfeng": "host",
+       "arm.hengsao": "host",
+       "arm.dianshe": "host",
+       "arm.guanri": "host",
+       "arm.huzhen": "host",
+       "arm.chiling": "host",
+       "arm.zhenji": "host",
+       "support.jianqi": "host",
+       "support.suoding": "host",
+       "support.jintang": "host",
+       "support.heming": "host",
+       "support.zhenhun": "host"
+      },
+      "maintain": {
+       "sword": true,
+       "bow": true,
+       "shield": true,
+       "book": true,
+       "hammer": true
+      },
+      "host": "a1",
+      "members": [
+       "a1",
+       "a8",
+       "a176",
+       "a10"
+      ]
+     }
+    },
+    {
+     "step": [
+      "end"
+     ],
+     "ret": null,
+     "hits": [],
+     "snap": {
+      "round": 1,
+      "tusu": {
+       "data": null,
+       "last": "sword",
+       "bind": null,
+       "states": [],
+       "hp": 6876,
+       "mp": 0,
+       "mmp": 2982,
+       "atk": 2543,
+       "mat": 2543,
+       "def": 985,
+       "mdf": 985,
+       "attack": 10301,
+       "canMove": true,
+       "skills": {
+        "return": [
+         false,
+         true,
+         0
+        ],
+        "menu.forge": [
+         false,
+         true,
+         0
+        ],
+        "body.phys": [
+         false,
+         false,
+         149
+        ],
+        "body.mag": [
+         false,
+         false,
+         178
+        ],
+        "body.guard": [
+         false,
+         false,
+         298
+        ],
+        "yiwu.sword": [
+         false,
+         true,
+         0
+        ],
+        "yiwu.bow": [
+         false,
+         true,
+         0
+        ],
+        "yiwu.shield": [
+         false,
+         true,
+         0
+        ],
+        "yiwu.book": [
+         false,
+         true,
+         0
+        ],
+        "yiwu.hammer": [
+         false,
+         true,
+         0
+        ],
+        "huawu.sword": [
+         true,
+         true,
+         0
+        ],
+        "huawu.bow": [
+         true,
+         true,
+         0
+        ],
+        "huawu.shield": [
+         true,
+         true,
+         0
+        ],
+        "huawu.book": [
+         true,
+         true,
+         0
+        ],
+        "huawu.hammer": [
+         true,
+         true,
+         0
+        ],
+        "support.jianqi": [
+         false,
+         false,
+         178
+        ],
+        "support.suoding": [
+         false,
+         false,
+         178
+        ],
+        "support.jintang": [
+         false,
+         false,
+         357
+        ],
+        "support.heming": [
+         false,
+         false,
+         178
+        ],
+        "support.zhenhun": [
+         false,
+         false,
+         298
+        ]
+       },
+       "guard": true,
+       "atk1": true
+      },
+      "party": {
+       "a1": {
+        "states": [],
+        "hp": 485,
+        "mp": 170,
         "mmp": 200,
         "def": 20,
         "mdf": 20,
