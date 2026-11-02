@@ -21,8 +21,10 @@
 6. **自动战斗与智能 AI**：屠苏武具态按规则易武（两人低于 40% 或下回合 Boss 霸体→盾、敌人 3 个以上→剑、只剩一个 Boss 且持剑→锤），否则支援有用就放、不然待命；人形时化武给默认宿主。持武者（不是超强者）自动战斗选的对敌伤害技能比不过武装技能（统一伤害预览 ×1.1）就换。智能 AI 估算认屠苏的武装、支援、本体技能公式（超强者持武的武装技能估 0）。
 7. **战斗日志台词**：化武、易武预约与换相、归形、持武者倒下、噬主借力与失败、支援。原版另有 `CodexTusuDevour.unbind／paid` 计数，正式版没定义这个对象、从不生效，不移植。
 8. **器谱开刃逻辑**：forgeRows、setKairen（重新开刃消耗人道意志碎片 ×10）、开刃被动按进阶阶数学／忘，读档时同步（开刃记在 `s.flags._codexTusuKairen`）。
+9. **审查第 25 期 P3-2（真气破甲读持武者）**：真气的 Game_Action.apply 包装装在屠苏外面，原版附加破甲·真气时读的是持武者。重制加 `XTusu.outer_subject`，`_apply_core` 取破甲倍率时把换上来的屠苏还原成持武者。参照新例 pojia：屠苏有破甲、持武者没有时倍率 0.5，持武者有破甲（结丹）时 0.75。
+10. **审查第 25 期 P3-3（屠苏公式只留一个入口）**：删掉 `run_item` 顶上的 `XTusu.formula`（异化公式帧外面），只留 events3 接的 module tusu 分支（在异化公式帧里面，同原版 evalDamageFormula）。生成数据里 10 个 `CodexTusu.damage` 技能都已标 module tusu、类型 1，module 分支的 maxf(0) 和回复取负对它们不起作用，数值不变。
 
-参照：`tusu_battle_probe.cjs` 新步骤 sup、gain、sethp、kairen、heal、smart、auto，快照加 trigger／growth、锁定、支援冷却、护盾、敌人 0 号的挫势与眩晕、每步日志台词；新例 arm60、support、cast、kairen、ai；armdmg 去掉 PENDING。
+参照：`tusu_battle_probe.cjs` 新步骤 sup、gain、sethp、kairen、heal、smart、auto、zq、atkst、pq、unpq，快照加 trigger／growth、锁定、支援冷却、护盾、敌人 0 号的挫势与眩晕、每步日志台词；新例 arm60、support、cast、kairen、ai、pojia；armdmg 去掉 PENDING。
 
 ## 交接板
 
