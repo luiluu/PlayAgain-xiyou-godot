@@ -108,6 +108,8 @@ static func meets(a, skill: Dictionary) -> bool:
 	var o := owner_of(int(skill.get("id", 0)))
 	if int(o[0]) == 0:
 		return true
+	if own(a) and int(a.actor_id) == int(o[0]) and str(o[1]) in ["jixing.possess", "liexing"]:
+		return false  # 【cc·悟空】寄星·附身与列星（璇 458、460 行）要本人被绑定；璇的绑定期合进来前恒假（易武已由屠苏三期 XTusu.meets 管）
 	if str(o[1]) == "return" and own(a) and int(a.actor_id) == int(o[0]):
 		var logic = XBinding._logic()
 		return logic != null and XBinding.is_bound(a) and a.is_alive() and a.hp > 0.0 and logic.can_move(a)  # 战斗中、绑定、活着、能动
@@ -188,3 +190,28 @@ static func recruit(s: XState, actor_id: int) -> bool:
 			a.refresh_passive()
 	sync(a)
 	return true
+
+
+# ---- 模块公式（转换器 MODULE_FORMULAS 的 tusu／xuan，【cc·悟空·未经审查】events3 进切片时接上；屠苏的走 XTusu.damage） ----
+static var _formula_key := RegEx.create_from_string("'([a-z_]+)'")
+
+
+## CodexTusu.damage(a,b,'键')、CodexXuan.damage(a,b,'lengguang')、CodexXuan.heal(a,b)；不认的公式返回 null
+static func formula(a, b, item: Dictionary):
+	var text := str(item.get("damage", {}).get("formula", ""))
+	if text.begins_with("CodexXuan.heal("):
+		return xuan_heal(a, b)
+	var m := _formula_key.search(text)
+	if m == null:
+		return null
+	if text.begins_with("CodexTusu.damage("):
+		return XTusu.damage(a, b, m.get_string(1))
+	if text.begins_with("CodexXuan.damage("):
+		return float(a.mat) * coefficient(XUAN, m.get_string(1), a)  # X.damage：璇（a）魔攻×系数
+	return null
+
+
+## X.healAmount：max(魔攻×[10,20]，目标最大生命×[20%,35%])，按璇等级 1～60 插值（不取整）
+static func xuan_heal(a, b) -> float:
+	var lv := int(a.level)
+	return maxf(XGuyu.curve(lv, [10, 20], [1, 60]) * float(a.mat), XGuyu.curve(lv, [0.2, 0.35], [1, 60]) * float(b.mhp) if b != null else 0.0)

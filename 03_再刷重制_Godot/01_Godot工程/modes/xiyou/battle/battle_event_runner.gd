@@ -115,6 +115,135 @@ func _actor_states_script(code: String) -> bool:
 	return true
 
 
+## 投石问路（CE2486，技能 7188）：每个敌人一条提示 (i+1)+'号敌人暴闪为'+cev.toFixed(2)*100+'%!'（$gameTroop.members() 含倒下的）。
+## 参照 script_gaps troopCev。toFixed(2) 是字符串，乘 100 转回数字：0.07→7.000000000000001 这类照 JS 数字转字符串。
+func _troop_cev_script(code: String) -> bool:
+	if _compact_js(code) != "for(vari=0;i<$gameTroop.members().length;i++){$.toaster({message:(i+1)+'号敌人暴闪为'+$gameTroop.members()[i].cev.toFixed(2)*100+'%!'});}":
+		return false
+	for i in logic.enemies.size():
+		var fixed := float("%.2f" % logic.enemies[i].xparam(3))
+		logs.append({"type": "toast", "text": str(i + 1) + "号敌人暴闪为" + MVScript.js_number(fixed * 100.0) + "%!"})
+	return true
+
+
+## 猛击（CE78，技能 459）这类：for(let i = 1; i < N; i++){ var actor = $gameActors.actor(i); if(actor._states.includes(S) && actor.hasArmor($dataArmors[A])) {
+##   var members = $gameTroop.members(), length = members.length; for(let i = 0; i < length; i++){members[i].addState(T);} } }
+## 角色 1～N−1 里有一个带状态 S 且身上穿着防具 A，就给全体敌人加状态 T（倒下的加不上，同 addState）。参照 script_gaps setArmorState.*。
+func _set_armor_troop_state_script(code: String) -> bool:
+	var m := RegEx.create_from_string("^for\\(leti=1;i<(\\d+);i\\+\\+\\)\\{varactor=\\$gameActors\\.actor\\(i\\);if\\(actor\\._states\\.includes\\((\\d+)\\)&&actor\\.hasArmor\\(\\$dataArmors\\[(\\d+)\\]\\)\\)\\{varmembers=\\$gameTroop\\.members\\(\\),length=members\\.length;for\\(leti=0;i<length;i\\+\\+\\)\\{members\\[i\\]\\.addState\\((\\d+)\\);\\}\\}\\}$").search(_compact_js(code))
+	if m == null:
+		return false
+	var marker := int(m.get_string(2))
+	var armor := int(m.get_string(3))
+	for i in range(1, int(m.get_string(1))):
+		if XDB.rec("Actors", i).is_empty():
+			return true   # 原版读 null 的 _states 抛错、YEP 吞掉：后面的都不做
+		var a = null
+		for b in logic.actors:
+			if b != null and int(b.actor_id) == i:
+				a = b
+		if a == null:
+			a = state().actor(i)
+		var worn: bool = a.equip_list().any(func(e): return e.get("kind", "") == "armor" and int(e.get("base", 0)) == armor)
+		if a.is_state_affected(marker) and worn:
+			for e in logic.enemies:
+				logic.sequence_add_state(e, int(m.get_string(4)))
+	return true
+
+
+## 「套装再放一次」一族（CE17 水流、18 锋芒、107 影杀、325 乱披风、628～631 滑稽弹再次等 34 个，及 CE100 三魔术、1354 冥花葬、1370 斩天拔剑术）：
+##   for(let i = 1; i < N; i++){ var actor = $gameActors.actor(i); if(条件 && …){ ACT } [if(…){ ACT }] }
+##   var actor = $gameActors.actor($gameVariables.value(V)); if(actor.hasSkill(K)){ ACT } [else { if(actor.hasSkill(K)){ ACT } }]
+## ACT＝new Game_Action(actor, true) → setSkill(S) → decideRandomTarget → _actions.splice(1, 0, action) → !$gameTroop.isAllDead() && BattleManager.forceAction(actor)。
+## 条件认：actor、!actor.isDeathStateAffected()、actor._states.includes(S)、actor._skills.includes(K)（学会的，不含特性附加）、
+## actor.hasArmor／hasWeapon（按基础编号）、actor.hasSkill(K)、($gameVariables.value(V)==K)、!BattleManager.checkBattleEnd()。
+## forceAction 只记最后一个（logic.pending_force），事件跑完后才结算；读到没有数据的角色（无 actor 守卫）抛错、YEP 吞掉，后面都不做。
+## 参照 battle_common_event recast_*。整段都认得才执行。
+func _recast_script(code: String) -> bool:
+	var js := _compact_js(code)
+	var act := "varaction=newGame_Action\\(actor,true\\);action\\.setSkill\\((\\d+)\\);action\\.decideRandomTarget\\(\\);actor\\._actions\\.splice\\(1,0,action\\);(?:!\\$gameTroop\\.isAllDead\\(\\)&&)?BattleManager\\.forceAction\\(actor\\);"
+	var loop := RegEx.create_from_string("^for\\(leti=1;i<(\\d+);i\\+\\+\\)\\{varactor=\\$gameActors\\.actor\\(i\\);(.*)\\}$").search(js)
+	var by_var := RegEx.create_from_string("^varactor=\\$gameActors\\.actor\\(\\$gameVariables\\.value\\((\\d+)\\)\\);(.*)$").search(js)
+	if loop == null and by_var == null:
+		return false
+	var body := (loop if loop != null else by_var).get_string(2)
+	var branch := RegEx.create_from_string("^if\\(([^{}]*)\\)\\{" + act + "\\}")
+	var clauses := []   # [[条件…], 技能, 是否 else 分支]
+	var is_else := false
+	while body != "":
+		if by_var != null and body.begins_with("else{") and body.ends_with("}") and not clauses.is_empty():
+			body = body.substr(5, body.length() - 6)
+			is_else = true
+			continue
+		var m := branch.search(body)
+		if m == null:
+			return false
+		var conds := []
+		for t in m.get_string(1).split("&&"):
+			var c := _recast_cond(t)
+			if c.is_empty():
+				return false
+			conds.append(c)
+		clauses.append([conds, int(m.get_string(2)), is_else])
+		body = body.substr(m.get_end())
+	if clauses.is_empty():
+		return false
+	var ids: Array = range(1, int(loop.get_string(1))) if loop != null else [int(state().variable(int(by_var.get_string(1))))]
+	for i in ids:
+		var a = null if XDB.rec("Actors", int(i)).is_empty() else state().actor(int(i))
+		var taken := false
+		for cl in clauses:
+			if bool(cl[2]) and taken:
+				continue
+			var ok = _recast_meets(a, cl[0])
+			if ok == null:
+				return true   # 读了 null 的 actor：抛错，后面都不做
+			taken = ok
+			if ok and logic.actors.has(a) and not logic.alive(logic.enemies).is_empty():
+				logic.pending_force = {"user": a, "skill": int(cl[1])}
+	return true
+
+
+## 条件一项：[种类, 数]；认不得返回 []
+func _recast_cond(t: String) -> Array:
+	for pat in [["guard", "^actor$"], ["alive", "^!actor\\.isDeathStateAffected\\(\\)$"], ["state", "^actor\\._states\\.includes\\((\\d+)\\)$"],
+			["learned", "^actor\\._skills\\.includes\\((\\d+)\\)$"], ["has_skill", "^actor\\.hasSkill\\((\\d+)\\)$"],
+			["armor", "^actor\\.hasArmor\\(\\$dataArmors\\[(\\d+)\\]\\)$"], ["weapon", "^actor\\.hasWeapon\\(\\$dataWeapons\\[(\\d+)\\]\\)$"],
+			["variable", "^\\(\\$gameVariables\\.value\\((\\d+)\\)==(\\d+)\\)$"], ["not_end", "^!BattleManager\\.checkBattleEnd\\(\\)$"]]:
+		var m := RegEx.create_from_string(pat[1]).search(t)
+		if m != null:
+			return [pat[0], int(m.get_string(1)) if m.get_group_count() >= 1 else 0, int(m.get_string(2)) if m.get_group_count() >= 2 else 0]
+	return []
+
+
+## 按 && 从左到右短路求值；读到 null 的 actor 返回 null（抛错）
+func _recast_meets(a, conds: Array):
+	for c in conds:
+		var kind := str(c[0])
+		var ok := true
+		if kind == "guard":
+			ok = a != null
+		elif kind == "variable":
+			ok = state().variable(int(c[1])) == float(c[2])
+		elif kind == "not_end":
+			ok = not (logic.is_won() or logic.is_lost())
+		elif a == null:
+			return null
+		elif kind == "alive":
+			ok = not a.is_dead()
+		elif kind == "state":
+			ok = a.is_state_affected(int(c[1]))
+		elif kind == "learned":
+			ok = a.skill_ids.has(int(c[1]))
+		elif kind == "has_skill":
+			ok = a.skills().any(func(k): return int(k.id) == int(c[1]))
+		else:
+			ok = a.has_base_equip(kind, int(c[1]))   # armor／weapon
+		if not ok:
+			return false
+	return true
+
+
 ## 去注释、去空白后的脚本（下面两段只认这种紧凑写法，脚本里没有字符串）
 static func _compact_js(code: String) -> String:
 	return RegEx.create_from_string("\\s+").sub(RegEx.create_from_string("//[^\\n]*").sub(code, "", true), "", true)
@@ -255,7 +384,8 @@ func _execute_env(c: Dictionary):
 			while at + 1 < list.size() and int(list[at + 1].code) == 655:
 				at += 1
 				code += "\n" + str(list[at].parameters[0])
-			if _member_states_script(code) or _count_skills_script(code) or _count_members_script(code) or _actor_states_script(code):
+			if _member_states_script(code) or _count_skills_script(code) or _count_members_script(code) or _actor_states_script(code) \
+					or _troop_cev_script(code) or _set_armor_troop_state_script(code) or _recast_script(code):
 				index = at
 				return null
 			if code.strip_edges() == "Star.PetSystem.PetGet()":  # 公共事件 173：捕获网（XPetCapture）

@@ -52,7 +52,7 @@ function run(o, user, plan, maxActions) {
   w.Game_Interpreter.prototype.setupReservedCommonEvent = function () {
     const id = w.$gameTemp._commonEventId;
     const ok = setupCE.apply(this, arguments);
-    if (ok) o.events.push({commonEvent: id, afterActions: o.actions.length});
+    if (ok) o.events.push({commonEvent: id, afterActions: o.actions.length, marked: w.$gameParty.members().filter(m => m._states.includes(345)).map(m => m.actorId())});
     return ok;
   };
   let used = false;
@@ -107,6 +107,27 @@ caseRun('thunder_not_learned', {party: [23, 8, 9, 10], troop: 2, learn: [217], u
   setup([23, 8, 9, 10], 2); const a = w.$gameActors.actor(23); a.learnSkill(217); a.forgetSkill(5083); a._mp = a.mmp;
   run(o, 23, [217, false, 1], 3);
 });
+// 「套装再放一次」一族（CE17 水流、18 锋芒、107 影杀等 37 个，events3c）：技能动作序列给使用者加 345，公共事件找带 345 且穿着套装
+// （或会某技能、拿某武器）的人：new Game_Action → setSkill → decideRandomTarget → _actions.splice(1,0,…) → BattleManager.forceAction；
+// 107／18 最后 313 解除 345，17 不解除。记强制行动、事件后 345 还在不在。
+function wear(a, kind, id) {
+  const item = kind === 'armor' ? w.$dataArmors[id] : w.$dataWeapons[id];
+  const slot = a.equipSlots().indexOf(kind === 'armor' ? item.etypeId : 1);
+  a._equips[slot].setObject(item);
+}
+function recast(id, setupInfo, prep) {
+  caseRun(id, setupInfo, o => {
+    setup(setupInfo.party, 2); const a = w.$gameActors.actor(setupInfo.user);
+    a.learnSkill(setupInfo.use[0]); a._mp = a.mmp; a._tp = 100; a.releaseUnequippableItems = function () {}; prep(a); o.worn = a.equips().filter(Boolean).map(e => [e.etypeId, e.baseItemId || e.id]);
+    run(o, setupInfo.user, setupInfo.use, 3);
+    o.state345 = a._states.includes(345);
+  });
+}
+recast('recast_armor_worn', {party: [23, 8, 9, 10], user: 8, use: [785, false, 0], wear: [['armor', 932], ['armor', 933]]}, a => { wear(a, 'armor', 932); wear(a, 'armor', 933); });
+recast('recast_armor_half', {party: [23, 8, 9, 10], user: 8, use: [785, false, 0], wear: [['armor', 932]]}, a => { wear(a, 'armor', 932); });
+recast('recast_weapon', {party: [23, 8, 9, 10], user: 8, use: [2260, false, 0], wear: [['weapon', 472]]}, a => { wear(a, 'weapon', 472); });
+recast('recast_skill_learned', {party: [23, 8, 9, 10], user: 8, use: [3669, false, 0], learn: [3671]}, a => { a.learnSkill(3671); });
+recast('recast_skill_not', {party: [23, 8, 9, 10], user: 8, use: [3669, false, 0], forget: [3671]}, a => { a.forgetSkill(3671); });
 // 打倒最后一只敌人：checkBattleEnd 先成立，预约的 84 不跑
 caseRun('thunder_battle_end', {party: [23, 8, 9, 10], troop: 2, learn: [217, 5083], use: [217, false, 0], enemiesHp: 1, othersHidden: true}, o => {
   setup([23, 8, 9, 10], 2); const a = w.$gameActors.actor(23); a.learnSkill(217); a.learnSkill(5083); a._mp = a.mmp;
@@ -117,5 +138,5 @@ const src = f => crypto.createHash('sha256').update(fs.readFileSync(path.join(AP
 const out = {source: 'js/plugins/YEP_BattleEngineCore.js', sha256: src('js/plugins/YEP_BattleEngineCore.js'), cases};
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox', 'battle_common_events.json'), JSON.stringify(out, null, 1));
-console.log(JSON.stringify(cases.map(c => ({id: c.id, errors: c.errors.length, actions: c.observed.actions, events: c.observed.events, toasts: c.observed.toasts, pets: c.observed.pets}))));
+console.log(JSON.stringify(cases.map(c => ({id: c.id, errors: c.errors.length, actions: c.observed.actions, events: c.observed.events, toasts: c.observed.toasts, pets: c.observed.pets, state345: c.observed.state345}))));
 process.exit(cases.some(c => c.errors.length) ? 1 : 0);

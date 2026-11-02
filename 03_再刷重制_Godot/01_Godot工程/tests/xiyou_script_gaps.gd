@@ -8,6 +8,7 @@ extends Node
 ## - 第二批（events2）：失去剩余伙伴号角 CE1391（for 循环 loseItem）；按变量 348 取人学技能＋角色名提示（CE1313 第一支），
 ##   没人时不学不提示；鲲拳 CE1160 只有一句声明的段无操作；大厅老妪头顶倒计时（Map004 EV005，画在看不见的名字条上）无操作；
 ##   战斗里按角色号加状态（CE43 脚本段，XBattleEventRunner._actor_states_script）：13～15 在队、不在队都加上 708。
+## - 第三批（events3）：投石问路 CE2486 每个敌人一条暴闪提示（troopCev）；猛击 CE78 带 345 且穿着防具 506 时全体敌人加 43（setArmorState.*）。
 ## 反向：写法稍变（速度写成变量、击败数写成别的对象）仍记认不出。
 const REF := "oracle/script_gaps.json"
 
@@ -120,12 +121,32 @@ func _defeat(ref: Dictionary) -> void:
 	_check("defeat_other_unknown", it2.skipped.size() == 1, it2.skipped)
 
 
-func _cleanup() -> void:
-	var s := XState.new_game(3, 1, [8, 9, 10])
-	XState.current = s
-	var before := JSON.stringify(s.gear)
-	var miss: Array = await script("DataManager.cleanupIndependentItems();")
-	_check("cleanup_noop", miss.is_empty() and JSON.stringify(s.gear) == before, miss)
+## 猫哥清理存档（zchuli.js，审查 21 期 P3①）：在队成员回满 HP／MP、倒下的救起（参照 cleanupHeal）；身上与背包的装备不变；
+## 仓库里的武器防具：O-待定-1 o_cleanup_keep_warehouse 默认留着，false 照原版丢掉（道具不动）
+func _cleanup(ref: Dictionary) -> void:
+	for keep in [true, false]:
+		MVScript.o_cleanup_keep_warehouse = true if keep else false
+		var s := XState.new_game(3, 1, [8, 9, 10])
+		XState.current = s
+		var m := s.members()
+		m[0].hp = floorf(m[0].mhp / 2.0)
+		m[0].mp = floorf(m[0].mmp / 2.0)
+		m[1].hp = 0.0
+		m[1].add_state(1)
+		XWarehouse.create(s, "<仓库:999>")
+		var w: Dictionary = s.warehouses["仓库"]
+		w.items.armor.append(XGear.create("armor", 2, s))
+		w.items.item.append(5)
+		w.qtty.item["5"] = 3
+		w.currentCapacity = 4
+		var before := JSON.stringify(s.gear)
+		var miss: Array = await script("DataManager.cleanupIndependentItems();")
+		var got: Array = s.members().map(func(a): return {"id": int(a.actor_id), "full": a.hp == a.mhp and a.mp == a.mmp, "dead": a.is_dead()})
+		var want: Array = ref.cleanupHeal.observed.members.map(func(x): return {"id": int(x.id), "full": bool(x.full), "dead": bool(x.dead)})
+		_check("cleanup_heal_%s" % keep, miss.is_empty() and got == want and JSON.stringify(s.gear) == before, [miss, got, want])
+		_check("cleanup_warehouse_%s" % keep, w.items.armor.size() == (1 if keep else 0) and w.items.item == [5] and int(w.qtty.item["5"]) == 3
+			and int(w.currentCapacity) == (4 if keep else 3), [w.items.armor.size(), w.items.item, w.currentCapacity])
+	MVScript.o_cleanup_keep_warehouse = true
 
 
 func _batch2(ref: Dictionary) -> void:
@@ -217,17 +238,55 @@ func _battle_states(ref: Dictionary) -> void:
 	_check("battle_states_unknown_tail", not r2.skipped.is_empty(), r2.skipped)
 
 
+func _battle_run(l: XBattleLogic, list: Array) -> XBattleEventRunner:
+	var r := XBattleEventRunner.new(l, list.duplicate(true))
+	for k in 50:
+		if r.advance().kind == "done":
+			break
+	return r
+
+
+func _battle_batch3(ref: Dictionary) -> void:
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = s
+	var l := XBattleLogic.new()
+	l.elite_roll = 100.0
+	l.setup(53, s)   # 敌群 53：有暴闪 5% 的敌人（同参照）
+	var list: Array = XDB.rec("CommonEvents", 2486).list.filter(func(c): return int(c.code) in [355, 655, 0]).slice(-4)
+	var r := _battle_run(l, list)
+	var got: Array = r.take_logs().filter(func(x): return x.get("type", "") == "toast").map(func(x): return str(x.text))
+	_check("troop_cev", r.skipped.is_empty() and got == ref.troopCev.observed.toasts, [r.skipped, got, ref.troopCev.observed])
+	for tag in ["wear", "bare"]:
+		var c: Dictionary = ref["setArmorState." + tag]
+		s = XState.new_game(3, 1, [8, 9, 10])
+		XState.current = s
+		l = XBattleLogic.new()
+		l.elite_roll = 100.0
+		l.setup(2, s)
+		for b in l.actors:
+			if b != null and int(b.actor_id) == 1:
+				b.add_state(345)
+				if tag == "wear":   # 同参照：当作穿着 506（新局穿不上，开战会卸下穿不了的），开战后直接放进第 5 槽
+					var eq: Array = b.equips.duplicate()
+					eq[4] = XGear.create("armor", 506, s)
+					b.equips = eq
+		r = _battle_run(l, XDB.rec("CommonEvents", 78).list)
+		var hit := l.enemies.map(func(e): return e.is_state_affected(43))
+		_check("set_armor_state_" + tag, r.skipped.is_empty() and hit == c.observed.enemies, [r.skipped, hit, c.observed])
+
+
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_script_gaps"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
 	var ref := _ref()
-	_check("ref_loaded", ref.size() == 16, ref.size())
+	_check("ref_loaded", ref.size() == 20, ref.size())
 	await _speed(ref)
 	await _defeat(ref)
-	await _cleanup()
+	await _cleanup(ref)
 	await _batch2(ref)
 	_battle_states(ref)
+	_battle_batch3(ref)
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)

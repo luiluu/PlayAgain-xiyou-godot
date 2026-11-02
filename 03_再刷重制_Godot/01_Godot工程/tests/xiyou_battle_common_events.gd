@@ -87,6 +87,40 @@ func _thunder(id: String, learn_5083: bool, kill: bool) -> void:
 		check(id + ".won_after_event", l.is_won() and int(c.observed.get("victory", -1)) == c.observed.actions.size(), [l.is_won(), c.observed.get("victory")])
 
 
+## 「套装再放一次」一族（events3c）：技能动作序列给自己加 345 → 公共事件找带 345 且穿着套装（拿着武器、学会某技能）的人强制再放一次。
+## 比：预约的公共事件、开跑时谁带着 345、事件后强制行动的行动者与技能、最后 345 还在不在（628 的追加技能自己又加 345）。目标随机不比。
+func _recast(id: String) -> void:
+	var c := _case(id)
+	var st: Dictionary = c.setup
+	var l := battle(st.party)
+	var s := l.state
+	var a := s.actor(int(st.user))
+	a.keep_unequippable = true   # 同探针在实例上停掉 releaseUnequippableItems（8 号穿不了这几件）
+	a.learn_skill(int(st.use[0]))
+	for k in st.get("learn", []):
+		a.learn_skill(int(k))
+	for k in st.get("forget", []):
+		a.forget_skill(int(k))
+	for wv in st.get("wear", []):
+		s.gain_gear(str(wv[0]), int(wv[1]), 1)
+		var item: Dictionary = s.gear.pop_back()
+		var etype := 1 if str(wv[0]) == "weapon" else int(XDB.rec("Armors", int(wv[1])).get("etypeId", 0))
+		a.equips[a.equip_slots().find(etype)] = item
+	a.refresh_passive()
+	a.mp = a.mmp
+	a.tp = 100
+	l.act(a, XDB.rec("Skills", int(st.use[0])), l.enemies[int(st.use[2])])
+	var ce: Dictionary = (c.observed.events as Array).filter(func(x): return int(x.commonEvent) != 1320)[0]
+	check(id + ".reserved", XBattleCommonEvent.reserved(l) == int(ce.commonEvent), [XBattleCommonEvent.reserved(l), ce.commonEvent])
+	check(id + ".marked", a.is_state_affected(345) == (ce.marked as Array).map(func(x): return int(x)).has(int(st.user)), [a.state_ids, ce.marked])
+	var ev := l.run_events()
+	var got := actions(ev).map(func(x): return [("a%d" % x[0].actor_id) if x[0] is XActor else "?", x[1]])
+	var want: Array = c.observed.actions.filter(func(x): return bool(x.forcing)).map(func(x): return [x.subject, int(x.item[1])])
+	check(id + ".forced", JSON.stringify(got) == JSON.stringify(want), [got, want])
+	check(id + ".state345", a.is_state_affected(345) == bool(c.observed.state345), [a.state_ids, c.observed.state345])
+	check(id + ".no_pending", l.pending_force.is_empty())
+
+
 func _net() -> void:
 	var c := _case("net_after_action")
 	var l := battle([1, 8, 9, 10])
@@ -161,6 +195,8 @@ func _run() -> void:
 	_thunder("thunder_learned", true, false)
 	_thunder("thunder_not_learned", false, false)
 	_thunder("thunder_battle_end", true, true)
+	for id in ["recast_armor_worn", "recast_armor_half", "recast_weapon", "recast_skill_learned", "recast_skill_not"]:
+		_recast(id)
 	_net()
 	_slot()
 	_inventory()

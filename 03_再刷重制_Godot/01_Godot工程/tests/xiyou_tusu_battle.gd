@@ -37,14 +37,6 @@ class HalfStream extends XRandomStream:
 		return lo + floori((hi - lo + 1) * 0.5)
 
 
-## 屠苏还没进切片（A 车道），重制里她的能力值与原版对不上（30 级魔攻、5／60 级各项）：这里把六项能力值钉成参照开局记的值，
-## 只比本期的逻辑（费用按最大 MP、基准按物攻魔攻、补底按双防）。进切片后去掉这个类再比一次。
-class TusuActor extends XActor:
-	var fixed: Array = []
-	func param(i: int) -> float:
-		return float(fixed[i]) if i < fixed.size() else super.param(i)
-
-
 func _key(b) -> Variant:
 	if b == null:
 		return null
@@ -54,11 +46,6 @@ func _key(b) -> Variant:
 func _battle(levels: Dictionary, start: Dictionary) -> XBattleLogic:
 	var s := XState.new_game(2, 1, [8, 10])
 	XState.current = s
-	var t := TusuActor.new()
-	t.setup(TUSU)
-	var ts: Dictionary = start.tusu
-	t.fixed = [ts.hp, ts.mmp, ts.atk, ts.def, ts.mat, ts.mdf]
-	s.actors[TUSU] = t
 	s.actor_max_level = 99
 	s.switches[2494] = true
 	XTusuXuan.recruit(s, TUSU)

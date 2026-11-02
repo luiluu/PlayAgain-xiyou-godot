@@ -34,13 +34,15 @@ func _run() -> void:
 	XCasinoBatch.frame_budget_ms = 1000000  # 参照一帧跑满 4 抽（停止那例靠它）
 	var f: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/casino_batch_oracle.json"))
 	check("source", f.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("complete", f.cases.size() == 12)
+	check("complete", f.cases.size() == 13)
 	find_scripts()
 	rules()
 	for c in f.cases:
 		check(c.id + ".native", c.errors.is_empty(), c.errors)
 		XCasinoBatch.notify_unstarted = false
+		MVEventCore.fixed_random = float(c.setup.get("random", 0.5))  # 用例带 random 时照参照固定（single.high 0.99，沙僧二审 S2-1-02）
 		await run_case(c, c.observed)
+		MVEventCore.fixed_random = 0.5
 		if c.id == "single.below":
 			XCasinoBatch.notify_unstarted = true
 			var fixed: Dictionary = c.observed.duplicate(true)

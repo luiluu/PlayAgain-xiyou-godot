@@ -91,12 +91,14 @@ static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 		kind = kind_of(obj)
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
 	var rows := desc_params(obj, type)
-	rows = _element_wrapper(obj, 0 if skill_copy else type, rows)
+	# 屠苏／璇的技能：bindGrowth 的 setItem 包装（最外层）把技能换成浅拷贝再往里传，元素包装看 isSkill 为假，同 skill_copy
+	var binding_copy := type == 3 and int(XTusuXuan.owner_of(int(obj.get("id", 0)))[0]) != 0
+	rows = _element_wrapper(obj, 0 if skill_copy or binding_copy else type, rows)
 	if (type == 1 or type == 2) and XPower.enabled():
 		rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
 	if type == 3:
 		# 专属角色技能（10122～10299）走 characterHelpView（XCharacterHelp），其余技能走 genericHelpView
-		rows = XCharacterHelp.view(obj, rows) if XCharacterHelp.target(obj) else _generic_view(obj, rows)
+		rows = XCharacterHelp.view(obj, rows) if XCharacterHelp.target(obj) else XCharacterHelp.now_growth(obj, _generic_view(obj, rows))
 		rows.append_array(XBlackFlash.help_rows(obj, scene_actor))  # 黑闪 Sprite_ItemHelp.setItem 包装（在 characterHelpView 之内）：卡尾两行现况
 	for r in rows:
 		r[0] = _terms(str(r[0]))

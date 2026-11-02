@@ -1,6 +1,6 @@
 'use strict';
 // installCasinoBatchRuntime（CodexCasino）：大厅 Map004 EV60「自定义单抽／自定义20连抽」。真走 CodexCasino.open／begin／update／finish，
-// 每抽整条跑 CE1432／1431 的副本（跳文字、选项选第 0 项、根解释器跳 212／230、静音 toaster）。Math.random 固定 0.5（host.newGame）。
+// 每抽整条跑 CE1432／1431 的副本（跳文字、选项选第 0 项、根解释器跳 212／230、静音 toaster）。Math.random 固定 0.5（host.newGame），用例带 random 的改成那个值。
 // 弹窗是 DOM（jsdom），只读它的文字。产物 .sandbox/casino_batch.json，手工复制为 tests/fixtures/casino_batch_oracle.json。
 const {start,makeCase,finish}=require('./shared/host.cjs');
 const host=start(),{w,newGame}=host;
@@ -26,10 +26,12 @@ const specs=[
  {id:'twenty.two',mode:'twenty',tickets:45,points:0,count:2},
  {id:'twenty.short',mode:'twenty',tickets:19,points:0,count:1},
  {id:'twenty.proof',mode:'twenty',tickets:40,points:0,count:1,proofBefore:true},
- {id:'wrong.map',mode:'single',tickets:5,points:0,count:1,map:5}
+ {id:'wrong.map',mode:'single',tickets:5,points:0,count:1,map:5},
+ {id:'single.high',mode:'single',tickets:5,points:0,count:5,random:0.99}  // 沙僧二审 S2-1-02：0.99 时每抽都达标，考 CE1431／1432 的 if(actor) 学技能
 ];
 const cases=specs.map(spec=>makeCase(spec.id,spec,()=>{
  newGame();toasts=[];w.$gameMessage.clear();
+ if(spec.random!=null)w.eval('Math.random=function(){return '+spec.random+';}');
  if(spec.map){w.DataManager.loadMapData(spec.map);w.$gameMap.setup(spec.map);}
  w.$gameSwitches.setValue(2495,true);w.$gameVariables.setValue(206,spec.points);
  if(spec.tickets)w.$gameParty.gainItem(w.$dataItems[1639],spec.tickets);

@@ -379,6 +379,10 @@ MODULE_FORMULAS.update({f'CodexYomi.damage(a,b,{i})': 'yomi' for i in range(1017
 MODULE_FORMULAS.update({f'CodexJingliu.damage(a,b,{i})': 'jingliu' for i in range(10187, 10194)})
 # 174 云裳 CodexYunshang.formula(this,a,b)：10270、10271、10274、10282、10286（XYunshang.formula）
 MODULE_FORMULAS['CodexYunshang.formula(this,a,b)'] = 'yunshang'
+# 176 屠苏 CodexTusu.damage(a,b,'键')：斩锋～炉火诀 10312～10325；177 璇 CodexXuan.damage(a,b,'lengguang')／heal(a,b)（XTusuXuan，白龙；
+# 求值等屠苏三期／璇六期接上，现在 XFormulaExecution 按 unsupported_program 不可用，跟进切片前一样）
+MODULE_FORMULAS.update({f"CodexTusu.damage(a,b,'{k}')": 'tusu' for k in ['zhanfeng', 'hengsao', 'dianshe', 'guanri', 'chiling', 'zhenji', 'jianqi', 'zhenhun', 'body_phys', 'body_mag']})
+MODULE_FORMULAS.update({"CodexXuan.damage(a,b,'lengguang')": 'xuan', 'CodexXuan.heal(a,b)': 'xuan'})
 # 167 渡鸦 5 个伤害技能：整条公式含 CodexRaven.legionStrikeRate／skillCoefficient（XRaven.formula 照原文逐技能写）
 MODULE_FORMULAS.update({re.sub(r'\s+', '', f): 'raven' for f in [
     '(a.mat * 78 + a.mmp * 39) * (CodexRaven.legionStrikeRate(a) * CodexRaven.skillCoefficient(a, 10122))',

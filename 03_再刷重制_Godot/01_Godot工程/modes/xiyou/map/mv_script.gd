@@ -229,6 +229,26 @@ static func run(code: String, interp) -> Array:
 
 
 ## 逐条处理简单语句（分号或换行分隔）
+## O-待定-1（悟空 events3，审查 21 期 P3①）：猫哥清理存档时仓库里的武器防具。true＝留着（重制存的是实例，不会失效）；
+## false＝照原版：zchuli.js 只给身上与背包的独立装备重编号，仓库里记的旧编号失效，这里按全部丢掉
+static var o_cleanup_keep_warehouse := true
+
+
+static func _cleanup_independent(s: XState) -> void:
+	if not o_cleanup_keep_warehouse:
+		for w in s.warehouses.values():
+			for cat in ["weapon", "armor"]:
+				var n: int = w.items[cat].size()
+				w.items[cat] = []
+				w.qtty[cat] = {}
+				w.currentCapacity = maxi(0, int(w.get("currentCapacity", 0)) - n)
+	for a in s.members():   # updateActorEquips 末尾：gainHp(mhp)、gainMp(mmp)、refresh（HP 不为 0 就解除死亡）
+		a.hp = a.mhp
+		a.mp = a.mmp
+		a.remove_state(1)
+		a.refresh_resources()
+
+
 static func _statements(js: String, interp) -> Array:
 	var s := XState.current
 	var unknown := []
@@ -255,8 +275,11 @@ static func _statements(js: String, interp) -> Array:
 		if m:
 			s.player_move_speed = clampi(int(m.get_string(1)), 1, 6)
 			continue
-		# 大厅猫哥「清理存档」（Map004 EV024，YEP_ItemCore 删掉没人持有的独立装备条目）：重制只存持有的装备实例，没有可清的，无操作
+		# 大厅猫哥「清理存档」（Map004 EV024，zchuli.js DataManager.cleanupIndependentItems）：原版把在队成员身上与背包里的独立装备
+		# 重新编号、其余独立装备条目丢掉（仓库里存的会失效），最后给在队成员回满 HP／MP 并 refresh（倒下的也救起，参照 script_gaps cleanupHeal）。
+		# 重制只存持有的装备实例，重编号没有可做的；回满照做。仓库：O-待定-1 o_cleanup_keep_warehouse（默认留着，false＝照原版丢掉仓库里的武器防具）
 		if st == "DataManager.cleanupIndependentItems()":
+			_cleanup_independent(s)
 			continue
 		m = _re("^\\$gamePlayer\\.SaveActorName\\s*=\\s*prompt\\(\\s*\"([^\"]*)\"\\s*,\\s*\"([^\"]*)\"\\s*\\)$").search(st)
 		if m:

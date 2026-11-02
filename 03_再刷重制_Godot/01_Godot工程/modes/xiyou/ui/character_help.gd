@@ -20,7 +20,7 @@ extends RefCounted
 ## 5. dyn2View：按前缀把行换成当前数值（渡鸦魄倍率／阶位系数／魔防穿透／魂海池，米拉人形倍率与共鸣，黄泉段数，宿傩术式威力／斩击强化，甚尔暴君成长与咒具成长系数，
 ##    饿狼形态系数／进化／解析／当前形态）。
 ## 未移植：listCosts（技能界面／战斗里消耗行不显示；重制说明卡不知道窗口，一律显示）、helpRankChanges「进阶变化」行（只在已进阶时出现）、
-## nowGrowthView 的屠苏／璇（谷雨已接，_now_growth_view）、镜流星魂行（镜流第二期）、云裳的 dyn2、各角色第二期才有的战斗内字段（渡鸦灵魂恒 0、
+## 镜流星魂行（镜流第二期）、云裳的 dyn2、各角色第二期才有的战斗内字段（渡鸦灵魂恒 0、
 ## 宿傩斩击强化恒「未储存」）、专属装备（4001、4577～4581、破限之心等）的角色说明。
 
 const VIEW_COLOR := "rgba(235,240,247,1)"
@@ -355,9 +355,17 @@ static func view(obj: Dictionary, rows: Array, list_costs := false) -> Array:
 	return _now_growth_view(obj, _dyn2_view(obj, out, a), a)
 
 
-## nowGrowthRows（谷雨部分；屠苏、璇未接）：按技能所属角色当前等级／阶位算的「成长：」行；null＝不换
+## nowGrowthView 包在 characterHelpView 最外层，也管走 genericHelpView 的技能（屠苏、璇的技能号在 10299 之后）
+static func now_growth(obj: Dictionary, rows: Array) -> Array:
+	return _now_growth_view(obj, rows, actor(obj))
+
+
+## nowGrowthRows（谷雨部分；屠苏、璇在 _tusu_xuan_growth_rows）：按技能所属角色当前等级／阶位算的「成长：」行；null＝不换
 static func _now_growth_rows(obj: Dictionary, a) -> Variant:
-	if owner(obj) != XGuyu.ACTOR or not str(obj.get("note", "")).contains("<GuyuSkill:"):
+	var note := str(obj.get("note", ""))
+	if note.contains("<CodexTusu:") or note.contains("<CodexXuan:"):
+		return _tusu_xuan_growth_rows(obj, a)
+	if owner(obj) != XGuyu.ACTOR or not note.contains("<GuyuSkill:"):
 		return null
 	var lv := _level(obj, a)
 	var rank := clampi(_rank(obj, a), 0, 5)
@@ -375,6 +383,71 @@ static func _now_growth_rows(obj: Dictionary, a) -> Variant:
 			return ["成长：队友储备比例" + pct.call(c.call([1, 1.25, 1.5, 1.75]) + 0.15 * rank), "成长：绽放系数" + x.call(c.call([5, 6, 7, 8]))]
 		10292:
 			return ["成长：归春系数" + x.call(c.call([33, 50], [40, 60]))]
+	return null
+
+
+## nowGrowthRows 的屠苏 176、璇 177 部分（【cc·悟空·未经审查】events3）：按所属角色等级（B.curve），没有该角色时按初始等级、没学技能
+const TUSU_GROWTH := {10312: "zhanfeng", 10313: "hengsao", 10314: "dianshe", 10315: "guanri", 10317: "chiling", 10318: "zhenji", 10319: "jianqi", 10323: "zhenhun", 10324: "body_phys", 10325: "body_mag"}
+
+
+static func _tusu_xuan_growth_rows(obj: Dictionary, a) -> Variant:
+	var lv := _level(obj, a)
+	var c := func(v: Array, l: Array) -> float: return XGuyu.curve(lv, v, l)
+	var pct := func(n: float) -> String: return num(roundf(n * 1000.0) / 10.0) + "%"
+	var x := func(n: float) -> String: return num(roundf(n * 100.0) / 100.0)
+	var coef := func(actor_id: int, k: String) -> String: return str(floori(XGuyu.curve(lv, XTusuXuan.DAMAGE[actor_id].get(k, [0, 0, 0, 0]), XTusuXuan.LEVELS)))
+	var w: float = c.call([0.1, 0.2, 0.35, 0.5, 0.65, 0.8, 1], [1, 10, 20, 30, 40, 50, 60])
+	var id := int(obj.get("id", 0))
+	if TUSU_GROWTH.has(id):
+		return ["成长：伤害系数" + coef.call(XTusuXuan.TUSU, TUSU_GROWTH[id])]
+	var lock: String = "锁定倍率×" + x.call(c.call([1.3, 1.5], [20, 60]))
+	var heming: String = "和鸣倍率×" + x.call(c.call([1.2, 1.5], [20, 60]))
+	var huzhen: String = "护阵倍率×" + x.call(c.call([0.85, 0.70], [20, 60]))
+	var hg: String = "回光系数" + x.call(c.call([10, 20], [1, 60]))
+	var hgf: String = pct.call(c.call([0.20, 0.35], [1, 60]))
+	var lbf: String = pct.call(c.call([0.15, 0.35], [1, 60]))
+	# X.gongsuDefenseRate／gongsuDamageRate：学会共宿且 10 级解锁才有
+	var gongsu := _learned(a, XTusuXuan.skill_id(XTusuXuan.XUAN, "gongsu")) and XTusuXuan.unlocked(XTusuXuan.XUAN, a, "gongsu")
+	var gs: String = "双防共享比例" + pct.call(c.call([0.15, 0.30], [20, 60]) if gongsu else 0.0)
+	var offense: String = "直接伤害提高" + pct.call(c.call([0.10, 0.30], [10, 60]) if gongsu else 0.0)
+	var shadow := "成长：星影人数" + ("全部队友" if lv >= 60 else "3名" if lv >= 50 else "2名" if lv >= 40 else "1名" if lv >= 30 else "0名")
+	var m := RegEx.create_from_string("<Codex(?:Tusu|Xuan):\\s*(passive\\.(?:temper|relay))\\s*>").search(str(obj.get("note", "")))
+	var passive := m.get_string(1) if m != null else ""
+	if passive == "passive.temper":  # T.temperRate：TEMPER 等级起 ×1.1，60 级 ×1.2（剑气纵横保持 ×1.1）
+		var tr := func(at: int, keep := false) -> String: return "×" + x.call(1.0 if lv < at else 1.1 if lv < 60 or keep else 1.2)
+		return ["成长：剑气纵横伤害" + tr.call(10, true), "成长：横扫、点射、贯日伤害" + tr.call(20), "成长：金汤护盾量、敕令伤害" + tr.call(30), "成长：震击、镇魂重击伤害" + tr.call(40)]
+	if passive == "passive.relay":
+		return ["成长：接力比例" + pct.call(0.3 if lv >= 60 else 0.2 if lv >= 20 else 0.0)]
+	match id:
+		10316:
+			return ["成长：" + huzhen]
+		10320:
+			return ["成长：" + lock]
+		10321:
+			return ["成长：成长权重" + pct.call(w) + "；保底比例" + pct.call(c.call([0.1, 0.3], [1, 60]))]
+		10322:
+			return ["成长：" + heming]
+		10358:
+			return ["成长：成长权重" + pct.call(w)]
+		10359:
+			return ["成长：" + lock + "；" + heming, "成长：" + huzhen, "成长：挫势－" + pct.call(1.0 - c.call([0.90, 0.80], [20, 60])) + "（霸体目标－" + pct.call(1.0 - c.call([0.85, 0.70], [20, 60])) + "）",
+				"成长：横扫对后续目标增伤" + pct.call(c.call([1, 1.2], [20, 60]) - 1.0)]
+		10360:
+			return ["成长：额外提高" + pct.call(c.call([1, 1.2], [40, 60]) - 1.0 if lv >= 40 else 0.0)]
+		10335:
+			return ["成长：" + hg + "；保底比例" + hgf]
+		10336:
+			return ["成长：成长权重" + pct.call(w) + "；保底比例" + lbf]
+		10337:
+			return ["成长：伤害系数" + coef.call(XTusuXuan.XUAN, "lengguang")]
+		10338, 10363:
+			return [shadow]
+		10339:
+			return ["成长：" + gs, "成长：" + offense]
+		10361:
+			return ["成长：" + hg + "；回光保底比例" + hgf, "成长：璃壁成长权重" + pct.call(w) + "；璃壁保底比例" + lbf]
+		10362:
+			return ["成长：" + gs.replace("双防共享比例", "共宿比例") + "；额外默契" + str(floori(c.call([1, 3], [20, 60])) if lv >= 20 else 0) + "点"]
 	return null
 
 
