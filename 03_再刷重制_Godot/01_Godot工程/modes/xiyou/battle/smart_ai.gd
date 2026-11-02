@@ -168,6 +168,8 @@ func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var id := int(rec.get("id", 0))
 	if id >= 10216 and id <= 10219 and _toji_formula_re.search(str(dmg.get("formula", ""))) != null:
 		value = XToji.ai_damage(a, t, id, int(p.get("extra", 0)))  # 甚尔主技能：受控的估算函数
+	elif XTusu.ai_raw(a, t, rec) != null:
+		value = float(XTusu.ai_raw(a, t, rec))  # CodexAIEstimators：屠苏的武装、支援、本体技能（超强者持武的武装技能 0）
 	elif XYunshang.ai_raw(logic, a, t, rec) != null:
 		value = float(XYunshang.ai_raw(logic, a, t, rec))  # CodexAIEstimators：云裳公式（防取 0）
 	else:

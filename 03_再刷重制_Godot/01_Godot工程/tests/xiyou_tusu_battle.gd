@@ -234,6 +234,16 @@ func _step(st: Array) -> Array:
 			XBinding.gain(_who(st[1]), int(st[2]))
 		"sethp":
 			_set_hp(_who(st[1]), float(st[2]))
+		"smart":
+			XConfig.ensure_loaded()
+			XConfig._values.codexSmartAI = int(st[1]) != 0  # 只改内存，不写设置文件
+		"auto":
+			var r: Array = logic.auto_battle_action(_who(st[1]))
+			var sk = r[0] if r.size() > 0 else null
+			var tg = r[1] if r.size() > 1 else null
+			var k := XTusu.key_of(sk) if sk is Dictionary else ""
+			ret = {"skill": null if not sk is Dictionary else (k if k != "" else int(sk.id)),
+				"target": -1 if tg == null else (logic.actors.find(tg) if tg is XActor else logic.enemies.find(tg))}
 		"kairen":
 			logic.state.actor_advance[TUSU] = 3
 			logic.state.flags[XTusu.KAIREN_FLAG] = (st[2] as Array).duplicate()
@@ -262,7 +272,7 @@ func _ready() -> void:
 
 func _go() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	check("oracle", ref.cases.size() == 10 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
+	check("oracle", ref.cases.size() == 11 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:
 		if PENDING.has(c.id):
 			print("SKIP ", c.id, "：", PENDING[c.id])

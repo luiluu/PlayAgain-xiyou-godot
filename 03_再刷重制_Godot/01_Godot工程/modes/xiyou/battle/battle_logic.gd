@@ -689,7 +689,7 @@ func auto_battle_action(a: XActor) -> Array:
 	var guyu := XGuyu.auto_action(self, a)  # 谷雨 makeAutoBattleActions 包装（云裳之外：modules.json 谷雨第 37、云裳第 30）：固定判断压过挂机与智能 AI
 	if not guyu.is_empty():
 		return guyu
-	var r := _auto_battle_action(a)
+	var r := XTusu.auto(self, a, _auto_battle_action(a))  # 屠苏 makeAutoBattleActions 包装：屠苏自己按规则易武／支援／化武，持武者比武装技能
 	XYunshang.auto_battle(self, a)  # 云裳 makeAutoBattleActions 包装（原选择之后）：免费赠行、放行、六衡裁身、收袖
 	return r
 

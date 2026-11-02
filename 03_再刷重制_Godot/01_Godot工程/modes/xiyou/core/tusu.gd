@@ -850,6 +850,124 @@ static func _book_protection(t, u, skill: Dictionary) -> bool:
 		or RegEx.create_from_string("(?:addShield|gainShield|ShieldLedger\\.grant)").search(f) != null or XTusuXuan.owner_of(int(skill.id)) == [177, "libi"]
 
 
+# ---- 自动战斗与智能 AI（makeAutoBattleActions 包装、CodexAIEstimators） ----
+const AI_HURT := 0.4
+
+
+static func super_strong(a) -> bool:
+	return a is XActor and XItemMarks.is_super_strong(int(a.actor_id))
+
+
+## T.autoAction：武具态按规则易武（两人以上低于 40%、或下回合 Boss 霸体→盾；敌人 3 个以上→剑；只剩一个 Boss 且持剑→锤），
+## 否则当前武相的支援有用就放，不然待命；人形时化武给默认宿主（上次武相维持得住）。返回 [技能, 目标]，空＝不管
+static func auto_action(logic, a) -> Array:
+	if not is_tusu(a) or not _in_battle():
+		return []
+	var allies: Array = logic.alive(logic.actors)
+	var foes: Array = logic.alive(logic.enemies)
+	if XBinding.is_bound(a):
+		var d = data(a)
+		var cur = d.reserve if d.reserve != null else d.weapon
+		var nxt := int(logic.turn) + 1
+		var want = null
+		var hurt := allies.filter(func(x): return x.hp / maxf(1.0, x.mhp) < AI_HURT).size()
+		var boss_next_hyper := foes.any(func(e): return e.boss_difficulty_boss) and nxt % 2 == 0
+		if (hurt >= 2 or boss_next_hyper) and cur != "shield":
+			want = "shield"
+		elif foes.size() >= 3 and cur != "sword":
+			want = "sword"
+		elif foes.size() == 1 and foes[0].boss_difficulty_boss and cur == "sword":
+			want = "hammer"
+		if want != null:
+			return [XDB.rec("Skills", skill_id("yiwu." + str(want))), null]
+		var s := support_skill(a)
+		var key := key_of(s) if not s.is_empty() else ""
+		var h = holder(a)
+		var target = danger_enemy(logic)
+		var useful := not s.is_empty()
+		if key == "support.suoding":
+			useful = target != null and (not _locks.has(h) or not is_same(_locks[h], target))
+		if key == "support.jintang":
+			useful = allies.any(func(x): return not XBinding.untargetable(x) and XShieldLedger.amount(x, "tusu.jintang") < shield_amount(a, x) * temper_rate(a, key) * shield_support_rate(a) * support_bonus(a, "jintang"))
+		if useful and logic.can_use(a, s):
+			return [s, target if target != null and key in ["support.suoding", "support.zhenhun"] else null]
+		return [XDB.rec("Skills", XBattleLogic.GUARD_SKILL), null]
+	var host = XBinding.default_host(a)
+	var w0 = _last(logic.state)
+	if w0 == null:
+		w0 = "sword"
+	if host != null and can_maintain(w0, host):
+		return [XDB.rec("Skills", skill_id("huawu." + str(w0))), host]
+	return []
+
+
+static func _preview(logic, u, skill: Dictionary, target) -> float:
+	var sub = u
+	if key_of(skill).begins_with("arm.") and tusu() != null:
+		sub = tusu()
+	var keep := _sword_targets.duplicate()
+	var v := float(XDamage.calculate(skill, sub, target, {"preview": true, "critical": false, "vars": logic.vars()}).get("value", 0.0))
+	_sword_targets = keep  # 预览的横扫目标表记在临时行动上，不留
+	var hits: int = logic.alive(logic.enemies).size() if XSmartAI.scope_of(skill) in [2, 8, 10] else 1
+	return v * hits * maxf(1.0, float(XBattleLogic.attack_repeats(u, skill, 1)))
+
+
+## T.hostAuto：持武者（不是超强者）自动战斗选的对敌伤害技能，比不过某个武装技能（统一伤害预览 ×1.1）就换成它，打 Boss 优先、血最多的敌人
+static func host_auto(logic, h, r: Array) -> Array:
+	var t = tusu()
+	if t == null or not is_same(holder(t), h) or super_strong(h) or r.is_empty() or not r[0] is Dictionary:
+		return r
+	var foes: Array = logic.alive(logic.enemies)
+	if foes.is_empty():
+		return r
+	var item: Dictionary = r[0]
+	if item.is_empty() or key_of(item) != "" or not XSmartAI.for_opponent(item) or not int(item.get("damage", {}).get("type", 0)) in [1, 5]:
+		return r
+	var focus = foes[0]
+	for e in foes:
+		var be := 1 if e.boss_difficulty_boss else 0
+		var bf := 1 if focus.boss_difficulty_boss else 0
+		if be > bf or (be == bf and e.hp > focus.hp):
+			focus = e
+	var best = null
+	var best_value := _preview(logic, h, item, focus) * 1.1
+	for s in h.skills():
+		var k := key_of(s)
+		if not k.begins_with("arm.") or not logic.can_use(h, s) or int(s.get("damage", {}).get("type", 0)) != 1:
+			continue
+		var v := _preview(logic, h, s, focus)
+		if v > best_value:
+			best = s
+			best_value = v
+	return [best, focus] if best != null else r
+
+
+## makeAutoBattleActions 包装（原选择之后）：屠苏按自己的规则，持武者比武装技能
+static func auto(logic, a, r: Array) -> Array:
+	if is_tusu(a) and _in_battle():
+		var act := auto_action(logic, a)
+		return act if not act.is_empty() else r
+	return host_auto(logic, a, r) if _in_battle() else r
+
+
+## CodexAIEstimators：武装、支援、本体技能按屠苏的公式估（原始公式值），超强者持武的武装技能估 0；不是屠苏的技能返回 null
+static func ai_raw(a, b, item: Dictionary):
+	var key := key_of(item)
+	if key == "":
+		return null
+	if key.begins_with("arm.") and super_strong(a):
+		return 0.0
+	if key.begins_with("arm.") or key.begins_with("support.") or key.begins_with("body."):
+		var k := key.split(".")[1]
+		var v := damage(a, b, ("body_" + k) if key.begins_with("body.") else k)
+		if key == "arm.guanri" and is_same(_locks.get(a), b):
+			v *= lock_rate(tusu())
+		if key == "arm.chiling" and a.state_ids.has(state_id("heming")):
+			v *= heming_rate(tusu())
+		return v
+	return 0.0
+
+
 # ---- 噬主 ----
 ## B.percentMpCost：MP 只按最大 MP 比例（基础 0），照常乘 mcr、减耗
 static func percent_cost(a, skill: Dictionary, rate: float) -> int:
