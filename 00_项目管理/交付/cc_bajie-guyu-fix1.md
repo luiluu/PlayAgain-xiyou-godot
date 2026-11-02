@@ -22,7 +22,7 @@
 
 ## 待交叉核查
 
-- 甲档（存档）：`xstate.gd` from_dict 里 `XGuyu.after_load` 挪到 `_become_current` 之后（3 行）；请顺带看同一处 `XYomiJingliu.after_load`、`XBinding.clear_all` 是否也读 `XState.current`（本分支没查、没改）。
+- 甲档（存档）：`xstate.gd` from_dict 里 `XGuyu.after_load` 挪到 `_become_current` 之后（3 行）；请顺带看同一处 `XYomiJingliu.after_load`、`XBinding.clear_all`、`XTusu.clear` 是否也读 `XState.current`（`tusu_xuan.gd` 的 `_owner` 读 `XState.current`）（本分支没查、没改）。
 - 乙档：`skill_scene.gd`（`mastery_level_text`）、`tests/xiyou_guyu.gd`（`_load_cases`）、`tests/xiyou_skill_mastery.gd`（`_level_text`）。
 
 ## 验证
@@ -31,6 +31,7 @@
 - 本机：`xiyou_guyu` 78/78、`xiyou_skill_mastery` 306/306（新 `ui.level_text_group`）。
 - 反向验证（`反向验证.py`）：把谷雨同步放回换档之前（旧顺序）→ 咬住；LV 改回 `str(lv)` → 咬住；「读档完全不同步」→ 没咬住，这是预期：两组存档本身账本一致，不需要同步也对，旧顺序错在按旧局去「改」。
 - 选测：`选测.py main --list` 284 个（xstate.gd 是核心文件），走云端（基准取上次云端通过的祖先 007c3c72，实际 311 个场景、14 片）全过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41367931973
+- 合 main（edcc1ca4，含屠苏三期）：`xstate.gd` 同一处冲突，留 `XTusu.clear(s)`、谷雨同步仍在换档之后；`--补齐` 刷新参照后本机复跑 `xiyou_guyu` 78/78、`xiyou_tusu` 314/314、`xiyou_tusu_battle` 992/992。合并后的提交没再上云端（main 那批已云端测过，冲突只一行）。
 - 语法检查 0 问题。
 
 ## 期二要点（没做，留给下一期）
@@ -45,4 +46,6 @@
 ## 本分支提交
 
 - cb315f63 谷雨读档同步挪到换成新档之后＋内存读档专项；技能窗熟练度 LV 千位逗号
-- 本交付单
+- 17ddf905 交付单
+- 97b45019 合并 main（解 xstate.gd 冲突）
+- 本次：交付单补合并后验证
