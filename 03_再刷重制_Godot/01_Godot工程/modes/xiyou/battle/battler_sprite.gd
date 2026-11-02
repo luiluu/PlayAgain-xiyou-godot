@@ -283,10 +283,10 @@ func _update_indicators() -> void:
 	if not battler is XActor:
 		return
 	var body := sprite as Sprite2D
-	var shown: bool = not (view.dead if not view.is_empty() else battler.is_dead()) and sprite.visible and sprite.modulate.a > 0.0 \
+	var shown: bool = not bool(view.get("dead", battler.is_dead())) and sprite.visible and sprite.modulate.a > 0.0 \
 		and (body == null or body.texture != null)
-	var domain: bool = shown and (bool(view.get("domain", false)) if not view.is_empty() else XBattleIndicators.domain_shown(battler))
-	var awake: bool = shown and body != null and (bool(view.get("flash_awake", false)) if not view.is_empty() else XBattleIndicators.outline_shown(battler))
+	var domain: bool = shown and bool(view["domain"] if view.has("domain") else XBattleIndicators.domain_shown(battler))
+	var awake: bool = shown and body != null and bool(view["flash_awake"] if view.has("flash_awake") else XBattleIndicators.outline_shown(battler))
 	if domain:
 		if _domain_circle == null:
 			_domain_circle = XBattleIndicators.DomainCircle.new()
