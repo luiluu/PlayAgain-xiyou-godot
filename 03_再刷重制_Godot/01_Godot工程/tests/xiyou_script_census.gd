@@ -7,7 +7,7 @@ extends Node
 ## 只读数据；跑脚本的副作用落在一局空白新游戏上，每条写法前重开。
 const EC := preload("res://tests/xiyou_event_compare.gd")
 const OUT := "user://script_census.json"
-## 已知认不出的写法（键＝种类|原文前 80 字 → 分类）；现状清单，补一条删一条
+## 已知认不出的写法（键＝种类|完整原文 → 分类）；现状清单，补一条删一条
 const KNOWN_FILE := "res://tests/fixtures/script_census_known.json"
 
 var results: Array = []
@@ -46,7 +46,7 @@ func _check(name: String, ok: bool, detail = null) -> bool:
 func _collect() -> Dictionary:
 	var out := {}
 	var add := func(kind: String, code, where: String):
-		var key: String = kind + "|" + str(code).left(80)
+		var key: String = kind + "|" + str(code)   # 按完整写法去重（审查 21 期 P3④：只取前 80 字会把开头相同、后面不同的写法并成一种，藏住认不出的）
 		if not out.has(key):
 			out[key] = {"kind": kind, "code": code, "where": []}
 		if out[key].where.size() < 12:

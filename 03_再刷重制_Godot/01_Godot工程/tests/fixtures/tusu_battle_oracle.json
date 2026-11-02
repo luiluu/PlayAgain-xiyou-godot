@@ -729,7 +729,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 1,
@@ -1030,7 +1030,7 @@
      "ret": {
       "damage": 19680000,
       "sword": 1312,
-      "book": 1530,
+      "book": 1312,
       "coef": 15000
      },
      "hits": [],
@@ -1050,7 +1050,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 1,
@@ -1378,7 +1378,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 10301,
@@ -1707,7 +1707,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 10301,
@@ -2010,7 +2010,7 @@
      "ret": {
       "damage": 23616000,
       "sword": 1312,
-      "book": 1530,
+      "book": 1312,
       "coef": 18000
      },
      "hits": [],
@@ -2039,7 +2039,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 10301,
@@ -2340,9 +2340,9 @@
       "chiling"
      ],
      "ret": {
-      "damage": 38250000,
+      "damage": 32800000,
       "sword": 1312,
-      "book": 1530,
+      "book": 1312,
       "coef": 25000
      },
      "hits": [],
@@ -2371,7 +2371,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 10301,
@@ -2701,7 +2701,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 10301,
@@ -3031,7 +3031,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 10301,
@@ -3358,7 +3358,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 10301,
@@ -3688,7 +3688,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 10301,
@@ -4015,7 +4015,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 10301,
@@ -4342,7 +4342,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 1,
@@ -4663,7 +4663,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 1,
@@ -4973,7 +4973,7 @@
        "mp": 1974,
        "mmp": 1974,
        "atk": 1312,
-       "mat": 1530,
+       "mat": 1312,
        "def": 546,
        "mdf": 546,
        "attack": 1,
@@ -53378,13 +53378,13 @@
         "returnedRound": 0
        },
        "states": [],
-       "hp": 1431,
-       "mp": 1167,
-       "mmp": 1167,
-       "atk": 365,
-       "mat": 365,
-       "def": 259,
-       "mdf": 259,
+       "hp": 1413,
+       "mp": 1149,
+       "mmp": 1149,
+       "atk": 322,
+       "mat": 322,
+       "def": 216,
+       "mdf": 216,
        "attack": 1,
        "canMove": true,
        "skills": {
@@ -53401,17 +53401,17 @@
         "body.phys": [
          true,
          true,
-         58
+         57
         ],
         "body.mag": [
          true,
          true,
-         70
+         68
         ],
         "body.guard": [
          true,
          true,
-         116
+         114
         ],
         "yiwu.sword": [
          false,
@@ -53466,27 +53466,27 @@
         "support.jianqi": [
          false,
          true,
-         70
+         68
         ],
         "support.suoding": [
          false,
          true,
-         70
+         68
         ],
         "support.jintang": [
          false,
          true,
-         140
+         137
         ],
         "support.heming": [
          false,
          true,
-         70
+         68
         ],
         "support.zhenhun": [
          false,
          true,
-         116
+         114
         ]
        },
        "guard": true,
@@ -53706,13 +53706,13 @@
        "states": [
         2681
        ],
-       "hp": 1431,
-       "mp": 1167,
-       "mmp": 1167,
-       "atk": 365,
-       "mat": 365,
-       "def": 259,
-       "mdf": 259,
+       "hp": 1413,
+       "mp": 1149,
+       "mmp": 1149,
+       "atk": 322,
+       "mat": 322,
+       "def": 216,
+       "mdf": 216,
        "attack": 10301,
        "canMove": true,
        "skills": {
@@ -53729,17 +53729,17 @@
         "body.phys": [
          false,
          true,
-         58
+         57
         ],
         "body.mag": [
          false,
          true,
-         70
+         68
         ],
         "body.guard": [
          false,
          true,
-         116
+         114
         ],
         "yiwu.sword": [
          true,
@@ -53794,27 +53794,27 @@
         "support.jianqi": [
          false,
          true,
-         70
+         68
         ],
         "support.suoding": [
          false,
          true,
-         70
+         68
         ],
         "support.jintang": [
          false,
          true,
-         140
+         137
         ],
         "support.heming": [
          false,
          true,
-         70
+         68
         ],
         "support.zhenhun": [
          false,
          true,
-         116
+         114
         ]
        },
        "guard": true,
@@ -54031,13 +54031,13 @@
        "states": [
         2681
        ],
-       "hp": 1431,
-       "mp": 1167,
-       "mmp": 1167,
-       "atk": 365,
-       "mat": 365,
-       "def": 259,
-       "mdf": 259,
+       "hp": 1413,
+       "mp": 1149,
+       "mmp": 1149,
+       "atk": 322,
+       "mat": 322,
+       "def": 216,
+       "mdf": 216,
        "attack": 10301,
        "canMove": true,
        "skills": {
@@ -54054,17 +54054,17 @@
         "body.phys": [
          false,
          true,
-         58
+         57
         ],
         "body.mag": [
          false,
          true,
-         70
+         68
         ],
         "body.guard": [
          false,
          true,
-         116
+         114
         ],
         "yiwu.sword": [
          true,
@@ -54119,27 +54119,27 @@
         "support.jianqi": [
          false,
          true,
-         70
+         68
         ],
         "support.suoding": [
          false,
          true,
-         70
+         68
         ],
         "support.jintang": [
          false,
          true,
-         140
+         137
         ],
         "support.heming": [
          false,
          true,
-         70
+         68
         ],
         "support.zhenhun": [
          false,
          true,
-         116
+         114
         ]
        },
        "guard": true,
@@ -54361,13 +54361,13 @@
         2681,
         2683
        ],
-       "hp": 1431,
-       "mp": 1167,
-       "mmp": 1167,
-       "atk": 365,
-       "mat": 365,
-       "def": 259,
-       "mdf": 259,
+       "hp": 1413,
+       "mp": 1149,
+       "mmp": 1149,
+       "atk": 322,
+       "mat": 322,
+       "def": 216,
+       "mdf": 216,
        "attack": 10301,
        "canMove": true,
        "skills": {
@@ -54384,17 +54384,17 @@
         "body.phys": [
          false,
          true,
-         58
+         57
         ],
         "body.mag": [
          false,
          true,
-         70
+         68
         ],
         "body.guard": [
          false,
          true,
-         116
+         114
         ],
         "yiwu.sword": [
          false,
@@ -54449,27 +54449,27 @@
         "support.jianqi": [
          false,
          true,
-         70
+         68
         ],
         "support.suoding": [
          false,
          true,
-         70
+         68
         ],
         "support.jintang": [
          false,
          true,
-         140
+         137
         ],
         "support.heming": [
          false,
          true,
-         70
+         68
         ],
         "support.zhenhun": [
          false,
          true,
-         116
+         114
         ]
        },
        "guard": true,
@@ -54688,13 +54688,13 @@
        "states": [
         2681
        ],
-       "hp": 1431,
-       "mp": 1167,
-       "mmp": 1167,
-       "atk": 365,
-       "mat": 365,
-       "def": 259,
-       "mdf": 259,
+       "hp": 1413,
+       "mp": 1149,
+       "mmp": 1149,
+       "atk": 322,
+       "mat": 322,
+       "def": 216,
+       "mdf": 216,
        "attack": 10301,
        "canMove": true,
        "skills": {
@@ -54711,17 +54711,17 @@
         "body.phys": [
          false,
          true,
-         58
+         57
         ],
         "body.mag": [
          false,
          true,
-         70
+         68
         ],
         "body.guard": [
          false,
          true,
-         116
+         114
         ],
         "yiwu.sword": [
          false,
@@ -54776,27 +54776,27 @@
         "support.jianqi": [
          true,
          true,
-         70
+         68
         ],
         "support.suoding": [
          false,
          true,
-         70
+         68
         ],
         "support.jintang": [
          false,
          true,
-         140
+         137
         ],
         "support.heming": [
          false,
          true,
-         70
+         68
         ],
         "support.zhenhun": [
          false,
          true,
-         116
+         114
         ]
        },
        "guard": true,
@@ -55000,13 +55000,13 @@
        "last": "sword",
        "bind": null,
        "states": [],
-       "hp": 1431,
-       "mp": 1167,
-       "mmp": 1167,
-       "atk": 365,
-       "mat": 365,
-       "def": 259,
-       "mdf": 259,
+       "hp": 1413,
+       "mp": 1149,
+       "mmp": 1149,
+       "atk": 322,
+       "mat": 322,
+       "def": 216,
+       "mdf": 216,
        "attack": 10301,
        "canMove": true,
        "skills": {
@@ -55023,17 +55023,17 @@
         "body.phys": [
          true,
          true,
-         58
+         57
         ],
         "body.mag": [
          true,
          true,
-         70
+         68
         ],
         "body.guard": [
          true,
          true,
-         116
+         114
         ],
         "yiwu.sword": [
          false,
@@ -55088,27 +55088,27 @@
         "support.jianqi": [
          false,
          true,
-         70
+         68
         ],
         "support.suoding": [
          false,
          true,
-         70
+         68
         ],
         "support.jintang": [
          false,
          true,
-         140
+         137
         ],
         "support.heming": [
          false,
          true,
-         70
+         68
         ],
         "support.zhenhun": [
          false,
          true,
-         116
+         114
         ]
        },
        "guard": true,

@@ -51,6 +51,7 @@ func _run() -> void:
 			a.tp = a.max_tp()
 			var logic := XBattleLogic.new()
 			logic.state = st
+			XBinding._logic_ref = weakref(logic)  # 探针量 canUse 时 inBattle 为真：屠苏没绑定，易武不可用（XTusu.meets）
 			for c in groups[key]:
 				var sk := XDB.rec("Skills", int(c.skill))
 				var full := logic.can_use(a, sk)

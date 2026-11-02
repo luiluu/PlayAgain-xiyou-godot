@@ -1732,6 +1732,123 @@
     }
    },
    "errors": []
+  },
+  {
+   "id": "single.high",
+   "setup": {
+    "id": "single.high",
+    "mode": "single",
+    "tickets": 5,
+    "points": 0,
+    "count": 5,
+    "random": 0.99
+   },
+   "observed": {
+    "before": {
+     "points": 0,
+     "tickets": 5,
+     "max": 5
+    },
+    "opened": true,
+    "dialog": {
+     "label": "抽数（持有 5 张券，最多 5 抽）",
+     "status": "共 1 抽，消耗 1 张券；积分门槛 -30000。",
+     "inputMax": "5",
+     "title": "自定义单抽",
+     "desc": "每抽消耗1张券，逐次判定二阶段与欧皇之证。自动选择「赢下所有」，积分不足时停止。",
+     "wait": "codexCasinoBatch",
+     "preview": "共 5 抽，消耗 5 张券；积分门槛 -30000。"
+    },
+    "begun": "drawing",
+    "frames": 3,
+    "result": {
+     "mode": "single",
+     "eventId": 1432,
+     "ticketsPerDraw": 1,
+     "requested": 5,
+     "used": 5,
+     "totalDraws": 5,
+     "ticketsUsed": 5,
+     "second": 5,
+     "proof": 4,
+     "newProof": true,
+     "initialPoints": 0,
+     "finalPoints": 13523,
+     "pointChange": 13523,
+     "remaining": 0,
+     "reason": "完成",
+     "samples": [
+      {
+       "draw": 1,
+       "second": true,
+       "proof": true,
+       "points": 3048
+      },
+      {
+       "draw": 2,
+       "second": true,
+       "proof": true,
+       "points": 6096
+      },
+      {
+       "draw": 3,
+       "second": true,
+       "proof": true,
+       "points": 9045
+      },
+      {
+       "draw": 4,
+       "second": true,
+       "proof": true,
+       "points": 12093
+      },
+      {
+       "draw": 5,
+       "second": true,
+       "proof": false,
+       "points": 13523
+      }
+     ]
+    },
+    "messages": [
+     "自定义单抽完成：5/5抽\n二阶段 5 次，欧皇达标 4 次（新获欧皇之证）\n积分 0 → 13523（变化 +13523）；剩余券 0"
+    ],
+    "toasts": [],
+    "after": {
+     "points": 13523,
+     "tickets": 0,
+     "wait": "",
+     "actors": [
+      {
+       "id": 1,
+       "proof": true,
+       "loss": false,
+       "gift": false
+      },
+      {
+       "id": 8,
+       "proof": true,
+       "loss": false,
+       "gift": false
+      },
+      {
+       "id": 9,
+       "proof": true,
+       "loss": false,
+       "gift": false
+      },
+      {
+       "id": 10,
+       "proof": true,
+       "loss": false,
+       "gift": false
+      }
+     ],
+     "v1197": 840,
+     "v1196": 5
+    }
+   },
+   "errors": []
   }
  ]
 }

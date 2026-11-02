@@ -55,6 +55,12 @@ static func _run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swi
 		return {"available": true, "value": XYomiJingliu.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "yunshang":  # CodexYunshang.formula(this,a,b)（174 云裳，XYunshang.formula）
 		return {"available": true, "value": XYunshang.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
+	if status == "module" and program.get("module") in ["tusu", "xuan"]:  # CodexTusu.damage／CodexXuan.damage、heal（176 屠苏、177 璇，XTusuXuan.formula）
+		var tx = XTusuXuan.formula(a, b, item)
+		if tx == null:
+			return _unavailable(item, execute, "unsupported_program")
+		var signed := maxf(0.0, float(tx)) * (-1.0 if int(item.get("damage", {}).get("type", 0)) in [3, 4] else 1.0)  # 同 XFormulaProgram：回复取负（回光 CodexXuan.heal）
+		return {"available": true, "value": signed, "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "raven":  # 渡鸦 5 个伤害技能的整条公式（167，XRaven.formula）
 		return {"available": true, "value": XRaven.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if int(program.get("version", 0)) != 1 or not status in ["pure", "effectful"]:
