@@ -5,5 +5,6 @@
 [node name="XiyouRulesD1B" type="Node"]
 script = ExtResource("1")
 difficulties = [1]
+parts = 8
 part = 1
 stale_checks = false

@@ -5,3 +5,4 @@
 [node name="XiyouRulesD4" type="Node"]
 script = ExtResource("1")
 difficulties = [4]
+parts = 8
