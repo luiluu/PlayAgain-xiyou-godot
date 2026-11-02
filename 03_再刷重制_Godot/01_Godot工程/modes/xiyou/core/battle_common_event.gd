@@ -23,7 +23,7 @@ const START_EVENT := 1320
 static func reserve(logic, id: int, user = null) -> void:
 	if id > 0:
 		logic.set_meta("battle_ce", id)
-		# 预约它的行动者（ACTION COMMON EVENT 才有）；CE1327 再释放按它（O-待定-1）
+		# 预约它的行动者（ACTION COMMON EVENT 才有）；CE1327 再释放按它（O-149）
 		if user != null:
 			logic.set_meta("battle_ce_user", user)
 		elif logic.has_meta("battle_ce_user"):

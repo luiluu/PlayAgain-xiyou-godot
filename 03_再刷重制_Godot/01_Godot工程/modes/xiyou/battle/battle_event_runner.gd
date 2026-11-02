@@ -160,7 +160,7 @@ func _set_armor_troop_state_script(code: String) -> bool:
 ## forceAction 只记最后一个（logic.pending_force），事件跑完后才结算；读到没有数据的角色（无 actor 守卫）抛错、YEP 吞掉，后面都不做。
 ## 第三种写法 CE1327 三千烦恼风再释放：var actor = $gameActors.actor($gameParty._targetActorId); if(actor.hasSkill(6184)){ ACT }。
 ## 原版 _targetActorId 是菜单里最后一次用物品选中的角色，与这次谁放的百八烦恼风无关：别人最后用过物品就不触发、
-## 新开局（0 号没有角色）抛错不做（O-待定-1）。重制默认按预约这条公共事件的行动者（XBattleCommonEvent.take 记的 ce_user），
+## 新开局（0 号没有角色）抛错不做（O-149）。重制默认按预约这条公共事件的行动者（XBattleCommonEvent.take 记的 ce_user），
 ## 没有行动者（开战预约、事件里装子事件）时退回物品选中的角色；O_RECAST_CASTER 设 false 回到原版。
 ## 参照 battle_common_event recast_*。整段都认得才执行。
 static var O_RECAST_CASTER := true
