@@ -68,12 +68,13 @@ const CHALLENGE_SKILLS := [2873, 2874, 2875, 2876, 2877, 2879, 2880, 2881, 2882,
 ## 本批只确认、不开放的副本入口与分支事件（地图号 → 事件号）。地图上不能放这些事件。
 ## （二十六层 Map155 EV2、二十七层 Map182 EV2、二十八层 Map145 EV2／4／5、二十九层 Map144 EV2 的副本入口与萨麦尔格已开放，见 xiyou_dungeon 的 d26／d27／d28a／d28b／d29
 ## 与 xiyou_floor28_dungeon。）
-## 二十九层前置图一护修炼卍解（Map213 EV2，要角色 109 在队，敌群 962）；
 ## 三十一层七位可选首领（1、2、3、4、6、8、13）、副本协会主席（9）；错误数据（20）已放，见 xiyou_error_data。
-const UNOPENED_EVENTS := {213: [2]}
+## 二十九层前置图一护修炼卍解（Map213 EV2）content2 已开放，挪到下面 HIDDEN_EVENTS。现在没有这类事件。
+const UNOPENED_EVENTS := {}
 ## 放了、但普通流程（开关 2302）没有可用页的事件：三十层通往 Map055 的门（3）、辛德瑞两位（4、5）与小明事件（6）
-## （页条件要求轮回开关 2303／2307 或角色 99 在队；轮回分支由 xiyou_floor30_seeker 测）。
-const HIDDEN_EVENTS := {146: [3, 4, 5, 6]}
+## （页条件要求轮回开关 2303／2307 或角色 99 在队；轮回分支由 xiyou_floor30_seeker 测）；
+## 二十九层前置图一护修炼卍解（Map213 EV2，页条件要角色 109 在队、变量 1309；各支由 xiyou_floor_odds 测）。
+const HIDDEN_EVENTS := {146: [3, 4, 5, 6], 213: [2]}
 ## 守层者胜后插件指令 maxlevel equal 设的等级上限（三十一层 81、三十二层 90、三十三层 99；之前各层见门与辛德瑞，未逐层核对）
 const MAX_LEVEL_AFTER := {148: 81, 156: 90, 157: 99}
 ## 到这些层（三十一至三十三层）挑战守层者前把队伍攻击／魔攻提到 BIG_ATK（见 _boost_party）
@@ -631,6 +632,9 @@ func _floor(f: Dictionary, full: bool) -> bool:
 			return false
 		for ev_id in UNOPENED_EVENTS.get(v.map, []):
 			_check(tag + "_via%d_unopened_ev%d_absent" % [v.map, ev_id], _event(_scene(), ev_id) == null, [v.map, ev_id])
+		for ev_id in HIDDEN_EVENTS.get(v.map, []):
+			var hidden_via := _event(_scene(), ev_id)
+			_check(tag + "_via%d_hidden_ev%d_no_page" % [v.map, ev_id], hidden_via != null and hidden_via.page.is_empty(), [v.map, ev_id])
 		if not await _talk(_scene(), int(v.event), [], tag + "_via%d" % v.map, full, true):
 			return false
 	if not _check(tag + "_entered", await _wait_map(f.map) and _scene().player.grid == Vector2i(f.x, f.y), [_scene().map_id, _scene().player.grid if _scene() is XMapScene else null]):
