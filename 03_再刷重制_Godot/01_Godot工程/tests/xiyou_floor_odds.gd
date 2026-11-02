@@ -23,12 +23,16 @@ const LANDING := {
 	10: Vector2i(17, 16), 12: Vector2i(13, 17), 47: Vector2i(14, 40), 64: Vector2i(30, 24), 17: Vector2i(26, 29),
 	46: Vector2i(21, 49), 213: Vector2i(13, 2), 119: Vector2i(22, 33), 166: Vector2i(14, 35), 32: Vector2i(31, 14),
 }
+## 同图别的入口（副本回来、深渊之门回来等）：大厅门的落点走不到时再从这些地方试
+const OTHER_LANDINGS := {64: [Vector2i(14, 26)], 17: [Vector2i(21, 36)], 166: [Vector2i(21, 9), Vector2i(7, 8)]}
 ## 出现条件（走得到检查前先满足）：独立开关、开关、入队角色、变量
 const SETUP := {
 	[10, 11]: {"self": "A"}, [12, 23]: {"self": "A"}, [47, 15]: {"self": "A"}, [64, 3]: {"self": "A"},
 	[64, 8]: {"actor": 127}, [17, 5]: {"switch": 172}, [17, 6]: {"actor": 128}, [46, 5]: {"actor": 104},
 	[213, 2]: {"actor": 109, "vars": {1309: 1}}, [32, 9]: {"switch": 2285}, [32, 10]: {"switch": 2285},
 }
+## 原版也走不到的（图块通行与 MV checkPassage 一致，各入口都试过）：铃兰彩蛋 Map064 (4,1)、张楚岚彩蛋 Map017 (42,43)，照放、不改
+const UNREACHABLE := [[64, 8], [17, 6]]
 ## 并行事件不用走到
 const PARALLEL := [[32, 10]]
 
@@ -117,6 +121,9 @@ func _start(m: int, id: int, extra := {}) -> XState:
 		s.set_switch(int(setup.switch), true)
 	if setup.has("actor"):
 		s.add_actor(int(setup.actor))
+		# 铃兰 127、天虎令 104 是超强者，地狱以下难度入不了队（XItemMarks.can_acquire_actor）；彩蛋只看在不在队伍里，直接放进去
+		if not s.party.has(int(setup.actor)):
+			s.party.append(int(setup.actor))
 	for v in setup.get("vars", {}):
 		s.set_variable(int(v), int(setup.vars[v]))
 	_party()
@@ -218,7 +225,10 @@ func _reach(m: int, id: int) -> void:
 	if PARALLEL.has([m, id]):
 		return
 	var miss := REACH.unreachable(_scene(), _scene().player.grid, [id])
-	_check("reach_map%d_ev%d" % [m, id], miss.is_empty(), miss)
+	for land in OTHER_LANDINGS.get(m, []):
+		if not miss.is_empty():
+			miss = REACH.unreachable(_scene(), land, [id])
+	_check("reach_map%d_ev%d" % [m, id], miss == ([id] if UNREACHABLE.has([m, id]) else []), miss)
 
 
 ## 镇凶火焰：独立开关 A 关时不出现；开时打敌群 1，胜后关 A、成就 61
