@@ -4,7 +4,8 @@ extends Node
 ## - 放上地图：切片 keepEvents 列表与地图上的事件一致；55、69 不放。
 ## - 走得到：从落点（大厅 (14,23)、一层 (11,14)、黄金大厅 (10,18)）按图块 BFS（tests/xiyou_reach_check.gd），全部有内容的事件走得到。
 ## - 真跑一遍：每个新放的事件在地图里跑到结束，选项一律取消（取消不了的取第一项），开的界面当场关、战斗直接赢；没有跳过的指令。
-## - 几条主路径：调速「快」、仓库「装备道具仓库」开仓库、木桩「测试伤害」打敌群 70、马老师打敌群 662、黄金大厅出口回 Map040 (19,6)。
+## - 几条主路径：调速「快」、仓库「装备道具仓库」开仓库、木桩「测试伤害」打敌群 70、马老师打敌群 662（两处敌人防死，打输回地图）、
+##   黄金大厅出口回 Map040 (19,6)；种族向导挪位。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const REACH := preload("res://tests/xiyou_reach_check.gd")
 const TIMEOUT_MS := 240000
@@ -17,6 +18,10 @@ const ADDED := {
 	41: [1, 2],
 }
 const LANDING := {4: Vector2i(14, 23), 5: Vector2i(11, 14), 41: Vector2i(10, 18)}
+## 原版也走不到的（图块通行与 MV checkPassage 一致）：大厅三个角上的宝箱门 9／53／58 与右下角的重置等级 64；自动执行／并行的不用走到（20）
+const UNREACHABLE := {4: [9, 53, 58, 64]}
+## 选项取消会回到菜单、一直转的：先选「离开」
+const LEAVE := {[4, 25]: [3], [4, 71]: [5]}
 
 var results: Array = []
 var battles: Array = []   # 每场：{troop, result}
@@ -220,9 +225,15 @@ func _reach(m: int) -> void:
 	s.set_variable(20, 31)
 	if not _check("reach_start_map%d" % m, await _wait_map(m)):
 		return
-	var ids: Array = XMapScene.slice().keepEvents[str(m)].map(func(v): return int(v))
+	if m == 4:
+		XRace.state(s).guideChosen = true   # 选过族：种族向导 22 让开入塔门口（见 _race_guide）
+		_scene().relocate_race_guide()
+	var ids: Array = XMapScene.slice().keepEvents[str(m)].map(func(v): return int(v)).filter(func(id):
+		var e := _event(_scene(), id)
+		return e != null and not (e.data.pages as Array).all(func(p): return int(p.trigger) in [3, 4]))
 	var miss := REACH.unreachable(_scene(), _scene().player.grid, ids)
-	_check("reach_map%d" % m, miss.is_empty(), miss)
+	var want: Array = UNREACHABLE.get(m, [])
+	_check("reach_map%d" % m, miss == want, [miss, want])
 
 
 ## 每个新放的事件跑到结束：选项一律取消，界面当场关，战斗直接赢；没有跳过的指令
@@ -234,7 +245,7 @@ func _smoke(m: int, id: int) -> void:
 		return
 	var map: XMapScene = _scene()
 	map.skipped_log.clear()
-	var answers := []
+	var answers: Array = LEAVE.get([m, id], []).duplicate()
 	for i in 40:
 		answers.append(-1)
 	await _run_event(map, id, answers, "win")
@@ -257,23 +268,45 @@ func _paths() -> void:
 		pages.clear()
 		await _run_event(_scene(), 8, [0], "")
 		_check("warehouse_opened", s.warehouses.has("仓库") and pages.has("XWarehouseScene"), [s.warehouses.keys(), pages])
+	# 木桩、马老师的敌人防死（训练用，生命归零也不倒），可输可逃：直接打输
 	# 木桩「测试伤害」：敌群 70
 	s = _start(4, 14, 23, 2)
 	if await _wait_map(4):
 		battles.clear()
-		await _run_event(_scene(), 25, [0], "win")
+		await _run_event(_scene(), 25, [0, 3, 3, 3], "lose")
 		_check("dummy_battle70", battles.any(func(b): return int(b.troop) == 70), battles)
 	# 马老师「与马老师正常比武」：敌群 662
 	s = _start(5, 11, 14, 2)
 	if await _wait_map(5):
 		battles.clear()
-		await _run_event(_scene(), 9, [0], "win")
+		await _run_event(_scene(), 9, [0], "lose")
 		_check("ma_battle662", battles.any(func(b): return int(b.troop) == 662), battles)
+	await _race_guide()
 	# 黄金大厅出口：回 Map040 (19,6)
 	s = _start(41, 10, 18, 2)
 	if await _wait_map(41):
 		await _run_event(_scene(), 2, [], "")
 		_check("golden_exit", await _wait_map(40) and _scene().player.grid == Vector2i(19, 6), [_scene().map_id, _scene().player.grid])
+
+
+## 种族向导 22：没选族时站在入塔门 36 前 (14,5)，门走不到；选族后（进大厅时、选单关闭后）挪到赌场 47 右边 (11,5)
+func _race_guide() -> void:
+	var s := _start(4, 14, 23, 2)
+	if not await _wait_map(4):
+		return
+	var map: XMapScene = _scene()
+	var g := _event(map, 22)
+	_check("guide_at_door", g != null and g.grid == Vector2i(14, 5), g.grid if g != null else null)
+	_check("door_blocked", REACH.unreachable(map, map.player.grid, [36]) == [36])
+	XRace.state(s).guideChosen = true
+	map.relocate_race_guide()
+	_check("guide_moved", g.grid == Vector2i(11, 5) and g.direction == 2, [g.grid, g.direction])
+	_check("door_open", REACH.unreachable(map, map.player.grid, [36]).is_empty())
+	# 再进大厅：按存档摆回去也照样挪开
+	s = _start(4, 14, 23, 2)
+	s.set_switch(283, true)
+	if await _wait_map(4):
+		_check("guide_moved_on_enter", _event(_scene(), 22).grid == Vector2i(11, 5), _event(_scene(), 22).grid)
 
 
 func _finish() -> void:
