@@ -56010,7 +56010,7 @@
        "hp",
        "a176",
        "e0",
-       72980114
+       72695258
       ]
      ],
      "lines": [],
@@ -56022,7 +56022,7 @@
         "reserve": null,
         "pending": null,
         "hostActions": 0,
-        "trigger": 72980114,
+        "trigger": 72695258,
         "growth": 0
        },
        "last": "sword",
@@ -56350,7 +56350,7 @@
         "reserve": null,
         "pending": null,
         "hostActions": 0,
-        "trigger": 72980114,
+        "trigger": 72695258,
         "growth": 0
        },
        "last": "sword",
@@ -56677,7 +56677,7 @@
         "reserve": null,
         "pending": null,
         "hostActions": 0,
-        "trigger": 72980114,
+        "trigger": 72695258,
         "growth": 0
        },
        "last": "sword",

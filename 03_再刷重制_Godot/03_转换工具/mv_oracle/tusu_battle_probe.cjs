@@ -151,7 +151,7 @@ function step(bm, st) {
     s.effects = y ? [{code: 21, dataId: 0, value1: 1, value2: 0}] : [];
   } else if (op === 'pq') {  // 敌人 0 号的破甲·真气：有没有、附加时记的双防倍率；unpq 去掉
     const e = who('e0'); ret = {affected: e.isStateAffected(2705), rate: e._codexZqPojiaRate === undefined ? null : e._codexZqPojiaRate};
-  } else if (op === 'unpq') { const e = who('e0'); e.removeState(2705); e.clearResult(); }
+  } else if (op === 'unpq') { const e = who('e0'); e.removeState(2705); e.refresh(); e.clearResult(); }  // refresh：原版敌人的双防缓存 removeState 后不更新（还是破甲后的值），不刷新第二次斩锋会按破甲后的防御算
   else if (op === 'smart') w.ConfigManager.codexSmartAI = !!x;  // 智能战斗 AI 开关（关了持武者按挂机表、否则普通攻击，再由屠苏包装比武装技能）
   else if (op === 'auto') {  // 自动战斗选的行动（makeAutoBattleActions，原选择＋屠苏包装）：技能（屠苏的记键）与目标序号
     const a = who(x); a._actions = [new w.Game_Action(a)]; a.makeAutoBattleActions();
