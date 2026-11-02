@@ -4,8 +4,8 @@
 用法：沿用车道.py <基准> --godot G --project P [--root 资料库] [--no-cloud] [--shell] 场景…
 - 候选提交：git rev-list <基准>..HEAD（本次合并带进来的提交，新的在前）。
 - 结果来源：
-  本机：并行测试.py 在工作区干净时按提交记的 <共用状态目录>/commit_results/<提交>.json；Godot 版本、generated/ 摘要、超时上限
-  都要与现在相同。
+  本机：并行测试.py 在工作区干净时按提交记的 <共用状态目录>/commit_results/<提交>.json；Godot 版本、generated/ 摘要（不含
+  oracle_batch.json、sync_stamp.json 两个记账文件）、超时上限都要与现在相同。
   云端：origin 上 refs/ci/results/<提交>/{affected,full,scenes} 里 passed 的 result.json（要有 sceneNames，tools43 起才写）；
   它测时用的产物快照（generatedCommit 的树）要与本工作区 generated/ 的快照树相同。--no-cloud 或 XIYOU_REUSE_CLOUD=0 不看云端。
 - 判波及：对每个有记录的候选提交 C，用 选测.select(C, 不抽样) 算「C → 现在工作区」的差异会选哪些场景；结论整轮、或差异里有
@@ -165,7 +165,7 @@ def main(argv=None):
             sdir = runner.state_dir(a.project)
             gen = Path(a.project) / 'modes/xiyou/generated'
             now = {'godot': runner.godot_version(a.godot), 'timeout': runner.TIMEOUT,
-                   'generated': runner.walk_digest(gen, sdir, ()) if gen.is_dir() else ''}
+                   'generated': runner.generated_digest(a.project, sdir)}
             candidates = [x for x in git(a.root, 'rev-list', a.base + '..HEAD').split() if x]
             records = local_records(sdir, candidates, now)
             if not a.no_cloud and os.environ.get('XIYOU_REUSE_CLOUD', '') != '0' and gen.is_dir():

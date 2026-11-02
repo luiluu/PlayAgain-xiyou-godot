@@ -7,6 +7,8 @@
 #   --affected <基准>  选测（三级检查②）：按 选测对照.json 只跑与「基准到工作区」改动相关的 Godot 场景和非 Godot 检查，
 #             先打印选了什么、为什么；文档与登记检查照常；有拿不准的改动就整轮。不加时行为不变（全量）
 #             选中的场景按工程指纹沿用上次通过结果（并行测试.py --reuse；--full 不沿用）
+#             rules／smart_ai 每 4 段抽 1 段（选测.py 抽样，XIYOU_SAMPLE=0 关）；车道交付测过、差异没波及的场景沿用车道结果
+#             （沿用车道.py，XIYOU_REUSE_LANE=0 关；tools43）
 #   --cloud   只和 --affected 用：选中的 Godot 场景改在 GitHub Actions 云端跑（云端选测.py run＋wait，只测已提交的 HEAD、
 #             基准是 GitHub 上的 main；文档、守卫、工具回归等非 Godot 检查照旧在本机跑）。云端不可用（推送失败、超时）直接判失败并提示
 #             去掉 --cloud 改本机跑，不静默降级。例外（tools29）：GitHub 根本没启动任务——账单问题（付款失败、花费上限）或本月额度用完——

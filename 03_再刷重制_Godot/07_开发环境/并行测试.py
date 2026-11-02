@@ -40,6 +40,8 @@
   每个场景一份 <场景>.log，结尾打印目录；失败的场景另打印它的完整日志路径（八戒期二、期三：明细只在屏幕上 8 行，
   管道给 tail 时看不全，曾多花一轮 50 分钟重跑）；最后两类行是「✗ 失败场景 N 个」与逐个「场景 → 日志」，
   设了 CHECK_FAILED_FILE 时同样写进该文件（每行「场景<Tab>日志」，全过时清空），检查.sh 据此在收尾汇总里带上日志路径。--quiet：不打通过行，只打失败、偶发、提示、心跳与汇总（心跳照打，长任务里加 --quiet 也不会被无输出看门狗杀掉，八戒 dev.206）。
+- 按提交记账（tools43）：工程目录相对 HEAD 干净时，本次每个场景通过与否记到共用状态目录 commit_results/<提交>.json（带 Godot 版本、
+  generated/ 摘要、超时上限），合并选测时 沿用车道.py 据此沿用车道结果。编号过滤时不记；XIYOU_COMMIT_RESULTS=0 关。
 - 共用状态目录：XIYOU_TEST_STATE_DIR，否则 <git-common-dir>/xiyou_test_state（主工作区与各 worktree 共用），不在 Git 里时用系统临时目录。
 """
 import argparse
@@ -515,7 +517,7 @@ def in_linked_worktree(path: str) -> bool:
 
 
 def walk_digest(root: Path, sdir: Path, skip_top=('.godot',)) -> str:
-    """目录下每个文件的路径与内容 SHA-256 汇成一个摘要（跟随软链接，顶层跳过 skip_top）。
+    """目录下每个文件的路径与内容 SHA-256 汇成一个摘要（跟随软链接，顶层跳过 skip_top 里的目录与文件）。
     文件内容哈希按 (大小, 修改时间, inode) 记在 filememo 里，没变的文件不重读。"""
     root = Path(root).resolve()
     memo_path = sdir / 'filememo' / (hashlib.sha1(str(root).encode()).hexdigest() + '.json')
@@ -524,10 +526,13 @@ def walk_digest(root: Path, sdir: Path, skip_top=('.godot',)) -> str:
     fresh = {}
     h = hashlib.sha256()
     for dirpath, dirnames, filenames in os.walk(root, followlinks=True):
-        if Path(dirpath) == root:
+        top = Path(dirpath) == root
+        if top:
             dirnames[:] = [d for d in dirnames if d not in skip_top]
         dirnames.sort()
         for fn in sorted(filenames):
+            if top and fn in skip_top:
+                continue
             p = Path(dirpath) / fn
             rel = p.relative_to(root).as_posix()
             st = p.stat()
@@ -584,6 +589,13 @@ def stale_generated(project: str):
 
 
 GENERATED_REL = 'modes/xiyou/generated'
+# generated/ 顶层的记账文件：Godot 不读，车道与主工作区内容总不同（批次指纹、同步时间），不算进产物摘要
+GENERATED_BOOKKEEPING = ('oracle_batch.json', 'sync_stamp.json')
+
+
+def generated_digest(project: str, sdir: Path) -> str:
+    gen = Path(project) / GENERATED_REL
+    return walk_digest(gen, sdir, GENERATED_BOOKKEEPING) if gen.is_dir() else ''
 COMMIT_RESULTS_KEEP = 300  # commit_results/ 下最多保留这么多个提交的记录
 
 
@@ -604,8 +616,7 @@ def record_commit_results(project: str, sdir: Path, godot: str, results: dict) -
     sha = clean_commit(project)
     if not sha or not results:
         return ''
-    gen = Path(project) / GENERATED_REL
-    rec = {'sha': sha, 'godot': godot_version(godot), 'generated': walk_digest(gen, sdir, ()) if gen.is_dir() else '',
+    rec = {'sha': sha, 'godot': godot_version(godot), 'generated': generated_digest(project, sdir),
            'timeout': TIMEOUT, 'project': str(Path(project).resolve())}
     d = sdir / 'commit_results'
     d.mkdir(exist_ok=True)
