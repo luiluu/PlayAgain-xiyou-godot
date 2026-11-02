@@ -126,6 +126,20 @@ fi
 print "== Godot 测试"
 (( SEL_FULL )) || TEST_ARGS+=(--reuse)
 CLOUD_FALLBACK=0
+# 合并沿用车道结果（tools43）：车道交付时测过（本机或云端）、到现在的差异又没波及的场景不再跑；说明写进收尾尾注（合并车道.py 读）
+# XIYOU_REUSE_LANE=0 关；拿不准（记录对不上、判不出差异）一律照跑
+REUSE_COUNT=0; REUSE_SKIP=()
+if [[ -n $AFFECTED ]] && (( ! SEL_FULL && ${#SEL_SCENES} )) && [[ ${XIYOU_REUSE_LANE:-1} != 0 ]]; then
+  if reuse_out=$(python3 "$ENV_DIR/沿用车道.py" "$AFFECTED" --root "$ROOT" --godot "$GODOT" --project "$PROJECT" --shell "${SEL_SCENES[@]}"); then
+    eval "$reuse_out"
+    if (( REUSE_COUNT )); then
+      REUSE_SKIP=(${SEL_SCENES:|REUSE_KEEP})
+      SEL_SCENES=("${REUSE_KEEP[@]}")
+    fi
+  else
+    print "  ⚠ 沿用车道结果判断失败，选中的场景全部照跑"
+  fi
+fi
 if (( ! SEL_FULL && ${#SEL_SCENES} == 0 )); then
   print "  （选测：没有要跑的 Godot 场景，跳过导入与测试）"
 elif (( CLOUD )); then
@@ -133,6 +147,7 @@ elif (( CLOUD )); then
   print "  （--cloud：选中的 ${#SEL_SCENES} 个场景交给云端，本机不跑 Godot；云端只测已提交的 HEAD）"
   cloud_head=$(git -C "$ROOT" rev-parse HEAD)
   cloud_run=(python3 "$CLOUD_SCRIPT" run); (( ${CHECK_CLOUD_NO_UPLOAD:-0} )) && cloud_run+=(--no-upload)
+  (( ${#REUSE_SKIP} )) && cloud_run+=(--skip "${REUSE_SKIP[*]}")
   if ! "${cloud_run[@]}"; then
     bad "云端选测触发失败（网络、权限或额度）；去掉 --cloud 改用本机跑"
   elif python3 "$CLOUD_SCRIPT" wait "$cloud_head" --mode affected --timeout ${CHECK_CLOUD_TIMEOUT:-2700}; then

@@ -1307,6 +1307,11 @@ def lane_uids(root, state):
     return {p + '.uid' for p in added if not git(root, 'ls-files', '--', p + '.uid')}
 
 
+def reuse_note(root):
+    """检查.sh 选测时 沿用车道.py 写的「沿用了哪次车道结果」（tools43），收尾提交写成「沿用:」尾注。"""
+    return Path(git(root, 'rev-parse', '--path-format=absolute', '--git-dir')) / 'xiyou_reuse_note.txt'
+
+
 def finish(root, state, state_file, executor, batch=False, affected=False, cloud=False):
     if state['phase'] not in ['prepared', 'committed']:
         raise RuntimeError('先运行准备合并，再手工登记，最后 --finish')
@@ -1367,6 +1372,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
             if cloud:
                 check.append('--cloud')
                 env = cloud_env(state, *load_batch(state_file.parent))
+            reuse_note(root).unlink(missing_ok=True)  # 检查.sh 里 沿用车道.py 会重写；没调到它时不能拿上次的
             try:
                 run(root, check, env=env)
             except subprocess.CalledProcessError:
@@ -1395,7 +1401,10 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         actor = 'cc（唐僧）' if executor == 'cc' else 'Codex（沙僧）'
         trailer = '执行者: ' + actor + '\n核查: ' + review_status(root, state)
         if affected and not batch:
-            trailer += '\n验证: 选测（基准 %s，当天全量前算选测已验）' % check[-1][:9]
+            trailer += '\n验证: 选测（基准 %s，当天全量前算选测已验）' % check[-1 - ('--cloud' in check)][:9]
+            note = reuse_note(root)
+            reused = note.read_text().strip().splitlines() if note.is_file() else []
+            trailer += ''.join('\n沿用: ' + line for line in reused)
         run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾', '-m', trailer], env=MAIN_COMMIT_ENV)
         state.update(phase='committed', head=git(root, 'rev-parse', 'HEAD'), batch=batch)
         save(state_file, state)

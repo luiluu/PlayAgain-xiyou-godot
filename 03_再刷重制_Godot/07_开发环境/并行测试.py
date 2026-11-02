@@ -514,9 +514,10 @@ def in_linked_worktree(path: str) -> bool:
         return False
 
 
-def project_fingerprint(godot: str, project: str, sdir: Path) -> str:
-    """工程指纹（见文件头）。文件内容哈希按 (大小, 修改时间, inode) 记在 filememo 里，没变的文件不重读。"""
-    root = Path(project).resolve()
+def walk_digest(root: Path, sdir: Path, skip_top=('.godot',)) -> str:
+    """目录下每个文件的路径与内容 SHA-256 汇成一个摘要（跟随软链接，顶层跳过 skip_top）。
+    文件内容哈希按 (大小, 修改时间, inode) 记在 filememo 里，没变的文件不重读。"""
+    root = Path(root).resolve()
     memo_path = sdir / 'filememo' / (hashlib.sha1(str(root).encode()).hexdigest() + '.json')
     memo_path.parent.mkdir(exist_ok=True)
     memo = read_json(memo_path, {})
@@ -524,7 +525,7 @@ def project_fingerprint(godot: str, project: str, sdir: Path) -> str:
     h = hashlib.sha256()
     for dirpath, dirnames, filenames in os.walk(root, followlinks=True):
         if Path(dirpath) == root:
-            dirnames[:] = [d for d in dirnames if d != '.godot']
+            dirnames[:] = [d for d in dirnames if d not in skip_top]
         dirnames.sort()
         for fn in sorted(filenames):
             p = Path(dirpath) / fn
@@ -543,9 +544,19 @@ def project_fingerprint(godot: str, project: str, sdir: Path) -> str:
             fresh[rel] = key + [digest]
             h.update(('%s\0%s\n' % (rel, digest)).encode())
     write_json(memo_path, fresh)
+    return h.hexdigest()
+
+
+def godot_version(godot: str) -> str:
+    return subprocess.run([godot, '--version'], capture_output=True, text=True, timeout=60).stdout.strip()
+
+
+def project_fingerprint(godot: str, project: str, sdir: Path) -> str:
+    """工程指纹（见文件头）。"""
+    h = hashlib.sha256(walk_digest(Path(project), sdir).encode())
     exe = Path(subprocess.run(['/bin/sh', '-c', 'command -v "$1"', '-', godot], capture_output=True, text=True).stdout.strip() or godot).resolve()
     st = exe.stat()
-    version = subprocess.run([godot, '--version'], capture_output=True, text=True, timeout=60).stdout.strip()
+    version = godot_version(godot)
     h.update(('godot\0%s\0%d\0%d\0%s\n' % (exe, st.st_size, st.st_mtime_ns, version)).encode())
     h.update(hashlib.sha256(Path(__file__).read_bytes()).hexdigest().encode())
     h.update(('timeout\0%d\n' % TIMEOUT).encode())
@@ -570,6 +581,43 @@ def stale_generated(project: str):
         return None
     p = subprocess.run([sys.executable, str(tool), 'compare', str(gen), str(main_gen)], capture_output=True, text=True)
     return p.stdout.strip() if p.returncode == 3 else None
+
+
+GENERATED_REL = 'modes/xiyou/generated'
+COMMIT_RESULTS_KEEP = 300  # commit_results/ 下最多保留这么多个提交的记录
+
+
+def clean_commit(project: str):
+    """工程目录相对 HEAD 没有已跟踪改动、也没有未忽略的新文件时返回 HEAD 全号，否则 None（测的不是某个提交，不记账）。"""
+    try:
+        sha = subprocess.run(['git', '-C', project, 'rev-parse', 'HEAD'], capture_output=True, text=True, check=True).stdout.strip()
+        dirty = subprocess.run(['git', '-C', project, 'status', '--porcelain', '--untracked-files=normal', '--', '.'],
+                               capture_output=True, text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return None if dirty else sha
+
+
+def record_commit_results(project: str, sdir: Path, godot: str, results: dict) -> str:
+    """按提交记每个场景通过与否（合并时 沿用车道.py 读，tools43）：commit_results/<提交>.json，
+    带 Godot 版本与 generated/ 摘要，合并时三者都对得上、且差异没波及该场景才沿用。工作区不干净时不记，返回空串。"""
+    sha = clean_commit(project)
+    if not sha or not results:
+        return ''
+    gen = Path(project) / GENERATED_REL
+    rec = {'sha': sha, 'godot': godot_version(godot), 'generated': walk_digest(gen, sdir, ()) if gen.is_dir() else '',
+           'timeout': TIMEOUT, 'project': str(Path(project).resolve())}
+    d = sdir / 'commit_results'
+    d.mkdir(exist_ok=True)
+    with file_lock(sdir / 'state.lock'):
+        old = read_json(d / (sha + '.json'), {})
+        scenes = dict(old.get('scenes', {})) if all(old.get(k) == rec[k] for k in ('godot', 'generated', 'timeout')) else {}
+        scenes.update(results)
+        rec.update(time=datetime.datetime.now().isoformat(timespec='seconds'), scenes=scenes)
+        write_json(d / (sha + '.json'), rec)
+        for stale in sorted(d.glob('*.json'), key=lambda p: p.stat().st_mtime)[:-COMMIT_RESULTS_KEEP]:
+            stale.unlink()
+    return sha
 
 
 def default_log_dir(project: str) -> Path:
@@ -783,6 +831,14 @@ def main() -> int:
             write_json(rdir / (fingerprint + '.json'), {'fingerprint': fingerprint, 'time': now, 'scenes': rows})
             for old in sorted(rdir.glob('*.json'), key=lambda p: p.stat().st_mtime)[:-RESULTS_KEEP]:
                 old.unlink()
+    # 按提交记账（tools43，合并沿用车道结果用）；编号过滤的结果不完整，不记。XIYOU_COMMIT_RESULTS=0 关
+    if not filtered and os.environ.get('XIYOU_COMMIT_RESULTS', '') != '0':
+        try:
+            sha = record_commit_results(a.project, sdir, a.godot, {**{n: True for n in reused}, **final})
+            if sha:
+                print('  · 本次结果记在提交 %s 名下（合并时差异没波及的场景可沿用）' % sha[:10])
+        except (OSError, subprocess.SubprocessError, ValueError) as e:
+            print('  ⚠ 按提交记账失败（不影响本次结果）：%s' % e)
     if flaky:
         history = [json.loads(l) for l in (sdir / 'flaky.jsonl').read_text().splitlines() if l.strip()]
         for n in flaky:
