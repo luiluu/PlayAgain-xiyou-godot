@@ -256,18 +256,6 @@ static func damage(a, _b, key: String) -> float:
 	return (t.mat if MAGIC_KEYS.has(key) else t.atk) * coefficient(key)
 
 
-## 技能公式「CodexTusu.damage(a,b,'键')」（武装技能、支援、本体技能）：公式程序不认引号，这里直接算；不是这种公式返回 null
-static var _formula_re: RegEx = null
-static func formula(item: Dictionary, a, b):
-	var f := str(item.get("damage", {}).get("formula", ""))
-	if not f.begins_with("CodexTusu.damage("):
-		return null
-	if _formula_re == null:
-		_formula_re = RegEx.create_from_string("^CodexTusu\\.damage\\(\\s*a\\s*,\\s*b\\s*,\\s*'(\\w+)'\\s*\\)$")
-	var m := _formula_re.search(f.strip_edges())
-	return damage(a, b, m.get_string(1)) if m != null else null
-
-
 ## Game_Action.apply／subject 包装（外层）：持武者用武装技能时，整个 apply 以屠苏为出手者（按屠苏的属性与加成结算；屠苏来源豁免异界制约，
 ## 屠苏不是导入角色，缩放本来就是 1）。apply 外面（付费、反击判定、行动次数）仍是持武者
 static func apply_subject(u, skill: Dictionary):
