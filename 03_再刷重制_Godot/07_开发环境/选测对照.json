@@ -43,6 +43,15 @@
       "extraAnimations": "converter", "weaponScan": "converter"
     }
   },
+  "sample": {
+    "说明": "选测抽样（用户 2026-11-02 同意，tools43）：选测（不是整轮）选到下面各族时，族内按名字排序、每 chunk 段一组只留 1 段，留哪段按提交号轮换；改了测试本身（exemptGroups）选上的段照跑并算作该组代表。全量（不加 --affected、选测结论整轮）照跑全套。enabled 设 false（或环境变量 XIYOU_SAMPLE=0）回到选到几段跑几段。依据见 00_项目管理/交付/cc_nezha-tools43.md。",
+    "enabled": true,
+    "exemptGroups": ["test", "test_data"],
+    "families": [
+      {"name": "xiyou_rules", "scenes": "xiyou_rules*.tscn", "chunk": 4},
+      {"name": "xiyou_smart_ai", "scenes": "xiyou_smart_ai*.tscn", "chunk": 4}
+    ]
+  },
   "rules": [
     {"match": "03_再刷重制_Godot/01_Godot工程/project.godot", "group": "registry"},
     {"match": "03_再刷重制_Godot/01_Godot工程/content/build_info.json", "group": "registry"},
