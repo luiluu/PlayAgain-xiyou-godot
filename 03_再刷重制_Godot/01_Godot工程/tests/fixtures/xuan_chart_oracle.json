@@ -1310,7 +1310,7 @@
      {
       "op": "learn",
       "m": "yuhui",
-      "error": "星砂不足（需要25）",
+      "why": "星砂不足（需要25）",
       "chart": {
        "sand": 5,
        "level": {
@@ -1350,7 +1350,7 @@
      {
       "op": "learn",
       "m": "yuhui",
-      "error": "星砂不足（需要25）",
+      "why": "星砂不足（需要25）",
       "chart": {
        "sand": 5,
        "level": {
@@ -1390,7 +1390,7 @@
      {
       "op": "learn",
       "m": "yuhui",
-      "error": "星砂不足（需要25）",
+      "why": "星砂不足（需要25）",
       "chart": {
        "sand": 5,
        "level": {
@@ -1634,7 +1634,7 @@
      {
       "op": "learn",
       "m": "dingxing",
-      "error": "星砂不足（需要15）",
+      "why": "星砂不足（需要15）",
       "chart": {
        "sand": 0,
        "level": {

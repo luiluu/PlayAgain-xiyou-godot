@@ -77,7 +77,7 @@ func step_view(s: XState, name: String, m: String) -> Dictionary:
 	var r := op(s, name, m)
 	var out := snap(s)
 	if str(r.error) != "":
-		out["error"] = r.error
+		out["why"] = r.error
 	else:
 		out["ret"] = r.ret
 	return out
@@ -112,7 +112,7 @@ func _gate(c: Dictionary) -> void:
 
 
 func step_ret(r: Dictionary) -> Dictionary:
-	return {"error": r.error} if str(r.error) != "" else {"ret": r.ret}
+	return {"why": r.error} if str(r.error) != "" else {"ret": r.ret}
 
 
 ## 一场战斗：璇按 front 站位，troop 打胜（result 0）走 grant，别的结果不发奖励

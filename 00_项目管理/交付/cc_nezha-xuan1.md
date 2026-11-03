@@ -56,6 +56,7 @@
 - 新探针 `xuan_chart_probe.cjs` 跑通（25 例，无 errors），产物拷到 `tests/fixtures/xuan_chart_oracle.json`；探针登记检查通过；`语法检查.py` 通过。
 - 专项 `xiyou_xuan_chart` 128 项全过；反向验证：手改 Boss 星砂 12→13、回收不清 `spent`，专项当场报多项失败，已还原。
 - 选测（`选测.py main --list` 因 `battle_logic.gd` 的一行改动列出 222 个场景，跑到 13/222 估计要几个小时，停掉了自己的任务，改跑相关的 27 个）：xiyou_xuan_chart、skill_menu_events（星谱改为可用，已改断言）、script_census（删一条已补好的已知项）、skill_page、determinism、battle、battle_drop、battle_ui、combat、settlement、tusu、tusu_ui、tusu_battle、binding、garou_battle、zhenqi、script、common_scripts、event_compare、race_battle、alien_battle、map、module_hooks、actor_modules、three_growth、help_card、rules_d1d，全部通过。
+- 合并 main 后补齐、在本工作树跑了 `同步正式西游.py --accept-additions` 通过（探针产物里报错文字不能叫 `error`，已改叫 `why`）；合并后复跑 xuan_chart、skill_menu_events、script_census、tusu_ui、determinism 全过。
 - 没跑另外约 195 个：`grant` 里新增的一行只在出战队有璇时才动星砂，其余场景（rules_*、smart_ai_*、floor_* 等）不碰；总装合并后按影响面再选测。
 
 ## 待交叉核查

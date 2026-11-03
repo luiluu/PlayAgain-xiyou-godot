@@ -34,7 +34,7 @@ function snap(a) {
     control: a._codexXuanControl === undefined ? null : a._codexXuanControl};
 }
 function tryDo(fn) {
-  try { return {ret: fn()}; } catch (e) { return {error: String(e && e.message || e)}; }
+  try { return {ret: fn()}; } catch (e) { return {why: String(e && e.message || e)}; }
 }
 const cases = [];
 
