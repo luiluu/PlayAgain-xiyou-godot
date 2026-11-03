@@ -1578,6 +1578,14 @@ func _hit_visual(l: Dictionary) -> bool:
 		_popup(t, 0, false, "miss")
 		ts.set_motion("evade")
 	else:
+		# 行动中途 startDamagePopup 拷下的弹字（死而复燃的回血、回蓝、TP），先于本次结果
+		for p in l.get("started_popups", []):
+			if p.hpAffected:
+				_popup(t, float(p.hpDamage), false)
+			if float(p.mpDamage) != 0.0:
+				_popup(t, float(p.mpDamage), false, "", true)
+			if float(p.tpDamage) != 0.0:
+				_popup(t, float(p.tpDamage), false, "", false, true)
 		# 轮回困难 Establish 的附加伤害：先于本次伤害各弹一次（gainHp＋startDamagePopup）
 		for v in l.get("extra", []):
 			_popup(t, float(v), false)

@@ -256,9 +256,13 @@ func _run(c: Dictionary) -> void:
 			var at := {}  # lambda 只捕获引用，往字典里写
 			_fight(0, {"during": func():
 				XGuyu.reset()
+				# 审查 33 P3-1：临时给谷雨一个行动结果上下文，真读补的 pushAddedState（addedStates）
+				var rc := XResourceContext.new()
+				var previous := g.lifecycle_context
+				g.lifecycle_context = {"resources": rc}
 				XGuyu.root(g, true)
-				# 本次行动结果（addedStates）要战斗里的结果上下文，这里没有，照参照填
-				rows.append(["rooted", _wearing(g), g.is_dead(), g.hp, g.state_ids.duplicate(), want.rows[1][5], g.buffs.slice(0, 8)])
+				g.lifecycle_context = previous
+				rows.append(["rooted", _wearing(g), g.is_dead(), g.hp, g.state_ids.duplicate(), rc.result(g).addedStates.duplicate(), g.buffs.slice(0, 8)])
 				at.v = _ledger()})
 			_cmp(id, {"rows": rows, "ledger": at.get("v")}, want)
 		"battle.swap":

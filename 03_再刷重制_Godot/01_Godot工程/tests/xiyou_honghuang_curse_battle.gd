@@ -164,3 +164,8 @@ func _case(c: Dictionary) -> void:
 	if kind == "revive":
 		check(c.id + ".mp", is_equal_approx(e.mp, float(o.mp)), [o.mp, e.mp])
 		check(c.id + ".tp", is_equal_approx(e.tp, float(o.tp)), [o.tp, e.tp])
+		# 审查 33 P3-2：复活时 clearResult 前先 startDamagePopup，回血（30%）、回蓝（满）、TP（翻倍）各弹一次；没复活不弹
+		# 只比画面会弹的血、蓝、TP 三种（状态行不弹数字；非血行的 hpDamage 是整份拷贝带过去的，不看）
+		var pops := (h.started_popups as Array).map(func(p): return [p.hpAffected, p.hpDamage if p.hpAffected else 0.0, p.mpDamage, p.tpDamage]).filter(func(p): return p != [false, 0.0, 0.0, 0.0])
+		var want_pops := [[true, -floorf(e.mhp * 0.3), 0.0, 0.0], [false, 0.0, -float(o.mp), 0.0], [false, 0.0, 0.0, -float(o.tp) / 2.0]] if bool(o.alive) else []
+		check(c.id + ".popups", pops == want_pops, [want_pops, pops])

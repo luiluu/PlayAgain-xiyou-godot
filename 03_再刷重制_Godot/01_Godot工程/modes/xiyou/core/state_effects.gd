@@ -228,7 +228,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	return c.value
 
 
-## 死而复燃：目标倒下时 15% 回 30% 血、回满蓝、TP 翻倍；clearResult 清掉这次结果槽（不显示这一击，也不算击杀，见 XBattleLogic.apply）。
+## 死而复燃：目标倒下时 15% 回 30% 血、回满蓝、TP 翻倍；先弹回复数字，再 clearResult 清掉这次结果槽（不显示这一击，也不算击杀，见 XBattleLogic.apply）。
 static func _revive(ctx: Dictionary) -> void:
 	var t: XBattler = ctx.target
 	if not (t.hp <= 0.0 or t.is_dead()):
@@ -240,6 +240,7 @@ static func _revive(ctx: Dictionary) -> void:
 	resources.gain(t, "hp", floorf(t.mhp * 0.3))
 	resources.gain(t, "mp", t.mmp)
 	resources.gain(t, "tp", t.tp)
+	resources.start_damage_popup(t)  # 原文 clearResult 前先 startDamagePopup：回血、回蓝、TP 数字照样弹（审查 33 P3-2）
 	resources.seed_result(t, XResourceContext.empty_result())
 
 

@@ -1929,7 +1929,8 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	result.evaded = r.evaded
 	result.critical = r.critical
 	r.result = result.duplicate(true)
-	r.popupQueue = XResourceContext.popup_queue(result)
+	r.started_popups = _action_resources.started_popups.get(t, [])  # 行动中途 startDamagePopup 的弹字（死而复燃），先于本次结果
+	r.popupQueue = r.started_popups + XResourceContext.popup_queue(result)
 	r.effectJournal = _action_resources.journal.duplicate(true)
 	r.formulaDiagnostic = _formula_outcome.get("diagnostic", "")
 	r.hp = r.hp if ESTABLISH_TRUE_POPUP and r.has("extra") else result.hpDamage
