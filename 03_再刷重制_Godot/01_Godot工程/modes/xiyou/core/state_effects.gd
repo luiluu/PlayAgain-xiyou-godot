@@ -13,6 +13,8 @@ const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_progra
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
+## 死而复燃（诅咒 7208 推给敌人的状态 1270）Custom Deselect Effect 的原文，由 _revive 翻译；别的 js 块仍只进未翻译清单
+const REVIVE_JS := "if ((target.hp <= 0 || target.isDead()) && Math.random() < 0.15) {\n  target.gainHp(Math.floor(target.mhp * 0.3));\n  target.gainMp(target.mmp);\n  target.gainTp(target.tp);\n  target.startDamagePopup();\n  target.clearResult();\n}"
 
 ## 测试观察者：每次某状态在某 phase 被分发时调用 (phase, state_id, holder, ctx)；ctx 是该状态这次调用的完整上下文
 static var observer := Callable()
@@ -198,6 +200,9 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				c.user.state_data["_stateCounter"] = counters
 			else:
 				_diagnose(phase, int(st.id), holder, "counter_set_unavailable")
+		elif op == "js" and str(e.get("source", "")) == REVIVE_JS:
+			if execute:
+				_revive(c)
 		elif op == "syntax_error":
 			pass  # 原版这块解析失败（SyntaxError），customEffectEval 只报错，什么都不改
 		elif op == "user_param_damage" and execute and ctx.get("resources") != null:
@@ -221,6 +226,21 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	if owns_resources:
 		resources.publish()
 	return c.value
+
+
+## 死而复燃：目标倒下时 15% 回 30% 血、回满蓝、TP 翻倍；clearResult 清掉这次结果槽（不显示这一击，也不算击杀，见 XBattleLogic.apply）。
+static func _revive(ctx: Dictionary) -> void:
+	var t: XBattler = ctx.target
+	if not (t.hp <= 0.0 or t.is_dead()):
+		return
+	var random: XRandomStream = ctx.get("random")
+	if random == null or random.next_float("state_effect", "revive") >= 0.15:
+		return
+	var resources: XResourceContext = ctx.resources
+	resources.gain(t, "hp", floorf(t.mhp * 0.3))
+	resources.gain(t, "mp", t.mmp)
+	resources.gain(t, "tp", t.tp)
+	resources.seed_result(t, XResourceContext.empty_result())
 
 
 ## Execute-only permanent writes. Native refresh runs after EVERY addParam,

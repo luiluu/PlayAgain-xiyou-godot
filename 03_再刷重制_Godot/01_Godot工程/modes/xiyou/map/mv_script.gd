@@ -26,7 +26,7 @@ extends RefCounted
 ## - 魔兽要诀：Star.PetSystem.ComEveLearnSkill(N) → XPets.learn_book（出战宠物学技能，提示走 host.toast）。
 ## - 已移除地图提示：CodexMapRemoval.notice(N) → 文字「【区域已移除】…」（Map080 王座宝箱，见 MVInterpreter.removed_gate_fix）。
 ## - 批量抽奖：if(window.CodexCasino)CodexCasino.open(this[,"twenty"]);else … → XCasinoBatch.open（等这一局结束）。
-## - 洪荒诅咒自选（公共事件 1442）：列候选、连问 5 次（不可取消）、写变量 1468～1472 三段 → XHonghuang（选项窗走 host.show_message）。
+## - 洪荒诅咒自选（公共事件 1442）：列候选、连问 5 次（不可取消）、写变量 1468～1472 三段 → XHonghuang（选项窗走 host.show_message）；CE1445 洪荒压制同一处。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## 正式版移除的地图（Codex_StabilityPerformancePatch 1.1）：地图 ID → 名字
@@ -305,8 +305,14 @@ static func _statements(js: String, interp) -> Array:
 			for t in XDungeon.boss_reward(s):
 				interp.host.toast(t)
 			continue
-		# 洪荒（难度 8）的诅咒加成券与不朽之力：其他难度不做任何事
-		if st in ["if(window.CodexHonghuang)CodexHonghuang.grantTicketBonus()", "if(window.CodexHonghuang)CodexHonghuang.rollPower()"] and s.difficulty != 8:
+		# 洪荒路线（开关 2483／2463，不看难度）的诅咒加成券与不朽存在权能掉落，见 XHonghuang
+		if st == "if(window.CodexHonghuang)CodexHonghuang.grantTicketBonus()":
+			for t in XHonghuang.grant_ticket_bonus(s):
+				interp.host.toast(t)
+			continue
+		if st == "if(window.CodexHonghuang)CodexHonghuang.rollPower()":
+			for t in XHonghuang.roll_power(s, func(): return MVInterpreter.random_float(s)).toasts:
+				interp.host.toast(t)
 			continue
 		m = _re("^\\$gameVariables\\.setValue\\((\\d+),window\\.CodexOrbs&&CodexOrbs\\.rollInt\\?CodexOrbs\\.rollInt\\('(\\w+)',(\\d+),(\\d+)\\):1\\+Math\\.randomInt\\(\\d+\\)\\)$").search(st)
 		if m:
@@ -933,6 +939,7 @@ static func _has_gear(s: XState, kind: String, base_id: int) -> bool:
 ## 公共事件 1442 的三段脚本（原文整段比对，去掉空白）：认得返回 true
 const _HH_OFFER := "vararr=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];$gameTemp._hhCurseOffer=arr;$gameTemp._hhCursePicked=[];"
 const _HH_ASK := "vart=$gameTemp,p=t._hhCursePicked,left=t._hhCurseOffer.filter(function(i){returnp.indexOf(i)<0;});vartext=function(i){returnCodexHonghuang.curseLabel(i);};$gameMessage.setFaceImage('SF_People2',5);$gameMessage.setBackground(0);$gameMessage.setPositionType(2);$gameMessage.add('\\\\n<破阵·投影>选择要承受的第'+(p.length+1)+'个诅咒（共选5个）');$gameMessage.setChoices(left.map(text),0,-1);$gameMessage.setChoiceBackground(0);$gameMessage.setChoicePositionType(2);$gameMessage.setChoiceCallback(function(n){p.push(left[n]);});this.setWaitMode('message');"
+const _HH_SUPPRESS := "varhh=$dataSkills.filter(function(s){returns&&/<CodexHonghuangSuppress>/.test(s.note);})[0];for(varj=1;j<$dataActors.length;j++){if(hh&&$dataActors[j].name!==\"\")$gameActors.actor(j).learnSkill(hh.id);}"
 const _HH_SAVE := "varp=$gameTemp._hhCursePicked;for(vark=0;k<5;k++)$gameVariables.setValue(1468+k,p[k]);delete$gameTemp._hhCurseOffer;delete$gameTemp._hhCursePicked;"
 
 
@@ -953,6 +960,11 @@ static func _honghuang_curse(js: String, interp) -> bool:
 			"choices": left.map(func(i): return XHonghuang.curse_label(int(i))), "cancel": -1, "default": 0, "choice_position": 2, "choice_background": 0})
 		if n >= 0 and n < left.size():
 			XHonghuang.picked.append(left[n])
+		return true
+	# CE1445 洪荒压制：全员有名字的角色学带 <CodexHonghuangSuppress> 的被动
+	if flat == _HH_SUPPRESS:
+		if XHonghuang.suppress_skill() > 0:
+			XState.current.add_actor_op({"op": "learn", "skill": XHonghuang.suppress_skill(), "ids": [], "exclude": [], "named": true})
 		return true
 	if flat == _HH_SAVE:
 		if XHonghuang.picked == null:

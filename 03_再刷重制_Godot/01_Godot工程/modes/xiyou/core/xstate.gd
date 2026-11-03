@@ -239,6 +239,7 @@ static func _fresh_seed() -> int:
 static func _become_current(s: XState) -> void:
 	current = s
 	XDungeon.battle = {}
+	XHonghuang.power_battle = {}
 	XZhenqi.battle = {}
 	XZhenqi.pending_trial = {}
 	XZhenqi.trial_done = {}
@@ -511,11 +512,8 @@ func sync_native_tier(a: XActor) -> void:
 	var id := a.actor_id
 	if id >= 167 or str(a.data().get("name", "")) == "":
 		return
-	if switch(2463):
-		for rec in XDB.table("Skills"):
-			if rec != null and str(rec.get("note", "")).contains("<CodexHonghuangSuppress>"):
-				a.learn_skill(int(rec.id))
-				break
+	if switch(2463) and XHonghuang.suppress_skill() > 0:
+		a.learn_skill(XHonghuang.suppress_skill())
 	for i in 3:
 		if not switch(DIFFICULTY_TIER_SWITCHES[i]) or difficulty_native_ids(DIFFICULTY_TIER_EVENTS[i], "noSkillIds").has(id):
 			continue
