@@ -725,6 +725,13 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 
 ## Sprite_ItemHelp.setText：假物品，内容只一行 [文字, ItemDescOtherSize 12, 白, 不分隔, 靠左]，品质 0、没有附卡
 ## （选敌时种族毒鸡汤说明用：「敌人名\n毒鸡汤（回合末） …」）
+## 字号压到 n 以下再排版（锻造选原件的原件卡：descParams 每行 min(字号, 14)）
+func cap_size(n: int) -> void:
+	for r in rows:
+		r[1] = mini(int(r[1]), n)
+	_apply(size.x)
+
+
 func show_text(text: String) -> void:
 	rows = [[text, OTHER_SIZE, "#ffffff", false, 0]]
 	quality = 0
