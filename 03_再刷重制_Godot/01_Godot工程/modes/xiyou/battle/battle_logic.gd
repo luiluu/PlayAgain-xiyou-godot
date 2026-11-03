@@ -181,6 +181,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	actors = everyone
 	XYunshang.start_battle(self)  # 云裳 startBattle 包装：建战斗数据、天衣无缝全醒
 	XHeartsteel.start_battle(self)  # 心钢 setup／startBattle 包装：清本场账，全队蓄力 2
+	XGrowthForge.start_battle()  # 利维坦锻造 setup 包装（第 16 个）：锻造锤每场一次
 	XHubris.start_battle(self)  # 狂妄 setup／startBattle 包装：开场名单，清扬名与行动数
 	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
 	XSukuna.start_tp(self)  # 宿傩 startBattle 包装（之后）：TP 至少 60
@@ -2595,6 +2596,7 @@ func end_battle(result := -1) -> void:
 		b.refresh_passive()
 		b.hp = minf(b.hp, b.mhp)
 		b.mp = minf(b.mp, b.mmp)
-	# 原 endBattle 之后：利维坦锻造包装掷心之钢，狂妄包装再掷狂妄（各 10%，不朽未知存在 454／455 胜利、每场一次）
+	# 原 endBattle 之后：利维坦锻造包装掷心之钢、再掷锻造锤（Map176 来源 108／165、570～575、20%），狂妄包装再掷狂妄（各 10%，不朽未知存在 454／455 胜利、每场一次）
 	XHeartsteel.clear_reward(self, result)
+	XGrowthForge.award_core(self, result)
 	XHubris.clear_reward(self, result)

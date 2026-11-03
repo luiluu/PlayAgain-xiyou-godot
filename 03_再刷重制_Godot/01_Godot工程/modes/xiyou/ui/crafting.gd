@@ -16,6 +16,10 @@ extends Control
 ##   x 在详情窗内居中（间隔 16）、y = 确认窗 y − 行高×2.5；进确认时显示，弹窗确定或取消确认时藏（做完弹窗期间仍在）。
 ##   松开时在同一按钮上才算点（Sprite_Button.processTouch），按住时用下一排（hot 帧）。确定键：弹窗时数量清回再关弹窗，确认时制作。
 ## - MV WindowLayer 把后建的金币窗范围从确认窗里挖掉：金币窗开着时确认窗内容（「制作」等）看不见。
+## - 锻造配方 457／458（installNativeLeviathanForge.patchCraftScene）：列表确定后先在列表窗位置选一件原件（mode "pick"，一列、行高 72，
+##   名字 22 号字、第二行 18 号字「品质 · 层数:N · 已装备／背包」，不能锻造的半透明、按了蜂鸣）；选好进数量确认，取消回列表。
+##   帮助窗换成 XGrowthForge.help_text，详情窗 y 224 起多画几行锻造说明（18 号字、行距 25）。锻造不成蜂鸣并回列表（不弹失败窗）。
+##   未做：选原件时按 Shift 看原件词条（原版另开 Sprite_ItemHelp）。
 
 signal closed
 
@@ -67,6 +71,11 @@ var _button_down := -1
 var _buttons: Control
 var _gold_covering := true
 var _gold_band := 0.0
+var picks: Array = []                # 锻造：可选的原件实例
+var pick_index := 0
+var pick_top := 0
+const PICK_H := 72.0
+const PICK_ROWS := 6                 # floor(448 / 72)
 
 
 func _ready() -> void:
@@ -198,7 +207,7 @@ static func detail_ops(s: XState, r: Dictionary) -> Array:
 	ops.append(_t(REQ_MATERIAL, 0, yy, 640, XUI.SYSTEM, "left", op))
 	yy += XUI.FONT_SIZE + 6
 	for m in r.materials:
-		var have := XCrafting.material_count(s, m)
+		var have := XCrafting.material_count(s, m, r)
 		var enough := have >= int(m.amount)
 		op = 255 if enough else DIM
 		var it := XCrafting.item_of(m)
@@ -237,11 +246,37 @@ func confirm_ops() -> Array:
 
 
 # ---- 绘制 ----
+## 锻造配方：选原件时为光标处的一件，否则为已选好的（XGrowthForge.forge_source）
+func forge_shown() -> Dictionary:
+	if mode == "pick":
+		return picks[pick_index] if pick_index >= 0 and pick_index < picks.size() else {}
+	return XGrowthForge.forge_source
+
+
+static func pick_row_ops(s: XState, id: int, item: Dictionary, y: float) -> Array:
+	var op := 255 if XGrowthForge.can_forge(s, id, item) else DIM
+	return [["i", int(item.get("iconIndex", 0)), 2, y + 2, op], _t(str(item.get("name", "")), 36, y, CW - 36, XQuality.list_color(item), "left", op, 22),
+		_t(XGrowthForge.source_row(s, id, item), 0, y + 32, CW, XUI.TEXT, "left", op, 18)]
+
+
+## forgeDetailLines：详情窗 y 224 起，18 号字、行距 25
+static func forge_detail_ops(id: int, source) -> Array:
+	var ops := []
+	var y := 224.0
+	for text in XGrowthForge.detail_lines(id, source):
+		ops.append(_t(text, 0, y, CW, XUI.TEXT, "left", 255, 18))
+		y += 25
+	return ops
+
+
 func _paint_help(c: XMVCanvas) -> void:
 	var r := current()
 	if r.is_empty() or mode == "category":
 		return
-	var t := XMVText.new(XMVText.convert_escapes(str(XCrafting.item_of(r.result).get("description", ""))), 6, 0, c.size.x - 12)
+	var text := str(XCrafting.item_of(r.result).get("description", ""))
+	if XGrowthForge.is_forge_recipe(int(r.id)):
+		text = XGrowthForge.help_text(int(r.id), forge_shown(), mode == "pick", false)
+	var t := XMVText.new(XMVText.convert_escapes(text), 6, 0, c.size.x - 12)
 	t.run()
 	XMVText.paint(c, t.glyphs)
 
@@ -253,6 +288,12 @@ func _paint_category(c: XMVCanvas) -> void:
 
 func _paint_list(c: XMVCanvas) -> void:
 	var s := XState.current
+	if mode == "pick":
+		if pick_index >= pick_top and pick_index < pick_top + PICK_ROWS:
+			c.cursor(Rect2(0, (pick_index - pick_top) * PICK_H, c.size.x, PICK_H), true)
+		for i in range(pick_top, mini(pick_top + PICK_ROWS, picks.size())):
+			paint_ops(c, pick_row_ops(s, int(current().id), picks[i], (i - pick_top) * PICK_H))
+		return
 	if index >= top and index < top + LIST_ROWS:
 		c.cursor(Rect2(0, (index - top) * LH, c.size.x, LH), mode == "list")
 	for i in range(top, mini(top + LIST_ROWS, list.size())):
@@ -260,7 +301,10 @@ func _paint_list(c: XMVCanvas) -> void:
 
 
 func _paint_detail(c: XMVCanvas) -> void:
-	paint_ops(c, detail_ops(XState.current, current()))
+	var r := current()
+	paint_ops(c, detail_ops(XState.current, r))
+	if not r.is_empty() and XGrowthForge.is_forge_recipe(int(r.id)):
+		paint_ops(c, forge_detail_ops(int(r.id), forge_shown()))
 
 
 func _paint_confirm(c: XMVCanvas) -> void:
@@ -302,8 +346,8 @@ func _refresh() -> void:
 		var a := 255 if XCrafting.craftable(XState.current, r) else 75
 		confirm_win.opacity = a
 		confirm_win.canvas.modulate.a = a / 255.0
-	list_win.up_arrow = top > 0
-	list_win.down_arrow = top + LIST_ROWS < list.size()
+	list_win.up_arrow = pick_top > 0 if mode == "pick" else top > 0
+	list_win.down_arrow = pick_top + PICK_ROWS < picks.size() if mode == "pick" else top + LIST_ROWS < list.size()
 	for w in [help_win, cat_win, list_win, detail_win, confirm_win, gold_win, gauge_win, popup_win]:
 		w.refresh()
 	_buttons.queue_redraw()
@@ -392,10 +436,21 @@ func change_amount(d: int) -> void:
 func craft() -> void:
 	var s := XState.current
 	var r := current()
+	var forged := {}
+	if not r.is_empty() and XGrowthForge.is_forge_recipe(int(r.id)):
+		amount = 1
+		forged = XCrafting.craft(s, r)
+		XGrowthForge.forge_source = {}
+		if forged.is_empty():
+			# craftSuccess：锻造不成蜂鸣、按取消确认回列表
+			XSound.system(3)
+			mode = "confirm"
+			cancel()
+			return
 	var made := 0
 	var item := {}
 	for i in amount:
-		var got := XCrafting.craft(s, r)
+		var got := forged if XGrowthForge.is_forge_recipe(int(r.id)) else XCrafting.craft(s, r)
 		if not got.is_empty():
 			made += 1
 			item = got
@@ -435,10 +490,24 @@ func ok() -> void:
 				XSound.system(3)
 				return
 			XSound.system(1)
-			mode = "confirm"
-			amount = 1
-			gold_win.close()
-			buttons_visible = true
+			if XGrowthForge.is_forge_recipe(int(r.id)):
+				# listSuccess 改写：先选原件
+				XGrowthForge.forge_source = {}
+				picks = XGrowthForge.forge_sources(XState.current, int(r.id))
+				pick_index = 0
+				pick_top = 0
+				mode = "pick"
+				_refresh()
+				return
+			_enter_confirm()
+		"pick":
+			var src := forge_shown()
+			if not XGrowthForge.can_forge(XState.current, int(current().id), src):
+				XSound.system(3)
+				return
+			XSound.system(1)
+			XGrowthForge.forge_source = src
+			_enter_confirm()
 		"confirm":
 			XSound.system(1)
 			craft()
@@ -447,6 +516,13 @@ func ok() -> void:
 			_popup_ok()
 			return
 	_refresh()
+
+
+func _enter_confirm() -> void:
+	mode = "confirm"
+	amount = 1
+	gold_win.close()
+	buttons_visible = true
 
 
 ## popupOk：关弹窗回列表（金币窗不重开）
@@ -468,8 +544,13 @@ func cancel() -> void:
 			XSound.system(2)
 			mode = "category"
 			index = -1
+		"pick":
+			XSound.system(2)
+			XGrowthForge.forge_source = {}
+			mode = "list"
 		"confirm":
 			XSound.system(2)
+			XGrowthForge.forge_source = {}  # confirmCancel 改写：清掉选好的原件
 			mode = "list"
 			gold_win.open()
 			buttons_visible = false
@@ -484,6 +565,14 @@ func _move(d: int, wrap: bool) -> void:
 		"list":
 			if not list.is_empty():
 				select(XMenu._move(index, d, list.size(), wrap))
+		"pick":
+			if not picks.is_empty():
+				var i := XMenu._move(pick_index, d, picks.size(), wrap)
+				if i != pick_index:
+					pick_index = i
+					XSound.system(0)
+					pick_top = XMenu._scroll_to(pick_index, pick_top, PICK_ROWS)
+					_refresh()
 		"confirm":
 			change_amount(-10 if d > 0 else 10)
 
@@ -535,6 +624,15 @@ func _gui_input(event: InputEvent) -> void:
 						ok()
 					else:
 						select(i)
+			elif mode == "pick" and LIST_RECT.has_point(p):
+				var i := pick_top + floori((p.y - LIST_RECT.position.y - XMVWindow.PADDING) / PICK_H)
+				if i >= pick_top and i < mini(pick_top + PICK_ROWS, picks.size()):
+					if i == pick_index:
+						ok()
+					else:
+						pick_index = i
+						XSound.system(0)
+						_refresh()
 			elif mode == "confirm" and CONFIRM_RECT.has_point(p):
 				ok()
 

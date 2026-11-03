@@ -700,6 +700,7 @@ func gain_gear(kind: String, base_id: int, amount: int) -> void:
 			if not inst.is_empty():
 				register_gear(inst)
 				gear.append(inst)
+		XGrowthForge.on_gain(self, kind, base_id)  # 利维坦锻造／狂妄 gainItem 包装：第一次拥有心钢／狂妄一族时解锁锻造配方
 	else:
 		for i in range(-amount):
 			var idx := gear.find_custom(func(e): return e.kind == kind and int(e.base) == base_id)
