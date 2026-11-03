@@ -162,6 +162,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	var leaving := XAlienBattle.possession_partners(self)
 	if not leaving.is_empty():
 		actors = everyone.filter(func(a): return not leaving.has(a))
+	XHonghuang.battle_started(state, int(troop_id))  # 洪荒 setup／startBattle 包装：记本场身份（权能掉落用）
 	XDemonCrown.begin(state, int(troop_id), func(): return _rule().next_float("demon_crown.roll"))  # 魔冠 startBattle 包装（main.js 第 151 行，最外层、原 startBattle 之前）：收编、记穿着的人、掉落战斗开战掷点
 	XToji.start_battle(self)  # 甚尔 startBattle 包装（原 startBattle 之前）：设第一形态（随后开战清 removeAtBattleEnd 状态）
 	XSukuna.start_battle(self)  # 宿傩 startBattle 包装（之前）：清战斗数据、同步技能
@@ -1908,6 +1909,7 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if not blocked:
 		XStateEffects.run("deselect", t, ctx)
 		XStateEffects.run("conclude", u, ctx)
+	r.died = bool(r.died) and t.is_dead()  # 死而复燃（deselect）当场复活：这一击不算击杀
 	XAlienBattle.pop_action()
 	var result := _action_resources.result(t)
 	result.missed = r.missed
@@ -2622,4 +2624,5 @@ func end_battle(result := -1) -> void:
 	XHeartsteel.clear_reward(self, result)
 	XGrowthForge.award_core(self, result)
 	XHubris.clear_reward(self, result)
+	XHonghuang.battle_ended(result)  # 洪荒 endBattle 包装：记胜负
 	XDemonCrown.finish(state, result)  # 魔冠 endBattle 包装（最外层，原 endBattle 之后）：胜利成长、掉落，遭遇序号＋1

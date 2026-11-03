@@ -5,7 +5,8 @@ extends RefCounted
 ## 选项文字照 CodexHonghuang.curseLabel：【档位·×系数】技能名（技能备注 <pos=APs text=…效果:X size=…> 的 X，去掉零宽空格）。
 ## 选择中的候选与已选（原版 $gameTemp._hhCurseOffer／_hhCursePicked，不进存档）放静态变量。
 ## 参照 mv_oracle/honghuang_curse_probe.cjs → tests/fixtures/honghuang_curse_oracle.json（tests/xiyou_honghuang_curse）。
-## 诅咒倍率（发券、权能掉率）与权能掉落、洪荒压制被动不在本期。
+## 第二期：路线判定（只看开关，不看难度）、诅咒加成券、不朽存在权能掉落（CE1439）、洪荒压制被动（CE1445）。
+## 参照 mv_oracle/honghuang_reward_probe.cjs → tests/fixtures/honghuang_reward_oracle.json（tests/xiyou_honghuang_reward）。
 
 const FACTOR := {"轻": 1.0, "中": 1.2, "重": 1.5}
 const TIER := {7211: "轻", 7206: "轻", 7203: "轻", 7208: "轻",
@@ -13,10 +14,23 @@ const TIER := {7211: "轻", 7206: "轻", 7203: "轻", 7208: "轻",
 	7201: "重", 7202: "重", 7214: "重", 7212: "重", 7213: "重"}
 const PICKS := 5
 const FIRST_VARIABLE := 1468
+const POWER_RATE := 0.03
+const SEGMENTS := [[0, 15], [16, 18], [19, 21], [22, 25], [26, 99]]
+const BASE_TICKET := 5
+const TICKET := 1639
 
 ## $gameTemp._hhCurseOffer／_hhCursePicked（null＝没有，同原版 delete 之后）
 static var offer = null
 static var picked = null
+## 原版 powerBattle：最近一场战斗的身份 {eligible, troop, floor, won, rolled}（不进存档；换档在 XState._become_current 清）。
+static var power_battle := {}
+static var _powers := {}
+static var _suppress := -1
+
+
+## H.isHonghuang：开关 2483（洪荒）或 2463（洪荒补强）。牢妲能单独把怪物难度切到 8，所以不看难度。
+static func is_honghuang(s: XState) -> bool:
+	return s != null and (s.switch(2483) or s.switch(2463))
 
 
 ## CodexHonghuang.curseLabel(i)
@@ -55,3 +69,104 @@ static func left() -> Array:
 ## JS 数字转字符串（1.2、1.5）
 static func _num(v: float) -> String:
 	return str(int(v)) if v == floorf(v) else str(v)
+
+
+## JS toFixed(1)：String.num 对正好落在中点的数取偶（2.25→2.2），原版取大（2.3）。只有 x.25／x.75 才是二进制里的真中点；
+## 4.05 这类实际略小于中点，String.num 与 JS 都舍（snappedf 会进成 4.1，不能用）。
+static func _fixed1(v: float) -> String:
+	return String.num(v + 0.01 if fmod(v * 4.0, 2.0) == 1.0 else v, 1).pad_decimals(1)
+
+
+## curseHolder：队伍里第一个学了诅咒的人，没有取队首
+static func curse_holder(s: XState) -> XActor:
+	var m := s.members()
+	for a in m:
+		if not curse_ids(a).is_empty():
+			return a
+	return m[0] if not m.is_empty() else null
+
+
+## H.curseBonus()（不传角色）
+static func party_bonus(s: XState) -> float:
+	return curse_bonus(curse_holder(s))
+
+
+## H.powerChance
+static func power_chance(s: XState) -> float:
+	return minf(1.0, POWER_RATE * party_bonus(s))
+
+
+## H.grantTicketBonus（CE1439 开头）：加发 round(5×(倍率−1)) 张券。返回提示文字列表。
+static func grant_ticket_bonus(s: XState) -> Array:
+	if not is_honghuang(s):
+		return []
+	var bonus := party_bonus(s)
+	var n := maxi(0, roundi(BASE_TICKET * (bonus - 1.0)))
+	if n <= 0:
+		return []
+	s.gain_item(TICKET, n)
+	return ["洪荒诅咒加成（×%s）：肝帝积分抽奖券额外+%d" % [_fixed1(bonus), n]]
+
+
+## 道具备注 <CodexPower: N> 的书，按区段分组（ID 升序）
+static func powers(seg: int) -> Array:
+	if _powers.is_empty():
+		var re := RegEx.create_from_string("<CodexPower:\\s*(\\d+)>")
+		for rec in XDB.table("Items"):
+			if rec == null:
+				continue
+			var m := re.search(str(rec.get("note", "")))
+			if m:
+				var k := int(m.get_string(1))
+				if not _powers.has(k):
+					_powers[k] = []
+				_powers[k].append(int(rec.id))
+	return _powers.get(seg, [])
+
+
+## H.segment
+static func segment(floor_no: int) -> int:
+	for i in SEGMENTS.size():
+		if floor_no >= int(SEGMENTS[i][0]) and floor_no <= int(SEGMENTS[i][1]):
+			return i + 1
+	return SEGMENTS.size()
+
+
+## BattleManager.setup／startBattle 包装：记本场身份
+static func battle_started(s: XState, troop: int) -> void:
+	power_battle = {"eligible": is_honghuang(s) and XYunshangOrders.immortal_clear(s, troop), "troop": troop,
+		"floor": XDungeon.boss_floor(s.map_id), "won": false, "rolled": false}
+
+
+## BattleManager.endBattle 包装
+static func battle_ended(result: int) -> void:
+	if not power_battle.is_empty():
+		power_battle.won = result == 0
+
+
+## H.rollPower（CE1439 末尾）：本场胜利的不朽存在，每战一次，这一段的书每本掷一次。返回 {got, toasts}。
+static func roll_power(s: XState, rand: Callable) -> Dictionary:
+	var b := power_battle
+	if b.is_empty() or not bool(b.eligible) or not bool(b.won) or bool(b.rolled):
+		return {"got": [], "toasts": []}
+	b.rolled = true
+	var p := minf(1.0, power_chance(s) * XDungeon.power_factor(s, int(b.troop)))
+	var got := []
+	var toasts := []
+	for id in powers(segment(int(b.floor))):
+		if float(rand.call()) < p:
+			s.gain_item(int(id), 1)
+			got.append(int(id))
+			toasts.append("洪荒权能掉落：%s！" % str(XDB.rec("Items", int(id)).get("name", "")))
+	return {"got": got, "toasts": toasts}
+
+
+## 带 <CodexHonghuangSuppress> 的第一个技能（洪荒压制被动，CE1445 与 syncNativeTier 共用），没有返回 0
+static func suppress_skill() -> int:
+	if _suppress < 0:
+		_suppress = 0
+		for rec in XDB.table("Skills"):
+			if rec != null and str(rec.get("note", "")).contains("<CodexHonghuangSuppress>"):
+				_suppress = int(rec.id)
+				break
+	return _suppress

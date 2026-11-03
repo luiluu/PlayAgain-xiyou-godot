@@ -118,6 +118,26 @@ cases.push(makeCase('battle.death', {}, () => {
   rows.push(['otherdied', wearing(a)]);
   return {rows, ledger: ledger(), worldSeq: w.$gameSystem._codexCrownWorldDeathSeq};
 }));
+// 审查 31 P3-1（growth3）：穿魔冠的谷雨（60 级）有死亡抵抗（实例加特性 14／1），代命成立后强制归根：addState 被抵抗，
+// 原版补 addNewState(死亡) → 魔冠 addNewState 包装照记死亡、成长减半；记归根当时谷雨是否倒下、状态表、本次行动结果与账本
+// （战斗结束时谷雨运行时的收尾会影响胜利成长，重制专项不跑整场战斗，所以不记结束后）
+cases.push(makeCase('guyu.root', {party: [175, 1, 9, 10]}, () => {
+  fresh();
+  w.eval('$gameSwitches.setValue(2494, true); $gameParty._actors=[175,1,9,10]; $gameParty._battleMembers=[175,1,9,10,0];');
+  const g = w.$gameActors.actor(175); g._level = 60; g.refresh(); g.recoverAll();
+  const it = grant(); it.traits.push({code: 14, dataId: 1, value: 0}); equip(g, it);
+  for (let i = 0; i < 2; i++) fight(0);
+  const rows = [['won2', wearing(g)]];
+  let at = null;
+  fight(0, {during: () => {
+    const G = w.Guyu, e = {pendingDeath: true, guyu: g};
+    g.clearResult();
+    G.events.push(e); G.end(e, true);
+    rows.push(['rooted', wearing(g), g.isDead(), g.hp, g.states().map(x => x.id), g.result().addedStates.slice(), g._buffs.slice(0, 8)]);
+    at = ledger();
+  }});
+  return {rows, ledger: at};
+}));
 cases.push(makeCase('battle.swap', {}, () => {
   fresh();
   const a = w.$gameActors.actor(1), it = grant(); equip(a, it);

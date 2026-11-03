@@ -4,12 +4,9 @@ extends Node
 ## 宿主用 xiyou_event_compare 的记录替身，只把选项应答换成用例的 picks。逐例比：每次运行的文字与选项（含取消类型、默认项）、
 ## 跑没跑完、变量 9／20／1468～1472／1482、开关 2461～2463／2483、样本角色（队伍四人＋2、50）学到的诅咒、候选是否清掉、curseBonus；
 ## 另比「每种学到的诅咒都给了全部有名字的角色」（原版 166 名，重制切片里的角色少，只比全员这一点，不比人数）。
-## 再查 1442 这几段脚本都认得（解释器 skipped 为空）；EV41 顺带调的 CE1445 学「洪荒压制」被动（<CodexHonghuangSuppress>）那段属下期，
-## 只放过 SUPPRESS_SKIPPED 这几条，下期接上后删掉。
+## 再查 1442 这几段脚本都认得（解释器 skipped 为空）。
 const FIXTURE := "res://tests/fixtures/honghuang_curse_oracle.json"
 const PARTY := [1, 8, 9, 10]
-const SUPPRESS_SKIPPED := ["var hh=$dataSkills.filter(function(s){return s&&/<CodexHonghuangSuppress>/.test(", "})[0]", "for(var j=1", "j<$dataActors.length",
-	"j++){if(hh&&$dataActors[j].name!==\"\")$gameActors.actor(j).learnSkill(hh.id)"]
 var checks := 0
 var failures: Array = []
 
@@ -107,7 +104,6 @@ func run_case(c: Dictionary, host: PickHost) -> void:
 		await interp.run()
 		skipped.append_array(interp.skipped)
 		got_runs.append({"messages": host.messages.duplicate(true), "usedPicks": host.at})
-	skipped = skipped.filter(func(e): return not SUPPRESS_SKIPPED.has(str(e.text)))
 	check(c.id + ".skipped", skipped.is_empty(), skipped)
 	for i in o.runs.size():
 		var want: Dictionary = o.runs[i]

@@ -7,7 +7,7 @@ extends RefCounted
 ## - 「五个乘区」一段（CodexZones，五乘区预算软上限）按数值平衡不移植（用户 2026-10-12），整段不显示（O-044）。
 ## - 第二阶段：区段里程碑（首次进新区段时的对话，每段一次，看过记 XState.guide_seen）与方桌大厅「商店向导」→「下一步建议」。
 ##   区段表 G.ATLAS 照原版（modes/xiyou/guide_atlas.json，冻结源抽出，tests/xiyou_guide 与参照比对）。参照 mv_oracle/guide_probe.cjs → generated/oracle/guide.json。
-##   「战力短板」一段来自五乘区预算（CodexZones），同修行页不移植（O-050）；「洪荒权能」一句随洪荒难度（未移植）。
+##   「战力短板」一段来自五乘区预算（CodexZones），同修行页不移植（O-050）；「洪荒权能」一句随洪荒路线（XHonghuang）。
 ## - Boss 预告原版关闭（G.PREVIEW_ENABLED=false，无调用处），不做。
 
 ## 难度技能名单（CodexGuide.difficultySkillIds）
@@ -201,9 +201,13 @@ static func _boss_summary(seg: Dictionary, n: int) -> String:
 	return "、".join(shown) + (" 等 %d 处" % b.size() if b.size() > n else "")
 
 
-## powerLine：洪荒难度（开关 2483／2463）下本段不朽存在的权能掉率。洪荒的诅咒倍率与权能掉落未移植，暂不显示
-static func _power_line(_seg: Dictionary) -> String:
-	return ""
+## powerLine：洪荒路线（开关 2483／2463）下本段不朽存在的权能掉率
+static func _power_line(seg: Dictionary) -> String:
+	var s := XState.current
+	if not XHonghuang.is_honghuang(s) or seg.get("power") == null:
+		return ""
+	return "\\C[4]洪荒权能\\C[0]：本段不朽存在通关后掉%s，每场每本 %s%%（诅咒倍率×%s）。" % ["、".join(PackedStringArray(seg.power)),
+		XHonghuang._fixed1(XHonghuang.power_chance(s) * 100.0), XHonghuang._fixed1(XHonghuang.party_bonus(s))]
 
 
 ## 区段原表保留冻结来源；显示内容遵循已定数值原则与当前实际掉率。
