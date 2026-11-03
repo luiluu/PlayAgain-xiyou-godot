@@ -222,10 +222,10 @@ func param_base(i: int) -> float:
 func param(i: int) -> float:
 	var dragon := XCat.dragon_param(self, i)  # 小猫试炼巨龙 param 最外层包装：数据库原值
 	if not is_nan(dragon):
-		return dragon
+		return XHubris.formula_param(self, i, dragon)
 	var native := cached_param(i, param_now) if param_cache_on else param_now(i)
 	native = XYomiJingliu.enemy_param(self, i, roundf(native * warehouse_rate()))  # 镜流裂隙演化（在仓库倍率之外、首领倍率之内）
-	return XAlienBattle.hp_param(self, i, roundf(native * boss_attribute_rate()))
+	return XHubris.formula_param(self, i, XAlienBattle.hp_param(self, i, roundf(native * boss_attribute_rate())))  # 狂妄 evalDamageFormula 包装（最外层）：公式里物防按穿透打折
 
 ## Star_Warehouse 的难度怪物属性：$gameParty.DCultyL1～5（公共事件 714 按难度开关置位，标志存在 XState.flags）从小到大取第一个为真的，
 ## 按插件参数 DCL1～5（1／1.5／2／2.5／3）乘到 Game_Enemy 的 param（取整）、xparam、sparam 上；L6～8 与全假＝不乘。
