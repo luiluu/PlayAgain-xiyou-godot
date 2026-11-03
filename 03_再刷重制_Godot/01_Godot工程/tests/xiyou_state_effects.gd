@@ -26,6 +26,12 @@ class FixedDamageLogic:
 		return 0.0 if reason == "critical" else super._float(reason)
 
 
+class ShieldLogic:
+	extends FixedDamageLogic
+	func _float(reason: String) -> float:
+		return 0.0 if reason == "hit" else 1.0  # 必中、不闪、不暴击（参照 Math.random 0.5、无暴击）
+
+
 class ValueBattler:
 	extends XBattler
 	var values := {}
@@ -267,6 +273,9 @@ func _run() -> void:
 	_damage_chain(cases["damage.full_chain"].observed)
 	_value_blocks(cases["value.native_blocks"].observed)
 	_query_blocks(cases["query.native_blocks"].observed)
+	check("shield.oracle_present", cases.has("query.shield_blocks"))
+	if cases.has("query.shield_blocks"):
+		_shield_blocks(cases["query.shield_blocks"].observed)
 	XStateEffects.observer = Callable()
 	finish()
 
@@ -546,6 +555,83 @@ func _query_blocks(o: Dictionary) -> void:
 		live.param_dirty, live.effect_dirty, random.snapshot(), XStateEffects.diagnostics]
 	check("query.preview.no_mutation", before == after and resources.slots.is_empty() and resources.journal.is_empty())
 	XState.current = saved
+
+
+## 护盾一族（rules2）：105、112、612、614、641、647、1039 的 React（不含本盾元素清零；HP 伤害>0 就播动画、移除自身）与 Remove 空操作。
+func _shield_blocks(o: Dictionary) -> void:
+	XStateEffects.observer = Callable()
+	check("shield.rows", o.rows.size() == 441 and o.pairs.size() == 15 and o.applies.size() == 7, [o.rows.size(), o.pairs.size(), o.applies.size()])
+	var a := ValueBattler.new()
+	a.values = {"attackElements": [], "damageElement": 0}
+	var shields := {}
+	for index in range(o.rows.size()):
+		var row: Dictionary = o.rows[index]
+		var sid := int(row.state)
+		var st := XDB.rec("States", sid)
+		var react: Array = st.effects.filter(func(e): return e.phase == "react")
+		var remove: Array = st.effects.filter(func(e): return e.phase == "remove")
+		if not shields.has(sid):
+			shields[sid] = true
+			check("shield.translated.%d" % sid, react.size() == 1 and react[0].op == "value_query" and react[0].get("remove_self", false)
+				and int(react[0].element) == int(row.element) and remove.size() == 1 and remove[0].op == "noop"
+				and not st.effects.any(func(e): return e.op == "js"), st.effects)
+		var item := {"id": 1, "damage": {"type": row.type, "elementId": row.elementId}}
+		for execute in [true, false]:
+			var b := ValueBattler.new()
+			b.state_ids.append(sid)
+			var resources := XResourceContext.new()
+			var record := {}
+			var ctx := {"attacker": a, "defender": b, "item": item, "value": row.before, "execute": execute, "resources": resources, "record": record}
+			if index == 0 and execute:
+				check("shield.elements", XStateEffects._query_elements(ctx, a) == row.elements.map(func(e): return int(e)))
+			var got := XStateEffects.run_one("react", b, st, ctx)
+			var kept := b.state_ids.has(sid)
+			var anims: Array = record.get("state_anims", []).map(func(p): return int(p[0]))
+			var removed: Array = resources.result(b).removedStates if resources.slots.has(b) else []
+			if execute:
+				check("shield.execute.%d" % index, got == float(row.after) and kept == row.states.has(float(sid))
+					and anims == row.anims.map(func(x): return int(x)) and removed == row.removedStates.map(func(x): return int(x)),
+					{"row": row, "got": [got, kept, anims, removed]})
+			else:
+				check("shield.preview.%d" % index, got == float(row.after) and kept and anims.is_empty(), {"row": row, "got": [got, kept, anims]})
+	# 两盾同挂：按状态顺序逐个 React；前一个清零后 value 为 0，后一个不触发
+	for index in range(o.pairs.size()):
+		var p: Dictionary = o.pairs[index]
+		var b := ValueBattler.new()
+		for sid in p.pair:
+			b.add_state(int(sid))
+		var resources := XResourceContext.new()
+		var record := {}
+		var item := {"id": 1, "damage": {"type": 1, "elementId": p.elementId}}
+		var got := XStateEffects.run("react", b, {"attacker": a, "defender": b, "item": item, "value": p.before, "resources": resources, "record": record})
+		var left: Array = p.pair.filter(func(sid): return b.state_ids.has(int(sid)))
+		var anims: Array = record.get("state_anims", []).map(func(q): return int(q[0]))
+		check("shield.pair.%d" % index, got == float(p.after) and left == p.states and anims == p.anims.map(func(x): return int(x))
+			and resources.result(b).removedStates == p.removedStates.map(func(x): return int(x)),
+			{"want": p, "got": [got, left, anims, resources.result(b).removedStates]})
+	# 实战：真实 apply 两下，第一下被挡（0 伤害、破盾动画、移除）、第二下照常
+	for row in o.applies:
+		var sid := int(row.state)
+		XEnemy.force_roll = 100.0
+		var s := XState.new_game(3, 1, [8])
+		s.random_master = XRandomStream.hex64(4400 + sid)
+		var logic := ShieldLogic.new()
+		logic.elite_roll = 100.0
+		logic.setup(2, s)
+		var u: XBattler = logic.actors[0]
+		var e: XBattler = logic.enemies[0]
+		e.add_state(sid)
+		check("shield.apply.%d.added" % sid, e.state_ids.has(sid), e.state_ids)
+		var skill := XDB.rec("Skills", 1)
+		var first := logic.apply(u, skill, e)
+		var hp := e.hp
+		var second := logic.apply(u, skill, e)
+		var want_anim := int(row.hits[0].anims[0])
+		check("shield.apply.%d.blocked" % sid, float(first.hp) == 0.0 and first.removed.has(sid) and not e.state_ids.has(sid)
+			and first.get("state_anims", []).size() == 1 and int(first.state_anims[0][0]) == want_anim and first.state_anims[0][1] == e,
+			[first.hp, first.removed, first.get("state_anims")])
+		check("shield.apply.%d.after" % sid, float(second.hp) == 7.0 and e.hp == hp - 7.0 and not second.has("state_anims")
+			and second.removed.is_empty(), [second.hp, second.get("state_anims"), second.removed])
 
 
 func finish() -> void:

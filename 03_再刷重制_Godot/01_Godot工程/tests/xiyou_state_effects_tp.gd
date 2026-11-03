@@ -101,12 +101,21 @@ func _ready() -> void:
 	for c in ref.cases:
 		cases[c.id] = c.observed
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
+	# op js 分两项报数：换装（setBattlerImage，costumes.gd 原生换图、不翻脚本）与真未翻
+	var costume := 0
 	var untranslated := 0
 	for st in XDB.table("States"):
 		if st is Dictionary:
 			for effect in st.get("effects", []):
-				untranslated += int(effect.op == "js")
-	check("inventory.merged_315", untranslated == 315, untranslated)  # 318 → 315：奈叶二期把 1774 battle、1780 action_start／action_end 三块单句 reserveCommonEvent 翻成 reserve_common_event
+				if effect.op == "js":
+					if str(effect.get("source", "")).contains("setBattlerImage"):
+						costume += 1
+					else:
+						untranslated += 1
+	check("inventory.costume_142", costume == 142, costume)
+	# 318 → 315：奈叶二期把 1774 battle、1780 action_start／action_end 三块单句 reserveCommonEvent 翻成 reserve_common_event；
+	# 315 → 301（真未翻 173 → 159）：rules2 护盾 7 块 React 译成 value_query remove_self、7 块 Remove 译成 noop
+	check("inventory.untranslated_159", untranslated == 159, untranslated)
 	for id in [607, 609, 857]:
 		check("production.battle.%d" % id, XDB.rec("States", id).effects.any(func(e): return e.phase == "battle" and e.op == "gain_resource"))
 	var saved := {}

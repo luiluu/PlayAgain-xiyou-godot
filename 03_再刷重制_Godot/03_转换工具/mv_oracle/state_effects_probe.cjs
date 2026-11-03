@@ -409,6 +409,54 @@ cases.push(makeCase('tp.native_blocks', {states: [607, 609, 857, 1334, 1336]}, (
   if (errors.length) throw new Error('native TP errors: ' + JSON.stringify(errors));
   return {rows, applyRows};
 }));
+// 护盾一族（rules2）：React 时 HP 伤害>0 就播动画、移除自身，攻击元素不含本盾元素时伤害清零；Remove 写 _bubbleWrapCooldown（冻结源无读者）。
+// 单块：customEffectEval 直调；连用：两个盾同时挂，走真实 onReactStateEffects 循环（KRZ 热缓存，前一个清零后后一个不再触发）；
+// 实战：真实 Game_Action.apply 打两下（第一下被挡、第二下盾已去）。
+const SHIELDS = [[105, 8], [112, 4], [612, 5], [614, 10], [641, 4], [647, 9], [1039, 8]];
+cases.push(makeCase('query.shield_blocks', {states: SHIELDS.map(s => s[0])}, () => {
+  const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
+  const item = action.item(), originalDamage = Object.assign({}, item.damage), originalMultiple = item.multipleElements;
+  const errors = [], oldError = w.Yanfly.Util.displayError, oldAnim = e.startAnimation, oldRandom = w.Math.random;
+  w.Yanfly.Util.displayError = (error, code, message) => errors.push({error: String(error), message});
+  let anims = [];
+  e.startAnimation = function (id) { anims.push(id); };
+  const prep = sids => { e.clearStates(); e.clearResult(); delete e._bubbleWrapCooldown;
+    for (const sid of sids) e.addState(sid); e.clearResult(); e.typestates('reactState'); anims = []; };
+  const after = sids => ({states: sids.filter(s => e.isStateAffected(s)), anims: anims.slice(),
+    removedStates: Array.from(e.result().removedStates), cooldown: e._bubbleWrapCooldown === undefined ? null : e._bubbleWrapCooldown});
+  const rows = [], pairs = [], applies = [];
+  try {
+    w.Math.random = () => 0.5;
+    a.attackElements = () => [];
+    item.multipleElements = [];
+    for (const [sid, el] of SHIELDS) for (const elementId of [el, 1, 0]) for (const type of [0, 1, 2, 3, 4, 5, 6]) for (const value of [-5, 0, 7]) {
+      item.damage.elementId = elementId; item.damage.type = type; prep([sid]);
+      const got = action.customEffectEval(e, sid, 'reactState', e, value);
+      rows.push({state: sid, element: el, elementId, type, before: value, elements: action.getItemElements(), after: got, ...after([sid])});
+    }
+    item.damage.type = 1;
+    for (const pair of [[105, 612], [112, 647], [641, 112]]) for (const elementId of [1, 8, 5, 4, 9]) {
+      item.damage.elementId = elementId; prep(pair);
+      const got = action.onReactStateEffects(e, 7);
+      pairs.push({pair, order: e.typestates('reactState').map(s => s.id), elementId, before: 7, after: got, ...after(pair)});
+    }
+    Object.assign(item.damage, originalDamage); item.multipleElements = originalMultiple; delete a.attackElements;
+    for (const [sid] of SHIELDS) {
+      prep([sid]); const hits = [];
+      for (let i = 0; i < 2; i++) {
+        e.clearResult(); anims = []; const hp = e.hp; action.apply(e);
+        hits.push({hpLoss: hp - e.hp, hpDamage: e.result().hpDamage, elements: action.getItemElements(), ...after([sid])});
+      }
+      applies.push({state: sid, hits});
+    }
+  } finally {
+    Object.assign(item.damage, originalDamage); item.multipleElements = originalMultiple; delete a.attackElements;
+    e.startAnimation = oldAnim; w.Math.random = oldRandom; w.Yanfly.Util.displayError = oldError;
+    e.clearStates(); e.clearResult(); delete e._bubbleWrapCooldown;
+  }
+  if (errors.length) throw new Error('native shield errors: ' + JSON.stringify(errors));
+  return {rows, pairs, applies};
+}));
 // Supplemental 2e boundaries are separately runnable without repeating native22.
 cases.push(...require('./state_effects_tp_context_probe.cjs').measureCases(host));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来

@@ -9,7 +9,7 @@ const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm",
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
 const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "gain_resource", "param_add",
 	"poison_stack", "poison_tick", "add_state", "gain_steps", "set_variable", "syntax_error", "counter_init", "counter_set",
-	"reserve_common_event"]
+	"reserve_common_event", "noop"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -158,7 +158,11 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 			elif execute:
 				_diagnose(phase, int(st.id), holder, "value_program_unavailable")
 		elif op == "value_query":
+			# 护盾一族：HP 伤害>0 就破盾（先判，清零后 value 已是 0）；元素只决定这一击挡不挡
+			var breaks: bool = e.get("remove_self", false) and _active({"cond": "positive", "hpOnly": true}, c)
 			c.value = _query_value(e, c, execute)
+			if breaks and execute:
+				_break_shield(e, holder, int(st.id), c)
 		elif op == "param_add" and execute:
 			_add_params(e, c)
 		elif op == "gain_resource" and execute:
@@ -205,6 +209,8 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				_revive(c)
 		elif op == "syntax_error":
 			pass  # 原版这块解析失败（SyntaxError），customEffectEval 只报错，什么都不改
+		elif op == "noop":
+			pass  # 护盾 Remove 的 user._bubbleWrapCooldown = 3：冻结源 js 里没有任何地方读这个字段
 		elif op == "user_param_damage" and execute and ctx.get("resources") != null:
 			var r: Dictionary = ctx.record
 			for p in e.params:
@@ -242,6 +248,19 @@ static func _revive(ctx: Dictionary) -> void:
 	resources.gain(t, "tp", t.tp)
 	resources.start_damage_popup(t)  # 原文 clearResult 前先 startDamagePopup：回血、回蓝、TP 数字照样弹（审查 33 P3-2）
 	resources.seed_result(t, XResourceContext.empty_result())
+
+
+## 护盾 React 后半段：target.startAnimation(动画)＋target.removeState(stateId)。动画记进命中记录 state_anims
+## [[动画, 持有者]]，由 battle_scene 在本次弹字前播；移除走行动的资源上下文（removedStates 进结果槽，Remove 块随之触发）。
+static func _break_shield(e: Dictionary, holder: XBattler, state_id: int, c: Dictionary) -> void:
+	var record = c.get("record")
+	if record is Dictionary:
+		record["state_anims"] = record.get("state_anims", []) + [[int(e.animation), holder]]
+	var resources: XResourceContext = c.get("resources")
+	if resources != null:
+		resources.remove_state(holder, state_id)
+	else:
+		holder.remove_state(state_id)
 
 
 ## Execute-only permanent writes. Native refresh runs after EVERY addParam,
