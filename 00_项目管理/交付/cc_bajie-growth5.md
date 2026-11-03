@@ -1,7 +1,7 @@
 # 交付：cc/bajie-growth5
 
 - 车道／工作者：C 规则·机制／八戒（cc，Opus）
-- 状态：进行中
+- 状态：完成，待总装合并
 
 （接 cc/bajie-growth4 的接续第 1～4 条：成长装备尾项二。growth4 只交审查 31 P3-1；本分支从它切出。）
 
@@ -41,6 +41,11 @@
 
 ## 验证
 
+- 专项：`xiyou_heartsteel` 463／463、`xiyou_growth_forge` 538／538；`xiyou_growth_help` 53／53（含 powerOnly 三件，由并行测试跑出；直接用 godot 单跑会因没带测试环境让战力开关为关而 15 项误报，以并行测试为准）。语法检查 506 个 .gd，0 个问题。
+- 选测：`选测.py` 抽出的 147 个场景（含 xiyou_heartsteel、xiyou_growth*、xiyou_smart_ai*、xiyou_rules* 抽样、xiyou_status_power_panel 等）全部通过（并行 3，用时 2751 秒，提交 7f41c18f 名下，日志 `03_再刷重制_Godot/04_验证/本地结果/并行测试/20261103_183948_a6_pkgnv`）。
+- 未跑：全量检查（按三级试行，留给总装合并时按影响面选测）。
+
 ## 本分支提交
 
 - e0687255 改码、参照例与专项。
+- 本交付单提交（交付单定稿）。
