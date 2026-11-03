@@ -62,7 +62,7 @@ static func register_kind() -> void:
 		"is_owner": func(a): return is_xuan(a),
 		"manual": func(_a): return not auto_enabled(),
 		"form_state": state_id("possess"), "empty_state": XTusu.state_id("empty"), "blocks_hp_loss": true,
-		"on_bind": _on_bind, "on_unbind": _on_unbind, "on_round_start": _on_round_start, "on_round_close": _on_round_close,
+		"on_bind": _on_bind, "on_unbind": _on_unbind, "on_round_start": _on_round_start, "on_round_end": _round_end_release, "on_round_close": _on_round_close,
 		"on_clear": func(_a): data = {}})
 
 
@@ -328,10 +328,13 @@ static func user_effect(logic, u, skill: Dictionary, t: XBattler) -> void:
 					_grant_dingxing(logic, u, t)
 			if not data.is_empty():
 				data.record.protect = true
+			_tonggui_strike(logic, u)  # 同轨：回光内置一次棱光式协同
 		"libi":
 			XShieldLedger.grant(t, "xuan.libi", shield_amount(u, t), LIBI_TURNS, XUAN)
+			_tonggui_strike(logic, u)
 		"liexing":
 			_liexing(logic, u)
+			_tonggui_strike(logic, u)
 		"lengguang":
 			if t is XEnemy and t.is_alive():
 				logic.sequence_buff(t, 3, true, false, LENGGUANG_DEBUFF_TURNS)
@@ -589,3 +592,255 @@ static func extend_targets(a, skill: Dictionary, list: Array) -> Array:
 			if t != h:
 				list = list + original
 	return list
+
+
+# ---- 星契自律（第三期，installNativeXuanRuntime 146～245、396～409、480～500 行）：50 级第三阶在星谱选「自动」开战后附身时，
+# 星契（绑定充能）由模块自己花：内部施放 cast（保留最后 1 点护主、先照预支）；敌人行动前璃壁；行动后救援回光、列星、宿主攻击后棱光
+# （分光、同调）；同轨协同；回合末释放；自动战斗选行动。参照 mv_oracle/xuan_auto_probe.cjs → tests/xiyou_xuan_auto。----
+const CAST_LINES := {"huiguang": "璇：「别撑了，先缓一口气。」", "libi": "璇：「低头。这一下我来。」", "lengguang": "璇：「往左。现在出手。」", "liexing": "璇：「都在。接上。」"}
+const RESCUE_BELOW := 0.6
+const XIANZHAO_EVERY := 3
+const FENGUANG_TARGETS := [0, 2, 3, 4]
+const AI_HEAL := 0.3
+## 当前内部施放（原版记在 Game_Action 上：_codexInternal、_codexXuanSplit、_codexXuanElement、_codexXuanTonggui），施放完还原
+static var _act := {}
+## 主行动的同轨已打过（action._codexXuanTonggui，主行动每次 startAction 清）
+static var _main_tonggui := false
+## 本次主行动最后 apply 的敌人（action._codexXuanLastTarget，弱引用：静态变量不存战斗对象）
+static var _last_target: WeakRef = null
+
+
+static func _key_skill(key: String) -> Dictionary:
+	return XDB.rec("Skills", XTusuXuan.skill_id(XUAN, key))
+
+
+## ready：解锁、学会、冷却好、付得起
+static func _ready_skill(logic, a, key: String) -> bool:
+	var s := _key_skill(key)
+	if s.is_empty() or not XTusuXuan.unlocked(XUAN, a, key) or not a.skill_ids.has(int(s.id)) or a.cooldown_left(int(s.id)) > 0:
+		return false
+	return _can_pay(logic, a, s)
+
+
+static func _can_pay(logic, a, s: Dictionary) -> bool:
+	if not logic.can_pay_hp(a, s):
+		return false
+	var c: Dictionary = logic.skill_cost(a, s)
+	return a.mp >= float(c.mp) and a.tp >= float(c.tp)
+
+
+## canSpend：2 点以上随便花；只剩 1 点只给护主（keepLastCharge）
+static func _can_spend(a, protect: bool) -> bool:
+	var n := XBinding.charges(a)
+	return n >= 2 or (n >= 1 and protect)
+
+
+## borrow（先照）：没有星契时预支下一回合 1 点，每 3 回合一次、只许一笔债；1 级回光、2 级加璃壁、3 级加列星
+static func _borrow(logic, a, key: String) -> bool:
+	var lv := XXuanChart.mark_level(logic.state, a, "xianzhao")
+	if lv <= 0 or int(data.debt) > 0 or XBinding.current_round() - int(data.xianzhaoRound) < XIANZHAO_EVERY:
+		return false
+	var allowed := ["huiguang"]
+	if lv >= 2:
+		allowed.append("libi")
+	if lv >= 3:
+		allowed.append("liexing")
+	if not key in allowed:
+		return false
+	data.debt = 1
+	data.xianzhaoRound = XBinding.current_round()
+	XBinding.gain(a, 1)
+	_sync_counters(logic, a)
+	return true
+
+
+## X.cast＋B.cast：内部施放（照常付费、进冷却，不插入行动序列），每个活着的目标 apply 一次，花 1 点星契
+static func _cast(logic, a, key: String, targets: Array, setup: Dictionary, protect: bool) -> bool:
+	if targets.is_empty() or not _live(a) or not auto_enabled() or not _ready_skill(logic, a, key):
+		return false
+	if not _can_spend(a, protect) and not (XBinding.charges(a) < 1 and protect and _borrow(logic, a, key)):
+		return false
+	if XBinding.charges(a) < 1:
+		return false
+	var skill := _key_skill(key)
+	var dead_scope := int(skill.get("scope", 0)) in [9, 10]
+	var list := targets.filter(func(x): return x != null and (x.is_dead() if dead_scope else x.is_alive()))
+	if list.is_empty():
+		return false
+	var prev := _act
+	_act = {"internal": "xuan"}
+	_act.merge(setup, true)
+	logic.pay_skill_cost(a, skill)
+	for x in list:
+		var at := _logs.size()
+		_logs.insert(at, logic.apply(a, skill, x))  # 命中记录排在 apply 期间带出的同轨协同之前（原版 executeHpDamage 在 applyItemUserEffect 之前）
+	_act = prev
+	_logs.append({"type": "battle_text", "text": str(CAST_LINES[key])})
+	XBinding.spend(a, 1)
+	data.used[key] = true
+	return true
+
+
+static func _need_rescue(t) -> bool:
+	return _live(t) and (t.hp / maxf(1.0, t.mhp) <= RESCUE_BELOW or first_cleansable(t) > 0)
+
+
+## tryRescue：受益者里低血（≤60%）或被硬控的；没有时并轨 1 级救副宿主
+static func _try_rescue(logic, a) -> bool:
+	var cover := beneficiaries(a)
+	var list: Array = (cover.list as Array).filter(func(t): return _need_rescue(t))
+	if list.is_empty() and cover.partner != null and XXuanChart.mark_level(logic.state, a, "binggui") >= 1 and _need_rescue(cover.partner):
+		list = [cover.partner]
+	return not list.is_empty() and _cast(logic, a, "huiguang", list, {}, true)
+
+
+## tryLiexing：附身、列星没在期内、有别的活着的队友（附身中的屠苏不算）
+static func _try_liexing(logic, a) -> bool:
+	var h = XBinding.host(a)
+	if h == null or XBinding.current_round() <= int(data.liexingUntil):
+		return false
+	var others := XBinding.members().filter(func(t): return t != h and t != a and _live(t) and not (XTusu.is_tusu(t) and XBinding.is_bound(t)))
+	if others.is_empty() or not _ready_skill(logic, a, "liexing"):
+		return false
+	return _cast(logic, a, "liexing", [a], {}, true)
+
+
+## followUp：棱光打宿主这次攻击的最后一个敌人（倒了打第一个活着的）；分光：全体攻击时分给 2／3／4 名；同调：2 级跟攻击元素、1 级用星谱指定元素
+static func _follow_up(logic, a, skill: Dictionary, target) -> bool:
+	if target == null or not target.is_alive():
+		var alive: Array = logic.alive(logic.enemies)
+		target = alive[0] if not alive.is_empty() else null
+	if target == null:
+		return false
+	var targets := [target]
+	var lv := XXuanChart.mark_level(logic.state, a, "fenguang")
+	if lv > 0 and XSmartAI.scope_of(skill) in [2, 8, 10]:
+		targets = (logic.alive(logic.enemies) as Array).slice(0, FENGUANG_TARGETS[lv])
+	var setup := {"split": targets.size()}
+	var el := int(skill.get("damage", {}).get("elementId", 0))
+	var td := XXuanChart.mark_level(logic.state, a, "tongdiao")
+	var chosen := int(XXuanChart.chart(logic.state).get("element", 0))
+	if td >= 2 and el > 0:
+		setup.element = el
+	elif td >= 1 and chosen > 0:
+		setup.element = chosen
+	return _cast(logic, a, "lengguang", targets, setup, false)
+
+
+## startAction 包装（原 startAction 之前，屠苏在外层）：敌人对我方的伤害行动打到受益者前璃壁（并轨 2 级：打到副宿主也给），每回合一次
+static func start_action(logic, u, skill: Dictionary, chosen) -> Array:
+	_last_target = null
+	_main_tonggui = false
+	var a = xuan()
+	if a == null or not auto_enabled() or not XBinding.is_bound(a) or not u is XEnemy or skill.is_empty() or not XSmartAI.for_opponent(skill):
+		return []
+	if not int(skill.get("damage", {}).get("type", 0)) in [1, 5]:
+		return []
+	var targets: Array = logic.targets_for(u, skill, chosen)  # 原版在这里多调一次 makeTargets（随机目标照样掷）
+	var cover := beneficiaries(a)
+	var hit: Array = (cover.list as Array).filter(func(t): return targets.has(t) and _live(t))
+	if hit.is_empty() and cover.partner != null and XXuanChart.mark_level(logic.state, a, "binggui") >= 2 and targets.has(cover.partner):
+		hit = [cover.partner]
+	if hit.is_empty() or data.used.has("libi"):
+		return []
+	_cast(logic, a, "libi", hit, {}, true)
+	return take_logs()
+
+
+## endAction 包装（原 endAction 之前，屠苏在外层）：救援回光、列星、宿主（含星影）主动攻击后棱光
+static func end_action(logic, u, skill) -> Array:
+	var a = xuan()
+	if a == null or not auto_enabled() or not XBinding.is_bound(a) or not _live(a):
+		return []
+	_try_rescue(logic, a)
+	_try_liexing(logic, a)
+	if u is XActor and skill is Dictionary and not skill.is_empty() and XSmartAI.for_opponent(skill) \
+			and int(skill.get("damage", {}).get("type", 0)) in [1, 5] and in_cover(a, u):
+		_follow_up(logic, a, skill, _last_target.get_ref() if _last_target != null else null)
+	return take_logs()
+
+
+## Game_Action.apply 包装：主行动记下最后打到的敌人
+static func note_target(t) -> void:
+	if t is XEnemy and not _act.has("internal"):
+		_last_target = weakref(t)
+
+
+## tongguiStrike：同轨时回光、璃壁、列星带一次棱光式协同（每次行动一次，打第一个活着的敌人，不花费）
+static func _tonggui_strike(logic, a) -> void:
+	if not auto_enabled() or data.is_empty() or not bool(data.tonggui):
+		return
+	if _act.has("internal"):
+		if _act.has("tonggui"):
+			return
+		_act.tonggui = true
+	else:
+		if _main_tonggui:
+			return
+		_main_tonggui = true
+	var alive: Array = logic.alive(logic.enemies)
+	if alive.is_empty():
+		return
+	var prev := _act
+	_act = {"internal": "xuan-tonggui", "tonggui": true}
+	_logs.append(logic.apply(a, _key_skill("lengguang"), alive[0]))
+	_act = prev
+
+
+## roundEndRelease（绑定 onRoundEnd）：剩下的星契按 受益者缺血或被控→回光、璇自己半血以下或被控→回光、棱光、给宿主璃壁 依次放到放不出
+static func _round_end_release(owner) -> void:
+	var logic = XBinding._logic()
+	if not auto_enabled() or logic == null:
+		return
+	while XBinding.charges(owner) > 0:
+		var hurt: Array = (beneficiaries(owner).list as Array).filter(func(t): return t.hp < t.mhp or first_cleansable(t) > 0)
+		var done := not hurt.is_empty() and _cast(logic, owner, "huiguang", hurt, {}, true)
+		if not done and (owner.hp < owner.mhp * 0.5 or first_cleansable(owner) > 0):
+			done = _cast(logic, owner, "huiguang", [owner], {}, true)
+		var alive: Array = logic.alive(logic.enemies)
+		if not done and not alive.is_empty():
+			done = _cast(logic, owner, "lengguang", [alive[0]], {}, true)
+		var h = XBinding.host(owner)
+		if not done and h != null:
+			done = _cast(logic, owner, "libi", [h], {}, true)
+		if not done:
+			break
+
+
+## 伤害钩子 xuan：内部施放的棱光按分光目标数分摊、同调换元素
+static func cast_ops(item: Dictionary, a) -> Array:
+	if not is_xuan(a) or key_of(item) != "lengguang" or not _act.has("internal"):
+		return []
+	var ops := []
+	if int(_act.get("split", 1)) > 1:
+		ops.append({"op": "mul", "field": "finalMultiplier", "value": 1.0 / float(_act.split)})
+	if int(_act.get("element", 0)) > 0:
+		ops.append({"op": "set", "field": "elements", "value": [int(_act.element)]})
+	return ops
+
+
+## X.autoAction（makeAutoBattleActions 包装，原选择之后）：附身时自律就防御（手动不管）；本体时先救 30% 以下的队友，再寄星（命主名册优先、否则默认宿主）
+static func auto_action(logic, a, base: Array) -> Array:
+	if not is_xuan(a) or not XBinding.in_battle():
+		return base
+	if XBinding.is_bound(a):
+		return [XDB.rec("Skills", XBattleLogic.GUARD_SKILL), null] if auto_enabled() else base
+	var heal := _key_skill("huiguang")
+	for t in XBinding.members():
+		if _live(t) and t.hp / t.mhp < AI_HEAL:
+			if logic.can_use(a, heal):
+				return [heal, t]
+			break
+	var s: XState = logic.state
+	var pick = null
+	for id in (XXuanChart.chart(s).roster as Array).slice(0, XXuanChart.stage(s)):
+		var t = s.actor(int(id))
+		if t != null and XBinding.can_host(a, t):
+			pick = t
+			break
+	if pick == null:
+		pick = XBinding.default_host(a)
+	var jx := _key_skill("jixing")
+	if pick != null and logic.can_use(a, jx):
+		return [jx, pick]
+	return base

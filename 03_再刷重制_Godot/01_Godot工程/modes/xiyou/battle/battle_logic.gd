@@ -713,7 +713,7 @@ func auto_battle_action(a: XActor) -> Array:
 	var guyu := XGuyu.auto_action(self, a)  # 谷雨 makeAutoBattleActions 包装（云裳之外：modules.json 谷雨第 37、云裳第 30）：固定判断压过挂机与智能 AI
 	if not guyu.is_empty():
 		return guyu
-	var r := XTusu.auto(self, a, _auto_battle_action(a))  # 屠苏 makeAutoBattleActions 包装：屠苏自己按规则易武／支援／化武，持武者比武装技能
+	var r := XTusu.auto(self, a, XXuanBattle.auto_action(self, a, _auto_battle_action(a)))  # 璇 makeAutoBattleActions 包装（屠苏之内）：附身自律时防御，本体救人、寄星；屠苏 makeAutoBattleActions 包装：屠苏自己按规则易武／支援／化武，持武者比武装技能
 	XYunshang.auto_battle(self, a)  # 云裳 makeAutoBattleActions 包装（原选择之后）：免费赠行、放行、六衡裁身、收袖
 	return r
 
@@ -854,6 +854,7 @@ func act(u: XBattler, skill, target) -> Array:
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
 	logs.append_array(XXuanBattle.take_logs())  # 璇：换宿主、定星的台词
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（原 endAction 之前，在谷雨之外）：贯日消费锁定、敕令消费和鸣，持武者行动后剑气／镇魂（内部施放）
+	logs.append_array(XXuanBattle.end_action(self, u, skill))  # 璇 endAction 包装（屠苏之内、谷雨之外）：星契自律，救援回光、列星、宿主攻击后棱光（内部施放）
 	XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：本次行动里的归根反馈（画面）
 	# 狂妄 112、心钢 111 装得比谷雨 133、屠苏 137 早，在里层：前半段排在它们之后，狂妄（外）先于心钢（审查第 29 期 P3-1）
@@ -1254,6 +1255,7 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	XNanoha.end_execute(self)
 	logs.append_array(XXuanBattle.take_logs())  # 璇：换宿主、定星的台词
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（同 act 的次序）：强制行动也消费锁定、和鸣，持武者放剑气／镇魂（审查第 26 期 P3-1）
+	logs.append_array(XXuanBattle.end_action(self, u, skill))  # 璇 endAction 包装（同 act 的次序）
 	XGuyu.end_action()  # 谷雨 endAction 包装（同 act 的次序，在屠苏之后）：结束行动事件，代命成立就归根
 	logs.append_array(XGuyu.take_visuals())
 	XHubris.end_action(self, u, true)  # 狂妄／心钢 endAction 包装（同 act 的次序，在谷雨之内）：强制行动不计行动、不减蓄力
@@ -1525,6 +1527,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	XHeartsteel.start_action(u, skill)  # 心钢 startAction 包装：记本次行动、巨人吞噬的施放与冷却
 	XHubris.start_action(u)  # 狂妄 startAction 包装：记本次行动（行动结束计数）
 	logs.append_array(XTusu.start_action(self, u, skill, chosen))  # 屠苏 startAction 包装（原 startAction 之前）：持武者贯日锁定、敕令和鸣，盾相敌人出手前金汤（内部施放）
+	logs.append_array(XXuanBattle.start_action(self, u, skill, chosen))  # 璇 startAction 包装（屠苏之内）：星契自律，敌人出手前璃壁（内部施放）
 	XGuyu.begin(u)  # 谷雨 startAction 包装：清特效标记、开行动事件（众生之劫记各人最大生命）
 	XGarou.begin(u, skill)  # 饿狼 startAction 包装：开施放帧（记施放开始时的进化层）
 	XRaven.begin(u, skill)  # 渡鸦：新行动的施放帧（原版记在 Game_Action 上）
@@ -1865,6 +1868,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var xuan_cmd := XXuanBattle.apply_command(self, u, skill, t)  # 璇 Game_Action.apply 包装：寄星、转移、回身
 	if not xuan_cmd.is_empty():
 		return xuan_cmd
+	XXuanBattle.note_target(t)  # 璇 Game_Action.apply 包装：记下主行动最后打到的敌人（棱光跟打）
 	var hp_before := t.hp
 	var live := t is XEnemy and t.is_alive()
 	var blocked := [false]
