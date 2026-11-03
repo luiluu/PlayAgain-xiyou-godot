@@ -45,6 +45,7 @@ KEYS = {
     'guyu.json': {'cases': ('id',)},
     'guyu_battle.json': {'cases': ('id',)},
     'three_growth.json': {'cases': ('id',)},
+    'xuan_chart.json': {'cases': ('id',)},
     'mira_battle.json': {'cases': ('id',)},
     'raven_soul.json': {'cases': ('id',)},
     'common_scripts.json': {'cases': ('id',)},
