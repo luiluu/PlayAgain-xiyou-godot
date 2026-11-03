@@ -13,6 +13,12 @@
 - 测试：`xiyou_xuan_chart` 加 `roster.after_load_remove`、`roster.after_load_mixed`（两次存读档往返后再点）、`max.rows`、`max.rows_original_label`（回退支）、`max.refund`；`xiyou_growth_forge` 的 `ui.source_card` 改成断言有大于 14 号的行。
 - 没改探针：审查建议探针加一例学满再打开的流程；原版那一行文字是 undefined、重制默认改了文字，加了也只能在测试里特判，规则层断言已覆盖三行的可选状态与回收，就没动探针，省一轮同步。
 
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | 星谱满级星纹操作页的强化行（`core/xuan_chart.gd` `learn_label`；installNativeXuanRuntime.js:550） | 星纹 3 级时读 `cost[3]` 得 undefined，强化行写「强化（星砂undefined）」（本就不可选，配入、回收照常） | 写「强化（已满级）」 | 原版是越界的副作用，文字不像话 | `XXuanChart.MAX_LABEL_FIX = false` | cc（白龙） | 待用户确认 |
+
 ## 待交叉核查
 
 - 改了 `core/xuan_chart.gd`、`ui/crafting.gd`（都不是原沙僧核心文件）。请核 P3-1 的结论（原版 14 号确实被冲掉）是否成立。
