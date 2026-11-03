@@ -120,6 +120,11 @@ func _physics_process(_delta: float) -> void:
 		queue_redraw()
 
 
+# 底色只铺内框：原版 _refreshBack 缩进 margin 4，圆角外不露底色
+func backdrop_rect() -> Rect2:
+	return Rect2(Vector2.ZERO, size).grow(-4)
+
+
 func _draw() -> void:
 	if openness <= 0:
 		return
@@ -130,7 +135,7 @@ func _draw() -> void:
 	elif background_type == 0:
 		draw_set_transform(Vector2(0, size.y / 2.0 * (1.0 - o)), 0.0, Vector2(1, o))
 		if backdrop.a > 0.0:
-			draw_rect(r, backdrop)
+			draw_rect(backdrop_rect(), backdrop)
 		draw_style_box(XUI.panel(opacity), r)
 		draw_set_transform(Vector2.ZERO)
 	if not is_open():
