@@ -10,6 +10,7 @@
     "event_baseline": {"说明": "事件对照基线", "scenes": ["xiyou_event_compare.tscn"]},
     "ui": {"说明": "界面：界面专项＋事件对照", "scenes": ["xiyou_event_compare.tscn"], "refs": true, "fallback": ["ui_smoke.tscn"], "checks": ["guards"]},
     "battle": {"说明": "战斗核心：xiyou_rules 全部段＋事件对照＋覆盖＋同源", "scenes": ["xiyou_rules*.tscn", "xiyou_event_compare.tscn"], "refs": true, "checks": ["guards", "content", "same_source"]},
+    "battle_hooks": {"说明": "战斗核心文件里只加／删角色专属模块的钩子调用（hookLines，tools54）：冒烟场景（determinism、battle、combat、rules 抽样、存档类）＋引用了这些模块名的测试（选测.py 按钩子行里的 X 模块名补）", "scenes": ["xiyou_determinism.tscn", "xiyou_battle.tscn", "xiyou_battle_log.tscn", "xiyou_battle_events.tscn", "xiyou_battle_drop.tscn", "xiyou_combat.tscn", "xiyou_rules*.tscn", "xiyou_*save*.tscn", "xiyou_autosave.tscn", "xiyou_*_load.tscn", "xiyou_event_compare.tscn"], "checks": ["guards", "content", "same_source"]},
     "slice_map": {"说明": "切片只加地图／保留事件：事件对照＋楼层专项＋引用该键的测试＋内容覆盖与工具回归（新增敌群的规则对照与测量接受单仍走同步那一路）", "scenes": ["xiyou_event_compare.tscn", "xiyou_floor*.tscn", "xiyou_map*.tscn", "xiyou_flow.tscn"], "checks": ["guards", "tools", "content"]},
     "slice_asset": {"说明": "切片只改图像／音频／字体名单：事件对照＋界面专项＋导出＋引用该键的测试＋工具回归", "scenes": ["xiyou_event_compare.tscn", "ui_smoke.tscn", "xiyou_panels.tscn", "xiyou_*_ui.tscn", "xiyou_mac_export.tscn"], "checks": ["guards", "tools"]},
     "converter": {"说明": "切片、转换器、oracle 探针、测量接受单：同战斗核心，另加工具回归", "scenes": ["xiyou_rules*.tscn", "xiyou_event_compare.tscn"], "refs": true, "checks": ["guards", "tools", "content", "same_source"]},
@@ -19,6 +20,19 @@
     "export": {"说明": "导出设置", "scenes": ["xiyou_mac_export.tscn"], "checks": ["guards"]},
     "tools": {"说明": "开发工具：工具回归（含守卫）", "checks": ["guards", "tools"]},
     "full": {"说明": "拿不准：整轮", "full": true}
+  },
+  "hookLines": {
+    "说明": "钩子行收窄（tools54，Kyo 2026-11-03 同意，O-153）：files 里的核心文件，改动的每个块都含非 excludeModules 的 X 模块调用、其余行只是注释／空行／glue 胶水时，改归 group（冒烟场景＋引用这些模块的测试）；认不出一块就退回规则里的原组。enabled 设 false（或环境变量 XIYOU_HOOKS=0）回到按文件整组选。依据见 00_项目管理/交付/cc_nezha-tools54.md。",
+    "enabled": true,
+    "group": "battle_hooks",
+    "files": [
+      "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/battler.gd", "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/damage.gd",
+      "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/state_effects.gd", "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor.gd",
+      "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/enemy.gd", "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+      "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/xstate.gd", "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/resource_context.gd"
+    ],
+    "excludeModules": ["XDB", "XState", "XActor", "XBattler", "XEnemy", "XBattleLogic", "XResourceContext", "XRandomStream", "XDamage", "XStateEffects", "XEquipment", "XSave", "XFormula"],
+    "glue": "^\\s*(return( (false|true|null|\\{\\}|\\[\\]|-?\\d+(\\.\\d+)?|\\w+))?|pass|break|continue|else:|(el)?if not \\w+\\.is_empty\\(\\):)\\s*$"
   },
   "mergeBase": true,
   "mergeBase说明": "true：基准不是 HEAD 的祖先时（车道跑 --affected main 而 main 已前进）改用 merge-base(基准, HEAD)，只算本分支的改动；false：按基准本身比（2026-10-26 前的行为）。总装用批首 base 时两者相同。",
