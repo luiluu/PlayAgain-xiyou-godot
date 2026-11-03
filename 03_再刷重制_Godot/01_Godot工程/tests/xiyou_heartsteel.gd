@@ -5,8 +5,8 @@ extends Node
 ## hubris.battle.* 是原版口径（KILL_FIX 关：击杀记不上），hubris.fix.* 是修复口径（O-150，默认开）。
 const FIXTURE := "res://tests/fixtures/heartsteel_oracle.json"
 const PARTY := [1, 8, 9, 10]
-## 参照里量了、本期没做的（期二：锻造配方解锁）
-const PENDING_FIELDS := ["recipes", "unlocked", "draws", "desc"]
+## 参照里量了、不在这里比的（draws 由各掉落例自己比；desc 动态说明在尾项）。recipes／unlocked 期二锻造解锁已做，掉落例里比
+const PENDING_FIELDS := ["draws", "desc"]
 var checks := 0
 var failures: Array = []
 var logic: XBattleLogic
@@ -142,9 +142,14 @@ func _case_reward(c: Dictionary) -> void:
 	var hubris := XHubris.clear_reward(l, int(st.result))
 	var again := [XHeartsteel.clear_reward(l, int(st.result)), XHubris.clear_reward(l, int(st.result))]
 	var count := func(id): return s.gear.filter(func(e): return str(e.kind) == "armor" and int(e.base) == id).size()
-	var got := {"origin": XHeartsteel.unknown_origin(s), "heart": heart, "hubris": hubris, "again": again, "armors": [count.call(7900), count.call(7902)]}
+	var got := {"origin": XHeartsteel.unknown_origin(s), "heart": heart, "hubris": hubris, "again": again, "armors": [count.call(7900), count.call(7902)],
+		"recipes": [XCrafting.known(s, XCrafting.recipe(457)), XCrafting.known(s, XCrafting.recipe(458))],
+		"unlocked": [bool(s.crafting.get("codexLeviathanUnlocked", false)), bool(s.crafting.get("codexAtaraxiaUnlocked", false))]}
+	# 这个探针没建配方表，没学过的 recipeKnown 是 undefined（记成 null），按没学会
+	var want := o.duplicate()
+	want.recipes = (o.recipes as Array).map(func(v): return v == true)
 	for k in got:
-		check(c.id + "." + k, JSON.stringify(got[k]) == JSON.stringify(o[k]).replace(".0", ""), [got[k], o[k]])
+		check(c.id + "." + k, JSON.stringify(got[k]) == JSON.stringify(want[k]).replace(".0", ""), [got[k], want[k]])
 
 
 func _case_weight(c: Dictionary) -> void:

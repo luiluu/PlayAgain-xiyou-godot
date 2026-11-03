@@ -29,7 +29,7 @@ const flags = () => ({unlocked: [!!w.$gameParty._codexLeviathanUnlocked, !!w.$ga
   recipes: [!!w.$gameParty.recipeKnown(457), !!w.$gameParty.recipeKnown(458)]});
 const pos = note => (String(note).match(/<pos=APs text=\\c\[1\][^>]*?size=/g) || []);
 const snap = it => ({base: it.baseItemId, orig: it.originalBaseItemId, name: it.name, baseName: it.baseItemName, icon: it.iconIndex,
-  description: it.description, params: it.params.slice(), metaKeys: Object.keys(it.meta).filter(k => /^Codex/.test(k)).sort(),
+  description: it.description, params: it.params.slice(), traits: it.traits.map(t => [t.code, t.dataId, t.value]), metaKeys: Object.keys(it.meta).filter(k => /^Codex/.test(k)).sort(),
   tags: ['<CodexHeartsteel>', '<CodexLeviathan>', '<CodexHubris>', '<CodexAtaraxia>'].filter(t => it.note.includes(t)), pos: pos(it.note),
   stacks: it._codexHeartsteelStacks, hp: it._codexHeartsteelHp, fame: it._codexHubrisFame});
 const SKILLS = [10227, 10228];
