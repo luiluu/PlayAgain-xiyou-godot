@@ -15,7 +15,8 @@ extends RefCounted
 ## - 得到数据库那件 7940（事件、商店）改由账本发；带 uid 的被直接失去（卖出、存仓库、分解）记 removed。按底子扣（事件）不记，原版独立物品留在
 ##   $dataArmors 里、重放找得到就不重发，重制用 flags._codexCrownKnown 记「本档建过的 uid」顶替。
 ## 编号：原版 crypto 16 字节，重制 Crypto 16 字节。开战掷点：原版 Math.random，重制取战斗规则流。
-## 未做：图标 Codex_DemonCrown 图（没转换）、RJO.HE 详情数字取整、战力（CodexCombatPower）、CodexZones。
+## 图标 290000 画整张 Codex_DemonCrown（icon_texture，XUI／大图标接）；说明行小数按 D.display 取整（desc_rows，RJO.HE.getDescParams 包装）；
+## replay 后清战力缓存（CodexCombatPower.clearCache）。CodexZones.invalidate：五乘区不移植，不用做。
 
 const ARMOR := 7940
 const ICON := 290000
@@ -84,6 +85,35 @@ static func next(b: float) -> float:
 ## D.display：Math.round
 static func display(v: float) -> String:
 	return str(floori(v + 0.5))
+
+## CodexQualityIcons demonCrownArt：图标 290000 画整张 img/system/Codex_DemonCrown（1254×1254），按格子大小平滑缩放
+static var _icons := {}
+static func icon_texture(size := 32) -> AtlasTexture:
+	if not _icons.has(size):
+		var p := XDB.img_path("system", "Codex_DemonCrown")
+		if p == "":
+			return null
+		var img: Image = (load(p) as Texture2D).get_image()
+		if img.is_compressed():
+			img.decompress()
+		img.resize(size, size, Image.INTERPOLATE_LANCZOS)
+		var a := AtlasTexture.new()  # XUI.icon_texture 要 AtlasTexture（大图标按 region 取）
+		a.atlas = ImageTexture.create_from_image(img)
+		a.region = Rect2(0, 0, size, size)
+		_icons[size] = a
+	return _icons[size]
+
+## RJO.HE.getDescParams 包装：先 describe，算出的行里带小数的数字按 D.display 取整（XHelpCard.desc_params 调）
+static func desc_rows(item: Dictionary, rows: Array) -> void:
+	var dec := RegEx.create_from_string("[-+]?\\d+\\.\\d+")
+	for r in rows:
+		var t := str(r[0])
+		var out := ""
+		var at := 0
+		for m in dec.search_all(t):
+			out += t.substr(at, m.get_start() - at) + display(m.get_string().to_float())
+			at = m.get_end()
+		r[0] = out + t.substr(at)
 
 static func gear(a) -> Dictionary:
 	if a is XActor:
@@ -260,7 +290,8 @@ static func replay(s: XState) -> bool:
 	for a in s.actors.values():
 		if not gear(a).is_empty():
 			a.refresh_passive()
-			a.param_mark_dirty()
+			a.param_mark_dirty()  # CodexZones.invalidate：五乘区不移植（O-044／O-050），没有要清的
+	XPower.clear_cache()  # CodexCombatPower.clearCache
 	_mutating = false
 	return true
 

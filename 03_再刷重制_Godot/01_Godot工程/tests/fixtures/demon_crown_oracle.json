@@ -772,6 +772,28 @@
    "errors": []
   },
   {
+   "id": "help",
+   "setup": {
+    "bonus": 12.3456
+   },
+   "observed": {
+    "note": "<CodexDemonCrown>\n<dh:183>\n<req_level:50>\n<Random Variance: 0>\n<pos=APs text=等级需求：50 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]效果：战斗胜利后积累八项全属性加成 size=18 color=rgba(120,165,255,1) line=false align=0>\n<pos=APs text=代价：死亡时失去50%当前累计加成 size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n4897-4901 15% 4800-4896 40%\n</Prefixes>\n\n\n<Variable 206 sell Price: 50>\n<pos=APs text=\\c[6]神话特效:物攻魔攻+40% size=18 color=rgba(255,255,255,1) line=false align=0>\n\n\n\n\n\n\n\n\n<quality:14>\n<ici:14>\n\n<pos=APs text=成长：八项全属性＋12% size=18 color=rgba(255,255,255,1) line=false align=0>\n",
+    "rows": [
+     "\"头顶\"",
+     "神武\n欲加冕成王，必承其重",
+     "品质：神话（神话特效·神武）",
+     "成长：八项全属性＋12%",
+     "\\c[6]神话特效:物攻魔攻+40%",
+     "代价：死亡时失去50%当前累计加成",
+     "\\c[1]效果：战斗胜利后积累八项全属性加成",
+     "等级需求：50",
+     "购买价格：10000",
+     "出售价格：5000"
+    ]
+   },
+   "errors": []
+  },
+  {
    "id": "battle.win",
    "setup": {},
    "observed": {

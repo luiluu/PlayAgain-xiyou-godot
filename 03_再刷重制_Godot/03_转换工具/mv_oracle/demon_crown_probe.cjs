@@ -71,6 +71,18 @@ cases.push(makeCase('grant', {}, () => {
   return {item: snap(it), count: two, ledger: ledger(), seq: seq(), params: [before, [0, 2, 3, 4].map(i => a.param(i))], toasts: toasts.slice()};
 }));
 
+// 说明行（growth3）：RJO.HE.getDescParams 包装，describe 后带小数的数字按 D.display 取整
+cases.push(makeCase('help', {bonus: 12.3456}, () => {
+  fresh();
+  const it = grant();
+  it._codexCrownBonus = 12.3456;
+  D.describe(it);
+  const v = w.JsonEx.makeDeepCopy(it);
+  delete v.descParams;
+  w.RJO.HE.getDescParams(v, 2);
+  return {note: it.note, rows: v.descParams.map(r => String(r[0]))};
+}));
+
 // ③ 战斗成长
 cases.push(makeCase('battle.win', {}, () => {
   fresh();

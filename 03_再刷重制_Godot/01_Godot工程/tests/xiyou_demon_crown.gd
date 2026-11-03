@@ -173,6 +173,22 @@ func _run(c: Dictionary) -> void:
 			s.gain_gear("armor", XDemonCrown.ARMOR, 2)
 			_cmp(id + ".item", _snap(it), want.item)
 			_cmp(id, {"count": _crowns().size(), "ledger": _ledger(), "seq": _seq()}, {"count": want.count, "ledger": want.ledger, "seq": want.seq})
+		"help":
+			_fresh()
+			var it := _grant()
+			it[XDemonCrown.BONUS] = float(c.setup.bonus)
+			XDemonCrown.describe(it)
+			# 神话词条（品质行的标签、\\c[n] 词条行）是重制自己掷的，不比
+			var no_affix := func(t): return not (str(t).begins_with("品质：") or str(t).contains("特效") or (str(t).begins_with("\\c[") and not str(t).begins_with("\\c[1]")))
+			_cmp(id, XHelpCard.desc_params(it, 2).map(func(r): return str(r[0])).filter(no_affix), (want.rows as Array).filter(no_affix))
+			# getDescParams 包装：带小数的数字（连正负号）换成 D.display（Math.round，正号丢掉）
+			var rr := [["物攻+1.5%，暴击-2.49", 12, "", false, null]]
+			XDemonCrown.desc_rows(it, rr)
+			check(id + ".round", rr[0][0] == "物攻2%，暴击-2", rr[0][0])
+			# 图标 290000：整张 Codex_DemonCrown 缩到格子大小（切片 system 图）
+			var ic := XUI.icon_texture(XDemonCrown.ICON)
+			var big := XDemonCrown.icon_texture(128)
+			check(id + ".icon", ic != null and ic.get_width() == 32 and big != null and big.get_width() == 128, [ic, big])
 		"battle.win":
 			_fresh()
 			var a := s.actor(1)
