@@ -14,7 +14,7 @@
 
 - 核查覆盖：cc/bajie-growth4（245e30ba）、cc/wukong-honghuang2（296a571a）、cc/nezha-tools50（44371eb1）、cc/nezha-tools51（a70c62bc）、cc/wukong-xuan2（effc9fa4）
 - 结论：P1、P2 无；P3 四条（growth4 一条测试自比、honghuang2 一条弹字、xuan2 两条）。五条都通过。
-- 验证：对着冻结 v0.28 读码；4 个原版探针（demon_crown 20、honghuang_curse_battle 34、honghuang_reward 44、xuan_battle 33 例）在本树重跑，产物与夹具逐例相等；专项见「验证」。没跑全量。
+- 验证：对着冻结 v0.28 读码；专项 8 个全过；4 个原版探针（demon_crown 20、honghuang_curse_battle 34、honghuang_reward 44、xuan_battle 33 例）在本树重跑，产物与夹具逐例相等；专项见「验证」。没跑全量。
 
 ## 问题
 
@@ -83,5 +83,5 @@
 ## 验证
 
 - 原版探针重跑（本树，`NODE_PATH` 指主工作区 node_modules）：demon_crown 20、honghuang_curse_battle 34、honghuang_reward 44、xuan_battle 33 例，与 `tests/fixtures/` 夹具逐例相等。
-- 专项：（待填）
+- 专项 8 个全过：`xiyou_demon_crown` 106、`xiyou_guyu_battle` 1637、`xiyou_honghuang_curse_battle` 342、`xiyou_honghuang_reward` 311、`xiyou_xuan_battle` 246、`xiyou_passive_content` 113142、`xiyou_pushstate` 89、`xiyou_state_js` 1733（日志 `04_验证/本地结果/并行测试/20261103_193819_mkqp6d8h`）。
 - `探针登记检查.py` 通过（存量 23）。
