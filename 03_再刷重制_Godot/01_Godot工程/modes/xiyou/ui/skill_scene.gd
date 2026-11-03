@@ -33,8 +33,9 @@ var top := 0
 var actor_pick := 0
 ## 用了带公共事件（效果 44）的技能：菜单整个关掉回地图执行（Scene_ItemBase.checkCommonEvent，主菜单读它）
 var to_map := false
-## 菜单里用了会回地图执行、但重制还没有对应画面的技能：璇「星谱」10349（CE9015 CodexXuan.openStarchart()，星谱页待做），先保持不可用（蜂鸣），免得点了关菜单却什么都不发生
-const MENU_UNBUILT := [10349]
+## 菜单里用了会回地图执行、但重制还没有对应画面的技能（先保持不可用、蜂鸣，免得点了关菜单却什么都不发生）。
+## 璇「星谱」10349（CE9015 CodexXuan.openStarchart()）xuan1 起有了星谱页（ui/xuan_chart_page.gd），目前没有这样的技能
+const MENU_UNBUILT := []
 var actor_top := 0
 var type_win: XMVWindow
 var status_win: XMVWindow

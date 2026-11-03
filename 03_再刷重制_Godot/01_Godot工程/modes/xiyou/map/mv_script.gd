@@ -26,6 +26,7 @@ extends RefCounted
 ## - 魔兽要诀：Star.PetSystem.ComEveLearnSkill(N) → XPets.learn_book（出战宠物学技能，提示走 host.toast）。
 ## - 已移除地图提示：CodexMapRemoval.notice(N) → 文字「【区域已移除】…」（Map080 王座宝箱，见 MVInterpreter.removed_gate_fix）。
 ## - 批量抽奖：if(window.CodexCasino)CodexCasino.open(this[,"twenty"]);else … → XCasinoBatch.open（等这一局结束）。
+## - 洪荒诅咒自选（公共事件 1442）：列候选、连问 5 次（不可取消）、写变量 1468～1472 三段 → XHonghuang（选项窗走 host.show_message）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## 正式版移除的地图（Codex_StabilityPerformancePatch 1.1）：地图 ID → 名字
@@ -110,6 +111,9 @@ static func run(code: String, interp) -> Array:
 	var casino := _re("^if\\(window\\.CodexCasino\\)CodexCasino\\.open\\(this(?:,\\s*\"(twenty)\")?\\);else \\$gameMessage\\.add\\(\"[^\"]*\"\\);?$").search(js)
 	if casino:
 		await XCasinoBatch.open(interp, "twenty" if casino.get_string(1) == "twenty" else "single")
+		return []
+	# 洪荒诅咒自选（公共事件 1442，见 XHonghuang）：开头列候选、连问 5 次、写变量 1468～1472 三段
+	if await _honghuang_curse(js, interp):
 		return []
 	if js == "Star.RunForgetSkill();":  # 遗忘河之水 CE83：选中角色的遗忘界面（Star_Scene_ForgetSkill）
 		if interp.host.has_method("open_forget_skill"):
@@ -347,6 +351,11 @@ static func _statements(js: String, interp) -> Array:
 		if st == "CodexTusu.openForge()":
 			if s.party.has(XTusu.ACTOR) and interp.host.has_method("open_tusu_forge"):
 				await interp.host.open_tusu_forge()
+			continue
+		# 公共事件 9015 璇的星谱（技能「星谱」，战斗外）：CodexXuan.openStarchart() 璇在队才开（B.openMenu → starMenu），不在队什么都不做
+		if st == "CodexXuan.openStarchart()":
+			if s.party.has(XTusuXuan.XUAN) and interp.host.has_method("open_xuan_chart"):
+				await interp.host.open_xuan_chart()
 			continue
 		if st == "CodexYunshang.openCrafting()" and interp.host.has_method("open_yunshang_shop"):
 			await interp.host.open_yunshang_shop()
@@ -921,6 +930,43 @@ static func _has_gear(s: XState, kind: String, base_id: int) -> bool:
 	return false
 
 
+## 公共事件 1442 的三段脚本（原文整段比对，去掉空白）：认得返回 true
+const _HH_OFFER := "vararr=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];$gameTemp._hhCurseOffer=arr;$gameTemp._hhCursePicked=[];"
+const _HH_ASK := "vart=$gameTemp,p=t._hhCursePicked,left=t._hhCurseOffer.filter(function(i){returnp.indexOf(i)<0;});vartext=function(i){returnCodexHonghuang.curseLabel(i);};$gameMessage.setFaceImage('SF_People2',5);$gameMessage.setBackground(0);$gameMessage.setPositionType(2);$gameMessage.add('\\\\n<破阵·投影>选择要承受的第'+(p.length+1)+'个诅咒（共选5个）');$gameMessage.setChoices(left.map(text),0,-1);$gameMessage.setChoiceBackground(0);$gameMessage.setChoicePositionType(2);$gameMessage.setChoiceCallback(function(n){p.push(left[n]);});this.setWaitMode('message');"
+const _HH_SAVE := "varp=$gameTemp._hhCursePicked;for(vark=0;k<5;k++)$gameVariables.setValue(1468+k,p[k]);delete$gameTemp._hhCurseOffer;delete$gameTemp._hhCursePicked;"
+
+
+static func _honghuang_curse(js: String, interp) -> bool:
+	var flat := _re("\\s+").sub(js, "", true)
+	if flat == _HH_OFFER:
+		XHonghuang.offer = range(1, 16)
+		XHonghuang.picked = []
+		return true
+	# 没先列候选就问／就写（原版这里读 undefined 抛错）：正式流程走不到，认得但不做事
+	if flat == _HH_ASK:
+		if XHonghuang.offer == null or XHonghuang.picked == null:
+			return true
+		var left := XHonghuang.left()
+		await interp.flush_message()
+		var n: int = await interp.host.show_message({"face": "SF_People2", "index": 5, "background": 0, "position": 2,
+			"lines": ["\\n<破阵·投影>选择要承受的第%d个诅咒（共选5个）" % (XHonghuang.picked.size() + 1)],
+			"choices": left.map(func(i): return XHonghuang.curse_label(int(i))), "cancel": -1, "default": 0, "choice_position": 2, "choice_background": 0})
+		if n >= 0 and n < left.size():
+			XHonghuang.picked.append(left[n])
+		return true
+	if flat == _HH_SAVE:
+		if XHonghuang.picked == null:
+			return true
+		var s := XState.current
+		for k in XHonghuang.PICKS:
+			# p[k] 没选满时是 undefined，变量读回 0
+			s.set_variable(XHonghuang.FIRST_VARIABLE + k, int(XHonghuang.picked[k]) if k < XHonghuang.picked.size() else 0)
+		XHonghuang.offer = null
+		XHonghuang.picked = null
+		return true
+	return false
+
+
 ## 「所有角色学会/忘记技能」的几种循环写法 → actor_op 列表；认不出返回空
 static func _actor_loop(js: String) -> Array:
 	var flat := js.replace("\n", " ")
@@ -948,7 +994,8 @@ static func _actor_loop(js: String) -> Array:
 	var body := head.get_string(2)
 	var calls := _re("(forgetSkill|learnSkill)\\((\\d+)\\)").search_all(body)
 	# CE1431／1432 的 if(actor)：actor(j) 为空只在没有该角色数据时，角色操作本来就只落到有数据的角色（沙僧二审 S2-1-02）
-	var plain := body.replace("if($dataActors[j].name != '')", "").replace("if ($dataActors[j].name != '')", "").replace("if(actor)", "").replace("if (actor)", "")
+	# 名字检查有带空格与不带空格两种（CE1442 洪荒诅咒写 if($dataActors[j].name!='')）
+	var plain := _re("if\\s*\\(\\s*" + _NAMED + "\\s*\\)").sub(body, "", true).replace("if(actor)", "").replace("if (actor)", "")
 	if calls.is_empty() or _re("\\b(if|else)\\b").search(plain):
 		return []
 	var named := _re(_NAMED).search(body) != null

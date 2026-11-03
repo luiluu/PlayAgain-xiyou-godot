@@ -213,6 +213,7 @@ want tools && { if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; the
 want tools && { if python3 "$ENV_DIR/测试云端准备.py"; then ok "云端导入失败保护"; else bad "云端导入保护回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试回退开关覆盖.py" >/dev/null 2>&1; then ok "优化开关回退支覆盖检查"; else bad "回退开关覆盖检查回归失败，单跑 07_开发环境/测试回退开关覆盖.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试探针登记检查.py" >/dev/null 2>&1; then ok "探针五乘区检查"; else bad "探针五乘区检查回归失败，单跑 07_开发环境/测试探针登记检查.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试提交守卫.py" >/dev/null 2>&1; then ok "主工作区 main 提交守卫"; else bad "提交守卫回归失败，单跑 07_开发环境/测试提交守卫.py 看详情"; fi; }
 # 测试选测满载偶发 1 项失败、单跑复现不了：失败时打出用例名，整份输出留在 本地结果/选测回归/ 当证据（tools22）
 if want tools; then
