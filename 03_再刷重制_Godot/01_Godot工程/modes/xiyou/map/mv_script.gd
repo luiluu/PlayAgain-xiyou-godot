@@ -26,6 +26,7 @@ extends RefCounted
 ## - 魔兽要诀：Star.PetSystem.ComEveLearnSkill(N) → XPets.learn_book（出战宠物学技能，提示走 host.toast）。
 ## - 已移除地图提示：CodexMapRemoval.notice(N) → 文字「【区域已移除】…」（Map080 王座宝箱，见 MVInterpreter.removed_gate_fix）。
 ## - 批量抽奖：if(window.CodexCasino)CodexCasino.open(this[,"twenty"]);else … → XCasinoBatch.open（等这一局结束）。
+## - 洪荒诅咒自选（公共事件 1442）：列候选、连问 5 次（不可取消）、写变量 1468～1472 三段 → XHonghuang（选项窗走 host.show_message）。
 
 const _NAMED := "\\$dataActors\\[j\\]\\.name\\s*!==?\\s*['\"]{2}"
 ## 正式版移除的地图（Codex_StabilityPerformancePatch 1.1）：地图 ID → 名字
@@ -936,7 +937,10 @@ static func _honghuang_curse(js: String, interp) -> bool:
 		XHonghuang.offer = range(1, 16)
 		XHonghuang.picked = []
 		return true
-	if flat == _HH_ASK and XHonghuang.offer != null and XHonghuang.picked != null:
+	# 没先列候选就问／就写（原版这里读 undefined 抛错）：正式流程走不到，认得但不做事
+	if flat == _HH_ASK:
+		if XHonghuang.offer == null or XHonghuang.picked == null:
+			return true
 		var left := XHonghuang.left()
 		await interp.flush_message()
 		var n: int = await interp.host.show_message({"face": "SF_People2", "index": 5, "background": 0, "position": 2,
@@ -945,7 +949,9 @@ static func _honghuang_curse(js: String, interp) -> bool:
 		if n >= 0 and n < left.size():
 			XHonghuang.picked.append(left[n])
 		return true
-	if flat == _HH_SAVE and XHonghuang.picked != null:
+	if flat == _HH_SAVE:
+		if XHonghuang.picked == null:
+			return true
 		var s := XState.current
 		for k in XHonghuang.PICKS:
 			# p[k] 没选满时是 undefined，变量读回 0
