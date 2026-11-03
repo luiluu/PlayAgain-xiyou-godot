@@ -12,6 +12,7 @@ const KNOWN_FILE := "res://tests/fixtures/script_census_known.json"
 
 var results: Array = []
 var host
+var last_logic: XBattleLogic   # 最近一次 _try_battle 用的战斗，供读敌人数据的断言取值
 
 
 ## 记录替身宿主再补上地图宿主才有的界面入口（脚本按 has_method 找它们；没有就当认不出）
@@ -125,6 +126,7 @@ func _try_battle(row: Dictionary) -> Array:
 	var l := XBattleLogic.new()
 	l.elite_roll = 100.0
 	l.setup(2, s)
+	last_logic = l
 	var list := []
 	match row.kind:
 		"script":
@@ -168,8 +170,10 @@ func _run() -> void:
 			# 「再次释放」一族（Game_Action＋forceAction，CE345 等）：战斗事件解释器 XBattleEventRunner._recast_script 原生处理
 			# （xiyou_battle_common_events 的 recast_* 与 battle_common_event_oracle 参照），战斗里认得就不算认不出；
 			# 地图解释器本来不跑它（只在战斗里触发）。认不出的变体（正则对不上）仍会进 unknown。
-			if r.kind == "script" and "new Game_Action(actor, true)" in str(r.code) and "BattleManager.forceAction(actor)" in str(r.code) \
-					and (await _try_battle(r)).is_empty():
+			# 捕获网的 CE173 `Star.PetSystem.PetGet()` 同理：只有战斗道具（物品 200／315／316／317，使用场合＝战斗）会调，XBattleEventRunner 认（XPetCapture.pet_get）
+			var battle_only: bool = r.kind == "script" and ((("new Game_Action(actor, true)" in str(r.code) and "BattleManager.forceAction(actor)" in str(r.code))) \
+					or str(r.code).strip_edges() == "Star.PetSystem.PetGet()")
+			if battle_only and (await _try_battle(r)).is_empty():
 				native += 1
 				continue
 			r["miss"] = miss
@@ -193,6 +197,26 @@ func _run() -> void:
 			battle_known += 1
 		print("CENSUS_BATTLE ", JSON.stringify({"key": key, "miss": bm.slice(0, 3)}))
 	print("CENSUS_BATTLE_KNOWN ", battle_known)
+	# 变量操作读敌人游戏数据（122 操作数 游戏数据 4＝敌人，序号 0；原版 gameDataOperand case 4：0 HP、1 MP、2～9＝param(0～7)）：
+	# 认得之外再看读出的值对不对（取 0 说明序号或类型走歪了）；只在战斗里有敌人，地图解释器不跑
+	var enemy_reads := 0
+	for key in rows:
+		var r: Dictionary = rows[key]
+		if r.kind != "var":
+			continue
+		var c: Dictionary = JSON.parse_string(str(r.code))
+		var q: Array = c.parameters
+		if int(q[3]) != 3 or int(q[4]) != 4:
+			continue
+		var bm: Array = await _try_battle(r)
+		var e = last_logic.enemy_at(int(q[5]))
+		var want := 0.0
+		if e != null:
+			want = e.hp if int(q[6]) == 0 else (e.mp if int(q[6]) == 1 else e.param(int(q[6]) - 2))
+		var got := XState.current.variable(int(q[0]))
+		enemy_reads += 1
+		_check("enemy_read_%d_%d" % [int(q[0]), int(q[6])], bm.is_empty() and e != null and got == want and (int(q[6]) != 0 or got > 0), [got, want, bm])
+	_check("enemy_reads_seen", enemy_reads >= 9, enemy_reads)   # 9 种（变量 318、1341～1348）都被看到
 	_check("known_still_unknown", fixed.is_empty(), fixed)
 	_finish()
 
