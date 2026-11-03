@@ -1376,6 +1376,16 @@ func open_yunshang_shop() -> void:
 	hud.visible = true
 
 
+## 公共事件 9014「屠苏器谱」：CodexTusu.openForge() → B.openMenu → Scene_CodexBindMenu（XTusuForge），关闭后回到地图
+func open_tusu_forge() -> void:
+	hud.visible = false
+	var page := XTusuForge.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 ## 公共事件 169「宠物」：SceneManager.push(Scene_PetSystem)，关闭后回到地图
 func open_pets() -> void:
 	hud.visible = false

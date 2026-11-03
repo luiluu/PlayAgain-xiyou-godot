@@ -21,7 +21,8 @@ extends RefCounted
 ## 【cc·白龙·未经审查】tusu5 补齐：武相支援（屠苏自用、内部施放、持武者行动触发、回合末释放、上下限与成长加成）、锁定与和鸣的消费、挫势、
 ## 止戈环 60 级与五兵淬纹（installThreeGrowthRelicRuntime 的屠苏部分：分段、横扫多目标、锻痕、护阵首伤护盾、挫势减伤、开刃·书护持）、开刃三相、
 ## 自动战斗与智能 AI 估算、战斗日志台词、器谱开刃逻辑。
-## 还没做（画面）：指令窗（武相支援一栏、易武子菜单、「待命」改名、持武者指令去重）、器谱菜单、支援目标选择的取消返回。
+## tusu7 补画面：指令窗（武相支援一栏、易武子菜单、「待命」改名、持武者指令去重，见 command_entries／battle_listed 与 battle_scene）、
+## 支援目标选择的取消回指令窗、器谱菜单（ui/tusu_forge.gd，公共事件 9014），专项 tests/xiyou_tusu_ui.gd。
 ## 原版锁定、和鸣、护阵倍率另被超强者路线压制往 1 收（O-050 不移植），参照里关掉。
 ## 参照：mv_oracle/tusu_battle_probe.cjs（tests/fixtures/tusu_battle_oracle.json），测试 tests/xiyou_tusu_battle.gd。
 
@@ -989,7 +990,7 @@ static func ai_raw(a, b, item: Dictionary):
 	return 0.0
 
 
-# ---- 器谱：开刃（T.forgeRows／setKairen／syncKairenSkills；菜单画面没做） ----
+# ---- 器谱：开刃（T.forgeRows／setKairen／syncKairenSkills；菜单画面在 XTusuForge） ----
 const REFORGE_ITEM := 2530
 const REFORGE_COUNT := 10
 const FORGE_NAMES := {"forgeInfo": "每次进阶可开刃一相，最多三相；重新开刃消耗人道意志碎片×10", "forgePick": "第%d道铭文：选择开刃的武相",
@@ -1199,6 +1200,42 @@ static func meets(a, skill: Dictionary) -> bool:
 ## attackSkillId 包装：战斗中绑定时恒为归形
 static func attack_id(a, native: int) -> int:
 	return RETURN_SKILL if is_tusu(a) and _in_battle() and XBinding.is_bound(a) else native
+
+
+# ---- 战斗指令窗（Window_ActorCommand／Window_BattleSkill 包装，tusu7） ----
+## 武具态的屠苏（绑定中）：指令窗只有「易武」一栏技能、加「武相支援」、防御改名「待命」
+static func bound_tusu(a) -> bool:
+	return is_tusu(a) and XBinding.is_bound(a)
+
+
+## makeCommandList 包装：持武者的技能栏按技能类型去重；武具态在第 2 行插「武相支援」（当前武相的支援技能名，没有时「武相支援」，
+## 能用才亮），防御改名「待命」。entries 是 battle_scene 的指令行 {text, key, enabled, preview}
+static func command_entries(logic, a, entries: Array) -> Array:
+	if weapon_of_host(a) != null:
+		var seen := {}
+		entries = entries.filter(func(e):
+			if not str(e.key).begins_with("stype:"):
+				return true
+			if seen.has(e.key):
+				return false
+			seen[e.key] = true
+			return true)
+	if bound_tusu(a):
+		var sk := support_skill(a)
+		entries.insert(mini(1, entries.size()), {"text": str(sk.name) if not sk.is_empty() else "武相支援", "key": "tusuSupport",
+			"enabled": not sk.is_empty() and logic.can_use(a, sk) and logic.can_move(a), "preview": sk if not sk.is_empty() else null})
+		for e in entries:
+			if e.key == "guard":
+				e.text = "待命"
+	return entries
+
+
+## Window_BattleSkill.includes 包装：武具态的屠苏只列解锁了的易武
+static func battle_listed(a, skill: Dictionary, stype: int) -> bool:
+	if bound_tusu(a):
+		var key := key_of(skill)
+		return key.begins_with("yiwu.") and unlocked(a, key)
+	return int(skill.get("stypeId", 0)) == stype
 
 
 ## Game_Action.apply 包装：归形、易武、化武只做自己的事（makeSuccess）；返回 {} 表示不是这三个

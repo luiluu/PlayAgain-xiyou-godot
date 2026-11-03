@@ -31,6 +31,8 @@ var type_top := 0
 var index := 0
 var top := 0
 var actor_pick := 0
+## 用了带公共事件（效果 44）的技能：菜单整个关掉回地图执行（Scene_ItemBase.checkCommonEvent，主菜单读它）
+var to_map := false
 var actor_top := 0
 var type_win: XMVWindow
 var status_win: XMVWindow
@@ -97,8 +99,15 @@ func current() -> Dictionary:
 
 
 ## Game_BattlerBase.canUse（地图上）：场合为「随时」或「菜单」，且满足消耗/武器/冷却
+## （XBattleLogic.can_use 按战斗中只认场合 0、1；菜单场合 2 的技能如屠苏「器谱」照「随时」交给它判其余条件，tusu7）
 func usable(skill: Dictionary) -> bool:
-	return not skill.is_empty() and int(skill.get("occasion", 0)) in [0, 2] and logic.can_use(actor(), skill)
+	if skill.is_empty() or not int(skill.get("occasion", 0)) in [0, 2]:
+		return false
+	var s := skill
+	if int(skill.occasion) == 2:
+		s = skill.duplicate()
+		s.occasion = 0
+	return logic.can_use(actor(), s)
 
 
 func _list_rows() -> int:
@@ -282,6 +291,9 @@ func ok() -> void:
 				XSound.system(3)
 				return
 			XSound.system(1)
+			if not _for_friend(current()):
+				use_skill()  # Scene_Skill.determineItem：不是对我方的（器谱这类 scope 0）不选人，直接用、留在列表
+				return
 			mode = "actor"
 			actor_pick = 0
 			actor_top = 0
@@ -309,10 +321,11 @@ func use_skill() -> void:
 	var s := current()
 	var a := actor()
 	var members := XState.current.members()
+	var friend := _for_friend(s)
 	var targets: Array = members if int(s.get("scope", 0)) in [8, 10] else ([a] if int(s.get("scope", 0)) == 11 else [members[clampi(actor_pick, 0, members.size() - 1)]])
 	var dead_ok := int(s.get("scope", 0)) in [9, 10]
-	targets = targets.filter(func(t): return t.is_dead() == dead_ok)
-	if not usable(s) or targets.is_empty():
+	targets = targets.filter(func(t): return t.is_dead() == dead_ok) if friend else []
+	if not usable(s) or (friend and targets.is_empty()):
 		XSound.system(3)
 		return
 	XSound.system(23)
@@ -323,6 +336,18 @@ func use_skill() -> void:
 	for t in targets:
 		for e in s.get("effects", []):
 			logic._effect(a, t, e, {"skill": s, "hp": 0.0, "mp": 0.0, "added": [], "removed": []})
+	# Game_Action.applyGlobal 预约公共事件（效果 44），checkCommonEvent 有预约就回地图
+	for e in s.get("effects", []):
+		if int(e.code) == 44:
+			XState.current.reserve_common_event(int(e.dataId))
+	if XState.current.peek_common_event() > 0:
+		to_map = true
+		closed.emit()
+
+
+## Game_Action.isForFriend：scope 7～11
+static func _for_friend(s: Dictionary) -> bool:
+	return int(s.get("scope", 0)) in [7, 8, 9, 10, 11]
 
 
 ## Scene_MenuBase.nextActor/previousActor：换角色后回到类型窗
