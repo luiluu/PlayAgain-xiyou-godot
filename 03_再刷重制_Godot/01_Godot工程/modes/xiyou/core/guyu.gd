@@ -642,8 +642,10 @@ static func root(g, forced: bool) -> void:
 		g.immortal = false
 		g.add_state(1)
 		g.hp = 0.0
-		if not g.state_ids.has(1):  # 死亡免疫不能取消已经成立的代命
-			g.state_ids.append(1)
+		if not g.state_ids.has(1):  # 死亡免疫不能取消已经成立的代命：照原版补 addNewState、resetStateCounts、pushAddedState（审查 31 P3-1）
+			g.add_new_state(1)
+			g.reset_state_counts(1)
+			g.push_state_result("addedStates", 1)
 		r.root_until = round + 1
 		internal -= 1
 	r.root_until = round + 1
