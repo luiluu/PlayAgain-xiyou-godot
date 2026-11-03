@@ -1,7 +1,7 @@
 # 交付：cc/bailong-xuan-fix1
 
 - 车道／工作者：E 角色专属／白龙（cc，xuan-fix1）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -34,8 +34,9 @@
 ## 验证
 
 - `语法检查.py` 通过。
-- 选测（`选测.py main --list` 列出的 7 个全跑）：待写
+- 选测（`选测.py main --list` 列出的 7 个全跑，全过）：`xiyou_xuan_chart` 133／133（原 128＋新 5）、`xiyou_growth_forge` 538／538、`xiyou_xuan_battle` 246／246、`xiyou_crafting` 49／49、`xiyou_gold_cap` 37／37、`xiyou_system_evidence` 15／15、`xiyou_event_compare` 5／5。没跑反向验证：P2 两条断言在旧代码下名册会是 `[8.0, 8]`／`[9.0, 10, 9]`，P1 旧代码 `mark_rows` 直接越界返回空，读码可确认咬得住。
 
 ## 本分支提交
 
-- 本提交：修 P1-1、P2-1、P3-1，加测试，登记 O-待定。
+- 9a97f0f9 修 P1-1、P2-1、P3-1，加测试，登记 O-待定
+- 本提交：交付单填验证、标可合并
