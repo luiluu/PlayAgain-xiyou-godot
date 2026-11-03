@@ -278,11 +278,19 @@ func _save_roundtrip() -> void:
 	var d := s.to_dict()
 	check("save.key", d.get("codexGarou") == {"breakthroughs": 77.0, "catalyst": true}, d.get("codexGarou"))
 	var back := XState.from_dict(JSON.parse_string(JSON.stringify(d)))
-	check("save.roundtrip", back.garou == {"breakthroughs": 77.0, "catalyst": true}, back.garou)
+	check("save.roundtrip", int(back.garou.get("breakthroughs", -1)) == 77 and back.garou.get("catalyst") == true, back.garou)
 	d.erase("codexGarou")
 	var old := XState.from_dict(JSON.parse_string(JSON.stringify(d)))
 	XState.current = old
-	check("save.old", old.garou.is_empty() and XGarou.breakthroughs(old.actor(XGarou.ACTOR)) == 0, old.garou)
+	check("save.old", int(old.garou.get("breakthroughs", 0)) == 0 and not old.garou.get("catalyst", false) and XGarou.breakthroughs(old.actor(XGarou.ACTOR)) == 0, old.garou)
+	# 读档同步（extractSaveContents 包装）：清战斗内进化／琦玉，并把缺的形态状态补回来
+	var s2 := _setup(2, 30)
+	var d2 := s2.to_dict()
+	XGarou.evolution = 2
+	XGarou.saitama = true
+	var loaded := XState.from_dict(JSON.parse_string(JSON.stringify(d2)))
+	check("save.load_clear", XGarou.evolution == 0 and not XGarou.saitama, [XGarou.evolution, XGarou.saitama])
+	check("save.load_sync", _forms(loaded.actor(XGarou.ACTOR)) == [XGarou.STATES[2]], _forms(loaded.actor(XGarou.ACTOR)))
 
 
 func _run() -> void:
