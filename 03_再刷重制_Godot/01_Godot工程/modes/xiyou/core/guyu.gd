@@ -690,7 +690,8 @@ static func regenerate(g) -> void:
 # ---- Game_Action.apply 包装、花期、转移、花荫、终结 ----
 
 ## Game_Action.apply 包装（异化之外、种族之内）：G.healing、doSpecial，花期／转移／花荫／终结没生效就整次不结算；行动执行标记
-static func apply(logic, u, skill: Dictionary, t) -> Dictionary:
+## inner：里层（心钢拦截＋原 apply）；不给就直接调 logic._apply_core
+static func apply(logic, u, skill: Dictionary, t, inner := Callable()) -> Dictionary:
 	var k := key(skill)
 	var prev := healing
 	healing = {"guyu": own(u), "direct": int(skill.get("damage", {}).get("type", 0)) == 3 or skill.get("effects", []).any(func(x): return int(x.code) == 11)}
@@ -708,7 +709,7 @@ static func apply(logic, u, skill: Dictionary, t) -> Dictionary:
 			"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
 	if not current().is_empty():
 		current().executed = true
-	var r: Dictionary = logic._apply_core(u, skill, t)
+	var r: Dictionary = inner.call() if inner.is_valid() else logic._apply_core(u, skill, t)
 	if k in ["open", "transfer", "shield"] and _special_done and r.has("result"):
 		r.result.success = true  # makeSuccess
 	healing = prev
