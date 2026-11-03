@@ -1,7 +1,7 @@
 # 交付：cc/nezha-tools50
 
 - 车道／工作者：D 工具／哪吒（cc）
-- 状态：进行中（额度到线，WIP 停手；已做的 7 个可单独合并，见接续）
+- 状态：可合并（二期做完，存量 50→28；剩余见接续）
 
 ## 变更记录草稿
 
@@ -21,9 +21,13 @@
 
 - `探针登记检查.py` 通过（存量 43）、`测试探针登记检查.py` 通过。其余只靠上面的前后产物比对；没跑全量、没跑选测（总装 15 号收尾通知说不用）。
 
+## 二期（本次，15 个）
+
+- 加开关并前后比对：skill_change_to、nanoha_kill、nanoha2、boss_react、boss_sequence、boss_state_origin、boss_output_context、attack_query、binding、cat_trial、state_js、review_fix 共 12 个产物逐字相同，直接从存量删。
+- 产物变了的 3 个：toji（伤害 growth 1.04→1，如 1269219→1219452）、param_cache、pushstate。toji、param_cache 的参照是同步生成的 generated/oracle（不入 Git），换成新产物后 xiyou_toji*、xiyou_param_cache、xiyou_boss_state_origin 全过；pushstate 更新 `tests/fixtures/pushstate_oracle.json`，xiyou_pushstate 通过。断言一条没改。toji_battle／toji_eva 等没动（仍在存量里）。
+- 存量 43→28。验证：探针登记检查、测试探针登记检查、语法检查通过；Godot 专项如上，未跑全量。合并后同步正式西游会重生 toji／param_cache 参照。
+
 ## 接续
 
-- **passive_content_probe 受五乘区影响**：关掉后 baseline/damage 的 growth 0.6437→1，伤害如 619→961、1052→1634。我已 `git checkout` 回去没改，要做：加开关、重跑、更新 `tests/fixtures/passive_content_oracle.json`、跑对应 Godot 专项（passive_content 相关，选测.py 会列），看断言。
-- 已加开关但中途被打断、未比对，已还原：skill_change_to、toji、nanoha_kill、nanoha2。
-- 没比对：boss_react、boss_sequence、boss_state_origin、boss_output_context（产物名里有 `--smoke` 三元式，旧脚本没认出；`drop_record_probe` 不走 finish，直接写文件，需手动对比）。
-- 做法：临时脚本在 /private/tmp/claude-501/s/zone.py（插入开关→前后各跑一次→比对产物；可能被清，思路就是这样）。大件如 slice_probe、state_effects 最后做。
+- 没比对：battle_event、options、sequence（旧脚本认不出输出文件名，需手动）；drop_record 不走 finish；passive_content_probe 受五乘区影响明显（growth 0.6437→1），要更新 `tests/fixtures/passive_content_oracle.json` 并跑对应专项；其余 formula_effect、各 *_battle、guyu_ui、jingliu 等未做；slice_probe、state_effects 最后做。
+- 临时脚本 /private/tmp/claude-501/s/zone.py（插入开关、前后各跑、比对产物）。

@@ -8,6 +8,7 @@
 // 敌人生命加 1e9；Math.random 0.5。产物 .sandbox/binding.json，拷成 tests/fixtures/binding_oracle.json（不进同步），专项 xiyou_binding。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 const B = w.CodexBinding;
 if (!B || typeof B.register !== 'function') throw new Error('绑定框架未安装');
 // 同 guyu_battle_probe：用户 10-12 定不移植五乘区与超强者路线压制（O-050），去掉这两个伤害钩子，命中的伤害才对得上重制
