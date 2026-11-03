@@ -1,0 +1,544 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"debuff_warm.none\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "2f23d3fdff0720f2",
+      "newDigest": "afb0b5cd82ff418d",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"debuff_warm.plain\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "ebc19ac0b2a90060",
+      "newDigest": "c0cc0e68deb99355",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"debuff_cold\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "010ab54283fbd14f",
+      "newDigest": "0f9d68cbc6ba26d9",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"invalidate.refresh_only\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "4fc8c81f3d40b43b",
+      "newDigest": "516942017fd7dfb5",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"invalidate.gainHp_minus1\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "df52870e6390dfa3",
+      "newDigest": "9b99ebdbec2482d6",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"invalidate.gainHp_0\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "db7e36da297a63c0",
+      "newDigest": "8cd0880fa6c6dc13",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"invalidate.onTurnEnd\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "cd2ea086558f14c6",
+      "newDigest": "8aa007a00336125e",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"invalidate.onTurnStart\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "298c55057576ca30",
+      "newDigest": "05fcb6dd3b80ef0d",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"invalidate.onTurnStart_refresh\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "62d4ed3675cfa0c9",
+      "newDigest": "b4cb370a91358e76",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"invalidate.addState_new\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "1b5d77ac21bafa39",
+      "newDigest": "a678dcd8e18b5005",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"invalidate.addBuff_other\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "c83a8546e4836b00",
+      "newDigest": "bb9267d0ad846906",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"invalidate.addDebuff_again\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "d85cc124a4475dd1",
+      "newDigest": "5dd2a8d598c8b17a",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"invalidate.removeBuff\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "4a944491a1508a2b",
+      "newDigest": "4a562a0657842895",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"invalidate.eraseBuff\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "54693c8185d06fb2",
+      "newDigest": "eaf8cd4c645c3cf3",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"invalidate.removeState\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "e1553fc548decef5",
+      "newDigest": "1d564385e060a0d6",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"apply_debuff.damage\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "2afd1b9b01a16076",
+      "newDigest": "03261e5ebe3b7292",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"apply_debuff.pure\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "dc5cb544eaa897ad",
+      "newDigest": "9021bbd96b9911d8",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"apply_real.damage\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "c0ab8036c01e946c",
+      "newDigest": "c6fa25c4e7fa2f02",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"apply_real.pure\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "f1f272a6e2111774",
+      "newDigest": "2a329a178266554f",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"outside_battle\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "b1ffe608928b9403",
+      "newDigest": "4dd8431453ef7fba",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv1\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "310248a807620295",
+      "newDigest": "c788404f565fddfa",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv1.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "c6c095f414f30b66",
+      "newDigest": "68c3aa1a90405dd3",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv10\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "113e5a32e527a2f6",
+      "newDigest": "fc0a9f7f561a0dc0",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv10.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "48d4d8194a21985d",
+      "newDigest": "3325f74ff4d036ce",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv20\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "aa8d1769d63f8c1a",
+      "newDigest": "a8c8d74d87cf485c",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv20.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "d9b8eeb5b4ffea6a",
+      "newDigest": "b38c56094bac6ab0",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv35\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "a397ff19680277ea",
+      "newDigest": "9bb77853bde646fa",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv35.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "2ba9d4291d8d47f4",
+      "newDigest": "b7f4946699902fbc",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv50\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "8bc5b4b6156f9f2d",
+      "newDigest": "45120ac7a84da5c7",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv50.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "e46cedbd481de314",
+      "newDigest": "17520baf146199d5",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv70\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "4e014dbef6bc737c",
+      "newDigest": "5b207289b15a0e9b",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv70.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "3d50d4484a1fb577",
+      "newDigest": "7e2cc2c20a533bf8",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv99\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "b99773de94ff68cf",
+      "newDigest": "b726c5e7771eee0e",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r0.lv99.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "244d608ba597765d",
+      "newDigest": "3c7b5ca20797dcf2",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv1\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "5d2b7d781d761862",
+      "newDigest": "802faf2208c54c4d",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv1.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "1da9e06be6cf2444",
+      "newDigest": "1c5fb7c2cfa23475",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv10\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "8cbcd1999dfe29e7",
+      "newDigest": "d8cf163a5531bc8c",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv10.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "043db821f0d43f28",
+      "newDigest": "d800c48cdce08c57",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv20\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "c978c3bd78ce329f",
+      "newDigest": "b315290aaa078491",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv20.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "a5407ddc63a2247c",
+      "newDigest": "faa582cabcd67297",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv35\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "a0368f5df974b209",
+      "newDigest": "b8f5f5fad00df15b",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv35.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "bcafec2eb1a41d98",
+      "newDigest": "b7802ed36db30f58",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv50\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "ba5778047a5f5a9b",
+      "newDigest": "1b26d825770df765",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv50.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "fff28ae164704cfe",
+      "newDigest": "e31cb41d570f698b",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv70\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "f4a3351b3f098a81",
+      "newDigest": "0f3a2b0e2fb102e0",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv70.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "a51231235ff9f083",
+      "newDigest": "f80897cad199f5b8",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv99\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "0c4967ebe93a8d4b",
+      "newDigest": "edde808ce8b9b846",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.r1.lv99.half\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "800656f457a855a6",
+      "newDigest": "1f43b5f4b84a3d24",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    },
+    {
+      "file": "toji.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"stats.armor.lv50\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "3fcaa161d71b68ee",
+      "newDigest": "a52b810b725f7994",
+      "reason": "探针关五乘区后原版参照值变化（toji、param_cache 产物，tools50 专项断言未改且全过）"
+    }
+  ]
+}
