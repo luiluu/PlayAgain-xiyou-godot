@@ -146,9 +146,10 @@ func _field() -> void:
 		var id := XBattleCommonEvent.reserved(logic)
 		XBattleCommonEvent.take(logic)
 		return [] if id <= 0 else [id]
-	var states: Array = n.state_ids.filter(func(id): return id in o[0].states)
-	states.sort()
 	var ints := func(v): return (v as Array).map(func(x): return int(x))
+	var want: Array = ints.call(o[0].states)
+	var states: Array = n.state_ids.filter(func(id): return want.has(int(id)))
+	states.sort()
 	check("field.startBattle", taken.call() == ints.call(o[0].reserved) and states == ints.call(o[0].states), [states, o[0]])
 	logic.act(n, XDB.rec("Skills", 1), logic.enemies[0])
 	check("field.nanoha.attack", taken.call() == ints.call(o[1].reserved), o[1])
