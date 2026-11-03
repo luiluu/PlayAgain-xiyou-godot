@@ -320,10 +320,14 @@ func _run(c: Dictionary) -> void:
 
 
 func _ready() -> void:
+	_main.call_deferred()  # 掉落提示（XToast）要往根节点加子节点，_ready 里根节点还在布置子节点会报 ERROR
+
+
+func _main() -> void:
 	XDemonCrown.path_override = XSave.dir().path_join("crown_progress_test.json")
 	var data = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	for c in data.cases:
 		_run(c)
 	DirAccess.remove_absolute(XDemonCrown.path_override)
-	print("xiyou_demon_crown: %d/%d" % [checks - failures.size(), checks])
+	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_demon_crown", "passed": checks - failures.size(), "total": checks, "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)

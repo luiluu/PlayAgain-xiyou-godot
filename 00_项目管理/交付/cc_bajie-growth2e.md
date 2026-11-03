@@ -59,22 +59,21 @@
 
 ## 验证
 
-- 原版探针 `node demon_crown_probe.cjs`：18 例无错。
-- 专项 `xiyou_demon_crown`：101／101（比较时不比品质，因为词缀是各自掷的）。
-- `python3 07_开发环境/语法检查.py`：499 个 .gd 无问题。
-- 全量（误启动，见「可优化」）：没跑完，作废。P3 改后只跑了语法检查（499 个 .gd 无问题），专项未跑。
+- 原版探针 `node demon_crown_probe.cjs`：18 例无错；`node heartsteel_probe.cjs`：41 例无错（新加 order.tusu、order.guyu）。两份都不进同步，拷成夹具。
+- 专项 `xiyou_demon_crown` 101／101、`xiyou_heartsteel` 423／423（合 main 后）。
+- 反向验证（`反向验证.py`）：`act()` 换回旧次序（心钢、狂妄在屠苏前）→ `xiyou_heartsteel` 报错；心钢拦截挪回谷雨 apply 外 → 报错。`_forced_run` 的次序没有单独的参照例（同 act 改法）。
+- 选测：合 main（dev.286 之后，c4473c42）后 `选测.py main --list` 列出的 300 个场景全名照跑（含 xiyou_rules 抽样 12 段、xiyou_smart_ai 抽样 4 段、xiyou_determinism、xiyou_event_compare）：299 过；`xiyou_demon_crown` 挂在「没有 `TEST_RESULT=` 行、_ready 里弹掉落提示报引擎 ERROR」（测试 101/101 本身是过的，growth2c 只直接跑过、没走过并行测试）。改成延后一帧跑、打 `TEST_RESULT=` 行后，与 `xiyou_heartsteel` 一起重跑通过。
+- `python3 07_开发环境/语法检查.py`：通过。
+- 偶发：无。
 - growth2d（作废）交付单里查出的探针 4 处（50 级、OTB 桩、revive、收编例）本单探针都已处理；按底子扣用 `_codexCrownKnown` 复现原版不补发，口径与总装定的一致，不算优化、不开回退开关。
 
 ## 本分支提交
 
-- ca624dfc／c8a89bb0 参照探针与夹具
-- e21bad56 运行时与专项
+- ca624dfc／c8a89bb0 参照探针与夹具；e21bad56 运行时与专项（growth2c）
+- 95040687 P3-1／P3-2 改码；66be5b81 两例参照与专项回放；b847f7f6 合 main；之后：交付单、demon_crown 专项接入并行测试
 
 ## 接续
 
-0. **先停掉误启动的全量**（长任务 PID 64002、进程组 64003，日志 `03_再刷重制_Godot/04_验证/本地结果/growth2c_选测.log`；P3 改在它跑的中途，结果不能用），再合 main（总装推送后）、`新建工作树.sh --补齐`，跑选测：`选测.py main --list` 里的战斗核心类＋ xiyou_demon_crown、xiyou_heartsteel、xiyou_hubris、xiyou_guyu_battle、xiyou_tusu_battle、xiyou_nanoha、xiyou_growth_forge、xiyou_yunshang_shop、xiyou_determinism、xiyou_save_page、xiyou_warehouse、xiyou_shop_buy、xiyou_equipment。**zsh 里名单别放进一个变量里传**（不拆词＝空名单＝全量）。
-1. **审查 29 的 P3-1（代码已改，0a 提交）**：`battle_logic.gd` `act()` 与 `_forced_run` 里 endAction 前半段次序应为 屠苏 → 谷雨 → 狂妄 → 心钢（屠苏 137、谷雨 133 装得晚，在外层，先跑）；现在心钢、狂妄排在前面。
-   改法：`act()`、`_forced_run` 里次序改成 屠苏 → 谷雨（end_action、take_visuals）→ 狂妄 → 心钢。**还缺原版参照例**（heartsteel_probe 补「谷雨代命＋狂妄」或「屠苏剑气＋狂妄」）。
-2. **P3-2（代码已改）**：`XGuyu.apply` 加可选参数 `inner`（里层回调），battle_logic 把心钢拦截放进回调：谷雨先置 executed，拦下时返回空结果、跳过奈叶与心钢记账。**还缺参照例**（强制行动放没蓄满的巨人吞噬→谷雨花期绽放仍触发）。原说明：心钢 `blocks_apply` 被拦下时谷雨没打「行动已执行」标记；原版的拦截在谷雨里面（谷雨先置 executed）。可以给 `XGuyu.apply` 加里层回调，或者把拦截挪到 `_apply_core` 开头。两条都要补原版参照例（审查没写），详见 `git show cc/review-29:00_项目管理/交付/cc_review-29.md` 的 P3-1、P3-2 两节。
-3. 魔冠余项：图标 Codex_DemonCrown 图没转换；RJO.HE 详情里的数字取整（getDescParams 包装）；战力 CodexCombatPower 里的魔冠；CodexZones.invalidate。
-4. 期二b 尾项照旧：心钢／狂妄动态说明（`H/U.helpRows`、`describe`、`helpView`，接 help_card）、选原件时 Shift 看原件词条、智能 AI 选巨人吞噬（`Codex_SmartBattleAI.js` 引用 7900，先查 plugins.js 确认启用）、战力、甚尔抑制行动不减蓄力、解锁与锻造锤的提示（toaster）。
+1. 魔冠余项：图标 Codex_DemonCrown 图没转换；RJO.HE 详情里的数字取整（getDescParams 包装）；战力 CodexCombatPower 里的魔冠；CodexZones.invalidate。
+2. 期二b 尾项：心钢／狂妄动态说明（`H/U.helpRows`、`describe`、`helpView`，接 help_card；`xiyou_heartsteel` 的 PENDING_FIELDS 里 desc 还没比）、选原件时 Shift 看原件词条、智能 AI 选巨人吞噬（`Codex_SmartBattleAI.js` 引用 7900，先查 plugins.js 确认启用）、战力、甚尔抑制行动不减蓄力、解锁与锻造锤的提示（toaster）。
+3. 可选：给 `_forced_run` 的新次序补一例（强制行动里屠苏剑气＋狂妄），现在只靠与 act 同改法。
