@@ -8,6 +8,7 @@
 // 夹具同 formula_effect_probe：固定能力值、清空状态，特性对象只用 setup 写明的状态与装备；内存新局，只写 .sandbox/shield.json。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), w = host.w, cases = [];
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 host.newGame();
 w.$gameParty._inBattle = true;
 const SUBJECT = [12000, 500, 321, 456, 210, 789, 100, 100], TARGET = [10000, 1000, 100, 100, 100, 100, 100, 100];
