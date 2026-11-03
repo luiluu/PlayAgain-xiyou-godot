@@ -2525,6 +2525,132 @@
     "pops": 96
    },
    "errors": []
+  },
+  {
+   "id": "ai.0",
+   "setup": {
+    "mp": 0
+   },
+   "observed": {
+    "mp": 0,
+    "learned5692": true,
+    "costmp": null,
+    "skill": 1,
+    "target": 0,
+    "skills": [
+     5692,
+     5710
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "ai.1500",
+   "setup": {
+    "mp": 1500
+   },
+   "observed": {
+    "mp": 1500,
+    "learned5692": true,
+    "costmp": null,
+    "skill": 5710,
+    "target": -1,
+    "skills": [
+     5692,
+     5710
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "ai.6667",
+   "setup": {
+    "mp": 6667
+   },
+   "observed": {
+    "mp": 6667,
+    "learned5692": true,
+    "costmp": null,
+    "skill": 5710,
+    "target": -1,
+    "skills": [
+     5692,
+     5710
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "ai.23000",
+   "setup": {
+    "mp": 23000
+   },
+   "observed": {
+    "mp": 23000,
+    "learned5692": true,
+    "costmp": null,
+    "skill": 5710,
+    "target": -1,
+    "skills": [
+     5692,
+     5710
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "ai.50000",
+   "setup": {
+    "mp": 50000
+   },
+   "observed": {
+    "mp": 50000,
+    "learned5692": true,
+    "costmp": null,
+    "skill": 5704,
+    "target": -1,
+    "skills": [
+     5692,
+     5710
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "ai.23000.lowfoe",
+   "setup": {
+    "mp": 23000
+   },
+   "observed": {
+    "mp": 23000,
+    "learned5692": true,
+    "costmp": null,
+    "skill": 5710,
+    "target": -1,
+    "skills": [
+     5692,
+     5710
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "ai.23000.noCannon",
+   "setup": {
+    "mp": 23000,
+    "noCannon": true
+   },
+   "observed": {
+    "mp": 23000,
+    "learned5692": false,
+    "costmp": null,
+    "skill": 5710,
+    "target": -1,
+    "skills": [
+     5710
+    ]
+   },
+   "errors": []
   }
  ]
 }

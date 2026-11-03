@@ -112,6 +112,7 @@ func _run() -> void:
 			check(c.id + ".after", _same(after, o.after), [after, o.after])
 	_field()
 	_cast()
+	_manual()
 	# 本地断言：追击等 execute 之外的 apply 不记（目标表在 execute 结束时关闭）
 	var b := _battle({"party": [1, 108], "hp": [1, BIG_HP, BIG_HP]})
 	var logic: XBattleLogic = b[0]
@@ -164,11 +165,14 @@ func _field() -> void:
 ## 各敌行动后血量与死活（每个目标 max(1, _costmp) 段同值伤害）；extreme 超 512 段走 ACS 快速结算（96 段弹字＋合并尾段）
 func _cast() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/nanoha3_oracle.json"))
-	if not check("cast.oracle_present", ref is Dictionary and ref.cases.size() == 22):
+	if not check("cast.oracle_present", ref is Dictionary and ref.cases.size() == 29):
 		return
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
 		var o: Dictionary = c.observed
+		if c.id.begins_with("ai."):
+			_ai(c)
+			continue
 		var b := _battle({"party": [108], "hp": o.hp0})
 		var logic: XBattleLogic = b[0]
 		var n: XActor = b[2]
@@ -204,6 +208,54 @@ func _cast() -> void:
 		else:
 			check(c.id + ".hits", got == want and dead == o.dead, [got, want, dead, o.dead])
 		check(c.id + ".popups", pops == int(o.pops), [pops, o.pops])
+
+
+## nanoha3_oracle ai.*：智能 AI 选的技能（会 5692 时六档魔炮替掉 5703～5709，估伤按付费后 MP ×段数；不会 5692 照常）
+func _ai(c: Dictionary) -> void:
+	var o: Dictionary = c.observed
+	var hp: Array = [BIG_HP, BIG_HP, BIG_HP] if not c.id.ends_with("lowfoe") else [5000, BIG_HP, BIG_HP]
+	var b := _battle({"party": [108], "hp": hp})
+	var n: XActor = b[2]
+	n.add_param(1, 50000.0)
+	n.param_mark_dirty()
+	n.param_refresh()
+	if bool(c.setup.get("noCannon", false)):
+		n.forget_skill(5692)
+	elif not n.skill_ids.has(5692):
+		n.learn_skill(5692)
+	n.mp = float(c.setup.mp)
+	var best := XSmartAI.choose(b[0], n)
+	var id := int(best.get("skill", {}).get("id", 0))
+	check(c.id, id == int(o.skill) and n.skill_ids.has(5692) == o.learned5692 and not n.has_meta("costmp"), [id, best.get("candidates"), o])
+
+
+## 手动战斗：小魔炮 5692 的效果 44 预约 CE2483「魔炮选择」，102 六选一 → 339 强制奈叶放所选大招（目标 -2 上次目标）。
+## 本地断言（通用事件流程，无原版逐例参照）：选第 i 项就强制放第 i 档，MP 先扣 5692 的 1 点、再扣 ⌊MP×比例⌋，_costmp 按付前 MP
+func _manual() -> void:
+	var ids := [5703, 5704, 5705, 5706, 5708, 5709]
+	var rates := [0.3, 0.6, 0.9, 0.3, 0.6, 0.9]
+	for i in ids.size():
+		var b := _battle({"party": [108], "hp": [BIG_HP, BIG_HP, BIG_HP]})
+		var logic: XBattleLogic = b[0]
+		var n: XActor = b[2]
+		XBattleCommonEvent.take(logic)  # 开战预约的 1320 不跑
+		n.add_param(1, 50000.0)
+		n.param_mark_dirty()
+		n.param_refresh()
+		n.mp = 23000.0
+		var asked := []
+		logic.message_responder = func(msg):
+			asked.append(msg.get("choices", []).size())
+			return i
+		var logs := logic.act(n, XDB.rec("Skills", 5692), n)
+		check("manual.%d.reserved" % ids[i], XBattleCommonEvent.reserved(logic) == 2483, XBattleCommonEvent.reserved(logic))
+		logs.append_array(logic.run_events())
+		var used := logs.filter(func(l): return l is Dictionary and l.has("target") and int(l.get("skill", {}).get("id", 0)) == ids[i])
+		var mp1 := 23000.0 - 1.0
+		var want_mp := mp1 - floorf(mp1 * rates[i])
+		check("manual.%d" % ids[i], asked == [6] and not used.is_empty() and n.mp == want_mp
+			and int(n.get_meta("costmp", -1)) == floori(mp1 * rates[i] / 2000.0) and logic.enemies.any(func(e): return e.hp < BIG_HP),
+			[asked, used.size(), n.mp, want_mp, n.get_meta("costmp", -1), logic.common_event_skipped])
 
 
 func finish() -> void:

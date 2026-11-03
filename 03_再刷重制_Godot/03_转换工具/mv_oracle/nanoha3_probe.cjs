@@ -98,4 +98,21 @@ cases.push(makeCase('cast.5703.kill', {skill: 5703, mp: 23000}, () => cast(5703,
 cases.push(makeCase('cast.1.6667', {skill: 1, mp: 6667, mmp: 50000}, () => cast(1, 6667, [BIG_HP, BIG_HP, BIG_HP], 50000)));
 // 极端段数（超 512，ACS 快速结算）
 cases.push(makeCase('cast.5709.extreme', {skill: 5709, mp: 1500000}, () => cast(5709, 1500000, [BIG_HP * 1000, BIG_HP, BIG_HP], 2000000)));
+// 智能 AI（Codex_SmartBattleAI makeAction）：奈叶会小魔炮 5692 时候选换成六档魔炮（不必学会），估伤按付费后 MP、再 ×max(1,⌊付前MP×比例/2000⌋)
+function ai(mp, hp, opts = {}) {
+  const {bm, n, foes} = battle([NANOHA], hp);
+  n._paramPlus[1] = 50000; n.need_refresh = true; n.refresh();
+  if (opts.noCannon) n.forgetSkill(5692); else n.learnSkill(5692);
+  n.setMp(mp);
+  w.ConfigManager.codexSmartAI = true;
+  delete n._costmp;
+  const action = n.makeAction();
+  const item = action && action.item && action.item();
+  return {mp: n.mp, learned5692: n.isLearnedSkill(5692), costmp: n._costmp === undefined ? null : n._costmp,
+    skill: item ? item.id : null, target: action ? action._targetIndex : null,
+    skills: n.skills().map(s => s.id).filter(id => id >= 5690 && id <= 5710)};
+}
+for (const mp of [0, 1500, 6667, 23000, 50000]) cases.push(makeCase(`ai.${mp}`, {mp}, () => ai(mp, [BIG_HP, BIG_HP, BIG_HP])));
+cases.push(makeCase('ai.23000.lowfoe', {mp: 23000}, () => ai(23000, [5000, BIG_HP, BIG_HP])));
+cases.push(makeCase('ai.23000.noCannon', {mp: 23000, noCannon: true}, () => ai(23000, [BIG_HP, BIG_HP, BIG_HP], {noCannon: true})));
 process.exit(finish(host, 'nanoha3.json', {hostScope: '真实 BattleManager.startAction 下奈叶大招 5703～5709 的自定义 MP 消耗与伤害后多段', cases}) ? 0 : 1);

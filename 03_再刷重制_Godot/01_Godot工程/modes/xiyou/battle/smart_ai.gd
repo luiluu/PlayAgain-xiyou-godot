@@ -16,7 +16,9 @@ extends RefCounted
 ##   单体技能的溅射 splash（其余敌人按期望伤害×溅射算伤害效用）、铺垫 followupSkill／setupActions（付完本技能代价后
 ##   用后续技能打分〔noSetup，不再铺垫〕，取 max(本分, (本分＋后续)÷(铺垫次数＋1)×0.92×(急需时 0.6))）。
 ##   重制只登记了甚尔（XToji.ai_profile；估伤 10216～10219 走 XToji.ai_damage）。O-131 o_profile_hits 见下。
-## - 没移植（重制版尚无这些角色/系统）：奈叶小魔炮、米拉/渡鸦/宿傩等角色专属估算与 profile、Boss 霸体（CodexBossDifficulty）。
+## - 奈叶小魔炮（5692 只开六选一公共事件，自动战斗不能用）：会 5692 且能用时，候选里的 5703～5709 换成六档魔炮（不必学会、各自能用），
+##   估伤按付费后的 MP 算公式、再 ×max(1, ⌊付前 MP×比例/2000⌋)（伤害后多段，见 XNanoha）。参照 nanoha3_probe ai.*。
+## - 没移植（重制版尚无这些角色/系统）：米拉/渡鸦/宿傩等角色专属估算与 profile、Boss 霸体（CodexBossDifficulty）。
 ##   这些在正式版里也只对对应角色/敌人生效；随相关内容接入时补上。
 ## - 异化行动道具投影（祸祝、恶愿、逆祷，XAlienBattle.project）：见 o_projection。
 
@@ -160,7 +162,31 @@ static func profile(a: XBattler, rec: Dictionary) -> Dictionary:
 	return p if not p.is_empty() else XYunshang.ai_profile(a, rec)
 
 
+## 小魔炮六档的功率（cannonPower）
+const CANNON_POWER := {5703: 0.3, 5704: 0.6, 5705: 0.9, 5706: 0.3, 5708: 0.6, 5709: 0.9}
+
+
+## cannonOptions：奈叶会 5692 且能用时，六档里能用的
+func cannon_options() -> Array:
+	if actor.actor_id != XNanoha.ACTOR or not actor.skill_ids.has(5692) or not can_use(XDB.rec("Skills", 5692)):
+		return []
+	return CANNON_POWER.keys().map(func(id): return XDB.rec("Skills", int(id))).filter(func(s): return not s.is_empty() and can_use(s))
+
+
 func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
+	var power := float(CANNON_POWER.get(int(rec.get("id", 0)), 0.0)) if a is XActor and a.actor_id == XNanoha.ACTOR else 0.0
+	if power <= 0.0:
+		return _safe_damage(a, t, rec)
+	# YEP 先付比例费用再算公式；previewCost 不留 _costmp（skill_cost 本就不写）
+	var before_mp := maxf(0.0, a.mp)
+	var hits := maxi(1, floori(before_mp * power / 2000.0))
+	a.mp = maxf(0.0, before_mp - float(logic.skill_cost(a, rec).mp))
+	var value := _safe_damage(a, t, rec)
+	a.mp = before_mp
+	return value * hits
+
+
+func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var dmg: Dictionary = rec.get("damage", {})
 	var type := int(dmg.get("type", 0))
 	var p := profile(a, rec)
@@ -480,6 +506,11 @@ func _choose() -> Dictionary:
 			candidates.append({"rec": s, "item": false, "eval": valued(s, false), "dir": directed(s, false)})
 	if legal(attack, false) and not candidates.any(func(c): return int(c.rec.id) == int(attack.id)):
 		candidates.append({"rec": attack, "item": false, "eval": valued(attack, false), "dir": directed(attack, false)})
+	var cannons := cannon_options()
+	if not cannons.is_empty():
+		candidates = candidates.filter(func(c): return not CANNON_POWER.has(int(c.rec.id)))
+		for cs in cannons:
+			candidates.append({"rec": cs, "item": false, "eval": valued(cs, false), "dir": directed(cs, false)})
 	var urgent := friends.any(func(t): return t.is_dead() or (t.hp + shield_points(t)) / maxf(1.0, t.mhp) < 0.25)
 	context = {"friends": friends, "foes": foes, "urgent": urgent, "longFight": false, "damageScale": 0.0}
 	var scale := 0.0
