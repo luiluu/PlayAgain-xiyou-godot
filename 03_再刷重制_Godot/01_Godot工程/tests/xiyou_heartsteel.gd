@@ -406,6 +406,32 @@ func _case_pierce(c: Dictionary) -> void:
 		_cmp(c.id + "." + base, {"atk": a.atk, "def": logic.enemies[1].def, "hits": _act(a, 1, 1)}, {"atk": o.atk, "def": o.def, "hits": o.hits})
 
 
+## 存档：层数／盛名随实例存读（穿着的和背包里的）；旧档实例没有这两个字段按 0（原版 growth／stacks 缺省 0）
+func _case_save(inst: Dictionary) -> void:
+	var s := _new_state()
+	var a := s.actor(1)
+	var worn := _gear(s, a, XHeartsteel.ARMOR, inst, {XHeartsteel.STACKS: 350, XHeartsteel.LEGACY_HP: 7})
+	var mhp := a.mhp
+	s.gain_gear("armor", XHubris.ARMOR, 1)
+	var bag: Dictionary = s.gear[s.gear.size() - 1]
+	bag[XHubris.FAME] = 42
+	var d: Dictionary = JSON.parse_string(JSON.stringify(s.to_dict()))
+	var r := XState.from_dict(d)
+	XState.current = r
+	var g := XHeartsteel.gear(r.actor(1))
+	check("save.worn", XHeartsteel.stacks(g) == 350 and XHeartsteel.growth(g) == 7 and _num(r.actor(1).mhp, mhp), [g.get(XHeartsteel.STACKS), r.actor(1).mhp, mhp])
+	var b := r.gear.filter(func(e): return XHubris.is_gear(e))
+	check("save.bag", b.size() == 1 and XHubris.growth(b[0]) == 42, b.size())
+	worn.erase(XHeartsteel.STACKS)
+	worn.erase(XHeartsteel.LEGACY_HP)
+	bag.erase(XHubris.FAME)
+	var old := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
+	XState.current = old
+	var og := XHeartsteel.gear(old.actor(1))
+	check("save.legacy", not og.is_empty() and XHeartsteel.stacks(og) == 0 and XHeartsteel.growth(og) == 0 and _num(XHeartsteel.hp_rate(og), 1.0) \
+		and XHubris.growth(old.gear.filter(func(e): return XHubris.is_gear(e))[0]) == 0)
+
+
 func _ready() -> void:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	var heart_inst := {}
@@ -438,6 +464,7 @@ func _ready() -> void:
 			_case_pierce(c)
 		else:
 			check(id + ".unhandled", false)
+	_case_save(heart_inst)
 	XHeartsteel.in_battle = false
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_heartsteel", "passed": checks - failures.size(), "total": checks, "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)
