@@ -360,12 +360,13 @@ func _refresh() -> void:
 	_buttons.queue_redraw()
 
 
-## _codexShowSourceHelp／_codexCloseSourceHelp：选原件且按过 Shift 时，详情窗位置显示光标下那件原件的说明卡（字号最多 14），详情窗藏起
+## _codexShowSourceHelp／_codexCloseSourceHelp：选原件且按过 Shift 时，详情窗位置显示光标下那件原件的说明卡，详情窗藏起。
+## 原版先把 descParams 字号压到 14 再 setItem，但原件都是成长装备，setItem 包装走 helpView 重算 getDescParams，
+## 压的字号被冲掉（installNativeHubrisRuntime.js:175、HelpExtend.js:150），实际按原字号显示，这里照原版不压
 func _sync_source() -> void:
 	source_shown = source_shown and mode == "pick" and not forge_shown().is_empty()
 	if source_shown:
 		source_card.show_for(forge_shown(), "armor", false)
-		source_card.cap_size(14)
 		source_card.position = DETAIL_RECT.position
 	source_card.visible = source_shown
 	detail_win.visible = not source_shown

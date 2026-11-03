@@ -203,6 +203,31 @@ func _local() -> void:
 	for id in [1, 8, 9]:
 		XXuanChart.toggle_roster(r, id)
 	check("roster.cap", XXuanChart.chart(r).roster == [8, 9], XXuanChart.chart(r).roster)
+	# 审查 32 P2-1：读档后名册是 [8.0]，点同一人应移出而不是再加一遍（原版 indexOf 找得到）
+	var g := setup(60, 0, 3)
+	XXuanChart.toggle_roster(g, 8)
+	var g2 := XState.from_dict(JSON.parse_string(JSON.stringify(g.to_dict())))
+	XXuanChart.toggle_roster(g2, 8)
+	check("roster.after_load_remove", XXuanChart.chart(g2).roster.is_empty(), XXuanChart.chart(g2).roster)
+	XXuanChart.toggle_roster(g2, 9)
+	var g3 := XState.from_dict(JSON.parse_string(JSON.stringify(g2.to_dict())))
+	XXuanChart.toggle_roster(g3, 10)
+	XXuanChart.toggle_roster(g3, 9)
+	check("roster.after_load_mixed", XXuanChart.chart(g3).roster == [10], XXuanChart.chart(g3).roster)
+	# 审查 32 P1-1：满级星纹的操作页三行照出，强化不可选，配入、回收可用（原版 cost[3] 越界只影响文字）
+	var m := setup(60, 1000)
+	var ma: XActor = m.actor(XUAN)
+	for _i in 3:
+		XXuanChart.learn(m, ma, "yuhui")
+	var rows := XXuanChart.mark_rows(m, "yuhui")
+	check("max.rows", rows.map(func(r): return [r.act, r.enabled]) == [["equip", true], ["learn", false], ["refund", true]]
+		and str(rows[1].label) == "强化（已满级）", rows)
+	XXuanChart.MAX_LABEL_FIX = false
+	check("max.rows_original_label", str(XXuanChart.mark_rows(m, "yuhui")[1].label) == "强化（星砂undefined）")
+	XXuanChart.MAX_LABEL_FIX = true
+	var before := int(XXuanChart.chart(m).sand)
+	XXuanChart.refund(m, ma, "yuhui")
+	check("max.refund", int(XXuanChart.chart(m).level.yuhui) == 1 and int(XXuanChart.chart(m).sand) > before, [XXuanChart.chart(m).level, XXuanChart.chart(m).sand, before])
 	# 公共事件 9015：技能页可用（MENU_UNBUILT 里已没有）
 	check("skill.not_unbuilt", not XSkillScene.MENU_UNBUILT.has(10349))
 
