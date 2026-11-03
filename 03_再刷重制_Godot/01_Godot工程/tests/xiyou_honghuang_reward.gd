@@ -125,7 +125,8 @@ func _power(c: Dictionary) -> void:
 	for id in POWER_ITEMS:
 		if s.item_count(id) > 0:
 			have.append([id, s.item_count(id)])
-	check(c.id + ".powers", JSON.stringify(have) == JSON.stringify(o.powers), [o.powers, have])
+	var want_powers: Array = o.powers.map(func(r): return [int(r[0]), int(r[1])])
+	check(c.id + ".powers", have == want_powers, [want_powers, have])
 	check(c.id + ".floor", XDungeon.boss_floor(s.map_id) == int(o.floor), [o.floor, XDungeon.boss_floor(s.map_id)])
 	check(c.id + ".segment", XHonghuang.segment(int(o.floor)) == int(o.segment))
 	check(c.id + ".chance", absf(XHonghuang.power_chance(s) - float(o.chance)) < 1e-5, [o.chance, XHonghuang.power_chance(s)])

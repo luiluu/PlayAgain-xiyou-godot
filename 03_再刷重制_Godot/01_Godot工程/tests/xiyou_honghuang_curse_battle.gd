@@ -58,6 +58,10 @@ func _setup(curse: int) -> Array:
 	rand.rule = stream
 	var logic := XBattleLogic.new()
 	logic.setup(3, s, rand)
+	# 同参照的 refresh：开战状态的 Confirm 列表要等第一回合刷新才生效（krz 缓存）
+	for b in [s.actor(1)] + logic.enemies:
+		b.param_mark_dirty()
+		b.param_refresh()
 	return [logic, s.actor(1), logic.enemies[0], stream]
 
 

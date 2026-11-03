@@ -204,7 +204,7 @@ static func _boss_summary(seg: Dictionary, n: int) -> String:
 ## powerLine：洪荒路线（开关 2483／2463）下本段不朽存在的权能掉率
 static func _power_line(seg: Dictionary) -> String:
 	var s := XState.current
-	if not XHonghuang.is_honghuang(s) or seg.get("power", []).is_empty():
+	if not XHonghuang.is_honghuang(s) or seg.get("power") == null:
 		return ""
 	return "\\C[4]洪荒权能\\C[0]：本段不朽存在通关后掉%s，每场每本 %s%%（诅咒倍率×%s）。" % ["、".join(PackedStringArray(seg.power)),
 		XHonghuang._fixed1(XHonghuang.power_chance(s) * 100.0), XHonghuang._fixed1(XHonghuang.party_bonus(s))]

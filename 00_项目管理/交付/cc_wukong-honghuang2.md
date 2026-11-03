@@ -1,41 +1,52 @@
-# cc/wukong-honghuang2（悟空·洪荒二期）— WIP，未完成，不可合并
+# 交付：cc/wukong-honghuang2
 
-- 分支从 cc/wukong-honghuang1（253b43dc）切出，已合 main（e808c146）并 `--补齐`。honghuang1 还没进 main，合并时先合 honghuang1。
-- 本期只做了调查和一个还没跑过的原版参照探针；没改 Godot 代码。总装十五 11-03 因额度收工叫停。
+- 车道／工作者：A 内容·楼层／悟空（cc，悟空 honghuang2，Opus）
+- 状态：可合并
 
 ## 变更记录草稿
 
-- （未完成，暂无）
+## 2026-11-03 【cc·悟空·未经审查】洪荒二期：判定口径、诅咒加成券、不朽存在权能掉落、洪荒压制、诅咒战斗效果（dev.待定）
 
-## 接续（下一位从这里开始）
+- 判定：新 `XHonghuang.is_honghuang`（开关 2483 或 2463，不看难度），替换 `mv_script` 原来按 `difficulty != 8` 的判定。原版牢妲能单独切怪物难度，所以只切到难度 8、没开开关的不算洪荒；关了 2483 但 2463 还开着的仍算（探针 `gate.*`）。
+- 发券：`grant_ticket_bonus` 加发 round(5×(倍率−1)) 张 1639；持有者是队伍里第一个学了诅咒的人，没有取队首；提示的 `toFixed(1)` 单独写 `_fixed1`（`String.num` 对 2.25 取偶，`snappedf` 把 4.05 进成 4.1，都和原版不一样）。
+- 权能：`battle_logic` 开战记本场身份（`battle_started`，在 `setup` 里，任何战斗都覆盖，同原版 `BattleManager.setup`／`startBattle` 包装）、结束记胜负（`battle_ended`），`roll_power` 按开战时楼层的区段每本掷一次，概率 min(1, 0.03×倍率×熟练度倍数)，每战一次。身份不进存档，`_become_current` 清，`battle_replay` 回放后还原。CE1439 的头尾两句接上。
+- 洪荒压制：CE1445 那段脚本整段认出，给全员有名字的角色记 `learn 10300`（actor op）；技能 ID 和 `sync_native_tier` 共用 `suppress_skill`。普查 `script_census_known.json` 删去这一条。
+- 指引：`XGuide._power_line` 接上，修行页和里程碑在洪荒路线显示本段权能书与掉率。
+- 诅咒战斗效果：15 种诅咒和 10300 逐个对原版量过（状态与回合、八维、xparam、sparam、敌人再动、普攻伤害）。标签和状态重制本来就认，只有状态 1270 死而复燃的脚本没翻译（`XStateEffects._revive`，15% 回 30% 血、回满蓝、TP 翻倍、清结果槽）；复活的这一击不算击杀（`battle_logic.apply` 里 `r.died` 改写）。
+- 原版参照：`mv_oracle/honghuang_reward_probe.cjs`（44 例）、`mv_oracle/honghuang_curse_battle_probe.cjs`（20 例，关五乘区、随机固定），产物手工复制为 `tests/fixtures/honghuang_reward_oracle.json`、`honghuang_curse_battle_oracle.json`，不进同步。新测试 `xiyou_honghuang_reward`（311 项）、`xiyou_honghuang_curse_battle`（296 项）。
+- 验证：见下方「验证」。
+- 已知问题：7207（爆伤）、7211（爆率）、7213（元素伤害）三条只确认了重制认这些标签，原版参照没量到数值（普攻不暴击、不掉落、物理属性）；7203／7204 的多回合持续时间只量了开战那一刻的回合数。
 
-### 1. 判定口径（已查清，还没改）
-- 原版 `CodexHonghuang.isHonghuang` = 开关 2483 **或** 2463。全游戏扫过一遍（地图、公共事件、敌群）：
-  - 2483、2463 一起开、同时 `Difficulty SetID 8`：只有大厅 Map004 EV41 第 3／5 页（开洪荒）。
-  - CE1441（女帝抽奖第 9 档）只开 2483，不设难度。
-  - Map004 EV62 第 3 页（牢妲）关掉 2483（**不关 2463**），还能把怪物难度单独切到 1～9（含 8）。
-  - CE714「难度修复」：2483 开着就 SetID 8。
-  - 所以「难度 8」和「开关」会不一致：牢妲切过难度后，原版仍按 2463 算洪荒；只切到难度 8、没开开关的，原版不算。
-- 重制只有一处按难度判洪荒：`modes/xiyou/map/mv_script.gd:309`（`s.difficulty != 8`）。`zhenqi.gd:95` 已经按 2483／2463 判，跟原版一致。
-- 要改的：在 `honghuang.gd` 加 `is_honghuang(s)`（2483 或 2463），309 行改用它。
+## 交接板
 
-### 2. 原版参照探针（写好了，**还没跑过**）
-- `03_转换工具/mv_oracle/honghuang_reward_probe.cjs`：① 判定口径 6 例（含只设难度 8）；② 发券 10 例（持有者、四舍五入）；③ rollPower 21 例（真实 setup／startBattle／endBattle，区段 1～5 分别用地图 152／161／162／177／210，熟练度 10／50，上限，同一场调两次）；④ CE1445 开／关 2463。
-- 下一步：`node honghuang_reward_probe.cjs`，看各例 errors，再把 `.sandbox/honghuang_reward.json` 拷成 `tests/fixtures/honghuang_reward_oracle.json`。注意难度用 `$gameSystem._difficultyId` 直接写，读回用 `difficultyId()`；`$.toaster` 已经接住。
+- 下一步：洪荒二期完成；上面三条诅咒的数值参照如果要补，可以单开一小期（在探针里加一个暴击例、一个元素技能例、一个掉率例）。
+- 用户试玩说明：开洪荒并选诅咒后，打不朽存在胜利会多给肝帝积分券，并有机会掉权能书；修行页和里程碑会显示掉率；开 2463 后全员造成的伤害×0.1；选了死而复燃的话，敌人倒下有 15% 复活。
+- 需要用户决定：无。原版行为和交代的口径没有对不上的地方。提醒一句：洪荒压制×0.1 和诅咒减伤都照原版接了，但原版同时有五乘区修正，重制不移植（O-050），所以洪荒路线的实际难度和原版不完全一样，试玩时可以留意。
 
-### 3. 实现要点（还没写）
-- 发券 `grantTicketBonus`：`max(0, round(5×(curse_bonus(持有者)−1)))` 张 1639；持有者＝队伍里第一个学了诅咒的人，没有就取队首；提示文字「洪荒诅咒加成（×N.N）：肝帝积分抽奖券额外+n」（toFixed(1)）。CE1439 里这一句不在 2483 的条件分支里，靠它自己判洪荒。
-- 权能 `rollPower`：开战时记 `{eligible: 洪荒 且 XYunshangOrders.immortal_clear(s, troop), troop, floor: XDungeon.boss_floor(map), won, rolled}`；建议在 `mv_interpreter.gd:236` 的 301 指令里，`start_battle` 之前记、之后写胜负；在 `xstate._become_current` 里清掉（`battle_replay.gd:44` 的 prior_contexts 也要带上）。区段 `SEGMENTS [[0,15],[16,18],[19,21],[22,25],[26,99]]`，这一段的书是道具备注 `<CodexPower: N>`（1655／1718＝1，1656／1658＝2，1657／1667＝3，1654／1659＝4，1674／1683＝5），每本掷一次 `rand < min(1, 0.03×倍率×XDungeon.power_factor(s, troop))`；CE1439 里 `bossReward` 先跑，熟练度已经 +1。提示「洪荒权能掉落：书名！」。
-- CE1445 洪荒压制：把去掉空白后的整段 `var hh=$dataSkills.filter(…<CodexHonghuangSuppress>…)[0];for(var j=1;…)learnSkill(hh.id)` 加进 `_honghuang_curse`，换成 actor op `{"op":"learn","skill":10300,"named":true}`；技能 ID 和 `xstate.sync_native_tier` 共用一个查找函数。做完删掉 `tests/xiyou_honghuang_curse.gd` 里的 `SUPPRESS_SKIPPED`。
-- `guide.gd:204` 的 `_power_line` 和修行页「洪荒权能」那句话，等权能接好再改。
+## 进度账
 
-### 4. 诅咒 7201～7215 战斗效果（还没查）
-- 技能备注已经列出来了：7201～7205、7208～7210、7212～7215 用 `Start(WT|AE)PushState` 挂状态 1265～1272／1282～1285／2675；7207 `<passiveCrHarmRi:-1000>`；7211 `<passiveIRUP:-40>`；10300 挂状态 2679。下一步对着这些状态的备注，查重制战斗认不认这些标签。
+- 洪荒难度（CodexHonghuang）：诅咒选择 → 诅咒奖励、权能掉落、压制、战斗效果都已接上。
+
+## 待交叉核查
+
+- 改了核心文件：`battle_logic.gd`（开战、结束两处钩子；`apply` 里 `r.died` 一行）、`state_effects.gd`（`_revive`）、`xstate.gd`（`sync_native_tier` 改用共用查找、`_become_current` 清身份）、`battle_replay.gd`（还原身份）。请重点看 `_revive` 和 `r.died`：原版 clearResult 之后这一击不显示也不算击杀。
+
+## 可优化（流程／工具／效率）
+
+- 建议：状态 1270 现在在 `state_effects.gd` 里按 js 原文比对，没动转换器（省一轮同步）。以后再有要翻译的 js 块，可以把这种写法挪进 `xiyou_export.py` 变成正式 op，随下一次改转换器一起做。归哪条车道都行，收益不大。
+- 建议：这轮 15 个场景排队等了约 20 分钟，并行测试在排队时如果管道给 `tail` 就完全没有输出，看起来像卡死。用 `长任务.py start` 加 `等待任务.sh` 能看到「等槽」进度，车道须知已写，这里只是再踩一次。
 
 ## 验证
 
-- 没跑测试（总装叫停；探针也还没跑）。
+- `语法检查.py`：通过。
+- 选测 `选测.py main --list` 列出 301 个场景，没有全跑（车道不跑全量）。跑了与改动直接相关的 16 个，全部通过：`xiyou_honghuang_reward` 311、`xiyou_honghuang_curse` 885、`xiyou_honghuang_curse_battle` 296、`xiyou_determinism` 372、`xiyou_guide` 63、`xiyou_battle` 9、`xiyou_difficulty_inherit` 6120、`xiyou_dungeon` 6954、`xiyou_zhenqi` 181、`xiyou_state_js` 1733、`xiyou_start_state_walk` 385、`xiyou_reward_branches`、`xiyou_yunshang_wraps` 214、`xiyou_floor_abyss211` 28、`xiyou_event_compare` 5、`xiyou_script_census`。
+- 没跑 `xiyou_rules*` 等其余战斗核心类场景：本次对 `battle_logic.gd` 只加了不取随机数的钩子和 `r.died`，`state_effects.gd` 只多一个只对状态 1270 生效的分支；请总装合并时按影响面选测。
+- 第一轮后改过 `guide.gd`（`seg.power` 为空时报错，已修）和两个新测试，这几个场景又单独跑过一次；`xiyou_determinism` 没有在修改后重跑，因为改动没碰战斗代码。
+- 没开游戏实际玩过，界面上的提示只验证了文字。
+- 没跑 `反向验证.py`。
 
 ## 本分支提交
 
-- （本提交）WIP：探针与交付单接续
+- 2f12744c WIP：口径调查与探针
+- 56e7a54b WIP：判定、发券、权能、压制、指引、诅咒战斗参照与死而复燃
+- （本提交）交付：洪荒二期

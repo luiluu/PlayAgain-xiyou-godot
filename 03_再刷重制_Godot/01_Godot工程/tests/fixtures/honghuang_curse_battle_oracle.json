@@ -735,7 +735,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 207,
+     "hp": 308,
      "dead": false
     }
    },
@@ -841,7 +841,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 83,
+     "hp": 123,
      "dead": false
     }
    },
@@ -947,7 +947,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 104,
+     "hp": 154,
      "dead": false
     }
    },
@@ -1053,7 +1053,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 207,
+     "hp": 308,
      "dead": false
     }
    },
@@ -1159,7 +1159,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 207,
+     "hp": 308,
      "dead": false
     }
    },
@@ -1265,7 +1265,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 207,
+     "hp": 308,
      "dead": false
     }
    },
@@ -1371,7 +1371,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 187,
+     "hp": 278,
      "dead": false
     }
    },
@@ -1470,7 +1470,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 207,
+     "hp": 308,
      "dead": false
     }
    },
@@ -1576,7 +1576,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 207,
+     "hp": 308,
      "dead": false
     }
    },
@@ -1682,7 +1682,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 132,
+     "hp": 198,
      "dead": false
     }
    },
@@ -1788,7 +1788,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 207,
+     "hp": 308,
      "dead": false
     }
    },
@@ -1887,7 +1887,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 207,
+     "hp": 308,
      "dead": false
     }
    },
@@ -1993,7 +1993,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 21,
+     "hp": 31,
      "dead": false
     }
    },
@@ -2099,7 +2099,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 207,
+     "hp": 308,
      "dead": false
     }
    },
@@ -2207,7 +2207,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 207,
+     "hp": 308,
      "dead": false
     }
    },
@@ -2313,7 +2313,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 207,
+     "hp": 308,
      "dead": false
     }
    },
@@ -2419,7 +2419,7 @@
     "attack": {
      "hit": true,
      "critical": false,
-     "hp": 21,
+     "hp": 31,
      "dead": false
     }
    },
@@ -2433,7 +2433,7 @@
    "observed": {
     "hit": true,
     "critical": false,
-    "hp": 207,
+    "hp": 308,
     "dead": false,
     "hpAfter": 0,
     "resist": true,
@@ -2477,19 +2477,19 @@
    "observed": {
     "hit": true,
     "critical": false,
-    "hp": 207,
+    "hp": 308,
     "dead": true,
     "hpAfter": 0,
     "mhp": 15000,
     "mp": 0,
     "mmp": 1200,
-    "tp": 50,
+    "tp": 51,
     "alive": false,
     "states": [
      1,
      1270
     ],
-    "hpDamage": 207
+    "hpDamage": 308
    },
    "errors": []
   }

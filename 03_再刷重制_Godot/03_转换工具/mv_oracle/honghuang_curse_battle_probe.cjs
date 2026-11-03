@@ -5,6 +5,8 @@
 // 产物 .sandbox/honghuang_curse_battle.json，手工复制为 tests/fixtures/honghuang_curse_battle_oracle.json（tests/xiyou_honghuang_curse_battle 对照，不进同步）。
 const {start, makeCase, finish, round} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
+// 五乘区（installNativePowerZonesRuntime）重制不移植（O-050），关掉才比得了绝对伤害（同 yunshang_probe）
+w.eval('CodexZones.ENABLED=false;');
 const stub = new Proxy({}, {get: () => () => {}});
 function setup(curse, rnd) {
   newGame();
