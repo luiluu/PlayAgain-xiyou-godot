@@ -226,6 +226,7 @@ func _scene() -> void:
 	check("scene.open", not page._bulk.is_empty() and int(page._bulk.available) == 25 and int(page._bulk.number) == 1 and page.bulk_win.visible, page._bulk.keys())
 	# 窗体读数（Window_BulkPillNumber：宽 456、fittingHeight(8)＝324、居中；opacity／backOpacity 255，皮肤透明处垫 #111827）
 	check("win.rect", page.bulk_win.position == Vector2(412, 198) and page.bulk_win.size == Vector2(456, 324), [page.bulk_win.position, page.bulk_win.size])
+	check("win.backdrop_inner", page.bulk_win.backdrop_rect() == Rect2(Vector2(4, 4), page.bulk_win.size - Vector2(8, 8)), [page.bulk_win.backdrop_rect(), page.bulk_win.size])
 	check("win.opacity_backdrop", page.bulk_win.opacity == 255 and page.bulk_win.backdrop == Color("#111827"), [page.bulk_win.opacity, page.bulk_win.backdrop])
 	# 触摸键：五个（-10、-1、+1、+10、确定 96 宽），间距 16 整排居中，y＝buttonY 192；最近一次输入是键盘（Enter 选的人）时不显示
 	var rs: Array = page._bulk_button_rects()
