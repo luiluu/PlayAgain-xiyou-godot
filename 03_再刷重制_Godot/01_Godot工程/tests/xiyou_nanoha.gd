@@ -165,13 +165,16 @@ func _field() -> void:
 ## 各敌行动后血量与死活（每个目标 max(1, _costmp) 段同值伤害）；extreme 超 512 段走 ACS 快速结算（96 段弹字＋合并尾段）
 func _cast() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/nanoha3_oracle.json"))
-	if not check("cast.oracle_present", ref is Dictionary and ref.cases.size() == 29):
+	if not check("cast.oracle_present", ref is Dictionary and ref.cases.size() == 31):
 		return
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
 		var o: Dictionary = c.observed
 		if c.id.begins_with("ai."):
 			_ai(c)
+			continue
+		if c.id.begins_with("atk."):
+			_atk(c)
 			continue
 		var b := _battle({"party": [108], "hp": o.hp0})
 		var logic: XBattleLogic = b[0]
@@ -188,26 +191,43 @@ func _cast() -> void:
 		check(c.id + ".mp", int(n.mp) == int(o.mpAfter) and int(n.get_meta("costmp", -1)) == int(o.get("costmpAfter", -1)),
 			[n.mp, n.get_meta("costmp", -1), o.mpAfter, o.get("costmpAfter")])
 		# 段数：参照每个目标掉血＝value×段数（value 取 applyPostDamageEval 收到的值），重制取日志本体＋extra；死活照比。
-		# 伤害绝对值不比：本宿主下普攻（cast.1）也差同一倍数，属整条伤害链／开局设置的既有差别，见交付单
+		# 单段伤害照比绝对值（参照探针关了五乘区，见 dmg1b 交付单）
 		var want := {}
+		var want_value := {}
 		for p in o.post:
 			want[int(p.t)] = int(round((float(o.hp0[int(p.t)]) - float(o.hp1[int(p.t)])) / float(p.value)))
+			want_value[int(p.t)] = int(p.value)
 		var got := {}
+		var got_value := {}
 		var pops := 0
 		for l in logs:
 			if l is Dictionary and l.has("target") and l.get("skill", {}).get("id", 0) == int(c.setup.skill):
 				var i := logic.enemies.find(l.target)
+				got_value[i] = int(l.hp)
 				var extra: Array = l.get("extra", [])
 				var hits := int(round((float(hp0[i]) - logic.enemies[i].hp) / float(l.hp))) if float(l.hp) > 0.0 else 0
 				got[i] = hits
 				pops += 1 + extra.size()
 				check(c.id + ".same_value.%d" % i, extra.all(func(v): return float(v) == float(l.hp)), [l.hp, extra.slice(0, 3)])
+		check(c.id + ".value", got_value == want_value, [got_value, want_value])
 		var dead: Array = logic.enemies.map(func(e): return e.is_dead())
 		if c.id.ends_with(".kill") or c.id.ends_with(".extreme"):
 			check(c.id + ".hits", dead == o.dead, [dead, o.dead])
 		else:
 			check(c.id + ".hits", got == want and dead == o.dead, [got, want, dead, o.dead])
 		check(c.id + ".popups", pops == int(o.pops), [pops, o.pops])
+
+
+## nanoha3_oracle atk.*：同宿主别的角色（1、9 号）单人普攻 1 号敌，比单段伤害（dmg1b：关五乘区后不只奈叶一致）
+func _atk(c: Dictionary) -> void:
+	var o: Dictionary = c.observed
+	var b := _battle({"party": [int(c.setup.actor)], "hp": o.hp1.map(func(_v): return BIG_HP)})
+	var logic: XBattleLogic = b[0]
+	var a := logic.actors[0] as XActor
+	var hp0: float = logic.enemies[0].hp
+	logic.act(a, XDB.rec("Skills", 1), logic.enemies[0])
+	check(c.id + ".atk", int(a.atk) == int(o.atk) and int(logic.enemies[0].def) == int(o.def), [a.atk, logic.enemies[0].def, o.atk, o.def])
+	check(c.id + ".damage", int(hp0 - logic.enemies[0].hp) == -int(o.gains[0].d), [hp0 - logic.enemies[0].hp, o.gains])
 
 
 ## nanoha3_oracle ai.*：智能 AI 选的技能（会 5692 时六档魔炮替掉 5703～5709，估伤按付费后 MP ×段数；不会 5692 照常）
