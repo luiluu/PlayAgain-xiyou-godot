@@ -19,7 +19,8 @@
 - `内容覆盖检查.py`：hard 0、new 0、resolved 0，基线不用更新。`语法检查.py`：489 个 .gd 0 问题。
 - 专项：`xiyou_nanoha` 39/39（反向验证：去掉 add_param 两行挂 4 项，已用备份还原）。
 - 选测：`选测.py main --list` 列出的 123 个场景（战斗核心按抽样留 d1b／d2c／d3d／d3e／d4b／d5c／d6d，含 `xiyou_determinism`、`xiyou_actor_p0`、`xiyou_wtype`、`xiyou_floor_odds`、`xiyou_floor_run*`）＋扩角色要的含 108 能力值段 `xiyou_rules_d1d／d2d／d3d／d4d／d5d／d6d`，共 128 个，`并行测试.py --jobs 2`：全部通过（2066 秒，无偶发）；另补 `xiyou_help_card` 1054/1054（同步重跑了 help 探针，选测没选它）。
-- 没跑全量 `检查.sh`（车道须知）。`xiyou_rules_d2d`、`d4d` 各 304 秒，过了上限一半（工具提示按场景拆分，原来就接近，非本期引入）。
+- 交付前合了一次 main（带进 tusu7、tools45、gaps4、审查 27）：`_forced_run` 一处冲突，奈叶 `end_execute` 与屠苏 endAction 两边都留（先关目标表，屠苏剑气另建行动不记）；合并后 `--补齐`、再跑一轮同步（80 个探针全部沿用，结论同上，指纹已按合并后的工具文件刷新），补跑 `xiyou_nanoha`、`xiyou_tusu*`（三个）、`xiyou_determinism`、`xiyou_actor_p0` 全过，语法检查过。tools45 把 xiyou_rules 拆成八段后的新段名没有再跑（只是拆分，断言总数不变）。
+- 没跑全量 `检查.sh`（车道须知）。`xiyou_rules_d2d`、`d4d` 各 304 秒，过了上限一半；main 上 tools45 已拆成八段。
 - 没在游戏里实际点商店买号角试招募（招募走 CE1666 通用事件，`xiyou_actor_p0` 第六批覆盖）。
 
 ## 交接板
@@ -44,7 +45,6 @@
 
 - 建议：车道须知「扩角色先单跑 slice_probe」——不带参数的 `node slice_probe.cjs` 六个难度串行、161 个角色，每个难度单跑约 6 分钟（同步里分难度并行，单份 337～990 秒），串行六份要 35 分钟以上、而且六份跑完才一起写文件；本期跑到 28 分钟停了，改由同步分难度并行跑。可以让 slice_probe 认一个 `XIYOU_PROBE_ACTORS`（只量新角色），单跑才真能先查问题；归哪吒。
 - 已做：无。
-- 建议：`xiyou_rules_d2d`／`d4d` 304 秒，过半上限，d2、d4 可像 d3 一样拆八份；归哪吒。
 
 ## 本分支提交
 
