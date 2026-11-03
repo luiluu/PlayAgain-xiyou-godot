@@ -59,7 +59,8 @@ const TICKETS = [
   ['mix', {1: [7203, 7205, 7201, 7215, 7206]}],
   ['holder_second', {9: [7201, 7202]}],         // 队首没有诅咒：取第一个有诅咒的（9）
   ['holder_first_wins', {8: [7210], 9: [7201, 7202]}],
-  ['outside_party', {50: [7201, 7202]}]         // 不在队伍：队首（没诅咒）
+  ['outside_party', {50: [7201, 7202]}],        // 不在队伍：队首（没诅咒）
+  ['tie405', {1: [7201, 7202, 7212, 7209]}]     // 1.5×1.5×1.5×1.2＝4.05（略小于中点，toFixed 舍成 4.0）
 ];
 for (const [tag, curses] of TICKETS) cases.push(makeCase(`ticket.${tag}`, {curses}, () => {
   fresh({switches: {2483: true}, curses});
@@ -104,6 +105,14 @@ for (const [tag, switches, curses, troop, map, origin, result, rolls, extra] of 
 }));
 // 没开战直接调：powerBattle 为空
 cases.push(makeCase('power.no_battle', {}, () => { fresh({switches: {2483: true}}); w.BattleManager.setup(539, true, false); return {got: H.rollPower(seqRand([0, 0]))}; }));
+
+// ⑤ 指引的 powerLine（G.milestoneTexts 的最后一段）
+for (const [tag, switches, curses] of [['off', {}, []], ['plain', {2463: true}, []], ['heavy', {2483: true}, HEAVY5], ['tie', {2483: true}, [7201, 7202]]]) cases.push(makeCase(`guide.${tag}`, {switches, curses}, () => {
+  fresh({switches, curses: {1: curses}});
+  const out = {};
+  for (const seg of w.CodexGuide.ATLAS) out[seg.key] = w.CodexGuide.milestoneTexts(seg);
+  return {texts: out};
+}));
 
 // ④ CE1445
 const SAMPLE = [1, 8, 9, 10, 2, 50, 166];
