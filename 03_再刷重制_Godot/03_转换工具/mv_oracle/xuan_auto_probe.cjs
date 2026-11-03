@@ -31,6 +31,7 @@ const I = X.ids(), K = k => I.skill[k], ST = k => I.state[k];
 const key = b => !b ? null : b.isActor() ? 'a' + b.actorId() : 'e' + b.index();
 const who = x => typeof x === 'number' ? w.$gameActors.actor(x) : w.$gameTroop.members()[+String(x).slice(1)];
 function battle(o) {
+  B.clearAll();  // 真实游戏战斗结束时清绑定模块的回合记号（startedRound／endedRound）；各例不结束战斗，不清会把上一例的回合号带进来、跳过回合收尾
   newGame();
   w.eval('$gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
   w.$gameSwitches.setValue(2494, true);
