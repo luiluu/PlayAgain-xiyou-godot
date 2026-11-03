@@ -612,6 +612,7 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Arr
 	var tusu_list = XTusu.targets(self, a, skill, chosen)  # 屠苏 makeTargets 包装：自己的和鸣、锁定给持武者，金汤滤掉形态中的本体
 	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, _targets_for(a, skill, chosen) if tusu_list == null else tusu_list, chosen))  # 云裳云丝展幅、千军入袖收袖 makeTargets 包装在异化之内
 	list = XBinding.filter_targets(self, a, skill, list)  # 绑定 makeTargets 包装：敌方对敌技能滤掉形态中的本体
+	list = XXuanBattle.extend_targets(a, skill, list)  # 璇 makeTargets 包装：列星期间回光、璃壁加受益者，棱光多打几遍
 	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
 	return list
 

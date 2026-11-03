@@ -40,7 +40,7 @@ func _run() -> void:
 	GameApp.fast_headless_frames()
 	var f: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", f.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("complete", f.cases.size() == 23, f.cases.size())
+	check("complete", f.cases.size() == 40, f.cases.size())
 	for c in f.cases:
 		check(c.id + ".oracle", c.errors.is_empty(), c.errors)
 		if c.errors.is_empty():
@@ -55,8 +55,8 @@ func _setup(spec: Dictionary) -> Dictionary:
 	XState.current = s
 	s.switches[2494] = true
 	s.actor_max_level = 99
-	for id in [XUAN, A1, A8]:
-		s.add_actor(id)
+	for id in spec.get("party", [XUAN, A1, A8]):
+		s.add_actor(int(id))
 	var a: XActor = s.actor(XUAN)
 	a.change_level(int(spec.get("level", 60)))
 	var chart := XTusuXuan.chart(s)
@@ -64,6 +64,9 @@ func _setup(spec: Dictionary) -> Dictionary:
 		s.actor_advance[XUAN] = int(spec.stage)
 	if spec.has("roster"):
 		chart.roster = spec.roster.map(func(v): return int(v))
+	for m in spec.get("marks", {}):
+		chart.level[m] = int(spec.marks[m])
+		chart.slots[XTusuXuan.SLOT_OF[m]] = m
 	XTusuXuan.sync_marks(s, a)
 	a.recover_all()
 	var stream := FixedStream.new()
@@ -135,6 +138,9 @@ func _case(k: Dictionary) -> void:
 	var o: Dictionary = k.observed
 	var c := _setup(k.setup)
 	var tag := id.get_slice(".", 0)
+	if tag in ["yiguang", "relay", "gongsu", "binggui", "liuhui", "liexing"]:
+		_part2(id, tag, o, c)
+		return
 	match id:
 		"jixing.ally":
 			_snap(id + ".s0", o.s0, c)
@@ -232,3 +238,91 @@ func _case(k: Dictionary) -> void:
 					check(label + ".tacit", int(XXuanBattle.data.tacit) == int(row.tacit), [row.tacit, XXuanBattle.data.tacit])
 					check(label + ".tonggui", bool(XXuanBattle.data.tonggui) == bool(row.tonggui))
 					check(label + ".state", c.a.state_ids.has(XXuanBattle.state_id("tonggui")) == bool(row.state))
+
+
+func _sh(b) -> Array:
+	var out := XShieldLedger.rows(b).filter(func(r): return str(r.source).begins_with("xuan.")).map(func(r): return {"source": str(r.source), "amount": roundf(float(r.amount)), "until": int(r.until)})
+	out.sort_custom(func(x, y): return x.source < y.source)
+	return out
+
+
+func _same_sh(tag: String, got: Array, want: Array) -> void:
+	var w := want.map(func(r): return {"source": str(r.source), "amount": float(r.amount), "until": int(r.until)})
+	check(tag, JSON.stringify(got) == JSON.stringify(w), [want, got])
+
+
+func _dm(tag: String, b: XActor, want: Dictionary) -> void:
+	check(tag, roundf(b.def) == float(want.def) and roundf(b.mdf) == float(want.mdf), [want, [b.def, b.mdf]])
+
+
+## 第二期续：移光、接力、留辉、共宿、并轨 3 级、列星
+func _part2(id: String, tag: String, o: Dictionary, c: Dictionary) -> void:
+	var t3: XActor = c.s.actor(2) if c.s.party.has(2) else null
+	if t3 != null:
+		t3.hp = floorf(t3.mhp / 2.0)
+	match tag:
+		"yiguang", "relay":
+			_use(c, "jixing", c.t)
+			_use(c, "libi", c.t)
+			_same_sh(id + ".s0", _sh(c.t), o.s0)
+			_use(c, "jixing.possess", c.t2)
+			_same_sh(id + ".prev", _sh(c.t), o.prev)
+			_same_sh(id + ".next", _sh(c.t2), o.next)
+			if o.has("third"):
+				_same_sh(id + ".third", _sh(t3), o.third)
+		"gongsu":
+			_dm(id + ".base.t", c.t, o.base.t)
+			_use(c, "jixing", c.t)
+			_dm(id + ".bound.t", c.t, o.bound.t)
+			_dm(id + ".bound.t2", c.t2, o.bound.t2)
+			_dm(id + ".xuan", c.a, o.xuan)
+			check(id + ".defRate", is_equal_approx(XXuanBattle.gongsu_defense_rate(c.a), float(o.defRate)), [o.defRate, XXuanBattle.gongsu_defense_rate(c.a)])
+			var ops: Array = XXuanBattle.damage_ops(XDB.rec("Skills", 1), c.t)
+			var rate: float = float(ops[0].value) - 1.0 if not ops.is_empty() else 0.0
+			check(id + ".rate", is_equal_approx(rate, float(o.rate)), [o.rate, rate])
+			check(id + ".rate2", XXuanBattle.damage_ops(XDB.rec("Skills", 1), c.t2).is_empty() == (float(o.rate2) == 0.0))
+		"binggui":
+			XXuanChart.chart(c.s).partner = A8
+			_dm(id + ".base", c.t2, o.base)
+			_use(c, "jixing", c.t)
+			_dm(id + ".partner", c.t2, o.partner)
+			_dm(id + ".host", c.t, o.host)
+		"liuhui":
+			_use(c, "jixing", c.t)
+			_dm(id + ".0", c.t, o.seq[0])
+			_use(c, "jixing.possess", c.t2)
+			_dm(id + ".1", c.t, o.seq[1])
+			for i in range(2, o.seq.size()):
+				_next(c)
+				_dm("%s.r%d" % [id, int(o.seq[i].round)], c.t, o.seq[i])
+		"liexing":
+			_use(c, "jixing", c.t)
+			_use(c, "liexing", c.a)
+			var d := XXuanBattle.data
+			var w: Dictionary = o.s0
+			check(id + ".until", int(d.liexingUntil) == int(w.until), [w.until, d.liexingUntil])
+			check(id + ".shadows", d.shadows == w.shadows.map(func(v): return int(v)), [w.shadows, d.shadows])
+			_shadow_state(id, c, w)
+			var cover: Array = XXuanBattle.beneficiaries(c.a).list.map(func(b): return int(b.actor_id))
+			check(id + ".cover", cover == w.cover.map(func(v): return int(v)), [w.cover, cover])
+			for p in [["heal", "huiguang", c.t], ["wall", "libi", c.t], ["prism", "lengguang", c.e]]:
+				var got: Array = c.logic.targets_for(c.a, XDB.rec("Skills", XTusuXuan.skill_id(XUAN, p[1])), p[2]).map(func(b): return int(b.actor_id) if b is XActor else -c.logic.enemies.find(b) - 1)
+				check(id + "." + p[0], got == w[p[0]].map(func(v): return int(v)), [w[p[0]], got])
+			var ops: Array = XXuanBattle.damage_ops(XDB.rec("Skills", 1), t3)
+			check(id + ".rate3", not ops.is_empty() and is_equal_approx(float(ops[0].value) - 1.0, float(w.rate3)), [w.rate3, ops])
+			_dm(id + ".def3", t3, w.def3)
+			for row in o.seq:
+				_next(c)
+				var label := "%s.r%d" % [id, int(row.round)]
+				check(label + ".until", int(d.liexingUntil) == int(row.until), [row.until, d.liexingUntil])
+				check(label + ".shadows", d.shadows == row.shadows.map(func(v): return int(v)), [row.shadows, d.shadows])
+				_shadow_state(label, c, row)
+
+
+func _shadow_state(tag: String, c: Dictionary, w: Dictionary) -> void:
+	var got := [A1, A8, 2].filter(func(id): return c.s.party.has(id) and c.s.actor(id).state_ids.has(XXuanBattle.state_id("shadow")))
+	var want: Array = w.shadowState.map(func(v): return int(v))
+	want.sort()
+	got.sort()
+	check(tag + ".shadowState", got == want, [w.shadowState, got])
+	check(tag + ".self", c.a.state_ids.has(XXuanBattle.state_id("liexing")) == bool(w.self))

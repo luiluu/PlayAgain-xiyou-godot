@@ -155,6 +155,7 @@ static func absorb(b, damage: float, quiet := false) -> Dictionary:
 
 ## onAbsorb：各角色挡下后的反应（原版是串起来的回调；这里直接列出）
 static func _on_absorb(b, _got: float, list: Array) -> void:
+	XXuanBattle.on_absorb(b, list)  # 璇 onAbsorb 包装：护主记录；三法宝成长：星盾流转定轨
 	if list.any(func(r): return r.source == "guyu.shield" and float(r.lastAbsorbed) > 0.0):
 		XGuyu.spring_shield_hit(b)  # 三法宝成长 onAbsorb：花荫挡下过 → 谷雨 springShieldHit
 

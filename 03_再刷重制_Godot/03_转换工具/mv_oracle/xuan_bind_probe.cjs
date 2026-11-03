@@ -9,6 +9,7 @@ if (!X || !B || !L) throw new Error('璇模块未安装');
 w.eval('CodexZones.ENABLED=false;');
 w.CodexRouteSuppress.otherScale = () => 1;
 w.CodexRouteSuppress.isSuper = () => false;
+w.CodexRouteSuppress.support = () => 1;  // 共宿伤害率 ×路线支援（O-050 不移植）
 if (!w.$) w.$ = {};
 w.$.toaster = () => {};
 const XUAN = 177, A1 = 1, A8 = 8;
@@ -21,7 +22,8 @@ function setup(o = {}) {
   newGame(); lines = [];
   w.Math.random = () => 0.5;
   w.eval('$gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
-  w.eval(`$gameParty._actors=[${XUAN},${A1},${A8}]; $gameParty._battleMembers=[${XUAN},${A1},${A8},0,0];`);
+  const P = o.party || [XUAN, A1, A8];
+  w.eval(`$gameParty._actors=[${P}]; $gameParty._battleMembers=[${P.concat([0, 0, 0, 0, 0]).slice(0, 5)}];`);
   w.$gameSwitches.setValue(2494, true);
   const a = w.$gameActors.actor(XUAN), t = w.$gameActors.actor(A1), t2 = w.$gameActors.actor(A8);
   a.changeLevel(o.level || 60, false);
@@ -127,5 +129,56 @@ C('end.clear', {}, c => {
   use(c, 'jixing', c.t);
   c.bm.endBattle(0);
   return {data: !!c.a._codexXuan, form: c.a._states.includes(ST('possess')), mark: c.t._states.includes(ST('hostmark')), bound: B.isBound(c.a), counter: c.a._codexXuanTacit === undefined ? null : c.a._codexXuanTacit};
+});
+// ---- 第二期续：移光、接力、留辉、共宿、并轨 3 级、列星 ----
+const A2 = 2;
+const sh = b => L.rows(b).filter(r => /^xuan\./.test(r.source)).map(r => ({source: r.source, amount: round(r.amount), until: r.until})).sort((x, y) => x.source < y.source ? -1 : 1);
+const dm = b => ({def: round(b.def), mdf: round(b.mdf)});
+for (const [tag, o] of [['lv1', {marks: {yiguang: 1}}], ['lv3', {marks: {yiguang: 3}}], ['none', {}]]) C(`yiguang.${tag}`, o, c => {
+  use(c, 'jixing', c.t); use(c, 'libi', c.t);
+  const s0 = sh(c.t);
+  use(c, 'jixing.possess', c.t2);
+  return {s0, prev: sh(c.t), next: sh(c.t2)};
+});
+for (const [tag, level, mk] of [['lv20', 20, {}], ['lv60', 60, {}], ['lv60_yiguang2', 60, {yiguang: 2}], ['lv10', 10, {}]]) C(`relay.${tag}`, {level, marks: mk, party: [XUAN, A1, A8, A2]}, c => {
+  const t3 = w.$gameActors.actor(A2);
+  t3.setHp(Math.floor(t3.mhp / 2));
+  use(c, 'jixing', c.t); use(c, 'libi', c.t);
+  const s0 = sh(c.t);
+  use(c, 'jixing.possess', c.t2);
+  return {s0, prev: sh(c.t), next: sh(c.t2), third: sh(t3)};
+});
+for (const level of [10, 20, 40, 60]) C(`gongsu.lv${level}`, {level}, c => {
+  const base = {t: dm(c.t), t2: dm(c.t2)};
+  use(c, 'jixing', c.t);
+  return {base, bound: {t: dm(c.t), t2: dm(c.t2)}, xuan: dm(c.a), rate: X.hostDamageRate(c.t), rate2: X.hostDamageRate(c.t2), dmgRate: X.gongsuDamageRate(c.a), defRate: X.gongsuDefenseRate(c.a)};
+});
+C('binggui.partner', {marks: {binggui: 3}}, c => {
+  X.chart(c.a).partner = A8;
+  const base = dm(c.t2);
+  use(c, 'jixing', c.t);
+  return {base, partner: dm(c.t2), host: dm(c.t)};
+});
+for (const [tag, mk] of [['lv2', {liuhui: 2}], ['none', {}]]) C(`liuhui.${tag}`, {marks: mk}, c => {
+  use(c, 'jixing', c.t);
+  const seq = [dm(c.t)];
+  use(c, 'jixing.possess', c.t2);
+  seq.push(dm(c.t));
+  for (let i = 0; i < 3; i++) { nextRound(c); seq.push({round: B.round(), ...dm(c.t)}); }
+  return {seq};
+});
+const ids2 = list => list.map(b => b.isActor() ? b.actorId() : -b.index() - 1);
+const tg = (c, key, target) => { const act = new w.Game_Action(c.a); act.setSkill(KEY(key)); act.setTarget(target.index()); return ids2(act.makeTargets()); };
+for (const [tag, level] of [['lv30', 30], ['lv40', 40], ['lv60', 60]]) C(`liexing.${tag}`, {level, party: [XUAN, A1, A8, A2]}, c => {
+  const t3 = w.$gameActors.actor(A2);
+  t3.setHp(Math.floor(t3.mhp / 2));
+  use(c, 'jixing', c.t);
+  use(c, 'liexing', c.a);
+  const d = c.a._codexXuan;
+  const s0 = {until: d.liexingUntil, shadows: d.shadows.slice(), shadowState: [A1, A8, A2].filter(id => w.$gameActors.actor(id).isStateAffected(ST('shadow'))), self: c.a.isStateAffected(ST('liexing')),
+    cover: X.beneficiaries(c.a).list.map(b => b.actorId()), heal: tg(c, 'huiguang', c.t), wall: tg(c, 'libi', c.t), prism: tg(c, 'lengguang', c.e), rate3: X.hostDamageRate(t3), def3: dm(t3)};
+  const seq = [];
+  for (let i = 0; i < 3; i++) { nextRound(c); seq.push({round: B.round(), until: d.liexingUntil, shadows: d.shadows.slice(), self: c.a.isStateAffected(ST('liexing')), shadowState: [A1, A8, A2].filter(id => w.$gameActors.actor(id).isStateAffected(ST('shadow')))}); }
+  return {s0, seq};
 });
 process.exit(finish(host, 'xuan_bind.json', {hostScope: '真实 Game_Action.apply、BattleManager.startTurn／endTurn；手动模式；随机 0.5；五乘区、路线压制关', cases}) ? 0 : 1);

@@ -1734,6 +1734,728 @@
     "counter": 0
    },
    "errors": []
+  },
+  {
+   "id": "yiguang.lv1",
+   "setup": {
+    "marks": {
+     "yiguang": 1
+    }
+   },
+   "observed": {
+    "s0": [
+     {
+      "source": "xuan.libi",
+      "amount": 155496,
+      "until": 2
+     }
+    ],
+    "prev": [
+     {
+      "source": "xuan.libi",
+      "amount": 77748,
+      "until": 1
+     }
+    ],
+    "next": [
+     {
+      "source": "xuan.libi",
+      "amount": 77748,
+      "until": 1
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "yiguang.lv3",
+   "setup": {
+    "marks": {
+     "yiguang": 3
+    }
+   },
+   "observed": {
+    "s0": [
+     {
+      "source": "xuan.libi",
+      "amount": 155496,
+      "until": 2
+     }
+    ],
+    "prev": [],
+    "next": [
+     {
+      "source": "xuan.libi",
+      "amount": 155496,
+      "until": 1
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "yiguang.none",
+   "setup": {},
+   "observed": {
+    "s0": [
+     {
+      "source": "xuan.libi",
+      "amount": 155496,
+      "until": 2
+     }
+    ],
+    "prev": [
+     {
+      "source": "xuan.libi",
+      "amount": 77748,
+      "until": 1
+     }
+    ],
+    "next": [
+     {
+      "source": "xuan.libi",
+      "amount": 77748,
+      "until": 1
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "relay.lv20",
+   "setup": {
+    "level": 20,
+    "marks": {},
+    "party": [
+     177,
+     1,
+     8,
+     2
+    ]
+   },
+   "observed": {
+    "s0": [
+     {
+      "source": "xuan.libi",
+      "amount": 23227,
+      "until": 2
+     }
+    ],
+    "prev": [
+     {
+      "source": "xuan.libi",
+      "amount": 18582,
+      "until": 2
+     }
+    ],
+    "next": [],
+    "third": [
+     {
+      "source": "xuan.relay.xuan.libi.until-2",
+      "amount": 4645,
+      "until": 2
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "relay.lv60",
+   "setup": {
+    "level": 60,
+    "marks": {},
+    "party": [
+     177,
+     1,
+     8,
+     2
+    ]
+   },
+   "observed": {
+    "s0": [
+     {
+      "source": "xuan.libi",
+      "amount": 155496,
+      "until": 2
+     }
+    ],
+    "prev": [
+     {
+      "source": "xuan.libi",
+      "amount": 54424,
+      "until": 1
+     }
+    ],
+    "next": [
+     {
+      "source": "xuan.libi",
+      "amount": 77748,
+      "until": 1
+     }
+    ],
+    "third": [
+     {
+      "source": "xuan.relay.xuan.libi.until-1",
+      "amount": 23324,
+      "until": 1
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "relay.lv60_yiguang2",
+   "setup": {
+    "level": 60,
+    "marks": {
+     "yiguang": 2
+    },
+    "party": [
+     177,
+     1,
+     8,
+     2
+    ]
+   },
+   "observed": {
+    "s0": [
+     {
+      "source": "xuan.libi",
+      "amount": 155496,
+      "until": 2
+     }
+    ],
+    "prev": [
+     {
+      "source": "xuan.libi",
+      "amount": 27212,
+      "until": 1
+     }
+    ],
+    "next": [
+     {
+      "source": "xuan.libi",
+      "amount": 116622,
+      "until": 1
+     }
+    ],
+    "third": [
+     {
+      "source": "xuan.relay.xuan.libi.until-1",
+      "amount": 11662,
+      "until": 1
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "relay.lv10",
+   "setup": {
+    "level": 10,
+    "marks": {},
+    "party": [
+     177,
+     1,
+     8,
+     2
+    ]
+   },
+   "observed": {
+    "s0": [
+     {
+      "source": "xuan.libi",
+      "amount": 8816,
+      "until": 2
+     }
+    ],
+    "prev": [
+     {
+      "source": "xuan.libi",
+      "amount": 8816,
+      "until": 2
+     }
+    ],
+    "next": [],
+    "third": []
+   },
+   "errors": []
+  },
+  {
+   "id": "gongsu.lv10",
+   "setup": {
+    "level": 10
+   },
+   "observed": {
+    "base": {
+     "t": {
+      "def": 20,
+      "mdf": 20
+     },
+     "t2": {
+      "def": 20,
+      "mdf": 20
+     }
+    },
+    "bound": {
+     "t": {
+      "def": 29,
+      "mdf": 32
+     },
+     "t2": {
+      "def": 20,
+      "mdf": 20
+     }
+    },
+    "xuan": {
+     "def": 64,
+     "mdf": 80
+    },
+    "rate": 0.1,
+    "rate2": 0,
+    "dmgRate": 0.1,
+    "defRate": 0.15
+   },
+   "errors": []
+  },
+  {
+   "id": "gongsu.lv20",
+   "setup": {
+    "level": 20
+   },
+   "observed": {
+    "base": {
+     "t": {
+      "def": 20,
+      "mdf": 20
+     },
+     "t2": {
+      "def": 20,
+      "mdf": 20
+     }
+    },
+    "bound": {
+     "t": {
+      "def": 33,
+      "mdf": 37
+     },
+     "t2": {
+      "def": 20,
+      "mdf": 20
+     }
+    },
+    "xuan": {
+     "def": 90,
+     "mdf": 118
+    },
+    "rate": 0.14,
+    "rate2": 0,
+    "dmgRate": 0.14,
+    "defRate": 0.15
+   },
+   "errors": []
+  },
+  {
+   "id": "gongsu.lv40",
+   "setup": {
+    "level": 40
+   },
+   "observed": {
+    "base": {
+     "t": {
+      "def": 20,
+      "mdf": 20
+     },
+     "t2": {
+      "def": 20,
+      "mdf": 20
+     }
+    },
+    "bound": {
+     "t": {
+      "def": 52,
+      "mdf": 63
+     },
+     "t2": {
+      "def": 20,
+      "mdf": 20
+     }
+    },
+    "xuan": {
+     "def": 143,
+     "mdf": 194
+    },
+    "rate": 0.21999999999999997,
+    "rate2": 0,
+    "dmgRate": 0.21999999999999997,
+    "defRate": 0.22499999999999998
+   },
+   "errors": []
+  },
+  {
+   "id": "gongsu.lv60",
+   "setup": {
+    "level": 60
+   },
+   "observed": {
+    "base": {
+     "t": {
+      "def": 20,
+      "mdf": 20
+     },
+     "t2": {
+      "def": 20,
+      "mdf": 20
+     }
+    },
+    "bound": {
+     "t": {
+      "def": 78,
+      "mdf": 101
+     },
+     "t2": {
+      "def": 20,
+      "mdf": 20
+     }
+    },
+    "xuan": {
+     "def": 196,
+     "mdf": 271
+    },
+    "rate": 0.30000000000000004,
+    "rate2": 0,
+    "dmgRate": 0.30000000000000004,
+    "defRate": 0.3
+   },
+   "errors": []
+  },
+  {
+   "id": "binggui.partner",
+   "setup": {
+    "marks": {
+     "binggui": 3
+    }
+   },
+   "observed": {
+    "base": {
+     "def": 78,
+     "mdf": 101
+    },
+    "partner": {
+     "def": 78,
+     "mdf": 101
+    },
+    "host": {
+     "def": 78,
+     "mdf": 101
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "liuhui.lv2",
+   "setup": {
+    "marks": {
+     "liuhui": 2
+    }
+   },
+   "observed": {
+    "seq": [
+     {
+      "def": 78,
+      "mdf": 101
+     },
+     {
+      "def": 78,
+      "mdf": 101
+     },
+     {
+      "round": 2,
+      "def": 78,
+      "mdf": 101
+     },
+     {
+      "round": 3,
+      "def": 20,
+      "mdf": 20
+     },
+     {
+      "round": 4,
+      "def": 20,
+      "mdf": 20
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "liuhui.none",
+   "setup": {
+    "marks": {}
+   },
+   "observed": {
+    "seq": [
+     {
+      "def": 78,
+      "mdf": 101
+     },
+     {
+      "def": 20,
+      "mdf": 20
+     },
+     {
+      "round": 2,
+      "def": 20,
+      "mdf": 20
+     },
+     {
+      "round": 3,
+      "def": 20,
+      "mdf": 20
+     },
+     {
+      "round": 4,
+      "def": 20,
+      "mdf": 20
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "liexing.lv30",
+   "setup": {
+    "level": 30,
+    "party": [
+     177,
+     1,
+     8,
+     2
+    ]
+   },
+   "observed": {
+    "s0": {
+     "until": 2,
+     "shadows": [
+      2
+     ],
+     "shadowState": [
+      2
+     ],
+     "self": true,
+     "cover": [
+      1,
+      2
+     ],
+     "heal": [
+      1,
+      2
+     ],
+     "wall": [
+      1,
+      2
+     ],
+     "prism": [
+      -1,
+      -1
+     ],
+     "rate3": 0.18,
+     "def3": {
+      "def": 41,
+      "mdf": 49
+     }
+    },
+    "seq": [
+     {
+      "round": 2,
+      "until": 2,
+      "shadows": [
+       2
+      ],
+      "self": true,
+      "shadowState": [
+       2
+      ]
+     },
+     {
+      "round": 3,
+      "until": -1,
+      "shadows": [],
+      "self": false,
+      "shadowState": []
+     },
+     {
+      "round": 4,
+      "until": -1,
+      "shadows": [],
+      "self": false,
+      "shadowState": []
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "liexing.lv40",
+   "setup": {
+    "level": 40,
+    "party": [
+     177,
+     1,
+     8,
+     2
+    ]
+   },
+   "observed": {
+    "s0": {
+     "until": 2,
+     "shadows": [
+      2,
+      8
+     ],
+     "shadowState": [
+      8,
+      2
+     ],
+     "self": true,
+     "cover": [
+      1,
+      2,
+      8
+     ],
+     "heal": [
+      1,
+      2,
+      8
+     ],
+     "wall": [
+      1,
+      2,
+      8
+     ],
+     "prism": [
+      -1,
+      -1,
+      -1
+     ],
+     "rate3": 0.21999999999999997,
+     "def3": {
+      "def": 52,
+      "mdf": 63
+     }
+    },
+    "seq": [
+     {
+      "round": 2,
+      "until": 2,
+      "shadows": [
+       2,
+       8
+      ],
+      "self": true,
+      "shadowState": [
+       8,
+       2
+      ]
+     },
+     {
+      "round": 3,
+      "until": -1,
+      "shadows": [],
+      "self": false,
+      "shadowState": []
+     },
+     {
+      "round": 4,
+      "until": -1,
+      "shadows": [],
+      "self": false,
+      "shadowState": []
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "liexing.lv60",
+   "setup": {
+    "level": 60,
+    "party": [
+     177,
+     1,
+     8,
+     2
+    ]
+   },
+   "observed": {
+    "s0": {
+     "until": 2,
+     "shadows": [
+      2,
+      8
+     ],
+     "shadowState": [
+      8,
+      2
+     ],
+     "self": true,
+     "cover": [
+      1,
+      2,
+      8
+     ],
+     "heal": [
+      1,
+      2,
+      8
+     ],
+     "wall": [
+      1,
+      2,
+      8
+     ],
+     "prism": [
+      -1,
+      -1,
+      -1
+     ],
+     "rate3": 0.30000000000000004,
+     "def3": {
+      "def": 78,
+      "mdf": 101
+     }
+    },
+    "seq": [
+     {
+      "round": 2,
+      "until": 2,
+      "shadows": [
+       2,
+       8
+      ],
+      "self": true,
+      "shadowState": [
+       8,
+       2
+      ]
+     },
+     {
+      "round": 3,
+      "until": -1,
+      "shadows": [],
+      "self": false,
+      "shadowState": []
+     },
+     {
+      "round": 4,
+      "until": -1,
+      "shadows": [],
+      "self": false,
+      "shadowState": []
+     }
+    ]
+   },
+   "errors": []
   }
  ]
 }

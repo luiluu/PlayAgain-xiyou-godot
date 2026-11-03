@@ -108,8 +108,6 @@ static func meets(a, skill: Dictionary) -> bool:
 	var o := owner_of(int(skill.get("id", 0)))
 	if int(o[0]) == 0:
 		return true
-	if own(a) and int(a.actor_id) == int(o[0]) and str(o[1]) in ["jixing.possess", "liexing"]:
-		return false  # 【cc·悟空】寄星·附身与列星（璇 458、460 行）要本人被绑定；璇的绑定期合进来前恒假（易武已由屠苏三期 XTusu.meets 管）
 	if str(o[1]) == "return" and own(a) and int(a.actor_id) == int(o[0]):
 		var logic = XBinding._logic()
 		return logic != null and XBinding.is_bound(a) and a.is_alive() and a.hp > 0.0 and logic.can_move(a)  # 战斗中、绑定、活着、能动
