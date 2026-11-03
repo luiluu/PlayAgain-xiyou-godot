@@ -154,6 +154,9 @@ func _script(c: Dictionary) -> void:
 			"act":
 				var skill := XDB.rec("Skills", int(st[2]))
 				logs = logic.act(who.call(st[1]), skill, _target(logic, skill, int(st[3])))
+			"force":  # 事件强制行动（339：[1 角色, 角色号, 技能, 目标序号]）走 _forced_run
+				var fu: XBattler = who.call(st[1])
+				logs = logic._force_action([1, fu.actor_id, int(st[2]), int(st[3])], null)
 			"turn":
 				logs = logic.end_turn()
 				logic.start_turn()
@@ -290,7 +293,7 @@ func _run() -> void:
 				_stone(c)
 			else:
 				_script(c)
-	check("covers_all", seen == 16, seen)
+	check("covers_all", seen == 17, seen)
 	_local()
 	finish()
 
