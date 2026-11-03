@@ -39,4 +39,22 @@ function finish(host, name, data) {
   console.log(JSON.stringify({file:name,cases:out.cases.length,errors:bad.map(c=>({id:c.id,errors:c.errors}))}));
   return bad.length === 0;
 }
-module.exports = {APP, start, makeCase, finish, round};
+// 「超强者参照」公用开关（O-050：用户 10-12 定不移植五乘区与超强者路线压制）。
+// 去掉 route-suppress、zones-correction 两个伤害钩子，并关掉路线压制的三处：otherScale（其余倍率）、isSuper（锁定／和鸣／护阵往 1 收）、
+// support（共宿伤害率 ×路线支援），让参照的伤害对得上重制。返回的 enableSuperSwitch() 开 2494（超强者可出战），newGame 会重置开关，所以每次新局后自己调。
+// xuan_* 探针仍各自手写，等悟空 xuan 期做完再迁。
+function superReference(w) {
+  const hooks = w.CodexDamageHooks || [];
+  for (const name of ['route-suppress', 'zones-correction']) {
+    const i = hooks.findIndex(h => h.name === name);
+    if (i < 0) throw new Error('伤害钩子 ' + name + ' 不在');
+    hooks.splice(i, 1);
+  }
+  const R = w.CodexRouteSuppress;
+  if (!R || typeof R.otherScale !== 'function') throw new Error('路线压制模块不在');
+  R.otherScale = () => 1;
+  R.isSuper = () => false;
+  R.support = () => 1;
+  return {enableSuperSwitch: () => w.$gameSwitches.setValue(2494, true)};
+}
+module.exports = {APP, start, makeCase, finish, round, superReference};

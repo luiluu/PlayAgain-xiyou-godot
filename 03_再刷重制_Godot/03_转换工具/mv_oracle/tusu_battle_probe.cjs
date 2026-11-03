@@ -7,23 +7,13 @@
 // 支援的施放与效果、统一伤害钩子、挫势、开刃、自动战斗是四期，这里不量。
 // 每步后记：屠苏的本场数据、上次武相、绑定数据、武具／预约状态，宿主的持武状态，两人生命魔法双防，攻击技能号，
 // 一组技能的 meets／canPay／面板 MP，各键的 payer、canMaintain。产物 .sandbox/tusu_battle.json，拷成 tests/fixtures/tusu_battle_oracle.json（不进同步），专项 xiyou_tusu_battle。
-const {start, makeCase, finish} = require('./shared/host.cjs');
+const {start, makeCase, finish, superReference} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
 const B = w.CodexBinding, T = w.CodexTusu;
 if (!T || !T.payer) throw new Error('屠苏模块未安装');
 if (!B || typeof B.register !== 'function') throw new Error('绑定框架未安装');
-// 同 guyu_battle_probe：用户 10-12 定不移植五乘区与超强者路线压制（O-050），去掉这两个伤害钩子，命中的伤害才对得上重制
-const hooks = w.CodexDamageHooks || [];
-for (const name of ['route-suppress', 'zones-correction']) {
-  const i = hooks.findIndex(h => h.name === name);
-  if (i < 0) throw new Error('伤害钩子 ' + name + ' 不在');
-  hooks.splice(i, 1);
-}
-if (!w.CodexRouteSuppress || typeof w.CodexRouteSuppress.otherScale !== 'function') throw new Error('路线压制模块不在');
-w.CodexRouteSuppress.otherScale = () => 1;
-// 同一条 O-050：路线压制还把锁定、和鸣、护阵倍率按超强者往 1 收（屠苏是超强者，地狱路线 toward(r, 0.5)：和鸣 1.5→1.25、护阵 0.7→0.85），
-// 包装里每次读 R.isSuper，改成恒假（tusu5 查明 tusu4 记的「和鸣只 ×1.25」就是它）
-w.CodexRouteSuppress.isSuper = () => false;
+// O-050：不移植五乘区与超强者路线压制，用 shared/host.cjs 的公用开关去掉它们（和鸣只 ×1.25 就是路线压制 isSuper 造成的，tusu5 查明）
+const SR = superReference(w);
 const stub = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprites = new Map();
 w.Game_Battler.prototype.battler = function () {
@@ -50,7 +40,7 @@ function battle(levels) {
   RELICS.forEach((id, i) => { w.$dataArmors[id] = JSON.parse(JSON.stringify(pristine[i])); });
   w.CodexThreeGrowth.sync();
   w.eval('$gameSystem.setDifficultyId(2); $gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
-  w.$gameSwitches.setValue(2494, true);  // 超强者可出战（同 tusu_growth 专项的开关）
+  SR.enableSuperSwitch();  // 超强者可出战（同 tusu_growth 专项的开关）
   T.recruit();
   w.eval('$gameParty._actors=[' + PARTY + ']; $gameParty._battleMembers=[' + PARTY + ',0];');
   for (const [id, lv] of Object.entries(levels || {})) w.$gameActors.actor(+id).changeLevel(lv, false);
