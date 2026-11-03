@@ -22,6 +22,8 @@ const SAND := 3
 const BOSS_SAND := 12
 const ELEMENT_INFO := "同调熟练1：本场棱光使用指定元素"
 const TUSU := 176
+## O-待定：满级（3 级）星纹的「强化」行原版读 cost[3] 得 undefined，显示「强化（星砂undefined）」；开着写「强化（已满级）」
+static var MAX_LABEL_FIX := true
 
 
 static func chart(s: XState) -> Dictionary:
@@ -113,6 +115,8 @@ static func credit_victory(s: XState, actors: Array, enemies: Array) -> int:
 ## 命主名册：已在就移出，不在就加到末尾，再只留最后 stage 人
 static func toggle_roster(s: XState, id: int) -> void:
 	var c := chart(s)
+	# 读档后名册是 [8.0]（存档走 JSON），[8.0].find(8) 为 -1；先归成整数再找
+	c.roster = c.roster.map(func(x): return int(x))
 	var i: int = c.roster.find(id)
 	if i >= 0:
 		c.roster.remove_at(i)
@@ -173,8 +177,15 @@ static func mark_rows(s: XState, m: String) -> Array:
 	var c := chart(s)
 	var lv := int(c.level.get(m, 0))
 	return [{"label": "配入此槽", "act": "equip", "enabled": lv > 0},
-		{"label": ("强化（星砂%d）" % COST[lv] if lv else "学习（星砂%d）" % COST[0]), "act": "learn", "enabled": lv < 3},
+		{"label": (learn_label(lv) if lv else "学习（星砂%d）" % COST[0]), "act": "learn", "enabled": lv < 3},
 		{"label": "回收强化星砂", "act": "refund", "enabled": lv > 1}]
+
+
+## 强化行：COST 只有 3 项，满级时原版越界读到 undefined（这一行本就不可选，配入、回收照常）
+static func learn_label(lv: int) -> String:
+	if lv < COST.size():
+		return "强化（星砂%d）" % COST[lv]
+	return "强化（已满级）" if MAX_LABEL_FIX else "强化（星砂undefined）"
 
 
 ## 可指定的队员：除璇本人和屠苏之外的全队（$gameParty.allMembers）

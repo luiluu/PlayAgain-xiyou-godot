@@ -300,12 +300,12 @@ func _case_ui() -> void:
 	check("ui.help", scene.forge_shown() == src and XGrowthForge.help_text(457, src, true, false).begins_with("选择: 心之钢"))
 	check("ui.row", XCraftingScene.pick_row_ops(s, 457, src, 0).size() == 3 and str(XCraftingScene.pick_row_ops(s, 457, src, 0)[2][1]).contains("心钢层数:120 · 背包"))
 	check("ui.detail", XCraftingScene.forge_detail_ops(457, src).size() == 5)
-	# Shift：详情窗位置开原件说明卡（字号 ≤14），提示换成「返回升级预览」；取消先收卡、留在选原件
+	# Shift：详情窗位置开原件说明卡（原版压 14 号被 helpView 冲掉，照原字号），提示换成「返回升级预览」；取消先收卡、留在选原件
 	scene.toggle_source()
 	var card_rows: Array = scene.source_card.rows
 	check("ui.source_card", scene.source_shown and scene.source_card.visible and not scene.detail_win.visible
 		and scene.source_card.position == XCraftingScene.DETAIL_RECT.position and str(card_rows[0][0]).contains("心之钢")
-		and card_rows.all(func(r): return int(r[1]) <= 14) and card_rows.any(func(r): return str(r[0]).contains("心钢层数120")),
+		and card_rows.any(func(r): return int(r[1]) > 14) and card_rows.any(func(r): return str(r[0]).contains("心钢层数120")),
 		[scene.source_shown, scene.source_card.visible, card_rows.map(func(r): return [r[0], r[1]]).slice(0, 8)])
 	check("ui.source_help", XGrowthForge.help_text(457, src, true, scene.source_shown).ends_with("按 Shift 返回升级预览"))
 	scene.cancel()
