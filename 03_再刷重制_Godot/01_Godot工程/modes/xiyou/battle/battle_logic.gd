@@ -851,6 +851,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XNanoha.end_execute(self)
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
+	logs.append_array(XXuanBattle.take_logs())  # 璇：换宿主、定星的台词
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（原 endAction 之前，在谷雨之外）：贯日消费锁定、敕令消费和鸣，持武者行动后剑气／镇魂（内部施放）
 	XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：本次行动里的归根反馈（画面）
@@ -910,6 +911,7 @@ func end_turn() -> Array:
 	XShieldLedger.round_end()  # 护盾账本 endTurn 包装（原 endTurn 之后）：撤销到期来源、衰减
 	XBinding.end_turn()  # 绑定 endTurn 包装（原 endTurn 之后）：剩余充能交给角色模块，清零
 	logs.append_array(XTusu.take_logs())  # 屠苏回合末释放支援的命中
+	logs.append_array(XXuanBattle.take_logs())
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
 	_sync_orders(before, false)
@@ -1249,6 +1251,7 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	XNanoha.begin(self)
 	logs.append_array(execute(u, skill, target, true))
 	XNanoha.end_execute(self)
+	logs.append_array(XXuanBattle.take_logs())  # 璇：换宿主、定星的台词
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（同 act 的次序）：强制行动也消费锁定、和鸣，持武者放剑气／镇魂（审查第 26 期 P3-1）
 	XGuyu.end_action()  # 谷雨 endAction 包装（同 act 的次序，在屠苏之后）：结束行动事件，代命成立就归根
 	logs.append_array(XGuyu.take_visuals())
@@ -1856,6 +1859,9 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var tusu_cmd := XTusu.apply_command(self, u, skill, t)  # 屠苏 Game_Action.apply 包装：归形、易武、化武
 	if not tusu_cmd.is_empty():
 		return tusu_cmd
+	var xuan_cmd := XXuanBattle.apply_command(self, u, skill, t)  # 璇 Game_Action.apply 包装：寄星、转移、回身
+	if not xuan_cmd.is_empty():
+		return xuan_cmd
 	var hp_before := t.hp
 	var live := t is XEnemy and t.is_alive()
 	var blocked := [false]

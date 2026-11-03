@@ -3,7 +3,9 @@ extends RefCounted
 ## 【cc·悟空·未经审查】璇的战斗效果第一期（正式 js/codex/runtime/installNativeXuanRuntime.js）：不靠绑定就成立的部分。
 ## 本场数据（fresh）、净化口径（isCleanseState）、MP 费用（按璇 MP 上限百分比）、技能条件、回光净化、定星、璃壁护盾、棱光减益、蚀辉、结束清标记。
 ## 余辉不做：原版包在 Game_Battler.gainHp 上，而回光只打角色，角色的 gainHp 是 Game_Actor 自有方法，这层跑不到，实测溢出不转护盾（见交付单「需要用户决定」）。
-## 绑定（寄星、回身、默契、共宿、列星）与星契自律（内部施放、同轨、先照、分光、同调）在下两期，盘点见交付单。
+## 第二期：绑定种类登记、寄星／转移／回身、星纹标记、默契结算、附身期间不掉血（mv_oracle/xuan_bind_probe.cjs → tests/xiyou_xuan_bind）。
+## 星纹标记原版的 removeState 补回不做：包在 Game_Battler 上，角色走 Game_Actor 自有方法，实测移除后不补回。
+## 星契自律（内部施放、同轨、先照预支、分光、同调）在第三期，盘点见交付单 cc_wukong-xuan2。
 ## 参照 mv_oracle/xuan_battle_probe.cjs → tests/fixtures/xuan_battle_oracle.json（tests/xiyou_xuan_battle）。
 
 const XUAN := 177
@@ -24,6 +26,162 @@ const SOFT_TYPES := "<BuffType:\\s*(?:减益|控制|诅咒|中毒|毒|麻痹|眩
 static var data := {}
 ## <CodexXuan: 键> 的状态编号
 static var _states := {}
+## 战斗日志台词（CFG.lines），由 battle_logic 取走
+static var _logs := []
+const TACIT_STAY := 10
+const TACIT_PROTECT := 5
+const TACIT_ASSIST := 5
+const TACIT_PER_ROUND := 20
+const TACIT_KEEP := 0.5
+const TACIT_ROSTER_KEEP := 0.75
+const LINES := {"dingxing": "定星挡住了控制。", "transfer": "璇：「我去另一边，有事叫我。」"}
+
+
+static func take_logs() -> Array:
+	var out := _logs
+	_logs = []
+	return out
+
+
+static func _line(key: String) -> void:
+	_logs.append({"type": "battle_text", "text": str(LINES[key])})
+
+
+## registerBinding
+static func register_kind() -> void:
+	if XBinding.kinds.has("xuan"):
+		return
+	XBinding.register("xuan", {
+		"is_owner": func(a): return is_xuan(a),
+		"manual": func(_a): return not auto_enabled(),
+		"form_state": state_id("possess"), "empty_state": XTusu.state_id("empty"), "blocks_hp_loss": true,
+		"on_bind": _on_bind, "on_unbind": _on_unbind, "on_round_start": _on_round_start, "on_round_close": _on_round_close,
+		"on_clear": func(_a): data = {}})
+
+
+static func _d() -> Dictionary:
+	if data.is_empty():
+		data = _fresh()
+	return data
+
+
+static func _on_bind(owner, target, _reason, previous) -> void:
+	var logic = XBinding._logic()
+	var d := _d()
+	_mark_host(logic, target, true)
+	# 开战默认绑定（原因 opening 的名册起始默契）原版算了但不绑，走不到
+	var s: XState = logic.state
+	var keep: float = TACIT_ROSTER_KEEP if _is_roster(s, target) or (previous != null and _is_roster(s, previous)) else TACIT_KEEP
+	d.tacit = floori(int(d.tacit) * keep)
+	d.record.transferRound = XBinding.current_round()
+	_line("transfer")
+	d.tonggui = int(d.tacit) >= 100
+	_sync_counters(logic, owner)
+	owner.refresh_passive()
+	target.refresh_passive()
+
+
+static func _on_unbind(owner, target, reason) -> void:
+	var logic = XBinding._logic()
+	if target != null:
+		_mark_host(logic, target, false)
+		target.refresh_passive()
+	if str(reason) != "transfer" and not data.is_empty():
+		data.tonggui = false
+		_sync_counters(logic, owner)
+
+
+static func _on_round_start(owner, n) -> void:
+	var logic = XBinding._logic()
+	var d := _d()
+	if int(d.debt) > 0 and int(n) > 0:
+		var pay := mini(int(d.debt), XBinding.charges(owner))
+		d.debt = int(d.debt) - pay
+		XBinding.spend(owner, pay)
+	var h = XBinding.host(owner)
+	d.used = {}
+	d.record = {"round": XBinding.current_round(), "stayed": int(h.actor_id) if h != null else 0}
+	_sync_counters(logic, owner)
+
+
+## settleTacit
+static func _on_round_close(owner) -> void:
+	var logic = XBinding._logic()
+	if data.is_empty():
+		return
+	var r: Dictionary = data.record
+	var h = XBinding.host(owner)
+	var gain := 0
+	if h != null and int(r.get("stayed", 0)) == int(h.actor_id) and int(r.get("transferRound", -1)) != XBinding.current_round():
+		gain += TACIT_STAY
+	var acted: bool = bool(r.get("protect", false)) or bool(r.get("assist", false))
+	if bool(r.get("protect", false)):
+		gain += TACIT_PROTECT
+	if bool(r.get("assist", false)):
+		gain += TACIT_ASSIST
+	var extra := floori(XGuyu.curve(int(owner.level), [1, 3], [20, 60])) if acted and int(owner.level) >= 20 else 0
+	data.tacit = mini(100, int(data.tacit) + mini(TACIT_PER_ROUND, gain) + extra)
+	data.tonggui = int(data.tacit) >= 100 and XBinding.is_bound(owner)
+	_sync_counters(logic, owner)
+
+
+static func _is_roster(s: XState, t) -> bool:
+	var c := XTusuXuan.chart(s)
+	return t != null and (c.roster as Array).slice(0, XXuanChart.stage(s)).has(int(t.actor_id))
+
+
+static func _mark_host(logic, target, on: bool) -> void:
+	var id := state_id("hostmark")
+	if on and not target.state_ids.has(id):
+		logic._state_add(target, id)
+	elif not on and target.state_ids.has(id):
+		logic._state_remove(target, id)
+
+
+## syncCounters：同轨、先照债务的显示状态
+static func _sync_counters(logic, a) -> void:
+	if data.is_empty():
+		return
+	for p in [["tonggui", bool(data.tonggui)], ["debt", int(data.debt) > 0]]:
+		var id := state_id(str(p[0]))
+		if bool(p[1]) and not a.state_ids.has(id):
+			logic._state_add(a, id)
+		elif not bool(p[1]) and a.state_ids.has(id):
+			logic._state_remove(a, id)
+
+
+## Game_Action.apply 包装：寄星、转移、回身不走普通结算
+static func apply_command(_logic_node, u, skill: Dictionary, t) -> Dictionary:
+	if not is_xuan(u):
+		return {}
+	var key := key_of(skill)
+	if not key in ["jixing", "jixing.possess", "return"]:
+		return {}
+	t.runtime_result = XResourceContext.empty_result()
+	if key == "return":
+		XBinding.unbind(u, "return")
+	elif XBinding.can_host(u, t) and t != XBinding.host(u):
+		if key == "jixing":
+			XBinding.bind(u, t, "jixing")
+		elif not auto_enabled() or XBinding.spend(u, 1):
+			_d().used.jixing = true
+			XBinding.bind(u, t, "transfer")
+	return {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false, "success": true,
+		"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
+
+
+## 指令窗「回身」（Window_ActorCommand.makeCommandList 包装）
+static func command_entries(logic, a) -> Array:
+	if not is_xuan(a) or not XBinding.is_bound(a):
+		return []
+	return [{"text": "回身", "key": "xuanReturn", "enabled": logic.can_use(a, XDB.rec("Skills", XTusuXuan.skill_id(XUAN, "return")))}]
+
+
+## Window_BattleActor.isCurrentItemEnabled 包装：寄星只能选合法宿主
+static func filter_pick(a, skill: Dictionary, pool: Array) -> Array:
+	if not is_xuan(a) or not key_of(skill) in ["jixing", "jixing.possess"]:
+		return pool
+	return pool.filter(func(t): return XBinding.can_host(a, t) and t != XBinding.host(a))
 
 
 static func is_xuan(a) -> bool:
@@ -192,4 +350,5 @@ static func blocks_state(t: XBattler, id: int) -> bool:
 	var mark := state_id("dingxing")
 	if t.state_ids.has(mark):
 		t.remove_state(mark)
+	_line("dingxing")
 	return true

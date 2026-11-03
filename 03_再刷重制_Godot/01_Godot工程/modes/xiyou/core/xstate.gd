@@ -240,6 +240,7 @@ static func _become_current(s: XState) -> void:
 	current = s
 	XDungeon.battle = {}
 	XHonghuang.power_battle = {}
+	XXuanBattle.data = {}
 	XZhenqi.battle = {}
 	XZhenqi.pending_trial = {}
 	XZhenqi.trial_done = {}

@@ -72,6 +72,7 @@ static func _call(spec: Dictionary, name: String, args: Array):
 static func kind_of(a) -> Dictionary:
 	if a == null or not a is XActor:
 		return {}
+	XXuanBattle.register_kind()
 	XTusu.register_kind()  # 原版屠苏模块装入时就 registerBinding；开机没打过仗就读档也得认得屠苏（审查第 24 期 P3-1）
 	for k in kinds:
 		if bool(_call(kinds[k], "is_owner", [a])):
