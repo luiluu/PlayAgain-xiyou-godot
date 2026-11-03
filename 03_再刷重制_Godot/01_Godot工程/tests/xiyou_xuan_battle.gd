@@ -39,7 +39,7 @@ func _run() -> void:
 	GameApp.fast_headless_frames()
 	var f: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", f.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("complete", f.cases.size() == 33, f.cases.size())
+	check("complete", f.cases.size() == 37, f.cases.size())
 	for c in f.cases:
 		check(c.id + ".oracle", c.errors.is_empty(), c.errors)
 		if not c.errors.is_empty():
@@ -140,6 +140,9 @@ func _c_huiguang(c: Dictionary) -> void:
 func _c_dingxing(c: Dictionary) -> void:
 	var o: Dictionary = c.observed
 	var id := str(c.id)
+	if id in ["dingxing.resist_effect", "dingxing.resist_direct", "dingxing.effect_line", "dingxing.benched"]:
+		_c_dingxing_extra(c)
+		return
 	if id == "dingxing.expired":
 		var q := _setup(60, {"dingxing": 2})
 		q.logic._state_add(q.t, HARD)
@@ -194,6 +197,41 @@ func _c_dingxing(c: Dictionary) -> void:
 	r.logic._state_add(r.t, HARD)
 	check(id + ".blocked", (not r.t.state_ids.has(HARD)) == bool(o.blocked), r.t.state_ids)
 	check(id + ".markAfter", r.t.state_ids.has(XXuanBattle.state_id("dingxing")) == bool(o.markAfter))
+
+
+## 审查 33 P3-3／P3-4：抗性挡下的硬控也先消耗定星（技能附加、事件直接加），挡下不写台词，璇下场后不挡
+func _c_dingxing_extra(c: Dictionary) -> void:
+	var o: Dictionary = c.observed
+	var id := str(c.id)
+	var q := _setup(60, {"dingxing": 2})
+	q.logic._state_add(q.t, HARD)
+	_use(q, "huiguang", q.t)
+	XXuanBattle.take_logs()
+	q.t.runtime_result = XResourceContext.empty_result()
+	var traits: Array = XDB.rec("Actors", ALLY).traits
+	var resist := {"code": XBattler.TRAIT_STATE_RESIST, "dataId": HARD, "value": 1.0}
+	if id.begins_with("dingxing.resist"):
+		traits.append(resist)
+		q.t.param_mark_dirty()
+		check(id + ".resists", q.t.traits_set(XBattler.TRAIT_STATE_RESIST).has(HARD))
+	if id == "dingxing.resist_effect" or id == "dingxing.effect_line":
+		# 敌人技能的状态附加（itemEffectAddNormalState，必中、100%）
+		var sk := XDB.rec("Skills", 1).duplicate(true)
+		sk.effects = [{"code": 21, "dataId": HARD, "value1": 1.0, "value2": 0.0}]
+		sk.damage = {"type": 0, "formula": "0", "elementId": 0, "variance": 0, "critical": false}
+		sk.hitType = 0
+		q.logic.apply(q.e, sk, q.t)
+	elif id == "dingxing.benched":
+		q.logic.actors.erase(q.a)
+		q.logic.sequence_add_state(q.t, HARD)
+	else:
+		q.logic.sequence_add_state(q.t, HARD)  # 事件「更改状态」
+	traits.erase(resist)
+	var lines := XXuanBattle.take_logs().map(func(l): return str(l.text))
+	check(id + ".guard", XXuanBattle.data.dingxing.has(ALLY) == bool(o.guard), XXuanBattle.data.dingxing)
+	check(id + ".mark", q.t.state_ids.has(XXuanBattle.state_id("dingxing")) == bool(o.mark), q.t.state_ids)
+	check(id + ".stun", q.t.state_ids.has(HARD) == bool(o.stun), q.t.state_ids)
+	check(id + ".lines", lines == (o.lines as Array), [o.lines, lines])
 
 
 func _c_libi(c: Dictionary) -> void:

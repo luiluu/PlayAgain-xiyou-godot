@@ -64,7 +64,7 @@ C('jixing.roster', {stage: 1, roster: [A1]}, c => { use(c, 'jixing', c.t); retur
 C('jixing.roster_stage0', {stage: 0, roster: [A1]}, c => { use(c, 'jixing', c.t); return snap(c); });
 C('jixing.self', {}, c => { use(c, 'jixing', c.a); return snap(c); });
 C('jixing.dead', {}, c => { c.t.setHp(0); c.t.refresh(); use(c, 'jixing', c.t); return snap(c); });
-for (const [tag, o] of [['plain', {}], ['roster_old', {stage: 2, roster: [A1]}], ['roster_new', {stage: 2, roster: [A8]}]]) C(`possess.${tag}`, o, c => {
+for (const [tag, o] of [['plain', {}], ['roster_old', {stage: 2, roster: [A1]}], ['roster_new', {stage: 2, roster: [A8]}], ['roster_json', {stage: 2, roster: [A8], json: true}]]) C(`possess.${tag}`, o, c => {
   use(c, 'jixing', c.t);
   c.a._codexXuan.tacit = 31;
   const s0 = snap(c);
@@ -102,6 +102,17 @@ C('owner.hp_loss', {}, c => {
   use(c, 'return', c.a);
   c.a.gainHp(-100);
   return {before: round(before), held: round(held), after: round(c.a.hp)};
+});
+// 审查第 34 期 P2-1：附身期间回合末的持续伤害（中毒 hrg −0.1）不扣；同场没绑定的 8 号照扣；回身后再扣
+C('owner.poison', {}, c => {
+  c.a.addState(4); c.t2.addState(4);
+  use(c, 'jixing', c.t);
+  const a0 = c.a.hp, o0 = c.t2.hp;
+  nextRound(c);
+  const a1 = c.a.hp, o1 = c.t2.hp, poisoned = c.a.isStateAffected(4);
+  use(c, 'return', c.a);
+  nextRound(c);
+  return {poisoned, poisonedAfter: c.a.isStateAffected(4), a: [a0, a1, c.a.hp].map(round), o: [o0, o1, c.t2.hp].map(round)};
 });
 for (const [tag, level, act] of [['stay10', 10, 0], ['stay60', 60, 0], ['protect20', 20, 'huiguang'], ['protect60', 60, 'huiguang'], ['assist60', 60, 'lengguang'], ['libi60', 60, 'libi']]) C(`tacit.${tag}`, {level}, c => {
   use(c, 'jixing', c.t);

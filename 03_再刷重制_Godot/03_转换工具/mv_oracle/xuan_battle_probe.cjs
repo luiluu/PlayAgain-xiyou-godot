@@ -177,4 +177,43 @@ cases.push(makeCase('endbattle.clear', {}, () => {
   c.bm.endBattle(0);
   return {before, after: c.t._states.filter(i => [ST('hostmark'), ST('shadow'), ST('dingxing')].includes(i))};
 }));
+// ⑨ 定星补例（审查 33 P3-3／P3-4）：本会被抗性挡下的硬控也先消耗定星（技能附加、事件直接 addState）；挡下时写不写台词；璇不在出战成员里时挡不挡
+function armed(o = {}) {
+  const c = setup({marks: {dingxing: 2}});
+  const lines = [];
+  c.bm._logWindow = new Proxy({}, {get: (_, k) => k === 'push' ? ((m, t) => { if (m === 'addText') lines.push(t); }) : () => {}});
+  c.t.addState(HARD); c.t.refresh();
+  use(c, 'huiguang', c.t);
+  c.t.clearResult();
+  if (o.resist) c.t.isStateResist = id => id === HARD;
+  return {c, lines};
+}
+const guardOf = c => !!c.a._codexXuan.dingxing[ALLY];
+cases.push(makeCase('dingxing.resist_effect', {}, () => {
+  const {c, lines} = armed({resist: true});
+  const act = new w.Game_Action(c.e); act.setSkill(1);
+  c.bm._action = act;
+  act.itemEffectAddNormalState(c.t, {code: 21, dataId: HARD, value1: 1, value2: 0});
+  c.bm._action = null;
+  return {guard: guardOf(c), mark: c.t.isStateAffected(ST('dingxing')), stun: c.t.isStateAffected(HARD), lines};
+}));
+cases.push(makeCase('dingxing.resist_direct', {}, () => {   // 事件「更改状态」（command313）直接 actor.addState
+  const {c, lines} = armed({resist: true});
+  c.t.addState(HARD);
+  return {guard: guardOf(c), mark: c.t.isStateAffected(ST('dingxing')), stun: c.t.isStateAffected(HARD), lines};
+}));
+cases.push(makeCase('dingxing.effect_line', {}, () => {   // 没有抗性：敌人技能附加被挡，看日志
+  const {c, lines} = armed();
+  const act = new w.Game_Action(c.e); act.setSkill(1);
+  c.bm._action = act;
+  act.itemEffectAddNormalState(c.t, {code: 21, dataId: HARD, value1: 1, value2: 0});
+  c.bm._action = null;
+  return {guard: guardOf(c), mark: c.t.isStateAffected(ST('dingxing')), stun: c.t.isStateAffected(HARD), lines};
+}));
+cases.push(makeCase('dingxing.benched', {}, () => {   // 璇换下出战成员后，宿主再中硬控
+  const {c, lines} = armed();
+  w.eval(`$gameParty._battleMembers=[${ALLY},0,0,0,0];`);
+  c.t.addState(HARD);
+  return {guard: guardOf(c), mark: c.t.isStateAffected(ST('dingxing')), stun: c.t.isStateAffected(HARD), lines};
+}));
 process.exit(finish(host, 'xuan_battle.json', {hostScope: '真实 Game_Action.apply，不跑回合；BattleManager._action 手工设；随机固定 0.5；五乘区关', cases}) ? 0 : 1);

@@ -1170,6 +1170,126 @@
    "errors": []
   },
   {
+   "id": "possess.roster_json",
+   "setup": {
+    "stage": 2,
+    "roster": [
+     8
+    ],
+    "json": true
+   },
+   "observed": {
+    "s0": {
+     "round": 1,
+     "host": 1,
+     "charges": 0,
+     "tacit": 31,
+     "tonggui": false,
+     "counter": 0,
+     "jixingUsed": false,
+     "form": true,
+     "empty": false,
+     "tongguiState": false,
+     "marks": [
+      1
+     ],
+     "meets": [
+      "jixing.possess",
+      "huiguang",
+      "libi",
+      "lengguang",
+      "liexing",
+      "return"
+     ],
+     "lines": [
+      "璇：「我去另一边，有事叫我。」"
+     ]
+    },
+    "s1": {
+     "round": 1,
+     "host": 8,
+     "charges": 0,
+     "tacit": 23,
+     "tonggui": false,
+     "counter": 23,
+     "jixingUsed": true,
+     "form": true,
+     "empty": false,
+     "tongguiState": false,
+     "marks": [
+      8
+     ],
+     "meets": [
+      "huiguang",
+      "libi",
+      "lengguang",
+      "liexing",
+      "return"
+     ],
+     "lines": [
+      "璇：「我去另一边，有事叫我。」",
+      "璇：「我去另一边，有事叫我。」"
+     ]
+    },
+    "s2": {
+     "round": 1,
+     "host": 1,
+     "charges": 0,
+     "tacit": 17,
+     "tonggui": false,
+     "counter": 17,
+     "jixingUsed": true,
+     "form": true,
+     "empty": false,
+     "tongguiState": false,
+     "marks": [
+      1
+     ],
+     "meets": [
+      "huiguang",
+      "libi",
+      "lengguang",
+      "liexing",
+      "return"
+     ],
+     "lines": [
+      "璇：「我去另一边，有事叫我。」",
+      "璇：「我去另一边，有事叫我。」",
+      "璇：「我去另一边，有事叫我。」"
+     ]
+    },
+    "s3": {
+     "round": 2,
+     "host": 1,
+     "charges": 0,
+     "tacit": 17,
+     "tonggui": false,
+     "counter": 17,
+     "jixingUsed": false,
+     "form": true,
+     "empty": false,
+     "tongguiState": false,
+     "marks": [
+      1
+     ],
+     "meets": [
+      "jixing.possess",
+      "huiguang",
+      "libi",
+      "lengguang",
+      "liexing",
+      "return"
+     ],
+     "lines": [
+      "璇：「我去另一边，有事叫我。」",
+      "璇：「我去另一边，有事叫我。」",
+      "璇：「我去另一边，有事叫我。」"
+     ]
+    }
+   },
+   "errors": []
+  },
+  {
    "id": "possess.same_target",
    "setup": {},
    "observed": {
@@ -1362,6 +1482,25 @@
     "before": 4698,
     "held": 4698,
     "after": 4598
+   },
+   "errors": []
+  },
+  {
+   "id": "owner.poison",
+   "setup": {},
+   "observed": {
+    "poisoned": true,
+    "poisonedAfter": true,
+    "a": [
+     4698,
+     4698,
+     4228
+    ],
+    "o": [
+     450,
+     405,
+     360
+    ]
    },
    "errors": []
   },

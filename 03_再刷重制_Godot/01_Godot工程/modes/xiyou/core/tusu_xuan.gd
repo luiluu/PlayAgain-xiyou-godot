@@ -144,6 +144,9 @@ static func chart(s: XState) -> Dictionary:
 	for m in CHART_INITIAL:
 		if not int(c.level.get(m, 0)):
 			c.level[m] = 1
+	# 读档后名册是 [8.0]（存档走 JSON），[8.0].has(8) 为假；读出时就归成整数，战斗里读名册的各处都认得（审查第 34 期 P2-2）
+	if (c.roster as Array).any(func(x): return not x is int):
+		c.roster = (c.roster as Array).map(func(x): return int(x))
 	return c
 
 

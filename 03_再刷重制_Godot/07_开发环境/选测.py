@@ -25,6 +25,10 @@
   （rules 每个难度 4 段、smart_ai 每 4 段）只留 1 段，留哪段按 --head 或 HEAD 沿第一父的合并提交数取余轮换（主线连续 4 次合并轮完一组；tools46 起只数合并提交，因为一次合并在主线上占「合并＋收尾」两个第一父提交，数全部提交会隔 2 取一）。改了测试本身（exemptGroups 里的组）
   选上的段照跑、并算作该组已有代表。段数不是 chunk 的整数倍时这一族不抽样。全量（不加 --affected、选测结论整轮）照跑全套。
   回退：对照表 sample.enabled 设 false，或环境变量 XIYOU_SAMPLE=0。
+- 钩子行收窄（hookLines，tools54，Kyo 2026-11-03 同意）：车道常在 battle_logic／actor／xstate／resource_context 这几个核心文件里只加「调用某个角色专属模块」的钩子
+  （如 XXuanBattle.take_logs()），按文件判会几乎全选（dev.294～296 一批选了 337／383 个场景）。对照表 hookLines.files 里的文件，若每个改动块（hunk）都含
+  X 模块调用（不含 excludeModules 里的核心设施，如 XDB、XState）且其余行只是注释、空行或胶水（return／else:／if not x.is_empty():），就改归 battle_hooks 组：
+  冒烟场景（determinism、battle、combat、rules 抽样、存档类）＋引用了这些模块名的测试；有一块认不出就退回原组。回退：hookLines.enabled 设 false，或环境变量 XIYOU_HOOKS=0（O-153）。
 - 基准不存在、对照表无效时退出 2。
 """
 import argparse
@@ -76,6 +80,9 @@ def load_table(path=TABLE):
     for rule in rules:
         if rule['group'] not in groups:
             raise ValueError('对照表规则指向不存在的组：' + rule['group'])
+    hook = table.get('hookLines') or {}
+    if hook and hook.get('group') not in groups:
+        raise ValueError('hookLines.group 指向不存在的组：%s' % hook.get('group'))
     for name, g in groups.items():
         if g.get('onlyLinesElse', 'full') not in groups or 'onlyLines' in groups[g.get('onlyLinesElse', 'full')]:
             raise ValueError('组 %s 的 onlyLinesElse 须指向没有 onlyLines 的已有组' % name)
@@ -196,6 +203,44 @@ def only_lines(root, base, path, pattern, head=None):
     return bool(lines) and all(re.search(pattern, l) for l in lines)
 
 
+def load_hooks(path=TABLE):
+    """钩子行收窄设置；关着（对照表 enabled false 或 XIYOU_HOOKS=0）返回 None。"""
+    if os.environ.get('XIYOU_HOOKS', '') == '0':
+        return None
+    cfg = json.loads(Path(path).read_text()).get('hookLines') or {}
+    return cfg if cfg.get('enabled') else None
+
+
+def hook_modules(root, base, path, cfg, head=None):
+    """该文件改动是否只是「调用专属模块」的钩子：是返回模块名集合，否（或没改动）返回 None。
+    逐个 hunk 看：至少一行含非核心设施的 X 模块引用，其余行只能是同类引用行、注释、空行或胶水（cfg.glue）。"""
+    exclude = set(cfg.get('excludeModules', []))
+    glue = re.compile(cfg['glue'])
+    ref = re.compile(r'\b(X[A-Z]\w*)\.\w+')
+    diff = git(root, 'diff', '-U0', base, *([head] if head else []), '--', path).splitlines()
+    hunks, cur = [], None
+    for l in diff:
+        if l.startswith('@@'):
+            cur = []
+            hunks.append(cur)
+        elif cur is not None and l[:1] in '+-' and not l.startswith(('+++', '---')):
+            cur.append(l[1:])
+    mods = set()
+    for lines in hunks:
+        found = False
+        for l in lines:
+            code = l.split('#', 1)[0]
+            names = {m for m in ref.findall(code) if m not in exclude}
+            if names:
+                found = True
+                mods |= names
+            elif code.strip() and not glue.match(code):
+                return None
+        if not found:
+            return None
+    return mods or None
+
+
 def read_any(root, base, path, head=None):
     p = root / path
     if not head and p.is_file():
@@ -310,6 +355,10 @@ def stale_notice(root, base, head=None):
         base, fork[:10], base, len(moved), base, base)
 
 
+def set_files(cfg, files):
+    return {f for f in files if any(fnmatch.fnmatchcase(f, pat) for pat in cfg.get('files', []))}
+
+
 def select(root, base, table=TABLE, head=None, sample=True):
     """sample=False：不抽样（合并沿用车道结果时算「哪些场景被差异波及」用）。"""
     root = Path(root)
@@ -328,10 +377,17 @@ def select(root, base, table=TABLE, head=None, sample=True):
     sample_cfg = load_sample(table) if sample else None
 
     narrow = sections.get('narrowFloorsByMap') or {}
+    hooks = load_hooks(table)
 
     def take(path, group, why, terms_extra=(), map_ids=None):
         nonlocal full
         g = groups[group]
+        if hooks and path in set_files(hooks, files):
+            mods = hook_modules(root, base, path, hooks, head)
+            if mods:
+                group, g = hooks['group'], groups[hooks['group']]
+                terms_extra = list(terms_extra) + sorted(mods)
+                why = '%s（只加钩子调用：%s）' % (group, '、'.join(sorted(mods)))
         if 'onlyLines' in g and not only_lines(root, base, path, g['onlyLines'], head):
             # onlyLinesElse：改动行不全匹配时退回的组（缺省整轮）；xstate.gd 只加字段与存读档键时只跑存档类专项（哪吒_8）
             other = g.get('onlyLinesElse', 'full')

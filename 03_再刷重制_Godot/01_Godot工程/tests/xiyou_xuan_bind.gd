@@ -40,7 +40,7 @@ func _run() -> void:
 	GameApp.fast_headless_frames()
 	var f: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", f.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("complete", f.cases.size() == 40, f.cases.size())
+	check("complete", f.cases.size() == 42, f.cases.size())
 	for c in f.cases:
 		check(c.id + ".oracle", c.errors.is_empty(), c.errors)
 		if c.errors.is_empty():
@@ -69,6 +69,12 @@ func _setup(spec: Dictionary) -> Dictionary:
 		chart.slots[XTusuXuan.SLOT_OF[m]] = m
 	XTusuXuan.sync_marks(s, a)
 	a.recover_all()
+	if spec.get("json", false):
+		# 审查第 34 期 P2-2：存读档往返（JSON）后名册读回成 [8.0]，不点名册直接进战斗
+		s = XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
+		XState.current = s
+		a = s.actor(XUAN)
+		check("roster_json.raw_float", (s.flags["_codexXuanChart"].roster as Array).all(func(v): return v is float), s.flags["_codexXuanChart"].roster)
 	var stream := FixedStream.new()
 	stream.domain = "rule"
 	var rand := XBattleRandom.create("0000000000000177")
@@ -185,6 +191,22 @@ func _case(k: Dictionary) -> void:
 			c.logic._state_add(c.a, 1)
 			XBinding.validate()
 			_snap(id, o, c)
+		"owner.poison":
+			# 审查第 34 期 P2-1：附身期间回合末中毒不扣（护盾、弹字都不走），没绑定的照扣，回身后再扣
+			c.a.add_state(4)
+			c.t2.add_state(4)
+			_use(c, "jixing", c.t)
+			var a0: float = c.a.hp
+			var o0: float = c.t2.hp
+			_next(c)
+			check(id + ".a1", [a0, c.a.hp] == [float(o.a[0]), float(o.a[1])], [o.a, a0, c.a.hp])
+			check(id + ".o1", [o0, c.t2.hp] == [float(o.o[0]), float(o.o[1])], [o.o, o0, c.t2.hp])
+			check(id + ".poisoned", c.a.state_ids.has(4) == bool(o.poisoned))
+			_use(c, "return", c.a)
+			_next(c)
+			check(id + ".a2", c.a.hp == float(o.a[2]), [o.a, c.a.hp])
+			check(id + ".o2", c.t2.hp == float(o.o[2]), [o.o, c.t2.hp])
+			check(id + ".poisoned_after", c.a.state_ids.has(4) == bool(o.poisonedAfter))
 		"owner.hp_loss":
 			_use(c, "jixing", c.t)
 			var before: float = c.a.hp
