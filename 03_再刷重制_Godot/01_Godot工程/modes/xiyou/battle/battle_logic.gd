@@ -132,6 +132,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	actors = s.battle_members()
 	XYomiJingliu.start_battle(self)  # 镜流 startBattle 包装：放血累计清零
 	XGuyu.after_load(s)  # 谷雨 startBattle 包装：syncAll（同读档）
+	XXuanBattle.start_battle(self)  # 璇 startBattle 包装：建本场数据
 	XBinding.start_battle(self)  # 绑定 startBattle 包装（原 startBattle 之后）：在场本体建新数据、去掉形态状态
 	_garou = XGarou.start_battle(actors)  # 饿狼 startBattle 包装：同步、记下出战的饿狼
 	victory_texts.clear()
@@ -467,6 +468,7 @@ func _skill_cost(a: XBattler, skill: Dictionary, panel: bool, shift: float) -> D
 	var guyu := XGuyu.mp_cost(a, skill, 1.0 if panel else a.mcr, consume_reduce(a, skill, shift))
 	if guyu >= 0:
 		cost.mp = guyu  # 谷雨 skillMpCost 包装（米拉、异化之外，种族之内）：五个主动技按最大 MP 比例
+	cost.mp = XXuanBattle.mp_cost(a, skill, int(cost.mp))  # 璇 skillMpCost 包装：专属技能按 MP 上限百分比
 	cost.mp = XTusu.mp_cost(a, skill, int(cost.mp))  # 屠苏 skillMpCost 包装（谷雨之外、种族之内）：专属技能按比例、噬主费用、书相省蓝
 	return {"mp": XRaceBattle.cost(a, int(cost.mp)), "tp": XRaceBattle.cost(a, int(cost.tp))}
 
@@ -494,6 +496,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if not XTusuXuan.meets(a, skill):  # 屠苏／璇 bindGrowth meetsSkillConditions：没解锁的专属技能、归形
 		return false
 	if not XHeartsteel.meets(a, skill):  # 心钢 meetsSkillConditions 包装：巨人吞噬要穿着对应的一件、在战斗里、蓄力满
+		return false
+	if not XXuanBattle.meets(a, skill):  # 璇 meetsSkillConditions 包装：寄星、列星看绑定，星谱战斗外
 		return false
 	if not XTusu.meets(a, skill):  # 屠苏 meetsSkillConditions：易武／化武／支援／武装技能看武相，武具态只有防御
 		return false
@@ -1987,6 +1991,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_effect(u, t, eff, r)
 	_otb_target_shift(skill, t)
 	_user_tp_gain(u, skill)
+	XXuanBattle.user_effect(self, u, skill, t)  # 璇 applyItemUserEffect 包装（原效果之后）：回光净化、璃壁、棱光减益
 	XTusu.user_effect(self, u, skill, t)  # 屠苏 applyItemUserEffect 包装（原效果之后）：护阵、挫势
 	if t.hp <= 0.0 and t.is_dead():
 		_die(t)
@@ -2596,6 +2601,7 @@ func end_battle(result := -1) -> void:
 	XGarou.clear_battle()  # 饿狼 endBattle 包装：清进化、解析、琦玉
 	XRaven.end_battle(state)  # 渡鸦 endBattle 包装：清神话形态
 	XShieldLedger.end_battle()  # 护盾账本 endBattle 包装（finally）：清空
+	XXuanBattle.end_battle(state)  # 璇 endBattle 包装（finally）：清标记与本场数据
 	XBinding.end_battle(self)  # 绑定 endBattle 包装（finally）：清数据与形态状态
 	XTusu.clear(state, self)  # 屠苏 endBattle 包装（finally）：清全队持武／锁定／和鸣状态与本场数据
 	# Game_Unit.onBattleEnd 先退出战斗，再对全队（含后备）调用 onBattleEnd。
