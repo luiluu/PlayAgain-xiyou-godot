@@ -2142,6 +2142,50 @@
     "after": []
    },
    "errors": []
+  },
+  {
+   "id": "dingxing.resist_effect",
+   "setup": {},
+   "observed": {
+    "guard": false,
+    "mark": false,
+    "stun": false,
+    "lines": []
+   },
+   "errors": []
+  },
+  {
+   "id": "dingxing.resist_direct",
+   "setup": {},
+   "observed": {
+    "guard": false,
+    "mark": false,
+    "stun": false,
+    "lines": []
+   },
+   "errors": []
+  },
+  {
+   "id": "dingxing.effect_line",
+   "setup": {},
+   "observed": {
+    "guard": false,
+    "mark": false,
+    "stun": false,
+    "lines": []
+   },
+   "errors": []
+  },
+  {
+   "id": "dingxing.benched",
+   "setup": {},
+   "observed": {
+    "guard": true,
+    "mark": true,
+    "stun": true,
+    "lines": []
+   },
+   "errors": []
   }
  ]
 }

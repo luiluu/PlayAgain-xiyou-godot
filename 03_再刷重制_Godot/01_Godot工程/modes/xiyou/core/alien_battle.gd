@@ -950,7 +950,8 @@ static func after_add_state(b, id: int, before_rev: int) -> void:
 	jail[id] = true
 	r.set_meta("xalien_jail", jail)
 	_state_routing += 1
-	r.add_state(id)
+	if not XXuanBattle.blocks_state(r, id):  # 原版 receiver.addState：璇定星包装在外层，挡下时囚厄者没接到、原持有者照旧（审查 33 P3-3）
+		r.add_state(id)
 	if r.state_ids.has(id):
 		r.state_turns[id] = maxi(int(r.state_turns.get(id, 0)), turns)
 		if id == corrosion_id():
