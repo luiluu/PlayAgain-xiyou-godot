@@ -8,6 +8,7 @@
 // 难度 2、Math.random 0.5（敌群生成时 0.99，同 slice_probe）；只在内存，产物 .sandbox/toji.json。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 const T = w.CodexToji;
 if (!T || typeof T.outputGrowth !== 'function') throw new Error('甚尔模块未安装');
 const ID = 171, ARMOR = 4580, TROOP = 3, SKILLS = [10216, 10217, 10218, 10219, 10220, 10221, 10222, 10223];
