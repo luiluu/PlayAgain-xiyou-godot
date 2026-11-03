@@ -21,6 +21,7 @@ const fresh = () => {
   try { fs.unlinkSync(LEDGER()); } catch (e) { /* 没有就算了 */ }
   newGame(); toasts.length = 0;
   w.eval('$gameParty._actors=[' + PARTY + ']; $gameParty._battleMembers=[' + PARTY + ',0];');
+  for (const id of PARTY) { const a = w.$gameActors.actor(id); a._level = 60; a.refresh(); a.recoverAll(); }
 };
 const crowns = () => {
   const out = w.$gameParty.armors().filter(D.isGear);
@@ -44,6 +45,7 @@ function battle(troop, roll, map, origin) {
   w.Math.random = () => 0.99;
   const bm = w.BattleManager; bm.setup(troop, true, false);
   bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
+  w.SceneManager._scene = {_otbDisplayWindow: stub};
   w.Math.random = () => roll == null ? 0.5 : roll;
   bm.startBattle();
   w.Math.random = () => 0.5;
@@ -95,11 +97,11 @@ cases.push(makeCase('battle.death', {}, () => {
   const rows = [['won4', wearing(a)]];
   fight(0, {during: () => { a.addState(1); rows.push(['died', wearing(a)]); a.addState(1); rows.push(['again', wearing(a)]); }});
   rows.push(['deadwin', wearing(a), a.isDead()]);
-  a.revive(); a.setHp(1);
-  fight(0, {during: () => { a.addState(1); rows.push(['died2', wearing(a)]); a.revive(); a.setHp(1); a.addState(1); rows.push(['died3', wearing(a)]); a.revive(); a.setHp(1); }});
+  a.removeState(1); a.setHp(1); a.clearResult();
+  fight(0, {during: () => { a.addState(1); rows.push(['died2', wearing(a)]); a.removeState(1); a.setHp(1); a.clearResult(); a.addState(1); rows.push(['died3', wearing(a)]); a.removeState(1); a.setHp(1); a.clearResult(); }});
   rows.push(['revivedwin', wearing(a)]);
   a.addState(1); rows.push(['world', wearing(a)]);
-  a.revive(); a.setHp(1); a.addState(1); rows.push(['world2', wearing(a)]);
+  a.removeState(1); a.setHp(1); a.clearResult(); a.addState(1); rows.push(['world2', wearing(a)]);
   const other = w.$gameActors.actor(8); other.addState(1);
   rows.push(['otherdied', wearing(a)]);
   return {rows, ledger: ledger(), worldSeq: w.$gameSystem._codexCrownWorldDeathSeq};
@@ -177,8 +179,7 @@ cases.push(makeCase('adopt', {}, () => {
   const save = JSON.parse(host.encode().replace(new RegExp('"_codexCrownUid":"' + uid + '",?', 'g'), ''));
   for (const k of ['_codexCrownProfile', '_codexCrownEncounterSeq', '_codexCrownWorldDeathSeq']) delete save.system[k];
   try { fs.unlinkSync(LEDGER()); } catch (e) { /* 没有就算了 */ }
-  w.$gameParty.armors().filter(D.isGear).forEach(i => { i._codexCrownBonus = 37.5; });
-  const text = host.encode().replace(/"_codexCrownUid":"[^"]*",?/g, '').replace(/"_codexCrown(Profile|EncounterSeq|WorldDeathSeq)":[^,}]*,?/g, '');
+  const text = host.encode().replace(/"_codexCrownBonus":0/g, '"_codexCrownBonus":37.5').replace(/"_codexCrownUid":"[^"]*",?/g, '').replace(/"_codexCrown(Profile|EncounterSeq|WorldDeathSeq)":[^,}]*,?/g, '');
   host.restore(text);
   const got = crowns();
   return {count: got.length, item: got.length ? snap(got[0]) : null, ledger: ledger(), profile: !!w.$gameSystem._codexCrownProfile, seq: seq(), stripped: !!save};
