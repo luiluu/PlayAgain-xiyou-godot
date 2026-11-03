@@ -294,13 +294,29 @@ class Tests:
         return hits
 
 
+def stale_notice(root, base, head=None):
+    """工作树分叉点比基准旧、且分叉之后基准改过 .gd 时返回一行提示，否则空串（tools53：xuan2、xuan3 被 300 多个场景的名单坑过）。"""
+    try:
+        base_sha = git(root, 'rev-parse', base + '^{commit}').strip()
+        fork = git(root, 'merge-base', base, head or 'HEAD').strip()
+        if not fork or fork == base_sha:
+            return ''
+        moved = [x for x in git(root, 'diff', '--name-only', '-z', fork, base_sha, '--').split('\0') if x.endswith('.gd')]
+    except RuntimeError:
+        return ''
+    if not moved:
+        return ''
+    return '⚠ 本分支比 %s 旧（分叉点 %s 之后 %s 改了 %d 个 .gd）：先 git merge %s 再选测，否则名单会混进 %s 的改动' % (
+        base, fork[:10], base, len(moved), base, base)
+
+
 def select(root, base, table=TABLE, head=None, sample=True):
     """sample=False：不抽样（合并沿用车道结果时算「哪些场景被差异波及」用）。"""
     root = Path(root)
     git(root, 'rev-parse', '--verify', '-q', base + '^{commit}')
     groups, rules = load_table(table)
     sections, merge_base = load_options(table)
-    shown_base = base
+    shown_base, ref_base = base, base
     if merge_base:
         base = effective_base(root, base, head)
         if git(root, 'rev-parse', shown_base + '^{commit}').strip() != base:
@@ -399,11 +415,13 @@ def select(root, base, table=TABLE, head=None, sample=True):
         seed = sample_seed(root, head)
         scenes, sampled = apply_sample(scenes, pinned, tests.scenes, sample_cfg, seed)
     return dict(base=shown_base, files=files, full=full, scenes=sorted(scenes), checks=sorted(checks), reasons=reasons,
-                sampled=sampled)
+                sampled=sampled, notice=stale_notice(root, ref_base, head))
 
 
 def report(sel, out):
     print('== 选测（基准 %s，%d 个改动文件）' % (sel['base'], len(sel['files'])), file=out)
+    if sel.get('notice'):
+        print(sel['notice'], file=out)
     for path, why, note, picked, full in sel['reasons']:
         extra = '整轮' if full else ('%d 个场景' % len(picked) if picked else '无场景')
         shown = '、'.join(picked[:6]) + ('……' if len(picked) > 6 else '')

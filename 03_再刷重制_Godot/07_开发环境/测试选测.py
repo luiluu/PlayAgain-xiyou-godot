@@ -4,6 +4,7 @@
 检查.sh 用真实脚本，被它调用的 Godot、各工具回归与守卫都换成只记一行名字的替身，核对选了什么、跑了什么；
 不加 --affected 时全部照跑（默认行为不变）。"""
 import importlib.util
+import io
 import json
 import os
 import shutil
@@ -525,6 +526,28 @@ class MergeBaseTests(Fixture):
         s = sel.select(self.root, 'main', table=off)
         self.assertIn(str(CORE / 'battler.gd'), s['files'])
         self.assertEqual(sel.select(self.root, self.base)['base'], self.base)  # 基准是祖先：照旧
+
+    def test_stale_lane_gets_merge_main_notice_only_when_main_moved_gd(self):
+        """tools53：分叉点之后 main 改过 .gd 才提示先合 main；只改文档或基准是祖先时不提示。"""
+        self.g('switch', '-q', '-c', 'lane')
+        self.put(Path('00_项目管理/交接板.md'), '# lane\n')
+        self.commit('lane docs')
+        self.g('switch', '-q', 'main')
+        self.put(Path('00_项目管理/变更记录.md'), '# log\n')
+        self.commit('main docs')
+        self.g('switch', '-q', 'lane')
+        self.assertEqual(sel.select(self.root, 'main')['notice'], '')
+        self.g('switch', '-q', 'main')
+        self.put(CORE / 'battler.gd', 'class_name XBattler\n# main moved\n')
+        self.commit('main battle')
+        self.g('switch', '-q', 'lane')
+        s = sel.select(self.root, 'main')
+        self.assertIn('git merge main', s['notice'])
+        out = io.StringIO()
+        sel.report(s, out)
+        self.assertIn('先 git merge main 再选测', out.getvalue())
+        self.g('merge', '-q', 'main', '-m', 'merge main')
+        self.assertEqual(sel.select(self.root, 'main')['notice'], '')
 
 
 class SampleTests(Fixture):

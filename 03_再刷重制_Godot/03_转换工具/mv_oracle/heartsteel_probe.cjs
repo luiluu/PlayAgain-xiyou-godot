@@ -5,18 +5,11 @@
 // ④ 敌人权重；⑤ H.damage 减防；⑥ 真实 BattleManager 打 3 号敌群：心钢蓄力两次→巨人吞噬（伤害、待结算层数、冷却）→回合末回血→胜利保存层数；
 // 狂妄击杀敌人→扬名（物攻倍率、剩余回合）→回合递减到清除、胜利保存盛名；狂妄物防穿透前后同一招的伤害。
 // 去掉 O-050 两个伤害钩子（同 tusu_battle_probe）。产物 .sandbox/heartsteel.json，拷成 tests/fixtures/heartsteel_oracle.json（不进同步），专项 xiyou_heartsteel。
-const {start, makeCase, finish} = require('./shared/host.cjs');
+const {start, makeCase, finish, superReference} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
 const H = w.CodexHeartsteel, U = w.CodexHubris;
 if (!H || !U || !H.unknownHeartOrigin) throw new Error('心钢／狂妄模块未安装');
-const hooks = w.CodexDamageHooks || [];
-for (const name of ['route-suppress', 'zones-correction']) {
-  const i = hooks.findIndex(h => h.name === name);
-  if (i < 0) throw new Error('伤害钩子 ' + name + ' 不在');
-  hooks.splice(i, 1);
-}
-w.CodexRouteSuppress.otherScale = () => 1;
-w.CodexRouteSuppress.isSuper = () => false;
+const SR = superReference(w);
 if (!w.$) w.$ = {};
 const toasts = [];
 w.$.toaster = o => { toasts.push(o.message); };
@@ -291,7 +284,7 @@ function battle2(party, levels, base, fields, prep) {
   RELICS.forEach((id, i) => { w.$dataArmors[id] = JSON.parse(JSON.stringify(pristine[i])); });
   w.CodexThreeGrowth.sync();
   w.eval('$gameSystem.setDifficultyId(2); $gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
-  w.$gameSwitches.setValue(2494, true);
+  SR.enableSuperSwitch();
   if (prep) prep();
   w.eval('$gameParty._actors=[' + party + ']; $gameParty._battleMembers=[' + party + ',0];');
   for (const [id, lv] of Object.entries(levels)) w.$gameActors.actor(+id).changeLevel(lv, false);
