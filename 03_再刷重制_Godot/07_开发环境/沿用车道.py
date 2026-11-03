@@ -10,6 +10,7 @@
   它测时用的产物快照（generatedCommit 的树）要与本工作区 generated/ 的快照树相同。--no-cloud 或 XIYOU_REUSE_CLOUD=0 不看云端。
 - 判波及：对每个有记录的候选提交 C，用 选测.select(C, 不抽样) 算「C → 现在工作区」的差异会选哪些场景；结论整轮、或差异里有
   转换器／切片／测量接受单（generated 的来源）时这个 C 一个都不沿用。没被选中、且在 C 的记录里通过的场景沿用 C 的结果。
+  一个场景取「没被波及的提交里最新一条记录」：最新是失败就照跑，不拿更早的通过、也不拿同组别段的通过顶（tools46，审查 27 P2-1）。
 - 抽样族（选测对照.json 的 sample）：抽中的段没有可沿用结果、但同组另一段有时，按同组那段沿用（车道测的是同组别的段）。
 - 拿不准就重跑：记录读不了、git 失败、云端连不上，都当没有记录，照跑。
 - --shell：标准输出给 检查.sh 的 REUSE_KEEP=(要跑的) REUSE_COUNT=沿用数；说明打到标准错误，并写进 <git-dir>/xiyou_reuse_note.txt
@@ -50,7 +51,7 @@ def git(root, *args, timeout=60):
 
 
 def local_records(sdir, candidates, now):
-    """{提交: (来源说明, {场景: True})}：本机按提交记的结果里，环境与现在相同、通过的场景。"""
+    """{提交: (来源说明, 通过的场景, 失败的场景)}：本机按提交记的结果里，环境与现在相同的记录；失败的也带出（tools46，审查 27 P2-1）。"""
     out = {}
     for sha in candidates:
         try:
@@ -62,13 +63,14 @@ def local_records(sdir, candidates, now):
         if any(rec.get(k) != now[k] for k in ('godot', 'generated', 'timeout')):
             continue
         ok = {n for n, v in rec['scenes'].items() if v is True}
-        if ok:
-            out[sha] = ('本机 ' + rec.get('time', ''), ok)
+        bad = {n for n, v in rec['scenes'].items() if v is not True}
+        if ok or bad:
+            out[sha] = ('本机 ' + rec.get('time', ''), ok, bad)
     return out
 
 
 def cloud_records(root, candidates, tree_of, my_tree):
-    """{提交: (来源说明, 通过的场景)}：origin 上候选提交的云端结果。连不上、没有 sceneNames、产物树对不上的不算。
+    """{提交: (来源说明, 通过的场景, 失败的场景)}：origin 上候选提交的云端结果。连不上、没有 sceneNames、产物树对不上的不算。
     tree_of(提交)：云端用的产物快照提交的树号（本机缓存库里没有就 None）；my_tree()：本工作区 generated/ 的快照树（只在用得上时才算）。"""
     out = {}
     try:
@@ -94,7 +96,7 @@ def cloud_records(root, candidates, tree_of, my_tree):
         tree = tree_of(res.get('generatedCommit', ''))
         if not tree or tree != my_tree():
             continue
-        got = out.setdefault(sha, ('云端 ' + res.get('runUrl', ''), set()))
+        got = out.setdefault(sha, ('云端 ' + res.get('runUrl', ''), set(), set()))
         got[1].update(n for n in names if isinstance(n, str))
     return out
 
@@ -103,9 +105,8 @@ def plan(root, base, scenes, records, selector, table=None):
     """返回 (要跑的场景, {沿用的场景: (提交, 来源, 代替的场景)}, 说明行)。"""
     table = table or selector.TABLE
     notes, reused = [], {}
-    usable = {}  # 场景 → (提交, 来源)：新的提交在前
-    per = []     # [(提交, 来源, 该提交通过且没被波及的场景, 波及的场景)]：替补按提交逐个找
-    for sha, (src, ok) in records.items():
+    per = []     # [(提交, 来源, 通过的场景, 失败的场景, 波及的场景)]：新的提交在前
+    for sha, (src, ok, bad) in records.items():
         try:
             sel = selector.select(root, sha, table, sample=False)
         except (RuntimeError, ValueError, KeyError, OSError) as e:
@@ -118,21 +119,33 @@ def plan(root, base, scenes, records, selector, table=None):
         if gen:
             notes.append('%s：之后改了产物来源（%s 等），不沿用' % (sha[:9], gen[0]))
             continue
-        hit = set(sel['scenes'])
-        for n in ok - hit:
-            usable.setdefault(n, (sha, src))
-        per.append((sha, src, ok - hit, hit))
+        per.append((sha, src, ok, bad, set(sel['scenes'])))
     sample = selector.load_sample(table)
     all_scenes = sorted(p.name for p in (Path(root) / PROJECT_REL / 'tests').glob('*.tscn'))
     chunks = {s: c for _, c in selector.sample_chunks(all_scenes, sample) for s in c} if sample else {}
+
+    def latest(s):
+        """s 在「没被波及」的提交里最新一条记录：('ok'|'bad', 提交, 来源) 或 None。失败也算记录（审查 27 P2-1）。"""
+        for sha, src, ok, bad, hit in per:
+            if s in hit:
+                continue
+            if s in bad:
+                return ('bad', sha, src)
+            if s in ok:
+                return ('ok', sha, src)
+        return None
     keep = []
     for s in scenes:
-        if s in usable:
-            reused[s] = usable[s] + (s,)
+        mine = latest(s)
+        if mine and mine[0] == 'ok':
+            reused[s] = mine[1:] + (s,)
+            continue
+        if mine:  # 最近一次是失败：照跑，也不拿同组别段的通过顶
+            keep.append(s)
             continue
         # 同组替补只在「s 自己没被 C→现在的差异波及」的 C 里找：s 被改过（如只改了这一段的 .tscn）就照跑（审查 26 P2-1）
-        alt = next(((sha, src, m) for sha, src, good, hit in per if s not in hit
-                    for m in chunks.get(s, []) if m in good), None)
+        alt = next(((sha, src, m) for sha, src, ok, bad, hit in per if s not in hit
+                    for m in chunks.get(s, []) if m in ok and m not in hit), None)
         if alt:
             reused[s] = alt
         else:
@@ -189,11 +202,12 @@ def main(argv=None):
                             memo['tree'] = ''
                             notes.append('云端结果不看：产物快照算不出（%s）' % e)
                     return memo['tree']
-                for sha, (src, ok) in cloud_records(a.root, candidates, tree_of, my_tree).items():
+                for sha, (src, ok, bad) in cloud_records(a.root, candidates, tree_of, my_tree).items():
                     if sha in records:
-                        records[sha] = (records[sha][0], records[sha][1] | ok)
+                        records[sha] = (records[sha][0], records[sha][1] | ok, records[sha][2] | bad)
                     else:
-                        records[sha] = (src, ok)
+                        records[sha] = (src, ok, bad)
+                records = {c: records[c] for c in candidates if c in records}  # 新的提交在前
             if records:
                 keep, reused, more = plan(a.root, a.base, scenes, records, selector)
                 notes += more
