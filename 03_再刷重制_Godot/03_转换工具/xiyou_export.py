@@ -184,6 +184,42 @@ def strip_js_comments(js):
     return re.sub(r'//[^\n]*', '', js)
 
 
+def _yep_block(note, tag):
+    """YEP_SkillCore 按行收 <tag>…</tag> 块（大小写不敏感）；没有返回 None。"""
+    out, mode = None, False
+    for line in re.split(r'[\r\n]+', note or ''):
+        if re.search(rf'<{tag}>', line, re.I):
+            mode, out = True, ''
+        elif re.search(rf'</{tag}>', line, re.I):
+            mode = False
+        elif mode:
+            out += line + '\n'
+    return out
+
+
+def _compact_js(js):
+    return re.sub(r'\s+', '', strip_js_comments(js or ''))
+
+
+def cost_hit_blocks(note):
+    """奈叶大招 5703～5709（Bailong_NaiyeACS_FastSettlement 认的形状）：只认完整形状，别的块不翻。
+    <Custom MP Cost>：cost＝⌊mp×比例⌋，顺手 user._costmp＝⌊mp×比例/每段⌋ → {'mpCostCurrentRate': 比例, 'costHitPer': 每段}；
+    <Post-Damage Eval>：_costmp>0 时再 target.gainHp(-value)＋弹字 _costmp-1 次 → {'postDamageCostRepeat': True}。"""
+    out = {}
+    num = r'(0\.\d+|\d+(?:\.\d+)?)'
+    cost = _yep_block(note, 'CUSTOM MP COST')
+    m = cost is not None and re.fullmatch(
+        rf'cost=Math\.floor\(user\.mp\*{num}\);user\._costmp=user\._costmp\|\|0;?user\._costmp=Math\.floor\(user\.mp\*{num}/(\d+)\);?',
+        _compact_js(cost))
+    if m and m.group(1) == m.group(2):
+        out.update({'mpCostCurrentRate': float(m.group(1)), 'costHitPer': int(m.group(3))})
+    post = _yep_block(note, 'POST-DAMAGE EVAL')
+    if post is not None and re.fullmatch(r'if\(user\._costmp>0\)\{for\((?:let|var)i=1;i<user\._costmp;i\+\+\)\{'
+                                         r'target\.gainHp\(-value\);target\.startDamagePopup\(\);?\}\}', _compact_js(post)):
+        out['postDamageCostRepeat'] = True
+    return out
+
+
 PARAM_HIT = re.compile(r'if \(user\.(atk|mat|def|mdf|agi|luk) > 0\) \{ target\.gainHp\(-user\.(\w+)\); target\.startDamagePopup\(\); \}\s*')
 
 
@@ -478,6 +514,11 @@ def simple_script_effect(body, code, phase):
         # addState 只认一个参数：turns 原版不生效，回合照状态自身的 min/maxTurns
         if m and ('var turns' in sig) == (', turns' in sig):  # 只写 , turns 不声明是 ReferenceError
             return {'op': 'add_state', 'who': m.group(2), 'id': int(m.group(1)), 'criticalOnly': True}
+    # 【cc·悟空·未经审查】奈叶领域 1774（battle）、身经百战 1780（action_start／action_end）：单独一句预约公共事件（nanoha2_probe）
+    if phase in ('battle', 'action_start', 'action_end'):
+        m = re.fullmatch(r'\$gameTemp \. reserveCommonEvent \( (%s) \)(?: ;)?' % INT, sig)
+        if m:
+            return {'op': 'reserve_common_event', 'id': int(m.group(1))}
     if phase == 'battle':
         m = re.fullmatch(r'\$gameVariables \. setValue \( (%s) , (0|%s) \)(?: ;)?' % (INT, INT), sig)
         if m:
@@ -833,6 +874,8 @@ class Exporter:
                         rec['effects'] = parse_state_effects(rec['note'])
                     if name == 'Enemies' and isinstance(rec, dict):
                         core_enemy_notetags(rec)
+                    if name == 'Skills' and isinstance(rec, dict):
+                        rec.update(cost_hit_blocks(rec.get('note')))
                     if isinstance(rec, dict) and isinstance(rec.get('damage'), dict):
                         block = yep_damage_block(rec.get('note'))
                         rec['damage']['custom'] = block is not None
