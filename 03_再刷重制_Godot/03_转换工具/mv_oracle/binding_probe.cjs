@@ -6,20 +6,13 @@
 // 后清零、回归当回合每次行动扣 1、行动前后 validate（本体／宿主阵亡、离场）、敌方不可命中（随机目标、指定目标、全体、apply）、
 // 敌方行动期间脚本扣血与加状态、战斗结束清理。每步后记四人的绑定数据、两个状态、生命、存活、untargetable，回合数，这一步的事件与命中。
 // 敌人生命加 1e9；Math.random 0.5。产物 .sandbox/binding.json，拷成 tests/fixtures/binding_oracle.json（不进同步），专项 xiyou_binding。
-const {start, makeCase, finish} = require('./shared/host.cjs');
+const {start, makeCase, finish, superReference} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
 w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 const B = w.CodexBinding;
 if (!B || typeof B.register !== 'function') throw new Error('绑定框架未安装');
-// 同 guyu_battle_probe：用户 10-12 定不移植五乘区与超强者路线压制（O-050），去掉这两个伤害钩子，命中的伤害才对得上重制
-const hooks = w.CodexDamageHooks || [];
-for (const name of ['route-suppress', 'zones-correction']) {
-  const i = hooks.findIndex(h => h.name === name);
-  if (i < 0) throw new Error('伤害钩子 ' + name + ' 不在');
-  hooks.splice(i, 1);
-}
-if (!w.CodexRouteSuppress || typeof w.CodexRouteSuppress.otherScale !== 'function') throw new Error('路线压制模块不在');
-w.CodexRouteSuppress.otherScale = () => 1;
+// O-050：不移植五乘区与超强者路线压制，用 shared/host.cjs 的公用开关去掉它们
+superReference(w);
 const stub = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprites = new Map();
 w.Game_Battler.prototype.battler = function () {
