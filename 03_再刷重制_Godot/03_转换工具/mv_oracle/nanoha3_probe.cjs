@@ -3,6 +3,8 @@
 // 只在内存，产物 .sandbox/nanoha3.json，拷成 tests/fixtures/nanoha3_oracle.json（不接入全量同步）。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
+// 五乘区（installNativePowerZonesRuntime 的成长修正）不移植（数值平衡），伤害对照照 actor1_damage／race_battle 探针关掉（开着时伤害约 5.2 倍）
+w.eval('CodexZones.ENABLED=false;');
 const stub = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprites = new Map();
 w.Game_Battler.prototype.battler = function () {

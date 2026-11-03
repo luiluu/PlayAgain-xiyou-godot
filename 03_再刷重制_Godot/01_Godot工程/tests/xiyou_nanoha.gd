@@ -188,20 +188,25 @@ func _cast() -> void:
 		check(c.id + ".mp", int(n.mp) == int(o.mpAfter) and int(n.get_meta("costmp", -1)) == int(o.get("costmpAfter", -1)),
 			[n.mp, n.get_meta("costmp", -1), o.mpAfter, o.get("costmpAfter")])
 		# 段数：参照每个目标掉血＝value×段数（value 取 applyPostDamageEval 收到的值），重制取日志本体＋extra；死活照比。
-		# 伤害绝对值不比：本宿主下普攻（cast.1）也差同一倍数，属整条伤害链／开局设置的既有差别，见交付单
+		# 单段伤害照比绝对值（参照探针关了五乘区，见 dmg1b 交付单）
 		var want := {}
+		var want_value := {}
 		for p in o.post:
 			want[int(p.t)] = int(round((float(o.hp0[int(p.t)]) - float(o.hp1[int(p.t)])) / float(p.value)))
+			want_value[int(p.t)] = int(p.value)
 		var got := {}
+		var got_value := {}
 		var pops := 0
 		for l in logs:
 			if l is Dictionary and l.has("target") and l.get("skill", {}).get("id", 0) == int(c.setup.skill):
 				var i := logic.enemies.find(l.target)
+				got_value[i] = int(l.hp)
 				var extra: Array = l.get("extra", [])
 				var hits := int(round((float(hp0[i]) - logic.enemies[i].hp) / float(l.hp))) if float(l.hp) > 0.0 else 0
 				got[i] = hits
 				pops += 1 + extra.size()
 				check(c.id + ".same_value.%d" % i, extra.all(func(v): return float(v) == float(l.hp)), [l.hp, extra.slice(0, 3)])
+		check(c.id + ".value", got_value == want_value, [got_value, want_value])
 		var dead: Array = logic.enemies.map(func(e): return e.is_dead())
 		if c.id.ends_with(".kill") or c.id.ends_with(".extreme"):
 			check(c.id + ".hits", dead == o.dead, [dead, o.dead])
