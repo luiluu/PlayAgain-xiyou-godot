@@ -12,3 +12,12 @@
 
 ## 待交叉核查
 - 无核心战斗文件改动；改了 `xstate.gd` 读档流程一行（核查重点）。
+
+## 变更记录草稿
+
+## 2026-11-03 【cc·白龙·未经审查】饿狼读档同步；预排琦玉查明 OTB 下取不到不移植（dev.待定）
+
+- 做了：新增 `XGarou.after_load`（clear_battle＋sync），`xstate.gd` 读档处在 XGuyu.after_load 后调用，对应原版 extractSaveContents 包装。预排琦玉：原版 planned 分支读 `_actionInputIndex`，OTB 的 selectNextCommand 有 _subject 就直接 startAction，该下标恒为 0，正式战斗取不到；重制行为一致，不移植（静态读源码结论，未跑探针；规则没改）。`garou.gd` 头注改写；`xiyou_garou_progress` 加 `save.load_clear`、`save.load_sync`，`save.old`／`save.roundtrip` 改按字段比较。
+- 验证：语法检查通过；17 个相关场景（actor_looks、actor_modules、actor_p0、battle_log、event_compare、garou_battle、garou_progress、determinism、autosave、battleback_save、flow、guyu、pets、save_events、save_page、difficulty_inherit_load、global_vars）加 skill_mastery 全过。选测按 xstate.gd 扩出 283 个，未全跑。
+- 待交叉核查：`xstate.gd` 读档流程一行。
+- 进度：无变化。
