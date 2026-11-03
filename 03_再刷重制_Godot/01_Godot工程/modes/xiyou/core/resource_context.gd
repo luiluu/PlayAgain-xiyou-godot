@@ -13,6 +13,8 @@ var in_battle := true
 var boss_output := XBossOutputContext.new()
 ## Host inputs without this context itself (avoid a reference cycle).
 var lifecycle_inputs := {}
+## startDamagePopup 当场深拷贝的弹字行（战斗者 -> popup_queue 行），之后 clearResult 也不影响
+var started_popups := {}
 
 func state_context(b: XBattler) -> Dictionary:
 	var ctx := lifecycle_inputs.duplicate()
@@ -77,6 +79,10 @@ static func popup_queue(r: Dictionary) -> Array:
 			row.hpDamage = 0.0
 		out.append(row)
 	return out
+
+## YEP startDamagePopup：把此刻的结果按种类拷进弹字队列（死而复燃回血回蓝在 clearResult 前弹出）
+func start_damage_popup(b: XBattler) -> void:
+	started_popups[b] = started_popups.get(b, []) + popup_queue(result(b))
 
 func result(b: XBattler) -> Dictionary:
 	if not slots.has(b):
