@@ -5,6 +5,7 @@ const {start, makeCase, finish} = require('./shared/host.cjs');
 const language = require('./shared/formula_language_cases.json');
 const generated = process.env.XIYOU_GENERATED || path.resolve(__dirname, '../../01_Godot工程/modes/xiyou/generated');
 const host = start(), w = host.w, cases = [], contexts = {};
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 host.newGame();
 const props = 'hp mp tp mhp mmp atk def mat mdf agi luk level hit eva cri cev mev mrf cnt hrg mrg trg tgr grd rec pha mcr tcr pdr mdr fdr exr'.split(' ');
 const measuredValue = value => ({value:Number.isFinite(value)?value:null,normalizedValue:Number.isFinite(value)?value:0,

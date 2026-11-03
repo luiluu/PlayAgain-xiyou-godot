@@ -32,9 +32,9 @@ class ZonesCheck(unittest.TestCase):
         self.assertIn('a_probe.cjs', bad[0])
 
     def test_each_damage_keyword_counts(self):
-        for i, kw in enumerate(['hpDamage', 'makeDamage', 'executeDamage', 'applyDamage', 'startAction', 'invokeAction']):
+        for i, kw in enumerate(['hpDamage', 'makeDamage', 'executeDamage', 'applyDamage', 'startAction', 'invokeAction', 'evalDamageFormula', 'a.result()']):
             self.probe(f'k{i}_probe.cjs', kw)
-        self.assertEqual(len(pc.zones_check(self.root, {})), 6)
+        self.assertEqual(len(pc.zones_check(self.root, {})), 8)
 
     def test_switch_set_passes(self):
         self.probe('a_probe.cjs', "w.eval('CodexZones.ENABLED=false;'); r.hpDamage;")

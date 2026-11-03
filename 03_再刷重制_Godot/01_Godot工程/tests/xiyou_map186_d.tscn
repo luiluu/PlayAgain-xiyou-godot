@@ -4,4 +4,4 @@
 
 [node name="XiyouMap186D" type="Node"]
 script = ExtResource("1")
-sections = ["mine"]
+sections = ["mine_a"]

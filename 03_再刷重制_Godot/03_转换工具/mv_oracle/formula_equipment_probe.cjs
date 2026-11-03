@@ -2,6 +2,7 @@
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
 const {start,makeCase,finish}=require('./shared/host.cjs');
 const host=start(),w=host.w,cases=[];host.newGame();
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 const generated=process.env.XIYOU_GENERATED||path.resolve(__dirname,'../../01_Godot工程/modes/xiyou/generated');
 const skills=JSON.parse(fs.readFileSync(path.join(generated,'db/Skills.json'),'utf8'));
 const modes=['none','wrong_kind','zero','high','first','different_base','nonmagic'];

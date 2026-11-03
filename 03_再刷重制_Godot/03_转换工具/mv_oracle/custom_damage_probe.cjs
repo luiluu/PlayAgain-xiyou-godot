@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), w = host.w, cases = [];
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 host.newGame();
 for (const skill of [857, 858, 4013]) for (const enemy of [false, true])
   for (const resources of [[10000, 220, 123], [450, 1, 1], [3000, 0, 0], [3001, 201, 200]])

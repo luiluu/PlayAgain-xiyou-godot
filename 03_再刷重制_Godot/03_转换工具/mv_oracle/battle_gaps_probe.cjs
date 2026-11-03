@@ -6,6 +6,7 @@
 // 真实冻结插件、全内存新局；只写 .sandbox/battle_gaps.json，拷成 tests/fixtures/battle_gaps_oracle.json（不接入全量同步）。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 const realmArray = values => { const out = w.eval('[]'); for (const v of values) out.push(v); return out; };
 function state(note, traits) {
   const st = w.JsonEx.makeDeepCopy(w.$dataStates[4]);

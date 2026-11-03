@@ -4,9 +4,9 @@ extends Node
 ## 矿（EV16～23）、超级 Boos EV32（敌群 739，playtime−变量 707≥180）、外界使者 EV33（送物品 1634）。
 ## 走地图场景真走一遍；数值（敌群事件）由 xiyou_troop_events 对照参照。
 ## 分段（照 xiyou_rules 拆场景，免得单场景超过 600 秒上限的一半）：xiyou_map186 跑入口门＋九军团，_b 跑农田，_d 跑矿，_c 跑超级 Boss 与使者；
-## 各段都自己开新局，四个场景断言合计与不拆时相同。不设时五段全跑。
+## 各段都自己开新局，各场景断言合计与不拆时相同。不设时五段全跑。
 ## 各事件都从门进来的落点 (46,51) 走过去或坐飞艇（飞艇开局停在 (50,49)）到事件旁再跑（xiyou_airship_route.approach；原来开局就站在事件旁）；
-## 矿改坐飞艇后 _b 跑到 310 秒，矿另拆成 _d（悟空 reach-air3）。
+## 矿改坐飞艇后 _b 跑到 310 秒，矿另拆成 _d（悟空 reach-air3）；_d 本机又到 303 秒，再拆成 _d（EV16～19）和 _e（EV20～23）（哪吒 tools52），断言合计不变。
 @export var sections: Array = ["gate", "legion", "farm", "mine", "boss"]
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 90000  # 墙钟与帧数（60 帧/秒折算）都过了、事件也不再推进才算卡住，见 wait_budget.gd
@@ -175,8 +175,10 @@ func _run() -> void:
 		await _legion()
 	if "farm" in sections:
 		await _farm()
-	if "mine" in sections:
-		await _mines()
+	if "mine" in sections or "mine_a" in sections:
+		await _mines(16, 19)
+	if "mine" in sections or "mine_b" in sections:
+		await _mines(20, 23)
 	if "boss" in sections:
 		await _boss_and_envoy()
 	_finish()
@@ -305,9 +307,9 @@ func _farm() -> void:
 	MVEventCore.fixed_random = -1.0
 
 
-## 矿（EV16～23）：每个事件占领一次（至少开一场战斗、翻到收取页）
-func _mines() -> void:
-	for id in range(16, 24):
+## 矿（EV16～23）：每个事件占领一次（至少开一场战斗、翻到收取页）；mine 跑全部，mine_a 只跑 EV16～19、mine_b 只跑 EV20～23（_d／_e 两个场景）
+func _mines(first: int, last: int) -> void:
+	for id in range(first, last + 1):
 		var r := await _in_war()
 		if r.is_empty():
 			return
