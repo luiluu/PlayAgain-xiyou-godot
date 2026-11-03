@@ -38,8 +38,9 @@
 ## 验证
 
 - `python3 07_开发环境/语法检查.py`：489 个 .gd 0 个问题。
-- 并行测试（--jobs 2）：见下，日志目录写在末行。
-VERIFY_PLACEHOLDER
+- 并行测试（--jobs 2，不跑全量）：15 个场景全过——xiyou_guyu_battle 1637、xiyou_guyu 78、xiyou_guyu_ui 791、xiyou_determinism 372、xiyou_battle 9、xiyou_combat 34、xiyou_tusu_battle 4977、xiyou_yunshang 1593、xiyou_yunshang_wraps 214、xiyou_alien_affix 2117、xiyou_state_effects 19949、xiyou_action_sequence 115、xiyou_event_compare 5、xiyou_rules_d1b 61294、xiyou_smart_ai 5349。
+- 日志：`03_再刷重制_Godot/04_验证/本地结果/并行测试/20261103_045707_vwxtd_wx/`
+- 没跑：选测名单其余场景（共约 120 个，含其余 rules／smart_ai 段）与全量，留总装。探针改了（guyu_battle_probe.cjs），未在工作树跑 `同步正式西游.py --accept-additions`，总装合并时同步会重生成 guyu_battle.json。
 
 ## 本分支提交
 
