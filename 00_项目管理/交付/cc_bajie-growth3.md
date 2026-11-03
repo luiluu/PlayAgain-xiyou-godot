@@ -1,7 +1,7 @@
 # 交付：cc/bajie-growth3
 
 - 车道／工作者：C 规则·机制／八戒（cc，Opus）
-- 状态：进行中
+- 状态：可合并
 
 （成长装备尾项第一期：派单 1～3 加第 5 项的心钢／狂妄战力；智能 AI、甚尔、提示与 `_forced_run` 补例在「接续」。）
 
@@ -65,11 +65,16 @@
 
 ## 验证
 
-（待写）
+- 原版探针：`node growth_help_probe.cjs` 12 例；`node demon_crown_probe.cjs` 19 例无错（新加 help）。都不进同步，拷成夹具。
+- 专项：`xiyou_growth_help` 50／50（HELP_FIX 关逐行比参照、开看三行、战力 12 例）、`xiyou_heartsteel` 423／423（desc 已比）、`xiyou_demon_crown` 104／104、`xiyou_growth_forge` 538／538（Shift 原件卡 4 项）、`xiyou_help_card` 1054／1054、`xiyou_power` 137／137、`xiyou_crafting` 49／49。
+- 选测：合 main（5d1ea3a2）后 `选测.py main --list` 列出的 57 个场景全名，加切片必跑的 `xiyou_rules` 难度 1 八段，共 65 个（含 `xiyou_event_compare`），一轮全过（2767 秒，机器上另有同步在跑）。`xiyou_determinism` 没被选中（战斗核心文件没改）。
+- 切片加了一张 system 图：worktree 里 `同步正式西游.py --accept-additions` 跑过（测量不变，产物 2558），`内容覆盖检查.py` 无新增、不用更新基线。
+- `语法检查.py`、`探针登记检查.py`：通过。
+- 偶发：无。没做反向验证（参照逐行比，HELP_FIX 开关两支都有断言）。
 
 ## 本分支提交
 
-- 382e4b57 心钢／狂妄动态说明；WIP 两条魔冠余项与战力；28ad1c2c 选原件看词条；b6e5dc75 合 main
+- 382e4b57 心钢／狂妄动态说明；两条 WIP 魔冠余项与战力；28ad1c2c 选原件看词条；b6e5dc75 合 main；交付单
 
 ## 接续
 
