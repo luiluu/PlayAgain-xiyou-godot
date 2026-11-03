@@ -1,7 +1,7 @@
 extends Node
 ## 【cc·八戒·未经审查】成长装备说明（growth3）XGrowthHelp：照参照 growth_help_probe（tests/fixtures/growth_help_oracle.json）逐行比。
 ## 每例拿参照实例刚建好时的备注 note0／说明 description0，加层数／盛名字段，HELP_FIX 关（原版口径）走 XHelpCard.content，
-## 文字、字号、颜色、对齐、行 y 与卡高同 xiyou_help_card；装备评分（总分、逐行）比参照 power；再开 HELP_FIX（O-待定，默认）看「本场成长」「当前增益」「装备战力」三行。
+## 文字、字号、颜色、对齐、行 y 与卡高同 xiyou_help_card；装备评分（总分、逐行）比参照 power；再开 HELP_FIX（O-151，默认）看「本场成长」「当前增益」「装备战力」三行。
 const FIXTURE := "res://tests/fixtures/growth_help_oracle.json"
 const POWER_PREFIX := "装备战力："
 var checks := 0

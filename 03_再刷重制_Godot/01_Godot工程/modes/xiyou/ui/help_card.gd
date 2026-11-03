@@ -90,7 +90,7 @@ static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	if kind == "":
 		kind = kind_of(obj)
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
-	# 心钢／狂妄：H/U.helpView（XGrowthHelp）；原版里它重算 descParams，外层元素与战力包装的改动被冲掉（O-待定 HELP_FIX 关时照原版）
+	# 心钢／狂妄：H/U.helpView（XGrowthHelp）；原版里它重算 descParams，外层元素与战力包装的改动被冲掉（O-151 HELP_FIX 关时照原版）
 	var growth := type == 2 and XGrowthHelp.target(obj)
 	var rows := XGrowthHelp.rows(obj, type) if growth else desc_params(obj, type)
 	# 屠苏／璇的技能：bindGrowth 的 setItem 包装（最外层）把技能换成浅拷贝再往里传，元素包装看 isSkill 为假，同 skill_copy
