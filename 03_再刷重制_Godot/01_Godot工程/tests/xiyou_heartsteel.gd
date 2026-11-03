@@ -206,11 +206,25 @@ func _set_hp(b, v: float) -> void:
 	logic._finish_lifecycle_operation(rc, b)
 
 
-func _battle(base: int, inst: Dictionary, fields: Dictionary) -> Dictionary:
+## party／levels／prep：审查第 29 期两例换队伍（同参照 battle2：开 2494、等级上限 99，prep 在排队伍之前）
+func _battle(base: int, inst: Dictionary, fields: Dictionary, party: Array = PARTY, levels := {}, prep := Callable()) -> Dictionary:
 	var s := _new_state()
+	if party != PARTY:
+		s.actor_max_level = 99
+		s.switches[2494] = true
+		if prep.is_valid():
+			prep.call(s)
+		s.party.clear()
+		s.battle_slots.clear()
+		for id in party:
+			s.add_actor(id)
+		for id in levels:
+			s.actor(int(id)).change_level_mv(int(levels[id]))
 	var a := s.actor(1)
 	var it := _gear(s, a, base, inst, fields)
-	for id in PARTY:
+	if party.has(XGuyu.ACTOR):
+		XGuyu.sync(s.actor(XGuyu.ACTOR))
+	for id in party:
 		s.actor(id).refresh_passive()
 		s.actor(id).recover_all()
 	var l := XBattleLogic.new()
@@ -411,6 +425,54 @@ func _case_pierce(c: Dictionary) -> void:
 		_cmp(c.id + "." + base, {"atk": a.atk, "def": logic.enemies[1].def, "hits": _act(a, 1, 1)}, {"atk": o.atk, "def": o.def, "hits": o.hits})
 
 
+## 审查第 29 期 P3-1：屠苏剑气（屠苏 endAction 前半段）打死的敌人，狂妄（里层）在同一次 endAction 结算（击杀按修复口径）
+func _case_order_tusu(c: Dictionary) -> void:
+	var rows: Array = c.observed.rows
+	XHubris.KILL_FIX = true
+	var ctx := _battle(7902, rows[0][2].inst, {XHubris.FAME: 0}, [1, 8, XTusu.ACTOR, 10], {XTusu.ACTOR: 60}, func(s): XTusuXuan.recruit(s, XTusu.ACTOR))
+	var a: XActor = ctx.a
+	var e: Array = logic.enemies
+	var tusu: XActor = logic.state.actor(XTusu.ACTOR)
+	var want := {}
+	for r in rows:
+		want[r[0]] = r
+	_cmp(c.id + ".start", _hubris_snap(ctx), want.start[1])
+	logic.act(tusu, XDB.rec("Skills", XTusu.skill_id("huawu.sword")), a)
+	var h = XBinding.host(tusu)
+	_cmp(c.id + ".huawu", [_hubris_snap(ctx), "a%d" % h.actor_id if h != null else null], want.huawu.slice(1))
+	_cmp(c.id + ".attack", [_act(a, 1, 0), _hubris_snap(ctx)], want.attack.slice(1))
+	_set_hp(e[0], 1)
+	XBinding.gain(tusu, 3)
+	_cmp(c.id + ".zhanfeng", [_act(a, XTusu.skill_id("arm.zhanfeng"), 1), _hubris_snap(ctx), e[0].is_dead()], want.zhanfeng.slice(1))
+	_turn()
+	_cmp(c.id + ".turn", _hubris_snap(ctx), want.turn[1])
+
+
+func _guyu_snap(ctx: Dictionary) -> Dictionary:
+	var g: XActor = logic.state.actor(XGuyu.ACTOR)
+	return {"heart": _heart_snap(ctx), "flowerUntil": XGuyu.flower_until, "seed": XGuyu.seed if XGuyu.seed >= 0 else null,
+		"reserve": [XGuyu.reserve(g), XGuyu.reserve(ctx.a)], "blooms": XGuyu.totals.get("blooms", 0), "spent": XGuyu.totals.get("spent", 0)}
+
+
+## 审查第 29 期 P3-2：花期里穿心之钢的 1 号被强制放没蓄满的巨人吞噬，心钢在谷雨 apply 里层拦下，谷雨已置执行标记，绽放照样触发
+func _case_order_guyu(c: Dictionary) -> void:
+	var rows: Array = c.observed.rows
+	var ctx := _battle(7900, rows[0][2].inst, {XHeartsteel.STACKS: 0}, [XGuyu.ACTOR, 1], {XGuyu.ACTOR: 35, 1: 35})
+	var a: XActor = ctx.a
+	var g: XActor = logic.state.actor(XGuyu.ACTOR)
+	var want := {}
+	for r in rows:
+		want[r[0]] = r
+	_cmp(c.id + ".start", _guyu_snap(ctx), want.start[1])
+	_act(g, 10288, 0)
+	_act(g, 10288, 0)
+	_cmp(c.id + ".heal", _guyu_snap(ctx), want.heal[1])
+	_cmp(c.id + ".open", [_act(g, 10289, 0), _guyu_snap(ctx)], want.open.slice(1))
+	var logs := logic._force_action([1, 1, XHeartsteel.skill_for(ctx.it), 1], null)
+	_cmp(c.id + ".forced", [_hits(logs), _guyu_snap(ctx)], want.forced.slice(1))
+	_cmp(c.id + ".attack", [_act(a, 1, 1), _guyu_snap(ctx)], want.attack.slice(1))
+
+
 ## 存档：层数／盛名随实例存读（穿着的和背包里的）；旧档实例没有这两个字段按 0（原版 growth／stacks 缺省 0）
 func _case_save(inst: Dictionary) -> void:
 	var s := _new_state()
@@ -467,6 +529,10 @@ func _ready() -> void:
 			_case_hubris_mode(c)
 		elif id == "hubris.pierce":
 			_case_pierce(c)
+		elif id == "order.tusu":
+			_case_order_tusu(c)
+		elif id == "order.guyu":
+			_case_order_guyu(c)
 		else:
 			check(id + ".unhandled", false)
 	_case_save(heart_inst)

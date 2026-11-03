@@ -4436,6 +4436,376 @@
     }
    },
    "errors": []
+  },
+  {
+   "id": "order.tusu",
+   "setup": {
+    "base": 7902
+   },
+   "observed": {
+    "rows": [
+     [
+      "start",
+      {
+       "atk": 1466,
+       "buff": null,
+       "pending": 0,
+       "fame": 0,
+       "moves": 0,
+       "round": 1
+      },
+      {
+       "inst": {
+        "params": [
+         0,
+         0,
+         1000,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "traits": [
+         [
+          41,
+          1,
+          1
+         ],
+         [
+          22,
+          2,
+          0.05
+         ],
+         [
+          22,
+          0,
+          0.05
+         ],
+         [
+          22,
+          1,
+          0.05
+         ],
+         [
+          22,
+          6,
+          0.05
+         ],
+         [
+          21,
+          4,
+          1.4
+         ],
+         [
+          21,
+          2,
+          1.4
+         ]
+        ],
+        "id": 8020
+       }
+      }
+     ],
+     [
+      "huawu",
+      {
+       "atk": 1466,
+       "buff": null,
+       "pending": 0,
+       "fame": 0,
+       "moves": 0,
+       "round": 1
+      },
+      "a1"
+     ],
+     [
+      "attack",
+      [
+       [
+        "a1",
+        "e0",
+        13338
+       ]
+      ],
+      {
+       "atk": 1466,
+       "buff": null,
+       "pending": 0,
+       "fame": 0,
+       "moves": 1,
+       "round": 1
+      }
+     ],
+     [
+      "zhanfeng",
+      [
+       [
+        "a176",
+        "e1",
+        72695258
+       ],
+       [
+        "a176",
+        "e0",
+        87961262
+       ],
+       [
+        "a176",
+        "e1",
+        87961262
+       ],
+       [
+        "a176",
+        "e2",
+        87961262
+       ]
+      ],
+      {
+       "atk": 1613,
+       "buff": {
+        "rate": 1.1,
+        "round": 1,
+        "remaining": 3
+       },
+       "pending": 1,
+       "fame": 0,
+       "moves": 2,
+       "round": 1
+      },
+      true
+     ],
+     [
+      "turn",
+      {
+       "atk": 1613,
+       "buff": {
+        "rate": 1.1,
+        "round": 1,
+        "remaining": 3
+       },
+       "pending": 1,
+       "fame": 0,
+       "moves": 2,
+       "round": 2
+      }
+     ]
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "order.guyu",
+   "setup": {
+    "base": 7900
+   },
+   "observed": {
+    "rows": [
+     [
+      "start",
+      {
+       "heart": {
+        "hp": 13211,
+        "mhp": 13211,
+        "wait": 2,
+        "casted": false,
+        "pending": 0,
+        "stacks": 0,
+        "meets": [
+         false,
+         false
+        ],
+        "round": 1
+       },
+       "flowerUntil": -1,
+       "seed": null,
+       "reserve": [
+        0,
+        0
+       ],
+       "blooms": 0,
+       "spent": 0
+      },
+      {
+       "inst": {
+        "params": [
+         10000,
+         0,
+         0,
+         600,
+         0,
+         600,
+         0,
+         0
+        ],
+        "traits": [
+         [
+          41,
+          1,
+          1
+         ],
+         [
+          22,
+          2,
+          0.05
+         ],
+         [
+          22,
+          0,
+          0.05
+         ],
+         [
+          22,
+          1,
+          0.05
+         ],
+         [
+          22,
+          6,
+          0.05
+         ],
+         [
+          21,
+          4,
+          1.4
+         ],
+         [
+          21,
+          2,
+          1.4
+         ]
+        ],
+        "id": 8019
+       }
+      }
+     ],
+     [
+      "heal",
+      {
+       "heart": {
+        "hp": 17670,
+        "mhp": 23634,
+        "wait": 2,
+        "casted": false,
+        "pending": 0,
+        "stacks": 0,
+        "meets": [
+         false,
+         false
+        ],
+        "round": 1
+       },
+       "flowerUntil": -1,
+       "seed": 0,
+       "reserve": [
+        7187,
+        10423
+       ],
+       "blooms": 0,
+       "spent": 0
+      }
+     ],
+     [
+      "open",
+      [],
+      {
+       "heart": {
+        "hp": 17670,
+        "mhp": 23634,
+        "wait": 2,
+        "casted": false,
+        "pending": 0,
+        "stacks": 0,
+        "meets": [
+         false,
+         false
+        ],
+        "round": 1
+       },
+       "flowerUntil": 2,
+       "seed": 0,
+       "reserve": [
+        7187,
+        10423
+       ],
+       "blooms": 0,
+       "spent": 0
+      }
+     ],
+     [
+      "forced",
+      [
+       [
+        "a1",
+        "e0",
+        17214
+       ]
+      ],
+      {
+       "heart": {
+        "hp": 17670,
+        "mhp": 21029,
+        "wait": 2,
+        "casted": false,
+        "pending": 0,
+        "stacks": 0,
+        "meets": [
+         false,
+         false
+        ],
+        "round": 1
+       },
+       "flowerUntil": 2,
+       "seed": 0,
+       "reserve": [
+        7187,
+        7818
+       ],
+       "blooms": 1,
+       "spent": 2605
+      }
+     ],
+     [
+      "attack",
+      [
+       [
+        "a1",
+        "e1",
+        1747
+       ],
+       [
+        "a1",
+        "e0",
+        12912
+       ]
+      ],
+      {
+       "heart": {
+        "hp": 17670,
+        "mhp": 19075,
+        "wait": 1,
+        "casted": false,
+        "pending": 0,
+        "stacks": 0,
+        "meets": [
+         false,
+         false
+        ],
+        "round": 1
+       },
+       "flowerUntil": 2,
+       "seed": 0,
+       "reserve": [
+        7187,
+        5864
+       ],
+       "blooms": 2,
+       "spent": 4559
+      }
+     ]
+    ]
+   },
+   "errors": []
   }
  ]
 }
