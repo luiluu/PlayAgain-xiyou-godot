@@ -64,6 +64,7 @@ static func change(s: XState, a: XActor, slot: int, item) -> bool:
 		s.gear.append(removed)
 	a.refresh_passive()
 	XActorModules.equip_changed(a)  # 专属角色模块的 changeEquip 包装（饿狼同步、法宝进化）
+	XDemonCrown.equip_changed(a)  # 魔冠 changeEquip 包装：战斗中换掉开战穿的那件，这一场不算成长
 	a.hp = minf(a.hp, a.mhp)
 	a.mp = minf(a.mp, a.mmp)
 	return true
