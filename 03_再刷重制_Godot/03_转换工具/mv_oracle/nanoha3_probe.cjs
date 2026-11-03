@@ -99,6 +99,16 @@ cases.push(makeCase('cast.5703.kill', {skill: 5703, mp: 23000}, () => cast(5703,
 // 普攻对照（分辨伤害链差别与多段无关）
 cases.push(makeCase('cast.1.6667', {skill: 1, mp: 6667, mmp: 50000}, () => cast(1, 6667, [BIG_HP, BIG_HP, BIG_HP], 50000)));
 // 极端段数（超 512，ACS 快速结算）
+// 同宿主别的角色普攻（dmg1b：确认关五乘区后不只奈叶一致）：队伍只有该角色，打 1 号敌，记单段伤害
+function attack(actorId) {
+  const {bm, foes} = battle([actorId], [BIG_HP, BIG_HP, BIG_HP]);
+  const a = w.$gameActors.actor(actorId);
+  log.length = 0; post.length = 0; pops = 0;
+  inAction = true;
+  try { act(bm, a, 1, 0); } finally { inAction = false; }
+  return {atk: a.atk, def: foes[0].def, gains: log.slice(), hp1: foes.map(e => e.hp)};
+}
+for (const id of [1, 9]) cases.push(makeCase(`atk.${id}`, {actor: id}, () => attack(id)));
 cases.push(makeCase('cast.5709.extreme', {skill: 5709, mp: 1500000}, () => cast(5709, 1500000, [BIG_HP * 1000, BIG_HP, BIG_HP], 2000000)));
 // 智能 AI（Codex_SmartBattleAI makeAction）：奈叶会小魔炮 5692 时候选换成六档魔炮（不必学会），估伤按付费后 MP、再 ×max(1,⌊付前MP×比例/2000⌋)
 function ai(mp, hp, opts = {}) {
