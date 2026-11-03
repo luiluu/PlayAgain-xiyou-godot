@@ -750,6 +750,9 @@ func _command_entries(a: XActor) -> Array:
 	var opts := [{"text": a.attack_command_text(), "key": "attack", "enabled": logic.can_use(a, atk), "preview": atk}]
 	var stypes: Array = XDB.system().skillTypes
 	var forced = XActorModules.battle_skill_types(a)  # 渡鸦／宿傩／饿狼 addSkillCommands 包装：固定几栏、照次序
+	if XTusu.bound_tusu(a):
+		forced = []  # 屠苏 addSkillCommands 包装：武具态只有一栏「易武」（技能类型 1）
+		opts.append({"text": "易武", "key": "stype:1"})
 	if forced != null:
 		for t in forced:
 			opts.append({"text": str(stypes[int(t)]), "key": "stype:%d" % int(t)})
@@ -761,6 +764,7 @@ func _command_entries(a: XActor) -> Array:
 	opts.append({"text": str(terms[3]), "key": "guard", "enabled": logic.can_use(a, grd), "preview": grd})
 	opts.append({"text": str(terms[4]), "key": "item"})
 	opts.append({"text": str(terms[1]), "key": "escape", "enabled": logic.can_escape})
+	opts = XTusu.command_entries(logic, a, opts)  # 屠苏 makeCommandList 包装：持武者技能栏去重；武具态插「武相支援」、防御改「待命」
 	opts.append_array(XYunshang.command_entries(a))  # 云裳 makeCommandList 包装（种族之前装）：赠行、放行、裁身、收袖、七曜元素
 	# installNativeRaceRuntime makeCommandList 包装：魔族在最后加「血契：开／关」
 	var blood := XRaceBattle.blood_command_text(a)
@@ -796,7 +800,7 @@ func _command_for(a: XActor):
 			a.last_command = pick if XConfig.flag("commandRemember") else ""
 		if pick is String and pick.begins_with("stype:"):
 			cmd_win.active = false
-			var action = await _pick_action_list(a, logic.battle_skills(a).filter(func(x): return int(x.stypeId) == int(pick.substr(6))), false)
+			var action = await _pick_action_list(a, logic.battle_skills(a).filter(func(x): return XTusu.battle_listed(a, x, int(pick.substr(6)))), false)  # 屠苏 Window_BattleSkill.includes 包装
 			if logic.auto:
 				return "auto"
 			if action is Array:
@@ -812,6 +816,19 @@ func _command_for(a: XActor):
 					return [atk, t]
 			"guard":
 				return [XDB.rec("Skills", XBattleLogic.GUARD_SKILL), null]
+			"tusuSupport":
+				# 屠苏 codexTusuSupport 处理器：用当前武相的支援（不能用时重画指令窗）；选目标取消回指令窗（onEnemyCancel／onActorCancel 包装）
+				var sk := XTusu.support_skill(a)
+				if sk.is_empty() or not logic.can_use(a, sk):
+					opts = _command_entries(a)
+					continue
+				a.last_battle_skill = int(sk.id)
+				cmd_win.active = false
+				var t = await _pick_target(sk, a)
+				if logic.auto:
+					return "auto"
+				if t != null:
+					return [sk, t]
 			"raceBlood":
 				# 原版处理器：切换后 setup(actor) 重画指令窗再激活（光标照 selectLast：记忆指令开时停在血契，否则回第一项）
 				XRace.toggle_blood(logic.state, a)

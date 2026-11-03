@@ -122,7 +122,7 @@ function snap() {
 const hits = [];
 const oldExec = w.Game_Action.prototype.executeHpDamage;
 w.Game_Action.prototype.executeHpDamage = function (t, v) { hits.push(['hp', key(this.subject()), key(t), v]); return oldExec.apply(this, arguments); };
-// 步骤：use 人 键 目标角色（屠苏的指令：走真实 startAction～endAction；目标角色给角色号）｜act 人 技能号 敌序号｜turn｜mp 人 值｜pay 人 键（直接 paySkillCost）｜
+// 步骤：force 人 键 敌序号（强制行动）｜use 人 键 目标角色（屠苏的指令：走真实 startAction～endAction；目标角色给角色号）｜act 人 技能号 敌序号｜turn｜mp 人 值｜pay 人 键（直接 paySkillCost）｜
 // state 人 状态键｜hit 敌 技能号 角色｜arm 人 键 敌序号（武装技能走真实行动，记熟练度使用次数）｜kill 人｜revive 人｜cost 人 技能号（skillMpCost）｜formula 人 键（T.damage(人, 敌0, 键)、T.base 剑／书、系数）｜end
 function step(bm, st) {
   const [op, x, y, z] = st;
@@ -132,6 +132,16 @@ function step(bm, st) {
     const tgt = z ? w.$gameParty.members().indexOf(who(z)) : -1;
     begin(bm, a, s, tgt); run(bm);
   } else if (op === 'act') { begin(bm, who(x), y, z); run(bm); }
+  else if (op === 'force') {  // 事件强制行动（339 一类：forceAction＋processForcedAction，原版照样 startAction～endAction，审查第 26 期 P3-1）：x 角色、y 武装技能键、z 敌序号
+    const a = who(x); a.forceAction(K(y), z); bm.forceAction(a); bm._subject = null;
+    for (let i = 0; i < 20000 && (bm._actionForcedBattler || bm._subject || ['action', 'actionList', 'actionTargetList', 'phaseChange'].includes(bm._phase)); i++) {
+      if (bm._actionForcedBattler && !bm._subject) { bm.processForcedAction(); continue; }
+      const ph = bm._phase;
+      if (ph === 'phaseChange') bm.updatePhase(); else if (ph === 'actionList') bm.updateActionList();
+      else if (ph === 'actionTargetList') bm.updateActionTargetList(); else break;
+    }
+    bm._phase = 'turn';
+  }
   else if (op === 'arm') { const a = who(x); begin(bm, a, K(y), z); run(bm); ret = {uses: a.skillMasteryUses(K(y))}; }  // 持武者走真实行动用武装技能：熟练度计次（审查第 24 期 P2-1）
   else if (op === 'turn') { bm._enteredEndPhase = false; bm._phase = 'turn'; bm.endTurn(); bm.startTurn(); bm._phase = 'turn'; }
   else if (op === 'mp') who(x).setMp(y);
@@ -224,6 +234,9 @@ const SCRIPTS = {
   // 持武者也有破甲（结丹，0.75）→ 0.75。斩锋临时加普攻附加状态（屠苏的 passiveATKST2705 才附加得上）
   pojia: [{176: 60}, [['zq', 176, 0, ['pojia']], ['atkst', 'arm.zhanfeng', 1], ['use', 176, 'huawu.sword', 1], ['arm', 1, 'arm.zhanfeng', 0], ['pq'],
     ['unpq'], ['zq', 1, 3, ['pojia']], ['arm', 1, 'arm.zhanfeng', 0], ['pq'], ['atkst', 'arm.zhanfeng', 0], ['end']]],
+  // 强制行动（审查第 26 期 P3-1）：持武者被强制放贯日消费锁定、被强制放敕令消费和鸣、持剑被强制斩锋后放剑气（补兵势）
+  forced: [{176: 60}, [['use', 176, 'huawu.bow', 1], ['sup', 176, 'support.suoding', 1], ['force', 1, 'arm.guanri', 1], ['use', 176, 'yiwu.book'], ['turn'],
+    ['state', 1, 'heming'], ['force', 1, 'arm.chiling', 0], ['use', 176, 'yiwu.sword'], ['turn'], ['gain', 176, 3], ['force', 1, 'arm.zhanfeng', 0], ['end']]],
   // 等级低：没解锁的武装技能、支援不能用
   low: [{176: 5}, [['use', 176, 'huawu.bow', 1], ['turn'], ['use', 176, 'yiwu.sword'], ['turn'], ['end']]],
 };
