@@ -2,6 +2,7 @@
 // 冻结原版普通HP/MP结算入口；内存新局，只写.sandbox。不替换任何数值方法。
 const {start,makeCase,finish}=require('./shared/host.cjs');
 const host=start(),{w,newGame}=host,D=w.CodexBossDifficulty;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 // 仅省略OTB复活行动条绘图，沿用otb_probe的无界面宿主。
 w.BattleManager.otbDisplayWindow=function(){return {createReturnedBattlerSprite:function(){}};};
 const sprites=new Map();

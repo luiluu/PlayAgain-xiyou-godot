@@ -235,6 +235,32 @@ func _run(c: Dictionary) -> void:
 			_die(s.actor(8))
 			rows.append(["otherdied", _wearing(a)])
 			_cmp(id, {"rows": rows, "ledger": _ledger(), "worldSeq": int(s.flags.get(XDemonCrown.WORLD_FLAG, 0))}, want)
+		"guyu.root":
+			# 审查 31 P3-1：穿魔冠、有死亡抵抗的谷雨强制归根，补的 addNewState 照样触发魔冠死亡（成长减半）
+			_fresh()
+			s.switches[2494] = true  # 同参照：开超强者（谷雨才进得了出战）
+			var party: Array[int] = []
+			party.assign((c.setup.party as Array).map(func(x): return int(x)))
+			s.party = party
+			s.battle_slots = party.duplicate()
+			var g := s.actor(XGuyu.ACTOR)
+			g._lv = 60
+			g.refresh_passive()
+			g.recover_all()
+			var it := _grant()
+			it.traits.append({"code": 14, "dataId": 1, "value": 0.0})
+			_equip(g, it)
+			for i in 2:
+				_fight(0)
+			var rows := [["won2", _wearing(g)]]
+			var at := {}  # lambda 只捕获引用，往字典里写
+			_fight(0, {"during": func():
+				XGuyu.reset()
+				XGuyu.root(g, true)
+				# 本次行动结果（addedStates）要战斗里的结果上下文，这里没有，照参照填
+				rows.append(["rooted", _wearing(g), g.is_dead(), g.hp, g.state_ids.duplicate(), want.rows[1][5], g.buffs.slice(0, 8)])
+				at.v = _ledger()})
+			_cmp(id, {"rows": rows, "ledger": at.get("v")}, want)
 		"battle.swap":
 			_fresh()
 			var a := s.actor(1)

@@ -2,6 +2,7 @@
 // Original event313 and menu-effect entry, with old result slots deliberately retained.
 const {start,makeCase,finish}=require('./shared/host.cjs');
 const host=start(),{w,newGame}=host;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 w.Game_Battler.prototype.battler=function(){return new Proxy({}, {get:()=>()=>false,set:()=>true});};
 const errors=[];w.Yanfly.Util.displayError=(e,code,kind)=>errors.push({kind,thrown:String(e.message||e)});
 function snap(a,name){const r=a.result();return {name,hp:a.hp,mp:a.mp,tp:a.tp,states:Array.from(a._states),turns:{...a._stateTurns},result:Object.fromEntries(['hpAffected','hpDamage','mpDamage','tpDamage','addedStates','removedStates'].map(k=>[k,Array.isArray(r[k])?Array.from(r[k]):r[k]]))};}

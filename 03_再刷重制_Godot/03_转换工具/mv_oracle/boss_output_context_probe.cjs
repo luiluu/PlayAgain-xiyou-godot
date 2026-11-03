@@ -3,6 +3,7 @@
 // __bossStep只提供测试脚本的资源操作与观察，不替换引擎结算或上下文方法。
 const {start,makeCase,finish}=require('./shared/host.cjs');
 const host=start(),{w,newGame}=host,D=w.CodexBossDifficulty;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 w.BattleManager.otbDisplayWindow=()=>({createReturnedBattlerSprite(){}});
 const sprites=new Map();
 w.Game_Battler.prototype.battler=function(){

@@ -332,26 +332,17 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	if XAlienBattle.route_state(self, id):
 		return  # 异化绝缘拒收、舍身转给队友（addState 包装）
 	var alien_rev := XAlienBattle.revision(self, id)
-	var was_dead := state_ids.has(1)
 	_adding_state = true
 	_add_state(id, random)
 	_adding_state = false
-	if id == 1 and not was_dead and state_ids.has(1):
-		XDemonCrown.on_death(XState.current, self)  # 魔冠 addNewState 包装：穿着的人新倒下，成长减半
 	XAlienBattle.after_add_state(self, id, alien_rev)  # 异化囚厄：其他角色得到的 jailStates 转给囚厄者
 	XGuyu.after_add_state(self, id)  # 谷雨 addState 包装（原 addState 之后）：谷雨自己倒下就归根
 
-func _add_state(id: int, random: XRandomStream = null) -> void:
-	if XDB.rec("States", id).is_empty():
-		return
-	var fresh := not state_ids.has(id)
-	var alien_before = state_turns.get(id) if not fresh else null
-	if id == XZhenqi.POJIA_STATE:
-		zq_pojia_rate = XZhenqi.pojia_rate()  # 本次行动者有破甲道法时 1−0.5×scale，否则 0.5
+## Game_BattlerBase.addNewState（不查抵抗）：死亡先 die，再进状态表、排序；魔冠的 addNewState 包装在这里。
+## 谷雨强制归根被死亡抵抗挡下时也走这里（审查 31 P3-1）
+func add_new_state(id: int) -> void:
+	var was_dead := state_ids.has(1)
 	if id == 1:
-		if state_ids.has(1) or immortal or traits_set(TRAIT_STATE_RESIST).has(1):
-			return
-		zq_pojia_rate = 0.5
 		hp = 0.0
 		# die：clearStates／clearBuffs；异化包装保留疫囊（此刻还没有阵亡状态，算活着）、囚厄接收、绝缘的外来保护等
 		XAlienBattle.dying = self
@@ -373,10 +364,32 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 	if not state_ids.has(id):
 		state_ids.append(id)
 		_sort_states()
-	var s := XDB.rec("States", id)
-	var lo := int(s.get("minTurns", 1))
-	var hi := maxi(lo, int(s.get("maxTurns", lo)))
+	if id == 1 and not was_dead and state_ids.has(1):
+		XDemonCrown.on_death(XState.current, self)  # 魔冠 addNewState 包装：穿着的人新倒下，成长减半
+
+
+## Game_BattlerBase.resetStateCounts：按状态的回合上下限掷持续回合
+func reset_state_counts(id: int, random: XRandomStream = null) -> void:
+	var st := XDB.rec("States", id)
+	var lo := int(st.get("minTurns", 1))
+	var hi := maxi(lo, int(st.get("maxTurns", lo)))
 	state_turns[id] = roll_state_duration(lo, hi, random, str(lifecycle_context.get("duration_key", str(id))))
+
+func _add_state(id: int, random: XRandomStream = null) -> void:
+	if XDB.rec("States", id).is_empty():
+		return
+	var fresh := not state_ids.has(id)
+	var alien_before = state_turns.get(id) if not fresh else null
+	if id == XZhenqi.POJIA_STATE:
+		zq_pojia_rate = XZhenqi.pojia_rate()  # 本次行动者有破甲道法时 1−0.5×scale，否则 0.5
+	if id == 1:
+		if state_ids.has(1) or immortal or traits_set(TRAIT_STATE_RESIST).has(1):
+			return
+		zq_pojia_rate = 0.5
+	if not state_ids.has(id):
+		add_new_state(id)
+	var s := XDB.rec("States", id)
+	reset_state_counts(id, random)
 	if id == XAlienBattle.corrosion_id():
 		XAlienBattle.sync_corrosion(self)  # 异化 resetStateCounts：沿生命周期时长结算之后同步
 	XAlienBattle.on_reset_state(self, id, alien_before)  # 异化 resetStateCounts：附加次数、疫囊回合取较长

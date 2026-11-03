@@ -5,6 +5,7 @@
 const crypto = require('crypto');
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), w = host.w;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 host.newGame();
 const custom = w.$dataSkills.filter(s => s && /<damage formula>/i.test(s.note));
 const inventory = custom.map(s => ({id: s.id, formula: s.damage.formula,
