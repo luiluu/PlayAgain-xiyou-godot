@@ -1,17 +1,70 @@
 # 交付：cc/bajie-growth2c
 
 - 车道／工作者：C 规则·机制／八戒（cc，Opus）
-- 状态：未完成（额度用完，WIP）
+- 状态：验证中（全量测试在跑，见「验证」）
 
-## 已做
+（成长装备期二b 分期：本单＝魔冠；心钢／狂妄尾项与审查 29 的 P3-1、P3-2 在「接续」。）
 
-- `mv_oracle/demon_crown_probe.cjs`：魔冠 7940 参照探针（公式、得到、战斗成长、死亡减半、换装、掉落、读档防回滚、失去、旧档收编），**还没跑过**（本机没有 `timeout`，直接 `node demon_crown_probe.cjs`）。
+## 变更记录草稿
 
-## 接续（下一位从这里接）
+## 2026-11-03 【cc·八戒·未经审查】成长装备期二b：魔冠「"头顶"」（dev.待定）
 
-1. 跑探针、修到无错，产物 `.sandbox/demon_crown.json` 拷成 `tests/fixtures/demon_crown_oracle.json`。
-2. 新文件 `core/demon_crown.gd`（XDemonCrown），账本照 `core/yunshang_orders.gd` 的写法：独立文件 `crown_progress_v1.json`（{version 1, profiles{id:{revision, items{uid:{spec,bonus,removed}}, battles, worldDeaths}}, legacy}），存档 flags 记 `_codexCrownProfile`／`_codexCrownEncounterSeq`／`_codexCrownWorldDeathSeq`；新局不平白写盘（第一次用到才建）。
-3. 接线（原版 main.js 第 151 行装载，晚于心钢 111，是外层）：`battle_logic.start_battle` 最前 begin（开战掷点，用规则流，可注入）；`end_battle` 最末（在 `XGrowthForge.award_core`、`XHubris.clear_reward` 之后）finish；`battler.add_state` 死亡（addNewState：之前没死、之后死了）→ 减半；`XEquipment.change` 战斗中换掉就作废；`xstate.gain_gear` 得到 7940 走账本发；`lose_gear(record)` 带 uid 记移除；`xsave.load_slot`（旧档身份＋adopt＋replay）、`xsave.save`（adopt＋replay）。
-4. describe：名字／说明／图标 290000（Codex_DemonCrown 图没转，先记待办）、品质 max(12, 14/15)、成长行 `成长：八项全属性＋N%`、八项 code21 特性 ×(1+b/100)（账本不可用时 1，提示一次）。
-5. 掉落：Map162、敌群 539～542、`XYunshangOrders.immortal_clear`，roll<0.03。
-6. 尾项（心钢／狂妄动态说明、Shift 看原件、智能 AI 7900、战力、甚尔抑制、toaster）仍按 growth2b 交付单「接续」。
+派单：总装十五 growth2c（成长装备期二b），先交魔冠这块能独立验证的部分，尾项写接续。
+
+### 一、来源核对
+
+- 魔冠 7940 只从 installNativeDemonCrownRuntime 里来：Map162（切片里有）敌群 539～542、不朽的未知战斗（来源 57／59，没记来源按变量 107＝2／3），开战掷一次，胜利且 <3%。条件判定直接用已有的 `XYunshangOrders.immortal_clear`。
+- 原版 main.js 第 151 行装载，比心钢（111）、狂妄晚，是外层：startBattle 在原来之前、endBattle 在原来之后（在利维坦锻造锤、狂妄掉落之后）。
+
+### 二、原版参照 `demon_crown_probe`（18 例，不进同步，拷成 `tests/fixtures/demon_crown_oracle.json`）
+
+- 公式 D.next／D.display；得到（数据库那件→账本发实例：名字、说明、图标、成长行、八项 code21）；胜利成长 6 场（含失败、逃跑）；战斗中死亡（同一人第二次不重记）、复活后再死、战斗外死亡；中途换装备、不在出战；掉落 9 例（边界 0.03／0.0299、来源、敌群、地图、失败、逃跑、变量 107）；读档防回滚（成长、遭遇序号重打不重掷、换敌群不算）；卖出记移除、穿上卸下不记、按底子扣不记且读档不重发；旧档没 uid 的收编（成长保留）。
+- 参照的坑：`changeLevel` 在参照里受难度上限卡住，探针直接设 `_level`；`revive` 不去死亡状态，用 `removeState(1)`＋`clearResult`（否则同一行动结果里不能再加死亡）；战斗中去死亡状态要场景的 OTB 窗口，探针给了桩。
+
+### 三、移植（`core/demon_crown.gd` XDemonCrown，新文件）
+
+- 账本照 `XYunshangOrders` 的写法：存档目录旁 `crown_progress_v1.json`（整份写、先写临时文件再改名），存档 flags 记 `_codexCrownProfile`／`_codexCrownEncounterSeq`／`_codexCrownWorldDeathSeq`；改账本都走 transaction（复制→改→写盘→replay）。
+- 重制与原版不同处：①新局不平白写盘（原版 setupNewGame 就建档案；重制等到第一次得到魔冠、碰上掉落战斗或读到带魔冠的档才建）；②原版独立物品被按底子扣掉后仍留在 $dataArmors，重放找得到就不重发，重制用 flags `_codexCrownKnown`（本档建过的 uid）顶替；③开战掷点原版 Math.random，重制取战斗规则流 `demon_crown.roll`（只在掉落战斗、且这一遭遇序号第一次开战时掷）；④编号 Crypto 16 字节。
+- 接线：`battle_logic.start_battle` 最前（甚尔之前）`XDemonCrown.begin`；`end_battle` 末尾（狂妄 clear_reward 之后）`XDemonCrown.finish`；`battler.add_state` 新加死亡状态后 `on_death`；`XEquipment.change` 末尾 `equip_changed`；`xstate.gain_gear` 得到 7940 改走 `grant`，`lose_gear(record)` 带 uid 记 removed；`xsave.save` 写前 `before_save`，`load_slot` 云裳之后 `after_load`。
+- 账本不可用（坏了、版本不对、本档编号找不到）：提示「"头顶"成长记录暂不可用…」一次，魔冠倍率退回 1，本局之后不再写。
+
+## 待交叉核查
+
+- 新文件：`core/demon_crown.gd`、`tests/xiyou_demon_crown.gd`（＋tscn、fixture）、`mv_oracle/demon_crown_probe.cjs`。
+- 原沙僧核心文件：`battle_logic.gd` 两行（start_battle 最前 begin、end_battle 末尾 finish）、`battler.gd` `add_state`（记 was_dead，新死调 on_death）、`xstate.gd`（gain_gear 7940 分支、lose_gear 魔冠分支）。
+- 另改：`core/equipment.gd`（change 末尾一行）、`core/xsave.gd`（save、load_slot 各一行）。
+- 请重点核：begin 放在 start_battle 最前是否与其它开战包装的规则流抽数次序冲突（只在掉落战斗首次开战抽一次）；`_codexCrownKnown` 顶替 $dataArmors 的做法。
+
+## 交接板
+
+- 下一步：成长装备期二b 魔冠已交；尾项与审查 29 的 P3-1、P3-2 见本单「接续」。
+- 用户试玩说明：魔冠「"头顶"」在 Map162 的不朽未知战斗胜利有 3% 掉落；穿着打赢一场八项全属性多约 1%（越高涨得越慢，上限 1000%），穿着的人倒下就丢一半。成长记在存档目录旁的独立文件，读旧档不会回滚。
+- 需要用户决定：无。
+
+## 进度账
+
+- 养成·成长装备：约 60% → 约 75%，依据：魔冠已移植并对上参照；剩心钢／狂妄动态说明、智能 AI、战力等尾项。
+
+## 可优化（流程／工具／效率）
+
+- 已做：无。
+- 建议：`长任务.py start` 后面的命令如果是空的场景名单，`并行测试.py` 会跑全部场景；本车道在 zsh 里用 `$T` 传名单没拆开词，误启动了全量（车道不该跑全量）。建议 `并行测试.py` 不带场景名时要求显式 `--all`，或者 `长任务.py` 加一个 `stop <日志>` 子命令（车道会话 kill 进程会被权限拦下），归哪吒。
+
+## 验证
+
+- 原版探针 `node demon_crown_probe.cjs`：18 例无错。
+- 专项 `xiyou_demon_crown`：101／101（比较时不比品质，因为词缀是各自掷的）。
+- `python3 07_开发环境/语法检查.py`：499 个 .gd 无问题。
+- 全量（误启动，见「可优化」）：结果待补。
+
+## 本分支提交
+
+- ca624dfc／c8a89bb0 参照探针与夹具
+- e21bad56 运行时与专项
+
+## 接续
+
+1. **审查 29 的 P3-1**：`battle_logic.gd` `act()` 与 `_forced_run` 里 endAction 前半段次序应为 屠苏 → 谷雨 → 狂妄 → 心钢（屠苏 137、谷雨 133 装得晚，在外层，先跑）；现在心钢、狂妄排在前面。
+2. **P3-2**：心钢 `blocks_apply` 被拦下时谷雨没打「行动已执行」标记；原版的拦截在谷雨里面（谷雨先置 executed）。可以给 `XGuyu.apply` 加里层回调，或者把拦截挪到 `_apply_core` 开头。两条都要补原版参照例（审查没写），详见 `git show cc/review-29:00_项目管理/交付/cc_review-29.md` 的 P3-1、P3-2 两节。
+3. 魔冠余项：图标 Codex_DemonCrown 图没转换；RJO.HE 详情里的数字取整（getDescParams 包装）；战力 CodexCombatPower 里的魔冠；CodexZones.invalidate。
+4. 期二b 尾项照旧：心钢／狂妄动态说明（`H/U.helpRows`、`describe`、`helpView`，接 help_card）、选原件时 Shift 看原件词条、智能 AI 选巨人吞噬（`Codex_SmartBattleAI.js` 引用 7900，先查 plugins.js 确认启用）、战力、甚尔抑制行动不减蓄力、解锁与锻造锤的提示（toaster）。
