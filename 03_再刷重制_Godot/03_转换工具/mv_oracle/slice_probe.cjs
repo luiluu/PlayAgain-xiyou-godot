@@ -7,16 +7,23 @@
 // 伤害：分散度清零、不会心；value=CodexDamage 结算值，final=onPreDamageStateEffects（Confirm＋固定减伤，不含 React）。
 // 敌群生成时 Math.random 固定为 0.99（避开精英/神话随机），之后固定 0.5。
 // 用法：node slice_probe.cjs [难度ID...] → 只写 .sandbox/slice/slice_d<N>.json；验收后由资料库侧复制到 generated/oracle。
+// 只查新角色：XIYOU_PROBE_ACTORS=123,124 node slice_probe.cjs 3 （六个难度可各开一个进程并行；产物写到 .sandbox/slice_actors，不进同步）。
 'use strict';
 const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 // XIYOU_SLICE_OUT：回归测试把产物写到 .sandbox 下自己的临时目录（文件守卫只许写 .sandbox；不碰同步用的 .sandbox/slice）
-const OUT = process.env.XIYOU_SLICE_OUT || path.resolve(__dirname, '.sandbox/slice');
+// XIYOU_PROBE_ACTORS（逗号分隔角色号）：只量这些角色（扩角色先查问题用）；产物是残缺的，所以没给 XIYOU_SLICE_OUT 时改写 .sandbox/slice_actors，不覆盖同步用的整份
+const PROBE_ACTORS = process.env.XIYOU_PROBE_ACTORS ? process.env.XIYOU_PROBE_ACTORS.split(',').map(x => Number(x.trim())).filter(x => x) : null;
+const OUT = process.env.XIYOU_SLICE_OUT || path.resolve(__dirname, PROBE_ACTORS ? '.sandbox/slice_actors' : '.sandbox/slice');
 const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));
 // 增量同步只跑部分敌群时，由 XIYOU_PROBE_UNITS 给出（其余由 oracle_shard_merge.cjs 从上次产物取回）
 const UNITS = process.env.XIYOU_PROBE_UNITS ? new Set(JSON.parse(process.env.XIYOU_PROBE_UNITS)) : null;
-const ACTORS = SLICE.actors, TROOPS = SLICE.troops.filter(t => !UNITS || UNITS.has(String(t)));
+if (PROBE_ACTORS) {
+  const bad = PROBE_ACTORS.filter(id => !SLICE.actors.includes(id));
+  if (bad.length) throw new Error('XIYOU_PROBE_ACTORS 里有切片外的角色：' + bad.join(','));
+}
+const ACTORS = PROBE_ACTORS ? SLICE.actors.filter(id => PROBE_ACTORS.includes(id)) : SLICE.actors, TROOPS = SLICE.troops.filter(t => !UNITS || UNITS.has(String(t)));
 // 与 dsPassiveSkill 战斗开始时相同：先清空被动缓存再刷新一次（直接多次 refresh 会重复累加）
 const battleRefresh = a => { if (a.initPassiveCache) { a.initPassiveCache(); a.refreshPassiveCache(); } };
 const P = ['mhp', 'mmp', 'atk', 'def', 'mat', 'mdf', 'agi', 'luk'];
@@ -121,10 +128,10 @@ function measure(w, user, target, sid, tag) {
 }
 
 const ids = process.argv.slice(2).map(Number);
-const measured = (ids.length ? ids : [1, 2, 3, 4, 5, 6]).map(run);
 fs.mkdirSync(OUT, {recursive: true});
-for (const data of measured) {
-  const d = data.difficulty;
+// 每个难度量完就写，不等六个都跑完（单难度出问题能先看到前面的）
+for (const d of (ids.length ? ids : [1, 2, 3, 4, 5, 6])) {
+  const data = run(d);
   fs.writeFileSync(path.join(OUT, 'slice_d' + d + '.json'), JSON.stringify(data, null, 1));
   console.log('difficulty', d, data.difficultyName, 'actors', Object.keys(data.actors).length, 'damage rows', data.damage.length,
     'errors', data.damage.filter(x => x.error).length);

@@ -10,7 +10,7 @@
 
 - `hboot.cjs`：复制自 Louis 工程 `strength-recheck-20261010-210743/sim/hboot.cjs`（源 SHA256 `de6f861e…cbaf5b0`），新增文件系统守卫——写入只限 `.sandbox/`，屏蔽 Application Support、作者钥匙与真实存档路径。插件在加载数据库时会写自身缓存（如 `RpgJiban*.rpgsave`），一律落在沙盒内，不是玩家存档。
 - `boot_check.cjs`：参照引擎启动检查。
-- `slice_probe.cjs`：内存新游戏的三难度首期能力/伤害对照，只输出到 `.sandbox/slice/`；每份数据附原始数据库、版本与运行脚本指纹。验收后在资料库侧复制到 Godot 的 `generated/oracle/`。
+- `slice_probe.cjs`：内存新游戏的三难度首期能力/伤害对照，只输出到 `.sandbox/slice/`（`XIYOU_PROBE_ACTORS=角色号,…` 只量这些角色，产物改写 `.sandbox/slice_actors/`，每个难度量完即写）；每份数据附原始数据库、版本与运行脚本指纹。验收后在资料库侧复制到 Godot 的 `generated/oracle/`。
 - `equipment_rules.py`：将装备/强化备注、GT 套装与符文之语插件参数转成纯 JSON 规则，不执行来源备注代码。
 - `equipment_probe.cjs`：在内存新游戏中固定随机数，测装备、强化材料、套装与符文之语；输出只写 `.sandbox/equipment.json`，验收后复制到 `generated/oracle/`。
 - `dual_wield_probe.cjs`：双持装备槽（特性 55 时 equipSlots 第 2 格改为武器、convertInitEquips／grabInitEquips）：刘备（13，专属剑 2005 带双持）与曼德斯（26，职业双持）逐步换装、清空、最强装备后的槽位类型、装备、背包、装备页候选、能力值与 attackAnimationId1／2，及若干初始装备表；只写 `.sandbox/dual_wield.json`，Godot 侧对照见 `tests/xiyou_dual_wield`。
