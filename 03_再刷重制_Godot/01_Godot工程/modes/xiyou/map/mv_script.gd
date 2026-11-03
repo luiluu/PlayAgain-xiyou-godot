@@ -343,6 +343,11 @@ static func _statements(js: String, interp) -> Array:
 		if st == "CodexYunshang.openCrafting()" and not _actor_ready(s, 174, 20):
 			interp.host.toast("云裳达到20级后，可在战斗外使用天衣铺")
 			continue
+		# 公共事件 9014 屠苏器谱（技能「器谱」，战斗外）：CodexTusu.openForge() 屠苏在队才开（B.openMenu → XTusuForge），不在队什么都不做
+		if st == "CodexTusu.openForge()":
+			if s.party.has(XTusu.ACTOR) and interp.host.has_method("open_tusu_forge"):
+				await interp.host.open_tusu_forge()
+			continue
 		if st == "CodexYunshang.openCrafting()" and interp.host.has_method("open_yunshang_shop"):
 			await interp.host.open_yunshang_shop()
 			continue

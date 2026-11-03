@@ -12,6 +12,7 @@ const ATTACK_SKILL := 1
 
 var troop_id := 0
 var actors: Array = []          # XActor（出战）
+var nanoha_frame := {}          # 奈叶共享击杀：本次行动打中的敌人（XNanoha.begin／applied／finish）
 var enemies: Array = []         # XEnemy
 var turn := 0
 var can_escape := true
@@ -824,7 +825,9 @@ func act(u: XBattler, skill, target) -> Array:
 		started = u.is_actor() or can_use(u, skill)  # 同 execute 开头的行动无效判断（非强制）
 		if started:
 			XBinding.start_action(u)  # 绑定 startAction 包装：validate、记行动者、回归扣充能
+		XNanoha.begin(self)
 		logs.append_array(execute(u, skill, target))
+		XNanoha.end_execute(self)
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（原 endAction 之前，在谷雨之外）：贯日消费锁定、敕令消费和鸣，持武者行动后剑气／镇魂（内部施放）
@@ -850,6 +853,7 @@ func act(u: XBattler, skill, target) -> Array:
 		_tick_states(u, 1)
 		_mastery_end(u, logs)
 		XMira.liberate(self, u, skill)  # 米拉 endAction 包装（原 endAction 之后）：解放·黑龙
+		XNanoha.finish(self, u)  # 奈叶 endAction 包装（原 endAction 之后，米拉、渡鸦、镜流、甚尔在里层）：队友击杀给奈叶永久生命／魔法
 		logs.append_array(mark_views(XGuyu.after_action(self, u, skill)))  # 谷雨 endAction 包装（原 endAction 之后）afterAction：花期里队友用技能后绽放
 	_sync_orders(before, true)
 	resolve_collapses()
@@ -1216,7 +1220,10 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	if u == first_subject:
 		_cleared[u] = true
 	var before := _movable_snapshot()
+	XNanoha.begin(self)
 	logs.append_array(execute(u, skill, target, true))
+	XNanoha.end_execute(self)
+	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（同 act 的次序）：强制行动也消费锁定、和鸣，持武者放剑气／镇魂（审查第 26 期 P3-1）
 	logs.append_array(XGarou.finish(self, u, skill))
 	logs.append_array(XSukuna.finish(self, u, skill, true))
 	logs.append_array(XYomiJingliu.j_finish(self, u, skill))
@@ -1229,6 +1236,7 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	_tick_states(u, 1)
 	_mastery_end(u, logs)
 	XMira.liberate(self, u, skill)
+	XNanoha.finish(self, u)
 	_sync_orders(before, true)
 	return logs
 
@@ -1813,7 +1821,10 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var tusu_cmd := XTusu.apply_command(self, u, skill, t)  # 屠苏 Game_Action.apply 包装：归形、易武、化武
 	if not tusu_cmd.is_empty():
 		return tusu_cmd
-	return XGuyu.apply(self, u, skill, t)  # 谷雨 Game_Action.apply 包装：治疗来源、花期／终结生效（没生效整次不结算）、行动执行标记
+	var live := t is XEnemy and t.is_alive()
+	var r: Dictionary = XGuyu.apply(self, u, skill, t)  # 谷雨 Game_Action.apply 包装：治疗来源、花期／终结生效（没生效整次不结算）、行动执行标记
+	XNanoha.applied(self, u, t, live, r)  # 奈叶 Game_Action.apply 包装（谷雨、屠苏、绑定在外层）：队友打中活着的敌人记目标
+	return r
 
 
 func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
