@@ -234,6 +234,11 @@ static func start_action(u) -> void:
 	if u is XActor:
 		_started[u.actor_id] = true
 
+## 甚尔封印让这次行动失效（_tojiSuppressed）：endAction 不计有效行动
+static func suppressed(u) -> void:
+	if u is XActor:
+		_started.erase(u.actor_id)
+
 ## BattleManager.endAction 包装：先结算倒下的，再给有效行动计数（活着、不是强制行动）
 static func end_action(logic, u, forcing: bool) -> void:
 	settle_deaths(logic)
@@ -281,4 +286,5 @@ static func clear_reward(logic, result: int) -> bool:
 	if logic._rule().next_float("hubris.reward") >= REWARD_RATE:
 		return false
 	s.gain_gear("armor", ARMOR, 1)
+	XToast.show_text("获得神武：狂妄！")
 	return true

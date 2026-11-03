@@ -327,6 +327,7 @@ func _case_ui() -> void:
 
 
 func _ready() -> void:
+	await get_tree().process_frame  # 得到装备会弹提示（XToast 挂在根节点上），_ready 里根节点还在忙
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	for c in data.cases:
 		check(c.id + ".oracle", (c.errors as Array).is_empty(), c.errors)

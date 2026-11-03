@@ -1547,6 +1547,8 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	if blocked:
 		return logs
 	if XToji.suppressed(self, u, skill):  # 甚尔天逆鉾封印 applyGlobal 包装：这次主动技能失效（扣一次），整段序列跳过
+		XHeartsteel.suppressed(u)  # 心钢、狂妄 endAction 包装看 _tojiSuppressed：失效的行动不减蓄力、不计行动
+		XHubris.suppressed(u)
 		return logs
 	XImportedBalance.set_acting(u)  # YEP 附加状态记 BattleManager._subject 为来源
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击（isAttack：此刻的 attackSkillId）的追加次数，

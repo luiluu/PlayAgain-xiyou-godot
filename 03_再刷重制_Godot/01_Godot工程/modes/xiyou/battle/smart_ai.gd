@@ -34,6 +34,7 @@ static var o_projection := true
 ## 一次（1＋追加），追加次数大于 0 时估伤翻倍（实战甚尔把目标收成一个，只打 hits 段）。true＝hits 就是总段数；false＝照原版相乘
 static var o_profile_hits := true
 static var _toji_formula_re := RegEx.create_from_string("^CodexToji\\.damage\\(a,b,1021[6-9],this\\)$")
+static var _heartsteel_formula_re := RegEx.create_from_string("^CodexHeartsteel\\.damage\\(a,b,this\\)$")
 
 var logic: XBattleLogic
 var actor: XActor
@@ -194,6 +195,8 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var id := int(rec.get("id", 0))
 	if id >= 10216 and id <= 10219 and _toji_formula_re.search(str(dmg.get("formula", ""))) != null:
 		value = XToji.ai_damage(a, t, id, int(p.get("extra", 0)))  # 甚尔主技能：受控的估算函数
+	elif (id == XHeartsteel.SKILL or id == XHeartsteel.LEV_SKILL) and _heartsteel_formula_re.search(str(dmg.get("formula", ""))) != null:
+		value = XHeartsteel.ai_damage(a, t, id)  # 巨人吞噬：受控的估算函数
 	elif XTusu.ai_raw(a, t, rec) != null:
 		value = float(XTusu.ai_raw(a, t, rec))  # CodexAIEstimators：屠苏的武装、支援、本体技能（超强者持武的武装技能 0）
 	elif XYunshang.ai_raw(logic, a, t, rec) != null:

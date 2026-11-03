@@ -11,7 +11,7 @@ extends RefCounted
 ##   同一实例改成杰作：底子、属性加两件模板之差、名字、图标、说明、备注标签与元数据；层数、盛名、词条、强化全保留；扣材料；穿着的角色刷新。
 ##   配方的材料数按自己的原件实例（含穿着的），能做 1 件或 0 件，不看金币。
 ## - 原版锻造后由 describe 重写说明行；重制把原件模板的说明行（<pos=APs …>）换成杰作模板的同一行（层数相关的动态说明行在尾项 help_card 做）。
-## 未做：解锁与锻造锤的提示（$.toaster，同期一没接）。
+## 提示（$.toaster）：第一次得到时报解锁（读档、补查不报，同 unlockForge(false)），得到锻造锤报获得。
 
 const FRAGMENT := 2530
 const HAMMER := 2867
@@ -85,8 +85,8 @@ static func unlocked(s: XState, id: int) -> bool:
 ## Game_Party.gainItem 包装：得到心钢／狂妄一族的实例时检查解锁
 static func on_gain(s: XState, kind: String, base_id: int) -> void:
 	var id := _kind_of({"base": base_id}) if kind == "armor" else 0
-	if id != 0:
-		unlock(s, id)
+	if id != 0 and unlock(s, id):
+		XToast.show_text("已解锁打造配方：" + str(KINDS[id].to))
 
 
 # ---- 锻造锤 ----
@@ -110,6 +110,7 @@ static func award_core(logic, result: int) -> bool:
 	if logic._rule().next_float("growth_forge.core") >= CORE_RATE:
 		return false
 	s.gain_item(HAMMER, 1)
+	XToast.show_text("获得锻造材料：锻造锤！")
 	return true
 
 

@@ -10,7 +10,7 @@ extends RefCounted
 ##   一次行动只结算一次；命中且打前活着，按敌人权重（未知存在 10、首领／被封印者 5、其余 1；分身、召唤物、木桩等 0，1 号敌群 0）记本场待结算，胜利才加进层数。
 ## - 回合末（每个全局回合一次）出战且活着的回复最大生命 3%／5%。
 ## - 掉落：Map152 的不朽来源（来源地图 38，没记来源按变量 107＝1）敌群 454／455 胜利，10% 得心之钢，每场一次。
-## 未做（期二／尾项）：利维坦锻造配方与解锁、智能 AI 与战力里的心钢分支、甚尔抑制行动（_tojiSuppressed）不减蓄力。
+## 尾项二：智能 AI 估伤 ai_damage、甚尔封印失效的行动不减蓄力 suppressed、掉落提示。
 
 const ARMOR := 7900
 const LEVIATHAN := 7901
@@ -196,6 +196,12 @@ static func start_action(u, skill: Dictionary) -> void:
 		_wait[u.actor_id] = 3
 		_casted[u.actor_id] = true
 
+## 甚尔封印让这次行动失效（_tojiSuppressed）：endAction 不减蓄力；失效的巨人吞噬已在 start_action 进了冷却，不退
+static func suppressed(u) -> void:
+	if u is XActor:
+		_started.erase(u.actor_id)
+		_cast.erase(u.actor_id)
+
 ## Game_Action.apply 包装：巨人吞噬没放成、或这次行动已结算过，整次 apply 不生效（真＝拦下）
 static func blocks_apply(u, skill: Dictionary) -> bool:
 	if not is_skill(skill):
@@ -225,6 +231,12 @@ static func formula(a, b) -> float:
 		return 0.0
 	var base := float(cast.base)
 	return base - minf(maxf(0.0, b.def), base * 0.5)
+
+## Codex_SmartBattleAI safeDamage 的心钢分支：按技能号定档，用当前最大生命（不是施放时的常态值），不取整
+static func ai_damage(a, t, id: int) -> float:
+	var lev := id == LEV_SKILL
+	var base := ((1000.0 if lev else 700.0) + maxf(0.0, float(a.mhp)) * (0.08 if lev else 0.06)) * cast_scale(a)
+	return maxf(0.0, base - minf(maxf(0.0, float(t.def)), base * 0.5))
 
 ## BattleManager.endAction 包装：不是巨人吞噬的行动结束减 1 蓄力（强制行动不减）
 static func end_action(u, forcing: bool) -> void:
@@ -273,4 +285,5 @@ static func clear_reward(logic, result: int) -> bool:
 	if logic._rule().next_float("heartsteel.reward") >= REWARD_RATE:
 		return false
 	s.gain_gear("armor", ARMOR, 1)
+	XToast.show_text("获得神武：心之钢！")
 	return true

@@ -7,7 +7,7 @@ extends RefCounted
 ## 战力相关备注与被动状态折成「输出／生存／辅助」三项分数，再加「命中 / 暴击与伤害乘区」（三档参照的伤害预演增益）。
 ## 法宝（<Magic Weapon>）按等级×每级属性另加「法宝成长」；等级取实例等级（XMagicWeapon 升级后写在实例上，缺省 CP_MagicWeapon 的初始等级）。
 ## 种族祝福（CodexRaces.powerAdjust 等，见 XRaceBattle.power_*）：参照 race_battle_probe.cjs 的 power.*，测试 xiyou_race_battle。
-## 狂妄／心钢的成长加成见 _growth_gear。未移植：渡鸦／米拉／甚尔的专属装备加成。
+## 狂妄／心钢的成长加成见 _growth_gear，渡鸦／米拉／甚尔的专属装备加成见 _exclusive_gear。
 
 const NAMES := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "敏捷", "幸运"]
 ## 公共参照属性：装备评分与穿戴者无关
@@ -288,6 +288,21 @@ static func _notes(s: Dictionary, obj: Dictionary, visited := {}, is_state := fa
 		_notes(s, st, visited, true)
 
 
+## 专属法宝（认底子）：渡鸦 4001 加专属固定属性（ARTIFACT_BASE_BONUS，物攻 0 不记行）、米拉 4577 元素 2 增伤＋20%、甚尔 4580 物理池 ×1.11。
+## 参照 growth_help_probe 的 powerOnly，专项 xiyou_growth_help。
+static func _exclusive_gear(s: Dictionary, item: Dictionary) -> void:
+	if _is_weapon(item):
+		return
+	match XHeartsteel.base_id(item):
+		XRaven.ARTIFACT:
+			for i in range(XRaven.ARTIFACT_BASE_BONUS.size()):
+				_attribute(s, i, float(XRaven.ARTIFACT_BASE_BONUS[i]), "专属固定 · " + NAMES[i])
+		XMira.ARMOR:
+			_pools(s).elements[2] = float(_pools(s).elements.get(2, 0.0)) + 0.2
+		XToji.ARMOR:
+			_pools(s).physical *= 1.11
+
+
 ## gearEffects：三档参照下「装上 vs 不装」的期望伤害之比（命中、暴击、暴伤、终伤、元素、武器类型、穿透、独立乘区），
 ## 乘 (2000 + 已有输出分)；另把附加能力 1、3～9 按有效值（0.05 起算）折分
 ## 成长装备按当前阶数（2026-10-08 原版）：狂妄／无我物理池 ×(1＋(扬名倍率−1)×0.6)；心钢／利维坦生命按参照
@@ -416,6 +431,7 @@ static func equipment(item: Dictionary) -> Dictionary:
 			_attribute(s, i, plus[i] * level, "法宝成长 · " + NAMES[i])
 	_traits(s, item, false)
 	_notes(s, item)
+	_exclusive_gear(s, item)
 	_growth_gear(s, item)
 	_gear_effects(s, item)
 	s.level = level

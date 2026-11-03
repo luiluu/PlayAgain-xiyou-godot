@@ -84,8 +84,13 @@ add('hubris.42.pending', 7902, {_codexHubrisFame: 42}, {pending: 4});
 add('hubris.600.buff', 7902, {_codexHubrisFame: 600}, {buff: {rate: 1.4, remaining: 2, sameRound: false}});
 add('hubris.600.buff.same', 7902, {_codexHubrisFame: 600}, {pending: 1, buff: {rate: 1.4, remaining: 3, sameRound: true}});
 add('ataraxia.1000', 7903, {_codexHubrisFame: 1000});
+// 尾项二：渡鸦／米拉／甚尔专属法宝的装备评分（CodexCombatPower.equipment 按 baseItemId 加专属固定、火伤 20%、物理池 ×1.11）
+const powerOnly = [4001, 4577, 4580].map(id => {
+  const pw = w.CodexCombatPower.equipment(w.$dataArmors[id]);
+  return {id, total: pw.total, parts: Array.from(pw.parts), rows: pw.rows.map(x => ({label: x.label, parts: Array.from(x.parts)}))};
+});
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(OUT, {recursive: true});
-fs.writeFileSync(path.join(OUT, 'growth_help.json'), JSON.stringify({schemaVersion: 1, sourceIdentity: identity, cases}));
+fs.writeFileSync(path.join(OUT, 'growth_help.json'), JSON.stringify({schemaVersion: 1, sourceIdentity: identity, cases, powerOnly}));
 console.log(JSON.stringify({cases: cases.length, rows: cases.map(c => c.rows.length)}));
 process.exit(0);

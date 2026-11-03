@@ -297,6 +297,93 @@ func _cmp(tag: String, got, want) -> void:
 	check(tag, _same(got, want), [got, want])
 
 
+## 尾项二：智能 AI 估伤（safeDamage 心钢分支），加防前后两档
+func _case_ai(c: Dictionary) -> void:
+	var ctx := _battle(int(c.setup.base), c.observed.inst, {XHeartsteel.STACKS: int(c.setup.stacks)})
+	var a: XActor = ctx.a
+	var e = logic.enemies[0]
+	var base_def := float(e.zq_ref.p[3])
+	for row in c.observed.rows:
+		e.zq_ref.p[3] = base_def + float(row.plus)
+		e.param_mark_dirty()
+		e.param_refresh()
+		var got := {"def": e.def, "mhp": a.mhp, "scale": XHeartsteel.cast_scale(a), "safe": XSmartAI.new(logic, a).safe_damage(a, e, XDB.rec("Skills", int(row.skill)))}
+		var want: Dictionary = row.duplicate()
+		want.erase("plus")
+		want.erase("skill")
+		_cmp("%s.%d.%d" % [c.id, int(row.plus), int(row.skill)], got, want)
+
+
+## 尾项二：甚尔封印失效的行动，心钢不减蓄力、狂妄不计行动；普攻照减
+func _case_suppress(c: Dictionary) -> void:
+	var rows: Array = c.observed.rows
+	var want := {}
+	for r in rows:
+		want[r[0]] = r
+	var base := int(c.setup.base)
+	var fields := {XHeartsteel.STACKS: 0} if base == XHeartsteel.ARMOR else {XHubris.FAME: 0}
+	var ctx := _battle(base, want.start[2].inst, fields)
+	var a: XActor = ctx.a
+	var active := int(want.start[2].active)
+	var snap := func(): return {"wait": XHeartsteel.remaining(a), "moves": int(XHubris._moves.get(1, 0)), "casted": bool(XHeartsteel._casted.get(1, false)),
+		"charges": int(XToji.seal_charges.get(a, 0)), "sealed": a.state_ids.has(XToji.SEAL)}
+	a.add_state(XToji.SEAL)
+	XToji.seal_charges[a] = 2
+	_cmp(c.id + ".start", snap.call(), want.start[1])
+	_cmp(c.id + ".attack", [_act(a, 1, 0).size(), snap.call()], want.attack.slice(1))
+	for step in ["skill1", "skill2", "free"]:
+		_cmp(c.id + "." + step, [_act(a, active, 0).size(), snap.call()], want[step].slice(1))
+
+
+## 尾项二：失效的巨人吞噬照样进冷却，不打伤害、不记层数
+func _case_suppress_cast(c: Dictionary) -> void:
+	var rows: Array = c.observed.rows
+	var ctx := _battle(int(c.setup.base), rows[0][2].inst, {XHeartsteel.STACKS: 0})
+	var a: XActor = ctx.a
+	XHeartsteel._wait[1] = 0
+	a.add_state(XToji.SEAL)
+	XToji.seal_charges[a] = 1
+	_cmp(c.id + ".start", _heart_snap(ctx), rows[0][1])
+	var hits := _act(a, XHeartsteel.SKILL, 0).size()
+	_cmp(c.id + ".cast", [hits, _heart_snap(ctx), a.state_ids.has(XToji.SEAL)], rows[1].slice(1))
+
+
+## 尾项二：提示。XToast.shown 记出现过的文字
+func _take_toasts() -> Array:
+	var out := XToast.shown.duplicate()
+	XToast.shown.clear()
+	return out
+
+
+func _case_toast_unlock(c: Dictionary) -> void:
+	var s := _new_state()
+	XToast.shown.clear()
+	for r in c.observed.rows:
+		s.gain_gear("armor", int(r[0]), 1)
+		_cmp("%s.%d" % [c.id, int(r[0])], _take_toasts(), r[1])
+
+
+func _case_toast_reward(c: Dictionary) -> void:
+	var o: Dictionary = c.observed
+	var s := _new_state()
+	s.map_id = XHeartsteel.REWARD_MAP
+	s.unknown_origin = XHeartsteel.REWARD_ORIGIN
+	var l := RewardLogic.new()
+	l.state = s
+	l.troop_id = 454
+	l.stream.value = 0.05
+	XHeartsteel._reward_rolled = false
+	XHubris._reward_rolled = false
+	XToast.shown.clear()
+	_cmp(c.id + ".heart", [XHeartsteel.clear_reward(l, 0), _take_toasts()], [o.heart, o.heartToasts])
+	_cmp(c.id + ".hubris", [XHubris.clear_reward(l, 0), _take_toasts()], [o.hubris, o.hubrisToasts])
+	s.map_id = XGrowthForge.CORE_MAP
+	s.unknown_origin = int(o.origin)
+	l.troop_id = 570
+	XGrowthForge.start_battle()
+	_cmp(c.id + ".core", [XGrowthForge.award_core(l, 0), _take_toasts()], [o.core, o.coreToasts])
+
+
 func _case_heart_battle(c: Dictionary) -> void:
 	var rows: Array = c.observed.rows
 	var ctx := _battle(int(c.setup.base), rows[0][2].inst, {XHeartsteel.STACKS: int(c.setup.stacks)})
@@ -501,6 +588,7 @@ func _case_save(inst: Dictionary) -> void:
 
 
 func _ready() -> void:
+	await get_tree().process_frame  # 得到装备会弹提示（XToast 挂在根节点上），_ready 里根节点还在忙
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	var heart_inst := {}
 	for c in data.cases:
@@ -520,6 +608,16 @@ func _ready() -> void:
 			_case_weight(c)
 		elif id == "damage":
 			_case_damage(c)
+		elif id.begins_with("ai."):
+			_case_ai(c)
+		elif id == "suppress.cast":
+			_case_suppress_cast(c)
+		elif id.begins_with("suppress."):
+			_case_suppress(c)
+		elif id == "toast.unlock":
+			_case_toast_unlock(c)
+		elif id == "toast.reward":
+			_case_toast_reward(c)
 		elif id == "heart.battle.escape":
 			_case_heart_escape(c, heart_inst)
 		elif id.begins_with("heart.battle."):
