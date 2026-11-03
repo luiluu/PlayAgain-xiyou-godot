@@ -111,6 +111,8 @@ func snapshot(b: XBattler) -> Dictionary:
 func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	if resource != "hp" or preview or not error.is_empty():
 		return _gain(b, resource, amount)
+	if amount < 0.0 and XBinding.blocks_hp_loss(b):
+		return {}  # 绑定 gainHp 包装：璇附身期间不掉血
 	if amount > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0:
 		return {}  # 归根中不回血
 	var temp := XGuyu.isolated_begin() if amount < 0.0 else {}  # 不在行动里的扣血包一个临时事件（代命）

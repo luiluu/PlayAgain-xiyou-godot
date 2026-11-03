@@ -3,7 +3,11 @@ extends RefCounted
 ## 【cc·悟空·未经审查】璇的战斗效果第一期（正式 js/codex/runtime/installNativeXuanRuntime.js）：不靠绑定就成立的部分。
 ## 本场数据（fresh）、净化口径（isCleanseState）、MP 费用（按璇 MP 上限百分比）、技能条件、回光净化、定星、璃壁护盾、棱光减益、蚀辉、结束清标记。
 ## 余辉不做：原版包在 Game_Battler.gainHp 上，而回光只打角色，角色的 gainHp 是 Game_Actor 自有方法，这层跑不到，实测溢出不转护盾（见交付单「需要用户决定」）。
-## 绑定（寄星、回身、默契、共宿、列星）与星契自律（内部施放、同轨、先照、分光、同调）在下两期，盘点见交付单。
+## 第二期：绑定种类登记、寄星／转移／回身、星纹标记、默契结算、附身期间不掉血、移光、留辉、共宿（伤害、双防、并轨 3 级）、列星（星影、目标扩展、到期）、
+## 星盾流转定轨（10 级）与接力（20 级，installThreeGrowthRelicRuntime）、护盾挡下计护主（mv_oracle/xuan_bind_probe.cjs → tests/xiyou_xuan_bind）。
+## 先照手动先制（Game_Action.speed +100000）没接：OTB 下 action.speed 怎么用还没量；璇玑星盘首回合星契 firstCharge 是 0，不做；60 级列星法宝特效在第三期。
+## 星纹标记原版的 removeState 补回不做：包在 Game_Battler 上，角色走 Game_Actor 自有方法，实测移除后不补回。
+## 星契自律（内部施放、同轨、先照预支、分光、同调）在第三期，盘点见交付单 cc_wukong-xuan2。
 ## 参照 mv_oracle/xuan_battle_probe.cjs → tests/fixtures/xuan_battle_oracle.json（tests/xiyou_xuan_battle）。
 
 const XUAN := 177
@@ -24,6 +28,181 @@ const SOFT_TYPES := "<BuffType:\\s*(?:减益|控制|诅咒|中毒|毒|麻痹|眩
 static var data := {}
 ## <CodexXuan: 键> 的状态编号
 static var _states := {}
+## 战斗日志台词（CFG.lines），由 battle_logic 取走
+static var _logs := []
+const TACIT_STAY := 10
+const TACIT_PROTECT := 5
+const TACIT_ASSIST := 5
+const TACIT_PER_ROUND := 20
+const TACIT_KEEP := 0.5
+const TACIT_ROSTER_KEEP := 0.75
+const GONGSU_DMG := [[0.10, 0.30], [10, 60]]
+const GONGSU_DEF := [[0.15, 0.30], [20, 60]]
+const YIGUANG_RATE := [0.0, 0.5, 0.75, 1.0]
+const LIEXING_TURNS := 2
+static var _param_guard := false
+const LINES := {"dingxing": "定星挡住了控制。", "transfer": "璇：「我去另一边，有事叫我。」"}
+
+
+static func take_logs() -> Array:
+	var out := _logs
+	_logs = []
+	return out
+
+
+static func _line(key: String) -> void:
+	_logs.append({"type": "battle_text", "text": str(LINES[key])})
+
+
+## registerBinding
+static func register_kind() -> void:
+	if XBinding.kinds.has("xuan"):
+		return
+	XBinding.register("xuan", {
+		"is_owner": func(a): return is_xuan(a),
+		"manual": func(_a): return not auto_enabled(),
+		"form_state": state_id("possess"), "empty_state": XTusu.state_id("empty"), "blocks_hp_loss": true,
+		"on_bind": _on_bind, "on_unbind": _on_unbind, "on_round_start": _on_round_start, "on_round_close": _on_round_close,
+		"on_clear": func(_a): data = {}})
+
+
+static func _d() -> Dictionary:
+	if data.is_empty():
+		data = _fresh()
+	return data
+
+
+static func _on_bind(owner, target, _reason, previous) -> void:
+	var logic = XBinding._logic()
+	var d := _d()
+	_mark_host(logic, target, true)
+	# 开战默认绑定（原因 opening 的名册起始默契）原版算了但不绑，走不到
+	var s: XState = logic.state
+	var keep: float = TACIT_ROSTER_KEEP if _is_roster(s, target) or (previous != null and _is_roster(s, previous)) else TACIT_KEEP
+	d.tacit = floori(int(d.tacit) * keep)
+	d.record.transferRound = XBinding.current_round()
+	if previous != null:
+		_transfer_effects(logic, owner, previous, target)
+	_line("transfer")
+	d.tonggui = int(d.tacit) >= 100
+	_sync_counters(logic, owner)
+	owner.refresh_passive()
+	target.refresh_passive()
+	if previous != null and int(owner.level) >= 20:
+		_relay(logic, owner, previous, target)
+
+
+static func _on_unbind(owner, target, reason) -> void:
+	var logic = XBinding._logic()
+	if target != null:
+		_mark_host(logic, target, false)
+		target.refresh_passive()
+	if str(reason) != "transfer" and not data.is_empty():
+		data.tonggui = false
+		_sync_counters(logic, owner)
+
+
+static func _on_round_start(owner, n) -> void:
+	var logic = XBinding._logic()
+	var d := _d()
+	if int(d.debt) > 0 and int(n) > 0:
+		var pay := mini(int(d.debt), XBinding.charges(owner))
+		d.debt = int(d.debt) - pay
+		XBinding.spend(owner, pay)
+	var h = XBinding.host(owner)
+	d.used = {}
+	d.record = {"round": XBinding.current_round(), "stayed": int(h.actor_id) if h != null else 0}
+	_sync_counters(logic, owner)
+
+
+## settleTacit
+static func _on_round_close(owner) -> void:
+	var logic = XBinding._logic()
+	if data.is_empty():
+		return
+	var r: Dictionary = data.record
+	var h = XBinding.host(owner)
+	var gain := 0
+	if h != null and int(r.get("stayed", 0)) == int(h.actor_id) and int(r.get("transferRound", -1)) != XBinding.current_round():
+		gain += TACIT_STAY
+	var acted: bool = bool(r.get("protect", false)) or bool(r.get("assist", false))
+	if bool(r.get("protect", false)):
+		gain += TACIT_PROTECT
+	if bool(r.get("assist", false)):
+		gain += TACIT_ASSIST
+	var extra := floori(XGuyu.curve(int(owner.level), [1, 3], [20, 60])) if acted and int(owner.level) >= 20 else 0
+	data.tacit = mini(100, int(data.tacit) + mini(TACIT_PER_ROUND, gain) + extra)
+	data.tonggui = int(data.tacit) >= 100 and XBinding.is_bound(owner)
+	_sync_counters(logic, owner)
+	# 列星到期
+	if int(data.liexingUntil) >= 0 and XBinding.current_round() >= int(data.liexingUntil):
+		for id in data.shadows:
+			var x: XActor = logic.state.actor(int(id))
+			if x != null and x.state_ids.has(state_id("shadow")):
+				logic._state_remove(x, state_id("shadow"))
+		data.shadows = []
+		data.liexingUntil = -1
+		if owner.state_ids.has(state_id("liexing")):
+			logic._state_remove(owner, state_id("liexing"))
+
+
+static func _is_roster(s: XState, t) -> bool:
+	var c := XTusuXuan.chart(s)
+	return t != null and (c.roster as Array).slice(0, XXuanChart.stage(s)).has(int(t.actor_id))
+
+
+static func _mark_host(logic, target, on: bool) -> void:
+	var id := state_id("hostmark")
+	if on and not target.state_ids.has(id):
+		logic._state_add(target, id)
+	elif not on and target.state_ids.has(id):
+		logic._state_remove(target, id)
+
+
+## syncCounters：同轨、先照债务的显示状态
+static func _sync_counters(logic, a) -> void:
+	if data.is_empty():
+		return
+	for p in [["tonggui", bool(data.tonggui)], ["debt", int(data.debt) > 0]]:
+		var id := state_id(str(p[0]))
+		if bool(p[1]) and not a.state_ids.has(id):
+			logic._state_add(a, id)
+		elif not bool(p[1]) and a.state_ids.has(id):
+			logic._state_remove(a, id)
+
+
+## Game_Action.apply 包装：寄星、转移、回身不走普通结算
+static func apply_command(_logic_node, u, skill: Dictionary, t) -> Dictionary:
+	if not is_xuan(u):
+		return {}
+	var key := key_of(skill)
+	if not key in ["jixing", "jixing.possess", "return"]:
+		return {}
+	t.runtime_result = XResourceContext.empty_result()
+	if key == "return":
+		XBinding.unbind(u, "return")
+	elif XBinding.can_host(u, t) and t != XBinding.host(u):
+		if key == "jixing":
+			XBinding.bind(u, t, "jixing")
+		elif not auto_enabled() or XBinding.spend(u, 1):
+			_d().used.jixing = true
+			XBinding.bind(u, t, "transfer")
+	return {"type": "hit", "user": u, "target": t, "skill": skill, "missed": false, "evaded": false, "critical": false, "success": true,
+		"hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "popupQueue": []}
+
+
+## 指令窗「回身」（Window_ActorCommand.makeCommandList 包装）
+static func command_entries(logic, a) -> Array:
+	if not is_xuan(a) or not XBinding.is_bound(a):
+		return []
+	return [{"text": "回身", "key": "xuanReturn", "enabled": logic.can_use(a, XDB.rec("Skills", XTusuXuan.skill_id(XUAN, "return")))}]
+
+
+## Window_BattleActor.isCurrentItemEnabled 包装：寄星只能选合法宿主
+static func filter_pick(a, skill: Dictionary, pool: Array) -> Array:
+	if not is_xuan(a) or not key_of(skill) in ["jixing", "jixing.possess"]:
+		return pool
+	return pool.filter(func(t): return XBinding.can_host(a, t) and t != XBinding.host(a))
 
 
 static func is_xuan(a) -> bool:
@@ -151,6 +330,8 @@ static func user_effect(logic, u, skill: Dictionary, t: XBattler) -> void:
 				data.record.protect = true
 		"libi":
 			XShieldLedger.grant(t, "xuan.libi", shield_amount(u, t), LIBI_TURNS, XUAN)
+		"liexing":
+			_liexing(logic, u)
 		"lengguang":
 			if t is XEnemy and t.is_alive():
 				logic.sequence_buff(t, 3, true, false, LENGGUANG_DEBUFF_TURNS)
@@ -192,4 +373,217 @@ static func blocks_state(t: XBattler, id: int) -> bool:
 	var mark := state_id("dingxing")
 	if t.state_ids.has(mark):
 		t.remove_state(mark)
+	_line("dingxing")
 	return true
+
+
+## 出战的璇（xuan()）
+static func xuan():
+	for a in XBinding.members():
+		if is_xuan(a):
+			return a
+	return null
+
+
+static func _live(b) -> bool:
+	return b != null and b.is_alive() and b.hp > 0.0
+
+
+## beneficiaries：主宿主＋列星期间的星影；并轨副宿主另给
+static func beneficiaries(a) -> Dictionary:
+	var h = XBinding.host(a)
+	var list := [h] if _live(h) else []
+	var logic = XBinding._logic()
+	var members := XBinding.members()
+	if not data.is_empty() and XBinding.current_round() <= int(data.liexingUntil):
+		for id in data.shadows:
+			var t = logic.state.actor(int(id))
+			if _live(t) and not XBinding.untargetable(t) and members.has(t) and not list.has(t):
+				list.append(t)
+	var pid := int(XXuanChart.chart(logic.state).get("partner", 0))
+	var partner = logic.state.actor(pid) if pid > 0 else null
+	return {"list": list, "partner": partner if partner != null and partner != h and _live(partner) and members.has(partner) else null}
+
+
+static func in_cover(a, t) -> bool:
+	return (beneficiaries(a).list as Array).has(t)
+
+
+static func _gongsu(a) -> bool:
+	return a != null and a.skill_ids.has(XTusuXuan.skill_id(XUAN, "gongsu")) and XTusuXuan.unlocked(XUAN, a, "gongsu")
+
+
+## X.gongsuDamageRate／gongsuDefenseRate
+static func gongsu_damage_rate(a) -> float:
+	return XGuyu.curve(int(a.level), GONGSU_DMG[0], GONGSU_DMG[1]) if _gongsu(a) else 0.0
+
+
+static func gongsu_defense_rate(a) -> float:
+	return XGuyu.curve(int(a.level), GONGSU_DEF[0], GONGSU_DEF[1]) if _gongsu(a) else 0.0
+
+
+static func gongsu_value(a, i: int) -> float:
+	return floorf(gongsu_defense_rate(a) * float(a.def if i == 3 else a.mdf))
+
+
+## Game_Actor.param 包装：附身时宿主（含星影）、并轨 3 级副宿主、留辉的旧宿主拿璇双防的一份，同源取较高值
+static func param(a, i: int, v: float) -> float:
+	if (i != 3 and i != 5) or _param_guard or not a is XActor or is_xuan(a) or not XBinding.in_battle():
+		return v
+	var x = xuan()
+	if x == null or not x.skill_ids.has(XTusuXuan.skill_id(XUAN, "gongsu")):
+		return v
+	_param_guard = true
+	var bonus := 0.0
+	if XBinding.is_bound(x) and in_cover(x, a):
+		bonus = gongsu_value(x, i)
+	var part := 0.0
+	var glow := 0.0
+	if not data.is_empty():
+		var s: XState = XBinding._logic().state
+		if int(XXuanChart.chart(s).get("partner", 0)) == int(a.actor_id) and XXuanChart.mark_level(s, x, "binggui") >= 3:
+			part = gongsu_value(x, i)
+		var g: Dictionary = data.get("afterglow", {}).get(int(a.actor_id), {})
+		if not g.is_empty() and int(g.until) >= XBinding.current_round():
+			glow = float(g.def if i == 3 else g.mdf)
+	_param_guard = false
+	return v + maxf(bonus, maxf(part, glow))
+
+
+## 伤害钩子 xuan-host-offense：主宿主与星影的直接伤害 ×(1＋共宿伤害率)，只对 HP 伤害、吸收，normal／true
+static func damage_ops(item: Dictionary, a) -> Array:
+	if not XBinding.in_battle() or not a is XActor or is_xuan(a) or not int(item.get("damage", {}).get("type", 0)) in [1, 5]:
+		return []
+	if not str(XRaceBattle._damage_spec(item).get("kind", "normal")) in ["normal", "true"]:
+		return []
+	var x = xuan()
+	if not _live(x) or not _gongsu(x) or not in_cover(x, a):
+		return []
+	return [{"op": "mul", "field": "finalMultiplier", "value": 1.0 + gongsu_damage_rate(x)}]
+
+
+## 移光：换宿主迁移旧宿主身上璇护盾的 50%／75%／100%；留辉：旧宿主保留共宿增益 1／2／3 回合
+static func _transfer_effects(logic, a, previous, target) -> void:
+	var s: XState = logic.state
+	var lv := XXuanChart.mark_level(s, a, "yiguang")
+	if lv > 0:
+		var moved := 0.0
+		for src in ["xuan.libi", "xuan.yuhui"]:
+			var v := XShieldLedger.amount(previous, src)
+			if v > 0.0:
+				var m := floorf(v * float(YIGUANG_RATE[lv]))
+				XShieldLedger.revoke(previous, src)
+				if v - m > 0.0:
+					XShieldLedger.grant(previous, src, v - m, 1, XUAN)
+				moved += m
+		if moved > 0.0:
+			XShieldLedger.grant(target, "xuan.libi", moved, 1, XUAN)
+	var keep := XXuanChart.mark_level(s, a, "liuhui")
+	data.afterglow = {}
+	if keep > 0 and _live(previous):
+		data.afterglow[int(previous.actor_id)] = {"until": XBinding.current_round() + keep - 1, "def": gongsu_value(a, 3), "mdf": gongsu_value(a, 5)}
+
+
+## 星盾流转·接力（installThreeGrowthRelicRuntime 包 onBind，20 级）：旧宿主的璇护盾 20%（60 级 30%）给血量比例最低的另一名队友
+static func _relay(logic, a, previous, target) -> void:
+	var pool := XBinding.members().filter(func(t): return t != previous and t != target and t != a and t.is_alive() and not XBinding.untargetable(t))
+	if pool.is_empty():
+		return
+	var order: Array = logic.actors
+	pool.sort_custom(func(x, y): return x.hp_rate() < y.hp_rate() if x.hp_rate() != y.hp_rate() else order.find(x) < order.find(y))
+	var recipient = pool[0]
+	var rnd := XBinding.current_round()
+	for r in XShieldLedger.rows(previous):
+		if not str(r.source).begins_with("xuan."):
+			continue
+		var move := floorf(float(r.amount) * (0.3 if int(a.level) >= 60 else 0.2))
+		if move <= 0.0:
+			continue
+		var turns := maxi(1, int(r.until) - rnd + 1)
+		var remainder := float(r.amount) - move
+		XShieldLedger.revoke(previous, r.source)
+		if remainder > 0.0:
+			XShieldLedger.grant(previous, r.source, remainder, turns, XUAN, {"noBonus": true, "noDecay": r.noDecay})
+		var src := "xuan.relay.%s.until-%d" % [r.source, int(r.until)]
+		var existing := XShieldLedger.amount(recipient, src)
+		XShieldLedger.revoke(recipient, src)
+		XShieldLedger.grant(recipient, src, existing + move, turns, XUAN, {"noBonus": true, "noDecay": r.noDecay})
+
+
+## CodexShieldLedger.onAbsorb：璇的护盾真挡下伤害计护主一次；星盾流转·定轨（10 级）：璃壁被打破时给一次定星
+static func on_absorb(b, list: Array) -> void:
+	if data.is_empty():
+		return
+	if list.any(func(r): return str(r.source).begins_with("xuan.")):
+		data.record.protect = true
+	var x = xuan()
+	if x == null or int(x.level) < 10 or not b is XActor or not XBinding.enemy_acting():
+		return
+	if not list.any(func(r): return r.source == "xuan.libi" and float(r.lastAbsorbed) > 0.0 and float(r.amount) <= 0.0):
+		return
+	var broke: Dictionary = data.get("breakRound", {})
+	if int(broke.get(int(b.actor_id), -1)) == XBinding.current_round():
+		return
+	broke[int(b.actor_id)] = XBinding.current_round()
+	data.breakRound = broke
+	data.dingxing[int(b.actor_id)] = {"until": XBinding.current_round() + 1, "numeric": false}
+	XBinding._logic()._state_add(b, state_id("dingxing"))
+
+
+## X.shadowLimit／shadowCandidates
+static func shadow_limit(a) -> int:
+	if not XTusuXuan.unlocked(XUAN, a, "liexing"):
+		return 0
+	var lv := int(a.level)
+	return 99 if lv >= 60 else 3 if lv >= 50 else 2 if lv >= 40 else 1
+
+
+static func shadow_candidates(logic, a) -> Array:
+	var h = XBinding.host(a)
+	var pid := int(XXuanChart.chart(logic.state).get("partner", 0))
+	var order: Array = logic.actors
+	var pool := XBinding.members().filter(func(t): return t != a and t != h and _live(t) and not XBinding.untargetable(t))
+	pool.sort_custom(func(x, y):
+		var px := int(x.actor_id) == pid
+		var py := int(y.actor_id) == pid
+		if px != py:
+			return px
+		if x.hp_rate() != y.hp_rate():
+			return x.hp_rate() < y.hp_rate()
+		return order.find(x) < order.find(y))
+	return pool.slice(0, shadow_limit(a))
+
+
+## 列星效果：星影期限、命主宿主净化一个硬控
+static func _liexing(logic, u) -> void:
+	if data.is_empty():
+		return
+	data.liexingUntil = XBinding.current_round() + LIEXING_TURNS - 1
+	data.shadows = shadow_candidates(logic, u).map(func(t): return int(t.actor_id))
+	for id in data.shadows:
+		logic._state_add(logic.state.actor(int(id)), state_id("shadow"))
+	logic._state_add(u, state_id("liexing"))
+	var h = XBinding.host(u)
+	if h != null and _is_roster(logic.state, h):
+		var bad := first_cleansable(h)
+		if bad > 0:
+			logic._state_remove(h, bad)
+
+
+## makeTargets 包装：列星期间回光、璃壁加上所有受益者；棱光每多一名受益者（主宿主外）再打一遍原目标
+static func extend_targets(a, skill: Dictionary, list: Array) -> Array:
+	if not is_xuan(a) or data.is_empty() or XBinding.current_round() > int(data.liexingUntil):
+		return list
+	var key := key_of(skill)
+	var cover: Array = beneficiaries(a).list
+	if key in ["huiguang", "libi"]:
+		for t in cover:
+			if not list.has(t):
+				list.append(t)
+	elif key == "lengguang":
+		var original := list.duplicate()
+		var h = XBinding.host(a)
+		for t in cover:
+			if t != h:
+				list = list + original
+	return list

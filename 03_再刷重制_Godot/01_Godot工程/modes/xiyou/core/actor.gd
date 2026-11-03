@@ -674,7 +674,7 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XHubris.formula_param(self, i, XRaceBattle.param(self, i, XTusu.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i))))))  # 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→异化逆骨（33）→谷雨储备（38）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
+	return XHubris.formula_param(self, i, XRaceBattle.param(self, i, XTusu.param(self, i, XXuanBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i)))))))  # 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:

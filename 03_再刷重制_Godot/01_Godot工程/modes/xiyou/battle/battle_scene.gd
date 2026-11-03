@@ -765,6 +765,7 @@ func _command_entries(a: XActor) -> Array:
 	opts.append({"text": str(terms[4]), "key": "item"})
 	opts.append({"text": str(terms[1]), "key": "escape", "enabled": logic.can_escape})
 	opts = XTusu.command_entries(logic, a, opts)  # 屠苏 makeCommandList 包装：持武者技能栏去重；武具态插「武相支援」、防御改「待命」
+	opts.append_array(XXuanBattle.command_entries(logic, a))  # 璇 makeCommandList 包装：附身时「回身」
 	opts.append_array(XYunshang.command_entries(a))  # 云裳 makeCommandList 包装（种族之前装）：赠行、放行、裁身、收袖、七曜元素
 	# installNativeRaceRuntime makeCommandList 包装：魔族在最后加「血契：开／关」
 	var blood := XRaceBattle.blood_command_text(a)
@@ -816,6 +817,8 @@ func _command_for(a: XActor):
 					return [atk, t]
 			"guard":
 				return [XDB.rec("Skills", XBattleLogic.GUARD_SKILL), null]
+			"xuanReturn":
+				return [XDB.rec("Skills", XTusuXuan.skill_id(XXuanBattle.XUAN, "return")), a]
 			"tusuSupport":
 				# 屠苏 codexTusuSupport 处理器：用当前武相的支援（不能用时重画指令窗）；选目标取消回指令窗（onEnemyCancel／onActorCancel 包装）
 				var sk := XTusu.support_skill(a)
@@ -1136,7 +1139,7 @@ func _pick_target(skill: Dictionary, a: XActor, forced := true):
 	if foe:
 		pool = XSukuna.selectable_enemies(a, skill, logic.alive(logic.enemies))  # 宿傩 Window_BattleEnemy.refresh 包装：神灶只列蓄力的敌人
 	elif scope == 7:
-		pool = logic.alive(logic.actors)
+		pool = XXuanBattle.filter_pick(a, skill, logic.alive(logic.actors))  # 璇 Window_BattleActor 包装：寄星只能选合法宿主
 	elif scope == 9:
 		pool = logic.actors.filter(func(x): return x.is_dead())
 	elif scope == 11:
