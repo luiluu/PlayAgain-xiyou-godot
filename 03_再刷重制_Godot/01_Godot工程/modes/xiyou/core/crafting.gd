@@ -8,6 +8,7 @@ extends RefCounted
 ## - 类别升级：经验 ≥ 50×等级 就减去并升一级；等级到 99（User Definable Max Level 缺省）以上不再得经验。
 ## - 产出宝珠的配方当作未学会（installNativeOrbRuntime，宝珠只从副本神秘珠来）。
 ## - 插件指令 crafting learn／forget N（设计图物品的公共事件）；crafting call 正式数据没有，不接。
+## - 配方 457／458（杰作利维坦／杰作无我）被利维坦锻造改写：解锁、材料数、能做几件、制作都转给 XGrowthForge。
 
 const CATEGORIES := ["炼金术", "打造", "加工", "珠宝"]
 const CATEGORY_ICONS := [1240, 1296, 1263, 1277]
@@ -59,6 +60,8 @@ static func is_orb_recipe(r: Dictionary) -> bool:
 static func known(s: XState, r: Dictionary) -> bool:
 	if is_orb_recipe(r):
 		return false
+	if XGrowthForge.is_forge_recipe(int(r.id)):
+		XGrowthForge.unlocked(s, int(r.id))  # 旧档读进来、或别的路子拿到装备时补查解锁
 	var k: Dictionary = _data(s).known
 	return bool(k.get(str(int(r.id)), r.get("known", false)))
 
@@ -90,7 +93,12 @@ static func gain_exp(s: XState, cat: int, value: int) -> void:
 		d.level[cat] = int(d.level[cat]) + 1
 
 
-static func material_count(s: XState, m: Dictionary) -> int:
+## r：材料所属的配方（锻造配方的原件那一项另算）
+static func material_count(s: XState, m: Dictionary, r := {}) -> int:
+	if not r.is_empty() and XGrowthForge.is_forge_recipe(int(r.id)):
+		var n := XGrowthForge.material_count(s, int(r.id), m)
+		if n >= 0:
+			return n
 	var t := str(m.get("type", ""))
 	if t == "item":
 		return s.item_count(int(m.id))
@@ -101,7 +109,7 @@ static func material_count(s: XState, m: Dictionary) -> int:
 
 static func has_materials(s: XState, r: Dictionary) -> bool:
 	for m in r.materials:
-		if material_count(s, m) < int(m.amount):
+		if material_count(s, m, r) < int(m.amount):
 			return false
 	return true
 
@@ -127,16 +135,20 @@ static func has_level(s: XState, r: Dictionary) -> bool:
 
 
 static func craftable(s: XState, r: Dictionary) -> bool:
+	if XGrowthForge.is_forge_recipe(int(r.id)):
+		return XGrowthForge.craftable(s, r)
 	return has_gold(s, r) and has_materials(s, r) and has_level(s, r)
 
 
 ## Recipe.amountCraftable：各材料 持有/需要 的最小值，再与 金币/费用（费用 0 时为 99）取小，向下取整
 static func amount_craftable(s: XState, r: Dictionary) -> int:
+	if XGrowthForge.is_forge_recipe(int(r.id)):
+		return 1 if XGrowthForge.craftable(s, r) else 0
 	if not has_materials(s, r):
 		return 0
 	var amount := -1.0
 	for m in r.materials:
-		var next := float(material_count(s, m)) / float(m.amount)
+		var next := float(material_count(s, m, r)) / float(m.amount)
 		if amount < 0.0 or next < amount:
 			amount = next
 	var gold_amount := float(s.gold) / float(r.goldCost) if int(r.goldCost) > 0 else 99.0
@@ -168,7 +180,10 @@ static func remove_materials(s: XState, r: Dictionary) -> void:
 
 
 ## Recipe.craft(Math.random()×100)：成功返回结果的数据库条目，失败返回 {}。roll 缺省时只在成功率不足 100 才抽随机数
+## 锻造配方：把界面选好的原件（XGrowthForge.forge_source）改成杰作，返回这件；不能锻造为空，什么都不扣
 static func craft(s: XState, r: Dictionary, roll := -1.0) -> Dictionary:
+	if XGrowthForge.is_forge_recipe(int(r.id)):
+		return XGrowthForge.forge(s, int(r.id), XGrowthForge.forge_source)
 	remove_materials(s, r)
 	var rate := success_rate(s, r)
 	if roll < 0.0:
