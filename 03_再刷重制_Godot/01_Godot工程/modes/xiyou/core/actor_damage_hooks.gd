@@ -13,7 +13,7 @@ static func descriptor() -> Dictionary:
 
 
 static func capture(item: Dictionary, a: XBattler, b: XBattler) -> Dictionary:
-	var ops: Array = XRaven.damage_ops(item, a) + XNumberBoost.damage_ops(item, a, b) + mira_ops(item, a, b) + XSukuna.damage_ops(item, a) + XYomiJingliu.damage_ops(item, a, b) + XToji.damage_ops(item, a) + XToji.incoming_ops(item, a, b) + XGarou.damage_ops(item, a, b) + XYunshang.damage_ops(item, a, b) + XBlackFlash.damage_ops(b) + XTusu.damage_ops(item, a, b)
+	var ops: Array = XRaven.damage_ops(item, a) + XNumberBoost.damage_ops(item, a, b) + mira_ops(item, a, b) + XSukuna.damage_ops(item, a) + XYomiJingliu.damage_ops(item, a, b) + XToji.damage_ops(item, a) + XToji.incoming_ops(item, a, b) + XGarou.damage_ops(item, a, b) + XYunshang.damage_ops(item, a, b) + XBlackFlash.damage_ops(b) + XTusu.damage_ops(item, a, b) + XHubris.damage_ops(item, a)  # 狂妄 hubris：物防率 ×0.82／0.73
 	return {"ops": ops}
 
 

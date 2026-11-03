@@ -179,6 +179,8 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XRaceBattle.start(self)  # 种族祝福：BattleManager.startBattle 包装清本场数据，出战成员建数据（记开战最大生命）
 	actors = everyone
 	XYunshang.start_battle(self)  # 云裳 startBattle 包装：建战斗数据、天衣无缝全醒
+	XHeartsteel.start_battle(self)  # 心钢 setup／startBattle 包装：清本场账，全队蓄力 2
+	XHubris.start_battle(self)  # 狂妄 setup／startBattle 包装：开场名单，清扬名与行动数
 	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
 	XSukuna.start_tp(self)  # 宿傩 startBattle 包装（之后）：TP 至少 60
 	XCat.trial_start_battle(self)  # 小猫试炼 startBattle 包装（之后）：178 回满、TP 满
@@ -477,6 +479,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if not XCat.legal(self, a, skill):  # 小猫剑圣的剑技／试炼条件、178 没持剑不能用物理技能
 		return false
 	if not XTusuXuan.meets(a, skill):  # 屠苏／璇 bindGrowth meetsSkillConditions：没解锁的专属技能、归形
+		return false
+	if not XHeartsteel.meets(a, skill):  # 心钢 meetsSkillConditions 包装：巨人吞噬要穿着对应的一件、在战斗里、蓄力满
 		return false
 	if not XTusu.meets(a, skill):  # 屠苏 meetsSkillConditions：易武／化武／支援／武装技能看武相，武具态只有防御
 		return false
@@ -827,6 +831,8 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(execute(u, skill, target))
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
+	XHeartsteel.end_action(u, false)  # 心钢 endAction 包装：不是巨人吞噬的行动减 1 蓄力
+	XHubris.end_action(self, u, false)  # 狂妄 endAction 包装：结算倒下的敌人、有效行动计数
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（原 endAction 之前，在谷雨之外）：贯日消费锁定、敕令消费和鸣，持武者行动后剑气／镇魂（内部施放）
 	XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：本次行动里的归根反馈（画面）
@@ -873,6 +879,8 @@ func end_turn() -> Array:
 	# BattleManager.refreshAllMembers
 	for b in actors + enemies:
 		b.param_refresh()
+	XHeartsteel.end_turn(self)  # 心钢 endTurn 包装（原 endTurn 之后，装得早在各包装里层）：每回合一次回复最大生命 3%／5%
+	XHubris.end_turn(self)  # 狂妄 endTurn 包装：结算倒下的敌人，扬名减 1 回合
 	logs.append_array(XAlienBattle.round_end(self))  # endTurn 的异化包装（在种族包装之内）：蚀能、腐蚀
 	logs.append_array(XRaceBattle.round_end(self))  # endTurn 的种族包装：毒鸡汤结算、残响交接
 	XYunshang.end_turn(self)  # 云裳 endTurn 包装：六衡裁身回合末清除
@@ -1217,6 +1225,8 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 		_cleared[u] = true
 	var before := _movable_snapshot()
 	logs.append_array(execute(u, skill, target, true))
+	XHeartsteel.end_action(u, true)  # 心钢／狂妄 endAction 包装：强制行动不减蓄力、不计行动
+	XHubris.end_action(self, u, true)
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（同 act 的次序）：强制行动也消费锁定、和鸣，持武者放剑气／镇魂（审查第 26 期 P3-1）
 	logs.append_array(XGarou.finish(self, u, skill))
 	logs.append_array(XSukuna.finish(self, u, skill, true))
@@ -1479,6 +1489,8 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# 角色在 OTB 下输入完（或不能输入时 makeActions 后）直接 startAction，不看 isValid，照原样执行。参照 attack_query_probe skip 组。
 	if not forcing and not u.is_actor() and not can_use(u, skill):
 		return logs
+	XHeartsteel.start_action(u, skill)  # 心钢 startAction 包装：记本次行动、巨人吞噬的施放与冷却
+	XHubris.start_action(u)  # 狂妄 startAction 包装：记本次行动（行动结束计数）
 	logs.append_array(XTusu.start_action(self, u, skill, chosen))  # 屠苏 startAction 包装（原 startAction 之前）：持武者贯日锁定、敕令和鸣，盾相敌人出手前金汤（内部施放）
 	XGuyu.begin(u)  # 谷雨 startAction 包装：清特效标记、开行动事件（众生之劫记各人最大生命）
 	XGarou.begin(u, skill)  # 饿狼 startAction 包装：开施放帧（记施放开始时的进化层）
@@ -1814,7 +1826,12 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var tusu_cmd := XTusu.apply_command(self, u, skill, t)  # 屠苏 Game_Action.apply 包装：归形、易武、化武
 	if not tusu_cmd.is_empty():
 		return tusu_cmd
-	return XGuyu.apply(self, u, skill, t)  # 谷雨 Game_Action.apply 包装：治疗来源、花期／终结生效（没生效整次不结算）、行动执行标记
+	if XHeartsteel.blocks_apply(u, skill):  # 心钢 Game_Action.apply 包装：巨人吞噬没放成或已结算过，整次不生效
+		return XBinding.unused_result(u, skill, t)
+	var hp_before := t.hp
+	var r: Dictionary = XGuyu.apply(self, u, skill, t)
+	XHeartsteel.after_apply(self, u, skill, t, hp_before, r)  # 心钢：命中按权重记本场层数
+	return r  # 谷雨 Game_Action.apply 包装：治疗来源、花期／终结生效（没生效整次不结算）、行动执行标记
 
 
 func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
@@ -1993,7 +2010,9 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
 	value = XTusu.book_heal(value)  # 止戈环 executeHpDamage 包装（最外层）：开刃·书的护持治疗 ×hemingRate
 	var tusu_cuoshi := XTusu.hp_before(u, t, value, item)  # 止戈环 60 级 executeHpDamage 包装（护盾账本之外）：护阵首伤护盾、打前有没有挫势
+	var hubris_before := t.hp
 	var out := _execute_hp_damage_ledger(u, t, value, drain, item)
+	XHubris.after_hp(self, u, t, value, hubris_before)  # 狂妄 executeHpDamage 包装：贡献、本方击杀、首领分段
 	XTusu.hp_after(u, t, value, item, tusu_cuoshi)  # 锻痕、挫势减伤标记的消费与新挂
 	return out
 
@@ -2531,6 +2550,8 @@ func end_battle(result := -1) -> void:
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XSukuna.end_battle(self)  # 宿傩 endBattle 包装：清战斗数据与领域、适应、觉醒状态
+	XHubris.end_battle(self, result)  # 狂妄 endBattle 包装（在心钢外层）：胜利存盛名，清扬名
+	XHeartsteel.end_battle(result)  # 心钢 endBattle 包装：胜利存层数
 	XYunshang.end_battle(self, result)  # 云裳 endBattle 包装：不朽天丝，结清赊账、结束衣魂，清战斗数据、御风、余辉、符针
 	XBlackFlash.end_battle(self)  # 黑闪 endBattle 包装
 	XToji.end_battle(self)  # 甚尔 endBattle 包装：清形态
@@ -2562,3 +2583,6 @@ func end_battle(result := -1) -> void:
 		b.refresh_passive()
 		b.hp = minf(b.hp, b.mhp)
 		b.mp = minf(b.mp, b.mmp)
+	# 原 endBattle 之后：利维坦锻造包装掷心之钢，狂妄包装再掷狂妄（各 10%，不朽未知存在 454／455 胜利、每场一次）
+	XHeartsteel.clear_reward(self, result)
+	XHubris.clear_reward(self, result)

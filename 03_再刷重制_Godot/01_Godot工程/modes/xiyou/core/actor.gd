@@ -422,6 +422,7 @@ func native_skills() -> Array:
 
 func skills() -> Array:
 	var ids: Array[int] = native_skill_ids()
+	ids.assign(XHeartsteel.skill_ids(self, ids))  # 心钢 skills 包装（第 15 个，在云裳、异化之内）：穿着时换成对应的巨人吞噬
 	XYunshang.skill_ids(self, ids)  # 云裳 skills 包装（在异化之内）：天衣给的赠行／收存余光
 	ids.assign(XAlienBattle.skill_ids(self, ids))  # 异化百相、无面 skills 包装（Affixes:21）：拿掉被替换的，加借来的、仿形与切换
 	ids.assign(XGuyu.skill_ids(self, ids))  # 谷雨 skills 包装：先许一枝开 10 级起、绽放不列、其余按解锁
@@ -622,7 +623,7 @@ func _param_plus(i: int) -> float:
 				v += _param_boost(p, m)
 		v += magic_param(e, i)
 		v += custom_param(e, i)
-	return XActorModules.param_plus(self, i, v)  # 专属角色模块的 paramPlus 包装（黄泉 10176／10177／10182）
+	return XHeartsteel.param_plus(self, i, XActorModules.param_plus(self, i, v))  # 专属角色模块的 paramPlus 包装（黄泉 10176／10177／10182）；心钢旧版累计生命
 
 ## YEP_EquipCore evalParamPlus：<Custom Parameters> 由转换器解析成每项能力的 常数 + 等级系数 × 等级 + Σ 变量系数 × v[编号]，
 ## 每次按当前等级与变量求值；不受 passiveWPNM／ARMM 放大（那只看 item.params）。原件按数据库基础编号取（实例复制原件的 parameterEval）。
@@ -673,14 +674,14 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XRaceBattle.param(self, i, XTusu.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i)))))  # 按原版安装先后由内到外：专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→异化逆骨（33）→谷雨储备（38）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
+	return XHubris.formula_param(self, i, XRaceBattle.param(self, i, XTusu.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i))))))  # 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→异化逆骨（33）→谷雨储备（38）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:
 	# 原版安装先后由内到外：专属角色模块（米拉、黄泉、甚尔、宿傩，modules.json 第 2～18 个）→小猫剑圣（installImportedBalanceRuntime，第 20 个）
 	# →云裳（第 31 个，同样从 1 数：云裳自身倍率、战斗内层六衡／万法／御风，最后夹值）。审查第 17 期 P3：原来夹值写在小猫剑圣里面，次序反了
 	# （XCat 只管 178、云裳倍率只管 174，结果一样；战斗内层对别的角色生效时才有差）。
-	var v := XCat.param(self, i, XActorModules.param(self, i, super.param(i)))
+	var v := XCat.param(self, i, XHubris.param(self, i, XHeartsteel.param(self, i, XActorModules.param(self, i, super.param(i)))))  # 心钢（第 15 个）、狂妄（第 17 个）夹在专属模块与小猫剑圣之间（宿傩第 18 个只管 172，次序差只在取整）
 	return final_clamp(i, XYunshang.battle_param(self, i, XYunshang.param(self, i, v)))
 
 ## 云裳 installNativeYunshangRuntime 的 Game_Actor.param 包装（modules.json 第 31 个，在米拉、黄泉、甚尔、宿傩、饿狼之后，异化、种族之前）：

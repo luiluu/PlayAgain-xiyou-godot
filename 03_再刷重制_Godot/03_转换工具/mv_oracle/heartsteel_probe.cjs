@@ -34,6 +34,8 @@ function gear(base, fields) {
   const list = w.$gameParty.armors().filter(x => x.baseItemId === base);
   return Object.assign(list[list.length - 1], fields || {});
 }
+// 实例的随机词条（<Prefixes>）：记下实例的八项属性与特性，重制照它设实例
+const inst = it => ({params: it.params.slice(), traits: it.traits.map(t => [t.code, t.dataId, t.value]), id: it.id});
 function equip(a, it) {
   const slot = a.equipSlots().indexOf(it.etypeId);
   a.changeEquip(slot, it);
@@ -54,7 +56,7 @@ for (const base of [7900, 7901]) for (const [stacks, hp] of [[0, 0], [100, 0], [
     const a = w.$gameActors.actor(1), before = {mhp: a.mhp, atk: a.atk, def: a.def, mdf: a.mdf};
     const it = gear(base, {_codexHeartsteelStacks: stacks, _codexHeartsteelHp: hp});
     const slot = equip(a, it);
-    const out = {before, slot, mhp: a.mhp, atk: a.atk, def: a.def, mdf: a.mdf, rate: H.hpRate(it), stage: H.stage(it), castScale: H.castScale(a),
+    const out = {before, slot, inst: inst(it), mhp: a.mhp, atk: a.atk, def: a.def, mdf: a.mdf, rate: H.hpRate(it), stage: H.stage(it), castScale: H.castScale(a),
       paramPlus0: a.paramPlus(0), listed: listed(a), effectiveHp: H.effectiveHp(a)};
     out.meetsOut = SKILLS.map(id => a.meetsSkillConditions(w.$dataSkills[id]));
     w.$gameParty._inBattle = true;
@@ -72,7 +74,7 @@ for (const base of [7902, 7903]) for (const fame of [0, 100, 350]) {
     const a = w.$gameActors.actor(1), before = {mhp: a.mhp, atk: a.atk};
     const it = gear(base, {_codexHubrisFame: fame});
     const slot = equip(a, it);
-    const out = {before, slot, mhp: a.mhp, atk: a.atk, rate: U.rateFor(it, fame), listed: listed(a)};
+    const out = {before, slot, inst: inst(it), mhp: a.mhp, atk: a.atk, rate: U.rateFor(it, fame), listed: listed(a)};
     w.$gameParty._inBattle = true;
     a._codexHubrisBuff = {itemId: it.id, rate: U.rateFor(it, fame), round: 0, remaining: 3};
     a.need_refresh = true; a.refresh();
@@ -178,7 +180,7 @@ for (const [base, stacks] of [[7900, 100], [7901, 0]]) {
   cases.push(makeCase(`heart.battle.${base}.${stacks}`, {base, stacks}, () => {
     const ctx = battle(base, {_codexHeartsteelStacks: stacks}), {bm, a, it} = ctx, sid = H.skillFor(it), rows = [];
     const e0 = w.$gameTroop.members()[0];
-    rows.push(['start', heartSnap(ctx), {enemies: w.$gameTroop.members().map(e => e.enemy().name), e0def: e0.def}]);
+    rows.push(['start', heartSnap(ctx), {inst: inst(it), enemies: w.$gameTroop.members().map(e => e.enemy().name), e0def: e0.def}]);
     rows.push(['early', act(bm, a, sid, 0), heartSnap(ctx)]);  // 蓄力没满：放不出
     rows.push(['attack1', act(bm, a, 1, 0).length, heartSnap(ctx)]);
     rows.push(['attack2', act(bm, a, 1, 0).length, heartSnap(ctx)]);
@@ -214,7 +216,7 @@ for (const [base, fame] of [[7902, 0], [7903, 300]]) {
   cases.push(makeCase(`hubris.battle.${base}.${fame}`, {base, fame}, () => {
     const ctx = battle(base, {_codexHubrisFame: fame}), {bm, a, it} = ctx, rows = [];
     const enemies = w.$gameTroop.members();
-    rows.push(['start', hubrisSnap(ctx), {enemies: enemies.map(e => e.enemy().name), count: enemies.length, def: enemies.map(e => e.def)}]);
+    rows.push(['start', hubrisSnap(ctx), {inst: inst(it), enemies: enemies.map(e => e.enemy().name), count: enemies.length, def: enemies.map(e => e.def)}]);
     rows.push(['attack', act(bm, a, 1, 0), hubrisSnap(ctx)]);
     enemies[0].setHp(1);
     rows.push(['kill', act(bm, a, 1, 0), hubrisSnap(ctx), enemies[0].isDead()]);
@@ -240,7 +242,7 @@ for (const mode of ['fix', 'boss']) for (const [base, fame] of [[7902, 0], [7903
     if (mode === 'boss') w.$dataEnemies[eid].name = '【首领】' + oldName;
     try {
       const ctx = battle(base, {_codexHubrisFame: fame}), {bm, a, it} = ctx, rows = [], enemies = w.$gameTroop.members();
-      rows.push(['start', hubrisSnap(ctx), {mhp: enemies.map(e => e.mhp)}]);
+      rows.push(['start', hubrisSnap(ctx), {inst: inst(it), mhp: enemies.map(e => e.mhp)}]);
       if (mode === 'fix') {
         enemies[0].setHp(1); rows.push(['kill', act(bm, a, 1, 0), hubrisSnap(ctx)]);
         rows.push(['attackBuffed', act(bm, a, 1, 1), hubrisSnap(ctx)]);
@@ -272,7 +274,7 @@ cases.push(makeCase('hubris.pierce', {}, () => {
     const ctx = battle(base || 7900, {});
     if (!base) { ctx.a.changeEquip(ctx.a.equipSlots().indexOf(17), null); ctx.a.need_refresh = true; ctx.a.refresh(); }
     const e = w.$gameTroop.members()[1];
-    out[base] = {atk: ctx.a.atk, def: e.def, hits: act(ctx.bm, ctx.a, 1, 1)};
+    out[base] = {inst: inst(ctx.it), atk: ctx.a.atk, def: e.def, hits: act(ctx.bm, ctx.a, 1, 1)};
   }
   return out;
 }));
