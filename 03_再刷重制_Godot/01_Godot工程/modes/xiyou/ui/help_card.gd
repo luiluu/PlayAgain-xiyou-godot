@@ -188,6 +188,8 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 			r[0] = label
 	for r in rows:
 		r[0] = _terms(str(r[0]))
+	if XDemonCrown.is_gear(obj):  # 魔冠的 getDescParams 包装：小数取整（describe 在发放／重放时已做）
+		XDemonCrown.desc_rows(obj, rows)
 	return rows
 
 

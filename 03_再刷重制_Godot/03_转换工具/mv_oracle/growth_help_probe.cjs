@@ -2,7 +2,7 @@
 // 【cc·八戒·未经审查】成长装备说明卡探针（growth3）：心之钢／杰作利维坦／狂妄／杰作无我的实例在不同层数、旧版生命、
 // 本场待结算、扬名增益下，正式版 Sprite_ItemHelp.setItem（H/U.helpView → describe → groupHelpRows）实际画出的行。
 // 每例记下实例刚建好时（层数 0 时 describe 过）的备注与说明 note0／description0，再改层数、调 describe（同胜利结算），
-// 重制拿 note0 加层数字段走 XHelpCard.content 比。画行记录同 help_probe。
+// 重制拿 note0 加层数字段走 XHelpCard.content 比。画行记录同 help_probe。另记装备评分 CodexCombatPower.equipment（power，成长装备按阶加成）。
 // 产物 .sandbox/growth_help.json，拷成 01_Godot工程/tests/fixtures/growth_help_oracle.json（不进同步），专项 xiyou_growth_help。
 const fs = require('fs'), path = require('path');
 const {boot} = require('./hboot.cjs');
@@ -61,6 +61,8 @@ function add(id, base, fields, opt) {
     actor._codexHubrisBuff = {itemId: it.id, rate: opt.buff.rate, remaining: opt.buff.remaining, round: opt.buff.sameRound ? 2 : 1};
     restore = () => { w.$gameParty.inBattle = inBattle; w.$gameTroop.turnCount = turn; delete actor._codexHubrisBuff; actor.changeEquip(slot, null); };
   }
+  const pw = w.CodexCombatPower.equipment(it);
+  rec.power = {total: pw.total, parts: Array.from(pw.parts), rows: pw.rows.map(x => ({label: x.label, parts: Array.from(x.parts)}))};
   rec.note = it.note;
   rec.description = it.description;
   Object.assign(rec, card(it));

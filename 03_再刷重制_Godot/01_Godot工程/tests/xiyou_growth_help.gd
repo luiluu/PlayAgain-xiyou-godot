@@ -1,7 +1,7 @@
 extends Node
 ## 【cc·八戒·未经审查】成长装备说明（growth3）XGrowthHelp：照参照 growth_help_probe（tests/fixtures/growth_help_oracle.json）逐行比。
 ## 每例拿参照实例刚建好时的备注 note0／说明 description0，加层数／盛名字段，HELP_FIX 关（原版口径）走 XHelpCard.content，
-## 文字、字号、颜色、对齐、行 y 与卡高同 xiyou_help_card；再开 HELP_FIX（O-待定，默认）看「本场成长」「当前增益」「装备战力」三行。
+## 文字、字号、颜色、对齐、行 y 与卡高同 xiyou_help_card；装备评分（总分、逐行）比参照 power；再开 HELP_FIX（O-待定，默认）看「本场成长」「当前增益」「装备战力」三行。
 const FIXTURE := "res://tests/fixtures/growth_help_oracle.json"
 const POWER_PREFIX := "装备战力："
 var checks := 0
@@ -57,6 +57,19 @@ func _faithful(c: Dictionary, obj: Dictionary) -> void:
 	check(tag + ".desc", str(XGrowthHelp.view(obj).description) == str(c.description), [XGrowthHelp.view(obj).description, c.description])
 
 
+## 装备评分：成长装备按阶加成（XPower._growth_gear）
+func _power(c: Dictionary, obj: Dictionary) -> void:
+	var p := XPower.equipment(obj)
+	var got: Array = p.rows.map(func(r): return [r.label, r.parts])
+	var want: Array = c.power.rows.map(func(r): return [r.label, r.parts])
+	var ok: bool = int(p.total) == int(c.power.total) and got.size() == want.size()
+	for i in range(mini(got.size(), want.size())):
+		ok = ok and got[i][0] == want[i][0]
+		for k in 3:
+			ok = ok and absf(float(got[i][1][k]) - float(want[i][1][k])) < 1e-6 * maxf(1.0, absf(float(want[i][1][k])))
+	check("power." + str(c.id), ok, {"got": [p.total, got], "want": [c.power.total, want]})
+
+
 ## HELP_FIX 开：原件比，待结算与增益两行出现在成长行前（APs 后插的在前），战力行在名字后
 func _fixed(c: Dictionary, obj: Dictionary, s: XState) -> void:
 	XGrowthHelp.HELP_FIX = true
@@ -102,6 +115,7 @@ func _ready() -> void:
 	XState.current = s
 	for c in data.cases:
 		_faithful(c, _obj(c))
+		_power(c, _obj(c))
 		_fixed(c, _obj(c), s)
 	# helpNumber：浮点误差抹掉、整数不带小数点
 	check("number", XGrowthHelp.number(1.0) == "1" and XGrowthHelp.number(1.1 + 0.2) == "1.3" and XGrowthHelp.number(1.2000004) == "1.2")
