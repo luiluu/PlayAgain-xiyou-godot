@@ -4,6 +4,7 @@
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const {battleHost} = require('./shared/battle_host.cjs');
 const host=start(), {w,newGame}=host, K=w.krz.restate;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 const PIDS=[0,2,3,6];
 // 伤害公式读数：临时把技能 1 的公式换成 a.atk／b.def，量完还原（evalDamageFormula 读的就是 param 缓存）
 function formula(sub, tgt, f) {

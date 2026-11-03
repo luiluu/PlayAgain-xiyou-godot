@@ -3,6 +3,7 @@
 // counterattack source. The frozen source stays read-only; no player saves.
 const {start, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host, cases = [];
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 const evalThrown = [];
 w.Yanfly.Util.displayError = e => evalThrown.push(String(e && e.stack || e));
 function measure(id, fn) {

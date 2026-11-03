@@ -653,8 +653,8 @@
     "rnd": 0.5
    },
    "observed": {
-    "value": 862,
-    "confirmed": 862,
+    "value": 1340,
+    "confirmed": 1340,
     "voidActive": false,
     "equips": [],
     "before": {
@@ -700,8 +700,8 @@
     "rnd": 0.7
    },
    "observed": {
-    "value": 862,
-    "confirmed": 862,
+    "value": 1340,
+    "confirmed": 1340,
     "voidActive": false,
     "equips": [],
     "before": {
@@ -746,8 +746,8 @@
     ]
    },
    "observed": {
-    "value": 862,
-    "confirmed": 862,
+    "value": 1340,
+    "confirmed": 1340,
     "voidActive": false,
     "equips": [],
     "before": {
@@ -797,8 +797,8 @@
     "rnd": 0.99
    },
    "observed": {
-    "value": 862,
-    "confirmed": 862,
+    "value": 1340,
+    "confirmed": 1340,
     "voidActive": false,
     "equips": [],
     "before": {
@@ -844,8 +844,8 @@
     "rnd": 0.1
    },
    "observed": {
-    "value": 862,
-    "confirmed": 862,
+    "value": 1340,
+    "confirmed": 1340,
     "voidActive": false,
     "equips": [],
     "before": {
@@ -891,8 +891,8 @@
     "rnd": 0.3
    },
    "observed": {
-    "value": 862,
-    "confirmed": 862,
+    "value": 1340,
+    "confirmed": 1340,
     "voidActive": false,
     "equips": [],
     "before": {
@@ -934,8 +934,8 @@
     "rnd": 0.99
    },
    "observed": {
-    "value": 635,
-    "confirmed": 635,
+    "value": 1340,
+    "confirmed": 1340,
     "voidActive": false,
     "equips": [],
     "before": {
@@ -981,8 +981,8 @@
     "rnd": 0
    },
    "observed": {
-    "value": 862,
-    "confirmed": 862,
+    "value": 1340,
+    "confirmed": 1340,
     "voidActive": false,
     "equips": [],
     "before": {
@@ -1118,8 +1118,8 @@
     "rnd": 0.1
    },
    "observed": {
-    "value": 56,
-    "confirmed": 56,
+    "value": 1904,
+    "confirmed": 1904,
     "voidActive": false,
     "equips": [],
     "before": {
@@ -1159,8 +1159,8 @@
     "rnd": 0.99
    },
    "observed": {
-    "value": 1478,
-    "confirmed": 1478,
+    "value": 1864,
+    "confirmed": 1864,
     "voidActive": false,
     "equips": [
      [
@@ -1316,8 +1316,8 @@
     "void": true
    },
    "observed": {
-    "value": 449,
-    "confirmed": 449,
+    "value": 698,
+    "confirmed": 698,
     "voidActive": true,
     "equips": [],
     "before": {
@@ -1365,7 +1365,7 @@
     "apply": true
    },
    "observed": {
-    "value": 449,
+    "value": 698,
     "confirmed": null,
     "voidActive": true,
     "equips": [],
@@ -1414,7 +1414,7 @@
     "apply": true
    },
    "observed": {
-    "value": 449,
+    "value": 698,
     "confirmed": null,
     "voidActive": true,
     "equips": [],
@@ -1511,7 +1511,7 @@
     "apply": true
    },
    "observed": {
-    "value": 862,
+    "value": 1340,
     "confirmed": null,
     "voidActive": false,
     "equips": [],
@@ -1600,7 +1600,7 @@
     },
     "hpLoss": [
      0,
-     862
+     1340
     ],
     "reflected": false,
     "actor": {

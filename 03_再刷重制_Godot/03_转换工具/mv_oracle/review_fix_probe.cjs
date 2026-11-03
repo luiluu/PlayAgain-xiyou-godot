@@ -7,6 +7,7 @@
 // 只在内存里跑：新局与 BattleManager.setup；不渲染、不写存档。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 const cases = [];
 const clean = a => { a._skills.length = 0; a._equips.length = 0; a.clearStates(); a.refresh(); a.recoverAll(); };
 const heal = (type) => ({id: 0, name: '核查固定恢复', stypeId: 1, hitType: 0, scope: 7, note: '', meta: {}, effects: [],
