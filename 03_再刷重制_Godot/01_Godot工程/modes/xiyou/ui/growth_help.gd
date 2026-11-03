@@ -5,7 +5,7 @@ extends RefCounted
 ## - describe：说明里旧版「神武\n13层…／奥恩杰作。…／由狂妄原件…」开头换回数据库说明；备注里旧的成长行（helpPatterns）删掉，
 ##   按当前层数／盛名重写（H.rewriteHelpRows：效果／战技／冷却／条件行加 \c[1]，倒着追加到 APs）。
 ## - helpView：拷一份 describe，加「本场成长」（待结算）与狂妄「当前增益」两行，重算 descParams，再按颜色把同色行排在一起（groupHelpRows）。
-## O-待定 HELP_FIX：原版这两个包装装得早（第 15、17 个），外层的元素包装先 Object.assign 拷了一份再往里传，
+## O-151 HELP_FIX：原版这两个包装装得早（第 15、17 个），外层的元素包装先 Object.assign 拷了一份再往里传，
 ##   ①H/U.pending 与 U.gear(a)===i 拿拷贝去比，「本场成长」「当前增益」两行永远不出；②helpView 里重算 descParams，
 ##   把外层战力包装插的「装备战力」行和元素包装的改动都冲掉。默认按原件比（两行照常出）、元素与战力包装在说明之后照常做；
 ##   设 false 回到原版（参照逐行比）。

@@ -352,6 +352,11 @@ static func _statements(js: String, interp) -> Array:
 			if s.party.has(XTusu.ACTOR) and interp.host.has_method("open_tusu_forge"):
 				await interp.host.open_tusu_forge()
 			continue
+		# 公共事件 9015 璇的星谱（技能「星谱」，战斗外）：CodexXuan.openStarchart() 璇在队才开（B.openMenu → starMenu），不在队什么都不做
+		if st == "CodexXuan.openStarchart()":
+			if s.party.has(XTusuXuan.XUAN) and interp.host.has_method("open_xuan_chart"):
+				await interp.host.open_xuan_chart()
+			continue
 		if st == "CodexYunshang.openCrafting()" and interp.host.has_method("open_yunshang_shop"):
 			await interp.host.open_yunshang_shop()
 			continue
