@@ -2209,10 +2209,15 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 					chance *= state_rate(t, id) * u.attack_states_rate(id) * _luk_rate(u, t)
 				elif int(r.skill.get("hitType", 0)) != 0:
 					chance *= state_rate(t, id) * _luk_rate(u, t)
+				var resisted_chance := -1.0
 				if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not XAlienBattle.forced_state(t, id):
+					resisted_chance = chance
 					chance = 0.0
 				# MV addState → isStateAddable 要求活着：本次伤害已致死时照常掷随机数，但不再附加（不进 r.added）
-				if _float("add_state") < chance and t.is_alive():
+				var roll := _float("add_state")
+				if roll < resisted_chance:
+					XXuanBattle.blocks_state(t, id)  # 原版照样 addState，抗性在最里层：璇定星在最外层先消耗（审查 33 P3-3，参照 dingxing.resist_effect）
+				if roll < chance and t.is_alive():
 					if id == DEATH_STATE:
 						t.immortal = false  # itemEffectAddNormalState：附加阵亡前先解除 IMMORTAL
 						_state_add(t, DEATH_STATE)
@@ -2244,7 +2249,9 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 
 ## 行动序列 ADD STATE（Game_Battler.addState → isStateAddable：活着、未抵抗（IMMORTAL 期间阵亡视为抵抗）；阵亡状态直接倒下）
 func sequence_add_state(t: XBattler, id: int) -> void:
-	if XDB.rec("States", id).is_empty() or not t.is_alive():
+	if XDB.rec("States", id).is_empty() or XXuanBattle.blocks_state(t, id):  # 璇定星 addState 最外层：事件「更改状态」等直接 addState，抗性挡下的也先消耗（审查 33 P3-3）
+		return
+	if not t.is_alive():
 		return
 	if (t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not XAlienBattle.forced_state(t, id)) or (id == DEATH_STATE and t.immortal):
 		return

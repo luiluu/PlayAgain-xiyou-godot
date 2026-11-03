@@ -41,7 +41,7 @@ const GONGSU_DEF := [[0.15, 0.30], [20, 60]]
 const YIGUANG_RATE := [0.0, 0.5, 0.75, 1.0]
 const LIEXING_TURNS := 2
 static var _param_guard := false
-const LINES := {"dingxing": "定星挡住了控制。", "transfer": "璇：「我去另一边，有事叫我。」"}
+const LINES := {"transfer": "璇：「我去另一边，有事叫我。」"}
 
 
 static func take_logs() -> Array:
@@ -363,8 +363,11 @@ static func _grant_dingxing(logic, u, t: XBattler) -> void:
 
 
 ## addState 包装（真正生效的是 installThreeGrowthRelicRuntime 包在 Game_Actor 上那层）：定星挡一次还没有的可净化硬控制。挡下返回真。
+## 包在最外层，抗性挡下的硬控也先消耗定星（审查 33 P3-3）；璇要在出战成员里；挡下时不写台词：外层那层直接 return，
+## 写台词的 Game_Battler 那层走不到（xuan_battle_probe dingxing.effect_line／benched，审查 33 P3-4）。
+## 绕开资源上下文直接加状态、又可能给角色加硬控的路径（事件更改状态 sequence_add_state、技能附加被抗性挡下、异化囚厄接收）都先问这里。
 static func blocks_state(t: XBattler, id: int) -> bool:
-	if data.is_empty() or not t is XActor or t.state_ids.has(id) or not XBinding.in_battle():
+	if data.is_empty() or not t is XActor or t.state_ids.has(id) or not XBinding.in_battle() or xuan() == null:
 		return false
 	var guard = data.dingxing.get(int(t.actor_id))
 	if guard == null or not is_cleanse_state(XDB.rec("States", id), true) or int(guard.until) < XBinding.current_round():
@@ -373,7 +376,6 @@ static func blocks_state(t: XBattler, id: int) -> bool:
 	var mark := state_id("dingxing")
 	if t.state_ids.has(mark):
 		t.remove_state(mark)
-	_line("dingxing")
 	return true
 
 
