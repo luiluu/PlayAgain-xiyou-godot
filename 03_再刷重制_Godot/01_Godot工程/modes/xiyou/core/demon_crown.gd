@@ -88,7 +88,7 @@ static func display(v: float) -> String:
 
 ## CodexQualityIcons demonCrownArt：图标 290000 画整张 img/system/Codex_DemonCrown（1254×1254），按格子大小平滑缩放
 static var _icons := {}
-static func icon_texture(size := 32) -> Texture2D:
+static func icon_texture(size := 32) -> AtlasTexture:
 	if not _icons.has(size):
 		var p := XDB.img_path("system", "Codex_DemonCrown")
 		if p == "":
@@ -97,7 +97,10 @@ static func icon_texture(size := 32) -> Texture2D:
 		if img.is_compressed():
 			img.decompress()
 		img.resize(size, size, Image.INTERPOLATE_LANCZOS)
-		_icons[size] = ImageTexture.create_from_image(img)
+		var a := AtlasTexture.new()  # XUI.icon_texture 要 AtlasTexture（大图标按 region 取）
+		a.atlas = ImageTexture.create_from_image(img)
+		a.region = Rect2(0, 0, size, size)
+		_icons[size] = a
 	return _icons[size]
 
 ## RJO.HE.getDescParams 包装：先 describe，算出的行里带小数的数字按 D.display 取整（XHelpCard.desc_params 调）
