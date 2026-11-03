@@ -8,7 +8,8 @@ const BATTLER_PHASES := ["battle", "turn_start", "turn_end", "regenerate", "acti
 const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm", "react", "respond", "establish"]
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
 const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "gain_resource", "param_add",
-	"poison_stack", "poison_tick", "add_state", "gain_steps", "set_variable", "syntax_error", "counter_init", "counter_set"]
+	"poison_stack", "poison_tick", "add_state", "gain_steps", "set_variable", "syntax_error", "counter_init", "counter_set",
+	"reserve_common_event"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -20,6 +21,8 @@ static var _stack: Array = []
 ## 未翻译清单：{phase, state, holder, op}，同键只记一次
 static var diagnostics: Array = []
 static var _seen := {}
+## $gameTemp.reserveCommonEvent 的编号（只存整数），由战斗逻辑在分发后 take_reserves 交给 XBattleCommonEvent.reserve
+static var _reserves: Array[int] = []
 
 
 ## Private value-only adapter: current signed phase input, without the damage
@@ -174,6 +177,8 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				_add_state(c.get(str(e.who)), int(e.id), c)
 		elif op == "gain_steps" and execute:
 			_gain_steps(e, holder, c, c)
+		elif op == "reserve_common_event" and execute:
+			_reserves.append(int(e.id))
 		elif op == "set_variable" and execute:
 			# Game_Variables.setValue：编号不在 1..System.variables 长度-1 内的写入原版直接忽略（如 1683 号脚本）
 			var vid := int(e.id)
@@ -419,3 +424,10 @@ static func _diagnose(phase: String, state_id: int, holder: XBattler, op: String
 static func clear_diagnostics() -> void:
 	diagnostics.clear()
 	_seen.clear()
+
+
+## 取走分发期间预约的公共事件（原版 $gameTemp 单槽，按次序交给 XBattleCommonEvent.reserve，后一个盖前一个）
+static func take_reserves() -> Array[int]:
+	var out := _reserves.duplicate()
+	_reserves.clear()
+	return out

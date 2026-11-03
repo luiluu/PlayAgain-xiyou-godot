@@ -110,6 +110,7 @@ func _run() -> void:
 			var after := _snap(b[0], b[1], b[2])
 			check(c.id + ".before", _same(before, o.before), [before, o.before])
 			check(c.id + ".after", _same(after, o.after), [after, o.after])
+	_field()
 	# 本地断言：追击等 execute 之外的 apply 不记（目标表在 execute 结束时关闭）
 	var b := _battle({"party": [1, 108], "hp": [1, BIG_HP, BIG_HP]})
 	var logic: XBattleLogic = b[0]
@@ -119,6 +120,42 @@ func _run() -> void:
 	XNanoha.finish(logic, b[1].actor(1))
 	check("local.closed_frame", _snap(logic, b[1], b[2]).plus == [0.0, 0.0], _snap(logic, b[1], b[2]))
 	finish()
+
+
+## nanoha2_oracle field.flow：真实开战后奈叶带 1708／1768／1774／1780；开战只预约 1320（领域 1774 的 battle 效果在被动状态之前跑过，
+## 原版从不预约 2478）；奈叶行动开始预约 2481（身经百战防转换），队友行动、回合结束不预约（1780 的 action_end 2480 在 OTB 下不触发）
+func _field() -> void:
+	var ref = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/nanoha2_oracle.json"))
+	if not check("field.oracle_present", ref is Dictionary and ref.cases.size() == 1 and ref.cases[0].errors.is_empty()):
+		return
+	var o: Array = ref.cases[0].observed.steps
+	var s := _new_state()
+	s.switches[2494] = true
+	s.party.clear()
+	s.battle_slots.clear()
+	for id in [1, 108]:
+		s.actor(id).change_level_mv(10)
+		s.add_actor(id)
+	var rand := XBattleRandom.create("0000000000000108")
+	rand.rule = FixedMidStream.new()
+	rand.rule.domain = "rule"
+	var logic := XBattleLogic.new()
+	logic.setup(2, s, rand)
+	var n := s.actor(108)
+	var taken := func() -> Array:
+		var id := XBattleCommonEvent.reserved(logic)
+		XBattleCommonEvent.take(logic)
+		return [] if id <= 0 else [id]
+	var states: Array = n.state_ids.filter(func(id): return id in o[0].states)
+	states.sort()
+	var ints := func(v): return (v as Array).map(func(x): return int(x))
+	check("field.startBattle", taken.call() == ints.call(o[0].reserved) and states == ints.call(o[0].states), [states, o[0]])
+	logic.act(n, XDB.rec("Skills", 1), logic.enemies[0])
+	check("field.nanoha.attack", taken.call() == ints.call(o[1].reserved), o[1])
+	logic.act(s.actor(1), XDB.rec("Skills", 1), logic.enemies[0])
+	check("field.mate.attack", taken.call() == ints.call(o[2].reserved), o[2])
+	logic.end_turn()
+	check("field.endTurn", taken.call() == ints.call(o[3].reserved), o[3])
 
 
 func finish() -> void:

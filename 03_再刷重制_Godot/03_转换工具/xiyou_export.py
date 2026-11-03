@@ -478,6 +478,11 @@ def simple_script_effect(body, code, phase):
         # addState 只认一个参数：turns 原版不生效，回合照状态自身的 min/maxTurns
         if m and ('var turns' in sig) == (', turns' in sig):  # 只写 , turns 不声明是 ReferenceError
             return {'op': 'add_state', 'who': m.group(2), 'id': int(m.group(1)), 'criticalOnly': True}
+    # 【cc·悟空·未经审查】奈叶领域 1774（battle）、身经百战 1780（action_start／action_end）：单独一句预约公共事件（nanoha2_probe）
+    if phase in ('battle', 'action_start', 'action_end'):
+        m = re.fullmatch(r'\$gameTemp \. reserveCommonEvent \( (%s) \)(?: ;)?' % INT, sig)
+        if m:
+            return {'op': 'reserve_common_event', 'id': int(m.group(1))}
     if phase == 'battle':
         m = re.fullmatch(r'\$gameVariables \. setValue \( (%s) , (0|%s) \)(?: ;)?' % (INT, INT), sig)
         if m:

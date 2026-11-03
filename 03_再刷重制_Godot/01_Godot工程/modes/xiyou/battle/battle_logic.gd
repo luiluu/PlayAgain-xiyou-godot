@@ -193,6 +193,12 @@ func _new_lifecycle_resources() -> XResourceContext:
 	resources.lifecycle_inputs = {"variables": vars(), "switches": state.switches if state != null else {}, "party_members": actors}
 	return resources
 
+## 状态效果里的 $gameTemp.reserveCommonEvent（奈叶身经百战 1780 行动开始预约 2481）：交给战斗公共事件单槽
+func _take_state_reserves() -> void:
+	for id in XStateEffects.take_reserves():
+		XBattleCommonEvent.reserve(self, id)
+
+
 func _start_battle_effects() -> void:
 	_battle_resources = _new_lifecycle_resources()
 	for b in state.members() + enemies:
@@ -211,6 +217,7 @@ func _start_battle_effects() -> void:
 		for b in effect_members:
 			_refresh_battler(b)
 			XStateEffects.run("battle", b, _battle_resources.state_context(b))
+	_take_state_reserves()
 	_battle_start_states()
 	var snapshots := {}
 	for b in state.members() + enemies:
@@ -810,6 +817,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XBlackFlash.begin(u, skill, [])  # 黑闪 startAction 包装：防御也建帧（不 eligible，结束时连闪归 0）
 		XSukuna.begin(self, u, skill, [])  # 宿傩 startAction 包装：清上一帧
 		XStateEffects.run("action_start", u)  # 防御也走 startAction
+		_take_state_reserves()
 		# 防御技能在原版也对自己 Game_Action.apply 一次：initiate／select／deselect／conclude 四段都跑（无伤害段）
 		u.param_refresh()  # native useItem refresh precedes guard apply
 		var gctx := {"attacker": u, "defender": u, "item": skill}
@@ -1496,6 +1504,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		return logs  # 被引爆的符针打倒：原版 _subject 清空，整次行动不执行
 	skill = change_to(u, skill)  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
+	_take_state_reserves()
 	skill = weapon_unleash(u, skill)  # YEP_WeaponUnleash：行动开始状态效果之后、付费之前
 	skill = XAlienBattle.project(u, skill)  # 异化行动道具投影（A.project 换掉 Game_Action.item）：祸祝等，之后各处都读投影
 	# 导入角色平衡：禁用角色／禁用号角的 useItem 直接返回（不扣物品、不付费、不进冷却、不前移），行动（含行动序列）对目标无效
