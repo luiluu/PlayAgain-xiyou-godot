@@ -1,15 +1,15 @@
-# 交付：cc/bajie-growth2c
+# 交付：cc/bajie-growth2e
 
 - 车道／工作者：C 规则·机制／八戒（cc，Opus）
-- 状态：未完成（到交接线，WIP；魔冠已对上参照，P3-1／P3-2 已改未验证，见「接续」）
+- 状态：可合并（选测见「验证」；尾项见「接续」）
 
-（成长装备期二b 分期：本单＝魔冠；心钢／狂妄尾项与审查 29 的 P3-1、P3-2 在「接续」。）
+（成长装备期二b 收尾：growth2c（魔冠，到交接线）＋ growth2e（审查 29 P3-1／P3-2 补参照、选测）并成这一份；growth2c 分支 95040687 以前的提交都在本分支。心钢／狂妄等尾项在「接续」。）
 
 ## 变更记录草稿
 
-## 2026-11-03 【cc·八戒·未经审查】成长装备期二b：魔冠「"头顶"」（dev.待定）
+## 2026-11-03 【cc·八戒·未经审查】成长装备期二b：魔冠「"头顶"」、审查 29 P3-1／P3-2（dev.待定）
 
-派单：总装十五 growth2c（成长装备期二b），先交魔冠这块能独立验证的部分，尾项写接续。
+派单：总装十五 growth2c／growth2e（成长装备期二b），魔冠＋审查第 29 期两条 P3，尾项写接续。
 
 ### 一、来源核对
 
@@ -28,16 +28,23 @@
 - 接线：`battle_logic.start_battle` 最前（甚尔之前）`XDemonCrown.begin`；`end_battle` 末尾（狂妄 clear_reward 之后）`XDemonCrown.finish`；`battler.add_state` 新加死亡状态后 `on_death`；`XEquipment.change` 末尾 `equip_changed`；`xstate.gain_gear` 得到 7940 改走 `grant`，`lose_gear(record)` 带 uid 记 removed；`xsave.save` 写前 `before_save`，`load_slot` 云裳之后 `after_load`。
 - 账本不可用（坏了、版本不对、本档编号找不到）：提示「"头顶"成长记录暂不可用…」一次，魔冠倍率退回 1，本局之后不再写。
 
+### 四、审查第 29 期 P3-1／P3-2
+
+- P3-1：`battle_logic.gd` `act()` 与 `_forced_run` 的 endAction 前半段改成 屠苏 → 谷雨（end_action、take_visuals）→ 狂妄 → 心钢（原版装载 心钢 111、狂妄 112 在 谷雨 133、屠苏 137 里层）。
+- P3-2：`XGuyu.apply` 加可选参数 `inner`（里层回调），心钢 `blocks_apply` 挪进回调：谷雨先置行动执行标记，心钢拦下时返回空结果、跳过奈叶与心钢记账。
+- 原版参照：`heartsteel_probe` 加两例（41 例无错）。`order.tusu`：屠苏 60 级化武剑给穿狂妄的 1 号，1 号打过 e0、e0 留 1 血，斩锋后屠苏剑气纵横打死 e0，原版在这次 endAction 就出扬名（击杀按修复口径）。`order.guyu`：谷雨 35 级开花期，穿心之钢的 1 号被事件强制放没蓄满的巨人吞噬，心钢拦下、谷雨仍绽放（付储备、打种子）。
+- 专项 `xiyou_heartsteel` 回放这两例；反向验证（把 act 换回旧次序、把拦截挪回谷雨外）两项都报错。
+
 ## 待交叉核查
 
 - 新文件：`core/demon_crown.gd`、`tests/xiyou_demon_crown.gd`（＋tscn、fixture）、`mv_oracle/demon_crown_probe.cjs`。
 - 原沙僧核心文件：`battle_logic.gd`（魔冠两行；P3-1 两处 endAction 次序；P3-2 apply 里心钢拦截进谷雨回调）、`guyu.gd` `apply` 加 `inner` 参数；魔冠两行（start_battle 最前 begin、end_battle 末尾 finish）、`battler.gd` `add_state`（记 was_dead，新死调 on_death）、`xstate.gd`（gain_gear 7940 分支、lose_gear 魔冠分支）。
-- 另改：`core/equipment.gd`（change 末尾一行）、`core/xsave.gd`（save、load_slot 各一行）。
+- 另改：`core/equipment.gd`（change 末尾一行）、`core/xsave.gd`（save、load_slot 各一行）、`mv_oracle/heartsteel_probe.cjs`（order.tusu、order.guyu）、`tests/xiyou_heartsteel.gd`（`_battle` 可换队伍、两例回放）、`tests/fixtures/heartsteel_oracle.json`。
 - 请重点核：begin 放在 start_battle 最前是否与其它开战包装的规则流抽数次序冲突（只在掉落战斗首次开战抽一次）；`_codexCrownKnown` 顶替 $dataArmors 的做法。
 
 ## 交接板
 
-- 下一步：成长装备期二b 魔冠已交；尾项与审查 29 的 P3-1、P3-2 见本单「接续」。
+- 下一步：成长装备期二b 魔冠与审查 29 两条 P3 已交（审查 29 P3-1、P3-2 可销账，待审查）；期二b 尾项见本单「接续」。
 - 用户试玩说明：魔冠「"头顶"」在 Map162 的不朽未知战斗胜利有 3% 掉落；穿着打赢一场八项全属性多约 1%（越高涨得越慢，上限 1000%），穿着的人倒下就丢一半。成长记在存档目录旁的独立文件，读旧档不会回滚。
 - 需要用户决定：无。
 
