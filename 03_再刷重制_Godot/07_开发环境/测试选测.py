@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 # 合并工具 --cloud 收尾不需重传产物时给 检查.sh 设 CHECK_CLOUD_NO_UPLOAD=1，会漏进这里的子进程与 cloud_env，用例按默认环境跑
@@ -548,6 +549,99 @@ class MergeBaseTests(Fixture):
         self.assertIn('先 git merge main 再选测', out.getvalue())
         self.g('merge', '-q', 'main', '-m', 'merge main')
         self.assertEqual(sel.select(self.root, 'main')['notice'], '')
+
+
+class HookLineTests(Fixture):
+    """tools54：核心文件里只加「调用专属模块」的钩子行时，只选冒烟场景＋引用这些模块的测试；改了别的逻辑、开关关掉、认不出就退回按文件整组。"""
+
+    def setUp(self):
+        super().setUp()
+        self.put(CORE / 'hooked.gd', 'class_name XHooked\n')
+        self.scene('xiyou_hooked', 'XHooked.go()')
+        self.scene('xiyou_big', 'XBattler.new()')
+        self.scene('xiyou_determinism', 'XBattler.new()')
+        self.put(CORE / 'battler.gd', 'class_name XBattler\nfunc f(d):\n\tvar a = 1\n\treturn a\n')
+        self.commit('hook fixture')
+        self.base = self.g('rev-parse', 'HEAD')
+
+    def edit(self, extra):
+        self.put(CORE / 'battler.gd', 'class_name XBattler\nfunc f(d):\n\tvar a = 1\n' + extra + '\treturn a\n')
+        self.commit('lane')
+
+    def scenes(self, hooks='1'):
+        with mock.patch.dict(os.environ, {'XIYOU_HOOKS': hooks}):
+            return {x[:-5] for x in self.pick()['scenes']}
+
+    def test_hook_only_narrows_to_smoke_and_module_users(self):
+        self.edit('\tXHooked.go()  # 钩子\n')
+        new, old = self.scenes('1'), self.scenes('0')
+        self.assertIn('xiyou_big', old)
+        self.assertNotIn('xiyou_big', new)
+        self.assertTrue({'xiyou_hooked', 'xiyou_determinism', 'xiyou_battle', 'xiyou_event_compare'} <= new)
+        reasons = ' '.join(r[1] for r in self.pick()['reasons'])
+        self.assertIn('只加钩子调用：XHooked', reasons)
+
+    def test_glue_lines_allowed_next_to_a_hook_call(self):
+        self.edit('\tif XHooked.has(d):\n\t\treturn {}\n')
+        self.assertNotIn('xiyou_big', self.scenes('1'))
+
+    def test_real_logic_change_falls_back(self):
+        self.edit('\tXHooked.go()\n\tvar hp = 1 + 2\n')
+        self.assertIn('xiyou_big', self.scenes('1'))
+
+    def test_hook_free_hunk_falls_back(self):
+        self.edit('\tXHooked.go()\n')
+        self.put(CORE / 'battler.gd', 'class_name XBattler\nfunc f(d):\n\tvar a = 1\n\tXHooked.go()\n\treturn a\nfunc g():\n\tvar hp = 3\n')
+        self.commit('lane2')
+        self.assertIn('xiyou_big', self.scenes('1'))
+
+    def test_core_infrastructure_module_is_not_a_hook(self):
+        self.edit('\tXDB.table("Skills")\n')
+        self.assertIn('xiyou_big', self.scenes('1'))
+
+    def test_switch_off_restores_file_level_selection(self):
+        self.edit('\tXHooked.go()\n')
+        self.assertIn('xiyou_big', self.scenes('0'))
+        self.assertNotIn('xiyou_hooked', self.scenes('0'))
+
+
+class HookHistoryTests(unittest.TestCase):
+    """tools54 回归例：用主线真实合并算新旧两种选法（不抽样）。新 ⊆ 旧 ∪ 冒烟场景；该合并专属的专项（各车道交付单里跑的）必须在新选法里；
+    真改了核心逻辑的合并（296a571a honghuang2）新旧一样。提交不在（浅克隆）就跳过。"""
+    ROOT = HERE.parent.parent
+    CASES = [  # (合并, 必选的专项, 是否应变窄)
+        ('b5f3a0ce', ['xiyou_xuan_battle', 'xiyou_xuan_chart', 'xiyou_xuan_bind', 'xiyou_binding'], True),
+        ('c7b7f237', ['xiyou_heartsteel', 'xiyou_growth_forge', 'xiyou_growth_help'], True),
+        ('effc9fa4', ['xiyou_xuan_battle', 'xiyou_xuan_chart'], True),
+        ('296a571a', [], False),
+    ]
+
+    def both(self, merge):
+        try:
+            base = subprocess.run(['git', '-C', str(self.ROOT), 'rev-parse', '--verify', '-q', merge + '^1'],
+                                  capture_output=True, text=True, check=True).stdout.strip()
+        except subprocess.CalledProcessError:
+            self.skipTest('提交 %s 不在本克隆里' % merge)
+        out = {}
+        for flag in ('0', '1'):
+            with mock.patch.dict(os.environ, {'XIYOU_HOOKS': flag}):
+                out[flag] = sel.select(self.ROOT, base, head=merge, sample=False)
+        return out['0'], out['1']
+
+    def test_history_cases(self):
+        for merge, must, narrower in self.CASES:
+            old, new = self.both(merge)
+            with self.subTest(merge=merge):
+                tests = sel.Tests(self.ROOT, merge)
+                groups, _ = sel.load_table()
+                smoke = {x for pat in groups['battle_hooks']['scenes'] for x in tests.glob(pat)}
+                self.assertEqual(sorted(set(new['scenes']) - set(old['scenes']) - smoke), [])  # 新选法只会多出冒烟场景
+                missing = [m for m in must if m + '.tscn' not in new['scenes']]
+                self.assertEqual(missing, [])
+                if narrower:
+                    self.assertLess(len(new['scenes']), len(old['scenes']))
+                else:
+                    self.assertEqual(new['scenes'], old['scenes'])
 
 
 class SampleTests(Fixture):
