@@ -1,7 +1,7 @@
 # 交付：cc/bajie-growth4
 
 - 车道／工作者：C 规则·机制／八戒（cc，Opus）
-- 状态：进行中
+- 状态：可合并
 
 （总装十五 growth4：成长装备尾项二期＋审查 31 P3-1。P3-1 先在 growth3 的工作树上做了，已挪到本分支；cc/bajie-growth3 退回 f728eaaa（交付时的样子），没动 main。Kyo 额度 88%，按总装通知做到 P3-1 停。）
 
@@ -27,7 +27,7 @@
 
 ## 交接板
 
-- 下一步：审查 31 P3-1 已修（待审查，可销账）；成长装备尾项二见下面「接续」。
+- 下一步：审查 31 P3-1 已修（待审查，可销账）；成长装备尾项二另走 cc/bajie-growth5（下一期交付）。
 - 用户试玩说明：穿着"头顶"的谷雨带死亡免疫时，代命归根也会让魔冠成长减半（同原版）。
 - 需要用户决定：无。
 
@@ -43,16 +43,9 @@
 
 - `node demon_crown_probe.cjs`：20 例无错（新加 guyu.root）。
 - 专项 `xiyou_demon_crown` 106／106；反向验证：guyu.gd 改回 `state_ids.append(1)` 后 guyu.root 两项报错（成长停在 1.999、不减半），改回后通过。`xiyou_guyu_battle` 1637／1637。
-- 选测还没跑完：开了一轮 80 个场景（`选测.py main --list` 的 75 个，加 xiyou_determinism、xiyou_guyu*、xiyou_sukuna*、xiyou_black_flash*、xiyou_race_battle、xiyou_raven*、xiyou_enemy_book*），按总装收尾通知停在中途（日志 `03_再刷重制_Godot/04_验证/本地结果/任务/growth3-p3.log`）。下一个会话要重跑这一轮；battler.gd 是核心文件，名单里 xiyou_determinism 一定要有。
+- 选测：`选测.py main --list` 的 75 个（xiyou_rules、xiyou_smart_ai 按工具抽样）加 xiyou_determinism、xiyou_guyu*、xiyou_sukuna*、xiyou_black_flash*、xiyou_race_battle、xiyou_raven*、xiyou_enemy_book*，共 80 个场景全部通过，无偶发（合 main 44a5a47a 后，提交 14395539，日志 `03_再刷重制_Godot/04_验证/本地结果/并行测试/20261103_174344_we4yewbu`）。
+- 没跑全量（车道不跑）；`语法检查.py` 通过。demon_crown_probe 不进同步，没有产物要刷新。
 
 ## 本分支提交
 
-- 86e6623a P3-1 改码、参照例与专项；f03f0f82 合 main（main 上已有 growth3 的合并 60a1066e）
-
-## 接续
-
-0. 先做：`git merge main`（growth3 合完收尾后）、`新建工作树.sh --补齐`，重跑上面「验证」那一轮选测，过了再往下做。
-1. 智能 AI 选巨人吞噬：`Codex_SmartBattleAI.js` 引用 7900，先查 `plugins.js` 确认这个插件启用了。
-2. 甚尔抑制行动（`_tojiSuppressed`）不减心钢蓄力。
-3. 解锁与锻造锤的提示（$.toaster），心钢、狂妄、锻造锤三处。
-4. 战力：渡鸦／米拉／甚尔的专属装备加成。
+- 86e6623a P3-1 改码、参照例与专项；f03f0f82、14395539 合 main（main 上已有 growth3 的合并 60a1066e）
