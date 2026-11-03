@@ -67,6 +67,14 @@ var bulk_win: XMVWindow
 var _bulk: Dictionary = {}          # 批量服用数量窗：{item, available, number, targets, for_friend}；空＝没开
 var _bulk_busy := false             # 正在逐颗服用（挡住输入）
 const BULK_RECT := Rect2(412, 198, 456, 324)   # Window_BulkPillNumber：宽 456、fittingHeight(8)，居中
+const BULK_BACKDROP := Color("#111827")        # _refreshBack：皮肤透明处垫的底色，窗体不透明度 255
+const BULK_BTN_Y := 192.0                      # buttonY＝行高×5＋12（窗体坐标）
+const BULK_BTN_SPACING := 16.0
+## ButtonSet.png 五个键：减十、减一、加一、加十（各 48 宽）、确定（96 宽），高 48；按键上依次是 -10、-1、+1、+10、确定
+const BULK_BTN_X := [0, 48, 96, 144, 192]
+const BULK_BTN_W := [48, 48, 48, 48, 96]
+var bulk_buttons: Control
+var _touched := false               # TouchInput.date > Input.date：最近一次输入是鼠标／触摸才显示触摸键
 
 
 func _ready() -> void:
@@ -82,6 +90,12 @@ func _ready() -> void:
 	actor_win = XMVWindow.make(self, ACTOR_RECT, op, _paint_actors)
 	bulk_win = XMVWindow.make(self, BULK_RECT, 255, _paint_bulk)
 	bulk_win.visible = false
+	bulk_win.backdrop = BULK_BACKDROP
+	bulk_buttons = Control.new()
+	bulk_buttons.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bulk_buttons.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bulk_buttons.draw.connect(_draw_bulk_buttons)
+	bulk_win.add_child(bulk_buttons)
 	for w in [cat_win, list_win, actor_win, bulk_win]:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
@@ -284,6 +298,7 @@ func _refresh() -> void:
 	bulk_win.visible = not _bulk.is_empty() and not _bulk_busy
 	for w in [cat_win, status_win, list_win, info_win, actor_win, bulk_win]:
 		w.refresh()
+	bulk_buttons.queue_redraw()
 	if toolbar != null:
 		var gear := entries().filter(func(e): return XItemMarks.is_gear(e.rec)).size()
 		(toolbar.get_child(0) as Button).text = XGearSearch.toolbar_label(not gear_filter.is_empty(), gear)
@@ -487,6 +502,8 @@ static func _current_max(c: XMVCanvas, label: String, cur: float, mx: float, x: 
 
 # ---- 操作 ----
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed:
+		_touched = false
 	if search_panel != null or power_page != null:
 		return
 	if _bulk_busy or not _bulk.is_empty():
@@ -828,7 +845,7 @@ func _bulk_input(event: InputEvent) -> void:
 		_refresh()
 
 
-## 鼠标：窗内左键确定，右键取消，滚轮 ±1
+## 鼠标：Window_ShopNumber 只认触摸键（减十、减一、加一、加十、确定）和右键取消；窗内其它位置的左键与滚轮不起作用
 func _bulk_click(event: InputEventMouseButton) -> void:
 	if _bulk_busy:
 		return
@@ -836,13 +853,49 @@ func _bulk_click(event: InputEventMouseButton) -> void:
 		MOUSE_BUTTON_RIGHT:
 			_bulk_cancel()
 		MOUSE_BUTTON_LEFT:
-			if BULK_RECT.has_point(event.position):
-				_bulk_ok()
-		MOUSE_BUTTON_WHEEL_UP:
-			_bulk_change(1)
-		MOUSE_BUTTON_WHEEL_DOWN:
-			_bulk_change(-1)
+			var hit := _bulk_button_at(event.position - BULK_RECT.position)
+			match hit:
+				0: _bulk_change(-10)
+				1: _bulk_change(-1)
+				2: _bulk_change(1)
+				3: _bulk_change(10)
+				4: _bulk_ok()
 	_refresh()
+
+
+## 触摸键的窗体坐标矩形：Window_ShopNumber.placeButtons（间距 16，整排在窗内居中，y＝buttonY）；没显示（最近一次输入不是触摸）时没有
+func _bulk_button_rects() -> Array:
+	var total := -BULK_BTN_SPACING
+	for w in BULK_BTN_W:
+		total += w + BULK_BTN_SPACING
+	var x := (BULK_RECT.size.x - total) / 2.0
+	var out := []
+	for i in 5:
+		out.append(Rect2(x, BULK_BTN_Y, BULK_BTN_W[i], 48))
+		x += BULK_BTN_W[i] + BULK_BTN_SPACING
+	return out
+
+
+func _bulk_button_at(p: Vector2) -> int:
+	if not _touched:
+		return -1
+	var rs := _bulk_button_rects()
+	for i in rs.size():
+		if rs[i].has_point(p):
+			return i
+	return -1
+
+
+func _draw_bulk_buttons() -> void:
+	if _bulk.is_empty() or not _touched:
+		return
+	var path := XDB.img_path("system", "ButtonSet")
+	var tex: Texture2D = load(path) if path != "" else null
+	if tex == null:
+		return
+	var rs := _bulk_button_rects()
+	for i in rs.size():
+		bulk_buttons.draw_texture_rect_region(tex, rs[i], Rect2(BULK_BTN_X[i], 0, BULK_BTN_W[i], 48))
 
 
 ## onCodexBulkNumberCancel：关窗，回到选人（对队友）或列表
@@ -1006,6 +1059,7 @@ func _paint_notice() -> void:
 func _gui_input(event: InputEvent) -> void:
 	if search_panel != null or power_page != null or not (event is InputEventMouseButton and event.pressed):
 		return
+	_touched = true
 	if _bulk_busy or not _bulk.is_empty():
 		_bulk_click(event)
 		return

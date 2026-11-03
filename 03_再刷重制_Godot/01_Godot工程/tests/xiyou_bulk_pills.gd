@@ -7,6 +7,7 @@ extends Node
 ## ④ 没审过的事件：先进先出排在单槽后，槽被取走时补上；批量停在「后续事件交由地图执行」；已有预约时停在「等待已有事件」；
 ## ⑤ 物品页入口：选人确定开数量窗、上下 ±10 左右 ±1 夹在库存内、确定逐颗服用后留在选人；取消回选人；有预约事件时回地图。
 const FIXTURE := "res://tests/fixtures/bulk_pills_oracle.json"
+const BULK_POS := Vector2(412, 198)
 const VARS := [968, 969, 970, 971]
 const SWS := [2466, 2467, 2468, 2469]
 const REWARDS := [1497, 1498, 1499, 1500]
@@ -223,6 +224,32 @@ func _scene() -> void:
 	page._actor = 0
 	page._ok()
 	check("scene.open", not page._bulk.is_empty() and int(page._bulk.available) == 25 and int(page._bulk.number) == 1 and page.bulk_win.visible, page._bulk.keys())
+	# 窗体读数（Window_BulkPillNumber：宽 456、fittingHeight(8)＝324、居中；opacity／backOpacity 255，皮肤透明处垫 #111827）
+	check("win.rect", page.bulk_win.position == Vector2(412, 198) and page.bulk_win.size == Vector2(456, 324), [page.bulk_win.position, page.bulk_win.size])
+	check("win.opacity_backdrop", page.bulk_win.opacity == 255 and page.bulk_win.backdrop == Color("#111827"), [page.bulk_win.opacity, page.bulk_win.backdrop])
+	# 触摸键：五个（-10、-1、+1、+10、确定 96 宽），间距 16 整排居中，y＝buttonY 192；最近一次输入是键盘（Enter 选的人）时不显示
+	var rs: Array = page._bulk_button_rects()
+	check("win.buttons_layout", rs.size() == 5 and rs[0] == Rect2(52, 192, 48, 48) and rs[3] == Rect2(244, 192, 48, 48) and rs[4] == Rect2(308, 192, 96, 48), rs)
+	check("win.buttons_hidden_by_key", not page._touched and page._bulk_button_at(Vector2(60, 200)) == -1, page._touched)
+	# 鼠标：窗内其它位置的左键、滚轮都不起作用（原版 isOkTriggered 只认键盘；Window_Selectable 滚轮只滚动）；右键取消
+	page._touched = true
+	var click := InputEventMouseButton.new()
+	click.pressed = true
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.position = Vector2(412 + 200, 198 + 100)
+	page._bulk_click(click)
+	check("win.body_click_ignored", not page._bulk.is_empty() and int(page._bulk.number) == 1, page._bulk.number)
+	var wheel := InputEventMouseButton.new()
+	wheel.pressed = true
+	wheel.button_index = MOUSE_BUTTON_WHEEL_UP
+	wheel.position = Vector2(412 + 200, 198 + 100)
+	page._bulk_click(wheel)
+	check("win.wheel_ignored", int(page._bulk.number) == 1, page._bulk.number)
+	for pair in [[3, 11], [2, 12], [1, 11], [0, 1]]:
+		click.position = BULK_POS + rs[pair[0]].position + Vector2(5, 5)
+		page._bulk_click(click)
+		check("win.button_%d" % pair[0], int(page._bulk.number) == pair[1], page._bulk.number)
+	page._touched = false
 	page._bulk_change(10)
 	page._bulk_change(10)
 	page._bulk_change(10)

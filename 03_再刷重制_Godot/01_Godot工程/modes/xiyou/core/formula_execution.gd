@@ -28,7 +28,9 @@ static func run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swit
 	if guyu != null:
 		return {"available": true, "value": float(guyu), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	XAlienBattle.push_formula(item, a, b, true)
+	XHubris.push_formula(item, a, b)  # 狂妄 evalDamageFormula 包装：物理（类型 1／5）公式里目标物防打折
 	var out := _run_item(item, a, b, variables, switches, execute, random, resource_context)
+	XHubris.pop_formula()
 	XAlienBattle.pop_formula()
 	return out
 
@@ -36,6 +38,8 @@ static func run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swit
 static func _run_item(item: Dictionary, a: XBattler, b: XBattler, variables, switches := {}, execute := false, random: XRandomStream = null, resource_context: XResourceContext = null) -> Dictionary:
 	var program: Dictionary = item.get("damage", {}).get("formulaProgram", {})
 	var status := str(program.get("status", "unsupported"))
+	if str(item.get("damage", {}).get("formula", "")).begins_with("CodexHeartsteel.damage("):  # 巨人吞噬 10227／10228（XHeartsteel.formula）
+		return {"available": true, "value": XHeartsteel.formula(a, b), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "cat":  # 整条公式是 CodexCat.formula(user,item,b)（转换器 MODULE_FORMULAS）
 		return {"available": true, "value": XCat.formula(a, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "garou":  # CodexGarou.base(a,b,id)（173 饿狼，XGarou.formula）
