@@ -1386,6 +1386,16 @@ func open_tusu_forge() -> void:
 	hud.visible = true
 
 
+## 公共事件 9015「璇的星谱」：CodexXuan.openStarchart() → B.openMenu → Scene_CodexBindMenu（XXuanChartPage），关闭后回到地图
+func open_xuan_chart() -> void:
+	hud.visible = false
+	var page := XXuanChartPage.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 ## 公共事件 169「宠物」：SceneManager.push(Scene_PetSystem)，关闭后回到地图
 func open_pets() -> void:
 	hud.visible = false

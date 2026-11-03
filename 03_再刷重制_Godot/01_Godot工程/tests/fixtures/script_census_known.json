@@ -138,7 +138,6 @@
   "var|{\"code\":122.0,\"indent\":0.0,\"parameters\":[1347.0,1347.0,0.0,3.0,4.0,0.0,8.0]}": "E",
   "var|{\"code\":122.0,\"indent\":0.0,\"parameters\":[1348.0,1348.0,0.0,3.0,4.0,0.0,9.0]}": "E",
   "script|for (var i = 0; i < $gameTroop.members().length; i++) {\n    $.toaster({ message: (i+1)+'号敌人暴闪为' + $gameTroop.members()[i].cev.toFixed(2)*100 + '%!' });\n}": "E",
-  "script|CodexXuan.openStarchart();": "E",
   "script|for (var j = 1; j < $dataActors.length; j++) {\nvar actor = $gameActors.actor(j);\nif(actor.hasSkill(6133)){\nactor.forgetSkill(6133);\nactor.learnSkill(6236);\n}\n}": "F",
   "script|for (var j = 1; j < $dataActors.length; j++) {\nvar actor = $gameActors.actor(j);\nif(actor.hasSkill(6138)){\nactor.forgetSkill(6138);\nactor.learnSkill(6237);\n}\n}": "F",
   "script|for (var j = 1; j < $dataActors.length; j++) {\nvar actor = $gameActors.actor(j);\nif(actor.hasSkill(6238)){\nactor.forgetSkill(6238);\nactor.learnSkill(6239);\n}\n}": "F"
