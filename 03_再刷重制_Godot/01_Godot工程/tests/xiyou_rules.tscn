@@ -4,3 +4,4 @@
 
 [node name="XiyouRules" type="Node"]
 script = ExtResource("1")
+parts = 8
