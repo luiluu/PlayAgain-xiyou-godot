@@ -162,6 +162,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	var leaving := XAlienBattle.possession_partners(self)
 	if not leaving.is_empty():
 		actors = everyone.filter(func(a): return not leaving.has(a))
+	XDemonCrown.begin(state, int(troop_id), func(): return _rule().next_float("demon_crown.roll"))  # 魔冠 startBattle 包装（main.js 第 151 行，最外层、原 startBattle 之前）：收编、记穿着的人、掉落战斗开战掷点
 	XToji.start_battle(self)  # 甚尔 startBattle 包装（原 startBattle 之前）：设第一形态（随后开战清 removeAtBattleEnd 状态）
 	XSukuna.start_battle(self)  # 宿傩 startBattle 包装（之前）：清战斗数据、同步技能
 	XBlackFlash.start_battle(self)  # 黑闪 startBattle 包装（宿傩之内）：round 归 0、清数据
@@ -845,11 +846,12 @@ func act(u: XBattler, skill, target) -> Array:
 		XNanoha.end_execute(self)
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
-	XHeartsteel.end_action(u, false)  # 心钢 endAction 包装：不是巨人吞噬的行动减 1 蓄力
-	XHubris.end_action(self, u, false)  # 狂妄 endAction 包装：结算倒下的敌人、有效行动计数
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（原 endAction 之前，在谷雨之外）：贯日消费锁定、敕令消费和鸣，持武者行动后剑气／镇魂（内部施放）
 	XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：本次行动里的归根反馈（画面）
+	# 狂妄 112、心钢 111 装得比谷雨 133、屠苏 137 早，在里层：前半段排在它们之后，狂妄（外）先于心钢（审查第 29 期 P3-1）
+	XHubris.end_action(self, u, false)  # 狂妄 endAction 包装：结算倒下的敌人、有效行动计数
+	XHeartsteel.end_action(u, false)  # 心钢 endAction 包装：不是巨人吞噬的行动减 1 蓄力
 	if started and not skipped:
 		logs.append_array(XGarou.finish(self, u, skill))  # 饿狼 endAction 包装（原 endAction 之前）：进化、解析、追击、流水回 TP；敌人命中饿狼的进化、解析、反击
 		logs.append_array(XSukuna.finish(self, u, skill))  # 宿傩 endAction 包装（原 endAction 之前）：神灶：开、追斩、看破、适应
@@ -1242,11 +1244,11 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	XNanoha.begin(self)
 	logs.append_array(execute(u, skill, target, true))
 	XNanoha.end_execute(self)
-	XHeartsteel.end_action(u, true)  # 心钢／狂妄 endAction 包装：强制行动不减蓄力、不计行动
-	XHubris.end_action(self, u, true)
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（同 act 的次序）：强制行动也消费锁定、和鸣，持武者放剑气／镇魂（审查第 26 期 P3-1）
 	XGuyu.end_action()  # 谷雨 endAction 包装（同 act 的次序，在屠苏之后）：结束行动事件，代命成立就归根
 	logs.append_array(XGuyu.take_visuals())
+	XHubris.end_action(self, u, true)  # 狂妄／心钢 endAction 包装（同 act 的次序，在谷雨之内）：强制行动不计行动、不减蓄力
+	XHeartsteel.end_action(u, true)
 	logs.append_array(XGarou.finish(self, u, skill))
 	logs.append_array(XSukuna.finish(self, u, skill, true))
 	logs.append_array(XYomiJingliu.j_finish(self, u, skill))
@@ -1849,11 +1851,17 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var tusu_cmd := XTusu.apply_command(self, u, skill, t)  # 屠苏 Game_Action.apply 包装：归形、易武、化武
 	if not tusu_cmd.is_empty():
 		return tusu_cmd
-	if XHeartsteel.blocks_apply(u, skill):  # 心钢 Game_Action.apply 包装：巨人吞噬没放成或已结算过，整次不生效
-		return XBinding.unused_result(u, skill, t)
 	var hp_before := t.hp
 	var live := t is XEnemy and t.is_alive()
-	var r: Dictionary = XGuyu.apply(self, u, skill, t)  # 谷雨 Game_Action.apply 包装：治疗来源、花期／终结生效（没生效整次不结算）、行动执行标记
+	var blocked := [false]
+	var r: Dictionary = XGuyu.apply(self, u, skill, t, func() -> Dictionary:
+		# 心钢 Game_Action.apply 包装（在谷雨之内，谷雨已置行动执行标记）：巨人吞噬没放成或已结算过，整次不生效（审查第 29 期 P3-2）
+		if XHeartsteel.blocks_apply(u, skill):
+			blocked[0] = true
+			return XBinding.unused_result(u, skill, t)
+		return _apply_core(u, skill, t))  # 谷雨 Game_Action.apply 包装：治疗来源、花期／终结生效（没生效整次不结算）、行动执行标记
+	if blocked[0]:
+		return r  # 心钢拦下：里层的奈叶、心钢记账都不跑
 	XNanoha.applied(self, u, t, live, r)  # 奈叶 Game_Action.apply 包装（谷雨、屠苏、绑定在外层）：队友打中活着的敌人记目标
 	XHeartsteel.after_apply(self, u, skill, t, hp_before, r)  # 心钢：命中按权重记本场层数（原版装在奈叶之后，包在奈叶外层）
 	return r
@@ -2613,3 +2621,4 @@ func end_battle(result := -1) -> void:
 	XHeartsteel.clear_reward(self, result)
 	XGrowthForge.award_core(self, result)
 	XHubris.clear_reward(self, result)
+	XDemonCrown.finish(state, result)  # 魔冠 endBattle 包装（最外层，原 endBattle 之后）：胜利成长、掉落，遭遇序号＋1

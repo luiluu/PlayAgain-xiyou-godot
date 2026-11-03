@@ -278,4 +278,84 @@ cases.push(makeCase('hubris.pierce', {}, () => {
   }
   return out;
 }));
+// 审查第 29 期：endAction 前半段次序（P3-1）与心钢拦截在谷雨 apply 之内（P3-2）。
+// order.tusu：队伍 [1, 8, 176, 10]，屠苏 60 级化武剑给穿狂妄的 1 号；1 号先打 e0（贡献），e0 留 1 血，补 3 兵势后斩锋打 e1，
+// 剑气纵横（屠苏 endAction 前半段，内部施放）打死 e0。原版狂妄前半段在屠苏之后，本次 endAction 就结算出扬名（击杀按修复口径记）。
+// order.guyu：队伍 [175, 1]，谷雨 35 级开花期打 e0，穿心之钢的 1 号被事件强制放没蓄满的巨人吞噬：心钢在谷雨 apply 里层拦下，
+// 谷雨已置行动执行标记，花期绽放照样触发（付储备、打种子）。
+const T = w.CodexTusu, G = w.Guyu, Bd = w.CodexBinding;
+const RELICS = [4047, 4048, 7912], pristine = RELICS.map(id => JSON.parse(JSON.stringify(w.$dataArmors[id])));
+function battle2(party, levels, base, fields, prep) {
+  newGame();
+  RELICS.forEach((id, i) => { w.$dataArmors[id] = JSON.parse(JSON.stringify(pristine[i])); });
+  w.CodexThreeGrowth.sync();
+  w.eval('$gameSystem.setDifficultyId(2); $gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
+  w.$gameSwitches.setValue(2494, true);
+  if (prep) prep();
+  w.eval('$gameParty._actors=[' + party + ']; $gameParty._battleMembers=[' + party + ',0];');
+  for (const [id, lv] of Object.entries(levels)) w.$gameActors.actor(+id).changeLevel(lv, false);
+  const a = w.$gameActors.actor(1), it = gear(base, fields);
+  equip(a, it);
+  if (party.includes(175)) G.syncSkills(w.$gameActors.actor(175));
+  for (const id of party) w.$gameActors.actor(id).recoverAll();
+  w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
+  w.Math.random = () => 0.99;
+  const bm = w.BattleManager; bm.setup(TROOP, false, false);
+  w.Math.random = () => 0.5;
+  bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
+  for (const t of w.$gameTroop.members()) t._paramPlus[0] = BIG_HP;
+  for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) { b.need_refresh = true; b.refresh(); b.recoverAll(); }
+  bm.startBattle();
+  for (let tick = 0; tick < 5000 && bm._phase !== 'input'; tick++) {
+    if (w.$gameMessage.isBusy()) { w.$gameMessage.clear(); continue; }
+    bm.update();
+  }
+  for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) b.recoverAll();
+  return {bm, a, it};
+}
+function forced(bm, user, skillId, targetIndex) {
+  hits.length = 0;
+  user.forceAction(skillId, targetIndex); bm.forceAction(user); bm._subject = null;
+  for (let i = 0; i < 20000 && (bm._actionForcedBattler || bm._subject || ['action', 'actionList', 'actionTargetList', 'phaseChange'].includes(bm._phase)); i++) {
+    if (bm._actionForcedBattler && !bm._subject) { bm.processForcedAction(); continue; }
+    const ph = bm._phase;
+    if (ph === 'phaseChange') bm.updatePhase(); else if (ph === 'actionList') bm.updateActionList();
+    else if (ph === 'actionTargetList') bm.updateActionTargetList(); else break;
+  }
+  bm._phase = 'turn';
+  return hits.slice();
+}
+cases.push(makeCase('order.tusu', {base: 7902}, () => {
+  const exec = w.Game_Action.prototype.executeHpDamage;
+  w.Game_Action.prototype.executeHpDamage = function (t, v) { const before = t.hp, out = exec.apply(this, arguments); if (v > 0 && t.isEnemy() && before > 0 && t.hp <= 0) t._codexHubrisKilledByParty = !!(this.subject() && this.subject().isActor()); return out; };
+  try {
+    const ctx = battle2([1, 8, 176, 10], {176: 60}, 7902, {_codexHubrisFame: 0}, () => T.recruit()), {bm, a, it} = ctx, rows = [];
+    const enemies = w.$gameTroop.members(), tusu = w.$gameActors.actor(176), K = k => T.ids().skill[k];
+    rows.push(['start', hubrisSnap(ctx), {inst: inst(it)}]);
+    act(bm, tusu, K('huawu.sword'), w.$gameParty.members().indexOf(a));
+    rows.push(['huawu', hubrisSnap(ctx), Bd.host(tusu) ? 'a' + Bd.host(tusu).actorId() : null]);
+    rows.push(['attack', act(bm, a, 1, 0), hubrisSnap(ctx)]);
+    enemies[0].setHp(1);
+    Bd.gain(tusu, 3);
+    rows.push(['zhanfeng', act(bm, a, K('arm.zhanfeng'), 1), hubrisSnap(ctx), enemies[0].isDead()]);
+    turn(bm);
+    rows.push(['turn', hubrisSnap(ctx)]);
+    return {rows};
+  } finally { w.Game_Action.prototype.executeHpDamage = exec; }
+}));
+function guyuSnap(ctx) {
+  const g = w.$gameActors.actor(175), t = G.totals || {};
+  return {heart: heartSnap(ctx), flowerUntil: G.flowerUntil, seed: G.seed ? G.seed.index() : null, reserve: [G.reserve(g), G.reserve(ctx.a)], blooms: t.blooms, spent: t.spent};
+}
+cases.push(makeCase('order.guyu', {base: 7900}, () => {
+  const ctx = battle2([175, 1], {175: 35, 1: 35}, 7900, {_codexHeartsteelStacks: 0}), {bm, a, it} = ctx, rows = [];
+  const g = w.$gameActors.actor(175);
+  rows.push(['start', guyuSnap(ctx), {inst: inst(it)}]);
+  act(bm, g, 10288, 0); act(bm, g, 10288, 0);
+  rows.push(['heal', guyuSnap(ctx)]);
+  rows.push(['open', act(bm, g, 10289, 0), guyuSnap(ctx)]);
+  rows.push(['forced', forced(bm, a, H.skillFor(it), 1), guyuSnap(ctx)]);
+  rows.push(['attack', act(bm, a, 1, 1), guyuSnap(ctx)]);
+  return {rows};
+}));
 process.exit(finish(host, 'heartsteel.json', {hostScope: '真实 CodexHeartsteel／CodexHubris（param、paramPlus、skills、meetsSkillConditions、clearReward、enemyWeight、damage、BattleManager 各包装）', cases}) ? 0 : 1);

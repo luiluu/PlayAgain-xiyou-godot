@@ -30,6 +30,7 @@ static func save(slot: int) -> bool:
 		return false
 	# Game_System.onBeforeSave：保存次数加 1（写盘失败也不退回，与正式版相同）
 	XState.current.save_count += 1
+	XDemonCrown.before_save(XState.current)  # 魔冠 makeSaveContents 包装：收编、重放
 	var data := XState.current.to_dict()
 	data["savedAt"] = Time.get_datetime_string_from_system()
 	# 先写同目录临时文件，成功后替换；失败不截断原有存档。
@@ -168,6 +169,7 @@ static func load_slot(slot: int) -> bool:
 		return false
 	XState.from_dict(d)
 	XYunshangOrders.after_load(XState.current, XYunshangOrders.identity(slot, text))  # 云裳 extractSaveContents 包装：订单账本重放
+	XDemonCrown.after_load(XState.current, XDemonCrown.identity(text))  # 魔冠 extractSaveContents 包装（在云裳外层）：收编、重放成长账本
 	XTusuXuan.after_load(XState.current)  # 屠苏／璇 extractSaveContents 包装：专属技能按习得表同步
 	XCat.restore_trial(XState.current, -1)  # 小猫 extractSaveContents 包装：存档里留着试炼就还原队伍
 	# dev.015 及以前忽略 ConfigManager 脚本，没有配置文件。已完成大厅 EV20 的 Godot 档补其 MapXy=true；

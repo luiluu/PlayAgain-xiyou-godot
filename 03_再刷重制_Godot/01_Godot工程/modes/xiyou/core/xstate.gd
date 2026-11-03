@@ -695,6 +695,9 @@ func _gain_raw(id: int, amount: int) -> void:
 
 func gain_gear(kind: String, base_id: int, amount: int) -> void:
 	if amount > 0:
+		if kind == "armor" and base_id == XDemonCrown.ARMOR and not XDemonCrown.mutating():
+			XDemonCrown.grant(self, amount)  # 魔冠 gainItem 包装：得到数据库那件改由成长账本发
+			return
 		for i in range(amount):
 			var inst := XGear.create(kind, base_id, self)
 			if not inst.is_empty():
@@ -715,6 +718,8 @@ func lose_gear(item: Dictionary, record := true) -> bool:
 	var i := gear.find_custom(func(e): return is_same(e, item))
 	if i < 0:
 		return false
+	if record and str(item.get(XDemonCrown.UID, "")) != "" and XDemonCrown.lost(self, item):
+		return true  # 魔冠 gainItem 包装：记 removed，重放已把这件拿掉
 	if record and str(item.get("_yunUid", "")) != "":
 		XYunshangOrders.lost(self, item)
 		i = gear.find_custom(func(e): return is_same(e, item))

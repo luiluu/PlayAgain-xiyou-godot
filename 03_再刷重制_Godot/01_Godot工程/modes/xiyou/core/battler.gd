@@ -332,9 +332,12 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	if XAlienBattle.route_state(self, id):
 		return  # 异化绝缘拒收、舍身转给队友（addState 包装）
 	var alien_rev := XAlienBattle.revision(self, id)
+	var was_dead := state_ids.has(1)
 	_adding_state = true
 	_add_state(id, random)
 	_adding_state = false
+	if id == 1 and not was_dead and state_ids.has(1):
+		XDemonCrown.on_death(XState.current, self)  # 魔冠 addNewState 包装：穿着的人新倒下，成长减半
 	XAlienBattle.after_add_state(self, id, alien_rev)  # 异化囚厄：其他角色得到的 jailStates 转给囚厄者
 	XGuyu.after_add_state(self, id)  # 谷雨 addState 包装（原 addState 之后）：谷雨自己倒下就归根
 
