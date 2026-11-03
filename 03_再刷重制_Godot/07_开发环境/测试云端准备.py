@@ -172,6 +172,32 @@ class CloudWaitTests(unittest.TestCase):
         self.git('push', '-q', '--delete', 'origin', 'refs/ci/results/%s/affected' % c2)
         self.assertEqual(mod.verified_base(str(self.remote), mod.cache_repo()), c1)
 
+    def load_tool(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('cloud', self.tool)
+        mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+        return mod
+
+    def test_generated_push_carries_network_tuning_and_can_roll_back(self):
+        """tools56：产物快照（约 1.1 GB）推送带 postBuffer／HTTP/1.1／慢速上限；XIYOU_CI_PUSH_TUNING=0 回到 git 默认。"""
+        mod = self.load_tool()
+        calls = []
+        mod.git = lambda *a, **k: calls.append(a)
+        os.environ.pop('XIYOU_CI_PUSH_TUNING', None)
+        mod.push_generated('url', 'bare', 'abc', 'refs/ci/generated/main')
+        args = list(calls[-1])
+        self.assertLess(args.index('-c'), args.index('push'))
+        for want in ('http.postBuffer=2147483648', 'http.version=HTTP/1.1', 'http.lowSpeedLimit=1000', 'http.lowSpeedTime=600'):
+            self.assertIn(want, args)
+        self.assertIn('abc:refs/ci/generated/main', args)
+        os.environ['XIYOU_CI_PUSH_TUNING'] = '0'
+        try:
+            mod.push_generated('url', 'bare', 'abc', 'refs/ci/generated/main')
+        finally:
+            os.environ.pop('XIYOU_CI_PUSH_TUNING')
+        self.assertEqual(calls[-1][0], 'push')
+        self.assertNotIn('-c', calls[-1])
+
     def test_run_pins_base_ref_and_pushes_branch(self):
         c1 = self.sha
         head = self.commit('b')

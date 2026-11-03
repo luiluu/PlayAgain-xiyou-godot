@@ -134,6 +134,21 @@ class ScanTests(Fixture):
         self.assertEqual(got['O-010 XMap.FIX']['status'], '覆盖')
         self.assertEqual(got['O-011 XMap.FONT']['status'], '缺口')  # 设成别的字面量不算回退
 
+    def test_tool_switches_json_field_and_env_var(self):
+        """tools56：工具类优化（O-153）的开关是对照表 JSON 字段或环境变量，不在 .gd 里；认声明，再看 测试*.py 有没有字面量回退。"""
+        tools = self.root / rb.TOOLS
+        tools.mkdir(parents=True)
+        (tools / 'pick.json').write_text('{"hookLines": {"enabled": true}}', encoding='utf-8')
+        (tools / 'pick.py').write_text("import os\nos.environ.get('XIYOU_HOOKS')\nos.environ.get('XIYOU_OTHER')\n", encoding='utf-8')
+        (tools / '测试pick.py').write_text("t['hookLines']['enabled'] = False\nmock.patch.dict(os.environ, {'XIYOU_HOOKS': flag})\n"
+                                         "mock.patch.dict(os.environ, {'XIYOU_OTHER': '0'})\n", encoding='utf-8')
+        self.register(row('O-040', '`hookLines.enabled = false`，或环境变量 `XIYOU_HOOKS=0`'), row('O-041', '`XIYOU_OTHER=0`'),
+                      row('O-042', '`hookLines.nope = false`'))
+        res = rb.scan(self.root)
+        got = {s['key']: s['status'] for s in res['switches']}
+        self.assertEqual(got, {'O-040 hookLines.enabled': '覆盖', 'O-040 XIYOU_HOOKS': '人工确认', 'O-041 XIYOU_OTHER': '覆盖'})
+        self.assertEqual([u['id'] for u in res['unparsed']], ['O-042'])
+
     def test_status_filter(self):
         self.put('core/m.gd', 'class_name XMap\nstatic var A := true\n')
         self.register(row('O-020', '`XMap.A = false`', '已撤销：改照原版'), row('O-021', '`XMap.A = false`', '暂缓（用户）'),
