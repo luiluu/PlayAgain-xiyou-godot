@@ -1,7 +1,7 @@
 # 交付：cc/bajie-growth1
 
 - 车道／工作者：C 规则·机制／八戒（cc，Opus medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -65,8 +65,18 @@
 
 ## 验证
 
-（待写）
+- 原版探针 `node heartsteel_probe.cjs`：39 例无错。
+- 专项 `xiyou_heartsteel`：391／391（含存档往返与旧档缺字段）。
+- `python3 07_开发环境/语法检查.py`：491 个 .gd 无问题。
+- 选测 `选测.py main --list` 列 235 个（改了 battle_logic／actor／enemy＝战斗核心全选，近全量）；按派单不跑全量，`并行测试.py --jobs 2` 跑了 50 个：xiyou_heartsteel、xiyou_determinism、xiyou_event_compare、xiyou_battle、xiyou_combat、xiyou_actor_modules、xiyou_tusu、xiyou_tusu_battle、xiyou_yunshang、xiyou_yunshang_wraps、xiyou_alien_battle、xiyou_alien_affix、xiyou_formula_effects、xiyou_formula_equipment、xiyou_formula_program、xiyou_formula_rest、xiyou_custom_damage、xiyou_boss_output_context、xiyou_equipment、xiyou_param_cache、xiyou_param_max、xiyou_param_states、xiyou_smart_ai（_f／_k／_p）、xiyou_module_hooks、xiyou_battle_gaps、xiyou_power、xiyou_raven_battle、xiyou_garou_battle、xiyou_toji_battle、xiyou_sukuna_battle、xiyou_guyu_battle、xiyou_mira_battle、xiyou_yomi_battle、xiyou_cat、xiyou_actor1_damage、xiyou_otb、xiyou_skill_mastery、xiyou_floor_abyss037、xiyou_rules（抽 d1f／d2c／d3f／d4h／d5／d6c）、xiyou_race_battle、xiyou_party_skills——全部通过（894 秒），无偶发。没跑的约 185 个（楼层流程、界面、其余 rules 段等）留给总装合并后选测／每日全量。
+- 回退开关：`XHubris.KILL_FIX = false` 由专项 `hubris.battle.*`（原版口径）覆盖；O 号由总装分配后登记，`回退开关覆盖.py` 才会计入。
+- 交付前合了 main（225e1633，只有交接板／登记／开发编号），没碰本车道文件，不重跑。
 
 ## 本分支提交
 
-（待写）
+- 3739b9d5 心钢／狂妄原版参照探针 heartsteel_probe
+- 37395338 运行时 XHeartsteel、XHubris 与各处接线
+- 31d9ea41 专项 xiyou_heartsteel
+- f8f75098 专项加存档往返；交付单草稿
+- d37a8b5c 合并 main
+- （本提交）交付单可合并
