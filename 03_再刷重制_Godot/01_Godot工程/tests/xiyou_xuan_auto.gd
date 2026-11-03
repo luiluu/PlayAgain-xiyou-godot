@@ -186,6 +186,18 @@ func _step(st: Array) -> Array:
 			var sk: Dictionary = r[0] if r[0] != null else {}
 			var k := XXuanBattle.key_of(sk)
 			ret = {"skill": k if k != "" else int(sk.get("id", 0)), "target": logic.state.battle_members().find(r[1]) if r[1] != null else -1}
+		"libi":
+			XShieldLedger.revoke(_who(st[1]), "xuan.libi")
+			XShieldLedger.grant(_who(st[1]), "xuan.libi", float(st[2]), 2, XUAN, {"noBonus": true})
+		"seqhit":
+			# 敌人不带伤害的技能期间序列扣血（参照包 Game_Action.apply 扣；这里照行动起止的包装次序手动走）
+			var e = _who(st[1])
+			var sk: Dictionary = XDB.rec("Skills", int(st[2]))
+			XBinding.start_action(e)
+			logs.append_array(XXuanBattle.start_action(logic, e, sk, e))
+			logic.gain_hp(_who(st[3]), -float(st[4]))
+			logs.append_array(XXuanBattle.end_action(logic, e, sk))
+			XBinding.end_action()
 		"end":
 			logic.end_battle(0)
 	return [ret, logs]
@@ -199,7 +211,7 @@ func _go() -> void:
 	GameApp.fast_headless_frames()
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("oracle", ref.cases.size() == 15 and ref.cases.all(func(c): return (c.errors as Array).is_empty()), ref.cases.size())
+	check("oracle", ref.cases.size() == 17 and ref.cases.all(func(c): return (c.errors as Array).is_empty()), ref.cases.size())
 	for c in ref.cases:
 		logic = _battle(c.setup)
 		var steps: Array = c.observed

@@ -2408,6 +2408,8 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 			dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
 	var dm := floorf(b.mmp * b.mrg)
 	var alien_hp := b.hp
+	if dh < 0.0 and XBinding.blocks_hp_loss(b):
+		dh = 0.0  # 璇附身期间 Game_Actor.gainHp 包装直接返回：持续伤害不扣、不吸护盾、不弹字（审查第 34 期 P2-1）
 	if dh != 0.0:
 		var shown := dh
 		if dh < 0.0:

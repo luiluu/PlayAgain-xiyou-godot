@@ -522,7 +522,7 @@ static func on_absorb(b, list: Array) -> void:
 	if list.any(func(r): return str(r.source).begins_with("xuan.")):
 		data.record.protect = true
 	var x = xuan()
-	if x == null or int(x.level) < 10 or not b is XActor or not XBinding.enemy_acting():
+	if x == null or int(x.level) < 10 or not b is XActor or not XBinding.enemy_acting() or not _direct:  # direct(BattleManager._action)：敌方、伤害类型 1／5、对敌（审查第 34 期 P3-1）
 		return
 	if not list.any(func(r): return r.source == "xuan.libi" and float(r.lastAbsorbed) > 0.0 and float(r.amount) <= 0.0):
 		return
@@ -608,6 +608,8 @@ static var _act := {}
 static var _main_tonggui := false
 ## 本次主行动最后 apply 的敌人（action._codexXuanLastTarget，弱引用：静态变量不存战斗对象）
 static var _last_target: WeakRef = null
+## 当前主行动是敌方直接伤害行动（installThreeGrowthRelicRuntime direct：敌人、伤害类型 1／5、isForOpponent），定轨只认它
+static var _direct := false
 
 
 static func _key_skill(key: String) -> Dictionary:
@@ -731,6 +733,7 @@ static func _follow_up(logic, a, skill: Dictionary, target) -> bool:
 static func start_action(logic, u, skill: Dictionary, chosen) -> Array:
 	_last_target = null
 	_main_tonggui = false
+	_direct = u is XEnemy and not skill.is_empty() and XSmartAI.for_opponent(skill) and int(skill.get("damage", {}).get("type", 0)) in [1, 5]
 	var a = xuan()
 	if a == null or not auto_enabled() or not XBinding.is_bound(a) or not u is XEnemy or skill.is_empty() or not XSmartAI.for_opponent(skill):
 		return []
@@ -749,6 +752,7 @@ static func start_action(logic, u, skill: Dictionary, chosen) -> Array:
 
 ## endAction 包装（原 endAction 之前，屠苏在外层）：救援回光、列星、宿主（含星影）主动攻击后棱光
 static func end_action(logic, u, skill) -> Array:
+	_direct = false
 	var a = xuan()
 	if a == null or not auto_enabled() or not XBinding.is_bound(a) or not _live(a):
 		return []

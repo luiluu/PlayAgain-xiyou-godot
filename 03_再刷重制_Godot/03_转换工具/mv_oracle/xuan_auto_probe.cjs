@@ -95,7 +95,7 @@ function snap() {
     party, enemies};
 }
 // 步骤：use 人 键 目标（璇的指令，目标给角色号或 e序号）｜act 人 技能号 目标（e序号或角色号）｜hit 敌序号 技能号 角色号｜turn｜hp 人 比例｜state 人 状态号｜
-// gain 人 n｜spend 人 n｜tacit 值｜auto 人（makeAutoBattleActions 选的行动）｜end
+// gain 人 n｜spend 人 n｜tacit 值｜auto 人（makeAutoBattleActions 选的行动）｜libi 人 量（重给一份璃壁）｜seqhit 敌序号 技能号 角色号 扣血｜end
 function step(bm, st) {
   const [op, x, y, z] = st;
   let ret = null;
@@ -113,6 +113,14 @@ function step(bm, st) {
     const a = who(x); a._actions = [new w.Game_Action(a)]; a.makeAutoBattleActions();
     const act = a._actions[0], it = act && act.item();
     ret = {skill: it ? (I.key[it.id] || it.id) : null, target: act ? act._targetIndex : null};
+  }
+  else if (op === 'libi') { L.revoke(who(x), 'xuan.libi'); L.grant(who(x), 'xuan.libi', y, 2, XUAN, {noBonus: true}); }
+  else if (op === 'seqhit') {
+    // 敌人放不带伤害的技能（防御，作用自己），行动期间序列扣角色 z 的血 st[4]（审查第 34 期 P3-1：不是 direct 行动，璃壁破了也不给定轨）
+    const oldApply = w.Game_Action.prototype.apply;
+    w.Game_Action.prototype.apply = function (t) { w.Game_Action.prototype.apply = oldApply; const r = oldApply.apply(this, arguments); who(z).gainHp(-st[4]); return r; };
+    begin(bm, who(x), y, +String(x).slice(1)); run(bm);
+    w.Game_Action.prototype.apply = oldApply;
   }
   else if (op === 'end') bm.endBattle(0);
   else throw new Error('未知步骤 ' + op);
@@ -144,6 +152,10 @@ const SCRIPTS = {
   roundend: [{}, [['use', XUAN, 'jixing', 1], ['turn'], ['gain', XUAN, 3], ['turn'], ['gain', XUAN, 1], ['turn']]],
   // 手动模式：没有星契，什么都不自动放；自动战斗本体时救人、寄星（名册优先）（附身时 autoAction 返回 null，留给原选择，那是通用自动战斗，不比）
   manual: [{manual: true, roster: [8]}, [['auto', XUAN], ['hp', 2, 0.2], ['auto', XUAN], ['use', XUAN, 'jixing', 1], ['turn'], ['hp', 1, 0.3], ['act', 8, 1, 'e0']]],
+  // 定轨（10 级，手动）：敌人攻击打破璃壁给一次定星，同回合同人只一次；下一回合以后再破再给
+  dinggui: [{manual: true}, [['use', XUAN, 'jixing', 1], ['libi', 1, 10], ['hit', 'e0', 1, 1], ['libi', 1, 10], ['hit', 'e1', 1, 1], ['turn'], ['turn'], ['libi', 1, 10], ['hit', 'e0', 1, 1]]],
+  // 定轨只认敌方直接伤害行动：不带伤害的技能期间序列扣血打破璃壁，不给定星
+  dinggui_seq: [{manual: true}, [['use', XUAN, 'jixing', 1], ['libi', 1, 10], ['seqhit', 'e0', 2, 1, 50]]],
   autoact: [{roster: [8]}, [['auto', XUAN], ['hp', 2, 0.2], ['auto', XUAN], ['use', XUAN, 'jixing', 1], ['auto', XUAN], ['end']]]
 };
 const cases = [];
