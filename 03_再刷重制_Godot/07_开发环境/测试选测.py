@@ -570,13 +570,20 @@ class SampleTests(Fixture):
         self.put(CORE / 'battler.gd', 'class_name XBattler\n# changed\n')
         self.assertEqual(self.pick()['scenes'], self.pick()['scenes'])
 
-    def test_four_consecutive_commits_cover_each_group(self):
-        """审查 26 P3-2：种子是沿第一父的提交数，主线连续 4 个提交正好轮完每组 4 段（原按提交号哈希，不保证）。"""
+    def test_four_consecutive_merges_cover_each_group(self):
+        """审查 27 P3-1：主线一次合并占「合并＋收尾」两个第一父提交，被测提交常差 2（数全部提交一组只轮两段）；
+        种子只数合并提交，连续 4 次合并（测的是收尾提交）正好轮完每组 4 段。"""
         self.put(CORE / 'battler.gd', 'class_name XBattler\n# changed\n')
+        main_branch = self.g('rev-parse', '--abbrev-ref', 'HEAD')
         seen, seeds = set(), []
         for i in range(4):
+            self.g('checkout', '-q', '-b', 'lane%d' % i)
             self.put(UI / 'nobody.gd', 'class_name XNobody\n# %d\n' % i)
-            self.commit('step %d' % i)
+            self.commit('lane %d' % i)
+            self.g('checkout', '-q', main_branch)
+            self.g('merge', '-q', '--no-ff', '-m', 'merge lane%d' % i, 'lane%d' % i)
+            self.put(UI / 'nobody2.gd', 'class_name XNobody2\n# %d\n' % i)
+            self.commit('closing %d' % i)                                   # 收尾提交：第一父上再多一个
             seeds.append(sel.sample_seed(self.root))
             seen.update(x for x in self.pick()['scenes'] if x in self.rules)
         self.assertEqual(seeds, list(range(seeds[0], seeds[0] + 4)))
@@ -630,7 +637,7 @@ class ReuseTests(SampleTests):
         c = self.lane()
         self.put(UI / 'shop.gd', 'class_name XShopScene\n# main moved\n')  # 合并后主线带来的改动波及 shop
         want = ['xiyou_shop.tscn', 'xiyou_event_compare.tscn', 'xiyou_battle.tscn']
-        keep, used, notes = reuse.plan(self.root, self.base, want, {c: ('本机', {'xiyou_shop.tscn', 'xiyou_battle.tscn'})}, sel)
+        keep, used, notes = reuse.plan(self.root, self.base, want, {c: ('本机', {'xiyou_shop.tscn', 'xiyou_battle.tscn'}, set())}, sel)
         self.assertEqual(keep, ['xiyou_shop.tscn', 'xiyou_event_compare.tscn'])  # shop 被波及，event_compare 车道没测
         self.assertEqual(used, {'xiyou_battle.tscn': (c, '本机', 'xiyou_battle.tscn')})
         self.assertIn('沿用 %s（本机）1 个：xiyou_battle' % c[:9], reuse.summarize(used))
@@ -638,19 +645,19 @@ class ReuseTests(SampleTests):
     def test_generated_inputs_or_full_diff_reuse_nothing(self):
         c = self.lane()
         self.put(TOOLS / 'xiyou_slice.json', '{"troops": [1]}\n')
-        keep, used, notes = reuse.plan(self.root, self.base, ['xiyou_battle.tscn'], {c: ('本机', {'xiyou_battle.tscn'})}, sel)
+        keep, used, notes = reuse.plan(self.root, self.base, ['xiyou_battle.tscn'], {c: ('本机', {'xiyou_battle.tscn'}, set())}, sel)
         self.assertEqual((keep, used), (['xiyou_battle.tscn'], {}))
         self.assertIn('产物来源', notes[0])
         self.g('checkout', '--', str(TOOLS / 'xiyou_slice.json'))
         self.put(PROJECT / 'mystery.txt', 'x\n')
-        keep, used, notes = reuse.plan(self.root, self.base, ['xiyou_battle.tscn'], {c: ('本机', {'xiyou_battle.tscn'})}, sel)
+        keep, used, notes = reuse.plan(self.root, self.base, ['xiyou_battle.tscn'], {c: ('本机', {'xiyou_battle.tscn'}, set())}, sel)
         self.assertEqual(used, {})
         self.assertIn('整轮', notes[0])
 
     def test_sampled_part_reuses_other_part_of_same_group(self):
         c = self.lane()
         keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_rules_d1c.tscn', 'xiyou_rules_d2.tscn'],
-                                   {c: ('本机', {'xiyou_rules_d1b.tscn'})}, sel)
+                                   {c: ('本机', {'xiyou_rules_d1b.tscn'}, set())}, sel)
         self.assertEqual(keep, ['xiyou_rules_d2.tscn'])                    # 第二组车道一段也没测
         self.assertEqual(used['xiyou_rules_d1c.tscn'][2], 'xiyou_rules_d1b.tscn')
 
@@ -659,12 +666,32 @@ class ReuseTests(SampleTests):
         c = self.lane()
         self.put(TESTS / 'xiyou_rules_d1c.tscn', '[ext_resource path="res://tests/xiyou_rules.gd" id="1"]\n# edited\n')
         keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_rules_d1c.tscn'],
-                                   {c: ('本机', {'xiyou_rules_d1b.tscn', 'xiyou_rules_d1c.tscn'})}, sel)
+                                   {c: ('本机', {'xiyou_rules_d1b.tscn', 'xiyou_rules_d1c.tscn'}, set())}, sel)
         self.assertEqual((keep, used), (['xiyou_rules_d1c.tscn'], {}))
         old = self.g('rev-parse', 'HEAD~1')                                 # 更早的 C 也一样：被波及就不替补
         keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_rules_d1c.tscn'],
-                                   {c: ('本机', {'xiyou_rules_d1c.tscn'}), old: ('本机', {'xiyou_rules_d1b.tscn'})}, sel)
+                                   {c: ('本机', {'xiyou_rules_d1c.tscn'}, set()), old: ('本机', {'xiyou_rules_d1b.tscn'}, set())}, sel)
         self.assertEqual(keep, ['xiyou_rules_d1c.tscn'])
+
+    def test_failed_part_is_not_replaced_by_group_mate(self):
+        """审查 27 P2-1 复现一：C 上 d1b 通过、d1c 跑了但失败，之后没改 d1c：d1c 要照跑，不能拿 d1b 的通过顶。"""
+        c = self.lane()
+        keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_rules_d1c.tscn'],
+                                   {c: ('本机', {'xiyou_rules_d1b.tscn'}, {'xiyou_rules_d1c.tscn'})}, sel)
+        self.assertEqual((keep, used), (['xiyou_rules_d1c.tscn'], {}))
+
+    def test_newer_failure_beats_older_pass(self):
+        """审查 27 P2-1 复现二：旧提交通过、新提交失败，中间只改了无关文件：以新提交的失败为准，照跑。"""
+        old = self.lane()
+        self.put(UI / 'nobody.gd', 'class_name XNobody\n# second\n')
+        self.commit('second')
+        new = self.g('rev-parse', 'HEAD')
+        recs = {new: ('本机', set(), {'xiyou_battle.tscn'}), old: ('本机', {'xiyou_battle.tscn'}, set())}
+        keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_battle.tscn'], recs, sel)
+        self.assertEqual((keep, used), (['xiyou_battle.tscn'], {}))
+        recs = {new: ('本机', {'xiyou_battle.tscn'}, set()), old: ('本机', set(), {'xiyou_battle.tscn'})}  # 反过来：新的通过就沿用
+        keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_battle.tscn'], recs, sel)
+        self.assertEqual((keep, used), ([], {'xiyou_battle.tscn': (new, '本机', 'xiyou_battle.tscn')}))
 
     def test_local_records_need_same_environment(self):
         sdir = self.root / 'state'
@@ -676,7 +703,7 @@ class ReuseTests(SampleTests):
         (sdir / 'commit_results/c3.json').write_text('not json')
         got = reuse.local_records(sdir, ['c1', 'c2', 'c3', 'c4'], now)
         self.assertEqual(list(got), ['c1'])
-        self.assertEqual(got['c1'][1], {'a.tscn'})
+        self.assertEqual((got['c1'][1], got['c1'][2]), ({'a.tscn'}, {'b.tscn'}))  # 失败的也带出（审查 27 P2-1）
 
     def test_cli_disabled_and_note_file(self):
         import contextlib, io

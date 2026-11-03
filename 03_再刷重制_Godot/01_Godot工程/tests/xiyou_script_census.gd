@@ -160,17 +160,26 @@ func _run() -> void:
 	var KNOWN: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(KNOWN_FILE)).known
 	var rows := _collect()
 	var unknown := {}
+	var native := 0
 	for key in rows:
 		var miss: Array = await _try(rows[key])
 		if not miss.is_empty():
 			var r: Dictionary = rows[key]
+			# 「再次释放」一族（Game_Action＋forceAction，CE345 等）：战斗事件解释器 XBattleEventRunner._recast_script 原生处理
+			# （xiyou_battle_common_events 的 recast_* 与 battle_common_event_oracle 参照），战斗里认得就不算认不出；
+			# 地图解释器本来不跑它（只在战斗里触发）。认不出的变体（正则对不上）仍会进 unknown。
+			if r.kind == "script" and "new Game_Action(actor, true)" in str(r.code) and "BattleManager.forceAction(actor)" in str(r.code) \
+					and (await _try_battle(r)).is_empty():
+				native += 1
+				continue
 			r["miss"] = miss
 			unknown[key] = r
 			print("CENSUS ", JSON.stringify({"key": key, "n": r.n, "where": r.where, "miss": miss.slice(0, 3)}))
 	var f := FileAccess.open(OUT, FileAccess.WRITE)
 	f.store_string(JSON.stringify({"total": rows.size(), "unknown": unknown}, "  "))
-	print("CENSUS_TOTAL ", rows.size(), " UNKNOWN ", unknown.size())
+	print("CENSUS_TOTAL ", rows.size(), " UNKNOWN ", unknown.size(), " NATIVE_RECAST ", native)
 	_check("collected", rows.size() > 100, rows.size())
+	_check("native_recast_seen", native >= 30, native)   # 再次释放一族原生模式确实被普查看到（防普查口径悄悄失效）
 	var new_keys := unknown.keys().filter(func(k): return not KNOWN.has(k))
 	_check("no_new_unknown", new_keys.is_empty(), new_keys.slice(0, 20))
 	var fixed := KNOWN.keys().filter(func(k): return rows.has(k) and not unknown.has(k))

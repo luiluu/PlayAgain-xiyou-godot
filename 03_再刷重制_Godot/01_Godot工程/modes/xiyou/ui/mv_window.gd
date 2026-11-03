@@ -12,6 +12,7 @@ const PAUSE_SRC := Vector2(144, 96)
 
 var canvas: XMVCanvas
 var opacity := 255
+var backdrop := Color(0, 0, 0, 0)   # 皮肤之下垫的底色（透明＝不垫）；批量服用数量窗 _refreshBack 垫 #111827
 var up_arrow := false
 var down_arrow := false
 var openness := 255:
@@ -128,6 +129,8 @@ func _draw() -> void:
 		_draw_dimmer(o)
 	elif background_type == 0:
 		draw_set_transform(Vector2(0, size.y / 2.0 * (1.0 - o)), 0.0, Vector2(1, o))
+		if backdrop.a > 0.0:
+			draw_rect(r, backdrop)
 		draw_style_box(XUI.panel(opacity), r)
 		draw_set_transform(Vector2.ZERO)
 	if not is_open():

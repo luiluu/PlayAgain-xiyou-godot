@@ -22,7 +22,7 @@
 - --list（车道手写选测前用，tools35）：只在标准输出逐行打场景名（不带 .tscn，可直接接到 并行测试.py 后面），理由与结论改到标准错误；
   整轮时不打场景名、退出 0 并在标准错误说明。车道交付的手写选测名单至少含这里列出的场景（至少战斗核心类），不跑要在交付单说明为什么。
 - 抽样（sample，用户 2026-11-02 同意，tools43）：选测（不是整轮）选到 xiyou_rules*／xiyou_smart_ai* 时，每组按名字排序、每 chunk 段
-  （rules 每个难度 4 段、smart_ai 每 4 段）只留 1 段，留哪段按 --head 或 HEAD 沿第一父的提交数取余轮换（主线连续 4 个提交轮完一组）。改了测试本身（exemptGroups 里的组）
+  （rules 每个难度 4 段、smart_ai 每 4 段）只留 1 段，留哪段按 --head 或 HEAD 沿第一父的合并提交数取余轮换（主线连续 4 次合并轮完一组；tools46 起只数合并提交，因为一次合并在主线上占「合并＋收尾」两个第一父提交，数全部提交会隔 2 取一）。改了测试本身（exemptGroups 里的组）
   选上的段照跑、并算作该组已有代表。段数不是 chunk 的整数倍时这一族不抽样。全量（不加 --affected、选测结论整轮）照跑全套。
   回退：对照表 sample.enabled 设 false，或环境变量 XIYOU_SAMPLE=0。
 - 基准不存在、对照表无效时退出 2。
@@ -116,8 +116,10 @@ def sample_chunks(all_scenes, sample):
 
 
 def sample_seed(root, head=None):
-    """抽样种子：HEAD（或 --head）沿第一父的提交数。主线上相邻提交差 1，同一组连续 4 个提交正好轮完 4 段（审查 26 P3-2；原按提交号哈希是伪随机）。"""
-    return int(git(root, 'rev-list', '--first-parent', '--count', head or 'HEAD').strip())
+    """抽样种子：HEAD（或 --head）沿第一父的合并提交数。一次合并在主线上占「合并＋收尾」两个第一父提交，被测提交常差 2，
+    数全部提交一组只在两段间来回（审查 27 P3-1）；只数合并提交，每次合并加 1，连续 4 次合并正好轮完一组，
+    合并和它的收尾提交种子相同（同一次合并里不换段）。不用共用状态目录里的计数器：免得依赖本机状态、云端和本机算出不同。"""
+    return int(git(root, 'rev-list', '--first-parent', '--merges', '--count', head or 'HEAD').strip())
 
 
 def apply_sample(scenes, pinned, all_scenes, sample, seed):

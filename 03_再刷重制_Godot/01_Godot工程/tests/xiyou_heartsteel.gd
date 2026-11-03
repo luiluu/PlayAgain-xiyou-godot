@@ -2,7 +2,7 @@ extends Node
 ## 【cc·八戒·未经审查】成长装备期一 XHeartsteel／XHubris：照参照 heartsteel_probe（tests/fixtures/heartsteel_oracle.json）逐例比。
 ## 新装备实例的随机词条照参照记下的实例属性与特性设（重制自己的词条掷法另有专项）。
 ## 战斗例：新局队伍 [1, 8, 9, 10]，角色 1 穿上；打 3 号敌群（敌人生命加 1e9），规则流全取 0.5，推进到第一回合，照参照的步骤逐步比。
-## hubris.battle.* 是原版口径（KILL_FIX 关：击杀记不上），hubris.fix.* 是修复口径（O-待定，默认开）。
+## hubris.battle.* 是原版口径（KILL_FIX 关：击杀记不上），hubris.fix.* 是修复口径（O-150，默认开）。
 const FIXTURE := "res://tests/fixtures/heartsteel_oracle.json"
 const PARTY := [1, 8, 9, 10]
 ## 参照里量了、本期没做的（期二：锻造配方解锁）

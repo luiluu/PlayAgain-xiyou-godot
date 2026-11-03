@@ -12,6 +12,7 @@ const ATTACK_SKILL := 1
 
 var troop_id := 0
 var actors: Array = []          # XActor（出战）
+var nanoha_frame := {}          # 奈叶共享击杀：本次行动打中的敌人（XNanoha.begin／applied／finish）
 var enemies: Array = []         # XEnemy
 var turn := 0
 var can_escape := true
@@ -828,7 +829,9 @@ func act(u: XBattler, skill, target) -> Array:
 		started = u.is_actor() or can_use(u, skill)  # 同 execute 开头的行动无效判断（非强制）
 		if started:
 			XBinding.start_action(u)  # 绑定 startAction 包装：validate、记行动者、回归扣充能
+		XNanoha.begin(self)
 		logs.append_array(execute(u, skill, target))
+		XNanoha.end_execute(self)
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
 	XHeartsteel.end_action(u, false)  # 心钢 endAction 包装：不是巨人吞噬的行动减 1 蓄力
@@ -856,6 +859,7 @@ func act(u: XBattler, skill, target) -> Array:
 		_tick_states(u, 1)
 		_mastery_end(u, logs)
 		XMira.liberate(self, u, skill)  # 米拉 endAction 包装（原 endAction 之后）：解放·黑龙
+		XNanoha.finish(self, u)  # 奈叶 endAction 包装（原 endAction 之后，米拉、渡鸦、镜流、甚尔在里层）：队友击杀给奈叶永久生命／魔法
 		logs.append_array(mark_views(XGuyu.after_action(self, u, skill)))  # 谷雨 endAction 包装（原 endAction 之后）afterAction：花期里队友用技能后绽放
 	_sync_orders(before, true)
 	resolve_collapses()
@@ -1224,10 +1228,14 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	if u == first_subject:
 		_cleared[u] = true
 	var before := _movable_snapshot()
+	XNanoha.begin(self)
 	logs.append_array(execute(u, skill, target, true))
+	XNanoha.end_execute(self)
 	XHeartsteel.end_action(u, true)  # 心钢／狂妄 endAction 包装：强制行动不减蓄力、不计行动
 	XHubris.end_action(self, u, true)
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（同 act 的次序）：强制行动也消费锁定、和鸣，持武者放剑气／镇魂（审查第 26 期 P3-1）
+	XGuyu.end_action()  # 谷雨 endAction 包装（同 act 的次序，在屠苏之后）：结束行动事件，代命成立就归根
+	logs.append_array(XGuyu.take_visuals())
 	logs.append_array(XGarou.finish(self, u, skill))
 	logs.append_array(XSukuna.finish(self, u, skill, true))
 	logs.append_array(XYomiJingliu.j_finish(self, u, skill))
@@ -1240,6 +1248,8 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	_tick_states(u, 1)
 	_mastery_end(u, logs)
 	XMira.liberate(self, u, skill)
+	XNanoha.finish(self, u)
+	logs.append_array(mark_views(XGuyu.after_action(self, u, skill)))  # 谷雨 endAction 包装 afterAction：强制行动也触发花期绽放（同 act，在奈叶之后）
 	_sync_orders(before, true)
 	return logs
 
@@ -1829,9 +1839,11 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if XHeartsteel.blocks_apply(u, skill):  # 心钢 Game_Action.apply 包装：巨人吞噬没放成或已结算过，整次不生效
 		return XBinding.unused_result(u, skill, t)
 	var hp_before := t.hp
-	var r: Dictionary = XGuyu.apply(self, u, skill, t)
-	XHeartsteel.after_apply(self, u, skill, t, hp_before, r)  # 心钢：命中按权重记本场层数
-	return r  # 谷雨 Game_Action.apply 包装：治疗来源、花期／终结生效（没生效整次不结算）、行动执行标记
+	var live := t is XEnemy and t.is_alive()
+	var r: Dictionary = XGuyu.apply(self, u, skill, t)  # 谷雨 Game_Action.apply 包装：治疗来源、花期／终结生效（没生效整次不结算）、行动执行标记
+	XNanoha.applied(self, u, t, live, r)  # 奈叶 Game_Action.apply 包装（谷雨、屠苏、绑定在外层）：队友打中活着的敌人记目标
+	XHeartsteel.after_apply(self, u, skill, t, hp_before, r)  # 心钢：命中按权重记本场层数（原版装在奈叶之后，包在奈叶外层）
+	return r
 
 
 func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
