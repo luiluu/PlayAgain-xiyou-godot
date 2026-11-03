@@ -1,7 +1,7 @@
 extends Node
 ## 技能页用菜单／随时场合、带效果 44 的技能：预约的公共事件都回地图执行（审查第 28 期 P3-3，tusu7 起）。
 ## ① 逐个把这些公共事件交给地图解释器跑一遍（run_common_event），断言 skipped_log 为空（没有被跳过的未知指令）；
-## ② 星谱（10349，CE9015 CodexXuan.openStarchart()）星谱页还没做：技能页保持不可用，不让玩家点了关菜单却什么都不发生；
+## ② 星谱（10349，CE9015 CodexXuan.openStarchart()）xuan1 起有星谱页，技能页可用（专项 xiyou_xuan_chart 比页面行文）；
 ## ③ 不对我方的技能在列表里直接用后，状态窗 MP 与列表灰显刷新（P3-2）。
 var checks := 0
 var failures: Array = []
@@ -116,9 +116,11 @@ func _run() -> void:
 func _starchart(s: XState) -> void:
 	var xuan := XDB.rec("Skills", 10349)
 	check("star.exists", not xuan.is_empty() and int(xuan.get("occasion", 0)) == 2, xuan.get("occasion"))
+	XTusuXuan.recruit(s, XTusuXuan.XUAN)
 	var page := XSkillScene.new()
+	page.actor_index = s.party.find(XTusuXuan.XUAN)
 	add_child(page)
-	check("star.unusable", not page.usable(xuan))
+	check("star.usable", page.usable(xuan), [page.actor().actor_id, page.logic.can_use(page.actor(), xuan)])
 	page.queue_free()
 
 

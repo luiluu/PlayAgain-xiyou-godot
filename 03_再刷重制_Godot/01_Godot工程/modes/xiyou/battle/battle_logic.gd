@@ -2548,6 +2548,7 @@ func grant(r: Dictionary) -> Array:
 	var garou_text := XGarou.credit_victory(state, _garou, _garou_boss)  # 饿狼 processVictory 包装：累计突破、神之触媒
 	if garou_text != "":
 		victory_texts.append(garou_text)
+	XXuanChart.credit_victory(state, actors, enemies)  # 璇 endBattle 包装：出战的璇胜利一场攒星砂（含 Boss 的敌群多给）
 	XZhenqi.on_victory(state, actors, XZhenqi.troop_members(troop_id, enemies, state.difficulty))  # 真气胜利结算（含没出场的隐藏成员）（BattleManager.endBattle(0)；每场一次）
 	state.gain_gold(r.gold)
 	if not drop_lock:
