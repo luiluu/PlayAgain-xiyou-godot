@@ -1,7 +1,7 @@
 # 交付：cc/bajie-rules1b
 
 - 车道／工作者：C 规则／八戒（cc，接另一账号八戒 rules1 的 a09f882f）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -53,8 +53,14 @@
 
 ## 验证
 
-- 待跑（等 main dev.296 收尾推送后合 main 再跑）。
+- 合 main（77180290，dev.296 收尾）后补齐；`语法检查.py` 511 个 .gd 0 问题。
+- 选测 21 个全部通过（并行 2，892 秒，结果记在 5ce3b295 名下）：派单指定 `xiyou_demon_crown` 106/106、`xiyou_honghuang_curse_battle` 344/344（原 342，加了 2 例 `.popups`）、`xiyou_state_js` 1733/1733；按影响面加 `xiyou_determinism` 372、`xiyou_battle_ui` 155、`xiyou_state_effects`、`xiyou_state_effects_tp`、`xiyou_battle`、`xiyou_battle_gaps`、`xiyou_battle_log`、`xiyou_regen_popup`、`xiyou_popup_overlap`、`xiyou_sequence_visual`、`xiyou_action_sequence`、`xiyou_boss_output_context`、`xiyou_boss_sequence`、`xiyou_boss_react`、`xiyou_shield`、`xiyou_enemy_book`、`xiyou_guyu_battle`、`xiyou_rules_d4`。
+- `选测.py main --list` 列出 209 个（`battle_logic.gd`、`state_effects.gd` 归战斗核心），没全跑；战斗核心类挑了 `xiyou_determinism`、`xiyou_rules_d4` 一段。请总装按影响面再选（主要是 `xiyou_rules*` 其余段）。
+- 盘点口径：可达性用脚本粗查（技能／道具／装备／敌人／状态的效果 code 21、备注与状态 js 里 `addState(n)`／「状态 n」、公共事件 `addState(n)` 与 313 指令），没算插件里硬编码加状态的路径，所以「约」数只作排期参考。
+- 没跑 `反向验证.py`；没开游戏看复活弹字（只读码＋断言弹字队列）；没跑全量。本期没做尾项里的规则改动：五项四项已做完，剩下最小的护盾一族要改转换器＋探针＋同步，留给 rules2。
 
 ## 本分支提交
 
 - a09f882f 审查 33 P3-1 魔冠归根例真比 addedStates；P3-2 死而复燃弹回血回蓝 TP 数字（另一账号八戒）
+- 5091a49d WIP: rules1b 交付单与尾项盘点
+- 5ce3b295 合并 main（dev.296 收尾）
