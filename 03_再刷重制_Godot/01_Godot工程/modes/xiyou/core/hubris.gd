@@ -10,7 +10,7 @@ extends RefCounted
 ## - 掉落：同心钢（Map152 不朽来源、敌群 454／455、胜利 10%、每场一次），在心钢掉落之后再掷。
 ## O-150 KILL_FIX：原版倒下状态在行动结束后才挂（YEP 延后），executeHpDamage 包装里 isDead() 还是假，击杀永远记不上，只有首领分段能触发；
 ##   默认按「生命打到 0 由本方打的」算击杀（参照 hubris.fix.*），设 false 回到原版（击杀不给扬名，参照 hubris.battle.*）。
-## 未做（期二／尾项）：杰作无我锻造（配方 458、200 人道意志碎片＋5 锻造锤）与解锁、动态说明（help_card）、敌人复活（revive）重开贡献只在下一次受击时重置。
+## 未做（期二／尾项）：杰作无我锻造（配方 458、200 人道意志碎片＋5 锻造锤）与解锁、敌人复活（revive）重开贡献只在下一次受击时重置。
 
 const ARMOR := 7902
 const ATARAXIA := 7903
@@ -33,6 +33,7 @@ static var _killed := {}
 static var _seg := {}
 static var _reward_rolled := false
 ## 公式帧（evalDamageFormula 包装）：目标与穿透
+static var _logic: WeakRef = null  # 说明卡要当前回合与出战名单（不直接存战斗对象）
 static var _frame_target = null
 static var _frame_rate := 0.0
 
@@ -79,6 +80,18 @@ static func active_bonus(a) -> float:
 	return float(b.rate)
 
 
+## U.helpView 的「当前增益」：穿着这件、扬名还有效的出战者 {rate, remaining, same_round}；没有为 null
+static func wearer_buff(item: Dictionary) -> Variant:
+	var logic = _logic.get_ref() if _logic != null else null
+	if logic == null or not XHeartsteel.in_battle:
+		return null
+	for a in logic.state.members():
+		if is_same(gear(a), item) and active_bonus(a) > 0.0:
+			var b: Dictionary = _buff[a.actor_id]
+			return {"rate": b.rate, "remaining": b.remaining, "same_round": int(logic.turn) == int(b.round)}
+	return null
+
+
 # ---- 角色包装 ----
 ## Game_Actor.param 包装：扬名时物攻 ×倍率，取整、夹上限
 static func param(a, i: int, v: float) -> float:
@@ -119,6 +132,7 @@ static func damage_ops(item: Dictionary, a) -> Array:
 # ---- 战斗包装 ----
 ## BattleManager.setup＋startBattle 包装：开场名单、清本场数据，全队清扬名、行动数归 0
 static func start_battle(logic) -> void:
+	_logic = weakref(logic)
 	_running = true
 	_ledger.clear()
 	_started.clear()

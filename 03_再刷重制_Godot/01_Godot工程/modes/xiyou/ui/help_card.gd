@@ -17,7 +17,7 @@ extends Control
 ##    N 是与穿戴者无关的装备评分 XPower.equipment；设置页关掉「战力显示与估算」时不插。
 ##    专属角色技能（ID 10122～10299）改走 characterHelpView（XCharacterHelp，ui/character_help.gd）。
 ## 6. installThreeGrowthRelicRuntime R.syncItem：三法宝（谷雨百谷生／万象长春盏）先按所属人物等级改写名字、说明与备注里的条目（XThreeGrowth.view）。
-## 未做：心钢、狂妄等专属装备的动态说明（切片里没有）。
+## 7. 心钢／利维坦／狂妄／无我：H/U.helpView（XGrowthHelp，ui/growth_help.gd）按层数／盛名重写成长行、同色行归组。
 ##
 ## 版面（layout()）：宽 400、内边距 4；每行按 RJO.SW 逐字排版：可用宽 392−x，放不下换行；行高 = 该行最大字号 + 8；
 ## 居中/靠右的行只算第一行；有分隔的行之后加 3；卡高 = 8 + Σ行高 + 3×分隔数。\i[n] 占 36、画在 (x+2, y−3)；
@@ -90,12 +90,15 @@ static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	if kind == "":
 		kind = kind_of(obj)
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
-	var rows := desc_params(obj, type)
+	# 心钢／狂妄：H/U.helpView（XGrowthHelp）；原版里它重算 descParams，外层元素与战力包装的改动被冲掉（O-待定 HELP_FIX 关时照原版）
+	var growth := type == 2 and XGrowthHelp.target(obj)
+	var rows := XGrowthHelp.rows(obj, type) if growth else desc_params(obj, type)
 	# 屠苏／璇的技能：bindGrowth 的 setItem 包装（最外层）把技能换成浅拷贝再往里传，元素包装看 isSkill 为假，同 skill_copy
 	var binding_copy := type == 3 and int(XTusuXuan.owner_of(int(obj.get("id", 0)))[0]) != 0
-	rows = _element_wrapper(obj, 0 if skill_copy or binding_copy else type, rows)
-	if (type == 1 or type == 2) and XPower.enabled():
-		rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
+	if not growth or XGrowthHelp.HELP_FIX:
+		rows = _element_wrapper(obj, 0 if skill_copy or binding_copy else type, rows)
+		if (type == 1 or type == 2) and XPower.enabled():
+			rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
 	if type == 3:
 		# 专属角色技能（10122～10299）走 characterHelpView（XCharacterHelp），其余技能走 genericHelpView
 		rows = XCharacterHelp.view(obj, rows) if XCharacterHelp.target(obj) else XCharacterHelp.now_growth(obj, _generic_view(obj, rows))
@@ -665,6 +668,11 @@ static func _first_line_height(text: String, size: int) -> int:
 ## RJO.SW.convertEscapeCharacters（\\ → ESC，变量/角色名/货币）
 static func _escapes(text: String) -> String:
 	return XMVText.convert_escapes(text)
+
+
+## 颜色分组键（groupHelpRows 借 style.color 归一：rgb／rgba／#hex 同色算一组，其余按原字串）
+static func css_key(text: String) -> String:
+	return _css(text).to_html() if text.begins_with("#") or text.begins_with("rgb") else text
 
 
 static func _css(text: String) -> Color:
