@@ -197,6 +197,12 @@ func _new_lifecycle_resources() -> XResourceContext:
 	resources.lifecycle_inputs = {"variables": vars(), "switches": state.switches if state != null else {}, "party_members": actors}
 	return resources
 
+## 状态效果里的 $gameTemp.reserveCommonEvent（奈叶身经百战 1780 行动开始预约 2481）：交给战斗公共事件单槽
+func _take_state_reserves() -> void:
+	for id in XStateEffects.take_reserves():
+		XBattleCommonEvent.reserve(self, id)
+
+
 func _start_battle_effects() -> void:
 	_battle_resources = _new_lifecycle_resources()
 	for b in state.members() + enemies:
@@ -215,6 +221,7 @@ func _start_battle_effects() -> void:
 		for b in effect_members:
 			_refresh_battler(b)
 			XStateEffects.run("battle", b, _battle_resources.state_context(b))
+	_take_state_reserves()
 	_battle_start_states()
 	var snapshots := {}
 	for b in state.members() + enemies:
@@ -443,6 +450,8 @@ func _skill_cost(a: XBattler, skill: Dictionary, panel: bool, shift: float) -> D
 	var nc := note_costs(skill)
 	# YEP skillMpCost：(基础＋最大MP×比例)×mcr 向下取整、不低于 0；skillTpCost：基础＋最大TP×比例 向下取整
 	var mp := float(nc.get("mpCost", skill.get("mpCost", 0))) + a.mmp * float(nc.get("mpCostPer", 0.0))
+	if skill.has("mpCostCurrentRate"):
+		mp = floorf(a.mp * float(skill.mpCostCurrentRate))  # YEP <Custom MP Cost>（奈叶大招 5703～5709）：eval 把 cost 改写成 ⌊当前MP×比例⌋，再 ×mcr
 	var tp := float(nc.get("tpCost", skill.get("tpCost", 0))) + a.max_tp() * float(nc.get("tpCostPer", 0.0))
 	var cost := {"mp": maxi(0, floori(mp * (1.0 if panel else a.mcr))), "tp": maxi(0, floori(tp))}
 	cost = {"mp": XSkillMastery.cost(a, skill, "mp", int(cost.mp)), "tp": XSkillMastery.cost(a, skill, "tp", int(cost.tp))}  # YEP_SkillMasteryLevels skillMpCost／TpCost 包装
@@ -816,6 +825,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XBlackFlash.begin(u, skill, [])  # 黑闪 startAction 包装：防御也建帧（不 eligible，结束时连闪归 0）
 		XSukuna.begin(self, u, skill, [])  # 宿傩 startAction 包装：清上一帧
 		XStateEffects.run("action_start", u)  # 防御也走 startAction
+		_take_state_reserves()
 		# 防御技能在原版也对自己 Game_Action.apply 一次：initiate／select／deselect／conclude 四段都跑（无伤害段）
 		u.param_refresh()  # native useItem refresh precedes guard apply
 		var gctx := {"attacker": u, "defender": u, "item": skill}
@@ -1479,6 +1489,7 @@ static func attack_repeats(u: XBattler, skill: Dictionary, base: int) -> int:
 func pay_skill_cost(u, skill: Dictionary) -> void:
 	var tusu_who = XTusu.pay_begin(u, skill)  # 屠苏噬主包装在最外层：屠苏自付或持武者三倍代付，里层照走（审查第 24 期 P2-1）
 	if not (tusu_who is String and tusu_who.is_empty()):  # ""：都付不起（支付前已查），整次不付
+		XNanoha.note_cost(u, skill)  # <Custom MP Cost> 的副作用：付费时那次 skillMpCost 按付前 MP 写 _costmp（段数）
 		var c := skill_cost(u, skill)
 		# 异化 paySkillCost 包装：缄默先锁生命上限（付不起整次不付 MP／TP），饕餮的 MP 费用从饥饿储备扣
 		if XAlienBattle.pay_silence(self, u, skill):
@@ -1514,6 +1525,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		return logs  # 被引爆的符针打倒：原版 _subject 清空，整次行动不执行
 	skill = change_to(u, skill)  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
+	_take_state_reserves()
 	skill = weapon_unleash(u, skill)  # YEP_WeaponUnleash：行动开始状态效果之后、付费之前
 	skill = XAlienBattle.project(u, skill)  # 异化行动道具投影（A.project 换掉 Game_Action.item）：祸祝等，之后各处都读投影
 	# 导入角色平衡：禁用角色／禁用号角的 useItem 直接返回（不扣物品、不付费、不进冷却、不前移），行动（含行动序列）对目标无效
@@ -1962,6 +1974,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 				XRaceBattle.after_hp(self, u, skill, dt, race_mark)
 				if dt != t:
 					XAlienBattle.sync_relations(self)
+				XNanoha.post_damage(self, u, dt, skill, value, r)  # YEP_SkillCore <Post-Damage Eval>（BSC Respond／Establish 之前）：奈叶大招按 _costmp 补段
 			2, 4, 6:
 				var mp_before := t.mp
 				r.mp = execute_mp_damage(u, t, value, type == 6)

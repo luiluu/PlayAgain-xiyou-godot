@@ -693,6 +693,22 @@ class ReuseTests(SampleTests):
         keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_battle.tscn'], recs, sel)
         self.assertEqual((keep, used), ([], {'xiyou_battle.tscn': (new, '本机', 'xiyou_battle.tscn')}))
 
+    def test_cloud_failure_beats_older_pass(self):
+        """审查 29 P3-4：云端没通过的运行也进失败集（failed 名单；没有就整份 sceneNames），新失败压过旧通过。"""
+        self.assertEqual(reuse.cloud_sets({'passed': True, 'sceneNames': ['a.tscn', 'b.tscn']}), ({'a.tscn', 'b.tscn'}, set()))
+        self.assertEqual(reuse.cloud_sets({'passed': False, 'sceneNames': ['a.tscn', 'b.tscn'], 'failed': ['b.tscn']}), (set(), {'b.tscn'}))
+        self.assertEqual(reuse.cloud_sets({'passed': False, 'sceneNames': ['a.tscn', 'b.tscn'], 'failed': []}), (set(), {'a.tscn', 'b.tscn'}))
+        self.assertEqual(reuse.cloud_sets({'passed': False, 'sceneNames': ['a.tscn']}), (set(), {'a.tscn'}))
+        self.assertIsNone(reuse.cloud_sets({'passed': False}))
+        old = self.lane()
+        self.put(UI / 'nobody.gd', 'class_name XNobody\n# second\n')
+        self.commit('second')
+        new = self.g('rev-parse', 'HEAD')
+        s = reuse.cloud_sets({'passed': False, 'sceneNames': ['xiyou_battle.tscn'], 'failed': ['xiyou_battle.tscn']})
+        recs = {new: ('云端', s[0], s[1]), old: ('云端', {'xiyou_battle.tscn'}, set())}
+        keep, used, _ = reuse.plan(self.root, self.base, ['xiyou_battle.tscn'], recs, sel)
+        self.assertEqual((keep, used), (['xiyou_battle.tscn'], {}))
+
     def test_local_records_need_same_environment(self):
         sdir = self.root / 'state'
         (sdir / 'commit_results').mkdir(parents=True)

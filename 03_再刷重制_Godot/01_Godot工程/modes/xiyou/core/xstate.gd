@@ -988,6 +988,7 @@ static func from_dict(d: Dictionary) -> XState:
 	# 谷雨 extractSaveContents 包装：syncAll。原版包装在原函数之后，读的是新档的进阶次数；
 	# XGuyu.stage 查 XState.current，所以要等换成新档后再同步（沙僧二审 S2-2-01）
 	XGuyu.after_load(s)
+	XGarou.after_load(s)  # 饿狼 extractSaveContents 包装：clearBattle＋sync
 	XPets.loaded(s)
 	# setup时曾缓存空状态；恢复完当前存档后重建效果快照，不额外夹HP／MP。
 	for a in s.actors.values():

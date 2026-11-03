@@ -69,6 +69,20 @@ def local_records(sdir, candidates, now):
     return out
 
 
+def cloud_sets(res):
+    """云端一份 result.json → (通过的场景, 失败的场景)；没有 sceneNames 就 None。
+    没通过的运行不再整份丢掉（审查 29 P3-4）：failed 名单进失败集，没有这个字段就把整份 sceneNames 当失败；这类运行不报通过的场景（缺片的结果不可信）。"""
+    names = res.get('sceneNames')
+    if not isinstance(names, list):
+        return None
+    names = {n for n in names if isinstance(n, str)}
+    if res.get('passed'):
+        return names, set()
+    failed = res.get('failed')
+    bad = {n for n in failed if isinstance(n, str)} if isinstance(failed, list) else set()
+    return set(), (bad or names)
+
+
 def cloud_records(root, candidates, tree_of, my_tree):
     """{提交: (来源说明, 通过的场景, 失败的场景)}：origin 上候选提交的云端结果。连不上、没有 sceneNames、产物树对不上的不算。
     tree_of(提交)：云端用的产物快照提交的树号（本机缓存库里没有就 None）；my_tree()：本工作区 generated/ 的快照树（只在用得上时才算）。"""
@@ -90,14 +104,15 @@ def cloud_records(root, candidates, tree_of, my_tree):
             res = json.loads(git(root, 'cat-file', '-p', 'refs/xiyou-reuse/%s:result.json' % ref[len(RESULT_PREFIX):]))
         except (RuntimeError, subprocess.SubprocessError, OSError, ValueError):
             continue
-        names = res.get('sceneNames')
-        if not res.get('passed') or not isinstance(names, list):
+        sets = cloud_sets(res)
+        if sets is None:
             continue
         tree = tree_of(res.get('generatedCommit', ''))
         if not tree or tree != my_tree():
             continue
         got = out.setdefault(sha, ('云端 ' + res.get('runUrl', ''), set(), set()))
-        got[1].update(n for n in names if isinstance(n, str))
+        got[1].update(sets[0])
+        got[2].update(sets[1])
     return out
 
 

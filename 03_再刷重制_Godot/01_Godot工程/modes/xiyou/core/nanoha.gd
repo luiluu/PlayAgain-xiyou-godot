@@ -59,3 +59,40 @@ static func finish(logic, subject) -> void:
 		if e != null and e.is_dead():
 			n.add_param(0, 10.0)
 			n.add_param(1, 30.0)
+
+
+## ---- 二期①：大招 5703～5709 的自定义 MP 消耗与伤害后多段（参照 mv_oracle/nanoha3_probe.cjs，tests/fixtures/nanoha3_oracle.json）----
+## 转换器把 <Custom MP Cost> 翻成 mpCostCurrentRate／costHitPer、<Post-Damage Eval> 翻成 postDamageCostRepeat（只认完整形状）。
+## 费用本身在 battle_logic._skill_cost；这里管 _costmp（原版挂在行动者上，付费那次 skillMpCost 按付前 MP 写）与补段。
+## Bailong_NaiyeACS_FastSettlement：总段数超 512 时只留 96 段（桌面）逐段 gainHp＋弹字，其余同值尾段合成一次扣血（不走 gainHp 包装），伤害记录按 ⌊每段⌋×段数补。
+const ACS_EXACT := 512
+const ACS_VISIBLE := 96
+
+
+## paySkillCost 里那次 skillMpCost：_costmp＝⌊付前 MP×比例/每段⌋
+static func note_cost(u, skill: Dictionary) -> void:
+	if skill.has("mpCostCurrentRate") and u is Object:
+		u.set_meta("costmp", floori(u.mp * float(skill.mpCostCurrentRate) / float(skill.get("costHitPer", 2000))))
+
+
+## applyPostDamageEval：_costmp>0 时再 target.gainHp(-value)＋弹字 _costmp-1 次；value 是进 executeHpDamage 之前的值（Boss 输出等包装在里层，不乘）
+static func post_damage(logic, u, t: XBattler, skill: Dictionary, value: float, r: Dictionary) -> void:
+	if not bool(skill.get("postDamageCostRepeat", false)):
+		return
+	var hits := int(u.get_meta("costmp", 0))
+	if hits <= 1:
+		return
+	var extra := hits - 1
+	var fast := hits > ACS_EXACT and t is XEnemy and value > 0.0 and value == floorf(value)
+	var shown := mini(extra, ACS_VISIBLE - 1) if fast else extra
+	var popups: Array = r.get("extra", [])
+	for i in shown:
+		var amount := t.absorb_shield(value)  # ShieldSystem gainHp 包装：护盾先吸收、击穿后减半
+		logic._action_resources.gain(t, "hp", -amount)
+		popups.append(amount)
+		r.record_hp = float(r.get("record_hp", 0.0)) + floorf(maxf(0.0, amount))
+	if fast and extra > shown:
+		var tail := extra - shown
+		logic._action_resources.gain(t, "hp", -value * tail)
+		r.record_hp = float(r.get("record_hp", 0.0)) + floorf(value) * tail
+	r.extra = popups

@@ -36,10 +36,12 @@ extends RefCounted
 ##   反击命中再加一层解析。回合结束（onTurnEnd 之后）清「本回合受过伤」与琦玉模式；开战、结束战斗清全部。
 ## - itemCnt：饿狼不被原生反击；meetsSkillConditions：未到形态的拳法、追击 10258 不能用，认真一拳 10263 要琦玉模式（模式：琦玉 10262
 ##   命中自己开，认真一拳打完关）。
-## 未移植：输入阶段预排了模式：琦玉时认真一拳可选（原版看 BattleManager._phase 'input' 的已排行动，重制选指令时没有预排）、
-## applyCritical 0 伤不暴击、技能分类与指令窗 [2,1,5,4]、
+## 输入阶段预排（meetsSkillConditions 的 planned 分支）不移植：原版看 _actions.slice(0, _actionInputIndex)，但 OTB 的
+## selectNextCommand 有 _subject 就直接 startAction，不调 Game_Actor.selectNextCommand，_actionInputIndex 恒为 0，分支在正式战斗里取不到
+## （读源码确认，重制每次行动逐个选、模式：琦玉命中即开 saitama，同效）。
+## 未移植：applyCritical 0 伤不暴击、技能分类与指令窗 [2,1,5,4]、
 ## 进阶界面的饿狼提示（重制走 XAdvance.fail_text）、胜利提示 victory_texts 上画面、法宝说明 describeRelic、
-## 图鉴立绘、读档同步（extractSaveContents 包装）、旧档迁移（不迁移 MV 旧存档）。
+## 图鉴立绘、旧档迁移（不迁移 MV 旧存档）。
 ## 参照：slice_probe（切片角色行与伤害行）、actor_passive_probe（各等级技能表）、garou_progress_probe、garou_battle_probe；
 ## 测试 tests/xiyou_actor_modules.gd、tests/xiyou_garou_progress.gd、tests/xiyou_garou_battle.gd。
 
@@ -514,6 +516,13 @@ static func passives(a) -> Dictionary:
 	return {"counter": learned.call(10265), "evolution": p[0] and learned.call(10266), "evolution_percent": int(p[1]),
 		"analysis": ana, "def_percent": int(p[3]) if ana else 0, "mdf_percent": int(p[4]) if ana else 0,
 		"followup": st >= 4 and learned.call(10268)}
+
+
+## 读档 extractSaveContents 包装：清战斗内状态再同步形态／技能／法宝
+static func after_load(s: XState) -> void:
+	if s.actors.has(ACTOR):
+		clear_battle()
+		sync(s.actor(ACTOR))
 
 
 static func clear_battle() -> void:
