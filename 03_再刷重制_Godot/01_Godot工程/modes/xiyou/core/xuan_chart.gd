@@ -22,7 +22,7 @@ const SAND := 3
 const BOSS_SAND := 12
 const ELEMENT_INFO := "同调熟练1：本场棱光使用指定元素"
 const TUSU := 176
-## O-待定：满级（3 级）星纹的「强化」行原版读 cost[3] 得 undefined，显示「强化（星砂undefined）」；开着写「强化（已满级）」
+## O-152：满级（3 级）星纹的「强化」行原版读 cost[3] 得 undefined，显示「强化（星砂undefined）」；开着写「强化（已满级）」
 static var MAX_LABEL_FIX := true
 
 
