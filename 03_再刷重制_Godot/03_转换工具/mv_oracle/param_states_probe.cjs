@@ -2,6 +2,7 @@
 // 冻结原版定向生命周期；只写 .sandbox，全内存新局，不访问玩家存档。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host=start(), {w,newGame}=host;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 let trace=[];
 const native=w.Game_BattlerBase.prototype.addParam;
 w.Game_BattlerBase.prototype.addParam=function(i,n) { native.call(this,i,n); trace.push({i,n,hp:this.hp,mp:this.mp}); };

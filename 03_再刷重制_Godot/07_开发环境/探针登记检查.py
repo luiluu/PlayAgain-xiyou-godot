@@ -41,7 +41,7 @@ def check(remake: Path, exempt: dict) -> list[str]:
     return bad
 
 
-DAMAGE_RE = re.compile(r'hpDamage|makeDamage|executeDamage|applyDamage|startAction|invokeAction')
+DAMAGE_RE = re.compile(r'hpDamage|makeDamage|executeDamage|applyDamage|startAction|invokeAction|evalDamageFormula|\.result\(\)')
 ZONES_FILE = HERE / '探针五乘区存量.json'
 
 
