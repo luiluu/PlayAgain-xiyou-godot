@@ -2,6 +2,7 @@
 // 书籍与科技静态能力链；冻结插件，全内存。条件低血/低蓝与learn/relearn/forget，写入仅.sandbox。
 const {start,makeCase,finish}=require('./shared/host.cjs');
 const host=start(),{w,newGame}=host;newGame();w.$gameParty._targetActorId=1;w.$gameVariables.setValue(9,999);
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正（tools50 确认关与不关产物一致或已更新夹具）
 const a=w.$gameActors.actor(1);a._level=37;a._equips.forEach((_,i)=>a.changeEquip(i,null));a._states=new w.Array();a._paramPlus=w.Array.from([0,0,0,0,0,0,0,0]);
 const damageSkills=[1,125,275];
 function refresh(){a.refreshPassiveSkillCache();a.initPassiveCache();a.refreshPassiveCache();a.refresh();}
