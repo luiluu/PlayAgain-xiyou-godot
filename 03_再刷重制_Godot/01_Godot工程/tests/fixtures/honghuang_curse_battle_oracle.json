@@ -2492,6 +2492,320 @@
     "hpDamage": 308
    },
    "errors": []
+  },
+  {
+   "id": "crit.0",
+   "setup": {
+    "curse": 0
+   },
+   "observed": {
+    "attack": {
+     "hit": true,
+     "critical": true,
+     "hp": 524,
+     "dead": false
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "crit.7207",
+   "setup": {
+    "curse": 7207
+   },
+   "observed": {
+    "attack": {
+     "hit": true,
+     "critical": true,
+     "hp": 308,
+     "dead": false
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "crit.7205",
+   "setup": {
+    "curse": 7205
+   },
+   "observed": {
+    "attack": {
+     "hit": true,
+     "critical": false,
+     "hp": 308,
+     "dead": false
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "elem.0",
+   "setup": {
+    "curse": 0
+   },
+   "observed": {
+    "attack": {
+     "hit": true,
+     "critical": false,
+     "hp": 172,
+     "dead": false
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "elem.7213",
+   "setup": {
+    "curse": 7213
+   },
+   "observed": {
+    "attack": {
+     "hit": true,
+     "critical": false,
+     "hp": 17,
+     "dead": false
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "elem.7212",
+   "setup": {
+    "curse": 7212
+   },
+   "observed": {
+    "attack": {
+     "hit": true,
+     "critical": false,
+     "hp": 172,
+     "dead": false
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "drop.0",
+   "setup": {
+    "curse": 0
+   },
+   "observed": {
+    "rate": 0.266
+   },
+   "errors": []
+  },
+  {
+   "id": "drop.7211",
+   "setup": {
+    "curse": 7211
+   },
+   "observed": {
+    "rate": 0.1596
+   },
+   "errors": []
+  },
+  {
+   "id": "turns.7203.0",
+   "setup": {
+    "curse": 7203,
+    "state": 1267,
+    "who": "enemy",
+    "startRnd": 0
+   },
+   "observed": {
+    "rows": [
+     {
+      "has": true,
+      "turns": 0,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "turns.7203.0.5",
+   "setup": {
+    "curse": 7203,
+    "state": 1267,
+    "who": "enemy",
+    "startRnd": 0.5
+   },
+   "observed": {
+    "rows": [
+     {
+      "has": true,
+      "turns": 1,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "turns.7203.0.99",
+   "setup": {
+    "curse": 7203,
+    "state": 1267,
+    "who": "enemy",
+    "startRnd": 0.99
+   },
+   "observed": {
+    "rows": [
+     {
+      "has": true,
+      "turns": 1,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "turns.7204.0",
+   "setup": {
+    "curse": 7204,
+    "state": 1268,
+    "who": "actor",
+    "startRnd": 0
+   },
+   "observed": {
+    "rows": [
+     {
+      "has": true,
+      "turns": 0,
+      "canMove": false
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "turns.7204.0.5",
+   "setup": {
+    "curse": 7204,
+    "state": 1268,
+    "who": "actor",
+    "startRnd": 0.5
+   },
+   "observed": {
+    "rows": [
+     {
+      "has": true,
+      "turns": 1,
+      "canMove": false
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "turns.7204.0.99",
+   "setup": {
+    "curse": 7204,
+    "state": 1268,
+    "who": "actor",
+    "startRnd": 0.99
+   },
+   "observed": {
+    "rows": [
+     {
+      "has": true,
+      "turns": 2,
+      "canMove": false
+     },
+     {
+      "has": true,
+      "turns": 1,
+      "canMove": false
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     },
+     {
+      "has": false,
+      "turns": null,
+      "canMove": true
+     }
+    ]
+   },
+   "errors": []
   }
  ]
 }

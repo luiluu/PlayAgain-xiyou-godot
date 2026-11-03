@@ -3,7 +3,7 @@ class_name XXuanChart
 ## 星砂（胜利一场＋3，含 Boss 的敌群＋12）、星纹学习／强化／回收／配槽、命主名册、并轨副宿主、同调元素、星契自律开关，
 ## 以及星谱各页的行文（画面在 ui/xuan_chart_page.gd）。星谱本身（chart）与按槽学技能（sync_marks）仍在 XTusuXuan（白龙 tusu1）。
 ## 参照 mv_oracle/xuan_chart_probe.cjs（tests/fixtures/xuan_chart_oracle.json），专项 tests/xiyou_xuan_chart.gd。
-## 星纹在战斗里的效果（余辉、定星、先照……）和璇的绑定战斗机制还没移植：本期星谱页能配、能学、能攒星砂，进了战斗暂时没有效果。
+## 星纹在战斗里的效果和璇的绑定战斗机制在 XXuanBattle（xuan2 期起）。
 ## 星契自律只存开关（原版 a._codexXuanControl，重制记 s.flags._codexXuanControl），自动战斗的行为不在这里。
 
 const NAMES := {

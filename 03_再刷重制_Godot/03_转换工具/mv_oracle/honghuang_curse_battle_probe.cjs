@@ -2,13 +2,15 @@
 // 【cc·悟空·未经审查】诅咒 7201～7215 与洪荒压制 10300 的战斗效果：队伍 1 号学一个诅咒，敌群 3；开战标签状态，量双方状态与回合、
 // 八维、xparam、sparam、敌人再动，再让 1 号普攻敌人一次看伤害（固定 Math.random＝0.5，敌人血加 1e12）；7208 死而复燃另量 0.1／0.5 两种随机下把敌人打死后的血蓝 TP。
 // Scene_Battle.start 需要窗口，无界面宿主跑不了；开战标签照 dsPassiveSkill 逐键解析（同 start_state_walk_probe）。
+// 尾巴（xuan2）：crit.* 随机 0.1 必暴看爆伤（7207、7205）；elem.* 魔法火焰 9 号看元素折算（7213、7212）；drop.* 看 dropItemRate（7211）；
+// turns.* 7203／7204 开战随机 0／0.5／0.99 时的回合数，以及之后三次回合结束状态什么时候掉、能不能动。
 // 产物 .sandbox/honghuang_curse_battle.json，手工复制为 tests/fixtures/honghuang_curse_battle_oracle.json（tests/xiyou_honghuang_curse_battle 对照，不进同步）。
 const {start, makeCase, finish, round} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
 // 五乘区（installNativePowerZonesRuntime）重制不移植（O-050），关掉才比得了绝对伤害（同 yunshang_probe）
 w.eval('CodexZones.ENABLED=false;');
 const stub = new Proxy({}, {get: () => () => {}});
-function setup(curse, rnd) {
+function setup(curse, rnd, startRnd = 0.5) {
   newGame();
   w.Math.random = () => 0.5;  // 敌人的血量等开战数值也取随机，开战这段都用 0.5
   w.eval('$gameParty._actors=[1]; $gameParty._battleMembers=[1,0,0,0,0];');
@@ -21,6 +23,7 @@ function setup(curse, rnd) {
   bm.startBattle();
   a.initPassiveCache();
   const enemies = w.$gameTroop.members();
+  w.Math.random = () => startRnd;
   a.equips().concat(a.skills()).filter(Boolean).forEach(obj => {
     for (const key in obj.meta || {}) {
       const m = /^Start(WT|AE)?PushState(\d+)$/.exec(key);
@@ -40,7 +43,7 @@ function setup(curse, rnd) {
 const nums = f => [...Array(10).keys()].map(i => round(f(i)));
 const look = b => ({states: b.states().map(s => s.id).filter(id => id > 1), turns: Object.keys(b._stateTurns || {}).map(Number).sort((x, y) => x - y).map(id => [id, b._stateTurns[id]]),
   params: [0, 1, 2, 3, 4, 5, 6, 7].map(i => round(b.param(i))), x: nums(i => b.xparam(i)), s: nums(i => b.sparam(i)), plus: b.actionPlusSet().map(round), rates: {death: b.isStateResist(1)}});
-const attack = (a, e) => { const act = new w.Game_Action(a); act.setSkill(1); e.clearResult(); act.apply(e); const r = e.result(); return {hit: r.isHit(), critical: r.critical, hp: round(r.hpDamage), dead: e.isDeathStateAffected()}; };
+const attack = (a, e, skill = 1) => { const act = new w.Game_Action(a); act.setSkill(skill); e.clearResult(); act.apply(e); const r = e.result(); return {hit: r.isHit(), critical: r.critical, hp: round(r.hpDamage), dead: e.isDeathStateAffected()}; };
 const cases = [];
 for (const curse of [0, 7201, 7202, 7203, 7204, 7205, 7206, 7207, 7208, 7209, 7210, 7211, 7212, 7213, 7214, 7215, 10300]) cases.push(makeCase(`curse.${curse}`, {curse}, () => {
   const {a, e} = setup(curse, 0.5);
@@ -63,5 +66,27 @@ for (const [tag, rnd] of [['revive', 0.1], ['stay', 0.5]]) cases.push(makeCase(`
   const r = attack(a, e);
   e.refresh();
   return {...r, hpAfter: round(e.hp), mhp: round(e.mhp), mp: round(e.mp), mmp: round(e.mmp), tp: round(e.tp), alive: e.isAlive(), states: e.states().map(s => s.id), hpDamage: round(e.result().hpDamage)};
+}));
+for (const curse of [0, 7207, 7205]) cases.push(makeCase(`crit.${curse}`, {curse}, () => {
+  const {a, e} = setup(curse, 0.1);
+  e.setHp(e.mhp);
+  return {attack: attack(a, e)};
+}));
+for (const curse of [0, 7213, 7212]) cases.push(makeCase(`elem.${curse}`, {curse}, () => {
+  const {a, e} = setup(curse, 0.5);
+  e.setHp(e.mhp);
+  return {attack: attack(a, e, 9)};
+}));
+for (const curse of [0, 7211]) cases.push(makeCase(`drop.${curse}`, {curse}, () => {
+  const {e} = setup(curse, 0.5);
+  return {rate: round(e.dropItemRate())};
+}));
+for (const [curse, state, who] of [[7203, 1267, 'enemy'], [7204, 1268, 'actor']]) for (const startRnd of [0, 0.5, 0.99]) cases.push(makeCase(`turns.${curse}.${startRnd}`, {curse, state, who, startRnd}, () => {
+  const {a, e} = setup(curse, 0.5, startRnd);
+  const b = who === 'enemy' ? e : a, rows = [];
+  const row = () => ({has: b.isStateAffected(state), turns: b._stateTurns[state] === undefined ? null : b._stateTurns[state], canMove: b.canMove()});
+  rows.push(row());
+  for (let i = 0; i < 3; i++) { [a, e].forEach(x => x.onTurnEnd()); [a, e].forEach(x => x.refresh()); rows.push(row()); }
+  return {rows};
 }));
 process.exit(finish(host, 'honghuang_curse_battle.json', {hostScope: '真实 Game_Action.apply 与状态包装；开战标签照 dsPassiveSkill 解析；Math.random 固定', cases}) ? 0 : 1);

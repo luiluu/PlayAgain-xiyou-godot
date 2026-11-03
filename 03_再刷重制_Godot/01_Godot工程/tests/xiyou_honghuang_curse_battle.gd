@@ -2,6 +2,7 @@ extends Node
 ## 诅咒 7201～7215 与洪荒压制 10300 的战斗效果对原版参照 tests/fixtures/honghuang_curse_battle_oracle.json
 ## （mv_oracle/honghuang_curse_battle_probe.cjs）：1 号学一个诅咒、敌群 3，比开战后双方的状态与回合、八维、xparam、sparam、敌人再动，
 ## 普攻一次的伤害（随机固定 0.5）；残魂苟存打到 0 血不倒；死而复燃（状态 1270）在 0.1／0.5 随机下打死后的血蓝 TP。
+## 尾巴：7207／7205 暴击（随机 0.1）、7213／7212 魔法火焰 9 号、7211 掉率、7203／7204 的回合数与之后三次回合结束。
 const FIXTURE := "res://tests/fixtures/honghuang_curse_battle_oracle.json"
 var checks := 0
 var failures: Array = []
@@ -36,7 +37,7 @@ func _run() -> void:
 	GameApp.fast_headless_frames()
 	var f: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", f.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("complete", f.cases.size() == 20, f.cases.size())
+	check("complete", f.cases.size() == 34, f.cases.size())
 	for c in f.cases:
 		check(c.id + ".oracle", c.errors.is_empty(), c.errors)
 		if c.errors.is_empty():
@@ -46,7 +47,7 @@ func _run() -> void:
 	get_tree().quit.call_deferred(0 if failures.is_empty() else 1)
 
 
-func _setup(curse: int) -> Array:
+func _setup(curse: int, start_rnd := 0.5) -> Array:
 	var s := XState.new_game_blank()
 	XState.current = s
 	s.add_actor(1)
@@ -54,6 +55,7 @@ func _setup(curse: int) -> Array:
 		s.actor(1).learn_skill(curse)
 	var stream := FixedStream.new()
 	stream.domain = "rule"
+	stream.value = start_rnd
 	var rand := XBattleRandom.create("0000000000000174")
 	rand.rule = stream
 	var logic := XBattleLogic.new()
@@ -95,14 +97,34 @@ func _look(tag: String, want: Dictionary, b: XBattler) -> void:
 	check(tag + ".resist", resist == bool(want.rates.death), [want.rates, resist])
 
 
-func _attack(logic: XBattleLogic, a: XActor, e: XBattler) -> Dictionary:
-	var r: Dictionary = logic.apply(a, XDB.rec("Skills", 1), e)
+func _attack(logic: XBattleLogic, a: XActor, e: XBattler, skill := 1) -> Dictionary:
+	var r: Dictionary = logic.apply(a, XDB.rec("Skills", skill), e)
 	return r
+
+
+func _turns(c: Dictionary) -> void:
+	var r := _setup(int(c.setup.curse), float(c.setup.startRnd))
+	var logic: XBattleLogic = r[0]
+	var b: XBattler = r[2] if str(c.setup.who) == "enemy" else r[1]
+	(r[3] as FixedStream).value = 0.5
+	var state := int(c.setup.state)
+	for i in c.observed.rows.size():
+		var want: Dictionary = c.observed.rows[i]
+		if i > 0:
+			logic.end_turn()
+		var has: bool = b.state_ids.has(state)
+		var turns = int(b.state_turns.get(state, -1)) if has else null
+		var got := {"has": has, "turns": turns, "canMove": logic.can_move(b)}
+		var same: bool = has == bool(want.has) and logic.can_move(b) == bool(want.canMove) and (not has or int(want.turns) == turns)
+		check("%s.row%d" % [c.id, i], same, [want, got])
 
 
 func _case(c: Dictionary) -> void:
 	var o: Dictionary = c.observed
 	var kind := str(c.id).get_slice(".", 0)
+	if kind == "turns":
+		_turns(c)
+		return
 	var r := _setup(int(c.setup.curse))
 	var logic: XBattleLogic = r[0]
 	var a: XActor = r[1]
@@ -115,6 +137,16 @@ func _case(c: Dictionary) -> void:
 		a.hp = a.mhp
 		var h := _attack(logic, a, e)
 		check(c.id + ".damage", float(h.hp) == float(o.attack.hp) and bool(h.critical) == bool(o.attack.critical), [o.attack, h.hp, h.critical])
+		return
+	if kind == "drop":
+		var rate := XAlienBattle.drop_item_rate(XState.current, e)
+		check(c.id + ".rate", absf(rate - float(o.rate)) < 1e-5, [o.rate, rate])
+		return
+	if kind == "crit" or kind == "elem":
+		stream.value = 0.1 if kind == "crit" else 0.5
+		e.hp = e.mhp
+		var hit := _attack(logic, a, e, 1 if kind == "crit" else 9)
+		check(c.id + ".damage", float(hit.hp) == float(o.attack.hp) and bool(hit.critical) == bool(o.attack.critical), [o.attack, hit.hp, hit.critical])
 		return
 	e.hp = 1.0
 	if kind == "revive":

@@ -28,6 +28,8 @@ func state_context(b: XBattler) -> Dictionary:
 func add_state(b: XBattler, id: int, inputs := {}) -> void:
 	if preview or bool(inputs.get("preview", false)) or b == null:
 		return
+	if XXuanBattle.blocks_state(b, id):
+		return  # 璇定星 addState 包装：挡一次硬控制（在 isStateAddable 之前）
 	# Native isStateAddable checks appearance and the death state. Raw HP may
 	# already be zero while refresh/_die still needs to attach state 1.
 	var forced := XAlienBattle.forced_state(b, id)  # 异化疫囊、囚厄：不可抵抗、本次移除过也照加
